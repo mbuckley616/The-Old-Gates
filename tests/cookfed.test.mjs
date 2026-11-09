@@ -134,5 +134,92 @@ const ds = await page.evaluate(() => {
 console.log(JSON.stringify(ds));
 check(`Uisce touched douses the fire 1.5 m ahead (${ds.near}, gone ${ds.gone}: "${ds.said}"), not one 2.5 m ahead (${ds.far}) or behind you (${ds.behind}); a use of Uisce (${ds.use})`,
   ds.near && ds.gone && !ds.far && ds.farLeft && !ds.behind && ds.use && ds.said === 'The fire hisses out.', ds);
+
+// Session 2012 — water B, session 1 (Michael's B on #1254, `docs/design/water.md`): a waterskin (4 uses, 0.3 empty and 0.25 a use) at
+// every goods shop and inn; E fills every vessel at a town's well (clean, foul while the town has the plague), in a river or lake 0.3 m
+// deep (raw), never the sea; rain outdoors adds a use each 10 game minutes. A drink leaves you Watered for 2 hours (a flask 4):
+// stamina regeneration ×1.1 and Cool 1. Foul water does you no good. Watered is the character's and saved.
+// a town with a plaza must be built first: on a slow runner the start's town comes some seconds after the world opens
+await page.waitForFunction(() => [...SETTLE.values()].some(S => S.site && KIND_PLAN[S.site.kind] && KIND_PLAN[S.site.kind].rows > 0 && S.site.kind !== 'farm'), null, { timeout: 180000, polling: 500 });
+const wt = await page.evaluate(() => {
+  const out = {}; BAG.length = 0; worldState.watered = null; CAMPFIRES.splice(0).forEach(dropFire); WX.type = 'clear';
+  const sm0 = showMsg; let last = ''; showMsg = (t, c) => { last = t; return sm0(t, c); }; const showMsgLast = () => last;
+  const sk = survivalFor({ type: 'misc' }).find(i => i.vessel), inn = survivalFor({ type: 'inn' }).some(i => i.vessel);
+  out.shop = { name: sk && sk.name, uses: sk && sk.wUses, w: sk && sk.weight, inn, price: sk && sk.buyPrice };
+  bagAdd(sk); const it = BAG.find(b => b.vessel);
+  const drink = () => { useItem(BAG.indexOf(it)); if (DRINK) { const d = DRINK; DRINK = null; d.apply(); } };
+  const S = [...SETTLE.values()].find(S => S.site && KIND_PLAN[S.site.kind] && KIND_PLAN[S.site.kind].rows > 0 && S.site.kind !== 'farm');
+  const st = S.site; px = st.x + 6 + 3; pz = st.z + 4; jumpY = 0;
+  out.well = { site: st.id, near: !!wellNear(), prompt: waterPrompt(), far: (() => { px += 3; const n = !!wellNear(); px -= 3; return n; })() };
+  fillHere(); out.well.uses = it.wUses; out.well.kind = it.wKind; out.well.w = it.weight; out.full = (fillHere(), showMsgLast());
+  const t0 = gameMinNow(); drink(); const W = wateredNow();
+  out.drink = { uses: it.wUses, mins: W && Math.round(W.until - t0), mult: waterRegenMult(), cool: coolNow().by.includes('Watered'), pill: /💧/.test(waterPill()) };
+  worldState.gameTimeAbsMinutes += 121; out.drink.after = !!wateredNow(); out.drink.multAfter = waterRegenMult();
+  const T = worldState.towns || (worldState.towns = {}); const ts = T[st.id] || (T[st.id] = { flags: {} }); const was = ts.flags.plague;
+  while (it.wUses) drink(); ts.flags.plague = gameMinNow(); fillHere(); out.plague = { kind: it.wKind, uses: it.wUses }; worldState.watered = null; drink();
+  out.plague.watered = !!wateredNow(); out.plague.said = showMsgLast(); if (was == null) delete ts.flags.plague; else ts.flags.plague = was;
+  while (it.wUses) drink(); px = st.x + 60; pz = st.z + 60;
+  let fresh = null, sea = null; const p0 = [px, pz];
+  for (let k = 0; k < 40000 && !(fresh && sea); k++) { const x = p0[0] + (Math.random() - .5) * 3000, z = p0[1] + (Math.random() - .5) * 3000; let y; try { y = worldH(x, z); } catch (e) { continue; } if (!(y < SEA_Y - .3)) continue;
+    const f = wildRiverNear(x, z, 0) || wildLakeNear(x, z); if (f && !fresh) fresh = [x, z]; else if (!f && !sea && y < -2) sea = [x, z]; }
+  if (fresh) { [px, pz] = fresh; out.river = { src: waterSourceHere(), filled: fillHere() }; out.river.kind = it.wKind; out.river.uses = it.wUses; while (it.wUses) drink(); }
+  if (sea) { [px, pz] = sea; out.sea = { prompt: waterPrompt(), took: fillHere(), said: showMsgLast(), uses: it.wUses }; }
+  px = p0[0]; pz = p0[1]; tickWater(); WX.type = 'rain'; tickWater(); /* the clock's mark first, dry */ for (let i = 0; i < 3; i++) { worldState.gameTimeAbsMinutes += 10; tickWater(); } out.rain = it.wUses; WX.type = 'clear';
+  bagAdd(waterItem('flask', 2)); const fl = BAG.find(b => b.vessel === 'flask'); worldState.watered = null; const t1 = gameMinNow(); useItem(BAG.indexOf(fl)); if (DRINK) { const d = DRINK; DRINK = null; d.apply(); }
+  out.flask = wateredNow() && Math.round(wateredNow().until - t1);
+  out.save = { char: SS_CHAR_WS.watered === 1, list: _applyLoadData.toString().includes("'watered'") };
+  showMsg = sm0; return out; });
+console.log(JSON.stringify(wt));
+check(`a ${wt.shop.name} at the goods shop and the inn (${wt.shop.inn}), ${wt.shop.price} gold, empty, ${wt.shop.w} kg`, wt.shop.name === 'Waterskin' && wt.shop.inn && wt.shop.uses === 0 && wt.shop.w === .3, wt.shop);
+check(`at ${wt.well.site}'s well ("${wt.well.prompt}"; not 3 m farther) E fills it: ${wt.well.uses} uses, ${wt.well.kind}, ${wt.well.w} kg; again: "${wt.full}"`,
+  wt.well.near && !wt.well.far && /fill the waterskin/.test(wt.well.prompt) && wt.well.uses === 4 && wt.well.kind === 'clean' && wt.well.w === 1.3 && wt.full === 'Your water is full.', wt.well);
+check(`a drink: ${wt.drink.uses} left, Watered ${wt.drink.mins} min, stamina regeneration ×${wt.drink.mult}, Cool 1 (${wt.drink.cool}); gone after (×${wt.drink.multAfter})`,
+  wt.drink.uses === 3 && wt.drink.mins === 120 && wt.drink.mult === 1.1 && wt.drink.cool && wt.drink.pill && !wt.drink.after && wt.drink.multAfter === 1, wt.drink);
+check(`the well of a town with the plague fills it ${wt.plague.kind}; a drink of it leaves you not Watered ("${wt.plague.said}")`, wt.plague.kind === 'foul' && wt.plague.uses === 4 && !wt.plague.watered, wt.plague);
+check(`a river or lake 0.3 m deep fills it raw (${wt.river && wt.river.uses}, ${wt.river && wt.river.kind})`, wt.river && wt.river.filled && wt.river.kind === 'raw' && wt.river.uses === 4, wt.river);
+check(`the sea fills nothing ("${wt.sea && wt.sea.said}", no prompt)`, wt.sea && wt.sea.took && !wt.sea.prompt && wt.sea.uses === 0 && wt.sea.said === 'It would not slake a gull.', wt.sea);
+check(`rain outdoors: three ten-minute marks, ${wt.rain} uses`, wt.rain === 3, wt);
+check(`a flask's drink lasts ${wt.flask} min; Watered is the character's and read back on load`, wt.flask === 240 && wt.save.char && wt.save.list, wt);
+
+// Session 2013 — water B, session 2: raw water leaves you Queasy one drink in eight (×0.8 stamina regeneration, 20 min), seeded by the
+// fill's chunk and day and the drink's index; foul water always (60 min, not Watered). A fill at a source pours out worse water. Boiling
+// at a fire cleans raw water and heats a canteen (a hot drink is Warmth 1, not Cool 1); a Charcoal filters raw water. The canteen at
+// the Mark's goods shops, the flask at Aurenne's.
+const w2 = await page.evaluate(() => {
+  const out = {}; BAG.length = 0; worldState.watered = null; worldState.queasy = null; CAMPFIRES.splice(0).forEach(dropFire); WX.type = 'clear';
+  const sm0 = showMsg; let last = ''; showMsg = (t, c) => { last = t; return sm0(t, c); };
+  const sip = it => { useItem(BAG.indexOf(it)); if (DRINK) { const d = DRINK; DRINK = null; d.apply(); } };
+  bagAdd(waterItem('skin')); const it = BAG.find(b => b.vessel); const x0 = px, z0 = pz;
+  const run = () => { let q = 0, n = 0, seq = ''; for (let k = 0; k < 200; k++) { px = x0 + k * CHUNK; vesselEmpty(it); fillVessel(it, 'raw');
+    for (let u = 0; u < 4; u++) { worldState.queasy = null; sip(it); const y = !!queasyNow(); q += y; n++; seq += y ? 1 : 0; } } return { q, n, seq }; };
+  const A = run(), B = run(); px = x0; pz = z0;
+  out.raw = { q: A.q, n: A.n, same: A.seq === B.seq };
+  let qd = null; for (let k = 0; k < 60 && !qd; k++) { px = x0 + (300 + k) * CHUNK; vesselEmpty(it); fillVessel(it, 'raw'); for (let u = 0; u < 4 && !qd; u++) { worldState.queasy = null; const t = gameMinNow(); sip(it); if (queasyNow()) qd = { mins: Math.round(queasyNow().until - t), mult: +waterRegenMult().toFixed(3), watered: !!wateredNow() }; } }
+  px = x0; out.rawQ = qd; vesselEmpty(it);
+  worldState.queasy = null; worldState.watered = null; fillVessel(it, 'foul'); const t1 = gameMinNow(); sip(it);
+  out.foul = { mins: queasyNow() && Math.round(queasyNow().until - t1), watered: !!wateredNow(), mult: +waterRegenMult().toFixed(3), pill: /🤢/.test(waterPill()) };
+  worldState.queasy = null;
+  const S = [...SETTLE.values()].find(S => S.site && KIND_PLAN[S.site.kind] && KIND_PLAN[S.site.kind].rows > 0 && S.site.kind !== 'farm'); px = S.site.x + 9; pz = S.site.z + 4;
+  out.pour = { before: it.wKind, uses: it.wUses, prompt: waterPrompt() }; fillHere(); Object.assign(out.pour, { after: it.wKind, n: it.wUses, said: last });
+  px = x0; pz = z0; vesselEmpty(it); fillVessel(it, 'raw'); bagAdd(waterItem('canteen', 3)); const cn = BAG.find(b => b.vessel === 'canteen');
+  bagAdd(survItem('tinderbox')); bagAdd(survItem('log')); const f = lightFire(); px = f.x + .5; pz = f.z;
+  openCookPage(); out.boilRow = !!document.querySelector('#ck-list [data-k="boil"]'); closeCookPage();
+  const bo = cookAt('boil'); out.boil = { made: bo.made, skin: it.wKind, hot: waterSay(cn) };
+  worldState.watered = null; sip(cn); out.hot = { hot: !!(wateredNow() && wateredNow().hot), warm: warmthNow().by.includes('a hot drink'), cool: coolNow().by.includes('Watered') };
+  worldState.gameTimeAbsMinutes += 181; out.cold = waterSay(cn);
+  CAMPFIRES.splice(0).forEach(dropFire); fillVessel(it, 'raw', null, true); vesselEmpty(it); fillVessel(it, 'raw'); bagAdd(survItem('charcoal', 2));
+  useItem(BAG.findIndex(b => b.name === 'Charcoal')); out.filter = { kind: it.wKind, left: bagCount(b => b.name === 'Charcoal'), said: last };
+  anchoredPlaces(); const isle = {}; for (const c of CELLS.values()) { if (c.type === 'sea') continue; const nk = nationKeyOf(c.i, c.j); if (isle[nk]) continue; const t = c.sites.find(t => t.kind === 'village'); if (t) isle[nk] = survivalFor({ type: 'misc', siteId: t.id }).filter(i => i.vessel).map(i => i.name); }
+  out.isle = isle; out.save = SS_CHAR_WS.queasy === 1 && _applyLoadData.toString().includes("'queasy'");
+  showMsg = sm0; worldState.watered = null; worldState.queasy = null; return out; });
+console.log(JSON.stringify(w2));
+check(`raw water: ${w2.raw.q} of ${w2.raw.n} drinks leave you Queasy (one in eight, 70 to 130), the same again on the same fills`, w2.raw.q >= 70 && w2.raw.q <= 130 && w2.raw.same, w2.raw);
+check(`Queasy from raw water: ${w2.rawQ && w2.rawQ.mins} min, stamina regeneration ×${w2.rawQ && w2.rawQ.mult}, still Watered`, w2.rawQ && w2.rawQ.mins === 20 && w2.rawQ.mult === 0.88 && w2.rawQ.watered, w2.rawQ);
+check(`foul water: Queasy ${w2.foul.mins} min (×${w2.foul.mult}), not Watered`, w2.foul.mins === 60 && w2.foul.mult === 0.8 && !w2.foul.watered && w2.foul.pill, w2.foul);
+check(`a waterskin of foul water at a clean well: the prompt shows and E pours it out and fills it clean ("${w2.pour.said}")`, w2.pour.before === 'foul' && w2.pour.prompt && w2.pour.after === 'clean' && w2.pour.n === 4, w2.pour);
+check(`at a fire Boil Water (listed: ${w2.boilRow}) cleans raw water and heats the canteen ("${w2.boil.hot}"); its drink is Warmth 1, not Cool 1; cold 3 hours on ("${w2.cold}")`,
+  w2.boilRow && w2.boil.made && w2.boil.skin === 'clean' && /hot/.test(w2.boil.hot) && w2.hot.hot && w2.hot.warm && !w2.hot.cool && !/hot/.test(w2.cold), w2);
+check(`a Charcoal used filters raw water clean (${w2.filter.kind}, ${w2.filter.left} left): "${w2.filter.said}"`, w2.filter.kind === 'clean' && w2.filter.left === 1, w2.filter);
+check(`the vessels by island: ${JSON.stringify(w2.isle)}; Queasy is the character's and saved`, w2.isle.gatelands + '' === 'Waterskin' && w2.isle.mark + '' === 'Waterskin,Canteen' && w2.isle.aurenne + '' === 'Waterskin,Flask' && w2.save, w2.isle);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
