@@ -531,3 +531,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** STUCK #1307: a long cloak's hem breaks the arm check; the bodies builder's own next run.
 
 **Roadmap.** 315 of 390 stories done (313 of 386 on 7 Nov). The new look is 6 of 17; no deep-work card is queued.
+
+## 9 Nov 2026
+
+**Waiting on you.** One decision: how long being fed lasts (#1339, B recommended: a filled stew 45 real minutes). No PR waits on your tap.
+
+**Landed on main since 8 Nov.** Your answers built: water B, its vessels, sources, boiling and the flask (#1254, Systems 2010–2011, 2022); cooking B, the pot, the clay oven and the inn's dish of the day (#1296, 2028, 2033, 2035); a farm's beast killed is theft (#1275 B, 2007); animals by the hour (#1293 A, 2005); the Mark's tight lots take the two-storey town house (#1300 C, Look 2003). Places by the road (#1292 A, F8): the overturned coach, the hunters' camp, the charcoal burners, a fallen cottage over a locked cellar, the perched stone (2007–2034). A town's house keeps its roof from boot to boot (2032). The long cloak: STUCK #1313 cleared, the hem's side bones, and your own cloak takes them (Bodies 2006–2036). The Hedge, the last of Asked in Passing's six (2021). QA landed lookpair (2027). Build s1405.
+
+**Under way.** QA's budget draft (#1349). The systems builder fixes the fire page's "a roast" label; the look builder the coach's black box.
+
+**Blocked.** Nothing. The weekly run's reds (8 Nov) are filed by owner in section I.
+
+**Roadmap.** 320 of 396 stories done (315 of 390 on 8 Nov). The new look is 7 of 18; only F14 is left for deep work.
