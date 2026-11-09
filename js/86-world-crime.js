@@ -593,7 +593,8 @@
     return {seen:true,by:w.name,site:site&&site.id,worth};}
   /* the farmer of a farm whose stock you were seen to take: asked as any talk opens (openDialog) */
   function farmerRefuses(def){const fid=def&&def._farm,R=worldState.refuse;if(!fid||!R||R['farm:'+fid]==null)return false;if(dayNow()>=R['farm:'+fid]){delete R['farm:'+fid];return false;}
-    showMsg(`${def.name||'The farmer'}: “I know what you did.”`,'#e8a880');return true;}
+    const FR={gatelander:"The fox that's had the hen isn't asked in for the eggs.",markman:"I know what you did. Get off my land.",aurennais:"I keep no account with whoever took from my stock, Master. Ours is closed.",oldblood:"You took from the fold. Go."}; /* Finding 44 (quest review, run 41): the line by the farmer's people */
+    showMsg(`${def.name||'The farmer'}: “${FR[def.people]||FR.gatelander}”`,'#e8a880');return true;}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
   function bountyAt(site){const C=worldState.crime;const c=C&&C[typeof site==='string'?site:site.id];return c?c.bounty:0;}
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];
