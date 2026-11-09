@@ -48,8 +48,8 @@ check(`each stands at its driver's stature: head bone ${fit.map(f => f.head).joi
 // it walks: the builder's bones follow the driver's stride
 const walk = await page.evaluate(() => { const { e, rig } = _F[0], H = rig.hb, sk = H.P.skeleton, mats = () => Array.from(sk.boneMatrices);
   const dx = Math.sin(e.mesh.rotation.y), dz = Math.cos(e.mesh.rotation.y); sk.update(); const a = mats(); let w = 0;
-  let hem = 0, side = 0; for (let i = 0; i < 120; i++) { e.x += dx * .011; e.z += dz * .011; e.mesh.position.set(e.x, WORLD.worldH(e.x, e.z), e.z); tickPeople(1 / 60, 4e5 + i * 16.7); if (i > 40) w = Math.max(w, (rig.w && rig.w.walk) || 0); const hm = H.P.hem; if (hm) { hem = Math.max(hem, hm.a); side = Math.max(side, hm.aS[0], hm.aS[1]); } }
-  sk.update(); const b = mats(); let moved = 0; for (let i = 0; i < a.length; i++) moved = Math.max(moved, Math.abs(a[i] - b[i])); return { moved: +moved.toFixed(3), w: +w.toFixed(2), hem: +hem.toFixed(2), side: +side.toFixed(2), tw: H.tw, hold: H.hold ? H.hold.size : 0 }; });
+  let hem = 0, side = 0, sx = 0, hx = 0; for (let i = 0; i < 120; i++) { e.x += dx * .011; e.z += dz * .011; e.mesh.position.set(e.x, WORLD.worldH(e.x, e.z), e.z); tickPeople(1 / 60, 4e5 + i * 16.7); if (i > 40) { w = Math.max(w, (rig.w && rig.w.walk) || 0); sx = Math.max(sx, Math.abs(rig.B.spine.rotation.x)); hx = Math.max(hx, rig.B.hips.rotation.x); } const hm = H.P.hem; if (hm) { hem = Math.max(hem, hm.a); side = Math.max(side, hm.aS[0], hm.aS[1]); } }
+  sk.update(); const b = mats(); let moved = 0; for (let i = 0; i < a.length; i++) moved = Math.max(moved, Math.abs(a[i] - b[i])); return { moved: +moved.toFixed(3), w: +w.toFixed(2), hem: +hem.toFixed(2), side: +side.toFixed(2), tw: H.tw, hold: H.hold ? H.hold.size : 0, lean: H.lean, sx: +sx.toFixed(3), hx: +hx.toFixed(3) }; });
 console.log('  walk:', JSON.stringify(walk));
 check(`it walks: the builder's bones turn with the driver's stride (by ${walk.moved})`, walk.moved > .02 && walk.w > .5, walk);
 // S2041 — and the long cloak's hem swings back over the trailing heel, its middle and its sides (a foe's own legs, 120 ticks: 2,717 points out of the cloak on main, 1,092 here)
@@ -57,6 +57,9 @@ check(`its cloak's hem swings back over the trailing heel as it walks (the middl
 // S2042 — her held arm takes none of the hips' twist under the long cloak, as the townsfolk's (S2009)
 check(`walking, her held arm (${walk.hold} bones) takes none of the hips' twist under the long cloak (tw ${walk.tw})`, walk.hold > 0 && walk.tw === 0, walk);
 
+// S2045 — and the spine's lean is the pelvis's under the long cloak, so the cloak (on the pelvis) leans with the chest and the arms it holds
+// stay under its front (a 160-tick run at 1.3 m/s: the Cultist's forearm points out of it 1,815 → 0, the hag's 945 → 207)
+check(`walking, her spine's forward lean is taken into the pelvis under the long cloak (the spine ${walk.sx} rad off the pelvis, the pelvis tipped ${walk.hx})`, walk.lean === true && walk.sx < .005 && walk.hx > .05, walk);
 // the picture: the line from 4 m, near
 await page.evaluate(() => { const f = _F[1].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 6; pz = f.z - fz * 6; pitch = .05; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickPeople(1 / 60, performance.now())); await g.frames(1); }
