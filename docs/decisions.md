@@ -26,6 +26,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A.
 
+### The character sheet's portrait — no figure, inked, or lit in a bronze window (from the concept artist, 2026-11-09, #1363)
+**The question.** The approved Inventory page shows what you wear as slots with no figure. Since F10 the player has the builder's body, so the sheet could show it between two columns of five slots (OG-134), turned by a drag. How should the figure sit on the parchment?
+
+**Options.**
+- **A.** No figure: the slots alone, as approved.
+- **B.** Inked into the paper: ink line, three-tone wash, hatched shadows. Matches the page, but the metals are lost (Mithril plate reads as a pale coat).
+- **C (recommended).** Lit, in a dark arched window with the HUD's bronze rim; every tier reads as itself. 78k–84k triangles, drawn once when the sheet opens or the kit changes.
+
+**Recommendation.** C. Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1109/docs/prototypes/levelup/sheet-options.jpg
+
 ## Answered
 ### Cooking — how long being fed lasts in real minutes (from the systems designer, 2026-11-09, #1339)
 **The question.** The game clock runs one game hour to the real minute, so today's meal (*fed*, 2 game hours) lasts about 2 real minutes, and cooking B's dish (×1.5) and filled dish (×2.25) about 3 and 4.5. Every length in the cooking build sheet (`docs/design/cooking-build.md`) is a multiple of it. How long should *fed* last?
