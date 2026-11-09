@@ -6,7 +6,7 @@
 // it until you come within 40 m, has it then with no travel to it. Session 2025 adds the Mark's hunters' camp (PKIT.places.hunters), Session 2029 the Gatelands'
 // charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar),
 // Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt);
-// Session 2043 the peat-cutting camp (PKIT.places.peat), on its own ground.
+// Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -129,7 +129,7 @@ await page.evaluate(D => { px = D.x + Math.sin(D.ry) * 28; pz = D.z + Math.cos(D
 const hm = await page.evaluate(id => { const e = mapEntries(getCell(...id.split('_').slice(1).map(Number))).find(e => e.id === id); return { disc: discovered(id), entry: e && { name: e.name, kind: e.kind, noTravel: !!e.noTravel }, travel: !!arrivalFor(id) }; }, of.hut.id);
 console.log(JSON.stringify(hm));
 check(`found at 28 m, on the map as "${hm.entry && hm.entry.name}", with no travel to it`, hm.disc && hm.entry && hm.entry.kind === 'offroad' && hm.entry.noTravel && !hm.travel, hm);
-// Session 2043: the Gatelands' peat-cutting camp (PKIT.places.peat, places.js's gatelandsPeatCamp) on level bog, the first place that brings its
+// Session 2044: the Gatelands' peat-cutting camp (PKIT.places.peat, places.js's gatelandsPeatCamp) on level bog, the first place that brings its
 // own ground: the bog's patch over the world (never under it inside the rim), the height you walk at read from the piece (offroadGroundAt),
 // the face a wall from the cut and open from the bank, the bothy solid with its door open, its cost
 const pc = await page.evaluate(() => { for (const c of CELLS.values()) { const d = c.type !== 'sea' && !c.home ? offroadAt(c) : null; if (d && d.kind === 'peat') return { id: d.id, x: d.x, z: d.z, ry: d.ry, cell: d.cell, ppl: nationOf(c.i, c.j).people }; } return null; });

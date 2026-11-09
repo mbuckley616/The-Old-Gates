@@ -189,7 +189,7 @@
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
     if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
     if(c._aq&&c._aq.walks){aqWalkDrop(c._aq.id);c._aq.walks=null;} /* S1927 — the aqueduct's channel */
-    if(c._offroad&&c._offroad.patch)offroadPatchDrop(c._offroad.id); /* S2043 — a place off the road's own ground */
+    if(c._offroad&&c._offroad.patch)offroadPatchDrop(c._offroad.id); /* S2044 — a place off the road's own ground */
     if(c._tunnel&&c._tunnel.house){const i=ZONES.world.houses.indexOf(c._tunnel.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1828 — the tunnel's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
@@ -843,7 +843,7 @@
   const OFFROAD_BIOME={shepherd:['moor','plains','coast'],peat:['moor','fen','plains'],falls:['plains','forest','autumn','moor'],cabin:['tundra','forest'],logging:['tundra','forest']};
   /* the shepherd's hut's three grounds in the piece's frame (the hut, the fold, the spring): each is read for its slope and its water */
   const OFFROAD_GROUND={shepherd:[[0,0],[11,5.5],[-8,-6.5]],peat:[[0,0],[-30,-30],[30,-30],[-30,24],[30,24],[0,-24],[0,12]]};
-  /* S2043 — the peat camp on the raised bog: its patch (80 by 66 m) within 2.4 m of level, its middle no steeper than 1 in 25, and every ground of it 6 m or more over the sea */
+  /* S2044 — the peat camp on the raised bog: its patch (80 by 66 m) within 2.4 m of level, its middle no steeper than 1 in 25, and every ground of it 6 m or more over the sea */
   const OFFROAD_FLAT={peat:{spread:2.4,grade:.04,sea:6}};
   function offroadAt(c){
     if(!c||c._offroad!==undefined)return c?c._offroad:null;c._offroad=null;
@@ -876,7 +876,7 @@
   // its stamps (the cell's first step, so the chunks are built with them): the hut's stance flat at the ground under its middle, cut into the
   // slope as the prototype's is; a clearing of the scatter over the hut, the fold and the spring, so no tree stands in the walls
   function offroadStamps(c,k){const D=offroadAt(c);if(!D)return [];const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],out=[];
-    if(D.kind==='peat'){ /* S2043 — the bog levelled under the camp's patch (55 m round its lip's middle), then sunk 1.85 m under the cut (the piece's sinks), so the camp's own ground lies over the world's everywhere; the scatter cleared over all of it */
+    if(D.kind==='peat'){ /* S2044 — the bog levelled under the camp's patch (55 m round its lip's middle), then sunk 1.85 m under the cut (the piece's sinks), so the camp's own ground lies over the world's everywhere; the scatter cleared over all of it */
       const [x0,z0]=W(0,-3),y=landH(x0,z0);out.push(addStamp({id:D.id+'_bog',kind:'door',x:x0,z:z0,r:55,blend:15,y,cell:k}));
       for(const [lx,lz,r] of OFFROAD_SINKS){const [x,z]=W(lx,lz);out.push(addStamp({id:D.id+'_sink',kind:'door',x,z,r,blend:4,y:y-1.85,cell:k}));}
       out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x:x0,z:z0,r:52,blend:2,y:0,cell:k}));return out;}
@@ -885,14 +885,14 @@
     return out;}
   // the piece built on the drawn ground (meshH) in its own frame, its door down the slope; its solids as squares (the world's solids are
   // squares, so a long wall is a row of them, each as wide as it), as a place by a road's are
-  /* S2043 — the peat camp's sinks, as gatelandsPeatCamp gives them (two rows of ten circles of 7 m over the cut), here so the stamps need no piece built */
+  /* S2044 — the peat camp's sinks, as gatelandsPeatCamp gives them (two rows of ten circles of 7 m over the cut), here so the stamps need no piece built */
   const OFFROAD_SINKS=[];for(const z of [1.5,12])for(let x=-24;x<=21;x+=5)OFFROAD_SINKS.push([x,z,7]);
-  /* S2043 — a place off the road that brings its own ground (the peat camp): the height you walk at over its patch, from the piece (groundY, 85) */
+  /* S2044 — a place off the road that brings its own ground (the peat camp): the height you walk at over its patch, from the piece (groundY, 85) */
   const OFFROAD_PATCHES=[];
   function offroadGroundAt(x,z){for(let i=0;i<OFFROAD_PATCHES.length;i++){const P=OFFROAD_PATCHES[i],dx=x-P.x,dz=z-P.z;if(dx*dx+dz*dz>P.R2)continue;
       const lx=dx*P.co-dz*P.s,lz=dx*P.s+dz*P.co;if(lx<P.x0||lx>P.x1||lz<P.z0||lz>P.z1)continue;return P.y+P.ground(lx,lz);}return null;}
   function offroadPatchDrop(id){for(let i=OFFROAD_PATCHES.length-1;i>=0;i--)if(OFFROAD_PATCHES[i].id===id)OFFROAD_PATCHES.splice(i,1);}
-  function placeOffroad(c,k){const D=offroadAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],bogS=D.kind==='peat'&&STAMPS.find(t=>t.id===D.id+'_bog'),y0=bogS?bogS.y:meshH(D.x,D.z); /* S2043 — the peat camp stands at its bog's level, not on the cut sunk under its middle */
+  function placeOffroad(c,k){const D=offroadAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],bogS=D.kind==='peat'&&STAMPS.find(t=>t.id===D.id+'_bog'),y0=bogS?bogS.y:meshH(D.x,D.z); /* S2044 — the peat camp stands at its bog's level, not on the cut sunk under its middle */
     const M=PKIT.places[D.kind]({key:D.id,ground:(lx,lz)=>meshH(...W(lx,lz))-y0});
     M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='offroad '+D.kind;sc.add(M.group);
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));

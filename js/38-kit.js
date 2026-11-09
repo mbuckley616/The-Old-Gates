@@ -7573,7 +7573,7 @@ function aurenneOrrery(hAt, o = {}) {
       hut: { w: HW, d: HD, wall: T, eaves: EAV, ridge: APEX, door: { x: DX, z: HD / 2, w: DW, h: DH }, gableW: XW, gableE: XE, floor: +gmin.toFixed(3) },
       fold: { x: FC[0], z: FC[1], r: FR, wall: FT, h: FH, gate: { a: +aG.toFixed(4), w: GW }, breach: { a: +aB.toFixed(4), w: BW } }, spring: { x: SP[0], z: SP[1], water: +WAT.toFixed(3) }, rowan: { x: RW[0], z: RW[1] }, track: TR };
   }
-  // S2043 (card F8; OG-124's "a peat-cutting camp", with OG-014's bogland and OG-099's fens; Michael's A on #1292) — the Gatelands' peat-cutting
+  // S2044 (card F8; OG-124's "a peat-cutting camp", with OG-014's bogland and OG-099's fens; Michael's A on #1292) — the Gatelands' peat-cutting
   // camp in the open world, places.js's gatelandsPeatCamp (Session 991): a family's turf bank on a raised bog, the face cut down in two spits
   // with the sleán, the newest sods spread to skin and the older footed, the barrow, the creel, the bog road with the rick of dry turf by it,
   // and the cutters' bothy of sods under a roped thatch with its fire, crane and kettle at the door. The camp brings its own ground, as the
