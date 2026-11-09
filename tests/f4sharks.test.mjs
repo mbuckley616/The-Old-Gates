@@ -41,7 +41,10 @@ const lv = await page.evaluate(() => { const m = _S.mesh, R = _R, at = (dd, k) =
 check(`three levels: near the kit's ${lv.near.kit} meshes, at 25 m ${lv.mid.kit}, at 60 m the old body`, lv.near.L === 0 && !lv.near.old && lv.near.kit >= 3 && lv.mid.L === 1 && !lv.mid.old && lv.mid.kit < lv.near.kit && lv.far.L === 2 && lv.far.old && lv.back.L === 0, lv);
 
 // a swim: the bones turn, and the wave beats at the old tail's 3.4 rad a second cruising, 7 hunting
-const swim = await page.evaluate(async () => { const R = _R, mats = () => Array.from(R.hc.C.skel.boneMatrices), run = async (alert) => { _S.alert = alert; const p0 = R.ph, a = mats(); for (let i = 0; i < 8; i++) { R.t = performance.now() / 1000 - 1 / 30; tickCreatures(1 / 60, 4e5 + i * 17); R.hc.C.skel.update(); }
+// Session 2046: each measured tick holds the page's clock still. The swimmers' poses take their step from performance.now() against rig.t, so
+// the time the tick spent before it reached this rig was added to the 1/30 s the suite sets: a dolphin's beat read 1.46 on one boot and 1.54
+// on the next (the band 1.37 to 1.49), the whale's and the shark's the same way on a slower runner. Now each step is 1/30 s exactly.
+const swim = await page.evaluate(async () => { const R = _R, mats = () => Array.from(R.hc.C.skel.boneMatrices), run = async (alert) => { _S.alert = alert; const p0 = R.ph, a = mats(); for (let i = 0; i < 8; i++) { { const pn = performance.now, T = pn.call(performance); R.t = T / 1000 - 1 / 30; performance.now = () => T; try { tickCreatures(1 / 60, 4e5 + i * 17); } finally { performance.now = pn; } } R.hc.C.skel.update(); }
   const b = mats(); let mv = 0; for (let i = 0; i < a.length; i++) mv = Math.max(mv, Math.abs(a[i] - b[i])); return { mv: +mv.toFixed(3), dph: R.ph - p0, ms: 0 }; };
   const c = await run(false), h = await run(true); _S.alert = false; /* each tick a 30th of a second, so the beat is the phase over 8/30 s */
   return { cruise: c.mv, hunt: h.mv, rc: +(c.dph * 30 / 8).toFixed(2), rh: +(h.dph * 30 / 8).toFixed(2) }; });
@@ -67,10 +70,13 @@ const dead = await page.evaluate(() => { const R = _R, before = []; R.hc.W.trave
   return { n: before.length, cloned: before.filter(([o, m]) => o.material !== m).length, shaded: shaded.length, kept: shaded.filter(([o, m]) => o.material.onBeforeCompile === m.onBeforeCompile).length,
     darker: before.filter(([o, m]) => o.material !== m && o.material.color && o.material.color.r <= m.color.r * .36 + 1e-6).length, still: +mv.toFixed(4), hc: !!R.hc }; });
 check('killed, the kit\'s body is darkened with its shaders kept, and its wave stops', dead.hc && dead.cloned === dead.n && dead.darker === dead.n && dead.kept === dead.shaded && dead.still < 1e-3, dead);
+// Session 2046: the whale's, the dolphin's, the gulls' and the schools' loops empty the world's queue first, as the shark's does: hcTick builds
+// nothing while JOBS holds a job, and nothing runs the queue inside one evaluate, so a job queued between two evaluates made every one of the
+// 300 ticks busy (FLAKY in the weekly run of 8 Nov, `{k:301, rig:true}`; caught here with two boots side by side: 2 jobs queued, no build begun).
 // Session 1536: the whales at sea (spawnWhale, peaceful) wear the kit's Storm Whale by the same path: the old mesh put in a group in its
 // place, which tickWhales moves and removes; the fluke's slow beat; levels and build reach five times the shark's
 const wh = await page.evaluate(() => { const y0 = worldH(px, pz) + 30, w = spawnWhale(px + 60, pz + 30), old = w.m; window._W = w; w.m.position.set(w.x, y0, w.z); w.m.rotation.set(0, 0, 0);
-  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); } CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
   const rig = () => [...HC_RIGS].find(r => r.w === w); let k = 0; HBODY.last = -1e9;
   while (!(rig() && rig().hc) && k++ < 300) tickCreatures(1 / 60, 1e6 + k * (HBODY.gap + 1));
   const R = rig(); window._RW = R; if (!R || !R.hc) return { k, rig: !!R, fail: R && R.hcFail };
@@ -87,7 +93,7 @@ const wlv = await page.evaluate(() => { const m = _W.m, R = _RW, at = (dd, k) =>
   let n = 0; if (R.hc.W.visible) R.hc.W.traverse(o => { if (o.isMesh && o.visible) n++; }); return { L: R.hc.L, kit: n, old: R.mesh.visible }; };
   return { near: at(30, 1), mid: at(120, 2), far: at(300, 3), back: at(30, 4) }; });
 check(`a whale's levels: near the kit's ${wlv.near.kit} meshes at 30 m, ${wlv.mid.kit} at 120 m, the old mesh at 300 m`, wlv.near.L === 0 && !wlv.near.old && wlv.mid.L === 1 && !wlv.mid.old && wlv.mid.kit <= wlv.near.kit && wlv.far.L === 2 && wlv.far.old && wlv.back.L === 0, wlv);
-const wsw = await page.evaluate(() => { const R = _RW, a = Array.from(R.hc.C.skel.boneMatrices), p0 = R.ph; for (let i = 0; i < 8; i++) { R.t = performance.now() / 1000 - 1 / 30; tickCreatures(1 / 60, 3e6 + i * 17); R.hc.C.skel.update(); }
+const wsw = await page.evaluate(() => { const R = _RW, a = Array.from(R.hc.C.skel.boneMatrices), p0 = R.ph; for (let i = 0; i < 8; i++) { { const pn = performance.now, T = pn.call(performance); R.t = T / 1000 - 1 / 30; performance.now = () => T; try { tickCreatures(1 / 60, 3e6 + i * 17); } finally { performance.now = pn; } } R.hc.C.skel.update(); }
   const b = Array.from(R.hc.C.skel.boneMatrices); let mv = 0; for (let i = 0; i < a.length; i++) mv = Math.max(mv, Math.abs(a[i] - b[i]));
   /* tickWhales moves the group, and the kit's body with it */
   const w = _W, k0 = R.hc.W.getWorldPosition(new THREE.Vector3()); w.x += 5; tickWhales(1 / 60, 1e5); w.m.updateMatrixWorld(true); const k1 = R.hc.W.getWorldPosition(new THREE.Vector3());
@@ -104,14 +110,14 @@ check('a whale removed from the sea drops its kit body', await page.evaluate(() 
 // Session 1537: a bow-wave dolphin (LIFE.dolphins, made here as tickDolphins makes one, since the suite does not sail) wears the kit's Stormswift
 const dol = await page.evaluate(() => { const sc = WORLD.scene, m = new THREE.Mesh(mergeParts([{ geo: new THREE.CylinderGeometry(.16, .06, 1.5, 6), color: new THREE.Color(0x6a7a8a), rx: Math.PI / 2, jitter: .05 }, { geo: new THREE.ConeGeometry(.12, .35, 3), color: new THREE.Color(0x5a6a7a), y: .18, z: .1, rx: -.6 }]), VC_MAT);
   sc.add(m); const d = { m, ph: 0, side: 1 }; LIFE.dolphins.push(d); window._D = d; m.position.set(px + 8, worldH(px, pz) + 20, pz - 8); const old = m;
-  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); } CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
   const rig = () => [...HC_RIGS].find(r => r.w === d); let k = 0; HBODY.last = -1e9;
   while (!(rig() && rig().hc) && k++ < 300) tickCreatures(1 / 60, 6e6 + k * (HBODY.gap + 1));
   const R = rig(); window._RD = R; if (!R || !R.hc) return { k, rig: !!R, fail: R && R.hcFail };
   const g = d.m; g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), box = (root, skin) => { const b = new THREE.Box3(), v = new THREE.Vector3();
     root.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); if (skin && o.isSkinnedMesh) o.applyBoneTransform(i, v); else v.applyMatrix4(o.matrixWorld); v.applyMatrix4(inv); b.expandByPoint(v); } }); return b; };
   HC.pose(R.hc.C, 0); R.hc.C.root.updateMatrixWorld(true); R.hc.C.skel.update(); const kb = box(R.hc.W, true), ob = box(R.mesh, false);
-  const a = Array.from(R.hc.C.skel.boneMatrices), p0 = R.ph; for (let i = 0; i < 8; i++) { R.t = performance.now() / 1000 - 1 / 30; tickCreatures(1 / 60, 7e6 + i * 17); R.hc.C.skel.update(); }
+  const a = Array.from(R.hc.C.skel.boneMatrices), p0 = R.ph; for (let i = 0; i < 8; i++) { { const pn = performance.now, T = pn.call(performance); R.t = T / 1000 - 1 / 30; performance.now = () => T; try { tickCreatures(1 / 60, 7e6 + i * 17); } finally { performance.now = pn; } } R.hc.C.skel.update(); }
   const b = Array.from(R.hc.C.skel.boneMatrices); let mv = 0; for (let i = 0; i < a.length; i++) mv = Math.max(mv, Math.abs(a[i] - b[i]));
   return { wrapped: g !== old && old.parent === g && g.parent === sc, plan: R.hc.C.g.plan, bones: R.hc.C.bones.length, tris: R.hc.C.stats.tris, key: R.hcKey, kit: [kb.min.z, kb.max.z].map(v => +v.toFixed(2)), old: [ob.min.z, ob.max.z].map(v => +v.toFixed(2)), mv: +mv.toFixed(3), rate: +((R.ph - p0) * 30 / 8).toFixed(2), L: R.hc.L }; });
 console.log('  dolphin:', JSON.stringify(dol));
@@ -130,7 +136,7 @@ check('hidden (the ship slowed) a dolphin is not posed, shown it swims again, an
 // place among the group's children (tickGulls moves them by it), its head where the old cone's broad end was (the old mesh's −z)
 const gul = await page.evaluate(() => { const sc = WORLD.scene, holder = new THREE.Group(); sc.add(holder); const S = { group: holder };
   spawnGulls(S, { x: px + 6, z: pz - 6 }); holder.position.y = worldH(px + 6, pz - 6); window._GS = S; const gl = S.gulls, olds = [...gl.g.children];
-  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true); HBODY.last = -1e9;
+  { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); } CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true); HBODY.last = -1e9;
   const rigs = () => [...HC_RIGS].filter(r => r.name === 'Gull' && r.w && olds.includes(r.mesh)); let k = 0;
   while (!(rigs().length === 4 && rigs().every(r => r.hc)) && k++ < 1200) tickCreatures(1 / 60, 1e7 + k * (HBODY.gap + 1));
   const R = rigs(); window._RG = R; if (R.length < 4 || !R.every(r => r.hc)) return { k, n: R.length, built: R.filter(r => r.hc).length, fail: R.some(r => r.hcFail) };
@@ -139,7 +145,7 @@ const gul = await page.evaluate(() => { const sc = WORLD.scene, holder = new THR
   const box = (root, skin) => { const b = new THREE.Box3(); root.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); if (skin && o.isSkinnedMesh) o.applyBoneTransform(i, v); else v.applyMatrix4(o.matrixWorld); v.applyMatrix4(inv); b.expandByPoint(v); } }); return b; };
   HC.pose(r0.hc.C, 0); r0.hc.C.root.updateMatrixWorld(true); r0.hc.C.skel.update(); const kb = box(r0.hc.W, true), ob = box(r0.mesh, false);
   const head = r0.hc.C.byName.head.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv);
-  const a = Array.from(r0.hc.C.skel.boneMatrices); for (let i = 0; i < 8; i++) { r0.t = performance.now() / 1000 - 1 / 30; tickCreatures(1 / 60, 2e7 + i * 17); r0.hc.C.skel.update(); }
+  const a = Array.from(r0.hc.C.skel.boneMatrices); for (let i = 0; i < 8; i++) { { const pn = performance.now, T = pn.call(performance); r0.t = T / 1000 - 1 / 30; performance.now = () => T; try { tickCreatures(1 / 60, 2e7 + i * 17); } finally { performance.now = pn; } } r0.hc.C.skel.update(); }
   const b = Array.from(r0.hc.C.skel.boneMatrices); let mv = 0; for (let i = 0; i < a.length; i++) mv = Math.max(mv, Math.abs(a[i] - b[i]));
   return { k, order, plan: r0.hc.C.g.plan, bones: r0.hc.C.bones.length, tris: r0.hc.C.stats.tris, keys: R.map(r => r.hcKey), kit: [kb.min.z, kb.max.z].map(x => +x.toFixed(2)), old: [ob.min.z, ob.max.z].map(x => +x.toFixed(2)), head: +head.z.toFixed(2), mv: +mv.toFixed(3), L: r0.hc.L }; });
 console.log('  gulls:', JSON.stringify(gul));
@@ -159,7 +165,7 @@ check('the port hidden its gulls are not posed, shown they fly again, and the po
 const fish = await page.evaluate(() => { const sc = WORLD.scene, x = px + 8, z = pz + 3, n = 12, geo = new THREE.ConeGeometry(.08, .42, 4); geo.rotateX(Math.PI / 2);
   const im = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: 0x9ab8c0 }), n); sc.add(im);
   const S = { im, cx: x, cz: z, y: worldH(x, z) + 2.4, r: 1.4, ph: 0, n, chunk: 'test' }; LIFE.fish.push(S); window._FS = S;
-  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true); HBODY.last = -1e9; let k = 0;
+  { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); } CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true); HBODY.last = -1e9; let k = 0;
   while (im.geometry === geo && k++ < 400) tickCreatures(1 / 60, 4e7 + k * (HBODY.gap + 1));
   const G = im.geometry; if (G === geo) return { k, kit: false };
   G.computeBoundingBox(); const b = G.boundingBox, c = G.attributes.color, p = G.attributes.position; let ex = 0, en = 0;
