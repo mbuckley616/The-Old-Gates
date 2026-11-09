@@ -746,7 +746,7 @@ function useItem(i){
   if(it.name==='Charcoal'&&typeof filterWater==='function'&&filterWater(i))return; /* S2013 — a filter for raw water */
   if(it.vessel){drinkWater(i);return;} /* S2012 — water B: a drink leaves you Watered */
   if(it.meal){eatMeal(i);return;} /* S1486 — a meal leaves you fed */
-  if(it.name===TINDERBOX_NAME||it.log||it.food){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
+  if(it.name===TINDERBOX_NAME||it.log||it.food||it.second||it._typeKey==='fish'){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
   if(it.tool==='pick'||it.ore||it.ingot){useOreThing(i);return;} /* S1491 — a pick at a vein */
   if(it.tool==='hatchet'){useHatchet();return;} /* S1511 — a hatchet at a tree */
   if(it.tool==='joiner'||it.plank||it.spar||it.heartwood||it.feather||(it.name===SURV_ITEMS.pitch.name&&benchHere())){useBenchThing(i);return;} /* S1517 — the bench */

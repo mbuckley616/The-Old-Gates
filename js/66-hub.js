@@ -787,7 +787,7 @@ function showBagTooltip(idx,ev){
     }
     if(it.brew&&typeof brewLines==='function')html+=brewLines(it); /* S1483 — a tincture's effects */
     if(it.vessel&&typeof WATER_VESSELS!=='undefined'&&WATER_VESSELS[it.vessel]){html+=`<div class="bt-row" style="color:#88b8e0">Water: ${waterSay(it)}</div><div class="bt-row" style="color:#a08860;font-size:9px">a drink: Watered, ${WATER_VESSELS[it.vessel].hours} hours · fill at a well, a river or in the rain</div>`;} /* S2012 — water B */
-    if(it.meal&&typeof FED_KIND!=='undefined'&&FED_KIND[it.meal.kind]){const K=FED_KIND[it.meal.kind];html+=`<div class="bt-row" style="color:${K.col}">${K.label}: ${K.say}</div><div class="bt-row" style="color:#a08860;font-size:9px">${Math.round(FED_MIN*(it.meal.s||1)/60*10)/10} hours · one meal at a time</div>`;if(it.meal.season&&typeof seasonSay==='function')html+=`<div class="bt-row" style="color:#88cc88">Seasoned: ${seasonSay(it.meal.season)}</div>`;} /* S1486 — a meal's fed; S1503 — its seasoning */
+    if(it.meal&&typeof FED_KIND!=='undefined'&&FED_KIND[it.meal.kind]){const K=FED_KIND[it.meal.kind];html+=`<div class="bt-row" style="color:${K.col}">${K.label}: ${K.say}</div>${it.meal.r&&typeof riderSay==='function'?`<div class="bt-row" style="color:#d8b070">${riderSay(it.meal.r)}</div>`:''}<div class="bt-row" style="color:#a08860;font-size:9px">${Math.round(FED_MIN*(it.meal.s||1)*(it.meal.x||1)/60*10)/10} hours · one meal at a time</div>`;if(it.meal.season&&typeof seasonSay==='function')html+=`<div class="bt-row" style="color:#88cc88">Seasoned: ${seasonSay(it.meal.season)}</div>`;} /* S1486 — a meal's fed; S1503 — its seasoning */
     html+='<div class="bt-hint">Click to use</div>';
   } else if(it.type==='book'){
     const def=BOOKS.find(b=>b.id===it.bookId);
@@ -838,6 +838,7 @@ function showBagTooltip(idx,ev){
     html+='<div class="bt-hint">Click to read</div>';
   } else {
     html+='<div class="bt-row"><span class="bt-label">Type</span><span class="bt-val">'+_typeWord(it)+'</span></div>';
+    if(it.second&&typeof DISH_SECONDS!=='undefined'&&DISH_SECONDS[it.second]){const S=DISH_SECONDS[it.second];html+=`<div class="bt-row" style="color:#d8b070">In a dish: ${secondKnown(it.second)?riderSay(S.r):'?'}</div><div class="bt-row" style="color:#a08860;font-size:9px">cook it with a meat, a fish or produce, in a pot</div>`;} /* S2028 — cooking B */
   }
   tip.innerHTML=html;
   tip.style.display='block';
