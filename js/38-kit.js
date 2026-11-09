@@ -7703,7 +7703,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, ground, rim, sinks, patch: { x0: -PX, x1: PX, z0: PZ0, z1: PZ1 }, floorMin: -1.6,
       bank: { x0: -CX, x1: CX, lip: 0, bench: BENCH, benchZ: BZ, floorZ: [BZ, 12], water: WL }, spread, footings, slean, rick: { x: RKX, z: RKZ, l: RL, w: RWd, h: RH, y: +(bog(RKX, RKZ) - .05).toFixed(3) }, hut, fire, road: { z: RZ, w: RW } };
   }
-  // S2050 (card F8; OG-124's Mark panel, "a smoking hunting cabin in snow pines"; Michael's A on #1292) — the Mark's hunting cabin in the
+  // S2051 (card F8; OG-124's Mark panel, "a smoking hunting cabin in snow pines"; Michael's A on #1292) — the Mark's hunting cabin in the
   // open world, places.js's markHuntingCabin (Session 998) without the prototype's own land: the world brings the tundra's snow and its
   // slope, so the page's drifted ground grid (160 m square) is left out, and its 74 spruce come down to a ring of 18 between 11 and 24 m, so
   // the clearing stands in snow pines whatever the scatter leaves. The laft cabin of eleven courses with its gables, the turf roof under

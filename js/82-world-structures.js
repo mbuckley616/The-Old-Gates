@@ -852,7 +852,7 @@
   const OFFROAD_GROUND={cabin:[[0,0],[5.6,-3.6],[-3.6,3],[3.9,3.1],[0,12]],shepherd:[[0,0],[11,5.5],[-8,-6.5]],peat:[[0,0],[-30,-30],[30,-30],[-30,24],[30,24],[0,-24],[0,12]]};
   /* S2044 — the peat camp on the raised bog: its patch (80 by 66 m) within 2.4 m of level, its middle no steeper than 1 in 25, and every ground of it 6 m or more over the sea */
   const OFFROAD_FLAT={peat:{spread:2.4,grade:.04,sea:6},cabin:{spread:1.6,grade:.12,sea:4,snow:true}};
-  /* S2050 — the hunting cabin in the tundra's snow (its ground the snow's own, so the snow line does not bar it): the cabin, the store, the block, the frame and the path's first reach within 1.6 m of level, its middle no steeper than 1 in 8 */
+  /* S2051 — the hunting cabin in the tundra's snow (its ground the snow's own, so the snow line does not bar it): the cabin, the store, the block, the frame and the path's first reach within 1.6 m of level, its middle no steeper than 1 in 8 */
   function offroadAt(c){
     if(!c||c._offroad!==undefined)return c?c._offroad:null;c._offroad=null;
     if(c.type==='sea'||c.home||!c.sites||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
@@ -861,7 +861,7 @@
     const kind=list[Math.floor(r()*list.length)];if(!PKIT.places[kind])return null; /* drawn, not built yet: the cell waits for it */
     const sites=[],defs=[],lakes=[],doors=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(!n)continue;sites.push(...(n.sites||[]));defs.push(...(n.roadDefs||[]));lakes.push(...(n.lakes||[]));doors.push(...(n.doors||[]));}
     const byId={};for(const t of sites)byId[t.id]=t;const roads=[];for(const d of defs){const A=byId[d.a],B=byId[d.b];if(!A||!B)continue;try{roads.push(roadCurve(d,A,B));}catch(e){roads.push([A,B]);}}
-    /* S2050 — a fort's spur (addFortSpur): a straight track from 33 m before its gate to the nearest point of a road, laid when the fort loads, so drawn here the same way from the roads round it */
+    /* S2051 — a fort's spur (addFortSpur): a straight track from 33 m before its gate to the nearest point of a road, laid when the fort loads, so drawn here the same way from the roads round it */
     {const spurs=[];for(const e of doors){if(e.kind!=='fort_door')continue;const gx=e.x,gz=e.z+33;let best=null,bd=1e9;for(const P of roads)for(const q of P){const d=Math.hypot(q.x-gx,q.z-gz);if(d<bd){bd=d;best=q;}}if(best)spurs.push([{x:gx,z:gz},best]);}roads.push(...spurs);}
     const others=[];try{for(const f of [limeCave,seaCove,mineAt,weaverDoorAt,roadCarvingAt,watcherAt,aqueductAt,waysideAt]){const o=f(c);if(o)others.push(o);}}catch(e){}
     const farms=[];try{loneFarms(c).forEach(F=>farms.push(F));c.sites.forEach(t=>{const F=villageFarm(t,c);if(F)farms.push(F);});}catch(e){}
@@ -890,7 +890,7 @@
       const [x0,z0]=W(0,-3),y=landH(x0,z0);out.push(addStamp({id:D.id+'_bog',kind:'door',x:x0,z:z0,r:55,blend:15,y,cell:k}));
       for(const [lx,lz,r] of OFFROAD_SINKS){const [x,z]=W(lx,lz);out.push(addStamp({id:D.id+'_sink',kind:'door',x,z,r,blend:4,y:y-1.85,cell:k}));}
       out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x:x0,z:z0,r:52,blend:2,y:0,cell:k}));return out;}
-    if(D.kind==='cabin'){ /* S2050 — the cabin's yard levelled at the ground under the cabin (the cabin, the store, the block and the frame on it), the scatter cleared 11 m round, and along the path away into the trees */
+    if(D.kind==='cabin'){ /* S2051 — the cabin's yard levelled at the ground under the cabin (the cabin, the store, the block and the frame on it), the scatter cleared 11 m round, and along the path away into the trees */
       {const [x,z]=W(1.2,-.4);out.push(addStamp({id:D.id+'_stance',kind:'door',x,z,r:7.2,blend:3,y:landH(...W(0,0)),cell:k}));}
       {const [x,z]=W(1,0);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:11,blend:2,y:0,cell:k}));}
       for(const [lx,lz] of [[1,10],[.6,14],[-.3,18],[-1.5,22],[-2.4,26],[-3.2,30],[-4,34]]){const [x,z]=W(lx,lz);out.push(addStamp({id:D.id+'_path',kind:'door',noFlat:true,x,z,r:2.6,blend:1,y:0,cell:k}));}
