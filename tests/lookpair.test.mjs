@@ -16,7 +16,7 @@ async function shoot(look) {
     buildRoadRibbons = function (cx, cz, group) { window.__seededRoads++; let s = (Math.imul(cx | 0, 73856093) ^ Math.imul(cz | 0, 19349663)) >>> 0; const rnd = Math.random;
       Math.random = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
       try { return build(cx, cz, group); } finally { Math.random = rnd; } }; });
-  // Session 2026 (QA): a detailed house's variant (thatch or slate, framed or not: HOUSE_VARIANTS, js/82-world-structures.js) is rolled from
+  // Session 2027 (QA): a detailed house's variant (thatch or slate, framed or not: HOUSE_VARIANTS, js/82-world-structures.js) is rolled from
   // its size, its plain twin's colours and _houseN, a count of every detailed house built so far in the boot. Which towns load before
   // Dunmore differs from look to look (and from boot to boot), so the same lot drew timber and slate on the old look and thatch on the new.
   // Here the count is reset before each house, so a house's variant comes from its own lot alone, the same in both looks. The seed also
