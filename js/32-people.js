@@ -1936,18 +1936,41 @@ function hbCloakLegs(P,heel){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bone
   const qr=rb.getWorldQuaternion(new THREE.Quaternion()).invert(),qp=P.root.getWorldQuaternion(new THREE.Quaternion()),inL=v=>v.clone().applyQuaternion(qp).applyQuaternion(qr);
   hem={bone:hb,front:fb,ax:inL(ax),fw:inL(fw),dn:inL(new THREE.Vector3(0,-1,0)),rest:[0,0],a:0,aF:0};hem.rest=[hbHemAngle(P,hem,'L'),hbHemAngle(P,hem,'R')];}
   const B=[Mb(il),Mb(iL),Mb(iR),Mb(sL),Mb(sR),ih>=0?Mb(ih):null,iF>=0?Mb(iF):null],C=HB_CLOAK_LEGS,ss=u=>u<=0?0:u>=1?1:u*u*(3-2*u),M=new THREE.Matrix4(),E=new THREE.Matrix4(),p=new THREE.Vector3(),d=new THREE.Vector3();let n=0;
-  for(const m of sheet){const g=m.geometry,pa=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight;
-    for(let i=0;i<pa.count;i++){if(si.getComponent(i,0)!==il||sw.getComponent(i,0)<.999)continue;p.fromBufferAttribute(pa,i).applyMatrix4(B[0]);
-      const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo);if(w<=1e-3)continue;
+  /* the sheet's weights at a point p of the hips' frame: the pelvis, the thighs and the fourth bone (a shin or a hem's), or null for the pelvis alone */
+  const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
       /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
       const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hf=iF<0?0:C.toe*ss((-bk-C.arcF)/(1-C.arcF))*ss((hY-C.lowF*(hY-kY)-p.y)/Math.max(.05,(1-C.lowF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
       /* the back: the hem's bone in the fourth place, the shin's share left with the thigh */
-      const wq=hw>.02?[1-wl-wr-hw,wl,wr,hw]:[1-w,dom?wl*(1-sh):wl,dom?wr:wr*(1-sh),dom?wl*sh:wr*sh],bq=[0,1,2,hw>.02?hx:dom?3:4];
+      const wq=hw>.02?[1-wl-wr-hw,wl,wr,hw]:[1-w,dom?wl*(1-sh):wl,dom?wr:wr*(1-sh),dom?wl*sh:wr*sh],bq=[0,1,2,hw>.02?hx:dom?3:4];return{wq,bq,w};};
+  const bix=[il,iL,iR,sL,sR,ih,iF];
+  for(const m of sheet){const g=m.geometry,pa=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight;
+    for(let i=0;i<pa.count;i++){if(si.getComponent(i,0)!==il||sw.getComponent(i,0)<.999)continue;p.fromBufferAttribute(pa,i).applyMatrix4(B[0]);
+      const S=sch(p);if(!S||S.w<=1e-3)continue;const{wq,bq}=S;
       const e=M.elements;e.fill(0);for(let k=0;k<4;k++)if(wq[k]){const b=B[bq[k]].elements;for(let j=0;j<16;j++)e[j]+=b[j]*wq[k];}
       if(Math.abs(M.determinant())<1e-9)continue;p.applyMatrix4(E.copy(M).invert());pa.setXYZ(i,p.x,p.y,p.z);
-      si.setXYZW(i,il,iL,iR,hw>.02?(hx===6?iF:ih):dom?sL:sR);sw.setXYZW(i,wq[0],wq[1],wq[2],wq[3]);n++;}
+      si.setXYZW(i,bix[bq[0]],bix[bq[1]],bix[bq[2]],bix[bq[3]]);sw.setXYZW(i,wq[0],wq[1],wq[2],wq[3]);n++;}
     pa.needsUpdate=si.needsUpdate=sw.needsUpdate=true;}
-  if(hem)P.hem=hem;return P.cloakLegs={n};}
+  /* S2020 — the apron's sides ride as the sheet over them (STUCK #1313): an apron goes wholly with the leading thigh, and the long cloak's
+     front only within its front bone's arc, so at the cloak's front edges, 20 to 40 degrees off straight ahead, the apron came out through it
+     (Maeve 5.4 cm). Under a long cloak, the apron's points from apronA[0] to apronA[1] (the cosine off straight ahead) take the sheet's own
+     weights at their place, blended from their own; the middle keeps the thigh, where the front bone carries the cloak with it. The skirt
+     under the apron is weighted the same way at the same points, so it keeps its place under the apron and never comes through it */
+  let na=0;if(hem){const ap=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&o.name==='apron')ap.push(o);});const C2=HB_CLOAK_APRON,Mk=[],Mi=k=>Mk[k]||(Mk[k]=new THREE.Matrix4().multiplyMatrices(inv,sk.bones[k].matrixWorld).multiply(sk.boneInverses[k])),q=new THREE.Vector3();
+    /* the shell's skin is the pack's, shared by every body: the apron takes its own copy first; only the points its triangles use are read */
+    const sk2=[];if(ap.length)P.root.traverse(o=>{if(o.isSkinnedMesh&&o.name==='skirt')sk2.push(o);});const under=ap.length?new Uint8Array(ap[0].geometry.attributes.position.count):null;if(under)for(const m of ap)for(const i of m.geometry.index.array)under[i]=1;
+    for(const m of ap.concat(sk2)){const g=m.geometry,pa=g.attributes.position;g.setAttribute('skinIndex',g.attributes.skinIndex.clone());g.setAttribute('skinWeight',g.attributes.skinWeight.clone());
+      const si=g.attributes.skinIndex,sw=g.attributes.skinWeight,used=new Uint8Array(pa.count);for(const i of g.index.array)used[i]=m.name==='apron'||under[i];
+      for(let i=0;i<pa.count;i++){if(!used[i])continue;q.fromBufferAttribute(pa,i);p.set(0,0,0);for(let k=0;k<4;k++){const wk=sw.getComponent(i,k);if(wk)p.addScaledVector(d.copy(q).applyMatrix4(Mi(si.getComponent(i,k))),wk);}
+        const dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),cs=dz/Math.max(1e-3,Math.hypot(dx,dz)),t=ss((C2[0]-cs)/(C2[0]-C2[1]));if(t<=1e-3)continue;
+        const S=sch(p),acc=new Map(),add=(b,wk)=>{if(wk>0)acc.set(b,(acc.get(b)||0)+wk);};
+        for(let k=0;k<4;k++)add(si.getComponent(i,k),sw.getComponent(i,k)*(1-t));if(S)for(let k=0;k<4;k++)add(bix[S.bq[k]],S.wq[k]*t);else add(il,t);
+        const top=[...acc].sort((a,b)=>b[1]-a[1]).slice(0,4);let tw=0;for(const x of top)tw+=x[1];while(top.length<4)top.push([il,0]);
+        const e=M.elements;e.fill(0);for(const[b,wk]of top)if(wk){const be=Mi(b).elements;for(let j=0;j<16;j++)e[j]+=be[j]*wk/tw;}
+        if(Math.abs(M.determinant())<1e-9)continue;p.applyMatrix4(E.copy(M).invert());pa.setXYZ(i,p.x,p.y,p.z);
+        si.setXYZW(i,top[0][0],top[1][0],top[2][0],top[3][0]);sw.setXYZW(i,top[0][1]/tw,top[1][1]/tw,top[2][1]/tw,top[3][1]/tw);na++;}
+      pa.needsUpdate=si.needsUpdate=sw.needsUpdate=true;}}
+  if(hem)P.hem=hem;return P.cloakLegs={n,apron:na};}
+const HB_CLOAK_APRON=[.94,.8];
 /* a leg's angle behind the vertical, in the pelvis bone's frame: the hip joint to the ankle, on the hips' plane of forward and down */
 const _hbhA=new THREE.Vector3(),_hbhB=new THREE.Vector3(),_hbhQ=new THREE.Quaternion(),_hbhR=new THREE.Quaternion();
 function hbHemAngle(P,hem,s){const rb=P.byName.root;rb.getWorldQuaternion(_hbhR).invert();P.byName['upperleg01.'+s].getWorldPosition(_hbhA);P.byName['foot.'+s].getWorldPosition(_hbhB);
