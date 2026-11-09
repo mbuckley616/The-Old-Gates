@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The character sheet's portrait</title>
+<!-- The approved Inventory page (the parchment, 27 Sep) with your own body between the worn slots (OG-134). Serve docs/prototypes/
+     (not this folder alone): the parchment kit and its fonts are read from ../hud/ and ../ui/. ?mode=a|b|c &kit=traveller|mail|plate -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<link href="../hud/kit.css" rel="stylesheet">
+<link href="./sheet.css" rel="stylesheet">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
+</script>
+</head>
+<body>
+<div id="note">The character sheet’s portrait (backlog L, OG-134; a prototype): ?mode=a|b|c (A the slots alone, as approved; B your body inked into the paper; C your body lit in a bronze window), &amp;kit=traveller|mail|plate. Drag the figure to turn it.</div>
+<script type="module" src="./sheet-view.js"></script>
+</body>
+</html>
