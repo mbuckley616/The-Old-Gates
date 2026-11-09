@@ -228,6 +228,9 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
+- **STUCK #1313 still open: a long cloak's front over an apron** (producer, 8 Nov, past 6 hours; for the bodies builder: `hbCloakLegs`,
+  `hbHem`, `js/32-people.js`). S1999 (#1316, s1376) put the front on its own hem bone: Maeve 242 → 50 points out, Pádraig 51 → 21, arms green.
+  Owed: Pádraig's tick-60 fingertip in `f4people`'s arm check (main's own, about one run in two) and Maeve's last 5 cm of apron. Close #1313 when both are green.
 - ~~**`placesave` red on main in the weekly run: a Dunmore house moves lot when the town's prosperity swings** (QA, Session 1994, for the look
   builder: `genSettlement`'s lots, `js/83-world-generator.js`). Run 42479827264 (s1368, shard 14, 8 Nov), red on both tries: *across
   prosperity swings of 13 and 26 in four towns, no house id moves to another lot*. Dunmore only (prosperity 61): at 48 and 35
