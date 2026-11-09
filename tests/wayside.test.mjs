@@ -3,7 +3,7 @@
 // not built yet keeps the cell empty. The first kind built is the Gatelands' overturned coach (PKIT.places.carriage, places.js's
 // gatelandsCarriage). The suite finds the coaches, the same when asked again, stands by the nearest, and checks it: 20 to 24 m off its
 // road and facing it, lying on the drawn ground, solid where the coach is and open beside it, its cost; then that the map has nothing of
-// it until you come within 40 m, has it then with no travel to it.
+// it until you come within 40 m, has it then with no travel to it. Session 2024 adds the Mark's hunters' camp (PKIT.places.hunters).
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -11,9 +11,11 @@ const k = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => 
   const again = G.map(c => { const keep = c._wayside; c._wayside = undefined; const d = waysideAt(c); c._wayside = keep; return d; }).filter(Boolean);
   const same = again.length === C.length && again.every((d, i) => d.id === C[i].id && d.x === C[i].x && d.z === C[i].z && d.ry === C[i].ry);
   C.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); const n = C[0];
-  return { cells: G.length, n: C.length, kinds: [...new Set(C.map(d => d.kind))], same, gl: C.every(d => nationOf(...d.cell.split(',').map(Number)).people === 'gatelander'), near: n && { id: n.id, x: n.x, z: n.z, ry: n.ry, off: n.off } }; });
+  const ppl = d => nationOf(...d.cell.split(',').map(Number)).people, coaches = C.filter(d => d.kind === 'carriage'), camps = C.filter(d => d.kind === 'hunters');
+  return { cells: G.length, n: C.length, kinds: [...new Set(C.map(d => d.kind))].sort(), same, coaches: coaches.length, camps: camps.length, gl: coaches.every(d => ppl(d) === 'gatelander'), mk: camps.every(d => ppl(d) === 'markman'),
+    near: coaches[0] && { id: coaches[0].id, x: coaches[0].x, z: coaches[0].z, ry: coaches[0].ry, off: coaches[0].off }, camp: camps[0] && { id: camps[0].id, x: camps[0].x, z: camps[0].z, ry: camps[0].ry, off: camps[0].off } }; });
 console.log(JSON.stringify(k));
-check(`${k.n} of ${k.cells} cells keep a place by a road, all of them the Gatelands' coach, the same when asked again`, k.n > 0 && k.n < k.cells / 3 && k.same && k.gl && k.kinds.join() === 'carriage', k);
+check(`${k.n} of ${k.cells} cells keep a place by a road (${k.coaches} of them the Gatelands' coach, ${k.camps} the Mark's hunters' camp), the same when asked again`, k.n > 0 && k.n < k.cells / 3 && k.same && k.gl && k.mk && k.coaches > 0 && k.camps > 0 && k.kinds.join() === 'carriage,hunters', k);
 await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, k.near);
 for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id); return !!(c && c._wayside.group && c._wayside.group.parent); }, k.near.id); if (ok) break; await page.waitForTimeout(1000); }
 await g.spin('clear', 40);
@@ -33,5 +35,19 @@ await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 30; pz = D.z - Math.cos(D
 const b = await page.evaluate(id => { const e = mapEntries(getCell(...id.split('_').slice(1).map(Number))).find(e => e.id === id); return { disc: discovered(id), entry: e && { name: e.name, kind: e.kind, noTravel: !!e.noTravel }, travel: !!arrivalFor(id) }; }, k.near.id);
 console.log(JSON.stringify(a), JSON.stringify(b));
 check(`unmarked at 60 m; found at 30 m, on the map as "${b.entry && b.entry.name}", with no travel to it`, !a.disc && !a.entry && b.disc && b.entry && b.entry.kind === 'wayside' && b.entry.noTravel && !b.travel, { a, b });
+// the hunters' camp (Session 2024, places.js's markHuntersCamp): stood off the nearest, then checked: 20 to 34 m off its road and facing it, its
+// hearth, rack fire, tub and stump on the drawn ground, solid at the tent and the rack, open at the tent's door and on the path to the road, its cost
+await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, k.camp);
+for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id); return !!(c && c._wayside.group && c._wayside.group.parent); }, k.camp.id); if (ok) break; await page.waitForTimeout(1000); }
+await g.spin('clear', 40);
+const h = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id)._wayside; if (!D.group || !D.group.parent) return { none: true };
+  const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co];
+  let bd = 1e9, bq = null; for (const sg of RSEG) { if (sg.road.def.via === 'quay' || sg.road.def.via === 'spur') continue; const vx = sg.bx - sg.ax, vz = sg.bz - sg.az, t = Math.max(0, Math.min(1, ((D.x - sg.ax) * vx + (D.z - sg.az) * vz) / (vx * vx + vz * vz || 1))), qx = sg.ax + vx * t - D.x, qz = sg.az + vz * t - D.z, d = Math.hypot(qx, qz); if (d < bd) { bd = d; bq = [qx, qz]; } }
+  const st = Math.max(...D.stands.map(l => { const [x, z] = W(l.x, l.z); return Math.abs(D.y + l.y - meshH(x, z)); }));
+  return { id, tris: D.tris, draws: D.draws, road: +bd.toFixed(2), fwd: bq ? +(-(bq[0] * s + bq[1] * co) / (bd || 1)).toFixed(2) : null, stands: +st.toFixed(3), n: D.stands.length,
+    tent: solidAt(...W(D.tent.x, D.tent.z), D.y + .5), rack: solidAt(...W(-4, 1.2), D.y + .5), door: solidAt(...W(3, -3.6), D.y + .5), path: solidAt(...W(2, -10), D.y + .5) }; }, k.camp.id);
+console.log(JSON.stringify(h));
+check(`${h.id}: the hunters' camp ${h.road} m off its road, facing it (${h.fwd}); ${h.n} things that stand on the ground within ${h.stands} m of it`, !h.none && h.road >= 19 && h.road <= 35 && h.fwd > .9 && h.stands < .06, h);
+check(`solid at the tent and the rack, open at the tent's door and on the path to the road; ${h.tris} triangles in ${h.draws} draws`, !h.none && h.tent && h.rack && !h.door && !h.path && h.tris < 9000 && h.draws <= 12, h);
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 5));
 await g.close();
