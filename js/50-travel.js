@@ -729,7 +729,7 @@ function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
 function tickSurvival(dt){const t=gameMinNow();
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){dropFire(f);CAMPFIRES.splice(i,1);continue;}
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
-  tickMining(dt);tickFelling(dt);tickTrunks();tickShipWork(dt);
+  tickMining(dt);tickFelling(dt);tickTrunks();tickShipWork(dt);tickWater(); /* S2010 — rain fills your water */
   if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2);
   if(stamina>effMaxStamina())stamina=effMaxStamina();}
 // fed: one kind at a time, by the game clock
@@ -764,6 +764,7 @@ const COOK_RECIPES=[
   {id:'produce',name:'Pottage',need:'1 Root Vegetables',has:()=>bagCount(b=>b.food==='produce')>=1},
   {id:'charcoal',name:'Charcoal',need:'2 logs',has:()=>bagCount(b=>!!b.log)>=2},
   {id:'pitch',name:'Pitch ×3',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
+  {id:'snow',name:'Melt Snow',need:'Snow on the ground and room in a vessel',has:()=>snowToMelt(),only:()=>snowToMelt()}, /* S2010 — water B; listed only when there is snow to melt */
 ];
 // cook one recipe at the fire. Returns {made, item, why}
 function cookAt(id,sk){
@@ -778,6 +779,7 @@ function cookAt(id,sk){
     return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n};}
   if(id==='charcoal'){const plain=bagCount(b=>b.log==='log');bagTake(b=>b.log==='log',Math.min(2,plain));if(plain<2)bagTake(b=>!!b.log,2-plain);const it=survItem('charcoal');bagAdd(it);return {made:true,item:it};}
   if(id==='pitch'){bagTake(b=>b.log==='pine',1);const it=survItem('pitch',3);bagAdd(it);return {made:true,item:it};}
+  if(id==='snow'){const v=meltSnow();return v?{made:true,item:v}:{made:false,why:''};}
   return {made:false,why:''};}
 // using a tinderbox, a log or a food from the bag: at a fire, the fire's page; else light one if you can
 function useFireThing(i){const it=BAG[i];if(!it)return;
@@ -797,7 +799,7 @@ function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellM
 const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};
 function riverFishItem(name){const f=RIVER_FISH[name];if(!f)return troutItem();return {name,ico:'🐟',type:'misc',weight:f.weight,sellMult:.7,buyPrice:f.gold,qty:1,_typeKey:'fish'};}
 // the goods shop and the inn: the tinderbox and produce; fish in a port
-function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce}];
+function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce},waterItem('skin')]; /* S2010 — a waterskin at every goods shop and inn */
   const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port')out.push({...SURV_ITEMS.fish});return out;}
 // the buff bar's pill for fed
 function fedPill(){const F=fedNow();if(!F)return '';const K=FED_KIND[F.kind],m=Math.ceil(F.until-gameMinNow());
@@ -833,7 +835,7 @@ function heavyChestOn(){const c=EQ.chest;return !!(c&&!c.line&&(c.tier||0)>=3);}
 function warmthNow(){const w=[];if(typeof cloakOn==='function'&&cloakOn('fur'))w.push('fur cloak');if(_hasBuff('resistCold'))w.push('Resist Cold');
   if(fedKind()==='hearty')w.push('Hearty');return {n:Math.min(2,w.length),by:w};}
 function coolNow(){const w=[];if(typeof cloakOn==='function'&&cloakOn('cape'))w.push('cape');if(EQ.chest&&EQ.chest.line==='robe')w.push('robe');
-  if(_hasBuff('resistHeat'))w.push('Resist Heat');if(fedKind()==='clear')w.push('Clear');return {n:Math.min(2,w.length),by:w};}
+  if(_hasBuff('resistHeat'))w.push('Resist Heat');if(fedKind()==='clear')w.push('Clear');if(wateredNow())w.push('Watered');return {n:Math.min(2,w.length),by:w};} /* S2010 — Watered, Cool 1 */
 // exposure after protection, with the 3 s fall; .raw is the grade before it, .by what is taking it off
 function climateGrade(){const e=exposureNow(),P=e.side==='cold'?warmthNow():e.side==='hot'?coolNow():{n:0,by:[]};
   const g=Math.max(0,e.g-P.n),now=performance.now();
@@ -849,6 +851,75 @@ function climatePill(){const g=_clim.g,raw=_clim.raw||0,side=_clim.side;if(!side
   if(!g)return `<span class="buff-pill" style="opacity:.45" title="${N[raw]} — ${side==='cold'?'warmed':'cooled'}: ${_clim.by.join(', ')}"><span class="bp-ico">${ico}</span><span class="bp-time">${N[raw]}</span></span>`;
   const cost=g>=2?(CLIMATE.cap2<1?`stamina regenerates at half and stops at ${Math.round(CLIMATE.cap2*100)}%`:'stamina regenerates at half'):'stamina regenerates at three quarters';
   return `<span class="buff-pill" title="${N[g]} (${_clim.why}) — ${cost}${_clim.by.length?'; '+(side==='cold'?'warmed':'cooled')+': '+_clim.by.join(', '):''}"><span class="bp-ico">${ico}</span><span class="bp-time">${N[g]}</span></span>`;}
+
+// ── S2010 — Water B, session 1 (Michael's B on #1254, `docs/design/water.md`): no thirst; water is a draught you carry. A vessel
+// is a bag item with its uses and its kind (`vessel`, `wUses`, `wKind`), so it is the character's with no new key. E fills every
+// vessel in the bag at a town's well (clean; foul while the town has the plague), standing in a river or a lake 0.3 m deep or more
+// (raw; never the sea), from the rain outdoors (one use a vessel each 10 game minutes) and from snow at a fire (the fire's page).
+// A vessel keeps the worst kind it was filled with. A drink (the potion's 0.8 s) leaves you Watered for the vessel's hours: stamina
+// regenerates ×1.1 and you have Cool 1 in the heat; foul water does you no good. Watered is `worldState.watered`, the character's.
+// Session 2 (owed): raw water's one in eight and foul's Queasy, boiling and the filter, the canteen's heat, the stock by island.
+const WATER_USE_W=.25,WATER_REACH=2,WATER_DEEP=.3,RAIN_FILL_MIN=10,WATER_REGEN=1.1,WATER_SNOW=.3;
+const WATER_VESSELS={
+  skin:{name:'Waterskin',ico:'💧',uses:4,empty:.3,buyPrice:12,hours:2},
+  canteen:{name:'Canteen',ico:'💧',uses:3,empty:.6,buyPrice:25,hours:2},
+  flask:{name:'Flask',ico:'💧',uses:2,empty:.4,buyPrice:30,hours:4},
+  bottle:{name:'Bottle',ico:'💧',uses:1,empty:.3,buyPrice:2,hours:2}};
+const WATER_KINDS={clean:0,raw:1,foul:2};
+function waterWeight(it){const V=WATER_VESSELS[it.vessel];return +(V.empty+WATER_USE_W*(it.wUses||0)).toFixed(2);}
+function waterItem(k,uses,kind){const V=WATER_VESSELS[k];const it={name:V.name,ico:V.ico,type:'misc',vessel:k,wUses:uses||0,wKind:uses?(kind||'clean'):null,buyPrice:V.buyPrice,sellMult:.4,qty:1};
+  it.weight=waterWeight(it);return it;}
+function vesselsInBag(){return BAG.filter(b=>b&&b.vessel&&WATER_VESSELS[b.vessel]);}
+function vesselHasRoom(b){return (b.wUses||0)<WATER_VESSELS[b.vessel].uses;}
+// up to n uses into one vessel (all its room when n is left out); returns how many went in
+function fillVessel(it,kind,n){const room=WATER_VESSELS[it.vessel].uses-(it.wUses||0);if(room<=0)return 0;const t=n==null?room:Math.min(room,n);
+  if(!(it.wUses>0)||WATER_KINDS[kind]>WATER_KINDS[it.wKind||'clean'])it.wKind=kind;it.wUses=(it.wUses||0)+t;it.weight=waterWeight(it);return t;}
+function _waterOutside(){return activeZoneId==='world'&&lid==='overworld'&&!(typeof isInterior==='function'&&isInterior());}
+// the well in a town's plaza: the settlement generator sets it at the pad's centre + (6, 4), solid 1.3 m round, wherever the plan has rows
+function wellNear(){if(!_waterOutside()||typeof SETTLE==='undefined')return null;
+  for(const S of SETTLE.values()){const st=S&&S.site;if(!st||st.kind==='farm'||(typeof POI_KINDS!=='undefined'&&POI_KINDS.includes(st.kind)))continue;
+    const P=typeof KIND_PLAN!=='undefined'?KIND_PLAN[st.kind]:null;if(!P||!(P.rows>0))continue;
+    const x=st.x+6,z=st.z+4;if(Math.hypot(px-x,pz-z)<=1.3+WATER_REACH)return {site:st,x,z};}
+  return null;}
+function townPlague(site){const t=worldState.towns&&worldState.towns[site.id];return !!(t&&t.flags&&t.flags.plague!=null);}
+// what you could fill from where you stand: {kind, from} or {sea:true}, or null
+function waterSourceHere(){if(!_waterOutside())return null;
+  const w=wellNear();if(w)return {kind:townPlague(w.site)?'foul':'clean',from:'the well',site:w.site};
+  let y=0;try{y=worldH(px,pz);}catch(e){return null;}if(!(y<SEA_Y-WATER_DEEP))return null;
+  let fresh=false;try{fresh=wildRiverNear(px,pz,0)||wildLakeNear(px,pz);}catch(e){}
+  return fresh?{kind:'raw',from:'the water'}:{sea:true};}
+// E: fill every vessel in the bag. False when there is nothing here to fill or nothing to fill it with, so E goes on to the next thing
+function fillHere(){const V=vesselsInBag();if(!V.length)return false;const s=waterSourceHere();if(!s)return false;
+  if(s.sea){showMsg('It would not slake a gull.','#7a98c0');return true;}
+  const room=V.filter(vesselHasRoom);if(!room.length){showMsg('Your water is full.','#a89060');return true;}
+  room.forEach(v=>fillVessel(v,s.kind));
+  const what=room.length>1?'your water':`the ${room[0].name.toLowerCase()}`;
+  showMsg(s.kind==='foul'?`You fill ${what} at the well. It smells of the sickness.`:`You fill ${what} from ${s.from}.`,s.kind==='foul'?'#a0a060':'#88b8e0');
+  if(typeof renderHubInv==='function')renderHubInv();return true;}
+function waterPrompt(){const V=vesselsInBag();if(!V.length)return '';const room=V.filter(vesselHasRoom);if(!room.length)return '';const s=waterSourceHere();if(!s||s.sea)return '';
+  return `Press 'E' to fill ${room.length>1?'your water':'the '+room[0].name.toLowerCase()}`;}
+// rain or a storm outdoors: one use into every vessel each 10 game minutes, by the clock's ten-minute marks
+let _rainMark=-1;
+function tickWater(){const m=Math.floor(gameMinNow()/RAIN_FILL_MIN);if(m===_rainMark)return;const first=_rainMark<0;_rainMark=m;if(first)return;
+  if(typeof WX==='undefined'||!(WX.type==='rain'||WX.type==='storm')||!_waterOutside())return;
+  let n=0;vesselsInBag().forEach(v=>{n+=fillVessel(v,'clean',1);});if(n&&typeof renderHubInv==='function')renderHubInv();}
+// snow at a fire outdoors: one vessel filled clean (a row of the fire's page)
+function snowToMelt(){return !!campfireNear()&&typeof WX!=='undefined'&&(WX.cover||0)>WATER_SNOW&&vesselsInBag().some(vesselHasRoom);}
+function meltSnow(){const v=vesselsInBag().find(vesselHasRoom);if(!v)return null;fillVessel(v,'clean');return v;}
+// Watered: one slot beside fed, by the game clock
+function wateredNow(){const W=worldState.watered;return W&&W.until>gameMinNow()?W:null;}
+function waterRegenMult(){return wateredNow()?WATER_REGEN:1;}
+function drinkWater(i){const it=BAG[i];if(!it||!it.vessel||!WATER_VESSELS[it.vessel])return;
+  if(!(it.wUses>0)){showMsg(`The ${it.name.toLowerCase()} is empty.`,'#cc8844');return;}
+  if(typeof DRINK!=='undefined'&&DRINK){showMsg('You are still drinking.','#cc8844');return;}
+  const kind=it.wKind||'clean',V=WATER_VESSELS[it.vessel];it.wUses--;if(!it.wUses)it.wKind=null;it.weight=waterWeight(it);
+  const go=()=>{if(kind==='foul'){showMsg('The water is foul. It does you no good.','#a0a060');return;}
+    worldState.watered={until:gameMinNow()+Math.round(60*V.hours),v:it.vessel};
+    showMsg(`Watered: stamina regenerates a tenth faster, and Cool 1 in the heat, for ${V.hours} hours.`,'#88b8e0');if(typeof updateHUD==='function')updateHUD();};
+  if(typeof startDrink==='function')startDrink(go,it.name);else go();if(typeof renderHubInv==='function')renderHubInv();}
+function waterPill(){const W=wateredNow();if(!W)return '';const m=Math.ceil(W.until-gameMinNow());
+  return `<span class="buff-pill" title="Watered — stamina regenerates ×${WATER_REGEN} · Cool 1 in the heat, ${m} min remaining"><span class="bp-ico">💧</span><span class="bp-time">${m}m</span></span>`;}
+function waterSay(it){const V=WATER_VESSELS[it.vessel];const n=it.wUses||0;return n?`${n} of ${V.uses} · ${it.wKind||'clean'}`:`empty · holds ${V.uses}`;}
 
 // ── the fire's page (the brewing page's layout): what can be made on the left, the recipe on the right ──
 let cookOpen=false,cookSel=null,cookSaid='',cookSeason=null;
@@ -873,7 +944,7 @@ function openCookPage(){
 function closeCookPage(){const ov=document.getElementById('cookui');if(ov)ov.style.display='none';cookOpen=false;if(typeof refocusView==='function')refocusView();}
 function cookDraw(){const ov=document.getElementById('cookui');if(!ov)return;
   const f=campfireNear();ov.querySelector('#ck-skill').textContent=`Cooking ${skillLv('cooking')}`+(f?` · the fire burns ${Math.max(1,Math.ceil(f.until-gameMinNow()))} min more`:' · the hearth');
-  ov.querySelector('#ck-list').innerHTML=COOK_RECIPES.map(r=>{const on=r.id===cookSel,ok=r.has();
+  ov.querySelector('#ck-list').innerHTML=COOK_RECIPES.filter(r=>!r.only||r.only()).map(r=>{const on=r.id===cookSel,ok=r.has();
     return `<div data-k="${r.id}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${!ok&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${r.name}</div>`;}).join('');
   ov.querySelectorAll('#ck-list [data-k]').forEach(d=>d.onclick=()=>{cookSel=d.dataset.k;cookSaid='';cookDraw();});
   const R=COOK_RECIPES.find(r=>r.id===cookSel);let t='';
@@ -2292,6 +2363,7 @@ function interact(){
     if(nearHerb){harvestHerb(nearHerb);return;}
     {const v=veinNear();if(v){mineVein(v);return;}} /* S1491 — a vein, with a pick */
     {const n=treeNear();if(n&&(chopTool()||(CHOP&&CHOP.t===n.t))){chopTree(n.ch,n.t);return;}} /* S1511 — a tree, with a hatchet */
+    if(fillHere())return; /* S2010 — water B: a well, a river, a lake; the sea answers */
     if(campfireNear()){openCookPage();return;} /* S1525 — a lit fire: its page (the critic's s995: only the bag opened it) */
     // v61ae: Bram's body needs special handling. The standard zone-corpse
     // check below requires items.length>0, which means an already-looted body

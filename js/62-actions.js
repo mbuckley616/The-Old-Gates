@@ -743,6 +743,7 @@ function useItem(i){
   if(it.brew){useTincture(i);return;} /* S1483 — a tincture drunk, a poison on the blade */
   if(it.name===MORTAR_NAME){openBrewPage();return;}
   if(it.firePot){const r=throwPot();if(r!==true)showMsg(r,'#cc8844');return;} /* S1837 — a fire pot thrown at a ship */
+  if(it.vessel){drinkWater(i);return;} /* S2010 — water B: a drink leaves you Watered */
   if(it.meal){eatMeal(i);return;} /* S1486 — a meal leaves you fed */
   if(it.name===TINDERBOX_NAME||it.log||it.food){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
   if(it.tool==='pick'||it.ore||it.ingot){useOreThing(i);return;} /* S1491 — a pick at a vein */
@@ -883,7 +884,7 @@ function updateHUD(){
       minimapPulse:'🗺', detectReduce:'👁',
       maxStamBuff:'⚡',
     };
-    const _fedP = (typeof fedPill==='function' ? fedPill() : '') + (typeof climatePill==='function' ? climatePill() : ''); // S1486 — fed; S1917 — climate
+    const _fedP = (typeof fedPill==='function' ? fedPill() : '') + (typeof waterPill==='function' ? waterPill() : '') + (typeof climatePill==='function' ? climatePill() : ''); // S1486 — fed; S1917 — climate
     if(ACTIVE_BUFFS.length||_fedP){
       buffEl.classList.add('has-buffs');
       buffEl.innerHTML = _fedP + ACTIVE_BUFFS.map(b=>{
