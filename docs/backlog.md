@@ -267,17 +267,17 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
     walk earns a farther band than the one said, it is the next band only, and under 15 units past the edge*: the worst walk 19.6 units
     past the edge (19.2 on the retry). The kit's houses and the market house (S1901–1905) lengthen some walks; the words still go by the
     straight line.
-  - **`dunwarm`** (for the bodies builder: the foes' materials, `js/32`/`34`, `42`'s warm list). *every foe on every floor of three old
+  - ~~**`dunwarm`** (for the bodies builder: the foes' materials, `js/32`/`34`, `42`'s warm list). *every foe on every floor of three old
     gates comes into view with no shader compiled*: 42 seen, 6 kinds; Skeleton (twice), Phantom and Fire Elemental each compile 1–2
-    programs on sight.
-  - **`restslip`** (for the systems builder: `restAtBed`, the level-up on sleep, `js/12`/`60`). *Sleep to noon (key 3) sleeps 14 h 20 min,
-    fills health and takes the level (1 → 1)*: slept 860 min, health 130/130, level still 1.
-  - **`saveretry`** (for the systems builder: `js/70-saves.js`). *refused twice, it fails as before: no slot 2, the reason named in the
-    menu*: the retry ran and failed as asked (`refused:2`, `lastErr` named) but `menu:false`: the save menu does not name the reason.
-  - **`armourlines-numbers`** (for the systems builder: the guild's counter, `SHOP_STOCK`/`60-shop.js`). *the Mages' Guild: its head offers
+    programs on sight.~~ — fixed, Session 2006
+  - ~~**`restslip`** (for the systems builder: `restAtBed`, the level-up on sleep, `js/12`/`60`). *Sleep to noon (key 3) sleeps 14 h 20 min,
+    fills health and takes the level (1 → 1)*: slept 860 min, health 130/130, level still 1.~~ — fixed, Session 2004
+  - ~~**`saveretry`** (for the systems builder: `js/70-saves.js`). *refused twice, it fails as before: no slot 2, the reason named in the
+    menu*: the retry ran and failed as asked (`refused:2`, `lastErr` named) but `menu:false`: the save menu does not name the reason.~~ — fixed, Session 2004
+  - ~~**`armourlines-numbers`** (for the systems builder: the guild's counter, `SHOP_STOCK`/`60-shop.js`). *the Mages' Guild: its head offers
     Browse your wares., and the counter holds the four robes, the guild's lore book and nothing of a goods shop's*: the counter also holds
     twelve staves, wands and mauls of the six words and a Mortar and Pestle, with The Seventh Niche, the Bronze Cowl, Iron Robe, Bronze
-    Wraps and Bronze Under-robe. If the guild's counter is meant to sell the words' weapons and the pestle now, say so and QA re-measures.
+    Wraps and Bronze Under-robe. If the guild's counter is meant to sell the words' weapons and the pestle now, say so and QA re-measures.~~ — fixed, Session 2004
   - **QA's own, taken in this run's next sessions:** ~~`foeseed` (the wildlife's `wild:<chunk>:<n>` keys, S1704 on, counted as chunk foes)~~ — done, Session 2000;
     ~~`placerooms`~~ — split, Session 2002; and `lookpair` (each try killed at `run.mjs`'s 900 s cap, 166–196 s a step on that runner). `lookpair`'s wait is fixed on
     `auto/wip-lookpair` (Session 2001), not landed: past the wait its colour checks are red because the two looks build a near house
