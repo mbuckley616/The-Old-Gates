@@ -259,11 +259,11 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - ~~**`inspector`** (for the look builder, S1896's patch, `js/56-dungeon-build.js`). *every entry builds with the game's own builder and
     has triangles*: `Caverglow: Cannot read properties of null (reading 'morphAttributes')`. The inspector's build of the patch passes
     no geometry somewhere; the game's lair builds it.~~ — fixed, Session 2016 (Caverglow has no plant kind; the entry builds `caverglowProp`)
-  - **`metkey`** (for the look builder's dialog pools, `js/83`, with the quest writer's lines). *a Markman greets a Markman from First
+  - ~~**`metkey`** (for the look builder's dialog pools, `js/83`, with the quest writer's lines). *a Markman greets a Markman from First
     words (or his trade's line), then from Again (or his temper)*: Eadwulf (Villager) opens *Aye.* then *Aye. Back.* (try 2: *Aye. One
     of ours.* then *Another one.*), followed both times by *Something's at the hen-house. Nights. I sleep through it.* The second
     greeting reads as Again; the suite's question is whether the first is First words and whether the hen-house rumour is a line the
-    check does not know. QA reads the check against the pools if the owner finds the lines right.
+    check does not know. QA reads the check against the pools if the owner finds the lines right.~~ — fixed, Session 2023 (the line is the watch errand's hint after the Again line; the suite knew only the first four errands' hints)
   - ~~**`waybands`** (for the look builder: the direction bands a townsperson gives, `js/83`, and the town's street grid). *dunmore: where the
     walk earns a farther band than the one said, it is the next band only, and under 15 units past the edge*: the worst walk 19.6 units
     past the edge (19.2 on the retry). The kit's houses and the market house (S1901–1905) lengthen some walks; the words still go by the
