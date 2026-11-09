@@ -30,7 +30,7 @@ const who = await page.evaluate(() => _F.map(({ n, e, rig }) => { const H = rig 
     if (!b) return 0; const p = b.geometry.attributes.position.array, y0 = b.geometry.boundingBox.min.y; let z0 = 1e9, z1 = -1e9; for (let i = 0; i < p.length; i += 3) { const f = (p[i + 1] - y0) / bh; if (f > .5 && f < .66 && Math.abs(p[i]) < bh * .15) { z0 = Math.min(z0, p[i + 2]); z1 = Math.max(z1, p[i + 2]); } } return +((z1 - z0) / bh).toFixed(3); })(), wpn: rig && rig.g.wpn, weapon: !!(rig && rig.weapon) }; }));
 console.log('  foes:', JSON.stringify(who));
 const og = who.filter(w => w.n === 'Marsh Hag'), ban = who[1];
-check(`the hags wear the builder's body on its 163-bone skeleton, keyed by their foe id (${og.map(w => w.tris + ' tris').join(', ')})`, made.left === 0 && og.length === 2 && og.every(w => w.hb && !w.fail && w.bones === 163 && w.key === 'foe:' + w.id), og);
+check(`the hags wear the builder's body on its 163-bone skeleton with the long cloak's four hem bones (167, S2041), keyed by their foe id (${og.map(w => w.tris + ' tris').join(', ')})`, made.left === 0 && og.length === 2 && og.every(w => w.hb && !w.fail && w.bones === 167 && w.key === 'foe:' + w.id), og);
 check('each wears a robe under a long plain cloak with its hood up', og.every(w => w.robe && !w.tartan && w.cloak && w.hood), og.map(w => w.names));
 check(`each is an old, thin woman: age ${og.map(w => w.age).join(', ')}, weight ${og.map(w => w.weight).join(', ')}`, og.every(w => w.age > .9 && w.g === 0 && w.weight < .5), who);
 
@@ -48,10 +48,14 @@ check(`each stands at its driver's stature: head bone ${fit.map(f => f.head).joi
 // it walks: the builder's bones follow the driver's stride
 const walk = await page.evaluate(() => { const { e, rig } = _F[0], H = rig.hb, sk = H.P.skeleton, mats = () => Array.from(sk.boneMatrices);
   const dx = Math.sin(e.mesh.rotation.y), dz = Math.cos(e.mesh.rotation.y); sk.update(); const a = mats(); let w = 0;
-  for (let i = 0; i < 120; i++) { e.x += dx * .011; e.z += dz * .011; e.mesh.position.set(e.x, WORLD.worldH(e.x, e.z), e.z); tickPeople(1 / 60, 4e5 + i * 16.7); if (i > 40) w = Math.max(w, (rig.w && rig.w.walk) || 0); }
-  sk.update(); const b = mats(); let moved = 0; for (let i = 0; i < a.length; i++) moved = Math.max(moved, Math.abs(a[i] - b[i])); return { moved: +moved.toFixed(3), w: +w.toFixed(2) }; });
+  let hem = 0, side = 0; for (let i = 0; i < 120; i++) { e.x += dx * .011; e.z += dz * .011; e.mesh.position.set(e.x, WORLD.worldH(e.x, e.z), e.z); tickPeople(1 / 60, 4e5 + i * 16.7); if (i > 40) w = Math.max(w, (rig.w && rig.w.walk) || 0); const hm = H.P.hem; if (hm) { hem = Math.max(hem, hm.a); side = Math.max(side, hm.aS[0], hm.aS[1]); } }
+  sk.update(); const b = mats(); let moved = 0; for (let i = 0; i < a.length; i++) moved = Math.max(moved, Math.abs(a[i] - b[i])); return { moved: +moved.toFixed(3), w: +w.toFixed(2), hem: +hem.toFixed(2), side: +side.toFixed(2), tw: H.tw, hold: H.hold ? H.hold.size : 0 }; });
 console.log('  walk:', JSON.stringify(walk));
 check(`it walks: the builder's bones turn with the driver's stride (by ${walk.moved})`, walk.moved > .02 && walk.w > .5, walk);
+// S2041 — and the long cloak's hem swings back over the trailing heel, its middle and its sides (a foe's own legs, 120 ticks: 2,717 points out of the cloak on main, 1,092 here)
+check(`its cloak's hem swings back over the trailing heel as it walks (the middle up to ${walk.hem} rad, the sides ${walk.side})`, walk.hem > .1 && walk.side > .1, walk);
+// S2042 — her held arm takes none of the hips' twist under the long cloak, as the townsfolk's (S2009)
+check(`walking, her held arm (${walk.hold} bones) takes none of the hips' twist under the long cloak (tw ${walk.tw})`, walk.hold > 0 && walk.tw === 0, walk);
 
 // the picture: the line from 4 m, near
 await page.evaluate(() => { const f = _F[1].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 6; pz = f.z - fz * 6; pitch = .05; });

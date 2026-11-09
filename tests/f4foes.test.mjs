@@ -55,7 +55,9 @@ const who = await page.evaluate(() => _F.map(({ n, e, rig }) => { const H = rig 
     spear: names.has('spear'), gear: rig && rig.g.gear, weapon: !!(rig && rig.weapon) }; }));
 console.log('  foes:', JSON.stringify(who.map(w => [w.n, w.key, w.hood, w.mail, w.helm, w.robe, w.coat, w.tabard])));
 const people = who.filter(w => w.n !== 'Wraith');
-check('the nine human foes wear the builder\'s body on its 163-bone skeleton, keyed by their foe id', people.every(w => w.hb && w.bones === 163 && w.key === 'foe:' + w.id), people.filter(w => !(w.hb && w.key === 'foe:' + w.id)));
+// S2041 — the two in a long cloak (the Cultist, the Rogue Mage) carry the hem's four bones over it, 167
+const LONG = ['Cultist', 'Rogue Mage'];
+check('the nine human foes wear the builder\'s body on its 163-bone skeleton (167 with the hem\'s bones under a long cloak), keyed by their foe id', people.every(w => w.hb && w.bones === (LONG.includes(w.n) ? 167 : 163) && w.key === 'foe:' + w.id), people.map(w => [w.n, w.bones, w.key === 'foe:' + w.id]));
 check('the Wraith keeps its own body (the ghosts are not on the builder\'s yet)', !who.find(w => w.n === 'Wraith').hb && made.left === 0, who.find(w => w.n === 'Wraith'));
 const by = Object.fromEntries(who.map(w => [w.n, w]));
 check('each dressed as its kind: hooded bandits and cultists, mail and helm on the deserter, the captain and the shieldbearer, a coat on the highwayman, a tabard on the shieldbearer, the builder\'s own spear only on one that carries a spear (a Deserter one time in two, S1464)',

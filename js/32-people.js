@@ -1823,7 +1823,9 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
   root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=true;full.push(o);
     if(o.isSkinnedMesh){o.bindMode='detached';o.bindMatrix.identity();o.bindMatrixInverse.identity();o.geometry.boundingSphere=sph.clone();o.frustumCulled=true;}
     if(HBODY.cards.test(o.name)||o.parent===by.head)cards.add(o);});
-  hbCloakLegs(P,!rig.foe);hbHairOnCloak(P);
+  /* S2041 — a foe in a long cloak takes the hem's bones too (the Cultist, the Rogue Mage, the Marsh Hag: 167 bones); a caped foe's sheet ends
+     above the hips and stays at 163. A foe's front has no `upF`: its hanging hands came out through the front edges with it (the hag 6.7 → 15.8 cm) */
+  const fG=rig.foe&&rig.hbG&&rig.hbG.dress;hbCloakLegs(P,!rig.foe||!!(fG&&fG.cloak&&!fG.cape),!rig.foe);hbHairOnCloak(P);
   // F10 (Session 1256) — a body that is only ever seen near (the player's, rig.hbLazy) bakes its middle level when it is first asked for
   // (hbMid: first person's hands, a bed), not at attach: the bake was 200 to 700 ms of every change of what the player wears
   let mid=null;if(!rig.hbLazy){try{mid=hbMerge(P,cards);}catch(e){rig.root.remove(W);rig.hbFail=true;console.warn('F4: the middle level failed for',rig.g.hbKey,e);return;}mid.geometry.boundingSphere=sph.clone();root.add(mid);
@@ -1850,7 +1852,7 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
   // the body. So the right forearm and wrist keep the grip's turn (from the upper arm, which still takes the walk's swing and a blow's
   // wind-up) while the driver holds and stands; a ragdoll or a sleeper takes the driver's again
   const gD=rig.hbG&&rig.hbG.dress||{},grip=(gD.spear||gD.staff)&&!gD.chair?map.map(([j],i)=>j==='elR'||j==='wrR'?i:-1).filter(i=>i>=0).map(i=>({i,q:map[i][1].quaternion.clone()})):null;
-  rig.hb={root:W,P,map,s0,t0,grip,hold:hbCloakArms(gD,map),tw:!rig.foe&&!rig.hbLazy&&gD&&gD.cloak&&!gD.cape?HB_CLOAK_TWIST:1,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
+  rig.hb={root:W,P,map,s0,t0,grip,hold:hbCloakArms(gD,map),tw:!rig.hbLazy&&gD&&gD.cloak&&!gD.cape?HB_CLOAK_TWIST:1,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
   // a foe's weapon (the game's kit, on the driver's gear bone, or the bow in its left hand) and shield (on the left forearm) hang on
   // the driver's bones, inside the driver's mesh, which is hidden while the builder's body shows: so they are carried in the builder's
   // group then, following their bone each frame (hbHold), the weapon's grip in the builder's fist, closed on it as people.js closes a
@@ -1932,7 +1934,7 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    and share it with the middle bone from `arc` to straight back. Each swings back by its own leg's angle past its rest only: the arm on a
    side swings forward as that side's leg trails, so the side's hem goes back away from its hand, and never forward onto the other */
 const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:1.6,arcF:.85,lowF:.4,arcS:.1,kS:1.1,capF:.2};
-function hbCloakLegs(P,heel){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
+function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
   if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
   if(P.cloakLegs)return P.cloakLegs;const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
   P.root.updateWorldMatrix(true,true);const inv=new THREE.Matrix4().copy(P.root.matrixWorld).invert(),Mb=i=>new THREE.Matrix4().multiplyMatrices(inv,sk.bones[i].matrixWorld).multiply(sk.boneInverses[i]);
@@ -1949,7 +1951,7 @@ function hbCloakLegs(P,heel){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bone
   hem={bone:hb,front:fb,side:[lb,rb2],aS:[0,0],ax:inL(ax),fw:inL(fw),dn:inL(new THREE.Vector3(0,-1,0)),rest:[0,0],a:0,aF:0};hem.rest=[hbHemAngle(P,hem,'L'),hbHemAngle(P,hem,'R')];}
   const B=[Mb(il),Mb(iL),Mb(iR),Mb(sL),Mb(sR),ih>=0?Mb(ih):null,iF>=0?Mb(iF):null,iSL>=0?Mb(iSL):null,iSR>=0?Mb(iSR):null],C=HB_CLOAK_LEGS,ss=u=>u<=0?0:u>=1?1:u*u*(3-2*u),M=new THREE.Matrix4(),E=new THREE.Matrix4(),p=new THREE.Vector3(),d=new THREE.Vector3();let n=0;
   /* the sheet's weights at a point p of the hips' frame: the pelvis, the thighs and the fourth bone (a shin or a hem's), or null for the pelvis alone */
-  const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo)*(heel?1-ss((p.y-hY)/C.capF):1);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
+  const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel&&front!==false?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo)*(heel?1-ss((p.y-hY)/C.capF):1);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
       /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
       const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),lw=ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*lw,hs=iSL<0?0:C.heel*ss((bk-C.arcS)/(C.arc-C.arcS))*lw,hf=iF<0?0:C.toe*ss((-bk-C.arcF)/(1-C.arcF))*ss((hY-C.lowF*(hY-kY)-p.y)/Math.max(.05,(1-C.lowF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
       /* the back: the hem's bone in the fourth place, the shin's share left with the thigh */
@@ -2110,6 +2112,9 @@ const HB_CLOAK_HOLD=1;
    pelvis' yaw swung the forward-hanging hands 5 cm in toward the middle, under the cloak's front edge, which falls back as that knee trails.
    A townsperson's arms under a long cloak (rig.hb.tw) now take the hips' tilt and none of their twist about the vertical; a cape (it hangs
    from the shoulders: its arms came out by 3.6 mm without the twist), a foe and your own body keep all of it */
+/* S2042 — and a foe in a long cloak (the Cultist, the Rogue Mage, the Marsh Hag): its held arms too take none of the twist while it walks
+   (a swing, a wind-up or a lunge lets the arm go, hbHoldF). Arm points out of the cloak over a 160-tick walk: Cultist 1,720 → 1,086, the
+   hag 1,642 → 1,269; what is left is the hag's robe sleeve at the front edge as she leans into the walk (6.6 cm) */
 const HB_CLOAK_TWIST=0;
 function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!!(D.spear||D.crossbow||D.staff||D.basket||D.lantern)&&(!D.cape||!!D.staff&&!D.spear&&!D.crossbow),sides=thrown?/L$/:/[LR]$/; /* S1798: a cape over a staff opens on the staff's side, as people.js's buildCloak */
   const i=map.map(([j],k)=>/^(sh|el|wr)[LR]$/.test(j)&&sides.test(j)?k:-1).filter(k=>k>=0);return i.length?new Set(i):null;}
