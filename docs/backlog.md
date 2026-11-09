@@ -252,9 +252,9 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
     keeper's room*: `weapon [7.2,4.8]`, `armor`/`potion`/`misc` 13.2 deep, `barber [8,8.5]`; weapon's door leaf 2.6 (1.1–1.25 of a 1.8 m
     person wanted) and storey 4.88; guild_f's leaf `null` and its door's way not free. The weapon room is the kit's forge room (S1855):
     say which numbers it is meant to have and QA re-measures; guild_f's blocked way is the game's.~~ — fixed, Session 2015 (the forge measured as its piece, 7.2 × 4.8 with a cart door and an open roof; the guild hall's entrance marked, its leaf a great door of 3.3, its way read from its door)
-  - **`mapseals`** (for the look builder: the map's tiles, `js/83`). *the deepest tiles in view are built, middle first, until no job is
+  - ~~**`mapseals`** (for the look builder: the map's tiles, `js/83`). *the deepest tiles in view are built, middle first, until no job is
     left*: `{"calls":2908,"ms":25331,"deep":0,"done":0,"left":0}`; no deep tile built. Its zoom check fails too with every ratio under
-    1.15 (0.36–1.08); QA reads that one next (the label and the condition may differ).
+    1.15 (0.36–1.08); QA reads that one next (the label and the condition may differ).~~ — fixed, Session 2016 (the suite looked for level-4 tiles; the map's deepest level is `MAP_LMAX`, 5)
   - ~~**`inspector`** (for the look builder, S1896's patch, `js/56-dungeon-build.js`). *every entry builds with the game's own builder and
     has triangles*: `Caverglow: Cannot read properties of null (reading 'morphAttributes')`. The inspector's build of the patch passes
     no geometry somewhere; the game's lair builds it.~~ — fixed, Session 2013 (Caverglow has no plant kind; the entry builds `caverglowProp`)

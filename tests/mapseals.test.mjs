@@ -37,13 +37,14 @@ const deep = await page.evaluate(() => { const d = WORLD.siteAnywhere('dunmore')
 check('zoomed into one district, the marks off the view stand on the frame', deep.n === 4 && deep.edge >= 1 && deep.inside, deep);
 
 // 4. sharp: the level keeps a tile pixel at or under 1.15 screen pixels, and the deep tiles build and are drawn
+const LMAX = await page.evaluate(() => MAP_LMAX);
 const lv = await page.evaluate(() => { const out = []; for (const z of [1, 4, 12, 30, 64]) { const cellPx = SIZE * baseScale() * z, dev = cellPx * MAP.dpr, L = mapLevelFor(dev); out.push({ z, L, ratio: +(dev / (1 << L) / MAP_TQ).toFixed(2) }); } return out; });
-check('at every zoom the tile level gives at most 1.15 screen pixels a tile pixel (the old fine tile, 320 px a province, gave 14 at ×64)', lv.every(o => o.ratio <= 1.15) && lv[lv.length - 1].L === 4, lv);
+check('at every zoom the tile level gives at most 1.15 screen pixels a tile pixel (the old fine tile, 320 px a province, gave 14 at ×64)', lv.every(o => o.ratio <= 1.15) && lv[lv.length - 1].L === LMAX, { LMAX, lv }); /* S2016: the deepest level is the game's MAP_LMAX (5 since the shoals' tiles, S1880), not 4 */
 // the jobs run with a draw only when the queue is empty (a draw re-queues what the view still wants): a draw every step left
 // 1,266 frames of the canvas queued unseen, which SwiftShader then rasterised at the next read, 325 s on its own (Session 731)
 await page.evaluate(() => { window._mapBuild = (max) => { let n = 0; mapDraw(); while (n < max) { if (!MAP.jobs.length) { mapDraw(); if (!MAP.jobs.length) break; } mapJobs(); n++; } mapDraw(); return n; }; });
-const built = await page.evaluate(() => { const t0 = performance.now(); const n = _mapBuild(6000);
-  const q = [...MAP.tiles.values()].filter(t => t.q && t.L === 4); return { calls: n, ms: Math.round(performance.now() - t0), deep: q.length, done: q.filter(t => t.done).length, left: MAP.jobs.length }; });
+const built = await page.evaluate((LMAX) => { const t0 = performance.now(); const n = _mapBuild(6000);
+  const q = [...MAP.tiles.values()].filter(t => t.q && t.L === LMAX); return { calls: n, ms: Math.round(performance.now() - t0), deep: q.length, done: q.filter(t => t.done).length, left: MAP.jobs.length }; }, LMAX);
 check('the deepest tiles in view are built, middle first, until no job is left', built.deep >= 4 && built.done === built.deep && built.left === 0, built);
 // detail: the middle of the view, drawn from the deep tiles, against the same view drawn from the province's coarse tile alone
 const detail = await page.evaluate(() => {
