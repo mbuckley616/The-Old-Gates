@@ -5,7 +5,7 @@
 // road and facing it, lying on the drawn ground, solid where the coach is and open beside it, its cost; then that the map has nothing of
 // it until you come within 40 m, has it then with no travel to it. Session 2025 adds the Mark's hunters' camp (PKIT.places.hunters), Session 2029 the Gatelands'
 // charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar),
-// Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2037 the first place off the road, the shepherd's hut (offroadAt).
+// Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt).
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -100,7 +100,7 @@ const er = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c
 console.log(JSON.stringify(er));
 check(`${er.id}: the perched stone ${er.road} m off its road, facing it (${er.fwd}); ${er.off && er.off.length} things on the ground within ${er.stands} m of it; ${er.clints} clints proud of it by ${er.proud && er.proud.join(' / ')} m (5th, 50th, 95th)`, !er.none && er.road >= 23 && er.road <= 35 && er.fwd > .9 && er.stands < .06 && er.clints > 30 && er.proud[0] > .01 && er.proud[2] < .16, er);
 check(`solid at the boulder (its crown ${er.crown} m) and the lace wall (${er.wallN} slabs), open before the stone and on the path; ${er.tris} triangles in ${er.draws} draws`, !er.none && er.boulder && er.wall && !er.before && !er.path && er.crown > 2.6 && er.tris < 20000 && er.draws <= 11, er);
-// the places off the road (Session 2037, #1292 A): one cell in three keeps one (offroadAt, 82), its kind drawn by its own stream, the same when
+// the places off the road (Session 2038, #1292 A): one cell in three keeps one (offroadAt, 82), its kind drawn by its own stream, the same when
 // asked again; the first kind built is the Gatelands' shepherd's hut (PKIT.places.shepherd, places.js's gatelandsShepherdHut) on open pasture,
 // 150 m and more off every road and pad. Stood by the nearest: its door down the slope, the floor level, its hearthstone, rowan and spring on the
 // drawn ground, solid at the walls and the fold, open at the door and inside, its cost; found at 28 m, on the map with no travel to it

@@ -827,7 +827,7 @@
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,wayside:true});}}
     D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;D.house=M.house;D.hatch=M.hatch;D.stone=M.stone;D.other=M.other;D.clints=M.clints;D.wall=M.wall;D.pave=M.pave;D.thorn=M.thorn;return M.group;}
-  // S2037 (card F8, OG-124; Michael's A on #1292, "by the land, unmarked until found") — the places off the road. One cell in three of an
+  // S2038 (card F8, OG-124; Michael's A on #1292, "by the land, unmarked until found") — the places off the road. One cell in three of an
   // island keeps one, by its own stream (offroad:<cell>), so no other draw of the cell moves: its kind drawn from its island's list (the
   // Gatelands' shepherd's hut, peat-cutting camp and falls with the cave behind; the Mark's hunting cabin and logging camp), and a kind the
   // kit has not built yet keeps the cell empty until it has, as the places by a road do. Each stands on the ground it was drawn for, read by

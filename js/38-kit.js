@@ -7453,7 +7453,7 @@ function aurenneOrrery(hAt, o = {}) {
       other: { ...other, ...(([x, z]) => ({ x, z }))(Tn(other.x, other.z)) }, clints: clints.map(c => { const [x, z] = Tn(c.x, c.z); return { x, z, y: c.y }; }), wall: { z: -WZ, n: wallN },
       stands: stands.map(s => { const [x, z] = Tn(s.x, s.z); return { x, y: +s.y.toFixed(3), z, what: s.what }; }), thorn: (([x, z]) => ({ x, z }))(Tn(TX, TZ)), road: { z: -RZ }, pave: { x: -PX, z: -PZ, rx: PRX, rz: PRZ } };
   }
-  // S2037 (card F8; OG-124's "abandoned shepherd's hut", with OG-014's dry stone and OG-077's foxglove; Michael's A on #1292) — the Gatelands'
+  // S2038 (card F8; OG-124's "abandoned shepherd's hut", with OG-014's dry stone and OG-077's foxglove; Michael's A on #1292) — the Gatelands'
   // shepherd's hut in the open world, places.js's gatelandsShepherdHut (Session 997) without the prototype's own hill: the world brings the
   // pasture and its slope, so the page's turf grid is left out. The hut of dry stone with its west gable to the chimney's stub and its east
   // gable fallen in a heap, the two rafters slid down from the wall-heads, the ridge pole and the rotted thatch on the floor, the hearthstone
