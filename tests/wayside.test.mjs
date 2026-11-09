@@ -3,8 +3,8 @@
 // not built yet keeps the cell empty. The first kind built is the Gatelands' overturned coach (PKIT.places.carriage, places.js's
 // gatelandsCarriage). The suite finds the coaches, the same when asked again, stands by the nearest, and checks it: 20 to 24 m off its
 // road and facing it, lying on the drawn ground, solid where the coach is and open beside it, its cost; then that the map has nothing of
-// it until you come within 40 m, has it then with no travel to it. Session 2025 adds the Mark's hunters' camp (PKIT.places.hunters), Session 2027 the Gatelands'
-// charcoal burners' camp (PKIT.places.charcoal), Session 2028 the locked cellar's fallen cottage (PKIT.places.cellar).
+// it until you come within 40 m, has it then with no travel to it. Session 2025 adds the Mark's hunters' camp (PKIT.places.hunters), Session 2029 the Gatelands'
+// charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar).
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -50,7 +50,7 @@ const h = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c.
 console.log(JSON.stringify(h));
 check(`${h.id}: the hunters' camp ${h.road} m off its road, facing it (${h.fwd}); ${h.n} things that stand on the ground within ${h.stands} m of it`, !h.none && h.road >= 19 && h.road <= 35 && h.fwd > .9 && h.stands < .06, h);
 check(`solid at the tent and the rack, open at the tent's door and on the path to the road; ${h.tris} triangles in ${h.draws} draws`, !h.none && h.tent && h.rack && !h.door && !h.path && h.tris < 9000 && h.draws <= 12, h);
-// the charcoal burners' camp (Session 2027, places.js's gatelandsCharcoalCamp): stood off it, then checked: 22 to 34 m off its road and facing it,
+// the charcoal burners' camp (Session 2029, places.js's gatelandsCharcoalCamp): stood off it, then checked: 22 to 34 m off its road and facing it,
 // its pitsteads, the heap, a sack, the cordwood, the hut and the fire on the drawn ground, solid at the stack, the hut and the cordwood, open
 // before the hut's door, on the path to the road and between the stack and the hut; its cost
 await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, k.burn);
@@ -66,7 +66,7 @@ const cc = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c
 console.log(JSON.stringify(cc));
 check(`${cc.id}: the charcoal burners' camp ${cc.road} m off its road, facing it (${cc.fwd}); ${cc.off && cc.off.length} things that stand on the ground within ${cc.stands} m of it`, !cc.none && cc.road >= 21 && cc.road <= 35 && cc.fwd > .9 && cc.stands < .06, cc);
 check(`solid at the stack, the hut and the cordwood, open before the hut's door, on the path and between; ${cc.tris} triangles in ${cc.draws} draws`, !cc.none && cc.stack && cc.hut && cc.cord && !cc.door && !cc.path && !cc.between && cc.tris < 20000 && cc.draws <= 13, cc);
-// the fallen cottage (Session 2028, places.js's gatelandsCellar): stood off it, then checked: 20 to 28 m off its road and facing it, its hearth
+// the fallen cottage (Session 2030, places.js's gatelandsCellar): stood off it, then checked: 20 to 28 m off its road and facing it, its hearth
 // stone, the hatch's ground and a fallen stone on the drawn ground, the padlock on the leaves; solid at the gable and the footings, open in the
 // doorway, over the hatch and on the path to the road; its cost
 await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, k.cot);

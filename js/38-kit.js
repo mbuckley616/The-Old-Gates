@@ -7071,7 +7071,7 @@ function aurenneOrrery(hAt, o = {}) {
   // so o.ground(x, z) (the drawn ground in the piece's frame) is read at (-x, -z), and o.road (the road's line, z below 0) sets the first path's start.
   // -> { group, tris, draws, sol ([{x, z, w, d, ry, h}]), tent { x, z, y, R, H }, rack { x, z, y }, stands [{ x, y, z, what }] (what rests on the ground), road { z } }
   let HNM = null, HNP = null;
-  // the smoke's soft puff, painted once and shared by the camps by a road (S2027: out of markHuntersCamp, for the charcoal burners too)
+  // the smoke's soft puff, painted once and shared by the camps by a road (S2029: out of markHuntersCamp, for the charcoal burners too)
   function hnPuff() { if (!HNP) { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), g = x.createRadialGradient(64, 64, 4, 64, 64, 62);
       g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.55, 'rgba(255,255,255,.85)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 128, 128); HNP = new THREE.CanvasTexture(c); HNP.colorSpace = THREE.NoColorSpace; }
     return HNP; }
@@ -7163,7 +7163,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, tent: { x: -TX, z: -TZ, y: +ty.toFixed(3), R: TR, H: TH }, rack: { x: -KX, z: -KZ, y: +ky.toFixed(3) },
       stands: stands.map(s => { const [x, z] = T(s.x, s.z); return { x, y: +s.y.toFixed(3), z, what: s.what }; }), road: { z: -RZ } };
   }
-  // S2027 (card F8; OG-124's "camps on the roads: … charcoal burners", Michael's A on #1292) — the Gatelands' charcoal burners' camp in the open
+  // S2029 (card F8; OG-124's "camps on the roads: … charcoal burners", Michael's A on #1292) — the Gatelands' charcoal burners' camp in the open
   // world, places.js's gatelandsCharcoalCamp (Session 1016) without the prototype's own land: the world brings the turf, the road and the
   // trees, so the page's ground grid and its road, the cart standing on that road, its thirty hazel stools, eleven oak standards and the
   // bracken under them are left out. The two pitsteads black with old burns, the burning stack under its sods with its twelve vents, its flue
@@ -7278,7 +7278,7 @@ function aurenneOrrery(hAt, o = {}) {
       stack: { ...Object.fromEntries(['x', 'z'].map((k, i) => [k, T(S.x, S.z)[i]])), y: +sy.toFixed(3), R: SR, H: SH }, hut: { x: -HX, z: -HZ, y: +hy0.toFixed(3), R: HR, H: HH, door: { x: -HX, z: +(-(HZ + HR)).toFixed(3) } },
       stands: stands.map(s => { const [x, z] = T(s.x, s.z); return { x, y: +s.y.toFixed(3), z, what: s.what }; }), road: { z: -RZ }, pads: CC_PADS.map(p => { const [x, z] = T(p.x, p.z); return { x, z, r: p.r }; }) };
   }
-  // S2028 (card F8; OG-124's panel 6, "small mysteries with no marker: … a locked cellar", Michael's A on #1292) — the Gatelands' locked cellar
+  // S2030 (card F8; OG-124's panel 6, "small mysteries with no marker: … a locked cellar", Michael's A on #1292) — the Gatelands' locked cellar
   // in the open world, places.js's gatelandsCellar (Session 1026) without the prototype's own land: the world brings the pasture, the lane and
   // the ash trees, so the page's ground grid, its lane and its nine ashes are left out. The footings in their courses with the doorway's gap,
   // the west gable whole with its stack, the limewash, the fireplace and the hearth stone, the rubble fallen in, the hatch in its kerb with

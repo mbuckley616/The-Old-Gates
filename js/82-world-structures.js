@@ -759,9 +759,9 @@
   // -> {id, kind, name, x, z, ry, off, cell} or null, kept on the cell (c._wayside)
   const WAYSIDE={gatelander:['charcoal','merchants','carriage','cellar','erratic'],markman:['hunters','unfinished'],aurennais:['expedition']};
   const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34],charcoal:[22,34],cellar:[20,28]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp',charcoal:'A charcoal burners’ camp',cellar:'A fallen cottage'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
-  /* S2027 — the charcoal burners' four stances in the camp's own frame (the kit's CC_PADS turned half round: the burning stack's pitstead, the opened
+  /* S2029 — the charcoal burners' four stances in the camp's own frame (the kit's CC_PADS turned half round: the burning stack's pitstead, the opened
      one's, the hut's and the cordwood's), [x, z, r]; the land under them may rise 2 m across the camp, where the coach's pad allows 1.2 */
-  /* S2028 — the fallen cottage's floor, 7 by 4.6 m, levelled as one stance */
+  /* S2030 — the fallen cottage's floor, 7 by 4.6 m, levelled as one stance */
   const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]]},WAYSIDE_RISE={charcoal:2};
   function waysideAt(c){
     if(!c||c._wayside!==undefined)return c?c._wayside:null;c._wayside=null;
@@ -796,13 +796,13 @@
       {const [x,z]=W(-1.2,-.4);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:13.5,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(2.4-.8*t,-7+(-D.off+7)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
       return out;}
-    if(D.kind==='charcoal'){ /* S2027 — the charcoal burners' four stances flat at their own ground (the pitsteads, the hut's, the cordwood's), a clearing of the
+    if(D.kind==='charcoal'){ /* S2029 — the charcoal burners' four stances flat at their own ground (the pitsteads, the hut's, the cordwood's), a clearing of the
       scatter over the camp, and the path to the road */
       WAYSIDE_PADS.charcoal.forEach(([lx,lz,r],n)=>{const [x,z]=W(lx,lz);out.push(addStamp({id:`${D.id}_pad${n}`,kind:'door',x,z,r:r+.4,blend:1.8,y:landH(x,z),cell:k}));});
       {const [x,z]=W(2,4);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:17,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-3.6-.6*t,-9.5+(-D.off+9.5)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
       return out;}
-    if(D.kind==='cellar'){ /* S2028 — the cottage's floor flat at its ground, a clearing of the scatter round the footings, the elder and the thorn, and the path to the road */
+    if(D.kind==='cellar'){ /* S2030 — the cottage's floor flat at its ground, a clearing of the scatter round the footings, the elder and the thorn, and the path to the road */
       {const [x,z]=W(0,0);out.push(addStamp({id:D.id+'_floor',kind:'door',x,z,r:4.4,blend:2.5,y,cell:k}));}
       {const [x,z]=W(0,-2);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9.5,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-.6-.6*t,-6+(-D.off+6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
