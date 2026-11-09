@@ -106,6 +106,6 @@ check(`the inn sells ${t.stock.dish} at ${t.stock.price} and the cups ${t.stock.
   t.stock.price === 20 && t.stock.cups === 'rye:12,berries:12,curd:12' && t.stock.aur === 'wheat,dates,olives' && !t.stock.shop && t.eatLearnt, t.stock);
 check(`"${t.talk.label}": "${t.talk.said}", learnt ${t.talk.learnt}`, /cooking/.test(t.talk.label || '') && /Stew/.test(t.talk.said || '') && t.talk.learnt, t.talk);
 check(`cups: rye unfed leaves no meal, fed adds ${t.ryeAdds} min; berries +${t.berries}; curd warms ${t.warm[0]} → ${t.warm[1]} for ${t.warm[2]} min; olives cool ${t.cool[0]} → ${t.cool[1]}; butter on a roast stamina ×${t.rich.toFixed(4)}; the pill; saved`,
-  !t.ryeUnfed && t.ryeAdds === 60 && t.berries[0] === 15 && t.berries[1] === 15 && t.warm[1] === t.warm[0] + 1 && t.warm[2] === 60 && t.cool[1] === t.cool[0] + 1 && Math.abs(t.rich - 1.1875) < .01 && t.pill && t.save, t);
+  !t.ryeUnfed && t.ryeAdds === 600 && t.berries[0] === 15 && t.berries[1] === 15 && t.warm[1] === t.warm[0] + 1 && t.warm[2] === 600 && t.cool[1] === t.cool[0] + 1 && Math.abs(t.rich - 1.1875) < .01 && t.pill && t.save, t);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
