@@ -10,14 +10,16 @@ for (const look of ['new', 'old']) {
     const S = WORLD.settle.get('dunmore'), hs = S.houses.filter(h => h.exitX != null);
     const row = h => { const L = Math.hypot(h.exitX - h.doorX, h.exitZ - h.doorZ);
       return { id: h.id, L: +L.toFixed(2), solid: WORLD.solidAt(h.exitX, h.exitZ) }; };
-    const rows = hs.map(row);
+    const rows = hs.filter(h => h.type !== 'market').map(row); /* S2014: the market house's room upstairs (S1912) opens on the stair's landing, its exit beside the door on the landing, not out of it into a street */
+    const landing = hs.filter(h => h.type === 'market').map(h => ({ ...row(h), onLanding: !!(S.market && S.market.house === h.id) }));
     const keepers = (S.npcs || []).filter(n => n.sched && n.sched.door).map(n => ({ name: n.def && n.def.name, d: Math.min(...hs.map(h => Math.hypot(n.sched.door.x - h.exitX, n.sched.door.z - h.exitZ))) }));
     const inn = S.houses.find(h => h.type === 'inn'); const innOk = !S.innDoor || !inn || Math.hypot(S.innDoor.x - inn.exitX, S.innDoor.z - inn.exitZ) < .01;
-    return { n: rows.length, blocked: rows.filter(x => x.solid).map(x => x.id), moved: rows.filter(x => Math.abs(x.L - 2.4) > .02).map(x => [x.id, x.L]), shortest: Math.min(...rows.map(x => x.L)), keepers: keepers.length, keeperFar: keepers.filter(k => k.d > .01), innOk };
+    return { n: rows.length, blocked: rows.filter(x => x.solid).map(x => x.id), moved: rows.filter(x => Math.abs(x.L - 2.4) > .02).map(x => [x.id, x.L]), shortest: Math.min(...rows.map(x => x.L)), keepers: keepers.length, keeperFar: keepers.filter(k => k.d > .01), innOk, landing };
   });
   console.log(look, JSON.stringify(r));
   check(`${look} look: every house's exit in Dunmore is clear ground (${r.n} houses)`, r.n > 40 && r.blocked.length === 0, r.blocked);
   check(`${look} look: a moved exit stays at least 0.6 m out of its door, and a clear one 2.4 m (${r.moved.length} moved)`, r.shortest >= .59, r.moved);
+  if (r.landing.length) check(`${look} look: the market house's room steps out onto its landing, clear ground beside its door`, r.landing.every(x => x.onLanding && !x.solid && x.L < 1.5), r.landing);
   check(`${look} look: the keepers' doors and the inn's door are the houses' exits`, r.keeperFar.length === 0 && r.innOk, { far: r.keeperFar, inn: r.innOk });
   if (look === 'new') check('new look: the exits that were blocked are the ones moved (about 14 of Dunmore\'s, backlog I)', r.moved.length >= 10 && r.moved.length <= 20, r.moved);
   await g.close();
