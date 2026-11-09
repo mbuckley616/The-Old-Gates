@@ -6965,14 +6965,18 @@ function aurenneOrrery(hAt, o = {}) {
   // lamps, traces and pole, the gouges and the clods, and everything lying where it fell are the prototype's, on the world's ground:
   // o.ground(x, z) is the drawn ground's height in the piece's frame (the coach's origin), o.road the road's line in that frame (z, below 0),
   // o.key its stream. The coach lies on a pad of its own, so it rests on level turf; the gouges run from the road's verge to it.
-  // -> { group, tris, draws, sol ([{x, z, w, d, ry, h}], the coach's body in its turn), coach { x, z, y, ry, top }, lying [{ x, y, z, what }] }
+  // -> { group, tris, draws, sol ([{x, z, w, d, ry, h}], the coach's body in its turn), coach { x, z, y, ry, top }, lying [{ x, y, z, what }], lamp { at [x, y, z], the lamp still on its bracket, mat its glass } }
   let CRM = null;
   function gatelandsCarriage(o = {}) {
     const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
-    if (!CRM) CRM = { earth: mat('plaster', { ns: 1.2, color: 0x6a5440, rough: 1 }), paint: mat('wood', { ns: .5, color: 0x8a3a26, rough: .55 }), black: mat('wood', { ns: .4, color: 0x2a2220, rough: .6 }),
-      yellow: mat('wood', { ns: .6, color: 0xc8a048, rough: .7 }), iron: std(0x2a2826, .5, { metalness: .6 }), glass: std(0x2a3238, .12, { metalness: .3 }), dark: std(0x0c0a08, 1, { side: THREE.BackSide }), cloth: std(0x7a2a2a, .95),
+    // S2048: the coach's paint, its black and its lining are lacquer over the boards, so they keep the grain's relief (the normal map) but not
+    // its colour: the wood map's ~0.4/0.3/0.2 took the oxblood to ~0x381208, a black box under a wood's canopy (the critic, s1401)
+    const lacq = (c, ns, ro) => { const m = mat('wood', { ns, color: c, rough: ro }); m.map = null; return m; };
+    if (!CRM) CRM = { earth: mat('plaster', { ns: 1.2, color: 0x6a5440, rough: 1 }), paint: lacq(0x7a3222, .5, .5), black: lacq(0x2a2420, .4, .55),
+      yellow: lacq(0xb08a3e, .6, .6), iron: std(0x2a2826, .5, { metalness: .6 }), glass: std(0x2a3238, .12, { metalness: .3 }), dark: std(0x0c0a08, 1, { side: THREE.BackSide }), cloth: std(0x7a2a2a, .95),
       leather: mat('wood', { ns: .3, color: 0x4a3020, rough: .7 }), trunk: mat('wood', { ns: .8, color: 0x7a5a3a, rough: .8 }), linen: std(0xe0d8c4, .95, { side: THREE.DoubleSide }), wool: std(0x3a4a5e, .95),
       lamp: std(0xffd8a0, .5, { emissive: new THREE.Color(1, .72, .38), emissiveIntensity: .25 }) };
+    let lampAt = null;
     const M = CRM, B = new Map(), key = String(o.key || 'carriage'), F = stream(key + ':lie'), ph = Array.from({ length: 10 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
     const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
       if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
@@ -7030,7 +7034,7 @@ function aurenneOrrery(hAt, o = {}) {
     // the driver's box: the seat over the front, its backrest against the body, the footboard sloping down ahead; the lamps at the front corners
     CP(new THREE.BoxGeometry(.5, .32, BW - .1), 'black', hx + .2, 1.75, 0); CP(new THREE.BoxGeometry(.48, .1, BW - .1), 'cloth', hx + .2, 1.96, 0); CP(new THREE.BoxGeometry(.06, .38, BW - .1), 'black', hx + .03, 2.2, 0);
     CP(new THREE.BoxGeometry(.6, .04, BW - .3), 'black', hx + .7, 1.42, 0, 0, 0, -.5); for (const sz of [-1, 1]) CR('iron', [hx + .45, 1.6, sz * .55], [hx + .95, 1.3, sz * .55], .015, 4);
-    { const x = hx + .05, y = 1.95, z = .82; CR('iron', [x - .05, y - .1, hz], [x, y - .1, z], .012, 4); CP(new THREE.BoxGeometry(.13, .2, .13), 'lamp', x, y, z); CP(new THREE.ConeGeometry(.1, .1, 4), 'black', x, y + .15, z, 0, Math.PI / 4); CP(new THREE.CylinderGeometry(.06, .07, .05, 8), 'black', x, y - .12, z); }
+    { const x = hx + .05, y = 1.95, z = .82; CR('iron', [x - .05, y - .1, hz], [x, y - .1, z], .012, 4); CP(new THREE.BoxGeometry(.13, .2, .13), 'lamp', x, y, z); CP(new THREE.ConeGeometry(.1, .1, 4), 'black', x, y + .15, z, 0, Math.PI / 4); CP(new THREE.CylinderGeometry(.06, .07, .05, 8), 'black', x, y - .12, z); lampAt = W(x, y, z); }
     // the splinter bar ahead of the fore-carriage, the four traces cut short at it and hanging; the pole snapped a metre out from its socket
     { CR('black', [1.45, .55, -.62], [1.45, .55, .62], .035, 5, FC); for (const z of [-.6, -.3, .3, .6]) { const a = W(...V3(1.45, .55, z).applyMatrix4(FC).toArray()), L = .55 + F() * .35, hang = [a[0] - .18, Math.max(ground(a[0] - .18, a[2]) + .02, a[1] - L), a[2] + .05];
         const rest = Math.max(0, L - (a[1] - hang[1])), end = [hang[0] - rest * .9, ground(hang[0] - rest * .9, hang[2]) + .02, hang[2]]; rod('leather', a, hang, .018, 4); if (rest > .05) rod('leather', hang, end, .018, 4); }
@@ -7060,7 +7064,7 @@ function aurenneOrrery(hAt, o = {}) {
     const ca = Math.cos(Math.PI + CA), sa = Math.sin(Math.PI + CA); let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9, top = -1e9;
     for (const [x, y, z] of pts) { const u = x * ca - z * sa, v = x * sa + z * ca; u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v); top = Math.max(top, y); }
     const um = (u0 + u1) / 2, vm = (v0 + v1) / 2, sol = [{ x: +(um * ca + vm * sa).toFixed(3), z: +(-um * sa + vm * ca).toFixed(3), w: +(u1 - u0).toFixed(3), d: +(v1 - v0).toFixed(3), ry: Math.PI + CA, h: +(top - CG).toFixed(3) }];
-    return { group, tris: Math.round(tris), draws: group.children.length, sol, coach: { x: CX, z: CZ, y: +CG.toFixed(3), ry: CA, top: +W(0, 1.5, hz)[1].toFixed(3) }, lying, road: { z: RZ, w: RW } };
+    return { group, tris: Math.round(tris), draws: group.children.length, sol, coach: { x: CX, z: CZ, y: +CG.toFixed(3), ry: CA, top: +W(0, 1.5, hz)[1].toFixed(3) }, lying, road: { z: RZ, w: RW }, lamp: lampAt && { at: lampAt.map(v => +v.toFixed(3)), mat: M.lamp } };
   }
   // S2025 (card F8; OG-124's "camps on the roads: … hunters", Michael's A on #1292) — the Mark's hunters' camp in the open world, places.js's
   // markHuntersCamp (Session 1022) without the prototype's own land: the world brings the heath, the road and the trees, so the page's ground

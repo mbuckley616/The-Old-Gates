@@ -481,6 +481,7 @@
     tickHerbSync(dt);tickAshenmoorStory();tickProsperity();tickRents();tickDatedWork();tickCaravans(dt);tickCoaches(dt);tickStory();try{tickDuel(dt);}catch(e){console.warn('duel',e);}try{tickSpar();}catch(e){console.warn('spar',e);}try{tickBrawl(dt);}catch(e){console.warn('brawl',e);}try{tickLadder(dt);}catch(e){console.warn('ladder',e);}try{tickSpire(dt);}catch(e){console.warn('spire',e);}tickSiteDeaths();tickVarek(dt);tickHerald();tickTremor();tickNightRoads();sweepLights();
     tickCleared();
     tickDiscovery(dt);
+    waysideLamps(); /* S2048 — the coach's lamp at night */
   }
   function restore(sx,sz,y){
     try{anchoredPlaces();}catch(e){}

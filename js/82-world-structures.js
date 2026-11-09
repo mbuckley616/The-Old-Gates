@@ -189,6 +189,7 @@
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
     if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
     if(c._aq&&c._aq.walks){aqWalkDrop(c._aq.id);c._aq.walks=null;} /* S1927 — the aqueduct's channel */
+    if(c._wayside&&c._wayside.lamp){unregLight(c._wayside.lamp.light);c._wayside.lamp=null;} /* S2048 — the coach's lamp */
     if(c._offroad&&c._offroad.patch)offroadPatchDrop(c._offroad.id); /* S2044 — a place off the road's own ground */
     if(c._tunnel&&c._tunnel.house){const i=ZONES.world.houses.indexOf(c._tunnel.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1828 — the tunnel's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
@@ -827,7 +828,13 @@
     M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='wayside '+D.kind;sc.add(M.group);
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,wayside:true});}}
-    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;D.house=M.house;D.hatch=M.hatch;D.stone=M.stone;D.other=M.other;D.clints=M.clints;D.wall=M.wall;D.pave=M.pave;D.thorn=M.thorn;return M.group;}
+    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;D.house=M.house;D.hatch=M.hatch;D.stone=M.stone;D.other=M.other;D.clints=M.clints;D.wall=M.wall;D.pave=M.pave;D.thorn=M.thorn;
+    if(M.lamp){const[ax,ay,az]=M.lamp.at,[lx,lz]=W(ax,az);D.lamp={mat:M.lamp.mat,light:regLight(0xffb060,0,9,'wayside:'+D.id),lit:null};D.lamp.light.position.set(lx,y0+ay,lz);} /* S2048 — the coach's lamp, lit at dusk (waysideLamps) */
+    return M.group;}
+  // S2048 — the coach's lamp still burns on its bracket: dark from 19:00 to 06:30 (the towns' lamps' hours), its glass glows and it throws
+  // a 9 m pool on the pool of lights; by day the glass is a faint ember. The glass's material is the kit's, one for every coach.
+  function waysideLamps(){const h=hourNow(),dark=isNight()||h<6.5||h>=19;
+    for(const L of LOADED.values()){const D=L.cell&&L.cell._wayside;if(!D||!D.lamp||!D.group||D.lamp.lit===dark)continue;D.lamp.lit=dark;D.lamp.mat.emissiveIntensity=dark?1.6:.25;D.lamp.light.intensity=dark?1.5:0;}}
   // S2038 (card F8, OG-124; Michael's A on #1292, "by the land, unmarked until found") — the places off the road. One cell in three of an
   // island keeps one, by its own stream (offroad:<cell>), so no other draw of the cell moves: its kind drawn from its island's list (the
   // Gatelands' shepherd's hut, peat-cutting camp and falls with the cave behind; the Mark's hunting cabin and logging camp), and a kind the
