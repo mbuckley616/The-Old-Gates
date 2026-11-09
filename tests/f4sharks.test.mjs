@@ -41,7 +41,7 @@ const lv = await page.evaluate(() => { const m = _S.mesh, R = _R, at = (dd, k) =
 check(`three levels: near the kit's ${lv.near.kit} meshes, at 25 m ${lv.mid.kit}, at 60 m the old body`, lv.near.L === 0 && !lv.near.old && lv.near.kit >= 3 && lv.mid.L === 1 && !lv.mid.old && lv.mid.kit < lv.near.kit && lv.far.L === 2 && lv.far.old && lv.back.L === 0, lv);
 
 // a swim: the bones turn, and the wave beats at the old tail's 3.4 rad a second cruising, 7 hunting
-// Session 2046: each measured tick holds the page's clock still. The swimmers' poses take their step from performance.now() against rig.t, so
+// Session 2047: each measured tick holds the page's clock still. The swimmers' poses take their step from performance.now() against rig.t, so
 // the time the tick spent before it reached this rig was added to the 1/30 s the suite sets: a dolphin's beat read 1.46 on one boot and 1.54
 // on the next (the band 1.37 to 1.49), the whale's and the shark's the same way on a slower runner. Now each step is 1/30 s exactly.
 const swim = await page.evaluate(async () => { const R = _R, mats = () => Array.from(R.hc.C.skel.boneMatrices), run = async (alert) => { _S.alert = alert; const p0 = R.ph, a = mats(); for (let i = 0; i < 8; i++) { { const pn = performance.now, T = pn.call(performance); R.t = T / 1000 - 1 / 30; performance.now = () => T; try { tickCreatures(1 / 60, 4e5 + i * 17); } finally { performance.now = pn; } } R.hc.C.skel.update(); }
@@ -70,7 +70,7 @@ const dead = await page.evaluate(() => { const R = _R, before = []; R.hc.W.trave
   return { n: before.length, cloned: before.filter(([o, m]) => o.material !== m).length, shaded: shaded.length, kept: shaded.filter(([o, m]) => o.material.onBeforeCompile === m.onBeforeCompile).length,
     darker: before.filter(([o, m]) => o.material !== m && o.material.color && o.material.color.r <= m.color.r * .36 + 1e-6).length, still: +mv.toFixed(4), hc: !!R.hc }; });
 check('killed, the kit\'s body is darkened with its shaders kept, and its wave stops', dead.hc && dead.cloned === dead.n && dead.darker === dead.n && dead.kept === dead.shaded && dead.still < 1e-3, dead);
-// Session 2046: the whale's, the dolphin's, the gulls' and the schools' loops empty the world's queue first, as the shark's does: hcTick builds
+// Session 2047: the whale's, the dolphin's, the gulls' and the schools' loops empty the world's queue first, as the shark's does: hcTick builds
 // nothing while JOBS holds a job, and nothing runs the queue inside one evaluate, so a job queued between two evaluates made every one of the
 // 300 ticks busy (FLAKY in the weekly run of 8 Nov, `{k:301, rig:true}`; caught here with two boots side by side: 2 jobs queued, no build begun).
 // Session 1536: the whales at sea (spawnWhale, peaceful) wear the kit's Storm Whale by the same path: the old mesh put in a group in its

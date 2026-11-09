@@ -53,7 +53,7 @@ check(`the row is ${ok[0] && ok[0].tris} tris in ${ok[0] && ok[0].draws} materia
   fs.writeFileSync(new URL('../docs/prototypes/' + name, import.meta.url), Buffer.from(url.split(',')[1], 'base64')); console.log(`  (picture: docs/prototypes/${name}, ${id})`); } }
 
 // Aurenne (Session 1329): every town, port and city of the first cells planned, then two settled for the solids and the pictures
-// Session 2045: the two are settled first, the game's own way (the site's job, once its cells and its pad's stamp are in), and only then
+// Session 2046: the two are settled first, the game's own way (the site's job, once its cells and its pad's stamp are in), and only then
 // are the others laid by hand for the counts. Laid by hand before its cells loaded, c7_1_s7's row took the ground under it before the
 // pad flattened it (its rise 8.19 m, its niches stepped −0.10 to +0.03), and stood 0.10 to 0.23 m above the pad once settled: red twice in
 // the weekly run of 8 Nov. Settled first it stands at 8.30 m, every niche 0.02 m over its ground.
