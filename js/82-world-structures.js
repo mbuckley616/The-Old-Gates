@@ -143,7 +143,7 @@
     {const K=FORT_KEEP[e.seed];if(K){delete FORT_KEEP[e.seed];for(const [geo,lod] of [[fortKeepGeoHi(11,9,7.2,K.banner,pRng(pHash('fortK|'+e.seed))),'hi'],[mergeParts(K.lo),'lo']]){const m=new THREE.Mesh(geo,VC_MAT);m.position.set(K.x,K.y,K.z);m.castShadow=true;m.receiveShadow=true;m.userData.lod=lod;m.userData.keep=true;group.add(m);}}}
     // barracks either side of the yard, doors toward the keep
     const S={site:{id:'fort_'+e.seed,x:cx,z:cz,pad:R+2,kind:'fort'},group,sol,houses:[],npcs:[],reg:'anglo',residents:[],lamps:[],_gates:[],reach:R+6,chimneys:[]};
-    [[-1,0],[1,0]].forEach(([sx])=>{const bx=cx+sx*15,bz=cz+9;const geo=buildingGeo(7,5,STYLE.garrison,r,{chimney:true,twoStory:false,h:2.8,rise:1.2});const m=new THREE.Mesh(geo,VC_MAT);m.position.set(bx,worldH(bx,bz)-.06,bz);m.rotation.y=sx>0?Math.PI/2:-Math.PI/2;{const ch=chimneyAt(geo,m,'barracks');if(ch)S.chimneys.push(ch);} /* S345 — the barracks' smoke */m.castShadow=true;m.receiveShadow=true;group.add(m);if(geo.userData.lo){m.userData.lod='hi';const l=new THREE.Mesh(geo.userData.lo,VC_MAT);l.position.copy(m.position);l.rotation.y=m.rotation.y;l.castShadow=true;l.userData.lod='lo';group.add(l);} /* S202 — its distant copy, baked into the POI's clusters */sol.push({cx:bx,cz:bz,rx:2.7,rz:3.7,c:Math.cos(m.rotation.y),s:Math.sin(m.rotation.y),bt:'barracks'});});
+    [[-1,0],[1,0]].forEach(([sx])=>{const bx=cx+sx*15,bz=cz+9;HOUSE_SEED=houseSeedFor('fort_'+e.seed,sx>0?1:0);const geo=buildingGeo(7,5,STYLE.garrison,r,{chimney:true,twoStory:false,h:2.8,rise:1.2});HOUSE_SEED=null; /* S2032 — keyed by the fort and the side */const m=new THREE.Mesh(geo,VC_MAT);m.position.set(bx,worldH(bx,bz)-.06,bz);m.rotation.y=sx>0?Math.PI/2:-Math.PI/2;{const ch=chimneyAt(geo,m,'barracks');if(ch)S.chimneys.push(ch);} /* S345 — the barracks' smoke */m.castShadow=true;m.receiveShadow=true;group.add(m);if(geo.userData.lo){m.userData.lod='hi';const l=new THREE.Mesh(geo.userData.lo,VC_MAT);l.position.copy(m.position);l.rotation.y=m.rotation.y;l.castShadow=true;l.userData.lod='lo';group.add(l);} /* S202 — its distant copy, baked into the POI's clusters */sol.push({cx:bx,cz:bz,rx:2.7,rz:3.7,c:Math.cos(m.rotation.y),s:Math.sin(m.rotation.y),bt:'barracks'});});
     // v80 S132 — a paved way from the gate to the keep's steps, so the courtyard reads as a courtyard
     {const z0=cz+R-1,z1=cz-8.5+4.5+2.4;const segs2=Math.max(4,Math.round(Math.abs(z0-z1)/3));for(let i=0;i<segs2;i++){const zz=z0+(z1-z0)*(i+.5)/segs2;const m=new THREE.Mesh(new THREE.BoxGeometry(2.6,.12,Math.abs(z1-z0)/segs2+.1),new THREE.MeshLambertMaterial({color:0x8a8078}));m.position.set(cx,worldH(cx,zz)+.05,zz);group.add(m);}}
     // torches on the gate towers
@@ -2121,6 +2121,11 @@
     stone:[{tile:true},{tile:true,shutter:0x4a5a3a}],
     garrison:[{slate:true}]};
   let _houseN=0;
+  // S2032 — a town's house is seeded by its town and lot (houseSeedFor, set by genSettlement round each lot's builds), not by _houseN,
+  // the count of every house built so far in the boot, which moved with the order the towns loaded in (QA's S2027 item). Null elsewhere.
+  let HOUSE_SEED=null;
+  function houseSeedFor(id,i){let h=2166136261;const s=String(id);for(let k=0;k<s.length;k++)h=Math.imul(h^s.charCodeAt(k),16777619);return hashSeed((h^Math.imul(i+1,0x9E3779B1))>>>0);}
+  function houseSeedStep(civ,m){const n=civ?_civN++:_houseN++;return HOUSE_SEED!=null?HOUSE_SEED:n*m;}
   function houseKey(st){for(const k in STYLE)if(STYLE[k]===st)return k;return null;}
   // S881 (F2a) — a house's wall height: its storeys, and never so low that the eaves' lip (a steep thatch, turf or shingle roof drops
   // its edge well below the wall plate) comes down across the door's head. The Mark's steep roofs did, once the door was 2.05.
@@ -2129,7 +2134,7 @@
     return Math.max(H,SCALE.DOOR_H+.14+.12+drop);}
   function buildingGeoHi(w,d,st0,r,opts,lo){
     const key=houseKey(st0)||opts.styleKey||'irish';const V=HOUSE_VARIANTS[key]||[{}];
-    const r0=pRng((Math.round(w*7)*131+Math.round(d*7)*977+lo.wallHex+lo.roofHex*3+(_houseN++)*7919)>>>0);
+    const r0=pRng((Math.round(w*7)*131+Math.round(d*7)*977+lo.wallHex+lo.roofHex*3+houseSeedStep(0,7919))>>>0);
     const st=Object.assign({},st0,V[Math.floor(r0()*V.length)%V.length]);if(key==='french'&&st.slate==null)st.slate=true;if(key==='bavarian'||key==='garrison')st.slate=true;
     const P=[];const c=x=>new THREE.Color(x);const add=(geo,col,x,y,z,rx,ry,rz,j)=>{P.push({geo,color:c(col),x,y,z,rx,ry,rz,jitter:j==null?.06:j});};
     const two=lo.two,SU=SCALE.STOREY,H=houseWallH(st,d,opts,two),pl=.3,fr=st.frame,dark=0x1e1a18,DW=SCALE.DOOR_W,DH=SCALE.DOOR_H; /* S881 (F2a): the upper storey and the door from SCALE (2.2, and a leaf .92 by 1.85, before) */
@@ -2236,7 +2241,7 @@
   // ── S195: churches and keeps in detail (H.5, Michael's A: buildings and structures, with a distant copy) ──
   // The old builders stay as the distant copies; neither took the town's dice, so the detailed ones roll their own.
   let _civN=0;
-  function churchGeoHi(w,d,st){const r0=pRng((Math.round(w*13)+Math.round(d*29)*7+(_civN++)*7919)>>>0);const P=[];const c=x=>new THREE.Color(x);
+  function churchGeoHi(w,d,st){const r0=pRng((Math.round(w*13)+Math.round(d*29)*7+houseSeedStep(1,7919))>>>0);const P=[];const c=x=>new THREE.Color(x);
     const add=(geo,col,x,y,z,rx,ry,rz,j)=>{P.push({geo,color:c(col),x,y,z,rx,ry,rz,jitter:j==null?.05:j});};
     const S=STYLE.stone,wallC=c(S.wall).lerp(c(S.wall2),r0()*.4).getHex(),dk=c(wallC).multiplyScalar(.82).getHex(),roofC=S.roof,H=4.2,b=.5;
     // stepped plinth
@@ -2272,7 +2277,7 @@
     // a few graves in the yard
     for(let k=0;k<4;k++)if(r0()<.7){const gx=(r0()<.5?-1:1)*(w/2+1.4+r0()*.8),gz=-d/2+1+r0()*(d-2);add(SK.rbox(.5,.8,.14,.08,2),0x7a7a74,gx,.4,gz,0,Math.PI/2+(r0()-.5)*.3,(r0()-.5)*.15,.08);}
     return mergeParts(P);}
-  function keepGeoHi(w,d,st){const r0=pRng((Math.round(w*17)+Math.round(d*31)*5+(_civN++)*104729)>>>0);const P=[];const c=x=>new THREE.Color(x);
+  function keepGeoHi(w,d,st){const r0=pRng((Math.round(w*17)+Math.round(d*31)*5+houseSeedStep(1,104729))>>>0);const P=[];const c=x=>new THREE.Color(x);
     const add=(geo,col,x,y,z,rx,ry,rz,j)=>{P.push({geo,color:c(col),x,y,z,rx,ry,rz,jitter:j==null?.05:j});};
     const S=STYLE.stone,wallC=S.wall,w2=S.wall2,dk=c(w2).multiplyScalar(.85).getHex(),H=6.5,b=.35;
     // a battered base (the wall's foot splays out), the wall, courses of stone proud of it

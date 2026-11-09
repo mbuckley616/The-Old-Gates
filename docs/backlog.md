@@ -285,14 +285,15 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
     south of Dunmore's square differently (timber and slate on the old look, thatch on the new at 6 m east and 46 m south, the same here and
     on CI), so the suite's `OG_KIT_TOWNS = false` no longer gives both looks one town. QA finds the switch that does, then lands both.~~ — done, Session 2027 (no switch: a detailed house's variant is rolled from `_houseN`, a count of every house built so far, and from its plain twin's colours by `getHex`, which r128 truncates and 0.170 rounds; the suite pins both, and the wait from `auto/wip-lookpair` lands with it; the game's side is the item below) FLAKY in the ledger:
     `guildfurn` (one cylinder left in the hall's bake, try 1), `people` (87 of 88 skinned, try 1).
-- **A town's detailed house changes its roof from boot to boot** (QA, Session 2027, for the look builder: `buildingGeoHi`, `js/82-world-structures.js`).
+- ~~**A town's detailed house changes its roof from boot to boot** (QA, Session 2027, for the look builder: `buildingGeoHi`, `js/82-world-structures.js`).
   The variant (`HOUSE_VARIANTS`: thatch or slate, framed or not, rubble) is rolled by `pRng(… + lo.wallHex + lo.roofHex*3 + (_houseN++)*7919)`.
   `_houseN` counts every detailed house built so far in the boot, so a house's variant depends on which towns loaded before its own. Seen in
   `lookpair` on main at s1394: at 6 m east and 46 m south of Dunmore's square the near house was timber and slate on one boot and thatched on
   another (108 detailed houses built in one boot, 132 in the next, in a different order). A player who reloads, or whose route there differs,
   sees the same house with another roof. The S1884 step (`opts.kitStep`) kept the count for the kit's lots but not across towns. The co-op
   rule's ids are there: key the roll by the town and the lot (`site.id`, `lot.n`), not by a running count. (The `getHex` rounding, the other
-  half of `lookpair`'s red, is r128's alone and goes with the old look at F14.)
+  half of `lookpair`'s red, is r128's alone and goes with the old look at F14.)~~ — done, Session 2032 (`HOUSE_SEED`, `houseSeedFor(site.id, i)` round each lot's builds,
+  the churches, keeps and a fort's two barracks too: across two boots with the count offset by 37, 95 of 95 alike; 4 of 4 differed before)
 - ~~**`placesave` red on main in the weekly run: a Dunmore house moves lot when the town's prosperity swings** (QA, Session 1994, for the look
   builder: `genSettlement`'s lots, `js/83-world-generator.js`). Run 42479827264 (s1368, shard 14, 8 Nov), red on both tries: *across
   prosperity swings of 13 and 26 in four towns, no house id moves to another lot*. Dunmore only (prosperity 61): at 48 and 35
