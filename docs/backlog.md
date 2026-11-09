@@ -248,10 +248,10 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - ~~**`houseexits`** (for the look builder: the kit's doors, `js/82`/`83`). *a moved exit stays at least 0.6 m out of its door, and a clear
     one 2.4 m*: ten clear exits at 1.80–1.85 (`g_dunmore_10`, 15, 20, 22–25, 29, 38, 51) and `g_dunmore_6000` at 0.4. If the kit's step
     is meant to put the exit 1.8 m out, say so and QA re-measures; 0.4 m is a door you stand in either way.~~ — fixed, Session 2014 (the ten at 1.8 are exits pulled back from a solid, as the rule allows; g_dunmore_6000 is the market room's door on its landing, checked on its own)
-  - **`scalerooms`** (for the look builder: `buildInteriorFor`, `scaleRoom`). *a shop is 7 to 9 m wide and 7 to 8.5 deep, + 4.7 for the
+  - ~~**`scalerooms`** (for the look builder: `buildInteriorFor`, `scaleRoom`). *a shop is 7 to 9 m wide and 7 to 8.5 deep, + 4.7 for the
     keeper's room*: `weapon [7.2,4.8]`, `armor`/`potion`/`misc` 13.2 deep, `barber [8,8.5]`; weapon's door leaf 2.6 (1.1–1.25 of a 1.8 m
     person wanted) and storey 4.88; guild_f's leaf `null` and its door's way not free. The weapon room is the kit's forge room (S1855):
-    say which numbers it is meant to have and QA re-measures; guild_f's blocked way is the game's.
+    say which numbers it is meant to have and QA re-measures; guild_f's blocked way is the game's.~~ — fixed, Session 2015 (the forge measured as its piece, 7.2 × 4.8 with a cart door and an open roof; the guild hall's entrance marked, its leaf a great door of 3.3, its way read from its door)
   - **`mapseals`** (for the look builder: the map's tiles, `js/83`). *the deepest tiles in view are built, middle first, until no job is
     left*: `{"calls":2908,"ms":25331,"deep":0,"done":0,"left":0}`; no deep tile built. Its zoom check fails too with every ratio under
     1.15 (0.36–1.08); QA reads that one next (the label and the condition may differ).
