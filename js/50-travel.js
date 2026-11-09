@@ -677,11 +677,13 @@ window.addEventListener('keydown',e=>{if(!brewOpen)return;const c=e.code;let hit
 // ── S1486 — Survival B, session 2: fires and meals (`docs/design/survival-build.md`) ──
 // A tinderbox (5 gold, never used up) lights a campfire from one log; it burns one game-hour. The hearth of an inn or a home
 // is a fire too. At a fire one food makes a meal (Cooking 6); two logs make a charcoal and a pine log three pitch. A meal
-// eaten leaves you *fed*, one kind at a time, for 2 game-hours times the cook's Cooking curve: Hearty (+15% stamina) from
+// eaten leaves you *fed*, one kind at a time, for 20 game-hours (S2048, Michael's B on #1339: ten times S1879's 2) times the cook's Cooking curve: Hearty (+15% stamina) from
 // meat, Steady (+1 HP every 5 s) from fish, Clear (+10% mana regeneration) from produce. There is no hunger: fed is a gift.
 // Meat comes off a bear, a boar or a wolf (1 to 3, seeded by the corpse's key); produce and fish from the goods shop and the
 // inn, fish only in a port. Fed is kept by the game clock (`worldState.fed`, the character's), so sleep runs it down.
-const FIRE_HOURS=1,FIRE_REACH=2.5,FED_MIN=120,TINDERBOX_NAME='Tinderbox';
+const FIRE_HOURS=1,FIRE_REACH=2.5,FED_MIN=1200,TINDERBOX_NAME='Tinderbox';
+// S2048 — a pill's minutes left: under two hours in minutes, past that in whole hours (a meal is 20 to 45 of them)
+function pillMin(m){return m<120?m+'m':Math.ceil(m/60)+'h';}
 const FED_KIND={hearty:{label:'Hearty',ico:'🍖',col:'#e8a060',say:'+15% stamina · Warmth 1'},steady:{label:'Steady',ico:'🐟',col:'#80c8a0',say:'+1 health every 5 s'},
   clear:{label:'Clear',ico:'🥕',col:'#88aaff',say:'+10% mana regeneration · Cool 1'}};
 const FOOD_MEAL={meat:{name:'Roast Meat',ico:'🍖',kind:'hearty'},fish:{name:'Baked Fish',ico:'🐟',kind:'steady'},produce:{name:'Pottage',ico:'🥣',kind:'clear'}};
@@ -903,10 +905,10 @@ function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];cons
     if(h.type==='inn'){out.push(dishOfDayItem(h));isleSeconds(nk).forEach(k=>out.push(cupItem(k)));}}}catch(e){} /* S2013 — by island; S2028 — its three seconds; S2035 — the inn's dish of the day and its three cups */
   const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port')out.push({...SURV_ITEMS.fish});return out;}
 // the buff bar's pill for fed
-function fedPill(){const C=cupNow(),cp=C?`<span class="buff-pill" title="${DISH_RIDER[C.r].label} — a cup, ${Math.ceil(C.until-gameMinNow())} min remaining"><span class="bp-ico">🍺</span><span class="bp-time">${Math.ceil(C.until-gameMinNow())}m</span></span>`:''; /* S2035 — a cup */
+function fedPill(){const C=cupNow(),cp=C?`<span class="buff-pill" title="${DISH_RIDER[C.r].label} — a cup, ${Math.ceil(C.until-gameMinNow())} min remaining"><span class="bp-ico">🍺</span><span class="bp-time">${pillMin(Math.ceil(C.until-gameMinNow()))}</span></span>`:''; /* S2035 — a cup */
   return fedPill1()+cp;}
 function fedPill1(){const F=fedNow();if(!F)return '';const K=FED_KIND[F.kind],m=Math.ceil(F.until-gameMinNow());
-  return `<span class="buff-pill" title="${K.label} — ${K.say}${F.r?' · '+DISH_RIDER[F.r].label:''}, ${m} min remaining"><span class="bp-ico">${K.ico}</span><span class="bp-time">${m}m</span></span>`;}
+  return `<span class="buff-pill" title="${K.label} — ${K.say}${F.r?' · '+DISH_RIDER[F.r].label:''}, ${m} min remaining"><span class="bp-ico">${K.ico}</span><span class="bp-time">${pillMin(m)}</span></span>`;}
 
 // ── S1917 — climate B (Michael's 5 B; docs/design/climate-build.md, session 1): the Mark's cold and Aurenne's heat wear your
 // stamina, never your health. Exposure is a grade 0–2 read from where you stand, the hour, the season and the weather; warmth
@@ -1103,7 +1105,7 @@ function cookDraw(){const ov=document.getElementById('cookui');if(!ov)return;
         t+=`<div style="margin-top:6px;font-variant:small-caps;color:#7a1f10">Season with</div>`+row('','nothing')+H.map(h=>{const sea=seasonOf(BAG.find(b=>b&&b.type==='herb'&&herbKeyOf(b)===h.key));return row(h.key,`${h.name} (${h.n}) <i style="font-size:12px;color:#8a7050">${seasonSay(sea)}</i>`);}).join('');}}
     else if(R.id==='charcoal')t+='<div style="padding-left:12px;color:#8a7050;font-style:italic">for steel, at the forge</div>';
     else if(R.id==='pitch')t+='<div style="padding-left:12px;color:#8a7050;font-style:italic">for a ship’s patch</div>';}
-  const F=fedNow();if(F)t+=`<div style="margin-top:8px;border-top:1px dotted #a89060;padding-top:4px;font-style:italic">You are ${FED_KIND[F.kind].label.toLowerCase()}, ${Math.ceil(F.until-gameMinNow())} min more.</div>`;
+  const F=fedNow();if(F)t+=`<div style="margin-top:8px;border-top:1px dotted #a89060;padding-top:4px;font-style:italic">You are ${FED_KIND[F.kind].label.toLowerCase()}, ${(m=>m<120?m+' min':Math.round(m/6)/10+' hours')(Math.ceil(F.until-gameMinNow()))} more.</div>`;
   ov.querySelector('#ck-right').innerHTML=t;ov.querySelector('#ck-said').textContent=cookSaid;
   ov.querySelectorAll('#ck-right [data-s]').forEach(d=>d.onclick=()=>{cookSeason=d.dataset.s||null;cookSaid='';cookDraw();});
   ov.querySelectorAll('#ck-right [data-d]').forEach(d=>d.onclick=()=>{cookSecond=d.dataset.d||null;cookSaid='';cookDraw();});
