@@ -745,6 +745,7 @@ function useItem(i){
   if(it.firePot){const r=throwPot();if(r!==true)showMsg(r,'#cc8844');return;} /* S1837 — a fire pot thrown at a ship */
   if(it.name==='Charcoal'&&typeof filterWater==='function'&&filterWater(i))return; /* S2013 — a filter for raw water */
   if(it.vessel){drinkWater(i);return;} /* S2012 — water B: a drink leaves you Watered */
+  if(it.cup){drinkCup(i);return;} /* S2035 — an inn's cup */
   if(it.meal){eatMeal(i);return;} /* S1486 — a meal leaves you fed */
   if(it.name===TINDERBOX_NAME||it.log||it.food||it.second||it._typeKey==='fish'){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
   if(it.tool==='pick'||it.ore||it.ingot){useOreThing(i);return;} /* S1491 — a pick at a vein */
