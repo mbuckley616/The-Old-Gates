@@ -5,7 +5,7 @@
 // road and facing it, lying on the drawn ground, solid where the coach is and open beside it, its cost; then that the map has nothing of
 // it until you come within 40 m, has it then with no travel to it. Session 2025 adds the Mark's hunters' camp (PKIT.places.hunters), Session 2029 the Gatelands'
 // charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar),
-// Session 2034 the perched stone on its pavement (PKIT.places.erratic).
+// Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2037 the first place off the road, the shepherd's hut (offroadAt).
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -100,6 +100,34 @@ const er = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c
 console.log(JSON.stringify(er));
 check(`${er.id}: the perched stone ${er.road} m off its road, facing it (${er.fwd}); ${er.off && er.off.length} things on the ground within ${er.stands} m of it; ${er.clints} clints proud of it by ${er.proud && er.proud.join(' / ')} m (5th, 50th, 95th)`, !er.none && er.road >= 23 && er.road <= 35 && er.fwd > .9 && er.stands < .06 && er.clints > 30 && er.proud[0] > .01 && er.proud[2] < .16, er);
 check(`solid at the boulder (its crown ${er.crown} m) and the lace wall (${er.wallN} slabs), open before the stone and on the path; ${er.tris} triangles in ${er.draws} draws`, !er.none && er.boulder && er.wall && !er.before && !er.path && er.crown > 2.6 && er.tris < 20000 && er.draws <= 11, er);
+// the places off the road (Session 2037, #1292 A): one cell in three keeps one (offroadAt, 82), its kind drawn by its own stream, the same when
+// asked again; the first kind built is the Gatelands' shepherd's hut (PKIT.places.shepherd, places.js's gatelandsShepherdHut) on open pasture,
+// 150 m and more off every road and pad. Stood by the nearest: its door down the slope, the floor level, its hearthstone, rowan and spring on the
+// drawn ground, solid at the walls and the fold, open at the door and inside, its cost; found at 28 m, on the map with no travel to it
+const of = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => c.type !== 'sea' && !c.home), C = G.map(c => offroadAt(c)).filter(Boolean);
+  const again = G.map(c => { const keep = c._offroad; c._offroad = undefined; const d = offroadAt(c); c._offroad = keep; return d; }).filter(Boolean);
+  const same = again.length === C.length && again.every((d, i) => d.id === C[i].id && d.x === C[i].x && d.z === C[i].z && d.ry === C[i].ry);
+  C.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); const h = C.find(d => d.kind === 'shepherd');
+  return { cells: G.length, n: C.length, same, huts: C.filter(d => d.kind === 'shepherd').length, gl: C.every(d => nationOf(...d.cell.split(',').map(Number)).people === 'gatelander'), hut: h && { id: h.id, x: h.x, z: h.z, ry: h.ry } }; });
+console.log(JSON.stringify(of));
+check(`${of.n} of ${of.cells} cells keep a place off the road (${of.huts} the Gatelands' shepherd's hut), the same when asked again`, of.n > 0 && of.n < of.cells / 3 && of.same && of.huts > 0 && of.gl, of);
+await page.evaluate(D => { px = D.x + Math.sin(D.ry) * 60; pz = D.z + Math.cos(D.ry) * 60; }, of.hut);
+for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id); return !!(c && c._offroad.group && c._offroad.group.parent); }, of.hut.id); if (ok) break; await page.waitForTimeout(1000); }
+await g.spin('clear', 40);
+const hu = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad; if (!D.group || !D.group.parent) return { none: true };
+  const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], at = (u, v, y = .5) => solidAt(...W(u, v), D.y + y);
+  let bd = 1e9; for (const sg of RSEG) { const vx = sg.bx - sg.ax, vz = sg.bz - sg.az, t = Math.max(0, Math.min(1, ((D.x - sg.ax) * vx + (D.z - sg.az) * vz) / (vx * vx + vz * vz || 1))); bd = Math.min(bd, Math.hypot(sg.ax + vx * t - D.x, sg.az + vz * t - D.z)); }
+  const st = Math.max(...D.stands.map(l => { const [x, z] = W(l.x, l.z); return Math.abs(D.y + l.y - meshH(x, z)); })), fl = [[-2, -1], [2, -1], [-2, 1], [2, 1]].map(([u, v]) => Math.abs(meshH(...W(u, v)) - D.y));
+  const fy = meshH(...W(11, 9.7)) - D.y;
+  return { id, tris: D.tris, draws: D.draws, road: +bd.toFixed(1), down: +(meshH(...W(0, 10)) - meshH(...W(0, -10))).toFixed(2), stands: +st.toFixed(3), floor: +Math.max(...fl).toFixed(3),
+    back: at(0, -1.8), side: at(-2.7, 0), door: at(1, 1.8), inside: at(0, 0), fold: at(11, 9.7, fy + .5), foldIn: at(11, 5.5, meshH(...W(11, 5.5)) - D.y + .5) }; }, of.hut.id);
+console.log(JSON.stringify(hu));
+check(`${hu.id}: the shepherd's hut ${hu.road} m off the nearest road, its door down the slope (${hu.down} m over 20), its floor within ${hu.floor} m of level, ${hu.stands} m from its hearthstone, rowan and spring to the ground`, !hu.none && hu.road >= 150 && hu.down < -.5 && hu.floor < .1 && hu.stands < .06, hu);
+check(`solid at the hut's walls and the fold, open at the door, inside and in the fold; ${hu.tris} triangles in ${hu.draws} draws`, !hu.none && hu.back && hu.side && !hu.door && !hu.inside && hu.fold && !hu.foldIn && hu.tris < 22000 && hu.draws <= 16, hu);
+await page.evaluate(D => { px = D.x + Math.sin(D.ry) * 28; pz = D.z + Math.cos(D.ry) * 28; }, of.hut); await g.spin('clear', 60);
+const hm = await page.evaluate(id => { const e = mapEntries(getCell(...id.split('_').slice(1).map(Number))).find(e => e.id === id); return { disc: discovered(id), entry: e && { name: e.name, kind: e.kind, noTravel: !!e.noTravel }, travel: !!arrivalFor(id) }; }, of.hut.id);
+console.log(JSON.stringify(hm));
+check(`found at 28 m, on the map as "${hm.entry && hm.entry.name}", with no travel to it`, hm.disc && hm.entry && hm.entry.kind === 'offroad' && hm.entry.noTravel && !hm.travel, hm);
 if (process.env.SHOT) { const S = process.env.SHOT_OF === 'erratic' ? k.er : k.burn; await page.evaluate(D => { REN.setSize(960, 540, false); forceTime(10); px = D.x - Math.sin(D.ry) * 24 + Math.cos(D.ry) * 7; pz = D.z - Math.cos(D.ry) * 24 - Math.sin(D.ry) * 7; }, S); await g.spin('clear', 60); await page.screenshot({ path: process.env.SHOT }); }
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 5));
 await g.close();
