@@ -1894,7 +1894,7 @@
     const R=seededRng('fish',(s.chunk||(Math.round(s.cx)+','+Math.round(s.cz)))+':fish:'+Math.floor(worldState.gameTimeAbsMinutes||0));
     const pool=(cl==='cold'&&R()<.5)?FISH_KINDS.cold:(cl==='warm'&&R()<.5)?FISH_KINDS.warm:bed<-5?FISH_KINDS.deep:FISH_KINDS.shallow;
     const name=pool[Math.floor(R()*pool.length)];const big=R()<.12;
-    const item={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish'};
+    const item={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish',food:'fish'}; /* S2028 — a main for the pot */
     if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
     if(typeof bagAdd==='function'){bagAdd(item);if(typeof gateGift==='function'&&gateGift('uisce')&&uisceWaters()&&(typeof canCarry!=='function'||canCarry(item)))bagAdd(Object.assign({},item));} /* S1359 — Uisce's face: two fish a catch in the Gatelands' waters */s.cool=18+R()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
   function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;}

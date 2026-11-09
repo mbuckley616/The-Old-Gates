@@ -221,5 +221,59 @@ check(`at a fire Boil Water (listed: ${w2.boilRow}) cleans raw water and heats t
   w2.boilRow && w2.boil.made && w2.boil.skin === 'clean' && /hot/.test(w2.boil.hot) && w2.hot.hot && w2.hot.warm && !w2.hot.cool && !/hot/.test(w2.cold), w2);
 check(`a Charcoal used filters raw water clean (${w2.filter.kind}, ${w2.filter.left} left): "${w2.filter.said}"`, w2.filter.kind === 'clean' && w2.filter.left === 1, w2.filter);
 check(`the vessels by island: ${JSON.stringify(w2.isle)}; Queasy is the character's and saved`, w2.isle.gatelands + '' === 'Waterskin' && w2.isle.mark + '' === 'Waterskin,Canteen' && w2.isle.aurenne + '' === 'Waterskin,Flask' && w2.save, w2.isle);
+// S2028 — Cooking B, session 1 (`docs/design/cooking-build.md`): a main and an island's second make a dish, ×1.5 its length
+// (Filling ×2.25), with the second's rider; a caught fish cooks; a dish wants a pot; cooking a pair teaches it.
+const ck = await page.evaluate(() => {
+  const out = {}, S = lv => { SKILLS.cooking = { lv, p: 0 }; };
+  BAG.length = 0; worldState.fed = null; worldState.dishesKnown = {}; CAMPFIRES.splice(0).forEach(dropFire);
+  const eat = it => { eatMeal(BAG.indexOf(it)); playClockS += 1; tickDrink(); };
+  const lid0 = lid, h0 = currentHouse; lid = 'int_test'; currentHouse = { type: 'inn' };
+  // a trout at a hearth
+  bagAdd(troutItem()); const tf = cookAt('fish'); out.trout = { made: tf.made, name: tf.item && tf.item.name, left: bagCount(b => b.name === 'Trout') };
+  out.troutSaved = _serItem(troutItem()).food === 'fish';
+  // lengths at Cooking 5
+  S(5); const mult = skillMult('cooking'); out.mult = mult;
+  bagAdd(survItem('meat', 6)); bagAdd(secondItem('butter', 2)); bagAdd(secondItem('oats', 1));
+  SKILL_LAST.delete('cooking'); const p0 = SKILLS.cooking.p; const rich = cookAt('meat', null, 'butter'); out.uses = SKILLS.cooking.p - p0;
+  out.rich = { name: rich.item.name, r: rich.item.meal.r, learnt: rich.learnt, butterLeft: bagCount(b => b.second === 'butter') };
+  const st0 = effMaxStamina(); eat(rich.item); out.richMins = Math.round(fedNow().until - gameMinNow()); out.richStam = effMaxStamina() / st0;
+  const fill = cookAt('meat', null, 'oats'); worldState.fed = null; eat(fill.item); out.fillMins = Math.round(fedNow().until - gameMinNow());
+  out.noOats = cookAt('meat', null, 'oats').why;
+  // Restoring once
+  bagAdd(secondItem('apples', 2)); const ap1 = cookAt('meat', null, 'apples').item; cookAt('meat', null, 'apples');
+  worldState.fed = null; PHP = 10; eat(ap1); out.rest1 = PHP - 10; PHP = 10; eat(BAG.find(b => b.meal && b.meal.r === 'restoring')); out.rest2 = PHP - 10;
+  // Warmth and Cool beside the kind's
+  bagAdd(secondItem('curd')); bagAdd(secondItem('olives')); bagAdd(survItem('produce'));
+  worldState.fed = null; eat(cookAt('meat', null, 'curd').item); out.warm = warmthNow();
+  worldState.fed = null; eat(cookAt('produce', null, 'olives').item); out.cool = coolNow();
+  // the page: the seconds in the bag, the rider *?* until known
+  bagAdd(secondItem('rye')); bagAdd(secondItem('butter')); cookSel = 'meat'; cookSecond = null; openCookPage();
+  const rows = [...document.querySelectorAll('#ck-right [data-d]')].map(d => d.textContent.trim()); out.rows = rows;
+  document.querySelector('#ck-right [data-d="rye"]').click(); cookGo(); out.said = document.getElementById('ck-said').textContent; closeCookPage(); cookSecond = null;
+  // fires: a campfire roasts; a dish there needs a mess kit
+  out.known = Object.keys(dishesKnown()).sort();
+  lid = lid0; currentHouse = h0; bagAdd(survItem('meat', 3)); bagAdd(survItem('tinderbox')); bagAdd(survItem('log', 1)); bagAdd(secondItem('wheat', 2)); lightFire();
+  out.camp = { roast: cookAt('meat').made, noKit: cookAt('meat', null, 'wheat').why };
+  bagAdd({ ...SURV_ITEMS.messkit }); out.camp.kit = cookAt('meat', null, 'wheat').made;
+  CAMPFIRES.splice(0).forEach(dropFire);
+  // the shops by island, and the save
+  anchoredPlaces(); const isle = {}; for (const c of CELLS.values()) { if (c.type === 'sea') continue; const nk = nationKeyOf(c.i, c.j); if (isle[nk]) continue; const t = c.sites.find(t => t.kind === 'village'); if (t) isle[nk] = survivalFor({ type: 'misc', siteId: t.id }).filter(i => i.second).map(i => i.second + ':' + i.buyPrice); }
+  out.isle = isle; out.kit = survivalFor({ type: 'misc' }).some(i => i.tool === 'messkit') && !survivalFor({ type: 'inn' }).some(i => i.tool === 'messkit');
+  out.save = SS_CHAR_WS.dishesKnown === 1 && _applyLoadData.toString().includes("'dishesKnown'") && _serItem(secondItem('curd')).second === 'curd' && _serItem(ap1).meal.r === 'restoring';
+  return out;
+});
+console.log(JSON.stringify(ck));
+check(`a trout cooks at a hearth (${ck.trout.name}, ${ck.trout.left} left); a trout's kind keeps through the save`, ck.trout.made && ck.trout.name === 'Baked Fish' && ck.trout.left === 0 && ck.troutSaved, ck.trout);
+check(`meat and butter at Cooking 5: "${ck.rich.name}", ${ck.rich.r}, learnt ${ck.rich.learnt}, ${ck.uses} Cooking points; fed ${ck.richMins} min (1.5 × 120 × ${ck.mult.toFixed(2)}), stamina ×${ck.richStam.toFixed(4)}`,
+  ck.uses === 9 && ck.rich.r === 'rich' && ck.rich.learnt && ck.rich.butterLeft === 1 && Math.abs(ck.richMins - 180 * ck.mult) <= 1 && Math.abs(ck.richStam - 1.1875) < .01, ck.rich);
+check(`meat and oats is Filling: ${ck.fillMins} min (2.25 × 120 × ${ck.mult.toFixed(2)}); none left: "${ck.noOats}"`, Math.abs(ck.fillMins - 270 * ck.mult) <= 1 && /oats/.test(ck.noOats || ''));
+check(`Restoring: the first apple dish gives ${ck.rest1} health, the second, eaten while the first feeds you, ${ck.rest2}`, ck.rest1 === 30 && ck.rest2 === 0);
+check(`a curd stew warms by ${ck.warm.n} (${ck.warm.by}); a root stew with olives cools by ${ck.cool.n} (${ck.cool.by})`, ck.warm.n === 2 && ck.cool.n === 2, { w: ck.warm, c: ck.cool });
+check(`the page offers ${ck.rows.length} rows (${ck.rows.join(' | ')}): butter's rider named, rye's "?"; rye cooked says "${ck.said}"`,
+  ck.rows.length === 3 && /Butter.*Rich/.test(ck.rows.join('|')) && /Rye \(1\) \?/.test(ck.rows.join('|')) && /new to you/.test(ck.said), ck.rows);
+check(`dishes learnt: ${ck.known.join(', ')}`, ck.known.join() === 'meat:apples,meat:butter,meat:curd,meat:oats,meat:rye,produce:olives');
+check(`a campfire roasts (${ck.camp.roast}); a dish there without a pot: "${ck.camp.noKit}"; with a mess kit: ${ck.camp.kit}`, ck.camp.roast && /pot/.test(ck.camp.noKit || '') && ck.camp.kit, ck.camp);
+check(`the seconds by island: ${JSON.stringify(ck.isle)}; the mess kit at the goods shop only; the dishes, the seconds and the riders saved`,
+  ck.isle.gatelands + '' === 'oats:2,apples:3,butter:4' && ck.isle.mark + '' === 'rye:2,berries:3,curd:4' && ck.isle.aurenne + '' === 'wheat:2,dates:3,olives:4' && ck.kit && ck.save, ck.isle);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
