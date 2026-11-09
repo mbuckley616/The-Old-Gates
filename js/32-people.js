@@ -1850,7 +1850,7 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
   // the body. So the right forearm and wrist keep the grip's turn (from the upper arm, which still takes the walk's swing and a blow's
   // wind-up) while the driver holds and stands; a ragdoll or a sleeper takes the driver's again
   const gD=rig.hbG&&rig.hbG.dress||{},grip=(gD.spear||gD.staff)&&!gD.chair?map.map(([j],i)=>j==='elR'||j==='wrR'?i:-1).filter(i=>i>=0).map(i=>({i,q:map[i][1].quaternion.clone()})):null;
-  rig.hb={root:W,P,map,s0,t0,grip,hold:hbCloakArms(gD,map),full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
+  rig.hb={root:W,P,map,s0,t0,grip,hold:hbCloakArms(gD,map),tw:!rig.foe&&!rig.hbLazy&&gD&&gD.cloak&&!gD.cape?HB_CLOAK_TWIST:1,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
   // a foe's weapon (the game's kit, on the driver's gear bone, or the bow in its left hand) and shield (on the left forearm) hang on
   // the driver's bones, inside the driver's mesh, which is hidden while the builder's body shows: so they are carried in the builder's
   // group then, following their bone each frame (hbHold), the weapon's grip in the builder's fist, closed on it as people.js closes a
@@ -1911,7 +1911,9 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    townsfolk's only for now (`heel`): a foe's and the player's skeletons stay at 163 bones (their suites count them) */
 /* S1990 — the front of the thigh: in front of the hips the thighs' share eased in from `up` above the hips, so the top of the front stayed
    with the pelvis while the leading thigh came forward under it (Maeve of Dunmore's apron and skirt out by up to 12.7 cm). On the front the
-   ease starts `upF` higher (by the front-ness past the hips' line), so the cloak's front rides the thigh from nearer the waist */
+   ease starts `upF` higher (by the front-ness past the hips' line), so the cloak's front rides the thigh from nearer the waist
+   (S2009: the townsfolk's only, with the hem's bones: on your own body that front rode the thigh past your held right forearm, f10motion's
+   cloak check 2 points out by 11 mm since S1990) */
 /* S1999 — the front pushed by the knee (STUCK #1313): the cloak's front took at most `w2` of the thighs, so a stride put a leading thigh's
    apron (3 to 4.2 cm off the skin) out through it (Maeve of Dunmore, 8.2 cm). More of the thighs on the front came back onto the hands when
    a thigh swung back. A second helper bone at the hips (`hemBoneF`) takes the front below `lowF` of the way to the knee, up to `toe` of each
@@ -1936,7 +1938,7 @@ function hbCloakLegs(P,heel){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bone
   const B=[Mb(il),Mb(iL),Mb(iR),Mb(sL),Mb(sR),ih>=0?Mb(ih):null,iF>=0?Mb(iF):null],C=HB_CLOAK_LEGS,ss=u=>u<=0?0:u>=1?1:u*u*(3-2*u),M=new THREE.Matrix4(),E=new THREE.Matrix4(),p=new THREE.Vector3(),d=new THREE.Vector3();let n=0;
   for(const m of sheet){const g=m.geometry,pa=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight;
     for(let i=0;i<pa.count;i++){if(si.getComponent(i,0)!==il||sw.getComponent(i,0)<.999)continue;p.fromBufferAttribute(pa,i).applyMatrix4(B[0]);
-      const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+C.upF*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo);if(w<=1e-3)continue;
+      const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo);if(w<=1e-3)continue;
       /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
       const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hf=iF<0?0:C.toe*ss((-bk-C.arcF)/(1-C.arcF))*ss((hY-C.lowF*(hY-kY)-p.y)/Math.max(.05,(1-C.lowF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
       /* the back: the hem's bone in the fourth place, the shin's share left with the thigh */
@@ -2061,12 +2063,18 @@ function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root
 // under one thrown back off the right shoulder (a spear, a crossbow, a staff, a basket). A blow, a ragdoll and a sleeper are left alone
 // (S1435: your own body's arms are held side by side, each by rig.tpHold.L/.R, which tpPose sets while that arm is on the gait's swing)
 const HB_CLOAK_HOLD=1;
+/* S2009 — the twist left out under a long cloak (Pádraig of Dunmore's left fingertips, out through the front edge by 5 to 11 mm in 13 of 20
+   start phases of f4people's walk, at gait phase .61 to .63: the suite's red one run in two). The held arms took the hips' whole turn, so the
+   pelvis' yaw swung the forward-hanging hands 5 cm in toward the middle, under the cloak's front edge, which falls back as that knee trails.
+   A townsperson's arms under a long cloak (rig.hb.tw) now take the hips' tilt and none of their twist about the vertical; a cape (it hangs
+   from the shoulders: its arms came out by 3.6 mm without the twist), a foe and your own body keep all of it */
+const HB_CLOAK_TWIST=0;
 function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!!(D.spear||D.crossbow||D.staff||D.basket||D.lantern)&&(!D.cape||!!D.staff&&!D.spear&&!D.crossbow),sides=thrown?/L$/:/[LR]$/; /* S1798: a cape over a staff opens on the staff's side, as people.js's buildCloak */
   const i=map.map(([j],k)=>/^(sh|el|wr)[LR]$/.test(j)&&sides.test(j)?k:-1).filter(k=>k>=0);return i.length?new Set(i):null;}
 function hbHoldF(rig){const H=rig.hb,w=rig.w;if(!H.hold||!w||rig.limp||rig.sleep)return 0;if(rig.tpHold)return HB_CLOAK_HOLD;const e=rig.e;
   if(e&&((e._wind||0)>0||(e._lunge!=null&&e._lunge>0)||(e.atkAnim||0)>0))return 0;return HB_CLOAK_HOLD*Math.min(1,(w.walk||0)+(w.run||0));}
 function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!rig.limp&&!rig.sleep?H.grip:null,hf=hbHoldF(rig);
-  if(hf>0)hbRel(B[map[0][0]],rig.root,_hbqH).multiply(H.s0[0]);
+  if(hf>0){hbRel(B[map[0][0]],rig.root,_hbqH);if(H.tw<1){_hbqA.set(0,_hbqH.y,0,_hbqH.w).normalize();_hbq3.copy(_hbqA).invert();_hbqH.multiply(_hbq3);_hbq3.identity().slerp(_hbqA,H.tw);_hbqH.multiply(_hbq3);}_hbqH.multiply(H.s0[0]);}
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
     if(grip&&(i===grip[0].i||grip[1]&&i===grip[1].i)){b.quaternion.copy(grip[0].i===i?grip[0].q:grip[1].q);continue;}
     hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]);if(hf>0&&H.hold.has(i)){const k=rig.tpHold?hf*(rig.tpHold[j.slice(-1)]||0):hf;if(k>0)_hbq.copy(_hbqA.copy(_hbq).slerp(_hbqH,k));}_hbq.multiply(H.t0[i]);
