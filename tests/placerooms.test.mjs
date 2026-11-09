@@ -1,5 +1,7 @@
 // Saves by place (Session 243): a save made inside a room comes back in that room, at that spot, after a reload and Continue.
-// Split from `placesave` in Session 1280 for CI's 900 s (its section 3).
+// Split from `placesave` in Session 1280 for CI's 900 s (its section 3). Session 2001 (QA): split again, three rooms here and three in
+// `placerooms2`, which shares this file's body: the weekly run of 8 Nov took 166–196 s a round trip on a slow runner and the cap killed
+// both tries in the fourth room. `PLACEROOMS_KINDS` is set by placerooms2.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -24,7 +26,7 @@ const t00 = Date.now(); const lap = (s) => console.log(`${s} at ${Math.round((Da
 
 // 3. save inside each kind of place, reload, Continue: the same room at the same spot
 await g.settle('dunmore');
-const kinds = ['home', 'weapon', 'inn', 'guild_f', 'church', 'cellar'];
+const kinds = globalThis.PLACEROOMS_KINDS || ['home', 'weapon', 'inn'];
 const places = [];
 for (const t of kinds) {
   if (!(await page.evaluate(() => !!WORLD.settle.get('dunmore')))) await g.settle('dunmore');
@@ -35,6 +37,6 @@ for (const t of kinds) {
 }
 for (const r of places) check(`saved in the ${r.t}, continued in the same room at the same spot`, r.back.started && r.back.id === r.at.id && r.back.name === r.at.name && Math.hypot(r.back.x - r.at.x, r.back.z - r.at.z) < .5, r);
 
-lap('six rooms');
+lap(`${kinds.length} rooms`);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
