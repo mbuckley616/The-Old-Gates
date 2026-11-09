@@ -232,12 +232,13 @@ const ck = await page.evaluate(() => {
   bagAdd(troutItem()); const tf = cookAt('fish'); out.trout = { made: tf.made, name: tf.item && tf.item.name, left: bagCount(b => b.name === 'Trout') };
   out.troutSaved = _serItem(troutItem()).food === 'fish';
   // lengths at Cooking 5
-  S(5); const mult = skillMult('cooking'); out.mult = mult;
-  bagAdd(survItem('meat', 6)); bagAdd(secondItem('butter', 2)); bagAdd(secondItem('oats', 1));
-  SKILL_LAST.delete('cooking'); const p0 = SKILLS.cooking.p; const rich = cookAt('meat', null, 'butter'); out.uses = SKILLS.cooking.p - p0;
-  out.rich = { name: rich.item.name, r: rich.item.meal.r, learnt: rich.learnt, butterLeft: bagCount(b => b.second === 'butter') };
+  bagAdd(survItem('meat', 7)); bagAdd(secondItem('butter', 3)); bagAdd(secondItem('oats', 1));
+  S(50); SKILL_LAST.delete('cooking'); const p0 = SKILLS.cooking.p; cookAt('meat', null, 'butter'); out.uses = SKILLS.cooking.p - p0; out.learnt1 = !!dishesKnown()['meat:butter'];
+  BAG.filter(b => b.meal).forEach(b => { b.qty = 0; }); for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i].qty <= 0) BAG.splice(i, 1);
+  S(5); const mult = skillMult('cooking'); out.mult = mult; const rich = cookAt('meat', null, 'butter');
+  out.rich = { name: rich.item.name, r: rich.item.meal.r, learnt: out.learnt1 && rich.learnt === false, butterLeft: bagCount(b => b.second === 'butter') };
   const st0 = effMaxStamina(); eat(rich.item); out.richMins = Math.round(fedNow().until - gameMinNow()); out.richStam = effMaxStamina() / st0;
-  const fill = cookAt('meat', null, 'oats'); worldState.fed = null; eat(fill.item); out.fillMins = Math.round(fedNow().until - gameMinNow());
+  S(5); const fill = cookAt('meat', null, 'oats'); worldState.fed = null; eat(fill.item); out.fillMins = Math.round(fedNow().until - gameMinNow());
   out.noOats = cookAt('meat', null, 'oats').why;
   // Restoring once
   bagAdd(secondItem('apples', 2)); const ap1 = cookAt('meat', null, 'apples').item; cookAt('meat', null, 'apples');
