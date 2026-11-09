@@ -235,12 +235,12 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   8 Nov 12:21–14:50 UTC; every one red on both tries unless named). Session 1994 filed the first shards' reds; these are the shards that
   had not finished then. Each item is one suite; strike it with the session that fixes it. Not bisected: each was green on 1 Nov's
   weekly run (c97ed1c) unless named.
-  - **`boxspots`** (for the look builder: the shop rooms, `buildInteriorFor`, `js/83`/`84`). *no box's mesh passes through another piece
+  - ~~**`boxspots`** (for the look builder: the shop rooms, `buildInteriorFor`, `js/83`/`84`). *no box's mesh passes through another piece
     of furniture*: Mira's Apothecary and The Old Cottage, both with the box at x 0.6 z 1 (meshHits `[-1.25,0.99,0.06,1.1,0.11,1.26]` and
-    `[0.6,3.34,0,0.88,-1.62,1.45]`). The same two shops fail `shopsight` and the same town's armoury fails `witness`: one cause is likely.
-  - **`shopsight`** (for the look builder, with `boxspots`). *the keeper walks: every one moved at least a unit from the counter in ten
+    `[0.6,3.34,0,0.88,-1.62,1.45]`). The same two shops fail `shopsight` and the same town's armoury fails `witness`: one cause is likely.~~ — fixed, Session 2010 (the suite measured the kit room's group before its world matrix was updated, 4.2 m off; and a merged mesh's union box is not a piece)
+  - ~~**`shopsight`** (for the look builder, with `boxspots`). *the keeper walks: every one moved at least a unit from the counter in ten
     minutes*: 5 of 23 keepers moved 0 (Lorcan's Forge, The Armory, Bram's Forge, Mira's Apothecary, The Old Cottage); the rest 3.2–4.7.
-    The forges are the kit's forge room (S1855); a keeper with no floor to walk to is the first suspect.
+    The forges are the kit's forge room (S1855); a keeper with no floor to walk to is the first suspect.~~ — fixed, Session 2010 (the kit rooms' keepers stand at their work by design; the walk is asked of those given floor)
   - **`witness`** (for the look builder; red on the first try, not retried). Bríd's Armoury: the back-room box is behind 2 walls from the
     counter, not 1 (`[5.24,2,false]`), so the snapped pick is not heard and the keeper never comes (`{"open":false,"d":4.64}`). The
     other five shops: 1 wall, heard, the door open at 0.6, 480/480. Red the same way here on main at s1375 (`[5.27,2,false]`).

@@ -14,7 +14,7 @@ for (const id of TOWNS) { await g.settle(id);
       const W = h.intW, D = h.intD, sc = X.g.parent;
       // 1. the chest as drawn against every other solid across its height (its own collision box is a little larger
       // than the chest, .64 × .56 about a .30 × .24 shop chest, so two collision boxes may touch where nothing does)
-      X.g.updateMatrixWorld(true); cb.setFromObject(X.g); cb.expandByScalar(-.02);
+      sc.updateMatrixWorld(true); cb.setFromObject(X.g); cb.expandByScalar(-.02); /* S2010: the whole room, so a kit room's group (moved into the room's frame) is measured where it stands */
       const own = INT_SOL.find(s => Math.abs((s.x0 + s.x1) / 2 - X.x) < .01 && Math.abs((s.z0 + s.z1) / 2 - X.z) < .01);
       const fy = X.y || 0; /* S1437: the chest's own floor (a kit townhouse's is on the second floor) */
       const solHits = INT_SOL.filter(s => s !== own && s.x0 < cb.max.x && s.x1 > cb.min.x && s.z0 < cb.max.z && s.z1 > cb.min.z && (s.y0 == null || s.y0 < cb.max.y) && (s.y1 == null || s.y1 > fy + .02))
@@ -27,7 +27,8 @@ for (const id of TOWNS) { await g.settle(id);
       sc.traverse(o => { if (!o.isMesh || !o.geometry) return; let p = o; while (p) { if (p === X.g) return; p = p.parent; }
         bb.setFromObject(o); const sx = bb.max.x - bb.min.x, sy = bb.max.y - bb.min.y, sz = bb.max.z - bb.min.z;
         if (sx > 3.5 || sz > 3.5 || sy < .05 || sy > 2.8) return;
-        if (bb.intersectsBox(cb)) meshHits.push([+bb.min.x.toFixed(2), +bb.max.x.toFixed(2), +bb.min.y.toFixed(2), +bb.max.y.toFixed(2), +bb.min.z.toFixed(2), +bb.max.z.toFixed(2)]); });
+        /* S2010: the kit rooms merge their pieces by material, so a mesh's box is the union of many pieces; a hit is a vertex inside the chest */
+        if (bb.intersectsBox(cb) && (() => { const P = o.geometry.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).applyMatrix4(o.matrixWorld); if (cb.containsPoint(v)) return true; } return false; })()) meshHits.push([+bb.min.x.toFixed(2), +bb.max.x.toFixed(2), +bb.min.y.toFixed(2), +bb.max.y.toFixed(2), +bb.min.z.toFixed(2), +bb.max.z.toFixed(2)]); });
       // 3. walkable from the door: flood a 0.1 grid from inside the front door
       const st = .1, nx = Math.ceil(W / st), nz = Math.ceil(D / st), seen = new Uint8Array(nx * nz), q = [];
       // walking on the floor only: anything standing on it blocks, even what the game lets you step up onto

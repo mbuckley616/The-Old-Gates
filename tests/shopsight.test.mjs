@@ -55,7 +55,11 @@ console.log(JSON.stringify(rows));
 check('the shops of four towns were entered with a keeper and a strongbox (at least 12)', ok.length >= 12, rows.map(r => [r.town, r.name, !r.none]));
 check('both kinds of shop are in the sample', one.length >= 2 && two.length >= 2, [one.length, two.length]);
 check('the keeper stays inside their own bounds all ten minutes', ok.every(r => r.inBounds), ok.filter(r => !r.inBounds));
-check('the keeper walks: every one moved at least a unit from the counter in ten minutes', ok.every(r => r.farthest >= 1), ok.map(r => [r.name, r.farthest]));
+// S2010: a kit room's keeper stands at their work (S1855's smith at the anvil, S1876's apothecary behind the counter, and every kit room
+// since: their amble's bounds are one point), so the walk is asked of a keeper who was given floor to walk, and the still ones are listed
+const still = r => r.bounds.minX === r.bounds.maxX && r.bounds.minZ === r.bounds.maxZ;
+console.log('  keepers at their work (a kit room, bounds one point): ' + ok.filter(still).map(r => r.name).join(', '));
+check('the keeper walks: every one given floor moved at least a unit from the counter in ten minutes, and one at their work stays put', ok.every(r => still(r) ? r.farthest < .01 : r.farthest >= 1), ok.map(r => [r.name, still(r), r.farthest]));
 check('a longer pick is never less likely to be seen', ok.every(r => r.picks.every((v, j) => j === 0 || v >= r.picks[j - 1])), ok.map(r => r.picks));
 check('a back-room strongbox is never seen while its door is shut', two.filter(r => r.doors > 0).every(r => r.seen === 0), two.map(r => [r.name, r.seen]));
 check('no page errors', g.errs.length === 0, g.errs);
