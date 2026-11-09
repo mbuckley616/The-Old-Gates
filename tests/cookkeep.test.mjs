@@ -1,6 +1,6 @@
 // Cooking B, session 2 (Session 2033; `docs/design/cooking-build.md`): the clay oven and keeping. Every inn and every Aurennais home has
 // an oven; there a grain dish (a main with oats, rye or wheat) may be a bake, the same dish that keeps 15 game days against a stew's or a
-// roast's 3. A meal past its days has turned: half its length, its rider kept, *(turned)* in its name. The day and the bake ride the save.
+// roast's 3. Session 2035: the inn's table, the dish of the day, the innkeeper's dish and the cups. A meal past its days has turned: half its length, its rider kept, *(turned)* in its name. The day and the bake ride the save.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -69,5 +69,43 @@ check(`sixteen days on: "${r.d16.pie}" turned, feeds ${r.d16.pieMins} min, its r
   r.d16.pieT && /\(turned\)$/.test(r.d16.pie) && Math.abs(r.d16.pieMins - r.d16.full / 2) <= 1 && r.d16.r === 'filling' && !r.oldT, r.d16);
 check(`a reload keeps "${r.reload.before}" as "${r.reload.after}" (day ${r.reload.made}) and the dishes known (${r.reload.known.join(', ')})`,
   r.reload.before && r.reload.after === r.reload.before && r.reload.made != null && r.reload.known.join() === 'meat:oats,produce:oats', r.reload);
+// S2035 — session 3, the inn's table: the dish of the day by the house and the day, the innkeeper's dish, the three cups of the island
+const t = await page.evaluate(() => {
+  const out = {}; BAG.length = 0; worldState.fed = null; worldState.cup = null; worldState.dishesKnown = {};
+  const drink = it => { useItem(BAG.indexOf(it)); playClockS += 1; tickDrink(); };
+  anchoredPlaces(); const town = {}; for (const c of CELLS.values()) { if (c.type === 'sea') continue; const nk = nationKeyOf(c.i, c.j); if (town[nk]) continue; const t = c.sites.find(t => t.kind === 'village'); if (t) town[nk] = t.id; }
+  const inn = isle => ({ type: 'inn', id: 'g_' + town[isle] + '_inn', siteId: town[isle] });
+  const hM = inn('mark'), hA = inn('aurenne'), hG = inn('gatelands');
+  out.menu = { a: dishOfDay(hM), b: dishOfDay(hM), talk: dishTalk(hM), pairs: innPairs(hM).length, isle: innPairs(hM).every(p => DISH_SECONDS[p.split(':')[1]].isle === 'mark') };
+  const T0 = worldState.gameTimeAbsMinutes, days = new Set();
+  for (let d = 0; d < 12; d++) { worldState.gameTimeAbsMinutes = T0 + d * 1440; days.add(dishOfDay(hM)); if (dishTalk(hM) === dishOfDay(hM)) out.menu.clash = true; }
+  worldState.gameTimeAbsMinutes = T0; out.menu.days = days.size;
+  const st = survivalFor(hM); const dd = st.find(i => i.meal && i.meal.pair);
+  out.stock = { dish: dd && dd.meal.pair, price: dd && dd.buyPrice, cups: st.filter(i => i.cup).map(i => i.cup + ':' + i.buyPrice).join(), aur: survivalFor(hA).filter(i => i.cup).map(i => i.cup).join(), shop: survivalFor({ type: 'misc', siteId: town.mark }).some(i => i.cup || (i.meal && i.meal.pair)) };
+  // eating the bought dish teaches it
+  bagAdd({ ...dd, qty: 1 }); useItem(BAG.findIndex(b => b.meal)); playClockS += 1; tickDrink(); out.eatLearnt = !!dishesKnown()[dd.meal.pair];
+  // the innkeeper's topic
+  const topic = innTopics(hM, 'markman').find(x => /cooking/.test(x.label)); const said = topic && topic.fn();
+  out.talk = { label: topic && topic.label, said, learnt: !!dishesKnown()[dishTalk(hM)] };
+  // the cups: the grain's fills out the meal, the sweet's restores, the island's own is its rider beside fed
+  worldState.fed = null; bagAdd(cupItem('rye')); drink(BAG.find(b => b.cup === 'rye')); out.ryeUnfed = worldState.fed;
+  setFed('hearty', 1); const u0 = fedNow().until; bagAdd(cupItem('rye')); drink(BAG.find(b => b.cup === 'rye')); out.ryeAdds = Math.round(fedNow().until - u0);
+  PHP = 10; stamina = 0; bagAdd(cupItem('berries')); drink(BAG.find(b => b.cup === 'berries')); out.berries = [PHP - 10, stamina];
+  const w0 = warmthNow().n; bagAdd(cupItem('curd')); drink(BAG.find(b => b.cup === 'curd')); out.warm = [w0, warmthNow().n, Math.round(worldState.cup.until - gameMinNow())];
+  worldState.cup = null; worldState.fed = null; const c0 = coolNow().n; bagAdd(cupItem('olives')); drink(BAG.find(b => b.cup === 'olives')); out.cool = [c0, coolNow().n];
+  worldState.cup = null; worldState.fed = null; const s0 = effMaxStamina(); setFed('hearty', 1); bagAdd(cupItem('butter')); drink(BAG.find(b => b.cup === 'butter')); out.rich = effMaxStamina() / s0;
+  out.pill = /a cup/.test(fedPill());
+  out.save = SS_CHAR_WS.cup === 1 && _applyLoadData.toString().includes("'cup'") && _serItem(cupItem('curd')).cup === 'curd';
+  worldState.cup = null; worldState.fed = null;
+  return out;
+});
+console.log(JSON.stringify(t));
+check(`the dish of the day: ${t.menu.a} twice the same; ${t.menu.days} dishes over 12 days of ${t.menu.pairs}, all the Mark's; the innkeeper's (${t.menu.talk}) never the day's`,
+  t.menu.a === t.menu.b && t.menu.pairs === 9 && t.menu.isle && t.menu.days >= 3 && !t.menu.clash, t.menu);
+check(`the inn sells ${t.stock.dish} at ${t.stock.price} and the cups ${t.stock.cups} (Aurenne's ${t.stock.aur}); the goods shop neither; eating it teaches it (${t.eatLearnt})`,
+  t.stock.price === 20 && t.stock.cups === 'rye:12,berries:12,curd:12' && t.stock.aur === 'wheat,dates,olives' && !t.stock.shop && t.eatLearnt, t.stock);
+check(`"${t.talk.label}": "${t.talk.said}", learnt ${t.talk.learnt}`, /cooking/.test(t.talk.label || '') && /Stew/.test(t.talk.said || '') && t.talk.learnt, t.talk);
+check(`cups: rye unfed leaves no meal, fed adds ${t.ryeAdds} min; berries +${t.berries}; curd warms ${t.warm[0]} → ${t.warm[1]} for ${t.warm[2]} min; olives cool ${t.cool[0]} → ${t.cool[1]}; butter on a roast stamina ×${t.rich.toFixed(4)}; the pill; saved`,
+  !t.ryeUnfed && t.ryeAdds === 60 && t.berries[0] === 15 && t.berries[1] === 15 && t.warm[1] === t.warm[0] + 1 && t.warm[2] === 60 && t.cool[1] === t.cool[0] + 1 && Math.abs(t.rich - 1.1875) < .01 && t.pill && t.save, t);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

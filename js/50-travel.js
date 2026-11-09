@@ -736,6 +736,35 @@ function learnDish(pair){const K=dishesKnown();if(K[pair])return false;K[pair]=1
 function secondKnown(k){return Object.keys(dishesKnown()).some(p=>p.split(':')[1]===k);}
 function hasMessKit(){return BAG.some(b=>b&&b.tool==='messkit');}
 function potHere(){return hearthHere()||(!!campfireNear()&&hasMessKit());}
+// ── S2035 — session 3: the inn's table (`docs/design/cooking-build.md`). Every inn sells a dish of the day, one of its island's nine,
+// drawn by the house and the day (a friend in a shared world sees the same menu); eating a dish teaches it. Its innkeeper, asked
+// *What's cooking?*, teaches one other a day, by a second draw. And three cups of its island, one to each second's rider: the grain's
+// adds half a FED_MIN to the meal you are eating, the sweet's restores 15 and 15, the island's own gives its rider (Rich, Warmth,
+// Cool) for half a FED_MIN, beside fed, not instead (`worldState.cup`, the character's). Drink names are working names, keyed by second.
+const DISH_DAY_PRICE=20,CUP_PRICE=12,CUP_LEN=.5,CUP_RESTORE=15,DISH_MAINS=['meat','fish','produce'];
+const CUP_NAMES={oats:'Oat Ale',apples:'Apple Cider',butter:'Buttered Ale',rye:'Rye Beer',berries:'Berry Mead',curd:'Hot Whey',wheat:'Wheat Beer',dates:'Date Wine',olives:'Mint Tea'};
+const DISH_ADJ={filling:'filling',restoring:'restoring',rich:'rich',warmth:'warming',cool:'cooling'};
+function isleSeconds(nk){return Object.keys(DISH_SECONDS).filter(k=>DISH_SECONDS[k].isle===nk);}
+function innPairs(h){const nk=houseIsle(h)||'gatelands';const out=[];DISH_MAINS.forEach(m=>isleSeconds(nk).forEach(k=>out.push(m+':'+k)));return out;}
+function innKey(h){return (h&&(h.id||h.siteId))||'inn';}
+function dishOfDay(h){const P=innPairs(h);return P[Math.floor(seededRng('dish',innKey(h)+':'+gameDayNow())()*P.length)];}
+function dishTalk(h){const d=dishOfDay(h),P=innPairs(h).filter(p=>p!==d);return P[Math.floor(seededRng('dishtalk',innKey(h)+':'+gameDayNow())()*P.length)];}
+function dishOfDayItem(h){const [m,k]=dishOfDay(h).split(':');const it=mealItem(m,1,null,k);it.buyPrice=DISH_DAY_PRICE;return it;}
+function cupItem(k){return {name:CUP_NAMES[k],ico:k==='olives'||k==='curd'?'🍵':'🍺',type:'potion',weight:.5,buyPrice:CUP_PRICE,sellMult:.3,cup:k};}
+function cupNow(){const C=worldState.cup;return C&&C.until>gameMinNow()?C:null;}
+function cupRider(){const C=cupNow();return C?C.r:null;}
+// the innkeeper's topic: the dish learnt, said plainly (the named action is learnDish)
+function dishTalkSay(h){const p=dishTalk(h);if(!p)return '';learnDish(p);const S=DISH_SECONDS[p.split(':')[1]];
+  return `${DISH_NAMES[p]}. Put ${S.name.toLowerCase()} in the pot and it's ${DISH_ADJ[S.r]}.`;}
+function drinkCup(i){const it=BAG[i];if(!it||!it.cup)return;const S=DISH_SECONDS[it.cup];if(!S)return;
+  if(typeof DRINK!=='undefined'&&DRINK){showMsg('You are still drinking.','#cc8844');return;}
+  const nm=it.name,k=it.cup;it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
+  const go=()=>{let say;
+    if(S.r==='filling'){const F=fedNow();if(F){F.until+=Math.round(FED_MIN*CUP_LEN);say=`${nm} — the meal lasts ${Math.round(FED_MIN*CUP_LEN/60*10)/10} hours more.`;}else say=`${nm} — there is no meal in you to fill out.`;}
+    else if(S.r==='restoring'){PHP=Math.min(effMaxHP(),PHP+CUP_RESTORE);stamina=Math.min(effMaxStamina(),stamina+CUP_RESTORE);say=`${nm} — +${CUP_RESTORE} health and stamina.`;}
+    else{worldState.cup={r:S.r,until:gameMinNow()+Math.round(FED_MIN*CUP_LEN),k};say=`${nm} — ${DISH_RIDER[S.r].label} for ${Math.round(FED_MIN*CUP_LEN/60*10)/10} hours.`;}
+    showMsg(say,'#e8c890');if(typeof updateHUD==='function')updateHUD();};
+  if(typeof startDrink==='function')startDrink(go,nm);else go();}
 function survItem(k,qty){return {...SURV_ITEMS[k],qty:qty||1};}
 function hasTinderbox(){return BAG.some(b=>b&&b.name===TINDERBOX_NAME);}
 function bagCount(pred){let n=0;BAG.forEach(b=>{if(b&&pred(b))n+=b.qty||1;});return n;}
@@ -787,7 +816,7 @@ function tickSurvival(dt){const t=gameMinNow();
 function fedNow(){const F=worldState.fed;if(!F||!(F.until>gameMinNow()))return null;return F;}
 function fedKind(){const F=fedNow();return F?F.kind:null;}
 function fedRider(){const F=fedNow();return F&&F.r||null;}
-function fedRich(){return fedRider()==='rich'?DISH_RICH:1;} /* S2028 — Rich: the kind's number ×1.25 */
+function fedRich(){return fedRider()==='rich'||cupRider()==='rich'?DISH_RICH:1;} /* S2028 — Rich: the kind's number ×1.25 */
 function fedStamMult(){return fedKind()==='hearty'?1+.15*fedRich():1;}
 function fedManaMult(){return fedKind()==='clear'?1+.1*fedRich():1;}
 // S1500 — Full belly (Cooking 75): fed lasts through sleep; restAtBed (60-shop.js) moves its end on by the hours slept
@@ -814,9 +843,9 @@ function seasonSay(sea){const e=sea.eff;return e.type==='heal'?`+${e.amount} HP`
 function eatMeal(i){const it=BAG[i];if(!it||!it.meal)return;
   if(typeof DRINK!=='undefined'&&DRINK){showMsg('You are still eating.','#cc8844');return;}
   const m=it.meal,nm=it.name,mx=mealX(it);it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
-  const go=()=>{const was=fedNow();setFed(m.kind,m.s||1,m.r,mx);const K=FED_KIND[m.kind];const sd=m.season&&m.season.eff?herbKnownApply(m.season.eff,m.season.name):null; /* S1503 — Seasoned */
+  const go=()=>{const was=fedNow();setFed(m.kind,m.s||1,m.r,mx);const learnt=m.pair?learnDish(m.pair):false; /* S2035 — eating a dish teaches it */const K=FED_KIND[m.kind];const sd=m.season&&m.season.eff?herbKnownApply(m.season.eff,m.season.name):null; /* S1503 — Seasoned */
     let rs='';if(m.r){rs=' '+DISH_RIDER[m.r].label+'.';if(m.r==='restoring'){if(was&&was.r==='restoring')rs=' Restoring: you are fed by one already.';else{PHP=Math.min(effMaxHP(),PHP+DISH_RESTORE);stamina=Math.min(effMaxStamina(),stamina+DISH_RESTORE);rs=` Restoring: +${DISH_RESTORE} health and stamina.`;}}} /* S2028 — a dish's rider */
-    showMsg(`${nm} — ${K.label}: ${K.say} for ${Math.round(mealMins({s:m.s,x:mx})/60*10)/10} hours.${rs}${sd?' '+sd[0].replace(/\.+$/,'')+'.':''}`,K.col);if(typeof updateHUD==='function')updateHUD();};
+    showMsg(`${nm} — ${K.label}: ${K.say} for ${Math.round(mealMins({s:m.s,x:mx})/60*10)/10} hours.${rs}${sd?' '+sd[0].replace(/\.+$/,'')+'.':''}${learnt?' A dish new to you.':''}`,K.col);if(typeof updateHUD==='function')updateHUD();};
   if(typeof startDrink==='function')startDrink(go,nm);else go();}
 // what the fire can make from the bag: each recipe, what it takes, whether you have it
 const COOK_RECIPES=[
@@ -870,10 +899,13 @@ function riverFishItem(name){const f=RIVER_FISH[name];if(!f)return troutItem();r
 function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce},waterItem('skin')]; /* S2012 — a waterskin at every goods shop and inn */
   if(h.type==='misc')out.push({...SURV_ITEMS.messkit}); /* S2028 — the mess kit at every goods shop */
   try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));if(nk==='mark')out.push(waterItem('canteen'));if(nk==='aurenne')out.push(waterItem('flask'));
-    for(const k in DISH_SECONDS)if(DISH_SECONDS[k].isle===nk)out.push(secondItem(k));}}catch(e){} /* S2013 — by island; S2028 — its three seconds */
+    for(const k in DISH_SECONDS)if(DISH_SECONDS[k].isle===nk)out.push(secondItem(k));
+    if(h.type==='inn'){out.push(dishOfDayItem(h));isleSeconds(nk).forEach(k=>out.push(cupItem(k)));}}}catch(e){} /* S2013 — by island; S2028 — its three seconds; S2035 — the inn's dish of the day and its three cups */
   const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port')out.push({...SURV_ITEMS.fish});return out;}
 // the buff bar's pill for fed
-function fedPill(){const F=fedNow();if(!F)return '';const K=FED_KIND[F.kind],m=Math.ceil(F.until-gameMinNow());
+function fedPill(){const C=cupNow(),cp=C?`<span class="buff-pill" title="${DISH_RIDER[C.r].label} — a cup, ${Math.ceil(C.until-gameMinNow())} min remaining"><span class="bp-ico">🍺</span><span class="bp-time">${Math.ceil(C.until-gameMinNow())}m</span></span>`:''; /* S2035 — a cup */
+  return fedPill1()+cp;}
+function fedPill1(){const F=fedNow();if(!F)return '';const K=FED_KIND[F.kind],m=Math.ceil(F.until-gameMinNow());
   return `<span class="buff-pill" title="${K.label} — ${K.say}${F.r?' · '+DISH_RIDER[F.r].label:''}, ${m} min remaining"><span class="bp-ico">${K.ico}</span><span class="bp-time">${m}m</span></span>`;}
 
 // ── S1917 — climate B (Michael's 5 B; docs/design/climate-build.md, session 1): the Mark's cold and Aurenne's heat wear your
@@ -904,9 +936,9 @@ function exposureNow(){const none={g:0,side:null,why:''};if(!_climOutside())retu
 // a mail or plate chest (the heavy line from tier 3: AR_FAM's mail and plate)
 function heavyChestOn(){const c=EQ.chest;return !!(c&&!c.line&&(c.tier||0)>=3);}
 function warmthNow(){const w=[];if(typeof cloakOn==='function'&&cloakOn('fur'))w.push('fur cloak');if(_hasBuff('resistCold'))w.push('Resist Cold');
-  if(fedKind()==='hearty')w.push('Hearty');if(fedRider()==='warmth')w.push('curd'); /* S2028 — a curd dish */{const W=wateredNow();if(W&&W.hot)w.push('a hot drink');}return {n:Math.min(2,w.length),by:w};} /* S2013 — the canteen's boiled water */
+  if(fedKind()==='hearty')w.push('Hearty');if(fedRider()==='warmth')w.push('curd');if(cupRider()==='warmth')w.push('a warming cup'); /* S2035 */ /* S2028 — a curd dish */{const W=wateredNow();if(W&&W.hot)w.push('a hot drink');}return {n:Math.min(2,w.length),by:w};} /* S2013 — the canteen's boiled water */
 function coolNow(){const w=[];if(typeof cloakOn==='function'&&cloakOn('cape'))w.push('cape');if(EQ.chest&&EQ.chest.line==='robe')w.push('robe');
-  if(_hasBuff('resistHeat'))w.push('Resist Heat');if(fedKind()==='clear')w.push('Clear');if(fedRider()==='cool')w.push('olives'); /* S2028 — an olive dish */{const W=wateredNow();if(W&&!W.hot)w.push('Watered');}return {n:Math.min(2,w.length),by:w};} /* S2012 — Watered, Cool 1; S2013 — not a hot drink */
+  if(_hasBuff('resistHeat'))w.push('Resist Heat');if(fedKind()==='clear')w.push('Clear');if(fedRider()==='cool')w.push('olives');if(cupRider()==='cool')w.push('a cooling cup'); /* S2035 */ /* S2028 — an olive dish */{const W=wateredNow();if(W&&!W.hot)w.push('Watered');}return {n:Math.min(2,w.length),by:w};} /* S2012 — Watered, Cool 1; S2013 — not a hot drink */
 // exposure after protection, with the 3 s fall; .raw is the grade before it, .by what is taking it off
 function climateGrade(){const e=exposureNow(),P=e.side==='cold'?warmthNow():e.side==='hot'?coolNow():{n:0,by:[]};
   const g=Math.max(0,e.g-P.n),now=performance.now();
