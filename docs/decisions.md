@@ -15,6 +15,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Water — how often a bottle is found in a barrel or chest, and full or empty (from the systems builder, 2026-11-09, #1355)
+**The question.** Water B's last vessel is the bottle (1 use, 0.3 kg, 2 gold, *the one you find rather than buy*), found in barrels, chests and inns' cellars; `docs/design/water.md` names where but not how often, nor whether it comes full. It would be one extra roll on its own seeded stream, so no other loot moves.
+
+**Options.**
+- **A (recommended).** A barrel in 8, a chest in 16, an inn's cellar barrel in 3. Found empty. Met in an evening on the home island; never replaces buying a skin.
+- **B.** Twice as common: a barrel in 4, a chest in 8, every cellar barrel one. Found empty.
+- **C.** As A, but found full of raw water (one drink, raw water's one-in-eight Queasy).
+- **D.** Rarer: a barrel in 20, a chest in 40, a cellar barrel in 6. Found empty; a find worth a log line.
+
+**Recommendation.** A.
+
+## Answered
 ### Cooking — how long being fed lasts in real minutes (from the systems designer, 2026-11-09, #1339)
 **The question.** The game clock runs one game hour to the real minute, so today's meal (*fed*, 2 game hours) lasts about 2 real minutes, and cooking B's dish (×1.5) and filled dish (×2.25) about 3 and 4.5. Every length in the cooking build sheet (`docs/design/cooking-build.md`) is a multiple of it. How long should *fed* last?
 
@@ -25,7 +37,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** B: it makes the page's "a filled stew carries a whole dungeon" true and the Mark's curd and Aurenne's olives a real way through climate B.
 
-## Answered
+Michael: **Ten times: roast 20 min, dish 30, filled 45.** (2026-11-09, on the control room)
+
 ### The six schools' great halls inside — how far a school changes a gate's space (from the concept artist, 2026-11-08, #1319)
 **The question.** Backlog L10 (OG-119, card F5's look half). Michael's B on the gate interiors gives every gate the same six space types (nave, crossing, stair hall, chasm, flooded hall, ring chamber) and says the schools re-dress them, but not how far. The prototype dresses one nave (27 m wide, four 14 m bays, vault to 33 m) three ways for each school. Page: `docs/prototypes/levelup/naves.html`; details in `docs/concepts.md`.
 
