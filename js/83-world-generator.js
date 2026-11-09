@@ -12,6 +12,26 @@
   const WAY_ASK={castle:['The keep?','keeps'],inn:['An inn?','inns'],guild_f:['The Fighters\u2019 Guild?',''],guild_m:['The Mages\u2019 Guild?',''],church:['The church?','churches'],weapon:['A smith?','smithies'],armor:['An armourer?','armouries'],potion:['An apothecary?','apothecaries'],misc:['Somewhere for supplies?','goods stores'],barber:['A barber?','barbers'],shipwright:['The shipwright?','']};
   const WAY_ORDER=['castle','inn','guild_f','guild_m','church','weapon','armor','potion','misc','barber','shipwright'];
   function wayFar(d,dir,open){return d<14?(open?`right here, just ${dir} of you`:`just ${dir} of here, you're nearly at the door`):d<55?`${dir} of here, a short walk`:d<130?`${dir} of here, on across the town`:`${dir} of here, the far side of town`;}
+  // S2022 — the band goes by the walk, not the crow's line (waybands: Dunmore's kit houses had stretched some walks 19 units past a
+  // band's edge). The walk is the shortest by a one-unit grid of the pad, eight ways at 1 and 1.414, never cutting a corner: the grid
+  // the watch's townRoute (S166) reads with the town, shared. A way found is checked against the world as it is now, as the watch's
+  // is (S378): a cell gone solid since is marked and the walk found again. Off the pad, or with no way, the straight line as before.
+  function wayGrid(S){if(!S._routeGrid)townRoute(S);return S._routeGrid;}
+  function wayWalk(S,o,x,z){const line=Math.hypot(x-o.x,z-o.z);try{const st=S&&S.site;if(!st)return line;const G=wayGrid(S),R=G.R,N=G.N,sol=G.sol;
+    if(Math.abs(o.x-st.x)>R-1||Math.abs(o.z-st.z)>R-1||Math.abs(x-st.x)>R-1||Math.abs(z-st.z)>R-1)return line;
+    for(let tries=0;tries<6;tries++){const w=wayWalk1(st,R,N,sol,o,x,z);if(!w)return line;let stale=false;
+      for(const k of w.cells)if(solidAt(st.x-R+k%N,st.z-R+Math.floor(k/N))){sol[k]=1;stale=true;}
+      if(!stale)return Math.max(line,w.d);}
+    return line;}catch(e){return line;}}
+  function wayWalk1(st,R,N,sol,o,x,z){
+    const ci=p=>Math.round(p-st.x+R),cj=p=>Math.round(p-st.z+R);const s0=cj(o.z)*N+ci(o.x),g0=cj(z)*N+ci(x);if(s0===g0)return null;
+    const D=new Float64Array(N*N).fill(1e9),P=new Int32Array(N*N).fill(-1);D[s0]=0;const hk=[s0],hd=[0];
+    const push=(k,d)=>{let n=hk.length;hk.push(k);hd.push(d);while(n>0){const q=(n-1)>>1;if(hd[q]<=d)break;hk[n]=hk[q];hd[n]=hd[q];n=q;}hk[n]=k;hd[n]=d;};
+    const pop=()=>{const k=hk[0],lk=hk.pop(),ld=hd.pop(),n=hk.length;if(n){let i=0;for(;;){let c=2*i+1;if(c>=n)break;if(c+1<n&&hd[c+1]<hd[c])c++;if(hd[c]>=ld)break;hk[i]=hk[c];hd[i]=hd[c];i=c;}hk[i]=lk;hd[i]=ld;}return k;};
+    while(hk.length){const d0=hd[0],c=pop();if(d0>D[c])continue;if(c===g0){const cells=[];for(let q=P[c];q>=0&&q!==s0;q=P[q])cells.push(q);return {d:d0,cells};}if(c!==s0&&sol[c])continue;const cx=c%N,cz=(c-cx)/N;
+      for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){if(!di&&!dj)continue;const ni=cx+di,nj=cz+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;
+        if(di&&dj&&(sol[cz*N+ni]||sol[nj*N+cx]))continue;const k=nj*N+ni,w=d0+(di&&dj?1.414:1);if(w<D[k]-1e-3){D[k]=w;P[k]=c;push(k,w);}}}
+    return null;}
   function waySet(x,z,label,glyph,siteId){WAY={x,z,label,glyph:glyph||'\u25c9',siteId};showMsg(`On your compass: ${label}`,'#f0dca0');}
   // indoors px/pz are the room's own coordinates: measure from the building's front door instead
   function wayFrom(){try{if(typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.exitX!=null)return {x:currentHouse.exitX,z:currentHouse.exitZ};}catch(e){}return {x:px,z:pz};}
@@ -21,11 +41,11 @@
     const S=SETTLE.get(site.id);if(!S||!S.houses||!S.houses.length)return [];const out=[];
     if(S.lordNpc&&S.lordNpc.def){const L=lordFor(site);const who=`${L.title} ${L.name}`;
       out.push({label:`Where's ${who}?`,fn:()=>{const o=wayFrom();if(def&&def._lord)return `You're looking at ${L.female?'her':'him'}.`;const LN=S.lordNpc;
-        if(!LN.g.visible){const sq=(LN.sched&&LN.sched.plaza)||{x:site.x,z:site.z};const d=Math.hypot(sq.x-o.x,sq.z-o.z),dir=compassWord(sq.x-o.x,sq.z-o.z);waySet(sq.x,sq.z,`the square (${who})`,'\ud83d\udc51',site.id);return `At this hour? Home, and not to be woken. ${L.female?'She\u2019s':'He\u2019s'} on the square in the morning: ${wayFar(d,dir,true)}.`;} // after dark the lord is indoors: point at the square
-        const g=LN.g.position;const d=Math.hypot(g.x-o.x,g.z-o.z),dir=compassWord(g.x-o.x,g.z-o.z);waySet(g.x,g.z,who,'\ud83d\udc51',site.id);WAY.follow=LN;return `${L.female?'She':'He'} keeps to the square most days \u2014 ${wayFar(d,dir,true)}.`;}});}
+        if(!LN.g.visible){const sq=(LN.sched&&LN.sched.plaza)||{x:site.x,z:site.z};const d=wayWalk(S,o,sq.x,sq.z),dir=compassWord(sq.x-o.x,sq.z-o.z);waySet(sq.x,sq.z,`the square (${who})`,'\ud83d\udc51',site.id);return `At this hour? Home, and not to be woken. ${L.female?'She\u2019s':'He\u2019s'} on the square in the morning: ${wayFar(d,dir,true)}.`;} // after dark the lord is indoors: point at the square
+        const g=LN.g.position;const d=wayWalk(S,o,g.x,g.z),dir=compassWord(g.x-o.x,g.z-o.z);waySet(g.x,g.z,who,'\ud83d\udc51',site.id);WAY.follow=LN;return `${L.female?'She':'He'} keeps to the square most days \u2014 ${wayFar(d,dir,true)}.`;}});}
     for(const t of WAY_ORDER){const hs=S.houses.filter(h=>h.type===t);if(!hs.length)continue;const ask=WAY_ASK[t];
       out.push({label:ask[0],fn:()=>{const o=wayFrom();let h=hs[0],bd=1e9;for(const x of hs){const d=Math.hypot(x.exitX-o.x,x.exitZ-o.z);if(d<bd){bd=d;h=x;}}
-        const dir=compassWord(h.exitX-o.x,h.exitZ-o.z);const far=wayFar(bd,dir);
+        const dir=compassWord(h.exitX-o.x,h.exitZ-o.z);const far=wayFar(wayWalk(S,o,h.exitX,h.exitZ),dir);
         if(def&&def._houseId===h.id)return bd<14?'You\u2019ve found it. It\u2019s mine.':`That\u2019s mine \u2014 ${far}. Go on, I\u2019ll be along.`;
         waySet(h.exitX,h.exitZ,h.name,bldOf(t).glyph,site.id);
         const nm=(t==='guild_f'||t==='guild_m')&&!/^The /.test(h.name)?'The '+h.name:h.name;
@@ -33,7 +53,7 @@
         const tail=t==='castle'?' The steward speaks for the lord.':(t==='guild_f'||t==='guild_m')?' Ask for the steward.':'';
         return lead+far+'.'+tail;}});}
     const mine=S.houses.find(h=>h.ownedByPlayer||ownedHouse(h.id));
-    if(mine)out.push({label:'My house?',fn:()=>{const o=wayFrom();const d=Math.hypot(mine.exitX-o.x,mine.exitZ-o.z),dir=compassWord(mine.exitX-o.x,mine.exitZ-o.z);waySet(mine.exitX,mine.exitZ,mine.name,'\u2302',site.id);return `Yours? You've forgotten already? ${wayFar(d,dir).replace(/^./,c=>c.toUpperCase())}.`;}});
+    if(mine)out.push({label:'My house?',fn:()=>{const o=wayFrom();const d=wayWalk(S,o,mine.exitX,mine.exitZ),dir=compassWord(mine.exitX-o.x,mine.exitZ-o.z);waySet(mine.exitX,mine.exitZ,mine.name,'\u2302',site.id);return `Yours? You've forgotten already? ${wayFar(d,dir).replace(/^./,c=>c.toUpperCase())}.`;}});
     return out;
   }
   function compassWord(dx,dz){

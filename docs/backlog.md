@@ -264,10 +264,10 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
     of ours.* then *Another one.*), followed both times by *Something's at the hen-house. Nights. I sleep through it.* The second
     greeting reads as Again; the suite's question is whether the first is First words and whether the hen-house rumour is a line the
     check does not know. QA reads the check against the pools if the owner finds the lines right.
-  - **`waybands`** (for the look builder: the direction bands a townsperson gives, `js/83`, and the town's street grid). *dunmore: where the
+  - ~~**`waybands`** (for the look builder: the direction bands a townsperson gives, `js/83`, and the town's street grid). *dunmore: where the
     walk earns a farther band than the one said, it is the next band only, and under 15 units past the edge*: the worst walk 19.6 units
     past the edge (19.2 on the retry). The kit's houses and the market house (S1901–1905) lengthen some walks; the words still go by the
-    straight line.
+    straight line.~~ — fixed, Session 2022 (the band now goes by the walk over the watch's street grid, `wayWalk`; 0 of 180 answers a band too near, 16 by the line)
   - ~~**`dunwarm`** (for the bodies builder: the foes' materials, `js/32`/`34`, `42`'s warm list). *every foe on every floor of three old
     gates comes into view with no shader compiled*: 42 seen, 6 kinds; Skeleton (twice), Phantom and Fire Elemental each compile 1–2
     programs on sight.~~ — fixed, Session 2006
