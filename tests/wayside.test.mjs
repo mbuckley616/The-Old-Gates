@@ -6,7 +6,7 @@
 // it until you come within 40 m, has it then with no travel to it. Session 2025 adds the Mark's hunters' camp (PKIT.places.hunters), Session 2029 the Gatelands'
 // charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar),
 // Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt);
-// Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground.
+// Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2046 the coach's lamp at night and its paint.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -32,6 +32,13 @@ const w = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c.
 console.log(JSON.stringify(w));
 check(`${w.id}: ${w.road} m off its road, facing it (${w.fwd}); the coach's panels ${w.low} m over the ground, what fell off it ${w.lie} m`, !w.none && w.road >= 19 && w.road <= 25 && w.fwd > .9 && w.low > -.05 && w.low < .15 && w.lie < .01, w);
 check(`solid where the coach lies, open on the road's side and behind; ${w.tris} triangles in ${w.draws} draws`, !w.none && w.mid && !w.road1 && !w.behind && w.tris < 9000 && w.draws <= 13, w);
+// Session 2046 (the critic, s1401: "a black box at 16 m in woodland, its lamp gave no light at 22h"): the coach's paint is lacquer, the
+// grain's relief without its colour; its lamp is dark by day and lit from 19:00, a light on the pool where the glass hangs
+const lp = async h => { await page.evaluate(h => forceTime(h), h); await g.spin('clear', 20); return page.evaluate(id => { const D = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id)._wayside;
+  if (!D.lamp) return { none: true }; const P = D.lamp.light.position; return { i: D.lamp.light.intensity, e: D.lamp.mat.emissiveIntensity, pool: sc.children.some(o => o.isPointLight && o.intensity > 0 && o.position.distanceTo(P) < .01),
+    up: +(P.y - meshH(P.x, P.z)).toFixed(2), map: !!D.group.getObjectByName('paint').material.map }; }, k.near.id); };
+const l12 = await lp(12), l22 = await lp(22); await page.evaluate(() => forceTime(12)); console.log(JSON.stringify({ l12, l22 }));
+check(`the coach's lamp dark at noon (${l12.i}), lit at 22h (${l22.i}, glass ${l22.e}) on the pool of lights, ${l22.up} m over the ground; its paint without the grain's colour`, !l12.none && l12.i === 0 && !l12.pool && l22.i > 1 && l22.e > 1 && l22.pool && l22.up > .5 && !l22.map, { l12, l22 });
 await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, k.near); await g.spin('clear', 60);
 const a = await page.evaluate(id => ({ disc: discovered(id), entry: mapEntries(getCell(...id.split('_').slice(1).map(Number))).some(e => e.id === id) }), k.near.id);
 await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 30; pz = D.z - Math.cos(D.ry) * 30; }, k.near); await g.spin('clear', 60);
