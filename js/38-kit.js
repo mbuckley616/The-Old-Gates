@@ -7573,6 +7573,132 @@ function aurenneOrrery(hAt, o = {}) {
       hut: { w: HW, d: HD, wall: T, eaves: EAV, ridge: APEX, door: { x: DX, z: HD / 2, w: DW, h: DH }, gableW: XW, gableE: XE, floor: +gmin.toFixed(3) },
       fold: { x: FC[0], z: FC[1], r: FR, wall: FT, h: FH, gate: { a: +aG.toFixed(4), w: GW }, breach: { a: +aB.toFixed(4), w: BW } }, spring: { x: SP[0], z: SP[1], water: +WAT.toFixed(3) }, rowan: { x: RW[0], z: RW[1] }, track: TR };
   }
+  // S2044 (card F8; OG-124's "a peat-cutting camp", with OG-014's bogland and OG-099's fens; Michael's A on #1292) — the Gatelands' peat-cutting
+  // camp in the open world, places.js's gatelandsPeatCamp (Session 991): a family's turf bank on a raised bog, the face cut down in two spits
+  // with the sleán, the newest sods spread to skin and the older footed, the barrow, the creel, the bog road with the rick of dry turf by it,
+  // and the cutters' bothy of sods under a roped thatch with its fire, crane and kettle at the door. The camp brings its own ground, as the
+  // prototype's does, because the cut is a metre and a half deep with a sheer face and the world's ground is drawn on a 4 m grid: the patch of
+  // bog (80 by 66 m) is laid a hand over the world, which offroadStamps levels at the camp's middle and sinks 1.85 m under the cut, and the
+  // world reads its height where you walk from o.ground (offroadGroundAt, 85). Three changes from the page: the bog's hummocks only rise (the
+  // world's level ground must never show through a hollow), the patch ends at a ragged rim where it dips under the world's ground (the world's
+  // turf draws the edge, not a rectangle), and the four flat bands of bog out to the fog are left out (the world is the bog beyond). Nobody is drawn. The prototype's frame is kept: the face along x at z 0,
+  // the cutaway to +z, the road along z -18.
+  // -> { group, tris, draws, sol, ground(x, z), rim(x, z) (under 0.88 on the bog), patch { x0, x1, z0, z1 }, sinks [[x, z, r]], bank { x0, x1, lip, bench, benchZ, floorZ, water },
+  //      spread, footings, slean, rick, hut, fire, road }
+  let PEATM = null;
+  function gatelandsPeatCamp(o = {}) {
+    const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+    if (!PEATM) PEATM = { bog: mat('turfDry', { ns: 1.2, color: 0x8e8a66, rough: 1 }), peat: mat('plaster', { ns: 1.4, color: 0x5a4030, rough: 1 }), floor: mat('plaster', { ns: 1.2, color: 0x46362a, rough: .7 }),
+      water: std(0x2e2824, .12), sodWet: mat('plaster', { ns: 1.5, color: 0x4e3a2c, rough: .85 }), sod: mat('plaster', { ns: 1.5, color: 0x6e543e, rough: 1 }), sodDry: mat('plaster', { ns: 1.5, color: 0x7a5e46, rough: 1 }),
+      grit: mat('rock', { ns: .8, color: 0x84765e, rough: 1 }), heather: std(0x4c3a40, 1), ling: std(0x5a5a34, 1), cotton: std(0xf2f0e8, .9), stone: mat('rock', { ns: 1.0, color: 0x8a867c, rough: 1 }),
+      wall: mat('turfDry', { ns: 1.2, color: 0xb0a088, rough: 1 }), ember: std(0x2a1408, .6, { emissive: new THREE.Color(1, .4, .12), emissiveIntensity: 2.2 }), rope: std(0x8a7650, .95),
+      basket: mat('thatch', { ns: .8, color: 0x8a7046, rough: 1 }), ash: mat('wood', { ns: .8, color: 0xb89a74, rough: .8 }), thatch: mat('thatch', { ns: 1.2, color: 0x9a8a66, rough: 1 }),
+      timber: mat('beam', { ns: 1.0, color: 0x8a6c4c, rough: .9 }), iron: std(0x2a2826, .5, { metalness: .6 }) };
+    const M = PEATM, B = new Map(), key = String(o.key || 'peat'), F = stream(key + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+    const rod = (k, a, b, rad, seg = 6) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg);
+      g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+    const sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+    // the land: the raised bog in low hummocks that only rise, kept flatter along the road and under the bothy, 2 cm over the world at the patch's
+    // edge; the cut stepped down from the lip at z 0
+    const CX = 18, RZ = -18, RW = 2.6, HX = 9, HZ = -24, HW = 3.6, HD = 2.8, BENCH = -.8, BZ = .45, WL = -1.45, PX = 40, PZ0 = -36, PZ1 = 30, LIFT = .02;
+    const hum = (x, z) => .16 + .07 * Math.sin(x * .9 + ph[0]) * Math.sin(z * .8 + ph[1]) + .05 * Math.sin(x * 2.1 + z * 1.6 + ph[2]) + .04 * Math.sin(x * .17 - z * .23 + ph[3]);
+    const calm = (x, z) => Math.max(sm(1 - (Math.abs(z - RZ) - RW / 2) / 1.5), sm(1 - Math.max(Math.abs(x - HX) - HW / 2 - .4, Math.abs(z - HZ) - HD / 2 - .4) / 1.5));
+    /* the bog's rim: a ragged oval round the camp, past which the patch dips 8 cm under the world's level ground, so the world's own turf draws the edge */
+    const rim = (x, z) => { const a = Math.atan2(z + 3, x); return Math.hypot(x / 38, (z + 3) / 32) + .06 * Math.sin(a * 5 + ph[0]) + .04 * Math.sin(a * 9 + ph[3]); };
+    const bog = (x, z) => { const e = sm((rim(x, z) - .88) / .1), edge = Math.abs(x) > PX - 1 || z < PZ0 + 1 || z > PZ1 - 1 ? 1 : e;
+      return (LIFT + hum(x, z) * (1 - .85 * calm(x, z)) * (1 - sm((Math.abs(x) - 31) / 5)) * (1 - sm((-z - 30) / 5)) * (1 - sm((z - 24) / 5))) * (1 - edge) - .08 * edge; };
+    const mx = x => x >= 0 ? 1 - sm((x - CX) / 8) : 1 - sm((-x - CX) / 3), wz = z => z <= 0 ? 0 : z < 12 ? 1 : 1 - sm((z - 12) / 4);
+    const cutY = (x, z) => z < BZ ? BENCH : -1.5 + .08 + .05 * Math.sin(x * .55 + ph[4]) * Math.sin(z * .7 + ph[5]) + .05 * Math.sin(x * .23 - z * .41 + ph[6]) + .03 * Math.sin(x * 1.3 + z * .9 + ph[7]) + (1 - sm(z - 2)) * .14 /* the cutter's ground at the face's foot, dry for 2 m out */;
+    const ground = (x, z) => { const m = mx(x) * wz(z), b = bog(x, z); return b + (cutY(x, z) - b) * m; };
+    { const xs = [], zs = []; for (let x = -PX; x < -24; x += 2) xs.push(x); for (let x = -24; x < 24; x += .8) xs.push(+x.toFixed(2)); for (let x = 24; x <= PX; x += 2) xs.push(x);
+      for (let z = PZ0; z < -20; z += 1.5) zs.push(z); for (let z = -20; z < -3; z += .85) zs.push(+z.toFixed(2)); for (let z = -3; z < -.1; z += .3) zs.push(+z.toFixed(2));
+      zs.push(-.005, .005, .15, .3, BZ - .006, BZ + .006); for (let z = .7; z < 12; z += .5) zs.push(z); for (let z = 12; z < 18; z += .6) zs.push(+z.toFixed(2)); for (let z = 18; z <= PZ1; z += 2) zs.push(z);
+      const NX = xs.length, pos = [], I = { bog: [], peat: [], floor: [] }; for (const z of zs) for (const x of xs) pos.push(x, ground(x, z), z);
+      for (let j = 0; j < zs.length - 1; j++) for (let i = 0; i < NX - 1; i++) { const a = j * NX + i, b = a + 1, c = a + NX, d = c + 1, ys = [a, b, c, d].map(q => pos[q * 3 + 1]), dy = Math.max(...ys) - Math.min(...ys), run = Math.min(xs[i + 1] - xs[i], zs[j + 1] - zs[j]);
+        const z = (zs[j] + zs[j + 1]) / 2, x = (xs[i] + xs[i + 1]) / 2, cut = mx(x) * wz(z), y = ys.reduce((s, v) => s + v) / 4;
+        (dy / run > 3 || (z > 0 && z < BZ && cut > .9) ? I.peat : cut > .5 && z < 12 && y < -.4 ? I.floor : I.bog).push(a, c, b, b, c, d); }
+      for (const [k, idx] of Object.entries(I)) { let g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); g = g.toNonIndexed(); if (k === 'peat') g.computeVertexNormals() /* the face flat-shaded: its edges are not smoothed into the bog */; put(g, k, 0, 0, 0, 0, 0, 0, .35); } }
+    // the water standing in the cutaway's hollows
+    { const g = new THREE.PlaneGeometry(2 * CX + 3, 13 - BZ + .005); g.rotateX(-Math.PI / 2); put(g, 'water', .5, WL, (13 + BZ - .005) / 2); }
+    // a sod: 0.3 long, 0.11 square, the sleán's cut
+    const SL = .3, SW = .11, sod = (k, x, y, z, rx, ry, rz) => put(new THREE.BoxGeometry(SW, SL, SW), k, x, y, z, rx, ry, rz, 2.2);
+    // spread: the newest sods in rows on the bank to skin over, lying flat along x, the row's gaps where the barrow went
+    const spread = []; for (let row = 0; row < 9; row++) { const z = -1.25 - row * .42; for (let x = -16; x < 3; x += SL + .06) { if (F() < .12) continue; const xx = x + (F() - .5) * .05, zz = z + (F() - .5) * .08;
+      sod('sodWet', xx, bog(xx, zz) + SW / 2 + .005, zz, 0, (F() - .5) * .25, Math.PI / 2); spread.push([+xx.toFixed(3), +zz.toFixed(3)]); } }
+    // footed: five on end leaning in, their tops touching, one laid across; in rows behind the spread and east of it
+    const footings = [], TILT = .3, RB = .12, RC = RB - SL / 2 * Math.sin(TILT); const foot = (cx, cz) => { const a0 = F() * 6.283, feet = [];
+      for (let k = 0; k < 5; k++) { const a = a0 + k * Math.PI * 2 / 5 + (F() - .5) * .2, bx = cx - RB * Math.sin(a), bz = cz - RB * Math.cos(a), gy = bog(bx, bz), y = gy + SL / 2 * Math.cos(TILT) + SW / 2 * Math.sin(TILT) - .005;
+        sod('sod', cx - RC * Math.sin(a), y, cz - RC * Math.cos(a), TILT, a, 0); feet.push([+bx.toFixed(3), +(y - SL / 2 * Math.cos(TILT) - SW / 2 * Math.sin(TILT)).toFixed(3), +bz.toFixed(3)]); }
+      const top = Math.max(...feet.map(f => f[1])) + SL * Math.cos(TILT) - .02; sod('sod', cx, top + SW / 2, cz, 0, a0 + .5, Math.PI / 2); footings.push({ x: +cx.toFixed(3), z: +cz.toFixed(3), feet, top: +top.toFixed(3) }); };
+    for (let z = -6; z > -11.5; z -= 1.15) for (let x = -15.5; x < 15.5; x += 1.25) if (F() > .3) foot(x + (F() - .5) * .3, z + (F() - .5) * .3);
+    for (let z = -1.6; z > -4.8; z -= 1.1) for (let x = 5; x < 15.5; x += 1.2) if (F() > .2) foot(x + (F() - .5) * .3, z + (F() - .5) * .3);
+    // the sleán: an ash shaft stood in the bank by the lip, its blade and its wing in the peat
+    const SX = -3.2 + (F() - .5), SZ = -.42, slTilt = .22, slY = bog(SX, SZ), SH = 1.05, BL = .3, tipY = slY - .2;
+    { const dir = V3(0, Math.cos(slTilt), -Math.sin(slTilt)), tip = V3(SX, tipY, SZ), bh = tip.clone().addScaledVector(dir, BL), top = bh.clone().addScaledVector(dir, SH);
+      put(new THREE.BoxGeometry(.13, BL, .012), 'iron', SX, (tipY + bh.y) / 2, SZ - BL / 2 * Math.sin(slTilt), slTilt); put(new THREE.BoxGeometry(.012, BL * .8, .1), 'iron', SX + .065, (tipY + bh.y) / 2 + .03, SZ - BL / 2 * Math.sin(slTilt) - .05, slTilt);
+      rod('ash', bh.toArray(), top.toArray(), .02); put(new THREE.BoxGeometry(.2, .035, .035), 'ash', top.x, top.y, top.z, slTilt); }
+    const slean = { x: +SX.toFixed(3), z: SZ, tip: +tipY.toFixed(3), top: +(tipY + (BL + SH) * Math.cos(slTilt)).toFixed(3), ground: +slY.toFixed(3) };
+    // the turf barrow: a slatted bed with its front board, one plank wheel, the handles and the legs; half a load of wet sods on it
+    const BX = 5.6, BZ2 = -1.9; { const ry = .3 + (F() - .5) * .2, gy = bog(BX, BZ2), c = Math.cos(ry), s = Math.sin(ry), P = (u, v, h) => [BX + u * c + v * s, gy + h, BZ2 - u * s + v * c];
+      const bed = .5; for (let k = 0; k < 6; k++) put(new THREE.BoxGeometry(.11, .025, 1.05), 'ash', ...P(-.3 + k * .12, 0, bed), 0, ry);
+      put(new THREE.BoxGeometry(.72, .45, .03), 'ash', ...P(0, .6, bed + .2), -.5, ry); for (const u of [-.38, .38]) rod('ash', P(u * .75, .72, .28), P(u, -1.2, .58), .025);
+      const w = new THREE.CylinderGeometry(.27, .27, .05, 14); w.rotateZ(Math.PI / 2); put(w, 'ash', ...P(0, .78, .27), 0, ry); for (const u of [-.3, .3]) rod('ash', P(u, -.5, 0), P(u, -.5, bed), .025);
+      for (let k = 0; k < 10; k++) sod('sodWet', ...P(-.24 + (k % 5) * .12, -.2 + Math.floor(k / 5) * .32, bed + .07), Math.PI / 2, ry, 0); }
+    // a creel by the footings
+    { const g = new THREE.CylinderGeometry(.26, .2, .42, 14, 1, true); put(g, 'basket', 3.4, bog(3.4, -6.3) + .21, -6.3); put(new THREE.CircleGeometry(.2, 14).rotateX(-Math.PI / 2), 'basket', 3.4, bog(3.4, -6.3) + .01, -6.3); }
+    // the bog road: gravel on the bog, a hand's breadth proud, its edges sunk; it stops at the rim, where the world's ground takes over
+    for (let x = -36; x < 22; x += 1) { if (rim(x + .5, RZ) > .86) continue; const y = Math.max(bog(x, RZ - 1), bog(x, RZ + 1), bog(x + 1, RZ)) + .04; put(new THREE.BoxGeometry(1.02, .14, RW), 'grit', x + .5, y - .03, RZ + (F() - .5) * .04, 0, (F() - .5) * .01); }
+    // the rick: dry turf built into a long clamp by the road, battered sides and a rounded back, its outside laid in courses
+    const RKX = -3, RKZ = RZ - 2.6, RL = 4.2, RWd = 1.5, RH = 1.4;
+    { const s = new THREE.Shape(); s.moveTo(-RWd / 2, 0); s.lineTo(RWd / 2, 0); s.lineTo(RWd / 2 - .22, RH * .78); s.quadraticCurveTo(0, RH * 1.06, -RWd / 2 + .22, RH * .78); s.closePath();
+      const g = new THREE.ExtrudeGeometry(s, { depth: RL, bevelEnabled: false, curveSegments: 6 }); g.translate(0, 0, -RL / 2); g.rotateY(Math.PI / 2); put(g, 'sodDry', RKX, bog(RKX, RKZ) - .05, RKZ, 0, 0, 0, 2.2);
+      const ry0 = bog(RKX, RKZ) - .05; for (let c = 0; c < 7; c++) { const y = ry0 + .06 + c * .11, inset = .22 * (c * .11) / (RH * .78); for (const sz of [-1, 1]) for (let x = -RL / 2 + .17; x < RL / 2 - .1; x += .31)
+        sod('sodDry', RKX + x + (F() - .5) * .03, y, RKZ + sz * (RWd / 2 - inset + .02), Math.PI / 2, 0, Math.PI / 2 + (F() - .5) * .08); } }
+    // the bothy: sod walls across the road from the bank, the door to the road; gables of sod, a thatched roof roped down with hanging stones
+    const WT = .5, WH = 1.5, DW = .78, DH = 1.42, hy = Math.min(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => bog(HX + a * HW / 2, HZ + b * HD / 2))) - .04;
+    { const wall = (w, h, d, x, y, z) => put(new THREE.BoxGeometry(w, h, d), 'wall', x, y, z, 0, 0, 0, .8);
+      wall(HW, WH, WT, HX, hy + WH / 2, HZ - HD / 2 + WT / 2); const side = (HW - DW) / 2; for (const sx of [-1, 1]) wall(side, WH, WT, HX + sx * (DW / 2 + side / 2), hy + WH / 2, HZ + HD / 2 - WT / 2);
+      wall(DW, WH - DH, WT, HX, hy + DH + (WH - DH) / 2, HZ + HD / 2 - WT / 2); put(new THREE.BoxGeometry(DW + .5, .1, WT + .04), 'timber', HX, hy + DH + .05, HZ + HD / 2 - WT / 2);
+      for (const sx of [-1, 1]) { wall(WT, WH, HD - 2 * WT, HX + sx * (HW / 2 - WT / 2), hy + WH / 2, HZ);
+        const s = new THREE.Shape(); s.moveTo(-HD / 2, 0); s.lineTo(HD / 2, 0); s.lineTo(0, 1.25); s.closePath(); const g = new THREE.ExtrudeGeometry(s, { depth: WT, bevelEnabled: false }); g.translate(0, 0, -WT / 2); g.rotateY(Math.PI / 2); put(g, 'wall', HX + sx * (HW / 2 - WT / 2), hy + WH, HZ, 0, 0, 0, .8); }
+      put(new THREE.BoxGeometry(HW - 2 * WT, .04, HD - 2 * WT), 'floor', HX, hy + .02, HZ);
+      const pitch = Math.atan2(1.25, HD / 2), slope = Math.hypot(1.25, HD / 2) + .45; for (const sz of [-1, 1]) put(new THREE.BoxGeometry(HW + .5, .32, slope), 'thatch', HX, hy + WH + 1.25 / 2 - .08, HZ + sz * (HD / 4 + .12), sz * pitch, 0, 0, .8);
+      put(new THREE.CylinderGeometry(.14, .14, HW + .5, 8).rotateZ(Math.PI / 2), 'thatch', HX, hy + WH + 1.25 + .08, HZ);
+      for (const dx of [-1.2, -.4, .4, 1.2]) { const pts = []; for (let k = 0; k <= 12; k++) { const t = k / 12 * 2 - 1, zz = t * (HD / 2 + .3), yy = hy + WH + 1.25 + .2 - Math.abs(t) * 1.4; pts.push(V3(HX + dx, yy, HZ + zz)); }
+        put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, .018, 5), 'rope'); for (const sz of [-1, 1]) { const st = new THREE.IcosahedronGeometry(.13, 0); st.scale(1, 1.2, .8); rod('rope', [HX + dx, hy + WH + .05, HZ + sz * (HD / 2 + .3)], [HX + dx, hy + WH - .45, HZ + sz * (HD / 2 + .32)], .012); put(st, 'stone', HX + dx, hy + WH - .55, HZ + sz * (HD / 2 + .34)); } } }
+    const hut = { x: HX, z: HZ, y: +hy.toFixed(3), w: HW, d: HD, wall: WT, wallH: WH, ridge: +(WH + 1.25).toFixed(2), door: { x: HX, z: HZ + HD / 2, w: DW, h: DH } };
+    // the fire before the door: a ring of stones, embers on the ash, a crane of two forked sticks and a bar, the kettle on its hook
+    const FX = HX + 2.4, FZ = HZ + HD / 2 + 1.7, fy = bog(FX, FZ);
+    for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283 + F() * .3, st = new THREE.IcosahedronGeometry(.11 + F() * .05, 0); st.scale(1.2, .7, 1); put(st, 'stone', FX + .42 * Math.cos(a), fy + .05, FZ + .42 * Math.sin(a), 0, F() * 3); }
+    { const e = new THREE.CylinderGeometry(.3, .34, .06, 12); put(e, 'ember', FX, fy + .03, FZ); for (let k = 0; k < 5; k++) { const a = k * 1.25; rod('timber', [FX + .32 * Math.cos(a), fy + .05, FZ + .32 * Math.sin(a)], [FX + .02 * Math.cos(a), fy + .16, FZ + .02 * Math.sin(a)], .035); } }
+    const CH = 1.05; for (const sx of [-1, 1]) { rod('timber', [FX + sx * .62, fy - .15, FZ], [FX + sx * .6, fy + CH + .12, FZ], .028); rod('timber', [FX + sx * .6, fy + CH - .05, FZ], [FX + sx * .68, fy + CH + .14, FZ], .02); }
+    rod('timber', [FX - .75, fy + CH, FZ], [FX + .75, fy + CH, FZ], .025); rod('iron', [FX, fy + CH, FZ], [FX, fy + .72, FZ], .008);
+    const V = (a, b) => new THREE.Vector2(a, b), KB = fy + .38; put(new THREE.LatheGeometry([V(.001, 0), V(.12, .01), V(.16, .08), V(.16, .2), V(.1, .3), V(.06, .32), V(.001, .33)], 14), 'iron', FX, KB, FZ);
+    rod('iron', [FX - .12, KB + .26, FZ], [FX, fy + .72, FZ], .006); rod('iron', [FX + .12, KB + .26, FZ], [FX, fy + .72, FZ], .006);
+    const fire = { x: +FX.toFixed(3), z: +FZ.toFixed(3), kettle: +KB.toFixed(3), embers: +(fy + .06).toFixed(3) };
+    // heather and bog cotton on the uncut bog, off the road, the bank's working strip, the rick and the bothy
+    const clear = (x, z) => rim(x, z) > .86 || mx(x) * (z > -12.2 && z < 16.5 ? 1 : 0) > .02 || Math.abs(z - RZ) < RW / 2 + .3 || (Math.abs(x - RKX) < RL / 2 + .5 && Math.abs(z - RKZ) < RWd / 2 + .5) || (Math.abs(x - HX - 1) < 4 && z > HZ - 2 && z < FZ + 1.2) || (z > -1 && z < 17 && mx(x) > 0);
+    for (let k = 0, n = 0; k < 1500 && n < 240; k++) { const x = -34 + F() * 68, z = -34 + F() * 62; if (clear(x, z)) continue; n++; const s = .14 + F() * .2, g = new THREE.IcosahedronGeometry(s, 0); g.scale(1.3, .55, 1.3); put(g, n % 3 ? 'heather' : 'ling', x, bog(x, z) + s * .3, z, 0, F() * 6); }
+    for (let k = 0, n = 0; k < 900 && n < 110; k++) { const x = -30 + F() * 60, z = -30 + F() * 56; if (clear(x, z)) continue; n++; const h = .25 + F() * .15, gy = bog(x, z);
+      put(new THREE.BoxGeometry(.008, h, .008), 'ling', x, gy + h / 2, z); put(new THREE.IcosahedronGeometry(.04, 0).scale(1, 1.3, 1), 'cotton', x, gy + h + .03, z); }
+    // baked one mesh a material
+    const group = new THREE.Group(); let tris = 0;
+    for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); g.computeBoundingBox(); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['bog', 'floor', 'water', 'peat', 'ember'].includes(k); m.receiveShadow = k !== 'water'; group.add(m); tris += g.attributes.position.count / 3; }
+    // the solids, boxes in this frame: the bothy's walls (the door's gap open, the jambs 0.15 m short, as the shepherd's hut's), the rick, the
+    // barrow; and the face, a strip along the lip whose top is the bank: walked from the bank you pass over it, from the cut it is a wall (the
+    // way out is the east end's ramp, the barrow's way)
+    const Sq = (x, z, w, d, h, ry = 0) => ({ x: +x.toFixed(3), z: +z.toFixed(3), w, d, ry, h: +h.toFixed(3) }), JB = .15, side = (HW - DW) / 2 - JB;
+    const sol = [Sq(HX, HZ - HD / 2 + WT / 2, HW, WT, hy + WH), Sq(HX - HW / 2 + side / 2, HZ + HD / 2 - WT / 2, side, WT, hy + WH), Sq(HX + HW / 2 - side / 2, HZ + HD / 2 - WT / 2, side, WT, hy + WH),
+      Sq(HX - HW / 2 + WT / 2, HZ, WT, HD - 2 * WT, hy + WH), Sq(HX + HW / 2 - WT / 2, HZ, WT, HD - 2 * WT, hy + WH), Sq(RKX, RKZ, RL, RWd, bog(RKX, RKZ) + RH), Sq(BX, BZ2, .7, .7, bog(BX, BZ2) + .6),
+      Sq(1, -.25, 2 * CX + 4, .5, 0)];
+    /* where the world must sink under the cut (offroadStamps): circles in this frame, two rows of ten, their cores over the cut and 4 m round it, all inside the rim */
+    const sinks = []; for (const z of [1.5, 12]) for (let x = -24; x <= 21; x += 5) sinks.push([x, z, 7]);
+    return { group, tris: Math.round(tris), draws: group.children.length, sol, ground, rim, sinks, patch: { x0: -PX, x1: PX, z0: PZ0, z1: PZ1 }, floorMin: -1.6,
+      bank: { x0: -CX, x1: CX, lip: 0, bench: BENCH, benchZ: BZ, floorZ: [BZ, 12], water: WL }, spread, footings, slean, rick: { x: RKX, z: RKZ, l: RL, w: RWd, h: RH, y: +(bog(RKX, RKZ) - .05).toFixed(3) }, hut, fire, road: { z: RZ, w: RW } };
+  }
   // the cave's mouth in the open world (Session 1768): an outcrop of grey limestone half sunk in the slope, 15 m across and 11 deep, its
   // face toward +z, and in it the mouth, 4.4 m wide and 3.6 m high, a short throat of rock 6 m into the dark. Its own frame: the throat's
   // floor at the origin (the ground before the mouth), +z out. The world's ground cannot be holed, so the throat has a floor of its own,
@@ -8321,7 +8447,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, piers: piers.map(f2), bays: bays.map(({ hi, ...b }) => ({ ...b, x0: f2(b.x0), x1: f2(b.x1) })), gap: GAP ? { x0: f2(GAP.x0), x1: f2(GAP.x1), stump: f2(GAP.stump) } : null,
       two, depth: f2(D), deep: f2(xd), arch: { pitch: PITCH, pier: PIER, span: SPAN, r: RAD, upSpring: f2(US), lowSpring: two ? f2(LS) : null, tier: two ? f2(TIER + SC) : null, deck: DECK }, channel: { w: CW, x0: CX0, x1: CX1, runs }, x0: X0, x1: X1, broken: !!GAP, far, farTris: Math.round(far.reduce((a, [g]) => a + g.attributes.position.count / 3, 0)) };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

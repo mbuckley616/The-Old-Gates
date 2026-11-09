@@ -5,7 +5,8 @@
 // road and facing it, lying on the drawn ground, solid where the coach is and open beside it, its cost; then that the map has nothing of
 // it until you come within 40 m, has it then with no travel to it. Session 2025 adds the Mark's hunters' camp (PKIT.places.hunters), Session 2029 the Gatelands'
 // charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar),
-// Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt).
+// Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt);
+// Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -128,6 +129,26 @@ await page.evaluate(D => { px = D.x + Math.sin(D.ry) * 28; pz = D.z + Math.cos(D
 const hm = await page.evaluate(id => { const e = mapEntries(getCell(...id.split('_').slice(1).map(Number))).find(e => e.id === id); return { disc: discovered(id), entry: e && { name: e.name, kind: e.kind, noTravel: !!e.noTravel }, travel: !!arrivalFor(id) }; }, of.hut.id);
 console.log(JSON.stringify(hm));
 check(`found at 28 m, on the map as "${hm.entry && hm.entry.name}", with no travel to it`, hm.disc && hm.entry && hm.entry.kind === 'offroad' && hm.entry.noTravel && !hm.travel, hm);
+// Session 2044: the Gatelands' peat-cutting camp (PKIT.places.peat, places.js's gatelandsPeatCamp) on level bog, the first place that brings its
+// own ground: the bog's patch over the world (never under it inside the rim), the height you walk at read from the piece (offroadGroundAt),
+// the face a wall from the cut and open from the bank, the bothy solid with its door open, its cost
+const pc = await page.evaluate(() => { for (const c of CELLS.values()) { const d = c.type !== 'sea' && !c.home ? offroadAt(c) : null; if (d && d.kind === 'peat') return { id: d.id, x: d.x, z: d.z, ry: d.ry, cell: d.cell, ppl: nationOf(c.i, c.j).people }; } return null; });
+console.log(JSON.stringify(pc));
+check(`a peat-cutting camp is drawn and finds level bog (${pc && pc.id}, ${pc && pc.ppl})`, !!pc && pc.ppl === 'gatelander', pc);
+if (pc) {
+  await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, pc);
+  for (let n = 0; n < 12; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id); return !!(c && c._offroad.group && c._offroad.group.parent); }, pc.id); if (ok) break; await page.waitForTimeout(1000); }
+  await g.spin('clear', 40);
+  const pt = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad; if (!D.group || !D.group.parent) return { none: true };
+    const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], at = (u, v, y) => solidAt(...W(u, v), y), Pt = OFFROAD_PATCHES.find(p => p.id === id), gr = (u, v) => D.y + Pt.ground(u, v);
+    let over = -1e9, walk = 0; for (let u = D.patch.x0 + 1; u < D.patch.x1; u += 1) for (let v = D.patch.z0 + 1; v < D.patch.z1; v += 1) { if (D.rim(u, v) < .86) over = Math.max(over, meshH(...W(u, v)) - gr(u, v)); if (Math.abs(v) > .02) walk = Math.max(walk, Math.abs(groundY(...W(u, v)) - gr(u, v))); }
+    let bd = 1e9; for (const sg of RSEG) { const vx = sg.bx - sg.ax, vz = sg.bz - sg.az, t = Math.max(0, Math.min(1, ((D.x - sg.ax) * vx + (D.z - sg.az) * vz) / (vx * vx + vz * vz || 1))); bd = Math.min(bd, Math.hypot(sg.ax + vx * t - D.x, sg.az + vz * t - D.z)); }
+    const H = D.hut; return { id, tris: D.tris, draws: D.draws, road: +bd.toFixed(1), over: +over.toFixed(3), walk: +walk.toFixed(3), deep: +(gr(0, -1) - gr(0, 5)).toFixed(2),
+      faceCut: at(0, .2, gr(0, .2)), faceBank: at(0, -.6, gr(0, -.6)), cut: at(0, 5, gr(0, 5)), ramp: at(22, 6, gr(22, 6)), back: at(H.x, H.z - H.d / 2 + .25, D.y + .5), door: at(H.x, H.z + H.d / 2 - .25, D.y + .5), inside: at(H.x, H.z, D.y + .5), rick: at(D.rick.x, D.rick.z, D.y + .5) }; }, pc.id);
+  console.log(JSON.stringify(pt));
+  check(`${pt.id}: the peat camp ${pt.road} m off the nearest road; inside the rim the world's ground ${pt.over} m under the bog's at most, the walk within ${pt.walk} m of the piece's ground, the cut ${pt.deep} m deep`, !pt.none && pt.road >= 150 && pt.over <= 0 && pt.walk < .1 && pt.deep > 1.2, pt);
+  check(`the face a wall from the cut and open from the bank, the cut and the ramp open; the bothy solid at its back, open at its door and inside, the rick solid; ${pt.tris} triangles in ${pt.draws} draws`, !pt.none && pt.faceCut && !pt.faceBank && !pt.cut && !pt.ramp && pt.back && !pt.door && !pt.inside && pt.rick && pt.tris < 42000 && pt.draws <= 20, pt);
+}
 if (process.env.SHOT) { const S = process.env.SHOT_OF === 'erratic' ? k.er : k.burn; await page.evaluate(D => { REN.setSize(960, 540, false); forceTime(10); px = D.x - Math.sin(D.ry) * 24 + Math.cos(D.ry) * 7; pz = D.z - Math.cos(D.ry) * 24 - Math.sin(D.ry) * 7; }, S); await g.spin('clear', 60); await page.screenshot({ path: process.env.SHOT }); }
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 5));
 await g.close();

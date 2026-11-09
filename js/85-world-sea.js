@@ -651,7 +651,7 @@
   // swimmer's feet hang 1.45 under the surface, so the eye (SCALE.EYE_SWIM 1.65) rides 0.20 over it. They were 0.40 and 0.35,
   // knee-deep. Water walking still holds you up wherever the water is over 0.35 deep (WALK_WATER), as it did.
   const SWIM_DEPTH=1.40,SWIM_Y=SEA_Y-1.45,WALK_WATER=SEA_Y-.35;
-  function groundY(x,z){const h=worldH(x,z);if(h<WALK_WATER&&typeof fxOn==='function'&&fxOn('waterwalk'))return SEA_Y+.06;return h<SWIM_Y?SWIM_Y:h;}
+  function groundY(x,z){if(OFFROAD_PATCHES.length){const o=offroadGroundAt(x,z);if(o!==null)return o;} /* S2044 — a place off the road that brings its own ground (the peat camp) */const h=worldH(x,z);if(h<WALK_WATER&&typeof fxOn==='function'&&fxOn('waterwalk'))return SEA_Y+.06;return h<SWIM_Y?SWIM_Y:h;}
   // S1808 — never in a room: indoors activeZoneId stays 'world' and px, pz are the room's, so worldH there read the sea off the map's corner
   // and a room's floor under −1.15 m (the mine's sump, 16 m down) counted as swimming. A room's own water is roomSwimming (88).
   function isSwimming(){if(typeof fxOn==='function'&&fxOn('waterwalk'))return false;return activeZoneId==='world'&&!isInterior()&&!SHIP.sailing&&worldH(px,pz)<SEA_Y-SWIM_DEPTH&&jumpY<SWIM_Y+.3&&!onAnyPlatform();}

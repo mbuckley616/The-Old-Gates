@@ -189,6 +189,7 @@
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
     if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
     if(c._aq&&c._aq.walks){aqWalkDrop(c._aq.id);c._aq.walks=null;} /* S1927 — the aqueduct's channel */
+    if(c._offroad&&c._offroad.patch)offroadPatchDrop(c._offroad.id); /* S2044 — a place off the road's own ground */
     if(c._tunnel&&c._tunnel.house){const i=ZONES.world.houses.indexOf(c._tunnel.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1828 — the tunnel's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
@@ -837,11 +838,13 @@
   // 150 m), 100 m off every door, 60 m off a farm's yard, 150 m off the cell's caves, mine, Weaver door, carving, watcher, aqueduct and place
   // by a road, 30 m off every lake's rim, and 200 m inside its cell. Found within 40 m (tickDiscovery, 83), then on the map, with no travel to it.
   // -> {id, kind, name, x, z, ry, cell} or null, kept on the cell (c._offroad)
-  const OFFROAD={gatelander:['shepherd','peat','falls'],markman:['cabin','logging']},OFFROAD_NAME={shepherd:'A shepherd’s hut'},OFFROAD_ODDS=1/3,OFFROAD_WOOD=.3;
+  const OFFROAD={gatelander:['shepherd','peat','falls'],markman:['cabin','logging']},OFFROAD_NAME={shepherd:'A shepherd’s hut',peat:'A peat-cutting camp'},OFFROAD_ODDS=1/3,OFFROAD_WOOD=.3;
   /* the ground each kind was drawn for, by the biome at its middle: the shepherd's hut on the hill pasture (the moor, the open plains, the coast's grass) */
-  const OFFROAD_BIOME={shepherd:['moor','plains','coast'],peat:['moor','fen'],falls:['plains','forest','autumn','moor'],cabin:['tundra','forest'],logging:['tundra','forest']};
+  const OFFROAD_BIOME={shepherd:['moor','plains','coast'],peat:['moor','fen','plains'],falls:['plains','forest','autumn','moor'],cabin:['tundra','forest'],logging:['tundra','forest']};
   /* the shepherd's hut's three grounds in the piece's frame (the hut, the fold, the spring): each is read for its slope and its water */
-  const OFFROAD_GROUND={shepherd:[[0,0],[11,5.5],[-8,-6.5]]};
+  const OFFROAD_GROUND={shepherd:[[0,0],[11,5.5],[-8,-6.5]],peat:[[0,0],[-30,-30],[30,-30],[-30,24],[30,24],[0,-24],[0,12]]};
+  /* S2044 — the peat camp on the raised bog: its patch (80 by 66 m) within 2.4 m of level, its middle no steeper than 1 in 25, and every ground of it 6 m or more over the sea */
+  const OFFROAD_FLAT={peat:{spread:2.4,grade:.04,sea:6}};
   function offroadAt(c){
     if(!c||c._offroad!==undefined)return c?c._offroad:null;c._offroad=null;
     if(c.type==='sea'||c.home||!c.sites||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
@@ -857,10 +860,13 @@
     withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<120&&!c._offroad;t++){const x=c.ox+200+r()*(SIZE-400),z=c.oz+200+r()*(SIZE-400);
       if(sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+150)||doors.some(e=>Math.hypot(e.x-x,e.z-z)<100)||farms.some(F=>Math.hypot(F.cx-x,F.cz-z)<FARM_R+60))continue;
       if(others.some(C=>Math.hypot(C.x-x,C.z-z)<150)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+30)||roads.some(P=>near(P,x,z)<150))continue;
-      const [gx,gz,g]=grad(x,z);if(g<.1||g>.222)continue;const dx=-gx/g,dz=-gz/g,ry=Math.atan2(dx,dz),co=Math.cos(ry),s_=Math.sin(ry);
-      let ok=true;for(const [lx,lz] of OFFROAD_GROUND[kind]||[[0,0]]){const qx=x+lx*co+lz*s_,qz=z-lx*s_+lz*co,h=rawH(qx,qz);
-        if(h<4||(typeof snowLineAt==='function'&&h>snowLineAt(qx,qz)-5)||grad(qx,qz)[2]>.33||farmWet(qx,qz)){ok=false;break;}}
-      if(!ok)continue;
+      const [gx,gz,g]=grad(x,z),FL=OFFROAD_FLAT[kind];let ry;
+      if(FL){if(g>FL.grade)continue;ry=r()*6.2832;} /* level ground: the face turned by the stream */
+      else{if(g<.1||g>.222)continue;ry=Math.atan2(-gx/g,-gz/g);}
+      const co=Math.cos(ry),s_=Math.sin(ry);
+      let ok=true,lo=1e9,hi=-1e9;for(const [lx,lz] of OFFROAD_GROUND[kind]||[[0,0]]){const qx=x+lx*co+lz*s_,qz=z-lx*s_+lz*co,h=rawH(qx,qz);lo=Math.min(lo,h);hi=Math.max(hi,h);
+        if(h<(FL?FL.sea:4)||(typeof snowLineAt==='function'&&h>snowLineAt(qx,qz)-5)||grad(qx,qz)[2]>(FL?FL.grade*2:.33)||farmWet(qx,qz)){ok=false;break;}}
+      if(!ok||(FL&&hi-lo>FL.spread))continue;
       /* open ground: the scatter's own odds of a tree (scatterChunk's, the slope's share left at 1) under 0.3 on the average of the place and a ring 18 m round it */
       let wood=0,nw=0;for(const [lx,lz] of [...(OFFROAD_GROUND[kind]||[[0,0]]),...[0,1,2,3,4,5].map(q=>[Math.cos(q*1.047)*18,Math.sin(q*1.047)*18])]){const qx=x+lx*co+lz*s_,qz=z-lx*s_+lz*co,h=rawH(qx,qz);
         wood+=regionScalar(qx,qz,'density')*(.5+fbm(qx,qz,60,SEED+21,2)*1.3)*(1-sstep(30,44,h));nw++;}
@@ -870,16 +876,29 @@
   // its stamps (the cell's first step, so the chunks are built with them): the hut's stance flat at the ground under its middle, cut into the
   // slope as the prototype's is; a clearing of the scatter over the hut, the fold and the spring, so no tree stands in the walls
   function offroadStamps(c,k){const D=offroadAt(c);if(!D)return [];const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],out=[];
+    if(D.kind==='peat'){ /* S2044 — the bog levelled under the camp's patch (55 m round its lip's middle), then sunk 1.85 m under the cut (the piece's sinks), so the camp's own ground lies over the world's everywhere; the scatter cleared over all of it */
+      const [x0,z0]=W(0,-3),y=landH(x0,z0);out.push(addStamp({id:D.id+'_bog',kind:'door',x:x0,z:z0,r:55,blend:15,y,cell:k}));
+      for(const [lx,lz,r] of OFFROAD_SINKS){const [x,z]=W(lx,lz);out.push(addStamp({id:D.id+'_sink',kind:'door',x,z,r,blend:4,y:y-1.85,cell:k}));}
+      out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x:x0,z:z0,r:52,blend:2,y:0,cell:k}));return out;}
     {const [x,z]=W(0,0);out.push(addStamp({id:D.id+'_stance',kind:'door',x,z,r:4.4,blend:2.6,y:landH(x,z),cell:k}));}
     {const [x,z]=W(1.5,0);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:17,blend:2,y:0,cell:k}));}
     return out;}
   // the piece built on the drawn ground (meshH) in its own frame, its door down the slope; its solids as squares (the world's solids are
   // squares, so a long wall is a row of them, each as wide as it), as a place by a road's are
-  function placeOffroad(c,k){const D=offroadAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],y0=meshH(D.x,D.z);
+  /* S2044 — the peat camp's sinks, as gatelandsPeatCamp gives them (two rows of ten circles of 7 m over the cut), here so the stamps need no piece built */
+  const OFFROAD_SINKS=[];for(const z of [1.5,12])for(let x=-24;x<=21;x+=5)OFFROAD_SINKS.push([x,z,7]);
+  /* S2044 — a place off the road that brings its own ground (the peat camp): the height you walk at over its patch, from the piece (groundY, 85) */
+  const OFFROAD_PATCHES=[];
+  function offroadGroundAt(x,z){for(let i=0;i<OFFROAD_PATCHES.length;i++){const P=OFFROAD_PATCHES[i],dx=x-P.x,dz=z-P.z;if(dx*dx+dz*dz>P.R2)continue;
+      const lx=dx*P.co-dz*P.s,lz=dx*P.s+dz*P.co;if(lx<P.x0||lx>P.x1||lz<P.z0||lz>P.z1)continue;return P.y+P.ground(lx,lz);}return null;}
+  function offroadPatchDrop(id){for(let i=OFFROAD_PATCHES.length-1;i>=0;i--)if(OFFROAD_PATCHES[i].id===id)OFFROAD_PATCHES.splice(i,1);}
+  function placeOffroad(c,k){const D=offroadAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],bogS=D.kind==='peat'&&STAMPS.find(t=>t.id===D.id+'_bog'),y0=bogS?bogS.y:meshH(D.x,D.z); /* S2044 — the peat camp stands at its bog's level, not on the cut sunk under its middle */
     const M=PKIT.places[D.kind]({key:D.id,ground:(lx,lz)=>meshH(...W(lx,lz))-y0});
     M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='offroad '+D.kind;sc.add(M.group);
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,offroad:true});}}
+    if(M.patch){offroadPatchDrop(D.id);const P=M.patch;OFFROAD_PATCHES.push({id:D.id,x:D.x,z:D.z,y:y0,co,s:s_,x0:P.x0,x1:P.x1,z0:P.z0,z1:P.z1,R2:(Math.hypot(Math.max(-P.x0,P.x1),Math.max(-P.z0,P.z1))+1)**2,ground:M.ground});
+      D.patch=P;D.rim=M.rim;D.bank=M.bank;D.rick=M.rick;D.fire=M.fire;D.footings=M.footings;D.slean=M.slean;D.sinks=M.sinks;}
     D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.stands=M.stands;D.hut=M.hut;D.fold=M.fold;D.spring=M.spring;D.rowan=M.rowan;return M.group;}
   // S1800 (card F8; Michael's A on #333, "broken, as drawn", and his A on #1072, "fit the arcade to the land") — Aurenne's ruined aqueducts
   // (PKIT.places.aqueduct, places.js's aurenneAqueduct): an arcade across a river's valley, one tier where it is under 12 m deep and two where
