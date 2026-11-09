@@ -112,7 +112,7 @@ function loop(now){
   const _encState = encumbranceState();
   const _stRegenMult = (_encState==='burdened' || _encState==='overloaded' || _encState==='immobile') ? 0.8 : 1.0;
   if(staminaCD>0){staminaCD=Math.max(0,staminaCD-dt);}
-  else if(stamina<_emSt){stamina=Math.min(_emSt,stamina+dt*(3+(level-1)*0.4+ATTRS.resolve*0.3+_ab.stRegen)*_stRegenMult*(furWarm()?1.1:1)*(typeof climateRegenMult==='function'?climateRegenMult():1));} /* S1917 — climate B */
+  else if(stamina<_emSt){stamina=Math.min(_emSt,stamina+dt*(3+(level-1)*0.4+ATTRS.resolve*0.3+_ab.stRegen)*_stRegenMult*(furWarm()?1.1:1)*(typeof climateRegenMult==='function'?climateRegenMult():1)*(typeof waterRegenMult==='function'?waterRegenMult():1));} /* S1917 — climate B */ /* S2012 — Watered ×1.1 */
   mana=Math.min(_emMana,mana+dt*(0.8+(level-1)*0.15+attrEff('intelligence')*0.2+_ab.mpRegen)*fedManaMult()); /* S1486 — Clear, +10% */
   // HP regen from armor enchants
   if(PHP<_emHP&&_ab.hpRegen>0){PHP=Math.min(_emHP,PHP+dt*_ab.hpRegen);}
@@ -997,6 +997,7 @@ function loop(now){
     else if(nearHerbPrompt){iprOW.textContent=`Press 'E' to harvest ${typeof herbPromptName==='function'?herbPromptName(nearHerbPrompt):nearHerbPrompt.def.name}`;iprOW.style.opacity='1';iprOW.style.display='block';}
     else if(typeof veinNear==='function'&&veinNear()){const v=veinNear(),n=veinLeft(v);iprOW.textContent=n<=0?'Worked out':MINE&&MINE.v===v?`Working the ${ORE_DEF[v.ore].name.toLowerCase()} · E to stop`:`Press 'E' to mine ${ORE_DEF[v.ore].name.toLowerCase()}`+(hasPick()?'':' (you need a pick)');iprOW.style.opacity='1';iprOW.style.display='block';} /* S1491 — a vein */
     else if(typeof treeNear==='function'&&(chopTool()||CHOP)&&treeNear()){const n=treeNear();iprOW.textContent=CHOP&&CHOP.t===n.t?`Felling · ${CHOP.n} of ${fellStrikes()} · E to stop`:`Press 'E' to fell the tree`+(chopTool()==='axe'?' (slow with an axe)':'');iprOW.style.opacity='1';iprOW.style.display='block';} /* S1511 — a tree, with a hatchet */
+    else if(typeof waterPrompt==='function'&&waterPrompt()){iprOW.textContent=waterPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S2012 — water B */
     else if(typeof campfireNear==='function'&&campfireNear()&&!cookOpen){iprOW.textContent="Press 'E' to tend the fire";iprOW.style.opacity='1';iprOW.style.display='block';} /* S1525 — a lit fire */
     else if(nearBramBodyPrompt){
       // v61al: prompt changes based on whether the body has been read yet.
