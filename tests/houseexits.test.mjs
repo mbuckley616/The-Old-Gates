@@ -10,7 +10,7 @@ for (const look of ['new', 'old']) {
     const S = WORLD.settle.get('dunmore'), hs = S.houses.filter(h => h.exitX != null);
     const row = h => { const L = Math.hypot(h.exitX - h.doorX, h.exitZ - h.doorZ);
       return { id: h.id, L: +L.toFixed(2), solid: WORLD.solidAt(h.exitX, h.exitZ) }; };
-    const rows = hs.filter(h => h.type !== 'market').map(row); /* S2014: the market house's room upstairs (S1912) opens on the stair's landing, its exit beside the door on the landing, not out of it into a street */
+    const rows = hs.filter(h => h.type !== 'market').map(row); /* S2017: the market house's room upstairs (S1912) opens on the stair's landing, its exit beside the door on the landing, not out of it into a street */
     const landing = hs.filter(h => h.type === 'market').map(h => ({ ...row(h), onLanding: !!(S.market && S.market.house === h.id) }));
     const keepers = (S.npcs || []).filter(n => n.sched && n.sched.door).map(n => ({ name: n.def && n.def.name, d: Math.min(...hs.map(h => Math.hypot(n.sched.door.x - h.exitX, n.sched.door.z - h.exitZ))) }));
     const inn = S.houses.find(h => h.type === 'inn'); const innOk = !S.innDoor || !inn || Math.hypot(S.innDoor.x - inn.exitX, S.innDoor.z - inn.exitZ) < .01;

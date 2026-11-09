@@ -39,7 +39,7 @@ check('zoomed into one district, the marks off the view stand on the frame', dee
 // 4. sharp: the level keeps a tile pixel at or under 1.15 screen pixels, and the deep tiles build and are drawn
 const LMAX = await page.evaluate(() => MAP_LMAX);
 const lv = await page.evaluate(() => { const out = []; for (const z of [1, 4, 12, 30, 64]) { const cellPx = SIZE * baseScale() * z, dev = cellPx * MAP.dpr, L = mapLevelFor(dev); out.push({ z, L, ratio: +(dev / (1 << L) / MAP_TQ).toFixed(2) }); } return out; });
-check('at every zoom the tile level gives at most 1.15 screen pixels a tile pixel (the old fine tile, 320 px a province, gave 14 at ×64)', lv.every(o => o.ratio <= 1.15) && lv[lv.length - 1].L === LMAX, { LMAX, lv }); /* S2016: the deepest level is the game's MAP_LMAX (5 since the shoals' tiles, S1880), not 4 */
+check('at every zoom the tile level gives at most 1.15 screen pixels a tile pixel (the old fine tile, 320 px a province, gave 14 at ×64)', lv.every(o => o.ratio <= 1.15) && lv[lv.length - 1].L === LMAX, { LMAX, lv }); /* S2019: the deepest level is the game's MAP_LMAX (5 since the shoals' tiles, S1880), not 4 */
 // the jobs run with a draw only when the queue is empty (a draw re-queues what the view still wants): a draw every step left
 // 1,266 frames of the canvas queued unseen, which SwiftShader then rasterised at the next read, 325 s on its own (Session 731)
 await page.evaluate(() => { window._mapBuild = (max) => { let n = 0; mapDraw(); while (n < max) { if (!MAP.jobs.length) { mapDraw(); if (!MAP.jobs.length) break; } mapJobs(); n++; } mapDraw(); return n; }; });

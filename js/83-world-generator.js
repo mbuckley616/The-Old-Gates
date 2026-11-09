@@ -3691,7 +3691,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     intNPCMesh=null;intBedPos=null;intStashPos=null;
     const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
     T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
-    {const E=new THREE.Object3D();E.position.set(rx(T.door.x),0,D);E.userData.entrance=true;E.userData.leaf=[T.door.w,T.door.h];sc_.add(E);} /* S2015 — the entrance and its leaf, as the other kit rooms mark theirs */
+    {const E=new THREE.Object3D();E.position.set(rx(T.door.x),0,D);E.userData.entrance=true;E.userData.leaf=[T.door.w,T.door.h];sc_.add(E);} /* S2018 — the entrance and its leaf, as the other kit rooms mark theirs */
     // the solids are the prototype's boxes (the furniture, the hearth's jambs, the gallery's posts and rail, the stair's treads, the beds and
     // chests, the leaves); a bench, the stool and the chair stand from the floor; a box's top is a foothold, except a leaf's, a rail's, a
     // post's, the stands', the lectern's and the grindstone's
