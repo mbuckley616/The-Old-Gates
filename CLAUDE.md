@@ -323,6 +323,9 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
 - `scripts/people_bundle.py` rewrites `vendor/mh-pack.js` from any local `docs/prototypes/levelup/mh/` (which the builder's checks need), and a
   pack built here can differ from the committed one (S1445's matched it to the byte; S1439's did not). After a change to `people.js`, run it with `--pack /nonexistent` so only the builder's copy
   is rewritten, against the committed pack's SHA (S1443).
+- A builder garment cut from the body's shell (`geomFor` in `people.js`: the apron, the skirt, the tunic, …) shares the pack's `skinIndex` and
+  `skinWeight` arrays with every body. Reweighting one in the game (as `hbCloakLegs` does) needs `attr.clone()` first, or every later body is
+  corrupted (`makePerson failed … matrixWorld`, S2020). The cloak has its own.
 - Most lines of `index.html` hold several statements. A scripted replace that appends `// note` after a matched fragment comments out
   the rest of that line, and parsecheck still passes (S237 lost the coaching inn's `g.add(inn)` this way; S239 found it). Mid-line, use `/* */`.
 
