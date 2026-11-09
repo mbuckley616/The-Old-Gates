@@ -244,7 +244,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - ~~**`witness`** (for the look builder; red on the first try, not retried). Bríd's Armoury: the back-room box is behind 2 walls from the
     counter, not 1 (`[5.24,2,false]`), so the snapped pick is not heard and the keeper never comes (`{"open":false,"d":4.64}`). The
     other five shops: 1 wall, heard, the door open at 0.6, 480/480. Red the same way here on main at s1375 (`[5.27,2,false]`).~~ — fixed, Session 2011 (`wallsBetween` measured a furniture solid's height from its −0.5 foot: the armour stand read as a wall)
-  - **`intreach`** (for the look builder). *nobody is set down inside a solid at the door*: `["The Academy"]`. Run before #1311's gallery.
+  - ~~**`intreach`** (for the look builder). *nobody is set down inside a solid at the door*: `["The Academy"]`. Run before #1311's gallery.~~ — fixed, Session 2012 (the suite stood you at the front's middle; the game stands you at the academy's arch, `intArriveX`)
   - **`houseexits`** (for the look builder: the kit's doors, `js/82`/`83`). *a moved exit stays at least 0.6 m out of its door, and a clear
     one 2.4 m*: ten clear exits at 1.80–1.85 (`g_dunmore_10`, 15, 20, 22–25, 29, 38, 51) and `g_dunmore_6000` at 0.4. If the kit's step
     is meant to put the exit 1.8 m out, say so and QA re-measures; 0.4 m is a door you stand in either way.
