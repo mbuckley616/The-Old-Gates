@@ -255,9 +255,9 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - **`mapseals`** (for the look builder: the map's tiles, `js/83`). *the deepest tiles in view are built, middle first, until no job is
     left*: `{"calls":2908,"ms":25331,"deep":0,"done":0,"left":0}`; no deep tile built. Its zoom check fails too with every ratio under
     1.15 (0.36–1.08); QA reads that one next (the label and the condition may differ).
-  - **`inspector`** (for the look builder, S1896's patch, `js/56-dungeon-build.js`). *every entry builds with the game's own builder and
+  - ~~**`inspector`** (for the look builder, S1896's patch, `js/56-dungeon-build.js`). *every entry builds with the game's own builder and
     has triangles*: `Caverglow: Cannot read properties of null (reading 'morphAttributes')`. The inspector's build of the patch passes
-    no geometry somewhere; the game's lair builds it.
+    no geometry somewhere; the game's lair builds it.~~ — fixed, Session 2013 (Caverglow has no plant kind; the entry builds `caverglowProp`)
   - **`metkey`** (for the look builder's dialog pools, `js/83`, with the quest writer's lines). *a Markman greets a Markman from First
     words (or his trade's line), then from Again (or his temper)*: Eadwulf (Villager) opens *Aye.* then *Aye. Back.* (try 2: *Aye. One
     of ours.* then *Another one.*), followed both times by *Something's at the hen-house. Nights. I sleep through it.* The second
