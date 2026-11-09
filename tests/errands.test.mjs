@@ -321,7 +321,7 @@ const d9 = await page.evaluate(() => {
   let offInland = 0; for (const site of inland.slice(0, 20)) for (let i = 0; i < 60; i++) { const e = errandFor(mk(site, 'in' + i), site); if (e && e.sub === 'fish') offInland++; }
   const by = [];
   for (const [pp, how] of [['gatelander', 'fine'], ['markman', 'plain'], ['aurennais', 'lapse'], ['oldblood', 'fine']]) { worldState.gameTimeAbsMinutes = T0;
-    for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i]._typeKey === 'fish') BAG.splice(i, 1);
+    for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].ico === '🐟') BAG.splice(i, 1);
     const F = find(pp); if (!F) { by.push({ pp, missing: true }); continue; } const { d: A, site, e: E } = F; const p = pp;
     A.greeting[0]; const greet = A.greeting[0]; const you = A.topics.find(t => /^About you/.test(t.label)); const ask = you && you.follow.find(t => t.label === 'What’s the wedding missing?');
     const n = Math.min(40, 15 + 5 * (Math.max(1, worldTierAt(site.x, site.z) || 1) - 1)); const wantOffer = ER_FISH.offer[p](Object.assign({}, E, { n }));
@@ -330,10 +330,11 @@ const d9 = await page.evaluate(() => {
     if (how === 'lapse') { worldState.gameTimeAbsMinutes = E.wday * 1440 + 400; tickDatedWork(); bagAdd({ name: 'Fine Cod', ico: '🐟', type: 'misc', weight: 1.2, qty: 1, _typeKey: 'fish' });
       const g1 = gold; const t = A.topics.find(t => t.label === 'About that errand.'); x.done = t && t.fn(); x.wdone = ER_FISH.lapse[p]; x.lapsed = q.lapsed; x.paid = gold - g1; x.again = !!A.topics.find(t => t.label === 'About that errand.'); by.push(x); continue; }
     worldState.gameTimeAbsMinutes = E.wday * 1440 + 300; tickDatedWork();
-    const fine = how === 'fine'; bagAdd({ name: fine ? 'Fine Cod' : 'Cod', ico: '🐟', type: 'misc', weight: 1, qty: 1, _typeKey: 'fish' });
+    { const ff = Object.assign({ qty: 1 }, SURV_ITEMS.fish); bagAdd(ff); x.shopFish = !!A.topics.find(t => t.label === 'It’s not a fine one. It’s what I could get.'); bagTake(b => b && b.name === ff.name, 1); } /* S2043 — the shop's Fresh Fish is no catch */
+    const fine = how === 'fine'; bagAdd(_serItem({ name: fine ? 'Fine Cod' : 'Cod', ico: '🐟', type: 'misc', weight: 1, qty: 1, _typeKey: 'fish', food: 'fish' })); /* S2043 — the catch as a reload gives it back: no _typeKey */
     const label = fine ? 'A fine cod, for the table.' : 'It’s not a fine one. It’s what I could get.'; const t = A.topics.find(t => t.label === label);
     const g1 = gold, f1 = favor(site); x.done = t && t.fn(); x.wdone = fine ? ER_FISH.fine[p]({ n, weekday: E.weekday }) : ER_FISH.plain[p]; x.paid = gold - g1; x.wpaid = questGold(fine ? n : Math.round(n / 2)); x.fav = favor(site) - f1; x.turned = q.turnedIn;
-    x.left = bagCount(b => b._typeKey === 'fish' && b.name === (fine ? 'Fine Cod' : 'Cod'));
+    x.left = bagCount(b => b.ico === '🐟' && b.name === (fine ? 'Fine Cod' : 'Cod'));
     worldState.gameTimeAbsMinutes = E.wday * 1440 + 600; x.wed = A.greeting[0]; x.wwed = ER_FISH.wed[p]; x.on = erWeddingAt(site.id); x.mine = !!erWeddingQ(site.id, erRecs(A, site));
     { const inn = { id: 'g_' + site.id + '_inn9' + pp, siteId: site.id }, st = b => b && b.name === 'Hot Stew', n0 = bagCount(st); x.feast = !!feastOn(absMin()); x.meal = feastMeal(inn); x.meal2 = feastMeal(inn); x.stew = bagCount(st) - n0; } /* S1859 — the wedding's meal at the inn */
     worldState.gameTimeAbsMinutes = E.wday * 1440 + 1500; x.off = erWeddingAt(site.id); x.mealOff = feastOn(absMin()) ? null : feastMeal({ id: 'g_' + site.id + '_inn9' + pp, siteId: site.id }); by.push(x); }
@@ -345,6 +346,7 @@ for (const x of d9.by) { const nm = `fish (${x.pp}, ${x.how})`; if (x.missing) {
   check(`${nm}: the hint after First Words, the offer word for word, taken and titled, not yet; four to six days`, x.sea && x.greet.endsWith(' ' + x.hint) && x.offer === x.wantOffer && x.yes === x.ys && x.title === 'A fish for the wedding' && x.notYet === x.ny && x.days >= 4 && x.days <= 6 && !/\{|undefined/.test(x.offer + x.hint), { greet: x.greet, offer: x.offer, days: x.days });
   if (x.how === 'lapse') { check(`${nm}: past the morning of the day, the lapse in the giver's words, once, nothing paid`, x.lapsed && x.done === x.wdone && x.paid === 0 && !x.again, x); continue; }
   check(`${nm}: the ${x.how} fish taken, answered in their words, ${x.how === 'fine' ? 'paid in full' : 'half paid'}, a point of favour`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.paid > 0 && x.fav === 1 && x.left === 0, { done: x.done, paid: x.paid, wpaid: x.wpaid, fav: x.fav });
+  check(`${nm}: the catch counts as a reload gives it back (no _typeKey), and the shop's Fresh Fish is no catch`, x.turned && x.shopFish === false, { shopFish: x.shopFish }); /* S2043 */
   if (x.how === 'fine' && !x.feast) check(`${nm}: the town's inn gives the wedding's stew on the house that day, once, and not the day after`, x.meal && !x.meal2 && x.stew === 1 && x.mealOff !== true, { meal: x.meal, again: x.meal2, stew: x.stew, after: x.mealOff });
   if (x.how === 'plain') check(`${nm}: a plain fish brings no meal of its own: the inn's stew only if the town keeps another's wedding or a feast that day`, x.meal === !!(x.on || x.feast), { meal: x.meal, wedding: x.on, feast: x.feast });
   if (x.how === 'fine') check(`${nm}: on the day, the wedding's greeting and the day's flag; gone the day after`, x.wed === x.wwed && x.on && !x.off, { wed: x.wed, on: x.on, off: x.off });

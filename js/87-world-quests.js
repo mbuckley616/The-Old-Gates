@@ -1282,7 +1282,9 @@ const giver=`${lord.title} ${lord.name}`;
     const p=erPeople(def),bank=NAMES[(PEOPLES[p]||{}).names]||NAMES.irish;let who=pick(s,s()<.5?bank.f:bank.m);if(who===def.name)who=pick(s,bank.f);
     const wday=Math.floor((worldState.gameTimeAbsMinutes||0)/1440)+4+Math.floor(s()*3);
     return {sub:'fish',who,wday,weekday:calDay(wday*1440).day.name,date:calDateLine(wday*1440),week:wk,idx};}
-  function erIsFish(fine){return b=>b&&b._typeKey==='fish'&&(/^Fine /.test(b.name||''))===fine;}
+  // S2043 — a caught fish by what the save keeps: its food (or its icon, a catch from before S2028), not a cooked meal and not the shop's Fresh Fish; `_typeKey` does not survive a reload
+  function erCaughtFish(b){return !!b&&!b.meal&&b.name!==SURV_ITEMS.fish.name&&(foodOf(b)==='fish'||b.ico==='🐟');}
+  function erIsFish(fine){return b=>erCaughtFish(b)&&(/^Fine /.test(b.name||''))===fine;}
   // the turn-in: a fine fish (full pay, the wedding kept) or a plain one (half); by six in the morning of the day
   function erFishTurnIn(q,site,p,fine){if(q.lapsed||erLapse(q)){q.erUnsaid=false;return ER_FISH.lapse[p];}const isF=erIsFish(fine);if(!bagCount(isF))return ER_SHARED[p].notYet;
     const it=BAG.find(isF);bagTake(isF,1);q.data.fine=fine;q.data.fish=it?it.name:null;if(!fine)q.reward=Math.round(q.reward/2);
