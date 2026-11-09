@@ -507,7 +507,7 @@
   const SNAP_HEAR=[9,6],LOOK_GO=4,LOOK_IN=1,LOOK_HOLD=8;
   function wallsBetween(ax,az,bx,bz,fl){const S_=(typeof INT_SOL!=='undefined'&&INT_SOL)||[],D_=(typeof INT_DOORS!=='undefined'&&INT_DOORS)||[],y=(fl||0)+1.2;
     const dx=bx-ax,dz=bz-az,T=[];
-    for(const s of S_){if(s.y0==null||s.y1==null||s.y0>y||s.y1<y||!(s.y1-s.y0>=1.8||D_.some(d=>d.sol===s)))continue;let t0=0,t1=1,ok=true;
+    for(const s of S_){if(s.y0==null||s.y1==null||s.y0>y||s.y1<y||!(s.y1-Math.max(s.y0,fl||0)>=1.8||D_.some(d=>d.sol===s)))continue; /* S2010: tall from the floor; the room's furniture solids start at -0.5 (an armour stand of 1.6 m read 2.3, a wall) */let t0=0,t1=1,ok=true;
       for(const [o,v,lo,hi] of [[ax,dx,s.x0,s.x1],[az,dz,s.z0,s.z1]]){if(Math.abs(v)<1e-9){if(!(o>lo&&o<hi))ok=false;continue;}let u=(lo-o)/v,w=(hi-o)/v;if(u>w){const k=u;u=w;w=k;}if(u>t0)t0=u;if(w<t1)t1=w;}
       if(ok&&t0<t1)T.push([t0,t1]);}
     T.sort((p,q)=>p[0]-q[0]);const L=Math.hypot(dx,dz)||1,gap=.15/L;let n=0,end=-1;for(const [t0,t1] of T){if(t0>end+gap)n++;end=Math.max(end,t1);} // a wall and the leaf in it are one
