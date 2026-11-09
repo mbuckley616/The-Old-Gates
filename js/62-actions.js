@@ -743,6 +743,7 @@ function useItem(i){
   if(it.brew){useTincture(i);return;} /* S1483 — a tincture drunk, a poison on the blade */
   if(it.name===MORTAR_NAME){openBrewPage();return;}
   if(it.firePot){const r=throwPot();if(r!==true)showMsg(r,'#cc8844');return;} /* S1837 — a fire pot thrown at a ship */
+  if(it.name==='Charcoal'&&typeof filterWater==='function'&&filterWater(i))return; /* S2011 — a filter for raw water */
   if(it.vessel){drinkWater(i);return;} /* S2010 — water B: a drink leaves you Watered */
   if(it.meal){eatMeal(i);return;} /* S1486 — a meal leaves you fed */
   if(it.name===TINDERBOX_NAME||it.log||it.food){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
