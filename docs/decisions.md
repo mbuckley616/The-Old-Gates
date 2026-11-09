@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Cooking — how long being fed lasts in real minutes (from the systems designer, 2026-11-09, #1339)
+**The question.** The game clock runs one game hour to the real minute, so today's meal (*fed*, 2 game hours) lasts about 2 real minutes, and cooking B's dish (×1.5) and filled dish (×2.25) about 3 and 4.5. Every length in the cooking build sheet (`docs/design/cooking-build.md`) is a multiple of it. How long should *fed* last?
+
+**Options.**
+- **A.** As built: a roast 2 real minutes, a dish 3, a filled dish 4.5. Food is a snack before a fight.
+- **B (recommended).** Ten times: a roast 20 real minutes, a dish 30, a filled dish 45, a drink 10. A filled stew carries a gate.
+- **C.** Four times: a roast 8, a dish 12, a filled dish 18 (Skyrim's soups last 12).
+
+**Recommendation.** B: it makes the page's "a filled stew carries a whole dungeon" true and the Mark's curd and Aurenne's olives a real way through climate B.
+
 ## Answered
 ### The six schools' great halls inside — how far a school changes a gate's space (from the concept artist, 2026-11-08, #1319)
 **The question.** Backlog L10 (OG-119, card F5's look half). Michael's B on the gate interiors gives every gate the same six space types (nave, crossing, stair hall, chasm, flooded hall, ring chamber) and says the schools re-dress them, but not how far. The prototype dresses one nave (27 m wide, four 14 m bays, vault to 33 m) three ways for each school. Page: `docs/prototypes/levelup/naves.html`; details in `docs/concepts.md`.
