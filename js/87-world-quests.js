@@ -289,6 +289,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(_st.flags.besieged!=null){const Pc=polityName(_st.siegeBy,true);const L={gatelander:`${Pc}'s camp is on the road and the gate is shut. Twelve days, the granary says, and then hunger opens it for them. A camp's only canvas and the men in it. Break it and the town will owe you more than it can say.`,markman:`${Pc}'s camp. On the road, past the gate. Twelve days of bread, then we open or we starve. Break the camp.`,aurennais:`${Pc} has encamped on the road, Master. By the granary's accounts we can hold twelve days; after that the gate opens on hunger's terms rather than ours. Should the camp be broken, the town would count itself in your debt, and say so in writing.`};return [{label:'The siege?',response:L[_lp]||L.gatelander}];}
     return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{tickDatedWork();const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id)){datedWork(q,site);qAdd(q);}if(q.done)return `You've done it? Then ${datedPay(q)} gold, with the ${site.kind}'s thanks.`;return q.desc+(q.due?` (${q.reward} gold; ${Math.round(q.reward*1.25)} if it is done by ${calDateLine(q.due-1)}. After that, the work goes to someone else.)`:` (${q.reward} gold.)`);}},
             {label:'It\u2019s done.',quest:true,avail:()=>{tickDatedWork();return qActive().some(q=>q.giverSite===site.id&&!q.faction&&q.done);},fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction);if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const paid=qTurnIn(q);addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
+            erHedgeLordTopic(site), /* S2021 — the hedge's deed, in Aurenne */
             {label:'How fares the town?',get response(){return `${site.name} is ${stateSaid(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
@@ -315,6 +316,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(q.kind==='errand'&&q.sub==='watch'){erWatchTick(q);continue;} /* S1776 */
       if(q.kind==='errand'&&q.sub==='cart'){erCartTick(q);continue;} /* S1947 */
       if(q.kind==='errand'&&q.sub==='child'){erChildTick(q);continue;} /* S1981 */
+      if(q.kind==='errand'&&q.sub==='hedge'){erHedgeTick(q);continue;} /* S2021 */
       if(q.kind==='retrieve'&&q.data.fixed&&!q.data.got&&dungeonWorldPos[q.data.seed]){const w=dungeonWorldPos[q.data.seed];q.data.fixed=false;q.data.x=w.x+7;q.data.z=w.z+5; /* S985 — the job was given before its gate was placed: the thing lies by the real door */
         if(q._obj){const y=worldH(q.data.x,q.data.z)+.2;q._obj.m.position.set(q.data.x,y,q.data.z);q._obj.l.position.copy(q._obj.m.position);const pk=pickups.find(o=>o.id===q.id+':pickup');if(pk){pk.x=q.data.x;pk.z=q.data.z;}}}
       if(q.kind==='retrieve'&&!q.data.got&&!q._obj){const m=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),new THREE.MeshLambertMaterial({color:0xc8a040}));m.position.set(q.data.x,worldH(q.data.x,q.data.z)+.2,q.data.z);sc.add(m);const l=regLight(0xffd080,.8,5,'quest');l.position.copy(m.position);q._obj={m,l};pickups.push({id:q.id+':pickup',x:q.data.x,z:q.data.z,quest:q});} /* S518 — a quest's pickup is <quest id>:pickup (co-op rules) */
@@ -992,7 +994,9 @@ const giver=`${lord.title} ${lord.name}`;
   function errandFor(def,site){
     if(!erGiver(def,site))return null;const wk=erWeek(),R=erRecs(def,site);
     if(R.some(q=>!q.turnedIn||q.week===wk))return null;
+    if(erHedgeQ(def,site))return null; /* S2021 — in a quarrel with the neighbour */
     {const L=erLetterAgain(R,wk);if(L)return L;}
+    {const H=erHedgeRoll(def,site,wk);if(H)return H;} /* S2021 — the hedge, on the pair's own stream */
     const r=seededRng('errand',site.id+':'+erTag(def)+':'+wk);if(r()>=.2)return null;
     {const N=erNameRoll(def,site,wk,R.length);if(N)return N;}
     {const D=erDebtRoll(def,site,wk,R.length);if(D)return D;} /* S1677 — the debt, on its own stream */
@@ -1518,6 +1522,107 @@ const giver=`${lord.title} ${lord.name}`;
       showMsg(`${d.who} runs on ahead to the house.`,'#e8d8a0');qJournal(q,'ready',`${d.who} is home. Tell ${q.giver}.`);}}
   function erChildTurnIn(q,site,p){const o=erChildO(q);if(q.lapsed||erLapse(q)){q.erUnsaid=false;erChildDrop(q);return ER_CHILD.lapse[p](o);}if(!q.data.home)return ER_SHARED[p].notYet;
     qTurnIn(q);if(q.data.choice!=='show')addFavor(site,1);return (q.data.choice==='show'?ER_CHILD.shown:ER_CHILD.homeNow)[p](o);}
+  // S2021 — errand 11, *The Hedge* (Asked in Passing, the second run; approved 14 Oct 2026): two neighbours, the residents in
+  // the town's homes paired in their build order (the first and second, the third and fourth…) when their doors stand within 30 of
+  // each other (the draft's lot.n and lot.n+1), both givers. One week in twelve of a pair's, on its own stream `errand-hedge` keyed
+  // by the pair, both offer it at once, and either can be asked. The record is the first's (er:<site>:<first>:<n>) and names the
+  // second (data.b). Hear both sides, then judge at either: for one, for the other, or split it; in the Mark, a fight at noon on
+  // the square (the next 12:00, the winner rolled on the record's id; no ring is laid); in Aurenne, the deed, read by the lord
+  // (or the steward), the winner rolled on the record's id. Each side then answers once, by the outcome, and pays its share:
+  // the one found for pays in full, a split is half from each, the noon fight full from both; a point of the town's favour. Two
+  // neighbours of two peoples call each other by the canon's coinage (§2.1) in their side, and the one found against says the
+  // other's contradiction before their answer. Plain fixes against the draft: the Gatelands' quarrel is always a hedge (the dry-stone
+  // wall would need its own Gatelander line, which says *planted*); each speaker's side names their own grievance, so two
+  // neighbours of two peoples in a port may each name another; the second side's pay comes when that side answers. Added, in each
+  // people's register: the answer to *Settle it at noon* and to *Ask for the deed*, and the journal's lines (the narrator's).
+  const ER_HEDGE={
+    hint:{gatelander:()=>"Good fences make good neighbours, they say. They never met mine.",markman:o=>`Neighbour's a thief. Ask ${o.him}. ${erCap(o.he)}'ll lie.`,
+      aurennais:()=>"There is a disagreement with the house next door, Master. A question of a boundary.",oldblood:()=>"The mearing is wrong."},
+    side:{gatelander:o=>`That hedge was my father's, and his father planted it, and ${o.who} has been cutting it back a yard a year since the frost. A yard's nothing. Thirty years is a field.`,
+      markman:o=>`${o.who} stacks ${o.his} wood on my side. Says the fence moved. Fences don't move. ${erCap(o.he)} moved it.`,
+      aurennais:o=>`The deed gives this house the cistern on alternate days, Master. ${o.who} draws every day and calls it a misunderstanding. I have the dates.`,
+      oldblood:o=>`The mearing was here. ${o.who} says there. It was here.`},
+    coin:{gatelander_markman:()=>"Hill-dog. Thinks a fence is something you knock down to get to the argument.",markman_gatelander:o=>`Turf-cutter. A proverb for every yard ${o.he}'s stolen.`,
+      aurennais_gatelander:o=>`Gate-grubber. ${erCap(o.he)} would dig up the boundary stone if ${o.he} thought it would sell.`,gatelander_aurennais:()=>"Ledger. Won't lend you a bucket without a witness.",
+      markman_aurennais:o=>`Tithe-man. ${erCap(o.he)}'d charge me for the shade off ${o.his} roof.`,aurennais_markman:o=>`The unlettered, Master. ${erCap(o.he)} settles a measurement with an axe.`},
+    contra:{gatelander_markman:o=>`I'll say this for ${o.him}: I'd walk any road with ${o.him}.`,markman_gatelander:o=>`${erCap(o.he)}'d not leave a wounded man. I'll give ${o.him} that.`,
+      aurennais_gatelander:o=>`Nobody keeps a field or a promise like ${o.him}. That is the irritation of it.`,gatelander_aurennais:()=>"Their ships come back, mind. Ours don't.",
+      markman_aurennais:o=>`${erCap(o.his)} steel's better than mine. ${erCap(o.he)} knows it.`,aurennais_markman:o=>`If I wanted a thing done by nightfall, I would hire ${o.him}. And pay ${o.him} after.`},
+    split:'Split it down the middle.',noon:'Settle it at noon, on the square.',
+    found:{gatelander:()=>"There. A wrong's not righted by saying it, but it's a start. Here's for your trouble.",markman:()=>"Told you. Here.",
+      aurennais:()=>"Then the matter is settled on its merits, Master. Your fee.",oldblood:()=>"Here. As I said."},
+    against:{gatelander:()=>"Is that how it is. Well, you've two eyes and I've a hedge. We'll see which lasts.",markman:()=>"Iron and blood. Get out of my yard.",
+      aurennais:()=>"I disagree, Master, and will say so in writing. But I will abide by it.",oldblood:()=>"It was here."},
+    halves:{gatelander:o=>`Half's better than none, and none's what I'd have got from ${o.him}. Half your pay, from me.`,markman:()=>"Half. Fine. Half from me.",
+      aurennais:()=>"A compromise, Master. Neither of us is satisfied, which I am told is the mark of a fair one. Half the fee.",oldblood:()=>"Half. Half from me."},
+    won:"Settled. Here. You've sense.",lost:o=>`Settled. ${erCap(o.he)} hits like a door. Here. You've sense.`,
+    atNoon:{gatelander:"Noon, then, on the square, and the Weaver pick the steadier of us.",markman:"Noon. Good.",
+      aurennais:"Fists at noon, Master. It is not how I would have drafted it, but I will attend.",oldblood:"Noon."},
+    toDeed:{gatelander:"The book, is it. Paper doesn't lie, they say. It's never been asked.",markman:"Fine. Paper.",
+      aurennais:"By all means, Master. The book will bear me out.",oldblood:"The book is younger than the mearing."},
+    deedAsk:o=>`I need to see the deed for ${o.an} and ${o.bn}'s line.`,
+    deed:o=>`The book is quite clear, Master. The line favours ${o.w}. It has favoured ${o.w} since before either of them was born.`};
+  function erFem(name){return Object.values(NAMES).some(b=>b&&b.f&&b.f.includes(name));}
+  function erHedgeNat(site){return nationOf(...cellOf(site.x,site.z)).people;}
+  function erHedgeThing(nat){return nat==='markman'?'fence':nat==='aurennais'?'boundary':'hedge';}
+  // the pair a def belongs to, or null: the town's residents who can give errands, in build order, two by two, doors within 30
+  function erHedgePair(def,site){const S=SETTLE.get(site.id);if(!S||!S.residents)return null;
+    const L=S.residents.filter(R=>!R.farm&&R.door&&R.def&&erGiver(R.def,site)),i=L.findIndex(R=>R.def===def);if(i<0)return null;
+    const k=i-(i%2),A=L[k],B=L[k+1];if(!A||!B||Math.hypot(A.door.x-B.door.x,A.door.z-B.door.z)>30)return null;return {a:A.def,b:B.def};}
+  // the record a def is in (as either side), while either side has an answer owed
+  function erHedgeQ(def,site){const t=erTag(def);return QJ().find(q=>q.kind==='errand'&&q.sub==='hedge'&&q.erSite===site.id&&(q.data.a===t||q.data.b===t)&&!(q.data.said.a&&q.data.said.b))||null;}
+  function erHedgeRoll(def,site,wk){const P=erHedgePair(def,site);if(!P)return null;
+    for(const d of [P.a,P.b]){if(erRecs(d,site).some(q=>!q.turnedIn||q.week===wk)||erHedgeQ(d,site))return null;}
+    const s=seededRng('errand-hedge',site.id+':'+erTag(P.a)+'|'+erTag(P.b)+':'+wk);if(s()>=1/12)return null;
+    const nat=erHedgeNat(site),me=P.a===def?'a':'b';
+    return {sub:'hedge',pa:P.a,pb:P.b,me,a:erTag(P.a),b:erTag(P.b),an:P.a.name,bn:P.b.name,af:erFem(P.a.name),bf:erFem(P.b.name),ap:erPeople(P.a),bp:erPeople(P.b),nat,thing:erHedgeThing(nat),week:wk,idx:erRecs(P.a,site).length};}
+  // what one side says of the other: who the other is, by their pronouns
+  function erHedgeO(d,me){const o=me==='a'?'b':'a';return erPro({who:d[o+'n'],fem:d[o+'f']});}
+  function erHedgeSide(d,me){const p=d[me+'p'],op=d[(me==='a'?'b':'a')+'p'],o=erHedgeO(d,me),c=ER_HEDGE.coin[p+'_'+op];return (c?c(o)+' ':'')+ER_HEDGE.side[p](o);}
+  function erHedgeAsk(def,site,E){const p=erPeople(def),d={an:E.an,bn:E.bn,af:E.af,bf:E.bf,ap:E.ap,bp:E.bp},o=erHedgeO(d,E.me);
+    return {cat:'you',label:`What’s the trouble with ${o.who}?`,response:erHedgeSide(d,E.me),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
+  function erHedgeAccept(site,E){const tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
+    const heard={a:E.me==='a',b:E.me==='b'};
+    return qAdd({id:erPre(E.pa,site)+E.idx,kind:'errand',sub:'hedge',giver:E.an,erSite:site.id,week:E.week,erPeople:E.ap,
+      title:`${E.an} and ${E.bn}'s ${E.thing}`,desc:`${E.an} and ${E.bn}, neighbours at ${site.name}, are at odds over the ${E.thing} between them. Hear them both, and judge.`,
+      objective:`Hear ${E.an} and ${E.bn} at ${site.name}, and give your judgement to either`,reward:base,
+      data:{a:E.a,b:E.b,an:E.an,bn:E.bn,af:E.af,bf:E.bf,ap:E.ap,bp:E.bp,nat:E.nat,thing:E.thing,base,heard,verdict:null,deed:false,noonAt:null,fought:false,winner:null,said:{a:false,b:false}}});}
+  function erHedgeMe(q,def){return q.data.a===erTag(def)?'a':'b';}
+  // the judgement, by name (co-op rules): 'a', 'b', 'split', 'noon' (the Mark) or 'deed' (Aurenne); the speaker answers
+  function erHedgeJudge(id,me,v){const q=QJ().find(x=>x.id===id);if(!q||q.data.verdict||q.data.deed)return null;const d=q.data,p=d[me+'p'],site=siteAnywhere(q.erSite);
+    if(v==='deed'){d.deed=true;const L=lordFor(site);qJournal(q,'ready',`The deed for ${d.an} and ${d.bn}'s line is in the town's book. Ask ${L.title} ${L.name} for it.`);return ER_HEDGE.toDeed[p];}
+    if(v==='noon'){const now=worldState.gameTimeAbsMinutes||0,day0=Math.floor(now/1440)*1440;d.verdict='noon';d.noonAt=now<day0+720?day0+720:day0+2160;
+      qJournal(q,'ready',`${d.an} and ${d.bn} will settle it on the square at noon, ${calDateLine(d.noonAt)}.`);return ER_HEDGE.atNoon[p];}
+    d.verdict=v;return erHedgeAnswer(q,me);}
+  function erHedgeShare(d,me){const v=d.verdict==='noon'?'noon':d.verdict;return v==='noon'?d.base:v==='split'?Math.round(d.base/2):v===me?d.base:0;}
+  // one side's answer to the outcome, and its share of the pay: the first answer turns the errand in, the second pays its own part
+  function erHedgeAnswer(q,me){const d=q.data;if(d.said[me])return null;const p=d[me+'p'],o=erHedgeO(d,me),op=d[(me==='a'?'b':'a')+'p'],site=siteAnywhere(q.erSite);
+    let say;if(d.verdict==='noon')say=d.winner===me?ER_HEDGE.won:ER_HEDGE.lost(o);
+    else if(d.verdict==='split')say=ER_HEDGE.halves[p](o);
+    else if(d.verdict===me)say=ER_HEDGE.found[p](o);
+    else{const c=ER_HEDGE.contra[p+'_'+op];say=(c?c(o)+' ':'')+ER_HEDGE.against[p](o);}
+    const n=erHedgeShare(d,me),first=!d.said.a&&!d.said.b;d.said[me]=true;
+    if(first){q.reward=n;qTurnIn(q);if(site)addFavor(site,1);}
+    else if(n>0){const paid=questGold(n);gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);}
+    return say;}
+  function erHedgeTopics(def,site){const q=erHedgeQ(def,site);if(!q)return [];const d=q.data,me=erHedgeMe(q,def),p=d[me+'p'],o=erHedgeO(d,me),id=q.id;
+    if(d.verdict&&!(d.verdict==='noon'&&!d.fought))return d.said[me]?[]:[{label:'About that errand.',quest:true,fn:()=>erHedgeAnswer(q,me)||ER_SHARED[p].notYet}];
+    if(d.verdict||d.deed)return [{label:'About that errand.',quest:true,fn:()=>ER_SHARED[p].notYet}];
+    if(!d.heard[me])return [{label:`What’s the trouble with ${o.who}?`,quest:true,fn:()=>{d.heard[me]=true;if(d.heard.a&&d.heard.b)qJournal(q,'ready',`You have heard ${d.an} and ${d.bn}. Give your judgement to either.`);return erHedgeSide(d,me);}}];
+    if(!(d.heard.a&&d.heard.b))return [{label:'About that errand.',quest:true,fn:()=>ER_SHARED[p].notYet}];
+    const J=[{label:`${d.an} is in the right.`,quest:true,fn:()=>erHedgeJudge(id,me,'a')||''},{label:`${d.bn} is in the right.`,quest:true,fn:()=>erHedgeJudge(id,me,'b')||''},{label:ER_HEDGE.split,quest:true,fn:()=>erHedgeJudge(id,me,'split')||''}];
+    if(d.nat==='markman')J.push({label:ER_HEDGE.noon,quest:true,fn:()=>erHedgeJudge(id,me,'noon')||''});
+    if(d.nat==='aurennais'&&!site.lordless){const L=lordFor(site);J.push({label:`Ask the ${L.title} for the deed.`,quest:true,fn:()=>erHedgeJudge(id,me,'deed')||''});}
+    return J;}
+  // the lord's (or the steward's) reading of the deed, in Aurenne: the winner on the record's id
+  function erHedgeDeedQ(site){return QJ().find(q=>q.kind==='errand'&&q.sub==='hedge'&&q.erSite===site.id&&q.data.deed&&!q.data.verdict)||null;}
+  function erHedgeDeed(site){const q=erHedgeDeedQ(site);if(!q)return null;const d=q.data;d.verdict=seededRng('errand',q.id+':deed')()<.5?'a':'b';
+    qJournal(q,'ready',`The book favours ${d[d.verdict+'n']}. Tell either of them.`);return ER_HEDGE.deed({w:d[d.verdict+'n']});}
+  function erHedgeLordTopic(site){return {get label(){const q=erHedgeDeedQ(site);return q?ER_HEDGE.deedAsk(q.data):'';},quest:true,avail:()=>!!erHedgeDeedQ(site),fn:()=>erHedgeDeed(site)||''};}
+  // the noon fight: at the hour, settled whether you watch or not; the town's line if you are in it
+  function erHedgeTick(q){const d=q.data;if(d.verdict!=='noon'||d.fought||(worldState.gameTimeAbsMinutes||0)<d.noonAt)return;
+    d.fought=true;d.winner=seededRng('errand',q.id+':noon')()<.5?'a':'b';const site=siteAnywhere(q.erSite),line=`${d.an} and ${d.bn} settle it on the square. ${d[d.winner+'n']} is still standing.`;
+    if(site&&Math.hypot(px-site.x,pz-site.z)<(site.pad||40)&&!(typeof isInterior==='function'&&isInterior()))showMsg(line,'#e8d8a0');qJournal(q,'ready',line);}
   function errandAccept(def,site,E){const p=erPeople(def),tier=Math.max(1,worldTierAt(site.x,site.z)||1),base=Math.min(40,15+5*(tier-1));
     if(E.sub==='letter'){const q={id:erPre(def,site)+E.idx,kind:'errand',sub:'letter',giver:def.name,erSite:site.id,week:E.week,erPeople:p,
         title:`A letter for ${E.who}`,desc:`${def.name} of ${site.name} has written to ${E.who} at ${E.town} and had no answer. Carry the letter there and ask after ${erPro(E).her}.`,
@@ -1549,6 +1654,7 @@ const giver=`${lord.title} ${lord.name}`;
         title:`${def.name}'s cart`,desc:`${def.name} of ${site.name} has a cart in the ditch on the ${E.dir} road, half an hour out. Shift it.`,
         objective:`Get ${def.name}'s cart out of the ditch on the ${E.dir} road from ${site.name}`,reward:E.n,
         data:{x:E.x,z:E.z,ang:E.ang,ra:E.ra,rb:E.rb,dir:E.dir,shifted:false,how:null,band:null,gone:false}});return ER_SHARED[p].yes;} /* S1947 */
+    if(E.sub==='hedge'){erHedgeAccept(site,E);return ER_SHARED[p].yes;} /* S2021 */
     if(E.sub==='child'){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440),pa=Object.values(NAMES).some(b=>b.f&&b.f.includes(def.name))?'mother':'father';qAdd({id:erPre(def,site)+E.idx,kind:'errand',sub:'child',giver:def.name,erSite:site.id,week:E.week,erDue:(day+3)*1440,erPeople:p,
         title:`${E.who} at ${erGateIn(E.gate)}`,desc:`${def.name} of ${site.name} has a ${E.fem?'daughter':'son'}, ${E.who}, gone off this morning to look at ${erGateIn(E.gate)}, and not back. Bring ${E.fem?'her':'him'} home.`,
         objective:`Bring ${E.who} home from ${erGateIn(E.gate)}, ${E.dir} of ${site.name}`,reward:E.n,
@@ -1615,6 +1721,7 @@ const giver=`${lord.title} ${lord.name}`;
       return {cat:'you',label:'Who’s the prayer for?',response:ER_PRAYER.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
     if(E.sub==='fish')return {cat:'you',label:'What’s the wedding missing?',response:ER_FISH.offer[p](Object.assign({},E,{n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1857 */
     if(E.sub==='rub')return {cat:'you',label:'What does the rubbing say?',response:ER_RUB.offer[p](Object.assign({},E,{gate:erGateIn(E.gate),n:Math.min(40,15+5*(Math.max(1,worldTierAt(site.x,site.z)||1)-1))})),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1908 */
+    if(E.sub==='hedge')return erHedgeAsk(def,site,E); /* S2021 */
     if(E.sub==='child')return {cat:'you',label:'Who’s not back?',response:ER_CHILD.offer[p](erPro(Object.assign({},E,{gate:erGateIn(E.gate)}))),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1981 */
     if(E.sub==='cart')return {cat:'you',label:'Where’s your cart?',response:ER_CART.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1947 */
     if(E.sub==='watch')return {cat:'you',label:'What’s coming at night?',response:ER_WATCH.offer[p](E),follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]}; /* S1776 */
@@ -1622,7 +1729,7 @@ const giver=`${lord.title} ${lord.name}`;
     return {cat:'you',label,response:said,follow:[{label:'I’ll do it.',fn:()=>errandFor(def,site)?errandAccept(def,site,E):ER_SHARED[p].no},{label:'Not now.',response:ER_SHARED[p].no}]};}
   function erBorrowLabel(q){const c=q.data.choice;return c==='coin'?'Here’s what it sold for.':c==='month'?'They’ll bring it back in a month.':c==='spare'?'They sold it. I left them the coin.':'About that errand.';} /* S1722 */
   // the top level: *About that errand.* while one is open, or once more to hear how a lapsed one ended; the letter's own lines
-  function errandTopics(def,site){const L=[...erLetterTopics(def,site),...erRubReaderTopics(def,site)]; /* S1908 — an Old Blood reader's *Can you read this?* */if(!erGiver(def,site))return L;const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));
+  function errandTopics(def,site){const L=[...erLetterTopics(def,site),...erRubReaderTopics(def,site)]; /* S1908 — an Old Blood reader's *Can you read this?* */if(!erGiver(def,site))return L;{const H=erHedgeQ(def,site);if(H)return [...erHedgeTopics(def,site),...L];} /* S2021 — either side of the hedge */const q=erRecs(def,site).find(q=>!q.turnedIn||(q.lapsed&&q.erUnsaid));
     if(!q||(q.sub==='letter'&&q.data.learned))return L;
     if(q.sub==='fish')return [...erFishTopics(q,site),...L]; /* S1857 */
     if(q.sub==='rub')return [...erRubTopics(q,site),...L]; /* S1908 */
@@ -1633,7 +1740,7 @@ const giver=`${lord.title} ${lord.name}`;
     const now=worldState.gameTimeAbsMinutes||0,R=erRecs(def,site);if(met>0&&erWeddingQ(site.id,R))return ER_FISH.wed[erPeople(def)]; /* S1857 — the wedding day */
     const cold=met>0&&R.find(q=>q.lapsed&&now<q.erDue+1440*7);if(cold)return cold.sub==='borrowed'?ER_BORROW.kept[erPeople(def)](erPro(cold.data)):ER_FEVER.cold[erPeople(def)];
     {const bq=met>0&&R.find(q=>q.sub==='borrowed'&&q.turnedIn&&q.data.choice==='month'&&now>=q.data.at+30*1440&&now<q.data.at+37*1440);if(bq)return line+' '+ER_BORROW.back[erPeople(def)](erPro(bq.data));} /* S1722 — the month out, the thing walked home: a week of the line */
-    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */if(E.sub==='fish')return line+' '+ER_FISH.hint[erPeople(def)](E); /* S1857 */if(E.sub==='rub')return line+' '+ER_RUB.hint[erPeople(def)]; /* S1908 */if(E.sub==='cart')return line+' '+ER_CART.hint[erPeople(def)]; /* S1947 */if(E.sub==='child')return line+' '+ER_CHILD.hint[erPeople(def)](erPro(E)); /* S1981 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
+    const E=met>0&&errandFor(def,site);if(E){if(E.sub==='name')return E.oldblood?line:line+' '+ER_NAME.hint[erPeople(def)](erPro(E));if(E.sub==='borrowed')return line+' '+ER_BORROW.hint[erPeople(def)](E);if(E.sub==='watch')return line+' '+ER_WATCH.hint[erPeople(def)](E);if(E.sub==='prayer')return E.oldblood?line:line+' '+ER_PRAYER.hint[erPeople(def)](E); /* S1817 */if(E.sub==='fish')return line+' '+ER_FISH.hint[erPeople(def)](E); /* S1857 */if(E.sub==='rub')return line+' '+ER_RUB.hint[erPeople(def)]; /* S1908 */if(E.sub==='cart')return line+' '+ER_CART.hint[erPeople(def)]; /* S1947 */if(E.sub==='child')return line+' '+ER_CHILD.hint[erPeople(def)](erPro(E)); /* S1981 */if(E.sub==='hedge')return line+' '+ER_HEDGE.hint[erPeople(def)](erHedgeO(E,E.me)); /* S2021 */return line+' '+(E.sub==='debt'?ER_DEBT.hint:E.sub==='letter'?ER_LETTER.hint:ER_FEVER.hint)[erPeople(def)];} /* S1600 — the name's hint; none for the Old Blood */
     const lq=R.filter(q=>q.sub==='letter').pop(),wk=erWeek();
     if(met>0&&lq&&lq.turnedIn&&lq.data.told==='lie'&&wk>lq.data.toldWeek&&seededRng('errand-wait',erPre(def,site)+wk)()<.5)return ER_LETTER.wait[erPeople(def)](erPro(lq.data));
     return line;}

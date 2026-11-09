@@ -497,5 +497,65 @@ for (const x of d8.by) { const nm = `child (${x.pp}, ${x.how})`; if (x.missing) 
   check(`${nm}: is home., answered in their words, paid, ${x.how === 'now' ? 'a point' : 'no'} favour`, x.turned && x.done === x.wdone && x.paid === x.wpaid && x.paid > 0 && x.fav === (x.how === 'now' ? 1 : 0), { done: x.done, paid: x.paid, fav: x.fav }); }
 check('child: the records are saved, the child is not', d8.saved >= 3, d8.saved);
 
+// S2021 — errand 11, The Hedge: two neighbours side by side, both offering in the same week; each side heard, then the judgement at
+// either; the Mark's noon fight on the clock, Aurenne's deed read by the lord; each side answers once and pays its share; two peoples
+// call each other by the coinage, and the one found against says the other's contradiction first
+const d11 = await page.evaluate(() => {
+  worldState.quests = []; worldState.met = {}; const T0 = 400 * 1440 + 600;
+  const sites = []; for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) getCell(i, j).sites.forEach(t => { if (t.pad >= 30 && t.kind !== 'shrine' && t.kind !== 'portal' && t.kind !== 'farm') sites.push(t); });
+  const natOf = t => nationOf(...cellOf(t.x, t.z)).people;
+  const saved = new Map(); const by = [];
+  const run = (nat, pa, pb, how) => {
+    const site = sites.find(t => natOf(t) === nat); if (!site) return { nat, how, missing: true };
+    const mk = (i, pp) => { const d = makeDef(site, site.reg || 'irish', seededRng('ertest11', how + i), 'Villager', 'Seán', {}); d._twin = 'H' + how + i; d.people = pp; return d; };
+    let A, B, E, wk; for (let k = 0; k < 400 && !E; k++) { A = mk('a' + k, pa); B = mk('b' + k, pb); if (A.name === B.name) continue;
+      if (!saved.has(site.id)) saved.set(site.id, SETTLE.get(site.id)); SETTLE.set(site.id, { ...(saved.get(site.id) || { site, houses: [], npcs: [], lamps: [], chimneys: [] }), residents: [{ def: A, door: { x: site.x, z: site.z } }, { def: B, door: { x: site.x + 12, z: site.z } }] });
+      for (let w = 0; w < 30 && !E; w++) { worldState.gameTimeAbsMinutes = T0 + w * 7 * 1440; const e = errandFor(A, site); if (e && e.sub === 'hedge') { E = e; wk = w; } } }
+    if (!E) return { nat, how, missing: true };
+    const x = { nat, how, pa, pb, an: A.name, bn: B.name };
+    const EB = errandFor(B, site); x.both = !!EB && EB.sub === 'hedge' && EB.me === 'b' && E.me === 'a';
+    const oA = erPro({ who: B.name, fem: erFem(B.name) }), oB = erPro({ who: A.name, fem: erFem(A.name) });
+    A.greeting[0]; B.greeting[0]; x.ga = A.greeting[0]; x.gb = B.greeting[0]; x.wga = ER_HEDGE.hint[pa](oA); x.wgb = ER_HEDGE.hint[pb](oB);
+    const coin = (p, q, o) => { const c = ER_HEDGE.coin[p + '_' + q]; return (c ? c(o) + ' ' : '') + ER_HEDGE.side[p](o); };
+    const askB = B.topics.find(t => /^About you/.test(t.label)).follow.find(t => t.label === `What’s the trouble with ${A.name}?`);
+    x.sideB = askB && askB.response; x.wsideB = coin(pb, pa, oB); x.yes = askB && askB.follow[0].fn(); x.ys = ER_SHARED[pb].yes;
+    const q = QJ().find(r => r.sub === 'hedge'); x.title = q && q.title; x.wtitle = `${A.name} and ${B.name}'s ${erHedgeThing(nat)}`;
+    x.reA = !!errandFor(A, site) || !!errandFor(B, site);
+    x.bWait = B.topics.find(t => t.label === 'About that errand.'); x.bWait = x.bWait && x.bWait.fn();
+    const tA = A.topics.find(t => t.label === `What’s the trouble with ${B.name}?`); x.sideA = tA && tA.fn(); x.wsideA = coin(pa, pb, oA);
+    const J = A.topics.filter(t => t.quest).map(t => t.label); x.J = J;
+    const L = lordFor(site); x.wJ = [`${A.name} is in the right.`, `${B.name} is in the right.`, 'Split it down the middle.'].concat(nat === 'markman' ? ['Settle it at noon, on the square.'] : nat === 'aurennais' ? [`Ask the ${L.title} for the deed.`] : []);
+    const g0 = gold, f0 = favor(site), base = q.data.base; const pickJ = l => A.topics.find(t => t.label === l).fn();
+    if (how === 'noon') { x.said1 = pickJ('Settle it at noon, on the square.'); x.wsaid1 = ER_HEDGE.atNoon[pa];
+      x.early = B.topics.find(t => t.label === 'About that errand.').fn(); px = site.x; pz = site.z;
+      worldState.gameTimeAbsMinutes = q.data.noonAt - 1; qTick(); x.notYetFought = !q.data.fought; worldState.gameTimeAbsMinutes = q.data.noonAt + 1; qTick(); x.fought = q.data.fought;
+      const w = q.data.winner; x.ansA = A.topics.find(t => t.label === 'About that errand.').fn(); x.ansB = B.topics.find(t => t.label === 'About that errand.').fn();
+      x.wansA = w === 'a' ? ER_HEDGE.won : ER_HEDGE.lost(oA); x.wansB = w === 'b' ? ER_HEDGE.won : ER_HEDGE.lost(oB); x.wpaid = questGold(base) * 2; }
+    else if (how === 'deed') { x.said1 = pickJ(`Ask the ${L.title} for the deed.`); x.wsaid1 = ER_HEDGE.toDeed[pa];
+      const lt = lordTopics(site).find(t => t.avail && t.avail()); x.lordL = lt && lt.label; x.wlordL = ER_HEDGE.deedAsk(q.data); x.lord = lt && lt.fn(); const w = q.data.verdict; x.wlord = ER_HEDGE.deed({ w: w === 'a' ? A.name : B.name });
+      x.lordAfter = !!lordTopics(site).find(t => t.avail && t.avail() && t.label === x.wlordL);
+      x.ansA = A.topics.find(t => t.label === 'About that errand.').fn(); x.ansB = B.topics.find(t => t.label === 'About that errand.').fn();
+      x.wansA = w === 'a' ? ER_HEDGE.found[pa](oA) : ER_HEDGE.against[pa](oA); x.wansB = w === 'b' ? ER_HEDGE.found[pb](oB) : ER_HEDGE.against[pb](oB); x.wpaid = questGold(base); }
+    else if (how === 'split') { x.ansA = pickJ('Split it down the middle.'); x.ansB = B.topics.find(t => t.label === 'About that errand.').fn();
+      x.wansA = ER_HEDGE.halves[pa](oA); x.wansB = ER_HEDGE.halves[pb](oB); x.wpaid = questGold(Math.round(base / 2)) * 2; }
+    else { x.ansA = pickJ(`${A.name} is in the right.`); x.ansB = B.topics.find(t => t.label === 'About that errand.').fn(); const c = ER_HEDGE.contra[pb + '_' + pa];
+      x.wansA = ER_HEDGE.found[pa](oA); x.wansB = (c ? c(oB) + ' ' : '') + ER_HEDGE.against[pb](oB); x.wpaid = questGold(base); x.contra = !!c; }
+    x.paid = gold - g0; x.fav = favor(site) - f0; x.turned = q.turnedIn; x.leftA = A.topics.filter(t => t.quest).length; x.leftB = B.topics.filter(t => t.quest).length;
+    x.saved = JSON.parse(ssStringify(worldState.quests)).some(r => r.id === q.id && r.data.said.a && r.data.said.b);
+    x.next = (() => { worldState.gameTimeAbsMinutes = T0 + (wk + 1) * 7 * 1440; return true; })();
+    return x; };
+  for (const [nat, pa, pb, how] of [['gatelander', 'gatelander', 'gatelander', 'split'], ['markman', 'markman', 'markman', 'noon'], ['aurennais', 'aurennais', 'aurennais', 'deed'], ['gatelander', 'aurennais', 'markman', 'for'], ['gatelander', 'gatelander', 'oldblood', 'for']]) { worldState.quests = []; try { by.push(run(nat, pa, pb, how)); } catch (e) { by.push({ nat, pa, pb, how, missing: true, err: String(e.stack).slice(0, 600) }); } }
+  for (const [k, v] of saved) { if (v) SETTLE.set(k, v); else SETTLE.delete(k); }
+  return by;
+});
+console.log(JSON.stringify(d11).slice(0, 4000));
+for (const x of d11) { const nm = `hedge (${x.pa}/${x.pb}, ${x.how})`; if (x.missing) { check(`${nm}: a pair asks`, false, x); continue; }
+  check(`${nm}: both neighbours offer it in the same week, each with the hint after First Words`, x.both && x.ga.endsWith(' ' + x.wga) && x.gb.endsWith(' ' + x.wgb) && !/\{|undefined|null/.test(x.ga + x.gb), { ga: x.ga, gb: x.gb });
+  check(`${nm}: each side word for word, the coinage where two peoples meet; taken at one, titled, none offered again`, x.sideB === x.wsideB && x.sideA === x.wsideA && x.yes === x.ys && x.title === x.wtitle && !x.reA && !/\{|undefined/.test(x.sideA + x.sideB), { sideA: x.sideA, sideB: x.sideB, title: x.title });
+  check(`${nm}: the judgement's labels once both are heard`, x.J.join('|') === x.wJ.join('|'), { J: x.J, wJ: x.wJ });
+  if (x.how === 'noon') check(`${nm}: noon agreed, not yet, fought at the hour`, x.said1 === x.wsaid1 && x.notYetFought && x.fought, x);
+  if (x.how === 'deed') check(`${nm}: the deed asked, read by the lord word for word, then gone from the lord`, x.said1 === x.wsaid1 && x.lordL === x.wlordL && x.lord === x.wlord && !x.lordAfter, x);
+  check(`${nm}: each side answers once, in their words${x.contra ? ', the contradiction first' : ''}; paid the shares, a point of favour, saved`, x.ansA === x.wansA && x.ansB === x.wansB && x.paid === x.wpaid && x.paid > 0 && x.fav === 1 && x.turned && x.leftA === 0 && x.leftB === 0 && x.saved, { ansA: x.ansA, ansB: x.ansB, paid: x.paid, wpaid: x.wpaid, fav: x.fav, leftA: x.leftA, leftB: x.leftB }); }
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
