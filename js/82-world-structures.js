@@ -758,7 +758,7 @@
   // Nothing marks it until you come within 40 m (tickDiscovery, 83), and then the map has it, with no travel to it.
   // -> {id, kind, name, x, z, ry, off, cell} or null, kept on the cell (c._wayside)
   const WAYSIDE={gatelander:['charcoal','merchants','carriage','cellar','erratic'],markman:['hunters','unfinished'],aurennais:['expedition']};
-  const WAYSIDE_OFF={carriage:[20,24]},WAYSIDE_NAME={carriage:'An overturned coach'},WAYSIDE_FIND=40;
+  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
   function waysideAt(c){
     if(!c||c._wayside!==undefined)return c?c._wayside:null;c._wayside=null;
     if(c.type==='sea'||c.home||!c.sites||!c.roadDefs||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
@@ -785,6 +785,12 @@
   // its stamps (the cell's first step, so the chunks are built with them): a pad flat at the ground under the coach, so it lies on level
   // turf, and clearings of the scatter (noFlat) round it and along the gouges to the road, so no tree stands in the way it went
   function waysideStamps(c,k){const D=waysideAt(c);if(!D)return [];const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],y=landH(D.x,D.z),out=[];
+    if(D.kind==='hunters'){ /* S2025 — the camp's two stances flat at their own ground (the tent's and the rack's, as the prototype levels them), the clearing
+      it keeps round it (the tent, the rack, the frame, the woodpile and the game pole's pines), and the path to the road */
+      for(const [n,lx,lz,r] of [['tent',3,0,3.3],['rack',-4,1.2,2.4]]){const [x,z]=W(lx,lz);out.push(addStamp({id:`${D.id}_${n}`,kind:'door',x,z,r,blend:1.6,y:landH(x,z),cell:k}));}
+      {const [x,z]=W(-1.2,-.4);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:13.5,blend:2,y:0,cell:k}));}
+      for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(2.4-.8*t,-7+(-D.off+7)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
+      return out;}
     {const [x,z]=W(0,-.3);out.push(addStamp({id:D.id+'_pad',kind:'door',x,z,r:3.4,blend:3,y,cell:k}));}
     {const [x,z]=W(0,1);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9,blend:2,y:0,cell:k}));}
     for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(2+17*t,-.8+(-D.off+2.6+.8)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3.5,blend:1.5,y:0,cell:k}));}
@@ -796,7 +802,7 @@
     M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='wayside '+D.kind;sc.add(M.group);
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,wayside:true});}}
-    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;return M.group;}
+    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;return M.group;}
   // S1800 (card F8; Michael's A on #333, "broken, as drawn", and his A on #1072, "fit the arcade to the land") — Aurenne's ruined aqueducts
   // (PKIT.places.aqueduct, places.js's aurenneAqueduct): an arcade across a river's valley, one tier where it is under 12 m deep and two where
   // deeper. One Aurenne cell in three keeps one, by its own stream (aqueduct:<cell>), so no other draw of the cell moves. Read by place
@@ -1483,7 +1489,7 @@
   // the line is clear or no way is found (he walks the direct line as before).
   function townRoute(S){if(S._route)return S._route;const cx=S.site.x,cz=S.site.z;
     const R=Math.ceil((S.site.pad||40)+8),N=2*R+1,sol=new Uint8Array(N*N);
-    const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;};fill();
+    const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;};fill();S._routeGrid={R,N,sol}; /* S2023 — the directions' walk (wayWalk) reads this grid too */
     const cel=p=>[Math.max(0,Math.min(N-1,Math.round(p.x-cx+R))),Math.max(0,Math.min(N-1,Math.round(p.z-cz+R)))];
     const find=(s0,g0)=>{const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0];
       for(let h=0;h<q.length&&prev[g0]<0;h++){const c=q[h],ci=c%N,cj=(c-ci)/N;

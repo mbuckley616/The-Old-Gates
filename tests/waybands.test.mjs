@@ -1,7 +1,8 @@
 // Backlog G, Wayfinding (Session 138): do the direction bands a townsperson gives (*just … of here* under 14, *a short
 // walk* under 55, *on across the town* under 130, *the far side of town* beyond) match the walk? The words are chosen by
-// the straight line; this measures, for every townsperson and every door in two towns, the walk by the street grid
-// (every one-unit cell of the town's pad that isn't solid, eight ways, no cutting a corner) and the band that walk would earn.
+// the straight line (S138 to S2021) and by the walk since Session 2023 (`wayWalk`, the watch's street grid pulled straight); this measures, for every townsperson and every door in two towns, the walk by the street grid
+// (every one-unit cell of the town's pad that isn't solid, eight ways, no cutting a corner) and the band that walk would earn,
+// against the band the game says (`wayFar` of `wayWalk`).
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -21,19 +22,23 @@ for (const id of ['dunmore', 'portclare']) {
     const inGrid = p => Math.abs(p.x - cx) < R - 1 && Math.abs(p.z - cz) < R - 1; // one standing off the pad (a quay) is outside the grid
     const askers = [...S.npcs, ...(S.residents || []).map(x => x.n).filter(Boolean)].filter(n => n.g && n.g.visible && n.def && !n.def._lord && inGrid(n.g.position)).map(n => ({ x: n.g.position.x, z: n.g.position.z, name: n.def.name }));
     const doors = S.houses.filter(h => h.exitX != null && inGrid({ x: h.exitX, z: h.exitZ })).map(h => ({ x: h.exitX, z: h.exitZ, name: h.name }));
-    const pairs = []; for (const a of askers) { const D = field(a); for (const d of doors) { const [bi, bj] = cel(d); const walk = D[bj * N + bi]; const line = Math.hypot(d.x - a.x, d.z - a.z); if (line < 1) continue; pairs.push({ a: a.name, d: d.name, line: +line.toFixed(1), walk: walk > 1e8 ? null : +walk.toFixed(1) }); } }
+    const pairs = []; for (const a of askers) { const D = field(a); for (const d of doors) { const [bi, bj] = cel(d); const walk = D[bj * N + bi]; const line = Math.hypot(d.x - a.x, d.z - a.z); if (line < 1) continue; pairs.push({ a: a.name, d: d.name, line: +line.toFixed(1), said: +wayWalk(S, a, d.x, d.z).toFixed(1), walk: walk > 1e8 ? null : +walk.toFixed(1) }); } }
     return { askers: askers.length, doors: doors.length, pairs }; }, id);
   const ok = r.pairs.filter(p => p.walk != null);
-  const lower = ok.filter(p => band(p.walk) > band(p.line));
+  const lower = ok.filter(p => band(p.walk) > band(p.said));
+  const lineLower = ok.filter(p => band(p.walk) > band(p.line)).length;
   const ratio = ok.map(p => p.walk / p.line).sort((a, b) => a - b); const q = f => +ratio[Math.floor(f * (ratio.length - 1))].toFixed(2);
-  const byBand = [0, 1, 2, 3].map(b => { const s = ok.filter(p => band(p.line) === b); return { said: ['just', 'short walk', 'across', 'far side'][b], n: s.length, under: s.filter(p => band(p.walk) > b).length, walkMax: s.length ? Math.max(...s.map(p => p.walk)) : 0 }; });
+  const byBand = [0, 1, 2, 3].map(b => { const s = ok.filter(p => band(p.said) === b); return { said: ['just', 'short walk', 'across', 'far side'][b], n: s.length, under: s.filter(p => band(p.walk) > b).length, byLine: ok.filter(p => band(p.line) === b).length, walkMax: s.length ? Math.max(...s.map(p => p.walk)) : 0 }; });
   const worst = [...lower].sort((a, b) => b.walk / b.line - a.walk / a.line).slice(0, 5);
   console.log(`\n${id}: ${r.askers} askers × ${r.doors} doors = ${r.pairs.length} pairs, ${r.pairs.length - ok.length} with no way by the grid`);
   console.log(`  walk ÷ straight line: median ${q(.5)}, 90% ${q(.9)}, 99% ${q(.99)}, most ${q(1)}`);
   console.log(`  by the band said: ${JSON.stringify(byBand)}`);
-  console.log(`  a band too near: ${lower.length} of ${ok.length} (${(100 * lower.length / ok.length).toFixed(1)}%); worst ${JSON.stringify(worst)}`);
-  const EDGE = [14, 55, 130]; const past = lower.map(p => +(p.walk - EDGE[band(p.line)]).toFixed(1));
-  check(`${id}: where the walk earns a farther band than the one said, it is the next band only, and under 15 units past the edge`, lower.every(p => band(p.walk) === band(p.line) + 1) && past.every(x => x < 15), { most: Math.max(0, ...past) });
+  console.log(`  a band too near: ${lower.length} of ${ok.length} (${(100 * lower.length / ok.length).toFixed(1)}%), by the straight line it would be ${lineLower}; worst ${JSON.stringify(worst)}`);
+  const sr = ok.map(p => p.said / p.walk).sort((a, b) => a - b);
+  console.log(`  the game's walk ÷ the grid's: least ${sr[0].toFixed(2)}, median ${sr[sr.length >> 1].toFixed(2)}, most ${sr[sr.length - 1].toFixed(2)}`);
+  const EDGE = [14, 55, 130]; const past = lower.map(p => +(p.walk - EDGE[band(p.said)]).toFixed(1));
+  check(`${id}: where the walk earns a farther band than the one said, it is the next band only, and under 15 units past the edge`, lower.every(p => band(p.walk) === band(p.said) + 1) && past.every(x => x < 15), { most: Math.max(0, ...past) });
+  check(`${id}: the band said goes by the walk: the game's measure is never under the straight line, and within 15% (or 2 units, at a door) of the grid's walk`, ok.every(p => p.said >= p.line - .01 && Math.abs(p.said - p.walk) < Math.max(2, .15 * p.walk)), ok.filter(p => p.said < p.line - .01 || Math.abs(p.said - p.walk) >= Math.max(2, .15 * p.walk)).slice(0, 3));
   check(`${id}: nearly every door can be walked to from where a townsperson stands`, ok.length >= .95 * r.pairs.length, { pairs: r.pairs.length, walkable: ok.length });
   check(`${id}: the walk is never shorter than the straight line`, ok.every(p => p.walk >= p.line - 1.5), ok.filter(p => p.walk < p.line - 1.5).slice(0, 3));
 }
