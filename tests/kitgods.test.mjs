@@ -53,15 +53,13 @@ check(`the row is ${ok[0] && ok[0].tris} tris in ${ok[0] && ok[0].draws} materia
   fs.writeFileSync(new URL('../docs/prototypes/' + name, import.meta.url), Buffer.from(url.split(',')[1], 'base64')); console.log(`  (picture: docs/prototypes/${name}, ${id})`); } }
 
 // Aurenne (Session 1329): every town, port and city of the first cells planned, then two settled for the solids and the pictures
-const AU = await page.evaluate(() => { anchoredPlaces(); const A = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'aurenne').flatMap(c => c.sites).filter(s => ['town', 'port', 'city'].includes(s.kind) && s.pad > 0).slice(0, 14);
-  return A.map(site => { if (!WORLD.settle.get(site.id)) genSettlement(site); const S = WORLD.settle.get(site.id), P = (S.plots || []).find(p => p.type === 'church'), G = S.gods;
-    const ch = S.houses.find(h => h.type === 'church' && h.kit);
-    return { id: site.id, kind: site.kind, au: !!(ch && ch.kit.kind === 'aurchurch'), yard: P ? +(P.w - P.lot.w).toFixed(2) : null, gods: !!G, island: G && G.island, n: G ? G.niches.length : 0, basins: G ? G.niches.filter(n => n.basin).length : 0, guest: G && G.niches[6].god, tris: G && G.tris, draws: G && G.draws }; }); });
-const auOk = AU.filter(r => r.au && r.gods && r.island === 'aurenne');
-check(`every Aurennais town, port and city tried has the Church of the Weaver with the row in Aurenne's dress (${auOk.length} of ${AU.length})`, AU.length >= 8 && auOk.length === AU.length, AU.filter(r => !auOk.includes(r)));
-check(`its yard is 1.5 + 4.5 m wider than the church (${[...new Set(auOk.map(r => r.yard))].join(', ')} m); seven niches, six basins, the Guest's last`, auOk.every(r => Math.abs(r.yard - 6) < 1e-6 && r.n === 7 && r.basins === 6 && r.guest === 'guest'), auOk);
-check(`Aurenne's row is ${auOk[0] && auOk[0].tris} tris in ${auOk[0] && auOk[0].draws} materials (at most 15)`, auOk.every(r => r.draws <= 15 && r.tris > 10000 && r.tris < 40000), auOk.map(r => [r.tris, r.draws]));
-const auIds = [AU.find(r => r.kind === 'town'), AU.find(r => r.kind === 'port')].filter(Boolean).map(r => r.id);
+// Session 2045: the two are settled first, the game's own way (the site's job, once its cells and its pad's stamp are in), and only then
+// are the others laid by hand for the counts. Laid by hand before its cells loaded, c7_1_s7's row took the ground under it before the
+// pad flattened it (its rise 8.19 m, its niches stepped −0.10 to +0.03), and stood 0.10 to 0.23 m above the pad once settled: red twice in
+// the weekly run of 8 Nov. Settled first it stands at 8.30 m, every niche 0.02 m over its ground.
+const AU_SITES = () => { anchoredPlaces(); return [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'aurenne').flatMap(c => c.sites).filter(s => ['town', 'port', 'city'].includes(s.kind) && s.pad > 0).slice(0, 14); };
+const AU0 = await page.evaluate(`(${AU_SITES})().map(s => ({ id: s.id, kind: s.kind }))`);
+const auIds = [AU0.find(r => r.kind === 'town'), AU0.find(r => r.kind === 'port')].filter(Boolean).map(r => r.id);
 for (const id of auIds) { await g.settle(id);
   const q = await page.evaluate(id => { const S = WORLD.settle.get(id), G = S.gods, fx = Math.sin(G.ry), fz = Math.cos(G.ry), ax = Math.cos(G.ry), az = -Math.sin(G.ry), at = (u, v) => [G.x + u * ax + v * fx, G.z + u * az + v * fz], so = (u, v) => WORLD.solidAt(...at(u, v)), L = G.rail;
     const P = S.plots.find(p => p.type === 'church'), ch = S.houses.find(h => h.type === 'church' && h.kit), toNave = ((P.lot.x - G.x) * fx + (P.lot.z - G.z) * fz) / Math.hypot(P.lot.x - G.x, P.lot.z - G.z);
@@ -72,6 +70,15 @@ for (const id of auIds) { await g.settle(id);
   check(`${id}: the row faces the nave (${q.toNave}), the walk inside its railing is ${q.walk} m to the church's solid and open its whole length; the church's door still clear`, q.toNave > .9 && q.walk >= 1.15 && q.walk < 1.6 && q.walkAlong && q.door, q);
   check(`${id}: the gate is open from the walk to An Chloch's kneeling place, the railing either side of it and the tithe box are solid`, q.gate.every(v => !v) && q.rail.every(v => v) && q.tithe, q);
   check(`${id}: every basin is solid and the place before it open; each niche on its own ground within 8 cm`, q.kneel.every(([b, k]) => b && !k) && q.ground.every(v => Math.abs(v) < .08), q); }
+const AU = await page.evaluate(src => { const A = (0, eval)(src)();
+  return A.map(site => { if (!WORLD.settle.get(site.id)) genSettlement(site); const S = WORLD.settle.get(site.id), P = (S.plots || []).find(p => p.type === 'church'), G = S.gods;
+    const ch = S.houses.find(h => h.type === 'church' && h.kit);
+    return { id: site.id, kind: site.kind, au: !!(ch && ch.kit.kind === 'aurchurch'), yard: P ? +(P.w - P.lot.w).toFixed(2) : null, gods: !!G, island: G && G.island, n: G ? G.niches.length : 0, basins: G ? G.niches.filter(n => n.basin).length : 0, guest: G && G.niches[6].god, tris: G && G.tris, draws: G && G.draws }; }); }, String(AU_SITES));
+const auOk = AU.filter(r => r.au && r.gods && r.island === 'aurenne');
+check(`every Aurennais town, port and city tried has the Church of the Weaver with the row in Aurenne's dress (${auOk.length} of ${AU.length})`, AU.length >= 8 && auOk.length === AU.length, AU.filter(r => !auOk.includes(r)));
+check(`its yard is 1.5 + 4.5 m wider than the church (${[...new Set(auOk.map(r => r.yard))].join(', ')} m); seven niches, six basins, the Guest's last`, auOk.every(r => Math.abs(r.yard - 6) < 1e-6 && r.n === 7 && r.basins === 6 && r.guest === 'guest'), auOk);
+check(`Aurenne's row is ${auOk[0] && auOk[0].tris} tris in ${auOk[0] && auOk[0].draws} materials (at most 15)`, auOk.every(r => r.draws <= 15 && r.tris > 10000 && r.tris < 40000), auOk.map(r => [r.tris, r.draws]));
+await g.settle(auIds[0]);
 // the pictures through the game's own frame (its land and its post): through the gate, and along the walk
 { const id = auIds[0]; for (const [name, view] of [['kit-gods-aurenne.png', 'gate'], ['kit-gods-aurenne-walk.png', 'walk']]) {
   await page.evaluate(([id, view]) => { forceTime(10); VM_SCENE.visible = false; const S = WORLD.settle.get(id), G = S.gods, fx = Math.sin(G.ry), fz = Math.cos(G.ry), ax = Math.cos(G.ry), az = -Math.sin(G.ry);
