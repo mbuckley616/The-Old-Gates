@@ -186,6 +186,20 @@ def hud(name, title, note, scene_src, query):
     open(os.path.join(out, name), 'w', encoding='utf-8').write(head + code + '\n</script></body></html>\n')
 hud('hud-lane.html', 'The HUD in the new look', 'The approved HUD over the new look, in a Gatelands lane. ?frame=metal|carved|bare. Drag to look.', 'street.js', '?scene=lane&frame=metal')
 hud('hud-hall.html', 'The HUD inside a gate', 'The approved HUD over the new look, a skeleton in a gate’s hall. ?frame=metal|carved|bare. Drag to look.', 'gate.js', '?scene=hall&view=hall&frame=metal')
+# the character sheet's portrait (concept, 9 Nov 2026; OG-134): the approved Inventory page with your own body between the worn slots;
+# the kit's CSS, icons and fonts inlined as hud()'s are, the bind kit (its sword and reach) and the sheet's in closures
+def sheet_page(name, title, note, query):
+    css = open(os.path.join(here, '..', 'hud', 'kit.css'), encoding='utf-8').read() + open(os.path.join(here, 'sheet.css'), encoding='utf-8').read()
+    defs = open(os.path.join(here, '..', 'hud', 'defs.html'), encoding='utf-8').read()
+    s = scene(open(os.path.join(here, 'sheet-view.js'), encoding='utf-8').read())
+    s = s.replace('window.HUD_DEFS ||', json.dumps(defs) + ' ||').replace("window.SHEET_BG || 'pieces-gatelands-street-a.jpg'", "''")
+    s = kits(s, ['bind', 'sheet'])
+    imps = re.findall(r"^import .*;$", s, flags=re.M); body = re.sub(r"^import .*;\n", '', s, flags=re.M)
+    code = '\n'.join(merge_imports(imports_c + imps)) + '\n' + common_body + '\n' + body
+    code = code.replace("new URLSearchParams(location.search)", f"new URLSearchParams(location.search || '{query}')")
+    head = HEAD.format(title=title, note=note, V=V).replace('<style>', '<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet"><style>' + css, 1)
+    open(os.path.join(out, name), 'w', encoding='utf-8').write(head + code + '\n</script></body></html>\n')
+sheet_page('sheet-portrait.html', 'The character sheet’s portrait', 'The character sheet’s portrait (L, OG-134): your own body between the worn slots of the approved Inventory page. ?mode=a|b|c (A the slots alone, as approved; B your body inked into the paper; C your body lit in a bronze window), &kit=traveller|mail|plate. Drag the figure to turn it.', '?mode=b&kit=mail')
 build('corruption-field.html', 'The world corrupted', 'The world’s corruption, 0 to 6 (L12, OG-145; F12): one Gatelands lane as each great gate is torn. The slider and the cast switch are top left; ?level=0..6, &cast=none|sky|world, &cam=field|hill|scale. Drag to look.', 'corruption-view.js', True, '?level=3')
 build('seasons-field.html', 'The seasons in the land', 'The seasons in the land (L12, OG-139; F3): one Gatelands lane through the year. The year, the rows (OG-139’s four seasons or OG-140’s green all year) and the snow are top left; ?season=spring|summer|autumn|winter, &rows=full|gentle, &snow=0..1, &cam=field|high|hedge|scale. Drag to look.', 'seasons-view.js', True, '?season=autumn')
 build('hours-lane.html', 'The hours of the day', 'The hours, island by island (L12, OG-137; F3): one Gatelands lane through a summer day and night. The hour, the night (A readable, B by the moon’s phase, C by phase with a starlit floor) and the moon are top left; ?hour=dawn|sunrise|midday|golden|twilight|moonlit|deep, &night=readable|phase|floor, &moon=0..1, &cam=field|hill|scale|high. Drag to look.', 'hours-view.js', True, '?hour=twilight')

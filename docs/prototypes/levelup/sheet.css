@@ -1,0 +1,27 @@
+/* The character sheet's portrait (concept, 9 Nov 2026; OG-134). The approved Inventory page's pieces (docs/prototypes/ui/index.html §3)
+   on a 1280×720 layer zoomed to the window, the worn panel widened to hold the figure between two columns of slots. */
+html, body { margin: 0; height: 100%; background: #0d1014; overflow: hidden; padding: 0; }
+#note { position: fixed; left: 12px; top: 10px; color: #f3ead6; font: 13px/1.4 system-ui, sans-serif; text-shadow: 0 1px 2px #000; pointer-events: none; z-index: 20; }
+#bg { position: fixed; inset: -20px; background: #1a140c center/cover no-repeat; filter: blur(3px) brightness(.42) sepia(.35); }
+#layer { position: fixed; left: 0; top: 0; width: 1280px; height: 720px; font-family: var(--body); }
+#layer svg.ico { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+#layer .slot svg.ico { width: 28px; height: 28px; }
+#layer .row svg.ico { width: 24px; height: 24px; }
+.cols { grid-template-columns: 30px 1fr 150px 50px 56px; }
+/* the worn panel with a figure: two columns of five slots, the figure between them */
+.worn2 { display: grid; grid-template-columns: 66px 1fr 66px; gap: 0 8px; height: 398px; position: relative; }
+.worn2 .col { display: flex; flex-direction: column; justify-content: space-between; padding: 8px 0 14px; z-index: 2; }
+.worn2 .col .slot { height: 64px; }
+.worn2 .slot .nm { font: 9px var(--display); letter-spacing: 0; color: var(--ink-faint); }
+.fig { position: relative; display: grid; place-items: center; cursor: grab; }
+.fig canvas { width: 100%; height: 100%; display: block; }
+.fig.ink canvas { mix-blend-mode: multiply; }
+/* B: a plate's ruled frame, as a book's illustration */
+.fig.ink::after { content: ""; position: absolute; inset: 2px 6px; border: 1px solid rgba(90,65,40,.45); box-shadow: inset 0 0 0 3px rgba(224,201,148,0), inset 0 0 0 4px rgba(90,65,40,.25); pointer-events: none; }
+.fig.ink .cap2 { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font: italic 13px var(--fell); color: var(--ink-soft); }
+/* C: a dark arched window framed in bronze */
+.fig.lit { margin: 0 2px; border-radius: 120px 120px 6px 6px / 90px 90px 6px 6px; overflow: hidden;
+  background: radial-gradient(ellipse 70% 55% at 45% 38%, #4a3826, #1c140c 70%, #0c0805);
+  box-shadow: 0 0 0 2px var(--bronze-lo), 0 0 0 4px var(--bronze), 0 0 0 5px #0a0806, 0 4px 14px rgba(0,0,0,.55), inset 0 0 30px rgba(0,0,0,.7); }
+.fig.lit .cap2 { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font: italic 13px var(--fell); color: #d8c290; text-shadow: 0 1px 2px #000; }
+.selinfo { margin-top: 10px; padding: 8px 10px; border-top: 1px solid rgba(90,65,40,.3); }
