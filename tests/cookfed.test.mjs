@@ -139,6 +139,8 @@ check(`Uisce touched douses the fire 1.5 m ahead (${ds.near}, gone ${ds.gone}: "
 // every goods shop and inn; E fills every vessel at a town's well (clean, foul while the town has the plague), in a river or lake 0.3 m
 // deep (raw), never the sea; rain outdoors adds a use each 10 game minutes. A drink leaves you Watered for 2 hours (a flask 4):
 // stamina regeneration ×1.1 and Cool 1. Foul water does you no good. Watered is the character's and saved.
+// a town with a plaza must be built first: on a slow runner the start's town comes some seconds after the world opens
+await page.waitForFunction(() => [...SETTLE.values()].some(S => S.site && KIND_PLAN[S.site.kind] && KIND_PLAN[S.site.kind].rows > 0 && S.site.kind !== 'farm'), null, { timeout: 180000, polling: 500 });
 const wt = await page.evaluate(() => {
   const out = {}; BAG.length = 0; worldState.watered = null; CAMPFIRES.splice(0).forEach(dropFire); WX.type = 'clear';
   const sm0 = showMsg; let last = ''; showMsg = (t, c) => { last = t; return sm0(t, c); }; const showMsgLast = () => last;
