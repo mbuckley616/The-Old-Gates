@@ -827,6 +827,60 @@
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,wayside:true});}}
     D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;D.house=M.house;D.hatch=M.hatch;D.stone=M.stone;D.other=M.other;D.clints=M.clints;D.wall=M.wall;D.pave=M.pave;D.thorn=M.thorn;return M.group;}
+  // S2038 (card F8, OG-124; Michael's A on #1292, "by the land, unmarked until found") — the places off the road. One cell in three of an
+  // island keeps one, by its own stream (offroad:<cell>), so no other draw of the cell moves: its kind drawn from its island's list (the
+  // Gatelands' shepherd's hut, peat-cutting camp and falls with the cave behind; the Mark's hunting cabin and logging camp), and a kind the
+  // kit has not built yet keeps the cell empty until it has, as the places by a road do. Each stands on the ground it was drawn for, read by
+  // place (withPlace over the cell's middle, the bare land, rawH): the shepherd's hut on a hill pasture of 1 in 10 to 1 in 4.5, its door down
+  // the slope, its fold below and its spring above on dry land 4 m or more over the sea and under the snow line, none of the three on ground
+  // steeper than 1 in 3, on open ground (the moor, the plains or the coast's grass, and the scatter's odds of a tree under 0.3 round it). Every kind keeps 150 m off every road's line and every pad of the cell and its eight neighbours (the decision's
+  // 150 m), 100 m off every door, 60 m off a farm's yard, 150 m off the cell's caves, mine, Weaver door, carving, watcher, aqueduct and place
+  // by a road, 30 m off every lake's rim, and 200 m inside its cell. Found within 40 m (tickDiscovery, 83), then on the map, with no travel to it.
+  // -> {id, kind, name, x, z, ry, cell} or null, kept on the cell (c._offroad)
+  const OFFROAD={gatelander:['shepherd','peat','falls'],markman:['cabin','logging']},OFFROAD_NAME={shepherd:'A shepherd’s hut'},OFFROAD_ODDS=1/3,OFFROAD_WOOD=.3;
+  /* the ground each kind was drawn for, by the biome at its middle: the shepherd's hut on the hill pasture (the moor, the open plains, the coast's grass) */
+  const OFFROAD_BIOME={shepherd:['moor','plains','coast'],peat:['moor','fen'],falls:['plains','forest','autumn','moor'],cabin:['tundra','forest'],logging:['tundra','forest']};
+  /* the shepherd's hut's three grounds in the piece's frame (the hut, the fold, the spring): each is read for its slope and its water */
+  const OFFROAD_GROUND={shepherd:[[0,0],[11,5.5],[-8,-6.5]]};
+  function offroadAt(c){
+    if(!c||c._offroad!==undefined)return c?c._offroad:null;c._offroad=null;
+    if(c.type==='sea'||c.home||!c.sites||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
+    const list=OFFROAD[nationOf(c.i,c.j).people];if(!list)return null;
+    const k=cellKey(c.i,c.j),r=PKIT.stream('offroad:'+k);if(r()>=OFFROAD_ODDS)return null;
+    const kind=list[Math.floor(r()*list.length)];if(!PKIT.places[kind])return null; /* drawn, not built yet: the cell waits for it */
+    const sites=[],defs=[],lakes=[],doors=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(!n)continue;sites.push(...(n.sites||[]));defs.push(...(n.roadDefs||[]));lakes.push(...(n.lakes||[]));doors.push(...(n.doors||[]));}
+    const byId={};for(const t of sites)byId[t.id]=t;const roads=[];for(const d of defs){const A=byId[d.a],B=byId[d.b];if(!A||!B)continue;try{roads.push(roadCurve(d,A,B));}catch(e){roads.push([A,B]);}}
+    const others=[];try{for(const f of [limeCave,seaCove,mineAt,weaverDoorAt,roadCarvingAt,watcherAt,aqueductAt,waysideAt]){const o=f(c);if(o)others.push(o);}}catch(e){}
+    const farms=[];try{loneFarms(c).forEach(F=>farms.push(F));c.sites.forEach(t=>{const F=villageFarm(t,c);if(F)farms.push(F);});}catch(e){}
+    const near=(pts,x,z)=>{let b=1e9;for(let i=0;i<pts.length-1;i++){const a=pts[i],q=pts[i+1],dx=q.x-a.x,dz=q.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));b=Math.min(b,Math.hypot(a.x+dx*t-x,a.z+dz*t-z));}return b;};
+    const grad=(x,z)=>{const gx=(rawH(x+4,z)-rawH(x-4,z))/8,gz=(rawH(x,z+4)-rawH(x,z-4))/8;return [gx,gz,Math.hypot(gx,gz)];};
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<120&&!c._offroad;t++){const x=c.ox+200+r()*(SIZE-400),z=c.oz+200+r()*(SIZE-400);
+      if(sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+150)||doors.some(e=>Math.hypot(e.x-x,e.z-z)<100)||farms.some(F=>Math.hypot(F.cx-x,F.cz-z)<FARM_R+60))continue;
+      if(others.some(C=>Math.hypot(C.x-x,C.z-z)<150)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+30)||roads.some(P=>near(P,x,z)<150))continue;
+      const [gx,gz,g]=grad(x,z);if(g<.1||g>.222)continue;const dx=-gx/g,dz=-gz/g,ry=Math.atan2(dx,dz),co=Math.cos(ry),s_=Math.sin(ry);
+      let ok=true;for(const [lx,lz] of OFFROAD_GROUND[kind]||[[0,0]]){const qx=x+lx*co+lz*s_,qz=z-lx*s_+lz*co,h=rawH(qx,qz);
+        if(h<4||(typeof snowLineAt==='function'&&h>snowLineAt(qx,qz)-5)||grad(qx,qz)[2]>.33||farmWet(qx,qz)){ok=false;break;}}
+      if(!ok)continue;
+      /* open ground: the scatter's own odds of a tree (scatterChunk's, the slope's share left at 1) under 0.3 on the average of the place and a ring 18 m round it */
+      let wood=0,nw=0;for(const [lx,lz] of [...(OFFROAD_GROUND[kind]||[[0,0]]),...[0,1,2,3,4,5].map(q=>[Math.cos(q*1.047)*18,Math.sin(q*1.047)*18])]){const qx=x+lx*co+lz*s_,qz=z-lx*s_+lz*co,h=rawH(qx,qz);
+        wood+=regionScalar(qx,qz,'density')*(.5+fbm(qx,qz,60,SEED+21,2)*1.3)*(1-sstep(30,44,h));nw++;}
+      if(wood/nw>=OFFROAD_WOOD||!OFFROAD_BIOME[kind].includes(dominantRegion(x,z).r.biome))continue;
+      c._offroad={id:`offroad_${c.i}_${c.j}`,kind,name:OFFROAD_NAME[kind]||kind,x:+x.toFixed(2),z:+z.toFixed(2),ry:+ry.toFixed(4),cell:k};}});
+    return c._offroad;}
+  // its stamps (the cell's first step, so the chunks are built with them): the hut's stance flat at the ground under its middle, cut into the
+  // slope as the prototype's is; a clearing of the scatter over the hut, the fold and the spring, so no tree stands in the walls
+  function offroadStamps(c,k){const D=offroadAt(c);if(!D)return [];const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],out=[];
+    {const [x,z]=W(0,0);out.push(addStamp({id:D.id+'_stance',kind:'door',x,z,r:4.4,blend:2.6,y:landH(x,z),cell:k}));}
+    {const [x,z]=W(1.5,0);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:17,blend:2,y:0,cell:k}));}
+    return out;}
+  // the piece built on the drawn ground (meshH) in its own frame, its door down the slope; its solids as squares (the world's solids are
+  // squares, so a long wall is a row of them, each as wide as it), as a place by a road's are
+  function placeOffroad(c,k){const D=offroadAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],y0=meshH(D.x,D.z);
+    const M=PKIT.places[D.kind]({key:D.id,ground:(lx,lz)=>meshH(...W(lx,lz))-y0});
+    M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='offroad '+D.kind;sc.add(M.group);
+    for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
+      for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,offroad:true});}}
+    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.stands=M.stands;D.hut=M.hut;D.fold=M.fold;D.spring=M.spring;D.rowan=M.rowan;return M.group;}
   // S1800 (card F8; Michael's A on #333, "broken, as drawn", and his A on #1072, "fit the arcade to the land") — Aurenne's ruined aqueducts
   // (PKIT.places.aqueduct, places.js's aurenneAqueduct): an arcade across a river's valley, one tier where it is under 12 m deep and two where
   // deeper. One Aurenne cell in three keeps one, by its own stream (aqueduct:<cell>), so no other draw of the cell moves. Read by place
