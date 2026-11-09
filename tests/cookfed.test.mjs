@@ -1,6 +1,6 @@
 // Survival B, session 2: fires and meals (Session 1486; `docs/design/survival-build.md`). A tinderbox and one log light a
 // campfire that burns one game-hour; an inn's or a home's hearth is a fire too. At a fire a food makes a meal (Cooking 6),
-// two logs a charcoal, a pine log three pitch. A meal leaves you fed, one kind at a time, for 2 game-hours × the Cooking
+// two logs a charcoal, a pine log three pitch. A meal leaves you fed, one kind at a time, for 20 game-hours (S2050, Michael's B on #1339; 2 before) × the Cooking
 // curve: Hearty (+15% stamina) from meat, Steady (+1 HP every 5 s) from fish, Clear (+10% mana regeneration) from produce.
 // A bear, a boar or a wolf gives 1 to 3 meat, seeded by the corpse's key.
 import { boot, check } from './lib/game.mjs';
@@ -31,7 +31,7 @@ const r = await page.evaluate(() => {
   S(100); const c100 = cookAt('meat'); out.s100 = c100.item.meal.s; out.mealStacks = BAG.filter(b => b.meal).length;
   const st0 = effMaxStamina();
   eatMeal(BAG.indexOf(BAG.find(b => b.meal && b.meal.s === 1))); playClockS += 1; tickDrink();
-  out.fed = { kind: fedKind(), mins: Math.round(fedNow().until - gameMinNow()), stam: effMaxStamina() / st0 };
+  out.fed = { kind: fedKind(), mins: Math.round(fedNow().until - gameMinNow()), stam: effMaxStamina() / st0, pill: (fedPill1().match(/bp-time">([^<]*)/) || [])[1] };
   // a second meal replaces the first
   bagAdd(survItem('fish')); const fish = cookAt('fish').item; eatMeal(BAG.indexOf(fish)); playClockS += 1; tickDrink();
   out.fed2 = { kind: fedKind(), mins: Math.round(fedNow().until - gameMinNow()), stam: effMaxStamina() / st0 };
@@ -93,9 +93,9 @@ check(`a tinderbox and a log light a fire (${r.logsLeft} logs and ${r.pineLeft} 
   r.lit && r.logsLeft === 2 && r.pineLeft === 1 && r.box && r.burns === 60 && r.at && r.mesh);
 check(`Raw Meat at the fire: ${r.cook.name} at ×${r.cook.s} (Cooking 50), ${r.cook.uses} Cooking points, ${r.cook.rawLeft} raw left; ×${r.s100} at 100, two stacks`,
   r.cook.made && r.cook.name === 'Roast Meat' && Math.abs(r.cook.s - 1) < .01 && r.cook.uses > 0 && r.cook.rawLeft === 1 && Math.abs(r.s100 - 1.4) < .01 && r.mealStacks === 2, r.cook);
-check(`eaten: ${r.fed.kind} for ${r.fed.mins} min, stamina ×${r.fed.stam.toFixed(3)}`, r.fed.kind === 'hearty' && Math.abs(r.fed.mins - 120) <= 1 && Math.abs(r.fed.stam - 1.15) < .01, r.fed);
+check(`eaten: ${r.fed.kind} for ${r.fed.mins} min, stamina ×${r.fed.stam.toFixed(3)}, the pill "${r.fed.pill}"`, r.fed.kind === 'hearty' && r.fed.pill === '20h' && Math.abs(r.fed.mins - 1200) <= 1 && Math.abs(r.fed.stam - 1.15) < .01, r.fed);
 check(`a fish after it replaces it: ${r.fed2.kind} for ${r.fed2.mins} min (×1.4), stamina back to ×${r.fed2.stam.toFixed(3)}; Steady heals ${r.steady} in 5 s`,
-  r.fed2.kind === 'steady' && Math.abs(r.fed2.mins - 168) <= 1 && Math.abs(r.fed2.stam - 1) < .01 && Math.abs(r.steady - 1) < .01, r.fed2);
+  r.fed2.kind === 'steady' && Math.abs(r.fed2.mins - 1680) <= 1 && Math.abs(r.fed2.stam - 1) < .01 && Math.abs(r.steady - 1) < .01, r.fed2);
 check(`Pottage: ${r.clear.kind}, mana regeneration ×${r.clear.mult}`, r.clear.kind === 'clear' && r.clear.mult === 1.1);
 check(`two logs make ${r.charcoal} Charcoal (${r.logsAfter} log left); a pine log ${r.pitch} Pitch; with none: "${r.noPitch}"`, r.charcoal === 1 && r.logsAfter === 1 && r.pitch === 3 && r.pineAfter === 0 && /pine/i.test(r.noPitch || ''));
 check(`Two portions: a meal cooked makes ${r.n24} at Cooking 24, ${r.n25} at 25`, r.n24 === 1 && r.n25 === 2);
@@ -106,7 +106,7 @@ check(`a seasoned meal eaten: fed ${r.sea.fed} and healed ${r.sea.healed}, ${r.s
 check(`no herb left: "${r.seaNone}"; the seasoning keeps through the save`, /none/.test(r.seaNone || '') && r.seaSer);
 check(`the page at 100 offers ${r.seaPage.rows} seasonings (nothing and the herb); a cooking with it says "${r.seaPage.said}" and takes one (${r.seaPage.herbs} left)`,
   r.seaPage.rows === 2 && r.seaPage.has && / with /.test(r.seaPage.said) && r.seaPage.herbs === 1, r.seaPage);
-check(`Full belly: fed with ${r.sleep74.left0} min left, 8 hours' sleep leaves ${r.sleep74.left} at 74 and ${r.sleep75.left} at 75`, r.sleep74.left === 0 && r.sleep75.left === r.sleep74.left0 && r.sleep75.left0 > 0, { s74: r.sleep74, s75: r.sleep75 });
+check(`Full belly: fed with ${r.sleep74.left0} min left, 8 hours' sleep leaves ${r.sleep74.left} at 74 and ${r.sleep75.left} at 75`, r.sleep74.left === r.sleep74.left0 - 480 && r.sleep75.left === r.sleep74.left0 && r.sleep75.left0 > 0, { s74: r.sleep74, s75: r.sleep75 });
 check(`the page: ${r.rows} recipes, cooks two at 100 ("${r.said}"), Esc closes`, r.page && r.rows === 5 && r.paged === 2 && /^Two: /.test(r.said) && r.closed);
 check(`after an hour the fire is out and gone ("${r.cold}")`, !r.out.at && r.out.left === 0 && !r.out.mesh && /fire/.test(r.cold || ''), r.out);
 check('an inn\'s and a home\'s hearth is a fire; a smithy\'s room is not', r.inn && r.home && !r.smithy);
@@ -267,9 +267,9 @@ const ck = await page.evaluate(() => {
 });
 console.log(JSON.stringify(ck));
 check(`a trout cooks at a hearth (${ck.trout.name}, ${ck.trout.left} left); a trout's kind keeps through the save`, ck.trout.made && ck.trout.name === 'Baked Fish' && ck.trout.left === 0 && ck.troutSaved, ck.trout);
-check(`meat and butter at Cooking 5: "${ck.rich.name}", ${ck.rich.r}, learnt ${ck.rich.learnt}, ${ck.uses} Cooking points; fed ${ck.richMins} min (1.5 × 120 × ${ck.mult.toFixed(2)}), stamina ×${ck.richStam.toFixed(4)}`,
-  ck.uses === 9 && ck.rich.r === 'rich' && ck.rich.learnt && ck.rich.butterLeft === 1 && Math.abs(ck.richMins - 180 * ck.mult) <= 1 && Math.abs(ck.richStam - 1.1875) < .01, ck.rich);
-check(`meat and oats is Filling: ${ck.fillMins} min (2.25 × 120 × ${ck.mult.toFixed(2)}); none left: "${ck.noOats}"`, Math.abs(ck.fillMins - 270 * ck.mult) <= 1 && /oats/.test(ck.noOats || ''));
+check(`meat and butter at Cooking 5: "${ck.rich.name}", ${ck.rich.r}, learnt ${ck.rich.learnt}, ${ck.uses} Cooking points; fed ${ck.richMins} min (1.5 × 1200 × ${ck.mult.toFixed(2)}), stamina ×${ck.richStam.toFixed(4)}`,
+  ck.uses === 9 && ck.rich.r === 'rich' && ck.rich.learnt && ck.rich.butterLeft === 1 && Math.abs(ck.richMins - 1800 * ck.mult) <= 1 && Math.abs(ck.richStam - 1.1875) < .01, ck.rich);
+check(`meat and oats is Filling: ${ck.fillMins} min (2.25 × 1200 × ${ck.mult.toFixed(2)}); none left: "${ck.noOats}"`, Math.abs(ck.fillMins - 2700 * ck.mult) <= 1 && /oats/.test(ck.noOats || ''));
 check(`Restoring: the first apple dish gives ${ck.rest1} health, the second, eaten while the first feeds you, ${ck.rest2}`, ck.rest1 === 30 && ck.rest2 === 0);
 check(`a curd stew warms by ${ck.warm.n} (${ck.warm.by}); a root stew with olives cools by ${ck.cool.n} (${ck.cool.by})`, ck.warm.n === 2 && ck.cool.n === 2, { w: ck.warm, c: ck.cool });
 check(`the page offers ${ck.rows.length} rows (${ck.rows.join(' | ')}): butter's rider named, rye's "?"; rye cooked says "${ck.said}"`,
