@@ -6,7 +6,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 
 const rigs = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.root.parent === WORLD.scene);
-  return { n: rs.length, skinned: rs.filter(r => r.mesh.isSkinnedMesh && r.mesh.skeleton.bones.length >= 17 && r.mesh.skeleton.bones.length <= 20 && r.root.children.length === 1).length,
+  return { n: rs.length, skinned: rs.filter(r => r.mesh.isSkinnedMesh && r.mesh.skeleton.bones.length >= 17 && r.mesh.skeleton.bones.length <= 20 && r.root.children.filter(c => c.name !== 'builder').length === 1 /* S2036: the new look's builder body hangs beside the driver in a group named builder (hbAttach) */).length,
     tris: rs.map(r => r.tris), armd: rs.map(r => !!(r.g.eq && r.g.eq.armour)), styles: new Set(rs.map(r => r.g.style)).size, beards: new Set(rs.map(r => r.g.beard)).size, hats: new Set(rs.map(r => r.g.hat)).size,
     skins: new Set(rs.map(r => r.g.skin.getHex())).size, roles: [...new Set(rs.map(r => r.g.role))].slice(0, 12) }; });
 // (Session 267: a cloak adds two bones and back hair one, the swinging parts'; Session 395: a guard in the armour kit is up
