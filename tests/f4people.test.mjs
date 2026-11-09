@@ -162,7 +162,7 @@ const cloakLegs = await page.evaluate(() => { const v = new THREE.Vector3();
   const rigs = [...HB_RIGS].filter(r => r.hb && r.hb.L < 2 && r.root.parent === WORLD.scene && !r.sleep && r.hb.full.find(m => m.name === 'cloak')).slice(0, 4);
   return rigs.map(rig => { const root = rig.root, fy = root.rotation.y, o = { key: rig.g.hbKey, legs: rig.hb.P.cloakLegs ? rig.hb.P.cloakLegs.n : 0, tested: 0, out: 0, worst: 0, hem: rig.hb.P.hem ? 0 : -1 };
     for (let i = 1; i <= 60; i++) { root.position.x += Math.sin(fy) * .012; root.position.z += Math.cos(fy) * .012; tickPeople(1 / 60, 7e5 + i * 16.7);
-      if (rig.hb.P.hem) o.hem = Math.max(o.hem, +rig.hb.P.hem.a.toFixed(2));
+      if (rig.hb.P.hem) { o.hem = Math.max(o.hem, +rig.hb.P.hem.a.toFixed(2)); o.sL = Math.max(o.sL || 0, rig.hb.P.hem.aS[0]); o.sR = Math.max(o.sR || 0, rig.hb.P.hem.aS[1]); o.side = +Math.min(o.sL, o.sR).toFixed(2); }
       if (i > 15 && i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; o.worst = Math.max(o.worst, c.worst); } }
     o.worst = +o.worst.toFixed(3); return o; }); });
 console.log('  legs under the cloaks:', JSON.stringify(cloakLegs));
@@ -173,6 +173,9 @@ console.log('  legs under the cloaks:', JSON.stringify(cloakLegs));
 // back by the further-trailing leg), so a trailing heel no longer goes out through the back hem (Clodagh of Dunmore, 16.8 cm out)
 check(`walking, a long cloak's back hem swings back over the trailing heel (its bone up to ${Math.max(...cloakLegs.map(c => c.hem))} rad)`,
   cloakLegs.every(c => !c.tested || c.hem >= 0) && cloakLegs.filter(c => c.tested && c.hem > .1).length >= 2, cloakLegs);
+// S2026 — and each side of the back by its own leg (Clodagh's heel 30–60° off straight back): over the walk both side bones swing back
+check(`walking, each side of a long cloak's back swings back over its own heel (both side bones up to ${Math.max(...cloakLegs.map(c => c.side || 0))} rad)`,
+  cloakLegs.filter(c => c.tested && c.side > .1).length >= 2, cloakLegs);
 // S1974 — a braid laid over a long cloak stays over it in the walk (S1966 laid it there in the builder's pose). The cloak rides the pelvis
 // (hbSkinLoose) and the hair the head, so the walk sank most of a braid under the sheet; the hair on the sheet now rides the pelvis too
 // (hbHairOnCloak). Before the cast's checks, which leave Dunmore. One cloaked walker of Dunmore rebuilt with a long braid; every third point of it near the sheet (within 4 cm) read
