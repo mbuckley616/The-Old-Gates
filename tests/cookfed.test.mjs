@@ -251,6 +251,8 @@ const ck = await page.evaluate(() => {
   bagAdd(secondItem('rye')); bagAdd(secondItem('butter')); cookSel = 'meat'; cookSecond = null; openCookPage();
   const rows = [...document.querySelectorAll('#ck-right [data-d]')].map(d => d.textContent.trim()); out.rows = rows;
   document.querySelector('#ck-right [data-d="rye"]').click(); cookGo(); out.said = document.getElementById('ck-said').textContent; closeCookPage(); cookSecond = null;
+  // the empty second is named for the main (critic s1401: a pottage's read "nothing: a roast")
+  openCookPage(); out.plain = ['meat', 'fish', 'produce'].map(k => { cookSel = k; cookDraw(); const d = document.querySelector('#ck-right [data-d=""]'); return d ? d.textContent.trim() : null; }); closeCookPage();
   // fires: a campfire roasts; a dish there needs a mess kit
   out.known = Object.keys(dishesKnown()).sort();
   lid = lid0; currentHouse = h0; bagAdd(survItem('meat', 3)); bagAdd(survItem('tinderbox')); bagAdd(survItem('log', 1)); bagAdd(secondItem('wheat', 2)); lightFire();
@@ -272,6 +274,7 @@ check(`Restoring: the first apple dish gives ${ck.rest1} health, the second, eat
 check(`a curd stew warms by ${ck.warm.n} (${ck.warm.by}); a root stew with olives cools by ${ck.cool.n} (${ck.cool.by})`, ck.warm.n === 2 && ck.cool.n === 2, { w: ck.warm, c: ck.cool });
 check(`the page offers ${ck.rows.length} rows (${ck.rows.join(' | ')}): butter's rider named, rye's "?"; rye cooked says "${ck.said}"`,
   ck.rows.length === 3 && /Butter.*Rich/.test(ck.rows.join('|')) && /Rye \(1\) \?/.test(ck.rows.join('|')) && /new to you/.test(ck.said), ck.rows);
+check(`the page's first second names the plain meal: ${ck.plain.join(' | ')}`, ck.plain.join('|') === '◆ nothing: Roast Meat|◆ nothing: Baked Fish|◆ nothing: Pottage', ck.plain);
 check(`dishes learnt: ${ck.known.join(', ')}`, ck.known.join() === 'meat:apples,meat:butter,meat:curd,meat:oats,meat:rye,produce:olives');
 check(`a campfire roasts (${ck.camp.roast}); a dish there without a pot: "${ck.camp.noKit}"; with a mess kit: ${ck.camp.kit}`, ck.camp.roast && /pot/.test(ck.camp.noKit || '') && ck.camp.kit, ck.camp);
 check(`the seconds by island: ${JSON.stringify(ck.isle)}; the mess kit at the goods shop only; the dishes, the seconds and the riders saved`,

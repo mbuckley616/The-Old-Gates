@@ -1091,7 +1091,7 @@ function cookDraw(){const ov=document.getElementById('cookui');if(!ov)return;
       t+=`<div style="padding-left:12px">${K.label}: ${K.say}, ${Math.round(FED_MIN*skillMult('cooking')*x/60*10)/10} hours</div>`;
       if(H.length){const pot=potHere(); /* S2028 — cooking B: the second in the pot, its rider *?* until a dish with it is known */
         const row=(k,lab)=>`<div data-d="${k}" style="cursor:pointer;padding-left:18px;${(cookSecond||'')===k?'color:#7a1f10':''}">${(cookSecond||'')===k?'◆':'◇'} ${lab}</div>`;
-        t+=`<div style="margin-top:6px;font-variant:small-caps;color:#7a1f10">With</div>`+row('','nothing: a roast')+H.map(h=>{const S=DISH_SECONDS[h.key];
+        t+=`<div style="margin-top:6px;font-variant:small-caps;color:#7a1f10">With</div>`+row('',`nothing: ${FOOD_MEAL[R.id].name}`)+H.map(h=>{const S=DISH_SECONDS[h.key];
           return row(h.key,`${S.name} (${h.n}) <i style="font-size:12px;color:#8a7050">${secondKnown(h.key)?DISH_RIDER[S.r].label:'?'}</i>`);}).join('');
         const canBake=!!(D&&D.r==='filling'&&ovenHere());if(!canBake)cookBake=false; /* S2033 — at an oven a grain dish is a stew or a bake */
         if(canBake){const brow=(v,lab)=>`<div data-b="${v?1:''}" style="cursor:pointer;padding-left:18px;${cookBake===v?'color:#7a1f10':''}">${cookBake===v?'◆':'◇'} ${lab}</div>`;

@@ -103,6 +103,36 @@ check(`walking in a cloak, none of your hand and forearm points under it comes o
   ck.cloak && ck.held > 0 && ck.rest.out === 0 && ck.restFree.out > 0 && ck.hold.tested > 1000 && ck.hold.out === 0 && ck.hold.worst < .006 && ck.free.out > ck.hold.out, ck);
 check('a swing or a block begun in the walk lets the arm go from the hold to the driver\'s pose (the right forearm within 30° of the driver\'s: 18° at rest)',
   ck.swing.R < .1 && ck.swing.forearm < 30 && ck.block.R === 0 && ck.block.forearm < 30, { swing: ck.swing, block: ck.block });
+// S2036 — your legs under your own long cloak: the hem's four bones (hbCloakLegs, as the townsfolk's) on your skeleton in a long cloak,
+// 167 bones; walking at 1.3 m/s, every other point of what your legs wear (and the body's legs) read round the neck's axis against the
+// cloak's columns (f4people's test) on every third tick of a 120-tick walk; a point out by 3 mm counts (main before: 702 of 10,657)
+const ckLegs = await page.evaluate(() => { const keep = { b: EQ.back }, raf = window.requestAnimationFrame; window.requestAnimationFrame = () => 0; const v = new THREE.Vector3();
+  const test = rig => { const P = rig.hb.P, cloak = rig.hb.full.find(m => m.name === 'cloak');
+    rig.root.updateMatrixWorld(true); const inv = cloak.matrixWorld.clone().invert(), K = 56, R = cloak.geometry.attributes.position.count / K, at = (m, i) => { m.getVertexPosition(i, v); return v.applyMatrix4(inv).clone(); };
+    const neck = P.byName['neck01'].getWorldPosition(new THREE.Vector3()).applyMatrix4(inv), ax = neck.x, az = neck.z, pol = [];
+    for (let k = 0; k < K; k++) { const c = []; for (let r = 0; r < R; r++) { const q = at(cloak, k * R + r); c.push({ th: Math.atan2(q.x - ax, -(q.z - az)), r: Math.hypot(q.x - ax, q.z - az), y: q.y }); } pol.push(c); }
+    const col = (k, y) => { const c = pol[k]; let lo = 0; while (lo < R - 2 && c[lo + 1].y > y) lo++; const a = c[lo], b = c[lo + 1], t = Math.max(0, Math.min(1, (a.y - y) / Math.max(1e-6, a.y - b.y))); return { th: a.th + (b.th - a.th) * t, r: a.r + (b.r - a.r) * t }; };
+    let yHem = -1e9; for (const c of pol) yHem = Math.max(yHem, c[R - 1].y); const yTop = neck.y - .14;
+    if (!rig._legs) { rig._legs = []; for (const m of rig.hb.full.filter(m => m.isSkinnedMesh && /^(|skirt|trousers|boots|legWraps|apron)$/.test(m.name))) { const g = m.geometry, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, bones = m.skeleton.bones, u = new Uint8Array(g.attributes.position.count);
+      if (g.index) for (const i of g.index.array) u[i] = 1; else u.fill(1); const ix = [];
+      for (let i = 0; i < u.length; i += 2) { if (!u[i]) continue; let b = 0, w = 0; for (let q = 0; q < 4; q++) if (sw.getComponent(i, q) > w) { w = sw.getComponent(i, q); b = si.getComponent(i, q); } if (/^(upperleg|lowerleg|foot|toe)/.test(bones[b].name)) ix.push(i); }
+      rig._legs.push([m, ix]); } }
+    let tested = 0, out = 0, worst = 0;
+    for (const [m, ix] of rig._legs) for (const i of ix) { const p = at(m, i); if (p.y > yTop || p.y < yHem + .01) continue; const th = Math.atan2(p.x - ax, -(p.z - az)), r = Math.hypot(p.x - ax, p.z - az);
+      if (th < col(1, p.y).th || th > col(K - 2, p.y).th) continue; let k = 1, A = col(1, p.y), B = col(2, p.y); while (k < K - 3 && B.th < th) { k++; A = B; B = col(k + 1, p.y); }
+      const t = Math.max(0, Math.min(1, (th - A.th) / Math.max(1e-6, B.th - A.th))), cr = A.r + (B.r - A.r) * t; tested++; worst = Math.max(worst, r - cr); if (r > cr + .003) out++; }
+    return { tested, out, worst }; };
+  const tick = (n, mv) => { for (let i = 0; i < n; i++) { onGround = true; velY = 0; if (mv) px += .022; tpUpdate(1 / 60, { moving: !!mv, sprinting: false, camY: 1.6, now: performance.now() + i * 16.7, roll: null }); } };
+  const o = { tested: 0, out: 0, worst: 0, hem: 0 };
+  try { _sneaking = false; blocking = false; swingT = 0; castT = 0; dead = false; thirdPerson = true; EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' }; buildViewmodel(); tick(10);
+    const rig = TP.rig.rig, P = rig.hb.P; o.bones = P.skeleton.bones.length; o.hemBones = ['hemBone', 'hemBoneF', 'hemBoneL', 'hemBoneR'].filter(n => P.skeleton.bones.some(b => b.name === n)).length; tick(20, 1);
+    for (let i = 1; i <= 120; i++) { tick(1, 1); if (P.hem) o.hem = Math.max(o.hem, P.hem.a); if (i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; o.worst = Math.max(o.worst, c.worst); } }
+    o.worst = +o.worst.toFixed(3); o.hem = +o.hem.toFixed(2);
+  } finally { window.requestAnimationFrame = raf; EQ.back = keep.b; buildViewmodel(); tick(4); }
+  return o; });
+console.log('  legs under your cloak:', JSON.stringify(ckLegs));
+check(`walking in a long cloak, your skeleton carries the hem's four bones (${ckLegs.bones}) and its back swings over the trailing heel (up to ${ckLegs.hem} rad); ${ckLegs.out} of ${ckLegs.tested} points of what your legs wear out of it by 3 mm or more`,
+  ckLegs.bones === 167 && ckLegs.hemBones === 4 && ckLegs.hem > .1 && ckLegs.tested > 3000 && ckLegs.out / ckLegs.tested < .08, ckLegs);
 for (const [k, v] of Object.entries(r)) console.log(k.padEnd(10), String(v.deg).padStart(5), v.worst, 'head', v.head, 'driver', v.headD, 'foot', v.foot, 'driver', v.footD);
 const rest = r.rest.deg, moving = Object.entries(r).filter(([k]) => k !== 'rest');
 check('at rest each limb of the builder\'s body lies along the driver\'s within 20°', rest < 20, r.rest);
