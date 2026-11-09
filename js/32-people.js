@@ -1530,6 +1530,7 @@ function tickPeople(dt,now){
     if(rig.g.wraith){mode='idle';root.position.y=(.24+.05*Math.sin(now*.0021+rig.g.phase))*SCALE.ROOM_K;} // a wraith takes no steps: it glides, a little off the ground (S905, F2a: as high against its taller body as before)
     const t=now/1000*rig.g.tempo+rig.g.phase;
     {const P=pwBlend(rig,mode,t,rig.phase,dt,pwOpts(rig));pwApply(rig,P);if(rig.g.wraith)rig.wraithArm=P.shR[0];}
+    if(rig.hb&&rig.hb.lean&&!rig.sleep&&!rig.limp)hbCloakLean(rig); // S2045 — under a long cloak the spine's lean is the pelvis's
     if((rig.B.cloak||rig.B.hairB)&&!rig.lod&&!rig.sleep)peopleSwing(rig,dt); // S267; a sleeper's hair and cloak lie still (S752)
     // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
     // a gargoyle's wings fold down its back while it sleeps and spread and beat slowly once it wakes; the tail sways
@@ -1852,7 +1853,7 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
   // the body. So the right forearm and wrist keep the grip's turn (from the upper arm, which still takes the walk's swing and a blow's
   // wind-up) while the driver holds and stands; a ragdoll or a sleeper takes the driver's again
   const gD=rig.hbG&&rig.hbG.dress||{},grip=(gD.spear||gD.staff)&&!gD.chair?map.map(([j],i)=>j==='elR'||j==='wrR'?i:-1).filter(i=>i>=0).map(i=>({i,q:map[i][1].quaternion.clone()})):null;
-  rig.hb={root:W,P,map,s0,t0,grip,hold:hbCloakArms(gD,map),tw:!rig.hbLazy&&gD&&gD.cloak&&!gD.cape?HB_CLOAK_TWIST:1,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
+  rig.hb={root:W,P,map,s0,t0,grip,hold:hbCloakArms(gD,map),tw:!rig.hbLazy&&gD&&gD.cloak&&!gD.cape?HB_CLOAK_TWIST:1,lean:!rig.hbLazy&&!!gD&&!!gD.cloak&&!gD.cape,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
   // a foe's weapon (the game's kit, on the driver's gear bone, or the bow in its left hand) and shield (on the left forearm) hang on
   // the driver's bones, inside the driver's mesh, which is hidden while the builder's body shows: so they are carried in the builder's
   // group then, following their bone each frame (hbHold), the weapon's grip in the builder's fist, closed on it as people.js closes a
@@ -2116,6 +2117,16 @@ const HB_CLOAK_HOLD=1;
    (a swing, a wind-up or a lunge lets the arm go, hbHoldF). Arm points out of the cloak over a 160-tick walk: Cultist 1,720 → 1,086, the
    hag 1,642 → 1,269; what is left is the hag's robe sleeve at the front edge as she leans into the walk (6.6 cm) */
 const HB_CLOAK_TWIST=0;
+/* S2045 — and the spine's lean taken into the pelvis under a long cloak. The cloak rides the pelvis (hbSkinLoose), and the arms it covers are
+   held to the hips' frame, but they hang from the shoulders, which the spine's forward lean carried out over the cloak's front: at a run
+   (pwRun's spine .2 rad) a long-cloaked foe's forearms and the robe's sleeves came through the front edges (a 160-tick run at 1.3 m/s:
+   the Cultist 1,815 points out, the Marsh Hag 945, at most 7 cm). Now that lean is set on the pelvis and taken off the spine and both
+   thighs, so the chest and the legs keep their angles in the world and the cloak leans with the chest. The townsfolk's long cloaks
+   too; a cape (from the shoulders) and your own body (tpPose) keep the driver's pose. HB_CLOAK_LEAN.k is the share moved */
+const HB_CLOAK_LEAN={k:1},_hbLX=new THREE.Vector3(1,0,0),_hbLq=new THREE.Quaternion();
+function hbCloakLean(rig){const B=rig.B,d=HB_CLOAK_LEAN.k*B.spine.rotation.x;if(Math.abs(d)<1e-4||!B.thL||!B.thR)return;
+  B.hips.quaternion.multiply(_hbLq.setFromAxisAngle(_hbLX,d));_hbLq.setFromAxisAngle(_hbLX,-d);
+  B.spine.quaternion.premultiply(_hbLq);B.thL.quaternion.premultiply(_hbLq);B.thR.quaternion.premultiply(_hbLq);}
 function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!!(D.spear||D.crossbow||D.staff||D.basket||D.lantern)&&(!D.cape||!!D.staff&&!D.spear&&!D.crossbow),sides=thrown?/L$/:/[LR]$/; /* S1798: a cape over a staff opens on the staff's side, as people.js's buildCloak */
   const i=map.map(([j],k)=>/^(sh|el|wr)[LR]$/.test(j)&&sides.test(j)?k:-1).filter(k=>k>=0);return i.length?new Set(i):null;}
 function hbHoldF(rig){const H=rig.hb,w=rig.w;if(!H.hold||!w||rig.limp||rig.sleep)return 0;if(rig.tpHold)return HB_CLOAK_HOLD;const e=rig.e;

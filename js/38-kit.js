@@ -6969,7 +6969,7 @@ function aurenneOrrery(hAt, o = {}) {
   let CRM = null;
   function gatelandsCarriage(o = {}) {
     const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
-    // S2046: the coach's paint, its black and its lining are lacquer over the boards, so they keep the grain's relief (the normal map) but not
+    // S2048: the coach's paint, its black and its lining are lacquer over the boards, so they keep the grain's relief (the normal map) but not
     // its colour: the wood map's ~0.4/0.3/0.2 took the oxblood to ~0x381208, a black box under a wood's canopy (the critic, s1401)
     const lacq = (c, ns, ro) => { const m = mat('wood', { ns, color: c, rough: ro }); m.map = null; return m; };
     if (!CRM) CRM = { earth: mat('plaster', { ns: 1.2, color: 0x6a5440, rough: 1 }), paint: lacq(0x7a3222, .5, .5), black: lacq(0x2a2420, .4, .55),

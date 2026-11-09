@@ -6,7 +6,7 @@
 // it until you come within 40 m, has it then with no travel to it. Session 2025 adds the Mark's hunters' camp (PKIT.places.hunters), Session 2029 the Gatelands'
 // charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar),
 // Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt);
-// Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2046 the coach's lamp at night and its paint.
+// Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2048 the coach's lamp at night and its paint.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -32,7 +32,7 @@ const w = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c.
 console.log(JSON.stringify(w));
 check(`${w.id}: ${w.road} m off its road, facing it (${w.fwd}); the coach's panels ${w.low} m over the ground, what fell off it ${w.lie} m`, !w.none && w.road >= 19 && w.road <= 25 && w.fwd > .9 && w.low > -.05 && w.low < .15 && w.lie < .01, w);
 check(`solid where the coach lies, open on the road's side and behind; ${w.tris} triangles in ${w.draws} draws`, !w.none && w.mid && !w.road1 && !w.behind && w.tris < 9000 && w.draws <= 13, w);
-// Session 2046 (the critic, s1401: "a black box at 16 m in woodland, its lamp gave no light at 22h"): the coach's paint is lacquer, the
+// Session 2048 (the critic, s1401: "a black box at 16 m in woodland, its lamp gave no light at 22h"): the coach's paint is lacquer, the
 // grain's relief without its colour; its lamp is dark by day and lit from 19:00, a light on the pool where the glass hangs
 const lp = async h => { await page.evaluate(h => forceTime(h), h); await g.spin('clear', 20); return page.evaluate(id => { const D = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id)._wayside;
   if (!D.lamp) return { none: true }; const P = D.lamp.light.position; return { i: D.lamp.light.intensity, e: D.lamp.mat.emissiveIntensity, pool: sc.children.some(o => o.isPointLight && o.intensity > 0 && o.position.distanceTo(P) < .01),
