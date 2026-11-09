@@ -3,7 +3,7 @@
 // not built yet keeps the cell empty. The first kind built is the Gatelands' overturned coach (PKIT.places.carriage, places.js's
 // gatelandsCarriage). The suite finds the coaches, the same when asked again, stands by the nearest, and checks it: 20 to 24 m off its
 // road and facing it, lying on the drawn ground, solid where the coach is and open beside it, its cost; then that the map has nothing of
-// it until you come within 40 m, has it then with no travel to it. Session 2024 adds the Mark's hunters' camp (PKIT.places.hunters).
+// it until you come within 40 m, has it then with no travel to it. Session 2025 adds the Mark's hunters' camp (PKIT.places.hunters).
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -35,7 +35,7 @@ await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 30; pz = D.z - Math.cos(D
 const b = await page.evaluate(id => { const e = mapEntries(getCell(...id.split('_').slice(1).map(Number))).find(e => e.id === id); return { disc: discovered(id), entry: e && { name: e.name, kind: e.kind, noTravel: !!e.noTravel }, travel: !!arrivalFor(id) }; }, k.near.id);
 console.log(JSON.stringify(a), JSON.stringify(b));
 check(`unmarked at 60 m; found at 30 m, on the map as "${b.entry && b.entry.name}", with no travel to it`, !a.disc && !a.entry && b.disc && b.entry && b.entry.kind === 'wayside' && b.entry.noTravel && !b.travel, { a, b });
-// the hunters' camp (Session 2024, places.js's markHuntersCamp): stood off the nearest, then checked: 20 to 34 m off its road and facing it, its
+// the hunters' camp (Session 2025, places.js's markHuntersCamp): stood off the nearest, then checked: 20 to 34 m off its road and facing it, its
 // hearth, rack fire, tub and stump on the drawn ground, solid at the tent and the rack, open at the tent's door and on the path to the road, its cost
 await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, k.camp);
 for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id); return !!(c && c._wayside.group && c._wayside.group.parent); }, k.camp.id); if (ok) break; await page.waitForTimeout(1000); }

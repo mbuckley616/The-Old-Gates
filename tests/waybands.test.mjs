@@ -1,6 +1,6 @@
 // Backlog G, Wayfinding (Session 138): do the direction bands a townsperson gives (*just … of here* under 14, *a short
 // walk* under 55, *on across the town* under 130, *the far side of town* beyond) match the walk? The words are chosen by
-// the straight line (S138 to S2021) and by the walk since Session 2022 (`wayWalk`, the watch's street grid pulled straight); this measures, for every townsperson and every door in two towns, the walk by the street grid
+// the straight line (S138 to S2021) and by the walk since Session 2023 (`wayWalk`, the watch's street grid pulled straight); this measures, for every townsperson and every door in two towns, the walk by the street grid
 // (every one-unit cell of the town's pad that isn't solid, eight ways, no cutting a corner) and the band that walk would earn,
 // against the band the game says (`wayFar` of `wayWalk`).
 import { boot, check } from './lib/game.mjs';

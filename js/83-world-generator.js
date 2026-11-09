@@ -12,7 +12,7 @@
   const WAY_ASK={castle:['The keep?','keeps'],inn:['An inn?','inns'],guild_f:['The Fighters\u2019 Guild?',''],guild_m:['The Mages\u2019 Guild?',''],church:['The church?','churches'],weapon:['A smith?','smithies'],armor:['An armourer?','armouries'],potion:['An apothecary?','apothecaries'],misc:['Somewhere for supplies?','goods stores'],barber:['A barber?','barbers'],shipwright:['The shipwright?','']};
   const WAY_ORDER=['castle','inn','guild_f','guild_m','church','weapon','armor','potion','misc','barber','shipwright'];
   function wayFar(d,dir,open){return d<14?(open?`right here, just ${dir} of you`:`just ${dir} of here, you're nearly at the door`):d<55?`${dir} of here, a short walk`:d<130?`${dir} of here, on across the town`:`${dir} of here, the far side of town`;}
-  // S2022 — the band goes by the walk, not the crow's line (waybands: Dunmore's kit houses had stretched some walks 19 units past a
+  // S2023 — the band goes by the walk, not the crow's line (waybands: Dunmore's kit houses had stretched some walks 19 units past a
   // band's edge). The walk is the shortest by a one-unit grid of the pad, eight ways at 1 and 1.414, never cutting a corner: the grid
   // the watch's townRoute (S166) reads with the town, shared. A way found is checked against the world as it is now, as the watch's
   // is (S378): a cell gone solid since is marked and the walk found again. Off the pad, or with no way, the straight line as before.

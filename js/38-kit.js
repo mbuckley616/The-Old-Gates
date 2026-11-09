@@ -7062,7 +7062,7 @@ function aurenneOrrery(hAt, o = {}) {
     const um = (u0 + u1) / 2, vm = (v0 + v1) / 2, sol = [{ x: +(um * ca + vm * sa).toFixed(3), z: +(-um * sa + vm * ca).toFixed(3), w: +(u1 - u0).toFixed(3), d: +(v1 - v0).toFixed(3), ry: Math.PI + CA, h: +(top - CG).toFixed(3) }];
     return { group, tris: Math.round(tris), draws: group.children.length, sol, coach: { x: CX, z: CZ, y: +CG.toFixed(3), ry: CA, top: +W(0, 1.5, hz)[1].toFixed(3) }, lying, road: { z: RZ, w: RW } };
   }
-  // S2024 (card F8; OG-124's "camps on the roads: … hunters", Michael's A on #1292) — the Mark's hunters' camp in the open world, places.js's
+  // S2025 (card F8; OG-124's "camps on the roads: … hunters", Michael's A on #1292) — the Mark's hunters' camp in the open world, places.js's
   // markHuntersCamp (Session 1022) without the prototype's own land: the world brings the heath, the road and the trees, so the page's ground
   // grid, its road, its twelve pines and twenty-two birches, its loose boulders and its heather are left out. The tent of hides on its twelve
   // poles, the fire in it and the bedding, the meat rack over its slow fire, the hide frame, the game pole between its own two pines, the

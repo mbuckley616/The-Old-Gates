@@ -1608,6 +1608,7 @@ function loop(now){
       if(promptText){iprEl.textContent=promptText;iprEl.style.opacity='1';iprEl.style.display='block';}
       else{iprEl.style.opacity='0';setTimeout(()=>{if(iprEl.style.opacity==='0')iprEl.style.display='none';},260);}
     }
+    else if(typeof waterPrompt==='function'&&waterPrompt()){iprEl.textContent=waterPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S2022 — water B: a gate's pool or flooded hall */
     else{iprEl.style.opacity='0';setTimeout(()=>{if(iprEl.style.opacity==='0')iprEl.style.display='none';},260);}
     TORCHES.forEach(({l,fl,ph})=>{
       const flicker=Math.sin(now*.003+ph)*.5+Math.sin(now*.007+ph)*.2+Math.sin(now*.019+ph)*.1;

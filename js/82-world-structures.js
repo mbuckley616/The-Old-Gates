@@ -758,7 +758,7 @@
   // Nothing marks it until you come within 40 m (tickDiscovery, 83), and then the map has it, with no travel to it.
   // -> {id, kind, name, x, z, ry, off, cell} or null, kept on the cell (c._wayside)
   const WAYSIDE={gatelander:['charcoal','merchants','carriage','cellar','erratic'],markman:['hunters','unfinished'],aurennais:['expedition']};
-  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp'},WAYSIDE_FIND=40; /* S2024 — the hunters' camp in sight of its road */
+  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
   function waysideAt(c){
     if(!c||c._wayside!==undefined)return c?c._wayside:null;c._wayside=null;
     if(c.type==='sea'||c.home||!c.sites||!c.roadDefs||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
@@ -785,7 +785,7 @@
   // its stamps (the cell's first step, so the chunks are built with them): a pad flat at the ground under the coach, so it lies on level
   // turf, and clearings of the scatter (noFlat) round it and along the gouges to the road, so no tree stands in the way it went
   function waysideStamps(c,k){const D=waysideAt(c);if(!D)return [];const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],y=landH(D.x,D.z),out=[];
-    if(D.kind==='hunters'){ /* S2024 — the camp's two stances flat at their own ground (the tent's and the rack's, as the prototype levels them), the clearing
+    if(D.kind==='hunters'){ /* S2025 — the camp's two stances flat at their own ground (the tent's and the rack's, as the prototype levels them), the clearing
       it keeps round it (the tent, the rack, the frame, the woodpile and the game pole's pines), and the path to the road */
       for(const [n,lx,lz,r] of [['tent',3,0,3.3],['rack',-4,1.2,2.4]]){const [x,z]=W(lx,lz);out.push(addStamp({id:`${D.id}_${n}`,kind:'door',x,z,r,blend:1.6,y:landH(x,z),cell:k}));}
       {const [x,z]=W(-1.2,-.4);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:13.5,blend:2,y:0,cell:k}));}
@@ -1489,7 +1489,7 @@
   // the line is clear or no way is found (he walks the direct line as before).
   function townRoute(S){if(S._route)return S._route;const cx=S.site.x,cz=S.site.z;
     const R=Math.ceil((S.site.pad||40)+8),N=2*R+1,sol=new Uint8Array(N*N);
-    const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;};fill();S._routeGrid={R,N,sol}; /* S2022 — the directions' walk (wayWalk) reads this grid too */
+    const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;};fill();S._routeGrid={R,N,sol}; /* S2023 — the directions' walk (wayWalk) reads this grid too */
     const cel=p=>[Math.max(0,Math.min(N-1,Math.round(p.x-cx+R))),Math.max(0,Math.min(N-1,Math.round(p.z-cz+R)))];
     const find=(s0,g0)=>{const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0];
       for(let h=0;h<q.length&&prev[g0]<0;h++){const c=q[h],ci=c%N,cj=(c-ci)/N;

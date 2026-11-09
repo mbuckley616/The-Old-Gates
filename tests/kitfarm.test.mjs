@@ -65,14 +65,15 @@ const theftAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settl
   const n = res.n, kill = e => { px = e.x + 1; pz = e.z; jumpY = 0; killZoneEnemy(e, sc); };
   const a = beasts[0]; n.g.visible = true; n._retreated = false; n.g.position.set(a.x + 4, n.g.position.y, a.z); n.g.rotation.y = Math.atan2(-1, 0); n.wt = 99;
   kill(a); const c = (worldState.crime || {})[town.id] || {}, fav = (worldState.favor || {})[town.id] || 0, ref = (worldState.refuse || {})['farm:' + F.id];
-  dlgOpen = false; openDialog(n.def); const talks = dlgOpen; if (dlgOpen) closeDialog();
+  const sm = showMsg; let said = ''; showMsg = (t, ...r) => { said = String(t); return sm(t, ...r); }; /* Finding 44: the refusal in the farmer's people's words */
+  dlgOpen = false; try { openDialog(n.def); } finally { showMsg = sm; } const talks = dlgOpen; if (dlgOpen) closeDialog();
   const hide = npcs.filter(m => m.g.visible); hide.forEach(m => { m.g.visible = false; });
   const b = beasts[1]; kill(b); hide.forEach(m => { m.g.visible = true; });
   const c2 = (worldState.crime || {})[town.id] || {}, fav2 = (worldState.favor || {})[town.id] || 0;
   const back = dayNow(); worldState.refuse['farm:' + F.id] = back; dlgOpen = false; openDialog(n.def); const talksAfter = dlgOpen; if (dlgOpen) closeDialog();
   return { town: town.id, kind: town.kind, d: Math.round(Math.hypot(town.x - F.cx, town.z - F.cz)), a: a.baseName, worth: STOCK_WORTH[a.baseName], bounty: c.bounty, fav, ref: ref != null ? ref - dayNow() : null, talks,
-    b: b.baseName, bounty2: c2.bounty, fav2, crimes: (worldState.crimes || []).filter(r => r.farm === F.id).length, talksAfter }; }, id);
-const theftOK = T => !T.none && T.bounty === 50 + T.worth && T.fav === -2 && T.ref === 5 && !T.talks && T.bounty2 === T.bounty && T.fav2 === -2 && T.crimes === 2 && T.talksAfter;
+    b: b.baseName, bounty2: c2.bounty, fav2, crimes: (worldState.crimes || []).filter(r => r.farm === F.id).length, talksAfter, people: n.def.people, said }; }, id);
+const theftOK = T => !T.none && T.bounty === 50 + T.worth && T.fav === -2 && T.ref === 5 && !T.talks && T.bounty2 === T.bounty && T.fav2 === -2 && T.crimes === 2 && T.talksAfter && T.said.includes({ gatelander: 'The fox', markman: 'Get off my land', aurennais: 'I keep no account', oldblood: 'from the fold' }[T.people] || 'The fox');
 const tid = P.first;
 check(`${tid}, the first of them, stands`, !!tid && await g.settle(tid));
 const S = await page.evaluate(tid => { const S = WORLD.settle.get(tid), F = S.farm; if (!F) return { none: true }; const c = Math.cos(F.ry), s_ = Math.sin(F.ry), W = (u, v) => [F.x + u * c + v * s_, F.z - u * s_ + v * c], L = FARM_LOT;
