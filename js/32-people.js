@@ -1912,7 +1912,7 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
 /* S1990 — the front of the thigh: in front of the hips the thighs' share eased in from `up` above the hips, so the top of the front stayed
    with the pelvis while the leading thigh came forward under it (Maeve of Dunmore's apron and skirt out by up to 12.7 cm). On the front the
    ease starts `upF` higher (by the front-ness past the hips' line), so the cloak's front rides the thigh from nearer the waist
-   (S2009: the townsfolk's only, with the hem's bones: on your own body that front rode the thigh past your held right forearm, f10motion's
+   (S2014: the townsfolk's only, with the hem's bones: on your own body that front rode the thigh past your held right forearm, f10motion's
    cloak check 2 points out by 11 mm since S1990) */
 /* S1999 — the front pushed by the knee (STUCK #1313): the cloak's front took at most `w2` of the thighs, so a stride put a leading thigh's
    apron (3 to 4.2 cm off the skin) out through it (Maeve of Dunmore, 8.2 cm). More of the thighs on the front came back onto the hands when
@@ -2063,7 +2063,7 @@ function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root
 // under one thrown back off the right shoulder (a spear, a crossbow, a staff, a basket). A blow, a ragdoll and a sleeper are left alone
 // (S1435: your own body's arms are held side by side, each by rig.tpHold.L/.R, which tpPose sets while that arm is on the gait's swing)
 const HB_CLOAK_HOLD=1;
-/* S2009 — the twist left out under a long cloak (Pádraig of Dunmore's left fingertips, out through the front edge by 5 to 11 mm in 13 of 20
+/* S2014 — the twist left out under a long cloak (Pádraig of Dunmore's left fingertips, out through the front edge by 5 to 11 mm in 13 of 20
    start phases of f4people's walk, at gait phase .61 to .63: the suite's red one run in two). The held arms took the hips' whole turn, so the
    pelvis' yaw swung the forward-hanging hands 5 cm in toward the middle, under the cloak's front edge, which falls back as that knee trails.
    A townsperson's arms under a long cloak (rig.hb.tw) now take the hips' tilt and none of their twist about the vertical; a cape (it hangs
