@@ -5,7 +5,7 @@
 // road and facing it, lying on the drawn ground, solid where the coach is and open beside it, its cost; then that the map has nothing of
 // it until you come within 40 m, has it then with no travel to it. Session 2025 adds the Mark's hunters' camp (PKIT.places.hunters), Session 2029 the Gatelands'
 // charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar),
-// Session 2033 the perched stone on its pavement (PKIT.places.erratic).
+// Session 2034 the perched stone on its pavement (PKIT.places.erratic).
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -83,7 +83,7 @@ const ct = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c
 console.log(JSON.stringify(ct));
 check(`${ct.id}: the fallen cottage ${ct.road} m off its road, facing it (${ct.fwd}); ${ct.off && ct.off.length} things on the ground within ${ct.stands} m of it, the padlock ${ct.lock} m over it`, !ct.none && ct.road >= 19 && ct.road <= 29 && ct.fwd > .9 && ct.stands < .06 && ct.lock > .05 && ct.lock < .2, ct);
 check(`solid at the gable and the footings, open in the doorway, over the hatch and on the path; ${ct.tris} triangles in ${ct.draws} draws`, !ct.none && ct.gable && ct.footing && !ct.door && !ct.hatch && !ct.path && ct.tris < 12000 && ct.draws <= 12, ct);
-// the perched stone (Session 2033, places.js's gatelandsErratic): stood off it, then checked: 24 to 34 m off its road and facing it, the pedestal's
+// the perched stone (Session 2034, places.js's gatelandsErratic): stood off it, then checked: 24 to 34 m off its road and facing it, the pedestal's
 // and the other stone's ground the drawn ground, the clints a hand proud of it (the world's ground is the gryke's floor and the ground you
 // walk on); solid at the boulder and the lace wall, open on the pavement before the stone and on the path to the road; its cost
 await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, k.er);

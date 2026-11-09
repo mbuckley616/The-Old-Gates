@@ -7355,7 +7355,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, house: { x0: -X1, x1: -X0, z0: -Z1, z1: -Z0, door: [-DOOR[1], -DOOR[0]] }, gable: { x: -GX, apex: +(FY + APEX).toFixed(2) },
       hatch: { x: -HX, z: -HZ, y: +LT.toFixed(3), lock: [-lock[0], +lock[1].toFixed(3), -lock[2]] }, stands: stands.map(s => { const [x, z] = Tn(s.x, s.z); return { x, y: +s.y.toFixed(3), z, what: s.what }; }), road: { z: -RZ } };
   }
-  // S2033 (card F8; OG-124's panel 6, "small mysteries with no marker: … an odd rock", Michael's A on #1292) — the Gatelands' perched stone
+  // S2034 (card F8; OG-124's panel 6, "small mysteries with no marker: … an odd rock", Michael's A on #1292) — the Gatelands' perched stone
   // in the open world, places.js's gatelandsErratic (Session 1031) without the prototype's own hill: the world brings the turf, the road and
   // the ash trees, so the page's ground grid, its green road and its five ashes are left out. The pavement is the one part of the land the
   // piece keeps, and it cannot be the prototype's: the world's ground is the ground you walk on, and nothing outdoors lets you stand on a

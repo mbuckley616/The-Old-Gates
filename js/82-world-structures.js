@@ -762,7 +762,7 @@
   /* S2029 — the charcoal burners' four stances in the camp's own frame (the kit's CC_PADS turned half round: the burning stack's pitstead, the opened
      one's, the hut's and the cordwood's), [x, z, r]; the land under them may rise 2 m across the camp, where the coach's pad allows 1.2 */
   /* S2030 — the fallen cottage's floor, 7 by 4.6 m, levelled as one stance */
-  /* S2033 — the perched stone's pavement, flat under the pavement's oval (21 by 16.4 m round (0, 1), the piece's frame): its middle and eight points
+  /* S2034 — the perched stone's pavement, flat under the pavement's oval (21 by 16.4 m round (0, 1), the piece's frame): its middle and eight points
      on its rim are read by the land check, the usual 1.2 m of rise */
   const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]],erratic:[[0,1,11.5],...[0,1,2,3,4,5,6,7].map(k=>[+(Math.cos(k*Math.PI/4)*10).toFixed(2),+(1+Math.sin(k*Math.PI/4)*8).toFixed(2),0])]},WAYSIDE_RISE={charcoal:2};
   function waysideAt(c){
@@ -809,7 +809,7 @@
       {const [x,z]=W(0,-2);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9.5,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-.6-.6*t,-6+(-D.off+6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
       return out;}
-    if(D.kind==='erratic'){ /* S2033 — the pavement's ground flat at the ground under its middle (its clints a hand proud of it), a clearing of the scatter over
+    if(D.kind==='erratic'){ /* S2034 — the pavement's ground flat at the ground under its middle (its clints a hand proud of it), a clearing of the scatter over
       the pavement, the lace wall above it and the hawthorn below, and the path to the road */
       {const [x,z]=W(0,1);out.push(addStamp({id:D.id+'_pave',kind:'door',x,z,r:11.5,blend:3,y:landH(x,z),cell:k}));}
       {const [x,z]=W(0,3);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:18,blend:2,y:0,cell:k}));}
