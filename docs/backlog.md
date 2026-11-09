@@ -235,29 +235,29 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   8 Nov 12:21–14:50 UTC; every one red on both tries unless named). Session 1994 filed the first shards' reds; these are the shards that
   had not finished then. Each item is one suite; strike it with the session that fixes it. Not bisected: each was green on 1 Nov's
   weekly run (c97ed1c) unless named.
-  - **`boxspots`** (for the look builder: the shop rooms, `buildInteriorFor`, `js/83`/`84`). *no box's mesh passes through another piece
+  - ~~**`boxspots`** (for the look builder: the shop rooms, `buildInteriorFor`, `js/83`/`84`). *no box's mesh passes through another piece
     of furniture*: Mira's Apothecary and The Old Cottage, both with the box at x 0.6 z 1 (meshHits `[-1.25,0.99,0.06,1.1,0.11,1.26]` and
-    `[0.6,3.34,0,0.88,-1.62,1.45]`). The same two shops fail `shopsight` and the same town's armoury fails `witness`: one cause is likely.
-  - **`shopsight`** (for the look builder, with `boxspots`). *the keeper walks: every one moved at least a unit from the counter in ten
+    `[0.6,3.34,0,0.88,-1.62,1.45]`). The same two shops fail `shopsight` and the same town's armoury fails `witness`: one cause is likely.~~ — fixed, Session 2010 (the suite measured the kit room's group before its world matrix was updated, 4.2 m off; and a merged mesh's union box is not a piece)
+  - ~~**`shopsight`** (for the look builder, with `boxspots`). *the keeper walks: every one moved at least a unit from the counter in ten
     minutes*: 5 of 23 keepers moved 0 (Lorcan's Forge, The Armory, Bram's Forge, Mira's Apothecary, The Old Cottage); the rest 3.2–4.7.
-    The forges are the kit's forge room (S1855); a keeper with no floor to walk to is the first suspect.
-  - **`witness`** (for the look builder; red on the first try, not retried). Bríd's Armoury: the back-room box is behind 2 walls from the
+    The forges are the kit's forge room (S1855); a keeper with no floor to walk to is the first suspect.~~ — fixed, Session 2010 (the kit rooms' keepers stand at their work by design; the walk is asked of those given floor)
+  - ~~**`witness`** (for the look builder; red on the first try, not retried). Bríd's Armoury: the back-room box is behind 2 walls from the
     counter, not 1 (`[5.24,2,false]`), so the snapped pick is not heard and the keeper never comes (`{"open":false,"d":4.64}`). The
-    other five shops: 1 wall, heard, the door open at 0.6, 480/480. Red the same way here on main at s1375 (`[5.27,2,false]`).
-  - **`intreach`** (for the look builder). *nobody is set down inside a solid at the door*: `["The Academy"]`. Run before #1311's gallery.
-  - **`houseexits`** (for the look builder: the kit's doors, `js/82`/`83`). *a moved exit stays at least 0.6 m out of its door, and a clear
+    other five shops: 1 wall, heard, the door open at 0.6, 480/480. Red the same way here on main at s1375 (`[5.27,2,false]`).~~ — fixed, Session 2011 (`wallsBetween` measured a furniture solid's height from its −0.5 foot: the armour stand read as a wall)
+  - ~~**`intreach`** (for the look builder). *nobody is set down inside a solid at the door*: `["The Academy"]`. Run before #1311's gallery.~~ — fixed, Session 2015 (the suite stood you at the front's middle; the game stands you at the academy's arch, `intArriveX`)
+  - ~~**`houseexits`** (for the look builder: the kit's doors, `js/82`/`83`). *a moved exit stays at least 0.6 m out of its door, and a clear
     one 2.4 m*: ten clear exits at 1.80–1.85 (`g_dunmore_10`, 15, 20, 22–25, 29, 38, 51) and `g_dunmore_6000` at 0.4. If the kit's step
-    is meant to put the exit 1.8 m out, say so and QA re-measures; 0.4 m is a door you stand in either way.
-  - **`scalerooms`** (for the look builder: `buildInteriorFor`, `scaleRoom`). *a shop is 7 to 9 m wide and 7 to 8.5 deep, + 4.7 for the
+    is meant to put the exit 1.8 m out, say so and QA re-measures; 0.4 m is a door you stand in either way.~~ — fixed, Session 2017 (the ten at 1.8 are exits pulled back from a solid, as the rule allows; g_dunmore_6000 is the market room's door on its landing, checked on its own)
+  - ~~**`scalerooms`** (for the look builder: `buildInteriorFor`, `scaleRoom`). *a shop is 7 to 9 m wide and 7 to 8.5 deep, + 4.7 for the
     keeper's room*: `weapon [7.2,4.8]`, `armor`/`potion`/`misc` 13.2 deep, `barber [8,8.5]`; weapon's door leaf 2.6 (1.1–1.25 of a 1.8 m
     person wanted) and storey 4.88; guild_f's leaf `null` and its door's way not free. The weapon room is the kit's forge room (S1855):
-    say which numbers it is meant to have and QA re-measures; guild_f's blocked way is the game's.
-  - **`mapseals`** (for the look builder: the map's tiles, `js/83`). *the deepest tiles in view are built, middle first, until no job is
+    say which numbers it is meant to have and QA re-measures; guild_f's blocked way is the game's.~~ — fixed, Session 2018 (the forge measured as its piece, 7.2 × 4.8 with a cart door and an open roof; the guild hall's entrance marked, its leaf a great door of 3.3, its way read from its door)
+  - ~~**`mapseals`** (for the look builder: the map's tiles, `js/83`). *the deepest tiles in view are built, middle first, until no job is
     left*: `{"calls":2908,"ms":25331,"deep":0,"done":0,"left":0}`; no deep tile built. Its zoom check fails too with every ratio under
-    1.15 (0.36–1.08); QA reads that one next (the label and the condition may differ).
-  - **`inspector`** (for the look builder, S1896's patch, `js/56-dungeon-build.js`). *every entry builds with the game's own builder and
+    1.15 (0.36–1.08); QA reads that one next (the label and the condition may differ).~~ — fixed, Session 2019 (the suite looked for level-4 tiles; the map's deepest level is `MAP_LMAX`, 5)
+  - ~~**`inspector`** (for the look builder, S1896's patch, `js/56-dungeon-build.js`). *every entry builds with the game's own builder and
     has triangles*: `Caverglow: Cannot read properties of null (reading 'morphAttributes')`. The inspector's build of the patch passes
-    no geometry somewhere; the game's lair builds it.
+    no geometry somewhere; the game's lair builds it.~~ — fixed, Session 2016 (Caverglow has no plant kind; the entry builds `caverglowProp`)
   - **`metkey`** (for the look builder's dialog pools, `js/83`, with the quest writer's lines). *a Markman greets a Markman from First
     words (or his trade's line), then from Again (or his temper)*: Eadwulf (Villager) opens *Aye.* then *Aye. Back.* (try 2: *Aye. One
     of ours.* then *Another one.*), followed both times by *Something's at the hen-house. Nights. I sleep through it.* The second

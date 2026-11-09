@@ -85,6 +85,7 @@ function inspRegistry(){
   for(let v=0;v<4;v++)add('Ships','Harbour boats','boat '+(v+1),'85-world-sea.js',()=>{const r=WORLD.boatBake(v);return {obj:new THREE.Mesh(r.geo,SHIP_MAT)};});
   // 5. Plants, trees and rocks — every herb whole and picked, the tree and scrub prototypes, the rocks of each biome
   for(const key of Object.keys(HERB_DEF))add('Plants, trees, rocks','Herbs',HERB_DEF[key].name||key,'30-plants.js',()=>{
+    if(key==='caverglow'&&typeof caverglowProp==='function')return {obj:caverglowProp('inspector')}; /* S2016: on a lair's wall, no plant kind (S1896's prop) */
     const g=plantGeo(key,false),p=plantGeo(key,true);return {obj:new THREE.Mesh(g,PLANT_MAT),lo:p&&new THREE.Mesh(p,PLANT_MAT),loLabel:'picked'};});
   const TREES=['oak','birch','broadleaf','conifer','pine','spruce','snowpine','willow','autumn','autumnRed','autumnGold','oakAutumn','birchAutumn','dead','bush','scrub','ember'];
   for(const k of TREES)add('Plants, trees, rocks','Trees and scrub',k,'80-world-terrain.js',()=>{if(!PROTO.oak)buildProtos();const g=PROTO[k];if(!g)throw new Error('no prototype '+k);return {obj:inspMesh(g)};});
