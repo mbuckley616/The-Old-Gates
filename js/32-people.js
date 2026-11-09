@@ -1823,7 +1823,7 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
   root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=true;full.push(o);
     if(o.isSkinnedMesh){o.bindMode='detached';o.bindMatrix.identity();o.bindMatrixInverse.identity();o.geometry.boundingSphere=sph.clone();o.frustumCulled=true;}
     if(HBODY.cards.test(o.name)||o.parent===by.head)cards.add(o);});
-  hbCloakLegs(P,!rig.foe&&!rig.hbLazy);hbHairOnCloak(P);
+  hbCloakLegs(P,!rig.foe);hbHairOnCloak(P);
   // F10 (Session 1256) — a body that is only ever seen near (the player's, rig.hbLazy) bakes its middle level when it is first asked for
   // (hbMid: first person's hands, a bed), not at attach: the bake was 200 to 700 ms of every change of what the player wears
   let mid=null;if(!rig.hbLazy){try{mid=hbMerge(P,cards);}catch(e){rig.root.remove(W);rig.hbFail=true;console.warn('F4: the middle level failed for',rig.g.hbKey,e);return;}mid.geometry.boundingSphere=sph.clone();root.add(mid);
@@ -1909,6 +1909,8 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    `heel` of each point's weight, eased in from `low` of the way from the hips to the knee, and only on the back within `arc` (the cosine) of straight back (S1989: the hands hang and swing at the sides, and a hem there carried the cloak in through them); hbHem swings it back each frame by `k` of the angle of whichever leg
    trails further behind its rest, never forward, so the hem goes out over the heel and never in through a skirt's back panel. The
    townsfolk's only for now (`heel`): a foe's and the player's skeletons stay at 163 bones (their suites count them) */
+/* S2036 — and the player's own long cloak (`heel` is every body but a foe's): your skeleton is 167 bones in a long cloak, 163 without one.
+   Your legs out of it by 3 mm or more over a 120-tick walk, 702 of 10,657 points to 530 of 9,323 (worst 27 to 19 cm); at a run 926 to 639 */
 /* S1990 — the front of the thigh: in front of the hips the thighs' share eased in from `up` above the hips, so the top of the front stayed
    with the pelvis while the leading thigh came forward under it (Maeve of Dunmore's apron and skirt out by up to 12.7 cm). On the front the
    ease starts `upF` higher (by the front-ness past the hips' line), so the cloak's front rides the thigh from nearer the waist
