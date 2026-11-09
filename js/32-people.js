@@ -1914,6 +1914,11 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    ease starts `upF` higher (by the front-ness past the hips' line), so the cloak's front rides the thigh from nearer the waist
    (S2014: the townsfolk's only, with the hem's bones: on your own body that front rode the thigh past your held right forearm, f10motion's
    cloak check 2 points out by 11 mm since S1990) */
+/* S2031 — none of the thighs over the hip joints: a thigh turns about its head, so a point of the sheet above it that took any of the
+   thigh went back into the body as that thigh came forward (`upF` eased the front's share in from 58 cm over the joints). At the waist,
+   20 to 40 cm up, the cloak's front edges came in by up to 1.5 cm on each stride and the tunic stood out through them (every cloaked
+   walker in Dunmore; Clodagh 2.9 cm). On the townsfolk (`heel`) the thighs' share now falls away over the joints, to none `capF` above
+   them; below them the ease is as before */
 /* S1999 — the front pushed by the knee (STUCK #1313): the cloak's front took at most `w2` of the thighs, so a stride put a leading thigh's
    apron (3 to 4.2 cm off the skin) out through it (Maeve of Dunmore, 8.2 cm). More of the thighs on the front came back onto the hands when
    a thigh swung back. A second helper bone at the hips (`hemBoneF`) takes the front below `lowF` of the way to the knee, up to `toe` of each
@@ -1924,7 +1929,7 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    hips (`hemBoneL`, `hemBoneR`) take the back on their own side from `arcS` (the cosine, about 70 degrees off straight back) in to `arc`,
    and share it with the middle bone from `arc` to straight back. Each swings back by its own leg's angle past its rest only: the arm on a
    side swings forward as that side's leg trails, so the side's hem goes back away from its hand, and never forward onto the other */
-const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:1.6,arcF:.85,lowF:.4,arcS:.1,kS:1.1};
+const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:1.6,arcF:.85,lowF:.4,arcS:.1,kS:1.1,capF:.2};
 function hbCloakLegs(P,heel){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
   if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
   if(P.cloakLegs)return P.cloakLegs;const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
@@ -1942,7 +1947,7 @@ function hbCloakLegs(P,heel){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bone
   hem={bone:hb,front:fb,side:[lb,rb2],aS:[0,0],ax:inL(ax),fw:inL(fw),dn:inL(new THREE.Vector3(0,-1,0)),rest:[0,0],a:0,aF:0};hem.rest=[hbHemAngle(P,hem,'L'),hbHemAngle(P,hem,'R')];}
   const B=[Mb(il),Mb(iL),Mb(iR),Mb(sL),Mb(sR),ih>=0?Mb(ih):null,iF>=0?Mb(iF):null,iSL>=0?Mb(iSL):null,iSR>=0?Mb(iSR):null],C=HB_CLOAK_LEGS,ss=u=>u<=0?0:u>=1?1:u*u*(3-2*u),M=new THREE.Matrix4(),E=new THREE.Matrix4(),p=new THREE.Vector3(),d=new THREE.Vector3();let n=0;
   /* the sheet's weights at a point p of the hips' frame: the pelvis, the thighs and the fourth bone (a shin or a hem's), or null for the pelvis alone */
-  const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
+  const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo)*(heel?1-ss((p.y-hY)/C.capF):1);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
       /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
       const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),lw=ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*lw,hs=iSL<0?0:C.heel*ss((bk-C.arcS)/(C.arc-C.arcS))*lw,hf=iF<0?0:C.toe*ss((-bk-C.arcF)/(1-C.arcF))*ss((hY-C.lowF*(hY-kY)-p.y)/Math.max(.05,(1-C.lowF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
       /* the back: the hem's bone in the fourth place, the shin's share left with the thigh */
