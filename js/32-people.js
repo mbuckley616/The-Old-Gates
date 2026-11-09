@@ -1826,7 +1826,7 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
     if(HBODY.cards.test(o.name)||o.parent===by.head)cards.add(o);});
   /* S2041 — a foe in a long cloak takes the hem's bones too (the Cultist, the Rogue Mage, the Marsh Hag: 167 bones); a caped foe's sheet ends
      above the hips and stays at 163. A foe's front has no `upF`: its hanging hands came out through the front edges with it (the hag 6.7 → 15.8 cm) */
-  const fG=rig.foe&&rig.hbG&&rig.hbG.dress;hbCloakLegs(P,!rig.foe||!!(fG&&fG.cloak&&!fG.cape),!rig.foe);hbHairOnCloak(P);
+  const fG=rig.foe&&rig.hbG&&rig.hbG.dress;hbCloakLegs(P,!rig.foe||!!(fG&&fG.cloak&&!fG.cape),!rig.foe&&(rig.hbLazy?'you':true));hbHairOnCloak(P);
   // F10 (Session 1256) — a body that is only ever seen near (the player's, rig.hbLazy) bakes its middle level when it is first asked for
   // (hbMid: first person's hands, a bed), not at attach: the bake was 200 to 700 ms of every change of what the player wears
   let mid=null;if(!rig.hbLazy){try{mid=hbMerge(P,cards);}catch(e){rig.root.remove(W);rig.hbFail=true;console.warn('F4: the middle level failed for',rig.g.hbKey,e);return;}mid.geometry.boundingSphere=sph.clone();root.add(mid);
@@ -1934,7 +1934,7 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    hips (`hemBoneL`, `hemBoneR`) take the back on their own side from `arcS` (the cosine, about 70 degrees off straight back) in to `arc`,
    and share it with the middle bone from `arc` to straight back. Each swings back by its own leg's angle past its rest only: the arm on a
    side swings forward as that side's leg trails, so the side's hem goes back away from its hand, and never forward onto the other */
-const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:1.6,arcF:.85,lowF:.4,arcS:.1,kS:1.1,capF:.2};
+const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:1.6,arcF:.85,lowF:.4,arcS:.1,kS:1.1,capF:.2,arcFYou:.92};
 function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
   if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
   if(P.cloakLegs)return P.cloakLegs;const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
@@ -1954,7 +1954,7 @@ function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?s
   /* the sheet's weights at a point p of the hips' frame: the pelvis, the thighs and the fourth bone (a shin or a hem's), or null for the pelvis alone */
   const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel&&front!==false?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo)*(heel?1-ss((p.y-hY)/C.capF):1);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
       /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
-      const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),lw=ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*lw,hs=iSL<0?0:C.heel*ss((bk-C.arcS)/(C.arc-C.arcS))*lw,hf=iF<0?0:C.toe*ss((-bk-C.arcF)/(1-C.arcF))*ss((hY-C.lowF*(hY-kY)-p.y)/Math.max(.05,(1-C.lowF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
+      const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),lw=ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*lw,hs=iSL<0?0:C.heel*ss((bk-C.arcS)/(C.arc-C.arcS))*lw,aF=front==='you'?C.arcFYou:C.arcF,hf=iF<0?0:C.toe*ss((-bk-aF)/(1-aF))*ss((hY-C.lowF*(hY-kY)-p.y)/Math.max(.05,(1-C.lowF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
       /* the back: the hem's bone in the fourth place, the shin's share left with the thigh */
       /* S2026 — the back off its middle: the hem's weight (hs, the side band's) shared between the middle bone (hb0's part of it) and the
          point's own side's bone; where both take a part the far thigh's small share goes to the pelvis, so four bones still carry it */
@@ -1977,9 +1977,11 @@ function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?s
      under the apron is weighted the same way at the same points, so it keeps its place under the apron and never comes through it */
   let na=0;if(hem){const ap=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&o.name==='apron')ap.push(o);});const C2=HB_CLOAK_APRON,Mk=[],Mi=k=>Mk[k]||(Mk[k]=new THREE.Matrix4().multiplyMatrices(inv,sk.bones[k].matrixWorld).multiply(sk.boneInverses[k])),q=new THREE.Vector3();
     /* the shell's skin is the pack's, shared by every body: the apron takes its own copy first; only the points its triangles use are read */
-    const sk2=[];if(ap.length)P.root.traverse(o=>{if(o.isSkinnedMesh&&o.name==='skirt')sk2.push(o);});const under=ap.length?new Uint8Array(ap[0].geometry.attributes.position.count):null;if(under)for(const m of ap)for(const i of m.geometry.index.array)under[i]=1;
+    /* S2049 — and with no apron, the skirt's own front edges: a leading thigh carried a skirt's sides out through the cloak's front edges
+       (your skirt at a run, 19 cm, 10 cm over the hip joints) */
+    const sk2=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&o.name==='skirt')sk2.push(o);});const under=ap.length?new Uint8Array(ap[0].geometry.attributes.position.count):null;if(under)for(const m of ap)for(const i of m.geometry.index.array)under[i]=1;
     for(const m of ap.concat(sk2)){const g=m.geometry,pa=g.attributes.position;g.setAttribute('skinIndex',g.attributes.skinIndex.clone());g.setAttribute('skinWeight',g.attributes.skinWeight.clone());
-      const si=g.attributes.skinIndex,sw=g.attributes.skinWeight,used=new Uint8Array(pa.count);for(const i of g.index.array)used[i]=m.name==='apron'||under[i];
+      const si=g.attributes.skinIndex,sw=g.attributes.skinWeight,used=new Uint8Array(pa.count);for(const i of g.index.array)used[i]=m.name==='apron'||!under||under[i];
       for(let i=0;i<pa.count;i++){if(!used[i])continue;q.fromBufferAttribute(pa,i);p.set(0,0,0);for(let k=0;k<4;k++){const wk=sw.getComponent(i,k);if(wk)p.addScaledVector(d.copy(q).applyMatrix4(Mi(si.getComponent(i,k))),wk);}
         const dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),cs=dz/Math.max(1e-3,Math.hypot(dx,dz)),t=ss((C2[0]-cs)/(C2[0]-C2[1]));if(t<=1e-3)continue;
         const S=sch(p),acc=new Map(),add=(b,wk)=>{if(wk>0)acc.set(b,(acc.get(b)||0)+wk);};
