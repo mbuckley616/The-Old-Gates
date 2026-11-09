@@ -1852,7 +1852,7 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
   // the body. So the right forearm and wrist keep the grip's turn (from the upper arm, which still takes the walk's swing and a blow's
   // wind-up) while the driver holds and stands; a ragdoll or a sleeper takes the driver's again
   const gD=rig.hbG&&rig.hbG.dress||{},grip=(gD.spear||gD.staff)&&!gD.chair?map.map(([j],i)=>j==='elR'||j==='wrR'?i:-1).filter(i=>i>=0).map(i=>({i,q:map[i][1].quaternion.clone()})):null;
-  rig.hb={root:W,P,map,s0,t0,grip,hold:hbCloakArms(gD,map),tw:!rig.foe&&!rig.hbLazy&&gD&&gD.cloak&&!gD.cape?HB_CLOAK_TWIST:1,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
+  rig.hb={root:W,P,map,s0,t0,grip,hold:hbCloakArms(gD,map),tw:!rig.hbLazy&&gD&&gD.cloak&&!gD.cape?HB_CLOAK_TWIST:1,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
   // a foe's weapon (the game's kit, on the driver's gear bone, or the bow in its left hand) and shield (on the left forearm) hang on
   // the driver's bones, inside the driver's mesh, which is hidden while the builder's body shows: so they are carried in the builder's
   // group then, following their bone each frame (hbHold), the weapon's grip in the builder's fist, closed on it as people.js closes a
@@ -2112,6 +2112,9 @@ const HB_CLOAK_HOLD=1;
    pelvis' yaw swung the forward-hanging hands 5 cm in toward the middle, under the cloak's front edge, which falls back as that knee trails.
    A townsperson's arms under a long cloak (rig.hb.tw) now take the hips' tilt and none of their twist about the vertical; a cape (it hangs
    from the shoulders: its arms came out by 3.6 mm without the twist), a foe and your own body keep all of it */
+/* S2042 — and a foe in a long cloak (the Cultist, the Rogue Mage, the Marsh Hag): its held arms too take none of the twist while it walks
+   (a swing, a wind-up or a lunge lets the arm go, hbHoldF). Arm points out of the cloak over a 160-tick walk: Cultist 1,720 → 1,086, the
+   hag 1,642 → 1,269; what is left is the hag's robe sleeve at the front edge as she leans into the walk (6.6 cm) */
 const HB_CLOAK_TWIST=0;
 function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!!(D.spear||D.crossbow||D.staff||D.basket||D.lantern)&&(!D.cape||!!D.staff&&!D.spear&&!D.crossbow),sides=thrown?/L$/:/[LR]$/; /* S1798: a cape over a staff opens on the staff's side, as people.js's buildCloak */
   const i=map.map(([j],k)=>/^(sh|el|wr)[LR]$/.test(j)&&sides.test(j)?k:-1).filter(k=>k>=0);return i.length?new Set(i):null;}
