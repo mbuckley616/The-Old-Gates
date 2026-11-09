@@ -855,6 +855,7 @@ function genSettlement(site){
       // S1884 — a kit lot's old house is let go once built, and only its draws on the town's stream count (they keep the town's people as on
       // the old look): so it builds the plain far form alone, which makes every one of those draws, and skips the detailed one, whose own
       // stream is seeded by the house's count (_houseN, _civN), stepped here as if it had been built. Aurenne's town took 1.7× as long.
+      HOUSE_SEED=houseSeedFor(site.id,i); /* S2032 — the detailed house's variant by its town and lot */
       const KP=lot.kit?{plain:true,kitStep:true}:{},kitGeo=(lo,civ)=>{if(civ)_civN++;else _houseN++;return lo;};
       if(type==='church')geo=lot.kit?kitGeo(churchGeoLo(lot.w,lot.d,st,r),1):churchGeo(lot.w,lot.d,st,r);
       else if(type==='castle')geo=lot.kit?kitGeo(keepGeoLo(lot.w,lot.d,st,r),1):keepGeo(lot.w,lot.d,st,r);
@@ -863,6 +864,7 @@ function genSettlement(site){
       else if(biome==='swamp'&&site.kind==='village'){lot.two=false;geo=mushroomGeo(lot.w,lot.d,st,r);}
       else if(biome==='tundra'&&site.kind==='village'&&site.islet){lot.two=false;geo=iceGeo(lot.w,lot.d,st,r);}
       else{lot.two=r()<(st.twoStory||0)||type==='inn';geo=buildingGeo(lot.w,lot.d,st,r,{chimney:r()<.65,twoStory:lot.two,h:type==='inn'?SCALE.STOREY_MAX:st.h,rise:type==='inn'?1.9:st.rise,...KP});}
+      HOUSE_SEED=null;
       solR=Math.max(lot.w,lot.d)/2*.85;
       if(lot.kit){kitHouse(lot,type);geo.dispose();if(geo.userData&&geo.userData.lo)geo.userData.lo.dispose();} /* S1072 — the old builder still runs (its draws keep the town's stream, and so its people, as on the old look), and its mesh is let go */
       else{const m=addMesh(geo,lot.x,lot.z,lot.ry,0);

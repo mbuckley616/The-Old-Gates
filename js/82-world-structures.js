@@ -143,7 +143,7 @@
     {const K=FORT_KEEP[e.seed];if(K){delete FORT_KEEP[e.seed];for(const [geo,lod] of [[fortKeepGeoHi(11,9,7.2,K.banner,pRng(pHash('fortK|'+e.seed))),'hi'],[mergeParts(K.lo),'lo']]){const m=new THREE.Mesh(geo,VC_MAT);m.position.set(K.x,K.y,K.z);m.castShadow=true;m.receiveShadow=true;m.userData.lod=lod;m.userData.keep=true;group.add(m);}}}
     // barracks either side of the yard, doors toward the keep
     const S={site:{id:'fort_'+e.seed,x:cx,z:cz,pad:R+2,kind:'fort'},group,sol,houses:[],npcs:[],reg:'anglo',residents:[],lamps:[],_gates:[],reach:R+6,chimneys:[]};
-    [[-1,0],[1,0]].forEach(([sx])=>{const bx=cx+sx*15,bz=cz+9;const geo=buildingGeo(7,5,STYLE.garrison,r,{chimney:true,twoStory:false,h:2.8,rise:1.2});const m=new THREE.Mesh(geo,VC_MAT);m.position.set(bx,worldH(bx,bz)-.06,bz);m.rotation.y=sx>0?Math.PI/2:-Math.PI/2;{const ch=chimneyAt(geo,m,'barracks');if(ch)S.chimneys.push(ch);} /* S345 — the barracks' smoke */m.castShadow=true;m.receiveShadow=true;group.add(m);if(geo.userData.lo){m.userData.lod='hi';const l=new THREE.Mesh(geo.userData.lo,VC_MAT);l.position.copy(m.position);l.rotation.y=m.rotation.y;l.castShadow=true;l.userData.lod='lo';group.add(l);} /* S202 — its distant copy, baked into the POI's clusters */sol.push({cx:bx,cz:bz,rx:2.7,rz:3.7,c:Math.cos(m.rotation.y),s:Math.sin(m.rotation.y),bt:'barracks'});});
+    [[-1,0],[1,0]].forEach(([sx])=>{const bx=cx+sx*15,bz=cz+9;HOUSE_SEED=houseSeedFor('fort_'+e.seed,sx>0?1:0);const geo=buildingGeo(7,5,STYLE.garrison,r,{chimney:true,twoStory:false,h:2.8,rise:1.2});HOUSE_SEED=null; /* S2032 — keyed by the fort and the side */const m=new THREE.Mesh(geo,VC_MAT);m.position.set(bx,worldH(bx,bz)-.06,bz);m.rotation.y=sx>0?Math.PI/2:-Math.PI/2;{const ch=chimneyAt(geo,m,'barracks');if(ch)S.chimneys.push(ch);} /* S345 — the barracks' smoke */m.castShadow=true;m.receiveShadow=true;group.add(m);if(geo.userData.lo){m.userData.lod='hi';const l=new THREE.Mesh(geo.userData.lo,VC_MAT);l.position.copy(m.position);l.rotation.y=m.rotation.y;l.castShadow=true;l.userData.lod='lo';group.add(l);} /* S202 — its distant copy, baked into the POI's clusters */sol.push({cx:bx,cz:bz,rx:2.7,rz:3.7,c:Math.cos(m.rotation.y),s:Math.sin(m.rotation.y),bt:'barracks'});});
     // v80 S132 — a paved way from the gate to the keep's steps, so the courtyard reads as a courtyard
     {const z0=cz+R-1,z1=cz-8.5+4.5+2.4;const segs2=Math.max(4,Math.round(Math.abs(z0-z1)/3));for(let i=0;i<segs2;i++){const zz=z0+(z1-z0)*(i+.5)/segs2;const m=new THREE.Mesh(new THREE.BoxGeometry(2.6,.12,Math.abs(z1-z0)/segs2+.1),new THREE.MeshLambertMaterial({color:0x8a8078}));m.position.set(cx,worldH(cx,zz)+.05,zz);group.add(m);}}
     // torches on the gate towers
@@ -758,11 +758,13 @@
   // Nothing marks it until you come within 40 m (tickDiscovery, 83), and then the map has it, with no travel to it.
   // -> {id, kind, name, x, z, ry, off, cell} or null, kept on the cell (c._wayside)
   const WAYSIDE={gatelander:['charcoal','merchants','carriage','cellar','erratic'],markman:['hunters','unfinished'],aurennais:['expedition']};
-  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34],charcoal:[22,34],cellar:[20,28]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp',charcoal:'A charcoal burners’ camp',cellar:'A fallen cottage'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
+  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34],charcoal:[22,34],cellar:[20,28],erratic:[24,34]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp',charcoal:'A charcoal burners’ camp',cellar:'A fallen cottage',erratic:'A perched stone'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
   /* S2029 — the charcoal burners' four stances in the camp's own frame (the kit's CC_PADS turned half round: the burning stack's pitstead, the opened
      one's, the hut's and the cordwood's), [x, z, r]; the land under them may rise 2 m across the camp, where the coach's pad allows 1.2 */
   /* S2030 — the fallen cottage's floor, 7 by 4.6 m, levelled as one stance */
-  const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]]},WAYSIDE_RISE={charcoal:2};
+  /* S2034 — the perched stone's pavement, flat under the pavement's oval (21 by 16.4 m round (0, 1), the piece's frame): its middle and eight points
+     on its rim are read by the land check, the usual 1.2 m of rise */
+  const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]],erratic:[[0,1,11.5],...[0,1,2,3,4,5,6,7].map(k=>[+(Math.cos(k*Math.PI/4)*10).toFixed(2),+(1+Math.sin(k*Math.PI/4)*8).toFixed(2),0])]},WAYSIDE_RISE={charcoal:2};
   function waysideAt(c){
     if(!c||c._wayside!==undefined)return c?c._wayside:null;c._wayside=null;
     if(c.type==='sea'||c.home||!c.sites||!c.roadDefs||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
@@ -807,6 +809,12 @@
       {const [x,z]=W(0,-2);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9.5,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-.6-.6*t,-6+(-D.off+6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
       return out;}
+    if(D.kind==='erratic'){ /* S2034 — the pavement's ground flat at the ground under its middle (its clints a hand proud of it), a clearing of the scatter over
+      the pavement, the lace wall above it and the hawthorn below, and the path to the road */
+      {const [x,z]=W(0,1);out.push(addStamp({id:D.id+'_pave',kind:'door',x,z,r:11.5,blend:3,y:landH(x,z),cell:k}));}
+      {const [x,z]=W(0,3);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:18,blend:2,y:0,cell:k}));}
+      for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-1.6-.9*t,-7.6+(-D.off+7.6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
+      return out;}
     {const [x,z]=W(0,-.3);out.push(addStamp({id:D.id+'_pad',kind:'door',x,z,r:3.4,blend:3,y,cell:k}));}
     {const [x,z]=W(0,1);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9,blend:2,y:0,cell:k}));}
     for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(2+17*t,-.8+(-D.off+2.6+.8)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3.5,blend:1.5,y:0,cell:k}));}
@@ -818,7 +826,7 @@
     M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='wayside '+D.kind;sc.add(M.group);
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,wayside:true});}}
-    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;D.house=M.house;D.hatch=M.hatch;return M.group;}
+    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;D.house=M.house;D.hatch=M.hatch;D.stone=M.stone;D.other=M.other;D.clints=M.clints;D.wall=M.wall;D.pave=M.pave;D.thorn=M.thorn;return M.group;}
   // S1800 (card F8; Michael's A on #333, "broken, as drawn", and his A on #1072, "fit the arcade to the land") — Aurenne's ruined aqueducts
   // (PKIT.places.aqueduct, places.js's aurenneAqueduct): an arcade across a river's valley, one tier where it is under 12 m deep and two where
   // deeper. One Aurenne cell in three keeps one, by its own stream (aqueduct:<cell>), so no other draw of the cell moves. Read by place
@@ -2121,6 +2129,11 @@
     stone:[{tile:true},{tile:true,shutter:0x4a5a3a}],
     garrison:[{slate:true}]};
   let _houseN=0;
+  // S2032 — a town's house is seeded by its town and lot (houseSeedFor, set by genSettlement round each lot's builds), not by _houseN,
+  // the count of every house built so far in the boot, which moved with the order the towns loaded in (QA's S2027 item). Null elsewhere.
+  let HOUSE_SEED=null;
+  function houseSeedFor(id,i){let h=2166136261;const s=String(id);for(let k=0;k<s.length;k++)h=Math.imul(h^s.charCodeAt(k),16777619);return hashSeed((h^Math.imul(i+1,0x9E3779B1))>>>0);}
+  function houseSeedStep(civ,m){const n=civ?_civN++:_houseN++;return HOUSE_SEED!=null?HOUSE_SEED:n*m;}
   function houseKey(st){for(const k in STYLE)if(STYLE[k]===st)return k;return null;}
   // S881 (F2a) — a house's wall height: its storeys, and never so low that the eaves' lip (a steep thatch, turf or shingle roof drops
   // its edge well below the wall plate) comes down across the door's head. The Mark's steep roofs did, once the door was 2.05.
@@ -2129,7 +2142,7 @@
     return Math.max(H,SCALE.DOOR_H+.14+.12+drop);}
   function buildingGeoHi(w,d,st0,r,opts,lo){
     const key=houseKey(st0)||opts.styleKey||'irish';const V=HOUSE_VARIANTS[key]||[{}];
-    const r0=pRng((Math.round(w*7)*131+Math.round(d*7)*977+lo.wallHex+lo.roofHex*3+(_houseN++)*7919)>>>0);
+    const r0=pRng((Math.round(w*7)*131+Math.round(d*7)*977+lo.wallHex+lo.roofHex*3+houseSeedStep(0,7919))>>>0);
     const st=Object.assign({},st0,V[Math.floor(r0()*V.length)%V.length]);if(key==='french'&&st.slate==null)st.slate=true;if(key==='bavarian'||key==='garrison')st.slate=true;
     const P=[];const c=x=>new THREE.Color(x);const add=(geo,col,x,y,z,rx,ry,rz,j)=>{P.push({geo,color:c(col),x,y,z,rx,ry,rz,jitter:j==null?.06:j});};
     const two=lo.two,SU=SCALE.STOREY,H=houseWallH(st,d,opts,two),pl=.3,fr=st.frame,dark=0x1e1a18,DW=SCALE.DOOR_W,DH=SCALE.DOOR_H; /* S881 (F2a): the upper storey and the door from SCALE (2.2, and a leaf .92 by 1.85, before) */
@@ -2236,7 +2249,7 @@
   // ── S195: churches and keeps in detail (H.5, Michael's A: buildings and structures, with a distant copy) ──
   // The old builders stay as the distant copies; neither took the town's dice, so the detailed ones roll their own.
   let _civN=0;
-  function churchGeoHi(w,d,st){const r0=pRng((Math.round(w*13)+Math.round(d*29)*7+(_civN++)*7919)>>>0);const P=[];const c=x=>new THREE.Color(x);
+  function churchGeoHi(w,d,st){const r0=pRng((Math.round(w*13)+Math.round(d*29)*7+houseSeedStep(1,7919))>>>0);const P=[];const c=x=>new THREE.Color(x);
     const add=(geo,col,x,y,z,rx,ry,rz,j)=>{P.push({geo,color:c(col),x,y,z,rx,ry,rz,jitter:j==null?.05:j});};
     const S=STYLE.stone,wallC=c(S.wall).lerp(c(S.wall2),r0()*.4).getHex(),dk=c(wallC).multiplyScalar(.82).getHex(),roofC=S.roof,H=4.2,b=.5;
     // stepped plinth
@@ -2272,7 +2285,7 @@
     // a few graves in the yard
     for(let k=0;k<4;k++)if(r0()<.7){const gx=(r0()<.5?-1:1)*(w/2+1.4+r0()*.8),gz=-d/2+1+r0()*(d-2);add(SK.rbox(.5,.8,.14,.08,2),0x7a7a74,gx,.4,gz,0,Math.PI/2+(r0()-.5)*.3,(r0()-.5)*.15,.08);}
     return mergeParts(P);}
-  function keepGeoHi(w,d,st){const r0=pRng((Math.round(w*17)+Math.round(d*31)*5+(_civN++)*104729)>>>0);const P=[];const c=x=>new THREE.Color(x);
+  function keepGeoHi(w,d,st){const r0=pRng((Math.round(w*17)+Math.round(d*31)*5+houseSeedStep(1,104729))>>>0);const P=[];const c=x=>new THREE.Color(x);
     const add=(geo,col,x,y,z,rx,ry,rz,j)=>{P.push({geo,color:c(col),x,y,z,rx,ry,rz,jitter:j==null?.05:j});};
     const S=STYLE.stone,wallC=S.wall,w2=S.wall2,dk=c(w2).multiplyScalar(.85).getHex(),H=6.5,b=.35;
     // a battered base (the wall's foot splays out), the wall, courses of stone proud of it
