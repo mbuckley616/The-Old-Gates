@@ -726,3 +726,27 @@ at Low is 626 of its 700 calls: 74 left.*
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
 
 *s1368, QA Session 1991 (`budget` 8/8 in 446 s and `budgetport` 9/9 in 530 s, one try each, run in series by `run.mjs budget budgetport` on four cores with no other boot). Against s1342, 26 builds later (every merge to 8 Nov 11:03 UTC, among them the Roman homes' rooms and the wall plate, the elders' staffs and their walk, the long cloak weighted to the legs, the braids on the cloak, the farms' hens and herds, the lair reloaded as a lair, and the fire orb's ward), every view held within two calls at every level: Dunmore's street at noon 727 → 725 at Middle, at midnight 803 → 802; the field west at noon 645 → 644 and at dawn 788 → 787 (each the other column −1, and a body fewer at noon in the street); Portclare's square 522 → 523 (Low 356 → 357, 682k → 693k triangles, +1.6%, the one triangle move over 0.3%); the inn's hall 34 → 34; the medium gate 102 → 102. The farms' stock stands in none of these views (the field west is not a farm's), and the rooms and the plate are behind doors. No spot rose by more than 10%. Dunmore at midnight at Low is 625 of its 700 calls: 75 left.*
+
+### s1404 — 2026-11-09 13:10 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 584 | 1.08 M | 0 | 0 | 107 | 120 | 253 | 104 | Mesh 46, oldGate 20, wayside carriage 13, sea cave mouth 8, cave mouth 7 |
+| Dunmore street, noon | Middle | 739 | 1.82 M | 136 | 6 | 108 | 120 | 265 | 104 | Mesh 46, oldGate 20, wayside carriage 13, sea cave mouth 8, cave mouth 7 |
+| Dunmore street, noon | High | 789 | 2.30 M | 168 | 6 | 108 | 120 | 283 | 104 | Mesh 46, oldGate 20, wayside carriage 13, sea cave mouth 8, cave mouth 7 |
+| Dunmore street, midnight | Low | 639 | 1.05 M | 0 | 0 | 105 | 176 | 253 | 105 | Mesh 46, oldGate 20, wayside carriage 13, sea cave mouth 8, cave mouth 7 |
+| Dunmore street, midnight | Middle | 816 | 1.77 M | 159 | 6 | 105 | 176 | 265 | 105 | Mesh 46, oldGate 20, wayside carriage 13, sea cave mouth 8, cave mouth 7 |
+| Dunmore street, midnight | High | 877 | 2.31 M | 202 | 6 | 105 | 176 | 283 | 105 | Mesh 46, oldGate 20, wayside carriage 13, sea cave mouth 8, cave mouth 7 |
+| the field west of Dunmore, noon | Low | 537 | 627k | 0 | 0 | 105 | 107 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 645 | 1.05 M | 83 | 6 | 105 | 107 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 692 | 1.51 M | 122 | 6 | 105 | 107 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 620 | 618k | 0 | 0 | 108 | 186 | 281 | 45 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 788 | 1.10 M | 143 | 6 | 108 | 186 | 300 | 45 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 840 | 1.62 M | 187 | 6 | 108 | 186 | 308 | 45 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| Portclare square, noon | Low | 369 | 702k | 0 | 0 | 29 | 60 | 192 | 88 | Mesh 31, oldGate 14, wayside carriage 13, cave mouth 8, sea cave mouth 8 |
+| Portclare square, noon | Middle | 535 | 1.40 M | 144 | 6 | 29 | 60 | 208 | 88 | Mesh 31, oldGate 14, wayside carriage 13, cave mouth 8, sea cave mouth 8 |
+| Portclare square, noon | High | 581 | 1.74 M | 179 | 6 | 29 | 60 | 219 | 88 | Mesh 31, oldGate 14, wayside carriage 13, cave mouth 8, sea cave mouth 8 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+*s1404, QA Session 2039 (`budget` 8/8 in 453 s and `budgetport` 9/9 in 522 s, one try each, run in series by `run.mjs budget budgetport --no-retry` on four cores with no other boot). Against s1368, 36 builds later (every merge to 9 Nov 12:14 UTC, among them the places by a road (the overturned coach, the hunters' and charcoal burners' camps, the locked cellar, the perched stone), the Mark's town houses, water B and cooking B, the cloak's hem bones and the house roofs keyed by lot), every view rose by 1–14 calls and no triangle count moved by more than 1.3%. The rise is one thing: a `wayside carriage`, the overturned coach (S2007), stands in view of Dunmore's street and of Portclare's square at 13 draws (the other column +14 and +13). Dunmore's street at noon 725 → 739 at Middle (+1.9%), at midnight 802 → 816 (+1.7%); the field west 644 → 645 and 787 → 788 (no coach in view; the other column +1); Portclare's square 523 → 535 (+2.3%; Low 357 → 369, +3.4%, the largest rise, and a body fewer); the inn's hall 34 → 34; the medium gate 102 → 102. No spot rose by more than 10%. Dunmore at midnight at Low is 639 of its 700 calls: 61 left (75 at s1368), and one more coach-sized place in that view would take 13 of them.*
