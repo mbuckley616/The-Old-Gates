@@ -193,12 +193,14 @@ if (cb) {
   check(`solid at the cabin's four walls (the door shut) and the woodpile, open in the yard, on the path and under the store; ${ct.tris} triangles in ${ct.draws} draws`, !ct.none && ct.back && ct.side && ct.door && !ct.inside && ct.pile && !ct.yard && !ct.path && !ct.under && ct.tris < 21000 && ct.draws <= 18, ct);
   // Session 2073 (the critic, 10 Nov: "about half of the frame's trees are leaf-card oaks in full green, standing in snow"): within 90 m of
   // the cabin no leafed tree (broadleaf, oak, birch, willow) stands where the tundra holds .55 of the ground or more, read from the 3×3 cells
-  // round it as tundraW reads them; and the bushes there are frosted
-  const sl = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, L = new Set(['broadleaf', 'oak', 'birch', 'willow']); let n = 0, snow = 0, leaf = 0, cone = 0;
-    for (const ch of chunks.values()) for (const t of ch.trees || []) { if (Math.hypot(t.x - D.x, t.z - D.z) > 90) continue; n++; if (tundraW(t.x, t.z) < .55) continue; snow++; if (L.has(t.sp)) leaf++; if (t.sp === 'snowpine' || t.sp === 'spruce') cone++; }
-    return { n, snow, leaf, cone }; }, cb.id);
+  // round it as tundraW reads them; and the bushes there are frosted. Session 2074: nor a spruce (the new look draws it from green cards), and the
+  // snowpine is drawn in its own snowed shape, not the land's cone kit
+  const sl = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, L = new Set(['broadleaf', 'oak', 'birch', 'willow', 'spruce']); let n = 0, snow = 0, leaf = 0, cone = 0, own = 0;
+    for (const ch of chunks.values()) for (const t of ch.trees || []) { if (Math.hypot(t.x - D.x, t.z - D.z) > 90) continue; n++; if (tundraW(t.x, t.z) < .55) continue; snow++; if (L.has(t.sp)) leaf++; if (t.sp === 'snowpine') cone++; }
+    for (const ch of chunks.values()) ch.group.traverse(m => { if (m.isInstancedMesh && m.userData.scatter === 'snowpine' && m.userData.landTree) own = -1e9; else if (m.isInstancedMesh && m.userData.scatter === 'snowpine') own++; });
+    return { n, snow, leaf, cone, own, kit: !!LAND_TREE_KIT.snowpine }; }, cb.id);
   console.log(JSON.stringify(sl));
-  check(`${cb.id}: of ${sl.n} trees within 90 m, ${sl.snow} stand in the Mark's snow and ${sl.leaf} of those are leafed (${sl.cone} spruce or snowpine)`, sl.snow > 10 && sl.leaf === 0 && sl.cone > sl.snow / 2, sl);
+  check(`${cb.id}: of ${sl.n} trees within 90 m, ${sl.snow} stand in the Mark's snow and ${sl.leaf} of those are leafed or spruce (${sl.cone} snowpine, drawn in ${sl.own} meshes of its own shape)`, sl.snow > 10 && sl.leaf === 0 && sl.cone > sl.snow / 2 && sl.own > 0 && !sl.kit, sl);
 }
 // Session 2056: the Mark's logging camp (PKIT.places.logging, places.js's markLoggingCamp) on a fall line of the world into water, 150 m and
 // more off every road: the chute from the deck's foot down to 3 m out over the water, clear of the bank all the way; the fire and the

@@ -394,7 +394,10 @@ void main(){ float a = texture2D(uMap, vUv).a * uOp; if (a < .01) discard;
 // in a chunk is still one draw call. A template is sized to the prototype it replaces (its height and its spread), so a tree
 // covers what it covered. Dead trees, scrub and mushrooms keep their old shapes.
 const LAND_TREE_KIT={broadleaf:'broad',oak:'oak',willow:'broad',autumn:'broad',autumnRed:'broad',autumnGold:'broad',oakAutumn:'oak',
-  birch:'birch',birchAutumn:'birch',conifer:'cone',spruce:'cone',pine:'pine',snowpine:'cone'};
+  birch:'birch',birchAutumn:'birch',conifer:'cone',spruce:'cone',pine:'pine'};
+// S2074 — the snowpine keeps its own shape on the new look (the old low-poly tiers, whose snow lies on the needles: S522, Michael's note).
+// The cone kit drew it as rounded masses of green cards with a tall bare trunk; from under it and beside the Mark's places it read as a
+// summer broadleaf in the snow (the critic, 10 Nov), beside the places' own snowed spruce. The kit's other conifers are unchanged.
 const LAND_LEAVES={green:[88,110,42,60,30,66],autumn:[14,46,62,82,34,62],birch:[70,92,40,58,40,72],needle:[90,122,32,48,34,54]}; // hue, sat and light ranges
 const LAND_LEAF_PAL={autumn:'autumn',autumnRed:'autumn',autumnGold:'autumn',oakAutumn:'autumn',birchAutumn:'autumn',birch:'birch',conifer:'needle',spruce:'needle',pine:'needle',snowpine:'needle'};
 const _landTreeMat={},_landTreeGeo={};

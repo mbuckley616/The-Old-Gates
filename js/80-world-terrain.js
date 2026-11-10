@@ -562,7 +562,7 @@
   // stamp or a road that skips one tree moves no other's. `ch.trees` holds each tree's id, place, species and trunk; each tree mesh
   // names its instances' ids (`userData.tids`) and each trunk's collider its tree (`tid`), so felling (50-travel.js) can take one out.
   // S2073 — the tundra's share of the ground at a point (regionWeights, as groundColor blends it), and the leafed kinds that may not stand in it
-  const SNOWLEAF=new Set(['broadleaf','oak','birch','willow']),_snowBushC=new THREE.Color(1.3,1.32,1.36);
+  const SNOWLEAF=new Set(['broadleaf','oak','birch','willow','spruce']),_snowBushC=new THREE.Color(1.3,1.32,1.36);
   // Read from the 3×3 cells round the point's own (as withPlace does), never the live REGIONS: a chunk scattered before its neighbour's
   // tundra had loaded drew its trees from the plains, and the ground was recoloured white when the neighbour came (the gotcha of S701)
   const _twRing=new Map();
@@ -602,8 +602,9 @@
         if(h>26&&sp!=='dead'&&sp!=='snowpine'&&sp!=='spruce')sp=(snowLineAt(x,z)<30?'snowpine':'conifer');
         // S2073 — the Mark's snow is the ground's blend of the tundra (groundColor), but the tree is the dominant region's: where the plains
         // won by a little, summer-green oaks stood on white ground (the critic, 10 Nov, at the cabin and the unfinished camp). A leafed tree
-        // takes the tundra's own (a spruce or a snowpine) as the tundra's weight rises from .25 to .55, by its own die
-        if(SNOWLEAF.has(sp)&&hash01(gx,gz,14)<sstep(.25,.55,tundraW(x,z)))sp=hash01(gx,gz,15)<.3?'spruce':'snowpine';
+        // takes the tundra's own, the snowpine, as the tundra's weight rises from .25 to .55, by its own die (S2074: a spruce in the snow too, since
+        // the new look draws the spruce from green leaf cards and the snowpine with its snow)
+        if(SNOWLEAF.has(sp)&&hash01(gx,gz,14)<sstep(.25,.55,tundraW(x,z)))sp='snowpine';
         const sc_=hash01(gx,gz,5);const gi=.84+hash01(gx,gz,12)*.34;(trees[sp]=trees[sp]||[]).push({id:cx+','+cz+':'+(iz*100+ix),x,z,h,s:sc_<.06?1.7+sc_*3:.8+sc_*.7,r:hash01(gx,gz,6)*Math.PI*2,t:hash01(gx,gz,7),g:gi,sy:1+(1-gi)*.7,au:base==='autumn'}); // .8–1.5, rare giants; the girth (S192) a squat tree wider, a tall one slimmer
         _treePts.push(x,z);
         continue;
