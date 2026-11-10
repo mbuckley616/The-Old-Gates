@@ -7558,9 +7558,15 @@ function aurenneOrrery(hAt, o = {}) {
     // bracken on the hill gone rust, and foxglove gone to seed, off the track, the stance, the fold and the spring
     const clear = (x, z) => trackD(x, z) < 1 || inHut(x, z) || Math.hypot(x - FC[0], z - FC[1]) < FR + 1.3 || Math.hypot(x - SP[0], z - SP[1]) < 1.6 || Math.hypot(x - RW[0], z - RW[1]) < 1.2 || rubble.some(([a, b]) => Math.abs(a - x) < .5 && Math.abs(b - z) < .5);
     for (let k = 0, n = 0; k < 2000 && n < 90; k++) { const x = -26 + F() * 52, z = -24 + F() * 44; if (clear(x, z)) continue; n++; const gy = ground(x, z), a0 = F() * 6.283;
-      for (let j = 0; j < 7; j++) { const a = a0 + j * .9 + (F() - .5) * .4, L = .45 + F() * .3, rise = .7 + F() * .2, pos = []; let qx = 0, qy = 0, pa = rise;
-        const ring = []; for (let s = 0; s <= 3; s++) { ring.push([qx, qy, .11 * (1 - s / 3.4)]); qx += Math.cos(pa) * L / 3; qy += Math.sin(pa) * L / 3; pa -= .55; }
-        for (let s = 0; s < 3; s++) { const [x0, y0, w0] = ring[s], [x1, y1, w1] = ring[s + 1]; pos.push(x0, y0, -w0, x1, y1, -w1, x0, y0, w0, x0, y0, w0, x1, y1, -w1, x1, y1, w1); }
+      // S2075 — a frond stands: its bare stipe near upright, then the blade arching out and over, knee-high (0.4 to 0.65 m) and reaching as far.
+      // It rose at 0.7 to 0.9 rad and curled down a third of a radian a segment, so a clump lay 15 cm high on the grass as a rust star (the critic, 10 Nov)
+      // Each blade is cut into its pinnae, a leaflet a side every half segment pointing on toward the tip, so it reads as a fern, not a ribbon
+      for (let j = 0; j < 5; j++) { const a = a0 + j * 1.256 + (F() - .5) * .4, L = .7 + F() * .35, rise = 1.38 + F() * .14, pos = []; let qx = 0, qy = 0, pa = rise;
+        const ring = []; for (let s = 0; s <= 4; s++) { ring.push([qx, qy]); qx += Math.cos(pa) * L / 4; qy += Math.sin(pa) * L / 4; pa -= .46 + (F() - .5) * .08; }
+        const at = (s, h) => [ring[s][0] + (ring[s + 1][0] - ring[s][0]) * h, ring[s][1] + (ring[s + 1][1] - ring[s][1]) * h];
+        { const [x0, y0] = ring[0], [x1, y1] = ring[1]; pos.push(x0, y0, -.012, x1, y1, -.008, x0, y0, .012, x0, y0, .012, x1, y1, -.008, x1, y1, .008); }
+        for (let s = 1; s < 4; s++) for (const h of [0, .5]) { const [ax, ay] = at(s, h), [bx, by] = at(s, h + .5), [tx, ty] = at(s, h + .8), w = .15 * (1 - ((s - 1) + h) / 3.2);
+          for (const sd of [-1, 1]) pos.push(ax, ay, 0, bx, by, 0, tx, ty - .03, sd * w); }
         const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'bracken', x, gy - .02, z, 0, a, 0); } }
     for (let k = 0, n = 0; k < 900 && n < 30; k++) { const x = -18 + F() * 36, z = -14 + F() * 28; if (clear(x, z)) continue; n++; const gy = ground(x, z), h = .7 + F() * .5; put(new THREE.BoxGeometry(.018, h, .018), 'stalk', x, gy + h / 2, z);
       for (let j = 0; j < 5; j++) put(new THREE.ConeGeometry(.035, .07, 5), 'glove', x + (F() - .5) * .05, gy + h * (.62 + j * .07), z + (F() - .5) * .05, Math.PI, 0, 0); }

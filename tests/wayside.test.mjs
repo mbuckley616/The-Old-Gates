@@ -148,6 +148,14 @@ const hu = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c
 console.log(JSON.stringify(hu));
 check(`${hu.id}: the shepherd's hut ${hu.road} m off the nearest road, its door down the slope (${hu.down} m over 20), its floor within ${hu.floor} m of level, ${hu.stands} m from its hearthstone, rowan and spring to the ground`, !hu.none && hu.road >= 150 && hu.down < -.5 && hu.floor < .1 && hu.stands < .06, hu);
 check(`solid at the hut's walls and the fold, open at the door, inside and in the fold; ${hu.tris} triangles in ${hu.draws} draws`, !hu.none && hu.back && hu.side && !hu.door && !hu.inside && hu.fold && !hu.foldIn && hu.tris < 22000 && hu.draws <= 16, hu);
+// Session 2075 (the critic, 10 Nov: "its 91 clumps lie flat on the grass as orange five-pointed stars"): the bracken stands knee-high, each
+// clump's highest point 0.4 m or more over the ground under it
+const bk = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, m = D.group.getObjectByName('bracken'); if (!m) return { none: true };
+  m.updateMatrixWorld(true); const P = m.geometry.attributes.position, v = new THREE.Vector3(), cl = new Map();
+  for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); const k = Math.round(v.x / 1.5) + ',' + Math.round(v.z / 1.5), h = v.y - meshH(v.x, v.z); cl.set(k, Math.max(cl.get(k) ?? -9, h)); }
+  const hs = [...cl.values()].sort((a, b) => a - b), q = f => +hs[Math.floor(f * (hs.length - 1))].toFixed(2); return { n: hs.length, q10: q(.1), q50: q(.5), q90: q(.9) }; }, of.hut.id);
+console.log(JSON.stringify(bk));
+check(`${of.hut.id}: the bracken stands, its clumps' tops ${bk.q10} / ${bk.q50} / ${bk.q90} m over the ground (10th, 50th, 90th)`, !bk.none && bk.q10 >= .35 && bk.q90 < 1, bk);
 await page.evaluate(D => { px = D.x + Math.sin(D.ry) * 28; pz = D.z + Math.cos(D.ry) * 28; }, of.hut); await g.spin('clear', 60);
 const hm = await page.evaluate(id => { const e = mapEntries(getCell(...id.split('_').slice(1).map(Number))).find(e => e.id === id); return { disc: discovered(id), entry: e && { name: e.name, kind: e.kind, noTravel: !!e.noTravel }, travel: !!arrivalFor(id) }; }, of.hut.id);
 console.log(JSON.stringify(hm));
