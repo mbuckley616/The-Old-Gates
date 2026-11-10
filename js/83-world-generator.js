@@ -2164,7 +2164,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     (INT_BEDS||[]).forEach(r=>S(r,['x','z','y','cz']));
     (INT_DOORS||[]).forEach(r=>{S(r,['x','z','y','w','h']);S(r.sol,BOX);S(r.box,BOX);});
     (INT_NPCS||[]).forEach(r=>S(r.box,BOX));
-    for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,INT_SHELF,house._hatch,house._bench])S(r,['x','z','y']);
+    for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,INT_SHELF,house._hatch,house._bench,...(house._casks||[])])S(r,['x','z','y']);
     if(HATCH.active||HATCH.x!=null)S(HATCH,['x','z','y']);
     house.intW*=k;house.intD*=k;
   }
@@ -4103,7 +4103,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       npc={x:-99,z:-99,maxZ:1,paused:true};
     } else if(type==='cellar'){
       // S293 — the cellar on the kit: the barrels and crates (the stacked crate now on the others), a wine rack, a chest, a ladder
-      for(let k=0;k<Math.min(3,Math.floor((D-1.6)/.9));k++){_intBarrel(sc_,.7,.8+k*.9);}for(let k=0;k<2;k++){_intCrate(sc_,W-.8-k*.85,.25,.9,.5);}_intCrate(sc_,W-1.22,.5+.225,.9,.45); /* S896 — down the west wall and in the north-east corner of a cellar of true size */
+      house._casks=[];for(let k=0;k<Math.min(3,Math.floor((D-1.6)/.9));k++){_intBarrel(sc_,.7,.8+k*.9);if(house.parent&&house.parent.type==='inn')house._casks.push({x:.7,z:.8+k*.9,y:.44,id:house.id+':cask:'+k});} /* S2062 — an inn's cellar barrels can be searched (86-world-crime.js, caskPrompt) */for(let k=0;k<2;k++){_intCrate(sc_,W-.8-k*.85,.25,.9,.5);}_intCrate(sc_,W-1.22,.5+.225,.9,.45); /* S896 — down the west wall and in the north-east corner of a cellar of true size */
       {const K=furnKit(),room=K.bake(K.cellar(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
       HATCH.x=W/2;HATCH.z=1.2;HATCH.y=0;HATCH.active=true;
       npc={x:-99,z:-99,maxZ:1,paused:true};

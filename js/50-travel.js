@@ -984,6 +984,11 @@ const WATER_KINDS={clean:0,raw:1,foul:2};
 function waterWeight(it){const V=WATER_VESSELS[it.vessel];return +(V.empty+WATER_USE_W*(it.wUses||0)).toFixed(2);}
 function waterItem(k,uses,kind){const V=WATER_VESSELS[k];const it={name:V.name,ico:V.ico,type:'misc',vessel:k,wUses:uses||0,wKind:uses?(kind||'clean'):null,buyPrice:V.buyPrice,sellMult:.4,qty:1};
   it.weight=waterWeight(it);return it;}
+// S2062 — water B's last vessel, found rather than bought (Michael on #1355): a barrel in 8, a chest in 16, a barrel in an inn's cellar
+// in 3, found empty. Rolled on its own stream keyed by the container's key (a container's id and its loot day), so no other loot moves
+// and a reload finds the same bottle. Only a keyed container rolls (the co-op rule); a corpse, a shelf or a library chest never does.
+const BOTTLE_FIND={barrel:1/8,chest:1/16,cellar:1/3};
+function bottleFind(kind,key){const p=BOTTLE_FIND[kind];if(!p||key==null)return null;return seededRng('bottle',kind+':'+key)()<p?waterItem('bottle',0):null;}
 function vesselsInBag(){return BAG.filter(b=>b&&b.vessel&&WATER_VESSELS[b.vessel]);}
 function vesselHasRoom(b){return (b.wUses||0)<WATER_VESSELS[b.vessel].uses;}
 // up to n uses into one vessel (all its room when n is left out); returns how many went in
