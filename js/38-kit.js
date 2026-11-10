@@ -7774,14 +7774,15 @@ function aurenneOrrery(hAt, o = {}) {
       else { g.rotateX(Math.PI / 2); put(g, 'log', c, y, m, 0, 0, 0, .6); for (const e of [a0, a1]) put(new THREE.CircleGeometry(rad * .96, 9).rotateY(e < m ? Math.PI : 0), 'end', c, y, e + (e < m ? -.002 : .002)); }
       if (rec) logs.push({ ax, a0: +a0.toFixed(3), a1: +a1.toFixed(3), c, y: +y.toFixed(3) }); };
     // the side walls: eleven courses, the window cut out of the east one; the gables: ten courses half a step up, the door cut out of the front
-    /* S2080 (the critic, 10 Nov: "from the west, at 25 m, I see no lit window … from three sides of four, a cabin lived in is dark at night"): two
-       more lights like the east one, in the west wall clear of the hearth's chimney (WZW) and in the front gable beside the door (FWX), so the
-       cabin shows a lit window from the front and both sides; the back gable, against the trees, stays blind. cut lays a log round its gaps */
-    const WZW = 1.0, FWX = 1.15, inWin = y => y > WS && y < WS + WH + R;
+    /* S2080 (the critic, 10 Nov: "from the west, at 25 m, I see no lit window … from three sides of four, a cabin lived in is dark at night"): three
+       more lights like the east one: in the west wall clear of the hearth's chimney (WZW), in the front gable beside the door (FWX) and in the
+       back gable on the side away from the chimney (BWX; the critic's own view, from the north of a cabin turned half round, was of its back),
+       so the cabin shows a lit window from every side. cut lays a log round its gaps */
+    const WZW = 1.0, FWX = 1.15, BWX = .9, inWin = y => y > WS && y < WS + WH + R;
     const cut = (ax, a0, a1, c, y, gaps) => { let a = a0; for (const [g0, g1] of gaps.sort((p, q) => p[0] - q[0])) { if (g0 > a) log(ax, a, g0, c, y); a = Math.max(a, g1); } if (a1 > a) log(ax, a, a1, c, y); };
     for (let k = 0; k < NC; k++) { const y = Y0 + R + k * STEP, w = inWin(y); cut('z', -ZW - OUT, ZW + OUT, -XW, y, w ? [[WZW - WW / 2, WZW + WW / 2]] : []);
       cut('z', -ZW - OUT, ZW + OUT, XW, y, w ? [[WZ - WW / 2, WZ + WW / 2]] : []); }
-    for (let k = 0; k < NC - 1; k++) { const y = Y0 + R + STEP / 2 + k * STEP; log('x', -XW - OUT, XW + OUT, -ZW, y);
+    for (let k = 0; k < NC - 1; k++) { const y = Y0 + R + STEP / 2 + k * STEP; cut('x', -XW - OUT, XW + OUT, -ZW, y, inWin(y) ? [[BWX - WW / 2, BWX + WW / 2]] : []);
       cut('x', -XW - OUT, XW + OUT, ZW, y, [...(y < Y0 + DH + R ? [[-DW / 2, DW / 2]] : []), ...(inWin(y) ? [[FWX - WW / 2, FWX + WW / 2]] : [])]); }
     // the gables above the eaves: logs shortening to the ridge, under the roof's line
     for (let y = Y0 + R + STEP / 2 + (NC - 1) * STEP; y < RIDGE - .2; y += STEP) { const hl = (RIDGE - R - y) / Math.tan(PITCH); if (hl < .25) break; for (const z of [-ZW, ZW]) log('x', -hl, hl, z, y); }
@@ -7791,7 +7792,7 @@ function aurenneOrrery(hAt, o = {}) {
     put(new THREE.BoxGeometry(2 * XW - .26, .05, 2 * ZW - .26), 'board', 0, Y0 + .05, 0);
     for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.1, DH + .1, .26), 'board', sx * (DW / 2 + .05), Y0 + (DH + .1) / 2, ZW);
     put(new THREE.BoxGeometry(DW, DH, .05), 'door', 0, Y0 + DH / 2, ZW - .06); put(new THREE.BoxGeometry(.04, .04, .1), 'iron', DW / 2 - .12, Y0 + 1.0, ZW + .01);
-    const wy = WS + WH / 2 + R / 2, wins = [{ x: XW, z: WZ, n: [1, 0] }, { x: -XW, z: WZW, n: [-1, 0] }, { x: FWX, z: ZW, n: [0, 1] }];
+    const wy = WS + WH / 2 + R / 2, wins = [{ x: XW, z: WZ, n: [1, 0] }, { x: -XW, z: WZW, n: [-1, 0] }, { x: FWX, z: ZW, n: [0, 1] }, { x: BWX, z: -ZW, n: [0, -1] }];
     /* each light: its frame of boards, the glow a hand inside the wall's line, its glazing bar; built along z and turned a quarter for the gable */
     for (const W of wins) { const ry = W.n[0] ? 0 : Math.PI / 2, ins = W.n[0] ? [-W.n[0] * .02, 0] : [0, -W.n[1] * .02], ins2 = W.n[0] ? [-W.n[0] * .01, 0] : [0, -W.n[1] * .01];
       for (const s2 of [-1, 1]) { put(new THREE.BoxGeometry(.26, .06, WW + .16), 'board', W.x, wy + s2 * (WH / 2 + .03), W.z, 0, ry); put(new THREE.BoxGeometry(.26, WH, .06), 'board', W.x + (W.n[0] ? 0 : s2 * (WW / 2 + .03)), wy, W.z + (W.n[0] ? s2 * (WW / 2 + .03) : 0), 0, ry); }
