@@ -87,6 +87,7 @@ const t = await page.evaluate(() => {
   // the innkeeper's topic
   const topic = innTopics(hM, 'markman').find(x => /cooking/.test(x.label)); const said = topic && topic.fn();
   out.talk = { label: topic && topic.label, said, learnt: !!dishesKnown()[dishTalk(hM)] };
+  out.voices = {}; for (const pp of ['gatelander', 'markman', 'aurennais', 'oldblood', 'other']) { const tp = innTopics(hM, pp).find(x => /cooking/.test(x.label)); out.voices[pp] = tp && tp.fn(); }
   // the cups: the grain's fills out the meal, the sweet's restores, the island's own is its rider beside fed
   worldState.fed = null; bagAdd(cupItem('rye')); drink(BAG.find(b => b.cup === 'rye')); out.ryeUnfed = worldState.fed;
   setFed('hearty', 1); const u0 = fedNow().until; bagAdd(cupItem('rye')); drink(BAG.find(b => b.cup === 'rye')); out.ryeAdds = Math.round(fedNow().until - u0);
@@ -105,6 +106,9 @@ check(`the dish of the day: ${t.menu.a} twice the same; ${t.menu.days} dishes ov
 check(`the inn sells ${t.stock.dish} at ${t.stock.price} and the cups ${t.stock.cups} (Aurenne's ${t.stock.aur}); the goods shop neither; eating it teaches it (${t.eatLearnt})`,
   t.stock.price === 20 && t.stock.cups === 'rye:12,berries:12,curd:12' && t.stock.aur === 'wheat,dates,olives' && !t.stock.shop && t.eatLearnt, t.stock);
 check(`"${t.talk.label}": "${t.talk.said}", learnt ${t.talk.learnt}`, /cooking/.test(t.talk.label || '') && /Stew/.test(t.talk.said || '') && t.talk.learnt, t.talk);
+check(`the line by people (quest review Finding 45): ${JSON.stringify(t.voices)}`,
+  /they say/.test(t.voices.gatelander || '') && /in the pot\. [A-Z]/.test(t.voices.markman || '') && /, Master\./.test(t.voices.aurennais || '') && /warrant/.test(t.voices.aurennais || '')
+  && /in the crock/.test(t.voices.oldblood || '') && t.voices.other === t.voices.gatelander && new Set(Object.values(t.voices)).size === 4, t.voices);
 check(`cups: rye unfed leaves no meal, fed adds ${t.ryeAdds} min; berries +${t.berries}; curd warms ${t.warm[0]} → ${t.warm[1]} for ${t.warm[2]} min; olives cool ${t.cool[0]} → ${t.cool[1]}; butter on a roast stamina ×${t.rich.toFixed(4)}; the pill; saved`,
   !t.ryeUnfed && t.ryeAdds === 600 && t.berries[0] === 15 && t.berries[1] === 15 && t.warm[1] === t.warm[0] + 1 && t.warm[2] === 600 && t.cool[1] === t.cool[0] + 1 && Math.abs(t.rich - 1.1875) < .01 && t.pill && t.save, t);
 check('no page errors', g.errs.length === 0, g.errs);

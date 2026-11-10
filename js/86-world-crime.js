@@ -308,7 +308,7 @@
               gold-=price;updateHUD();worldState.rented={id:house.id,room:free,until:(worldState.gameTimeAbsMinutes||0)+24*60};if(innBench(house))worldState.rented.bench=1;
               if(typeof addLog==='function')addLog('🛏️',`Rented ${innRoomName(free,n,house)} at ${house.name} for ${price} gold.`);
               return L.paid(price,cap(innRoomName(free,n,house)));}},
-            {label:'Not tonight.',response:L.not}];}},{label:'What’s cooking?',fn:()=>typeof dishTalkSay==='function'?dishTalkSay(house):''},...lampTopics(house,people)];} /* S2035 — cooking B: the innkeeper teaches one dish a day */
+            {label:'Not tonight.',response:L.not}];}},{label:'What’s cooking?',fn:()=>typeof dishTalkSay==='function'?dishTalkSay(house,people):''},...lampTopics(house,people)];} /* S2035 — cooking B: the innkeeper teaches one dish a day */
   // S550 — a feast day: the innkeeper's line comes before the room offer, and the meal (a Hot Stew) is the house's, once
   // a feast at each inn, put in your pack when you ask for something to eat; the shop opens as on any day
   function feastInnLine(people){const f=typeof feastOn==='function'&&feastOn(absMin());return f?(FEAST_INN[people]||FEAST_INN.gatelander):'';}
