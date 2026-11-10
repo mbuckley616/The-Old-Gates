@@ -9,7 +9,7 @@
 // Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2048 the coach's lamp at night and its paint. Session 2051
 // the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished),
 // Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants), Session 2065 Aurenne's abandoned expedition (PKIT.places.expedition) on its laid ground,
-// Session 2071 the Gatelands' falls (PKIT.places.falls), their glen cut into the world's own ground.
+// Session 2071 the Gatelands' falls (PKIT.places.falls), their glen cut into the world's own ground. Session 2079 the peat camp's heather in shoots and its footings as tents.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -179,6 +179,18 @@ if (pc) {
   console.log(JSON.stringify(pt));
   check(`${pt.id}: the peat camp ${pt.road} m off the nearest road; inside the rim the world's ground ${pt.over} m under the bog's at most, the walk within ${pt.walk} m of the piece's ground, the cut ${pt.deep} m deep`, !pt.none && pt.road >= 150 && pt.over <= 0 && pt.walk < .1 && pt.deep > 1.2, pt);
   check(`the face a wall from the cut and open from the bank, the cut and the ramp open; the bothy solid at its back, open at its door and inside, the rick solid; ${pt.tris} triangles in ${pt.draws} draws`, !pt.none && pt.faceCut && !pt.faceBank && !pt.cut && !pt.ramp && pt.back && !pt.door && !pt.inside && pt.rick && pt.tris < 42000 && pt.draws <= 20, pt);
+  // Session 2079 (the critic, 10 Nov: "the heather is purple stones", "dark upright blocks that read as tree stumps"): the heather is shoots
+  // standing, not a lump lying (its faces' mean |n.y| by area under one half), each clump under 0.7 m across and 0.15 m high or more; a
+  // footing is wider at its foot than it is tall
+  const ph = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, hm = D.group.getObjectByName('heather'), sm = D.group.getObjectByName('sod'); if (!hm || !sm || !D.heather) return { none: true };
+    const P = hm.geometry.attributes.position, a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(); let ny = 0, ar = 0;
+    for (let i = 0; i < P.count; i += 3) { a.fromBufferAttribute(P, i); b.fromBufferAttribute(P, i + 1); c.fromBufferAttribute(P, i + 2); const n = b.clone().sub(a).cross(c.clone().sub(a)), s = n.length() / 2; ar += s; ny += s * Math.abs(n.y / (2 * s || 1)); }
+    const cl = D.heather.map(() => ({ w: 0, h: -9 })), v = new THREE.Vector3();
+    for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); let k = -1, kd = 9; D.heather.forEach(([x, z], j) => { const d = Math.hypot(v.x - x, v.z - z); if (d < kd) { kd = d; k = j; } }); if (kd > .5) continue; cl[k].w = Math.max(cl[k].w, 2 * kd); cl[k].h = Math.max(cl[k].h, v.y - D.ground(D.heather[k][0], D.heather[k][1])); }
+    const S = sm.geometry.attributes.position, ft = D.footings.map(f => { let span = 0, top = -9; const gy = D.ground(f.x, f.z); for (let i = 0; i < S.count; i++) { v.fromBufferAttribute(S, i); const d = Math.hypot(v.x - f.x, v.z - f.z); if (d > .5) continue; top = Math.max(top, v.y - gy); if (v.y - gy < .06) span = Math.max(span, 2 * d); } return span / top; }).sort((x, y) => x - y);
+    return { ny: +(ny / ar).toFixed(2), clumps: cl.length, wMax: +Math.max(...cl.map(q => q.w)).toFixed(2), hMin: +Math.min(...cl.map(q => q.h)).toFixed(2), hMax: +Math.max(...cl.map(q => q.h)).toFixed(2), feet: ft.length, ratioMin: +ft[0].toFixed(2), ratioMid: +ft[ft.length >> 1].toFixed(2) }; }, pc.id);
+  console.log(JSON.stringify(ph));
+  check(`${pc.id}: the heather stands in shoots (mean |n.y| ${ph.ny}), ${ph.clumps} clumps ${ph.hMin}–${ph.hMax} m high and at most ${ph.wMax} m across; ${ph.feet} footings ${ph.ratioMin} (least) and ${ph.ratioMid} (middle) times as wide at the foot as they are tall`, !ph.none && ph.ny < .5 && ph.wMax < .7 && ph.hMin >= .15 && ph.ratioMin >= 1.2, ph);
 }
 // Session 2051: the Mark's hunting cabin (PKIT.places.cabin, places.js's markHuntingCabin) in the tundra's snow, on its levelled yard, 150 m
 // and more off every road and every fort's spur: the cabin, the store, the block and the frame on the drawn ground, solid at its four log walls
