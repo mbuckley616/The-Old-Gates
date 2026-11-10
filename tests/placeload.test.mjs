@@ -12,9 +12,13 @@ await page.evaluate(() => WORLD.devUnlockAll());
 const cont = async () => { const t0 = Date.now();
   await page.evaluate(() => saveToSlot(0));
   // Session 326: waits for what it needs (the menu, then the room), not for fixed times a loaded runner can outlast
-  await page.reload(); await page.waitForFunction(() => { const b = document.getElementById('cb'); return b && typeof saveToSlot === 'function' && getComputedStyle(b).display !== 'none'; }, null, { timeout: 120000, polling: 100 });
-  await page.evaluate(() => document.getElementById('cb').click());
-  await page.waitForFunction(() => started && !!currentHouse && !!currentHouse.id && scene === interiorScene && !window._pendingPos, null, { timeout: 120000, polling: 100 }).catch(() => {}); await g.hide(); console.log('cont', (Date.now() - t0) / 1000, 's');
+  await page.reload(); await page.waitForFunction(() => { const b = document.getElementById('cb'); return b && typeof saveToSlot === 'function' && getComputedStyle(b).display !== 'none'; }, null, { timeout: 300000, polling: 100 });
+  await page.evaluate(() => document.getElementById('cb').click()); const t1 = Date.now();
+  // S2052 (QA): as gatesave (S1978) and dungeonexit (S1985), Continue's load is one long task (90–151 s side by side on four cores)
+  // that one 120 s wait shared with the room after it; the world restored is waited for on its own, up to 300 s, then the room
+  await page.waitForFunction(() => activeZoneId === 'world' || activeZoneId === 'dungeon', null, { timeout: 300000, polling: 200 }); const t2 = Date.now();
+  await page.waitForFunction(() => started && !!currentHouse && !!currentHouse.id && scene === interiorScene && !window._pendingPos, null, { timeout: 120000, polling: 100 }).catch(() => {}); await g.hide();
+  console.log('cont', (Date.now() - t0) / 1000, 's', JSON.stringify({ title: (t1 - t0) / 1000, load: (t2 - t1) / 1000, room: (Date.now() - t2) / 1000 }));
   return page.evaluate(() => ({ started, id: currentHouse && currentHouse.id, name: currentHouse && currentHouse.name, x: +px.toFixed(1), z: +pz.toFixed(1) }));
 };
 const here = () => page.evaluate(() => ({ id: currentHouse && currentHouse.id, name: currentHouse && currentHouse.name, x: +px.toFixed(1), z: +pz.toFixed(1) }));
