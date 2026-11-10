@@ -775,31 +775,47 @@
   const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]],merchants:[[3,-6.6,3.2],[0,1,1.8],[-6.6,4.2,2.2],[9.5,1.5,3.2],[-8.4,-1.6,0],[-14.4,-1.6,0],[6.55,5.15,0]],erratic:[[0,1,11.5],...[0,1,2,3,4,5,6,7].map(k=>[+(Math.cos(k*Math.PI/4)*10).toFixed(2),+(1+Math.sin(k*Math.PI/4)*8).toFixed(2),0])]},WAYSIDE_RISE={charcoal:2,merchants:1.6,expedition:2.4};
   /* S2065 — the abandoned expedition's camp and its dig on the old terrace behind the wall (the kit's frame: the road at -z), read by the land check; the hill may rise 2.4 m across them */
   WAYSIDE_PADS.expedition=[[0,0,5],[2.5,8.5,4],[-6,4,0],[8,4,0],[2.5,12,0]];
+  /* S2083 — Michael's C on #1385: a second chance for cells that drew nothing. A cell whose roll missed by less than a sixth (1/3 to 1/2)
+     keeps a place only of a kind its island (its nation) has drawn nowhere on the first chance, so nothing that stands moves. The first
+     chance is its own (waysideFirst, cached), the island's census reads only first chances, and the second keeps clear of the first
+     chance's places off the road, as those keep clear of the first chance's places by it */
   function waysideAt(c){
     if(!c||c._wayside!==undefined)return c?c._wayside:null;c._wayside=null;
+    c._wayside1=waysideTry(c,null);c._wayside=c._wayside1||waysideTry(c,placeMissing(c,WAYSIDE,waysideFirst));return c._wayside;}
+  function waysideFirst(c){if(!c)return null;if(c._wayside1===undefined){c._wayside1=null;c._wayside1=waysideTry(c,null);}return c._wayside1;}
+  /* the kinds of a nation's list the kit has built and no cell of the nation drew on the first chance (one census a nation and kind of place) */
+  const PLACE_CENSUS={};
+  function placeMissing(c,LISTS,first){const n=nationKeyOf(c.i,c.j),list=LISTS[nationOf(c.i,c.j).people];if(!list)return [];const key=(LISTS===WAYSIDE?'w:':'o:')+n;
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return []; /* no census taken before the kit's places are there */
+    if(!PLACE_CENSUS[key]){const s=new Set();for(const q of CELLS.values()){if(q.type==='sea'||q.home||nationKeyOf(q.i,q.j)!==n)continue;const D=first(q);if(D)s.add(D.kind);}PLACE_CENSUS[key]=s;}
+    return [...new Set(list)].filter(k=>PKIT.places[k]&&!PLACE_CENSUS[key].has(k));}
+  function waysideTry(c,miss){
     if(c.type==='sea'||c.home||!c.sites||!c.roadDefs||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
     const list=WAYSIDE[nationOf(c.i,c.j).people];if(!list)return null;
-    const k=cellKey(c.i,c.j),r=PKIT.stream('wayside:'+k);if(r()>=1/3)return null;
-    const kind=list[Math.floor(r()*list.length)];if(!PKIT.places[kind])return null; /* drawn, not built yet: the cell waits for it */
+    const k=cellKey(c.i,c.j),r=PKIT.stream('wayside:'+k),v=r();let kind;
+    if(!miss){if(v>=1/3)return null;kind=list[Math.floor(r()*list.length)];if(!PKIT.places[kind])return null;} /* drawn, not built yet: the cell waits for it */
+    else{if(v<1/3||v>=.5||!miss.length)return null;kind=miss[Math.floor(r()*miss.length)];}
+    let out=null;
     const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
     const roads=c.roadDefs.filter(d=>d.via!=='quay'&&d.via!=='spur'&&byId[d.a]&&byId[d.b]&&byId[d.a].kind!=='portal'&&byId[d.b].kind!=='portal').map(d=>({d,pts:roadCurve(d,byId[d.a],byId[d.b])}));if(!roads.length)return null;
     const others=[];try{for(const f of [limeCave,seaCove,mineAt,weaverDoorAt,roadCarvingAt,watcherAt]){const o=f(c);if(o)others.push(o);}}catch(e){}
+    if(miss){try{const o=offroadFirst(c);if(o)others.push({x:o.x,z:o.z,far:150});}catch(e){}} /* S2083 — a second chance keeps 150 m from the cell's place off the road, as that keeps from a place by it */
     const farms=[];try{loneFarms(c).forEach(F=>farms.push(F));c.sites.forEach(t=>{const F=villageFarm(t,c);if(F)farms.push(F);});}catch(e){}
     const near=(pts,x,z)=>{let b=1e9;for(let i=0;i<pts.length-1;i++){const a=pts[i],q=pts[i+1],dx=q.x-a.x,dz=q.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));b=Math.min(b,Math.hypot(a.x+dx*t-x,a.z+dz*t-z));}return b;};
     const OFF=WAYSIDE_OFF[kind]||[20,60];
-    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<80&&!c._wayside;t++){const R=roads[Math.floor(r()*roads.length)],P=R.pts;if(P.length<2)continue;
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<80&&!out;t++){const R=roads[Math.floor(r()*roads.length)],P=R.pts;if(P.length<2)continue;
         const i=Math.min(P.length-2,Math.floor(P.length*(.2+r()*.6))),a=P[i],b=P[i+1],L=Math.hypot(b.x-a.x,b.z-a.z)||1,
         nx=-(b.z-a.z)/L,nz=(b.x-a.x)/L,sd=r()<.5?-1:1,u=r(),off=OFF[0]+r()*(OFF[1]-OFF[0]),rx=a.x+(b.x-a.x)*u,rz=a.z+(b.z-a.z)*u,x=rx+nx*sd*off,z=rz+nz*sd*off;
         if(cellOf(x,z)[0]!==c.i||cellOf(x,z)[1]!==c.j)continue;
         if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+40)||(c.doors||[]).some(e=>Math.hypot(e.x-x,e.z-z)<60)||farms.some(F=>Math.hypot(F.cx-x,F.cz-z)<FARM_R+30))continue;
-        if(others.some(C=>Math.hypot(C.x-x,C.z-z)<60)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+15)||roads.some(o=>o!==R&&near(o.pts,x,z)<off-1)||near(P,x,z)<OFF[0]-1)continue;
+        if(others.some(C=>Math.hypot(C.x-x,C.z-z)<(C.far||60))||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+15)||roads.some(o=>o!==R&&near(o.pts,x,z)<off-1)||near(P,x,z)<OFF[0]-1)continue;
         const ry=Math.atan2(nx*sd,nz*sd),co=Math.cos(ry),s_=Math.sin(ry);let lo=1e9,hi=-1e9,wet=false;
         const pads=(WAYSIDE_PADS[kind]||[]).map(([u,v])=>[u,v,1]);
         for(const [lx,lz,pd] of [[0,0],[-5,-3],[5,-3],[-5,5],[5,5],[0,-off*.5],[10,-off*.7],...pads]){const qx=x+lx*co+lz*s_,qz=z-lx*s_+lz*co,h=rawH(qx,qz);if(pd||(Math.abs(lx)<=5&&lz>-4)){lo=Math.min(lo,h);hi=Math.max(hi,h);}if(farmWet(qx,qz))wet=true;}
         if(wet||lo<2||hi-lo>(WAYSIDE_RISE[kind]||1.2))continue;
         if(WAYSIDE_BIOME[kind]&&!WAYSIDE_BIOME[kind].includes(dominantRegion(x,z).r.biome))continue;
-        c._wayside={id:`wayside_${c.i}_${c.j}`,kind,name:WAYSIDE_NAME[kind]||kind,x:+x.toFixed(2),z:+z.toFixed(2),ry:+ry.toFixed(4),off:+off.toFixed(2),cell:k};}});
-    return c._wayside;}
+        out={id:`wayside_${c.i}_${c.j}`,kind,name:WAYSIDE_NAME[kind]||kind,x:+x.toFixed(2),z:+z.toFixed(2),ry:+ry.toFixed(4),off:+off.toFixed(2),cell:k};if(miss)out.second=true;}});
+    return out;}
   // its stamps (the cell's first step, so the chunks are built with them): a pad flat at the ground under the coach, so it lies on level
   // turf, and clearings of the scatter (noFlat) round it and along the gouges to the road, so no tree stands in the way it went
   function waysideStamps(c,k){const D=waysideAt(c);if(!D)return [];const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],y=landH(D.x,D.z),out=[];
@@ -927,22 +943,28 @@
   /* S2044 — the peat camp on the raised bog: its patch (80 by 66 m) within 2.4 m of level, its middle no steeper than 1 in 25, and every ground of it 6 m or more over the sea */
   const OFFROAD_FLAT={peat:{spread:2.4,grade:.04,sea:6},cabin:{spread:1.6,grade:.12,sea:4,snow:true}};
   /* S2051 — the hunting cabin in the tundra's snow (its ground the snow's own, so the snow line does not bar it): the cabin, the store, the block, the frame and the path's first reach within 1.6 m of level, its middle no steeper than 1 in 8 */
+  /* S2083 — the second chance (#1385 C), as waysideAt's: a cell whose roll missed by under a sixth keeps a place off the road of a kind its nation drew nowhere */
   function offroadAt(c){
     if(!c||c._offroad!==undefined)return c?c._offroad:null;c._offroad=null;
+    c._offroad1=offroadTry(c,null);c._offroad=c._offroad1||offroadTry(c,placeMissing(c,OFFROAD,offroadFirst));return c._offroad;}
+  function offroadFirst(c){if(!c)return null;if(c._offroad1===undefined){c._offroad1=null;c._offroad1=offroadTry(c,null);}return c._offroad1;}
+  function offroadTry(c,miss){
     if(c.type==='sea'||c.home||!c.sites||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
     const list=OFFROAD[nationOf(c.i,c.j).people];if(!list)return null;
-    const k=cellKey(c.i,c.j),r=PKIT.stream('offroad:'+k);if(r()>=OFFROAD_ODDS)return null;
-    const kind=list[Math.floor(r()*list.length)];if(!PKIT.places[kind])return null; /* drawn, not built yet: the cell waits for it */
+    const k=cellKey(c.i,c.j),r=PKIT.stream('offroad:'+k),v=r();let kind;
+    if(!miss){if(v>=OFFROAD_ODDS)return null;kind=list[Math.floor(r()*list.length)];if(!PKIT.places[kind])return null;} /* drawn, not built yet: the cell waits for it */
+    else{if(v<OFFROAD_ODDS||v>=.5||!miss.length)return null;kind=miss[Math.floor(r()*miss.length)];}
+    let out=null;
     const sites=[],defs=[],lakes=[],doors=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(!n)continue;sites.push(...(n.sites||[]));defs.push(...(n.roadDefs||[]));lakes.push(...(n.lakes||[]));doors.push(...(n.doors||[]));}
     const byId={};for(const t of sites)byId[t.id]=t;const roads=[];for(const d of defs){const A=byId[d.a],B=byId[d.b];if(!A||!B)continue;try{roads.push(roadCurve(d,A,B));}catch(e){roads.push([A,B]);}}
     /* S2051 — a fort's spur (addFortSpur): a straight track from 33 m before its gate to the nearest point of a road, laid when the fort loads, so drawn here the same way from the roads round it */
     {const spurs=[];for(const e of doors){if(e.kind!=='fort_door')continue;const gx=e.x,gz=e.z+33;let best=null,bd=1e9;for(const P of roads)for(const q of P){const d=Math.hypot(q.x-gx,q.z-gz);if(d<bd){bd=d;best=q;}}if(best)spurs.push([{x:gx,z:gz},best]);}roads.push(...spurs);}
-    const others=[];try{for(const f of [limeCave,seaCove,mineAt,weaverDoorAt,roadCarvingAt,watcherAt,aqueductAt,waysideAt]){const o=f(c);if(o)others.push(o);}}catch(e){}
+    const others=[];try{for(const f of [limeCave,seaCove,mineAt,weaverDoorAt,roadCarvingAt,watcherAt,aqueductAt,miss?waysideAt:waysideFirst]){const o=f(c);if(o)others.push(o);}}catch(e){} /* S2083 — the first chance reads the first chance's place by the road, so a second chance by the road moves nothing off it */
     const farms=[];try{loneFarms(c).forEach(F=>farms.push(F));c.sites.forEach(t=>{const F=villageFarm(t,c);if(F)farms.push(F);});}catch(e){}
     const near=(pts,x,z)=>{let b=1e9;for(let i=0;i<pts.length-1;i++){const a=pts[i],q=pts[i+1],dx=q.x-a.x,dz=q.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));b=Math.min(b,Math.hypot(a.x+dx*t-x,a.z+dz*t-z));}return b;};
     const grad=(x,z)=>{const gx=(rawH(x+4,z)-rawH(x-4,z))/8,gz=(rawH(x,z+4)-rawH(x,z-4))/8;return [gx,gz,Math.hypot(gx,gz)];};
     const LOG=kind==='logging',FAL=kind==='falls';let fb=null; /* S2056 — the logging camp: a fall line into fresh water first, the sea's shore kept as the fallback */
-    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<(LOG?360:FAL?1200:120)&&!c._offroad;t++){let x=c.ox+200+r()*(SIZE-400),z=c.oz+200+r()*(SIZE-400);
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<(LOG?360:FAL?1200:120)&&!out;t++){let x=c.ox+200+r()*(SIZE-400),z=c.oz+200+r()*(SIZE-400);
       if(LOG){const [ax,az,ag]=grad(x,z);if(ag<.08)continue;let sh=null;for(let s=0;s<=80;s++)if(rawH(x-ax/ag*s,z-az/ag*s)<0){sh=s;break;}if(sh===null)continue;x-=ax/ag*(sh-28);z-=az/ag*(sh-28);} /* slid down its fall line till the water lies 28 m below it */
       if(sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+150)||doors.some(e=>Math.hypot(e.x-x,e.z-z)<100)||farms.some(F=>Math.hypot(F.cx-x,F.cz-z)<FARM_R+60))continue;
       if(others.some(C=>Math.hypot(C.x-x,C.z-z)<150)||(!LOG&&lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+30))||roads.some(P=>near(P,x,z)<150))continue;
@@ -968,9 +990,10 @@
       const bio=dominantRegion(x,z).r.biome;if((!LOG&&!FAL&&wood/nw>=OFFROAD_WOOD)||!OFFROAD_BIOME[kind].includes(bio))continue; /* the felling stands in its wood: no bar on the trees */
       const D={id:`offroad_${c.i}_${c.j}`,kind,name:OFFROAD_NAME[kind]||kind,x:+x.toFixed(2),z:+z.toFixed(2),ry:+ry.toFixed(4),cell:k};
       if(FAL){D.lip=+fb.top.toFixed(3);D.y0=+fb.y0.toFixed(3);D.wall=+fb.lip.toFixed(3);fb=null;} /* S2071 — the plateau's level, the pool's water and the head-wall's height */
-      if(LOG){D.shore=shore;D.snow=bio==='tundra';D.fresh=!!fresh;if(!fresh){fb=D;continue;}}c._offroad=D;}});
-    if(!c._offroad&&fb&&LOG)c._offroad=fb;
-    return c._offroad;}
+      if(miss)D.second=true;
+      if(LOG){D.shore=shore;D.snow=bio==='tundra';D.fresh=!!fresh;if(!fresh){fb=D;continue;}}out=D;}});
+    if(!out&&fb&&LOG)out=fb;
+    return out;}
   // its stamps (the cell's first step, so the chunks are built with them): the hut's stance flat at the ground under its middle, cut into the
   // slope as the prototype's is; a clearing of the scatter over the hut, the fold and the spring, so no tree stands in the walls
   function offroadStamps(c,k){const D=offroadAt(c);if(!D)return [];const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],out=[];
