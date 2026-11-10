@@ -10,6 +10,7 @@
 // the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished),
 // Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants), Session 2065 Aurenne's abandoned expedition (PKIT.places.expedition) on its laid ground,
 // Session 2071 the Gatelands' falls (PKIT.places.falls), their glen cut into the world's own ground. Session 2079 the peat camp's heather in shoots and its footings as tents. Session 2081 the cabin's lights on all four sides.
+// Session 2083 the second chance for cells that drew nothing (#1385 C): the Gatelands' merchants' camps and falls drawn at last.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -22,7 +23,7 @@ const k = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => 
   return { cells: G.length, n: C.length, kinds: [...new Set(C.map(d => d.kind))].sort(), same, coaches: coaches.length, camps: camps.length, burns: burns.length, cots: cots.length, ers: ers.length, gl: [...coaches, ...burns, ...cots, ...ers].every(d => ppl(d) === 'gatelander'), mk: camps.every(d => ppl(d) === 'markman'),
     near: coaches[0] && { id: coaches[0].id, x: coaches[0].x, z: coaches[0].z, ry: coaches[0].ry, off: coaches[0].off }, camp: camps[0] && { id: camps[0].id, x: camps[0].x, z: camps[0].z, ry: camps[0].ry, off: camps[0].off }, burn: burns[0] && { id: burns[0].id, x: burns[0].x, z: burns[0].z, ry: burns[0].ry, off: burns[0].off }, cot: cots[0] && { id: cots[0].id, x: cots[0].x, z: cots[0].z, ry: cots[0].ry, off: cots[0].off }, er: ers[0] && { id: ers[0].id, x: ers[0].x, z: ers[0].z, ry: ers[0].ry, off: ers[0].off } }; });
 console.log(JSON.stringify(k));
-check(`${k.n} of ${k.cells} cells keep a place by a road (${k.coaches} of them the Gatelands' coach, ${k.camps} the Mark's hunters' camp, ${k.burns} the Gatelands' charcoal burners, ${k.cots} the fallen cottage, ${k.ers} the perched stone), the same when asked again`, k.n > 0 && k.n < k.cells / 2 && k.same && k.gl && k.mk && k.coaches > 0 && k.camps > 0 && k.burns > 0 && k.cots > 0 && k.ers > 0 && k.kinds.join() === 'carriage,cellar,charcoal,erratic,expedition,hunters,unfinished', k);
+check(`${k.n} of ${k.cells} cells keep a place by a road (${k.coaches} of them the Gatelands' coach, ${k.camps} the Mark's hunters' camp, ${k.burns} the Gatelands' charcoal burners, ${k.cots} the fallen cottage, ${k.ers} the perched stone), the same when asked again`, k.n > 0 && k.n < k.cells / 2 && k.same && k.gl && k.mk && k.coaches > 0 && k.camps > 0 && k.burns > 0 && k.cots > 0 && k.ers > 0 && k.kinds.join() === 'carriage,cellar,charcoal,erratic,expedition,hunters,merchants,unfinished', k);
 await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, k.near);
 for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id); return !!(c && c._wayside.group && c._wayside.group.parent); }, k.near.id); if (ok) break; await page.waitForTimeout(1000); }
 await g.spin('clear', 40);
@@ -135,6 +136,21 @@ const of = await page.evaluate(() => { const G = [...CELLS.values()].filter(c =>
   return { cells: G.length, n: C.length, same, huts: C.filter(d => d.kind === 'shepherd').length, cabins: C.filter(d => d.kind === 'cabin').length, gl: C.every(d => nationOf(...d.cell.split(',').map(Number)).people === (d.kind === 'cabin' || d.kind === 'logging' ? 'markman' : 'gatelander')), hut: h && { id: h.id, x: h.x, z: h.z, ry: h.ry } }; });
 console.log(JSON.stringify(of));
 check(`${of.n} of ${of.cells} cells keep a place off the road (${of.huts} the Gatelands' shepherd's hut, ${of.cabins} the Mark's hunting cabin), each on its own island, the same when asked again`, of.n > 0 && of.n < of.cells / 3 && of.same && of.huts > 0 && of.gl, of);
+// Session 2083 (Michael's C on #1385): a second chance for cells that drew nothing. A cell whose roll missed by under a sixth (1/3 to 1/2)
+// keeps a place only of a kind its nation drew nowhere on the first chance; the first chance's places are as they were without it (each cell's
+// first chance asked again on its own), every second place's kind is one no first chance of its nation drew, and every kind the kit has built
+// stands somewhere on its island (today the Gatelands' merchants' camps and falls are only second chances)
+const sc = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => c.type !== 'sea' && !c.home), out = { first: 0, second: [], moved: [], bad: [], missing: [] };
+  for (const [nm, LISTS, at, tr, odds] of [['wayside', WAYSIDE, waysideAt, waysideTry, 1 / 3], ['offroad', OFFROAD, offroadAt, offroadTry, OFFROAD_ODDS]]) {
+    const drawn = {}, first = {}; for (const c of G) { const n = nationKeyOf(c.i, c.j), f = tr(c, null), d = at(c); (first[n] = first[n] || new Set()); (drawn[n] = drawn[n] || new Set()); if (f) first[n].add(f.kind); if (d) drawn[n].add(d.kind);
+      if (f) { out.first++; if (!d || d.id !== f.id || d.x !== f.x || d.z !== f.z || d.ry !== f.ry || d.kind !== f.kind || d.second) out.moved.push(f.id); } }
+    for (const c of G) { const d = at(c); if (!d || !d.second) continue; const n = nationKeyOf(c.i, c.j), v = PKIT.stream(nm + ':' + cellKey(c.i, c.j))(); out.second.push(d.id + ' ' + d.kind);
+      if (tr(c, null) || v < odds || v >= .5 || first[n].has(d.kind)) out.bad.push(d.id); }
+    for (const c of G) { const n = nationKeyOf(c.i, c.j), list = LISTS[nationOf(c.i, c.j).people] || []; for (const kd of list) if (PKIT.places[kd] && !drawn[n].has(kd) && !out.missing.includes(n + ':' + kd)) out.missing.push(n + ':' + kd); } }
+  return out; });
+console.log(JSON.stringify(sc));
+check(`a second chance for cells that drew nothing (#1385 C): ${sc.second.length} places of kinds their island drew nowhere (${sc.second.join(', ')}), in cells that missed by under a sixth; the ${sc.first} first-chance places unmoved; every kind built stands somewhere on its island`,
+  sc.second.length > 0 && sc.moved.length === 0 && sc.bad.length === 0 && sc.missing.length === 0 && sc.second.some(t => / merchants$/.test(t)) && sc.second.some(t => / falls$/.test(t)), sc);
 await page.evaluate(D => { px = D.x + Math.sin(D.ry) * 60; pz = D.z + Math.cos(D.ry) * 60; }, of.hut);
 for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id); return !!(c && c._offroad.group && c._offroad.group.parent); }, of.hut.id); if (ok) break; await page.waitForTimeout(1000); }
 await g.spin('clear', 40);
