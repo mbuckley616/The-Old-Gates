@@ -1390,6 +1390,7 @@ function tickZoneEnemies(dt,now,sc){
     // the boss doesn't go back to "wandering near home" if the player runs.
     if(e.isBoss) e.alert = true;
     if(!e.alert){
+      if(e._beat&&typeof patrolStep==='function'&&patrolStep(e,dt))return; /* S2069 — a garrison's patrol on its beat (87-world-quests.js) */
       // Wander near home
       e.walkT+=dt*.5;
       const wx=e.homeX+Math.sin(e.walkT*.4)*3,wz=e.homeZ+Math.cos(e.walkT*.4)*3;

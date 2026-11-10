@@ -1945,16 +1945,36 @@ const giver=`${lord.title} ${lord.name}`;
   // soldiers outside the walls, or a garrison on the plaza; kill them all and the town is yours again
   const SIEGES=new Map();
   function soldierName(nk){return nk==='mark'?'Markish Soldier':nk==='aurenne'?'Compact Man-at-arms':"Crown Soldier";}
+  // S2069 — Under Another Flag §8 (canon §12a, *gains patrols*): by day, 6h to 20h, the garrison's soldiers 1 and 2 walk a beat from the
+  // plaza to the town's first gate and back, a leg a game-hour (out on the even hours from 6, back on the odd), by the watch's street grid
+  // (townRoute), at a pace that ends the leg in 50 s of the game-hour's 60, never under their own (1.2 m/s) nor over 2.5 m/s. By night they stand with the rest. The leg is read from the clock, never the frame (co-op rules).
+  // A town with no wall has no gate: the beat's end is where its first road leaves the pad (pad − 5, the wall's ring).
+  const PATROL={from:6,to:20,legS:50,pace:2.5};
+  function patrolLeg(h){if(h<PATROL.from||h>=PATROL.to)return null;return Math.floor(h-PATROL.from)%2?'back':'out';}
+  function patrolGate(t){const S=SETTLE.get(t.id);if(S&&S._gates&&S._gates.length)return {x:S._gates[0].x,z:S._gates[0].z};
+    const rd=ROADS.find(r=>r.def.a===t.id||r.def.b===t.id);if(!rd||!rd.pts||!rd.pts.length)return null;const pts=rd.def.a===t.id?rd.pts:rd.pts.slice().reverse();const R=(t.pad||40)-5;
+    for(const p of pts)if(Math.hypot(p.x-t.x,p.z-t.z)>=R)return {x:p.x,z:p.z};return null;}
+  function patrolTick(t,S){const h=hourNow(),leg=patrolLeg(h);const gate=leg==='out'?(S.gate||(S.gate=patrolGate(t))):null;const plaza={x:t.x+8,z:t.z+8};const to=gate||plaza;
+    const key=(leg&&gate?leg:'stand')+':'+dayNow()+':'+Math.floor(h);
+    for(const e of S.enemies){if(!e._beat||e.dead)continue;if(e.alert){e._beatKey=null;continue;}if(e._beatKey===key)continue;e._beatKey=key;e.homeX=to.x;e.homeZ=to.z;
+      let way=[];try{const T=SETTLE.get(t.id);if(T)way=townRoute(T)({x:e.x,z:e.z},to);}catch(err){way=[];}e._beatWay=way.concat([{x:to.x,z:to.z}]);
+      let L=0,q={x:e.x,z:e.z};for(const w of e._beatWay){L+=Math.hypot(w.x-q.x,w.z-q.z);q=w;}e._beatPace=Math.max(e.spd,Math.min(PATROL.pace,L/PATROL.legS));}}
+  // called from tickZoneEnemies while the soldier is not alert: true while it is walking its way
+  function patrolStep(e,dt){const W=e._beatWay;if(!W||!W.length)return false;const w=W[0];const dx=w.x-e.x,dz=w.z-e.z,d=Math.hypot(dx,dz);
+    if(d<(W.length>1?1:3)){W.shift();return W.length>0;}
+    const step=Math.min(d,(e._beatPace||e.spd)*dt),nx=e.x+dx/d*step,nz=e.z+dz/d*step;if(currentZoneSolid(nx,nz)){e._beatKey=null;e._beatWay=null;return false;}
+    e.x=nx;e.z=nz;e.walkT=(e.walkT||0)+dt;const y=activeTerrainH(e.x,e.z);e.mesh.position.set(e.x,y,e.z);e.el.position.set(e.x,y+.8,e.z);e.combatYaw=Math.atan2(dx,dz);e.mesh.lookAt(e.x+dx/d,y,e.z+dz/d);return true;}
   function tickSieges(){if(activeZoneId!=='world')return;
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=worldState.towns&&worldState.towns[t.id];if(!st)continue;const kind=st.flags.besieged!=null?'siege':st.flags.occupied!=null?'occupied':null;
       const S=SIEGES.get(t.id);const d=Math.hypot(px-t.x,pz-t.z);
       if(!kind||d>420){if(S&&(d>600||!kind)){S.enemies.forEach(e=>{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);});S.props.forEach(m=>sc.remove(m));SIEGES.delete(t.id);}continue;}
       if(S){if(S.kind!==kind){S.enemies.forEach(e=>{if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);});S.props.forEach(m=>sc.remove(m));SIEGES.delete(t.id);continue;} /* S440 — out of the world's foes too: a camp whose town fell left its soldiers unseen and striking */
+        if(kind==='occupied')patrolTick(t,S);
         if(S.enemies.length&&S.enemies.every(e=>e.dead)){SIEGES.delete(t.id);S.props.forEach(m=>sc.remove(m));if(kind==='siege')breakSiege(t);else liberate(t);}continue;}
       if(d>300)continue;
       const by=kind==='siege'?st.siegeBy:st.occupier;const tL=tierLevel(worldTierAt(t.x,t.z));const n=kind==='siege'?6+Math.floor(tL/3):5+Math.floor(tL/4); /* S1076 — by the town's tier's level, not yours (#405 A) */const enemies=[],props=[];
       let cx,cz;if(kind==='siege'){const rd=ROADS.find(r=>r.def.a===t.id||r.def.b===t.id);const q=rd?rd.pts[rd.def.a===t.id?Math.min(rd.pts.length-1,8):Math.max(0,rd.pts.length-9)]:{x:t.x+(t.pad||30)+30,z:t.z};cx=q.x;cz=q.z;}else{cx=t.x+8;cz=t.z+8;}
-      for(let k=0;k<n;k++){const a=k/n*Math.PI*2;const ex=cx+Math.cos(a)*(kind==='siege'?7:5),ez=cz+Math.sin(a)*(kind==='siege'?7:5);const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,k===0?'Bandit Captain':'Bandit',null)),t.id+':'+kind+':'+k);e.name=k===0?`${soldierName(by).replace(/Soldier|Man-at-arms/,'Captain')}`:soldierName(by);e.displayName=e.name;e.alert=false;e.homeX=cx;e.homeZ=cz;e._siege=t.id;ZONES.world.enemies.push(e);enemies.push(e);}
+      for(let k=0;k<n;k++){const a=k/n*Math.PI*2;const ex=cx+Math.cos(a)*(kind==='siege'?7:5),ez=cz+Math.sin(a)*(kind==='siege'?7:5);const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,k===0?'Bandit Captain':'Bandit',null)),t.id+':'+kind+':'+k);e.name=k===0?`${soldierName(by).replace(/Soldier|Man-at-arms/,'Captain')}`:soldierName(by);e.displayName=e.name;e.alert=false;e.homeX=cx;e.homeZ=cz;e._siege=t.id;if(kind==='occupied'&&(k===1||k===2))e._beat=k;ZONES.world.enemies.push(e);enemies.push(e);}
       if(kind==='siege'){const tentMat=new THREE.MeshLambertMaterial({color:by==='mark'?0x2a2a30:by==='aurenne'?0x2a3a6a:0x6a2a2a,side:THREE.DoubleSide});[[-4,-2],[4,-3],[0,5]].forEach(([ox,oz])=>{const m=new THREE.Mesh(new THREE.ConeGeometry(2,2.4,5,1,true),tentMat);m.position.set(cx+ox,worldH(cx+ox,cz+oz)+1.2,cz+oz);sc.add(m);props.push(m);});
         const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,4,5),new THREE.MeshLambertMaterial({color:0x3a2a1a}));pole.position.set(cx,worldH(cx,cz)+2,cz);sc.add(pole);props.push(pole);const ban=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.8),new THREE.MeshLambertMaterial({color:NATIONS[by]?NATIONS[by].banner:0x444444,side:THREE.DoubleSide}));ban.position.set(cx+.6,worldH(cx,cz)+3.6,cz);sc.add(ban);props.push(ban);
         showMsg(`${polityName(by,true)}'s camp is on the road outside ${t.name}.`,'#ff8060');}
