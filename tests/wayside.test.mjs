@@ -201,7 +201,7 @@ if (cb) {
   check(`solid at the cabin's four walls (the door shut) and the woodpile, open in the yard, on the path and under the store; ${ct.tris} triangles in ${ct.draws} draws`, !ct.none && ct.back && ct.side && ct.door && !ct.inside && ct.pile && !ct.yard && !ct.path && !ct.under && ct.tris < 21000 && ct.draws <= 18, ct);
   // Session 2073 (the critic, 10 Nov: "about half of the frame's trees are leaf-card oaks in full green, standing in snow"): within 90 m of
   // the cabin no leafed tree (broadleaf, oak, birch, willow) stands where the tundra holds .55 of the ground or more, read from the 3×3 cells
-  // round it as tundraW reads them; and the bushes there are frosted. Session 2074: nor a spruce (the new look draws it from green cards), and the
+  // round it as tundraW reads them; and the bushes there are frosted. Session 2076: nor a spruce (the new look draws it from green cards), and the
   // snowpine is drawn in its own snowed shape, not the land's cone kit
   const sl = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, L = new Set(['broadleaf', 'oak', 'birch', 'willow', 'spruce']); let n = 0, snow = 0, leaf = 0, cone = 0, own = 0;
     for (const ch of chunks.values()) for (const t of ch.trees || []) { if (Math.hypot(t.x - D.x, t.z - D.z) > 90) continue; n++; if (tundraW(t.x, t.z) < .55) continue; snow++; if (L.has(t.sp)) leaf++; if (t.sp === 'snowpine') cone++; }

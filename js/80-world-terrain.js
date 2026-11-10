@@ -602,7 +602,7 @@
         if(h>26&&sp!=='dead'&&sp!=='snowpine'&&sp!=='spruce')sp=(snowLineAt(x,z)<30?'snowpine':'conifer');
         // S2073 — the Mark's snow is the ground's blend of the tundra (groundColor), but the tree is the dominant region's: where the plains
         // won by a little, summer-green oaks stood on white ground (the critic, 10 Nov, at the cabin and the unfinished camp). A leafed tree
-        // takes the tundra's own, the snowpine, as the tundra's weight rises from .25 to .55, by its own die (S2074: a spruce in the snow too, since
+        // takes the tundra's own, the snowpine, as the tundra's weight rises from .25 to .55, by its own die (S2076: a spruce in the snow too, since
         // the new look draws the spruce from green leaf cards and the snowpine with its snow)
         if(SNOWLEAF.has(sp)&&hash01(gx,gz,14)<sstep(.25,.55,tundraW(x,z)))sp='snowpine';
         const sc_=hash01(gx,gz,5);const gi=.84+hash01(gx,gz,12)*.34;(trees[sp]=trees[sp]||[]).push({id:cx+','+cz+':'+(iz*100+ix),x,z,h,s:sc_<.06?1.7+sc_*3:.8+sc_*.7,r:hash01(gx,gz,6)*Math.PI*2,t:hash01(gx,gz,7),g:gi,sy:1+(1-gi)*.7,au:base==='autumn'}); // .8–1.5, rare giants; the girth (S192) a squat tree wider, a tall one slimmer
