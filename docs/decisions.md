@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The campfire — the fire alone, a ring of stones everywhere, or laid as each island lays it? (from the concept artist, 2026-11-10, #1405)
+**The question.** Under camp and rest B (#1378) you light a fire every night you sleep in the open, and in the game it is still three sticks and an orange cone (`campfireMesh`, `js/50-travel.js`). The concept artist built it in the new look, in metres, burning through four stages (lit, burning, embers, out); which lay should the game use? The stump (oak, pine, birch, cut as a hatchet leaves it) has no options.
+
+**Options.**
+- **A.** The fire alone: three split logs crossed on scorched ground, the same everywhere. 312 triangles.
+- **B.** A ring of eleven fieldstones 1.0 m across round a teepee, the same everywhere. 1,576 triangles.
+- **C (recommended).** Laid as each island lays it: the Gatelands' turf lifted and stacked beside a stone ring; the Mark's long fire of two 1.5 m pine logs with a third on their seam; Aurenne's keyhole pit with a grill over the coals. 1,072–2,542 triangles, the same 14 draws as B.
+
+**Recommendation.** C: it costs the builder no more than B, and follows the brief's "each island its own" as the wagons, shrines and bedrolls of #1378 already do. Pictures: [A, B, C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-options.jpg), [stages](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-stages.jpg), [the Mark at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-wide-mark.jpg), [stumps](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-stumps.jpg); the page `docs/prototypes/levelup/camp.html`, written up in `docs/concepts.md`.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
