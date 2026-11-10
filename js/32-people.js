@@ -1934,7 +1934,7 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    hips (`hemBoneL`, `hemBoneR`) take the back on their own side from `arcS` (the cosine, about 70 degrees off straight back) in to `arc`,
    and share it with the middle bone from `arc` to straight back. Each swings back by its own leg's angle past its rest only: the arm on a
    side swings forward as that side's leg trails, so the side's hem goes back away from its hand, and never forward onto the other */
-/* S2055 — the side bones swing back by twice their leg's angle past its rest (`kS` 1.1 → 2): at 30 to 60 degrees off straight back the
+/* S2057 — the side bones swing back by twice their leg's angle past its rest (`kS` 1.1 → 2): at 30 to 60 degrees off straight back the
    cloak hangs further from the hips than the middle, so at 1.1 a trailing boot under the knee still came through it (Clodagh of Dunmore,
    63 points of a 160-tick walk, 4.8 cm; now 2, 1.2 cm). 1.5 halved it; 2.4 lifted the hem off more of the legs and gained nothing. Never
    past `capS` (0.9 rad); your own body keeps 1.1 (`kSYou`): at your run the thigh comes to 1.5 rad, and twice that threw the cloak's back
