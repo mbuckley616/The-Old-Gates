@@ -766,7 +766,7 @@
   /* S2030 — the fallen cottage's floor, 7 by 4.6 m, levelled as one stance */
   /* S2034 — the perched stone's pavement, flat under the pavement's oval (21 by 16.4 m round (0, 1), the piece's frame): its middle and eight points
      on its rim are read by the land check, the usual 1.2 m of rise */
-  /* S2057 — the unfinished camp in the Mark's tundra alone, where the world's ground is snow (the prototype's "snow has fallen on all of it") */
+  /* S2058 — the unfinished camp in the Mark's tundra alone, where the world's ground is snow (the prototype's "snow has fallen on all of it") */
   const WAYSIDE_BIOME={unfinished:['tundra']};
   const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]],erratic:[[0,1,11.5],...[0,1,2,3,4,5,6,7].map(k=>[+(Math.cos(k*Math.PI/4)*10).toFixed(2),+(1+Math.sin(k*Math.PI/4)*8).toFixed(2),0])]},WAYSIDE_RISE={charcoal:2};
   function waysideAt(c){
@@ -820,7 +820,7 @@
       {const [x,z]=W(0,3);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:18,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-1.6-.9*t,-7.6+(-D.off+7.6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
       return out;}
-    if(D.kind==='unfinished'){ /* S2057 — the camp's stance flat at the ground under its middle (the tent, the fire, the pulk and the round on it), the scatter cleared
+    if(D.kind==='unfinished'){ /* S2058 — the camp's stance flat at the ground under its middle (the tent, the fire, the pulk and the round on it), the scatter cleared
       round it to the kit's ring of spruce at 9 m, and toward the road so the camp is seen from it; no path is trodden: nobody came back */
       {const [x,z]=W(0,0);out.push(addStamp({id:D.id+'_stance',kind:'door',x,z,r:5,blend:2.5,y,cell:k}));}
       {const [x,z]=W(0,1);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:8.5,blend:2,y:0,cell:k}));}

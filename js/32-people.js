@@ -1934,7 +1934,12 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    hips (`hemBoneL`, `hemBoneR`) take the back on their own side from `arcS` (the cosine, about 70 degrees off straight back) in to `arc`,
    and share it with the middle bone from `arc` to straight back. Each swings back by its own leg's angle past its rest only: the arm on a
    side swings forward as that side's leg trails, so the side's hem goes back away from its hand, and never forward onto the other */
-const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:1.6,arcF:.85,lowF:.4,arcS:.1,kS:1.1,capF:.2,arcFYou:.96};
+/* S2057 — the side bones swing back by twice their leg's angle past its rest (`kS` 1.1 → 2): at 30 to 60 degrees off straight back the
+   cloak hangs further from the hips than the middle, so at 1.1 a trailing boot under the knee still came through it (Clodagh of Dunmore,
+   63 points of a 160-tick walk, 4.8 cm; now 2, 1.2 cm). 1.5 halved it; 2.4 lifted the hem off more of the legs and gained nothing. Never
+   past `capS` (0.9 rad); your own body keeps 1.1 (`kSYou`): at your run the thigh comes to 1.5 rad, and twice that threw the cloak's back
+   corners up off your legs (f10motion's legs 5.1% → 6.1% out, with fewer of them under it) */
+const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:1.6,arcF:.85,lowF:.4,arcS:.1,kS:2,kSYou:1.1,capS:.9,capF:.2,arcFYou:.96};
 function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
   if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
   if(P.cloakLegs)return P.cloakLegs;const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
@@ -1949,7 +1954,7 @@ function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?s
   if(sk.boneTexture){sk.boneTexture.dispose();sk.boneTexture=null;}ih=sk.bones.length-4;iF=sk.bones.length-3;iSL=sk.bones.length-2;iSR=sk.bones.length-1;
   /* the hem's frame in the pelvis bone's: the hips' axis, forward and down, and each leg's rest angle behind the vertical */
   const qr=rb.getWorldQuaternion(new THREE.Quaternion()).invert(),qp=P.root.getWorldQuaternion(new THREE.Quaternion()),inL=v=>v.clone().applyQuaternion(qp).applyQuaternion(qr);
-  hem={bone:hb,front:fb,side:[lb,rb2],aS:[0,0],ax:inL(ax),fw:inL(fw),dn:inL(new THREE.Vector3(0,-1,0)),rest:[0,0],a:0,aF:0};hem.rest=[hbHemAngle(P,hem,'L'),hbHemAngle(P,hem,'R')];}
+  hem={bone:hb,front:fb,side:[lb,rb2],you:front==='you',aS:[0,0],ax:inL(ax),fw:inL(fw),dn:inL(new THREE.Vector3(0,-1,0)),rest:[0,0],a:0,aF:0};hem.rest=[hbHemAngle(P,hem,'L'),hbHemAngle(P,hem,'R')];}
   const B=[Mb(il),Mb(iL),Mb(iR),Mb(sL),Mb(sR),ih>=0?Mb(ih):null,iF>=0?Mb(iF):null,iSL>=0?Mb(iSL):null,iSR>=0?Mb(iSR):null],C=HB_CLOAK_LEGS,ss=u=>u<=0?0:u>=1?1:u*u*(3-2*u),M=new THREE.Matrix4(),E=new THREE.Matrix4(),p=new THREE.Vector3(),d=new THREE.Vector3();let n=0;
   /* the sheet's weights at a point p of the hips' frame: the pelvis, the thighs and the fourth bone (a shin or a hem's), or null for the pelvis alone */
   const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel&&front!==false?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo)*(heel?1-ss((p.y-hY)/C.capF):1);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
@@ -2001,7 +2006,7 @@ function hbHemAngle(P,hem,s){const rb=P.byName.root;rb.getWorldQuaternion(_hbhR)
 function hbHem(rig){const P=rig.hb.P,hem=P&&P.hem;if(!hem)return;P.byName.root.updateMatrixWorld(true);
   const aL=hbHemAngle(P,hem,'L')-hem.rest[0],aR=hbHemAngle(P,hem,'R')-hem.rest[1],a=Math.max(0,aL,aR)*HB_CLOAK_LEGS.k;hem.a=a;
   _hbhA.copy(hem.dn).multiplyScalar(Math.cos(a)).addScaledVector(hem.fw,-Math.sin(a));hem.bone.quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());
-  if(hem.side){for(let j=0;j<2;j++){const b=Math.max(0,j?aR:aL)*HB_CLOAK_LEGS.kS;hem.aS[j]=b;
+  if(hem.side){for(let j=0;j<2;j++){const b=Math.min(HB_CLOAK_LEGS.capS,Math.max(0,j?aR:aL)*(hem.you?HB_CLOAK_LEGS.kSYou:HB_CLOAK_LEGS.kS));hem.aS[j]=b;
     _hbhA.copy(hem.dn).multiplyScalar(Math.cos(b)).addScaledVector(hem.fw,-Math.sin(b));hem.side[j].quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());}}
   if(!hem.front)return;const f=Math.max(0,-aL,-aR)*HB_CLOAK_LEGS.kF;hem.aF=f;
   _hbhA.copy(hem.dn).multiplyScalar(Math.cos(f)).addScaledVector(hem.fw,Math.sin(f));hem.front.quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());}

@@ -7925,7 +7925,7 @@ function aurenneOrrery(hAt, o = {}) {
       chute: { x: CX, z0: CZ0, z1: CZ1, y0: +CY0.toFixed(3), y1: +CY1.toFixed(3), grade: +grade.toFixed(4), gap: GAP, trestles, clear: +clear.toFixed(3), R: CR }, deck: { x: DX, z: DZ, logs: deck.length, skid: +Math.max(...sk).toFixed(3) },
       stumps, shelter, sledge: { x: GX, z: GZ }, ice, trees, snow: SNOW };
   }
-  // S2057 (card F8; OG-124's panel 6, "small mysteries with no marker: … an unfinished camp"; Michael's A on #1292) — the Mark's unfinished
+  // S2058 (card F8; OG-124's panel 6, "small mysteries with no marker: … an unfinished camp"; Michael's A on #1292) — the Mark's unfinished
   // camp in the open world, places.js's markUnfinishedCamp (Session 1032) without the prototype's own land: the world brings the tundra's
   // snow, its slope and the road, so the page's snowfield (320 m square) is left out, and its 46 spruce come down to a ring of 20 between
   // 9 and 24 m, none on the road's side, so the clearing stands in snowed spruce whatever the scatter leaves. The tent's back pole stood and
