@@ -160,21 +160,21 @@
     t.push({cat:'you',label:'How long have you lived here?',response:bio.born===site.name?`All my life. ${bio.years} years, if you're counting. I stopped.`:`${bio.years} years, since ${bio.born}. It's home now. Mostly.`});
     t.push({cat:'you',label:'What do you want out of life?',response:`${bio.wish.charAt(0).toUpperCase()+bio.wish.slice(1)}. ${pick(Math.random,["Ask me again when I'm old.","Is that so much?","Don't laugh.","You asked."])}`});
     t.push({cat:'you',label:'Your people?',response:`${P.self}. ${P.name==='Old Blood'?"We were here before the rest. We don't say it loudly.":P.name==='Markman'?"Iron and blood. It's on the banners and it's in the bread.":P.name==='Aurennais'?"On account, and on paper. It's kept us fed a long time.":"We keep the roads and the promises. Somebody has to."}`});
-    t.push({cat:'place',label:'Who runs things here?',response:`${lord.title} ${lord.name}. ${lord.style.charAt(0).toUpperCase()+lord.style.slice(1)}. Above ${lord.title==='Elder'?'them':'that'}, ${NAT.crown} — for what it's worth out here.`});
+    t.push({cat:'place',label:'Who runs things here?',get response(){return warTalkFor('who',site,def,NAT)||`${lord.title} ${lord.name}. ${lord.style.charAt(0).toUpperCase()+lord.style.slice(1)}. Above ${lord.title==='Elder'?'them':'that'}, ${NAT.crown} — for what it's worth out here.`;}});
     t.push({cat:'place',label:'Where can I sleep?',response:have('inn')?`The inn. A room's a few coins a night; ${lord.title} ${lord.name} doesn't let them gouge.`:`No inn. There's a camp on the road, or a friend's floor if you've a friend. Try ${nearSites(site,900).find(x=>x.kind==='town'||x.kind==='city')?.name||'the next town'}.`});
     t.push({cat:'place',label:'What can I buy here?',response:shopsHere.length?`${[...new Set(shopsHere.map(k=>({forge:'the smith',weapon:'the smith',armoury:'the armourer',armor:'the armourer',apothecary:'the apothecary',potion:'the apothecary',goods:'the general goods',misc:'the general goods',inn:'the inn',church:'the church',shipwright:'the shipwright',guild_f:"the Fighters' Guild",guild_m:"the Mages' Guild",castle:'the keep',keep:'the keep'})[k]||k))].join(', ')}. ${prosperity(site)<40?'Not much on the shelves lately.':'Fair prices, mostly.'}`:'Nothing. We trade with each other and with the carts, when carts come.'});
-    t.push({cat:'place',label:'What\u2019s the law here?',response:NAT.people==='markman'?"The Captain's word, and a duel if you don't like it. Fair, in its way.":NAT.people==='aurennais'?"The Compact's. Everything's written, everything's tithed, and the Prior reads it back to you slowly.":"The Crown's. Patrols on the roads, a magistrate twice a year, and the old gates are royal property — so they say."});
+    t.push({cat:'place',label:'What\u2019s the law here?',get response(){return warTalkFor('law',site,def,NAT)||(NAT.people==='markman'?"The Captain's word, and a duel if you don't like it. Fair, in its way.":NAT.people==='aurennais'?"The Compact's. Everything's written, everything's tithed, and the Prior reads it back to you slowly.":"The Crown's. Patrols on the roads, a magistrate twice a year, and the old gates are royal property — so they say.");}});
     t.push({cat:'place',label:'The nearest old gate?',get response(){const d=nearestSigilDoorFrom(site);const doors=(getCell(ni,nj).doors||[]).map(e=>({e,p:dungeonWorldPos[e.seed]||e})).sort((a,b)=>Math.hypot(a.p.x-site.x,a.p.z-site.z)-Math.hypot(b.p.x-site.x,b.p.z-site.z));const n=doors[0];return n?`${n.e.canonicalName||(typeof dungeonName==='function'?dungeonName(n.e.seed,n.e.theme):'An old gate')}, ${compassWord(n.p.x-site.x,n.p.z-site.z)} of here. ${d&&d.seed===n.e.seed?'There\'s a warm stone in it, they say.':'Leave it be, unless you\'re the sort who doesn\'t.'}`:'None near. Count yourself lucky.';}});
     t.push({cat:'place',label:'How are things here, honestly?',get response(){const st=TS(site),p=prosperity(site),pp=def.people||NAT.people;const k=st.flags.besieged!=null?'siege':st.flags.occupied!=null?'held':p>=60?'good':p>=35?'fair':'poor';const H={gatelander:{good:"Fat years, these. Better than my father saw. You don't say so aloud, mind, or the weather hears.",fair:"Neither fat nor lean. A middling year's a good one, if you've lived through the other kind.",poor:"You've eyes. An empty street says more than I'd like to.",siege:"Their camp's on the road and the gate's shut. A town under siege counts its loaves, not its blessings.",held:"Their flag's on the gate and their boots are on the square. We keep our heads down and our names to ourselves."},markman:{good:"Good. Better than my father saw. Don't spread it.",fair:"We get by. Could be worse. Has been.",poor:"Bad. You've eyes.",siege:"Siege. Their camp's on the road. We eat less and sharpen more.",held:"Their soldiers on our square. For now."},aurennais:{good:"Prosperous, Master, by any accounting. The books have not looked so well in my lifetime.",fair:"Solvent, Master, though not by much. The accounts balance, which is more than some towns can say.",poor:"In arrears, Master, and not only in coin. You can see it from the street.",siege:"Under siege, Master. A town that cannot trade cannot long pay what it owes.",held:"Under another's administration, Master. Their terms are not ours, and we were not asked to sign them."},oldblood:{good:"Full. The barns and the wells.",fair:"Enough. Not more.",poor:"Thin. As the year before a hunger.",siege:"Shut in. The camp is on the road.",held:"Held. Not by us."}};return (H[pp]||H.gatelander)[k];}});
-    t.push({cat:'news',label:`What of ${NAT.crown}?`,response:NAT.people==='markman'?"The League? Captains arguing in a hall. They agree on one thing — the Crown's ships shouldn't be in our strait.":NAT.people==='aurennais'?"The Compact tithes and the Church blesses the tithe. Between them they own the sea. Don't say I said it.":"The Crown wants the gates. Says they're royal. My grandmother said they were the Weaver's. Neither of them's ever been down one."});
+    t.push({cat:'news',label:`What of ${NAT.crown}?`,get response(){return warTalkFor('crown',site,def,NAT)||(NAT.people==='markman'?"The League? Captains arguing in a hall. They agree on one thing — the Crown's ships shouldn't be in our strait.":NAT.people==='aurennais'?"The Compact tithes and the Church blesses the tithe. Between them they own the sea. Don't say I said it.":"The Crown wants the gates. Says they're royal. My grandmother said they were the Weaver's. Neither of them's ever been down one.");}});
     t.push({cat:'news',label:'Any word from the sea?',get response(){const pirates=OTHER.some(o=>o.kind==='pirate');return pirates?"Black sails, this week. The fishermen came in early and won't say why.":pick(Math.random,["The ferries are running. That's news enough.","A whale off the point, they say. Big as a church.","Quiet. Too quiet for the harbourmaster, who likes a tithe."]);}});
-    t.push({cat:'news',label:'How\u2019s trade?',get response(){const R=worldState.routes||{};const open=Object.keys(R).filter(k=>!R[k].broken&&(R[k].a===site.id||R[k].b===site.id)).length;return open?`A cart in the morning, a cart at night. ${open>1?'Two routes now.':'One route.'} Prices are kinder for it.`:prosperity(site)>=50?"Steady. We could do with a route to somewhere, if anyone with coin were listening.":"What trade. The road's a road; nothing comes down it.";}});
+    t.push({cat:'news',label:'How\u2019s trade?',get response(){const w=warTalkFor('trade',site,def,NAT);if(w)return w;const R=worldState.routes||{};const open=Object.keys(R).filter(k=>!R[k].broken&&(R[k].a===site.id||R[k].b===site.id)).length;return open?`A cart in the morning, a cart at night. ${open>1?'Two routes now.':'One route.'} Prices are kinder for it.`:prosperity(site)>=50?"Steady. We could do with a route to somewhere, if anyone with coin were listening.":"What trade. The road's a road; nothing comes down it.";}});
     t.push({cat:'news',label:'Heard anything strange?',get response(){return pick(Math.random,["A man at the old field who doesn't age. Everyone's uncle has seen him.","The stones in the gates are warmer than they were. Or colder. Depends who you ask.","Someone's been carving over the old marks. Down in the gates. Nobody knows what for.","The church has a room it bricked up. You didn't hear that from me."]);}});
     {const a=errandAsk(def,site);if(a)t.push(a);} /* S1510 — Asked in Passing: the ask */
     if(role==='Villager')t.push({cat:'you',label:'Any work going?',response:`Not from me. The ${site.kind==='city'||site.kind==='town'?'guilds take contracts, and':''} ${lord.title} pays for real trouble. Ask at the ${site.kind==='city'?'keep':'well'}.`});
     if(role==='Innkeeper')t.push({label:'Who\u2019s passing through?',get response(){return pick(Math.random,["A carter from the north who won't say what he carried.","Two guild swords, drinking like they'd earned it.","Nobody. It's you and the fire."+(isNight()?" And whatever's outside.":""),"A priest who paid in silver and ate nothing."]);}});
     if(role==='Priest')t.push({label:'A blessing?',fn:()=>{PHP=Math.min(effMaxHP(),PHP+8);updateHUD();return "Kneel. There. Go easier on the road.";}});
-    if(role==='Guard')t.push({label:'Any trouble on the watch?',get response(){return pick(Math.random,["Quiet. Too quiet, my sergeant would say, but he says that about bread.","Wolves at the north fence three nights running.","Someone's been at the graves. Don't ask me who.",isNight()?"Night watch. Everything's trouble at night.":"A drunk, a cart, and you. Fine day."]);}});
+    if(role==='Guard')t.push({label:'Any trouble on the watch?',get response(){const w=warTalkFor('watch',site,def,NAT);if(w)return w;return pick(Math.random,["Quiet. Too quiet, my sergeant would say, but he says that about bread.","Wolves at the north fence three nights running.","Someone's been at the graves. Don't ask me who.",isNight()?"Night watch. Everything's trouble at night.":"A drunk, a cart, and you. Fine day."]);}});
     return t;
   }
   function dialogFor(site,reg,r,role,name,extraTopics,def){
@@ -1865,6 +1865,64 @@ const giver=`${lord.title} ${lord.name}`;
   function war(){return worldState.war||null;}
   function nationName(nk){return NATIONS[nk]?NATIONS[nk].name:nk;}
   function polityName(nk,cap){const s=NATIONS[nk]?NATIONS[nk].crown:String(nk);return cap?s.charAt(0).toUpperCase()+s.slice(1):s;} /* the power that acts in a war: the Crown, the League, the Compact */
+  // S2055 — Under Another Flag, §3–5 (the quest writer's draft, approved by Michael 14 Oct): what the town says while it is besieged
+  // or held, by the speaker's people and, for the law, by who holds it. {Lord} is the lord's title and name, {Polity}/{polity} the
+  // besieger's or occupier's power, {Crown} the town's own, {town} the nearest town the Compact tithes (its capital's trade).
+  const WAR_TALK={
+    who:{held:{gatelander:"{Lord}, on paper, and paper's grand for lighting fires. {Polity}'s captain, in fact, from {Lord}'s own chair. Ask me again when the plaza's ours.",
+        markman:"{Polity}'s captain. For now. {Lord} still has the title. Titles don't hold a plaza.",
+        aurennais:"Formally, {Lord}, Master. In practice, {polity}'s captain, by right of occupation. Our law does not recognise that right. Our streets do.",
+        oldblood:"A captain who is not ours. The chair is {Lord}'s."}},
+    law:{gatelands:{gatelander:"The Crown's, since they came. A magistrate on the plaza, a ledger at the gate, and the old gates royal property again, so they say. It's the law I grew up under, and I'll not pretend I missed it.",
+        markman:"The Crown's. No duels. A magistrate settles it now, in a fortnight. Nothing's finished by noon any more.",
+        aurennais:"The Crown's, Master, which writes rather less down than we do and enforces rather more. The tithe has stopped. Do not ask whether that is an improvement; I have not decided.",
+        oldblood:"The Crown's. They say the old gates are theirs. The gates say nothing."},
+      mark:{gatelander:"Whatever their captain says at breakfast, and a duel if you don't like it. Two on the plaza this week, over a spilt cup. Fair fights, I'll grant them. I'd still be elsewhere.",
+        markman:"The League's. Captain's word, duel if you don't like it. Can't say I mind.",
+        aurennais:"The League's, Master, insofar as it is a law at all. Disputes are settled by single combat on the plaza. We have begun keeping a register of the outcomes, so that at least something is written down.",
+        oldblood:"Their captain's word. Iron, after."},
+      aurenne:{gatelander:"The Compact's, now. Everything written, everything tithed, and a factor at the gate who counts the eggs in your basket. He's polite about it, I'll give him that. Polite as a toll.",
+        markman:"The Compact's. No duels. Everything on paper. A tenth of everything to their factor. He counts it twice.",
+        aurennais:"The Compact's, Master, as it ought to be everywhere, though I would have preferred it to arrive by contract rather than by siege.",
+        oldblood:"The Compact's. They write our names down. Our names were written before."}},
+    crown:{held:{gatelander:"{Crown}'s a long way off and a slow writer. They'll come or they won't, and the plaza won't clear itself while we wait to see which.",
+        markman:"{Crown}? Arguing in a hall. Somebody has to come. Might be you.",
+        aurennais:"{Crown} has been informed, Master, in triplicate. Relief is under consideration. I would not plan around it.",
+        oldblood:"Far. Slow. You are here."},
+      siege:{gatelander:"{Crown} knows. Whether {Crown} comes inside twelve days is another matter. A friend at the gate is worth two on the road.",
+        markman:"{Crown} knows. Twelve days. They won't make it. You might.",
+        aurennais:"{Crown} has acknowledged our letter, Master. A relief has been promised. The date has not.",
+        oldblood:"They know. They are far."}},
+    trade:{siege:{gatelander:"Trade? The gate's shut. We trade with each other now, and dear. A loaf's a fair price for a favour this week.",
+        markman:"Gate's shut. No carts. Grain's dear, iron's dearer.",
+        aurennais:"Suspended, Master. Nothing enters and nothing leaves, and grain trades at half again its price. The books will take a season to recover.",
+        oldblood:"Shut. Bread is dear."},
+      tithed:{gatelander:"There's trade, and there's the Compact's factor at the gate taking a tenth of it. A tenth of everything, and he blesses the cart after. The blessing's free. I asked.",
+        markman:"Their factor takes a tenth. Of everything. Ships it home. Town's poorer every week.",
+        aurennais:"A tithe is levied at the gate, Master, and remitted to the capital. It is quite proper. It is also why the town is poorer each week. Both things are true.",
+        oldblood:"A tenth goes to their city. Each day, less."},
+      held:{gatelander:"Their carts come in and ours stay out. Grain's dear and iron's dearer. The soldiers pay, I'll say that for them. Not well, but they pay.",
+        markman:"Their carts in, ours out. Grain's dear. Soldiers pay. Badly.",
+        aurennais:"Constrained, Master. Grain and iron trade at half again their price, and the garrison's custom does not cover the difference.",
+        oldblood:"Their carts. Not ours."},
+      capital:{aurennais:"Brisk, Master. The tithe from {town} comes in on every ship. The Prior calls it providence. The Factors call it accounts receivable.",
+        markman:"Tithe ships in from {town}. Every tide. Fat city.",
+        gatelander:"Brisk enough. There's a tithe comes in from {town} on every ship. I've a cousin there. I don't write to him about it."}},
+    watch:{held:{gatelander:"Watch? They do the watching now. I stand here so the gate looks as it did.",
+        markman:"Their men watch. I stand here. Ask them.",
+        aurennais:"The watch has been assumed by the garrison, Master. I remain at my post in an advisory capacity.",
+        oldblood:"They watch. I wait."}}};
+  // the line for one topic, or '' when the town is at peace (the topic then answers as it always has)
+  function warTalkFor(topic,site,def,NAT){try{const st=TS(site),pp=(def&&def.people)||NAT.people||'gatelander',T=WAR_TALK[topic];if(!T)return '';
+    const held=st.flags.occupied!=null&&st.occupier,siege=st.flags.besieged!=null&&st.siegeBy;let k=null,town='';
+    if(topic==='law'){if(!held)return '';k=st.occupier;}
+    else if(topic==='trade'){if(siege)k='siege';else if(held)k=st.occupier==='aurenne'?'tithed':'held';
+      else if(FACTIONS.compact.seat===site.id){const ts=allSites().filter(t=>{const s=TS(t);return s.flags.occupied!=null&&s.occupier==='aurenne';}).sort((a,b)=>Math.hypot(a.x-site.x,a.z-site.z)-Math.hypot(b.x-site.x,b.z-site.z));if(ts.length){k='capital';town=ts[0].name;}}}
+    else k=held?'held':siege?'siege':null;
+    const line=k&&T[k]&&T[k][pp];if(!line)return '';
+    const by=held?st.occupier:siege?st.siegeBy:null,L=lordFor(site),cr=NAT.crown||'the Crown';
+    return line.replace(/\{Lord\}/g,`${L.title} ${L.name}`).replace(/\{Polity\}/g,by?polityName(by,true):'').replace(/\{polity\}/g,by?polityName(by):'')
+      .replace(/\{Crown\}/g,(m,o,s)=>{const a=s.slice(Math.max(0,o-2),o);return (o===0||/[.?!] $/.test(a))?cr.charAt(0).toUpperCase()+cr.slice(1):cr;}).replace(/\{town\}/g,town);}catch(e){return '';}}
   function borderTowns(nk,vs){const out=[];const cells=[...CELLS.values()].filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)===vs);if(!cells.length)return out;const R=SIZE*2.5;
     for(const t of allSites()){if(!(t.kind in BASE_P)||t.kind==='outpost')continue;const [ci,cj]=cellOf(t.x,t.z);if(nationKeyOf(ci,cj)!==nk)continue;let bd=1e9;for(const c of cells){const d=Math.hypot(t.x-(c.i+.5)*SIZE,t.z-(c.j+.5)*SIZE);if(d<bd)bd=d;}if(bd<R)out.push(t);}
     if(!out.length){const mine=allSites().filter(t=>(t.kind in BASE_P)&&t.kind!=='outpost'&&nationKeyOf(...cellOf(t.x,t.z))===nk);mine.sort((p,q)=>{const dp=Math.min(...cells.map(c=>Math.hypot(p.x-(c.i+.5)*SIZE,p.z-(c.j+.5)*SIZE)));const dq=Math.min(...cells.map(c=>Math.hypot(q.x-(c.i+.5)*SIZE,q.z-(c.j+.5)*SIZE)));return dp-dq;});out.push(...mine.slice(0,4));}
