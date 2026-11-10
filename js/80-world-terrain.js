@@ -561,6 +561,16 @@
   // S1511 — a tree's id is `<cx,cz>:<i>`, i its cell of the chunk's lattice (iz*100+ix): stable whatever else had loaded, because a
   // stamp or a road that skips one tree moves no other's. `ch.trees` holds each tree's id, place, species and trunk; each tree mesh
   // names its instances' ids (`userData.tids`) and each trunk's collider its tree (`tid`), so felling (50-travel.js) can take one out.
+  // S2073 — the tundra's share of the ground at a point (regionWeights, as groundColor blends it), and the leafed kinds that may not stand in it
+  const SNOWLEAF=new Set(['broadleaf','oak','birch','willow']),_snowBushC=new THREE.Color(1.3,1.32,1.36);
+  // Read from the 3×3 cells round the point's own (as withPlace does), never the live REGIONS: a chunk scattered before its neighbour's
+  // tundra had loaded drew its trees from the plains, and the ground was recoloured white when the neighbour came (the gotcha of S701)
+  const _twRing=new Map();
+  function tundraW(x,z){const [ci,cj]=cellOf(x,z),key=ci+','+cj;let regs=_twRing.get(key);
+    if(!regs){regs=[];for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(c&&c.regions)regs.push(...c.regions);}
+      if(_twRing.size>64)_twRing.clear();_twRing.set(key,regs);}
+    let sum=0,tw=0,near=null,nd=1e9;for(const r_ of regs){const d=Math.hypot(x-r_.x,z-r_.z);let w=Math.max(0,1-d/r_.r);w*=w;sum+=w;if(r_.biome==='tundra')tw+=w;if(d/r_.r<nd){nd=d/r_.r;near=r_;}}
+    return sum>1e-6?tw/sum:(near&&near.biome==='tundra'?1:0);}
   function scatterChunk(cx,cz,group,sol){
     _treePts=[];_treeRecs=[];
     const ox=cx*CHUNK,oz=cz*CHUNK;
@@ -590,6 +600,10 @@
         let sp=dom.r.trees;const base=sp;
         const mix=hash01(gx,gz,4);const MX=TREE_MIX[sp];if(MX){let acc=0;for(const [k,w] of MX){acc+=w;if(mix<acc){sp=k;break;}}}
         if(h>26&&sp!=='dead'&&sp!=='snowpine'&&sp!=='spruce')sp=(snowLineAt(x,z)<30?'snowpine':'conifer');
+        // S2073 — the Mark's snow is the ground's blend of the tundra (groundColor), but the tree is the dominant region's: where the plains
+        // won by a little, summer-green oaks stood on white ground (the critic, 10 Nov, at the cabin and the unfinished camp). A leafed tree
+        // takes the tundra's own (a spruce or a snowpine) as the tundra's weight rises from .25 to .55, by its own die
+        if(SNOWLEAF.has(sp)&&hash01(gx,gz,14)<sstep(.25,.55,tundraW(x,z)))sp=hash01(gx,gz,15)<.3?'spruce':'snowpine';
         const sc_=hash01(gx,gz,5);const gi=.84+hash01(gx,gz,12)*.34;(trees[sp]=trees[sp]||[]).push({id:cx+','+cz+':'+(iz*100+ix),x,z,h,s:sc_<.06?1.7+sc_*3:.8+sc_*.7,r:hash01(gx,gz,6)*Math.PI*2,t:hash01(gx,gz,7),g:gi,sy:1+(1-gi)*.7,au:base==='autumn'}); // .8–1.5, rare giants; the girth (S192) a squat tree wider, a tall one slimmer
         _treePts.push(x,z);
         continue;
@@ -600,7 +614,7 @@
       if(roll<p+rockP){const kr=hash01(gx,gz,13),kind=ny<.8&&kr<.55?'outcrop':kr<.5?'boulder':kr<.8?'outcrop':'cluster';rocks.push({x,z,h,s:.5+hash01(gx,gz,8)*1.3,r:hash01(gx,gz,9)*Math.PI*2,ny,proto:rockProto(ROCK_OF_BIOME[dom.r.biome]||'moor',kind)});continue;} // S264 — its kind by the ground's dice (outcrops likelier on a slope), dressed by its biome
       // Bushes: open ground only.
       const bushP=(dom.r.biome==='wastes'?.02:.06)*(1-dens)*sstep(.7,.9,ny);
-      if(roll<p+rockP+bushP)bushes.push({x,z,h,s:.7+hash01(gx,gz,10)*.7,r:hash01(gx,gz,11)*Math.PI*2});
+      if(roll<p+rockP+bushP)bushes.push({x,z,h,s:.7+hash01(gx,gz,10)*.7,r:hash01(gx,gz,11)*Math.PI*2,sn:sstep(.25,.55,tundraW(x,z))}); /* S2073 — sn, how much of the tundra's snow the bush stands in */
     }
     const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),s3=new THREE.Vector3(),c=new THREE.Color();
     function place(list,proto,tint,castShadow,solR){
@@ -648,7 +662,7 @@
         for(const t of trees[sp])_treeRecs.push({id:t.id,x:t.x,z:t.z,h:t.h,sp,r:solR*t.s*(t.g||1)});} /* S1511 — felling's records */
     }
     {const by={};rocks.forEach(r=>{r.sink=0;(by[r.proto]||(by[r.proto]=[])).push(r);});for(const k in by)place(by[k],k,(t,c)=>{c.setRGB(.9+t.ny*.1,.9+t.ny*.08,.9);},true,.55);} // S264 — one instanced mesh per kind of rock in the chunk
-    place(bushes,'bush',(t,c)=>{c.setRGB(.92+(t.s-1)*.2,1,.9);},false,0);
+    place(bushes,'bush',(t,c)=>{c.setRGB(.92+(t.s-1)*.2,1,.9);if(t.sn)c.lerp(_snowBushC,.55*t.sn);},false,0); /* S2073 — a bush in the Mark's snow is frosted, not bright green */
     if(embers.length){place(embers,'ember',(t,c)=>{c.setRGB(1,1,1);},false,0);const gl=group.children[group.children.length-1];if(gl&&gl.isInstancedMesh){gl.material=new THREE.MeshBasicMaterial({vertexColors:true});}}
   }
 
