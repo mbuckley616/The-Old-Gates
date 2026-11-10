@@ -7823,6 +7823,108 @@ function aurenneOrrery(hAt, o = {}) {
       cabin: { x0: -XW, x1: XW, z0: -ZW, z1: ZW, eaves: EAV, ridge: RIDGE, y0: Y0, logs: logs.length, door: { x: 0, z: ZW, w: DW, h: DH }, win: { x: XW, z: WZ, w: WW, h: WH, sill: WS } },
       chimney: { x: CX, z: CZ, w: CW, top: CTOP }, store, pile: pile.length, trees, paths: PATHS };
   }
+  // S2053 (card F8; OG-124's Mark panel, "an abandoned logging camp"; Michael's A on #1292) — the Mark's logging camp in the open world,
+  // places.js's markLoggingCamp (Session 999): a winter felling left mid-season on a slope over water, after the Norwegian and Swedish
+  // forest drives. The 50 stumps cut flat at a man's swing with an axe left in one, the deck of 18 logs on two skids, the chute of paired
+  // logs on trestles at one grade from the deck's foot down over the water with one length fallen beside its gap, the gapahuk of logs with
+  // its bed of boughs and its cold fire, and the log sledge with a log chained on it, are the prototype's, on the world's ground. Three
+  // changes: the slope and the water are the world's (the page's own ground grid, its 1-in-4.5 slope and its river are left out): the camp
+  // stands on a fall line of the world that runs down into a river, a lake or the sea, and the chute ends 3 m out over the water at its
+  // shore (o.shore), wherever that is; the river's ice is a sheet a hand over the water (every lake and river of the world lies at the
+  // sea's level), from under the shore out to a ragged edge 16 to 22 m out, laid only where the world is snow (o.snow, the tundra), where
+  // the snow on the stumps, the shelter's roof and the trees is kept too; elsewhere the chute ends over open water and nothing is snowed;
+  // and the 80 spruce round the felling come down to 30. The prototype's frame is kept: the slope falls to +z; o.ground(x, z) is the drawn
+  // ground in that frame, 0 at the middle, and o.water the water's level in it.
+  // -> { group, tris, draws, sol, stands [{ x, y, z, what }], shore, chute { x, z0, z1, y0, y1, grade, gap, trestles, clear }, deck { x, z, logs, skid },
+  //      stumps [{ x, z, r, top }], shelter { x, z, w, d, y }, sledge { x, z }, ice { z0, edge(x), y } | null, trees [{ x, z, h }] }
+  let LGM = null;
+  function markLoggingCamp(o = {}) {
+    const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+    if (!LGM) LGM = { snow: mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }), ice: std(0xb8cad6, .15, { metalness: .1 }), log: mat('beam', { ns: 1.2, color: 0x9a7c5c, rough: .9 }), end: std(0xa88a66, .9),
+      grey: mat('beam', { ns: 1.2, color: 0x8a8278, rough: .95 }), board: mat('wood', { ns: .9, color: 0x6a5a4a, rough: .9 }), stone: mat('rock', { ns: 1.0, color: 0x8a8680, rough: 1 }), char: std(0x1a1614, 1),
+      bark: std(0x4a3a30, .95), needle: std(0x2a3a2a, .9), bough: std(0x36482e, .95), iron: std(0x2a2826, .5, { metalness: .6 }), wood: std(0xb89a72, .85) };
+    const M = LGM, B = new Map(), key = String(o.key || 'logging'), F = stream(key + ':lie'), V3 = (x, y, z) => new THREE.Vector3(x, y, z), SNOW = o.snow !== false;
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+    const rod = (k, a, b, rad, seg = 7) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg);
+      g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+    const flip = g => { g = g.index ? g.toNonIndexed() : g; const P = g.attributes.position.array; for (let i = 0; i < P.length; i += 9) for (let j = 0; j < 3; j++) { const t = P[i + 3 + j]; P[i + 3 + j] = P[i + 6 + j]; P[i + 6 + j] = t; } g.deleteAttribute('normal'); g.computeVertexNormals(); return g; };
+    const log = (k, a, b, rad) => { rod(k, a, b, rad, 9); const d = V3(b[0] - a[0], b[1] - a[1], b[2] - a[2]).normalize(), q = new THREE.Quaternion().setFromUnitVectors(V3(0, 0, 1), d);
+      for (const [p, s] of [[a, -1], [b, 1]]) { const c = new THREE.CircleGeometry(rad * .97, 9); c.applyQuaternion(q); const n = d.clone().multiplyScalar(s * .002); c.translate(p[0] + n.x, p[1] + n.y, p[2] + n.z); put(s < 0 ? flip(c) : c, 'end'); } };
+    const ground = typeof o.ground === 'function' ? o.ground : (x, z) => -.22 * Math.min(z, 26), WL = o.water ?? -6.3, stands = [], sol = [];
+    const Sq = (x, z, w, d, h, ry = 0) => sol.push({ x: +x.toFixed(3), z: +z.toFixed(3), w, d, ry, h: +h.toFixed(3) });
+    const dry = (x, z, m = .3) => ground(x, z) > WL + m;
+    // the chute: from the deck's foot down its line at x CX to 3 m out over the water, at one grade; two logs side by side in lengths of 5 m on trestles every 2.5 m
+    const CX = -6, CZ0 = -11; let SH = CZ0 + 8; while (SH < 60 && dry(CX, SH, .02)) SH += .25;
+    const CZ1 = +(SH + 3).toFixed(2), CY1 = WL + .9; let CY0 = ground(CX, CZ0) + .45;
+    { let lo = 1e9; for (let z = CZ0 + 1; z < SH; z += .5) lo = Math.min(lo, CY0 - (CY0 - CY1) * (z - CZ0) / (CZ1 - CZ0) - Math.max(ground(CX - .2, z), ground(CX + .2, z))); if (lo < .3) CY0 += Math.min(1.4, (.3 - lo) * (CZ1 - CZ0) / Math.max(1, CZ1 - CZ0 - 1)); } /* the head lifted on its first trestle where the bank swells under the line */
+    const grade = (CY0 - CY1) / (CZ1 - CZ0), cy = z => CY0 - grade * (z - CZ0), CR = .15, CS = .13;
+    const GAP = CZ1 - CZ0 > 32 ? [CZ0 + 25, CZ0 + 30] : null /* one 5 m length, from a joint to a joint */, trestles = []; let clear = 1e9;
+    for (let z = CZ0; z < CZ1 - .01; z += 5) { const z1 = Math.min(z + 5, CZ1); if (GAP && z >= GAP[0] && z < GAP[1]) continue; for (const s of [-1, 1]) log('grey', [CX + s * CS, cy(z) + CR, z], [CX + s * CS, cy(z1) + CR, z1], CR); }
+    for (let z = CZ0 + 1.25; z < CZ1; z += 2.5) { const gy = Math.min(ground(CX - .7, z), ground(CX + .7, z)), top = cy(z), fallen = GAP && z > GAP[0] && z < GAP[1];
+      if (fallen) { for (const s of [-1, 1]) rod('grey', [CX + s * .6, ground(CX + s * .6, z) + .1, z], [CX + s * .3 + 1.1, ground(CX + 1.4, z) + .12, z + .5 * s], .08); continue; }
+      if (z < SH) clear = Math.min(clear, top - Math.max(ground(CX - .2, z), ground(CX + .2, z)));
+      const legBot = Math.max(gy, WL - .6) - .25; for (const s of [-1, 1]) rod('grey', [CX + s * .7, legBot, z], [CX + s * .32, top - .02, z], .07); rod('grey', [CX - .45, top - .08, z], [CX + .45, top - .08, z], .08);
+      if (top - gy > 1.0) rod('grey', [CX - .62, Math.max(gy, WL) + .35, z], [CX + .62, Math.max(gy, WL) + .35, z], .05); trestles.push({ z: +z.toFixed(2), top: +top.toFixed(3) }); }
+    for (let z = CZ0 + 1, k = 0; z < SH - .5; z += 1.6) { if (GAP && z > GAP[0] - .4 && z < GAP[1] + .4) continue; Sq(CX, z, 1.5, 1.6, cy(z) + CR * 2); k++; }
+    // the fallen length: off its trestles and down in the snow beside the gap, askew
+    if (GAP) { const a = [CX + 1.7, 0, GAP[0] + .4], b = [CX + 2.6, 0, GAP[1] - .2]; a[1] = ground(a[0], a[2]) + CR - .04; b[1] = ground(b[0], b[2]) + CR - .04; log('grey', a, b, CR);
+      const a2 = [a[0] + .5, ground(a[0] + .5, a[2] + .3) + CR - .04, a[2] + .3], b2 = [b[0] + .2, ground(b[0] + .2, b[2] + .4) + CR - .04, b[2] + .4]; log('grey', a2, b2, CR); }
+    // the deck: two skids across the slope, the logs on them in rows of 6, 5, 4, 3, each on the two below
+    const DX = 6, DZ = -9, LR = .17, LL = 5, deck = [], sk = [];
+    { const skH = Math.max(...[-1.6, 1.6].flatMap(sx => [ground(DX + sx, DZ - 1.6), ground(DX + sx, DZ + 1.6)])) + .12 /* both skids levelled to the highest ground under them */;
+      for (const sx of [-1.6, 1.6]) { log('log', [DX + sx, skH, DZ - 1.6], [DX + sx, skH, DZ + 1.6], .14); sk.push(skH + .14); for (const dz of [-1.2, 0, 1.2]) { const gy = ground(DX + sx, DZ + dz); if (skH - .14 - gy > .05) rod('log', [DX + sx, gy - .1, DZ + dz], [DX + sx, skH - .1, DZ + dz], .1, 6); } }
+      const base = Math.max(...sk) + LR; for (let row = 0, n = 6; n >= 3; row++, n--) for (let k = 0; k < n; k++) { const z = DZ + (k - (n - 1) / 2) * 2 * LR, y = base + row * LR * Math.sqrt(3);
+        log('log', [DX - LL / 2 + (F() - .5) * .3, y, z], [DX + LL / 2 + (F() - .5) * .3, y, z], LR); deck.push({ y: +y.toFixed(4), z: +z.toFixed(4), row }); }
+      Sq(DX, DZ, LL + .3, 3.6, base + 3 * LR * Math.sqrt(3) + LR); }
+    // the felling: stumps cut flat, snow on each, an axe left in one
+    const SX = 11, SZ = 4, GX = 2, GZ = -4, ZMAX = Math.min(22, SH - 3);
+    const clearOf = (x, z) => Math.abs(x - CX) < 1.8 || (Math.abs(x - DX) < 3.4 && Math.abs(z - DZ) < 2.6) || Math.hypot(x - SX, z - SZ) < 4 || Math.hypot(x - GX, z - GZ) < 2.6;
+    const stumps = []; for (let k = 0, n = 0; k < 1200 && n < 50; k++) { const x = -18 + F() * 34, z = -16 + F() * (ZMAX + 16); if (clearOf(x, z) || !dry(x, z, .5) || stumps.some(s => Math.hypot(s.x - x, s.z - z) < 1.6)) continue; n++;
+      const rr = .18 + F() * .14, h = .45 + F() * .25, around = [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([a, b]) => ground(x + a * rr, z + b * rr)), gl = Math.min(...around), gh = Math.max(...around);
+      put(new THREE.CylinderGeometry(rr, rr * 1.15, h + (gh - gl) + .1, 9), 'log', x, (gl - .1 + gh + h) / 2, z); const top = gh + h; put(new THREE.CircleGeometry(rr * .97, 9).rotateX(-Math.PI / 2), 'end', x, top + .002, z);
+      if (SNOW) { const cap = new THREE.SphereGeometry(rr * .92, 9, 3, 0, 6.283, 0, Math.PI / 2); cap.scale(1, .3, 1); put(cap, 'snow', x, top, z); }
+      stumps.push({ x: +x.toFixed(2), z: +z.toFixed(2), r: +rr.toFixed(3), top: +top.toFixed(3) }); Sq(x, z, rr * 2, rr * 2, top); }
+    { const s = stumps[0]; rod('wood', [s.x + .02, s.top + .05, s.z], [s.x + .5, s.top + .35, s.z + .2], .02, 6); put(new THREE.BoxGeometry(.04, .14, .11), 'iron', s.x, s.top + .04, s.z, 0, -.38, .52); }
+    // the gapahuk: a back wall of logs 1 m high, the sides rising to 2.1 m at the open front, a roof of poles, boards and snow, a bed of boughs
+    const SW = 3.2, SD = 2.4, BK = 1.0, FR = 2.1, LR2 = .11, sy = Math.max(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => ground(SX + a * SW / 2, SZ + b * SD / 2))) - .15;
+    { const gb = Math.min(ground(SX - SW / 2, SZ - SD / 2), ground(SX + SW / 2, SZ - SD / 2)); for (let y = Math.min(sy, gb) + LR2; y < sy + BK; y += LR2 * 1.8) log('grey', [SX - SW / 2 - .2, y, SZ - SD / 2], [SX + SW / 2 + .2, y, SZ - SD / 2], LR2);
+      for (const s of [-1, 1]) for (let y = sy + LR2 + LR2 * .9; y < sy + FR - .25; y += LR2 * 1.8) { const zb = SZ - SD / 2 + Math.max(0, (y + LR2 - sy - BK) / (FR - BK)) * SD; if (zb > SZ + SD / 2 - .4) break; log('grey', [SX + s * SW / 2, y, zb - .05], [SX + s * SW / 2, y, SZ + SD / 2 + .15], LR2); }
+      for (const s of [-1, 1]) { const gy = Math.min(ground(SX + s * SW / 2, SZ), ground(SX + s * SW / 2, SZ + SD / 2)); if (sy - gy > .05) put(new THREE.BoxGeometry(.24, sy - gy + .3, SD + .3), 'grey', SX + s * SW / 2, (sy + gy) / 2 + .02, SZ + .05) /* the bottom course to the ground, where the slope falls away under it */; }
+      const pitch = Math.atan2(FR - BK, SD), rl = Math.hypot(FR - BK, SD) + .7, rcy = sy + (BK + FR) / 2 + .14, rcz = SZ + .1;
+      for (const [k, th, off] of [['grey', .1, 0], ['board', .05, .08], ['snow', .22, .2]]) if (k !== 'snow' || SNOW) put(new THREE.BoxGeometry(SW + (k === 'snow' ? .7 : .6), th, rl + (k === 'snow' ? .05 : 0)), k, SX, rcy + off * Math.cos(pitch), rcz - off * Math.sin(pitch), -pitch, 0, 0, .5);
+      for (let k = 0; k < 9; k++) { const g = new THREE.ConeGeometry(.5, 1.3, 5); g.rotateX(Math.PI / 2); g.scale(1, .18, 1); put(g, 'bough', SX - 1.1 + (k % 3) * 1.1, sy + .2 + Math.floor(k / 3) * .02, SZ - .6 + Math.floor(k / 3) * .55, 0, (F() - .5) * .6); }
+      put(new THREE.BoxGeometry(SW - .2, sy - Math.min(...[-1, 1].map(s => ground(SX + s, SZ))) + .2, SD - .3), 'board', SX, (sy + Math.min(...[-1, 1].map(s => ground(SX + s, SZ)))) / 2 + .05, SZ) /* the floor under the boughs, the slope's step filled */;
+      const FX = SX, FZ = SZ + SD / 2 + 1.4, fy = ground(FX, FZ); for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283, st = new THREE.IcosahedronGeometry(.13, 0); st.scale(1.2, .7, 1); put(st, 'stone', FX + .45 * Math.cos(a), ground(FX + .45 * Math.cos(a), FZ + .45 * Math.sin(a)) + .04, FZ + .45 * Math.sin(a), 0, F() * 3); }
+      put(new THREE.CylinderGeometry(.32, .36, .05, 10), 'char', FX, fy + .02, FZ); for (let k = 0; k < 3; k++) rod('char', [FX + .3 * Math.cos(k * 2.1), fy + .06, FZ + .3 * Math.sin(k * 2.1)], [FX - .1 * Math.cos(k * 2.1), fy + .1, FZ - .1 * Math.sin(k * 2.1)], .045);
+      if (SNOW) put(new THREE.SphereGeometry(.4, 9, 3, 0, 6.283, 0, Math.PI / 2).scale(1, .15, 1), 'snow', FX + .05, fy + .05, FZ + .05) /* snow fallen in the cold fire */;
+      stands.push({ x: FX, y: fy, z: FZ, what: 'fire' });
+      Sq(SX, SZ - SD / 2, SW + .4, .3, sy + BK); for (const s of [-1, 1]) Sq(SX + s * SW / 2, SZ + .05, .3, SD + .3, sy + FR - .3); }
+    const shelter = { x: SX, z: SZ, w: SW, d: SD, y: +sy.toFixed(3), back: BK, front: FR };
+    // the sledge: two runners turned up at the front, two bunks, a log chained on them
+    { for (const s of [-1, 1]) { const x = GX + s * .45, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10, z = GZ - 1.4 + t * 2.8, up = t > .8 ? Math.pow((t - .8) / .2, 2) * .35 : 0; pts.push(V3(x, ground(x, z) + .05 + up, z - (t > .8 ? up * .4 : 0))); }
+        put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 20, .05, 6), 'board'); }
+      for (const dz of [-.8, .6]) { const y = Math.max(ground(GX - .45, GZ + dz), ground(GX + .45, GZ + dz)) + .3; put(new THREE.BoxGeometry(1.15, .12, .14), 'board', GX, y, GZ + dz); for (const s of [-1, 1]) rod('board', [GX + s * .45, ground(GX + s * .45, GZ + dz) + .08, GZ + dz], [GX + s * .45, y, GZ + dz], .035, 5); }
+      const ly = Math.max(ground(GX, GZ - .8), ground(GX, GZ + .6)) + .36 + .2; log('log', [GX, ly, GZ - 2.6], [GX, ly - .1, GZ + 2.2], .2); for (const dz of [-.8, .6]) { const ring = new THREE.TorusGeometry(.24, .015, 4, 14); ring.rotateY(Math.PI / 2); put(ring, 'iron', GX, ly - .02, GZ + dz + .12); }
+      Sq(GX, GZ, 1.2, 4.6, ly + .2); stands.push({ x: GX, y: ground(GX, GZ - 1.4), z: GZ - 1.4, what: 'sledge' }); }
+    // the river's ice where the world is snow: a sheet a hand over the water, from under the shore out to a ragged edge
+    let ice = null; if (SNOW) { const IY = WL + .06, Z0 = SH - 9, ip = F() * 6.283, edge = x => Z0 + (28 + 2.5 * Math.sin(x * .21 + ip) + 1.5 * Math.sin(x * .53 + ip * 1.7)) * Math.sqrt(Math.max(0, 1 - (x / 36) ** 2)) /* a lens of shore ice, 16 to 22 m out at the chute, thinning to nothing 36 m either side */;
+      const xs = []; for (let x = -36; x <= 36; x += 2) xs.push(x); const pos = [], idx = []; xs.forEach(x => { pos.push(x, IY, Z0, x, IY, edge(x)); });
+      for (let i = 0; i < xs.length - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 2, a + 1, a + 3); } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+      if (g.attributes.normal.array[1] < 0) { g.setIndex(idx.map((v, j) => idx[j - j % 3 + [0, 2, 1][j % 3]])); g.computeVertexNormals(); } put(g, 'ice', 0, 0, 0, 0, 0, 0, .3); ice = { z0: Z0, edge, y: +IY.toFixed(3) }; }
+    // the spruce round the felling: 30 of them, a few left standing in it; a trunk and seven tiers of needle, a cap of snow on most where it snows
+    const trees = []; for (let k = 0, n = 0; k < 1400 && n < 30; k++) { const x = -42 + F() * 84, z = -42 + F() * (SH + 30); if ((x > -21 && x < 19 && z > -19 && z < SH - 1) && F() > .04) continue; if (!dry(x, z, .8) || clearOf(x, z) || trees.some(t => Math.hypot(t.x - x, t.z - z) < 3.2) || stumps.some(s => Math.hypot(s.x - x, s.z - z) < 1.5)) continue; n++;
+      const h = 9 + F() * 9, gy = ground(x, z), w = h * (.21 + F() * .05); rod('bark', [x, gy - .3, z], [x, gy + h * .35, z], h * .016, 6);
+      for (let t = 0; t < 7; t++) { const f = t / 7, y0 = gy + h * (.16 + f * .76), th = h * (.26 - f * .05), rw = w * (1 - f * .8) * (.9 + F() * .2); put(new THREE.ConeGeometry(rw, th, 8, 1, true), 'needle', x, y0 + th / 2, z, 0, F() * 3);
+        if (SNOW && F() < .8) put(new THREE.ConeGeometry(rw * .62, th * .36, 7, 1, true), 'snow', x + (F() - .5) * rw * .2, y0 + th * .7 + .02, z + (F() - .5) * rw * .2, 0, F() * 3); }
+      trees.push({ x: +x.toFixed(2), z: +z.toFixed(2), h: +h.toFixed(2) }); Sq(x, z, .4, .4, gy + h); }
+    const group = new THREE.Group(); let tris = 0;
+    for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = k !== 'ice'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+    return { group, tris: Math.round(tris), draws: group.children.length, sol, stands: stands.map(s => ({ ...s, x: +s.x.toFixed(3), y: +s.y.toFixed(3), z: +s.z.toFixed(3) })), shore: +SH.toFixed(2),
+      chute: { x: CX, z0: CZ0, z1: CZ1, y0: +CY0.toFixed(3), y1: +CY1.toFixed(3), grade: +grade.toFixed(4), gap: GAP, trestles, clear: +clear.toFixed(3), R: CR }, deck: { x: DX, z: DZ, logs: deck.length, skid: +Math.max(...sk).toFixed(3) },
+      stumps, shelter, sledge: { x: GX, z: GZ }, ice, trees, snow: SNOW };
+  }
   // the cave's mouth in the open world (Session 1768): an outcrop of grey limestone half sunk in the slope, 15 m across and 11 deep, its
   // face toward +z, and in it the mouth, 4.4 m wide and 3.6 m high, a short throat of rock 6 m into the dark. Its own frame: the throat's
   // floor at the origin (the ground before the mouth), +z out. The world's ground cannot be holed, so the throat has a floor of its own,
@@ -8571,7 +8673,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, piers: piers.map(f2), bays: bays.map(({ hi, ...b }) => ({ ...b, x0: f2(b.x0), x1: f2(b.x1) })), gap: GAP ? { x0: f2(GAP.x0), x1: f2(GAP.x1), stump: f2(GAP.stump) } : null,
       two, depth: f2(D), deep: f2(xd), arch: { pitch: PITCH, pier: PIER, span: SPAN, r: RAD, upSpring: f2(US), lowSpring: two ? f2(LS) : null, tier: two ? f2(TIER + SC) : null, deck: DECK }, channel: { w: CW, x0: CX0, x1: CX1, runs }, x0: X0, x1: X1, broken: !!GAP, far, farTris: Math.round(far.reduce((a, [g]) => a + g.attributes.position.count / 3, 0)) };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
