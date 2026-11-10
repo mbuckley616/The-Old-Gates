@@ -899,6 +899,7 @@ function magicWrite(){const id=magicPageWord();if(!id)return;const f=magicPageFo
   if(r.say){showMsg(r.say,'#a8a8d4');return;}bookSelect(r.i);updateSpellButton();showMsg('Written: '+bookLineName(spellBook[r.i]),'#88ccff');renderHubMagic();}
 function magicReady(i){if(!bookSelect(i))return false;const b=spellBook[i];MAGIC_PAGE.word=b.word;MAGIC_PAGE.form=b.form;MAGIC_PAGE.rider=b.rider;
   updateSpellButton();if(hubOpen&&hubLastTab==='magic')renderHubMagic();showMsg('Readied: '+bookLineName(b),'#88ccff');return true;}
+function magicSeek(v){setSeek(v||null);renderHubMagic();}
 function magicUnmake(i){if(!bookUnmake(i))return;updateSpellButton();renderHubMagic();}
 function magicCost(id,f,rider){return wordCost(id,f,rider);}
 function renderHubMagic(){
@@ -922,6 +923,12 @@ function renderHubMagic(){
     for(const x of ws){const t=wordTierOf(x.id)||1;
       lex+=`<div class="mp-word${x.id===id?' sel':''}${x.id===rider?' two':''}" data-word="${x.id}" onclick="magicPick('${x.id}')"><span class="nm">${x.nameIr}${t>=2?`<span class="gl">${t>=3?(x.nameMa||x.nameEn):x.nameEn}</span>`:''}</span>${tierPips(t)}<span class="c">${x.cost}</span></div>`;}
     for(const x of part)lex+=`<div class="mp-word unk">${x.nameIr} · partly understood, Intelligence ${x.intReqs[0]}</div>`;}
+  // S2054 — Súil by choice: once Súil is held, the word it seeks, any of the 24 below Mastery (setSeek, 87-world-quests.js)
+  if(knownWords.suil_fiodora){const sk=seekWord();
+    lex+=`<div class="mp-h" style="margin-top:12px">${WORD_BY.suil_fiodora.nameIr} seeks</div><select class="mp-seek" onchange="magicSeek(this.value)" style="width:100%;font:inherit;background:transparent;color:inherit;border:1px solid currentColor;padding:2px 4px"><option value=""${sk?'':' selected'}>the nearest unread stone</option>`;
+    for(const sc of Object.keys(SCHOOL_DEF)){const ws=WORDS.filter(x=>x.school===sc&&(knownWords[x.id]||0)<3);if(!ws.length)continue;
+      lex+=`<optgroup label="${SCHOOL_DEF[sc].name}">`+ws.map(x=>`<option value="${x.id}"${x.id===sk?' selected':''}>${x.nameIr}</option>`).join('')+`</optgroup>`;}
+    lex+=`</select>`;}
   // the spell being made
   const nm=bookLineName({word:id,form:f,rider:join.ok?rider:null}),dur=wordCellDur(id,f);
   let say=wordCellSay(id,f)+(dur?`, ${dur} s`:'');if(rider&&join.ok)say+=`; and it ${RIDERS[rider].verb}`;
