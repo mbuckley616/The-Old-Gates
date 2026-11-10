@@ -2110,6 +2110,13 @@ function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root
 // under one thrown back off the right shoulder (a spear, a crossbow, a staff, a basket). A blow, a ragdoll and a sleeper are left alone
 // (S1435: your own body's arms are held side by side, each by rig.tpHold.L/.R, which tpPose sets while that arm is on the gait's swing)
 const HB_CLOAK_HOLD=1;
+/* S2053 — and a walking staff's arm too (the Marsh Hag's right). The long cloak is thrown back off that shoulder (people.js: it starts just
+   forward of the right side), so the arm was left free, and the gait swung the robe's sleeve back under the cloak's start edge, 90 to 120
+   degrees round from the front (a 160-tick run at 1.3 m/s: 308 and 263 points out, 4.7 cm; at a walk 337 and 287, 5.5 cm). A staff is
+   planted, not swung: under a long cloak with no cape, the staff's arm is held to the hips as the other is, HB_CLOAK_STAFF.k of the swing
+   taken off (1: at a run 15 and 26 points out, at most 1.4 cm; .5 left 131 and 121 at 3 cm). A spear, a crossbow, a basket or a lantern
+   keeps its arm free */
+const HB_CLOAK_STAFF={k:1};
 /* S2014 — the twist left out under a long cloak (Pádraig of Dunmore's left fingertips, out through the front edge by 5 to 11 mm in 13 of 20
    start phases of f4people's walk, at gait phase .61 to .63: the suite's red one run in two). The held arms took the hips' whole turn, so the
    pelvis' yaw swung the forward-hanging hands 5 cm in toward the middle, under the cloak's front edge, which falls back as that knee trails.
@@ -2130,14 +2137,15 @@ function hbCloakLean(rig){const B=rig.B,d=HB_CLOAK_LEAN.k*B.spine.rotation.x;if(
   B.hips.quaternion.multiply(_hbLq.setFromAxisAngle(_hbLX,d));_hbLq.setFromAxisAngle(_hbLX,-d);
   B.spine.quaternion.premultiply(_hbLq);B.thL.quaternion.premultiply(_hbLq);B.thR.quaternion.premultiply(_hbLq);}
 function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!!(D.spear||D.crossbow||D.staff||D.basket||D.lantern)&&(!D.cape||!!D.staff&&!D.spear&&!D.crossbow),sides=thrown?/L$/:/[LR]$/; /* S1798: a cape over a staff opens on the staff's side, as people.js's buildCloak */
-  const i=map.map(([j],k)=>/^(sh|el|wr)[LR]$/.test(j)&&sides.test(j)?k:-1).filter(k=>k>=0);return i.length?new Set(i):null;}
+  const low=thrown&&!!D.staff&&!D.spear&&!D.crossbow&&!D.basket&&!D.lantern&&!D.cape,i=map.map(([j],k)=>/^(sh|el|wr)[LR]$/.test(j)&&(sides.test(j)||low)?k:-1).filter(k=>k>=0);
+  if(!i.length)return null;const S=new Set(i);if(low)S.staff=new Set(i.filter(k=>/R$/.test(map[k][0])));return S;}
 function hbHoldF(rig){const H=rig.hb,w=rig.w;if(!H.hold||!w||rig.limp||rig.sleep)return 0;if(rig.tpHold)return HB_CLOAK_HOLD;const e=rig.e;
   if(e&&((e._wind||0)>0||(e._lunge!=null&&e._lunge>0)||(e.atkAnim||0)>0))return 0;return HB_CLOAK_HOLD*Math.min(1,(w.walk||0)+(w.run||0));}
 function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!rig.limp&&!rig.sleep?H.grip:null,hf=hbHoldF(rig);
   if(hf>0){hbRel(B[map[0][0]],rig.root,_hbqH);if(H.tw<1){_hbqA.set(0,_hbqH.y,0,_hbqH.w).normalize();_hbq3.copy(_hbqA).invert();_hbqH.multiply(_hbq3);_hbq3.identity().slerp(_hbqA,H.tw);_hbqH.multiply(_hbq3);}_hbqH.multiply(H.s0[0]);}
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
     if(grip&&(i===grip[0].i||grip[1]&&i===grip[1].i)){b.quaternion.copy(grip[0].i===i?grip[0].q:grip[1].q);continue;}
-    hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]);if(hf>0&&H.hold.has(i)){const k=rig.tpHold?hf*(rig.tpHold[j.slice(-1)]||0):hf;if(k>0)_hbq.copy(_hbqA.copy(_hbq).slerp(_hbqH,k));}_hbq.multiply(H.t0[i]);
+    hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]);if(hf>0&&H.hold.has(i)){const k=rig.tpHold?hf*(rig.tpHold[j.slice(-1)]||0):H.hold.staff&&H.hold.staff.has(i)?hf*HB_CLOAK_STAFF.k:hf;if(k>0)_hbq.copy(_hbqA.copy(_hbq).slerp(_hbqH,k));}_hbq.multiply(H.t0[i]);
     if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
   const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));
   if(grip&&rig.thrust>0){const wb=(map.find(m=>m[0]==='wrR')||[])[1],sp=wb&&foeSpearOf(rig,H.root,wb);if(sp)foeSpearAim(rig,wb,sp);}
