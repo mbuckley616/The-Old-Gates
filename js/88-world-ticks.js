@@ -463,7 +463,7 @@
     for(const ch of [...WILD_CH]){const d=Math.hypot(ch.cx*CHUNK+CHUNK/2-px,ch.cz*CHUNK+CHUNK/2-pz);if(chunks.get(chunkKey(ch.cx,ch.cz))!==ch||d>WILD_DROP)wildDrop(ch);}
     for(const ch of chunks.values()){if(ch.wild)continue;if(Math.hypot(ch.cx*CHUNK+CHUNK/2-px,ch.cz*CHUNK+CHUNK/2-pz)<WILD_R)try{wildSpawnChunk(ch);}catch(err){console.warn('wild',err);}}
   }
-  // S2083 — the falls are heard (the look builder's S2071 owed it): one looped noise through a lowpass, a gain and a pan, from the fall's
+  // S2084 — the falls are heard (the look builder's S2071 owed it): one looped noise through a lowpass, a gain and a pan, from the fall's
   // foot of the nearest falls drawn (a loaded cell's _offroad of kind 'falls'). Full within 8 m, then as 8/d, faded to nothing at 140 m;
   // the far fall a rumble (the lowpass 2,600 Hz at its foot to 600 at 140 m); a 12 m wall at full, a 7 m one at 0.83. Each tick ramps to its
   // level and holds it 0.6 s, then fades to silence by 1.6 s, which the next tick cancels: when the world stops ticking (a door, a
