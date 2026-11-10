@@ -9,7 +9,7 @@
 // Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2048 the coach's lamp at night and its paint. Session 2051
 // the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished),
 // Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants), Session 2065 Aurenne's abandoned expedition (PKIT.places.expedition) on its laid ground,
-// Session 2071 the Gatelands' falls (PKIT.places.falls), their glen cut into the world's own ground. Session 2079 the peat camp's heather in shoots and its footings as tents. Session 2080 the cabin's lights on all four sides.
+// Session 2071 the Gatelands' falls (PKIT.places.falls), their glen cut into the world's own ground. Session 2079 the peat camp's heather in shoots and its footings as tents. Session 2081 the cabin's lights on all four sides.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -221,7 +221,7 @@ if (cb) {
     return { n, snow, leaf, cone, own, kit: !!LAND_TREE_KIT.snowpine }; }, cb.id);
   console.log(JSON.stringify(sl));
   check(`${cb.id}: of ${sl.n} trees within 90 m, ${sl.snow} stand in the Mark's snow and ${sl.leaf} of those are leafed or spruce (${sl.cone} snowpine, drawn in ${sl.own} meshes of its own shape)`, sl.snow > 10 && sl.leaf === 0 && sl.cone > sl.snow / 2 && sl.own > 0 && !sl.kit, sl);
-  // Session 2080 (the critic, 10 Nov: "from the west, at 25 m, I see no lit window … from three sides of four, a cabin lived in is dark"): a lit
+  // Session 2081 (the critic, 10 Nov: "from the west, at 25 m, I see no lit window … from three sides of four, a cabin lived in is dark"): a lit
   // window in each wall, the gables and the sides; from 25 m out before each, at eye height and from five points 2 m apart across it, a
   // sight line to the light, over its glazing bar, meets its glow before anything else within 3 m of the cabin (the woodpile, the logs, the
   // roof); the ring of its own spruce, 11 m out and more, is the wood's and not counted

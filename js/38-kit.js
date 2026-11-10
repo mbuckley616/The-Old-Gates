@@ -7774,7 +7774,7 @@ function aurenneOrrery(hAt, o = {}) {
       else { g.rotateX(Math.PI / 2); put(g, 'log', c, y, m, 0, 0, 0, .6); for (const e of [a0, a1]) put(new THREE.CircleGeometry(rad * .96, 9).rotateY(e < m ? Math.PI : 0), 'end', c, y, e + (e < m ? -.002 : .002)); }
       if (rec) logs.push({ ax, a0: +a0.toFixed(3), a1: +a1.toFixed(3), c, y: +y.toFixed(3) }); };
     // the side walls: eleven courses, the window cut out of the east one; the gables: ten courses half a step up, the door cut out of the front
-    /* S2080 (the critic, 10 Nov: "from the west, at 25 m, I see no lit window … from three sides of four, a cabin lived in is dark at night"): three
+    /* S2081 (the critic, 10 Nov: "from the west, at 25 m, I see no lit window … from three sides of four, a cabin lived in is dark at night"): three
        more lights like the east one: in the west wall clear of the hearth's chimney (WZW), in the front gable beside the door (FWX) and in the
        back gable on the side away from the chimney (BWX; the critic's own view, from the north of a cabin turned half round, was of its back),
        so the cabin shows a lit window from every side. cut lays a log round its gaps */
@@ -7823,7 +7823,7 @@ function aurenneOrrery(hAt, o = {}) {
     const STEPS_Z = SZ + SD / 2 + .2 + .22 /* the gap */; for (let k = 0; k < 3; k++) { const h = (k + 1) * SF / 3.2, d = .3, z = STEPS_Z + (2 - k) * d + d / 2, gy = ground(SX, z); put(new THREE.BoxGeometry(.8, h + .3 + sy - gy, d), 'stone', SX, (sy + h + gy - .3) / 2 - .05, z); }
     const store = { x: SX, z: SZ, w: SW, d: SD, floor: +(sy + SF).toFixed(3), steps: { z: +STEPS_Z.toFixed(3), top: +(sy + 3 * SF / 3.2 - .05).toFixed(3) } };
     // the woodpile under the west eaves: split rounds in two rows, ends out; a chopping block with the axe in it; a hide on its frame; snowshoes by the door
-    /* S2080: the pile stops short of the west light (PZ1), where it ran the wall's length and would have hidden it */
+    /* S2081: the pile stops short of the west light (PZ1), where it ran the wall's length and would have hidden it */
     const PZ1 = WZW - WW / 2 - .22, pile = []; for (const row of [0, 1]) for (let y = .1, lay = 0; y < 1.3; y += .17, lay++) for (let z = -ZW + .3 + (lay % 2) * .08; z < PZ1; z += .19) { const x = -XW - R - .18 - row * .27, rr = .075 + F() * .025, g = new THREE.CylinderGeometry(rr, rr, .44, 4 + (F() < .5 ? 1 : 0));
       g.rotateZ(Math.PI / 2); g.rotateX(F() * 6.283); g.rotateY((F() - .5) * .08); put(g, 'wood', x, y, z, 0, 0, 0, .4); pile.push({ x: +x.toFixed(3), z: +z.toFixed(3), y: +(y + .09).toFixed(3) }); }
     const BX = -3.6, BZ = 3.0; { const gy = ground(BX, BZ); put(new THREE.CylinderGeometry(.3, .32, .5, 10), 'log', BX, gy + .2, BZ); put(new THREE.CircleGeometry(.29, 10).rotateX(-Math.PI / 2), 'end', BX, gy + .451, BZ);
