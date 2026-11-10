@@ -8,7 +8,8 @@
 // Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt);
 // Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2048 the coach's lamp at night and its paint. Session 2051
 // the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished),
-// Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants), Session 2065 Aurenne's abandoned expedition (PKIT.places.expedition) on its laid ground.
+// Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants), Session 2065 Aurenne's abandoned expedition (PKIT.places.expedition) on its laid ground,
+// Session 2071 the Gatelands' falls (PKIT.places.falls), their glen cut into the world's own ground.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -289,6 +290,33 @@ if (ex) {
     !xt.none && xt.under > .3 && xt.sunk > 1 && xt.seam < .01 && xt.edges >= 4 && Math.abs(xt.inT) < .01 && Math.abs(xt.camp) < .01, xt);
   check(`solid at the standing tent, the cart and the wall, open at the fire and in the wall's gap; no ore vein in its clearing; ${xt.tris} triangles in ${xt.draws} draws, the laid ground ${xt.laid} over ${xt.cells} squares`,
     !xt.none && xt.tent && xt.cart && xt.wall && !xt.gap && !xt.fire && xt.veins === 0 && xt.tris < 12000 && xt.draws <= 16 && xt.laid < 3000, xt);
+}
+// Session 2071: the Gatelands' falls off the road (PKIT.places.falls, places.js's gatelandsFalls). No cell of today's world draws them (#1385),
+// so the suite asks the first Gatelands cell that rolls a place off the road for a falls site, puts it there and builds the cell again: the
+// head-wall 7 to 12 m as the land falls; the world's ground nowhere over the ground cut into it; the pool waded, the shelf behind the fall and
+// the cave's floor at 1.2 m; solid at the face's foot, the cave's sides and the arcade's piers, open in its mouth and its bays; its cost
+const fl = await page.evaluate(() => { const L = OFFROAD.gatelander.slice(); let out = null;
+  for (let j = 0; j < GRID && !out; j++) for (let i = 0; i < GRID && !out; i++) { const c = getCell(i, j); if (!c || c.type === 'sea' || c.home || !c.sites || nationOf(i, j).people !== 'gatelander') continue;
+    const keep = c._offroad; c._offroad = undefined; OFFROAD.gatelander.splice(0, L.length, 'falls', 'falls', 'falls'); let d; try { d = offroadAt(c); } finally { OFFROAD.gatelander.splice(0, 3, ...L); }
+    if (!d) { c._offroad = keep; continue; } const k = cellKey(i, j); unloadCell(k); c._offroad = d; px = d.x + Math.sin(d.ry) * 40; pz = d.z + Math.cos(d.ry) * 40; out = { id: d.id, x: d.x, z: d.z, ry: d.ry, y0: d.y0, wall: d.wall }; }
+  return out; });
+console.log(JSON.stringify(fl));
+check(`a Gatelands cell that rolls a place off the road finds a falls site when asked for one (${fl && fl.id}, the head-wall ${fl && fl.wall} m, the pool ${fl && fl.y0} m over the sea)`, !!fl && fl.wall >= 7 && fl.wall <= 12 && fl.y0 >= 2.5, fl);
+if (fl) {
+  for (let n = 0; n < 15; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id); return !!(c && c._offroad.group && c._offroad.group.parent); }, fl.id); if (ok) break; await page.waitForTimeout(1000); }
+  await g.spin('clear', 30);
+  const ft = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad; if (!D.group || !D.group.parent) return { none: true };
+    const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], S = D.shape, P = S.patch;
+    let over = 0, n = 0; for (let v = P.z0 + 1; v < P.z1; v += 1.3) for (let u = P.x0 + 1; u < P.x1; u += 1.3) { if (S.cut(u, v)) continue; const [x, z] = W(u, v); n++; if (meshH(x, z) - D.laid.h(x, z) > .02) over++; }
+    const gy = (u, v) => +(groundY(...W(u, v)) - D.y0).toFixed(2), at = (u, v, y) => solidAt(...W(u, v), D.y0 + y), A = D.arcade, mid = q => (q.x0 + q.x1) / 2;
+    return { id, tris: D.tris, draws: D.draws, laid: D.laid.tris, cells: D.laid.cells, n, over, lip: +(D.fall.lipY).toFixed(2), face: +S.faceH(0).toFixed(2),
+      pool: gy(0, 5), shelf: gy(3, S.faceZ(3) - .9), cave: gy(S.CX, S.CZ0 - 4), roof: +(D.laid.h(...W(S.CX, S.CZ0 - 4)) - D.y0).toFixed(2),
+      foot: at(10, S.footZ(10) - .5, 2), mouth: at(S.CX, S.CZ0 - 1, 1.6), side: at(S.CX + S.hwAt(S.CZ0 - 3) + .5, S.CZ0 - 3, 2), pier: at(mid(A.piers[1]), A.z, 1), bay: at(mid(A.bays[1]), A.z, 1) }; }, fl.id);
+  console.log(JSON.stringify(ft));
+  check(`${ft.id}: the river leaves the lip ${ft.lip} m over the pool, the face ${ft.face} m over its foot; the world's ground over the cut ground at ${ft.over} of ${ft.n} points; the pool waded at ${ft.pool} m, the shelf ${ft.shelf} m, the cave's floor ${ft.cave} m under ${ft.roof} m of hill`,
+    !ft.none && ft.lip >= 6.5 && ft.face >= 4.5 && ft.over === 0 && ft.n > 3000 && ft.pool === -1 && Math.abs(ft.shelf - 1.2) < .05 && ft.cave === 1.2 && ft.roof > 5, ft);
+  check(`solid at the face's foot, the cave's side and the arcade's pier, open in the cave's mouth and the arcade's bay; ${ft.tris} triangles in ${ft.draws} draws, the laid ground ${ft.laid} over ${ft.cells} squares`,
+    !ft.none && ft.foot && ft.side && ft.pier && !ft.mouth && !ft.bay && ft.tris < 34000 && ft.draws <= 17 && ft.laid < 10000, ft);
 }
 // Session 2063 (QA's S2060: two shepherd's huts 2.5 km out drawn whole in Dunmore's view): the places by a road and off it are hidden past
 // 450 m of you and shown within it; nothing else of them changes
