@@ -1939,7 +1939,13 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    63 points of a 160-tick walk, 4.8 cm; now 2, 1.2 cm). 1.5 halved it; 2.4 lifted the hem off more of the legs and gained nothing. Never
    past `capS` (0.9 rad); your own body keeps 1.1 (`kSYou`): at your run the thigh comes to 1.5 rad, and twice that threw the cloak's back
    corners up off your legs (f10motion's legs 5.1% → 6.1% out, with fewer of them under it) */
-const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:1.6,arcF:.85,lowF:.4,arcS:.1,kS:2,kSYou:1.1,capS:.9,capF:.2,arcFYou:.96};
+/* S2060 — the front edges over a leading thigh: 15 to 25 cm under the hip joints, near straight ahead, the leading thigh's boots, trousers
+   and leg wraps came out through the cloak's front by up to 3.2 cm (Dunmore's cloaked walkers, 120 points of a 160-tick walk; Lorcan's
+   leg wraps). The front bone now swings forward by 2.2 of the leading leg's angle (`kF` 1.6), and takes the front from further down
+   (`lowF` .4 → .55: at mid-thigh more of it goes with the thighs, which carry it better than the bone at the hips' middle). Each alone:
+   `kF` 2.2, 72 points; `lowF` .55, 100; `lowF` .2, 151 (worse); `kF` 2.8 lifted the cloak off a quarter of the legs. Your own body keeps
+   1.6 and .4 (`kFYou`, `lowFYou`) */
+const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:2.2,kFYou:1.6,arcF:.85,lowF:.55,lowFYou:.4,arcS:.1,kS:2,kSYou:1.1,capS:.9,capF:.2,arcFYou:.96};
 function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
   if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
   if(P.cloakLegs)return P.cloakLegs;const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
@@ -1959,7 +1965,7 @@ function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?s
   /* the sheet's weights at a point p of the hips' frame: the pelvis, the thighs and the fourth bone (a shin or a hem's), or null for the pelvis alone */
   const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel&&front!==false?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo)*(heel?1-ss((p.y-hY)/C.capF):1);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
       /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
-      const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),lw=ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*lw,hs=iSL<0?0:C.heel*ss((bk-C.arcS)/(C.arc-C.arcS))*lw,aF=front==='you'?C.arcFYou:C.arcF,hf=iF<0?0:C.toe*ss((-bk-aF)/(1-aF))*ss((hY-C.lowF*(hY-kY)-p.y)/Math.max(.05,(1-C.lowF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
+      const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),lw=ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*lw,hs=iSL<0?0:C.heel*ss((bk-C.arcS)/(C.arc-C.arcS))*lw,aF=front==='you'?C.arcFYou:C.arcF,lF=front==='you'?C.lowFYou:C.lowF,hf=iF<0?0:C.toe*ss((-bk-aF)/(1-aF))*ss((hY-lF*(hY-kY)-p.y)/Math.max(.05,(1-lF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
       /* the back: the hem's bone in the fourth place, the shin's share left with the thigh */
       /* S2026 — the back off its middle: the hem's weight (hs, the side band's) shared between the middle bone (hb0's part of it) and the
          point's own side's bone; where both take a part the far thigh's small share goes to the pelvis, so four bones still carry it */
@@ -2008,7 +2014,7 @@ function hbHem(rig){const P=rig.hb.P,hem=P&&P.hem;if(!hem)return;P.byName.root.u
   _hbhA.copy(hem.dn).multiplyScalar(Math.cos(a)).addScaledVector(hem.fw,-Math.sin(a));hem.bone.quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());
   if(hem.side){for(let j=0;j<2;j++){const b=Math.min(HB_CLOAK_LEGS.capS,Math.max(0,j?aR:aL)*(hem.you?HB_CLOAK_LEGS.kSYou:HB_CLOAK_LEGS.kS));hem.aS[j]=b;
     _hbhA.copy(hem.dn).multiplyScalar(Math.cos(b)).addScaledVector(hem.fw,-Math.sin(b));hem.side[j].quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());}}
-  if(!hem.front)return;const f=Math.max(0,-aL,-aR)*HB_CLOAK_LEGS.kF;hem.aF=f;
+  if(!hem.front)return;const f=Math.max(0,-aL,-aR)*(hem.you?HB_CLOAK_LEGS.kFYou:HB_CLOAK_LEGS.kF);hem.aF=f;
   _hbhA.copy(hem.dn).multiplyScalar(Math.cos(f)).addScaledVector(hem.fw,Math.sin(f));hem.front.quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());}
 const HB_HAIR_CLOAK={in:.02,out:.07,cell:.07};
 function hbHairOnCloak(P){const st=P.cloak&&P.cloak.hairOver;if(!st)return null;const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf(lo);if(il<0)return null;
