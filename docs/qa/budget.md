@@ -808,3 +808,32 @@ at Low is 626 of its 700 calls: 74 left.*
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
 
 *s1441, QA Session 2068 (`budget` 8/8 in 415 s and `budgetport` 9/9 in 373 s, one try each, run in series by `BUDGET_LEDGER=1 run.mjs budget budgetport --no-retry` on four cores with no other boot). Against s1430, 11 builds later (every merge to 10 Nov 11:42 UTC, among them Look 2063's `placesFar` and Look 2065's expedition). The towns fell 42–45 calls and the field, the inn and the gate held within one: the two shepherd's huts (32 calls) and the wayside carriage (13) are gone from both towns' views, hidden past 450 m by `placesFar`. No expedition is in view of any spot. Dunmore at midnight at Low is 627 of 700, 73 left (30 at s1430, 61 at s1404).*
+
+### s1448 — 2026-11-10 19:01 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 570 | 1.07 M | 0 | 0 | 107 | 120 | 253 | 90 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | Middle | 725 | 1.81 M | 136 | 6 | 108 | 120 | 265 | 90 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | High | 775 | 2.29 M | 168 | 6 | 108 | 120 | 283 | 90 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Low | 625 | 1.04 M | 0 | 0 | 105 | 176 | 253 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Middle | 803 | 1.75 M | 160 | 6 | 105 | 176 | 265 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | High | 863 | 2.29 M | 202 | 6 | 105 | 176 | 283 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| the field west of Dunmore, noon | Low | 536 | 624k | 0 | 0 | 105 | 107 | 281 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 644 | 1.04 M | 83 | 6 | 105 | 107 | 300 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 691 | 1.51 M | 122 | 6 | 105 | 107 | 308 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 619 | 615k | 0 | 0 | 108 | 186 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 787 | 1.10 M | 143 | 6 | 108 | 186 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 839 | 1.62 M | 187 | 6 | 108 | 186 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+
+### s1448 — 2026-11-10 19:09 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 355 | 690k | 0 | 0 | 28 | 60 | 192 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | Middle | 521 | 1.39 M | 144 | 6 | 28 | 60 | 208 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | High | 568 | 1.73 M | 179 | 6 | 29 | 60 | 219 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+*s1448, QA Session 2077 (`budget` 8/8 in 447 s and `budgetport` 9/9 in 451 s, one try each, run in series by `BUDGET_LEDGER=1 run.mjs budget budgetport --no-retry` on four cores with no other boot). Against s1441, 7 builds later (every merge to 10 Nov 18:16 UTC, among them Look 2069–2076's falls kit, the snowed snowpine and the hut's bracken, and Bodies 2070's cloak). Flat: every spot within 3 calls and 1% of its triangles (Dunmore noon at Middle 728 → 725, midnight 805 → 803, Portclare 522 → 521, the field 645 → 644, the inn 34 and the gate 102 the same). Land fell one call at Low and Middle in both towns' views. No falls, merchants' camp or expedition is in any spot's list. Dunmore at midnight at Low is 625 of 700, 75 left.*
