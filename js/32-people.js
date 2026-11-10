@@ -1955,7 +1955,14 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    f10motion's 120-tick walk, 9.5 cm). There the sheet's share of the thighs is faded out above the hips by `capF` and starts low at the
    front by `upF`. Your body alone (`capFYou` .3, `upFYou` .7; the townsfolk keep .2 and .5): 5 of 3,325, 2.3 cm. Each alone: capF .3,
    11 (7.5 cm); upF .9 with it, 12; capF .25 or .4, 13 and 20; `kFYou` 2, 14; `arcFYou` .9, 58 */
-const HB_CLOAK_LEGS={w:.8,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:2.2,kFYou:1.6,arcF:.85,lowF:.55,lowFYou:.4,arcS:.1,kS:2,kSYou:1.1,capS:.9,capF:.2,arcFYou:.96,capFYou:.3,upFYou:.7};
+/* S2070 — your heel at a run: as the thigh swings through, the shin folds right back, and the heel comes up 14 cm behind the hip joint and
+   23 cm under it (gait phase 0.12). There, 45 to 60 degrees off straight back, the hem's bones took none of the sheet (their band starts half
+   way to the knee, `low` .5), so the boot's heel came out by 8.9 cm (105 of 42,240 points over the whole stride, every tick, four starts).
+   Your body alone: within 66 degrees of straight back the band starts at .15 of the way (`lowYou`, blended in from `bk` .4, `arcLYou`), and
+   the side bones swing 1.6 of their leg's angle (`kSYou`, was 1.1): 82 points, 3.0 cm. Further forward the band stays at .5: there the front
+   edges sit far enough round to take the side bones' weight, and lost the leading thigh (`lowYou` .15 everywhere: 25.6 cm). `lowYou` .2,
+   84 points, 4.0 cm; `kSYou` 1.8, 74, 3.0; `lowYou` .05, 79 (3.5 cm); `heel` 1, `arc` .6, `back` .5, `capS` 1.3 alone: none reached the heel */
+const HB_CLOAK_LEGS={w:.8,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:2.2,kFYou:1.6,arcF:.85,lowF:.55,lowFYou:.4,arcS:.1,kS:2,kSYou:1.6,capS:.9,capF:.2,arcFYou:.96,capFYou:.3,upFYou:.7,lowYou:.15,arcLYou:.4};
 function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
   if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
   if(P.cloakLegs)return P.cloakLegs;const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
@@ -1975,7 +1982,7 @@ function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?s
   /* the sheet's weights at a point p of the hips' frame: the pelvis, the thighs and the fourth bone (a shin or a hem's), or null for the pelvis alone */
   const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel&&front!==false?(front==='you'?C.upFYou:C.upF):0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo)*(heel?1-ss((p.y-hY)/(front==='you'?C.capFYou:C.capF)):1);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
       /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
-      const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),lw=ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*lw,hs=iSL<0?0:C.heel*ss((bk-C.arcS)/(C.arc-C.arcS))*lw,aF=front==='you'?C.arcFYou:C.arcF,lF=front==='you'?C.lowFYou:C.lowF,hf=iF<0?0:C.toe*ss((-bk-aF)/(1-aF))*ss((hY-lF*(hY-kY)-p.y)/Math.max(.05,(1-lF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
+      const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),lo2=front==='you'?C.low+(C.lowYou-C.low)*ss((bk-C.arcLYou)/.3):C.low,lw=ss((hY-lo2*(hY-kY)-p.y)/Math.max(.05,(1-lo2)*(hY-kY))),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*lw,hs=iSL<0?0:C.heel*ss((bk-C.arcS)/(C.arc-C.arcS))*lw,aF=front==='you'?C.arcFYou:C.arcF,lF=front==='you'?C.lowFYou:C.lowF,hf=iF<0?0:C.toe*ss((-bk-aF)/(1-aF))*ss((hY-lF*(hY-kY)-p.y)/Math.max(.05,(1-lF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
       /* the back: the hem's bone in the fourth place, the shin's share left with the thigh */
       /* S2026 — the back off its middle: the hem's weight (hs, the side band's) shared between the middle bone (hb0's part of it) and the
          point's own side's bone; where both take a part the far thigh's small share goes to the pelvis, so four bones still carry it */
