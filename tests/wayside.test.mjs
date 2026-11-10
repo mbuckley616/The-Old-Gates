@@ -7,7 +7,8 @@
 // charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar),
 // Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt);
 // Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2048 the coach's lamp at night and its paint. Session 2051
-// the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished).
+// the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished),
+// Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants).
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -220,6 +221,47 @@ if (uf) {
   check(`${ut.id}: the unfinished camp ${ut.road} m off its road, facing it (${ut.fwd}); ${ut.n} things lying within ${ut.stands} m of the ground, its stance within ${ut.floor} m of level; ${ut.trees} spruce of its own from ${ut.near} m, ${ut.toRoad} toward the road; nothing lit`, !ut.none && ut.road >= 13 && ut.road <= 23 && ut.fwd > .9 && ut.stands < .06 && ut.floor < .08 && ut.trees >= 15 && ut.near >= 9 && ut.toRoad === 0 && !ut.lit, ut);
   check(`solid at the pulk and the chopping round, open at the laid fire and on the way to the road; ${ut.tris} triangles in ${ut.draws} draws`, !ut.none && ut.pulk && ut.round && !ut.fire && !ut.way && ut.tris < 16000 && ut.draws <= 12, ut);
 }
-if (process.env.SHOT) { const S = process.env.SHOT_OF === 'erratic' ? k.er : process.env.SHOT_OF === 'unfinished' ? uf : k.burn; await page.evaluate(D => { REN.setSize(960, 540, false); forceTime(10); px = D.x - Math.sin(D.ry) * 24 + Math.cos(D.ry) * 7; pz = D.z - Math.cos(D.ry) * 24 - Math.sin(D.ry) * 7; }, S); await g.spin('clear', 60); await page.screenshot({ path: process.env.SHOT }); }
+// Session 2063: the Gatelands' merchants' camp (PKIT.places.merchants, places.js's gatelandsMerchantCamp). No cell of today's world draws it (the
+// eight Gatelands cells that keep a place by a road drew the other four kinds; DECISION in docs/devlog/2063.md), so the kit's piece is built on a
+// slope of 1 in 20 and checked alone: every foot and wheel on that ground, its six solids, its lantern, its cost. When a cell draws it, the
+// camp in the world is checked too: 14 to 24 m off its road and facing it, what stands on the drawn ground, its stances near level (the drawn
+// ground's 4 m grid), solid at both waggons, the stall, the tent and the goods from the ground, open at the fire, before the tent's door and on
+// the path; the lantern lit at night. (A boot with the Gatelands' list set to the merchants alone puts it in 8 cells; every check below held.)
+const mk = await page.evaluate(() => { const gr = (x, z) => .05 * z + .08 * Math.sin(x * .3), M = PKIT.places.merchants({ key: 'test', road: -18, ground: gr });
+  const off = Math.max(...M.stands.map(s => Math.abs(s.y - gr(s.x, s.z)))), out = { tris: M.tris, draws: M.draws, n: M.stands.length, off: +off.toFixed(4), sol: M.sol.length, wagons: M.wagons.length, lamp: !!(M.lamp && M.lamp.mat), tent: M.tent.ridge - M.tent.floor };
+  M.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); return out; });
+console.log(JSON.stringify(mk));
+check(`the kit's merchants' camp on a slope: ${mk.n} feet, wheels and goods within ${mk.off} m of its ground, ${mk.sol} solids, 2 waggons, a lantern; ${mk.tris} triangles in ${mk.draws} draws`, mk.off < .001 && mk.n >= 25 && mk.sol === 6 && mk.wagons === 2 && mk.lamp && Math.abs(mk.tent - 1.95) < .01 && mk.tris < 16000 && mk.draws <= 18, mk);
+const mc = await page.evaluate(() => { const C = []; for (const c of CELLS.values()) { const d = c.type !== 'sea' && !c.home ? waysideAt(c) : null; if (d && d.kind === 'merchants') C.push({ id: d.id, x: d.x, z: d.z, ry: d.ry, off: d.off, ppl: nationOf(c.i, c.j).people }); }
+  C.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); return C.length ? { ...C[0], n: C.length, gl: C.every(d => d.ppl === 'gatelander') } : null; });
+console.log(JSON.stringify(mc));
+if (mc) {
+  check(`${mc.n} merchants' camps are drawn by the Gatelands' roads (the nearest ${mc.id})`, mc.gl, mc);
+  await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 50; pz = D.z - Math.cos(D.ry) * 50; }, mc);
+  for (let n = 0; n < 12; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id); return !!(c && c._wayside.group && c._wayside.group.parent); }, mc.id); if (ok) break; await page.waitForTimeout(1000); }
+  await g.spin('clear', 40);
+  const mt = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id)._wayside; if (!D.group || !D.group.parent) return { none: true };
+    const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], at = (u, v) => solidAt(...W(u, v), meshH(...W(u, v)) + .1);
+    let bd = 1e9, bq = null; for (const sg of RSEG) { if (sg.road.def.via === 'quay' || sg.road.def.via === 'spur') continue; const vx = sg.bx - sg.ax, vz = sg.bz - sg.az, t = Math.max(0, Math.min(1, ((D.x - sg.ax) * vx + (D.z - sg.az) * vz) / (vx * vx + vz * vz || 1))), qx = sg.ax + vx * t - D.x, qz = sg.az + vz * t - D.z, d = Math.hypot(qx, qz); if (d < bd) { bd = d; bq = [qx, qz]; } }
+    const off = D.stands.map(l => { const [x, z] = W(l.x, l.z); return [l.what, +Math.abs(D.y + l.y - meshH(x, z)).toFixed(3)]; }), st = Math.max(...off.map(o => o[1]));
+    const lvls = [[3, -6.6, 3], [0, 1, 1.6], [-6.6, 4.2, 2], [9.5, 1.5, 2.2]].map(([u, v, r]) => +Math.max(...[[r, 0], [-r, 0], [0, r], [0, -r]].map(([a, b]) => Math.abs(meshH(...W(u + a, v + b)) - meshH(...W(u, v))))).toFixed(3)), lvl = Math.max(...lvls);
+    const t = D.tent, dx = t.door.x - t.x, dz = t.door.z - t.z, dl = Math.hypot(dx, dz);
+    return { id, tris: D.tris, draws: D.draws, road: +bd.toFixed(2), fwd: bq ? +(-(bq[0] * s + bq[1] * co) / (bd || 1)).toFixed(2) : null, stands: st, n: off.length, worst: off.sort((a, b) => b[1] - a[1])[0], level: +lvl.toFixed(3), lvls,
+      wagonA: at(D.wagons[0].x, D.wagons[0].z), wagonB: at(D.wagons[1].x, D.wagons[1].z), table: at(D.tables[0].x, D.tables[0].z), tent: at(t.x, t.z), goods: at(6.55, 5.15),
+      fire: at(D.fire.x, D.fire.z), door: at(t.door.x + dx / dl * 1, t.door.z + dz / dl * 1), path: at(2.7, -D.off + 3), lamp: !!D.lamp }; }, mc.id);
+  console.log(JSON.stringify(mt));
+  check(`${mt.id}: the merchants' camp ${mt.road} m off its road, facing it (${mt.fwd}); ${mt.n} things that stand on the ground within ${mt.stands} m of it; its stances within ${mt.level} m of level`, !mt.none && mt.road >= 13 && mt.road <= 25 && mt.fwd > .9 && mt.stands < .06 && mt.level < .25, mt);
+  check(`solid at both waggons, the stall, the tent and the goods, open at the fire, before the tent's door and on the path to the road; ${mt.tris} triangles in ${mt.draws} draws`, !mt.none && mt.wagonA && mt.wagonB && mt.table && mt.tent && mt.goods && !mt.fire && !mt.door && !mt.path && mt.tris < 16000 && mt.draws <= 18, mt);
+  const ml = async h => { await page.evaluate(h => forceTime(h), h); await g.spin('clear', 20); return page.evaluate(id => { const D = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id)._wayside; if (!D.lamp) return { none: true }; const P = D.lamp.light.position; return { i: D.lamp.light.intensity, up: +(P.y - meshH(P.x, P.z)).toFixed(2) }; }, mc.id); };
+  const m12 = await ml(12), m22 = await ml(22); await page.evaluate(() => forceTime(12)); console.log(JSON.stringify({ m12, m22 }));
+  check(`the stall's lantern dark at noon (${m12.i}), lit at 22h (${m22.i}), ${m22.up} m over the ground`, !m12.none && m12.i === 0 && m22.i > 1 && m22.up > 1.2 && m22.up < 2.6, { m12, m22 });
+}
+// Session 2063 (QA's S2060: two shepherd's huts 2.5 km out drawn whole in Dunmore's view): the places by a road and off it are hidden past
+// 450 m of you and shown within it; nothing else of them changes
+await g.spin('clear', 5);
+const far = await page.evaluate(() => { const all = []; for (const L of LOADED.values()) { const c = L.cell; if (!c) continue; for (const D of [c._wayside, c._offroad]) if (D && D.group && D.group.parent) all.push({ id: D.id, d: Math.round(Math.hypot(D.x - px, D.z - pz)), vis: D.group.visible }); } return all; });
+console.log(JSON.stringify(far));
+check(`the places by a road and off it drawn within 450 m only: ${far.filter(f => f.vis).length} shown (${far.filter(f => f.vis).map(f => f.d).join(', ')} m), ${far.filter(f => !f.vis).length} hidden (${far.filter(f => !f.vis).map(f => f.d).join(', ')} m)`, far.length > 1 && far.some(f => !f.vis) && far.every(f => f.vis === (f.d < 450)), far);
+if (process.env.SHOT) { const S = process.env.SHOT_OF === 'erratic' ? k.er : process.env.SHOT_OF === 'unfinished' ? uf : process.env.SHOT_OF === 'merchants' ? mc : k.burn; await page.evaluate(D => { REN.setSize(960, 540, false); forceTime(10); px = D.x - Math.sin(D.ry) * 24 + Math.cos(D.ry) * 7; pz = D.z - Math.cos(D.ry) * 24 - Math.sin(D.ry) * 7; }, S); await g.spin('clear', 60); await page.screenshot({ path: process.env.SHOT }); }
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 5));
 await g.close();

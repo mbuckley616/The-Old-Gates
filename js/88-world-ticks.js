@@ -482,6 +482,7 @@
     tickCleared();
     tickDiscovery(dt);
     waysideLamps(); /* S2048 — the coach's lamp at night */
+    placesFar(); /* S2063 — the places by a road and off it hidden past 450 m */
   }
   function restore(sx,sz,y){
     try{anchoredPlaces();}catch(e){}

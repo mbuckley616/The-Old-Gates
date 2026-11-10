@@ -760,15 +760,18 @@
   // Nothing marks it until you come within 40 m (tickDiscovery, 83), and then the map has it, with no travel to it.
   // -> {id, kind, name, x, z, ry, off, cell} or null, kept on the cell (c._wayside)
   const WAYSIDE={gatelander:['charcoal','merchants','carriage','cellar','erratic'],markman:['hunters','unfinished'],aurennais:['expedition']};
-  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34],charcoal:[22,34],cellar:[20,28],erratic:[24,34],unfinished:[14,22]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp',charcoal:'A charcoal burners’ camp',cellar:'A fallen cottage',erratic:'A perched stone',unfinished:'An unfinished camp'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
+  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34],charcoal:[22,34],cellar:[20,28],erratic:[24,34],unfinished:[14,22],merchants:[14,24]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp',charcoal:'A charcoal burners’ camp',cellar:'A fallen cottage',erratic:'A perched stone',unfinished:'An unfinished camp',merchants:'A merchants’ camp'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
   /* S2029 — the charcoal burners' four stances in the camp's own frame (the kit's CC_PADS turned half round: the burning stack's pitstead, the opened
      one's, the hut's and the cordwood's), [x, z, r]; the land under them may rise 2 m across the camp, where the coach's pad allows 1.2 */
   /* S2030 — the fallen cottage's floor, 7 by 4.6 m, levelled as one stance */
   /* S2034 — the perched stone's pavement, flat under the pavement's oval (21 by 16.4 m round (0, 1), the piece's frame): its middle and eight points
      on its rim are read by the land check, the usual 1.2 m of rise */
   /* S2059 — the unfinished camp in the Mark's tundra alone, where the world's ground is snow (the prototype's "snow has fallen on all of it") */
+  /* S2063 — the merchants' camp's four stances in the camp's own frame (the kit's MC_PADS turned half round: the stall under its fly with the first
+     waggon, the fire, the tent and the second waggon), [x, z, r]; the picket line's two posts and the stacked goods are read by the land check
+     alone (r 0), and the green may rise 1.6 m across them; no stance's blend reaches another's flat, so each reads level */
   const WAYSIDE_BIOME={unfinished:['tundra']};
-  const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]],erratic:[[0,1,11.5],...[0,1,2,3,4,5,6,7].map(k=>[+(Math.cos(k*Math.PI/4)*10).toFixed(2),+(1+Math.sin(k*Math.PI/4)*8).toFixed(2),0])]},WAYSIDE_RISE={charcoal:2};
+  const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]],merchants:[[3,-6.6,3.2],[0,1,1.8],[-6.6,4.2,2.2],[9.5,1.5,3.2],[-8.4,-1.6,0],[-14.4,-1.6,0],[6.55,5.15,0]],erratic:[[0,1,11.5],...[0,1,2,3,4,5,6,7].map(k=>[+(Math.cos(k*Math.PI/4)*10).toFixed(2),+(1+Math.sin(k*Math.PI/4)*8).toFixed(2),0])]},WAYSIDE_RISE={charcoal:2,merchants:1.6};
   function waysideAt(c){
     if(!c||c._wayside!==undefined)return c?c._wayside:null;c._wayside=null;
     if(c.type==='sea'||c.home||!c.sites||!c.roadDefs||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
@@ -809,6 +812,12 @@
       {const [x,z]=W(2,4);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:17,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-3.6-.6*t,-9.5+(-D.off+9.5)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
       return out;}
+    if(D.kind==='merchants'){ /* S2063 — the merchants' four stances flat at their own ground (the stall's, the fire's, the tent's and the second waggon's), a
+      clearing of the scatter over the green to the picket line and the goods, and the two paths to the road */
+      WAYSIDE_PADS.merchants.forEach(([lx,lz,r],n)=>{if(!r)return;const [x,z]=W(lx,lz);out.push(addStamp({id:`${D.id}_pad${n}`,kind:'door',x,z,r:r+.4,blend:1.6,y:landH(x,z),cell:k}));});
+      {const [x,z]=W(-2.5,-1.5);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:16,blend:2,y:0,cell:k}));}
+      for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(2.6,-9+(-D.off+9)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3.5,blend:1.5,y:0,cell:k}));}
+      return out;}
     if(D.kind==='cellar'){ /* S2030 — the cottage's floor flat at its ground, a clearing of the scatter round the footings, the elder and the thorn, and the path to the road */
       {const [x,z]=W(0,0);out.push(addStamp({id:D.id+'_floor',kind:'door',x,z,r:4.4,blend:2.5,y,cell:k}));}
       {const [x,z]=W(0,-2);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9.5,blend:2,y:0,cell:k}));}
@@ -837,13 +846,17 @@
     M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='wayside '+D.kind;sc.add(M.group);
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,wayside:true});}}
-    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;D.house=M.house;D.hatch=M.hatch;D.stone=M.stone;D.other=M.other;D.clints=M.clints;D.wall=M.wall;D.pave=M.pave;D.thorn=M.thorn;D.fire=M.fire;D.sledge=M.sledge;D.round=M.round;D.capped=M.capped;D.trees=M.trees;
+    D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;D.house=M.house;D.hatch=M.hatch;D.stone=M.stone;D.other=M.other;D.clints=M.clints;D.wall=M.wall;D.pave=M.pave;D.thorn=M.thorn;D.fire=M.fire;D.sledge=M.sledge;D.round=M.round;D.capped=M.capped;D.trees=M.trees;D.wagons=M.wagons;D.tables=M.tables;
     if(M.lamp){const[ax,ay,az]=M.lamp.at,[lx,lz]=W(ax,az);D.lamp={mat:M.lamp.mat,light:regLight(0xffb060,0,9,'wayside:'+D.id),lit:null};D.lamp.light.position.set(lx,y0+ay,lz);} /* S2048 — the coach's lamp, lit at dusk (waysideLamps) */
     return M.group;}
   // S2048 — the coach's lamp still burns on its bracket: dark from 19:00 to 06:30 (the towns' lamps' hours), its glass glows and it throws
   // a 9 m pool on the pool of lights; by day the glass is a faint ember. The glass's material is the kit's, one for every coach.
   function waysideLamps(){const h=hourNow(),dark=isNight()||h<6.5||h>=19;
     for(const L of LOADED.values()){const D=L.cell&&L.cell._wayside;if(!D||!D.lamp||!D.group||D.lamp.lit===dark)continue;D.lamp.lit=dark;D.lamp.mat.emissiveIntensity=dark?1.6:.25;D.lamp.light.intensity=dark?1.5:0;}}
+  // S2063 — the places by a road and off it drawn only within 450 m of you (QA, S2060: two shepherd's huts 2.5 km out cost Dunmore's view 31
+  // calls at Low, drawn whole with no draw distance). Their solids, stamps, ground and discovery are untouched: only the group is hidden.
+  const PLACE_FAR=450;
+  function placesFar(){for(const L of LOADED.values()){const c=L.cell;if(!c)continue;for(const D of [c._wayside,c._offroad]){if(!D||!D.group)continue;const v=Math.hypot(D.x-px,D.z-pz)<PLACE_FAR;if(D.group.visible!==v)D.group.visible=v;}}}
   // S2038 (card F8, OG-124; Michael's A on #1292, "by the land, unmarked until found") — the places off the road. One cell in three of an
   // island keeps one, by its own stream (offroad:<cell>), so no other draw of the cell moves: its kind drawn from its island's list (the
   // Gatelands' shepherd's hut, peat-cutting camp and falls with the cave behind; the Mark's hunting cabin and logging camp), and a kind the
