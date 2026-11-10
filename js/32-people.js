@@ -1950,7 +1950,12 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    front band's top edge and past its arc, where the sheet goes with the thighs by `w` near the joints. `w` .7 → .8: 1 point, 5 mm.
    `arcF` .8 or .7 (a wider band), `lowF` .7, `toe` 1 and `kF` 2.5 were each worse or no better (81, 154, 78, 73 and 38 points).
    Your own body shares it: f10motion's legs 232 of 4,520 → 19 of 3,412 out, worst 14.1 → 9.3 cm */
-const HB_CLOAK_LEGS={w:.8,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:2.2,kFYou:1.6,arcF:.85,lowF:.55,lowFYou:.4,arcS:.1,kS:2,kSYou:1.1,capS:.9,capF:.2,arcFYou:.96};
+/* S2067 — your own front edges at a run: your thigh comes to 1.5 rad, level with the hips, and the leading thigh's trousers and boot tops,
+   30 to 45 degrees off straight ahead and up to 15 cm over the hip joints, came out through the cloak's front edges (16 of 3,340 points of
+   f10motion's 120-tick walk, 9.5 cm). There the sheet's share of the thighs is faded out above the hips by `capF` and starts low at the
+   front by `upF`. Your body alone (`capFYou` .3, `upFYou` .7; the townsfolk keep .2 and .5): 5 of 3,325, 2.3 cm. Each alone: capF .3,
+   11 (7.5 cm); upF .9 with it, 12; capF .25 or .4, 13 and 20; `kFYou` 2, 14; `arcFYou` .9, 58 */
+const HB_CLOAK_LEGS={w:.8,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:2.2,kFYou:1.6,arcF:.85,lowF:.55,lowFYou:.4,arcS:.1,kS:2,kSYou:1.1,capS:.9,capF:.2,arcFYou:.96,capFYou:.3,upFYou:.7};
 function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
   if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
   if(P.cloakLegs)return P.cloakLegs;const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
@@ -1968,7 +1973,7 @@ function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?s
   hem={bone:hb,front:fb,side:[lb,rb2],you:front==='you',aS:[0,0],ax:inL(ax),fw:inL(fw),dn:inL(new THREE.Vector3(0,-1,0)),rest:[0,0],a:0,aF:0};hem.rest=[hbHemAngle(P,hem,'L'),hbHemAngle(P,hem,'R')];}
   const B=[Mb(il),Mb(iL),Mb(iR),Mb(sL),Mb(sR),ih>=0?Mb(ih):null,iF>=0?Mb(iF):null,iSL>=0?Mb(iSL):null,iSR>=0?Mb(iSR):null],C=HB_CLOAK_LEGS,ss=u=>u<=0?0:u>=1?1:u*u*(3-2*u),M=new THREE.Matrix4(),E=new THREE.Matrix4(),p=new THREE.Vector3(),d=new THREE.Vector3();let n=0;
   /* the sheet's weights at a point p of the hips' frame: the pelvis, the thighs and the fourth bone (a shin or a hem's), or null for the pelvis alone */
-  const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel&&front!==false?C.upF:0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo)*(heel?1-ss((p.y-hY)/C.capF):1);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
+  const sch=p=>{const lo=ss((kY-p.y)/Math.max(.05,kY-aY)),fr=ss(.5+.5*d.copy(p).sub(mid).dot(fw)/C.depth),uf=C.up+(heel&&front!==false?(front==='you'?C.upFYou:C.upF):0)*ss(2*fr-1),w=(C.back+(1-C.back)*fr)*(C.w*ss((hY+uf-p.y)/Math.max(.05,hY+uf-kY))+(C.w2-C.w)*lo)*(heel?1-ss((p.y-hY)/(front==='you'?C.capFYou:C.capF)):1);if(w<=1e-3)return{w,wq:[1,0,0,0],bq:[0,1,2,3]};
       /* the thighs share w by the point's side; below the knee part of its own side's share goes to that side's shin, none at the middle */
       const aL=ss(.5+.5*d.copy(p).sub(mid).dot(ax)/(half*C.side)),dom=aL>=.5,dz=d.copy(p).sub(mid).dot(fw),dx=d.copy(p).sub(mid).dot(ax),bk=-dz/Math.max(1e-3,Math.hypot(dx,dz)),lw=ss((hY-C.low*(hY-kY)-p.y)/Math.max(.05,(1-C.low)*(hY-kY))),hb0=ih<0?0:C.heel*ss((bk-C.arc)/(1-C.arc))*lw,hs=iSL<0?0:C.heel*ss((bk-C.arcS)/(C.arc-C.arcS))*lw,aF=front==='you'?C.arcFYou:C.arcF,lF=front==='you'?C.lowFYou:C.lowF,hf=iF<0?0:C.toe*ss((-bk-aF)/(1-aF))*ss((hY-lF*(hY-kY)-p.y)/Math.max(.05,(1-lF)*(hY-kY))),hw=Math.max(hb0,hf),hx=hf>hb0?6:5,sh=hw>.02?0:C.shin*lo*Math.abs(2*aL-1),wl=w*aL*(1-hw),wr=w*(1-aL)*(1-hw);
       /* the back: the hem's bone in the fourth place, the shin's share left with the thigh */
