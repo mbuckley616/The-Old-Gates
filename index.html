@@ -489,6 +489,18 @@
 .eq-slot-lbl{font-size:8px;color:#4a3820;letter-spacing:.03em;text-transform:uppercase}
 .eq-slot.has-item .eq-slot-lbl{color:#7a6030}
 .eq-slot-empty{grid-column:auto;visibility:hidden}
+/* S2066 — the sheet's portrait (Michael's C on #1363, OG-134): on the new look your own body, lit, in a dark arched window with the
+   HUD's bronze rim, between two columns of slots. 66-hub.js's sheetFig draws it; the old look keeps the grid as it was */
+#eq-fig{display:none}
+#eq-grid-wrap.fig{width:320px}
+#eq-grid-wrap.fig #eq-grid{grid-template-columns:52px 200px 52px;gap:4px 8px;grid-template-areas:"head fig amulet" "back fig weapon" "chest fig offhand" "hands fig ring" "legs fig ammo" "feet fig ."}
+#eq-grid-wrap.fig .eq-slot-empty{display:none}
+#eq-grid-wrap.fig #ds-head{grid-area:head}#eq-grid-wrap.fig #ds-back{grid-area:back}#eq-grid-wrap.fig #ds-chest{grid-area:chest}#eq-grid-wrap.fig #ds-hands{grid-area:hands}#eq-grid-wrap.fig #ds-legs{grid-area:legs}#eq-grid-wrap.fig #ds-feet{grid-area:feet}
+#eq-grid-wrap.fig #ds-amulet{grid-area:amulet}#eq-grid-wrap.fig #ds-weapon{grid-area:weapon}#eq-grid-wrap.fig #ds-offhand{grid-area:offhand}#eq-grid-wrap.fig #ds-ring{grid-area:ring}#eq-grid-wrap.fig #ds-ammo{grid-area:ammo}
+#eq-grid-wrap.fig #eq-fig{display:block;grid-area:fig;width:200px;height:332px;cursor:grab;touch-action:none;border-radius:100px 100px 6px 6px / 76px 76px 6px 6px;
+  background:radial-gradient(ellipse 70% 55% at 45% 38%,#4a3826,#1c140c 70%,#0c0805);
+  box-shadow:0 0 0 2px #5a4018,0 0 0 4px #a07a38,0 0 0 5px #0a0806,0 4px 14px rgba(0,0,0,.55),inset 0 0 30px rgba(0,0,0,.7)}
+#eq-grid-wrap.fig #eq-fig:active{cursor:grabbing}
 #eq-tooltip{background:rgba(10,8,4,.95);border:1px solid rgba(200,168,74,.25);border-radius:5px;padding:7px 9px;font-size:10px;min-height:40px;flex-shrink:0}
 #eq-tooltip-name{color:#c8b880;font-size:11px;margin-bottom:2px}
 #eq-tooltip-stat{color:#706040;line-height:1.6}
@@ -1048,6 +1060,7 @@
       <div class="hub-panel active" id="hpanel-inv">
         <div id="eq-grid-wrap">
           <div id="eq-grid">
+            <canvas id="eq-fig" title="Drag to turn"></canvas>
             <!-- Row 1: empty, Head, empty -->
             <div class="eq-slot-empty"></div>
             <div class="eq-slot" id="ds-head"    data-slot="head">    <span class="eq-slot-ico">🪖</span><span class="eq-slot-lbl">Head</span></div>
