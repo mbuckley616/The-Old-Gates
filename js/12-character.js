@@ -269,7 +269,7 @@ function skillUse(id,w,target){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)re
   const now=performance.now(),key=target==null?'':target;let m=SKILL_LAST.get(id);if(!m)SKILL_LAST.set(id,m=new Map());
   const t=m.get(key);if(t!=null&&now-t<1000)return false;
   if(m.size>64)for(const [k,v] of m)if(now-v>=1000)m.delete(k);
-  m.set(key,now);s.p+=(w||1)*SKILL_W_MULT*(typeof _buffMult==='function'?_buffMult('xpBoost',1):1);let up=0;
+  m.set(key,now);s.p+=(w||1)*SKILL_W_MULT*(typeof _buffMult==='function'?_buffMult('xpBoost',1):1)*(typeof restSkillMult==='function'?restSkillMult():1);let up=0; /* S2085 — Rested ×1.1, Well rested ×1.15 */
   while(s.lv<100&&s.p>=skillCost(s.lv)){s.p-=skillCost(s.lv);s.lv++;up++;}
   if(s.lv>=100)s.p=0;
   if(up){skillMark(id,up);if(typeof showMsg==='function')showMsg(`${SKILL_DEF[id].label} rises to ${s.lv}.`,'#c8b8e8');}

@@ -463,8 +463,34 @@
     for(const ch of [...WILD_CH]){const d=Math.hypot(ch.cx*CHUNK+CHUNK/2-px,ch.cz*CHUNK+CHUNK/2-pz);if(chunks.get(chunkKey(ch.cx,ch.cz))!==ch||d>WILD_DROP)wildDrop(ch);}
     for(const ch of chunks.values()){if(ch.wild)continue;if(Math.hypot(ch.cx*CHUNK+CHUNK/2-px,ch.cz*CHUNK+CHUNK/2-pz)<WILD_R)try{wildSpawnChunk(ch);}catch(err){console.warn('wild',err);}}
   }
+  // S2084 — the falls are heard (the look builder's S2071 owed it): one looped noise through a lowpass, a gain and a pan, from the fall's
+  // foot of the nearest falls drawn (a loaded cell's _offroad of kind 'falls'). Full within 8 m, then as 8/d, faded to nothing at 140 m;
+  // the far fall a rumble (the lowpass 2,600 Hz at its foot to 600 at 140 m); a 12 m wall at full, a 7 m one at 0.83. Each tick ramps to its
+  // level and holds it 0.6 s, then fades to silence by 1.6 s, which the next tick cancels: when the world stops ticking (a door, a
+  // gate, the inspector) the sound dies away by itself, with no hook in the main loop.
+  const FALLS_SND={src:null,g:null,f:null,p:null,D:null,d:Infinity,level:0,pan:0,findT:0,setT:0};
+  const FALLS_R=140,FALLS_NEAR=8,FALLS_PEAK=.18; /* rain's loop is .055, a storm's .075: at the pool the fall drowns them, at 20 m it is a storm's */
+  function fallsSource(D){const co=Math.cos(D.ry),s=Math.sin(D.ry),F=D.fall,u=F?F.x:0,v=F?F.lipZ:0;return {x:D.x+u*co+v*s,z:D.z-u*s+v*co,y:D.y+(F?F.foot:0)};}
+  function fallsLevel(d,wall){if(!(d<FALLS_R))return 0;const w=.6+.4*Math.min(1,Math.max(0,(wall||12)/12));return FALLS_PEAK*w*Math.min(1,FALLS_NEAR/Math.max(d,.01))*(1-d/FALLS_R);}
+  function fallsEnsure(){if(FALLS_SND.src||typeof AX==='undefined'||!AX||!sfxGain)return !!FALLS_SND.src;
+    const n=AX.sampleRate*3,buf=AX.createBuffer(1,n,AX.sampleRate),d=buf.getChannelData(0);let b=0;
+    for(let i=0;i<n;i++){const w=Math.random()*2-1;b=b*.985+w*.015;d[i]=w*.35+b*5;} /* white with a brown body: the hiss of the sheet over the pool's roar */
+    const src=AX.createBufferSource();src.buffer=buf;src.loop=true;const f=AX.createBiquadFilter();f.type='lowpass';f.frequency.value=2600;f.Q.value=.4;
+    const g=AX.createGain();g.gain.value=0;const p=AX.createStereoPanner?AX.createStereoPanner():null;
+    src.connect(f);f.connect(g);if(p){g.connect(p);p.connect(sfxGain);}else g.connect(sfxGain);src.start();Object.assign(FALLS_SND,{src,g,f,p});return true;}
+  function tickFallsSound(dt){const S=FALLS_SND;S.findT-=dt;
+    if(S.findT<=0){S.findT=.5;let best=null,bd=Infinity;for(const L of LOADED.values()){const D=L.cell&&L.cell._offroad;if(!D||D.kind!=='falls'||!D.group||!D.group.parent)continue;const o=fallsSource(D),d=Math.hypot(o.x-px,o.z-pz);if(d<bd){bd=d;best=D;}}S.D=best;}
+    const D=S.D&&S.D.group&&S.D.group.parent?S.D:null;if(!D){S.d=Infinity;S.level=0;if(!S.src)return;}
+    else{const o=fallsSource(D),dx=o.x-px,dz=o.z-pz,dy=o.y-(typeof jumpY==='number'?jumpY:o.y);S.d=Math.hypot(dx,dz,dy*.5);S.level=fallsLevel(S.d,D.wall);
+      S.pan=S.d>.5?Math.max(-1,Math.min(1,(dx*Math.cos(yaw)-dz*Math.sin(yaw))/Math.hypot(dx,dz)*.6)):0;}
+    if(S.level<=0&&!S.src)return;if(!fallsEnsure())return;
+    S.setT-=dt;if(S.setT>0)return;S.setT=.1;
+    const t=AX.currentTime,g=S.g.gain,cut=600+2000*Math.pow(Math.max(0,1-S.d/FALLS_R),2);
+    try{const v=g.value;g.cancelScheduledValues(t);g.setValueAtTime(v,t);g.linearRampToValueAtTime(S.level,t+.15);g.linearRampToValueAtTime(S.level,t+.6);g.linearRampToValueAtTime(0,t+1.6);
+      S.f.frequency.setTargetAtTime(Math.min(2600,cut),t,.2);if(S.p)S.p.pan.setTargetAtTime(S.pan,t,.1);}catch(e){}}
   function tick(dt,now){
     if(activeZoneId!=='world'||!sc)return;
+    try{tickFallsSound(dt);}catch(e){}
     tickCells(dt,false);runJobs();
     tickLightPool(dt);tickWeather(dt);tickSmoke(dt);tickShip(dt);tickSailTrim(dt);tickBehaviours(dt);cabinUpdate();tickSchoolCool(dt);tickWhales(dt,now||performance.now());tickBoarding(dt);tickHullCollisions(dt);tickShipLeaks(dt);tickOtherShips(dt,now||performance.now());tickHooks(dt);tickBolts(dt);tickPots(dt);tickGuns(dt);tickShipFires(dt);tickMerchantHands(dt);sunkWrecksTick(dt);tickCrew();tickSharks();tickFish(dt,now||performance.now());tickGulls(dt,now||performance.now());tickDolphins(dt,now||performance.now());
     stream(px,pz,false);
