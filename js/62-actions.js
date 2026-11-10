@@ -886,7 +886,7 @@ function updateHUD(){
       minimapPulse:'🗺', detectReduce:'👁',
       maxStamBuff:'⚡',
     };
-    const _fedP = (typeof fedPill==='function' ? fedPill() : '') + (typeof waterPill==='function' ? waterPill() : '') + (typeof climatePill==='function' ? climatePill() : ''); // S1486 — fed; S1917 — climate
+    const _fedP = (typeof fedPill==='function' ? fedPill() : '') + (typeof waterPill==='function' ? waterPill() : '') + (typeof climatePill==='function' ? climatePill() : '') + (typeof restPill==='function' ? restPill() : ''); // S1486 — fed; S1917 — climate
     if(ACTIVE_BUFFS.length||_fedP){
       buffEl.classList.add('has-buffs');
       buffEl.innerHTML = _fedP + ACTIVE_BUFFS.map(b=>{

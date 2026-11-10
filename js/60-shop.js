@@ -347,6 +347,29 @@ function isGodsDay(god,at){return !!god&&calDay(at).god===god;}
 // noon, NOW and the hour you wake marked on it; a slider of 1–24 hours and today's five times as marks (keys 1–5) that set
 // it to that hour exactly; what the rest gives, by restAtBed's rule, before you take it. Waiting goes by any number of
 // hours (it went only to the five times); it restores nothing, and only sleep takes the level.
+// S2085 — camp and rest B's first part, A's beds by grade (Michael on #1378, docs/design/camp-and-rest.md): each bed has a comfort,
+// and six hours or more in one of comfort 2 or 3 leaves you Rested (skill gain ×1.10) for 45 game hours, 4 or 5 Well rested (×1.15, and
+// stamina regeneration ×1.10) for 90; the clock runs a game hour to the real minute, so 45 and 90 real minutes. A bed the page does not
+// name (a tower's, a room's that is no inn's, home's or guild's) is 3, the berth's. The state is the character's (worldState.rested).
+const REST_BED={camp:{c:1,n:'Camp bedroll'},cot:{c:1,n:'Fort cot'},berth:{c:3,n:'Ship’s berth'},bed:{c:3,n:'A bed'},inn:{c:4,n:'Inn room'},guild:{c:4,n:'Guild bed'},own:{c:5,n:'Your own bed'}};
+const REST_STATE={rested:{label:'Rested',rank:1,skill:1.10,stam:1,min:2700},well:{label:'Well rested',rank:2,skill:1.15,stam:1.10,min:5400}};
+function restBedNow(){try{
+    if(typeof isInterior==='function'&&isInterior()){const h=typeof currentHouse!=='undefined'?currentHouse:null;if(h&&h.type==='cabin')return 'berth';
+      const bd=typeof intBedTarget==='function'?intBedTarget():null;if(bd)return bd.owner==='inn'?'inn':bd.owner==='guild'?'guild':bd.owner==='home'?'own':'bed';
+      return (typeof INT_BEDS!=='undefined'&&INT_BEDS.length)||!intBedPos?'bed':'own';} /* the old safehouse's one bed is yours */
+    if(typeof fortCotNear==='function'&&fortCotNear())return 'cot';
+    if(activeZoneId==='world'){if(typeof berthNear==='function'&&berthNear())return 'berth';return 'camp';}
+  }catch(e){}return 'bed';}
+function restStateFor(c){return c>=4?'well':c>=2?'rested':null;}
+function restedNow(){const R=worldState.rested;if(!R||!REST_STATE[R.k]||!(gameMinNow()<R.until))return null;return R;}
+function restSkillMult(){const R=restedNow();return R?REST_STATE[R.k].skill:1;}
+function restRegenMult(){const R=restedNow();return R?REST_STATE[R.k].stam:1;}
+function restLeftMin(){const R=restedNow();return R?R.until-gameMinNow():0;}
+function restPill(){const R=restedNow();if(!R)return '';const S=REST_STATE[R.k],m=Math.ceil(R.until-gameMinNow());
+  return `<span class="buff-pill" title="${S.label} — skills ×${S.skill}${S.stam>1?', stamina ×'+S.stam:''}, ${m} min remaining"><span class="bp-ico">☾</span><span class="bp-time">${typeof pillMin==='function'?pillMin(m):m+'m'}</span></span>`;}
+function restWake(bed,hours){const B=REST_BED[bed]||REST_BED.bed,k=hours>=6?restStateFor(B.c):null;if(!k)return null;const S=REST_STATE[k],was=restedNow();
+  if(was&&REST_STATE[was.k].rank>S.rank)return null; /* a worse bed never takes a better night's state away */
+  worldState.rested={k,until:gameMinNow()+S.min,bed};return k;}
 const REST_MARKS=[[6,'Dawn'],[8,'Morning'],[12,'Noon'],[18,'Dusk'],[20,'Night']];
 let restSlip={mode:'sleep',min:480};
 function restPreview(hours){const k=Math.min(1,hours/6),mh=effMaxHP(),mm=effMaxMana();
@@ -400,7 +423,7 @@ function openRestSlip(mode,min){
     ov.querySelector('#sleep-no').onclick=()=>closeSleepUI();
     ov.querySelector('#sleep-go').onclick=()=>restSlipGo();
   }
-  restSlip={mode:mode==='wait'?'wait':'sleep',min:Math.max(60,Math.min(1440,min||480))};
+  restSlip={mode:mode==='wait'?'wait':'sleep',min:Math.max(60,Math.min(1440,min||480)),bed:mode==='wait'?null:restBedNow()};
   ov.style.display='flex';sleepOpen=true;restSlipDraw();
 }
 function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)return;const {mode,min}=restSlip,sleep=mode==='sleep';
@@ -420,7 +443,9 @@ function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)retur
   if(sleep){const p=restPreview(min/60),v=(l,a,b,m)=>a>=b&&a>=m?`<span style="font-variant:small-caps">${l}</span> full`:`<span style="font-variant:small-caps">${l}</span> <s style="color:#8a7050">${Math.round(a)}</s> ${Math.round(b)} <span style="color:#8a7050">of ${Math.round(m)}</span>`;
     out=row('☀',`You wake at ${at}.`,min>=360?'a full night':'a short sleep')+
       row('♥',`${v('Health',PHP,p.hp,p.mh)} &nbsp; ${v('Mana',mana,p.mp,p.mm)} &nbsp; <span style="font-variant:small-caps">Stamina</span> full`,'all, at six hours')+
-      (ready?row('✦',`You are ready to advance: you wake at <b>level ${level+1}</b>.`,'','#7a1f10'):'');}
+      (ready?row('✦',`You are ready to advance: you wake at <b>level ${level+1}</b>.`,'','#7a1f10'):'');
+    {const B=REST_BED[restSlip.bed]||REST_BED.bed,k=restStateFor(B.c),S=k&&REST_STATE[k],was=restedNow(),keep=was&&S&&REST_STATE[was.k].rank>S.rank; /* S2085 — the bed's comfort, and what six hours of it leave you */
+      out+=row('☾',`${B.n} · comfort ${B.c}`+(S?(min>=360?(keep?` · you stay <i>${REST_STATE[was.k].label}</i>`:` · <i>${S.label}</i> for ${S.min/60} hours`):` · six hours for <i>${S.label}</i>`):''),S?(S.stam>1?'skills ×1.15, stamina ×1.1':'skills ×1.1'):'');}}
   else out=row('☀',`You rise at ${at}.`)+row('♥','Waiting restores nothing; a bed does.','','#8a7050')+(ready?row('✦','You are ready to advance, but only sleep takes the level.','','#8a7050'):'');
   {const W=typeof erWatchJumpLoses==='function'?erWatchJumpLoses(min):null;if(W)out+=row('☾',`The night at the ${W.data.fold} will be lost.`,'an hour or more','#7a1f10');} /* S1789 — the watch lapses on a jump of the clock; the slip says so */
   q('#rs-out').innerHTML=out;
@@ -446,9 +471,10 @@ function restAtBed(hours){
       worldState.gameTimeMinutes = (worldState.gameTimeMinutes + hours*60) % 1440;
       worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes||0) + hours*60;
     }
+    const rk=restWake(restSlip.bed||'bed',hours); /* S2085 — Rested by the bed's comfort, from the hour you wake */
     if(typeof addLog==='function')addLog('🛏️',`Slept ${restDur(hours*60)}.`);
     if(typeof greatNoteOnWake==='function')greatNoteOnWake(); /* S1353 — Varek's note, folded into the pack */
-    showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}`,'#c8b880');
+    showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}`+(rk?` ${REST_STATE[rk].label}.`:''),'#c8b880');
     updateHUD();
     if(typeof saveGame==='function')saveGame(); /* S353 — #66 A: sleeping anywhere autosaves */
     setTimeout(()=>{if(takeLevelIfReady())showMsg('You wake stronger.','#e8d8a0');},900);
