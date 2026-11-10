@@ -312,6 +312,9 @@ Corrections to earlier entries go in the new entry, named as corrections. Histor
   code units and the files hold emoji, so an edit by acorn offset is applied on the UTF-16 form, never on Python's string.
 - What a chunk holds depends on what had loaded when it was built: the scatter skips stamps and roads registered so far, and `SETTLE` holds
   only the towns built so far. An outcome keyed by id (a herb's kind, a spawn) must read the hash and `getCell`, never `ch.treePts` or `SETTLE` (S533).
+- `goToZone('world', x, z)` (the tests' `g.intoWorld` and their own jumps) sets `px`/`pz` and lets the next tick stream the chunks while the new
+  cells still wait in the job queue, so a far jump's chunks are laid before their cells' stamps (veins in a town's pad, S2080). The game
+  never goes in that way: fast travel, a load and a dungeon's exit go through `enter`/`restore`, which load the 3×3 first. Jump with `WORLD.enter`.
 - `dominantRegion(x,z)` (and `regionWeights`, `regionScalar`) read `REGIONS`, the loaded cells' regions only: near a cell's edge the biome at a fixed spot changes with what is loaded (6 of 14 lairs near the start, S701). An outcome keyed by a place reads its cell's and the eight neighbours' `c.regions` through `getCell` (`lairBiome`), never while a cell is being made.
 - Since F2a (Session 896) a generated room is laid out in the furniture kit's old unit (a man 1.233 tall) at its true size ÷
   `SCALE.ROOM_K` (1.444), then `scaleRoom` scales it up whole at the end of `buildInteriorFor`, with every record of it (solids,
