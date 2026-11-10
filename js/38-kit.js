@@ -7596,7 +7596,7 @@ function aurenneOrrery(hAt, o = {}) {
   // turf draws the edge, not a rectangle), and the four flat bands of bog out to the fog are left out (the world is the bog beyond). Nobody is drawn. The prototype's frame is kept: the face along x at z 0,
   // the cutaway to +z, the road along z -18.
   // -> { group, tris, draws, sol, ground(x, z), rim(x, z) (under 0.88 on the bog), patch { x0, x1, z0, z1 }, sinks [[x, z, r]], bank { x0, x1, lip, bench, benchZ, floorZ, water },
-  //      spread, footings, heather [[x, z, r, h]], slean, rick, hut, fire, road }
+  //      spread, footings, heather [[x, z, r, h, ling]], slean, rick, hut, fire, road }
   let PEATM = null;
   function gatelandsPeatCamp(o = {}) {
     const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
@@ -7705,7 +7705,7 @@ function aurenneOrrery(hAt, o = {}) {
     for (let k = 0, n = 0; k < 1500 && n < 240; k++) { const x = -34 + F() * 68, z = -34 + F() * 62; if (clear(x, z)) continue; n++; const r = .15 + F() * .14, h = .16 + F() * .18, gy = bog(x, z) - .02, kk = n % 3 ? 'heather' : 'ling';
       for (let j = 0; j < 16; j++) { const a = j * 2.4 + F() * .6, d = Math.sqrt(F()) * r * .25, ph2 = .25 + F() * 1.05, out = r * Math.sin(ph2) / Math.sin(1.3);
         shoot(kk, x + d * Math.cos(a), gy, z + d * Math.sin(a), x + out * Math.cos(a), gy + .02 + h * Math.cos(ph2) / Math.cos(.25), z + out * Math.sin(a), .016 + F() * .012, F() * 3.14); }
-      heather.push([+x.toFixed(2), +z.toFixed(2), +r.toFixed(2), +h.toFixed(2)]); }
+      heather.push([+x.toFixed(2), +z.toFixed(2), +r.toFixed(2), +h.toFixed(2), kk === 'ling' ? 1 : 0]); }
     for (let k = 0, n = 0; k < 900 && n < 110; k++) { const x = -30 + F() * 60, z = -30 + F() * 56; if (clear(x, z)) continue; n++; const h = .25 + F() * .15, gy = bog(x, z);
       put(new THREE.BoxGeometry(.008, h, .008), 'ling', x, gy + h / 2, z); put(new THREE.IcosahedronGeometry(.04, 0).scale(1, 1.3, 1), 'cotton', x, gy + h + .03, z); }
     // baked one mesh a material
