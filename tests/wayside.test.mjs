@@ -8,7 +8,8 @@
 // Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt);
 // Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2048 the coach's lamp at night and its paint. Session 2051
 // the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished),
-// Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants), Session 2065 Aurenne's abandoned expedition (PKIT.places.expedition) on its laid ground.
+// Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants), Session 2065 Aurenne's abandoned expedition (PKIT.places.expedition) on its laid ground,
+// Session 2071 the Gatelands' falls (PKIT.places.falls), their glen cut into the world's own ground.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -111,6 +112,18 @@ const er = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c
 console.log(JSON.stringify(er));
 check(`${er.id}: the perched stone ${er.road} m off its road, facing it (${er.fwd}); ${er.off && er.off.length} things on the ground within ${er.stands} m of it; ${er.clints} clints proud of it by ${er.proud && er.proud.join(' / ')} m (5th, 50th, 95th)`, !er.none && er.road >= 23 && er.road <= 35 && er.fwd > .9 && er.stands < .06 && er.clints > 30 && er.proud[0] > .01 && er.proud[2] < .16, er);
 check(`solid at the boulder (its crown ${er.crown} m) and the lace wall (${er.wallN} slabs), open before the stone and on the path; ${er.tris} triangles in ${er.draws} draws`, !er.none && er.boulder && er.wall && !er.before && !er.path && er.crown > 2.6 && er.tris < 20000 && er.draws <= 11, er);
+// Session 2072 (the critic, 10 Nov: "the perched stone is hidden from the road by its own tree"): from the road's side, 24 m out and 0 or
+// 6 m to either side at the eye, rays to a grid over the boulder's face; none may meet the hawthorn's or the hazels' bark and leaves first
+const vis = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id)._wayside; if (!D.group || !D.group.parent) return { none: true };
+  const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], [bx, bz] = W(D.stone.x, D.stone.z), RC = new THREE.Raycaster(), out = [];
+  D.group.updateMatrixWorld(true); const ms = D.group.children.filter(m => m.isMesh);
+  for (const side of [-6, 0, 6]) { const [ex, ez] = W(side, -24), eye = new THREE.Vector3(ex, meshH(ex, ez) + 1.65, ez), dx = bx - ex, dz = bz - ez, L = Math.hypot(dx, dz), nx = -dz / L, nz = dx / L;
+    let n = 0, hid = 0; for (let i = -2; i <= 2; i++) for (let j = 0; j < 5; j++) { const t = new THREE.Vector3(bx + nx * i * .3 * D.stone.brx, D.y + D.stone.top + .3 + j * (D.stone.crown - D.stone.top - .6) / 4, bz + nz * i * .3 * D.stone.brx);
+      const dir = t.clone().sub(eye); const far = dir.length(); RC.set(eye, dir.normalize()); RC.far = far + 2; const h = RC.intersectObjects(ms, false)[0]; n++; if (h && ['haw', 'bark', 'leaf', 'berry'].includes(h.object.name)) hid++; }
+    out.push([side, hid, n]); }
+  return { out, hid: Math.max(...out.map(o => o[1])) }; }, k.er.id);
+console.log(JSON.stringify(vis));
+check(`${k.er.id}: the boulder seen whole from the road's side, 24 m out: ${vis.out && vis.out.map(o => `${o[1]} of ${o[2]} rays met a tree first at ${o[0]} m`).join(', ')}`, !vis.none && vis.hid === 0, vis);
 // the places off the road (Session 2038, #1292 A): one cell in three keeps one (offroadAt, 82), its kind drawn by its own stream, the same when
 // asked again; the first kind built is the Gatelands' shepherd's hut (PKIT.places.shepherd, places.js's gatelandsShepherdHut) on open pasture,
 // 150 m and more off every road and pad. Stood by the nearest: its door down the slope, the floor level, its hearthstone, rowan and spring on the
@@ -135,6 +148,14 @@ const hu = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c
 console.log(JSON.stringify(hu));
 check(`${hu.id}: the shepherd's hut ${hu.road} m off the nearest road, its door down the slope (${hu.down} m over 20), its floor within ${hu.floor} m of level, ${hu.stands} m from its hearthstone, rowan and spring to the ground`, !hu.none && hu.road >= 150 && hu.down < -.5 && hu.floor < .1 && hu.stands < .06, hu);
 check(`solid at the hut's walls and the fold, open at the door, inside and in the fold; ${hu.tris} triangles in ${hu.draws} draws`, !hu.none && hu.back && hu.side && !hu.door && !hu.inside && hu.fold && !hu.foldIn && hu.tris < 22000 && hu.draws <= 16, hu);
+// Session 2075 (the critic, 10 Nov: "its 91 clumps lie flat on the grass as orange five-pointed stars"): the bracken stands knee-high, each
+// clump's highest point 0.4 m or more over the ground under it
+const bk = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, m = D.group.getObjectByName('bracken'); if (!m) return { none: true };
+  m.updateMatrixWorld(true); const P = m.geometry.attributes.position, v = new THREE.Vector3(), cl = new Map();
+  for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); const k = Math.round(v.x / 1.5) + ',' + Math.round(v.z / 1.5), h = v.y - meshH(v.x, v.z); cl.set(k, Math.max(cl.get(k) ?? -9, h)); }
+  const hs = [...cl.values()].sort((a, b) => a - b), q = f => +hs[Math.floor(f * (hs.length - 1))].toFixed(2); return { n: hs.length, q10: q(.1), q50: q(.5), q90: q(.9) }; }, of.hut.id);
+console.log(JSON.stringify(bk));
+check(`${of.hut.id}: the bracken stands, its clumps' tops ${bk.q10} / ${bk.q50} / ${bk.q90} m over the ground (10th, 50th, 90th)`, !bk.none && bk.q10 >= .35 && bk.q90 < 1, bk);
 await page.evaluate(D => { px = D.x + Math.sin(D.ry) * 28; pz = D.z + Math.cos(D.ry) * 28; }, of.hut); await g.spin('clear', 60);
 const hm = await page.evaluate(id => { const e = mapEntries(getCell(...id.split('_').slice(1).map(Number))).find(e => e.id === id); return { disc: discovered(id), entry: e && { name: e.name, kind: e.kind, noTravel: !!e.noTravel }, travel: !!arrivalFor(id) }; }, of.hut.id);
 console.log(JSON.stringify(hm));
@@ -178,6 +199,16 @@ if (cb) {
   console.log(JSON.stringify(ct));
   check(`${ct.id}: the hunting cabin ${ct.road} m off the nearest road or spur, its yard within ${ct.floor} m of level, ${ct.stands} m from its block and frame to the ground, ${ct.trees} spruce of its own from ${ct.near} m`, !ct.none && ct.road >= 150 && ct.floor < .06 && ct.stands < .06 && ct.trees >= 12 && ct.near >= 11, ct);
   check(`solid at the cabin's four walls (the door shut) and the woodpile, open in the yard, on the path and under the store; ${ct.tris} triangles in ${ct.draws} draws`, !ct.none && ct.back && ct.side && ct.door && !ct.inside && ct.pile && !ct.yard && !ct.path && !ct.under && ct.tris < 21000 && ct.draws <= 18, ct);
+  // Session 2073 (the critic, 10 Nov: "about half of the frame's trees are leaf-card oaks in full green, standing in snow"): within 90 m of
+  // the cabin no leafed tree (broadleaf, oak, birch, willow) stands where the tundra holds .55 of the ground or more, read from the 3×3 cells
+  // round it as tundraW reads them; and the bushes there are frosted. Session 2076: nor a spruce (the new look draws it from green cards), and the
+  // snowpine is drawn in its own snowed shape, not the land's cone kit
+  const sl = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, L = new Set(['broadleaf', 'oak', 'birch', 'willow', 'spruce']); let n = 0, snow = 0, leaf = 0, cone = 0, own = 0;
+    for (const ch of chunks.values()) for (const t of ch.trees || []) { if (Math.hypot(t.x - D.x, t.z - D.z) > 90) continue; n++; if (tundraW(t.x, t.z) < .55) continue; snow++; if (L.has(t.sp)) leaf++; if (t.sp === 'snowpine') cone++; }
+    for (const ch of chunks.values()) ch.group.traverse(m => { if (m.isInstancedMesh && m.userData.scatter === 'snowpine' && m.userData.landTree) own = -1e9; else if (m.isInstancedMesh && m.userData.scatter === 'snowpine') own++; });
+    return { n, snow, leaf, cone, own, kit: !!LAND_TREE_KIT.snowpine }; }, cb.id);
+  console.log(JSON.stringify(sl));
+  check(`${cb.id}: of ${sl.n} trees within 90 m, ${sl.snow} stand in the Mark's snow and ${sl.leaf} of those are leafed or spruce (${sl.cone} snowpine, drawn in ${sl.own} meshes of its own shape)`, sl.snow > 10 && sl.leaf === 0 && sl.cone > sl.snow / 2 && sl.own > 0 && !sl.kit, sl);
 }
 // Session 2056: the Mark's logging camp (PKIT.places.logging, places.js's markLoggingCamp) on a fall line of the world into water, 150 m and
 // more off every road: the chute from the deck's foot down to 3 m out over the water, clear of the bank all the way; the fire and the
@@ -289,6 +320,33 @@ if (ex) {
     !xt.none && xt.under > .3 && xt.sunk > 1 && xt.seam < .01 && xt.edges >= 4 && Math.abs(xt.inT) < .01 && Math.abs(xt.camp) < .01, xt);
   check(`solid at the standing tent, the cart and the wall, open at the fire and in the wall's gap; no ore vein in its clearing; ${xt.tris} triangles in ${xt.draws} draws, the laid ground ${xt.laid} over ${xt.cells} squares`,
     !xt.none && xt.tent && xt.cart && xt.wall && !xt.gap && !xt.fire && xt.veins === 0 && xt.tris < 12000 && xt.draws <= 16 && xt.laid < 3000, xt);
+}
+// Session 2071: the Gatelands' falls off the road (PKIT.places.falls, places.js's gatelandsFalls). No cell of today's world draws them (#1385),
+// so the suite asks the first Gatelands cell that rolls a place off the road for a falls site, puts it there and builds the cell again: the
+// head-wall 7 to 12 m as the land falls; the world's ground nowhere over the ground cut into it; the pool waded, the shelf behind the fall and
+// the cave's floor at 1.2 m; solid at the face's foot, the cave's sides and the arcade's piers, open in its mouth and its bays; its cost
+const fl = await page.evaluate(() => { const L = OFFROAD.gatelander.slice(); let out = null;
+  for (let j = 0; j < GRID && !out; j++) for (let i = 0; i < GRID && !out; i++) { const c = getCell(i, j); if (!c || c.type === 'sea' || c.home || !c.sites || nationOf(i, j).people !== 'gatelander') continue;
+    const keep = c._offroad; c._offroad = undefined; OFFROAD.gatelander.splice(0, L.length, 'falls', 'falls', 'falls'); let d; try { d = offroadAt(c); } finally { OFFROAD.gatelander.splice(0, 3, ...L); }
+    if (!d) { c._offroad = keep; continue; } const k = cellKey(i, j); unloadCell(k); c._offroad = d; px = d.x + Math.sin(d.ry) * 40; pz = d.z + Math.cos(d.ry) * 40; out = { id: d.id, x: d.x, z: d.z, ry: d.ry, y0: d.y0, wall: d.wall }; }
+  return out; });
+console.log(JSON.stringify(fl));
+check(`a Gatelands cell that rolls a place off the road finds a falls site when asked for one (${fl && fl.id}, the head-wall ${fl && fl.wall} m, the pool ${fl && fl.y0} m over the sea)`, !!fl && fl.wall >= 7 && fl.wall <= 12 && fl.y0 >= 2.5, fl);
+if (fl) {
+  for (let n = 0; n < 15; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id); return !!(c && c._offroad.group && c._offroad.group.parent); }, fl.id); if (ok) break; await page.waitForTimeout(1000); }
+  await g.spin('clear', 30);
+  const ft = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad; if (!D.group || !D.group.parent) return { none: true };
+    const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], S = D.shape, P = S.patch;
+    let over = 0, n = 0; for (let v = P.z0 + 1; v < P.z1; v += 1.3) for (let u = P.x0 + 1; u < P.x1; u += 1.3) { if (S.cut(u, v)) continue; const [x, z] = W(u, v); n++; if (meshH(x, z) - D.laid.h(x, z) > .02) over++; }
+    const gy = (u, v) => +(groundY(...W(u, v)) - D.y0).toFixed(2), at = (u, v, y) => solidAt(...W(u, v), D.y0 + y), A = D.arcade, mid = q => (q.x0 + q.x1) / 2;
+    return { id, tris: D.tris, draws: D.draws, laid: D.laid.tris, cells: D.laid.cells, n, over, lip: +(D.fall.lipY).toFixed(2), face: +S.faceH(0).toFixed(2),
+      pool: gy(0, 5), shelf: gy(3, S.faceZ(3) - .9), cave: gy(S.CX, S.CZ0 - 4), roof: +(D.laid.h(...W(S.CX, S.CZ0 - 4)) - D.y0).toFixed(2),
+      foot: at(10, S.footZ(10) - .5, 2), mouth: at(S.CX, S.CZ0 - 1, 1.6), side: at(S.CX + S.hwAt(S.CZ0 - 3) + .5, S.CZ0 - 3, 2), pier: at(mid(A.piers[1]), A.z, 1), bay: at(mid(A.bays[1]), A.z, 1) }; }, fl.id);
+  console.log(JSON.stringify(ft));
+  check(`${ft.id}: the river leaves the lip ${ft.lip} m over the pool, the face ${ft.face} m over its foot; the world's ground over the cut ground at ${ft.over} of ${ft.n} points; the pool waded at ${ft.pool} m, the shelf ${ft.shelf} m, the cave's floor ${ft.cave} m under ${ft.roof} m of hill`,
+    !ft.none && ft.lip >= 6.5 && ft.face >= 4.5 && ft.over === 0 && ft.n > 3000 && ft.pool === -1 && Math.abs(ft.shelf - 1.2) < .05 && ft.cave === 1.2 && ft.roof > 5, ft);
+  check(`solid at the face's foot, the cave's side and the arcade's pier, open in the cave's mouth and the arcade's bay; ${ft.tris} triangles in ${ft.draws} draws, the laid ground ${ft.laid} over ${ft.cells} squares`,
+    !ft.none && ft.foot && ft.side && ft.pier && !ft.mouth && !ft.bay && ft.tris < 34000 && ft.draws <= 17 && ft.laid < 10000, ft);
 }
 // Session 2063 (QA's S2060: two shepherd's huts 2.5 km out drawn whole in Dunmore's view): the places by a road and off it are hidden past
 // 450 m of you and shown within it; nothing else of them changes

@@ -839,7 +839,7 @@
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-.6-.6*t,-6+(-D.off+6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
       return out;}
     if(D.kind==='erratic'){ /* S2034 — the pavement's ground flat at the ground under its middle (its clints a hand proud of it), a clearing of the scatter over
-      the pavement, the lace wall above it and the hawthorn below, and the path to the road */
+      the pavement, the lace wall and the hawthorn above it (S2072: the thorn moved off the road side), and the path to the road */
       {const [x,z]=W(0,1);out.push(addStamp({id:D.id+'_pave',kind:'door',x,z,r:11.5,blend:3,y:landH(x,z),cell:k}));}
       {const [x,z]=W(0,3);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:18,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-1.6-.9*t,-7.6+(-D.off+7.6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
@@ -919,11 +919,11 @@
   // 150 m), 100 m off every door, 60 m off a farm's yard, 150 m off the cell's caves, mine, Weaver door, carving, watcher, aqueduct and place
   // by a road, 30 m off every lake's rim, and 200 m inside its cell. Found within 40 m (tickDiscovery, 83), then on the map, with no travel to it.
   // -> {id, kind, name, x, z, ry, cell} or null, kept on the cell (c._offroad)
-  const OFFROAD={gatelander:['shepherd','peat','falls'],markman:['cabin','logging']},OFFROAD_NAME={shepherd:'A shepherd’s hut',peat:'A peat-cutting camp',cabin:'A hunting cabin',logging:'A logging camp'},OFFROAD_ODDS=1/3,OFFROAD_WOOD=.3;
+  const OFFROAD={gatelander:['shepherd','peat','falls'],markman:['cabin','logging']},OFFROAD_NAME={shepherd:'A shepherd’s hut',peat:'A peat-cutting camp',cabin:'A hunting cabin',logging:'A logging camp',falls:'A waterfall'},OFFROAD_ODDS=1/3,OFFROAD_WOOD=.3;
   /* the ground each kind was drawn for, by the biome at its middle: the shepherd's hut on the hill pasture (the moor, the open plains, the coast's grass) */
   const OFFROAD_BIOME={shepherd:['moor','plains','coast'],peat:['moor','fen','plains'],falls:['plains','forest','autumn','moor'],cabin:['tundra'],logging:['tundra','forest']};
   /* the shepherd's hut's three grounds in the piece's frame (the hut, the fold, the spring): each is read for its slope and its water */
-  const OFFROAD_GROUND={logging:[[0,0],[6,-9],[11,4],[2,-4],[-6,-11]],cabin:[[0,0],[5.6,-3.6],[-3.6,3],[3.9,3.1],[0,12]],shepherd:[[0,0],[11,5.5],[-8,-6.5]],peat:[[0,0],[-30,-30],[30,-30],[-30,24],[30,24],[0,-24],[0,12]]};
+  const OFFROAD_GROUND={logging:[[0,0],[6,-9],[11,4],[2,-4],[-6,-11]],cabin:[[0,0],[5.6,-3.6],[-3.6,3],[3.9,3.1],[0,12]],shepherd:[[0,0],[11,5.5],[-8,-6.5]],falls:[[0,-12],[0,5],[0,30],[-20,8],[20,8]],peat:[[0,0],[-30,-30],[30,-30],[-30,24],[30,24],[0,-24],[0,12]]};
   /* S2044 — the peat camp on the raised bog: its patch (80 by 66 m) within 2.4 m of level, its middle no steeper than 1 in 25, and every ground of it 6 m or more over the sea */
   const OFFROAD_FLAT={peat:{spread:2.4,grade:.04,sea:6},cabin:{spread:1.6,grade:.12,sea:4,snow:true}};
   /* S2051 — the hunting cabin in the tundra's snow (its ground the snow's own, so the snow line does not bar it): the cabin, the store, the block, the frame and the path's first reach within 1.6 m of level, its middle no steeper than 1 in 8 */
@@ -941,8 +941,8 @@
     const farms=[];try{loneFarms(c).forEach(F=>farms.push(F));c.sites.forEach(t=>{const F=villageFarm(t,c);if(F)farms.push(F);});}catch(e){}
     const near=(pts,x,z)=>{let b=1e9;for(let i=0;i<pts.length-1;i++){const a=pts[i],q=pts[i+1],dx=q.x-a.x,dz=q.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));b=Math.min(b,Math.hypot(a.x+dx*t-x,a.z+dz*t-z));}return b;};
     const grad=(x,z)=>{const gx=(rawH(x+4,z)-rawH(x-4,z))/8,gz=(rawH(x,z+4)-rawH(x,z-4))/8;return [gx,gz,Math.hypot(gx,gz)];};
-    const LOG=kind==='logging';let fb=null; /* S2056 — the logging camp: a fall line into fresh water first, the sea's shore kept as the fallback */
-    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<(LOG?360:120)&&!c._offroad;t++){let x=c.ox+200+r()*(SIZE-400),z=c.oz+200+r()*(SIZE-400);
+    const LOG=kind==='logging',FAL=kind==='falls';let fb=null; /* S2056 — the logging camp: a fall line into fresh water first, the sea's shore kept as the fallback */
+    withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<(LOG?360:FAL?1200:120)&&!c._offroad;t++){let x=c.ox+200+r()*(SIZE-400),z=c.oz+200+r()*(SIZE-400);
       if(LOG){const [ax,az,ag]=grad(x,z);if(ag<.08)continue;let sh=null;for(let s=0;s<=80;s++)if(rawH(x-ax/ag*s,z-az/ag*s)<0){sh=s;break;}if(sh===null)continue;x-=ax/ag*(sh-28);z-=az/ag*(sh-28);} /* slid down its fall line till the water lies 28 m below it */
       if(sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+150)||doors.some(e=>Math.hypot(e.x-x,e.z-z)<100)||farms.some(F=>Math.hypot(F.cx-x,F.cz-z)<FARM_R+60))continue;
       if(others.some(C=>Math.hypot(C.x-x,C.z-z)<150)||(!LOG&&lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+30))||roads.some(P=>near(P,x,z)<150))continue;
@@ -952,18 +952,24 @@
         const cy0=Hl(-6,-11)+.45,gr=(cy0-.9)/(shore+14);if(cy0<6)continue;let lo=1e9,hi=-1e9;for(let lz=-10;lz<shore;lz+=1){const q=cy0-gr*(lz+11)-Hl(-6,lz);lo=Math.min(lo,q);hi=Math.max(hi,q);}const lift=Math.max(0,.3-lo);if(lift>1.2||hi+lift>4.5)continue; /* the chute's line clear of the bank, its head lifted up to 1.2 m on its first trestle */
         const wx=x+(-6)*c1+(shore+4)*s1,wz=z-(-6)*s1+(shore+4)*c1;fresh=wildRiverNear(wx,wz,0)||wildLakeNear(wx,wz);if(!fresh&&fb)continue;}
       else if(FL){if(g>FL.grade)continue;ry=r()*6.2832;} /* level ground: the face turned by the stream */
+      else if(FAL){if(g<.07||g>.38)continue;ry=Math.atan2(-gx/g,-gz/g);const c1=Math.cos(ry),s1=Math.sin(ry),Hl=(lx,lz)=>rawH(x+lx*c1+lz*s1,z-lx*s1+lz*c1); /* S2071 — the falls: the head-wall square to the fall line, the glen cut down it */
+        const top=Hl(0,-3),drop=top-Hl(0,56);if(drop<8.25)continue;const lip=Math.min(12,drop-1.25),y0=top-lip,Hp=(lx,lz)=>{const d=Math.hypot(lx,lz+12),t=d<=14?1:Math.max(0,1-(d-14)/12),e=t*t*(3-2*t);return Hl(lx,lz)*(1-e)+top*e;}; /* the land with the plateau's stamp, as offroadStamps lays it */
+        if(y0<2.5||Hl(0,46)<y0-14||Math.abs(Hl(-22,-6)-Hl(22,-6))>4)continue; /* the head-wall as high as the land falls by 56 m, the patch's end, less the glen's floor there (7 to 12 m); the pool 2.5 m over the sea; the lip level across */
+        if([[-7,5],[7,5],[0,10.5],[-5,9],[5,9]].some(([u,v])=>Hp(u,v)<y0+.8)||[3,11.5,19].some(u=>Hp(u,17)<y0-.2)||[-24,24].some(u=>Hp(u,10)<y0+lip*.4))continue; /* the land holds the pool and the arcade's pad; the glen's sides stand 0.4 of the wall's height over it */
+        fb={top,y0,lip};}
       else{if(g<.1||g>.222)continue;ry=Math.atan2(-gx/g,-gz/g);}
       const co=Math.cos(ry),s_=Math.sin(ry);
       let ok=true,lo=1e9,hi=-1e9;for(const [lx,lz] of OFFROAD_GROUND[kind]||[[0,0]]){const qx=x+lx*co+lz*s_,qz=z-lx*s_+lz*co,h=rawH(qx,qz);lo=Math.min(lo,h);hi=Math.max(hi,h);
-        if(h<(FL?FL.sea:LOG?1.5:4)||(!(FL&&FL.snow)&&!LOG&&typeof snowLineAt==='function'&&h>snowLineAt(qx,qz)-5)||grad(qx,qz)[2]>(FL?FL.grade*2:LOG?.42:.33)||farmWet(qx,qz)){ok=false;break;}}
+        if(h<(FL?FL.sea:LOG||FAL?1.5:4)||(!(FL&&FL.snow)&&!LOG&&typeof snowLineAt==='function'&&h>snowLineAt(qx,qz)-5)||grad(qx,qz)[2]>(FL?FL.grade*2:LOG?.42:FAL?.5:.33)||farmWet(qx,qz)){ok=false;break;}}
       if(!ok||(FL&&hi-lo>FL.spread))continue;
       /* open ground: the scatter's own odds of a tree (scatterChunk's, the slope's share left at 1) under 0.3 on the average of the place and a ring 18 m round it */
       let wood=0,nw=0;for(const [lx,lz] of [...(OFFROAD_GROUND[kind]||[[0,0]]),...[0,1,2,3,4,5].map(q=>[Math.cos(q*1.047)*18,Math.sin(q*1.047)*18])]){const qx=x+lx*co+lz*s_,qz=z-lx*s_+lz*co,h=rawH(qx,qz);
         wood+=regionScalar(qx,qz,'density')*(.5+fbm(qx,qz,60,SEED+21,2)*1.3)*(1-sstep(30,44,h));nw++;}
-      const bio=dominantRegion(x,z).r.biome;if((!LOG&&wood/nw>=OFFROAD_WOOD)||!OFFROAD_BIOME[kind].includes(bio))continue; /* the felling stands in its wood: no bar on the trees */
+      const bio=dominantRegion(x,z).r.biome;if((!LOG&&!FAL&&wood/nw>=OFFROAD_WOOD)||!OFFROAD_BIOME[kind].includes(bio))continue; /* the felling stands in its wood: no bar on the trees */
       const D={id:`offroad_${c.i}_${c.j}`,kind,name:OFFROAD_NAME[kind]||kind,x:+x.toFixed(2),z:+z.toFixed(2),ry:+ry.toFixed(4),cell:k};
+      if(FAL){D.lip=+fb.top.toFixed(3);D.y0=+fb.y0.toFixed(3);D.wall=+fb.lip.toFixed(3);fb=null;} /* S2071 — the plateau's level, the pool's water and the head-wall's height */
       if(LOG){D.shore=shore;D.snow=bio==='tundra';D.fresh=!!fresh;if(!fresh){fb=D;continue;}}c._offroad=D;}});
-    if(!c._offroad&&fb)c._offroad=fb;
+    if(!c._offroad&&fb&&LOG)c._offroad=fb;
     return c._offroad;}
   // its stamps (the cell's first step, so the chunks are built with them): the hut's stance flat at the ground under its middle, cut into the
   // slope as the prototype's is; a clearing of the scatter over the hut, the fold and the spring, so no tree stands in the walls
@@ -976,6 +982,13 @@
       {const [x,z]=W(1.2,-.4);out.push(addStamp({id:D.id+'_stance',kind:'door',x,z,r:7.2,blend:3,y:landH(...W(0,0)),cell:k}));}
       {const [x,z]=W(1,0);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:11,blend:2,y:0,cell:k}));}
       for(const [lx,lz] of [[1,10],[.6,14],[-.3,18],[-1.5,22],[-2.4,26],[-3.2,30],[-4,34]]){const [x,z]=W(lx,lz);out.push(addStamp({id:D.id+'_path',kind:'door',noFlat:true,x,z,r:2.6,blend:1,y:0,cell:k}));}
+      return out;}
+    if(D.kind==='falls'){ /* S2071 — the plateau levelled behind the lip at the land 3 m back from it, the scatter cleared over the glen and the lip, and every point of
+      the world's 4 m grid round the cut ground sunk under the pool's floor (every corner of every square where the cut lies under the land), so the
+      piece's head-wall and the ground laid back over them (offroadLaidCarve) have nothing of the world's in them */
+      {const [x,z]=W(0,-12);out.push(addStamp({id:D.id+'_plateau',kind:'door',x,z,r:14,blend:12,y:D.lip,cell:k}));}
+      {const [x,z]=W(0,8);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:30,blend:2,y:0,cell:k}));}
+      const FG=offroadFallsGround(D);for(const pk of FG.sunk){const [x,z]=pk.split(',').map(Number);out.push(addStamp({id:D.id+'_sink',kind:'door',sink:true,x,z,r:.3,blend:.3,y:D.y0-4.2,cell:k}));}
       return out;}
     if(D.kind==='logging'){ /* S2056 — the felling on the world's own slope: only the scatter cleared over it, down to the shore */
       const [x,z]=W(-1,2);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:25,blend:2,y:0,cell:k}));return out;}
@@ -991,15 +1004,64 @@
   function offroadGroundAt(x,z){for(let i=0;i<OFFROAD_PATCHES.length;i++){const P=OFFROAD_PATCHES[i],dx=x-P.x,dz=z-P.z;if(dx*dx+dz*dz>P.R2)continue;
       const lx=dx*P.co-dz*P.s,lz=dx*P.s+dz*P.co;if(lx<P.x0||lx>P.x1||lz<P.z0||lz>P.z1)continue;return P.y+P.ground(lx,lz);}return null;}
   function offroadPatchDrop(id){for(let i=OFFROAD_PATCHES.length-1;i>=0;i--)if(OFFROAD_PATCHES[i].id===id)OFFROAD_PATCHES.splice(i,1);}
-  function placeOffroad(c,k){const D=offroadAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],bogS=D.kind==='peat'&&STAMPS.find(t=>t.id===D.id+'_bog'),y0=bogS?bogS.y:meshH(D.x,D.z); /* S2044 — the peat camp stands at its bog's level, not on the cut sunk under its middle */
-    const M=PKIT.places[D.kind]({key:D.id,ground:(lx,lz)=>meshH(...W(lx,lz))-y0,water:SEA_Y-y0,snow:D.snow}); /* S2056 — the water's level and the snow, for the logging camp */
+  function placeOffroad(c,k){const D=offroadAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],bogS=D.kind==='peat'&&STAMPS.find(t=>t.id===D.id+'_bog'),FG=D.kind==='falls'?offroadFallsGround(D):null,y0=FG?D.y0:bogS?bogS.y:meshH(D.x,D.z); /* S2071 — the falls stand at the pool's water, on the world's ground cut into (offroadFallsGround) */ /* S2044 — the peat camp stands at its bog's level, not on the cut sunk under its middle */
+    const M=PKIT.places[D.kind]({key:D.id,ground:(lx,lz)=>meshH(...W(lx,lz))-y0,water:SEA_Y-y0,snow:D.snow,land:FG?FG.land:undefined,lip:D.wall}); /* S2056 — the water's level and the snow, for the logging camp */
     M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='offroad '+D.kind;sc.add(M.group);
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,offroad:true});}}
     if(M.patch){offroadPatchDrop(D.id);const P=M.patch;OFFROAD_PATCHES.push({id:D.id,x:D.x,z:D.z,y:y0,co,s:s_,x0:P.x0,x1:P.x1,z0:P.z0,z1:P.z1,R2:(Math.hypot(Math.max(-P.x0,P.x1),Math.max(-P.z0,P.z1))+1)**2,ground:M.ground});
       D.patch=P;D.rim=M.rim;D.bank=M.bank;D.rick=M.rick;D.fire=M.fire;D.footings=M.footings;D.slean=M.slean;D.sinks=M.sinks;}
     D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.stands=M.stands;D.hut=M.hut;D.fold=M.fold;D.spring=M.spring;D.rowan=M.rowan;D.cabin=M.cabin;D.store=M.store;D.trees=M.trees;
-    if(D.kind==='logging'){D.chute=M.chute;D.deck=M.deck;D.stumps=M.stumps;D.shelter=M.shelter;D.sledge=M.sledge;D.ice=M.ice;D.shoreAt=M.shore;}return M.group;}
+    if(D.kind==='logging'){D.chute=M.chute;D.deck=M.deck;D.stumps=M.stumps;D.shelter=M.shelter;D.sledge=M.sledge;D.ice=M.ice;D.shoreAt=M.shore;}
+    if(FG){const LB=offroadLaidCarve(D,FG),S=M.shape;sc.add(LB.mesh);D.laid=LB;D.shape=S;D.fall=M.fall;D.pool=M.pool;D.cave=M.cave;D.arcade=M.arcade;D.rise=M.rise;D.path=M.path;offroadPatchDrop(D.id); /* the cut ground drawn always (the pit under it is seen from afar), and walked on (groundY): the cave's floor while you are under its roof */
+      const P=S.patch;OFFROAD_PATCHES.push({id:D.id,x:D.x,z:D.z,y:y0,co,s:s_,...P,R2:(Math.hypot(Math.max(-P.x0,P.x1),Math.max(-P.z0,P.z1))+1)**2,ground:(lx,lz)=>S.inCave(lx,lz)&&jumpY<y0+S.LY+3?S.LY:S.walk(lx,lz)});D.patch=P;}
+    return M.group;}
+  // S2071 — the falls' ground: the world's drawn ground before the sinks (each point of its 4 m grid read with them lifted, split on the
+  // chunk's diagonal, so it is the world's own triangles), in the piece's frame from the pool's water, and the shape cut from it
+  // (PKIT.places.falls.shape); the squares of the grid where the cut lies under the land or meets the face (5 by 5 points a square), and
+  // their corners, which offroadStamps sinks. -> { land(lx, lz), H(x, z), S, carved (Set of 'x,z' squares), sunk (Set of 'x,z' points), W, L }
+  function offroadFallsGround(D){const g=CHUNK/SEGS,co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],Lc=(x,z)=>{const dx=x-D.x,dz=z-D.z;return [dx*co-dz*s_,dx*s_+dz*co];};
+    const HV=new Map(),vk=(x,z)=>x+','+z,H=(x,z)=>{const q=vk(x,z);let v=HV.get(q);if(v===undefined){const sk=STAMPS.filter(t=>t.id===D.id+'_sink');sk.forEach(t=>t.noFlat=true);try{v=worldH(x,z);}finally{sk.forEach(t=>t.noFlat=false);}HV.set(q,v);}return v;};
+    const hW=(x,z)=>{const x0=Math.floor(x/g)*g,z0=Math.floor(z/g)*g,u=(x-x0)/g,w=(z-z0)/g,h00=H(x0,z0),h10=H(x0+g,z0),h01=H(x0,z0+g),h11=H(x0+g,z0+g);return (u+w<1)?(h00+(h10-h00)*u+(h01-h00)*w):(h11+(h01-h11)*(1-u)+(h10-h11)*(1-w));};
+    const land=(lx,lz)=>hW(...W(lx,lz))-D.y0,S=PKIT.places.falls.shape(D.id,land,D.wall),P=S.patch;
+    let ax=1e9,bx=-1e9,az=1e9,bz=-1e9;for(const [u,v] of [[P.x0,P.z0],[P.x1,P.z0],[P.x0,P.z1],[P.x1,P.z1]]){const [x,z]=W(u,v);ax=Math.min(ax,x);bx=Math.max(bx,x);az=Math.min(az,z);bz=Math.max(bz,z);}
+    const carved=new Set(),sunk=new Set();
+    for(let z0=Math.floor(az/g)*g;z0<bz;z0+=g)for(let x0=Math.floor(ax/g)*g;x0<bx;x0+=g){let hit=false;
+      for(let j=0;j<=4&&!hit;j++)for(let i=0;i<=4&&!hit;i++){const [lx,lz]=Lc(x0+i*g/4,z0+j*g/4);if(lx<P.x0||lx>P.x1||lz<P.z0||lz>P.z1)continue;if(S.carve(lx,lz)<land(lx,lz)-.01||S.cut(lx,lz))hit=true;}
+      if(hit){carved.add(vk(x0,z0));for(const [dx,dz] of [[0,0],[g,0],[0,g],[g,g]])sunk.add(vk(x0+dx,z0+dz));}}
+    return {land,H,hW,S,carved,sunk,W,L:Lc};}
+  // S2071 — the falls' ground laid back over its sunk points in the world's own terrain material, as waysideLaidBack lays the expedition's:
+  // every square a sunk point touches and one more round them; a square the cut reaches is cut every 1 m, its points at the cut's height,
+  // each coloured by groundColor at its own slope and masked by landMask where the cut lies under the land (as the world's own ground is
+  // coloured), and read from the world's corners where it does not; a square of the 1 m grid across the face is left out (the piece's lip
+  // and scree cover the seam). -> { h(x, z), mesh, cells, tris }
+  function offroadLaidCarve(D,FG){const g=CHUNK/SEGS,{H,S,land,carved,sunk,L:Lc}=FG,vk=(x,z)=>x+','+z,cells=new Set(),V=new Map();
+    for(const pk of sunk){const [sx,sz]=pk.split(',').map(Number);for(let dz=-2*g;dz<=g;dz+=g)for(let dx=-2*g;dx<=g;dx+=g)cells.add(vk(sx+dx,sz+dz));}
+    const fA=(x,z)=>{const a=H(x,z),b=H(x,z+g),c=H(x+g,z);return [(a-c)*g,g*g,(a-b)*g];},fB=(x,z)=>{const b=H(x,z+g),d=H(x+g,z+g),c=H(x+g,z);return [(b-d)*g,g*g,(c-d)*g];};
+    const corner=(x,z)=>{const q=vk(x,z);let v=V.get(q);if(v)return v;const h=H(x,z),cc=new THREE.Color(),s=[0,0,0];for(const f of [fA(x,z),fA(x-g,z),fB(x-g,z),fA(x,z-g),fB(x,z-g),fB(x-g,z-g)]){s[0]+=f[0];s[1]+=f[1];s[2]+=f[2];}const l=Math.hypot(...s);
+      groundColor(x,z,h,s[1]/l,cc);v={x,z,h,c:[cc.r,cc.g,cc.b],m:[0,0,0],n:s.map(q=>q/l)};V.set(q,v);return v;};
+    const cW=(x,z)=>S.carve(...Lc(x,z))+D.y0;
+    const pos=[],col=[],msk=[],nor=[],idx=[],own=[];
+    for(const ck of cells){const [x0,z0]=ck.split(',').map(Number),N=carved.has(ck)?4:1,c4=[[0,0],[g,0],[0,g],[g,g]].map(([dx,dz])=>corner(x0+dx,z0+dz)),base=pos.length/3;
+      for(let j=0;j<=N;j++)for(let i=0;i<=N;i++){const u=i/N,w=j/N,[A,Bq,Cq,wa,wb,wc]=(u+w<1||(u+w===1&&u<1))?[c4[0],c4[1],c4[2],1-u-w,u,w]:[c4[3],c4[2],c4[1],u+w-1,1-u,1-w];
+        const Li=(f,q)=>A[f][q]*wa+Bq[f][q]*wb+Cq[f][q]*wc,x=x0+u*g,z=z0+w*g,hL=A.h*wa+Bq.h*wb+Cq.h*wc,[lx,lz]=Lc(x,z),inP=N>1&&lx>=S.patch.x0&&lx<=S.patch.x1&&lz>=S.patch.z0&&lz<=S.patch.z1,hC=inP?S.carve(lx,lz)+D.y0:hL,k=inP?S.sm((hL-hC)/.4):0;
+        pos.push(x-D.x,hC,z-D.z);let n=[Li('n',0),Li('n',1),Li('n',2)],c=[Li('c',0),Li('c',1),Li('c',2)];
+        if(k>0){const e=.5,gx=(cW(x+e,z)-cW(x-e,z))/(2*e),gz=(cW(x,z+e)-cW(x,z-e))/(2*e),nl=Math.hypot(gx,1,gz),nc=[-gx/nl,1/nl,-gz/nl],cc=new THREE.Color();groundColor(x,z,hC,nc[1],cc);
+          n=n.map((q,t)=>q*(1-k)+nc[t]*k);c=[cc.r,cc.g,cc.b].map((q,t)=>c[t]*(1-k)+q*k);own.push([pos.length/3-1,k,x,hC,z]);}
+        const nl=Math.hypot(...n);nor.push(n[0]/nl,n[1]/nl,n[2]/nl);col.push(...c);msk.push(0,0,0);}
+      for(let j=0;j<N;j++)for(let i=0;i<N;i++){if(N>1){const [lx,lz]=Lc(x0+(i+.5)/N*g,z0+(j+.5)/N*g);if(S.cut(lx,lz))continue;}const a=base+j*(N+1)+i,b=a+1,c=a+N+1,d=c+1;idx.push(a,c,b,c,d,b);}}
+    if(LAND.on){const cs=[...cells].flatMap(ck=>{const [x0,z0]=ck.split(',').map(Number);return [[0,0],[g,0],[0,g],[g,g]].map(([dx,dz])=>corner(x0+dx,z0+dz));}),uniq=[...new Set(cs)],own2=own,geo=new THREE.BufferGeometry();
+      geo.setAttribute('position',new THREE.Float32BufferAttribute([...uniq.flatMap(v=>[v.x,v.h,v.z]),...own2.flatMap(o=>[o[2],o[3],o[4]])],3));const sk=STAMPS.filter(t=>t.id===D.id+'_sink');sk.forEach(t=>{t.r0=t.r;t.r=0;});try{landMask(geo,-CHUNK/2,-CHUNK/2);}finally{sk.forEach(t=>t.r=t.r0);} /* the sunk points read as no stamp, as they were */const m=geo.attributes.aMask;
+      uniq.forEach((v,i)=>v.m=[m.getX(i),m.getY(i),m.getZ(i)]);geo.dispose();
+      /* the corners' masks over the uncut points of every square, and each cut point's own where the cut lies under the land */
+      let q=0;for(const ck of cells){const [x0,z0]=ck.split(',').map(Number),N=carved.has(ck)?4:1,c4=[[0,0],[g,0],[0,g],[g,g]].map(([dx,dz])=>V.get(vk(x0+dx,z0+dz)));
+        for(let j=0;j<=N;j++)for(let i=0;i<=N;i++,q++){const u=i/N,w=j/N,[A,Bq,Cq,wa,wb,wc]=(u+w<1||(u+w===1&&u<1))?[c4[0],c4[1],c4[2],1-u-w,u,w]:[c4[3],c4[2],c4[1],u+w-1,1-u,1-w];for(let t=0;t<3;t++)msk[q*3+t]=A.m[t]*wa+Bq.m[t]*wb+Cq.m[t]*wc;}}
+      own2.forEach((o,i)=>{const r=uniq.length+i,k=o[1];msk[o[0]*3]=msk[o[0]*3]*(1-k)+m.getX(r)*k;msk[o[0]*3+1]=msk[o[0]*3+1]*(1-k)+m.getY(r)*k;msk[o[0]*3+2]=msk[o[0]*3+2]*(1-k)+m.getZ(r)*k;});}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+    if(LAND.on)geo.setAttribute('aMask',new THREE.Float32BufferAttribute(msk,3));geo.setIndex(idx);geo.computeBoundingSphere();
+    const mesh=new THREE.Mesh(geo,terrainMat);mesh.position.set(D.x,0,D.z);mesh.receiveShadow=true;mesh.name='falls laid ground';
+    const h=(x,z)=>{const [lx,lz]=Lc(x,z),P=S.patch;return lx>=P.x0&&lx<=P.x1&&lz>=P.z0&&lz<=P.z1?S.carve(lx,lz)+D.y0:meshH(x,z);};
+    return {h,mesh,cells:cells.size,carved:carved.size,tris:idx.length/3};}
   // S1800 (card F8; Michael's A on #333, "broken, as drawn", and his A on #1072, "fit the arcade to the land") — Aurenne's ruined aqueducts
   // (PKIT.places.aqueduct, places.js's aurenneAqueduct): an arcade across a river's valley, one tier where it is under 12 m deep and two where
   // deeper. One Aurenne cell in three keeps one, by its own stream (aqueduct:<cell>), so no other draw of the cell moves. Read by place
