@@ -223,11 +223,12 @@ if (cb) {
   check(`${cb.id}: of ${sl.n} trees within 90 m, ${sl.snow} stand in the Mark's snow and ${sl.leaf} of those are leafed or spruce (${sl.cone} snowpine, drawn in ${sl.own} meshes of its own shape)`, sl.snow > 10 && sl.leaf === 0 && sl.cone > sl.snow / 2 && sl.own > 0 && !sl.kit, sl);
   // Session 2080 (the critic, 10 Nov: "from the west, at 25 m, I see no lit window … from three sides of four, a cabin lived in is dark"): a lit
   // window in each wall, the gables and the sides; from 25 m out before each, at eye height and from five points 2 m apart across it, a
-  // sight line to the light's middle meets its glow before anything else of the cabin's own (the woodpile, the logs, the roof)
+  // sight line to the light, over its glazing bar, meets its glow before anything else within 3 m of the cabin (the woodpile, the logs, the
+  // roof); the ring of its own spruce, 11 m out and more, is the wood's and not counted
   const lw = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, G = D.group, W = D.cabin.wins; if (!W || W.length < 4) return { none: true, n: W && W.length };
     G.updateMatrixWorld(true); const rc = new THREE.Raycaster(), meshes = []; G.traverse(m => { if (m.isMesh) meshes.push(m); });
-    const sides = W.map(w => { let seen = 0; for (const off of [-4, -2, 0, 2, 4]) { const t = G.localToWorld(new THREE.Vector3(w.x, w.y, w.z)), e = G.localToWorld(new THREE.Vector3(w.x + w.n[0] * 25 - w.n[1] * off, 0, w.z + w.n[1] * 25 + w.n[0] * off));
-      e.y = meshH(e.x, e.z) + 1.65; const d = t.clone().sub(e), L = d.length(); rc.set(e, d.normalize()); rc.far = L + .3; const h = rc.intersectObjects(meshes, false)[0]; if (h && h.object.name === 'glow') seen++; } return { n: w.n.join(','), seen }; });
+    const C = D.cabin, sides = W.map(w => { let seen = 0; const hit = []; for (const off of [-4, -2, 0, 2, 4]) { const t = G.localToWorld(new THREE.Vector3(w.x, w.y + .12, w.z)) /* above the glazing bar */, e = G.localToWorld(new THREE.Vector3(w.x + w.n[0] * 25 - w.n[1] * off, 0, w.z + w.n[1] * 25 + w.n[0] * off));
+      e.y = meshH(e.x, e.z) + 1.65; const d = t.clone().sub(e), L = d.length(); rc.set(e, d.normalize()); rc.far = L + .3; const h = rc.intersectObjects(meshes, false).find(q => { const l = G.worldToLocal(q.point.clone()); return Math.abs(l.x) < C.x1 + 3 && Math.abs(l.z) < C.z1 + 3; }); if (h && h.object.name === 'glow') seen++; else hit.push(h ? h.object.name : 'none'); } return { n: w.n.join(','), seen, hit: [...new Set(hit)] }; });
     return { n: W.length, sides, faces: [...new Set(W.map(w => w.n.join(',')))].length }; }, cb.id);
   console.log(JSON.stringify(lw));
   check(`${cb.id}: ${lw.n} lit windows facing ${lw.faces} ways, each seen from 25 m out (${(lw.sides || []).map(q => q.n + ' ' + q.seen + ' of 5').join('; ')})`, !lw.none && lw.faces === 4 && lw.sides.every(q => q.seen >= 3), lw);
