@@ -500,7 +500,7 @@ function requestDestroyItem(i, el){
 }
 
 function renderHubInv(){
-  sheetFigShow(); /* S2065 — the sheet's portrait */
+  sheetFigShow(); /* S2066 — the sheet's portrait */
   EQ_SLOTS.forEach(s=>{
     const el=document.getElementById('ds-'+s.key);if(!el)return;
     const it=EQ[s.key];
@@ -635,7 +635,7 @@ function renderHubInv(){
     }
   });
 }
-// ── the sheet's portrait (Session 2065; Michael's C on #1363, OG-134, the concept artist's docs/prototypes/levelup/sheet.js) ─────────
+// ── the sheet's portrait (Session 2066; Michael's C on #1363, OG-134, the concept artist's docs/prototypes/levelup/sheet.js) ─────────
 // On the new look the Inventory's worn slots stand in two columns with your own body between them, lit, in a dark arched window with
 // the HUD's bronze rim. The body is the third-person rig's (tpEnsure: the look's genome, dressed from EQ by tpHBDress), lent to the
 // portrait's own scene for the draw and given back in the same call, posed standing at ease (pwIdle at rest, through tpHBPose). The

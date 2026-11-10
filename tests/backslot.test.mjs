@@ -25,7 +25,7 @@ check('every slot in EQ_SLOTS has its cell on the doll (eleven)', r.missing.leng
 check('a Dark Hood from the bag is worn', r.worn === 'Dark Hood' && r.bagAfterWear === r.bag0 - 1, r);
 check('the Back cell shows it, and its tooltip names it', r.shown.hasItem && r.shown.ico && r.shown.visible && /Dark Hood/.test(r.tip) && /unequip/i.test(r.hint), r);
 check('clicking the Back cell takes it off, into the bag', r.off.back === null && r.off.inBag && !r.off.hasItem && r.off.bag === r.bag0, r.off);
-// S2065 — the sheet's portrait (Michael's C on #1363): on the new look the slots stand in two columns round your body's window; the
+// S2066 — the sheet's portrait (Michael's C on #1363): on the new look the slots stand in two columns round your body's window; the
 // body is lent to the portrait's scene for a draw and given back where it was. The draw itself is not waited for (its programs take
 // about 17 s on software GL); the hub is closed in the same call, so none is made
 const f = await page.evaluate(() => {
