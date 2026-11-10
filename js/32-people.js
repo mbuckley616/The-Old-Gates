@@ -1939,7 +1939,7 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    63 points of a 160-tick walk, 4.8 cm; now 2, 1.2 cm). 1.5 halved it; 2.4 lifted the hem off more of the legs and gained nothing. Never
    past `capS` (0.9 rad); your own body keeps 1.1 (`kSYou`): at your run the thigh comes to 1.5 rad, and twice that threw the cloak's back
    corners up off your legs (f10motion's legs 5.1% → 6.1% out, with fewer of them under it) */
-/* S2060 — the front edges over a leading thigh: 15 to 25 cm under the hip joints, near straight ahead, the leading thigh's boots, trousers
+/* S2061 — the front edges over a leading thigh: 15 to 25 cm under the hip joints, near straight ahead, the leading thigh's boots, trousers
    and leg wraps came out through the cloak's front by up to 3.2 cm (Dunmore's cloaked walkers, 120 points of a 160-tick walk; Lorcan's
    leg wraps). The front bone now swings forward by 2.2 of the leading leg's angle (`kF` 1.6), and takes the front from further down
    (`lowF` .4 → .55: at mid-thigh more of it goes with the thighs, which carry it better than the bone at the hips' middle). Each alone:
