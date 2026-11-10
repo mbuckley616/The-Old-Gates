@@ -1034,6 +1034,13 @@ HC_KINDS['Golem (failing)']=Object.assign({},HC_KINDS.Golem,{plan:'failinggolem'
 // the Cloch gargoyle's span, a second pair of wings behind them (hcGarg) and a second pair of clawed arms out of the shoulder blades
 // (hcArms), the stone cracked and only the cracks lit a storm's blue-white); its eyes in the plan's pale blue, not the steady one's ember
 HC_KINDS['Gargoyle (failing)']=Object.assign({},HC_KINDS.Gargoyle,{plan:'failinggargoyle',glow:[.55,.75,1],arms:true});
+// Session 2082 (L4, OG-018: canon §9a puts gargoyles in Cloch and in Gaoth): a steady Gaoth gate's gargoyle on the kit's Gaoth gargoyle, the same
+// stone body weathered pale by the wind, its moss scoured off, its horns laid flatter and its wings a quarter wider; its eyes the storm's
+// blue-white, as its failing form's. A Gaoth gate holds gargoyles when it drew the ruins' roster (gateSchool's one in six)
+HC_KINDS['Gargoyle (gaoth)']=Object.assign({},HC_KINDS.Gargoyle,{plan:'gaothgargoyle',glow:[.55,.75,1]});
+// a gargoyle's form by its gate: the failing gargoyle in a failing or catastrophic gate (the condition shows over the school, as the
+// skeleton's), else Gaoth's in a Gaoth gate, else Cloch's mossy stone (and outside a gate)
+function hcGargKind(){return hcFailing()?'Gargoyle (failing)':hcGateSchool()==='gaoth'?'Gargoyle (gaoth)':'Gargoyle';}
 // Session 1877: the gate's trolls, in their plan's own hide and eyes (no coat or eye of the driver's), with the troll's maul
 for(const [k,plan] of [['tine','tinetroll'],['uisce','uiscetroll'],['cloch','stonetroll']])HC_KINDS['Cave Troll ('+k+')']={plan,own:true,person:true,merge:true,ik:true,gear:'plan',gearFrom:'troll'};
 for(const k of ['Skeleton','Skeleton (spear)'])HC_KINDS[k.replace(/\)$/,', failing)').replace(/^Skeleton$/,'Skeleton (failing)')]=Object.assign({},HC_KINDS[k],{plan:'failingskeleton',glow:null,arms:true});
