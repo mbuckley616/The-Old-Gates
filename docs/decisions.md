@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### How do places no cell draws (the merchants' camp, the falls) get into the world? (from the look builder, 2026-11-10, #1385)
+**The question.** The places by a road and off it are drawn one cell at a time, each by its own key, in one fixed world. On the Gatelands no cell draws the merchants' camp (built in Session 2063) by a road, or the falls off it, while three cells drew a coach and three a perched stone. How should a kind no cell drew get into the world?
+
+**Options.**
+- **A.** Leave the draw as it is: the merchants' camp and the falls stay out of this world.
+- **B.** No kind twice before every kind once: on each island a kind drawn more than twice gives its last cell (by the cell's key) to a kind drawn nowhere. One coach and one perched stone become a merchants' camp; a shepherd's hut becomes the falls. Three places that stand today change kind.
+- **C (recommended).** A second chance for cells that drew nothing: a cell whose roll missed by less than a sixth (1/3 to 1/2) keeps a place only of a kind its island has drawn nowhere. Nothing that stands today moves. About one more cell in six keeps a place, each hidden past 450 m.
+
+**Recommendation.** C: nothing that stands today moves, and every kind gets a place. Pictures: `docs/prototypes/wayside-merchants-noon.jpg`, `docs/prototypes/wayside-merchants-lantern.jpg`.
+
 ### Camp and rest — beds by grade, a bedroll you carry, or a camp you keep? (from the designer, 2026-11-10, #1378)
 **The question.** Backlog L8's *Camp and rest* asks for a lean-to, a tent, bedrolls of three grades and better beds giving stronger rest; today every bed (inn, home, cot, berth, a road camp's bedroll) does the same thing, and nothing you carry lets you sleep. Should a better night be a property of the bed, of a camp you make, or of a camp you keep? The page: `docs/design/camp-and-rest.md`.
 
