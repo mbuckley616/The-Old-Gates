@@ -1945,7 +1945,12 @@ function hbSkinLoose(P){const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf
    (`lowF` .4 → .55: at mid-thigh more of it goes with the thighs, which carry it better than the bone at the hips' middle). Each alone:
    `kF` 2.2, 72 points; `lowF` .55, 100; `lowF` .2, 151 (worse); `kF` 2.8 lifted the cloak off a quarter of the legs. Your own body keeps
    1.6 and .4 (`kFYou`, `lowFYou`) */
-const HB_CLOAK_LEGS={w:.7,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:2.2,kFYou:1.6,arcF:.85,lowF:.55,lowFYou:.4,arcS:.1,kS:2,kSYou:1.1,capS:.9,capF:.2,arcFYou:.96};
+/* S2064 — the thighs' share at mid-thigh: the tops of a leading thigh's boots, 20 to 25 cm under the hip joints and 15 to 45 degrees off
+   straight ahead, still came out through the cloak (Clodagh, Niamh and Pádraig of Dunmore, 46 points of a 160-tick walk, 2 cm), at the
+   front band's top edge and past its arc, where the sheet goes with the thighs by `w` near the joints. `w` .7 → .8: 1 point, 5 mm.
+   `arcF` .8 or .7 (a wider band), `lowF` .7, `toe` 1 and `kF` 2.5 were each worse or no better (81, 154, 78, 73 and 38 points).
+   Your own body shares it: f10motion's legs 232 of 4,520 → 19 of 3,412 out, worst 14.1 → 9.3 cm */
+const HB_CLOAK_LEGS={w:.8,w2:.9,back:.3,depth:.12,shin:.5,side:1,up:.08,heel:.8,k:1.1,arc:.8,low:.5,upF:.5,toe:.9,kF:2.2,kFYou:1.6,arcF:.85,lowF:.55,lowFYou:.4,arcS:.1,kS:2,kSYou:1.1,capS:.9,capF:.2,arcFYou:.96};
 function hbCloakLegs(P,heel,front){const sk=P.skeleton,by=P.byName,ix=n=>by[n]?sk.bones.indexOf(by[n]):-1,il=ix('root'),iL=ix('upperleg01.L'),iR=ix('upperleg01.R'),sL=ix('lowerleg01.L'),sR=ix('lowerleg01.R');
   if(il<0||iL<0||iR<0||sL<0||sR<0||!by['foot.L']||!by['foot.R']||!by['toe1-1.L'])return null;
   if(P.cloakLegs)return P.cloakLegs;const sheet=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(o.name))sheet.push(o);});if(!sheet.length)return null;
