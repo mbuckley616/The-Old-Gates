@@ -7601,7 +7601,7 @@ function aurenneOrrery(hAt, o = {}) {
   function gatelandsPeatCamp(o = {}) {
     const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
     if (!PEATM) PEATM = { bog: mat('turfDry', { ns: 1.2, color: 0x8e8a66, rough: 1 }), peat: mat('plaster', { ns: 1.4, color: 0x5a4030, rough: 1 }), floor: mat('plaster', { ns: 1.2, color: 0x46362a, rough: .7 }),
-      water: std(0x2e2824, .12), sodWet: mat('plaster', { ns: 1.5, color: 0x4e3a2c, rough: .85 }), sod: mat('plaster', { ns: 1.5, color: 0x7e6046, rough: 1 }), sodDry: mat('plaster', { ns: 1.5, color: 0x7a5e46, rough: 1 }),
+      water: std(0x2e2824, .12), sodWet: mat('plaster', { ns: 1.5, color: 0x4e3a2c, rough: .85 }), sod: mat('plaster', { ns: 1.5, color: 0x6e543e, rough: 1 }), sodB: mat('plaster', { ns: 1.5, color: 0x94785a, rough: 1 }), sodDry: mat('plaster', { ns: 1.5, color: 0x7a5e46, rough: 1 }),
       grit: mat('rock', { ns: .8, color: 0x84765e, rough: 1 }), heather: std(0x4c3a40, 1, { side: THREE.DoubleSide }), ling: std(0x5a5a34, 1, { side: THREE.DoubleSide }), cotton: std(0xf2f0e8, .9), stone: mat('rock', { ns: 1.0, color: 0x8a867c, rough: 1 }),
       wall: mat('turfDry', { ns: 1.2, color: 0xb0a088, rough: 1 }), ember: std(0x2a1408, .6, { emissive: new THREE.Color(1, .4, .12), emissiveIntensity: 2.2 }), rope: std(0x8a7650, .95),
       basket: mat('thatch', { ns: .8, color: 0x8a7046, rough: 1 }), ash: mat('wood', { ns: .8, color: 0xb89a74, rough: .8 }), thatch: mat('thatch', { ns: 1.2, color: 0x9a8a66, rough: 1 }),
@@ -7641,12 +7641,14 @@ function aurenneOrrery(hAt, o = {}) {
     const spread = []; for (let row = 0; row < 9; row++) { const z = -1.25 - row * .42; for (let x = -16; x < 3; x += SL + .06) { if (F() < .12) continue; const xx = x + (F() - .5) * .05, zz = z + (F() - .5) * .08;
       sod('sodWet', xx, bog(xx, zz) + SW / 2 + .005, zz, 0, (F() - .5) * .25, Math.PI / 2); spread.push([+xx.toFixed(3), +zz.toFixed(3)]); } }
     // footed: five on end leaning in, their tops touching, one laid across; in rows behind the spread and east of it
-    /* S2079 (the critic, 10 Nov: "a field of dark upright blocks that read as tree stumps"): leaned 0.5 rad, not 0.3, their feet 0.19 m out, not 0.12, so a
-       footing is a small tent of sods with daylight between them at the foot, wider than it is tall, and the sods drier, paler, than the newest spread */
-    const footings = [], TILT = .5, RB = .19, RC = RB - SL / 2 * Math.sin(TILT); const foot = (cx, cz) => { const a0 = F() * 6.283, feet = [];
-      for (let k = 0; k < 5; k++) { const a = a0 + k * Math.PI * 2 / 5 + (F() - .5) * .2, bx = cx - RB * Math.sin(a), bz = cz - RB * Math.cos(a), gy = bog(bx, bz), y = gy + SL / 2 * Math.cos(TILT) + SW / 2 * Math.sin(TILT) - .005;
-        sod('sod', cx - RC * Math.sin(a), y, cz - RC * Math.cos(a), TILT, a, 0); feet.push([+bx.toFixed(3), +(y - SL / 2 * Math.cos(TILT) - SW / 2 * Math.sin(TILT)).toFixed(3), +bz.toFixed(3)]); }
-      const top = Math.max(...feet.map(f => f[1])) + SL * Math.cos(TILT) - .02; sod('sod', cx, top + SW / 2, cz, 0, a0 + .5, Math.PI / 2); footings.push({ x: +cx.toFixed(3), z: +cz.toFixed(3), feet, top: +top.toFixed(3) }); };
+    /* S2079 (the critic, 10 Nov: "a field of dark upright blocks that read as tree stumps"): the five sods stood 0.3 rad off upright with a sixth laid
+       flat across their tops, a block with a flat lid. Now four or five lean in at 0.5 to 0.6 rad from feet 0.17 m out until their tops meet in a point,
+       with no lid: a small tent of sods with daylight between them at the foot, wider than it is tall; and each sod has its own tone, some dried paler
+       ('sodB'), so the pieces show */
+    const footings = [], RB = .17; const foot = (cx, cz) => { const a0 = F() * 6.283, feet = [], n = F() < .4 ? 4 : 5; let top = -9;
+      for (let k = 0; k < n; k++) { const TILT = .55 + (F() - .5) * .12, RC = RB - SL / 2 * Math.sin(TILT), a = a0 + k * Math.PI * 2 / n + (F() - .5) * .25, bx = cx - RB * Math.sin(a), bz = cz - RB * Math.cos(a), gy = bog(bx, bz), y = gy + SL / 2 * Math.cos(TILT) + SW / 2 * Math.sin(TILT) - .005;
+        sod(F() < .45 ? 'sodB' : 'sod', cx - RC * Math.sin(a), y, cz - RC * Math.cos(a), TILT, a, (F() - .5) * .3); feet.push([+bx.toFixed(3), +(y - SL / 2 * Math.cos(TILT) - SW / 2 * Math.sin(TILT)).toFixed(3), +bz.toFixed(3)]); top = Math.max(top, y + SL / 2 * Math.cos(TILT)); }
+      footings.push({ x: +cx.toFixed(3), z: +cz.toFixed(3), feet, top: +top.toFixed(3) }); };
     for (let z = -6; z > -11.5; z -= 1.15) for (let x = -15.5; x < 15.5; x += 1.25) if (F() > .3) foot(x + (F() - .5) * .3, z + (F() - .5) * .3);
     for (let z = -1.6; z > -4.8; z -= 1.1) for (let x = 5; x < 15.5; x += 1.2) if (F() > .2) foot(x + (F() - .5) * .3, z + (F() - .5) * .3);
     // the sleán: an ash shaft stood in the bank by the lip, its blade and its wing in the peat
@@ -7695,13 +7697,14 @@ function aurenneOrrery(hAt, o = {}) {
     const fire = { x: +FX.toFixed(3), z: +FZ.toFixed(3), kettle: +KB.toFixed(3), embers: +(fy + .06).toFixed(3) };
     // heather and bog cotton on the uncut bog, off the road, the bank's working strip, the rick and the bothy
     const clear = (x, z) => rim(x, z) > .86 || mx(x) * (z > -12.2 && z < 16.5 ? 1 : 0) > .02 || Math.abs(z - RZ) < RW / 2 + .3 || (Math.abs(x - RKX) < RL / 2 + .5 && Math.abs(z - RKZ) < RWd / 2 + .5) || (Math.abs(x - HX - 1) < 4 && z > HZ - 2 && z < FZ + 1.2) || (z > -1 && z < 17 && mx(x) > 0);
-    /* S2079 (the critic, 10 Nov: "the heather is purple stones"): a clump is eleven wiry shoots from one root, each two crossed blades tapering to its tip,
-       splayed more the farther out they rise, a low brush 0.3 to 0.6 m across and 0.18 to 0.38 m high, the old flattened stone's 20 triangles to 22 */
-    const heather = [], shoot = (k, bx, by, bz, tx, ty, tz, w) => { const dx = tx - bx, dz = tz - bz, L = Math.hypot(dx, dz) || 1, ux = -dz / L, uz = dx / L, g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute([bx - ux * w, by, bz - uz * w, bx + ux * w, by, bz + uz * w, tx, ty, tz, bx - dx / L * w, by, bz - dz / L * w, bx + dx / L * w, by, bz + dz / L * w, tx, ty, tz], 3)); put(g, k); };
-    for (let k = 0, n = 0; k < 1500 && n < 240; k++) { const x = -34 + F() * 68, z = -34 + F() * 62; if (clear(x, z)) continue; n++; const r = .15 + F() * .14, h = .18 + F() * .2, gy = bog(x, z) - .02, kk = n % 3 ? 'heather' : 'ling';
-      for (let j = 0; j < 11; j++) { const a = j * 2.4 + F() * .6, d = Math.sqrt(F()) * r * .35, bx = x + d * Math.cos(a), bz = z + d * Math.sin(a), out = r * (.55 + .45 * F()), hh = h * (.65 + .35 * F()) * (1 - .35 * d / (r * .35));
-        shoot(kk, bx, gy, bz, x + out * Math.cos(a), gy + hh, z + out * Math.sin(a), .022 + F() * .012); }
+    /* S2079 (the critic, 10 Nov: "the heather is purple stones"): a flattened stone 0.4 to 0.9 m across was a clump. Now a clump is sixteen wiry
+       sprigs from one root, each a narrow blade turned its own way, their tips spread over a low dome: a brush 0.3 to 0.6 m across and 0.16 to 0.34 m
+       high, 16 triangles where the stone had 20 */
+    const heather = [], shoot = (k, bx, by, bz, tx, ty, tz, w, t) => { const ux = Math.cos(t), uz = Math.sin(t), g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute([bx - ux * w, by, bz - uz * w, bx + ux * w, by, bz + uz * w, tx, ty, tz], 3)); put(g, k); };
+    for (let k = 0, n = 0; k < 1500 && n < 240; k++) { const x = -34 + F() * 68, z = -34 + F() * 62; if (clear(x, z)) continue; n++; const r = .15 + F() * .14, h = .16 + F() * .18, gy = bog(x, z) - .02, kk = n % 3 ? 'heather' : 'ling';
+      for (let j = 0; j < 16; j++) { const a = j * 2.4 + F() * .6, d = Math.sqrt(F()) * r * .25, ph2 = .25 + F() * 1.05, out = r * Math.sin(ph2) / Math.sin(1.3);
+        shoot(kk, x + d * Math.cos(a), gy, z + d * Math.sin(a), x + out * Math.cos(a), gy + .02 + h * Math.cos(ph2) / Math.cos(.25), z + out * Math.sin(a), .016 + F() * .012, F() * 3.14); }
       heather.push([+x.toFixed(2), +z.toFixed(2), +r.toFixed(2), +h.toFixed(2)]); }
     for (let k = 0, n = 0; k < 900 && n < 110; k++) { const x = -30 + F() * 60, z = -30 + F() * 56; if (clear(x, z)) continue; n++; const h = .25 + F() * .15, gy = bog(x, z);
       put(new THREE.BoxGeometry(.008, h, .008), 'ling', x, gy + h / 2, z); put(new THREE.IcosahedronGeometry(.04, 0).scale(1, 1.3, 1), 'cotton', x, gy + h + .03, z); }
