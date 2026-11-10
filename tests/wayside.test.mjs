@@ -112,6 +112,18 @@ const er = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c
 console.log(JSON.stringify(er));
 check(`${er.id}: the perched stone ${er.road} m off its road, facing it (${er.fwd}); ${er.off && er.off.length} things on the ground within ${er.stands} m of it; ${er.clints} clints proud of it by ${er.proud && er.proud.join(' / ')} m (5th, 50th, 95th)`, !er.none && er.road >= 23 && er.road <= 35 && er.fwd > .9 && er.stands < .06 && er.clints > 30 && er.proud[0] > .01 && er.proud[2] < .16, er);
 check(`solid at the boulder (its crown ${er.crown} m) and the lace wall (${er.wallN} slabs), open before the stone and on the path; ${er.tris} triangles in ${er.draws} draws`, !er.none && er.boulder && er.wall && !er.before && !er.path && er.crown > 2.6 && er.tris < 20000 && er.draws <= 11, er);
+// Session 2072 (the critic, 10 Nov: "the perched stone is hidden from the road by its own tree"): from the road's side, 24 m out and 0 or
+// 6 m to either side at the eye, rays to a grid over the boulder's face; none may meet the hawthorn's or the hazels' bark and leaves first
+const vis = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id)._wayside; if (!D.group || !D.group.parent) return { none: true };
+  const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], [bx, bz] = W(D.stone.x, D.stone.z), RC = new THREE.Raycaster(), out = [];
+  D.group.updateMatrixWorld(true); const ms = D.group.children.filter(m => m.isMesh);
+  for (const side of [-6, 0, 6]) { const [ex, ez] = W(side, -24), eye = new THREE.Vector3(ex, meshH(ex, ez) + 1.65, ez), dx = bx - ex, dz = bz - ez, L = Math.hypot(dx, dz), nx = -dz / L, nz = dx / L;
+    let n = 0, hid = 0; for (let i = -2; i <= 2; i++) for (let j = 0; j < 5; j++) { const t = new THREE.Vector3(bx + nx * i * .3 * D.stone.brx, D.y + D.stone.top + .3 + j * (D.stone.crown - D.stone.top - .6) / 4, bz + nz * i * .3 * D.stone.brx);
+      const dir = t.clone().sub(eye); const far = dir.length(); RC.set(eye, dir.normalize()); RC.far = far + 2; const h = RC.intersectObjects(ms, false)[0]; n++; if (h && ['haw', 'bark', 'leaf', 'berry'].includes(h.object.name)) hid++; }
+    out.push([side, hid, n]); }
+  return { out, hid: Math.max(...out.map(o => o[1])) }; }, k.er.id);
+console.log(JSON.stringify(vis));
+check(`${k.er.id}: the boulder seen whole from the road's side, 24 m out: ${vis.out && vis.out.map(o => `${o[1]} of ${o[2]} rays met a tree first at ${o[0]} m`).join(', ')}`, !vis.none && vis.hid === 0, vis);
 // the places off the road (Session 2038, #1292 A): one cell in three keeps one (offroadAt, 82), its kind drawn by its own stream, the same when
 // asked again; the first kind built is the Gatelands' shepherd's hut (PKIT.places.shepherd, places.js's gatelandsShepherdHut) on open pasture,
 // 150 m and more off every road and pad. Stood by the nearest: its door down the slope, the floor level, its hearthstone, rowan and spring on the

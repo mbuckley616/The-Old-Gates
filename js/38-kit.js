@@ -7434,11 +7434,13 @@ function aurenneOrrery(hAt, o = {}) {
           let y = 0; for (let k = i0; k <= i1; k++) y = Math.max(y, bins[k]); const h = Math.min(.18 + F() * .12, top(xm) - y);
           if (h > .08) { const b = ground(xm, wz(xm)) - .04; put(new THREE.BoxGeometry(L, h - .01, .16 + F() * .06), 'wall', xm, b + y + h / 2, wz(xm), (F() - .5) * .06, -Math.atan(.4 * .07 * Math.cos(xm * .07 + ph[3])) + (F() - .5) * .08, (F() - .5) * .08); for (let k = i0; k <= i1; k++) bins[k] = y + h; wallN++; }
           x += L + gap; } } }
-    // the green: hazel up out of the grykes to the east, the hawthorn bent by the west wind toward the road
+    // the green: hazel up out of the grykes to the east, the hawthorn bent by the west wind on the pavement's far side from the road
+    // S2072 — the thorn stood between the road and the stone (critic, 10 Nov: from 24 m out and 6 to the side its crown hid all but the boulder's
+    // foot); it is turned a quarter round the pavement to the uphill side, west of the stone and short of the lace wall, its crown clear of the boulder
     const trees = [], bush = (x, z, s) => { const gy = ground(x, z) - .1; for (let c = 0; c < 4; c++) rod('bark', [x, gy, z], [x + (F() - .5) * s * .8, gy + s * .95, z + (F() - .5) * s * .8], .04, 5, .6);
       for (let c = 0; c < 6; c++) put(new THREE.IcosahedronGeometry(s * (.32 + F() * .18), 0).scale(1.2, .8, 1.2), 'leaf', x + (F() - .5) * s * 1.1, gy + s * (.65 + F() * .55), z + (F() - .5) * s * 1.1, F(), F() * 3); trees.push({ x, z }); };
     for (let k = 0, n = 0; k < 400 && n < 7; k++) { const x = 6 + F() * 7, z = -9 + F() * 9; if (mem(x, z) < .1 || Math.hypot(x - other.x, z - other.z) < 2 || trees.some(t => Math.hypot(t.x - x, t.z - z) < 2.2)) continue; n++; bush(x, z, 1.8 + F() * 1.2); }
-    const TX = -6.5, TZ = Math.min(RZ - 6, 10.5), ty = ground(TX, TZ); { const top = [TX + 2.6, ty + 2.5, TZ + .2]; rod('bark', [TX, ty - .2, TZ], [TX + .8, ty + 1.3, TZ], .15, 7, .8); rod('bark', [TX + .8, ty + 1.3, TZ], top, .11, 6, .7);
+    const TX = -9.5, TZ = -8, ty = ground(TX, TZ); { const top = [TX + 2.6, ty + 2.5, TZ + .2]; rod('bark', [TX, ty - .2, TZ], [TX + .8, ty + 1.3, TZ], .15, 7, .8); rod('bark', [TX + .8, ty + 1.3, TZ], top, .11, 6, .7);
       for (let l = 0; l < 6; l++) { const e = [top[0] + .4 + F() * 1.6, top[1] - .3 + F() * .7, top[2] + (F() - .5) * 2.2]; rod('bark', [top[0] - .6 + l * .15, top[1] - .5 + l * .1, top[2]], e, .045, 5, .6);
         for (let c = 0; c < 3; c++) { const p = [e[0] + (F() - .3) * 1.2, e[1] + (F() - .5) * .5, e[2] + (F() - .5) * 1.2]; put(new THREE.IcosahedronGeometry(.6 + F() * .3, 0).scale(1.5, .55, 1.2), 'haw', ...p, F() * .3, F() * 3);
           for (let q = 0; q < 4; q++) put(new THREE.IcosahedronGeometry(.035, 0), 'berry', p[0] + (F() - .5) * 1.1, p[1] - .15 + F() * .2, p[2] + (F() - .5) * .9); } } }

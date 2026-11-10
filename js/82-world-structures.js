@@ -839,7 +839,7 @@
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-.6-.6*t,-6+(-D.off+6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
       return out;}
     if(D.kind==='erratic'){ /* S2034 — the pavement's ground flat at the ground under its middle (its clints a hand proud of it), a clearing of the scatter over
-      the pavement, the lace wall above it and the hawthorn below, and the path to the road */
+      the pavement, the lace wall and the hawthorn above it (S2072: the thorn moved off the road side), and the path to the road */
       {const [x,z]=W(0,1);out.push(addStamp({id:D.id+'_pave',kind:'door',x,z,r:11.5,blend:3,y:landH(x,z),cell:k}));}
       {const [x,z]=W(0,3);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:18,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-1.6-.9*t,-7.6+(-D.off+7.6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
