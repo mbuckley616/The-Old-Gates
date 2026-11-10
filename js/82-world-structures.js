@@ -190,6 +190,7 @@
     if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
     if(c._aq&&c._aq.walks){aqWalkDrop(c._aq.id);c._aq.walks=null;} /* S1927 — the aqueduct's channel */
     if(c._wayside&&c._wayside.lamp){unregLight(c._wayside.lamp.light);c._wayside.lamp=null;} /* S2048 — the coach's lamp */
+    if(c._wayside&&c._wayside.patch)offroadPatchDrop(c._wayside.id); /* S2065 — the expedition's laid-back ground */
     if(c._offroad&&c._offroad.patch)offroadPatchDrop(c._offroad.id); /* S2044 — a place off the road's own ground */
     if(c._tunnel&&c._tunnel.house){const i=ZONES.world.houses.indexOf(c._tunnel.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1828 — the tunnel's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
@@ -760,7 +761,7 @@
   // Nothing marks it until you come within 40 m (tickDiscovery, 83), and then the map has it, with no travel to it.
   // -> {id, kind, name, x, z, ry, off, cell} or null, kept on the cell (c._wayside)
   const WAYSIDE={gatelander:['charcoal','merchants','carriage','cellar','erratic'],markman:['hunters','unfinished'],aurennais:['expedition']};
-  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34],charcoal:[22,34],cellar:[20,28],erratic:[24,34],unfinished:[14,22],merchants:[14,24]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp',charcoal:'A charcoal burners’ camp',cellar:'A fallen cottage',erratic:'A perched stone',unfinished:'An unfinished camp',merchants:'A merchants’ camp'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
+  const WAYSIDE_OFF={carriage:[20,24],hunters:[20,34],charcoal:[22,34],cellar:[20,28],erratic:[24,34],unfinished:[14,22],merchants:[14,24],expedition:[16,24]},WAYSIDE_NAME={carriage:'An overturned coach',hunters:'A hunters’ camp',charcoal:'A charcoal burners’ camp',cellar:'A fallen cottage',erratic:'A perched stone',unfinished:'An unfinished camp',merchants:'A merchants’ camp',expedition:'An abandoned expedition'},WAYSIDE_FIND=40; /* S2025 — the hunters' camp in sight of its road */
   /* S2029 — the charcoal burners' four stances in the camp's own frame (the kit's CC_PADS turned half round: the burning stack's pitstead, the opened
      one's, the hut's and the cordwood's), [x, z, r]; the land under them may rise 2 m across the camp, where the coach's pad allows 1.2 */
   /* S2030 — the fallen cottage's floor, 7 by 4.6 m, levelled as one stance */
@@ -770,8 +771,10 @@
   /* S2063 — the merchants' camp's four stances in the camp's own frame (the kit's MC_PADS turned half round: the stall under its fly with the first
      waggon, the fire, the tent and the second waggon), [x, z, r]; the picket line's two posts and the stacked goods are read by the land check
      alone (r 0), and the green may rise 1.6 m across them; no stance's blend reaches another's flat, so each reads level */
-  const WAYSIDE_BIOME={unfinished:['tundra']};
-  const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]],merchants:[[3,-6.6,3.2],[0,1,1.8],[-6.6,4.2,2.2],[9.5,1.5,3.2],[-8.4,-1.6,0],[-14.4,-1.6,0],[6.55,5.15,0]],erratic:[[0,1,11.5],...[0,1,2,3,4,5,6,7].map(k=>[+(Math.cos(k*Math.PI/4)*10).toFixed(2),+(1+Math.sin(k*Math.PI/4)*8).toFixed(2),0])]},WAYSIDE_RISE={charcoal:2,merchants:1.6};
+  const WAYSIDE_BIOME={unfinished:['tundra'],expedition:['plains','coast','wastes','wasteland']}; /* S2065 — the expedition on Aurenne's dry ground, not in its swamp's giant caps or on its dunes */
+  const WAYSIDE_PADS={charcoal:[[0,0,4.6],[12,1,4.2],[-9,5,2.4],[4,10.5,3.4]],cellar:[[0,0,4.4]],merchants:[[3,-6.6,3.2],[0,1,1.8],[-6.6,4.2,2.2],[9.5,1.5,3.2],[-8.4,-1.6,0],[-14.4,-1.6,0],[6.55,5.15,0]],erratic:[[0,1,11.5],...[0,1,2,3,4,5,6,7].map(k=>[+(Math.cos(k*Math.PI/4)*10).toFixed(2),+(1+Math.sin(k*Math.PI/4)*8).toFixed(2),0])]},WAYSIDE_RISE={charcoal:2,merchants:1.6,expedition:2.4};
+  /* S2065 — the abandoned expedition's camp and its dig on the old terrace behind the wall (the kit's frame: the road at -z), read by the land check; the hill may rise 2.4 m across them */
+  WAYSIDE_PADS.expedition=[[0,0,5],[2.5,8.5,4],[-6,4,0],[8,4,0],[2.5,12,0]];
   function waysideAt(c){
     if(!c||c._wayside!==undefined)return c?c._wayside:null;c._wayside=null;
     if(c.type==='sea'||c.home||!c.sites||!c.roadDefs||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
@@ -818,6 +821,18 @@
       {const [x,z]=W(-2.5,-1.5);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:16,blend:2,y:0,cell:k}));}
       for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(2.6,-9+(-D.off+9)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3.5,blend:1.5,y:0,cell:k}));}
       return out;}
+    if(D.kind==='expedition'){ /* S2065 — the camp's terrace flat at its own ground; the old terrace behind the wall flat at its ground, or 0.6 m over the camp's if
+      the hill does not rise so far; the grid's points round the trench sunk 2.4 m under the terrace (every corner of every 4 m square the trench, 0.3 m
+      wider, reaches), so the trench the piece cuts has nothing of the world's ground in it, and placeWayside lays the ground back over the squares
+      they touch; the scatter cleared over the camp and the dig, and the path to the road */
+      const yc=landH(...W(0,0)),yt=Math.max(landH(...W(2.5,9.5)),yc+.6),T=PKIT.places.expedition.trench,g=CHUNK/SEGS;
+      {const [x,z]=W(0,0);out.push(addStamp({id:D.id+'_camp',kind:'door',x,z,r:5,blend:3,y:yc,cell:k}));}
+      {const [x,z]=W(2,10.5);out.push(addStamp({id:D.id+'_terrace',kind:'door',x,z,r:4.6,blend:2.5,y:yt,cell:k}));}
+      let ax=1e9,bx=-1e9,az=1e9,bz=-1e9;for(const [u,v] of [[-1,-1],[1,-1],[-1,1],[1,1]]){const [x,z]=W(T.x+u*(T.L/2+.3),T.z+v*(T.W/2+.3));ax=Math.min(ax,x);bx=Math.max(bx,x);az=Math.min(az,z);bz=Math.max(bz,z);}
+      for(let vz=Math.floor(az/g)*g;vz<=Math.floor(bz/g)*g+g;vz+=g)for(let vx=Math.floor(ax/g)*g;vx<=Math.floor(bx/g)*g+g;vx+=g)out.push(addStamp({id:D.id+'_sink',kind:'door',sink:true,x:vx,z:vz,r:.3,blend:.3,y:yt-2.4,cell:k}));
+      {const [x,z]=W(0,3);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:16,blend:2,y:0,cell:k}));}
+      for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(-.6,-6+(-D.off+6)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3,blend:1.5,y:0,cell:k}));}
+      return out;}
     if(D.kind==='cellar'){ /* S2030 — the cottage's floor flat at its ground, a clearing of the scatter round the footings, the elder and the thorn, and the path to the road */
       {const [x,z]=W(0,0);out.push(addStamp({id:D.id+'_floor',kind:'door',x,z,r:4.4,blend:2.5,y,cell:k}));}
       {const [x,z]=W(0,-2);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9.5,blend:2,y:0,cell:k}));}
@@ -839,14 +854,51 @@
     {const [x,z]=W(0,1);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:9,blend:2,y:0,cell:k}));}
     for(let q=1;q<=4;q++){const t=q/4,[x,z]=W(2+17*t,-.8+(-D.off+2.6+.8)*t);out.push(addStamp({id:`${D.id}_way${q}`,kind:'door',noFlat:true,x,z,r:3.5,blend:1.5,y:0,cell:k}));}
     return out;}
+  // S2065 — inside the scatter's clearing of a place by a road or off it (its _clear stamp's core): the ore veins keep out of it (spawnChunkVeins,
+  // 50), as the trees and rocks do; they seek a chunk's steepest ground, and the expedition's sunk points under its laid ground were the steepest
+  function placeClearAt(x,z){const arr=stampsNear(x,z);for(let i=0;i<arr.length;i++){const t=arr[i];if(t.noFlat&&/^(wayside|offroad)_.*_clear$/.test(t.id)&&Math.hypot(x-t.x,z-t.z)<t.r)return true;}return false;}
+  // S2065 — the ground laid back over a trench's sunk points (the expedition's): the world's ground is drawn on a 4 m grid, so waysideStamps
+  // sinks every point of the squares the trench reaches, and this draws those squares and their neighbours (every square a sunk point
+  // touches, and one more round them) again as they were before the sink, in the world's own terrain material: each point's height, colour, land mask and normal
+  // read with the sinks lifted, as buildChunk reads them, split on the chunk's diagonal and cut every 0.5 m, so it meets the world's ground
+  // at the squares' edges exactly. Only the cut squares over the trench (0.6 m wider than it) are left out; the piece's ring of trodden
+  // earth covers their edge. -> { h(x, z) the laid-back height (meshH elsewhere), mesh, rect(co, s) its bounds in the piece's frame, cells }
+  function waysideLaidBack(D){const g=CHUNK/SEGS,sinks=STAMPS.filter(t=>t.id===D.id+'_sink');if(!sinks.length)return null;
+    const cells=new Set(),V=new Map(),vk=(x,z)=>x+','+z;for(const t of sinks)for(let dz=-2*g;dz<=g;dz+=g)for(let dx=-2*g;dx<=g;dx+=g)cells.add(vk(t.x+dx,t.z+dz)); /* the squares a sunk point touches, and one more round them, so no square left to the world has a point whose normal saw the pit */
+    const pts=new Set();for(const ck of cells){const [x,z]=ck.split(',').map(Number);for(const [dx,dz] of [[0,0],[g,0],[0,g],[g,g],[-g,0],[0,-g],[2*g,0],[0,2*g],[g,-g],[-g,g],[2*g,g],[g,2*g]])pts.add(vk(x+dx,z+dz));}
+    const H=(x,z)=>{const v=V.get(vk(x,z));return v?v.h:worldH(x,z);};
+    /* each point's normal as computeVertexNormals gives it: the six faces round it (each square split from (x+g, z) to (x, z+g)), weighted by area */
+    const fA=(x,z)=>{const a=H(x,z),b=H(x,z+g),c=H(x+g,z);return [(a-c)*g,g*g,(a-b)*g];},fB=(x,z)=>{const b=H(x,z+g),d=H(x+g,z+g),c=H(x+g,z);return [(b-d)*g,g*g,(c-d)*g];};
+    const nrm=v=>{if(v.n)return v.n;const {x,z}=v,s=[0,0,0];for(const f of [fA(x,z),fA(x-g,z),fB(x-g,z),fA(x,z-g),fB(x,z-g),fB(x-g,z-g)]){s[0]+=f[0];s[1]+=f[1];s[2]+=f[2];}const l=Math.hypot(...s);return v.n=s.map(q=>q/l);};
+    sinks.forEach(t=>t.noFlat=true);
+    try{for(const pk of pts){const [x,z]=pk.split(',').map(Number),h=worldH(x,z),cc=new THREE.Color();groundColor(x,z,h,slopeNormalY(x,z),cc);V.set(pk,{x,z,h,c:[cc.r,cc.g,cc.b],m:[0,0,0],n:null});}
+      if(LAND.on){const arr=[...V.values()],geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(arr.flatMap(v=>[v.x,v.h,v.z]),3));landMask(geo,-CHUNK/2,-CHUNK/2);const m=geo.attributes.aMask;arr.forEach((v,i)=>v.m=[m.getX(i),m.getY(i),m.getZ(i)]);geo.dispose();}
+      for(const ck of cells){const [x0,z0]=ck.split(',').map(Number);for(const [dx,dz] of [[0,0],[g,0],[0,g],[g,g]])nrm(V.get(vk(x0+dx,z0+dz)));}}
+    finally{sinks.forEach(t=>t.noFlat=false);}
+    const h=(x,z)=>{const x0=Math.floor(x/g)*g,z0=Math.floor(z/g)*g;if(!cells.has(vk(x0,z0)))return meshH(x,z);const u=(x-x0)/g,w=(z-z0)/g,h00=H(x0,z0),h10=H(x0+g,z0),h01=H(x0,z0+g),h11=H(x0+g,z0+g);
+      return (u+w<1)?(h00+(h10-h00)*u+(h01-h00)*w):(h11+(h01-h11)*(1-u)+(h10-h11)*(1-w));};
+    const T=PKIT.places.expedition.trench,co=Math.cos(D.ry),s_=Math.sin(D.ry),cut=(x,z)=>{const dx=x-D.x,dz=z-D.z,lx=dx*co-dz*s_,lz=dx*s_+dz*co;return Math.abs(lx-T.x)<T.L/2+.6&&Math.abs(lz-T.z)<T.W/2+.6;};
+    const pos=[],col=[],msk=[],nor=[],idx=[];
+    for(const ck of cells){const [x0,z0]=ck.split(',').map(Number),N=Array.from({length:64},(_,q)=>cut(x0+((q&7)+.5)/8*g,z0+((q>>3)+.5)/8*g)).some(Boolean)?8:1 /* cut every 0.5 m only where the trench reaches */,c4=[[0,0],[g,0],[0,g],[g,g]].map(([dx,dz])=>{const v=V.get(vk(x0+dx,z0+dz));nrm(v);return v;}),base=pos.length/3;
+      for(let j=0;j<=N;j++)for(let i=0;i<=N;i++){const u=i/N,w=j/N,[A,Bq,Cq,wa,wb,wc]=(u+w<1||(u+w===1&&u<1))?[c4[0],c4[1],c4[2],1-u-w,u,w]:[c4[3],c4[2],c4[1],u+w-1,1-u,1-w]; /* barycentric in the chunk's own triangle */
+        const L=(f,q)=>A[f][q]*wa+Bq[f][q]*wb+Cq[f][q]*wc;pos.push(x0+u*g-D.x,A.h*wa+Bq.h*wb+Cq.h*wc,z0+w*g-D.z);col.push(L('c',0),L('c',1),L('c',2));msk.push(L('m',0),L('m',1),L('m',2));const nx=L('n',0),ny=L('n',1),nz=L('n',2),nl=Math.hypot(nx,ny,nz);nor.push(nx/nl,ny/nl,nz/nl);}
+      for(let j=0;j<N;j++)for(let i=0;i<N;i++){if(cut(x0+(i+.5)/N*g,z0+(j+.5)/N*g))continue;const a=base+j*(N+1)+i,b=a+1,c=a+N+1,d=c+1;idx.push(a,c,b,c,d,b);}}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+    if(LAND.on)geo.setAttribute('aMask',new THREE.Float32BufferAttribute(msk,3));geo.setIndex(idx);geo.computeBoundingSphere();
+    const mesh=new THREE.Mesh(geo,terrainMat);mesh.position.set(D.x,0,D.z);mesh.receiveShadow=true;mesh.name='wayside laid ground';
+    const rect=(co,s)=>{let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(const ck of cells){const [cx,cz]=ck.split(',').map(Number);for(const [dx,dz] of [[0,0],[g,0],[0,g],[g,g]]){const ex=cx+dx-D.x,ez=cz+dz-D.z,lx=ex*co-ez*s,lz=ex*s+ez*co;x0=Math.min(x0,lx);x1=Math.max(x1,lx);z0=Math.min(z0,lz);z1=Math.max(z1,lz);}}return {x0,x1,z0,z1};};
+    return {h,mesh,rect,cells:cells.size,keys:[...cells],tris:idx.length/3};}
   // the piece built on the drawn ground (meshH) in its own frame, turned to face the road; its solids, squares along the coach's length
   // (the world's solids are squares, so a turned body is three of them, each as wide as it)
-  function placeWayside(c,k){const D=waysideAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],y0=meshH(D.x,D.z);
-    const M=PKIT.places[D.kind]({key:D.id,road:-D.off,ground:(lx,lz)=>meshH(...W(lx,lz))-y0});
+  function placeWayside(c,k){const D=waysideAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co];
+    const LB=D.kind==='expedition'?waysideLaidBack(D):null,bare=LB?LB.h:meshH,y0=bare(D.x,D.z); /* S2065 — the expedition stands on the ground laid back over its trench's sunk points */
+    const M=PKIT.places[D.kind]({key:D.id,road:-D.off,ground:(lx,lz)=>bare(...W(lx,lz))-y0});
     M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='wayside '+D.kind;sc.add(M.group);
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,wayside:true});}}
     D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.lying=M.lying;D.coach=M.coach;D.tent=M.tent;D.stands=M.stands;D.stack=M.stack;D.hut=M.hut;D.pits=M.pits;D.house=M.house;D.hatch=M.hatch;D.stone=M.stone;D.other=M.other;D.clints=M.clints;D.wall=M.wall;D.pave=M.pave;D.thorn=M.thorn;D.fire=M.fire;D.sledge=M.sledge;D.round=M.round;D.capped=M.capped;D.trees=M.trees;D.wagons=M.wagons;D.tables=M.tables;
+    if(LB){sc.add(LB.mesh);D.laid=LB;D.trench=M.trench;D.inTrench=M.inTrench;D.cart=M.cart;D.tents=M.tents;D.wall=M.wall;offroadPatchDrop(D.id); /* the laid-back ground drawn always (the pit under it is seen from afar), and walked on (groundY) with the trench's floor */
+      const P=LB.rect(co,s_);OFFROAD_PATCHES.push({id:D.id,x:D.x,z:D.z,y:y0,co,s:s_,...P,R2:(Math.hypot(Math.max(-P.x0,P.x1),Math.max(-P.z0,P.z1))+1)**2,ground:(lx,lz)=>M.inTrench(lx,lz)?M.trench.floor:LB.h(...W(lx,lz))-y0});D.patch=P;}
     if(M.lamp){const[ax,ay,az]=M.lamp.at,[lx,lz]=W(ax,az);D.lamp={mat:M.lamp.mat,light:regLight(0xffb060,0,9,'wayside:'+D.id),lit:null};D.lamp.light.position.set(lx,y0+ay,lz);} /* S2048 — the coach's lamp, lit at dusk (waysideLamps) */
     return M.group;}
   // S2048 — the coach's lamp still burns on its bracket: dark from 19:00 to 06:30 (the towns' lamps' hours), its glass glows and it throws

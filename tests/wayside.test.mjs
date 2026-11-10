@@ -8,10 +8,11 @@
 // Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt);
 // Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2048 the coach's lamp at night and its paint. Session 2051
 // the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished),
-// Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants).
+// Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants), Session 2065 Aurenne's abandoned expedition (PKIT.places.expedition) on its laid ground.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
+/* S2065 — one cell in three rolls a place, and with every kind on Aurenne's list built 23 of 60 keep one: the ceiling is half the cells, the odds' spread */
 const k = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => c.type !== 'sea' && !c.home), C = G.map(c => waysideAt(c)).filter(Boolean);
   const again = G.map(c => { const keep = c._wayside; c._wayside = undefined; const d = waysideAt(c); c._wayside = keep; return d; }).filter(Boolean);
   const same = again.length === C.length && again.every((d, i) => d.id === C[i].id && d.x === C[i].x && d.z === C[i].z && d.ry === C[i].ry);
@@ -20,7 +21,7 @@ const k = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => 
   return { cells: G.length, n: C.length, kinds: [...new Set(C.map(d => d.kind))].sort(), same, coaches: coaches.length, camps: camps.length, burns: burns.length, cots: cots.length, ers: ers.length, gl: [...coaches, ...burns, ...cots, ...ers].every(d => ppl(d) === 'gatelander'), mk: camps.every(d => ppl(d) === 'markman'),
     near: coaches[0] && { id: coaches[0].id, x: coaches[0].x, z: coaches[0].z, ry: coaches[0].ry, off: coaches[0].off }, camp: camps[0] && { id: camps[0].id, x: camps[0].x, z: camps[0].z, ry: camps[0].ry, off: camps[0].off }, burn: burns[0] && { id: burns[0].id, x: burns[0].x, z: burns[0].z, ry: burns[0].ry, off: burns[0].off }, cot: cots[0] && { id: cots[0].id, x: cots[0].x, z: cots[0].z, ry: cots[0].ry, off: cots[0].off }, er: ers[0] && { id: ers[0].id, x: ers[0].x, z: ers[0].z, ry: ers[0].ry, off: ers[0].off } }; });
 console.log(JSON.stringify(k));
-check(`${k.n} of ${k.cells} cells keep a place by a road (${k.coaches} of them the Gatelands' coach, ${k.camps} the Mark's hunters' camp, ${k.burns} the Gatelands' charcoal burners, ${k.cots} the fallen cottage, ${k.ers} the perched stone), the same when asked again`, k.n > 0 && k.n < k.cells / 3 && k.same && k.gl && k.mk && k.coaches > 0 && k.camps > 0 && k.burns > 0 && k.cots > 0 && k.ers > 0 && k.kinds.join() === 'carriage,cellar,charcoal,erratic,hunters,unfinished', k);
+check(`${k.n} of ${k.cells} cells keep a place by a road (${k.coaches} of them the Gatelands' coach, ${k.camps} the Mark's hunters' camp, ${k.burns} the Gatelands' charcoal burners, ${k.cots} the fallen cottage, ${k.ers} the perched stone), the same when asked again`, k.n > 0 && k.n < k.cells / 2 && k.same && k.gl && k.mk && k.coaches > 0 && k.camps > 0 && k.burns > 0 && k.cots > 0 && k.ers > 0 && k.kinds.join() === 'carriage,cellar,charcoal,erratic,expedition,hunters,unfinished', k);
 await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, k.near);
 for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id); return !!(c && c._wayside.group && c._wayside.group.parent); }, k.near.id); if (ok) break; await page.waitForTimeout(1000); }
 await g.spin('clear', 40);
@@ -255,6 +256,39 @@ if (mc) {
   const ml = async h => { await page.evaluate(h => forceTime(h), h); await g.spin('clear', 20); return page.evaluate(id => { const D = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id)._wayside; if (!D.lamp) return { none: true }; const P = D.lamp.light.position; return { i: D.lamp.light.intensity, up: +(P.y - meshH(P.x, P.z)).toFixed(2) }; }, mc.id); };
   const m12 = await ml(12), m22 = await ml(22); await page.evaluate(() => forceTime(12)); console.log(JSON.stringify({ m12, m22 }));
   check(`the stall's lantern dark at noon (${m12.i}), lit at 22h (${m22.i}), ${m22.up} m over the ground`, !m12.none && m12.i === 0 && m22.i > 1 && m22.up > 1.2 && m22.up < 2.6, { m12, m22 });
+}
+// Session 2065 — Aurenne's abandoned expedition (PKIT.places.expedition, places.js's aurenneExpedition) on Aurenne's dry ground, 16 to 24 m
+// off its road and facing it; its trench cut where the world's ground is sunk and laid back over it (waysideLaidBack): the world's ground
+// under the trench's floor everywhere, the laid ground meeting the world's at its edge, the walk height the trench's floor in it and the
+// laid ground's out of it; what fell lies on the laid ground; solid at the standing tent, the cart and the wall, open at the fire and in
+// the wall's gap; its cost; no ore vein in its clearing
+const ex = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => c.type !== 'sea' && !c.home), E = G.map(c => waysideAt(c)).filter(d => d && d.kind === 'expedition');
+  E.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); const D = E[0];
+  return D && { n: E.length, id: D.id, x: D.x, z: D.z, ry: D.ry, off: D.off, au: E.every(d => nationOf(...d.cell.split(',').map(Number)).people === 'aurennais'),
+    dry: E.every(d => withPlace(d.x, d.z, () => ['plains', 'coast', 'wastes', 'wasteland'].includes(dominantRegion(d.x, d.z).r.biome))) }; });
+check(`${ex ? ex.n : 0} abandoned expeditions by Aurenne's roads, on its dry ground (the nearest ${ex && ex.id})`, !!ex && ex.n >= 4 && ex.au && ex.dry, ex);
+if (ex) {
+  await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 50; pz = D.z - Math.cos(D.ry) * 50; }, ex);
+  for (let n = 0; n < 12; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id); return !!(c && c._wayside.group && c._wayside.group.parent); }, ex.id); if (ok) break; }
+  await g.spin('clear', 40);
+  const xt = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id)._wayside; if (!D.group || !D.group.parent || !D.laid) return { none: true };
+    const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], L = D.laid, T = D.trench, at = (u, v) => solidAt(...W(u, v), L.h(...W(u, v)) + .1);
+    let bd = 1e9, bq = null; for (const sg of RSEG) { if (sg.road.def.via === 'quay' || sg.road.def.via === 'spur') continue; const vx = sg.bx - sg.ax, vz = sg.bz - sg.az, t = Math.max(0, Math.min(1, ((D.x - sg.ax) * vx + (D.z - sg.az) * vz) / (vx * vx + vz * vz || 1))), qx = sg.ax + vx * t - D.x, qz = sg.az + vz * t - D.z, d = Math.hypot(qx, qz); if (d < bd) { bd = d; bq = [qx, qz]; } }
+    const st = Math.max(...D.stands.map(l => Math.abs(D.y + l.y - L.h(...W(l.x, l.z)))));
+    let under = 1e9; for (let u = -T.L / 2; u <= T.L / 2 + 1e-6; u += .25) for (let v = -T.W / 2; v <= T.W / 2 + 1e-6; v += .25) { const [x, z] = W(T.x + u, T.z + v); under = Math.min(under, D.y + T.floor - meshH(x, z)); }
+    const keys = new Set(L.keys), g4 = CHUNK / SEGS; let seam = 0, edges = 0; for (const k of L.keys) { const [x0, z0] = k.split(',').map(Number);
+      for (const [nx, nz, e] of [[x0 - g4, z0, t => [x0, z0 + t]], [x0 + g4, z0, t => [x0 + g4, z0 + t]], [x0, z0 - g4, t => [x0 + t, z0]], [x0, z0 + g4, t => [x0 + t, z0 + g4]]]) { if (keys.has(nx + ',' + nz)) continue; edges++;
+        for (let t = 0; t <= g4; t += .5) { const [x, z] = e(t); seam = Math.max(seam, Math.abs(L.h(x, z) - meshH(x + (nx - x0) * 1e-3, z + (nz - z0) * 1e-3))); } } }
+    const veins = VEINS.filter(v => placeClearAt(v.x, v.z) && Math.hypot(v.x - D.x, v.z - D.z) < 30).length, [gx0, gz0] = W(T.x, T.z), [gx1, gz1] = W(0, 0);
+    return { id, tris: D.tris, draws: D.draws, laid: L.tris, cells: L.cells, road: +bd.toFixed(2), fwd: bq ? +(-(bq[0] * s + bq[1] * co) / (bd || 1)).toFixed(2) : null, stands: +st.toFixed(3), n: D.stands.length,
+      under: +under.toFixed(3), seam: +seam.toFixed(4), edges, inT: +(groundY(gx0, gz0) - D.y - T.floor).toFixed(3), camp: +(groundY(gx1, gz1) - L.h(gx1, gz1)).toFixed(3), sunk: +(L.h(gx0, gz0) - meshH(gx0, gz0)).toFixed(2),
+      tent: at(D.tents.up.x, D.tents.up.z), cart: at(D.cart.wheel.x + .1, D.cart.wheel.z + .7), wall: at(4, D.wall.z), gap: at(-.8, D.wall.z), fire: at(D.fire.x, D.fire.z), veins }; }, ex.id);
+  console.log(JSON.stringify(xt));
+  check(`${xt.id}: the expedition ${xt.road} m off its road, facing it (${xt.fwd}); ${xt.n} things fallen within ${xt.stands} m of its ground`, !xt.none && xt.road >= 15 && xt.road <= 25 && xt.fwd > .9 && xt.stands < .03, xt);
+  check(`its trench: the world's ground ${xt.under} m or more under the floor (sunk ${xt.sunk} m at its middle), the ground laid back meeting the world's within ${xt.seam} m on ${xt.edges} edges, the walk on the trench's floor (${xt.inT}) and on the laid ground at the camp (${xt.camp})`,
+    !xt.none && xt.under > .3 && xt.sunk > 1 && xt.seam < .01 && xt.edges >= 4 && Math.abs(xt.inT) < .01 && Math.abs(xt.camp) < .01, xt);
+  check(`solid at the standing tent, the cart and the wall, open at the fire and in the wall's gap; no ore vein in its clearing; ${xt.tris} triangles in ${xt.draws} draws, the laid ground ${xt.laid} over ${xt.cells} squares`,
+    !xt.none && xt.tent && xt.cart && xt.wall && !xt.gap && !xt.fire && xt.veins === 0 && xt.tris < 12000 && xt.draws <= 16 && xt.laid < 3000, xt);
 }
 // Session 2063 (QA's S2060: two shepherd's huts 2.5 km out drawn whole in Dunmore's view): the places by a road and off it are hidden past
 // 450 m of you and shown within it; nothing else of them changes
