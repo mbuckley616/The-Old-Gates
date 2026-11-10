@@ -7774,10 +7774,15 @@ function aurenneOrrery(hAt, o = {}) {
       else { g.rotateX(Math.PI / 2); put(g, 'log', c, y, m, 0, 0, 0, .6); for (const e of [a0, a1]) put(new THREE.CircleGeometry(rad * .96, 9).rotateY(e < m ? Math.PI : 0), 'end', c, y, e + (e < m ? -.002 : .002)); }
       if (rec) logs.push({ ax, a0: +a0.toFixed(3), a1: +a1.toFixed(3), c, y: +y.toFixed(3) }); };
     // the side walls: eleven courses, the window cut out of the east one; the gables: ten courses half a step up, the door cut out of the front
-    for (let k = 0; k < NC; k++) { const y = Y0 + R + k * STEP; log('z', -ZW - OUT, ZW + OUT, -XW, y);
-      if (y > WS && y < WS + WH + R) { log('z', -ZW - OUT, WZ - WW / 2, XW, y); log('z', WZ + WW / 2, ZW + OUT, XW, y); } else log('z', -ZW - OUT, ZW + OUT, XW, y); }
+    /* S2080 (the critic, 10 Nov: "from the west, at 25 m, I see no lit window … from three sides of four, a cabin lived in is dark at night"): two
+       more lights like the east one, in the west wall clear of the hearth's chimney (WZW) and in the front gable beside the door (FWX), so the
+       cabin shows a lit window from the front and both sides; the back gable, against the trees, stays blind. cut lays a log round its gaps */
+    const WZW = 1.0, FWX = 1.15, inWin = y => y > WS && y < WS + WH + R;
+    const cut = (ax, a0, a1, c, y, gaps) => { let a = a0; for (const [g0, g1] of gaps.sort((p, q) => p[0] - q[0])) { if (g0 > a) log(ax, a, g0, c, y); a = Math.max(a, g1); } if (a1 > a) log(ax, a, a1, c, y); };
+    for (let k = 0; k < NC; k++) { const y = Y0 + R + k * STEP, w = inWin(y); cut('z', -ZW - OUT, ZW + OUT, -XW, y, w ? [[WZW - WW / 2, WZW + WW / 2]] : []);
+      cut('z', -ZW - OUT, ZW + OUT, XW, y, w ? [[WZ - WW / 2, WZ + WW / 2]] : []); }
     for (let k = 0; k < NC - 1; k++) { const y = Y0 + R + STEP / 2 + k * STEP; log('x', -XW - OUT, XW + OUT, -ZW, y);
-      if (y < Y0 + DH + R) { log('x', -XW - OUT, -DW / 2, ZW, y); log('x', DW / 2, XW + OUT, ZW, y); } else log('x', -XW - OUT, XW + OUT, ZW, y); }
+      cut('x', -XW - OUT, XW + OUT, ZW, y, [...(y < Y0 + DH + R ? [[-DW / 2, DW / 2]] : []), ...(inWin(y) ? [[FWX - WW / 2, FWX + WW / 2]] : [])]); }
     // the gables above the eaves: logs shortening to the ridge, under the roof's line
     for (let y = Y0 + R + STEP / 2 + (NC - 1) * STEP; y < RIDGE - .2; y += STEP) { const hl = (RIDGE - R - y) / Math.tan(PITCH); if (hl < .25) break; for (const z of [-ZW, ZW]) log('x', -hl, hl, z, y); }
     // the corner stones and the sill's middle stones, down into the ground; the floor; the door: its frame posts, the leaf of boards shut, its latch
@@ -7786,8 +7791,11 @@ function aurenneOrrery(hAt, o = {}) {
     put(new THREE.BoxGeometry(2 * XW - .26, .05, 2 * ZW - .26), 'board', 0, Y0 + .05, 0);
     for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.1, DH + .1, .26), 'board', sx * (DW / 2 + .05), Y0 + (DH + .1) / 2, ZW);
     put(new THREE.BoxGeometry(DW, DH, .05), 'door', 0, Y0 + DH / 2, ZW - .06); put(new THREE.BoxGeometry(.04, .04, .1), 'iron', DW / 2 - .12, Y0 + 1.0, ZW + .01);
-    { const wy = WS + WH / 2 + R / 2; for (const s2 of [-1, 1]) { put(new THREE.BoxGeometry(.26, .06, WW + .16), 'board', XW, wy + s2 * (WH / 2 + .03), WZ); put(new THREE.BoxGeometry(.26, WH, .06), 'board', XW, wy, WZ + s2 * (WW / 2 + .03)); }
-      put(new THREE.BoxGeometry(.03, WH, WW), 'glow', XW - .02, wy, WZ); put(new THREE.BoxGeometry(.04, .03, WW), 'board', XW - .01, wy, WZ) /* the light, its glazing bar */; }
+    const wy = WS + WH / 2 + R / 2, wins = [{ x: XW, z: WZ, n: [1, 0] }, { x: -XW, z: WZW, n: [-1, 0] }, { x: FWX, z: ZW, n: [0, 1] }];
+    /* each light: its frame of boards, the glow a hand inside the wall's line, its glazing bar; built along z and turned a quarter for the gable */
+    for (const W of wins) { const ry = W.n[0] ? 0 : Math.PI / 2, ins = W.n[0] ? [-W.n[0] * .02, 0] : [0, -W.n[1] * .02], ins2 = W.n[0] ? [-W.n[0] * .01, 0] : [0, -W.n[1] * .01];
+      for (const s2 of [-1, 1]) { put(new THREE.BoxGeometry(.26, .06, WW + .16), 'board', W.x, wy + s2 * (WH / 2 + .03), W.z, 0, ry); put(new THREE.BoxGeometry(.26, WH, .06), 'board', W.x + (W.n[0] ? 0 : s2 * (WW / 2 + .03)), wy, W.z + (W.n[0] ? s2 * (WW / 2 + .03) : 0), 0, ry); }
+      put(new THREE.BoxGeometry(.03, WH, WW), 'glow', W.x + ins[0], wy, W.z + ins[1], 0, ry); put(new THREE.BoxGeometry(.04, .03, WW), 'board', W.x + ins2[0], wy, W.z + ins2[1], 0, ry) /* the light, its glazing bar */; }
     // antlers on the front gable, over the door
     { const ay = Y0 + DH + .9, az = ZW + R + .02; put(new THREE.BoxGeometry(.22, .14, .06), 'antler', 0, ay, az); for (const s of [-1, 1]) { const b = [s * .5, ay + .45, az + .15]; rod('antler', [s * .05, ay, az + .02], b, .025, 5);
       for (let t = 0; t < 3; t++) { const f = .3 + t * .25, p = [s * .05 + s * .45 * f, ay + .45 * f, az + .02 + .13 * f]; rod('antler', p, [p[0] + s * .05, p[1] + .22, p[2] + .08], .018, 5); } } }
@@ -7814,7 +7822,8 @@ function aurenneOrrery(hAt, o = {}) {
     const STEPS_Z = SZ + SD / 2 + .2 + .22 /* the gap */; for (let k = 0; k < 3; k++) { const h = (k + 1) * SF / 3.2, d = .3, z = STEPS_Z + (2 - k) * d + d / 2, gy = ground(SX, z); put(new THREE.BoxGeometry(.8, h + .3 + sy - gy, d), 'stone', SX, (sy + h + gy - .3) / 2 - .05, z); }
     const store = { x: SX, z: SZ, w: SW, d: SD, floor: +(sy + SF).toFixed(3), steps: { z: +STEPS_Z.toFixed(3), top: +(sy + 3 * SF / 3.2 - .05).toFixed(3) } };
     // the woodpile under the west eaves: split rounds in two rows, ends out; a chopping block with the axe in it; a hide on its frame; snowshoes by the door
-    const pile = []; for (const row of [0, 1]) for (let y = .1, lay = 0; y < 1.3; y += .17, lay++) for (let z = -ZW + .3 + (lay % 2) * .08; z < ZW - .5; z += .19) { const x = -XW - R - .18 - row * .27, rr = .075 + F() * .025, g = new THREE.CylinderGeometry(rr, rr, .44, 4 + (F() < .5 ? 1 : 0));
+    /* S2080: the pile stops short of the west light (PZ1), where it ran the wall's length and would have hidden it */
+    const PZ1 = WZW - WW / 2 - .22, pile = []; for (const row of [0, 1]) for (let y = .1, lay = 0; y < 1.3; y += .17, lay++) for (let z = -ZW + .3 + (lay % 2) * .08; z < PZ1; z += .19) { const x = -XW - R - .18 - row * .27, rr = .075 + F() * .025, g = new THREE.CylinderGeometry(rr, rr, .44, 4 + (F() < .5 ? 1 : 0));
       g.rotateZ(Math.PI / 2); g.rotateX(F() * 6.283); g.rotateY((F() - .5) * .08); put(g, 'wood', x, y, z, 0, 0, 0, .4); pile.push({ x: +x.toFixed(3), z: +z.toFixed(3), y: +(y + .09).toFixed(3) }); }
     const BX = -3.6, BZ = 3.0; { const gy = ground(BX, BZ); put(new THREE.CylinderGeometry(.3, .32, .5, 10), 'log', BX, gy + .2, BZ); put(new THREE.CircleGeometry(.29, 10).rotateX(-Math.PI / 2), 'end', BX, gy + .451, BZ);
       rod('wood', [BX + .05, gy + .48, BZ], [BX + .55, gy + .82, BZ + .1], .02, 6); put(new THREE.BoxGeometry(.04, .16, .12), 'iron', BX + .02, gy + .48, BZ, 0, 0, .55); stands.push({ x: BX, y: gy, z: BZ, what: 'block' }); }
@@ -7836,11 +7845,11 @@ function aurenneOrrery(hAt, o = {}) {
     // steps, the block, the hide frame's posts and the trees' trunks. The walls are rows of the logs' own width, so a turned cabin's squares
     // stay inside its corners' run-on
     const Sq = (x, z, w, d, h, ry = 0) => ({ x: +x.toFixed(3), z: +z.toFixed(3), w, d, ry, h: +h.toFixed(3) }), LW = 2 * R + .04;
-    const sol = [Sq(0, ZW, 2 * XW + LW, LW, EAV), Sq(0, -ZW, 2 * XW + LW, LW, EAV), Sq(-XW, 0, LW, 2 * ZW - LW, EAV), Sq(XW, 0, LW, 2 * ZW - LW, EAV), Sq(-XW - R - .32, -.1, .55, 2 * ZW - .8, 1.3),
+    const sol = [Sq(0, ZW, 2 * XW + LW, LW, EAV), Sq(0, -ZW, 2 * XW + LW, LW, EAV), Sq(-XW, 0, LW, 2 * ZW - LW, EAV), Sq(XW, 0, LW, 2 * ZW - LW, EAV), Sq(-XW - R - .32, (-ZW + .2 + PZ1 + .1) / 2, .55, PZ1 + .1 + ZW - .2, 1.3),
       ...[-1, 1].flatMap(sx => [-1, 1].map(sz => Sq(SX + sx * (SW / 2 - .2), SZ + sz * (SD / 2 - .2), .3, .3, sy + SF + 2))), Sq(SX, STEPS_Z + .45, .8, .9, sy + SF * .9), Sq(BX, BZ, .6, .6, ground(BX, BZ) + .45),
       ...[-1, 1].map(s => Sq(HX + s * .8, HZ, .2, .2, ground(HX, HZ) + 2)), ...trees.map(t => Sq(t.x, t.z, .4, .4, ground(t.x, t.z) + t.h))];
     return { group, tris: Math.round(tris), draws: group.children.length, sol, stands: stands.map(s => ({ x: +s.x.toFixed(3), y: +s.y.toFixed(3), z: +s.z.toFixed(3), what: s.what })),
-      cabin: { x0: -XW, x1: XW, z0: -ZW, z1: ZW, eaves: EAV, ridge: RIDGE, y0: Y0, logs: logs.length, door: { x: 0, z: ZW, w: DW, h: DH }, win: { x: XW, z: WZ, w: WW, h: WH, sill: WS } },
+      cabin: { x0: -XW, x1: XW, z0: -ZW, z1: ZW, eaves: EAV, ridge: RIDGE, y0: Y0, logs: logs.length, door: { x: 0, z: ZW, w: DW, h: DH }, win: { x: XW, z: WZ, w: WW, h: WH, sill: WS }, wins: wins.map(W => ({ x: W.x, z: W.z, n: W.n, y: +wy.toFixed(3) })) },
       chimney: { x: CX, z: CZ, w: CW, top: CTOP }, store, pile: pile.length, trees, paths: PATHS };
   }
   // S2056 (card F8; OG-124's Mark panel, "an abandoned logging camp"; Michael's A on #1292) — the Mark's logging camp in the open world,
