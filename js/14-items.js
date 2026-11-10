@@ -903,7 +903,8 @@ function rollLoot(diffScale, theme, kind){
 //   corpse   — up to 2 items. First uses passed baseChance (existing fortune+difficulty roll); second 25% bonus.
 function rollContainerLoot(kind, diffScale, theme, baseChance, key, tier){
   if(tier!=null&&LOOT_TIER!==tier)return withLootTier(tier,()=>rollContainerLoot(kind, diffScale, theme, baseChance, key));
-  if(key!=null&&!LOOT_RNG)return withLootRng(seededRng('loot',key),()=>rollContainerLoot(kind, diffScale, theme, baseChance));
+  if(key!=null){const got=LOOT_RNG?rollContainerLoot(kind, diffScale, theme, baseChance):withLootRng(seededRng('loot',key),()=>rollContainerLoot(kind, diffScale, theme, baseChance));
+    const b=typeof bottleFind==='function'?bottleFind(kind==='treasure'?'chest':kind,key):null;if(b)got.push(b);return got;} /* S2062 — water B's found bottle, on its own stream (50-travel.js) */
   const items=[];
   if((kind==='chest'||kind==='treasure')&&typeof spellbookItem==='function'&&lootRand()<.07){const rare=['suil_oiche','eitilt','sciath','siul_uisce'];items.push(spellbookItem(rare[Math.floor(lootRand()*rare.length)],1));} // v80 — rare spells live in chests
   if(kind==='chest' || kind==='treasure'){

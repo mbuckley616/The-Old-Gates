@@ -896,9 +896,19 @@
     if(typeof renderInv==='function')renderInv();return true;}
   function shelfInteract(){if(!shelfPrompt())return false;return takeShelfBook(currentHouse);}
   let INT_LOOT=null;
-  function lootPrompt(){if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<TOUCH&&Math.abs(jumpY-INT_LOOT.y)<1.2&&aimBox(INT_LOOT.x,INT_LOOT.z,INT_LOOT.y,.45,.45,.75))return towerLocked()?"Press 'E' to pick the chest's lock":"Press 'E' to open the chest";return null;}
+  // S2062 — an inn's cellar barrels (water B's found bottle, Michael on #1355: one barrel in three holds an empty bottle). Each is a
+  // container like a town's barrel: its id is the cellar's and its index, rolled on bottleFind's stream for the loot day, and what you
+  // leave in it stays until the day turns. Nothing else is in an inn's cellar barrel.
+  const CASKS=new Map();
+  function caskAimed(){const C=currentHouse&&currentHouse._casks;if(!C||!C.length)return null;
+    for(const c of C){if(Math.hypot(px-c.x,pz-c.z)>TOUCH||jumpY>.6)continue;if(aimBox(c.x,c.z,0,.4,.4,c.y+.1))return c;}return null;}
+  function caskOf(c){const k=c.id+':'+lootDay();let o=CASKS.get(k);if(!o){const b=typeof bottleFind==='function'?bottleFind('cellar',k):null;
+    o={id:c.id,kind:'barrel',name:'Barrel',displayName:'Barrel',items:b?[b]:[],zone:'interior',opened:false};CASKS.set(k,o);}return o;}
+  function caskPrompt(){return caskAimed()?"Press 'E' to search the barrel":null;}
+  function caskInteract(){const c=caskAimed();if(!c||typeof openLoot!=='function')return false;openLoot(caskOf(c));return true;}
+  function lootPrompt(){const cp=caskPrompt();if(cp)return cp;if(!INT_LOOT||!currentHouse)return null;const taken=worldState.towerLoot&&worldState.towerLoot[INT_LOOT.id];if(taken)return null;if(Math.hypot(px-INT_LOOT.x,pz-INT_LOOT.z)<TOUCH&&Math.abs(jumpY-INT_LOOT.y)<1.2&&aimBox(INT_LOOT.x,INT_LOOT.z,INT_LOOT.y,.45,.45,.75))return towerLocked()?"Press 'E' to pick the chest's lock":"Press 'E' to open the chest";return null;}
   function towerLocked(){return !!INT_LOOT&&!(worldState.towerPicked&&worldState.towerPicked[INT_LOOT.id]);} // S150 — the tower's chest is a good lock
-  function lootInteract(){if(!lootPrompt())return false;
+  function lootInteract(){if(caskInteract())return true;if(!lootPrompt())return false;
     if(towerLocked()){const id=INT_LOOT.id;if(typeof tryLockpick==='function')tryLockpick({seed:'tower_'+id,minPins:4,lockTitle:'A locked chest',onPick:()=>{(worldState.towerPicked||(worldState.towerPicked={}))[id]=true;lootInteract();}});return true;}
     const items=(typeof rollContainerLoot==='function'?rollContainerLoot('treasure',2.4,null,1,'tower:'+INT_LOOT.id):[])||[];if(!items.length)items.push({name:'Old Gold',ico:'🪙',type:'misc',weight:.5,sellMult:1,buyPrice:120,qty:1});let got=0;items.forEach(it=>{if(it.qty==null)it.qty=1;if(typeof bagAdd==='function'){bagAdd(it);got++;}});(worldState.towerLoot||(worldState.towerLoot={}))[INT_LOOT.id]=true;showMsg(`The chest yields ${got} thing${got===1?'':'s'}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Opened the chest atop ${currentHouse.name}.`);return true;}
   function hatchPrompt(){if(currentHouse&&currentHouse.type==='towercellar')return towerCellarPrompt();if(currentHouse&&(currentHouse.type==='limecave'||currentHouse.type==='seacave'||currentHouse.type==='mine'||currentHouse.type==='tunnel'))return limeCavePrompt(); /* S1768 */ /* S1765 — the tower house's cellar: its two ways up */if(!HATCH.active||!currentHouse)return null;if(Math.hypot(px-HATCH.x,pz-HATCH.z)<TOUCH&&Math.abs(jumpY-HATCH.y)<.9&&intHatchAimed())return HATCH.roof?"Press 'E' to climb out onto the roof":(currentHouse.type==='cellar'||currentHouse.type==='chapel')?"Press 'E' to climb up":isGuestCathedral(currentHouse)?"Press 'E' to go down — the bricked stair":"Press 'E' to go down to the cellar";return null;}

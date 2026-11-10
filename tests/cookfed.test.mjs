@@ -279,5 +279,17 @@ check(`dishes learnt: ${ck.known.join(', ')}`, ck.known.join() === 'meat:apples,
 check(`a campfire roasts (${ck.camp.roast}); a dish there without a pot: "${ck.camp.noKit}"; with a mess kit: ${ck.camp.kit}`, ck.camp.roast && /pot/.test(ck.camp.noKit || '') && ck.camp.kit, ck.camp);
 check(`the seconds by island: ${JSON.stringify(ck.isle)}; the mess kit at the goods shop only; the dishes, the seconds and the riders saved`,
   ck.isle.gatelands + '' === 'oats:2,apples:3,butter:4' && ck.isle.mark + '' === 'rye:2,berries:3,curd:4' && ck.isle.aurenne + '' === 'wheat:2,dates:3,olives:4' && ck.kit && ck.save, ck.isle);
+// S2062 — water B's found bottle (Michael on #1355): a barrel in 8, a chest in 16, an inn's cellar barrel in 3, found empty, on its own stream
+const bt = await page.evaluate(() => {
+  const N = 3000, rate = kind => { let n = 0; for (let i = 0; i < N; i++) if (rollContainerLoot(kind, 1, null, .9, 'bt:' + kind + ':' + i, 2).some(b => b.vessel === 'bottle')) n++; return n / N; };
+  const out = { barrel: rate('barrel'), chest: rate('chest'), corpse: rate('corpse') };
+  let n = 0; for (let d = 0; d < N; d++) if (bottleFind('cellar', 'g_test_1_cellar:cask:0:' + d)) n++; out.cellar = n / N;
+  const keep = bottleFind; bottleFind = () => null; const base = []; for (let i = 0; i < 200; i++) base.push(rollContainerLoot('chest', 1, null, .9, 'bt:chest:' + i, 2).map(x => x.name).join('|'));
+  bottleFind = keep; out.moved = 0; for (let i = 0; i < 200; i++) if (rollContainerLoot('chest', 1, null, .9, 'bt:chest:' + i, 2).filter(x => !x.vessel).map(x => x.name).join('|') !== base[i]) out.moved++;
+  const b = bottleFind('cellar', 'g_test_1_cellar:cask:0:' + [...Array(50).keys()].find(d => bottleFind('cellar', 'g_test_1_cellar:cask:0:' + d)));
+  out.item = b && { name: b.name, uses: b.wUses, kind: b.wKind }; return out;
+});
+check(`a bottle in ${(bt.barrel * 100).toFixed(1)}% of barrels, ${(bt.chest * 100).toFixed(1)}% of chests, ${(bt.cellar * 100).toFixed(1)}% of an inn's cellar barrels, no corpse; the rest of the loot unmoved (${bt.moved} of 200 chests); found empty`,
+  Math.abs(bt.barrel - 1 / 8) < .02 && Math.abs(bt.chest - 1 / 16) < .015 && Math.abs(bt.cellar - 1 / 3) < .03 && bt.corpse === 0 && bt.moved === 0 && bt.item && bt.item.name === 'Bottle' && bt.item.uses === 0 && bt.item.kind == null, bt);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
