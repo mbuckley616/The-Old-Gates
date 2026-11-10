@@ -2110,7 +2110,7 @@ function hbGive(rig){const H=rig.hb;for(const h of H.held)if(h.o.parent===H.root
 // under one thrown back off the right shoulder (a spear, a crossbow, a staff, a basket). A blow, a ragdoll and a sleeper are left alone
 // (S1435: your own body's arms are held side by side, each by rig.tpHold.L/.R, which tpPose sets while that arm is on the gait's swing)
 const HB_CLOAK_HOLD=1;
-/* S2052 — and a walking staff's arm too (the Marsh Hag's right). The long cloak is thrown back off that shoulder (people.js: it starts just
+/* S2053 — and a walking staff's arm too (the Marsh Hag's right). The long cloak is thrown back off that shoulder (people.js: it starts just
    forward of the right side), so the arm was left free, and the gait swung the robe's sleeve back under the cloak's start edge, 90 to 120
    degrees round from the front (a 160-tick run at 1.3 m/s: 308 and 263 points out, 4.7 cm; at a walk 337 and 287, 5.5 cm). A staff is
    planted, not swung: under a long cloak with no cape, the staff's arm is held to the hips as the other is, HB_CLOAK_STAFF.k of the swing

@@ -56,7 +56,7 @@ check(`it walks: the builder's bones turn with the driver's stride (by ${walk.mo
 check(`its cloak's hem swings back over the trailing heel as it walks (the middle up to ${walk.hem} rad, the sides ${walk.side})`, walk.hem > .1 && walk.side > .1, walk);
 // S2042 — her held arm takes none of the hips' twist under the long cloak, as the townsfolk's (S2009)
 check(`walking, her held arm (${walk.hold} bones) takes none of the hips' twist under the long cloak (tw ${walk.tw})`, walk.hold > 0 && walk.tw === 0, walk);
-// S2052 — and her staff's arm is held too: the gait swung its robe sleeve back under the thrown-back cloak's start edge (a 160-tick run: 308 points out, 4.7 cm → 15, 1.0 cm)
+// S2053 — and her staff's arm is held too: the gait swung its robe sleeve back under the thrown-back cloak's start edge (a 160-tick run: 308 points out, 4.7 cm → 15, 1.0 cm)
 check(`walking, her staff's arm (${walk.staff} of ${walk.hold} held bones) is held to the hips under the long cloak, so its sleeve stays out of the cloak's start edge`, walk.staff === 3 && walk.hold === 6, walk);
 
 // S2045 — and the spine's lean is the pelvis's under the long cloak, so the cloak (on the pelvis) leans with the chest and the arms it holds
