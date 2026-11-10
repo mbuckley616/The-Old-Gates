@@ -3,26 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### How do places no cell draws (the merchants' camp, the falls) get into the world? (from the look builder, 2026-11-10, #1385)
-**The question.** The places by a road and off it are drawn one cell at a time, each by its own key, in one fixed world. On the Gatelands no cell draws the merchants' camp (built in Session 2063) by a road, or the falls off it, while three cells drew a coach and three a perched stone. How should a kind no cell drew get into the world?
-
-**Options.**
-- **A.** Leave the draw as it is: the merchants' camp and the falls stay out of this world.
-- **B.** No kind twice before every kind once: on each island a kind drawn more than twice gives its last cell (by the cell's key) to a kind drawn nowhere. One coach and one perched stone become a merchants' camp; a shepherd's hut becomes the falls. Three places that stand today change kind.
-- **C (recommended).** A second chance for cells that drew nothing: a cell whose roll missed by less than a sixth (1/3 to 1/2) keeps a place only of a kind its island has drawn nowhere. Nothing that stands today moves. About one more cell in six keeps a place, each hidden past 450 m.
-
-**Recommendation.** C: nothing that stands today moves, and every kind gets a place. Pictures: `docs/prototypes/wayside-merchants-noon.jpg`, `docs/prototypes/wayside-merchants-lantern.jpg`.
-
-### Camp and rest — beds by grade, a bedroll you carry, or a camp you keep? (from the designer, 2026-11-10, #1378)
-**The question.** Backlog L8's *Camp and rest* asks for a lean-to, a tent, bedrolls of three grades and better beds giving stronger rest; today every bed (inn, home, cot, berth, a road camp's bedroll) does the same thing, and nothing you carry lets you sleep. Should a better night be a property of the bed, of a camp you make, or of a camp you keep? The page: `docs/design/camp-and-rest.md`.
-
-**Options.**
-- **A.** Beds by grade: each bed a comfort (road camp 1 to your own bed 5); a night of 6 h leaves you *Rested* (×1.10 skill gain, 45 min) or *Well rested* (×1.15 and stamina regen ×1.10, 90 min). One systems session.
-- **B (recommended).** A, plus sleep anywhere with a bedroll of three grades (blanket 1, wool 2, the island's own 3), a lean-to (3 logs) or tent (+1), a fire (+1), minus the climate grade where you lie; the best camp equals your own bed. In the open a seeded roll by danger tier may wake you with a group from the place's table (tier 1 never, up to 1 in 3 at tier 4; halved by a fire). Three systems sessions, one look.
-- **C.** B, plus a pitched camp you keep: on the map, fast travel to it, a 20 kg stash. Two more sessions; it competes with the house and the road.
-
-**Recommendation.** B: each piece is a trade (weight, gold, logs), the best camp only equals your own bed, and its reward is skill gain, never a fight's numbers.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -36,6 +16,30 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### Camp and rest — beds by grade, a bedroll you carry, or a camp you keep? (from the designer, 2026-11-10, #1378)
+**The question.** Backlog L8's *Camp and rest* asks for a lean-to, a tent, bedrolls of three grades and better beds giving stronger rest; today every bed (inn, home, cot, berth, a road camp's bedroll) does the same thing, and nothing you carry lets you sleep. Should a better night be a property of the bed, of a camp you make, or of a camp you keep? The page: `docs/design/camp-and-rest.md`.
+
+**Options.**
+- **A.** Beds by grade: each bed a comfort (road camp 1 to your own bed 5); a night of 6 h leaves you *Rested* (×1.10 skill gain, 45 min) or *Well rested* (×1.15 and stamina regen ×1.10, 90 min). One systems session.
+- **B (recommended).** A, plus sleep anywhere with a bedroll of three grades (blanket 1, wool 2, the island's own 3), a lean-to (3 logs) or tent (+1), a fire (+1), minus the climate grade where you lie; the best camp equals your own bed. In the open a seeded roll by danger tier may wake you with a group from the place's table (tier 1 never, up to 1 in 3 at tier 4; halved by a fire). Three systems sessions, one look.
+- **C.** B, plus a pitched camp you keep: on the map, fast travel to it, a 20 kg stash. Two more sessions; it competes with the house and the road.
+
+**Recommendation.** B: each piece is a trade (weight, gold, logs), the best camp only equals your own bed, and its reward is skill gain, never a fight's numbers.
+
+Michael: **A, plus a camp you make anywhere.** (2026-11-10)
+
+### How do places no cell draws (the merchants' camp, the falls) get into the world? (from the look builder, 2026-11-10, #1385)
+**The question.** The places by a road and off it are drawn one cell at a time, each by its own key, in one fixed world. On the Gatelands no cell draws the merchants' camp (built in Session 2063) by a road, or the falls off it, while three cells drew a coach and three a perched stone. How should a kind no cell drew get into the world?
+
+**Options.**
+- **A.** Leave the draw as it is: the merchants' camp and the falls stay out of this world.
+- **B.** No kind twice before every kind once: on each island a kind drawn more than twice gives its last cell (by the cell's key) to a kind drawn nowhere. One coach and one perched stone become a merchants' camp; a shepherd's hut becomes the falls. Three places that stand today change kind.
+- **C (recommended).** A second chance for cells that drew nothing: a cell whose roll missed by less than a sixth (1/3 to 1/2) keeps a place only of a kind its island has drawn nowhere. Nothing that stands today moves. About one more cell in six keeps a place, each hidden past 450 m.
+
+**Recommendation.** C: nothing that stands today moves, and every kind gets a place. Pictures: `docs/prototypes/wayside-merchants-noon.jpg`, `docs/prototypes/wayside-merchants-lantern.jpg`.
+
+Michael: **Second chance for cells that drew nothing.** (2026-11-10)
+
 ### Water — how often a bottle is found in a barrel or chest, and full or empty (from the systems builder, 2026-11-09, #1355)
 **The question.** Water B's last vessel is the bottle (1 use, 0.3 kg, 2 gold, *the one you find rather than buy*), found in barrels, chests and inns' cellars; `docs/design/water.md` names where but not how often, nor whether it comes full. It would be one extra roll on its own seeded stream, so no other loot moves.
 
