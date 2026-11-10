@@ -500,6 +500,7 @@ function requestDestroyItem(i, el){
 }
 
 function renderHubInv(){
+  sheetFigShow(); /* S2065 — the sheet's portrait */
   EQ_SLOTS.forEach(s=>{
     const el=document.getElementById('ds-'+s.key);if(!el)return;
     const it=EQ[s.key];
@@ -634,6 +635,90 @@ function renderHubInv(){
     }
   });
 }
+// ── the sheet's portrait (Session 2065; Michael's C on #1363, OG-134, the concept artist's docs/prototypes/levelup/sheet.js) ─────────
+// On the new look the Inventory's worn slots stand in two columns with your own body between them, lit, in a dark arched window with
+// the HUD's bronze rim. The body is the third-person rig's (tpEnsure: the look's genome, dressed from EQ by tpHBDress), lent to the
+// portrait's own scene for the draw and given back in the same call, posed standing at ease (pwIdle at rest, through tpHBPose). The
+// game's renderer draws it into a half-float target (its lights unclamped), then one quad tone-maps it with ACES into a byte target that
+// is read back onto the canvas: one WebGL context, the body's geometry and textures shared. It is drawn when the panel opens or the kit
+// changes, and on a drag (which turns it); nothing ticks while the hub is open. The old look keeps the grid as approved (A).
+const SHEET_FIG={yaw:-.32,wr:1.5,done:new WeakSet(),compiling:false,sig:'',scene:null,cam:null,key:null,rt:null,out:null,q:null,qs:null,qc:null,buf:null,W:0,H:0,ms:0,n:0,tris:0,calls:0,err:'',owed:false,drag:null};
+function sheetFigOk(){return typeof hbOn==='function'&&hbOn()&&typeof REN!=='undefined'&&!!REN&&typeof tpEnsure==='function';}
+function sheetFigSetup(W,H){const F=SHEET_FIG;
+  if(!F.scene){const sc=new THREE.Scene();F.scene=sc;
+    // the lights at the game's legacy scale (05-compat.js: the prototype's physical numbers ÷ π): a warm key high on the left with a soft
+    // shadow, a soft fill, a cool rim behind on the right and a warm one behind on the left
+    sc.add(new THREE.HemisphereLight(0xf4ead8,0x4a3a28,.2));
+    const key=new THREE.DirectionalLight(0xffe2b8,1.05);key.position.set(-2.2,3.4,3.2);key.castShadow=true;key.shadow.mapSize.set(1024,1024);
+    Object.assign(key.shadow.camera,{left:-1.2,right:1.2,top:2.4,bottom:-.2,near:.5,far:9});key.shadow.camera.updateProjectionMatrix();key.shadow.bias=-.0004;key.shadow.normalBias=.02;sc.add(key);F.key=key;
+    const rim=new THREE.DirectionalLight(0xa8c4ff,.8),rim2=new THREE.DirectionalLight(0xffd8a0,.26);rim.position.set(2.4,2.6,-2.8);rim2.position.set(-2.6,1.2,-2.4);sc.add(rim,rim2);
+    // a floor that takes only the shadow, so the figure stands on something
+    const fl=new THREE.Mesh(new THREE.CircleGeometry(.75,48).rotateX(-Math.PI/2),new THREE.ShadowMaterial({opacity:.55}));fl.receiveShadow=true;sc.add(fl);
+    F.cam=new THREE.PerspectiveCamera(18,W/H,.5,30);
+    F.q=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial({uniforms:{t:{value:null},ex:{value:1}},depthTest:false,depthWrite:false,blending:THREE.NoBlending,
+      vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
+      /* three's ACES fit (RRT and ODT), straight alpha out: the shadow's black stays black at its own alpha over the window */
+      fragmentShader:`uniform sampler2D t;uniform float ex;varying vec2 vUv;
+vec3 rrt(vec3 v){vec3 a=v*(v+.0245786)-.000090537;vec3 b=v*(.983729*v+.4329510)+.238081;return a/b;}
+vec3 aces(vec3 c){const mat3 I=mat3(vec3(.59719,.07600,.02840),vec3(.35458,.90834,.13383),vec3(.04823,.01566,.83777));
+  const mat3 O=mat3(vec3(1.60475,-.10208,-.00327),vec3(-.53108,1.10813,-.07276),vec3(-.07367,-.00605,1.07602));c*=ex/.6;c=I*c;c=rrt(c);c=O*c;return clamp(c,0.,1.);}
+void main(){vec4 s=texture2D(t,vUv);float a=clamp(s.a,0.,1.);vec3 c=a>.001?s.rgb/a:vec3(0.);gl_FragColor=vec4(aces(c),a);}`}));
+    F.q.frustumCulled=false;F.qs=new THREE.Scene();F.qs.add(F.q);F.qc=new THREE.OrthographicCamera(-1,1,1,-1,0,1);}
+  if(F.W!==W||F.H!==H){if(F.rt)F.rt.dispose();if(F.out)F.out.dispose();F.W=W;F.H=H;
+    F.rt=new THREE.WebGLRenderTarget(W,H,{type:THREE.HalfFloatType,samples:THREE_LEGACY?0:4});F.out=new THREE.WebGLRenderTarget(W,H,{depthBuffer:false});
+    F.q.material.uniforms.t.value=F.rt.texture;F.buf=new Uint8Array(W*H*4);F.cam.aspect=W/H;F.cam.updateProjectionMatrix();}
+}
+// lend the third-person body to the portrait's scene, posed standing at ease and turned; giveBack undoes all of it in the same call
+function sheetFigLend(R){const F=SHEET_FIG,rig=R.rig,root=R.root,keep={p:root.parent,pos:root.position.clone(),rot:root.rotation.clone(),vis:root.visible,L:rig.hb.L,m:[]};
+  root.traverse(m=>{if(m.isMesh){keep.m.push([m,m.castShadow,m.frustumCulled]);m.castShadow=true;m.frustumCulled=false;}});
+  F.scene.add(root);root.position.set(0,0,0);root.rotation.set(0,F.yaw,0);root.visible=true;hbLevel(rig,0);
+  /* the weapon's wrist turned so the blade hangs by the thigh rather than pointing at you */
+  const P=pwIdle(0,{});if(R.weapon)P.wrR=[F.wr,0,P.wrR[2]];pwApply(rig,P);root.updateMatrixWorld(true);tpHBPose(R);return keep;}
+function sheetFigGiveBack(R,keep){const root=R.root;SHEET_FIG.scene.remove(root);if(keep.p)keep.p.add(root);root.position.copy(keep.pos);root.rotation.copy(keep.rot);root.visible=keep.vis;
+  if(keep.L>0)hbLevel(R.rig,keep.L);for(const [m,c,f] of keep.m){m.castShadow=c;m.frustumCulled=f;}root.updateMatrixWorld(true);}
+// draw the body into the canvas now; false (with SHEET_FIG.err) when there is nothing to draw yet. The first draw of a material it has
+// not drawn before compiles its programs first (compileAsync, for the target) and draws when they are ready: where the browser compiles
+// in parallel (KHR_parallel_shader_compile) that is off the main thread. Headless SwiftShader has no such extension: there the body's
+// programs for this light hold the page about 17 s, once a boot
+function sheetFigDraw(){const F=SHEET_FIG,cv=document.getElementById('eq-fig');F.owed=false;if(!cv||!sheetFigOk()||F.compiling)return false;
+  const t0=performance.now(),dpr=Math.min(2,window.devicePixelRatio||1),W=Math.round(200*dpr),H=Math.round(332*dpr);
+  let R;try{R=tpEnsure();}catch(e){F.err='build: '+e.message;return false;}
+  if(!R||!R.rig||!R.rig.hb){F.err='no body';return false;}
+  sheetFigSetup(W,H);if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}
+  const mats=[];R.root.traverse(m=>{if(m.isMesh)for(const x of [].concat(m.material))if(x&&!F.done.has(x))mats.push(x);});
+  if(mats.length&&typeof REN.compileAsync==='function'){let keep;F.compiling=true;
+    try{keep=sheetFigLend(R);REN.setRenderTarget(F.rt);var p=REN.compileAsync(F.scene,F.cam);}catch(e){F.compiling=false;F.err='compile: '+e.message;return false;}finally{REN.setRenderTarget(null);if(keep)sheetFigGiveBack(R,keep);}
+    p.then(()=>{for(const x of mats)F.done.add(x);F.compiling=false;F.err='';if(hubOpen)sheetFigOwe();},e=>{F.compiling=false;F.err='compile: '+(e&&e.message);});
+    F.err='compiling';return false;}
+  for(const x of mats)F.done.add(x);
+  const raw=(typeof LAND!=='undefined'&&LAND.rawRender)||REN.render.bind(REN),cc=REN.getClearColor(new THREE.Color()),ca=REN.getClearAlpha(),ac=REN.autoClear,sa=REN.shadowMap.autoUpdate;let keep=null;
+  try{keep=sheetFigLend(R);
+    const st=R.rig.hb.st||1.76,fitH=st+.5,dist=fitH/2/Math.tan(THREE.MathUtils.degToRad(9)),aimY=st*.5-.07,pitch=.05;
+    F.cam.position.set(0,aimY+Math.sin(pitch)*dist,dist);F.cam.lookAt(0,aimY,0);F.cam.updateMatrixWorld(true);
+    REN.info.reset();REN.autoClear=true;REN.shadowMap.autoUpdate=true;REN.shadowMap.needsUpdate=true;
+    REN.setClearColor(0x000000,0);REN.setRenderTarget(F.rt);REN.clear();raw(F.scene,F.cam);
+    F.tris=REN.info.render.triangles;F.calls=REN.info.render.calls;
+    REN.setRenderTarget(F.out);REN.clear();raw(F.qs,F.qc);
+    REN.readRenderTargetPixels(F.out,0,0,W,H,F.buf);
+  }catch(e){F.err='draw: '+e.message;console.warn('the sheet\'s portrait',e);return false;}
+  finally{REN.setRenderTarget(null);REN.setClearColor(cc,ca);REN.autoClear=ac;REN.shadowMap.autoUpdate=sa;if(keep)sheetFigGiveBack(R,keep);}
+  // the target's rows run bottom up
+  const ctx=cv.getContext('2d'),img=ctx.createImageData(W,H),row=W*4;
+  for(let y=0;y<H;y++)img.data.set(F.buf.subarray((H-1-y)*row,(H-y)*row),y*row);
+  ctx.putImageData(img,0,0);F.ms=performance.now()-t0;F.n++;F.err='';return true;
+}
+// the panel's half: the slots in two columns round the figure on the new look, and a draw when what you wear has changed
+function sheetFigShow(){const wrap=document.getElementById('eq-grid-wrap'),cv=document.getElementById('eq-fig');if(!wrap||!cv)return;
+  const on=sheetFigOk();wrap.classList.toggle('fig',on);if(!on)return;
+  if(!cv._figWired){cv._figWired=true;
+    cv.addEventListener('pointerdown',e=>{SHEET_FIG.drag={x:e.clientX,y0:SHEET_FIG.yaw};try{cv.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
+    cv.addEventListener('pointermove',e=>{const D=SHEET_FIG.drag;if(!D)return;SHEET_FIG.yaw=D.y0+(e.clientX-D.x)*.012;sheetFigOwe();});
+    const up=()=>{SHEET_FIG.drag=null;};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);}
+  let sig='';try{sig=workWield(tpSig);}catch(e){}
+  if(sig!==SHEET_FIG.sig||!SHEET_FIG.n){SHEET_FIG.sig=sig;sheetFigOwe();}
+}
+// one draw at the next frame however many asks came first (a drag's moves, a kit change's renders)
+function sheetFigOwe(){if(SHEET_FIG.owed)return;SHEET_FIG.owed=true;requestAnimationFrame(()=>{if(SHEET_FIG.owed&&hubOpen)sheetFigDraw();else SHEET_FIG.owed=false;});}
 // ── BAG ITEM TOOLTIP ──────────────────────────────────────────────────────
 let _bagTipTimer=null,_bagTipEl=null;
 function scheduleBagTooltip(idx,ev){
