@@ -779,3 +779,32 @@ at Low is 626 of its 700 calls: 74 left.*
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
 
 *s1430, QA Session 2060 (`budget` 8/8 in 474 s and `budgetport` 9/9 in 566 s, one try each, run in series by `BUDGET_LEDGER=1 run.mjs budget budgetport --no-retry` on four cores with no other boot). Against s1404, 26 builds later (every merge to 10 Nov 06:24 UTC, among them the places off the road (the shepherd's hut, the peat camp, the Mark's cabin, logging camp and unfinished camp), the coach's lacquer and lamp, the long-cloaked foes' hem bones, the fed ×10 and *Under Another Flag*), the two towns' views rose and the field west and the indoor spots did not move. The rise is one thing: two `offroad shepherd` huts, 2,504 and 2,646 m from Dunmore's centre, 16 meshes and 17–18k triangles each, are drawn whole from both towns (the other column +31 and +32). Dunmore's street at noon 739 → 770 at Middle (+4.2%), at midnight 816 → 847 (+3.8%; Low 639 → 670, +4.9%); the field west 645 → 644 and 788 → 787; Portclare's square 535 → 567 (+6.0%; Low 369 → 401, +8.7%, the largest rise; 702k → 734k triangles, +4.6%); the inn's hall 34 → 34; the medium gate 102 → 102. No spot rose by more than 10%. Dunmore at midnight at Low is 670 of its 700 calls: 30 left (61 at s1404). A place off the road has no draw distance: one more hut-sized place in view of Dunmore takes half of what is left.*
+
+### s1441 — 2026-11-10 13:01 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 572 | 1.08 M | 0 | 0 | 107 | 120 | 254 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | Middle | 728 | 1.81 M | 136 | 6 | 109 | 120 | 266 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | High | 778 | 2.29 M | 168 | 6 | 109 | 120 | 284 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Low | 627 | 1.04 M | 0 | 0 | 105 | 176 | 254 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Middle | 805 | 1.75 M | 160 | 6 | 105 | 176 | 266 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | High | 865 | 2.29 M | 202 | 6 | 105 | 176 | 284 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| the field west of Dunmore, noon | Low | 537 | 624k | 0 | 0 | 105 | 107 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 645 | 1.04 M | 83 | 6 | 105 | 107 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 692 | 1.51 M | 122 | 6 | 105 | 107 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 620 | 615k | 0 | 0 | 108 | 186 | 281 | 45 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 788 | 1.10 M | 143 | 6 | 108 | 186 | 300 | 45 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 840 | 1.62 M | 187 | 6 | 108 | 186 | 308 | 45 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+
+### s1441 — 2026-11-10 13:08 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 355 | 690k | 0 | 0 | 28 | 60 | 192 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | Middle | 522 | 1.40 M | 144 | 6 | 29 | 60 | 208 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | High | 568 | 1.73 M | 179 | 6 | 29 | 60 | 219 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+*s1441, QA Session 2068 (`budget` 8/8 in 415 s and `budgetport` 9/9 in 373 s, one try each, run in series by `BUDGET_LEDGER=1 run.mjs budget budgetport --no-retry` on four cores with no other boot). Against s1430, 11 builds later (every merge to 10 Nov 11:42 UTC, among them Look 2063's `placesFar` and Look 2065's expedition). The towns fell 42–45 calls and the field, the inn and the gate held within one: the two shepherd's huts (32 calls) and the wayside carriage (13) are gone from both towns' views, hidden past 450 m by `placesFar`. No expedition is in view of any spot. Dunmore at midnight at Low is 627 of 700, 73 left (30 at s1430, 61 at s1404).*
