@@ -182,7 +182,7 @@ if (pc) {
   // Session 2079 (the critic, 10 Nov: "the heather is purple stones", "dark upright blocks that read as tree stumps"): the heather is shoots
   // standing, not a lump lying (its faces' mean |n.y| by area under one half), each clump under 0.7 m across and 0.15 m high or more; a
   // footing (four or five sods leaned to a point, no lid) is wider at its foot than it is tall
-  const ph = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, hm = D.group.getObjectByName('heather'), sm = ['sod', 'sodB'].map(k => D.group.getObjectByName(k)); if (!hm || !sm[0] || !sm[1] || !D.heather) return { none: true };
+  const ph = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, hm = D.group.getObjectByName('heather'), sm = ['sod', 'sodDry'].map(k => D.group.getObjectByName(k)); if (!hm || !sm[0] || !sm[1] || !D.heather) return { none: true };
     const P = hm.geometry.attributes.position, a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(); let ny = 0, ar = 0;
     for (let i = 0; i < P.count; i += 3) { a.fromBufferAttribute(P, i); b.fromBufferAttribute(P, i + 1); c.fromBufferAttribute(P, i + 2); const n = b.clone().sub(a).cross(c.clone().sub(a)), s = n.length() / 2; ar += s; ny += s * Math.abs(n.y / (2 * s || 1)); }
     const cl = D.heather.map(() => ({ w: 0, h: -9 })), v = new THREE.Vector3();

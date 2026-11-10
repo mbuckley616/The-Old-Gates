@@ -7601,7 +7601,7 @@ function aurenneOrrery(hAt, o = {}) {
   function gatelandsPeatCamp(o = {}) {
     const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
     if (!PEATM) PEATM = { bog: mat('turfDry', { ns: 1.2, color: 0x8e8a66, rough: 1 }), peat: mat('plaster', { ns: 1.4, color: 0x5a4030, rough: 1 }), floor: mat('plaster', { ns: 1.2, color: 0x46362a, rough: .7 }),
-      water: std(0x2e2824, .12), sodWet: mat('plaster', { ns: 1.5, color: 0x4e3a2c, rough: .85 }), sod: mat('plaster', { ns: 1.5, color: 0x6e543e, rough: 1 }), sodB: mat('plaster', { ns: 1.5, color: 0x94785a, rough: 1 }), sodDry: mat('plaster', { ns: 1.5, color: 0x7a5e46, rough: 1 }),
+      water: std(0x2e2824, .12), sodWet: mat('plaster', { ns: 1.5, color: 0x4e3a2c, rough: .85 }), sod: mat('plaster', { ns: 1.5, color: 0x6e543e, rough: 1 }), sodDry: mat('plaster', { ns: 1.5, color: 0x7a5e46, rough: 1 }),
       grit: mat('rock', { ns: .8, color: 0x84765e, rough: 1 }), heather: std(0x4c3a40, 1, { side: THREE.DoubleSide }), ling: std(0x5a5a34, 1, { side: THREE.DoubleSide }), cotton: std(0xf2f0e8, .9), stone: mat('rock', { ns: 1.0, color: 0x8a867c, rough: 1 }),
       wall: mat('turfDry', { ns: 1.2, color: 0xb0a088, rough: 1 }), ember: std(0x2a1408, .6, { emissive: new THREE.Color(1, .4, .12), emissiveIntensity: 2.2 }), rope: std(0x8a7650, .95),
       basket: mat('thatch', { ns: .8, color: 0x8a7046, rough: 1 }), ash: mat('wood', { ns: .8, color: 0xb89a74, rough: .8 }), thatch: mat('thatch', { ns: 1.2, color: 0x9a8a66, rough: 1 }),
@@ -7644,10 +7644,10 @@ function aurenneOrrery(hAt, o = {}) {
     /* S2079 (the critic, 10 Nov: "a field of dark upright blocks that read as tree stumps"): the five sods stood 0.3 rad off upright with a sixth laid
        flat across their tops, a block with a flat lid. Now four or five lean in at 0.5 to 0.6 rad from feet 0.17 m out until their tops meet in a point,
        with no lid: a small tent of sods with daylight between them at the foot, wider than it is tall; and each sod has its own tone, some dried paler
-       ('sodB'), so the pieces show */
+       (the rick's 'sodDry', no new draw), so the pieces show */
     const footings = [], RB = .17; const foot = (cx, cz) => { const a0 = F() * 6.283, feet = [], n = F() < .4 ? 4 : 5; let top = -9;
       for (let k = 0; k < n; k++) { const TILT = .55 + (F() - .5) * .12, RC = RB - SL / 2 * Math.sin(TILT), a = a0 + k * Math.PI * 2 / n + (F() - .5) * .25, bx = cx - RB * Math.sin(a), bz = cz - RB * Math.cos(a), gy = bog(bx, bz), y = gy + SL / 2 * Math.cos(TILT) + SW / 2 * Math.sin(TILT) - .005;
-        sod(F() < .45 ? 'sodB' : 'sod', cx - RC * Math.sin(a), y, cz - RC * Math.cos(a), TILT, a, (F() - .5) * .3); feet.push([+bx.toFixed(3), +(y - SL / 2 * Math.cos(TILT) - SW / 2 * Math.sin(TILT)).toFixed(3), +bz.toFixed(3)]); top = Math.max(top, y + SL / 2 * Math.cos(TILT)); }
+        sod(F() < .45 ? 'sodDry' : 'sod', cx - RC * Math.sin(a), y, cz - RC * Math.cos(a), TILT, a, (F() - .5) * .3); feet.push([+bx.toFixed(3), +(y - SL / 2 * Math.cos(TILT) - SW / 2 * Math.sin(TILT)).toFixed(3), +bz.toFixed(3)]); top = Math.max(top, y + SL / 2 * Math.cos(TILT)); }
       footings.push({ x: +cx.toFixed(3), z: +cz.toFixed(3), feet, top: +top.toFixed(3) }); };
     for (let z = -6; z > -11.5; z -= 1.15) for (let x = -15.5; x < 15.5; x += 1.25) if (F() > .3) foot(x + (F() - .5) * .3, z + (F() - .5) * .3);
     for (let z = -1.6; z > -4.8; z -= 1.1) for (let x = 5; x < 15.5; x += 1.2) if (F() > .2) foot(x + (F() - .5) * .3, z + (F() - .5) * .3);
