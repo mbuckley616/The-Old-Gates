@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Water — how often a bottle is found in a barrel or chest, and full or empty (from the systems builder, 2026-11-09, #1355)
 **The question.** Water B's last vessel is the bottle (1 use, 0.3 kg, 2 gold, *the one you find rather than buy*), found in barrels, chests and inns' cellars; `docs/design/water.md` names where but not how often, nor whether it comes full. It would be one extra roll on its own seeded stream, so no other loot moves.
 
@@ -26,6 +27,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A.
 
+Michael: **Barrel 1 in 8, chest 1 in 16, cellar barrel 1 in 3; empty.** (2026-11-10, on the control room)
+
 ### The character sheet's portrait — no figure, inked, or lit in a bronze window (from the concept artist, 2026-11-09, #1363)
 **The question.** The approved Inventory page shows what you wear as slots with no figure. Since F10 the player has the builder's body, so the sheet could show it between two columns of five slots (OG-134), turned by a drag. How should the figure sit on the parchment?
 
@@ -36,7 +39,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** C. Pictures: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1109/docs/prototypes/levelup/sheet-options.jpg
 
-## Answered
+Michael: **Lit, in a dark arched bronze-rimmed window.** (2026-11-10, on the control room)
+
 ### Cooking — how long being fed lasts in real minutes (from the systems designer, 2026-11-09, #1339)
 **The question.** The game clock runs one game hour to the real minute, so today's meal (*fed*, 2 game hours) lasts about 2 real minutes, and cooking B's dish (×1.5) and filled dish (×2.25) about 3 and 4.5. Every length in the cooking build sheet (`docs/design/cooking-build.md`) is a multiple of it. How long should *fed* last?
 
