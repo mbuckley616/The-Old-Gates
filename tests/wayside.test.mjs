@@ -9,7 +9,7 @@
 // Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2048 the coach's lamp at night and its paint. Session 2051
 // the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished),
 // Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants), Session 2065 Aurenne's abandoned expedition (PKIT.places.expedition) on its laid ground,
-// Session 2071 the Gatelands' falls (PKIT.places.falls), their glen cut into the world's own ground.
+// Session 2071 the Gatelands' falls (PKIT.places.falls), their glen cut into the world's own ground. Session 2079 the peat camp's heather in shoots and its footings as tents. Session 2081 the cabin's lights on all four sides.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -179,6 +179,18 @@ if (pc) {
   console.log(JSON.stringify(pt));
   check(`${pt.id}: the peat camp ${pt.road} m off the nearest road; inside the rim the world's ground ${pt.over} m under the bog's at most, the walk within ${pt.walk} m of the piece's ground, the cut ${pt.deep} m deep`, !pt.none && pt.road >= 150 && pt.over <= 0 && pt.walk < .1 && pt.deep > 1.2, pt);
   check(`the face a wall from the cut and open from the bank, the cut and the ramp open; the bothy solid at its back, open at its door and inside, the rick solid; ${pt.tris} triangles in ${pt.draws} draws`, !pt.none && pt.faceCut && !pt.faceBank && !pt.cut && !pt.ramp && pt.back && !pt.door && !pt.inside && pt.rick && pt.tris < 42000 && pt.draws <= 20, pt);
+  // Session 2079 (the critic, 10 Nov: "the heather is purple stones", "dark upright blocks that read as tree stumps"): the heather is shoots
+  // standing, not a lump lying (its faces' mean |n.y| by area under one half), each clump under 0.7 m across and nine in ten 0.15 m high or more; a
+  // footing (four or five sods leaned to a point, no lid) is wider at its foot than it is tall
+  const ph = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, hm = D.group.getObjectByName('heather'), sm = ['sod', 'sodDry'].map(k => D.group.getObjectByName(k)); if (!hm || !sm[0] || !sm[1] || !D.heather) return { none: true };
+    const P = hm.geometry.attributes.position, a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(); let ny = 0, ar = 0;
+    for (let i = 0; i < P.count; i += 3) { a.fromBufferAttribute(P, i); b.fromBufferAttribute(P, i + 1); c.fromBufferAttribute(P, i + 2); const n = b.clone().sub(a).cross(c.clone().sub(a)), s = n.length() / 2; ar += s; ny += s * Math.abs(n.y / (2 * s || 1)); }
+    const HC = D.heather.filter(q => !q[4]), cl = HC.map(() => ({ w: 0, h: -9 })), v = new THREE.Vector3(); /* the heather's own clumps; one in three is the ling's, drawn with the bog cotton */
+    for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); let k = -1, kd = 9; HC.forEach(([x, z], j) => { const d = Math.hypot(v.x - x, v.z - z); if (d < kd) { kd = d; k = j; } }); if (kd > .5) continue; cl[k].w = Math.max(cl[k].w, 2 * kd); cl[k].h = Math.max(cl[k].h, v.y - D.ground(HC[k][0], HC[k][1])); }
+    const ft = D.footings.map(f => { let span = 0, top = -9; const gy = D.ground(f.x, f.z); for (const S of sm.map(m => m.geometry.attributes.position)) for (let i = 0; i < S.count; i++) { v.fromBufferAttribute(S, i); const d = Math.hypot(v.x - f.x, v.z - f.z); if (d > .5) continue; top = Math.max(top, v.y - gy); if (v.y - gy < .06) span = Math.max(span, 2 * d); } return span / top; }).sort((x, y) => x - y);
+    return { ny: +(ny / ar).toFixed(2), clumps: cl.length, wMax: +Math.max(...cl.map(q => q.w)).toFixed(2), hMin: +cl.map(q => q.h).sort((a, b) => a - b)[Math.floor(cl.length / 10)].toFixed(2) /* the 10th percentile: a clump that touches another loses tips to it */, hMax: +Math.max(...cl.map(q => q.h)).toFixed(2), feet: ft.length, ratioMin: +ft[0].toFixed(2), ratioMid: +ft[ft.length >> 1].toFixed(2) }; }, pc.id);
+  console.log(JSON.stringify(ph));
+  check(`${pc.id}: the heather stands in shoots (mean |n.y| ${ph.ny}), ${ph.clumps} heather clumps ${ph.hMin} (10th percentile) to ${ph.hMax} m high and at most ${ph.wMax} m across; ${ph.feet} footings ${ph.ratioMin} (least) and ${ph.ratioMid} (middle) times as wide at the foot as they are tall`, !ph.none && ph.ny < .5 && ph.wMax < .7 && ph.hMin >= .15 && ph.ratioMin >= 1.2, ph);
 }
 // Session 2051: the Mark's hunting cabin (PKIT.places.cabin, places.js's markHuntingCabin) in the tundra's snow, on its levelled yard, 150 m
 // and more off every road and every fort's spur: the cabin, the store, the block and the frame on the drawn ground, solid at its four log walls
@@ -209,6 +221,17 @@ if (cb) {
     return { n, snow, leaf, cone, own, kit: !!LAND_TREE_KIT.snowpine }; }, cb.id);
   console.log(JSON.stringify(sl));
   check(`${cb.id}: of ${sl.n} trees within 90 m, ${sl.snow} stand in the Mark's snow and ${sl.leaf} of those are leafed or spruce (${sl.cone} snowpine, drawn in ${sl.own} meshes of its own shape)`, sl.snow > 10 && sl.leaf === 0 && sl.cone > sl.snow / 2 && sl.own > 0 && !sl.kit, sl);
+  // Session 2081 (the critic, 10 Nov: "from the west, at 25 m, I see no lit window … from three sides of four, a cabin lived in is dark"): a lit
+  // window in each wall, the gables and the sides; from 25 m out before each, at eye height and from five points 2 m apart across it, a
+  // sight line to the light, over its glazing bar, meets its glow before anything else within 3 m of the cabin (the woodpile, the logs, the
+  // roof); the ring of its own spruce, 11 m out and more, is the wood's and not counted
+  const lw = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, G = D.group, W = D.cabin.wins; if (!W || W.length < 4) return { none: true, n: W && W.length };
+    G.updateMatrixWorld(true); const rc = new THREE.Raycaster(), meshes = []; G.traverse(m => { if (m.isMesh) meshes.push(m); });
+    const C = D.cabin, sides = W.map(w => { let seen = 0; const hit = []; for (const off of [-4, -2, 0, 2, 4]) { const t = G.localToWorld(new THREE.Vector3(w.x, w.y + .12, w.z)) /* above the glazing bar */, e = G.localToWorld(new THREE.Vector3(w.x + w.n[0] * 25 - w.n[1] * off, 0, w.z + w.n[1] * 25 + w.n[0] * off));
+      e.y = meshH(e.x, e.z) + 1.65; const d = t.clone().sub(e), L = d.length(); rc.set(e, d.normalize()); rc.far = L + .3; const h = rc.intersectObjects(meshes, false).find(q => { const l = G.worldToLocal(q.point.clone()); return Math.abs(l.x) < C.x1 + 3 && Math.abs(l.z) < C.z1 + 3; }); if (h && h.object.name === 'glow') seen++; else hit.push(h ? h.object.name : 'none'); } return { n: w.n.join(','), seen, hit: [...new Set(hit)] }; });
+    return { n: W.length, sides, faces: [...new Set(W.map(w => w.n.join(',')))].length }; }, cb.id);
+  console.log(JSON.stringify(lw));
+  check(`${cb.id}: ${lw.n} lit windows facing ${lw.faces} ways, each seen from 25 m out (${(lw.sides || []).map(q => q.n + ' ' + q.seen + ' of 5').join('; ')})`, !lw.none && lw.faces === 4 && lw.sides.every(q => q.seen >= 3), lw);
 }
 // Session 2056: the Mark's logging camp (PKIT.places.logging, places.js's markLoggingCamp) on a fall line of the world into water, 150 m and
 // more off every road: the chute from the deck's foot down to 3 m out over the water, clear of the bank all the way; the fire and the

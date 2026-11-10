@@ -1010,7 +1010,7 @@
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,offroad:true});}}
     if(M.patch){offroadPatchDrop(D.id);const P=M.patch;OFFROAD_PATCHES.push({id:D.id,x:D.x,z:D.z,y:y0,co,s:s_,x0:P.x0,x1:P.x1,z0:P.z0,z1:P.z1,R2:(Math.hypot(Math.max(-P.x0,P.x1),Math.max(-P.z0,P.z1))+1)**2,ground:M.ground});
-      D.patch=P;D.rim=M.rim;D.bank=M.bank;D.rick=M.rick;D.fire=M.fire;D.footings=M.footings;D.slean=M.slean;D.sinks=M.sinks;}
+      D.patch=P;D.rim=M.rim;D.bank=M.bank;D.rick=M.rick;D.fire=M.fire;D.footings=M.footings;D.heather=M.heather;D.ground=M.ground;D.slean=M.slean;D.sinks=M.sinks;}
     D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.stands=M.stands;D.hut=M.hut;D.fold=M.fold;D.spring=M.spring;D.rowan=M.rowan;D.cabin=M.cabin;D.store=M.store;D.trees=M.trees;
     if(D.kind==='logging'){D.chute=M.chute;D.deck=M.deck;D.stumps=M.stumps;D.shelter=M.shelter;D.sledge=M.sledge;D.ice=M.ice;D.shoreAt=M.shore;}
     if(FG){const LB=offroadLaidCarve(D,FG),S=M.shape;sc.add(LB.mesh);D.laid=LB;D.shape=S;D.fall=M.fall;D.pool=M.pool;D.cave=M.cave;D.arcade=M.arcade;D.rise=M.rise;D.path=M.path;offroadPatchDrop(D.id); /* the cut ground drawn always (the pit under it is seen from afar), and walked on (groundY): the cave's floor while you are under its roof */

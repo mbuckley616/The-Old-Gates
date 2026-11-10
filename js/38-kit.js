@@ -7596,13 +7596,13 @@ function aurenneOrrery(hAt, o = {}) {
   // turf draws the edge, not a rectangle), and the four flat bands of bog out to the fog are left out (the world is the bog beyond). Nobody is drawn. The prototype's frame is kept: the face along x at z 0,
   // the cutaway to +z, the road along z -18.
   // -> { group, tris, draws, sol, ground(x, z), rim(x, z) (under 0.88 on the bog), patch { x0, x1, z0, z1 }, sinks [[x, z, r]], bank { x0, x1, lip, bench, benchZ, floorZ, water },
-  //      spread, footings, slean, rick, hut, fire, road }
+  //      spread, footings, heather [[x, z, r, h, ling]], slean, rick, hut, fire, road }
   let PEATM = null;
   function gatelandsPeatCamp(o = {}) {
     const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
     if (!PEATM) PEATM = { bog: mat('turfDry', { ns: 1.2, color: 0x8e8a66, rough: 1 }), peat: mat('plaster', { ns: 1.4, color: 0x5a4030, rough: 1 }), floor: mat('plaster', { ns: 1.2, color: 0x46362a, rough: .7 }),
       water: std(0x2e2824, .12), sodWet: mat('plaster', { ns: 1.5, color: 0x4e3a2c, rough: .85 }), sod: mat('plaster', { ns: 1.5, color: 0x6e543e, rough: 1 }), sodDry: mat('plaster', { ns: 1.5, color: 0x7a5e46, rough: 1 }),
-      grit: mat('rock', { ns: .8, color: 0x84765e, rough: 1 }), heather: std(0x4c3a40, 1), ling: std(0x5a5a34, 1), cotton: std(0xf2f0e8, .9), stone: mat('rock', { ns: 1.0, color: 0x8a867c, rough: 1 }),
+      grit: mat('rock', { ns: .8, color: 0x84765e, rough: 1 }), heather: std(0x4c3a40, 1, { side: THREE.DoubleSide }), ling: std(0x5a5a34, 1, { side: THREE.DoubleSide }), cotton: std(0xf2f0e8, .9), stone: mat('rock', { ns: 1.0, color: 0x8a867c, rough: 1 }),
       wall: mat('turfDry', { ns: 1.2, color: 0xb0a088, rough: 1 }), ember: std(0x2a1408, .6, { emissive: new THREE.Color(1, .4, .12), emissiveIntensity: 2.2 }), rope: std(0x8a7650, .95),
       basket: mat('thatch', { ns: .8, color: 0x8a7046, rough: 1 }), ash: mat('wood', { ns: .8, color: 0xb89a74, rough: .8 }), thatch: mat('thatch', { ns: 1.2, color: 0x9a8a66, rough: 1 }),
       timber: mat('beam', { ns: 1.0, color: 0x8a6c4c, rough: .9 }), iron: std(0x2a2826, .5, { metalness: .6 }) };
@@ -7641,10 +7641,14 @@ function aurenneOrrery(hAt, o = {}) {
     const spread = []; for (let row = 0; row < 9; row++) { const z = -1.25 - row * .42; for (let x = -16; x < 3; x += SL + .06) { if (F() < .12) continue; const xx = x + (F() - .5) * .05, zz = z + (F() - .5) * .08;
       sod('sodWet', xx, bog(xx, zz) + SW / 2 + .005, zz, 0, (F() - .5) * .25, Math.PI / 2); spread.push([+xx.toFixed(3), +zz.toFixed(3)]); } }
     // footed: five on end leaning in, their tops touching, one laid across; in rows behind the spread and east of it
-    const footings = [], TILT = .3, RB = .12, RC = RB - SL / 2 * Math.sin(TILT); const foot = (cx, cz) => { const a0 = F() * 6.283, feet = [];
-      for (let k = 0; k < 5; k++) { const a = a0 + k * Math.PI * 2 / 5 + (F() - .5) * .2, bx = cx - RB * Math.sin(a), bz = cz - RB * Math.cos(a), gy = bog(bx, bz), y = gy + SL / 2 * Math.cos(TILT) + SW / 2 * Math.sin(TILT) - .005;
-        sod('sod', cx - RC * Math.sin(a), y, cz - RC * Math.cos(a), TILT, a, 0); feet.push([+bx.toFixed(3), +(y - SL / 2 * Math.cos(TILT) - SW / 2 * Math.sin(TILT)).toFixed(3), +bz.toFixed(3)]); }
-      const top = Math.max(...feet.map(f => f[1])) + SL * Math.cos(TILT) - .02; sod('sod', cx, top + SW / 2, cz, 0, a0 + .5, Math.PI / 2); footings.push({ x: +cx.toFixed(3), z: +cz.toFixed(3), feet, top: +top.toFixed(3) }); };
+    /* S2079 (the critic, 10 Nov: "a field of dark upright blocks that read as tree stumps"): the five sods stood 0.3 rad off upright with a sixth laid
+       flat across their tops, a block with a flat lid. Now four or five lean in at 0.5 to 0.6 rad from feet 0.17 m out until their tops meet in a point,
+       with no lid: a small tent of sods with daylight between them at the foot, wider than it is tall; and each sod has its own tone, some dried paler
+       (the rick's 'sodDry', no new draw), so the pieces show */
+    const footings = [], RB = .17; const foot = (cx, cz) => { const a0 = F() * 6.283, feet = [], n = F() < .4 ? 4 : 5; let top = -9;
+      for (let k = 0; k < n; k++) { const TILT = .55 + (F() - .5) * .12, RC = RB - SL / 2 * Math.sin(TILT), a = a0 + k * Math.PI * 2 / n + (F() - .5) * .25, bx = cx - RB * Math.sin(a), bz = cz - RB * Math.cos(a), gy = bog(bx, bz), y = gy + SL / 2 * Math.cos(TILT) + SW / 2 * Math.sin(TILT) - .005;
+        sod(F() < .45 ? 'sodDry' : 'sod', cx - RC * Math.sin(a), y, cz - RC * Math.cos(a), TILT, a, (F() - .5) * .3); feet.push([+bx.toFixed(3), +(y - SL / 2 * Math.cos(TILT) - SW / 2 * Math.sin(TILT)).toFixed(3), +bz.toFixed(3)]); top = Math.max(top, y + SL / 2 * Math.cos(TILT)); }
+      footings.push({ x: +cx.toFixed(3), z: +cz.toFixed(3), feet, top: +top.toFixed(3) }); };
     for (let z = -6; z > -11.5; z -= 1.15) for (let x = -15.5; x < 15.5; x += 1.25) if (F() > .3) foot(x + (F() - .5) * .3, z + (F() - .5) * .3);
     for (let z = -1.6; z > -4.8; z -= 1.1) for (let x = 5; x < 15.5; x += 1.2) if (F() > .2) foot(x + (F() - .5) * .3, z + (F() - .5) * .3);
     // the sleán: an ash shaft stood in the bank by the lip, its blade and its wing in the peat
@@ -7693,7 +7697,15 @@ function aurenneOrrery(hAt, o = {}) {
     const fire = { x: +FX.toFixed(3), z: +FZ.toFixed(3), kettle: +KB.toFixed(3), embers: +(fy + .06).toFixed(3) };
     // heather and bog cotton on the uncut bog, off the road, the bank's working strip, the rick and the bothy
     const clear = (x, z) => rim(x, z) > .86 || mx(x) * (z > -12.2 && z < 16.5 ? 1 : 0) > .02 || Math.abs(z - RZ) < RW / 2 + .3 || (Math.abs(x - RKX) < RL / 2 + .5 && Math.abs(z - RKZ) < RWd / 2 + .5) || (Math.abs(x - HX - 1) < 4 && z > HZ - 2 && z < FZ + 1.2) || (z > -1 && z < 17 && mx(x) > 0);
-    for (let k = 0, n = 0; k < 1500 && n < 240; k++) { const x = -34 + F() * 68, z = -34 + F() * 62; if (clear(x, z)) continue; n++; const s = .14 + F() * .2, g = new THREE.IcosahedronGeometry(s, 0); g.scale(1.3, .55, 1.3); put(g, n % 3 ? 'heather' : 'ling', x, bog(x, z) + s * .3, z, 0, F() * 6); }
+    /* S2079 (the critic, 10 Nov: "the heather is purple stones"): a flattened stone 0.4 to 0.9 m across was a clump. Now a clump is sixteen wiry
+       sprigs from one root, each a narrow blade turned its own way, their tips spread over a low dome: a brush 0.3 to 0.6 m across and 0.16 to 0.34 m
+       high, 16 triangles where the stone had 20 */
+    const heather = [], shoot = (k, bx, by, bz, tx, ty, tz, w, t) => { const ux = Math.cos(t), uz = Math.sin(t), g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute([bx - ux * w, by, bz - uz * w, bx + ux * w, by, bz + uz * w, tx, ty, tz], 3)); put(g, k); };
+    for (let k = 0, n = 0; k < 1500 && n < 240; k++) { const x = -34 + F() * 68, z = -34 + F() * 62; if (clear(x, z)) continue; n++; const r = .15 + F() * .14, h = .16 + F() * .18, gy = bog(x, z) - .02, kk = n % 3 ? 'heather' : 'ling';
+      for (let j = 0; j < 16; j++) { const a = j * 2.4 + F() * .6, d = Math.sqrt(F()) * r * .25, ph2 = .25 + F() * 1.05, out = r * Math.sin(ph2) / Math.sin(1.3);
+        shoot(kk, x + d * Math.cos(a), gy, z + d * Math.sin(a), x + out * Math.cos(a), gy + .02 + h * Math.cos(ph2) / Math.cos(.25), z + out * Math.sin(a), .016 + F() * .012, F() * 3.14); }
+      heather.push([+x.toFixed(2), +z.toFixed(2), +r.toFixed(2), +h.toFixed(2), kk === 'ling' ? 1 : 0]); }
     for (let k = 0, n = 0; k < 900 && n < 110; k++) { const x = -30 + F() * 60, z = -30 + F() * 56; if (clear(x, z)) continue; n++; const h = .25 + F() * .15, gy = bog(x, z);
       put(new THREE.BoxGeometry(.008, h, .008), 'ling', x, gy + h / 2, z); put(new THREE.IcosahedronGeometry(.04, 0).scale(1, 1.3, 1), 'cotton', x, gy + h + .03, z); }
     // baked one mesh a material
@@ -7709,7 +7721,7 @@ function aurenneOrrery(hAt, o = {}) {
     /* where the world must sink under the cut (offroadStamps): circles in this frame, two rows of ten, their cores over the cut and 4 m round it, all inside the rim */
     const sinks = []; for (const z of [1.5, 12]) for (let x = -24; x <= 21; x += 5) sinks.push([x, z, 7]);
     return { group, tris: Math.round(tris), draws: group.children.length, sol, ground, rim, sinks, patch: { x0: -PX, x1: PX, z0: PZ0, z1: PZ1 }, floorMin: -1.6,
-      bank: { x0: -CX, x1: CX, lip: 0, bench: BENCH, benchZ: BZ, floorZ: [BZ, 12], water: WL }, spread, footings, slean, rick: { x: RKX, z: RKZ, l: RL, w: RWd, h: RH, y: +(bog(RKX, RKZ) - .05).toFixed(3) }, hut, fire, road: { z: RZ, w: RW } };
+      bank: { x0: -CX, x1: CX, lip: 0, bench: BENCH, benchZ: BZ, floorZ: [BZ, 12], water: WL }, spread, footings, heather, slean, rick: { x: RKX, z: RKZ, l: RL, w: RWd, h: RH, y: +(bog(RKX, RKZ) - .05).toFixed(3) }, hut, fire, road: { z: RZ, w: RW } };
   }
   // S2051 (card F8; OG-124's Mark panel, "a smoking hunting cabin in snow pines"; Michael's A on #1292) — the Mark's hunting cabin in the
   // open world, places.js's markHuntingCabin (Session 998) without the prototype's own land: the world brings the tundra's snow and its
@@ -7762,10 +7774,16 @@ function aurenneOrrery(hAt, o = {}) {
       else { g.rotateX(Math.PI / 2); put(g, 'log', c, y, m, 0, 0, 0, .6); for (const e of [a0, a1]) put(new THREE.CircleGeometry(rad * .96, 9).rotateY(e < m ? Math.PI : 0), 'end', c, y, e + (e < m ? -.002 : .002)); }
       if (rec) logs.push({ ax, a0: +a0.toFixed(3), a1: +a1.toFixed(3), c, y: +y.toFixed(3) }); };
     // the side walls: eleven courses, the window cut out of the east one; the gables: ten courses half a step up, the door cut out of the front
-    for (let k = 0; k < NC; k++) { const y = Y0 + R + k * STEP; log('z', -ZW - OUT, ZW + OUT, -XW, y);
-      if (y > WS && y < WS + WH + R) { log('z', -ZW - OUT, WZ - WW / 2, XW, y); log('z', WZ + WW / 2, ZW + OUT, XW, y); } else log('z', -ZW - OUT, ZW + OUT, XW, y); }
-    for (let k = 0; k < NC - 1; k++) { const y = Y0 + R + STEP / 2 + k * STEP; log('x', -XW - OUT, XW + OUT, -ZW, y);
-      if (y < Y0 + DH + R) { log('x', -XW - OUT, -DW / 2, ZW, y); log('x', DW / 2, XW + OUT, ZW, y); } else log('x', -XW - OUT, XW + OUT, ZW, y); }
+    /* S2081 (the critic, 10 Nov: "from the west, at 25 m, I see no lit window … from three sides of four, a cabin lived in is dark at night"): three
+       more lights like the east one: in the west wall clear of the hearth's chimney (WZW), in the front gable beside the door (FWX) and in the
+       back gable on the side away from the chimney (BWX; the critic's own view, from the north of a cabin turned half round, was of its back),
+       so the cabin shows a lit window from every side. cut lays a log round its gaps */
+    const WZW = 1.0, FWX = 1.15, BWX = .9, inWin = y => y > WS && y < WS + WH + R;
+    const cut = (ax, a0, a1, c, y, gaps) => { let a = a0; for (const [g0, g1] of gaps.sort((p, q) => p[0] - q[0])) { if (g0 > a) log(ax, a, g0, c, y); a = Math.max(a, g1); } if (a1 > a) log(ax, a, a1, c, y); };
+    for (let k = 0; k < NC; k++) { const y = Y0 + R + k * STEP, w = inWin(y); cut('z', -ZW - OUT, ZW + OUT, -XW, y, w ? [[WZW - WW / 2, WZW + WW / 2]] : []);
+      cut('z', -ZW - OUT, ZW + OUT, XW, y, w ? [[WZ - WW / 2, WZ + WW / 2]] : []); }
+    for (let k = 0; k < NC - 1; k++) { const y = Y0 + R + STEP / 2 + k * STEP; cut('x', -XW - OUT, XW + OUT, -ZW, y, inWin(y) ? [[BWX - WW / 2, BWX + WW / 2]] : []);
+      cut('x', -XW - OUT, XW + OUT, ZW, y, [...(y < Y0 + DH + R ? [[-DW / 2, DW / 2]] : []), ...(inWin(y) ? [[FWX - WW / 2, FWX + WW / 2]] : [])]); }
     // the gables above the eaves: logs shortening to the ridge, under the roof's line
     for (let y = Y0 + R + STEP / 2 + (NC - 1) * STEP; y < RIDGE - .2; y += STEP) { const hl = (RIDGE - R - y) / Math.tan(PITCH); if (hl < .25) break; for (const z of [-ZW, ZW]) log('x', -hl, hl, z, y); }
     // the corner stones and the sill's middle stones, down into the ground; the floor; the door: its frame posts, the leaf of boards shut, its latch
@@ -7774,8 +7792,11 @@ function aurenneOrrery(hAt, o = {}) {
     put(new THREE.BoxGeometry(2 * XW - .26, .05, 2 * ZW - .26), 'board', 0, Y0 + .05, 0);
     for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.1, DH + .1, .26), 'board', sx * (DW / 2 + .05), Y0 + (DH + .1) / 2, ZW);
     put(new THREE.BoxGeometry(DW, DH, .05), 'door', 0, Y0 + DH / 2, ZW - .06); put(new THREE.BoxGeometry(.04, .04, .1), 'iron', DW / 2 - .12, Y0 + 1.0, ZW + .01);
-    { const wy = WS + WH / 2 + R / 2; for (const s2 of [-1, 1]) { put(new THREE.BoxGeometry(.26, .06, WW + .16), 'board', XW, wy + s2 * (WH / 2 + .03), WZ); put(new THREE.BoxGeometry(.26, WH, .06), 'board', XW, wy, WZ + s2 * (WW / 2 + .03)); }
-      put(new THREE.BoxGeometry(.03, WH, WW), 'glow', XW - .02, wy, WZ); put(new THREE.BoxGeometry(.04, .03, WW), 'board', XW - .01, wy, WZ) /* the light, its glazing bar */; }
+    const wy = WS + WH / 2 + R / 2, wins = [{ x: XW, z: WZ, n: [1, 0] }, { x: -XW, z: WZW, n: [-1, 0] }, { x: FWX, z: ZW, n: [0, 1] }, { x: BWX, z: -ZW, n: [0, -1] }];
+    /* each light: its frame of boards, the glow a hand inside the wall's line, its glazing bar; built along z and turned a quarter for the gable */
+    for (const W of wins) { const ry = W.n[0] ? 0 : Math.PI / 2, ins = W.n[0] ? [-W.n[0] * .02, 0] : [0, -W.n[1] * .02], ins2 = W.n[0] ? [-W.n[0] * .01, 0] : [0, -W.n[1] * .01];
+      for (const s2 of [-1, 1]) { put(new THREE.BoxGeometry(.26, .06, WW + .16), 'board', W.x, wy + s2 * (WH / 2 + .03), W.z, 0, ry); put(new THREE.BoxGeometry(.26, WH, .06), 'board', W.x + (W.n[0] ? 0 : s2 * (WW / 2 + .03)), wy, W.z + (W.n[0] ? s2 * (WW / 2 + .03) : 0), 0, ry); }
+      put(new THREE.BoxGeometry(.03, WH, WW), 'glow', W.x + ins[0], wy, W.z + ins[1], 0, ry); put(new THREE.BoxGeometry(.04, .03, WW), 'board', W.x + ins2[0], wy, W.z + ins2[1], 0, ry) /* the light, its glazing bar */; }
     // antlers on the front gable, over the door
     { const ay = Y0 + DH + .9, az = ZW + R + .02; put(new THREE.BoxGeometry(.22, .14, .06), 'antler', 0, ay, az); for (const s of [-1, 1]) { const b = [s * .5, ay + .45, az + .15]; rod('antler', [s * .05, ay, az + .02], b, .025, 5);
       for (let t = 0; t < 3; t++) { const f = .3 + t * .25, p = [s * .05 + s * .45 * f, ay + .45 * f, az + .02 + .13 * f]; rod('antler', p, [p[0] + s * .05, p[1] + .22, p[2] + .08], .018, 5); } } }
@@ -7802,7 +7823,8 @@ function aurenneOrrery(hAt, o = {}) {
     const STEPS_Z = SZ + SD / 2 + .2 + .22 /* the gap */; for (let k = 0; k < 3; k++) { const h = (k + 1) * SF / 3.2, d = .3, z = STEPS_Z + (2 - k) * d + d / 2, gy = ground(SX, z); put(new THREE.BoxGeometry(.8, h + .3 + sy - gy, d), 'stone', SX, (sy + h + gy - .3) / 2 - .05, z); }
     const store = { x: SX, z: SZ, w: SW, d: SD, floor: +(sy + SF).toFixed(3), steps: { z: +STEPS_Z.toFixed(3), top: +(sy + 3 * SF / 3.2 - .05).toFixed(3) } };
     // the woodpile under the west eaves: split rounds in two rows, ends out; a chopping block with the axe in it; a hide on its frame; snowshoes by the door
-    const pile = []; for (const row of [0, 1]) for (let y = .1, lay = 0; y < 1.3; y += .17, lay++) for (let z = -ZW + .3 + (lay % 2) * .08; z < ZW - .5; z += .19) { const x = -XW - R - .18 - row * .27, rr = .075 + F() * .025, g = new THREE.CylinderGeometry(rr, rr, .44, 4 + (F() < .5 ? 1 : 0));
+    /* S2081: the pile stops short of the west light (PZ1), where it ran the wall's length and would have hidden it */
+    const PZ1 = WZW - WW / 2 - .22, pile = []; for (const row of [0, 1]) for (let y = .1, lay = 0; y < 1.3; y += .17, lay++) for (let z = -ZW + .3 + (lay % 2) * .08; z < PZ1; z += .19) { const x = -XW - R - .18 - row * .27, rr = .075 + F() * .025, g = new THREE.CylinderGeometry(rr, rr, .44, 4 + (F() < .5 ? 1 : 0));
       g.rotateZ(Math.PI / 2); g.rotateX(F() * 6.283); g.rotateY((F() - .5) * .08); put(g, 'wood', x, y, z, 0, 0, 0, .4); pile.push({ x: +x.toFixed(3), z: +z.toFixed(3), y: +(y + .09).toFixed(3) }); }
     const BX = -3.6, BZ = 3.0; { const gy = ground(BX, BZ); put(new THREE.CylinderGeometry(.3, .32, .5, 10), 'log', BX, gy + .2, BZ); put(new THREE.CircleGeometry(.29, 10).rotateX(-Math.PI / 2), 'end', BX, gy + .451, BZ);
       rod('wood', [BX + .05, gy + .48, BZ], [BX + .55, gy + .82, BZ + .1], .02, 6); put(new THREE.BoxGeometry(.04, .16, .12), 'iron', BX + .02, gy + .48, BZ, 0, 0, .55); stands.push({ x: BX, y: gy, z: BZ, what: 'block' }); }
@@ -7824,11 +7846,11 @@ function aurenneOrrery(hAt, o = {}) {
     // steps, the block, the hide frame's posts and the trees' trunks. The walls are rows of the logs' own width, so a turned cabin's squares
     // stay inside its corners' run-on
     const Sq = (x, z, w, d, h, ry = 0) => ({ x: +x.toFixed(3), z: +z.toFixed(3), w, d, ry, h: +h.toFixed(3) }), LW = 2 * R + .04;
-    const sol = [Sq(0, ZW, 2 * XW + LW, LW, EAV), Sq(0, -ZW, 2 * XW + LW, LW, EAV), Sq(-XW, 0, LW, 2 * ZW - LW, EAV), Sq(XW, 0, LW, 2 * ZW - LW, EAV), Sq(-XW - R - .32, -.1, .55, 2 * ZW - .8, 1.3),
+    const sol = [Sq(0, ZW, 2 * XW + LW, LW, EAV), Sq(0, -ZW, 2 * XW + LW, LW, EAV), Sq(-XW, 0, LW, 2 * ZW - LW, EAV), Sq(XW, 0, LW, 2 * ZW - LW, EAV), Sq(-XW - R - .32, (-ZW + .2 + PZ1 + .1) / 2, .55, PZ1 + .1 + ZW - .2, 1.3),
       ...[-1, 1].flatMap(sx => [-1, 1].map(sz => Sq(SX + sx * (SW / 2 - .2), SZ + sz * (SD / 2 - .2), .3, .3, sy + SF + 2))), Sq(SX, STEPS_Z + .45, .8, .9, sy + SF * .9), Sq(BX, BZ, .6, .6, ground(BX, BZ) + .45),
       ...[-1, 1].map(s => Sq(HX + s * .8, HZ, .2, .2, ground(HX, HZ) + 2)), ...trees.map(t => Sq(t.x, t.z, .4, .4, ground(t.x, t.z) + t.h))];
     return { group, tris: Math.round(tris), draws: group.children.length, sol, stands: stands.map(s => ({ x: +s.x.toFixed(3), y: +s.y.toFixed(3), z: +s.z.toFixed(3), what: s.what })),
-      cabin: { x0: -XW, x1: XW, z0: -ZW, z1: ZW, eaves: EAV, ridge: RIDGE, y0: Y0, logs: logs.length, door: { x: 0, z: ZW, w: DW, h: DH }, win: { x: XW, z: WZ, w: WW, h: WH, sill: WS } },
+      cabin: { x0: -XW, x1: XW, z0: -ZW, z1: ZW, eaves: EAV, ridge: RIDGE, y0: Y0, logs: logs.length, door: { x: 0, z: ZW, w: DW, h: DH }, win: { x: XW, z: WZ, w: WW, h: WH, sill: WS }, wins: wins.map(W => ({ x: W.x, z: W.z, n: W.n, y: +wy.toFixed(3) })) },
       chimney: { x: CX, z: CZ, w: CW, top: CTOP }, store, pile: pile.length, trees, paths: PATHS };
   }
   // S2056 (card F8; OG-124's Mark panel, "an abandoned logging camp"; Michael's A on #1292) — the Mark's logging camp in the open world,
