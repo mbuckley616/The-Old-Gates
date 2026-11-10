@@ -114,6 +114,32 @@ for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, per
 await page.screenshot({ path: path.join(OUT, 'f4-failinggargoyle.jpg') });
 await page.evaluate(() => { _FG.e.mesh.parent.remove(_FG.e.mesh); tickPeople(1 / 60, 8e5); tickCreatures(1 / 60, 8e5); [px, pz] = _P; });
 
+// Session 2082 (L4, OG-018): a steady Gaoth gate's gargoyle wears the kit's Gaoth gargoyle (the stone weathered pale, no moss, its wings a
+// quarter wider, its eyes the storm's blue-white); a failing Gaoth gate's still the failing one, and any other gate's Cloch's mossy stone
+const ga = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rf = window.hcFailing, rs = window.hcGateSchool;
+  const kinds = []; for (const [f, s] of [[false, 'gaoth'], [true, 'gaoth'], [false, 'cloch'], [false, null]]) { window.hcFailing = () => f; window.hcGateSchool = () => s; kinds.push(hcGargKind()); }
+  window.hcFailing = () => false; window.hcGateSchool = () => 'gaoth';
+  const a = _S[0].e, b = _S[1].e, X = (a.x + b.x) / 2 + fx * 3.5, Z = (a.z + b.z) / 2 + fz * 3.5;
+  const pr = buildFoe('Gargoyle', X, Z, null, 0x880000), m = new THREE.Group(); pr.root.scale.multiplyScalar(1.35); m.add(pr.root); window.hcFailing = rf; window.hcGateSchool = rs;
+  const e = { id: 'f4gargoyles:gaoth', name: 'Gargoyle', mesh: m, limbs: { person: pr }, dormant: false, alert: true }, rig = pr; e.x = X; e.z = Z;
+  m.position.set(X, WORLD.worldH(X, Z), Z); m.rotation.y = Math.atan2(px - X, pz - Z); e.combatYaw = m.rotation.y; e.locked = false; WORLD.scene.add(m); rig.e = e; window._FG = { e, rig };
+  let n = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && n++ < 100) { tickPeople(1 / 60, 4e5 + n * (HBODY.gap + 1)); tickCreatures(1 / 60, 4e5 + n * (HBODY.gap + 1)); }
+  const H = rig.hc; if (!H) return { hc: false, kinds, kind: rig.hcKind, fail: !!rig.hcFail };
+  for (let i = 0; i < 60; i++) { tickPeople(1 / 60, 4.2e5 + i * 16.7); tickCreatures(1 / 60, 4.2e5 + i * 16.7); }
+  const span = P => (P.parts.find(([k]) => k === 'wings') || [, {}])[1].span, S = _S[1].rig.hc;
+  const lum = W => { let t = 0, k = 0; W.traverse(o => { if (o.isMesh && o.material && o.material.color && !(o.material.emissive && o.material.emissive.b > .5)) { const c = o.material.color; t += (c.r + c.g + c.b) / 3; k++; } }); return k ? +(t / k).toFixed(3) : 0; };
+  let blue = 0, ember = 0; H.W.traverse(o => { if (o.isMesh && o.material && o.material.emissive) { const em = o.material.emissive; if (em.b > .5 && em.b > em.r) blue++; if (em.r > .5 && em.r > em.b) ember++; } });
+  return { hc: true, kinds, kind: rig.hcKind, seed: H.C.g.seed, want: HC.hashKey('foe:' + e.id), span: span(H.C.plan), steadySpan: span(S.C.plan), lum: lum(H.W), steadyLum: lum(S.W), blue, ember,
+    wings: H.garg && H.garg.wings.length, tris: H.C.stats.tris, steadyTris: S.C.stats.tris, driver: rig.mesh.visible }; });
+console.log('  gaoth:', JSON.stringify(ga));
+check(`a steady Gaoth gate's gargoyle wears the kit's Gaoth gargoyle (${ga.tris} triangles, Cloch's ${ga.steadyTris}): its stone paler (${ga.lum} against ${ga.steadyLum}), its wings ${ga.span} m to Cloch's ${ga.steadySpan}, ${ga.blue} blue-lit meshes and no ember, keyed by its foe id; the kinds by gate ${(ga.kinds || []).join(', ')}`,
+  ga.hc && ga.kind === 'Gargoyle (gaoth)' && ga.seed === ga.want && ga.wings === 2 && Math.abs(ga.span - ga.steadySpan * 1.25) < .01 && ga.lum > ga.steadyLum + .05 && ga.blue >= 1 && ga.ember === 0 && !ga.driver
+  && ga.kinds.join('|') === 'Gargoyle (gaoth)|Gargoyle (failing)|Gargoyle|Gargoyle', ga);
+await page.evaluate(() => { const m = _FG.e.mesh, fx = -Math.sin(yaw), fz = -Math.cos(yaw); window._P = [px, pz]; px = m.position.x - fx * 4.5; pz = m.position.z - fz * 4.5; pitch = .12; });
+for (let i = 0; i < 8; i++) { await page.evaluate(() => { tickPeople(1 / 60, performance.now()); tickCreatures(1 / 60, performance.now()); }); await g.frames(1); }
+await page.screenshot({ path: path.join(OUT, 'f4-gaothgargoyle.jpg') });
+await page.evaluate(() => { _FG.e.mesh.parent.remove(_FG.e.mesh); tickPeople(1 / 60, 4.8e5); tickCreatures(1 / 60, 4.8e5); [px, pz] = _P; });
+
 // the levels: near and at 25 m the kit's body; at 60 m the driver's, with its knife back
 const lv = await page.evaluate(() => { const out = {}, f = _S[1], g0 = f.e.mesh, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   const at = (dd, k) => { CAM.position.set(g0.position.x - fx * dd, g0.position.y + 1.65, g0.position.z - fz * dd); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) { tickPeople(1 / 60, 5e5 + k * 100 + i * 17); tickCreatures(1 / 60, 5e5 + k * 100 + i * 17); }

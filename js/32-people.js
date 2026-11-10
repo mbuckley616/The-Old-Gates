@@ -1127,7 +1127,7 @@ function buildFoe(type,x,z,genome,eyeCol,arm){
   if(g.troll&&typeof hcOn==='function'&&hcOn()&&HC_KINDS[type]){rig.hcKind=hcTrollKind(type);HC_RIGS.add(rig);} /* S1877 — in a Tine, Uisce or Cloch gate the cave troll its school's (OG-018, OG-088) */ /* S1378 (F4) — the trolls the kit's troll, with its maul, in their kind's hide */
   if(g.golem&&typeof hcOn==='function'&&hcOn()){rig.hcKind=hcFailing()?'Golem (failing)':'Golem';HC_RIGS.add(rig);} /* S1868 — in a failing gate the failing golem (OG-073) */ /* S1371 (F4) — the Golem the kit's golem, its eyes rune-lit */
   if(g.wraith&&typeof hcOn==='function'&&hcOn()){rig.hcKind=g.phantom?'Phantom':hcFailing()?'Wraith (failing)':'Wraith';HC_RIGS.add(rig);} /* S1866 — in a failing gate the failing wraith (OG-073) */ /* S1429 (F4) — the Wraith and the Phantom the kit's, floating legless with their claws (hcPose takes off the driver's stance) */
-  if(g.gargoyle&&typeof hcOn==='function'&&hcOn()){rig.hcKind=hcFailing()?'Gargoyle (failing)':'Gargoyle';HC_RIGS.add(rig);} /* S1872 — in a failing gate the failing gargoyle (OG-073) */ /* S1375 (F4) — the Gargoyle the kit's gargoyle, its stone wings folded by its fold (hcGarg) */
+  if(g.gargoyle&&typeof hcOn==='function'&&hcOn()){rig.hcKind=hcGargKind();HC_RIGS.add(rig);} /* S2082 — by its gate, hcGargKind */ /* S1872 — in a failing gate the failing gargoyle (OG-073) */ /* S1375 (F4) — the Gargoyle the kit's gargoyle, its stone wings folded by its fold (hcGarg) */
   if(hbOn()&&hbFoeOk(type,genome,g)){rig.hbFoe=type;if(g.hbKey)rig.hbG=HB_GENOMES.get(g.hbKey);HB_RIGS.add(rig);} /* S1201 (F4) — a human foe wears the builder's body too, its genome rolled at its first attach, by its id */
   return rig;
 }
