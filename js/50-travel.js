@@ -1213,7 +1213,7 @@ function spawnChunkVeins(ch){
   for(let i=0;i<40;i++){
     const x=ch.cx*CHUNK+3+hash01(ch.cx+i,ch.cz,302)*(CHUNK-6),z=ch.cz*CHUNK+3+hash01(ch.cz,ch.cx+i,303)*(CHUNK-6);
     const h=worldH(x,z);if(h<1.5)continue;
-    if(solidAt(x,z))continue;const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+2)continue;const st=stampAt(x,z);if(st&&st.kind==='site'&&Math.hypot(x-st.x,z-st.z)<st.r)continue;
+    if(solidAt(x,z))continue;const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+2)continue;const st=stampAt(x,z);if(st&&st.kind==='site'&&Math.hypot(x-st.x,z-st.z)<st.r)continue;if(typeof placeClearAt==='function'&&placeClearAt(x,z))continue; /* S2065 — nor in a place by a road's or off it's clearing (the look builder's) */
     cand.push({i,x,z,ny:slopeNormalY(x,z)});}
   cand.sort((a,b)=>a.ny-b.ny||a.i-b.i); /* the steepest of the chunk's tries: rock where it has any, a bank where it is flat */
   for(const c of cand.slice(0,n)){
