@@ -543,3 +543,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing. The weekly run's reds (8 Nov) are filed by owner in section I.
 
 **Roadmap.** 320 of 396 stories done (315 of 390 on 8 Nov). The new look is 7 of 18; only F14 is left for deep work.
+
+## 10 Nov 2026
+
+**Waiting on you.** Two decisions: camp and rest (#1378, B recommended: beds by grade, plus a camp you make anywhere) and the places no cell draws (#1385, C recommended: a second chance for cells that drew nothing). No PR waits on your tap.
+
+**Landed on main since 9 Nov.** Your answers built: a meal feeds ten times as long (#1339 B, Systems 2050); the found water bottle (#1355 A, 2062); the sheet's portrait, your own body lit in a bronze window (#1363 C, 2066). Súil seeks a word you name (2054); the innkeeper's dish by people (2058). Places off the road (F8): the Mark's hunting cabin, logging camp and unfinished camp, the Gatelands' merchants' camp, Aurenne's abandoned expedition (Look 2051–2065). Under Another Flag §3–5 (Quests 2055). A long cloak goes with your legs at a walk and a run (Bodies 2049–2067). QA held the budget: far places hidden past 450 m, Dunmore 42 calls lighter (2052–2068). Build s1443.
+
+**Under way.** No PR open; #1371 closed as superseded by #1374. Camp and rest waits on #1378.
+
+**Blocked.** Nothing. Dunmore at midnight at Low stands at 627 of 700 calls.
+
+**Roadmap.** 320 of 397 stories done (320 of 396 on 9 Nov). The new look is 7 of 18; only F14 is left for deep work.
