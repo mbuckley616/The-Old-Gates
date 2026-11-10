@@ -7,7 +7,7 @@
 // charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar),
 // Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt);
 // Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2048 the coach's lamp at night and its paint. Session 2051
-// the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2058 the Mark's unfinished camp (PKIT.places.unfinished).
+// the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished).
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -199,7 +199,7 @@ if (lg) {
   check(`${lt.id}: the logging camp ${lt.road} m off the nearest road; the chute ends over water (ground ${lt.end} m) and clears the bank by ${lt.clear} m at least; its fire and sledge within ${lt.stands} m of the ground; ${lt.stumps} stumps, ${lt.trees} spruce; ice at ${lt.ice}`, !lt.none && lt.road >= 150 && lt.end < 0 && lt.clear > 0 && lt.stands < .06 && lt.stumps >= 40 && lt.trees >= 20 && (!lt.snow || (lt.ice > 0 && lt.ice < .1)), lt);
   check(`solid at the deck, the chute on land and the gapahuk's back, open at its front; ${lt.tris} triangles in ${lt.draws} draws`, !lt.none && lt.deck && lt.chute && lt.back && !lt.front && lt.tris < 17000 && lt.draws <= 13, lt);
 }
-// Session 2058: the Mark's unfinished camp (PKIT.places.unfinished, places.js's markUnfinishedCamp) by a road in the tundra's snow: 14 to 22 m
+// Session 2059: the Mark's unfinished camp (PKIT.places.unfinished, places.js's markUnfinishedCamp) by a road in the tundra's snow: 14 to 22 m
 // off its road and facing it, what lies about on the drawn ground and its stance level, solid at the pulk and the chopping round, open at the
 // laid fire and on the way to the road, a ring of its own spruce from 9 m and none toward the road; its cost
 const uf = await page.evaluate(() => { for (const c of CELLS.values()) { const d = c.type !== 'sea' && !c.home ? waysideAt(c) : null; if (d && d.kind === 'unfinished') return { id: d.id, x: d.x, z: d.z, ry: d.ry, off: d.off, ppl: nationOf(c.i, c.j).people, bio: withPlace(c.ox + SIZE / 2, c.oz + SIZE / 2, () => dominantRegion(d.x, d.z).r.biome) }; } return null; });

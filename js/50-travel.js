@@ -755,9 +755,14 @@ function dishOfDayItem(h){const [m,k]=dishOfDay(h).split(':');const it=mealItem(
 function cupItem(k){return {name:CUP_NAMES[k],ico:k==='olives'||k==='curd'?'🍵':'🍺',type:'potion',weight:.5,buyPrice:CUP_PRICE,sellMult:.3,cup:k};}
 function cupNow(){const C=worldState.cup;return C&&C.until>gameMinNow()?C:null;}
 function cupRider(){const C=cupNow();return C?C.r:null;}
-// the innkeeper's topic: the dish learnt, said plainly (the named action is learnDish)
-function dishTalkSay(h){const p=dishTalk(h);if(!p)return '';learnDish(p);const S=DISH_SECONDS[p.split(':')[1]];
-  return `${DISH_NAMES[p]}. Put ${S.name.toLowerCase()} in the pot and it's ${DISH_ADJ[S.r]}.`;}
+// the innkeeper's topic: the dish learnt, said in the innkeeper's people's voice (the named action is learnDish; quest review Finding 45, S2058)
+function dishTalkSay(h,people){const p=dishTalk(h);if(!p)return '';learnDish(p);const S=DISH_SECONDS[p.split(':')[1]];
+  const d=DISH_NAMES[p],s=S.name.toLowerCase(),a=DISH_ADJ[S.r];
+  const L={gatelander:`${d}. A pot's only as good as what goes in it, they say: ${s}, and it's ${a}.`,
+    markman:`${d}. ${s.charAt(0).toUpperCase()+s.slice(1)} in the pot. ${a.charAt(0).toUpperCase()+a.slice(1)}.`,
+    aurennais:`${d}, Master. Put ${s} in the pot and the dish is ${a}; that much the kitchen will warrant.`,
+    oldblood:`${d}. ${s.charAt(0).toUpperCase()+s.slice(1)} goes in the crock. It makes it ${a}.`};
+  return L[people]||L.gatelander;}
 function drinkCup(i){const it=BAG[i];if(!it||!it.cup)return;const S=DISH_SECONDS[it.cup];if(!S)return;
   if(typeof DRINK!=='undefined'&&DRINK){showMsg('You are still drinking.','#cc8844');return;}
   const nm=it.name,k=it.cup;it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
