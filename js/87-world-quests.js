@@ -569,7 +569,19 @@ const giver=`${lord.title} ${lord.name}`;
   // loaded cells, carved or not.
   let _suilCast=null;
   function nearestUnreadCarving(x,z){const read=worldState.sigilsRead||{},c=carvingsNear(x,z,CARVE_REACH).find(c=>!read[c.seed]);return c?{x:c.x,z:c.z,name:c.name,seed:c.seed}:null;}
-  function nearestSigilDoor(){if(typeof fxOn==='function'&&fxOn('seamsight')){const u=SPELL_FX.seamsight;if(!_suilCast||_suilCast.until!==u)_suilCast={until:u,d:nearestUnreadCarving(px,pz)};return _suilCast.d;}
+  // S2054 — Súil by choice (words-and-the-mouth-build.md, "Súil by choice"): once you hold Súil you may name one of the 24 words for it
+  // to seek (`setSeek`, a named action; saved as register.seek, the character's). While the sought word is below Mastery (held or not),
+  // a cast points at the nearest door carved with it within the rubbing's reach, read or not, so you go back for the second touch and
+  // for Mastery. Unset, or the word at Mastery, it points at the nearest unread carving as before. With none within reach the eye says
+  // so and points at the nearest unread carving instead. A new choice is searched at once; otherwise the answer is kept for the cast.
+  function setSeek(id){if(id!=null&&!WORD_BY[id])return false;if(!knownWords.suil_fiodora)return false;
+    const R=worldState.register||(worldState.register={});R.seek=id||null;_suilCast=null;return true;}
+  function seekWord(){const R=worldState.register,s=R&&R.seek;return s&&WORD_BY[s]&&(knownWords[s]||0)<3?s:null;}
+  function suilSearch(x,z){const s=seekWord();
+    if(s){const c=nearestCarvingOf(s,x,z,CARVE_REACH);if(c)return {x:c.x,z:c.z,name:c.name,seed:c.seed,word:s};
+      if(typeof showMsg==='function')showMsg(`The eye finds nothing of ${WORD_BY[s].nameIr} this side of the water.`,'#a0c8ff');}
+    return nearestUnreadCarving(x,z);}
+  function nearestSigilDoor(){if(typeof fxOn==='function'&&fxOn('seamsight')){const u=SPELL_FX.seamsight;if(!_suilCast||_suilCast.until!==u)_suilCast={until:u,d:suilSearch(px,pz)};return _suilCast.d;}
     return nearestUnreadCarving(px,pz);}
   function onMasteryTouch(spellId){const seed=(typeof activePortal!=='undefined'&&activePortal&&activePortal.seed)||(typeof curPortal!=='undefined'&&curPortal&&curPortal.seed)||(typeof currentPortal!=='undefined'&&currentPortal&&currentPortal.seed)||null;if(seed!=null)(worldState.sigilsRead||(worldState.sigilsRead={}))[seed]=spellId;worldState.masteries=(worldState.masteries||0)+1;gateStoneDue(seed);}
   // S1734 — the first lesser gate you clear (its sigil read) whose condition is failing or catastrophic gives the gate stone, a figurehead

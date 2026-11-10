@@ -3,6 +3,7 @@
 // all 24 words; the table reads no level and nothing that has loaded, so it is the same at level 1 and 30 and after a reload. Then a
 // gate whose carving is one of the eight new words (none in the old SPELLS table) is entered: the carving hangs on its last floor,
 // and a touch teaches the word a tier a touch and marks the door read.
+// Session 2054: Súil by choice (setSeek), its search and the Magic tab's choice.
 // Session 1633: Súil's search from the carvings by place, kept for the cast.
 // Session 1632: the carvings by place (carvingsNear, nearestCarvingOf), the hermits' *Do you know the old words?*, the rubbing's label.
 import { boot, check } from './lib/game.mjs';
@@ -79,5 +80,35 @@ const su = await page.evaluate(() => { worldState.sigilsRead = {}; const out = {
   SPELL_FX.seamsight = 0; worldState.sigilsRead = {}; return out; });
 console.log(JSON.stringify(su));
 check(`Súil points at the nearest carving, ${su.d} m off and carved (${su.carved}); read during the cast it is kept (${su.kept}); the next cast points at the next unread (${su.next})`, !su.none && su.d <= 2600 && su.carved && su.first && su.kept && su.next, su);
+// S2054 — Súil by choice: a word named for it to seek; its nearest carving, read or not, while the word is below Mastery
+const sk = await page.evaluate(() => { const out = {}; worldState.sigilsRead = {}; const kw = { ...knownWords }, P = [px, pz], msgs = [];
+  const _sm = showMsg; showMsg = (t) => { msgs.push(t); };
+  try {
+    for (const k of Object.keys(knownWords)) delete knownWords[k];
+    out.refused = setSeek('tonn') === false;
+    knownWords.suil_fiodora = 1; SPELL_FX.seamsight = performance.now() + 60000;
+    const first = nearestSigilDoor(); out.firstSeed = first && first.seed;
+    const w = WORDS.map(w => w.id).find(id => { const c = nearestCarvingOf(id, px, pz); return c && first && c.seed !== first.seed; });
+    out.word = w; out.name = WORD_BY[w].nameIr; out.ok = setSeek(w); const c = nearestCarvingOf(w, px, pz);
+    const d = nearestSigilDoor(); out.points = d && d.seed === c.seed && gateCarving(d.seed) === w; out.dist = Math.round(c.d);
+    worldState.sigilsRead[c.seed] = w; knownWords[w] = 2; SPELL_FX.seamsight += 1; const d2 = nearestSigilDoor(); out.readKept = d2 && d2.seed === c.seed;
+    knownWords[w] = 3; SPELL_FX.seamsight += 1; const d3 = nearestSigilDoor(); out.mastery = d3 && d3.seed !== c.seed && !worldState.sigilsRead[d3.seed];
+    knownWords[w] = 1; SPELL_FX.seamsight += 1; out.saved = worldState.register.seek;
+    px = 0; pz = 0; const d4 = nearestSigilDoor(); out.far = { d: d4, msg: msgs[msgs.length - 1] };
+    px = P[0]; pz = P[1];
+    out.cleared = setSeek(null) && worldState.register.seek === null; SPELL_FX.seamsight += 1; const d5 = nearestSigilDoor(); out.unset = d5 && d5.seed === out.firstSeed;
+    // the Magic tab: the choice, once Súil is held
+    knownWords.suil_fiodora = 1; setSeek(w); renderHubMagic(); const sel = document.querySelector('#spell-grid select.mp-seek'); out.tab = sel ? sel.value : null;
+    if (sel) { sel.value = ''; sel.dispatchEvent(new Event('change')); } out.tabCleared = worldState.register.seek;
+    delete knownWords.suil_fiodora; renderHubMagic(); out.tabGone = !document.querySelector('#spell-grid select.mp-seek');
+  } finally { showMsg = _sm; px = P[0]; pz = P[1]; for (const k of Object.keys(knownWords)) delete knownWords[k]; Object.assign(knownWords, kw); SPELL_FX.seamsight = 0; worldState.sigilsRead = {}; if (worldState.register) worldState.register.seek = null; }
+  return out; });
+console.log(JSON.stringify(sk));
+check(`no seek without Súil held (${sk.refused})`, sk.refused, sk);
+check(`Súil seeking ${sk.word} points at its nearest carving, ${sk.dist} m off, not the nearest unread (${sk.points}), saved as the register's seek (${sk.saved})`, sk.ok && sk.points && sk.saved === sk.word, sk);
+check(`read and held at Comprehension it still points there (${sk.readKept}); at Mastery, at the nearest unread again (${sk.mastery})`, sk.readKept && sk.mastery, sk);
+check(`with none within 2,600 m the eye says so ("${sk.far.msg}") and finds no unread stone either`, sk.far.d === null && sk.far.msg === `The eye finds nothing of ${sk.name} this side of the water.`, sk.far);
+check(`cleared, it points at the nearest unread stone again (${sk.cleared}, ${sk.unset})`, sk.cleared && sk.unset, sk);
+check(`the Magic tab shows the choice once Súil is held (${sk.tab}), sets it (${sk.tabCleared}) and hides it without (${sk.tabGone})`, sk.tab === sk.word && sk.tabCleared === null && sk.tabGone, sk);
 check('no page errors on the fresh page', g.errs.length === 0, g.errs);
 await g.close();

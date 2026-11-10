@@ -18,7 +18,7 @@ const r = await page.evaluate((raw) => {
   out.book = spellBook.map(b => b.form[0] + ':' + b.word); out.active = activeSpell; out.granted = [...formsGranted];
   out.activeId = activeSpellId;
   // a made spell and a star, through the two rows
-  knownWords.tonn = 2; spellBook.length = 6; spellBook.push({ form: 'laid', word: 'tonn', rider: 'sioc' }); worldState.register = { stars: { uisce: 'seed:4417' } };
+  knownWords.tonn = 2; spellBook.length = 6; spellBook.push({ form: 'laid', word: 'tonn', rider: 'sioc' }); worldState.register = { stars: { uisce: 'seed:4417' }, seek: 'tonn' }; /* S2054 — Súil's seek */
   activeSpellId = 'tonn'; // not in the book unjoined: activeSpell reads -1
   const rows = _buildSaveRows(); out.inChar = { book: !!rows.c.spellBook, words: !!rows.c.knownWords, reg: !!(rows.c.wS && rows.c.wS.register), regW: !!(rows.w.wS && rows.w.wS.register), oldKey: 'knownSpells' in rows.c };
   spellBook.length = 0; for (const k of Object.keys(knownWords)) delete knownWords[k]; delete worldState.register;
@@ -33,8 +33,8 @@ check(`the old save's sixteen spells are sixteen words at the same tiers (${r.n}
 check(`the book holds eight: ${r.book.join(' ')}`, r.book.length === 8 && r.book[0] === 'w:lampa' && r.book.slice(1, 7).every(b => b.startsWith('s:')) && r.book[7] === 'w:siul_uisce', r);
 check(`F's spell is the book's first (${r.activeId}, index ${r.active}); Sent and Worn granted (${r.granted})`, r.activeId === 'lampa' && r.active === 0 && r.granted.join() === 'sent,worn', r);
 check(`the book, the words and the register ride the character row (${JSON.stringify(r.inChar)})`, r.inChar.book && r.inChar.words && r.inChar.reg && !r.inChar.regW && !r.inChar.oldKey, r);
-check(`Tonn laid with Sioc comes back (${JSON.stringify(r.made)}), Tonn at ${r.tonn}, the star ${JSON.stringify(r.reg)}`,
-  r.made && r.made.rider === 'sioc' && r.tonn === 2 && r.reg && r.reg.stars.uisce === 'seed:4417' && r.n2 === 7, r);
+check(`Tonn laid with Sioc comes back (${JSON.stringify(r.made)}), Tonn at ${r.tonn}, the star and Súil's seek ${JSON.stringify(r.reg)}`,
+  r.made && r.made.rider === 'sioc' && r.tonn === 2 && r.reg && r.reg.stars.uisce === 'seed:4417' && r.reg.seek === 'tonn' && r.n2 === 7, r);
 check(`a dead cell and an unheld word are dropped on load (${r.n3} of 9)`, r.n3 === 7, r);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
