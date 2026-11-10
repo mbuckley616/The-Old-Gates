@@ -7,7 +7,7 @@
 // charcoal burners' camp (PKIT.places.charcoal), Session 2030 the locked cellar's fallen cottage (PKIT.places.cellar),
 // Session 2034 the perched stone on its pavement (PKIT.places.erratic); Session 2038 the first place off the road, the shepherd's hut (offroadAt);
 // Session 2044 the peat-cutting camp (PKIT.places.peat), on its own ground. Session 2048 the coach's lamp at night and its paint. Session 2051
-// the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road.
+// the Mark's hunting cabin (PKIT.places.cabin), and a fort's spur counted as a road. Session 2056 the logging camp, Session 2059 the Mark's unfinished camp (PKIT.places.unfinished).
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -19,7 +19,7 @@ const k = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => 
   return { cells: G.length, n: C.length, kinds: [...new Set(C.map(d => d.kind))].sort(), same, coaches: coaches.length, camps: camps.length, burns: burns.length, cots: cots.length, ers: ers.length, gl: [...coaches, ...burns, ...cots, ...ers].every(d => ppl(d) === 'gatelander'), mk: camps.every(d => ppl(d) === 'markman'),
     near: coaches[0] && { id: coaches[0].id, x: coaches[0].x, z: coaches[0].z, ry: coaches[0].ry, off: coaches[0].off }, camp: camps[0] && { id: camps[0].id, x: camps[0].x, z: camps[0].z, ry: camps[0].ry, off: camps[0].off }, burn: burns[0] && { id: burns[0].id, x: burns[0].x, z: burns[0].z, ry: burns[0].ry, off: burns[0].off }, cot: cots[0] && { id: cots[0].id, x: cots[0].x, z: cots[0].z, ry: cots[0].ry, off: cots[0].off }, er: ers[0] && { id: ers[0].id, x: ers[0].x, z: ers[0].z, ry: ers[0].ry, off: ers[0].off } }; });
 console.log(JSON.stringify(k));
-check(`${k.n} of ${k.cells} cells keep a place by a road (${k.coaches} of them the Gatelands' coach, ${k.camps} the Mark's hunters' camp, ${k.burns} the Gatelands' charcoal burners, ${k.cots} the fallen cottage, ${k.ers} the perched stone), the same when asked again`, k.n > 0 && k.n < k.cells / 3 && k.same && k.gl && k.mk && k.coaches > 0 && k.camps > 0 && k.burns > 0 && k.cots > 0 && k.ers > 0 && k.kinds.join() === 'carriage,cellar,charcoal,erratic,hunters', k);
+check(`${k.n} of ${k.cells} cells keep a place by a road (${k.coaches} of them the Gatelands' coach, ${k.camps} the Mark's hunters' camp, ${k.burns} the Gatelands' charcoal burners, ${k.cots} the fallen cottage, ${k.ers} the perched stone), the same when asked again`, k.n > 0 && k.n < k.cells / 3 && k.same && k.gl && k.mk && k.coaches > 0 && k.camps > 0 && k.burns > 0 && k.cots > 0 && k.ers > 0 && k.kinds.join() === 'carriage,cellar,charcoal,erratic,hunters,unfinished', k);
 await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 60; pz = D.z - Math.cos(D.ry) * 60; }, k.near);
 for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id); return !!(c && c._wayside.group && c._wayside.group.parent); }, k.near.id); if (ok) break; await page.waitForTimeout(1000); }
 await g.spin('clear', 40);
@@ -177,6 +177,49 @@ if (cb) {
   check(`${ct.id}: the hunting cabin ${ct.road} m off the nearest road or spur, its yard within ${ct.floor} m of level, ${ct.stands} m from its block and frame to the ground, ${ct.trees} spruce of its own from ${ct.near} m`, !ct.none && ct.road >= 150 && ct.floor < .06 && ct.stands < .06 && ct.trees >= 12 && ct.near >= 11, ct);
   check(`solid at the cabin's four walls (the door shut) and the woodpile, open in the yard, on the path and under the store; ${ct.tris} triangles in ${ct.draws} draws`, !ct.none && ct.back && ct.side && ct.door && !ct.inside && ct.pile && !ct.yard && !ct.path && !ct.under && ct.tris < 21000 && ct.draws <= 18, ct);
 }
-if (process.env.SHOT) { const S = process.env.SHOT_OF === 'erratic' ? k.er : k.burn; await page.evaluate(D => { REN.setSize(960, 540, false); forceTime(10); px = D.x - Math.sin(D.ry) * 24 + Math.cos(D.ry) * 7; pz = D.z - Math.cos(D.ry) * 24 - Math.sin(D.ry) * 7; }, S); await g.spin('clear', 60); await page.screenshot({ path: process.env.SHOT }); }
+// Session 2056: the Mark's logging camp (PKIT.places.logging, places.js's markLoggingCamp) on a fall line of the world into water, 150 m and
+// more off every road: the chute from the deck's foot down to 3 m out over the water, clear of the bank all the way; the fire and the
+// sledge on the drawn ground; in the snow, the ice a hand over the water; solid at the deck, the chute on land and the gapahuk's back, open
+// at its front; its cost
+const lg = await page.evaluate(() => { for (const c of CELLS.values()) { const d = c.type !== 'sea' && !c.home ? offroadAt(c) : null; if (d && d.kind === 'logging') return { id: d.id, x: d.x, z: d.z, ry: d.ry, shore: d.shore, snow: d.snow, fresh: d.fresh, ppl: nationOf(c.i, c.j).people }; } return null; });
+console.log(JSON.stringify(lg));
+check(`a logging camp is drawn on a fall line into water in the Mark (${lg && lg.id}, the shore ${lg && lg.shore} m down it, ${lg && (lg.fresh ? 'fresh water' : 'the sea')})`, !!lg && lg.ppl === 'markman' && lg.shore >= 22 && lg.shore <= 34, lg);
+if (lg) {
+  await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 40; pz = D.z - Math.cos(D.ry) * 40; }, lg);
+  for (let n = 0; n < 12; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id); return !!(c && c._offroad.group && c._offroad.group.parent); }, lg.id); if (ok) break; await page.waitForTimeout(1000); }
+  await g.spin('clear', 40);
+  const lt = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad; if (!D.group || !D.group.parent) return { none: true };
+    const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], C = D.chute, cy = v => D.y + C.y0 - C.grade * (v - C.z0);
+    let bd = 1e9; for (const sg of RSEG) { const vx = sg.bx - sg.ax, vz = sg.bz - sg.az, t = Math.max(0, Math.min(1, ((D.x - sg.ax) * vx + (D.z - sg.az) * vz) / (vx * vx + vz * vz || 1))); bd = Math.min(bd, Math.hypot(sg.ax + vx * t - D.x, sg.az + vz * t - D.z)); }
+    let clear = 1e9; for (let v = C.z0 + .5; v < C.z1; v += .5) { if (C.gap && v > C.gap[0] && v < C.gap[1]) continue; clear = Math.min(clear, cy(v) - meshH(...W(C.x, v))); }
+    const st = Math.max(...D.stands.map(l => { const [x, z] = W(l.x, l.z); return Math.abs(D.y + l.y - meshH(x, z)); })), Sh = D.shelter, at = (u, v, y) => solidAt(...W(u, v), y);
+    return { id, tris: D.tris, draws: D.draws, road: +bd.toFixed(1), end: +meshH(...W(C.x, C.z1)).toFixed(2), clear: +clear.toFixed(3), stands: +st.toFixed(3), stumps: D.stumps.length, trees: D.trees.length, ice: D.ice ? +(D.y + D.ice.y).toFixed(3) : null, snow: !!D.snow,
+      deck: at(D.deck.x, D.deck.z, meshH(...W(D.deck.x, D.deck.z)) + .5), chute: at(C.x, C.z0 + 4, meshH(...W(C.x, C.z0 + 4)) + .3), back: at(Sh.x, Sh.z - Sh.d / 2, D.y + Sh.y + .5), front: at(Sh.x, Sh.z + Sh.d / 2 - .3, D.y + Sh.y + .5) }; }, lg.id);
+  console.log(JSON.stringify(lt));
+  check(`${lt.id}: the logging camp ${lt.road} m off the nearest road; the chute ends over water (ground ${lt.end} m) and clears the bank by ${lt.clear} m at least; its fire and sledge within ${lt.stands} m of the ground; ${lt.stumps} stumps, ${lt.trees} spruce; ice at ${lt.ice}`, !lt.none && lt.road >= 150 && lt.end < 0 && lt.clear > 0 && lt.stands < .06 && lt.stumps >= 40 && lt.trees >= 20 && (!lt.snow || (lt.ice > 0 && lt.ice < .1)), lt);
+  check(`solid at the deck, the chute on land and the gapahuk's back, open at its front; ${lt.tris} triangles in ${lt.draws} draws`, !lt.none && lt.deck && lt.chute && lt.back && !lt.front && lt.tris < 17000 && lt.draws <= 13, lt);
+}
+// Session 2059: the Mark's unfinished camp (PKIT.places.unfinished, places.js's markUnfinishedCamp) by a road in the tundra's snow: 14 to 22 m
+// off its road and facing it, what lies about on the drawn ground and its stance level, solid at the pulk and the chopping round, open at the
+// laid fire and on the way to the road, a ring of its own spruce from 9 m and none toward the road; its cost
+const uf = await page.evaluate(() => { for (const c of CELLS.values()) { const d = c.type !== 'sea' && !c.home ? waysideAt(c) : null; if (d && d.kind === 'unfinished') return { id: d.id, x: d.x, z: d.z, ry: d.ry, off: d.off, ppl: nationOf(c.i, c.j).people, bio: withPlace(c.ox + SIZE / 2, c.oz + SIZE / 2, () => dominantRegion(d.x, d.z).r.biome) }; } return null; });
+console.log(JSON.stringify(uf));
+check(`an unfinished camp is drawn by a road in the Mark's tundra (${uf && uf.id}, ${uf && uf.ppl}, ${uf && uf.bio})`, !!uf && uf.ppl === 'markman' && uf.bio === 'tundra', uf);
+if (uf) {
+  await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 50; pz = D.z - Math.cos(D.ry) * 50; }, uf);
+  for (let n = 0; n < 12; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id); return !!(c && c._wayside.group && c._wayside.group.parent); }, uf.id); if (ok) break; await page.waitForTimeout(1000); }
+  await g.spin('clear', 40);
+  const ut = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._wayside && c._wayside.id === id)._wayside; if (!D.group || !D.group.parent) return { none: true };
+    const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], at = (u, v) => solidAt(...W(u, v), meshH(...W(u, v)));
+    let bd = 1e9, bq = null; for (const sg of RSEG) { if (sg.road.def.via === 'quay' || sg.road.def.via === 'spur') continue; const vx = sg.bx - sg.ax, vz = sg.bz - sg.az, t = Math.max(0, Math.min(1, ((D.x - sg.ax) * vx + (D.z - sg.az) * vz) / (vx * vx + vz * vz || 1))), qx = sg.ax + vx * t - D.x, qz = sg.az + vz * t - D.z, d = Math.hypot(qx, qz); if (d < bd) { bd = d; bq = [qx, qz]; } }
+    const st = Math.max(...D.stands.map(l => { const [x, z] = W(l.x, l.z); return Math.abs(D.y + l.y - meshH(x, z)); })), fl = Math.max(...[[-3, -3], [3, -3], [-3, 3], [3, 3]].map(([u, v]) => Math.abs(meshH(...W(u, v)) - D.y)));
+    return { id, tris: D.tris, draws: D.draws, road: +bd.toFixed(2), fwd: bq ? +(-(bq[0] * s + bq[1] * co) / (bd || 1)).toFixed(2) : null, stands: +st.toFixed(3), n: D.stands.length, floor: +fl.toFixed(3),
+      trees: D.trees.length, near: +Math.min(...D.trees.map(t => Math.hypot(t.x, t.z))).toFixed(1), toRoad: D.trees.filter(t => t.z < -(D.off - 5)).length, lit: D.group.children.some(m => m.material.emissive && m.material.emissive.getHex() > 0),
+      pulk: at(D.sledge.x, D.sledge.z), round: at(D.round.x, D.round.z), fire: at(D.fire.x, D.fire.z), way: at(0, -D.off / 2) }; }, uf.id);
+  console.log(JSON.stringify(ut));
+  check(`${ut.id}: the unfinished camp ${ut.road} m off its road, facing it (${ut.fwd}); ${ut.n} things lying within ${ut.stands} m of the ground, its stance within ${ut.floor} m of level; ${ut.trees} spruce of its own from ${ut.near} m, ${ut.toRoad} toward the road; nothing lit`, !ut.none && ut.road >= 13 && ut.road <= 23 && ut.fwd > .9 && ut.stands < .06 && ut.floor < .08 && ut.trees >= 15 && ut.near >= 9 && ut.toRoad === 0 && !ut.lit, ut);
+  check(`solid at the pulk and the chopping round, open at the laid fire and on the way to the road; ${ut.tris} triangles in ${ut.draws} draws`, !ut.none && ut.pulk && ut.round && !ut.fire && !ut.way && ut.tris < 16000 && ut.draws <= 12, ut);
+}
+if (process.env.SHOT) { const S = process.env.SHOT_OF === 'erratic' ? k.er : process.env.SHOT_OF === 'unfinished' ? uf : k.burn; await page.evaluate(D => { REN.setSize(960, 540, false); forceTime(10); px = D.x - Math.sin(D.ry) * 24 + Math.cos(D.ry) * 7; pz = D.z - Math.cos(D.ry) * 24 - Math.sin(D.ry) * 7; }, S); await g.spin('clear', 60); await page.screenshot({ path: process.env.SHOT }); }
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 5));
 await g.close();
