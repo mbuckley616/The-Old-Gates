@@ -1,7 +1,7 @@
 // Card F4 (Session 1201): on the new look the human foes wear the builder's bodies, as the townsfolk have since Session 1195.
 // A line of the nine kinds of FOE_DRESS that are people (and a Wraith, which is not: the risen dead have their own suite since Session 1404, f4dead, and the Ash Wight is in it since Session 1409) ahead of you in the open world: each is
 // built on the builder's 163-bone skeleton over its 17-bone driver, its genome rolled from its foe id (keyFoe, the co-op rule's
-// place and index) and dressed from its kind; its weapon stays the game's, in the builder's fist; it glows with the tell; and
+// place and index) and dressed from its kind; its weapon stays the game's, in the builder's fist; its tell lights what it holds (S2092); and
 // killed, its corpse is darkened with the garments' shaders kept. Pictures: docs/prototypes/f4/f4-foes.jpg and f4-foes-near.jpg.
 // Session 1898: parried perfectly, a human foe takes the deflect (Michael's A on #1192); f4-deflect.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
@@ -19,9 +19,10 @@ const made = await page.evaluate((KINDS) => { forceTime(12);
   const clear = (x, z) => { for (let dx = -2; dx <= 2; dx += .5) for (let dz = -2; dz <= 2; dz += .5) if (WORLD.solidAt(x + dx, z + dz)) return false; return true; };
   let d = 9; for (; d < 60; d += 3) { let ok = true; for (let i = 0; i < KINDS.length; i++) if (!clear(px + fx * d + sx * (i - 4.5) * 1.6, pz + fz * d + sz * (i - 4.5) * 1.6)) { ok = false; break; } if (ok) break; }
   window._F = KINDS.map((n, i) => { const x = px + fx * d + sx * (i - 4.5) * 1.6, z = pz + fz * d + sz * (i - 4.5) * 1.6;
-    // the Shieldbearer is the dungeon's (56-dungeon-build.js builds it with buildFoe and keys it): built the same way here
+    // the Shieldbearer is the dungeon's (56-dungeon-build.js builds it with buildFoe and keys it): built the same way here, its driver the
+    // torso as the dungeon sets it (S2092: the tell is read from it)
     if (n === 'Shieldbearer') { const rig = buildFoe(n, x, z), grp = new THREE.Group(); grp.add(rig.root); grp.position.set(x, WORLD.worldH(x, z), z); grp.rotation.y = Math.atan2(px - x, pz - z); WORLD.scene.add(grp);
-      const e = keyFoe({ x, z, mesh: grp, dead: false, name: n, limbs: { person: rig } }, 'f4test:' + i); rig.e = e; return { n, e, rig }; }
+      const e = keyFoe({ x, z, mesh: grp, dead: false, name: n, limbs: { person: rig, torso: rig.mesh } }, 'f4test:' + i); rig.e = e; return { n, e, rig }; }
     const e = keyFoe(buildZoneEnemy(WORLD.scene, [], x, z, n, null), 'f4test:' + i); e.mesh.position.set(x, WORLD.worldH(x, z), z); e.mesh.rotation.y = Math.atan2(px - x, pz - z); e.combatYaw = e.mesh.rotation.y;
     e.locked = false; e.mesh.visible = true; if (!e.mesh.parent) WORLD.scene.add(e.mesh); const rig = e.limbs && e.limbs.person; if (rig) rig.e = e; return { n, e, rig }; });
   // S1224: named, before any body is built, each foe has its genome and its driver's two copies are in its colours: of the driver's
@@ -73,11 +74,26 @@ const fist = await page.evaluate(() => _F.filter(f => f.rig && f.rig.hb && f.rig
   return [f.n, +v.distanceTo(w).toFixed(3), rig.weapon.parent === rig.hb.root]; }));
 check('each kit weapon is held in the builder\'s fist (the bow in the left), within 12 cm of its wrist, carried in the builder\'s group (the driver\'s is hidden)', fist.length >= 6 && fist.every(([, d, shown]) => d < .12 && shown), fist);
 
-// the tell's glow reaches the builder's body, and goes out with it
-const glow = await page.evaluate(() => { const f = _F[0], rig = f.rig, mats = () => [...rig.hb.full, rig.hb.mid].filter(o => o.visible).map(o => o.material);
+// Session 2092 (Michael's B on #1278, the weapon's edge carries it): at the tell's height the builder's body keeps its own colours and
+// what the foe holds is lit, gold for a light blow and red for a heavy one: a blade's two edges, an axe's or a spear's head round its
+// outline, a blunt head or a staff's top in a skin; an unarmed foe's right hand carries the glare. All of it goes out with the tell
+const tell = await page.evaluate(() => _F.filter(f => f.rig && f.rig.hb).map(f => { const rig = f.rig, mats = () => [...rig.hb.full, rig.hb.mid].filter(o => o && o.visible).map(o => o.material);
   const lit = () => mats().filter(m => m.emissive && m.emissive.getHex() !== 0).length;
-  telegraphPulse(f.e, 1); tickPeople(1 / 60, 6e5); const on = lit(), all = mats().length; telegraphReset(f.e); tickPeople(1 / 60, 6e5 + 17); return { on, all, off: lit(), level: rig.hb.L }; });
-check('the tell\'s glow lights the builder\'s body and goes out with it', glow.on > 0 && glow.on === glow.all && glow.off === 0, glow);
+  const out = { n: f.n, kind: rig.weapon ? rig.weapon.userData.wpn : null };
+  for (const heavy of [false, true]) { f.e._heavy = heavy; f.e.telegraphMax = .9; telegraphPulse(f.e, 1); tickPeople(1 / 60, 6e5); const D = rig.hb.tellD;
+    out[heavy ? 'heavy' : 'light'] = { body: lit(), shown: !!(D && D.g.visible && D.g.parent), look: D && D.look, glare: D ? +D.glare.material.opacity.toFixed(2) : 0,
+      col: D ? (D.mat || D.glare.material).color.toArray().map(v => +v.toFixed(2)) : null, tris: D ? (() => { let t = 0; D.g.traverse(o => { if (o.isMesh) { const g = o.geometry; t += (g.index ? g.index.count : g.attributes.position.count) / 3; } }); return t; })() : 0 }; }
+  telegraphReset(f.e); f.e._heavy = false; tickPeople(1 / 60, 6e5 + 17); out.off = { body: lit(), shown: !!(rig.hb.tellD && rig.hb.tellD.g.visible) }; return out; }));
+console.log('  tell:', JSON.stringify(tell.map(t => [t.n, t.kind, t.light.look, t.light.tris, t.light.col, t.heavy.col])));
+check('at the tell\'s height no builder body lights up; what each foe holds does (its edge, its head or its hand)', tell.length === 9 && tell.every(t => t.light.body === 0 && t.heavy.body === 0 && t.light.shown && t.heavy.shown && t.light.glare > .5), tell.filter(t => t.light.body || !t.light.shown));
+check('a blade\'s tell is its two edges, a light blow gold and a heavy one red', tell.filter(t => ['sword', 'cutlass', 'longsword', 'dagger', 'claymore', 'axe', 'spear'].includes(t.kind)).every(t => t.light.look === 'edge' && t.light.tris > 40 && t.light.col[1] > .5 && t.heavy.col[1] < .2) && tell.some(t => t.light.look === 'edge'), tell.map(t => [t.n, t.kind, t.light.look, t.light.col, t.heavy.col]));
+check('and goes out with the tell', tell.every(t => !t.off.shown && t.off.body === 0), tell.map(t => [t.n, t.off]));
+const shotT = await page.evaluate(() => { const f = _F.find(x => x.n === 'Bandit'), e = f.e, m = e.mesh.position; e._heavy = true; e.telegraphMax = .9; e.mesh.lookAt(px, m.y, pz); telegraphPulse(e, 1); tickPeople(1 / 60, 7e5);
+  const cv = REN.domElement, cam = new THREE.PerspectiveCamera(40, cv.width / cv.height, .05, 60), d = new THREE.Vector3(px - m.x, 0, pz - m.z).normalize(), s = new THREE.Vector3(-d.z, 0, d.x);
+  cam.position.set(m.x + d.x * 3 + s.x * 1.2, m.y + 1.4, m.z + d.z * 3 + s.z * 1.2); cam.lookAt(m.x, m.y + 1, m.z);
+  WORLD.scene.updateMatrixWorld(true); REN.render(WORLD.scene, cam); const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0);
+  telegraphReset(e); e._heavy = false; tickPeople(1 / 60, 7e5 + 17); return o.toDataURL('image/jpeg', .85); });
+fs.writeFileSync(path.join(OUT, 'f4-tell.jpg'), Buffer.from(shotT.split(',')[1], 'base64'));
 
 // Session 1898 (Michael's A on #1192, the deflect): parried perfectly, a human foe's weapon arm is flung out wide and low, its shield arm
 // thrown open and its trunk rocked back, through the zone's own tick, and the builder's body follows; by .9 s it is its own again
