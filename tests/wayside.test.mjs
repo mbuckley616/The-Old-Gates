@@ -469,12 +469,15 @@ if (cv) {
     const gy = (u, v) => +(groundY(...W(u, v)) - D.y0).toFixed(2), at = (u, v, y) => solidAt(...W(u, v), D.y0 + y), h = D.houses[0], st = D.steps[10];
     const cliff = Math.min(...[0, 10, 20].map(v => S.land(-S.W(v) - 3, v) - S.carve(-S.W(v) + 1, v)));
     return { id, tris: D.tris, draws: D.draws, laid: D.laid.tris, cells: D.laid.cells, n, over, cliff: +cliff.toFixed(1), steps: D.steps.length, top: D.stairTop.y, land: +S.land(S.W(D.stairTop.z) + S.CW + 1.2, D.stairTop.z).toFixed(2),
+      face: +Math.max(...D.steps.map(s => s.y - S.crag(s).yt)).toFixed(2), crag: +Math.min(...D.steps.map(s => S.crag(s).xf)).toFixed(1),
       beach: gy(0, -6), sea: gy(0, S.REACH - 8), stair: gy(st.x + .5, st.z), stairY: st.y, house: at(h.x - .85, h.z, 1.5), look: at(D.lookout.x, D.lookout.z, D.lookout.y + 1), open: at(0, -4, 1) }; }, cv.id);
   console.log(JSON.stringify(it));
   check(`${it.id}: the cliffs ${it.cliff} m or more; the world's ground over the cut ground at ${it.over} of ${it.n} points; the beach walked at ${it.beach} m, the inlet swum at ${it.sea} m; ${it.steps} steps to ${it.top} m by land at ${it.land} m, a tread walked at ${it.stair} m`,
     !it.none && it.cliff >= 4 && it.over === 0 && it.n > 1000 && it.beach > 0 && it.sea === -1.45 && Math.abs(it.stair - it.stairY) < .02 && Math.abs(it.top - it.land) < .2, it);
   check(`solid at a boathouse's front and the lookout, open on the beach; ${it.tris} triangles in ${it.draws} draws, the laid ground ${it.laid} over ${it.cells} squares`,
-    !it.none && it.house && it.look && !it.open && it.tris < 6000 && it.draws <= 11 && it.laid < 20000, it);
+    !it.none && it.house && it.look && !it.open && it.tris < 6000 && it.draws <= 12 && it.laid < 20000, it);
+  // Session 2112: the stair stands on a crag of the cliff's stone, not on an ashlar wall from the inlet's floor (it stood up to 16 m)
+  check(`the stair's treads show ${it.face} m of ashlar over the crag under them, and the crag's foot stays ${it.crag} m east of the inlet's middle`, !it.none && it.face <= .5 && it.crag > 2, it);
 }
 // Session 2063 (QA's S2060: two shepherd's huts 2.5 km out drawn whole in Dunmore's view): the places by a road and off it are hidden past
 // 450 m of you and shown within it; nothing else of them changes

@@ -9575,19 +9575,21 @@ function aurenneOrrery(hAt, o = {}) {
       while (y < topAt(z) - .05 && n < 160) { const rise = Math.min(.18, topAt(z) + .02 - y); y += rise; n++; const run = n % 18 === 0 ? 1.2 : .3, wx = W(z + run / 2), x0 = wx - 1.55, x1 = wx + 2.6, zc = z + run / 2;
         steps.push({ x: +(wx - .85).toFixed(3), z: +zc.toFixed(3), y: +y.toFixed(3), w: +(x1 - x0).toFixed(2), x0: +(x0 + .25).toFixed(3), x1: +x1.toFixed(3), wx, run, rise: +rise.toFixed(3) }); z += run; } }
     const st = steps[steps.length - 1] || { x: W(-6) - .85, z: -6, y: 1 }, stairTop = { x: st.x, z: st.z, y: st.y };
+    /* S2112 — the rock left under the stair (the piece draws it, aurenneCove's crag): its outer foot on the inlet's floor, 3.5 to 1 below the treads */
+    const crag = s => { const xo = s.x0 - .25, yt = s.y - .3, foot = bed(xo - 2, s.z) - .6; return { xo, yt, xf: xo - (yt - foot) / 3.5, yf: foot }; };
     const LZ = Math.min(62, REACH - 14), look = { x: +(W(LZ) + CW + 6).toFixed(2), z: LZ, w: 3.2 };
     const houses = [[0, -4.4], [1, .4], [2, 5.2]].map(([i, z]) => { const x = -W(z) + .8; return { i, x: +x.toFixed(2), z, w: 4.4, h: 4.2, gy: +Math.max(carve(x + .3, z), .15).toFixed(2), open: i === 1 }; });
     /* where you walk: a tread under your feet, else the cut ground */
     const onStep = (x, z) => { for (const s of steps) if (Math.abs(z - s.z) <= s.run / 2 + .01 && x >= s.x0 - .1 && x <= s.x1) return s; return null; };
     const walk = (x, z) => { const c = carve(x, z), s = onStep(x, z); return s ? Math.max(c, s.y) : c; };
     const cut = () => false;
-    return { ph, sm, F, REACH, CW, HEAD, BZ, W, D, bed, carve, walk, cut, onStep, steps, stairTop, look, houses, land, patch: { x0: -40, x1: 40, z0: -24, z1: REACH + 16 } };
+    return { ph, sm, F, REACH, CW, HEAD, BZ, W, D, bed, carve, crag, walk, cut, onStep, steps, stairTop, look, houses, land, patch: { x0: -40, x1: 40, z0: -24, z1: REACH + 16 } };
   }
   function aurenneCove(o = {}) {
     const A = aqueductMats(), std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
     const M = { plaster: A.plaster, cope: A.cope, ashlar: mat('ashlar', { ns: .9, color: 0xe8dcc4, rough: .9 }), dark: std(0x0b0907, 1), door: std(0x2f6aa0, .7), iron: std(0x2a2826, .5, { metalness: .6 }),
       hull: Object.assign(mat('wood', { ns: .8, color: 0x7aa4b8, rough: .85 }), { side: THREE.DoubleSide }), wood: mat('wood', { ns: .9, color: 0x8a6c4c, rough: .9 }), bale: mat('plaster', { ns: .9, color: 0xb8a078, rough: 1 }),
-      clay: std(0xb0603c, .85), lamp: std(0x3a3020, .4, { emissive: 0xffc070, emissiveIntensity: o.lit ? 5 : 0 }) };
+      clay: std(0xb0603c, .85), crag: Object.assign(mat('limestone', { ns: 1.3, color: 0xd8ccb2, rough: 1 }), { side: THREE.DoubleSide }), lamp: std(0x3a3020, .4, { emissive: 0xffc070, emissiveIntensity: o.lit ? 5 : 0 }) };
     const B = new Map(), land = o.land || (() => 8), S = coveShape(o.key, land, o.reach), { W, CW, carve, steps, houses } = S, F = stream(String(o.key || 'cove') + ':goods'), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
     const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
       if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
@@ -9606,8 +9608,17 @@ function aurenneOrrery(hAt, o = {}) {
       sol.push(Sq(x - .85, z, 1.7, HW, gy + HH + .2)); }
     // the third's slip: slabs from its sill down into the sea at 1 in 7
     const slip = { z: 5.2, x0: houses[2].x, foot: 0, x1: 0 }; { let y = houses[2].gy, x = houses[2].x + .5; while (y > -1.1) { put(new THREE.BoxGeometry(1.0, .25, 2.8), 'cope', x, y - .12, slip.z, 0, 0, Math.atan(1 / 7)); x += 1; y -= 1 / 7; } slip.foot = +y.toFixed(2); slip.x1 = +x.toFixed(2); }
-    // the stair: treads of ashlar from the floor under them, 1.4 m clear of the parapet's inner face, cut into the rock behind
-    for (const s of steps) { const fl = S.bed(s.wx - 1, s.z); put(new THREE.BoxGeometry(s.x1 - s.x0 + .25, s.y - fl + .5, s.run + .01), 'ashlar', (s.x0 - .25 + s.x1) / 2, (s.y + fl - .5) / 2, s.z, 0, 0, 0, .5); }
+    // the stair: treads of ashlar 1.2 m deep on the rock left under them (S2112: they stood on the inlet's floor, a sheer ashlar wall up to
+    // 18 m), 1.4 m clear of the parapet's inner face, cut into the rock behind
+    for (const s of steps) { const fl = s.y - 1.2; put(new THREE.BoxGeometry(s.x1 - s.x0 + .25, s.y - fl + .5, s.run + .01), 'ashlar', (s.x0 - .25 + s.x1) / 2, (s.y + fl - .5) / 2, s.z, 0, 0, 0, .5); }
+    // S2112 — the crag the stair is cut into: a face of the cliff's own stone from 0.3 m under each tread's nosing down past the inlet's floor,
+    // falling 3.5 to 1 outward, in five rows roughened by the cove's stream; lofted in the cove's frame, since the laid ground's 1 m grid in the
+    // world's axes drew a face this steep as teeth. Two rows a tread (its two ends) so the top edge follows the steps.
+    if (steps.length) { const R = stream(String(o.key || 'cove') + ':crag'), K = 5, J = Array.from({ length: steps.length + 1 }, () => Array.from({ length: K }, (q, k) => k && k < K - 1 ? (R() - .5) * .7 : 0));
+      const rows = []; steps.forEach((s, i) => { const c = S.crag(s); for (const [z, j] of [[s.z - s.run / 2, i], [s.z + s.run / 2, i + 1]]) rows.push({ z, c, j: J[j] }); });
+      const pos = []; const P = (r, k) => { const t = k / (K - 1), { xo, yt, xf, yf } = r.c; return [xo + (xf - xo) * t + r.j[k], yt + (yf - yt) * t, r.z]; };
+      for (let i = 0; i + 1 < rows.length; i++) for (let k = 0; k + 1 < K; k++) { const a = P(rows[i], k), b = P(rows[i], k + 1), c = P(rows[i + 1], k), d = P(rows[i + 1], k + 1); pos.push(...a, ...c, ...b, ...c, ...d, ...b); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); put(g, 'crag'); }
     // the parapet: one sloped wall along each flight and a level one along each landing, 0.95 m over the nosings, coped
     { let f0 = 0; for (let i = 0; i <= steps.length; i++) { const end = i === steps.length || steps[i].run > .5; if (!end) continue; const seg = steps.slice(f0, i);
         if (seg.length) { const a = seg[0], b = seg[seg.length - 1], za = a.z - .15, zb = b.z + .15, ya = a.y - a.rise, yb = b.y, dx = .15 * (b.x0 - a.x0) / Math.max(.3, b.z - a.z), xa = a.x0 - .125 - dx, xb = b.x0 - .125 + dx;
