@@ -1108,6 +1108,7 @@ function prewarmFoes(sc,cam){
       try{hcAttach(r);}catch(e){}
       if(r.hc){try{hcLevel(r,0);hcPose(r);}catch(e){}r.hc.W.traverse(o=>{o.visible=true;});r.mesh.visible=true;hcw.push(r);}} /* the driver too, which the shadow pass draws */
     HC_BODY.n=n0;HC_BODY.ms=ms0;}
+  if(typeof slamRingMesh==='function')try{const r=slamRingMesh();r.visible=true;r.material.opacity=1;tmp.add(r);}catch(e){} /* S2095 — the master's slam ring (its line's texture, added), compiled here and not on the first slam */
   const lights=[];tmp.traverse(o=>{if(o.isLight)lights.push(o);});for(const l of lights)if(l.parent)l.parent.remove(l);
   tmp.traverse(o=>{o.frustumCulled=false;});
   if(typeof WORLD!=='undefined'&&sc===WORLD.scene)try{WORLD.sweepLights();}catch(e){} /* the world's tick folds stray lights into its pool of 24; before the first tick there are more, and every program would be keyed to that count */

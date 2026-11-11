@@ -32,7 +32,7 @@ await page.evaluate(() => { window._stage = (d) => { const e = window._lairBoss;
       const dist = Math.hypot(px - e.x, pz - e.z); const r = tickMasterSlam(e, 1 / 60, dist, now);
       if (r) { held++; if (startedAt < 0) startedAt = t; } maxWind = Math.max(maxWind, e._wind || 0); if (e._slamRing && e._slamRing.visible) ringMax = Math.max(ringMax, e._slamRing.material.opacity);
       if ((e._slams || 0) > s0 || (startedAt >= 0 && !(e._slamT > 0))) break; }
-    return { ticks: t, held, startedAt, maxWind: +maxWind.toFixed(2), ringMax: +ringMax.toFixed(2), landed: (e._slams || 0) > s0, last: e._slamLast, hp: PHP, ringOn: !!(e._slamRing && e._slamRing.visible), ringR: e._slamRing ? e._slamRing.geometry.parameters.outerRadius : 0, cd: +(e._slamCd || 0).toFixed(2), wind: e._wind || 0 }; }; });
+    return { ticks: t, held, startedAt, maxWind: +maxWind.toFixed(2), ringMax: +ringMax.toFixed(2), landed: (e._slams || 0) > s0, last: e._slamLast, hp: PHP, ringOn: !!(e._slamRing && e._slamRing.visible), ringR: e._slamRing ? (e._slamRing.geometry.parameters.radius ?? e._slamRing.geometry.parameters.outerRadius) : 0, cd: +(e._slamCd || 0).toFixed(2), wind: e._wind || 0 }; }; });
 
 // A. standing in the ring, a block raised at the right moment: the whole slam lands
 const a = await page.evaluate(() => { const e = window._stage(2); const def2 = _armour(), m = e.dmgMult;
@@ -42,6 +42,11 @@ const a = await page.evaluate(() => { const e = window._stage(2); const def2 = _
 check('the slam starts at once with you within six units and its timer spent', a.startedAt === 0, a);
 check('the tell is 0.9 s: 54 ticks held still, then it lands', a.landed && a.held >= 53 && a.held <= 56, a);
 check('the wind-up pose and the ring show through the tell, the ring 3 units, gone after', a.maxWind > .95 && a.ringMax > .6 && a.ringR === 3 && !a.ringOn && a.wind === 0, a);
+// S2095 (Michael's B on #1278): the ring is a thin hard line at 3 m with a faint wash inside, added in the heavy tell's red, not a band
+const ln = await page.evaluate(() => { const r = window._lairBoss._slamRing, m = r.material, im = m.map && m.map.image, x = im && im.getContext('2d');
+  const A = f => x ? +(x.getImageData(512 + Math.round(f * 511), 512, 1, 1).data[3] / 255).toFixed(3) : -1;
+  return { disc: r.geometry.type, additive: m.blending === THREE.AdditiveBlending, red: m.color.r > 1 && m.color.g < .3, at: [0, .5, .9, .96, .987, .9995].map(A), o0: +slamRingOpacity(0).toFixed(2) }; });
+check('the ring is B\'s line: a disc whose wash rises to at most 22% inside, the line at full at 98.7% of 3 m and falling away at the rim, red and added', ln.disc === 'CircleGeometry' && ln.additive && ln.red && ln.at[0] === 0 && ln.at[1] < .05 && ln.at[2] < .2 && ln.at[3] <= .23 && ln.at[4] > .95 && ln.at[5] < .5 && ln.o0 === .2, ln);
 check('in the ring, blocking (a perfect parry\'s timing): 45% of your max health (60% with no chest piece), nothing taken off', a.dmg >= a.lo && a.dmg <= a.hi && a.last === a.dmg, a);
 check('the next slam waits 8–10 s', a.cd >= 8 && a.cd <= 10, a);
 
