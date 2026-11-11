@@ -816,7 +816,7 @@ function tickSurvival(dt){const t=gameMinNow();
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){dropFire(f);CAMPFIRES.splice(i,1);continue;}
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
   if(t!==_mealTurnAt){_mealTurnAt=t;mealTurnPass();} /* S2033 — meals turn */
-  tickMining(dt);tickFelling(dt);tickTrunks();tickShipWork(dt);tickWater(); /* S2012 — rain fills your water */
+  tickLeanTos();tickMining(dt);tickFelling(dt);tickTrunks();tickShipWork(dt);tickWater(); /* S2012 — rain fills your water */
   if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2*fedRich());
   if(stamina>effMaxStamina())stamina=effMaxStamina();}
 // fed: one kind at a time, by the game clock
@@ -905,7 +905,7 @@ function riverFishItem(name){const f=RIVER_FISH[name];if(!f)return troutItem();r
 // the goods shop and the inn: the tinderbox and produce; fish in a port
 function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce},waterItem('skin')]; /* S2012 — a waterskin at every goods shop and inn */
   if(h.type==='misc')out.push({...SURV_ITEMS.messkit}); /* S2028 — the mess kit at every goods shop */
-  try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));if(nk==='mark')out.push(waterItem('canteen'));if(nk==='aurenne')out.push(waterItem('flask'));
+  try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));if(h.type==='misc')out.push(...campGearFor(nk)); /* S2088 — the rolls and the tent */if(nk==='mark')out.push(waterItem('canteen'));if(nk==='aurenne')out.push(waterItem('flask'));
     for(const k in DISH_SECONDS)if(DISH_SECONDS[k].isle===nk)out.push(secondItem(k));
     if(h.type==='inn'){out.push(dishOfDayItem(h));isleSeconds(nk).forEach(k=>out.push(cupItem(k)));}}}catch(e){} /* S2013 — by island; S2028 — its three seconds; S2035 — the inn's dish of the day and its three cups */
   const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port')out.push({...SURV_ITEMS.fish});return out;}
@@ -1376,7 +1376,7 @@ function layTrunk(ch,t,yw){const dx=-Math.sin(yw),dz=-Math.cos(yw),L=Math.max(4,
   TRUNKS.push(T);return T;}
 function dropTrunk(T){const P=ZONES.world.platforms,i=P.indexOf(T.plat);if(i>=0)P.splice(i,1);if(T.mesh){if(T.mesh.parent)T.mesh.parent.remove(T.mesh);T.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();});}}
 function tickTrunks(){const now=gameMinNow();for(let i=TRUNKS.length-1;i>=0;i--){const T=TRUNKS[i];if(T.until<=now||!chunkLive(T.ch)){dropTrunk(T);TRUNKS.splice(i,1);}}}
-function useHatchet(){const n=treeNear();if(n)chopTree(n.ch,n.t);else showMsg('Stand at a tree to fell it.','#c8b890');}
+function useHatchet(){const n=treeNear();if(n)chopTree(n.ch,n.t);else if(bagCount(b=>!!b.log)>=LEANTO_LOGS&&!rollSpotWhy())cutLeanTo();else showMsg('Stand at a tree to fell it.','#c8b890');} /* S2088 — no tree, three logs: a lean-to */
 // the smith's and the goods shop's hatchet, beside the pick
 function hatchetFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...HATCHET_ITEM}]:[];}
 // ── S1494 — Survival B, session 5: the forge (`docs/design/survival-build.md`; Michael's A on #781) ──

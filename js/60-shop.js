@@ -353,6 +353,56 @@ function isGodsDay(god,at){return !!god&&calDay(at).god===god;}
 // name (a tower's, a room's that is no inn's, home's or guild's) is 3, the berth's. The state is the character's (worldState.rested).
 const REST_BED={camp:{c:1,n:'Camp bedroll'},cot:{c:1,n:'Fort cot'},berth:{c:3,n:'Ship’s berth'},bed:{c:3,n:'A bed'},inn:{c:4,n:'Inn room'},guild:{c:4,n:'Guild bed'},own:{c:5,n:'Your own bed'}};
 const REST_STATE={rested:{label:'Rested',rank:1,skill:1.10,stam:1,min:2700},well:{label:'Well rested',rank:2,skill:1.15,stam:1.10,min:5400}};
+// S2088 — camp and rest B's second part (docs/design/camp-and-rest.md): a bedroll you carry lets you sleep in the open, and the
+// night's comfort is a sum: the roll (or a road camp's bedroll), a tent +1 (and the cold or heat one grade less), a lean-to +1, a lit
+// fire within 4 m +1, less a point a grade of the climate where you lie, read with what you wear. Below 0 the night heals half.
+// The lean-to (three logs, cut with a hatchet where no tree stands) stays while its cell is loaded; it is not saved (the page).
+const ROLL_DEF={blanket:{name:'Blanket Roll',c:1,weight:1.5,price:8},wool:{name:'Wool Bedroll',c:2,weight:2.5,price:25},
+  gatelands:{name:'Quilted Plaid Roll',c:3,weight:3.5,price:70,isle:'gatelands'},mark:{name:'Fur Sleeping Sack',c:3,weight:3.5,price:70,isle:'mark',warm:1},
+  aurenne:{name:'Linen Hammock',c:3,weight:2,price:70,isle:'aurenne',cool:1}};
+const TENT_ITEM={name:'Tent',ico:'⛺',type:'misc',weight:4,buyPrice:45,sellMult:.4,tent:1};
+const NIGHT_FIRE_REACH=4,LEANTO_REACH=3,LEANTO_LOGS=3,LEANTOS=[];
+function rollItem(k){const R=ROLL_DEF[k];return {name:R.name,ico:'🛏️',type:'misc',weight:R.weight,buyPrice:R.price,sellMult:.4,roll:k};}
+// a goods shop's camp gear: the two plain rolls and the tent everywhere, the island's own roll in its own island's towns
+function campGearFor(nk){const out=[rollItem('blanket'),rollItem('wool'),{...TENT_ITEM}];if(ROLL_DEF[nk]&&ROLL_DEF[nk].isle===nk)out.push(rollItem(nk));return out;}
+function bestRoll(){let b=null;BAG.forEach(it=>{if(it&&it.roll&&ROLL_DEF[it.roll]&&(!b||ROLL_DEF[it.roll].c>ROLL_DEF[b].c))b=it.roll;});return b;}
+function hasTent(){return BAG.some(b=>b&&b.tent);}
+function fireForNight(){const t=gameMinNow();return CAMPFIRES.some(f=>f.until>t&&Math.hypot(f.x-px,f.z-pz)<=NIGHT_FIRE_REACH);}
+function leanToNear(){return LEANTOS.some(L=>Math.hypot(L.x-px,L.z-pz)<=LEANTO_REACH);}
+// the night: {c, n, parts [[what, points]], bed, roll}. A bed indoors, a cot or a berth is its comfort alone; a camp and a roll are summed
+function restNight(bed,roll){const B=REST_BED[bed]||REST_BED.bed;if(bed!=='camp'&&bed!=='roll')return {c:B.c,n:B.n,parts:[[B.n,B.c]],bed};
+  const R=bed==='roll'?ROLL_DEF[roll]||ROLL_DEF.blanket:null,parts=[[R?R.name:B.n,R?R.c:B.c]];
+  const tent=bed==='camp'||hasTent(),lean=leanToNear(),fire=fireForNight();
+  if(tent)parts.push([bed==='camp'?'its tents':'tent',1]);if(lean)parts.push(['lean-to',1]);if(fire)parts.push(['fire',1]);
+  let e={g:0,side:null};try{e=exposureNow();}catch(x){}
+  if(e.g>0&&e.side){const P=e.side==='cold'?warmthNow():coolNow(),rid=R?(e.side==='cold'?R.warm||0:R.cool||0):0;
+    const g=Math.max(0,e.g-Math.min(2,P.n+rid)-(tent?1:0)-(lean&&fire&&e.side==='cold'?1:0));if(g)parts.push([CLIMATE.names[e.side][g],-g]);}
+  return {c:parts.reduce((s,p)=>s+p[1],0),n:R?R.name:B.n,parts,bed,roll:R?roll:null};}
+function restNightSay(N){if(N.parts.length<2)return `${N.n} · comfort ${N.c}`;
+  return N.parts.map((p,i)=>i?`${p[0]} ${p[1]<0?'−'+(-p[1]):'+'+p[1]}`:`${p[0]} ${p[1]}`).join(' · ')+` = ${N.c<0?'−'+(-N.c):N.c}`;}
+// why you cannot lie down here, or ''
+function rollSpotWhy(){if(activeZoneId!=='world'||lid!=='overworld'||(typeof isInterior==='function'&&isInterior()))return 'Lay out a bedroll in the open. Indoors, find a bed.';
+  try{if(WORLD.isSwimming())return 'Not in the water.';}catch(e){}if(typeof SHIP!=='undefined'&&SHIP.sailing)return 'Not while she sails.';
+  const w=typeof _canWait==='function'?_canWait():{ok:true};if(!w.ok)return w.reason||'Not now.';return '';}
+// the bag's roll, used: lay it out and the rest slip opens on the night's sum
+function layRoll(i){const it=BAG[i];const k=it&&it.roll?it.roll:bestRoll();if(!k){showMsg('A tent needs a bedroll under it.','#cc8844');return false;}
+  const why=rollSpotWhy();if(why){showMsg(why,'#cc8844');return false;}openRestSlip('sleep',480,{roll:k});return true;}
+// a lean-to of three logs, cut where you stand (Woodcutting); a plain stand-in until the kit's: two forked posts, a ridge pole, a slant of poles
+function leanToMesh(x,z,ry){const g=new THREE.Group();const y=typeof worldH==='function'?worldH(x,z):0,wood=new THREE.MeshLambertMaterial({color:0x5a3a20});
+  const pole=(len,r)=>new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,6),wood);
+  [-1,1].forEach(s=>{const p=pole(1.5,.05);p.position.set(s*1.1,.75,.9);g.add(p);});
+  {const p=pole(2.5,.05);p.rotation.z=Math.PI/2;p.position.set(0,1.45,.9);g.add(p);}
+  for(let i=0;i<7;i++){const p=pole(1.9,.045);p.rotation.x=-Math.atan2(1.45,1.3);p.position.set(-1.05+i*.35,.72,.25);g.add(p);}
+  g.position.set(x,y,z);g.rotation.y=ry;return g;}
+function cutLeanTo(){const why=rollSpotWhy();if(why){showMsg(why,'#cc8844');return false;}
+  if(bagCount(b=>!!b.log)<LEANTO_LOGS){showMsg(`A lean-to takes ${LEANTO_LOGS} logs.`,'#cc8844');return false;}
+  bagTake(b=>!!b.log,LEANTO_LOGS);const x=px-Math.sin(yaw)*1.2,z=pz-Math.cos(yaw)*1.2,L={x,z,mesh:null};
+  try{L.mesh=leanToMesh(x,z,yaw);scene.add(L.mesh);}catch(e){L.mesh=null;}
+  try{const [i,j]=cellOf(x,z);L.cell=i+','+j;}catch(e){}LEANTOS.push(L);skillUse('woodcutting',3,'leanto'+LEANTOS.length);
+  showMsg('You cut a lean-to.','#c8b890');if(typeof renderHubInv==='function')renderHubInv();return true;}
+// each frame (from tickSurvival): a lean-to whose cell is gone goes with it
+function tickLeanTos(){for(let i=LEANTOS.length-1;i>=0;i--){const L=LEANTOS[i];let gone=false;try{gone=!!L.cell&&typeof LOADED!=='undefined'&&!LOADED.has(L.cell);}catch(e){}
+  if(gone){if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);LEANTOS.splice(i,1);}}}
 function restBedNow(){try{
     if(typeof isInterior==='function'&&isInterior()){const h=typeof currentHouse!=='undefined'?currentHouse:null;if(h&&h.type==='cabin')return 'berth';
       const bd=typeof intBedTarget==='function'?intBedTarget():null;if(bd)return bd.owner==='inn'?'inn':bd.owner==='guild'?'guild':bd.owner==='home'?'own':'bed';
@@ -367,13 +417,13 @@ function restRegenMult(){const R=restedNow();return R?REST_STATE[R.k].stam:1;}
 function restLeftMin(){const R=restedNow();return R?R.until-gameMinNow():0;}
 function restPill(){const R=restedNow();if(!R)return '';const S=REST_STATE[R.k],m=Math.ceil(R.until-gameMinNow());
   return `<span class="buff-pill" title="${S.label} — skills ×${S.skill}${S.stam>1?', stamina ×'+S.stam:''}, ${m} min remaining"><span class="bp-ico">☾</span><span class="bp-time">${typeof pillMin==='function'?pillMin(m):m+'m'}</span></span>`;}
-function restWake(bed,hours){const B=REST_BED[bed]||REST_BED.bed,k=hours>=6?restStateFor(B.c):null;if(!k)return null;const S=REST_STATE[k],was=restedNow();
+function restWake(bed,hours){const N=typeof bed==='string'?restNight(bed):bed||restNight('bed'),k=hours>=6?restStateFor(N.c):null;if(!k)return null;const S=REST_STATE[k],was=restedNow();
   if(was&&REST_STATE[was.k].rank>S.rank)return null; /* a worse bed never takes a better night's state away */
-  worldState.rested={k,until:gameMinNow()+S.min,bed};return k;}
+  worldState.rested={k,until:gameMinNow()+S.min,bed:N.bed};return k;}
 const REST_MARKS=[[6,'Dawn'],[8,'Morning'],[12,'Noon'],[18,'Dusk'],[20,'Night']];
 let restSlip={mode:'sleep',min:480};
-function restPreview(hours){const k=Math.min(1,hours/6),mh=effMaxHP(),mm=effMaxMana();
-  return {hp:Math.min(mh,PHP+Math.ceil((mh-PHP)*k)+(k>=1?mh:0)),mp:Math.min(mm,mana+Math.ceil((mm-mana)*k)+(k>=1?mm:0)),mh,mm};}
+function restPreview(hours,bad){const k=Math.min(1,hours/6)*(bad?.5:1),mh=effMaxHP(),mm=effMaxMana(); /* S2088 — a bad night (comfort below 0) heals half */
+  return {hp:Math.min(mh,PHP+Math.ceil((mh-PHP)*k)+(k>=1?mh:0)),mp:Math.min(mm,mana+Math.ceil((mm-mana)*k)+(k>=1?mm:0)),mh,mm,bad:!!bad};}
 function restClock(h){h=((h%24)+24)%24;const hh=Math.floor(h),mm=Math.round((h-hh)*60)%60;return `${((hh+11)%12)+1}:${String(mm).padStart(2,'0')} ${hh<12?'am':'pm'}`;}
 function restDur(min){min=Math.round(min);const h=Math.floor(min/60),m=Math.round(min%60);return (h?`${h} hour${h===1?'':'s'}`:'')+(h&&m?' ':'')+(m?`${m} minute${m===1?'':'s'}`:'');}
 function restMarkMin(h){const now=(worldState.gameTimeMinutes||0);let d=h*60-now;if(d<=0)d+=1440;return Math.round(d);}
@@ -396,7 +446,7 @@ function restDial(min,mode){
     `<text x="${right?b+6:b-6}" y="${bot+28}" text-anchor="${right?'end':'start'}" font-family="Georgia,serif" font-size="11" fill="${rub}" letter-spacing=".5">${mode==='sleep'?'YOU WAKE':'YOU RISE'} · ${restClock(end)}</text></svg>`;
   return s;
 }
-function openRestSlip(mode,min){
+function openRestSlip(mode,min,opt){
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
   let ov=document.getElementById('sleepui');
   if(!ov){
@@ -423,7 +473,7 @@ function openRestSlip(mode,min){
     ov.querySelector('#sleep-no').onclick=()=>closeSleepUI();
     ov.querySelector('#sleep-go').onclick=()=>restSlipGo();
   }
-  restSlip={mode:mode==='wait'?'wait':'sleep',min:Math.max(60,Math.min(1440,min||480)),bed:mode==='wait'?null:restBedNow()};
+  {const bed=mode==='wait'?null:opt&&opt.roll?'roll':restBedNow();restSlip={mode:mode==='wait'?'wait':'sleep',min:Math.max(60,Math.min(1440,min||480)),bed,night:bed?restNight(bed,opt&&opt.roll):null};} /* S2088 — the night's sum, read as you lie down */
   ov.style.display='flex';sleepOpen=true;restSlipDraw();
 }
 function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)return;const {mode,min}=restSlip,sleep=mode==='sleep';
@@ -440,12 +490,13 @@ function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)retur
   const nowM=worldState.gameTimeMinutes||0,abs=worldState.gameTimeAbsMinutes||0,endTod=(nowM+min)%1440,endDay=gameDateLine(abs+min,endTod,'day');
   const at=`<b>${restClock(endTod/60)}</b>, ${endDay}`,ready=levelReady(),row=(ic,txt,r,col)=>`<div style="display:flex;gap:10px;align-items:baseline${col?';color:'+col:''}"><span style="width:16px;text-align:center;color:#9a7020">${ic}</span><span style="flex:1">${txt}</span><span style="font-style:italic;font-size:12px;color:#8a7050">${r||''}</span></div>`;
   let out='';
-  if(sleep){const p=restPreview(min/60),v=(l,a,b,m)=>a>=b&&a>=m?`<span style="font-variant:small-caps">${l}</span> full`:`<span style="font-variant:small-caps">${l}</span> <s style="color:#8a7050">${Math.round(a)}</s> ${Math.round(b)} <span style="color:#8a7050">of ${Math.round(m)}</span>`;
+  const night=restSlip.night||restNight(restSlip.bed||'bed'),bad=night.c<0;
+  if(sleep){const p=restPreview(min/60,bad),v=(l,a,b,m)=>a>=b&&a>=m?`<span style="font-variant:small-caps">${l}</span> full`:`<span style="font-variant:small-caps">${l}</span> <s style="color:#8a7050">${Math.round(a)}</s> ${Math.round(b)} <span style="color:#8a7050">of ${Math.round(m)}</span>`;
     out=row('☀',`You wake at ${at}.`,min>=360?'a full night':'a short sleep')+
-      row('♥',`${v('Health',PHP,p.hp,p.mh)} &nbsp; ${v('Mana',mana,p.mp,p.mm)} &nbsp; <span style="font-variant:small-caps">Stamina</span> full`,'all, at six hours')+
+      row('♥',`${v('Health',PHP,p.hp,p.mh)} &nbsp; ${v('Mana',mana,p.mp,p.mm)} &nbsp; <span style="font-variant:small-caps">Stamina</span> full`,bad?'a bad night: half':'all, at six hours')+
       (ready?row('✦',`You are ready to advance: you wake at <b>level ${level+1}</b>.`,'','#7a1f10'):'');
-    {const B=REST_BED[restSlip.bed]||REST_BED.bed,k=restStateFor(B.c),S=k&&REST_STATE[k],was=restedNow(),keep=was&&S&&REST_STATE[was.k].rank>S.rank; /* S2085 — the bed's comfort, and what six hours of it leave you */
-      out+=row('☾',`${B.n} · comfort ${B.c}`+(S?(min>=360?(keep?` · you stay <i>${REST_STATE[was.k].label}</i>`:` · <i>${S.label}</i> for ${S.min/60} hours`):` · six hours for <i>${S.label}</i>`):''),S?(S.stam>1?'skills ×1.15, stamina ×1.1':'skills ×1.1'):'');}}
+    {const k=restStateFor(night.c),S=k&&REST_STATE[k],was=restedNow(),keep=was&&S&&REST_STATE[was.k].rank>S.rank; /* S2085 — the bed's comfort, and what six hours of it leave you; S2088 — a night in the open, its sum */
+      out+=row('☾',restNightSay(night)+(bad?' · a bad night':'')+(S?(min>=360?(keep?` · you stay <i>${REST_STATE[was.k].label}</i>`:` · <i>${S.label}</i> for ${S.min/60} hours`):` · six hours for <i>${S.label}</i>`):''),S?(S.stam>1?'skills ×1.15, stamina ×1.1':'skills ×1.1'):'');}}
   else out=row('☀',`You rise at ${at}.`)+row('♥','Waiting restores nothing; a bed does.','','#8a7050')+(ready?row('✦','You are ready to advance, but only sleep takes the level.','','#8a7050'):'');
   {const W=typeof erWatchJumpLoses==='function'?erWatchJumpLoses(min):null;if(W)out+=row('☾',`The night at the ${W.data.fold} will be lost.`,'an hour or more','#7a1f10');} /* S1789 — the watch lapses on a jump of the clock; the slip says so */
   q('#rs-out').innerHTML=out;
@@ -465,16 +516,17 @@ function restAtBed(hours){
   hours=Math.max(1,Math.min(24,hours||8));
   doFade(()=>{
     if(typeof orbDrop==='function')orbDrop(); /* S1854 — sleep empties the orb */
-    {const p=restPreview(hours);PHP=p.hp;mana=p.mp;stamina=effMaxStamina();}
+    const night=restSlip.night||restNight(restSlip.bed||'bed');
+    {const p=restPreview(hours,night.c<0);PHP=p.hp;mana=p.mp;stamina=effMaxStamina();}
     if(typeof worldState !== 'undefined' && typeof worldState.gameTimeMinutes === 'number'){
       if(typeof fedSleep==='function')fedSleep(hours*60); /* S1500 — Full belly */
       worldState.gameTimeMinutes = (worldState.gameTimeMinutes + hours*60) % 1440;
       worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes||0) + hours*60;
     }
-    const rk=restWake(restSlip.bed||'bed',hours); /* S2085 — Rested by the bed's comfort, from the hour you wake */
+    const rk=restWake(night,hours); /* S2085 — Rested by the bed's comfort, from the hour you wake; S2088 — by the night's sum */
     if(typeof addLog==='function')addLog('🛏️',`Slept ${restDur(hours*60)}.`);
     if(typeof greatNoteOnWake==='function')greatNoteOnWake(); /* S1353 — Varek's note, folded into the pack */
-    showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}`+(rk?` ${REST_STATE[rk].label}.`:''),'#c8b880');
+    showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}`+(rk?` ${REST_STATE[rk].label}.`:night.c<0?' A bad night.':''),'#c8b880');
     updateHUD();
     if(typeof saveGame==='function')saveGame(); /* S353 — #66 A: sleeping anywhere autosaves */
     setTimeout(()=>{if(takeLevelIfReady())showMsg('You wake stronger.','#e8d8a0');},900);
