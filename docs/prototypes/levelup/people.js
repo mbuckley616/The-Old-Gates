@@ -2834,6 +2834,92 @@ function buildShieldBack(G, body, byName, meshes, root, heads) {
   let bottom; if (H) { let floor = 1e9; { const PP = posedBody(body); for (const i of bodyV()) floor = Math.min(floor, PP[i * 3 + 1]); } let low = 1e9; for (const [u, v] of H.line) low = Math.min(low, C.y + S.y * u + U.y * v + N.y * H.z(u, v)); bottom = +(low - floor).toFixed(3); }
   return { mesh: sh, stats: { on: 'back', shape: H ? H.name : 'round', inside, near, tested: n, across: H === HOPLON ? 2 * H.R : H ? 2 * KITE.W : 2 * R, ...(H ? { tall: H === HOPLON ? 2 * H.R : +(KITE.TOP - KITE.TIP).toFixed(2), bottom } : {}), tris, strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps: pts.length } } };
 }
+// ── the satchel (Session 2113, L2; OG-053's travelling scholar: "charcoal coat, hood, satchel"; OG-092's satchel) ──
+// A leather bag 27 cm wide, 21 deep and 7 through, hung on the left hip by a strap over the right shoulder, as a scholar carries his
+// books. Its body is a rounded box (the bottom's corners 3.5 cm round, the front a little full), a flap over the top falls 62% of
+// the way down its front with its lower corners rounded, and two buckled tabs close the flap. The bag hangs from its strap with its
+// top at the hip's joint plus 5 cm. It is turned round the hip from the side toward the back (1.75 to 2.2 rad off the front, 0.05 a
+// step) until the hanging arm and its sleeve are clear of it, and where they never are the arm is lifted out over it; its back lies
+// 5 mm outside whatever else lies within its outline (the hip, the robe, a cloak), leaning in at the top as far as the hip lets
+// it. The strap, 3 cm of the same leather, leaves the bag's back end, climbs the back to the right shoulder, goes over it and down
+// across the chest to the bag's front end: laid along rays from inside the body as the slung shield's guige is (it rides 3.5 mm over
+// the furthest point within 3 cm of its ray, bridging hollows, between the arm and the side). An iron ring holds it at each end.
+// Carried by the hips (the bag) and the chest (the strap). `satchel` is the leather's colour
+function buildSatchel(G, body, byName, meshes, root) {
+  const D = G.dress, R0 = PACK.rest, hipB = byName['spine01'] || byName['spine02'], chest = byName['spine03'] || byName['spine04'], V = THREE.Vector3, up = new V(0, 1, 0);
+  const W = .27, H = .21, T = .07, CLEAR = .005;
+  const neck = new V().setFromMatrixPosition(byName['neck01'].matrixWorld), legL = new V().setFromMatrixPosition((byName['upperleg01.L'] || byName['pelvis.L']).matrixWorld), yTop = legL.y + .05;
+  // the arm on the bag's side, the skin and the sleeve over it: a skinned point whose rest lies out past 0.2 and under the shoulder
+  const armOf = i => i >= 0 && R0[i * 3] > .2 && R0[i * 3 + 1] < .6, armAny = i => i >= 0 && Math.abs(R0[i * 3]) > .2 && R0[i * 3 + 1] < .6, clouds = wornClouds(body, meshes, root);
+  // the hip's middle at the bag's height: the middle of the body's own points there, the arms apart
+  let x0 = 9, x1 = -9, z0 = 9, z1 = -9; { const PP = posedBody(body); for (const i of bodyV()) { if (armAny(i)) continue; const y = PP[i * 3 + 1]; if (Math.abs(y - (yTop - H / 2)) > .04) continue; const x = PP[i * 3], z = PP[i * 3 + 2]; x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); } }
+  const hc = new V((x0 + x1) / 2, yTop, (z0 + z1) / 2);
+  // the bag's frame at a turn a (from the front, round to the left) and a lean: S along its width toward the front, U up its back, N out of its back
+  const frame = (a, lean) => { const n0 = new V(Math.sin(a), 0, Math.cos(a)), S = new V(-Math.cos(a), 0, Math.sin(a)).negate(), N = n0.clone().multiplyScalar(Math.cos(lean)).addScaledVector(up, Math.sin(lean)), U = new V().crossVectors(N, S).normalize(); return { S: new V().crossVectors(U, N).normalize(), U, N }; };
+  // the furthest point along N within the outline, in a band of its height (fr..to, from the top down), the arm's points apart; and the arm's
+  // within the bag's own depth (from its back to a centimetre past its front: the arm beside the hip, behind the back, is not in it)
+  const reach = (F, C, fr = 0, to = 1) => { let other = -1, arm = -1; eachPoint(clouds, (x, y, z, i) => { const dx = x - C.x, dy = y - C.y, dz = z - C.z, u = dx * F.S.x + dy * F.S.y + dz * F.S.z, v = dx * F.U.x + dy * F.U.y + dz * F.U.z, d = dx * F.N.x + dy * F.N.y + dz * F.N.z;
+    if (Math.abs(u) > W / 2 + .008 || v > .008 || v < -H - .008 || d < -.25) return; if (armOf(i)) { if (d > -.003 && d < T + .012) arm = Math.max(arm, d); } else if (-v >= fr * H && -v <= to * H) other = Math.max(other, d); }); return { other, arm }; };
+  // turned from the side (1.75 rad off the front) toward the back, 0.05 a step to 2.2, until the arm is clear; where it never is, the
+  // arm is lifted out over the bag 0.03 rad at a time (to 0.36) and the turns tried again, as a satchel pushes the arm that hangs on it
+  const armB = byName['upperarm01.L'], again = wornMover(clouds, root, armB); let a, F, C, lean = 0, back = 0, turns = 0, armIn = true, lift = 0;
+  for (;;) { for (a = 1.75; a <= 2.2 + 1e-9; a += .05, turns++) { F = frame(a, 0); const r0 = reach(F, hc, 0, .5), r1 = reach(F, hc, .5, 1);
+      // leaning in at the top as far as the hip lets it: the top half laid on its furthest point and the bottom half on its own
+      lean = Math.max(0, Math.min(.3, Math.atan2(r1.other - r0.other, H / 2))); F = frame(a, lean); const r = reach(F, hc); back = r.other + CLEAR; C = hc.clone().addScaledVector(F.N, back);
+      armIn = reach(F, C).arm > -1; if (!armIn) break; }
+    if (!armIn || lift >= .36 - 1e-9) break; lift += .03; armB.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new V(0, 0, 1), .03)); root.updateMatrixWorld(true); again(); }
+  if (a > 2.2) a = 2.2;
+  // the bag: its body, the flap and its fold over the top, the two tabs (one leather mesh), the buckles and the strap's rings (iron)
+  const rr = (w, h, rb, rt, y0) => { const s = new THREE.Shape(), x = w / 2; s.moveTo(-x + rb, y0 - h); s.lineTo(x - rb, y0 - h); s.quadraticCurveTo(x, y0 - h, x, y0 - h + rb); s.lineTo(x, y0 - rt); s.quadraticCurveTo(x, y0, x - rt, y0); s.lineTo(-x + rt, y0); s.quadraticCurveTo(-x, y0, -x, y0 - rt); s.lineTo(-x, y0 - h + rb); s.quadraticCurveTo(-x, y0 - h, -x + rb, y0 - h); return s; };
+  const bev = .008, bodyG = new THREE.ExtrudeGeometry(rr(W - 2 * bev, H - 2 * bev, .028, .006, -bev), { depth: T - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 2, curveSegments: 5 }); bodyG.translate(0, 0, bev);
+  { const p = bodyG.attributes.position; for (let i = 0; i < p.count; i++) { const z = p.getZ(i); if (z < T * .5) continue; const fx = 1 - (p.getX(i) / (W / 2)) ** 2, fy = 1 - ((p.getY(i) + H / 2) / (H / 2)) ** 2; p.setZ(i, z + .009 * Math.max(0, fx) * Math.max(0, fy) * (z - T * .5) / (T * .5)); } }
+  const fall = H * .62, flapG = new THREE.ExtrudeGeometry(rr(W + .006, fall, .032, .001, .002), { depth: .004, bevelEnabled: false, curveSegments: 5 }); flapG.translate(0, 0, T + .0025);
+  { const p = flapG.attributes.position; for (let i = 0; i < p.count; i++) { const fx = 1 - (p.getX(i) / (W / 2 + .003)) ** 2, fy = 1 - ((p.getY(i) + H / 2) / (H / 2)) ** 2; p.setZ(i, p.getZ(i) + .009 * Math.max(0, fx) * Math.max(0, fy)); } }
+  const foldG = new THREE.CylinderGeometry(.006, .006, W + .006, 6, 1, false, 0, Math.PI); foldG.rotateZ(Math.PI / 2); foldG.scale(1, 1, (T + .007) / .012); foldG.rotateY(Math.PI); foldG.translate(0, .0005, T / 2 + .002);
+  const leather = [bodyG, flapG, foldG], iron = [], tabs = [];
+  for (const s of [-1, 1]) { const x = s * W * .26, yB = -fall + .004, tab = new THREE.BoxGeometry(.018, .07, .003); tab.translate(x, yB - .012, T + .006 + .009 * (1 - (x / (W / 2)) ** 2) * .55); leather.push(tab); tabs.push(x);
+    const bk = new THREE.TorusGeometry(.0115, .0018, 4, 4); bk.rotateZ(Math.PI / 4); bk.scale(1, .8, 1); bk.translate(x, yB, T + .0085 + .009 * (1 - (x / (W / 2)) ** 2) * .55); iron.push(bk); }
+  const ends = [-1, 1].map(s => new V(s * (W / 2 + .004), -.012, T / 2));
+  for (const e of ends) { const g = new THREE.TorusGeometry(.012, .0022, 5, 12); g.rotateY(Math.PI / 2); g.translate(e.x, e.y + .004, e.z); iron.push(g); }
+  for (const g of [...leather, ...iron]) if (!g.index) g.setIndex([...Array(g.attributes.position.count).keys()]);
+  const lg = mergeGeoms(leather), ig = mergeGeoms(iron); lg.setAttribute('aBase', lg.attributes.position);
+  const lMat = clothMat(sRGB(...D.satchel), 'leather'), iMat = new THREE.MeshStandardMaterial({ color: sRGB(.3, .3, .32), metalness: .75, roughness: .5 });
+  const bag = new THREE.Group(); bag.name = 'satchel'; for (const [g, m, nm] of [[lg, lMat, 'satchelBag'], [ig, iMat, 'satchelIron']]) { const me = new THREE.Mesh(g, m); me.name = nm; me.castShadow = me.receiveShadow = true; me.userData.shield = true; bag.add(me); }
+  bag.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(F.S, F.U, F.N)); bag.position.copy(C); root.add(bag); root.updateMatrixWorld(true);
+  const E = ends.map(e => e.clone().applyMatrix4(bag.matrixWorld)), fw = E[1].z > E[0].z ? 1 : 0, Ef = E[fw], Eb = E[1 - fw];
+  // (the end further forward takes the run down the chest, the other the run up the back, so the two never cross over the bag)
+  // the strap: rays from inside the body, as the guige's: up the back from the bag's back end to the right shoulder, over it, and down the
+  // chest to the bag's front end. Its points are on every cloud but the arms' skin and sleeves, and nothing over the neck's foot and
+  // 6 cm (the side of a big head stands within 3 cm of the rays over the shoulder)
+  // under a shoulder cape, which stands out over the chest and the shoulder blades, the strap goes under it, on what the cape covers
+  const strapClouds = clouds.filter(c => !(D.cape && c.m && /^cloak/.test(c.m.name))).map(c => c.ids ? { X: c.X, ids: c.ids.filter(i => !armAny(i) && c.X[i * 3 + 1] < neck.y + .06) } : { X: c.X.filter((_, k) => c.X[k - k % 3 + 1] < neck.y + .03), ids: null });
+  const sY = neck.y - .02, zc = neck.z + .02, sh = new V(-.14, sY - .12, zc), guide = [], add = (c, d) => guide.push({ c, d: d.normalize() }), hip = new V(hc.x * .5, yTop + .06, zc);
+  for (let k = 12; k >= 1; k--) { const t = k / 12, c = sh.clone().lerp(hip, t), d = new V(0, .45, -1).lerp(Eb.clone().sub(c).normalize(), t * t); add(c, d); }
+  for (let k = 0; k <= 8; k++) { const ph = -1.25 + k / 8 * 2.5; add(sh.clone(), new V(0, Math.cos(ph), Math.sin(ph))); }
+  for (let k = 1; k <= 12; k++) { const t = k / 12, c = sh.clone().lerp(hip, t), d = new V(0, .45, 1).lerp(Ef.clone().sub(c).normalize(), t * t); add(c, d); }
+  const rays = []; for (let k = 0; k < guide.length - 1; k++) for (let s = 0; s < 6; s++) { const t = s / 6; rays.push({ c: guide[k].c.clone().lerp(guide[k + 1].c, t), d: guide[k].d.clone().lerp(guide[k + 1].d, t).normalize() }); } rays.push(guide[guide.length - 1]);
+  const SW = .015, OFF = .0035;
+  for (const r of rays) { let far = 0; eachPoint(strapClouds, (x, y, z, i) => { const dx = x - r.c.x, dy = y - r.c.y, dz = z - r.c.z, dd = dx * r.d.x + dy * r.d.y + dz * r.d.z; if (dd <= 0 || dd > .45) return; if (Math.hypot(dx - r.d.x * dd, dy - r.d.y * dd, dz - r.d.z * dd) < (i < 0 ? .08 : .03) && dd > far) far = dd; }); r.far = far + OFF; }
+  { const f0 = rays.map(r => r.far); for (let k = 0; k < rays.length; k++) { let L = 0, Rr = 0; for (let j = 1; j <= 8; j++) { if (k - j >= 0) L = Math.max(L, f0[k - j]); if (k + j < rays.length) Rr = Math.max(Rr, f0[k + j]); } rays[k].far = Math.max(f0[k], Math.min(L, Rr) - .004); } }
+  for (let p = 0; p < 4; p++) for (let k = 1; k < rays.length - 1; k++) rays[k].far = Math.max(rays[k].far, (rays[k - 1].far + rays[k + 1].far) / 2 - .002);
+  let pts = rays.map(r => r.c.clone().addScaledVector(r.d, r.far)), nrm = rays.map(r => r.d);
+  // each end runs on from where it leaves the body straight to its ring: the last points that are lower than the ring's top, or past it, are dropped
+  const trim = (P, Nn, e) => { let k = P.length - 1; while (k > 0 && (P[k].y < e.y + .02 || P[k].distanceTo(e) < .03)) k--; const out = P.slice(0, k + 1), on = Nn.slice(0, k + 1), last = out[out.length - 1], n = Math.max(1, Math.round(last.distanceTo(e) / .01)); for (let j = 1; j <= n; j++) { out.push(last.clone().lerp(e, j / n)); on.push(on[on.length - 1]); } return [out, on]; };
+  { const ring = (e, s) => e.clone().addScaledVector(F.U, .016).addScaledVector(F.S, s * -.002); let [p1, n1] = trim(pts, nrm, ring(Ef, fw ? 1 : -1)); p1.reverse(); n1.reverse(); [pts, nrm] = trim(p1, n1, ring(Eb, fw ? -1 : 1)); pts.reverse(); nrm.reverse(); }
+  const pos = [], idx = []; for (let k = 0; k < pts.length; k++) { const t = pts[Math.min(k + 1, pts.length - 1)].clone().sub(pts[Math.max(k - 1, 0)]).normalize(), side = new V().crossVectors(t, nrm[k]).normalize();
+    for (const s of [-1, 1]) { const p = pts[k].clone().addScaledVector(side, s * SW); pos.push(p.x, p.y, p.z); } if (k) { const o = (k - 1) * 2; idx.push(o, o + 2, o + 1, o + 1, o + 2, o + 3); } }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setIndex(idx); sg.computeVertexNormals(); sg.setAttribute('aBase', sg.attributes.position);
+  const strap = new THREE.Mesh(sg, clothMat(sRGB(...D.satchel), 'leather', { side: THREE.DoubleSide })); strap.name = 'satchelStrap'; strap.castShadow = strap.receiveShadow = true; strap.userData.shield = true;
+  // the strap's promise, as the guige's: no point of what it lies on comes up through it (the free run to each ring is in the air, and counts too)
+  let through = 0, tested = 0, worst = 0; for (let k = 0; k < pts.length; k++) { const d = nrm[k], t0 = pts[Math.min(k + 1, pts.length - 1)].clone().sub(pts[Math.max(k - 1, 0)]), t = t0.addScaledVector(d, -t0.dot(d)).normalize(), side = new V().crossVectors(t, d).normalize(), p0 = pts[k];
+    eachPoint(strapClouds, (x, y, z) => { const dx = x - p0.x, dy = y - p0.y, dz = z - p0.z; if (Math.abs(dx * t.x + dy * t.y + dz * t.z) > .006 || Math.abs(dx * side.x + dy * side.y + dz * side.z) > SW) return; const h = dx * d.x + dy * d.y + dz * d.z; if (h < -.03 || h > .03) return; tested++; if (h > -.001) { through++; worst = Math.max(worst, h); } }); }
+  let len = 0; for (let k = 1; k < pts.length; k++) len += pts[k].distanceTo(pts[k - 1]);
+  // the bag's promise: no point of the person or what they wear inside its body (in its own frame: within its outline, between its back and its front)
+  const inv = bag.matrixWorld.clone().invert(), v = new V(); let inside = 0, armInside = 0, near = 1; eachPoint(clouds, (x, y, z, i) => { v.set(x, y, z).applyMatrix4(inv); if (Math.abs(v.x) > W / 2 || v.y > 0 || v.y < -H || v.z > T || v.z < -.05) return; if (v.z > -.001) { inside++; if (armOf(i)) armInside++; } else if (!armOf(i)) near = Math.min(near, -v.z); });
+  root.add(strap); hipB.attach(bag); chest.attach(strap);
+  const tris = lg.index.count / 3 + ig.index.count / 3 + idx.length / 3;
+  return { mesh: bag, stats: { turn: +a.toFixed(2), turns, lift: +lift.toFixed(2), lean: +lean.toFixed(3), armIn, inside, armInside, near: +near.toFixed(4), top: +(yTop - legL.y).toFixed(3), tris, strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps: pts.length } } };
+}
 // the spear (Sessions 907, 909 and 910; OG-025's hold guards and OG-044's Compact guards carry one, and it is one of the two new kinds
 // of weapon, Michael's 6 A). An ash shaft 2.2 to 2.6 cm thick (as the fist's hole allows) and 45 cm taller than its bearer (2.3 m at the least), an iron socket and a
 // leaf-shaped head 18 cm long with a midrib, and an iron shoe on the butt. Held upright in the right fist, its butt on the ground:
@@ -4315,6 +4401,9 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats;
     if (!D.cape && hairStats && /^(braid|braids|tail|shaved)$/.test(hairStats.style)) cloakStats.hairOver = hairOverCloak(meshes, C.meshes); }
+  // the satchel (Session 2113), over everything worn, before the shield
+  yield;
+  let satchelStats = null; if (D.satchel) satchelStats = buildSatchel(G, body, byName, meshes, root).stats;
   // the round shield (Session 904), last: it is laid outside everything else, and lifts the left arm clear where it must. Under a
   // cloak, which hangs over the arm that holds it, or a shoulder cape, which stands 8 cm out over the board's top edge, it is slung on the back (Session 905)
   yield;
@@ -4352,7 +4441,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -4375,7 +4464,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -4592,14 +4681,19 @@ export const CAST = {
   Aldwyn: { people: 'oldblood', fixed: true, g: 1, age: .95, muscle: .22, weight: .24, metres: 1.6, hairCol: [.64, .63, .61], hair: { style: 'short', len: .55 }, beard: .25,
     brow: { thick: .55, arch: .35 }, pose: { stoop: .6 }, marks: .05, face: { 'head-fat': -.8, 'head-oval': .5, 'l-cheek-bones': .6, 'r-cheek-bones': .6, 'chin-width': -.3, 'neck-scale-horiz': -.4 },
     dress: { tunic: [.46, .08, .07], robe: [.46, .08, .07], skirtColor: [.46, .08, .07], boots: [.18, .12, .09], cord: [.72, .55, .2],
-      cloak: [.5, .09, .08], cape: true, cloakLen: .5, cloakHem: [.72, .55, .2], brooch: [.78, .6, .22], broochMake: 'herald', staff: [.24, .19, .15], staffMake: 'carved' } } };
+      cloak: [.5, .09, .08], cape: true, cloakLen: .5, cloakHem: [.72, .55, .2], brooch: [.78, .6, .22], broochMake: 'herald', staff: [.24, .19, .15], staffMake: 'carved' },
+    // Session 2113 (OG-053's second outfit, the travelling scholar): a charcoal coat to the shin with its hood down, over a dark tunic and
+    // trousers, belted, the satchel on the left hip on its strap over the right shoulder, the same staff. `castGenome(name, { outfit })`
+    outfits: { travel: { tunic: [.3, .27, .25], trousers: [.17, .16, .15], boots: [.16, .11, .08], belt: [.2, .14, .1], coat: [.21, .21, .22], coatLen: .9, coatHood: 'down',
+      satchel: [.34, .22, .13], staff: [.24, .19, .15], staffMake: 'carved' } } } };
 // a cast member's genome: their name's roll, then the sheet. `o.people` keeps a people the caller already knows (Corwin's), unless the
-// sheet's is `fixed` (Aldwyn's Old Blood, which the game's Gatelander driver does not know; Session 2103)
+// sheet's is `fixed` (Aldwyn's Old Blood, which the game's Gatelander driver does not know; Session 2103); `o.outfit` dresses them in one of
+// their sheet's other outfits in place of the first (Aldwyn's `travel`; Session 2113), the same face and body
 export function castGenome(name, o = {}) {
   const C = CAST[name]; if (!C) return null; const people = !C.fixed && o.people && PEOPLES[o.people] ? o.people : C.people;
   const G = rollGenome('cast:' + name, { people, g: C.g });
   for (const k of ['age', 'muscle', 'weight', 'hairCol', 'beard']) if (C[k] != null) G[k] = Array.isArray(C[k]) ? C[k].slice() : C[k];
   G.hair = { ...C.hair }; if (C.brow) G.brow = { ...C.brow }; if (C.face) G.face = { ...(G.face || {}), ...C.face }; G.pose = { ...(G.pose || {}), stoop: 0, ...(C.pose || {}) }; G.scar = null; G.marks = people === 'oldblood' ? C.marks ?? G.marks : null;
-  G.dress = { ...Object.fromEntries(GARMENTS.map(k => [k, null])), ...DRESS_FLAGS, skirt: C.g ? 'short' : 'long', ...JSON.parse(JSON.stringify(C.dress)) };
+  G.dress = { ...Object.fromEntries(GARMENTS.map(k => [k, null])), ...DRESS_FLAGS, skirt: C.g ? 'short' : 'long', ...JSON.parse(JSON.stringify(C.outfits?.[o.outfit] || C.dress)) };
   G.height = heightFor(G, C.metres); G.cast = name; return G;
 }
