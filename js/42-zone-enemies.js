@@ -837,7 +837,19 @@ function gateCorruptDef(kind){const C=Object.values(GATE_CORRUPT).find(c=>c.kind
 function gateCorruptOf(kind){return Object.values(GATE_CORRUPT).find(c=>c.kind===kind)||null;}
 // the roster a gate's floor draws from: its school's six, with the corrupted slot when the gate is failing or worse and the floor's tier
 // reaches the kin's least tier (Cave Bear and Dire Wolf 2, Boar 1)
-function gateRoster(portal,gen,tier,list){if(!portal||portal.occupied||portal.tutorial||!gen||!gen.gate||!(gen.cond==='failing'||gen.cond==='catastrophic'))return list;
+// S2115 — Gaoth's gates (Michael's C on #1424, its first part; the canon's §9a: wisps, Gargoyles, something winged). One old gate in six is
+// Gaoth's by its seed (gateSchool, 87-world-quests.js); it held the roster of the theme it drew. Now it holds Gaoth's: the Gale Wisp in the
+// Skeleton's two slots, then Gargoyles and Phantoms. The wisp is the Skeleton's row in the dungeon's table at the floor's tier (35 health at
+// tier 1), on the Shore Wisp's light and resists, Gaoth's words at ×0.7, and its blow that lands shoves you 1 m (GALE_WISP, gaothWispBody,
+// 68-dungeon-misc.js). The dusk eagle in a failing gate is the decision's second part, still to build.
+const GAOTH_ROSTER=['Gale Wisp','Gale Wisp','Gargoyle','Phantom','Gargoyle','Phantom'];
+const GALE_WISP={from:'Shore Wisp',ward:.7,shove:1,light:0xa8ecff};
+function gaothGate(portal,gen){try{if(!portal||portal.occupied||portal.tutorial||!gen||!gen.gate||typeof gateSchool!=='function')return false;
+  if(typeof greatSchoolOf==='function'&&greatSchoolOf(portal))return false;
+  const W=(typeof WORLD_DUNGEONS!=='undefined'&&WORLD_DUNGEONS.find(x=>x.seed===portal.seed))||portal;if(gateOf(W).occupied)return false;
+  return gateSchool(W)==='gaoth';}catch(err){return false;}}
+function gateRoster(portal,gen,tier,list){if(gaothGate(portal,gen))return GAOTH_ROSTER.slice();
+  if(!portal||portal.occupied||portal.tutorial||!gen||!gen.gate||!(gen.cond==='failing'||gen.cond==='catastrophic'))return list;
   const C=GATE_CORRUPT[portal.theme],D=C&&gateCorruptDef(C.kind);if(!D||minTierOf(D.minLevel)>tier)return list;
   const i=list.indexOf(C.slot);if(i<0)return list;const L=list.slice();L[i]=C.kind;return L;}
 // S1759 — a trout holds a metre under the surface, head to the current, wandering a little where the water is deep enough to hide it.

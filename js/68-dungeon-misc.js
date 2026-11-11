@@ -599,6 +599,23 @@ function foeRebody(e,kind,D,body,portal){if(!D||!e||!e.mesh)return false;
 function gateCorruptBody(e,portal){const C=e&&gateCorruptOf(e.baseType);if(!C)return false;const D=gateCorruptDef(C.kind);
   if(!foeRebody(e,C.kind,D,C.body,portal))return false;const rig=e.limbs&&e.limbs.wolf;if(rig){rig.hcKind=C.kind;delete rig.hcKey;}
   e.name=C.kind;e.corrupt=C.school;e.shape=D.shape;delete e.posture;delete e.maxPosture;initPosture(e);return true;}
+// S2115 — Gaoth's wisp (GALE_WISP, 42-zone-enemies.js): spawned on the Skeleton's row, it is built again as the coast's Shore Wisp's light,
+// keeping the numbers it was given; it takes the Shore Wisp's resists and armour, Gaoth's words at ×0.7, and its shove
+function gaothWispBody(e){if(!e||!e.mesh||e.baseType!=='Gale Wisp'||typeof buildZoneEnemy!=='function')return false;
+  const W=GALE_WISP,z=buildZoneEnemy(new THREE.Group(),[],0,0,W.from,null,{tier:1});if(!z||!z.mesh)return false;
+  const g=e.mesh,L=e.limbs&&!Array.isArray(e.limbs)?e.limbs:{},hpBg=L.hpBg||e.hpBg;
+  g.children.slice().forEach(c=>{if(c===hpBg||c===e.hpFg||c.isLight)return;g.remove(c);});g.scale.set(1,1,1);g.rotation.set(0,g.rotation.y,0);
+  for(const c of z.mesh.children.slice()){if(c===z.hpBg||c===z.hpFg||c.isLight)continue;z.mesh.remove(c);g.add(c);}
+  if(z.el&&z.el.parent)z.el.parent.remove(z.el);g._hover=true;
+  const D=ZONE_FOE_DEF[W.from];e.limbs={hpBg,body:z.limbs&&z.limbs.body};e.def=D.def||0;e.resist=Object.assign({},D.resist,{gaoth:W.ward});
+  e.shove=W.shove;e.size=D.scale;e.buildFn='wisp';e._origCol=D.col;e.isWraith=false;e.ranged=false;e.shieldUp=false;e.school='gaoth';
+  if(hpBg)hpBg.position.y=1.3;if(e.hpFg)e.hpFg.position.y=1.3;if(e.el){e.el.color.setHex(W.light);e.el.intensity=.7;}
+  delete e.posture;delete e.maxPosture;initPosture(e);return true;}
+// the wisp's blow that lands shoves you its length straight away from it, slid along the walls in tenths so nothing is passed through
+function foeShoveYou(e){const m=e&&e.shove;if(!m||typeof activeZoneId==='undefined'||activeZoneId!=='dungeon'||typeof dSlideP!=='function')return 0;
+  const d=Math.hypot(px-e.x,pz-e.z);if(!(d>1e-3))return 0;const ux=(px-e.x)/d,uz=(pz-e.z)/d,x0=px,z0=pz;
+  for(let i=0;i<10;i++){const [nx,nz]=dSlideP(px,pz,ux*m/10,uz*m/10);if(nx===px&&nz===pz)break;px=nx;pz=nz;}
+  return Math.hypot(px-x0,pz-z0);}
 // the master is 1.5× the beast: one that would stand through the cavern's ceiling is made the largest that clears it
 function masterUnderCeiling(e){const g=e&&e.mesh;if(!g)return;const rig=e.limbs&&(e.limbs.person||e.limbs.wolf);const root=rig&&rig.root;if(!root)return;
   g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(root),h=b.max.y-b.min.y,room=FLOOR_HEIGHT-.15;if(h>room)g.scale.multiplyScalar(room/h);}

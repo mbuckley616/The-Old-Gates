@@ -42,7 +42,7 @@ check('Cloch\'s (ruins) gate at level 6 meets its stone: a Golem or a Gargoyle',
 // (OG-088): the Frost Wraith Bear for Uisce's first Slime, the Blight Boar for Cloch's first Skeleton, the Stag of Shadows for Scáth's first
 // Skeleton. A steady gate keeps its roster. Each on its kin's driver, wearing the kit's plan, at its kin's numbers and its school's resistance
 const conds = await page.evaluate(() => { const o = { steady: null, failing: null }; for (let s = 11; s < 400 && !(o.steady && o.failing); s++) { const c = gateCondRoll(s);
-  if (o[c] === null && !WORLD_DUNGEONS.some(e => e.seed === s)) o[c] = s; } return o; });
+  if (o[c] === null && !WORLD_DUNGEONS.some(e => e.seed === s) && gateSchool({ seed: s, theme: 'ruins' }) !== 'gaoth') o[c] = s; } return o; }); /* S2115 — a Gaoth seed holds Gaoth's roster */
 const Wst = await page.evaluate(() => { const r = getCell(HOME_I, HOME_J).regions.find(r => r.id === 'wastes'); return r ? { x: r.x, z: r.z } : null; });
 const CR = {};
 for (const theme of Object.keys(CORRUPT)) for (const cond of ['steady', 'failing']) for (const deep of [false, true]) {
@@ -66,5 +66,34 @@ check('each runs on its kin\'s driver (the Cave Bear\'s, the Boar\'s, the Elders
 check('its school resists it ×0.7 (uisce, cloch, scáth), it fights as a beast or a brute, and it gives no meat',
   CR['deep:failing:deep'].res.uisce === .7 && CR['ruins:failing'].res.cloch === .7 && CR['haunted:failing:deep'].res.scath === .7
   && CR['deep:failing:deep'].fam === 'brute' && CR['haunted:failing:deep'].fam === 'beast' && Object.values(CR).filter(r => r.k).every(r => r.meat === 0), CR);
+
+// Session 2115 (Michael's C on #1424, its first part): one old gate in six is Gaoth's by its seed, and holds Gaoth's roster whatever theme it
+// drew: the Gale Wisp in the Skeleton's two slots, Gargoyles and Phantoms. The wisp has the Skeleton's numbers at the floor's tier, the Shore
+// Wisp's light and resists, Gaoth's words at ×0.7, and a blow that lands shoves you 1 m
+const gs = await page.evaluate(() => { const o = []; for (let s = 11; s < 400 && o.length < 2; s++) if (!WORLD_DUNGEONS.some(e => e.seed === s) && gateSchool({ seed: s, theme: 'undead' }) === 'gaoth') o.push(s); return o; });
+const GA = {};
+for (const seed of gs) for (const deep of [false, true]) {
+  await enterDungeon(page, Object.assign({ theme: 'undead', seed, size: 'medium' }, deep && Wst ? Wst : {}));
+  GA[seed + (deep ? ':deep' : '')] = await page.evaluate(() => { const w = ENEMIES.filter(e => e.baseType === 'Gale Wisp'), w0 = w.find(e => !e.variant) || w[0];
+    let shove = null;
+    if (w0) { const hp0 = PHP; PHP = 9999; let spot = null;
+      for (let r = 0; r < dMap.length && !spot; r++) for (let c = 0; c < dMap[0].length && !spot; c++) { if (dMap[r][c] !== 1) continue; const x = dAt(c), z = dAt(r);
+        let free = true; for (let t = -1; t <= 1.6 && free; t += .1) if (dBlkP(x + t, z)) free = false; if (free) spot = [x, z]; }
+      if (spot) { const e = w0, ex = e.x, ez = e.z; px = spot[0]; pz = spot[1]; e.x = px - .8; e.z = pz; blocking = false; lastBlockAttemptT = -99;
+        const before = PHP, x0 = px; executeStrike(e, 10, performance.now() + 1e7); shove = { moved: +(px - x0).toFixed(3), took: before - PHP, dz: +(pz - spot[1]).toFixed(3) }; e.x = ex; e.z = ez; }
+      PHP = hp0; }
+    return { tier: ENEMIES[0] && ENEMIES[0].tier, names: [...new Set(ENEMIES.map(e => e.baseType || e.name))], n: w.length,
+      hp: w0 && w0.maxHp, res: w0 && w0.resist, fam: w0 && foeFamily(w0), hover: !!(w0 && w0.mesh._hover), glows: w0 ? w0.mesh.children.filter(c => c.material && c.material.blending === THREE.AdditiveBlending).length : 0,
+      shove }; });
+}
+await enterDungeon(page, { theme: 'undead', seed: 11, size: 'medium' });
+const skel = await page.evaluate(() => { const s = ENEMIES.find(e => e.baseType === 'Skeleton' && !e.variant); return s ? { hp: s.maxHp, tier: s.tier } : null; });
+console.log(JSON.stringify({ gs, GA, skel }));
+const gaw = Object.values(GA);
+check('two Gaoth seeds found, and their gates hold only Gaoth\'s roster (the Gale Wisp, Gargoyles, Phantoms), the wisp in every one', gs.length === 2 && gaw.length === 4 && gaw.every(r => r.n > 0 && r.names.every(n => n === 'Gale Wisp' || n === 'Gargoyle' || n === 'Phantom')), GA);
+check('deeper (the Wastes, tier 2+), a Gaoth gate shows more than the wisp', Object.entries(GA).filter(([k]) => k.endsWith(':deep')).some(([, r]) => r.tier >= 2 && r.names.length >= 2), GA);
+check('the wisp has the Skeleton\'s health at the same tier, the Shore Wisp\'s resists and Gaoth\'s ×0.7', gaw.every(r => r.res.gaoth === .7 && r.res.pierce === .4 && r.res.blunt === .4) && skel && Object.entries(GA).filter(([k, r]) => !k.endsWith(':deep') && r.tier === skel.tier).every(([, r]) => r.hp === skel.hp), { GA, skel });
+check('it fights as the coast\'s wisp (the spider\'s row) and is drawn as its light: hovering, its haloes additive', gaw.every(r => r.fam === 'spider' && r.hover && r.glows >= 8), GA);
+check('its blow that lands takes health and shoves you 1 m straight away from it', gaw.every(r => r.shove && r.shove.took > 0 && Math.abs(r.shove.moved - 1) < .02 && Math.abs(r.shove.dz) < .02), gaw.map(r => r.shove));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
