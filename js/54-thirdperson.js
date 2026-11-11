@@ -584,6 +584,48 @@ function tpGripL(R){
   _tgQ.setFromUnitVectors(_tgA.normalize(),_tgB.normalize());R.shL.getWorldQuaternion(_tgQ2);_tgQ.multiply(_tgQ2);R.shL.parent.getWorldQuaternion(_tgQ2);_tgQ.premultiply(_tgQ2.invert());R.shL.quaternion.copy(_tgQ);
   R.shL.updateMatrixWorld(true);
 }
+// S2086 — the sheet's portrait (66-hub.js) stands you at rest with what you hold planted rather than hung from the fist, which put a staff's
+// head, a spear's point and an axe's blade through the floor. TP_REST by the weapon's shape: `side`, held upright in the right hand beside
+// the right foot, the butt down (a staff, a spear); `front`, stood on its point or its head before you, the right hand on top and the left at rest (a two-hander).
+// `hand` is the right wrist's height as a share of your stature (its bounds when the weapon does not set it), `down` the end on the floor:
+// `long` (the end further from the fist) or `short`; `haft`, the hands may sit anywhere along it, so it slides through the fist to stand on
+// the floor. A bow, a crossbow and every one-handed weapon keep the hang (TP_REST has no row for them)
+const TP_REST={staff:{at:'side',hand:[.55,.6],down:'short',haft:true},spear:{at:'side',hand:[.55,.6],down:'short',haft:true},
+  claymore:{at:'front',hand:[.44,.7],down:'long'},greataxe:{at:'front',hand:[.44,.6],down:'long',haft:true},warhammer:{at:'front',hand:[.44,.6],down:'long',haft:true},
+  greatclub:{at:'front',hand:[.44,.6],down:'long',haft:true},pick:{at:'front',hand:[.44,.6],down:'long',haft:true}};
+const TP_REST_AT={side:[-.3,.14],front:[-.12,.3]}; /* the wrist's place about your feet in metres, turned with you: x (−x is your right), z ahead */
+const _trP=new THREE.Vector3(),_trS=new THREE.Vector3(),_trW=new THREE.Matrix4(),_trW2=new THREE.Vector3(),_trB=new THREE.Box3(),_trM=new THREE.Matrix4(),_trM2=new THREE.Matrix4(),_trE=new THREE.Vector3(),_trD=new THREE.Vector3(),_trQ=new THREE.Quaternion();
+// the weapon's extent along its own length (its y), from the fist: [lowest, highest]
+function tpRestSpan(W){W.updateMatrixWorld(true);_trM.copy(W.matrixWorld).invert();let lo=0,hi=0;
+  W.traverse(m=>{if(!m.isMesh||!m.geometry)return;if(!m.geometry.boundingBox)m.geometry.computeBoundingBox();_trB.copy(m.geometry.boundingBox).applyMatrix4(_trM2.multiplyMatrices(_trM,m.matrixWorld));lo=Math.min(lo,_trB.min.y);hi=Math.max(hi,_trB.max.y);});
+  return [lo,hi];}
+// pose R's arms for the portrait (after pwApply, before tpHBPose): the right wrist set where the weapon stands, turned so its down end
+// points down; true when the weapon has a row (then tpRestHeld plants the builder's copy after tpHBPose). The driver's weapon is not moved
+function tpRestPose(R){const W=R.weapon,it=EQ.weapon,T=W&&it&&!R.bow&&TP_REST[it.weaponShape];R.rest=null;if(!T||!R.rig)return false;
+  const st=(R.rig.hb&&R.rig.hb.st)||1.76,[lo,hi]=tpRestSpan(W),dn=T.down==='long'?(Math.abs(lo)>Math.abs(hi)?-1:1):(Math.abs(lo)>Math.abs(hi)?1:-1),
+    at=TP_REST_AT[T.at],y0=R.root.position.y;
+  let h=(T.hand[0]+T.hand[1])/2*st;const fix=new THREE.Quaternion();
+  const place=()=>{R.root.updateMatrixWorld(true);R.root.getWorldQuaternion(_trQ);tpReach(R.shR,R.elR,R.handR,_tgT.set(at[0],0,at[1]).applyQuaternion(_trQ).add(R.root.position).setY(y0+h));
+    // the weapon's down end turned straight down, the least turn of the wrist that does it, so the fist keeps its hold round the grip
+    R.root.updateMatrixWorld(true);W.getWorldQuaternion(_trQ);_trD.set(0,dn,0).applyQuaternion(_trQ).normalize();
+    _tgQ.setFromUnitVectors(_trD,_tgA.set(0,-1,0));R.handR.getWorldQuaternion(_tgQ2);_tgQ.multiply(_tgQ2);R.handR.parent.getWorldQuaternion(_tgQ2);
+    _tgQ.premultiply(fix);R.handR.quaternion.copy(_tgQ.premultiply(_tgQ2.invert()));R.root.updateMatrixWorld(true);};
+  // the builder's fist is where its arm puts it, not the driver's (its forearm turns the copy, tpHBHold): five times, the driver's wrist
+  // moved by what the builder's fist (the copy's pivot, its fingers' middle) misses its height by (for a haft the row's middle, else the
+  // weapon's down end on the floor), and turned by what the copy misses straight down by (`fix`), so the hilt runs through the fist
+  const hd=R.hbHeld&&R.hbHeld.find(x=>x.o===W),lim=y=>Math.max(T.hand[0]*st,Math.min(T.hand[1]*st,y)),wantH=h;
+  for(let k=0;k<5;k++){place();if(!hd||!hd.f||!hd.f.length||!R.rig.hb)break;tpHBPose(R);_trP.set(0,0,0);
+    const want=lim(T.haft?wantH:Math.abs(dn>0?hi:lo)*hd.c.getWorldScale(_trS).y); /* the copy's own scale, not the driver's */for(const b of hd.f)_trP.add(_trW2.setFromMatrixPosition(b.matrixWorld));
+    h+=want-(_trP.y/hd.f.length-y0);
+    hd.c.updateMatrixWorld(true);hd.c.getWorldQuaternion(_trQ);_trD.set(0,dn,0).applyQuaternion(_trQ).normalize();fix.premultiply(_tgQ.setFromUnitVectors(_trD,_tgA.set(0,-1,0)));}
+  place();R.rest={dn,lo,hi,haft:!!T.haft,y0};return true;}
+// after tpHBPose: the builder's copy of the weapon (set in the builder's fingers, and turned with its forearm) stood straight up and down
+// about the fist, and a haft slid through the fist until its end is on the floor
+function tpRestHeld(R){const S=R.rest,h=S&&R.hbHeld&&R.hbHeld.find(x=>x.o===R.weapon);if(!h)return;const c=h.c,par=c.parent;if(!par)return;
+  par.updateMatrixWorld(true);_trW.multiplyMatrices(par.matrixWorld,c.matrix).decompose(_trP,_trQ,_trS);
+  _trD.set(0,S.dn,0).applyQuaternion(_trQ).normalize();_tgQ.setFromUnitVectors(_trD,_tgA.set(0,-1,0));_trQ.premultiply(_tgQ);
+  if(S.haft){const e=Math.abs(S.dn>0?S.hi:S.lo)*_trS.y;_trP.y=S.y0+.005+e;}
+  _trW.compose(_trP,_trQ,_trS);c.matrix.copy(_trM.copy(par.matrixWorld).invert().multiply(_trW));c.matrixWorldNeedsUpdate=true;c.updateMatrixWorld(true);}
 // S1401 — the pull's holds on the builder's body: twice, the driver's wrists aimed short by how far the builder's miss, and copied again
 const _tmE=[new THREE.Vector3(),new THREE.Vector3()],_tmW=new THREE.Vector3();
 function tpHBMantle(R){const H=R.rig.hb,M=R.mantle;if(M.w<=0)return;const wb=[H.P.byName['wrist.L'],H.P.byName['wrist.R']];if(!wb[0]||!wb[1])return;
