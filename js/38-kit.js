@@ -4621,6 +4621,7 @@ function campMats() {
 function campGear(what, o = {}) {
   const M = campMats(), B = new Map(), F = stream(String(o.key || 'camp:' + what)), V3 = (x, y, z) => new THREE.Vector3(x, y, z), G0 = typeof o.ground === 'function' ? o.ground : () => 0, gy = (x, z) => G0(x, z);
   const KEEP = new Set(['plaid', 'linen']);
+  const LIFT = .045 /* over the land's drawn triangles and a path's top, which stand a few cm off worldH */;
   const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a) || (a === 'uv' && !KEEP.has(k))) g.deleteAttribute(a);
     if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1)));
     if (!g.attributes.uv) { if (KEEP.has(k)) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); else worldUV(g, .5); }
@@ -4634,8 +4635,8 @@ function campGear(what, o = {}) {
   const edge = (t, e) => { const s = Math.min(1, Math.min(t, 1 - t) / e); return Math.sqrt(s * (2 - s)); };
   // a pad lying on the land from x0..x1, z0..z1, h thick at its middle and rounded to the ground at its edges, lifted by lift(x, z)
   const pad = (k, x0, x1, z0, z1, h, op = {}) => grid(k, op.nu || 8, op.nv || 16, (u, v) => { const x = x0 + (x1 - x0) * u, z = z0 + (z1 - z0) * v, lf = op.lift ? op.lift(x, z) : 0;
-    return [x, gy(x, z) + .006 + lf + h * edge(u, op.ex || .14) * edge(v, op.ez || .06) * (op.q ? op.q(x, z) : 1), z]; }, op.uv ? (u, v) => [u * op.uv[0], v * op.uv[1]] : null);
-  const pillow = (k, z, w = .5, d = .32, h = .11) => { const g = new THREE.SphereGeometry(.5, 10, 6); g.scale(w, h * 2, d); put(g, k, 0, gy(0, z) + h * .8, z); };
+    return [x, gy(x, z) + LIFT + lf + h * edge(u, op.ex || .14) * edge(v, op.ez || .06) * (op.q ? op.q(x, z) : 1), z]; }, op.uv ? (u, v) => [u * op.uv[0], v * op.uv[1]] : null);
+  const pillow = (k, z, w = .5, d = .32, h = .11) => { const g = new THREE.SphereGeometry(.5, 10, 6); g.scale(w, h * 2, d); put(g, k, 0, gy(0, z) + LIFT + h * .8, z); };
   const rolled = (k, z, w, r) => { const g = new THREE.CylinderGeometry(r, r, w, 10); g.rotateZ(Math.PI / 2); put(g, k, 0, Math.max(gy(-w / 2, z), gy(w / 2, z)) + r * .9, z); };
   let tentOn = !!o.tent;
   if (what === 'leanto') {
@@ -4667,8 +4668,8 @@ function campGear(what, o = {}) {
     // the hood's flap thrown back fur side up
     const L0 = -.9, L1 = 1.1, W = u => .78 - .22 * Math.max(0, Math.min(1, (u - .45) / .55)), H = u => .24 - .07 * u;
     grid('hide', 10, 24, (v, u) => { const z = L0 + (L1 - L0) * u, w = W(u) / 2, x = w * Math.cos(Math.PI * v), e = u > .9 ? Math.sqrt(Math.max(0, 1 - ((u - .9) / .1) ** 2)) : 1;
-      return [x, gy(x, z) + .008 + H(u) * Math.sin(Math.PI * v) * e, z]; });
-    { const g = new THREE.TorusGeometry(.33, .07, 6, 14, Math.PI); g.scale(1.15, .7, 1); put(g, 'fur', 0, gy(0, L0) + .005, L0 - .01); }
+      return [x, gy(x, z) + LIFT + H(u) * Math.sin(Math.PI * v) * e, z]; });
+    { const g = new THREE.TorusGeometry(.33, .07, 6, 14, Math.PI); g.scale(1.15, .7, 1); put(g, 'fur', 0, gy(0, L0) + LIFT, L0 - .01); }
     pad('fur', -.36, .36, L0 - .5, L0 - .04, .03, { ex: .25, ez: .15, nv: 6 });
     pad('fur', -.3, .3, L0 + .02, L0 + .3, .14, { ex: .4, ez: .3, nv: 4 }) /* the lining seen in the mouth */;
   } else if (what === 'aurenne') {
