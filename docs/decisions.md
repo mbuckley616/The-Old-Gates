@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Children in the towns — townsfolk only, at play by island, or at play and at their day's work? (from the concept artist, 2026-11-11, #1445)
+**The question.** The builder has had child bodies since Session 1081 (ages 11 to 15), but the towns hold only Finn and nothing exists for a child to hold. The concept artist built ten toys in metres (48 to 1,008 triangles each) and posed eleven children at their island's games: the Gatelands' hoop, ball and rag doll; the Mark's play fight and pine boat; Aurenne's kite, knucklebones and terracotta horse (`docs/prototypes/levelup/kids.html`). How should the towns show children?
+
+**Options.**
+- **A.** Townsfolk only: a few children walk and stand like the grown folk; no toys, no games.
+- **B (recommended).** At play, by island: two to four children in a town by day, each at one of its island's games with the toys as props; indoors at dusk. One bodies session plus a line in the town's hours.
+- **C.** B, and their day: play in the afternoon, the hedge school, forge or scribes' school in the morning, and a rite per island. About four sessions across three lanes.
+
+**Recommendation.** B: children in the towns as the brief's lived-in world asks, at one body and up to a thousand triangles each; the school and the rites can come later without undoing anything. Pictures and approach: `docs/concepts.md`.
+
 ## Answered
 ### Swords by island — the six makes as looks only, or Aurenne’s falchion and flyssa as kinds of their own? (from the systems builder, 2026-11-11, #1425)
 **The question.** The bodies builder has made six swords by island in the people's kit (Session 2096, OG-028): the Gatelands' arming sword, the Mark's Norse sword, and Aurenne's takouba, nimcha, falchion and flyssa. Before they go into the game, each item has to know which make it is. The game has a Sword, a Longsword and a Scimitar today, one look each, the same everywhere. Are the makes looks only, or are Aurenne's four kinds of their own?
