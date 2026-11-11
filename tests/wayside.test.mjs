@@ -11,6 +11,7 @@
 // Session 2063 the Gatelands' merchants' camp (PKIT.places.merchants), Session 2065 Aurenne's abandoned expedition (PKIT.places.expedition) on its laid ground,
 // Session 2071 the Gatelands' falls (PKIT.places.falls), their glen cut into the world's own ground. Session 2079 the peat camp's heather in shoots and its footings as tents. Session 2081 the cabin's lights on all four sides.
 // Session 2083 the second chance for cells that drew nothing (#1385 C): the Gatelands' merchants' camps and falls drawn at last.
+// Session 2101 Aurenne's first place off the road, the coastal watchtower (PKIT.places.watchtower), on a rise of its coast over the open sea.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -133,7 +134,7 @@ const of = await page.evaluate(() => { const G = [...CELLS.values()].filter(c =>
   const again = G.map(c => { const keep = c._offroad; c._offroad = undefined; const d = offroadAt(c); c._offroad = keep; return d; }).filter(Boolean);
   const same = again.length === C.length && again.every((d, i) => d.id === C[i].id && d.x === C[i].x && d.z === C[i].z && d.ry === C[i].ry);
   C.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); const h = C.find(d => d.kind === 'shepherd');
-  return { cells: G.length, n: C.length, same, huts: C.filter(d => d.kind === 'shepherd').length, cabins: C.filter(d => d.kind === 'cabin').length, gl: C.every(d => nationOf(...d.cell.split(',').map(Number)).people === (d.kind === 'cabin' || d.kind === 'logging' ? 'markman' : 'gatelander')), hut: h && { id: h.id, x: h.x, z: h.z, ry: h.ry } }; });
+  return { cells: G.length, n: C.length, same, huts: C.filter(d => d.kind === 'shepherd').length, cabins: C.filter(d => d.kind === 'cabin').length, gl: C.every(d => nationOf(...d.cell.split(',').map(Number)).people === (d.kind === 'cabin' || d.kind === 'logging' ? 'markman' : d.kind === 'watchtower' ? 'aurennais' : 'gatelander')), hut: h && { id: h.id, x: h.x, z: h.z, ry: h.ry } }; });
 console.log(JSON.stringify(of));
 check(`${of.n} of ${of.cells} cells keep a place off the road (${of.huts} the Gatelands' shepherd's hut, ${of.cabins} the Mark's hunting cabin), each on its own island, the same when asked again`, of.n > 0 && of.n < of.cells / 3 && of.same && of.huts > 0 && of.gl, of);
 // Session 2083 (Michael's C on #1385): a second chance for cells that drew nothing. A cell whose roll missed by under a sixth (1/3 to 1/2)
@@ -256,6 +257,31 @@ if (cb) {
     return { n: W.length, sides, faces: [...new Set(W.map(w => w.n.join(',')))].length }; }, cb.id);
   console.log(JSON.stringify(lw));
   check(`${cb.id}: ${lw.n} lit windows facing ${lw.faces} ways, each seen from 25 m out (${(lw.sides || []).map(q => q.n + ' ' + q.seen + ' of 5').join('; ')})`, !lw.none && lw.faces === 4 && lw.sides.every(q => q.seen >= 3), lw);
+}
+// Session 2101: Aurenne's coastal watchtower (PKIT.places.watchtower, places.js's aurenneWatchtower) off the road on a rise of its coast,
+// facing the nearest shore 12 to 26 m out over the open sea, 150 m and more off every road: its scarp's foot under the lowest ground round it,
+// its well, cypresses and path on the drawn ground, solid at the drum, its rim, the stair and the landing, the wellhead; open on the path, in
+// the yard and on the seaward grass; no tree of the scatter in its clearing; its cost
+const wt = await page.evaluate(() => { for (const c of CELLS.values()) { const d = c.type !== 'sea' && !c.home ? offroadAt(c) : null; if (d && d.kind === 'watchtower') return { id: d.id, x: d.x, z: d.z, ry: d.ry, shore: d.shore, ppl: nationOf(c.i, c.j).people }; } return null; });
+console.log(JSON.stringify(wt));
+check(`a watchtower is drawn on Aurenne's coast (${wt && wt.id}, the shore ${wt && wt.shore} m before it)`, !!wt && wt.ppl === 'aurennais' && wt.shore >= 12 && wt.shore <= 26, wt);
+if (wt) {
+  await page.evaluate(D => { px = D.x - Math.sin(D.ry) * 40; pz = D.z - Math.cos(D.ry) * 40; }, wt);
+  for (let n = 0; n < 12; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id); return !!(c && c._offroad.group && c._offroad.group.parent); }, wt.id); if (ok) break; await page.waitForTimeout(1000); }
+  await g.spin('clear', 40);
+  const wq = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad; if (!D.group || !D.group.parent) return { none: true };
+    const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], at = (u, v, y = .5) => solidAt(...W(u, v), D.y + y);
+    let bd = 1e9; for (const sg of RSEG) { const vx = sg.bx - sg.ax, vz = sg.bz - sg.az, t = Math.max(0, Math.min(1, ((D.x - sg.ax) * vx + (D.z - sg.az) * vz) / (vx * vx + vz * vz || 1))); bd = Math.min(bd, Math.hypot(sg.ax + vx * t - D.x, sg.az + vz * t - D.z)); }
+    const st = Math.max(...D.stands.map(l => { const [x, z] = W(l.x, l.z); return Math.abs(D.y + l.y - meshH(x, z)); }));
+    let lo = 1e9; for (let k = 0; k < 32; k++) { const a = k / 32 * 6.2832; lo = Math.min(lo, meshH(...W(Math.sin(a) * 5.05, Math.cos(a) * 5.05)) - D.y); }
+    const [cx, cz] = W(0, -4); let trees = 0; for (const ch of chunks.values()) for (const p of (ch.treePts || [])) if (Math.hypot(p.x - cx, p.z - cz) < 12) trees++;
+    const sea = [D.shore + 60, D.shore + 120].every(v => meshH(...W(0, v)) < SEA_Y - 1);
+    return { id, tris: D.tris, draws: D.draws, road: +bd.toFixed(1), stands: +st.toFixed(3), foot: +(D.tower.foot - lo).toFixed(2), trees, sea,
+      tower: at(0, 0), rim: [0, 1, 2, 3, 4, 5, 6, 7].filter(k => at(Math.sin(k * .785) * 4.8, Math.cos(k * .785) * 4.8)).length, stair: at(4.5, D.stair.foot[1]), landing: at(0, (D.stair.landing.z0 + D.stair.landing.z1) / 2), well: at(6.5, -12),
+      open: [at(9.6, -20), at(0, -12), at(-4, -8), at(0, 7)].filter(Boolean).length }; }, wt.id);
+  console.log(JSON.stringify(wq));
+  check(`${wq.id}: the watchtower ${wq.road} m off the nearest road, the open sea before it, its scarp's foot ${wq.foot} m under the lowest ground round it, its well, cypresses and path within ${wq.stands} m of the ground, ${wq.trees} trees of the scatter in its clearing`, !wq.none && wq.road >= 150 && wq.sea && wq.foot <= -.3 && wq.stands < .06 && wq.trees === 0, wq);
+  check(`solid at the drum, ${wq.rim} of 8 points round its foot, the stair, the landing and the wellhead; ${4 - wq.open} of 4 open points blocked; ${wq.tris} triangles in ${wq.draws} draws`, !wq.none && wq.tower && wq.rim === 8 && wq.stair && wq.landing && wq.well && wq.open === 0 && wq.tris < 14000 && wq.draws <= 10, wq);
 }
 // Session 2056: the Mark's logging camp (PKIT.places.logging, places.js's markLoggingCamp) on a fall line of the world into water, 150 m and
 // more off every road: the chute from the deck's foot down to 3 m out over the water, clear of the bank all the way; the fire and the
