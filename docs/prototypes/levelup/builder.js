@@ -5,7 +5,7 @@
 // creatures.js; the genome text, Save, Load, Apply and the link take either (kit.js reads both). The people's pack is
 // fetched only when a person is shown, so the creatures need no pack.
 // Query: ?g=<base64url genome>  ?seed=<s>&sex=m|f  ?plan=<body plan>&gait=<g>  ?view=full|face|back|side (a creature: side|front|back|top)
-// ?cast=<name> (a named person of the cast, people.js's CAST; Session 2103)  ?still&w&h (one frame, for the checks).
+// ?cast=<name> (a named person of the cast, people.js's CAST; Session 2103)  ?view=brooch (the brooch's face; Session 2106)  ?still&w&h (one frame, for the checks).
 import * as THREE from 'three';
 import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, castGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
@@ -92,6 +92,9 @@ function frame() {
   else if (view === 'hand') { const w = new THREE.Vector3(); person.byName['wrist.L'].getWorldPosition(w); const o = new THREE.Vector3(1, 0, 0).applyQuaternion(person.root.quaternion); cam.fov = 20; cam.position.set(w.x + o.x * .55 / zoom + .12 * Math.cos(turn), w.y + .12, w.z + o.z * .55 / zoom + .35 / zoom); cam.lookAt(w.x, w.y + .02, w.z); }
   // the waist (Session 1004): the belt's front, and what hangs from it (or the sash belt's, Session 1010)
   else if (view === 'waist') { const b = person.root.getObjectByName('beltCoins') || person.root.getObjectByName('beltCharms'), sb = !b && (person.root.getObjectByName('sashBelt') || person.root.getObjectByName('belt')), t = b ? new THREE.Box3().setFromObject(b).getCenter(new THREE.Vector3()) : sb ? bandMid(sb) : h.clone().setY(h.y - .7); cam.fov = 22; cam.position.set(t.x + .3 / zoom, t.y + .12, t.z + 1.05 / zoom); cam.lookAt(t); }
+  // the brooch (Session 2106): a cloak's or a cape's, square on its face and a little above, the herald's device
+  else if (view === 'brooch') { const b = person.root.getObjectByName('brooch'), t = new THREE.Vector3(), n = new THREE.Vector3(0, 1, 0); if (b) { b.getWorldPosition(t); n.applyQuaternion(b.getWorldQuaternion(new THREE.Quaternion())); } else t.set(h.x, h.y - .2, h.z + .1);
+    cam.fov = 20; cam.position.copy(t).addScaledVector(n, .45 / zoom).add(new THREE.Vector3(.02, .06, 0).divideScalar(zoom)); cam.lookAt(t); }
   // the feet (Session 1015): what is worn on them, sandals
   // the shins (Session 1021): what is worn from the ankle to the knee, leg wraps
   else if (view === 'shins') { const t = new THREE.Vector3(h.x, .3, h.z + .05); cam.fov = 24; cam.position.set(t.x + .4 / zoom, t.y + .12 / zoom, t.z + 1.3 / zoom); cam.lookAt(t); }

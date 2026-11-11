@@ -1219,11 +1219,13 @@ function buildCloak(G, body, byName, rnd) {
   const a = thrown ? tops[K - 1] : tops[0], b = tops[K - 1], at = a.start.clone().add(b.start).multiplyScalar(.5), nrm = a.n.clone().add(b.n).normalize();
   // a burnous is sewn shut at the chest and tied at the throat with a knot of its own cord in place of the brooch
   const knot = burnousOn(D), br = knot ? new THREE.Mesh(new THREE.SphereGeometry(.0105, 14, 10), clothMat(sRGB(...(D.burnousStripe || D.cloak)).multiplyScalar(.85), 'wool', { scale: 90 }))
+    : D.broochMake === 'herald' ? heraldBrooch(D)
     : new THREE.Mesh(new THREE.CylinderGeometry(.021, .021, .006, 24), new THREE.MeshStandardMaterial({ color: sRGB(...(D.brooch || [.55, .42, .2])), metalness: .9, roughness: .38 }));
   if (knot) br.geometry.setAttribute('aBase', br.geometry.attributes.position);
-  br.position.copy(at).addScaledVector(nrm, knot ? .01 : .012); br.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), nrm); br.name = knot ? 'knot' : 'brooch'; out.push(br);
-  const boss = new THREE.Mesh(knot ? new THREE.SphereGeometry(.0075, 12, 8) : new THREE.SphereGeometry(.007, 12, 8), br.material); if (knot) boss.geometry.setAttribute('aBase', boss.geometry.attributes.position);
-  boss.position.copy(br.position).addScaledVector(nrm, knot ? -.002 : .005).add(new THREE.Vector3(0, knot ? -.016 : 0, 0)); out.push(boss);
+  br.position.copy(at).addScaledVector(nrm, knot ? .01 : br.userData.device ? .016 : .012); if (br.userData.device) br.position.y += .014; br.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), nrm); br.name = knot ? 'knot' : 'brooch'; out.push(br);
+  // the herald's device has its own pivot at the rose's middle, so its boss is a small one (Session 2106)
+  const boss = new THREE.Mesh(knot ? new THREE.SphereGeometry(.0075, 12, 8) : new THREE.SphereGeometry(br.userData.device ? .0032 : .007, 12, 8), br.userData.device ? new THREE.MeshStandardMaterial({ color: br.material.color, metalness: .8, roughness: .3 }) : br.material); if (knot) boss.geometry.setAttribute('aBase', boss.geometry.attributes.position);
+  boss.position.copy(br.position).addScaledVector(nrm, knot ? -.002 : br.userData.device ? .0036 : .005).add(new THREE.Vector3(0, knot ? -.016 : 0, 0)); out.push(boss);
   for (const m of out) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
   let minClear = 1, under = 0; for (const c of cols) for (const q of c) { const hit = heightOver(S, q); if (hit) { minClear = Math.min(minClear, hit.h); if (hit.h < .005) under++; } }
   return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3), cape, hemDrop: +(neck.y - cols.reduce((a, c) => a + c[R - 1].y, 0) / K).toFixed(3), hem: !!D.cloakHem, thrown, ...H.stats, through: armsThrough(cols, R, PP, neck, worn), point: pointStats } };
@@ -3472,6 +3474,47 @@ function fitTex(kind) {
 }
 // a fitting's material with its work, from the plain one; bumpScale in three's screen units
 const fitWork = (m, kind) => { const w = m.clone(); w.map = w.bumpMap = fitTex(kind); w.bumpScale = 2.4; w.name = kind; return w; };
+// ── the herald's brooch (Session 2106, OG-053: "a gold wheel-and-compass device on the shoulder") ──
+// The Crown's device on Aldwyn's brooch, as the fittings' work is (Session 2100): one canvas read as colour and bump, no triangle added.
+// A wheel of eight spokes in a raised felloe, a compass rose laid over it (four long points on the quarters, four short between, each
+// point lit on one face and shaded on the other, so it stands as a ridge), a hub ring round the pivot and a beaded edge. The spokes
+// run between the rose's points. The disc is 4.8 cm across where the plain brooch is 4.2, so the device carries at a few metres; its
+// side takes the felloe's gold (one texel), so at the bodies' middle level (one material, baked) it is the plain gold disc.
+function heraldTex() {
+  if (FIT_TEX.herald) return FIT_TEX.herald;
+  const W = 512, C = W / 2, c = document.createElement('canvas'); c.width = c.height = W; const x = c.getContext('2d');
+  const gr = v => { const k = Math.round(v * 255); return `rgb(${k},${k},${k})`; }, P = (r, a) => [C + r * Math.cos(a), C + r * Math.sin(a)];
+  const ring = (r, w, v) => { x.lineWidth = w; x.strokeStyle = gr(v); x.beginPath(); x.arc(C, C, r, 0, 7); x.stroke(); };
+  const dot = (p, r, v) => { const g = x.createRadialGradient(p[0] - r * .3, p[1] - r * .3, r * .1, p[0], p[1], r); g.addColorStop(0, gr(Math.min(1, v + .05))); g.addColorStop(1, gr(v * .7)); x.fillStyle = g; x.beginPath(); x.arc(p[0], p[1], r, 0, 7); x.fill(); };
+  const tri = (a, b, d, v) => { x.fillStyle = gr(v); x.beginPath(); x.moveTo(...a); x.lineTo(...b); x.lineTo(...d); x.closePath(); x.fill(); };
+  x.fillStyle = gr(.74); x.fillRect(0, 0, W, W);
+  // the felloe: a raised ring between two grooves; the spokes, tapered toward the rim, each between a groove and its crown
+  ring(206, 40, .3); ring(206, 28, .9); ring(206, 10, 1);
+  for (let k = 0; k < 8; k++) { const a = (k + .5) * Math.PI / 4, u = [Math.cos(a), Math.sin(a)], v = [-u[1], u[0]];
+    for (const [w0, w1, val] of [[17, 12, .3], [12, 8, .88], [5, 3, 1]]) { x.fillStyle = gr(val); x.beginPath();
+      x.moveTo(C + 52 * u[0] + w0 * v[0], C + 52 * u[1] + w0 * v[1]); x.lineTo(C + 190 * u[0] + w1 * v[0], C + 190 * u[1] + w1 * v[1]);
+      x.lineTo(C + 190 * u[0] - w1 * v[0], C + 190 * u[1] - w1 * v[1]); x.lineTo(C + 52 * u[0] - w0 * v[0], C + 52 * u[1] - w0 * v[1]); x.closePath(); x.fill(); } }
+  // the rose: the short points first, then the long over them; a point is two halves either side of its ridge, one lit and one shaded,
+  // drawn over a darker outline so it stands off the ground
+  const point = (a, len, half) => { const tip = P(len, a), l = P(half, a - Math.PI / 4), r = P(half, a + Math.PI / 4), o = P(0, 0);
+    const out = (q, s) => [q[0] + (q[0] - C) * s, q[1] + (q[1] - C) * s];
+    x.lineJoin = 'miter'; x.lineWidth = 9; x.strokeStyle = gr(.26); x.beginPath(); x.moveTo(...tip); x.lineTo(...l); x.lineTo(...o); x.lineTo(...r); x.closePath(); x.stroke();
+    tri(tip, l, o, .98); tri(tip, r, o, .7); };
+  for (let k = 0; k < 4; k++) point((k + .5) * Math.PI / 2 - Math.PI / 2, 132, 30);
+  for (let k = 0; k < 4; k++) point(k * Math.PI / 2 - Math.PI / 2, 228, 44);
+  // the hub round the pivot, and the beaded edge outside the felloe
+  ring(34, 14, .28); ring(34, 7, 1);
+  ring(244, 6, .7); for (let i = 0; i < 40; i++) dot(P(244, i / 40 * 2 * Math.PI), 8.5, .97);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return FIT_TEX.herald = t;
+}
+function heraldBrooch(D) {
+  const g = new THREE.CylinderGeometry(.024, .024, .006, 32), uv = g.attributes.uv, side = g.groups[0], idx = g.index;
+  // the side's uv all on the felloe's crown (206 of 256 out from the middle), so the rim reads as the device's gold
+  for (let j = side.start; j < side.start + side.count; j++) uv.setXY(idx.getX(j), .5, .5 + 206 / 512);
+  uv.needsUpdate = true; g.clearGroups();
+  const m = new THREE.MeshStandardMaterial({ color: sRGB(...(D.brooch || [.78, .6, .22])), metalness: .55, roughness: .42 }); m.map = m.bumpMap = heraldTex(); m.bumpScale = 2.4; m.name = 'herald';
+  const o = new THREE.Mesh(g, m); o.userData.device = 'herald'; return o;
+}
 // a band's uv on a box-like piece: along each face's long side in tiles twice the face's short side, across the short side 0 to 1
 function fitBandUV(g) { g = g.index ? g.toNonIndexed() : g; const P = g.attributes.position, N = g.attributes.normal, uv = new Float32Array(P.count * 2);
   g.computeBoundingBox(); const bb = g.boundingBox, lo = [bb.min.x, bb.min.y, bb.min.z], ext = [bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z];
@@ -4332,7 +4375,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -4549,7 +4592,7 @@ export const CAST = {
   Aldwyn: { people: 'oldblood', fixed: true, g: 1, age: .95, muscle: .22, weight: .24, metres: 1.6, hairCol: [.64, .63, .61], hair: { style: 'short', len: .55 }, beard: .25,
     brow: { thick: .55, arch: .35 }, pose: { stoop: .6 }, marks: .05, face: { 'head-fat': -.8, 'head-oval': .5, 'l-cheek-bones': .6, 'r-cheek-bones': .6, 'chin-width': -.3, 'neck-scale-horiz': -.4 },
     dress: { tunic: [.46, .08, .07], robe: [.46, .08, .07], skirtColor: [.46, .08, .07], boots: [.18, .12, .09], cord: [.72, .55, .2],
-      cloak: [.5, .09, .08], cape: true, cloakLen: .5, cloakHem: [.72, .55, .2], brooch: [.78, .6, .22], staff: [.24, .19, .15], staffMake: 'carved' } } };
+      cloak: [.5, .09, .08], cape: true, cloakLen: .5, cloakHem: [.72, .55, .2], brooch: [.78, .6, .22], broochMake: 'herald', staff: [.24, .19, .15], staffMake: 'carved' } } };
 // a cast member's genome: their name's roll, then the sheet. `o.people` keeps a people the caller already knows (Corwin's), unless the
 // sheet's is `fixed` (Aldwyn's Old Blood, which the game's Gatelander driver does not know; Session 2103)
 export function castGenome(name, o = {}) {
