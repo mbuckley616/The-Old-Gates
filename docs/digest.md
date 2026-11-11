@@ -555,3 +555,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing. Dunmore at midnight at Low stands at 627 of 700 calls.
 
 **Roadmap.** 320 of 397 stories done (320 of 396 on 9 Nov). The new look is 7 of 18; only F14 is left for deep work.
+
+## 11 Nov 2026
+
+**Waiting on you.** Four decisions: the campfire (#1405, C recommended: laid as each island lays it), resources and crafting (#1420, B: hides and salt plus a house that works), Gaoth's gates (#1424, C: a wisp and the dusk eagle) and swords by island (#1425, B: looks only, Aurenne's Sword varies by seed). No PR waits on your tap.
+
+**Landed on main since 10 Nov.** Your answers built: camp and rest B, with beds by grade, a roll, tent and lean-to you carry and a night in the open that can break (#1378, Systems 2085, 2090–2091, Look 2094); the critic's four camp faults fixed (Systems 2102). Empty cells get a second chance, so the merchants' camps and the falls stand in the world (#1385 C, Look 2083–2084). A foe's tell lights what it holds and the slam's ring is a line (#1278 B, Bodies 2092, Systems 2095). Places off the road: the shepherd's hut on its pasture (2088) and Aurenne's coastal watchtower (2101). Swords by island in the kit with their fittings (Bodies 2096, 2100), a Gaoth gargoyle (2082), Aldwyn the Royal Herald (2103), the portrait's staff (2087). Under Another Flag §6–7 (Quests 2093). QA held the budgets flat (2086, 2097). Build s1478.
+
+**Under way.** Look #1427 (the Mark's ice mouth) conflicts and shares Session 2098 with systems; the look builder renumbers it.
+
+**Blocked.** Nothing; main is green.
+
+**Roadmap.** 321 of 398 stories done (320 of 397 on 10 Nov). The new look is 7 of 18; only F14 is left for deep work.
