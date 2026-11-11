@@ -488,7 +488,7 @@
     const t=AX.currentTime,g=S.g.gain,cut=600+2000*Math.pow(Math.max(0,1-S.d/FALLS_R),2);
     try{const v=g.value;g.cancelScheduledValues(t);g.setValueAtTime(v,t);g.linearRampToValueAtTime(S.level,t+.15);g.linearRampToValueAtTime(S.level,t+.6);g.linearRampToValueAtTime(0,t+1.6);
       S.f.frequency.setTargetAtTime(Math.min(2600,cut),t,.2);if(S.p)S.p.pan.setTargetAtTime(S.pan,t,.1);}catch(e){}}
-  // S2089 — camp and rest B's third part: a night in the open broken. One group from the place's own table (the chunk encounters' ENC, by
+  // S2091 — camp and rest B's third part: a night in the open broken. One group from the place's own table (the chunk encounters' ENC, by
   // region, with the climate's night kinds and the marauders; kindAllowed by the tier where you lie) comes for you from 25 m. Drawn on the
   // night's stream `r` (keyed by cell and game day), so a friend in the same world meets the same group; ids are `night:<cell>:<day>:<i>`.
   function nightFoes(r,id){if(!sc)return [];const dom=dominantRegion(px,pz),[ci,cj]=cellOf(px,pz),tier=worldTierAt(px,pz);

@@ -1017,6 +1017,12 @@
       const [x,z]=W(-1,2);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:25,blend:2,y:0,cell:k}));return out;}
     {const [x,z]=W(0,0);out.push(addStamp({id:D.id+'_stance',kind:'door',x,z,r:4.4,blend:2.6,y:landH(x,z),cell:k}));}
     {const [x,z]=W(1.5,0);out.push(addStamp({id:D.id+'_clear',kind:'door',noFlat:true,x,z,r:17,blend:2,y:0,cell:k}));}
+    /* S2088 (the critic, 10 Nov: "a ruin in a forest"; OG-124's hut on open hill) — the hill pasture the flock kept: the trees thinned to one in
+       twelve over a field round the hut and the fold, wider down the slope and across it than up, its edge in six lobes of its own stream, so
+       the wood stands back 45 to 65 m. Only the trees: the grass, the bushes, the rocks and the ground are the world's */
+    {const g=PKIT.stream(D.id+':graze'),[x0,z0]=W(3,6);out.push(addStamp({id:D.id+'_graze',kind:'graze',noFlat:true,x:x0,z:z0,r:38,blend:0,y:0,cell:k}));
+      for(let q=0;q<6;q++){const a=q*1.0472+(g()-.5)*.6,d=24+g()*10,dn=Math.max(0,Math.cos(a)),[x,z]=W(3+Math.sin(a)*d,6+Math.cos(a)*d*(1+.35*dn));
+        out.push(addStamp({id:D.id+'_graze',kind:'graze',noFlat:true,x,z,r:18+g()*8+dn*6,blend:0,y:0,cell:k}));}}
     return out;}
   // the piece built on the drawn ground (meshH) in its own frame, its door down the slope; its solids as squares (the world's solids are
   // squares, so a long wall is a row of them, each as wide as it), as a place by a road's are
@@ -1439,7 +1445,7 @@
         for(const t of SITES){if(t.pad<=0)continue;const dd=Math.hypot(wx-t.x,wz-t.z);const min=t.pad+120;if(dd<min){const dx=wx-t.x,dz=wz-t.z,L=Math.hypot(dx,dz)||1;wx=t.x+dx/L*min;wz=t.z+dz/L*min;}}
       } else if(e.zone==='gen'){
         wx=e.x;wz=e.z;
-        for(let k=0;k<10;k++){const ri=roadInfo(wx,wz);const st=e.lairDoor?(stampsNear(wx,wz).find(o=>o.id!=='site_'+e.lairSite&&Math.hypot(wx-o.x,wz-o.z)<o.r)||null):stampAt(wx,wz); /* S702 — a lair's own pad does not push its cavern door out */
+        for(let k=0;k<10;k++){const ri=roadInfo(wx,wz);const st=e.lairDoor?(stampsNear(wx,wz).find(o=>o.id!=='site_'+e.lairSite&&o.kind!=='graze'&&Math.hypot(wx-o.x,wz-o.z)<o.r)||null):stampAt(wx,wz); /* S702 — a lair's own pad does not push its cavern door out */
           if(ri&&ri.d<=16){const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,L=Math.hypot(vx,vz)||1;const side=(hash01(e.seed,1,77)<.5?-1:1);wx+=(-vz/L)*side*(18-ri.d+4);wz+=(vx/L)*side*(18-ri.d+4);continue;}
           if(st&&st.kind!=='door'){const dx=wx-st.x,dz=wz-st.z,L=Math.hypot(dx,dz)||1;wx=st.x+dx/L*(st.r+14);wz=st.z+dz/L*(st.r+14);continue;}
           let near=null,nd=1e9;for(const o of stampsNear(wx,wz)){if(o.kind!=='door')continue;const d=Math.hypot(wx-o.x,wz-o.z);if(d<nd){nd=d;near=o;}}
