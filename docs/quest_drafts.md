@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 42, 10 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 43, 11 Nov: no new calls on the page)
 
 ---
 
@@ -2761,7 +2761,7 @@ The giver, by their people, to each:
 
 ## Under Another Flag — a town besieged, held and freed
 
-*Approved by Michael, 14 Oct 2026.* *Building: §3–5, the townsfolk's talk while held or besieged, Session 2055 (PR #1372), word for word (`WAR_TALK`, `warTalkFor`). Owed: §1–2 the lord's jobs and thanks, §6 the greeting, §7 the rumours, §8's patrols (the systems builder's rule).* Backlog A's last open story item, *occupation effects from the canon*. The war is built (Sessions 129–440: `startWar`, `laySiege`, `occupy`, `liberate`, `tickSieges`, `87-world-quests.js`): a camp sits on the road for twelve days and the town falls; a garrison then holds the plaza until someone kills it. What is missing is everything a person in that town would say about it. Today a besieged or held town answers *Who runs things here?*, *What's the law here?* and *How's trade?* as if nothing had happened, the lord has one line and nothing to offer, and nobody outside the walls has heard. This draft gives the state its voice, gives the lord two jobs to hand out, lets the freed town remember who freed it, and writes down the patrols canon §12a names.
+*Approved by Michael, 14 Oct 2026.* *Built: §3–5, the townsfolk's talk while held or besieged, Session 2055 (PR #1372, on main 10 Nov), word for word (`WAR_TALK`, `warTalkFor`); §8's patrols, the systems builder's Session 2069. Building: §6 the greeting and §7 the rumours, Session 2093, word for word (`WAR_GREET`, `warGreet`, `WAR_RUMOUR`, `warRumours`; `st.freed` carries `by`, the power driven off, which the freed rumour names). Owed: §1–2 the lord's jobs and thanks.* Backlog A's last open story item, *occupation effects from the canon*. The war is built (Sessions 129–440: `startWar`, `laySiege`, `occupy`, `liberate`, `tickSieges`, `87-world-quests.js`): a camp sits on the road for twelve days and the town falls; a garrison then holds the plaza until someone kills it. What is missing is everything a person in that town would say about it. Today a besieged or held town answers *Who runs things here?*, *What's the law here?* and *How's trade?* as if nothing had happened, the lord has one line and nothing to offer, and nobody outside the walls has heard. This draft gives the state its voice, gives the lord two jobs to hand out, lets the freed town remember who freed it, and writes down the patrols canon §12a names.
 
 ### What the canon fixes, and where it is silent
 
