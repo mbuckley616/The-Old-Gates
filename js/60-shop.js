@@ -548,7 +548,7 @@ function restAtBed(hours){
   doFade(()=>{
     if(typeof orbDrop==='function')orbDrop(); /* S1854 — sleep empties the orb */
     const night=restSlip.night||restNight(restSlip.bed||'bed'),broke=nightRoll(night,hours); /* S2091 — woken in the open */
-    if(broke)hours=broke.h;
+    if(broke){hours=broke.h;if(typeof saveGame==='function')saveGame(true);} /* S2108 — a broken night saves as you lie down, not on waking: its foes are not saved, and the roll is keyed by cell and day, so a load replays the same night */
     {const p=restPreview(hours,night.c<0);PHP=p.hp;mana=p.mp;stamina=effMaxStamina();}
     if(typeof worldState !== 'undefined' && typeof worldState.gameTimeMinutes === 'number'){
       if(typeof fedSleep==='function')fedSleep(hours*60); /* S1500 — Full belly */
@@ -561,7 +561,7 @@ function restAtBed(hours){
     if(broke){let n=0;try{n=WORLD.nightFoes(broke.r,broke.id).length;}catch(e){}showMsg(`Something wakes you after ${restDur(hours*60)}.`+(n?' You are not alone.':''),'#ff9060');}
     else showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}.`+(rk?` ${REST_STATE[rk].label}.`:night.c<0?' A bad night.':''),'#c8b880');
     updateHUD();
-    if(typeof saveGame==='function')saveGame(); /* S353 — #66 A: sleeping anywhere autosaves */
+    if(!broke&&typeof saveGame==='function')saveGame(); /* S353 — #66 A: sleeping anywhere autosaves (a broken night has saved already, S2108) */
     setTimeout(()=>{if(takeLevelIfReady())showMsg('You wake stronger.','#e8d8a0');},900);
   });
 }

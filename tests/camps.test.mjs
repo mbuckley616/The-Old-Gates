@@ -55,5 +55,22 @@ const tr = await page.evaluate(() => { yaw = .6; for (let i = BAG.length - 1; i 
   return out; });
 console.log('trunk', JSON.stringify(tr));
 check('with a trunk where the tent would stand, it is laid elsewhere within 4 m, and no point of it stands in the trunk', ['wool', 'aurenne'].every(k => tr[k] && tr[k].hit === 0 && tr[k].moved > .3 && tr[k].from < 4), tr);
+// Session 2108 (the critic's s1474): a broken night saves as you lie down, not on waking. Its foes are not saved, and the roll is keyed by
+// the cell and the game day, so a load replays the same night where a save taken on waking gave a quiet one.
+const sv = await page.evaluate(() => { const keep = { doFade, saveGame, nightRisk, nf: WORLD.nightFoes }, out = {};
+  try { doFade = cb => cb(); WORLD.nightFoes = () => []; nightRisk = N => N && N.bed === 'roll' ? { tier: 4, one: 3, fire: false } : null;
+    const saves = []; saveGame = f => saves.push({ abs: worldState.gameTimeAbsMinutes, force: !!f });
+    const N = restNight('roll', 'wool'); let d0 = null;
+    for (let d = 0; d < 60; d++) { worldState.gameTimeAbsMinutes = (400 + d) * 1440 + 22 * 60; worldState.gameTimeMinutes = 22 * 60; if (nightRoll(N, 8)) { d0 = d; break; } }
+    const at = worldState.gameTimeAbsMinutes, a = nightRoll(N, 8), b = nightRoll(N, 8);
+    restSlip.night = N; restAtBed(8); out.broke = { at, h: a && a.h, same: !!a && !!b && a.h === b.h && a.id === b.id, saves: saves.splice(0), after: worldState.gameTimeAbsMinutes };
+    nightRisk = () => null; worldState.gameTimeAbsMinutes = at; worldState.gameTimeMinutes = 22 * 60; restAtBed(8);
+    out.calm = { at, saves: saves.splice(0), after: worldState.gameTimeAbsMinutes }; out.d0 = d0; }
+  finally { doFade = keep.doFade; saveGame = keep.saveGame; nightRisk = keep.nightRisk; WORLD.nightFoes = keep.nf; restSlip.night = null; }
+  return out; });
+console.log('save', JSON.stringify(sv));
+check('a broken night saves once, as you lie down (the clock before the night), and the same cell and day roll the same night again', sv.d0 != null && sv.broke.same &&
+  sv.broke.saves.length === 1 && sv.broke.saves[0].abs === sv.broke.at && sv.broke.saves[0].force && sv.broke.after === sv.broke.at + sv.broke.h * 60, sv);
+check('a night not broken saves once on waking, as before', sv.calm.saves.length === 1 && sv.calm.saves[0].abs === sv.calm.at + 480 && sv.calm.after === sv.calm.at + 480, sv.calm);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
