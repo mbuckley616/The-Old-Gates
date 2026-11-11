@@ -172,6 +172,14 @@ const bk = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c
   const hs = [...cl.values()].sort((a, b) => a - b), q = f => +hs[Math.floor(f * (hs.length - 1))].toFixed(2); return { n: hs.length, q10: q(.1), q50: q(.5), q90: q(.9) }; }, of.hut.id);
 console.log(JSON.stringify(bk));
 check(`${of.hut.id}: the bracken stands, its clumps' tops ${bk.q10} / ${bk.q50} / ${bk.q90} m over the ground (10th, 50th, 90th)`, !bk.none && bk.q10 >= .35 && bk.q90 < 1, bk);
+// Session 2088 (the critic, 10 Nov: "it reads as a ruin in a forest"): the hut stands in its pasture, the trees thinned to one in twelve and the
+// wood stood back, while the grass and the ground are the world's (no stamp to stampAt inside the pasture)
+const pa = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, n = [0, 0];
+  for (const ch of chunks.values()) { const t = ch.treePts || []; for (let i = 0; i < t.length; i += 2) { const d = Math.hypot(t[i] - D.x, t[i + 1] - D.z); if (d < 35) n[0]++; if (d < 45) n[1]++; } }
+  const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co];
+  return { in35: n[0], in45: n[1], graze: STAMPS.filter(t => t.id === id + '_graze').length, open: [[25, 10], [-25, 10], [0, 30]].every(([u, v]) => { const [x, z] = W(u, v); return grazeAt(x, z) && !stampAt(x, z); }) }; }, of.hut.id);
+console.log(JSON.stringify(pa));
+check(`${of.hut.id}: the hut on its pasture, ${pa.in35} trees within 35 m and ${pa.in45} within 45 m, the grass and the ground the world's`, pa.graze === 7 && pa.in35 <= 3 && pa.in45 <= 12 && pa.open, pa);
 await page.evaluate(D => { px = D.x + Math.sin(D.ry) * 28; pz = D.z + Math.cos(D.ry) * 28; }, of.hut); await g.spin('clear', 60);
 const hm = await page.evaluate(id => { const e = mapEntries(getCell(...id.split('_').slice(1).map(Number))).find(e => e.id === id); return { disc: discovered(id), entry: e && { name: e.name, kind: e.kind, noTravel: !!e.noTravel }, travel: !!arrivalFor(id) }; }, of.hut.id);
 console.log(JSON.stringify(hm));

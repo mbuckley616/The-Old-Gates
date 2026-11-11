@@ -208,9 +208,12 @@
   }
   function stampAt(x,z){ // stamp whose core radius contains the point, or null
     const arr=stampsNear(x,z);
-    for(let i=0;i<arr.length;i++){const s=arr[i];if(Math.hypot(x-s.x,z-s.z)<s.r)return s;}
+    for(let i=0;i<arr.length;i++){const s=arr[i];if(s.kind!=='graze'&&Math.hypot(x-s.x,z-s.z)<s.r)return s;}
     return null;
   }
+  /* S2088 — a grazed stamp (kind 'graze', noFlat) is no stamp to the ground, the grass or anything that asks stampAt: it only thins the trees
+     the scatter would stand in it (the shepherd's pasture). -> true inside one */
+  function grazeAt(x,z){const arr=stampsNear(x,z);for(let i=0;i<arr.length;i++){const s=arr[i];if(s.kind==='graze'&&Math.hypot(x-s.x,z-s.z)<s.r)return true;}return false;}
   // baseH: land + stamp pads. worldH: baseH + road bed. Roads are built
   // after stamps, so a road crossing a site pad sits at pad height.
   function baseH(x,z){
@@ -595,6 +598,7 @@
       const clump=fbm(x,z,60,SEED+21,2);
       const p=dens*(.5+clump*1.3)*sstep(.55,.8,ny)*(1-sstep(30,44,h));
       if(roll<p){
+        if(grazeAt(x,z)&&hash01(gx,gz,15)>=.08)continue; /* S2088 — a pasture keeps one tree in twelve, a lone thorn or ash in the grass */
         // Species by dominant biome, with a broadleaf minority in conifer land and vice versa.
         // S192 — each biome's own mix: its main tree and the species that grow among it
         let sp=dom.r.trees;const base=sp;
