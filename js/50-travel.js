@@ -922,10 +922,10 @@ function fedPill1(){const F=fedNow();if(!F)return '';const K=FED_KIND[F.kind],m=
 const CLIMATE={regen:[1,.75,.5],cap2:.8,fall:3000,band:2,names:{cold:['','Cold','Bitter'],hot:['','Hot','Scorching']},
   ico:{cold:'❄',hot:'☀'},sand:{dunes:1,wasteland:1,wastes:1}};
 const _clim={above:false,g:0,side:null,at:0,why:''};
-function _climOutside(){if(activeZoneId!=='world'||lid!=='overworld')return false;if(typeof isInterior==='function'&&isInterior())return false;
-  return !atFire();}
-// the raw grade where you stand: {g, side:'cold'|'hot'|null, why}
-function exposureNow(){const none={g:0,side:null,why:''};if(!_climOutside())return none;
+function _climOutside(raw){if(activeZoneId!=='world'||lid!=='overworld')return false;if(typeof isInterior==='function'&&isInterior())return false;
+  return raw||!atFire();}
+// the raw grade where you stand: {g, side:'cold'|'hot'|null, why}. raw: the open's grade even by a fire (the night's sum takes its own off, S2102)
+function exposureNow(raw){const none={g:0,side:null,why:''};if(!_climOutside(raw))return none;
   let cl;try{const [i,j]=cellOf(px,pz);cl=climateOfCell(i,j);HERB_ISLE_LAST=nationKeyOf(i,j);}catch(e){return none;} /* S1940 — the island a chest indoors draws its herbs from */
   const h=gameHour(),sea=calDay().season;
   if(cl==='cold'){let line=18;try{line=snowLineAt(px,pz);}catch(e){}const y=typeof worldH==='function'?worldH(px,pz):0;

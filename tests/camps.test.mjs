@@ -41,5 +41,19 @@ check('a roll lies on the land, its top under 0.36 m; the hammock hangs to 1.3â€
   (k === 'aurenne' || k === 'aurenne+tent' ? v.hi > 1.3 && v.hi < 1.75 : /\+tent/.test(k) ? v.hi > 1 && v.hi < 1.3 : v.hi < .36)), cg.out);
 check('walking 9 m off packs it again', cg.packed, cg);
 check('the lean-to is the kit\'s (under 2,500 tris)', !!cg.lean && cg.lean.tris < 2500, cg.lean);
+
+// Session 2102 (the critic's s1474): a trunk 1.4 m ahead, where the roll is laid, and the tent stands clear of it, not through its ridge
+const tr = await page.evaluate(() => { yaw = .6; for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && (BAG[i].tent || BAG[i].roll)) BAG.splice(i, 1);
+  const out = {}, tx = px - Math.sin(yaw) * 1.4, tz = pz - Math.cos(yaw) * 1.4, T = { cx: tx, cz: tz, rx: .25, rz: .25 };
+  for (const k of ['wool', 'aurenne']) { BAG.push(rollItem(k)); BAG.push({ ...TENT_ITEM }); WORLD.STATIC_SOL.push(T);
+    try { campLayDraw(k); const C = CAMP_LAID, box = new THREE.Box3(); C.mesh.updateMatrixWorld(true);
+      let hit = 0; C.mesh.traverse(o => { if (!o.isMesh || !o.geometry) return; const p = o.geometry.attributes.position, v = new THREE.Vector3();
+        for (let i = 0; i < p.count; i += 3) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); if (v.y - WORLD.worldH(v.x, v.z) > .3 && Math.hypot(v.x - tx, v.z - tz) < .25) hit++; } });
+      WORLD.STATIC_SOL.splice(WORLD.STATIC_SOL.indexOf(T), 1); campLayDraw(k); const C0 = CAMP_LAID;
+      out[k] = { hit, moved: +Math.hypot(C.x - C0.x, C.z - C0.z).toFixed(2), from: +Math.hypot(C.x - px, C.z - pz).toFixed(2) }; }
+    finally { const j = WORLD.STATIC_SOL.indexOf(T); if (j >= 0) WORLD.STATIC_SOL.splice(j, 1); campLaidDrop(); for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && (BAG[i].tent || BAG[i].roll)) BAG.splice(i, 1); } }
+  return out; });
+console.log('trunk', JSON.stringify(tr));
+check('with a trunk where the tent would stand, it is laid elsewhere within 4 m, and no point of it stands in the trunk', ['wool', 'aurenne'].every(k => tr[k] && tr[k].hit === 0 && tr[k].moved > .3 && tr[k].from < 4), tr);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
