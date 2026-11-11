@@ -13,6 +13,7 @@
 // Session 2083 the second chance for cells that drew nothing (#1385 C): the Gatelands' merchants' camps and falls drawn at last.
 // Session 2101 Aurenne's first place off the road, the coastal watchtower (PKIT.places.watchtower), on a rise of its coast over the open sea.
 // Session 2107 (begun as 2098, then 2104) the Mark's ice cave mouth (PKIT.places.icemouth), a glacier's tongue on the world's own slope, its tunnel and stream cut into the ground.
+// Session 2105 Aurenne's smuggler's cove (PKIT.places.cove), an inlet cut into the world's own coast.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -135,7 +136,7 @@ const of = await page.evaluate(() => { const G = [...CELLS.values()].filter(c =>
   const again = G.map(c => { const keep = c._offroad; c._offroad = undefined; const d = offroadAt(c); c._offroad = keep; return d; }).filter(Boolean);
   const same = again.length === C.length && again.every((d, i) => d.id === C[i].id && d.x === C[i].x && d.z === C[i].z && d.ry === C[i].ry);
   C.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); const h = C.find(d => d.kind === 'shepherd');
-  return { cells: G.length, n: C.length, same, huts: C.filter(d => d.kind === 'shepherd').length, cabins: C.filter(d => d.kind === 'cabin').length, gl: C.every(d => nationOf(...d.cell.split(',').map(Number)).people === (d.kind === 'cabin' || d.kind === 'logging' || d.kind === 'icemouth' ? 'markman' : d.kind === 'watchtower' ? 'aurennais' : 'gatelander')), hut: h && { id: h.id, x: h.x, z: h.z, ry: h.ry } }; });
+  return { cells: G.length, n: C.length, same, huts: C.filter(d => d.kind === 'shepherd').length, cabins: C.filter(d => d.kind === 'cabin').length, gl: C.every(d => nationOf(...d.cell.split(',').map(Number)).people === (d.kind === 'cabin' || d.kind === 'logging' || d.kind === 'icemouth' ? 'markman' : d.kind === 'watchtower' || d.kind === 'cove' ? 'aurennais' : 'gatelander')), hut: h && { id: h.id, x: h.x, z: h.z, ry: h.ry } }; });
 console.log(JSON.stringify(of));
 check(`${of.n} of ${of.cells} cells keep a place off the road (${of.huts} the Gatelands' shepherd's hut, ${of.cabins} the Mark's hunting cabin), each on its own island, the same when asked again`, of.n > 0 && of.n < of.cells / 3 && of.same && of.huts > 0 && of.gl, of);
 // Session 2083 (Michael's C on #1385): a second chance for cells that drew nothing. A cell whose roll missed by under a sixth (1/3 to 1/2)
@@ -147,11 +148,11 @@ const sc = await page.evaluate(() => { const G = [...CELLS.values()].filter(c =>
     const drawn = {}, first = {}; for (const c of G) { const n = nationKeyOf(c.i, c.j), f = tr(c, null), d = at(c); (first[n] = first[n] || new Set()); (drawn[n] = drawn[n] || new Set()); if (f) first[n].add(f.kind); if (d) drawn[n].add(d.kind);
       if (f) { out.first++; if (!d || d.id !== f.id || d.x !== f.x || d.z !== f.z || d.ry !== f.ry || d.kind !== f.kind || d.second) out.moved.push(f.id); } }
     for (const c of G) { const d = at(c); if (!d || !d.second) continue; const n = nationKeyOf(c.i, c.j), v = PKIT.stream(nm + ':' + cellKey(c.i, c.j))(); out.second.push(d.id + ' ' + d.kind);
-      if (tr(c, null) || v < odds || v >= .5 || first[n].has(d.kind)) out.bad.push(d.id); }
+      if (tr(c, null) || (v < odds && nm === 'wayside') || v >= .5 || first[n].has(d.kind)) out.bad.push(d.id); } /* S2105 — off the road, a cell whose first kind found no ground takes the second chance too */
     for (const c of G) { const n = nationKeyOf(c.i, c.j), list = LISTS[nationOf(c.i, c.j).people] || []; for (const kd of list) if (PKIT.places[kd] && !drawn[n].has(kd) && !out.missing.includes(n + ':' + kd)) out.missing.push(n + ':' + kd); } }
   return out; });
 console.log(JSON.stringify(sc));
-check(`a second chance for cells that drew nothing (#1385 C): ${sc.second.length} places of kinds their island drew nowhere (${sc.second.join(', ')}), in cells that missed by under a sixth; the ${sc.first} first-chance places unmoved; every kind built stands somewhere on its island`,
+check(`a second chance for cells that drew nothing (#1385 C): ${sc.second.length} places of kinds their island drew nowhere (${sc.second.join(', ')}), in cells that missed by under a sixth (or, off the road, whose first kind found no ground); the ${sc.first} first-chance places unmoved; every kind built stands somewhere on its island`,
   sc.second.length > 0 && sc.moved.length === 0 && sc.bad.length === 0 && sc.missing.length === 0 && sc.second.some(t => / merchants$/.test(t)) && sc.second.some(t => / falls$/.test(t)) && sc.second.some(t => / icemouth$/.test(t)), sc);
 await page.evaluate(D => { px = D.x + Math.sin(D.ry) * 60; pz = D.z + Math.cos(D.ry) * 60; }, of.hut);
 for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id); return !!(c && c._offroad.group && c._offroad.group.parent); }, of.hut.id); if (ok) break; await page.waitForTimeout(1000); }
@@ -446,6 +447,30 @@ if (im) {
     !it.none && it.face >= 15 && it.over === 0 && it.n > 1000 && it.tun === it.tunF && Math.abs(it.ice - it.iceT) < .02 && it.ice > 12, it);
   check(`solid at the face's foot, the tunnel's side and the dark at its back, open in the mouth; ${it.tris} triangles in ${it.draws} draws, the laid ground ${it.laid} over ${it.cells} squares`,
     !it.none && it.foot && it.side && it.back && !it.mouth && it.tris < 24000 && it.draws <= 11 && it.laid < 8000, it);
+}
+// Session 2105: Aurenne's smuggler's cove (PKIT.places.cove, places.js's aurenneCove), an inlet cut into the world's own coast, drawn by the second
+// chance (a near miss, or a cell whose first kind found no ground). The world's ground nowhere over the cut; the beach walked over the sea, the
+// inlet swum, the stair's tread walked at its own height; solid at a boathouse's front and the lookout, open on the beach; its cost
+const cv = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => c.type !== 'sea' && !c.home), C = G.map(c => offroadAt(c)).filter(d => d && d.kind === 'cove');
+  const d = C[0]; if (!d) return null; px = d.x + Math.sin(d.ry) * 10 + Math.cos(d.ry) * 25; pz = d.z + Math.cos(d.ry) * 10 - Math.sin(d.ry) * 25;
+  return { n: C.length, first: C.filter(d => !d.second).length, id: d.id, ry: d.ry, reach: d.shore, ppl: nationOf(...d.cell.split(',').map(Number)).people }; });
+console.log(JSON.stringify(cv));
+check(`Aurenne keeps ${cv && cv.n} smuggler's cove${cv && cv.n === 1 ? '' : 's'}, every one a second chance (${cv && cv.id}, its inlet ${cv && cv.reach} m to the shore)`, !!cv && cv.n > 0 && cv.first === 0 && cv.ppl === 'aurennais', cv);
+if (cv) {
+  for (let n = 0; n < 15; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id); return !!(c && c._offroad.group && c._offroad.group.parent); }, cv.id); if (ok) break; await page.waitForTimeout(1000); }
+  await g.spin('clear', 30);
+  const it = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad; if (!D.group || !D.group.parent) return { none: true };
+    const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], S = D.shape;
+    let over = 0, n = 0; for (let v = S.HEAD - 2; v < S.REACH + 6; v += 1) for (let u = -20; u <= 20; u += 1) { if (S.D(u, v) > S.CW + .3) continue; const [x, z] = W(u, v); n++; if (meshH(x, z) - D.laid.h(x, z) > .02) over++; }
+    const gy = (u, v) => +(groundY(...W(u, v)) - D.y0).toFixed(2), at = (u, v, y) => solidAt(...W(u, v), D.y0 + y), h = D.houses[0], st = D.steps[10];
+    const cliff = Math.min(...[0, 10, 20].map(v => S.land(-S.W(v) - 3, v) - S.carve(-S.W(v) + 1, v)));
+    return { id, tris: D.tris, draws: D.draws, laid: D.laid.tris, cells: D.laid.cells, n, over, cliff: +cliff.toFixed(1), steps: D.steps.length, top: D.stairTop.y, land: +S.land(S.W(D.stairTop.z) + S.CW + 1.2, D.stairTop.z).toFixed(2),
+      beach: gy(0, -6), sea: gy(0, S.REACH - 8), stair: gy(st.x + .5, st.z), stairY: st.y, house: at(h.x - .85, h.z, 1.5), look: at(D.lookout.x, D.lookout.z, D.lookout.y + 1), open: at(0, -4, 1) }; }, cv.id);
+  console.log(JSON.stringify(it));
+  check(`${it.id}: the cliffs ${it.cliff} m or more; the world's ground over the cut ground at ${it.over} of ${it.n} points; the beach walked at ${it.beach} m, the inlet swum at ${it.sea} m; ${it.steps} steps to ${it.top} m by land at ${it.land} m, a tread walked at ${it.stair} m`,
+    !it.none && it.cliff >= 4 && it.over === 0 && it.n > 1000 && it.beach > 0 && it.sea === -1.45 && Math.abs(it.stair - it.stairY) < .02 && Math.abs(it.top - it.land) < .2, it);
+  check(`solid at a boathouse's front and the lookout, open on the beach; ${it.tris} triangles in ${it.draws} draws, the laid ground ${it.laid} over ${it.cells} squares`,
+    !it.none && it.house && it.look && !it.open && it.tris < 6000 && it.draws <= 11 && it.laid < 20000, it);
 }
 // Session 2063 (QA's S2060: two shepherd's huts 2.5 km out drawn whole in Dunmore's view): the places by a road and off it are hidden past
 // 450 m of you and shown within it; nothing else of them changes
