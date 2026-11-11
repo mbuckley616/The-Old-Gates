@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Resources and crafting — hides and salt, a house that works, or stations anywhere? (from the systems designer, 2026-11-11, #1420)
+**The question.** Backlog L8's *Resources and crafting* lists nodes, tools, stations and crops. Survival B already built the veins, felling, the forge and the bench, so three gaps are left: nothing makes the light armour line, a hunt ends at the meat, and a house you buy does nothing a rented room doesn't. How far should the rest go? The page: `docs/design/resources-and-crafting.md`.
+
+**Options.**
+- **A.** Hides, leather and salt. A skinning knife takes a hide off a deer, boar, wolf or bear (a bear gives 2), cured with salt on a tanner's rack in 6 game hours. Leather plus a few rivets of your metal makes the light line at the forge under Smithing (Fine and Masterwork apply, never enchanted). Salt dries meat into jerky you eat with no fire. Two systems sessions, one look.
+- **B (recommended).** A, plus a house that works. Your house holds fittings by its size, as your ship does (cottage 3, townhouse 4, farmstead or longhouse 6): tanning rack, drying rack, a clay oven, a kiln, the workbench, a garden of four beds. Clay is dug from riverbanks with a shovel; the garden grows only its own island's cooking seconds, plus herbs you have picked. Five systems sessions, two look.
+- **C.** Stations anywhere, Valheim's way: carried station kits, a work radius, fields you clear, salt pans and fishing. It brings back the kept camp declined on #1378. One deep-work session, about six systems and three look.
+
+**Recommendation.** B: it finishes the list without a new skill and gives the house a reason to exist. Every fitting costs one of the house's 3–6 places; the vein table still caps the metal, the garden grows only its own island's crops, and a made piece is never enchanted.
+
 ### The campfire — the fire alone, a ring of stones everywhere, or laid as each island lays it? (from the concept artist, 2026-11-10, #1405)
 **The question.** Under camp and rest B (#1378) you light a fire every night you sleep in the open, and in the game it is still three sticks and an orange cone (`campfireMesh`, `js/50-travel.js`). The concept artist built it in the new look, in metres, burning through four stages (lit, burning, embers, out); which lay should the game use? The stump (oak, pine, birch, cut as a hatchet leaves it) has no options.
 
