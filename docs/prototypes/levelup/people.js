@@ -765,6 +765,7 @@ const HAIR_STYLES = ['short', 'loose', 'braid', 'braids', 'tail', 'bun', 'crown'
 export { HAIR_STYLES };
 // the sleeve's place along the forearm (Session 1228), for the checks
 export { slvX };
+export { SWORDS };
 function buildHair(P, G, heads, scalpTris, headB, rnd, checks = true) {
   const out = [], style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose'), len = G.hair?.len ?? G.hairLen ?? .3, col = sRGB(...G.hairCol);
   const R0 = PACK.rest, neckY0 = .6, S = surfGrid(P, PACK.G['body'], (x, y, z) => (y > neckY0 - .02) || (y > .25 && Math.abs(x) < .2));
@@ -3364,6 +3365,135 @@ function buildHammer(G, body, byName, meshes, root, grip) {
   return { mesh: hm, stats: { len: +(K.yT - K.yB).toFixed(3), headLen: +(K.face + K.peen).toFixed(3), grip: [+fit.lo.toFixed(3), +fit.hi.toFixed(3)], haftIn: +(2 * K.rIn).toFixed(4), bearing: best.k, inside: T.n, tested: T.tested, clear: +T.clear.toFixed(4), lift: +lift.toFixed(2),
     handIn: T.handIn, handInAt: T.handIn ? [+inY[0].toFixed(3), +inY[1].toFixed(3), +inD.toFixed(4)] : null, headIn: T.headIn, thumbIn: grip.thumbIn, lean: +lean.toFixed(3), buttH: +(butt.y - floor).toFixed(3), headH: +(head.y - floor).toFixed(3), gap: grip.gap, curl: grip.curl, gripPts: grip.n, tris } };
 }
+// ── swords by island (Session 2096, L7; OG-028's board of the three islands' weapons and its strip of blade profiles and pommels) ──
+// The kit's first sword, of six makes, carried upright in the right fist as the hammer is (the forearm out before the body, the
+// blade straight up from the fist), its true edge toward the knuckles. OG-028 gives each island its own: the Gatelands an arming
+// sword (a wheel pommel, a straight bronze-bound cross, one broad fuller); the Mark a Norse sword (a five-lobed pommel over a short
+// thick cross, a broad blade with a wide fuller to a rounded point, a line of runes inlaid at the forte, silver fittings); and
+// Aurenne, whose kris, chakram and war fan the catalogue swaps for "a falchion, a flyssa, a nimcha, a takouba", those four: the
+// takouba (straight, double-edged, three narrow fullers, a disc pommel 7 cm across, a plain cross), the nimcha (curved, single-edged,
+// quillons turned toward the blade, a knuckle guard, a hooked pommel), the falchion (single-edged, widening to a clipped point near
+// the back) and the flyssa (long, straight and single-edged, tapering to a needle point, an angular brass-bound pommel and hardly a
+// guard). Aurenne's three straight-hilted and curved blades take a gilt collar at the forte, the filigree's colour. Numbers in metres:
+// `blade` its length; `w0`, `w1` the edge's half width at the forte and at the point's start, `back` the back's (equal for a double
+// edge; a single edge's spine is `back` from the middle and as thick as the blade); `th` half its thickness at the forte; `point`
+// the share of its length the point takes and `round` its shape (0 straight to the tip, 1 a round tip); `curve` how far the tip is
+// swept back, over its length; fullers as [middle, half width, depth, how far up] across the blade (-1 the back, 1 the edge)
+const SWORDS = {
+  arming: { blade: .76, w0: .026, w1: .021, back: null, th: .0034, point: .14, round: .15, curve: 0, fullers: [[0, .3, .5, .7]],
+    cross: { len: .19, h: .013, d: .017, turn: 0 }, pommel: 'wheel', grip: .095, fit: [.62, .45, .22], gripCol: [.3, .2, .13] },
+  norse: { blade: .78, w0: .029, w1: .026, back: null, th: .0032, point: .08, round: .85, curve: 0, fullers: [[0, .42, .4, .86]], runes: true,
+    cross: { len: .11, h: .018, d: .023, turn: 0 }, pommel: 'lobed', grip: .09, fit: [.74, .74, .77], gripCol: [.24, .17, .12] },
+  takouba: { blade: .8, w0: .021, w1: .019, back: null, th: .003, point: .1, round: .3, curve: 0, fullers: [[-.42, .1, .5, .55], [0, .1, .5, .62], [.42, .1, .5, .55]], collar: true,
+    cross: { len: .14, h: .01, d: .014, turn: 0 }, pommel: 'disc', grip: .11, fit: [.86, .68, .3], gripCol: [.36, .2, .12] },
+  nimcha: { blade: .78, w0: .02, w1: .018, back: .006, th: .0042, point: .16, round: 0, curve: .075, fullers: [[-.35, .22, .35, .7]], collar: true,
+    cross: { len: .1, h: .012, d: .015, turn: .55 }, knuckle: true, pommel: 'hook', grip: .1, fit: [.86, .68, .3], gripCol: [.12, .09, .08] },
+  falchion: { blade: .66, w0: .022, w1: .036, back: .004, th: .0036, point: .2, round: .6, curve: 0, clip: true, fullers: [],
+    cross: { len: .13, h: .012, d: .016, turn: 0 }, pommel: 'cap', grip: .095, fit: [.4, .41, .43], gripCol: [.3, .2, .13] },
+  flyssa: { blade: .82, w0: .021, w1: .021, back: .005, th: .0048, point: 1, round: 0, curve: 0, fullers: [], collar: true, facets: true,
+    cross: { len: .05, h: .01, d: .02, turn: 0 }, pommel: 'flyssa', grip: .11, fit: [.86, .68, .3], gripCol: [.42, .3, .2] } };
+// each pommel's box for the clearance test, round its middle: x and y (from the grip's foot) of the middle, and its half sizes
+const SWORD_POMMEL = { wheel: [0, -.025, .027, .027, .013], lobed: [0, -.013, .036, .015, .013], disc: [0, -.036, .035, .035, .006], hook: [-.016, -.012, .026, .021, .011], cap: [0, -.012, .019, .016, .016], flyssa: [.006, -.025, .028, .027, .016] };
+const SWORD_BY_PEOPLE = { gatelander: 'arming', markman: 'norse', aurennais: 'takouba', oldblood: 'arming' };
+const swordOn = D => !!D.sword && !D.hammer && !D.tankard && !D.basket && !D.lantern && !D.chair && !(D.cloak && !D.cape);
+// the blade's half widths, its half thickness and its middle's sweep at t (0 the forte, 1 the tip), in the blade's own frame
+function swordAt(K, t) { const p = K.point, s = t < 1 - p ? 0 : (t - (1 - p)) / p, E = .0004;
+  let we = t < 1 - p ? K.w0 + (K.w1 - K.w0) * t / (1 - p) : K.w1, wb = K.back == null ? we : K.back;
+  if (s > 0) { if (K.clip) { we *= Math.cos(s * Math.PI / 2) ** .7; wb = K.back * (1 - s ** 3); }
+    else { const f = K.round * Math.sqrt(Math.max(0, 1 - s * s)) + (1 - K.round) * (1 - s); we *= f; if (K.back == null) wb = we; else wb = K.back * Math.min(1, f * 1.6); } }
+  return { we: Math.max(E, we), wb: Math.max(E, wb), th: Math.max(.0005, K.th * (1 - .5 * t) * (s > 0 ? Math.max(.25, 1 - s) : 1)), c: -K.curve * t * t }; }
+function swordBlade(K) {
+  const U = new Set([-1, -.7, -.35, 0, .35, .7, 1]); for (const [m, hw] of K.fullers) for (const f of [-1, -.5, 0, .5, 1]) U.add(+Math.max(-1, Math.min(1, m + f * hw)).toFixed(3));
+  const us = [...U].sort((a, b) => a - b), single = K.back != null, NR = 56, pos = [], idx = [], M = us.length;
+  for (let r = 0; r <= NR; r++) { const t = 1 - (1 - r / NR) ** 1.4, S = swordAt(K, t), y = t * K.blade, ring = [];
+    for (const u of us) { const x = u < 0 ? u * S.wb : u * S.we;
+      // the bevel to the edge (both sides of a double edge, the edge's side of a single one; the flyssa's spine faceted too)
+      let z = S.th; const bev = u > 0 || !single ? Math.abs(u) : 0; if (bev > .35) z *= (1 - bev) / .65 + .04;
+      if (K.facets && u < 0) z *= 1 - .35 * Math.abs(u);
+      for (const [m, hw, dep, to] of K.fullers) { const d = Math.abs(u - m) / hw; if (d < 1 && t < to) z *= 1 - dep * Math.cos(d * Math.PI / 2) ** 2 * Math.min(1, (to - t) / .05); }
+      ring.push([x + S.c, z]); }
+    for (const [x, z] of ring) pos.push(x, y, z); for (let k = M - 1; k >= 0; k--) pos.push(ring[k][0], y, -ring[k][1]); }
+  const RS = 2 * M; for (let r = 0; r < NR; r++) for (let k = 0; k < RS; k++) { const a = r * RS + k, b = r * RS + (k + 1) % RS, c = a + RS, d = b + RS; idx.push(a, b, c, b, d, c); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
+function swordParts(D, make, fit) {
+  const K = { ...SWORDS[make], ...fit }, parts = [], add = (g, m, name) => { const o = new THREE.Mesh(g, m); o.name = name; parts.push(o); return o; };
+  const steel = new THREE.MeshStandardMaterial({ color: sRGB(.66, .67, .7), metalness: .85, roughness: .28 }), fitM = new THREE.MeshStandardMaterial({ color: sRGB(...K.fit), metalness: .8, roughness: .32 });
+  const wrap = new THREE.MeshStandardMaterial({ color: sRGB(...(Array.isArray(D.sword) ? D.sword : K.gripCol)), roughness: .75 }), dark = new THREE.MeshStandardMaterial({ color: sRGB(.08, .07, .07), metalness: .5, roughness: .6 });
+  // the grip: a lathe from the pommel to the guard, the fist's run pared to the hand as the hammer's haft is
+  const prof = [new THREE.Vector2(0, K.yG0)]; for (let k = 0; k <= 40; k++) { const y = K.yG0 + (K.yG1 - K.yG0) * k / 40; prof.push(new THREE.Vector2(swordGripR(K, y), y)); } prof.push(new THREE.Vector2(0, K.yG1));
+  add(new THREE.LatheGeometry(prof, 16), wrap, 'swordGrip');
+  // the guard: a bar across the blade's plane, or two quillons turned toward the blade (the nimcha's)
+  const C = K.cross, yC = K.yG1 + C.h / 2;
+  if (!C.turn) { const g = new THREE.BoxGeometry(C.len, C.h, C.d, 8, 1, 1), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const f = 1 - .3 * (Math.abs(P.getX(i)) / (C.len / 2)) ** 2; P.setY(i, P.getY(i) * f); P.setZ(i, P.getZ(i) * f); } g.computeVertexNormals(); add(g, fitM, 'swordGuard').position.y = yC; }
+  else for (const s of [-1, 1]) { const q = add(new THREE.BoxGeometry(C.len / 2, C.h * .8, C.d * .8), fitM, 'swordGuard'); q.rotation.z = s * C.turn; q.position.set(s * C.len / 4 * Math.cos(C.turn), yC + C.len / 4 * Math.sin(C.turn), 0);
+    const b = add(new THREE.SphereGeometry(C.h * .6, 10, 8), fitM, 'swordGuard'); b.position.set(s * C.len / 2 * Math.cos(C.turn), yC + C.len / 2 * Math.sin(C.turn), 0); }
+  // the blade, from the guard's top
+  const yB = K.yG1 + C.h, bl = add(swordBlade(K), steel, 'swordBlade'); bl.position.y = yB;
+  // the Mark's runes inlaid at the forte down the fuller's floor, both faces; Aurenne's gilt collar over the forte
+  if (K.runes) { const rg = new THREE.BoxGeometry(.0016, .009, .0006); for (let k = 0; k < 9; k++) { const t = .05 + k * .018, S = swordAt(K, t), z = S.th * (1 - K.fullers[0][2]) + .0003; for (const sd of [-1, 1]) { const r = add(rg, dark, 'swordRunes'); r.position.set((k % 3 - 1) * .0035 * (k % 2 ? 1 : -.5), yB + t * K.blade, sd * z); r.rotation.z = (k % 4 - 1.5) * .35; } } }
+  if (K.collar) { const S = swordAt(K, .02), g = new THREE.BoxGeometry(S.we + S.wb + .003, .022, 2 * S.th + .003); g.translate((S.we - S.wb) / 2, 0, 0); add(g, fitM, 'swordCollar').position.y = yB + .011; }
+  // the pommel under the grip
+  const yP = K.yG0; let pm;
+  if (K.pommel === 'wheel') { pm = add(new THREE.CylinderGeometry(.027, .027, .02, 24), fitM, 'swordPommel'); pm.rotation.x = Math.PI / 2; pm.position.y = yP - .025; const boss = add(new THREE.CylinderGeometry(.011, .011, .026, 14), fitM, 'swordPommel'); boss.rotation.x = Math.PI / 2; boss.position.y = yP - .025; }
+  else if (K.pommel === 'lobed') { const bar = add(new THREE.BoxGeometry(.07, .014, .024), fitM, 'swordPommel'); bar.position.y = yP - .007;
+    for (let k = 0; k < 5; k++) { const x = (k - 2) * .0135, lb = add(new THREE.SphereGeometry(.0085, 10, 8), fitM, 'swordPommel'); lb.scale.set(1, 1.2 - .25 * Math.abs(k - 2) / 2, 1.3); lb.position.set(x, yP - .016 - .006 * (1 - Math.abs(k - 2) / 2), 0); } }
+  else if (K.pommel === 'disc') { pm = add(new THREE.CylinderGeometry(.035, .035, .011, 28), fitM, 'swordPommel'); pm.rotation.x = Math.PI / 2; pm.position.y = yP - .036; const nk = add(new THREE.CylinderGeometry(.006, .009, .004, 10), fitM, 'swordPommel'); nk.position.y = yP - .002; }
+  else if (K.pommel === 'hook') { const hk = add(new THREE.CapsuleGeometry(.0105, .035, 4, 10), fitM, 'swordPommel'); hk.rotation.z = -1.0; hk.position.set(-.016, yP - .012, 0); }
+  else if (K.pommel === 'cap') { pm = add(new THREE.SphereGeometry(.019, 14, 10), fitM, 'swordPommel'); pm.scale.set(1, .8, .8); pm.position.y = yP - .012; }
+  else { pm = add(new THREE.CylinderGeometry(.022, .013, .05, 6), fitM, 'swordPommel'); pm.scale.set(1.2, 1, .7); pm.position.set(.006, yP - .025, 0); pm.rotation.z = -.25; }
+  // the nimcha's knuckle guard: a bar from the guard's edge-side quillon round before the fingers to the pommel
+  let kn = null; if (K.knuckle) { const x0 = C.len / 2 * Math.cos(C.turn) * .55, pts = [new THREE.Vector3(x0, yC, 0), new THREE.Vector3(K.kx, yC - .03, 0), new THREE.Vector3(K.kx, (yC + yP) / 2, 0), new THREE.Vector3(K.kx * .8, yP + .012, 0), new THREE.Vector3(.004, yP - .004, 0)];
+    kn = new THREE.CatmullRomCurve3(pts); add(new THREE.TubeGeometry(kn, 24, .0036, 6), fitM, 'swordKnuckle'); }
+  return { parts, K, yB, yC, kn }; }
+// the grip's radius at a height (the fist's middle at 0): the full grip, pared inside the fingers' run as the hammer's haft is
+function swordGripR(K, y) { const r0 = SPEAR_R * (1 - .06 * ((y - (K.yG0 + K.yG1) / 2) / ((K.yG1 - K.yG0) / 2)) ** 2); if (K.rIn == null || K.rIn >= r0) return r0;
+  const o = Math.max(0, K.lo - y, y - K.hi) / .015, s = o >= 1 ? 1 : o * o * (3 - 2 * o); return Math.min(r0, K.rIn + (r0 - K.rIn) * s); }
+// how far a point (in the sword's frame) is outside it: the grip, the blade by its section, the guard's and the pommel's boxes, the knuckle bar
+function swordDist(P, x, y, z) { const K = P.K, C = K.cross; let d = 1;
+  if (y >= K.yG0 && y <= K.yG1) d = Math.hypot(x, z) - swordGripR(K, y);
+  const t = (y - P.yB) / K.blade; if (t >= 0 && t <= 1) { const S = swordAt(K, t), dx = Math.max(S.c - S.wb - x, x - S.c - S.we), dz = Math.abs(z) - S.th, o = Math.hypot(Math.max(dx, 0), Math.max(dz, 0)); d = Math.min(d, o > 0 ? o : Math.max(dx, dz)); }
+  const box = (cx, cy, hx, hy, hz) => { const a = Math.abs(x - cx) - hx, b = Math.abs(y - cy) - hy, c = Math.abs(z) - hz, o = Math.hypot(Math.max(a, 0), Math.max(b, 0), Math.max(c, 0)); return o > 0 ? o : Math.max(a, b, c); };
+  d = Math.min(d, box(0, P.yC + (C.turn ? C.len / 4 * Math.sin(C.turn) : 0), C.len / 2 * Math.cos(C.turn) + (C.turn ? C.h * .6 : 0), C.h / 2 + (C.turn ? C.len / 4 * Math.sin(C.turn) : 0), C.d / 2));
+  const PB = SWORD_POMMEL[K.pommel]; d = Math.min(d, box(PB[0], K.yG0 + PB[1], PB[2], PB[3], PB[4]));
+  if (P.kn) for (let k = 0; k <= 24; k++) { const q = P.kn.getPoint(k / 24); d = Math.min(d, Math.hypot(x - q.x, y - q.y, z - q.z) - .0036); }
+  return d; }
+function buildSword(G, body, byName, meshes, root, grip) {
+  const D = G.dress, R0 = PACK.rest, wr = byName['wrist.R'], arm = byName['upperarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld);
+  const make = SWORDS[D.swordMake] ? D.swordMake : SWORD_BY_PEOPLE[G.people] || 'arming', K0 = SWORDS[make];
+  root.updateMatrixWorld(true); const A0 = grip.A.clone().normalize();
+  // the grip cut to the hand, as the hammer's haft: the fingers' run up and down it, the guard 1.2 cm over the first finger's knuckle,
+  // the grip its make's length down from there (or longer, for a broad hand), and pared inside the fist where it closes tighter than 2.6 cm
+  const kd = (() => { const k = at('finger2-1.R').add(at('finger5-1.R')).multiplyScalar(.5).sub(grip.C); return k.addScaledVector(A0, -k.dot(A0)); })();
+  { const PP = posedBody(body), w = new THREE.Vector3(); let lo = 1, hi = -1;
+    for (const i of PACK.handRV) { if (PACK.thumbRV.has(i)) continue; w.set(PP[i * 3], PP[i * 3 + 1], PP[i * 3 + 2]).sub(grip.C); const y = w.dot(A0); if (w.addScaledVector(A0, -y).length() > .045) continue; lo = Math.min(lo, y); hi = Math.max(hi, y); }
+    let rMin = 1; for (const i of PACK.handRV) { w.set(PP[i * 3], PP[i * 3 + 1], PP[i * 3 + 2]).sub(grip.C); const y = w.dot(A0); if (y < lo - .015 || y > hi + .015) continue; rMin = Math.min(rMin, w.addScaledVector(A0, -y).length()); }
+    // the guard over the thumb too, where it closes round the grip above the first finger (within the cross's reach of the grip's line)
+    let top = hi; for (const i of PACK.thumbRV) { w.set(PP[i * 3], PP[i * 3 + 1], PP[i * 3 + 2]).sub(grip.C); const y = w.dot(A0); if (w.addScaledVector(A0, -y).length() < Math.max(.03, K0.cross.len / 2 + .01)) top = Math.max(top, y); }
+    const yG1 = Math.max(hi + .012, top + .006); var fit = { lo, hi, yG1, yG0: Math.min(yG1 - K0.grip, lo - .012), rIn: Math.max(.0095, Math.min(SPEAR_R, rMin - .0005)), kx: kd.length() + .022 }; }
+  const P = swordParts(D, make, fit), K = P.K, sw = new THREE.Group(); sw.name = 'sword'; for (const m of P.parts) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; sw.add(m); } root.add(sw);
+  const toW = wr.matrixWorld.clone().invert(), Cl = grip.C.clone().applyMatrix4(toW), Al = A0.clone().transformDirection(toW), Kl = kd.clone().normalize().transformDirection(toW);
+  // its frame: y up the grip, x (the true edge) toward the knuckles
+  const place = () => { root.updateMatrixWorld(true); const C = Cl.clone().applyMatrix4(wr.matrixWorld), Y = Al.clone().transformDirection(wr.matrixWorld).normalize(), X = Kl.clone().transformDirection(wr.matrixWorld); X.addScaledVector(Y, -X.dot(Y)).normalize();
+    sw.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(X, Y, X.clone().cross(Y))); sw.position.copy(C); root.updateMatrixWorld(true); };
+  const clouds = wornClouds(body, meshes, root), again = wornMover(clouds, root, arm); let inY, inD;
+  let near = null; const test = () => { const inv = sw.matrixWorld.clone().invert(), v = new THREE.Vector3(); let n = 0, clear = 1, tested = 0, handIn = 0, hiltIn = 0; inY = [1, -1]; inD = 0; near = null;
+    for (const cl of clouds) eachPoint([cl], (x, y, z, i) => { v.set(x, y, z).applyMatrix4(inv); if (v.y < K.yG0 - .06 || v.y > P.yB + K.blade + .02 || Math.abs(v.z) > .05 || Math.abs(v.x) > .2) return; const d = swordDist(P, v.x, v.y, v.z);
+      if (i >= 0 && R0[i * 3] < -.39) { if (d < -.001) { handIn++; inY[0] = Math.min(inY[0], v.y); inY[1] = Math.max(inY[1], v.y); inD = Math.min(inD, d); if (v.y > K.yG1 || v.y < K.yG0 || Math.hypot(v.x, v.z) > SPEAR_R + .002) hiltIn++; } return; } tested++; if (d < .008) n++; if (d < clear) { clear = d; near = [cl.m === body ? 'body' : cl.m.name || '?', i, +v.x.toFixed(3), +v.y.toFixed(3), +v.z.toFixed(3)]; } });
+    return { n, clear, tested, handIn, hiltIn }; };
+  const upright = () => { root.updateMatrixWorld(true); const A = Al.clone().transformDirection(wr.matrixWorld), fix = new THREE.Quaternion().setFromUnitVectors(A, A0), pw = wr.parent.getWorldQuaternion(new THREE.Quaternion());
+    wr.quaternion.copy(pw.clone().invert().multiply(fix).multiply(pw).multiply(wr.quaternion)); };
+  // lifted only while it gains: what rides with the hand (the thumb's root, a cuff) is not left behind by lifting
+  const turn = a => { arm.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), a)); upright(); place(); again(); };
+  let lift = 0, T; place(); again(); T = test(); while (T.n && lift < .6) { turn(-.03); const T2 = test(); if (T2.clear <= T.clear + .0005 && T2.n >= T.n) { turn(.03); break; } lift += .03; T = T2; }
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(sw.getWorldQuaternion(new THREE.Quaternion())), lean = Math.acos(Math.min(1, up.y));
+  let floor = 1e9; { const PP = posedBody(body); for (const i of bodyV()) floor = Math.min(floor, PP[i * 3 + 1]); }
+  const tip = new THREE.Vector3(swordAt(K, 1).c, P.yB + K.blade, 0).applyMatrix4(sw.matrixWorld), pom = new THREE.Vector3(0, K.yG0, 0).applyMatrix4(sw.matrixWorld);
+  const edge = new THREE.Vector3(1, 0, 0).applyQuaternion(sw.getWorldQuaternion(new THREE.Quaternion())), fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
+  wr.attach(sw); let tris = 0; sw.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
+  return { mesh: sw, stats: { make, len: +(P.yB + K.blade - K.yG0 + .03).toFixed(3), blade: K.blade, width: +(2 * Math.max(...[0, .2, .4, .6, .8].map(t => (swordAt(K, t).we + swordAt(K, t).wb) / 2))).toFixed(4), grip: +(K.yG1 - K.yG0).toFixed(3),
+    gripIn: +(2 * K.rIn).toFixed(4), inside: T.n, tested: T.tested, clear: +T.clear.toFixed(4), lift: +lift.toFixed(2), near, handIn: T.handIn, handInAt: T.handIn ? [+inY[0].toFixed(3), +inY[1].toFixed(3), +inD.toFixed(4)] : null, hiltIn: T.hiltIn,
+    thumbIn: grip.thumbIn, lean: +lean.toFixed(3), tipH: +(tip.y - floor).toFixed(3), pommelH: +(pom.y - floor).toFixed(3), edgeFwd: +edge.dot(fwd).toFixed(3), gap: grip.gap, tris } };
+}
 // ── the clay pipe (Session 1816, L2; OG-069's Edna, who smokes one) ──
 // A short white clay pipe, the cutty of a Gatelands hearth, held in the teeth at the left corner of the mouth and carried by the head.
 // Its numbers, in metres: a stem 9 cm long from the mouthpiece, 3.5 mm thick at the bowl and 2.6 at the lips, sagging a few millimetres
@@ -4005,7 +4135,7 @@ function* makePersonSteps(G, o = {}) {
   // the shaft is laid in the palm and the four fingers close on it (fistGrip). (The elbow's own x is not its hinge: 1.45 rad
   // about it swung the forearm round a cone, backward)
   yield;
-  let spearGrip = null, wristFix = 0; if (D.spear || D.crossbow && !D.chair || D.staff || tankardOn(D) || hammerOn(D)) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
+  let spearGrip = null, wristFix = 0; if (D.spear || D.crossbow && !D.chair || D.staff || tankardOn(D) || hammerOn(D) || swordOn(D)) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
     const setWorld = Q => lb.quaternion.copy(lb.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(Q)); root.updateMatrixWorld(true);
     setWorld(new THREE.Quaternion().setFromUnitVectors(at('wrist.R').sub(at('lowerarm01.R')).normalize(), (D.staff && !D.spear && !D.crossbow ? STAFF_ARM : !D.spear && !(D.crossbow && !D.chair) ? TANKARD.ARM : new THREE.Vector3(-.12, -.2, 1)).clone().normalize()).multiply(wq())); root.updateMatrixWorld(true);
     const ax = at('wrist.R').sub(at('lowerarm01.R')).normalize(), flat = v => v.addScaledVector(ax, -v.dot(ax)).normalize(), kn = flat(at('finger2-1.R').sub(at('finger5-1.R'))), up = flat(new THREE.Vector3(0, 1, 0));
@@ -4092,6 +4222,8 @@ function* makePersonSteps(G, o = {}) {
   let tankardStats = null; if (tankardOn(D) && !D.spear && !(D.crossbow && !D.chair) && !D.staff && spearGrip) tankardStats = { ...buildTankard(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   // a smith's hammer in the same fist (Session 1835), held as the tankard is, when it holds nothing else
   let hammerStats = null; if (hammerOn(D) && !D.spear && !(D.crossbow && !D.chair) && !D.staff && spearGrip) hammerStats = { ...buildHammer(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
+  // a sword in the same fist (Session 2096), held as the hammer is, when it holds nothing else
+  let swordStats = null; if (swordOn(D) && !D.spear && !(D.crossbow && !D.chair) && !D.staff && spearGrip) swordStats = { ...buildSword(G, body, byName, meshes, root, spearGrip).stats, wrist: wristFix };
   // a basket in the same fist (Session 1033), when it holds no spear, crossbow or staff; last, as it is lifted clear of all the rest
   yield;
   // a lantern in the same fist (Session 1809), on the basket's grip; it takes the fist from a basket
@@ -4111,7 +4243,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, tankard: tankardStats, hammer: hammerStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -4134,7 +4266,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -4301,7 +4433,7 @@ export function peopleGenome(rnd, people, g, o = {}) {
   if (P.gown && sx === 'f' && D.skirt === 'long' && !D.apron && !D.mail && !D.tabard) { const rg = seeded(String(o.seed ?? 'person') + '|gown'); if (rg() < P.gown) { const k = rg(), c = k < .5 ? [.6, .14, .1] : k < .75 ? [.78, .55, .16] : [.1, .38, .38];
     D.tunic = c; D.skirtColor = c; D.cuffs = null; D.cuffBand = null; D.gownBorder = c[0] === .78 && rg() < .4 ? [.5, .1, .08] : [.85, .66, .3]; } }
   if (o.child) { const rc = seeded(String(o.seed ?? 'person') + '|child'), ta = rc(); G.age = .1875 + .09 * ta; G.muscle = .3 + .15 * rc(); G.weight = .3 + .15 * rc(); G.beard = 0; G.scar = null;
-    for (const k of ['helm', 'mail', 'scales', 'plate', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch', 'staff', 'staffMake', 'lantern', 'pipe', 'tankard', 'hammer', 'tier']) D[k] = DRESS_FLAGS[k] ?? null;
+    for (const k of ['helm', 'mail', 'scales', 'plate', 'tabard', 'tabardTrim', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'eyepatch', 'staff', 'staffMake', 'lantern', 'pipe', 'tankard', 'hammer', 'sword', 'swordMake', 'tier']) D[k] = DRESS_FLAGS[k] ?? null;
     if (G.marks != null) G.marks = Math.min(G.marks, .06 * rc()); const M = P.body[sx].metres, f = .8 + .12 * ta + .03 * (rc() - .5); G.height = heightFor(G, (M[0] + M[1]) / 2 * f);
     // a cloak or cape cut to the child (its length in buildCloak is in metres: .4 + the length, or a cape's .24 + .14 of it), so a long one does not pool on the ground
     if (D.cloak) D.cloakLen = Math.max(0, D.cape ? ((.24 + .14 * (D.cloakLen ?? .8)) * f - .24) / .14 : (.4 + (D.cloakLen ?? .8)) * f - .4); }
