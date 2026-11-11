@@ -4612,10 +4612,10 @@ function campMats() {
   // Aurenne's linen: undyed, an indigo border of a broad and a narrow stripe down each side, the weave's grain
   const linen = paint(128, (x, N) => { x.fillStyle = '#e6dcc6'; x.fillRect(0, 0, N, N); x.fillStyle = '#2e4a7a'; for (const [a, w] of [[5, 7], [16, 3], [107, 3], [116, 7]]) x.fillRect(a, 0, w, N);
     x.globalAlpha = .07; x.fillStyle = '#6a5a40'; for (let i = 0; i < N; i += 2) { x.fillRect(i, 0, 1, N); x.fillRect(0, i, N, 1); } x.globalAlpha = 1; });
-  CGM = { blanket: mat('plaster', { ns: .4, color: 0x7a6a56, rough: 1 }), madder: mat('plaster', { ns: .4, color: 0x7a3e2c, rough: 1 }), fleece: mat('plaster', { ns: 1.6, color: 0xd8ccb2, rough: 1 }),
+  CGM = { blanket: mat('plaster', { ns: .4, color: 0x5e5244, rough: 1 }), madder: mat('plaster', { ns: .4, color: 0x5a2a1e, rough: 1 }), fleece: mat('plaster', { ns: 1.6, color: 0xd8ccb2, rough: 1 }),
     plaid: std(0xffffff, .95, { map: plaid }), linen: std(0xffffff, .9, { map: linen, side: THREE.DoubleSide }), pillow: std(0xe2d8c2, .95), hide: mat('plaster', { ns: .8, color: 0x5e4634, rough: .9 }),
-    fur: mat('thatch', { ns: 1.4, color: 0xd6cab2, rough: 1 }), leather: std(0x4a3020, .7), pole: mat('wood', { ns: .9, color: 0x8e7254, rough: .9 }), bark: mat('bark', { ns: 1.2, color: 0xb4a490, rough: .95 }),
-    bough: std(0x36482e, .95), canvas: std(0xc4b28c, .95, { side: THREE.DoubleSide }), rope: std(0x8a7650, .95) };
+    fur: mat('plaster', { ns: 2.2, color: 0xd2c6b0, rough: 1 }), leather: std(0x4a3020, .7), pole: mat('wood', { ns: .9, color: 0x8e7254, rough: .9 }), bark: mat('bark', { ns: 1.2, color: 0xb4a490, rough: .95 }),
+    bough: std(0x2c3d26, .95, { side: THREE.DoubleSide }), canvas: std(0xc4b28c, .95, { side: THREE.DoubleSide }), rope: std(0x8a7650, .95) };
   return CGM;
 }
 function campGear(what, o = {}) {
@@ -4646,9 +4646,13 @@ function campGear(what, o = {}) {
     for (const s of [-1, 1]) { const x = s * 1.2; rod('bark', [x, gy(x, 0) - .2, 0], [x, RY - .06, 0], .055, 7); for (const t of [-1, 1]) rod('bark', [x, RY - .1, 0], [x + t * .1, RY + .12, t * .04], .03, 5); }
     rod('bark', [-1.5, RY, 0], [1.5, RY + .02, 0], .065, 7);
     for (let i = 0; i < 9; i++) { const x = -1.15 + i * 2.3 / 8 + (F() - .5) * .08; rod('bark', [x, RY + .05, .1], [x + (F() - .5) * .1, gy(x, BK) - .05, BK - .08], .032, 5); }
-    for (let r = 0; r < 5; r++) for (let i = 0; i < 6; i++) { const t = (r + .5) / 5, x = -1.15 + (i + (r % 2) * .5) * 2.3 / 5.5 + (F() - .5) * .1, z = BK * (1 - t), y = gy(x, BK) * (1 - t) + RY * t;
-      const g = new THREE.ConeGeometry(.34, .95, 5); g.rotateX(Math.PI / 2); g.scale(1, .2, 1); put(g, 'bough', x, y + .07 * Math.cos(a), z - .07 * Math.sin(a), -a + (F() - .5) * .15, (F() - .5) * .3); }
-    for (let i = 0; i < 6; i++) { const x = -.8 + (i % 3) * .8, z = -.45 - Math.floor(i / 3) * .55, g = new THREE.ConeGeometry(.42, 1.1, 5); g.rotateX(Math.PI / 2); g.scale(1, .16, 1); put(g, 'bough', x, gy(x, z) + .05, z, 0, (F() - .5) * .5); }
+    // a spray of fir: a flat fan 0.5 m across and 0.75 long, its butt at the origin and its tip at +z, the needles' edge jagged
+    const spray = () => { const P = [], n = 7; for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, w = t => .25 * Math.sin(Math.PI * Math.min(1, t * 1.25)) * (1 - .35 * t), j = k % 2 ? .06 : 0;
+      for (const sd of [-1, 1]) P.push(0, .01, t0 * .75, sd * (w(t1) + j), 0, t1 * .75, 0, .01, t1 * .75); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.computeVertexNormals(); return g; };
+    for (let r = 0; r < 7; r++) for (let i = 0; i < 7; i++) { const t = (r + .9) / 7.3, x = -1.15 + (i + (r % 2) * .5) * 2.3 / 6.5 + (F() - .5) * .08, z = BK * (1 - t), y = gy(x, BK) * (1 - t) + RY * t;
+      put(spray(), 'bough', x, y + .05 * Math.cos(a), z - .05 * Math.sin(a), Math.PI - a + (F() - .5) * .1, (F() - .5) * .25); } /* tips down the slope, each course over the butts of the one below */
+    for (let i = 0; i < 10; i++) { const x = -.9 + (i % 5) * .45, z = -.35 - Math.floor(i / 5) * .6; put(spray(), 'bough', x, gy(x, z) + .04, z - .3, 0, Math.PI + (F() - .5) * .6); }
     tentOn = false;
   } else if (what === 'blanket') {
     // a grey-brown wool blanket laid flat, its head end rolled for a pillow
@@ -4667,7 +4671,7 @@ function campGear(what, o = {}) {
     // the fur sleeping sack: a hide sack 2.05 m long, 0.78 m wide at the shoulders and tapered to the foot, its mouth ringed with fur,
     // the hood's flap thrown back fur side up
     const L0 = -.9, L1 = 1.1, W = u => .78 - .22 * Math.max(0, Math.min(1, (u - .45) / .55)), H = u => .24 - .07 * u;
-    grid('hide', 10, 24, (v, u) => { const z = L0 + (L1 - L0) * u, w = W(u) / 2, x = w * Math.cos(Math.PI * v), e = u > .9 ? Math.sqrt(Math.max(0, 1 - ((u - .9) / .1) ** 2)) : 1;
+    grid('hide', 10, 24, (v, u) => { const z = L0 + (L1 - L0) * u, w = W(u) / 2, x = -w * Math.cos(Math.PI * v), e = u > .9 ? Math.sqrt(Math.max(0, 1 - ((u - .9) / .1) ** 2)) : 1;
       return [x, gy(x, z) + LIFT + H(u) * Math.sin(Math.PI * v) * e, z]; });
     { const g = new THREE.TorusGeometry(.33, .07, 6, 14, Math.PI); g.scale(1.15, .7, 1); put(g, 'fur', 0, gy(0, L0) + LIFT, L0 - .01); }
     pad('fur', -.36, .36, L0 - .5, L0 - .04, .03, { ex: .25, ez: .15, nv: 6 });
