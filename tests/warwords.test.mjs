@@ -78,5 +78,41 @@ for (const p of ['gatelander', 'markman', 'aurennais']) { const T = talk[p]; if 
   check(`${p}, at peace: the law as before`, !/occupation|since they came|now\./.test(T.peace[1]), T.peace); }
 check(`an Old Blood speaker, the Crown holding: *${talk.oldblood}*`, talk.oldblood === "The Crown's. They say the old gates are theirs. The gates say nothing.", talk.oldblood);
 check(`the Compact's capital while it tithes ${talk.capital.town}: *${talk.capital.line}*`, talk.capital.line === `Brisk, Master. The tithe from ${talk.capital.town} comes in on every ship. The Prior calls it providence. The Factors call it accounts receivable.`, talk.capital);
+
+// Session 2093 — Under Another Flag §6–7: a held town's first words by whose people you are, the freed town's greeting once a person,
+// and the rumours of a town besieged, held, freed or relieved in the towns within 900
+const greet = await page.evaluate(() => { const at = {};
+  for (let i = 0; i < 80; i++) for (let j = 0; j < 80; j++) { let p; try { p = nationOf(i, j).people; } catch (e) { continue; } if (!at[p]) at[p] = { x: (i + .5) * WORLD.SIZE, z: (j + .5) * WORLD.SIZE }; }
+  const keepP = worldState.people, out = {}; let n = 0;
+  const say = (site, people, who) => { const def = { name: 'Test Person ' + (n++), people }; return firstWords(def, site); };
+  const gs = { id: 'test_greet_g', name: 'Testford', kind: 'town', x: at.gatelander.x, z: at.gatelander.z }; const st = TS(gs);
+  st.flags.occupied = 1; st.occupier = 'mark';
+  worldState.people = 'markman'; out.occG = say(gs, 'gatelander'); out.occA = say(gs, 'aurennais'); out.occO = say(gs, 'oldblood');
+  worldState.people = 'gatelander'; out.ownG = say(gs, 'gatelander'); out.ownM = say(gs, 'markman');
+  worldState.people = 'oldblood'; out.obPlayer = say(gs, 'gatelander');
+  worldState.people = 'gatelander';
+  const dm = WORLD.siteAnywhere('dunmore'), sd = TS(dm), near = { id: 'test_greet_near', name: 'Nearby', kind: 'town', x: dm.x + 300, z: dm.z };
+  sd.flags.occupied = 1; sd.occupier = 'mark'; out.rumHeld = warRumours(near).filter(r => /Dunmore/.test(r)); liberate(dm);
+  out.rumFreed = warRumours(near).filter(r => /Dunmore/.test(r)); out.rumFar = warRumours({ id: 'far', x: dm.x + 2000, z: dm.z }).filter(r => /Dunmore/.test(r));
+  sd.freed.day -= 20; out.rumOld = warRumours(near).filter(r => /Dunmore/.test(r)); delete sd.freed;
+  laySiege(dm, 'aurenne'); out.rumSiege = warRumours(near).filter(r => /Dunmore/.test(r)); breakSiege(dm); out.rumRelieved = warRumours(near).filter(r => /Dunmore/.test(r)); delete sd.freed;
+  liberate(gs);
+  out.freed = JSON.parse(JSON.stringify(st.freed));
+  const def = { name: 'Test Freed', people: 'markman' }; out.free1 = firstWords(def, gs); out.free2 = firstWords(def, gs);
+  delete st.freed; laySiege(gs, 'aurenne'); breakSiege(gs); out.relieved = st.freed.how;
+  out.relG = firstWords({ name: 'Test Relief', people: 'aurennais' }, gs); delete st.freed;
+  worldState.people = keepP; return out; });
+console.log(JSON.stringify(greet, null, 1));
+const WG = { occG: "You're one of theirs, by the look of you.", occA: 'Ah. One of the administration', occO: 'You are of them. You are not them.', ownG: 'One of our own. Good. Walk soft past the plaza.' };
+for (const k in WG) check(`a held town, ${k}: *${greet[k]}*`, greet[k].startsWith(WG[k]), greet[k]);
+check(`a Markman speaker to a Gatelander in a Gatelands town held by the Mark keeps his own first words (*${greet.ownM}*)`, !/^(One of|Markman\. Good)/.test(greet.ownM), greet.ownM);
+check(`an Old Blood player keeps their own aside (*${greet.obPlayer}*)`, !/one of theirs|One of our own/i.test(greet.obPlayer), greet.obPlayer);
+check(`held, rumoured 300 off: *${greet.rumHeld[0]}*`, greet.rumHeld[0] === "The League's men hold Dunmore. A handful on the plaza, they say, and nobody coming to shift them.", greet.rumHeld);
+check('liberate writes the freed record, by the League', greet.freed.how === 'garrison' && greet.freed.by === 'mark', greet.freed);
+check(`freed: a Markman's next greeting *${greet.free1}*, and once only`, greet.free1.startsWith('Sweeper. Good.') && !greet.free2.startsWith('Sweeper'), [greet.free1, greet.free2]);
+check(`freed, rumoured: *${greet.rumFreed[0]}*; not 2,000 off, not after fourteen days`, greet.rumFreed[0] === "Somebody walked into Dunmore and cleared the League's garrison off the plaza. Everyone's cousin saw it. Nobody agrees what they looked like." && !greet.rumFar.length && !greet.rumOld.length, greet);
+check(`besieged, rumoured: *${greet.rumSiege[0]}*`, greet.rumSiege[0] === "Dunmore's shut up behind its gate with the Compact's camp on the road. Twelve days, they reckon, before hunger opens it.", greet.rumSiege);
+check(`relieved, rumoured: *${greet.rumRelieved[0]}*`, greet.rumRelieved[0] === "The camp outside Dunmore is ashes. Whoever did it didn't stop to be thanked.", greet.rumRelieved);
+check(`relieved: an Aurennais greets *${greet.relG}*`, greet.relieved === 'siege' && greet.relG.startsWith('Master, the road is open again'), greet.relG);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
