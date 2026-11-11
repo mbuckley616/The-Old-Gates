@@ -2213,11 +2213,70 @@ function hbStaffWalk(rig){const H=rig.hb,w=rig.w;
     if(ang>HB_STAFF.TURN)_hbsQ.slerp(_hbsR.identity(),1-HB_STAFF.TURN/ang).normalize();hbStaffTurn(S.ua,_hbsQ);}}
 // a bone turned by a rotation given in the world's frame, its children with it
 function hbStaffTurn(b,q){b.parent.getWorldQuaternion(_hbsR);b.getWorldQuaternion(_hbq3);b.quaternion.copy(_hbsR.invert().multiply(q.multiply(_hbq3)));b.updateMatrixWorld(true);}
+// Session 2092 (Michael's B on #1278, 8 Nov: "the weapon's edge carries it"): a foe on the builder's body no longer lights up whole in
+// its tell's last 0.15 s (telegraphPulse's emissive on the driver, which hbGlow copied to the body). The body keeps its own colours and the
+// pose carries the warning; the colour runs along what it holds, gold for a light blow and red for a heavy one, at the tell's height:
+// a blade's two edges as thin bright strips from the guard to the point (a sword, a knife, a claymore; an axe's or a spear's head round
+// its outline), a blunt head (a mace, a hammer, a club, a staff's top, a bow) in a skin of light a little larger than itself, and a
+// glare of the same colour on the weapon's middle. An unarmed foe (a ghoul, the risen dead) carries the glare on its right hand.
+// The prototype's point light is left out: a light added and taken away recompiles every lit material in sight, a stutter in every
+// fight, and the glare reads without it. Built once per weapon at its first tell, from the kit's own geometry (buildWeapon: the grip
+// at the origin, the blade up +y, its flat across x); the parry's gold and the hit's flash still light the body, as before
+const HB_TELL={edge:{sword:1,cutlass:1,longsword:1,dagger:1,claymore:1},outline:{axe:1,hatchet:1,greataxe:1,spear:1},bins:24,glare:.5,shell:1.12};
+let _hbTellTex=null;
+function hbTellTex(){if(_hbTellTex)return _hbTellTex;const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),gr=x.createRadialGradient(32,32,0,32,32,32);
+  gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.25,'rgba(255,255,255,.55)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,64,64);
+  _hbTellTex=new THREE.CanvasTexture(c);return _hbTellTex;}
+// the weapon's triangles (in the group's own frame) of the meshes that are not light already, as [a,b,c] Vector3 triples, metal only if asked
+function hbTellTris(w,metal){const T=[];for(const o of w.children){if(!o.isMesh||!o.geometry||o.userData.tell)continue;const mt=o.material;
+    if(mt===WPN_MAT.glow||mt===WPN_MAT.halo||(metal&&mt!==WPN_MAT.metal))continue;const pa=o.geometry.attributes.position,ix=o.geometry.index;if(!pa)continue;o.updateMatrix();
+    const n=ix?ix.count:pa.count,v=i=>new THREE.Vector3().fromBufferAttribute(pa,ix?ix.getX(i):i).applyMatrix4(o.matrix);for(let i=0;i+2<n;i+=3)T.push([v(i),v(i+1),v(i+2)]);}
+  return T;}
+// a blade's outline: the metal's x-extent in bins up its length, from the top down to the guard (a bin a half again wider than the
+// widest above it, once a fifth of the length is past) or to the first bin with no metal (an axe's head ends at its haft)
+function hbTellOutline(T,guard){let y0=1e9,y1=-1e9;for(const t of T)for(const p of t){y0=Math.min(y0,p.y);y1=Math.max(y1,p.y);}if(!(y1>y0))return null;
+  const n=HB_TELL.bins,h=(y1-y0)/n,lo=new Array(n).fill(1e9),hi=new Array(n).fill(-1e9),zc=new Array(n).fill(0),zn=new Array(n).fill(0);
+  for(const t of T)for(const p of t){const i=Math.min(n-1,Math.floor((p.y-y0)/h));if(p.x<lo[i])lo[i]=p.x;if(p.x>hi[i])hi[i]=p.x;zc[i]+=p.z;zn[i]++;}
+  const R=[];let wMax=0;for(let i=n-1;i>=0;i--){if(!zn[i])break;const w=hi[i]-lo[i];if(guard&&R.length>n*.2&&w>wMax*1.5)break;wMax=Math.max(wMax,w);R.push({y:y0+(i+.5)*h,lo:lo[i],hi:hi[i],z:zc[i]/zn[i]});}
+  if(R.length<3)return null;R.reverse();R[R.length-1].y=y1;R[0].y=Math.max(y0,R[0].y-h*.5);return R;}
+// two strips, one along each side of the outline: the outer line a hair outside the metal, the inner .7 cm in toward the flat
+function hbTellStrips(R,mat){const g=new THREE.Group();for(const s of [-1,1]){const P=[],I=[],n=R.length;
+    for(const r of R){const x=s<0?r.lo:r.hi,half=Math.max(.002,(r.hi-r.lo)/2),inn=Math.min(.007,half*.6);P.push(x+s*.0008,r.y,r.z-.0012,x+s*.0008,r.y,r.z+.0012,x-s*inn,r.y,r.z);}
+    for(let i=0;i<n-1;i++){const a=i*3;I.push(a,a+3,a+2,a+2,a+3,a+5,a+1,a+2,a+4,a+2,a+5,a+4,a,a+1,a+3,a+1,a+4,a+3);}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(P,3));geo.setIndex(I);const e=new THREE.Mesh(geo,mat);e.userData.tell=1;e.castShadow=false;g.add(e);}
+  return g;}
+// the blunt head: the top two-fifths of the weapon (its metal, or all of it if no metal is there) drawn again, additive, a tenth larger
+function hbTellShell(T,mat){let y0=1e9,y1=-1e9;for(const t of T)for(const p of t){y0=Math.min(y0,p.y);y1=Math.max(y1,p.y);}const cut=y1-(y1-y0)*.4,P=[],c=new THREE.Vector3();let nc=0;
+  for(const t of T)if(t[0].y>=cut&&t[1].y>=cut&&t[2].y>=cut){for(const p of t){c.add(p);nc++;}}if(!nc)return null;c.multiplyScalar(1/nc);
+  for(const t of T)if(t[0].y>=cut&&t[1].y>=cut&&t[2].y>=cut)for(const p of t){const q=p.clone().sub(c).multiplyScalar(HB_TELL.shell).add(c);P.push(q.x,q.y,q.z);}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(P,3));const e=new THREE.Mesh(geo,mat);e.userData.tell=1;e.castShadow=false;return e;}
+function hbTellBuild(w){const kind=w.userData.wpn||'',D={g:new THREE.Group(),kind,mid:new THREE.Vector3()};D.g.name='tellEdge';D.g.visible=false;
+  D.mat=new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false});D.shell=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false,side:THREE.DoubleSide});
+  const metal=hbTellTris(w,true),all=metal.length?metal:hbTellTris(w,false);let part=null;D.look='none';
+  if((HB_TELL.edge[kind]||HB_TELL.outline[kind])&&metal.length){const R=hbTellOutline(metal,!!HB_TELL.edge[kind]);if(R){part=hbTellStrips(R,D.mat);D.look='edge';D.mid.set((R[0].lo+R[0].hi)/2,(R[0].y+R[R.length-1].y)/2,R[0].z);}}
+  if(!part&&all.length){part=hbTellShell(all,D.shell);if(part){D.look='shell';part.geometry.computeBoundingSphere();D.mid.copy(part.geometry.boundingSphere.center);}}
+  if(part)D.g.add(part);
+  D.glare=new THREE.Sprite(new THREE.SpriteMaterial({map:hbTellTex(),color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
+  D.glare.position.copy(D.mid);D.g.add(D.glare);w.add(D.g);w.userData.tell=D;return D;}
+// the tell's colour by the driver's emissive (telegraphPulse: gold .75,.52,.08 or red .75,.08,.05, times the glow's share k), on what
+// the foe holds or, unarmed, on its right hand; em 0 puts it out
+function hbTell(rig,em){const H=rig.hb,w=rig.weapon&&rig.weapon.parent?rig.weapon:null;
+  const r=(em>>16&255)/255,gC=(em>>8&255)/255,b=(em&255)/255,k=Math.min(1,r/.75);H.tellK=k;
+  let D=null;if(w)D=w.userData.tell||hbTellBuild(w);
+  else{const hand=H.P&&H.P.byName&&(H.P.byName['metacarpal3.R']||H.P.byName['hand.R']);if(!hand)return;D=hand.userData.tell;
+    if(!D){D={g:new THREE.Group(),look:'hand',mid:new THREE.Vector3()};D.g.name='tellEdge';D.glare=new THREE.Sprite(new THREE.SpriteMaterial({map:hbTellTex(),color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
+      D.g.add(D.glare);hand.add(D.g);hand.userData.tell=D;}}
+  H.tellD=D;if(!k){D.g.visible=false;return;}
+  D.g.visible=true;const hue=r>0?[1,gC/r,b/r]:[1,1,1];
+  if(D.mat)D.mat.color.setRGB(hue[0]*(.35+.65*k),hue[1]*(.35+.65*k),hue[2]*(.35+.65*k));if(D.shell)D.shell.color.setRGB(hue[0]*k*.9,hue[1]*k*.9,hue[2]*k*.9);
+  D.glare.material.color.setRGB(hue[0],hue[1],hue[2]);D.glare.material.opacity=.6*k;
+  D.g.updateMatrixWorld(true);const ws=new THREE.Vector3().setFromMatrixScale(D.g.matrixWorld).x||1;D.glare.scale.setScalar(HB_TELL.glare/ws);}
 // a foe's glow: the driver's emissive on every material of the builder's body, and the parry's stagger (which swaps the driver's
 // material for a yellow clone, 74-strikes.js) as a strong gold; the materials the kill clones are the ones on the meshes now
 function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
+  const tell=m===H.drv&&em&&em!==0xffaa00&&(!rig.e||rig.e._wind>0);if(tell||H.tellK)hbTell(rig,tell?em:0);if(tell)em=0; /* S2092 — the tell is the weapon's (Michael's B on #1278) */
   if(em===H.em)return;H.em=em;for(const o of H.mid?[...H.full,H.mid]:H.full)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);} // the body's own: what it holds keeps the kit's shared materials
-function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;if(H.eyeGlow&&rig.eyeGlow)rig.eyeGlow.visible=L===2;if(L===2)hbGive(rig);if(L===1)hbMid(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;if(H.mid)H.mid.visible=L===1;}
+function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;if(L===2&&H.tellK)hbTell(rig,0);if(H.eyeGlow&&rig.eyeGlow)rig.eyeGlow.visible=L===2;if(L===2)hbGive(rig);if(L===1)hbMid(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;if(H.mid)H.mid.visible=L===1;}
 // the middle level, baked now if the body was attached without it (rig.hbLazy); null if the bake fails
 function hbMid(rig){const H=rig.hb;if(!H)return null;if(H.mid||H.midFail)return H.mid;const t=performance.now();
   try{const m=hbMerge(H.P,H.cards);m.geometry.boundingSphere=H.sph.clone();m.visible=H.L===1;if(rig.foe)m.material=HB_MID_MAT.clone();
