@@ -935,6 +935,8 @@
   // 150 m), 100 m off every door, 60 m off a farm's yard, 150 m off the cell's caves, mine, Weaver door, carving, watcher, aqueduct and place
   // by a road, 30 m off every lake's rim, and 200 m inside its cell. Found within 40 m (tickDiscovery, 83), then on the map, with no travel to it.
   // -> {id, kind, name, x, z, ry, cell} or null, kept on the cell (c._offroad)
+  /* S2111 — the kit's piece for an off-road kind: Aurenne's cove is PKIT.places.inlet, since PKIT.places.cove is the Gatelands' sea cave (S1773) */
+  function offroadPiece(kind){return typeof PKIT!=='undefined'&&PKIT.places?PKIT.places[kind==='cove'?'inlet':kind]:null;}
   const OFFROAD={gatelander:['shepherd','peat','falls'],markman:['cabin','logging','icemouth'],aurennais:['watchtower','cove']},OFFROAD_NAME={shepherd:'A shepherd’s hut',peat:'A peat-cutting camp',cabin:'A hunting cabin',logging:'A logging camp',falls:'A waterfall',watchtower:'A watchtower',icemouth:'An ice cave mouth',cove:'A smuggler’s cove'},OFFROAD_ODDS=1/3,OFFROAD_WOOD=.3;
   /* S2098 — the first chance draws from the kinds each island had before #1385 C (the Mark's first two): a kind added since comes by the second chance only, so nothing that stands moves */
   const OFFROAD_FIRST={markman:2,aurennais:1}; /* S2105 — and Aurenne's first, the watchtower */
@@ -954,7 +956,7 @@
     if(c.type==='sea'||c.home||!c.sites||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places)return null;
     const ppl=nationOf(c.i,c.j).people,list=OFFROAD[ppl];if(!list)return null;
     const k=cellKey(c.i,c.j),r=PKIT.stream('offroad:'+k),v=r();let kind;
-    if(!miss){if(v>=OFFROAD_ODDS)return null;kind=list[Math.floor(r()*(OFFROAD_FIRST[ppl]||list.length))];if(!PKIT.places[kind])return null;} /* drawn, not built yet: the cell waits for it */
+    if(!miss){if(v>=OFFROAD_ODDS)return null;kind=list[Math.floor(r()*(OFFROAD_FIRST[ppl]||list.length))];if(!offroadPiece(kind))return null;} /* drawn, not built yet: the cell waits for it */
     else{if(v>=.5||!miss.length)return null; /* S2105 — and a cell that drew a kind on the first chance but found no ground for it: it stood empty, so nothing moves */kind=miss[Math.floor(r()*miss.length)];}
     let out=null;
     const sites=[],defs=[],lakes=[],doors=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(!n)continue;sites.push(...(n.sites||[]));defs.push(...(n.roadDefs||[]));lakes.push(...(n.lakes||[]));doors.push(...(n.doors||[]));}
@@ -1066,7 +1068,7 @@
       const lx=dx*P.co-dz*P.s,lz=dx*P.s+dz*P.co;if(lx<P.x0||lx>P.x1||lz<P.z0||lz>P.z1)continue;return P.y+P.ground(lx,lz);}return null;}
   function offroadPatchDrop(id){for(let i=OFFROAD_PATCHES.length-1;i>=0;i--)if(OFFROAD_PATCHES[i].id===id)OFFROAD_PATCHES.splice(i,1);}
   function placeOffroad(c,k){const D=offroadAt(c);if(!D)return null;const co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],bogS=D.kind==='peat'&&STAMPS.find(t=>t.id===D.id+'_bog'),FG=D.kind==='falls'||D.kind==='icemouth'||D.kind==='cove'?offroadFallsGround(D):null,y0=FG?D.y0:bogS?bogS.y:meshH(D.x,D.z); /* S2071 — the falls stand at the pool's water, on the world's ground cut into (offroadFallsGround) */ /* S2044 — the peat camp stands at its bog's level, not on the cut sunk under its middle */
-    const M=PKIT.places[D.kind]({key:D.id,ground:(lx,lz)=>meshH(...W(lx,lz))-y0,water:SEA_Y-y0,snow:D.snow,land:FG?FG.land:undefined,lip:D.wall,reach:D.shore}); /* S2056 — the water's level and the snow, for the logging camp */
+    const M=offroadPiece(D.kind)({key:D.id,ground:(lx,lz)=>meshH(...W(lx,lz))-y0,water:SEA_Y-y0,snow:D.snow,land:FG?FG.land:undefined,lip:D.wall,reach:D.shore}); /* S2056 — the water's level and the snow, for the logging camp */
     M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='offroad '+D.kind;sc.add(M.group);
     for(const b of M.sol||[]){const ca=Math.cos(b.ry),sa=Math.sin(b.ry),along=b.w>=b.d,L=Math.max(b.w,b.d),h=Math.min(b.w,b.d)/2,n=Math.max(1,Math.ceil(L/(2*h)));
       for(let q=0;q<n;q++){const t=n>1?-L/2+h+q*(L-2*h)/(n-1):0,lu=along?t:0,lv=along?0:t,[cx,cz]=W(b.x+lu*ca+lv*sa,b.z-lu*sa+lv*ca);STATIC_SOL.push({cx,cz,rx:h,rz:h,top:y0+b.h,offroad:true});}}
@@ -1089,7 +1091,7 @@
   function offroadFallsGround(D){const g=CHUNK/SEGS,co=Math.cos(D.ry),s_=Math.sin(D.ry),W=(lx,lz)=>[D.x+lx*co+lz*s_,D.z-lx*s_+lz*co],Lc=(x,z)=>{const dx=x-D.x,dz=z-D.z;return [dx*co-dz*s_,dx*s_+dz*co];};
     const HV=new Map(),vk=(x,z)=>x+','+z,H=(x,z)=>{const q=vk(x,z);let v=HV.get(q);if(v===undefined){const sk=STAMPS.filter(t=>t.id===D.id+'_sink');sk.forEach(t=>t.noFlat=true);try{v=worldH(x,z);}finally{sk.forEach(t=>t.noFlat=false);}HV.set(q,v);}return v;};
     const hW=(x,z)=>{const x0=Math.floor(x/g)*g,z0=Math.floor(z/g)*g,u=(x-x0)/g,w=(z-z0)/g,h00=H(x0,z0),h10=H(x0+g,z0),h01=H(x0,z0+g),h11=H(x0+g,z0+g);return (u+w<1)?(h00+(h10-h00)*u+(h01-h00)*w):(h11+(h01-h11)*(1-u)+(h10-h11)*(1-w));};
-    const land=(lx,lz)=>hW(...W(lx,lz))-D.y0,S=PKIT.places[D.kind].shape(D.id,land,D.kind==='cove'?D.shore:D.wall),P=S.patch; /* S2098 — the falls' or the ice cave mouth's */
+    const land=(lx,lz)=>hW(...W(lx,lz))-D.y0,S=offroadPiece(D.kind).shape(D.id,land,D.kind==='cove'?D.shore:D.wall),P=S.patch; /* S2098 — the falls' or the ice cave mouth's */
     let ax=1e9,bx=-1e9,az=1e9,bz=-1e9;for(const [u,v] of [[P.x0,P.z0],[P.x1,P.z0],[P.x0,P.z1],[P.x1,P.z1]]){const [x,z]=W(u,v);ax=Math.min(ax,x);bx=Math.max(bx,x);az=Math.min(az,z);bz=Math.max(bz,z);}
     const carved=new Set(),sunk=new Set();
     for(let z0=Math.floor(az/g)*g;z0<bz;z0+=g)for(let x0=Math.floor(ax/g)*g;x0<bx;x0+=g){let hit=false;

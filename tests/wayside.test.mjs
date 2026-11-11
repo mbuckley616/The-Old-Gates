@@ -13,7 +13,7 @@
 // Session 2083 the second chance for cells that drew nothing (#1385 C): the Gatelands' merchants' camps and falls drawn at last.
 // Session 2101 Aurenne's first place off the road, the coastal watchtower (PKIT.places.watchtower), on a rise of its coast over the open sea.
 // Session 2107 (begun as 2098, then 2104) the Mark's ice cave mouth (PKIT.places.icemouth), a glacier's tongue on the world's own slope, its tunnel and stream cut into the ground.
-// Session 2105 Aurenne's smuggler's cove (PKIT.places.cove), an inlet cut into the world's own coast.
+// Session 2105 Aurenne's smuggler's cove (PKIT.places.inlet), an inlet cut into the world's own coast.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -448,9 +448,13 @@ if (im) {
   check(`solid at the face's foot, the tunnel's side and the dark at its back, open in the mouth; ${it.tris} triangles in ${it.draws} draws, the laid ground ${it.laid} over ${it.cells} squares`,
     !it.none && it.foot && it.side && it.back && !it.mouth && it.tris < 24000 && it.draws <= 11 && it.laid < 8000, it);
 }
-// Session 2105: Aurenne's smuggler's cove (PKIT.places.cove, places.js's aurenneCove), an inlet cut into the world's own coast, drawn by the second
+// Session 2105: Aurenne's smuggler's cove (PKIT.places.inlet, places.js's aurenneCove), an inlet cut into the world's own coast, drawn by the second
 // chance (a near miss, or a cell whose first kind found no ground). The world's ground nowhere over the cut; the beach walked over the sea, the
 // inlet swum, the stair's tread walked at its own height; solid at a boathouse's front and the lookout, open on the beach; its cost
+// Session 2111: Aurenne's cove was registered as PKIT.places.cove too, which overwrote the Gatelands' sea cave (S1773) that the sea caves'
+// rooms build: the two pieces keep their own names
+const pk = await page.evaluate(() => { const T = PKIT.places.cove({ key: 'cove_names', held: true }); return { cave: !!T.bounds && !!T.mouth, inlet: typeof PKIT.places.inlet === 'function' && typeof PKIT.places.inlet.shape === 'function', piece: offroadPiece('cove') === PKIT.places.inlet }; });
+check(`the Gatelands' sea cave is PKIT.places.cove and Aurenne's inlet PKIT.places.inlet, the off-road cove built from the inlet`, pk.cave && pk.inlet && pk.piece, pk);
 const cv = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => c.type !== 'sea' && !c.home), C = G.map(c => offroadAt(c)).filter(d => d && d.kind === 'cove');
   const d = C[0]; if (!d) return null; px = d.x + Math.sin(d.ry) * 10 + Math.cos(d.ry) * 25; pz = d.z + Math.cos(d.ry) * 10 - Math.sin(d.ry) * 25;
   return { n: C.length, first: C.filter(d => !d.second).length, id: d.id, ry: d.ry, reach: d.shore, ppl: nationOf(...d.cell.split(',').map(Number)).people }; });
