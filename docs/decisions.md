@@ -3,46 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### Swords by island — the six makes as looks only, or Aurenne’s falchion and flyssa as kinds of their own? (from the systems builder, 2026-11-11, #1425)
-**The question.** The bodies builder has made six swords by island in the people's kit (Session 2096, OG-028): the Gatelands' arming sword, the Mark's Norse sword, and Aurenne's takouba, nimcha, falchion and flyssa. Before they go into the game, each item has to know which make it is. The game has a Sword, a Longsword and a Scimitar today, one look each, the same everywhere. Are the makes looks only, or are Aurenne's four kinds of their own?
-
-**Options.**
-- **A.** Looks only, by island, as the staffs and wands carry theirs (`make`, Session 1858): a Sword in the Gatelands is the arming sword, in the Mark the Norse sword, in Aurenne the takouba; a Scimitar is the nimcha everywhere. The falchion and the flyssa go unused. Half a systems session, then the bodies builder's.
-- **B (recommended).** A, but Aurenne's Sword is drawn by the item's own seed as the takouba (one in two), the falchion (one in four) or the flyssa (one in four). Still looks only. Half a systems session, then the bodies builder's.
-- **C.** The falchion and the flyssa as new kinds with their own numbers, sold and found only in Aurenne: the falchion a chopper (damage ×1.1, posture +2, tell 0.05 s slower), the flyssa a thruster (pierce, reach +0.15 m, damage ×0.95). Two systems sessions and the quest review on the names.
-
-**Recommendation.** B: all six makes reach the game with no new rule to balance, and a player in Aurenne sees three blades on the racks, not one. C stays open later. Session 2099's devlog: `docs/devlog/2099.md`.
-
-### Gaoth’s gates — what they hold (a roster from what exists, a wisp, or the wisp and the dusk eagle?) (from the systems builder, 2026-11-11, #1424)
-**The question.** One old gate in six is Gaoth's by its seed (`gateSchool`): it teaches Gaoth's words, lights blue-white and its Gargoyles wear Gaoth's pale stone, but its foes are still the roster of the theme it drew, because `THEME_DEF` has no Gaoth row. The canon (§9a) gives Gaoth *wisps, Gargoyle, something winged*, and the dusk eagle (OG-088, B on #1201) waits on this roster. What should a Gaoth gate hold?
-
-**Options.**
-- **A.** From foes that exist: Skeleton, Skeleton, Gargoyle, Phantom, Gargoyle, Phantom. No new foe. Half a session.
-- **B.** A, with a wisp in the two Skeleton slots: the coast's Shore Wisp made a gate foe (working name *Gale Wisp*), level one, the Skeleton's numbers graded by tier, Gaoth's damage ×0.7, its blow shoving you 1 m. One systems session.
-- **C (recommended).** B, plus the dusk eagle in a failing or catastrophic gate: a flier circling 4–6 m up that dives on a 0.9 s tell; at the dive a blade or a parry reaches it, an arrow or a word always does. The Dire Wolf's numbers, Gaoth ×0.7. Three systems sessions and the bodies builder's dive pose.
-
-**Recommendation.** C: it finishes OG-088's five, gives Gaoth its own gate as the canon draws it, and the dive is a fair fight with a readable tell. Session 2098's devlog: `docs/devlog/2098.md`.
-
-### Resources and crafting — hides and salt, a house that works, or stations anywhere? (from the systems designer, 2026-11-11, #1420)
-**The question.** Backlog L8's *Resources and crafting* lists nodes, tools, stations and crops. Survival B already built the veins, felling, the forge and the bench, so three gaps are left: nothing makes the light armour line, a hunt ends at the meat, and a house you buy does nothing a rented room doesn't. How far should the rest go? The page: `docs/design/resources-and-crafting.md`.
-
-**Options.**
-- **A.** Hides, leather and salt. A skinning knife takes a hide off a deer, boar, wolf or bear (a bear gives 2), cured with salt on a tanner's rack in 6 game hours. Leather plus a few rivets of your metal makes the light line at the forge under Smithing (Fine and Masterwork apply, never enchanted). Salt dries meat into jerky you eat with no fire. Two systems sessions, one look.
-- **B (recommended).** A, plus a house that works. Your house holds fittings by its size, as your ship does (cottage 3, townhouse 4, farmstead or longhouse 6): tanning rack, drying rack, a clay oven, a kiln, the workbench, a garden of four beds. Clay is dug from riverbanks with a shovel; the garden grows only its own island's cooking seconds, plus herbs you have picked. Five systems sessions, two look.
-- **C.** Stations anywhere, Valheim's way: carried station kits, a work radius, fields you clear, salt pans and fishing. It brings back the kept camp declined on #1378. One deep-work session, about six systems and three look.
-
-**Recommendation.** B: it finishes the list without a new skill and gives the house a reason to exist. Every fitting costs one of the house's 3–6 places; the vein table still caps the metal, the garden grows only its own island's crops, and a made piece is never enchanted.
-
-### The campfire — the fire alone, a ring of stones everywhere, or laid as each island lays it? (from the concept artist, 2026-11-10, #1405)
-**The question.** Under camp and rest B (#1378) you light a fire every night you sleep in the open, and in the game it is still three sticks and an orange cone (`campfireMesh`, `js/50-travel.js`). The concept artist built it in the new look, in metres, burning through four stages (lit, burning, embers, out); which lay should the game use? The stump (oak, pine, birch, cut as a hatchet leaves it) has no options.
-
-**Options.**
-- **A.** The fire alone: three split logs crossed on scorched ground, the same everywhere. 312 triangles.
-- **B.** A ring of eleven fieldstones 1.0 m across round a teepee, the same everywhere. 1,576 triangles.
-- **C (recommended).** Laid as each island lays it: the Gatelands' turf lifted and stacked beside a stone ring; the Mark's long fire of two 1.5 m pine logs with a third on their seam; Aurenne's keyhole pit with a grill over the coals. 1,072–2,542 triangles, the same 14 draws as B.
-
-**Recommendation.** C: it costs the builder no more than B, and follows the brief's "each island its own" as the wagons, shrines and bedrolls of #1378 already do. Pictures: [A, B, C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-options.jpg), [stages](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-stages.jpg), [the Mark at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-wide-mark.jpg), [stumps](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-stumps.jpg); the page `docs/prototypes/levelup/camp.html`, written up in `docs/concepts.md`.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -56,6 +16,54 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### Swords by island — the six makes as looks only, or Aurenne’s falchion and flyssa as kinds of their own? (from the systems builder, 2026-11-11, #1425)
+**The question.** The bodies builder has made six swords by island in the people's kit (Session 2096, OG-028): the Gatelands' arming sword, the Mark's Norse sword, and Aurenne's takouba, nimcha, falchion and flyssa. Before they go into the game, each item has to know which make it is. The game has a Sword, a Longsword and a Scimitar today, one look each, the same everywhere. Are the makes looks only, or are Aurenne's four kinds of their own?
+
+**Options.**
+- **A.** Looks only, by island, as the staffs and wands carry theirs (`make`, Session 1858): a Sword in the Gatelands is the arming sword, in the Mark the Norse sword, in Aurenne the takouba; a Scimitar is the nimcha everywhere. The falchion and the flyssa go unused. Half a systems session, then the bodies builder's.
+- **B (recommended).** A, but Aurenne's Sword is drawn by the item's own seed as the takouba (one in two), the falchion (one in four) or the flyssa (one in four). Still looks only. Half a systems session, then the bodies builder's.
+- **C.** The falchion and the flyssa as new kinds with their own numbers, sold and found only in Aurenne: the falchion a chopper (damage ×1.1, posture +2, tell 0.05 s slower), the flyssa a thruster (pierce, reach +0.15 m, damage ×0.95). Two systems sessions and the quest review on the names.
+
+**Recommendation.** B: all six makes reach the game with no new rule to balance, and a player in Aurenne sees three blades on the racks, not one. C stays open later. Session 2099's devlog: `docs/devlog/2099.md`.
+
+Michael: **A, but Aurenne's Sword varies by seed** (B). (2026-11-11)
+
+### Gaoth’s gates — what they hold (a roster from what exists, a wisp, or the wisp and the dusk eagle?) (from the systems builder, 2026-11-11, #1424)
+**The question.** One old gate in six is Gaoth's by its seed (`gateSchool`): it teaches Gaoth's words, lights blue-white and its Gargoyles wear Gaoth's pale stone, but its foes are still the roster of the theme it drew, because `THEME_DEF` has no Gaoth row. The canon (§9a) gives Gaoth *wisps, Gargoyle, something winged*, and the dusk eagle (OG-088, B on #1201) waits on this roster. What should a Gaoth gate hold?
+
+**Options.**
+- **A.** From foes that exist: Skeleton, Skeleton, Gargoyle, Phantom, Gargoyle, Phantom. No new foe. Half a session.
+- **B.** A, with a wisp in the two Skeleton slots: the coast's Shore Wisp made a gate foe (working name *Gale Wisp*), level one, the Skeleton's numbers graded by tier, Gaoth's damage ×0.7, its blow shoving you 1 m. One systems session.
+- **C (recommended).** B, plus the dusk eagle in a failing or catastrophic gate: a flier circling 4–6 m up that dives on a 0.9 s tell; at the dive a blade or a parry reaches it, an arrow or a word always does. The Dire Wolf's numbers, Gaoth ×0.7. Three systems sessions and the bodies builder's dive pose.
+
+**Recommendation.** C: it finishes OG-088's five, gives Gaoth its own gate as the canon draws it, and the dive is a fair fight with a readable tell. Session 2098's devlog: `docs/devlog/2098.md`.
+
+Michael: **B, plus the dusk eagle in failing gates** (C). (2026-11-11)
+
+### Resources and crafting — hides and salt, a house that works, or stations anywhere? (from the systems designer, 2026-11-11, #1420)
+**The question.** Backlog L8's *Resources and crafting* lists nodes, tools, stations and crops. Survival B already built the veins, felling, the forge and the bench, so three gaps are left: nothing makes the light armour line, a hunt ends at the meat, and a house you buy does nothing a rented room doesn't. How far should the rest go? The page: `docs/design/resources-and-crafting.md`.
+
+**Options.**
+- **A.** Hides, leather and salt. A skinning knife takes a hide off a deer, boar, wolf or bear (a bear gives 2), cured with salt on a tanner's rack in 6 game hours. Leather plus a few rivets of your metal makes the light line at the forge under Smithing (Fine and Masterwork apply, never enchanted). Salt dries meat into jerky you eat with no fire. Two systems sessions, one look.
+- **B (recommended).** A, plus a house that works. Your house holds fittings by its size, as your ship does (cottage 3, townhouse 4, farmstead or longhouse 6): tanning rack, drying rack, a clay oven, a kiln, the workbench, a garden of four beds. Clay is dug from riverbanks with a shovel; the garden grows only its own island's cooking seconds, plus herbs you have picked. Five systems sessions, two look.
+- **C.** Stations anywhere, Valheim's way: carried station kits, a work radius, fields you clear, salt pans and fishing. It brings back the kept camp declined on #1378. One deep-work session, about six systems and three look.
+
+**Recommendation.** B: it finishes the list without a new skill and gives the house a reason to exist. Every fitting costs one of the house's 3–6 places; the vein table still caps the metal, the garden grows only its own island's crops, and a made piece is never enchanted.
+
+Michael: **A, plus a house that works** (B). (2026-11-11)
+
+### The campfire — the fire alone, a ring of stones everywhere, or laid as each island lays it? (from the concept artist, 2026-11-10, #1405)
+**The question.** Under camp and rest B (#1378) you light a fire every night you sleep in the open, and in the game it is still three sticks and an orange cone (`campfireMesh`, `js/50-travel.js`). The concept artist built it in the new look, in metres, burning through four stages (lit, burning, embers, out); which lay should the game use? The stump (oak, pine, birch, cut as a hatchet leaves it) has no options.
+
+**Options.**
+- **A.** The fire alone: three split logs crossed on scorched ground, the same everywhere. 312 triangles.
+- **B.** A ring of eleven fieldstones 1.0 m across round a teepee, the same everywhere. 1,576 triangles.
+- **C (recommended).** Laid as each island lays it: the Gatelands' turf lifted and stacked beside a stone ring; the Mark's long fire of two 1.5 m pine logs with a third on their seam; Aurenne's keyhole pit with a grill over the coals. 1,072–2,542 triangles, the same 14 draws as B.
+
+**Recommendation.** C: it costs the builder no more than B, and follows the brief's "each island its own" as the wagons, shrines and bedrolls of #1378 already do. Pictures: [A, B, C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-options.jpg), [stages](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-stages.jpg), [the Mark at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-wide-mark.jpg), [stumps](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/camp-stumps.jpg); the page `docs/prototypes/levelup/camp.html`, written up in `docs/concepts.md`.
+
+Michael: **Laid as each island lays it** (C). (2026-11-11)
+
 ### Camp and rest — beds by grade, a bedroll you carry, or a camp you keep? (from the designer, 2026-11-10, #1378)
 **The question.** Backlog L8's *Camp and rest* asks for a lean-to, a tent, bedrolls of three grades and better beds giving stronger rest; today every bed (inn, home, cot, berth, a road camp's bedroll) does the same thing, and nothing you carry lets you sleep. Should a better night be a property of the bed, of a camp you make, or of a camp you keep? The page: `docs/design/camp-and-rest.md`.
 
