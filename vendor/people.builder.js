@@ -3679,17 +3679,17 @@ function buildHammer(G, body, byName, meshes, root, grip) {
 // swept back, over its length; fullers as [middle, half width, depth, how far up] across the blade (-1 the back, 1 the edge)
 const SWORDS = {
   arming: { blade: .76, w0: .026, w1: .021, back: null, th: .0034, point: .14, round: .15, curve: 0, fullers: [[0, .3, .5, .7]],
-    cross: { len: .19, h: .013, d: .017, turn: 0 }, pommel: 'wheel', grip: .095, fit: [.62, .45, .22], gripCol: [.3, .2, .13] },
+    cross: { len: .19, h: .013, d: .017, turn: 0 }, pommel: 'wheel', work: 'knot', grip: .095, fit: [.62, .45, .22], gripCol: [.3, .2, .13] },
   norse: { blade: .78, w0: .029, w1: .026, back: null, th: .0032, point: .08, round: .85, curve: 0, fullers: [[0, .42, .4, .86]], runes: true,
     cross: { len: .11, h: .018, d: .023, turn: 0 }, pommel: 'lobed', grip: .09, fit: [.74, .74, .77], gripCol: [.24, .17, .12] },
   takouba: { blade: .8, w0: .021, w1: .019, back: null, th: .003, point: .1, round: .3, curve: 0, fullers: [[-.42, .1, .5, .55], [0, .1, .5, .62], [.42, .1, .5, .55]], collar: true,
-    cross: { len: .14, h: .01, d: .014, turn: 0 }, pommel: 'disc', grip: .11, fit: [.86, .68, .3], gripCol: [.36, .2, .12] },
+    cross: { len: .14, h: .01, d: .014, turn: 0 }, pommel: 'disc', work: 'fili', grip: .11, fit: [.86, .68, .3], gripCol: [.36, .2, .12] },
   nimcha: { blade: .78, w0: .02, w1: .018, back: .006, th: .0042, point: .16, round: 0, curve: .075, fullers: [[-.35, .22, .35, .7]], collar: true,
-    cross: { len: .1, h: .012, d: .015, turn: .55 }, knuckle: true, pommel: 'hook', grip: .1, fit: [.86, .68, .3], gripCol: [.12, .09, .08] },
+    cross: { len: .1, h: .012, d: .015, turn: .55 }, knuckle: true, pommel: 'hook', work: 'fili', grip: .1, fit: [.86, .68, .3], gripCol: [.12, .09, .08] },
   falchion: { blade: .66, w0: .022, w1: .036, back: .004, th: .0036, point: .2, round: .6, curve: 0, clip: true, fullers: [],
     cross: { len: .13, h: .012, d: .016, turn: 0 }, pommel: 'cap', grip: .095, fit: [.4, .41, .43], gripCol: [.3, .2, .13] },
   flyssa: { blade: .82, w0: .021, w1: .021, back: .005, th: .0048, point: 1, round: 0, curve: 0, fullers: [], collar: true, facets: true,
-    cross: { len: .05, h: .01, d: .02, turn: 0 }, pommel: 'flyssa', grip: .11, fit: [.86, .68, .3], gripCol: [.42, .3, .2] } };
+    cross: { len: .05, h: .01, d: .02, turn: 0 }, pommel: 'flyssa', work: 'fili', grip: .11, fit: [.86, .68, .3], gripCol: [.42, .3, .2] } };
 // each pommel's box for the clearance test, round its middle: x and y (from the grip's foot) of the middle, and its half sizes
 const SWORD_POMMEL = { wheel: [0, -.025, .027, .027, .013], lobed: [0, -.013, .036, .015, .013], disc: [0, -.036, .035, .035, .006], hook: [-.016, -.012, .026, .021, .011], cap: [0, -.012, .019, .016, .016], flyssa: [.006, -.025, .028, .027, .016] };
 const SWORD_BY_PEOPLE = { gatelander: 'arming', markman: 'norse', aurennais: 'takouba', oldblood: 'arming' };
@@ -3713,6 +3713,72 @@ function swordBlade(K) {
     for (const [x, z] of ring) pos.push(x, y, z); for (let k = M - 1; k >= 0; k--) pos.push(ring[k][0], y, -ring[k][1]); }
   const RS = 2 * M; for (let r = 0; r < NR; r++) for (let k = 0; k < RS; k++) { const a = r * RS + k, b = r * RS + (k + 1) % RS, c = a + RS, d = b + RS; idx.push(a, b, c, b, d, c); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g; }
+// ── the fittings' work (Session 2100, OG-028: "Celtic knotwork, runic carving and filigree") ──
+// Cut as a texture over the fittings, no triangle added: one canvas read as both colour (the ground and the grooves darker) and bump.
+// The Gatelands' bronze takes knotwork: a two-cord twist, over and under at each crossing, framed by a line each side, round the
+// wheel pommel's rim, along the cross's faces, and as a ring round the boss on the wheel's two faces. Aurenne's gilt takes filigree:
+// fine wire scrolls on a matt ground with granules in their loops and beaded wire at each edge, round the collar and the pommel's
+// rim, and a rosette of eight scrolls on the takouba's disc. A band's tile is one twist (two crossings, or two scrolls) and twice as
+// long as the band is wide; `fitBandUV` lays it along a face's long side, the band across the short.
+const FIT_TEX = {};
+function fitTex(kind) {
+  if (FIT_TEX[kind]) return FIT_TEX[kind];
+  const ring = kind.endsWith('Ring'), W = ring ? 512 : 512, H = ring ? 512 : 256, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const gr = v => { const k = Math.round(v * 255); return `rgb(${k},${k},${k})`; };
+  // a path's point at t (0..1 along the band) and o (across it, in pixels from its middle): straight along a band, round a ring
+  const R0 = ring ? (kind === 'knotRing' ? 180 : 0) : 0, at = ring ? (t, o) => [W / 2 + (R0 + o) * Math.cos(t * 2 * Math.PI), H / 2 + (R0 + o) * Math.sin(t * 2 * Math.PI)] : (t, o) => [t * W, H / 2 + o];
+  const line = (f, t0, t1, w, v, cap = 'round') => { x.lineWidth = w; x.strokeStyle = gr(v); x.lineCap = cap; x.lineJoin = 'round'; x.beginPath(); const N = Math.max(8, Math.ceil((t1 - t0) * (ring ? 720 : 240))); for (let i = 0; i <= N; i++) { const p = f(t0 + (t1 - t0) * i / N); i ? x.lineTo(...p) : x.moveTo(...p); } x.stroke(); };
+  const dot = (p, r, v) => { const g = x.createRadialGradient(p[0] - r * .3, p[1] - r * .3, r * .1, p[0], p[1], r); g.addColorStop(0, gr(Math.min(1, v + .08))); g.addColorStop(1, gr(v * .72)); x.fillStyle = g; x.beginPath(); x.arc(p[0], p[1], r, 0, 7); x.fill(); };
+  if (kind.startsWith('knot')) {
+    x.fillStyle = gr(.66); x.fillRect(0, 0, W, H);
+    // the twist: two cords crossing n times a turn (twice a tile), each drawn as its groove, its body and its crown; then at each crossing the cord
+    // that goes over is drawn again across it, butt-ended, so the other passes under
+    const n = ring ? 9 : 1, amp = ring ? 30 : 62, cw = ring ? 24 : 40;
+    const cord = s => t => at(t, s * amp * Math.sin(2 * Math.PI * n * t));
+    const body = (f, t0, t1, cap) => { line(f, t0, t1, cw + 14, .28, cap); line(f, t0, t1, cw, .86, cap); line(f, t0, t1, cw * .42, 1, cap); };
+    for (const s of [1, -1]) line(cord(s), -.1, 1.1, cw + 14, .28);
+    for (const s of [1, -1]) { line(cord(s), -.1, 1.1, cw, .86); line(cord(s), -.1, 1.1, cw * .42, 1); }
+    const d = .19 / (2 * n); for (let k = -1; k <= 2 * n + 1; k++) { const tk = k / (2 * n), s = k % 2 ? 1 : -1; body(cord(s), tk - d, tk + d, 'butt'); }
+    // the frame: a raised line each side, a groove inside it
+    const fo = ring ? [amp + cw / 2 + 14, -(amp + cw / 2 + 14)] : [H / 2 - 12, -(H / 2 - 12)];
+    for (const o of fo) { line(t => at(t, o), -.05, 1.05, 18, .28); line(t => at(t, o), -.05, 1.05, 10, .95); }
+  } else {
+    x.fillStyle = gr(.6); x.fillRect(0, 0, W, H);
+    // a scroll: a wire spiralling in from its start, `turns` round, to a granule at its eye
+    const scroll = (cx, cy, r, a0, dir, turns, w) => { x.lineWidth = w; x.strokeStyle = gr(.97); x.lineCap = 'round'; x.beginPath(); const N = 60;
+      for (let i = 0; i <= N; i++) { const f = i / N, a = a0 + dir * f * turns * 2 * Math.PI, rr = r * (1 - .78 * f); const p = [cx + rr * Math.cos(a), cy + rr * Math.sin(a)]; i ? x.lineTo(...p) : x.moveTo(...p); } x.stroke(); dot([cx, cy], w * 1.1, .95); };
+    if (!ring) {
+      // the stem: a wave along the middle; at each crest a scroll curling off toward the edge, a granule in each trough's bay; beaded wire at both edges
+      const A = 34, stem = t => at(t, A * Math.sin(2 * Math.PI * 2 * t));
+      line(stem, -.05, 1.05, 12, .34); line(stem, -.05, 1.05, 7, .97);
+      for (let k = 0; k < 5; k++) { const t = (k + .25) / 2, sd = k % 2 ? 1 : -1, [cx, cy] = at(t, 0); scroll(cx + 14 * sd, cy - sd * 78, 40, sd > 0 ? Math.PI : 0, -sd, 1.6, 6);
+        scroll(cx - 52 * sd, cy - sd * 64, 22, sd > 0 ? 0 : Math.PI, sd, 1.3, 5); const [gx, gy] = at(t + .25, 0); for (let j = 0; j < 3; j++) dot([gx + (j - 1) * 11, gy - sd * (64 + (j === 1 ? 10 : 0))], 5.5, .95); }
+      for (const o of [H / 2 - 13, -(H / 2 - 13)]) { line(t => at(t, o), -.05, 1.05, 4, .8); for (let i = 0; i < 33; i++) dot(at(i / 32, o), 6.5, .97); }
+    } else {
+      // the rosette: a granule cluster at the eye, a ring of granules, eight petals each a pair of scrolls back to back, a wire ring and a beaded edge
+      const C = [W / 2, H / 2]; dot(C, 22, .98); for (let i = 0; i < 6; i++) dot([C[0] + 30 * Math.cos(i * Math.PI / 3), C[1] + 30 * Math.sin(i * Math.PI / 3)], 9, .95);
+      x.lineWidth = 6; x.strokeStyle = gr(.95); x.beginPath(); x.arc(C[0], C[1], 52, 0, 7); x.stroke();
+      for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, ux = Math.cos(a), uy = Math.sin(a), vx = -uy, vy = ux;
+        line(f => [C[0] + ux * (56 + 120 * f) , C[1] + uy * (56 + 120 * f)], 0, 1, 6, .95);
+        for (const s of [1, -1]) scroll(C[0] + ux * 150 + vx * s * 38, C[1] + uy * 150 + vy * s * 38, 34, a + Math.PI + s * .9, s, 1.5, 5.5);
+        const b = a + Math.PI / 8; for (let j = 0; j < 3; j++) dot([C[0] + (128 + j * 34) * Math.cos(b), C[1] + (128 + j * 34) * Math.sin(b)], 7 - j, .95); }
+      x.lineWidth = 7; x.strokeStyle = gr(.95); x.beginPath(); x.arc(C[0], C[1], 218, 0, 7); x.stroke();
+      for (let i = 0; i < 64; i++) { const a = i / 64 * 2 * Math.PI; dot([C[0] + 240 * Math.cos(a), C[1] + 240 * Math.sin(a)], 9, .97); }
+    }
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return FIT_TEX[kind] = t;
+}
+// a fitting's material with its work, from the plain one; bumpScale in three's screen units
+const fitWork = (m, kind) => { const w = m.clone(); w.map = w.bumpMap = fitTex(kind); w.bumpScale = 2.4; w.name = kind; return w; };
+// a band's uv on a box-like piece: along each face's long side in tiles twice the face's short side, across the short side 0 to 1
+function fitBandUV(g) { g = g.index ? g.toNonIndexed() : g; const P = g.attributes.position, N = g.attributes.normal, uv = new Float32Array(P.count * 2);
+  g.computeBoundingBox(); const bb = g.boundingBox, lo = [bb.min.x, bb.min.y, bb.min.z], ext = [bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z];
+  for (let i = 0; i < P.count; i++) { const n = [Math.abs(N.getX(i)), Math.abs(N.getY(i)), Math.abs(N.getZ(i))], a = n.indexOf(Math.max(...n)), [b, c2] = [0, 1, 2].filter(k => k !== a), L = ext[b] >= ext[c2] ? b : c2, S = L === b ? c2 : b, p = [P.getX(i), P.getY(i), P.getZ(i)];
+    uv[i * 2] = (p[L] - lo[L]) / (2 * ext[S]); uv[i * 2 + 1] = (p[S] - lo[S]) / ext[S]; }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); return g; }
+// a cylinder's side in tiles twice its height round (its caps keep their disc mapping)
+function fitCylUV(g, r, h) { const uv = g.attributes.uv, side = g.groups[0], idx = g.index, k = Math.max(1, Math.round(2 * Math.PI * r / (2 * h))), seen = new Set();
+  for (let j = side.start; j < side.start + side.count; j++) { const i = idx.getX(j); if (seen.has(i)) continue; seen.add(i); uv.setX(i, uv.getX(i) * k); } uv.needsUpdate = true; return g; }
 function swordParts(D, make, fit) {
   const K = { ...SWORDS[make], ...fit }, parts = [], add = (g, m, name) => { const o = new THREE.Mesh(g, m); o.name = name; parts.push(o); return o; };
   const steel = new THREE.MeshStandardMaterial({ color: sRGB(.66, .67, .7), metalness: .85, roughness: .28 }), fitM = new THREE.MeshStandardMaterial({ color: sRGB(...K.fit), metalness: .8, roughness: .32 });
@@ -3722,23 +3788,23 @@ function swordParts(D, make, fit) {
   add(new THREE.LatheGeometry(prof, 16), wrap, 'swordGrip');
   // the guard: a bar across the blade's plane, or two quillons turned toward the blade (the nimcha's)
   const C = K.cross, yC = K.yG1 + C.h / 2;
-  if (!C.turn) { const g = new THREE.BoxGeometry(C.len, C.h, C.d, 8, 1, 1), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const f = 1 - .3 * (Math.abs(P.getX(i)) / (C.len / 2)) ** 2; P.setY(i, P.getY(i) * f); P.setZ(i, P.getZ(i) * f); } g.computeVertexNormals(); add(g, fitM, 'swordGuard').position.y = yC; }
+  if (!C.turn) { const g = new THREE.BoxGeometry(C.len, C.h, C.d, 8, 1, 1), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const f = 1 - .3 * (Math.abs(P.getX(i)) / (C.len / 2)) ** 2; P.setY(i, P.getY(i) * f); P.setZ(i, P.getZ(i) * f); } g.computeVertexNormals(); add(K.work === 'knot' ? fitBandUV(g) : g, K.work === 'knot' ? fitWork(fitM, 'knotBand') : fitM, 'swordGuard').position.y = yC; }
   else for (const s of [-1, 1]) { const q = add(new THREE.BoxGeometry(C.len / 2, C.h * .8, C.d * .8), fitM, 'swordGuard'); q.rotation.z = s * C.turn; q.position.set(s * C.len / 4 * Math.cos(C.turn), yC + C.len / 4 * Math.sin(C.turn), 0);
     const b = add(new THREE.SphereGeometry(C.h * .6, 10, 8), fitM, 'swordGuard'); b.position.set(s * C.len / 2 * Math.cos(C.turn), yC + C.len / 2 * Math.sin(C.turn), 0); }
   // the blade, from the guard's top
   const yB = K.yG1 + C.h, bl = add(swordBlade(K), steel, 'swordBlade'); bl.position.y = yB;
   // the Mark's runes inlaid at the forte down the fuller's floor, both faces; Aurenne's gilt collar over the forte
   if (K.runes) { const rg = new THREE.BoxGeometry(.0016, .009, .0006); for (let k = 0; k < 9; k++) { const t = .05 + k * .018, S = swordAt(K, t), z = S.th * (1 - K.fullers[0][2]) + .0003; for (const sd of [-1, 1]) { const r = add(rg, dark, 'swordRunes'); r.position.set((k % 3 - 1) * .0035 * (k % 2 ? 1 : -.5), yB + t * K.blade, sd * z); r.rotation.z = (k % 4 - 1.5) * .35; } } }
-  if (K.collar) { const S = swordAt(K, .02), g = new THREE.BoxGeometry(S.we + S.wb + .003, .022, 2 * S.th + .003); g.translate((S.we - S.wb) / 2, 0, 0); add(g, fitM, 'swordCollar').position.y = yB + .011; }
+  if (K.collar) { const S = swordAt(K, .02), g = new THREE.BoxGeometry(S.we + S.wb + .003, .022, 2 * S.th + .003); g.translate((S.we - S.wb) / 2, 0, 0); add(K.work === 'fili' ? fitBandUV(g) : g, K.work === 'fili' ? fitWork(fitM, 'filiBand') : fitM, 'swordCollar').position.y = yB + .011; }
   // the pommel under the grip
   const yP = K.yG0; let pm;
-  if (K.pommel === 'wheel') { pm = add(new THREE.CylinderGeometry(.027, .027, .02, 24), fitM, 'swordPommel'); pm.rotation.x = Math.PI / 2; pm.position.y = yP - .025; const boss = add(new THREE.CylinderGeometry(.011, .011, .026, 14), fitM, 'swordPommel'); boss.rotation.x = Math.PI / 2; boss.position.y = yP - .025; }
+  if (K.pommel === 'wheel') { pm = add(fitCylUV(new THREE.CylinderGeometry(.027, .027, .02, 24), .027, .02), [fitWork(fitM, 'knotBand'), fitWork(fitM, 'knotRing'), fitWork(fitM, 'knotRing')], 'swordPommel'); pm.rotation.x = Math.PI / 2; pm.position.y = yP - .025; const boss = add(new THREE.CylinderGeometry(.011, .011, .026, 14), fitM, 'swordPommel'); boss.rotation.x = Math.PI / 2; boss.position.y = yP - .025; }
   else if (K.pommel === 'lobed') { const bar = add(new THREE.BoxGeometry(.07, .014, .024), fitM, 'swordPommel'); bar.position.y = yP - .007;
     for (let k = 0; k < 5; k++) { const x = (k - 2) * .0135, lb = add(new THREE.SphereGeometry(.0085, 10, 8), fitM, 'swordPommel'); lb.scale.set(1, 1.2 - .25 * Math.abs(k - 2) / 2, 1.3); lb.position.set(x, yP - .016 - .006 * (1 - Math.abs(k - 2) / 2), 0); } }
-  else if (K.pommel === 'disc') { pm = add(new THREE.CylinderGeometry(.035, .035, .011, 28), fitM, 'swordPommel'); pm.rotation.x = Math.PI / 2; pm.position.y = yP - .036; const nk = add(new THREE.CylinderGeometry(.006, .009, .004, 10), fitM, 'swordPommel'); nk.position.y = yP - .002; }
+  else if (K.pommel === 'disc') { pm = add(fitCylUV(new THREE.CylinderGeometry(.035, .035, .011, 28), .035, .011), [fitWork(fitM, 'filiBand'), fitWork(fitM, 'filiRing'), fitWork(fitM, 'filiRing')], 'swordPommel'); pm.rotation.x = Math.PI / 2; pm.position.y = yP - .036; const nk = add(new THREE.CylinderGeometry(.006, .009, .004, 10), fitM, 'swordPommel'); nk.position.y = yP - .002; }
   else if (K.pommel === 'hook') { const hk = add(new THREE.CapsuleGeometry(.0105, .035, 4, 10), fitM, 'swordPommel'); hk.rotation.z = -1.0; hk.position.set(-.016, yP - .012, 0); }
   else if (K.pommel === 'cap') { pm = add(new THREE.SphereGeometry(.019, 14, 10), fitM, 'swordPommel'); pm.scale.set(1, .8, .8); pm.position.y = yP - .012; }
-  else { pm = add(new THREE.CylinderGeometry(.022, .013, .05, 6), fitM, 'swordPommel'); pm.scale.set(1.2, 1, .7); pm.position.set(.006, yP - .025, 0); pm.rotation.z = -.25; }
+  else { pm = add(fitCylUV(new THREE.CylinderGeometry(.022, .013, .05, 6), .0175, .05), [fitWork(fitM, 'filiBand'), fitM, fitM], 'swordPommel'); pm.scale.set(1.2, 1, .7); pm.position.set(.006, yP - .025, 0); pm.rotation.z = -.25; }
   // the nimcha's knuckle guard: a bar from the guard's edge-side quillon round before the fingers to the pommel
   let kn = null; if (K.knuckle) { const x0 = C.len / 2 * Math.cos(C.turn) * .55, pts = [new THREE.Vector3(x0, yC, 0), new THREE.Vector3(K.kx, yC - .03, 0), new THREE.Vector3(K.kx, (yC + yP) / 2, 0), new THREE.Vector3(K.kx * .8, yP + .012, 0), new THREE.Vector3(.004, yP - .004, 0)];
     kn = new THREE.CatmullRomCurve3(pts); add(new THREE.TubeGeometry(kn, 24, .0036, 6), fitM, 'swordKnuckle'); }
