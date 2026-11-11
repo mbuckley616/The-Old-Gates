@@ -3672,6 +3672,8 @@ function buildDungeon(portal){
       // family lookup doesn't have to fall back to name-matching for dungeon enemies.
       initPosture(ENEMIES[ENEMIES.length-1]);
       if(gateCorruptOf(name))gateCorruptBody(ENEMIES[ENEMIES.length-1],portal); /* S1933 — built again on its kin's driver, at its own numbers (68-dungeon-misc.js) */
+      else if(name==='Gale Wisp')gaothWispBody(ENEMIES[ENEMIES.length-1]); /* S2115 — Gaoth's wisp on the Shore Wisp's light (68-dungeon-misc.js) */
+      else if(name==='Dusk Eagle')duskEagleBody(ENEMIES[ENEMIES.length-1],portal); /* S2116 — the flier (68-dungeon-misc.js) */
     });
   }
   spawnFloorEnemies(dMap,1,0,1.0);

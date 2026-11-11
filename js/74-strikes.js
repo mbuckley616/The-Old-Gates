@@ -142,7 +142,7 @@ const FOE_ATTACKS={
 const TELEGRAPH_BY_NAME=Object.assign({},...Object.values(FOE_ATTACKS).map(r=>r.tells));
 const FOE_FAMILY_OF={Skeleton:'humanoid',Goblin:'humanoid','Kobold Thief':'humanoid',Shieldbearer:'humanoid',Bandit:'humanoid',
   Golem:'brute',Gargoyle:'brute','Cave Bear':'brute',Ogre:'brute',Phantom:'wraith',Slime:'slime','Small Slime':'slime',
-  'Fire Elemental':'elemental',Mimic:'mimic',Spider:'spider','Shore Wisp':'spider',Shark:'shark'};
+  'Fire Elemental':'elemental',Mimic:'mimic',Spider:'spider','Shore Wisp':'spider','Gale Wisp':'spider','Dusk Eagle':'beast',Shark:'shark'}; /* S2115 — Gaoth's wisp fights as the coast's */
 const FOE_SHAPE_FAMILY={humanoid:'humanoid',wolf:'beast',spider:'spider',brute:'brute',shark:'shark'};
 function foeFamily(e){
   if(!e)return 'humanoid';
@@ -628,6 +628,7 @@ function executeStrike(e, rawDmg, now){
     lastHitT = now/1000;
     playerPostureHit(rawDmg*_row.posture*(_hv?_hv.posture:1), now/1000, false, !!_hv); // S281; S940 — the row's multiple (1.5 for every family today); S1136 — twice for a heavy
     if(finalDmg>0)impactOnYou(e,'hit'); /* S1951 — on a heavy chest, sparks (#1239 B) */
+    if(e.shove&&finalDmg>0)foeShoveYou(e); /* S2115 — a Gale Wisp's blow shoves you 1 m (68-dungeon-misc.js) */
     e._lunge=.3; // v80 — every strike moves the body
     if(e._spar&&typeof sparBlow==='function')sparBlow(e,'hit');
     if(PHP<=0 && !dead) playerDead();

@@ -38,7 +38,7 @@ function pushFromBodies(){
     const ux=d>1e-4?dx/d:-fwdX,uz=d>1e-4?dz/d:-fwdZ;const nx=bx+ux*R,nz=bz+uz*R;
     if(free(nx,nz)){px=nx;pz=nz;}else if(free(nx,pz))px=nx;else if(free(px,nz))pz=nz;};
   if(_int){if(typeof INT_NPCS!=='undefined')for(const n of INT_NPCS){if(n&&n.g&&n.g.visible)push(n.g.position.x,n.g.position.z,.3);}return;}
-  if(inD){if(typeof ENEMIES!=='undefined')for(const e of ENEMIES){if(e.dead||e.floor!==currentFloor||Math.abs(e.x-px)>2||Math.abs(e.z-pz)>2)continue;push(e.x,e.z,bodyR(e,.5));}return;}
+  if(inD){if(typeof ENEMIES!=='undefined')for(const e of ENEMIES){if(e.dead||e.aloft||e.floor!==currentFloor||Math.abs(e.x-px)>2||Math.abs(e.z-pz)>2)continue;push(e.x,e.z,bodyR(e,.5));}return;}
   for(const e of ZE){if(!e||e.dead||e.locked||Math.abs(e.x-px)>3||Math.abs(e.z-pz)>3)continue;if(e.mesh&&!e.mesh.visible)continue;push(e.x,e.z,bodyR(e,e.isBoss||e.boss?.9:.7));}
   if(activeZoneId==='world'&&typeof npcs!=='undefined')for(const n of npcs){if(!n.g||!n.g.visible)continue;const p=n.g.position;if(Math.abs(p.x-px)>2||Math.abs(p.z-pz)>2)continue;push(p.x,p.z,.3);}
 }
@@ -1252,6 +1252,7 @@ function loop(now){
         if(e.hp<=0)killE(e,dmgTag(info,e));dScene.remove(fb);BALLS.splice(i,1);}});}
     staggerSweep();
     ENEMIES.forEach(e=>{if(e.dead||e.floor!==currentFloor)return;if(typeof dFoeIce==='function')dFoeIce(e); /* S1692 — a foe on a frozen pool stands on its ice */const T=targetOf(e);const dist=Math.hypot(T.x-e.x,T.z-e.z);
+      if(e.flier&&typeof eagleTick==='function'&&eagleTick(e,dt,T,dist))return; /* S2116 — the dusk eagle flies on its own tick (68-dungeon-misc.js) */
       // S222 — a slime quivers, faster as it creeps; a fire elemental's flames flicker and its core eases back to its glow
       if(e.limbs&&e.limbs.slime&&e.limbs.body){const q=Math.sin(swT*(e.alert?7:3)+(e.ph||0))*.05;e.limbs.body.scale.set(1+q,1-q*1.4,1+q);}
       if(e.limbs&&e.limbs.flames){const L=e.limbs.flames;for(let i=0;i<L.length;i++){const m=L[i],f=1+.18*Math.sin(swT*9+i*1.7+(e.ph||0))+.08*Math.sin(swT*23+i);m.scale.set(m.userData.s0.x,m.userData.s0.y*f,m.userData.s0.z);}

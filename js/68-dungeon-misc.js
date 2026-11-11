@@ -599,6 +599,62 @@ function foeRebody(e,kind,D,body,portal){if(!D||!e||!e.mesh)return false;
 function gateCorruptBody(e,portal){const C=e&&gateCorruptOf(e.baseType);if(!C)return false;const D=gateCorruptDef(C.kind);
   if(!foeRebody(e,C.kind,D,C.body,portal))return false;const rig=e.limbs&&e.limbs.wolf;if(rig){rig.hcKind=C.kind;delete rig.hcKey;}
   e.name=C.kind;e.corrupt=C.school;e.shape=D.shape;delete e.posture;delete e.maxPosture;initPosture(e);return true;}
+// S2115 — Gaoth's wisp (GALE_WISP, 42-zone-enemies.js): spawned on the Skeleton's row, it is built again as the coast's Shore Wisp's light,
+// keeping the numbers it was given; it takes the Shore Wisp's resists and armour, Gaoth's words at ×0.7, and its shove
+function gaothWispBody(e){if(!e||!e.mesh||e.baseType!=='Gale Wisp'||typeof buildZoneEnemy!=='function')return false;
+  const W=GALE_WISP,z=buildZoneEnemy(new THREE.Group(),[],0,0,W.from,null,{tier:1});if(!z||!z.mesh)return false;
+  const g=e.mesh,L=e.limbs&&!Array.isArray(e.limbs)?e.limbs:{},hpBg=L.hpBg||e.hpBg;
+  g.children.slice().forEach(c=>{if(c===hpBg||c===e.hpFg||c.isLight)return;g.remove(c);});g.scale.set(1,1,1);g.rotation.set(0,g.rotation.y,0);
+  for(const c of z.mesh.children.slice()){if(c===z.hpBg||c===z.hpFg||c.isLight)continue;z.mesh.remove(c);g.add(c);}
+  if(z.el&&z.el.parent)z.el.parent.remove(z.el);g._hover=true;
+  const D=ZONE_FOE_DEF[W.from];e.limbs={hpBg,body:z.limbs&&z.limbs.body};e.def=D.def||0;e.resist=Object.assign({},D.resist,{gaoth:W.ward});
+  e.shove=W.shove;e.size=D.scale;e.buildFn='wisp';e._origCol=D.col;e.isWraith=false;e.ranged=false;e.shieldUp=false;e.school='gaoth';
+  if(hpBg)hpBg.position.y=1.3;if(e.hpFg)e.hpFg.position.y=1.3;if(e.el){e.el.color.setHex(W.light);e.el.intensity=.7;}
+  delete e.posture;delete e.maxPosture;initPosture(e);return true;}
+// the wisp's blow that lands shoves you its length straight away from it, slid along the walls in tenths so nothing is passed through
+function foeShoveYou(e){const m=e&&e.shove;if(!m||typeof activeZoneId==='undefined'||activeZoneId!=='dungeon'||typeof dSlideP!=='function')return 0;
+  const d=Math.hypot(px-e.x,pz-e.z);if(!(d>1e-3))return 0;const ux=(px-e.x)/d,uz=(pz-e.z)/d,x0=px,z0=pz;
+  for(let i=0;i<10;i++){const [nx,nz]=dSlideP(px,pz,ux*m/10,uz*m/10);if(nx===px&&nz===pz)break;px=nx;pz=nz;}
+  return Math.hypot(px-x0,pz-z0);}
+// S2116 — the dusk eagle (Michael's C on #1424; OG-088, the kit's `duskeagle`, the Crag Hawk grown ×2.6): in a failing or catastrophic
+// Gaoth gate, in the first wisp's slot. The Dire Wolf's numbers at the floor's tier, Gaoth's words at ×0.7. It circles 4 to 6 m up (under
+// the vault, `dCeil`), round its home and, once it has seen you, round you; out of a blade's reach there (`aloft`, as S1711's birds). It
+// stops and hangs for its 0.9 s tell, then dives at where you stood when the tell ended: step aside and it strikes air. At the dive's foot
+// it is 1 m up for 0.7 s, and a blade or a parry reaches it (a parry staggers it and it hangs there while staggered); then it climbs back
+// and circles 2.5 s before the next. An arrow or a word reaches it always. Its body is the kit's bird's stand-in (birdStandIn,
+// 34-creatures.js) until the bodies builder brings the eagle and its dive pose
+const DUSK_EAGLE={from:'Dire Wolf',ward:.7,alt:[4,6],ring:4.5,turn:.8,fly:5,tell:.9,dive:12,low:1,linger:.7,climb:4,rest:2.5,reach:1.6,aloft:2,sight:16,len:1.43,col:0x3b3f4c,light:0xa8ecff};
+function duskEagleBody(e,portal){if(!e||!e.mesh||e.baseType!=='Dusk Eagle')return false;const E=DUSK_EAGLE,D=ZONE_FOE_DEF[E.from];if(!D)return false;
+  const g=e.mesh,L=e.limbs&&!Array.isArray(e.limbs)?e.limbs:{},hpBg=L.hpBg||e.hpBg;
+  g.children.slice().forEach(c=>{if(c===hpBg||c===e.hpFg||c.isLight)return;g.remove(c);});g.scale.set(1,1,1);g.rotation.set(0,g.rotation.y,0);
+  const body=typeof birdStandIn==='function'?birdStandIn(E.len,E.col):new THREE.Mesh(new THREE.SphereGeometry(.3,8,6),new THREE.MeshLambertMaterial({color:E.col}));g.add(body);
+  const ds=portal&&portal.diffScale||DIFF_SCALE.normal,tr=dungeonTier(portal,e.floor||1);
+  e.hp=e.maxHp=Math.max(1,Math.round(D.hp*ds.hp*enemyHpScale(tr)));e.dmgMult=D.dmg/15*ds.dmg*enemyDmgScale(tr);e.tier=tr;e.spd=D.spd*ds.spd;e.rankSpd=D.spd;
+  e.def=D.def||0;e.resist=Object.assign({},D.resist,{gaoth:E.ward});e.size=1;e.buildFn='bird';e._origCol=E.col;e.variant=null;e.xpMult=1;e.school='gaoth';
+  e.isWraith=false;e.ranged=false;e.shieldUp=false;e.disguised=false;e.dormant=false;e.limbs={hpBg,body};
+  const r=seededRng('eagle',e.id||'');e.flier={mode:'circle',a:r()*Math.PI*2,dir:r()<.5?-1:1,alt:E.alt[0]+r()*(E.alt[1]-E.alt[0]),y:E.alt[0],t:0,cd:E.rest,tx:0,tz:0};
+  if(hpBg)hpBg.position.y=.6;if(e.hpFg)e.hpFg.position.y=.6;if(e.el){e.el.color.setHex(E.light);e.el.intensity=.5;}
+  delete e.posture;delete e.maxPosture;initPosture(e);return true;}
+// the height it flies at here: its own, under the vault by 0.8 m, never under 2.2 m
+function eagleAlt(e){const F=e.flier;let c=6;try{if(typeof dCeil==='function')c=dCeil(e.x,e.z);}catch(err){}return Math.max(2.2,Math.min(F.alt,c-.8));}
+function eagleTick(e,dt,T,dist){const F=e.flier,E=DUSK_EAGLE;if(!F)return false;
+  const now=performance.now(),ease=(v,to,r)=>v+Math.max(-r*dt,Math.min(r*dt,to-v)),go=(tx,tz,sp)=>{const dx=tx-e.x,dz=tz-e.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;
+    const st=Math.min(d,sp*dt),[nx,nz]=dSlide(e.x,e.z,dx/d*st,dz/d*st),moved=Math.hypot(nx-e.x,nz-e.z);e.x=nx;e.z=nz;if(moved>1e-4)e.combatYaw=Math.atan2(dx,dz);return moved>st*.5;};
+  if(!e.alert&&dist<E.sight)e.alert=true;if(e.alert&&dist>E.sight*1.6)e.alert=false;
+  F.cd=Math.max(0,F.cd-dt);const alt=eagleAlt(e);
+  if(typeof isStaggered==='function'&&isStaggered(e)){e._wind=0;} /* staggered, it hangs where it is */
+  else if(F.mode==='circle'){const cx=e.alert?T.x:e.homeX,cz=e.alert?T.z:e.homeZ;F.a+=dt*E.turn*F.dir;go(cx+Math.sin(F.a)*E.ring,cz+Math.cos(F.a)*E.ring,E.fly);F.y=ease(F.y,alt,E.climb);
+    if(e.alert&&F.cd<=0&&dist<E.ring+4&&Math.abs(F.y-alt)<.3){F.mode='tell';F.t=E.tell;e.telegraphT=E.tell;e.telegraphMax=E.tell;}}
+  else if(F.mode==='tell'){F.t-=dt;e._wind=Math.min(1,1-F.t/E.tell);e.combatYaw=Math.atan2(T.x-e.x,T.z-e.z);
+    if(F.t<=0){F.mode='dive';F.tx=T.x;F.tz=T.z;e._wind=0;e.telegraphT=0;}}
+  else if(F.mode==='dive'){const d=Math.hypot(F.tx-e.x,F.tz-e.z),sp=E.dive,k=Math.min(1,sp*dt/Math.max(1e-3,Math.hypot(d,F.y-E.low)));
+    const ok=go(F.tx,F.tz,sp*(d/Math.max(1e-3,Math.hypot(d,F.y-E.low))));F.y=F.y+(E.low-F.y)*k;
+    if((d<.25&&F.y-E.low<.15)||!ok){F.y=Math.min(F.y,E.low);F.mode='low';F.t=E.linger;e.atkAnim=.35;const dd=Math.hypot(T.x-e.x,T.z-e.z)||1;e.atkDir={x:(T.x-e.x)/dd,z:(T.z-e.z)/dd};
+      if(ok&&dd<=E.reach)executeStrike(e,foeBlow(e),now);else if(typeof sndSwing==='function')sndSwing();}}
+  else if(F.mode==='low'){F.t-=dt;if(F.t<=0)F.mode='climb';}
+  else if(F.mode==='climb'){F.y=ease(F.y,alt,E.climb);if(Math.abs(F.y-alt)<.05){F.mode='circle';F.cd=E.rest;}}
+  e.aloft=F.y>E.aloft;
+  e.mesh.position.set(e.x,e.baseY+F.y,e.z);e.mesh.rotation.set(F.mode==='dive'?.5:0,e.combatYaw,0,'YXZ');if(e.el)e.el.position.set(e.x,e.baseY+F.y,e.z);return true;}
 // the master is 1.5× the beast: one that would stand through the cavern's ceiling is made the largest that clears it
 function masterUnderCeiling(e){const g=e&&e.mesh;if(!g)return;const rig=e.limbs&&(e.limbs.person||e.limbs.wolf);const root=rig&&rig.root;if(!root)return;
   g.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(root),h=b.max.y-b.min.y,room=FLOOR_HEIGHT-.15;if(h>room)g.scale.multiplyScalar(room/h);}

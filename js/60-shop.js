@@ -828,6 +828,10 @@ function _chaExtraItem(stock, cha){
   }
   return null;
 }
+// S2117 — the counter's swords in its island's make (Michael's B on #1425; `swordStamp`, 14-items.js): copies, so the shared table is
+// untouched, and each row's blade drawn by its house and row, so a counter shows the same takouba or flyssa every visit
+function counterSwords(stock,h){if(!h||!stock)return stock;const isle=houseIsle(h)||isleHere(),key=h.id||h.name||'';
+  return stock.map((it,i)=>isSwordItem(it)?swordStamp({...it},isle,seededRng('sword',key+':'+i)):it);}
 function renderShop(){
   document.getElementById('sh-gold-val').textContent=gold;
   // Stock list
@@ -861,6 +865,7 @@ function renderShop(){
   // v80 S333 — Charisma's merchant access (Michael's A on #58): at 5 points a merchant shows one piece from the tier above its best.
   const _chaX = _chaExtraItem(stock, _cha);
   if(_chaX) stock = [...stock, _chaX];
+  stock = counterSwords(stock, currentHouse); /* S2117 */
 
   // v68 — merge this merchant's buy-back overlay onto the native stock. These
   // are items the player previously sold here, re-priced to what they got.

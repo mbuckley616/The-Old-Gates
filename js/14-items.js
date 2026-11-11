@@ -647,6 +647,23 @@ function foundPlaceSchool(){try{if(typeof activeZoneId==='undefined'||activeZone
   return gateOrbSchool(currentPortal);}catch(e){return null;}}
 // the named action (co-op rules): the gate's orb is taken, and the gate keeps no other
 function takeGateOrb(seed){if(seed==null)return;(worldState.gateOrbs||(worldState.gateOrbs={}))[seed]=1;}
+// S2117 — swords by island (Michael's B on #1425): a Sword or a Scimitar records its make, for its look only; the name and the numbers
+// are the type's. `make` is the island it was sold, found or forged on; `swordMake` names the kit's blade (people.js, S2096): the arming
+// sword in the Gatelands, the Norse sword in the Mark, and in Aurenne the takouba (1 in 2), the falchion or the flyssa (1 in 4 each), drawn
+// from the item's own stream (a counter's by its house and row, a chest's from its loot stream). A Scimitar is the nimcha everywhere.
+const SWORD_MAKES={gatelands:'arming',mark:'norse',aurenne:'takouba'};
+function isSwordItem(it){return !!it&&(it.weaponType==='Sword'||it.weaponType==='Scimitar');}
+function swordStamp(it,isle,rng){if(!isSwordItem(it))return it;isle=SWORD_MAKES[isle]?isle:'gatelands';it.make=isle;
+  if(it.weaponType==='Scimitar')it.swordMake='nimcha';
+  else if(isle==='aurenne'){const r=(rng||Math.random)();it.swordMake=r<.5?'takouba':r<.75?'falchion':'flyssa';}
+  else it.swordMake=SWORD_MAKES[isle];return it;}
+function isleAt(x,z){try{if(x==null||typeof cellOf!=='function'||typeof nationKeyOf!=='function')return 'gatelands';return nationKeyOf(...cellOf(x,z))||'gatelands';}catch(e){return 'gatelands';}}
+// the island you stand on: indoors the house's town (`houseIsle`, 50-travel.js, the island's bedroll's), in a gate its portal, else where you are
+function isleHere(){try{
+  if(typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&currentHouse){const i=typeof houseIsle==='function'?houseIsle(currentHouse.parent||currentHouse):null;if(i)return i;}
+  if(typeof activeZoneId!=='undefined'&&activeZoneId==='dungeon'){const P=typeof currentPortal!=='undefined'?currentPortal:null;return P&&P.x!=null?isleAt(P.x,P.z):'gatelands';}
+  if(typeof activeZoneId!=='undefined'&&activeZoneId==='world'&&typeof px==='number')return isleAt(px,pz);}catch(e){}
+  return 'gatelands';}
 function makeItem(matTier, typeObj, enchant, isArmor){
   const mat=MATERIALS[matTier-1]||MATERIALS[0];
   const t=matTier;
@@ -690,6 +707,7 @@ function makeItem(matTier, typeObj, enchant, isArmor){
     // v57 pricing: TIER_VALUE baseline × weapon's hi-end atkMult. Heavier/punchier weapons cost more.
     item.buyPrice=Math.max(3, Math.round(TIER_VALUE[t]*typeObj.atkMult[1]));
     item.sellMult=0.45;
+    if(isSwordItem(item))swordStamp(item,isleHere(),LOOT_RNG?lootRand:null); /* S2117 — its make, by island */
   } else {
     // Armor
     const isShield=typeObj.shieldType==='shield';
