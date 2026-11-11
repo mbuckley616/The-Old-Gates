@@ -263,10 +263,10 @@ const cast = await page.evaluate(() => { const forget = () => { for (const m of 
   const one = (def, key) => { const root = buildNPCMesh(def, { key }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
     return { cast: r.hbG.cast || null, fem: r.g.female, age: r.g.age, st: +(r.g.height * personScale(r.g) * SCALE.PERSON_MODEL).toFixed(2), sheet: r.hbG.g === 0,
       hair: r.hbG.hair.style, apron: !!r.hbG.dress.apronLeather, tartan: !!r.hbG.dress.tartan, cape: !!r.hbG.dress.cape, waistcoat: !!r.hbG.dress.waistcoat,
-      dHat: r.g.hat, dGear: r.g.gear, dEx: r.g.extras.length, dApron: r.g.apron != null, dStyle: r.g.style, dCloth: r.g.cloth && r.g.cloth.isColor ? r.g.cloth.getHexString() : null }; };
+      dHat: r.g.hat, dGear: r.g.gear, dEx: r.g.extras.length, dApron: r.g.apron != null, dStyle: r.g.style, dCloth: r.g.cloth && r.g.cloth.isColor ? r.g.cloth.getHexString() : null, people: r.hbG.people, marks: r.hbG.marks ?? null, robe: !!r.hbG.dress.robe }; };
   forget(); const out = { bram: one({ name: 'Bram', role: 'Blacksmith' }, 'ashenmoor'), edna: one({ name: 'Edna', role: 'Herbalist' }, 'ashenmoor'),
     corwin: one({ name: 'Corwin', role: '', authored: true, people: 'gatelander' }, 'ctest_port'), other: one({ name: 'Edna', role: 'Herbalist' }, 'ctest_town'),
-    corwinHome: one({ name: 'Corwin', role: 'Traveling Merchant' }, 'ashenmoor') }; forget(); return out; });
+    corwinHome: one({ name: 'Corwin', role: 'Traveling Merchant' }, 'ashenmoor'), aldwyn: one({ name: 'Aldwyn', role: 'Royal Herald', authored: true, people: 'gatelander' }, 'ctest_ironhaven') }; forget(); return out; });
 check('the cast: Bram and Edna at Ashenmoor wear the sheet (the leather apron; the green cape and the bun), the driver at the sheet\'s sex, age and stature',
   cast.bram.cast === 'Bram' && cast.bram.apron && !cast.bram.tartan && cast.bram.st === 1.82 && !cast.bram.fem &&
   cast.edna.cast === 'Edna' && cast.edna.fem && cast.edna.age === 'elder' && cast.edna.cape && cast.edna.hair === 'bun' && cast.edna.st === 1.6, cast);
@@ -278,6 +278,11 @@ check('the cast\'s driver (the far copy) wears the sheet: no hat, Edna\'s stick,
   cast.bram.dHat === 'none' && cast.bram.dApron && cast.bram.dGear === 'hammer' && cast.edna.dHat === 'none' && cast.edna.dGear === 'stick' && cast.edna.dEx === 0 && cast.edna.dStyle === 'bun' &&
   cast.corwinHome.cast === 'Corwin' && cast.corwinHome.dHat === 'none' && cast.corwinHome.dEx === 0 && cast.corwinHome.dGear === null && cast.corwin.dHat === 'none' &&
   cast.other.dHat === 'kerchief', cast);
+// S2103 (L2, OG-053, Michael's 10 B): Aldwyn, authored beside Ironhaven's plaza, is the herald of the sheet: Old Blood though his def names
+// him a Gatelander (the sheet's people is fixed), his marks no further than the wrist, the crimson robe and the cape, 1.6 m, an elder on his stick
+check('Aldwyn authored at Ironhaven wears the herald\'s sheet: Old Blood, marked only at the wrist, the crimson robe and cape, an elder of 1.6 m on his staff',
+  cast.aldwyn.cast === 'Aldwyn' && cast.aldwyn.people === 'oldblood' && cast.aldwyn.marks > 0 && cast.aldwyn.marks < .1 && cast.aldwyn.robe && cast.aldwyn.cape &&
+  cast.aldwyn.st === 1.6 && cast.aldwyn.age === 'elder' && !cast.aldwyn.fem && cast.aldwyn.dGear === 'stick' && cast.aldwyn.dHat === 'none', cast.aldwyn);
 const capes = await page.evaluate(() => { const out = {}; for (const nm of ['Edna', 'Áine']) { const G = HB.castGenome(nm, {}), P = HB.makePerson(G, { hoodStats: false });
     P.root.updateMatrixWorld(true); const cl = P.root.getObjectByName('cloak'), pa = cl.geometry.attributes.position, v = new THREE.Vector3(), n = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(n);
     let fwd = -1; for (let i = 0; i < pa.count; i++) fwd = Math.max(fwd, v.fromBufferAttribute(pa, i).applyMatrix4(cl.matrixWorld).z - n.z);

@@ -5,10 +5,10 @@
 // creatures.js; the genome text, Save, Load, Apply and the link take either (kit.js reads both). The people's pack is
 // fetched only when a person is shown, so the creatures need no pack.
 // Query: ?g=<base64url genome>  ?seed=<s>&sex=m|f  ?plan=<body plan>&gait=<g>  ?view=full|face|back|side (a creature: side|front|back|top)
-// ?still&w&h (one frame, for the checks).
+// ?cast=<name> (a named person of the cast, people.js's CAST; Session 2103)  ?still&w&h (one frame, for the checks).
 import * as THREE from 'three';
 import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
-import { makePerson, toSaved, rollGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
+import { makePerson, toSaved, rollGenome, castGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
 import { PLANS, SLIDERS as CSLIDERS, genome as cGenome, build as cBuild, pose as cPose, step as cStep, speedOf } from './creatures.js';
 import { readGenome, saveGenome, needPack } from './kit.js';
 const GLABEL = { plateGlow: 'plate glow', cowl: 'hood (no cloak)', chair: 'wheeled chair', eyepatch: 'eyepatch', staff: 'walking staff', lantern: 'lantern', pipe: 'clay pipe', tankard: 'pewter tankard', hammer: "smith's hammer", sword: 'sword', coatTrim: 'coat trim', sash: 'shoulder sash', sashBorder: 'sash border', wrap: 'head-wrap', wrapBorder: 'head-wrap edge', earrings: 'hoop earrings', necklace: 'coin necklace', beltCoins: 'belt coins', sashBelt: 'sash belt', skirtColor: 'skirt colour', cord: 'robe cord', lace: 'bodice lacing', cuffBand: 'woven cuff band', mail: 'mail hauberk', helm: 'helm (kettle, or by tier)', shield: 'round shield', shieldPaint: 'shield quarters', shieldRim: 'shield rim', spear: 'spear shaft', crossbow: 'crossbow tiller', cloakFur: 'fur collar', cloakHem: 'embroidered hem', tabardTrim: 'tabard trim', scarfPrint: 'headscarf print', basket: 'willow basket', basketCloth: 'cloth over the basket', amulet: 'stone amulet', charms: 'belt charms', dots: 'dot embroidery', shoulderWrap: 'shoulder wrap', tartan: 'tartan (dark stripe)', tartanLine: 'tartan overcheck', coat: 'winter coat', coatFur: 'coat fur trim', bands: 'woven bands (ground)', bandsMotif: 'woven bands (lozenges)', robeStripe: 'robe stripe', robeStripeLine: 'robe stripe (fine line)', circlet: 'circlet', circletStone: 'circlet stone', gownBorder: 'gown embroidery', burnousStripe: 'burnous stripe', veil: 'face veil' };
@@ -34,7 +34,7 @@ const rollPerson = s => rollGenome(s, { g: Q.get('sex') === 'f' ? 0 : Q.get('sex
 let SP = 'human', G = null, CG = null, C = null;
 if (Q.get('g')) ({ species: SP, G } = readGenome(b64.dec(Q.get('g'))));
 else if (PLANS[Q.get('plan')]) { SP = 'creature'; G = cGenome(Q.get('plan'), Q.get('seed') || Q.get('plan') + ':builder'); }
-else if (!Q.get('people')) G = rollPerson(Q.get('seed') || 'builder');
+else if (!Q.get('people') && !Q.get('cast')) G = rollPerson(Q.get('seed') || 'builder');
 if (SP === 'creature') { CG = G; G = null; }
 const locks = new Set();
 let person = null, pal = null, palAt = null, view = Q.get('view') || (SP === 'creature' ? 'side' : 'full'), turn = Q.has('turn') ? +Q.get('turn') : 0, zoom = Q.has('zoom') ? +Q.get('zoom') : 1, dirty = true, gait = null;
@@ -270,7 +270,7 @@ function peoplesSheet() {
   cam.fov = 24; cam.aspect = W / H; cam.position.set(0, 1.2, ((n - 1) / 2 * gap + .75) / (Math.tan(12 * Math.PI / 180) * W / H)); cam.lookAt(0, .95, 0); cam.updateProjectionMatrix(); STATS.peoples = out;
 }
 // a people's genome measures the morphed body for its height, so with ?people= it is rolled once the pack is in (Session 826)
-(SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
+(SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = (Q.get('cast') && castGenome(Q.get('cast'))) || rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
   if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
   if (SP === 'human') { if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
     if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); if (Q.has('scar')) G.scar = Q.get('scar') === 'none' ? null : Q.get('scar'); if (Q.has('rot')) G.rot = +Q.get('rot') || null; if (Q.has('stoop')) G.pose = { ...(G.pose || {}), stoop: +Q.get('stoop') };
