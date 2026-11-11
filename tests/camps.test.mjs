@@ -72,5 +72,23 @@ console.log('save', JSON.stringify(sv));
 check('a broken night saves once, as you lie down (the clock before the night), and the same cell and day roll the same night again', sv.d0 != null && sv.broke.same &&
   sv.broke.saves.length === 1 && sv.broke.saves[0].abs === sv.broke.at && sv.broke.saves[0].force && sv.broke.after === sv.broke.at + sv.broke.h * 60, sv);
 check('a night not broken saves once on waking, as before', sv.calm.saves.length === 1 && sv.calm.saves[0].abs === sv.calm.at + 480 && sv.calm.after === sv.calm.at + 480, sv.calm);
+// Session 2114 (Michael's C on #1405): the fire you light is the kit's, laid as its island lays it, and burns down through its stages
+const fr = await page.evaluate(() => { const out = {}, box = new THREE.Box3();
+  for (const isle of ['gatelands', 'mark', 'aurenne']) { const x = px - 3, z = pz + 2, G = campFireProp(x, z, .6, { island: isle }); WORLD.scene.add(G);
+    const f = { x, z, until: gameMinNow() + FIRE_HOURS * 60 }, st = [], u = G.userData.fire;
+    for (const left of [1, .5, .1]) { f.until = gameMinNow() + Math.round(FIRE_HOURS * 60 * left); u.tick(f, FIRE_HOURS); st.push(u.stage + ':' + u.tris + ':' + u.draws); }
+    f.until = gameMinNow() + FIRE_HOURS * 60; u.tick(f, FIRE_HOURS); G.updateMatrixWorld(true); box.setFromObject(G);
+    let lo = 9; G.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < p.count; i += 7) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); lo = Math.min(lo, v.y - WORLD.worldH(v.x, v.z)); } });
+    const light = !!G.getObjectByName('fire:light') || LSRC.some(v => v.follow === G);
+    out[isle] = { st, lo: +lo.toFixed(2), hi: +(box.max.y - WORLD.worldH(x, z)).toFixed(2), light }; WORLD.scene.remove(G); }
+  for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && (BAG[i].log || BAG[i].name === TINDERBOX_NAME)) BAG.splice(i, 1);
+  BAG.push(survItem('tinderbox'), survItem('log')); const F = lightFire();
+  out.lit = F && F.mesh && F.mesh.userData.fire ? { island: F.mesh.userData.fire.island, want: nationKeyOf(...cellOf(F.x, F.z)), stage: F.mesh.userData.fire.stage } : null;
+  if (F) { F.until = gameMinNow(); tickSurvival(1 / 60); out.gone = !F.mesh.parent && !CAMPFIRES.includes(F); }
+  return out; });
+console.log('fire', JSON.stringify(fr));
+check('the fire is the kit\'s on each island: lit, burning, embers by its clock, each under 3,000 tris in 16 draws at most, on the land, lit by a light', ['gatelands', 'mark', 'aurenne'].every(k => { const v = fr[k];
+  return v && v.st.map(s => s.split(':')[0]).join() === 'lit,burning,embers' && v.st.every(s => +s.split(':')[1] < 3000 && +s.split(':')[2] <= 16) && v.lo > -.3 && v.hi > .5 && v.hi < 4 && v.light; }), fr);
+check('a fire lit from the bag is laid as its own island lays it, and taken away when it is out', !!fr.lit && fr.lit.island === fr.lit.want && fr.lit.stage === 'lit' && fr.gone, fr);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

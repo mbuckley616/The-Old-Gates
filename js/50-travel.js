@@ -789,7 +789,8 @@ function atFire(){return hearthHere()||!!campfireNear();}
 function fireSpotOk(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return false;
   if(typeof WORLD!=='undefined'&&WORLD.isSwimming&&WORLD.isSwimming())return false;if(typeof SHIP!=='undefined'&&SHIP.sailing)return false;return true;}
 // a plain stand-in until the kit's fire arrives (the look builder's): three logs and a flame
-function campfireMesh(x,z){const g=new THREE.Group();const y=typeof worldH==='function'?worldH(x,z):0;
+function campfireMesh(x,z){{let K=null;try{K=typeof campFireProp==='function'?campFireProp(x,z,typeof yaw==='number'?yaw:0):null;}catch(e){K=null;}if(K)return K;} /* S2114 — the kit's fire, laid by its island, on the new look */
+  const g=new THREE.Group();const y=typeof worldH==='function'?worldH(x,z):0;
   const wood=new THREE.MeshLambertMaterial({color:0x5a3a20});
   for(let i=0;i<3;i++){const l=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.6,6),wood);l.rotation.z=Math.PI/2;l.rotation.y=i*Math.PI/3;l.position.y=.06;g.add(l);}
   const fl=new THREE.Mesh(new THREE.ConeGeometry(.16,.45,7),new THREE.MeshBasicMaterial({color:0xff8a30,transparent:true,opacity:.85}));fl.position.y=.3;g.add(fl);g.userData.flame=fl;
@@ -814,6 +815,7 @@ function mealTurnPass(){BAG.forEach(b=>{if(b&&b.meal&&!b.meal.turned&&mealTurned
 // each frame: a fire burnt out is taken away, the flame flickers; Steady's health. Called from the loop beside the buffs
 function tickSurvival(dt){const t=gameMinNow();
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){dropFire(f);CAMPFIRES.splice(i,1);continue;}
+    if(f.mesh&&f.mesh.userData.fire){try{f.mesh.userData.fire.tick(f,FIRE_HOURS);}catch(e){}continue;} /* S2114 — the kit's fire: its stage and its flames */
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
   if(t!==_mealTurnAt){_mealTurnAt=t;mealTurnPass();} /* S2033 — meals turn */
   tickLeanTos();tickMining(dt);tickFelling(dt);tickTrunks();tickShipWork(dt);tickWater(); /* S2012 — rain fills your water */
