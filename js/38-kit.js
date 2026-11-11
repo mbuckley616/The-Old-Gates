@@ -4709,6 +4709,156 @@ function campGear(what, o = {}) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, M[k]); m.name = 'camp:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, what };
 }
+// S2114 (Michael's C on #1405: the fire laid as each island lays it; the concept artist's camp.js, S2091's page) — the fire you light:
+// the Gatelands lift the turf in a 1.5 m square and stack the sods to put back, a ring of eleven fieldstones on the bare earth round a
+// teepee of sticks over two split logs; the Mark's long fire, two pine logs 1.5 m side by side with a third on their seam, on three flat
+// stones; Aurenne's keyhole, a round pit and a slot of flat limestone where the coals are raked under a little iron grill. Four stages:
+// 'lit' (tall flames), 'burning', 'embers' (low licks, the coals glow), 'out' (ash and charred stubs). Built in its own frame, the keyhole's
+// slot and the long fire's side at +z; o.ground(x, z) is the land's height in that frame, every piece laid on it; o.key the seed.
+// -> { group, tris, draws, tick(t), stage, island }; the group holds a PointLight (the world's pool takes it, 80-world-terrain.js)
+let CFM = null;
+function fireMats() {
+  if (CFM) return CFM;
+  const paint = (N, f) => { const c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'), d = g.createImageData(N, N); f(d.data, N); g.putImageData(d, 0, 0); return finishTex(c); };
+  // charred wood: black, a crackle of ember light in its emissive (turned up by the stage)
+  const ch = texPair(256, (x, y) => { const cx = Math.abs(tfbm(x, y * 3, 6, 3, 11) - .5), cr = cx < .035 ? 1 : 0, n = tfbm(x, y, 18, 3, 12), v = .035 + .04 * n; return [cr ? 0 : .6 + .4 * n, v, v * .95, v * .9]; }, 2.6);
+  const glow = paint(256, (D, N) => { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const cx = Math.abs(tfbm(i / N, j / N * 3, 6, 3, 11) - .5), k = Math.max(0, 1 - cx / .05) ** 1.5, o = (j * N + i) * 4; D[o] = 255 * k; D[o + 1] = 110 * k; D[o + 2] = 20 * k; D[o + 3] = 255; } });
+  const ash = paint(256, (D, N) => { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const u = i / N - .5, v = j / N - .5, r = Math.hypot(u, v) * 2, n = tfbm(i / N, j / N, 8, 4, 31), m = tn(i / N, j / N, 64, 33);
+    const a = Math.max(0, Math.min(1, (1 - r) * 3.2 - .2 + (n - .5) * 1.6)), s = m > .55 ? .55 + .2 * n : .12 + .1 * n, o = (j * N + i) * 4; D[o] = 255 * s; D[o + 1] = 250 * s; D[o + 2] = 240 * s; D[o + 3] = 255 * a; } });
+  const ashGlow = paint(256, (D, N) => { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const u = i / N - .5, v = j / N - .5, r = Math.hypot(u, v) * 2, m = tn(i / N, j / N, 40, 35), k = Math.min(1, Math.max(0, 1 - r * 1.5) * Math.max(0, m - .45) * 3.2), o = (j * N + i) * 4;
+    D[o] = 255 * k; D[o + 1] = 120 * k; D[o + 2] = 25 * k; D[o + 3] = 255; } });
+  const scorch = paint(256, (D, N) => { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const u = i / N - .5, v = j / N - .5, r = Math.hypot(u, v) * 2, n = tfbm(i / N, j / N, 6, 4, 41), a = Math.max(0, Math.min(1, (1 - r) * 2.2 + (n - .5) * 1.4)) * .85, o = (j * N + i) * 4;
+    D[o] = 30; D[o + 1] = 24; D[o + 2] = 18; D[o + 3] = 255 * a; } });
+  const rings = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#c9a874'; x.fillRect(0, 0, 128, 128);
+    for (let r = 3; r < 62; r += 2 + (r % 3)) { x.strokeStyle = r % 2 ? 'rgba(120,80,40,.38)' : 'rgba(150,105,60,.25)'; x.lineWidth = 1; x.beginPath(); x.arc(64, 64, r, 0, Math.PI * 2); x.stroke(); }
+    x.fillStyle = '#3e2818'; x.beginPath(); x.arc(64, 64, 63, 0, Math.PI * 2); x.arc(64, 64, 58, 0, Math.PI * 2, true); x.fill(); return finishTex(c); })();
+  const smokeTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 2, 32, 32, 31);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.55, 'rgba(255,255,255,.85)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return finishTex(c); })();
+  const std = (c, ro = .92, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  CFM = { oakBark: mat('bark', { ns: 1.2, color: 0xb09a84, rough: .95 }), pineBark: mat('bark', { ns: 1.2, color: 0xc08a68, rough: .95 }), split: mat('wood', { ns: .8, color: 0xe0c49c, rough: .9 }),
+    end: std(0xffffff, .85, { map: rings }), stone: mat('rock', { ns: 1.2, color: 0x9a968e, rough: .95 }), lime: mat('rock', { ns: 1.0, color: 0xe2d6b8, rough: .9 }),
+    earth: mat('turfDry', { ns: 1.0, color: 0x6a5038, rough: 1 }), sodTop: mat('turfMoss', { ns: 1.0, rough: 1 }), iron: std(0x2a2624, .6, { metalness: .7 }),
+    charBase: { map: ch.map, normalMap: ch.normalMap, glow }, ashBase: { ash, ashGlow }, scorch: std(0xffffff, 1, { map: scorch, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 }),
+    smoke: smokeTex, flame: fireFlameMat(), byStage: {} };
+  return CFM;
+}
+// the charred wood and the ash glow by the stage: a material each, so two fires at two stages keep their own
+function fireStageMats(stage) {
+  const M = fireMats(); if (M.byStage[stage]) return M.byStage[stage];
+  const ci = { lit: .9, burning: 1.4, embers: 2.2, out: 0 }[stage], ai = { lit: .8, burning: 1.3, embers: 2.4, out: 0 }[stage];
+  return (M.byStage[stage] = { char: new THREE.MeshStandardMaterial({ map: M.charBase.map, normalMap: M.charBase.normalMap, roughness: .95, emissive: 0xffffff, emissiveMap: M.charBase.glow, emissiveIntensity: ci }),
+    ash: new THREE.MeshStandardMaterial({ map: M.ashBase.ash, roughness: 1, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, emissive: 0xffffff, emissiveMap: M.ashBase.ashGlow, emissiveIntensity: ai }) });
+}
+// the flame: crossed cards drawing a licking tongue from noise rising through a teardrop; added, so the bloom takes it
+function fireFlameMat() {
+  return new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
+    uniforms: { uT: { value: 0 } },
+    vertexShader: 'attribute float aSeed; varying vec2 vUv; varying float vS; void main(){ vUv = uv; vS = aSeed; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
+    fragmentShader: `uniform float uT; varying vec2 vUv; varying float vS;
+      float h(vec2 p){ p = fract(p * vec2(127.1, 311.7)); p += dot(p, p + 19.19); return fract(p.x * p.y); }
+      float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f); return mix(mix(h(i), h(i + vec2(1,0)), f.x), mix(h(i + vec2(0,1)), h(i + vec2(1,1)), f.x), f.y); }
+      float fb(vec2 p){ float a = 0., m = .5; for (int i = 0; i < 4; i++){ a += m * vn(p); p *= 2.1; m *= .5; } return a; }
+      void main(){ vec2 p = vUv; float t = uT * 1.6 + vS * 17.;
+        float n = fb(vec2(p.x * 3. + vS * 9., p.y * 2.2 - t)), n2 = fb(vec2(p.x * 6. - vS * 5., p.y * 4. - t * 1.7));
+        float w = (1. - p.y) * (.42 + .1 * n) * smoothstep(0., .18, p.y + .05);
+        float d = abs(p.x - .5 + (n - .5) * .25 * p.y) / max(w, 1e-3);
+        float body = smoothstep(1., .35, d) * smoothstep(1., .55 - .25 * n2, p.y + (n2 - .5) * .35);
+        float core = smoothstep(.55, 0., d) * smoothstep(.7, .1, p.y);
+        vec3 c = mix(vec3(.9, .18, .02), vec3(1., .55, .12), body) + vec3(1., .85, .5) * core * .9;
+        float a = body * (1. - p.y * .35); gl_FragColor = vec4(c * a * .95, 1.); }` });
+}
+const FIRE_STAGE_K = { lit: 1, burning: .72, embers: .16, out: 0 };
+// the game's light by the stage (the world's other fires are 1.1 to 1.5, 82-world-structures.js), 9 m
+const FIRE_LIGHT = { lit: 1.6, burning: 1.3, embers: .45, out: 0 };
+function campFire(island, o = {}) {
+  island = island === 'mark' || island === 'aurenne' ? island : 'gatelands';
+  const M = fireMats(), stage = FIRE_STAGE_K[o.stage] != null ? o.stage : 'lit', SM = fireStageMats(stage), K = FIRE_STAGE_K[stage], rr = stream(String(o.key || 'fire:' + island));
+  const G0 = typeof o.ground === 'function' ? o.ground : () => 0, LIFT = .03, FLAT = new Set(['earth', 'sodTop', 'ash', 'scorch']), FLIFT = .045 /* the flat pieces over a path's top, which stands a few cm off the land (campGear's LIFT) */;
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z), B = new Map();
+  // every piece is laid on the land: each point is raised by the ground under it (a fire 1.5 m across drapes; on the page's flat it is the same)
+  const add = (k, g) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    if (!['end', 'scorch', 'ash', 'char'].includes(k) && !/Bark$/.test(k)) worldUV(g, k === 'stone' || k === 'lime' ? 2 : 1);
+    const P = g.attributes.position; const lf = FLAT.has(k) ? FLIFT : LIFT; for (let i = 0; i < P.count; i++) P.setY(i, P.getY(i) + G0(P.getX(i), P.getZ(i)) + lf);
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  // a log or a stick from a to b, radius r: bark round it (its uv along the log), the ends capped
+  const logGeo = (a, b, r, taper = .92, seg = 8) => { const A = V3(...a), C = V3(...b), L = A.distanceTo(C);
+    const g = new THREE.CylinderGeometry(r * taper, r, L, seg, Math.max(1, Math.round(L / .25))); const P = g.attributes.position, wob = stream('log' + a.join() + b.join());
+    for (let i = 0; i < P.count; i++) { const y = P.getY(i); P.setX(i, P.getX(i) * (1 + .06 * Math.sin(y * 9 + wob() * 6))); } g.computeVertexNormals();
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), C.clone().sub(A).normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return g; };
+  // a fieldstone: an icosahedron pushed about by noise, flattened, half sunk
+  const stoneGeo = (x, z, s, q = {}) => { const g = new THREE.IcosahedronGeometry(1, 1), P = g.attributes.position, ph = rr() * 9;
+    for (let i = 0; i < P.count; i++) { const v = V3(P.getX(i), P.getY(i), P.getZ(i)), k = 1 + .22 * Math.sin(v.x * 3 + ph) * Math.cos(v.z * 2.6 - ph) + .1 * Math.sin(v.y * 5 + ph * 2); v.multiplyScalar(k); P.setXYZ(i, v.x, v.y, v.z); }
+    g.scale(s * (q.sx ?? (1 + rr() * .3)), s * (q.sy ?? (.55 + rr() * .2)), s * (q.sz ?? (.85 + rr() * .2))); g.rotateY(rr() * 6.3); g.translate(x, s * (q.sink ?? .25), z); g.computeVertexNormals(); return g; };
+  const disc = (r, y) => { const g = new THREE.CircleGeometry(r, 32); g.rotateX(-Math.PI / 2); g.translate(0, y, 0); return g; };
+  const sod = (x, z, w, d, t, ry, y0, up) => { const top = new THREE.BoxGeometry(w, .02, d), body = new THREE.BoxGeometry(w, t - .02, d);
+    top.translate(0, up ? t - .01 : .01, 0); body.translate(0, up ? (t - .02) / 2 : .02 + (t - .02) / 2, 0); for (const g of [top, body]) { g.rotateY(ry); g.translate(x, y0, z); } add('sodTop', top); add('earth', body); };
+  const wood = island === 'mark' ? 'pineBark' : 'oakBark', burnt = stage === 'lit' ? .35 : stage === 'burning' ? .65 : 1, cold = stage === 'embers' || stage === 'out';
+  // the half nearer the heart is charred; in embers and out the whole log is charred, thinner and shorter
+  const logAt = (a, b, r) => { const cut = cold ? .55 : burnt, m = [a[0] + (b[0] - a[0]) * cut, a[1] + (b[1] - a[1]) * cut, a[2] + (b[2] - a[2]) * cut];
+    add('char', logGeo(a, m, r * (stage === 'out' ? .7 : cold ? .8 : 1))); if (!cold) add(wood, logGeo(m, b, r)); };
+  let pitR = .4, flameY = .05, foot = .75;
+  if (island === 'gatelands') {
+    // the turf lifted in a 1.5 m square, the earth bare inside; the cut's edge stands 5 cm proud; four sods stacked beside it to put back
+    { const e = new THREE.PlaneGeometry(1.5, 1.5, 6, 6); e.rotateX(-Math.PI / 2); e.translate(0, .002, 0); add('earth', e); }
+    for (let k = 0; k < 4; k++) { const w = new THREE.BoxGeometry(1.6, .05, .05); w.translate(0, .025, .775); w.rotateY(k * Math.PI / 2); add('earth', w);
+      const t = new THREE.PlaneGeometry(1.6, .05, 4, 1); t.rotateX(-Math.PI / 2); t.translate(0, .051, .775); t.rotateY(k * Math.PI / 2); add('sodTop', t); }
+    for (let k = 0; k < 4; k++) sod(1.3 + (k % 2) * .02, .05 - k * .012, .48, .34, .06, .1 + k * .06, k * .06, k === 3);
+    for (let i = 0; i < 11; i++) { const a = i / 11 * Math.PI * 2 + rr() * .2; add('stone', stoneGeo(Math.cos(a) * .5, Math.sin(a) * .5, .11 + rr() * .05)); }
+    for (let i = 0; i < 2; i++) { const a = i * Math.PI / 2 + .4; logAt([Math.cos(a) * -.3, .05, Math.sin(a) * -.3], [Math.cos(a) * .3, .05, Math.sin(a) * .3], .05); }
+    if (!cold) for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2 + rr() * .3, L = .34 + rr() * .06; logAt([Math.cos(a) * L, .02, Math.sin(a) * L], [Math.cos(a) * .03, .42 - (stage === 'burning' ? .12 : 0) + rr() * .04, Math.sin(a) * .03], .022 + rr() * .01); }
+    else for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2 + rr(); add('char', logGeo([Math.cos(a) * .25, .02, Math.sin(a) * .25], [Math.cos(a) * .05, .05, Math.sin(a) * .05], .02)); }
+    add('ash', disc(.38, .006)); pitR = .4; foot = 1.55;
+  } else if (island === 'mark') {
+    // the long fire along x: two pine logs side by side, a third on their seam, on three flat stones; it burns down the seam
+    const L = 1.5, r = .12, charB = stage === 'lit' ? .25 : stage === 'burning' ? .5 : 1;
+    add('stone', stoneGeo(-.55, 0, .16, { sy: .3, sink: .05 })); add('stone', stoneGeo(.55, 0, .16, { sy: .3, sink: .05 })); add('stone', stoneGeo(0, -.05, .14, { sy: .28, sink: .05 }));
+    for (const [z, y, rad] of [[-.12, .14, r], [.12, .14, r], [0, .36, r * .85]]) { if (stage === 'out' && !z) continue; /* the top log has burnt through */
+      const dz = Math.sign(z) * (cold ? .03 : 0);
+      if (charB < 1) add(wood, logGeo([-L / 2, y, z], [L / 2, y, z], rad * (stage === 'burning' && y > .3 ? .85 : 1)));
+      add('char', logGeo([-L / 2 + .06, y + (z ? .01 : -.03), z * .7 - dz], [L / 2 - .06, y + (z ? .01 : -.03), z * .7 - dz], rad * (charB < 1 ? .9 + .1 * charB : stage === 'out' ? .7 : .85)));
+      if (charB < 1) for (const x of [-L / 2, L / 2]) { const c = new THREE.CircleGeometry(rad * .98, 10); c.rotateY(x > 0 ? Math.PI / 2 : -Math.PI / 2); c.translate(x, y, z); add('end', c); } }
+    const ash = disc(.5, .006); ash.scale(1.8, 1, .7); add('ash', ash); const sc = disc(.8, .003); sc.scale(1.5, 1, .8); add('scorch', sc); pitR = .7; flameY = .3; foot = 1.2;
+  } else {
+    // the keyhole: a round pit of 0.8 m and a slot 0.55 m long toward +z, edged with flat limestone; the iron grill over the slot, 0.16 m up
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; if (Math.abs(((a - Math.PI / 2 + Math.PI * 3) % (Math.PI * 2)) - Math.PI) < .45) continue;
+      add('lime', stoneGeo(Math.cos(a) * .42, Math.sin(a) * .42, .12 + rr() * .03, { sy: .45, sx: 1.3, sink: .18 })); }
+    for (const s of [-1, 1]) for (let j = 0; j < 3; j++) add('lime', stoneGeo(s * .17, .48 + j * .17, .1 + rr() * .02, { sy: .5, sx: 1.2, sink: .18 }));
+    add('ash', disc(.4, .005)); { const slot = new THREE.PlaneGeometry(.26, .55); slot.rotateX(-Math.PI / 2); slot.translate(0, .006, .62); add('ash', slot); }
+    { const gy = .16, x0 = -.15, x1 = .15, z0 = .44, z1 = .8; add('iron', logGeo([x0, gy, z0], [x0, gy, z1], .008, 1, 5)); add('iron', logGeo([x1, gy, z0], [x1, gy, z1], .008, 1, 5));
+      for (let k = 0; k < 7; k++) { const z = z0 + .02 + (z1 - z0 - .04) * k / 6; add('iron', logGeo([x0, gy, z], [x1, gy, z], .005, 1, 5)); }
+      for (const [x, z] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1]]) add('iron', logGeo([x, 0, z], [x, gy, z], .008, 1, 5)); }
+    if (!cold) for (let i = 0; i < 9; i++) { const a = rr() * Math.PI, L = .26 + rr() * .1, y = .03 + i * .018; logAt([Math.cos(a) * L, y, Math.sin(a) * L - .02], [-Math.cos(a) * L, y + .02, -Math.sin(a) * L - .02], .018 + rr() * .012); }
+    else for (let i = 0; i < 5; i++) { const a = rr() * Math.PI; add('char', logGeo([Math.cos(a) * .2, .02, Math.sin(a) * .2], [-Math.cos(a) * .15, .03, -Math.sin(a) * .15], .016)); }
+    add('scorch', disc(.75, .003)); pitR = .36; foot = 1.0;
+  }
+  const group = new THREE.Group(); group.name = 'campfire:' + island; let tris = 0;
+  const matOf = k => k === 'char' || k === 'ash' ? SM[k] : M[k];
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, matOf(k)); m.name = 'fire:' + k;
+    m.castShadow = !['ash', 'scorch', 'earth', 'sodTop'].includes(k); m.receiveShadow = true; if (k === 'ash' || k === 'scorch') m.renderOrder = 1; group.add(m); tris += g.attributes.position.count / 3; }
+  // the flames by the stage: tall in the heart when lit, lower burning, licks over the coals in embers; along the seam for the long fire
+  let flames = null;
+  if (K > 0) { const gs = [], mk = island === 'mark', n = mk ? 9 : 6, list = [];
+    for (let i = 0; i < n; i++) { const t = (i + .5) / n, x = mk ? (t - .5) * 1.25 : (rr() - .5) * pitR * .7, z = mk ? (rr() - .5) * .08 : (rr() - .5) * pitR * .7, cen = mk ? 1 - Math.abs(t - .5) * .9 : 1 - Math.hypot(x, z) / pitR;
+      const hgt = (mk ? .55 : island === 'aurenne' ? .5 : .75) * K * (.55 + .5 * cen) * (mk ? .45 + .9 * rr() : .8 + .4 * rr()), w = Math.max(.12, (mk ? .28 : .3) * (.6 + .5 * K));
+      list.push([x, flameY, z, Math.max(.08, hgt), w, rr()]); }
+    if (island === 'aurenne') list.push([0, .08, .6, .1 * K + .03, .18, rr()]);
+    for (const [x, y, z, h, w, s] of list) for (let k = 0; k < 3; k++) { const g = new THREE.PlaneGeometry(w, h).toNonIndexed(); g.translate(0, h / 2, 0); g.rotateY(k * Math.PI / 3 + s * 3); g.translate(x, y + G0(x, z) + LIFT, z);
+      g.setAttribute('aSeed', new THREE.Float32BufferAttribute(new Array(g.attributes.position.count).fill(s + k * .13), 1)); gs.push(g); }
+    let n2 = 0; for (const g of gs) n2 += g.attributes.position.count; const P = new Float32Array(n2 * 3), U = new Float32Array(n2 * 2), S = new Float32Array(n2); let q = 0;
+    for (const g of gs) { const c = g.attributes.position.count; P.set(g.attributes.position.array, q * 3); U.set(g.attributes.uv.array, q * 2); S.set(g.attributes.aSeed.array, q); q += c; g.dispose(); }
+    const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(P, 3)); fg.setAttribute('uv', new THREE.BufferAttribute(U, 2)); fg.setAttribute('aSeed', new THREE.BufferAttribute(S, 1)); fg.computeBoundingSphere();
+    flames = new THREE.Mesh(fg, M.flame); flames.renderOrder = 5; flames.name = 'fire:flames'; flames.frustumCulled = false; group.add(flames); tris += n2 / 3; }
+  // the smoke: a few soft puffs rising and fading over the heart; thin and three when out
+  const smoke = [], hy = G0(0, 0) + LIFT, ns = stage === 'out' ? 3 : 5;
+  for (let i = 0; i < ns; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: M.smoke, color: 0x8a8580, transparent: true, depthWrite: false, opacity: (stage === 'out' ? .1 : .2) * (1 - i / ns), fog: true }));
+    s.position.set(Math.sin(i * 1.3) * .08 * i, hy + .9 + i * .45, i * .07); s.scale.setScalar(.35 + i * .22); s.name = 'fire:smoke'; smoke.push(s); group.add(s); }
+  // the light: a warm point at the heart as bright as the flames are tall, a dull red in embers; the world's pool carries it
+  let light = null; if (K > 0) { light = new THREE.PointLight(stage === 'embers' ? 0xff5a1a : 0xff9a40, FIRE_LIGHT[stage], 9); light.position.set(0, hy + (island === 'mark' ? .6 : .5), 0); light.name = 'fire:light'; group.add(light); }
+  const tick = t => { M.flame.uniforms.uT.value = t; if (light) light.intensity = FIRE_LIGHT[stage] * (1 + .12 * Math.sin(t * 13) + .07 * Math.sin(t * 29 + 1));
+    smoke.forEach((s, i) => { s.position.y = hy + .9 + ((i * .45 + t * .35) % (ns * .45)); }); };
+  return { group, tris: Math.round(tris), draws: B.size + (flames ? 1 : 0) + smoke.length, tick, stage, island, foot, light };
+}
 // ── ships (card F11, backlog L6, OG-004; Session 1531): the Gatelands sloop of docs/prototypes/levelup/ships.js (gatelandsSloop,
 // Session 858; Michael's A on #306: the square sail, the harp, a tiller on the small hulls), in the game's sloop's numbers (L 13, W 4.4,
 // draft 1.05, the deck 1.0 over the sea): clinker strakes lapped, tarred below the water and oak above, the sheer strake green under a
@@ -9412,7 +9562,7 @@ function aurenneOrrery(hAt, o = {}) {
       stair: { rise: +RISE.toFixed(3), n: N, foot: [+footX.toFixed(2), +SZ.toFixed(2)], width: SW, landing: { x0: LX0, x1: LX1, z0: +LZ0.toFixed(2), z1: +LZ1.toFixed(2), top: DY } },
       terrace: { y: TY, rIn: PI, rOut: PR, parapet: +(PT - TY).toFixed(2) }, hut: { x: HX, z: HZ, w: HW }, beacon: [BX, BY + .9, BZ], well: [WX, WZ], trees, path: { x: +PX.toFixed(2), z0: +SZ.toFixed(2), z1: PZ1 } };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, camp: campGear }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, camp: campGear, fire: campFire }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

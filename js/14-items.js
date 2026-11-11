@@ -647,7 +647,7 @@ function foundPlaceSchool(){try{if(typeof activeZoneId==='undefined'||activeZone
   return gateOrbSchool(currentPortal);}catch(e){return null;}}
 // the named action (co-op rules): the gate's orb is taken, and the gate keeps no other
 function takeGateOrb(seed){if(seed==null)return;(worldState.gateOrbs||(worldState.gateOrbs={}))[seed]=1;}
-// S2114 — swords by island (Michael's B on #1425): a Sword or a Scimitar records its make, for its look only; the name and the numbers
+// S2117 — swords by island (Michael's B on #1425): a Sword or a Scimitar records its make, for its look only; the name and the numbers
 // are the type's. `make` is the island it was sold, found or forged on; `swordMake` names the kit's blade (people.js, S2096): the arming
 // sword in the Gatelands, the Norse sword in the Mark, and in Aurenne the takouba (1 in 2), the falchion or the flyssa (1 in 4 each), drawn
 // from the item's own stream (a counter's by its house and row, a chest's from its loot stream). A Scimitar is the nimcha everywhere.
@@ -707,7 +707,7 @@ function makeItem(matTier, typeObj, enchant, isArmor){
     // v57 pricing: TIER_VALUE baseline × weapon's hi-end atkMult. Heavier/punchier weapons cost more.
     item.buyPrice=Math.max(3, Math.round(TIER_VALUE[t]*typeObj.atkMult[1]));
     item.sellMult=0.45;
-    if(isSwordItem(item))swordStamp(item,isleHere(),LOOT_RNG?lootRand:null); /* S2114 — its make, by island */
+    if(isSwordItem(item))swordStamp(item,isleHere(),LOOT_RNG?lootRand:null); /* S2117 — its make, by island */
   } else {
     // Armor
     const isShield=typeObj.shieldType==='shield';

@@ -2842,6 +2842,20 @@
   function campGearProp(what,x,z,ry,o){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.camp)return null;o=o||{};
     const y0=worldH(x,z),co=Math.cos(ry),s_=Math.sin(ry),ground=(lx,lz)=>worldH(x+lx*co+lz*s_,z-lx*s_+lz*co)-y0;
     const C=PKIT.props.camp(what,{ground,key:o.key||('camp:'+what),tent:!!o.tent});C.group.position.set(x,y0,z);C.group.rotation.y=ry;C.group.userData.camp={what,tris:C.tris,draws:C.draws};return C.group;}
+  // S2114 — the fire you light, laid as its island lays it (Michael's C on #1405; PKIT.props.fire, 38-kit.js): at x,z turned ry (the way you
+  // faced, so the keyhole's grill and the long fire's side are toward you), on the land's own heights. Its stage follows the fire's own clock:
+  // the first quarter of its hours 'lit', the last fifth 'embers', 'burning' between (camp.js's stages); the group is rebuilt in place when it
+  // changes. -> the Group (userData.fire.tick(f) each frame, f the CAMPFIRES entry), or null on the old look (50-travel.js keeps its stand-in)
+  function campFireStage(f,hours){if(!f||f.until==null)return 'lit';const left=(f.until-gameMinNow())/((hours||1)*60);return left>.75?'lit':left<=.2?'embers':'burning';}
+  function campFireProp(x,z,ry,o){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.fire)return null;o=o||{};
+    const y0=worldH(x,z),co=Math.cos(ry),s_=Math.sin(ry),ground=(lx,lz)=>worldH(x+lx*co+lz*s_,z-lx*s_+lz*co)-y0;
+    let isle='gatelands';try{isle=o.island||nationKeyOf(...cellOf(x,z));}catch(e){}
+    const key=o.key||('fire:'+Math.round(x)+','+Math.round(z)),g=new THREE.Group();g.name='campfire';g.position.set(x,y0,z);g.rotation.y=ry;
+    let C=null;const build=st=>{if(C&&C.light)C.light.intensity=0; /* the pool's copy of the last stage's light goes out and is dropped (tickLightPool) */
+      for(const c of [...g.children]){g.remove(c);if(c.isMesh&&c.geometry)c.geometry.dispose();if(c.isSprite&&c.material)c.material.dispose();} /* the kit's materials are shared: only the geometry goes */
+      C=PKIT.props.fire(isle,{ground,key,stage:st});for(const c of [...C.group.children])g.add(c);g.userData.fire.stage=st;g.userData.fire.tris=C.tris;g.userData.fire.draws=C.draws;};
+    g.userData.fire={island:isle,stage:null,tris:0,draws:0,tick(f,hours){const st=campFireStage(f,hours);if(st!==this.stage)build(st);C.tick(performance.now()/1000);}};
+    build(o.stage||'lit');return g;}
   function bladeStoneProp(){const r=pRng(0xb1ade5),g=new THREE.Group(),P=[];
     {const s=SK.bumpy(SK.rbox(.95,1.1,.62,.16,3),.045,6,4.2),pa=s.attributes.position;for(let i=0;i<pa.count;i++){const t=(pa.getY(i)+.55)/1.1;pa.setX(i,pa.getX(i)*(1-.16*t));pa.setZ(i,pa.getZ(i)*(1-.12*t));}s.computeVertexNormals();
       P.push({geo:s,color:new THREE.Color(0x77746b),x:0,y:.5,z:0,rz:.04,jitter:.1});}
