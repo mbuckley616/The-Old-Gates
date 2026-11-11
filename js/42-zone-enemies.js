@@ -848,7 +848,10 @@ function gaothGate(portal,gen){try{if(!portal||portal.occupied||portal.tutorial|
   if(typeof greatSchoolOf==='function'&&greatSchoolOf(portal))return false;
   const W=(typeof WORLD_DUNGEONS!=='undefined'&&WORLD_DUNGEONS.find(x=>x.seed===portal.seed))||portal;if(gateOf(W).occupied)return false;
   return gateSchool(W)==='gaoth';}catch(err){return false;}}
-function gateRoster(portal,gen,tier,list){if(gaothGate(portal,gen))return GAOTH_ROSTER.slice();
+// S2116 — the decision's second part: a failing or catastrophic Gaoth gate gives its first wisp's slot to the dusk eagle, from the Dire
+// Wolf's least tier (2), as S1933's corrupted animals take theirs (DUSK_EAGLE, eagleTick, 68-dungeon-misc.js)
+function gaothRoster(gen,tier){const L=GAOTH_ROSTER.slice();if(gen&&(gen.cond==='failing'||gen.cond==='catastrophic')&&minTierOf(ZONE_FOE_DEF[DUSK_EAGLE.from].minLevel)<=tier)L[0]='Dusk Eagle';return L;}
+function gateRoster(portal,gen,tier,list){if(gaothGate(portal,gen))return gaothRoster(gen,tier);
   if(!portal||portal.occupied||portal.tutorial||!gen||!gen.gate||!(gen.cond==='failing'||gen.cond==='catastrophic'))return list;
   const C=GATE_CORRUPT[portal.theme],D=C&&gateCorruptDef(C.kind);if(!D||minTierOf(D.minLevel)>tier)return list;
   const i=list.indexOf(C.slot);if(i<0)return list;const L=list.slice();L[i]=C.kind;return L;}

@@ -142,7 +142,7 @@ const FOE_ATTACKS={
 const TELEGRAPH_BY_NAME=Object.assign({},...Object.values(FOE_ATTACKS).map(r=>r.tells));
 const FOE_FAMILY_OF={Skeleton:'humanoid',Goblin:'humanoid','Kobold Thief':'humanoid',Shieldbearer:'humanoid',Bandit:'humanoid',
   Golem:'brute',Gargoyle:'brute','Cave Bear':'brute',Ogre:'brute',Phantom:'wraith',Slime:'slime','Small Slime':'slime',
-  'Fire Elemental':'elemental',Mimic:'mimic',Spider:'spider','Shore Wisp':'spider','Gale Wisp':'spider',Shark:'shark'}; /* S2115 — Gaoth's wisp fights as the coast's */
+  'Fire Elemental':'elemental',Mimic:'mimic',Spider:'spider','Shore Wisp':'spider','Gale Wisp':'spider','Dusk Eagle':'beast',Shark:'shark'}; /* S2115 — Gaoth's wisp fights as the coast's */
 const FOE_SHAPE_FAMILY={humanoid:'humanoid',wolf:'beast',spider:'spider',brute:'brute',shark:'shark'};
 function foeFamily(e){
   if(!e)return 'humanoid';
