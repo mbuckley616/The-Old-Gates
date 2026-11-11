@@ -380,6 +380,17 @@ function restNight(bed,roll){const B=REST_BED[bed]||REST_BED.bed;if(bed!=='camp'
   return {c:parts.reduce((s,p)=>s+p[1],0),n:R?R.name:B.n,parts,bed,roll:R?roll:null};}
 function restNightSay(N){if(N.parts.length<2)return `${N.n} · comfort ${N.c}`;
   return N.parts.map((p,i)=>i?`${p[0]} ${p[1]<0?'−'+(-p[1]):'+'+p[1]}`:`${p[0]} ${p[1]}`).join(' · ')+` = ${N.c<0?'−'+(-N.c):N.c}`;}
+// S2089 — the open has a risk (the page's third part): a night on a roll outside a town's pad rolls once, on a stream keyed by the
+// cell and the game day; tier 1 never, 2 one in 10, 3 one in 5, 4 one in 3, halved with a fire. Woken at a seeded hour, you keep what the
+// hours slept gave and no Rested, and one group of the place's (WORLD.nightFoes) comes from 25 m. A camp, a bed and your ship never roll.
+const NIGHT_RISK=[0,0,10,5,3];
+function nightRisk(N){if(!N||N.bed!=='roll')return null;let t=1;try{t=worldTierAt(px,pz);}catch(e){}if(!(NIGHT_RISK[t]>0))return null;
+  try{if(typeof SITES!=='undefined'&&SITES.some(s=>s.pad>0&&Math.hypot(px-s.x,pz-s.z)<s.pad))return null;}catch(e){}
+  const fire=N.parts.some(p=>p[0]==='fire');return {tier:t,one:NIGHT_RISK[t]*(fire?2:1),fire};}
+function nightKey(){let c='?';try{const [i,j]=cellOf(px,pz);c=i+','+j;}catch(e){}return c+':'+gameDayNow();}
+// the roll, made as you lie down: null, or {h, r, id} (the hour you are woken, the stream for the group, its ids)
+function nightRoll(N,hours){const R=nightRisk(N);if(!R)return null;const id='night:'+nightKey(),r=seededRng('night',id);
+  if(!(r()<1/R.one))return null;return {h:Math.max(1,Math.min(hours,1+Math.floor(r()*Math.max(1,hours-1)))),r,id};}
 // why you cannot lie down here, or ''
 function rollSpotWhy(){if(activeZoneId!=='world'||lid!=='overworld'||(typeof isInterior==='function'&&isInterior()))return 'Lay out a bedroll in the open. Indoors, find a bed.';
   try{if(WORLD.isSwimming())return 'Not in the water.';}catch(e){}if(typeof SHIP!=='undefined'&&SHIP.sailing)return 'Not while she sails.';
@@ -498,6 +509,7 @@ function restSlipDraw(){const ov=document.getElementById('sleepui');if(!ov)retur
     {const k=restStateFor(night.c),S=k&&REST_STATE[k],was=restedNow(),keep=was&&S&&REST_STATE[was.k].rank>S.rank; /* S2085 — the bed's comfort, and what six hours of it leave you; S2088 — a night in the open, its sum */
       out+=row('☾',restNightSay(night)+(bad?' · a bad night':'')+(S?(min>=360?(keep?` · you stay <i>${REST_STATE[was.k].label}</i>`:` · <i>${S.label}</i> for ${S.min/60} hours`):` · six hours for <i>${S.label}</i>`):''),S?(S.stam>1?'skills ×1.15, stamina ×1.1':'skills ×1.1'):'');}}
   else out=row('☀',`You rise at ${at}.`)+row('♥','Waiting restores nothing; a bed does.','','#8a7050')+(ready?row('✦','You are ready to advance, but only sleep takes the level.','','#8a7050'):'');
+  if(sleep){const R=nightRisk(night);if(R)out+=row('⚠',`Tier ${R.tier}: 1 in ${R.one} you are woken`,R.fire?'with a fire':'','#7a1f10');} /* S2089 — the night's roll */
   {const W=typeof erWatchJumpLoses==='function'?erWatchJumpLoses(min):null;if(W)out+=row('☾',`The night at the ${W.data.fold} will be lost.`,'an hour or more','#7a1f10');} /* S1789 — the watch lapses on a jump of the clock; the slip says so */
   q('#rs-out').innerHTML=out;
 }
@@ -516,17 +528,19 @@ function restAtBed(hours){
   hours=Math.max(1,Math.min(24,hours||8));
   doFade(()=>{
     if(typeof orbDrop==='function')orbDrop(); /* S1854 — sleep empties the orb */
-    const night=restSlip.night||restNight(restSlip.bed||'bed');
+    const night=restSlip.night||restNight(restSlip.bed||'bed'),broke=nightRoll(night,hours); /* S2089 — woken in the open */
+    if(broke)hours=broke.h;
     {const p=restPreview(hours,night.c<0);PHP=p.hp;mana=p.mp;stamina=effMaxStamina();}
     if(typeof worldState !== 'undefined' && typeof worldState.gameTimeMinutes === 'number'){
       if(typeof fedSleep==='function')fedSleep(hours*60); /* S1500 — Full belly */
       worldState.gameTimeMinutes = (worldState.gameTimeMinutes + hours*60) % 1440;
       worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes||0) + hours*60;
     }
-    const rk=restWake(night,hours); /* S2085 — Rested by the bed's comfort, from the hour you wake; S2088 — by the night's sum */
+    const rk=broke?null:restWake(night,hours); /* S2085 — Rested by the bed's comfort, from the hour you wake; S2088 — by the night's sum */
     if(typeof addLog==='function')addLog('🛏️',`Slept ${restDur(hours*60)}.`);
     if(typeof greatNoteOnWake==='function')greatNoteOnWake(); /* S1353 — Varek's note, folded into the pack */
-    showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}`+(rk?` ${REST_STATE[rk].label}.`:night.c<0?' A bad night.':''),'#c8b880');
+    if(broke){let n=0;try{n=WORLD.nightFoes(broke.r,broke.id).length;}catch(e){}showMsg(`Something wakes you after ${restDur(hours*60)}.`+(n?' You are not alone.':''),'#ff9060');}
+    else showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}`+(rk?` ${REST_STATE[rk].label}.`:night.c<0?' A bad night.':''),'#c8b880');
     updateHUD();
     if(typeof saveGame==='function')saveGame(); /* S353 — #66 A: sleeping anywhere autosaves */
     setTimeout(()=>{if(takeLevelIfReady())showMsg('You wake stronger.','#e8d8a0');},900);
