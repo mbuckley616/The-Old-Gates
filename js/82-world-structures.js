@@ -2825,6 +2825,12 @@
   // shape of a key"). A standing stone 1.1 m (the critic's s632: the hilt at waist to chest), a lip of stone grown up round the blade,
   // a hand's breadth of blade above the lip, then the guard, the grip and the pommel; lichen, and moss at its foot. The key-shaped
   // slot in the lip shows once the blade is out. Returns {group, hilt, slot}, built at the origin; bladeStoneBuild (87) places it.
+  // S2094 — the camp you make, in the kit (PKIT.props.camp, 38-kit.js): the lean-to, and the bedroll you lay out with the tent over it if
+  // you carry one. At x,z turned ry (the way you faced), on the land's own heights -> the Group, or null on the old look (60-shop.js keeps
+  // its stand-in there)
+  function campGearProp(what,x,z,ry,o){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.camp)return null;o=o||{};
+    const y0=worldH(x,z),co=Math.cos(ry),s_=Math.sin(ry),ground=(lx,lz)=>worldH(x+lx*co+lz*s_,z-lx*s_+lz*co)-y0;
+    const C=PKIT.props.camp(what,{ground,key:o.key||('camp:'+what),tent:!!o.tent});C.group.position.set(x,y0,z);C.group.rotation.y=ry;C.group.userData.camp={what,tris:C.tris,draws:C.draws};return C.group;}
   function bladeStoneProp(){const r=pRng(0xb1ade5),g=new THREE.Group(),P=[];
     {const s=SK.bumpy(SK.rbox(.95,1.1,.62,.16,3),.045,6,4.2),pa=s.attributes.position;for(let i=0;i<pa.count;i++){const t=(pa.getY(i)+.55)/1.1;pa.setX(i,pa.getX(i)*(1-.16*t));pa.setZ(i,pa.getZ(i)*(1-.12*t));}s.computeVertexNormals();
       P.push({geo:s,color:new THREE.Color(0x77746b),x:0,y:.5,z:0,rz:.04,jitter:.1});}

@@ -397,9 +397,16 @@ function rollSpotWhy(){if(activeZoneId!=='world'||lid!=='overworld'||(typeof isI
   const w=typeof _canWait==='function'?_canWait():{ok:true};if(!w.ok)return w.reason||'Not now.';return '';}
 // the bag's roll, used: lay it out and the rest slip opens on the night's sum
 function layRoll(i){const it=BAG[i];const k=it&&it.roll?it.roll:bestRoll();if(!k){showMsg('A tent needs a bedroll under it.','#cc8844');return false;}
-  const why=rollSpotWhy();if(why){showMsg(why,'#cc8844');return false;}openRestSlip('sleep',480,{roll:k});return true;}
+  const why=rollSpotWhy();if(why){showMsg(why,'#cc8844');return false;}campLayDraw(k);openRestSlip('sleep',480,{roll:k});return true;}
+// S2094 — the roll you lay out is drawn where you lie (the kit's, on the new look), with the tent over it if you carry one; it is packed
+// again when you walk 8 m off, leave the open, or lay it out elsewhere. Not saved, as the lean-to is not.
+let CAMP_LAID=null;
+function campLayDraw(k){campLaidDrop();if(typeof campGearProp!=='function')return;const ry=yaw,d=k==='aurenne'?1.8:1.4,x=px-Math.sin(ry)*d,z=pz-Math.cos(ry)*d;
+  let g=null;try{g=campGearProp(k,x,z,ry,{tent:hasTent(),key:'roll:'+k});}catch(e){g=null;}if(!g)return;scene.add(g);CAMP_LAID={x,z,mesh:g,roll:k};}
+function campLaidDrop(){const C=CAMP_LAID;CAMP_LAID=null;if(!C||!C.mesh)return;if(C.mesh.parent)C.mesh.parent.remove(C.mesh);C.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
 // a lean-to of three logs, cut where you stand (Woodcutting); a plain stand-in until the kit's: two forked posts, a ridge pole, a slant of poles
-function leanToMesh(x,z,ry){const g=new THREE.Group();const y=typeof worldH==='function'?worldH(x,z):0,wood=new THREE.MeshLambertMaterial({color:0x5a3a20});
+function leanToMesh(x,z,ry){{let K=null;try{K=typeof campGearProp==='function'?campGearProp('leanto',x,z,ry,{key:'leanto:'+Math.round(x)+','+Math.round(z)}):null;}catch(e){K=null;}if(K)return K;} /* S2094 — the kit's on the new look */
+  const g=new THREE.Group();const y=typeof worldH==='function'?worldH(x,z):0,wood=new THREE.MeshLambertMaterial({color:0x5a3a20});
   const pole=(len,r)=>new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,6),wood);
   [-1,1].forEach(s=>{const p=pole(1.5,.05);p.position.set(s*1.1,.75,.9);g.add(p);});
   {const p=pole(2.5,.05);p.rotation.z=Math.PI/2;p.position.set(0,1.45,.9);g.add(p);}
@@ -412,7 +419,8 @@ function cutLeanTo(){const why=rollSpotWhy();if(why){showMsg(why,'#cc8844');retu
   try{const [i,j]=cellOf(x,z);L.cell=i+','+j;}catch(e){}LEANTOS.push(L);skillUse('woodcutting',3,'leanto'+LEANTOS.length);
   showMsg('You cut a lean-to.','#c8b890');if(typeof renderHubInv==='function')renderHubInv();return true;}
 // each frame (from tickSurvival): a lean-to whose cell is gone goes with it
-function tickLeanTos(){for(let i=LEANTOS.length-1;i>=0;i--){const L=LEANTOS[i];let gone=false;try{gone=!!L.cell&&typeof LOADED!=='undefined'&&!LOADED.has(L.cell);}catch(e){}
+function tickLeanTos(){if(CAMP_LAID&&(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||Math.hypot(CAMP_LAID.x-px,CAMP_LAID.z-pz)>8))campLaidDrop();
+  for(let i=LEANTOS.length-1;i>=0;i--){const L=LEANTOS[i];let gone=false;try{gone=!!L.cell&&typeof LOADED!=='undefined'&&!LOADED.has(L.cell);}catch(e){}
   if(gone){if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);LEANTOS.splice(i,1);}}}
 function restBedNow(){try{
     if(typeof isInterior==='function'&&isInterior()){const h=typeof currentHouse!=='undefined'?currentHouse:null;if(h&&h.type==='cabin')return 'berth';

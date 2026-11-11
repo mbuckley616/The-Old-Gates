@@ -4593,6 +4593,122 @@ function felledTrunk(L = 9, R = .35, seed = 1) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, TKM[k]); m.name = 'trunk:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, L, R };
 }
+// S2094 (camp and rest B's look session, Michael's B on #1378; OG-023's "shelter" and "bedrolls and camp comforts") — the camp you make:
+// a lean-to of poles thatched with boughs, the five bedrolls laid out (the blanket roll, the wool bedroll, and each island's own: the
+// Gatelands' quilted plaid roll, the Mark's fur sleeping sack, Aurenne's linen hammock slung on its two shears), and the tent pitched over
+// a roll (over the hammock, a fly on a ridge line). Built in its own frame: the roll's head at -z, the way you faced as you laid it, its foot
+// and the tent's door at +z; the lean-to's open side at +z. o.ground(x, z) is the land's height in that frame, o.key the seed, o.tent the
+// tent. Nothing here is solid: you lie in it. -> { group, tris, draws, what }
+let CGM = null;
+function campMats() {
+  if (CGM) return CGM;
+  const std = (c, ro = .95, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const paint = (N, f) => { const c = document.createElement('canvas'); c.width = c.height = N; f(c.getContext('2d'), N); return finishTex(c); };
+  // the Gatelands' sett: moss green and peat brown in broad checks, a navy band, a madder line and a faded yellow one, the twill's grain over it
+  const plaid = paint(128, (x, N) => { x.fillStyle = '#3e5434'; x.fillRect(0, 0, N, N);
+    const band = (c, a, w, al) => { x.globalAlpha = al; x.fillStyle = c; x.fillRect(a, 0, w, N); x.fillRect(0, a, N, w); };
+    band('#5a3c24', 8, 34, .55); band('#5a3c24', 72, 34, .55); band('#22303e', 50, 14, .6); band('#a83a26', 44, 3, .9); band('#a83a26', 108, 3, .9); band('#c8a84a', 24, 2, .8);
+    x.globalAlpha = .1; for (let i = 0; i < N; i += 2) { x.fillStyle = (i >> 1) % 2 ? '#000' : '#fff'; x.fillRect(0, i, N, 1); } x.globalAlpha = 1; });
+  // Aurenne's linen: undyed, an indigo border of a broad and a narrow stripe down each side, the weave's grain
+  const linen = paint(128, (x, N) => { x.fillStyle = '#e6dcc6'; x.fillRect(0, 0, N, N); x.fillStyle = '#2e4a7a'; for (const [a, w] of [[5, 7], [16, 3], [107, 3], [116, 7]]) x.fillRect(a, 0, w, N);
+    x.globalAlpha = .07; x.fillStyle = '#6a5a40'; for (let i = 0; i < N; i += 2) { x.fillRect(i, 0, 1, N); x.fillRect(0, i, N, 1); } x.globalAlpha = 1; });
+  CGM = { blanket: mat('plaster', { ns: .4, color: 0x5e5244, rough: 1 }), madder: mat('plaster', { ns: .4, color: 0x5a2a1e, rough: 1 }), fleece: mat('plaster', { ns: 1.6, color: 0xd8ccb2, rough: 1 }),
+    plaid: std(0xffffff, .95, { map: plaid }), linen: std(0xffffff, .9, { map: linen, side: THREE.DoubleSide }), pillow: std(0xe2d8c2, .95), hide: mat('plaster', { ns: .8, color: 0x5e4634, rough: .9 }),
+    fur: mat('plaster', { ns: 2.2, color: 0xd2c6b0, rough: 1 }), leather: std(0x4a3020, .7), pole: mat('wood', { ns: .9, color: 0x8e7254, rough: .9 }), bark: mat('bark', { ns: 1.2, color: 0xb4a490, rough: .95 }),
+    bough: std(0x435a32, .95), canvas: std(0xc4b28c, .95, { side: THREE.DoubleSide }), rope: std(0x8a7650, .95) };
+  return CGM;
+}
+function campGear(what, o = {}) {
+  const M = campMats(), B = new Map(), F = stream(String(o.key || 'camp:' + what)), V3 = (x, y, z) => new THREE.Vector3(x, y, z), G0 = typeof o.ground === 'function' ? o.ground : () => 0, gy = (x, z) => G0(x, z);
+  const KEEP = new Set(['plaid', 'linen']);
+  const LIFT = .045 /* over the land's drawn triangles and a path's top, which stand a few cm off worldH */;
+  const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a) || (a === 'uv' && !KEEP.has(k))) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1)));
+    if (!g.attributes.uv) { if (KEEP.has(k)) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); else worldUV(g, .5); }
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const rod = (k, a, b, rad, seg = 6) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
+  // a sheet of nu x nv quads through f(u, v) -> [x, y, z]; uv(u, v) -> [s, t] for the painted cloths
+  const grid = (k, nu, nv, f, uv) => { const pos = [], tc = [], idx = []; for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) { pos.push(...f(i / nu, j / nv)); if (uv) tc.push(...uv(i / nu, j / nv)); }
+    for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) { const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); if (uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(tc, 2)); g.setIndex(idx); g.computeVertexNormals(); return put(g, k); };
+  const edge = (t, e) => { const s = Math.min(1, Math.min(t, 1 - t) / e); return Math.sqrt(s * (2 - s)); };
+  // a pad lying on the land from x0..x1, z0..z1, h thick at its middle and rounded to the ground at its edges, lifted by lift(x, z)
+  const pad = (k, x0, x1, z0, z1, h, op = {}) => grid(k, op.nu || 8, op.nv || 16, (u, v) => { const x = x0 + (x1 - x0) * u, z = z0 + (z1 - z0) * v, lf = op.lift ? op.lift(x, z) : 0;
+    return [x, gy(x, z) + LIFT + lf + h * edge(u, op.ex || .14) * edge(v, op.ez || .06) * (op.q ? op.q(x, z) : 1), z]; }, op.uv ? (u, v) => [u * op.uv[0], v * op.uv[1]] : null);
+  const pillow = (k, z, w = .5, d = .32, h = .11) => { const g = new THREE.SphereGeometry(.5, 10, 6); g.scale(w, h * 2, d); put(g, k, 0, gy(0, z) + LIFT + h * .8, z); };
+  const rolled = (k, z, w, r) => { const g = new THREE.CylinderGeometry(r, r, w, 10); g.rotateZ(Math.PI / 2); put(g, k, 0, Math.max(gy(-w / 2, z), gy(w / 2, z)) + r * .9, z); };
+  let tentOn = !!o.tent;
+  if (what === 'leanto') {
+    // two forked posts 2.4 m apart, the ridge pole in their forks at 1.48 m, nine poles leaned from it to the ground 1.6 m back, thatched
+    // with boughs in five courses from the foot up, butts to the ridge, and a bed of boughs under it
+    const RY = 1.48, BK = -1.6, a = Math.atan2(RY, -BK);
+    for (const s of [-1, 1]) { const x = s * 1.2; rod('bark', [x, gy(x, 0) - .2, 0], [x, RY - .06, 0], .055, 7); for (const t of [-1, 1]) rod('bark', [x, RY - .1, 0], [x + t * .1, RY + .12, t * .04], .03, 5); }
+    rod('bark', [-1.5, RY, 0], [1.5, RY + .02, 0], .065, 7);
+    for (let i = 0; i < 9; i++) { const x = -1.15 + i * 2.3 / 8 + (F() - .5) * .08; rod('bark', [x, RY + .05, .1], [x + (F() - .5) * .1, gy(x, BK) - .05, BK - .08], .032, 5); }
+    // a spray of fir: a flat fan 0.5 m across and 0.75 long, its butt at the origin and its tip at +z, the needles' edge jagged
+    const spray = () => { const P = [], n = 5; for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, w = t => .25 * Math.sin(Math.PI * Math.min(1, t * 1.25)) * (1 - .35 * t), j = k % 2 ? .06 : 0;
+      for (const sd of [-1, 1]) { const e0 = sd * w(t0) * (k % 2 ? 1 : .7), e1 = sd * (w(t1) + j), q = [[0, .015, t0 * .75], [e0, 0, t0 * .75], [e1, 0, t1 * .75], [0, .015, t1 * .75]]; for (const i of [0, 1, 2, 0, 2, 3]) P.push(...q[i]); } }
+      for (let i = 0, n0 = P.length; i < n0; i += 9) P.push(P[i], P[i + 1] - .004, P[i + 2], P[i + 6], P[i + 7] - .004, P[i + 8], P[i + 3], P[i + 4] - .004, P[i + 5]); /* its underside, wound the other way */
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.computeVertexNormals(); return g; };
+    for (let r = 0; r < 6; r++) for (let i = 0; i < 6; i++) { const t = (r + .9) / 6.3, x = -1.15 + (i + (r % 2) * .5) * 2.3 / 5.5 + (F() - .5) * .08, z = BK * (1 - t), y = gy(x, BK) * (1 - t) + RY * t;
+      put(spray(), 'bough', x, y + .05 * Math.cos(a), z - .05 * Math.sin(a), Math.PI - a + (F() - .5) * .1, (F() - .5) * .25); } /* tips down the slope, each course over the butts of the one below */
+    for (let i = 0; i < 6; i++) { const x = -.8 + (i % 3) * .8, z = -.35 - Math.floor(i / 3) * .6; put(spray(), 'bough', x, gy(x, z) + .04, z - .3, 0, Math.PI + (F() - .5) * .6); }
+    tentOn = false;
+  } else if (what === 'blanket') {
+    // a grey-brown wool blanket laid flat, its head end rolled for a pillow
+    pad('blanket', -.38, .38, -.75, .95, .035); rolled('blanket', -.86, .74, .085);
+  } else if (what === 'wool') {
+    // a fleece laid under, the madder wool blanket over it, turned back at the head; the two straps it was rolled in lying loose beside it
+    pad('fleece', -.42, .42, -.98, .98, .045, { ex: .2, ez: .08 }); pad('madder', -.36, .36, -.62, .92, .05, { lift: () => .03 });
+    pad('madder', -.36, .36, -.62, -.4, .03, { lift: () => .08, nv: 4 }); pillow('fleece', -.8, .52, .3, .1);
+    for (const s of [-1, 1]) { const x = s * .55, z = s * .2; rod('leather', [x, gy(x, z - .45) + .01, z - .45], [x + s * .04, gy(x, z + .45) + .01, z + .45], .012, 4); }
+  } else if (what === 'gatelands') {
+    // the quilted plaid roll: a mattress of plaid stitched in diamonds, a linen bolster at the head, a second plaid folded over its foot
+    const q = (x, z) => .82 + .18 * Math.abs(Math.cos((x + z) * 9) * Math.cos((x - z) * 9));
+    pad('plaid', -.4, .4, -.98, .98, .085, { q, nu: 12, nv: 26, uv: [1.6, 3.9] }); pillow('pillow', -.78, .6, .3, .1);
+    pad('plaid', -.42, .42, .3, .9, .05, { lift: x => .07 + .015 * Math.cos(x * 6), nu: 8, nv: 6, uv: [1.7, 1.2] });
+  } else if (what === 'mark') {
+    // the fur sleeping sack: a hide sack 2.05 m long, 0.78 m wide at the shoulders and tapered to the foot, its mouth ringed with fur,
+    // the hood's flap thrown back fur side up
+    const L0 = -.9, L1 = 1.1, W = u => .78 - .22 * Math.max(0, Math.min(1, (u - .45) / .55)), H = u => .24 - .07 * u;
+    grid('hide', 10, 24, (v, u) => { const z = L0 + (L1 - L0) * u, e = u > .86 ? Math.sqrt(Math.max(0, 1 - ((u - .86) / .14) ** 2)) : 1, w = W(u) / 2 * (.3 + .7 * e), x = -w * Math.cos(Math.PI * v);
+      return [x, gy(x, z) + LIFT + H(u) * Math.sin(Math.PI * v) * e, z]; });
+    { const g = new THREE.TorusGeometry(.33, .07, 6, 14, Math.PI); g.scale(1.15, .7, 1); put(g, 'fur', 0, gy(0, L0) + LIFT, L0 - .01); }
+    pad('fur', -.34, .34, L0 - .46, L0 - .02, .025, { ex: .3, ez: .3, nu: 6, nv: 6, lift: () => .01 });
+    pad('fur', -.3, .3, L0 + .02, L0 + .3, .14, { ex: .4, ez: .3, nv: 4 }) /* the lining seen in the mouth */;
+  } else if (what === 'aurenne') {
+    // the linen hammock: two shears of poles 3.2 m apart, each crossed at 1.35 m and guyed out along the line, a spreader bar at each end
+    // and the cloth hanging between them, 0.45 m over the ground at its lowest, the sides curled up
+    const Z = 1.6, b0 = Math.max(gy(0, -Z), gy(0, Z)), CR = b0 + 1.35, SP = 1.08, SY = b0 + .92, LOW = b0 + .48;
+    for (const s of [-1, 1]) { for (const t of [-1, 1]) rod('pole', [t * .45, gy(t * .45, s * (Z + .12)) - .05, s * (Z + .12)], [-t * .1, CR + .18, s * (Z - .03)], .035, 6);
+      const pg = [0, 0, s * (Z + 1.1)]; pg[1] = gy(pg[0], pg[2]); rod('rope', [0, CR + .02, s * Z], [pg[0], pg[1] + .05, pg[2]], .008, 3); rod('pole', [0, pg[1] - .15, pg[2]], [0, pg[1] + .1, pg[2] - s * .03], .02, 4);
+      rod('pole', [-.44, SY, s * SP], [.44, SY, s * SP], .02, 5); for (const x of [-.4, 0, .4]) rod('rope', [0, CR - .02, s * Z], [x, SY, s * SP], .006, 3); }
+    grid('linen', 10, 22, (u, t) => { const z = -SP + 2 * SP * t, sg = Math.sin(Math.PI * t), x = (u - .5) * .86 * (1 - .1 * sg), c = (2 * u - 1) ** 2;
+      return [x, SY - (SY - LOW) * sg + .2 * c * Math.sqrt(sg), z]; }, (u, t) => [u, t * 2.2]);
+    if (tentOn) {
+      // the fly: a ridge line over the two shears, the canvas pitched from it 1.0 m out each side, its four corners guyed to pegs
+      const RY = CR + .14, EY = b0 + .78, HW = 1.0, FZ = 1.55; rod('rope', [0, RY, -Z], [0, RY, Z], .007, 3);
+      for (const s of [-1, 1]) { grid('canvas', 8, 4, (u, v) => { const z = -FZ + 2 * FZ * u; return [s * HW * v, RY - (RY - EY) * v - .05 * Math.sin(Math.PI * u) * Math.sin(Math.PI * v), z]; });
+        for (const t of [-1, 1]) { const pg = [s * (HW + .55), 0, t * (FZ + .25)]; pg[1] = gy(pg[0], pg[2]); rod('rope', [s * HW, EY, t * FZ], [pg[0], pg[1] + .05, pg[2]], .006, 3); rod('pole', [pg[0], pg[1] - .12, pg[2]], [pg[0], pg[1] + .1, pg[2]], .018, 4); } }
+      tentOn = false; }
+  }
+  if (tentOn) {
+    // the tent: a ridge tent for one, 2.4 m long, 1.6 m across and 1.1 m to its ridge pole, the back closed, the pitches pegged at the eaves,
+    // the door's flaps rolled and tied back, a guy fore and aft
+    const Z0 = -1.25, Z1 = 1.15, HW = .8, b0 = Math.max(gy(0, Z0), gy(0, Z1), gy(0, 0)), RY = b0 + 1.1, top = (z) => RY - .03 * Math.sin(Math.PI * (z - Z0) / (Z1 - Z0));
+    for (const s of [-1, 1]) grid('canvas', 8, 4, (u, v) => { const z = Z0 + (Z1 - Z0) * u, x = s * HW * v, yr = top(z), yg = gy(x, z) + .01; return [x, yr + (yg - yr) * v - .04 * Math.sin(Math.PI * v) * Math.sin(Math.PI * u), z]; });
+    grid('canvas', 6, 3, (u, v) => { const x = (u - .5) * 2 * HW, yg = gy(x, Z0) + .01, yt = RY - (RY - yg) * Math.abs(2 * u - 1); return [x, yg + (yt - yg) * v, Z0]; });
+    for (const s of [-1, 1]) { const yg = gy(s * HW, Z1); rod('canvas', [s * .06, RY - .08, Z1 + .02], [s * (HW - .05), yg + .12, Z1 + .02], .045, 6); }
+    for (const z of [Z0, Z1]) rod('pole', [0, gy(0, z) - .15, z + (z > 0 ? .03 : -.03)], [0, RY + .08, z + (z > 0 ? .03 : -.03)], .022, 5);
+    rod('pole', [0, RY + .02, Z0 - .05], [0, RY + .02, Z1 + .05], .02, 5);
+    for (const [z, d] of [[Z0, -1], [Z1, 1]]) { const pz = z + d * 1.0, pg = gy(0, pz); rod('rope', [0, RY + .06, z], [0, pg + .05, pz], .006, 3); rod('pole', [0, pg - .12, pz], [0, pg + .1, pz], .018, 4); }
+    for (const s of [-1, 1]) for (let k = 0; k <= 3; k++) { const z = Z0 + (Z1 - Z0) * k / 3, x = s * (HW + .06), g = gy(x, z); rod('pole', [x, g - .1, z], [x + s * .02, g + .07, z], .012, 3); }
+  }
+  const group = new THREE.Group(); group.name = 'camp:' + what; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, M[k]); m.name = 'camp:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, what };
+}
 // ── ships (card F11, backlog L6, OG-004; Session 1531): the Gatelands sloop of docs/prototypes/levelup/ships.js (gatelandsSloop,
 // Session 858; Michael's A on #306: the square sail, the harp, a tiller on the small hulls), in the game's sloop's numbers (L 13, W 4.4,
 // draft 1.05, the deck 1.0 over the sea): clinker strakes lapped, tarred below the water and oak above, the sheer strake green under a
@@ -9209,7 +9325,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, piers: piers.map(f2), bays: bays.map(({ hi, ...b }) => ({ ...b, x0: f2(b.x0), x1: f2(b.x1) })), gap: GAP ? { x0: f2(GAP.x0), x1: f2(GAP.x1), stump: f2(GAP.stump) } : null,
       two, depth: f2(D), deep: f2(xd), arch: { pitch: PITCH, pier: PIER, span: SPAN, r: RAD, upSpring: f2(US), lowSpring: two ? f2(LS) : null, tier: two ? f2(TIER + SC) : null, deck: DECK }, channel: { w: CW, x0: CX0, x1: CX1, runs }, x0: X0, x1: X1, broken: !!GAP, far, farTris: Math.round(far.reduce((a, [g]) => a + g.attributes.position.count / 3, 0)) };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, camp: campGear }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
