@@ -41,5 +41,34 @@ const f = await page.evaluate(() => {
 console.log(JSON.stringify(f));
 check('on the new look the slots stand in two columns round the portrait\'s window, 200 by 332', f.fig && f.canvas[0] === 200 && f.canvas[1] === 332 && !/\?/.test(f.cols) && /head:L/.test(f.cols) && /weapon:R/.test(f.cols), f);
 check('the body lent to the portrait is given back where it was', f.lent && f.back, f);
+// S2087 — the portrait plants a staff, a spear or a two-hander on the floor (tpRestPose/tpRestHeld): the builder's copy of it stands
+// straight up and down with its low end on the floor, through the fist; a longsword and a bow keep the hang; the driver's weapon is not
+// moved by a lend and give-back. No draw is made
+const rest = await page.evaluate(() => {
+  const out = {}, keepW = EQ.weapon, keepO = EQ.offhand;
+  for (const k of ['staff', 'Spear', 'Claymore', 'GreatAxe', 'Longsword', 'Bow']) {
+    const T = IMPLEMENT_TYPES[k] || WEAPON_TYPES.find(w => w.type === k);
+    EQ.offhand = null; EQ.weapon = makeItem(2, T, null, false); if (T.shape === 'staff') EQ.weapon.weaponShape = 'staff';
+    const R = tpEnsure(); sheetFigSetup(200, 332); const W = R.weapon || R.weaponL, p0 = W.position.toArray();
+    const keep = sheetFigLend(R), h = R.hbHeld && R.hbHeld.find(x => x.o === W), S = R.rest;
+    let r = { planted: !!S };
+    if (S && h) {
+      h.c.updateMatrixWorld(true); const q = h.c.getWorldQuaternion(new THREE.Quaternion());
+      const ax = new THREE.Vector3(0, S.dn, 0).applyQuaternion(q), lo = h.c.localToWorld(new THREE.Vector3(0, S.dn > 0 ? S.hi : S.lo, 0)), up = h.c.localToWorld(new THREE.Vector3(0, S.dn > 0 ? S.lo : S.hi, 0));
+      const f = new THREE.Vector3(); for (const b of h.f) f.add(new THREE.Vector3().setFromMatrixPosition(b.matrixWorld)); f.multiplyScalar(1 / h.f.length);
+      // how far the fingers' middle is off the weapon's line (the hilt through the fist)
+      const off = new THREE.Vector3().subVectors(f, lo).projectOnPlane(ax).length();
+      r = Object.assign(r, { tilt: +(Math.acos(Math.min(1, -ax.y)) * 180 / Math.PI).toFixed(2), foot: +lo.y.toFixed(3), top: +up.y.toFixed(2), fist: +f.y.toFixed(2), off: +off.toFixed(3) });
+    }
+    sheetFigGiveBack(R, keep); r.kept = W.position.toArray().every((v, i) => Math.abs(v - p0[i]) < 1e-9); out[k] = r;
+  }
+  EQ.weapon = keepW; EQ.offhand = keepO; tpEnsure();
+  return out;
+});
+console.log(JSON.stringify(rest));
+check('the portrait plants a staff, a spear, a claymore and a great axe: upright (under 2°), the low end on the floor (within 3 cm), the fist on its line',
+  ['staff', 'Spear', 'Claymore', 'GreatAxe'].every(k => { const r = rest[k]; return r.planted && r.tilt < 2 && Math.abs(r.foot) < .03 && r.top > r.fist && r.off < .03 && r.fist > .6 && r.fist < 1.3; }), rest);
+check('a longsword and a bow keep the hang, and no lend moves the weapon in the driver\'s hand',
+  !rest.Longsword.planted && !rest.Bow.planted && Object.values(rest).every(r => r.kept), rest);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

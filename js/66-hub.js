@@ -673,7 +673,9 @@ function sheetFigLend(R){const F=SHEET_FIG,rig=R.rig,root=R.root,keep={p:root.pa
   root.traverse(m=>{if(m.isMesh){keep.m.push([m,m.castShadow,m.frustumCulled]);m.castShadow=true;m.frustumCulled=false;}});
   F.scene.add(root);root.position.set(0,0,0);root.rotation.set(0,F.yaw,0);root.visible=true;hbLevel(rig,0);
   /* the weapon's wrist turned so the blade hangs by the thigh rather than pointing at you */
-  const P=pwIdle(0,{});if(R.weapon)P.wrR=[F.wr,0,P.wrR[2]];pwApply(rig,P);root.updateMatrixWorld(true);tpHBPose(R);return keep;}
+  const P=pwIdle(0,{});if(R.weapon)P.wrR=[F.wr,0,P.wrR[2]];pwApply(rig,P);root.updateMatrixWorld(true);
+  /* S2087 — a staff, a spear or a two-hander planted on the floor rather than hung from the fist (tpRestPose, 54-thirdperson.js) */
+  const rest=typeof tpRestPose==='function'&&tpRestPose(R);tpHBPose(R);if(rest)tpRestHeld(R);return keep;}
 function sheetFigGiveBack(R,keep){const root=R.root;SHEET_FIG.scene.remove(root);if(keep.p)keep.p.add(root);root.position.copy(keep.pos);root.rotation.copy(keep.rot);root.visible=keep.vis;
   if(keep.L>0)hbLevel(R.rig,keep.L);for(const [m,c,f] of keep.m){m.castShadow=c;m.frustumCulled=f;}root.updateMatrixWorld(true);}
 // draw the body into the canvas now; false (with SHEET_FIG.err) when there is nothing to draw yet. The first draw of a material it has
