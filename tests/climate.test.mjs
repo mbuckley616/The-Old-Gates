@@ -36,6 +36,18 @@ const sh = await page.evaluate(() => { _clT('winter', 23); const o = { open: _cl
   const L = lid; lid = 'int_test'; o.inside = _clG().g; lid = L; o.again = _clG().g; return o; });
 check('shelter: Bitter in the open, nothing beside a fire, nothing indoors', sh.open === 2 && sh.fire === 0 && sh.inside === 0 && sh.again === 2, sh);
 
+// 2b. the night's sum by a fire (Session 2102, the critic's s1474): the fire's +1 is its worth, and the cold stays; a lean-to with a fire before
+// it takes a grade off; a tent and a lean-to are one roof (+1), so the page's best camp (roll 3, roof 1, fire 1) is 5
+const ns = await page.evaluate(() => { _clT('winter', 23); for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && (BAG[i].tent || BAG[i].roll)) BAG.splice(i, 1);
+  const sum = k => { _clim.g = 0; _clim.at = 0; const N = restNight('roll', k); return [N.c, restNightSay(N)]; }, o = { open: sum('blanket') };
+  CAMPFIRES.push({ x: px + .9, z: pz, until: gameMinNow() + 600, mesh: null }); o.fire = sum('blanket');
+  LEANTOS.push({ x: px, z: pz + 1, mesh: null }); o.lean = sum('blanket'); BAG.push({ ...TENT_ITEM }); o.both = sum('blanket'); o.best = sum('mark');
+  CAMPFIRES.length = 0; LEANTOS.length = 0; for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].tent) BAG.splice(i, 1); return o; });
+console.log('night sums', JSON.stringify(ns));
+check('a Mark winter night: a blanket roll alone 1 − 2 = −1; by a fire 0.9 m off, fire +1 and Bitter −2 = 0 (it read 2)', ns.open[0] === -1 && ns.fire[0] === 0 && /Bitter −2/.test(ns.fire[1]), ns);
+check('a lean-to with the fire takes a grade: 1 + 1 + 1 − 1 = 2; a tent too is one roof, + another grade: 1 + 1 + 1 = 3', ns.lean[0] === 2 && /Cold −1/.test(ns.lean[1]) && ns.both[0] === 3 && /tent and lean-to \+1/.test(ns.both[1]), ns);
+check('the Mark\'s fur sack, tent, lean-to and fire on that night: 3 + 1 + 1 = 5, your own bed', ns.best[0] === 5, ns);
+
 // 3. protection: Bitter; the fur cloak; then Hearty
 const pr = await page.evaluate(() => { _clT('winter', 23); const o = { bare: climateGrade() };
   EQ.back = makeCloak('fur'); _clim.g = 0; o.fur = climateGrade(); setFed('hearty', 1); _clim.g = 0; o.fed = climateGrade(); o.by = _clim.by.slice();

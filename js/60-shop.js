@@ -373,8 +373,8 @@ function leanToNear(){return LEANTOS.some(L=>Math.hypot(L.x-px,L.z-pz)<=LEANTO_R
 function restNight(bed,roll){const B=REST_BED[bed]||REST_BED.bed;if(bed!=='camp'&&bed!=='roll')return {c:B.c,n:B.n,parts:[[B.n,B.c]],bed};
   const R=bed==='roll'?ROLL_DEF[roll]||ROLL_DEF.blanket:null,parts=[[R?R.name:B.n,R?R.c:B.c]];
   const tent=bed==='camp'||hasTent(),lean=leanToNear(),fire=fireForNight();
-  if(tent)parts.push([bed==='camp'?'its tents':'tent',1]);if(lean)parts.push(['lean-to',1]);if(fire)parts.push(['fire',1]);
-  let e={g:0,side:null};try{e=exposureNow();}catch(x){}
+  if(tent)parts.push([bed==='camp'?'its tents':lean?'tent and lean-to':'tent',1]);else if(lean)parts.push(['lean-to',1]);if(fire)parts.push(['fire',1]); /* S2102 — one roof: a tent and a lean-to are +1 together, the page's roll 3, roof 1, fire 1 = 5 */
+  let e={g:0,side:null};try{e=exposureNow(true);}catch(x){} /* S2102 — the open's grade even by the fire: the fire's +1 and the lean-to's grade are its whole worth */
   if(e.g>0&&e.side){const P=e.side==='cold'?warmthNow():coolNow(),rid=R?(e.side==='cold'?R.warm||0:R.cool||0):0;
     const g=Math.max(0,e.g-Math.min(2,P.n+rid)-(tent?1:0)-(lean&&fire&&e.side==='cold'?1:0));if(g)parts.push([CLIMATE.names[e.side][g],-g]);}
   return {c:parts.reduce((s,p)=>s+p[1],0),n:R?R.name:B.n,parts,bed,roll:R?roll:null};}
@@ -401,7 +401,18 @@ function layRoll(i){const it=BAG[i];const k=it&&it.roll?it.roll:bestRoll();if(!k
 // S2094 — the roll you lay out is drawn where you lie (the kit's, on the new look), with the tent over it if you carry one; it is packed
 // again when you walk 8 m off, leave the open, or lay it out elsewhere. Not saved, as the lean-to is not.
 let CAMP_LAID=null;
-function campLayDraw(k){campLaidDrop();if(typeof campGearProp!=='function')return;const ry=yaw,d=k==='aurenne'?1.8:1.4,x=px-Math.sin(ry)*d,z=pz-Math.cos(ry)*d;
+// S2102 — the camp is laid where it stands clear (the critic's tent through a trunk): its footprint in the prop's own frame, [x0, x1, z0, z1]
+// as the kit draws it (the tent's guy lines left out), read on a 0.4 m grid by the world's solids (trees, rocks, walls); the spot ahead
+// first, then turning off it and farther out. None clear, and it is laid ahead as before: nothing stops the night.
+const CAMP_FOOT={roll:[-.6,.6,-1.36,1.1],tent:[-.85,.85,-1.5,1.5],aurenne:[-.5,.5,-2.7,2.7],aurenneTent:[-1.2,1.2,-2.7,2.7],leanto:[-1.5,1.5,-2,.12]};
+function campSpotClear(x,z,ry,f){if(typeof solidAt!=='function')return true;const co=Math.cos(ry),sn=Math.sin(ry),R=.3,n=(a,b)=>Math.max(1,Math.ceil((b-a-2*R)/.4)); /* solidAt pads by 0.3: the grid is pulled in by it */
+  const nx=n(f[0],f[1]),nz=n(f[2],f[3]);for(let j=0;j<=nz;j++)for(let i=0;i<=nx;i++){const lx=f[0]+R+(f[1]-f[0]-2*R)*i/nx,lz=f[2]+R+(f[3]-f[2]-2*R)*j/nz;
+    if(solidAt(x+lx*co+lz*sn,z-lx*sn+lz*co))return false;}return true;}
+function campSpot(d0,f,dMax){const turns=[0,.45,-.45,.9,-.9,1.5,-1.5,2.2,-2.2,Math.PI];
+  for(let d=d0;d<=dMax+1e-6;d+=.6)for(const t of turns){const ry=yaw+t,x=px-Math.sin(ry)*d,z=pz-Math.cos(ry)*d;if(campSpotClear(x,z,ry,f))return {x,z,ry};}
+  return {x:px-Math.sin(yaw)*d0,z:pz-Math.cos(yaw)*d0,ry:yaw};}
+function campLayDraw(k){campLaidDrop();if(typeof campGearProp!=='function')return;
+  const f=CAMP_FOOT[k==='aurenne'?(hasTent()?'aurenneTent':'aurenne'):hasTent()?'tent':'roll'],{x,z,ry}=campSpot(k==='aurenne'?1.8:1.4,f,3.8);
   let g=null;try{g=campGearProp(k,x,z,ry,{tent:hasTent(),key:'roll:'+k});}catch(e){g=null;}if(!g)return;scene.add(g);CAMP_LAID={x,z,mesh:g,roll:k};}
 function campLaidDrop(){const C=CAMP_LAID;CAMP_LAID=null;if(!C||!C.mesh)return;if(C.mesh.parent)C.mesh.parent.remove(C.mesh);C.mesh.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
 // a lean-to of three logs, cut where you stand (Woodcutting); a plain stand-in until the kit's: two forked posts, a ridge pole, a slant of poles
@@ -414,8 +425,8 @@ function leanToMesh(x,z,ry){{let K=null;try{K=typeof campGearProp==='function'?c
   g.position.set(x,y,z);g.rotation.y=ry;return g;}
 function cutLeanTo(){const why=rollSpotWhy();if(why){showMsg(why,'#cc8844');return false;}
   if(bagCount(b=>!!b.log)<LEANTO_LOGS){showMsg(`A lean-to takes ${LEANTO_LOGS} logs.`,'#cc8844');return false;}
-  bagTake(b=>!!b.log,LEANTO_LOGS);const x=px-Math.sin(yaw)*1.2,z=pz-Math.cos(yaw)*1.2,L={x,z,mesh:null};
-  try{L.mesh=leanToMesh(x,z,yaw);scene.add(L.mesh);}catch(e){L.mesh=null;}
+  bagTake(b=>!!b.log,LEANTO_LOGS);const {x,z,ry}=campSpot(1.2,CAMP_FOOT.leanto,2.4),L={x,z,mesh:null}; /* S2102 — clear of trunks, within LEANTO_REACH */
+  try{L.mesh=leanToMesh(x,z,ry);scene.add(L.mesh);}catch(e){L.mesh=null;}
   try{const [i,j]=cellOf(x,z);L.cell=i+','+j;}catch(e){}LEANTOS.push(L);skillUse('woodcutting',3,'leanto'+LEANTOS.length);
   showMsg('You cut a lean-to.','#c8b890');if(typeof renderHubInv==='function')renderHubInv();return true;}
 // each frame (from tickSurvival): a lean-to whose cell is gone goes with it
@@ -548,7 +559,7 @@ function restAtBed(hours){
     if(typeof addLog==='function')addLog('🛏️',`Slept ${restDur(hours*60)}.`);
     if(typeof greatNoteOnWake==='function')greatNoteOnWake(); /* S1353 — Varek's note, folded into the pack */
     if(broke){let n=0;try{n=WORLD.nightFoes(broke.r,broke.id).length;}catch(e){}showMsg(`Something wakes you after ${restDur(hours*60)}.`+(n?' You are not alone.':''),'#ff9060');}
-    else showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}`+(rk?` ${REST_STATE[rk].label}.`:night.c<0?' A bad night.':''),'#c8b880');
+    else showMsg(`You wake after ${restDur(hours*60)}. ${gameDateLine()}.`+(rk?` ${REST_STATE[rk].label}.`:night.c<0?' A bad night.':''),'#c8b880');
     updateHUD();
     if(typeof saveGame==='function')saveGame(); /* S353 — #66 A: sleeping anywhere autosaves */
     setTimeout(()=>{if(takeLevelIfReady())showMsg('You wake stronger.','#e8d8a0');},900);
