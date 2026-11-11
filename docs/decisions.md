@@ -3,6 +3,26 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Swords by island — the six makes as looks only, or Aurenne’s falchion and flyssa as kinds of their own? (from the systems builder, 2026-11-11, #1425)
+**The question.** The bodies builder has made six swords by island in the people's kit (Session 2096, OG-028): the Gatelands' arming sword, the Mark's Norse sword, and Aurenne's takouba, nimcha, falchion and flyssa. Before they go into the game, each item has to know which make it is. The game has a Sword, a Longsword and a Scimitar today, one look each, the same everywhere. Are the makes looks only, or are Aurenne's four kinds of their own?
+
+**Options.**
+- **A.** Looks only, by island, as the staffs and wands carry theirs (`make`, Session 1858): a Sword in the Gatelands is the arming sword, in the Mark the Norse sword, in Aurenne the takouba; a Scimitar is the nimcha everywhere. The falchion and the flyssa go unused. Half a systems session, then the bodies builder's.
+- **B (recommended).** A, but Aurenne's Sword is drawn by the item's own seed as the takouba (one in two), the falchion (one in four) or the flyssa (one in four). Still looks only. Half a systems session, then the bodies builder's.
+- **C.** The falchion and the flyssa as new kinds with their own numbers, sold and found only in Aurenne: the falchion a chopper (damage ×1.1, posture +2, tell 0.05 s slower), the flyssa a thruster (pierce, reach +0.15 m, damage ×0.95). Two systems sessions and the quest review on the names.
+
+**Recommendation.** B: all six makes reach the game with no new rule to balance, and a player in Aurenne sees three blades on the racks, not one. C stays open later. Session 2099's devlog: `docs/devlog/2099.md`.
+
+### Gaoth’s gates — what they hold (a roster from what exists, a wisp, or the wisp and the dusk eagle?) (from the systems builder, 2026-11-11, #1424)
+**The question.** One old gate in six is Gaoth's by its seed (`gateSchool`): it teaches Gaoth's words, lights blue-white and its Gargoyles wear Gaoth's pale stone, but its foes are still the roster of the theme it drew, because `THEME_DEF` has no Gaoth row. The canon (§9a) gives Gaoth *wisps, Gargoyle, something winged*, and the dusk eagle (OG-088, B on #1201) waits on this roster. What should a Gaoth gate hold?
+
+**Options.**
+- **A.** From foes that exist: Skeleton, Skeleton, Gargoyle, Phantom, Gargoyle, Phantom. No new foe. Half a session.
+- **B.** A, with a wisp in the two Skeleton slots: the coast's Shore Wisp made a gate foe (working name *Gale Wisp*), level one, the Skeleton's numbers graded by tier, Gaoth's damage ×0.7, its blow shoving you 1 m. One systems session.
+- **C (recommended).** B, plus the dusk eagle in a failing or catastrophic gate: a flier circling 4–6 m up that dives on a 0.9 s tell; at the dive a blade or a parry reaches it, an arrow or a word always does. The Dire Wolf's numbers, Gaoth ×0.7. Three systems sessions and the bodies builder's dive pose.
+
+**Recommendation.** C: it finishes OG-088's five, gives Gaoth its own gate as the canon draws it, and the dive is a fair fight with a readable tell. Session 2098's devlog: `docs/devlog/2098.md`.
+
 ### Resources and crafting — hides and salt, a house that works, or stations anywhere? (from the systems designer, 2026-11-11, #1420)
 **The question.** Backlog L8's *Resources and crafting* lists nodes, tools, stations and crops. Survival B already built the veins, felling, the forge and the bench, so three gaps are left: nothing makes the light armour line, a hunt ends at the meat, and a house you buy does nothing a rented room doesn't. How far should the rest go? The page: `docs/design/resources-and-crafting.md`.
 
