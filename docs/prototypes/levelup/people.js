@@ -4539,13 +4539,24 @@ export const CAST = {
   // a long white braid over the shoulder, the deep red wrap with its woven border
   Áine: { people: 'gatelander', g: 0, age: .88, muscle: .25, weight: .42, metres: 1.58, hairCol: [.9, .89, .87], hair: { style: 'plait', len: .85 }, pose: { stoop: .3 },
     dress: { tunic: [.8, .76, .66], skirtColor: [.3, .26, .22], boots: [.3, .2, .13], belt: [.36, .25, .16],
-      cloak: [.45, .1, .08], cape: true, cloakLen: .9, brooch: [.42, .43, .45], cloakHem: [.2, .28, .45], staff: [.45, .33, .2], staffMake: 'hazel' } } };
-// a cast member's genome: their name's roll, then the sheet. `o.people` keeps a people the caller already knows (Corwin's)
+      cloak: [.45, .1, .08], cape: true, cloakLen: .9, brooch: [.42, .43, .45], cloakHem: [.2, .28, .45], staff: [.45, .33, .2], staffMake: 'hazel' } },
+  // Session 2103 (L2, OG-053 kept over OG-092; Michael's 10 B): the Royal Herald at Ironhaven, 150 years in the post and afraid to die, so
+  // older and frailer than the sheet's vigorous fifty: Old Blood (short and slight, grey-pale), his black gone to iron grey, a short beard,
+  // a stoop on the carved staff of his people. The herald's dress in the Crown's crimson and gold (canon §1.5): a crimson robe to the
+  // ankle, a gold cord at the waist, a short crimson shoulder cape with a gold border, and the gold wheel-and-compass brooch at the
+  // shoulder. His marks barely past the wrist (`marks`), where the robe's sleeve hides them, as he has hidden them for a century and a half;
+  // the face drawn thin (`face`: no fat, the cheekbones up, the jaw and neck narrowed), since the old-age targets alone left it heavy
+  Aldwyn: { people: 'oldblood', fixed: true, g: 1, age: .95, muscle: .22, weight: .24, metres: 1.6, hairCol: [.64, .63, .61], hair: { style: 'short', len: .55 }, beard: .25,
+    brow: { thick: .55, arch: .35 }, pose: { stoop: .6 }, marks: .05, face: { 'head-fat': -.8, 'head-oval': .5, 'l-cheek-bones': .6, 'r-cheek-bones': .6, 'chin-width': -.3, 'neck-scale-horiz': -.4 },
+    dress: { tunic: [.46, .08, .07], robe: [.46, .08, .07], skirtColor: [.46, .08, .07], boots: [.18, .12, .09], cord: [.72, .55, .2],
+      cloak: [.5, .09, .08], cape: true, cloakLen: .5, cloakHem: [.72, .55, .2], brooch: [.78, .6, .22], staff: [.24, .19, .15], staffMake: 'carved' } } };
+// a cast member's genome: their name's roll, then the sheet. `o.people` keeps a people the caller already knows (Corwin's), unless the
+// sheet's is `fixed` (Aldwyn's Old Blood, which the game's Gatelander driver does not know; Session 2103)
 export function castGenome(name, o = {}) {
-  const C = CAST[name]; if (!C) return null; const people = o.people && PEOPLES[o.people] ? o.people : C.people;
+  const C = CAST[name]; if (!C) return null; const people = !C.fixed && o.people && PEOPLES[o.people] ? o.people : C.people;
   const G = rollGenome('cast:' + name, { people, g: C.g });
   for (const k of ['age', 'muscle', 'weight', 'hairCol', 'beard']) if (C[k] != null) G[k] = Array.isArray(C[k]) ? C[k].slice() : C[k];
-  G.hair = { ...C.hair }; if (C.brow) G.brow = { ...C.brow }; G.pose = { ...(G.pose || {}), stoop: 0, ...(C.pose || {}) }; G.scar = null; G.marks = people === 'oldblood' ? G.marks : null;
+  G.hair = { ...C.hair }; if (C.brow) G.brow = { ...C.brow }; if (C.face) G.face = { ...(G.face || {}), ...C.face }; G.pose = { ...(G.pose || {}), stoop: 0, ...(C.pose || {}) }; G.scar = null; G.marks = people === 'oldblood' ? C.marks ?? G.marks : null;
   G.dress = { ...Object.fromEntries(GARMENTS.map(k => [k, null])), ...DRESS_FLAGS, skirt: C.g ? 'short' : 'long', ...JSON.parse(JSON.stringify(C.dress)) };
   G.height = heightFor(G, C.metres); G.cast = name; return G;
 }
