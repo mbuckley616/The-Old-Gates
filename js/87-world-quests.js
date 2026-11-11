@@ -119,6 +119,7 @@
     {const P=!artifactState('gate_blade')&&artifactPlaces().gate_blade;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [gi,gj]=cellOf(P.x,P.z);if(Math.abs(gi-ci)<=1&&Math.abs(gj-cj)<=1)out.push(`There's a sword in a stone out by ${P.name}. Half the young ones in the townland have had a pull at it. It's still there. So are they, mostly.`);}} /* S802 — the blade, while it stands in its stone (the approved draft, §5) */
     {const P=!artifactState('drowned_bell')&&artifactPlaces().drowned_bell;if(P&&nationKeyOf(ci,cj)==='gatelands'){const [bi,bj]=cellOf(P.x,P.z);if(Math.abs(bi-ci)<=1&&Math.abs(bj-cj)<=1&&(site.kind==='port'||Math.hypot(site.x-P.x,site.z-P.z)<500))out.push(`There's a wreck on the rock off ${P.coast} that only shows at the ebb. The lads say there's a bell on her still. Nobody's gone out for it. The tide comes in faster than you'd think, and it's never once been sorry.`);}} /* S801 — the bell, while it hangs in its wreck (the approved draft, §2) */
     {const P=!artifactState('sundial_ring')&&artifactPlaces().sundial_ring;if(P){const [ri,rj]=cellOf(P.x,P.z);if(Math.abs(ri-ci)<=1&&Math.abs(rj-cj)<=1)out.push(`There's gold on the cairn at the top of ${P.name}. Everybody's seen it from below, and nobody's brought it down. You climb up, it's never noon. You climb faster, it's raining. The mountain takes its time, and it takes yours.`);}} /* S800 — the ring, while it lies on its cairn (the approved draft, §4) */
+    out.push(...warRumours(site)); /* S2093 — Under Another Flag §7 */
     {const t=gateTalk(site);if(t)out.push(t);} /* S1350 — the great gates, by the count torn */
     if(isNight())out.push("Don't go past the last lamp. Not tonight.");
     {const L=fstate().league;if(L.spire==='held'){const cs=anchoredPlaces().caer_slige;if(cs&&cs.id===site.id)out.push("The new Captain held the spire a whole night. Came down at first light and wouldn't talk about it.");else if(nationKeyOf(ci,cj)==='mark')out.push("The spire at Caer Slige has gone dark. The night watch says it's colder for it. The night watch can freeze.");}} /* S1338 — *The Spire Held*, §7 */
@@ -904,6 +905,7 @@ const giver=`${lord.title} ${lord.name}`;
     const owner=worldState.owned&&site&&Object.values(worldState.owned).some(o=>o.site===site.id)?G.owner:'';
     const rank=worldState.guild&&((worldState.guild.guild_f&&worldState.guild.guild_f.done>=3)||(worldState.guild.guild_m&&worldState.guild.guild_m.done>=3))?G.guild:'';
     if(n===0)try{hearingFirst(site);}catch(e){} /* S1795 — Hearing (Speech 75) */
+    {const w=warGreet(def,site,n);if(w)g=w;} /* S2093 — Under Another Flag §6: a held town's first words by whose people you are; the freed town's */
     noteMet(key);return g+owner+rank;
   }
 
@@ -1923,6 +1925,44 @@ const giver=`${lord.title} ${lord.name}`;
     const by=held?st.occupier:siege?st.siegeBy:null,L=lordFor(site),cr=NAT.crown||'the Crown';
     return line.replace(/\{Lord\}/g,`${L.title} ${L.name}`).replace(/\{Polity\}/g,by?polityName(by,true):'').replace(/\{polity\}/g,by?polityName(by):'')
       .replace(/\{Crown\}/g,(m,o,s)=>{const a=s.slice(Math.max(0,o-2),o);return (o===0||/[.?!] $/.test(a))?cr.charAt(0).toUpperCase()+cr.slice(1):cr;}).replace(/\{town\}/g,town);}catch(e){return '';}}
+  // S2093 — Under Another Flag, §6–7 (the quest writer's draft, approved by Michael 14 Oct): the greeting in a held town by whose people
+  // you are (the first meeting), and the first greeting after you freed it or broke its siege (seven days, once a person); the rumours of
+  // a town besieged, held, freed or relieved, told in the other towns within 900 (fourteen days for the last two). `st.freed` is written by
+  // breakSiege and liberate, in worldState.towns (the world row, already saved); nothing else is kept.
+  const WAR_GREET={
+    held:{gatelander:"You're one of theirs, by the look of you. I'll mind my tongue, then, and you'll mind your boots on my step.",
+      markman:"One of theirs. Fine. Keep walking.",
+      aurennais:"Ah. One of the administration's own people, Master. We are, of course, entirely cooperative.",
+      oldblood:"You are of them. You are not them."},
+    own:{gatelander:"One of our own. Good. Walk soft past the plaza. They've counted us, and they'll count you.",
+      markman:"Markman. Good. Count their men for me on your way past.",
+      aurennais:"A countryman, Master. Then you understand our position without my having to state it, which is as well."},
+    garrison:{gatelander:"You're the one cleared the plaza. I'd know you anywhere now, and I'm no hand at faces.",
+      markman:"Sweeper. Good. That's what we call you now.",
+      aurennais:"Master. You are the one who concluded the garrison's tenancy. The town is in your debt, and has said so in writing.",
+      oldblood:"You cleared the square. We saw."},
+    siege:{gatelander:"You broke the camp on the road. There was bread on every table next morning, and it was your name said over it.",
+      markman:"Camp-breaker. Good. Bread's back.",
+      aurennais:"Master, the road is open again, and the town knows to whom it owes the reopening.",
+      oldblood:"The road is open. You opened it."}};
+  const WAR_RUMOUR={besieged:"{town}'s shut up behind its gate with {polity}'s camp on the road. Twelve days, they reckon, before hunger opens it.",
+    held:"{Polity}'s men hold {town}. A handful on the plaza, they say, and nobody coming to shift them.",
+    garrison:"Somebody walked into {town} and cleared {polity}'s garrison off the plaza. Everyone's cousin saw it. Nobody agrees what they looked like.",
+    siege:"The camp outside {town} is ashes. Whoever did it didn't stop to be thanked."};
+  function freedNow(st){return st.freed&&dayNow()-st.freed.day<7?st.freed:null;}
+  // the aside that takes the place of the first words, or '' (n: how often you have met this person)
+  function warGreet(def,site,n){try{if(!site||!site.id)return '';const st=TS(site),sp=def.people||'gatelander',pp=playerPeople();
+    const F=freedNow(st);if(F&&WAR_GREET[F.how]&&def._freedSeen!==F.day){def._freedSeen=F.day;return WAR_GREET[F.how][sp]||WAR_GREET[F.how].gatelander;}
+    if(n!==0||pp==='oldblood'||st.flags.occupied==null||!NATIONS[st.occupier])return '';
+    if(pp===NATIONS[st.occupier].people)return WAR_GREET.held[sp]||WAR_GREET.held.gatelander;
+    const home=NATIONS[nationKeyOf(...cellOf(site.x,site.z))];if(home&&pp===home.people&&sp===home.people&&WAR_GREET.own[sp])return WAR_GREET.own[sp];
+    return '';}catch(e){return '';}}
+  // the rumours of the war's towns within 900 of this one, from the saved towns (a town need not be loaded to be talked of)
+  function warRumours(site){const out=[];try{const T=worldState.towns||{};for(const id in T){if(id===site.id)continue;const st=T[id];if(!st||!st.flags)continue;
+    let k=null,by=null;if(st.flags.besieged!=null&&st.siegeBy){k='besieged';by=st.siegeBy;}else if(st.flags.occupied!=null&&st.occupier){k='held';by=st.occupier;}
+    else if(st.freed&&dayNow()-st.freed.day<14){k=st.freed.how;by=st.freed.by;}
+    if(!k||!WAR_RUMOUR[k])continue;const t=siteAnywhere(id);if(!t||Math.hypot(t.x-site.x,t.z-site.z)>900)continue;
+    out.push(WAR_RUMOUR[k].replace(/\{town\}/g,t.name).replace(/\{Polity\}/g,by?polityName(by,true):'').replace(/\{polity\}/g,by?polityName(by):''));}}catch(e){}return out;}
   function borderTowns(nk,vs){const out=[];const cells=[...CELLS.values()].filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)===vs);if(!cells.length)return out;const R=SIZE*2.5;
     for(const t of allSites()){if(!(t.kind in BASE_P)||t.kind==='outpost')continue;const [ci,cj]=cellOf(t.x,t.z);if(nationKeyOf(ci,cj)!==nk)continue;let bd=1e9;for(const c of cells){const d=Math.hypot(t.x-(c.i+.5)*SIZE,t.z-(c.j+.5)*SIZE);if(d<bd)bd=d;}if(bd<R)out.push(t);}
     if(!out.length){const mine=allSites().filter(t=>(t.kind in BASE_P)&&t.kind!=='outpost'&&nationKeyOf(...cellOf(t.x,t.z))===nk);mine.sort((p,q)=>{const dp=Math.min(...cells.map(c=>Math.hypot(p.x-(c.i+.5)*SIZE,p.z-(c.j+.5)*SIZE)));const dq=Math.min(...cells.map(c=>Math.hypot(q.x-(c.i+.5)*SIZE,q.z-(c.j+.5)*SIZE)));return dp-dq;});out.push(...mine.slice(0,4));}
@@ -1931,11 +1971,11 @@ const giver=`${lord.title} ${lord.name}`;
     if(typeof addLog==='function')addLog('⚔',`The cold peace is broken: ${nationName(a)} and ${nationName(b)} are at war.`);showMsg(`Word comes that ${nationName(a)} and ${nationName(b)} are at war.`,'#ff8060');
     if(firstId){const t=siteAnywhere(firstId);if(t)laySiege(t,b);}}
   function laySiege(t,by){const st=TS(t);if(st.flags.besieged!=null||st.flags.occupied!=null)return;flag(t,'besieged',true);st.siegeBy=by;st.siegeDay=dayNow();if(typeof addLog==='function')addLog('⚔',`${polityName(by,true)} has laid siege to ${t.name}.`);showMsg(`${t.name} is under siege.`,'#ff8060');}
-  function breakSiege(t){const st=TS(t);const by=st.siegeBy;flag(t,'besieged',false);delete st.siegeBy;st.p=Math.min(100,st.p+5);addFavor(t,3);const W=war();if(W){W.broken++;W.resolved++;}
+  function breakSiege(t){const st=TS(t);const by=st.siegeBy;flag(t,'besieged',false);delete st.siegeBy;st.freed={day:dayNow(),how:'siege',by}; /* S2093 — the relieved town remembers (Under Another Flag §6–7) */ st.p=Math.min(100,st.p+5);addFavor(t,3);const W=war();if(W){W.broken++;W.resolved++;}
     if(typeof addLog==='function')addLog('⚔',`The siege of ${t.name} is broken.`);showMsg(`The siege of ${t.name} is broken.`,'#e8d8a0');if(W&&W.first===t.id)W.first=null;endWarIf();}
   function occupy(t){const st=TS(t);const by=st.siegeBy;flag(t,'besieged',false);flag(t,'occupied',true);st.occupier=by;delete st.siegeBy;st.p=Math.max(10,st.p-10);const W=war();if(W){W.lost++;W.resolved++;}
     if(typeof addLog==='function')addLog('⚔',`${t.name} has fallen to ${nationName(by)}.`);showMsg(`${t.name} has fallen.`,'#ff8060');endWarIf();}
-  function liberate(t){const st=TS(t);flag(t,'occupied',false);delete st.occupier;st.p=Math.min(100,st.p+5);addFavor(t,4);if(typeof addLog==='function')addLog('⚔',`${t.name} is free again.`);showMsg(`${t.name} is free.`,'#e8d8a0');}
+  function liberate(t){const st=TS(t);st.freed={day:dayNow(),how:'garrison',by:st.occupier}; /* S2093 — the freed town remembers */ flag(t,'occupied',false);delete st.occupier;st.p=Math.min(100,st.p+5);addFavor(t,4);if(typeof addLog==='function')addLog('⚔',`${t.name} is free again.`);showMsg(`${t.name} is free.`,'#e8d8a0');}
   function endWarIf(){const W=war();if(!W)return;if(W.resolved>=5){worldState.war=null;(worldState.wars||(worldState.wars=[])).push({a:W.a,b:W.b,day:W.day,ended:dayNow(),broken:W.broken,lost:W.lost});if(typeof addLog==='function')addLog('⚔',`Peace between ${nationName(W.a)} and ${nationName(W.b)}. ${W.broken} ${plural(W.broken,'siege')} broken, ${W.lost} ${plural(W.lost,'town')} lost.`);showMsg('Word comes of a peace.','#e8d8a0');}}
   function warFromFaction(fk){const a=FACTIONS[fk].nation,b=OPPONENT[fk];const seat=FACTIONS[fk].seat?siteAnywhere(FACTIONS[fk].seat):null;let first=null;const bt=borderTowns(a,b);if(seat&&bt.some(t=>t.id===seat.id))first=seat.id;else if(seat&&bt.length)first=bt.slice().sort((p,q)=>Math.hypot(p.x-seat.x,p.z-seat.z)-Math.hypot(q.x-seat.x,q.z-seat.z))[0].id;startWar(a,b,first);}
   function tickWarDay(){const W=war();if(!W)return;const day=dayNow();
