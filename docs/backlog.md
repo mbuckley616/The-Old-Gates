@@ -229,6 +229,9 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
+- ~~**A broken night is undone by a load** (the critic, 11 Nov, s1474, under S2091; for the systems builder, `restAtBed`, `js/60-shop.js`): the autosave
+  on waking is taken with the night's foes 25 m off, and they are not saved, so *Load last save* gives a quiet night in the same place.~~ — done,
+  Session 2108 (a broken night saves as you lie down, forced, and not on waking; the roll is keyed by cell and day, so a load replays it; `camps` +2)
 - ~~**STUCK #1313 still open: a long cloak's front over an apron** (producer, 8 Nov, past 6 hours; for the bodies builder: `hbCloakLegs`,
   `hbHem`, `js/32-people.js`). S1999 (#1316, s1376) put the front on its own hem bone: Maeve 242 → 50 points out, Pádraig 51 → 21, arms green.
   Owed: Pádraig's tick-60 fingertip in `f4people`'s arm check (main's own, about one run in two) and Maeve's last 5 cm of apron. Close #1313 when both are green.~~
