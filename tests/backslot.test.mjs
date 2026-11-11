@@ -41,7 +41,7 @@ const f = await page.evaluate(() => {
 console.log(JSON.stringify(f));
 check('on the new look the slots stand in two columns round the portrait\'s window, 200 by 332', f.fig && f.canvas[0] === 200 && f.canvas[1] === 332 && !/\?/.test(f.cols) && /head:L/.test(f.cols) && /weapon:R/.test(f.cols), f);
 check('the body lent to the portrait is given back where it was', f.lent && f.back, f);
-// S2086 — the portrait plants a staff, a spear or a two-hander on the floor (tpRestPose/tpRestHeld): the builder's copy of it stands
+// S2087 — the portrait plants a staff, a spear or a two-hander on the floor (tpRestPose/tpRestHeld): the builder's copy of it stands
 // straight up and down with its low end on the floor, through the fist; a longsword and a bow keep the hang; the driver's weapon is not
 // moved by a lend and give-back. No draw is made
 const rest = await page.evaluate(() => {

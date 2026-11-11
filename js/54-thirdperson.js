@@ -584,7 +584,7 @@ function tpGripL(R){
   _tgQ.setFromUnitVectors(_tgA.normalize(),_tgB.normalize());R.shL.getWorldQuaternion(_tgQ2);_tgQ.multiply(_tgQ2);R.shL.parent.getWorldQuaternion(_tgQ2);_tgQ.premultiply(_tgQ2.invert());R.shL.quaternion.copy(_tgQ);
   R.shL.updateMatrixWorld(true);
 }
-// S2086 — the sheet's portrait (66-hub.js) stands you at rest with what you hold planted rather than hung from the fist, which put a staff's
+// S2087 — the sheet's portrait (66-hub.js) stands you at rest with what you hold planted rather than hung from the fist, which put a staff's
 // head, a spear's point and an axe's blade through the floor. TP_REST by the weapon's shape: `side`, held upright in the right hand beside
 // the right foot, the butt down (a staff, a spear); `front`, stood on its point or its head before you, the right hand on top and the left at rest (a two-hander).
 // `hand` is the right wrist's height as a share of your stature (its bounds when the weapon does not set it), `down` the end on the floor:
