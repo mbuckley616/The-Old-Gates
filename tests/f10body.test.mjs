@@ -119,6 +119,16 @@ const hood = await drive(() => { const m = MATERIALS[2], out = {}, names = () =>
 console.log('  light hood:', JSON.stringify(hood));
 check('the light line\'s hood is the builder\'s hood up, alone and over a hoodless cloak; gone when taken off', /hoodUp/.test(hood.alone) && !/cloak/.test(hood.alone) && /cloak/.test(hood.cloak) && /hoodUp/.test(hood.cloak) && hood.none === '', hood);
 check('the robe line\'s cowl is the same hood up in the robe\'s dye (Session 1271: Iron\'s 0x2e3e5e)', /hoodUp/.test(hood.robe) && hood.robeCol === '46,62,94', hood);
+// a robe's raised hood takes its tier's dressing (Session 2109; helms.js's hoodDress, OG-052): Iron plain, Mithril and Obsidian a ring, Adamant antlers,
+// Draconic the crescent, Demonic horns, Cosmic the halo; the light line's hood at the same tier stays plain
+const hoodTier = await drive(() => { const out = {};
+  EQ.back = null; for (const t of [3, 5, 6, 7, 8, 9, 10]) { const m = MATERIALS[t - 1]; EQ.head = { name: m.name + ' Cowl', slot: 'head', material: m.name, tier: t, line: 'robe' }; for (let i = 0; i < 4; i++) step();
+    const P = TP.rig.rig.hb.P, d = P.hood && P.hood.dress; out[t] = d ? { tier: d.tier, tris: d.tris, draws: d.draws, onHead: !!(P.tierFit && P.tierFit.h.group.parent === P.byName.head) } : null; }
+  const m = MATERIALS[9]; EQ.head = { name: m.name + ' Hood', slot: 'head', material: m.name, tier: 10, line: 'light' }; for (let i = 0; i < 4; i++) step();
+  out.light = !!(TP.rig.rig.hb.P.hood && TP.rig.rig.hb.P.hood.dress); EQ.head = null; for (let i = 0; i < 4; i++) step(); return out; });
+console.log('  robe hoods by tier:', JSON.stringify(hoodTier));
+check('a robe\'s raised hood takes its tier\'s dressing on the head from Mithril up (antlers, crescent, horns, halo); Iron\'s and the light hood plain',
+  hoodTier[3] === null && hoodTier.light === false && [5, 6, 7, 8, 9, 10].every(t => { const d = hoodTier[t]; return d && d.tier === t && d.tris > 0 && d.onHead; }), hoodTier);
 // the bow's draw on the builder's fingers (Session 1270): the right fist opens into the archer's hook as the string comes back, the little
 // finger left folded, and closes again when the arrow is loosed
 const bow = await drive(() => { const out = {}; EQ.weapon = { name: 'Hunting Bow', slot: 'weapon', weaponShape: 'bow', weight: 2 }; EQ.offhand = null; for (let i = 0; i < 6; i++) step();
