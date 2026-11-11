@@ -4615,7 +4615,7 @@ function campMats() {
   CGM = { blanket: mat('plaster', { ns: .4, color: 0x5e5244, rough: 1 }), madder: mat('plaster', { ns: .4, color: 0x5a2a1e, rough: 1 }), fleece: mat('plaster', { ns: 1.6, color: 0xd8ccb2, rough: 1 }),
     plaid: std(0xffffff, .95, { map: plaid }), linen: std(0xffffff, .9, { map: linen, side: THREE.DoubleSide }), pillow: std(0xe2d8c2, .95), hide: mat('plaster', { ns: .8, color: 0x5e4634, rough: .9 }),
     fur: mat('plaster', { ns: 2.2, color: 0xd2c6b0, rough: 1 }), leather: std(0x4a3020, .7), pole: mat('wood', { ns: .9, color: 0x8e7254, rough: .9 }), bark: mat('bark', { ns: 1.2, color: 0xb4a490, rough: .95 }),
-    bough: std(0x2c3d26, .95, { side: THREE.DoubleSide }), canvas: std(0xc4b28c, .95, { side: THREE.DoubleSide }), rope: std(0x8a7650, .95) };
+    bough: std(0x435a32, .95, { side: THREE.DoubleSide }), canvas: std(0xc4b28c, .95, { side: THREE.DoubleSide }), rope: std(0x8a7650, .95) };
   return CGM;
 }
 function campGear(what, o = {}) {
@@ -4648,7 +4648,7 @@ function campGear(what, o = {}) {
     for (let i = 0; i < 9; i++) { const x = -1.15 + i * 2.3 / 8 + (F() - .5) * .08; rod('bark', [x, RY + .05, .1], [x + (F() - .5) * .1, gy(x, BK) - .05, BK - .08], .032, 5); }
     // a spray of fir: a flat fan 0.5 m across and 0.75 long, its butt at the origin and its tip at +z, the needles' edge jagged
     const spray = () => { const P = [], n = 7; for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, w = t => .25 * Math.sin(Math.PI * Math.min(1, t * 1.25)) * (1 - .35 * t), j = k % 2 ? .06 : 0;
-      for (const sd of [-1, 1]) P.push(0, .01, t0 * .75, sd * (w(t1) + j), 0, t1 * .75, 0, .01, t1 * .75); }
+      for (const sd of [-1, 1]) { const e0 = sd * w(t0) * (k % 2 ? 1 : .7), e1 = sd * (w(t1) + j), q = [[0, .015, t0 * .75], [e0, 0, t0 * .75], [e1, 0, t1 * .75], [0, .015, t1 * .75]]; for (const i of [0, 1, 2, 0, 2, 3]) P.push(...q[i]); } }
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.computeVertexNormals(); return g; };
     for (let r = 0; r < 7; r++) for (let i = 0; i < 7; i++) { const t = (r + .9) / 7.3, x = -1.15 + (i + (r % 2) * .5) * 2.3 / 6.5 + (F() - .5) * .08, z = BK * (1 - t), y = gy(x, BK) * (1 - t) + RY * t;
       put(spray(), 'bough', x, y + .05 * Math.cos(a), z - .05 * Math.sin(a), Math.PI - a + (F() - .5) * .1, (F() - .5) * .25); } /* tips down the slope, each course over the butts of the one below */
@@ -4671,10 +4671,10 @@ function campGear(what, o = {}) {
     // the fur sleeping sack: a hide sack 2.05 m long, 0.78 m wide at the shoulders and tapered to the foot, its mouth ringed with fur,
     // the hood's flap thrown back fur side up
     const L0 = -.9, L1 = 1.1, W = u => .78 - .22 * Math.max(0, Math.min(1, (u - .45) / .55)), H = u => .24 - .07 * u;
-    grid('hide', 10, 24, (v, u) => { const z = L0 + (L1 - L0) * u, w = W(u) / 2, x = -w * Math.cos(Math.PI * v), e = u > .9 ? Math.sqrt(Math.max(0, 1 - ((u - .9) / .1) ** 2)) : 1;
+    grid('hide', 10, 24, (v, u) => { const z = L0 + (L1 - L0) * u, e = u > .86 ? Math.sqrt(Math.max(0, 1 - ((u - .86) / .14) ** 2)) : 1, w = W(u) / 2 * (.3 + .7 * e), x = -w * Math.cos(Math.PI * v);
       return [x, gy(x, z) + LIFT + H(u) * Math.sin(Math.PI * v) * e, z]; });
     { const g = new THREE.TorusGeometry(.33, .07, 6, 14, Math.PI); g.scale(1.15, .7, 1); put(g, 'fur', 0, gy(0, L0) + LIFT, L0 - .01); }
-    pad('fur', -.36, .36, L0 - .5, L0 - .04, .03, { ex: .25, ez: .15, nv: 6 });
+    pad('fur', -.34, .34, L0 - .46, L0 - .02, .025, { ex: .3, ez: .3, nu: 6, nv: 6, lift: () => .01 });
     pad('fur', -.3, .3, L0 + .02, L0 + .3, .14, { ex: .4, ez: .3, nv: 4 }) /* the lining seen in the mouth */;
   } else if (what === 'aurenne') {
     // the linen hammock: two shears of poles 3.2 m apart, each crossed at 1.35 m and guyed out along the line, a spreader bar at each end
