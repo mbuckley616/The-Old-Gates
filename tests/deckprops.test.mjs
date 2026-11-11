@@ -44,9 +44,12 @@ const props = await page.evaluate(() => { const out = [];
   for (const [cls, yaw] of [['sloop', .4], ['cog', 2.1], ['galleon', -1.2]]) {
     worldState.ship = { cls, name: 'Test Gull', sails: 0, cargo: 0, hold: {} }; if (S.mesh) { if (S.mesh.parent) S.mesh.parent.remove(S.mesh); S.mesh = null; } WORLD.spawnShip(_sea.x, _sea.z, yaw); S.sailing = false; px = _sea.x + 300; pz = _sea.z; WORLD.tick(1 / 60, performance.now()); run('yours, ' + cls, S.mesh); }
   for (const [kind, yaw] of [['pirate', 1.0], ['merchant', -2.5]]) {
-    const o = WORLD.spawnOtherShip(kind, _sea.x + 60, _sea.z + 60); o.yaw = yaw; o.speed = 0; o.volleyT = 1e9; o.ramWait = 1e9; WORLD.tick(1 / 60, performance.now()); o.x = _sea.x + 60; o.z = _sea.z + 60; o.yaw = yaw; o.mesh.position.set(o.x, 0, o.z); o.mesh.rotation.y = yaw + Math.PI; run(kind, o.mesh); WORLD.despawnOtherShip(o); }
+    const o = WORLD.spawnOtherShip(kind, _sea.x + 60, _sea.z + 60); o.yaw = yaw; o.speed = 0; o.volleyT = 1e9; o.ramWait = 1e9; WORLD.tick(1 / 60, performance.now()); o.x = _sea.x + 60; o.z = _sea.z + 60; o.yaw = yaw; o.mesh.position.set(o.x, 0, o.z); o.mesh.rotation.y = yaw + Math.PI; run(kind, o.mesh);
+    /* S2110: a merchantman's two hands stand on her deck clear of what stands on it (the kit cog's hatch is 1.2 m wide) */
+    if (kind === 'merchant') { const qx = px, qz = pz; px = o.x + 40; pz = o.z; o.mesh.updateMatrixWorld(true); merchantHands(o); window._hands = o.crew.map(e => [onShipDeck(o.mesh, e.mesh.position.x, e.mesh.position.z), shipPropHit(o.mesh, e.mesh.position.x, e.mesh.position.z, .3)]); px = qx; pz = qz; }
+    WORLD.despawnOtherShip(o); }
   return out; });
-for (const r of props) console.log(JSON.stringify(r));
+const hands = await page.evaluate(() => window._hands); for (const r of props) console.log(JSON.stringify(r));
 check('every ship records her props: barrels, crates, masts and the wheel\'s post (a sloop 6, a cog 6, a galleon 8; the kit\'s sloop her mast, bucket and hatch)', props.every(r => r.n >= (r.kit ? 3 : 6)) && props.find(r => r.label === 'yours, galleon').n >= 8, props.map(r => [r.label, r.n]));
 check('every prop is solid at its centre and at its edge, on every ship', props.every(r => r.centre === r.n && r.edge === r.n), props);
 check('a step clear of each prop is open, and the deck\'s middle line between them is open', props.every(r => r.clear === r.clearTried && r.clearTried >= 3 && r.open === r.openTried && r.openTried >= (r.label === 'yours, galleon' && r.kit ? 5 : 6) /* S1552 — the galleon's three masts, two hatches and the castles' wide end stops, each taken here as a circle, leave five points on her line */), props);
@@ -83,5 +86,6 @@ const round = await roundRun(true), stuck = await roundRun(false);
 console.log('round', JSON.stringify(round), 'without the slide', JSON.stringify(stuck));
 check(`a pirate behind her barrel comes round it to you (within 1.6 in ${round.secs} s), never through it; without the slide he stands ${stuck.best} off for 5 s`, round.best <= 1.6 && !round.throughBarrel && stuck.best > 1.6 && !stuck.throughBarrel, { round, stuck });
 
+check('a merchantman\'s two hands stand on her deck, clear of her hatch and her cargo (S2110)', !!hands && hands.length === 2 && hands.every(([on, hit]) => on && !hit), hands);
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop(); await g.close();

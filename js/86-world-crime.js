@@ -1570,7 +1570,8 @@
   const MERCH_HANDS={n:2,near:250,cut:6,walk:1.5,reach:.8};
   function merchantHands(o){if(!merchantOf(o)||o._hands||o.dead||o.founder!=null||o.struck||(o.crew&&o.crew.length))return false;
     if(Math.hypot(o.x-px,o.z-pz)>MERCH_HANDS.near)return false;o._hands=true;const fwd=[-Math.sin(o.yaw),-Math.cos(o.yaw)];
-    for(let k=0;k<MERCH_HANDS.n;k++){const at=k?-2.2:2,ex=o.x+fwd[0]*at+(-fwd[1])*(k?.8:-.8),ez=o.z+fwd[1]*at+fwd[0]*(k?.8:-.8),fid=`${o.id||'ship'}:hand:${k}`;
+    for(let k=0;k<MERCH_HANDS.n;k++){const at=k?-2.2:2;let off=.8;while(off<1.6&&o.mesh&&typeof shipPropHit==='function'&&shipPropHit(o.mesh,o.x+fwd[0]*at+(-fwd[1])*(k?off:-off),o.z+fwd[1]*at+fwd[0]*(k?off:-off),.35))off+=.1; /* S2110 — the kit cog's hatch is 1.2 m wide: a hand steps out beside it, not into it */
+      const ex=o.x+fwd[0]*at+(-fwd[1])*(k?off:-off),ez=o.z+fwd[1]*at+fwd[0]*(k?off:-off),fid=`${o.id||'ship'}:hand:${k}`;
       const e=buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Pirate',null,{genome:personGenome({name:'Hand '+fid,role:'villager'},{key:fid})});keyFoe(e,fid);
       e.name='Deckhand';e.hand=true;e._duelHold=true;e.alert=false;e.homeX=o.x;e.homeZ=o.z;e._ship=o;ZONES.world.enemies.push(e);o.crew.push(e);}
     o._handHp=crewHp(o);return true;}
