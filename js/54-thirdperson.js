@@ -109,6 +109,9 @@ function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign(
   // S1271 — the robe line's cowl (the old kit's: a hood up over a roll at the neck, in the robe's dye) is the same hood up in LINE_ROBE's colour
   const Lh=AR&&AR.head&&(AR.head.line==='light'||AR.head.line==='robe')?AR.head:null;
   if(Lh&&!(o.cloak&&o.cloak.hood))D.cowl=hbRGB(Lh.line==='robe'?LINE_ROBE[Lh.tier]:new THREE.Color(armourLineLeather(Lh.tier)).lerp(new THREE.Color(0x2a3424),.5).getHex());
+  // S2109 — a robe's raised hood takes its tier's dressing (helms.js's hoodDress; OG-052's antlered and haloed hoods on the high robes):
+  // Mithril's and Obsidian's a ring, Adamant's antlers, Draconic's crescent, Demonic's horns, Cosmic's halo; the low tiers' hoods stay plain
+  if(Lh&&Lh.line==='robe'&&Lh.tier)D.tier=Lh.tier;
   const K=o.cloak;if(K){D.cloak=hbRGB(K.col);if(K.cut==='short'){D.cape=true;D.cloakLen=.6;}else D.cloakLen=.85;D.brooch=[.62,.47,.22];
     if(K.fur!=null)D.cloakFur=hbRGB(K.fur);if(K.trim!=null)D.cloakHem=hbRGB(K.trim);if(K.hood)D.hood=o.hd&&(tpIsCloth(o.hd)||Lh)?'up':'down';}
   return G;}
