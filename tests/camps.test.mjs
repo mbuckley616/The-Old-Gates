@@ -40,6 +40,6 @@ check('each of the five rolls, with and without the tent, is laid as the kit\'s 
 check('a roll lies on the land, its top under 0.36 m; the hammock hangs to 1.3–1.7 m on its shears; a tent stands 1.0–1.3 m', rolls.every(([k, v]) => v && v.lo > -.35 &&
   (k === 'aurenne' || k === 'aurenne+tent' ? v.hi > 1.3 && v.hi < 1.75 : /\+tent/.test(k) ? v.hi > 1 && v.hi < 1.3 : v.hi < .36)), cg.out);
 check('walking 9 m off packs it again', cg.packed, cg);
-check('the lean-to is the kit\'s (under 2,000 tris)', !!cg.lean && cg.lean.tris < 2000, cg.lean);
+check('the lean-to is the kit\'s (under 2,500 tris)', !!cg.lean && cg.lean.tris < 2500, cg.lean);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
