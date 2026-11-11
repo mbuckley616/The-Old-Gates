@@ -9548,7 +9548,93 @@ function aurenneOrrery(hAt, o = {}) {
       stair: { rise: +RISE.toFixed(3), n: N, foot: [+footX.toFixed(2), +SZ.toFixed(2)], width: SW, landing: { x0: LX0, x1: LX1, z0: +LZ0.toFixed(2), z1: +LZ1.toFixed(2), top: DY } },
       terrace: { y: TY, rIn: PI, rOut: PR, parapet: +(PT - TY).toFixed(2) }, hut: { x: HX, z: HZ, w: HW }, beacon: [BX, BY + .9, BZ], well: [WX, WZ], trees, path: { x: +PX.toFixed(2), z0: +SZ.toFixed(2), z1: PZ1 } };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, camp: campGear }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  // S2105 (card F8; OG-124's Aurenne panel, "a smuggler's cove"; OG-121's "smugglers' lairs"; Michael's A on #1292) — Aurenne's smuggler's
+  // cove off the road, places.js's aurenneCove (Session 1007): a narrow inlet between pale cliffs with a shingle beach at its head, three
+  // boathouses cut into the west cliff's foot behind plastered fronts (blue round-headed doors, the middle one open on the dark, the third's
+  // slip into the sea), a stair cut half into the east cliff and built out half on a wall with its parapet, a lookout's hut on the east top
+  // near the mouth with its window to the sea, a rowing boat drawn up on the shingle and another at the slip, bales, amphorae and casks
+  // before the boathouses. The calas of the Balearics, Wied il-Għasri, the fjord of Furore. The page built its own plateau 20 m over the sea;
+  // the world's coast stands 6 to 12 m, so here the inlet is cut into the world's own coast (offroadLaidCarve, 82, as the falls' glen): the
+  // cliffs are the land falling to the inlet's floor over 2.2 m, as high as the land stands, the beach and the sea floor the page's, and the
+  // world's sea fills it. The inlet runs from its head 9 m behind the origin out to the shore the site found (o.reach, 30 to 90 m), widening
+  // from 14 m to 32. The stair climbs to the land beside it, however high that is; the page's sloop at anchor is left to the world's ships.
+  // -> coveShape(key, land, reach) { carve, walk(x, z), cut, W, D, bed, steps, stairTop, look { x, z }, houses, REACH, HEAD, CW, patch }
+  // -> aurenneCove(o) { group, tris, draws, sol, shape, houses, slip, steps, stairTop, lookout, boats, cargo }
+  function coveShape(key, land, reach = 60) {
+    const F = stream(String(key || 'cove') + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283), sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+    const REACH = Math.max(30, Math.min(90, reach)), CW = 2.2, HEAD = -9, BZ = 6, W = z => 7 + 9 * sm((z + 5) / (REACH + 5));
+    /* how far into the land a point is from the inlet's side or head (negative inside it), wandering as the page's */
+    const D = (x, z) => Math.min(Math.abs(x) - W(z), HEAD - z) + .35 * Math.sin(z * .9 + ph[2]) + .2 * Math.sin(z * 2.3 + x * .4 + ph[3]);
+    const bed = (x, z) => { z = Math.max(z, HEAD); const bz = z < BZ ? .15 + (BZ - z) * .08 : Math.max(-6, .15 - (z - BZ) * .35); return bz - (z > BZ ? .6 * Math.max(0, 1 - (x / W(z)) ** 2) * sm((z - BZ) / 4) : 0); };
+    /* the ground cut from the land: the inlet's floor, rising to the land over the cliff's 2.2 m; never above the land */
+    const carve = (x, z) => { const L = land(x, z), d = D(x, z); if (d >= CW + .5) return L; const b = bed(x, z); if (d <= 0) return Math.min(L, b); const t = sm(d / CW); return Math.min(L, b * (1 - t) + L * t); };
+    /* the stair up the east cliff from the beach: 0.18 m risers on 0.3 m treads, a landing every 18, till it meets the land beside it */
+    const steps = []; { let z = -6.2, y = Math.max(carve(W(-6.2) - .85, -6.2), .2), n = 0; const topAt = z => land(W(z) + CW + 1.2, z);
+      while (y < topAt(z) - .05 && n < 160) { const rise = Math.min(.18, topAt(z) + .02 - y); y += rise; n++; const run = n % 18 === 0 ? 1.2 : .3, wx = W(z + run / 2), x0 = wx - 1.55, x1 = wx + 2.6, zc = z + run / 2;
+        steps.push({ x: +(wx - .85).toFixed(3), z: +zc.toFixed(3), y: +y.toFixed(3), w: +(x1 - x0).toFixed(2), x0: +(x0 + .25).toFixed(3), x1: +x1.toFixed(3), wx, run, rise: +rise.toFixed(3) }); z += run; } }
+    const st = steps[steps.length - 1] || { x: W(-6) - .85, z: -6, y: 1 }, stairTop = { x: st.x, z: st.z, y: st.y };
+    const LZ = Math.min(62, REACH - 14), look = { x: +(W(LZ) + CW + 6).toFixed(2), z: LZ, w: 3.2 };
+    const houses = [[0, -4.4], [1, .4], [2, 5.2]].map(([i, z]) => { const x = -W(z) + .8; return { i, x: +x.toFixed(2), z, w: 4.4, h: 4.2, gy: +Math.max(carve(x + .3, z), .15).toFixed(2), open: i === 1 }; });
+    /* where you walk: a tread under your feet, else the cut ground */
+    const onStep = (x, z) => { for (const s of steps) if (Math.abs(z - s.z) <= s.run / 2 + .01 && x >= s.x0 - .1 && x <= s.x1) return s; return null; };
+    const walk = (x, z) => { const c = carve(x, z), s = onStep(x, z); return s ? Math.max(c, s.y) : c; };
+    const cut = () => false;
+    return { ph, sm, F, REACH, CW, HEAD, BZ, W, D, bed, carve, walk, cut, onStep, steps, stairTop, look, houses, land, patch: { x0: -40, x1: 40, z0: -24, z1: REACH + 16 } };
+  }
+  function aurenneCove(o = {}) {
+    const A = aqueductMats(), std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+    const M = { plaster: A.plaster, cope: A.cope, ashlar: mat('ashlar', { ns: .9, color: 0xe8dcc4, rough: .9 }), dark: std(0x0b0907, 1), door: std(0x2f6aa0, .7), iron: std(0x2a2826, .5, { metalness: .6 }),
+      hull: Object.assign(mat('wood', { ns: .8, color: 0x7aa4b8, rough: .85 }), { side: THREE.DoubleSide }), wood: mat('wood', { ns: .9, color: 0x8a6c4c, rough: .9 }), bale: mat('plaster', { ns: .9, color: 0xb8a078, rough: 1 }),
+      clay: std(0xb0603c, .85), lamp: std(0x3a3020, .4, { emissive: 0xffc070, emissiveIntensity: o.lit ? 5 : 0 }) };
+    const B = new Map(), land = o.land || (() => 8), S = coveShape(o.key, land, o.reach), { W, CW, carve, steps, houses } = S, F = stream(String(o.key || 'cove') + ':goods'), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+    const sol = [], Sq = (x, z, w, d, h) => ({ x: +x.toFixed(3), z: +z.toFixed(3), w, d, ry: 0, h: +h.toFixed(3) });
+    // the boathouses: plastered fronts in the west cliff's foot, facing +x across the beach, standing 0.8 m out and 1.7 m deep, so the rock's wander stays behind them
+    for (const hs of houses) { const { x, z, gy, open } = hs, HW = 4.4, HH = 4.2, DW = 3, DH = 3, hw = DW / 2;
+      put(new THREE.BoxGeometry(1.7, HH + 1, HW), 'plaster', x - .85, gy + (HH - 1) / 2, z); put(new THREE.BoxGeometry(1.9, .22, HW + .3), 'cope', x - .8, gy + HH + .11, z);
+      const sh = new THREE.Shape(); sh.moveTo(-hw, 0); sh.lineTo(hw, 0); sh.lineTo(hw, DH - hw); sh.absarc(0, DH - hw, hw, 0, Math.PI, false); sh.lineTo(-hw, 0);
+      { const g = new THREE.ShapeGeometry(sh, 12); g.rotateY(Math.PI / 2); put(g, 'dark', x + .02, gy, z); }
+      { const g = new THREE.RingGeometry(hw, hw + .28, 12, 1, 0, Math.PI); g.rotateY(Math.PI / 2); put(g, 'cope', x + .03, gy + DH - hw, z); }
+      for (const s of [-1, 1]) put(new THREE.BoxGeometry(.3, DH - hw, .28), 'cope', x - .1, gy + (DH - hw) / 2, z + s * (hw + .14));
+      if (open) { for (const s of [-1, 1]) put(new THREE.BoxGeometry(.08, DH - hw - .05, hw), 'door', x + .04 + hw / 2 * .9, gy + (DH - hw) / 2, z + s * (hw + .05), 0, s * 1.35); }
+      else { put(new THREE.BoxGeometry(.08, DH - hw - .02, DW - .04), 'door', x + .06, gy + (DH - hw) / 2, z); const g = new THREE.CircleGeometry(hw - .02, 12, 0, Math.PI); g.rotateY(Math.PI / 2); put(g, 'door', x + .1, gy + DH - hw, z); }
+      put(new THREE.PlaneGeometry(.9, .6).rotateY(Math.PI / 2), 'dark', x + .02, gy + DH + .55, z); for (let b = -1; b <= 1; b++) put(new THREE.BoxGeometry(.03, .6, .03), 'iron', x + .06, gy + DH + .55, z + b * .25);
+      sol.push(Sq(x - .85, z, 1.7, HW, gy + HH + .2)); }
+    // the third's slip: slabs from its sill down into the sea at 1 in 7
+    const slip = { z: 5.2, x0: houses[2].x, foot: 0, x1: 0 }; { let y = houses[2].gy, x = houses[2].x + .5; while (y > -1.1) { put(new THREE.BoxGeometry(1.0, .25, 2.8), 'cope', x, y - .12, slip.z, 0, 0, Math.atan(1 / 7)); x += 1; y -= 1 / 7; } slip.foot = +y.toFixed(2); slip.x1 = +x.toFixed(2); }
+    // the stair: treads of ashlar from the floor under them, 1.4 m clear of the parapet's inner face, cut into the rock behind
+    for (const s of steps) { const fl = S.bed(s.wx - 1, s.z); put(new THREE.BoxGeometry(s.x1 - s.x0 + .25, s.y - fl + .5, s.run + .01), 'ashlar', (s.x0 - .25 + s.x1) / 2, (s.y + fl - .5) / 2, s.z, 0, 0, 0, .5); }
+    // the parapet: one sloped wall along each flight and a level one along each landing, 0.95 m over the nosings, coped
+    { let f0 = 0; for (let i = 0; i <= steps.length; i++) { const end = i === steps.length || steps[i].run > .5; if (!end) continue; const seg = steps.slice(f0, i);
+        if (seg.length) { const a = seg[0], b = seg[seg.length - 1], za = a.z - .15, zb = b.z + .15, ya = a.y - a.rise, yb = b.y, dx = .15 * (b.x0 - a.x0) / Math.max(.3, b.z - a.z), xa = a.x0 - .125 - dx, xb = b.x0 - .125 + dx;
+          const hz = Math.hypot(zb - za, xb - xa), L = Math.hypot(hz, yb - ya), pitch = Math.atan2(yb - ya, hz), yaw = Math.atan2(xb - xa, zb - za), xm = (xa + xb) / 2, zm = (za + zb) / 2;
+          put(new THREE.BoxGeometry(.25, 1.25, L + .1), 'plaster', xm, (ya + yb) / 2 + .45, zm, -pitch, yaw); put(new THREE.BoxGeometry(.33, .07, L + .12), 'cope', xm, (ya + yb) / 2 + 1.1, zm, -pitch, yaw); }
+        if (i < steps.length) { const l = steps[i]; put(new THREE.BoxGeometry(.25, 1.0, l.run + .02), 'plaster', l.x0 - .125, l.y + .45, l.z); put(new THREE.BoxGeometry(.33, .07, l.run + .04), 'cope', l.x0 - .125, l.y + .98, l.z); }
+        f0 = i + 1; } }
+    // the lookout: a plastered hut on the east top near the mouth, its door landward (+x), its window to the sea (+z) with the lamp in it
+    const LX = S.look.x, LZ = S.look.z, LW = 3.2, LH = 2.7, LY = land(LX, LZ), look = { x: LX, z: LZ, y: +LY.toFixed(2), w: LW };
+    { const yb = Math.min(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([u, v]) => land(LX + u * LW / 2, LZ + v * LW / 2))) - .3; put(new THREE.BoxGeometry(LW, LH + (LY - yb), LW), 'plaster', LX, yb + (LH + LY - yb) / 2, LZ);
+      put(new THREE.BoxGeometry(LW + .2, .2, LW + .2), 'cope', LX, LY + LH + .1, LZ); put(new THREE.BoxGeometry(.06, 1.9, .85), 'door', LX + LW / 2 + .02, LY + .95, LZ);
+      put(new THREE.PlaneGeometry(.7, .8), 'dark', LX, LY + 1.5, LZ + LW / 2 + .02); put(new THREE.SphereGeometry(.12, 10, 8), 'lamp', LX, LY + 1.35, LZ + LW / 2 - .05);
+      look.foot = +(yb + .3 - LY).toFixed(2); look.door = { x: +(LX + LW / 2).toFixed(2), w: .85, h: 1.9 }; look.win = { x: LX, y: +(LY + 1.5).toFixed(2), z: LZ + LW / 2 }; sol.push(Sq(LX, LZ, LW, LW, LY + LH + .2)); }
+    // the boats: a rowing boat drawn up on the shingle, another lying at the slip's foot; a lathe bowl along z, two thwarts
+    const boats = []; const boat = (bx, bz, by, ry) => { const BL = 4.0, W2 = .72, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector2(Math.sin(Math.PI * t) ** .6 * W2 + .05, (t - .5) * BL)); }
+      const g = new THREE.LatheGeometry(pts, 14, -Math.PI / 2, Math.PI); g.rotateX(Math.PI / 2); g.scale(1, .55, 1); g.rotateY(ry); put(g, 'hull', bx, by + .45, bz, 0, 0, 0, .5);
+      for (const t of [-.6, .5]) { const tg = new THREE.BoxGeometry(1.3, .05, .22); tg.rotateY(ry); put(tg, 'wood', bx + Math.sin(ry) * t, by + .35, bz + Math.cos(ry) * t); } boats.push({ x: +bx.toFixed(2), z: +bz.toFixed(2), y: +by.toFixed(2) }); };
+    { const bx = 1.2, bz = -1.5; boat(bx, bz, Math.max(carve(bx, bz - 1.6), carve(bx, bz + 1.6), carve(bx, bz)) - .03, .25); }
+    boat(slip.x1 + 1.6, slip.z + .4, -.12, 1.45);
+    // the cargo before the boathouses: bales, amphorae and casks, each set on the shingle
+    const cargo = []; for (let k = 0; k < 13; k++) { const z = -6.4 + k * .75 + (F() - .5) * .3, x = -W(z) + 2.4 + F() * 1.8, gy = carve(x, z), kind = k % 3;
+      if (kind === 0) put(new THREE.BoxGeometry(.8, .55, .55), 'bale', x, gy + .275, z, 0, F() * .6); else if (kind === 1) { const pts = [[.02, 0], [.16, .1], [.22, .35], [.2, .6], [.08, .75], [.07, .85], [.1, .88]].map(([u, v]) => new THREE.Vector2(u, v)); put(new THREE.LatheGeometry(pts, 10), 'clay', x, gy, z); }
+      else put(new THREE.CylinderGeometry(.3, .3, .8, 12), 'wood', x, gy + .4, z); cargo.push({ x: +x.toFixed(2), z: +z.toFixed(2), y: +gy.toFixed(3), kind }); }
+    const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, M[k]); m.name = k;
+      m.castShadow = k !== 'dark'; m.receiveShadow = k !== 'dark'; group.add(m); tris += g.attributes.position.count / 3; }
+    return { group, tris: Math.round(tris), draws: group.children.length, sol, shape: S, houses, slip, steps, stairTop: S.stairTop, lookout: look, boats, cargo };
+  }
+  aurenneCove.shape = coveShape; /* the world reads the cut ground before the piece is built (offroadStamps) */
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, cove: aurenneCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, camp: campGear }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
