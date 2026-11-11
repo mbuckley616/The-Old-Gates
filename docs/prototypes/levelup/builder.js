@@ -5,7 +5,7 @@
 // creatures.js; the genome text, Save, Load, Apply and the link take either (kit.js reads both). The people's pack is
 // fetched only when a person is shown, so the creatures need no pack.
 // Query: ?g=<base64url genome>  ?seed=<s>&sex=m|f  ?plan=<body plan>&gait=<g>  ?view=full|face|back|side (a creature: side|front|back|top)
-// ?cast=<name> (a named person of the cast, people.js's CAST; Session 2103)  ?view=brooch (the brooch's face; Session 2106)  ?still&w&h (one frame, for the checks).
+// ?cast=<name> (a named person of the cast, people.js's CAST; Session 2103; &outfit=<name> one of their other outfits, Session 2113)  ?view=brooch (the brooch's face; Session 2106)  ?still&w&h (one frame, for the checks).
 import * as THREE from 'three';
 import { Q, STILL, W, H, STATS, makeRenderer, makeComposer } from './common.js';
 import { makePerson, toSaved, rollGenome, castGenome, HAIR_STYLES, BODY_SLIDERS, GARMENTS, PEOPLES } from './people.js';
@@ -273,7 +273,7 @@ function peoplesSheet() {
   cam.fov = 24; cam.aspect = W / H; cam.position.set(0, 1.2, ((n - 1) / 2 * gap + .75) / (Math.tan(12 * Math.PI / 180) * W / H)); cam.lookAt(0, .95, 0); cam.updateProjectionMatrix(); STATS.peoples = out;
 }
 // a people's genome measures the morphed body for its height, so with ?people= it is rolled once the pack is in (Session 826)
-(SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = (Q.get('cast') && castGenome(Q.get('cast'))) || rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
+(SP === 'human' ? needPack() : Promise.resolve()).then(() => { if (SP === 'human' && !G) G = (Q.get('cast') && castGenome(Q.get('cast'), { outfit: Q.get('outfit') })) || rollPerson(Q.get('seed') || 'builder'); if (Q.has('peoples')) { peoplesSheet(); comp.render(); window.__done = true; return; }
   if (Q.has('sheet')) { sheet(); comp.render(); window.__done = true; return; }
   if (SP === 'human') { if (Q.get('dress')) Object.assign(G.dress, JSON.parse(Q.get('dress')));
     if (Q.get('style')) G.hair = { ...(G.hair || {}), style: Q.get('style') }; if (Q.get('len')) G.hair = { ...(G.hair || {}), len: +Q.get('len') }; if (Q.has('marks')) G.marks = Q.get('marks') === 'none' ? null : +Q.get('marks'); if (Q.has('scar')) G.scar = Q.get('scar') === 'none' ? null : Q.get('scar'); if (Q.has('rot')) G.rot = +Q.get('rot') || null; if (Q.has('stoop')) G.pose = { ...(G.pose || {}), stoop: +Q.get('stoop') };
