@@ -41,7 +41,24 @@ const count = () => g.page.evaluate(() => {
   const others = Object.entries(otherBy).sort((a, b) => b[1] - a[1]).slice(0, 5);
   return { calls: all.calls, tris: all.tris, shadow: all.calls - eye.calls, post: eye.calls - bare.calls, eye: bare.calls, by, others, shadowTris: all.tris - eye.tris };
 });
-const measure = async (label, level) => { await g.spin(null, 20); const row = { label, level, ...(await count()) }; console.log(el(), JSON.stringify(row)); return row; };
+// S2110 — the builder's bodies in reach, built before a count. hbTick makes one step of a body a drawn frame and keeps 250 ms of the
+// page's clock between bodies (HBODY.gap); on software GL a frame at Portclare takes about 7 s, so after 8 min of frames 8 of 25 in
+// reach stood built and the Bodies column was a sample of a build in progress (S2104: 29 to 45 calls on one build). The world's job
+// queue was not the cause: it read 0 at every sample (S2110's probe). So the kit calls hbTick itself with a clock it moves past the gap,
+// as a real machine's frames would, until no body in reach (HBODY.build, from the camera, as hbTick reads it) waits, and gives the
+// clock back. Returns what was built and what still waits (a body the builder failed on is counted apart).
+const bodies = () => g.page.evaluate(() => {
+  if (typeof HB_RIGS === 'undefined' || typeof hbTick !== 'function') return { built: 0, wait: 0, fail: 0, ms: 0 };
+  const reach = () => { let built = 0, wait = 0, fail = 0; for (const rig of HB_RIGS) { const top = rig.foe ? rig.root.parent : rig.root;
+      if (!top || top.parent !== scene || !top.visible || !rig.root.visible) continue;
+      if (Math.hypot(CAM.position.x - top.position.x, CAM.position.z - top.position.z) >= HBODY.build) continue;
+      if (rig.hb) built++; else if (rig.hbFail) fail++; else wait++; } return { built, wait, fail }; };
+  const t0 = performance.now(); let t = t0, r = reach();
+  while ((r.wait || HBODY.job) && performance.now() - t0 < 240000) { t += HBODY.gap + 1; hbTick(t); r = reach(); }
+  HBODY.last = performance.now() - HBODY.gap - 1;
+  return { ...r, job: !!HBODY.job, ms: Math.round(performance.now() - t0) };
+});
+const measure = async (label, level) => { await g.spin(null, 20); const b = await bodies(); const row = { label, level, ...(await count()), hb: b }; console.log(el(), JSON.stringify(row)); return row; };
 // stand at a spot, looking one way, at an hour, and let the cells, the chunks, the grass and the bodies near it build
 const stand = async (x, z, ry, hour) => {
   await g.page.evaluate(([x, z, ry, h]) => { px = x; pz = z; yaw = ry; pitch = -.05; forceTime(h); }, [x, z, ry, hour]);
@@ -50,7 +67,7 @@ const stand = async (x, z, ry, hour) => {
 };
 const setLevel = async n => { const t = Date.now(); await g.page.evaluate(n => { SETTINGS.quality = n; if (typeof qualityApply === 'function') qualityApply(); else landQuality(); }, n); await g.spin(null, 120); console.log(`  level ${n} set in ${Math.round((Date.now() - t) / 1000)} s`); };
 
-return { count, measure, stand, setLevel };
+return { count, measure, stand, setLevel, bodies };
 }
 export async function budgetEnd(g, rows, views) {
   const tag = (await g.page.evaluate(() => (document.getElementById('cbar').textContent.match(/build (s\d+)/) || [])[1])) || '?';
@@ -62,7 +79,7 @@ export async function budgetEnd(g, rows, views) {
   const k = n => n >= 1e6 ? (n / 1e6).toFixed(2) + ' M' : Math.round(n / 1000) + 'k';
   const over = r => CEIL[r.level] && r.calls > CEIL[r.level].calls ? ' **over**' : '';
   const table = `\n### ${tag} — ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC\n\n| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |\n|---|---|---|---|---|---|---|---|---|---|---|\n` +
-    rows.map(r => `| ${r.label} | ${r.level} | ${r.calls}${over(r)} | ${k(r.tris)} | ${r.shadow} | ${r.post} | ${r.by.bodies} | ${r.by.houses} | ${r.by.land} | ${(r.by.other || 0) + (r.by.room || 0) + (r.by.gate || 0)} | ${r.others.map(([n, c]) => `${n} ${c}`).join(', ')} |`).join('\n') + '\n';
+    rows.map(r => `| ${r.label} | ${r.level} | ${r.calls}${over(r)} | ${k(r.tris)} | ${r.shadow} | ${r.post} | ${r.by.bodies}${r.hb && (r.hb.wait || r.hb.fail) ? ` (${r.hb.wait + r.hb.fail} of ${r.hb.built + r.hb.wait + r.hb.fail} unbuilt)` : ''} | ${r.by.houses} | ${r.by.land} | ${(r.by.other || 0) + (r.by.room || 0) + (r.by.gate || 0)} | ${r.others.map(([n, c]) => `${n} ${c}`).join(', ')} |`).join('\n') + '\n';
   console.log(table);
   if (process.env.BUDGET_LEDGER) fs.appendFileSync(path.join(ROOT, 'docs', 'qa', 'budget.md'), table);
 }
