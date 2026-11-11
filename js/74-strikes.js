@@ -709,8 +709,21 @@ function slamEvery(e){return SLAM_EVERY[0]+foeRand(e)*(SLAM_EVERY[1]-SLAM_EVERY[
 // step out of the ring all of it, as before. Two slams leave you standing only if you have a chest piece on.
 const SLAM_SHARE={dressed:.45,bare:.6};
 function slamBlow(e){return Math.max(1,Math.round(maxHP*(EQ.chest?SLAM_SHARE.dressed:SLAM_SHARE.bare)));}
+/* S2095 — Michael's B on #1278, the ring's half (S2092 carried the edge): a thin hard line at the slam's 3 m with a faint wash inside rising
+   toward it, so you read where it ends, not a floor painted red (the prototype's ringTex 'line', docs/prototypes/levelup/telegraphs.js).
+   One disc, its look in a shared texture: clear at the centre, 1.5% at half the radius, 13% at 93%, 22% at 97.5%, then the line at full from
+   97.9% to 99.6% (about 5 cm at 3 m) and nothing past it. The heavy tell's red ×1.4, added, not tone-mapped; its strength rises through the
+   0.9 s from a fifth to all of it. The material is the master's own (its opacity is its tell); the geometry and the texture are shared. */
+const SLAM_LINE={hue:[1,.16,.08],gain:1.4,seg:96,o0:.2};let _slamTex=null,_slamGeo=null;
+function slamRingTex(){if(_slamTex)return _slamTex;const c=document.createElement('canvas');c.width=c.height=1024;const x=c.getContext('2d'),gr=x.createRadialGradient(512,512,0,512,512,512);
+  for(const [t,a] of [[0,0],[.55,.015],[.93,.13],[.975,.22],[.979,1],[.996,1],[1,0]])gr.addColorStop(t,`rgba(255,255,255,${a})`);
+  x.fillStyle=gr;x.fillRect(0,0,1024,1024);_slamTex=new THREE.CanvasTexture(c);_slamTex.anisotropy=8;return _slamTex;}
+function slamRingMesh(){if(!_slamGeo)_slamGeo=new THREE.CircleGeometry(SLAM_R,SLAM_LINE.seg);
+  const h=SLAM_LINE.hue,g=SLAM_LINE.gain,m=new THREE.Mesh(_slamGeo,new THREE.MeshBasicMaterial({map:slamRingTex(),color:new THREE.Color(h[0]*g,h[1]*g,h[2]*g),transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,side:THREE.DoubleSide}));
+  m.rotation.x=-Math.PI/2;m.renderOrder=2;m.userData.noHit=true;m.visible=false;return m;}
+function slamRingOpacity(p){return SLAM_LINE.o0+(1-SLAM_LINE.o0)*Math.max(0,Math.min(1,p));}
 function slamRing(e){
-  if(!e._slamRing){const m=new THREE.Mesh(new THREE.RingGeometry(SLAM_R-.22,SLAM_R,48),new THREE.MeshBasicMaterial({color:0xff5a30,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.visible=false;e._slamRing=m;}
+  if(!e._slamRing)e._slamRing=slamRingMesh();
   const r=e._slamRing;if(r.parent!==dScene)dScene.add(r);r.position.set(e.x,(e.floor===2?FLOOR2_Y:0)+.04,e.z);return r;}
 function slamCancel(e){e._slamT=0;telegraphReset(e);if(e._slamRing)e._slamRing.visible=false;e._slamCd=slamEvery(e);}
 function tickMasterSlam(e,dt,dist,now){
@@ -720,7 +733,7 @@ function tickMasterSlam(e,dt,dist,now){
     if(isStaggered(e)){slamCancel(e);return false;}
     e._slamT-=dt;const p=1-Math.max(0,e._slamT)/SLAM_TELL;
     e.telegraphMax=SLAM_TELL;e._feint=0;telegraphPulse(e,p);
-    const r=slamRing(e);r.visible=true;r.material.opacity=.15+.55*p;
+    const r=slamRing(e);r.visible=true;r.material.opacity=slamRingOpacity(p);
     if(e._slamT>0)return true;
     e._slamT=0;telegraphReset(e);r.visible=false;e.atkCd=Math.max(e.atkCd||0,1.2);e._slamCd=slamEvery(e);e._slams=(e._slams||0)+1;
     if(typeof sfxNoise==='function')sfxNoise(.5,0,0,.32,220);
@@ -738,7 +751,7 @@ function tickMasterSlam(e,dt,dist,now){
   e._slamT=SLAM_TELL;e.telegraphMax=SLAM_TELL;e.path=[];
   if(typeof sndTelegraph==='function')sndTelegraph();
   showMsg(`${e.name} rears up to strike the ground.`,'#ffb060');
-  slamRing(e).visible=true;
+  {const r=slamRing(e);r.material.opacity=slamRingOpacity(0);r.visible=true;}
   return true;}
 
 // Returns a display tag showing notable resist/def interaction, or '' if fully neutral.
