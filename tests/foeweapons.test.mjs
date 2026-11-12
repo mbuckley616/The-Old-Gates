@@ -34,6 +34,13 @@ const kit = r.out.filter(x => !x.bow), bows = r.out.filter(x => x.bow);
 check('every foe holding a kit weapon holds it edge forward (the kit\'s edge axis along the facing) with the shaft upright', kit.length >= 30 && kit.every(x => x.fwd > .9 && x.up > .9), kit.filter(x => !(x.fwd > .9 && x.up > .9)));
 check('a bandit archer\'s bow has its back to the front, the string on the archer\'s side', bows.length >= 4 && bows.every(x => x.fwd > .9), bows);
 check('the highwayman\'s brim reaches at most .21 from the head\'s middle (it was .245 at scale 1)', r.hats.length >= 4 && r.hats.every(h => h.brim < .21), r.hats);
+// S2129 — a foe's sword is its island's (#1425 B): the kit's make by where it stands, while the rules still read 'sword' and its tell is a blade's edge
+const isles = await page.evaluate(() => { const keep = isleAt, keepH = isleHere, o = {};
+  for (const isle of ['gatelands', 'mark', 'aurenne']) { isleAt = () => isle; isleHere = () => isle; o[isle] = [];
+    for (let k = 0; k < 4; k++) { const rig = buildFoe('Bandit Captain', 400 + k * 9, 60 + k * 4); scene.add(rig.root); rig.root.visible = false;
+      o[isle].push({ make: rig.g.swordMake, kit: rig.weapon.userData.wpn, kind: foeWeaponKind({ limbs: { person: rig } }), tell: hbTellBuild(rig.weapon).kind }); scene.remove(rig.root); } }
+  isleAt = keep; isleHere = keepH; return o; });
+check('a foe\'s sword is its island\'s make (arming, Norse, Aurenne\'s three); the rules read sword and the tell is an edge (S2129)', isles.gatelands.every(x => x.kit === 'sword:arming') && isles.mark.every(x => x.kit === 'sword:norse') && isles.aurenne.every(x => /^sword:(takouba|falchion|flyssa)$/.test(x.kit)) && Object.values(isles).flat().every(x => x.kind === 'sword' && x.tell === 'sword'), isles);
 // side views (the stage's orbit a quarter round), where an edge held forward shows the blade's whole profile
 const side = 'INSPECTOR.opts.figure=false;INSPECTOR.orbit.theta=1.5708;INSPECTOR.orbit.phi=1.4;';
 await inspShots(g, [['people/foes-on-the-body/highwayman', 'highwayman-after.png', side], ['people/foes-on-the-body/bandit', 'foeweapon-bandit-after.png', side], ['people/foes-on-the-body/cultist', 'foeweapon-cultist-after.png', side]]);

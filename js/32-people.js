@@ -1034,6 +1034,12 @@ function wpnSword(L,col,make,steel){if(typeof HB==='undefined'||!HB.swordParts||
   return true;}
 function buildWeapon(kind,opts){opts=opts||{};const t=opts.tint;const key=kind+(opts.rust?'|rust':'')+(t?'|'+[t.metal,t.guard,t.wood,t.glow,t.face].join(','):'');let parts=WPN_GEO.get(key);if(!parts){parts=wpnBuild(kind,!!opts.rust,t);WPN_GEO.set(key,parts);}
   const G=new THREE.Group();G.name='weapon:'+kind;G.userData.wpn=kind;for(const p of parts){const m=new THREE.Mesh(p.geo,WPN_MAT[p.mat]);m.castShadow=false;G.add(m);}return G;}
+// S2129 — the foes' swords by island (Michael's B on #1425): a foe's sword takes the make of the island it stands on (a gate's or a fort's
+// by its portal, isleHere), the arming sword in the Gatelands, the Norse in the Mark, in Aurenne the takouba (1 in 2), the falchion or the
+// flyssa from the genome's own stream, as an item's is. The genome's `wpn` stays 'sword' (the rules read it); only the kit's piece changes.
+function foeSwordMake(g,x,z){let isle='gatelands';try{isle=(typeof activeZoneId!=='undefined'&&activeZoneId==='world'&&typeof isleAt==='function')?isleAt(x,z):typeof isleHere==='function'?(isleHere()||'gatelands'):'gatelands';}catch(e){}
+  if(isle==='aurenne'){const r=pRng((g.seed|0)+31)();return r<.5?'takouba':r<.75?'falchion':'flyssa';}return isle==='mark'?'norse':'arming';}
+function foeWpnKit(g){const m=g&&g.wpn==='sword'&&g.swordMake;return m&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&HB.SWORDS&&HB.SWORDS[m]?'sword:'+m:g.wpn;}
 const FOE_DRESS={
   'Bandit':        {cloth:0x4a3a2a,hat:'hood',wpn:['sword','axe'],shield:'round',shieldP:.35}, // S226 — armed from the weapon kit (wpn), a shield at shieldP
   'Bandit Archer': {cloth:0x3a4a2a,hat:'hood',wpn:'bow'},
@@ -1116,7 +1122,9 @@ function buildFoe(type,x,z,genome,eyeCol,arm){
   // S520 — the kit is built with its edge (and an axe's bit) along x, which held in the fist put the flat towards the foe's target
   // and the edge to the side (Michael, the inspector: the bandit's axe turned the wrong way, the cultist's sword sideways): a
   // quarter turn about the shaft puts the edge forward. The bow was drawn belly-out; a half turn puts its back to the target.
-  if(g.wpn){const w=buildWeapon(g.wpn,{rust:!!(g.skel||g.dead||g.goblin)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}wpnTrue(g.wpn,w,rig.root);rig.weapon=w;}
+  // S2129 — a foe's sword is its island's (#1425 B, the foes' half): the make by where it stands (foeSwordMake), the kit's blade on the new look
+  if(g.wpn==='sword'&&!g.swordMake)g.swordMake=foeSwordMake(g,x,z);
+  if(g.wpn){const wk=foeWpnKit(g),w=buildWeapon(wk,{rust:!!(g.skel||g.dead||g.goblin)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}wpnTrue(wk,w,rig.root);rig.weapon=w;}
   if(g.shieldKit){const sh=buildWeapon(g.shieldKit);sh.position.set(.07,-.05,.02);sh.scale.setScalar(.9);rig.B.elL.add(sh);rig.shieldKit=sh;}
   if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=g.phantom?.5:.68;rig.mesh.castShadow=false;}
   // a golem's rune-light: a slit for eyes and an X cut in the chest, unlit, on the head and spine bones
@@ -2264,7 +2272,7 @@ function hbTellShell(T,mat){let y0=1e9,y1=-1e9;for(const t of T)for(const p of t
   for(const t of T)if(t[0].y>=cut&&t[1].y>=cut&&t[2].y>=cut){for(const p of t){c.add(p);nc++;}}if(!nc)return null;c.multiplyScalar(1/nc);
   for(const t of T)if(t[0].y>=cut&&t[1].y>=cut&&t[2].y>=cut)for(const p of t){const q=p.clone().sub(c).multiplyScalar(HB_TELL.shell).add(c);P.push(q.x,q.y,q.z);}
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(P,3));const e=new THREE.Mesh(geo,mat);e.userData.tell=1;e.castShadow=false;return e;}
-function hbTellBuild(w){const kind=w.userData.wpn||'',D={g:new THREE.Group(),kind,mid:new THREE.Vector3()};D.g.name='tellEdge';D.g.visible=false;
+function hbTellBuild(w){const kind=(w.userData.wpn||'').replace(/^sword:.*/,'sword'),D={g:new THREE.Group(),kind,mid:new THREE.Vector3()};D.g.name='tellEdge';D.g.visible=false;
   D.mat=new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false});D.shell=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false,side:THREE.DoubleSide});
   const metal=hbTellTris(w,true),all=metal.length?metal:hbTellTris(w,false);let part=null;D.look='none';
   if((HB_TELL.edge[kind]||HB_TELL.outline[kind])&&metal.length){const R=hbTellOutline(metal,!!HB_TELL.edge[kind]);if(R){part=hbTellStrips(R,D.mat);D.look='edge';D.mid.set((R[0].lo+R[0].hi)/2,(R[0].y+R[R.length-1].y)/2,R[0].z);}}
