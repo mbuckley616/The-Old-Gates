@@ -193,8 +193,11 @@ const hb = await page.evaluate(async () => {
   const old = P.weapon, ok = foeRearm(e, 'staff');
   const out = { look: window.OG_LOOK, ok, held: P.hb.held.length, hasNew: P.hb.held.some(h => h.o === P.weapon), hasOld: P.hb.held.some(h => h.o === old), oldGone: !old || !old.parent, kind: foeWeaponKind(e) };
   try { hbHold(P); out.follows = P.weapon.parent === P.hb.root; } catch (err) { out.err = String(err); }
+  // S2133 — a sword given by foeRearm is its island's make, as buildFoe's (S2129), and the body carries that blade
+  const s0 = P.weapon; P.g.swordMake = null; out.sword = { ok: foeRearm(e, 'sword'), make: P.g.swordMake, kit: foeWpnKit(P.g), kind: foeWeaponKind(e), held: P.hb.held.some(h => h.o === P.weapon), oldGone: !s0.parent };
   if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); return out; });
 console.log('rearm', JSON.stringify(hb));
 check(`a foe rearmed after its builder body is on carries the new weapon in the body (${hb.held} held, the old gone)`, hb.ok && hb.hasNew && !hb.hasOld && hb.oldGone && hb.kind === 'staff' && hb.follows && !hb.err, hb);
+check(`a foe given a sword by foeRearm holds its island's make (${hb.sword && hb.sword.kit})`, hb.sword && hb.sword.ok && !!hb.sword.make && hb.sword.kit === 'sword:' + hb.sword.make && hb.sword.kind === 'sword' && hb.sword.held && hb.sword.oldGone, hb.sword);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
