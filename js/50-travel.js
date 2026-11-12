@@ -700,6 +700,7 @@ const SURV_ITEMS={
   skinknife:{name:'Skinning Knife',ico:'🔪',type:'misc',weight:.3,buyPrice:6,sellMult:.4,tool:'skinknife'}, /* S2123 — resources A: the hide off a hunted body */
   hide:{name:'Hide',ico:'🟫',type:'misc',weight:2,buyPrice:10,sellMult:.4,hide:1},
   salt:{name:'Salt',ico:'🧂',type:'misc',weight:.2,buyPrice:1,sellMult:.3,salt:1,bundle:1}, /* sold under a coin, so Aurenne's two for 1 is no trade */
+  leather:{name:'Leather',ico:'🟤',type:'misc',weight:1,buyPrice:12,sellMult:.4,leather:1}, /* S2131 — off the tanner's rack; the smith sells it for 12 */
 };
 // ── S2028 — Cooking B, session 1: the pot (Michael's B on #1296; `docs/design/cooking-build.md`). A main (meat, fish, produce) and
 // one of an island's three seconds make a dish: the main's kind, ×1.5 its length, and the second's rider. Each second is sold only
@@ -810,9 +811,10 @@ function lightFire(){
   CAMPFIRES.push(f);showMsg('The fire catches.','#ffb060');if(typeof renderHubInv==='function')renderHubInv();return f;}
 function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
 // S2033 — a meal past its days: turned, and named so. Its day (`meal.made`) is the game day it was cooked; a meal from before this build has none and never turns
-function mealTurned(it){const m=it&&it.meal;if(!m||m.made==null)return false;return gameDayNow()-m.made>=(m.bake?BAKE_TURN_DAYS:MEAL_TURN_DAYS);}
+function mealKeepDays(m){return m.jerky?JERKY_TURN_DAYS:m.bake?BAKE_TURN_DAYS:MEAL_TURN_DAYS;} /* S2131 — jerky keeps 30 */
+function mealTurned(it){const m=it&&it.meal;if(!m||m.made==null)return false;return gameDayNow()-m.made>=mealKeepDays(m);}
 function mealKeepSay(it){const m=it&&it.meal;if(!m||m.made==null)return '';if(mealTurned(it))return 'turned: half as long';
-  const n=m.made+(m.bake?BAKE_TURN_DAYS:MEAL_TURN_DAYS)-gameDayNow();return `keeps ${n} day${n===1?'':'s'} more`;}
+  const n=m.made+mealKeepDays(m)-gameDayNow();return `keeps ${n} day${n===1?'':'s'} more`;}
 let _mealTurnAt=-1;
 function mealTurnPass(){BAG.forEach(b=>{if(b&&b.meal&&!b.meal.turned&&mealTurned(b)){b.meal.turned=1;b.name+=' (turned)';}});}
 // each frame: a fire burnt out is taken away, the flame flickers; Steady's health. Called from the loop beside the buffs
@@ -912,6 +914,66 @@ function bodyHide(e,items){if(!e||e.corrupt||e.swim||!MEAT_BODIES.test(e.name||'
 function hasSkinKnife(){return BAG.some(b=>b&&b.tool==='skinknife');}
 // salt at a harbour's goods shop, a gold a measure; Aurenne's salt pans sell two for the gold (half price)
 function saltFor(h){const it=survItem('salt',houseIsle(h)==='aurenne'?2:1);return it;}
+// ── S2131 — Resources and crafting A, session 2: the racks (`docs/design/resources-and-crafting.md`, A's table). A tanner's rack cures
+// 1 hide with 1 salt into leather, and a drying rack 1 raw meat or fish with 1 salt into jerky, each in 6 game hours (`RACK_MIN`, read off
+// the game clock) and 4 to a rack. Both stand in a smith's room (the town's tanner keeps his rack beside the forge), a drying rack alone at a
+// harbour's goods shop. What hangs is the world's: `worldState.racks`, keyed `<site>:<lot>:rack` and `<site>:<lot>:dry`, each a list of
+// {k, at}; it stays there till you take it, and taking it is the one named action (`cureTake`). Jerky is eaten cold: fed for half a
+// roast's length, its main's kind, and it keeps 30 days. No skill rises, and nothing is asked for the rack.
+const RACK_MIN=360,RACK_HOLD=4,JERKY_TURN_DAYS=30,JERKY_X=.5;
+const RACK_KIND={rack:{name:'Tanner’s rack',takes:['hide']},dry:{name:'Drying rack',takes:['meat','fish']}};
+const RACK_HANG={hide:{need:b=>!!b.hide,say:'a hide'},meat:{need:b=>foodOf(b)==='meat',say:'raw meat'},fish:{need:b=>foodOf(b)==='fish',say:'a fish'}};
+function jerkyItem(food,day){const fish=food==='fish';
+  return {name:fish?'Dried Fish':'Jerky',ico:fish?'🐟':'🥓',type:'potion',weight:.3,buyPrice:10,sellMult:.3,meal:{kind:FOOD_MEAL[food].kind,s:1,x:JERKY_X,made:day,jerky:1},brewKey:'jerky@'+food+'@d'+day};}
+// the racks a house keeps: both at a smith's, the drying rack at a harbour's goods shop. Returns [{kind, key}]
+function curesOf(h){if(!h||!h.siteId)return [];const lot=String(h.id||'').replace('g_'+h.siteId+'_','')||'0',k=w=>`${h.siteId}:${lot}:${w}`;
+  if(h.type==='weapon')return [{kind:'rack',key:k('rack')},{kind:'dry',key:k('dry')}];
+  const st=typeof SITE!=='undefined'?SITE[h.siteId]:null;if(h.type==='misc'&&st&&st.kind==='port')return [{kind:'dry',key:k('dry')}];return [];}
+function curesHere(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'?curesOf(currentHouse):[];}
+function cureList(key){const R=worldState.racks||(worldState.racks={});return R[key]||(R[key]=[]);}
+function cureReady(e){return gameMinNow()-e.at>=RACK_MIN;}
+// the named actions: hang one thing with its salt; take everything done. Each returns {done, why}
+function cureHang(r,what){const K=RACK_KIND[r.kind],H=RACK_HANG[what];if(!K||!H||!K.takes.includes(what))return {done:false,why:''};
+  const L=cureList(r.key);if(L.length>=RACK_HOLD)return {done:false,why:`The rack holds ${RACK_HOLD}.`};
+  if(!bagCount(H.need))return {done:false,why:`You have no ${H.say.replace(/^an? /,'')}.`};
+  if(!bagCount(b=>!!b.salt))return {done:false,why:'It wants a salt.'};
+  bagTake(H.need,1);bagTake(b=>!!b.salt,1);L.push({k:what,at:gameMinNow()});return {done:true};}
+function cureTake(r){const L=cureList(r.key),done=L.filter(cureReady);if(!done.length)return {done:false,why:'Nothing on it is ready.'};
+  const got=[];done.forEach(e=>{const it=e.k==='hide'?survItem('leather'):jerkyItem(e.k,Math.floor((e.at+RACK_MIN)/1440));bagAdd(it);got.push(it.name);});
+  worldState.racks[r.key]=L.filter(e=>!cureReady(e));return {done:true,got};}
+function cureLeft(e){const m=Math.max(0,RACK_MIN-(gameMinNow()-e.at));return m>=60?`${Math.floor(m/60)} h ${m%60} m`:`${m} m`;}
+// the racks' page, the forge's paper: what hangs and how long it has, a row for each thing to hang, and Take
+let cureOpen=false,cureSaid='';
+function openCurePage(){const RS=curesHere();if(!RS.length){showMsg('There is no rack here.','#cc8844');return;}
+  if(typeof shopOpen!=='undefined'&&shopOpen&&typeof closeShop==='function')closeShop();
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('rackui');
+  if(!ov){ov=document.createElement('div');ov.id='rackui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:520px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:18px 24px 16px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The Racks</span><span id="rk-salt" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
+      '<div id="rk-body" style="font-size:14px;line-height:1.6;margin-top:8px"></div>'+
+      '<div id="rk-said" style="min-height:20px;margin-top:8px;font-style:italic;color:#7a1f10;font-size:14px"></div>'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;border-top:1px solid #a89060;padding-top:8px"><span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="rk-no" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px">Esc</button> as you were</span></div></div>';
+    document.body.appendChild(ov);ov.querySelector('#rk-no').onclick=()=>closeCurePage();}
+  cureSaid='';ov.style.display='flex';cureOpen=true;cureDraw();}
+function closeCurePage(){const ov=document.getElementById('rackui');if(ov)ov.style.display='none';cureOpen=false;if(typeof refocusView==='function')refocusView();}
+function cureDraw(){const ov=document.getElementById('rackui');if(!ov)return;const RS=curesHere();if(!RS.length){closeCurePage();return;}
+  ov.querySelector('#rk-salt').textContent=`${bagCount(b=>!!b.salt)} salt in your pack`;
+  const btn=(id,label,ok)=>`<button type="button" data-a="${id}" style="background:none;border:1px solid ${ok?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#7a1f10':'#a09070'};cursor:pointer;padding:1px 8px;margin:2px 4px 2px 0">${label}</button>`;
+  let h='';RS.forEach((r,ri)=>{const K=RACK_KIND[r.kind],L=cureList(r.key);
+    h+=`<div style="font-variant:small-caps;color:#7a1f10;margin-top:6px">${K.name} <i style="font-size:12px;color:#8a7050;font-variant:normal">${L.length} of ${RACK_HOLD}</i></div>`;
+    L.forEach(e=>{const out=e.k==='hide'?'Leather':e.k==='fish'?'Dried Fish':'Jerky';h+=`<div style="padding-left:12px">${out} <i style="font-size:12px;color:#8a7050">${cureReady(e)?'ready':cureLeft(e)+' more'}</i></div>`;});
+    if(!L.length)h+=`<div style="padding-left:12px;color:#8a7050;font-style:italic">bare</div>`;
+    h+='<div style="padding-left:12px">'+K.takes.map(w=>btn(ri+':'+w,`Hang ${RACK_HANG[w].say} · ${bagCount(RACK_HANG[w].need)}`,L.length<RACK_HOLD&&bagCount(RACK_HANG[w].need)>0&&bagCount(b=>!!b.salt)>0)).join('')+
+      btn(ri+':take','Take what is done',L.some(cureReady))+'</div>';});
+  h+=`<div style="color:#8a7050;font-style:italic;font-size:12px;margin-top:6px">each with a salt, ${RACK_MIN/60} hours; jerky is eaten cold and keeps ${JERKY_TURN_DAYS} days</div>`;
+  const B=ov.querySelector('#rk-body');B.innerHTML=h;
+  B.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const [ri,a]=b.dataset.a.split(':'),r=RS[+ri];let res;
+    if(a==='take'){res=cureTake(r);cureSaid=res.done?res.got.join(', ')+'.':res.why;}else{res=cureHang(r,a);cureSaid=res.done?`Hung, with a salt. Ready in ${RACK_MIN/60} hours.`:res.why;}
+    if(res.done&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();cureDraw();});
+  ov.querySelector('#rk-said').textContent=cureSaid;}
+window.addEventListener('keydown',e=>{if(!cureOpen)return;if(e.code==='Escape'){e.preventDefault();e.stopPropagation();closeCurePage();}},true);
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish',food:'fish'};} /* S2028 — food, which the save keeps */
 // S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
 const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};
@@ -1417,10 +1479,18 @@ function ingotItem(tier,qty){const D=INGOT_DEF.find(d=>d.tier===tier),M=MATERIAL
 // what a piece costs in ingots, and the types the forge makes: the heavy line, the shield, every blade and haft but the bows'
 // (the bench's) and the wooden club
 function forgePlanks(T){return T.slot==='weapon'?1:0;}
-function forgeIngots(T){if(T.slot==='weapon')return T.type==='Dagger'?1:T.twoHand?4:2;
-  return T.shieldType==='shield'?3:{head:2,chest:5,legs:3,feet:2,hands:1}[T.slot]||0;}
+function forgeIngots(T){if(T.slot==='weapon')return T.type==='Dagger'?1:T.twoHand?4:2;if(T.line)return Math.ceil(forgeLeather(T)/2);
+  return T.shieldType==='shield'?3:FORGE_SLOT_N[T.slot]||0;}
+// S2132 — Resources and crafting A, session 2b (`docs/design/resources-and-crafting.md`): the light line at the forge. A piece takes leather
+// by slot as the heavy line takes ingots (hands 1, feet and head 2, legs 3, chest 5), and half as many ingots of its metal, rounded up, which
+// names it (an *Iron Jerkin*); 20 game minutes. Smithing's rules all hold: the metal's gate, Fine and Masterwork, never enchanted, a fifth
+// back at the counter, a Smithing use of 10 + 5 × tier. Wearing it still asks Finesse (armorReq). The robe line stays bought and found.
+const FORGE_SLOT_N={head:2,chest:5,legs:3,feet:2,hands:1},LIGHT_MIN=20;
+function forgeLeather(T){return T&&T.line==='light'?FORGE_SLOT_N[T.slot]||0:0;}
+function leatherCount(){return bagCount(b=>!!b.leather);}
 const FORGE_TYPES=[...WEAPON_TYPES.filter(T=>!/^(Bow|Crossbow|GreatClub)$/.test(T.type)).map(T=>({T,arm:false})),
-  ...ARMOR_TYPES.filter(T=>forgeIngots(T)>0).map(T=>({T,arm:true}))];
+  ...ARMOR_TYPES.filter(T=>forgeIngots(T)>0).map(T=>({T,arm:true})),
+  ...ARMOR_LINE_TYPES.filter(T=>T.line==='light').map(T=>({T,arm:true,light:true}))]; /* S2132 — the light line */
 function forgeHere(){return smithForge()||!!dunForgeNear();}
 function smithForge(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='weapon';}
 // S1514 — the sheet's second forge: a fort armoury's smelter (D_FORGES, 56-dungeon-build.js), within touch on its floor. No smith
@@ -1459,12 +1529,13 @@ function forgeMake(type,tier){
   const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
   const n=forgeIngots(F.T);if(ingotCount(tier)<n)return {made:false,why:`You need ${n} ${MATERIALS[tier-1].name.toLowerCase()} ingot${n>1?'s':''}.`};
   const pl=forgePlanks(F.T);if(plankCount()<pl)return {made:false,why:'It needs a plank for the grip.'};
+  const lt=forgeLeather(F.T);if(leatherCount()<lt)return {made:false,why:`You need ${lt} leather.`}; /* S2132 */
   const it=makeItem(tier,F.T,null,F.arm);it.made=true;it.sellMult=MADE_SELL;const q=forgeQuality(tier);forgeQualityApply(it,q);
   if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
   const f=forgeFee();if(f)return {made:false,why:f};
-  bagTake(b=>b.ingot===tier,n);if(pl)bagTake(b=>b.plank,pl);bagAdd(it);skillUse('smithing',10+5*tier,'f'+(_forgeN++));
+  bagTake(b=>b.ingot===tier,n);if(pl)bagTake(b=>b.plank,pl);if(lt)bagTake(b=>!!b.leather,lt);bagAdd(it);skillUse('smithing',10+5*tier,'f'+(_forgeN++));
   if(q==='master')(worldState.masterworks||(worldState.masterworks=[])).push(tier);
-  if(typeof advanceClock==='function')advanceClock(FORGE_MIN);
+  if(typeof advanceClock==='function')advanceClock(F.light?LIGHT_MIN:FORGE_MIN);
   return {made:true,item:BAG[BAG.length-1]};}
 // a piece's tempers: +8% each on the attack or defence it was made with, three to a piece
 function temperMax(){return perk('smithing',75)?4:3;}
@@ -1513,7 +1584,7 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
   const row=(on,ok,key,label)=>`<div data-k="${key}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${!ok&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${label}</div>`;
   const head=t=>`<div style="font-variant:small-caps;color:#8a7050;margin-top:4px">${t}</div>`;const S=forgeSel,P=forgePieces();
   let h=head('Smelt')+INGOT_DEF.map(d=>row(S.k==='s'&&S.tier===d.tier,forgeCanSmelt(d.tier),'s'+d.tier,`${MATERIALS[d.tier-1].name} Ingot`)).join('');
-  h+=head('Make')+FORGE_TYPES.map((f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>ingotCount(t)>=forgeIngots(f.T))&&plankCount()>=forgePlanks(f.T),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'))).join('');
+  const mk=(f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>ingotCount(t)>=forgeIngots(f.T))&&plankCount()>=forgePlanks(f.T)&&leatherCount()>=forgeLeather(f.T),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'));h+=head('Make')+FORGE_TYPES.map((f,i)=>f.light?'':mk(f,i)).join('')+head('Make, light')+FORGE_TYPES.map((f,i)=>f.light?mk(f,i):'').join(''); /* S2132 — the light line's own row */
   if(P.length)h+=head('Temper')+P.map((it,i)=>row(S.k==='t'&&S.it===it,true,'t'+i,`${it.name}${it.tempers?` (${it.tempers})`:''}`)).join('');
   ov.querySelector('#fg-list').innerHTML=h;
   ov.querySelectorAll('#fg-list [data-k]').forEach(d=>d.onclick=()=>{const k=d.dataset.k,n=+k.slice(1);
@@ -1524,7 +1595,7 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
       (D.charcoal?pad(`1 Charcoal <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.name===SURV_ITEMS.charcoal.name)})</i>`):'')+note(`you hold ${ingotCount(S.tier)}`);}
   else if(S.k==='m'){const F=FORGE_TYPES.find(f=>f.T.type===S.type),n=forgeIngots(F.T);
     if(forgeTier==null||!forgeMetals().includes(forgeTier))forgeTier=forgeMetals().find(m=>ingotCount(m)>=n)||2;
-    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[forgeTier-1].name} ${S.type.replace(/([a-z])([A-Z])/g,'$1 $2')}</div>`+pad(`${n} ingot${n>1?'s':''}${forgePlanks(F.T)?` and a plank <i style="font-size:12px;color:#8a7050">(you have ${plankCount()})</i>`:''}, ${FORGE_MIN} minutes`)+
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[forgeTier-1].name} ${S.type.replace(/([a-z])([A-Z])/g,'$1 $2')}</div>`+pad(`${n} ingot${n>1?'s':''}${forgePlanks(F.T)?` and a plank <i style="font-size:12px;color:#8a7050">(you have ${plankCount()})</i>`:''}${forgeLeather(F.T)?` and ${forgeLeather(F.T)} leather <i style="font-size:12px;color:#8a7050">(you have ${leatherCount()})</i>`:''}, ${F.light?LIGHT_MIN:FORGE_MIN} minutes`)+
       '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+forgeMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=ingotCount(m)>=n&&skillLv('smithing')>=g;
         return `<button type="button" data-m="${m}" style="background:${m===forgeTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===forgeTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}${g?` · ${g}`:''}</button>`;}).join('')+'</div>'+
       ((SKILL_GATE[forgeTier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[forgeTier]}`):'')+note('made, never enchanted; sold back at a fifth');}

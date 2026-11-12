@@ -949,8 +949,10 @@ function wildFlyStep(e,W,P,T,dt){const F=WILD_FLY;
 function foeRearm(e,kind){const P=e&&e.limbs&&e.limbs.person;if(!P||!P.B||!P.B.gear||typeof buildWeapon!=='function')return false;
   const H=P.hb,old=P.weapon,sh=P.shieldKit;
   for(const o of [old,sh])if(o&&o.parent)o.parent.remove(o);
-  const w=buildWeapon(kind);w.rotation.y=Math.PI/2;P.B.gear.add(w);if(typeof wpnTrue==='function')wpnTrue(kind,w,P.root);w.updateMatrix();
-  P.weapon=w;P.shieldKit=null;P.g.wpn=kind;P.g.gear='kit';P.g.shieldKit=null;
+  P.g.wpn=kind;if(kind==='sword'&&!P.g.swordMake&&typeof foeSwordMake==='function')P.g.swordMake=foeSwordMake(P.g,e.x,e.z); /* S2133 — a sword given here is its island's, as buildFoe's (S2129) */
+  const wk=typeof foeWpnKit==='function'?foeWpnKit(P.g):kind;
+  const w=buildWeapon(wk);w.rotation.y=Math.PI/2;P.B.gear.add(w);if(typeof wpnTrue==='function')wpnTrue(wk,w,P.root);w.updateMatrix();
+  P.weapon=w;P.shieldKit=null;P.g.gear='kit';P.g.shieldKit=null;
   if(H&&H.held){const h=H.held.find(q=>q.o===old);H.held=H.held.filter(q=>q.o!==old&&q.o!==sh);
     H.held.push({o:w,par:P.B.gear,m0:w.matrix.clone(),f:h?h.f:null,sd:'R'});}
   return true;}
