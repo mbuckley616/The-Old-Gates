@@ -5,6 +5,10 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
+/* S2146 — waking autosaves, and the save's picture (`ssShot`: a render and a read back of the WebGL canvas) held the page
+   142–200 s with three boots on four cores, so the 30 s wait for the clock timed out with the clock already moved. The slip
+   is what this suite reads, not the picture (the saves suites take it): the picture is skipped and every check is unchanged. */
+await page.evaluate(() => { window.ssShot = () => null; });
 const key = (code) => page.evaluate((code) => window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true })), code);
 const slip = () => page.evaluate(() => { const q = id => document.getElementById(id); return { open: sleepOpen, shown: q('sleepui').style.display, title: q('rs-title').textContent,
   date: q('sleep-date').textContent, hrs: q('sleep-hrs').textContent, range: q('sleep-range').value, out: q('rs-out').innerText.replace(/\s+/g, ' ').trim(),
