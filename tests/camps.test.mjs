@@ -84,12 +84,19 @@ const fr = await page.evaluate(() => { const out = {}, box = new THREE.Box3();
   for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && (BAG[i].log || BAG[i].name === TINDERBOX_NAME)) BAG.splice(i, 1);
   BAG.push(survItem('tinderbox'), survItem('log')); const F = lightFire();
   out.lit = F && F.mesh && F.mesh.userData.fire ? { island: F.mesh.userData.fire.island, want: nationKeyOf(...cellOf(F.x, F.z)), stage: F.mesh.userData.fire.stage } : null;
-  if (F) { F.until = gameMinNow(); tickSurvival(1 / 60); out.gone = !F.mesh.parent && !CAMPFIRES.includes(F); }
+  if (F) { FIRE_ASH.splice(0).forEach(dropFire); F.until = gameMinNow(); tickSurvival(1 / 60); out.gone = !F.mesh.parent && !CAMPFIRES.includes(F);
+    /* Session 2147: it leaves its cold ash where it lay, which is no fire, and the ash goes after ASH_HOURS */
+    const A = FIRE_ASH[0], u = A && A.mesh && A.mesh.userData.fire; let light = false; if (A) A.mesh.traverse(o => { if (o.isLight && o.intensity > 0) light = true; });
+    out.ash = A ? { n: FIRE_ASH.length, stage: u && u.stage, island: u && u.island, at: Math.hypot(A.x - F.x, A.z - F.z), shown: !!A.mesh.parent, tris: u && u.tris, light,
+      fire: !!campfireNear() || atFire(), hrs: Math.round((A.until - gameMinNow()) / 60) } : null;
+    worldState.gameTimeAbsMinutes += ASH_HOURS * 60; tickSurvival(1 / 60); out.ashGone = !FIRE_ASH.length && !!A && !A.mesh.parent; }
   return out; });
 console.log('fire', JSON.stringify(fr));
 check('the fire is the kit\'s on each island: lit, burning, embers by its clock, each under 3,000 tris in 16 draws at most, on the land, lit by a light', ['gatelands', 'mark', 'aurenne'].every(k => { const v = fr[k];
   return v && v.st.map(s => s.split(':')[0]).join() === 'lit,burning,embers' && v.st.every(s => +s.split(':')[1] < 3000 && +s.split(':')[2] <= 16) && v.lo > -.3 && v.hi > .5 && v.hi < 4 && v.light; }), fr);
 check('a fire lit from the bag is laid as its own island lays it, and taken away when it is out', !!fr.lit && fr.lit.island === fr.lit.want && fr.lit.stage === 'lit' && fr.gone, fr);
+check('a fire burnt out leaves its cold ash where it lay, unlit and no fire to cook at, gone after a game day', !!fr.ash && fr.ash.n === 1 && fr.ash.stage === 'out' && fr.ash.island === fr.lit.island
+  && fr.ash.at < .01 && fr.ash.shown && fr.ash.tris > 0 && !fr.ash.light && !fr.ash.fire && fr.ash.hrs === 24 && fr.ashGone, fr.ash);
 // Session 2131 (Michael's B on #1420, its look session): the tanner's rack and the drying rack, each island's frame, four places each, rebuilt
 // in place when what hangs on them changes
 const rk = await page.evaluate(() => { const out = {};
