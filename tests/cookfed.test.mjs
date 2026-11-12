@@ -225,7 +225,7 @@ check(`the vessels by island: ${JSON.stringify(w2.isle)}; Queasy is the characte
 // (Filling ×2.25), with the second's rider; a caught fish cooks; a dish wants a pot; cooking a pair teaches it.
 const ck = await page.evaluate(() => {
   const out = {}, S = lv => { SKILLS.cooking = { lv, p: 0 }; };
-  BAG.length = 0; worldState.fed = null; worldState.dishesKnown = {}; CAMPFIRES.splice(0).forEach(dropFire);
+  BAG.length = 0; worldState.fed = null; worldState.rested = null; worldState.dishesKnown = {}; CAMPFIRES.splice(0).forEach(dropFire);
   const eat = it => { eatMeal(BAG.indexOf(it)); playClockS += 1; tickDrink(); };
   const lid0 = lid, h0 = currentHouse; lid = 'int_test'; currentHouse = { type: 'inn' };
   // a trout at a hearth
