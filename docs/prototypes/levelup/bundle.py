@@ -74,6 +74,7 @@ def build(name, title, note, srcfile, use_common, query=''):
     if use_common:
         s = scene(src)
         if "from './wrongness.js'" in s: s = kits(s, ['gatekit', 'creatures', 'wrongness'])
+        if "from './singer.js'" in s: s = kits(s, ['pieces', 'ships', 'singer'])
         if "from './camp.js'" in s: s = kits(s, ['camp'])
         if "from './kids.js'" in s: s = kits(s, ['pieces', 'shrines', 'kids'])
         if "from './naves.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'naves'])
@@ -222,4 +223,5 @@ build('telegraphs-hall.html', 'A foe’s tell', 'A foe’s tell (L11, “Foes an
 build('naves-hall.html', 'The six schools’ halls', 'The six schools’ great halls, inside (L10, OG-119; F5): one nave of the gate kit dressed by each school. ?school=tine|uisce|cloch|scath|solas|gaoth, &level=colour|dressed|drawn (A the kit as built; B dressed: walls, aisles, air and light, the floor the same; C OG-119 as drawn: the floor changed and a set piece), &cam=wide|eye|high|aisle|up|scale. Drag to look.', 'naves-view.js', True, '?school=tine&level=dressed&cam=wide')
 build('camp-fire.html', 'The campfire and the stump', 'The campfire and the stump (L8/L11, OG-132, OG-133; the survival sheet’s props, camp and rest’s fire): your fire and a felled tree’s stump on each island. ?island=gatelands|mark|aurenne, &mode=plain|ring|island (A the fire alone, B a ring of stones everywhere, C laid as each island lays it), &stage=lit|burning|embers|out, &hour=dusk|night|day, &cam=close|wide|scale|high, &what=fire|stumps. Drag to look.', 'camp-view.js', True)
 build('kids-play.html', 'Children at play', 'Children at play, by island (L9, OG-116; L1’s children): each island’s children at its own games, the toys in metres. ?island=gatelands|mark|aurenne, &cam=wide|close|scale|high, &view=play|toys. Drag to look.', 'kids-view.js', True)
+build('singing-ship.html', 'The singing ship', 'The singing ship in fog (Sea legends, L6, OG-049; the quest writer’s Sea Legends I): a Compact cog long at sea, her sails full on the wrong side of the wind, seen from your own deck in fog of 60 m. ?mode=close|lane|lit (A the fog holds, B a lane opens to her, C lit, as drawn), &cam=deck|near|scale|high, &plain. Drag to look.', 'singer-view.js', True)
 print('ok')
