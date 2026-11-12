@@ -928,6 +928,7 @@ function jerkyItem(food,day){const fish=food==='fish';
 // the racks a house keeps: both at a smith's, the drying rack at a harbour's goods shop. Returns [{kind, key}]
 function curesOf(h){if(!h||!h.siteId)return [];const lot=String(h.id||'').replace('g_'+h.siteId+'_','')||'0',k=w=>`${h.siteId}:${lot}:${w}`;
   if(h.type==='weapon')return [{kind:'rack',key:k('rack')},{kind:'dry',key:k('dry')}];
+  if(homeMine(h))return ['rack','dry'].filter(f=>homeFitted(h,f)).map(f=>({kind:f,key:k(f)})); /* S2136 — your own house's racks, once fitted */
   const st=typeof SITE!=='undefined'?SITE[h.siteId]:null;if(h.type==='misc'&&st&&st.kind==='port')return [{kind:'dry',key:k('dry')}];return [];}
 function curesHere(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'?curesOf(currentHouse):[];}
 function cureList(key){const R=worldState.racks||(worldState.racks={});return R[key]||(R[key]=[]);}
@@ -974,6 +975,72 @@ function cureDraw(){const ov=document.getElementById('rackui');if(!ov)return;con
     if(res.done&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();cureDraw();});
   ov.querySelector('#rk-said').textContent=cureSaid;}
 window.addEventListener('keydown',e=>{if(!cureOpen)return;if(e.code==='Escape'){e.preventDefault();e.stopPropagation();closeCurePage();}},true);
+// ── S2136 — Resources and crafting B, session 1 (Michael's B on #1420; `docs/design/resources-and-crafting.md`, B's table): a house that
+// works. A house you own holds fittings by its size, as your ship does (S1726): a cottage 3, a townhouse 4, a farmstead or a longhouse 6
+// (a keep, which the page does not name, as the largest). One of each. This session fits the three bought or joined: the tanner's rack
+// (40 gold, or 4 planks at a bench), the drying rack (30 gold, or 3 planks) and the workbench (60 gold, or 6 planks). The racks at home are
+// A's racks with no fee, keyed as a shop's are (`<site>:<lot>:rack`); the workbench is the joiner's bench of your cabin. The clay oven, the
+// kiln and the garden come with clay and the shovel. What is fitted is the world's: `worldState.fittings[houseId] = {fit, stored}`; a
+// fitting taken out is stored in the house and fitted back for nothing, as a ship's is. Until the look builder's fittings stand at a lot
+// point, anywhere in the house is at them (the hold's rule, S1726), and E with nothing else in reach opens the house's page.
+const HOME_PLACES={cottage:3,townhouse:4,farmstead:6,longhouse:6,keep:6};
+const HOME_FITS={rack:{n:'tanner’s rack',a:'a tanner’s rack',gold:40,planks:4},dry:{n:'drying rack',a:'a drying rack',gold:30,planks:3},bench:{n:'workbench',a:'a workbench',gold:60,planks:6}};
+function homeMine(h){return !!h&&(h.type==='home'||h.type==='castle')&&(h.ownedByPlayer||(typeof ownedHouse==='function'&&ownedHouse(h.id)));}
+function homeSize(h){if(!h)return null;if(h.type==='castle')return 'keep';if(h.farm)return 'farmstead';const k=h.kit&&h.kit.kind;if(k==='markhall')return 'longhouse';
+  if(k==='townhouse'||k==='merchant'||k==='marktown')return 'townhouse';return ['town','port','city'].includes(h.siteKind)?'townhouse':'cottage';}
+function homePlaces(h){return HOME_PLACES[homeSize(h)]||3;}
+function homeFitRec(h){const F=worldState.fittings||(worldState.fittings={});const r=F[h.id]||(F[h.id]={fit:[],stored:[]});
+  if(!Array.isArray(r.fit))r.fit=[];if(!Array.isArray(r.stored))r.stored=[];r.fit=r.fit.filter(k=>HOME_FITS[k]);r.stored=r.stored.filter(k=>HOME_FITS[k]);return r;}
+function homeFitted(h,k){const r=worldState.fittings&&h&&worldState.fittings[h.id];return !!(r&&Array.isArray(r.fit)&&r.fit.includes(k));}
+function homeHere(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&homeMine(currentHouse)?currentHouse:null;}
+function homeFitHere(k){const h=homeHere();if(!h||!homeFitted(h,k))return false;const sp=h._fits&&h._fits[k];return !sp||Math.hypot(px-sp.x,pz-sp.z)<=2;}
+// why a fitting cannot go in now, by gold or by planks, or null
+function homeFitWhy(h,k,how){if(!homeMine(h))return 'This is not your house.';const F=HOME_FITS[k];if(!F)return 'No such fitting.';const r=homeFitRec(h);
+  if(r.fit.includes(k))return `The house has ${F.a} already.`;if(r.fit.length>=homePlaces(h))return `The house has room for ${homePlaces(h)}; take one out first.`;
+  if(r.stored.includes(k))return null;
+  if(how==='planks'){if(!benchHere())return 'Planks are joined at a bench: a joiner’s kit is one.';if(plankCount()<F.planks)return `It takes ${F.planks} planks (you have ${plankCount()}).`;return null;}
+  return gold<F.gold?`It costs ${F.gold} gold.`:null;}
+// the named actions: fit one (a stored one back for nothing), take one out. Each returns {done, why}
+function homeFit(h,k,how){const why=homeFitWhy(h,k,how);if(why)return {done:false,why};const r=homeFitRec(h),F=HOME_FITS[k],si=r.stored.indexOf(k);
+  if(si>=0)r.stored.splice(si,1);else if(how==='planks')bagTake(b=>b.plank,F.planks);else{gold-=F.gold;if(typeof updateHUD==='function')updateHUD();}
+  r.fit.push(k);if(typeof addLog==='function')addLog('🏠',`The house fitted with ${F.a}.`);return {done:true};}
+function homeUnfit(h,k){if(!homeMine(h))return {done:false,why:'This is not your house.'};const r=homeFitRec(h),i=r.fit.indexOf(k);if(i<0)return {done:false,why:''};
+  if(k==='rack'||k==='dry'){const c=curesOf(h).find(x=>x.kind===k);if(c&&cureList(c.key).length)return {done:false,why:'Take down what hangs on it first.'};}
+  r.fit.splice(i,1);r.stored.push(k);return {done:true};}
+// the house's page, the racks' paper: places, what stands in it (and its use), what can go in
+let homeOpen=false,homeSaid='';
+function openHousePage(){const h=homeHere();if(!h){showMsg('This is not your house.','#cc8844');return;}
+  if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
+  let ov=document.getElementById('homeui');
+  if(!ov){ov=document.createElement('div');ov.id='homeui';
+    ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
+    ov.innerHTML='<div style="width:520px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:18px 24px 16px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The House</span><span id="hm-places" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
+      '<div id="hm-body" style="font-size:14px;line-height:1.6;margin-top:8px"></div>'+
+      '<div id="hm-said" style="min-height:20px;margin-top:8px;font-style:italic;color:#7a1f10;font-size:14px"></div>'+
+      '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;border-top:1px solid #a89060;padding-top:8px"><span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="hm-no" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px">Esc</button> as you were</span></div></div>';
+    document.body.appendChild(ov);ov.querySelector('#hm-no').onclick=()=>closeHousePage();}
+  homeSaid='';ov.style.display='flex';homeOpen=true;homeDraw();}
+function closeHousePage(){const ov=document.getElementById('homeui');if(ov)ov.style.display='none';homeOpen=false;if(typeof refocusView==='function')refocusView();}
+function homeDraw(){const ov=document.getElementById('homeui');if(!ov)return;const h=homeHere();if(!h){closeHousePage();return;}const r=homeFitRec(h),n=homePlaces(h);
+  ov.querySelector('#hm-places').textContent=`a ${homeSize(h)} · ${r.fit.length} of ${n} places · ${gold} gold · ${plankCount()} planks`;
+  const btn=(id,label,ok)=>`<button type="button" data-a="${id}" style="background:none;border:1px solid ${ok?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#7a1f10':'#a09070'};cursor:pointer;padding:1px 8px;margin:2px 4px 2px 0">${label}</button>`;
+  let s='<div style="font-variant:small-caps;color:#7a1f10">Fitted</div>';
+  if(!r.fit.length)s+='<div style="padding-left:12px;color:#8a7050;font-style:italic">nothing yet</div>';
+  r.fit.forEach(k=>{s+=`<div style="padding-left:12px">${HOME_FITS[k].n[0].toUpperCase()+HOME_FITS[k].n.slice(1)} `+btn('use:'+k,k==='bench'?'Work':'See to it',true)+btn('out:'+k,'Take out',true)+'</div>';});
+  const rest=Object.keys(HOME_FITS).filter(k=>!r.fit.includes(k));
+  if(rest.length){s+='<div style="font-variant:small-caps;color:#7a1f10;margin-top:6px">To fit</div>';
+    rest.forEach(k=>{const F=HOME_FITS[k],name=F.n[0].toUpperCase()+F.n.slice(1);
+      if(r.stored.includes(k)){s+=`<div style="padding-left:12px">${name} <i style="font-size:12px;color:#8a7050">stored</i> `+btn('fit:'+k+':gold','Fit it back',!homeFitWhy(h,k,'gold'))+'</div>';return;}
+      s+=`<div style="padding-left:12px">${name} `+btn('fit:'+k+':gold',`${F.gold} gold`,!homeFitWhy(h,k,'gold'))+btn('fit:'+k+':planks',`${F.planks} planks`,!homeFitWhy(h,k,'planks'))+'</div>';});}
+  s+=`<div style="color:#8a7050;font-style:italic;font-size:12px;margin-top:6px">one of each; a fitting taken out is kept here and goes back for nothing</div>`;
+  const B=ov.querySelector('#hm-body');B.innerHTML=s;
+  B.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const [a,k,how]=b.dataset.a.split(':');
+    if(a==='use'){closeHousePage();if(k==='bench')openBenchPage();else openCurePage();return;}
+    const res=a==='fit'?homeFit(h,k,how):homeUnfit(h,k);homeSaid=res.done?(a==='fit'?`${HOME_FITS[k].a[0].toUpperCase()+HOME_FITS[k].a.slice(1)} stands in the house.`:`The ${HOME_FITS[k].n} is taken out and kept.`):res.why;
+    if(res.done&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();homeDraw();});
+  ov.querySelector('#hm-said').textContent=homeSaid;}
+window.addEventListener('keydown',e=>{if(!homeOpen)return;if(e.code==='Escape'){e.preventDefault();e.stopPropagation();closeHousePage();}},true);
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish',food:'fish'};} /* S2028 — food, which the save keeps */
 // S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
 const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};
@@ -1642,7 +1709,7 @@ const BENCH_ITEMS={
   heartspar:{name:'Heartwood Spar',ico:'🪵',type:'misc',weight:3,buyPrice:30,sellMult:.3,heartwood:'spar'}};
 function benchItem(k,qty){return {...BENCH_ITEMS[k],qty:qty||1};}
 function hasJoinerKit(){return BAG.some(b=>b&&b.tool==='joiner');}
-function benchHere(){return hasJoinerKit()||cabinBench();}
+function benchHere(){return hasJoinerKit()||cabinBench()||homeFitHere('bench');} /* S2136 — your house's workbench */
 function joinerKitFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...JOINER_ITEM}]:[];}
 function feathersFor(h){return h&&h.type==='misc'?[{...BENCH_ITEMS.feathers}]:[];}
 function plankCount(){return bagCount(b=>b.plank);}
@@ -2766,6 +2833,7 @@ function interact(){
       else{dlgWokenLine=null;openShop();}
       return;
     }
+    if(homeHere()){openHousePage();return;} /* S2136 — your house: nothing else in reach, its page */
     return;
   }
   if(typeof knotNear==='function'&&knotNear()){knotUse();return;} /* S1346 — a great gate's knot */
