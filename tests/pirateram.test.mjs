@@ -120,7 +120,8 @@ const hk = await page.evaluate(() => {
   out.cutPrompt = hookPrompt(); const tCut = performance.now(); let tick0 = tCut, worst = 0; hookInteract(); run(2.2, () => { px = a.x; pz = a.z; const n = performance.now(); worst = Math.max(worst, n - tick0); tick0 = n; if (c0.cut && out.cutAt == null) out.cutAt = +((n - tCut) / 1000).toFixed(2); });
   out.cutSlack = +(worst / 1000).toFixed(2); out.still = lashed(o);
   a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(.4); px += 5; run(.2); out.walkedOff = { cut: c1.cut, msg: said.filter(t => /uncut/.test(t)).pop() || said[said.length - 1] };
-  a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(1.7, () => { px = a.x; pz = a.z; }); out.free = { cut: c1.cut, lashed: !!o.lashed, hooks: !!HOOKS.o, msg: said.filter(t => /free/.test(t)).pop() || said[said.length - 1] };
+  a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); /* S2155 — until the cut is done (1.5 s on the game's clock), up to 3 s: a fixed 1.7 s left one 0.4 s tick under load short of it */
+  { const t0 = performance.now(); while (performance.now() - t0 < 3000 && !c1.cut) run(.05, () => { px = a.x; pz = a.z; }); out.freeAt = +((performance.now() - t0) / 1000).toFixed(2); } run(.2, () => { px = a.x; pz = a.z; }); out.free = { cut: c1.cut, lashed: !!o.lashed, hooks: !!HOOKS.o, msg: said.filter(t => /free/.test(t)).pop() || said[said.length - 1] };
   // a rough sea: a throw misses one time in two, by her id and the throw's number
   const ss = seaState; seaState = () => 2; const got = [], want = [];
   for (let i = 0; i < 4; i++) { const n = (HOOKS.n['test:hooks'] || 0) + 1; want.push(seededRng('hooks', `test:hooks:${n}`)() < .5); px = S.x; pz = S.z; jumpY = DECK_Y; throwHooks(o); got.push(HOOKS.miss); run(1.15); hookDrop(); }
