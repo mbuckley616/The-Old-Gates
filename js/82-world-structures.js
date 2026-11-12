@@ -2926,7 +2926,7 @@
       const tx=lot.tx,tz=lot.tz,w=lot.w||6,d=lot.d||6,at=(u,v)=>[lot.x+u*tz+v*tx,lot.z-u*tx+v*tz],along=Math.atan2(tx,tz),deep=along+Math.PI/2;
       // behind first (the yard), then the sides, then a rack's depth further out each way, so two stand side by side or one behind the other
       const spots=[],SU=2*HW+.6,SV=2*HD+.8;
-      // S2149 — a Mark hall's racks stand at its training yard (S1657, S2142's `_yardAt`), not behind the hall (82 m off at c2_1_s7): outside the
+      // S2151 — a Mark hall's racks stand at its training yard (S1657, S2142's `_yardAt`), not behind the hall (82 m off at c2_1_s7): outside the
       // ring's earth (its ragged edge reaches r+0.73), the long side along the ring, the sides first (the staff rack is toward the hall, the
       // bench across), then the shoulders, then a rack's depth further out; the hall's own spots only if none of these is clear
       const Yd=h._yardAt;if(Yd)for(let k=0;k<3;k++)for(const da of [Math.PI/2,-Math.PI/2,Math.PI/3,-Math.PI/3,2*Math.PI/3,-2*Math.PI/3]){const a=Yd.ry+da,rr=Yd.r+.8+.5+HD+k*SV;
