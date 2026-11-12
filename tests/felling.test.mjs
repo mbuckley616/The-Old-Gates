@@ -34,6 +34,10 @@ const r = await page.evaluate(() => {
   tick(.9); out.fell = { chop: CHOP, down: !!t.out, logs: bagCount(b => !!b.log), kind: (BAG.find(b => b.log) || {}).name,
     count: im.count, n0, inMesh: im.userData.tids.indexOf(id), solids: ch.sol.filter(s => s.tid === id).length,
     stump: !!(t.out && t.out.stump && t.out.stump.parent === ch.group), rec: worldState.felled[id], day0, learned: SKILLS.woodcutting.p > 0 || SKILLS.woodcutting.lv > 5 };
+  /* S2123 — on the new look the stump is the kit's: its bark by the species, its notch toward where you faced, its foot in the ground */
+  { const st = t.out && t.out.stump, k = st && st.userData.kit, d = st ? Math.atan2(Math.sin(st.rotation.y - (yaw + Math.PI / 2)), Math.cos(st.rotation.y - (yaw + Math.PI / 2))) : 9;
+    let foot = 9; if (st) { st.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(st.children.find(m => /Bark$/.test(m.name)) || st); foot = +(b.min.y - worldH(t.x, t.z)).toFixed(3); }
+    out.kitStump = { look: window.OG_LOOK, kit: !!k, kind: k && k.kind, want: typeof stumpKind === 'function' ? stumpKind(t.sp) : null, tris: k && k.tris, draws: k && k.draws, faces: +Math.abs(d).toFixed(4), foot }; }
   out.nearAfter = treeNear() ? treeNear().t.id : null;
   out.again = strikeTree(ch, t, 0).why;
   // ── fewer strikes by skill; the war axe at half pace ──
@@ -135,6 +139,7 @@ check('and falls at the 6th', r.fell.down && !r.fell.chop, r.fell);
 check('2 to 4 logs into the bag', r.fell.logs >= 2 && r.fell.logs <= 4, r.fell.logs);
 check('the tree leaves its mesh and its solids', r.fell.count === r.fell.n0 - 1 && r.fell.inMesh < 0 && r.fell.solids === 0 && r.solid0 >= 1, r.fell);
 check('a stump stands in its place', r.fell.stump);
+if (r.kitStump && r.kitStump.look === 'new') check('on the new look the stump is the kit\'s: its bark by the species, under 1,500 triangles in 3 draws, the notch toward where you faced, its foot in the ground (S2123)', r.kitStump.kit && r.kitStump.kind === r.kitStump.want && r.kitStump.tris < 1500 && r.kitStump.draws <= 3 && r.kitStump.faces < .01 && r.kitStump.foot < -.05 && r.kitStump.foot > -.3, r.kitStump);
 check('worldState.felled holds the day', r.fell.rec === r.fell.day0, [r.fell.rec, r.fell.day0]);
 check('a strike teaches Woodcutting', r.fell.learned);
 check('a felled tree is not offered again', r.nearAfter !== r.id && /down/.test(r.again || ''), [r.nearAfter, r.again]);

@@ -1290,7 +1290,8 @@ function treeDown(id){const d=(worldState.felled||{})[id];return d!=null&&gameMi
 function fellable(t){return t&&t.r>0&&!FELL_NOT.includes(t.sp)&&!(typeof MUSH_KINDS!=='undefined'&&MUSH_KINDS.includes(t.sp));}
 // the stump: one short trunk, its cut face pale, shared by every stump and scaled to the trunk's collider
 let _stumpGeo=null,_stumpMat=null;
-function stumpMesh(t){if(!_stumpGeo){_stumpGeo=new THREE.CylinderGeometry(.8,1,1,9);_stumpGeo.translate(0,.5,0);
+function stumpMesh(t){{let K=null;try{K=typeof stumpProp==='function'?stumpProp(t):null;}catch(e){K=null;}if(K)return K;} /* S2123 — the kit's stump on the new look */
+  if(!_stumpGeo){_stumpGeo=new THREE.CylinderGeometry(.8,1,1,9);_stumpGeo.translate(0,.5,0);
     _stumpMat=[new THREE.MeshLambertMaterial({color:0x5a4030}),new THREE.MeshLambertMaterial({color:0xc8a878}),new THREE.MeshLambertMaterial({color:0x5a4030})];}
   const m=new THREE.Mesh(_stumpGeo,_stumpMat),rr=Math.max(.14,Math.min(.5,t.r*.55));m.scale.set(rr,.42,rr);
   m.position.set(t.x,t.h-.06,t.z);m.name='stump';m.castShadow=true;m.receiveShadow=true;m.userData.tree=t.id;return m;}
@@ -1339,7 +1340,7 @@ function strikeTree(ch,t,n){
   const it=survItem(t.sp==='pine'?'pine':'log');if(!canCarry(it))return {why:'Too heavy to carry!'};
   n++;const need=fellStrikes();
   if(n<need){skillUse('woodcutting',1);return {n,need};}
-  const k=treeLogs(t),hw=heartwoodHere(t);fellTree(ch,t);it.qty=k;bagAdd(it);if(hw)bagAdd(benchItem('heartlog',1));skillUse('woodcutting',4);if(perk('woodcutting',25))layTrunk(ch,t,yaw);
+  const k=treeLogs(t),hw=heartwoodHere(t);t.fall=yaw;fellTree(ch,t);it.qty=k;bagAdd(it);if(hw)bagAdd(benchItem('heartlog',1));skillUse('woodcutting',4);if(perk('woodcutting',25))layTrunk(ch,t,yaw);
   if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onFell)WORLD.guild.onFell(it.log,k); /* S1563 — a timber Supply counts the fall */
   return {n,need,logs:k,item:it,heart:hw};}
 // working a tree: E starts it, E again, walking off, or the fall stops it

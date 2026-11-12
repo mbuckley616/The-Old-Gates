@@ -4593,6 +4593,55 @@ function felledTrunk(L = 9, R = .35, seed = 1) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, TKM[k]); m.name = 'trunk:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, L, R };
 }
+// S2123 — the stump a felled tree leaves (the concept artist's camp.js stump, S2091; #1405 gave it no options; survival's owed props): felled
+// as a hatchet fells it, a notch on the side it falls to (its flat at notchY), the back cut a hand higher on the far side, the torn hinge's
+// splinters standing between them; the root flare (the oak's most, the birch's least) running into four or five roots, and chips on the
+// ground on the notch's side. Built in its own frame, the notch toward +x (where the tree fell), its foot 0.12 m into the ground at y = 0;
+// o.ground(x, z) the land's height there (the roots and the chips lie on it). Seeded: one id, one stump.
+//   PKIT.props.stump(kind 'oak' | 'pine' | 'birch', { r, seed, ground }) -> { group, tris, draws, h (the back cut's height), r }
+let STM = null;
+function birchBarkTex() { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), r = stream('birchbark');
+  x.fillStyle = '#ddd8cc'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 70; i++) { const w = 6 + r() * 26, y = r() * 256; x.fillStyle = r() < .5 ? 'rgba(30,26,22,.85)' : 'rgba(60,52,44,.6)'; x.fillRect(r() * 256, y, w, 1.5 + r() * 3); }
+  for (let i = 0; i < 256; i += 4) { x.fillStyle = 'rgba(120,110,95,' + (.04 + r() * .06).toFixed(3) + ')'; x.fillRect(0, i, 256, 1); }
+  const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, 'rgba(30,24,18,0)'); g.addColorStop(.8, 'rgba(30,24,18,0)'); g.addColorStop(1, 'rgba(30,24,18,.55)'); x.fillStyle = g; x.fillRect(0, 0, 256, 256); /* dark at the foot */
+  return finishTex(c); }
+function treeStump(kind = 'oak', o = {}) {
+  kind = kind === 'pine' || kind === 'birch' ? kind : 'oak';
+  if (!TKM) felledTrunk(4, .3, 0);
+  if (!STM) STM = { oakBark: mat('bark', { ns: 1.3, color: 0xa89484, rough: .95 }), pineBark: mat('bark', { ns: 1.2, color: 0xc08a68, rough: .95 }), birchBark: new THREE.MeshStandardMaterial({ map: birchBarkTex(), roughness: .75 }),
+    end: TKM.end, split: mat('wood', { ns: .8, color: 0xe0c49c, rough: .9 }) };
+  const R = o.r ?? (kind === 'oak' ? .34 : kind === 'pine' ? .26 : .16), rr = stream('stump:' + kind + ':' + (o.seed ?? 1)), G0 = typeof o.ground === 'function' ? o.ground : () => 0;
+  const H = kind === 'birch' ? .38 : kind === 'pine' ? .5 : .46, notchY = H - .02, backY = H + R * .22, NR = kind === 'birch' ? 12 : 16, NS = 6, bark = kind + 'Bark';
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z), B = new Map(), add = (k, g, drape) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    if (drape) { const P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setY(i, P.getY(i) + G0(P.getX(i), P.getZ(i))); g.computeVertexNormals(); }
+    if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  const nRoot = kind === 'birch' ? 3 : 5, ph = rr() * 6, flare = kind === 'oak' ? 1.0 : kind === 'pine' ? .7 : .35;
+  const rad = (y, a) => R * (1 + flare * Math.exp(-y / .12) * (.55 + .45 * Math.max(0, Math.cos(a * nRoot + ph)) ** 2) + .03 * Math.sin(a * 7 + ph));
+  const topAt = a => { const x = Math.sin(a); return x > .12 ? notchY : x < -.12 ? backY : notchY + (backY - notchY) * (.12 - x) / .24; };
+  { const P = [], U = []; for (let i = 0; i < NS; i++) for (let k = 0; k < NR; k++) { const q = [[i, k], [i + 1, k], [i + 1, k + 1], [i, k + 1]].map(([ii, kk]) => { const a = kk / NR * Math.PI * 2, t = ii / NS, y = -.12 + (topAt(a) + .12) * t, r = rad(Math.max(0, y), a);
+        return [[r * Math.sin(a), y, r * Math.cos(a)], [kk / NR * Math.max(2, Math.round(R * 14)), y * 3.2]]; });
+      for (const j of [0, 1, 2, 0, 2, 3]) { P.push(...q[j][0]); U.push(...q[j][1]); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); g.computeVertexNormals(); add(bark, g); }
+  // the roots: tapering, from inside the flare out and down into the ground (laid on it)
+  for (let k = 0; k < nRoot; k++) { const a = k / nRoot * Math.PI * 2 - ph / nRoot + (rr() - .5) * .3, L = R * (.7 + rr() * .5) * flare + .08, rr0 = R * .32 * (.6 + flare * .4);
+    const A = V3(Math.sin(a) * R * .45, .2, Math.cos(a) * R * .45), C = V3(Math.sin(a) * (R + L), -.06, Math.cos(a) * (R + L)), len = A.distanceTo(C);
+    const g = new THREE.CylinderGeometry(rr0 * .35, rr0, len, 7, 3); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), C.clone().sub(A).normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); add(bark, g, true); }
+  // the two cut faces, each its half, their rings drawn; the hinge's torn fibres between them; the chips where they flew
+  const face = (side, y) => { const E = [], EU = []; for (let k = 0; k < NR; k++) { const a0 = k / NR * Math.PI * 2, a1 = (k + 1) / NR * Math.PI * 2, x0 = Math.sin(a0), x1 = Math.sin(a1);
+      if (side > 0 ? (x0 < .12 && x1 < .12) : (x0 > -.12 && x1 > -.12)) continue;
+      const c = [side * R * .06, y, 0], p0 = [rad(y, a0) * .97 * x0, topAt(a0), rad(y, a0) * .97 * Math.cos(a0)], p1 = [rad(y, a1) * .97 * x1, topAt(a1), rad(y, a1) * .97 * Math.cos(a1)];
+      for (const p of [c, p1, p0]) { E.push(...p); EU.push(.5 + p[0] / (R * 2.1), .5 + p[2] / (R * 2.1)); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(E, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(EU, 2)); g.computeVertexNormals(); add('end', g); };
+  face(1, notchY); face(-1, backY);
+  for (let k = 0; k < 7; k++) { const z = (k / 6 - .5) * R * 1.5, h = (backY - notchY) + R * (.02 + rr() * .1), w = .01 + rr() * .015, g = new THREE.BoxGeometry(w, h, .02 + rr() * .02);
+    g.translate(0, h / 2, 0); g.rotateZ((rr() - .3) * .25); g.translate((rr() - .5) * .03, notchY, z); add('split', g); }
+  for (let k = 0; k < (kind === 'birch' ? 5 : 9); k++) { const a = (rr() - .5) * 1.6 + Math.PI / 2, d = R + .2 + rr() * .7, g = new THREE.BoxGeometry(.05 + rr() * .04, .012, .03 + rr() * .02);
+    g.rotateY(rr() * 6); g.rotateZ((rr() - .5) * .4); g.translate(Math.sin(a) * d, .008, Math.cos(a) * d); add('split', g, true); }
+  const group = new THREE.Group(); group.name = 'stump'; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, STM[k]); m.name = 'stump:' + k; m.castShadow = k !== 'split'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, h: +backY.toFixed(3), r: R };
+}
 // S2094 (camp and rest B's look session, Michael's B on #1378; OG-023's "shelter" and "bedrolls and camp comforts") — the camp you make:
 // a lean-to of poles thatched with boughs, the five bedrolls laid out (the blanket roll, the wool bedroll, and each island's own: the
 // Gatelands' quilted plaid roll, the Mark's fur sleeping sack, Aurenne's linen hammock slung on its two shears), and the tent pitched over
@@ -9797,7 +9846,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, shape: S, houses, slip, steps, stairTop: S.stairTop, lookout: look, boats, cargo };
   }
   aurenneCove.shape = coveShape; /* the world reads the cut ground before the piece is built (offroadStamps) */
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, camp: campGear, fire: campFire }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, camp: campGear, fire: campFire }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

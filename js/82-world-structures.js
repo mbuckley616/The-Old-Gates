@@ -2884,6 +2884,16 @@
       C=PKIT.props.fire(isle,{ground,key,stage:st});for(const c of [...C.group.children])g.add(c);g.userData.fire.stage=st;g.userData.fire.tris=C.tris;g.userData.fire.draws=C.draws;};
     g.userData.fire={island:isle,stage:null,tris:0,draws:0,tick(f,hours){const st=campFireStage(f,hours);if(st!==this.stage)build(st);C.tick(performance.now()/1000);}};
     build(o.stage||'lit');return g;}
+  // S2123 — the stump a felled tree leaves, the kit's (PKIT.props.stump, 38-kit.js), on the new look: its bark by the tree's species (the pines,
+  // the spruces and the snowpine a pine's; a birch a birch's; the rest an oak's), its girth the old stand-in's (the trunk's collider × .55,
+  // 0.14 to 0.5 m), the roots and the chips laid on the land. The notch faces the way the tree fell: t.fall where you felled it this visit, else
+  // a direction by its id (the trunk is gone by then). -> the Group, named 'stump' as the stand-in, or null on the old look
+  function stumpKind(sp){sp=String(sp||'');return /pine|conifer|spruce|fir|larch/.test(sp)?'pine':/birch|aspen/.test(sp)?'birch':'oak';}
+  function stumpProp(t){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.stump||!t)return null;
+    const R=Math.max(.14,Math.min(.5,(t.r||.3)*.55)),y0=worldH(t.x,t.z),fy=t.fall!=null?t.fall:(()=>{let h=2166136261;for(const c of String(t.id))h=Math.imul(h^c.charCodeAt(0),16777619);return (h>>>0)/4294967296*Math.PI*2;})();
+    const ry=fy+Math.PI/2,co=Math.cos(ry),s_=Math.sin(ry),ground=(lx,lz)=>worldH(t.x+lx*co+lz*s_,t.z-lx*s_+lz*co)-y0;
+    const K=PKIT.props.stump(stumpKind(t.sp),{r:R,seed:t.id,ground});K.group.position.set(t.x,y0,t.z);K.group.rotation.y=ry;
+    K.group.name='stump';K.group.userData.tree=t.id;K.group.userData.kit={kind:stumpKind(t.sp),tris:K.tris,draws:K.draws,r:R,h:K.h};return K.group;}
   function bladeStoneProp(){const r=pRng(0xb1ade5),g=new THREE.Group(),P=[];
     {const s=SK.bumpy(SK.rbox(.95,1.1,.62,.16,3),.045,6,4.2),pa=s.attributes.position;for(let i=0;i<pa.count;i++){const t=(pa.getY(i)+.55)/1.1;pa.setX(i,pa.getX(i)*(1-.16*t));pa.setZ(i,pa.getZ(i)*(1-.12*t));}s.computeVertexNormals();
       P.push({geo:s,color:new THREE.Color(0x77746b),x:0,y:.5,z:0,rz:.04,jitter:.1});}
