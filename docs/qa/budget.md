@@ -951,3 +951,32 @@ at Low is 626 of its 700 calls: 74 left.*
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
 
 *s1483, QA Session 2110 (`budget` 8/8, then `budgetport` 9/9 in about 700 s, one try, run alone; an earlier boot read Portclare 357 / 538 / 584 and was cut off at the inn by my own `timeout` wrapper; a third, unrecorded, read 356 / 536 / 583). From this table on, every count is taken with the bodies in reach built: `budgetkit`'s `bodies()` runs the builder (`hbTick`) on its own clock until none in 46 m of the camera waits, which took 78–92 s at Portclare and 4 s at Dunmore. Portclare's Bodies column was a sample of a build in progress before this (S2104: 29 to 45 at Middle on one build); it now reads 43–45 at Middle in three boots. High's 53 here is 21 bodies in reach against 19 at Low, a townsperson who walked in. A body still waiting when counted would show in the Bodies cell as "(n of m unbuilt)".*
+
+### s1490 — 2026-11-12 01:08 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 572 | 1.08 M | 0 | 0 | 108 | 120 | 253 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | Middle | 726 | 1.81 M | 136 | 6 | 108 | 120 | 265 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | High | 776 | 2.29 M | 168 | 6 | 108 | 120 | 283 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Low | 626 | 1.04 M | 0 | 0 | 105 | 176 | 253 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Middle | 804 | 1.76 M | 160 | 6 | 105 | 176 | 265 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | High | 864 | 2.30 M | 202 | 6 | 105 | 176 | 283 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| the field west of Dunmore, noon | Low | 534 | 623k | 0 | 0 | 103 | 107 | 281 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 642 | 1.04 M | 83 | 6 | 103 | 107 | 300 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 689 | 1.51 M | 122 | 6 | 103 | 107 | 308 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 633 | 666k | 0 | 0 | 122 | 186 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 785 | 1.09 M | 143 | 6 | 106 | 186 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 837 | 1.62 M | 187 | 6 | 106 | 186 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+
+### s1490 — 2026-11-12 01:22 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 357 | 682k | 0 | 0 | 29 | 60 | 192 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | Middle | 539 | 1.48 M | 144 | 6 | 45 | 60 | 208 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | High | 585 | 1.81 M | 179 | 6 | 45 | 60 | 219 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 394k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+*s1490, QA Session 2120 (`budget` 8/8, then `budgetport` 9/9, one try each, `--no-retry`; `run.mjs budget` also ran `budgetport` once, which read Portclare 355 / 538 / 585 with 28 / 45 / 46 body calls, 9/9). Seven builds after s1483, among them the campfire (S2114), the swords by island and Gaoth's gates (S2115–2117) and the satchel (S2113); none stands at these spots. Every spot is within 2.3% of s1483. Dunmore at noon on High 793 → 776: 108 body calls where s1483 had 125, the townsperson who walked in then. The field at dawn on Low 619 → 633: 122 body calls against 108 at Middle and High in the same boot, someone in reach at Low's moment; Middle and High 787 → 785, 839 → 837. Portclare's drain took 58 s, then 0–1 s per level; `budgetport` took about 7 minutes by the tables' clocks, with `cookfed` running beside it for part of that.*
