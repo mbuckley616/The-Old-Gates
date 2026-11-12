@@ -3,7 +3,7 @@
 // Cave Bear's own brown, whose plantigrade legs have three bones to the driver's four (hcMap: the paw takes the driver's paw). A line of
 // the two and an Ash Hound (its own plan since Session 1274) ahead of you: each on the kit's skeleton, keyed by its foe id; its hips at its driver's;
 // three levels by distance; a run that moves the kit's bones with its feet by the driver's; the tell's glow; and killed, a corpse
-// darkened with its shaders kept that lies with its driver. Session 1273 adds the coach's two horses on the kit's horse. Pictures: docs/prototypes/f4/f4-beasts.jpg and f4-beasts-near.jpg.
+// darkened with its shaders kept that lies with its driver. Session 1273 adds the coach's two horses on the kit's horse, Session 2148 the ox and the yoked ox. Pictures: docs/prototypes/f4/f4-beasts.jpg, f4-beasts-near.jpg and f4-oxen.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -167,6 +167,40 @@ check(`Aurenne's coach team is two mules (${ta0.tris}, ${ta1.tris} triangles), k
   [ta0, ta1].every(h => h.hc && h.kind === 'Mule' && h.plan === 'mule' && h.island === 'aurenne' && h.map === 24 && h.seed === h.want) && ta0.seed !== ta1.seed, teams);
 check(`every team stands on its hooves (${teams.map(h => h.toes.join(', ')).join('; ')} m)`, teams.every(h => h.toes && h.toes.every(y => Math.abs(y) < .05)), teams.map(h => h.toes));
 
+// Session 2148 (L3, OG-046; backlog L3's "oxen on a driver of their own for the ox cart"): buildAnimal('Ox' | 'Yoked Ox', key) builds the
+// kit's ox (the cow's plan at 1.15) and the same ox under its yoke and bow, on a driver of their own (WOLF_KINDS' Ox, the cow's legs, broader),
+// keyed burden:<key>, which no spawn rolls. The plain ox and the yoked one on the same key are the same beast, the yoke the only difference;
+// each stands on its hooves with its hips at 1.41 m, its back about a man's shoulder; at a walk its bones move and its hooves keep the ground
+const oxen = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
+  window._OX = [['Ox', 'f4oxen:0'], ['Yoked Ox', 'f4oxen:0'], ['Yoked Ox', 'f4oxen:1']].map(([n, key], j) => { const hg = new THREE.Group(), rg = buildAnimal(n, key); hg.add(rg.root);
+    const x = px + fx * 9 + sx * (j - 1) * 3.4, z = pz + fz * 9 + sz * (j - 1) * 3.4; hg.position.set(x, WORLD.worldH(x, z), z); hg.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(hg); return { n, key, hg, rg }; });
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  let k = 0; HBODY.last = -1e9; while (_OX.some(h => !h.rg.hc && !h.rg.hcFail) && k++ < 300) tickCreatures(1 / 60, 1.05e6 + k * (HBODY.gap + 1));
+  return _OX.map(({ n, hg, rg }) => { const H = rg.hc; if (!H) return { n, hc: false }; hg.updateMatrixWorld(true); const by = H.C.byName;
+    const a = by.spine0.getWorldPosition(new THREE.Vector3()), b = rg.B.hips.getWorldPosition(new THREE.Vector3()), box = new THREE.Box3(); for (const m of H.C.meshes) box.expandByObject(m);
+    return { n, hc: true, key: rg.hcKey, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rg.hcKey), map: H.map.length, tris: H.C.stats.tris, hips: +a.distanceTo(b).toFixed(3),
+      hipY: +(a.y - hg.position.y).toFixed(3), man: +((box.max.y - hg.position.y) / SCALE.PEOPLE.gatelander.m).toFixed(2), yoke: H.C.plan.parts.some(([p, o]) => p === 'harness' && o.kind === 'yoke'),
+      ...(() => { let n = 0, all = 0; H.C.root.traverse(o => { if (o.isMesh && !H.C.meshes.includes(o)) { n++; const G = o.geometry; all += (G.index ? G.index.count : G.attributes.position.count) / 3; } }); return { bits: n, bitTris: all }; })(),
+      toes: ['leg0L_4', 'leg0R_4', 'leg1L_4', 'leg1R_4'].map(t => +(by[t].getWorldPosition(new THREE.Vector3()).y - hg.position.y).toFixed(3)) }; }); });
+console.log('  oxen:', JSON.stringify(oxen));
+const [ox0, oy0, oy1] = oxen;
+check(`the ox and the yoked ox wear the kit's ox (${oxen.map(o => o.plan + ' ' + o.tris).join(', ')} triangles of hide), keyed burden:<key>; on one key the same hide, the yoke and its bow ${oy0.bits - ox0.bits} more pieces and ${oy0.bitTris - ox0.bitTris} triangles`,
+  oxen.every(o => o.hc && o.map === 24 && o.seed === o.want && /^burden:/.test(o.key) && o.hips < .03) && ox0.plan === 'ox' && !ox0.yoke && oy0.plan === 'yokedox' && oy0.yoke && oy1.yoke
+  && ox0.seed === oy0.seed && oy0.seed !== oy1.seed && oy0.tris === ox0.tris && oy0.bits === ox0.bits + 2 && oy0.bitTris - ox0.bitTris > 100, oxen);
+check(`each ox stands on its hooves (${oxen.map(o => o.toes.join(', ')).join('; ')} m), its hips at ${oxen.map(o => o.hipY).join(', ')} m and its horns at ${oxen.map(o => o.man).join(', ')} of a man`,
+  oxen.every(o => o.toes.every(y => Math.abs(y) < .05) && Math.abs(o.hipY - 1.41) < .05 && o.man > .95 && o.man < 1.3), oxen);
+{ const url = await page.evaluate(() => { const a = _OX[0].hg.position, b = _OX[2].hg.position, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+    window._OXP = [px, pz]; px = mx - fx * 6; pz = mz - fz * 6; CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.lookAt(mx, worldH(mx, mz) + .9, mz); CAM.updateMatrixWorld(true); const hid = _W.map(w => [w.e.mesh, w.e.mesh.visible]); for (const [m] of hid) m.visible = false;
+    REN.render(scene, CAM); const u = REN.domElement.toDataURL('image/jpeg', .85); for (const [m, v] of hid) m.visible = v; return u; });
+  fs.writeFileSync(path.join(OUT, 'f4-oxen.jpg'), Buffer.from(url.split(',')[1], 'base64')); }
+const oxWalk = await page.evaluate(() => { const { hg, rg } = _OX[1], H = rg.hc, by = H.C.byName, sk = H.C.skel; sk.update(); const a = Array.from(sk.boneMatrices); let low = 9;
+  for (let i = 0; i < 120; i++) { hg.position.x += Math.sin(hg.rotation.y) * 1.1 / 60; hg.position.z += Math.cos(hg.rotation.y) * 1.1 / 60; hg.position.y = WORLD.worldH(hg.position.x, hg.position.z); tickCreatures(1 / 60, 1.1e6 + i * 16.7);
+    if (i > 50) { hg.updateMatrixWorld(true); for (const t of ['leg0L_4', 'leg0R_4', 'leg1L_4', 'leg1R_4']) { const p = by[t].getWorldPosition(new THREE.Vector3()); low = Math.min(low, p.y - WORLD.worldH(p.x, p.z)); } } }
+  sk.update(); const b = Array.from(sk.boneMatrices); let moved = 0; for (let i = 0; i < a.length; i++) moved = Math.max(moved, Math.abs(a[i] - b[i]));
+  return { moved: +moved.toFixed(3), low: +low.toFixed(3), stand: +rg.w.stand.toFixed(2) }; });
+check(`the yoked ox walked 1.1 m/s: its bones move (by ${oxWalk.moved}) and its lowest hoof stays by the ground (${oxWalk.low} m)`, oxWalk.moved > .01 && oxWalk.stand < .2 && Math.abs(oxWalk.low) < .06, oxWalk);
+await page.evaluate(() => { for (const { hg } of _OX) hg.parent.remove(hg); [px, pz] = _OXP; tickCreatures(1 / 60, 1.2e6); });
+
 // the beasts by island (Session 1969, L3, OG-031): a foe made in the open world wears its island's coat, read at its home. The Mark's Snow
 // Wolf is the kit's Stonefang (the Ironwolf's stone grey, darker than the white), its Cave Bear the kit's own Frostreach (paler than the
 // brown), its Wolf the kit's colder coat; made at home each is as before
@@ -189,12 +223,17 @@ console.log('  by island:', JSON.stringify(isles));
     && sw1.L < sw0.L - .25 && cb1.L > cb0.L + .3 && w1.L > w0.L + .05, isles); }
 
 // the pictures: the line from 7 m, then the bear from 4 m
+// Session 2148: each a frame drawn and read back from the canvas (f4animals' way, S1745); Playwright's screenshot waited on the live loop's
+// queue of frames and ran past 120 s on both tries here
+const shoot = async (file) => { const url = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw); CAM.position.set(px, worldH(px, pz) + 1.65, pz);
+  CAM.rotation.order = 'YXZ'; CAM.rotation.set(pitch, yaw, 0); CAM.updateMatrixWorld(true); REN.render(scene, CAM); return REN.domElement.toDataURL('image/jpeg', .85); });
+  fs.writeFileSync(path.join(OUT, file), Buffer.from(url.split(',')[1], 'base64')); };
 await page.evaluate(() => { const a = _W[0].e, b = _W[2].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 7; pz = mz - fz * 7; pitch = -.12; });
 for (let i = 0; i < 8; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }
-await page.screenshot({ path: path.join(OUT, 'f4-beasts.jpg') });
+await shoot('f4-beasts.jpg');
 await page.evaluate(() => { const f = _W[1].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 4; pz = f.z - fz * 4; pitch = -.2; });
 for (let i = 0; i < 6; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }
-await page.screenshot({ path: path.join(OUT, 'f4-beasts-near.jpg') });
+await shoot('f4-beasts-near.jpg');
 
 const dead = await page.evaluate(() => { const f = _W[0], rig = f.rig, before = []; rig.hc.W.traverse(o => { if (o.isMesh) before.push([o, o.material]); });
   f.e.hp = 0; killZoneEnemy(f.e, WORLD.scene, '');
