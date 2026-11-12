@@ -1012,8 +1012,22 @@ function homePlaces(h){return HOME_PLACES[homeSize(h)]||3;}
 function homeFitRec(h){const F=worldState.fittings||(worldState.fittings={});const r=F[h.id]||(F[h.id]={fit:[],stored:[]});
   if(!Array.isArray(r.fit))r.fit=[];if(!Array.isArray(r.stored))r.stored=[];r.fit=r.fit.filter(k=>HOME_FITS[k]);r.stored=r.stored.filter(k=>HOME_FITS[k]);return r;}
 function homeFitted(h,k){const r=worldState.fittings&&h&&worldState.fittings[h.id];return !!(r&&Array.isArray(r.fit)&&r.fit.includes(k));}
-function homeHere(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&homeMine(currentHouse)?currentHouse:null;}
-function homeFitHere(k){const h=homeHere();if(!h||!homeFitted(h,k))return false;const sp=h._fits&&h._fits[k];return !sp||Math.hypot(px-sp.x,pz-sp.z)<=2;}
+// S2153 — the house's own yard counts (the page: B's fittings "stand in the yard first"; the look builder's S2147 asked for it). A fitting
+// stood outdoors is `h._yardFits[k] = {x, z}`, world metres, unsaved, set by whoever lays it in the yard (84's homeFitsDress); outdoors,
+// within HOME_YARD_REACH of a fitted one of your own house, you are at the house: its page opens on E and homeFitHere(k) holds for it.
+// Indoors nothing changes: `h._fits` is the room's, and is never read outdoors
+const HOME_YARD_REACH=2;
+function homeYardAt(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
+  const F=worldState.fittings;if(!F||typeof SETTLE==='undefined')return null;let best=null,bd=HOME_YARD_REACH;
+  for(const S of SETTLE.values()){if(!S||!S.site||!Array.isArray(S.houses)||Math.hypot(px-S.site.x,pz-S.site.z)>(S.reach||200)+60)continue;
+    for(const h of S.houses){if(!h||!h._yardFits||!F[h.id]||!homeMine(h))continue;
+      for(const k in h._yardFits){const sp=h._yardFits[k];if(!sp||!homeFitted(h,k))continue;const d=Math.hypot(px-sp.x,pz-sp.z);if(d<=bd){bd=d;best={h,k};}}}}
+  return best;}
+function homeHere(){if(typeof isInterior==='function'&&isInterior())return typeof currentHouse!=='undefined'&&homeMine(currentHouse)?currentHouse:null;
+  const Y=homeYardAt();return Y?Y.h:null;}
+function homeFitHere(k){if(!(typeof isInterior==='function'&&isInterior())){const Y=homeYardAt();if(!Y)return false;const sp=Y.h._yardFits[k];
+    return !!sp&&homeFitted(Y.h,k)&&Math.hypot(px-sp.x,pz-sp.z)<=HOME_YARD_REACH;}
+  const h=homeHere();if(!h||!homeFitted(h,k))return false;const sp=h._fits&&h._fits[k];return !sp||Math.hypot(px-sp.x,pz-sp.z)<=2;}
 // why a fitting cannot go in now, by gold or by planks, or null
 function homeFitWhy(h,k,how){if(!homeMine(h))return 'This is not your house.';const F=HOME_FITS[k];if(!F)return 'No such fitting.';const r=homeFitRec(h);
   if(r.fit.includes(k))return `The house has ${F.a} already.`;if(r.fit.length>=homePlaces(h))return `The house has room for ${homePlaces(h)}; take one out first.`;
@@ -2793,6 +2807,7 @@ function interact(){
     if(hasShovel()&&(DIG||clayBankHere())&&digStart())return; /* S2138 — clay from a bank, with a shovel */
     if(fillHere())return; /* S2012 — water B: a well, a river, a lake; the sea answers */
     if(campfireNear()){openCookPage();return;} /* S1525 — a lit fire: its page (the critic's s995: only the bag opened it) */
+    if(homeYardAt()){openHousePage();return;} /* S2153 — your house's yard: a fitting stood there, its page */
     // v61ae: Bram's body needs special handling. The standard zone-corpse
     // check below requires items.length>0, which means an already-looted body
     // with empty items becomes NON-interactable. But Bram's body should always
