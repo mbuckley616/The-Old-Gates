@@ -344,7 +344,9 @@
   // edge, where you stand to work. A room with no such spot keeps the rules' fallback (anywhere in the house). The racks are the yard's
   // (townRacks, 82): a rack fitted or taken out now is stood or struck in the yard at once. homeFitsDress(h) runs on coming in
   // (goToInterior) and after a fitting goes in or out (homeFit, homeUnfit). New look only.
-  const HOMEFIT_LAY={bench:homeBenchLay};
+  // S2147 — the clay oven and the kiln (PKIT.props.clay, 38-kit.js, by the house's island) stand by a wall as the bench does, after it, each
+  // clear of the fittings already laid; the kiln, the larger, last. A room with no free wall for one keeps the fallback for it.
+  const HOMEFIT_LAY={bench:homeBenchLay,oven:h=>homeClayLay(h,'oven'),kiln:h=>homeClayLay(h,'kiln')};
   function homeFitsDress(h){if(window.OG_LOOK!=='new'||!h||typeof homeMine!=='function'||!homeMine(h))return;
     try{homeYardRacks(h);}catch(e){console.warn('home racks',e);}
     if(typeof isInterior!=='function'||!isInterior()||currentHouse!==h||!interiorScene)return;
@@ -361,7 +363,7 @@
     try{keep.push([intArriveX(h),intArrivalZ(h),1.2]);}catch(e){}
     for(const b of INT_BEDS||[])if(!(b.y>1))keep.push([b.x,b.cz!=null?b.cz:b.z,.9]);
     if(INT_BOX&&INT_BOX.x!=null)keep.push([INT_BOX.x,INT_BOX.z,.9]);if(HATCH&&HATCH.active&&!HATCH.roof&&!(HATCH.y>1))keep.push([HATCH.x,HATCH.z,.9]);
-    if(intStashPos)keep.push([intStashPos.x,intStashPos.z,.9]);for(const q of INT_DOORS||[])if(q&&q.x!=null)keep.push([q.x,q.z,1.2]);
+    if(intStashPos)keep.push([intStashPos.x,intStashPos.z,.9]);if(h._fits)for(const k in h._fits)keep.push([h._fits[k].x,h._fits[k].z,.7]); /* S2147 — where you stand at a fitting already laid */for(const q of INT_DOORS||[])if(q&&q.x!=null)keep.push([q.x,q.z,1.2]);
     const low=[...(INT_SOL||[]).filter(s=>s.y0<1.6&&s.y1>.05),...(FOOTHOLDS||[]).filter(f=>f.y>.05&&f.y<1.6)];
     const over=(a,b)=>a.x0<b.x1&&a.x1>b.x0&&a.z0<b.z1&&a.z1>b.z0;
     // a wall: where it starts (ox, oz), the way it runs (ax, az) for L, and its normal into the room (nx, nz)
@@ -391,6 +393,15 @@
     B.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(B.group);
     const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:B.top,homeFit:'bench'});FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:B.top,homeFit:'bench'});
     h._fits.bench={x:+sp.front[0].toFixed(3),z:+sp.front[1].toFixed(3)};}
+  function homeClayLay(h,kind){if(typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.clay)return;let isle='gatelands';try{isle=nationAt(h.doorX,h.doorZ)||'gatelands';}catch(e){}
+    let P=null,sp=null;for(const small of [false,true]){P=PKIT.props.clay(kind,isle,{small});const f=P.foot;sp=homeWallSpot(h,f.x1-f.x0,f.z1-f.z0,.8,homeWallWhole);if(sp)break; /* a full room takes the small one */
+      P.group.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+    if(!sp)return;const cx=(P.foot.x0+P.foot.x1)/2;
+    for(const c of P.group.children)c.position.x-=cx; /* the spot is the foot's middle; the kiln's pots stand off its own */
+    P.group.position.set(sp.x,0,sp.z);P.group.rotation.y=sp.ry;P.group.userData.homeFit=kind;P.group.userData.kit={tris:P.tris,draws:P.draws,island:isle,small:P.foot.x1-P.foot.x0<(kind==='oven'?.9:1)};
+    P.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(P.group);
+    const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:P.top,homeFit:kind});FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:P.top,homeFit:kind});
+    h._fits[kind]={x:+sp.front[0].toFixed(3),z:+sp.front[1].toFixed(3)};}
   // the wall behind a thing w wide is whole: from 0.3 m into the room, rays back to the wall at 0.5, 1.0 and 1.4 m up, at its middle and
   // 0.1 m in from each end, each meet the room within 0.45 m (a doorway, an open window or the stair's well lets one through: the
   // townhouse's back door, where the first try hung the bench's tools)
