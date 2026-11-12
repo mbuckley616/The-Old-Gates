@@ -850,7 +850,7 @@ function flagTex(n) { if (FLAGT.has(n)) return FLAGT.get(n); const B = BANNERS[n
   x.save();
   if (B.device === 'harp') { x.translate(150, 128); x.scale(.5, .5); x.translate(-270, -285); drawHarp(x, B.trim); }
   else if (B.device === 'star') { x.translate(150, 128); x.scale(.58, .58); x.translate(-256, -256); drawStar(x, { rays: B.trim, disc: B.trim, ring: B.field }); }
-  else { x.fillStyle = B.trim; x.fillRect(0, 98, 384, 60); x.fillStyle = B.field; x.fillRect(0, 122, 384, 12); }
+  else if (B.device === 'band') { x.fillStyle = B.trim; x.fillRect(0, 98, 384, 60); x.fillStyle = B.field; x.fillRect(0, 122, 384, 12); }
   x.restore(); x.strokeStyle = B.trim; x.lineWidth = 10; x.strokeRect(5, 5, 374, 246); /* a hem in the trim */
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; FLAGT.set(n, t); return t; }
 const FLAGM = new Map(), STAFFM = { m: null };
@@ -887,4 +887,41 @@ export function banner(S, nation, o = {}) {
   const tris = Math.round(sg.index.count / 3 + fg.index.count / 3);
   S.banner = { nation, at, group: g, hoist: +h.toFixed(2), fly: +fly.toFixed(2), staff: [0, +fy.toFixed(2), +fz.toFixed(2)], head: +(fy + len * Math.cos(rake)).toFixed(2), tris, draws: 2 };
   return S;
+}
+
+// ── the black sail (Session 2122, card F11, L6: "the pirates' ships keep the old loft"; a prototype for DECISION). The old look's pirate
+//   (Session 168; #50, Session 278) was any hull under black sails with a red wale. Here that look is a dress laid over any kit hull as
+//   built, as the yard's colours are (swatch, above): one bake, its materials swapped. Every sail takes a black cloth, its panels of three
+//   blacks by turns where the cloth was dyed and re-dyed, a few patches of undyed canvas, and the island's mark struck: the harp and the
+//   sun-star scrubbed out to a ghost a shade off the black, the Mark's two-shade cloths overdyed till the stripes barely show. The hull's
+//   one painted surface (the Gatelands' green strake, Aurenne's blue) goes red, the wale; the Mark's tar topsides stay tar and her gilt line
+//   is painted over red; Aurenne's gilt the same. Her bright timber above the water is tarred dark, her cream trim dulled. She flies no
+//   colours (o.flag 'black' gives her a black flag with a red hem, as an alternative to choose between).
+//   blackSail(S, o) -> S, with S.black { dress, ghost, swapped: [material names], flag }. o.ghost false: the mark gone outright.
+const BLKC = new Map();
+function blackCloth(kind, ghost, harp, star) { const k = kind + '|' + ghost + '|' + harp + '|' + star; if (BLKC.has(k)) return BLKC.get(k);
+  const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d'), R = stream('blackcloth:' + kind);
+  const shades = ['#232124', '#2a282b', '#1f1e21', '#272425'];
+  for (let i = 0; i < 8; i++) { x.fillStyle = kind === 'mark' && ghost ? (i % 2 ? '#262222' : '#1a1919') : shades[(i * 3 + (R() * 2 | 0)) % 4]; x.fillRect(i * 64, 0, 64, 512); }
+  if (ghost && kind === 'gatelands' && harp) { x.globalAlpha = .55; drawHarp(x, '#2c2b2c'); x.globalAlpha = 1; }
+  if (ghost && kind === 'aurenne' && star) { x.globalAlpha = .5; drawStar(x, { rays: '#2a2928', disc: '#2e2c2a', ring: '#242322' }); x.globalAlpha = 1; }
+  for (let p = 0; p < 4; p++) { const w = 34 + R() * 40, h = 30 + R() * 46, px = 30 + R() * 440, py = 40 + R() * 420; x.fillStyle = p % 2 ? '#3a3632' : '#2e2b29'; x.fillRect(px, py, w, h);
+    x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 2; x.setLineDash([4, 4]); x.strokeRect(px + 2, py + 2, w - 4, h - 4); x.setLineDash([]); }
+  x.fillStyle = 'rgba(255,255,255,.035)'; for (let i = 0; i < 512; i += 64) x.fillRect(i, 0, 3, 512); for (let j = 0; j < 512; j += 128) x.fillRect(0, j, 512, 2); /* the seams and reef bands, sun-greyed */
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; BLKC.set(k, t); return t; }
+const BLKM = new Map(), BLACK_RED = 0x7a1e16, BLACK_TAR = 0x3a2c22;
+export function blackSail(S, o = {}) {
+  const dress = S.dress || 'gatelands', ghost = o.ghost !== false, swapped = new Set(), seen = new Set();
+  const swap = (m, key, make) => { const k = m.uuid + '|' + key; if (!BLKM.has(k)) BLKM.set(k, make(m.clone())); return BLKM.get(k); };
+  S.group.traverse(n => { if (!n.isMesh || n.parent && n.parent.name === 'banner') return; const m = n.material, u = m.userData || {}; seen.add(n.name);
+    if (u.swatch === 'cloth' || n.name === 'jib') { const cl = u.cloth || { kind: dress }; n.material = swap(m, 'cloth:' + ghost, c => { const t0 = m.map; c.map = blackCloth(cl.kind || dress, ghost, !!cl.harp, !!cl.star);
+      if (t0) { c.map.wrapS = t0.wrapS; c.map.wrapT = t0.wrapT; } c.userData = { black: 'cloth' }; return c; }); swapped.add(n.name); return; }
+    const red = (u.swatch === 'paint' && dress !== 'mark') || n.name === 'gilt';
+    if (red) { n.material = swap(m, 'red', c => { c.color.setHex(BLACK_RED); if ('metalness' in c) c.metalness = 0; c.roughness = .7; c.userData = { black: 'red' }; return c; }); swapped.add(n.name); return; }
+    if (n.name === 'oak' && dress !== 'mark' || n.name === 'hull' || n.name === 'tar' && dress === 'aurenne') { n.material = swap(m, 'tar', c => { c.color.setHex(BLACK_TAR); c.userData = { black: 'tar' }; return c; }); swapped.add(n.name); return; }
+    if (n.name === 'cream' || n.name === 'paint') { n.material = swap(m, 'dull', c => { c.color.setHex(0x5a5048); c.userData = { black: 'dull' }; return c; }); swapped.add(n.name); } });
+  if (S.banner && S.banner.group) { S.group.remove(S.banner.group); S.banner = null; }
+  let flag = 'none';
+  if (o.flag === 'black') { BANNERS.black = BANNERS.black || { name: 'no nation', field: '#141314', trim: '#7a1e16', device: 'none' }; banner(S, 'black', { yaw: o.yaw }); flag = 'black'; }
+  S.black = { dress, ghost, swapped: [...swapped].sort(), seen: [...seen].sort(), flag }; return S;
 }
