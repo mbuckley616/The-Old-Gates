@@ -4440,6 +4440,79 @@ function joinerBench(o = {}) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, BM[k]); m.name = 'bench:' + k; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, foot: { x0: -L / 2, x1: L / 2, z0: 0, z1: D + .26 }, top: H };
 }
+// ── the clay oven and the kiln (Session 2147; Michael's B on #1420, resources-and-crafting.md's fittings: "a clay oven, 6 clay, laid by
+// hand (a cob oven)" and "a kiln, 10 clay"), the house's two fittings of clay, each to stand against a wall of your room.
+//   'oven'  a cob dome 0.84 m across on a plinth 0.72 m high, its mouth a dark arch at the front with the embers' glow at its back, a flue
+//           behind, split logs in the plinth's open front, and the peel hung on the wall over it.
+//   'kiln'  a small bottle kiln, a cob drum 0.9 m across on a footing, its firing arch glowing at the foot, drawn in to a neck and its vent
+//           at 1.4 m, two fired pots on the floor at its right.
+// By island: the Gatelands' brown cob on grey stone, the kiln's drum hooped in iron; the Mark's grey-brown cob on dark rubble, the kiln's
+// footing a course higher; Aurenne's terracotta on a limewashed plinth, a lime band at the oven's foot and round the kiln.
+// o.small: a smaller one for a full room (the oven 0.8 m wide, the kiln 0.8 m across without its pots).
+//   PKIT.props.clay(kind 'oven' | 'kiln', island, { small }) -> { group, tris, draws, kind, island, foot: { x0, x1, z0, z1 }, top } in the
+//   wall's frame, as the bench's: the wall at z = 0, the piece toward +z, centred on x, the floor at y = 0. One mesh a material, five in all.
+let CYM = null;
+function clayMats() {
+  if (CYM) return CYM;
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  CYM = { gatelands: { cob: mat('plaster', { ns: 1.4, color: 0xb08a62, rough: .95 }), base: mat('stone', { ns: 1.0, color: 0xb4a898, rough: .9 }) },
+    mark: { cob: mat('plaster', { ns: 1.4, color: 0x8e7c66, rough: .95 }), base: mat('stone', { ns: 1.2, color: 0x7c766e, rough: .92 }) },
+    aurenne: { cob: mat('plaster', { ns: 1.2, color: 0xc4805a, rough: .9 }), base: mat('plaster', { ns: .8, color: 0xf0e8da, rough: .9 }) },
+    wood: mat('wood', { ns: .8, color: 0xb08a64, rough: .85 }), soot: std(0x17120f, .8, { side: THREE.DoubleSide, metalness: .2 }),
+    ember: std(0x1a0a05, .9, { emissive: 0x7a2408, emissiveIntensity: 1, side: THREE.DoubleSide }), pot: mat('plaster', { ns: .6, color: 0xb86e48, rough: .8 }) };
+  CYM.pot.side = THREE.DoubleSide; return CYM;
+}
+function clayFitting(kind, island, o = {}) {
+  kind = kind === 'kiln' ? 'kiln' : 'oven'; island = island === 'mark' || island === 'aurenne' ? island : 'gatelands';
+  const C = clayMats(), I = C[island], M = { cob: I.cob, base: I.base, wood: C.wood, soot: C.soot, ember: C.ember, pot: C.pot }, B = new Map(), sm = !!o.small;
+  const put = (k, g, s = 1.5) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    worldUV(g, s); if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const box = (k, w, h, d, x, y, z, rx = 0, ry = 0, rz = 0) => { const g = new THREE.BoxGeometry(w, h, d); if (rz) g.rotateZ(rz); if (rx) g.rotateX(rx); if (ry) g.rotateY(ry); g.translate(x, y, z); put(k, g); };
+  // a mouth at the front: a thick lip of cob round a dark half-round opening len deep, the embers' glow at its back; its springing at y0
+  const mouth = (r, len, y0, z) => { const g = new THREE.CylinderGeometry(r * 1.32, r * 1.32, len, 10, 1, true, -Math.PI / 2, Math.PI); g.rotateX(-Math.PI / 2); g.translate(0, y0, z); put('cob', g);
+    const lip = new THREE.RingGeometry(r, r * 1.32, 10, 1, 0, Math.PI); lip.translate(0, y0, z + len / 2); put('cob', lip);
+    const s = new THREE.CylinderGeometry(r, r, len, 10, 1, true, -Math.PI / 2, Math.PI); s.rotateX(-Math.PI / 2); s.translate(0, y0, z); put('soot', s);
+    const f = new THREE.PlaneGeometry(r * 2, .01); f.rotateX(-Math.PI / 2); f.scale(1, 1, len * 100); f.translate(0, y0 + .002, z); put('soot', f);
+    const m = new THREE.CircleGeometry(r, 10, 0, Math.PI); m.translate(0, y0, z - len / 2 + .01); put('ember', m);
+    for (let i = 0; i < 4; i++) { const e = new THREE.BoxGeometry(.07, .03, .05); e.rotateY(i * 1.3); e.translate((i - 1.5) * r * .4, y0 + .015, z - len / 2 + .05 + (i % 2) * .04); put('ember', e); } };
+  const pot = (x, z, h, r, ry) => { const p = [[0, 0], [r * .62, 0], [r * .9, h * .2], [r, h * .5], [r * .78, h * .82], [r * .5, h * .92], [r * .58, h]].map(([a, b]) => new THREE.Vector2(a, b));
+    const g = new THREE.LatheGeometry(p, 9); g.rotateY(ry); g.translate(x, 0, z); put('pot', g, 4); };
+  const ring = (k, r, y, z, t = .016, seg = 16) => { const g = new THREE.TorusGeometry(r, t, 3, seg); g.rotateX(Math.PI / 2); g.translate(0, y, z); put(k, g); };
+  let foot, top;
+  if (kind === 'oven') {
+    const W = sm ? .8 : 1.0, D = sm ? .76 : .9, H = .72, z0 = .02, zc = z0 + D / 2, R = sm ? .34 : .42;
+    // the plinth: its top slab, two cheeks and a back, the front open on a store of split logs before a sooted back
+    box('base', W, .12, D, 0, H - .06, zc); for (const s of [-1, 1]) box('base', .14, H - .12, D, s * (W / 2 - .07), (H - .12) / 2, zc); box('base', W - .28, H - .12, .12, 0, (H - .12) / 2, z0 + .06);
+    box('soot', W - .28, H - .12, .01, 0, (H - .12) / 2, z0 + .125);
+    for (let i = 0; i < 5; i++) { const g = new THREE.CylinderGeometry(.055, .06, W - .36, 6); g.rotateZ(Math.PI / 2); g.rotateY((i % 2 ? .06 : -.05)); g.translate((i % 2 ? .02 : -.02), .07 + (i < 3 ? 0 : .11), z0 + .3 + (i < 3 ? i : i - 2.5) * .13 * (sm ? .8 : 1)); put('wood', g, 2); }
+    // the dome, a hair flattened, its mouth at the front and the flue at the back
+    { const g = new THREE.SphereGeometry(R, 16, 7, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1, .92, 1); g.translate(0, H, zc - .02); put('cob', g); }
+    mouth(R * .36, .18, H, zc - .02 + R - .06);
+    { const g = new THREE.CylinderGeometry(.05, .06, .22, 8, 1, true); g.translate(0, H + R * .78, zc - .2 * R / .42); put('cob', g); const t = new THREE.CircleGeometry(.05, 8); t.rotateX(-Math.PI / 2); t.translate(0, H + R * .78 + .1, zc - .2 * R / .42); put('soot', t); }
+    // the peel hung on two pegs on the wall at the left, its blade up
+    for (const x of [-.36, -.24]) box('wood', .02, .02, .07, x * W, 1.62, .04);
+    box('wood', .03, .9, .02, -.3 * W, 1.22, .05, 0, 0, .08); box('wood', .24, .3, .012, -.33 * W, 1.67, .05, 0, 0, .08);
+    if (island === 'aurenne') ring('base', R * 1.0, H + .02, zc - .02, .03, 18);
+    foot = { x0: -W / 2, x1: W / 2, z0: 0, z1: z0 + D }; top = H + R * .92;
+  } else {
+    const k = sm ? .9 : 1, zc = .5 * k + .02, F = island === 'mark' ? .3 : .15, R0 = .44 * k, H1 = .58, H2 = .5, R1 = .2 * k;
+    { const g = new THREE.CylinderGeometry(R0 + .03, R0 + .05, F, 12); g.translate(0, F / 2, zc); put('base', g); }
+    { const g = new THREE.CylinderGeometry(R0 - .02, R0, H1, 14, 1, true); g.translate(0, F + H1 / 2, zc); put('cob', g); }
+    // the shoulder drawn in to the neck: a quarter-round in six rings
+    { const P = []; for (let i = 0; i <= 6; i++) { const t = i / 6, a = t * Math.PI / 2; P.push(new THREE.Vector2(R1 + (R0 - .02 - R1) * Math.cos(a), H2 * Math.sin(a) * .8 + (t > .99 ? H2 * .2 : 0))); }
+      const g = new THREE.LatheGeometry(P, 14); g.translate(0, F + H1, zc); put('cob', g); }
+    const yc = F + H1 + H2; { const g = new THREE.CylinderGeometry(R1 - .02, R1, .12, 12, 1, true); g.translate(0, yc + .06, zc); put('cob', g); ring('cob', R1 - .01, yc + .12, zc, .025, 12);
+      const t = new THREE.CircleGeometry(R1 - .02, 12); t.rotateX(-Math.PI / 2); t.translate(0, yc + .09, zc); put('soot', t); }
+    mouth(.15, .22, F, zc + R0 - .07);
+    if (island === 'gatelands') for (const y of [F + .14, F + H1 - .06]) ring('soot', R0 - .004 - (y - F) / H1 * .02, y, zc, .014, 18);
+    if (island === 'aurenne') ring('base', R0 - .006, F + H1 - .08, zc, .03, 18);
+    if (!sm) { pot(.5, zc + .38, .26, .1, .4); pot(.62, zc + .14, .2, .08, 1.3); }
+    foot = { x0: -R0 - .05, x1: sm ? R0 + .05 : .72, z0: 0, z1: zc + R0 + .1 }; top = yc + .14;
+  }
+  const group = new THREE.Group(); group.name = 'clay ' + kind; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = kind + ':' + k; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, kind, island, foot, top };
+}
 // ── the Mark's training yard (Session 1657; arenas-build.md session 2, Michael's B on #914: "a staff rack, a 5 m rope ring"): the
 // yard behind a Markish Fighters' Guild hall where the spar (sparStart) and the evening brawl (brawlStart) are fought. A ring of
 // trodden earth 5.7 m round, fourteen ash stakes 1 m high at 5 m with one rope at 0.9 m sagging 9 cm a span (the bout's rope: over
@@ -9984,7 +10057,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, shape: S, houses, slip, steps, stairTop: S.stairTop, lookout: look, boats, cargo };
   }
   aurenneCove.shape = coveShape; /* the world reads the cut ground before the piece is built (offroadStamps) */
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, camp: campGear, fire: campFire, rack: workRack }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

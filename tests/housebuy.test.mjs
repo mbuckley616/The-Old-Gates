@@ -58,6 +58,16 @@ const fit = await page.evaluate(() => { const h = currentHouse, B = interiorScen
   return { placed: !!B, sp, others, inRoom: !!mine && mine.x0 >= 0 && mine.z0 >= 0 && mine.x1 <= h._roomW && mine.z1 <= h._roomD, at, far, L: B && B.userData.kit.L }; });
 check(fit.placed ? `a workbench fitted stands in Your House (${fit.L} m, its front at ${fit.sp.x}, ${fit.sp.z}), clear of the room's solids, worked from its front` : 'a workbench fitted in a room with no whole wall free for it is worked anywhere in the house (the rules\' fallback)',
   fit.placed ? fit.others === 0 && fit.inRoom && fit.at && !fit.far : !fit.sp && fit.far, fit);
+// S2147 (the look builder): a clay oven and a kiln fitted (PKIT.props.clay) stand by a wall too, each clear of the room's solids and of the
+// bench, worked from its front; a room with no wall free for one keeps the rules' fallback for it
+const clay = await page.evaluate(() => { const h = currentHouse, r = homeFitRec(h); for (const k of ['oven', 'kiln']) if (!r.fit.includes(k)) r.fit.push(k); homeFitsDress(h); const o = {};
+  for (const k of ['oven', 'kiln']) { const G = interiorScene.children.find(x => x.userData.homeFit === k), mine = INT_SOL.find(s => s.homeFit === k), sp = h._fits[k];
+    const hit = mine ? INT_SOL.filter(s => s !== mine && s.y0 < 1.6 && s.y1 > .05 && s.x0 < mine.x1 - 1e-6 && s.x1 > mine.x0 + 1e-6 && s.z0 < mine.z1 - 1e-6 && s.z1 > mine.z0 + 1e-6).length : -1;
+    let at = true; if (sp) { const sx = px, sz = pz; px = sp.x; pz = sp.z; at = homeFitHere(k); px = sx; pz = sz; }
+    o[k] = { placed: !!G, hit, at, tris: G && G.userData.kit.tris, draws: G && G.userData.kit.draws, inRoom: !mine || (mine.x0 >= 0 && mine.z0 >= 0 && mine.x1 <= h._roomW && mine.z1 <= h._roomD) }; }
+  return o; });
+check(`a clay oven and a kiln fitted stand clear of the room and the bench, worked from their fronts, or fall back (oven ${clay.oven.placed ? clay.oven.tris + ' tris' : 'anywhere'}, kiln ${clay.kiln.placed ? clay.kiln.tris + ' tris' : 'anywhere'})`,
+  ['oven', 'kiln'].every(k => clay[k].placed ? clay[k].hit === 0 && clay[k].inRoom && clay[k].at && clay[k].draws <= 5 : clay[k].at), clay);
 await page.evaluate(() => exitInterior()); for (let n = 0; n < 40 && (await page.evaluate(() => isInterior())); n++) await page.waitForTimeout(250);
 const yard = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id); homeFit(h, 'rack'); const n1 = S.racks.filter(R => R.house === id).length;
   homeUnfit(h, 'rack'); return { n1, n2: S.racks.filter(R => R.house === id).length }; }, pick.id);
