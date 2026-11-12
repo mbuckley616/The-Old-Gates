@@ -140,7 +140,7 @@ check(`the guide: ${fg.count.n} of ${fg.count.of} found over ${fg.pages} pages, 
   fg.count.n === 1 && fg.count.of === 50 && fg.frames === 49 + fg.specN && fg.hasFire && fg.noSilver && /1 of 50 found/.test(fg.head) && /^The Gatelands: /.test(fg.where) && /^The Mark: /.test(fg.whereMark) && fg.fxLine0 === '? · ? · ? · ?' && /^Restore Health · \?/.test(fg.fxLine), fg);
 check(`an old save's guide holds what it ate and carries (Thornberry ${fg.old.thorn}, Icebloom ${fg.old.ice}), not the rest`, fg.old.thorn && fg.old.ice && !fg.old.fire, fg.old);
 check(`the apothecary sells it at ${fg.stock[0] && fg.stock[0][1]}, the smith not; read: "${fg.title}"`, fg.stock.length === 1 && fg.stock[0][1] === 20 && fg.stock[0][2] === 'book' && fg.smith === 0 && fg.title === 'A Field Guide to the Three Islands' && /^A FIELD GUIDE/.test(fg.page) && fg.charKey, fg);
-// ── S2158: the rare specimens (#1463 B, session 2): patches by cell, buds, hours and weathers, a pick that regrows in 7 days ──
+// ── S2160: the rare specimens (#1463 B, session 2): patches by cell, buds, hours and weathers, a pick that regrows in 7 days ──
 const sp0 = await page.evaluate(() => { const o = { per: { gatelands: 0, mark: 0, aurenne: 0 }, kinds: {} };
   for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { const L = specCell(i, j); if (!L.length) continue; o.per[nationKeyOf(i, j)] += L.length; L.forEach(p => { o.kinds[p.kind] = (o.kinds[p.kind] || 0) + 1; if (SPEC_DEF[p.kind].island !== nationKeyOf(i, j)) o.wrong = p.id; }); }
   const [ci, cj] = cellOf(px, pz); const a = JSON.stringify(specCell(ci, cj)); SPEC_CELLS.clear(); o.same = a === JSON.stringify(specCell(ci, cj));
