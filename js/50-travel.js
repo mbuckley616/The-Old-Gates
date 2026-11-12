@@ -987,7 +987,7 @@ window.addEventListener('keydown',e=>{if(!cureOpen)return;if(e.code==='Escape'){
 // point, anywhere in the house is at them (the hold's rule, S1726), and E with nothing else in reach opens the house's page.
 const HOME_PLACES={cottage:3,townhouse:4,farmstead:6,longhouse:6,keep:6};
 const HOME_FITS={rack:{n:'tanner’s rack',a:'a tanner’s rack',gold:40,planks:4},dry:{n:'drying rack',a:'a drying rack',gold:30,planks:3},bench:{n:'workbench',a:'a workbench',gold:60,planks:6},
-  oven:{n:'clay oven',a:'a clay oven',clay:6},kiln:{n:'kiln',a:'a kiln',clay:10}}; /* S2138 — the oven and the kiln, laid of clay by hand */
+  oven:{n:'clay oven',a:'a clay oven',clay:6},kiln:{n:'kiln',a:'a kiln',clay:10},garden:{n:'garden',a:'a garden',gold:50,shovel:true}}; /* S2139 — four beds, dug with a shovel */ /* S2138 — the oven and the kiln, laid of clay by hand */
 function homeMine(h){return !!h&&(h.type==='home'||h.type==='castle')&&(h.ownedByPlayer||(typeof ownedHouse==='function'&&ownedHouse(h.id)));}
 function homeSize(h){if(!h)return null;if(h.type==='castle')return 'keep';if(h.farm)return 'farmstead';const k=h.kit&&h.kit.kind;if(k==='markhall')return 'longhouse';
   if(k==='townhouse'||k==='merchant'||k==='marktown')return 'townhouse';return ['town','port','city'].includes(h.siteKind)?'townhouse':'cottage';}
@@ -1001,7 +1001,9 @@ function homeFitHere(k){const h=homeHere();if(!h||!homeFitted(h,k))return false;
 function homeFitWhy(h,k,how){if(!homeMine(h))return 'This is not your house.';const F=HOME_FITS[k];if(!F)return 'No such fitting.';const r=homeFitRec(h);
   if(r.fit.includes(k))return `The house has ${F.a} already.`;if(r.fit.length>=homePlaces(h))return `The house has room for ${homePlaces(h)}; take one out first.`;
   if(r.stored.includes(k))return null;
+  if(F.shovel&&!r.stored.includes(k)&&!hasShovel())return 'A garden is dug with a shovel.';
   if(F.clay){const n=bagCount(b=>!!b.clay);return n<F.clay?`It takes ${F.clay} clay (you have ${n}).`:null;} /* S2138 — laid by hand */
+  if(how==='planks'&&!F.planks)return 'It is not made of planks.';
   if(how==='planks'){if(!benchHere())return 'Planks are joined at a bench: a joiner’s kit is one.';if(plankCount()<F.planks)return `It takes ${F.planks} planks (you have ${plankCount()}).`;return null;}
   return gold<F.gold?`It costs ${F.gold} gold.`:null;}
 // the named actions: fit one (a stored one back for nothing), take one out. Each returns {done, why}
@@ -1009,6 +1011,7 @@ function homeFit(h,k,how){const why=homeFitWhy(h,k,how);if(why)return {done:fals
   if(si>=0)r.stored.splice(si,1);else if(F.clay)bagTake(b=>!!b.clay,F.clay);else if(how==='planks')bagTake(b=>b.plank,F.planks);else{gold-=F.gold;if(typeof updateHUD==='function')updateHUD();}
   r.fit.push(k);if(typeof addLog==='function')addLog('🏠',`The house fitted with ${F.a}.`);return {done:true};}
 function homeUnfit(h,k){if(!homeMine(h))return {done:false,why:'This is not your house.'};const r=homeFitRec(h),i=r.fit.indexOf(k);if(i<0)return {done:false,why:''};
+  if(k==='garden'&&gardenBeds(h).some(Boolean))return {done:false,why:'Gather what grows in it first.'}; /* S2139 */
   if(k==='rack'||k==='dry'){const c=curesOf(h).find(x=>x.kind===k);if(c&&cureList(c.key).length)return {done:false,why:'Take down what hangs on it first.'};}
   r.fit.splice(i,1);r.stored.push(k);return {done:true};}
 // the house's page, the racks' paper: places, what stands in it (and its use), what can go in
@@ -1031,16 +1034,17 @@ function homeDraw(){const ov=document.getElementById('homeui');if(!ov)return;con
   const btn=(id,label,ok)=>`<button type="button" data-a="${id}" style="background:none;border:1px solid ${ok?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#7a1f10':'#a09070'};cursor:pointer;padding:1px 8px;margin:2px 4px 2px 0">${label}</button>`;
   let s='<div style="font-variant:small-caps;color:#7a1f10">Fitted</div>';
   if(!r.fit.length)s+='<div style="padding-left:12px;color:#8a7050;font-style:italic">nothing yet</div>';
-  r.fit.forEach(k=>{s+=`<div style="padding-left:12px">${HOME_FITS[k].n[0].toUpperCase()+HOME_FITS[k].n.slice(1)} `+(k==='oven'?'<i style="font-size:12px;color:#8a7050">bakes at the hearth</i> ':k==='kiln'?Object.keys(KILN_WARES).map(w=>btn('kiln:'+w,`Fire ${KILN_WARES[w].a} · ${KILN_WARES[w].clay} clay`,!kilnWhy(h,w))).join(''):btn('use:'+k,k==='bench'?'Work':'See to it',true))+btn('out:'+k,'Take out',true)+'</div>';}); /* S2138 — the oven and the kiln */
+  r.fit.forEach(k=>{s+=`<div style="padding-left:12px">${HOME_FITS[k].n[0].toUpperCase()+HOME_FITS[k].n.slice(1)} `+(k==='garden'?gardenRows(h,btn):k==='oven'?'<i style="font-size:12px;color:#8a7050">bakes at the hearth</i> ':k==='kiln'?Object.keys(KILN_WARES).map(w=>btn('kiln:'+w,`Fire ${KILN_WARES[w].a} · ${KILN_WARES[w].clay} clay`,!kilnWhy(h,w))).join(''):btn('use:'+k,k==='bench'?'Work':'See to it',true))+btn('out:'+k,'Take out',true)+'</div>';}); /* S2138 — the oven and the kiln */
   const rest=Object.keys(HOME_FITS).filter(k=>!r.fit.includes(k));
   if(rest.length){s+='<div style="font-variant:small-caps;color:#7a1f10;margin-top:6px">To fit</div>';
     rest.forEach(k=>{const F=HOME_FITS[k],name=F.n[0].toUpperCase()+F.n.slice(1);
       if(r.stored.includes(k)){s+=`<div style="padding-left:12px">${name} <i style="font-size:12px;color:#8a7050">stored</i> `+btn('fit:'+k+':gold','Fit it back',!homeFitWhy(h,k,'gold'))+'</div>';return;}
-      s+=`<div style="padding-left:12px">${name} `+(F.clay?btn('fit:'+k+':clay',`${F.clay} clay, by hand`,!homeFitWhy(h,k,'clay')):btn('fit:'+k+':gold',`${F.gold} gold`,!homeFitWhy(h,k,'gold'))+btn('fit:'+k+':planks',`${F.planks} planks`,!homeFitWhy(h,k,'planks')))+'</div>';});}
+      s+=`<div style="padding-left:12px">${name} `+(F.clay?btn('fit:'+k+':clay',`${F.clay} clay, by hand`,!homeFitWhy(h,k,'clay')):F.shovel?btn('fit:'+k+':gold',`${F.gold} gold, dug with a shovel`,!homeFitWhy(h,k,'gold')):btn('fit:'+k+':gold',`${F.gold} gold`,!homeFitWhy(h,k,'gold'))+btn('fit:'+k+':planks',`${F.planks} planks`,!homeFitWhy(h,k,'planks')))+'</div>';});}
   s+=`<div style="color:#8a7050;font-style:italic;font-size:12px;margin-top:6px">one of each; a fitting taken out is kept here and goes back for nothing</div>`;
   const B=ov.querySelector('#hm-body');B.innerHTML=s;
   B.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const [a,k,how]=b.dataset.a.split(':');
     if(a==='use'){closeHousePage();if(k==='bench')openBenchPage();else openCurePage();return;}
+    if(a==='bed'){const [,bi,what]=b.dataset.a.split(':');const res=what==='take'?gardenTake(h,+bi):gardenPlant(h,+bi,what,b.dataset.v);homeSaid=res.done?(what==='take'?res.got+'.':'Planted. Ready in '+GARDEN_DAYS+' days.'):res.why;if(res.done&&typeof uiTone==='function')uiTone(520,700,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();homeDraw();return;} /* S2139 */
     if(a==='kiln'){const res=kilnFire(h,k);homeSaid=res.done?`${KILN_WARES[k].a[0].toUpperCase()+KILN_WARES[k].a.slice(1)}, fired.`:res.why;if(res.done&&typeof uiTone==='function')uiTone(440,660,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();homeDraw();return;}
     const res=a==='fit'?homeFit(h,k,how):homeUnfit(h,k);homeSaid=res.done?(a==='fit'?`${HOME_FITS[k].a[0].toUpperCase()+HOME_FITS[k].a.slice(1)} stands in the house.`:`The ${HOME_FITS[k].n} is taken out and kept.`):res.why;
     if(res.done&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();homeDraw();});
@@ -1095,6 +1099,38 @@ function jarMeal(){if(bagCount(b=>!!b.jar&&!b.meal)<1)return {done:false,why:'Yo
   const one={...m,meal:{...m.meal},qty:1,jarred:1,weight:(m.weight||0)+JAR_ITEM.weight,brewKey:(m.brewKey||m.name)+'@jar'};
   m.qty=(m.qty||1)-1;if(m.qty<=0)BAG.splice(best.i,1);bagTake(b=>!!b.jar&&!b.meal,1);bagAdd(one);return {done:true,name:m.name};}
 function useJarThing(){const r=jarMeal();showMsg(r.done?`The ${r.name.toLowerCase()} goes into a jar. It will keep.`:r.why,r.done?'#d8c8a0':'#cc8844');if(r.done&&typeof renderHubInv==='function')renderHubInv();}
+// ── S2139 — Resources and crafting B, session 5: the garden (the page's *The garden*). A fitting like the others, one place: 50 gold for four
+// beds, dug with the shovel (one in the bag). A bed takes one second of the house's own island (oats in the Gatelands, olives only in
+// Aurenne), or a herb you have picked, and after 5 game days gives 4 of the second or 3 of the herb, read off the game clock, so time away
+// counts. Gathering a second is a Cooking use, a herb an Alchemy use (each of 1, as a pick is). The beds are the world's:
+// `worldState.garden[houseId]`, four entries, each null or {k:'second', s} or {k:'herb', item}, with `at`; sowing and gathering are the
+// two named actions (`gardenPlant`, `gardenTake`). The page's yields are fixed numbers, so no stream is drawn.
+const GARDEN_BEDS=4,GARDEN_DAYS=5,GARDEN_SECOND=4,GARDEN_HERB=3;
+function gardenBeds(h){const G=worldState.garden||(worldState.garden={});let L=G[h.id];if(!Array.isArray(L)||L.length!==GARDEN_BEDS)L=G[h.id]=Array.from({length:GARDEN_BEDS},(_,i)=>(Array.isArray(L)&&L[i])||null);return L;}
+function gardenReady(e){return !!e&&gameMinNow()-e.at>=GARDEN_DAYS*1440;}
+function gardenSeconds(h){const isle=houseIsle(h);return Object.keys(DISH_SECONDS).filter(k=>DISH_SECONDS[k].isle===isle);}
+// sow a bed: what is 'second' (v the second's key) or 'herb' (v the herb's name). Returns {done} or {done:false, why}
+function gardenPlant(h,bi,what,v){if(!homeMine(h)||!homeFitted(h,'garden'))return {done:false,why:'There is no garden here.'};const L=gardenBeds(h);
+  if(bi<0||bi>=GARDEN_BEDS)return {done:false,why:''};if(L[bi])return {done:false,why:'Something grows in that bed already.'};
+  if(what==='second'){if(!DISH_SECONDS[v])return {done:false,why:''};if(DISH_SECONDS[v].isle!==houseIsle(h))return {done:false,why:`${DISH_SECONDS[v].name} will not grow on this island.`};
+    if(!bagTake(b=>b.second===v,1))return {done:false,why:`You have no ${DISH_SECONDS[v].name.toLowerCase()}.`};L[bi]={k:'second',s:v,at:gameMinNow()};return {done:true};}
+  if(what==='herb'){const i=BAG.findIndex(b=>b&&b.type==='herb'&&b.name===v);if(i<0)return {done:false,why:'You have no such herb.'};
+    const it=JSON.parse(JSON.stringify({...BAG[i],qty:1}));delete it.stolen;bagTake(b=>b===BAG[i],1);L[bi]={k:'herb',item:it,at:gameMinNow()};return {done:true};}
+  return {done:false,why:''};}
+// gather a bed that is ready. Returns {done, got} or {done:false, why}
+function gardenTake(h,bi){const L=gardenBeds(h),e=L[bi];if(!e)return {done:false,why:'The bed is bare.'};if(!gardenReady(e))return {done:false,why:'It is not ready.'};
+  const it=e.k==='second'?secondItem(e.s,GARDEN_SECOND):{...e.item,qty:GARDEN_HERB};if(typeof canCarry==='function'&&!canCarry(it))return {done:false,why:'Too heavy to carry!'};
+  bagAdd(it);L[bi]=null;skillUse(e.k==='second'?'cooking':'alchemy',1,'garden:'+h.id+':'+bi+':'+e.at);return {done:true,got:`${it.qty} ${it.name}`};}
+function gardenLeft(e){const m=Math.max(0,GARDEN_DAYS*1440-(gameMinNow()-e.at)),d=Math.floor(m/1440),hh=Math.ceil((m%1440)/60);return d?`${d} d ${hh} h`:`${hh} h`;}
+// the beds' rows on the house's page
+function gardenRows(h,btn){const L=gardenBeds(h),secs=gardenSeconds(h).filter(k=>bagCount(b=>b.second===k)>0),herbs=[...new Set(BAG.filter(b=>b&&b.type==='herb').map(b=>b.name))];
+  let s='';L.forEach((e,bi)=>{s+=`<div style="padding-left:12px">Bed ${bi+1}: `;
+    if(e){const nm=e.k==='second'?DISH_SECONDS[e.s].name:e.item.name;s+=`${nm} <i style="font-size:12px;color:#8a7050">${gardenReady(e)?'ready':gardenLeft(e)+' more'}</i> `+btn('bed:'+bi+':take','Gather',gardenReady(e));}
+    else{s+='<i style="font-size:12px;color:#8a7050">bare</i> ';secs.forEach(k=>{s+=btn('bed:'+bi+':second',`Sow ${DISH_SECONDS[k].name.toLowerCase()}`,true).replace('data-a=',`data-v="${k}" data-a=`);});
+      herbs.forEach(n=>{s+=btn('bed:'+bi+':herb',`Plant ${n}`,true).replace('data-a=',`data-v="${n.replace(/"/g,'&quot;')}" data-a=`);});
+      if(!secs.length&&!herbs.length)s+='<i style="font-size:12px;color:#8a7050">nothing to sow: this island’s seconds, or a herb you have picked</i>';}
+    s+='</div>';});
+  return s;}
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish',food:'fish'};} /* S2028 — food, which the save keeps */
 // S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
 const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};
