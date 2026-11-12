@@ -147,18 +147,20 @@ if (gc.failing) { await enterDungeon(page, Object.assign({ theme: 'undead', seed
     const H = rig.hc, C = H.C, kb = new THREE.Box3(), inv = new THREE.Matrix4(); C.gait = 'stand'; HC.pose(C, 0); rig.root.updateMatrixWorld(true); inv.copy(rig.root.matrixWorld).invert();
     for (const m of C.meshes) { m.geometry.computeBoundingBox(); kb.union(m.geometry.boundingBox.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld))); }
     const len = +(kb.max.z - kb.min.z).toFixed(2), T = () => ({ x: px, z: pz }), seen = {}, wing = {};
-    const w0 = C.byName[C.B.wings[0].arm[0]];
-    const look = () => { e.mesh.updateMatrixWorld(true); rig.t = performance.now() / 1000 - 1 / 60; hcBirdPose(rig); seen[e.flier.mode] = C.gait; wing[C.gait] = wing[C.gait] || w0.quaternion.toArray().map(v => +v.toFixed(3)); };
+    const w0 = C.byName[C.B.wings[0].arm[0]], L0 = C.B.legs[0], foot = {}, fv = new THREE.Vector3();
+    /* the foot's reach ahead (in the rig's frame, of the leg's height): the strike throws the feet forward, where the soar tucks them back */
+    const look = () => { e.mesh.updateMatrixWorld(true); rig.t = performance.now() / 1000 - 1 / 60; hcBirdPose(rig); seen[e.flier.mode] = C.gait; wing[C.gait] = wing[C.gait] || w0.quaternion.toArray().map(v => +v.toFixed(3));
+      if (foot[C.gait] == null) { C.rig.updateMatrixWorld(true); L0.bones[L0.bones.length - 1].getWorldPosition(fv); C.rig.worldToLocal(fv); foot[C.gait] = +(fv.z / L0.hR).toFixed(2); } };
     for (let i = 0; i < 2400 && Object.keys(seen).length < 5; i++) { eagleTick(e, 1 / 60, T(), Math.hypot(px - e.x, pz - e.z)); look(); }
     const q = (a, b) => a && b ? +Math.max(...a.map((v, i) => Math.abs(v - b[i]))).toFixed(3) : 0;
     const near = { L: H.L, kit: H.W.visible, stand: rig.mesh.visible };
     /* S2120 — the wind-up's red on the stand-in reaches the kit's hide */ const sm = enemyBodyMesh(e).material; sm.emissive.setHex(0xff2000); hcBirdPose(rig); const lit = H.hide.every(o => [].concat(o.material).some(x => x.emissive && x.emissive.getHex() === 0xff2000)); sm.emissive.setHex(0); hcBirdPose(rig); near.flash = lit && H.hide.every(o => [].concat(o.material).every(x => !x.emissive || x.emissive.getHex() === 0));
     CAM.position.set(e.x - 80, e.baseY + 1.65, e.z); CAM.updateMatrixWorld(true); hcTick(3e6); const far = { L: H.L, kit: H.W.visible, stand: rig.mesh.visible };
-    return { rig: true, built: true, plan: C.plan.name, len, tris: C.stats && C.stats.tris, seen, moved: { stoop: q(wing.soar, wing.stoop), strike: q(wing.soar, wing.strike) }, near, far }; }); }
+    return { rig: true, built: true, plan: C.plan.name, len, tris: C.stats && C.stats.tris, seen, moved: { stoop: q(wing.soar, wing.stoop), strike: +((foot.strike ?? 0) - (foot.soar ?? 0)).toFixed(2) }, near, far }; }); }
 console.log(JSON.stringify(BD));
 check('the dusk eagle wears the kit\'s duskeagle, 1.43 m beak to tail (±0.1)', BD && BD.built && BD.plan === 'Dusk Eagle' && Math.abs(BD.len - 1.43) < .1, BD);
 check('its gait is its flight: it soars circling and hanging, stoops on the dive and strikes at its foot', BD && BD.seen && BD.seen.circle === 'soar' && BD.seen.tell === 'soar' && BD.seen.dive === 'stoop' && BD.seen.low === 'strike' && BD.seen.climb === 'soar', BD && BD.seen);
-check('the stoop and the strike turn its wing from the soar\'s', BD && BD.moved && BD.moved.stoop > .05 && BD.moved.strike > .05, BD && BD.moved);
+check('the stoop turns its wing from the soar\'s; the strike throws its feet forward of the soar\'s, by more than half the leg\'s height', BD && BD.moved && BD.moved.stoop > .05 && BD.moved.strike > .5, BD && BD.moved);
 check('a flash on its body (the wind-up\'s red) lights the kit\'s hide, and goes out with it (S2120)', BD && BD.near && BD.near.flash, BD && BD.near);
 check('near, the kit\'s body shows; far, the stand-in', BD && BD.near && BD.near.kit && !BD.near.stand && BD.far.L === 2 && !BD.far.kit && BD.far.stand, BD && [BD.near, BD.far]);
 check('no page errors', g.errs.length === 0, g.errs);
