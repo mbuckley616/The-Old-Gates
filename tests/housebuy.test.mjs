@@ -82,5 +82,20 @@ const yd = await page.evaluate((id) => { if (isInterior()) exitInterior(); const
   px = x0 + 4.5; o.far = !homeYardAt() && !homeHere() && !homeFitHere('garden');
   r.fit.splice(r.fit.indexOf('garden'), 1); px = x0 + 1.2; o.unfitted = !homeYardAt(); delete h._yardFits; px = x0; pz = z0; return o; }, pick.id);
 check('in your house\'s yard, 1.2 m from a garden stood there, E opens the house\'s page and the garden counts (the kiln, not stood there, does not); 3.3 m off, nothing', yd.out && yd.at && yd.here && yd.garden && !yd.kiln && yd.page && yd.far && yd.unfitted, yd);
+// S2165 (the look builder): a garden fitted is stood in the yard at once (PKIT.props.garden): four beds, each a solid, the paths between them
+// free; its middle, where the paths cross, is the yard's spot (h._yardFits.garden), the garden within reach there and every bed within 2.3 m;
+// what is sown shows at its stage; taken out, it goes with its solids and its spot
+const gd = await page.evaluate((id) => { if (isInterior()) exitInterior(); const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id);
+  const r = homeFitRec(h); if (!r.fit.includes('garden')) r.fit.push('garden'); gardenBeds(h); homeFitsDress(h);
+  const G = (S.gardens || []).find(G => G.house === id), sp = h._yardFits && h._yardFits.garden, o = { stood: !!G && !!sp, sol: S.sol.filter(s => s.bt === 'garden' && s.house === id).length };
+  if (!o.stood) return o; const x0 = px, z0 = pz; px = sp.x; pz = sp.z; const Y = homeYardAt(); o.at = !!Y && Y.h === h && Y.k === 'garden'; o.free = !WORLD.solidAt(px, pz);
+  const c = Math.cos(G.g.rotation.y), s_ = Math.sin(G.g.rotation.y), U = G.g.userData.garden;
+  o.beds = U.plots.map(P => { const bx = G.x + P.x * c + P.z * s_, bz = G.z - P.x * s_ + P.z * c; return { solid: WORLD.solidAt(bx, bz), d: +Math.hypot(bx - sp.x, bz - sp.z).toFixed(2) }; });
+  o.draws0 = U.draws; o.tris0 = U.tris; worldState.garden[id][0] = { k: 'second', s: 'oats', at: gameMinNow() - GARDEN_DAYS * 1440 }; U.set(gardenBedsOf(h));
+  o.ready = U.beds[0] && U.beds[0].stage === 'ready'; o.tris1 = U.tris; o.draws1 = U.draws; worldState.garden[id][0] = null;
+  homeUnfit(h, 'garden'); o.gone = !S.gardens.some(G => G.house === id) && !S.sol.some(s => s.bt === 'garden' && s.house === id) && !(h._yardFits && h._yardFits.garden) && !homeYardAt();
+  px = x0; pz = z0; return o; }, pick.id);
+check(`a garden fitted stands in the yard (${gd.tris0} tris in ${gd.draws0} draws bare, ${gd.tris1} with ripe oats): four beds solid, its middle free and the house's spot, every bed within 2.3 m; taken out, it goes`,
+  gd.stood && gd.sol === 4 && gd.at && gd.free && gd.beds.length === 4 && gd.beds.every(b => b.solid && b.d < 2.3) && gd.ready && gd.tris1 > gd.tris0 && gd.draws1 <= 6 && gd.gone, gd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

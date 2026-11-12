@@ -5119,6 +5119,139 @@ function workRack(kind, island, o = {}) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, M[k]); m.name = 'rack:' + k; m.castShadow = k !== 'cord'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, kind, island, slots, at, box: { w: +box.w.toFixed(2), d: +box.d.toFixed(2), h: +box.h.toFixed(2) } };
 }
+// ── S2165 — the house's garden (Michael's B on #1420: "a garden of four beds"; docs/design/resources-and-crafting.md, *The garden*): four
+// raised beds of 1.5 by 1.1 m in two rows either side of a cross of paths 0.8 m wide, so you walk in among them and reach every bed from the
+// cross. By island: the Gatelands' beds edged with wattle (hazel stakes and three woven courses, 0.3 m), the Mark's boxed in two courses of
+// barked pine half-logs crossed at the corners, Aurenne's kerbed in pale limestone blocks with a water jar at the head of the path. Each bed
+// is raked earth in three ridges along its length, and grows what was sown in it at its stage ('sown' a few shoots, 'growing' green,
+// 'ready' to gather): the grains (oats, rye, wheat) in three drills, green and then gold in the ear; apples a dwarf tree, red-fruited when
+// ready; berries three low bushes, blue-black; butter and curd a fodder clover, white-headed or red; dates a young palm, its clusters
+// orange; olives a little grey-leaved tree, its fruit dark. A herb is the plant kit's, laid by the game (30-plants.js's plantGeo) at the
+// bed's three places, `at`. Built in its own frame, the long side along x, the beds' middles at (±1.15, ±0.95); o.ground(x, z) the land's
+// height in that frame, o.key the seed, o.beds four entries, each null or { crop, stage }.
+//   PKIT.props.garden(island, { beds, key, ground }) -> { group, tris, draws, island, beds, box { w, d, h }, plots [{ x, z, w, d, y }] (each
+//   bed's middle, size and soil height), at [[x, y, z] × 3 per bed] }
+const GARDEN_CROP = ['oats', 'rye', 'wheat', 'apples', 'berries', 'butter', 'curd', 'dates', 'olives', 'herb'];
+let GDM = null;
+function gardenMats() {
+  if (GDM) return GDM;
+  const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  // raked earth: a dark loam with clods, small stones and the rake's tines along u
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), r = stream('garden:soil');
+  x.fillStyle = '#4a3626'; x.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 900; i++) { const v = r(); x.fillStyle = v < .5 ? `rgba(30,20,12,${(.2 + r() * .3).toFixed(2)})` : `rgba(120,92,64,${(.12 + r() * .2).toFixed(2)})`; const s = 2 + r() * 6; x.beginPath(); x.ellipse(r() * 256, r() * 256, s, s * (.5 + r() * .5), r() * 3, 0, 7); x.fill(); }
+  for (let i = 0; i < 60; i++) { x.fillStyle = `rgba(${150 + r() * 40 | 0},${140 + r() * 30 | 0},${120 + r() * 30 | 0},.8)`; x.fillRect(r() * 256, r() * 256, 2 + r() * 3, 2 + r() * 2); }
+  x.strokeStyle = 'rgba(25,16,10,.25)'; x.lineWidth = 2; for (let i = 0; i < 256; i += 11) { x.beginPath(); x.moveTo(0, i + r() * 3); for (let u = 0; u <= 256; u += 32) x.lineTo(u, i + (r() - .5) * 4); x.stroke(); }
+  GDM = { soil: std(0xffffff, 1, { map: finishTex(c) }), hazel: mat('wood', { ns: .7, color: 0x7a6248, rough: .95 }), bark: mat('bark', { ns: 1.0, color: 0x8a7258, rough: .95 }),
+    pine: mat('wood', { ns: .8, color: 0xc8a878, rough: .9 }), lime: mat('limestone', { ns: 1.0, color: 0xe6dcc6, rough: .95 }), jar: mat('plaster', { ns: .6, color: 0xb86e48, rough: .8 }),
+    crop: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .85, side: THREE.DoubleSide }) };
+  GDM.jar.side = THREE.DoubleSide; return GDM;
+}
+function houseGarden(island, o = {}) {
+  island = island === 'mark' || island === 'aurenne' ? island : 'gatelands';
+  const M = gardenMats(), B = new Map(), CR = [], G0 = typeof o.ground === 'function' ? o.ground : () => 0, V3 = (x, y, z) => new THREE.Vector3(x, y, z), key = String(o.key || 'garden:' + island);
+  const beds = [0, 1, 2, 3].map(i => { const e = o.beds && o.beds[i]; if (!e || !GARDEN_CROP.includes(e.crop)) return null; return { crop: e.crop, stage: ['sown', 'growing', 'ready'].includes(e.stage) ? e.stage : 'growing' }; });
+  const put = (k, g, s = 2) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); worldUV(g, s); if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  // a crop part: vertex-coloured, the colour jittered a little by part
+  const crop = (g, hex, rr, jit = .08) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); const C = new THREE.Color(hex), k = 1 + (rr() - .5) * 2 * jit, n = g.attributes.position.count, a = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { a[i * 3] = Math.min(1, C.r * k); a[i * 3 + 1] = Math.min(1, C.g * k); a[i * 3 + 2] = Math.min(1, C.b * k); } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); CR.push(g); };
+  const beam = (k, a, b, r, seg = 6) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), L = d.length(); if (L < 1e-4) return;
+    const g = new THREE.CylinderGeometry(r * .92, r, L, seg); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); put(k, g); };
+  const BW = 1.5, BD = 1.1, PATH = .8, X0 = BW / 2 + PATH / 2, Z0 = BD / 2 + PATH / 2;
+  const TOP = island === 'gatelands' ? .2 : island === 'mark' ? .17 : .16, EDGE = island === 'gatelands' ? .3 : island === 'mark' ? .26 : .24;
+  const plots = [], at = [];
+  for (let i = 0; i < 4; i++) {
+    const bx = (i & 1 ? 1 : -1) * X0, bz = (i & 2 ? 1 : -1) * Z0, rr = stream(key + ':bed:' + i), gy = (x, z) => G0(x, z);
+    const ridge = z => .03 * Math.cos((z - bz) / (BD - .1) * 3 * Math.PI * 2 - Math.PI);
+    // the earth: a plane over the bed, three ridges along x, set on the land's own heights
+    { const g = new THREE.PlaneGeometry(BW - .04, BD - .04, 12, 12); g.rotateX(-Math.PI / 2); g.translate(bx, 0, bz); const P = g.attributes.position;
+      for (let k = 0; k < P.count; k++) P.setY(k, gy(P.getX(k), P.getZ(k)) + TOP + ridge(P.getZ(k)) + (rr() - .5) * .012); g.computeVertexNormals(); put('soil', g, 1); }
+    const y0 = gy(bx, bz) + TOP;
+    plots.push({ x: bx, z: bz, w: BW, d: BD, y: +y0.toFixed(3) });
+    at.push([-.45, 0, .45].map(u => [bx + u, gy(bx + u, bz) + TOP + .03, bz]));
+    // the edge round it
+    const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [bx + a * BW / 2, bz + b * BD / 2]);
+    if (island === 'gatelands') {
+      // wattle: hazel stakes every 0.3 m, three courses of rods woven in and out between them
+      for (let s = 0; s < 4; s++) { const [ax, az] = corners[s], [cx, cz] = corners[(s + 1) % 4], L = Math.hypot(cx - ax, cz - az), n = Math.max(2, Math.round(L / .3)), nx = -(cz - az) / L, nz = (cx - ax) / L;
+        for (let k = 0; k < n; k++) { const t = k / n, sx = ax + (cx - ax) * t, sz = az + (cz - az) * t, g0 = gy(sx, sz); beam('hazel', [sx, g0 - .08, sz], [sx + (rr() - .5) * .02, g0 + EDGE + .05 + rr() * .04, sz + (rr() - .5) * .02], .018, 4); }
+        for (let c = 0; c < 3; c++) { const yc = .08 + c * .09, pts = []; for (let k = 0; k <= n; k++) { const t = k / n, sx = ax + (cx - ax) * t, sz = az + (cz - az) * t, w = (k + c) % 2 ? .03 : -.03;
+            pts.push([sx + nx * w, gy(sx, sz) + yc, sz + nz * w]); }
+          for (let k = 0; k + 1 < pts.length; k++) beam('hazel', pts[k], pts[k + 1], .015, 3); } }
+    } else if (island === 'mark') {
+      // two courses of half-logs, the long sides on the bottom course, the ends on the top, each running past the corner
+      for (const [c, long] of [[0, true], [1, false], [2, true], [3, false]]) { const course = c >> 1, r = .07, yc = r * .9 + course * r * 1.7;
+        const [L, a, b] = long ? [BW + .26, 0, (c & 1 ? 1 : -1)] : [BD + .26, (c & 1 ? 1 : -1), 0];
+        const sideA = long ? [-1, 1] : [-1, 1];
+        for (const s of sideA) { const cx = long ? bx : bx + s * (BW / 2 + r * .3), cz = long ? bz + s * (BD / 2 + r * .3) : bz, g0 = gy(cx, cz);
+          const g = new THREE.CylinderGeometry(r, r, L, 7, 1, false, 0, Math.PI); if (long) g.rotateZ(Math.PI / 2); else g.rotateX(Math.PI / 2);
+          g.rotateY(0); g.translate(cx, g0 + yc - r * .5, cz); put('bark', g, 1.5);
+          const e = new THREE.BoxGeometry(long ? L : .02, .02, long ? .02 : L); e.translate(cx, g0 + yc - r * .5 - .005, cz); put('pine', e); } }
+    } else {
+      // limestone kerbs: blocks 0.3 to 0.45 m long, a hand off true
+      for (let s = 0; s < 4; s++) { const [ax, az] = corners[s], [cx, cz] = corners[(s + 1) % 4], L = Math.hypot(cx - ax, cz - az), ry = Math.atan2(-(cz - az), cx - ax), nx = -(cz - az) / L, nz = (cx - ax) / L;
+        let t = 0; while (t < L - .05) { const l = Math.min(L - t, .3 + rr() * .15), m = t + l / 2, sx = ax + (cx - ax) / L * m - nx * .06, sz = az + (cz - az) / L * m - nz * .06, h = EDGE + (rr() - .5) * .04;
+          const g = new THREE.BoxGeometry(l - .02, h, .13 + rr() * .03); g.rotateY(ry + (rr() - .5) * .06); g.translate(sx, gy(sx, sz) + h / 2 - .06, sz); put('lime', g, 2); t += l; } }
+    }
+    // what grows in it
+    const b = beds[i]; if (!b || b.crop === 'herb') continue;
+    const st = b.stage, ready = st === 'ready', sown = st === 'sown', soilY = (x, z) => gy(x, z) + TOP + ridge(z);
+    if (b.crop === 'oats' || b.crop === 'rye' || b.crop === 'wheat') {
+      const H = { oats: .85, rye: 1.15, wheat: .95 }[b.crop], GOLD = { oats: 0xd6c894, rye: 0xb8a478, wheat: 0xd8b062 }[b.crop];
+      for (const dz of [-1, 0, 1]) { const z = bz + dz * (BD - .1) / 3; for (let u = -BW / 2 + .1; u <= BW / 2 - .08; u += .135) { const x = bx + u + (rr() - .5) * .03, y = soilY(x, z), n = sown ? 2 : 3;
+          for (let k = 0; k < n; k++) { const a = rr() * Math.PI * 2, lean = (rr() - .5) * .25, h = (sown ? .07 : ready ? H : H * .45) * (.8 + rr() * .3);
+            const g = new THREE.ConeGeometry(sown ? .006 : .008, h, 3, 1); g.translate(0, h / 2, 0); g.rotateZ(lean); g.rotateY(a); g.translate(x + Math.cos(a) * .02, y, z + Math.sin(a) * .02);
+            crop(g, ready ? GOLD : sown ? 0x7aa848 : 0x5f8c3a, rr);
+            if (!sown) { const lf = new THREE.ConeGeometry(.012, h * .5, 3, 1); lf.translate(0, h * .25, 0); lf.rotateZ(lean + (rr() < .5 ? .7 : -.7)); lf.rotateY(a + 1.3); lf.translate(x, y + h * .15, z); crop(lf, ready ? 0xb8a060 : 0x5a8638, rr); }
+            if (ready) { const tip = V3(0, h, 0).applyAxisAngle(V3(0, 0, 1), lean).applyAxisAngle(V3(0, 1, 0), a);
+              if (b.crop === 'oats') for (let q = 0; q < (k < 2 ? 3 : 0); q++) { const s = new THREE.OctahedronGeometry(.012); s.scale(.7, 1.6, .7); s.translate(x + Math.cos(a) * .02 + tip.x + (q - 1.5) * .02, y + tip.y - .02 - q * .025, z + Math.sin(a) * .02 + tip.z + (q % 2 ? .015 : -.015)); crop(s, GOLD, rr); }
+              else { const s = new THREE.OctahedronGeometry(.016); s.scale(.8, b.crop === 'rye' ? 5 : 3.2, .8); s.translate(x + Math.cos(a) * .02 + tip.x, y + tip.y + (b.crop === 'rye' ? .06 : .04), z + Math.sin(a) * .02 + tip.z); crop(s, GOLD, rr); } } } } }
+    } else if (b.crop === 'butter' || b.crop === 'curd') {
+      // fodder clover in clumps, white-headed (the Gatelands' butter) or red (the Mark's curd) when ready
+      for (let k = 0; k < 22; k++) { const x = bx + (rr() - .5) * (BW - .16), z = bz + (rr() - .5) * (BD - .16), y = soilY(x, z), s = (sown ? .04 : .1) * (.8 + rr() * .4);
+        const g = new THREE.IcosahedronGeometry(1, 0); g.scale(s, s * (sown ? .5 : .45), s); g.translate(x, y + s * .25, z); crop(g, sown ? 0x7aa848 : 0x4f7e34, rr, .12);
+        if (ready) for (let q = 0; q < 3; q++) { const f = new THREE.IcosahedronGeometry(.018, 0); f.translate(x + (rr() - .5) * s, y + s * .55 + .03, z + (rr() - .5) * s); crop(f, b.crop === 'butter' ? 0xf2efe4 : 0xc0507a, rr); } }
+    } else if (b.crop === 'berries') {
+      for (const u of [-.48, 0, .48]) { const x = bx + u, z = bz + (rr() - .5) * .2, y = soilY(x, z), R = sown ? .07 : ready ? .3 : .2;
+        if (sown) { beam('hazel', [x, y, z], [x, y + .14, z], .008, 4); const g = new THREE.IcosahedronGeometry(R, 0); g.scale(1, .6, 1); g.translate(x, y + .15, z); crop(g, 0x5f8c3a, rr); continue; }
+        for (let q = 0; q < 3; q++) { const g = new THREE.IcosahedronGeometry(R * (.7 + rr() * .3), 1); g.scale(1, .7, 1); g.translate(x + (rr() - .5) * R * .6, y + R * .55 + q * R * .12, z + (rr() - .5) * R * .6); crop(g, 0x3c6a34, rr, .1); }
+        if (ready) for (let q = 0; q < 26; q++) { const a = rr() * 7, e = rr() * 1.2, f = new THREE.TetrahedronGeometry(.016); f.translate(x + Math.cos(a) * R * .9 * Math.cos(e * .6), y + R * .55 + Math.sin(e) * R * .6, z + Math.sin(a) * R * .9 * Math.cos(e * .6)); crop(f, 0x2a2c58, rr); } }
+    } else {
+      // a tree to the bed: apples, olives or a young date palm, sized by its stage
+      const x = bx, z = bz, y = soilY(x, z), S = sown ? .25 : ready ? 1 : .65;
+      if (b.crop === 'dates') {
+        const H = 1.5 * S; for (let k = 0; k < 6; k++) { const g = new THREE.CylinderGeometry(.07 * S + .02 - k * .003, .08 * S + .025 - k * .003, H / 6, 7); g.translate(x, y + H / 6 * (k + .5), z); crop(g, k % 2 ? 0x8a7050 : 0x7a6044, rr, .04); }
+        for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2 + rr() * .3, L = (.7 + rr() * .3) * (S * .9 + .1), pts = [];
+          for (let q = 0; q <= 5; q++) { const t = q / 5; pts.push([x + Math.cos(a) * L * t, y + H + L * (.45 * t - .7 * t * t), z + Math.sin(a) * L * t]); }
+          for (let q = 0; q < 5; q++) { const w = .09 * (1 - q / 6) * (S * .8 + .2), [p0, p1] = [pts[q], pts[q + 1]], g = new THREE.BufferGeometry(), nx = -Math.sin(a) * w, nz = Math.cos(a) * w;
+            g.setAttribute('position', new THREE.Float32BufferAttribute([p0[0] - nx, p0[1], p0[2] - nz, p0[0] + nx, p0[1], p0[2] + nz, p1[0] + nx, p1[1] - .01, p1[2] + nz, p0[0] - nx, p0[1], p0[2] - nz, p1[0] + nx, p1[1] - .01, p1[2] + nz, p1[0] - nx, p1[1] - .01, p1[2] - nz], 3)); g.computeVertexNormals(); crop(g, 0x5a7a3a, rr, .1); } }
+        if (ready) for (let k = 0; k < 2; k++) { const a = k * Math.PI + .6; for (let q = 0; q < 14; q++) { const f = new THREE.IcosahedronGeometry(.022, 0); f.scale(1, 1.4, 1); f.translate(x + Math.cos(a) * (.12 + rr() * .08), y + H - .1 - rr() * .25, z + Math.sin(a) * (.12 + rr() * .08)); crop(f, 0xc06a28, rr); } }
+      } else {
+        const olive = b.crop === 'olives', H = (olive ? 1.1 : 1.0) * S, LEAF = olive ? 0x8a9a70 : 0x4a7a36;
+        const TR = olive ? .5 : .42; beam('hazel', [x, y - .05, z], [x + (olive ? .06 : .02) * S, y + H * TR + .05, z + (olive ? -.04 : .02) * S], .045 * S + .012, 6);
+        const crowns = sown ? 1 : 4, R = (olive ? .36 : .44) * S;
+        for (let k = 0; k < crowns; k++) { const a = k / crowns * Math.PI * 2 + rr(), d = k ? R * .55 : 0, g = new THREE.IcosahedronGeometry(R * (k ? .75 : 1), 1); g.scale(1, olive ? .65 : .8, 1);
+          g.translate(x + Math.cos(a) * d, y + H * TR + R * .75 + (k ? .02 : .08), z + Math.sin(a) * d); crop(g, LEAF, rr, .1); }
+        if (ready) for (let q = 0; q < (olive ? 30 : 18); q++) { const a = rr() * 7, e = (rr() - .45) * 1.1, f = new THREE.IcosahedronGeometry(olive ? .018 : .042, 0); if (olive) f.scale(1, 1.3, 1);
+          const rf = R * (1.06 + rr() * .08); f.translate(x + Math.cos(a) * rf * Math.cos(e), y + H * TR + R * .8 + Math.sin(e) * rf * (olive ? .65 : .8), z + Math.sin(a) * rf * Math.cos(e)); crop(f, olive ? 0x3a2a3a : 0xb8302a, rr); }
+      }
+    }
+  }
+  // Aurenne's water jar at the head of the cross path, on the +x end
+  if (island === 'aurenne') { const jx = X0 + BW / 2 + .02, jz = 0, y = G0(jx, jz) - .02, r = .2, h = .55;
+    const p = [[0, 0], [r * .5, 0], [r * .85, h * .25], [r, h * .5], [r * .8, h * .8], [r * .42, h * .92], [r * .5, h]].map(([a, b]) => new THREE.Vector2(a, b));
+    const g = new THREE.LatheGeometry(p, 10); g.translate(jx, y, jz); put('jar', g, 4); }
+  const group = new THREE.Group(); group.name = 'garden:' + island; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, M[k]); m.name = 'garden:' + k; m.castShadow = k !== 'soil'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  if (CR.length) { let n = 0; for (const g of CR) n += g.attributes.position.count; const P = new Float32Array(n * 3), N = new Float32Array(n * 3), C = new Float32Array(n * 3); let off = 0;
+    for (const g of CR) { const c = g.attributes.position.count; P.set(g.attributes.position.array.subarray(0, c * 3), off * 3); N.set(g.attributes.normal.array.subarray(0, c * 3), off * 3); C.set(g.attributes.color.array.subarray(0, c * 3), off * 3); off += c; g.dispose(); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('color', new THREE.BufferAttribute(C, 3)); g.computeBoundingSphere();
+    const m = new THREE.Mesh(g, M.crop); m.name = 'garden:crop'; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += n / 3; }
+  const W = 2 * BW + PATH + (island === 'mark' ? .4 : .1) + (island === 'aurenne' ? .45 : 0), D = 2 * BD + PATH + (island === 'mark' ? .4 : .1);
+  return { group, tris: Math.round(tris), draws: group.children.length, island, beds, box: { w: +W.toFixed(2), d: +D.toFixed(2), h: EDGE }, plots, at };
+}
 // ── ships (card F11, backlog L6, OG-004; Session 1531): the Gatelands sloop of docs/prototypes/levelup/ships.js (gatelandsSloop,
 // Session 858; Michael's A on #306: the square sail, the harp, a tiller on the small hulls), in the game's sloop's numbers (L 13, W 4.4,
 // draft 1.05, the deck 1.0 over the sea): clinker strakes lapped, tarred below the water and oak above, the sheer strake green under a
@@ -10118,7 +10251,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, shape: S, houses, slip, steps, stairTop: S.stairTop, lookout: look, boats, cargo };
   }
   aurenneCove.shape = coveShape; /* the world reads the cut ground before the piece is built (offroadStamps) */
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
