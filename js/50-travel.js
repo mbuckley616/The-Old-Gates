@@ -794,8 +794,15 @@ function campfireNear(){if(activeZoneId!=='world'||(typeof isInterior==='functio
 function atFire(){return hearthHere()||!!campfireNear();}
 function fireSpotOk(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return false;
   if(typeof WORLD!=='undefined'&&WORLD.isSwimming&&WORLD.isSwimming())return false;if(typeof SHIP!=='undefined'&&SHIP.sailing)return false;return true;}
+// S2150 — where a fire is laid: 0.9 m ahead as before, unless a solid (a trunk, a wall, a rock) stands in its footprint; then
+// camp and rest's own search (campSpot, S2102) turns off the line and steps out to 1.8 m, inside FIRE_REACH, so you are at it once lit.
+// The footprint is the island's fire (the kit's, measured), by its own box at a turn of 0 (the Gatelands' turf seat to one side, the Mark's long fire across your way)
+const FIRE_FOOT={gatelands:[-.9,1.6,-.8,.8],mark:[-1.2,1.2,-.64,.64],aurenne:[-.9,.75,-.75,.98]};
+function fireSpot(){let isle='gatelands';try{isle=nationKeyOf(...cellOf(px,pz));}catch(e){}
+  if(typeof campSpot!=='function')return {x:px-Math.sin(yaw)*.9,z:pz-Math.cos(yaw)*.9,ry:yaw};
+  return campSpot(.9,FIRE_FOOT[isle]||FIRE_FOOT.gatelands,1.8);}
 // a plain stand-in until the kit's fire arrives (the look builder's): three logs and a flame
-function campfireMesh(x,z){{let K=null;try{K=typeof campFireProp==='function'?campFireProp(x,z,typeof yaw==='number'?yaw:0):null;}catch(e){K=null;}if(K)return K;} /* S2114 — the kit's fire, laid by its island, on the new look */
+function campfireMesh(x,z,ry){if(typeof ry!=='number')ry=typeof yaw==='number'?yaw:0;{let K=null;try{K=typeof campFireProp==='function'?campFireProp(x,z,ry):null;}catch(e){K=null;}if(K)return K;} /* S2114 — the kit's fire, laid by its island, on the new look */
   const g=new THREE.Group();const y=typeof worldH==='function'?worldH(x,z):0;
   const wood=new THREE.MeshLambertMaterial({color:0x5a3a20});
   for(let i=0;i<3;i++){const l=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.6,6),wood);l.rotation.z=Math.PI/2;l.rotation.y=i*Math.PI/3;l.position.y=.06;g.add(l);}
@@ -807,9 +814,9 @@ function lightFire(){
   if(!fireSpotOk()){showMsg('There is no place for a fire here.','#cc8844');return null;}
   const plain=bagCount(b=>b.log==='log')>0;
   if(!bagTake(b=>plain?b.log==='log':!!b.log,1)){showMsg('A fire needs a log.','#cc8844');return null;}
-  const x=px-Math.sin(yaw)*.9,z=pz-Math.cos(yaw)*.9;
+  const S=fireSpot(),x=S.x,z=S.z;
   const f={x,z,until:gameMinNow()+FIRE_HOURS*60,mesh:null};
-  try{f.mesh=campfireMesh(x,z);scene.add(f.mesh);f.scn=scene;}catch(e){f.mesh=null;}
+  try{f.mesh=campfireMesh(x,z,S.ry);scene.add(f.mesh);f.scn=scene;}catch(e){f.mesh=null;}
   CAMPFIRES.push(f);showMsg('The fire catches.','#ffb060');if(typeof renderHubInv==='function')renderHubInv();return f;}
 function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
 // S2149 (first numbered 2147) — the cold ash: a fire burnt out or doused leaves the kit's 'out' stage (ash and charred stubs, a thread of smoke) where it lay, for
