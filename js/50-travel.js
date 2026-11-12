@@ -379,7 +379,7 @@ function harvestHerb(h){
   if(typeof WORLD!=='undefined')WORLD.guild.onHarvest(h); // v80 S12
   const item={...h.def.item,qty:1,_typeKey:h.type};
   if(!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return;}
-  h.harvested=true;h.gl.intensity=0;skillUse('alchemy',1,h); /* S941 — a pick is an Alchemy use */
+  h.harvested=true;h.gl.intensity=0;skillUse('alchemy',plantPickMarks(h.type),h); /* S941 — a pick is an Alchemy use; S2157 — the first of its kind 10 (the field guide) */
   {const u=h.g.userData;if(u&&u.picked){u.whole.visible=false;u.picked.visible=true;}else h.g.visible=false;} // S217 — a bush picked in the old zones stays, bare, as in the world
   if(h.def.respawn!=null)h.respawnT=h.def.respawn;
   bagAdd(item);if(h.gate&&typeof gateHerbPicked==='function')gateHerbPicked(h); /* S1886 — a gate's plant: entered within the hour, its gate teaches it */
@@ -542,6 +542,161 @@ const HERB_KIN=new Set(['firemoss','silverleaf','muirfhear','thornberry','shadow
 function herbKeyOf(it){if(!it)return null;if(it._typeKey&&HERB_FX[it._typeKey])return it._typeKey;if(typeof HERB_DEF!=='undefined')for(const k in HERB_DEF)if(HERB_DEF[k].name===it.name)return k;
   const k=String(it.name||'').toLowerCase().replace(/[^a-z]/g,'');return HERB_FX[k]?k:null;}
 function herbsKnown(){return worldState.herbsKnown||(worldState.herbsKnown={fx:{},none:{}});}
+// ── S2157 — the field guide (Michael's B on #1463, docs/design/rare-specimens-and-the-field-guide.md, session 1 of 3) ──
+// What you have picked, kept as yours (herbsKnown().seen, in SS_CHAR_WS with the rest of it): notePlant is the named action, and the first
+// pick of a kind is 10 Alchemy marks, not 1. The book, A Field Guide to the Three Islands, is drawn live from it: a page an island, and
+// the sea's and the gates', each plant you have picked with where it grows, its rarity and its effects as far as you know them; the rest
+// empty frames. Rarity is read from where a herb grows (HERB_PLACE, its override, ISLAND_HERB), so a new herb is graded without a list.
+const FIELD_GUIDE_PRICE=20,FIRST_PICK_MARKS=10,GUIDE_PER_PAGE=6;
+// an old save has no seen: what it has eaten, ground or carries counts as picked, with no marks for it
+function herbsSeen(){const K=herbsKnown();if(K.seen)return K.seen;const S=K.seen={},ok=k=>typeof HERB_DEF!=='undefined'&&HERB_DEF[k];
+  for(const k in HERB_CONSUME_COUNTS)if(ok(k)&&HERB_CONSUME_COUNTS[k]>0)S[k]=1;for(const k in K.fx||{})if(ok(k))S[k]=1;
+  for(const it of BAG){if(!it||it.type!=='herb')continue;const k=herbKeyOf(it);if(k&&ok(k))S[k]=1;}return S;}
+function plantSeen(k){return !!herbsSeen()[k];}
+// the named action: a plant picked; true the first time of its kind
+function notePlant(k){if(!k||typeof HERB_DEF==='undefined'||!HERB_DEF[k])return false;const S=herbsSeen();if(S[k])return false;S[k]=1;return true;}
+function plantPickMarks(k){return notePlant(k)?FIRST_PICK_MARKS:1;}
+function herbPlaceOf(k){if(typeof ISLAND_HERB!=='undefined'&&ISLAND_HERB[k])return ISLAND_HERB[k];if(HERB_PLACE_OVR[k])return HERB_PLACE_OVR[k];
+  return typeof HERB_PLACE!=='undefined'&&HERB_PLACE[k]||null;}
+// Common in 4 or more biomes, Uncommon in 2 or 3, Rare in 1, or flagged rare, or a gate's plant; the sea's grow in every island's waters
+function herbRarity(k){const d=HERB_DEF[k];if(!d)return null;if(d.zone==='gate')return 'Rare';if(d.zone==='sea')return 'Common';
+  const p=herbPlaceOf(k);if(!p)return 'Rare';if(p.rare)return 'Rare';const n=p.biomes.length;return n>=4?'Common':n>=2?'Uncommon':'Rare';}
+const GUIDE_ISLE={gatelands:'the Gatelands',mark:'the Mark',aurenne:'Aurenne'};
+const GUIDE_GROUND={rock:'on rock',open:'in the open',water:'by water',sand:'on sand',tree:'under trees',house:'by houses'};
+const GUIDE_BIOME={plains:'grassland',forest:'forest',autumn:'the autumn woods',fen:'fen',swamp:'swamp',moor:'moor',tundra:'tundra',coast:'coast',dunes:'dunes',wastes:'the wastes',wasteland:'the wasteland'};
+const GUIDE_GATE={lichenbloom:'On the stone about a steady gate.',gatelotus:'In the grass about a failing gate.',gateresin:'On bare stone about a gate near breaking.',caverglow:'On the walls of a lair’s way in.'};
+function herbWhere(k){const d=HERB_DEF[k];if(!d)return '';if(d.zone==='gate')return GUIDE_GATE[k]||'About the gates.';if(d.zone==='sea')return 'On the sea floor, in any island’s waters.';
+  const p=herbPlaceOf(k),isle=GUIDE_ISLE[herbIsland(k)]||'the Gatelands';if(!p)return isle[0].toUpperCase()+isle.slice(1)+'.';
+  const gr=p.ctx.map(c=>GUIDE_GROUND[c]||c),bi=p.biomes.map(b=>GUIDE_BIOME[b]||b);
+  return (isle[0].toUpperCase()+isle.slice(1))+': '+gr.join(', ')+'; '+bi.join(', ')+'.';}
+function herbFxLine(k){const fx=HERB_FX[k];if(!fx){const d=HERB_DEF[k];return d&&d.knownDesc||'';}
+  return fx.map((f,i)=>herbFxKnown(k,i)?(ALCH_FX[f]?ALCH_FX[f].label:f):'?').join(' · ');}
+// the guide's sections, in HERB_DEF's order: each island's herbs, then the sea's and the gates'
+function guideSections(){if(typeof ensureSeaHerbs==='function')try{ensureSeaHerbs();}catch(e){}
+  const sec=[['THE GATELANDS',[]],['THE MARK',[]],['AURENNE',[]],['THE SEA AND THE GATES',[]]],at={gatelands:0,mark:1,aurenne:2};
+  for(const k in HERB_DEF){const d=HERB_DEF[k];const i=d.zone==='sea'||d.zone==='gate'?3:at[herbIsland(k)];sec[i==null?0:i][1].push(k);}return sec;}
+function fieldGuideCount(){let n=0,of=0;for(const [,ks] of guideSections())for(const k of ks){of++;if(plantSeen(k))n++;}return {n,of};}
+function fieldGuidePages(){const sec=guideSections(),C=fieldGuideCount();
+  const head='A FIELD GUIDE TO THE THREE ISLANDS\n\nWhat grows on the Gatelands, the Mark and Aurenne, in their waters and about the gates. A plant is entered here once you have picked it; the empty frames are those still to find.\n\n'+C.n+' of '+C.of+' found.\n\n'+
+    sec.map(([t,ks])=>t[0]+t.slice(1).toLowerCase().replace(/\b(gatelands|mark|aurenne|sea|gates)\b/g,w=>w[0].toUpperCase()+w.slice(1))+': '+ks.filter(plantSeen).length+' of '+ks.length).join('\n');
+  const pages=[head];
+  for(const [t,ks] of sec){const parts=Math.ceil(ks.length/GUIDE_PER_PAGE);
+    for(let p=0;p<parts;p++){const rows=ks.slice(p*GUIDE_PER_PAGE,(p+1)*GUIDE_PER_PAGE).map(k=>{if(!plantSeen(k))return '— an empty frame —';const d=HERB_DEF[k];
+        return d.name+' — '+herbRarity(k)+'\n'+herbWhere(k)+'\n'+herbFxLine(k);});
+      pages.push(t+(parts>1?' ('+(p+1)+' of '+parts+')':'')+'\n\n'+rows.join('\n\n'));}}
+  /* S2160 — the rare specimens: named once picked or looked at shut, with their hour once known */
+  if(typeof SPEC_DEF!=='undefined'){const S=specKnown(),ks=Object.keys(SPEC_DEF);pages[0]+='\nRare specimens: '+ks.filter(k=>S.seen[k]).length+' of '+ks.length;
+    const rows=ks.map(k=>{const D=SPEC_DEF[k];if(!S.seen[k]&&!S.cond[k])return '— an empty frame —';const isle=GUIDE_ISLE[D.island];
+      return D.name+' — Rare'+(S.seen[k]?'':' (seen shut)')+'\n'+isle[0].toUpperCase()+isle.slice(1)+': '+D.biomes.map(b=>GUIDE_BIOME[b]||b).join(', ')+(D.water==='bank'?', on river banks':D.water?', by water':'')+'.\n'+(S.cond[k]?SPEC_WHEN[D.open]:'When it opens is not yet known.')+(S.seen[k]?'\nIn the mortar: '+specCatLine(k):'');});
+    for(let p=0;p<rows.length;p+=GUIDE_PER_PAGE)pages.push('RARE SPECIMENS'+(rows.length>GUIDE_PER_PAGE?' ('+(p/GUIDE_PER_PAGE+1)+' of '+Math.ceil(rows.length/GUIDE_PER_PAGE)+')':'')+'\n\n'+rows.slice(p,p+GUIDE_PER_PAGE).join('\n\n'));}
+  return pages;}
+BOOKS.push({id:'field_guide',name:'A Field Guide to the Three Islands',ico:'📗',attr:null,get pages(){return fieldGuidePages();}});
+function fieldGuideFor(h){if(!h||!(h.type==='potion'||h.type==='apothecary'))return [];const def=BOOKS.find(b=>b.id==='field_guide');const it=makeBookItem(def);it.buyPrice=FIELD_GUIDE_PRICE;return [it];}
+// ── S2160 — rare specimens (#1463 B, session 2 of 3: placement, hours and buds) ──
+// Not herbs: no row in HERB_DEF or HERB_FX, so the four-effect pool and its suites stand. Each grows in patches on its own island,
+// 4 to 6 tries a cell of 2 to 4 plants, placed once per cell from the cell's hash and stable reads only (the cell's and its eight
+// neighbours' regions, rawH, the cell's sites), so a patch never hangs on what has loaded; each plant is <i>,<j>:sp:<kind>:<n>:<m>.
+// It opens at its hour or in its weather and is a closed bud otherwise (specOpen). E at a bud writes its condition into your guide
+// (learnSpecCond, the character's); E at an open one picks it (pickSpec): 10 Alchemy marks the first time, 1 after, the plant gone
+// for SPEC_REGROW_D game days (worldState.picked, the world's). Skyshard and Saltcrystal wait on the quest writer's yes on their names
+// (the page's "what must be true first"). The stand-in mesh is a kin herb's, whole when open and small and shut as a bud, until the
+// bodies builder's nine land. The catalysts and the study are session 3.
+const SPEC_DEF={
+  whispercap:{name:'Whispercap',island:'gatelands',kin:'shadowcap',biomes:['forest','autumn'],open:'dusk',price:45,eat:'stamina',desc:'A grey fungus of the old woods.'},
+  moonfenorchid:{name:'Moonfen Orchid',island:'gatelands',kin:'veilwort',biomes:['moor','swamp','fen'],water:'wet',open:'clearNight',price:70,eat:'mana',desc:'A pale orchid of the moor pools.'},
+  bloodreed:{name:'Bloodreed',island:'gatelands',kin:'muirfhear',biomes:['plains','forest','autumn','moor','fen','swamp'],water:'bank',open:'rain',price:50,eat:'health',desc:'A red-stemmed reed of the river margins.'},
+  ironleaf:{name:'Ironleaf',island:'mark',kin:'coldmoss',biomes:['tundra'],open:'snow',price:55,eat:'health',desc:'A dark leaf that unrolls under snow.'},
+  snowshroom:{name:'Snowshroom',island:'mark',kin:'frostcap',biomes:['forest'],open:'dawn',price:45,eat:'stamina',desc:'A white fungus of the spruce woods.'},
+  miragebloom:{name:'Miragebloom',island:'aurenne',kin:'sandlotus',biomes:['dunes'],open:'noonClear',price:70,eat:'mana',desc:'A flower of the dunes that opens in the noon glare.'},
+  sunglass:{name:'Sunglass',island:'aurenne',kin:'shardmoss',biomes:['dunes','wastes','wasteland'],open:'afterStorm',price:90,eat:'mana',desc:'Sand fused to glass where lightning struck.'}};
+const SPEC_REGROW_D=7,SPEC_RAIN_AFTER=120,SPEC_STORM_AFTER=360;
+const SPEC_WHEN={dusk:'It opens at dusk.',clearNight:'It opens at night under a clear sky.',rain:'It opens in the rain, and for a while after.',snow:'It opens under snow.',
+  dawn:'It opens at dawn.',noonClear:'It opens at noon under a clear sky.',afterStorm:'It opens after a storm.'};
+// the named action for the weather's history (the world's, worldState.wxSeen): the last minute it rained and the last it stormed
+function noteWeather(){if(typeof WX==='undefined')return;const t=WX.type,W=worldState.wxSeen||(worldState.wxSeen={}),now=gameMinNow();
+  if(t==='rain'||t==='storm')W.rain=now;if(t==='storm')W.storm=now;}
+function specClear(){return typeof WX!=='undefined'&&WX.type==='clear';}
+function specOpen(kind){const D=SPEC_DEF[kind];if(!D)return false;const h=gameHour(),W=worldState.wxSeen||{},now=gameMinNow(),t=typeof WX!=='undefined'?WX.type:'clear';
+  switch(D.open){case 'dusk':return h>=19&&h<22;case 'dawn':return h>=5&&h<8;case 'clearNight':return (h>=22||h<4)&&specClear();case 'noonClear':return h>=11&&h<15&&specClear();
+    case 'rain':return t==='rain'||t==='storm'||(W.rain!=null&&now-W.rain<=SPEC_RAIN_AFTER);case 'snow':return typeof WX!=='undefined'&&WX.cover>=.5;
+    case 'afterStorm':return t!=='storm'&&W.storm!=null&&now-W.storm<=SPEC_STORM_AFTER;}return false;}
+// the biome at a spot from the cell's and its neighbours' regions (lairBiome's read), never REGIONS
+function specBiome(x,z){const [ci,cj]=cellOf(x,z);let best=null,bw=0;for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){const c=getCell(i,j);if(!c||!c.regions)continue;
+    for(const r of c.regions){const d=Math.hypot(x-r.x,z-r.z)/r.r,w=Math.max(0,1-d);if(w>bw||(!bw&&(!best||d<best._d))){bw=w;best=r;r._d=d;}}}return best?best.biome:null;}
+// by a river or a lake: within SPEC_BANK m of its water, read from the routed carve grid (RVG, the same whether a cell is loaded or not)
+const SPEC_BANK=12,_specRs=[0,0];
+function specWaterNear(x,z){if(typeof RVG==='undefined')return false;if(!RV.ready)routeWorld();const bk=RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));if(!bk)return false;
+  for(const e of bk){if(e.lk){if(Math.hypot(x-e.lk.x,z-e.lk.z)<e.lk.r+SPEC_BANK)return true;continue;}riverSample(e.rv,e.i0,e.i1,x,z,_specRs);if(_specRs[0]<_specRs[1]+SPEC_BANK)return true;}return false;}
+const SPEC_CELLS=new Map();
+function specCell(i,j){const key=i+','+j;if(SPEC_CELLS.has(key))return SPEC_CELLS.get(key);const out=[];SPEC_CELLS.set(key,out);
+  let isle;try{isle=nationKeyOf(i,j);}catch(e){return out;}const c=getCell(i,j);const sites=[];for(let a=i-1;a<=i+1;a++)for(let b=j-1;b<=j+1;b++){const n=getCell(a,b);if(n&&n.sites)sites.push(...n.sites);}
+  const x0=i*SIZE,z0=j*SIZE;
+  for(const kind in SPEC_DEF){const D=SPEC_DEF[kind];if(D.island!==isle)continue;const R=seededRng('spec',key+':'+kind),n=4+Math.floor(R()*3);
+    for(let p=0;p<n;p++){let at=null;
+      for(let t=0;t<(D.water==='bank'?300:40)&&!at;t++){const x=x0+40+R()*(SIZE-80),z=z0+40+R()*(SIZE-80);if(D.water==='bank'&&!specWaterNear(x,z))continue;if(rawH(x,z)<1.6)continue;
+        const b=specBiome(x,z);if(!D.biomes.includes(b))continue;if(D.water==='wet'&&b==='moor'&&!specWaterNear(x,z))continue; /* the moor's pools; a fen or a swamp is wet ground */
+        if(sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||30)+20))continue;at=[x,z];}
+      if(!at)continue;const m=2+Math.floor(R()*3);
+      for(let q=0;q<m;q++){const a=R()*Math.PI*2,r=q?1.2+R()*2:0;out.push({id:key+':sp:'+kind+':'+p+':'+q,kind,x:at[0]+Math.cos(a)*r,z:at[1]+Math.sin(a)*r,ph:R()*Math.PI*2});}}}
+  return out;}
+const SPECS=[];
+function specGeo(kind){const D=SPEC_DEF[kind];try{return typeof plantGeo==='function'?plantGeo(D.kin,false):null;}catch(e){return null;}}
+// a chunk's specimens, when it builds (called from spawnChunkVeins)
+function spawnChunkSpecs(ch){if(typeof getCell!=='function')return;const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK,[i,j]=cellOf(x0+CHUNK/2,z0+CHUNK/2);
+  for(const p of specCell(i,j)){if(p.x<x0||p.x>=x0+CHUNK||p.z<z0||p.z>=z0+CHUNK)continue;const s={...p,g:null,ch};
+    try{const geo=specGeo(p.kind);if(geo){const m=new THREE.Mesh(geo,typeof PLANT_MAT!=='undefined'?PLANT_MAT:new THREE.MeshLambertMaterial({vertexColors:true}));m.name='spec';m.receiveShadow=true;
+      m.position.set(p.x,worldH(p.x,p.z),p.z);m.rotation.y=p.ph;s.g=m;ch.group.add(m);}}catch(e){}
+    SPECS.push(s);specShow(s);}}
+function specLive(s){return !s.g||!!(s.g.parent&&s.g.parent.parent);}
+function specGone(s){const P=worldState.picked,t=P&&P[s.id];return t!=null&&gameMinNow()-t<SPEC_REGROW_D*1440;}
+// open, a bud, or gone: the stand-in whole (×1.444, the herbs' true size), shut small, or hidden
+function specShow(s){if(!s.g)return;const gone=specGone(s),open=specOpen(s.kind),K=typeof herbLift==='function'?herbLift():1;s.g.visible=!gone;
+  if(open)s.g.scale.set(K,K,K);else s.g.scale.set(K*.45,K*.3,K*.45);s.shown=gone?'gone':open?'open':'bud';}
+let _specT=0;
+function tickSpecs(dt){_specT-=dt;if(_specT>0)return;_specT=1;noteWeather();
+  for(let i=SPECS.length-1;i>=0;i--){const s=SPECS[i];if(!specLive(s)){SPECS.splice(i,1);continue;}if(Math.abs(s.x-px)<150&&Math.abs(s.z-pz)<150)specShow(s);}}
+function specNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;let best=null,bd=TOUCH;
+  for(const s of SPECS){if(!specLive(s)||specGone(s))continue;const d=Math.hypot(px-s.x,pz-s.z);if(d<bd){bd=d;best=s;}}return best;}
+function specKnown(){const K=herbsKnown();return K.spec||(K.spec={seen:{},cond:{}});}
+// the named actions: a condition learnt at a bud, a specimen picked
+function learnSpecCond(kind){const S=specKnown();if(S.cond[kind])return false;S.cond[kind]=1;return true;}
+function specItem(kind){const D=SPEC_DEF[kind],e=D.eat==='health'?[{type:'heal',amount:15},'Restores 15 HP']:D.eat==='stamina'?[{type:'stamina',amount:20},'Restores 20 Stamina']:[{type:'mana',amount:25},'Restores 25 Mana'];
+  return {name:D.name,ico:'✿',type:'herb',spec:kind,effect:e[0],knownDesc:e[1],buyPrice:D.price,sellMult:.8,weight:.1,qty:1};}
+function pickSpec(s){if(!s||specGone(s))return {why:''};const D=SPEC_DEF[s.kind];
+  if(!specOpen(s.kind)){const fresh=learnSpecCond(s.kind);return {bud:true,said:`${D.name}: a closed bud. ${SPEC_WHEN[D.open]}`,fresh};}
+  const it=specItem(s.kind);if(!canCarry(it))return {why:'Too heavy to carry!'};
+  const S=specKnown(),first=!S.seen[s.kind];S.seen[s.kind]=1;learnSpecCond(s.kind);specObserve(s.kind);
+  (worldState.picked||(worldState.picked={}))[s.id]=gameMinNow();bagAdd(it);skillUse('alchemy',first?FIRST_PICK_MARKS:1,s.id);specShow(s);
+  return {picked:D.name,first};}
+function specUse(s){const r=pickSpec(s);if(r.why){if(r.why)showMsg(r.why,'#cc8844');return;}
+  if(r.bud){showMsg(r.said,'#c8b8e8');if(r.fresh)addLog('✿',r.said);return;}
+  addLog('✿','Picked '+r.picked);if(typeof uiTone==='function'){uiTone(320,420,.12,.1,'sine');}showMsg('Picked '+r.picked+'!','#e8c8f0');}
+function specPrompt(s){const D=SPEC_DEF[s.kind];return specOpen(s.kind)?`Press 'E' to pick the ${D.name}`:`A closed bud · E to look closer`;}
+// ── S2159 — the specimens in the mortar (#1463 B, session 3 of 3): each a catalyst, one a grinding, riding with the herbs (brewMax unchanged)
+// and spent. What it does is hidden until learnt, by any of three (OG-097, Morrowind's learning by doing): observe (pick SPEC_OBSERVE open
+// ones), study (an hour at an apothecary's table, your house's workbench or your ship's still, spending one), experiment (grind with it once).
+// It works whether learnt or not; learning only names it, on the brewing page and in the guide.
+const SPEC_CAT={revealing:{name:'Revealing',says:'the brew teaches every effect of every herb in it'},steeping:{name:'Steeping',says:'strength ×1.25'},
+  venom:{name:'Venom',says:'a poison coats a blade for 6 blows, not 3'},lasting:{name:'Lasting',says:'a tincture’s time ×2'},
+  clean:{name:'Clean',says:'a harmful effect is left out, and the rest is a tincture'}};
+const SPEC_CAT_OF={whispercap:'revealing',moonfenorchid:'steeping',bloodreed:'venom',ironleaf:'lasting',snowshroom:'clean',miragebloom:'lasting',sunglass:'revealing'};
+const SPEC_STEEP=1.25,SPEC_VENOM_BLOWS=6,SPEC_LAST=2,SPEC_OBSERVE=3,SPEC_STUDY_MIN=60;
+// the named action: a catalyst learnt (the character's, herbsKnown().spec.cat); true the first time
+function learnSpecimen(kind){if(!SPEC_DEF[kind])return false;const S=specKnown(),C=S.cat||(S.cat={});if(C[kind])return false;C[kind]=1;return true;}
+function specCatKnown(kind){const S=specKnown();return !!(S.cat&&S.cat[kind]);}
+function specCatLine(kind){const c=SPEC_CAT[SPEC_CAT_OF[kind]];return specCatKnown(kind)&&c?`${c.name}: ${c.says}`:'— unknown —';}
+// observe: each open one picked counts; the third teaches it
+function specObserve(kind){const S=specKnown(),O=S.picks||(S.picks={});O[kind]=(O[kind]||0)+1;return O[kind]>=SPEC_OBSERVE&&learnSpecimen(kind);}
+// where a specimen can be studied: an apothecary's room, your house's workbench, your ship's still
+function studyWhere(){if(typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&currentHouse&&(currentHouse.type==='potion'||currentHouse.type==='apothecary'))return 'the apothecary’s table';
+  if(typeof homeFitHere==='function'&&homeFitHere('bench'))return 'your workbench';if(typeof shipFitAtHand==='function'&&shipFitAtHand('still'))return 'the still';return null;}
+function specInBag(kind){return BAG.findIndex(b=>b&&b.type==='herb'&&b.spec===kind);}
+// the named action: an hour's study, one specimen spent. Returns {done, said} or {why}
+function studySpecimen(kind){if(!SPEC_DEF[kind])return {why:''};if(specCatKnown(kind))return {why:'You know it already.'};const at=studyWhere();if(!at)return {why:'Study wants a table: an apothecary’s, your workbench, or a ship’s still.'};
+  if(!bagTake(b=>b.type==='herb'&&b.spec===kind,1))return {why:`You have no ${SPEC_DEF[kind].name}.`};
+  worldState.gameTimeMinutes=((worldState.gameTimeMinutes||0)+SPEC_STUDY_MIN)%1440;worldState.gameTimeAbsMinutes=(worldState.gameTimeAbsMinutes||0)+SPEC_STUDY_MIN;
+  learnSpecimen(kind);skillUse('alchemy',8);const c=SPEC_CAT[SPEC_CAT_OF[kind]];return {done:true,said:`An hour over the ${SPEC_DEF[kind].name} at ${at}. In the mortar it is ${c.name}: ${c.says}.`};}
+function specInBagList(){const m=new Map();BAG.forEach(b=>{if(b&&b.type==='herb'&&b.spec&&SPEC_DEF[b.spec])m.set(b.spec,(m.get(b.spec)||0)+(b.qty||1));});return [...m].map(([k,n])=>({k,n,name:SPEC_DEF[k].name}));}
 // S1499 — Tell (Alchemy 25): a herb's hidden effect is learnt at 5 eats, not HIDDEN_UNLOCK_COUNT's 15
 function herbTellCount(){return perk('alchemy',25)?5:HIDDEN_UNLOCK_COUNT;}
 function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=herbTellCount())return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
@@ -558,41 +713,47 @@ function brewShared(keys){const c={};keys.forEach(k=>new Set(HERB_FX[k]||[]).for
 function hasMortar(){return BAG.some(b=>b&&b.name===MORTAR_NAME);}
 function brewName(fx,poison){const l=fx.map(f=>ALCH_FX[f].label);return (poison?'Poison of ':'Tincture of ')+(l.length>1?l.slice(0,-1).join(', ')+' and '+l[l.length-1]:l[0]);}
 // grind the herbs (HERB_DEF keys, one of each from the bag) into a tincture or a poison. Returns {made, item, learnt, kept}
-function brewHerbs(keys){
+function brewHerbs(keys,cat){
   keys=[...new Set(keys)];
   if(!hasMortar())return {made:false,why:'You need a mortar and pestle.'};
+  if(cat&&(!SPEC_DEF[cat]||specInBag(cat)<0))return {made:false,why:'You do not have that specimen.'}; /* S2159 — one catalyst a grinding */
+  const C=cat?SPEC_CAT_OF[cat]:null;
   if(keys.length<2||keys.length>brewMax())return {made:false,why:brewMax()===3?'Two or three herbs.':'Two herbs.'};
   const idx=keys.map(k=>BAG.findIndex(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));
   if(idx.some(i=>i<0))return {made:false,why:'You do not have those herbs.'};
   const sh=brewShared(keys),K=herbsKnown();
+  if(C==='clean'&&sh.poison){const rest=sh.all.filter(f=>!ALCH_FX[f].harm);if(!rest.length)return {made:false,kept:true,why:'Nothing is left but harm. The herbs are kept.'};sh.fx=rest;sh.poison=false;}
   if(!sh.all.length){for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++)K.none[brewPairKey(keys[i],keys[j])]=1;
     return {made:false,kept:true,why:'Nothing between them. The herbs are kept.'};}
   const newPair=keys.some((a,i)=>keys.some((b,j)=>j>i&&!(K.pairs&&K.pairs[brewPairKey(a,b)])));
   K.pairs=K.pairs||{};for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++)K.pairs[brewPairKey(keys[i],keys[j])]=1;
-  const learnt=[];keys.forEach(k=>HERB_FX[k].forEach((f,i)=>{if(sh.all.includes(f)&&learnHerbFx(k,i))learnt.push(k+':'+f);}));
+  const learnt=[];keys.forEach(k=>HERB_FX[k].forEach((f,i)=>{if((sh.all.includes(f)||C==='revealing')&&learnHerbFx(k,i))learnt.push(k+':'+f);}));
   idx.sort((a,b)=>b-a).forEach(i=>{const b=BAG[i];b.qty=(b.qty||1)-1;if(b.qty<=0)BAG.splice(i,1);});
-  const s=+alchStrength().toFixed(3),day=gameDayNow();
+  let catNew=false;if(cat){bagTake(b=>b.type==='herb'&&b.spec===cat,1);catNew=learnSpecimen(cat);} /* experiment: grinding with it teaches it */
+  const s=+(alchStrength()*(C==='steeping'?SPEC_STEEP:1)).toFixed(3),day=gameDayNow();
   const item={name:brewName(sh.fx,sh.poison),ico:sh.poison?'☠️':'🧪',type:'potion',weight:.5,sellMult:.4,
     buyPrice:Math.max(...sh.fx.map(f=>ALCH_FX[f].price||25)),brew:{fx:sh.fx,s,day,poison:sh.poison}};
-  item.brewKey=sh.fx.join('+')+'@'+s+'/'+day;
+  if(C==='venom'&&sh.poison)item.brew.blows=SPEC_VENOM_BLOWS;if(C==='lasting'&&!sh.poison)item.brew.last=SPEC_LAST;
+  item.brewKey=sh.fx.join('+')+'@'+s+'/'+day+(item.brew.blows?'/b'+item.brew.blows:'')+(item.brew.last?'/l'+item.brew.last:'');
   const n=perk('alchemy',100)?2:1;if(n>1)item.qty=n; /* S1499 — Double measure (Alchemy 100): two from one grinding */
   bagAdd(item);
   skillUse('alchemy',8+(newPair?25:0));
-  return {made:true,item:BAG.find(b=>sameStack(b,item))||item,learnt,newPair,n};
+  return {made:true,item:BAG.find(b=>sameStack(b,item))||item,learnt,newPair,n,cat:cat||null,catNew};
 }
 // drink a tincture, or coat the blade with a poison
 let BLADE_POISON=null;
 function useTincture(i){
   const it=BAG[i];if(!it||!it.brew)return;const s=brewStrength(it),fx=it.brew.fx.slice();
   if(it.brew.poison){const w=EQ.weapon;if(!w||(typeof _isBowEquipped==='function'&&_isBowEquipped())){showMsg('Poison needs a blade in your hand.','#cc8844');return;}
-    BLADE_POISON={fx,s,blows:POISON_BLOWS,name:it.name};it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
+    BLADE_POISON={fx,s,blows:it.brew.blows||POISON_BLOWS,name:it.name};it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
     showMsg(`${it.name} coats your ${w.name}.`,'#9adf9a');if(typeof renderHubInv==='function')renderHubInv();return;}
   if(DRINK){showMsg('You are still drinking.','#cc8844');return;}
   const nm=it.name;it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
-  startDrink(()=>drinkBrew(fx,s,nm),nm);
+  const L=it.brew.last||1;startDrink(()=>drinkBrew(fx,s,nm,L),nm);
 }
-function drinkBrew(fx,s,nm){const said=[];
-  fx.forEach(f=>{const d=ALCH_FX[f];if(d.drink)said.push(d.drink(s));else if(d.buff){const b=d.buff(s);_applyBuff({duration:ALCH_FORTIFY_S,...b,label:d.label,col:d.col});}});
+function drinkBrew(fx,s,nm,L){const said=[];L=L||1; /* S2159 — Lasting: a buff's time and a sense's (Night Eye, Water Breathing) ×L */
+  fx.forEach(f=>{const d=ALCH_FX[f];if(d.drink){if(L>1&&(f==='nightEye'||f==='waterBreathing')){const k=f==='nightEye'?'nighteye':'waterbreath';said.push(d.drink(s));SPELL_FX[k]=Math.max(SPELL_FX[k]||0,performance.now()+60000*s*L);}else said.push(d.drink(s));}
+    else if(d.buff){const B={duration:ALCH_FORTIFY_S,...d.buff(s),label:d.label,col:d.col};B.duration*=L;_applyBuff(B);}});
   if(said.length)showMsg(`${nm} — ${said.join(', ')}`,ALCH_FX[fx[0]].col);
   if(typeof updateHUD==='function')updateHUD();}
 // a landed blow with a poisoned blade (74's resolver): each harmful effect on the foe, three blows
@@ -606,7 +767,7 @@ function foeSlowMult(e){if(!e)return 1;if(e._rootUntil>playClockS)return 0;let m
 // the brewing page's text for a tincture in the bag
 function brewLines(it){const b=it.brew;if(!b)return '';const t=brewTurned(it),s=brewStrength(it);
   return b.fx.map(f=>`<div class="bt-row" style="color:${ALCH_FX[f].col}">${ALCH_FX[f].label}</div>`).join('')+
-    `<div class="bt-row" style="color:#a08860;font-size:9px">${b.poison?'Coats a blade for '+POISON_BLOWS+' blows':'Strength ×'+s.toFixed(2)}${t?' · turned':''}</div>`;}
+    `<div class="bt-row" style="color:#a08860;font-size:9px">${b.poison?'Coats a blade for '+(b.blows||POISON_BLOWS)+' blows':'Strength ×'+s.toFixed(2)+(b.last?' · lasts ×'+b.last:'')}${t?' · turned':''}</div>`;}
 // the mortar at an apothecary and the Mages' Guild (40 gold, weight 1)
 const MORTAR_ITEM={name:MORTAR_NAME,ico:'🥣',type:'misc',weight:1,buyPrice:40,sellMult:.4};
 function mortarFor(h){return h&&(h.type==='potion'||h.type==='apothecary'||h.type==='guild_m')?[{...MORTAR_ITEM}]:[];}
@@ -627,7 +788,7 @@ function sealFirePot(){const why=sealPotWhy();if(why)return why;bagTake(b=>b.nam
   bagAdd({...FIRE_POT_ITEM});skillUse('alchemy',8);addLog('🏺','Sealed a fire pot');return true;}
 
 // ── the brewing page (parchment, Michael's A on the interface): the herbs on the left, the chosen herbs' four rows right ──
-let brewOpen=false,brewSel=[],brewSaid='';
+let brewOpen=false,brewSel=[],brewSaid='',brewCat=null;
 function openBrewPage(){
   if(!hasMortar()){showMsg('You need a mortar and pestle.','#cc8844');return;}
   if(typeof hubOpen!=='undefined'&&hubOpen&&typeof closeHub==='function')closeHub();
@@ -654,6 +815,12 @@ function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;con
   ov.querySelector('#br-herbs').innerHTML=list.length?list.map(h=>{const on=brewSel.includes(h.k),nn=brewSel.some(o=>o!==h.k&&K.none[brewPairKey(o,h.k)]);
     return `<div data-k="${h.k}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${nn&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${h.name} <span style="color:#8a7050;font-size:12px">×${h.n}</span>${nn&&!on?' <i style="font-size:12px">· nothing between</i>':''}</div>`;}).join(''):'<i>You carry no herbs.</i>';
   ov.querySelectorAll('#br-herbs [data-k]').forEach(d=>d.onclick=()=>brewPick(d.dataset.k));
+  {const SL=specInBagList();if(brewCat&&!SL.some(q=>q.k===brewCat))brewCat=null; /* S2159 — a specimen rides with the herbs, one a grinding */
+    if(SL.length){const at=studyWhere();ov.querySelector('#br-herbs').insertAdjacentHTML('beforeend','<div style="margin-top:6px;font-variant:small-caps;color:#7a1f10">With a specimen</div>'+SL.map(q=>{const on=brewCat===q.k;
+        return `<div data-c="${q.k}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}">${on?'◆':'◇'} ${q.name} <span style="color:#8a7050;font-size:12px">×${q.n}</span><div style="padding-left:14px;font-size:12px;color:#8a7050">${specCatLine(q.k)}</div></div>`;}).join('')+
+        (brewCat&&at&&!specCatKnown(brewCat)?`<button type="button" id="br-study" style="margin:4px 6px;background:none;border:1px solid #7a1f10;border-radius:3px;font:13px Georgia,serif;color:#7a1f10;cursor:pointer;padding:1px 8px">Study it at ${at} (an hour)</button>`:''));
+      ov.querySelectorAll('#br-herbs [data-c]').forEach(d=>d.onclick=()=>{brewCat=brewCat===d.dataset.c?null:d.dataset.c;brewSaid='';brewDraw();});
+      const sb=ov.querySelector('#br-study');if(sb)sb.onclick=()=>{const r=studySpecimen(brewCat);brewSaid=r.done?r.said:r.why;if(r.done)addLog('✿',r.said);brewDraw();};}}
   let r='';brewSel.forEach(k=>{r+=`<div style="font-variant:small-caps;color:#7a1f10;margin-top:4px">${(HERB_DEF[k]&&HERB_DEF[k].name)||k}</div>`;
     HERB_FX[k].forEach((f,i)=>{const kn=herbFxKnown(k,i);r+=`<div style="padding-left:12px">${kn?ALCH_FX[f].label+(ALCH_FX[f].harm?' <i style="font-size:12px;color:#8a2a20">(harmful)</i>':''):'<span style="color:#a09070">— unknown —</span>'}</div>`;});});
   if(brewSel.length>=2){const kn=new Set();brewSel.forEach(k=>HERB_FX[k].forEach((f,i)=>{if(herbFxKnown(k,i)&&brewSel.filter(o=>o!==k).some(o=>HERB_FX[o].some((g,j)=>g===f&&herbFxKnown(o,j))))kn.add(f);}));
@@ -666,8 +833,8 @@ function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;con
   ov.querySelector('#br-said').textContent=brewSaid;
 }
 function brewPick(k){const i=brewSel.indexOf(k);if(i>=0)brewSel.splice(i,1);else{if(brewSel.length>=brewMax())brewSel.shift();brewSel.push(k);}brewSaid='';brewDraw();}
-function brewGo(){const r=brewHerbs(brewSel);
-  if(r.made){brewSaid=`${r.n>1?'Two: ':''}${r.item.name}.${r.learnt.length?' You learn '+r.learnt.length+(r.learnt.length>1?' effects.':' effect.'):''}`;if(typeof uiTone==='function')uiTone(260,340,.1,.08,'sine');addLog('🧪','Made '+r.item.name);}
+function brewGo(){const r=brewHerbs(brewSel,brewCat);
+  if(r.made){brewSaid=`${r.n>1?'Two: ':''}${r.item.name}.${r.learnt.length?' You learn '+r.learnt.length+(r.learnt.length>1?' effects.':' effect.'):''}${r.catNew?' The '+SPEC_DEF[r.cat].name+' is '+SPEC_CAT[SPEC_CAT_OF[r.cat]].name+'.':''}`;if(typeof uiTone==='function')uiTone(260,340,.1,.08,'sine');addLog('🧪','Made '+r.item.name);}
   else brewSaid=r.why||'';
   brewSel=brewSel.filter(k=>BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));brewDraw();}
 window.addEventListener('keydown',e=>{if(!brewOpen)return;const c=e.code;let hit=true;
@@ -836,6 +1003,7 @@ let _mealTurnAt=-1;
 function mealTurnPass(){BAG.forEach(b=>{if(b&&b.meal&&!b.meal.turned&&mealTurned(b)){b.meal.turned=1;b.name+=' (turned)';}});}
 // each frame: a fire burnt out is taken away, the flame flickers; Steady's health. Called from the loop beside the buffs
 function tickSurvival(dt){const t=gameMinNow();
+  try{tickSpecs(dt);}catch(e){} /* S2160 — the weather's history and the specimens' buds */
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){layAsh(f);dropFire(f);CAMPFIRES.splice(i,1);continue;}
     if(f.mesh&&f.mesh.userData.fire){try{f.mesh.userData.fire.tick(f,FIRE_HOURS);}catch(e){}continue;} /* S2114 — the kit's fire: its stage and its flames */
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
@@ -1145,7 +1313,7 @@ function gardenPlant(h,bi,what,v){if(!homeMine(h)||!homeFitted(h,'garden'))retur
   if(bi<0||bi>=GARDEN_BEDS)return {done:false,why:''};if(L[bi])return {done:false,why:'Something grows in that bed already.'};
   if(what==='second'){if(!DISH_SECONDS[v])return {done:false,why:''};if(DISH_SECONDS[v].isle!==houseIsle(h))return {done:false,why:`${DISH_SECONDS[v].name} will not grow on this island.`};
     if(!bagTake(b=>b.second===v,1))return {done:false,why:`You have no ${DISH_SECONDS[v].name.toLowerCase()}.`};L[bi]={k:'second',s:v,at:gameMinNow()};return {done:true};}
-  if(what==='herb'){const i=BAG.findIndex(b=>b&&b.type==='herb'&&b.name===v);if(i<0)return {done:false,why:'You have no such herb.'};
+  if(what==='herb'){const i=BAG.findIndex(b=>b&&b.type==='herb'&&!b.spec&&b.name===v); /* S2160 — a rare specimen is not sown */if(i<0)return {done:false,why:'You have no such herb.'};
     const it=JSON.parse(JSON.stringify({...BAG[i],qty:1}));delete it.stolen;bagTake(b=>b===BAG[i],1);L[bi]={k:'herb',item:it,at:gameMinNow()};return {done:true};}
   return {done:false,why:''};}
 // gather a bed that is ready. Returns {done, got} or {done:false, why}
@@ -1486,7 +1654,8 @@ function spawnChunkVeins(ch){
     const id=ch.cx+','+ch.cz+':'+c.i,tier=veinTier(c.x,c.z);
     const v={id,x:c.x,z:c.z,tier,ore:veinOre(id,tier),ph:hash01(ch.cx+c.i,ch.cz,304)*Math.PI*2,g:null};
     try{v.g=veinMesh(v);ch.group.add(v.g);}catch(e){}
-    (ch.veins||(ch.veins=[])).push(v);VEINS.push(v);veinShow(v);}}
+    (ch.veins||(ch.veins=[])).push(v);VEINS.push(v);veinShow(v);}
+  try{spawnChunkSpecs(ch);}catch(e){}} /* S2160 — the rare specimens' patches in this chunk */
 function veinLive(v){return !v.g||!!(v.g.parent&&v.g.parent.parent);}
 // the vein's record, brought back if 7 days have passed since it was worked out
 function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id];
@@ -2802,6 +2971,7 @@ function interact(){
     // Herb harvest — all zones
     const nearHerb=activeHerbs().find(h=>!h.harvested&&!h._tolled&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
     if(nearHerb){harvestHerb(nearHerb);return;}
+    {const sp=specNear();if(sp){specUse(sp);return;}} /* S2160 — a rare specimen: picked open, looked at shut */
     {const v=veinNear();if(v){mineVein(v);return;}} /* S1491 — a vein, with a pick */
     {const n=treeNear();if(n&&(chopTool()||(CHOP&&CHOP.t===n.t))){chopTree(n.ch,n.t);return;}} /* S1511 — a tree, with a hatchet */
     if(hasShovel()&&(DIG||clayBankHere())&&digStart())return; /* S2138 — clay from a bank, with a shovel */

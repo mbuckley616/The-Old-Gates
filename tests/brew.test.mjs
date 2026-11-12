@@ -112,5 +112,95 @@ check(`Briarweed and Wolf's Bane: ${r.poison.name}, a poison of the harmful only
 check(`the poison coats the blade for ${r.coat} blows: a foe at ${r.foe.hp} of 100, slowed ×${r.foe.slowed}, then spent`, r.coat === 3 && r.foe.hp === 76 && r.foe.slowed === .6 && r.foe.spent, r.foe);
 check('a tincture keeps its brew through the save, and herbsKnown is the character\'s', r.ser && r.charKey);
 check(`the page: ${r.rows} herbs listed, two chosen, ground (${r.ground} made: "${r.said}"), Esc closes`, r.open && r.rows >= 6 && /Firemoss/.test(r.right) && r.ground === 1 && r.closed);
+// ── S2157: the field guide (Michael's B on #1463, session 1): first picks, rarity, the book drawn live, the apothecary's copy ──
+const fg = await page.evaluate(() => {
+  const o = {}; worldState.herbsKnown = null; for (const k in HERB_CONSUME_COUNTS) delete HERB_CONSUME_COUNTS[k]; BAG.length = 0;
+  SKILLS.alchemy = { lv: 60, p: 0 }; SKILL_LAST.clear();
+  const pick = k => { const h = { type: k, def: HERB_DEF[k], g: { userData: {}, visible: true }, gl: { intensity: 1 } }; const p0 = SKILLS.alchemy.p; SKILL_LAST.clear(); harvestHerb(h); return Math.round((SKILLS.alchemy.p - p0) * 100) / 100; };
+  o.first = pick('firemoss'); o.second = pick('firemoss'); o.seen = plantSeen('firemoss'); o.unseen = plantSeen('silverleaf');
+  o.rar = { firemoss: herbRarity('firemoss'), heartroot: herbRarity('heartroot'), pineresin: herbRarity('pineresin'), wolfsbane: herbRarity('wolfsbane'), gateresin: herbRarity('gateresin'), kelp: herbRarity('kelp') };
+  o.where = herbWhere('firemoss'); o.whereMark = herbWhere('icebloom');
+  const C = fieldGuideCount(); o.count = C;
+  const pages = BOOKS.find(b => b.id === 'field_guide').pages; o.pages = pages.length; o.head = pages[0];
+  const all = pages.join('\n'); o.frames = (all.match(/an empty frame/g) || []).length; o.hasFire = /Firemoss — Common/.test(all); o.noSilver = !/Silverleaf/.test(all);
+  o.fxLine0 = herbFxLine('firemoss'); HERB_CONSUME_COUNTS.firemoss = 1; o.fxLine = herbFxLine('firemoss'); delete HERB_CONSUME_COUNTS.firemoss;
+  // an old save: no seen, but eaten and carried herbs count, with no marks
+  BAG.length = 0; worldState.herbsKnown = { fx: {}, none: {} }; HERB_CONSUME_COUNTS.thornberry = 2; bagAdd({ ...HERB_DEF.icebloom.item, qty: 1, _typeKey: 'icebloom' });
+  o.old = { thorn: plantSeen('thornberry'), ice: plantSeen('icebloom'), fire: plantSeen('firemoss') };
+  const sh = { type: 'potion' }; o.stock = fieldGuideFor(sh).map(i => [i.name, i.buyPrice, i.type]); o.smith = fieldGuideFor({ type: 'weapon' }).length;
+  BAG.push(fieldGuideFor(sh)[0]); openBookReader(BAG.length - 1); o.title = document.getElementById('book-title').textContent; o.page = document.getElementById('book-page').textContent.slice(0, 40);
+  if (typeof closeBookReader === 'function') closeBookReader(); else document.getElementById('book-overlay').style.display = 'none';
+  o.charKey = SS_CHAR_WS.herbsKnown === 1; o.specN = Object.keys(SPEC_DEF).length;
+  return o; });
+console.log(JSON.stringify(fg));
+check(`the first Firemoss picked is ${fg.first} Alchemy marks, the second ${fg.second}; it is in the guide, Silverleaf not`, Math.abs(fg.first / fg.second - 10) < .01 && fg.seen && !fg.unseen, fg);
+check(`rarity by where it grows: Firemoss ${fg.rar.firemoss}, Heartroot ${fg.rar.heartroot}, Pine Resin ${fg.rar.pineresin}, Wolf's Bane ${fg.rar.wolfsbane}, Gate Resin ${fg.rar.gateresin}, Kelp ${fg.rar.kelp}`,
+  fg.rar.firemoss === 'Common' && fg.rar.heartroot === 'Uncommon' && fg.rar.pineresin === 'Rare' && fg.rar.wolfsbane === 'Rare' && fg.rar.gateresin === 'Rare' && fg.rar.kelp === 'Common', fg.rar);
+check(`the guide: ${fg.count.n} of ${fg.count.of} found over ${fg.pages} pages, ${fg.frames} empty frames (with ${fg.specN} specimens); Firemoss "${fg.where}", picked "${fg.fxLine0}", eaten "${fg.fxLine}"`,
+  fg.count.n === 1 && fg.count.of === 50 && fg.frames === 49 + fg.specN && fg.hasFire && fg.noSilver && /1 of 50 found/.test(fg.head) && /^The Gatelands: /.test(fg.where) && /^The Mark: /.test(fg.whereMark) && fg.fxLine0 === '? · ? · ? · ?' && /^Restore Health · \?/.test(fg.fxLine), fg);
+check(`an old save's guide holds what it ate and carries (Thornberry ${fg.old.thorn}, Icebloom ${fg.old.ice}), not the rest`, fg.old.thorn && fg.old.ice && !fg.old.fire, fg.old);
+check(`the apothecary sells it at ${fg.stock[0] && fg.stock[0][1]}, the smith not; read: "${fg.title}"`, fg.stock.length === 1 && fg.stock[0][1] === 20 && fg.stock[0][2] === 'book' && fg.smith === 0 && fg.title === 'A Field Guide to the Three Islands' && /^A FIELD GUIDE/.test(fg.page) && fg.charKey, fg);
+// ── S2160: the rare specimens (#1463 B, session 2): patches by cell, buds, hours and weathers, a pick that regrows in 7 days ──
+const sp0 = await page.evaluate(() => { const o = { per: { gatelands: 0, mark: 0, aurenne: 0 }, kinds: {} };
+  for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { const L = specCell(i, j); if (!L.length) continue; o.per[nationKeyOf(i, j)] += L.length; L.forEach(p => { o.kinds[p.kind] = (o.kinds[p.kind] || 0) + 1; if (SPEC_DEF[p.kind].island !== nationKeyOf(i, j)) o.wrong = p.id; }); }
+  const [ci, cj] = cellOf(px, pz); const a = JSON.stringify(specCell(ci, cj)); SPEC_CELLS.clear(); o.same = a === JSON.stringify(specCell(ci, cj));
+  const p = specCell(ci, cj).find(q => q.kind === 'whispercap'); window._tp = p; o.p = !!p; if (p) WORLD.enter(p.x + 1.2, p.z, 0, 'test'); return o; });
+console.log(JSON.stringify(sp0));
+check(`every kind placed on its own island only (${Object.entries(sp0.kinds).map(([k, n]) => k + ' ' + n).join(', ')}); a cell's patches the same when made again`,
+  Object.keys(sp0.kinds).length === 7 && Object.values(sp0.kinds).every(n => n >= 20) && !sp0.wrong && sp0.same && sp0.p, sp0);
+await page.waitForTimeout(6000);
+const sp = await page.evaluate(() => { const o = {}, p = window._tp, s = SPECS.find(q => q.id === p.id); o.found = !!(s && s.g && s.g.parent); if (!s) return o;
+  px = p.x + .8; pz = p.z; const setH = h => { worldState.gameTimeMinutes = Math.round(h * 60) + 1440 * 3; worldState.gameTimeAbsMinutes = worldState.gameTimeMinutes; };
+  BAG.length = 0; worldState.herbsKnown = null; SKILLS.alchemy = { lv: 60, p: 0 }; SKILL_LAST.clear();
+  setH(12); specShow(s); o.noon = s.shown; interact(); o.bud = { bag: BAG.length, cond: specKnown().cond.whispercap, guide: /Whispercap — Rare \(seen shut\)[^]*It opens at dusk/.test(BOOKS.find(b => b.id === 'field_guide').pages.join('\n')) };
+  setH(20); specShow(s); o.dusk = s.shown; const p0 = SKILLS.alchemy.p; interact(); o.pick = { bag: BAG.map(b => b.name + ':' + b.spec).join(), marks: SKILLS.alchemy.p - p0, shown: s.shown, again: specNear() === s };
+  worldState.gameTimeAbsMinutes += 6 * 1440; o.day6 = specGone(s); worldState.gameTimeAbsMinutes += 1440; o.day7 = specGone(s);
+  const t = () => worldState.gameTimeAbsMinutes; worldState.wxSeen = {};
+  WORLD.wx.type = 'rain'; noteWeather(); o.reed = [specOpen('bloodreed')]; WORLD.wx.type = 'clear'; worldState.gameTimeAbsMinutes += 100; o.reed.push(specOpen('bloodreed')); worldState.gameTimeAbsMinutes += 30; o.reed.push(specOpen('bloodreed'));
+  WORLD.wx.type = 'storm'; noteWeather(); o.glass = [specOpen('sunglass')]; WORLD.wx.type = 'overcast'; worldState.gameTimeAbsMinutes += 300; o.glass.push(specOpen('sunglass')); worldState.gameTimeAbsMinutes += 100; o.glass.push(specOpen('sunglass'));
+  WORLD.wx.cover = .6; o.iron = [specOpen('ironleaf')]; WORLD.wx.cover = .2; o.iron.push(specOpen('ironleaf'));
+  setH(23); WORLD.wx.type = 'clear'; o.orchid = [specOpen('moonfenorchid')]; WORLD.wx.type = 'overcast'; o.orchid.push(specOpen('moonfenorchid'));
+  o.wxWorld = !SS_CHAR_WS.wxSeen; return o; });
+console.log(JSON.stringify(sp));
+check(`a Whispercap at noon is a bud (${sp.noon}): E writes "opens at dusk" into the guide and picks nothing`, sp.found && sp.noon === 'bud' && sp.bud.bag === 0 && sp.bud.cond === 1 && sp.bud.guide, sp);
+check(`at 20h it is open (${sp.dusk}): picked for ${sp.pick.marks} Alchemy marks (the first), gone, back after 7 days (6: ${sp.day6 ? 'gone' : 'back'}, 7: ${sp.day7 ? 'gone' : 'back'})`,
+  sp.dusk === 'open' && sp.pick.bag === 'Whispercap:whispercap' && sp.pick.marks === 10 && sp.pick.shown === 'gone' && !sp.pick.again && sp.day6 && !sp.day7, sp);
+check(`the weathers: Bloodreed in rain and 2 h after (${sp.reed}), Sunglass 6 h after a storm (${sp.glass}), Ironleaf under snow (${sp.iron}), Moonfen Orchid at night when clear (${sp.orchid}); the history is the world's`,
+  sp.reed.join() === 'true,true,false' && sp.glass.join() === 'false,true,false' && sp.iron.join() === 'true,false' && sp.orchid.join() === 'true,false' && sp.wxWorld, sp);
+// ── S2159: the specimens in the mortar (#1463 B, session 3): each a catalyst, one a grinding, spent; learnt by observing, study or experiment ──
+const ct = await page.evaluate(() => { const o = {};
+  BAG.length = 0; worldState.herbsKnown = null; for (const k in HERB_CONSUME_COUNTS) delete HERB_CONSUME_COUNTS[k]; SKILLS.alchemy = { lv: 50, p: 0 }; ACTIVE_BUFFS.length = 0;
+  bagAdd({ ...MORTAR_ITEM }); const herb = (k, n = 5) => bagAdd({ ...HERB_DEF[k].item, qty: n, _typeKey: k }); const sp = (k, n = 1) => bagAdd({ ...specItem(k), qty: n });
+  ['firemoss', 'silverleaf', 'thornberry', 'briarweed', 'wolfsbane'].forEach(k => herb(k));
+  const plain = brewHerbs(['firemoss', 'silverleaf']).item.brew.s;
+  sp('whispercap', 2); o.unknown = specCatLine('whispercap');
+  const rv = brewHerbs(['firemoss', 'thornberry'], 'whispercap'); o.reveal = { made: rv.made, all: [0, 1, 2, 3].every(i => herbFxKnown('firemoss', i) && herbFxKnown('thornberry', i)), left: BAG.find(b => b.spec === 'whispercap').qty, catNew: rv.catNew, line: specCatLine('whispercap') };
+  sp('moonfenorchid'); o.steep = +(brewHerbs(['firemoss', 'silverleaf'], 'moonfenorchid').item.brew.s / plain).toFixed(3); o.orchidGone = !BAG.some(b => b.spec === 'moonfenorchid');
+  o.noCat = brewHerbs(['firemoss', 'silverleaf'], 'moonfenorchid').why;
+  sp('bloodreed'); const vn = brewHerbs(['briarweed', 'wolfsbane'], 'bloodreed').item; EQ.weapon = makeItem(1, WEAPON_TYPES.find(w => w.type === 'Sword'), null, false); useTincture(BAG.indexOf(vn)); o.venom = BLADE_POISON && BLADE_POISON.blows; BLADE_POISON = null;
+  sp('ironleaf'); const ls = brewHerbs(['firemoss', 'silverleaf'], 'ironleaf').item; o.lastKey = ls.brew.last; drinkBrew(ls.brew.fx, ls.brew.s, ls.name, ls.brew.last); const bf = ACTIVE_BUFFS.find(b => b.label === 'Swiftness'); o.lastS = bf && bf.remaining;
+  ACTIVE_BUFFS.length = 0; const pl = BAG.find(b => b.brew && !b.brew.last && b.brew.fx.includes('swiftness')); drinkBrew(pl.brew.fx, pl.brew.s, pl.name); const bf2 = ACTIVE_BUFFS.find(b => b.label === 'Swiftness'); o.plainS = bf2 && bf2.remaining;
+  // Clean: a pair sharing a harmful effect and another
+  const keys = Object.keys(HERB_FX).filter(k => HERB_DEF[k] && HERB_DEF[k].zone !== 'gate'); let pair = null;
+  for (let i = 0; i < keys.length && !pair; i++) for (let j = i + 1; j < keys.length && !pair; j++) { const sh = brewShared([keys[i], keys[j]]); if (sh.poison && sh.all.some(f => !ALCH_FX[f].harm)) pair = [keys[i], keys[j]]; }
+  o.pair = pair; pair.forEach(k => herb(k, 2)); o.dirty = brewShared(pair).poison; sp('snowshroom'); const cl = brewHerbs(pair, 'snowshroom'); o.clean = { made: cl.made, poison: cl.item && cl.item.brew.poison, harm: cl.item && cl.item.brew.fx.some(f => ALCH_FX[f].harm), name: cl.item && cl.item.name };
+  // observe and study
+  o.obs = [specObserve('miragebloom'), specObserve('miragebloom'), specObserve('miragebloom')]; o.obsKnown = specCatKnown('miragebloom');
+  sp('sunglass'); o.studyOut = studySpecimen('sunglass').why; const _ii = isInterior, _ch = currentHouse; isInterior = () => true; currentHouse = { type: 'potion' };
+  const m0 = worldState.gameTimeAbsMinutes || 0; const st = studySpecimen('sunglass'); isInterior = _ii; currentHouse = _ch;
+  o.study = { done: st.done, said: st.said, mins: (worldState.gameTimeAbsMinutes || 0) - m0, spent: !BAG.some(b => b.spec === 'sunglass'), known: specCatKnown('sunglass') };
+  // the page
+  sp('ironleaf'); herb('firemoss', 1); herb('silverleaf', 1); openBrewPage(); brewSel = ['firemoss', 'silverleaf']; brewDraw(); const row = document.querySelector('#brewui [data-c="ironleaf"]'); o.row = row && row.textContent;
+  if (row) row.click(); o.sel = brewCat; brewGo(); o.said = document.querySelector('#br-said').textContent; o.spent = !BAG.some(b => b.spec === 'ironleaf'); closeBrewPage();
+  return o; });
+console.log(JSON.stringify(ct));
+check(`Revealing (the Whispercap, unknown until used: "${ct.unknown}"): Firemoss and Thornberry learn all four each; the specimen spent (${ct.reveal.left} of 2 left), learnt by the grinding: "${ct.reveal.line}"`,
+  ct.unknown === '— unknown —' && ct.reveal.made && ct.reveal.all && ct.reveal.left === 1 && ct.reveal.catNew && /^Revealing/.test(ct.reveal.line), ct.reveal);
+check(`Steeping (the Moonfen Orchid): strength ×${ct.steep}; none left, none used: "${ct.noCat}"`, ct.steep === 1.25 && ct.orchidGone && /specimen/.test(ct.noCat || ''), ct);
+check(`Venom (Bloodreed): the poison coats for ${ct.venom} blows; Lasting (Ironleaf): Swiftness for ${ct.lastS} s against ${ct.plainS}`, ct.venom === 6 && ct.lastKey === 2 && ct.lastS === 2 * ct.plainS && ct.plainS === 60, ct);
+check(`Clean (Snowshroom): ${ct.pair.join(' and ')} make a poison bare, with it "${ct.clean.name}", nothing harmful`, ct.dirty && ct.clean.made && !ct.clean.poison && !ct.clean.harm, ct.clean);
+check(`observed: the third open Miragebloom picked teaches it (${ct.obs}); study: refused with no table, an hour at the apothecary's (${ct.study.mins} min), one spent: "${ct.study.said}"`,
+  ct.obs.join() === 'false,false,true' && ct.obsKnown && /table/.test(ct.studyOut || '') && ct.study.done && ct.study.mins === 60 && ct.study.spent && ct.study.known, ct);
+check(`the page offers the Ironleaf under the herbs, chosen and ground: "${ct.said}"`, /Ironleaf/.test(ct.row || '') && ct.sel === 'ironleaf' && /Swiftness/.test(ct.said) && ct.spent, ct);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -501,11 +501,15 @@ const bg = await page.evaluate(() => {
   const watch = secs => { const ev = [], t0 = performance.now(); let h = shipBars().hull; while (performance.now() - t0 < secs * 1000) { step(1); const h2 = shipBars().hull; if (h2 < h) { ev.push({ t: +((performance.now() - t0) / 1000).toFixed(2), lost: h - h2 }); h = h2; } } return { ev, msg: document.getElementById('msg').textContent, lost: ev.reduce((a, e) => a + e.lost, 0) }; };
   step(1); out.side = herGunsSide(G); G.gunT = { port: -1e9, stbd: -1e9 }; out.fire = watch(3); out.reload = watch(5);
   gx = 0; gz = -80; gyaw = Math.PI; step(1); G.gunT = { port: -1e9, stbd: -1e9 }; out.bowSide = herGunsSide(G); out.bow = watch(2);
+  // S2161 — one hitched frame lands the whole broadside: the line still says all of it (section I, QA's S2158)
+  gx = -80; gz = 0; gyaw = 0; step(1); HER_BALLS.length = 0; G.gunT = { port: -1e9, stbd: -1e9 }; const t0 = hookClock(); tickHerGuns(t0); out.hitchN = HER_BALLS.length;
+  const h0 = shipBars().hull; document.getElementById('msg').textContent = ''; tickHerGuns(t0 + 10); out.hitch = { lost: h0 - shipBars().hull, msg: document.getElementById('msg').textContent, left: HER_BALLS.length };
   despawnOtherShip(G); return out; });
 console.log('galleon', JSON.stringify(bg));
 check('the black galleon: 200 hull, 9.5 m/s, a galleon\'s 22 m', bg.cls === 'galleon' && bg.hull === 200 && bg.top === 9.5 && bg.L === 22, bg);
 check('your ship 80 m off her starboard beam: six balls of 6 in a ripple, 36 in all, and the line says so', bg.side === 'stbd' && bg.fire.lost === 36 && bg.fire.ev.length >= 2 && /The black galleon's broadside strikes the Test Gull\. Hull −36\./.test(bg.fire.msg), bg.fire);
 check('that side reloads 20 s; bow-on no side bears', bg.reload.lost === 0 && bg.bowSide === null && bg.bow.lost === 0, bg);
+check(`all six landing in one hitched frame: ${bg.hitch.lost} hull, and the line says "${bg.hitch.msg}"`, bg.hitchN === 6 && bg.hitch.lost === 36 && bg.hitch.left === 0 && /Hull −36\./.test(bg.hitch.msg), bg.hitch);
 
 check('no page errors', g.errs.length === 0, g.errs);
 if (stop) stop();
