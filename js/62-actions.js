@@ -272,6 +272,7 @@ function killE(e,tag=''){
   const th = currentPortal?currentPortal.theme:null;
   const items = rollContainerLoot('corpse', ds, th, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined, e.tier); // S478 — a keyed foe's corpse rolls on its id
   bodyMeat(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); /* S1486 — meat off a bear, a boar or a wolf */
+  bodyHide(e,items); /* S2123 — its hide, for a skinning knife */
   bodyPicks(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S633 — a bandit's, kobold's, skeleton's or goblin's body may hold picks (#191 A)
   const drops = items.length > 0;
   CORPSES.push({id:e.id?`${e.id}:corpse`:null,x:e.x,z:e.z,name:e.name,looted:false,items,gl:lootGl,spark:lootSpark,age:0,floorY:floorGroundY,displayName:e.name,body:e.mesh});

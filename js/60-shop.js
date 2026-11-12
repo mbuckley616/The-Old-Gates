@@ -60,13 +60,14 @@ function openLoot(container){
   renderLoot();
 }
 function closeLoot(){
-  lootOpen=false;
+  lootOpen=false;SKIN.c=null;SKIN.it=null;
   currentLootContainer=null;
   document.getElementById('loot-panel').style.display='none';
   G.focus();
 }
 function lootItemDesc(it){
   if(it.type==='gold') return `${it.value} gold`;
+  if(it._skin) return SKIN.c&&SKIN.it===it?'Skinning…':(typeof hasSkinKnife==='function'&&hasSkinKnife()?'Skin it (2 s)':'Wants a skinning knife'); /* S2123 */
   if(it.type==='misc') return 'Curiosity';
   return itemDesc(it);
 }
@@ -87,10 +88,23 @@ function renderLoot(){
   });
   takeAllBtn.disabled=false;
 }
+// S2123 — a hide comes off the body only with a skinning knife, in SKIN_MS of the wall clock (a dropped frame never shortens it); closing
+// the panel or walking off stops it, and the hide stays on the body
+const SKIN={c:null,it:null,t0:0};
+function skinStart(it){const c=currentLootContainer;if(SKIN.c)return;
+  if(!hasSkinKnife()){showMsg('You need a skinning knife to take the hide.','#cc8844');return;}
+  if(!canCarry(it)){showMsg('Too heavy to carry!','#cc8844');return;}
+  SKIN.c=c;SKIN.it=it;SKIN.t0=performance.now();renderLoot();
+  setTimeout(skinDone,SKIN_MS);}
+function skinDone(){const c=SKIN.c,it=SKIN.it;if(!c)return;
+  if(performance.now()-SKIN.t0<SKIN_MS-1){setTimeout(skinDone,SKIN_MS-(performance.now()-SKIN.t0));return;}
+  SKIN.c=null;SKIN.it=null;if(!lootOpen||currentLootContainer!==c)return;
+  const i=c.items.indexOf(it);if(i<0)return;delete it._skin;takeLootItem(i);}
 function takeLootItem(idx){
   if(!currentLootContainer)return;
   const it=currentLootContainer.items[idx];
   if(!it)return;
+  if(it._skin){skinStart(it);return;}
   if(it.type==='gold'){
     gold += it.value;
     showMsg(`+${it.value} gold`, '#ffd700');
@@ -132,11 +146,14 @@ function takeLootItem(idx){
 function takeAllLoot(){
   if(!currentLootContainer)return;
   // Iterate by snapshot, take one-by-one; stop if bag fills up
-  while(currentLootContainer.items.length){
+  let i=0;
+  while(i<currentLootContainer.items.length){
+    const it=currentLootContainer.items[i];if(it&&it._skin){i++;continue;} /* S2123 — the hide is skinned after the rest */
     const preLen=currentLootContainer.items.length;
-    takeLootItem(0);
+    takeLootItem(i);
     if(currentLootContainer.items.length===preLen)break; // bag full, nothing more can be taken
   }
+  const sk=currentLootContainer.items.find(x=>x&&x._skin);if(sk&&hasSkinKnife())skinStart(sk);
 }
 
 // ── STASH (v61d4) ──────────────────────────────────────────────────────
