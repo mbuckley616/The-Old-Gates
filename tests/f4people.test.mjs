@@ -304,6 +304,13 @@ const study = await page.evaluate(() => { const one = o => { const P = HB.makePe
 const bs = study.study.st || {};
 check('Aldwyn in his study carries his journal in his right fist, the coat open over the undertunic: 0 points of him within 1 cm of the book, the fist on its spine; the herald and the traveller carry none',
   study.study.book && study.study.on === 'wrist.R' && study.study.coat && study.study.dev && bs.inside === 0 && bs.tested > 100 && bs.handPts > 100 && bs.tris < 1000 && !study.travel.book && !study.herald.book, study);
+// S2141 (L2, OG-053's belt of instruments): Aldwyn's brass astrolabe on the travelling dress, hung from the belt at the right hip on a thong,
+// carried by the hips: nothing of him inside it, his arm and staff clear of it; neither other dress carries it
+const astro = await page.evaluate(() => { const one = o => { const P = HB.makePerson(HB.castGenome('Aldwyn', o), { hoodStats: false }), a = P.root.getObjectByName('astrolabe'); return { on: !!a, bone: a && a.parent && a.parent.name, thong: !!P.root.getObjectByName('astrolabeThong'), st: P.astrolabe }; };
+  return { travel: one({ outfit: 'travel' }), study: one({ outfit: 'study' }), herald: one({}) }; });
+const as = astro.travel.st || {};
+check('Aldwyn travels with his astrolabe on his belt at the right hip: 0 points of him inside it, his arm and staff clear, the thong to the belt; the herald and the study carry none',
+  astro.travel.on && /^spine0[12]$/.test(astro.travel.bone) && astro.travel.thong && as.inside === 0 && as.tested > 10 && !as.armIn && as.turn < -.5 && as.turn > -2.1 && as.tris < 2000 && !astro.study.on && !astro.herald.on, astro);
 check('Edna and Áine carry their sticks, and the cape stays on the shoulder: under 30 cm in front of the neck, nothing through it', Object.values(capes).every(c => c.staff && c.fwd < .3 && c.out === 0 && c.under === 0), capes);
 // S1809 (L2, OG-069): Niamh's lantern, in her right fist on the basket's grip, hanging clear of her and her cloak, on her wrist so it goes where the arm goes
 const lantern = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome('Niamh', {}), { hoodStats: false }), ln = P.root.getObjectByName('lantern');
