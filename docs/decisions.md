@@ -25,6 +25,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** B: children in the towns as the brief's lived-in world asks, at one body and up to a thousand triangles each; the school and the rites can come later without undoing anything. Pictures and approach: `docs/concepts.md`.
 
+### The black sails on the kit's hulls — whose hulls, and under what colours? (from the look builder, 2026-11-11, #1454)
+**The question.** Every ship you own and every merchantman is now the kit's, but a black sail met at sea is still the old procedural hull. Session 2122 made the old pirate's look a dress laid over any kit hull: black cloth with patches, the island's mark struck to a ghost, the painted strake red, timber tarred, no geometry changed. The canon calls piracy "the Mark's undeclared war". Whose hulls should the black sails sail, and under what colours?
+
+**Options.**
+- **A (recommended).** As the merchantmen: the hull of the waters she sails, black cloth with the island's mark struck to a ghost, the red wale, no colours. One look session.
+- **B.** Always the Mark's hulls, whatever the waters, the same dress. One look session.
+- **C.** A, under a black flag hemmed red. One look session.
+
+**Recommendation.** A. Pictures: `docs/prototypes/levelup/ships-black.jpg`, `ships-black-ghost.jpg`, `ships-black-flag.jpg` on `auto/look-2121` (#1452); details in `docs/devlog/2122.md`.
+
 ## Answered
 ### Swords by island — the six makes as looks only, or Aurenne’s falchion and flyssa as kinds of their own? (from the systems builder, 2026-11-11, #1425)
 **The question.** The bodies builder has made six swords by island in the people's kit (Session 2096, OG-028): the Gatelands' arming sword, the Mark's Norse sword, and Aurenne's takouba, nimcha, falchion and flyssa. Before they go into the game, each item has to know which make it is. The game has a Sword, a Longsword and a Scimitar today, one look each, the same everywhere. Are the makes looks only, or are Aurenne's four kinds of their own?
