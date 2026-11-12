@@ -336,6 +336,76 @@
     site.quayAt={x:mx,z:mz,ang,len};
   }
 
+  // ── S2143 — your house's fittings where they stand (the systems builder's S2137: `house._fits[k]`, read by homeFitHere at 2 m). The
+  // workbench is the kit's joiner's bench (PKIT.props.bench, the cabin's since S1524), stood against a wall of the room's ground floor:
+  // the back wall first (from its middle outward), then the two sides, the door's wall last, at the first spot where its foot and 0.8 m
+  // in front of it are clear of every low solid and step of the room, 1.9 m from the door, 1.2 m from where you come in, a bed, the chest,
+  // the hatch and any inner door. Nothing is rolled, so the same room puts it in the same place. Its spot is the middle of its front
+  // edge, where you stand to work. A room with no such spot keeps the rules' fallback (anywhere in the house). The racks are the yard's
+  // (townRacks, 82): a rack fitted or taken out now is stood or struck in the yard at once. homeFitsDress(h) runs on coming in
+  // (goToInterior) and after a fitting goes in or out (homeFit, homeUnfit). New look only.
+  const HOMEFIT_LAY={bench:homeBenchLay};
+  function homeFitsDress(h){if(window.OG_LOOK!=='new'||!h||typeof homeMine!=='function'||!homeMine(h))return;
+    try{homeYardRacks(h);}catch(e){console.warn('home racks',e);}
+    if(typeof isInterior!=='function'||!isInterior()||currentHouse!==h||!interiorScene)return;
+    for(const o of interiorScene.children.filter(o=>o.userData&&o.userData.homeFit))interiorScene.remove(o);
+    for(const A of [INT_SOL,FOOTHOLDS])if(A)for(let i=A.length-1;i>=0;i--)if(A[i].homeFit)A.splice(i,1);
+    h._fits={};for(const k of Object.keys(HOMEFIT_LAY))if(homeFitted(h,k)){try{HOMEFIT_LAY[k](h);}catch(e){console.warn('home fit '+k,e);}}}
+  // the ground floor's free spots by a wall for a thing w wide and d deep (its foot from the wall, plus `front` clear before it): the outer
+  // walls back, west and east, then each face of a partition (a solid from the floor past 2 m, under 0.3 thick and 1.8 long), the front
+  // wall last, each from its middle outward in steps of 0.1 m. What stands upstairs (a bed, the roof's hatch) does not count.
+  // wallOk(x, z, nx, nz, ax, az, w), if given, is asked last (it may be dear): is the wall whole behind the thing there.
+  // -> {x, z, ry, box, front} or null; box is the foot in the room's frame, front the spot 0.3 m before its front edge
+  function homeWallSpot(h,w,d,front,wallOk){const W=h._roomW||h.intW,D=h._roomD||h.intD;if(!W||!D)return null;
+    const keep=[];const dx=typeof intDoorX==='function'?intDoorX(h):W/2;keep.push([dx,D,1.9]);
+    try{keep.push([intArriveX(h),intArrivalZ(h),1.2]);}catch(e){}
+    for(const b of INT_BEDS||[])if(!(b.y>1))keep.push([b.x,b.cz!=null?b.cz:b.z,.9]);
+    if(INT_BOX&&INT_BOX.x!=null)keep.push([INT_BOX.x,INT_BOX.z,.9]);if(HATCH&&HATCH.active&&!HATCH.roof&&!(HATCH.y>1))keep.push([HATCH.x,HATCH.z,.9]);
+    if(intStashPos)keep.push([intStashPos.x,intStashPos.z,.9]);for(const q of INT_DOORS||[])if(q&&q.x!=null)keep.push([q.x,q.z,1.2]);
+    const low=[...(INT_SOL||[]).filter(s=>s.y0<1.6&&s.y1>.05),...(FOOTHOLDS||[]).filter(f=>f.y>.05&&f.y<1.6)];
+    const over=(a,b)=>a.x0<b.x1&&a.x1>b.x0&&a.z0<b.z1&&a.z1>b.z0;
+    // a wall: where it starts (ox, oz), the way it runs (ax, az) for L, and its normal into the room (nx, nz)
+    const walls=[{ox:0,oz:0,ax:1,az:0,L:W,nx:0,nz:1},{ox:0,oz:0,ax:0,az:1,L:D,nx:1,nz:0},{ox:W,oz:0,ax:0,az:1,L:D,nx:-1,nz:0}];
+    for(const q of INT_SOL||[]){if(q.homeFit||q.y0>.1||q.y1<2)continue;const sx=q.x1-q.x0,sz=q.z1-q.z0;
+      if(sx>=1.8&&sz<=.3)walls.push({ox:q.x0,oz:q.z0,ax:1,az:0,L:sx,nx:0,nz:-1},{ox:q.x0,oz:q.z1,ax:1,az:0,L:sx,nx:0,nz:1});
+      else if(sz>=1.8&&sx<=.3)walls.push({ox:q.x0,oz:q.z0,ax:0,az:1,L:sz,nx:-1,nz:0},{ox:q.x1,oz:q.z0,ax:0,az:1,L:sz,nx:1,nz:0});}
+    walls.push({ox:0,oz:D,ax:1,az:0,L:W,nx:0,nz:-1});
+    for(const wl of walls){const ts=[];for(let k=0;k<=120;k++)for(const s of k?[-1,1]:[1]){const t=wl.L/2+s*k*.1;if(t>=w/2+.1&&t<=wl.L-w/2-.1)ts.push(t);}
+      const ry=Math.atan2(wl.nx,wl.nz),ux=Math.abs(wl.ax),uz=Math.abs(wl.az);
+      for(const t of ts){const wx=wl.ox+wl.ax*t,wz=wl.oz+wl.az*t,gap=.04;
+        const boxAt=(d0,d1)=>{const ax=wx+wl.nx*d0,az=wz+wl.nz*d0,bx=wx+wl.nx*d1,bz=wz+wl.nz*d1;
+          return {x0:Math.min(ax,bx)-ux*w/2,x1:Math.max(ax,bx)+ux*w/2,z0:Math.min(az,bz)-uz*w/2,z1:Math.max(az,bz)+uz*w/2};};
+        // the foot is tested from 0.15 off the wall (a wall's own slab may stand just inside the room), and the floor before it to `front`
+        const foot=boxAt(gap,gap+d),test=boxAt(.15,gap+d+front);
+        if(test.x0<.05||test.z0<.05||test.x1>W-.05||test.z1>D-.05)continue;
+        if(low.some(s=>over(test,s)))continue;
+        if(keep.some(([x,z,r])=>Math.hypot(x-Math.max(foot.x0,Math.min(foot.x1,x)),z-Math.max(foot.z0,Math.min(foot.z1,z)))<r))continue;
+        if(wallOk&&!wallOk(wx,wz,wl.nx,wl.nz,wl.ax,wl.az,w))continue;
+        return {x:wx+wl.nx*gap,z:wz+wl.nz*gap,ry,box:foot,front:[wx+wl.nx*(gap+d+.3),wz+wl.nz*(gap+d+.3)]};}}
+    return null;}
+  // the bench is the kit's 1.5 m one where it fits, else its 1.1 m one (a full room: Dunmore's townhouse)
+  function homeBenchLay(h){if(typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.bench)return;let B=null,sp=null;
+    for(const L of [1.5,1.1]){const f={x0:-L/2,x1:L/2,z0:0,z1:.86};sp=homeWallSpot(h,f.x1-f.x0,f.z1-f.z0,.8,homeWallWhole);if(sp){B=PKIT.props.bench({L});break;}}
+    if(!sp)return;
+    B.group.position.set(sp.x,0,sp.z);B.group.rotation.y=sp.ry;B.group.userData.homeFit='bench';B.group.userData.kit={tris:B.tris,draws:B.draws,L:B.foot.x1-B.foot.x0};
+    B.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(B.group);
+    const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:B.top,homeFit:'bench'});FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:B.top,homeFit:'bench'});
+    h._fits.bench={x:+sp.front[0].toFixed(3),z:+sp.front[1].toFixed(3)};}
+  // the wall behind a thing w wide is whole: from 0.3 m into the room, rays back to the wall at 0.5, 1.0 and 1.4 m up, at its middle and
+  // 0.1 m in from each end, each meet the room within 0.45 m (a doorway, an open window or the stair's well lets one through: the
+  // townhouse's back door, where the first try hung the bench's tools)
+  const HF_RAY=new THREE.Raycaster(),HF_O=new THREE.Vector3(),HF_D=new THREE.Vector3();
+  function homeWallWhole(x,z,nx,nz,ax,az,w){const ms=[];interiorScene.updateMatrixWorld(true);
+    interiorScene.traverse(o=>{if(o.isMesh&&o.visible&&!o.userData.daylight){for(let p=o;p;p=p.parent)if(p.userData&&p.userData.homeFit)return;ms.push(o);}});
+    HF_D.set(-nx,0,-nz);HF_RAY.far=.45;
+    for(const u of [-w/2+.1,0,w/2-.1])for(const y of [.5,1.0,1.4]){HF_O.set(x+ax*u+nx*.3,y,z+az*u+nz*.3);HF_RAY.set(HF_O,HF_D);HF_RAY.far=.45;if(!HF_RAY.intersectObjects(ms,false).length)return false;}
+    return true;}
+  // the yard's racks for your own house: struck and stood again by what is fitted now (townRacks lays what curesOf gives, the fitted ones)
+  function homeYardRacks(h){const S=typeof SETTLE!=='undefined'&&SETTLE.get(h.siteId);if(!S||!S.group||!Array.isArray(S.racks)||typeof townRacks!=='function')return;
+    for(let i=S.racks.length-1;i>=0;i--){const R=S.racks[i];if(R.house!==h.id)continue;S.group.remove(R.g);R.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});S.racks.splice(i,1);
+      if(S.sol){const j=S.sol.findIndex(s=>s.bt==='rack'&&Math.abs(s.cx-R.x)<1e-6&&Math.abs(s.cz-R.z)<1e-6);if(j>=0)S.sol.splice(j,1);}}
+    S.racks.push(...townRacks(S.site,[h],S.sol||[],S.group));}
+
   // ═══ SHIPS & SWIMMING (Session C) ════════════════════════════════════
   // One ship for now, bought at a shipwright, kept in worldState.ship. The
   // deck is a moving platform (ZONES.world.platforms entry updated every
