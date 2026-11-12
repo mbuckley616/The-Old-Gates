@@ -167,5 +167,40 @@ check(`at 20h it is open (${sp.dusk}): picked for ${sp.pick.marks} Alchemy marks
   sp.dusk === 'open' && sp.pick.bag === 'Whispercap:whispercap' && sp.pick.marks === 10 && sp.pick.shown === 'gone' && !sp.pick.again && sp.day6 && !sp.day7, sp);
 check(`the weathers: Bloodreed in rain and 2 h after (${sp.reed}), Sunglass 6 h after a storm (${sp.glass}), Ironleaf under snow (${sp.iron}), Moonfen Orchid at night when clear (${sp.orchid}); the history is the world's`,
   sp.reed.join() === 'true,true,false' && sp.glass.join() === 'false,true,false' && sp.iron.join() === 'true,false' && sp.orchid.join() === 'true,false' && sp.wxWorld, sp);
+// ── S2159: the specimens in the mortar (#1463 B, session 3): each a catalyst, one a grinding, spent; learnt by observing, study or experiment ──
+const ct = await page.evaluate(() => { const o = {};
+  BAG.length = 0; worldState.herbsKnown = null; for (const k in HERB_CONSUME_COUNTS) delete HERB_CONSUME_COUNTS[k]; SKILLS.alchemy = { lv: 50, p: 0 }; ACTIVE_BUFFS.length = 0;
+  bagAdd({ ...MORTAR_ITEM }); const herb = (k, n = 5) => bagAdd({ ...HERB_DEF[k].item, qty: n, _typeKey: k }); const sp = (k, n = 1) => bagAdd({ ...specItem(k), qty: n });
+  ['firemoss', 'silverleaf', 'thornberry', 'briarweed', 'wolfsbane'].forEach(k => herb(k));
+  const plain = brewHerbs(['firemoss', 'silverleaf']).item.brew.s;
+  sp('whispercap', 2); o.unknown = specCatLine('whispercap');
+  const rv = brewHerbs(['firemoss', 'thornberry'], 'whispercap'); o.reveal = { made: rv.made, all: [0, 1, 2, 3].every(i => herbFxKnown('firemoss', i) && herbFxKnown('thornberry', i)), left: BAG.find(b => b.spec === 'whispercap').qty, catNew: rv.catNew, line: specCatLine('whispercap') };
+  sp('moonfenorchid'); o.steep = +(brewHerbs(['firemoss', 'silverleaf'], 'moonfenorchid').item.brew.s / plain).toFixed(3); o.orchidGone = !BAG.some(b => b.spec === 'moonfenorchid');
+  o.noCat = brewHerbs(['firemoss', 'silverleaf'], 'moonfenorchid').why;
+  sp('bloodreed'); const vn = brewHerbs(['briarweed', 'wolfsbane'], 'bloodreed').item; EQ.weapon = makeItem(1, WEAPON_TYPES.find(w => w.type === 'Sword'), null, false); useTincture(BAG.indexOf(vn)); o.venom = BLADE_POISON && BLADE_POISON.blows; BLADE_POISON = null;
+  sp('ironleaf'); const ls = brewHerbs(['firemoss', 'silverleaf'], 'ironleaf').item; o.lastKey = ls.brew.last; drinkBrew(ls.brew.fx, ls.brew.s, ls.name, ls.brew.last); const bf = ACTIVE_BUFFS.find(b => b.label === 'Swiftness'); o.lastS = bf && bf.remaining;
+  ACTIVE_BUFFS.length = 0; const pl = BAG.find(b => b.brew && !b.brew.last && b.brew.fx.includes('swiftness')); drinkBrew(pl.brew.fx, pl.brew.s, pl.name); const bf2 = ACTIVE_BUFFS.find(b => b.label === 'Swiftness'); o.plainS = bf2 && bf2.remaining;
+  // Clean: a pair sharing a harmful effect and another
+  const keys = Object.keys(HERB_FX).filter(k => HERB_DEF[k] && HERB_DEF[k].zone !== 'gate'); let pair = null;
+  for (let i = 0; i < keys.length && !pair; i++) for (let j = i + 1; j < keys.length && !pair; j++) { const sh = brewShared([keys[i], keys[j]]); if (sh.poison && sh.all.some(f => !ALCH_FX[f].harm)) pair = [keys[i], keys[j]]; }
+  o.pair = pair; pair.forEach(k => herb(k, 2)); o.dirty = brewShared(pair).poison; sp('snowshroom'); const cl = brewHerbs(pair, 'snowshroom'); o.clean = { made: cl.made, poison: cl.item && cl.item.brew.poison, harm: cl.item && cl.item.brew.fx.some(f => ALCH_FX[f].harm), name: cl.item && cl.item.name };
+  // observe and study
+  o.obs = [specObserve('miragebloom'), specObserve('miragebloom'), specObserve('miragebloom')]; o.obsKnown = specCatKnown('miragebloom');
+  sp('sunglass'); o.studyOut = studySpecimen('sunglass').why; const _ii = isInterior, _ch = currentHouse; isInterior = () => true; currentHouse = { type: 'potion' };
+  const m0 = worldState.gameTimeAbsMinutes || 0; const st = studySpecimen('sunglass'); isInterior = _ii; currentHouse = _ch;
+  o.study = { done: st.done, said: st.said, mins: (worldState.gameTimeAbsMinutes || 0) - m0, spent: !BAG.some(b => b.spec === 'sunglass'), known: specCatKnown('sunglass') };
+  // the page
+  sp('ironleaf'); herb('firemoss', 1); herb('silverleaf', 1); openBrewPage(); brewSel = ['firemoss', 'silverleaf']; brewDraw(); const row = document.querySelector('#brewui [data-c="ironleaf"]'); o.row = row && row.textContent;
+  if (row) row.click(); o.sel = brewCat; brewGo(); o.said = document.querySelector('#br-said').textContent; o.spent = !BAG.some(b => b.spec === 'ironleaf'); closeBrewPage();
+  return o; });
+console.log(JSON.stringify(ct));
+check(`Revealing (the Whispercap, unknown until used: "${ct.unknown}"): Firemoss and Thornberry learn all four each; the specimen spent (${ct.reveal.left} of 2 left), learnt by the grinding: "${ct.reveal.line}"`,
+  ct.unknown === '— unknown —' && ct.reveal.made && ct.reveal.all && ct.reveal.left === 1 && ct.reveal.catNew && /^Revealing/.test(ct.reveal.line), ct.reveal);
+check(`Steeping (the Moonfen Orchid): strength ×${ct.steep}; none left, none used: "${ct.noCat}"`, ct.steep === 1.25 && ct.orchidGone && /specimen/.test(ct.noCat || ''), ct);
+check(`Venom (Bloodreed): the poison coats for ${ct.venom} blows; Lasting (Ironleaf): Swiftness for ${ct.lastS} s against ${ct.plainS}`, ct.venom === 6 && ct.lastKey === 2 && ct.lastS === 2 * ct.plainS && ct.plainS === 60, ct);
+check(`Clean (Snowshroom): ${ct.pair.join(' and ')} make a poison bare, with it "${ct.clean.name}", nothing harmful`, ct.dirty && ct.clean.made && !ct.clean.poison && !ct.clean.harm, ct.clean);
+check(`observed: the third open Miragebloom picked teaches it (${ct.obs}); study: refused with no table, an hour at the apothecary's (${ct.study.mins} min), one spent: "${ct.study.said}"`,
+  ct.obs.join() === 'false,false,true' && ct.obsKnown && /table/.test(ct.studyOut || '') && ct.study.done && ct.study.mins === 60 && ct.study.spent && ct.study.known, ct);
+check(`the page offers the Ironleaf under the herbs, chosen and ground: "${ct.said}"`, /Ironleaf/.test(ct.row || '') && ct.sel === 'ironleaf' && /Swiftness/.test(ct.said) && ct.spent, ct);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
