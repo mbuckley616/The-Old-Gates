@@ -146,7 +146,10 @@
   };
   const SHIP_GEO=new Map();
   // kind 'sloop' | 'cog' | 'galleon' | 'cutter' | 'caravel'; look 'player' | 'pirate' | 'merchant'. One bake per kind and look, shared.
-  function shipBake(kind,look,dress){const kit=(kind==='sloop'||kind==='cutter'||kind==='caravel'||kind==='cog'||kind==='galleon')&&look==='player'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships;
+  // S2121 (card F11, L6) — a merchantman on the new look is the kit's cog too, in the dress of the island whose waters she sails (spawnOtherShip
+  // passes it); a kit bake is keyed by its kind and dress alone, so she shares your cog's geometry and materials.
+  function shipBake(kind,look,dress){const kit=(kind==='sloop'||kind==='cutter'||kind==='caravel'||kind==='cog'||kind==='galleon')&&(look==='player'||(look==='merchant'&&kind==='cog'))&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships;
+    if(kit)look='player';
     if(kit)dress=kind==='cutter'?'mark':kind==='caravel'?'aurenne':shipDress(dress); /* S1539 — the cutter is sold only at the Mark's yards; S1544 — the caravel only at Aurenne's */
     const key=kind+'|'+look+(kit?'|'+dress:'');let r=SHIP_GEO.get(key);if(r)return r;
     if(kit){r=shipBakeKit(kind,dress);SHIP_GEO.set(key,r);return r;}
@@ -429,9 +432,9 @@
     const sig=h?Object.keys(h).sort().map(k=>k+':'+h[k]).join(','):'';if(m.userData.stowSig!==sig){m.userData.stowSig=sig;shipStowOn(m,h);}else shipStowSolid(m);}
   // the ship's mesh: the class by its length (or `hull`), the look by who sails her; the wheel a child that turns with the helm
   // S665 — `hull` names the bake outright; without it your own ship (no look given) takes her class's hull when it has one of its own
-  function buildShipMesh(SHIP_L,SHIP_W,look,hull){
+  function buildShipMesh(SHIP_L,SHIP_W,look,hull,dress){
     const own=!look&&!hull&&worldState.ship&&worldState.ship.cls;if(own==='cutter'||own==='caravel')hull=own;
-    const kind=hull||((SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop');const r=shipBake(kind,look||'player');const bk=kind+'|'+(look||'player')+(r.dress?'|'+r.dress:'');
+    const kind=hull||((SHIP_L||13)>=20?'galleon':(SHIP_L||13)>=15?'cog':'sloop');const r=shipBake(kind,look||'player',dress);const bk=kind+'|'+(r.kit?'player':look||'player')+(r.dress?'|'+r.dress:'');
     const mesh=new THREE.Mesh(r.geo,r.mats||SHIP_MAT);mesh.castShadow=true;mesh.receiveShadow=true;
     const wheel=r.tiller?r.tiller.clone():r.wheel?r.wheel.clone():shipWheelMesh();if(!r.tiller&&!r.wheel)wheel.position.set(0,SHIP_DECK+.95,-r.L/2+2.8);mesh.add(wheel);mesh.userData.tiller=!!r.tiller; /* S1531 — the kit's sloop steers by a tiller */
     mesh.add(r.at?shipNetsMesh(r):shipNetMesh(SHIP_W||r.W||4.4)); /* S723 — the boarding nets laid on the hull (S638's stand-in where a bake has no section) */
@@ -439,6 +442,7 @@
     mesh.userData.rigs=(r.rigs||[]).map(q=>{const m=new THREE.Mesh(q.geo,q.mats||SHIP_MAT);m.castShadow=true;m.position.z=q.z;mesh.add(m);if(q.extra){const e=new THREE.Mesh(q.extra,SHIP_MAT);e.castShadow=true;m.add(e);}return {m,type:q.type,a:0};});
     mesh.userData.trimSnap=true;
     if(!look&&r.kit){shipSwatchOn(mesh);shipBannerOn(mesh);} /* S1843 — your own ship in the yard's colours; S1919 — and her banner */
+    if(look==='merchant'&&r.kit)shipBannerOn(mesh,r.dress); /* S2121 — a merchantman flies her own nation's banner, the dress as built */
     return mesh;
   }
   // S1843 (#1133, Michael: as drawn) — the yard's colours: her paint and cloth (worldState.ship.paint, .cloth, indices into her dress's
@@ -925,11 +929,12 @@
     // S168 — the black sail and the merchantman are looks of their own, not tints; S285 — the merchantman on the cog, broad and slow (Michael's A, #50)
     // S1839 — a black sail's hull by the water's tier (ck, blackSailCls in 86-world-crime.js; Michael's A on #1115): the sloop unless told
     const cls=kind==='pirate'?SHIP_CLASSES[ck&&SHIP_CLASSES[ck]?ck:'sloop']:SHIP_CLASSES.cog;
-    const m=buildShipMesh(cls.L,cls.W,kind==='pirate'?'pirate':'merchant',cls.name==='cutter'?'cutter':undefined);
+    const dress=kind==='merchant'&&typeof nationAt==='function'?nationAt(x,z):undefined; /* S2121 — a merchantman is of the island whose waters she sails */
+    const m=buildShipMesh(cls.L,cls.W,kind==='pirate'?'pirate':'merchant',cls.name==='cutter'?'cutter':undefined,dress);
     sc.add(m);
     if(id==null)id=`sea:${chunkKey(Math.floor(x/CHUNK),Math.floor(z/CHUNK))}:${Math.floor(worldState.gameTimeAbsMinutes||0)}:${kind}`;
     const rng=seededRng('ship',id);
-    const o={id,rng,kind,cls:cls.name,top:kind==='pirate'?(cls.name==='sloop'?PIRATE_RAM.top:cls.speed):4.5,mesh:m,x,z,yaw:rng()*Math.PI*2,speed:0,L:cls.L,W:cls.W,hull:cls.hull,hullMax:cls.hull,rig:100, /* S1813 — her bars (naval combat) */ plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman'};
+    const o={id,rng,kind,cls:cls.name,top:kind==='pirate'?(cls.name==='sloop'?PIRATE_RAM.top:cls.speed):4.5,mesh:m,x,z,yaw:rng()*Math.PI*2,speed:0,L:cls.L,W:cls.W,hull:cls.hull,hullMax:cls.hull,rig:100, /* S1813 — her bars (naval combat) */ plat:{x0:0,x1:0,z0:0,z1:0,y:DECK_Y},crew:[],chest:null,boarded:false,volleyT:2,dead:false,wp:null,name:kind==='pirate'?'a black-sailed ship':'a merchantman',dress:m.userData.kit||dress||null};
     ZONES.world.platforms.push(o.plat);OTHER.push(o);placeOther(o);
     if(kind==='pirate')crewUp(o,false);
     return o;

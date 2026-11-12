@@ -8727,6 +8727,142 @@ function aurenneOrrery(hAt, o = {}) {
       cave: { x: CX, hw: CHW, crown: CCR, depth: CL, z0: CZ0 }, arcade: { z: AZ, y: AY, t: AT, spring: SPR, span: SPAN, piers, bays, fallen: fallen.length }, path, trees };
   }
   gatelandsFalls.shape = fallsShape; /* the world reads the cut ground before the piece is built (offroadStamps) */
+  // S2098 (card F8; OG-124's Mark panel, "an ice cave mouth"; OG-121's "ice caverns, snowed-in mouths"; Michael's A on #1292) — the Mark's
+  // ice cave mouth off the road, places.js's markIceMouth (Session 1006): a glacier's snout with the meltwater's tunnel out under it, after
+  // Breiðamerkurjökull and Nigardsbreen. The page built it in a valley of its own (rock walls 34 m high, its own sandur and moraine ridge);
+  // the world's ground is one height a point and cannot hold that valley, so here the glacier is a tongue lying on the world's own slope, the
+  // ice to -z (uphill) and the stream out to +z (downhill). Its top is the land under it plus the ice's thickness: 17 to 20 m at the face,
+  // a little more behind it, thinning to nothing over its last 45 m (110 m back) and over its last 18 m each side, so the tongue's ends and
+  // head lie down into the world's snow with no edge to hide. The face as the page's: wandering, curving back 9 m at its ends, leaning out
+  // 1.5 m at its head, fluted, banded with grit. The tunnel is the page's arch (8 m by 5.6 at the mouth, 6 by 4.6 at the throat 18 m in),
+  // its floor rising 1 in 25 inward. What the world cuts (offroadLaidCarve, 82, as the falls' glen): the land inside the tunnel down under its
+  // gravel floor, an apron before the mouth rising 1 in 4 to the land, and the stream's channel 0.45 m deep from the dark out to where it
+  // sinks into the snow 60 m out. The moraine is a ridge of gravel 2.6 m high laid over the world's ground in the page's arc 26 m out, cut
+  // where the stream goes through, with its boulders and the cairn; the calved blocks, the crevasses and the icicles are the page's.
+  // -> iceMouthShape(key, land) { carve, walk(x, z, y), cut, inTunnel, thk, top, faceZ, faceTop, floorAt, tFloor, hwAt, crownAt, roofAt, SX, Z0, TL, MW, MH, SPR, patch }
+  // -> markIceMouth(o) { group, tris, draws, sol, shape, mouth, blocks, icicles, crevasses, boulders, cairn }
+  const ICEM_PATCH = { x0: -56, x1: 56, z0: -122, z1: 66 };
+  function iceMouthShape(key, land) {
+    const F = stream(String(key || 'icemouth') + ':lie'), ph = Array.from({ length: 10 }, () => F() * 6.283), sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+    const HW = 44, LEAN = 1.5, L = 110, MW = 8, MH = 5.6, SPR = 2.4, TW = 6, TH = 4.6, TL = 18, Z0 = .6, SINK = 60;
+    const fz0 = 2.5 * Math.sin(ph[0]) + 1.2 * Math.sin(ph[1]), faceZ = x => 2.5 * Math.sin(x * .07 + ph[0]) + 1.2 * Math.sin(x * .19 + ph[1]) - fz0 - 9 * (x / HW) ** 2;
+    const TK = x => 18.5 + 1.5 * Math.sin(x * .11 + ph[2]);
+    /* the ice's thickness over the land: full across the tongue, thinning over its last 18 m each side and its last 45 m uphill */
+    const thk = (x, z) => { const d = faceZ(x) - z; if (d < -.01) return 0; const dd = Math.max(0, d), w = HW + .08 * dd; return Math.max(0, TK(x) * sm((w - Math.abs(x)) / 18) * (1 + .12 * sm(dd / 24)) * sm((L - dd) / 45)); };
+    const top = (x, z) => land(x, z) + thk(x, Math.min(z, faceZ(x))) - .25;
+    const faceTop = x => top(x, faceZ(x));
+    const tAt = z => sm((Z0 - z) / TL), hwAt = z => (MW + (TW - MW) * tAt(z)) / 2, crownAt = z => MH + (TH - MH) * tAt(z);
+    const floorAt = z => -.04 * Math.min(z, Z0) - .04 * Math.max(0, z - Z0);
+    const SX = z => 1.3 + (z > Z0 ? 3.2 * Math.sin(z * .085 + ph[3]) * sm((z - Z0) / 10) : 0);
+    const chan = (x, z) => z > SINK ? 0 : .45 * Math.exp(-(((x - SX(z)) / 1.4) ** 2)) * sm((SINK - z) / 4);
+    const inTunnel = (x, z, m = 0) => z <= Z0 + m && z >= Z0 - TL - m && Math.abs(x) < hwAt(Math.min(z, Z0)) + m;
+    /* the tunnel's gravel floor (the walk), the stream's channel in it */
+    const tFloor = (x, z) => floorAt(z) - chan(x, z);
+    /* the ground cut from the land: under the tunnel's floor, the apron before the mouth, the stream's channel */
+    const carve = (x, z) => { const Lh = land(x, z);
+      if (inTunnel(x, z, 1)) return Math.min(Lh, tFloor(x, z) - .15);
+      let c = Lh; if (z > Z0 - 1 && z < Z0 + 16) c = Math.min(c, floorAt(Z0) - .04 * (z - Z0) + .25 * Math.max(0, z - Z0 - 1) + .3 * Math.max(0, Math.abs(x) - hwAt(Z0) - .5));
+      return c - chan(x, z); };
+    const roofAt = (z, x) => { const hw = hwAt(z), cr = crownAt(z), fl = floorAt(z), t = Math.min(1, Math.abs(x) / hw); return fl + (Math.abs(x) >= hw ? SPR : SPR + (cr - SPR) * Math.sqrt(1 - t * t)); };
+    /* where you walk: the tunnel's floor while you are under its roof, the ice's top over the tongue, else the cut ground */
+    const walk = (x, z, y = 0) => { if (inTunnel(x, z) && y < floorAt(z) + crownAt(Math.min(z, Z0)) + .5) return tFloor(x, z); if (z < faceZ(x) && thk(x, z) > .3) return top(x, z); return carve(x, z); };
+    const cut = () => false;
+    return { ph, sm, HW, LEAN, L, MW, MH, SPR, TW, TH, TL, Z0, SINK, faceZ, TK, thk, top, faceTop, tAt, hwAt, crownAt, floorAt, SX, chan, inTunnel, tFloor, carve, roofAt, walk, cut, land, patch: ICEM_PATCH, F };
+  }
+  let ICEMM = null;
+  function markIceMouth(o = {}) {
+    const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+    if (!ICEMM) { const ice = (c, rough, x = {}) => { const m = mat(x.tex || 'rock', { ns: x.ns ?? .5, color: c, rough }); /* the face on the plaster's grain: on the rock's, under the world's sun and grade, the ice read grey (as S1777's ice cave did) */ m.side = THREE.DoubleSide; if (x.em) m.emissive = new THREE.Color(x.em); return m; };
+      ICEMM = { ice: ice(0xc4def0, .3, { ns: .35, tex: 'plaster' }), band: ice(0x6e767a, .8, { ns: .6 }), blue: ice(0x4a92c0, .2, { em: 0x0a2840 }), deep: ice(0x1c4c78, .2, { em: 0x061a2e }),
+        dark: new THREE.MeshBasicMaterial({ color: 0x06121e, side: THREE.DoubleSide }), snow: mat('plaster', { ns: .3, color: 0xf2f6fa, rough: .95 }),
+        gravel: mat('rock', { ns: .7, color: 0xd2cec6, rough: 1 }), boulder: mat('rock', { ns: 1.1, color: 0x9a968c, rough: 1 }),
+        water: std(0x8cb2ba, .12, { metalness: .1 }), crev: std(0x1e4c6c, .3), icicle: ice(0xd4ecf6, .1) }; }
+    const M = ICEMM, B = new Map(), land = o.land || (() => 0), S = iceMouthShape(o.key, land), r = stream(String(o.key || 'icemouth')), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+    const { ph, sm, HW, LEAN, L, MW, MH, SPR, TL, Z0, SINK, faceZ, thk, top, faceTop, hwAt, crownAt, floorAt, SX, chan, tFloor, roofAt } = S;
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+    const tri = (k, pos) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, k, 0, 0, 0, 0, 0, 0, .3); };
+    /* a stone's faces pushed about by its own hash, the same at a shared corner, so it stays closed */
+    const rough = (geo, amt) => { const g = geo.index ? geo.toNonIndexed() : geo, P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), h = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453, f = (h - Math.floor(h) - .5) * 2 * amt;
+      const l = Math.hypot(x, y, z) || 1; P.setXYZ(i, x + x / l * f, y + y / l * f, z + z / l * f); } g.deleteAttribute('normal'); g.computeVertexNormals(); return g; };
+    const smoothGrid = (P, keyOf) => { const nj = P.length, ni = P[0].length, N = P.map(row => row.map(() => [0, 0, 0])), keep = [];
+      const cr = (p, q, w) => { const u = [q[0] - p[0], q[1] - p[1], q[2] - p[2]], v = [w[0] - p[0], w[1] - p[1], w[2] - p[2]]; return [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]; };
+      for (let j = 0; j + 1 < nj; j++) for (let i = 0; i + 1 < ni; i++) { const k = keyOf(i, j); if (!k) continue; keep.push([i, j, k]); const n = cr(P[j][i], P[j + 1][i], P[j][i + 1]), n2 = cr(P[j][i + 1], P[j + 1][i], P[j + 1][i + 1]);
+        for (const [jj, ii, nn] of [[j, i, n], [j + 1, i, n], [j, i + 1, n], [j, i + 1, n2], [j + 1, i, n2], [j + 1, i + 1, n2]]) { const t = N[jj][ii]; t[0] += nn[0]; t[1] += nn[1]; t[2] += nn[2]; } }
+      const out = {}; for (const [i, j, k] of keep) { const q = out[k] || (out[k] = { p: [], n: [] }); for (const [jj, ii] of [[j, i], [j + 1, i], [j, i + 1], [j, i + 1], [j + 1, i], [j + 1, i + 1]]) { q.p.push(...P[jj][ii]); const t = N[jj][ii], Ln = Math.hypot(...t) || 1; q.n.push(t[0] / Ln, t[1] / Ln, t[2] / Ln); } }
+      for (const k in out) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out[k].p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(out[k].n, 3)); put(g, k, 0, 0, 0, 0, 0, 0, .3); } };
+    const fl0 = floorAt(Z0), eOf = x => sm((HW - Math.abs(x)) / 18);
+    // the face: columns along x, rows up from under the land to the ice's top, leaning out at its head; quads inside the mouth's arch dropped
+    const inArch = (x, y, m = 0) => { const hw = hwAt(Z0) - m; if (Math.abs(x) > hw || y < fl0 - .5) return false; const yy = y - fl0; return yy < SPR - m || ((x / hw) ** 2 + ((yy - SPR) / (MH - SPR - m)) ** 2) < 1; };
+    const footY = x => Math.min(land(x, faceZ(x)), Math.abs(x) < hwAt(Z0) + 1 ? fl0 : 1e9) - .6;
+    const facePt = (x, v) => { const g0 = footY(x), y = g0 + (faceTop(x) - g0) * v, e = eOf(x), j = (.55 * Math.sin(x * .83 + ph[9] + y * .05) + .8 * Math.sin(x * .27 + ph[8]) * Math.sin(y * .21 + ph[7])) * Math.min(1, v * 6) * (1 - .5 * v) * e; return [x, y, faceZ(x) + LEAN * e * v * v + j]; };
+    { const NX = 110, NV = 26, cols = []; for (let i = 0; i <= NX; i++) { const x = -HW + 2 * HW * i / NX, col = []; for (let j = 0; j <= NV; j++) col.push(facePt(x, j < 10 ? j / 10 * .32 : .32 + (j - 10) / (NV - 10) * .68)); cols.push(col); }
+      const P = []; for (let j = 0; j <= NV; j++) P.push(cols.map(col => col[j]).reverse());
+      smoothGrid(P, (i, j) => { const a = P[j][i], d = P[j + 1][i + 1]; return inArch((a[0] + d[0]) / 2, (a[1] + d[1]) / 2) || Math.max(a[1], d[1]) < land(a[0], a[2]) - .2 ? null : 'ice'; });
+      // the grit: bands laid in the ice as it moved, wavy strips just proud of the face, broken where the arch is cut
+      for (let yb = 2.2; yb < 21; yb += 3.1 + .8 * Math.sin(yb * 1.7 + ph[3])) { const th = .25 + .3 * (.5 + .5 * Math.sin(yb * 2.3 + ph[4])), pos = []; let prev = null;
+        for (let x = -HW; x <= HW + .01; x += .8) { const g0 = footY(x), T = faceTop(x), yc = g0 + .6 + yb + 1.1 * Math.sin(x * .06 + ph[2] + yb * .3), row = [];
+          for (const y of [yc - th / 2, yc + th / 2]) { const v = (y - g0) / Math.max(.01, T - g0), p = facePt(x, Math.min(1, Math.max(0, v))); row.push([p[0], p[1], p[2] + .06]); }
+          const ok = !inArch(x, yc - g0 - .6 + fl0, -.4) && yc - th > land(x, faceZ(x)) && yc + th < T - .3 && T - g0 > 2;
+          if (prev && ok && prev.ok) pos.push(...prev.row[0], ...row[0], ...prev.row[1], ...prev.row[1], ...row[0], ...row[1]); prev = { row, ok }; }
+        if (pos.length) tri('band', pos); } }
+    // the arch's surround: a lip of clear ice round the opening, so the cut reads as an edge, not a hole in a sheet
+    { const out = [], NA = 30, ring = (m, dz) => { const pts = [], hw = hwAt(Z0) + m, fy = fl0 - .3; pts.push([-hw, fy, Z0 + dz]); for (let k = 0; k <= NA; k++) { const th = Math.PI - Math.PI * k / NA; pts.push([hw * Math.cos(th), fl0 + SPR + (MH - SPR + m) * Math.sin(th), Z0 + dz]); } pts.push([hw, fy, Z0 + dz]); return pts; };
+      const A = ring(0, 0), C = ring(.9, -.6); for (let k = 0; k + 1 < A.length; k++) out.push(...A[k], ...C[k], ...A[k + 1], ...A[k + 1], ...C[k], ...C[k + 1]); tri('ice', out); }
+    // the tunnel: rings of the arch's section from the mouth to the throat, each pushed about by a little noise; clear, then blue, then deep
+    { const NR = 36, NA = 28, rings = []; for (let i = 0; i <= NR; i++) { const z = Z0 - TL * i / NR, hw = hwAt(z), cr = crownAt(z), fl = floorAt(z), ring = [];
+        const w = (x, y) => .18 * Math.sin(x * 1.7 + z * 1.1 + ph[1]) * Math.sin(y * 1.3 + z * .7) * (i ? 1 : 0);
+        ring.push([-hw - w(-hw, fl), fl - .55, z]); for (let k = 0; k <= NA; k++) { const th = Math.PI * (1 - k / NA), x = hw * Math.cos(th), y = fl + SPR + (cr - SPR) * Math.sin(th); if (k === 0) ring.push([-hw - w(-hw, fl + 1), fl + SPR * .5, z]);
+          ring.push([x + w(x, y) * Math.cos(th), y + w(x, y) * Math.sin(th), z]); if (k === NA) ring.push([hw + w(hw, fl + 1), fl + SPR * .5, z]); } ring.push([hw + w(hw, fl), fl - .55, z]); rings.push(ring); }
+      const out = { ice: [], blue: [], deep: [] }; for (let i = 0; i < NR; i++) { const zc = Z0 - TL * (i + .5) / NR, k = Z0 - zc < 6 ? 'ice' : Z0 - zc < 12 ? 'blue' : 'deep';
+        for (let j = 0; j + 1 < rings[i].length; j++) { const a = rings[i][j], b = rings[i][j + 1], c = rings[i + 1][j], d = rings[i + 1][j + 1]; out[k].push(...a, ...c, ...b, ...b, ...c, ...d); } }
+      for (const k in out) tri(k, out[k]);
+      // the dark beyond the throat: the tunnel goes on, turning, out of the light
+      { const z = Z0 - TL, hw = hwAt(z), cr = crownAt(z), fl = floorAt(z), sh = new THREE.Shape(); sh.moveTo(-hw - .3, fl - .6); sh.lineTo(-hw - .3, fl + SPR); sh.absellipse(0, fl + SPR, hw + .3, cr - SPR + .3, Math.PI, 0, true); sh.lineTo(hw + .3, fl - .6); sh.lineTo(-hw - .3, fl - .6);
+        const g = new THREE.ShapeGeometry(sh, 16); g.translate(0, 0, z - .05); put(g, 'dark'); } }
+    // the tunnel's floor: gravel over the world's cut ground, the stream's channel in it, out to the mouth's sill and a metre past it
+    { const xs = [], zs = []; for (let x = -4.4; x <= 4.41; x += .4) xs.push(x); for (let z = Z0 - TL - .2; z <= Z0 + 1.2; z += .5) zs.push(z);
+      const P = zs.map(z => xs.map(x => [Math.max(-hwAt(Math.min(z, Z0)) - .3, Math.min(hwAt(Math.min(z, Z0)) + .3, x)), tFloor(x, z) + .02, z]));
+      smoothGrid(P, () => 'gravel'); }
+    // the stream: a ribbon on the water's line, out of the dark and over the world's snow to where it sinks; a few stones in its bed show through
+    { const wY = (x, z) => (S.inTunnel(x, z, .2) ? floorAt(z) : land(x, z)) - .2, pos = []; let prev = null;
+      for (let z = Z0 - TL + .2; z <= SINK - 2; z += z < 36 ? .5 : 1) { const x = SX(z), wd = z < Z0 ? .9 : 1.15; const row = [[x - wd, wY(x - wd, z), z], [x, wY(x, z), z], [x + wd, wY(x + wd, z), z]];
+        if (prev) for (let k = 0; k < 2; k++) pos.push(...prev[k], ...row[k], ...prev[k + 1], ...prev[k + 1], ...row[k], ...row[k + 1]); prev = row; }
+      tri('water', pos); for (let k = 0; k < 40; k++) { const z = 1 + r() * 34, x = SX(z) + (r() - .5) * 1.8, s = .12 + r() * .18; put(new THREE.DodecahedronGeometry(s, 0), 'boulder', x, land(x, z) - chan(x, z) - s * .3, z, r() * 3, r() * 3, 0, .4); } }
+    // the moraine: a ridge of gravel laid over the land in an arc 26 m out, cut where the stream goes through; boulders on it, the cairn by the gap
+    const MR = 26, GAP = 3.0, mor = (x, z) => { if (z < 4) return 0; const d = Math.hypot(x, z), cut = sm((Math.abs(x - SX(z)) - GAP) / 2.5); return 2.6 * Math.exp(-(((d - MR) / 4.2) ** 2)) * cut * (1 + .15 * Math.sin(x * .6 + ph[4])) * sm((36 - Math.abs(x)) / 6); };
+    { const xs = [], zs = []; for (let x = -38; x <= 38.01; x += 1.2) xs.push(x); for (let z = 4; z <= 40.01; z += 1.2) zs.push(z);
+      const P = zs.map(z => xs.map(x => [x, land(x, z) + mor(x, z) - .12, z]));
+      smoothGrid(P, (i, j) => Math.max(mor(P[j][i][0], P[j][i][2]), mor(P[j][i + 1][0], P[j][i + 1][2]), mor(P[j + 1][i][0], P[j + 1][i][2]), mor(P[j + 1][i + 1][0], P[j + 1][i + 1][2])) > .12 ? 'gravel' : null); }
+    let boulders = 0; for (let k = 0; k < 110; k++) { const a = -1.15 + r() * 2.3, d = MR + (r() - .5) * 9, x = Math.sin(a) * d, z = Math.cos(a) * d; if (Math.abs(x - SX(z)) < GAP + 1.2 || Math.abs(x) > 34) continue;
+      const s = .35 + r() * r() * 1.4; boulders++; put(rough(new THREE.DodecahedronGeometry(s, 0), s * .08), 'boulder', x, land(x, z) + mor(x, z) + s * .25, z, r() * 3, r() * 3, 0, .4); }
+    const cairn = (() => { const cz = MR - .5, cx = SX(cz) - GAP - 3.2, gy = land(cx, cz) + mor(cx, cz); let y = gy; for (let k = 0; k < 6; k++) { const s = .42 - k * .05; put(new THREE.DodecahedronGeometry(s, 0).scale(1, .55, 1), 'boulder', cx + (r() - .5) * .06, y + s * .5, cz, 0, r() * 3, 0, .4); y += s * .95; } return { x: +cx.toFixed(2), z: cz, top: +y.toFixed(2), foot: +gy.toFixed(2) }; })();
+    // the ice's back: a snowfield from the face's head inward over the land, thinning into the world's snow at its sides and head
+    { const NX = 46, rows = []; for (let j = 0; j <= 36; j++) rows.push(j < 20 ? j * 1.5 : 30 + (j - 20) * 5);
+      const P = rows.map((d, j) => { const row = []; for (let i = 0; i <= NX; i++) { const s = -1 + 2 * i / NX, w = HW + .08 * d; let x = s * w; if (!j) { const p = facePt(s * HW, 1); row.push(p); continue; }
+        const z = faceZ(x) + LEAN * eOf(x) - d; row.push([x, top(x, z) + .25 * Math.sin(x * .4 + z * .3) * sm(thk(x, z) / 3), z]); } return row.reverse(); });
+      smoothGrid(P, () => 'snow'); }
+    const crevasses = []; for (let k = 0; k < 8; k++) { const z = -8 - k * 6.5 - r() * 3, x = (r() - .5) * 40, Lc = 7 + r() * 9, a = (r() - .5) * .3; if (thk(x, z) < 6) continue; crevasses.push([+x.toFixed(1), +z.toFixed(1), +Lc.toFixed(1)]);
+      const tilt = Math.atan2(top(x + Lc / 2, z) - top(x - Lc / 2, z), Lc); put(new THREE.BoxGeometry(Lc, 1.4, .55 + r() * .4), 'crev', x, top(x, z) - .62, z, 0, a, tilt); }
+    // calved blocks at the foot of the face: clear of the way in and of the stream
+    const blocks = []; for (let t = 0; t < 60 && blocks.length < 11; t++) { const x = (r() - .5) * 44, z = faceZ(x) + 2.2 + r() * 6, s = .8 + r() * 1.6;
+      if (Math.abs(x) < hwAt(Z0) + 2.5 + s || Math.abs(x - SX(z)) < 2.4 + s || blocks.some(b => Math.hypot(b.x - x, b.z - z) < b.s + s + .5)) continue;
+      const gy = land(x, z), y = gy + s * .3; blocks.push({ x: +x.toFixed(2), z: +z.toFixed(2), s: +s.toFixed(2), y: +y.toFixed(2), ground: +gy.toFixed(2) }); put(rough(new THREE.BoxGeometry(s * 1.6, s, s * 1.2, 2, 2, 2), s * .1), 'ice', x, y, z, r() * .4, r() * 3, r() * .4, .4); }
+    // icicles from the arch's lip and the first metres of the roof: only where the tip leaves 2.1 m clear over the floor
+    const icicles = []; for (let k = 0; k < 90 && icicles.length < 44; k++) { const z = Z0 - r() * 3.5, x = (r() - .5) * 2 * hwAt(z) * .9, tp = roofAt(z, x) - .05, Lq = .3 + r() * r() * 1.4, fl = floorAt(z);
+      if (tp - Lq - fl < 2.1) continue; icicles.push({ x: +x.toFixed(2), z: +z.toFixed(2), tip: +(tp - Lq).toFixed(2), floor: +fl.toFixed(2) }); const g = new THREE.ConeGeometry(.04 + Lq * .06, Lq, 6); g.rotateX(Math.PI); put(g, 'icicle', x, tp - Lq / 2, z, 0, 0, 0, .2); }
+    // the solids: the face's foot (but the mouth), the tunnel's two sides and the dark at its back
+    const sol = [], Sq = (x, z, w, d, h) => ({ x: +x.toFixed(3), z: +z.toFixed(3), w, d, ry: 0, h: +h.toFixed(3) });
+    for (let x = -HW; x <= HW; x += 1.2) { if (faceTop(x) - land(x, faceZ(x)) < 1.6 || Math.abs(x) < hwAt(Z0) + .3) continue; sol.push(Sq(x, faceZ(x) - .5, 1.2, 1.2, faceTop(x))); }
+    for (let z = Z0 - .5; z > Z0 - TL; z -= 1) for (const s of [-1, 1]) sol.push(Sq(s * (hwAt(z) + .5), z, 1, 1, floorAt(z) + crownAt(z) + 1));
+    sol.push(Sq(0, Z0 - TL - .55, 2 * hwAt(Z0 - TL) + 1, 1, floorAt(Z0 - TL) + crownAt(Z0 - TL) + 1));
+    const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, M[k]); m.name = k;
+      m.castShadow = !['water', 'dark', 'gravel', 'snow'].includes(k); m.receiveShadow = k !== 'dark'; group.add(m); tris += g.attributes.position.count / 3; }
+    return { group, tris: Math.round(tris), draws: group.children.length, sol, shape: S,
+      mouth: { w: MW, h: MH, spring: SPR, depth: TL, z0: Z0, floor: fl0 }, blocks, icicles, crevasses, boulders, cairn };
+  }
+  markIceMouth.shape = iceMouthShape; /* the world reads the cut ground before the piece is built (offroadStamps) */
   // the cave's mouth in the open world (Session 1768): an outcrop of grey limestone half sunk in the slope, 15 m across and 11 deep, its
   // face toward +z, and in it the mouth, 4.4 m wide and 3.6 m high, a short throat of rock 6 m into the dark. Its own frame: the throat's
   // floor at the origin (the ground before the mouth), +z out. The world's ground cannot be holed, so the throat has a floor of its own,
@@ -9562,7 +9698,106 @@ function aurenneOrrery(hAt, o = {}) {
       stair: { rise: +RISE.toFixed(3), n: N, foot: [+footX.toFixed(2), +SZ.toFixed(2)], width: SW, landing: { x0: LX0, x1: LX1, z0: +LZ0.toFixed(2), z1: +LZ1.toFixed(2), top: DY } },
       terrace: { y: TY, rIn: PI, rOut: PR, parapet: +(PT - TY).toFixed(2) }, hut: { x: HX, z: HZ, w: HW }, beacon: [BX, BY + .9, BZ], well: [WX, WZ], trees, path: { x: +PX.toFixed(2), z0: +SZ.toFixed(2), z1: PZ1 } };
   }
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, camp: campGear, fire: campFire }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  // S2105 (card F8; OG-124's Aurenne panel, "a smuggler's cove"; OG-121's "smugglers' lairs"; Michael's A on #1292) — Aurenne's smuggler's
+  // cove off the road, places.js's aurenneCove (Session 1007): a narrow inlet between pale cliffs with a shingle beach at its head, three
+  // boathouses cut into the west cliff's foot behind plastered fronts (blue round-headed doors, the middle one open on the dark, the third's
+  // slip into the sea), a stair cut half into the east cliff and built out half on a wall with its parapet, a lookout's hut on the east top
+  // near the mouth with its window to the sea, a rowing boat drawn up on the shingle and another at the slip, bales, amphorae and casks
+  // before the boathouses. The calas of the Balearics, Wied il-Għasri, the fjord of Furore. The page built its own plateau 20 m over the sea;
+  // the world's coast stands 6 to 12 m, so here the inlet is cut into the world's own coast (offroadLaidCarve, 82, as the falls' glen): the
+  // cliffs are the land falling to the inlet's floor over 2.2 m, as high as the land stands, the beach and the sea floor the page's, and the
+  // world's sea fills it. The inlet runs from its head 9 m behind the origin out to the shore the site found (o.reach, 30 to 90 m), widening
+  // from 14 m to 32. The stair climbs to the land beside it, however high that is; the page's sloop at anchor is left to the world's ships.
+  // -> coveShape(key, land, reach) { carve, walk(x, z), cut, W, D, bed, steps, stairTop, look { x, z }, houses, REACH, HEAD, CW, patch }
+  // -> aurenneCove(o) { group, tris, draws, sol, shape, houses, slip, steps, stairTop, lookout, boats, cargo }
+  // PKIT.places.inlet (S2111: it was registered as `cove` too, which overwrote the Gatelands' sea cave, PKIT.places.cove, S1773); the
+  // world's off-road kind stays 'cove' and reaches it through offroadPiece (82).
+  function coveShape(key, land, reach = 60) {
+    const F = stream(String(key || 'cove') + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283), sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+    const REACH = Math.max(30, Math.min(90, reach)), CW = 2.2, HEAD = -9, BZ = 6, W = z => 7 + 9 * sm((z + 5) / (REACH + 5));
+    /* how far into the land a point is from the inlet's side or head (negative inside it), wandering as the page's */
+    const D = (x, z) => Math.min(Math.abs(x) - W(z), HEAD - z) + .35 * Math.sin(z * .9 + ph[2]) + .2 * Math.sin(z * 2.3 + x * .4 + ph[3]);
+    const bed = (x, z) => { z = Math.max(z, HEAD); const bz = z < BZ ? .15 + (BZ - z) * .08 : Math.max(-6, .15 - (z - BZ) * .35); return bz - (z > BZ ? .6 * Math.max(0, 1 - (x / W(z)) ** 2) * sm((z - BZ) / 4) : 0); };
+    /* the ground cut from the land: the inlet's floor, rising to the land over the cliff's 2.2 m; never above the land */
+    const carve = (x, z) => { const L = land(x, z), d = D(x, z); if (d >= CW + .5) return L; const b = bed(x, z); if (d <= 0) return Math.min(L, b); const t = sm(d / CW); return Math.min(L, b * (1 - t) + L * t); };
+    /* the stair up the east cliff from the beach: 0.18 m risers on 0.3 m treads, a landing every 18, till it meets the land beside it */
+    const steps = []; { let z = -6.2, y = Math.max(carve(W(-6.2) - .85, -6.2), .2), n = 0; const topAt = z => land(W(z) + CW + 1.2, z);
+      while (y < topAt(z) - .05 && n < 160) { const rise = Math.min(.18, topAt(z) + .02 - y); y += rise; n++; const run = n % 18 === 0 ? 1.2 : .3, wx = W(z + run / 2), x0 = wx - 1.55, x1 = wx + 2.6, zc = z + run / 2;
+        steps.push({ x: +(wx - .85).toFixed(3), z: +zc.toFixed(3), y: +y.toFixed(3), w: +(x1 - x0).toFixed(2), x0: +(x0 + .25).toFixed(3), x1: +x1.toFixed(3), wx, run, rise: +rise.toFixed(3) }); z += run; } }
+    const st = steps[steps.length - 1] || { x: W(-6) - .85, z: -6, y: 1 }, stairTop = { x: st.x, z: st.z, y: st.y };
+    /* S2112 — the rock left under the stair (the piece draws it, aurenneCove's crag): its outer foot on the inlet's floor, 3.5 to 1 below the treads */
+    const crag = s => { const xo = s.x0 - .25, yt = s.y - .3, foot = bed(xo - 2, s.z) - .6; return { xo, yt, xf: xo - (yt - foot) / 3.5, yf: foot }; };
+    const LZ = Math.min(62, REACH - 14), look = { x: +(W(LZ) + CW + 6).toFixed(2), z: LZ, w: 3.2 };
+    const houses = [[0, -4.4], [1, .4], [2, 5.2]].map(([i, z]) => { const x = -W(z) + .8; return { i, x: +x.toFixed(2), z, w: 4.4, h: 4.2, gy: +Math.max(carve(x + .3, z), .15).toFixed(2), open: i === 1 }; });
+    /* where you walk: a tread under your feet, else the cut ground */
+    const onStep = (x, z) => { for (const s of steps) if (Math.abs(z - s.z) <= s.run / 2 + .01 && x >= s.x0 - .1 && x <= s.x1) return s; return null; };
+    const walk = (x, z) => { const c = carve(x, z), s = onStep(x, z); return s ? Math.max(c, s.y) : c; };
+    const cut = () => false;
+    return { ph, sm, F, REACH, CW, HEAD, BZ, W, D, bed, carve, crag, walk, cut, onStep, steps, stairTop, look, houses, land, patch: { x0: -40, x1: 40, z0: -24, z1: REACH + 16 } };
+  }
+  function aurenneCove(o = {}) {
+    const A = aqueductMats(), std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+    const M = { plaster: A.plaster, cope: A.cope, ashlar: mat('ashlar', { ns: .9, color: 0xe8dcc4, rough: .9 }), dark: std(0x0b0907, 1), door: std(0x2f6aa0, .7), iron: std(0x2a2826, .5, { metalness: .6 }),
+      hull: Object.assign(mat('wood', { ns: .8, color: 0x7aa4b8, rough: .85 }), { side: THREE.DoubleSide }), wood: mat('wood', { ns: .9, color: 0x8a6c4c, rough: .9 }), bale: mat('plaster', { ns: .9, color: 0xb8a078, rough: 1 }),
+      clay: std(0xb0603c, .85), crag: Object.assign(mat('limestone', { ns: 1.3, color: 0xd8ccb2, rough: 1 }), { side: THREE.DoubleSide }), lamp: std(0x3a3020, .4, { emissive: 0xffc070, emissiveIntensity: o.lit ? 5 : 0 }) };
+    const B = new Map(), land = o.land || (() => 8), S = coveShape(o.key, land, o.reach), { W, CW, carve, steps, houses } = S, F = stream(String(o.key || 'cove') + ':goods'), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+    const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+      if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
+      if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+    const sol = [], Sq = (x, z, w, d, h) => ({ x: +x.toFixed(3), z: +z.toFixed(3), w, d, ry: 0, h: +h.toFixed(3) });
+    // the boathouses: plastered fronts in the west cliff's foot, facing +x across the beach, standing 0.8 m out and 1.7 m deep, so the rock's wander stays behind them
+    for (const hs of houses) { const { x, z, gy, open } = hs, HW = 4.4, HH = 4.2, DW = 3, DH = 3, hw = DW / 2;
+      put(new THREE.BoxGeometry(1.7, HH + 1, HW), 'plaster', x - .85, gy + (HH - 1) / 2, z); put(new THREE.BoxGeometry(1.9, .22, HW + .3), 'cope', x - .8, gy + HH + .11, z);
+      const sh = new THREE.Shape(); sh.moveTo(-hw, 0); sh.lineTo(hw, 0); sh.lineTo(hw, DH - hw); sh.absarc(0, DH - hw, hw, 0, Math.PI, false); sh.lineTo(-hw, 0);
+      { const g = new THREE.ShapeGeometry(sh, 12); g.rotateY(Math.PI / 2); put(g, 'dark', x + .02, gy, z); }
+      { const g = new THREE.RingGeometry(hw, hw + .28, 12, 1, 0, Math.PI); g.rotateY(Math.PI / 2); put(g, 'cope', x + .03, gy + DH - hw, z); }
+      for (const s of [-1, 1]) put(new THREE.BoxGeometry(.3, DH - hw, .28), 'cope', x - .1, gy + (DH - hw) / 2, z + s * (hw + .14));
+      if (open) { for (const s of [-1, 1]) put(new THREE.BoxGeometry(.08, DH - hw - .05, hw), 'door', x + .04 + hw / 2 * .9, gy + (DH - hw) / 2, z + s * (hw + .05), 0, s * 1.35); }
+      else { put(new THREE.BoxGeometry(.08, DH - hw - .02, DW - .04), 'door', x + .06, gy + (DH - hw) / 2, z); const g = new THREE.CircleGeometry(hw - .02, 12, 0, Math.PI); g.rotateY(Math.PI / 2); put(g, 'door', x + .1, gy + DH - hw, z); }
+      put(new THREE.PlaneGeometry(.9, .6).rotateY(Math.PI / 2), 'dark', x + .02, gy + DH + .55, z); for (let b = -1; b <= 1; b++) put(new THREE.BoxGeometry(.03, .6, .03), 'iron', x + .06, gy + DH + .55, z + b * .25);
+      sol.push(Sq(x - .85, z, 1.7, HW, gy + HH + .2)); }
+    // the third's slip: slabs from its sill down into the sea at 1 in 7
+    const slip = { z: 5.2, x0: houses[2].x, foot: 0, x1: 0 }; { let y = houses[2].gy, x = houses[2].x + .5; while (y > -1.1) { put(new THREE.BoxGeometry(1.0, .25, 2.8), 'cope', x, y - .12, slip.z, 0, 0, Math.atan(1 / 7)); x += 1; y -= 1 / 7; } slip.foot = +y.toFixed(2); slip.x1 = +x.toFixed(2); }
+    // the stair: treads of ashlar 1.2 m deep on the rock left under them (S2112: they stood on the inlet's floor, a sheer ashlar wall up to
+    // 18 m), 1.4 m clear of the parapet's inner face, cut into the rock behind
+    for (const s of steps) { const fl = s.y - 1.2; put(new THREE.BoxGeometry(s.x1 - s.x0 + .25, s.y - fl + .5, s.run + .01), 'ashlar', (s.x0 - .25 + s.x1) / 2, (s.y + fl - .5) / 2, s.z, 0, 0, 0, .5); }
+    // S2112 — the crag the stair is cut into: a face of the cliff's own stone from 0.3 m under each tread's nosing down past the inlet's floor,
+    // falling 3.5 to 1 outward, in five rows roughened by the cove's stream; lofted in the cove's frame, since the laid ground's 1 m grid in the
+    // world's axes drew a face this steep as teeth. Two rows a tread (its two ends) so the top edge follows the steps.
+    if (steps.length) { const R = stream(String(o.key || 'cove') + ':crag'), K = 5, J = Array.from({ length: steps.length + 1 }, () => Array.from({ length: K }, (q, k) => k && k < K - 1 ? (R() - .5) * .7 : 0));
+      const rows = []; steps.forEach((s, i) => { const c = S.crag(s); for (const [z, j] of [[s.z - s.run / 2, i], [s.z + s.run / 2, i + 1]]) rows.push({ z, c, j: J[j] }); });
+      const pos = []; const P = (r, k) => { const t = k / (K - 1), { xo, yt, xf, yf } = r.c; return [xo + (xf - xo) * t + r.j[k], yt + (yf - yt) * t, r.z]; };
+      for (let i = 0; i + 1 < rows.length; i++) for (let k = 0; k + 1 < K; k++) { const a = P(rows[i], k), b = P(rows[i], k + 1), c = P(rows[i + 1], k), d = P(rows[i + 1], k + 1); pos.push(...a, ...c, ...b, ...c, ...d, ...b); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); put(g, 'crag'); }
+    // the parapet: one sloped wall along each flight and a level one along each landing, 0.95 m over the nosings, coped
+    { let f0 = 0; for (let i = 0; i <= steps.length; i++) { const end = i === steps.length || steps[i].run > .5; if (!end) continue; const seg = steps.slice(f0, i);
+        if (seg.length) { const a = seg[0], b = seg[seg.length - 1], za = a.z - .15, zb = b.z + .15, ya = a.y - a.rise, yb = b.y, dx = .15 * (b.x0 - a.x0) / Math.max(.3, b.z - a.z), xa = a.x0 - .125 - dx, xb = b.x0 - .125 + dx;
+          const hz = Math.hypot(zb - za, xb - xa), L = Math.hypot(hz, yb - ya), pitch = Math.atan2(yb - ya, hz), yaw = Math.atan2(xb - xa, zb - za), xm = (xa + xb) / 2, zm = (za + zb) / 2;
+          put(new THREE.BoxGeometry(.25, 1.25, L + .1), 'plaster', xm, (ya + yb) / 2 + .45, zm, -pitch, yaw); put(new THREE.BoxGeometry(.33, .07, L + .12), 'cope', xm, (ya + yb) / 2 + 1.1, zm, -pitch, yaw); }
+        if (i < steps.length) { const l = steps[i]; put(new THREE.BoxGeometry(.25, 1.0, l.run + .02), 'plaster', l.x0 - .125, l.y + .45, l.z); put(new THREE.BoxGeometry(.33, .07, l.run + .04), 'cope', l.x0 - .125, l.y + .98, l.z); }
+        f0 = i + 1; } }
+    // the lookout: a plastered hut on the east top near the mouth, its door landward (+x), its window to the sea (+z) with the lamp in it
+    const LX = S.look.x, LZ = S.look.z, LW = 3.2, LH = 2.7, LY = land(LX, LZ), look = { x: LX, z: LZ, y: +LY.toFixed(2), w: LW };
+    { const yb = Math.min(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([u, v]) => land(LX + u * LW / 2, LZ + v * LW / 2))) - .3; put(new THREE.BoxGeometry(LW, LH + (LY - yb), LW), 'plaster', LX, yb + (LH + LY - yb) / 2, LZ);
+      put(new THREE.BoxGeometry(LW + .2, .2, LW + .2), 'cope', LX, LY + LH + .1, LZ); put(new THREE.BoxGeometry(.06, 1.9, .85), 'door', LX + LW / 2 + .02, LY + .95, LZ);
+      put(new THREE.PlaneGeometry(.7, .8), 'dark', LX, LY + 1.5, LZ + LW / 2 + .02); put(new THREE.SphereGeometry(.12, 10, 8), 'lamp', LX, LY + 1.35, LZ + LW / 2 - .05);
+      look.foot = +(yb + .3 - LY).toFixed(2); look.door = { x: +(LX + LW / 2).toFixed(2), w: .85, h: 1.9 }; look.win = { x: LX, y: +(LY + 1.5).toFixed(2), z: LZ + LW / 2 }; sol.push(Sq(LX, LZ, LW, LW, LY + LH + .2)); }
+    // the boats: a rowing boat drawn up on the shingle, another lying at the slip's foot; a lathe bowl along z, two thwarts
+    const boats = []; const boat = (bx, bz, by, ry) => { const BL = 4.0, W2 = .72, pts = []; for (let k = 0; k <= 10; k++) { const t = k / 10; pts.push(new THREE.Vector2(Math.sin(Math.PI * t) ** .6 * W2 + .05, (t - .5) * BL)); }
+      const g = new THREE.LatheGeometry(pts, 14, -Math.PI / 2, Math.PI); g.rotateX(Math.PI / 2); g.scale(1, .55, 1); g.rotateY(ry); put(g, 'hull', bx, by + .45, bz, 0, 0, 0, .5);
+      for (const t of [-.6, .5]) { const tg = new THREE.BoxGeometry(1.3, .05, .22); tg.rotateY(ry); put(tg, 'wood', bx + Math.sin(ry) * t, by + .35, bz + Math.cos(ry) * t); } boats.push({ x: +bx.toFixed(2), z: +bz.toFixed(2), y: +by.toFixed(2) }); };
+    { const bx = 1.2, bz = -1.5; boat(bx, bz, Math.max(carve(bx, bz - 1.6), carve(bx, bz + 1.6), carve(bx, bz)) - .03, .25); }
+    boat(slip.x1 + 1.6, slip.z + .4, -.12, 1.45);
+    // the cargo before the boathouses: bales, amphorae and casks, each set on the shingle
+    const cargo = []; for (let k = 0; k < 13; k++) { const z = -6.4 + k * .75 + (F() - .5) * .3, x = -W(z) + 2.4 + F() * 1.8, gy = carve(x, z), kind = k % 3;
+      if (kind === 0) put(new THREE.BoxGeometry(.8, .55, .55), 'bale', x, gy + .275, z, 0, F() * .6); else if (kind === 1) { const pts = [[.02, 0], [.16, .1], [.22, .35], [.2, .6], [.08, .75], [.07, .85], [.1, .88]].map(([u, v]) => new THREE.Vector2(u, v)); put(new THREE.LatheGeometry(pts, 10), 'clay', x, gy, z); }
+      else put(new THREE.CylinderGeometry(.3, .3, .8, 12), 'wood', x, gy + .4, z); cargo.push({ x: +x.toFixed(2), z: +z.toFixed(2), y: +gy.toFixed(3), kind }); }
+    const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, M[k]); m.name = k;
+      m.castShadow = k !== 'dark'; m.receiveShadow = k !== 'dark'; group.add(m); tris += g.attributes.position.count / 3; }
+    return { group, tris: Math.round(tris), draws: group.children.length, sol, shape: S, houses, slip, steps, stairTop: S.stairTop, lookout: look, boats, cargo };
+  }
+  aurenneCove.shape = coveShape; /* the world reads the cut ground before the piece is built (offroadStamps) */
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, camp: campGear, fire: campFire }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
