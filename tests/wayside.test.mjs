@@ -447,6 +447,13 @@ if (im) {
     !it.none && it.face >= 15 && it.over === 0 && it.n > 1000 && it.tun === it.tunF && Math.abs(it.ice - it.iceT) < .02 && it.ice > 12, it);
   check(`solid at the face's foot, the tunnel's side and the dark at its back, open in the mouth; ${it.tris} triangles in ${it.draws} draws, the laid ground ${it.laid} over ${it.cells} squares`,
     !it.none && it.foot && it.side && it.back && !it.mouth && it.tris < 24000 && it.draws <= 11 && it.laid < 8000, it);
+  // Session 2150: the ice's blue is the sky's light through it, so it glows by day and not at night (the critic, 12 Nov: at 19:30 the tunnel
+  // was the brightest thing in view); every glowing material the mouth draws is the kit's PKIT.dayGlow, set by the hour
+  const glow = async h => { await page.evaluate(h => forceTime(h), h); await g.spin('clear', 4); return page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, M = new Set();
+    D.group.traverse(o => { if (o.material && o.material.emissive && o.material.emissive.getHex()) M.add(o.material); });
+    return { n: M.size, kit: [...M].every(m => PKIT.dayGlow.has(m)), i: [...M].map(m => +m.emissiveIntensity.toFixed(2)) }; }, im.id); };
+  const gd = await glow(12), gn = await glow(19.5), gk = await glow(18); await page.evaluate(() => forceTime(12));
+  check(`the ice's ${gd.n} glowing materials are the kit's day glow: ${gd.i[0]} at noon, ${gk.i[0]} at 18h, ${gn.i[0]} at 19:30`, gd.n > 0 && gd.kit && gd.i.every(v => v === 1) && gn.i.every(v => v === 0) && gk.i.every(v => v > 0 && v < 1), { gd, gk, gn });
 }
 // Session 2105: Aurenne's smuggler's cove (PKIT.places.inlet, places.js's aurenneCove), an inlet cut into the world's own coast, drawn by the second
 // chance (a near miss, or a cell whose first kind found no ground). The world's ground nowhere over the cut; the beach walked over the sea, the
