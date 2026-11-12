@@ -567,3 +567,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing; main is green.
 
 **Roadmap.** 321 of 398 stories done (320 of 397 on 10 Nov). The new look is 7 of 18; only F14 is left for deep work.
+
+## 12 Nov 2026
+
+**Waiting on you.** Three decisions: children in the towns (#1445, B recommended: two to four at play by island), the black sails (#1454, A: the hull of her waters, the mark struck, no colours) and rare specimens and the field guide (#1463, B: the guide plus nine specimens by hour and weather). No PR waits on your tap.
+
+**Landed on main since 11 Nov.** Your answers built: resources and crafting B, all five systems sessions (hides and salt, the tanner's and drying racks, the light line, a house's fittings, clay, the oven and kiln, the garden; Systems 2123–2142) and the look's racks in the yards and the workbench in your house (Look 2131, 2136, 2143); the fire laid as each island lays it (#1405 C, Look 2114); swords by island, on the item, in the hand and on the foes (#1425 B, Systems 2114, 2133, Bodies 2119, 2129); Gaoth's gates hold the Gale Wisp and the dusk eagle (#1424 C, Systems 2115–2116, Bodies 2118–2120). The merchantmen sail the kit's cog (Look 2126). Aldwyn's brooch, travelling dress, study dress, astrolabe and maps (Bodies 2106–2144). Under Another Flag §1–2 (Quests 2130). QA held the budgets flat (2104–2122). Build s1508.
+
+**Under way.** QA #1467 (docs) lands on green. The look builder takes the oven, kiln and garden beds as kit pieces next.
+
+**Blocked.** Nothing; main is green.
+
+**Roadmap.** 323 of 405 stories done (321 of 398 on 11 Nov). The new look is 7 of 18; only F14 is left for deep work.
