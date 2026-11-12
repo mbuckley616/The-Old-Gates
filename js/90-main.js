@@ -997,6 +997,7 @@ function loop(now){
     else if(nearHerbPrompt){iprOW.textContent=`Press 'E' to harvest ${typeof herbPromptName==='function'?herbPromptName(nearHerbPrompt):nearHerbPrompt.def.name}`;iprOW.style.opacity='1';iprOW.style.display='block';}
     else if(typeof veinNear==='function'&&veinNear()){const v=veinNear(),n=veinLeft(v);iprOW.textContent=n<=0?'Worked out':MINE&&MINE.v===v?`Working the ${ORE_DEF[v.ore].name.toLowerCase()} · E to stop`:`Press 'E' to mine ${ORE_DEF[v.ore].name.toLowerCase()}`+(hasPick()?'':' (you need a pick)');iprOW.style.opacity='1';iprOW.style.display='block';} /* S1491 — a vein */
     else if(typeof treeNear==='function'&&(chopTool()||CHOP)&&treeNear()){const n=treeNear();iprOW.textContent=CHOP&&CHOP.t===n.t?`Felling · ${CHOP.n} of ${fellStrikes()} · E to stop`:`Press 'E' to fell the tree`+(chopTool()==='axe'?' (slow with an axe)':'');iprOW.style.opacity='1';iprOW.style.display='block';} /* S1511 — a tree, with a hatchet */
+    else if(typeof clayPrompt==='function'&&clayPrompt()){iprOW.textContent=clayPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S2138 — clay */
     else if(typeof waterPrompt==='function'&&waterPrompt()){iprOW.textContent=waterPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S2012 — water B */
     else if(typeof campfireNear==='function'&&campfireNear()&&!cookOpen){iprOW.textContent="Press 'E' to tend the fire";iprOW.style.opacity='1';iprOW.style.display='block';} /* S1525 — a lit fire */
     else if(nearBramBodyPrompt){
@@ -1082,6 +1083,7 @@ function loop(now){
     else if(typeof chartHoldNear==='function'&&chartHoldNear()){iprInt.textContent=CHART_PROMPT;iprInt.style.opacity='1';iprInt.style.display='block';} /* S1880 — her chart table */
     else if(nearBed){iprInt.textContent=(_nbd&&typeof WORLD!=='undefined'&&WORLD.bedPrompt(_nbd))||"Press 'E' to rest";iprInt.style.opacity='1';iprInt.style.display='block';} // v80 S141 — the bed says whose it is
     else if(nearKeeper){iprInt.textContent=(typeof sleeperAsleep==='function'&&sleeperAsleep())?(currentHouse&&currentHouse.keeper?currentHouse.keeper:'The resident')+" (asleep) — Press 'E' to wake":(currentHouse&&currentHouse.keeper?currentHouse.keeper+" — ":"")+"Press 'E' to talk"; /* S770 — over a sleeper (#255) */iprInt.style.opacity='1';iprInt.style.display='block';}
+    else if(typeof homeHere==='function'&&homeHere()&&!homeOpen&&!benchOpen&&!cureOpen){iprInt.textContent="Press 'E' to see to the house";iprInt.style.opacity='1';iprInt.style.display='block';} /* S2137 — your house's page */
     else{iprInt.style.opacity='0';setTimeout(()=>{if(iprInt.style.opacity==='0')iprInt.style.display='none';},260);}
   }
   else{

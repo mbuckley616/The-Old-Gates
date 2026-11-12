@@ -749,6 +749,8 @@ function useItem(i){
   if(it.cup){drinkCup(i);return;} /* S2035 — an inn's cup */
   if(it.meal){eatMeal(i);return;} /* S1486 — a meal leaves you fed */
   if(it.name===TINDERBOX_NAME||it.log||it.food||it.second||it._typeKey==='fish'){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
+  if(it.tool==='shovel'){useShovelThing();return;} /* S2138 — clay */
+  if(it.jar&&!it.meal){useJarThing();return;} /* S2139 — a meal into a jar */
   if(it.tool==='pick'||it.ore||it.ingot){useOreThing(i);return;} /* S1491 — a pick at a vein */
   if(it.roll||it.tent){layRoll(i);return;} /* S2090 — lay out your bedroll (a tent is pitched over the best one you carry) */
   if(it.tool==='hatchet'){useHatchet();return;} /* S1511 — a hatchet at a tree */
