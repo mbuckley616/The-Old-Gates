@@ -58,5 +58,17 @@ if (id) {
     check(`at the cart door E takes you out`, !(await page.evaluate(() => isInterior())));
   }
 }
+// Session 2136 (Michael's B on #1420): the smith's tanner's rack and drying rack stand in his yard, each its island's (S2131's kit), clear of
+// the town's other solids and 2.5 m from every door; what hangs on one is worldState.racks' for its key, and at it E opens the smith's page
+const rk = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), h = S.houses.find(q => q.type === 'weapon'); if (!h || !S.racks) return null;
+  const R = S.racks.filter(r => r.house === h.id), hitOther = r => S.sol.some(s => { if (s.bt === 'rack' && Math.abs(s.cx - r.x) < .01 && Math.abs(s.cz - r.z) < .01) return false;
+    const dx = r.x - s.cx, dz = r.z - s.cz, lx = s.c !== undefined ? dx * s.c - dz * s.s : dx, lz = s.c !== undefined ? dx * s.s + dz * s.c : dz; return Math.abs(lx) < s.rx && Math.abs(lz) < s.rz; });
+  const doors = Math.min(...R.flatMap(r => S.houses.map(q => Math.hypot(r.x - q.doorX, r.z - q.doorZ))));
+  const T = R.find(r => r.kind === 'tan'); worldState.racks = worldState.racks || {}; worldState.racks[T.key] = [{ k: 'hide', at: gameMinNow() - 999 }, { k: 'hide', at: gameMinNow() }]; T.t = 0;
+  townRacksLive(S, { x: T.x, z: T.z }); px = T.x + T.s * (T.rz + .7); pz = T.z + T.c * (T.rz + .7); const pr = townRackPrompt(), hold = curesHere().map(c => c.kind).join();
+  delete worldState.racks[T.key]; return { kinds: R.map(r => r.kind + ':' + r.g.userData.rack.island).join(), clear: R.every(r => !hitOther(r)), doors: +doors.toFixed(1), slots: T.g.userData.rack.slots.join(), pr, hold }; });
+console.log('racks', JSON.stringify(rk));
+check(`the smith's two racks stand in his yard, the Gatelands' (${rk && rk.kinds}), clear of the town's solids and ${rk && rk.doors} m from the nearest door`, !!rk && rk.kinds === 'tan:gatelands,dry:gatelands' && rk.clear && rk.doors >= 2.5, rk);
+check('a hide hung there is drawn on it, leather when it is ready; at it E opens the smith\'s two racks', !!rk && rk.slots === 'leather,salted,,' && /tanner/.test(rk.pr || '') && rk.hold === 'rack,dry', rk);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

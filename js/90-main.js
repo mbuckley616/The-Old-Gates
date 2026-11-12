@@ -1040,6 +1040,7 @@ function loop(now){
     else if(typeof limeCavePrompt==='function'&&limeCavePrompt()){iprOW.textContent=limeCavePrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1768 — a limestone cave's mouth */
     else if(typeof bellWreckPrompt==='function'&&bellWreckPrompt()){iprOW.textContent=bellWreckPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S801 — the Drowned Bell's wreck */
     else if(typeof ringCairnPrompt==='function'&&ringCairnPrompt()){iprOW.textContent=ringCairnPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S800 — the Noon Ring's cairn */
+    else if(typeof townRackPrompt==='function'&&townRackPrompt()){iprOW.textContent=townRackPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S2136 — a smith's or a harbour's rack in its yard */
     else if(typeof yardRackPrompt==='function'&&yardRackPrompt()){iprOW.textContent=yardRackPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1657 — a Markish yard's staff rack */
     else if(typeof ringPrompt==='function'&&ringPrompt()){iprOW.textContent=ringPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S1658 — the ladder's ring's gate and post */
     else if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.shipPrompt()){iprOW.textContent=WORLD.shipPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} // v80 C
