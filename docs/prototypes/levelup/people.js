@@ -3610,7 +3610,7 @@ function fitBandUV(g) { g = g.index ? g.toNonIndexed() : g; const P = g.attribut
 // a cylinder's side in tiles twice its height round (its caps keep their disc mapping)
 function fitCylUV(g, r, h) { const uv = g.attributes.uv, side = g.groups[0], idx = g.index, k = Math.max(1, Math.round(2 * Math.PI * r / (2 * h))), seen = new Set();
   for (let j = side.start; j < side.start + side.count; j++) { const i = idx.getX(j); if (seen.has(i)) continue; seen.add(i); uv.setX(i, uv.getX(i) * k); } uv.needsUpdate = true; return g; }
-function swordParts(D, make, fit) {
+export function swordParts(D, make, fit) {
   const K = { ...SWORDS[make], ...fit }, parts = [], add = (g, m, name) => { const o = new THREE.Mesh(g, m); o.name = name; parts.push(o); return o; };
   const steel = new THREE.MeshStandardMaterial({ color: sRGB(.66, .67, .7), metalness: .85, roughness: .28 }), fitM = new THREE.MeshStandardMaterial({ color: sRGB(...K.fit), metalness: .8, roughness: .32 });
   const wrap = new THREE.MeshStandardMaterial({ color: sRGB(...(Array.isArray(D.sword) ? D.sword : K.gripCol)), roughness: .75 }), dark = new THREE.MeshStandardMaterial({ color: sRGB(.08, .07, .07), metalness: .5, roughness: .6 });
