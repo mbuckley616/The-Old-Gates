@@ -2,7 +2,7 @@
 // Session 643 prototype showed them. The bakes, their sizes and rigs, the caravel's lateens trimmed to leeward, your own
 // ship taking her class's hull, the three older hulls untouched; writes docs/prototypes/shiphulls-ingame-*.png and, since
 // Session 1538, shipdress-*.png (your sloop in each island's dress). Session 1544: your caravel is the kit's Aurenne caravel, her
-// sterncastle a second deck walked by its ladders, her wheel on it (shipdress-caravel.png).
+// sterncastle a second deck walked by its ladders, her wheel on it (shipdress-caravel.png). Session 2126: a merchantman is the kit's cog in her waters' dress.
 import { boot, check } from './lib/game.mjs';
 import { inspShots } from './lib/inspshot.mjs';
 const g = await boot(); const { page } = g;
@@ -21,6 +21,8 @@ const r = await page.evaluate(() => { const out = {};
     own[cls] = WORLD.buildShipMesh(L, 4, undefined).userData.kind; }
   worldState.ship = was; out.own = own;
   out.lengthRule = [WORLD.buildShipMesh(13, 4.4).userData.kind, WORLD.buildShipMesh(17, 5.6, 'merchant').userData.kind, WORLD.buildShipMesh(22, 7, 'pirate').userData.kind];
+  /* S2126: a merchantman on the new look is the kit's cog in the dress of her waters, under her nation's banner, on your cog's own bake */
+  out.merch = ['gatelands', 'mark', 'aurenne'].map(d => { const m = WORLD.buildShipMesh(17, 5.6, 'merchant', undefined, d); return { d, kit: m.userData.kit, kind: m.userData.kind, banner: m.userData.banner ? m.userData.banner.nation || 'yes' : null, shared: m.geometry === shipBake('cog', 'player', d).geo, castle: !!m.userData.castle }; });
   openInspector(); out.keys = INSPECTOR.entries.filter(e => e.group === 'Ships').map(e => e.key || e.id); return out; });
 console.log(JSON.stringify(r));
 for (const look of ['player', 'pirate', 'merchant']) {
@@ -358,5 +360,6 @@ check('the flag flies clear: at the stern about head height over the deck it sta
   bv.every(([k, v]) => v.at === 'stern' ? v.flag[0] > v.foot[1] + 1.7 : v.flag[0] > v.foot[1] + .5) && bv.every(([k, v]) => v.flag[1] < v.staffTop + .1), bv.map(([k, v]) => [k, v.foot[1], v.flag, v.staffTop]));
 check('the flag streams down the wind: abeam to leeward, forward with the wind astern, aft into a head wind', bv.every(([k, v]) => v.a[0] === 4.71 && v.a[1] === 3.14 && Math.cos(v.a[2]) > .999), bv.map(([k, v]) => [k, v.a]));
 check('a new banner replaces the old: one staff, one flag', bv.every(([k, v]) => v.again === '1/1/aurenne'), bv.map(([k, v]) => v.again));
+if (r.merch[0].kit) check('a merchantman is the kit\'s cog in the dress she is given, under that nation\'s banner, on your cog\'s bake (S2126)', r.merch.every(q => q.kit === q.d && q.kind === 'cog' && q.banner === q.d && q.shared && q.castle), r.merch);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

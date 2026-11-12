@@ -19,10 +19,11 @@
 // ?ship=aurcog (Session 1044): the cog in Aurenne's dress (#347 A: one lateen), the cog's views; &nostar.
 // ?ship=markcaravel (Session 1038): the caravel in the Mark's dress (#347 A: gaff fore and main, the lateen mizzen), the caravel's views; &stripe, &nohead.
 // &paint=N&cloth=M (Session 1836): the yard's colours, ships.js's SWATCHES of the ship's dress (0 is the dress as drawn).
+// &black (Session 2127): the black sail's dress over the ship as built (blackSail); &black=clean strikes the island's mark outright; &flag=black a black flag with a red hem.
 // ?ship=marksloop (Session 900): the sloop in the Mark's dress, the sloop's views (lap is close on her bow and its head); &nohead, &noshields.
 import * as THREE from 'three';
 import { Q, W, H, STATS, GLSL_NOISE, makeRenderer, makeComposer, buildTextures, skyDome, clouds, run } from './common.js';
-import { gatelandsSloop, markSloop, aurenneSloop, markCutter, aurenneCutter, gatelandsCutter, gatelandsCaravel, markCaravel, aurenneCaravel, gatelandsCog, markCog, aurenneCog, gatelandsGalleon, markGalleon, aurenneGalleon, swatch, banner } from './ships.js';
+import { gatelandsSloop, markSloop, aurenneSloop, markCutter, aurenneCutter, gatelandsCutter, gatelandsCaravel, markCaravel, aurenneCaravel, gatelandsCog, markCog, aurenneCog, gatelandsGalleon, markGalleon, aurenneGalleon, swatch, banner, blackSail } from './ships.js';
 import { stream } from './pieces.js';
 
 const R = makeRenderer(.85), scene = new THREE.Scene(), VIEW = Q.get('view') || 'quarter'; buildTextures();
@@ -52,6 +53,7 @@ const GCU = Q.get('ship') === 'glcutter', ACU = GCU || Q.get('ship') === 'aurcut
 const DRESS = AGL || ACG || ASL || (ACU && !GCU) || (CAR && !GCV && !MCV) ? 'aurenne' : MGL || MCG || MCV || CUT || MSL ? 'mark' : 'gatelands';
 if (Q.has('paint') || Q.has('cloth')) swatch(S, DRESS, { paint: +Q.get('paint') || 0, cloth: +Q.get('cloth') || 0 });
 if (Q.has('banner')) banner(S, Q.get('banner') === '1' ? DRESS : Q.get('banner'), { yaw: Q.has('yaw') ? +Q.get('yaw') : undefined }); /* Session 1847: the ship's banner */
+if (Q.has('black')) blackSail(S, { ghost: Q.get('black') !== 'clean', flag: Q.get('flag') || undefined, yaw: Q.has('yaw') ? +Q.get('yaw') : undefined }); /* Session 2127: the black sail's dress */
 scene.add(S.group);
 if (CUT || ACU) Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 17 });
 if (CAR || COG) Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 22, bottom: -5 });
@@ -79,5 +81,5 @@ else { eye = CUT ? [15, 5.6, 16] : [13, 5.2, 14]; at = CUT ? [0, 4.6, .5] : [0, 
 cam.position.set(...eye); cam.lookAt(...at);
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); }
 cam.updateProjectionMatrix();
-STATS.ship = { ship: AGL ? 'aurgalleon' : MGL ? 'markgalleon' : MCG ? 'markcog' : ACG ? 'aurcog' : MCV ? 'markcaravel' : GCV ? 'glcaravel' : GCU ? 'glcutter' : ACU ? 'aurcutter' : GAL ? 'galleon' : COG ? 'cog' : CAR ? 'caravel' : CUT ? 'cutter' : MSL ? 'marksloop' : ASL ? 'aursloop' : 'sloop', view: VIEW, tris: S.tris, draws: S.draws, swatch: S.swatch || null, banner: S.banner ? (({ group, ...b }) => b)(S.banner) : null };
+STATS.ship = { ship: AGL ? 'aurgalleon' : MGL ? 'markgalleon' : MCG ? 'markcog' : ACG ? 'aurcog' : MCV ? 'markcaravel' : GCV ? 'glcaravel' : GCU ? 'glcutter' : ACU ? 'aurcutter' : GAL ? 'galleon' : COG ? 'cog' : CAR ? 'caravel' : CUT ? 'cutter' : MSL ? 'marksloop' : ASL ? 'aursloop' : 'sloop', view: VIEW, tris: S.tris, draws: S.draws, swatch: S.swatch || null, black: S.black || null, banner: S.banner ? (({ group, ...b }) => b)(S.banner) : null };
 run(makeComposer(R, scene, cam, { bloom: .12, sat: 1.05, vig: .28 }), cam);
