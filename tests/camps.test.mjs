@@ -90,5 +90,21 @@ console.log('fire', JSON.stringify(fr));
 check('the fire is the kit\'s on each island: lit, burning, embers by its clock, each under 3,000 tris in 16 draws at most, on the land, lit by a light', ['gatelands', 'mark', 'aurenne'].every(k => { const v = fr[k];
   return v && v.st.map(s => s.split(':')[0]).join() === 'lit,burning,embers' && v.st.every(s => +s.split(':')[1] < 3000 && +s.split(':')[2] <= 16) && v.lo > -.3 && v.hi > .5 && v.hi < 4 && v.light; }), fr);
 check('a fire lit from the bag is laid as its own island lays it, and taken away when it is out', !!fr.lit && fr.lit.island === fr.lit.want && fr.lit.stage === 'lit' && fr.gone, fr);
+// Session 2131 (Michael's B on #1420, its look session): the tanner's rack and the drying rack, each island's frame, four places each, rebuilt
+// in place when what hangs on them changes
+const rk = await page.evaluate(() => { const out = {};
+  const FULL = { tan: ['hide', 'salted', 'leather', 'hide'], dry: ['meat', 'jerky', 'fish', 'fishdry'] };
+  for (const kind of ['tan', 'dry']) for (const isle of ['gatelands', 'mark', 'aurenne']) { const x = px + 4, z = pz - 3, G = workRackProp(kind, x, z, .4, { island: isle }); WORLD.scene.add(G);
+    const u = G.userData.rack, empty = [u.tris, u.draws]; u.set(FULL[kind]); G.updateMatrixWorld(true); const box = new THREE.Box3().setFromObject(G);
+    const names = []; G.traverse(o => { if (o.isMesh) names.push(o.name); });
+    let lo = 9; G.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position, v = new THREE.Vector3(); for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); lo = Math.min(lo, v.y - WORLD.worldH(v.x, v.z)); } });
+    out[kind + ':' + isle] = { empty, full: [u.tris, u.draws], slots: u.slots.join(), names: names.join(), hi: +(box.max.y - WORLD.worldH(x, z)).toFixed(2), lo: +lo.toFixed(2), box: u.box, at: u.at.length };
+    u.set(['leather', null, 'jerky']); out[kind + ':' + isle].odd = u.slots.join(); WORLD.scene.remove(G); G.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  return out; });
+console.log('racks', JSON.stringify(rk));
+check('each island\'s tanning and drying racks: four places, what hangs on them drawn by its word, under 9,000 tris in 16 draws full, on the land, 1.4 to 2.6 m tall', Object.entries(rk).every(([k, v]) => {
+  const tan = k.startsWith('tan'), want = tan ? ['rack:flesh', 'rack:salted', 'rack:hair', 'rack:leather'] : ['rack:meat', 'rack:jerky', 'rack:fish', 'rack:fishdry'];
+  return v.at === 4 && v.full[0] > v.empty[0] && v.full[0] < 9000 && v.full[1] <= 16 && want.every(n => v.names.includes(n)) && v.lo > -.5 && v.hi > 1.4 && v.hi < 2.6 &&
+    v.odd === (tan ? 'leather,,,' : ',,jerky,'); }), rk);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
