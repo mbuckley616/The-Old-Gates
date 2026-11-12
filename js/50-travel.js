@@ -927,9 +927,9 @@ const RACK_KIND={rack:{name:'Tanner’s rack',takes:['hide']},dry:{name:'Drying 
 const RACK_HANG={hide:{need:b=>!!b.hide,say:'a hide'},meat:{need:b=>foodOf(b)==='meat',say:'raw meat'},fish:{need:b=>foodOf(b)==='fish',say:'a fish'}};
 function jerkyItem(food,day){const fish=food==='fish';
   return {name:fish?'Dried Fish':'Jerky',ico:fish?'🐟':'🥓',type:'potion',weight:.3,buyPrice:10,sellMult:.3,meal:{kind:FOOD_MEAL[food].kind,s:1,x:JERKY_X,made:day,jerky:1},brewKey:'jerky@'+food+'@d'+day};}
-// the racks a house keeps: both at a smith's, the drying rack at a harbour's goods shop. Returns [{kind, key}]
+// the racks a house keeps: both at a smith's and at a Mark hall's yard (S2142), the drying rack at a harbour's goods shop. Returns [{kind, key}]
 function curesOf(h){if(!h||!h.siteId)return [];const lot=String(h.id||'').replace('g_'+h.siteId+'_','')||'0',k=w=>`${h.siteId}:${lot}:${w}`;
-  if(h.type==='weapon')return [{kind:'rack',key:k('rack')},{kind:'dry',key:k('dry')}];
+  if(h.type==='weapon'||h._yard)return [{kind:'rack',key:k('rack')},{kind:'dry',key:k('dry')}]; /* S2142 — a Mark hall's yard (S1657) keeps both, as the page's every longhouse yard */
   if(homeMine(h))return ['rack','dry'].filter(f=>homeFitted(h,f)).map(f=>({kind:f,key:k(f)})); /* S2137 — your own house's racks, once fitted */
   const st=typeof SITE!=='undefined'?SITE[h.siteId]:null;if(h.type==='misc'&&st&&st.kind==='port')return [{kind:'dry',key:k('dry')}];return [];}
 function curesHere(){const T=typeof townRackNear==='function'?townRackNear():null;if(T)return curesOf(T.h); /* S2136 — a rack stood in its yard (82) opens its house's page */
@@ -1010,7 +1010,7 @@ function homeFitWhy(h,k,how){if(!homeMine(h))return 'This is not your house.';co
 // the named actions: fit one (a stored one back for nothing), take one out. Each returns {done, why}
 function homeFit(h,k,how){const why=homeFitWhy(h,k,how);if(why)return {done:false,why};const r=homeFitRec(h),F=HOME_FITS[k],si=r.stored.indexOf(k);
   if(si>=0)r.stored.splice(si,1);else if(F.clay)bagTake(b=>!!b.clay,F.clay);else if(how==='planks')bagTake(b=>b.plank,F.planks);else{gold-=F.gold;if(typeof updateHUD==='function')updateHUD();}
-  r.fit.push(k);if(typeof addLog==='function')addLog('🏠',`The house fitted with ${F.a}.`);if(typeof homeFitsDress==='function')homeFitsDress(h); /* S2142 — stood in the room or the yard (84) */return {done:true};}
+  r.fit.push(k);if(typeof addLog==='function')addLog('🏠',`The house fitted with ${F.a}.`);if(typeof homeFitsDress==='function')homeFitsDress(h); /* S2143 — stood in the room or the yard (84) */return {done:true};}
 function homeUnfit(h,k){if(!homeMine(h))return {done:false,why:'This is not your house.'};const r=homeFitRec(h),i=r.fit.indexOf(k);if(i<0)return {done:false,why:''};
   if(k==='garden'&&gardenBeds(h).some(Boolean))return {done:false,why:'Gather what grows in it first.'}; /* S2140 */
   if(k==='rack'||k==='dry'){const c=curesOf(h).find(x=>x.kind===k);if(c&&cureList(c.key).length)return {done:false,why:'Take down what hangs on it first.'};}

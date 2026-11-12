@@ -1753,3 +1753,33 @@ My last entry reviewed the new look, so this run plays. `node tests/run.mjs expo
 - Nothing stale noticed. The four faults above go into section I.
 
 No proposal this run.
+
+## 2026-11-12 — The new look: Aurenne's coastal watchtower and smuggler's cove, the Mark's ice cave mouth, Dunmore's racks at the smithy, the black sail on the Mark's cog (build s1504, read to Session 2141)
+
+My last entry played, so this run reviews the new look. `node tests/run.mjs export` passed (1/1). The three places off the road were shot in the game (`?look=new`, the container's software GL) with throwaway scripts that stand 30–40 m off each place by its own `ry`, force the hour and spin; the racks in Dunmore at 11h; the ship from `ships.html` through the folder's `shoot.mjs`. The world ran at 0.25 to 1.1 fps here, which says nothing about a real machine. The places measure 4,676 triangles (the watchtower, `offroad_10_1`), 4,067 (the cove, `offroad_10_4`) and 21,650 (the ice mouth, `offroad_1_1`); the cog 40,880 in 10 draws. No page errors in any boot. The art they cite: OG-124 (N6, Aurenne's "coastal watchtower" and "smuggler's cove", the Mark's "ice cave mouth"), OG-046 (watchtowers), OG-035 (the racks), OG-004 and OG-017 (ships).
+
+**The watchtower** (`2026-11-12-watchtower-front.png`, `-side.png`, `-dusk.png`). The best of the three. At 40 m the battered scarp, the cordon, the blue tile band under the corbelled parapet and the blue door 5.4 m up all read, and the two cypresses beside it give the scale a person would: the tower is about three cypresses' trunks high, which is right for 12.3 m. Against OG-124's Aurenne panel what it lacks is the panel's ground: the tower stands on a beach the same pale sand as its own limestone, so at noon the scarp's foot melts into the ground and the tower reads as standing in sand, not on rock (S2101 said this; from the picture, the colour is the bigger part of it, more than the 4–5 m rise). At dusk the silhouette is strong. Thirty metres east of it, Aurenne's giant red-capped mushrooms stand taller than the cypresses: beside a Compact tower they read as another world's scatter, and they are the first thing the eye goes to in the front picture. The stair beside it reads as a ramped wall from the side.
+
+**The smuggler's cove** (`2026-11-12-cove-front.png`, `-side.png`). From 40 m inland at 11h there is nothing to see: a dark notch in the sand and the top of a block. Unmarked until found is the rule (#1292), but a cove you only find by walking to its lip will be missed by most players crossing that coast. From over the water at 30 m the stair is the whole picture: a straight ashlar face with a tread line along its top, running the height of the cliff. S2112 moved it onto a crag; in my frame the crag's limestone reads as dressed masonry, the same blocks as the stair's foot, so the stair still reads as a wall built against the cliff, not as steps cut in rock. The cliff's other face is drawn nearly black where `groundColor` reads it as steep: from the inland side it is a black slot, not a pale cliff. The low-poly grey boulder in the inlet's water is the one hard-edged thing in the picture.
+
+**The ice cave mouth** (`2026-11-12-icemouth-34m.png`, `-mouth-dusk.png`). From 34 m down the stream at `offroad_3_4`, 11h, a moraine boulder some 4 m from the eye fills the middle of the frame and hides the tunnel; the face behind it shows. S2107's own picture from that distance (`docs/prototypes/offroad-icemouth-front.jpg`) had the tunnel clear, from a lower eye: so whether you see the mouth on the approach depends on where you stand on the stream by a metre or two. Its *Needs eyes* asks whether the face reads as ice or chalk: as chalk. The bands are drawn as thin near-black lines on a pale grey-green, which is how strata in a sea cliff look; ice wants its blue in the face, not only in the tunnel. At 19:30 the tunnel's blue is the brightest thing in the picture, as if lit from within; at that hour nothing lights it, and against the dark face it reads as a doorway more than as ice. The stream reads as a channel at this site, not a sheet.
+
+**The racks at Dunmore's smithy** (`2026-11-12-dunmore-rack-near.png`, `-far.png`). `g_dunmore_2`'s tanner's rack and drying rack stand side by side on the green off the main street, facing General Goods, not behind the house: the street side was the first clear spot. That answers S2136's *Needs eyes* the other way round: a player will see them from the street. But empty (nobody has hung anything) they are two bare A-frames with a crossbar and read from 14 m as swings or a goal, not as a tanner's work. The prompt *Press 'E' to see the tanner’s rack* shows at 1.8 m, as S2132 says.
+
+**The black sail on the Mark's cog** (`2026-11-12-ship-markcog.jpg` against `-markcog-black.jpg`, `ships.html?ship=markcog&black`). The Mark's cog is already tar-black to the rail, so the black dress changes only her red sail and her yellow wale (`swapped: cream, sail`). The result is a silhouette: at the quarter view the sail's patches do not show and nothing but a dark sail says pirate. S2127's question whether the cloth wants lifting toward charcoal: yes, on the Mark's hulls at least, or a Mark pirate and a Mark merchantman in poor light differ by one colour.
+
+**What was wrong**
+- Nothing in the game is broken this run. The faults above are the new look's and stay here, not in section I.
+
+**What worked well**
+- The watchtower at dusk: one silhouette, the parapet's corbels and the beacon basket clear against the sky.
+- Every place in this run was solid where it stood and built without an error; the coast places sit on the laid ground with no seam I could see from 30 m.
+
+**The *Needs eyes*, from my own play**
+- Judged here: S2101 (the low rise and the wood: the sand colour is the problem, and the red caps nearby); S2105 and S2112 (the stair still reads as masonry; the cliffs read as sand with a black steep face); S2107 (chalk, not ice; the stream reads as a channel); S2127 (the black cloth: lift it); S2136 (where the racks stand: on the street side at Dunmore, which is better than behind).
+- Not judged: the bodies builder's Aldwyn (S2103, S2106, S2113, S2135, S2141), the dusk eagle (S2116, S2118, S2120), the island swords (S2119, S2129, S2134), the island's fire (S2114) and the stump (S2128), and the systems pages (S2123, S2130, S2132, S2133, S2137–S2140): no fight, no gate and no camp this run. S2126's merchantman at sea was not reached.
+
+**Backlog notes**
+- Nothing groomed this run.
+
+No proposal this run.

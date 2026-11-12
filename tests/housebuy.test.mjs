@@ -46,7 +46,7 @@ check(`the town built again: Your House, no resident for it, nothing on sale (${
 const cellar = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id); const was = currentHouse;
   currentHouse = cellarFor(h); const a = ssPlaceName(); currentHouse = h; const b = ssPlaceName(); currentHouse = was; return { cellar: a, upstairs: b }; }, pick.id);
 check(`a save in the cellar names the town ("${cellar.cellar}"), as upstairs does ("${cellar.upstairs}")`, /, Dunmore$/.test(cellar.cellar) && /cellar/.test(cellar.cellar) && cellar.upstairs === 'Your House, Dunmore', cellar);
-// S2142 (the look builder): a workbench fitted in Your House stands against a whole wall of its ground floor, clear of the room's solids,
+// S2143 (the look builder): a workbench fitted in Your House stands against a whole wall of its ground floor, clear of the room's solids,
 // and you work at it from its front (house._fits.bench, homeFitHere at 2 m); Dunmore's townhouse has no such wall free (its one run is the
 // back door), so there it is worked anywhere in the house. A tanner's rack fitted stands in the yard at once
 await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id); gold = 5000; homeFit(h, 'bench'); px = h.exitX; pz = h.exitZ; goToInterior(h); }, pick.id);

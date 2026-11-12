@@ -28,6 +28,13 @@ check(`${id}'s Fighters' Guild has its yard: a ${r.r} m ring, ${r.tris} triangle
 check(`its ground falls ${r.fall} m across it, ${r.road > 1e8 ? 'no road near it' : 'the nearest road ' + r.road + ' m off its edge'}, no tree in it (${r.trees})`, r.fall < 1.6 && r.road >= 1.4 && r.trees === 0, r);
 check('the rack is solid and the ring is open', r.rackSolid && r.ringOpen, r);
 check(`it adds at most two materials to the town's kit (${r.newMats}: the rope and the earth)`, r.inKit && r.newMats <= 2, r);
+// S2142 — the page's "every Mark longhouse yard" (resources-and-crafting.md, Michael's B on #1420): the hall whose yard it is keeps a
+// tanner's rack and a drying rack, keyed by its lot as a smith's are; townRacks (82) stands them. The mark is the hall's own, never saved.
+const yr = await page.evaluate(id => {
+  const S = WORLD.settle.get(id), Y = S.yards[0], hall = S.houses.find(h => h.id === Y.house);
+  return { keys: curesOf(hall).map(c => c.key), stood: (S.racks || []).filter(R => R.h === hall).map(R => R.kind).sort(), saved: Object.keys(hall).includes('_yard') || JSON.stringify(hall).includes(':yard') };
+}, id);
+check(`the yard's hall keeps a tanner's rack and a drying rack (${yr.keys.join(', ')}), both stood, the mark not saved`, yr.keys.length === 2 && /:rack$/.test(yr.keys[0]) && /:dry$/.test(yr.keys[1]) && yr.stood.join() === 'dry,tan' && !yr.saved, yr);
 // S1691 — the yard's rack by the hour: a staff by day (the spar), and from 18h to 22h the evening's brawl in the same ring, its stake by
 // the town's tier taken when it is called (brawlStart, S1644).
 const yb = await page.evaluate(id => {

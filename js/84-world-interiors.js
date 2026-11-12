@@ -336,7 +336,7 @@
     site.quayAt={x:mx,z:mz,ang,len};
   }
 
-  // ── S2142 — your house's fittings where they stand (the systems builder's S2137: `house._fits[k]`, read by homeFitHere at 2 m). The
+  // ── S2143 — your house's fittings where they stand (the systems builder's S2137: `house._fits[k]`, read by homeFitHere at 2 m). The
   // workbench is the kit's joiner's bench (PKIT.props.bench, the cabin's since S1524), stood against a wall of the room's ground floor:
   // the back wall first (from its middle outward), then the two sides, the door's wall last, at the first spot where its foot and 0.8 m
   // in front of it are clear of every low solid and step of the room, 1.9 m from the door, 1.2 m from where you come in, a bed, the chest,

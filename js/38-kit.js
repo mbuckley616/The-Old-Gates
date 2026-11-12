@@ -4417,7 +4417,7 @@ function hallFixtures(list) {
 // and an offcut on the top with shavings, and a rack of tools on the wall over it (a saw, a plane, a mallet, two chisels).
 //   PKIT.props.bench() -> { group, tris, draws, foot: { x0, x1, z0, z1 }, top } in the wall's frame: the wall at z = 0, the bench
 //   toward +z, its length along x centred on 0, the floor at y = 0. One mesh a material, three in all. PKIT.props.bench({ L }) is the
-//   same bench at another length (Session 2142: 1.1 m, a short one for a full room), the plank in work and its shavings scaled to it.
+//   same bench at another length (Session 2143: 1.1 m, a short one for a full room), the plank in work and its shavings scaled to it.
 let BM = null;
 function joinerBench(o = {}) {
   if (!BM) BM = { wood: new THREE.MeshStandardMaterial({ color: 0x9a7650, roughness: .8 }), dark: new THREE.MeshStandardMaterial({ color: 0x4e3622, roughness: .85 }), iron: new THREE.MeshStandardMaterial({ color: 0x2a2826, roughness: .5, metalness: .6 }) };
