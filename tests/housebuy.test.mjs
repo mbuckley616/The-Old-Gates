@@ -72,5 +72,15 @@ await page.evaluate(() => exitInterior()); for (let n = 0; n < 40 && (await page
 const yard = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id); homeFit(h, 'rack'); const n1 = S.racks.filter(R => R.house === id).length;
   homeUnfit(h, 'rack'); return { n1, n2: S.racks.filter(R => R.house === id).length }; }, pick.id);
 check('a tanner\'s rack fitted stands in the yard at once, and goes when taken out', yard.n1 === 1 && yard.n2 === 0, yard);
+// Session 2153: the house's own yard counts. A fitting stood outdoors (h._yardFits[k], world metres, the look builder's to lay) is the house
+// within 2 m: E there opens the house's page, and homeFitHere holds for that fitting and no other; 3 m off, nothing
+const yd = await page.evaluate((id) => { if (isInterior()) exitInterior(); const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id);
+  const r = homeFitRec(h); if (!r.fit.includes('garden')) r.fit.push('garden'); const x0 = px, z0 = pz;
+  h._yardFits = { garden: { x: px + 1.2, z: pz } }; const o = { out: !isInterior() };
+  const Y = homeYardAt(); o.at = !!Y && Y.h === h && Y.k === 'garden'; o.here = homeHere() === h; o.garden = homeFitHere('garden'); o.kiln = homeFitHere('kiln');
+  interact(); o.page = homeOpen; if (homeOpen) closeHousePage();
+  px = x0 + 4.5; o.far = !homeYardAt() && !homeHere() && !homeFitHere('garden');
+  r.fit.splice(r.fit.indexOf('garden'), 1); px = x0 + 1.2; o.unfitted = !homeYardAt(); delete h._yardFits; px = x0; pz = z0; return o; }, pick.id);
+check('in your house\'s yard, 1.2 m from a garden stood there, E opens the house\'s page and the garden counts (the kiln, not stood there, does not); 3.3 m off, nothing', yd.out && yd.at && yd.here && yd.garden && !yd.kiln && yd.page && yd.far && yd.unfitted, yd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

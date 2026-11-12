@@ -794,8 +794,15 @@ function campfireNear(){if(activeZoneId!=='world'||(typeof isInterior==='functio
 function atFire(){return hearthHere()||!!campfireNear();}
 function fireSpotOk(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return false;
   if(typeof WORLD!=='undefined'&&WORLD.isSwimming&&WORLD.isSwimming())return false;if(typeof SHIP!=='undefined'&&SHIP.sailing)return false;return true;}
+// S2152 — where a fire is laid: 0.9 m ahead as before, unless a solid (a trunk, a wall, a rock) stands in its footprint; then
+// camp and rest's own search (campSpot, S2102) turns off the line and steps out to 1.8 m, inside FIRE_REACH, so you are at it once lit.
+// The footprint is the island's fire (the kit's, measured), by its own box at a turn of 0 (the Gatelands' turf seat to one side, the Mark's long fire across your way)
+const FIRE_FOOT={gatelands:[-.9,1.6,-.8,.8],mark:[-1.2,1.2,-.64,.64],aurenne:[-.9,.75,-.75,.98]};
+function fireSpot(){let isle='gatelands';try{isle=nationKeyOf(...cellOf(px,pz));}catch(e){}
+  if(typeof campSpot!=='function')return {x:px-Math.sin(yaw)*.9,z:pz-Math.cos(yaw)*.9,ry:yaw};
+  return campSpot(.9,FIRE_FOOT[isle]||FIRE_FOOT.gatelands,1.8);}
 // a plain stand-in until the kit's fire arrives (the look builder's): three logs and a flame
-function campfireMesh(x,z){{let K=null;try{K=typeof campFireProp==='function'?campFireProp(x,z,typeof yaw==='number'?yaw:0):null;}catch(e){K=null;}if(K)return K;} /* S2114 — the kit's fire, laid by its island, on the new look */
+function campfireMesh(x,z,ry){if(typeof ry!=='number')ry=typeof yaw==='number'?yaw:0;{let K=null;try{K=typeof campFireProp==='function'?campFireProp(x,z,ry):null;}catch(e){K=null;}if(K)return K;} /* S2114 — the kit's fire, laid by its island, on the new look */
   const g=new THREE.Group();const y=typeof worldH==='function'?worldH(x,z):0;
   const wood=new THREE.MeshLambertMaterial({color:0x5a3a20});
   for(let i=0;i<3;i++){const l=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.6,6),wood);l.rotation.z=Math.PI/2;l.rotation.y=i*Math.PI/3;l.position.y=.06;g.add(l);}
@@ -807,11 +814,19 @@ function lightFire(){
   if(!fireSpotOk()){showMsg('There is no place for a fire here.','#cc8844');return null;}
   const plain=bagCount(b=>b.log==='log')>0;
   if(!bagTake(b=>plain?b.log==='log':!!b.log,1)){showMsg('A fire needs a log.','#cc8844');return null;}
-  const x=px-Math.sin(yaw)*.9,z=pz-Math.cos(yaw)*.9;
+  const S=fireSpot(),x=S.x,z=S.z;
   const f={x,z,until:gameMinNow()+FIRE_HOURS*60,mesh:null};
-  try{f.mesh=campfireMesh(x,z);scene.add(f.mesh);f.scn=scene;}catch(e){f.mesh=null;}
+  try{f.mesh=campfireMesh(x,z,S.ry);scene.add(f.mesh);f.scn=scene;}catch(e){f.mesh=null;}
   CAMPFIRES.push(f);showMsg('The fire catches.','#ffb060');if(typeof renderHubInv==='function')renderHubInv();return f;}
 function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
+// S2149 (first numbered 2147) — the cold ash: a fire burnt out or doused leaves the kit's 'out' stage (ash and charred stubs, a thread of smoke) where it lay, for
+// ASH_HOURS of the game clock, the newest ASH_MAX kept; nothing reads it as a fire. On the old look the stand-in has no 'out' and goes as before
+const ASH_HOURS=24,ASH_MAX=6,FIRE_ASH=[];
+function layAsh(f){const g=f&&f.mesh,u=g&&g.userData.fire,par=g&&g.parent;if(!u||!par||typeof campFireProp!=='function')return false;
+  let A=null;try{A=campFireProp(f.x,f.z,g.rotation.y,{island:u.island,stage:'out'});}catch(e){A=null;}if(!A)return false;
+  par.add(A);FIRE_ASH.push({x:f.x,z:f.z,until:gameMinNow()+ASH_HOURS*60,mesh:A});
+  while(FIRE_ASH.length>ASH_MAX)dropFire(FIRE_ASH.shift());return true;}
+function tickAsh(t){for(let i=FIRE_ASH.length-1;i>=0;i--)if(FIRE_ASH[i].until<=t){dropFire(FIRE_ASH[i]);FIRE_ASH.splice(i,1);}}
 // S2033 — a meal past its days: turned, and named so. Its day (`meal.made`) is the game day it was cooked; a meal from before this build has none and never turns
 function mealKeepDays(m){return m.jerky?JERKY_TURN_DAYS:m.bake?BAKE_TURN_DAYS:MEAL_TURN_DAYS;} /* S2131 — jerky keeps 30 */
 function mealTurned(it){const m=it&&it.meal;if(!m||m.made==null||it.jarred)return false; /* S2139 — a jar keeps it */return gameDayNow()-m.made>=mealKeepDays(m);}
@@ -821,9 +836,10 @@ let _mealTurnAt=-1;
 function mealTurnPass(){BAG.forEach(b=>{if(b&&b.meal&&!b.meal.turned&&mealTurned(b)){b.meal.turned=1;b.name+=' (turned)';}});}
 // each frame: a fire burnt out is taken away, the flame flickers; Steady's health. Called from the loop beside the buffs
 function tickSurvival(dt){const t=gameMinNow();
-  for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){dropFire(f);CAMPFIRES.splice(i,1);continue;}
+  for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){layAsh(f);dropFire(f);CAMPFIRES.splice(i,1);continue;}
     if(f.mesh&&f.mesh.userData.fire){try{f.mesh.userData.fire.tick(f,FIRE_HOURS);}catch(e){}continue;} /* S2114 — the kit's fire: its stage and its flames */
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
+  tickAsh(t); /* S2149 (first numbered 2147) — the ash goes after its hours */
   if(t!==_mealTurnAt){_mealTurnAt=t;mealTurnPass();} /* S2033 — meals turn */
   tickLeanTos();tickMining(dt);tickDig();tickFelling(dt);tickTrunks();tickShipWork(dt);tickWater(); /* S2012 — rain fills your water */
   if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2*fedRich());
@@ -996,8 +1012,22 @@ function homePlaces(h){return HOME_PLACES[homeSize(h)]||3;}
 function homeFitRec(h){const F=worldState.fittings||(worldState.fittings={});const r=F[h.id]||(F[h.id]={fit:[],stored:[]});
   if(!Array.isArray(r.fit))r.fit=[];if(!Array.isArray(r.stored))r.stored=[];r.fit=r.fit.filter(k=>HOME_FITS[k]);r.stored=r.stored.filter(k=>HOME_FITS[k]);return r;}
 function homeFitted(h,k){const r=worldState.fittings&&h&&worldState.fittings[h.id];return !!(r&&Array.isArray(r.fit)&&r.fit.includes(k));}
-function homeHere(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&homeMine(currentHouse)?currentHouse:null;}
-function homeFitHere(k){const h=homeHere();if(!h||!homeFitted(h,k))return false;const sp=h._fits&&h._fits[k];return !sp||Math.hypot(px-sp.x,pz-sp.z)<=2;}
+// S2153 — the house's own yard counts (the page: B's fittings "stand in the yard first"; the look builder's S2147 asked for it). A fitting
+// stood outdoors is `h._yardFits[k] = {x, z}`, world metres, unsaved, set by whoever lays it in the yard (84's homeFitsDress); outdoors,
+// within HOME_YARD_REACH of a fitted one of your own house, you are at the house: its page opens on E and homeFitHere(k) holds for it.
+// Indoors nothing changes: `h._fits` is the room's, and is never read outdoors
+const HOME_YARD_REACH=2;
+function homeYardAt(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
+  const F=worldState.fittings;if(!F||typeof SETTLE==='undefined')return null;let best=null,bd=HOME_YARD_REACH;
+  for(const S of SETTLE.values()){if(!S||!S.site||!Array.isArray(S.houses)||Math.hypot(px-S.site.x,pz-S.site.z)>(S.reach||200)+60)continue;
+    for(const h of S.houses){if(!h||!h._yardFits||!F[h.id]||!homeMine(h))continue;
+      for(const k in h._yardFits){const sp=h._yardFits[k];if(!sp||!homeFitted(h,k))continue;const d=Math.hypot(px-sp.x,pz-sp.z);if(d<=bd){bd=d;best={h,k};}}}}
+  return best;}
+function homeHere(){if(typeof isInterior==='function'&&isInterior())return typeof currentHouse!=='undefined'&&homeMine(currentHouse)?currentHouse:null;
+  const Y=homeYardAt();return Y?Y.h:null;}
+function homeFitHere(k){if(!(typeof isInterior==='function'&&isInterior())){const Y=homeYardAt();if(!Y)return false;const sp=Y.h._yardFits[k];
+    return !!sp&&homeFitted(Y.h,k)&&Math.hypot(px-sp.x,pz-sp.z)<=HOME_YARD_REACH;}
+  const h=homeHere();if(!h||!homeFitted(h,k))return false;const sp=h._fits&&h._fits[k];return !sp||Math.hypot(px-sp.x,pz-sp.z)<=2;}
 // why a fitting cannot go in now, by gold or by planks, or null
 function homeFitWhy(h,k,how){if(!homeMine(h))return 'This is not your house.';const F=HOME_FITS[k];if(!F)return 'No such fitting.';const r=homeFitRec(h);
   if(r.fit.includes(k))return `The house has ${F.a} already.`;if(r.fit.length>=homePlaces(h))return `The house has room for ${homePlaces(h)}; take one out first.`;
@@ -2777,6 +2807,7 @@ function interact(){
     if(hasShovel()&&(DIG||clayBankHere())&&digStart())return; /* S2138 — clay from a bank, with a shovel */
     if(fillHere())return; /* S2012 — water B: a well, a river, a lake; the sea answers */
     if(campfireNear()){openCookPage();return;} /* S1525 — a lit fire: its page (the critic's s995: only the bag opened it) */
+    if(homeYardAt()){openHousePage();return;} /* S2153 — your house's yard: a fitting stood there, its page */
     // v61ae: Bram's body needs special handling. The standard zone-corpse
     // check below requires items.length>0, which means an already-looted body
     // with empty items becomes NON-interactable. But Bram's body should always

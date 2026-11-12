@@ -1000,6 +1000,7 @@ function loop(now){
     else if(typeof clayPrompt==='function'&&clayPrompt()){iprOW.textContent=clayPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S2138 — clay */
     else if(typeof waterPrompt==='function'&&waterPrompt()){iprOW.textContent=waterPrompt();iprOW.style.opacity='1';iprOW.style.display='block';} /* S2012 — water B */
     else if(typeof campfireNear==='function'&&campfireNear()&&!cookOpen){iprOW.textContent="Press 'E' to tend the fire";iprOW.style.opacity='1';iprOW.style.display='block';} /* S1525 — a lit fire */
+    else if(typeof homeYardAt==='function'&&homeYardAt()&&!homeOpen&&!benchOpen&&!cureOpen){iprOW.textContent="Press 'E' to see to the house";iprOW.style.opacity='1';iprOW.style.display='block';} /* S2153 — your house's yard */
     else if(nearBramBodyPrompt){
       // v61al: prompt changes based on whether the body has been read yet.
       // First-read branch advances the quest and shows the flavor text.
