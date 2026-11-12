@@ -1305,7 +1305,7 @@ function genSettlement(site){
         const sols=[];for(const [P,hh] of [[Y.rack,1.7],[Y.bench,.5]]){const [x,z]=W_(P.x,P.z),q={cx:x,cz:z,rx:P.w/2,rz:P.d/2,c,s:s_,h:hh,yard:true};sol.push(q);sols.push(q);}
         const [rkx,rkz]=W_(0,Y.rack.z-.9);
         S.yards.push({id:`${site.id}:yard`,site:site.id,house:h.id,x:at.x,z:at.z,out:!!at.out,y:y0,ry,r:Y.R,rack:{x:rkx,z:rkz},tris:Y.tris,draws:Y.draws,sols});
-        Object.defineProperty(h,'_yard',{value:`${site.id}:yard`,configurable:true,writable:true});} /* S2142 — the hall keeps its yard's racks (curesOf, 50-travel.js); not saved */
+        Object.defineProperty(h,'_yard',{value:`${site.id}:yard`,configurable:true,writable:true});Object.defineProperty(h,'_yardAt',{value:{x:at.x,z:at.z,ry,r:Y.R},configurable:true,writable:true});} /* S2142, S2151 — the hall keeps its yard's racks (curesOf, 50-travel.js), stood beside its ring (townRacks, 82); neither saved */
     }catch(e){console.warn('yard',e);}
     /* S1658 (arenas-build.md session 2, Michael's B on #914) — the ladder's ring at each of its sites (ladderSites: Caer Slige, the Mark's
        cities, padded with its largest towns to four), on the new look: PKIT.mk.ring, 8 m round (LADDER_R) with its stands and post, 12.4 m
