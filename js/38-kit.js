@@ -4416,19 +4416,20 @@ function hallFixtures(list) {
 // Michael's A on #418): an elm top 1.5 by 0.6 m at 0.85 on four square legs and a stretcher, an iron vice at its right end, a plank
 // and an offcut on the top with shavings, and a rack of tools on the wall over it (a saw, a plane, a mallet, two chisels).
 //   PKIT.props.bench() -> { group, tris, draws, foot: { x0, x1, z0, z1 }, top } in the wall's frame: the wall at z = 0, the bench
-//   toward +z, its length along x centred on 0, the floor at y = 0. One mesh a material, three in all.
+//   toward +z, its length along x centred on 0, the floor at y = 0. One mesh a material, three in all. PKIT.props.bench({ L }) is the
+//   same bench at another length (Session 2142: 1.1 m, a short one for a full room), the plank in work and its shavings scaled to it.
 let BM = null;
-function joinerBench() {
+function joinerBench(o = {}) {
   if (!BM) BM = { wood: new THREE.MeshStandardMaterial({ color: 0x9a7650, roughness: .8 }), dark: new THREE.MeshStandardMaterial({ color: 0x4e3622, roughness: .85 }), iron: new THREE.MeshStandardMaterial({ color: 0x2a2826, roughness: .5, metalness: .6 }) };
-  const L = 1.5, D = .6, H = .85, T = .08, B = new Map(), box = (k, w, h, d, x, y, z, ry = 0) => { const g = new THREE.BoxGeometry(w, h, d).toNonIndexed(); if (ry) g.rotateY(ry); g.translate(x, y, z); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  const L = o.L || 1.5, D = .6, q = L / 1.5, H = .85, T = .08, B = new Map(), box = (k, w, h, d, x, y, z, ry = 0) => { const g = new THREE.BoxGeometry(w, h, d).toNonIndexed(); if (ry) g.rotateY(ry); g.translate(x, y, z); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
   box('wood', L, T, D, 0, H - T / 2, D / 2 + .02);
   for (const sx of [-1, 1]) for (const z of [.08, D - .04]) box('dark', .08, H - T, .08, sx * (L / 2 - .1), (H - T) / 2, z);
   for (const sx of [-1, 1]) box('dark', .06, .06, D - .12, sx * (L / 2 - .1), .22, D / 2 + .02); box('dark', L - .2, .06, .06, 0, .22, D - .04);
   // the vice: a jaw block over the right front leg and its screw's bar
   box('iron', .22, .14, .1, L / 2 - .2, H + .07, D + .06); box('iron', .04, .04, .2, L / 2 - .2, H + .07, D + .14); box('iron', .3, .03, .03, L / 2 - .2, H + .07, D + .24);
   // a plank in work and an offcut on the top, shavings
-  box('wood', .9, .04, .14, -.15, H + .02, D * .55, .04); box('wood', .3, .04, .12, .35, H + .02, .16, -.3);
-  for (let k = 0; k < 6; k++) box('wood', .05, .006, .02, -.55 + k * .09, H + .003, .32 + (k % 3) * .05, k * .9);
+  box('wood', .9 * q, .04, .14, -.15 * q, H + .02, D * .55, .04); box('wood', .3, .04, .12, .35 * q, H + .02, .16, -.3);
+  for (let k = 0; k < 6; k++) box('wood', .05, .006, .02, (-.55 + k * .09) * q, H + .003, .32 + (k % 3) * .05, k * .9);
   // the rack on the wall: a board, and on its pegs the tools
   box('dark', 1.1, .05, .04, 0, 1.3, .02); for (let k = 0; k < 5; k++) box('dark', .02, .02, .08, -.44 + k * .22, 1.32, .06);
   box('iron', .5, .12, .006, -.44, 1.16, .07); box('dark', .12, .1, .03, -.13, 1.16, .07) /* the saw, its blade and handle */;

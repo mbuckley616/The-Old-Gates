@@ -1010,11 +1010,11 @@ function homeFitWhy(h,k,how){if(!homeMine(h))return 'This is not your house.';co
 // the named actions: fit one (a stored one back for nothing), take one out. Each returns {done, why}
 function homeFit(h,k,how){const why=homeFitWhy(h,k,how);if(why)return {done:false,why};const r=homeFitRec(h),F=HOME_FITS[k],si=r.stored.indexOf(k);
   if(si>=0)r.stored.splice(si,1);else if(F.clay)bagTake(b=>!!b.clay,F.clay);else if(how==='planks')bagTake(b=>b.plank,F.planks);else{gold-=F.gold;if(typeof updateHUD==='function')updateHUD();}
-  r.fit.push(k);if(typeof addLog==='function')addLog('🏠',`The house fitted with ${F.a}.`);return {done:true};}
+  r.fit.push(k);if(typeof addLog==='function')addLog('🏠',`The house fitted with ${F.a}.`);if(typeof homeFitsDress==='function')homeFitsDress(h); /* S2142 — stood in the room or the yard (84) */return {done:true};}
 function homeUnfit(h,k){if(!homeMine(h))return {done:false,why:'This is not your house.'};const r=homeFitRec(h),i=r.fit.indexOf(k);if(i<0)return {done:false,why:''};
   if(k==='garden'&&gardenBeds(h).some(Boolean))return {done:false,why:'Gather what grows in it first.'}; /* S2140 */
   if(k==='rack'||k==='dry'){const c=curesOf(h).find(x=>x.kind===k);if(c&&cureList(c.key).length)return {done:false,why:'Take down what hangs on it first.'};}
-  r.fit.splice(i,1);r.stored.push(k);return {done:true};}
+  r.fit.splice(i,1);r.stored.push(k);if(typeof homeFitsDress==='function')homeFitsDress(h);return {done:true};}
 // the house's page, the racks' paper: places, what stands in it (and its use), what can go in
 let homeOpen=false,homeSaid='';
 function openHousePage(){const h=homeHere();if(!h){showMsg('This is not your house.','#cc8844');return;}
