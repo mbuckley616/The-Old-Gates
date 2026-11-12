@@ -3,7 +3,7 @@
 // Cave Bear's own brown, whose plantigrade legs have three bones to the driver's four (hcMap: the paw takes the driver's paw). A line of
 // the two and an Ash Hound (its own plan since Session 1274) ahead of you: each on the kit's skeleton, keyed by its foe id; its hips at its driver's;
 // three levels by distance; a run that moves the kit's bones with its feet by the driver's; the tell's glow; and killed, a corpse
-// darkened with its shaders kept that lies with its driver. Session 1273 adds the coach's two horses on the kit's horse, Session 2148 the ox and the yoked ox. Pictures: docs/prototypes/f4/f4-beasts.jpg, f4-beasts-near.jpg and f4-oxen.jpg.
+// darkened with its shaders kept that lies with its driver. Session 1273 adds the coach's two horses on the kit's horse, Session 2148 the ox and the yoked ox, Session 2154 the donkey and the pack mule. Pictures: docs/prototypes/f4/f4-beasts.jpg, f4-beasts-near.jpg, f4-oxen.jpg and f4-packbeasts.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -200,6 +200,39 @@ const oxWalk = await page.evaluate(() => { const { hg, rg } = _OX[1], H = rg.hc,
   return { moved: +moved.toFixed(3), low: +low.toFixed(3), stand: +rg.w.stand.toFixed(2) }; });
 check(`the yoked ox walked 1.1 m/s: its bones move (by ${oxWalk.moved}) and its lowest hoof stays by the ground (${oxWalk.low} m)`, oxWalk.moved > .01 && oxWalk.stand < .2 && Math.abs(oxWalk.low) < .06, oxWalk);
 await page.evaluate(() => { for (const { hg } of _OX) hg.parent.remove(hg); [px, pz] = _OXP; tickCreatures(1 / 60, 1.2e6); });
+
+// Session 2154 (L3, OG-046): buildAnimal('Donkey' | 'Pack Mule', key) builds the kit's donkey (the horse at .72) and its pack mule (the mule
+// under two packs) on the horse's legs, keyed burden:<key> as the ox; each on its hooves, the donkey the smaller, the packs rigid pieces on
+// the spine; walked, the pack mule's bones move and its hooves keep the ground
+const pack = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
+  window._PK = [['Donkey', 'f4pack:0'], ['Donkey', 'f4pack:1'], ['Pack Mule', 'f4pack:0']].map(([n, key], j) => { const hg = new THREE.Group(), rg = buildAnimal(n, key); hg.add(rg.root);
+    const x = px + fx * 7 + sx * (j - 1) * 2.4, z = pz + fz * 7 + sz * (j - 1) * 2.4; hg.position.set(x, WORLD.worldH(x, z), z); hg.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(hg); return { n, key, hg, rg }; });
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  let k = 0; HBODY.last = -1e9; while (_PK.some(h => !h.rg.hc && !h.rg.hcFail) && k++ < 300) tickCreatures(1 / 60, 1.3e6 + k * (HBODY.gap + 1));
+  return _PK.map(({ n, hg, rg }) => { const H = rg.hc; if (!H) return { n, hc: false }; hg.updateMatrixWorld(true); const by = H.C.byName;
+    const a = by.spine0.getWorldPosition(new THREE.Vector3()), b = rg.B.hips.getWorldPosition(new THREE.Vector3()), box = new THREE.Box3(); for (const m of H.C.meshes) box.expandByObject(m);
+    let bits = 0, bitTris = 0; H.C.root.traverse(o => { if (o.isMesh && !H.C.meshes.includes(o)) { bits++; const G = o.geometry; bitTris += (G.index ? G.index.count : G.attributes.position.count) / 3; } });
+    return { n, hc: true, key: rg.hcKey, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rg.hcKey), map: H.map.length, tris: H.C.stats.tris, hips: +a.distanceTo(b).toFixed(3), bones: H.C.skel.bones.length,
+      hipY: +(a.y - hg.position.y).toFixed(3), man: +((box.max.y - hg.position.y) / SCALE.PEOPLE.gatelander.m).toFixed(2), packs: H.C.plan.parts.some(([p]) => p === 'packs'), bits, bitTris,
+      toes: ['leg0L_4', 'leg0R_4', 'leg1L_4', 'leg1R_4'].map(t => +(by[t].getWorldPosition(new THREE.Vector3()).y - hg.position.y).toFixed(3)) }; }); });
+console.log('  donkeys and the pack mule:', JSON.stringify(pack));
+const [dk0, dk1, pm0] = pack;
+check(`the donkey and the pack mule wear the kit's donkey and packmule (${pack.map(o => o.plan + ' ' + o.tris).join(', ')} triangles of hide), keyed burden:<key>; the packs ${pm0.bits - dk0.bits} more pieces, ${pm0.bitTris - dk0.bitTris} triangles`,
+  pack.every(o => o.hc && o.map === 24 && o.seed === o.want && /^burden:/.test(o.key) && o.hips < .03) && dk0.plan === 'donkey' && dk1.plan === 'donkey' && !dk0.packs && pm0.plan === 'packmule' && pm0.packs
+  && dk0.seed !== dk1.seed && pm0.bits > dk0.bits, pack);
+check(`each stands on its hooves (${pack.map(o => o.toes.join(', ')).join('; ')} m), the donkey's hips at ${dk0.hipY} m and the pack mule's at ${pm0.hipY}; their tops at ${pack.map(o => o.man).join(', ')} of a man`,
+  pack.every(o => o.toes.every(y => Math.abs(y) < .05)) && dk0.hipY < pm0.hipY * .85 && dk0.man > .5 && dk0.man < 1 && pm0.man > .75 && pm0.man < 1.3, pack);
+{ const url = await page.evaluate(() => { const a = _PK[0].hg.position, b = _PK[2].hg.position, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+    window._PKP = [px, pz]; px = mx - fx * 5; pz = mz - fz * 5; CAM.position.set(px, worldH(px, pz) + 1.5, pz); CAM.lookAt(mx, worldH(mx, mz) + .7, mz); CAM.updateMatrixWorld(true); const hid = _W.map(w => [w.e.mesh, w.e.mesh.visible]); for (const [m] of hid) m.visible = false;
+    REN.render(scene, CAM); const u = REN.domElement.toDataURL('image/jpeg', .85); for (const [m, v] of hid) m.visible = v; return u; });
+  fs.writeFileSync(path.join(OUT, 'f4-packbeasts.jpg'), Buffer.from(url.split(',')[1], 'base64')); }
+const pkWalk = await page.evaluate(() => { const { hg, rg } = _PK[2], H = rg.hc, by = H.C.byName, sk = H.C.skel; sk.update(); const a = Array.from(sk.boneMatrices); let low = 9;
+  for (let i = 0; i < 120; i++) { hg.position.x += Math.sin(hg.rotation.y) * 1.2 / 60; hg.position.z += Math.cos(hg.rotation.y) * 1.2 / 60; hg.position.y = WORLD.worldH(hg.position.x, hg.position.z); tickCreatures(1 / 60, 1.4e6 + i * 16.7);
+    if (i > 50) { hg.updateMatrixWorld(true); for (const t of ['leg0L_4', 'leg0R_4', 'leg1L_4', 'leg1R_4']) { const p = by[t].getWorldPosition(new THREE.Vector3()); low = Math.min(low, p.y - WORLD.worldH(p.x, p.z)); } } }
+  sk.update(); const b = Array.from(sk.boneMatrices); let moved = 0; for (let i = 0; i < a.length; i++) moved = Math.max(moved, Math.abs(a[i] - b[i]));
+  return { moved: +moved.toFixed(3), low: +low.toFixed(3), stand: +rg.w.stand.toFixed(2) }; });
+check(`the pack mule walked 1.2 m/s: its bones move (by ${pkWalk.moved}) and its lowest hoof stays by the ground (${pkWalk.low} m)`, pkWalk.moved > .01 && pkWalk.stand < .2 && Math.abs(pkWalk.low) < .06, pkWalk);
+await page.evaluate(() => { for (const { hg } of _PK) hg.parent.remove(hg); [px, pz] = _PKP; tickCreatures(1 / 60, 1.5e6); });
 
 // the beasts by island (Session 1969, L3, OG-031): a foe made in the open world wears its island's coat, read at its home. The Mark's Snow
 // Wolf is the kit's Stonefang (the Ironwolf's stone grey, darker than the white), its Cave Bear the kit's own Frostreach (paler than the
