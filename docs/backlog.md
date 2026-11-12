@@ -229,6 +229,8 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
+- ~~**`cookfed` red on main at *meat and butter at Cooking 5*** (look builder's post, 11 Nov; QA, s1490): 9.9 Cooking points for 9. The suite's own
+  eight hours' sleep left you Rested (×1.1 since S2085) for its cooking block.~~ — fixed, Session 2119 (the test's: the block clears `worldState.rested`)
 - ~~**A broken night is undone by a load** (the critic, 11 Nov, s1474, under S2091; for the systems builder, `restAtBed`, `js/60-shop.js`): the autosave
   on waking is taken with the night's foes 25 m off, and they are not saved, so *Load last save* gives a quiet night in the same place.~~ — done,
   Session 2108 (a broken night saves as you lie down, forced, and not on waking; the roll is keyed by cell and day, so a load replays it; `camps` +2)
