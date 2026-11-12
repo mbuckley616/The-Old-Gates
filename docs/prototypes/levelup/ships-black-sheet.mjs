@@ -1,4 +1,4 @@
-// node docs/prototypes/levelup/ships-black-sheet.mjs (Session 2122): the black sail's dress (ships.js's blackSail) on the game's three
+// node docs/prototypes/levelup/ships-black-sheet.mjs (Session 2127): the black sail's dress (ships.js's blackSail) on the game's three
 // pirate classes. Top row: the sloop, the cutter and the galleon in the Mark's hulls; bottom row: the same three in the hulls of the other
 // two islands' waters (the Gatelands' sloop, Aurenne's cutter, the Gatelands' galleon), the island's mark struck to a ghost. One 3 × 2 sheet
 // at 1920×1080 -> ships-black.jpg, and two closes: ships-black-ghost.jpg (the harp's ghost on the Gatelands sloop's sail, and the clean

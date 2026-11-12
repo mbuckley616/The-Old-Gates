@@ -889,7 +889,7 @@ export function banner(S, nation, o = {}) {
   return S;
 }
 
-// ── the black sail (Session 2122, card F11, L6: "the pirates' ships keep the old loft"; a prototype for DECISION). The old look's pirate
+// ── the black sail (Session 2127, card F11, L6: "the pirates' ships keep the old loft"; a prototype for DECISION). The old look's pirate
 //   (Session 168; #50, Session 278) was any hull under black sails with a red wale. Here that look is a dress laid over any kit hull as
 //   built, as the yard's colours are (swatch, above): one bake, its materials swapped. Every sail takes a black cloth, its panels of three
 //   blacks by turns where the cloth was dyed and re-dyed, a few patches of undyed canvas, and the island's mark struck: the harp and the

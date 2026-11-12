@@ -4593,7 +4593,7 @@ function felledTrunk(L = 9, R = .35, seed = 1) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, TKM[k]); m.name = 'trunk:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, L, R };
 }
-// S2123 — the stump a felled tree leaves (the concept artist's camp.js stump, S2091; #1405 gave it no options; survival's owed props): felled
+// S2128 — the stump a felled tree leaves (the concept artist's camp.js stump, S2091; #1405 gave it no options; survival's owed props): felled
 // as a hatchet fells it, a notch on the side it falls to (its flat at notchY), the back cut a hand higher on the far side, the torn hinge's
 // splinters standing between them; the root flare (the oak's most, the birch's least) running into four or five roots, and chips on the
 // ground on the notch's side. Built in its own frame, the notch toward +x (where the tree fell), its foot 0.12 m into the ground at y = 0;

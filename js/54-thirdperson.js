@@ -47,7 +47,8 @@ function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   // material colour, and it turns to put the string on your side of the grip, as the box bow had it
   // S1856 — a staff, wand or maul that is an implement is the kit's implement in its island's make with its school's emblem (implKind)
   const im=typeof implementOf==='function'?implementOf(it):null;if(im==='staff'||im==='wand'||im==='maul'){g.add(buildWeapon(implKind(it)));g.userData.kit='impl';return g;}
-  const kind={scimitar:'cutlass',flail:'flail',greatclub:'greatclub',greataxe:'greataxe',claymore:'claymore'}[sh]||(WPN_KINDS.includes(sh)?sh:'sword');
+  let kind={scimitar:'cutlass',flail:'flail',greatclub:'greatclub',greataxe:'greataxe',claymore:'claymore'}[sh]||(WPN_KINDS.includes(sh)?sh:'sword');
+  if((kind==='sword'||kind==='cutlass')&&it.swordMake&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&HB.SWORDS&&HB.SWORDS[it.swordMake])kind='sword:'+it.swordMake; /* S2118 — the make's own blade (#1425 B) */
   const w=buildWeapon(kind==='crossbow'?'crossbowbare':kind==='bow'&&BOW_LEN[it.bowKind]?it.bowKind:kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
   if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;g.userData.bowLen=bowLenOf(it);} /* S1550 — a longbow or a war bow is the kit's own, longer */if(kind==='crossbow'){w.rotation.x=Math.PI;g.userData.xbow=xbowRig(w);}g.userData.kit=kind; /* S1476 — its string and bolt drawn by the span */
   return g;}
@@ -222,7 +223,7 @@ function tpImplHold(R){if(!R.orb&&!R.tome)return null;
   const raised=!!R.orb&&typeof orbRaised==='function'&&orbRaised(),kept=!!R.orb&&typeof ORB_KEPT!=='undefined'&&!!ORB_KEPT,cast=typeof castT!=='undefined'&&castT>0;
   if(R.orbG)implGlowSet(R.orbG,kept?1.6+.25*Math.sin(performance.now()/1000*5):raised||cast?1.25:1);
   return {orb:!!R.orb,raised,kept};}
-function tpTrue(R){for(const o of [R.tome,R.orb])if(o&&o.userData.kit==='impl'&&o.children[0])wpnTrue('impl',o.children[0],R.root);const W=R.weapon||R.weaponL,k=W&&W.children[0];R.trueK=1;if(!k||!WPN_TRUE.has(W.userData.kit))return;
+function tpTrue(R){for(const o of [R.tome,R.orb])if(o&&o.userData.kit==='impl'&&o.children[0])wpnTrue('impl',o.children[0],R.root);const W=R.weapon||R.weaponL,k=W&&W.children[0];R.trueK=1;if(!k||!wpnIsTrue(W.userData.kit))return;
   wpnTrue(W.userData.kit,k,R.root);const f=k.scale.x;R.trueK=f;for(const c of W.children)if(c.isPoints)c.scale.setScalar(f);if(R.gripL)R.gripL.multiplyScalar(f);}
 // a held piece's copy for the builder's group: its meshes and points on the same geometry and materials, its own turns below the top
 // (Object3D.clone copies userData through JSON, which the kit's pieces do not all survive)

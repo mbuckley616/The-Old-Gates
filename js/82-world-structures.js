@@ -2884,7 +2884,7 @@
       C=PKIT.props.fire(isle,{ground,key,stage:st});for(const c of [...C.group.children])g.add(c);g.userData.fire.stage=st;g.userData.fire.tris=C.tris;g.userData.fire.draws=C.draws;};
     g.userData.fire={island:isle,stage:null,tris:0,draws:0,tick(f,hours){const st=campFireStage(f,hours);if(st!==this.stage)build(st);C.tick(performance.now()/1000);}};
     build(o.stage||'lit');return g;}
-  // S2123 — the stump a felled tree leaves, the kit's (PKIT.props.stump, 38-kit.js), on the new look: its bark by the tree's species (the pines,
+  // S2128 — the stump a felled tree leaves, the kit's (PKIT.props.stump, 38-kit.js), on the new look: its bark by the tree's species (the pines,
   // the spruces and the snowpine a pine's; a birch a birch's; the rest an oak's), its girth the old stand-in's (the trunk's collider × .55,
   // 0.14 to 0.5 m), the roots and the chips laid on the land. The notch faces the way the tree fell: t.fall where you felled it this visit, else
   // a direction by its id (the trunk is gone by then). -> the Group, named 'stump' as the stand-in, or null on the old look

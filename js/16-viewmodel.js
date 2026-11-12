@@ -294,6 +294,11 @@ const FP_THRUST={back:.14,out:.42,pow:1.35};
 function fpThrust(p,pow,S){const e=t=>(1-Math.cos(t*Math.PI))/2,out=FP_THRUST.out*(pow?FP_THRUST.pow:1),bk=-FP_THRUST.back;
   const a=p<S.antEnd?bk*e(p/S.antEnd):p<S.sweepEnd?bk+(out-bk)*e((p-S.antEnd)/(S.sweepEnd-S.antEnd)):p<S.holdEnd?out:out*(1-e((p-S.holdEnd)/(1-S.holdEnd)));
   const L=FP_LEVEL.spear,d=new THREE.Vector3(0,Math.cos(L),-Math.sin(L)).applyEuler(vmSword.rotation);return d.multiplyScalar(a);}
+// S2118 — a sword by its make (the builder's, drawn in true metres) is shown in first person at the old sword's length, the length the
+// view model's hands, swing and camera were laid out for: a 0.92 m blade there ran off the top of the frame
+let _fpSwordH=0;
+function fpSwordFit(k){const w=k.children[0];if(!w)return;const h=o=>{const b=new THREE.Box3().setFromObject(o);return b.max.y-b.min.y;};
+  if(!_fpSwordH)_fpSwordH=h(buildWeapon('sword'));const s=_fpSwordH/Math.max(.1,h(w));w.scale.multiplyScalar(s);}
 function buildViewmodel(){
   if(typeof workShown==='function'){const t=workShown();if(t&&EQ.weapon!==t)return workWield(buildViewmodel);} /* S1520 — the pick or the hatchet while you work (54-thirdperson.js) */
   if(vmSword){if(vmSword.userData.fistL)VM_SCENE.remove(vmSword.userData.fistL);VM_SCENE.remove(vmSword);vmSword=null;}
@@ -783,7 +788,7 @@ function buildViewmodel(){
     let k;if(_isBow){k=new THREE.Group();const bl=bowLenOf(w),b=buildWeapon((bl>1?w.bowKind:'bow')+'bare',{tint:{wood:tpHex(w.matCol,0x6a4428)}});const S=.40/.34;b.scale.setScalar(S);b.position.set(.012,0,-.025*S);k.add(b);k.userData.kit='bow';
       // S1550 — a longbow's or a war bow's tips are further out (BOW_LEN): the view model's string is hung from them
       if(bl>1){const T=.40*bl,U=g.userData;U.bowTipY=T;for(const [G,sd] of [[U.bowStringTopGroup,1],[U.bowStringBotGroup,-1]])if(G){G.position.y=sd*T;const m=G.children[0];if(m){m.scale.y=bl;m.position.y=-sd*.21*bl;}}}}
-    else{k=tpWeapon(w);k.position.y=handMain.position.y;}
+    else{k=tpWeapon(w);k.position.y=handMain.position.y;if(/^sword:/.test(k.userData.kit||''))fpSwordFit(k);}
     k.traverse(o=>{if(o.isMesh&&o.material.metalness>.3){o.material=o.material.clone();o.material.metalness=.25;o.material.roughness=.4;}});
     k.userData.fpKit=true;g.add(k);g.userData.kit=k;
   }

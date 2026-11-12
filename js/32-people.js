@@ -799,7 +799,8 @@ const WPN_GEO=new Map();
 // brings most of them to their true length: a sword 0.89 m, a longsword 1.17, an axe 0.76. Three were drawn in true metres and came out
 // too big: the knife 0.49 m, the spear 2.97, the crossbow 1.40. These are carried at their own size, whatever the stature (wpnTrue)
 const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet','impl']);
-function wpnTrue(kind,w,holder){if(WPN_TRUE.has(kind)&&holder&&holder.scale.x>0)w.scale.setScalar(1/holder.scale.x);return w;}
+function wpnIsTrue(kind){return WPN_TRUE.has(kind)||/^sword:/.test(kind||'');} /* S2118 — a sword by its make is drawn in metres */
+function wpnTrue(kind,w,holder){if(wpnIsTrue(kind)&&holder&&holder.scale.x>0)w.scale.setScalar(1/holder.scale.x);return w;}
 // S1550 — the length of Bowyer's two bows to the plain bow's (#851 A: the longbow 1.5×, the war bow 1.7×), by the item's bowKind
 const BOW_LEN={longbow:1.5,warbow:1.7};
 function bowLenOf(w){return (w&&BOW_LEN[w.bowKind])||1;}
@@ -900,7 +901,8 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       // S231 — the boss and rivets on the +x face, the face every shield turns outward from the left forearm (it faced the body)
       add(SK.ball(.045,12,8,0,Math.PI*2,0,Math.PI/2),'metal',BRASS,[.028,.05,0],[0,0,-Math.PI/2]);for(const [a,b2] of [[.2,.1],[-.24,0]])add(SK.ball(.012,6,5),'metal',BRASS,[.03,a,b2]);}
   };
-  const IM=/^impl:(staff|wand|maul|orb|tome):(gatelands|mark|aurenne):(\w*)$/.exec(kind);if(IM)wpnImpl(add,IM[1],IM[2],IM[3]);else (K[kind]||K.sword)();
+  const IM=/^impl:(staff|wand|maul|orb|tome):(gatelands|mark|aurenne):(\w*)$/.exec(kind),SM=/^sword:(\w+)$/.exec(kind);
+  if(IM)wpnImpl(add,IM[1],IM[2],IM[3]);else if(SM&&!wpnSword(L,col,SM[1],STEEL))K.sword();else if(!SM)(K[kind]||K.sword)();
   // merge by material: vertex colours carry each part's colour
   const by={};for(const [geo,m,c,mx] of L)(by[m]=by[m]||[]).push([geo,c,mx]);
   const out=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
@@ -1018,6 +1020,18 @@ function xbowRigSet(root,f,bolt){const P=root.userData.xbowParts||(root.userData
   for(const [nm,sd] of [['xbowStringL',-1],['xbowStringR',1]]){const s=P[nm];if(!s)continue;_xbA.set(K.px,K.tipY,sd*K.tipZ);_xbB.set(K.px,my,0).sub(_xbA);
     const L=_xbB.length();s.position.copy(_xbA);s.quaternion.setFromUnitVectors(_xbY,_xbB.multiplyScalar(1/L));s.scale.set(1,L,1);}
   if(P.xbowBolt)P.xbowBolt.visible=!!bolt;}
+// Session 2118: a sword by its make (#1425 B; the item's `swordMake`, S2117): the builder's own blade (people.js swordParts, S2096: the
+// Gatelands' arming sword, the Mark's Norse sword, Aurenne's takouba, nimcha, falchion and flyssa), drawn in true metres along +y from the
+// fist's middle at 0 as every kit piece is (WPN_TRUE takes `sword:<make>`). The blade takes the item's metal; the grip, the guard and the
+// pommel keep the make's own colours, since they are what tells one island's sword from another's (its fittings' knotwork and filigree are
+// the builder's textures, left off: the game's weapons are one vertex-coloured mesh a material). The fist's run is the kit's: the guard 5 cm
+// over the fist's middle, the grip its make's length down from there, not pared. Only on the new look (the builder's bundle); otherwise false
+const SWORD_FIT={yG1:.052,kx:.062};
+function wpnSword(L,col,make,steel){if(typeof HB==='undefined'||!HB.swordParts||!HB.SWORDS||!HB.SWORDS[make])return false;
+  const K0=HB.SWORDS[make],P=HB.swordParts({},make,{yG1:SWORD_FIT.yG1,yG0:SWORD_FIT.yG1-K0.grip,rIn:null,kx:SWORD_FIT.kx}),fit=new THREE.Color(...K0.fit),grip=new THREE.Color(...K0.gripCol),dark=new THREE.Color(.08,.07,.07);
+  for(const m of P.parts){m.updateMatrix();const n=m.name,metal=n!=='swordGrip'&&n!=='swordRunes';
+    L.push([m.geometry,metal?'metal':'matte',n==='swordBlade'?col('metal',steel):n==='swordGrip'?grip:n==='swordRunes'?dark:col('metal',fit.getHex()),m.matrix.clone()]);}
+  return true;}
 function buildWeapon(kind,opts){opts=opts||{};const t=opts.tint;const key=kind+(opts.rust?'|rust':'')+(t?'|'+[t.metal,t.guard,t.wood,t.glow,t.face].join(','):'');let parts=WPN_GEO.get(key);if(!parts){parts=wpnBuild(kind,!!opts.rust,t);WPN_GEO.set(key,parts);}
   const G=new THREE.Group();G.name='weapon:'+kind;G.userData.wpn=kind;for(const p of parts){const m=new THREE.Mesh(p.geo,WPN_MAT[p.mat]);m.castShadow=false;G.add(m);}return G;}
 const FOE_DRESS={

@@ -1290,7 +1290,7 @@ function treeDown(id){const d=(worldState.felled||{})[id];return d!=null&&gameMi
 function fellable(t){return t&&t.r>0&&!FELL_NOT.includes(t.sp)&&!(typeof MUSH_KINDS!=='undefined'&&MUSH_KINDS.includes(t.sp));}
 // the stump: one short trunk, its cut face pale, shared by every stump and scaled to the trunk's collider
 let _stumpGeo=null,_stumpMat=null;
-function stumpMesh(t){{let K=null;try{K=typeof stumpProp==='function'?stumpProp(t):null;}catch(e){K=null;}if(K)return K;} /* S2123 — the kit's stump on the new look */
+function stumpMesh(t){{let K=null;try{K=typeof stumpProp==='function'?stumpProp(t):null;}catch(e){K=null;}if(K)return K;} /* S2128 — the kit's stump on the new look */
   if(!_stumpGeo){_stumpGeo=new THREE.CylinderGeometry(.8,1,1,9);_stumpGeo.translate(0,.5,0);
     _stumpMat=[new THREE.MeshLambertMaterial({color:0x5a4030}),new THREE.MeshLambertMaterial({color:0xc8a878}),new THREE.MeshLambertMaterial({color:0x5a4030})];}
   const m=new THREE.Mesh(_stumpGeo,_stumpMat),rr=Math.max(.14,Math.min(.5,t.r*.55));m.scale.set(rr,.42,rr);

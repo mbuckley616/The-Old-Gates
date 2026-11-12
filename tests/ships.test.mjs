@@ -17,7 +17,7 @@ const bakes = await page.evaluate(() => {
     pirate: { tris: tri(p), sameGeoAsMerchant: p.mesh.geometry === m.mesh.geometry }, sea: [Math.round(sx), Math.round(sz)] }; });
 check('found open water for a ship', !bakes.noSea, bakes.sea);
 check('the merchantman is a lofted cog (Session 285, Michael\'s A on #50), one baked hull, its wheel and its one square rig (Session 330: the rig trims to the wind); the black sail stays a sloop, a look of its own (a different bake), not a tint',
-  bakes.merchant.kind === 'cog' && bakes.merchant.L === 17 && bakes.merchant.W === 5.6 && bakes.merchant.pirateKind === 'sloop' && bakes.merchant.pirateL === 13 && bakes.merchant.deck && bakes.merchant.wheel && (bakes.merchant.kit ? bakes.merchant.meshes >= 4 && bakes.merchant.tris > 20000 && bakes.merchant.tris < 40000 /* S2121: on the new look the kit's cog in her waters' dress */ : bakes.merchant.meshes === 4 /* S638: and the boarding nets */ && bakes.merchant.tris > 3000 && bakes.merchant.tris < 9000) && !bakes.pirate.sameGeoAsMerchant, bakes);
+  bakes.merchant.kind === 'cog' && bakes.merchant.L === 17 && bakes.merchant.W === 5.6 && bakes.merchant.pirateKind === 'sloop' && bakes.merchant.pirateL === 13 && bakes.merchant.deck && bakes.merchant.wheel && (bakes.merchant.kit ? bakes.merchant.meshes >= 4 && bakes.merchant.tris > 20000 && bakes.merchant.tris < 40000 /* S2126: on the new look the kit's cog in her waters' dress */ : bakes.merchant.meshes === 4 /* S638: and the boarding nets */ && bakes.merchant.tris > 3000 && bakes.merchant.tris < 9000) && !bakes.pirate.sameGeoAsMerchant, bakes);
 
 // the deck follows the hull: stand at the middle and you are on it; the old box's bow corners are water now; the bow's
 // deck reaches past where the box ended
