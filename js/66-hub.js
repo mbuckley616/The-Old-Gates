@@ -1051,7 +1051,7 @@ function playKeysFree(){return started&&!dead&&!won&&!invOpen&&!shopOpen&&!lootO
   &&!(typeof lockOpen!=='undefined'&&lockOpen)&&!(typeof sleepOpen!=='undefined'&&sleepOpen)&&!(typeof barberOpen!=='undefined'&&barberOpen)
   &&!(typeof cargoOpen!=='undefined'&&cargoOpen)&&!(typeof brewOpen!=='undefined'&&brewOpen)&&!(typeof cookOpen!=='undefined'&&cookOpen)
   &&!(typeof yardOpen!=='undefined'&&yardOpen)&&!(typeof pauseOpen!=='undefined'&&pauseOpen)&&!(typeof forgeOpen!=='undefined'&&forgeOpen)
-  &&!(typeof benchOpen!=='undefined'&&benchOpen);}
+  &&!(typeof benchOpen!=='undefined'&&benchOpen)&&!(typeof cureOpen!=='undefined'&&cureOpen);}
 window.addEventListener('keydown',e=>{const m=/^Digit([1-8])$/.exec(e.code),t=e.target;if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return;
   if(hubOpen){if(hubLastTab!=='magic')return;if(m&&!e.repeat){e.preventDefault();magicReady(+m[1]-1);}else if(e.code==='Enter'&&!e.repeat){e.preventDefault();magicWrite();}return;}
   if(m&&!e.repeat&&playKeysFree()&&spellBook[+m[1]-1])magicReady(+m[1]-1);});

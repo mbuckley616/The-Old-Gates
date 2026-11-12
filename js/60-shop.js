@@ -13,6 +13,9 @@ function openShop(){
   {let fb=document.getElementById('sh-forge');const on=typeof forgeHere==='function'&&forgeHere(); /* S1494 — a smith's room: the forge */
     if(on&&!fb){fb=document.createElement('button');fb.id='sh-forge';fb.className='sh-tab';fb.textContent='Forge';fb.onclick=()=>openForgePage();document.getElementById('sh-tabs').appendChild(fb);}
     if(fb)fb.style.display=on?'':'none';}
+  {let rb=document.getElementById('sh-rack');const on=typeof curesHere==='function'&&curesHere().length>0; /* S2131 — the tanner's and the drying rack */
+    if(on&&!rb){rb=document.createElement('button');rb.id='sh-rack';rb.className='sh-tab';rb.textContent='Racks';rb.onclick=()=>openCurePage();document.getElementById('sh-tabs').appendChild(rb);}
+    if(rb)rb.style.display=on?'':'none';}
 }
 function closeShop(){
   shopOpen=false;
@@ -873,6 +876,7 @@ function renderShop(){
   {const mo=mortarFor(currentHouse);if(mo.length)stock=[...stock,...mo];}
   {const pk=minersPickFor(currentHouse);if(pk.length)stock=[...stock,...pk.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1491 — the pick at the smith's and the goods shop */
   {const hk=hatchetFor(currentHouse);if(hk.length)stock=[...stock,...hk.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1511 — and the hatchet */
+  if(currentHouse&&currentHouse.type==='weapon'&&!stock.some(b=>b.leather))stock=[...stock,{...SURV_ITEMS.leather}]; /* S2131 — the tanner's leather, 12, for who won't wait */
   {const jk=[...joinerKitFor(currentHouse),...feathersFor(currentHouse)];if(jk.length)stock=[...stock,...jk.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1517 — the joiner's kit beside them, feathers at the goods shop */
   {const cp=clayPotFor(currentHouse);if(cp.length)stock=[...stock,...cp.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1837 — the clay pot at an apothecary and the goods shop */
   {const sv=survivalFor(currentHouse);if(sv.length)stock=[...stock,...sv.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1486 — the tinderbox and produce at the goods shop and the inn, fish in a port */ /* S1483 — the mortar at an apothecary and the Mages' Guild */ // S564 — the light line at the armourer, robes at a goods shop
