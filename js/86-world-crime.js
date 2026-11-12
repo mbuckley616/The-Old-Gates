@@ -1480,7 +1480,9 @@
       for(let i=0;i<BROADSIDE.guns;i++){const along=(i/(BROADSIDE.guns-1)-.5)*o.L*.6,x0=o.x+fx*along+(-fz)*s*o.W/2,z0=o.z+fz*along+fx*s*o.W/2;
         HER_BALLS.push({o,vol:HER_VOL,t0:now+i*BROADSIDE.ripple/(BROADSIDE.guns-1),dur:Math.hypot(SHIP.x-x0,SHIP.z-z0)/BROADSIDE.speed,last:i===BROADSIDE.guns-1});}
       if(typeof sfxNoise==='function')sfxNoise(.35,0,0,.25,160);showMsg('The black galleon runs out her guns.','#ff8060');}
-    for(let i=HER_BALLS.length-1;i>=0;i--){const f=HER_BALLS[i];if(now<f.t0+f.dur)continue;HER_BALLS.splice(i,1);if(!SHIP.mesh||!worldState.ship)continue;
+    /* S2161 — the balls landed this tick, taken out, then met in the order they were fired: a volley's last ball, pushed last, ends its line after every earlier one of the tick (walked from the end it was met first, and a hitched frame's line read part of the hull) */
+    const landed=[];for(let i=HER_BALLS.length-1;i>=0;i--){if(now<HER_BALLS[i].t0+HER_BALLS[i].dur)continue;landed.unshift(HER_BALLS[i]);HER_BALLS.splice(i,1);}
+    for(const f of landed){if(!SHIP.mesh||!worldState.ship)continue;
       const r=damageShip(SHIP,SHOT.round.hull,0);if(r&&!r.sunk){HER_BALLS.t=(HER_BALLS.v===f.vol?HER_BALLS.t:0)+r.hull;HER_BALLS.v=f.vol;}
       if(f.last&&HER_BALLS.v===f.vol&&HER_BALLS.t>0){showMsg(`The black galleon's broadside strikes the ${SHIP.name}. Hull −${HER_BALLS.t}.`,'#ff8060');HER_BALLS.t=0;}}}
   const HER_BOLTS=[];
