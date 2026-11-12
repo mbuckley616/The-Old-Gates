@@ -35,6 +35,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A. Pictures: `docs/prototypes/levelup/ships-black.jpg`, `ships-black-ghost.jpg`, `ships-black-flag.jpg` on `auto/look-2121` (#1452); details in `docs/devlog/2122.md`.
 
+### Rare specimens and the field guide — a guide alone, rare specimens that keep their hours, or those plus apparatus? (from the systems designer, 2026-11-12, #1463)
+**The question.** Backlog L8 (OG-097) asks for field-guide plates with a rarity and a habitat, and rare specimens with a known and a hidden effect learned by study. Fourteen of the sheet's plants already grow among the game's 50 herbs, but nothing lists what you have found and nothing is rare by hour or weather: how far should it go?
+
+**Options.**
+- **A.** The field guide alone: a book (20 gold, Edna's free) showing every plant you have picked, where it grows, its rarity and its known effects; a first pick of a kind is 10 Alchemy marks. One systems session, one look session.
+- **B (recommended).** A, plus nine rare specimens, three an island (Whispercap, Moonfen Orchid, Bloodreed; Ironleaf, Snowshroom, Skyshard; Miragebloom, Sunglass, Saltcrystal). Each opens only at an hour or in a weather (dusk, a clear night, rain, snow, after a storm) and is a closed bud otherwise. In the mortar each is a catalyst (stronger, longer, reveals all effects, a longer poison, drops the harm, or binds a pair that shares nothing), learned by observing, study or experiment. The four-effect pool is untouched. Three systems sessions, one bodies, one look.
+- **C.** B, plus Morrowind's apparatus (alembic, retort, cauldron in grades). Two more sessions, and a buy-better ladder.
+
+**Recommendation.** B: it gives the land something to come back for at night or after a storm, and the reward changes how your brews come out, not their price. Page: `docs/design/rare-specimens-and-the-field-guide.md`.
+
 ## Answered
 ### Swords by island — the six makes as looks only, or Aurenne’s falchion and flyssa as kinds of their own? (from the systems builder, 2026-11-11, #1425)
 **The question.** The bodies builder has made six swords by island in the people's kit (Session 2096, OG-028): the Gatelands' arming sword, the Mark's Norse sword, and Aurenne's takouba, nimcha, falchion and flyssa. Before they go into the game, each item has to know which make it is. The game has a Sword, a Longsword and a Scimitar today, one look each, the same everywhere. Are the makes looks only, or are Aurenne's four kinds of their own?
