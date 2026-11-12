@@ -3,7 +3,7 @@
 // Cave Bear's own brown, whose plantigrade legs have three bones to the driver's four (hcMap: the paw takes the driver's paw). A line of
 // the two and an Ash Hound (its own plan since Session 1274) ahead of you: each on the kit's skeleton, keyed by its foe id; its hips at its driver's;
 // three levels by distance; a run that moves the kit's bones with its feet by the driver's; the tell's glow; and killed, a corpse
-// darkened with its shaders kept that lies with its driver. Session 1273 adds the coach's two horses on the kit's horse, Session 2148 the ox and the yoked ox, Session 2154 the donkey and the pack mule, Session 2155 the camel, Session 2156 the reindeer and the highland yak. Pictures: docs/prototypes/f4/f4-beasts.jpg, f4-beasts-near.jpg, f4-oxen.jpg, f4-packbeasts.jpg, f4-camel.jpg and f4-markburden.jpg.
+// darkened with its shaders kept that lies with its driver. Session 1273 adds the coach's two horses on the kit's horse, Session 2148 the ox and the yoked ox, Session 2154 the donkey and the pack mule, Session 2155 the camel, Session 2156 the reindeer and the highland yak, Session 2164 the giant goat. Pictures: docs/prototypes/f4/f4-beasts.jpg, f4-beasts-near.jpg, f4-oxen.jpg, f4-packbeasts.jpg, f4-camel.jpg, f4-markburden.jpg and f4-giantgoat.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -258,6 +258,28 @@ check(`the reindeer's head at ${rd0.man} of a man, its hips at ${rd0.hipY} m; th
     CAM.position.set(ex, worldH(ex, ez) + 1.5, ez); CAM.lookAt(mx, worldH(mx, mz) + 1, mz); CAM.updateMatrixWorld(true); const hid = [..._W.map(w => w.e.mesh), ..._PK.map(h => h.hg)].map(m => [m, m.visible]); for (const [m] of hid) m.visible = false;
     REN.render(scene, CAM); const u = REN.domElement.toDataURL('image/jpeg', .85); for (const [m, v] of hid) m.visible = v; return u; });
   fs.writeFileSync(path.join(OUT, 'f4-markburden.jpg'), Buffer.from(url.split(',')[1], 'base64')); }
+// Session 2164 (L3, OG-046): the giant goat, the kit's goat at 2.1 under a saddle, on the goat's legs, keyed burden:<key>, beside a farm goat;
+// a mount's back: its hips about 2.1 times the goat's, under the kit's saddle
+const gg = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
+  window._GG = [['Giant Goat', 'f4gg:0'], ['Goat', 'f4gg:0']].map(([n, key], j) => { const hg = new THREE.Group(), rg = buildAnimal(n, key); hg.add(rg.root);
+    const x = px - fx * 7 + sx * (j - .5) * 3, z = pz - fz * 7 + sz * (j - .5) * 3; hg.position.set(x, WORLD.worldH(x, z), z); hg.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(hg); return { n, key, hg, rg }; });
+  let k = 0; HBODY.last = -1e9; while (_GG.some(h => !h.rg.hc && !h.rg.hcFail) && k++ < 300) tickCreatures(1 / 60, 1.5e6 + k * (HBODY.gap + 1));
+  return _GG.map(({ n, hg, rg }) => { const H = rg.hc; if (!H) return { n, hc: false }; hg.updateMatrixWorld(true); const by = H.C.byName;
+    const a = by.spine0.getWorldPosition(new THREE.Vector3()), b = rg.B.hips.getWorldPosition(new THREE.Vector3()), box = new THREE.Box3(); for (const m of H.C.meshes) box.expandByObject(m);
+    return { n, hc: true, key: rg.hcKey, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rg.hcKey), map: H.map.length, tris: H.C.stats.tris, bones: H.C.skel.bones.length, hips: +a.distanceTo(b).toFixed(3),
+      hipY: +(a.y - hg.position.y).toFixed(3), top: +(box.max.y - hg.position.y).toFixed(2), saddle: H.C.plan.parts.some(([p]) => p === 'saddle'),
+      toes: ['leg0L_4', 'leg0R_4', 'leg1L_4', 'leg1R_4'].map(t => +(by[t].getWorldPosition(new THREE.Vector3()).y - hg.position.y).toFixed(3)) }; }); });
+console.log('  the giant goat:', JSON.stringify(gg));
+const [gg0, gt0] = gg;
+check(`the giant goat wears the kit's giantgoat (${gg0.tris} tris, ${gg0.bones} bones, ${gg0.map} driven), keyed burden:<key>, on its hooves (${gg0.toes && gg0.toes.join(', ')} m), under its saddle, which the farm goat has not`,
+  gg0.hc && gt0.hc && gg0.plan === 'giantgoat' && gg0.map >= 22 && gg0.seed === gg0.want && /^burden:/.test(gg0.key) && gg0.hips < .03 && gg0.toes.every(y => Math.abs(y) < .05) && gg0.saddle && !gt0.saddle, gg);
+check(`its hips at ${gg0.hipY} m, ${(gg0.hipY / gt0.hipY).toFixed(2)} of the farm goat's ${gt0.hipY}; a mount's back, above a man's waist`,
+  gg0.hipY / gt0.hipY > 1.8 && gg0.hipY / gt0.hipY < 2.4 && gg0.hipY > 1, gg);
+{ const url = await page.evaluate(() => { const a = _GG[0].hg.position, b = _GG[1].hg.position, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw), ex = mx + fx * 6, ez = mz + fz * 6;
+    CAM.position.set(ex, worldH(ex, ez) + 1.5, ez); CAM.lookAt(mx, worldH(mx, mz) + 1, mz); CAM.updateMatrixWorld(true); const hid = [..._W.map(w => w.e.mesh), ..._PK.map(h => h.hg), ..._MK.map(h => h.hg)].map(m => [m, m.visible]); for (const [m] of hid) m.visible = false;
+    REN.render(scene, CAM); const u = REN.domElement.toDataURL('image/jpeg', .85); for (const [m, v] of hid) m.visible = v; return u; });
+  fs.writeFileSync(path.join(OUT, 'f4-giantgoat.jpg'), Buffer.from(url.split(',')[1], 'base64')); }
+await page.evaluate(() => { for (const { hg } of _GG) hg.parent.remove(hg); });
 await page.evaluate(() => { for (const { hg } of _MK) hg.parent.remove(hg); });
 const pkWalk = await page.evaluate(() => { const { hg, rg } = _PK[2], H = rg.hc, by = H.C.byName, sk = H.C.skel; sk.update(); const a = Array.from(sk.boneMatrices); let low = 9;
   for (let i = 0; i < 120; i++) { hg.position.x += Math.sin(hg.rotation.y) * 1.2 / 60; hg.position.z += Math.cos(hg.rotation.y) * 1.2 / 60; hg.position.y = WORLD.worldH(hg.position.x, hg.position.z); tickCreatures(1 / 60, 1.4e6 + i * 16.7);
