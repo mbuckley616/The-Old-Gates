@@ -415,7 +415,13 @@
   function homeYardRacks(h){const S=typeof SETTLE!=='undefined'&&SETTLE.get(h.siteId);if(!S||!S.group||!Array.isArray(S.racks)||typeof townRacks!=='function')return;
     for(let i=S.racks.length-1;i>=0;i--){const R=S.racks[i];if(R.house!==h.id)continue;S.group.remove(R.g);R.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});S.racks.splice(i,1);
       if(S.sol){const j=S.sol.findIndex(s=>s.bt==='rack'&&Math.abs(s.cx-R.x)<1e-6&&Math.abs(s.cz-R.z)<1e-6);if(j>=0)S.sol.splice(j,1);}}
-    S.racks.push(...townRacks(S.site,[h],S.sol||[],S.group));}
+    // S2165 — and its garden, struck with the racks and stood again after them, so the racks take the spots they took when the town was built
+    if(!Array.isArray(S.gardens))S.gardens=[];
+    for(let i=S.gardens.length-1;i>=0;i--){const G=S.gardens[i];if(G.house!==h.id)continue;S.group.remove(G.g);G.g.traverse(o=>{if(o.geometry&&!o.userData.shared)o.geometry.dispose();});S.gardens.splice(i,1);}
+    if(S.sol)for(let j=S.sol.length-1;j>=0;j--)if(S.sol[j].bt==='garden'&&S.sol[j].house===h.id)S.sol.splice(j,1);
+    if(h._yardFits)delete h._yardFits.garden;
+    S.racks.push(...townRacks(S.site,[h],S.sol||[],S.group));
+    if(typeof townGardens==='function')S.gardens.push(...townGardens(S.site,[h],S.sol||[],S.group));}
 
   // ═══ SHIPS & SWIMMING (Session C) ════════════════════════════════════
   // One ship for now, bought at a shipwright, kept in worldState.ship. The
