@@ -114,5 +114,40 @@ check(`freed, rumoured: *${greet.rumFreed[0]}*; not 2,000 off, not after fourtee
 check(`besieged, rumoured: *${greet.rumSiege[0]}*`, greet.rumSiege[0] === "Dunmore's shut up behind its gate with the Compact's camp on the road. Twelve days, they reckon, before hunger opens it.", greet.rumSiege);
 check(`relieved, rumoured: *${greet.rumRelieved[0]}*`, greet.rumRelieved[0] === "The camp outside Dunmore is ashes. Whoever did it didn't stop to be thanked.", greet.rumRelieved);
 check(`relieved: an Aurennais greets *${greet.relG}*`, greet.relieved === 'siege' && greet.relG.startsWith('Master, the road is open again'), greet.relG);
+
+// Session 2130 — Under Another Flag §1–2 (the quest writer's approved draft): the lord's two war jobs, offered under *The siege?* and
+// *Who holds the town?* in the lord's own people's words, done when the camp or the garrison falls, lapsed if the town falls first, paid
+// at *It's done.* with the thanks by kind and people; the favour breakSiege and liberate give is the only favour
+const jobs = await page.evaluate(() => { const at = {};
+  for (let i = 0; i < 80; i++) for (let j = 0; j < 80; j++) { let p; try { p = nationOf(i, j).people; } catch (e) { continue; } if (!at[p]) at[p] = { x: (i + .5) * WORLD.SIZE, z: (j + .5) * WORLD.SIZE }; }
+  const out = {}; let n = 0; const QJn = () => QJ().length;
+  for (const p in at) { const site = { id: 'test_job_' + (n++), name: 'Testford', kind: 'town', x: at[p].x, z: at[p].z }; const st = TS(site); const o = {};
+    laySiege(site, 'mark'); st.siegeDay = 40;
+    let T = lordTopics(site); const tk = T.find(t => t.label === 'I’ll break the camp.'); o.campShown = !!tk && tk.avail();
+    o.campOffer = tk.fn(); o.campHidden = !lordTopics(site)[1].avail(); const q = qFind('war:' + site.id + ':siege:40'); o.camp = q ? { title: q.title, objective: q.objective, kind: q.kind } : null;
+    const f0 = favor(site); breakSiege(site); o.campDone = !!(q && q.done); o.favSiege = favor(site) - f0;
+    const g0 = gold; const done = lordTopics(site).find(t => t.label === 'It’s done.'); o.campAvail = !!done && done.avail(); o.campThanks = done.fn(); o.campPaid = gold - g0; o.favTurn = favor(site) - f0;
+    delete st.freed;
+    laySiege(site, 'aurenne'); st.siegeDay = 41; lordTopics(site)[1].fn(); occupy(site); const q2 = qFind('war:' + site.id + ':siege:41'); o.lapsed = !!(q2 && q2.lapsed && q2.turnedIn);
+    o.lapseLog = (GAME_LOG.filter(e => e.q === q2.id).pop() || {}).text || GAME_LOG.slice(-3).map(e => e.text || e.t || e.msg).join(' | ');
+    st.flags.occupied = 777;
+    T = lordTopics(site); const hk = T.find(t => t.label === 'I’ll clear the plaza.'); o.heldShown = !!hk && hk.avail(); o.heldOffer = hk.fn();
+    const q3 = qFind('war:' + site.id + ':held:777'); o.held = q3 ? { title: q3.title, objective: q3.objective } : null;
+    liberate(site); o.heldDone = !!(q3 && q3.done); o.heldThanks = lordTopics(site).find(t => t.label === 'It’s done.').fn(); delete st.freed;
+    out[p] = o; }
+  return out; });
+console.log(JSON.stringify(jobs, null, 1));
+const OFFER = { gatelander: ["Would you, now. I'd not ask it, and I'll not refuse it. The camp's on the road ", "Then you're braver than the rest of us, or newer here."],
+  markman: ["Good. Camp's on the road, ", "Good. They're on the plaza. All of them."], aurennais: ['Then let us call it an engagement, Master. The camp lies on the road ', 'Then consider yourself engaged, Master.'] };
+const THANKS = { gatelander: ['I watched it burn from the wall.', "My own chair. It's not much of a chair, but I'd missed it."], markman: ['Saw the smoke. Good work, Camp-breaker. ', "Town's ours. Good work, Sweeper. "],
+  aurennais: ['The road is open and the first cart is already in, Master. ', 'The administration has been concluded, Master, and the chair returned to its tenant. '] };
+for (const p of ['gatelander', 'markman', 'aurennais']) { const J = jobs[p]; if (!J) continue;
+  check(`${p}: *I’ll break the camp.* under *The siege?*, once: *${J.campOffer}*`, J.campShown && J.campHidden && J.campOffer.startsWith(OFFER[p][0]) && /gold/.test(J.campOffer), J);
+  check(`${p}: the job is *${J.camp && J.camp.title}*, *${J.camp && J.camp.objective}*`, J.camp && J.camp.title === 'The siege of Testford' && J.camp.objective === "Break the League's camp on the road outside Testford", J.camp);
+  check(`${p}: the camp broken finishes it; *It’s done.* pays (${J.campPaid} gold): *${J.campThanks}*`, J.campDone && J.campAvail && J.campPaid > 0 && J.campThanks.startsWith(THANKS[p][0]) && J.campThanks.includes(`${J.campPaid} gold`), J);
+  check(`${p}: no favour but the siege's own (+${J.favSiege}, +${J.favTurn} after the thanks)`, J.favSiege === J.favTurn, J);
+  check(`${p}: the town fallen first lapses the job: *${J.lapseLog}*`, J.lapsed && J.lapseLog.includes('The camp outside Testford outlasted the gate. Testford has fallen to the Compact, and the work is on its plaza now.'), J);
+  check(`${p}: *I’ll clear the plaza.*: *${J.heldOffer}*; *${J.held && J.held.title}*`, J.heldShown && J.heldOffer.startsWith(OFFER[p][1]) && J.held && J.held.title === 'Testford under the Compact' && J.held.objective === "Kill the Compact's garrison on Testford's plaza", J);
+  check(`${p}: freed, thanked: *${J.heldThanks}*`, J.heldDone && J.heldThanks.startsWith(THANKS[p][1]), J); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
