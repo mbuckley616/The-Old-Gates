@@ -5205,7 +5205,7 @@ function shipSwatch(mats, dress, o = {}) { const d = SHIP_SWATCHES[dress] ? dres
       return SHIP_SWC.get(k); }
     return m; };
   return Array.isArray(mats) ? mats.map(one) : one(mats); }
-// Session 2157 — the black sail (ships.js's blackSail, Session 2127; Michael's A on #1454: "the hull of her waters, no colours"). A dress
+// Session 2162 — the black sail (ships.js's blackSail, Session 2127; Michael's A on #1454: "the hull of her waters, no colours"). A dress
 // laid over any kit hull's bake as the yard's colours are: every sail a black cloth of eight panels in four near-blacks by turns, four patches
 // of undyed canvas with their stitching, the seams and reef bands sun-greyed, and the island's mark struck to a ghost a shade off the black
 // (the harp, the sun-star; the Mark's two-shade cloths overdyed till the stripes barely show). The painted surface goes red, the wale (the
@@ -5226,7 +5226,7 @@ function shipBlackTex(dress, plain) { const tk = dress + (plain ? ':plain' : '')
   return SHIP_BLK_TEX[tk] = finishTex(c); }
 function shipBlack(mats, dress) { const d = SHIP_SWATCHES[dress] ? dress : 'gatelands', M = shipMats(d);
   const one = m => { if (!m || !m.isMaterial) return m; const k = m.uuid; if (SHIP_BLK.has(k)) return SHIP_BLK.get(k); const u = m.userData || {}; let c = null;
-    if (u.swatch === 'cloth' || u.jib) { c = m.clone(); const t = shipBlackTex(d, !!u.jib); /* S2158 — a cutter's plain jib, no mark to strike */ if (m.map) { t.wrapS = m.map.wrapS; t.wrapT = m.map.wrapT; } c.map = t; c.userData = { black: 'cloth', of: m.uuid }; }
+    if (u.swatch === 'cloth' || u.jib) { c = m.clone(); const t = shipBlackTex(d, !!u.jib); /* S2163 — a cutter's plain jib, no mark to strike */ if (m.map) { t.wrapS = m.map.wrapS; t.wrapT = m.map.wrapT; } c.map = t; c.userData = { black: 'cloth', of: m.uuid }; }
     else if ((u.swatch === 'paint' && d !== 'mark') || m === M.gilt) { c = m.clone(); c.color.setHex(0x7a1e16); if ('metalness' in c) c.metalness = 0; c.roughness = .7; c.userData = { black: 'red', of: m.uuid }; }
     else if ((m === M.oak && d !== 'mark') || (d === 'aurenne' && m === M.hull)) { c = m.clone(); c.color.setHex(0x3a2c22); c.userData = { black: 'tar', of: m.uuid }; }
     else if (m === M.cream) { c = m.clone(); c.color.setHex(0x5a5048); c.userData = { black: 'dull', of: m.uuid }; }
@@ -5854,7 +5854,7 @@ function galleonBase(o = {}) {
 // and a jib out on a 4.2 m bowsprit, all tanned; the rudder on the transom and a tiller. Sold only at the Mark's yards, so only the Mark's dress.
 //   PKIT.ships.cutter(o) -> as PKIT.ships.sloop, with boom ({ y, z0, z1 }) and transom (z); rigs [gaff, jib]. o.hatchZ as the sloop's;
 //   o.open (Session 1558) the hatch open to the hold, for the base below deck (cutterBase).
-// Session 2158 — o.dress 'gatelands' | 'aurenne' (ships.js's gatelandsCutter and aurenneCutter, Sessions 922–923; #306's one rig to an
+// Session 2163 — o.dress 'gatelands' | 'aurenne' (ships.js's gatelandsCutter and aurenneCutter, Sessions 922–923; #306's one rig to an
 //   island): the cutter's own lines and carvel planking in the island's colours, no head. Aurenne's: tallowed below the water, oiled above,
 //   the top two strakes blue under the gilt line; one lateen with the sun-star on the mast raked 4° forward, slung to starboard, its foot
 //   2.5 m over the deck, and one plain jib on the bowsprit wholly above and forward of the yard. The Gatelands': tarred below, oak above, the
