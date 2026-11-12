@@ -10,10 +10,10 @@ Backlog L8, *Rare specimens and the field guide* (systems, and the look builder 
 Most of the sheet's plants are in the game already. What is missing is the *guide*, a place where what you have found is kept, and the *rare* in rare specimens.
 
 ## Today
-`HERB_DEF` (`30-plants.js`) holds 50 herbs: the 23 old land herbs, the sea's three, the four that mark a gate (S1886, S1896) and the atlas's twenty by island (S1939, #1202 A). Each has four effects in `HERB_FX` (`50-travel.js`), drawn from the 22 of `ALCH_FX`, every effect on 4 to 10 herbs (`tests/herbpool`). The first is learned by eating, the second after 15 eats (5 with the Tell perk, Alchemy 25), and the rest by grinding pairs in the mortar (`brewHerbs`); all of it lives in `herbsKnown()`, the character's. `spawnChunkHerbs` puts 8 to 16 herbs in every 64 m chunk by island, biome and ground; only Wolf's Bane is flagged `rare` (a third of the weight). Fourteen of OG-097's names already grow (Heartroot, Gatelotus, Gate Resin, Icebloom, Stormthistle, Glacier Lily, Stonecress, Frostcap, Amberbloom, Sandlotus, Spicethorn, Jade Aloe, Shadowcap, Pearlweed). Nowhere in the game can you see the herbs you are not carrying: the brew page lists the bag, and a herb you sold is forgotten by every screen but the mortar's memory of failed pairs. No herb depends on the hour, the weather or the season; a pick is 1 Alchemy mark. Time runs 60 game minutes to a real minute, so a game day is 24 real minutes and a season (84 days) about 34 real hours, a fortnight of evenings.
+`HERB_DEF` (`30-plants.js`) holds 50 herbs (the old 23, the sea's 3, the gate plants' 4, the atlas's 20 by island), each with four effects in `HERB_FX` (`50-travel.js`) from `ALCH_FX`'s 22, every effect on 4 to 10 herbs (`tests/herbpool`). You learn them by eating (the second after 15 eats, 5 with Tell) and by grinding pairs (`brewHerbs`), kept in `herbsKnown()`, the character's. `spawnChunkHerbs` puts 8 to 16 in every 64 m chunk; only Wolf's Bane is `rare`. Fourteen of OG-097's names already grow. No screen shows a herb you are not carrying, no herb keys on the hour or the weather, and a pick is 1 Alchemy mark. A game day is 24 real minutes; a season is about 34 real hours.
 
 ## Direction A: the field guide alone
-**The loop.** Any herbalist or apothecary sells *A Field Guide to the Three Islands* (20 gold; Edna gives one free the first time you ask her about herbs). It opens in the book reader as a page for each island and one for the sea and the gates. Each plant you have ever picked gets its plate, its name, where it grows, its rarity, and its four effects as far as you know them. Plants never picked show an empty frame. The header counts what you have found: *31 of 50*.
+**The loop.** Herbalists sell *A Field Guide to the Three Islands* (20 gold; Edna gives one free). In the book reader, a page an island, and one for the sea and the gates: every plant you have picked with its plate, where it grows, its rarity and its effects as far as you know them; the rest are empty frames. *31 of 50*.
 
 **The rules.**
 
@@ -23,14 +23,13 @@ Most of the sheet's plants are in the game already. What is missing is the *guid
 | Rarity | Common in 4 or more biomes, Uncommon in 2 or 3, Rare in 1, or flagged `rare`, or a gate's plant | Computed from the same table, so a new herb is graded without a hand list. |
 | First pick | the first time you pick a kind, 10 Alchemy marks instead of 1 | A new plant is worth ten ordinary picks: it rewards going somewhere new, which the brief's progression wants. |
 | Effects | as `herbFxKnown` reads them | No new knowledge rule, only a place to see it. |
-| Plates | the plant kit's own mesh drawn once to a small canvas, in ink and wash | The look builder's; a text entry with the icon works until it lands. |
 
-**Touches.** `herbsKnown()` gains `seen` (picks by kind), the character's, already in `SS_CHAR_WS` and on the S242 list. A `BOOKS` entry whose pages are drawn live; `harvestHerb` and the Caverglow pick call one named action, `notePlant(k)`. **Cost.** One systems session, one look session for the plates.
+**Touches.** `herbsKnown().seen` (the character's, already saved); a `BOOKS` entry drawn live; `notePlant(k)` from `harvestHerb`. **Cost.** One systems session; one look session for the plates (the plant kit's mesh drawn once in ink and wash).
 
 **Against.** It keeps a record but adds nothing to find. Every one of the 50 is a pick you will make anyway walking the roads.
 
 ## Direction B: the guide and nine rare specimens that keep their hours (recommended)
-**The loop.** A as above, and nine specimens that are not herbs. Each grows in a few patches in a cell of its own island and opens only under one condition: an hour, a weather, snow. Outside it, it is a closed bud you can examine but not take. The first examine writes its condition into the guide ("opens at night under a clear sky"), so the second time you know to come back after dark. You live with a short list of *things to come back for*: the fen at night, the fells after a storm. You cannot buy them; at most, an apothecary will say where she last saw one.
+**The loop.** A, and nine specimens that are not herbs. Each grows in a few patches on its own island and opens only at an hour or in a weather; outside it, it is a closed bud. The first examine writes its condition into the guide ("opens at night under a clear sky"), and you carry a short list of things to come back for: the fen at night, the fells after a storm. None is sold.
 
 **The nine.** Three an island, from OG-097's names the game lacks.
 
@@ -60,19 +59,17 @@ Most of the sheet's plants are in the game already. What is missing is the *guid
 | Price | 45 to 90 (Skyshard and Sunglass the top); no shop sells one, an apothecary buys at her rate | Worth carrying home; at a few a night, never a money press. |
 | First pick | 10 Alchemy marks, as A | |
 
-**What it touches.** `HERB_DEF` grows a `spec` flag and a `when(x, z, t, wx)` condition; the cell's load (`81-world-cells.js`, beside the gate rings) places the patches; `harvestHerb` checks the condition; `brewHerbs` and the brew page take one catalyst slot. `herbsKnown()` gains `seen`, `cond` and `cat` (the character's, already saved). `worldState.picked` carries the patches (the world's). Named actions: `notePlant`, `learnSpecimen`, `studySpecimen`. The bodies builder owes nine meshes in the plant kit, each open and closed. Co-op: what you know is yours, the patches are the host's, and the conditions read the host's clock and weather.
+**What it touches.** `HERB_DEF` gains `spec` and a `when` condition; the cell's load (`81-world-cells.js`) places the patches; `harvestHerb` checks the condition; `brewHerbs` and the brew page take one catalyst. `herbsKnown()` gains `seen`, `cond`, `cat` (the character's, already saved); `worldState.picked` the patches (the world's). Named actions `notePlant`, `learnSpecimen`, `studySpecimen`. Co-op: knowledge is yours, patches, clock and weather the host's.
 
 **Conflicts.** None with a decision. Venom and Lasting lean on Alchemy's perks (Stoppered, Double measure) without copying them.
 
 **Cost.** Three systems sessions: (1) the guide, rarity, first picks; (2) the specimens' placement, conditions and buds; (3) the catalysts and the study. One bodies session for the nine, one look session for the plates. All ordinary sessions.
 
 ## Direction C: B and the apparatus
-**The loop.** B, and the equipment row of OG-097 as Morrowind's apparatus: an alembic (strength ×1.10), a retort (time ×1.25) and a cauldron (two tinctures from a grinding), bought in three grades and carried, or fitted in a house.
-
-**Against.** It is a ladder of better tools bought with gold, which is the brief's *Not this* in plain words, and Morrowind's own apparatus was the first thing its players learned to exploit. The ship's still (×1.10) and the house's fittings (#1420 B) already put apparatus where you live; Double measure already gives two tinctures. Two more systems sessions on top of B.
+B, and OG-097's equipment row as Morrowind's apparatus: an alembic (strength ×1.10), a retort (time ×1.25), a cauldron (two tinctures), in three grades. **Against:** a ladder of better tools bought with gold is the brief's *Not this*, the ship's still and #1420 B's house already place apparatus, and Double measure already doubles. Two more sessions.
 
 ## Recommendation
-**B.** The guide alone records a walk you were going to take anyway; the nine give the walk a reason and an hour. Coming back to the fen at night for an orchid you saw shut at noon is the brief's progression in miniature: the land rewards someone who pays attention, and the reward changes how your brews come out, not which buttons you press. It keeps the four-effect pool and its suite untouched, adds no shop item but the book, and costs three ordinary sessions.
+**B.** The guide alone records a walk you were taking anyway; the nine give the walk a reason and an hour. Coming back at night for an orchid you saw shut at noon is the brief's progression in miniature, and the reward changes how your brews come out. The four-effect pool and its suite stay untouched; three ordinary sessions.
 
 ## What must be true first
 - Survival B's brewing and Alchemy's perks (built). Resources B's house bench, if study is to work there (session 3 can open study at shop tables first).
