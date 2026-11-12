@@ -32,9 +32,13 @@ check(`it adds at most two materials to the town's kit (${r.newMats}: the rope a
 // tanner's rack and a drying rack, keyed by its lot as a smith's are; townRacks (82) stands them. The mark is the hall's own, never saved.
 const yr = await page.evaluate(id => {
   const S = WORLD.settle.get(id), Y = S.yards[0], hall = S.houses.find(h => h.id === Y.house);
-  return { keys: curesOf(hall).map(c => c.key), stood: (S.racks || []).filter(R => R.h === hall).map(R => R.kind).sort(), saved: Object.keys(hall).includes('_yard') || JSON.stringify(hall).includes(':yard') };
+  // S2151 — and they stand at the yard, beside its ring: each rack's centre within 12 m of the ring's, and no corner of its box on the earth
+  const at = (S.racks || []).filter(R => R.h === hall).map(R => { let near = 1e9; for (const u of [-1, 1]) for (const v of [-1, 1]) { const x = R.x + u * R.rx * R.c + v * R.rz * R.s, z = R.z - u * R.rx * R.s + v * R.rz * R.c; near = Math.min(near, Math.hypot(x - Y.x, z - Y.z)); }
+    return { kind: R.kind, d: +Math.hypot(R.x - Y.x, R.z - Y.z).toFixed(2), edge: +near.toFixed(2) }; });
+  return { keys: curesOf(hall).map(c => c.key), stood: (S.racks || []).filter(R => R.h === hall).map(R => R.kind).sort(), at, r: Y.r, saved: Object.keys(hall).includes('_yard') || Object.keys(hall).includes('_yardAt') || JSON.stringify(hall).includes(':yard') };
 }, id);
 check(`the yard's hall keeps a tanner's rack and a drying rack (${yr.keys.join(', ')}), both stood, the mark not saved`, yr.keys.length === 2 && /:rack$/.test(yr.keys[0]) && /:dry$/.test(yr.keys[1]) && yr.stood.join() === 'dry,tan' && !yr.saved, yr);
+check(`both stand beside the yard's ring (${yr.at.map(a => a.kind + ' ' + a.d + ' m, its nearest corner ' + a.edge).join('; ')}), off its earth`, yr.at.length === 2 && yr.at.every(a => a.d < 12 && a.edge > yr.r + .73), yr);
 // S1691 — the yard's rack by the hour: a staff by day (the spar), and from 18h to 22h the evening's brawl in the same ring, its stake by
 // the town's tier taken when it is called (brawlStart, S1644).
 const yb = await page.evaluate(id => {

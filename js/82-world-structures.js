@@ -919,8 +919,14 @@
     return M.group;}
   // S2048 — the coach's lamp still burns on its bracket: dark from 19:00 to 06:30 (the towns' lamps' hours), its glass glows and it throws
   // a 9 m pool on the pool of lights; by day the glass is a faint ember. The glass's material is the kit's, one for every coach.
-  function waysideLamps(){const h=hourNow(),dark=isNight()||h<6.5||h>=19;
+  function waysideLamps(){iceDayGlow();const h=hourNow(),dark=isNight()||h<6.5||h>=19; /* S2150 — and the ice's glow by the hour */
     for(const L of LOADED.values()){const D=L.cell&&L.cell._wayside;if(!D||!D.lamp||!D.group||D.lamp.lit===dark)continue;D.lamp.lit=dark;D.lamp.mat.emissiveIntensity=dark?1.6:.25;D.lamp.light.intensity=dark?1.5:0;}}
+  // S2150 — the ice's blue glows with the day and goes out with it (the critic, 12 Nov: at 19:30 the ice mouth's tunnel was the brightest
+  // thing in view, lit by nothing): the kit's ice materials (PKIT.dayGlow) at full by day, none from 19:00 to 05:00, eased between by the
+  // sky's own dusk and dawn (_nightFactor); set only when it changes by a hundredth
+  let ICE_GLOW=-1;
+  function iceDayGlow(){if(typeof PKIT==='undefined'||!PKIT.dayGlow||!PKIT.dayGlow.size)return;const f=typeof _nightFactor==='function'?1-_nightFactor():1;
+    if(Math.abs(f-ICE_GLOW)<.01)return;ICE_GLOW=f;for(const m of PKIT.dayGlow)m.emissiveIntensity=f;}
   // S2063 — the places by a road and off it drawn only within 450 m of you (QA, S2060: two shepherd's huts 2.5 km out cost Dunmore's view 31
   // calls at Low, drawn whole with no draw distance). Their solids, stamps, ground and discovery are untouched: only the group is hidden.
   const PLACE_FAR=450;
@@ -2919,10 +2925,17 @@
     for(const h of houses){const RS=curesOf(h),lot=h._lot;if(!RS.length||!lot)continue;
       const tx=lot.tx,tz=lot.tz,w=lot.w||6,d=lot.d||6,at=(u,v)=>[lot.x+u*tz+v*tx,lot.z-u*tx+v*tz],along=Math.atan2(tx,tz),deep=along+Math.PI/2;
       // behind first (the yard), then the sides, then a rack's depth further out each way, so two stand side by side or one behind the other
-      const spots=[],SU=2*HW+.6,SV=2*HD+.8;for(let k=0;k<3;k++){for(const u of [0,-SU/2,SU/2,-SU,SU])spots.push([u,-(d/2+.6+HD+k*SV),along]);
+      const spots=[],SU=2*HW+.6,SV=2*HD+.8;
+      // S2151 — a Mark hall's racks stand at its training yard (S1657, S2142's `_yardAt`), not behind the hall (82 m off at c2_1_s7): outside the
+      // ring's earth (its ragged edge reaches r+0.73), the long side along the ring, the sides first (the staff rack is toward the hall, the
+      // bench across), then the shoulders, then a rack's depth further out; the hall's own spots only if none of these is clear
+      const Yd=h._yardAt;if(Yd)for(let k=0;k<3;k++)for(const da of [Math.PI/2,-Math.PI/2,Math.PI/3,-Math.PI/3,2*Math.PI/3,-2*Math.PI/3]){const a=Yd.ry+da,rr=Yd.r+.8+.5+HD+k*SV;
+        spots.push({x:Yd.x+Math.sin(a)*rr,z:Yd.z+Math.cos(a)*rr,ry:a});}
+      for(let k=0;k<3;k++){for(const u of [0,-SU/2,SU/2,-SU,SU])spots.push([u,-(d/2+.6+HD+k*SV),along]);
         if(k<2)for(const sd of [-1,1])for(const v of [0,-d/4,d/4,-d/2])spots.push([sd*(w/2+.6+HD+k*SV),v,deep]);}
-      for(const r of RS){const sp=spots.find(([u,v,ry])=>{const [x,z]=at(u,v);return clear(x,z,ry);});if(!sp)continue;
-        const [x,z]=at(sp[0],sp[1]),ry=sp[2],kind=r.kind==='rack'?'tan':'dry',g=workRackProp(kind,x,z,ry,{key:r.key,slots:rackSlotsFor(r.key)});if(!g)continue;
+      const wp=sp=>Array.isArray(sp)?at(sp[0],sp[1]):[sp.x,sp.z],wr=sp=>Array.isArray(sp)?sp[2]:sp.ry;
+      for(const r of RS){const sp=spots.find(q=>{const [x,z]=wp(q);return clear(x,z,wr(q));});if(!sp)continue;
+        const [x,z]=wp(sp),ry=wr(sp),kind=r.kind==='rack'?'tan':'dry',g=workRackProp(kind,x,z,ry,{key:r.key,slots:rackSlotsFor(r.key)});if(!g)continue;
         g.name='rack:'+r.key;group.add(g);const B=g.userData.rack.box||{w:2*HW,d:2*HD};sol.push({cx:x,cz:z,rx:B.w/2,rz:B.d/2,c:Math.cos(ry),s:Math.sin(ry),bt:'rack'});
         out.push({g,key:r.key,kind,house:h.id,h,x,z,c:Math.cos(ry),s:Math.sin(ry),rx:B.w/2,rz:B.d/2,t:performance.now()});}}
     return out;}
