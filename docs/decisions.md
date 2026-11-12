@@ -15,15 +15,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
-### Children in the towns — townsfolk only, at play by island, or at play and at their day's work? (from the concept artist, 2026-11-11, #1445)
-**The question.** The builder has had child bodies since Session 1081 (ages 11 to 15), but the towns hold only Finn and nothing exists for a child to hold. The concept artist built ten toys in metres (48 to 1,008 triangles each) and posed eleven children at their island's games: the Gatelands' hoop, ball and rag doll; the Mark's play fight and pine boat; Aurenne's kite, knucklebones and terracotta horse (`docs/prototypes/levelup/kids.html`). How should the towns show children?
+## Answered
+### Rare specimens and the field guide — a guide alone, rare specimens that keep their hours, or those plus apparatus? (from the systems designer, 2026-11-12, #1463)
+**The question.** Backlog L8 (OG-097) asks for field-guide plates with a rarity and a habitat, and rare specimens with a known and a hidden effect learned by study. Fourteen of the sheet's plants already grow among the game's 50 herbs, but nothing lists what you have found and nothing is rare by hour or weather: how far should it go?
 
 **Options.**
-- **A.** Townsfolk only: a few children walk and stand like the grown folk; no toys, no games.
-- **B (recommended).** At play, by island: two to four children in a town by day, each at one of its island's games with the toys as props; indoors at dusk. One bodies session plus a line in the town's hours.
-- **C.** B, and their day: play in the afternoon, the hedge school, forge or scribes' school in the morning, and a rite per island. About four sessions across three lanes.
+- **A.** The field guide alone: a book (20 gold, Edna's free) showing every plant you have picked, where it grows, its rarity and its known effects; a first pick of a kind is 10 Alchemy marks. One systems session, one look session.
+- **B (recommended).** A, plus nine rare specimens, three an island (Whispercap, Moonfen Orchid, Bloodreed; Ironleaf, Snowshroom, Skyshard; Miragebloom, Sunglass, Saltcrystal). Each opens only at an hour or in a weather (dusk, a clear night, rain, snow, after a storm) and is a closed bud otherwise. In the mortar each is a catalyst (stronger, longer, reveals all effects, a longer poison, drops the harm, or binds a pair that shares nothing), learned by observing, study or experiment. The four-effect pool is untouched. Three systems sessions, one bodies, one look.
+- **C.** B, plus Morrowind's apparatus (alembic, retort, cauldron in grades). Two more sessions, and a buy-better ladder.
 
-**Recommendation.** B: children in the towns as the brief's lived-in world asks, at one body and up to a thousand triangles each; the school and the rites can come later without undoing anything. Pictures and approach: `docs/concepts.md`.
+**Recommendation.** B: it gives the land something to come back for at night or after a storm, and the reward changes how your brews come out, not their price. Page: `docs/design/rare-specimens-and-the-field-guide.md`.
+
+Michael: **The guide plus nine rare specimens** (B). (2026-11-12)
 
 ### The black sails on the kit's hulls — whose hulls, and under what colours? (from the look builder, 2026-11-11, #1454)
 **The question.** Every ship you own and every merchantman is now the kit's, but a black sail met at sea is still the old procedural hull. Session 2122 made the old pirate's look a dress laid over any kit hull: black cloth with patches, the island's mark struck to a ghost, the painted strake red, timber tarred, no geometry changed. The canon calls piracy "the Mark's undeclared war". Whose hulls should the black sails sail, and under what colours?
@@ -35,17 +38,20 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A. Pictures: `docs/prototypes/levelup/ships-black.jpg`, `ships-black-ghost.jpg`, `ships-black-flag.jpg` on `auto/look-2121` (#1452); details in `docs/devlog/2122.md`.
 
-### Rare specimens and the field guide — a guide alone, rare specimens that keep their hours, or those plus apparatus? (from the systems designer, 2026-11-12, #1463)
-**The question.** Backlog L8 (OG-097) asks for field-guide plates with a rarity and a habitat, and rare specimens with a known and a hidden effect learned by study. Fourteen of the sheet's plants already grow among the game's 50 herbs, but nothing lists what you have found and nothing is rare by hour or weather: how far should it go?
+Michael: **The hull of her waters, no colours** (A). (2026-11-12)
+
+### Children in the towns — townsfolk only, at play by island, or at play and at their day's work? (from the concept artist, 2026-11-11, #1445)
+**The question.** The builder has had child bodies since Session 1081 (ages 11 to 15), but the towns hold only Finn and nothing exists for a child to hold. The concept artist built ten toys in metres (48 to 1,008 triangles each) and posed eleven children at their island's games: the Gatelands' hoop, ball and rag doll; the Mark's play fight and pine boat; Aurenne's kite, knucklebones and terracotta horse (`docs/prototypes/levelup/kids.html`). How should the towns show children?
 
 **Options.**
-- **A.** The field guide alone: a book (20 gold, Edna's free) showing every plant you have picked, where it grows, its rarity and its known effects; a first pick of a kind is 10 Alchemy marks. One systems session, one look session.
-- **B (recommended).** A, plus nine rare specimens, three an island (Whispercap, Moonfen Orchid, Bloodreed; Ironleaf, Snowshroom, Skyshard; Miragebloom, Sunglass, Saltcrystal). Each opens only at an hour or in a weather (dusk, a clear night, rain, snow, after a storm) and is a closed bud otherwise. In the mortar each is a catalyst (stronger, longer, reveals all effects, a longer poison, drops the harm, or binds a pair that shares nothing), learned by observing, study or experiment. The four-effect pool is untouched. Three systems sessions, one bodies, one look.
-- **C.** B, plus Morrowind's apparatus (alembic, retort, cauldron in grades). Two more sessions, and a buy-better ladder.
+- **A.** Townsfolk only: a few children walk and stand like the grown folk; no toys, no games.
+- **B (recommended).** At play, by island: two to four children in a town by day, each at one of its island's games with the toys as props; indoors at dusk. One bodies session plus a line in the town's hours.
+- **C.** B, and their day: play in the afternoon, the hedge school, forge or scribes' school in the morning, and a rite per island. About four sessions across three lanes.
 
-**Recommendation.** B: it gives the land something to come back for at night or after a storm, and the reward changes how your brews come out, not their price. Page: `docs/design/rare-specimens-and-the-field-guide.md`.
+**Recommendation.** B: children in the towns as the brief's lived-in world asks, at one body and up to a thousand triangles each; the school and the rites can come later without undoing anything. Pictures and approach: `docs/concepts.md`.
 
-## Answered
+Michael: **At play, by island** (B). (2026-11-12)
+
 ### Swords by island — the six makes as looks only, or Aurenne’s falchion and flyssa as kinds of their own? (from the systems builder, 2026-11-11, #1425)
 **The question.** The bodies builder has made six swords by island in the people's kit (Session 2096, OG-028): the Gatelands' arming sword, the Mark's Norse sword, and Aurenne's takouba, nimcha, falchion and flyssa. Before they go into the game, each item has to know which make it is. The game has a Sword, a Longsword and a Scimitar today, one look each, the same everywhere. Are the makes looks only, or are Aurenne's four kinds of their own?
 
