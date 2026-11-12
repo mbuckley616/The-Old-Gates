@@ -697,6 +697,9 @@ const SURV_ITEMS={
   fish:{name:'Fresh Fish',ico:'🐟',type:'misc',weight:.5,buyPrice:4,sellMult:.3,food:'fish'},
   produce:{name:'Root Vegetables',ico:'🥕',type:'misc',weight:.5,buyPrice:3,sellMult:.3,food:'produce'},
   messkit:{name:'Mess Kit',ico:'🥘',type:'misc',weight:1,buyPrice:8,sellMult:.4,tool:'messkit'}, /* S2028 — cooking B: a pot at a campfire */
+  skinknife:{name:'Skinning Knife',ico:'🔪',type:'misc',weight:.3,buyPrice:6,sellMult:.4,tool:'skinknife'}, /* S2123 — resources A: the hide off a hunted body */
+  hide:{name:'Hide',ico:'🟫',type:'misc',weight:2,buyPrice:10,sellMult:.4,hide:1},
+  salt:{name:'Salt',ico:'🧂',type:'misc',weight:.2,buyPrice:1,sellMult:.3,salt:1,bundle:1}, /* sold under a coin, so Aurenne's two for 1 is no trade */
 };
 // ── S2028 — Cooking B, session 1: the pot (Michael's B on #1296; `docs/design/cooking-build.md`). A main (meat, fish, produce) and
 // one of an island's three seconds make a dish: the main's kind, ×1.5 its length, and the second's rider. Each second is sold only
@@ -900,6 +903,15 @@ function bodyMeat(e,items,key){if(e&&e.swim&&(e.baseName==='Trout'||RIVER_FISH[e
   const N=MEAT_N[(e.name||'').split(' ').pop()]||[1,3];
   const r=key!=null?seededRng('meat',key):lootRand;items.push(survItem('meat',N[0]+Math.floor(r()*(N[1]-N[0]+1))));return items;}
 // S1759 — a trout (#1014 A): one, a fish like the sea's (0.6 weight, 9 gold), taken by hand or off its body when struck
+// ── S2123 — Resources and crafting A, session 1 (Michael's B on #1420; `docs/design/resources-and-crafting.md`): a hunted body's hide.
+// A deer, an elk, a stag, a boar, a wolf (every body that gives meat) has 1, a bear 2; a hare, the fox kind and the corrupted none. It lies
+// on the corpse beside the meat and is taken only with a skinning knife in the bag, in 2 s (`SKIN_MS`, read off the wall clock). No skill rises.
+const SKIN_MS=2000,HIDE_N={Bear:2,Hare:0};
+function bodyHide(e,items){if(!e||e.corrupt||e.swim||!MEAT_BODIES.test(e.name||''))return items;
+  const k=(e.name||'').split(' ').pop(),n=HIDE_N[k]!=null?HIDE_N[k]:1;if(n>0)items.push({...survItem('hide',n),_skin:1});return items;}
+function hasSkinKnife(){return BAG.some(b=>b&&b.tool==='skinknife');}
+// salt at a harbour's goods shop, a gold a measure; Aurenne's salt pans sell two for the gold (half price)
+function saltFor(h){const it=survItem('salt',houseIsle(h)==='aurenne'?2:1);return it;}
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish',food:'fish'};} /* S2028 — food, which the save keeps */
 // S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
 const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};
@@ -907,10 +919,11 @@ function riverFishItem(name){const f=RIVER_FISH[name];if(!f)return troutItem();r
 // the goods shop and the inn: the tinderbox and produce; fish in a port
 function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce},waterItem('skin')]; /* S2012 — a waterskin at every goods shop and inn */
   if(h.type==='misc')out.push({...SURV_ITEMS.messkit}); /* S2028 — the mess kit at every goods shop */
+  if(h.type==='misc')out.push({...SURV_ITEMS.skinknife}); /* S2123 — the skinning knife at every goods shop */
   try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));if(h.type==='misc')out.push(...campGearFor(nk)); /* S2090 — the rolls and the tent */if(nk==='mark')out.push(waterItem('canteen'));if(nk==='aurenne')out.push(waterItem('flask'));
     for(const k in DISH_SECONDS)if(DISH_SECONDS[k].isle===nk)out.push(secondItem(k));
     if(h.type==='inn'){out.push(dishOfDayItem(h));isleSeconds(nk).forEach(k=>out.push(cupItem(k)));}}}catch(e){} /* S2013 — by island; S2028 — its three seconds; S2035 — the inn's dish of the day and its three cups */
-  const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port')out.push({...SURV_ITEMS.fish});return out;}
+  const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port'){out.push({...SURV_ITEMS.fish});if(h.type==='misc')out.push(saltFor(h));} /* S2123 — salt at a harbour's goods shop */return out;}
 // the buff bar's pill for fed
 function fedPill(){const C=cupNow(),cp=C?`<span class="buff-pill" title="${DISH_RIDER[C.r].label} — a cup, ${Math.ceil(C.until-gameMinNow())} min remaining"><span class="bp-ico">🍺</span><span class="bp-time">${pillMin(Math.ceil(C.until-gameMinNow()))}</span></span>`:''; /* S2035 — a cup */
   return fedPill1()+cp;}

@@ -1860,6 +1860,7 @@ function killZoneEnemy(e,sc,tag=''){
   if(e.wild&&typeof wildTaken==='function')wildTaken(e);
   if(e.farmStock&&typeof stockKilled==='function')try{stockKilled(e);}catch(err){console.warn('stock',err);} /* S2008 — a farm's beast is theft (#1275 B) */
   bodyMeat(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); /* S1486 — meat off a bear, a boar or a wolf */
+  bodyHide(e,items); /* S2123 — its hide, for a skinning knife */
   bodyPicks(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S633 — a bandit's, kobold's, skeleton's or goblin's body may hold picks (#191 A)
   // v61c2 — Boss death hooks. The Faolchú gets:
   //   - guaranteed unique drop (The Faolchú's Mark amulet) prepended to
