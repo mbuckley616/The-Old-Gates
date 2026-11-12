@@ -416,7 +416,9 @@ function hcBirdPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
   HC.pose(C,rig.ph);
   // aloft the kit lifts its body by the plan's flyH: the group's own height is the flight, so the lift is taken back off
   if(gait==='soar'||gait==='stoop'||gait==='strike'){if(H.fly==null){C.root.updateMatrixWorld(true);const s0=C.byName.spine0;H.fly=s0?C.root.worldToLocal(s0.getWorldPosition(new THREE.Vector3())).y-H.spineY0:0;}H.W.position.y=H.y0-H.fly*H.f;}
-  else H.W.position.y=H.y0;rig.gaitNow=gait;}
+  else H.W.position.y=H.y0;rig.gaitNow=gait;
+  // S2120 — a fighting bird's wind-up red and a parry's gold, lit on the stand-in (the far level, hidden near), on the kit's hide too, as hcFishPose does
+  if(e.flier){const m=rig.mesh.material,em=m&&m.emissive?m.emissive.getHex():0;if(em!==H.em){H.em=em;for(const o of H.hide)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}}
 // Session 1712: the trout (L3's last common animal, OG-084: "trout; Rock Trout"). A fish has no legs for the wolf's driver, so it has
 // none, as the birds have none: `buildAnimal('Trout', key)` gives a rig whose root holds a plain stand-in (a body, a tail fan and a back
 // fin, one mesh, its head at +z, centred on the group's origin: the group's height is the depth it swims at), the far level and the old

@@ -152,12 +152,14 @@ if (gc.failing) { await enterDungeon(page, Object.assign({ theme: 'undead', seed
     for (let i = 0; i < 2400 && Object.keys(seen).length < 5; i++) { eagleTick(e, 1 / 60, T(), Math.hypot(px - e.x, pz - e.z)); look(); }
     const q = (a, b) => a && b ? +Math.max(...a.map((v, i) => Math.abs(v - b[i]))).toFixed(3) : 0;
     const near = { L: H.L, kit: H.W.visible, stand: rig.mesh.visible };
+    /* S2120 — the wind-up's red on the stand-in reaches the kit's hide */ const sm = enemyBodyMesh(e).material; sm.emissive.setHex(0xff2000); hcBirdPose(rig); const lit = H.hide.every(o => [].concat(o.material).some(x => x.emissive && x.emissive.getHex() === 0xff2000)); sm.emissive.setHex(0); hcBirdPose(rig); near.flash = lit && H.hide.every(o => [].concat(o.material).every(x => !x.emissive || x.emissive.getHex() === 0));
     CAM.position.set(e.x - 80, e.baseY + 1.65, e.z); CAM.updateMatrixWorld(true); hcTick(3e6); const far = { L: H.L, kit: H.W.visible, stand: rig.mesh.visible };
     return { rig: true, built: true, plan: C.plan.name, len, tris: C.stats && C.stats.tris, seen, moved: { stoop: q(wing.soar, wing.stoop), strike: q(wing.soar, wing.strike) }, near, far }; }); }
 console.log(JSON.stringify(BD));
 check('the dusk eagle wears the kit\'s duskeagle, 1.43 m beak to tail (±0.1)', BD && BD.built && BD.plan === 'Dusk Eagle' && Math.abs(BD.len - 1.43) < .1, BD);
 check('its gait is its flight: it soars circling and hanging, stoops on the dive and strikes at its foot', BD && BD.seen && BD.seen.circle === 'soar' && BD.seen.tell === 'soar' && BD.seen.dive === 'stoop' && BD.seen.low === 'strike' && BD.seen.climb === 'soar', BD && BD.seen);
 check('the stoop and the strike turn its wing from the soar\'s', BD && BD.moved && BD.moved.stoop > .05 && BD.moved.strike > .05, BD && BD.moved);
+check('a flash on its body (the wind-up\'s red) lights the kit\'s hide, and goes out with it (S2120)', BD && BD.near && BD.near.flash, BD && BD.near);
 check('near, the kit\'s body shows; far, the stand-in', BD && BD.near && BD.near.kit && !BD.near.stand && BD.far.L === 2 && !BD.far.kit && BD.far.stand, BD && [BD.near, BD.far]);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
