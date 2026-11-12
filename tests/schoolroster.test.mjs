@@ -134,5 +134,30 @@ check('it hangs for its tell, 0.9 s (54 ticks, ±2)', F.fly && Math.abs(F.fly.te
 check('it dives on where you stand and strikes; at the dive\'s foot, 1 m up, a blade reaches it', F.fly && F.fly.low.took > 0 && F.fly.low.y <= 1.05 && F.fly.low.blade, F.fly && F.fly.low);
 check('it climbs back and circles again', F.fly && F.fly.back.mode === 'circle' && F.fly.back.y >= 2.2, F.fly && F.fly.back);
 check('stepping 2.5 m aside as the tell ends, the dive strikes air', F.fly && F.fly.aside.took === 0 && F.fly.aside.d > 1.6, F.fly && F.fly.aside);
+
+// Session 2118 (the bodies builder's half): the eagle wears the kit's duskeagle near, the stand-in far, and its gait is its flight: it soars
+// as it circles, stoops on the dive (the wings half closed) and strikes at its foot (the wings up, the feet forward)
+let BD = null;
+if (gc.failing) { await enterDungeon(page, Object.assign({ theme: 'undead', seed: gc.failing, size: 'medium' }, Wst || {}));
+  BD = await page.evaluate(() => { const e = ENEMIES.find(x => x.baseType === 'Dusk Eagle'), rig = e && e.limbs && e.limbs.bird; if (!rig) return { rig: false };
+    ENEMIES.forEach(o => { if (o !== e) o.dead = true; }); px = e.x - 6; pz = e.z; PHP = 9999; blocking = false;
+    CAM.position.set(e.x - 6, e.baseY + 1.65, e.z); CAM.updateMatrixWorld(true);
+    let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 400) hcTick(2e6 + k * (HBODY.gap + 1));
+    if (!rig.hc) return { rig: true, built: false, fail: !!rig.hcFail };
+    const H = rig.hc, C = H.C, kb = new THREE.Box3(), inv = new THREE.Matrix4(); C.gait = 'stand'; HC.pose(C, 0); rig.root.updateMatrixWorld(true); inv.copy(rig.root.matrixWorld).invert();
+    for (const m of C.meshes) { m.geometry.computeBoundingBox(); kb.union(m.geometry.boundingBox.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, m.matrixWorld))); }
+    const len = +(kb.max.z - kb.min.z).toFixed(2), T = () => ({ x: px, z: pz }), seen = {}, wing = {};
+    const w0 = C.byName[C.B.wings[0].arm[0]];
+    const look = () => { e.mesh.updateMatrixWorld(true); rig.t = performance.now() / 1000 - 1 / 60; hcBirdPose(rig); seen[e.flier.mode] = C.gait; wing[C.gait] = wing[C.gait] || w0.quaternion.toArray().map(v => +v.toFixed(3)); };
+    for (let i = 0; i < 2400 && Object.keys(seen).length < 5; i++) { eagleTick(e, 1 / 60, T(), Math.hypot(px - e.x, pz - e.z)); look(); }
+    const q = (a, b) => a && b ? +Math.max(...a.map((v, i) => Math.abs(v - b[i]))).toFixed(3) : 0;
+    const near = { L: H.L, kit: H.W.visible, stand: rig.mesh.visible };
+    CAM.position.set(e.x - 80, e.baseY + 1.65, e.z); CAM.updateMatrixWorld(true); hcTick(3e6); const far = { L: H.L, kit: H.W.visible, stand: rig.mesh.visible };
+    return { rig: true, built: true, plan: C.plan.name, len, tris: C.stats && C.stats.tris, seen, moved: { stoop: q(wing.soar, wing.stoop), strike: q(wing.soar, wing.strike) }, near, far }; }); }
+console.log(JSON.stringify(BD));
+check('the dusk eagle wears the kit\'s duskeagle, 1.43 m beak to tail (±0.1)', BD && BD.built && BD.plan === 'Dusk Eagle' && Math.abs(BD.len - 1.43) < .1, BD);
+check('its gait is its flight: it soars circling and hanging, stoops on the dive and strikes at its foot', BD && BD.seen && BD.seen.circle === 'soar' && BD.seen.tell === 'soar' && BD.seen.dive === 'stoop' && BD.seen.low === 'strike' && BD.seen.climb === 'soar', BD && BD.seen);
+check('the stoop and the strike turn its wing from the soar\'s', BD && BD.moved && BD.moved.stoop > .05 && BD.moved.strike > .05, BD && BD.moved);
+check('near, the kit\'s body shows; far, the stand-in', BD && BD.near && BD.near.kit && !BD.near.stand && BD.far.L === 2 && !BD.far.kit && BD.far.stand, BD && [BD.near, BD.far]);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

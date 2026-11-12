@@ -621,17 +621,18 @@ function foeShoveYou(e){const m=e&&e.shove;if(!m||typeof activeZoneId==='undefin
 // the vault, `dCeil`), round its home and, once it has seen you, round you; out of a blade's reach there (`aloft`, as S1711's birds). It
 // stops and hangs for its 0.9 s tell, then dives at where you stood when the tell ended: step aside and it strikes air. At the dive's foot
 // it is 1 m up for 0.7 s, and a blade or a parry reaches it (a parry staggers it and it hangs there while staggered); then it climbs back
-// and circles 2.5 s before the next. An arrow or a word reaches it always. Its body is the kit's bird's stand-in (birdStandIn,
-// 34-creatures.js) until the bodies builder brings the eagle and its dive pose
+// and circles 2.5 s before the next. An arrow or a word reaches it always. Its body (S2118) is the kit's duskeagle near and the bird's
+// stand-in far (buildBird('Dusk Eagle'), 34-creatures.js), posed by its flight: it soars, stoops on the dive and strikes at its foot
 const DUSK_EAGLE={from:'Dire Wolf',ward:.7,alt:[4,6],ring:4.5,turn:.8,fly:5,tell:.9,dive:12,low:1,linger:.7,climb:4,rest:2.5,reach:1.6,aloft:2,sight:16,len:1.43,col:0x3b3f4c,light:0xa8ecff};
 function duskEagleBody(e,portal){if(!e||!e.mesh||e.baseType!=='Dusk Eagle')return false;const E=DUSK_EAGLE,D=ZONE_FOE_DEF[E.from];if(!D)return false;
   const g=e.mesh,L=e.limbs&&!Array.isArray(e.limbs)?e.limbs:{},hpBg=L.hpBg||e.hpBg;
   g.children.slice().forEach(c=>{if(c===hpBg||c===e.hpFg||c.isLight)return;g.remove(c);});g.scale.set(1,1,1);g.rotation.set(0,g.rotation.y,0);
-  const body=typeof birdStandIn==='function'?birdStandIn(E.len,E.col):new THREE.Mesh(new THREE.SphereGeometry(.3,8,6),new THREE.MeshLambertMaterial({color:E.col}));g.add(body);
+  const bird=typeof buildBird==='function'?buildBird('Dusk Eagle','gate:'+(e.id!=null?e.id:'')):null; /* S2118 — the kit's duskeagle near, the stand-in far (34-creatures.js) */
+  const body=bird?bird.mesh:new THREE.Mesh(new THREE.SphereGeometry(.3,8,6),new THREE.MeshLambertMaterial({color:E.col}));g.add(bird?bird.root:body);if(bird)bird.e=e;
   const ds=portal&&portal.diffScale||DIFF_SCALE.normal,tr=dungeonTier(portal,e.floor||1);
   e.hp=e.maxHp=Math.max(1,Math.round(D.hp*ds.hp*enemyHpScale(tr)));e.dmgMult=D.dmg/15*ds.dmg*enemyDmgScale(tr);e.tier=tr;e.spd=D.spd*ds.spd;e.rankSpd=D.spd;
   e.def=D.def||0;e.resist=Object.assign({},D.resist,{gaoth:E.ward});e.size=1;e.buildFn='bird';e._origCol=E.col;e.variant=null;e.xpMult=1;e.school='gaoth';
-  e.isWraith=false;e.ranged=false;e.shieldUp=false;e.disguised=false;e.dormant=false;e.limbs={hpBg,body};
+  e.isWraith=false;e.ranged=false;e.shieldUp=false;e.disguised=false;e.dormant=false;e.limbs=bird?{hpBg,body,bird}:{hpBg,body};
   const r=seededRng('eagle',e.id||'');e.flier={mode:'circle',a:r()*Math.PI*2,dir:r()<.5?-1:1,alt:E.alt[0]+r()*(E.alt[1]-E.alt[0]),y:E.alt[0],t:0,cd:E.rest,tx:0,tz:0};
   if(hpBg)hpBg.position.y=.6;if(e.hpFg)e.hpFg.position.y=.6;if(e.el){e.el.color.setHex(E.light);e.el.intensity=.5;}
   delete e.posture;delete e.maxPosture;initPosture(e);return true;}
