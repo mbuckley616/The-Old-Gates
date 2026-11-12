@@ -311,6 +311,13 @@ const astro = await page.evaluate(() => { const one = o => { const P = HB.makePe
 const as = astro.travel.st || {};
 check('Aldwyn travels with his astrolabe on his belt at the right hip: 0 points of him inside it, his arm and staff clear, the thong to the belt; the herald and the study carry none',
   astro.travel.on && /^spine0[12]$/.test(astro.travel.bone) && astro.travel.thong && as.inside === 0 && as.tested > 10 && !as.armIn && as.turn < -.5 && as.turn > -2.1 && as.tris < 2000 && !astro.study.on && !astro.herald.on, astro);
+// S2144 (L2, OG-053's rolled maps of the gates): three map rolls in Aldwyn's satchel on the travelling dress, standing out past both its
+// ends, nothing of him within them; neither other dress carries them
+const maps = await page.evaluate(() => { const one = o => { const P = HB.makePerson(HB.castGenome('Aldwyn', o), { hoodStats: false }); let n = 0, on = null; P.root.traverse(m => { if (m.name === 'mapRoll') { n++; on = m.parent && m.parent.name; } }); return { n, on, st: P.satchel && P.satchel.maps }; };
+  return { travel: one({ outfit: 'travel' }), study: one({ outfit: 'study' }), herald: one({}) }; });
+const ms = maps.travel.st || {};
+check('Aldwyn travels with three rolled maps in his satchel, standing out past both its ends: 0 points of him within them; the herald and the study carry none',
+  maps.travel.n === 3 && maps.travel.on === 'satchel' && ms.inside === 0 && ms.out.every(o => o.every(x => x >= .012)) && ms.tris < 1000 && !maps.study.n && !maps.herald.n, maps);
 check('Edna and Áine carry their sticks, and the cape stays on the shoulder: under 30 cm in front of the neck, nothing through it', Object.values(capes).every(c => c.staff && c.fwd < .3 && c.out === 0 && c.under === 0), capes);
 // S1809 (L2, OG-069): Niamh's lantern, in her right fist on the basket's grip, hanging clear of her and her cloak, on her wrist so it goes where the arm goes
 const lantern = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome('Niamh', {}), { hoodStats: false }), ln = P.root.getObjectByName('lantern');
