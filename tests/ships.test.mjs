@@ -24,7 +24,7 @@ check('the merchantman is a lofted cog (Session 285, Michael\'s A on #50), one b
 const deck = await page.evaluate(() => { const o = _O[1], m = o.mesh; const ry = m.rotation.y, c = Math.cos(ry), s = Math.sin(ry);
   const toW = (lx, lz) => [m.position.x + lx * c + lz * s, m.position.z - lx * s + lz * c]; const D = 1 + (typeof SEA_Y !== 'undefined' ? SEA_Y : 0);
   const y = (lx, lz) => { const [x, z] = toW(lx, lz); return +activeTerrainH(x, z).toFixed(2); }; const dk = o.plat.y;
-  const r = { deckY: dk, mid: y(0, 0), side: y(1.9, 0), oldBowCorner: y(2.0, 6.2), oldSternCorner: y(2.1, -6.4), bowPastBox: y(0, 7.6), wheel: y(0, -6.5 + 2.8), hatch: y(0, 6.5 - 3.2), out: y(3, 0) };
+  const r = { deckY: dk, mid: y(0, 0), side: y(1.9, 0), oldBowCorner: y(2.0, 6.2), oldSternCorner: y(2.1, -6.4), bowPastBox: y(0, m.userData.kit ? m.userData.deck.z1 - .2 : 7.6) /* S2157: a black sail on the new look is the kit's sloop, her deck her own lines' (to 0.2 m short of its forward end), not the old loft's overhang */, wheel: y(0, -6.5 + 2.8), hatch: y(0, 6.5 - 3.2), out: y(3, 0) };
   // and turned: the same at 37° off the axis (the old box's bounding square was widest there)
   o.yaw += .65; o.mesh.rotation.y = o.yaw + Math.PI; const c2 = Math.cos(o.mesh.rotation.y), s2 = Math.sin(o.mesh.rotation.y);
   r.turnedCorner = +activeTerrainH(m.position.x + 2.0 * c2 + 6.2 * s2, m.position.z - 2.0 * s2 + 6.2 * c2).toFixed(2); r.turnedMid = +activeTerrainH(m.position.x, m.position.z).toFixed(2);

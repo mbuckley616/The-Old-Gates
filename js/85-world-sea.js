@@ -148,7 +148,8 @@
   // kind 'sloop' | 'cog' | 'galleon' | 'cutter' | 'caravel'; look 'player' | 'pirate' | 'merchant'. One bake per kind and look, shared.
   // S2126 (card F11, L6) — a merchantman on the new look is the kit's cog too, in the dress of the island whose waters she sails (spawnOtherShip
   // passes it); a kit bake is keyed by its kind and dress alone, so she shares your cog's geometry and materials.
-  function shipBake(kind,look,dress){const kit=(kind==='sloop'||kind==='cutter'||kind==='caravel'||kind==='cog'||kind==='galleon')&&(look==='player'||(look==='merchant'&&kind==='cog'))&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships;
+  // S2157 (Michael's A on #1454) — a black sail too: the kit's hull of her waters on the same shared bake, her black dress laid on in buildShipMesh.
+  function shipBake(kind,look,dress){const kit=(kind==='sloop'||kind==='cutter'||kind==='caravel'||kind==='cog'||kind==='galleon')&&(look==='player'||look==='pirate'||(look==='merchant'&&kind==='cog'))&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.ships;
     if(kit)look='player';
     if(kit)dress=kind==='cutter'?'mark':kind==='caravel'?'aurenne':shipDress(dress); /* S1539 — the cutter is sold only at the Mark's yards; S1544 — the caravel only at Aurenne's */
     const key=kind+'|'+look+(kit?'|'+dress:'');let r=SHIP_GEO.get(key);if(r)return r;
@@ -443,8 +444,16 @@
     mesh.userData.trimSnap=true;
     if(!look&&r.kit){shipSwatchOn(mesh);shipBannerOn(mesh);} /* S1843 — your own ship in the yard's colours; S1919 — and her banner */
     if(look==='merchant'&&r.kit)shipBannerOn(mesh,r.dress); /* S2126 — a merchantman flies her own nation's banner, the dress as built */
+    if(look==='pirate'&&r.kit)shipBlackOn(mesh); /* S2157 — #1454 A: a black sail, the hull of her waters, no colours */
     return mesh;
   }
+  // S2157 (card F11, L6; Michael's A on #1454, the prototype S2127's blackSail) — a black sail's dress on a kit hull: her bake's materials
+  // swapped for PKIT.ships.black's (black cloth with the mark struck to a ghost, the red wale, tarred timber), hull and rigs; no banner.
+  // -> {dress, swapped: the count of materials changed}, or null on a hull that is not the kit's.
+  function shipBlackOn(mesh){const ud=mesh&&mesh.userData,r=ud&&SHIP_GEO.get(ud.bakeKey);if(!r||!r.kit||!PKIT.ships.black)return null;const d=r.dress||'gatelands';
+    mesh.material=PKIT.ships.black(r.mats,d);let n=mesh.material.filter((x,i)=>x!==r.mats[i]).length;
+    (ud.rigs||[]).forEach((q,i)=>{const R=r.rigs[i];if(R&&R.mats){q.m.material=PKIT.ships.black(R.mats,d);n+=[].concat(q.m.material).filter((x,j)=>x!==[].concat(R.mats)[j]).length;}});
+    return ud.black={dress:d,swapped:n};}
   // S1843 (#1133, Michael: as drawn) — the yard's colours: her paint and cloth (worldState.ship.paint, .cloth, indices into her dress's
   // PKIT.ships.SWATCHES; 0 or none the dress as built) laid on a kit hull's materials in place. The bake is shared and untouched; only the
   // mesh's material arrays change, so the yard (the systems builder's paintShip) repaints her by calling this again. sw overrides the
@@ -929,7 +938,7 @@
     // S168 — the black sail and the merchantman are looks of their own, not tints; S285 — the merchantman on the cog, broad and slow (Michael's A, #50)
     // S1839 — a black sail's hull by the water's tier (ck, blackSailCls in 86-world-crime.js; Michael's A on #1115): the sloop unless told
     const cls=kind==='pirate'?SHIP_CLASSES[ck&&SHIP_CLASSES[ck]?ck:'sloop']:SHIP_CLASSES.cog;
-    const dress=kind==='merchant'&&typeof nationAt==='function'?nationAt(x,z):undefined; /* S2126 — a merchantman is of the island whose waters she sails */
+    const dress=typeof nationAt==='function'?nationAt(x,z):undefined; /* S2126 — a merchantman is of the island whose waters she sails; S2157 — a black sail too (#1454 A) */
     const m=buildShipMesh(cls.L,cls.W,kind==='pirate'?'pirate':'merchant',cls.name==='cutter'?'cutter':undefined,dress);
     sc.add(m);
     if(id==null)id=`sea:${chunkKey(Math.floor(x/CHUNK),Math.floor(z/CHUNK))}:${Math.floor(worldState.gameTimeAbsMinutes||0)}:${kind}`;
