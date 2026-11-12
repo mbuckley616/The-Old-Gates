@@ -927,9 +927,9 @@ const RACK_KIND={rack:{name:'Tanner’s rack',takes:['hide']},dry:{name:'Drying 
 const RACK_HANG={hide:{need:b=>!!b.hide,say:'a hide'},meat:{need:b=>foodOf(b)==='meat',say:'raw meat'},fish:{need:b=>foodOf(b)==='fish',say:'a fish'}};
 function jerkyItem(food,day){const fish=food==='fish';
   return {name:fish?'Dried Fish':'Jerky',ico:fish?'🐟':'🥓',type:'potion',weight:.3,buyPrice:10,sellMult:.3,meal:{kind:FOOD_MEAL[food].kind,s:1,x:JERKY_X,made:day,jerky:1},brewKey:'jerky@'+food+'@d'+day};}
-// the racks a house keeps: both at a smith's, the drying rack at a harbour's goods shop. Returns [{kind, key}]
+// the racks a house keeps: both at a smith's and at a Mark hall's yard (S2142), the drying rack at a harbour's goods shop. Returns [{kind, key}]
 function curesOf(h){if(!h||!h.siteId)return [];const lot=String(h.id||'').replace('g_'+h.siteId+'_','')||'0',k=w=>`${h.siteId}:${lot}:${w}`;
-  if(h.type==='weapon')return [{kind:'rack',key:k('rack')},{kind:'dry',key:k('dry')}];
+  if(h.type==='weapon'||h._yard)return [{kind:'rack',key:k('rack')},{kind:'dry',key:k('dry')}]; /* S2142 — a Mark hall's yard (S1657) keeps both, as the page's every longhouse yard */
   if(homeMine(h))return ['rack','dry'].filter(f=>homeFitted(h,f)).map(f=>({kind:f,key:k(f)})); /* S2137 — your own house's racks, once fitted */
   const st=typeof SITE!=='undefined'?SITE[h.siteId]:null;if(h.type==='misc'&&st&&st.kind==='port')return [{kind:'dry',key:k('dry')}];return [];}
 function curesHere(){const T=typeof townRackNear==='function'?townRackNear():null;if(T)return curesOf(T.h); /* S2136 — a rack stood in its yard (82) opens its house's page */
