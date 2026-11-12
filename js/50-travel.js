@@ -584,9 +584,94 @@ function fieldGuidePages(){const sec=guideSections(),C=fieldGuideCount();
     for(let p=0;p<parts;p++){const rows=ks.slice(p*GUIDE_PER_PAGE,(p+1)*GUIDE_PER_PAGE).map(k=>{if(!plantSeen(k))return '— an empty frame —';const d=HERB_DEF[k];
         return d.name+' — '+herbRarity(k)+'\n'+herbWhere(k)+'\n'+herbFxLine(k);});
       pages.push(t+(parts>1?' ('+(p+1)+' of '+parts+')':'')+'\n\n'+rows.join('\n\n'));}}
+  /* S2158 — the rare specimens: named once picked or looked at shut, with their hour once known */
+  if(typeof SPEC_DEF!=='undefined'){const S=specKnown(),ks=Object.keys(SPEC_DEF);pages[0]+='\nRare specimens: '+ks.filter(k=>S.seen[k]).length+' of '+ks.length;
+    const rows=ks.map(k=>{const D=SPEC_DEF[k];if(!S.seen[k]&&!S.cond[k])return '— an empty frame —';const isle=GUIDE_ISLE[D.island];
+      return D.name+' — Rare'+(S.seen[k]?'':' (seen shut)')+'\n'+isle[0].toUpperCase()+isle.slice(1)+': '+D.biomes.map(b=>GUIDE_BIOME[b]||b).join(', ')+(D.water==='bank'?', on river banks':D.water?', by water':'')+'.\n'+(S.cond[k]?SPEC_WHEN[D.open]:'When it opens is not yet known.');});
+    for(let p=0;p<rows.length;p+=GUIDE_PER_PAGE)pages.push('RARE SPECIMENS'+(rows.length>GUIDE_PER_PAGE?' ('+(p/GUIDE_PER_PAGE+1)+' of '+Math.ceil(rows.length/GUIDE_PER_PAGE)+')':'')+'\n\n'+rows.slice(p,p+GUIDE_PER_PAGE).join('\n\n'));}
   return pages;}
 BOOKS.push({id:'field_guide',name:'A Field Guide to the Three Islands',ico:'📗',attr:null,get pages(){return fieldGuidePages();}});
 function fieldGuideFor(h){if(!h||!(h.type==='potion'||h.type==='apothecary'))return [];const def=BOOKS.find(b=>b.id==='field_guide');const it=makeBookItem(def);it.buyPrice=FIELD_GUIDE_PRICE;return [it];}
+// ── S2158 — rare specimens (#1463 B, session 2 of 3: placement, hours and buds) ──
+// Not herbs: no row in HERB_DEF or HERB_FX, so the four-effect pool and its suites stand. Each grows in patches on its own island,
+// 4 to 6 tries a cell of 2 to 4 plants, placed once per cell from the cell's hash and stable reads only (the cell's and its eight
+// neighbours' regions, rawH, the cell's sites), so a patch never hangs on what has loaded; each plant is <i>,<j>:sp:<kind>:<n>:<m>.
+// It opens at its hour or in its weather and is a closed bud otherwise (specOpen). E at a bud writes its condition into your guide
+// (learnSpecCond, the character's); E at an open one picks it (pickSpec): 10 Alchemy marks the first time, 1 after, the plant gone
+// for SPEC_REGROW_D game days (worldState.picked, the world's). Skyshard and Saltcrystal wait on the quest writer's yes on their names
+// (the page's "what must be true first"). The stand-in mesh is a kin herb's, whole when open and small and shut as a bud, until the
+// bodies builder's nine land. The catalysts and the study are session 3.
+const SPEC_DEF={
+  whispercap:{name:'Whispercap',island:'gatelands',kin:'shadowcap',biomes:['forest','autumn'],open:'dusk',price:45,eat:'stamina',desc:'A grey fungus of the old woods.'},
+  moonfenorchid:{name:'Moonfen Orchid',island:'gatelands',kin:'veilwort',biomes:['moor','swamp','fen'],water:'wet',open:'clearNight',price:70,eat:'mana',desc:'A pale orchid of the moor pools.'},
+  bloodreed:{name:'Bloodreed',island:'gatelands',kin:'muirfhear',biomes:['plains','forest','autumn','moor','fen','swamp'],water:'bank',open:'rain',price:50,eat:'health',desc:'A red-stemmed reed of the river margins.'},
+  ironleaf:{name:'Ironleaf',island:'mark',kin:'coldmoss',biomes:['tundra'],open:'snow',price:55,eat:'health',desc:'A dark leaf that unrolls under snow.'},
+  snowshroom:{name:'Snowshroom',island:'mark',kin:'frostcap',biomes:['forest'],open:'dawn',price:45,eat:'stamina',desc:'A white fungus of the spruce woods.'},
+  miragebloom:{name:'Miragebloom',island:'aurenne',kin:'sandlotus',biomes:['dunes'],open:'noonClear',price:70,eat:'mana',desc:'A flower of the dunes that opens in the noon glare.'},
+  sunglass:{name:'Sunglass',island:'aurenne',kin:'shardmoss',biomes:['dunes','wastes','wasteland'],open:'afterStorm',price:90,eat:'mana',desc:'Sand fused to glass where lightning struck.'}};
+const SPEC_REGROW_D=7,SPEC_RAIN_AFTER=120,SPEC_STORM_AFTER=360;
+const SPEC_WHEN={dusk:'It opens at dusk.',clearNight:'It opens at night under a clear sky.',rain:'It opens in the rain, and for a while after.',snow:'It opens under snow.',
+  dawn:'It opens at dawn.',noonClear:'It opens at noon under a clear sky.',afterStorm:'It opens after a storm.'};
+// the named action for the weather's history (the world's, worldState.wxSeen): the last minute it rained and the last it stormed
+function noteWeather(){if(typeof WX==='undefined')return;const t=WX.type,W=worldState.wxSeen||(worldState.wxSeen={}),now=gameMinNow();
+  if(t==='rain'||t==='storm')W.rain=now;if(t==='storm')W.storm=now;}
+function specClear(){return typeof WX!=='undefined'&&WX.type==='clear';}
+function specOpen(kind){const D=SPEC_DEF[kind];if(!D)return false;const h=gameHour(),W=worldState.wxSeen||{},now=gameMinNow(),t=typeof WX!=='undefined'?WX.type:'clear';
+  switch(D.open){case 'dusk':return h>=19&&h<22;case 'dawn':return h>=5&&h<8;case 'clearNight':return (h>=22||h<4)&&specClear();case 'noonClear':return h>=11&&h<15&&specClear();
+    case 'rain':return t==='rain'||t==='storm'||(W.rain!=null&&now-W.rain<=SPEC_RAIN_AFTER);case 'snow':return typeof WX!=='undefined'&&WX.cover>=.5;
+    case 'afterStorm':return t!=='storm'&&W.storm!=null&&now-W.storm<=SPEC_STORM_AFTER;}return false;}
+// the biome at a spot from the cell's and its neighbours' regions (lairBiome's read), never REGIONS
+function specBiome(x,z){const [ci,cj]=cellOf(x,z);let best=null,bw=0;for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){const c=getCell(i,j);if(!c||!c.regions)continue;
+    for(const r of c.regions){const d=Math.hypot(x-r.x,z-r.z)/r.r,w=Math.max(0,1-d);if(w>bw||(!bw&&(!best||d<best._d))){bw=w;best=r;r._d=d;}}}return best?best.biome:null;}
+// by a river or a lake: within SPEC_BANK m of its water, read from the routed carve grid (RVG, the same whether a cell is loaded or not)
+const SPEC_BANK=12,_specRs=[0,0];
+function specWaterNear(x,z){if(typeof RVG==='undefined')return false;if(!RV.ready)routeWorld();const bk=RVG.get(sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG)));if(!bk)return false;
+  for(const e of bk){if(e.lk){if(Math.hypot(x-e.lk.x,z-e.lk.z)<e.lk.r+SPEC_BANK)return true;continue;}riverSample(e.rv,e.i0,e.i1,x,z,_specRs);if(_specRs[0]<_specRs[1]+SPEC_BANK)return true;}return false;}
+const SPEC_CELLS=new Map();
+function specCell(i,j){const key=i+','+j;if(SPEC_CELLS.has(key))return SPEC_CELLS.get(key);const out=[];SPEC_CELLS.set(key,out);
+  let isle;try{isle=nationKeyOf(i,j);}catch(e){return out;}const c=getCell(i,j);const sites=[];for(let a=i-1;a<=i+1;a++)for(let b=j-1;b<=j+1;b++){const n=getCell(a,b);if(n&&n.sites)sites.push(...n.sites);}
+  const x0=i*SIZE,z0=j*SIZE;
+  for(const kind in SPEC_DEF){const D=SPEC_DEF[kind];if(D.island!==isle)continue;const R=seededRng('spec',key+':'+kind),n=4+Math.floor(R()*3);
+    for(let p=0;p<n;p++){let at=null;
+      for(let t=0;t<(D.water==='bank'?300:40)&&!at;t++){const x=x0+40+R()*(SIZE-80),z=z0+40+R()*(SIZE-80);if(D.water==='bank'&&!specWaterNear(x,z))continue;if(rawH(x,z)<1.6)continue;
+        const b=specBiome(x,z);if(!D.biomes.includes(b))continue;if(D.water==='wet'&&b==='moor'&&!specWaterNear(x,z))continue; /* the moor's pools; a fen or a swamp is wet ground */
+        if(sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||30)+20))continue;at=[x,z];}
+      if(!at)continue;const m=2+Math.floor(R()*3);
+      for(let q=0;q<m;q++){const a=R()*Math.PI*2,r=q?1.2+R()*2:0;out.push({id:key+':sp:'+kind+':'+p+':'+q,kind,x:at[0]+Math.cos(a)*r,z:at[1]+Math.sin(a)*r,ph:R()*Math.PI*2});}}}
+  return out;}
+const SPECS=[];
+function specGeo(kind){const D=SPEC_DEF[kind];try{return typeof plantGeo==='function'?plantGeo(D.kin,false):null;}catch(e){return null;}}
+// a chunk's specimens, when it builds (called from spawnChunkVeins)
+function spawnChunkSpecs(ch){if(typeof getCell!=='function')return;const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK,[i,j]=cellOf(x0+CHUNK/2,z0+CHUNK/2);
+  for(const p of specCell(i,j)){if(p.x<x0||p.x>=x0+CHUNK||p.z<z0||p.z>=z0+CHUNK)continue;const s={...p,g:null,ch};
+    try{const geo=specGeo(p.kind);if(geo){const m=new THREE.Mesh(geo,typeof PLANT_MAT!=='undefined'?PLANT_MAT:new THREE.MeshLambertMaterial({vertexColors:true}));m.name='spec';m.receiveShadow=true;
+      m.position.set(p.x,worldH(p.x,p.z),p.z);m.rotation.y=p.ph;s.g=m;ch.group.add(m);}}catch(e){}
+    SPECS.push(s);specShow(s);}}
+function specLive(s){return !s.g||!!(s.g.parent&&s.g.parent.parent);}
+function specGone(s){const P=worldState.picked,t=P&&P[s.id];return t!=null&&gameMinNow()-t<SPEC_REGROW_D*1440;}
+// open, a bud, or gone: the stand-in whole (×1.444, the herbs' true size), shut small, or hidden
+function specShow(s){if(!s.g)return;const gone=specGone(s),open=specOpen(s.kind),K=typeof herbLift==='function'?herbLift():1;s.g.visible=!gone;
+  if(open)s.g.scale.set(K,K,K);else s.g.scale.set(K*.45,K*.3,K*.45);s.shown=gone?'gone':open?'open':'bud';}
+let _specT=0;
+function tickSpecs(dt){_specT-=dt;if(_specT>0)return;_specT=1;noteWeather();
+  for(let i=SPECS.length-1;i>=0;i--){const s=SPECS[i];if(!specLive(s)){SPECS.splice(i,1);continue;}if(Math.abs(s.x-px)<150&&Math.abs(s.z-pz)<150)specShow(s);}}
+function specNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;let best=null,bd=TOUCH;
+  for(const s of SPECS){if(!specLive(s)||specGone(s))continue;const d=Math.hypot(px-s.x,pz-s.z);if(d<bd){bd=d;best=s;}}return best;}
+function specKnown(){const K=herbsKnown();return K.spec||(K.spec={seen:{},cond:{}});}
+// the named actions: a condition learnt at a bud, a specimen picked
+function learnSpecCond(kind){const S=specKnown();if(S.cond[kind])return false;S.cond[kind]=1;return true;}
+function specItem(kind){const D=SPEC_DEF[kind],e=D.eat==='health'?[{type:'heal',amount:15},'Restores 15 HP']:D.eat==='stamina'?[{type:'stamina',amount:20},'Restores 20 Stamina']:[{type:'mana',amount:25},'Restores 25 Mana'];
+  return {name:D.name,ico:'✿',type:'herb',spec:kind,effect:e[0],knownDesc:e[1],buyPrice:D.price,sellMult:.8,weight:.1,qty:1};}
+function pickSpec(s){if(!s||specGone(s))return {why:''};const D=SPEC_DEF[s.kind];
+  if(!specOpen(s.kind)){const fresh=learnSpecCond(s.kind);return {bud:true,said:`${D.name}: a closed bud. ${SPEC_WHEN[D.open]}`,fresh};}
+  const it=specItem(s.kind);if(!canCarry(it))return {why:'Too heavy to carry!'};
+  const S=specKnown(),first=!S.seen[s.kind];S.seen[s.kind]=1;learnSpecCond(s.kind);
+  (worldState.picked||(worldState.picked={}))[s.id]=gameMinNow();bagAdd(it);skillUse('alchemy',first?FIRST_PICK_MARKS:1,s.id);specShow(s);
+  return {picked:D.name,first};}
+function specUse(s){const r=pickSpec(s);if(r.why){if(r.why)showMsg(r.why,'#cc8844');return;}
+  if(r.bud){showMsg(r.said,'#c8b8e8');if(r.fresh)addLog('✿',r.said);return;}
+  addLog('✿','Picked '+r.picked);if(typeof uiTone==='function'){uiTone(320,420,.12,.1,'sine');}showMsg('Picked '+r.picked+'!','#e8c8f0');}
+function specPrompt(s){const D=SPEC_DEF[s.kind];return specOpen(s.kind)?`Press 'E' to pick the ${D.name}`:`A closed bud · E to look closer`;}
 // S1499 — Tell (Alchemy 25): a herb's hidden effect is learnt at 5 eats, not HIDDEN_UNLOCK_COUNT's 15
 function herbTellCount(){return perk('alchemy',25)?5:HIDDEN_UNLOCK_COUNT;}
 function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=herbTellCount())return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
@@ -881,6 +966,7 @@ let _mealTurnAt=-1;
 function mealTurnPass(){BAG.forEach(b=>{if(b&&b.meal&&!b.meal.turned&&mealTurned(b)){b.meal.turned=1;b.name+=' (turned)';}});}
 // each frame: a fire burnt out is taken away, the flame flickers; Steady's health. Called from the loop beside the buffs
 function tickSurvival(dt){const t=gameMinNow();
+  try{tickSpecs(dt);}catch(e){} /* S2158 — the weather's history and the specimens' buds */
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){layAsh(f);dropFire(f);CAMPFIRES.splice(i,1);continue;}
     if(f.mesh&&f.mesh.userData.fire){try{f.mesh.userData.fire.tick(f,FIRE_HOURS);}catch(e){}continue;} /* S2114 — the kit's fire: its stage and its flames */
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
@@ -1190,7 +1276,7 @@ function gardenPlant(h,bi,what,v){if(!homeMine(h)||!homeFitted(h,'garden'))retur
   if(bi<0||bi>=GARDEN_BEDS)return {done:false,why:''};if(L[bi])return {done:false,why:'Something grows in that bed already.'};
   if(what==='second'){if(!DISH_SECONDS[v])return {done:false,why:''};if(DISH_SECONDS[v].isle!==houseIsle(h))return {done:false,why:`${DISH_SECONDS[v].name} will not grow on this island.`};
     if(!bagTake(b=>b.second===v,1))return {done:false,why:`You have no ${DISH_SECONDS[v].name.toLowerCase()}.`};L[bi]={k:'second',s:v,at:gameMinNow()};return {done:true};}
-  if(what==='herb'){const i=BAG.findIndex(b=>b&&b.type==='herb'&&b.name===v);if(i<0)return {done:false,why:'You have no such herb.'};
+  if(what==='herb'){const i=BAG.findIndex(b=>b&&b.type==='herb'&&!b.spec&&b.name===v); /* S2158 — a rare specimen is not sown */if(i<0)return {done:false,why:'You have no such herb.'};
     const it=JSON.parse(JSON.stringify({...BAG[i],qty:1}));delete it.stolen;bagTake(b=>b===BAG[i],1);L[bi]={k:'herb',item:it,at:gameMinNow()};return {done:true};}
   return {done:false,why:''};}
 // gather a bed that is ready. Returns {done, got} or {done:false, why}
@@ -1531,7 +1617,8 @@ function spawnChunkVeins(ch){
     const id=ch.cx+','+ch.cz+':'+c.i,tier=veinTier(c.x,c.z);
     const v={id,x:c.x,z:c.z,tier,ore:veinOre(id,tier),ph:hash01(ch.cx+c.i,ch.cz,304)*Math.PI*2,g:null};
     try{v.g=veinMesh(v);ch.group.add(v.g);}catch(e){}
-    (ch.veins||(ch.veins=[])).push(v);VEINS.push(v);veinShow(v);}}
+    (ch.veins||(ch.veins=[])).push(v);VEINS.push(v);veinShow(v);}
+  try{spawnChunkSpecs(ch);}catch(e){}} /* S2158 — the rare specimens' patches in this chunk */
 function veinLive(v){return !v.g||!!(v.g.parent&&v.g.parent.parent);}
 // the vein's record, brought back if 7 days have passed since it was worked out
 function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id];
@@ -2847,6 +2934,7 @@ function interact(){
     // Herb harvest — all zones
     const nearHerb=activeHerbs().find(h=>!h.harvested&&!h._tolled&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
     if(nearHerb){harvestHerb(nearHerb);return;}
+    {const sp=specNear();if(sp){specUse(sp);return;}} /* S2158 — a rare specimen: picked open, looked at shut */
     {const v=veinNear();if(v){mineVein(v);return;}} /* S1491 — a vein, with a pick */
     {const n=treeNear();if(n&&(chopTool()||(CHOP&&CHOP.t===n.t))){chopTree(n.ch,n.t);return;}} /* S1511 — a tree, with a hatchet */
     if(hasShovel()&&(DIG||clayBankHere())&&digStart())return; /* S2138 — clay from a bank, with a shovel */
