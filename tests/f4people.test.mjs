@@ -297,6 +297,13 @@ const satchel = await page.evaluate(() => { const one = o => { const P = HB.make
   return { travel: one({ outfit: 'travel' }), herald: one({}) }; });
 const st = satchel.travel.st || {};
 check('Aldwyn travels in the charcoal coat with the satchel on his hip: 0 points inside the bag, his arm clear of it, nothing through its strap; the herald carries none', satchel.travel.bag && satchel.travel.strap && satchel.travel.coat && satchel.travel.onHip && st.inside === 0 && st.armInside === 0 && !st.armIn && st.strap.through === 0 && st.strap.tested > 100 && st.strap.len > 1.2 && st.strap.len < 2.2 && !satchel.herald.bag && !satchel.herald.coat, satchel);
+// S2135 (L2, OG-053): Aldwyn's private study, the cream undertunic under the red over-robe worn open, his journal shut in his right fist
+// by its spine, the wheel on its covers: nothing of him within a centimetre of it; neither other dress carries it
+const study = await page.evaluate(() => { const one = o => { const P = HB.makePerson(HB.castGenome('Aldwyn', o), { hoodStats: false }), b = P.root.getObjectByName('book'); return { book: !!b, on: b && b.parent && b.parent.name, coat: !!P.root.getObjectByName('coat'), dev: !!P.root.getObjectByName('bookDevice'), st: P.book }; };
+  return { study: one({ outfit: 'study' }), travel: one({ outfit: 'travel' }), herald: one({}) }; });
+const bs = study.study.st || {};
+check('Aldwyn in his study carries his journal in his right fist, the coat open over the undertunic: 0 points of him within 1 cm of the book, the fist on its spine; the herald and the traveller carry none',
+  study.study.book && study.study.on === 'wrist.R' && study.study.coat && study.study.dev && bs.inside === 0 && bs.tested > 100 && bs.handPts > 100 && bs.tris < 1000 && !study.travel.book && !study.herald.book, study);
 check('Edna and Áine carry their sticks, and the cape stays on the shoulder: under 30 cm in front of the neck, nothing through it', Object.values(capes).every(c => c.staff && c.fwd < .3 && c.out === 0 && c.under === 0), capes);
 // S1809 (L2, OG-069): Niamh's lantern, in her right fist on the basket's grip, hanging clear of her and her cloak, on her wrist so it goes where the arm goes
 const lantern = await page.evaluate(() => { const P = HB.makePerson(HB.castGenome('Niamh', {}), { hoodStats: false }), ln = P.root.getObjectByName('lantern');
