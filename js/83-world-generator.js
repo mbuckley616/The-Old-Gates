@@ -892,7 +892,7 @@ function genSettlement(site){
         const hh={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name:hName,keeper:rdef.name,_twin:rdef._twin,type:'home',tagline:'',bCol:rdef.bCol,sCol:rdef.sCol,dlg:rdef,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,roleTag:rdef.roleTag,siteKind:site.kind,siteId:site.id,kit:lot.kit||null};
         if(lot._shuttered){hh.shuttered=true;hh.name=`${hName} (shuttered)`;hh.tagline='Gone to the city. Door nailed.';}
         if(ownedHouse(hh.id)){hh.name='Your House';hh.ownedByPlayer=true;}else rdef._extra.unshift(...houseTopics(hh));
-        houses.push(hh);
+        houses.push(hh);Object.defineProperty(hh,'_lot',{value:lot}); /* S2142 — a home's yard too, for the racks you fit (homeYardRacks, 84) */
         // residents stream in by distance (a city has 150+ of them)
         if(!hh.ownedByPlayer)S.residents.push({def:rdef,ry:lot.ry+Math.PI,n:null,door:{x:exX,z:exZ}}); // S530 — the seller moved out
         return;

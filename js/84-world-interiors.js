@@ -354,8 +354,9 @@
   // the ground floor's free spots by a wall for a thing w wide and d deep (its foot from the wall, plus `front` clear before it): the outer
   // walls back, west and east, then each face of a partition (a solid from the floor past 2 m, under 0.3 thick and 1.8 long), the front
   // wall last, each from its middle outward in steps of 0.1 m. What stands upstairs (a bed, the roof's hatch) does not count.
+  // wallOk(x, z, nx, nz, ax, az, w), if given, is asked last (it may be dear): is the wall whole behind the thing there.
   // -> {x, z, ry, box, front} or null; box is the foot in the room's frame, front the spot 0.3 m before its front edge
-  function homeWallSpot(h,w,d,front){const W=h._roomW||h.intW,D=h._roomD||h.intD;if(!W||!D)return null;
+  function homeWallSpot(h,w,d,front,wallOk){const W=h._roomW||h.intW,D=h._roomD||h.intD;if(!W||!D)return null;
     const keep=[];const dx=typeof intDoorX==='function'?intDoorX(h):W/2;keep.push([dx,D,1.9]);
     try{keep.push([intArriveX(h),intArrivalZ(h),1.2]);}catch(e){}
     for(const b of INT_BEDS||[])if(!(b.y>1))keep.push([b.x,b.cz!=null?b.cz:b.z,.9]);
@@ -379,16 +380,26 @@
         if(test.x0<.05||test.z0<.05||test.x1>W-.05||test.z1>D-.05)continue;
         if(low.some(s=>over(test,s)))continue;
         if(keep.some(([x,z,r])=>Math.hypot(x-Math.max(foot.x0,Math.min(foot.x1,x)),z-Math.max(foot.z0,Math.min(foot.z1,z)))<r))continue;
+        if(wallOk&&!wallOk(wx,wz,wl.nx,wl.nz,wl.ax,wl.az,w))continue;
         return {x:wx+wl.nx*gap,z:wz+wl.nz*gap,ry,box:foot,front:[wx+wl.nx*(gap+d+.3),wz+wl.nz*(gap+d+.3)]};}}
     return null;}
   // the bench is the kit's 1.5 m one where it fits, else its 1.1 m one (a full room: Dunmore's townhouse)
   function homeBenchLay(h){if(typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.bench)return;let B=null,sp=null;
-    for(const L of [1.5,1.1]){const f={x0:-L/2,x1:L/2,z0:0,z1:.86};sp=homeWallSpot(h,f.x1-f.x0,f.z1-f.z0,.8);if(sp){B=PKIT.props.bench({L});break;}}
+    for(const L of [1.5,1.1]){const f={x0:-L/2,x1:L/2,z0:0,z1:.86};sp=homeWallSpot(h,f.x1-f.x0,f.z1-f.z0,.8,homeWallWhole);if(sp){B=PKIT.props.bench({L});break;}}
     if(!sp)return;
     B.group.position.set(sp.x,0,sp.z);B.group.rotation.y=sp.ry;B.group.userData.homeFit='bench';B.group.userData.kit={tris:B.tris,draws:B.draws,L:B.foot.x1-B.foot.x0};
     B.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(B.group);
     const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:B.top,homeFit:'bench'});FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:B.top,homeFit:'bench'});
     h._fits.bench={x:+sp.front[0].toFixed(3),z:+sp.front[1].toFixed(3)};}
+  // the wall behind a thing w wide is whole: from 0.3 m into the room, rays back to the wall at 0.5, 1.0 and 1.4 m up, at its middle and
+  // 0.1 m in from each end, each meet the room within 0.45 m (a doorway, an open window or the stair's well lets one through: the
+  // townhouse's back door, where the first try hung the bench's tools)
+  const HF_RAY=new THREE.Raycaster(),HF_O=new THREE.Vector3(),HF_D=new THREE.Vector3();
+  function homeWallWhole(x,z,nx,nz,ax,az,w){const ms=[];interiorScene.updateMatrixWorld(true);
+    interiorScene.traverse(o=>{if(o.isMesh&&o.visible&&!o.userData.daylight){for(let p=o;p;p=p.parent)if(p.userData&&p.userData.homeFit)return;ms.push(o);}});
+    HF_D.set(-nx,0,-nz);HF_RAY.far=.45;
+    for(const u of [-w/2+.1,0,w/2-.1])for(const y of [.5,1.0,1.4]){HF_O.set(x+ax*u+nx*.3,y,z+az*u+nz*.3);HF_RAY.set(HF_O,HF_D);HF_RAY.far=.45;if(!HF_RAY.intersectObjects(ms,false).length)return false;}
+    return true;}
   // the yard's racks for your own house: struck and stood again by what is fitted now (townRacks lays what curesOf gives, the fitted ones)
   function homeYardRacks(h){const S=typeof SETTLE!=='undefined'&&SETTLE.get(h.siteId);if(!S||!S.group||!Array.isArray(S.racks)||typeof townRacks!=='function')return;
     for(let i=S.racks.length-1;i>=0;i--){const R=S.racks[i];if(R.house!==h.id)continue;S.group.remove(R.g);R.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});S.racks.splice(i,1);

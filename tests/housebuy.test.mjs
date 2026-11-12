@@ -46,5 +46,21 @@ check(`the town built again: Your House, no resident for it, nothing on sale (${
 const cellar = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id); const was = currentHouse;
   currentHouse = cellarFor(h); const a = ssPlaceName(); currentHouse = h; const b = ssPlaceName(); currentHouse = was; return { cellar: a, upstairs: b }; }, pick.id);
 check(`a save in the cellar names the town ("${cellar.cellar}"), as upstairs does ("${cellar.upstairs}")`, /, Dunmore$/.test(cellar.cellar) && /cellar/.test(cellar.cellar) && cellar.upstairs === 'Your House, Dunmore', cellar);
+// S2142 (the look builder): a workbench fitted in Your House stands against a whole wall of its ground floor, clear of the room's solids,
+// and you work at it from its front (house._fits.bench, homeFitHere at 2 m); Dunmore's townhouse has no such wall free (its one run is the
+// back door), so there it is worked anywhere in the house. A tanner's rack fitted stands in the yard at once
+await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id); gold = 5000; homeFit(h, 'bench'); px = h.exitX; pz = h.exitZ; goToInterior(h); }, pick.id);
+for (let n = 0; n < 40 && !(await page.evaluate(() => isInterior())); n++) await page.waitForTimeout(250);
+await g.frames(2);
+const fit = await page.evaluate(() => { const h = currentHouse, B = interiorScene.children.find(o => o.userData.homeFit === 'bench'), sp = h._fits && h._fits.bench, mine = INT_SOL.find(s => s.homeFit === 'bench');
+  const others = mine ? INT_SOL.filter(s => !s.homeFit && s.y0 < 1.6 && s.y1 > .05 && s.x0 < mine.x1 && s.x1 > mine.x0 && s.z0 < mine.z1 && s.z1 > mine.z0).length : -1;
+  const sx = px, sz = pz, far = homeFitHere('bench'); let at = false; if (sp) { px = sp.x; pz = sp.z; at = homeFitHere('bench'); px = sx; pz = sz; }
+  return { placed: !!B, sp, others, inRoom: !!mine && mine.x0 >= 0 && mine.z0 >= 0 && mine.x1 <= h._roomW && mine.z1 <= h._roomD, at, far, L: B && B.userData.kit.L }; });
+check(fit.placed ? `a workbench fitted stands in Your House (${fit.L} m, its front at ${fit.sp.x}, ${fit.sp.z}), clear of the room's solids, worked from its front` : 'a workbench fitted in a room with no whole wall free for it is worked anywhere in the house (the rules\' fallback)',
+  fit.placed ? fit.others === 0 && fit.inRoom && fit.at && !fit.far : !fit.sp && fit.far, fit);
+await page.evaluate(() => exitInterior()); for (let n = 0; n < 40 && (await page.evaluate(() => isInterior())); n++) await page.waitForTimeout(250);
+const yard = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id); homeFit(h, 'rack'); const n1 = S.racks.filter(R => R.house === id).length;
+  homeUnfit(h, 'rack'); return { n1, n2: S.racks.filter(R => R.house === id).length }; }, pick.id);
+check('a tanner\'s rack fitted stands in the yard at once, and goes when taken out', yard.n1 === 1 && yard.n2 === 0, yard);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
