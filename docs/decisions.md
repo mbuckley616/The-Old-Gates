@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The singing ship — how is she seen in fog of 60 m? (from the concept artist, 2026-11-12, #1486)
+**The question.** Backlog L6, *Sea legends* (OG-049): a ghost ship heard singing in fog. The quest writer's draft (*Sea Legends, I*, unapproved) puts her 150–200 m off your bow in fog, but Michael's C on #679 closes fog to 60 m, so as drafted nobody would see her. She is the Aurenne cog (17 m) long at sea: grey patched canvas, silvered hull, pewter gilt, dark lanterns; 41k triangles in 13 draws. Page: `docs/prototypes/levelup/singer.html`.
+
+**Options.**
+- **A. The fog holds.** She obeys the 60 m rule: 50 m off, a grey shape in the grey; the draft's distances shrink to fit.
+- **B. A lane opens to her** *(recommended)*. Fog thins to a quarter along a 22 m lane from your bow to her, so she stands 160 m off as drafted; elsewhere fog stays at 60 m.
+- **C. OG-049 as drawn.** The fog doesn't take her: pale green light in her canvas and timbers, a little see-through, 160 m off.
+
+**Recommendation: B.** Keeps the draft's distances and the fog rule; the wrongness lives in the weather. C is the stock spectre, against the draft's "sad and a little funny"; A leaves her a smudge. Cost: one change to the fog shader.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
