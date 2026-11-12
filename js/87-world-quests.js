@@ -311,9 +311,9 @@ const giver=`${lord.title} ${lord.name}`;
       return {id:'war:'+site.id+':held:'+st.flags.occupied,kind,giver,giverSite:site.id,title:`${site.name} under ${P}`,desc:`${lord.name}: "${offer}"`,offer,objective:`Kill ${P}'s garrison on ${site.name}'s plaza`,data:{siteId:site.id,x:site.x+8,z:site.z+8,by:st.occupier},reward:n};}
     return null;}
   function warJobOpen(t,kind){return qActive().find(q=>q.kind===kind&&q.data&&q.data.siteId===t.id&&!q.done)||null;}
-  function takeWarJob(siteId,kind){const site=siteAnywhere(siteId);if(!site)return null;const q=warJobFor(site,kind);if(!q||qFind(q.id))return null;qAdd(q);return q;}
+  function takeWarJob(siteId,kind,at){const site=at&&at.id===siteId?at:siteAnywhere(siteId);if(!site)return null;const q=warJobFor(site,kind);if(!q||qFind(q.id))return null;qAdd(q);return q;}
   function warJobTopic(site,kind){const id=()=>{const q=warJobFor(site,kind);return q?q.id:null;};
-    return {label:kind==='warcamp'?'I\u2019ll break the camp.':'I\u2019ll clear the plaza.',quest:true,avail:()=>{const i=id();return !!i&&!qFind(i);},fn:()=>{const q=takeWarJob(site.id,kind);return q?q.offer+` (${q.reward} gold.)`:'';}};}
+    return {label:kind==='warcamp'?'I\u2019ll break the camp.':'I\u2019ll clear the plaza.',quest:true,avail:()=>{const i=id();return !!i&&!qFind(i);},fn:()=>{const q=takeWarJob(site.id,kind,site);return q?q.offer+` (${q.reward} gold.)`:'';}};}
   function lordTopics(site){
     const _st=TS(site),_lp=nationOf(...cellOf(site.x,site.z)).people;
     if(_st.flags.occupied!=null){const P=polityName(_st.occupier),Pc=polityName(_st.occupier,true);const L={gatelander:`${Pc}, for now. Their captain sits in my chair and their soldiers stand on my plaza. A town's not taken till it's kept, and they've not kept it yet. Clear the plaza and there's nothing in this town I'd not give you.`,markman:`${Pc}. Their captain's in my chair, their men are on the plaza. Kill the lot and the town's ours again. I'd do it myself if I had the arm.`,aurennais:`${Pc}, Master, under terms we were not asked to sign. Their captain keeps my chair and their men keep the plaza. Should the garrison cease, the town reverts to its proper holders, and its gratitude to you would be entered in the books.`};return [{label:'Who holds the town?',response:L[_lp]||L.gatelander},warJobTopic(site,'garrison')];}
