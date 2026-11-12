@@ -812,7 +812,7 @@ function lightFire(){
   try{f.mesh=campfireMesh(x,z);scene.add(f.mesh);f.scn=scene;}catch(e){f.mesh=null;}
   CAMPFIRES.push(f);showMsg('The fire catches.','#ffb060');if(typeof renderHubInv==='function')renderHubInv();return f;}
 function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
-// S2147 — the cold ash: a fire burnt out or doused leaves the kit's 'out' stage (ash and charred stubs, a thread of smoke) where it lay, for
+// S2149 (first numbered 2147) — the cold ash: a fire burnt out or doused leaves the kit's 'out' stage (ash and charred stubs, a thread of smoke) where it lay, for
 // ASH_HOURS of the game clock, the newest ASH_MAX kept; nothing reads it as a fire. On the old look the stand-in has no 'out' and goes as before
 const ASH_HOURS=24,ASH_MAX=6,FIRE_ASH=[];
 function layAsh(f){const g=f&&f.mesh,u=g&&g.userData.fire,par=g&&g.parent;if(!u||!par||typeof campFireProp!=='function')return false;
@@ -832,7 +832,7 @@ function tickSurvival(dt){const t=gameMinNow();
   for(let i=CAMPFIRES.length-1;i>=0;i--){const f=CAMPFIRES[i];if(f.until<=t){layAsh(f);dropFire(f);CAMPFIRES.splice(i,1);continue;}
     if(f.mesh&&f.mesh.userData.fire){try{f.mesh.userData.fire.tick(f,FIRE_HOURS);}catch(e){}continue;} /* S2114 — the kit's fire: its stage and its flames */
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
-  tickAsh(t); /* S2147 — the ash goes after its hours */
+  tickAsh(t); /* S2149 (first numbered 2147) — the ash goes after its hours */
   if(t!==_mealTurnAt){_mealTurnAt=t;mealTurnPass();} /* S2033 — meals turn */
   tickLeanTos();tickMining(dt);tickDig();tickFelling(dt);tickTrunks();tickShipWork(dt);tickWater(); /* S2012 — rain fills your water */
   if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2*fedRich());

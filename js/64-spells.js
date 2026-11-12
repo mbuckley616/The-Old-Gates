@@ -1541,7 +1541,7 @@ function touchFire(){if(typeof CAMPFIRES==='undefined'||activeZoneId!=='world'||
   let best=null,bd=1e9;for(const f of CAMPFIRES){if(!(f.until>t))continue;const dx=f.x-px,dz=f.z-pz,d=Math.hypot(dx,dz);
     if(d>FORMS.touched.reach+STEP_BODY+1e-9)continue;if(d>1e-3&&(-dx*Math.sin(yaw)-dz*Math.cos(yaw))/d<c-1e-9)continue;if(d<bd){bd=d;best=f;}}
   return best;}
-function douseFire(f){const i=CAMPFIRES.indexOf(f);if(i<0)return false;if(typeof layAsh==='function')layAsh(f); /* S2147 — doused, it leaves its ash */dropFire(f);CAMPFIRES.splice(i,1);if(SKILL_DEF.uisce)skillUse('uisce',1,'douse');return true;}
+function douseFire(f){const i=CAMPFIRES.indexOf(f);if(i<0)return false;if(typeof layAsh==='function')layAsh(f); /* S2149 (first numbered 2147) — doused, it leaves its ash */dropFire(f);CAMPFIRES.splice(i,1);if(SKILL_DEF.uisce)skillUse('uisce',1,'douse');return true;}
 // S1680 — a touch on a gate's things (the look builder's S1675 braziers and webs, S1678 pools): Caor "lights a brazier, burns a web",
 // Sioc "freezes a pool". The thing's nearest surface (a brazier's 0.55 m bowl, a web's span, a pool's kerb) within the touch's 1.6 m of
 // your edge and in its 60° cone, on your floor; the nearest wins. S1717: Loscadh's touch fires a lair's dry brush (#973 A, S1708's fireBrush),

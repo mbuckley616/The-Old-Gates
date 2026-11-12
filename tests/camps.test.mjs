@@ -85,7 +85,7 @@ const fr = await page.evaluate(() => { const out = {}, box = new THREE.Box3();
   BAG.push(survItem('tinderbox'), survItem('log')); const F = lightFire();
   out.lit = F && F.mesh && F.mesh.userData.fire ? { island: F.mesh.userData.fire.island, want: nationKeyOf(...cellOf(F.x, F.z)), stage: F.mesh.userData.fire.stage } : null;
   if (F) { FIRE_ASH.splice(0).forEach(dropFire); F.until = gameMinNow(); tickSurvival(1 / 60); out.gone = !F.mesh.parent && !CAMPFIRES.includes(F);
-    /* Session 2147: it leaves its cold ash where it lay, which is no fire, and the ash goes after ASH_HOURS */
+    /* Session 2149 (first numbered 2147): it leaves its cold ash where it lay, which is no fire, and the ash goes after ASH_HOURS */
     const A = FIRE_ASH[0], u = A && A.mesh && A.mesh.userData.fire; let light = false; if (A) A.mesh.traverse(o => { if (o.isLight && o.intensity > 0) light = true; });
     out.ash = A ? { n: FIRE_ASH.length, stage: u && u.stage, island: u && u.island, at: Math.hypot(A.x - F.x, A.z - F.z), shown: !!A.mesh.parent, tris: u && u.tris, light,
       fire: !!campfireNear() || atFire(), hrs: Math.round((A.until - gameMinNow()) / 60) } : null;
