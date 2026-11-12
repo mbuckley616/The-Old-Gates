@@ -3,7 +3,7 @@
 // Cave Bear's own brown, whose plantigrade legs have three bones to the driver's four (hcMap: the paw takes the driver's paw). A line of
 // the two and an Ash Hound (its own plan since Session 1274) ahead of you: each on the kit's skeleton, keyed by its foe id; its hips at its driver's;
 // three levels by distance; a run that moves the kit's bones with its feet by the driver's; the tell's glow; and killed, a corpse
-// darkened with its shaders kept that lies with its driver. Session 1273 adds the coach's two horses on the kit's horse, Session 2148 the ox and the yoked ox, Session 2154 the donkey and the pack mule, Session 2155 the camel. Pictures: docs/prototypes/f4/f4-beasts.jpg, f4-beasts-near.jpg, f4-oxen.jpg, f4-packbeasts.jpg and f4-camel.jpg.
+// darkened with its shaders kept that lies with its driver. Session 1273 adds the coach's two horses on the kit's horse, Session 2148 the ox and the yoked ox, Session 2154 the donkey and the pack mule, Session 2155 the camel, Session 2156 the reindeer and the highland yak. Pictures: docs/prototypes/f4/f4-beasts.jpg, f4-beasts-near.jpg, f4-oxen.jpg, f4-packbeasts.jpg, f4-camel.jpg and f4-markburden.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -237,6 +237,28 @@ check(`the camel wears the kit's camel (${cm0.tris} triangles of hide, ${cm0.bon
     CAM.position.set(ex, worldH(ex, ez) + 1.4, ez); CAM.lookAt(c.x, worldH(c.x, c.z) + 1.1, c.z); CAM.updateMatrixWorld(true); const hid = _W.map(w => [w.e.mesh, w.e.mesh.visible]); for (const [m] of hid) m.visible = false;
     REN.render(scene, CAM); const u = REN.domElement.toDataURL('image/jpeg', .85); for (const [m, v] of hid) m.visible = v; return u; });
   fs.writeFileSync(path.join(OUT, 'f4-camel.jpg'), Buffer.from(url.split(',')[1], 'base64')); }
+// Session 2156 (L3, OG-046, the Mark's): the reindeer on the Elderstag's legs and the highland yak on the ox's, keyed burden:<key>, each on its
+// hooves; the reindeer's head below a man's (its antlers are rigid pieces, not the hide), the yak's hips below the ox's (1.05 of the cow to its 1.15)
+const mk = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
+  window._MK = [['Reindeer', 'f4mk:0'], ['Highland Yak', 'f4mk:0']].map(([n, key], j) => { const hg = new THREE.Group(), rg = buildAnimal(n, key); hg.add(rg.root);
+    const x = px - fx * 7 + sx * (j - .5) * 3, z = pz - fz * 7 + sz * (j - .5) * 3; hg.position.set(x, WORLD.worldH(x, z), z); hg.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(hg); return { n, key, hg, rg }; });
+  let k = 0; HBODY.last = -1e9; while (_MK.some(h => !h.rg.hc && !h.rg.hcFail) && k++ < 300) tickCreatures(1 / 60, 1.32e6 + k * (HBODY.gap + 1));
+  return _MK.map(({ n, hg, rg }) => { const H = rg.hc; if (!H) return { n, hc: false }; hg.updateMatrixWorld(true); const by = H.C.byName;
+    const a = by.spine0.getWorldPosition(new THREE.Vector3()), b = rg.B.hips.getWorldPosition(new THREE.Vector3()), box = new THREE.Box3(); for (const m of H.C.meshes) box.expandByObject(m);
+    return { n, hc: true, key: rg.hcKey, plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rg.hcKey), map: H.map.length, tris: H.C.stats.tris, bones: H.C.skel.bones.length, hips: +a.distanceTo(b).toFixed(3),
+      hipY: +(a.y - hg.position.y).toFixed(3), man: +((box.max.y - hg.position.y) / SCALE.PEOPLE.gatelander.m).toFixed(2),
+      toes: ['leg0L_4', 'leg0R_4', 'leg1L_4', 'leg1R_4'].map(t => +(by[t].getWorldPosition(new THREE.Vector3()).y - hg.position.y).toFixed(3)) }; }); });
+console.log('  the Mark\'s:', JSON.stringify(mk));
+const [rd0, yk0] = mk;
+check(`the reindeer and the highland yak wear the kit's reindeer and yak (${mk.map(o => o.plan + ' ' + o.tris + ' tris, ' + o.bones + ' bones, ' + o.map + ' driven').join('; ')}), keyed burden:<key>, on their hooves (${mk.map(o => o.toes.join(', ')).join('; ')} m)`,
+  mk.every(o => o.hc && o.map >= 22 && o.seed === o.want && /^burden:/.test(o.key) && o.hips < .03 && o.toes.every(y => Math.abs(y) < .05)) && rd0.plan === 'reindeer' && yk0.plan === 'yak', mk);
+check(`the reindeer's head at ${rd0.man} of a man, its hips at ${rd0.hipY} m; the yak's hips at ${yk0.hipY} m, below the ox's (${ox0.hipY})`,
+  rd0.man > .7 && rd0.man < 1.1 && rd0.hipY > .9 && rd0.hipY < 1.3 && yk0.hipY < ox0.hipY && yk0.hipY > ox0.hipY * .85, mk);
+{ const url = await page.evaluate(() => { const a = _MK[0].hg.position, b = _MK[1].hg.position, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw), ex = mx + fx * 6, ez = mz + fz * 6;
+    CAM.position.set(ex, worldH(ex, ez) + 1.5, ez); CAM.lookAt(mx, worldH(mx, mz) + 1, mz); CAM.updateMatrixWorld(true); const hid = [..._W.map(w => w.e.mesh), ..._PK.map(h => h.hg)].map(m => [m, m.visible]); for (const [m] of hid) m.visible = false;
+    REN.render(scene, CAM); const u = REN.domElement.toDataURL('image/jpeg', .85); for (const [m, v] of hid) m.visible = v; return u; });
+  fs.writeFileSync(path.join(OUT, 'f4-markburden.jpg'), Buffer.from(url.split(',')[1], 'base64')); }
+await page.evaluate(() => { for (const { hg } of _MK) hg.parent.remove(hg); });
 const pkWalk = await page.evaluate(() => { const { hg, rg } = _PK[2], H = rg.hc, by = H.C.byName, sk = H.C.skel; sk.update(); const a = Array.from(sk.boneMatrices); let low = 9;
   for (let i = 0; i < 120; i++) { hg.position.x += Math.sin(hg.rotation.y) * 1.2 / 60; hg.position.z += Math.cos(hg.rotation.y) * 1.2 / 60; hg.position.y = WORLD.worldH(hg.position.x, hg.position.z); tickCreatures(1 / 60, 1.4e6 + i * 16.7);
     if (i > 50) { hg.updateMatrixWorld(true); for (const t of ['leg0L_4', 'leg0R_4', 'leg1L_4', 'leg1R_4']) { const p = by[t].getWorldPosition(new THREE.Vector3()); low = Math.min(low, p.y - WORLD.worldH(p.x, p.z)); } } }
