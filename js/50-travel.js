@@ -697,6 +697,8 @@ const SURV_ITEMS={
   fish:{name:'Fresh Fish',ico:'🐟',type:'misc',weight:.5,buyPrice:4,sellMult:.3,food:'fish'},
   produce:{name:'Root Vegetables',ico:'🥕',type:'misc',weight:.5,buyPrice:3,sellMult:.3,food:'produce'},
   messkit:{name:'Mess Kit',ico:'🥘',type:'misc',weight:1,buyPrice:8,sellMult:.4,tool:'messkit'}, /* S2028 — cooking B: a pot at a campfire */
+  shovel:{name:'Shovel',ico:'🪏',type:'misc',weight:2.5,buyPrice:12,sellMult:.4,tool:'shovel'}, /* S2137 — resources B: clay from a bank */
+  clay:{name:'Clay',ico:'🟤',type:'misc',weight:1.5,buyPrice:2,sellMult:.3,clay:1},
   skinknife:{name:'Skinning Knife',ico:'🔪',type:'misc',weight:.3,buyPrice:6,sellMult:.4,tool:'skinknife'}, /* S2123 — resources A: the hide off a hunted body */
   hide:{name:'Hide',ico:'🟫',type:'misc',weight:2,buyPrice:10,sellMult:.4,hide:1},
   salt:{name:'Salt',ico:'🧂',type:'misc',weight:.2,buyPrice:1,sellMult:.3,salt:1,bundle:1}, /* sold under a coin, so Aurenne's two for 1 is no trade */
@@ -823,7 +825,7 @@ function tickSurvival(dt){const t=gameMinNow();
     if(f.mesh&&f.mesh.userData.fire){try{f.mesh.userData.fire.tick(f,FIRE_HOURS);}catch(e){}continue;} /* S2114 — the kit's fire: its stage and its flames */
     const fl=f.mesh&&f.mesh.userData.flame;if(fl){const k=.85+.15*Math.sin(performance.now()*.013+i);fl.scale.set(1,k,1);}}
   if(t!==_mealTurnAt){_mealTurnAt=t;mealTurnPass();} /* S2033 — meals turn */
-  tickLeanTos();tickMining(dt);tickFelling(dt);tickTrunks();tickShipWork(dt);tickWater(); /* S2012 — rain fills your water */
+  tickLeanTos();tickMining(dt);tickDig();tickFelling(dt);tickTrunks();tickShipWork(dt);tickWater(); /* S2012 — rain fills your water */
   if(fedKind()==='steady'&&!dead)PHP=Math.min(effMaxHP(),PHP+dt*.2*fedRich());
   if(stamina>effMaxStamina())stamina=effMaxStamina();}
 // fed: one kind at a time, by the game clock
@@ -1041,6 +1043,36 @@ function homeDraw(){const ov=document.getElementById('homeui');if(!ov)return;con
     if(res.done&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();homeDraw();});
   ov.querySelector('#hm-said').textContent=homeSaid;}
 window.addEventListener('keydown',e=>{if(!homeOpen)return;if(e.code==='Escape'){e.preventDefault();e.stopPropagation();closeHousePage();}},true);
+// ── S2137 — Resources and crafting B, session 4a: clay (the page's *Clay*). With a shovel (12 gold, 2.5 kg, every goods shop), E on a
+// river's or a lake's bank, dry ground within 2 m of fresh water, digs 1 clay (1.5 kg) in 3 s of wall clock; walking off stops it. A bank
+// holds 3 and comes back 7 days after it was dug out, as a vein does. The bank is the carve grid's cell (`RVG`, 160 m), the same for every
+// player and every load: `worldState.clay[<bucket>] = {n, d}` (the world's), dug through the one named action `digClay`. No skill rises.
+const CLAY_REACH=2,CLAY_S=3,CLAY_HOLD=3,CLAY_DAYS=7;
+function hasShovel(){return BAG.some(b=>b&&b.tool==='shovel');}
+// the water's edge is past a river's channel, in the carve's blend (rawH: up to 60 m), so the reach is counted to there
+function clayFresh(x,z){try{return worldH(x,z)<SEA_Y-WATER_DEEP&&(wildRiverNear(x,z,60)||wildLakeNear(x,z));}catch(e){return false;}}
+// the bank you stand on: its key, or null. Dry underfoot, fresh water within CLAY_REACH
+function clayBankHere(){if(!_waterOutside())return null;let y;try{y=worldH(px,pz);}catch(e){return null;}if(!(y>=SEA_Y-WATER_DEEP))return null;
+  for(let r=.5;r<=CLAY_REACH;r+=.5)for(let a=0;a<8;a++){const x=px+Math.cos(a*Math.PI/4)*r,z=pz+Math.sin(a*Math.PI/4)*r;
+    if(clayFresh(x,z))return 'b'+sgKey(Math.floor(x/RVSG),Math.floor(z/RVSG));}
+  return null;}
+function clayRec(key){const W=worldState.clay||(worldState.clay={});let r=W[key];
+  if(r&&r.n>=CLAY_HOLD&&gameMinNow()/1440-r.d>=CLAY_DAYS){r={n:0,d:r.d};W[key]=r;}return r||{n:0,d:0};}
+function clayLeft(key){return Math.max(0,CLAY_HOLD-clayRec(key).n);}
+// the named action: one clay off the bank. Returns {done, left} or {done:false, why}
+function digClay(key){if(!hasShovel())return {done:false,why:'You need a shovel.'};if(!key)return {done:false,why:'Clay is dug at a river’s or a lake’s edge.'};
+  const r=clayRec(key);if(r.n>=CLAY_HOLD)return {done:false,why:'The bank is dug out here.'};const it=survItem('clay');
+  if(typeof canCarry==='function'&&!canCarry(it))return {done:false,why:'Too heavy to carry!'};
+  bagAdd(it);(worldState.clay||(worldState.clay={}))[key]={n:r.n+1,d:Math.floor(gameMinNow()/1440)};return {done:true,left:CLAY_HOLD-r.n-1};}
+let DIG=null;
+function digStart(){if(DIG){DIG=null;showMsg('You stop digging.','#c8b890');return true;}const key=clayBankHere();if(!key||!hasShovel())return false;
+  if(clayLeft(key)<=0){showMsg('The bank is dug out here.','#cc8844');return true;}
+  DIG={key,x:px,z:pz,t0:performance.now()};showMsg('You dig into the bank.','#c8b890');return true;}
+function tickDig(){if(!DIG)return;if(!_waterOutside()||Math.hypot(px-DIG.x,pz-DIG.z)>1.5||(typeof dead!=='undefined'&&dead)){DIG=null;showMsg('You leave the digging.','#cc8844');return;}
+  if(performance.now()-DIG.t0<CLAY_S*1000)return;const r=digClay(DIG.key);DIG=null;
+  if(!r.done){showMsg(r.why,'#cc8844');return;}showMsg(r.left?'A clay.':'A clay. The bank is dug out here.','#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
+function clayPrompt(){if(!hasShovel())return '';if(DIG)return 'Digging · E to stop';const key=clayBankHere();if(!key)return '';return clayLeft(key)>0?"Press 'E' to dig clay":'Dug out';}
+function useShovelThing(){if(!digStart())showMsg('Dig clay with it at a river’s or a lake’s edge.','#c8b890');}
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish',food:'fish'};} /* S2028 — food, which the save keeps */
 // S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
 const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};
@@ -1049,6 +1081,7 @@ function riverFishItem(name){const f=RIVER_FISH[name];if(!f)return troutItem();r
 function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce},waterItem('skin')]; /* S2012 — a waterskin at every goods shop and inn */
   if(h.type==='misc')out.push({...SURV_ITEMS.messkit}); /* S2028 — the mess kit at every goods shop */
   if(h.type==='misc')out.push({...SURV_ITEMS.skinknife}); /* S2123 — the skinning knife at every goods shop */
+  if(h.type==='misc')out.push({...SURV_ITEMS.shovel}); /* S2137 — the shovel at every goods shop */
   try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));if(h.type==='misc')out.push(...campGearFor(nk)); /* S2090 — the rolls and the tent */if(nk==='mark')out.push(waterItem('canteen'));if(nk==='aurenne')out.push(waterItem('flask'));
     for(const k in DISH_SECONDS)if(DISH_SECONDS[k].isle===nk)out.push(secondItem(k));
     if(h.type==='inn'){out.push(dishOfDayItem(h));isleSeconds(nk).forEach(k=>out.push(cupItem(k)));}}}catch(e){} /* S2013 — by island; S2028 — its three seconds; S2035 — the inn's dish of the day and its three cups */
@@ -2681,6 +2714,7 @@ function interact(){
     if(nearHerb){harvestHerb(nearHerb);return;}
     {const v=veinNear();if(v){mineVein(v);return;}} /* S1491 — a vein, with a pick */
     {const n=treeNear();if(n&&(chopTool()||(CHOP&&CHOP.t===n.t))){chopTree(n.ch,n.t);return;}} /* S1511 — a tree, with a hatchet */
+    if(hasShovel()&&(DIG||clayBankHere())&&digStart())return; /* S2137 — clay from a bank, with a shovel */
     if(fillHere())return; /* S2012 — water B: a well, a river, a lake; the sea answers */
     if(campfireNear()){openCookPage();return;} /* S1525 — a lit fire: its page (the critic's s995: only the bag opened it) */
     // v61ae: Bram's body needs special handling. The standard zone-corpse
