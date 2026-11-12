@@ -794,7 +794,7 @@ function campfireNear(){if(activeZoneId!=='world'||(typeof isInterior==='functio
 function atFire(){return hearthHere()||!!campfireNear();}
 function fireSpotOk(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return false;
   if(typeof WORLD!=='undefined'&&WORLD.isSwimming&&WORLD.isSwimming())return false;if(typeof SHIP!=='undefined'&&SHIP.sailing)return false;return true;}
-// S2150 — where a fire is laid: 0.9 m ahead as before, unless a solid (a trunk, a wall, a rock) stands in its footprint; then
+// S2152 — where a fire is laid: 0.9 m ahead as before, unless a solid (a trunk, a wall, a rock) stands in its footprint; then
 // camp and rest's own search (campSpot, S2102) turns off the line and steps out to 1.8 m, inside FIRE_REACH, so you are at it once lit.
 // The footprint is the island's fire (the kit's, measured), by its own box at a turn of 0 (the Gatelands' turf seat to one side, the Mark's long fire across your way)
 const FIRE_FOOT={gatelands:[-.9,1.6,-.8,.8],mark:[-1.2,1.2,-.64,.64],aurenne:[-.9,.75,-.75,.98]};

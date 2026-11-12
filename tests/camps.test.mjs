@@ -97,7 +97,7 @@ check('the fire is the kit\'s on each island: lit, burning, embers by its clock,
 check('a fire lit from the bag is laid as its own island lays it, and taken away when it is out', !!fr.lit && fr.lit.island === fr.lit.want && fr.lit.stage === 'lit' && fr.gone, fr);
 check('a fire burnt out leaves its cold ash where it lay, unlit and no fire to cook at, gone after a game day', !!fr.ash && fr.ash.n === 1 && fr.ash.stage === 'out' && fr.ash.island === fr.lit.island
   && fr.ash.at < .01 && fr.ash.shown && fr.ash.tris > 0 && !fr.ash.light && !fr.ash.fire && fr.ash.hrs === 24 && fr.ashGone, fr.ash);
-// Session 2150: a fire lit facing a trunk is not laid in it. It turns off the line (camp and rest's campSpot) and stays within reach
+// Session 2152: a fire lit facing a trunk is not laid in it. It turns off the line (camp and rest's campSpot) and stays within reach
 const fs2 = await page.evaluate(() => { const out = {}; const P = [px, pz], Y = yaw;
   let hit = null; for (let d = 2; d < 60 && !hit; d += .5) for (let a = 0; a < 64 && !hit; a++) { const t = a / 64 * Math.PI * 2, x = px + Math.sin(t) * d, z = pz + Math.cos(t) * d; if (solidAt(x, z)) hit = { x, z }; }
   if (!hit) return out; const t0 = Math.atan2(px - hit.x, pz - hit.z); px = hit.x + Math.sin(t0) * .9; pz = hit.z + Math.cos(t0) * .9; yaw = t0;
