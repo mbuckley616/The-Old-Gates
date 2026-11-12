@@ -698,7 +698,7 @@ const SURV_ITEMS={
   produce:{name:'Root Vegetables',ico:'🥕',type:'misc',weight:.5,buyPrice:3,sellMult:.3,food:'produce'},
   messkit:{name:'Mess Kit',ico:'🥘',type:'misc',weight:1,buyPrice:8,sellMult:.4,tool:'messkit'}, /* S2028 — cooking B: a pot at a campfire */
   shovel:{name:'Shovel',ico:'🪏',type:'misc',weight:2.5,buyPrice:12,sellMult:.4,tool:'shovel'}, /* S2137 — resources B: clay from a bank */
-  clay:{name:'Clay',ico:'🟤',type:'misc',weight:1.5,buyPrice:2,sellMult:.3,clay:1},
+  clay:{name:'Clay',ico:'🧱',type:'misc',weight:1.5,buyPrice:2,sellMult:.3,clay:1},
   skinknife:{name:'Skinning Knife',ico:'🔪',type:'misc',weight:.3,buyPrice:6,sellMult:.4,tool:'skinknife'}, /* S2123 — resources A: the hide off a hunted body */
   hide:{name:'Hide',ico:'🟫',type:'misc',weight:2,buyPrice:10,sellMult:.4,hide:1},
   salt:{name:'Salt',ico:'🧂',type:'misc',weight:.2,buyPrice:1,sellMult:.3,salt:1,bundle:1}, /* sold under a coin, so Aurenne's two for 1 is no trade */
@@ -788,7 +788,7 @@ const CAMPFIRES=[];
 function hearthHere(){if(typeof isInterior!=='function'||!isInterior()||typeof currentHouse==='undefined'||!currentHouse)return false;return currentHouse.type==='inn'||currentHouse.type==='home'||(currentHouse.type==='cabin'&&typeof shipFitAtHand==='function'&&shipFitAtHand('galley'));} /* S1733 — her galley is a fire */
 // S2033 — the clay oven: every inn, and every Aurennais home (by the house's type and its town's island, as hearthHere; the prop is the look builder's)
 function houseIsle(h){try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);const [i,j]=t?cellOf(t.x,t.z):cellOf(h.doorX,h.doorZ);return nationKeyOf(i,j);}catch(e){return null;}}
-function ovenHere(){if(!hearthHere())return false;return currentHouse.type==='inn'||(currentHouse.type==='home'&&houseIsle(currentHouse)==='aurenne');}
+function ovenHere(){if(!hearthHere())return false;return currentHouse.type==='inn'||homeFitHere('oven')||(currentHouse.type==='home'&&houseIsle(currentHouse)==='aurenne');}
 function campfireNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const t=gameMinNow();
   return CAMPFIRES.find(f=>f.until>t&&Math.hypot(f.x-px,f.z-pz)<=FIRE_REACH)||null;}
 function atFire(){return hearthHere()||!!campfireNear();}
@@ -814,8 +814,8 @@ function lightFire(){
 function dropFire(f){if(f.mesh&&f.mesh.parent)f.mesh.parent.remove(f.mesh);}
 // S2033 — a meal past its days: turned, and named so. Its day (`meal.made`) is the game day it was cooked; a meal from before this build has none and never turns
 function mealKeepDays(m){return m.jerky?JERKY_TURN_DAYS:m.bake?BAKE_TURN_DAYS:MEAL_TURN_DAYS;} /* S2131 — jerky keeps 30 */
-function mealTurned(it){const m=it&&it.meal;if(!m||m.made==null)return false;return gameDayNow()-m.made>=mealKeepDays(m);}
-function mealKeepSay(it){const m=it&&it.meal;if(!m||m.made==null)return '';if(mealTurned(it))return 'turned: half as long';
+function mealTurned(it){const m=it&&it.meal;if(!m||m.made==null||it.jarred)return false; /* S2138 — a jar keeps it */return gameDayNow()-m.made>=mealKeepDays(m);}
+function mealKeepSay(it){const m=it&&it.meal;if(!m||m.made==null)return '';if(it.jarred)return 'in a jar: keeps'; /* S2138 */if(mealTurned(it))return 'turned: half as long';
   const n=m.made+mealKeepDays(m)-gameDayNow();return `keeps ${n} day${n===1?'':'s'} more`;}
 let _mealTurnAt=-1;
 function mealTurnPass(){BAG.forEach(b=>{if(b&&b.meal&&!b.meal.turned&&mealTurned(b)){b.meal.turned=1;b.name+=' (turned)';}});}
@@ -858,7 +858,7 @@ function seasonOf(herb){const e=herbKnownEff(herb);if(!e)return null;const eff={
 function seasonSay(sea){const e=sea.eff;return e.type==='heal'?`+${e.amount} HP`:e.type==='stamina'?`+${e.amount} Stamina`:e.type==='mana'?`+${e.amount} Mana`:e.type==='hpRegen'?`+${e.rate} HP a second for ${e.duration} s`:e.type==='damage'?`−${e.amount} HP, bitter`:'';}
 function eatMeal(i){const it=BAG[i];if(!it||!it.meal)return;
   if(typeof DRINK!=='undefined'&&DRINK){showMsg('You are still eating.','#cc8844');return;}
-  const m=it.meal,nm=it.name,mx=mealX(it);it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);
+  const m=it.meal,nm=it.name,mx=mealX(it),jarred=!!it.jarred;it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);if(jarred)bagAdd({...JAR_ITEM}); /* S2138 — the jar comes back */
   const go=()=>{const was=fedNow();setFed(m.kind,m.s||1,m.r,mx);const learnt=m.pair?learnDish(m.pair):false; /* S2035 — eating a dish teaches it */const K=FED_KIND[m.kind];const sd=m.season&&m.season.eff?herbKnownApply(m.season.eff,m.season.name):null; /* S1503 — Seasoned */
     let rs='';if(m.r){rs=' '+DISH_RIDER[m.r].label+'.';if(m.r==='restoring'){if(was&&was.r==='restoring')rs=' Restoring: you are fed by one already.';else{PHP=Math.min(effMaxHP(),PHP+DISH_RESTORE);stamina=Math.min(effMaxStamina(),stamina+DISH_RESTORE);rs=` Restoring: +${DISH_RESTORE} health and stamina.`;}}} /* S2028 — a dish's rider */
     showMsg(`${nm} — ${K.label}: ${K.say} for ${Math.round(mealMins({s:m.s,x:mx})/60*10)/10} hours.${rs}${sd?' '+sd[0].replace(/\.+$/,'')+'.':''}${learnt?' A dish new to you.':''}`,K.col);if(typeof updateHUD==='function')updateHUD();};
@@ -986,7 +986,8 @@ window.addEventListener('keydown',e=>{if(!cureOpen)return;if(e.code==='Escape'){
 // fitting taken out is stored in the house and fitted back for nothing, as a ship's is. Until the look builder's fittings stand at a lot
 // point, anywhere in the house is at them (the hold's rule, S1726), and E with nothing else in reach opens the house's page.
 const HOME_PLACES={cottage:3,townhouse:4,farmstead:6,longhouse:6,keep:6};
-const HOME_FITS={rack:{n:'tanner’s rack',a:'a tanner’s rack',gold:40,planks:4},dry:{n:'drying rack',a:'a drying rack',gold:30,planks:3},bench:{n:'workbench',a:'a workbench',gold:60,planks:6}};
+const HOME_FITS={rack:{n:'tanner’s rack',a:'a tanner’s rack',gold:40,planks:4},dry:{n:'drying rack',a:'a drying rack',gold:30,planks:3},bench:{n:'workbench',a:'a workbench',gold:60,planks:6},
+  oven:{n:'clay oven',a:'a clay oven',clay:6},kiln:{n:'kiln',a:'a kiln',clay:10}}; /* S2138 — the oven and the kiln, laid of clay by hand */
 function homeMine(h){return !!h&&(h.type==='home'||h.type==='castle')&&(h.ownedByPlayer||(typeof ownedHouse==='function'&&ownedHouse(h.id)));}
 function homeSize(h){if(!h)return null;if(h.type==='castle')return 'keep';if(h.farm)return 'farmstead';const k=h.kit&&h.kit.kind;if(k==='markhall')return 'longhouse';
   if(k==='townhouse'||k==='merchant'||k==='marktown')return 'townhouse';return ['town','port','city'].includes(h.siteKind)?'townhouse':'cottage';}
@@ -1000,11 +1001,12 @@ function homeFitHere(k){const h=homeHere();if(!h||!homeFitted(h,k))return false;
 function homeFitWhy(h,k,how){if(!homeMine(h))return 'This is not your house.';const F=HOME_FITS[k];if(!F)return 'No such fitting.';const r=homeFitRec(h);
   if(r.fit.includes(k))return `The house has ${F.a} already.`;if(r.fit.length>=homePlaces(h))return `The house has room for ${homePlaces(h)}; take one out first.`;
   if(r.stored.includes(k))return null;
+  if(F.clay){const n=bagCount(b=>!!b.clay);return n<F.clay?`It takes ${F.clay} clay (you have ${n}).`:null;} /* S2138 — laid by hand */
   if(how==='planks'){if(!benchHere())return 'Planks are joined at a bench: a joiner’s kit is one.';if(plankCount()<F.planks)return `It takes ${F.planks} planks (you have ${plankCount()}).`;return null;}
   return gold<F.gold?`It costs ${F.gold} gold.`:null;}
 // the named actions: fit one (a stored one back for nothing), take one out. Each returns {done, why}
 function homeFit(h,k,how){const why=homeFitWhy(h,k,how);if(why)return {done:false,why};const r=homeFitRec(h),F=HOME_FITS[k],si=r.stored.indexOf(k);
-  if(si>=0)r.stored.splice(si,1);else if(how==='planks')bagTake(b=>b.plank,F.planks);else{gold-=F.gold;if(typeof updateHUD==='function')updateHUD();}
+  if(si>=0)r.stored.splice(si,1);else if(F.clay)bagTake(b=>!!b.clay,F.clay);else if(how==='planks')bagTake(b=>b.plank,F.planks);else{gold-=F.gold;if(typeof updateHUD==='function')updateHUD();}
   r.fit.push(k);if(typeof addLog==='function')addLog('🏠',`The house fitted with ${F.a}.`);return {done:true};}
 function homeUnfit(h,k){if(!homeMine(h))return {done:false,why:'This is not your house.'};const r=homeFitRec(h),i=r.fit.indexOf(k);if(i<0)return {done:false,why:''};
   if(k==='rack'||k==='dry'){const c=curesOf(h).find(x=>x.kind===k);if(c&&cureList(c.key).length)return {done:false,why:'Take down what hangs on it first.'};}
@@ -1029,16 +1031,17 @@ function homeDraw(){const ov=document.getElementById('homeui');if(!ov)return;con
   const btn=(id,label,ok)=>`<button type="button" data-a="${id}" style="background:none;border:1px solid ${ok?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#7a1f10':'#a09070'};cursor:pointer;padding:1px 8px;margin:2px 4px 2px 0">${label}</button>`;
   let s='<div style="font-variant:small-caps;color:#7a1f10">Fitted</div>';
   if(!r.fit.length)s+='<div style="padding-left:12px;color:#8a7050;font-style:italic">nothing yet</div>';
-  r.fit.forEach(k=>{s+=`<div style="padding-left:12px">${HOME_FITS[k].n[0].toUpperCase()+HOME_FITS[k].n.slice(1)} `+btn('use:'+k,k==='bench'?'Work':'See to it',true)+btn('out:'+k,'Take out',true)+'</div>';});
+  r.fit.forEach(k=>{s+=`<div style="padding-left:12px">${HOME_FITS[k].n[0].toUpperCase()+HOME_FITS[k].n.slice(1)} `+(k==='oven'?'<i style="font-size:12px;color:#8a7050">bakes at the hearth</i> ':k==='kiln'?Object.keys(KILN_WARES).map(w=>btn('kiln:'+w,`Fire ${KILN_WARES[w].a} · ${KILN_WARES[w].clay} clay`,!kilnWhy(h,w))).join(''):btn('use:'+k,k==='bench'?'Work':'See to it',true))+btn('out:'+k,'Take out',true)+'</div>';}); /* S2138 — the oven and the kiln */
   const rest=Object.keys(HOME_FITS).filter(k=>!r.fit.includes(k));
   if(rest.length){s+='<div style="font-variant:small-caps;color:#7a1f10;margin-top:6px">To fit</div>';
     rest.forEach(k=>{const F=HOME_FITS[k],name=F.n[0].toUpperCase()+F.n.slice(1);
       if(r.stored.includes(k)){s+=`<div style="padding-left:12px">${name} <i style="font-size:12px;color:#8a7050">stored</i> `+btn('fit:'+k+':gold','Fit it back',!homeFitWhy(h,k,'gold'))+'</div>';return;}
-      s+=`<div style="padding-left:12px">${name} `+btn('fit:'+k+':gold',`${F.gold} gold`,!homeFitWhy(h,k,'gold'))+btn('fit:'+k+':planks',`${F.planks} planks`,!homeFitWhy(h,k,'planks'))+'</div>';});}
+      s+=`<div style="padding-left:12px">${name} `+(F.clay?btn('fit:'+k+':clay',`${F.clay} clay, by hand`,!homeFitWhy(h,k,'clay')):btn('fit:'+k+':gold',`${F.gold} gold`,!homeFitWhy(h,k,'gold'))+btn('fit:'+k+':planks',`${F.planks} planks`,!homeFitWhy(h,k,'planks')))+'</div>';});}
   s+=`<div style="color:#8a7050;font-style:italic;font-size:12px;margin-top:6px">one of each; a fitting taken out is kept here and goes back for nothing</div>`;
   const B=ov.querySelector('#hm-body');B.innerHTML=s;
   B.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const [a,k,how]=b.dataset.a.split(':');
     if(a==='use'){closeHousePage();if(k==='bench')openBenchPage();else openCurePage();return;}
+    if(a==='kiln'){const res=kilnFire(h,k);homeSaid=res.done?`${KILN_WARES[k].a[0].toUpperCase()+KILN_WARES[k].a.slice(1)}, fired.`:res.why;if(res.done&&typeof uiTone==='function')uiTone(440,660,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();homeDraw();return;}
     const res=a==='fit'?homeFit(h,k,how):homeUnfit(h,k);homeSaid=res.done?(a==='fit'?`${HOME_FITS[k].a[0].toUpperCase()+HOME_FITS[k].a.slice(1)} stands in the house.`:`The ${HOME_FITS[k].n} is taken out and kept.`):res.why;
     if(res.done&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();homeDraw();});
   ov.querySelector('#hm-said').textContent=homeSaid;}
@@ -1073,6 +1076,25 @@ function tickDig(){if(!DIG)return;if(!_waterOutside()||Math.hypot(px-DIG.x,pz-DI
   if(!r.done){showMsg(r.why,'#cc8844');return;}showMsg(r.left?'A clay.':'A clay. The bank is dug out here.','#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
 function clayPrompt(){if(!hasShovel())return '';if(DIG)return 'Digging · E to stop';const key=clayBankHere();if(!key)return '';return clayLeft(key)>0?"Press 'E' to dig clay":'Dug out';}
 function useShovelThing(){if(!digStart())showMsg('Dig clay with it at a river’s or a lake’s edge.','#c8b890');}
+// ── S2138 — Resources and crafting B, session 4b: the clay oven and the kiln, two of the house's fittings, each laid by hand of clay (6 and
+// 10; the page's table). The oven makes your house an oven (`ovenHere`): a grain dish bakes at its hearth, as at an inn or an Aurennais
+// home. At the kiln, 2 clay fire a Clay Pot (the one the apothecary sells for 3, which the mortar seals into a fire pot) and 3 a Jar.
+// A jar keeps one meal from turning: used from the bag, it takes the meal nearest to turning (not one already turned) into it, and the
+// jar comes back empty when the meal is eaten. The page names no time for the firing, so it is done as you ask; no skill rises.
+const JAR_ITEM={name:'Jar',ico:'🏺',type:'misc',weight:.5,buyPrice:4,sellMult:.4,jar:1};
+const KILN_WARES={pot:{a:'a clay pot',clay:2,item:()=>({...CLAY_POT_ITEM})},jar:{a:'a jar',clay:3,item:()=>({...JAR_ITEM})}};
+function kilnWhy(h,w){const W=KILN_WARES[w];if(!W)return 'No such ware.';if(!homeMine(h)||!homeFitted(h,'kiln'))return 'There is no kiln here.';
+  const n=bagCount(b=>!!b.clay);return n<W.clay?`It takes ${W.clay} clay (you have ${n}).`:null;}
+// the named action: clay from the bag, the ware into it. Returns {done} or {done:false, why}
+function kilnFire(h,w){const why=kilnWhy(h,w);if(why)return {done:false,why};const W=KILN_WARES[w],it=W.item();
+  if(typeof canCarry==='function'&&!canCarry(it))return {done:false,why:'Too heavy to carry!'};bagTake(b=>!!b.clay,W.clay);bagAdd(it);return {done:true};}
+// a jar used from the bag: the meal nearest to turning goes into it. Returns {done, name} or {done:false, why}
+function jarMeal(){if(bagCount(b=>!!b.jar&&!b.meal)<1)return {done:false,why:'You have no empty jar.'};
+  let best=null;BAG.forEach((b,i)=>{if(!b||!b.meal||b.jarred||b.meal.made==null||mealTurned(b))return;const left=b.meal.made+mealKeepDays(b.meal);if(!best||left<best.left)best={i,left};});
+  if(!best)return {done:false,why:'Nothing in your pack would turn.'};const m=BAG[best.i];
+  const one={...m,meal:{...m.meal},qty:1,jarred:1,weight:(m.weight||0)+JAR_ITEM.weight,brewKey:(m.brewKey||m.name)+'@jar'};
+  m.qty=(m.qty||1)-1;if(m.qty<=0)BAG.splice(best.i,1);bagTake(b=>!!b.jar&&!b.meal,1);bagAdd(one);return {done:true,name:m.name};}
+function useJarThing(){const r=jarMeal();showMsg(r.done?`The ${r.name.toLowerCase()} goes into a jar. It will keep.`:r.why,r.done?'#d8c8a0':'#cc8844');if(r.done&&typeof renderHubInv==='function')renderHubInv();}
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish',food:'fish'};} /* S2028 — food, which the save keeps */
 // S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
 const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};

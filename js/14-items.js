@@ -40,7 +40,7 @@ function isStackable(it){
   if(it.type==='misc'&&it.name==='Gold Coins')return true;
   if(it.type==='misc'&&it.name==='Lockpick')return true; // v80 S170 — picks stack, so the count on the lock is the whole bag's
   // S1525 — survival's goods stack by kind (the critic's s995: four fellings were four rows of logs); its tools never do
-  if(it.type==='misc'&&!it.tool&&(it.log||it.ore||it.ingot||it.plank||it.spar||it.heartwood||it.lodestone||it.feather||it.food||it.second||it.name==='Charcoal'||it.name==='Pitch'||it.name==='Clay Pot'||it.firePot||it.hide||it.salt))return true; /* S1837 — pots stack */ /* S2123 — hides and salt */
+  if(it.type==='misc'&&!it.tool&&(it.log||it.ore||it.ingot||it.plank||it.spar||it.heartwood||it.lodestone||it.feather||it.food||it.second||it.name==='Charcoal'||it.name==='Pitch'||it.name==='Clay Pot'||it.firePot||it.hide||it.salt||it.leather||it.clay||it.jar))return true; /* S2138 — leather, clay and empty jars too */ /* S1837 — pots stack */ /* S2123 — hides and salt */
   return false;
 }
 // S732 — a stack is one name and one mark: stolen goods stack only with stolen goods (the cells take BAG[i].stolen whole).
