@@ -2884,6 +2884,18 @@
       C=PKIT.props.fire(isle,{ground,key,stage:st});for(const c of [...C.group.children])g.add(c);g.userData.fire.stage=st;g.userData.fire.tris=C.tris;g.userData.fire.draws=C.draws;};
     g.userData.fire={island:isle,stage:null,tris:0,draws:0,tick(f,hours){const st=campFireStage(f,hours);if(st!==this.stage)build(st);C.tick(performance.now()/1000);}};
     build(o.stage||'lit');return g;}
+  // S2131 — the tanner's rack and the drying rack (Michael's B on #1420; PKIT.props.rack, 38-kit.js), on the new look: at x,z turned ry, the
+  // feet on the land's own heights, the island's own frame (o.island, else the cell's), o.slots the four places' contents (the tanning rack
+  // 'hide' | 'salted' | 'leather', the drying rack 'meat' | 'jerky' | 'fish' | 'fishdry', or null). userData.rack.set(slots) rebuilds it in place
+  // when what hangs on it changes. -> the Group (userData.rack: kind, island, slots, tris, draws, box, at), or null on the old look
+  function workRackProp(kind,x,z,ry,o){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.rack)return null;o=o||{};
+    const y0=worldH(x,z),co=Math.cos(ry),s_=Math.sin(ry),ground=(lx,lz)=>worldH(x+lx*co+lz*s_,z-lx*s_+lz*co)-y0;
+    let isle='gatelands';try{isle=o.island||nationKeyOf(...cellOf(x,z));}catch(e){}
+    const key=o.key||('rack:'+kind+':'+Math.round(x)+','+Math.round(z)),g=new THREE.Group();g.name='rack';g.position.set(x,y0,z);g.rotation.y=ry;
+    const build=sl=>{for(const c of [...g.children]){g.remove(c);if(c.geometry)c.geometry.dispose();} /* the kit's materials are shared: only the geometry goes */
+      const R=PKIT.props.rack(kind,isle,{ground,key,slots:sl});for(const c of [...R.group.children])g.add(c);Object.assign(g.userData.rack,{slots:R.slots,tris:R.tris,draws:R.draws,box:R.box,at:R.at});};
+    g.userData.rack={kind,island:isle,key,slots:[],tris:0,draws:0,box:null,at:[],set(sl){if(JSON.stringify(sl||[])!==JSON.stringify(this.slots))build(sl);}};
+    build(o.slots||[]);return g;}
   // S2128 — the stump a felled tree leaves, the kit's (PKIT.props.stump, 38-kit.js), on the new look: its bark by the tree's species (the pines,
   // the spruces and the snowpine a pine's; a birch a birch's; the rest an oak's), its girth the old stand-in's (the trunk's collider × .55,
   // 0.14 to 0.5 m), the roots and the chips laid on the land. The notch faces the way the tree fell: t.fall where you felled it this visit, else

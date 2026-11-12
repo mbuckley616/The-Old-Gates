@@ -4908,6 +4908,143 @@ function campFire(island, o = {}) {
     smoke.forEach((s, i) => { s.position.y = hy + .9 + ((i * .45 + t * .35) % (ns * .45)); }); };
   return { group, tris: Math.round(tris), draws: B.size + (flames ? 1 : 0) + smoke.length, tick, stage, island, foot, light };
 }
+// S2131 (Michael's B on #1420, the look session of its A half: the hide, leather, both racks with what hangs on them, jerky; OG-035's
+// "drying rack, tanning rack", OG-023's preservation) — the racks the house and the tanner keep, each with four places (a rack holds 4):
+//   'tan'  an A of two stretching frames, two bays a face, a hide laced into each bay by its edges: 'hide' (fresh: the flesh side out, the
+//          hair side in), 'salted' (the flesh side crusted white), 'leather' (scraped and cured, both faces the tan of a jerkin);
+//   'dry'  a ridge pole 1.6-2 m up, four hangs along it: 'meat' (raw strips draped over it), 'jerky' (the same strips dried, darker,
+//          shorter, wrinkled), 'fish' (three pairs tied at the tails), 'fishdry' (the pairs flat and yellowed, as stockfish).
+// By island: the Gatelands' squared oak, pegged on sills; the Mark's peeled pine poles crossed at the head and lashed with rawhide, their
+// feet in the ground (the drying rack the tall hjell of the fish coasts); Aurenne's pale cedar under a reed-mat shade. Built in its own
+// frame, the long side along x, the faces toward ±z; o.ground(x, z) the land's height in that frame (the feet go into it), o.key the seed,
+// o.slots the four contents (null or a word above; a word of the other rack's is taken as empty). The posts are its solid, o.box.
+//   PKIT.props.rack(kind 'tan' | 'dry', island, { slots, key, ground }) -> { group, tris, draws, kind, island, slots, at (the four places,
+//   their middles in its frame), box { w, d, h } }
+let RKM = null;
+function rackMats() {
+  if (RKM) return RKM;
+  const std = (c, ro = .92, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
+  const paint = (N, f) => { const c = document.createElement('canvas'); c.width = c.height = N; f(c.getContext('2d'), N, stream('rack:tex:' + N + f.length)); return finishTex(c); };
+  // the flesh side of a fresh hide: a cream membrane with pink and red-brown blotches and the veins' fine lines
+  const flesh = salt => paint(256, (x, N, r) => { x.fillStyle = '#d9b9a0'; x.fillRect(0, 0, N, N);
+    for (let i = 0; i < 40; i++) { const g = x.createRadialGradient(0, 0, 0, 0, 0, 1); g.addColorStop(0, r() < .5 ? 'rgba(160,70,60,.35)' : 'rgba(200,120,100,.3)'); g.addColorStop(1, 'rgba(160,70,60,0)');
+      x.save(); x.translate(r() * N, r() * N); x.scale(10 + r() * 40, 8 + r() * 30); x.fillStyle = g; x.fillRect(-1, -1, 2, 2); x.restore(); }
+    x.strokeStyle = 'rgba(120,40,40,.35)'; x.lineWidth = 1; for (let i = 0; i < 14; i++) { let a = r() * N, b = r() * N; x.beginPath(); x.moveTo(a, b); for (let k = 0; k < 6; k++) { a += (r() - .5) * 40; b += (r() - .5) * 40; x.lineTo(a, b); } x.stroke(); }
+    if (salt) { for (let i = 0; i < 2600; i++) { const v = 220 + r() * 35 | 0; x.fillStyle = `rgba(${v},${v},${v - 6},${(.55 + r() * .45).toFixed(2)})`; const s = 1 + r() * 2.5; x.fillRect(r() * N, r() * N, s, s); }
+      x.fillStyle = 'rgba(240,236,226,.35)'; x.fillRect(0, 0, N, N); } });
+  // the hair side: a deer's brown, darker down the spine (the shape's middle) and pale at the belly's edges, the hair's grain downward
+  const hair = paint(256, (x, N, r) => { const g = x.createLinearGradient(0, 0, N, 0); g.addColorStop(0, '#b89a74'); g.addColorStop(.3, '#7a5636'); g.addColorStop(.5, '#4e3420'); g.addColorStop(.7, '#7a5636'); g.addColorStop(1, '#b89a74');
+    x.fillStyle = g; x.fillRect(0, 0, N, N); for (let i = 0; i < 5000; i++) { const v = r(), a = r() * N, b = r() * N; x.strokeStyle = v < .5 ? 'rgba(30,18,10,.25)' : 'rgba(220,190,150,.18)'; x.beginPath(); x.moveTo(a, b); x.lineTo(a + (r() - .5) * 2, b + 4 + r() * 5); x.stroke(); } });
+  // leather: an even tan with a faint grain and the scraper's darker strokes
+  const leather = paint(256, (x, N, r) => { x.fillStyle = '#a87648'; x.fillRect(0, 0, N, N); for (let i = 0; i < 30; i++) { x.fillStyle = `rgba(90,52,26,${(.05 + r() * .08).toFixed(2)})`; x.fillRect(r() * N, 0, 4 + r() * 18, N); }
+    for (let i = 0; i < 3000; i++) { x.fillStyle = r() < .5 ? 'rgba(60,34,16,.12)' : 'rgba(210,170,120,.1)'; x.fillRect(r() * N, r() * N, 1.5, 1.5); } });
+  RKM = { oak: mat('wood', { ns: 1.0, color: 0x9a7a58, rough: .9 }), pine: mat('wood', { ns: .8, color: 0xd8c09a, rough: .9 }), cedar: mat('wood', { ns: .8, color: 0xd2a676, rough: .85 }),
+    peg: std(0x5a4430, .9), wrap: std(0xc8b088, .85), cord: std(0x9a8460, .95), iron: std(0x2a2624, .6, { metalness: .7 }), reed: mat('thatch', { ns: .8, color: 0xd8c08a, rough: 1 }),
+    flesh: std(0xffffff, .55, { map: flesh(false) }), salted: std(0xffffff, .95, { map: flesh(true) }), hair: std(0xffffff, 1, { map: hair, side: THREE.BackSide }),
+    leather: std(0xffffff, .75, { map: leather, side: THREE.DoubleSide }),
+    meat: std(0x8a2a22, .45, { side: THREE.DoubleSide }), jerky: std(0x4a2416, .8, { side: THREE.DoubleSide }),
+    fish: std(0xb4b8b4, .35, { metalness: .35 }), fishBack: std(0x3e4a4e, .4, { metalness: .25 }), fishdry: std(0xbca47a, .95) };
+  return RKM;
+}
+const RACK_FOR = { tan: ['hide', 'salted', 'leather'], dry: ['meat', 'jerky', 'fish', 'fishdry'] };
+function workRack(kind, island, o = {}) {
+  kind = kind === 'dry' ? 'dry' : 'tan'; island = island === 'mark' || island === 'aurenne' ? island : 'gatelands';
+  const M = rackMats(), B = new Map(), rr = stream(String(o.key || 'rack:' + kind + ':' + island)), G0 = typeof o.ground === 'function' ? o.ground : () => 0, V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const slots = [0, 1, 2, 3].map(i => { const s = o.slots && o.slots[i]; return RACK_FOR[kind].includes(s) ? s : null; });
+  const wood = island === 'mark' ? 'pine' : island === 'aurenne' ? 'cedar' : 'oak', round = island === 'mark';
+  const UVK = new Set(['flesh', 'salted', 'hair', 'leather']);
+  const add = (k, g) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a) || (a === 'uv' && !UVK.has(k))) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) worldUV(g, k === wood ? 1 : 2); if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  // a member from a to b: round (a peeled pole, 7 sides) or squared (a sawn timber), r its half-thickness
+  const beam = (k, a, b, r, sq = !round, seg = 7) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), L = d.length(); if (L < 1e-4) return;
+    const g = sq ? new THREE.BoxGeometry(r * 2, L, r * 2) : new THREE.CylinderGeometry(r * .92, r, L, seg); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); add(k, g); };
+  const cord = (a, b, r = .005) => beam('cord', a, b, r, false, 3);
+  const lash = (p, r) => { const g = new THREE.CylinderGeometry(r * 1.25, r * 1.25, r * 2.6, 7); g.rotateZ(Math.PI / 2); g.translate(...p); add('wrap', g); };
+  const gy = (x, z) => G0(x, z), at = [];
+  let box;
+  if (kind === 'tan') {
+    // the A: two faces 2.3 m long leaning 16° in to a ridge 1.8 m up; each face a frame of three stiles and two rails, two bays of 1.0 by 1.3 m
+    const A = .28, H = 1.86, BH = H * Math.sin(A) + .04, X = 1.16, cA = Math.cos(A), sA = Math.sin(A), r = round ? .045 : .04;
+    const P = (s, x, t, n = 0) => [x, t * cA + n * sA, s * (BH - t * sA) + n * s * cA];
+    for (const s of [-1, 1]) {
+      for (const x of [-X, 0, X]) beam(wood, P(s, x, -.18), P(s, x, round ? H + .2 : H), x === 0 ? r * .8 : r);
+      for (const t of [.3, 1.72]) beam(wood, P(s, -X - (round ? .12 : .05), t, -.05), P(s, X + (round ? .12 : .05), t, -.05), r * .75);
+      if (round) for (const x of [-X, 0, X]) for (const t of [.3, 1.72]) lash(P(s, x, t, -.03), r * .8);
+      for (let b = 0; b < 2; b++) { const x0 = b ? .06 : -X + .06, x1 = b ? X - .06 : -.06, i = (s > 0 ? 0 : 2) + b; at[i] = { x: (x0 + x1) / 2, y: 1.01 * cA, z: s * (BH - 1.01 * sA), face: s };
+        if (slots[i]) hideIn(s, x0, x1, .36, 1.66, slots[i], i); }
+    }
+    beam(wood, [-X - .1, H * cA + .02, 0], [X + .1, H * cA + .02, 0], r * .9, round);
+    if (!round) for (const x of [-X, X]) { beam(wood, [x, gy(x, 0) + .03, -BH - .2], [x, gy(x, 0) + .03, BH + .2], .06); for (const s of [-1, 1]) beam('peg', [x - .06, .03 + gy(x, 0), s * (BH - .02)], [x + .06, .03 + gy(x, 0), s * (BH - .02)], .012, false); }
+    if (island === 'aurenne') shade(X + .25, H * cA + .06 + r * .9 - .18, .9, .18) /* its apex rests on the ridge pole */;
+    box = { w: 2 * X + .2, d: 2 * BH + (round ? .1 : .4), h: H * cA + (island === 'aurenne' ? .2 : .05) };
+    function hideIn(s, x0, x1, t0, t1, st, i) {
+      // the shape: a deer's hide stretched head up, the four leg tabs pulled to the bay's corners, a jitter by its slot
+      const hr = stream(String(o.key || 'rack') + ':hide:' + i), w = (x1 - x0) * (st === 'leather' ? .86 : .92), h = (t1 - t0) * (st === 'leather' ? .86 : .93), J = () => (hr() - .5) * .04;
+      const half = [[0, .5], [.07, .49], [.1, .42], [.27, .36], [.44, .4], [.5, .33], [.4, .26], [.36, .12], [.34, -.04], [.38, -.2], [.5, -.32], [.47, -.42], [.3, -.38], [.2, -.46], [.06, -.47], [.03, -.5]];
+      const pts = [...half.map(([u, v]) => [u + J(), v + J()]), ...half.slice().reverse().map(([u, v]) => [-u + J(), v + J()])];
+      const sh = new THREE.Shape(); pts.forEach(([u, v], k) => k ? sh.lineTo(u * w, v * h) : sh.moveTo(u * w, v * h));
+      const g = new THREE.ShapeGeometry(sh, 1), U = g.attributes.uv, Pp = g.attributes.position; for (let k = 0; k < U.count; k++) U.setXY(k, Pp.getX(k) / w + .5, Pp.getY(k) / h + .5);
+      const cx = (x0 + x1) / 2, ct = (t0 + t1) / 2, Xa = V3(s, 0, 0), Ta = V3(0, cA, -s * sA), Na = V3(0, sA, s * cA), m = new THREE.Matrix4().makeBasis(Xa, Ta, Na).setPosition(V3(...P(s, cx, ct, .05)));
+      g.applyMatrix4(m); g.computeVertexNormals();
+      if (st === 'leather') add('leather', g); else { add(st === 'salted' ? 'salted' : 'flesh', g); add('hair', g.clone()); }
+      // the lacing: a cord from every other point of the edge to the nearest member of the bay (a stile or a rail)
+      for (let k = 0; k < pts.length; k += 2) { const [u, v] = pts[k], lx = cx + u * w, lt = ct + v * h, dl = [lx - x0, x1 - lx, lt - t0, t1 - lt], j = dl.indexOf(Math.min(...dl));
+        const tx = j === 0 ? x0 - .06 : j === 1 ? x1 + .06 : lx, tt = j === 2 ? t0 - .06 : j === 3 ? t1 + .06 : lt; cord(P(s, lx, lt, .05), P(s, tx, tt, 0)); }
+    }
+  } else {
+    // the drying rack: an A at each end, the ridge pole in their heads, a lower rail each side; the four hangs along the ridge
+    const HT = island === 'mark' ? 2.0 : 1.65, X = island === 'mark' ? 1.5 : 1.25, SP = island === 'mark' ? .62 : .5, r = round ? .05 : .045;
+    if (island === 'aurenne') {
+      // four posts and a frame at its height, the hangs from S-hooks on the ridge, the reed shade over all
+      for (const x of [-X, X]) for (const z of [-SP * .6, SP * .6]) beam(wood, [x, gy(x, z) - .15, z], [x, HT + .02, z], r);
+      for (const z of [-SP * .6, SP * .6]) beam(wood, [-X - .08, HT, z], [X + .08, HT, z], r * .8);
+      for (const x of [-X, X]) beam(wood, [x, HT, -SP * .6 - .06], [x, HT, SP * .6 + .06], r * .8);
+      beam(wood, [-X, HT - .02, 0], [X, HT - .02, 0], r * .7);
+      shade(X + .3, HT + .03 + r * .8 - .06 + .02, .75, .06);
+    } else {
+      for (const x of [-X, X]) { for (const s of [-1, 1]) beam(wood, [x, gy(x, s * SP) - .2, s * SP], [x, HT + (round ? .3 : .06), -s * (round ? .14 : .02)], r);
+        if (round) lash([x, HT, 0], r * 1.1); else beam('peg', [x, HT - .04, -.08], [x, HT - .04, .08], .014, false);
+        if (!round) beam(wood, [x, gy(x, 0) + .03, -SP - .16], [x, gy(x, 0) + .03, SP + .16], .06); }
+      for (const s of [-1, 1]) beam(wood, [-X - .1, HT * .55, s * SP * .45], [X + .1, HT * .55, s * SP * .45], r * .7);
+      beam(wood, [-X - (round ? .3 : .12), HT + .02, 0], [X + (round ? .3 : .12), HT + .02, 0], r * .9);
+    }
+    const ry = island === 'aurenne' ? HT - .02 - .16 : HT + .02, pr = island === 'aurenne' ? .015 : r * .9;
+    for (let i = 0; i < 4; i++) { const x0 = -X + .15 + i * (2 * X - .3) / 4, x1 = x0 + (2 * X - .3) / 4; at[i] = { x: (x0 + x1) / 2, y: ry - .3, z: 0 };
+      if (island === 'aurenne') { beam(wood, [x0, ry, 0], [x1, ry, 0], .015, false, 6); for (const hx of [x0 + .05, x1 - .05]) beam('iron', [hx, ry, 0], [hx, HT - .02 - r * .7, 0], .005, false, 4); }
+      if (slots[i]) hang(x0 + .04, x1 - .04, ry, pr, slots[i], i); }
+    box = { w: 2 * X + .2, d: island === 'aurenne' ? SP * 1.2 + .1 : 2 * SP + .1, h: HT + .1 };
+    function hang(x0, x1, py, pr, st, i) {
+      const hr = stream(String(o.key || 'rack') + ':hang:' + i);
+      if (st === 'meat' || st === 'jerky') {
+        // the strips: five ribbons draped over the pole, the front leg longer, a wobble along them (jerky's wrinkled and shrunk)
+        const J = st === 'jerky', n = 5;
+        for (let k = 0; k < n; k++) { const cx = x0 + (k + .5) * (x1 - x0) / n + (hr() - .5) * .02, w = (J ? .04 : .06) * (.85 + hr() * .3), Lf = (J ? .26 : .36) * (.8 + hr() * .4), Lb = Lf * (.55 + hr() * .3), th = J ? .006 : .012, R0 = pr + th;
+          const path = q => { const L = Lf + Lb + Math.PI * R0; let d = q * L; if (d < Lf) return [0, py - (Lf - d), R0]; d -= Lf; if (d < Math.PI * R0) { const a = d / R0; return [0, py + Math.sin(a) * R0, Math.cos(a) * R0]; } d -= Math.PI * R0; return [0, py - d, -R0]; };
+          const nv = 14, pos = [], idx = []; for (let j = 0; j <= nv; j++) { const p = path(j / nv), wob = (J ? .012 : .005) * Math.sin(j * 1.9 + k * 2.3); for (const e of [-.5, .5]) pos.push(cx + e * w * (1 - (J ? .15 : 0) * Math.sin(j)), p[1], p[2] + wob * (p[2] > 0 ? 1 : -1)); }
+          for (let j = 0; j < nv; j++) { const a = j * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+          const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); add(J ? 'jerky' : 'meat', g);
+        }
+      } else {
+        // the fish: three pairs tied at the tails, one each side of the pole; fresh silver with a dark back, or flat and yellowed when dried
+        const D = st === 'fishdry', n = 3;
+        for (let k = 0; k < n; k++) { const cx = x0 + (k + .5) * (x1 - x0) / n, L = (.42 + hr() * .1) * (D ? .92 : 1), W = L * (D ? .17 : .22);
+          const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(W * .5, -.03); sh.lineTo(W * .14, -.07); sh.quadraticCurveTo(W * .6, -L * .45, W * .2, -L * .92); sh.lineTo(0, -L); sh.lineTo(-W * .2, -L * .92); sh.quadraticCurveTo(-W * .6, -L * .45, -W * .14, -.07); sh.lineTo(-W * .5, -.03); sh.lineTo(0, 0);
+          for (const s of [-1, 1]) { const g = new THREE.ExtrudeGeometry(sh, { depth: D ? .008 : .03, bevelEnabled: false, curveSegments: 4 }); g.translate(0, 0, -(D ? .004 : .015));
+            g.rotateX(s * .08); g.translate(cx + s * .012, py - pr * .2, s * (pr + (D ? .01 : .02))); add(D ? 'fishdry' : 'fish', g);
+            if (!D) { const b = new THREE.BoxGeometry(.012, L * .7, .032); b.translate(cx + s * .012, py - pr * .2 - L * .45, s * (pr + .02)); add('fishBack', b); } }
+          cord([cx - .03, py + pr + .006, 0], [cx + .03, py + pr + .006, 0], .006); }
+      }
+    }
+  }
+  // Aurenne's shade: a reed mat over a light frame at height y, half-width wx along x, dz out each side, a little pitch
+  function shade(wx, y, dz, pitch) {
+    const g = new THREE.BoxGeometry(2 * wx, .025, 2 * dz, 1, 1, 2); const Pp = g.attributes.position; for (let k = 0; k < Pp.count; k++) Pp.setY(k, Pp.getY(k) + pitch * (1 - Math.abs(Pp.getZ(k)) / dz));
+    g.translate(0, y, 0); add('reed', g); for (const s of [-1, 1]) beam(wood, [-wx, y - .02, s * dz * .95], [wx, y - .02, s * dz * .95], .022);
+    beam(wood, [-wx, y + pitch - .02, 0], [wx, y + pitch - .02, 0], .025); }
+  const group = new THREE.Group(); group.name = 'rack:' + kind + ':' + island; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, M[k]); m.name = 'rack:' + k; m.castShadow = k !== 'cord'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, kind, island, slots, at, box: { w: +box.w.toFixed(2), d: +box.d.toFixed(2), h: +box.h.toFixed(2) } };
+}
 // ── ships (card F11, backlog L6, OG-004; Session 1531): the Gatelands sloop of docs/prototypes/levelup/ships.js (gatelandsSloop,
 // Session 858; Michael's A on #306: the square sail, the harp, a tiller on the small hulls), in the game's sloop's numbers (L 13, W 4.4,
 // draft 1.05, the deck 1.0 over the sea): clinker strakes lapped, tarred below the water and oak above, the sheer strake green under a
@@ -9846,7 +9983,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws: group.children.length, sol, shape: S, houses, slip, steps, stairTop: S.stairTop, lookout: look, boats, cargo };
   }
   aurenneCove.shape = coveShape; /* the world reads the cut ground before the piece is built (offroadStamps) */
-  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, camp: campGear, fire: campFire }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, camp: campGear, fire: campFire, rack: workRack }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
