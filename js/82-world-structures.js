@@ -2896,6 +2896,44 @@
       const R=PKIT.props.rack(kind,isle,{ground,key,slots:sl});for(const c of [...R.group.children])g.add(c);Object.assign(g.userData.rack,{slots:R.slots,tris:R.tris,draws:R.draws,box:R.box,at:R.at});};
     g.userData.rack={kind,island:isle,key,slots:[],tris:0,draws:0,box:null,at:[],set(sl){if(JSON.stringify(sl||[])!==JSON.stringify(this.slots))build(sl);}};
     build(o.slots||[]);return g;}
+  // S2136 — the racks of S2132's rules stood where those rules keep them (Michael's B on #1420; the design's "a tanner's rack and a drying
+  // rack stand in every town with a smith ... and at every fishing harbour (drying racks only)"): curesOf(house) names them (50-travel.js),
+  // and each stands in its house's yard, behind the house or beside it, its long side along the wall, the posts a solid. Nothing is rolled:
+  // the spots are tried in one order and the first clear one taken (half a metre clear of the town's solids, of every door and step-out by 2.5 m, of a
+  // road by 3.5 m, out of the sea, and on ground that falls under 0.8 m across it). What hangs on it is what worldState.racks holds for its
+  // key, in the order hung: a hide salted until it is ready, then leather; meat or a fish raw, then jerky or stockfish (rackSlotsFor).
+  // townRacksLive (from houseLod, every frame) shows a rack within RACK_SHOW and reads its slots again once a second; set() rebuilds only
+  // when they differ. -> [{g, key, kind, house, x, z, t}] (S.racks); [] on the old look
+  const RACK_SHOW=70;
+  function rackSlotsFor(key){const L=(worldState.racks&&worldState.racks[key])||[],now=typeof gameMinNow==='function'?gameMinNow():0,M=typeof RACK_MIN!=='undefined'?RACK_MIN:360;
+    return [0,1,2,3].map(i=>{const e=L[i];if(!e)return null;const ready=now-e.at>=M;
+      return e.k==='hide'?(ready?'leather':'salted'):e.k==='fish'?(ready?'fishdry':'fish'):(ready?'jerky':'meat');});}
+  function townRacks(site,houses,sol,group){if(window.OG_LOOK!=='new'||typeof curesOf!=='function'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.rack)return [];
+    const out=[],hit=(x,z,R)=>sol.some(s=>{const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
+    const doors=[];for(const h of houses){if(h.doorX!=null)doors.push([h.doorX,h.doorZ]);if(h.exitX!=null)doors.push([h.exitX,h.exitZ]);}
+    const HW=1.7,HD=1.05; /* the larger of the two racks' halves on any island (the Mark's hjell 3.2 m long, the Gatelands' sills 1.9 deep), with a hand's room */
+    const clear=(x,z,ry)=>{const c=Math.cos(ry),s_=Math.sin(ry);let lo=1e9,hi=-1e9;
+      for(let u=-HW;u<=HW+1e-6;u+=HW/3)for(let v=-HD;v<=HD+1e-6;v+=HD/2){const wx=x+u*c+v*s_,wz=z-u*s_+v*c;if(hit(wx,wz,.5))return false;
+        if(doors.some(([a,b])=>Math.hypot(wx-a,wz-b)<2.5))return false;const y=worldH(wx,wz);if(y<SEA_Y+.3)return false;lo=Math.min(lo,y);hi=Math.max(hi,y);}
+      if(hi-lo>.8)return false;try{const ri=roadInfo(x,z);if(ri&&ri.d<3.5+HD)return false;}catch(e){}return true;};
+    for(const h of houses){const RS=curesOf(h),lot=h._lot;if(!RS.length||!lot)continue;
+      const tx=lot.tx,tz=lot.tz,w=lot.w||6,d=lot.d||6,at=(u,v)=>[lot.x+u*tz+v*tx,lot.z-u*tx+v*tz],along=Math.atan2(tx,tz),deep=along+Math.PI/2;
+      // behind first (the yard), then the sides, then a rack's depth further out each way, so two stand side by side or one behind the other
+      const spots=[],SU=2*HW+.6,SV=2*HD+.8;for(let k=0;k<3;k++){for(const u of [0,-SU/2,SU/2,-SU,SU])spots.push([u,-(d/2+.6+HD+k*SV),along]);
+        if(k<2)for(const sd of [-1,1])for(const v of [0,-d/4,d/4,-d/2])spots.push([sd*(w/2+.6+HD+k*SV),v,deep]);}
+      for(const r of RS){const sp=spots.find(([u,v,ry])=>{const [x,z]=at(u,v);return clear(x,z,ry);});if(!sp)continue;
+        const [x,z]=at(sp[0],sp[1]),ry=sp[2],kind=r.kind==='rack'?'tan':'dry',g=workRackProp(kind,x,z,ry,{key:r.key,slots:rackSlotsFor(r.key)});if(!g)continue;
+        g.name='rack:'+r.key;group.add(g);const B=g.userData.rack.box||{w:2*HW,d:2*HD};sol.push({cx:x,cz:z,rx:B.w/2,rz:B.d/2,c:Math.cos(ry),s:Math.sin(ry),bt:'rack'});
+        out.push({g,key:r.key,kind,house:h.id,h,x,z,c:Math.cos(ry),s:Math.sin(ry),rx:B.w/2,rz:B.d/2,t:performance.now()});}}
+    return out;}
+  // the rack you stand at in the open: within 1.2 m of its posts' box, in the world, outdoors, drawn. Its page is its house's (curesHere, 50:
+  // a smith's two racks are one page, as in his room); E opens it (50's interact) and the prompt reads as the yard's staff rack's (90)
+  function townRackNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
+    for(const S of SETTLE.values())for(const R of S.racks||[]){if(!R.g.visible)continue;const dx=px-R.x,dz=pz-R.z,lx=dx*R.c-dz*R.s,lz=dx*R.s+dz*R.c;
+      if(Math.abs(lx)<R.rx+1.2&&Math.abs(lz)<R.rz+1.2)return R;}return null;}
+  function townRackPrompt(){const R=townRackNear();return R?`Press 'E' to see the ${R.kind==='tan'?'tanner’s rack':'drying rack'}`:null;}
+  function townRacksLive(S,cp){const now=performance.now();for(const R of S.racks){const v=Math.hypot(R.x-cp.x,R.z-cp.z)<RACK_SHOW;R.g.visible=v;
+      if(v&&now-R.t>1000){R.t=now;try{R.g.userData.rack.set(rackSlotsFor(R.key));}catch(e){}}}}
   // S2128 — the stump a felled tree leaves, the kit's (PKIT.props.stump, 38-kit.js), on the new look: its bark by the tree's species (the pines,
   // the spruces and the snowpine a pine's; a birch a birch's; the rest an oak's), its girth the old stand-in's (the trunk's collider × .55,
   // 0.14 to 0.5 m), the roots and the chips laid on the land. The notch faces the way the tree fell: t.fall where you felled it this visit, else
