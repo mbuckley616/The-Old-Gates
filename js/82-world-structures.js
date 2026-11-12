@@ -2947,6 +2947,52 @@
   function townRackPrompt(){const R=townRackNear();return R?`Press 'E' to see the ${R.kind==='tan'?'tanner’s rack':'drying rack'}`:null;}
   function townRacksLive(S,cp){const now=performance.now();for(const R of S.racks){const v=Math.hypot(R.x-cp.x,R.z-cp.z)<RACK_SHOW;R.g.visible=v;
       if(v&&now-R.t>1000){R.t=now;try{R.g.userData.rack.set(rackSlotsFor(R.key));}catch(e){}}}}
+  // S2165 — your house's garden in its yard (Michael's B on #1420; PKIT.props.garden, 38-kit.js), on the new look: four beds in two rows across
+  // a cross of paths, the island's edging, each bed growing what worldState.garden holds for it (the systems builder's S2140) at its stage:
+  // 'sown' for its first fifth of GARDEN_DAYS, then 'growing', then 'ready'. Stood as the racks are (S2136): behind the house, then beside it,
+  // a garden's depth further out each way, each a path's width (1.6 m) off the house, the first spot clear of the town's solids (the racks of your house among them, laid first), of every
+  // door by 2.5 m, of a road and of the sea, on ground that falls under 0.8 m across it. Its four beds are solids (bt 'garden'), the paths
+  // between them free, and its middle, where the paths cross, is the yard's spot for the rules (h._yardFits.garden, S2153's homeYardAt): every
+  // bed is within reach of it. A herb sown is the plant kit's own (plantGeo, 30-plants.js), three to a bed, sized by its stage.
+  // townGardensLive (from houseLod) shows a garden within RACK_SHOW and reads its beds again once a second; set() rebuilds only when they differ.
+  // -> [{g, key, house, h, x, z, t}] (S.gardens); [] on the old look
+  function gardenBedsOf(h){const L=(worldState.garden&&worldState.garden[h.id])||[],now=typeof gameMinNow==='function'?gameMinNow():0,D=(typeof GARDEN_DAYS!=='undefined'?GARDEN_DAYS:5)*1440;
+    return [0,1,2,3].map(i=>{const e=L[i];if(!e)return null;const f=(now-e.at)/D,stage=f>=1?'ready':f<.2?'sown':'growing';
+      if(e.k==='second')return {crop:e.s,stage};const nm=e.item&&e.item.name;let hk=null;if(typeof HERB_DEF!=='undefined')for(const k in HERB_DEF){const d=HERB_DEF[k];if(d&&((d.item&&d.item.name===nm)||d.name===nm)){hk=k;break;}}
+      return {crop:'herb',herb:hk,stage};});}
+  function yardGardenProp(x,z,ry,o){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.garden)return null;o=o||{};
+    const y0=worldH(x,z),co=Math.cos(ry),s_=Math.sin(ry),ground=(lx,lz)=>worldH(x+lx*co+lz*s_,z-lx*s_+lz*co)-y0;
+    let isle='gatelands';try{isle=o.island||nationKeyOf(...cellOf(x,z));}catch(e){}
+    const key=o.key||('garden:'+Math.round(x)+','+Math.round(z)),g=new THREE.Group();g.name='garden';g.position.set(x,y0,z);g.rotation.y=ry;
+    const build=bd=>{for(const c of [...g.children]){g.remove(c);if(c.geometry&&!c.userData.shared)c.geometry.dispose();} /* the kit's materials and the herbs' geometry are shared */
+      const K=PKIT.props.garden(isle,{ground,key,beds:bd});for(const c of [...K.group.children])g.add(c);let tris=K.tris,draws=K.draws,herbs=0;
+      (bd||[]).forEach((b,i)=>{if(!b||b.crop!=='herb'||!b.herb||typeof plantGeo!=='function')return;const pg=plantGeo(b.herb,false);if(!pg)return;const s=b.stage==='sown'?.3:b.stage==='growing'?.65:1;
+        for(const [hx,hy,hz] of K.at[i]){const m=new THREE.Mesh(pg,PLANT_MAT);m.userData.shared=true;m.position.set(hx,hy,hz);m.scale.setScalar(s);m.rotation.y=(hx*7.3+hz*3.1)%6.283;m.castShadow=true;g.add(m);herbs++;tris+=(pg.index?pg.index.count:pg.attributes.position.count)/3;draws++;}});
+      Object.assign(g.userData.garden,{beds:JSON.parse(JSON.stringify(bd||[])),tris:Math.round(tris),draws,herbs,box:K.box,plots:K.plots});};
+    g.userData.garden={island:isle,key,beds:null,tris:0,draws:0,herbs:0,box:null,plots:[],set(bd){if(JSON.stringify(bd||[])!==JSON.stringify(this.beds))build(bd);}};
+    build(o.beds||[null,null,null,null]);return g;}
+  function townGardens(site,houses,sol,group){if(window.OG_LOOK!=='new'||typeof homeMine!=='function'||typeof homeFitted!=='function'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.garden)return [];
+    const out=[],hit=(x,z,R)=>sol.some(s=>{const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
+    const doors=[];for(const h of houses){if(h.doorX!=null)doors.push([h.doorX,h.doorZ]);if(h.exitX!=null)doors.push([h.exitX,h.exitZ]);}
+    const HW=2.15,HD=1.65; /* the largest garden's halves (Aurenne's with its jar 4.35 m long, the Mark's logs 3.4 deep), with a hand's room */
+    const clear=(x,z,ry)=>{const c=Math.cos(ry),s_=Math.sin(ry);let lo=1e9,hi=-1e9;
+      for(let u=-HW;u<=HW+1e-6;u+=HW/4)for(let v=-HD;v<=HD+1e-6;v+=HD/3){const wx=x+u*c+v*s_,wz=z-u*s_+v*c;if(hit(wx,wz,.4))return false;
+        if(doors.some(([a,b])=>Math.hypot(wx-a,wz-b)<2.5))return false;const y=worldH(wx,wz);if(y<SEA_Y+.3)return false;lo=Math.min(lo,y);hi=Math.max(hi,y);}
+      if(hi-lo>.8)return false;try{const ri=roadInfo(x,z);if(ri&&ri.d<3.5+HD)return false;}catch(e){}return true;};
+    for(const h of houses){if(!h||!h._lot||!homeMine(h)||!homeFitted(h,'garden'))continue;const lot=h._lot;
+      const tx=lot.tx,tz=lot.tz,w=lot.w||6,d=lot.d||6,at=(u,v)=>[lot.x+u*tz+v*tx,lot.z-u*tx+v*tz],along=Math.atan2(tx,tz),deep=along+Math.PI/2;
+      const spots=[],SU=2*HW+.6,SV=2*HD+.8;
+      for(let k=0;k<4;k++){for(const u of [0,-SU/2,SU/2,-SU,SU])spots.push([u,-(d/2+1.6+HD+k*SV),along]); /* a path's width off the wall, past a back door's step */
+        if(k<3)for(const sd of [-1,1])for(const v of [0,-d/4,d/4,-d/2])spots.push([sd*(w/2+1.6+HD+k*SV),v,deep]);}
+      const sp=spots.find(q=>{const [x,z]=at(q[0],q[1]);return clear(x,z,q[2]);});if(!sp)continue;
+      const [x,z]=at(sp[0],sp[1]),ry=sp[2],gkey='garden:'+h.id,g=yardGardenProp(x,z,ry,{key:gkey,beds:gardenBedsOf(h)});if(!g)continue;
+      g.name='garden:'+h.id;group.add(g);const c=Math.cos(ry),s_=Math.sin(ry);
+      for(const P of g.userData.garden.plots){const bx=x+P.x*c+P.z*s_,bz=z-P.x*s_+P.z*c;sol.push({cx:bx,cz:bz,rx:P.w/2+.06,rz:P.d/2+.06,c,s:s_,bt:'garden',house:h.id});}
+      if(!h._yardFits)Object.defineProperty(h,'_yardFits',{value:{},writable:true,configurable:true});h._yardFits.garden={x:+x.toFixed(3),z:+z.toFixed(3)};
+      out.push({g,key:gkey,house:h.id,h,x,z,t:performance.now()});}
+    return out;}
+  function townGardensLive(S,cp){const now=performance.now();for(const G of S.gardens){const v=Math.hypot(G.x-cp.x,G.z-cp.z)<RACK_SHOW;G.g.visible=v;
+      if(v&&now-G.t>1000){G.t=now;try{G.g.userData.garden.set(gardenBedsOf(G.h));}catch(e){}}}}
   // S2128 — the stump a felled tree leaves, the kit's (PKIT.props.stump, 38-kit.js), on the new look: its bark by the tree's species (the pines,
   // the spruces and the snowpine a pine's; a birch a birch's; the rest an oak's), its girth the old stand-in's (the trunk's collider × .55,
   // 0.14 to 0.5 m), the roots and the chips laid on the land. The notch faces the way the tree fell: t.fall where you felled it this visit, else

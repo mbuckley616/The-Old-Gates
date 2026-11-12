@@ -1348,6 +1348,7 @@ function genSettlement(site){
       const lo=new THREE.Mesh(mergeGeos(kitLo),VC_MAT);lo.name='kit houses far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);kitLo.forEach(([g])=>g.dispose()); /* S1073 — and their far copy */
       let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */for(const Y of S.yards||[])r=Math.max(r,Math.hypot(Y.x-cx,Y.z-cz)+Y.r+2);if(S.market)r=Math.max(r,Math.hypot(S.market.x-cx,S.market.z-cz)+S.market.r); /* S1904 — and the market house */if(S.academy)r=Math.max(r,Math.hypot(S.academy.cx-cx,S.academy.cz-cz)+S.academy.r); /* S1959 — and the academy */ /* S1658 — and a yard outside the walls */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
     try{S.racks=townRacks(site,houses,sol,group);}catch(e){console.warn('racks',e);S.racks=[];} /* S2136 — the smith's and the harbour's racks in their yards */
+    try{S.gardens=townGardens(site,houses,sol,group);}catch(e){console.warn('gardens',e);S.gardens=[];} /* S2165 — your house's garden in its yard, after the racks */
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
@@ -1378,6 +1379,7 @@ function genSettlement(site){
   function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
     for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod,S.cairnLod,S.whLod,S.thLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     if(S.racks&&S.racks.length)townRacksLive(S,cp); /* S2136 — shown near, and what hangs kept to worldState.racks */
+    if(S.gardens&&S.gardens.length)townGardensLive(S,cp); /* S2165 — and your garden's beds kept to worldState.garden */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
