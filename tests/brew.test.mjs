@@ -141,13 +141,16 @@ check(`the guide: ${fg.count.n} of ${fg.count.of} found over ${fg.pages} pages, 
 check(`an old save's guide holds what it ate and carries (Thornberry ${fg.old.thorn}, Icebloom ${fg.old.ice}), not the rest`, fg.old.thorn && fg.old.ice && !fg.old.fire, fg.old);
 check(`the apothecary sells it at ${fg.stock[0] && fg.stock[0][1]}, the smith not; read: "${fg.title}"`, fg.stock.length === 1 && fg.stock[0][1] === 20 && fg.stock[0][2] === 'book' && fg.smith === 0 && fg.title === 'A Field Guide to the Three Islands' && /^A FIELD GUIDE/.test(fg.page) && fg.charKey, fg);
 // ── S2160: the rare specimens (#1463 B, session 2): patches by cell, buds, hours and weathers, a pick that regrows in 7 days ──
-const sp0 = await page.evaluate(() => { const o = { per: { gatelands: 0, mark: 0, aurenne: 0 }, kinds: {} };
-  for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { const L = specCell(i, j); if (!L.length) continue; o.per[nationKeyOf(i, j)] += L.length; L.forEach(p => { o.kinds[p.kind] = (o.kinds[p.kind] || 0) + 1; if (SPEC_DEF[p.kind].island !== nationKeyOf(i, j)) o.wrong = p.id; }); }
+const sp0 = await page.evaluate(() => { const o = { per: { gatelands: 0, mark: 0, aurenne: 0 }, kinds: {} }; const q0 = p => /:0$/.test(p.id); /* a patch's first plant stands on the spot that was tried */
+  for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { const L = specCell(i, j); if (!L.length) continue; o.per[nationKeyOf(i, j)] += L.length; L.forEach(p => { o.kinds[p.kind] = (o.kinds[p.kind] || 0) + 1; if (SPEC_DEF[p.kind].island !== nationKeyOf(i, j)) o.wrong = p.id;
+    const y = rawH(p.x, p.z), G = SPEC_DEF[p.kind].ground; if (G) { const k = (o.gr = o.gr || {})[p.kind] || (o.gr[p.kind] = { lo: 1e9, hi: -1e9 }); if (q0(p, L)) { k.lo = Math.min(k.lo, y); k.hi = Math.max(k.hi, y); } } }); }
   const [ci, cj] = cellOf(px, pz); const a = JSON.stringify(specCell(ci, cj)); SPEC_CELLS.clear(); o.same = a === JSON.stringify(specCell(ci, cj));
   const p = specCell(ci, cj).find(q => q.kind === 'whispercap'); window._tp = p; o.p = !!p; if (p) WORLD.enter(p.x + 1.2, p.z, 0, 'test'); return o; });
 console.log(JSON.stringify(sp0));
 check(`every kind placed on its own island only (${Object.entries(sp0.kinds).map(([k, n]) => k + ' ' + n).join(', ')}); a cell's patches the same when made again`,
-  Object.keys(sp0.kinds).length === 7 && Object.values(sp0.kinds).every(n => n >= 20) && !sp0.wrong && sp0.same && sp0.p, sp0);
+  Object.keys(sp0.kinds).length === 9 && Object.values(sp0.kinds).every(n => n >= 20) && !sp0.wrong && sp0.same && sp0.p, sp0);
+check(`S2165: Skyshard on the Mark's fells, its patches at ${sp0.gr.skyshard.lo.toFixed(0)}–${sp0.gr.skyshard.hi.toFixed(0)} m; Saltcrystal on Aurenne's shore sand, at ${sp0.gr.saltcrystal.lo.toFixed(1)}–${sp0.gr.saltcrystal.hi.toFixed(1)} m`,
+  sp0.gr.skyshard.lo >= 60 && sp0.gr.saltcrystal.lo >= 1.6 && sp0.gr.saltcrystal.hi < 6, sp0.gr);
 await page.waitForTimeout(6000);
 const sp = await page.evaluate(() => { const o = {}, p = window._tp, s = SPECS.find(q => q.id === p.id); o.found = !!(s && s.g && s.g.parent); if (!s) return o;
   px = p.x + .8; pz = p.z; const setH = h => { worldState.gameTimeMinutes = Math.round(h * 60) + 1440 * 3; worldState.gameTimeAbsMinutes = worldState.gameTimeMinutes; };
@@ -159,6 +162,8 @@ const sp = await page.evaluate(() => { const o = {}, p = window._tp, s = SPECS.f
   WORLD.wx.type = 'rain'; noteWeather(); o.reed = [specOpen('bloodreed')]; WORLD.wx.type = 'clear'; worldState.gameTimeAbsMinutes += 100; o.reed.push(specOpen('bloodreed')); worldState.gameTimeAbsMinutes += 30; o.reed.push(specOpen('bloodreed'));
   WORLD.wx.type = 'storm'; noteWeather(); o.glass = [specOpen('sunglass')]; WORLD.wx.type = 'overcast'; worldState.gameTimeAbsMinutes += 300; o.glass.push(specOpen('sunglass')); worldState.gameTimeAbsMinutes += 100; o.glass.push(specOpen('sunglass'));
   WORLD.wx.cover = .6; o.iron = [specOpen('ironleaf')]; WORLD.wx.cover = .2; o.iron.push(specOpen('ironleaf'));
+  worldState.wxSeen = {}; WORLD.wx.type = 'storm'; noteWeather(); o.sky = [specOpen('skyshard')]; WORLD.wx.type = 'clear'; worldState.gameTimeAbsMinutes += 300; o.sky.push(specOpen('skyshard')); worldState.gameTimeAbsMinutes += 100; o.sky.push(specOpen('skyshard'));
+  o.salt = [specOpen('saltcrystal')]; worldState.gameTimeAbsMinutes += 2 * 1440 - 400; o.salt.push(specOpen('saltcrystal')); WORLD.wx.type = 'rain'; o.salt.push(specOpen('saltcrystal')); WORLD.wx.type = 'clear';
   setH(23); WORLD.wx.type = 'clear'; o.orchid = [specOpen('moonfenorchid')]; WORLD.wx.type = 'overcast'; o.orchid.push(specOpen('moonfenorchid'));
   o.wxWorld = !SS_CHAR_WS.wxSeen; return o; });
 console.log(JSON.stringify(sp));
@@ -167,6 +172,8 @@ check(`at 20h it is open (${sp.dusk}): picked for ${sp.pick.marks} Alchemy marks
   sp.dusk === 'open' && sp.pick.bag === 'Whispercap:whispercap' && sp.pick.marks === 10 && sp.pick.shown === 'gone' && !sp.pick.again && sp.day6 && !sp.day7, sp);
 check(`the weathers: Bloodreed in rain and 2 h after (${sp.reed}), Sunglass 6 h after a storm (${sp.glass}), Ironleaf under snow (${sp.iron}), Moonfen Orchid at night when clear (${sp.orchid}); the history is the world's`,
   sp.reed.join() === 'true,true,false' && sp.glass.join() === 'false,true,false' && sp.iron.join() === 'true,false' && sp.orchid.join() === 'true,false' && sp.wxWorld, sp);
+check(`S2165: Skyshard in the storm, 5 h and 6 h 40 after (${sp.sky}); Saltcrystal 6 h 40 after rain, 2 days after, and in rain again (${sp.salt})`,
+  sp.sky.join() === 'false,true,false' && sp.salt.join() === 'false,true,false', sp);
 // ── S2159: the specimens in the mortar (#1463 B, session 3): each a catalyst, one a grinding, spent; learnt by observing, study or experiment ──
 const ct = await page.evaluate(() => { const o = {};
   BAG.length = 0; worldState.herbsKnown = null; for (const k in HERB_CONSUME_COUNTS) delete HERB_CONSUME_COUNTS[k]; SKILLS.alchemy = { lv: 50, p: 0 }; ACTIVE_BUFFS.length = 0;
@@ -184,6 +191,11 @@ const ct = await page.evaluate(() => { const o = {};
   const keys = Object.keys(HERB_FX).filter(k => HERB_DEF[k] && HERB_DEF[k].zone !== 'gate'); let pair = null;
   for (let i = 0; i < keys.length && !pair; i++) for (let j = i + 1; j < keys.length && !pair; j++) { const sh = brewShared([keys[i], keys[j]]); if (sh.poison && sh.all.some(f => !ALCH_FX[f].harm)) pair = [keys[i], keys[j]]; }
   o.pair = pair; pair.forEach(k => herb(k, 2)); o.dirty = brewShared(pair).poison; sp('snowshroom'); const cl = brewHerbs(pair, 'snowshroom'); o.clean = { made: cl.made, poison: cl.item && cl.item.brew.poison, harm: cl.item && cl.item.brew.fx.some(f => ALCH_FX[f].harm), name: cl.item && cl.item.name };
+  // S2165: Skyshard steeps ×1.4; Saltcrystal binds two herbs with nothing shared into their first effects
+  sp('skyshard'); o.steep2 = +(brewHerbs(['firemoss', 'silverleaf'], 'skyshard').item.brew.s / plain).toFixed(3);
+  let lone = null; for (let i = 0; i < keys.length && !lone; i++) for (let j = i + 1; j < keys.length && !lone; j++) { const a = keys[i], b = keys[j]; if (!brewShared([a, b]).all.length && !ALCH_FX[HERB_FX[a][0]].harm && !ALCH_FX[HERB_FX[b][0]].harm && HERB_FX[a][0] !== HERB_FX[b][0]) lone = [a, b]; }
+  o.lone = lone; lone.forEach(k => herb(k, 2)); o.bare = brewHerbs(lone).why; sp('saltcrystal'); const bd = brewHerbs(lone, 'saltcrystal');
+  o.bind = { made: bd.made, fx: bd.item && bd.item.brew.fx.join(), want: lone.map(k => HERB_FX[k][0]).join(), name: bd.item && bd.item.name, learnt: bd.learnt && bd.learnt.join(), salt: BAG.some(b => b.spec === 'saltcrystal') };
   // observe and study
   o.obs = [specObserve('miragebloom'), specObserve('miragebloom'), specObserve('miragebloom')]; o.obsKnown = specCatKnown('miragebloom');
   sp('sunglass'); o.studyOut = studySpecimen('sunglass').why; const _ii = isInterior, _ch = currentHouse; isInterior = () => true; currentHouse = { type: 'potion' };
@@ -199,6 +211,8 @@ check(`Revealing (the Whispercap, unknown until used: "${ct.unknown}"): Firemoss
 check(`Steeping (the Moonfen Orchid): strength ×${ct.steep}; none left, none used: "${ct.noCat}"`, ct.steep === 1.25 && ct.orchidGone && /specimen/.test(ct.noCat || ''), ct);
 check(`Venom (Bloodreed): the poison coats for ${ct.venom} blows; Lasting (Ironleaf): Swiftness for ${ct.lastS} s against ${ct.plainS}`, ct.venom === 6 && ct.lastKey === 2 && ct.lastS === 2 * ct.plainS && ct.plainS === 60, ct);
 check(`Clean (Snowshroom): ${ct.pair.join(' and ')} make a poison bare, with it "${ct.clean.name}", nothing harmful`, ct.dirty && ct.clean.made && !ct.clean.poison && !ct.clean.harm, ct.clean);
+check(`S2165: Steeping (Skyshard) ×${ct.steep2}; Binding (Saltcrystal): ${ct.lone.join(' and ')} share nothing ("${ct.bare}"), with it "${ct.bind.name}"`,
+  ct.steep2 === 1.4 && /Nothing between/.test(ct.bare || '') && ct.bind.made && ct.bind.fx === ct.bind.want && !ct.bind.salt, ct.bind);
 check(`observed: the third open Miragebloom picked teaches it (${ct.obs}); study: refused with no table, an hour at the apothecary's (${ct.study.mins} min), one spent: "${ct.study.said}"`,
   ct.obs.join() === 'false,false,true' && ct.obsKnown && /table/.test(ct.studyOut || '') && ct.study.done && ct.study.mins === 60 && ct.study.spent && ct.study.known, ct);
 check(`the page offers the Ironleaf under the herbs, chosen and ground: "${ct.said}"`, /Ironleaf/.test(ct.row || '') && ct.sel === 'ironleaf' && /Swiftness/.test(ct.said) && ct.spent, ct);

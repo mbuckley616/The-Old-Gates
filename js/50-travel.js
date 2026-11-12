@@ -587,7 +587,7 @@ function fieldGuidePages(){const sec=guideSections(),C=fieldGuideCount();
   /* S2160 — the rare specimens: named once picked or looked at shut, with their hour once known */
   if(typeof SPEC_DEF!=='undefined'){const S=specKnown(),ks=Object.keys(SPEC_DEF);pages[0]+='\nRare specimens: '+ks.filter(k=>S.seen[k]).length+' of '+ks.length;
     const rows=ks.map(k=>{const D=SPEC_DEF[k];if(!S.seen[k]&&!S.cond[k])return '— an empty frame —';const isle=GUIDE_ISLE[D.island];
-      return D.name+' — Rare'+(S.seen[k]?'':' (seen shut)')+'\n'+isle[0].toUpperCase()+isle.slice(1)+': '+D.biomes.map(b=>GUIDE_BIOME[b]||b).join(', ')+(D.water==='bank'?', on river banks':D.water?', by water':'')+'.\n'+(S.cond[k]?SPEC_WHEN[D.open]:'When it opens is not yet known.')+(S.seen[k]?'\nIn the mortar: '+specCatLine(k):'');});
+      return D.name+' — Rare'+(S.seen[k]?'':' (seen shut)')+'\n'+isle[0].toUpperCase()+isle.slice(1)+': '+(D.ground?SPEC_GROUND[D.ground]:D.biomes.map(b=>GUIDE_BIOME[b]||b).join(', '))+(D.water==='bank'?', on river banks':D.water?', by water':'')+'.\n'+(S.cond[k]?SPEC_WHEN[D.open]:'When it opens is not yet known.')+(S.seen[k]?'\nIn the mortar: '+specCatLine(k):'');});
     for(let p=0;p<rows.length;p+=GUIDE_PER_PAGE)pages.push('RARE SPECIMENS'+(rows.length>GUIDE_PER_PAGE?' ('+(p/GUIDE_PER_PAGE+1)+' of '+Math.ceil(rows.length/GUIDE_PER_PAGE)+')':'')+'\n\n'+rows.slice(p,p+GUIDE_PER_PAGE).join('\n\n'));}
   return pages;}
 BOOKS.push({id:'field_guide',name:'A Field Guide to the Three Islands',ico:'📗',attr:null,get pages(){return fieldGuidePages();}});
@@ -598,8 +598,9 @@ function fieldGuideFor(h){if(!h||!(h.type==='potion'||h.type==='apothecary'))ret
 // neighbours' regions, rawH, the cell's sites), so a patch never hangs on what has loaded; each plant is <i>,<j>:sp:<kind>:<n>:<m>.
 // It opens at its hour or in its weather and is a closed bud otherwise (specOpen). E at a bud writes its condition into your guide
 // (learnSpecCond, the character's); E at an open one picks it (pickSpec): 10 Alchemy marks the first time, 1 after, the plant gone
-// for SPEC_REGROW_D game days (worldState.picked, the world's). Skyshard and Saltcrystal wait on the quest writer's yes on their names
-// (the page's "what must be true first"). The stand-in mesh is a kin herb's, whole when open and small and shut as a bud, until the
+// for SPEC_REGROW_D game days (worldState.picked, the world's). S2165: Skyshard and Saltcrystal, the last two (Michael's B named both); a
+// fell is the Mark's open ground above SPEC_FELL m (the page's 250 m is above every hill the Mark has: its highest is about 126 m), a
+// shore Aurenne's coast below SPEC_SHORE m. The stand-in mesh is a kin herb's, whole when open and small and shut as a bud, until the
 // bodies builder's nine land. The catalysts and the study are session 3.
 const SPEC_DEF={
   whispercap:{name:'Whispercap',island:'gatelands',kin:'shadowcap',biomes:['forest','autumn'],open:'dusk',price:45,eat:'stamina',desc:'A grey fungus of the old woods.'},
@@ -608,10 +609,14 @@ const SPEC_DEF={
   ironleaf:{name:'Ironleaf',island:'mark',kin:'coldmoss',biomes:['tundra'],open:'snow',price:55,eat:'health',desc:'A dark leaf that unrolls under snow.'},
   snowshroom:{name:'Snowshroom',island:'mark',kin:'frostcap',biomes:['forest'],open:'dawn',price:45,eat:'stamina',desc:'A white fungus of the spruce woods.'},
   miragebloom:{name:'Miragebloom',island:'aurenne',kin:'sandlotus',biomes:['dunes'],open:'noonClear',price:70,eat:'mana',desc:'A flower of the dunes that opens in the noon glare.'},
-  sunglass:{name:'Sunglass',island:'aurenne',kin:'shardmoss',biomes:['dunes','wastes','wasteland'],open:'afterStorm',price:90,eat:'mana',desc:'Sand fused to glass where lightning struck.'}};
+  sunglass:{name:'Sunglass',island:'aurenne',kin:'shardmoss',biomes:['dunes','wastes','wasteland'],open:'afterStorm',price:90,eat:'mana',desc:'Sand fused to glass where lightning struck.'},
+  skyshard:{name:'Skyshard',island:'mark',kin:'shardmoss',biomes:['tundra','moor'],ground:'fell',open:'afterStorm',price:90,eat:'mana',desc:'A clear crystal of the high fells, bared by the storm’s rain.'},
+  saltcrystal:{name:'Saltcrystal',island:'aurenne',kin:'shardmoss',biomes:['coast'],ground:'shore',open:'dry',price:60,eat:'stamina',desc:'Salt grown into clear cubes where the shore has dried.'}};
+const SPEC_FELL=60,SPEC_SHORE=6,SPEC_DRY_D=2;
 const SPEC_REGROW_D=7,SPEC_RAIN_AFTER=120,SPEC_STORM_AFTER=360;
+const SPEC_GROUND={fell:'the high fells, above 60 m',shore:'coast sand by the sea'};
 const SPEC_WHEN={dusk:'It opens at dusk.',clearNight:'It opens at night under a clear sky.',rain:'It opens in the rain, and for a while after.',snow:'It opens under snow.',
-  dawn:'It opens at dawn.',noonClear:'It opens at noon under a clear sky.',afterStorm:'It opens after a storm.'};
+  dawn:'It opens at dawn.',noonClear:'It opens at noon under a clear sky.',afterStorm:'It opens after a storm.',dry:'It opens after two dry days.'};
 // the named action for the weather's history (the world's, worldState.wxSeen): the last minute it rained and the last it stormed
 function noteWeather(){if(typeof WX==='undefined')return;const t=WX.type,W=worldState.wxSeen||(worldState.wxSeen={}),now=gameMinNow();
   if(t==='rain'||t==='storm')W.rain=now;if(t==='storm')W.storm=now;}
@@ -619,7 +624,8 @@ function specClear(){return typeof WX!=='undefined'&&WX.type==='clear';}
 function specOpen(kind){const D=SPEC_DEF[kind];if(!D)return false;const h=gameHour(),W=worldState.wxSeen||{},now=gameMinNow(),t=typeof WX!=='undefined'?WX.type:'clear';
   switch(D.open){case 'dusk':return h>=19&&h<22;case 'dawn':return h>=5&&h<8;case 'clearNight':return (h>=22||h<4)&&specClear();case 'noonClear':return h>=11&&h<15&&specClear();
     case 'rain':return t==='rain'||t==='storm'||(W.rain!=null&&now-W.rain<=SPEC_RAIN_AFTER);case 'snow':return typeof WX!=='undefined'&&WX.cover>=.5;
-    case 'afterStorm':return t!=='storm'&&W.storm!=null&&now-W.storm<=SPEC_STORM_AFTER;}return false;}
+    case 'afterStorm':return t!=='storm'&&W.storm!=null&&now-W.storm<=SPEC_STORM_AFTER;
+    case 'dry':return t!=='rain'&&t!=='storm'&&(W.rain==null||now-W.rain>=SPEC_DRY_D*1440);}return false;}
 // the biome at a spot from the cell's and its neighbours' regions (lairBiome's read), never REGIONS
 function specBiome(x,z){const [ci,cj]=cellOf(x,z);let best=null,bw=0;for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){const c=getCell(i,j);if(!c||!c.regions)continue;
     for(const r of c.regions){const d=Math.hypot(x-r.x,z-r.z)/r.r,w=Math.max(0,1-d);if(w>bw||(!bw&&(!best||d<best._d))){bw=w;best=r;r._d=d;}}}return best?best.biome:null;}
@@ -633,7 +639,8 @@ function specCell(i,j){const key=i+','+j;if(SPEC_CELLS.has(key))return SPEC_CELL
   const x0=i*SIZE,z0=j*SIZE;
   for(const kind in SPEC_DEF){const D=SPEC_DEF[kind];if(D.island!==isle)continue;const R=seededRng('spec',key+':'+kind),n=4+Math.floor(R()*3);
     for(let p=0;p<n;p++){let at=null;
-      for(let t=0;t<(D.water==='bank'?300:40)&&!at;t++){const x=x0+40+R()*(SIZE-80),z=z0+40+R()*(SIZE-80);if(D.water==='bank'&&!specWaterNear(x,z))continue;if(rawH(x,z)<1.6)continue;
+      for(let t=0;t<(D.water==='bank'||D.ground?300:40)&&!at;t++){const x=x0+40+R()*(SIZE-80),z=z0+40+R()*(SIZE-80);if(D.water==='bank'&&!specWaterNear(x,z))continue;const y=rawH(x,z);if(y<1.6)continue;
+        if(D.ground==='fell'&&y<SPEC_FELL)continue;if(D.ground==='shore'&&y>=SPEC_SHORE)continue;
         const b=specBiome(x,z);if(!D.biomes.includes(b))continue;if(D.water==='wet'&&b==='moor'&&!specWaterNear(x,z))continue; /* the moor's pools; a fen or a swamp is wet ground */
         if(sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||30)+20))continue;at=[x,z];}
       if(!at)continue;const m=2+Math.floor(R()*3);
@@ -678,9 +685,10 @@ function specPrompt(s){const D=SPEC_DEF[s.kind];return specOpen(s.kind)?`Press '
 // It works whether learnt or not; learning only names it, on the brewing page and in the guide.
 const SPEC_CAT={revealing:{name:'Revealing',says:'the brew teaches every effect of every herb in it'},steeping:{name:'Steeping',says:'strength ×1.25'},
   venom:{name:'Venom',says:'a poison coats a blade for 6 blows, not 3'},lasting:{name:'Lasting',says:'a tincture’s time ×2'},
-  clean:{name:'Clean',says:'a harmful effect is left out, and the rest is a tincture'}};
-const SPEC_CAT_OF={whispercap:'revealing',moonfenorchid:'steeping',bloodreed:'venom',ironleaf:'lasting',snowshroom:'clean',miragebloom:'lasting',sunglass:'revealing'};
-const SPEC_STEEP=1.25,SPEC_VENOM_BLOWS=6,SPEC_LAST=2,SPEC_OBSERVE=3,SPEC_STUDY_MIN=60;
+  clean:{name:'Clean',says:'a harmful effect is left out, and the rest is a tincture'},
+  steeping2:{name:'Steeping',says:'strength ×1.4'},binding:{name:'Binding',says:'herbs with nothing shared make a brew of each one’s first effect'}};
+const SPEC_CAT_OF={whispercap:'revealing',moonfenorchid:'steeping',bloodreed:'venom',ironleaf:'lasting',snowshroom:'clean',miragebloom:'lasting',sunglass:'revealing',skyshard:'steeping2',saltcrystal:'binding'};
+const SPEC_STEEP=1.25,SPEC_STEEP2=1.4,SPEC_VENOM_BLOWS=6,SPEC_LAST=2,SPEC_OBSERVE=3,SPEC_STUDY_MIN=60;
 // the named action: a catalyst learnt (the character's, herbsKnown().spec.cat); true the first time
 function learnSpecimen(kind){if(!SPEC_DEF[kind])return false;const S=specKnown(),C=S.cat||(S.cat={});if(C[kind])return false;C[kind]=1;return true;}
 function specCatKnown(kind){const S=specKnown();return !!(S.cat&&S.cat[kind]);}
@@ -723,14 +731,16 @@ function brewHerbs(keys,cat){
   if(idx.some(i=>i<0))return {made:false,why:'You do not have those herbs.'};
   const sh=brewShared(keys),K=herbsKnown();
   if(C==='clean'&&sh.poison){const rest=sh.all.filter(f=>!ALCH_FX[f].harm);if(!rest.length)return {made:false,kept:true,why:'Nothing is left but harm. The herbs are kept.'};sh.fx=rest;sh.poison=false;}
+  let bound=false;if(!sh.all.length&&C==='binding'){const f1=[...new Set(keys.map(k=>HERB_FX[k][0]))],harm=f1.filter(f=>ALCH_FX[f].harm); /* S2165 — Binding: each one's first effect */
+    sh.fx=harm.length?harm:f1;sh.poison=harm.length>0;sh.all=f1;bound=true;}
   if(!sh.all.length){for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++)K.none[brewPairKey(keys[i],keys[j])]=1;
     return {made:false,kept:true,why:'Nothing between them. The herbs are kept.'};}
   const newPair=keys.some((a,i)=>keys.some((b,j)=>j>i&&!(K.pairs&&K.pairs[brewPairKey(a,b)])));
   K.pairs=K.pairs||{};for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++)K.pairs[brewPairKey(keys[i],keys[j])]=1;
-  const learnt=[];keys.forEach(k=>HERB_FX[k].forEach((f,i)=>{if((sh.all.includes(f)||C==='revealing')&&learnHerbFx(k,i))learnt.push(k+':'+f);}));
+  const learnt=[];keys.forEach(k=>HERB_FX[k].forEach((f,i)=>{if(((bound?i===0:sh.all.includes(f))||C==='revealing')&&learnHerbFx(k,i))learnt.push(k+':'+f);}));
   idx.sort((a,b)=>b-a).forEach(i=>{const b=BAG[i];b.qty=(b.qty||1)-1;if(b.qty<=0)BAG.splice(i,1);});
   let catNew=false;if(cat){bagTake(b=>b.type==='herb'&&b.spec===cat,1);catNew=learnSpecimen(cat);} /* experiment: grinding with it teaches it */
-  const s=+(alchStrength()*(C==='steeping'?SPEC_STEEP:1)).toFixed(3),day=gameDayNow();
+  const s=+(alchStrength()*(C==='steeping'?SPEC_STEEP:C==='steeping2'?SPEC_STEEP2:1)).toFixed(3),day=gameDayNow();
   const item={name:brewName(sh.fx,sh.poison),ico:sh.poison?'☠️':'🧪',type:'potion',weight:.5,sellMult:.4,
     buyPrice:Math.max(...sh.fx.map(f=>ALCH_FX[f].price||25)),brew:{fx:sh.fx,s,day,poison:sh.poison}};
   if(C==='venom'&&sh.poison)item.brew.blows=SPEC_VENOM_BLOWS;if(C==='lasting'&&!sh.poison)item.brew.last=SPEC_LAST;
