@@ -110,13 +110,18 @@ const hk = await page.evaluate(() => {
   // across: from your rail with her hull under the crosshair
   const r = at(Math.sign(lx) * (S.W / 2 - .9), 1.5); px = r.x; pz = r.z; jumpY = DECK_Y; look(o.x, o.z); out.crossPrompt = hookPrompt(); out.cross = hookInteract();
   out.onHers = inDeck(o.plat, px, pz) && !onDeck(); out.boarded = !!o.boarded;
-  look(S.x, S.z); out.backPrompt = hookPrompt(); hookInteract(); out.back = onDeck();
+  /* S2158 — the way back is logged in full (a first try failed here once, S2139, with only `back: false` to read): what the cross
+     aimed at, the eye's distance to your hull, the lashing's state, what E returned, and where it set you against your deck */
+  look(S.x, S.z); out.backPrompt = hookPrompt(); { const ct = crossTarget(); out.backAim = { ct: ct ? (ct.other ? 'hers' : 'mine') : null, eye: +eyeOnHull(SHIP.mesh, SHIP.W, SHIP.L).toFixed(2), lashed: lashed(), phase: HOOKS.phase, cut: !!HOOKS.cut, jumpY: +jumpY.toFixed(2), sailing: !!SHIP.sailing }; }
+  out.backRet = hookInteract(); out.back = onDeck();
+  { const p = SHIP.plat, [blx, blz] = shipLocal(side, px, pz); out.backAt = { lx: +blx.toFixed(2), lz: +blz.toFixed(2), box: !!p && px > p.x0 && px < p.x1 && pz > p.z0 && pz < p.z1, inside: p && p.inside ? !!p.inside(px, pz) : null, jumpY: +jumpY.toFixed(2) }; }
   // the cut: by the first cleat, E, 1.5 s
   const c0 = HOOKS.cleats[0], c1 = HOOKS.cleats[1]; let a = at(c0.lx, c0.lz); px = a.x; pz = a.z; jumpY = DECK_Y; look(a.x, a.z, 0);
   out.cutPrompt = hookPrompt(); const tCut = performance.now(); let tick0 = tCut, worst = 0; hookInteract(); run(2.2, () => { px = a.x; pz = a.z; const n = performance.now(); worst = Math.max(worst, n - tick0); tick0 = n; if (c0.cut && out.cutAt == null) out.cutAt = +((n - tCut) / 1000).toFixed(2); });
   out.cutSlack = +(worst / 1000).toFixed(2); out.still = lashed(o);
   a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(.4); px += 5; run(.2); out.walkedOff = { cut: c1.cut, msg: said.filter(t => /uncut/.test(t)).pop() || said[said.length - 1] };
-  a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); run(1.7, () => { px = a.x; pz = a.z; }); out.free = { cut: c1.cut, lashed: !!o.lashed, hooks: !!HOOKS.o, msg: said.filter(t => /free/.test(t)).pop() || said[said.length - 1] };
+  a = at(c1.lx, c1.lz); px = a.x; pz = a.z; hookInteract(); /* S2158 — until the cut is done (1.5 s on the game's clock), up to 3 s: a fixed 1.7 s left one 0.4 s tick under load short of it */
+  { const t0 = performance.now(); while (performance.now() - t0 < 3000 && !c1.cut) run(.05, () => { px = a.x; pz = a.z; }); out.freeAt = +((performance.now() - t0) / 1000).toFixed(2); } run(.2, () => { px = a.x; pz = a.z; }); out.free = { cut: c1.cut, lashed: !!o.lashed, hooks: !!HOOKS.o, msg: said.filter(t => /free/.test(t)).pop() || said[said.length - 1] };
   // a rough sea: a throw misses one time in two, by her id and the throw's number
   const ss = seaState; seaState = () => 2; const got = [], want = [];
   for (let i = 0; i < 4; i++) { const n = (HOOKS.n['test:hooks'] || 0) + 1; want.push(seededRng('hooks', `test:hooks:${n}`)() < .5); px = S.x; pz = S.z; jumpY = DECK_Y; throwHooks(o); got.push(HOOKS.miss); run(1.15); hookDrop(); }
@@ -212,7 +217,8 @@ const rb = await page.evaluate(() => {
   T.slack = +(worst / 1000).toFixed(2); out.T = T; out.crossed = { boarders: WORLD.boarders.length, msg: document.getElementById('msg').textContent, still: lashed(o) };
   // again, and you cut both lines while she hauls: nobody crosses, and she must ram again
   [S, o] = fresh(); o._rammed = true; run(1.2, o); out.second = HOOKS.phase;
-  for (const c of HOOKS.cleats.slice()) { const at = () => { const a = shipToWorld(S.mesh, c.lx, c.lz); px = a.x; pz = a.z; jumpY = DECK_Y; }; at(); hookInteract(); run(1.6, o, at); }
+  for (const c of HOOKS.cleats.slice()) { const at = () => { const a = shipToWorld(S.mesh, c.lx, c.lz); px = a.x; pz = a.z; jumpY = DECK_Y; }; at(); hookInteract(); /* S2158 — until this line is cut (1.5 s on the game's clock), up to 2.5 s: a fixed 1.6 s left the second cut unfinished under load */
+    const t1 = performance.now(); while (performance.now() - t1 < 2500 && !c.cut && HOOKS.o) run(.05, o, at); }
   out.cut = { hooks: !!HOOKS.o, rammed: !!o._rammed, sent: !!o.sentBoarders, boarded: !!o.boarded, msg: document.getElementById('msg').textContent };
   run(7, o); out.after = { boarders: WORLD.boarders.length, hooks: !!HOOKS.o };
   // a storm: nobody grapples
