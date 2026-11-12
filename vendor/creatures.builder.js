@@ -2411,6 +2411,11 @@ const GAITS = {
   drift: { duty: 1, bl: .25, bell: 1, phase: () => 0 },
   // Session 775: a bird in the air, its wings beating, its legs tucked up under it
   soar: { duty: 1, bl: 2.4, flap: 1, aloft: 1, phase: () => 0 },
+  // Session 2118: a raptor's dive (the dusk eagle's, #1424 C): the stoop, the wings half closed and swept back along the body, still, the
+  // feet tucked, the neck stretched out ahead; and the strike at its foot, the wings thrown up and wide to brake, the feet thrown forward
+  // under the breast, talons first. Neither travels by itself: the game moves the group, as for the soar
+  stoop: { duty: 1, fr: 0, aloft: 1, stoop: 1, phase: () => 0 },
+  strike: { duty: 1, fr: 0, aloft: 1, strike: 1, phase: () => 0 },
   // Session 1114: a four-legged body sitting (Garrick's hound by his chair): the forefeet where they stand, the body pitched up about
   // the shoulders until the haunch is on the ground, the hind legs folded under it with the hocks laid flat (sitBody, sitLeg)
   sit: { duty: 1, fr: 0, sit: 1, phase: () => 0 },
@@ -2469,6 +2474,10 @@ function stowQuills(C, W, k) {
     _qP.copy(qp).invert().multiply(_qD).multiply(qp); b.quaternion.copy(_qI).slerp(_qP, k); } }
 // the kick's numbers (Session 1915), as fractions of the leg's own height (hR) and radians: chambered, the foot lifts `lift` and draws back
 // `tuck` and the knee folds by `fold`; struck, the foot is `high` up and `reach` ahead; the body pitches by `back` (nose up, negative) chambered and by `fwd` (nose down) struck
+// the dive's numbers (Session 2118): the stoop's wing fold (0 spread, 1 the perch's fold) and the neck's stretch (radians, nose down, over its
+// bones); the strike's wing raise (a beat's sine: -1 its top), the hand's bend, the feet up from the perch and out ahead (of the leg's
+// height), the knee's fold, and the body pitched nose up (radians) as it brakes
+const STOOP = { fold: .75, neck: .35, mantle: 1.1, hand: .45, footUp: .25, footOut: .75, footFold: .25, brake: -.45 };
 const KICK = { lift: .55, tuck: .15, fold: 1.3, high: .4, reach: 1.0, back: -.2, fwd: .12, neck: .7 };
 function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
@@ -2517,11 +2526,13 @@ function pose(C, phase) {
     C.byName[A.names[2]].rotation.set(0, 0, sd * .2 * k * Math.sin(w - 1.2)); }
   for (const A of B.arms) if (!A.stroke) { const s = A.swing * Math.sin(tau * ph + (A.side > 0 ? 0 : Math.PI) + A.phase); C.byName[A.names[0]].rotation.set(s, 0, 0); C.byName[A.names[1]].rotation.set(-Math.abs(s) * .6 - .2, 0, 0); C.byName[A.names[2]].rotation.set(.25 * Math.sin(tau * ph * 2 + A.side), 0, 0); }
   // a bird's wing folds in a Z against its side (humerus back, forearm forward, hand back), or beats: down hard, up folded a little
-  for (const W of B.wings) if (W.feathered) { const fold = G.flap ? 0 : (C.plan.wingFold ?? 1), s = W.side, beat = G.flap ? Math.sin(tau * ph) : 0, up = G.flap ? Math.max(0, -Math.cos(tau * ph)) : 0;
+  // the stoop holds them half folded (STOOP.fold) and still; the strike holds them high (STOOP.mantle, a beat's top) with the hand a little bent
+  for (const W of B.wings) if (W.feathered) { const fold = G.stoop ? STOOP.fold : G.strike ? 0 : G.flap ? 0 : (C.plan.wingFold ?? 1), s = W.side,
+    beat = G.strike ? STOOP.mantle + .06 * Math.sin(tau * ph * 3) : G.flap ? Math.sin(tau * ph) : 0, up = G.strike ? STOOP.hand : G.flap ? Math.max(0, -Math.cos(tau * ph)) : 0;
     C.byName[W.arm[0]].rotation.set(.1 * fold, s * 1.2 * fold, s * (.55 * beat - .25 * fold));
     C.byName[W.arm[1]].rotation.set(0, -s * (2.5 * fold + .35 * up), -s * .15 * beat);
     C.byName[W.arm[2]].rotation.set(0, s * (2.3 * fold + .3 * up), -s * .2 * beat);
-    if (W.quills) stowQuills(C, W, G.flap ? 0 : 1); }
+    if (W.quills) stowQuills(C, W, G.flap || G.stoop || G.strike ? 0 : 1); }
   for (const W of B.wings) if (!W.feathered) { const flap = G.flap ? Math.sin(tau * ph + W.phase) : 0, fold = G.flap ? 0 : (C.plan.wingFold ?? .5);
     // an upright body's wings at rest (Session 956, the gargoyle's): the fold above lays a level back's wings along it, which on an
     // upright one spreads them flat over its head. `wingRest` gives the arm's three bones their rest turns instead (x, then y and z
@@ -2537,6 +2548,9 @@ function pose(C, phase) {
   // forward and down through the strike, the body pitching into it. The other leg stands; the neck takes back most of the rock
   const KK = C.kick && (C.kick.a > 0 || C.kick.b > 0) ? C.kick : null;
   if (KK) { const lean = KICK.back * KK.a * (1 - KK.b) + KICK.fwd * KK.b; sp.rotation.x += lean; if (B.chains.neck) C.byName[B.chains.neck[0]].rotation.x -= lean * KICK.neck; }
+  // the stoop's neck stretched out ahead; the strike's body pitched back to brake, the neck taking half of it back so the eyes stay on the prey
+  if (G.stoop && B.chains.neck) B.chains.neck.forEach(nm => { C.byName[nm].rotation.x += STOOP.neck / B.chains.neck.length; });
+  if (G.strike) { sp.rotation.x += STOOP.brake; if (B.chains.neck) C.byName[B.chains.neck[0]].rotation.x -= STOOP.brake * .5; }
   C.rig.updateMatrixWorld(true);
   // the legs: the foot's target from the gait, then IK
   const sweep = sweepOf(C, G), D = C.dir;
@@ -2550,7 +2564,8 @@ function pose(C, phase) {
     // a cat sits with its forefeet together (Session 1126, the plan's sitTuck: how much of the standing width is kept)
     if (G.sit && !G.lie && C.plan.sitTuck && L.at === order[0]) T.x *= C.plan.sitTuck;
     // aloft, the feet tuck up and back; an insect's splayed legs only lift a little and hang (Session 864)
-    if (G.aloft) { if (L.yaw) { T.y += (C.plan.flyH || 0) - .1 * L.hR; T.x = lerp(T.x, L.rest[0].x, .25); } else { T.y += (C.plan.flyH || 0) + .55 * L.hR; T.addScaledVector(D, -.45 * L.hR); fold = 1.2; } }
+    if (G.strike && !L.yaw) { T.y += (C.plan.flyH || 0) + STOOP.footUp * L.hR; T.addScaledVector(D, STOOP.footOut * L.hR); fold = STOOP.footFold; }
+    else if (G.aloft) { if (L.yaw) { T.y += (C.plan.flyH || 0) - .1 * L.hR; T.x = lerp(T.x, L.rest[0].x, .25); } else { T.y += (C.plan.flyH || 0) + .55 * L.hR; T.addScaledVector(D, -.45 * L.hR); fold = 1.2; } }
     else if (G.fr > 0 && !G.wave) { if (fl < G.duty) T.addScaledVector(D, sweep * (.5 - fl / G.duty)); else { const u = (fl - G.duty) / (1 - G.duty), e = u * u * (3 - 2 * u); T.addScaledVector(D, sweep * (-.5 + e)); T.y += (G.lift || .15) * L.hR * Math.sin(Math.PI * u) + air; fold = (C.plan.fold ?? .9) * Math.sin(Math.PI * u); } }
     if (KK && L.at === order[order.length - 1] && Math.sign(L.side) === Math.sign(KK.side || 1)) { const h = L.hR, a = KK.a * (1 - KK.b), k = KK.b;
       T.copy(F0); T.y += h * (KICK.lift * a + KICK.high * k); T.addScaledVector(D, h * (-KICK.tuck * a + KICK.reach * k)); fold = KICK.fold * a; }
@@ -3549,6 +3564,7 @@ Object.assign(PLANS, {
       : k === 'head' ? [k, { ...o, antlers: { ...o.antlers, len: 1.45, r: .034, depth: 3, mist: { per: 7, rate: 2, rise: .45, drift: .22, r0: .08, r1: .4, alpha: .2 } }, eyes: o.eyes.map(e => ({ ...e, color: [.75, .5, 1] })) }] : k === 'neck' ? [k, { ...o, r: o.r.map(v => v * .85) }] : [k, o]) }),
   // Gaoth: the dusk eagle, its feathers draining to violet: the Crag Hawk grown to a giant eagle, its flight feathers dark at their tips, violet light in its seams
   duskeagle: re(PLANS.craghawk, { name: 'Dusk Eagle', src: 'OG-088 (corrupted: a dusk eagle with draining violet feathers)', school: 'Gaoth', from: 'craghawk', scale: 2.6,
+    gaits: [...PLANS.craghawk.gaits, 'stoop', 'strike'], /* Session 2118: its dive (the gate's flier, #1424 C) */
     palette: { coat: [.26, .2, .32], saddle: [.16, .12, .22], belly: [.44, .36, .52], dark: [.03, .02, .04], horn: [.18, .16, .2], skin: [.5, .42, .2], feather: [.3, .22, .4], featherTip: [.08, .04, .14], covert: [.38, .3, .48] },
     glow: { color: [1.2, .45, 2.2], freq: 3, w: .02, all: .3 },
     // the shape: wings a third wider with longer primaries, too few of them to close (ragged, the light through their gaps), a heavier hooked beak, a longer tail fan
@@ -4006,5 +4022,5 @@ Object.assign(PLANS, {
 });
 const CRAWLERS = ['bogcrawler'];
 
-return {hashKey,rng,genome,toSaved,fromSaved,build,buildIter,speedOf,strideOf,step,pose,footAt,SLIDERS,GAITS,KICK,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,SHORE,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,PHANTOMS,ELEMENTALS,HOUNDS,CRAWLERS};
+return {hashKey,rng,genome,toSaved,fromSaved,build,buildIter,speedOf,strideOf,step,pose,footAt,SLIDERS,GAITS,STOOP,KICK,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,SHORE,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,PHANTOMS,ELEMENTALS,HOUNDS,CRAWLERS};
 })();

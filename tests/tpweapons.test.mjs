@@ -33,6 +33,22 @@ const pair = await page.evaluate(() => { const o = {}; for (const [k, w] of [['s
   return o; });
 check('the spear and the crossbow are the kit\'s, in the right hand alone (S1458)', pair.spear.kit === 'spear' && pair.crossbow.kit === 'crossbow' && !pair.crossbow.twoH && !pair.crossbow.left && !pair.spear.twoH, pair);
 
+// S2118 — a sword by its make (#1425 B, the item's swordMake, S2117): the builder's own blade, in true metres, the blade in the item's
+// metal and the fittings in the make's colours; an item with no make, and the old look, keep the old sword
+const makes = await page.evaluate(() => { const M = ['arming', 'norse', 'takouba', 'nimcha', 'falchion', 'flyssa'], o = {};
+  for (const mk of M) { const w = tpWeapon({ name: 'Test ' + mk, weaponShape: mk === 'nimcha' ? 'scimitar' : 'sword', swordMake: mk, matCol: '#9ad8b0' }), bb = new THREE.Box3().setFromObject(w);
+    let tint = 0, tris = 0; w.traverse(x => { if (!x.isMesh) return; tris += x.geometry.index ? x.geometry.index.count / 3 : 0; const C = x.geometry.attributes.color, t = new THREE.Color(0x9ad8b0); for (let i = 0; i < C.count; i++) if (Math.abs(C.getX(i) - t.r) + Math.abs(C.getY(i) - t.g) + Math.abs(C.getZ(i) - t.b) < .02) tint++; });
+    o[mk] = { kit: w.userData.kit, h: +(bb.max.y - bb.min.y).toFixed(3), tris, tint }; }
+  const plain = tpWeapon({ name: 'Old Sword', weaponShape: 'sword' }).userData.kit;
+  EQ.weapon = { name: 'Norse Sword', slot: 'weapon', weaponShape: 'sword', swordMake: 'norse' }; EQ.offhand = null; tpUpdate(1 / 60, { moving: false, sprinting: false, camY: 1.6, now: performance.now() + 80 });
+  const R = TP.rig, k = R.weapon && R.weapon.children[0]; let held = null; if (k) { const bb = new THREE.Box3().setFromObject(k); const s = new THREE.Vector3(); k.getWorldScale(s); held = { kit: R.weapon.userData.kit, scale: +s.y.toFixed(3) }; }
+  return { o, plain, held }; });
+console.log('makes', JSON.stringify(makes));
+const MK = makes.o;
+check('each island\'s sword is the builder\'s own blade by the item\'s make, 0.75–1.05 m long, the blade in the item\'s metal; an item with no make keeps the old sword',
+  Object.entries(MK).every(([mk, r]) => r.kit === 'sword:' + mk && r.h > .75 && r.h < 1.05 && r.tint > 50 && r.tris > 100) && new Set(Object.values(MK).map(r => r.tris)).size >= 5 && makes.plain === 'sword', makes);
+check('in the hand it is carried at its true size (world scale 1)', makes.held && makes.held.kit === 'sword:norse' && Math.abs(makes.held.scale - 1) < .02, makes.held);
+
 // the photograph: the kit tinted as the items tint it, in a row, and the player with sword and shield from behind
 const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElement, sc = scene; const bx = px + 300, bz = pz, y = 60; const objs = [];
   const cam = new THREE.PerspectiveCamera(30, cv.width / cv.height, .02, 100);
