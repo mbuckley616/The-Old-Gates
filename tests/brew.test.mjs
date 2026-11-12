@@ -112,5 +112,33 @@ check(`Briarweed and Wolf's Bane: ${r.poison.name}, a poison of the harmful only
 check(`the poison coats the blade for ${r.coat} blows: a foe at ${r.foe.hp} of 100, slowed ×${r.foe.slowed}, then spent`, r.coat === 3 && r.foe.hp === 76 && r.foe.slowed === .6 && r.foe.spent, r.foe);
 check('a tincture keeps its brew through the save, and herbsKnown is the character\'s', r.ser && r.charKey);
 check(`the page: ${r.rows} herbs listed, two chosen, ground (${r.ground} made: "${r.said}"), Esc closes`, r.open && r.rows >= 6 && /Firemoss/.test(r.right) && r.ground === 1 && r.closed);
+// ── S2157: the field guide (Michael's B on #1463, session 1): first picks, rarity, the book drawn live, the apothecary's copy ──
+const fg = await page.evaluate(() => {
+  const o = {}; worldState.herbsKnown = null; for (const k in HERB_CONSUME_COUNTS) delete HERB_CONSUME_COUNTS[k]; BAG.length = 0;
+  SKILLS.alchemy = { lv: 60, p: 0 }; SKILL_LAST.clear();
+  const pick = k => { const h = { type: k, def: HERB_DEF[k], g: { userData: {}, visible: true }, gl: { intensity: 1 } }; const p0 = SKILLS.alchemy.p; SKILL_LAST.clear(); harvestHerb(h); return Math.round((SKILLS.alchemy.p - p0) * 100) / 100; };
+  o.first = pick('firemoss'); o.second = pick('firemoss'); o.seen = plantSeen('firemoss'); o.unseen = plantSeen('silverleaf');
+  o.rar = { firemoss: herbRarity('firemoss'), heartroot: herbRarity('heartroot'), pineresin: herbRarity('pineresin'), wolfsbane: herbRarity('wolfsbane'), gateresin: herbRarity('gateresin'), kelp: herbRarity('kelp') };
+  o.where = herbWhere('firemoss'); o.whereMark = herbWhere('icebloom');
+  const C = fieldGuideCount(); o.count = C;
+  const pages = BOOKS.find(b => b.id === 'field_guide').pages; o.pages = pages.length; o.head = pages[0];
+  const all = pages.join('\n'); o.frames = (all.match(/an empty frame/g) || []).length; o.hasFire = /Firemoss — Common/.test(all); o.noSilver = !/Silverleaf/.test(all);
+  o.fxLine0 = herbFxLine('firemoss'); HERB_CONSUME_COUNTS.firemoss = 1; o.fxLine = herbFxLine('firemoss'); delete HERB_CONSUME_COUNTS.firemoss;
+  // an old save: no seen, but eaten and carried herbs count, with no marks
+  BAG.length = 0; worldState.herbsKnown = { fx: {}, none: {} }; HERB_CONSUME_COUNTS.thornberry = 2; bagAdd({ ...HERB_DEF.icebloom.item, qty: 1, _typeKey: 'icebloom' });
+  o.old = { thorn: plantSeen('thornberry'), ice: plantSeen('icebloom'), fire: plantSeen('firemoss') };
+  const sh = { type: 'potion' }; o.stock = fieldGuideFor(sh).map(i => [i.name, i.buyPrice, i.type]); o.smith = fieldGuideFor({ type: 'weapon' }).length;
+  BAG.push(fieldGuideFor(sh)[0]); openBookReader(BAG.length - 1); o.title = document.getElementById('book-title').textContent; o.page = document.getElementById('book-page').textContent.slice(0, 40);
+  if (typeof closeBookReader === 'function') closeBookReader(); else document.getElementById('book-overlay').style.display = 'none';
+  o.charKey = SS_CHAR_WS.herbsKnown === 1;
+  return o; });
+console.log(JSON.stringify(fg));
+check(`the first Firemoss picked is ${fg.first} Alchemy marks, the second ${fg.second}; it is in the guide, Silverleaf not`, Math.abs(fg.first / fg.second - 10) < .01 && fg.seen && !fg.unseen, fg);
+check(`rarity by where it grows: Firemoss ${fg.rar.firemoss}, Heartroot ${fg.rar.heartroot}, Pine Resin ${fg.rar.pineresin}, Wolf's Bane ${fg.rar.wolfsbane}, Gate Resin ${fg.rar.gateresin}, Kelp ${fg.rar.kelp}`,
+  fg.rar.firemoss === 'Common' && fg.rar.heartroot === 'Uncommon' && fg.rar.pineresin === 'Rare' && fg.rar.wolfsbane === 'Rare' && fg.rar.gateresin === 'Rare' && fg.rar.kelp === 'Common', fg.rar);
+check(`the guide: ${fg.count.n} of ${fg.count.of} found over ${fg.pages} pages, ${fg.frames} empty frames; Firemoss "${fg.where}", picked "${fg.fxLine0}", eaten "${fg.fxLine}"`,
+  fg.count.n === 1 && fg.count.of === 50 && fg.frames === 49 && fg.hasFire && fg.noSilver && /1 of 50 found/.test(fg.head) && /^The Gatelands: /.test(fg.where) && /^The Mark: /.test(fg.whereMark) && fg.fxLine0 === '? · ? · ? · ?' && /^Restore Health · \?/.test(fg.fxLine), fg);
+check(`an old save's guide holds what it ate and carries (Thornberry ${fg.old.thorn}, Icebloom ${fg.old.ice}), not the rest`, fg.old.thorn && fg.old.ice && !fg.old.fire, fg.old);
+check(`the apothecary sells it at ${fg.stock[0] && fg.stock[0][1]}, the smith not; read: "${fg.title}"`, fg.stock.length === 1 && fg.stock[0][1] === 20 && fg.stock[0][2] === 'book' && fg.smith === 0 && fg.title === 'A Field Guide to the Three Islands' && /^A FIELD GUIDE/.test(fg.page) && fg.charKey, fg);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

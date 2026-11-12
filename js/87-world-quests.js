@@ -513,7 +513,7 @@ const giver=`${lord.title} ${lord.name}`;
   function pickCaverglow(t){if(!t||t.picked)return false;ensureGateHerbs();const item={...HERB_DEF.caverglow.item,qty:1,_typeKey:'caverglow'};
     if(!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return false;}
     t.picked=true;(worldState.picked||(worldState.picked={}))[t.id]=worldState.gameTimeAbsMinutes||0;
-    if(t.group&&t.group.parent)t.group.parent.remove(t.group);bagAdd(item);skillUse('alchemy',1,t);addLog('🍄','Picked Caverglow');showMsg('Picked Caverglow!','#8ff0d8');return true;}
+    if(t.group&&t.group.parent)t.group.parent.remove(t.group);bagAdd(item);skillUse('alchemy',plantPickMarks('caverglow'),t);addLog('🍄','Picked Caverglow');showMsg('Picked Caverglow!','#8ff0d8');return true;}
   function gateHerbDoor(e){return !!(e&&e.seed!=null&&!e.wet&&!e.lairDoor&&!e.root&&!e.great&&!e.tutorial&&e.kind!=='fort_door'&&!(typeof e.interior==='string'&&e.interior.startsWith('fort_'))&&e.x!=null);}
   // the ring's centre, from the door's own record: a generated gate's spot, a home gate's spot through its zone's anchor (placeDoor's mapping,
   // before it steps off a road or a pad, which reads what has loaded)

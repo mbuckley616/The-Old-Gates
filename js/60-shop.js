@@ -874,6 +874,7 @@ function renderShop(){
   {const ln=armorLinesFor(currentHouse);if(ln.length)stock=[...stock,...ln];}
   {const im=implementsFor(currentHouse);if(im.length)stock=[...stock,...im];} /* S1858 — staves, wands and tomes at the Mages' Guild */
   {const mo=mortarFor(currentHouse);if(mo.length)stock=[...stock,...mo];}
+  {const fg=fieldGuideFor(currentHouse);if(fg.length)stock=[...stock,...fg];} /* S2157 — the field guide at the apothecary, 20 */
   {const pk=minersPickFor(currentHouse);if(pk.length)stock=[...stock,...pk.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1491 — the pick at the smith's and the goods shop */
   {const hk=hatchetFor(currentHouse);if(hk.length)stock=[...stock,...hk.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1511 — and the hatchet */
   if(currentHouse&&currentHouse.type==='weapon'&&!stock.some(b=>b.leather))stock=[...stock,{...SURV_ITEMS.leather}]; /* S2131 — the tanner's leather, 12, for who won't wait */

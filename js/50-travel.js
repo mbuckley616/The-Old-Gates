@@ -379,7 +379,7 @@ function harvestHerb(h){
   if(typeof WORLD!=='undefined')WORLD.guild.onHarvest(h); // v80 S12
   const item={...h.def.item,qty:1,_typeKey:h.type};
   if(!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return;}
-  h.harvested=true;h.gl.intensity=0;skillUse('alchemy',1,h); /* S941 — a pick is an Alchemy use */
+  h.harvested=true;h.gl.intensity=0;skillUse('alchemy',plantPickMarks(h.type),h); /* S941 — a pick is an Alchemy use; S2157 — the first of its kind 10 (the field guide) */
   {const u=h.g.userData;if(u&&u.picked){u.whole.visible=false;u.picked.visible=true;}else h.g.visible=false;} // S217 — a bush picked in the old zones stays, bare, as in the world
   if(h.def.respawn!=null)h.respawnT=h.def.respawn;
   bagAdd(item);if(h.gate&&typeof gateHerbPicked==='function')gateHerbPicked(h); /* S1886 — a gate's plant: entered within the hour, its gate teaches it */
@@ -542,6 +542,51 @@ const HERB_KIN=new Set(['firemoss','silverleaf','muirfhear','thornberry','shadow
 function herbKeyOf(it){if(!it)return null;if(it._typeKey&&HERB_FX[it._typeKey])return it._typeKey;if(typeof HERB_DEF!=='undefined')for(const k in HERB_DEF)if(HERB_DEF[k].name===it.name)return k;
   const k=String(it.name||'').toLowerCase().replace(/[^a-z]/g,'');return HERB_FX[k]?k:null;}
 function herbsKnown(){return worldState.herbsKnown||(worldState.herbsKnown={fx:{},none:{}});}
+// ── S2157 — the field guide (Michael's B on #1463, docs/design/rare-specimens-and-the-field-guide.md, session 1 of 3) ──
+// What you have picked, kept as yours (herbsKnown().seen, in SS_CHAR_WS with the rest of it): notePlant is the named action, and the first
+// pick of a kind is 10 Alchemy marks, not 1. The book, A Field Guide to the Three Islands, is drawn live from it: a page an island, and
+// the sea's and the gates', each plant you have picked with where it grows, its rarity and its effects as far as you know them; the rest
+// empty frames. Rarity is read from where a herb grows (HERB_PLACE, its override, ISLAND_HERB), so a new herb is graded without a list.
+const FIELD_GUIDE_PRICE=20,FIRST_PICK_MARKS=10,GUIDE_PER_PAGE=6;
+// an old save has no seen: what it has eaten, ground or carries counts as picked, with no marks for it
+function herbsSeen(){const K=herbsKnown();if(K.seen)return K.seen;const S=K.seen={},ok=k=>typeof HERB_DEF!=='undefined'&&HERB_DEF[k];
+  for(const k in HERB_CONSUME_COUNTS)if(ok(k)&&HERB_CONSUME_COUNTS[k]>0)S[k]=1;for(const k in K.fx||{})if(ok(k))S[k]=1;
+  for(const it of BAG){if(!it||it.type!=='herb')continue;const k=herbKeyOf(it);if(k&&ok(k))S[k]=1;}return S;}
+function plantSeen(k){return !!herbsSeen()[k];}
+// the named action: a plant picked; true the first time of its kind
+function notePlant(k){if(!k||typeof HERB_DEF==='undefined'||!HERB_DEF[k])return false;const S=herbsSeen();if(S[k])return false;S[k]=1;return true;}
+function plantPickMarks(k){return notePlant(k)?FIRST_PICK_MARKS:1;}
+function herbPlaceOf(k){if(typeof ISLAND_HERB!=='undefined'&&ISLAND_HERB[k])return ISLAND_HERB[k];if(HERB_PLACE_OVR[k])return HERB_PLACE_OVR[k];
+  return typeof HERB_PLACE!=='undefined'&&HERB_PLACE[k]||null;}
+// Common in 4 or more biomes, Uncommon in 2 or 3, Rare in 1, or flagged rare, or a gate's plant; the sea's grow in every island's waters
+function herbRarity(k){const d=HERB_DEF[k];if(!d)return null;if(d.zone==='gate')return 'Rare';if(d.zone==='sea')return 'Common';
+  const p=herbPlaceOf(k);if(!p)return 'Rare';if(p.rare)return 'Rare';const n=p.biomes.length;return n>=4?'Common':n>=2?'Uncommon':'Rare';}
+const GUIDE_ISLE={gatelands:'the Gatelands',mark:'the Mark',aurenne:'Aurenne'};
+const GUIDE_GROUND={rock:'on rock',open:'in the open',water:'by water',sand:'on sand',tree:'under trees',house:'by houses'};
+const GUIDE_BIOME={plains:'grassland',forest:'forest',autumn:'the autumn woods',fen:'fen',swamp:'swamp',moor:'moor',tundra:'tundra',coast:'coast',dunes:'dunes',wastes:'the wastes',wasteland:'the wasteland'};
+const GUIDE_GATE={lichenbloom:'On the stone about a steady gate.',gatelotus:'In the grass about a failing gate.',gateresin:'On bare stone about a gate near breaking.',caverglow:'On the walls of a lair’s way in.'};
+function herbWhere(k){const d=HERB_DEF[k];if(!d)return '';if(d.zone==='gate')return GUIDE_GATE[k]||'About the gates.';if(d.zone==='sea')return 'On the sea floor, in any island’s waters.';
+  const p=herbPlaceOf(k),isle=GUIDE_ISLE[herbIsland(k)]||'the Gatelands';if(!p)return isle[0].toUpperCase()+isle.slice(1)+'.';
+  const gr=p.ctx.map(c=>GUIDE_GROUND[c]||c),bi=p.biomes.map(b=>GUIDE_BIOME[b]||b);
+  return (isle[0].toUpperCase()+isle.slice(1))+': '+gr.join(', ')+'; '+bi.join(', ')+'.';}
+function herbFxLine(k){const fx=HERB_FX[k];if(!fx){const d=HERB_DEF[k];return d&&d.knownDesc||'';}
+  return fx.map((f,i)=>herbFxKnown(k,i)?(ALCH_FX[f]?ALCH_FX[f].label:f):'?').join(' · ');}
+// the guide's sections, in HERB_DEF's order: each island's herbs, then the sea's and the gates'
+function guideSections(){if(typeof ensureSeaHerbs==='function')try{ensureSeaHerbs();}catch(e){}
+  const sec=[['THE GATELANDS',[]],['THE MARK',[]],['AURENNE',[]],['THE SEA AND THE GATES',[]]],at={gatelands:0,mark:1,aurenne:2};
+  for(const k in HERB_DEF){const d=HERB_DEF[k];const i=d.zone==='sea'||d.zone==='gate'?3:at[herbIsland(k)];sec[i==null?0:i][1].push(k);}return sec;}
+function fieldGuideCount(){let n=0,of=0;for(const [,ks] of guideSections())for(const k of ks){of++;if(plantSeen(k))n++;}return {n,of};}
+function fieldGuidePages(){const sec=guideSections(),C=fieldGuideCount();
+  const head='A FIELD GUIDE TO THE THREE ISLANDS\n\nWhat grows on the Gatelands, the Mark and Aurenne, in their waters and about the gates. A plant is entered here once you have picked it; the empty frames are those still to find.\n\n'+C.n+' of '+C.of+' found.\n\n'+
+    sec.map(([t,ks])=>t[0]+t.slice(1).toLowerCase().replace(/\b(gatelands|mark|aurenne|sea|gates)\b/g,w=>w[0].toUpperCase()+w.slice(1))+': '+ks.filter(plantSeen).length+' of '+ks.length).join('\n');
+  const pages=[head];
+  for(const [t,ks] of sec){const parts=Math.ceil(ks.length/GUIDE_PER_PAGE);
+    for(let p=0;p<parts;p++){const rows=ks.slice(p*GUIDE_PER_PAGE,(p+1)*GUIDE_PER_PAGE).map(k=>{if(!plantSeen(k))return '— an empty frame —';const d=HERB_DEF[k];
+        return d.name+' — '+herbRarity(k)+'\n'+herbWhere(k)+'\n'+herbFxLine(k);});
+      pages.push(t+(parts>1?' ('+(p+1)+' of '+parts+')':'')+'\n\n'+rows.join('\n\n'));}}
+  return pages;}
+BOOKS.push({id:'field_guide',name:'A Field Guide to the Three Islands',ico:'📗',attr:null,get pages(){return fieldGuidePages();}});
+function fieldGuideFor(h){if(!h||!(h.type==='potion'||h.type==='apothecary'))return [];const def=BOOKS.find(b=>b.id==='field_guide');const it=makeBookItem(def);it.buyPrice=FIELD_GUIDE_PRICE;return [it];}
 // S1499 — Tell (Alchemy 25): a herb's hidden effect is learnt at 5 eats, not HIDDEN_UNLOCK_COUNT's 15
 function herbTellCount(){return perk('alchemy',25)?5:HIDDEN_UNLOCK_COUNT;}
 function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=herbTellCount())return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
