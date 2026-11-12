@@ -929,7 +929,8 @@ function jerkyItem(food,day){const fish=food==='fish';
 function curesOf(h){if(!h||!h.siteId)return [];const lot=String(h.id||'').replace('g_'+h.siteId+'_','')||'0',k=w=>`${h.siteId}:${lot}:${w}`;
   if(h.type==='weapon')return [{kind:'rack',key:k('rack')},{kind:'dry',key:k('dry')}];
   const st=typeof SITE!=='undefined'?SITE[h.siteId]:null;if(h.type==='misc'&&st&&st.kind==='port')return [{kind:'dry',key:k('dry')}];return [];}
-function curesHere(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'?curesOf(currentHouse):[];}
+function curesHere(){const T=typeof townRackNear==='function'?townRackNear():null;if(T)return curesOf(T.h); /* S2136 — a rack stood in its yard (82) opens its house's page */
+  return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'?curesOf(currentHouse):[];}
 function cureList(key){const R=worldState.racks||(worldState.racks={});return R[key]||(R[key]=[]);}
 function cureReady(e){return gameMinNow()-e.at>=RACK_MIN;}
 // the named actions: hang one thing with its salt; take everything done. Each returns {done, why}
@@ -941,7 +942,7 @@ function cureHang(r,what){const K=RACK_KIND[r.kind],H=RACK_HANG[what];if(!K||!H|
 function cureTake(r){const L=cureList(r.key),done=L.filter(cureReady);if(!done.length)return {done:false,why:'Nothing on it is ready.'};
   const got=[];done.forEach(e=>{const it=e.k==='hide'?survItem('leather'):jerkyItem(e.k,Math.floor((e.at+RACK_MIN)/1440));bagAdd(it);got.push(it.name);});
   worldState.racks[r.key]=L.filter(e=>!cureReady(e));return {done:true,got};}
-function cureLeft(e){const m=Math.max(0,RACK_MIN-(gameMinNow()-e.at));return m>=60?`${Math.floor(m/60)} h ${m%60} m`:`${m} m`;}
+function cureLeft(e){const m=Math.ceil(Math.max(0,RACK_MIN-(gameMinNow()-e.at))); /* S2136 — whole minutes: the clock runs in fractions */ return m>=60?`${Math.floor(m/60)} h ${m%60} m`:`${m} m`;}
 // the racks' page, the forge's paper: what hangs and how long it has, a row for each thing to hang, and Take
 let cureOpen=false,cureSaid='';
 function openCurePage(){const RS=curesHere();if(!RS.length){showMsg('There is no rack here.','#cc8844');return;}
@@ -2598,6 +2599,7 @@ function interact(){
       }
     }
     if(typeof ringCairnNear==='function'&&ringCairnNear()){ringCairnUse();return;} /* S800 — the Noon Ring's cairn */
+    if(typeof townRackNear==='function'&&townRackNear()){openCurePage();return;} /* S2136 — a smith's or a harbour's rack in its yard */
     if(typeof yardRackNear==='function'&&yardRackNear()){yardRackUse();return;} /* S1657 — a Markish yard's staff rack (the spar) */
     if(typeof ringPrompt==='function'&&ringPrompt()){ringUse();return;} /* S1658 — the ladder's ring: its gate (a bout) and its post (the names) */
     if(typeof bellWreckNear==='function'&&bellWreckNear()){bellWreckUse();return;} /* S801 — the Drowned Bell's wreck */

@@ -908,7 +908,8 @@ function genSettlement(site){
       // explicit exit point in front of the door (rotated buildings defeat the engine's cardinal step-out)
       let exX=doorX+lot.tx*2.4,exZ=doorZ+lot.tz*2.4;
       const house={id:lot.id,doorX,doorZ,doorFace:cardinalFace(lot.tx,lot.tz),exitX:exX,exitZ:exZ,exitYaw:Math.atan2(-lot.tx,-lot.tz),name,keeper,type,tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc),bCol:heroH?heroH.bCol:0x5a4030,sCol:heroH?heroH.sCol:0xd4a878,w:lot.w,d:lot.d,two:lot.two,reg,style:st===STYLE.stone?'stone':st===STYLE.garrison?'garrison':reg,siteKind:site.kind,siteId:site.id,kit:lot.kit||null};
-      houses.push(house);if(lot._wallH){house.wallH=lot._wallH;house.storeys=lot._storeys;}
+      houses.push(house);Object.defineProperty(house,'_lot',{value:lot}); /* S2136 — the racks' yard reads the lot (townRacks, 82); not enumerable, so nothing saves it */
+      if(lot._wallH){house.wallH=lot._wallH;house.storeys=lot._storeys;}
       if(lot.kit&&lot.kit.kind==='keep'){house.w=lot.kit.w0;house.d=lot.kit.d0;} /* S1143 — the steward's room is the old keep's (its lot is the tower's now) */
       { // wall lantern by the door (glow only)
         const lo=lot.kit&&lot.kit.kind==='forge'?1.55:1.05; /* S1855 — beside the forge's cart door (1.2 m each side of its middle), not in it */
@@ -1345,6 +1346,7 @@ function genSettlement(site){
     if(kitG){S.kitTris=PKIT.mergeByMaterial(kitG);S.kitCalls=kitG.children.length; // S1072 — the kit's houses, one mesh per material
       const lo=new THREE.Mesh(mergeGeos(kitLo),VC_MAT);lo.name='kit houses far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);kitLo.forEach(([g])=>g.dispose()); /* S1073 — and their far copy */
       let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */for(const Y of S.yards||[])r=Math.max(r,Math.hypot(Y.x-cx,Y.z-cz)+Y.r+2);if(S.market)r=Math.max(r,Math.hypot(S.market.x-cx,S.market.z-cz)+S.market.r); /* S1904 — and the market house */if(S.academy)r=Math.max(r,Math.hypot(S.academy.cx-cx,S.academy.cz-cz)+S.academy.r); /* S1959 — and the academy */ /* S1658 — and a yard outside the walls */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
+    try{S.racks=townRacks(site,houses,sol,group);}catch(e){console.warn('racks',e);S.racks=[];} /* S2136 — the smith's and the harbour's racks in their yards */
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
@@ -1374,6 +1376,7 @@ function genSettlement(site){
   // houses' reach: near the town the kit's houses, from outside it their far copy
   function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
     for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod,S.cairnLod,S.whLod,S.thLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
+    if(S.racks&&S.racks.length)townRacksLive(S,cp); /* S2136 — shown near, and what hangs kept to worldState.racks */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
