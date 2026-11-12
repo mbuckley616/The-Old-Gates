@@ -217,7 +217,8 @@ const rb = await page.evaluate(() => {
   T.slack = +(worst / 1000).toFixed(2); out.T = T; out.crossed = { boarders: WORLD.boarders.length, msg: document.getElementById('msg').textContent, still: lashed(o) };
   // again, and you cut both lines while she hauls: nobody crosses, and she must ram again
   [S, o] = fresh(); o._rammed = true; run(1.2, o); out.second = HOOKS.phase;
-  for (const c of HOOKS.cleats.slice()) { const at = () => { const a = shipToWorld(S.mesh, c.lx, c.lz); px = a.x; pz = a.z; jumpY = DECK_Y; }; at(); hookInteract(); run(1.6, o, at); }
+  for (const c of HOOKS.cleats.slice()) { const at = () => { const a = shipToWorld(S.mesh, c.lx, c.lz); px = a.x; pz = a.z; jumpY = DECK_Y; }; at(); hookInteract(); /* S2155 — until this line is cut (1.5 s on the game's clock), up to 2.5 s: a fixed 1.6 s left the second cut unfinished under load */
+    const t1 = performance.now(); while (performance.now() - t1 < 2500 && !c.cut && HOOKS.o) run(.05, o, at); }
   out.cut = { hooks: !!HOOKS.o, rammed: !!o._rammed, sent: !!o.sentBoarders, boarded: !!o.boarded, msg: document.getElementById('msg').textContent };
   run(7, o); out.after = { boarders: WORLD.boarders.length, hooks: !!HOOKS.o };
   // a storm: nobody grapples
