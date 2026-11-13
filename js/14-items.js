@@ -657,6 +657,14 @@ function swordStamp(it,isle,rng){if(!isSwordItem(it))return it;isle=SWORD_MAKES[
   if(it.weaponType==='Scimitar')it.swordMake='nimcha';
   else if(isle==='aurenne'){const r=(rng||Math.random)();it.swordMake=r<.5?'takouba':r<.75?'falchion':'flyssa';}
   else it.swordMake=SWORD_MAKES[isle];return it;}
+// S2180 — the spear and the crossbow by island too (L7, OG-028; the bodies builder's ask in S2178, on #1425's rule: looks only, the name and the
+// numbers the type's). A Spear records its island and the kit's head (people.js SPEAR_HEADS: the Gatelands' leaf, the Mark's winged head,
+// Aurenne's long head), a Crossbow its island and the kit's make (CROSSBOWS: wood, steel, horn), the same keys the foes' carry (S2178). No
+// draw: one head and one make an island, so no loot or counter stream moves.
+const SPEAR_ISLE_HEAD={gatelands:'leaf',mark:'winged',aurenne:'long'},XBOW_ISLE_MAKE={gatelands:'wood',mark:'steel',aurenne:'horn'};
+function isMadeWeapon(it){return isSwordItem(it)||!!it&&(it.weaponType==='Spear'||it.weaponType==='Crossbow');}
+function weaponStamp(it,isle,rng){if(isSwordItem(it))return swordStamp(it,isle,rng);if(!isMadeWeapon(it))return it;isle=SWORD_MAKES[isle]?isle:'gatelands';it.make=isle;
+  if(it.weaponType==='Spear')it.spearHead=SPEAR_ISLE_HEAD[isle];else it.crossbowMake=XBOW_ISLE_MAKE[isle];return it;}
 function isleAt(x,z){try{if(x==null||typeof cellOf!=='function'||typeof nationKeyOf!=='function')return 'gatelands';return nationKeyOf(...cellOf(x,z))||'gatelands';}catch(e){return 'gatelands';}}
 // the island you stand on: indoors the house's town (`houseIsle`, 50-travel.js, the island's bedroll's), in a gate its portal, else where you are
 function isleHere(){try{
@@ -707,7 +715,7 @@ function makeItem(matTier, typeObj, enchant, isArmor){
     // v57 pricing: TIER_VALUE baseline × weapon's hi-end atkMult. Heavier/punchier weapons cost more.
     item.buyPrice=Math.max(3, Math.round(TIER_VALUE[t]*typeObj.atkMult[1]));
     item.sellMult=0.45;
-    if(isSwordItem(item))swordStamp(item,isleHere(),LOOT_RNG?lootRand:null); /* S2117 — its make, by island */
+    if(isMadeWeapon(item))weaponStamp(item,isleHere(),LOOT_RNG?lootRand:null); /* S2117 — its make, by island; S2180 the spear's and the crossbow's too */
   } else {
     // Armor
     const isShield=typeObj.shieldType==='shield';
