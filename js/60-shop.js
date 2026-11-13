@@ -851,7 +851,7 @@ function _chaExtraItem(stock, cha){
 // S2117 — the counter's swords in its island's make (Michael's B on #1425; `swordStamp`, 14-items.js): copies, so the shared table is
 // untouched, and each row's blade drawn by its house and row, so a counter shows the same takouba or flyssa every visit
 function counterSwords(stock,h){if(!h||!stock)return stock;const isle=houseIsle(h)||isleHere(),key=h.id||h.name||'';
-  return stock.map((it,i)=>isSwordItem(it)?swordStamp({...it},isle,seededRng('sword',key+':'+i)):it);}
+  return stock.map((it,i)=>isMadeWeapon(it)?weaponStamp({...it},isle,seededRng('sword',key+':'+i)):it);} /* S2180 — a spear or a crossbow on the counter takes the island's make too */
 function renderShop(){
   document.getElementById('sh-gold-val').textContent=gold;
   // Stock list
