@@ -17,6 +17,12 @@ const r = await page.evaluate(() => {
   out.unique = new Set(all.map(({ t }) => t.id)).size === all.length;
   const meshOf = (ch, id) => ch.group.children.find(o => o.isInstancedMesh && o.userData.tids && o.userData.tids.indexOf(id) >= 0 && o.userData.tids.indexOf(id) < o.count) || null;
   all.sort((a, b) => Math.hypot(a.t.x - px, a.t.z - pz) - Math.hypot(b.t.x - px, b.t.z - pz));
+  /* S2168: the later sections take their trees from the chunks as they stand now. `all` was read once, and the first tree's chunk
+     is built again four times below, so its trees in `all` are stale; with few chunks loaded (31 trees on CI, 12 Nov) none were left
+     for the great trees and the timber. Nearest the start first, as `all`. */
+  const x0 = px, z0 = pz;
+  const live = () => { const a = []; for (const ch of chunks.values()) for (const t of ch.trees || []) if (fellable(t) && !t.out && !treeDown(t.id)) a.push({ ch, t });
+    return a.sort((p, q) => Math.hypot(p.t.x - x0, p.t.z - z0) - Math.hypot(q.t.x - x0, q.t.z - z0)); };
   const pick = all.find(({ ch, t }) => meshOf(ch, t.id) && meshOf(ch, t.id).userData.landTree) || all[0];
   if (!pick) return out;
   let { ch, t } = pick; const id = t.id, key = chunkKey(ch.cx, ch.cz);
@@ -70,14 +76,14 @@ const r = await page.evaluate(() => {
   stand(); chopTree(ch, t); tick(.9 * 6 + .2); const b = bagCount(b => !!b.log);
   out.reloadLogs = { a, b, down: !!t.out };
   // ── a dropped frame: one 2 s step strikes once, never skips the count ──
-  { const u = all.find(x => x.t.id !== id && chunks.get(chunkKey(x.ch.cx, x.ch.cz)) === x.ch && !x.t.out); if (u) { px = u.t.x + u.t.r + .6; pz = u.t.z;
+  { const u = live().find(x => x.t.id !== id); if (u) { px = u.t.x + u.t.r + .6; pz = u.t.z;
     SKILLS.woodcutting = { lv: 5, p: 0 }; chopTree(u.ch, u.t); tickFelling(2); out.dropped = CHOP && CHOP.n; CHOP = null; } }
   // the war axe, no hatchet: twice the time
   { BAG.length = 0; const was = EQ.weapon; EQ.weapon = { name: 'Great Axe', weaponShape: 'greataxe', type: 'weapon', atk: [5, 6] };
-    out.axeTool = chopTool(); const u = all.find(x => x.t.id !== id && chunks.get(chunkKey(x.ch.cx, x.ch.cz)) === x.ch && !x.t.out);
+    out.axeTool = chopTool(); const u = live().find(x => x.t.id !== id);
     if (u) { px = u.t.x + u.t.r + .6; pz = u.t.z; chopTree(u.ch, u.t); out.axeStep = CHOP && CHOP.step; CHOP = null; } EQ.weapon = was; }
   // ── S1534: Felling (Woodcutting 25): the trunk falls where you face, a walkable deck for 600 world minutes; none at 24 ──
-  { const free = () => all.find(x => chunks.get(chunkKey(x.ch.cx, x.ch.cz)) === x.ch && !x.t.out && !treeDown(x.t.id));
+  { const free = () => live()[0];
     const fell = (lv, yw) => { const u = free(); if (!u) return null; px = u.t.x + u.t.r + .6; pz = u.t.z; yaw = yw; BAG.length = 0; bagAdd({ ...HATCHET_ITEM });
       SKILLS.woodcutting = { lv, p: 0 }; const n0 = TRUNKS.length, P0 = ZONES.world.platforms.length; for (let i = 0; i < 9 && !u.t.out; i++) strikeTree(u.ch, u.t, 9);
       return { down: !!u.t.out, trunks: TRUNKS.length - n0, plats: ZONES.world.platforms.length - P0, T: TRUNKS[TRUNKS.length - 1], t: u.t }; };
@@ -97,7 +103,7 @@ const r = await page.evaluate(() => {
   { const share = sp => { let n = 0; for (let i = 0; i < 2000; i++) if (greatTree({ sp, id: 'gt:' + i })) n++; return n / 2000; };
     out.great = { oak: share('oak'), pine: share('pine'), birch: share('birch'), live: PERK_LIVE.has('woodcutting:75') };
     const g0 = greatTree; greatTree = () => true;
-    const fellGreat = lv => { const u = all.find(x => chunks.get(chunkKey(x.ch.cx, x.ch.cz)) === x.ch && !x.t.out && !treeDown(x.t.id)); if (!u) return null;
+    const fellGreat = lv => { const u = live()[0]; if (!u) return null;
       px = u.t.x + u.t.r + .6; pz = u.t.z; BAG.length = 0; bagAdd({ ...HATCHET_ITEM }); SKILLS.woodcutting = { lv, p: 0 };
       const said = []; const sm = showMsg; showMsg = m => said.push(m); chopTree(u.ch, u.t); tick(.9 * 6 + .2); showMsg = sm;
       return { down: !!u.t.out, heart: bagCount(b => b.heartwood === 'log'), logs: bagCount(b => !!b.log), said }; };
@@ -111,11 +117,11 @@ const r = await page.evaluate(() => {
     out.timber = { wooded: wooded && wooded.name, kind: wooded && supplyWood(wooded.x, wooded.z), bare: bare && bare.name };
     if (wooded) { const w = roll(wooded); out.timber.w = { sup: w.sup, wood: w.wood, need: w.first && w.first.need, short: w.first && w.first.short, desc: w.first && w.first.desc };
       if (bare) { const b = roll(bare); out.timber.b = { sup: b.sup, wood: b.wood }; }
-      const T = w.first; if (T) { const u = all.find(x => chunks.get(chunkKey(x.ch.cx, x.ch.cz)) === x.ch && !x.t.out && !treeDown(x.t.id));
+      const T = w.first; if (T) { const u = live()[0];
         G.guild_f = { done: 3, active: T }; T.wood = u && u.t.sp === 'pine' ? 'pine' : 'log'; BAG.length = 0; bagAdd({ ...HATCHET_ITEM }); bagAdd(survItem(T.wood, 12));
         out.timber.bought = turnIn('guild_f'); WORLD.guild.onFell(T.wood === 'pine' ? 'log' : 'pine', 9); out.timber.wrongKind = T.have;
         SKILLS.woodcutting = { lv: 100, p: 0 }; let n = 0;
-        for (const x of all) { if (T.have >= T.need || n > 12) break; if (chunks.get(chunkKey(x.ch.cx, x.ch.cz)) !== x.ch || x.t.out || treeDown(x.t.id) || (x.t.sp === 'pine') !== (T.wood === 'pine')) continue;
+        for (const x of live()) { if (T.have >= T.need || n > 12) break; if (chunks.get(chunkKey(x.ch.cx, x.ch.cz)) !== x.ch || x.t.out || treeDown(x.t.id) || (x.t.sp === 'pine') !== (T.wood === 'pine')) continue;
           px = x.t.x + x.t.r + .6; pz = x.t.z; strikeTree(x.ch, x.t, 9); n++; }
         out.timber.felled = n; out.timber.have = T.have; out.timber.done = !!T.doneAt || T.doneAt === 0; const held = bagCount(b => b.log === T.wood), g0 = gold;
         out.timber.said = turnIn('guild_f'); out.timber.paid = gold - g0; out.timber.kept = bagCount(b => b.log === T.wood) === held; out.timber.active = G.guild_f.active;
