@@ -254,6 +254,12 @@ check(`the reindeer and the highland yak wear the kit's reindeer and yak (${mk.m
   mk.every(o => o.hc && o.map >= 22 && o.seed === o.want && /^burden:/.test(o.key) && o.hips < .03 && o.toes.every(y => Math.abs(y) < .05)) && rd0.plan === 'reindeer' && yk0.plan === 'yak', mk);
 check(`the reindeer's head at ${rd0.man} of a man, its hips at ${rd0.hipY} m; the yak's hips at ${yk0.hipY} m, below the ox's (${ox0.hipY})`,
   rd0.man > .7 && rd0.man < 1.1 && rd0.hipY > .9 && rd0.hipY < 1.3 && yk0.hipY < ox0.hipY && yk0.hipY > ox0.hipY * .85, mk);
+// Session 2167: the reindeer's antlers in velvet, a mid brown a third thicker, so they read against snow (S2156's pale beam vanished)
+const ant = await page.evaluate(() => { const out = []; _MK[0].hg.traverse(o => { if (o.isMesh && o.name === 'antler') { const c = o.material.color; o.geometry.computeBoundingBox(); const s = o.geometry.boundingBox.getSize(new THREE.Vector3());
+  out.push({ lum: +(.2126 * c.r + .7152 * c.g + .0722 * c.b).toFixed(3), tris: (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3, h: +s.y.toFixed(3) }); } }); return out; });
+console.log('  the reindeer\'s antlers:', JSON.stringify(ant));
+check(`the reindeer carries two antlers (${ant.map(a => a.tris + ' tris, ' + a.h + ' m high').join('; ')}), brown, their colour's luminance ${ant.map(a => a.lum).join(', ')} under snow's by half`,
+  ant.length === 2 && ant.every(a => a.lum < .4 && a.tris > 200 && a.h > .3), ant);
 { const url = await page.evaluate(() => { const a = _MK[0].hg.position, b = _MK[1].hg.position, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw), ex = mx + fx * 6, ez = mz + fz * 6;
     CAM.position.set(ex, worldH(ex, ez) + 1.5, ez); CAM.lookAt(mx, worldH(mx, mz) + 1, mz); CAM.updateMatrixWorld(true); const hid = [..._W.map(w => w.e.mesh), ..._PK.map(h => h.hg)].map(m => [m, m.visible]); for (const [m] of hid) m.visible = false;
     REN.render(scene, CAM); const u = REN.domElement.toDataURL('image/jpeg', .85); for (const [m, v] of hid) m.visible = v; return u; });

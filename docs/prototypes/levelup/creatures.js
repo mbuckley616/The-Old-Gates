@@ -544,7 +544,7 @@ function antler(o, S, c, p, side, r) {
     geos.push(taperTube(pts, rad, rad * .3, 7)); tips.push(pts[n].clone());
     if (depth > 0) for (let i = 1; i < n; i++) if (r() < (depth > 1 ? .75 : .45)) { const td = V(side * (r() - .3) * .6, .8, .55 + r() * .4).normalize(); grow(pts[i], td, len * (.32 + r() * .2), rad * .55, depth - 1); } };
   grow(V(), V(side * .55, .7, -.15).normalize(), L, o.r * S, o.depth ?? 2);
-  const m = new THREE.Mesh(mergeGeometries(geos), stdMat(c, { rough: .75 })); m.position.copy(p); m.userData.tips = tips.map(t => t.add(p)); return m;
+  const m = new THREE.Mesh(mergeGeometries(geos), stdMat(c, { rough: .75 })); m.name = 'antler'; m.position.copy(p); m.userData.tips = tips.map(t => t.add(p)); return m;
 }
 // a mist the antlers breathe (Session 969, OG-088's stag of shadows): from each tine's tip `per` puffs rise, swell and fade, each one
 // `life` of a stride behind the last, so the whole mist loops with the gait and a still picture is the same every time. The puffs are
@@ -1998,8 +1998,9 @@ Object.assign(PLANS, {
       ['legs', { at: 0, kind: 'ungulHind', out: .16, drop: .08, r: [.16, .075, .045, .07] }]
     ] },
   reindeer: re(PLANS.stag, { name: 'Reindeer', src: 'OG-046 (beasts of burden: the reindeer, the Mark)', scale: .85,
-    palette: { coat: [.46, .4, .34], saddle: [.32, .27, .22], belly: [.86, .84, .8], dark: [.05, .04, .04], hoof: [.1, .08, .07], horn: [.7, .64, .52] }, fur: { len: .04, layers: 9, sx: 200, droop: .4 },
-    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: { len: 1.1, r: .026, f: .1, up: .85, out: .3, depth: 3 } }] : [k, o]) })
+    palette: { coat: [.46, .4, .34], saddle: [.32, .27, .22], belly: [.86, .84, .8], dark: [.05, .04, .04], hoof: [.1, .08, .07], horn: [.4, .31, .22] }, fur: { len: .04, layers: 9, sx: 200, droop: .4 },
+    // Session 2167: the antlers in velvet, a mid brown and a third thicker (the pale .026 beam vanished on snow, S2156's note)
+    parts: PLANS.stag.parts.map(([k, o]) => k === 'head' ? [k, { ...o, antlers: { len: 1.1, r: .035, f: .1, up: .85, out: .3, depth: 3 } }] : [k, o]) })
 });
 Object.assign(PLANS, {
   mule: re(PLANS.horse, { name: 'Mule', src: 'OG-046 (beasts of burden: the mule)', scale: .9,
