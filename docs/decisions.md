@@ -3,26 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### Can the garden grow butter and curd? (from the systems builder, 2026-11-12, #1495)
-**The question.** Resources and crafting B (#1420) gave your house a garden whose four beds grow "its own island's seconds". Two of those seconds are not plants: the Gatelands' **butter** and the Mark's **curd**. As built (Session 2140) you can sow butter and gather 4 butter five days later, and the look builder (Session 2165) draws those beds as clover. Aurenne's three (wheat, dates, olives) are all crops.
-
-**Options.**
-- **A. Crops only** *(recommended)*. A bed takes oats or apples (Gatelands), rye or berries (Mark), wheat, dates or olives (Aurenne), or a picked herb. Butter and curd stay at the inn and the goods shop. One line (`gardenSeconds`); the clover goes.
-- **B. As built.** Any second of the island grows; butter and curd show as clover.
-- **C. A, and later a cow or a goat as a seventh fitting that gives butter or curd.** Its own proposal, not built now.
-
-**Recommendation: A.** A bed of butter breaks the lived-in place the brief asks for. The two rich-dish islands keep two crops each, and Rich and Warmth stay bought, which keeps a reason to visit the inn. (`docs/devlog/2172.md`)
-
-### The singing ship — how is she seen in fog of 60 m? (from the concept artist, 2026-11-12, #1486)
-**The question.** Backlog L6, *Sea legends* (OG-049): a ghost ship heard singing in fog. The quest writer's draft (*Sea Legends, I*, unapproved) puts her 150–200 m off your bow in fog, but Michael's C on #679 closes fog to 60 m, so as drafted nobody would see her. She is the Aurenne cog (17 m) long at sea: grey patched canvas, silvered hull, pewter gilt, dark lanterns; 41k triangles in 13 draws. Page: `docs/prototypes/levelup/singer.html`.
-
-**Options.**
-- **A. The fog holds.** She obeys the 60 m rule: 50 m off, a grey shape in the grey; the draft's distances shrink to fit.
-- **B. A lane opens to her** *(recommended)*. Fog thins to a quarter along a 22 m lane from your bow to her, so she stands 160 m off as drafted; elsewhere fog stays at 60 m.
-- **C. OG-049 as drawn.** The fog doesn't take her: pale green light in her canvas and timbers, a little see-through, 160 m off.
-
-**Recommendation: B.** Keeps the draft's distances and the fog rule; the wrongness lives in the weather. C is the stock spectre, against the draft's "sad and a little funny"; A leaves her a smudge. Cost: one change to the fog shader.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -36,6 +16,30 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### Can the garden grow butter and curd? (from the systems builder, 2026-11-12, #1495)
+**The question.** Resources and crafting B (#1420) gave your house a garden whose four beds grow "its own island's seconds". Two of those seconds are not plants: the Gatelands' **butter** and the Mark's **curd**. As built (Session 2140) you can sow butter and gather 4 butter five days later, and the look builder (Session 2165) draws those beds as clover. Aurenne's three (wheat, dates, olives) are all crops.
+
+**Options.**
+- **A. Crops only** *(recommended)*. A bed takes oats or apples (Gatelands), rye or berries (Mark), wheat, dates or olives (Aurenne), or a picked herb. Butter and curd stay at the inn and the goods shop. One line (`gardenSeconds`); the clover goes.
+- **B. As built.** Any second of the island grows; butter and curd show as clover.
+- **C. A, and later a cow or a goat as a seventh fitting that gives butter or curd.** Its own proposal, not built now.
+
+**Recommendation: A.** A bed of butter breaks the lived-in place the brief asks for. The two rich-dish islands keep two crops each, and Rich and Warmth stay bought, which keeps a reason to visit the inn. (`docs/devlog/2172.md`)
+
+Michael: **Crops only; butter and curd stay bought.** (2026-11-12)
+
+### The singing ship — how is she seen in fog of 60 m? (from the concept artist, 2026-11-12, #1486)
+**The question.** Backlog L6, *Sea legends* (OG-049): a ghost ship heard singing in fog. The quest writer's draft (*Sea Legends, I*, unapproved) puts her 150–200 m off your bow in fog, but Michael's C on #679 closes fog to 60 m, so as drafted nobody would see her. She is the Aurenne cog (17 m) long at sea: grey patched canvas, silvered hull, pewter gilt, dark lanterns; 41k triangles in 13 draws. Page: `docs/prototypes/levelup/singer.html`.
+
+**Options.**
+- **A. The fog holds.** She obeys the 60 m rule: 50 m off, a grey shape in the grey; the draft's distances shrink to fit.
+- **B. A lane opens to her** *(recommended)*. Fog thins to a quarter along a 22 m lane from your bow to her, so she stands 160 m off as drafted; elsewhere fog stays at 60 m.
+- **C. OG-049 as drawn.** The fog doesn't take her: pale green light in her canvas and timbers, a little see-through, 160 m off.
+
+**Recommendation: B.** Keeps the draft's distances and the fog rule; the wrongness lives in the weather. C is the stock spectre, against the draft's "sad and a little funny"; A leaves her a smudge. Cost: one change to the fog shader.
+
+Michael: **A lane of thin fog opens to her, 160 m off.** (2026-11-12)
+
 ### Rare specimens and the field guide — a guide alone, rare specimens that keep their hours, or those plus apparatus? (from the systems designer, 2026-11-12, #1463)
 **The question.** Backlog L8 (OG-097) asks for field-guide plates with a rarity and a habitat, and rare specimens with a known and a hidden effect learned by study. Fourteen of the sheet's plants already grow among the game's 50 herbs, but nothing lists what you have found and nothing is rare by hour or weather: how far should it go?
 
