@@ -8703,10 +8703,14 @@ function aurenneOrrery(hAt, o = {}) {
     const M = CBM, B = new Map(), key = String(o.key || 'cabin'), F = stream(key + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
     const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
       if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
-      if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+      if (SH && (OUTX || SH_OUT.has(k))) return g; if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
     const rod = (k, a, b, rad, seg = 6) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), g = new THREE.CylinderGeometry(rad, rad, d.length(), seg);
       g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.clone().normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); return put(g, k); };
     const ground = typeof o.ground === 'function' ? o.ground : () => 0, stands = [];
+    /* S2196 (card F9; OG-115) — o.interior: the cabin opened for its room (markCabinRoom): no leaf in the door (the room hangs its own) and
+       no glow in the lights, the day is beyond them; o.shell: the cabin alone, for the room's scene, without the paths, the store, the woodpile,
+       the block, the frame, the snowshoes, the trees and the smoke (put drops what is built while OUTX is set) */
+    const SH = !!o.shell, INT = !!o.interior || SH, SH_OUT = new Set(['turf', 'snow', 'antler', 'rock', 'trod']) /* the roof's outer layers and what is only seen outside */; let OUTX = false;
     // the cabin's numbers: side walls along z at x ±XW, gables along x at z ±ZW; the logs R in radius, each wall's courses STEP apart, the two walls half a step out of phase
     const XW = 1.9, ZW = 2.3, R = .13, STEP = .21, OUT = .3, Y0 = .25, NC = 11, EAV = +(Y0 + R + (NC - 1) * STEP).toFixed(3), PITCH = .47, RIDGE = +(EAV + R + XW * Math.tan(PITCH)).toFixed(3);
     const DW = .85, DH = 1.85, WZ = -.6, WW = .6, WH = .45, WS = 1.05, SX = 5.6, SZ = -3.6, SW = 2.0, SD = 1.8, SF = 1.05;
@@ -8717,6 +8721,7 @@ function aurenneOrrery(hAt, o = {}) {
     // the paths' trodden snow: ribbons five vertices across laid a hand over the ground, and the snow thrown up beside them in two banks 0.12 m high
     const ribbon = (P2, idx2) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P2, 3)); g.setIndex(idx2); g.computeVertexNormals();
       if (g.attributes.normal.array.reduce((t, v, j) => j % 3 === 1 ? t + v : t, 0) < 0) /* wound to face up, judged on all its normals */ { g.setIndex(idx2.map((v, j) => idx2[j - j % 3 + [0, 2, 1][j % 3]])); g.computeVertexNormals(); } return g; };
+    OUTX = true;
     for (const P of PATHS) { const pts = []; for (let i = 0; i < P.length - 1; i++) { const [a, b] = [P[i], P[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(L / .3); for (let k = i ? 1 : 0; k <= n; k++) pts.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]); }
       const pos = [], idx = [], bank = [[], []]; pts.forEach(([x, z], i) => { const [p, q] = [pts[Math.max(0, i - 1)], pts[Math.min(pts.length - 1, i + 1)]], dx = q[0] - p[0], dz = q[1] - p[1], l = Math.hypot(dx, dz), w = .32 + .05 * Math.sin(i * .9 + ph[4]);
         for (const sd of [-1, -.5, 0, .5, 1]) { const ex = x - dz / l * w * sd, ez = z + dx / l * w * sd; pos.push(ex, ground(ex, ez) + .035, ez); } if (i) { const o2 = (i - 1) * 5; for (let c = 0; c < 4; c++) idx.push(o2 + c, o2 + c + 5, o2 + c + 1, o2 + c + 1, o2 + c + 5, o2 + c + 6); }
@@ -8724,6 +8729,7 @@ function aurenneOrrery(hAt, o = {}) {
       put(ribbon(pos, idx), 'trod', 0, 0, 0, 0, 0, 0, .35);
       const i0 = pts.findIndex(([x, z]) => Math.hypot(x - P[0][0], z - P[0][1]) > 1.1) /* the banks start clear of the door, where the paths meet */;
       for (const bk of bank) { bk.splice(0, i0 * 12); const bi = []; for (let i = 1; i < pts.length - i0; i++) { const o2 = (i - 1) * 4; for (let c = 0; c < 3; c++) bi.push(o2 + c, o2 + c + 4, o2 + c + 1, o2 + c + 1, o2 + c + 4, o2 + c + 5); } put(ribbon(bk, bi), 'snow', 0, 0, 0, 0, 0, 0, .3); } }
+    OUTX = false;
     // a log: along x or z between a0 and a1 at (c, y); its two ends showing the cut wood
     const logs = []; const log = (ax, a0, a1, c, y, rad = R, rec = true) => { const L = a1 - a0, m = (a0 + a1) / 2, g = new THREE.CylinderGeometry(rad, rad * 1.04, L, 9);
       if (ax === 'x') { g.rotateZ(Math.PI / 2); put(g, 'log', m, y, c, 0, 0, 0, .6); for (const e of [a0, a1]) put(new THREE.CircleGeometry(rad * .96, 9).rotateY(e < m ? -Math.PI / 2 : Math.PI / 2), 'end', e + (e < m ? -.002 : .002), y, c); }
@@ -8747,12 +8753,12 @@ function aurenneOrrery(hAt, o = {}) {
     put(new THREE.BoxGeometry(.5, Y0 + .3, .5), 'stone', 0, (Y0 + .3) / 2 - .3, -ZW, 0, F() * .3);
     put(new THREE.BoxGeometry(2 * XW - .26, .05, 2 * ZW - .26), 'board', 0, Y0 + .05, 0);
     for (const sx of [-1, 1]) put(new THREE.BoxGeometry(.1, DH + .1, .26), 'board', sx * (DW / 2 + .05), Y0 + (DH + .1) / 2, ZW);
-    put(new THREE.BoxGeometry(DW, DH, .05), 'door', 0, Y0 + DH / 2, ZW - .06); put(new THREE.BoxGeometry(.04, .04, .1), 'iron', DW / 2 - .12, Y0 + 1.0, ZW + .01);
+    if (!INT) { put(new THREE.BoxGeometry(DW, DH, .05), 'door', 0, Y0 + DH / 2, ZW - .06); put(new THREE.BoxGeometry(.04, .04, .1), 'iron', DW / 2 - .12, Y0 + 1.0, ZW + .01); }
     const wy = WS + WH / 2 + R / 2, wins = [{ x: XW, z: WZ, n: [1, 0] }, { x: -XW, z: WZW, n: [-1, 0] }, { x: FWX, z: ZW, n: [0, 1] }, { x: BWX, z: -ZW, n: [0, -1] }];
     /* each light: its frame of boards, the glow a hand inside the wall's line, its glazing bar; built along z and turned a quarter for the gable */
     for (const W of wins) { const ry = W.n[0] ? 0 : Math.PI / 2, ins = W.n[0] ? [-W.n[0] * .02, 0] : [0, -W.n[1] * .02], ins2 = W.n[0] ? [-W.n[0] * .01, 0] : [0, -W.n[1] * .01];
       for (const s2 of [-1, 1]) { put(new THREE.BoxGeometry(.26, .06, WW + .16), 'board', W.x, wy + s2 * (WH / 2 + .03), W.z, 0, ry); put(new THREE.BoxGeometry(.26, WH, .06), 'board', W.x + (W.n[0] ? 0 : s2 * (WW / 2 + .03)), wy, W.z + (W.n[0] ? s2 * (WW / 2 + .03) : 0), 0, ry); }
-      put(new THREE.BoxGeometry(.03, WH, WW), 'glow', W.x + ins[0], wy, W.z + ins[1], 0, ry); put(new THREE.BoxGeometry(.04, .03, WW), 'board', W.x + ins2[0], wy, W.z + ins2[1], 0, ry) /* the light, its glazing bar */; }
+      if (!INT) put(new THREE.BoxGeometry(.03, WH, WW), 'glow', W.x + ins[0], wy, W.z + ins[1], 0, ry); put(new THREE.BoxGeometry(.04, .03, WW), 'board', W.x + ins2[0], wy, W.z + ins2[1], 0, ry) /* the light, its glazing bar */; }
     // antlers on the front gable, over the door
     { const ay = Y0 + DH + .9, az = ZW + R + .02; put(new THREE.BoxGeometry(.22, .14, .06), 'antler', 0, ay, az); for (const s of [-1, 1]) { const b = [s * .5, ay + .45, az + .15]; rod('antler', [s * .05, ay, az + .02], b, .025, 5);
       for (let t = 0; t < 3; t++) { const f = .3 + t * .25, p = [s * .05 + s * .45 * f, ay + .45 * f, az + .02 + .13 * f]; rod('antler', p, [p[0] + s * .05, p[1] + .22, p[2] + .08], .018, 5); } } }
@@ -8768,6 +8774,8 @@ function aurenneOrrery(hAt, o = {}) {
     put(new THREE.BoxGeometry(CW + .1, .3, CW + .1), 'snow', CX, roofAt(CX) - .05, CZ);
     const SMK = []; for (let k = 0; k < 9; k++) { const t = k / 8, x = CX + 1.6 * t * t + (F() - .5) * .15, y = CTOP + .35 + t * 3.4, z = CZ - .9 * t * t, s = .45 + t * 1.3, a = F() * 3;
       for (const ry of [a, a + Math.PI / 3, a + 2 * Math.PI / 3]) { const g = new THREE.PlaneGeometry(s, s).toNonIndexed(); g.rotateY(ry); g.translate(x, y, z); SMK.push(g); } }
+    /* S2196 — what stands outside the cabin, left out of its shell (o.shell): the store, the woodpile, the block, the frame, the snowshoes, the trees */
+    OUTX = true;
     // the stabbur: four posts, a flat rat stone on each, a log box on its own sill, a turf roof under snow; its steps stopped short of the door
     const sy = ground(SX, SZ); { for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const x = SX + sx * (SW / 2 - .2), z = SZ + sz * (SD / 2 - .2), gy = ground(x, z); rod('log', [x, gy - .3, z], [x, sy + SF - .12, z], .14, 8); put(new THREE.CylinderGeometry(.3, .32, .1, 9), 'rock', x, sy + SF - .07, z); }
       const sr = .11, sst = .18; for (let k = 0; k < 9; k++) { const y = sy + SF + sr + k * sst; log('z', SZ - SD / 2 - .2, SZ + SD / 2 + .2, SX - SW / 2 + sr, y, sr, false); log('z', SZ - SD / 2 - .2, SZ + SD / 2 + .2, SX + SW / 2 - sr, y, sr, false);
@@ -8797,7 +8805,7 @@ function aurenneOrrery(hAt, o = {}) {
     // baked one mesh a material, the smoke one more
     const group = new THREE.Group(); let tris = 0;
     for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['trod', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
-    { const g = mergeGeometries(SMK); SMK.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M.smoke); m.name = 'smoke'; m.renderOrder = 2; m.castShadow = false; group.add(m); tris += g.attributes.position.count / 3; }
+    if (!SH) { const g = mergeGeometries(SMK); SMK.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M.smoke); m.name = 'smoke'; m.renderOrder = 2; m.castShadow = false; group.add(m); tris += g.attributes.position.count / 3; }
     // the solids, boxes in this frame: the cabin's four walls of logs (the door shut), the chimney, the woodpile, the store's legs and its
     // steps, the block, the hide frame's posts and the trees' trunks. The walls are rows of the logs' own width, so a turned cabin's squares
     // stay inside its corners' run-on
@@ -8806,8 +8814,78 @@ function aurenneOrrery(hAt, o = {}) {
       ...[-1, 1].flatMap(sx => [-1, 1].map(sz => Sq(SX + sx * (SW / 2 - .2), SZ + sz * (SD / 2 - .2), .3, .3, sy + SF + 2))), Sq(SX, STEPS_Z + .45, .8, .9, sy + SF * .9), Sq(BX, BZ, .6, .6, ground(BX, BZ) + .45),
       ...[-1, 1].map(s => Sq(HX + s * .8, HZ, .2, .2, ground(HX, HZ) + 2)), ...trees.map(t => Sq(t.x, t.z, .4, .4, ground(t.x, t.z) + t.h))];
     return { group, tris: Math.round(tris), draws: group.children.length, sol, stands: stands.map(s => ({ x: +s.x.toFixed(3), y: +s.y.toFixed(3), z: +s.z.toFixed(3), what: s.what })),
-      cabin: { x0: -XW, x1: XW, z0: -ZW, z1: ZW, eaves: EAV, ridge: RIDGE, y0: Y0, logs: logs.length, door: { x: 0, z: ZW, w: DW, h: DH }, win: { x: XW, z: WZ, w: WW, h: WH, sill: WS }, wins: wins.map(W => ({ x: W.x, z: W.z, n: W.n, y: +wy.toFixed(3) })) },
+      cabin: { x0: -XW, x1: XW, z0: -ZW, z1: ZW, eaves: EAV, ridge: RIDGE, y0: Y0, R, pitch: PITCH, logs: logs.length, door: { x: 0, z: ZW, w: DW, h: DH }, win: { x: XW, z: WZ, w: WW, h: WH, sill: WS }, wins: wins.map(W => ({ x: W.x, z: W.z, n: W.n, y: +wy.toFixed(3) })) },
       chimney: { x: CX, z: CZ, w: CW, top: CTOP }, store, pile: pile.length, trees, paths: PATHS };
+  }
+  // S2196 (card F9; OG-115's "hunter's cabin" for the Mark; Michael's A on #303, the rooms inside their own shells) — the hunting cabin's
+  // room, rooms.js's markCabin (Session 1199) inside the cabin the world stands (markHuntingCabin's shell: the logs, the floor, the roof,
+  // the stack, the four lights of S2081): the peis against the stack's east face, a fur before it; the bed of furs along the east wall;
+  // the table by the front under its light, two stools and a candle; the woodbox by the fire; the shelves on the west wall; the bow, the
+  // quiver and two traps on pegs by the door over a chest; the drying pole across the room; a lantern from the ridge. One change to the
+  // prototype: S2081 opened a light in the west wall at z 0.7 to 1.3, where the page's shelves ran from 0.05 to 1.35, so the shelves are
+  // 0.8 m long south of it, the kettle, the crocks and the plates closer together on them. In the cabin's frame (the door to +z, y 0 the
+  // ground at the cabin's middle). o.key the stream's.
+  // -> { group, tris, draws, inner, floor, under(x), stack, hearth, fire, bed, table, boxes [{ tag, x0, x1, y0, y1, z0, z1 }], lamps, candles,
+  //      door { x, z, w, h, y0 }, wins [{ x, z, n, y }], win { w, h }, pole, eaves, ridge, shellTris }
+  function markCabinRoom(o = {}) {
+    const key = String(o.key || 'cabin'), P = markHuntingCabin({ key, shell: true }), C = P.cabin, Ch = P.chimney;
+    const M = { ...roomMats(), stone: mat('stone', { ns: 1.3, color: 0xb8b4ac, rough: .95 }), pine: mat('wood', { ns: .9, color: 0xa07a52, rough: .8 }), log: mat('beam', { ns: 1.2, color: 0xa88866, rough: .9 }),
+      fur: mat('plaster', { ns: .6, color: 0x5a4632, rough: 1 }), pelt: mat('plaster', { ns: .5, color: 0x8a7458, rough: 1 }), wax: new THREE.MeshStandardMaterial({ color: 0xeee2c4, roughness: .6 }),
+      meat: new THREE.MeshStandardMaterial({ color: 0x5a2a1e, roughness: .55 }), horn: new THREE.MeshStandardMaterial({ color: 0xd8ccb4, roughness: .5 }), gut: new THREE.MeshStandardMaterial({ color: 0x6a5038, roughness: .9 }),
+      wood: mat('wood', { ns: .8, color: 0xd2b48a, rough: .85 }), door: mat('wood', { ns: 1.0, color: 0x4a3a2a, rough: .8 }) };
+    const B = new Map(), boxes = [], X = C.x1 - C.R, Z = C.z1 - C.R, FY = C.y0 + .075 /* the floor's boards */, tp = Math.tan(C.pitch), under = x => C.ridge - Math.abs(x) * tp;
+    const put = (geo, k, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const q = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(q.attributes)) if (!['position', 'normal'].includes(a)) q.deleteAttribute(a);
+      q.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1))); worldUV(q, uv); if (!B.has(k)) B.set(k, []); B.get(k).push(q); return q; };
+    const bx = (k, x0, x1, y0, y1, z0, z1, tag) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), k, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1 }); };
+    const stack = { x0: Ch.x - Ch.w / 2, x1: Ch.x + Ch.w / 2, z0: Ch.z - Ch.w / 2, z1: Ch.z + Ch.w / 2 };
+    // the roof's frame under the boards: the ridge log and a purlin halfway down each slope, gable to gable
+    { const L = 2 * Z, g = new THREE.CylinderGeometry(.11, .11, L, 9); g.rotateX(Math.PI / 2); put(g, 'log', 0, C.ridge - .11, 0);
+      for (const s of [-1, 1]) { const x = s * X / 2, q = new THREE.CylinderGeometry(.09, .09, L, 8); q.rotateX(Math.PI / 2); put(q, 'log', x, under(x) - .1, 0); } }
+    // the peis: the hearth raised against the stack's east face, a cheek each side, a stone hood back to the stack; the fire on it
+    const hx1 = stack.x1 + .42, HY = FY + .32, HH = FY + 1.02; bx('stone', stack.x1, hx1, FY, HY, stack.z0, stack.z1); for (const z of [stack.z0, stack.z1 - .12]) bx('stone', stack.x1, hx1 - .04, HY, HH, z, z + .12);
+    bx('stone', stack.x1 - .02, hx1 + .02, HH, HH + .26, stack.z0 - .02, stack.z1 + .02); bx('soot', stack.x1, stack.x1 + .015, HY, HH, stack.z0 + .12, stack.z1 - .12); bx('soot', stack.x1, hx1 - .04, HH - .02, HH, stack.z0 + .12, stack.z1 - .12);
+    boxes.push({ tag: 'peis', x0: stack.x1, x1: hx1 + .02, y0: FY, y1: HH + .26, z0: stack.z0 - .02, z1: stack.z1 + .02 });
+    const fx = stack.x1 + .2, fz = Ch.z; for (let i = 0; i < 3; i++) { const q = new THREE.CylinderGeometry(.045, .05, .34, 6); q.rotateZ(Math.PI / 2); put(q, 'oak', fx, HY + .05 + (i === 2 ? .07 : 0), fz + (i - 1) * .09, (i - 1) * .5); }
+    put(new THREE.SphereGeometry(.13, 10, 6).scale(1.1, .35, 1.3), 'ember', fx, HY + .03, fz); for (let i = 0; i < 3; i++) put(new THREE.ConeGeometry(.055, .24 + i * .05, 7), 'flame', fx + (i - 1) * .03, HY + .2, fz + (i - 1) * .07);
+    const fire = [fx, HY + .25, fz]; bx('fur', stack.x1 + .55, stack.x1 + 1.45, FY, FY + .02, stack.z0 - .1, stack.z1 + .25) /* a bear's fur before the fire */;
+    // the bed along the east wall, under its light: a box of boards, furs heaped on it, a pelt rolled for the pillow
+    const bed = { x0: X - .82, x1: X, z0: -Z, z1: -Z + 1.92, y: FY + .45 }; bx('pine', bed.x0, bed.x1, FY + .1, bed.y - .08, bed.z0, bed.z1, 'bed'); for (const z of [bed.z0 + .04, bed.z1 - .04]) bx('pine', bed.x0, bed.x0 + .08, FY, FY + .12, z - .04, z + .04);
+    bx('pine', bed.x0, bed.x0 + .05, FY, bed.y + .05, bed.z0, bed.z1) /* its side board */; bx('straw', bed.x0 + .05, bed.x1 - .02, bed.y - .08, bed.y, bed.z0 + .03, bed.z1 - .03);
+    put(new THREE.BoxGeometry(bed.x1 - bed.x0 - .1, .12, bed.z1 - bed.z0 - .5), 'fur', (bed.x0 + bed.x1) / 2 - .02, bed.y + .05, bed.z1 - (bed.z1 - bed.z0 - .5) / 2 - .05); { const q = new THREE.CylinderGeometry(.11, .11, bed.x1 - bed.x0 - .16, 10); q.rotateZ(Math.PI / 2); put(q, 'pelt', (bed.x0 + bed.x1) / 2, bed.y + .1, bed.z0 + .22); }
+    // the table by the front under its light, two stools and a candle in a horn holder
+    const tb = { x0: .62, x1: 1.42, z0: .38, z1: 1.12, y: FY + .74 }; bx('pine', tb.x0, tb.x1, tb.y - .05, tb.y, tb.z0, tb.z1, 'table'); for (const x of [tb.x0 + .08, tb.x1 - .08]) bx('pine', x - .04, x + .04, FY, tb.y - .05, tb.z0 + .08, tb.z1 - .08);
+    bx('pine', tb.x0 + .08, tb.x1 - .08, FY + .14, FY + .2, (tb.z0 + tb.z1) / 2 - .03, (tb.z0 + tb.z1) / 2 + .03) /* the stretcher */;
+    const stool = (x, z) => { put(new THREE.CylinderGeometry(.16, .16, .05, 10), 'pine', x, FY + .425, z); for (const a of [0, 2.1, 4.2]) put(new THREE.CylinderGeometry(.022, .025, .4, 5), 'pine', x + Math.cos(a) * .1, FY + .2, z + Math.sin(a) * .1);
+      boxes.push({ tag: 'stool', x0: x - .16, x1: x + .16, y0: FY, y1: FY + .45, z0: z - .16, z1: z + .16 }); }; stool(.42, .75); stool(1.02, 1.42);
+    const candles = []; { const x = 1.15, z = .62; put(new THREE.CylinderGeometry(.04, .05, .06, 8), 'horn', x, tb.y + .03, z); put(new THREE.CylinderGeometry(.016, .018, .12, 8), 'wax', x, tb.y + .12, z); put(new THREE.SphereGeometry(.011, 5, 4).scale(1, 2.2, 1), 'flame', x, tb.y + .19, z); candles.push([x, tb.y + .2, z]); }
+    put(new THREE.CylinderGeometry(.11, .09, .05, 12), 'oak', .85, tb.y + .025, .85) /* a wooden bowl */; put(new THREE.ConeGeometry(.035, .14, 8, 1, true), 'horn', .95, tb.y + .07, .55, 0, .6, Math.PI / 2 - .1) /* a horn cup on its side */;
+    // the woodbox by the fire, split wood in it; the shelves on the west wall, south of its light, and their things
+    { const x0 = -X + .02, x1 = x0 + .48, z0 = stack.z1 + .18, z1 = z0 + .58; bx('pine', x0, x1, FY, FY + .5, z0, z1, 'woodbox'); for (let i = 0; i < 6; i++) { const q = new THREE.CylinderGeometry(.06, .06, .42, 5); q.rotateZ(Math.PI / 2); put(q, 'wood', (x0 + x1) / 2, FY + .53 + (i % 2) * .08, z0 + .1 + Math.floor(i / 2) * .17, .05 * i); } }
+    const wW = C.wins.find(w => w.n[0] < 0), SH = [FY + 1.3, FY + 1.66], shz = [-.2, Math.min(.6, wW ? wW.z - C.win.w / 2 - .1 : .6)];
+    for (const y of SH) bx('pine', -X, -X + .26, y - .03, y, shz[0], shz[1], 'shelf'); for (const z of shz) bx('pine', -X, -X + .26, SH[0] - .2, SH[1], z - .02, z + .02, 'shelf');
+    put(new THREE.CylinderGeometry(.1, .12, .16, 12), 'iron', -X + .13, SH[0] + .08, -.04); put(new THREE.TorusGeometry(.08, .007, 4, 10, Math.PI), 'iron', -X + .13, SH[0] + .16, -.04, Math.PI / 2);
+    for (const [z, h] of [[.18, .16], [.34, .2], [.49, .14]]) put(new THREE.CylinderGeometry(.06, .07, h, 10), 'crock', -X + .13, SH[0] + h / 2, z); for (const z of [-.06, .2, .46]) put(new THREE.CylinderGeometry(.07, .07, .03, 10), 'oak', -X + .13, SH[1] + .015, z);
+    // by the door, on pegs in the front wall's logs: the bow, the quiver, two traps; a chest under them
+    const PG = FY + 1.62; for (const x of [-1.55, -1.0, -.62]) bx('oak', x - .02, x + .02, PG - .04, PG, Z - .16, Z);
+    { const q = new THREE.TorusGeometry(.55, .014, 4, 18, 2.3); q.rotateZ(Math.PI / 2 - 1.15); put(q, 'oak', -1.25, PG - .23, Z - .07); put(new THREE.CylinderGeometry(.003, .003, 1.0, 3), 'gut', -1.25, PG, Z - .07, 0, .6, 0, Math.PI / 2) /* the bow on two pegs, its string on them */; }
+    put(new THREE.CylinderGeometry(.06, .05, .6, 8), 'fur', -.62, PG - .36, Z - .08, 0, .6, 0, .06); for (let k = 0; k < 4; k++) put(new THREE.CylinderGeometry(.005, .005, .25, 3), 'oak', -.64 + k * .015, PG - .02, Z - .08 + (k % 2) * .02) /* the quiver, its arrows */;
+    for (const x of [-1.55, -1.0]) { put(new THREE.TorusGeometry(.1, .008, 4, 12), 'iron', x, PG - .32, Z - .06); put(new THREE.BoxGeometry(.02, .02, .14), 'iron', x, PG - .41, Z - .1); put(new THREE.CylinderGeometry(.003, .003, .2, 3), 'iron', x, PG - .12, Z - .06) /* a trap on its chain */; }
+    boxes.push({ tag: 'pegs', x0: -X + .02, x1: -.5, y0: PG - .5, y1: PG + .33, z0: Z - .17, z1: Z });
+    { const x0 = -X + .05, x1 = x0 + .72, z0 = Z - .5, z1 = Z - .02; bx('oak', x0, x1, FY, FY + .46, z0, z1, 'chest'); bx('oak', x0 - .01, x1 + .01, FY + .46, FY + .5, z0 - .01, z1); for (const e of [x0 + .12, x1 - .12]) bx('iron', e - .02, e + .02, FY + .05, FY + .5, z0 - .012, z0); }
+    // the drying pole across the room from wall to wall, strips of meat and a hare hung from it; the lantern from the ridge
+    const PY = FY + 2.25, PZ = -.25; { const q = new THREE.CylinderGeometry(.04, .04, 2 * X - .04, 7); q.rotateZ(Math.PI / 2); put(q, 'oak', 0, PY, PZ); }
+    for (const x of [-.9, -.6, -.3, .3, .6]) { put(new THREE.CylinderGeometry(.004, .004, .08, 3), 'gut', x, PY - .06, PZ); put(new THREE.BoxGeometry(.06, .22, .015), 'meat', x, PY - .21, PZ, .3); }
+    put(new THREE.CylinderGeometry(.05, .035, .28, 7), 'fur', .95, PY - .2, PZ) /* a hare */; boxes.push({ tag: 'pole', x0: -X, x1: X, y0: PY - .33, y1: PY + .04, z0: PZ - .06, z1: PZ + .06 });
+    const lamps = [farmLantern({ put, bx }, 0, 0, .55, FY + 2.12, C.ridge - .22)];
+    // the door's leaf, open into the room on its west jamb
+    const D = C.door, lx = D.x - D.w / 2, lz = Z + C.R - .06; bx('door', lx, lx + .05, FY, C.y0 + D.h, lz - D.w + .02, lz); bx('iron', lx + .05, lx + .06, C.y0 + 1.0, C.y0 + 1.04, lz - D.w + .1, lz - D.w + .2);
+    boxes.push({ tag: 'leaf', x0: lx, x1: lx + .06, y0: FY, y1: C.y0 + D.h, z0: lz - D.w + .02, z1: Z });
+    boxes.push({ tag: 'stack', x0: stack.x0, x1: stack.x1, y0: FY, y1: C.ridge, z0: stack.z0, z1: stack.z1 });
+    const room = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const q = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(q, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; room.add(m); tris += q.attributes.position.count / 3; }
+    const group = new THREE.Group(); group.name = 'cabin room'; group.add(P.group, room);
+    const paths = [{ pts: [[D.x, Z - .2], [0, -.55], [stack.x1 + .9, stack.z0 + .2]] }, { pts: [[0, -.55], [bed.x0 - .3, -1.55]] }, { pts: [[0, -.2], [stack.x0 + .1, -.25], [-X + .75, -.25]] }];
+    return { group, tris: Math.round(tris + P.tris), draws: room.children.length + P.draws, shellTris: P.tris, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floor: FY, under, stack, hearth: { x1: hx1, y: HY, hood: HH },
+      fire, bed, table: tb, boxes, paths, lamps, candles, door: { x: D.x, z: C.z1 + C.R, w: D.w, h: D.h, y0: C.y0 }, wins: C.wins, win: { w: C.win.w, h: C.win.h }, pole: { y: PY, z: PZ }, eaves: C.eaves, ridge: C.ridge, shelves: shz };
   }
   // S2056 (card F8; OG-124's Mark panel, "an abandoned logging camp"; Michael's A on #1292) — the Mark's logging camp in the open world,
   // places.js's markLoggingCamp (Session 999): a winter felling left mid-season on a slope over water, after the Norwegian and Swedish
@@ -10578,7 +10656,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(geo.attributes.position.count / 3), draws: 1, spine, ribs, gap, skull: sk, jaws, flipper: fl, box, length: +(sk.x + sk.len - spine.at(-10).x).toFixed(2) };
   } /* the world reads the cut ground before the piece is built (offroadStamps) */
   return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
-    mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
+    mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
 })();

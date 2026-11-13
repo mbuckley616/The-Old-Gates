@@ -192,6 +192,7 @@
     if(c._wayside&&c._wayside.lamp){unregLight(c._wayside.lamp.light);c._wayside.lamp=null;} /* S2048 — the coach's lamp */
     if(c._wayside&&c._wayside.patch)offroadPatchDrop(c._wayside.id); /* S2065 — the expedition's laid-back ground */
     if(c._offroad&&c._offroad.patch)offroadPatchDrop(c._offroad.id); /* S2044 — a place off the road's own ground */
+    if(c._offroad&&c._offroad.house){const i=ZONES.world.houses.indexOf(c._offroad.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S2196 — the hunting cabin's record */
     if(c._tunnel&&c._tunnel.house){const i=ZONES.world.houses.indexOf(c._tunnel.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1828 — the tunnel's */
     (c._lone||[]).forEach(F=>{if(SETTLE.has(F.id))disposeSettlement(F.id);const i=F._site?LONE_FARMS.indexOf(F._site):-1;if(i>=0)LONE_FARMS.splice(i,1);}); /* S1473 — and its lone farms */
     if(L.staticsBuilt||L.staticsPending)dropStatics(L);
@@ -1081,6 +1082,11 @@
     if(M.patch){offroadPatchDrop(D.id);const P=M.patch;OFFROAD_PATCHES.push({id:D.id,x:D.x,z:D.z,y:y0,co,s:s_,x0:P.x0,x1:P.x1,z0:P.z0,z1:P.z1,R2:(Math.hypot(Math.max(-P.x0,P.x1),Math.max(-P.z0,P.z1))+1)**2,ground:M.ground});
       D.patch=P;D.rim=M.rim;D.bank=M.bank;D.rick=M.rick;D.fire=M.fire;D.footings=M.footings;D.heather=M.heather;D.ground=M.ground;D.slean=M.slean;D.sinks=M.sinks;}
     D.y=y0;D.tris=M.tris;D.draws=M.draws;D.group=M.group;D.stands=M.stands;D.hut=M.hut;D.fold=M.fold;D.spring=M.spring;D.rowan=M.rowan;D.cabin=M.cabin;D.store=M.store;D.trees=M.trees;
+    /* S2196 (card F9; OG-115) — the hunting cabin's door opens on its room (markCabinRoom, buildKitHuntCabin, 83): its record in the world's
+       houses, found by its door as a house's is (not byAim), never locked and nobody in; taken out when the cell unloads */
+    if(D.kind==='cabin'&&M.cabin&&PKIT.mk&&PKIT.mk.cabin){const Cb=M.cabin,dz=Cb.z1+Cb.R,[dx_,dz_]=W(Cb.door.x,dz),[ex,ez]=W(Cb.door.x,dz+1.2);
+      D.house={id:`g_${D.id}`,type:'huntcabin',siteId:D.id,name:'the hunting cabin',keeper:'',reg:c.reg,style:'mark',w:2*(Cb.x1-Cb.R),d:2*(Cb.z1-Cb.R),two:false,doorX:+dx_.toFixed(3),doorZ:+dz_.toFixed(3),doorFace:'S',exitX:+ex.toFixed(3),exitZ:+ez.toFixed(3),exitYaw:+Math.atan2(-s_,-co).toFixed(4)};
+      if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===D.house.id))ZONES.world.houses.push(D.house);}
     if(D.kind==='watchtower'){D.tower=M.tower;D.door=M.door;D.stair=M.stair;D.terrace=M.terrace;D.well=M.well;D.path=M.path;D.top=M.top;}
     if(D.kind==='logging'){D.chute=M.chute;D.deck=M.deck;D.stumps=M.stumps;D.shelter=M.shelter;D.sledge=M.sledge;D.ice=M.ice;D.shoreAt=M.shore;}
     if(FG&&D.kind==='cove'){const LB=offroadLaidCarve(D,FG),S=M.shape;sc.add(LB.mesh);D.laid=LB;D.shape=S;D.houses=M.houses;D.slip=M.slip;D.steps=M.steps;D.stairTop=M.stairTop;D.lookout=M.lookout;D.boats=M.boats;D.cargo=M.cargo;offroadPatchDrop(D.id); /* S2105 — the inlet's ground drawn always, and walked on (groundY): the stair's treads, else the cut */
@@ -1773,11 +1779,11 @@
     if(t==='church')return h>=6&&h<21;
     if(t==='castle')return h>=8&&h<20;
     if(t==='guild_f'||t==='guild_m')return true;
-    if(t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='market'||t==='academy')return false; /* S1963 — nor the academy's library; S1480 — and a farm's byre (S1475, and its barn): nobody keeps them; S1905, nor the room over a market house */
+    if(t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='huntcabin'||t==='market'||t==='academy')return false; /* S1963 — nor the academy's library; S1480 — and a farm's byre (S1475, and its barn): nobody keeps them; S1905, nor the room over a market house */
     if(t==='home'){if(house.shuttered)return false;if(house.ownedByPlayer||ownedHouse(house.id))return false;return h>=(house.farm&&!feastNow()?HRS.eve:HRS.night)||h<HRS.dawn;} /* S1471 — a farmer is in from the evening (#762 A) */
     return h>=HRS.shopOpen&&h<HRS.shopClose; // shops
   }
-  function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='market'||t==='academy')return false;return !npcInsideNow(house);} /* S1480 — a byre (S1475, a barn) is never locked */
+  function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='huntcabin'||t==='market'||t==='academy')return false;return !npcInsideNow(house);} /* S1480 — a byre (S1475, a barn) is never locked */
   function feastNow(){return typeof feastOn==='function'&&!!feastOn();}
   function feastR(r){return feastNow()?Math.min(r,18):r;}
   function scheduleFor(n,h){
