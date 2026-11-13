@@ -3949,14 +3949,14 @@ const giver=`${lord.title} ${lord.name}`;
     "{blot} {blot} Beorhtric {blot} {blot} {blot} Áed {blot} {blot} — Caer {blot} — {blot} {blot} Manon {blot} {blot} {blot} {blot} Odo {blot} {blot} {blot} Cass {blot} {blot} {blot} {blot} {blot} {blot} {blot}",
     "Ashenmoor.\nBram, the smith. Wat Atherton. Hilde Atherton. Ned Atherton. Rob Glenn. Annis Glenn. Kit Glenn. Joan Glenn. Mag, Humphrey’s widow. On the south road, two travellers: Ciara Ní Mhurchú, and Lucien Adret, of Aurenne. {blot}. {blot}. {blot}.",
     "{back}"];
-  const VLIST_HANDS=[0,0,.25,.45,.65,.85,1,0]; /* how worn each fold's hand is, for a reader that can draw it (backlog A) */
+  const VLIST_HANDS=[0,0,.25,.45,.65,.85,1,0]; /* how worn each fold's hand is (renderBookPage draws it, S2176) */
   const VLIST_ONES=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
   const VLIST_TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
   function vlistWord(n){n=Math.max(0,n|0);if(n<20)return VLIST_ONES[n];if(n<100){const t=VLIST_TENS[Math.floor(n/10)],o=n%10;return o?t+'-'+VLIST_ONES[o]:t;}return String(n);}
   function vlistBack(n){n=Math.max(0,n|0);if(n===0)return 'Has not died. I would have known.';if(n===1)return 'Died once. Stood up once. Where do you go?';
     const w=vlistWord(n);return `Died ${w} times. Stood up ${w} times. Where do you go?`;}
   BOOKS.push({id:'worn_paper',name:'Worn Paper',ico:'📜',attr:null,quiet:true,bare:true,hands:VLIST_HANDS,
-    get pages(){const L=worldState.varekList,n=L?L.n|0:0;return VLIST_PAGES.map(p=>p==='{back}'?'\n\n\n'+vlistBack(n):p.replace(/\{blot\}/g,'—'));}});
+    get pages(){const L=worldState.varekList,n=L?L.n|0:0;return VLIST_PAGES.map(p=>p==='{back}'?'\n\n\n'+vlistBack(n):p);}}); /* S2176 — the reader draws {blot} (renderBookPage) */
   let VLIST_LIE=null;
   // the cell before the sarcophagus along the waking yaw (the camera looks along -sin, -cos), else the nearest open neighbour. The
   // waking spot is in metres by now (dunScaleWhole scales it with the rest); the map is read in cells

@@ -97,5 +97,14 @@ const gd = await page.evaluate((id) => { if (isInterior()) exitInterior(); const
   px = x0; pz = z0; return o; }, pick.id);
 check(`a garden fitted stands in the yard (${gd.tris0} tris in ${gd.draws0} draws bare, ${gd.tris1} with ripe oats): four beds solid, its middle free and the house's spot, every bed within 2.3 m; taken out, it goes`,
   gd.stood && gd.sol === 4 && gd.at && gd.free && gd.beds.length === 4 && gd.beds.every(b => b.solid && b.d < 2.3) && gd.ready && gd.tris1 > gd.tris0 && gd.draws1 <= 6 && gd.gone, gd);
+// S2175 (Michael's A on #1495): a bed grows crops only; butter and curd stay bought. A Gatelands house offers oats and apples, not butter,
+// and sowing butter or curd is refused with nothing taken from the bag
+const crops = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id);
+  const r = homeFitRec(h); if (!r.fit.includes('garden')) r.fit.push('garden'); const L = gardenBeds(h); L[1] = null;
+  bagAdd(secondItem('butter', 2)); const n0 = bagCount(b => b.second === 'butter');
+  const o = { isle: houseIsle(h), secs: gardenSeconds(h), butter: gardenPlant(h, 1, 'second', 'butter'), curd: gardenPlant(h, 1, 'second', 'curd') };
+  o.kept = bagCount(b => b.second === 'butter') === n0; o.bare = !L[1]; bagTake(b => b.second === 'butter', n0); homeUnfit(h, 'garden'); return o; }, pick.id);
+check(`a garden bed takes crops only (${crops.isle}: ${crops.secs && crops.secs.join(', ')}); butter is refused (“${crops.butter && crops.butter.why}”) and kept, curd refused`,
+  crops.isle === 'gatelands' && crops.secs.join() === 'oats,apples' && !crops.butter.done && crops.kept && crops.bare && !crops.curd.done, crops);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -45,12 +45,21 @@ check(`the pickup's line alone (*${took.shown.join(' | ')}*), and nothing in the
 const read = await page.evaluate(() => { const logs0 = GAME_LOG.length, i = BAG.findIndex(b => b && b.bookId === 'worn_paper'); openBookReader(i);
   const title = document.getElementById('book-title').textContent, pag = document.getElementById('book-pagination').textContent, first = document.getElementById('book-page').textContent;
   const n = _bookState.bookDef.pages.length; _bookState.page = n - 1; renderBookPage(); const last = document.getElementById('book-page').textContent.trim();
-  _bookState.page = 4; renderBookPage(); const fifth = document.getElementById('book-page').textContent; closeBookReader();
-  return { title, pag, first: first.slice(0, 40), n, last, blots: (fifth.match(/—/g) || []).length, braces: /\{/.test(fifth), logs: GAME_LOG.length - logs0 }; });
+  const P = document.getElementById('book-page'), hand = k => { _bookState.page = k; renderBookPage(); const W = [...P.querySelectorAll(':scope > span:not(.bk-blot)')];
+    return { words: W.length, skew: W.length ? (W[0].style.transform.match(/skewX\(([-\d.]+)deg\)/) || [])[1] : null, ls: P.style.letterSpacing, ink: P.querySelectorAll('.bk-blot svg path').length }; };
+  const hands = [0, 3, 6, 7].map(hand);
+  _bookState.page = 4; renderBookPage(); const fifth = document.getElementById('book-page').textContent; const fifthInk = P.querySelectorAll('.bk-blot svg path').length;
+  if (globalThis.__shot) { _bookState.page = 6; renderBookPage(); } else closeBookReader();
+  return { title, pag, first: first.slice(0, 40), n, last, blots: (fifth.match(/—/g) || []).length, braces: /\{/.test(fifth), logs: GAME_LOG.length - logs0, hands, fifthInk }; });
 console.log(JSON.stringify(read));
 check('the reader: no title, no folios, eight folds, the first *First year after the stone*', read.title === '' && read.pag === '' && read.n === 8 && read.first.startsWith('First year after the stone, at the hay.'), read);
 check(`the back: *${read.last}*`, read.last === 'Died three times. Stood up three times. Where do you go?', read);
-check(`the fifth fold's blots drawn as dashes (${read.blots}), and nothing in the log for reading it`, read.blots === 12 && !read.braces && read.logs === 0, read);
+check(`the fifth fold's blots read as dashes (${read.blots}), and nothing in the log for reading it`, read.blots === 12 && !read.braces && read.logs === 0, read);
+// S2176 — the reader draws the worn hand: fold 1 is the neat hand (no leaning words, the page's own spacing), the hand worsens to fold 7
+// (every word leaning 9°, the letters .14 em apart) and the back is steady again; each blot an ink stroke over a hidden dash
+const H = read.hands;
+check(`the hand wears by the fold: neat (${H[0].words} words set apart, ${H[0].ls}), fold 4 ${H[1].skew}°, fold 7 ${H[2].skew}° at ${H[2].ls}, the back neat; the fifth's ${read.fifthInk} blots inked, fold 7's ${H[2].ink}`,
+  H[0].words === 0 && parseFloat(H[0].ls) === .02 && +H[1].skew < 0 && +H[1].skew > +H[2].skew && +H[2].skew === -9 && parseFloat(H[2].ls) === .14 && H[3].words === 0 && read.fifthInk === 12 && H[2].ink === 3, H);
 
 const backs = await page.evaluate(() => [0, 1, 2, 21, 99, 140].map(vlistBack));
 console.log(JSON.stringify(backs));
