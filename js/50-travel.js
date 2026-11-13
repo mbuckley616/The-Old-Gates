@@ -1276,7 +1276,7 @@ function clayRec(key){const W=worldState.clay||(worldState.clay={});let r=W[key]
   if(r&&r.n>=CLAY_HOLD&&gameMinNow()/1440-r.d>=CLAY_DAYS){r={n:0,d:r.d};W[key]=r;}return r||{n:0,d:0};}
 function clayLeft(key){return Math.max(0,CLAY_HOLD-clayRec(key).n);}
 // the named action: one clay off the bank. Returns {done, left} or {done:false, why}
-// S2170 — the bank keeps where it was first cut (`x`, `z`, world metres to the centimetre, the dig's stand), for the look builder's cut;
+// S2171 — the bank keeps where it was first cut (`x`, `z`, world metres to the centimetre, the dig's stand), for the look builder's cut;
 // `at` is that stand (the player's place when omitted). A bank that comes back heals: its record loses the place, and the next dig sets it.
 function digClay(key,at){if(!hasShovel())return {done:false,why:'You need a shovel.'};if(!key)return {done:false,why:'Clay is dug at a river’s or a lake’s edge.'};
   const r=clayRec(key);if(r.n>=CLAY_HOLD)return {done:false,why:'The bank is dug out here.'};const it=survItem('clay');
