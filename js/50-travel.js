@@ -3149,6 +3149,7 @@ function interact(){
   }
   if(typeof knotNear==='function'&&knotNear()){knotUse();return;} /* S1346 — a great gate's knot */
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
+  if(typeof varekListNear==='function'&&varekListNear()){varekListTake();return;} /* S2174 — the worn paper in the crypt */
   if(typeof cloakDenNear==='function'&&cloakDenNear()){cloakDenTake();return;} /* S992 — the cloak, from under its sleeping master */
   {const cg=typeof caverglowNear==='function'&&caverglowNear();if(cg){pickCaverglow(cg);return;}} /* S1896 — Caverglow on a lair's wall */
   // Sigil touch — floor 2 only, closer range than most interactables

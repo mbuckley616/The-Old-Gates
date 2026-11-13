@@ -757,7 +757,7 @@ function ccBegin(){
   // Hide modal.
   document.getElementById('cc-modal').style.display='none';
   if(window._ccLook)worldState.look=JSON.parse(JSON.stringify(window._ccLook));applyLook();try{buildViewmodel();}catch(e){}ccLookStop(); // v80 S127 — the look
-  if(window._ogCarry){try{if(window._ogCarry.people)worldState.people=window._ogCarry.people;if(window._ogCarry.look)worldState.look=window._ogCarry.look;if(window._ogCarry.item&&typeof bagAdd==='function')bagAdd(window._ogCarry.item);if(typeof addLog==='function')addLog('📖','A new world. The same name; one thing carried through.');}catch(e){}window._ogCarry=null;}
+  if(window._ogCarry){try{if(window._ogCarry.people)worldState.people=window._ogCarry.people;if(window._ogCarry.look)worldState.look=window._ogCarry.look;if(window._ogCarry.item&&typeof bagAdd==='function')bagAdd(window._ogCarry.item);if(window._ogCarry.list)worldState.varekList={n:window._ogCarry.deaths|0,state:'laid'}; /* S2174 — The Last Entry: laid in the crypt */if(typeof addLog==='function')addLog('📖','A new world. The same name; one thing carried through.');}catch(e){}window._ogCarry=null;}
   // v61aw / v61ax: tutorial flow.
   //   1. Show the intro overlay BLACK and OPAQUE first (no text yet) — this
   //      hides every scene transition that follows so the player never
