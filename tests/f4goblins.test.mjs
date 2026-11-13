@@ -46,6 +46,25 @@ const blow = await page.evaluate(() => _S.map(({ k, e, rig }) => { const H = rig
   return { k, kit: +a.distanceTo(b).toFixed(3), driver: +ad.distanceTo(bd).toFixed(3) }; }));
 check(`in play order the wind-up moves the kit's right elbow (${blow.map(b => b.k + ' ' + b.kit + ' m, its driver ' + b.driver).join('; ')})`, blow.every(b => !b.none && b.driver > .1 && b.kit > .1), blow);
 
+// S2192 (Michael's B on #1278 carried to the kit's armed people): at the tell's height the goblin's body keeps its colours and its blade's
+// two edges take the colour, gold for a light blow and red for a heavy one, near and at the middle level (baked, its blade hidden in the
+// bake); it goes out with the tell. The slinger holds nothing of the kit's and glows whole, as before
+const tell = await page.evaluate(() => { const [G, S] = _S, out = {}, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+  const lit = H => [...H.hide, ...H.fur, ...(H.mid ? [H.mid] : [])].filter(o => o.visible).reduce((a, o) => a + [].concat(o.material).reduce((s, x) => s + (x.emissive ? x.emissive.r + x.emissive.g : 0), 0), 0);
+  const shown = D => { if (!D || !D.g.visible) return false; for (let o = D.g; o; o = o.parent) if (!o.visible) return false; return true; };
+  let t = 9.5e5; const step = () => { t += 16.7; tickPeople(1 / 60, t); tickCreatures(1 / 60, t); };
+  const at = dd => { const g0 = G.e.mesh; CAM.position.set(g0.position.x - fx * dd, g0.position.y + 1.65, g0.position.z - fz * dd); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) step(); };
+  for (const [name, dd] of [['near', 4], ['mid', 25]]) { at(dd); const H = G.rig.hc;
+    for (const heavy of [false, true]) { G.e._heavy = heavy; G.e.telegraphMax = .9; telegraphPulse(G.e, 1); step(); const D = H.tellD; let tris = 0; if (D) D.g.traverse(o => { if (o.isMesh) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });
+      out[name + (heavy ? 'Heavy' : 'Light')] = { L: H.L, body: +lit(H).toFixed(3), shown: shown(D), look: D && D.look, tris, col: D && D.mat ? [D.mat.color.r, D.mat.color.g, D.mat.color.b].map(v => +v.toFixed(2)) : null, glare: D ? +D.glare.material.opacity.toFixed(2) : 0 }; }
+    telegraphReset(G.e); G.e._heavy = false; step(); out[name + 'Off'] = { body: +lit(H).toFixed(3), shown: shown(H.tellD) }; }
+  at(4); S.e.telegraphMax = .9; telegraphPulse(S.e, 1); step(); out.sling = { body: +lit(S.rig.hc).toFixed(3), tell: !!S.rig.hc.tellD }; telegraphReset(S.e); step(); return out; });
+console.log('  tell:', JSON.stringify(tell));
+check(`at the tell's height the goblin's body stays dark (${tell.nearLight.body}, ${tell.midLight.body}) and its blade's two edges take the colour, near and baked at 25 m (${tell.nearLight.tris} and ${tell.midLight.tris} triangles, gold ${tell.nearLight.col}, red ${tell.nearHeavy.col})`,
+  ['near', 'mid'].every(n => [tell[n + 'Light'], tell[n + 'Heavy']].every(x => x.body === 0 && x.shown && x.look === 'edge' && x.tris > 20 && x.glare > .5)) && tell.midLight.L === 1 && tell.nearLight.L === 0
+  && tell.nearLight.col[1] > .5 && tell.nearHeavy.col[1] < .2, tell);
+check(`and goes out with the tell; the slinger, empty-handed, still glows whole (${tell.sling.body})`, !tell.nearOff.shown && !tell.midOff.shown && tell.nearOff.body === 0 && tell.sling.body > .5 && !tell.sling.tell, tell);
+
 // its size, by its legs: its hips over the driver's, its ankles at the driver's, its toes on the ground in the goblin's crouch
 const size = await page.evaluate(() => _S.map(({ k, e, rig }) => { for (let i = 0; i < 30; i++) { tickPeople(1 / 60, 3e5 + i * 16.7); tickCreatures(1 / 60, 3e5 + i * 16.7); }
   rig.root.parent.updateMatrixWorld(true); const by = rig.hc.C.byName, W = o => o.getWorldPosition(new THREE.Vector3());

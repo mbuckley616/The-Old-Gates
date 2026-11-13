@@ -1290,7 +1290,31 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs
   if(H.night){const k=hcNightK();H.glow.forEach((u,i)=>u.value.copy(H.night[i]).multiplyScalar(k));}
   // the wind-up's red and the parry's gold on the driver's material, on the kit's (its eyes and claws keep their own)
   const m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
+  {const tell=m===H.drv&&em&&em!==0xffaa00&&(!rig.e||rig.e._wind>0);if((tell||H.tellK)&&hcTell(rig,tell?em:0)&&tell)em=0;} /* S2192 — an armed one's tell is its weapon's (Michael's B on #1278) */
   if(em!==H.em){H.em=em;for(const o of [...H.hide,...H.fur,...(H.mid?[H.mid]:[])])for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);}}
+// Session 2192 (Michael's B on #1278, "the weapon's edge carries it", carried to the kit's armed people: the skeletons' swords and spears,
+// the goblin's sword, the trolls' mauls): in the tell's last 0.15 s the body keeps its own colours and what it holds takes the colour, as
+// a builder's foe's does (hbTell, S2092): a blade's two edges and a spear's head round its outline as thin strips, a maul's iron head in a
+// skin of light a tenth larger, and the glare on its middle. Built once, from the kit's own gear (creatures.js P.gear: the blade, the
+// head up +y, its flat across x). The group hangs on the gear's bone beside it, not in it, so it still shows at the middle level, where
+// a merged kind's gear is baked into one mesh (hcBake) and hidden. The beasts (no gear) still glow whole: DECISION #1522
+const HC_TELL_GEAR={sword:1,spear:1,maul:1};
+function hcTellGear(rig){const H=rig.hc;if(H.gearT===undefined){H.gearT=null;H.C.root.traverse(o=>{if(!H.gearT&&HC_TELL_GEAR[o.name])H.gearT=o;});}return H.gearT;}
+function hcTellBuild(g){const kind=g.name,D={g:new THREE.Group(),kind,mid:new THREE.Vector3(),look:'none'};D.g.name='tellEdge';D.g.visible=false;
+  D.mat=new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false});D.shell=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false,side:THREE.DoubleSide});
+  const parts=kind==='maul'?g.children.slice(2):g.children.slice(0,1),T=[];
+  for(const o of parts){if(!o.isMesh||!o.geometry)continue;o.updateMatrix();const pa=o.geometry.attributes.position,ix=o.geometry.index,n=ix?ix.count:pa.count,v=i=>new THREE.Vector3().fromBufferAttribute(pa,ix?ix.getX(i):i).applyMatrix4(o.matrix);
+    for(let i=0;i+2<n;i+=3)T.push([v(i),v(i+1),v(i+2)]);}
+  let part=null;
+  if(kind!=='maul'){const R=hbTellOutline(T,false);if(R){part=hbTellStrips(R,D.mat);D.look='edge';D.mid.set((R[0].lo+R[0].hi)/2,(R[0].y+R[R.length-1].y)/2,R[0].z);}}
+  if(!part&&T.length){const c=new THREE.Vector3(),P=[];for(const t of T)for(const p of t)c.add(p);c.multiplyScalar(1/(T.length*3));
+    for(const t of T)for(const p of t){const q=p.clone().sub(c).multiplyScalar(HB_TELL.shell).add(c);P.push(q.x,q.y,q.z);}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(P,3));part=new THREE.Mesh(geo,D.shell);part.userData.tell=1;part.castShadow=false;D.look='shell';D.mid.copy(c);}
+  if(part)D.g.add(part);
+  D.glare=new THREE.Sprite(new THREE.SpriteMaterial({map:hbTellTex(),color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
+  D.glare.position.copy(D.mid);D.g.add(D.glare);D.g.position.copy(g.position);D.g.quaternion.copy(g.quaternion);D.g.scale.copy(g.scale);g.parent.add(D.g);g.userData.tell=D;return D;}
+// lit by the driver's emissive; false for a kind that holds nothing of the kit's (it glows whole, as before)
+function hcTell(rig,em){const H=rig.hc,g=hcTellGear(rig);if(!g)return false;const D=g.userData.tell||hcTellBuild(g);H.tellD=D;H.tellK=hbTellLight(D,em);return true;}
 // Session 1273: the kit's horse has its legs in other proportions than the driver's, so the driver's joint turns copied onto it lift a
 // planted hoof up to 11 cm off the ground at the trot. Each leg is bent back onto the driver's paw height (its rest offset kept) by
 // two passes of turns at its three upper joints about the body's own side axis, so the leg stays in its plane and the stride is the
