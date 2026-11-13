@@ -166,7 +166,7 @@ check('the bench shows the Heartwood Spar row and makes one from the log; it is 
 check('timber: one Supply in three where the hall\'s country is wooded, none where it is not; 4 + 2 × tier logs (6 at tier 1)', r.timber.w && Math.abs(r.timber.w.wood / r.timber.w.sup - 1 / 3) < .1 && (!r.timber.b || r.timber.b.wood === 0) && r.timber.w.need === 6 && /^Supply 6 (Pine )?Logs$/.test(r.timber.w.short) && /hatchet/.test(r.timber.w.desc), r.timber);
 check('bought logs and the other kind never count; logs felled after taking it do, and the guild pays and leaves the bag alone', /^Not yet\. 0\/6\./.test(r.timber.bought || '') && r.timber.wrongKind === 0 && r.timber.have >= 6 && r.timber.done && /^Good work\. \d+ gold/.test(r.timber.said || '') && r.timber.paid >= 110 && r.timber.kept && r.timber.active === null, r.timber);
 check('the hatchet at the smith and the goods shop, 30 gold, weight 3; a log weighs 3', r.at.weapon === 1 && r.at.misc === 1 && r.at.potion === 0 && r.price === 30 && r.w === 3 && r.logW === 3, r.at);
-// Session 2175 (the look builder) — the bank's cut where clay was dug (PKIT.props.claycut, tickClayCuts in 82-world-structures.js): a bank
+// Session 2177 (the look builder) — the bank's cut where clay was dug (PKIT.props.claycut, tickClayCuts in 82-world-structures.js): a bank
 // near you dug once draws a cut on the drawn ground, its open side to the water, in at most 3 draws and 1,000 triangles; dug out it is wider
 // and deeper; when the bank comes back (7 days after it is dug out) the cut is gone
 const cut = await page.evaluate(() => { let b = null;

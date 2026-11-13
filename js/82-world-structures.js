@@ -3003,7 +3003,7 @@
     const ry=fy+Math.PI/2,co=Math.cos(ry),s_=Math.sin(ry),ground=(lx,lz)=>worldH(t.x+lx*co+lz*s_,t.z-lx*s_+lz*co)-y0;
     const K=PKIT.props.stump(stumpKind(t.sp),{r:R,seed:t.id,ground});K.group.position.set(t.x,y0,t.z);K.group.rotation.y=ry;
     K.group.name='stump';K.group.userData.tree=t.id;K.group.userData.kit={kind:stumpKind(t.sp),tris:K.tris,draws:K.draws,r:R,h:K.h};return K.group;}
-  // S2175 — the bank's cut where clay was dug (resources and crafting B's last look piece; Michael's B on #1420): PKIT.props.claycut, 38-kit.js,
+  // S2177 — the bank's cut where clay was dug (resources and crafting B's last look piece; Michael's B on #1420): PKIT.props.claycut, 38-kit.js,
   // drawn from the rules' clayCuts() (S2171: the first dig's stand, x and z, and n the clay taken). The cut faces the water: its open side
   // toward the mean of the fresh water found within 3 m of the stand (clayFresh, the rules' own test), else down the slope; its middle
   // 0.4 m from the stand that way while the ground there is dry. Its age is the days since the last dig over the bank's seven (CLAY_DAYS),

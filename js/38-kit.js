@@ -4716,7 +4716,7 @@ function treeStump(kind = 'oak', o = {}) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, STM[k]); m.name = 'stump:' + k; m.castShadow = k !== 'split'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, h: +backY.toFixed(3), r: R };
 }
-// S2175 — the bank's cut (resources and crafting B, the look's second session; Michael's B on #1420): where clay was dug at a river's or a
+// S2177 — the bank's cut (resources and crafting B, the look's second session; Michael's B on #1420): where clay was dug at a river's or a
 // lake's edge, the spade's cut into the bank. A scarp of bare clay in a horseshoe, open to the water, the spade's scoops down its face and
 // the torn turf lip overhanging its top; the floor wet clay, a puddle in a fresh one, a few lumps; the sods cut off it stacked beside, and
 // crumbs of clay. o.n the clay taken (1 to 3) makes it wider and deeper; o.age (0 fresh to 1 at the bank's seven days) dries the clay paler,
