@@ -13,6 +13,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 **Recommendation.** B: the pack makes the load a choice without raising a fighter's numbers, and the glass, rod and net are the sheet's three verbs nothing answers; wear is a chore and footing is L11's own proposal.
 
+### Weather in a sneak and a shot: rain covers your steps, wind carries your arrows, or neither? (from the systems builder, 13 Nov 2026, #1511)
+**The question.** OG-138 (*Weather that matters*, backlog L12) asks for weather that changes play; so far it changes only how far you see (Session 1420, C on #679). Two of its rules are the systems builder's: *rain masking sound for sneaking* and *wind bending arrows*. Today a foe hears you walking at 3 m, sneaking at 1 m, standing still at 0.9 m; an arrow leaves a full draw at 28 m/s and falls 4 m/s²; the world's wind (`windDir()`, read off the clock, gusting in a storm) moves only the sails and the smoke. Should the weather change how you are heard and where your arrows fly?
+
+**Options.**
+- **A.** Rain and snow cover your steps, outdoors only: a foe hears you walking at 2 m in rain or snow, 1.5 m in a storm, heavy rain or a blizzard; sneaking is floored at the still 0.9 m. Arrows unchanged. One session.
+- **B (recommended).** A, plus the wind carries your arrows sideways along `windDir()`: a breeze 0.4 m/s², rain or snow 0.8, a storm or blizzard gusting at 2.0 (0.23 / 0.46 / 1.15 m of drift at 30 m; 0.9 / 1.8 / 4.6 m at 60). No wind indoors or in gates; the foes' arrows drift the same; Long eye halves it. Two sessions.
+- **C.** Neither: the weather stays a matter of sight.
+
+**Recommendation.** B: a storm that covers your steps but spoils your shot is a choice with two sides (feeling 2, a world that pushes back); every number is read from the weather and the clock, already saved and seeded, so co-op holds.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
