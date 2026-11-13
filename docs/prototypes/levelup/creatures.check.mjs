@@ -433,6 +433,15 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     return out; });
   check(`the Mark's horses are dun (mean colour moved ${fj.horse.mark.d} and ${fj.draughthorse.mark.d}, lighter by ${fj.horse.mark.light}); Aurenne's (${fj.horse.aurenne.d}) and the Mark's mule (${fj.mule.mark.d}) keep their coats`,
     ['horse', 'draughthorse'].every(p => fj[p].mark.sameBones && fj[p].mark.d > .05 && fj[p].mark.light > .05 && fj[p].aurenne.d < .002) && fj.mule.mark.d < .002, fj);
+  // the ox by island (Session 2173, L3, OG-046): the Mark's black and Aurenne's pale grey on the ox and the yoked ox, on the same bones; the yak keeps its own
+  const oxi = await page.evaluate(async () => { const K = await import('./creatures.js'), out = {};
+    const mean = C => { const col = C.meshes[0].geometry.attributes.color; let r = 0, g = 0, b = 0; for (let v = 0; v < col.count; v++) { r += col.getX(v); g += col.getY(v); b += col.getZ(v); } return [r / col.count, g / col.count, b / col.count]; };
+    for (const plan of ['ox', 'yokedox', 'yak']) { const base = K.build(K.genome(plan, plan + ':isle')), m0 = mean(base); out[plan] = {};
+      for (const isle of ['mark', 'aurenne']) { const C = K.build(K.genome(plan, plan + ':isle', { island: isle })), m = mean(C);
+        out[plan][isle] = { d: +Math.hypot(m[0] - m0[0], m[1] - m0[1], m[2] - m0[2]).toFixed(3), light: +((m[0] + m[1] + m[2]) / 3 - (m0[0] + m0[1] + m0[2]) / 3).toFixed(3), sameBones: C.stats.bones === base.stats.bones, tris: C.stats.tris === base.stats.tris }; } }
+    return out; });
+  check(`the ox by island: the Mark's darker (${oxi.ox.mark.light}, yoked ${oxi.yokedox.mark.light}), Aurenne's paler (+${oxi.ox.aurenne.light}, yoked +${oxi.yokedox.aurenne.light}) on the same bones and triangles; the yak keeps its coat (${oxi.yak.mark.d}, ${oxi.yak.aurenne.d})`,
+    ['ox', 'yokedox'].every(p => ['mark', 'aurenne'].every(i => oxi[p][i].sameBones && oxi[p][i].tris) && oxi[p].mark.light < -.03 && oxi[p].aurenne.light > .2) && oxi.yak.mark.d < .002 && oxi.yak.aurenne.d < .002, oxi);
   check(`a creature's island survives the saved genome, and a genome with none or an unknown one carries none`, isl.saved.island === 'mark' && isl.saved.none && isl.saved.bad, isl.saved);
   check(`the common set: ten animals, each a plan from OG-084 (${common.map(c => c.k).join(', ')})`, common.length === 10 && common.every(c => c.ok && c.src.includes('OG-084')), common.filter(c => !c.ok || !c.src.includes('OG-084')));
   // the hounds (Session 1107): OG-065's black wolfhound, a plan, standing taller at the withers than the grey wolf and its chest deeper than its loin
