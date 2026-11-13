@@ -1276,16 +1276,22 @@ function clayRec(key){const W=worldState.clay||(worldState.clay={});let r=W[key]
   if(r&&r.n>=CLAY_HOLD&&gameMinNow()/1440-r.d>=CLAY_DAYS){r={n:0,d:r.d};W[key]=r;}return r||{n:0,d:0};}
 function clayLeft(key){return Math.max(0,CLAY_HOLD-clayRec(key).n);}
 // the named action: one clay off the bank. Returns {done, left} or {done:false, why}
-function digClay(key){if(!hasShovel())return {done:false,why:'You need a shovel.'};if(!key)return {done:false,why:'Clay is dug at a river’s or a lake’s edge.'};
+// S2170 — the bank keeps where it was first cut (`x`, `z`, world metres to the centimetre, the dig's stand), for the look builder's cut;
+// `at` is that stand (the player's place when omitted). A bank that comes back heals: its record loses the place, and the next dig sets it.
+function digClay(key,at){if(!hasShovel())return {done:false,why:'You need a shovel.'};if(!key)return {done:false,why:'Clay is dug at a river’s or a lake’s edge.'};
   const r=clayRec(key);if(r.n>=CLAY_HOLD)return {done:false,why:'The bank is dug out here.'};const it=survItem('clay');
   if(typeof canCarry==='function'&&!canCarry(it))return {done:false,why:'Too heavy to carry!'};
-  bagAdd(it);(worldState.clay||(worldState.clay={}))[key]={n:r.n+1,d:Math.floor(gameMinNow()/1440)};return {done:true,left:CLAY_HOLD-r.n-1};}
+  const q=v=>Math.round(v*100)/100,first=r.n<=0||r.x==null,rec={n:r.n+1,d:Math.floor(gameMinNow()/1440)};
+  if(first){const a=at||{x:px,z:pz};rec.x=q(a.x);rec.z=q(a.z);}else{rec.x=r.x;rec.z=r.z;}
+  bagAdd(it);(worldState.clay||(worldState.clay={}))[key]=rec;return {done:true,left:CLAY_HOLD-r.n-1};}
+// the banks cut and not yet come back: [{key, x, z, n}], n the clay taken (1 to CLAY_HOLD). What the look builder draws the cut from
+function clayCuts(){const W=worldState.clay||{},L=[];for(const k in W){const r=clayRec(k);if(r.n>0&&r.x!=null)L.push({key:k,x:r.x,z:r.z,n:r.n});}return L;}
 let DIG=null;
 function digStart(){if(DIG){DIG=null;showMsg('You stop digging.','#c8b890');return true;}const key=clayBankHere();if(!key||!hasShovel())return false;
   if(clayLeft(key)<=0){showMsg('The bank is dug out here.','#cc8844');return true;}
   DIG={key,x:px,z:pz,t0:performance.now()};showMsg('You dig into the bank.','#c8b890');return true;}
 function tickDig(){if(!DIG)return;if(!_waterOutside()||Math.hypot(px-DIG.x,pz-DIG.z)>1.5||(typeof dead!=='undefined'&&dead)){DIG=null;showMsg('You leave the digging.','#cc8844');return;}
-  if(performance.now()-DIG.t0<CLAY_S*1000)return;const r=digClay(DIG.key);DIG=null;
+  if(performance.now()-DIG.t0<CLAY_S*1000)return;const r=digClay(DIG.key,{x:DIG.x,z:DIG.z});DIG=null;
   if(!r.done){showMsg(r.why,'#cc8844');return;}showMsg(r.left?'A clay.':'A clay. The bank is dug out here.','#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
 function clayPrompt(){if(!hasShovel())return '';if(DIG)return 'Digging · E to stop';const key=clayBankHere();if(!key)return '';return clayLeft(key)>0?"Press 'E' to dig clay":'Dug out';}
 function useShovelThing(){if(!digStart())showMsg('Dig clay with it at a river’s or a lake’s edge.','#c8b890');}
