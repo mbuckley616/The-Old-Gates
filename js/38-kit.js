@@ -4724,6 +4724,139 @@ function treeStump(kind = 'oak', o = {}) {
 // the origin; o.ground(x, z) the land's height there, 0 at the origin. o.island the clay's colour ('gatelands' grey-ochre, 'mark' blue-grey,
 // 'aurenne' red), o.turf the grass's colour there (a hex), o.key the seed. Nothing is solid.
 //   PKIT.props.claycut({ n, age, island, turf, key, ground }) -> { group, tris, draws, w, l, d (the scarp's height at the back) }
+// S2180 (L3, OG-046, OG-077; Michael's B on #1046, "each island its own three, with its own animals") — the coaching road's vehicle by
+// island: wagons.js's Crown's coach (the Gatelands), carved wagon (the Mark, after the Oseberg cart) and covered carriage (Aurenne, after
+// the carpentum), as drawn, without their beasts: the game walks its own team (buildCoachBeast) ahead of the vehicle, so the pole runs
+// from the front axle to where the team's collars stand and the reins and traces end there. Built in the prototype's frame: z forward
+// (towards the team), x across, the ground at y 0, the rear axle at z 0.
+// PKIT.props.coach({ island, key }) -> { group, tris, draws, island, name, front (z of the team's rumps), ride { z, y } (where a rider
+//   stands: the coach's roof, the wagon's trough, the carriage's footboard), deck { z0, z1, hw } (the platform's extent), wheels [{ x, y, z, r }] }
+let WGM = null;
+function wgMats() {
+  if (WGM) return WGM;
+  const knot = (() => { const c = document.createElement('canvas'); c.width = 512; c.height = 128; const x = c.getContext('2d'), w = 512, h = 128; x.fillStyle = '#6c6c6c'; x.fillRect(0, 0, w, h); x.lineCap = 'round';
+    for (const [ph, wd, col] of [[0, 22, '#161616'], [0, 13, '#e8e8e8'], [Math.PI, 22, '#161616'], [Math.PI, 13, '#e8e8e8']]) { x.strokeStyle = col; x.lineWidth = wd; x.beginPath(); for (let i = 0; i <= w; i += 4) { const y = h / 2 + Math.sin(i / w * Math.PI * 4 + ph) * h * .3; i ? x.lineTo(i, y) : x.moveTo(i, y); } x.stroke(); }
+    x.fillStyle = '#e8e8e8'; x.fillRect(0, 0, w, 7); x.fillRect(0, h - 7, w, 7); return finishTex(c); })();
+  WGM = { knot, by: new Map() }; return WGM;
+}
+function wgMat(kind, c) {
+  const W = wgMats(), col = new THREE.Color(c[0], c[1], c[2]), k = kind + ':' + col.getHexString(); if (W.by.has(k)) return W.by.get(k);
+  const ns = v => new THREE.Vector2(v, v); let m;
+  if (kind === 'paint') { m = mat('wood', { color: col, ns: .45, rough: .55 }); m.map = null; }
+  else if (kind === 'wood') m = mat('wood', { color: col, ns: .9, rough: .85 });
+  else if (kind === 'iron') m = new THREE.MeshStandardMaterial({ color: col, roughness: .5, metalness: .65 });
+  else if (kind === 'brass') m = new THREE.MeshStandardMaterial({ color: col, roughness: .3, metalness: .85 });
+  else if (kind === 'cloth') { m = mat('plaster', { color: col, ns: .6, rough: .95 }); m.map = null; m.side = THREE.DoubleSide; }
+  else if (kind === 'leather') m = new THREE.MeshStandardMaterial({ color: col, roughness: .6 });
+  else if (kind === 'glass') m = new THREE.MeshStandardMaterial({ color: col, roughness: .08, metalness: .3 });
+  else if (kind === 'carved') m = new THREE.MeshStandardMaterial({ color: col, map: W.knot, bumpMap: W.knot, bumpScale: 3, roughness: .8 });
+  else if (kind === 'sack') { m = mat('thatch', { color: col, ns: .4, rough: 1 }); m.map = null; }
+  m.name = k; W.by.set(k, m); return m;
+}
+const WG_PAL = {
+  gatelands: { wheel: [.6, .2, .1], trim: [.85, .72, .3], coach: [.46, .07, .08], panel: [.08, .07, .07] },
+  mark: { trim: [.55, .2, .1] },
+  aurenne: { body: [.86, .84, .78], trim: [.13, .3, .6], cloth: [.18, .36, .66] }
+};
+function wgKit() {
+  const B = new Map(), mats = new Map(), V = (x, y, z) => new THREE.Vector3(x, y, z), UP = V(0, 1, 0);
+  const K = {
+    put(m, g, mx) { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a); if (!x.attributes.normal) x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, 1); if (mx) x.applyMatrix4(mx); mats.set(m.name, m); (B.get(m.name) || B.set(m.name, []).get(m.name)).push(x); return x; },
+    box(m, w, h, d, x, y, z, rx = 0, ry = 0, rz = 0) { const g = worldUV(new THREE.BoxGeometry(w, h, d).toNonIndexed(), 1); return K.put(m, g, new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), V(1, 1, 1))); },
+    beam(m, a, b, w, h = w) { const d = b.clone().sub(a), L = d.length(); if (L < 1e-4) return; const g = worldUV(new THREE.BoxGeometry(w, h, L).toNonIndexed(), 1), f = d.normalize(), side = new THREE.Vector3().crossVectors(UP, f); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize(); const up = new THREE.Vector3().crossVectors(f, side);
+      return K.put(m, g, new THREE.Matrix4().makeBasis(side, up, f).setPosition(a.clone().add(b).multiplyScalar(.5))); },
+    path(m, pts, w, h) { for (let i = 0; i + 1 < pts.length; i++) K.beam(m, pts[i], pts[i + 1], w, h); },
+    bake(group) { let tris = 0, draws = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const me = new THREE.Mesh(g, mats.get(k)); me.name = k; me.castShadow = !k.startsWith('glass'); me.receiveShadow = true; group.add(me); tris += g.attributes.position.count / 3; draws++; } return { tris: Math.round(tris), draws }; }
+  }; return K;
+}
+// wagons.js's spoked wheel: an iron tyre, the felloe, n spokes, the hub and its bands; its axis along x
+function wgSpoked(K, { r, x, y = r, z, n = 12, w = .075, hubR = .11, hubL = .3, paint }) {
+  const wood = wgMat('paint', paint), iron = wgMat('iron', [.12, .12, .13]), rot = new THREE.Matrix4().makeRotationY(Math.PI / 2), at = new THREE.Matrix4().makeTranslation(x, y, z);
+  const ring = (R, t, wd, m) => { const g = new THREE.TorusGeometry(R, t, 6, 40); g.scale(1, 1, wd / (2 * t)); g.applyMatrix4(rot); g.applyMatrix4(at); K.put(m, g); };
+  ring(r - .016, .018, w + .01, iron); ring(r - .065, .045, w, wood);
+  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, L = r - .1 - hubR * .9, g = new THREE.BoxGeometry(.034, L, .052); g.translate(0, hubR * .9 + L / 2, 0); g.rotateX(a); g.applyMatrix4(at); K.put(wood, worldUV(g.toNonIndexed(), 1)); }
+  const h = new THREE.CylinderGeometry(hubR * .72, hubR, hubL, 12); h.rotateZ(Math.sign(x || 1) * Math.PI / 2); h.applyMatrix4(at); K.put(wood, h);
+  for (const s of [-.4, .4]) { const b = new THREE.TorusGeometry(hubR * (.86 - s * .14), .012, 5, 16); b.applyMatrix4(rot); b.translate(x + s * hubL * Math.sign(x || 1), y, z); K.put(iron, b); }
+  return { x, y, z, r };
+}
+function wgCrate(K, x, y, z, w, h, d, r) { K.box(wgMat('wood', [.58 + r() * .1, .46, .32]), w, h, d, x, y + h / 2, z); for (const s of [-1, 1]) K.box(wgMat('wood', [.38, .28, .18]), w + .01, .05, d + .01, x, y + h / 2 + s * h * .36, z); }
+function wgBale(K, x, y, z, w, h, d, col) { K.box(wgMat('sack', col), w, h, d, x, y + h / 2, z); for (const s of [-.3, .3]) K.box(wgMat('leather', [.3, .22, .14]), w + .02, h + .02, .03, x, y + h / 2, z + s * d); }
+// the pole and its gear for a team of two the game walks itself: wagons.js's onPole with the beasts' measured hides replaced by the team's
+// stand (rumps at zr, the pair at ±sx, collars ~1.3 m up and 1.05 m ahead of the rumps), so the pole, the neck bar, the swingle bars and
+// the traces meet the horses where tickCoaches puts them
+function wgPole(K, { zF, y0, sx = .45, paint, gap = .55, seat }) {
+  const V = (x, y, z) => new THREE.Vector3(x, y, z), zr = zF + gap, lea = wgMat('leather', [.13, .08, .05]), wood = wgMat('paint', paint), cy = 1.3, cz = zr + 1.05, tip = V(0, cy - .35, cz + .45);
+  K.path(wood, [V(0, y0, zF - .5), V(0, y0 + .08, zF + .5), tip], .085, .095); K.beam(wood, V(-sx * .8, tip.y + .02, tip.z - .2), V(sx * .8, tip.y + .02, tip.z - .2), .06, .06);
+  for (const cx of [-sx, sx]) { const fl = .27, yT = 1.0, bz = zr - .25;
+    K.beam(wood, V(cx - fl, yT - .1, bz), V(cx + fl, yT - .1, bz), .06, .06);
+    for (const s of [-1, 1]) K.beam(lea, V(cx + s * fl * .92, cy - .12, cz), V(cx + s * fl, yT - .1, bz), .05, .012);
+    K.beam(lea, V(cx * .55, cy - .2, cz - .05), V(0, tip.y + .02, tip.z - .2), .04, .02);
+    K.beam(lea, V(cx, yT - .1, bz + .02), V(0, y0 + .02, zF + .15), .05, .03);
+    if (seat) for (const s of [-1, 1]) { const a = V(cx + s * .09, cy + .15, cz + .55); K.path(wgMat('leather', [.1, .06, .04]), [a, V((a.x + seat.x) / 2 + s * .05, Math.max(a.y, seat.y) - .2, (a.z + seat.z) / 2), seat.clone().add(V(s * .12, 0, 0))], .022, .006); } }
+  return zr;
+}
+function wgBeastHead(K, m, x, y, z, s, flip) {
+  const sh = new THREE.Shape(), p = [[0, 0], [.05, .3], [.02, .5], [.1, .62], [.28, .66], [.42, .6], [.36, .54], [.2, .55], [.3, .46], [.38, .38], [.22, .4], [.14, .36], [.13, .2], [.12, 0]];
+  p.forEach(([a, b], i) => i ? sh.lineTo(a * s, b * s) : sh.moveTo(a * s, b * s)); const g = new THREE.ExtrudeGeometry(sh, { depth: .07, bevelEnabled: true, bevelThickness: .015, bevelSize: .012, bevelSegments: 1 }); g.translate(-.06 * s, 0, -.035); g.rotateY(flip ? Math.PI / 2 : -Math.PI / 2); g.translate(x, y, z); K.put(m, worldUV(g.toNonIndexed(), 2));
+  const brass = wgMat('brass', [.75, .6, .3]); for (const dx of [.045, -.045]) { const e = new THREE.SphereGeometry(.022 * s / .6, 6, 4); e.translate(x + dx, y + .58 * s, z + (flip ? -.3 : .3) * s); K.put(brass, e); }
+}
+const WG_COACH = {
+  // the Crown's coach: a crimson body of 1.9 by 1.45 m and 1.5 m high slung on braces from four C-springs, the box seat, a roof rail with a trunk
+  gatelands(K, P, r) {
+    const V = (x, y, z) => new THREE.Vector3(x, y, z), w = 1.45, wheels = [], iron = wgMat('iron', [.1, .1, .11]), body = wgMat('paint', P.coach), panel = wgMat('paint', P.panel), trim = wgMat('brass', P.trim), dark = wgMat('glass', [.04, .05, .06]), lea = wgMat('leather', [.12, .08, .06]);
+    for (const [z, R] of [[0, .72], [2.4, .55]]) { K.box(iron, w + .6, .08, .08, 0, R, z); for (const s of [-1, 1]) wheels.push(wgSpoked(K, { r: R, x: s * (w / 2 + .2), z, n: R > .6 ? 14 : 12, paint: P.coach, hubR: .12 })); }
+    K.beam(panel, V(0, .78, -.3), V(0, .66, 2.55), .12, .12);
+    const by = 1.0, bz = 1.05, sh = new THREE.Shape(); sh.moveTo(-.95, .3); sh.quadraticCurveTo(-1.02, -.02, -.6, 0); sh.lineTo(.6, 0); sh.quadraticCurveTo(1.02, -.02, .95, .3); sh.lineTo(.98, 1.5); sh.lineTo(-.98, 1.5); sh.closePath();
+    { const g = new THREE.ExtrudeGeometry(sh, { depth: w, bevelEnabled: true, bevelThickness: .03, bevelSize: .03, bevelSegments: 2, curveSegments: 8 }).toNonIndexed(); g.rotateY(-Math.PI / 2); g.translate(w / 2, by, bz); K.put(body, worldUV(g, 1)); }
+    for (const s of [-1, 1]) { K.box(panel, .02, .5, 1.75, s * (w / 2 + .035), by + .3, bz); K.box(dark, .02, .5, .48, s * (w / 2 + .04), by + 1.08, bz - .55); K.box(dark, .02, .5, .48, s * (w / 2 + .04), by + 1.08, bz + .55); K.box(dark, .02, .55, .42, s * (w / 2 + .04), by + 1.06, bz);
+      K.box(trim, .012, .02, 1.85, s * (w / 2 + .046), by + .6, bz); K.box(trim, .012, 1.3, .02, s * (w / 2 + .046), by + .75, bz - .27); K.box(trim, .012, 1.3, .02, s * (w / 2 + .046), by + .75, bz + .27); K.box(trim, .03, .03, .06, s * (w / 2 + .06), by + .75, bz + .2);
+      for (const e of [-1, 1]) { const g = new THREE.TorusGeometry(.32, .035, 6, 12, Math.PI * 1.25); g.rotateY(Math.PI / 2); g.rotateX(e > 0 ? .2 : -.2); g.translate(s * (w / 2 - .1), .98, bz + e * 1.25); K.put(iron, g); K.beam(lea, V(s * (w / 2 - .1), 1.28, bz + e * 1.32), V(s * (w / 2 - .12), by + .1, bz + e * .85), .07, .015); } }
+    K.box(panel, w + .12, .07, 2.05, 0, by + 1.55, bz); for (const s of [-1, 1]) K.box(iron, .025, .025, 1.9, s * (w / 2), by + 1.78, bz); for (const e of [-1, 1]) K.box(iron, w, .025, .025, 0, by + 1.78, bz + e * .95);
+    wgCrate(K, -.2, by + 1.59, bz - .35, .7, .34, .55, r); wgBale(K, .35, by + 1.59, bz + .3, .5, .3, .6, [.36, .25, .16]);
+    K.box(body, w - .1, .5, .6, 0, .98 + .25, bz - 1.33);
+    const seatZ = bz + 1.15; K.beam(panel, V(-.55, .8, 2.4), V(-.55, by + 1.15, seatZ), .06, .06); K.beam(panel, V(.55, .8, 2.4), V(.55, by + 1.15, seatZ), .06, .06);
+    K.box(body, w - .05, .12, .5, 0, by + 1.2, seatZ + .05); K.box(lea, w - .15, .1, .45, 0, by + 1.3, seatZ + .05); K.box(body, w - .1, .04, .5, 0, by + .92, seatZ + .48, -.85, 0, 0);
+    for (const s of [-1, 1]) { K.box(trim, .1, .18, .1, s * (w / 2 + .05), by + 1.45, seatZ - .1); K.box(wgMat('glass', [.9, .8, .5]), .07, .1, .07, s * (w / 2 + .05), by + 1.45, seatZ - .1); }
+    const front = wgPole(K, { zF: 2.65, y0: .6, paint: P.panel, seat: V(0, by + 1.45, seatZ + .2) });
+    return { wheels, front, ride: { z: bz + .7, y: by + 1.59 }, deck: { z0: bz - 1.02, z1: bz + 1.02, hw: w / 2 + .06 }, name: "the Crown's coach" };
+  },
+  // the carved wagon, after the Oseberg cart: four wheels of 1.0 m, a trough body of 2.4 by 1.2 m on two cradles whose ends rise as beasts'
+  // heads, a band of interlace down each side
+  mark(K, P, r) {
+    const V = (x, y, z) => new THREE.Vector3(x, y, z), w = 1.2, l = 2.4, wheels = [], oak = wgMat('wood', [.36, .26, .17]), carved = wgMat('carved', [.62, .46, .3]), ochre = wgMat('paint', P.trim), zb = 1.05;
+    for (const z of [0, 2.1]) { K.box(oak, w + .5, .1, .1, 0, .5, z); for (const s of [-1, 1]) wheels.push(wgSpoked(K, { r: .5, x: s * (w / 2 + .16), z, n: 10, paint: [.3, .22, .15], w: .07, hubR: .1 })); }
+    K.beam(oak, V(0, .52, -.25), V(0, .52, 2.3), .14, .12);
+    for (const z of [0, 2.1]) { K.box(oak, w + .1, .12, .18, 0, .66, z); for (const s of [-1, 1]) { K.beam(oak, V(s * .45, .7, z), V(s * .66, 1.42, z), .1, .14); wgBeastHead(K, oak, s * .67, 1.38, z, .78, z > 1); } }
+    const fy = .95; K.box(oak, w - .3, .06, l, 0, fy, zb);
+    for (const s of [-1, 1]) { const g = new THREE.BoxGeometry(.05, .55, l + .2).toNonIndexed(); worldUV(g, 1); const uv = g.attributes.uv, p = g.attributes.position; for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getZ(i) / (l + .2) + .5) * 2, p.getY(i) / .55 + .5);
+      g.rotateZ(s * -.32); g.translate(s * (w / 2 - .06), fy + .28, zb); K.put(carved, g); K.box(ochre, .07, .06, l + .26, s * (w / 2 + .03), fy + .55, zb); }
+    for (const e of [-1, 1]) { const sh = new THREE.Shape(); sh.moveTo(-(w - .3) / 2, 0); sh.lineTo((w - .3) / 2, 0); sh.lineTo(w / 2 + .03, .55); sh.lineTo(-w / 2 - .03, .55); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: .05, bevelEnabled: false }).toNonIndexed(); g.translate(0, fy, zb + e * (l / 2 + .1) - .025); K.put(oak, worldUV(g, 1)); }
+    for (let k = 0; k < 2; k++) wgBale(K, (k - .5) * .45, fy + .03, zb - .4 + k * .25, .4, .32, .55, [.4, .3, .2]);
+    { const g = new THREE.SphereGeometry(.4, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1.1, .5, 1.3); g.translate(0, fy + .03, zb + .55); K.put(wgMat('sack', [.5, .4, .3]), g); }
+    const front = wgPole(K, { zF: 2.35, y0: .55, paint: [.36, .26, .17], seat: V(0, fy + .55, zb + .9) });
+    return { wheels, front, ride: { z: zb + .1, y: fy + .03 }, deck: { z0: zb - l / 2, z1: zb + l / 2, hw: (w - .3) / 2 }, name: 'the carved wagon' };
+  },
+  // the covered carriage, after the carpentum: two wheels of 1.4 m, a white body of 2.0 by 1.3 m with blue panels, an arched blue hood with
+  // a gilt fringe, its back open
+  aurenne(K, P, r) {
+    const R = .7, w = 1.3, l = 2.0, y = 1.0, wheels = [], white = wgMat('paint', P.body), blue = wgMat('paint', P.trim), gilt = wgMat('brass', [.8, .62, .28]), cloth = wgMat('cloth', P.cloth);
+    K.box(wgMat('iron', [.12, .12, .13]), w + .55, .08, .08, 0, R, 0); for (const s of [-1, 1]) wheels.push(wgSpoked(K, { r: R, x: s * (w / 2 + .18), z: 0, n: 12, paint: P.trim, hubR: .12 }));
+    K.box(white, w, .06, l, 0, y, 0); for (const s of [-1, 1]) { K.box(white, .05, .62, l, s * w / 2, y + .31, 0); K.box(blue, .02, .4, l - .3, s * (w / 2 + .03), y + .31, 0); K.box(gilt, .015, .025, l - .25, s * (w / 2 + .04), y + .53, 0); K.box(gilt, .015, .025, l - .25, s * (w / 2 + .04), y + .09, 0); }
+    K.box(white, w, .62, .05, 0, y + .31, l / 2); K.box(white, w * .35, .3, .05, -w * .32, y + .15, -l / 2); K.box(white, w * .35, .3, .05, w * .32, y + .15, -l / 2);
+    const hy = y + .62, rise = .85; { const g = new THREE.CylinderGeometry(1, 1, l + .1, 20, 1, true, -Math.PI / 2, Math.PI); g.rotateX(Math.PI / 2); g.rotateZ(Math.PI / 2); g.scale(w / 2 + .04, rise, 1); g.translate(0, hy, 0); K.put(cloth, g); }
+    { const g = new THREE.RingGeometry(.001, 1, 20, 1, 0, Math.PI); g.scale(w / 2 + .04, rise, 1); g.translate(0, hy, l / 2 + .05); K.put(cloth, g); }
+    for (const e of [-1, 1]) { const g = new THREE.TorusGeometry(1, .025, 5, 20, Math.PI); g.scale(w / 2 + .06, rise + .02, 1); g.translate(0, hy, e * (l / 2 + .05)); K.put(gilt, g); }
+    for (const s of [-1, 1]) for (let i = 0; i < 14; i++) K.box(gilt, .02, .1, .03, s * (w / 2 + .05), hy - .03, -l / 2 + i * l / 13);
+    K.box(blue, w - .1, .08, .4, 0, y + .45, l / 2 - .3); K.box(white, w - .1, .04, .45, 0, y + .15, l / 2 + .25, -.4, 0, 0);
+    const front = wgPole(K, { zF: l / 2 + .05, y0: y - .2, sx: .45, paint: P.trim, seat: new THREE.Vector3(0, y + .7, l / 2 - .25) });
+    return { wheels, front, ride: { z: l / 2 + .25, y: y + .2 }, deck: { z0: -l / 2, z1: l / 2 + .45, hw: w / 2 }, name: 'the covered carriage' };
+  }
+};
+function roadCoach(o = {}) {
+  const island = WG_COACH[o.island] ? o.island : 'gatelands', K = wgKit(), group = new THREE.Group(), r = stream('coach:' + (o.key ?? island));
+  const out = WG_COACH[island](K, WG_PAL[island], r), st = K.bake(group); group.name = 'coach:' + island;
+  return { group, tris: st.tris, draws: st.draws, island, ...out };
+}
 let CUTM = null;
 function clayCutMats() {
   if (CUTM) return CUTM;
@@ -10402,7 +10535,7 @@ function aurenneOrrery(hAt, o = {}) {
     const box = { x0: Math.min(fl.x - 2, ...spine.map(s => s.x)) - .3, x1: sk.x + sk.len + .3, z0: -5.5, z1: 5.5 };
     return { group, tris: Math.round(geo.attributes.position.count / 3), draws: 1, spine, ribs, gap, skull: sk, jaws, flipper: fl, box, length: +(sk.x + sk.len - spine.at(-10).x).toFixed(2) };
   } /* the world reads the cut ground before the piece is built (offroadStamps) */
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, claycut: clayCut, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
