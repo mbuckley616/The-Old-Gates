@@ -25,15 +25,24 @@ const opened = await page.evaluate(() => { const T = ['town', 'city', 'port'];
 await page.waitForTimeout(6000);
 await page.evaluate(() => { for (let i = 0; i < 5; i++) WORLD.tick(1 / 60, performance.now()); });
 await page.waitForTimeout(4000);
-const c = await page.evaluate(() => { for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); const C = [...WORLD.coachLines.values()][0]; if (!C) return null; const cart = C.cart; const n = cart.geometry.attributes.position.count / 3;
+const c = await page.evaluate(() => { for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); const C = [...WORLD.coachLines.values()][0]; if (!C) return null; const cart = C.cart; const V = cart.userData.coach; const n = V ? V.tris : cart.geometry.attributes.position.count / 3;
   forceTime(12); const cv = REN.domElement, cam = new THREE.PerspectiveCamera(45, cv.width / cv.height, .1, 300); const a = cart.rotation.y, x = cart.position.x, y = cart.position.y, z = cart.position.z;
   cam.position.set(x + Math.cos(a) * 6 + Math.sin(a) * 3, y + 2.6, z - Math.sin(a) * 6 + Math.cos(a) * 3); cam.lookAt(x + Math.sin(a) * 1.4, y + 1.2, z + Math.cos(a) * 1.4); CAM.position.copy(cam.position);
   for (let i = 0; i < 3; i++) WORLD.tick(1 / 60, performance.now()); WORLD.scene.updateMatrixWorld(true); const f = WORLD.scene.fog; WORLD.scene.fog = null; REN.render(WORLD.scene, cam); WORLD.scene.fog = f;
   const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0);
-  return { tris: n, platY: +(C.plat.y - cart.position.y).toFixed(2), shot: o.toDataURL() }; });
+  return { tris: n, kit: V ? V.island : null, rideY: C.ride ? C.ride.y : null, platY: +(C.plat.y - cart.position.y).toFixed(2), shot: o.toDataURL() }; });
 if (c && c.shot) { fs.writeFileSync('tests/out/coach.png', Buffer.from(c.shot.split(',')[1], 'base64')); delete c.shot; }
 console.log(JSON.stringify({ opened, ...c }));
-check('a coach line near the start runs the kit coach, its ride platform 1.9 over the road', !!c && c.tris === r.tris && c.platY === 1.9, c);
+check('a coach line near the start runs its island\'s vehicle from the new kit (S2181), its ride platform at the vehicle\'s standing place', !!c && !!c.kit && c.platY === +c.rideY.toFixed(2), c);
+// S2181 (#1046 B): each island's own vehicle, the Crown's coach, the Mark's carved wagon and Aurenne's carriage, without their beasts
+const v = await page.evaluate(() => { const out = {}; for (const isle of ['gatelands', 'mark', 'aurenne']) { const V = PKIT.props.coach({ island: isle, key: 'suite' }); const b = new THREE.Box3().setFromObject(V.group);
+    const m = V.group.children; const rc = new THREE.Raycaster(new THREE.Vector3(0, 5, V.ride.z), new THREE.Vector3(0, -1, 0)); const h = rc.intersectObjects(m)[0];
+    out[isle] = { name: V.name, tris: V.tris, draws: V.draws, front: V.front, ride: V.ride, under: h ? +h.point.y.toFixed(3) : null, wheels: V.wheels.length, box: [b.min.x, b.max.x, b.min.y, b.max.y, b.min.z, b.max.z].map(q => +q.toFixed(2)) }; }
+  return out; });
+console.log(JSON.stringify(v));
+check('each island\'s vehicle is 2–8k triangles in at most 10 draws, on its wheels from the ground (2 or 4)', Object.values(v).every(q => q.tris > 2000 && q.tris < 8000 && q.draws <= 10 && Math.abs(q.box[2]) < .03 && [2, 4].includes(q.wheels)), v);
+check('three different vehicles: the coach, the carved wagon, the carriage', new Set(Object.values(v).map(q => q.name)).size === 3, Object.values(v).map(q => q.name));
+check('the rider stands on what is there: a ray down at the standing place meets the vehicle within 6 cm under the feet', Object.values(v).every(q => q.under != null && q.ride.y - q.under > -.01 && q.ride.y - q.under < .06), v);
 // the horses (Session 262): the wolf's bones on legs 1.8 as long, a body of their own; standing on their hooves, walked by
 // tickCreatures from the ground they cover
 const h = await page.evaluate(() => { const out = {}; for (const kind of ['Horse', 'Grey Horse']) { const hg = new THREE.Group(), rg = buildWolf(kind, 1.6); hg.add(rg.root); WORLD.scene.add(hg); hg.position.set(px + 400, 0, pz); hg.visible = true;

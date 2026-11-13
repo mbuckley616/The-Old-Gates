@@ -21,7 +21,7 @@ const r = await page.evaluate(() => {
   const out = run(1, .3, 120), back = run(-1, .7, 120);
   // a passenger rides through the stop and stays aboard
   line.u = .45; line.state = 'run'; line.dir = 1; line.stopped = false; line.riding = true; let seated = null;
-  for (let i = 0; i < 60 * 20; i++) { WORLD.tick(1 / 60, performance.now()); if (line.state === 'stop' && !seated) { seated = { riding: line.riding, onCoach: +Math.hypot(px - line.cart.position.x, pz - line.cart.position.z).toFixed(2) }; } }
+  for (let i = 0; i < 60 * 20; i++) { WORLD.tick(1 / 60, performance.now()); if (line.state === 'stop' && !seated) { const a = line.cart.rotation.y, rz = line.ride ? line.ride.z : -.3; /* S2181 — from where the vehicle's rider stands (the old coach's roof .3 behind its middle; the kit's vehicles, C.ride) */ seated = { riding: line.riding, onCoach: +Math.hypot(px - (line.cart.position.x + Math.sin(a) * rz), pz - (line.cart.position.z + Math.cos(a) * rz)).toFixed(2) }; } }
   line.riding = false;
   return { key, out, back, seated };
 });
