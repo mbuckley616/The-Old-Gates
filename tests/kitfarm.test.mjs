@@ -11,8 +11,9 @@
 // and as far from every other farm, none on a gate's spot, the ground across its lot rising 5 m at most, among the fields (farmOpen). The one nearest the start
 // stands as a place of its own: its farmstead and pad as a village's, a home with a farmer, its door taking you into the farmhouse's room.
 import { boot, check } from './lib/game.mjs';
-// the prototype's counts (pieces.check.mjs, Session 1194: about 8.5k triangles in 20 draws a layout)
-const PROTO = { min: 8000, max: 9000, draws: 20 };
+// the prototype's counts (pieces.check.mjs, Session 1194: about 8.5k triangles in 20 draws a layout; Session 2194's cart, wagons.js's
+// carter's cart tipped on its shafts, about 9.2k in the same 20)
+const PROTO = { min: 8700, max: 9700, draws: 20 };
 
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 const K = await page.evaluate(() => { const hash = b => { let h = 0; b.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };

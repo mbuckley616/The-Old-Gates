@@ -1363,13 +1363,30 @@ function farmstead(o = {}) {
     { const g = box(.05, .05, .8); g.rotateX(-.45); g.translate(x, 1.42, z + .3); bk.add('iron', g); }
     bx('dress', x - 1.75, x - .45, 0, .5, z - .23, z + .23); bx('dress', x - 1.65, x - .55, .5, .52, z - .13, z + .13); prop('pump', x, z, .35, .3); prop('trough', x - 1.1, z, .65, .23);
     const wg = new THREE.PlaneGeometry(1.1, .26); wg.rotateX(-Math.PI / 2); wg.translate(x - 1.1, .44, z); bk.add('glass', wg); }
-  { const [x, z, ry] = S.cart, part = (k, g) => { g.rotateY(ry); g.translate(x, 0, z); bk.add(k, g); }, c = Math.cos(ry), s = Math.sin(ry);
-    { const g = box(2.0, .1, 1.3, .9); g.translate(0, .82, 0); part('board', g); } for (const sz of [-1, 1]) { const g = box(2.0, .32, .05, .9); g.translate(0, 1.03, sz * .63); part('board', g); }
-    for (const sx of [-1, 1]) { const g = box(.05, .32, 1.3, .9); g.translate(sx * .98, 1.03, 0); part('board', g); }
-    for (const sz of [-1, 1]) { const w = new THREE.TorusGeometry(.6, .05, 6, 20); w.translate(-.1, .65, sz * .78); part('iron', w); const h = new THREE.CylinderGeometry(.09, .09, .14, 8); h.rotateX(Math.PI / 2); h.translate(-.1, .65, sz * .78); part('board', h);
-      for (let k = 0; k < 6; k++) { const sp = box(.04, 1.12, .04); sp.rotateZ(k * Math.PI / 6); sp.translate(-.1, .65, sz * .78); part('board', sp); }
-      const sh = box(2.1, .08, .08, .9); sh.rotateZ(Math.atan2(.7, 2.0)); sh.translate(1.85, .45, sz * .45); part('board', sh); }
-    { const g = box(.12, .7, .12); g.translate(-.9, .4, 0); part('board', g); }
+  // S2194 (L3, OG-046; Michael's B on #1046) — the cart: wagons.js's carter's cart (its Gatelands one), not hitched: two spoked wheels of
+  // 1.4 m on an iron axle, a sided bed of 2.0 by 1.2 m with four stakes a side, and its shafts, the whole tipped forward about the axle until
+  // the shafts' tips rest on the cobbles. In the yard's own wood and iron, the wheels, stakes and rails in the byre's paint (no new draw).
+  // Built in the cart's frame (x along it, +x to the shafts' tips, the axle at x 0), tipped, then turned by ry; its footprint as before.
+  { const [x, z, ry] = S.cart, c = Math.cos(ry), s = Math.sin(ry), R = .7, W = 1.2, L = 2.0, BY = .98, BH = .42, X0 = -L / 2 + .05, X1 = L / 2 + .05, P2 = 'p:' + paint;
+    const SH = 3.0, SY = BY - .1, dy = SY - .02 - R, tilt = Math.asin((R - .035) / Math.hypot(SH, dy)) + Math.atan2(dy, SH), lean = new THREE.Matrix4().makeTranslation(0, R, 0).multiply(new THREE.Matrix4().makeRotationZ(-tilt)).multiply(new THREE.Matrix4().makeTranslation(0, -R, 0));
+    const part = (k, g, still) => { if (!still) g.applyMatrix4(lean); g.rotateY(ry); g.translate(x, 0, z); bk.add(k, g); };
+    const bxc = (k, w, h, d, px, py, pz) => { const g = box(w, h, d, .9); g.translate(px, py, pz); part(k, g); };
+    const beam = (k, ax, ay, bx_, by, w, zz) => { const Lb = Math.hypot(bx_ - ax, by - ay), g = box(Lb, w, w * .9, .9); g.rotateZ(Math.atan2(by - ay, bx_ - ax)); g.translate((ax + bx_) / 2, (ay + by) / 2, zz); part(k, g); };
+    // the bed: its floor and two sole bars, two boards a side, the tailboard and the front board, the stakes and the rails
+    bxc('board', L, .055, W, .05, BY, 0); for (const sz of [-1, 1]) bxc('board', L + .1, .14, .12, .05, BY - .1, sz * (W / 2 - .12));
+    const bh = BH / 2 * .82; for (const sz of [-1, 1]) { for (let b = 0; b < 2; b++) bxc('board', L, bh, .035, .05, BY + .03 + bh / 2 + b * BH / 2, sz * W / 2);
+      bxc(P2, L + .04, .05, .06, .05, BY + BH + .02, sz * W / 2); for (let i = 0; i < 4; i++) bxc(P2, .06, BH + .12, .06, X0 + .06 + (L - .12) * i / 3, BY + BH / 2 - .02, sz * (W / 2 + .02)); }
+    for (const sx of [-1, 1]) for (let b = 0; b < 2; b++) bxc('board', .035, bh, W, .05 + sx * L / 2, BY + .03 + bh / 2 + b * BH / 2, 0);
+    // the shafts: from under the bed's back third, along its sole bars and out past the front to the tips, a little apart at the tips
+    for (const sz of [-1, 1]) { beam('board', X0 + .4, SY - .05, X1, SY, .075, sz * (W / 2 - .12)); beam('board', X1, SY, SH, SY - .02, .065, sz * (W / 2 - .12 + .06)); }
+    { const g = box(.06, .06, W - .12, .9); g.translate(X1 + .35, SY - .02, 0); part('board', g); }
+    // the axle and the two wheels: an iron tyre, the felloe and twelve spokes in the paint, the hub; turned with the cart (a wheel is round)
+    { const g = box(.08, .08, W + .5, .9); g.translate(0, R, 0); part('iron', g); }
+    for (const sz of [-1, 1]) { const wz = sz * (W / 2 + .12), rot = new THREE.Matrix4().makeTranslation(0, R, wz);
+      const ring = (Rr, t, wd, k) => { const g = new THREE.TorusGeometry(Rr, t, 4, 24); g.scale(1, 1, wd / (2 * t)); g.applyMatrix4(rot); part(k, g); };
+      ring(R - .016, .018, .085, 'iron'); ring(R - .065, .045, .075, P2);
+      for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, Ls = R - .1 - .1, g = box(.034, Ls, .05, .9); g.translate(0, .1 + Ls / 2, 0); g.rotateZ(a); g.applyMatrix4(rot); part(P2, g); }
+      const h = new THREE.CylinderGeometry(.08, .11, .22, 10); h.rotateX(Math.PI / 2); h.translate(0, R, wz + sz * .02); part(P2, h); }
     const hx = Math.abs(c) * 1.95 + Math.abs(s) * .85, hz = Math.abs(s) * 1.95 + Math.abs(c) * .85, cx = x + c * .9, cz = z - s * .9; prop('cart', cx, cz, hx, hz); }
   { const [x, z] = S.rick; { const g = new THREE.CylinderGeometry(1.45, 1.3, 1.9, 18); g.translate(x, .95, z); scaleUV(g, 2); bk.add('thatch', g); } { const g = new THREE.ConeGeometry(1.6, 1.7, 18); g.translate(x, 2.75, z); scaleUV(g, 2); bk.add('thatch', g); }
     for (const y of [1.6, 2.2, 2.75]) { const t = new THREE.TorusGeometry(1.48 - (y - 1.6) * .8, .025, 4, 24); t.rotateX(Math.PI / 2); t.translate(x, y + .3, z); bk.add('board', t); }
