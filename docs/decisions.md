@@ -33,6 +33,14 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 **Note.** In the shallowest houses (3.4 m deep) the stair is a ladder-stair at 62°; with no climbing, you walk it as a steep ramp.
 
+### A beast's tell: the body glows, the jaws, or the eyes? (from the bodies builder, 13 Nov 2026, #1522)
+**The question.** A foe's blow is warned by its wind-up and, in the tell's last 0.15 s, a colour: gold for a light blow, red for a heavy one. Michael's B on #1278 moved a person's colour off the body onto the weapon's edge (Session 2092). The beasts on the wolf's driver (the wolves, the Dire Wolf, the bears, the boars, the corrupted three) hold no weapon, so on the new look their whole hide still lights up. Where should a beast's tell show? Pictures (A, B, C left to right): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/beasttells-wolf.jpg, https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/beasttells-bear.jpg, https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/beasttells-heavy.jpg (dusk, red). Prototype: `docs/prototypes/levelup/beasttells.html`.
+
+**Options.**
+- **A.** As today: the whole body glows gold or red.
+- **B (recommended).** #1278's rule carried to a beast: the muzzle and the jaw glow in the tell's colour (about 2.5% of the hide), with a small glare in the open mouth; the rest keeps its colour. Reads from the camera at 5.8 m. One bodies session (`hcTick`).
+- **C.** The eyes alone flare, with a glare round each. The quietest; at dusk you can miss them.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
