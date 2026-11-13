@@ -2522,6 +2522,41 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const p of T.lamps){const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,7);l.position.set(rx(p[0]),ry(p[1]),rz(p[2]));sc_.add(l);}
     return sc_;
   }
+  // S2196 (card F9; OG-115's "hunter's cabin"; Michael's A on #303) — the Mark's hunting cabin off the road (offroad kind 'cabin', S2051)
+  // opens on its room (PKIT.mk.cabin, rooms.js's markCabin of Session 1199) inside the cabin's own logs: the peis lit against the stack, the
+  // bed of furs under the east light, the table under the front's, the woodbox, the shelves, the bow and the traps by the door over a
+  // chest, the drying pole, the lantern from the ridge. Drawn in metres and moved into the room's frame as the byre's is (the door on +z).
+  // Nobody is in; the fire is lit, as its lights are at night outside. You come in by the door, a step past the open leaf.
+  function kitHuntCabin(house){return !!(house&&house.type==='huntcabin'&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.mk&&PKIT.mk.cabin);}
+  function buildKitHuntCabin(house){
+    const T=PKIT.mk.cabin({key:house.siteId}),I=T.inner,X=I.x1,Z=I.z1,F0=T.floor,W=2*X,D=2*Z;
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-F0,dr=T.door;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.under(X)-F0).toFixed(3);house._exitD=.8;house._exitW=dr.w;house._exitX=+rx(dr.x).toFixed(3);house._huntCabin=T;
+    house._arriveX=+rx(dr.x+.15).toFixed(3);house._arriveZ=+(D-.92).toFixed(3); /* a step past the leaf, open on the west jamb, short of the stool at the table */
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    {const E=new THREE.Object3D();E.position.set(rx(dr.x),0,D);E.userData.entrance=true;E.userData.leaf=[dr.w,dr.h];sc_.add(E);}
+    // the solids are the room's boxes on its floor; the low things' tops are footholds (the bed, the table, a stool, the woodbox, the chest),
+    // the peis, the stack, the shelves, the pegs, the pole and the leaf are not
+    const TALL=['peis','stack','shelf','pegs','pole','leaf'];
+    for(const q of T.boxes){const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:Math.max(0,ry(q.y0)),y1:ry(q.y1)};SOL.push(b);if(!TALL.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    // the day beyond the four lights and the open door: one mesh of planes a hand outside the logs
+    const hr=typeof gameHour==='function'?gameHour():12;
+    {const day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),P=[],Rl=.2;
+      const out=(x,z,nx,nz,w,h,y)=>{const g=new THREE.PlaneGeometry(w+.1,h+.1).toNonIndexed();g.rotateY(Math.atan2(-nx,-nz));g.translate(rx(x+nx*Rl),ry(y),rz(z+nz*Rl));P.push(g.attributes.position.array);g.dispose();};
+      for(const w of T.wins)out(w.x,w.z,w.n[0],w.n[1],T.win.w,T.win.h,w.y);
+      out(dr.x,dr.z,0,1,dr.w,dr.h,dr.y0+dr.h/2);
+      const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    kitDaylight(sc_,[{x:rx(dr.x),y:ry(dr.y0)+dr.h*.7,z:D,nx:0,nz:-1,w:dr.w,h:dr.h}],.4);
+    // the light: the fire on the peis, the lantern from the ridge, the candle on the table, and the room's air
+    const KA=kitRoomAir(sc_,.4);
+    {const f=T.fire,l=new THREE.PointLight(0xff6a20,1.5*KA.fire,7);l.position.set(rx(f[0]+.4),ry(f[1])+.3,rz(f[2]));l.userData.lit=1.5*KA.fire;sc_.add(l);}
+    for(const p of T.lamps){const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,6);l.position.set(rx(p[0]),ry(p[1]),rz(p[2]));sc_.add(l);}
+    return sc_;
+  }
   // S1860 (card F9; Michael's A on #303 and on the kit in every interior; OG-043) — on the new look a Gatelands smithy that stands as the
   // kit's forge (lot.kit.kind 'forge', S1855) opens on the forge's own room (PKIT.gl.forge, rooms.js's Session 929) inside the street's
   // shell: the hearth against the west gable under its hood, the great bellows, the anvil on its stump, the slack tub and the coal bin,
@@ -3822,6 +3857,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
+    if(kitHuntCabin(house))return buildKitHuntCabin(house); /* S2196 — the Mark's hunting cabin off the road, its room */
     if(kitLimeCave(house))return buildKitLimeCave(house); /* S1768 — a limestone cave behind its mouth */
     if(kitSeaCave(house))return buildKitSeaCave(house); /* S1773 — a smugglers' sea cave behind its mouth */
     if(kitMine(house))return buildKitMine(house); /* S1790 — the Mark's silver mine behind its adit */

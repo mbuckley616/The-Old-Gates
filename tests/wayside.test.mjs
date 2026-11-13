@@ -16,6 +16,7 @@
 // Session 2105 Aurenne's smuggler's cove (PKIT.places.inlet), an inlet cut into the world's own coast.
 // Session 2187 the watchtower's foot on the point's grey rock, and boulders down to the shore.
 // Session 2190 the cove cut only inside its inlet (it cut its whole 80 m patch to the bed), its crag in the kit's rock.
+// Session 2196 the hunting cabin's door opens on its room.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -261,6 +262,24 @@ if (cb) {
     return { n: W.length, sides, faces: [...new Set(W.map(w => w.n.join(',')))].length }; }, cb.id);
   console.log(JSON.stringify(lw));
   check(`${cb.id}: ${lw.n} lit windows facing ${lw.faces} ways, each seen from 25 m out (${(lw.sides || []).map(q => q.n + ' ' + q.seen + ' of 5').join('; ')})`, !lw.none && lw.faces === 4 && lw.sides.every(q => q.seen >= 3), lw);
+  // Session 2196 (card F9; OG-115): the cabin's door opens on its room (PKIT.mk.cabin, buildKitHuntCabin): E by the door takes you in, never
+  // locked, nobody in; you arrive clear of the leaf and the stool and short of the door's reach; the room's three walks (the door to the
+  // fire, to the bed, to the woodbox) are clear; the fire and the lantern lit; its cost; out again by the door onto clear ground
+  await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, h = D.house; if (!h) return; forceTime(12); px = h.exitX; pz = h.exitZ; jumpY = meshH(px, pz); interact(); }, cb.id);
+  for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+  await g.frames(2);
+  const cr = await page.evaluate(() => { const h = currentHouse, T = h && h._huntCabin; if (!T) return { none: true, type: h && h.type };
+    const X = T.inner.x1, Z = T.inner.z1, rx = x => x + X, rz = z => z + Z; let lights = 0, draws = 0, tris = 0;
+    interiorScene.traverse(o => { if (o.isLight && !o.userData.daylight && !o.isAmbientLight && !o.isHemisphereLight && o.intensity > 0) lights++; if (o.isMesh && o.visible) { draws++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; } });
+    const ax = intArriveX(h), az = intArrivalZ(h), walks = T.paths.map(P => { let n = 0; for (let i = 0; i + 1 < P.pts.length; i++) { const [a, c] = [P.pts[i], P.pts[i + 1]], m = Math.ceil(Math.hypot(c[0] - a[0], c[1] - a[1]) / .1);
+      for (let k = 0; k <= m; k++) if (intSolidAt(rx(a[0] + (c[0] - a[0]) * k / m), rz(a[1] + (c[1] - a[1]) * k / m), .15, 0)) n++; } return n; });
+    return { id: h.id, W: +h._roomW.toFixed(2), D: +h._roomD.toFixed(2), arrive: [+ax.toFixed(2), +az.toFixed(2)], clear: !intSolidAt(ax, az, .3, 0), exits: az > h._roomD - h._exitD, walks, lights, draws, tris: Math.round(tris), npc: !!intNPCMesh }; });
+  console.log(JSON.stringify(cr));
+  check(`${cb.id}: E at its door takes you into the cabin's room (${cr.W} by ${cr.D} m), nobody in, arriving clear at ${cr.arrive} short of the door; its walks clear (${cr.walks}); ${cr.lights} lights, ${cr.tris} triangles in ${cr.draws} draws`, !cr.none && cr.clear && !cr.exits && !cr.npc && cr.walks.every(n => n === 0) && cr.lights >= 2 && cr.draws <= 26 && cr.tris < 9000, cr);
+  await page.evaluate(() => exitInterior());
+  for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+  const co = await page.evaluate(() => ({ out: !isInterior(), solid: solidAt(px, pz, jumpY + .5) }));
+  check(`out of the cabin by its door onto clear ground`, co.out && !co.solid, co);
 }
 // Session 2101: Aurenne's coastal watchtower (PKIT.places.watchtower, places.js's aurenneWatchtower) off the road on a rise of its coast,
 // facing the nearest shore 12 to 26 m out over the open sea, 150 m and more off every road: its scarp's foot under the lowest ground round it,
