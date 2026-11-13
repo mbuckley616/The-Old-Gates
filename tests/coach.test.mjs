@@ -33,8 +33,8 @@ const c = await page.evaluate(() => { for (let i = 0; i < 3; i++) WORLD.tick(1 /
   return { tris: n, kit: V ? V.island : null, rideY: C.ride ? C.ride.y : null, platY: +(C.plat.y - cart.position.y).toFixed(2), shot: o.toDataURL() }; });
 if (c && c.shot) { fs.writeFileSync('tests/out/coach.png', Buffer.from(c.shot.split(',')[1], 'base64')); delete c.shot; }
 console.log(JSON.stringify({ opened, ...c }));
-check('a coach line near the start runs its island\'s vehicle from the new kit (S2180), its ride platform at the vehicle\'s standing place', !!c && !!c.kit && c.platY === +c.rideY.toFixed(2), c);
-// S2180 (#1046 B): each island's own vehicle, the Crown's coach, the Mark's carved wagon and Aurenne's carriage, without their beasts
+check('a coach line near the start runs its island\'s vehicle from the new kit (S2181), its ride platform at the vehicle\'s standing place', !!c && !!c.kit && c.platY === +c.rideY.toFixed(2), c);
+// S2181 (#1046 B): each island's own vehicle, the Crown's coach, the Mark's carved wagon and Aurenne's carriage, without their beasts
 const v = await page.evaluate(() => { const out = {}; for (const isle of ['gatelands', 'mark', 'aurenne']) { const V = PKIT.props.coach({ island: isle, key: 'suite' }); const b = new THREE.Box3().setFromObject(V.group);
     const m = V.group.children; const rc = new THREE.Raycaster(new THREE.Vector3(0, 5, V.ride.z), new THREE.Vector3(0, -1, 0)); const h = rc.intersectObjects(m)[0];
     out[isle] = { name: V.name, tris: V.tris, draws: V.draws, front: V.front, ride: V.ride, under: h ? +h.point.y.toFixed(3) : null, wheels: V.wheels.length, box: [b.min.x, b.max.x, b.min.y, b.max.y, b.min.z, b.max.z].map(q => +q.toFixed(2)) }; }

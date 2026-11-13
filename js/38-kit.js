@@ -4724,7 +4724,7 @@ function treeStump(kind = 'oak', o = {}) {
 // the origin; o.ground(x, z) the land's height there, 0 at the origin. o.island the clay's colour ('gatelands' grey-ochre, 'mark' blue-grey,
 // 'aurenne' red), o.turf the grass's colour there (a hex), o.key the seed. Nothing is solid.
 //   PKIT.props.claycut({ n, age, island, turf, key, ground }) -> { group, tris, draws, w, l, d (the scarp's height at the back) }
-// S2180 (L3, OG-046, OG-077; Michael's B on #1046, "each island its own three, with its own animals") — the coaching road's vehicle by
+// S2181 (L3, OG-046, OG-077; Michael's B on #1046, "each island its own three, with its own animals") — the coaching road's vehicle by
 // island: wagons.js's Crown's coach (the Gatelands), carved wagon (the Mark, after the Oseberg cart) and covered carriage (Aurenne, after
 // the carpentum), as drawn, without their beasts: the game walks its own team (buildCoachBeast) ahead of the vehicle, so the pole runs
 // from the front axle to where the team's collars stand and the reins and traces end there. Built in the prototype's frame: z forward
