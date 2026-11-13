@@ -579,3 +579,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing; main is green.
 
 **Roadmap.** 323 of 405 stories done (321 of 398 on 11 Nov). The new look is 7 of 18; only F14 is left for deep work.
+
+## 13 Nov 2026
+
+**Waiting on you.** Two decisions: the adventurer's kit (#1504, B recommended: the pack plus a spyglass, rod and net) and weather in a sneak and a shot (#1511, B: rain covers your steps, wind carries your arrows). No PR waits on your tap.
+
+**Landed on main since 12 Nov.** Your answers built: rare specimens and the field guide (#1463 B; Systems 2157–2166); the black sails on their waters' hulls (#1454 A; Look 2162–2163); the garden grows crops only (#1495 A; Systems 2175); the clay oven, kiln and garden beds in your house (#1420 B; Look 2147, 2165, 2177). The beasts of burden: ox, donkey, mule, camel, reindeer, yak, giant goat (Bodies 2148–2173). Spears and crossbows by island, on the item and in your hand (Systems 2180, Bodies 2178–2185). The coaching road's vehicle by island (Look 2181); the whale fall (Look 2170). The Last Entry (Quests 2174). QA fixed `felling`, `autosave`, `pirateram` and `restslip`; a budget red at Dunmore's street was fixed by the bodies builder and is green again (2179–2186). Build s1546.
+
+**Under way.** Look #1513 lands on green.
+
+**Blocked.** Nothing; main is green.
+
+**Roadmap.** 325 of 409 stories done (323 of 405 on 12 Nov). The new look is 7 of 18; only F14 is left for deep work.
