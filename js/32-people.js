@@ -1037,7 +1037,10 @@ function buildWeapon(kind,opts){opts=opts||{};const t=opts.tint;const key=kind+(
 // S2129 — the foes' swords by island (Michael's B on #1425): a foe's sword takes the make of the island it stands on (a gate's or a fort's
 // by its portal, isleHere), the arming sword in the Gatelands, the Norse in the Mark, in Aurenne the takouba (1 in 2), the falchion or the
 // flyssa from the genome's own stream, as an item's is. The genome's `wpn` stays 'sword' (the rules read it); only the kit's piece changes.
-function foeSwordMake(g,x,z){let isle='gatelands';try{isle=(typeof activeZoneId!=='undefined'&&activeZoneId==='world'&&typeof isleAt==='function')?isleAt(x,z):typeof isleHere==='function'?(isleHere()||'gatelands'):'gatelands';}catch(e){}
+function foeIsle(x,z){let isle='gatelands';try{isle=(typeof activeZoneId!=='undefined'&&activeZoneId==='world'&&typeof isleAt==='function')?isleAt(x,z):typeof isleHere==='function'?(isleHere()||'gatelands'):'gatelands';}catch(e){}return isle||'gatelands';}
+// S2178 — a foe's spear head is its island's too (L7, OG-028; S918's SPEAR_HEADS): the Mark's winged head, Aurenne's long head, else the leaf
+function foeSpearHead(x,z){const isle=foeIsle(x,z);return isle==='mark'?'winged':isle==='aurenne'?'long':'leaf';}
+function foeSwordMake(g,x,z){const isle=foeIsle(x,z);
   if(isle==='aurenne'){const r=pRng((g.seed|0)+31)();return r<.5?'takouba':r<.75?'falchion':'flyssa';}return isle==='mark'?'norse':'arming';}
 function foeWpnKit(g){const m=g&&g.wpn==='sword'&&g.swordMake;return m&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&HB.SWORDS&&HB.SWORDS[m]?'sword:'+m:g.wpn;}
 const FOE_DRESS={
@@ -1124,6 +1127,7 @@ function buildFoe(type,x,z,genome,eyeCol,arm){
   // quarter turn about the shaft puts the edge forward. The bow was drawn belly-out; a half turn puts its back to the target.
   // S2129 — a foe's sword is its island's (#1425 B, the foes' half): the make by where it stands (foeSwordMake), the kit's blade on the new look
   if(g.wpn==='sword'&&!g.swordMake)g.swordMake=foeSwordMake(g,x,z);
+  if(g.gear==='spear'&&!g.spearHead)g.spearHead=foeSpearHead(x,z);
   if(g.wpn){const wk=foeWpnKit(g),w=buildWeapon(wk,{rust:!!(g.skel||g.dead||g.goblin)});if(g.wpn==='bow'){w.position.set(0,-.05,.01);w.rotation.y=Math.PI;rig.B.wrL.add(w);}else{w.rotation.y=Math.PI/2;rig.B.gear.add(w);}wpnTrue(wk,w,rig.root);rig.weapon=w;}
   if(g.shieldKit){const sh=buildWeapon(g.shieldKit);sh.position.set(.07,-.05,.02);sh.scale.setScalar(.9);rig.B.elL.add(sh);rig.shieldKit=sh;}
   if(g.wraith){const m=rig.mesh.material;m.transparent=true;m.opacity=g.phantom?.5:.68;rig.mesh.castShadow=false;}
@@ -1801,6 +1805,7 @@ function hbFoeGenome(rig){const g=rig.g,dr=FOE_DRESS[rig.hbFoe]||{},id=rig.e&&ri
   G.dress=Object.assign({},G.dress,{tunic:c,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,lantern:null,shield:null,chair:null,apron:null,bib:null,cape:null,coat:null,scarf:null,wrap:null},(HB_FOE_DRESS[rig.hbFoe]||(()=>({})))(c));
   // S1464 — a foe that rolled the gear kit's spear (a Deserter one time in two) holds the builder's, as the Ash Wight does: the driver's is baked into its hidden mesh
   if(g.gear==='spear'&&!G.dress.spear)G.dress.spear=[.46,.33,.2];
+  if(G.dress.spear&&g.spearHead)G.dress.spearHead=g.spearHead; /* S2178 — its island's head (foeSpearHead) */
   HB_GENOMES.set(key,G);return G;}
 // S1224 — named (keyFoe), a foe rolls its genome at once, and the driver's two baked copies take its colours: the skin, the hair, the
 // tunic, the legs and the boots, from a bake of the same shape in the genome's colours (the vertices are the same, so only the colour

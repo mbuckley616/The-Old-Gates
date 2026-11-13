@@ -41,6 +41,22 @@ const isles = await page.evaluate(() => { const keep = isleAt, keepH = isleHere,
       o[isle].push({ make: rig.g.swordMake, kit: rig.weapon.userData.wpn, kind: foeWeaponKind({ limbs: { person: rig } }), tell: hbTellBuild(rig.weapon).kind }); scene.remove(rig.root); } }
   isleAt = keep; isleHere = keepH; return o; });
 check('a foe\'s sword is its island\'s make (arming, Norse, Aurenne\'s three); the rules read sword and the tell is an edge (S2129)', isles.gatelands.every(x => x.kit === 'sword:arming') && isles.mark.every(x => x.kit === 'sword:norse') && isles.aurenne.every(x => /^sword:(takouba|falchion|flyssa)$/.test(x.kit)) && Object.values(isles).flat().every(x => x.kind === 'sword' && x.tell === 'sword'), isles);
+// S2178 — a foe's spear head is its island's (L7, OG-028): the builder's spear on the new look, the Gatelands' leaf, the Mark's winged
+// head (two lugs, three silver rings) and Aurenne's long head (four gold rings), its blade 18, 24 and 28 cm
+const heads = await page.evaluate(() => { const keep = isleAt, keepH = isleHere, o = {};
+  for (const isle of ['gatelands', 'mark', 'aurenne']) { isleAt = () => isle; isleHere = () => isle;
+    const rig = buildFoe('Deserter', 420, 70, null, null, { wpn: 'spear' }); scene.add(rig.root); rig.root.visible = false;
+    const G = rig.hbG || hbFoeGenome(rig), P = HB.makePerson(G, HB_LEAN); let sp = null; P.root.traverse(m => { if (!sp && m.name === 'spear') sp = m; });
+    const kids = sp ? sp.children.filter(m => m.isMesh) : [], rings = kids.filter(m => m.geometry.type === 'TorusGeometry').length, lugs = kids.filter(m => m.geometry.type === 'ConeGeometry').length;
+    const lathe = kids.find(m => m.geometry.type === 'LatheGeometry'); let blade = 0; if (lathe) { lathe.geometry.computeBoundingBox(); blade = +(lathe.geometry.boundingBox.max.y - lathe.geometry.boundingBox.min.y).toFixed(3); }
+    let tris = 0; for (const m of kids) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3;
+    o[isle] = { head: rig.g.spearHead, dress: G.dress.spearHead, spear: !!sp, rings, lugs, blade, tris, kind: foeWeaponKind({ limbs: { person: rig } }) };
+    scene.remove(rig.root); }
+  isleAt = keep; isleHere = keepH; return o; });
+console.log('  spear heads:', JSON.stringify(heads));
+check('a foe\'s spear head is its island\'s: the leaf, the Mark\'s winged head with its lugs, Aurenne\'s long head in four rings; the rules still read spear (S2178)',
+  heads.gatelands.dress === 'leaf' && heads.gatelands.rings === 2 && heads.gatelands.lugs === 0 && heads.mark.dress === 'winged' && heads.mark.lugs === 2 && heads.mark.rings === 3 && heads.aurenne.dress === 'long' && heads.aurenne.rings === 4 &&
+  heads.gatelands.blade < heads.mark.blade && heads.mark.blade < heads.aurenne.blade && Object.values(heads).every(h => h.spear && h.kind === 'spear'), heads);
 // side views (the stage's orbit a quarter round), where an edge held forward shows the blade's whole profile
 const side = 'INSPECTOR.opts.figure=false;INSPECTOR.orbit.theta=1.5708;INSPECTOR.orbit.phi=1.4;';
 await inspShots(g, [['people/foes-on-the-body/highwayman', 'highwayman-after.png', side], ['people/foes-on-the-body/bandit', 'foeweapon-bandit-after.png', side], ['people/foes-on-the-body/cultist', 'foeweapon-cultist-after.png', side]]);
