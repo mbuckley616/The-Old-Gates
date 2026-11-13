@@ -10307,7 +10307,8 @@ function aurenneOrrery(hAt, o = {}) {
   function aurenneWatchtower(o = {}) {
     const std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x }), AQ = aqueductMats();
     if (!WTM) WTM = { plaster: mat('plaster', { ns: .8, color: 0xeee0c2, rough: .95 }), cope: AQ.cope, zellige: AQ.zellige, leaf: std(0x1e3220, .9), bark: std(0x4a3a2c, .95),
-      dark: std(0x0d0b09, 1), door: std(0x3f73a6, .7), iron: std(0x2a2826, .5, { metalness: .6 }), faggot: mat('wood', { ns: .6, color: 0x6a5238, rough: 1 }) };
+      dark: std(0x0d0b09, 1), door: std(0x3f73a6, .7), iron: std(0x2a2826, .5, { metalness: .6 }), faggot: mat('wood', { ns: .6, color: 0x6a5238, rough: 1 }),
+      rock: mat('rock', { ns: 1.5, color: 0x8c867a, rough: .95 }) };
     const M = WTM, B = new Map(), key = String(o.key || 'watchtower'), r = stream(key + ':watch'), V = (x, y) => new THREE.Vector2(x, y), ground = o.ground || (() => 0);
     const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
       if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
@@ -10361,13 +10362,33 @@ function aurenneOrrery(hAt, o = {}) {
     put(new THREE.CircleGeometry(.48, 16), 'dark', WX, ground(WX, WZ) + .905, WZ, -Math.PI / 2);
     const trees = []; for (const [x, z, hgt] of [[-7, -15, 9], [-9.5, -12.5, 7.5]]) { const gy = floorY(x, z, .15, .15); put(new THREE.CylinderGeometry(.12, .18, 1.2 + ground(x, z) - gy, 6), 'bark', x, (gy + ground(x, z) + 1.2) / 2, z);
       put(new THREE.LatheGeometry([V(.001, 0), V(.55, hgt * .12), V(.75, hgt * .4), V(.5, hgt * .75), V(.001, hgt)], 10), 'leaf', x, ground(x, z) + .8, z); trees.push({ x, z, h: hgt + .8 }); }
+    // S2187 (the critic, 12 Nov: "the tower reads as standing in sand, not on rock", its scarp's foot the same pale as Aurenne's sand) —
+    // the point's rock, which the prototype drew and the world's coast does not: a collar of grey weathered bedrock round the scarp's foot,
+    // standing proud of the ground by up to 0.35 m landward and 0.9 m seaward (where a point's rock breaks out of the turf) and sinking
+    // under it at its edge, 2.2 to 3.4 m wide and to 8 m out on the sea side; and boulders broken from it down the slope toward the shore
+    // (o.reach), none in the yard, on the stair's side or at the seaward check point (0, 7). Its colour is the old stone of a sea point,
+    // a step darker and greyer than the plaster and the sand. Boulders of 0.7 m and up are solids.
+    const rockSol = [];
+    { const NA = 48, NR = 5, reach = o.reach || 18, hz = (x, z) => .5 + .5 * Math.sin(x * 1.37 + z * .71) * Math.sin(x * .53 - z * 1.19),
+        out = a => { const sea = Math.max(0, Math.cos(a)); return 2.2 + .9 * hz(Math.sin(a) * 9, Math.cos(a) * 9) + sea * Math.max(0, Math.min(8, reach - 6) - 2.2) * (.75 + .25 * Math.sin(a * 5 + 1.3)); },
+        lift = a => .35 + .55 * Math.max(0, Math.cos(a)), P = [];
+      for (let i = 0; i <= NA; i++) { const a = i / NA * Math.PI * 2, w = out(a), row = []; for (let j = 0; j <= NR; j++) { const t = j / NR, rr = R0 - .35 + t * (w + .2), x = Math.sin(a) * rr, z = Math.cos(a) * rr,
+          y = ground(x, z) + lift(a) * Math.pow(1 - t, 1.2) * (.7 + .6 * hz(x * 2.1, z * 2.1)) - .25 * t * t; row.push([x, y, z]); } P.push(row); }
+      const pos = []; for (let i = 0; i < NA; i++) for (let j = 0; j < NR; j++) { const a = P[i][j], b = P[i + 1][j], c = P[i][j + 1], d = P[i + 1][j + 1]; pos.push(...a, ...c, ...b, ...b, ...c, ...d); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); put(g, 'rock', 0, 0, 0, 0, 0, 0, .35);
+      const water = o.water === undefined ? -99 : o.water; let n = 0;
+      for (let k = 0; k < 120 && n < 24; k++) { const a = (r() - .5) * Math.PI * 1.15, d = R0 + 1.2 + r() * Math.max(2, Math.min(16, reach) - R0 - 1.2), x = Math.sin(a) * d, z = Math.cos(a) * d, s = .3 + r() * r() * 1.0;
+        if (Math.hypot(x, z - 7) < s + 1.1 || (z < -3.5 && x > -1.5) || ground(x, z) < water - .8) continue;
+        const gy = floorY(x, z, s * .6, s * .6), geo = new THREE.DodecahedronGeometry(s, 0); geo.scale(1 + r() * .4, .6 + r() * .25, 1 + r() * .4);
+        put(geo, 'rock', x, gy + s * .3, z, (r() - .5) * .5, r() * 6.28, (r() - .5) * .5, .4); n++;
+        if (s >= .7) rockSol.push({ x: +x.toFixed(3), z: +z.toFixed(3), w: +(s * 1.3).toFixed(2), d: +(s * 1.3).toFixed(2), ry: 0, h: +(gy + s * .8).toFixed(3) }); } }
     const group = new THREE.Group(); group.name = 'watchtower'; let tris = 0;
     for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     // its solids: the drum as a square inside its foot and a ring of sixteen round it (the world's solids are squares, square to its axes
     // whatever the turn), the landing pier and the flight, the wellhead and the cypresses' trunks
     const Sq = (x, z, w, d, h) => ({ x: +x.toFixed(3), z: +z.toFixed(3), w, d, ry: 0, h: +h.toFixed(3) });
     const sol = [Sq(0, 0, 7, 7, PT), ...Array.from({ length: 16 }, (_, k) => { const a = k / 16 * Math.PI * 2; return Sq(Math.sin(a) * 4.2, Math.cos(a) * 4.2, 1.6, 1.6, PT); }),
-      Sq(0, (LZ0 + LZ1) / 2, LX1 - LX0, LZ1 - LZ0, DY), Sq((LX1 + footX + TREAD / 2) / 2, SZ, footX + TREAD / 2 - LX1, SW, DY), Sq(WX, WZ, 1.2, 1.2, ground(WX, WZ) + .9), ...trees.map(t => Sq(t.x, t.z, .4, .4, ground(t.x, t.z) + t.h))];
+      Sq(0, (LZ0 + LZ1) / 2, LX1 - LX0, LZ1 - LZ0, DY), Sq((LX1 + footX + TREAD / 2) / 2, SZ, footX + TREAD / 2 - LX1, SW, DY), Sq(WX, WZ, 1.2, 1.2, ground(WX, WZ) + .9), ...trees.map(t => Sq(t.x, t.z, .4, .4, ground(t.x, t.z) + t.h)), ...rockSol];
     const stands = [{ x: WX, y: ground(WX, WZ), z: WZ, what: 'well' }, ...trees.map(t => ({ x: t.x, y: ground(t.x, t.z), z: t.z, what: 'cypress' })), { x: PX, y: ground(PX, -20), z: -20, what: 'path' }];
     return { group, tris: Math.round(tris), draws: group.children.length, sol, top: +(TY + HH + .12 + HW * .48).toFixed(2), stands: stands.map(s => ({ x: +s.x.toFixed(3), y: +s.y.toFixed(3), z: +s.z.toFixed(3), what: s.what })),
       tower: { r0: R0, rS: RS, hS: HS, r1: R1, h: H, foot: +FOOT.toFixed(2) }, door: { ...door, sill: DY }, gap: GAP,
