@@ -15,6 +15,7 @@
 // Session 2107 (begun as 2098, then 2104) the Mark's ice cave mouth (PKIT.places.icemouth), a glacier's tongue on the world's own slope, its tunnel and stream cut into the ground.
 // Session 2105 Aurenne's smuggler's cove (PKIT.places.inlet), an inlet cut into the world's own coast.
 // Session 2187 the watchtower's foot on the point's grey rock, and boulders down to the shore.
+// Session 2190 the cove cut only inside its inlet (it cut its whole 80 m patch to the bed), its crag in the kit's rock.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -483,7 +484,10 @@ if (cv) {
     let over = 0, n = 0; for (let v = S.HEAD - 2; v < S.REACH + 6; v += 1) for (let u = -20; u <= 20; u += 1) { if (S.D(u, v) > S.CW + .3) continue; const [x, z] = W(u, v); n++; if (meshH(x, z) - D.laid.h(x, z) > .02) over++; }
     const gy = (u, v) => +(groundY(...W(u, v)) - D.y0).toFixed(2), at = (u, v, y) => solidAt(...W(u, v), D.y0 + y), h = D.houses[0], st = D.steps[10];
     const cliff = Math.min(...[0, 10, 20].map(v => S.land(-S.W(v) - 3, v) - S.carve(-S.W(v) + 1, v)));
-    return { id, tris: D.tris, draws: D.draws, laid: D.laid.tris, cells: D.laid.cells, n, over, cliff: +cliff.toFixed(1), steps: D.steps.length, top: D.stairTop.y, land: +S.land(S.W(D.stairTop.z) + S.CW + 1.2, D.stairTop.z).toFixed(2),
+    /* S2190 — the cut stays inside the inlet: 4 m past its cliffs' tops, and behind its head, the land stands uncut (the whole patch was cut) */
+    let wide = 0, wn = 0; for (let v = S.HEAD - 12; v < S.REACH - 2; v += 2) for (const u of [-1, 1].flatMap(q => [q * (S.W(v) + S.CW + 4), q * (S.W(v) + S.CW + 12)])) { if (Math.abs(u) > S.patch.x1) continue; wn++; if (S.carve(u, v) < S.land(u, v) - .01) wide++; }
+    for (let u = -6; u <= 6; u += 2) { wn++; if (S.carve(u, S.HEAD - 4) < S.land(u, S.HEAD - 4) - .01) wide++; }
+    return { id, tris: D.tris, draws: D.draws, laid: D.laid.tris, cells: D.laid.cells, n, over, wide, wn, cliff: +cliff.toFixed(1), steps: D.steps.length, top: D.stairTop.y, land: +S.land(S.W(D.stairTop.z) + S.CW + 1.2, D.stairTop.z).toFixed(2),
       face: +Math.max(...D.steps.map(s => s.y - S.crag(s).yt)).toFixed(2), crag: +Math.min(...D.steps.map(s => S.crag(s).xf)).toFixed(1),
       beach: gy(0, -6), sea: gy(0, S.REACH - 8), stair: gy(st.x + .5, st.z), stairY: st.y, house: at(h.x - .85, h.z, 1.5), look: at(D.lookout.x, D.lookout.z, D.lookout.y + 1), open: at(0, -4, 1) }; }, cv.id);
   console.log(JSON.stringify(it));
@@ -491,6 +495,7 @@ if (cv) {
     !it.none && it.cliff >= 4 && it.over === 0 && it.n > 1000 && it.beach > 0 && it.sea === -1.45 && Math.abs(it.stair - it.stairY) < .02 && Math.abs(it.top - it.land) < .2, it);
   check(`solid at a boathouse's front and the lookout, open on the beach; ${it.tris} triangles in ${it.draws} draws, the laid ground ${it.laid} over ${it.cells} squares`,
     !it.none && it.house && it.look && !it.open && it.tris < 6000 && it.draws <= 12 && it.laid < 20000, it);
+  check(`the cove cuts only its inlet: the land 4 and 12 m past its cliffs and 4 m behind its head cut at ${it.wide} of ${it.wn} points; the laid ground ${it.laid} triangles`, !it.none && it.wn > 40 && it.wide === 0, it);
   // Session 2112: the stair stands on a crag of the cliff's stone, not on an ashlar wall from the inlet's floor (it stood up to 16 m)
   check(`the stair's treads show ${it.face} m of ashlar over the crag under them, and the crag's foot stays ${it.crag} m east of the inlet's middle`, !it.none && it.face <= .5 && it.crag > 2, it);
 }

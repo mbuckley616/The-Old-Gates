@@ -792,6 +792,12 @@
       c.multiplyScalar(.72); // match the near tiles, whose detail texture averages ~0.72
       colArr[i*3]=c.r;colArr[i*3+1]=c.g;colArr[i*3+2]=c.b;
     }
+    /* S2190 — a place cut into the world's ground (the cove, the falls, the ice mouth) sinks its 4 m points under its floor (offroadStamps).
+       One far vertex on a sunk point dropped to it while its neighbours 32 m off kept the land, so a far triangle sloped up through the cut
+       (the cove's water, once its cut was the inlet alone): every corner of a far square holding a sunk point goes under that sink */
+    {const st=SIZE/n,lo=new Map();for(const t of STAMPS){if(!t.sink)continue;const fx=(t.x-cell.ox)/st,fz=(t.z-cell.oz)/st;if(fx<-1||fz<-1||fx>n+1||fz>n+1)continue;
+        const i0=Math.floor(fx),j0=Math.floor(fz);for(let j=j0;j<=j0+1;j++)for(let i=i0;i<=i0+1;i++){if(i<0||j<0||i>n||j>n)continue;const q=j*(n+1)+i,y=t.y-3;if(!(lo.get(q)<=y))lo.set(q,y);}}
+      if(lo.size)for(let i=0;i<pa.count;i++){const q=Math.round((pa.getZ(i)+SIZE/2)/st)*(n+1)+Math.round((pa.getX(i)+SIZE/2)/st),y=lo.get(q);if(y!==undefined&&y<pa.getY(i))pa.setY(i,y);}}
     geo.setAttribute('color',new THREE.BufferAttribute(colArr,3));
     geo.computeVertexNormals();
     const fm=new THREE.Mesh(geo,VC_MAT);
