@@ -3804,6 +3804,7 @@ function buildDungeon(portal){
   dunScaleWhole(dunCellFor(portal),thWallMat);
   try{gateFallBuild(gen);}catch(e){console.warn('gateFallBuild',e);} /* S1376 — Cloch's fallen blocks, in metres */
   try{gateThingsBuild(gen,portal);}catch(e){GATE_THINGS=[];console.warn('gateThingsBuild',e);} /* S1675 — the braziers and webs, in metres */
+  if(typeof varekListLay==='function')varekListLay(portal); /* S2174 — The Last Entry: the worn paper before the sarcophagus, after the unbound ending (87) */
   try{knotLay(portal,gen);}catch(e){console.warn('knotLay',e);} /* S1346 — a great gate's knot over the ring's dais, in metres (87-world-quests.js) */
   /* S1302 — a gate draws by space (dZoneBuild, dRender) and lights 8 at a time; its pool is made now, so the compile below has its lights */
   DZONE=gen.gate?dZoneBuild(gen):null;if(gen.gate){dScene.userData.lightPool=8;try{_sweepScenePool(dScene);}catch(e){}}

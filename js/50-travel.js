@@ -1323,11 +1323,13 @@ function useJarThing(){const r=jarMeal();showMsg(r.done?`The ${r.name.toLowerCas
 const GARDEN_BEDS=4,GARDEN_DAYS=5,GARDEN_SECOND=4,GARDEN_HERB=3;
 function gardenBeds(h){const G=worldState.garden||(worldState.garden={});let L=G[h.id];if(!Array.isArray(L)||L.length!==GARDEN_BEDS)L=G[h.id]=Array.from({length:GARDEN_BEDS},(_,i)=>(Array.isArray(L)&&L[i])||null);return L;}
 function gardenReady(e){return !!e&&gameMinNow()-e.at>=GARDEN_DAYS*1440;}
-function gardenSeconds(h){const isle=houseIsle(h);return Object.keys(DISH_SECONDS).filter(k=>DISH_SECONDS[k].isle===isle);}
+// S2175 — crops only (Michael's A on #1495): butter and curd are not grown; they stay bought at the inn and the goods shop
+const GARDEN_UNSOWN=new Set(['butter','curd']);
+function gardenSeconds(h){const isle=houseIsle(h);return Object.keys(DISH_SECONDS).filter(k=>DISH_SECONDS[k].isle===isle&&!GARDEN_UNSOWN.has(k));}
 // sow a bed: what is 'second' (v the second's key) or 'herb' (v the herb's name). Returns {done} or {done:false, why}
 function gardenPlant(h,bi,what,v){if(!homeMine(h)||!homeFitted(h,'garden'))return {done:false,why:'There is no garden here.'};const L=gardenBeds(h);
   if(bi<0||bi>=GARDEN_BEDS)return {done:false,why:''};if(L[bi])return {done:false,why:'Something grows in that bed already.'};
-  if(what==='second'){if(!DISH_SECONDS[v])return {done:false,why:''};if(DISH_SECONDS[v].isle!==houseIsle(h))return {done:false,why:`${DISH_SECONDS[v].name} will not grow on this island.`};
+  if(what==='second'){if(!DISH_SECONDS[v])return {done:false,why:''};if(GARDEN_UNSOWN.has(v))return {done:false,why:`${DISH_SECONDS[v].name} does not grow in a bed.`};if(DISH_SECONDS[v].isle!==houseIsle(h))return {done:false,why:`${DISH_SECONDS[v].name} will not grow on this island.`};
     if(!bagTake(b=>b.second===v,1))return {done:false,why:`You have no ${DISH_SECONDS[v].name.toLowerCase()}.`};L[bi]={k:'second',s:v,at:gameMinNow()};return {done:true};}
   if(what==='herb'){const i=BAG.findIndex(b=>b&&b.type==='herb'&&!b.spec&&b.name===v); /* S2160 — a rare specimen is not sown */if(i<0)return {done:false,why:'You have no such herb.'};
     const it=JSON.parse(JSON.stringify({...BAG[i],qty:1}));delete it.stolen;bagTake(b=>b===BAG[i],1);L[bi]={k:'herb',item:it,at:gameMinNow()};return {done:true};}
@@ -3149,6 +3151,7 @@ function interact(){
   }
   if(typeof knotNear==='function'&&knotNear()){knotUse();return;} /* S1346 — a great gate's knot */
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
+  if(typeof varekListNear==='function'&&varekListNear()){varekListTake();return;} /* S2174 — the worn paper in the crypt */
   if(typeof cloakDenNear==='function'&&cloakDenNear()){cloakDenTake();return;} /* S992 — the cloak, from under its sleeping master */
   {const cg=typeof caverglowNear==='function'&&caverglowNear();if(cg){pickCaverglow(cg);return;}} /* S1896 — Caverglow on a lair's wall */
   // Sigil touch — floor 2 only, closer range than most interactables

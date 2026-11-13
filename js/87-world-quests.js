@@ -3936,6 +3936,45 @@ const giver=`${lord.title} ${lord.name}`;
        the new place's line (the way down to a ring's, corruption on CI); the log keeps it either way */
     const at=activeZoneId+'|'+(typeof isInterior==='function'&&isInterior());
     if(typeof addLog==='function')addLog('📜',KNIFE_SAY.note);setTimeout(()=>{try{if(activeZoneId+'|'+(typeof isInterior==='function'&&isInterior())===at)showMsg(KNIFE_SAY.note,'#c8c0a8');}catch(e){}},1800);return true;}
+  // S2174 — The Last Entry (approved by Michael, 14 Oct; docs/quest_drafts.md): after the unbound ending, Varek's list lies in the crypt
+  // of the new game, one cell before the open sarcophagus on the side you wake facing. No quest, no journal, no log line, no message of
+  // its own: the pickup's prompt and its took line, and the reader. worldState.varekList = {n: deaths carried, state: 'laid' | 'taken'},
+  // set by the creator from og_carry (ending('unbound') writes deaths and list:true). The crypt is built once a game, so the paper is one.
+  const VLIST_PAGES=[
+    "First year after the stone, at the hay.\nDonncha Mac Giolla Phádraig, of Baile na hAbhann, a herd, forty years or about it. I turned three wolves from the children at the ford. They went up the hill to his shieling. I did not ask where they would go.\n\nThird year after the stone, the long frost.\nSorcha and Eithne Ní Laoire, of Cill Rónáin, sisters, both grown. I ended the drought at Gort Mór. The water did not stop at Gort Mór.\n\nSeventh year, at the turn of the year.\nFiach Ó Cuinn, of Gort Mór, a boy of twelve. He followed me into the gate under the hill because he had seen me come out of it. I went back for him. Not quickly enough.",
+    "Twenty-sixth year, in the hungry months.\nAt Ráth Dubh. Lord Thibaut de Sauveterre took the seed corn for his due. I put him out of his keep and the corn back in the barns.\nHis brother came at the harvest with forty men. These are his dead, and they are mine:\nMairéad Ní Bhriain. Colm, her son. Tomás the miller. Peig Ní Shé, and Seosamh her husband, whose name I did not know that day and have known every day since. Cormac Ó Ceallaigh. Úna, a child of six. Brigid, her grandmother.\n\nThis is the last of these.",
+    "Thirty-first year. Ráth Bán. The same, and the same.\nNuala Ní Dhubhda. Lughaidh. Oisín the thatcher and his two boys. Gormlaith. Ciarán Ó Floinn. Treasa. Eoghan, who had the bees. Máire Bhán. Seán Rua. Neasa. Lorcán Beag. Siobhán. Fionnuala. Pádraig the carter. Clíodhna. Ruairí. Saoirse. Íde.\nThe last.\n\nForty-fourth year. Achadh Fada. Eleven.\nThe last.\n\nSixty-second year. Cnoc na Gaoithe. Thirty.\nThe last.",
+    "90. Wulfstow, on the Mark. Hild Osricsdaughter. Leofwine. Cuthred the reeve. Godgifu. The road I closed.\n103. Sainte-Aude, in Aurenne. Prior Anselme. Brother Gautier. Isabeau Marchal, who swept the nave. The roof.\n117. Glennagh. Nine. The gate.\n131. Gort na Claise. Twenty-two. Fever out of the gate.\n140. Stanholt. Beorn. Eadgyth. Wulfric. Osgar. Seven more. Wolves.\n152. Port-Lévrier. Margot Daviel. Raoul. The ship.",
+    "Nóra. Diarmuid. {blot}. Ealhswith. Bertrand. Caoimhe. {blot}. {blot}. Ferchar. Muirgheal. Godric. Ysolde. {blot}. Tadhgán. Cyneburh. {blot}. Aoife. Renaud. {blot}. Éibhear. Oslac. {blot}. {blot}. Gráinne. Hereward. Clémence. {blot}. Dubhaltach. {blot}. {blot}. Wynflæd. Sabine. {blot}.",
+    "{blot} {blot} Beorhtric {blot} {blot} {blot} Áed {blot} {blot} — Caer {blot} — {blot} {blot} Manon {blot} {blot} {blot} {blot} Odo {blot} {blot} {blot} Cass {blot} {blot} {blot} {blot} {blot} {blot} {blot}",
+    "Ashenmoor.\nBram, the smith. Wat Atherton. Hilde Atherton. Ned Atherton. Rob Glenn. Annis Glenn. Kit Glenn. Joan Glenn. Mag, Humphrey’s widow. On the south road, two travellers: Ciara Ní Mhurchú, and Lucien Adret, of Aurenne. {blot}. {blot}. {blot}.",
+    "{back}"];
+  const VLIST_HANDS=[0,0,.25,.45,.65,.85,1,0]; /* how worn each fold's hand is (renderBookPage draws it, S2176) */
+  const VLIST_ONES=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+  const VLIST_TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  function vlistWord(n){n=Math.max(0,n|0);if(n<20)return VLIST_ONES[n];if(n<100){const t=VLIST_TENS[Math.floor(n/10)],o=n%10;return o?t+'-'+VLIST_ONES[o]:t;}return String(n);}
+  function vlistBack(n){n=Math.max(0,n|0);if(n===0)return 'Has not died. I would have known.';if(n===1)return 'Died once. Stood up once. Where do you go?';
+    const w=vlistWord(n);return `Died ${w} times. Stood up ${w} times. Where do you go?`;}
+  BOOKS.push({id:'worn_paper',name:'Worn Paper',ico:'📜',attr:null,quiet:true,bare:true,hands:VLIST_HANDS,
+    get pages(){const L=worldState.varekList,n=L?L.n|0:0;return VLIST_PAGES.map(p=>p==='{back}'?'\n\n\n'+vlistBack(n):p);}}); /* S2176 — the reader draws {blot} (renderBookPage) */
+  let VLIST_LIE=null;
+  // the cell before the sarcophagus along the waking yaw (the camera looks along -sin, -cos), else the nearest open neighbour. The
+  // waking spot is in metres by now (dunScaleWhole scales it with the rest); the map is read in cells
+  function varekListSpot(sp){if(!sp||!dMap)return null;const open=(c,r)=>dMap[r]&&dMap[r][c]===1,c0=dCellOf(sp.x),r0=dCellOf(sp.z);
+    const f=[Math.round(c0-Math.sin(sp.yaw)),Math.round(r0-Math.cos(sp.yaw))];const tries=[f,[c0-1,r0],[c0,r0+1],[c0+1,r0],[c0,r0-1]];
+    const k=tries.find(([c,r])=>open(c,r)&&!(c===c0&&r===r0));return k?{c:k[0],r:k[1]}:null;}
+  function varekListLay(portal){VLIST_LIE=null;try{const L=worldState.varekList;if(!portal||!portal.tutorial||!L||L.state!=='laid')return null;
+    const c=varekListSpot(portal._tutorialSpawn);if(!c)return null;const x=dAt(c.c),z=dAt(c.r);
+    const g=new THREE.Group();g.name='wornPaper';
+    const paper=new THREE.Mesh(new THREE.BoxGeometry(.13,.006,.18),new THREE.MeshLambertMaterial({color:0xcfc2a0}));paper.position.y=.004;g.add(paper);
+    const fold=new THREE.Mesh(new THREE.BoxGeometry(.13,.004,.09),new THREE.MeshLambertMaterial({color:0xbfb18e}));fold.position.set(0,.01,-.045);fold.rotation.x=.05;g.add(fold);
+    const stone=new THREE.Mesh(new THREE.DodecahedronGeometry(.035,0),new THREE.MeshLambertMaterial({color:0x5a554c}));stone.scale.set(1,.6,.9);stone.position.set(.02,.03,.02);g.add(stone);
+    g.position.set(x,0,z);g.rotation.y=.4;dScene.add(g);VLIST_LIE={x,z,floor:1,mesh:g};return VLIST_LIE;}catch(e){console.warn('varekListLay',e);return null;}}
+  function varekListNear(){const L=VLIST_LIE;return !!(L&&L.mesh&&activeZoneId==='dungeon'&&currentFloor===L.floor&&Math.hypot(px-L.x,pz-L.z)<TOUCH);}
+  // the named action: taken once, into the bag; the pickup's own line and nothing else
+  function varekListTake(){const L=VLIST_LIE,S=worldState.varekList;if(!L||!S||S.state!=='laid')return false;
+    const it=Object.assign(makeBookItem(BOOKS.find(b=>b.id==='worn_paper')),{weight:.1,sellMult:0});if(!canCarry(it)){showMsg('Too heavy to carry!','#cc8844');return false;}
+    S.state='taken';bagAdd(it);if(L.mesh&&L.mesh.parent)L.mesh.parent.remove(L.mesh);VLIST_LIE=null;showMsg('Took the worn paper.','#c8c0a8');if(typeof renderInv==='function')renderInv();return true;}
   // the flagstone: in the middle of the Ashfeld's ring of six stones, where the road's path in ends
   const FLAG_REACH=1.6;let FLAG_STONE=null,_flagT=0;
   function flagstoneSpot(){const f=siteAnywhere('ashfeld');return f?{x:f.x,z:f.z}:null;}

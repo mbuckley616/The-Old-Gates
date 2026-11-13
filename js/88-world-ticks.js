@@ -208,7 +208,7 @@
               {label:'Farewell.',bye:true}]};def.temper='weary';
     const n=spawnNPC(def,0,true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);ROOTS.npc=n;showMsg('Varek is standing at the mouth of the Root.','#a0a8c0');}
   function ending(kind){const S=story();S.ending=kind;S.step='end';const q=qFind('act3_root');if(q){qComplete(q);q.turnedIn=true;}
-    if(kind==='unbound'){worldState.unbound=true;try{localStorage.setItem('og_carry',JSON.stringify({name:typeof playerName!=='undefined'?playerName:'',people:worldState.people,look:worldState.look||null,item:(typeof BAG!=='undefined'&&BAG[0])?BAG[0]:null,seed:Date.now()%100000}));}catch(e){}}
+    if(kind==='unbound'){worldState.unbound=true;try{localStorage.setItem('og_carry',JSON.stringify({name:typeof playerName!=='undefined'?playerName:'',people:worldState.people,look:worldState.look||null,item:(typeof BAG!=='undefined'&&BAG[0])?BAG[0]:null,seed:Date.now()%100000,deaths:(worldState.varek&&worldState.varek.deaths)|0,list:true}));/* S2174 — The Last Entry: the list goes with you */}catch(e){}}
     if(kind==='open'){worldState.knowing=true;}
     if(typeof addLog==='function')addLog('📖',kind==='unbound'?'The Root broken. The world unbinds; a new book begins.':kind==='sealed'?'The Root sealed. The window narrows.':'The Root left open, knowing.');
     setTimeout(()=>endingScreen(kind),1500);}
