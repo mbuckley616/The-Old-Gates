@@ -48,6 +48,18 @@ const MK = makes.o;
 check('each island\'s sword is the builder\'s own blade by the item\'s make, 0.75–1.05 m long, the blade in the item\'s metal; an item with no make keeps the old sword',
   Object.entries(MK).every(([mk, r]) => r.kit === 'sword:' + mk && r.h > .75 && r.h < 1.05 && r.tint > 50 && r.tris > 100) && new Set(Object.values(MK).map(r => r.tris)).size >= 5 && makes.plain === 'sword', makes);
 check('in the hand it is carried at its true size (world scale 1)', makes.held && makes.held.kit === 'sword:norse' && Math.abs(makes.held.scale - 1) < .02, makes.held);
+// S2189 — the fittings' work in the hand (S2100's fitTex): the arming sword's guard and wheel in knotwork, Aurenne's collars and pommels in
+// filigree (the takouba's collar and disc, the nimcha's collar, the flyssa's pommel), each a textured metal with uvs; the Norse sword and
+// the falchion have none, as in the kit
+const work = await page.evaluate(() => { const o = {}; for (const mk of ['arming', 'norse', 'takouba', 'nimcha', 'falchion', 'flyssa']) {
+    const w = tpWeapon({ name: 'Work ' + mk, weaponShape: mk === 'nimcha' ? 'scimitar' : 'sword', swordMake: mk }), r = o[mk] = {};
+    w.traverse(x => { if (!x.isMesh || !x.material.userData.fitMetal) return; const uv = x.geometry.attributes.uv; r[x.material.name] = { tris: x.geometry.index.count / 3, map: !!(x.material.map && x.material.map.image && x.material.map.image.width), uvs: !!uv && uv.count === x.geometry.attributes.position.count }; }); }
+  return o; });
+console.log('work', JSON.stringify(work));
+const fw = (mk, k) => work[mk][k] && work[mk][k].map && work[mk][k].uvs && work[mk][k].tris > 0;
+check('the fittings keep their work: knotwork on the arming sword\'s guard and wheel, filigree on Aurenne\'s collars and pommels; none on the Norse sword or the falchion',
+  fw('arming', 'fit:knotBand') && fw('arming', 'fit:knotRing') && fw('takouba', 'fit:filiBand') && fw('takouba', 'fit:filiRing') && fw('nimcha', 'fit:filiBand') && fw('flyssa', 'fit:filiBand')
+  && !Object.keys(work.norse).length && !Object.keys(work.falchion).length, work);
 // S2182 — a spear by its island (S2180's it.spearHead): the kit's head, the spear as long; a leaf or no head keeps the old spear
 const heads = await page.evaluate(() => { const o = {};
   for (const hd of ['leaf', 'winged', 'long', null]) { const w = tpWeapon({ name: 'Spear', weaponShape: 'spear', ...(hd ? { spearHead: hd, make: 'x' } : {}) }), bb = new THREE.Box3().setFromObject(w);
