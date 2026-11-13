@@ -1039,3 +1039,36 @@ s1536 (QA, Session 2179): **Dunmore street, noon, Middle is over** 2.0 M triangl
 every other row within 1% of these). Not a build change: Bodies is 125 calls with one townsperson inside 16 m at the full level, against 108 at
 s1515's Middle, and that crossing fell at High at s1483 and s1515. One near body is about +0.26 M at Middle. Filed in backlog I for the bodies
 builder. Every other spot is within 4% of s1515.
+
+### s1545 — 2026-11-13 13:04 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 576 | 1.10 M | 0 | 0 | 107 | 124 | 254 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | Middle | 752 | 1.96 M | 140 | 6 | 125 | 124 | 266 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | High | 802 | 2.58 M | 172 | 6 | 125 | 124 | 284 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Low | 631 | 1.06 M | 0 | 0 | 105 | 180 | 254 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Middle | 813 | 1.78 M | 164 | 6 | 105 | 180 | 266 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | High | 873 | 2.32 M | 206 | 6 | 105 | 180 | 284 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| the field west of Dunmore, noon | Low | 536 | 647k | 0 | 0 | 105 | 107 | 281 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 644 | 1.06 M | 83 | 6 | 105 | 107 | 300 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 691 | 1.53 M | 122 | 6 | 105 | 107 | 308 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 635 | 677k | 0 | 0 | 124 | 186 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 787 | 1.12 M | 143 | 6 | 108 | 186 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 839 | 1.64 M | 187 | 6 | 108 | 186 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+
+### s1545 — 2026-11-13 13:14 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 360 | 690k | 0 | 0 | 29 | 64 | 192 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | Middle | 550 | 1.46 M | 154 | 6 | 43 | 64 | 208 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | High | 596 | 1.82 M | 189 | 6 | 43 | 64 | 219 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 105 | 401k | 0 | 0 | 36 | 0 | 0 | 68 |  |
+
+s1545 (QA, Session 2186): **Dunmore street, noon, Middle is back under** 2.0 M: 1.96 M, with the same one townsperson inside 16 m at the full
+level (Bodies 125 calls) that read 2.10 M at s1536. Session 2182's hair (cards join every 3rd strand point at Middle and Low) took 0.14 M off
+that frame. `budget` and `budgetport` green, 1/1 each. The headroom is 40k: by the bodies builder's measure a second near body puts the
+street at about 2.03 M, so a walk that brings two people inside 16 m would still be red. The field at dawn, Low, read 677k (one body crossed
+into reach, 108 → 124 calls; inside 1.2 M). Every other row is within 1% of s1536.
