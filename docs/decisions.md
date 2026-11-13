@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Can the garden grow butter and curd? (from the systems builder, 2026-11-12, #1495)
+**The question.** Resources and crafting B (#1420) gave your house a garden whose four beds grow "its own island's seconds". Two of those seconds are not plants: the Gatelands' **butter** and the Mark's **curd**. As built (Session 2140) you can sow butter and gather 4 butter five days later, and the look builder (Session 2165) draws those beds as clover. Aurenne's three (wheat, dates, olives) are all crops.
+
+**Options.**
+- **A. Crops only** *(recommended)*. A bed takes oats or apples (Gatelands), rye or berries (Mark), wheat, dates or olives (Aurenne), or a picked herb. Butter and curd stay at the inn and the goods shop. One line (`gardenSeconds`); the clover goes.
+- **B. As built.** Any second of the island grows; butter and curd show as clover.
+- **C. A, and later a cow or a goat as a seventh fitting that gives butter or curd.** Its own proposal, not built now.
+
+**Recommendation: A.** A bed of butter breaks the lived-in place the brief asks for. The two rich-dish islands keep two crops each, and Rich and Warmth stay bought, which keeps a reason to visit the inn. (`docs/devlog/2172.md`)
+
 ### The singing ship — how is she seen in fog of 60 m? (from the concept artist, 2026-11-12, #1486)
 **The question.** Backlog L6, *Sea legends* (OG-049): a ghost ship heard singing in fog. The quest writer's draft (*Sea Legends, I*, unapproved) puts her 150–200 m off your bow in fog, but Michael's C on #679 closes fog to 60 m, so as drafted nobody would see her. She is the Aurenne cog (17 m) long at sea: grey patched canvas, silvered hull, pewter gilt, dark lanterns; 41k triangles in 13 draws. Page: `docs/prototypes/levelup/singer.html`.
 
