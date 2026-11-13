@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A beast’s tell — level-up slice</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0d1014; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  #note { position: fixed; left: 12px; bottom: 10px; color: #f3ead6; font: 13px/1.4 system-ui, sans-serif; text-shadow: 0 1px 2px #000; pointer-events: none; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
+</script>
+</head>
+<body>
+<div id="note">A beast’s tell (backlog L11, "Foes and bosses": "the beasts’ tell is still the body"; a prototype): where the warning before a beast’s bite shows, at the tell’s height. ?beast=wolf|ironwolf|cavebear|boar, &amp;level=a|b|c (A the whole hide glows, today; B the muzzle and the jaw; C the eyes), &amp;kind=light|heavy, &amp;k=&lt;0 to 1&gt;, &amp;cam=back|close|side, &amp;light=day|dusk. Drag to look.</div>
+<script type="module">
+import * as THREE from 'three';
+import { Q, W, H, STILL, STATS, makeRenderer, makeComposer, run } from './common.js';
+import { PLANS, genome, build } from './creatures.js';
+import { windUp, tellFx, LEVEL_OF, BEAST_LEVELS, TELL_HUE } from './beasttells.js';
+
+// the game's Cave Bear: the kit's bear (the Frostreach) in the driver's brown (HC_KINDS, S1251)
+PLANS.cavebear = { ...PLANS.bear, name: 'Cave Bear', palette: { ...PLANS.bear.palette, coat: [.29, .227, .165], saddle: [.18, .133, .094], belly: [.416, .329, .25] } };
+const BEAST = PLANS[Q.get('beast')] ? Q.get('beast') : 'wolf', LV = LEVEL_OF[Q.get('level')] || Q.get('level') || 'jaws', KIND = Q.get('kind') === 'heavy' ? 'heavy' : 'light';
+const K = +(Q.get('k') ?? 1), CAM = Q.get('cam') || 'back', DUSK = Q.get('light') === 'dusk';
+const R = makeRenderer(DUSK ? .8 : .9), scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(CAM === 'close' ? 30 : 42, W / H, .02, 600);
+const sky = DUSK ? new THREE.Color(.22, .24, .32) : new THREE.Color(.55, .6, .64); scene.background = sky; scene.fog = new THREE.Fog(sky, 18, 90);
+const sun = new THREE.DirectionalLight(DUSK ? new THREE.Color(1, .62, .42) : new THREE.Color(1, .94, .84), DUSK ? 1.1 : 2.6); sun.position.set(DUSK ? -14 : 8, DUSK ? 4 : 14, DUSK ? -10 : 6);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -.0003; sun.shadow.normalBias = .03; Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6 });
+scene.add(sun, new THREE.HemisphereLight(DUSK ? new THREE.Color(.36, .4, .56) : new THREE.Color(.62, .68, .78), DUSK ? new THREE.Color(.12, .1, .09) : new THREE.Color(.3, .27, .2), DUSK ? .7 : 1.1));
+// a woodland floor: a mottled earth with litter
+function floorTex() { const c = document.createElement('canvas'); c.width = c.height = 1024; const x = c.getContext('2d'); x.fillStyle = '#5d5a3e'; x.fillRect(0, 0, 1024, 1024); let s = 7;
+  const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 14000; i++) { x.fillStyle = `rgba(${50 + r() * 60},${48 + r() * 50},${28 + r() * 30},.25)`; x.fillRect(r() * 1024, r() * 1024, 2 + r() * 12, 2 + r() * 12); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.repeat.set(30, 30); return t; }
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.MeshStandardMaterial({ map: floorTex(), roughness: .95 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const comp = makeComposer(R, scene, cam, { bloom: .55, bloomT: .6, bloomR: .45, sat: 1.04, vig: .34 });
+Object.assign(STATS, { beast: BEAST, level: LV, levelName: BEAST_LEVELS[LV], kind: KIND, k: K, cam: CAM, light: DUSK ? 'dusk' : 'day' });
+try {
+  // the game's sizes: the Wolf 0.92 of the kit's ironwolf, the Cave Bear the kit's bear (hcKind's plans, drawn at the driver's stature)
+  const C = build(genome(BEAST, 'tell:' + BEAST)); scene.add(C.root); C.meshes.forEach(m => m.castShadow = true);
+  windUp(C, 1); const fx = tellFx(C, LV, KIND, K); scene.add(fx); STATS.fx = fx.userData; STATS.len = +C.len.toFixed(2); STATS.tris = C.stats.tris; STATS.bones = C.stats.bones;
+  C.root.updateMatrixWorld(true); const head = new THREE.Vector3().setFromMatrixPosition(C.byName.head.matrixWorld); STATS.headY = +head.y.toFixed(2);
+  // the player stands 2.4 m before the beast's nose (a bite and a step); the third-person camera 3.4 m behind and over the shoulder
+  const nose = C.len * .5, PZ = nose + 2.4;
+  const CAMS = { back: [new THREE.Vector3(.9, 1.85, PZ + 3.4), new THREE.Vector3(0, head.y * .8, 0)], close: [new THREE.Vector3(.7, head.y + .25, nose + 1.6), head.clone().add(new THREE.Vector3(0, -.05, .1))],
+    side: [new THREE.Vector3(3.6 + C.len, 1.1, nose * .3), new THREE.Vector3(0, head.y * .6, 0)] };
+  const c0 = CAMS[CAM] || CAMS.back; cam.position.copy(c0[0]); cam.lookAt(c0[1]); cam.updateProjectionMatrix();
+} catch (e) { STATS.err = String(e && e.stack || e); console.error(e); }
+R.info.autoReset = !STILL; R.info.reset(); run(comp, cam, {}); STATS.calls = R.info.render.calls;
+</script>
+</body>
+</html>
