@@ -3374,6 +3374,7 @@ const SPEAR_HEADS = {
   leaf: { sock: .09, blade: .18, facets: 14, w: t => .0235 * Math.sin(Math.PI * Math.min(1, t * 1.25) ** .8) * (1 - t * .15) + .007 * (1 - t), rings: [.2, .8], ring: [.62, .45, .22] },
   winged: { sock: .1, blade: .24, facets: 8, w: spearW(.019, .3, .006), rings: [.15, .5, .85], ring: [.78, .78, .8], wings: true },
   long: { sock: .13, blade: .28, facets: 12, w: spearW(.0145, .36, .005), rings: [.12, .3, .7, .88], ring: [.86, .68, .3] } };
+// (Session 2182: the game's held spear, wpnBuild's `spear:<head>`, reads the heads from here)
 function fistGrip(body, byName, root, curl, hinge) {
   const R0 = PACK.rest, hand = PACK.handRV || (PACK.handRV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3] < -.39)), at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld);
   // the thumb's points (skinned more than half to its own bones) are left out: it is posed after, round the shaft
@@ -5185,5 +5186,5 @@ function castGenome(name, o = {}) {
   G.height = heightFor(G, C.metres); G.cast = name; return G;
 }
 
-return {loadPack,lozHemY,neckBandY,scarLine,seeded,browShape,astrolabeParts,swordParts,makePerson,makePersonIter,markGenome,toSaved,fromSaved,statureOf,heightFor,peopleGenome,rollGenome,castGenome,HAIR_STYLES,slvX,SWORDS,MANTLE_CUT,BODY_SLIDERS,GARMENTS,DRESS_FLAGS,PEOPLES,CAST,MH_PACK_SHA256,get PACK(){return PACK;}};
+return {loadPack,lozHemY,neckBandY,scarLine,seeded,browShape,astrolabeParts,swordParts,makePerson,makePersonIter,markGenome,toSaved,fromSaved,statureOf,heightFor,peopleGenome,rollGenome,castGenome,HAIR_STYLES,slvX,SWORDS,SPEAR_HEADS,MANTLE_CUT,BODY_SLIDERS,GARMENTS,DRESS_FLAGS,PEOPLES,CAST,MH_PACK_SHA256,get PACK(){return PACK;}};
 })();

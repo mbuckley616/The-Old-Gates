@@ -48,6 +48,16 @@ const MK = makes.o;
 check('each island\'s sword is the builder\'s own blade by the item\'s make, 0.75–1.05 m long, the blade in the item\'s metal; an item with no make keeps the old sword',
   Object.entries(MK).every(([mk, r]) => r.kit === 'sword:' + mk && r.h > .75 && r.h < 1.05 && r.tint > 50 && r.tris > 100) && new Set(Object.values(MK).map(r => r.tris)).size >= 5 && makes.plain === 'sword', makes);
 check('in the hand it is carried at its true size (world scale 1)', makes.held && makes.held.kit === 'sword:norse' && Math.abs(makes.held.scale - 1) < .02, makes.held);
+// S2182 — a spear by its island (S2180's it.spearHead): the kit's head, the spear as long; a leaf or no head keeps the old spear
+const heads = await page.evaluate(() => { const o = {};
+  for (const hd of ['leaf', 'winged', 'long', null]) { const w = tpWeapon({ name: 'Spear', weaponShape: 'spear', ...(hd ? { spearHead: hd, make: 'x' } : {}) }), bb = new THREE.Box3().setFromObject(w);
+    let tris = 0, top = -9; w.traverse(x => { if (!x.isMesh) return; tris += x.geometry.index ? x.geometry.index.count / 3 : 0; });
+    o[hd || 'none'] = { kit: w.userData.kit, len: +(bb.max.y - bb.min.y).toFixed(3), wide: +(bb.max.x - bb.min.x).toFixed(3), tris }; }
+  return o; });
+console.log('spear heads', JSON.stringify(heads));
+check(`each island's spear is the kit's head (the winged ${heads.winged.tris}, the long ${heads.long.tris} tris), 2.2 m as before; a leaf or no head keeps the old spear`,
+  heads.leaf.kit === 'spear' && heads.none.kit === 'spear' && heads.winged.kit === 'spear:winged' && heads.long.kit === 'spear:long' &&
+  ['winged', 'long'].every(k => Math.abs(heads[k].len - heads.none.len) < .02 && heads[k].tris > heads.none.tris) && heads.winged.wide > heads.long.wide + .02, heads);
 
 // the photograph: the kit tinted as the items tint it, in a row, and the player with sword and shield from behind
 const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElement, sc = scene; const bx = px + 300, bz = pz, y = 60; const objs = [];
