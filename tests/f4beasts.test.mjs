@@ -201,6 +201,26 @@ const oxWalk = await page.evaluate(() => { const { hg, rg } = _OX[1], H = rg.hc,
 check(`the yoked ox walked 1.1 m/s: its bones move (by ${oxWalk.moved}) and its lowest hoof stays by the ground (${oxWalk.low} m)`, oxWalk.moved > .01 && oxWalk.stand < .2 && Math.abs(oxWalk.low) < .06, oxWalk);
 await page.evaluate(() => { for (const { hg } of _OX) hg.parent.remove(hg); [px, pz] = _OXP; tickCreatures(1 / 60, 1.2e6); });
 
+// Session 2173 (L3, OG-046; owed from S2148): the ox by island. buildAnimal('Ox' | 'Yoked Ox', key, island) wears the kit's island coat: the
+// Mark's black, Aurenne's pale grey; with no island the kit's own brown. One key, so the same beast in three coats on the same bones
+const oxIsle = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), sx = -fz, sz = fx;
+  window._OXI = [['Ox', null], ['Ox', 'mark'], ['Ox', 'aurenne'], ['Yoked Ox', 'mark'], ['Yoked Ox', 'aurenne']].map(([n, isle], j) => { const hg = new THREE.Group(), rg = buildAnimal(n, 'f4oxisle:0', isle); hg.add(rg.root);
+    const x = px + fx * 10 + sx * (j - 1) * 3.4, z = pz + fz * 10 + sz * (j - 1) * 3.4; hg.position.set(x, WORLD.worldH(x, z), z); hg.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(hg); return { n, isle, hg, rg }; });
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  let k = 0; HBODY.last = -1e9; while (_OXI.some(h => !h.rg.hc && !h.rg.hcFail) && k++ < 400) tickCreatures(1 / 60, 1.25e6 + k * (HBODY.gap + 1));
+  const lum = H => { const c = H.C.meshes[0].geometry.attributes.color; let s = 0; for (let v = 0; v < c.count; v++) s += (c.getX(v) + c.getY(v) + c.getZ(v)) / 3; return +(s / c.count).toFixed(3); };
+  return _OXI.map(({ n, isle, rg }) => { const H = rg.hc; return H ? { n, isle, hc: true, island: H.C.g.island || null, plan: H.C.g.plan, seed: H.C.g.seed, tris: H.C.stats.tris, bones: H.C.skel.bones.length, L: lum(H) } : { n, isle, hc: false }; }); });
+console.log('  oxen by island:', JSON.stringify(oxIsle));
+{ const [o0, om, oa, ym, ya] = oxIsle;
+  check(`the ox by island on one key: the kit's brown (${o0.L}), the Mark's black (${om.L}, yoked ${ym.L}), Aurenne's pale grey (${oa.L}, yoked ${ya.L}), the same ${o0.tris} triangles and ${o0.bones} bones`,
+    oxIsle.every(o => o.hc && o.island === o.isle && o.seed === o0.seed) && [om, oa].every(o => o.tris === o0.tris && o.bones === o0.bones)
+    && om.L < o0.L - .03 && ym.L < o0.L - .03 && oa.L > o0.L + .2 && ya.L > o0.L + .2, oxIsle); }
+{ const url = await page.evaluate(() => { const a = _OXI[0].hg.position, b = _OXI[2].hg.position, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+    const P = [px, pz]; px = mx - fx * 7; pz = mz - fz * 7; CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.lookAt(mx, worldH(mx, mz) + .9, mz); CAM.updateMatrixWorld(true); const hid = _W.map(w => [w.e.mesh, w.e.mesh.visible]); for (const [m] of hid) m.visible = false; _OXI[3].hg.visible = _OXI[4].hg.visible = false;
+    REN.render(scene, CAM); const u = REN.domElement.toDataURL('image/jpeg', .85); for (const [m, v] of hid) m.visible = v; [px, pz] = P; return u; });
+  fs.writeFileSync(path.join(OUT, 'f4-oxen-isles.jpg'), Buffer.from(url.split(',')[1], 'base64')); }
+await page.evaluate(() => { for (const { hg } of _OXI) hg.parent.remove(hg); tickCreatures(1 / 60, 1.26e6); });
+
 // Session 2154 (L3, OG-046): buildAnimal('Donkey' | 'Pack Mule', key) builds the kit's donkey (the horse at .72) and its pack mule (the mule
 // under two packs) on the horse's legs, keyed burden:<key> as the ox; each on its hooves, the donkey the smaller, the packs rigid pieces on
 // the spine; walked, the pack mule's bones move and its hooves keep the ground

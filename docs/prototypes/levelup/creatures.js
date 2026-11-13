@@ -1585,7 +1585,10 @@ export const COATS = {
     hen: { coat: [.5, .48, .46], saddle: [.24, .23, .22], belly: [.62, .6, .58] },
     // Session 1825 (#1046 B: the Mark's teams): the fjord horse, a pale brown dun with a darker back and a cream mane. Any plan that says
     // `coatAs: 'horse'` takes it (the horse, the draught horse, the wagons' harnessed horse), so the Mark's horses are one breed
-    horse: { coat: [.7, .58, .4], saddle: [.5, .4, .27], belly: [.8, .72, .56], mane: [.86, .82, .72] } },
+    horse: { coat: [.7, .58, .4], saddle: [.5, .4, .27], belly: [.8, .72, .56], mane: [.86, .82, .72] },
+    // Session 2173 (L3, OG-046; owed from S2148): the ox is the island's cattle, steered and grown to the yoke, so it wears the hill cow's
+    // black, a shade lifted so its shape still reads (OG-058's dark Mark beasts); any plan that says `coatAs: 'ox'` takes it (the yoked ox)
+    ox: { coat: [.14, .11, .1], saddle: [.09, .07, .06], belly: [.2, .16, .14] } },
   aurenne: {
     wolf: { coat: [.64, .56, .46], saddle: [.42, .34, .26], belly: [.9, .86, .78] },
     redfox: { coat: [.84, .62, .38], saddle: [.68, .48, .28], belly: [.97, .94, .88] },
@@ -1600,7 +1603,10 @@ export const COATS = {
     cow: { coat: [.84, .76, .62], saddle: [.74, .64, .5], pale: [.88, .82, .7], belly: [.92, .88, .8] },
     sheep: { coat: [.82, .68, .5], saddle: [.74, .6, .42], belly: [.76, .62, .46] },
     goat: { coat: [.16, .13, .12], saddle: [.09, .08, .07], belly: [.24, .2, .18] },
-    hen: { coat: [.86, .66, .36], saddle: [.7, .5, .24], belly: [.9, .74, .46] } } };
+    hen: { coat: [.86, .66, .36], saddle: [.7, .5, .24], belly: [.9, .74, .46] },
+    // Session 2173: the south's draught ox, a pale grey-white (the warm lands' working cattle), darker on the shoulders and neck than the
+    // cream cow, its long horns as the plan's
+    ox: { coat: [.78, .76, .7], saddle: [.56, .54, .5], belly: [.88, .86, .8] } } };
 // ── Session 844: livestock (backlog L3; OG-023 and OG-035, the farms): the cow, the sheep, the goat and the hen ──
 Object.assign(PLANS, {
   cow: { name: 'Cow', src: 'OG-035, OG-023 (livestock on the farms)', gaits: ['walk', 'trot', 'stand'], speedK: .75, wag: .1, fold: .5, rough: .6, pattern: { kind: 'patches', size: .32, cut: .12, tone: 'pale' },
@@ -1979,7 +1985,7 @@ Object.assign(PLANS, {
       ['legs', { at: 1, kind: 'ungulFore', out: .15, drop: .16, r: [.17, .095, .056, .068] }],
       ['legs', { at: 0, kind: 'ungulHind', out: .15, drop: .1, r: [.22, .11, .058, .068] }]
     ] },
-  ox: re(PLANS.cow, { name: 'Ox', src: 'OG-046 (beasts of burden: the ox)', scale: 1.15, pattern: null, speedK: .7,
+  ox: re(PLANS.cow, { name: 'Ox', src: 'OG-046 (beasts of burden: the ox)', coatAs: 'ox', scale: 1.15, pattern: null, speedK: .7,
     palette: { coat: [.32, .21, .14], saddle: [.22, .14, .09], belly: [.56, .46, .36], dark: [.06, .04, .04], hoof: [.1, .08, .07], horn: [.84, .78, .64], skin: [.5, .36, .3] },
     parts: PLANS.cow.parts.map(([k, o]) => k === 'head' ? [k, { ...o, horns: { ...o.horns, len: .42, r: .04, spread: 1 } }] : [k, o]) }),
   yak: re(PLANS.cow, { name: 'Highland yak', src: 'OG-046 (beasts of burden: the highland yak)', scale: 1.05, pattern: null, speedK: .7,
@@ -2106,7 +2112,7 @@ const GEAR = { blanket: [.46, .36, .22], pack: [.5, .42, .3], leather: [.3, .19,
 Object.assign(PLANS, {
   packmule: re(PLANS.mule, { name: 'Pack mule', src: 'OG-046 (beasts of burden: the mule with its packs)', scale: PLANS.mule.scale, palette: { ...PLANS.mule.palette, ...GEAR }, parts: [...PLANS.mule.parts, ['packs', { at: .55, len: .55 }]] }),
   draughthorse: re(PLANS.horse, { name: 'Draught horse', src: 'OG-046 (beasts of burden: the horse in harness)', coatAs: 'horse', scale: 1.1, palette: { ...PLANS.horse.palette, ...GEAR }, parts: [...PLANS.horse.parts, ['harness', { kind: 'collar', at: .28, fit: 1.4 }]] }),
-  yokedox: re(PLANS.ox, { name: 'Yoked ox', src: 'OG-046 (beasts of burden: the ox under its yoke)', scale: PLANS.ox.scale, speedK: PLANS.ox.speedK, palette: { ...PLANS.ox.palette, ...GEAR }, parts: [...PLANS.ox.parts, ['harness', { kind: 'yoke', at: .7, over: .5, fit: 1.05 }]] })
+  yokedox: re(PLANS.ox, { name: 'Yoked ox', src: 'OG-046 (beasts of burden: the ox under its yoke)', coatAs: 'ox', scale: PLANS.ox.scale, speedK: PLANS.ox.speedK, palette: { ...PLANS.ox.palette, ...GEAR }, parts: [...PLANS.ox.parts, ['harness', { kind: 'yoke', at: .7, over: .5, fit: 1.05 }]] })
 });
 export const HARNESSED = ['packmule', 'draughthorse', 'yokedox'];
 
