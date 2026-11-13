@@ -10413,7 +10413,9 @@ function aurenneOrrery(hAt, o = {}) {
     const F = stream(String(key || 'cove') + ':lie'), ph = Array.from({ length: 8 }, () => F() * 6.283), sm = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
     const REACH = Math.max(30, Math.min(90, reach)), CW = 2.2, HEAD = -9, BZ = 6, W = z => 7 + 9 * sm((z + 5) / (REACH + 5));
     /* how far into the land a point is from the inlet's side or head (negative inside it), wandering as the page's */
-    const D = (x, z) => Math.min(Math.abs(x) - W(z), HEAD - z) + .35 * Math.sin(z * .9 + ph[2]) + .2 * Math.sin(z * 2.3 + x * .4 + ph[3]);
+    /* S2190 — the larger of the two, as the page's (it read the smaller, so every point past the head counted as inside: the whole 80 m
+       patch was cut to the inlet's bed, the stair stood alone in a square pit of sea, and the scatter's rocks hung over it; the critic, 12 Nov) */
+    const D = (x, z) => Math.max(Math.abs(x) - W(z), HEAD - z) + .35 * Math.sin(z * .9 + ph[2]) + .2 * Math.sin(z * 2.3 + x * .4 + ph[3]);
     const bed = (x, z) => { z = Math.max(z, HEAD); const bz = z < BZ ? .15 + (BZ - z) * .08 : Math.max(-6, .15 - (z - BZ) * .35); return bz - (z > BZ ? .6 * Math.max(0, 1 - (x / W(z)) ** 2) * sm((z - BZ) / 4) : 0); };
     /* the ground cut from the land: the inlet's floor, rising to the land over the cliff's 2.2 m; never above the land */
     const carve = (x, z) => { const L = land(x, z), d = D(x, z); if (d >= CW + .5) return L; const b = bed(x, z); if (d <= 0) return Math.min(L, b); const t = sm(d / CW); return Math.min(L, b * (1 - t) + L * t); };
@@ -10436,7 +10438,7 @@ function aurenneOrrery(hAt, o = {}) {
     const A = aqueductMats(), std = (c, ro = .9, x = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: ro, ...x });
     const M = { plaster: A.plaster, cope: A.cope, ashlar: mat('ashlar', { ns: .9, color: 0xe8dcc4, rough: .9 }), dark: std(0x0b0907, 1), door: std(0x2f6aa0, .7), iron: std(0x2a2826, .5, { metalness: .6 }),
       hull: Object.assign(mat('wood', { ns: .8, color: 0x7aa4b8, rough: .85 }), { side: THREE.DoubleSide }), wood: mat('wood', { ns: .9, color: 0x8a6c4c, rough: .9 }), bale: mat('plaster', { ns: .9, color: 0xb8a078, rough: 1 }),
-      clay: std(0xb0603c, .85), crag: Object.assign(mat('limestone', { ns: 1.3, color: 0xd8ccb2, rough: 1 }), { side: THREE.DoubleSide }), lamp: std(0x3a3020, .4, { emissive: 0xffc070, emissiveIntensity: o.lit ? 5 : 0 }) };
+      clay: std(0xb0603c, .85), crag: Object.assign(mat('rock', { ns: 1.1, color: 0xe2d6bc, rough: 1 }), { side: THREE.DoubleSide }) /* S2190 — the kit's rock, not the limestone's coursed blocks, which read as the stair's masonry (the critic, 12 Nov) */, lamp: std(0x3a3020, .4, { emissive: 0xffc070, emissiveIntensity: o.lit ? 5 : 0 }) };
     const B = new Map(), land = o.land || (() => 8), S = coveShape(o.key, land, o.reach), { W, CW, carve, steps, houses } = S, F = stream(String(o.key || 'cove') + ':goods'), V3 = (x, y, z) => new THREE.Vector3(x, y, z);
     const put = (geo, k, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .5) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
       if (!g.attributes.normal) g.computeVertexNormals(); g.applyMatrix4(new THREE.Matrix4().compose(V3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), V3(1, 1, 1))); worldUV(g, uv);
