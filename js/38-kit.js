@@ -4740,6 +4740,8 @@ function wgMats() {
   WGM = { knot, by: new Map() }; return WGM;
 }
 function wgMat(kind, c) {
+  /* one leather and one iron for every strap and fitting (the prototype's near-alike shades each cost a draw) */
+  if (kind === 'leather') c = [.12, .08, .05]; else if (kind === 'iron') c = [.12, .12, .13];
   const W = wgMats(), col = new THREE.Color(c[0], c[1], c[2]), k = kind + ':' + col.getHexString(); if (W.by.has(k)) return W.by.get(k);
   const ns = v => new THREE.Vector2(v, v); let m;
   if (kind === 'paint') { m = mat('wood', { color: col, ns: .45, rough: .55 }); m.map = null; }
@@ -4779,7 +4781,7 @@ function wgSpoked(K, { r, x, y = r, z, n = 12, w = .075, hubR = .11, hubL = .3, 
   for (const s of [-.4, .4]) { const b = new THREE.TorusGeometry(hubR * (.86 - s * .14), .012, 5, 16); b.applyMatrix4(rot); b.translate(x + s * hubL * Math.sign(x || 1), y, z); K.put(iron, b); }
   return { x, y, z, r };
 }
-function wgCrate(K, x, y, z, w, h, d, r) { K.box(wgMat('wood', [.58 + r() * .1, .46, .32]), w, h, d, x, y + h / 2, z); for (const s of [-1, 1]) K.box(wgMat('wood', [.38, .28, .18]), w + .01, .05, d + .01, x, y + h / 2 + s * h * .36, z); }
+function wgCrate(K, x, y, z, w, h, d, r) { K.box(wgMat('wood', [.62, .46, .32]), w, h, d, x, y + h / 2, z); for (const s of [-1, 1]) K.box(wgMat('wood', [.38, .28, .18]), w + .01, .05, d + .01, x, y + h / 2 + s * h * .36, z); }
 function wgBale(K, x, y, z, w, h, d, col) { K.box(wgMat('sack', col), w, h, d, x, y + h / 2, z); for (const s of [-.3, .3]) K.box(wgMat('leather', [.3, .22, .14]), w + .02, h + .02, .03, x, y + h / 2, z + s * d); }
 // the pole and its gear for a team of two the game walks itself: wagons.js's onPole with the beasts' measured hides replaced by the team's
 // stand (rumps at zr, the pair at ±sx, collars ~1.3 m up and 1.05 m ahead of the rumps), so the pole, the neck bar, the swingle bars and
@@ -4831,9 +4833,9 @@ const WG_COACH = {
     for (const s of [-1, 1]) { const g = new THREE.BoxGeometry(.05, .55, l + .2).toNonIndexed(); worldUV(g, 1); const uv = g.attributes.uv, p = g.attributes.position; for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getZ(i) / (l + .2) + .5) * 2, p.getY(i) / .55 + .5);
       g.rotateZ(s * -.32); g.translate(s * (w / 2 - .06), fy + .28, zb); K.put(carved, g); K.box(ochre, .07, .06, l + .26, s * (w / 2 + .03), fy + .55, zb); }
     for (const e of [-1, 1]) { const sh = new THREE.Shape(); sh.moveTo(-(w - .3) / 2, 0); sh.lineTo((w - .3) / 2, 0); sh.lineTo(w / 2 + .03, .55); sh.lineTo(-w / 2 - .03, .55); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: .05, bevelEnabled: false }).toNonIndexed(); g.translate(0, fy, zb + e * (l / 2 + .1) - .025); K.put(oak, worldUV(g, 1)); }
-    for (let k = 0; k < 2; k++) wgBale(K, (k - .5) * .45, fy + .03, zb - .4 + k * .25, .4, .32, .55, [.4, .3, .2]);
-    { const g = new THREE.SphereGeometry(.4, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1.1, .5, 1.3); g.translate(0, fy + .03, zb + .55); K.put(wgMat('sack', [.5, .4, .3]), g); }
-    const front = wgPole(K, { zF: 2.35, y0: .55, paint: [.36, .26, .17], seat: V(0, fy + .55, zb + .9) });
+    for (let k = 0; k < 2; k++) wgBale(K, (k - .5) * .45, fy + .03, zb - .4 + k * .25, .4, .32, .55, [.45, .35, .25]);
+    { const g = new THREE.SphereGeometry(.4, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1.1, .5, 1.3); g.translate(0, fy + .03, zb + .55); K.put(wgMat('sack', [.45, .35, .25]), g); }
+    const front = wgPole(K, { zF: 2.35, y0: .55, paint: [.3, .22, .15], seat: V(0, fy + .55, zb + .9) });
     return { wheels, front, ride: { z: zb - .8, y: fy + .03 }, deck: { z0: zb - l / 2, z1: zb + l / 2, hw: (w - .3) / 2 }, name: 'the carved wagon' };
   },
   // the covered carriage, after the carpentum: two wheels of 1.4 m, a white body of 2.0 by 1.3 m with blue panels, an arched blue hood with
