@@ -1051,5 +1051,67 @@
   ],
   "people": 2,
   "errs": []
+ },
+ "farmstead-cart": {
+  "secs": 3,
+  "puffs": 1131,
+  "farms": [
+   {
+    "kind": "yard",
+    "tris": 9203,
+    "calls": 20,
+    "size": {
+     "w": 23.8,
+     "d": 21.97,
+     "eave": 5.6,
+     "ridge": 8.2
+    }
+   }
+  ],
+  "plans": {
+   "Farmstead round a yard": {
+    "tris": 9203,
+    "calls": 20,
+    "w": 23.8,
+    "d": 21.97,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "farmstead",
+  "mix": "a",
+  "errs": []
+ },
+ "farmstead-cart-range": {
+  "secs": 3,
+  "puffs": 1131,
+  "farms": [
+   {
+    "kind": "range",
+    "tris": 9159,
+    "calls": 20,
+    "size": {
+     "w": 24,
+     "d": 22.77,
+     "eave": 5.6,
+     "ridge": 8.2
+    }
+   }
+  ],
+  "plans": {
+   "Farmstead, house and range": {
+    "tris": 9159,
+    "calls": 20,
+    "w": 24,
+    "d": 22.77,
+    "eave": 5.6,
+    "ridge": 8.2
+   }
+  },
+  "view": "farmstead",
+  "mix": "a",
+  "errs": [
+   "SyntaxError: Failed to execute 'json' on 'Response': Unexpected end of JSON input\n    at http://localhost:35705/people.js:27:78\n    at async Promise.all (index 0)\n    at async loadPack (http://localhost:35705/people.js:27:21)"
+  ]
  }
 }
