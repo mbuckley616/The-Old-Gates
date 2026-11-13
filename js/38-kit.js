@@ -4834,7 +4834,7 @@ const WG_COACH = {
     for (let k = 0; k < 2; k++) wgBale(K, (k - .5) * .45, fy + .03, zb - .4 + k * .25, .4, .32, .55, [.4, .3, .2]);
     { const g = new THREE.SphereGeometry(.4, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2); g.scale(1.1, .5, 1.3); g.translate(0, fy + .03, zb + .55); K.put(wgMat('sack', [.5, .4, .3]), g); }
     const front = wgPole(K, { zF: 2.35, y0: .55, paint: [.36, .26, .17], seat: V(0, fy + .55, zb + .9) });
-    return { wheels, front, ride: { z: zb + .1, y: fy + .03 }, deck: { z0: zb - l / 2, z1: zb + l / 2, hw: (w - .3) / 2 }, name: 'the carved wagon' };
+    return { wheels, front, ride: { z: zb - .8, y: fy + .03 }, deck: { z0: zb - l / 2, z1: zb + l / 2, hw: (w - .3) / 2 }, name: 'the carved wagon' };
   },
   // the covered carriage, after the carpentum: two wheels of 1.4 m, a white body of 2.0 by 1.3 m with blue panels, an arched blue hood with
   // a gilt fringe, its back open

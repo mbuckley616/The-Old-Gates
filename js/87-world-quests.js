@@ -3558,11 +3558,16 @@ const giver=`${lord.title} ${lord.name}`;
     const house=coachInnHouse(key,rt,rd,ix,iz,L);if(!ZONES.world.houses.includes(house))ZONES.world.houses.push(house); // S237 — you can go in
     const l=regLight(0xffb050,1.4,14,'coach:'+key);l.position.set(mid.x+Math.cos(mid.ang)*(ROAD_HALF+2),iy+3,mid.z-Math.sin(mid.ang)*(ROAD_HALF+2));
     // the coach
-    const cart=new THREE.Mesh(coachGeo(),VC_MAT);cart.castShadow=true;sc.add(cart); // S261 — the coach on the kit
     const isle=nationAt(mid.x,mid.z);const horse=i=>{const hg=new THREE.Group();const rg=buildCoachBeast(key,i,isle);hg.add(rg.root);return hg;}; /* S262 — the horses on the wolf's bones and gait (tickCreatures walks them by the ground they cover); S1825 — the team by the road's island */
     const h1=horse(0),h2=horse(1);sc.add(h1);sc.add(h2);
+    let cart,ride={z:-.3,y:1.9}; /* S2180 — where a rider stands, in the cart's frame: the old coach's roof */
+    if(window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.props&&PKIT.props.coach){ /* S2180 — the island's own vehicle (#1046 B): the Crown's coach, the Mark's carved wagon, Aurenne's carriage; its pole's end set at the team's rumps, measured from the first beast as built (3.2 ahead, as tickCoaches walks it) */
+      const V=PKIT.props.coach({island:isle,key});let rump=-1;try{h1.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(h1);if(isFinite(b.min.z))rump=b.min.z;}catch(e){}
+      cart=new THREE.Group();V.group.position.z=3.2+rump-V.front;cart.add(V.group);cart.userData.coach=V;ride={z:V.ride.z+V.group.position.z,y:V.ride.y};cart.traverse(o=>{if(o.isMesh)o.castShadow=true;});}
+    else{cart=new THREE.Mesh(coachGeo(),VC_MAT);cart.castShadow=true;} // S261 — the coach on the kit
+    sc.add(cart);
     const plat={x0:0,x1:0,z0:0,z1:0,y:0,coach:key};ZONES.world.platforms.push(plat);
-    sc.add(g);const C={road:rd,rt,group:g,cart,horses:[h1,h2],plat,u:0,dir:1,state:'wait',len:L,riding:false,smokeS};COACHES.set(key,C);return C;
+    sc.add(g);const C={road:rd,rt,group:g,cart,horses:[h1,h2],plat,ride,u:0,dir:1,state:'wait',len:L,riding:false,smokeS};COACHES.set(key,C);return C;
   }
   function removeCoachLine(key){const C=COACHES.get(key);if(!C)return;{const hs=ZONES.world.houses,i=hs.findIndex(h=>h.coachInn===key);if(i>=0&&!(typeof currentHouse!=='undefined'&&currentHouse===hs[i]))hs.splice(i,1);}sc.remove(C.group);if(C.smokeS&&C.smokeS.smoke)C.smokeS.smoke.geometry.dispose();sc.remove(C.cart);C.horses.forEach(h=>sc.remove(h));const i=ZONES.world.platforms.indexOf(C.plat);if(i>=0)ZONES.world.platforms.splice(i,1);unregLights('coach:'+key);COACHES.delete(key);}
   const COACH_SPEED=13;
@@ -3589,8 +3594,9 @@ const giver=`${lord.title} ${lord.name}`;
       const p=roadPoint(rd,C.u);const fwd=C.dir;const ang=p.ang+(fwd<0?Math.PI:0);const y=worldH(p.x,p.z);
       C.cart.position.set(p.x,y,p.z);C.cart.rotation.y=ang;
       C.horses.forEach((hm,k)=>{const ox=(k?-.45:.45);hm.position.set(p.x+Math.sin(ang)*3.2+Math.cos(ang)*ox,worldH(p.x,p.z),p.z+Math.cos(ang)*3.2-Math.sin(ang)*ox);hm.rotation.y=ang;});
-      C.plat.x0=p.x-1.2;C.plat.x1=p.x+1.2;C.plat.z0=p.z-1.7;C.plat.z1=p.z+1.7;C.plat.y=y+1.9;
-      if(C.riding){px=p.x-Math.sin(ang)*.3;pz=p.z-Math.cos(ang)*.3;jumpY=y+1.9;}
+      const rd2=C.ride||{z:-.3,y:1.9},rx=p.x+Math.sin(ang)*(rd2.z+.3),rz=p.z+Math.cos(ang)*(rd2.z+.3); /* S2180 — the platform and the rider at the vehicle's own standing place (the old coach's: .3 behind the middle, 1.9 up) */
+      C.plat.x0=rx-1.2;C.plat.x1=rx+1.2;C.plat.z0=rz-1.7;C.plat.z1=rz+1.7;C.plat.y=y+rd2.y;
+      if(C.riding){px=p.x+Math.sin(ang)*rd2.z;pz=p.z+Math.cos(ang)*rd2.z;jumpY=y+rd2.y;}
     }
   }
   function coachNear(){for(const C of COACHES.values()){const d=Math.hypot(px-C.cart.position.x,pz-C.cart.position.z);if(d<3.2)return C;}return null;}
