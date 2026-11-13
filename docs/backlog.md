@@ -235,8 +235,11 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   `metal` into `matte` when `rust` is set. `wpnSword` (S2118) pushes its parts into `L` itself, as `'metal'` (and since S2189 `wpnFitMat`'s
   `fit:*` metals), so the rust only lerps the colour and the blade keeps steel's sheen. The goblins' knife and every other kind are still
   rusted. Red since S2129 put the foes' swords on their make; no pull request ran `weapons` since then (it is not in the smoke set), so
-  Sunday's weekly run would have been the first to show it. The suite's other two reds that day were the suite's own (it counted `sword`,
-  not `sword:<make>`), fixed in Session 2193; this check is unchanged.
+  Sunday's weekly run would have been the first to show it. The suite's other two reds (*bandits carry swords…*, *…the captain a sword*) are
+  the suite's own: it tallies `w.userData.wpn` whole, so `sword:norse` is not a `sword`. QA's fix is one line of the tally, `const kw = w ?
+  w.userData.wpn : '-', k = kw.split(':')[0];`, with the make counted beside it; with it, the skeleton's rust is the suite's only red. It is
+  left out of QA's PR so that PR lands green; whichever lands the rust fix takes the line with it (the bodies builder's PR editing `weapons`
+  runs it), or QA's next run lands it after. This check is unchanged.
 - ~~**`budget` red: Dunmore's street at noon is over Middle's 2.0 M triangles whenever a townsperson is inside 16 m** (QA, Session 2179, s1536;
   for the bodies builder: `HBODY.near`, `hbLevel`, the full level, `js/32-people.js`). Two runs of `budget` at s1536, both red at *at Middle,
   every view under 2 M triangles*: 2,102,603 and 2,106,281. The street from 4 m south of Dunmore's centre, looking north, reads Bodies 107–108
