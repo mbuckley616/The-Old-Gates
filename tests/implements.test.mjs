@@ -125,7 +125,7 @@ const X = await page.evaluate(() => {
   formsGranted.push('touched'); const mt = bookMake('touched', 'caor'); bookSelect(mt.i);
   out.kTouch = keepNow() && ORB_KEPT.form === 'touched'; out.touchPaid = 100 - mana;
   out.touchPend = !!TOUCH_PEND; castT = 0; _castFreeAt = 0; _castReleaseAt = 0; ORB_KEPT.ready = 0;
-  const t0 = performance.now() / 1000; mana = 100; castSpell(); out.touchRel = { kept: !!ORB_KEPT, pend: !!TOUCH_PEND, at: TOUCH_PEND ? +(TOUCH_PEND.at - t0).toFixed(2) : null, paid: 100 - mana };
+  const t0 = performance.now() / 1000; mana = 100; castSpell(); out.touchRel = { kept: !!ORB_KEPT, pend: !!TOUCH_PEND, at: TOUCH_PEND ? +(TOUCH_PEND.at - t0).toFixed(3) : null, paid: 100 - mana, tell: +touchTell().toFixed(3) };
   TOUCH_PEND = null; out.kSleep = keepNow(); showMsg = sm; return out; });
 await page.evaluate(() => restAtBed(1));
 const slept = await page.waitForFunction(() => ORB_KEPT === null, null, { timeout: 8000, polling: 100 }).then(() => true).catch(() => false);
@@ -138,7 +138,7 @@ check(`the next F lets it go at once: no mana (${R.paid}), wind-up ${R.tell} s, 
 check(`guard down, the orb keeps nothing: F casts as ever (wind-up ${R2.free.tell} s, paid ${R2.free.paid})`, !R2.free.kept && R2.free.tell === .35 && R2.free.paid === O.cost, R2.free);
 check('the charge holds 59.5 s of play and is gone past 60 s', X.k59 && X.at59 && !X.at61, X);
 check('a change of place or the orb leaving the hand loses it', X.kPlace && !X.place && X.kHand && !X.hand, X);
-check(`a Touched entry is kept at its cost (${X.touchPaid}) and lands at once on release (${JSON.stringify(X.touchRel)})`, X.kTouch && X.touchPaid > 0 && !X.touchPend && !X.touchRel.kept && X.touchRel.pend && X.touchRel.at === 0 && X.touchRel.paid === 0, X);
+check(`a Touched entry is kept at its cost (${X.touchPaid}) and lands at once on release (${JSON.stringify(X.touchRel)})`, X.kTouch && X.touchPaid > 0 && !X.touchPend && !X.touchRel.kept && X.touchRel.pend && X.touchRel.at < Math.min(.1, X.touchRel.tell / 2) /* S2193: the cast's own run under load, not a tell (0.01 s with three boots; a tell is 0.25 s) */ && X.touchRel.paid === 0, X);
 check('sleep empties the orb', X.kSleep && slept, { kSleep: X.kSleep, slept });
 // the sheet's third session (Session 1858): the Mages' Guild's stock and one gate in three's orb
 await g.intoWorld();
