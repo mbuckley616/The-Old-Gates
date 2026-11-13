@@ -50,8 +50,9 @@ function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   let kind={scimitar:'cutlass',flail:'flail',greatclub:'greatclub',greataxe:'greataxe',claymore:'claymore'}[sh]||(WPN_KINDS.includes(sh)?sh:'sword');
   if((kind==='sword'||kind==='cutlass')&&it.swordMake&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&HB.SWORDS&&HB.SWORDS[it.swordMake])kind='sword:'+it.swordMake; /* S2118 — the make's own blade (#1425 B) */
   if(kind==='spear'&&it.spearHead&&it.spearHead!=='leaf'&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&HB.SPEAR_HEADS&&HB.SPEAR_HEADS[it.spearHead])kind='spear:'+it.spearHead; /* S2182 — its island's head (S2180) */
-  const w=buildWeapon(kind==='crossbow'?'crossbowbare':kind==='bow'&&BOW_LEN[it.bowKind]?it.bowKind:kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
-  if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;g.userData.bowLen=bowLenOf(it);} /* S1550 — a longbow or a war bow is the kit's own, longer */if(kind==='crossbow'){w.rotation.x=Math.PI;g.userData.xbow=xbowRig(w);}g.userData.kit=kind; /* S1476 — its string and bolt drawn by the span */
+  if(kind==='crossbow'&&it.crossbowMake&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&HB.CROSSBOWS&&HB.CROSSBOWS[it.crossbowMake])kind='crossbow:'+it.crossbowMake; /* S2185 — its island's make (S2180) */
+  const xb=/^crossbow(:|$)/.test(kind),w=buildWeapon(xb?kind.replace('crossbow','crossbowbare'):kind==='bow'&&BOW_LEN[it.bowKind]?it.bowKind:kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
+  if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;g.userData.bowLen=bowLenOf(it);} /* S1550 — a longbow or a war bow is the kit's own, longer */if(xb){w.rotation.x=Math.PI;g.userData.xbow=xbowRig(w,it.crossbowMake&&kind!=='crossbow'?it.crossbowMake:null);}g.userData.kit=kind; /* S1476 — its string and bolt drawn by the span */
   return g;}
 const TP_LINEN=0xa89c80;
 const TP_BOW_TIP=.5; /* S1550 — a long bow carried at rest, tipped forward: the war bow (1.7) .35 rad */
@@ -321,7 +322,7 @@ function tpCamera(dt,camY){
 const TP_SWING_NEW=true;
 // S1476 — the crossbow's string and bolt by the span (xbowSpanPose, 16-viewmodel.js), on the driver's piece and the builder's copy of it
 function tpXbowSpan(R){const S=xbowSpanPose();xbowRigSet(R.weapon.userData.xbow,S.f,S.bolt);
-  if(R.hbHeld)for(const h of R.hbHeld)if(h.o===R.weapon)xbowRigSet(h.c,S.f,S.bolt);}
+  if(R.hbHeld)for(const h of R.hbHeld)if(h.o===R.weapon)xbowRigSet(h.c,S.f,S.bolt,R.weapon.userData.xbow.userData.xbowK);}
 // S1504 — the body spans it (owed since S1476). Standing, the bow is set down nose first, its stirrup on the ground a short stride
 // ahead with the right foot in it and the tiller leaning back to the belt; the body bows over it, both hands take the string either
 // side of the tiller and haul it up the groove to the nut as the back comes up (xbowSpanPose's f), and over the span's last 0.4 s the

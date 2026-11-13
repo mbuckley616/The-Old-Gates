@@ -3221,6 +3221,7 @@ const CROSSBOWS = {
   wood: { span: .66, bend: .05, prod: [.6, .4, .2], metal: false, bind: [.3, .2, .13], binds: 3, nut: [.86, .82, .72], stirrup: [.42, .43, .45] },
   steel: { span: .6, bend: .035, prod: [.5, .51, .53], metal: true, bind: [.4, .41, .43], binds: 2, bindMetal: true, nut: [.5, .51, .53], stirrup: [.42, .43, .45] },
   horn: { span: .64, bend: .055, prod: [.36, .13, .08], metal: false, tips: [.82, .74, .58], bind: [.86, .68, .3], binds: 2, bindMetal: true, nut: [.62, .45, .22], stirrup: [.62, .45, .22] } };
+export { CROSSBOWS };
 // the tiller's section along its length: half its depth (a, out of the bolt's face), half its width (c), how square it is (e, 1 round),
 // and how far its middle drops toward the belly (o). Round in the fist; a squared fore-stock to the prod; the butt deepening and dropping
 const CB_FRONT = -.6, CB_BUTT = .31, CB_PROD = -.54;

@@ -799,7 +799,7 @@ const WPN_GEO=new Map();
 // brings most of them to their true length: a sword 0.89 m, a longsword 1.17, an axe 0.76. Three were drawn in true metres and came out
 // too big: the knife 0.49 m, the spear 2.97, the crossbow 1.40. These are carried at their own size, whatever the stature (wpnTrue)
 const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet','impl']);
-function wpnIsTrue(kind){return WPN_TRUE.has(kind)||/^(sword|spear):/.test(kind||'');} /* S2118 — a sword by its make is drawn in metres */
+function wpnIsTrue(kind){return WPN_TRUE.has(kind)||/^(sword|spear|crossbow):/.test(kind||'');} /* S2118 — a sword by its make is drawn in metres */
 function wpnTrue(kind,w,holder){if(wpnIsTrue(kind)&&holder&&holder.scale.x>0)w.scale.setScalar(1/holder.scale.x);return w;}
 // S1550 — the length of Bowyer's two bows to the plain bow's (#851 A: the longbow 1.5×, the war bow 1.7×), by the item's bowKind
 const BOW_LEN={longbow:1.5,warbow:1.7};
@@ -874,16 +874,25 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
     // the grip to the prod as a blade runs from the hilt; the tiller round in the fist, squared to the prod 0.54 ahead and deepening to
     // the butt 0.31 behind, the prod bowed back 5 cm at its tips over a 0.66 m span, the string braced across, the nut, the bolt's
     // groove along the top (+x), the trigger lever under the belly and the stirrup at the front. The prod is the item's metal
-    crossbow:bare=>{const R=.013,PY=.54,SP=.66,BD=.05,px=.03,yAt=z=>PY-BD*(2*z/SP)**2;
+    // S2185 — `crossbow:<make>`, the item's island make (S2180's it.crossbowMake) from the kit's own table (people.js CROSSBOWS): the
+    // Gatelands' yew prod lashed with cord on a bone nut, the Mark's short iron prod in an iron bridle (the item's metal), Aurenne's
+    // lacquered horn-and-sinew prod with horn tips, bound and ferruled in gold. Its span and bow set the string's tips (xbowRigK)
+    crossbow:(bare,mk)=>{const CB=mk&&typeof HB!=='undefined'&&HB.CROSSBOWS&&HB.CROSSBOWS[mk],hx=c=>new THREE.Color(...c).getHex();
+      const R=.013,PY=.54,SP=CB?CB.span:.66,BD=CB?CB.bend:.05,px=.03,yAt=z=>PY-BD*(2*z/SP)**2;
       add(SK.rbox(.044,.48,.036,.008,2),'matte',WOOD,[0,.36,0]);add(SK.cyl(R,R,.27,10),'matte',WOOD,[0,0,0]);
       add(SK.rbox(.07,.2,.042,.012,2),'matte',WOOD,[-.012,-.215,0],[0,0,-.08]);add(SK.rbox(.03,.04,.03,.006,1),'matte',WOOD,[0,.135,0]);
       const pts=[];for(let k=0;k<=16;k++){const z=-SP/2+SP*k/16;pts.push(new THREE.Vector3(px,yAt(z),z));}
-      add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,.011,6),'metal',STEEL);
+      const pg=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),24,CB?.0135:.011,6);
+      if(CB){const a=pg.attributes.position;for(let i=0;i<a.count;i++){const z=a.getZ(i),t=Math.min(1,Math.abs(2*z/SP)),k=1-.42*t,cy=yAt(Math.max(-SP/2,Math.min(SP/2,z)));a.setX(i,px+(a.getX(i)-px)*k);a.setY(i,cy+(a.getY(i)-cy)*k);}pg.computeVertexNormals();}
+      add(pg,CB&&!CB.metal?'matte':'metal',CB&&!CB.metal?hx(CB.prod):STEEL);
+      if(CB&&CB.tips)for(const sd of [-1,1])add(SK.cyl(.0072,.0085,.05,8),'matte',hx(CB.tips),[px,yAt(SP/2)+.002,sd*(SP/2-.022)],[Math.PI/2,0,0]);
       if(bare!==true)add(SK.cyl(.0022,.0022,SP-.02,4),'matte',0xe8e0c8,[px,yAt(SP/2)-.004,0],[Math.PI/2,0,0]);
-      for(const y of [PY-.026,PY+.026])add(SK.rbox(.05,.01,.042,.003,1),'metal',DSTEEL,[0,y,0]);
-      add(SK.cyl(.012,.012,.03,10),'metal',BRASS,[.022,.15,0],[Math.PI/2,0,0]);add(SK.rbox(.003,.33,.006,.001,1),'matte',0x141008,[.0222,.335,0]);
+      if(!CB)for(const y of [PY-.026,PY+.026])add(SK.rbox(.05,.01,.042,.003,1),'metal',DSTEEL,[0,y,0]);
+      else{const bm=CB.bindMetal?'metal':'matte',bc=hx(CB.bind);for(let k=0;k<CB.binds;k++)for(const sd of [-1,1])add(SK.rbox(.05,.006,.042,.002,1),bm,bc,[0,PY+sd*(.024+k*.011),0]);
+        if(mk==='horn'){for(const y of [.125,-.125])add(SK.torus(R+.0012,.0022,5,14),'metal',bc,[0,y,0],[Math.PI/2,0,0]);add(SK.rbox(.074,.007,.046,.002,1),'metal',bc,[-.012,-.302,0],[0,0,-.08]);}}
+      add(SK.cyl(.012,.012,.03,10),CB&&mk==='wood'?'matte':'metal',CB?hx(CB.nut):BRASS,[.022,.15,0],[Math.PI/2,0,0]);add(SK.rbox(.003,.33,.006,.001,1),'matte',0x141008,[.0222,.335,0]);
       add(SK.rbox(.007,.075,.008,.002,1),'metal',DSTEEL,[-.026,.115,0],[0,0,.06]);
-      add(SK.torus(.05,.0055,5,18),'metal',DSTEEL,[0,PY+.112,0],[0,Math.PI/2,0],[1,1.3,1]);},
+      add(SK.torus(.05,.0055,5,18),'metal',CB?hx(CB.stirrup):DSTEEL,[0,PY+.112,0],[0,Math.PI/2,0],[1,1.3,1]);},
     // S1476 — your crossbow without its string, which xbowRig draws as two lengths that come back to the nut over the span; the
     // string's length is one metre along +y from 0, set by xbowRigSet. The bolt: an ash shaft 9 mm thick, an iron bodkin, two vanes
     crossbowbare:()=>K.crossbow(true),
@@ -905,8 +914,8 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       // S231 — the boss and rivets on the +x face, the face every shield turns outward from the left forearm (it faced the body)
       add(SK.ball(.045,12,8,0,Math.PI*2,0,Math.PI/2),'metal',BRASS,[.028,.05,0],[0,0,-Math.PI/2]);for(const [a,b2] of [[.2,.1],[-.24,0]])add(SK.ball(.012,6,5),'metal',BRASS,[.03,a,b2]);}
   };
-  const IM=/^impl:(staff|wand|maul|orb|tome):(gatelands|mark|aurenne):(\w*)$/.exec(kind),SM=/^sword:(\w+)$/.exec(kind),PM=/^spear:(\w+)$/.exec(kind);
-  if(IM)wpnImpl(add,IM[1],IM[2],IM[3]);else if(SM&&!wpnSword(L,col,SM[1],STEEL))K.sword();else if(PM)K.spear(PM[1]);else if(!SM)(K[kind]||K.sword)();
+  const IM=/^impl:(staff|wand|maul|orb|tome):(gatelands|mark|aurenne):(\w*)$/.exec(kind),SM=/^sword:(\w+)$/.exec(kind),PM=/^spear:(\w+)$/.exec(kind),XM=/^crossbow(bare)?:(\w+)$/.exec(kind);
+  if(IM)wpnImpl(add,IM[1],IM[2],IM[3]);else if(SM&&!wpnSword(L,col,SM[1],STEEL))K.sword();else if(PM)K.spear(PM[1]);else if(XM)K.crossbow(!!XM[1],XM[2]);else if(!SM)(K[kind]||K.sword)();
   // merge by material: vertex colours carry each part's colour
   const by={};for(const [geo,m,c,mx] of L)(by[m]=by[m]||[]).push([geo,c,mx]);
   const out=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
@@ -1016,11 +1025,13 @@ function wpnImpl(add,shape,make,sc){const M=IMPL_MAKE[make]||IMPL_MAKE.gatelands
 // across, 0.49 up the tiller) to a middle that comes back from where it is braced (0.486) to the nut's catch (0.163), and the bolt
 // laid in the groove ahead of the nut once it is spanned. xbowRig adds them to the kit's crossbow; xbowRigSet poses any copy of it
 const XBOW_RIG={px:.03,tipY:.49,tipZ:.33,restY:.486,nutY:.163,boltX:.0265,boltY:.17};
-function xbowRig(w){for(const nm of ['xbowStringL','xbowStringR']){const s=buildWeapon('xbowstring');s.name=nm;w.add(s);}
+// S2185 — a make's prod spans and bows its own (CROSSBOWS' span and bend), so its string leaves from its own tips: xbowRigK(make)
+function xbowRigK(mk){const CB=mk&&typeof HB!=='undefined'&&HB.CROSSBOWS&&HB.CROSSBOWS[mk];if(!CB)return XBOW_RIG;const tipY=.54-CB.bend;return Object.assign({},XBOW_RIG,{tipY,tipZ:CB.span/2,restY:tipY-.004});}
+function xbowRig(w,mk){w.userData.xbowK=xbowRigK(mk);for(const nm of ['xbowStringL','xbowStringR']){const s=buildWeapon('xbowstring');s.name=nm;w.add(s);}
   const b=buildWeapon('xbowbolt');b.name='xbowBolt';b.position.set(XBOW_RIG.boltX,XBOW_RIG.boltY,0);w.add(b);xbowRigSet(w,0,false);return w;}
 const _xbA=new THREE.Vector3(),_xbB=new THREE.Vector3(),_xbY=new THREE.Vector3(0,1,0);
-function xbowRigSet(root,f,bolt){const P=root.userData.xbowParts||(root.userData.xbowParts=(()=>{const o={};root.traverse(c=>{if(/^xbow(StringL|StringR|Bolt)$/.test(c.name))o[c.name]=c;});return o;})());
-  const K=XBOW_RIG,my=K.restY+(K.nutY-K.restY)*f;
+function xbowRigSet(root,f,bolt,RK){const P=root.userData.xbowParts||(root.userData.xbowParts=(()=>{const o={};root.traverse(c=>{if(/^xbow(StringL|StringR|Bolt)$/.test(c.name))o[c.name]=c;});return o;})());
+  const K=RK||root.userData.xbowK||XBOW_RIG,my=K.restY+(K.nutY-K.restY)*f;
   for(const [nm,sd] of [['xbowStringL',-1],['xbowStringR',1]]){const s=P[nm];if(!s)continue;_xbA.set(K.px,K.tipY,sd*K.tipZ);_xbB.set(K.px,my,0).sub(_xbA);
     const L=_xbB.length();s.position.copy(_xbA);s.quaternion.setFromUnitVectors(_xbY,_xbB.multiplyScalar(1/L));s.scale.set(1,L,1);}
   if(P.xbowBolt)P.xbowBolt.visible=!!bolt;}
