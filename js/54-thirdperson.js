@@ -49,6 +49,7 @@ function tpWeapon(it){const g=new THREE.Group();if(!it)return g;
   const im=typeof implementOf==='function'?implementOf(it):null;if(im==='staff'||im==='wand'||im==='maul'){g.add(buildWeapon(implKind(it)));g.userData.kit='impl';return g;}
   let kind={scimitar:'cutlass',flail:'flail',greatclub:'greatclub',greataxe:'greataxe',claymore:'claymore'}[sh]||(WPN_KINDS.includes(sh)?sh:'sword');
   if((kind==='sword'||kind==='cutlass')&&it.swordMake&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&HB.SWORDS&&HB.SWORDS[it.swordMake])kind='sword:'+it.swordMake; /* S2118 — the make's own blade (#1425 B) */
+  if(kind==='spear'&&it.spearHead&&it.spearHead!=='leaf'&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&HB.SPEAR_HEADS&&HB.SPEAR_HEADS[it.spearHead])kind='spear:'+it.spearHead; /* S2182 — its island's head (S2180) */
   const w=buildWeapon(kind==='crossbow'?'crossbowbare':kind==='bow'&&BOW_LEN[it.bowKind]?it.bowKind:kind,{tint:{metal:blade,guard,glow:tpHex(it.matGlow,0x88c0ff),wood:sh==='bow'?tpHex(it.matCol,0x6a4428):null}});g.add(w);
   if(kind==='bow'){w.rotation.y=Math.PI;g.userData.bow=true;g.userData.bowLen=bowLenOf(it);} /* S1550 — a longbow or a war bow is the kit's own, longer */if(kind==='crossbow'){w.rotation.x=Math.PI;g.userData.xbow=xbowRig(w);}g.userData.kit=kind; /* S1476 — its string and bolt drawn by the span */
   return g;}

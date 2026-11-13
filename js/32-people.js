@@ -799,7 +799,7 @@ const WPN_GEO=new Map();
 // brings most of them to their true length: a sword 0.89 m, a longsword 1.17, an axe 0.76. Three were drawn in true metres and came out
 // too big: the knife 0.49 m, the spear 2.97, the crossbow 1.40. These are carried at their own size, whatever the stature (wpnTrue)
 const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet','impl']);
-function wpnIsTrue(kind){return WPN_TRUE.has(kind)||/^sword:/.test(kind||'');} /* S2118 — a sword by its make is drawn in metres */
+function wpnIsTrue(kind){return WPN_TRUE.has(kind)||/^(sword|spear):/.test(kind||'');} /* S2118 — a sword by its make is drawn in metres */
 function wpnTrue(kind,w,holder){if(wpnIsTrue(kind)&&holder&&holder.scale.x>0)w.scale.setScalar(1/holder.scale.x);return w;}
 // S1550 — the length of Bowyer's two bows to the plain bow's (#851 A: the longbow 1.5×, the war bow 1.7×), by the item's bowKind
 const BOW_LEN={longbow:1.5,warbow:1.7};
@@ -860,12 +860,16 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
     // S1458 — your spear (#745 1 A, a one-handed thrust): the builder's Gatelands spear (people.js, buildSpear: an ash shaft 2.6 cm
     // thick, an iron shoe, a socket bound with two bronze rings, a leaf head 18 cm long with a midrib) at 2.2 m, gripped at its
     // balance 0.85 m up from the butt, the leaf's flat across x as a sword's blade is
-    spear:()=>{const R=.013,B=-.85,L=2.2,HB=.18,SO=.09,top=B+L-HB,s0=top-SO;
+    // S2182 — `spear:<head>`, the item's island head (S2180's it.spearHead) from the kit's own table (people.js SPEAR_HEADS: the Mark's
+    // winged head with its two lugs and silver rings, Aurenne's long head banded in gold; the leaf as before): the spear as long, the shaft
+    // giving up what a longer head and socket take, as the kit's does; the rings keep the head's own metal, not the item's guard colour
+    spear:(hd)=>{const SH=hd&&typeof HB!=='undefined'&&HB.SPEAR_HEADS&&HB.SPEAR_HEADS[hd],R=.013,B=-.85,L=2.2,HB2=SH?SH.blade:.18,SO=SH?SH.sock:.09,top=B+L-HB2,s0=top-SO,fc=SH?SH.facets:10;
       add(SK.cyl(R*.92,R,s0-B-.06,10),'matte',WOOD,[0,(B+.06+s0)/2,0]);grip(.13,R+.0012,-.07);
-      add(SK.cyl(R+.001,R*.55,.06,10),'metal',DSTEEL,[0,B+.03,0]);add(SK.cyl(R*.62,R*.95,SO,10),'metal',STEEL,[0,s0+SO/2,0]);
-      for(const f of [.2,.8])add(SK.torus(R*(.95-.33*f)+.0012,.0016,4,14),'metal',BRASS,[0,s0+SO*f,0],[Math.PI/2,0,0]);
-      const prof=[];for(let k=0;k<=16;k++){const t=k/16,w=.0235*Math.sin(Math.PI*Math.min(1,t*1.25)**.8)*(1-t*.15)+.007*(1-t);prof.push([t<1?w:4e-4,t*HB]);}
-      add(SK.lathe(prof,4),'metal',STEEL,[0,top,0],null,[1,1,.22]);},
+      add(SK.cyl(R+.001,R*.55,.06,10),'metal',DSTEEL,[0,B+.03,0]);add(SK.cyl(R*.62,R*.95,SO,fc),'metal',STEEL,[0,s0+SO/2,0]);
+      const RC=SH?new THREE.Color(...SH.ring).getHex():BRASS;for(const f of (SH?SH.rings:[.2,.8]))add(SK.torus(R*(.95-.33*f)+.0012,.0016,4,14),'metal',RC,[0,s0+SO*f,0],[Math.PI/2,0,0]);
+      const wf=SH?SH.w:(t=>.0235*Math.sin(Math.PI*Math.min(1,t*1.25)**.8)*(1-t*.15)+.007*(1-t)),prof=[];for(let k=0;k<=16;k++){const t=k/16;prof.push([t<1?Math.max(4e-4,wf(t)):4e-4,t*HB2]);}
+      add(SK.lathe(prof,4),'metal',STEEL,[0,top,0],null,[1,1,.22]);
+      if(SH&&SH.wings)for(const sg of [-1,1]){const a=Math.PI/4,r=R*.7+.016;add(SK.cone(.009,.034,4),'metal',STEEL,[sg*r*Math.cos(a),top-.014,-sg*r*Math.sin(a)],[0,a,-sg*Math.PI/2],[1,1,.45]);}},
     // S1458 — your crossbow (#745 2 A): the builder's (people.js, crossbowParts: Session 941's wood make) in the kit's frame, +y from
     // the grip to the prod as a blade runs from the hilt; the tiller round in the fist, squared to the prod 0.54 ahead and deepening to
     // the butt 0.31 behind, the prod bowed back 5 cm at its tips over a 0.66 m span, the string braced across, the nut, the bolt's
@@ -901,8 +905,8 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       // S231 — the boss and rivets on the +x face, the face every shield turns outward from the left forearm (it faced the body)
       add(SK.ball(.045,12,8,0,Math.PI*2,0,Math.PI/2),'metal',BRASS,[.028,.05,0],[0,0,-Math.PI/2]);for(const [a,b2] of [[.2,.1],[-.24,0]])add(SK.ball(.012,6,5),'metal',BRASS,[.03,a,b2]);}
   };
-  const IM=/^impl:(staff|wand|maul|orb|tome):(gatelands|mark|aurenne):(\w*)$/.exec(kind),SM=/^sword:(\w+)$/.exec(kind);
-  if(IM)wpnImpl(add,IM[1],IM[2],IM[3]);else if(SM&&!wpnSword(L,col,SM[1],STEEL))K.sword();else if(!SM)(K[kind]||K.sword)();
+  const IM=/^impl:(staff|wand|maul|orb|tome):(gatelands|mark|aurenne):(\w*)$/.exec(kind),SM=/^sword:(\w+)$/.exec(kind),PM=/^spear:(\w+)$/.exec(kind);
+  if(IM)wpnImpl(add,IM[1],IM[2],IM[3]);else if(SM&&!wpnSword(L,col,SM[1],STEEL))K.sword();else if(PM)K.spear(PM[1]);else if(!SM)(K[kind]||K.sword)();
   // merge by material: vertex colours carry each part's colour
   const by={};for(const [geo,m,c,mx] of L)(by[m]=by[m]||[]).push([geo,c,mx]);
   const out=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
@@ -2303,7 +2307,21 @@ function hbTell(rig,em){const H=rig.hb,w=rig.weapon&&rig.weapon.parent?rig.weapo
 function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
   const tell=m===H.drv&&em&&em!==0xffaa00&&(!rig.e||rig.e._wind>0);if(tell||H.tellK)hbTell(rig,tell?em:0);if(tell)em=0; /* S2092 — the tell is the weapon's (Michael's B on #1278) */
   if(em===H.em)return;H.em=em;for(const o of H.mid?[...H.full,H.mid]:H.full)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);} // the body's own: what it holds keeps the kit's shared materials
-function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;if(L===2&&H.tellK)hbTell(rig,0);if(H.eyeGlow&&rig.eyeGlow)rig.eyeGlow.visible=L===2;if(L===2)hbGive(rig);if(L===1)hbMid(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;if(H.mid)H.mid.visible=L===1;}
+// S2182 — the hair's cards by the quality level. A groomed head is ~97k card segments (a strand point every 9 mm): Caoimhe's loose hair
+// was 194k of her 232k triangles at the full level, and one townsperson inside HBODY.near put Dunmore's street over Middle's 2.0 M
+// (backlog I, QA S2179). At the full level a strand card (hair, tail, brush: strandCards in people.js, one run of point pairs a strand)
+// is drawn through every HB_HAIR_STEP-th of its points, its root and tip kept: the index only, the points untouched, so the strand's
+// line, width and texture are as built. Every point at High, every 3rd (27 mm chords; side by side at 1.5 m no different) at Middle
+// and Low: Niamh's hair 220k to 75k. The player's own body is always whole.
+const HB_HAIR_STEP=[3,3,1],HB_HAIR_CARDS=/^(hair|tail|brush)$/;
+function hbHairIndex(g,k){const ix=g.userData.hairIx||(g.userData.hairIx={});if(ix[k])return ix[k];const a0=ix[1]||(ix[1]=g.index),A=a0.array,out=[];
+  const emit=rows=>{for(let i=0;i+1<rows.length;i++){const a=rows[i],b=rows[i+1];out.push(a,a+1,b,a+1,b+1,b);}};
+  let rows=null,prev=-9,n=0;const flush=()=>{if(!rows)return;const keep=[];for(let i=0;i<rows.length;i+=k)keep.push(rows[i]);if(keep[keep.length-1]!==rows[rows.length-1])keep.push(rows[rows.length-1]);emit(keep);};
+  for(let q=0;q<A.length;q+=6){const a=A[q];if(a!==prev+2){flush();rows=[a];}rows.push(a+2);prev=a;n++;}flush();
+  return ix[k]=new THREE.BufferAttribute(new (A.constructor)(out),1);}
+function hbHairQ(rig){const H=rig.hb;if(rig.hbLazy)return;const q=SETTINGS&&SETTINGS.quality,k=window.OG_LOOK==='new'?HB_HAIR_STEP[Math.max(0,Math.min(2,(q==null?1:q)|0))]:1;
+  if(H.hairK===k)return;H.hairK=k;for(const m of H.full)if(HB_HAIR_CARDS.test(m.name)&&m.geometry.index){const g=m.geometry,a=hbHairIndex(g,k);if(g.index!==a)g.setIndex(a);}}
+function hbLevel(rig,L){const H=rig.hb;if(L===0)hbHairQ(rig);if(H.L===L)return;H.L=L;if(L===2&&H.tellK)hbTell(rig,0);if(H.eyeGlow&&rig.eyeGlow)rig.eyeGlow.visible=L===2;if(L===2)hbGive(rig);if(L===1)hbMid(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;if(H.mid)H.mid.visible=L===1;}
 // the middle level, baked now if the body was attached without it (rig.hbLazy); null if the bake fails
 function hbMid(rig){const H=rig.hb;if(!H)return null;if(H.mid||H.midFail)return H.mid;const t=performance.now();
   try{const m=hbMerge(H.P,H.cards);m.geometry.boundingSphere=H.sph.clone();m.visible=H.L===1;if(rig.foe)m.material=HB_MID_MAT.clone();

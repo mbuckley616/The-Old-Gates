@@ -229,7 +229,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
-- **`budget` red: Dunmore's street at noon is over Middle's 2.0 M triangles whenever a townsperson is inside 16 m** (QA, Session 2179, s1536;
+- ~~**`budget` red: Dunmore's street at noon is over Middle's 2.0 M triangles whenever a townsperson is inside 16 m** (QA, Session 2179, s1536;
   for the bodies builder: `HBODY.near`, `hbLevel`, the full level, `js/32-people.js`). Two runs of `budget` at s1536, both red at *at Middle,
   every view under 2 M triangles*: 2,102,603 and 2,106,281. The street from 4 m south of Dunmore's centre, looking north, reads Bodies 107–108
   calls and 1.81–1.84 M at Middle when nobody is near (s1483–s1515), and 125 calls and 2.10 M when one townsperson has walked inside
@@ -238,7 +238,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   inside High's 4.0 M); at s1536 it lands at Middle in both runs. Middle has 160k of headroom at the street, so one person passing within 16 m
   puts any frame there over. The ceiling is the build sheet's (`docs/design/streaming-and-quality-build.md`); the check is unchanged. Ways out
   are the bodies builder's: a lighter full level, the full level only nearer than 16 m at Middle (by `LAND_Q`), or the shadow pass drawing the
-  mid level. The ledger's table for s1536 is in `docs/qa/budget.md`.
+  mid level. The ledger's table for s1536 is in `docs/qa/budget.md`.~~ — done, Session 2182 (194k of a near body's 232k triangles were its hair's cards; at Middle and Low they join every 3rd strand point: Caoimhe's hair 194k → 66k, the street with her at 6 m 2.05 M → 1.93 M; High whole)
 - ~~**`cookfed` red on main at *meat and butter at Cooking 5*** (look builder's post, 11 Nov; QA, s1490): 9.9 Cooking points for 9. The suite's own
   eight hours' sleep left you Rested (×1.1 since S2085) for its cooking block.~~ — fixed, Session 2121 (the test's: the block clears `worldState.rested`)
 - ~~**A broken night is undone by a load** (the critic, 11 Nov, s1474, under S2091; for the systems builder, `restAtBed`, `js/60-shop.js`): the autosave
