@@ -15,7 +15,7 @@ const kit = await page.evaluate(() => { const out = {}; const drop = r => { PEOP
   // who carries what, over many seeds
   const tally = {}; for (const n of ['Bandit', 'Highwayman', 'Deserter', 'Bandit Archer', 'Rogue Mage', 'Cultist', 'Pirate', 'Bandit Captain', 'Skeleton', 'Kobold', 'Cave Troll'])
     for (let i = 0; i < 24; i++) { const r = buildFoe(n, i * 31 + 7, i * 17 + 3); const w = r.weapon, t = tally[n] || (tally[n] = { wpn: {}, shield: 0, gear: {}, onBone: 0, bowLeft: 0, rust: 0, fist: 0 });
-      const k = w ? w.userData.wpn : '-'; t.wpn[k] = (t.wpn[k] || 0) + 1; t.gear[r.g.gear] = (t.gear[r.g.gear] || 0) + 1; if (r.shieldKit && r.shieldKit.parent === r.B.elL) t.shield++;
+      const kw = w ? w.userData.wpn : '-', k = kw.split(':')[0]; t.wpn[k] = (t.wpn[k] || 0) + 1; if (kw !== k) { t.make = t.make || {}; t.make[kw] = (t.make[kw] || 0) + 1; } t.gear[r.g.gear] = (t.gear[r.g.gear] || 0) + 1; if (r.shieldKit && r.shieldKit.parent === r.B.elL) t.shield++;
       if (w && w.parent === (k === 'bow' ? r.B.wrL : r.B.gear)) t.onBone++; if (k === 'bow' && w.parent === r.B.wrL) t.bowLeft++;
       if (w && w.children.every(m => m.material !== WPN_MAT.metal)) t.rust++; drop(r); }
   out.tally = tally; return out; });
