@@ -4716,6 +4716,93 @@ function treeStump(kind = 'oak', o = {}) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, STM[k]); m.name = 'stump:' + k; m.castShadow = k !== 'split'; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, h: +backY.toFixed(3), r: R };
 }
+// S2177 — the bank's cut (resources and crafting B, the look's second session; Michael's B on #1420): where clay was dug at a river's or a
+// lake's edge, the spade's cut into the bank. A scarp of bare clay in a horseshoe, open to the water, the spade's scoops down its face and
+// the torn turf lip overhanging its top; the floor wet clay, a puddle in a fresh one, a few lumps; the sods cut off it stacked beside, and
+// crumbs of clay. o.n the clay taken (1 to 3) makes it wider and deeper; o.age (0 fresh to 1 at the bank's seven days) dries the clay paler,
+// browns the sods and lets grass back into the floor. Built in its own frame, the open side at +z (toward the water), the floor's middle at
+// the origin; o.ground(x, z) the land's height there, 0 at the origin. o.island the clay's colour ('gatelands' grey-ochre, 'mark' blue-grey,
+// 'aurenne' red), o.turf the grass's colour there (a hex), o.key the seed. Nothing is solid.
+//   PKIT.props.claycut({ n, age, island, turf, key, ground }) -> { group, tris, draws, w, l, d (the scarp's height at the back) }
+let CUTM = null;
+function clayCutMats() {
+  if (CUTM) return CUTM;
+  // bare clay: pale and close, the spade's scoops as vertical bands each shaded across its width, a fine bedding, a few stones
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'), r = stream('claycut:clay');
+  x.fillStyle = '#bdb6aa'; x.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 26; i++) { const y = r() * 256; x.fillStyle = `rgba(${r() < .5 ? '90,84,76' : '230,224,214'},${(.05 + r() * .08).toFixed(3)})`; x.fillRect(0, y, 256, 1 + r() * 3); }
+  for (let u = 0; u < 256;) { const w = 22 + r() * 26, g = x.createLinearGradient(u, 0, u + w, 0);
+    g.addColorStop(0, 'rgba(40,34,28,.24)'); g.addColorStop(.25, 'rgba(255,250,240,.06)'); g.addColorStop(.7, 'rgba(255,250,240,.1)'); g.addColorStop(1, 'rgba(40,34,28,.3)');
+    x.fillStyle = g; x.fillRect(u, 0, w, 256); u += w; }
+  for (let i = 0; i < 40; i++) { x.fillStyle = `rgba(${110 + r() * 60 | 0},${100 + r() * 50 | 0},${90 + r() * 40 | 0},.85)`; x.beginPath(); const s = 1 + r() * 2.5; x.ellipse(r() * 256, r() * 256, s, s * .7, r() * 3, 0, 7); x.fill(); }
+  CUTM = { clay: new THREE.MeshStandardMaterial({ map: finishTex(c), vertexColors: true, roughness: .62, side: THREE.DoubleSide }),
+    turf: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95, side: THREE.DoubleSide }),
+    water: new THREE.MeshStandardMaterial({ color: 0x4a4434, roughness: .08, metalness: .1, transparent: true, opacity: .82 }) };
+  return CUTM;
+}
+const CLAY_CUT_HEX = { gatelands: 0xb8a684, mark: 0x9aa0a2, aurenne: 0xc8774a };
+function clayCut(o = {}) {
+  const M = clayCutMats(), n = Math.max(1, Math.min(3, Math.round(o.n || 1))), age = Math.max(0, Math.min(1, +o.age || 0)), rr = stream('claycut:' + (o.key ?? 1));
+  const G0 = typeof o.ground === 'function' ? o.ground : () => 0, island = CLAY_CUT_HEX[o.island] ? o.island : 'gatelands';
+  const W = .55 + .25 * n, L = .5 + .2 * n, D = .14 + .14 * n, SEG = 22, LIFT = .025;
+  const clayC = new THREE.Color(CLAY_CUT_HEX[island]), turfC = new THREE.Color(o.turf ?? 0x56703a), soilC = new THREE.Color(0x4a3a2a), deadC = new THREE.Color(0x8a7a4c);
+  const wet = 1 - .38 * (1 - age);   /* fresh clay is dark with water; it dries pale over the seven days */
+  const parts = { clay: [], turf: [] };
+  // a part: a grid of (I+1) x (J+1) points, f(i, j) -> [x, y, z, u, v, colour]; normals smoothed over the grid, then flattened
+  const grid = (k, I, J, f) => { const P = [], U = [], C = [], idx = [];
+    for (let j = 0; j <= J; j++) for (let i = 0; i <= I; i++) { const [px, py, pz, u, v, col] = f(i, j); P.push(px, py, pz); U.push(u, v); C.push(col.r, col.g, col.b); }
+    for (let j = 0; j < J; j++) for (let i = 0; i < I; i++) { const a = j * (I + 1) + i, b = a + 1, c2 = a + I + 1, d2 = c2 + 1; idx.push(a, c2, b, b, c2, d2); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.setIndex(idx); g.computeVertexNormals(); parts[k].push(g.toNonIndexed()); };
+  const solid = (k, g, col, top) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    const N = g.attributes.normal, a = new Float32Array(N.count * 3); for (let i = 0; i < N.count; i++) { const cc = top && N.getY(i) > .5 ? top : col; a[i * 3] = cc.r; a[i * 3 + 1] = cc.g; a[i * 3 + 2] = cc.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(a, 3)); parts[k].push(g); };
+  // the outline: half an ellipse, from the front's left (t 0) round the back (t .5) to the front's right (t 1)
+  const out = t => { const a = Math.PI * t; return [-(W / 2) * Math.cos(a), L / 2 - L * Math.sin(a)]; };
+  const nrm = t => { const [x, z] = out(t), nx = x / ((W / 2) ** 2), nz = (z - L / 2) / (L * L), l = Math.hypot(nx, nz) || 1; return [nx / l, nz / l]; };
+  const hAt = t => D * Math.pow(Math.sin(Math.PI * t), .7) * (1 + .08 * Math.sin(t * 17 + n));
+  let arc = [0]; for (let i = 1; i <= SEG; i++) { const [a, b] = out((i - 1) / SEG), [c2, d2] = out(i / SEG); arc.push(arc[i - 1] + Math.hypot(c2 - a, d2 - b)); }
+  const shade = (base, k) => base.clone().multiplyScalar(k);
+  // the scarp: bare clay from the floor to the lip, battered back a little, the spade's scoops bulging it; darker and wetter at its foot
+  grid('clay', SEG, 4, (i, j) => { const t = i / SEG, [x, z] = out(t), [nx, nz] = nrm(t), h = hAt(t), v = j / 4, scoop = .025 * Math.sin(arc[i] / .16 * Math.PI) ** 2 * Math.sin(v * Math.PI);
+    const back = .06 * h * v + scoop, X = x + nx * back, Z = z + nz * back, y = G0(x, z) + LIFT + h * v;
+    return [X, y, Z, arc[i] / .55, (h * v) / .55, shade(clayC, wet * (.88 + .22 * v))]; });
+  // the turf's lip on top: the sod's cut edge overhanging the scarp a hand, its top running back into the berm, which eases down to the land
+  const LIP = .07, BERM = t => .25 + hAt(t) * .9;
+  grid('turf', SEG, 5, (i, j) => { const t = i / SEG, [x, z] = out(t), [nx, nz] = nrm(t), h = hAt(t);
+    const rows = [[-.05, -LIP], [-.05, 0], [.04, .012], [.15, -.06 * h], [.5, -.62 * h], [1, -h - LIP]], [s, dy] = rows[j], off = j < 3 ? s : .04 + (s - .04) * BERM(t);
+    const X = x + nx * off, Z = z + nz * off, y = (j < 3 ? G0(x, z) : G0(X, Z)) + LIFT + h + dy + (j === 5 ? -.04 : 0);
+    const col = j < 2 ? shade(soilC, .9 + .2 * rr()) : shade(turfC, .92 + .14 * rr()); return [X, y, Z, 0, 0, col]; });
+  // the floor: wet clay laid on the land, out to the scarp's foot and across the open front
+  { const loop = []; for (let i = 0; i <= SEG; i++) loop.push(out(i / SEG)); for (let k = 1; k < 6; k++) loop.push([W / 2 - W * k / 6, L / 2]);
+    const Q = [0, L * .1], R = 4;
+    grid('clay', loop.length, R, (i, j) => { const [ox, oz] = loop[i % loop.length], s = j / R, x = Q[0] + (ox - Q[0]) * s, z = Q[1] + (oz - Q[1]) * s, edge = i > SEG ? s : 0;
+      return [x, G0(x, z) + LIFT - .006 * (1 - s), z, x / .5, z / .5, shade(clayC, wet * (.82 + .12 * edge) * (.95 + .1 * rr()))]; }); }
+  // the lumps the spade left on the floor and the crumbs thrown out with the sods
+  for (let k = 0; k < 2 + 2 * n; k++) { const inside = k < n + 1, a = rr() * Math.PI * 2, d = inside ? rr() * .35 : 0;
+    const x = inside ? Math.sin(a) * d * W / 2 : W / 2 + .25 + rr() * .5, z = inside ? Math.cos(a) * d * L / 2 : (rr() - .3) * L, s = .04 + rr() * .05;
+    const g = new THREE.IcosahedronGeometry(s, 0); g.scale(1, .55, .85); g.rotateY(rr() * 6); g.translate(x, G0(x, z) + LIFT + s * .3, z); solid('clay', g, shade(clayC, wet * .85)); }
+  // the sods: the turf cut off the bank, stacked grass-down and grass-up beside it on the +x side; they brown as the days go
+  const sodTop = turfC.clone().lerp(deadC, .25 + .6 * age);
+  for (let k = 0; k < 2 * n; k++) { const layer = k % 3 === 2 ? 1 : 0, col = Math.floor(k / 3), x = W / 2 + .45 + col * .38 + (rr() - .5) * .08, z = -L * .2 + (k % 3 === 1 ? .3 : 0) + (rr() - .5) * .1;
+    const g = new THREE.BoxGeometry(.32, .09, .24, 1, 1, 1); g.rotateY((rr() - .5) * .9); g.rotateZ((rr() - .5) * .14); g.translate(x, G0(x, z) + .03 + .045 + layer * .09, z);
+    solid('turf', g, shade(soilC, .9 + .2 * rr()), rr() < .3 && layer === 0 ? shade(soilC, .8) : sodTop); }
+  // grass coming back into the floor, from the third day or so
+  const tufts = Math.round(Math.max(0, age - .3) / .7 * (6 + 4 * n));
+  for (let k = 0; k < tufts; k++) { const a = rr() * Math.PI * 2, d = Math.sqrt(rr()) * .8, x = Math.sin(a) * d * W / 2, z = Math.cos(a) * d * L / 2 * .9 + L * .05, h = .05 + rr() * .1 * age;
+    const g = new THREE.ConeGeometry(.04 + rr() * .03, h, 5); g.translate(x, G0(x, z) + LIFT + h / 2, z); solid('turf', g, shade(turfC, .9 + .2 * rr())); }
+  const group = new THREE.Group(); group.name = 'claycut'; let tris = 0;
+  for (const k of ['clay', 'turf']) { const gs = parts[k]; if (!gs.length) continue; let cnt = 0; for (const g of gs) cnt += g.attributes.position.count;
+    const A = { position: new Float32Array(cnt * 3), normal: new Float32Array(cnt * 3), uv: new Float32Array(cnt * 2), color: new Float32Array(cnt * 3) }; let off = 0;
+    for (const g of gs) { const c2 = g.attributes.position.count; for (const a of ['position', 'normal', 'color']) A[a].set(g.attributes[a].array.subarray(0, c2 * 3), off * 3); A.uv.set(g.attributes.uv.array.subarray(0, c2 * 2), off * 2); off += c2; g.dispose(); }
+    const g = new THREE.BufferGeometry(); for (const a of ['position', 'normal', 'color']) g.setAttribute(a, new THREE.BufferAttribute(A[a], 3)); g.setAttribute('uv', new THREE.BufferAttribute(A.uv, 2)); g.computeBoundingSphere();
+    const m = new THREE.Mesh(g, M[k]); m.name = 'claycut:' + k; m.castShadow = k === 'turf'; m.receiveShadow = true; group.add(m); tris += cnt / 3; }
+  // the puddle in a fresh cut of two clay or more, in the hollow at the scarp's foot
+  if (n >= 2 && age < .45) { const pr = .12 + .08 * n, px0 = (rr() - .5) * W * .2, pz0 = -L * .25, g = new THREE.CircleGeometry(pr, 14); g.rotateX(-Math.PI / 2); g.scale(1.3, 1, .8);
+    g.translate(px0, G0(px0, pz0) + LIFT + .006, pz0); const m = new THREE.Mesh(g, M.water); m.name = 'claycut:water'; m.receiveShadow = true; m.renderOrder = 2; group.add(m); tris += 14; }
+  return { group, tris: Math.round(tris), draws: group.children.length, w: +W.toFixed(2), l: +L.toFixed(2), d: +D.toFixed(2) };
+}
 // S2094 (camp and rest B's look session, Michael's B on #1378; OG-023's "shelter" and "bedrolls and camp comforts") — the camp you make:
 // a lean-to of poles thatched with boughs, the five bedrolls laid out (the blanket roll, the wool bedroll, and each island's own: the
 // Gatelands' quilted plaid roll, the Mark's fur sleeping sack, Aurenne's linen hammock slung on its two shears), and the tent pitched over
@@ -10315,7 +10402,7 @@ function aurenneOrrery(hAt, o = {}) {
     const box = { x0: Math.min(fl.x - 2, ...spine.map(s => s.x)) - .3, x1: sk.x + sk.len + .3, z0: -5.5, z1: 5.5 };
     return { group, tris: Math.round(geo.attributes.position.count / 3), draws: 1, spine, ribs, gap, skull: sk, jaws, flipper: fl, box, length: +(sk.x + sk.len - spine.at(-10).x).toFixed(2) };
   } /* the world reads the cut ground before the piece is built (offroadStamps) */
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, claycut: clayCut, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

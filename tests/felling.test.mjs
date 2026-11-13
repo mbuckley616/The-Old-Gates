@@ -166,4 +166,21 @@ check('the bench shows the Heartwood Spar row and makes one from the log; it is 
 check('timber: one Supply in three where the hall\'s country is wooded, none where it is not; 4 + 2 × tier logs (6 at tier 1)', r.timber.w && Math.abs(r.timber.w.wood / r.timber.w.sup - 1 / 3) < .1 && (!r.timber.b || r.timber.b.wood === 0) && r.timber.w.need === 6 && /^Supply 6 (Pine )?Logs$/.test(r.timber.w.short) && /hatchet/.test(r.timber.w.desc), r.timber);
 check('bought logs and the other kind never count; logs felled after taking it do, and the guild pays and leaves the bag alone', /^Not yet\. 0\/6\./.test(r.timber.bought || '') && r.timber.wrongKind === 0 && r.timber.have >= 6 && r.timber.done && /^Good work\. \d+ gold/.test(r.timber.said || '') && r.timber.paid >= 110 && r.timber.kept && r.timber.active === null, r.timber);
 check('the hatchet at the smith and the goods shop, 30 gold, weight 3; a log weighs 3', r.at.weapon === 1 && r.at.misc === 1 && r.at.potion === 0 && r.price === 30 && r.w === 3 && r.logW === 3, r.at);
+// Session 2177 (the look builder) — the bank's cut where clay was dug (PKIT.props.claycut, tickClayCuts in 82-world-structures.js): a bank
+// near you dug once draws a cut on the drawn ground, its open side to the water, in at most 3 draws and 1,000 triangles; dug out it is wider
+// and deeper; when the bank comes back (7 days after it is dug out) the cut is gone
+const cut = await page.evaluate(() => { let b = null;
+  for (let r = 20; r < 600 && !b; r += 8) for (let a = 0; a < 64; a++) { const x = px + Math.cos(a / 64 * 6.283) * r, z = pz + Math.sin(a / 64 * 6.283) * r;
+    if (!(worldH(x, z) >= SEA_Y - WATER_DEEP)) continue; let ok = false; for (let rr = .5; rr <= 2 && !ok; rr += .5) for (let k = 0; k < 8; k++) if (clayFresh(x + Math.cos(k * .785) * rr, z + Math.sin(k * .785) * rr)) { ok = true; break; }
+    if (ok) { b = { x, z }; break; } }
+  if (!b) return { err: 'no bank' }; px = b.x; pz = b.z; const key = clayBankHere(); if (!key) return { err: 'no key', b };
+  BAG.length = 0; BAG.push({ name: 'Shovel', tool: 'shovel', type: 'misc', weight: 2.5 }); worldState.clay = {};
+  const read = () => { const E = CLAY_CUTS.get(key); if (!E) return null; const U = E.g.userData.clay, m = E.g.children.find(o => o.name === 'claycut:clay'); E.g.updateMatrixWorld(true);
+    const P = m.geometry.attributes.position, v = new THREE.Vector3(); let lo = 9; for (let i = 0; i < P.count; i += 5) { v.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); lo = Math.min(lo, v.y - meshH(v.x, v.z)); }
+    return { n: U.n, tris: U.tris, draws: U.draws, w: U.w, d: U.d, water: U.water, inScene: !!E.g.parent, below: +lo.toFixed(3) }; };
+  digClay(key); tickClayCuts(true); const one = read(); digClay(key); digClay(key); tickClayCuts(true); const three = read();
+  worldState.clay[key].d -= 8; tickClayCuts(true); return { one, three, healed: !CLAY_CUTS.has(key) }; });
+console.log(JSON.stringify(cut));
+check('a bank dug once shows its cut on the drawn ground, facing the water, in at most 3 draws and 1,000 triangles', !!cut.one && cut.one.inScene && cut.one.water && cut.one.draws <= 3 && cut.one.tris <= 1000 && cut.one.below > -.01, cut);
+check('dug out, the cut is wider and deeper; when the bank comes back it is gone', !!cut.three && cut.three.n === 3 && cut.three.w > cut.one.w && cut.three.d > cut.one.d && cut.three.draws <= 3 && cut.three.tris <= 1000 && cut.healed, cut);
 await g.close();

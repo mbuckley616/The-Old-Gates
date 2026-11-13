@@ -3003,6 +3003,41 @@
     const ry=fy+Math.PI/2,co=Math.cos(ry),s_=Math.sin(ry),ground=(lx,lz)=>worldH(t.x+lx*co+lz*s_,t.z-lx*s_+lz*co)-y0;
     const K=PKIT.props.stump(stumpKind(t.sp),{r:R,seed:t.id,ground});K.group.position.set(t.x,y0,t.z);K.group.rotation.y=ry;
     K.group.name='stump';K.group.userData.tree=t.id;K.group.userData.kit={kind:stumpKind(t.sp),tris:K.tris,draws:K.draws,r:R,h:K.h};return K.group;}
+  // S2177 — the bank's cut where clay was dug (resources and crafting B's last look piece; Michael's B on #1420): PKIT.props.claycut, 38-kit.js,
+  // drawn from the rules' clayCuts() (S2171: the first dig's stand, x and z, and n the clay taken). The cut faces the water: its open side
+  // toward the mean of the fresh water found within 3 m of the stand (clayFresh, the rules' own test), else down the slope; its middle
+  // 0.4 m from the stand that way while the ground there is dry. Its age is the days since the last dig over the bank's seven (CLAY_DAYS),
+  // in five steps, so a cut is rebuilt only when it is dug again or a step passes. Shown within CLAY_CUT_SHOW, checked once a second from
+  // the world's tick; the grass blades of its chunk inside it are laid flat. New look only; nothing is solid. CLAY_CUTS: key -> entry.
+  const CLAY_CUT_SHOW=90,CLAY_CUTS=new Map();let _clayCutT=0;
+  function clayCutFace(x,z){let sx=0,sz=0,k=0;
+    for(let r=.5;r<=3;r+=.5)for(let a=0;a<16;a++){const c=Math.cos(a*Math.PI/8),s_=Math.sin(a*Math.PI/8);if(typeof clayFresh==='function'&&clayFresh(x+c*r,z+s_*r)){sx+=c/r;sz+=s_/r;k++;}}
+    if(!k||Math.hypot(sx,sz)<1e-6){const e=.6;sx=worldH(x-e,z)-worldH(x+e,z);sz=worldH(x,z-e)-worldH(x,z+e);if(Math.hypot(sx,sz)<1e-6){sx=0;sz=1;}}
+    const l=Math.hypot(sx,sz);return {dx:sx/l,dz:sz/l,water:k>0};}
+  function clayCutPlace(c){const f=clayCutFace(c.x,c.z);let x=c.x,z=c.z;
+    for(const s of [.4,.2])if(worldH(c.x+f.dx*s,c.z+f.dz*s)>=SEA_Y-WATER_DEEP){x=c.x+f.dx*s;z=c.z+f.dz*s;break;}
+    return {x,z,ry:Math.atan2(f.dx,f.dz),water:f.water};}
+  function clayCutProp(c,age){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.claycut)return null;
+    const P=clayCutPlace(c),y0=meshH(P.x,P.z),co=Math.cos(P.ry),s_=Math.sin(P.ry),ground=(lx,lz)=>meshH(P.x+lx*co+lz*s_,P.z-lx*s_+lz*co)-y0;
+    let island='gatelands';try{const ce=cellOf(P.x,P.z);island=nationKeyOf(ce[0],ce[1]);}catch(e){}
+    let turf=0x56703a;try{const t=new THREE.Color();groundColor(P.x,P.z,y0,1,t);turf=t.getHex();}catch(e){}
+    const K=PKIT.props.claycut({n:c.n,age,island,turf,key:c.key,ground});K.group.position.set(P.x,y0,P.z);K.group.rotation.y=P.ry;K.group.name='claycut';
+    K.group.userData.clay={key:c.key,n:c.n,age,x:P.x,z:P.z,ry:P.ry,island,water:P.water,tris:K.tris,draws:K.draws,w:K.w,l:K.l,d:K.d};return K.group;}
+  // the chunk's grass blades whose foot is inside the cut's ellipse (with a hand's room) scaled to nothing; done once per grass mesh
+  function clayCutGrass(E){const U=E.g.userData.clay,R=Math.max(U.w,U.l*2)/2+.6,m=new THREE.Matrix4(),p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();
+    for(const ch of chunks.values()){const G=ch.landGrass;if(!G||!G.grass)continue;const ox=ch.cx*CHUNK,oz=ch.cz*CHUNK;if(U.x<ox-R||U.x>ox+CHUNK+R||U.z<oz-R||U.z>oz+CHUNK+R)continue;
+      if(!G._clayCut)G._clayCut=new Set();if(G._clayCut.has(E.sig))continue;G._clayCut.add(E.sig);let hit=0;
+      for(let i=0;i<G.grass.count;i++){G.grass.getMatrixAt(i,m);m.decompose(p,q,s);if(Math.hypot(p.x+ox-U.x,p.z+oz-U.z)<R){s.set(0,0,0);m.compose(p,q,s);G.grass.setMatrixAt(i,m);hit++;}}
+      if(hit)G.grass.instanceMatrix.needsUpdate=true;}}
+  function clayCutDrop(E){if(E.g.parent)E.g.parent.remove(E.g);E.g.traverse(o=>{if(o.isMesh)o.geometry.dispose();});}
+  function tickClayCuts(force){if(window.OG_LOOK!=='new'||typeof clayCuts!=='function'||!sc)return;const now=performance.now();if(!force&&now-_clayCutT<1000)return;_clayCutT=now;
+    const day=gameMinNow()/1440,W=worldState.clay||{},seen=new Set();
+    for(const c of clayCuts()){if(Math.hypot(c.x-px,c.z-pz)>CLAY_CUT_SHOW)continue;const r=W[c.key]||{},age=Math.max(0,Math.min(1,(day-(r.d||0))/CLAY_DAYS));
+      const sig=c.n+':'+Math.round(age*4)+':'+c.x+':'+c.z;seen.add(c.key);let E=CLAY_CUTS.get(c.key);
+      if(!E||E.sig!==sig){if(E)clayCutDrop(E);let g=null;try{g=clayCutProp(c,Math.round(age*4)/4);}catch(e){console.warn('claycut',e);}
+        if(!g){CLAY_CUTS.delete(c.key);continue;}sc.add(g);E={g,sig};CLAY_CUTS.set(c.key,E);}
+      clayCutGrass(E);}
+    for(const [k,E] of CLAY_CUTS)if(!seen.has(k)){clayCutDrop(E);CLAY_CUTS.delete(k);}}
   function bladeStoneProp(){const r=pRng(0xb1ade5),g=new THREE.Group(),P=[];
     {const s=SK.bumpy(SK.rbox(.95,1.1,.62,.16,3),.045,6,4.2),pa=s.attributes.position;for(let i=0;i<pa.count;i++){const t=(pa.getY(i)+.55)/1.1;pa.setX(i,pa.getX(i)*(1-.16*t));pa.setZ(i,pa.getZ(i)*(1-.12*t));}s.computeVertexNormals();
       P.push({geo:s,color:new THREE.Color(0x77746b),x:0,y:.5,z:0,rz:.04,jitter:.1});}
