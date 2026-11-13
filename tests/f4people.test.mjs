@@ -223,6 +223,15 @@ const mid = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb 
   const m = rig.hb.mid, t = (m.geometry.index.count / 3) | 0; let full = 0; for (const o of rig.hb.full) full += ((o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3) | 0;
   return { key: rig.g.hbKey, level: rig.hb.L, shown: shown.length, mid: shown[0] === m, skinned: m.isSkinnedMesh && m.skeleton === rig.hb.P.skeleton, tris: t, fullTris: full, ok: !!rig.hb.full.length }; });
 check('a body in the middle range is one mesh on its own skeleton, the whole body baked', mid.level === 1 && mid.shown === 1 && mid.mid && mid.skinned && mid.tris > 10000, mid);
+// S2182 — a near body's hair cards are drawn through every 3rd strand point at Middle (and Low), every point at High; the same strands
+const hairQ = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb && !r.foe && !r.hbLazy && r.hb.full.some(m => m.name === 'hair' && m.geometry.index));
+  if (!rig) return null; const m = rig.hb.full.find(o => o.name === 'hair'), g = m.geometry, tris = () => g.index.count / 3, used = () => new Set(g.index.array).size;
+  const q0 = SETTINGS.quality, at = q => { SETTINGS.quality = q; hbLevel(rig, 1); hbLevel(rig, 0); return { tris: tris(), pts: used() }; };
+  const hi = at(2), mid = at(1), lo = at(0); SETTINGS.quality = q0; hbLevel(rig, 1);
+  return { key: rig.g.hbKey, hi, mid, lo, pos: g.attributes.position.count }; });
+console.log('  hair by quality:', JSON.stringify(hairQ));
+check(`a near body's hair is drawn through every 3rd strand point at Middle (${hairQ && hairQ.mid.tris} of ${hairQ && hairQ.hi.tris} triangles) and whole at High`,
+  hairQ && hairQ.hi.pts === hairQ.pos && hairQ.mid.tris < hairQ.hi.tris * .4 && hairQ.mid.tris > hairQ.hi.tris * .25 && hairQ.lo.tris === hairQ.mid.tris, hairQ);
 // far away every body is the cheap level
 const far = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); CAM.position.set(t.x, worldH(t.x, t.z + 70) + 1.65, t.z + 70); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 5e5);
   const rs = [...HB_RIGS].filter(r => r.hb && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) > HBODY.mid + 1);

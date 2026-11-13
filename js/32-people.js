@@ -2303,7 +2303,21 @@ function hbTell(rig,em){const H=rig.hb,w=rig.weapon&&rig.weapon.parent?rig.weapo
 function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
   const tell=m===H.drv&&em&&em!==0xffaa00&&(!rig.e||rig.e._wind>0);if(tell||H.tellK)hbTell(rig,tell?em:0);if(tell)em=0; /* S2092 — the tell is the weapon's (Michael's B on #1278) */
   if(em===H.em)return;H.em=em;for(const o of H.mid?[...H.full,H.mid]:H.full)for(const x of Array.isArray(o.material)?o.material:[o.material])if(x.emissive)x.emissive.setHex(em);} // the body's own: what it holds keeps the kit's shared materials
-function hbLevel(rig,L){const H=rig.hb;if(H.L===L)return;H.L=L;if(L===2&&H.tellK)hbTell(rig,0);if(H.eyeGlow&&rig.eyeGlow)rig.eyeGlow.visible=L===2;if(L===2)hbGive(rig);if(L===1)hbMid(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;if(H.mid)H.mid.visible=L===1;}
+// S2182 — the hair's cards by the quality level. A groomed head is ~97k card segments (a strand point every 9 mm): Caoimhe's loose hair
+// was 194k of her 232k triangles at the full level, and one townsperson inside HBODY.near put Dunmore's street over Middle's 2.0 M
+// (backlog I, QA S2179). At the full level a strand card (hair, tail, brush: strandCards in people.js, one run of point pairs a strand)
+// is drawn through every HB_HAIR_STEP-th of its points, its root and tip kept: the index only, the points untouched, so the strand's
+// line, width and texture are as built. Every point at High, every 3rd (27 mm chords; side by side at 1.5 m no different) at Middle
+// and Low: Niamh's hair 220k to 75k. The player's own body is always whole.
+const HB_HAIR_STEP=[3,3,1],HB_HAIR_CARDS=/^(hair|tail|brush)$/;
+function hbHairIndex(g,k){const ix=g.userData.hairIx||(g.userData.hairIx={});if(ix[k])return ix[k];const a0=ix[1]||(ix[1]=g.index),A=a0.array,out=[];
+  const emit=rows=>{for(let i=0;i+1<rows.length;i++){const a=rows[i],b=rows[i+1];out.push(a,a+1,b,a+1,b+1,b);}};
+  let rows=null,prev=-9,n=0;const flush=()=>{if(!rows)return;const keep=[];for(let i=0;i<rows.length;i+=k)keep.push(rows[i]);if(keep[keep.length-1]!==rows[rows.length-1])keep.push(rows[rows.length-1]);emit(keep);};
+  for(let q=0;q<A.length;q+=6){const a=A[q];if(a!==prev+2){flush();rows=[a];}rows.push(a+2);prev=a;n++;}flush();
+  return ix[k]=new THREE.BufferAttribute(new (A.constructor)(out),1);}
+function hbHairQ(rig){const H=rig.hb;if(rig.hbLazy)return;const q=SETTINGS&&SETTINGS.quality,k=window.OG_LOOK==='new'?HB_HAIR_STEP[Math.max(0,Math.min(2,(q==null?1:q)|0))]:1;
+  if(H.hairK===k)return;H.hairK=k;for(const m of H.full)if(HB_HAIR_CARDS.test(m.name)&&m.geometry.index){const g=m.geometry,a=hbHairIndex(g,k);if(g.index!==a)g.setIndex(a);}}
+function hbLevel(rig,L){const H=rig.hb;if(L===0)hbHairQ(rig);if(H.L===L)return;H.L=L;if(L===2&&H.tellK)hbTell(rig,0);if(H.eyeGlow&&rig.eyeGlow)rig.eyeGlow.visible=L===2;if(L===2)hbGive(rig);if(L===1)hbMid(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;if(H.mid)H.mid.visible=L===1;}
 // the middle level, baked now if the body was attached without it (rig.hbLazy); null if the bake fails
 function hbMid(rig){const H=rig.hb;if(!H)return null;if(H.mid||H.midFail)return H.mid;const t=performance.now();
   try{const m=hbMerge(H.P,H.cards);m.geometry.boundingSphere=H.sph.clone();m.visible=H.L===1;if(rig.foe)m.material=HB_MID_MAT.clone();
