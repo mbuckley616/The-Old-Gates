@@ -2318,11 +2318,13 @@ function hbTell(rig,em){const H=rig.hb,w=rig.weapon&&rig.weapon.parent?rig.weapo
   else{const hand=H.P&&H.P.byName&&(H.P.byName['metacarpal3.R']||H.P.byName['hand.R']);if(!hand)return;D=hand.userData.tell;
     if(!D){D={g:new THREE.Group(),look:'hand',mid:new THREE.Vector3()};D.g.name='tellEdge';D.glare=new THREE.Sprite(new THREE.SpriteMaterial({map:hbTellTex(),color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
       D.g.add(D.glare);hand.add(D.g);hand.userData.tell=D;}}
-  H.tellD=D;if(!k){D.g.visible=false;return;}
+  H.tellD=D;hbTellLight(D,em);}
+// the tell's group lit by the driver's emissive at its height k (0 puts it out); the kit's armed people use it too (hcTell, Session 2192)
+function hbTellLight(D,em){const r=(em>>16&255)/255,gC=(em>>8&255)/255,b=(em&255)/255,k=Math.min(1,r/.75);if(!k){D.g.visible=false;return 0;}
   D.g.visible=true;const hue=r>0?[1,gC/r,b/r]:[1,1,1];
   if(D.mat)D.mat.color.setRGB(hue[0]*(.35+.65*k),hue[1]*(.35+.65*k),hue[2]*(.35+.65*k));if(D.shell)D.shell.color.setRGB(hue[0]*k*.9,hue[1]*k*.9,hue[2]*k*.9);
   D.glare.material.color.setRGB(hue[0],hue[1],hue[2]);D.glare.material.opacity=.6*k;
-  D.g.updateMatrixWorld(true);const ws=new THREE.Vector3().setFromMatrixScale(D.g.matrixWorld).x||1;D.glare.scale.setScalar(HB_TELL.glare/ws);}
+  D.g.updateMatrixWorld(true);const ws=new THREE.Vector3().setFromMatrixScale(D.g.matrixWorld).x||1;D.glare.scale.setScalar(HB_TELL.glare/ws);return k;}
 // a foe's glow: the driver's emissive on every material of the builder's body, and the parry's stagger (which swaps the driver's
 // material for a yellow clone, 74-strikes.js) as a strong gold; the materials the kill clones are the ones on the meshes now
 function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.emissive.getHex():0;if(m!==H.drv&&m&&m.color&&m.color.getHex()===0xffdd44)em=0xb08010;
@@ -2367,7 +2369,7 @@ function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map
   P.root.updateMatrixWorld(true);
   // S1294 — what is baked, counted first, so the arrays are made once at their size (the bake pushed into plain arrays: 60 to 340 ms a body)
   const list=[];let NV=0,NI=0;
-  P.root.traverse(o=>{if(!o.isMesh||skip.has(o))return;const g=o.geometry,pa=g.attributes.position,m=o.material;
+  P.root.traverse(o=>{if(!o.isMesh||skip.has(o)||o.userData.tell)return;const g=o.geometry,pa=g.attributes.position,m=o.material; /* S2192 — never a tell's strips */
     if(!pa||Array.isArray(m)||m.transparent)return;list.push(o);NV+=pa.count;NI+=g.index?g.index.count:pa.count;});
   const pos=new Float32Array(NV*3),nor=new Float32Array(NV*3),col=new Float32Array(NV*3),si=new Uint16Array(NV*4),sw=new Float32Array(NV*4),idx=new Uint32Array(NI),v=new THREE.Vector3(),n=new THREE.Vector3(),M=new THREE.Matrix4(),N=new THREE.Matrix3(),I=new THREE.Matrix4(),c=new THREE.Color();let base=0,ni=0;
   for(const o of list){const g=o.geometry,pa=g.attributes.position,na=g.attributes.normal,ca=g.attributes.color,m=o.material;

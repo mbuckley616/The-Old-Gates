@@ -109,6 +109,19 @@ check(`its walk and its run turn the kit's bones (by ${walk.moved}); its toes li
   walk.moved > .02 && walk.walk.w > .5 && walk.run.w > .5 && walk.walk.lift > .03 && walk.run.lift > .05 && Math.min(walk.walk.low, walk.run.low) > -.06 && Math.max(walk.walk.hand, walk.run.hand) < hand0 + .25, walk);
 
 // the levels: near and at 25 m the kit's body; at 60 m the driver's, with its knife back
+// S2192 (Michael's B on #1278 carried to the kit's armed people): at the tell's height a troll's hide keeps its colours and its maul's
+// iron head takes the colour in a skin a tenth larger, gold for a light blow and red for a heavy one; it goes out with the tell
+const tell = await page.evaluate(() => { const T = _S[0], H = T.rig.hc, out = {}, fx = -Math.sin(yaw), fz = -Math.cos(yaw), g0 = T.e.mesh;
+  const lit = () => [...H.hide, ...H.fur, ...(H.mid ? [H.mid] : [])].filter(o => o.visible).reduce((a, o) => a + [].concat(o.material).reduce((s, x) => s + (x.emissive ? x.emissive.r + x.emissive.g : 0), 0), 0);
+  let t = 9.6e5; const step = () => { t += 16.7; tickPeople(1 / 60, t); tickCreatures(1 / 60, t); };
+  CAM.position.set(g0.position.x - fx * 5, g0.position.y + 1.65, g0.position.z - fz * 5); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) step();
+  for (const heavy of [false, true]) { T.e._heavy = heavy; T.e.telegraphMax = .9; telegraphPulse(T.e, 1); step(); const D = H.tellD; let tris = 0; if (D) D.g.traverse(o => { if (o.isMesh) tris += o.geometry.attributes.position.count / 3; });
+    out[heavy ? 'heavy' : 'light'] = { L: H.L, body: +lit().toFixed(3), shown: !!(D && D.g.visible), look: D && D.look, tris, col: D ? [D.shell.color.r, D.shell.color.g, D.shell.color.b].map(v => +v.toFixed(2)) : null }; }
+  telegraphReset(T.e); T.e._heavy = false; step(); out.off = { body: +lit().toFixed(3), shown: !!(H.tellD && H.tellD.g.visible) }; return out; });
+console.log('  tell:', JSON.stringify(tell));
+check(`at the tell's height the troll's hide stays dark (${tell.light.body}) and its maul's head takes the colour (${tell.light.tris} triangles, gold ${tell.light.col}, red ${tell.heavy.col}); out with the tell`,
+  [tell.light, tell.heavy].every(x => x.body === 0 && x.shown && x.look === 'shell' && x.tris > 20) && tell.light.col[1] > .5 && tell.heavy.col[1] < .2 && !tell.off.shown && tell.off.body === 0, tell);
+
 const lv = await page.evaluate(() => { const out = {}, f = _S[0], g0 = f.e.mesh, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
   const at = (dd, k) => { CAM.position.set(g0.position.x - fx * dd, g0.position.y + 1.65, g0.position.z - fz * dd); CAM.updateMatrixWorld(true); for (let i = 0; i < 3; i++) { tickPeople(1 / 60, 5e5 + k * 100 + i * 17); tickCreatures(1 / 60, 5e5 + k * 100 + i * 17); }
     const H = f.rig.hc; let n = 0; if (H.W.visible) H.W.traverse(o => { if (o.isMesh && o.visible) n++; }); return { L: H.L, kit: n, driver: f.rig.mesh.visible, gear: f.rig.mesh.visible && f.rig.B.gear.visible }; };
