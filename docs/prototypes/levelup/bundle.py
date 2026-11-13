@@ -77,6 +77,7 @@ def build(name, title, note, srcfile, use_common, query=''):
         if "from './singer.js'" in s: s = kits(s, ['pieces', 'ships', 'singer'])
         if "from './camp.js'" in s: s = kits(s, ['camp'])
         if "from './kids.js'" in s: s = kits(s, ['pieces', 'shrines', 'kids'])
+        if "from './festivals.js'" in s: s = kits(s, ['pieces', 'shrines', 'creatures', 'festivals'])
         if "from './naves.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'naves'])
         if "from './impacts.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'bind', 'impacts'])
         if "from './telegraphs.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'bind', 'telegraphs'])
@@ -224,4 +225,5 @@ build('naves-hall.html', 'The six schools’ halls', 'The six schools’ great h
 build('camp-fire.html', 'The campfire and the stump', 'The campfire and the stump (L8/L11, OG-132, OG-133; the survival sheet’s props, camp and rest’s fire): your fire and a felled tree’s stump on each island. ?island=gatelands|mark|aurenne, &mode=plain|ring|island (A the fire alone, B a ring of stones everywhere, C laid as each island lays it), &stage=lit|burning|embers|out, &hour=dusk|night|day, &cam=close|wide|scale|high, &what=fire|stumps. Drag to look.', 'camp-view.js', True)
 build('kids-play.html', 'Children at play', 'Children at play, by island (L9, OG-116; L1’s children): each island’s children at its own games, the toys in metres. ?island=gatelands|mark|aurenne, &cam=wide|close|scale|high, &view=play|toys. Drag to look.', 'kids-view.js', True)
 build('singing-ship.html', 'The singing ship', 'The singing ship in fog (Sea legends, L6, OG-049; the quest writer’s Sea Legends I): a Compact cog long at sea, her sails full on the wrong side of the wind, seen from your own deck in fog of 60 m. ?mode=close|lane|lit (A the fog holds, B a lane opens to her, C lit, as drawn), &cam=deck|near|scale|high, &plain. Drag to look.', 'singer-view.js', True)
+build('festivals-green.html', 'The Gatelands’ festivals', 'The Gatelands’ three festivals on the green (L9, OG-107; the quest writer’s Festivals on the Calendar, I): the Greening’s pole and ribbons, Riverfair’s booths and the blessing at the water, the Night of the Lanterns. ?fest=greening|riverfair|lanterns, &level=a|b|c (A the custom alone, B the green dressed, C the town dressed), &cam=wide|close|scale|high. Drag to look.', 'festivals-view.js', True)
 print('ok')
