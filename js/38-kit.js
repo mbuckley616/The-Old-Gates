@@ -4735,12 +4735,12 @@ function clayCutMats() {
     g.addColorStop(0, 'rgba(40,34,28,.24)'); g.addColorStop(.25, 'rgba(255,250,240,.06)'); g.addColorStop(.7, 'rgba(255,250,240,.1)'); g.addColorStop(1, 'rgba(40,34,28,.3)');
     x.fillStyle = g; x.fillRect(u, 0, w, 256); u += w; }
   for (let i = 0; i < 40; i++) { x.fillStyle = `rgba(${110 + r() * 60 | 0},${100 + r() * 50 | 0},${90 + r() * 40 | 0},.85)`; x.beginPath(); const s = 1 + r() * 2.5; x.ellipse(r() * 256, r() * 256, s, s * .7, r() * 3, 0, 7); x.fill(); }
-  CUTM = { clay: new THREE.MeshStandardMaterial({ map: finishTex(c), vertexColors: true, roughness: .62 }),
+  CUTM = { clay: new THREE.MeshStandardMaterial({ map: finishTex(c), vertexColors: true, roughness: .62, side: THREE.DoubleSide }),
     turf: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95, side: THREE.DoubleSide }),
     water: new THREE.MeshStandardMaterial({ color: 0x4a4434, roughness: .08, metalness: .1, transparent: true, opacity: .82 }) };
   return CUTM;
 }
-const CLAY_CUT_HEX = { gatelands: 0x8e826c, mark: 0x6c7276, aurenne: 0xa45e3a };
+const CLAY_CUT_HEX = { gatelands: 0xb8a684, mark: 0x9aa0a2, aurenne: 0xc8774a };
 function clayCut(o = {}) {
   const M = clayCutMats(), n = Math.max(1, Math.min(3, Math.round(o.n || 1))), age = Math.max(0, Math.min(1, +o.age || 0)), rr = stream('claycut:' + (o.key ?? 1));
   const G0 = typeof o.ground === 'function' ? o.ground : () => 0, island = CLAY_CUT_HEX[o.island] ? o.island : 'gatelands';
@@ -4767,18 +4767,18 @@ function clayCut(o = {}) {
   // the scarp: bare clay from the floor to the lip, battered back a little, the spade's scoops bulging it; darker and wetter at its foot
   grid('clay', SEG, 4, (i, j) => { const t = i / SEG, [x, z] = out(t), [nx, nz] = nrm(t), h = hAt(t), v = j / 4, scoop = .025 * Math.sin(arc[i] / .16 * Math.PI) ** 2 * Math.sin(v * Math.PI);
     const back = .06 * h * v + scoop, X = x + nx * back, Z = z + nz * back, y = G0(x, z) + LIFT + h * v;
-    return [X, y, Z, arc[i] / .55, (h * v) / .55, shade(clayC, wet * (.78 + .22 * v))]; });
+    return [X, y, Z, arc[i] / .55, (h * v) / .55, shade(clayC, wet * (.88 + .22 * v))]; });
   // the turf's lip on top: the sod's cut edge overhanging the scarp a hand, its top running back into the berm, which eases down to the land
-  const LIP = .07, BERM = t => .3 + hAt(t) * 1.4;
+  const LIP = .07, BERM = t => .25 + hAt(t) * .9;
   grid('turf', SEG, 5, (i, j) => { const t = i / SEG, [x, z] = out(t), [nx, nz] = nrm(t), h = hAt(t);
-    const rows = [[-.05, -LIP], [-.05, 0], [.04, .012], [.35, -.02 * h], [.7, -.55 * h], [1, -h - LIP]], [s, dy] = rows[j], off = j < 3 ? s : .04 + (s - .04) * BERM(t);
+    const rows = [[-.05, -LIP], [-.05, 0], [.04, .012], [.15, -.06 * h], [.5, -.62 * h], [1, -h - LIP]], [s, dy] = rows[j], off = j < 3 ? s : .04 + (s - .04) * BERM(t);
     const X = x + nx * off, Z = z + nz * off, y = (j < 3 ? G0(x, z) : G0(X, Z)) + LIFT + h + dy + (j === 5 ? -.04 : 0);
     const col = j < 2 ? shade(soilC, .9 + .2 * rr()) : shade(turfC, .92 + .14 * rr()); return [X, y, Z, 0, 0, col]; });
   // the floor: wet clay laid on the land, out to the scarp's foot and across the open front
   { const loop = []; for (let i = 0; i <= SEG; i++) loop.push(out(i / SEG)); for (let k = 1; k < 6; k++) loop.push([W / 2 - W * k / 6, L / 2]);
     const Q = [0, L * .1], R = 4;
     grid('clay', loop.length, R, (i, j) => { const [ox, oz] = loop[i % loop.length], s = j / R, x = Q[0] + (ox - Q[0]) * s, z = Q[1] + (oz - Q[1]) * s, edge = i > SEG ? s : 0;
-      return [x, G0(x, z) + LIFT - .006 * (1 - s), z, x / .5, z / .5, shade(clayC, wet * (.7 + .12 * edge) * (.95 + .1 * rr()))]; }); }
+      return [x, G0(x, z) + LIFT - .006 * (1 - s), z, x / .5, z / .5, shade(clayC, wet * (.82 + .12 * edge) * (.95 + .1 * rr()))]; }); }
   // the lumps the spade left on the floor and the crumbs thrown out with the sods
   for (let k = 0; k < 2 + 2 * n; k++) { const inside = k < n + 1, a = rr() * Math.PI * 2, d = inside ? rr() * .35 : 0;
     const x = inside ? Math.sin(a) * d * W / 2 : W / 2 + .25 + rr() * .5, z = inside ? Math.cos(a) * d * L / 2 : (rr() - .3) * L, s = .04 + rr() * .05;
