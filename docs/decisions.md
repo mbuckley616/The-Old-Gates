@@ -23,6 +23,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 **Recommendation.** B: a storm that covers your steps but spoils your shot is a choice with two sides (feeling 2, a world that pushes back); every number is read from the weather and the clock, already saved and seeded, so co-op holds.
 
+### The Mark's town house inside: as drawn, one room, or not yet? (from the look builder, 13 Nov 2026, #1518)
+**The question.** Michael's C on #1300 put the kit's town house on the Mark's tight lots (Session 2003): 68 homes in the four ports and the city, which inside still open on the old generated room. The look builder has drawn a room for them (`markTownRoom`, `docs/prototypes/levelup/rooms.js`, `rooms.html?room=marktown`), built in the street's own shell at every lot size (4.2–6.6 m by 3.4–7 m), after Bergen's wharf houses: downstairs a living room with a raised hearth (a stone hood and wooden flue where there is no chimney), table, bench and a hanging lamp; a 13-step stair to a landing; upstairs a loft open to the roof with a bed of furs, the game's chest, a cradle where it fits and sacks under the hoist door. 2,600–3,288 triangles in 14 draws; the prototype's checks pass at all 36 sizes. Picture: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2187/docs/prototypes/levelup/rooms-marktown-sheet.jpg
+
+**Options.**
+- **A (recommended).** As drawn: it goes into the game next for all 68 town houses, as the longhouse did.
+- **B.** One room only: the ground floor as drawn, the bed downstairs in place of the stair; upstairs stays unreachable storage.
+- **C.** Leave them on the generated room for now.
+
+**Note.** In the shallowest houses (3.4 m deep) the stair is a ladder-stair at 62°; with no climbing, you walk it as a steep ramp.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
