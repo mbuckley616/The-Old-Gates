@@ -919,10 +919,10 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
   // merge by material: vertex colours carry each part's colour
   const by={};for(const [geo,m,c,mx] of L)(by[m]=by[m]||[]).push([geo,c,mx]);
   const out=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
-  for(const m in by){const P=[],N=[],C=[],I=[];for(const [geo,c,mx] of by[m]){const g=geo.index?geo:geo,p=g.attributes.position,n=g.attributes.normal,b=P.length/3;nm.getNormalMatrix(mx);
-      for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(mx);P.push(v.x,v.y,v.z);v.fromBufferAttribute(n,i).applyMatrix3(nm).normalize();N.push(v.x,v.y,v.z);C.push(c.r,c.g,c.b);}
+  for(const m in by){const P=[],N=[],C=[],I=[],U=[],tx=m.startsWith('fit:');for(const [geo,c,mx] of by[m]){const g=geo.index?geo:geo,p=g.attributes.position,n=g.attributes.normal,uv=g.attributes.uv,b=P.length/3;nm.getNormalMatrix(mx);
+      for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(mx);P.push(v.x,v.y,v.z);v.fromBufferAttribute(n,i).applyMatrix3(nm).normalize();N.push(v.x,v.y,v.z);C.push(c.r,c.g,c.b);if(tx)U.push(uv?uv.getX(i):0,uv?uv.getY(i):0);}
       if(g.index){const ix=g.index.array;for(let i=0;i<ix.length;i++)I.push(ix[i]+b);}else for(let i=0;i<p.count;i++)I.push(b+i);geo.dispose();}
-    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.computeBoundingSphere();
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));if(tx)g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));g.setIndex(I);g.computeBoundingSphere();
     out.push({geo:g,mat:m});}
   return out;
 }
@@ -1038,15 +1038,25 @@ function xbowRigSet(root,f,bolt,RK){const P=root.userData.xbowParts||(root.userD
 // Session 2118: a sword by its make (#1425 B; the item's `swordMake`, S2117): the builder's own blade (people.js swordParts, S2096: the
 // Gatelands' arming sword, the Mark's Norse sword, Aurenne's takouba, nimcha, falchion and flyssa), drawn in true metres along +y from the
 // fist's middle at 0 as every kit piece is (WPN_TRUE takes `sword:<make>`). The blade takes the item's metal; the grip, the guard and the
-// pommel keep the make's own colours, since they are what tells one island's sword from another's (its fittings' knotwork and filigree are
-// the builder's textures, left off: the game's weapons are one vertex-coloured mesh a material). The fist's run is the kit's: the guard 5 cm
+// pommel keep the make's own colours, since they are what tells one island's sword from another's (its fittings' knotwork and filigree, the
+// builder's textures, are kept since S2189: wpnFitMat). The fist's run is the kit's: the guard 5 cm
 // over the fist's middle, the grip its make's length down from there, not pared. Only on the new look (the builder's bundle); otherwise false
 const SWORD_FIT={yG1:.052,kx:.062};
 function wpnSword(L,col,make,steel){if(typeof HB==='undefined'||!HB.swordParts||!HB.SWORDS||!HB.SWORDS[make])return false;
   const K0=HB.SWORDS[make],P=HB.swordParts({},make,{yG1:SWORD_FIT.yG1,yG0:SWORD_FIT.yG1-K0.grip,rIn:null,kx:SWORD_FIT.kx}),fit=new THREE.Color(...K0.fit),grip=new THREE.Color(...K0.gripCol),dark=new THREE.Color(.08,.07,.07);
-  for(const m of P.parts){m.updateMatrix();const n=m.name,metal=n!=='swordGrip'&&n!=='swordRunes';
-    L.push([m.geometry,metal?'metal':'matte',n==='swordBlade'?col('metal',steel):n==='swordGrip'?grip:n==='swordRunes'?dark:col('metal',fit.getHex()),m.matrix.clone()]);}
+  for(const m of P.parts){m.updateMatrix();const n=m.name,metal=n!=='swordGrip'&&n!=='swordRunes',c=n==='swordBlade'?col('metal',steel):n==='swordGrip'?grip:n==='swordRunes'?dark:col('metal',fit.getHex());
+    const M=Array.isArray(m.material)?m.material:null,G=m.geometry;
+    if(!M){L.push([G,metal?wpnFitMat(m.material):'matte',c,m.matrix.clone()]);continue;}
+    for(const gr of G.groups){const sub=new THREE.BufferGeometry();for(const a in G.attributes)sub.setAttribute(a,G.attributes[a]);sub.setIndex(new THREE.BufferAttribute(G.index.array.slice(gr.start,gr.start+gr.count),1));
+      L.push([sub,wpnFitMat(M[gr.materialIndex]),c,m.matrix.clone()]);}}
   return true;}
+// S2189 — the fittings' work in the hand (owed from S2119; the kit's fitTex, S2100): a guard, collar or pommel the kit cuts with knotwork
+// or filigree keeps its texture here, as one more weapon material per pattern (`fit:knotBand`, `fit:knotRing`, `fit:filiBand`,
+// `fit:filiRing`): the metal's own, vertex-coloured, with the kit's canvas as colour and bump. The canvas is read raw (no sRGB decode: the
+// game's output is linear, so the ground keeps the kit's 0.66 as it shows on the builder page). A plain fitting stays `metal`
+function wpnFitMat(mt){const k=mt&&mt.map&&mt.name;if(!k)return'metal';const key='fit:'+k;if(WPN_MAT[key])return key;
+  const t=new THREE.Texture(mt.map.image);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;t.needsUpdate=true;
+  const w=new THREE.MeshStandardMaterial({vertexColors:true,metalness:.7,roughness:.34,map:t,bumpMap:t,bumpScale:mt.bumpScale||2.4});w.name=key;w.userData.fitMetal=true;WPN_MAT[key]=w;return key;}
 function buildWeapon(kind,opts){opts=opts||{};const t=opts.tint;const key=kind+(opts.rust?'|rust':'')+(t?'|'+[t.metal,t.guard,t.wood,t.glow,t.face].join(','):'');let parts=WPN_GEO.get(key);if(!parts){parts=wpnBuild(kind,!!opts.rust,t);WPN_GEO.set(key,parts);}
   const G=new THREE.Group();G.name='weapon:'+kind;G.userData.wpn=kind;for(const p of parts){const m=new THREE.Mesh(p.geo,WPN_MAT[p.mat]);m.castShadow=false;G.add(m);}return G;}
 // S2129 — the foes' swords by island (Michael's B on #1425): a foe's sword takes the make of the island it stands on (a gate's or a fort's
@@ -2271,7 +2281,7 @@ function hbTellTex(){if(_hbTellTex)return _hbTellTex;const c=document.createElem
   _hbTellTex=new THREE.CanvasTexture(c);return _hbTellTex;}
 // the weapon's triangles (in the group's own frame) of the meshes that are not light already, as [a,b,c] Vector3 triples, metal only if asked
 function hbTellTris(w,metal){const T=[];for(const o of w.children){if(!o.isMesh||!o.geometry||o.userData.tell)continue;const mt=o.material;
-    if(mt===WPN_MAT.glow||mt===WPN_MAT.halo||(metal&&mt!==WPN_MAT.metal))continue;const pa=o.geometry.attributes.position,ix=o.geometry.index;if(!pa)continue;o.updateMatrix();
+    if(mt===WPN_MAT.glow||mt===WPN_MAT.halo||(metal&&mt!==WPN_MAT.metal&&!(mt&&mt.userData.fitMetal)))continue;const pa=o.geometry.attributes.position,ix=o.geometry.index;if(!pa)continue;o.updateMatrix();
     const n=ix?ix.count:pa.count,v=i=>new THREE.Vector3().fromBufferAttribute(pa,ix?ix.getX(i):i).applyMatrix4(o.matrix);for(let i=0;i+2<n;i+=3)T.push([v(i),v(i+1),v(i+2)]);}
   return T;}
 // a blade's outline: the metal's x-extent in bins up its length, from the top down to the guard (a bin a half again wider than the
