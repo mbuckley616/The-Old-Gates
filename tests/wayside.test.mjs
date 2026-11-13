@@ -14,6 +14,7 @@
 // Session 2101 Aurenne's first place off the road, the coastal watchtower (PKIT.places.watchtower), on a rise of its coast over the open sea.
 // Session 2107 (begun as 2098, then 2104) the Mark's ice cave mouth (PKIT.places.icemouth), a glacier's tongue on the world's own slope, its tunnel and stream cut into the ground.
 // Session 2105 Aurenne's smuggler's cove (PKIT.places.inlet), an inlet cut into the world's own coast.
+// Session 2184 the watchtower's foot on the point's grey rock, and boulders down to the shore.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
@@ -284,6 +285,13 @@ if (wt) {
   console.log(JSON.stringify(wq));
   check(`${wq.id}: the watchtower ${wq.road} m off the nearest road, the open sea before it, its scarp's foot ${wq.foot} m under the lowest ground round it, its well, cypresses and path within ${wq.stands} m of the ground, ${wq.trees} trees of the scatter in its clearing`, !wq.none && wq.road >= 150 && wq.sea && wq.foot <= -.3 && wq.stands < .06 && wq.trees === 0, wq);
   check(`solid at the drum, ${wq.rim} of 8 points round its foot, the stair, the landing and the wellhead; ${4 - wq.open} of 4 open points blocked; ${wq.tris} triangles in ${wq.draws} draws`, !wq.none && wq.tower && wq.rim === 8 && wq.stair && wq.landing && wq.well && wq.open === 0 && wq.tris < 14000 && wq.draws <= 10, wq);
+  /* S2184 (the critic, 12 Nov: the tower read as standing in sand) — a ray down just past the scarp's foot on the sea side, and on either flank, meets the point's grey rock first */
+  const wr = await page.evaluate(id => { const D = [...CELLS.values()].find(c => c._offroad && c._offroad.id === id)._offroad, rk = D.group.getObjectByName('rock'); if (!rk) return { none: true };
+    D.group.updateMatrixWorld(true); const co = Math.cos(D.ry), s = Math.sin(D.ry), W = (u, v) => [D.x + u * co + v * s, D.z - u * s + v * co], rc = new THREE.Raycaster();
+    const hits = [[0, 5.6], [5.4, 1.5], [-5.4, 1.5]].map(([u, v]) => { const [x, z] = W(u, v); rc.set(new THREE.Vector3(x, D.y + 20, z), new THREE.Vector3(0, -1, 0)); const h = rc.intersectObject(D.group, true)[0]; return h ? h.object.name : null; });
+    return { hits, tris: rk.geometry.attributes.position.count / 3, grey: rk.material.color.getHSL({}).s < .15 }; }, wt.id);
+  console.log(JSON.stringify(wr));
+  check(`${wt.id}: the scarp's foot stands on the point's grey rock (a ray down at the sea side and both flanks meets ${wr.hits}), ${wr.tris} triangles of rock`, !wr.none && wr.hits.every(h => h === 'rock') && wr.grey, wr);
 }
 // Session 2056: the Mark's logging camp (PKIT.places.logging, places.js's markLoggingCamp) on a fall line of the world into water, 150 m and
 // more off every road: the chute from the deck's foot down to 3 m out over the water, clear of the bank all the way; the fire and the
