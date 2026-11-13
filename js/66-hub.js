@@ -38,7 +38,7 @@ function openBookReader(bagIndex){
       showMsg(`📖 You absorb the book's wisdom. +1 ${attrLabel}!`,'#ffd700');
       addLog('📖',`Read "${def.name}" — +1 ${attrLabel}`);
     }
-    if(!def.attr)addLog('📖',`Read "${def.name}".`); /* S979 — a lore book grants nothing */
+    if(!def.attr&&!def.quiet)addLog('📖',`Read "${def.name}".`); /* S979 — a lore book grants nothing; S2174 — a quiet one says nothing (the worn paper) */
     // v61ea: book is NOT consumed. Player retains it for re-reading + lore.
   } else if(def.attr){
     showMsg('You have already absorbed this book. The text is familiar.','#a08860');
@@ -63,9 +63,9 @@ function renderBookPage(){
   const pagEl=document.getElementById('book-pagination');
   const prevBtn=document.getElementById('book-prev');
   const nextBtn=document.getElementById('book-next');
-  if(titleEl)titleEl.textContent=def.name;
+  if(titleEl)titleEl.textContent=def.bare?'':def.name; /* S2174 — a bare sheet has no title and no folios (the worn paper) */
   if(pageEl)pageEl.textContent=def.pages[p];
-  if(pagEl)pagEl.textContent=`Page ${p+1} / ${totalPages}`;
+  if(pagEl)pagEl.textContent=def.bare?'':`Page ${p+1} / ${totalPages}`;
   if(prevBtn)prevBtn.disabled=(p===0);
   if(nextBtn)nextBtn.disabled=(p>=totalPages-1);
 }

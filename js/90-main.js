@@ -1580,6 +1580,7 @@ function loop(now){
     /* S1671 — the prompt names what E does: interact()'s order, the knot first and the way out after a chest, a cot, the forge and a barrel */
     if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
+    else if(typeof varekListNear==='function'&&varekListNear()){iprEl.textContent="Press 'E' to take the worn paper";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2174 */
     else if(typeof cloakDenNear==='function'&&cloakDenNear()){iprEl.textContent="Press 'E' to take the grey cloak from under it";iprEl.style.opacity='1';iprEl.style.display='block';} /* S992 */
     else if(typeof caverglowNear==='function'&&caverglowNear()){iprEl.textContent="Press 'E' to pick the Caverglow";iprEl.style.opacity='1';iprEl.style.display='block';} /* S1896 */
     else if(nearSigilPrompt){
