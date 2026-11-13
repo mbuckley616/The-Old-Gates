@@ -229,7 +229,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
-- **`weapons` red on main: a skeleton's sword by make is not rusted** (QA, Session 2193, s1550; for the bodies builder: `wpnSword`, `wpnBuild`,
+- ~~**`weapons` red on main: a skeleton's sword by make is not rusted** (QA, Session 2193, s1550; for the bodies builder: `wpnSword`, `wpnBuild`,
   `js/32-people.js`). *a skeleton carries a rusted sword or its spear…*: of 24 Skeletons built by `buildFoe`, 11 hold `sword:norse` and 0 of
   the 11 are rusted (`rust: 0`). The kit's rule since S226 is that a rusted weapon draws no part on `WPN_MAT.metal`: `wpnBuild`'s `add` turns
   `metal` into `matte` when `rust` is set. `wpnSword` (S2118) pushes its parts into `L` itself, as `'metal'` (and since S2189 `wpnFitMat`'s
@@ -239,7 +239,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   the suite's own: it tallies `w.userData.wpn` whole, so `sword:norse` is not a `sword`. QA's fix is one line of the tally, `const kw = w ?
   w.userData.wpn : '-', k = kw.split(':')[0];`, with the make counted beside it; with it, the skeleton's rust is the suite's only red. It is
   left out of QA's PR so that PR lands green; whichever lands the rust fix takes the line with it (the bodies builder's PR editing `weapons`
-  runs it), or QA's next run lands it after. This check is unchanged.
+  runs it), or QA's next run lands it after. This check is unchanged.~~ — done, Session 2195 (`wpnSword` takes the rust: every metal part matte; QA's tally line with it; skeletons 11/11 rusted, `weapons` 10/10)
 - ~~**`budget` red: Dunmore's street at noon is over Middle's 2.0 M triangles whenever a townsperson is inside 16 m** (QA, Session 2179, s1536;
   for the bodies builder: `HBODY.near`, `hbLevel`, the full level, `js/32-people.js`). Two runs of `budget` at s1536, both red at *at Middle,
   every view under 2 M triangles*: 2,102,603 and 2,106,281. The street from 4 m south of Dunmore's centre, looking north, reads Bodies 107–108

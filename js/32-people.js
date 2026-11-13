@@ -915,7 +915,7 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       add(SK.ball(.045,12,8,0,Math.PI*2,0,Math.PI/2),'metal',BRASS,[.028,.05,0],[0,0,-Math.PI/2]);for(const [a,b2] of [[.2,.1],[-.24,0]])add(SK.ball(.012,6,5),'metal',BRASS,[.03,a,b2]);}
   };
   const IM=/^impl:(staff|wand|maul|orb|tome):(gatelands|mark|aurenne):(\w*)$/.exec(kind),SM=/^sword:(\w+)$/.exec(kind),PM=/^spear:(\w+)$/.exec(kind),XM=/^crossbow(bare)?:(\w+)$/.exec(kind);
-  if(IM)wpnImpl(add,IM[1],IM[2],IM[3]);else if(SM&&!wpnSword(L,col,SM[1],STEEL))K.sword();else if(PM)K.spear(PM[1]);else if(XM)K.crossbow(!!XM[1],XM[2]);else if(!SM)(K[kind]||K.sword)();
+  if(IM)wpnImpl(add,IM[1],IM[2],IM[3]);else if(SM&&!wpnSword(L,col,SM[1],STEEL,rust))K.sword();else if(PM)K.spear(PM[1]);else if(XM)K.crossbow(!!XM[1],XM[2]);else if(!SM)(K[kind]||K.sword)();
   // merge by material: vertex colours carry each part's colour
   const by={};for(const [geo,m,c,mx] of L)(by[m]=by[m]||[]).push([geo,c,mx]);
   const out=[];const v=new THREE.Vector3(),nm=new THREE.Matrix3();
@@ -1041,14 +1041,15 @@ function xbowRigSet(root,f,bolt,RK){const P=root.userData.xbowParts||(root.userD
 // pommel keep the make's own colours, since they are what tells one island's sword from another's (its fittings' knotwork and filigree, the
 // builder's textures, are kept since S2189: wpnFitMat). The fist's run is the kit's: the guard 5 cm
 // over the fist's middle, the grip its make's length down from there, not pared. Only on the new look (the builder's bundle); otherwise false
+// S2195 — a rusted sword by its make (a skeleton's) is drawn matte, fittings and all, as wpnBuild's own pieces are (rust: no part on metal)
 const SWORD_FIT={yG1:.052,kx:.062};
-function wpnSword(L,col,make,steel){if(typeof HB==='undefined'||!HB.swordParts||!HB.SWORDS||!HB.SWORDS[make])return false;
+function wpnSword(L,col,make,steel,rust){if(typeof HB==='undefined'||!HB.swordParts||!HB.SWORDS||!HB.SWORDS[make])return false;
   const K0=HB.SWORDS[make],P=HB.swordParts({},make,{yG1:SWORD_FIT.yG1,yG0:SWORD_FIT.yG1-K0.grip,rIn:null,kx:SWORD_FIT.kx}),fit=new THREE.Color(...K0.fit),grip=new THREE.Color(...K0.gripCol),dark=new THREE.Color(.08,.07,.07);
   for(const m of P.parts){m.updateMatrix();const n=m.name,metal=n!=='swordGrip'&&n!=='swordRunes',c=n==='swordBlade'?col('metal',steel):n==='swordGrip'?grip:n==='swordRunes'?dark:col('metal',fit.getHex());
     const M=Array.isArray(m.material)?m.material:null,G=m.geometry;
-    if(!M){L.push([G,metal?wpnFitMat(m.material):'matte',c,m.matrix.clone()]);continue;}
+    if(!M){L.push([G,metal&&!rust?wpnFitMat(m.material):'matte',c,m.matrix.clone()]);continue;}
     for(const gr of G.groups){const sub=new THREE.BufferGeometry();for(const a in G.attributes)sub.setAttribute(a,G.attributes[a]);sub.setIndex(new THREE.BufferAttribute(G.index.array.slice(gr.start,gr.start+gr.count),1));
-      L.push([sub,wpnFitMat(M[gr.materialIndex]),c,m.matrix.clone()]);}}
+      L.push([sub,rust?'matte':wpnFitMat(M[gr.materialIndex]),c,m.matrix.clone()]);}}
   return true;}
 // S2189 — the fittings' work in the hand (owed from S2119; the kit's fitTex, S2100): a guard, collar or pommel the kit cuts with knotwork
 // or filigree keeps its texture here, as one more weapon material per pattern (`fit:knotBand`, `fit:knotRing`, `fit:filiBand`,
