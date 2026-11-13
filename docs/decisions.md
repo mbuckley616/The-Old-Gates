@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The adventurer's kit: a pack, the pack plus a spyglass, rod and net, or those plus wear? (from the designer, 13 Nov 2026, #1504)
+**The question.** Backlog L8's adventurer's kit (OG-098) asks a use for each thing carried. Most of it is built (pick, hatchet, joiner's kit, shovel, skinning knife, mess kit, bedrolls, tent, water vessels, cloaks), but nothing makes what you carry a choice, and nothing in the game is a pack, a spyglass, a rod or a net. How far should the kit go? Page: `docs/design/adventurers-kit.md`.
+
+**Options.**
+- **A.** A pack (2 kg, 40 gold): the first 20 kg of tools and goods weigh nothing, never armour or weapons; past 10 kg in it the roll is the heavy roll. By island in looks only. A *Kit* tab in the inventory. One systems session, one bodies.
+- **B (recommended).** A, plus a spyglass (ships read to 800 m; towns, forts, lairs and gate doors *sighted* in pencil to 1,000 m, no fast travel; bound by fog and dark), a rod (cast from a bank, a bite in 15–45 s, a 1 s strike) and a net (from your deck over a school, 3–5 fish, feeds the crew). Three systems sessions, one bodies, one look.
+- **C.** B, plus wear (pick 300 strikes, hatchet 60 trees, mended at the smith) and footing (ice and mud, nailed boots). Three more systems sessions and a deep-work session.
+
+**Recommendation.** B: the pack makes the load a choice without raising a fighter's numbers, and the glass, rod and net are the sheet's three verbs nothing answers; wear is a chore and footing is L11's own proposal.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
