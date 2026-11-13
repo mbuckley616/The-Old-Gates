@@ -58,7 +58,9 @@ await W(6000); await g.hide();
 R.inside = await page.evaluate(() => activeZoneId);
 check('the dungeon door going down autosaves at the threshold, in the world', R.door.door && R.door.saves.length === 1 && /^world@/.test(R.door.saves[0]) && R.inside === 'dungeon', { ...R.door, inside: R.inside });
 // and coming back up saves as before (goToOW)
-await reset(); await page.evaluate(() => goToOW()); await W(4000); await g.hide();
+/* S2169: wait for the save, not 4 s of wall clock: goToOW saves in its fade's callback, which ran past 4 s on CI (12 Nov, 43134216007, FLAKY) */
+await reset(); await page.evaluate(() => goToOW());
+await page.waitForFunction(() => _saves.length > 0, null, { timeout: 60000, polling: 200 }).catch(() => {}); await W(1000); await g.hide();
 R.up = await saves();
 check('coming back up still autosaves', R.up.length >= 1, R.up);
 console.log(JSON.stringify(R));
