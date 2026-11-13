@@ -1,6 +1,6 @@
 // The wreck and the world's chests on the kit (Session 259, H.5): a sea-floor wreck is a hull broken in two, open ribs
 // on a keel with rotted planking, a stem, a snapped mast; the wreck's sea chest and the lairs' and bandit camps' hoards
-// are S198's kit chest at the old box's size, their lids opening on the hinge.
+// are S198's kit chest at the old box's size, their lids opening on the hinge. Session 2170 adds the whale fall on the open bed.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
@@ -34,5 +34,23 @@ console.log(JSON.stringify(c));
 check('a lair or bandit camp near the start has its hoard', !!c && !c.err, c);
 if (c && !c.err) { check('the hoard is the kit chest (body and lid), still in the scene after the site\'s bake', c.inScene && c.meshes === 2, c);
   check('it opens on its hinge', c.before === 0 && c.after < -.9, c); }
+// Session 2170 — the whale fall (OG-125, card F11; PKIT.places.whale, undersea.js's whaleFall): about one chunk of open bed in 800 lays a
+// whale's bones, the same spots when asked again; the nearest is built when its chunk loads, one draw, her bones on the drawn bed, and a
+// chunk left and entered again takes the same built bones back rather than building them twice
+const wf = await page.evaluate(() => { const N = Math.ceil(WORLD.SIZE * GRID / CHUNK), L = []; for (let cx = 0; cx < N; cx++) for (let cz = 0; cz < N; cz++) { if (hash01(cx, cz, 170) > WHALE_FALL_ODDS) continue; const d = whaleFallSpot(cx, cz); if (d) L.push({ cx, cz, ...d }); }
+  const again = L.every(d => { const e = whaleFallSpot(d.cx, d.cz); return e && e.x === d.x && e.z === d.z && e.ry === d.ry; }), wrecks = L.filter(d => wreckSpot(d.cx, d.cz)).length;
+  L.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); return { n: L.length, again, wrecks, near: L[0] }; });
+check(`${wf.n} whale falls lie on the open bed (60 to 300), the same when asked again, none in a wreck's chunk`, wf.n >= 60 && wf.n <= 300 && wf.again && wf.wrecks === 0, wf);
+if (wf.near) { const D = wf.near, key = `${D.cx},${D.cz}`;
+  await page.evaluate(D => WORLD.enter(D.x - 14, D.z + 6, 0, 'test'), D);
+  for (let k = 0; k < 30; k++) { await g.spin('clear', 20); if (await page.evaluate(k => !!(chunks.get(k) && chunks.get(k).whale), key)) break; }
+  const w = await page.evaluate(k => { const ch = chunks.get(k); if (!ch || !ch.whale) return { none: true }; const W = ch.whale, M = W.M, co = Math.cos(W.ry), s_ = Math.sin(W.ry), Wd = (u, v) => [W.x + u * co + v * s_, W.z - u * s_ + v * co];
+    const sink = M.spine.filter(v => !v.loose).map(v => v.y - v.r * .6 - (meshH(...Wd(v.x, v.z)) - W.y)), mesh = W.group.children[0];
+    const out = { tris: W.tris, draws: W.draws, colours: !!mesh.geometry.attributes.color, len: M.length, gap: M.gap, bed: W.bed, inScene: !!(W.group.parent === ch.group && ch.group.parent), sinkMin: +Math.min(...sink).toFixed(3), sinkMax: +Math.max(...sink).toFixed(3) };
+    const grp = W.group; dropChunk(k); out.gone = !grp.parent || !grp.parent.parent; buildChunk(...k.split(',').map(Number)); const c2 = chunks.get(k); out.same = !!(c2 && c2.whale && c2.whale.group === grp && grp.parent === c2.group); return out; }, key);
+  console.log(JSON.stringify(w));
+  check(`the nearest is built with her chunk, on a bed ${w.bed} m down: ${w.tris} triangles in ${w.draws} draw (under 20k, one draw, vertex-coloured), ${w.len} m long`, !w.none && w.inScene && w.draws === 1 && w.tris < 20000 && w.colours && w.len > 18 && w.len < 21, w);
+  check(`her vertebrae lie on the drawn bed, 5 to 12 cm into it (${w.sinkMin}..${w.sinkMax}); the cage's gap ${w.gap && w.gap.clear} m wide and ${w.gap && w.gap.high} m high`, w.sinkMin > -.12 && w.sinkMax < -.05 && w.gap && w.gap.clear > .9 && w.gap.high > 1.5, w);
+  check('her chunk dropped takes her out of the scene, and loaded again takes the same bones back', w.gone && w.same, w); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -758,6 +758,29 @@
     if(hash01(cx,cz,150)>.06)return null; // ~1 in 16 candidate chunks
     for(let k=0;k<9;k++){const tx=cx*CHUNK+8+hash01(cx+k,cz,151)*(CHUNK-16),tz=cz*CHUNK+8+hash01(cz,cx+k,152)*(CHUNK-16),b=placeH(tx,tz);if(b<-2.5&&b>-8)return {x:tx,z:tz,bed:b};}
     return null;}
+  // S2170 — the whale fall on the sea bed (OG-125, card F11; undersea.js's whaleFall as PKIT.places.whale): about one chunk in 800 of the
+  // open bed, its spot the first of six hashed ones whose bed (placeH, the land keyed by place, as wreckSpot reads it) is 7 to 10 m under
+  // the sea at her middle and at her two ends and two sides, and never a chunk that lays a wreck. She lies on the drawn ground (meshH) in
+  // her own frame, turned by the chunk's hash. Built when her chunk loads; the last four built are kept whole, so a chunk left and
+  // entered again does not build her twice, and an older one is let go only once her chunk has dropped. New look only. {x,z,ry,bed} or null.
+  const WHALE_FALL_ODDS=1/800,WHALE_FALLS=new Map();
+  function whaleFallSpot(cx,cz){
+    if(hash01(cx,cz,170)>WHALE_FALL_ODDS||wreckSpot(cx,cz))return null;
+    const ry=hash01(cx,cz,171)*Math.PI*2,co=Math.cos(ry),s_=Math.sin(ry);
+    for(let k=0;k<6;k++){const tx=cx*CHUNK+16+hash01(cx+k,cz,172)*(CHUNK-32),tz=cz*CHUNK+16+hash01(cz,cx+k,173)*(CHUNK-32);let ok=true,bed=0;
+      for(const [u,v] of [[0,0],[-14,0],[11,0],[0,-6],[0,6]]){const b=placeH(tx+u*co+v*s_,tz-u*s_+v*co);if(!(b<-7&&b>-10)){ok=false;break;}if(!u&&!v)bed=b;}
+      if(ok)return {x:tx,z:tz,ry,bed};}
+    return null;}
+  function spawnWhaleFall(ch){
+    if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.whale)return;
+    const key=chunkKey(ch.cx,ch.cz);let W=WHALE_FALLS.get(key);
+    if(!W){const D=whaleFallSpot(ch.cx,ch.cz);if(!D)return;const co=Math.cos(D.ry),s_=Math.sin(D.ry),y0=meshH(D.x,D.z);
+      let M=null;try{M=PKIT.places.whale({key:'whale:'+key,land:(lx,lz)=>meshH(D.x+lx*co+lz*s_,D.z-lx*s_+lz*co)-y0});}catch(e){console.warn('whale fall',key,e);return;}
+      M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='whaleFall';
+      W={...D,y:y0,key,group:M.group,tris:M.tris,draws:M.draws,M};WHALE_FALLS.set(key,W);
+      for(const [k,o] of WHALE_FALLS){if(WHALE_FALLS.size<=4)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});WHALE_FALLS.delete(k);}}
+    else{WHALE_FALLS.delete(key);WHALE_FALLS.set(key,W);}
+    ch.group.add(W.group);ch.whale=W;}
   function spawnWreck(ch){
     const w=wreckSpot(ch.cx,ch.cz);if(!w)return;
     const x=w.x,z=w.z,y=worldH(x,z),ry=hash01(ch.cx,ch.cz,153)*Math.PI*2;
