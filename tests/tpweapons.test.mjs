@@ -59,6 +59,27 @@ check(`each island's spear is the kit's head (the winged ${heads.winged.tris}, t
   heads.leaf.kit === 'spear' && heads.none.kit === 'spear' && heads.winged.kit === 'spear:winged' && heads.long.kit === 'spear:long' &&
   ['winged', 'long'].every(k => Math.abs(heads[k].len - heads.none.len) < .02 && heads[k].tris > heads.none.tris) && heads.winged.wide > heads.long.wide + .02, heads);
 
+// S2185 — a crossbow by its island (S2180's it.crossbowMake): the kit's prod by make (people.js CROSSBOWS), the string from its own tips;
+// no make keeps the old crossbow; in the hand at its true size, and the builder's copy strung from the same tips
+const xbows = await page.evaluate(() => { const o = {};
+  for (const mk of ['wood', 'steel', 'horn', null]) { const w = tpWeapon({ name: 'Crossbow', weaponShape: 'crossbow', ...(mk ? { crossbowMake: mk, make: 'x' } : {}) }), k = w.children[0], bb = new THREE.Box3().setFromObject(k);
+    let tris = 0, prodCol = 0; const CB = mk && HB.CROSSBOWS[mk], pc = CB && !CB.metal ? new THREE.Color(...CB.prod) : null;
+    k.traverse(x => { if (!x.isMesh || x.name) return; tris += x.geometry.index ? x.geometry.index.count / 3 : 0; const C = x.geometry.attributes.color; if (pc && C) for (let i = 0; i < C.count; i++) if (Math.abs(C.getX(i) - pc.r) + Math.abs(C.getY(i) - pc.g) + Math.abs(C.getZ(i) - pc.b) < .01) prodCol++; });
+    const sl = k.userData.xbowParts.xbowStringL; o[mk || 'none'] = { kit: w.userData.kit, span: +(bb.max.z - bb.min.z).toFixed(3), tris, prodCol, tip: [+sl.position.y.toFixed(3), +Math.abs(sl.position.z).toFixed(3)] }; }
+  EQ.weapon = { name: 'Horn Crossbow', slot: 'weapon', weaponShape: 'crossbow', twoHand: true, crossbowMake: 'horn', make: 'x' }; EQ.offhand = null; tpUpdate(1 / 60, { moving: false, sprinting: false, camY: 1.6, now: performance.now() + 80 });
+  const R = TP.rig, k = R.weapon && R.weapon.children[0]; let held = null;
+  if (k) { const s = new THREE.Vector3(); k.getWorldScale(s); held = { kit: R.weapon.userData.kit, scale: +s.y.toFixed(3), copyTip: null };
+    const h = R.hbHeld && R.hbHeld.find(h => h.o === R.weapon); if (h) { xbowRigSet(h.c, 0, false, k.userData.xbowK); let sl = null; h.c.traverse(c => { if (c.name === 'xbowStringL') sl = c; }); if (sl) held.copyTip = [+sl.position.y.toFixed(3), +Math.abs(sl.position.z).toFixed(3)]; } }
+  EQ.weapon = null; return { o, held }; });
+console.log('crossbow makes', JSON.stringify(xbows));
+const XB = xbows.o;
+check(`each island's crossbow is the kit's make (the wood ${XB.wood.tris}, the steel ${XB.steel.tris}, the horn ${XB.horn.tris} tris), its prod's own span and colour and the string from its tips; no make keeps the old crossbow`,
+  XB.none.kit === 'crossbow' && ['wood', 'steel', 'horn'].every(m => XB[m].kit === 'crossbow:' + m) &&
+  Math.abs(XB.steel.span - .6) < .03 && Math.abs(XB.horn.span - .64) < .03 && Math.abs(XB.wood.span - .66) < .03 && XB.wood.prodCol > 50 && XB.horn.prodCol > 50 &&
+  Math.abs(XB.steel.tip[0] - .505) < .002 && Math.abs(XB.steel.tip[1] - .3) < .002 && Math.abs(XB.horn.tip[0] - .485) < .002 && Math.abs(XB.none.tip[0] - .49) < .002 && Math.abs(XB.none.tip[1] - .33) < .002, XB);
+check('a crossbow by its make is carried at its true size, and the builder\'s copy is strung from the make\'s tips',
+  xbows.held && xbows.held.kit === 'crossbow:horn' && Math.abs(xbows.held.scale - 1) < .02 && (xbows.held.copyTip === null || (Math.abs(xbows.held.copyTip[0] - .485) < .002 && Math.abs(xbows.held.copyTip[1] - .32) < .002)), xbows.held);
+
 // the photograph: the kit tinted as the items tint it, in a row, and the player with sword and shield from behind
 const shot = await page.evaluate(() => { forceTime(12); const cv = REN.domElement, sc = scene; const bx = px + 300, bz = pz, y = 60; const objs = [];
   const cam = new THREE.PerspectiveCamera(30, cv.width / cv.height, .02, 100);

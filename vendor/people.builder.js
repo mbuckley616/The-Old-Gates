@@ -5186,5 +5186,5 @@ function castGenome(name, o = {}) {
   G.height = heightFor(G, C.metres); G.cast = name; return G;
 }
 
-return {loadPack,lozHemY,neckBandY,scarLine,seeded,browShape,astrolabeParts,swordParts,makePerson,makePersonIter,markGenome,toSaved,fromSaved,statureOf,heightFor,peopleGenome,rollGenome,castGenome,HAIR_STYLES,slvX,SWORDS,SPEAR_HEADS,MANTLE_CUT,BODY_SLIDERS,GARMENTS,DRESS_FLAGS,PEOPLES,CAST,MH_PACK_SHA256,get PACK(){return PACK;}};
+return {loadPack,lozHemY,neckBandY,scarLine,seeded,browShape,astrolabeParts,swordParts,makePerson,makePersonIter,markGenome,toSaved,fromSaved,statureOf,heightFor,peopleGenome,rollGenome,castGenome,HAIR_STYLES,slvX,SWORDS,SPEAR_HEADS,CROSSBOWS,MANTLE_CUT,BODY_SLIDERS,GARMENTS,DRESS_FLAGS,PEOPLES,CAST,MH_PACK_SHA256,get PACK(){return PACK;}};
 })();
