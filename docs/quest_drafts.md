@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 44, 12 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 45, 13 Nov: no new calls on the page)
 
 ---
 
@@ -939,7 +939,7 @@ A Markman's writing: short sentences, no honorifics, an oath on iron. Unsigned e
 
 ## The Last Entry — Varek's list in the first gate, after the unbound ending
 
-*Approved by Michael, 14 Oct 2026.* *Drafted 4 Oct 2026. Backlog A, consequence hooks: Varek's list found in the first gate after the unbound ending (canon §11).*
+*Approved by Michael, 14 Oct 2026.* *Built, Session 2174 (PR #1498), word for word: the carry, the paper in the crypt, the pickup's prompt (*Press 'E' to take the worn paper*) and line (*Took the worn paper.*), the eight folds and the back. The reader's worsening hand and the ink-stroke blots wait on the book reader (backlog A, systems); until then a blot reads as an em dash, the draft's fallback.* *Drafted 4 Oct 2026. Backlog A, consequence hooks: Varek's list found in the first gate after the unbound ending (canon §11).*
 
 ### What the canon fixes, and where it is silent
 
