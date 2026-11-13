@@ -64,11 +64,32 @@ function renderBookPage(){
   const prevBtn=document.getElementById('book-prev');
   const nextBtn=document.getElementById('book-next');
   if(titleEl)titleEl.textContent=def.bare?'':def.name; /* S2174 — a bare sheet has no title and no folios (the worn paper) */
-  if(pageEl)pageEl.textContent=def.pages[p];
+  if(pageEl){const tx=String(def.pages[p]),h=def.hands?+def.hands[p]||0:0; /* S2176 — a worn hand and its blots (the worn paper's `hands`, The Last Entry) */
+    if(def.hands){pageEl.innerHTML=bookHandHTML(tx,h,p);pageEl.style.letterSpacing=(.02+.12*h).toFixed(3)+'em';}
+    else{pageEl.textContent=tx.replace(/\{blot\}/g,'—');pageEl.style.letterSpacing='';}}
   if(pagEl)pagEl.textContent=def.bare?'':`Page ${p+1} / ${totalPages}`;
   if(prevBtn)prevBtn.disabled=(p===0);
   if(nextBtn)nextBtn.disabled=(p>=totalPages-1);
 }
+// S2176 — a page in a hand that wears (The Last Entry's draft: each fold's hand loosened from 0 to 1 by letter spacing, a slant and a
+// jittered baseline; `{blot}` drawn as an ink stroke that cannot be read). At h 1 a word leans 9°, sits up to 2.4 px off the line, turns
+// up to 1.6° and the letters spread .12 em; at 0 the hand is the reader's own. The jitter is cosmetic but fixed by the fold and the word,
+// so a page reads the same each time it is turned to. A blot is a scrawl in the text's ink with a hidden em dash under it (the text
+// fallback, and what the page's text reads as).
+function bookHandRnd(a,b){let x=(a*7919+b*104729+13)|0;x=Math.imul(x^(x>>>15),2246822507);x=Math.imul(x^(x>>>13),3266489909);return ((x^(x>>>16))>>>0)/4294967296;}
+function bookHandEsc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function bookBlotSVG(f,i){const w=26+Math.round(bookHandRnd(f,i*3+1)*14),n=5+Math.floor(bookHandRnd(f,i*3+2)*3);let d=`M1 ${8+bookHandRnd(f,i)*4|0}`;
+  for(let k=1;k<=n;k++){const x=(w-2)*k/n+1,y=k%2?2+bookHandRnd(f,i*7+k)*3:12+bookHandRnd(f,i*7+k)*3;d+=` L${x.toFixed(1)} ${y.toFixed(1)}`;}
+  d+=` M2 ${7+bookHandRnd(f,i*5)*2|0} Q${w/2|0} ${3+bookHandRnd(f,i*5+1)*8|0} ${w-2} ${6+bookHandRnd(f,i*5+2)*4|0}`;
+  const r=((bookHandRnd(f,i*11)-.5)*14).toFixed(1);
+  return `<span class="bk-blot" style="display:inline-block;position:relative;width:${w}px;height:1em;vertical-align:-.15em;transform:rotate(${r}deg)"><svg aria-hidden="true" width="${w}" height="16" viewBox="0 0 ${w} 16" style="position:absolute;left:0;top:0;overflow:visible"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/></svg><span style="opacity:0">—</span></span>`;}
+function bookHandHTML(tx,h,f){let out='',wi=0,bi=0;
+  for(const tok of tx.split(/(\{blot\}|\s+)/)){if(!tok)continue;
+    if(tok==='{blot}'){out+=bookBlotSVG(f,bi++);continue;}
+    if(/^\s+$/.test(tok)||h<=0){out+=bookHandEsc(tok);continue;}
+    const y=((bookHandRnd(f,wi*2+1)-.5)*4.8*h).toFixed(2),r=((bookHandRnd(f,wi*2+2)-.5)*3.2*h).toFixed(2),k=(-9*h).toFixed(1);wi++;
+    out+=`<span style="display:inline-block;transform:translateY(${y}px) rotate(${r}deg) skewX(${k}deg)">${bookHandEsc(tok)}</span>`;}
+  return out;}
 function bookNextPage(){
   if(!_bookState.bookDef)return;
   if(_bookState.page<_bookState.bookDef.pages.length-1){
