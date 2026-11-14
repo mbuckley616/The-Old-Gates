@@ -113,11 +113,19 @@ const sweep = await page.evaluate(() => { const f = _W[1], e = f.e, rig = f.rig,
 check(`the bear walked sideways and backwards plants its paws (${sweep.side.slip} and ${sweep.back.slip} m/s against ${sweep.ahead.slip} ahead; the kit's ${sweep.side.kit} and ${sweep.back.kit} against ${sweep.ahead.kit})`,
   !sweep.side.gallop && sweep.side.slip < .35 && sweep.back.slip < .35 && sweep.ahead.kit < .35 && sweep.side.kit < sweep.ahead.kit + .2 && sweep.back.kit < sweep.ahead.kit + .2, sweep);
 
-// the tell's glow reaches the kit's hide, and goes out with it
-const glow = await page.evaluate(() => { const f = _W[0], rig = f.rig, mats = () => [...rig.hc.hide, ...rig.hc.fur].map(o => o.material);
-  const lit = () => mats().filter(m => m.emissive && m.emissive.getHex() !== 0).length;
-  telegraphPulse(f.e, 1); tickCreatures(1 / 60, 6e5); const on = lit(), all = mats().length; telegraphReset(f.e); tickCreatures(1 / 60, 6e5 + 17); return { on, all, off: lit() }; });
-check('the tell\'s glow lights the kit\'s hide and fur and goes out with it', glow.on > 0 && glow.on === glow.all && glow.off === 0, glow);
+// S2210 (Michael's B on #1522): at the tell's height a beast's hide and fur keep their own colours and its muzzle and jaw take the
+// colour (the mask's uniform, uTell), gold for a light blow and red for a heavy one, with a glare in the mouth; out with the tell
+const glow = await page.evaluate(() => { let t = 6e5; return _W.map(f => { const H = f.rig && f.rig.hc; if (!H) return { n: f.n, none: true };
+  const lit = () => [...H.hide, ...H.fur].map(o => o.material).filter(m => m.emissive && m.emissive.getHex() !== 0).length, J = H.jaw;
+  const now = () => ({ body: lit(), jaw: J ? J.u.value.toArray().map(x => +x.toFixed(2)) : null, glare: !!(J && J.glare.visible) });
+  const out = { n: f.n, share: J ? +J.share.toFixed(4) : 0, attr: [...H.hide, ...H.fur].filter(o => o.geometry.attributes.aTell).length, of: H.hide.length + H.fur.length };
+  f.e.telegraphMax = .9; for (const heavy of [false, true]) { f.e._heavy = heavy; telegraphPulse(f.e, 1); tickCreatures(1 / 60, t += 17); out[heavy ? 'heavy' : 'light'] = now(); }
+  telegraphReset(f.e); f.e._heavy = false; tickCreatures(1 / 60, t += 17); out.off = now(); return out; }); });
+console.log('  tell:', JSON.stringify(glow));
+const jawOk = x => !x.none && x.share > .004 && x.share < .08 && x.attr >= 1 && x.light.body === 0 && x.heavy.body === 0 && x.light.glare && x.heavy.glare
+  && x.light.jaw[0] > .3 && x.light.jaw[1] > .5 * x.light.jaw[0] && x.heavy.jaw[1] < .25 * x.heavy.jaw[0] && x.off.body === 0 && x.off.jaw[0] === 0 && !x.off.glare;
+check(`at the tell's height each beast's hide stays dark and its muzzle and jaw take the colour (${glow.map(x => x.n + ' ' + (x.share * 100).toFixed(1) + '%').join(', ')} of the hide; gold, then red); out with the tell`,
+  glow.every(jawOk), glow.filter(x => !jawOk(x)));
 
 // the coach's two horses (Session 1273): the kit's horse in each one's coat, keyed by the coach's road and the place in the team as
 // buildCoachLine keys them; standing on their hooves, and at the trot each planted hoof kept on the driver's (hcLegIK)
