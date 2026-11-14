@@ -276,6 +276,12 @@ if (cb) {
     return { id: h.id, W: +h._roomW.toFixed(2), D: +h._roomD.toFixed(2), arrive: [+ax.toFixed(2), +az.toFixed(2)], clear: !intSolidAt(ax, az, .3, 0), exits: az > h._roomD - h._exitD, walks, lights, draws, tris: Math.round(tris), npc: !!intNPCMesh }; });
   console.log(JSON.stringify(cr));
   check(`${cb.id}: E at its door takes you into the cabin's room (${cr.W} by ${cr.D} m), nobody in, arriving clear at ${cr.arrive} short of the door; its walks clear (${cr.walks}); ${cr.lights} lights, ${cr.tris} triangles in ${cr.draws} draws`, !cr.none && cr.clear && !cr.exits && !cr.npc && cr.walks.every(n => n === 0) && cr.lights >= 2 && cr.draws <= 26 && cr.tris < 9000, cr);
+  // Session 2200 (the look builder's S2196 asked): the bed of furs is free to rest in, as the old look's generated room gave the house type;
+  // from the floor at its side, looking at it, E finds it and the prompt offers the rest; nobody's bed, so nothing refuses it
+  const bdr = await page.evaluate(() => { const b = (INT_BEDS || [])[0]; if (!b) return { none: true, n: 0 }; px = b.x - .75; pz = b.z; jumpY = 0;
+    lookAtPt(b.x, .45, b.z); const t = intBedTarget(); return { n: INT_BEDS.length, owner: b.owner, at: [+b.x.toFixed(2), +b.z.toFixed(2)], stand: !intSolidAt(px, pz, .2, 0), found: t === b, prompt: t ? WORLD.bedPrompt(t) : null, refused: t ? WORLD.bedInteract(t) : null, grade: REST_BED[t && t.owner === 'free' ? 'bed' : 'own'].c }; });
+  console.log(JSON.stringify(bdr));
+  check(`${cb.id}: the bed of furs is a free bed (${bdr.n} in the room, at ${bdr.at}); from its side the crosshair finds it and offers "${bdr.prompt}", nothing refuses it, comfort ${bdr.grade}`, !bdr.none && bdr.n === 1 && bdr.owner === 'free' && bdr.stand && bdr.found && bdr.prompt === "Press 'E' to rest" && bdr.refused === false && bdr.grade === 3, bdr);
   await page.evaluate(() => exitInterior());
   for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
   const co = await page.evaluate(() => ({ out: !isInterior(), solid: solidAt(px, pz, jumpY + .5) }));

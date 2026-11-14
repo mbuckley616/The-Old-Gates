@@ -2542,6 +2542,9 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // the peis, the stack, the shelves, the pegs, the pole and the leaf are not
     const TALL=['peis','stack','shelf','pegs','pole','leaf'];
     for(const q of T.boxes){const b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:Math.max(0,ry(q.y0)),y1:ry(q.y1)};SOL.push(b);if(!TALL.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    // S2200 — the bed of furs is free to rest in, as the old look's generated room gave this house type (bedOwner 'free': nobody's home,
+    // REST_BED.bed's comfort 3); its head against the back wall, the aim box down its length as every bed's
+    {const b=T.bed,x=rx((b.x0+b.x1)/2),cz=rz((b.z0+b.z1)/2);INT_BEDS.push({x,z:cz+.2,y:0,owner:'free',room:null,cz});intBedPos={x,z:cz+.2};}
     // the day beyond the four lights and the open door: one mesh of planes a hand outside the logs
     const hr=typeof gameHour==='function'?gameHour():12;
     {const day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),P=[],Rl=.2;
