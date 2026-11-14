@@ -1970,6 +1970,63 @@
     if(activeZoneId!=='world'||!SHIP.mesh||SHIP.sailing||!onDeck()||Math.abs(SHIP.speed||0)>NET_KNOTS){NET.on=null;showMsg('You haul the net in empty.','#a0a090');return;}
     if(performance.now()-N.t0>=NET_MS)netHaul();}
   function tickNetted(){for(const s of LIFE.fish)if(s.im)s.im.visible=!schoolNetted(s);}
+  // S2221 — the spyglass (Michael's B on #1504, docs/design/adventurers-kit.md; GLASS_ITEM, 50-travel.js). Used from the bag, it is raised:
+  // the view narrows ×5 (glassZoom, read by the loop's field of view in 90-main.js) and a step, a jump, a blow struck or taken, leaving the
+  // open world or putting it away lowers it. At the helm the keys steer her, so only a blow lowers it there. Four times a second
+  // (tickGlass) it reads what lies in the narrow view, out to its reach:
+  // - its reach (glassReach) is the weather's sight (WX.sightM, #679: fog's 60 m), capped at 1,000 m; after dusk (_nightFactor over .5) it
+  //   is 0, so the glass sees no further than your eye and the hilltop is a clear day's thing;
+  // - a ship (OTHER) within 800 m and the reach, nearest the view's middle within her own breadth and 1°, shows a card: her trade
+  //   (a merchantman, a black sail, or the ship a quest of yours is after), her build, her waters, and her hull and rig if hurt;
+  // - a town, a fort, a lair or a gate's door (GLASS_KINDS) within the reach, inside the narrow view and over no ridge (glassClear samples
+  //   the ground every 10 m against the line of sight), not yet discovered, is sighted: worldState.sighted[id], the character's key
+  //   (SS_CHAR_WS, the S242 list). The map pencils it with its name (83-world-generator.js); fast travel still wants it walked to.
+  //   Places by and off the road are never sighted (#1292 A). Sighting gives no experience: discovering does.
+  const GLASS={up:false,php:0,t:0,ship:null,el:null,ring:null};const GLASS_ZOOM=5,GLASS_SHIP=800,GLASS_PLACE=1000;
+  const GLASS_KINDS={city:1,town:1,village:1,port:1,garrison:1,lair:1,fort:1,cave:1};
+  function hasGlass(){return BAG.some(b=>b&&b.tool==='glass');}
+  function glassCan(){return activeZoneId==='world'&&lid==='overworld'&&!isInterior()&&!isSwimming()&&!dead;}
+  function glassReach(){if(!glassCan())return 0;if(typeof _nightFactor==='function'&&_nightFactor()>.5)return 0;return Math.min(GLASS_PLACE,WX.sightM||WX_SIGHT.clear);}
+  function glassZoom(){if(GLASS.up&&!glassCan())glassDown();return GLASS.up?GLASS_ZOOM:1;}
+  function glassSighted(id){return !!(worldState.sighted&&worldState.sighted[id]);}
+  function glassRaise(){if(!hasGlass())return false;if(!glassCan()){showMsg('Not here.','#a0a090');return false;}
+    GLASS.up=true;GLASS.php=PHP;GLASS.t=0;GLASS.ship=null;glassDress(true);return true;}
+  function glassDown(){if(!GLASS.up)return;GLASS.up=false;GLASS.ship=null;glassDress(false);}
+  function glassToggle(){return GLASS.up?(glassDown(),true):glassRaise();}
+  // the narrow view's ring and the ship's card: two plain elements made on first use
+  function glassDress(on){if(on&&!GLASS.ring){const r=document.createElement('div');r.id='glass-ring';r.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:40;display:none;background:radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 0,rgba(0,0,0,0) 38vmin,rgba(8,6,4,.92) 41vmin)';document.body.appendChild(r);GLASS.ring=r;
+      const c=document.createElement('div');c.id='glass-card';c.style.cssText='position:fixed;left:50%;top:calc(50% + 24vmin);transform:translateX(-50%);pointer-events:none;z-index:41;display:none;padding:8px 14px;background:rgba(28,20,12,.86);border:1px solid #8a6a3a;border-radius:4px;color:#e8d8b0;font:14px Georgia,serif;text-align:center;min-width:180px';document.body.appendChild(c);GLASS.el=c;}
+    if(GLASS.ring)GLASS.ring.style.display=on?'block':'none';if(GLASS.el&&!on)GLASS.el.style.display='none';}
+  // what the card says of a ship: her trade, her build, her waters, and her bars when hurt
+  function glassCard(o){const quest=String(o.id||'').startsWith('story:')||o.oswy;const trade=quest?(o.name||'The ship you are after'):o.kind==='pirate'?'A black sail':'A merchantman';
+    const nk=typeof nationAt==='function'?nationAt(o.x,o.z):null,N=nk&&NATIONS[nk];const L=[trade,`${o.cls||'ship'}${N?' · in the waters of '+N.name:''}`];
+    const hurt=[];if(o.hull<o.hullMax)hurt.push(`hull ${Math.max(0,Math.round(o.hull))} of ${o.hullMax}`);if(o.rig<100)hurt.push(`rig ${Math.max(0,Math.round(o.rig))} of 100`);if(hurt.length)L.push(hurt.join(' · '));
+    return L;}
+  // the ground under the line from the eye to a place, every 10 m: nothing over a ridge is sighted
+  function glassClear(ex,ey,ez,tx,ty,tz){const d=Math.hypot(tx-ex,tz-ez),n=Math.floor(d/10);for(let k=1;k<n;k++){const f=k/n;if(worldH(ex+(tx-ex)*f,ez+(tz-ez)*f)>ey+(ty-ey)*f)return false;}return true;}
+  const _glV=new THREE.Vector3();
+  function glassLook(){const reach=glassReach();const out={ship:null,sighted:[]};if(!reach)return out;
+    CAM.updateMatrixWorld();CAM.getWorldDirection(_glV);const dx=_glV.x,dy=_glV.y,dz=_glV.z,ex=CAM.position.x,ey=CAM.position.y,ez=CAM.position.z;
+    const ang=(x,y,z)=>{const vx=x-ex,vy=y-ey,vz=z-ez,L=Math.hypot(vx,vy,vz)||1;return Math.acos(Math.max(-1,Math.min(1,(vx*dx+vy*dy+vz*dz)/L)));};
+    let best=null,ba=Infinity;for(const o of OTHER){if(o.dead)continue;const d=Math.hypot(o.x-ex,o.z-ez);if(d>Math.min(GLASS_SHIP,reach))continue;
+      const a=ang(o.x,SEA_Y+3,o.z),lim=Math.atan((o.L||12)/2/Math.max(1,d))+Math.PI/180;if(a<lim&&a<ba){ba=a;best=o;}}
+    out.ship=best;
+    // the narrow view's own frustum: half its height and half its width, from the zoomed field of view
+    const vh=Math.atan(Math.tan(CAM.fov*Math.PI/360)),hh=Math.atan(Math.tan(vh)*(CAM.aspect||1.6)),yawV=Math.atan2(dx,dz);
+    const [ci,cj]=cellOf(ex,ez);for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){let c;try{c=getCell(i,j);}catch(e){continue;}if(!c)continue;
+      for(const e of mapEntries(c)){if(!GLASS_KINDS[e.kind]||discovered(e.id)||glassSighted(e.id))continue;const d=Math.hypot(e.x-ex,e.z-ez);if(d>reach||d<1)continue;
+        let h=Math.atan2(e.x-ex,e.z-ez)-yawV;while(h>Math.PI)h-=2*Math.PI;while(h<-Math.PI)h+=2*Math.PI;if(Math.abs(h)>hh)continue;
+        const ty=worldH(e.x,e.z)+4,v=Math.atan2(ty-ey,d)-Math.asin(Math.max(-1,Math.min(1,dy)));if(Math.abs(v)>vh)continue;
+        if(!glassClear(ex,ey,ez,e.x,ty,e.z))continue;out.sighted.push(e);}}
+    return out;}
+  // named action: a place sighted through the glass (the character's knowledge, like wdisc)
+  function sightPlace(id,name){if(!worldState.sighted)worldState.sighted={};if(worldState.sighted[id]||discovered(id))return false;worldState.sighted[id]=1;
+    showMsg(`Sighted: ${name}. Pencilled on your map.`,'#c8c0a8');if(typeof addLog==='function')addLog('🔭',`Sighted ${name} through the glass.`);return true;}
+  function tickGlass(dt){if(!GLASS.up)return;
+    const steps=!SHIP.sailing&&(K['KeyW']||K['KeyA']||K['KeyS']||K['KeyD']||K['ArrowUp']||K['ArrowDown']||K['ArrowLeft']||K['ArrowRight']||K['Space']);
+    if(!hasGlass()||!glassCan()||PHP<GLASS.php||steps){glassDown();return;}GLASS.php=PHP;
+    GLASS.t-=dt;if(GLASS.t>0)return;GLASS.t=.25;const R=glassLook();GLASS.ship=R.ship;for(const e of R.sighted)sightPlace(e.id,e.name);
+    if(GLASS.el){if(R.ship){GLASS.el.innerHTML=glassCard(R.ship).map((l,i)=>i?`<div style="font-size:12px;color:#b8a880">${l}</div>`:`<div style="font-weight:600">${l}</div>`).join('');GLASS.el.style.display='block';}else GLASS.el.style.display='none';}}
   function rodPrompt(){if(NET.on)return 'Netting…';if(deckSchool())return "Press 'E' to cast the net";if(ROD.cast)return ROD.cast.told?"Press 'E' to strike":"Press 'E' to reel in";return rodSpot()?"Press 'E' to cast":null;}
   function rodAct(){if(NET.on)return true;{const ds=deckSchool();if(ds)return netCast(ds);}if(ROD.cast)return rodStrike();const s=rodSpot();return s?rodCast(s):false;}
   function fishPrompt(){return nearSchool()||nearTrout()?"Press 'E' to catch a fish":rodPrompt();}
@@ -1982,7 +2039,7 @@
     const item={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish',food:'fish'}; /* S2028 — a main for the pot */
     if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
     if(typeof bagAdd==='function'){bagAdd(item);if(typeof gateGift==='function'&&gateGift('uisce')&&uisceWaters()&&(typeof canCarry!=='function'||canCarry(item)))bagAdd(Object.assign({},item));} /* S1359 — Uisce's face: two fish a catch in the Gatelands' waters */s.cool=18+R()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
-  function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;tickRod();tickNet();tickNetted();} /* S2214 — the rod's cast; S2215 — the net, and a netted school out of sight */
+  function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;tickRod();tickNet();tickNetted();tickGlass(dt);} /* S2214 — the rod's cast; S2215 — the net, and a netted school out of sight */
   // ── whales ──
   const WHALES=[];
   function spawnWhale(x,z){const c=k=>new THREE.Color(k);const g=mergeParts([{geo:new THREE.CylinderGeometry(1.6,.7,14,10),color:c(0x3a4650),rx:Math.PI/2,jitter:.03},{geo:new THREE.SphereGeometry(1.7,10,8),color:c(0x3a4650),z:7,jitter:.03},{geo:new THREE.BoxGeometry(5.2,.3,2.2),color:c(0x2e3a44),z:-8.2,jitter:.03},{geo:new THREE.ConeGeometry(.5,1.2,4),color:c(0x2e3a44),y:1.6,z:-2},{geo:new THREE.BoxGeometry(2.6,.25,1.4),color:c(0x2e3a44),x:2.2,z:2.5,y:-.6},{geo:new THREE.BoxGeometry(2.6,.25,1.4),color:c(0x2e3a44),x:-2.2,z:2.5,y:-.6}]);
