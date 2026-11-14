@@ -692,26 +692,88 @@ function tpArmSig(){const L=lookNow();let pp='gatelander';try{pp=WORLD.playerPeo
 // of what you carry (buildViewmodel and tpBuild take WORK_TOOL's piece as the weapon for the call, as the sheath's view does), with an
 // overhead chop each strike, begun so that its hit (ANIM_PARAMS.swing.impactPoint) lands on the strike. A war axe at a tree is its own
 // tool and swings as it is. Nothing here decides an outcome: the strikes are tickMining's and tickFelling's, on their own clocks.
-const WORK_TOOL={pick:{name:'Pick',weaponShape:'pick',twoHand:true,matCol:0x7a7e86,matGuard:0x5a3a22},hatchet:{name:'Hatchet',weaponShape:'hatchet',matCol:0x9a9ea6,matGuard:0x5a3a22}};
+const WORK_TOOL={pick:{name:'Pick',weaponShape:'pick',twoHand:true,matCol:0x7a7e86,matGuard:0x5a3a22},hatchet:{name:'Hatchet',weaponShape:'hatchet',matCol:0x9a9ea6,matGuard:0x5a3a22},
+  rod:{name:'Fishing Rod',weaponShape:'rod',matCol:0x8a6a44,matGuard:0x8a6a44}}; /* S2224 — the rod while a line is out (ROD_FX below) */
 const WORK_SWING=.72;
 const WORK={tool:null,axe:null,swung:false,left:1e9,n:0};
-function workKind(){if(typeof MINE!=='undefined'&&MINE)return 'pick';if(typeof CHOP!=='undefined'&&CHOP)return chopTool()==='axe'?'axe':'hatchet';return null;}
+function workKind(){if(typeof MINE!=='undefined'&&MINE)return 'pick';if(typeof CHOP!=='undefined'&&CHOP)return chopTool()==='axe'?'axe':'hatchet';return rodOut()?'rod':null;}
 function workShown(){const k=WORK.tool;return k==='axe'?WORK.axe:k?WORK_TOOL[k]:null;}
 // fn run with the work's piece as the weapon in hand, and the real one put back after
 function workWield(fn){const t=workShown(),w=EQ.weapon;if(!t||t===w)return fn();EQ.weapon=t;try{return fn();}finally{EQ.weapon=w;}}
 function workTick(){const k=workKind();
   if(k!==WORK.tool){WORK.tool=k;WORK.axe=k==='axe'?EQ.weapon:null;WORK.swung=false;WORK.left=1e9;
     if(typeof sheathView==='function')sheathView();else if(typeof buildViewmodel==='function')buildViewmodel();}
-  if(!k)return;
+  if(!k||k==='rod')return;
   const left=MINE?MINE.t:CHOP.tm;if(left>WORK.left+.05)WORK.swung=false;WORK.left=left;
   if(WORK.swung||left>ANIM_PARAMS.swing.impactPoint*WORK_SWING||swingT>0||(typeof SWING!=='undefined'&&SWING)||typeof vmSword==='undefined'||!vmSword)return;
   WORK.swung=true;WORK.n++;swingT=WORK_SWING;const u=vmSword.userData;u.swingMax=WORK_SWING;u.swingVariant=2;u.swingIsPower=false;}
+// S2224 — the rod's cast (Michael's B on #1504, the bodies part; 86-world-crime.js's ROD): while a line is out the rod is in your hand
+// in both views (WORK_TOOL.rod, as the pick is), and it plays the cast: drawn back over the shoulder (0–0.3 s), flicked out low (to
+// 0.55 s), settled at 35° over the water (to 1 s), its tip nodding when a fish takes; when the cast ends (struck, reeled in, walked
+// off) it is lifted to 75° for 0.7 s and put away. The line runs from the tip's loop (ROD_TIP up the kit's rod) to a cork float that
+// flies out with the flick (0.42–0.75 s) and lies at the cast's spot (ROD.cast.wx, wz) on the water, bobbing, pulled under at the bite.
+// All of it is read from ROD.cast and the wall clock; nothing here decides an outcome (the bite and the strike are tickRod's)
+const ROD_TIP=2.606,ROD_E={rest:35,back:100,flick:15,lift:75},ROD_FX={c:null,t0:0,end:0,until:0,e:35,line:null,bob:null,tip:new THREE.Vector3(),fl:new THREE.Vector3(),seen:false};
+const _rdV=new THREE.Vector3(),_rdD=new THREE.Vector3(),_rdQ=new THREE.Quaternion(),_rdQ2=new THREE.Quaternion(),_rdP=new THREE.Vector3(),_rdS=new THREE.Vector3(),_rdY=new THREE.Vector3(0,1,0);
+// the cast's start and end, noticed by whoever asks first (workKind asks each frame, before the tool is put away)
+function rodWatch(){const F=ROD_FX,C=typeof ROD!=='undefined'?ROD.cast:null,now=performance.now();if(C===F.c)return C;
+  if(C){F.t0=now;F.until=0;F.last=C;}else if(F.c){F.end=now;F.until=now+700;F.e0=F.e;}F.c=C;return C;}
+function rodOut(){return !!rodWatch()||performance.now()<ROD_FX.until;}
+function _rdEase(x){x=Math.max(0,Math.min(1,x));return (1-Math.cos(x*Math.PI))/2;}
+// the rod's elevation over the level (degrees) and the float's flight (0 at the tip, 1 on the water; null when it is not out)
+function rodPhase(){const F=ROD_FX,C=rodWatch(),now=performance.now(),E=ROD_E;
+  let e,fly=null,bite=false;
+  if(C){const t=(now-F.t0)/1000;bite=(worldState.gameTimeAbsMinutes||0)>=C.bite;
+    e=t<.3?E.rest+(E.back-E.rest)*_rdEase(t/.3):t<.55?E.back+(E.flick-E.back)*_rdEase((t-.3)/.25):t<1?E.flick+(E.rest-E.flick)*_rdEase((t-.55)/.45):E.rest;
+    if(t>=1&&bite)e=E.rest-4+3*Math.sin(now*.025);fly=t<.42?null:Math.min(1,(t-.42)/.33);}
+  else if(now<F.until){const u=(now-F.end)/250;e=F.e0+(E.lift-F.e0)*_rdEase(u);fly=u<1?1-u:null;}
+  else e=E.rest;
+  F.e=e;return {e,fly,bite};}
+// the direction the rod points in the world: ahead of you at its elevation, a little out to the right so it clears the head when drawn back
+function rodDir(e,out){const a=e*Math.PI/180,f=_rdV.set(-Math.sin(yaw),0,-Math.cos(yaw)),c=Math.cos(a);return out.set(f.x*c+Math.cos(yaw)*.12,Math.sin(a),f.z*c-Math.sin(yaw)*.12).normalize();}
+function rodMesh(o){let m=null;if(o)o.traverse(x=>{if(!m&&x.isMesh)m=x;});return m;}
+// third person, after tpPose: the right arm held out (drawn up toward the shoulder as the rod goes back)
+function tpRodArm(R,P){const r=Math.max(0,Math.min(1,(P.e-ROD_E.rest)/(ROD_E.back-ROD_E.rest)));
+  tpSet(R.shR,-.7-1.15*r,0,-.15,1);tpSet(R.elR,-.8-.65*r,0,0,1);}
+// after tpHBPose: the builder's copy of the rod turned about the fist to point along rodDir; its tip's loop is where the line starts
+function tpRodHeld(R,P){const W=R.weapon,H=R.rig.hb,h=H&&R.hbHeld&&R.hbHeld.find(x=>x.o===W);let o=W;
+  if(h){const c=h.c;H.root.updateMatrixWorld(true);H.root.getWorldQuaternion(_rdQ2).invert();rodDir(P.e,_rdD).applyQuaternion(_rdQ2);
+    c.matrix.decompose(_rdP,_rdQ,_rdS);_rdQ2.setFromUnitVectors(_rdV.copy(_rdY).applyQuaternion(_rdQ).normalize(),_rdD);_rdQ.premultiply(_rdQ2);
+    c.matrix.compose(_rdP,_rdQ,_rdS);c.matrixWorldNeedsUpdate=true;c.updateMatrixWorld(true);o=c;}
+  const m=rodMesh(o);if(!m)return false;m.updateMatrixWorld(true);ROD_FX.tip.set(0,ROD_TIP,0).applyMatrix4(m.matrixWorld);return true;}
+// first person: the rod's level (FP_LEVEL's pivot) turned through the cast, and its tip carried from the view model's camera to the
+// world's at the same place on the screen (the two cameras' fields differ)
+function fpRodHeld(P){if(typeof vmSword==='undefined'||!vmSword)return false;const pv=vmSword.userData.level,k=vmSword.userData.kit;if(!pv||!k||k.userData.kit!=='rod')return false;
+  pv.rotation.x=-(Math.PI/2-P.e*Math.PI/180);const m=rodMesh(k);if(!m)return false;vmSword.updateMatrixWorld(true);
+  const p=ROD_FX.tip.set(0,ROD_TIP,0).applyMatrix4(m.matrixWorld),s=Math.tan(CAM.fov*Math.PI/360)/Math.tan(VM_CAM.fov*Math.PI/360);p.x*=s;p.y*=s;CAM.updateMatrixWorld();p.applyMatrix4(CAM.matrixWorld);return true;}
+function rodFloat(){const g=new THREE.Group(),M=c=>new THREE.MeshStandardMaterial({color:c,roughness:.8});
+  const b=new THREE.Mesh(new THREE.SphereGeometry(.022,10,8),M(0xc8a070));b.scale.y=1.35;g.add(b);
+  const q=new THREE.Mesh(new THREE.CylinderGeometry(.003,.004,.07,6),M(0xe8e0d0));q.position.y=.06;g.add(q);
+  const t=new THREE.Mesh(new THREE.CylinderGeometry(.0045,.004,.025,6),M(0xb03020));t.position.y=.1;g.add(t);g.name='rodFloat';return g;}
+function rodLine(){const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(24*3),3));
+  const l=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xd8d2c0,transparent:true,opacity:.75}));l.frustumCulled=false;l.name='rodLine';return l;}
+function rodHide(){const F=ROD_FX;for(const o of [F.line,F.bob])if(o&&o.parent)o.parent.remove(o);F.seen=false;}
+// each frame (tpUpdate): the hold, the float and the line
+function rodTick(R){if(!rodOut()||typeof activeZoneId==='undefined'||activeZoneId!=='world'||typeof scene==='undefined'||!scene){rodHide();return;}
+  const P=rodPhase(),F=ROD_FX,C=ROD.cast||F.last;
+  const held=thirdPerson?(R&&R.weapon&&R.weapon.userData.kit==='rod'&&tpRodHeld(R,P)):fpRodHeld(P);
+  if(!held||P.fly==null||!C){rodHide();return;}
+  if(!F.line){F.line=rodLine();F.bob=rodFloat();}
+  for(const o of [F.line,F.bob])if(o.parent!==scene)scene.add(o);F.seen=true;
+  const now=performance.now()/1000,sea=typeof SEA_Y==='number'?SEA_Y:0,s=_rdEase(P.fly),
+    wy=sea+(P.bite&&ROD.cast?-.05-.03*Math.sin(now*14):.006*Math.sin(now*2.1));
+  F.fl.set(F.tip.x+(C.wx-F.tip.x)*s,F.tip.y+(wy-F.tip.y)*s+Math.sin(Math.PI*s)*.8,F.tip.z+(C.wz-F.tip.z)*s);F.bob.position.copy(F.fl);
+  F.bob.rotation.z=P.fly<1?(1-P.fly)*1.2:P.bite?.25*Math.sin(now*9):0;
+  const a=F.line.geometry.attributes.position,n=a.count,d=F.tip.distanceTo(F.fl),sag=(P.fly<1?.02:P.bite?.01:.07)*d;
+  for(let i=0;i<n;i++){const u=i/(n-1);a.setXYZ(i,F.tip.x+(F.fl.x-F.tip.x)*u,F.tip.y+(F.fl.y+.11-F.tip.y)*u-sag*4*u*(1-u),F.tip.z+(F.fl.z-F.tip.z)*u);}
+  a.needsUpdate=true;}
 function tpUpdate(dt,st){
   workTick();
   if(!thirdPerson){
     if(TP.rig&&TP.rig.root.visible)TP.rig.root.visible=false;
     if(TP.hidVM){TP.hidVM=false;VM_SCENE.visible=true;}
     if(typeof fpHBCheck==='function')fpHBCheck();
+    rodTick(null);
     return;}
   if(!TP.hidVM){TP.hidVM=true;VM_SCENE.visible=false;}
   tpEnsure();
@@ -733,7 +795,9 @@ function tpUpdate(dt,st){
   tpPose(R,dt,st);
   if(R.rig.B.cloak||R.rig.B.hairB)peopleSwing(R.rig,dt); // S277 — your own back hair (and a cloak, should you wear one) swings as the townsfolk's (S267)
   tpRollTumble(R,st.roll);
+  const rodK=R.weapon&&R.weapon.userData.kit==='rod'&&rodOut()?rodPhase():null;if(rodK)tpRodArm(R,rodK); /* S2224 — the rod held out */
   tpHBPose(R); // F10 — the builder's body follows the driver
+  rodTick(R);
   // too close to see past: step out of the way
   R.root.visible=TP.near>.32||TP.dist>.55;
 }

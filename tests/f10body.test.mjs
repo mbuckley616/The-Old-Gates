@@ -150,6 +150,23 @@ console.log('  packs:', JSON.stringify(packs));
 check('a pack in the bag is on your back by island (creel, frame, saddle-roll) on the chest bone, two straps, nothing of you inside it or through them; none without one',
   [['gatelands', 'creel'], ['mark', 'frame'], ['aurenne', 'roll']].every(([nk, k]) => { const p = packs[nk]; return p && p.kind === k && /^spine0[34]$/.test(p.bone) && p.straps === 2 && p.inside === 0 && p.arm === 0 && p.through <= 0; }) && packs.none === null, packs);
 check('in third person the new body bakes no middle level (it is baked when first person asks)', worn.mid === false, { mid: worn.mid });
+// the rod's cast (Session 2224; Michael's B on #1504): while a line is out (ROD.cast) the rod is in your hand in both views, held out
+// over the water at 35°, its line from the tip's loop to a float on the cast's spot; when the cast ends it is lifted, then put away
+const rod = await drive(() => { const out = {}; BAG.length = 0; BAG.push({ ...ROD_ITEM }); ROD.cast = null; ROD_FX.until = 0; const t = 50 * 1440 + 600; worldState.gameTimeAbsMinutes = t;
+  const f = [-Math.sin(yaw), -Math.cos(yaw)], cast = () => { ROD.cast = { x: px, z: pz, wx: px + f[0] * 3, wz: pz + f[1] * 3, at: t, bite: t + 20, R: () => .5, key: 'test' }; };
+  for (const fp of [false, true]) { thirdPerson = !fp; for (let i = 0; i < 3; i++) step(); cast(); step(); ROD_FX.t0 = performance.now() - 2000; for (let i = 0; i < 3; i++) step();
+    const F = ROD_FX, ahead = (F.tip.x - px) * f[0] + (F.tip.z - pz) * f[1], a = F.line && F.line.geometry.attributes.position;
+    const kit = fp ? vmSword && vmSword.userData.kit && vmSword.userData.kit.userData.kit : TP.rig.weapon && TP.rig.weapon.userData.kit;
+    const held = !fp && TP.rig.hbHeld && TP.rig.hbHeld.find(h => h.o === TP.rig.weapon);
+    out[fp ? 'fp' : 'tp'] = { kit, inBuilder: !fp ? !!(held && held.c.parent) : null, e: +F.e.toFixed(1), up: +(F.tip.y - jumpY).toFixed(2), ahead: +ahead.toFixed(2),
+      float: F.bob && F.bob.parent === scene ? +Math.hypot(F.bob.position.x - ROD.cast.wx, F.bob.position.z - ROD.cast.wz).toFixed(3) : null, floatY: F.bob && +F.bob.position.y.toFixed(3),
+      lineFromTip: a ? +Math.hypot(a.getX(0) - F.tip.x, a.getY(0) - F.tip.y, a.getZ(0) - F.tip.z).toFixed(3) : null };
+    ROD.cast = null; step(); out[(fp ? 'fp' : 'tp') + 'Lift'] = workKind(); ROD_FX.until = performance.now() - 1; for (let i = 0; i < 3; i++) step();
+    out[(fp ? 'fp' : 'tp') + 'After'] = workKind(); out[(fp ? 'fp' : 'tp') + 'Gone'] = !(ROD_FX.line && ROD_FX.line.parent); }
+  thirdPerson = true; BAG.length = 0; for (let i = 0; i < 3; i++) step(); return out; });
+console.log('  rod:', JSON.stringify(rod));
+check('a line out puts the rod in your hand in both views (the builder\'s copy in third person), held out 35° with its tip 2–3.5 m up (4 in first person, carried from the view model\'s camera) and 2–3.2 m ahead; the line runs from the tip to a float on the cast\'s spot; ended, it is lifted, then put away',
+  ['tp', 'fp'].every(k => { const r = rod[k]; return r && r.kit === 'rod' && r.e === 35 && r.up > 2 && r.up < (k === 'fp' ? 4 : 3.5) && r.ahead > 2 && r.ahead < 3.2 && r.float !== null && r.float < .01 && Math.abs(r.floatY) < .02 && r.lineFromTip < .01 && rod[k + 'Lift'] === 'rod' && rod[k + 'After'] === null && rod[k + 'Gone']; }) && rod.tp.inBuilder, rod);
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
 

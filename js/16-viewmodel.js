@@ -275,7 +275,7 @@ const FP_AIR={dip:.07,drop:.04,back:.05,roll:.25};
 function vmAirDip(){if(!vmSword)return;const P=airPose(performance.now()/1000),ln=P.lean,tk=P.tuck*(1-ln);if(tk<=0&&ln<=0)return;
   const dy=-FP_AIR.dip*tk-FP_AIR.drop*ln,dz=FP_AIR.back*ln,fL=vmSword.userData.fistL;
   vmSword.position.y+=dy;vmSword.position.z+=dz;vmSword.rotation.z+=FP_AIR.roll*P.s*ln;if(fL){fL.position.y+=dy;fL.position.z+=dz;}}
-const FP_LEVEL={spear:1.15,crossbow:1.5};
+const FP_LEVEL={spear:1.15,crossbow:1.5,rod:.96}; /* S2224 — the rod held out at 35° over the water (54-thirdperson.js's rodTick turns it through the cast) */
 // S1476 — the crossbow's 2.0 s span drawn (XBOW, #745 2 A): the prod tipped up toward you and the bow drawn in (0–0.35 s), so the
 // string is in view as it is hauled back to the nut (0.35–1.45), the bolt laid in the groove (1.55), the bow let back down level
 // (1.6–2.0). Spanned: the string on the nut and the bolt in place until the shot lets the string fly home (spanT back to 0). d is
