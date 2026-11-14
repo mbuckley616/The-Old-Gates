@@ -1484,7 +1484,7 @@ function genSettlement(site){
       if(S.lamps&&S._lit!==_dark){S._lit=_dark;S.lamps.forEach(l=>{l.glass.visible=_dark;if(l.light)l.light.intensity=_dark?2.4:0;});}
       for(const res of S.residents){
         const d=Math.hypot(px-res.def.x,pz-res.def.z);
-        if(d<70&&!res.n&&_spawned<2){_spawned++;res.n=spawnNPC(res.def,res.ry,false);res.n.home={x:res.def.x,z:res.def.z};res.n.sched={type:'resident',door:res.door,plaza:{x:S.site.x,z:S.site.z},padR:Math.max(10,S.site.pad-22),inn:S.innDoor||null};
+        if(d<70&&!res.n&&_spawned<2){_spawned++;res.n=spawnNPC(res.def,res.ry,false);res.n._settle=S;/* S2208 — her own town, not the last one built (_curSettle) */res.n.home={x:res.def.x,z:res.def.z};res.n.sched={type:'resident',door:res.door,plaza:{x:S.site.x,z:S.site.z},padR:Math.max(10,S.site.pad-22),inn:S.innDoor||null};
           if(res.farm){const Y=farmYard(S);if(Y){res.n.sched.type='farmer';res.n.sched.yard=Y;if(!feastNow(S.site&&S.site.id)){const n=res.n;n.g.position.set(Y.door.x,worldH(Y.door.x,Y.door.z),Y.door.z);n.g.rotation.y=Y.ry;}}}S.npcs.push(res.n);}
         else if(d>95&&res.n){const n=res.n;if(n._torch&&n._torch.userData.light)unregLight(n._torch.userData.light);sc.remove(n.g);sc.remove(n.dot);let i=npcs.indexOf(n);if(i>=0)npcs.splice(i,1);i=S.npcs.indexOf(n);if(i>=0)S.npcs.splice(i,1);res.n=null;}
       }
