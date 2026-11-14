@@ -1361,8 +1361,8 @@ function genSettlement(site){
     if(kitG){S.kitTris=PKIT.mergeByMaterial(kitG);S.kitCalls=kitG.children.length; // S1072 — the kit's houses, one mesh per material
       const lo=new THREE.Mesh(mergeGeos(kitLo),VC_MAT);lo.name='kit houses far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);kitLo.forEach(([g])=>g.dispose()); /* S1073 — and their far copy */
       let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */for(const Y of S.yards||[])r=Math.max(r,Math.hypot(Y.x-cx,Y.z-cz)+Y.r+2);if(S.market)r=Math.max(r,Math.hypot(S.market.x-cx,S.market.z-cz)+S.market.r); /* S1904 — and the market house */if(S.academy)r=Math.max(r,Math.hypot(S.academy.cx-cx,S.academy.cz-cz)+S.academy.r); /* S1959 — and the academy */ /* S1658 — and a yard outside the walls */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
-    try{S.racks=townRacks(site,houses,sol,group);}catch(e){console.warn('racks',e);S.racks=[];} /* S2136 — the smith's and the harbour's racks in their yards */
-    try{S.gardens=townGardens(site,houses,sol,group);}catch(e){console.warn('gardens',e);S.gardens=[];} /* S2165 — your house's garden in its yard, after the racks */
+    try{S.racks=townRacks(site,houses,sol,group,S.paths);}catch(e){console.warn('racks',e);S.racks=[];} /* S2136 — the smith's and the harbour's racks in their yards */
+    try{S.gardens=townGardens(site,houses,sol,group,S.paths);}catch(e){console.warn('gardens',e);S.gardens=[];} /* S2165 — your house's garden in its yard, after the racks */
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
