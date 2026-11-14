@@ -375,6 +375,31 @@ function setQuickDestroy(on){
   if(hint) hint.classList.toggle('active', on);
 }
 
+// S2213 — the Kit tab (Michael's B on #1504, docs/design/adventurers-kit.md): each piece of the working kit you hold, with one line of
+// what it does; the rest greyed, with where they are sold. The pack's row says how much it holds.
+const KIT_ROWS=[
+  {has:b=>b.tool==='pack',lbl:'Pack',line:'the first 20 kg of tools and goods weigh nothing; past 10 kg in it you roll heavy',sold:'goods shops'},
+  {has:b=>b.tool==='pick',lbl:'Miner’s pick',line:'ore from a vein, Mining',sold:'smiths and goods shops'},
+  {has:b=>b.tool==='hatchet',lbl:'Hatchet',line:'logs from a tree, Woodcutting',sold:'smiths and goods shops'},
+  {has:b=>b.tool==='joiner',lbl:'Joiner’s kit',line:'work at the bench: planks, bucklers, arrows, Joinery',sold:'smiths and goods shops'},
+  {has:b=>b.tool==='shovel',lbl:'Shovel',line:'clay from a bank',sold:'goods shops'},
+  {has:b=>b.tool==='skinknife',lbl:'Skinning knife',line:'the hide off a hunted body',sold:'goods shops'},
+  {has:b=>b.tool==='messkit',lbl:'Mess kit',line:'a dish in the pot at a campfire, Cooking',sold:'goods shops'},
+  {has:b=>typeof TINDERBOX_NAME!=='undefined'&&b.name===TINDERBOX_NAME,lbl:'Tinderbox',line:'a campfire',sold:'goods shops and inns'},
+  {has:b=>!!b.roll,lbl:'Bedroll',line:'a night in the open',sold:'goods shops'},
+  {has:b=>!!b.tent,lbl:'Tent',line:'a night in the open one grade better, and the weather one grade less',sold:'goods shops'},
+  {has:b=>!!b.vessel,lbl:'Water vessel',line:'water to drink on the road',sold:'goods shops and inns'},
+];
+function kitRows(){return KIT_ROWS.map(R=>{const it=BAG.find(b=>b&&R.has(b));return {lbl:R.lbl,line:R.line,sold:R.sold,it:it||null};});}
+function renderKitList(list){
+  const P=typeof packCarried==='function'&&hasPack()?packCarried():null;
+  kitRows().forEach(r=>{const el=document.createElement('div');el.className='inv-kit-row'+(r.it?'':' kit-missing');
+    el.style.cssText='display:flex;gap:8px;align-items:baseline;padding:4px 6px;border-bottom:1px solid rgba(200,168,74,.08);font-size:11px;'+(r.it?'color:#e0d0a0':'color:#6a5a38');
+    const nm=r.it?r.it.name:r.lbl,ico=r.it?(r.it.ico||''):'·';
+    const extra=r.it&&r.it.tool==='pack'&&P!=null?` — ${P.toFixed(1)} / ${PACK_HOLD} kg in it`:'';
+    el.innerHTML=`<span style="width:18px;text-align:center">${ico}</span><span style="min-width:120px;font-weight:${r.it?600:400}">${nm}</span><span style="flex:1">${r.it?r.line+extra:'sold at '+r.sold}</span>`;
+    list.appendChild(el);});
+}
 // Classify an item into one of the four categories used for sub-tabs.
 // Weapons: equip+slot=weapon. Armor: any other equip slot (includes shields/torches via offhand). Consumable: potion/herb. Misc: everything else.
 function itemCategory(it){
@@ -558,6 +583,7 @@ function renderHubInv(){
   const list = document.getElementById('inv-list');
   if(!list) return;
   list.innerHTML='';
+  if(invSubtab==='kit'){renderKitList(list);return;} /* S2213 — the kit page (#1504 B) */
   const indexed = BAG.map((it,i)=>({it,i}));
   const filtered = invSubtab==='all' ? indexed : indexed.filter(({it})=>itemCategory(it)===invSubtab);
   // v61r: apply the column sort if one is active, else fall back to the default

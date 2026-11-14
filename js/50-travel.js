@@ -1357,7 +1357,7 @@ function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];cons
   if(h.type==='misc')out.push({...SURV_ITEMS.messkit}); /* S2028 — the mess kit at every goods shop */
   if(h.type==='misc')out.push({...SURV_ITEMS.skinknife}); /* S2123 — the skinning knife at every goods shop */
   if(h.type==='misc')out.push({...SURV_ITEMS.shovel}); /* S2138 — the shovel at every goods shop */
-  try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));if(h.type==='misc')out.push(...campGearFor(nk)); /* S2090 — the rolls and the tent */if(nk==='mark')out.push(waterItem('canteen'));if(nk==='aurenne')out.push(waterItem('flask'));
+  try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));if(h.type==='misc')out.push(...campGearFor(nk)); /* S2090 — the rolls and the tent */if(h.type==='misc')out.push(packItem(nk)); /* S2213 — the island's pack (#1504 B) */if(nk==='mark')out.push(waterItem('canteen'));if(nk==='aurenne')out.push(waterItem('flask'));
     for(const k in DISH_SECONDS)if(DISH_SECONDS[k].isle===nk)out.push(secondItem(k));
     if(h.type==='inn'){out.push(dishOfDayItem(h));isleSeconds(nk).forEach(k=>out.push(cupItem(k)));}}}catch(e){} /* S2013 — by island; S2028 — its three seconds; S2035 — the inn's dish of the day and its three cups */
   const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port'){out.push({...SURV_ITEMS.fish});if(h.type==='misc')out.push(saltFor(h));} /* S2123 — salt at a harbour's goods shop */return out;}
