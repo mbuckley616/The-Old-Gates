@@ -1313,7 +1313,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
-function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0};}
+function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1327,9 +1327,19 @@ function pwSleep(t,o){const p=pwZero();const br=Math.sin(t*1.2);
   p.shL=[-1.3,0,.08];p.elL=[-1.6,0,0];p.wrL=[.25,0,0];p.shR=[-.6+.015*br,0,-.04];p.elR=[-.75,0,0];p.wrR=[.15,0,0];
   p.thL=[-1.0,0,.05];p.knL=[1.3,0,0];p.anL=[.35,0,0];p.thR=[-1.2,0,-.03];p.knR=[1.55,0,0];p.anR=[.35,0,0];
   p.hipsY=PW.HIPS;return p;}
+// S2197 — seated on a bench (the ring's watchers, arenas L; Michael's B on #914): the thighs level, the shins straight down, the feet
+// flat. o.sit = {v, look, c}: v 0 sits up with the hands on the thighs, 1 leans in with the forearms on the knees; look turns the
+// head and neck toward the fight (radians, the body's own yaw); c (0 to 1) throws the right fist up, a shout for a blow landed.
+function pwSit(t,o){const p=pwZero(),S=o.sit||{},br=Math.sin(t*1.3),c=S.c||0,lk=S.look||0;
+  p.thL=[-1.45,0,.12];p.thR=[-1.45,0,-.12];p.knL=[1.6,0,0];p.knR=[1.6,0,0];p.anL=[-.15,0,-.06];p.anR=[-.15,0,.06];
+  if(S.v===1){p.spine=[.48+.015*br,0,0];p.neck=[-.22,0,0];p.head=[-.22,0,0];p.shL=[-1.0,0,.1];p.elL=[-1.25,0,0];p.wrL=[.25,0,0];p.shR=[-1.0,0,-.1];p.elR=[-1.25,0,0];p.wrR=[.25,0,0];}
+  else{p.spine=[.1+.015*br,0,0];p.neck=[-.03,0,0];p.head=[0,0,0];p.shL=[-.6,0,.14];p.elL=[-.6,0,0];p.wrL=[.1,0,0];p.shR=[-.6,0,-.14];p.elR=[-.6,0,0];p.wrR=[.1,0,0];}
+  p.neck[1]=lk*.4;p.head[1]=lk*.6;
+  if(c>0){const r=p.shR,e=p.elR;p.shR=[r[0]+(-2.75-r[0])*c,0,r[2]+(-.3-r[2])*c];p.elR=[e[0]+(-.35-e[0])*c,0,0];p.spine[0]-=.12*c;p.head[0]-=.25*c;}
+  p.hipsY=PW.L2+PW.FOOT+PW.HIPJ;return p;}
 function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);for(const m in w)w[m]+=((m===mode?1:0)-w[m])*k;
   const out=pwZero();let tot=0;
-  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):m==='sleep'?pwSleep(t,o):pwIdle(t,o);
+  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):m==='sleep'?pwSleep(t,o):m==='sit'?pwSit(t,o):pwIdle(t,o);
     PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
   if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}return out;}
 function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
@@ -1578,6 +1588,7 @@ function tickPeople(dt,now){
     let mode=now-rig.wavedAt<2200?'wave':spd>.08?(rig.run?'run':'walk'):'idle';
     if(rig.g.gargoyle&&rig.e&&rig.e.dormant)mode='crouch'; // S210 — a sleeping gargoyle is a statue
     if(rig.sleep)mode='sleep'; // S752 — asleep in bed (personLie)
+    if(rig.sit)mode='sit'; // S2197 — on a bench (the ring's watchers, ringCrowdTick)
     if(rig.g.ghoul&&mode==='run')mode='walk'; // S534 — a ghoul never runs: a fast hobble on its limp
     if(rig.g.wraith){mode='idle';root.position.y=(.24+.05*Math.sin(now*.0021+rig.g.phase))*SCALE.ROOM_K;} // a wraith takes no steps: it glides, a little off the ground (S905, F2a: as high against its taller body as before)
     const t=now/1000*rig.g.tempo+rig.g.phase;
@@ -1593,8 +1604,50 @@ function tickPeople(dt,now){
   }
   if(HB_TINTQ.length)hbTintDrain(4); // S1468 — the named foes' drivers take their genome's colours, a few a frame
   if(HB_RIGS.size)hbTick(now); // S1195 (F4) — the builder's bodies follow their drivers
+  if(RING_CROWD.on)ringCrowdTick(now); /* S2197 — the ring's watchers */
   if(PEOPLE_HIQ.length)personHiDrain(); // S1487 — a foe's near copy, once its driver is seen near without a builder's body over it
 }
+// ═══ THE RING'S WATCHERS (S2197; arenas L, Michael's B on #914, owed since S1662) ════════════════════════════════════════════
+// While a ladder bout is fought (WORLD.ladder, 87-world-quests.js) and you are within RING_CROWD.far of its ring, the ring's stands
+// hold a crowd: 10 to 22 townsfolk of the Mark (more as the ladder climbs), seated on the planks (pwSit) facing the ring, their heads
+// following the fight, a few throwing a fist up when either of you lands a blow. Who sits where is seeded by the ring and the day; a
+// seat is always the same person (keyed `ring:<site>:s<seat>`, so the builder's genome is rolled once). Nobody in it talks, fights or
+// is saved: it is a body only, gone a while after the bout ends or as soon as you leave. The seats come from the ring's stand solids
+// (S.ring.sols, PKIT.mk.ring's arcs in 38-kit.js: three tiers 0.75 m deep, seats 0.45 m apart in height, a footboard under each upper tier).
+const RING_CROWD={on:true,list:[],key:null,R:null,endAt:0,far:70,linger:25000,hp:null,tier:.75,arc:.95/6};
+function ringOfSite(id){if(typeof SETTLE==='undefined')return null;for(const S of SETTLE.values())if(S.ring&&S.ring.site===id)return S.ring;return null;}
+function ringCrowdSeats(R){const c=Math.cos(R.ry),s=Math.sin(R.ry),TD=RING_CROWD.tier,out=[];
+  const W=(lx,lz)=>[R.x+lx*c+lz*s,R.z-lx*s+lz*c];
+  for(const q of (R.sols||[]).slice(0,-1)){const dx=q.cx-R.x,dz=q.cz-R.z,lx=dx*c-dz*s,lz=dx*s+dz*c,am=Math.atan2(lz,lx),r0=Math.hypot(lx,lz)-1.5*TD,base=q.h-1.4;
+    for(let k=0;k<3;k++){const rr=r0+k*TD+TD/2;for(const da of [-.25,.25]){const a=am+da*RING_CROWD.arc,[x,z]=W(Math.cos(a)*rr,Math.sin(a)*rr);
+      out.push({x,z,y:R.y+base+.45*(k+1)+.03,ry:Math.atan2(R.x-x,R.z-z),k});}}}
+  return out;}
+function ringCrowdDrop(){const C=RING_CROWD;for(const g of C.list)if(g.parent)g.parent.remove(g);C.list=[];C.key=null;C.R=null;C.hp=null;}
+function ringCrowdFill(R,key,bout){const C=RING_CROWD,seats=ringCrowdSeats(R);if(!seats.length||typeof scene==='undefined'||!scene)return 0;
+  const r=pRng(pHash('ringcrowd|'+key)),n=Math.min(seats.length,10+Math.floor(r()*5)+Math.round((bout||1)*.6)),idx=seats.map((_,i)=>i);
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  const V=new THREE.Vector3();
+  for(const i of idx.slice(0,n).sort((a,b)=>a-b)){const S=seats[i],pr=pRng(pHash(`ring:${R.site}:s${i}`)),u=pr();
+    const people=u<.8?'markman':u<.93?'gatelander':'oldblood';
+    const g=buildNPCMesh({role:pr()<.15?'Old Onlooker':'Onlooker',people},{nation:'mark',key:`ring:${R.site}:s${i}`}),rig=g.userData.rig;
+    rig.sit={v:pr()<.35?1:0,look:0,c:0,at:-1e9,seat:i};for(const k in rig.w)rig.w[k]=0;rig.w.sit=1;
+    g.rotation.y=S.ry;g.position.set(S.x,S.y,S.z);scene.add(g);pwApply(rig,pwSit(0,pwOpts(rig)));g.updateMatrixWorld(true);
+    rig.B.hips.getWorldPosition(V);const ox=(S.x-R.x),oz=(S.z-R.z),ol=Math.hypot(ox,oz)||1;
+    g.position.x+=S.x+ox/ol*.05-V.x;g.position.z+=S.z+oz/ol*.05-V.z;g.position.y+=S.y+.1-V.y; /* the hip joint a hand over the plank, a little behind its middle */
+    g.userData.ringSeat=S;C.list.push(g);}
+  C.key=key;C.R=R;return C.list.length;}
+function ringCrowdTick(now){const C=RING_CROWD;if(!C.on||typeof WORLD==='undefined')return;
+  const out=typeof activeZoneId!=='undefined'&&activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior());
+  let L=null;try{L=WORLD.ladder;}catch(e){}
+  if(L&&!out){const R=ringOfSite(L.site);if(R&&Math.hypot(px-R.x,pz-R.z)<C.far){const key=`${L.site}:${L.day}:${L.bout}`;if(C.key!==key){ringCrowdDrop();ringCrowdFill(R,key,L.bout);}C.endAt=now+C.linger;}}
+  if(!C.list.length)return;const R=C.R;
+  if(out||!R||now>C.endAt||Math.hypot(px-R.x,pz-R.z)>C.far+10||C.list.some(g=>g.parent!==scene)){ringCrowdDrop();return;}
+  // where they look: between you and the fighter while the bout runs, at you after it; a blow landed either way brings a few to their feet's worth of shout
+  const f=L&&L.foe,lx=f&&!f.dead?(px+f.x)/2:px,lz=f&&!f.dead?(pz+f.z)/2:pz,hp=[f?f.hp||0:0,typeof PHP!=='undefined'?PHP:0];
+  if(C.hp&&(hp[0]<=C.hp[0]-1||hp[1]<=C.hp[1]-1))for(const g of C.list)if(Math.random()<.4)g.userData.rig.sit.at=now+Math.random()*350; /* a blow, not a breath of regained health */
+  if(!C.hp||hp[0]<C.hp[0]-.99||hp[1]<C.hp[1]-.99||hp[0]>C.hp[0]||hp[1]>C.hp[1])C.hp=hp;
+  for(const g of C.list){const S=g.userData.rig.sit;let d=Math.atan2(lx-g.position.x,lz-g.position.z)-g.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));
+    S.look+=(Math.max(-1,Math.min(1,d))-S.look)*.08;const u=(now-S.at)/1100;S.c=u>0&&u<1?Math.sin(u*Math.PI):0;}}
 // ═══ THE BUILDER'S BODIES (v80 S1195, card F4) ═══════════════════════════════════════════════════════════════════════════
 // On the new look a townsperson wears the builder's body (docs/design/character-builder.md): MakeHuman's CC0 body morphed by
 // a genome, its 163-bone skeleton, the wardrobe and the hair cards, all from docs/prototypes/levelup/people.js, which the
@@ -1631,6 +1684,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,lantern:null,shield:null,crossbow:null});
   if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
+  if(/^ring:/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
   if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
   HB_GENOMES.set(g.hbKey,G);return G;}
 /* S1980 (L1, OG-001/OG-065; owed by Session 1977) — the role's staff. An elder or a hermit carries the driver's stick (personGenome's role),

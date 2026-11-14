@@ -93,5 +93,17 @@ check('the ring is open, the stands and the post are solid', got.length && got.e
 check('at its gate the ring itself is drawn, from 300 m its earth alone', got.length && got.every(r => r.near && r.far), got);
 check('its gate takes the call at the ring, its post reads the names', got.length && got.every(r => r.p1 && /bout/.test(r.p1) && r.call && r.call.at < .01 && /post/.test(r.p2) && /Testfighter/.test(r.lines)), got);
 check('the post\'s boards carry the names: the champion on the top board, the dead under it, bare again when they go', got.length && got.every(r => r.cut && r.cut[0] > 300 && r.cut[1] > 300 && r.cut[2] === 0 && r.bare && r.bare[1] === 0 && (r.bare[0] === 0 || r.bare[0] > 300)), got.map(r => ({ id: r.id, cut: r.cut, bare: r.bare })));
+// S2197 — the ring's watchers (owed since S1662): while a ladder bout is fought there and you are near, its stands hold 10 to 22 of the
+// Mark's townsfolk, seated (pwSit) on the planks facing the ring, none dressed as a guard; they go a while after the bout
+const last = got[got.length - 1];
+const crowd = last ? await page.evaluate(id => { const G = WORLD.settle.get(id).ring; forceTime(10); const A = arenaState(); A.call = null; A.lastDay = -1; A.banUntil = 0; px = G.x + 2; pz = G.z;
+  A.call = { bout: 4, site: id, x: G.x, z: G.z, day: dayNow(), hour: 11, at: 0, challenge: false, fixer: false }; ladderBegin(); const t = performance.now(); tickPeople(1 / 60, t);
+  const V = new THREE.Vector3(), L = RING_CROWD.list, hip = L.map(m => { m.userData.rig.B.hips.getWorldPosition(V); return +(V.y - m.userData.ringSeat.y).toFixed(3); });
+  const r = { seats: ringCrowdSeats(G).length, n: L.length, sit: L.filter(m => m.userData.rig.sit && m.userData.rig.w.sit === 1).length, guards: L.filter(m => GUARD_ROLE.test(m.userData.rig.g.role || '') || m.userData.rig.g.hat === 'helm').length,
+    hip: [Math.min(...hip), Math.max(...hip)], solid: L.filter(m => !solidAt(m.userData.ringSeat.x, m.userData.ringSeat.z)).length };
+  ladderEnd('won'); tickPeople(1 / 60, t + 1000); r.stay = RING_CROWD.list.length; tickPeople(1 / 60, t + 30000); r.gone = RING_CROWD.list.length === 0; return r; }, last.id) : null;
+console.log(JSON.stringify(crowd));
+check(`a ladder bout fills the stands: ${crowd && crowd.n} seated of ${crowd && crowd.seats} seats, the hips ${crowd && crowd.hip.join('–')} m over the plank, no guard among them`, !!crowd && crowd.seats === 108 && crowd.n >= 10 && crowd.n <= 22 && crowd.sit === crowd.n && crowd.guards === 0 && crowd.solid === 0 && crowd.hip[0] > .05 && crowd.hip[1] < .15, crowd);
+check('the crowd stays a while after the bout, then goes', !!crowd && crowd.stay === crowd.n && crowd.gone, crowd);
 check('no errors', g.errs.length === 0, g.errs);
 await g.close();
