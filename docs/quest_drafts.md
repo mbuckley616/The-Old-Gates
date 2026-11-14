@@ -2,13 +2,13 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 45, 13 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 46, 14 Nov: no new calls on the page)
 
 ---
 
 ## The Seventh Niche — the Guest lorebook, the defaced niches, the Church's line
 
-*Approved by Michael, 14 Oct 2026.* *Built in part, Session 979 (16 Oct), on auto/quests-build: the book (on the Mages' Guild's counter rather than a shelf, and a rare library roll) and the priests' topic, word for word. The niche waits on the look builder's recess (backlog A).* *Drafted 28 Sep 2026. Backlog A, Lore objects: the Guest lorebook, defaced niches, and the Church's line on the Guest. (The sigil-lore books are the other half of that line and are left for another run.)*
+*Approved by Michael, 14 Oct 2026.* *Built in part, Session 979 (16 Oct), on auto/quests-build: the book (on the Mages' Guild's counter rather than a shelf, and a rare library roll) and the priests' topic, word for word. The niche: §1 no longer fits the world (the Guest's niche stands in the town's row, not beside a wayside altar), so §1a rewrites it to the row as built, 14 Nov, unapproved; it is built once Michael approves §1a.* *Drafted 28 Sep 2026. Backlog A, Lore objects: the Guest lorebook, defaced niches, and the Church's line on the Guest. (The sigil-lore books are the other half of that line and are left for another run.)*
 
 ### What the canon fixes
 
@@ -33,6 +33,30 @@ This draft doesn't add a quest-log quest. It lays a trail of three things the pl
 > Beside the altar, set low in the stone, is a niche the size of a hand. It has been emptied with a chisel. Not worn away by weather: struck, and the marks are as old as the carving around them.
 >
 > The offering ledge under the altar is worn smooth by hands. The ledge under the niche is not. Whoever emptied it made sure nobody would bring it anything again.
+
+### 1a. The niche in the town's row — revised to the row as built (14 Nov 2026, *Unapproved*)
+
+*Revised by the quest writer, 14 Nov 2026, without a note from Michael: the world changed under §1.* §1 was written for a hand-sized recess beside every wayside shrine's altar. Michael's C on #439 (18 Oct) made each wayside shrine one god's niche, and his B on #464 put the row of seven by the town church; the look builder built it (Session 1232 for the Gatelands, Session 1329 for Aurenne, `PKIT.gl.row`, `kitGods`). So the Guest's niche now stands in that row, the seventh, as tall as the other six. In the Gatelands its figure is struck away and a stump of the hem is left on the sill. In Aurenne it is bricked up and plastered, with the Church's notice on a board beside it. There is no altar beside it and no hand-sized recess, so §1's words would describe a thing the player cannot see. These lines replace §1 wherever the row stands. §1 stays above as the record of what was approved. The Mark has no row yet. When it takes the kit, its seventh niche takes the Gatelands' lines if it is struck, or new ones if the look builder draws it otherwise.
+
+**The Gatelands' row.** **Prompt** (at the seventh niche, in front of it):
+> Press 'E' to look at the empty niche
+
+**Examine** (the same popup as §1, titled *The Seventh Niche*):
+> The seventh niche at the end of the row is cut like the other six, and as deep. Its figure has been struck out with a chisel. A stump of the hem is left on the sill, and the shape of the rest is a pale scar on the back of the recess. The name under it is cut back to the bare stone, and so is the roundel over the arch. It was not worn away by weather. It was struck, and the marks are as old as the carving around them.
+>
+> The six have a basin of water before them, a candle on the sill and a rag tied at the hood. The seventh has none of these. Whoever emptied it made sure nobody would bring it anything again.
+
+**Aurenne's row.** **Prompt:**
+> Press 'E' to look at the sealed niche
+
+**Examine:**
+> The seventh niche at the end of the row has been bricked up and plastered over. The plaster is whiter and newer than the stele's, and a patch of it has fallen to show the brick. The name under the sill and the roundel over the arch were cut back first and plastered after, so that nothing shows through.
+>
+> The Church's notice hangs on a board beside it. The six have their candles and their basins; the seventh has a wall, and the wall is kept clean. Whoever sealed it meant it to be seen sealed.
+
+**What carries it.** `S.gods.niches` (`kitGods`, `83-world-generator.js`) holds each niche's god and its standing place in front (`pray`, 1.1 m out); the Guest's is `god==='guest'`, and the row's island is `S.gods.island`. A prompt hook at the head of `shrinePrompt` and an interact at the head of `shrineInteract` (`87-world-quests.js`), within 1.3 m of the Guest's standing place, open `openNoticeBoard({title:'The Seventh Niche', text})`, as the keystones do. Nothing is saved. The niche grants nothing and unlocks nothing; the priests' topic (§3) still opens on the book or the chapel.
+
+**Checked against the canon.** §4.2: the Guest has no shrine and is found in defaced niches. The Gatelands' niche is defaced by the people who cut it, as §1 had it. The Aurennais niche is the Church's work, the same act as the bricked chapel, and the notice beside it is the one the look builder lettered (*This shrine is kept by order of the Prior of the parish …*). Neither text names the Guest. A player who has not read the book learns only that something was taken out.
 
 ### 2. The book — *The Seventh Niche*
 
@@ -753,7 +777,7 @@ The second line is the whole of it. He is seen; he is not spoken to. The open en
 
 ## What the Stones Say — the sigil-lore books in the guilds
 
-*Approved by Michael, 14 Oct 2026.* *Built in part, Session 1092 (18 Oct), on auto/quests-build: the treatise sold by the Mages' Guild head (the follow reads* Is it written down? (Buy On the Seals, 40 gold)*), the sheet given once by the Fighters' Guild head, the glossary as a rare library roll, every line word for word. The glossary's shelf copy waits on a shelf pick-up (backlog A, systems).* *Drafted 3 Oct 2026. Backlog A, Lore objects: the sigil-lore books in the guilds (the other half of the line *The Seventh Niche* took).*
+*Approved by Michael, 14 Oct 2026.* *Built in part, Session 1092 (18 Oct), on auto/quests-build: the treatise sold by the Mages' Guild head (the follow reads* Is it written down? (Buy On the Seals, 40 gold)*), the sheet given once by the Fighters' Guild head, the glossary as a rare library roll, every line word for word. The glossary's shelf copy: built whole once the systems builder's shelf (Session 1121, `SHELF_BOOKS`) met the book; `shelfbook` green on main, 14 Nov.* *Drafted 3 Oct 2026. Backlog A, Lore objects: the sigil-lore books in the guilds (the other half of the line *The Seventh Niche* took).*
 
 ### What the canon fixes, and where it is silent
 
