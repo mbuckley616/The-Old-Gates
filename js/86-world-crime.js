@@ -613,6 +613,44 @@
   function farmerRefuses(def){const fid=def&&def._farm,R=worldState.refuse;if(!fid||!R||R['farm:'+fid]==null)return false;if(dayNow()>=R['farm:'+fid]){delete R['farm:'+fid];return false;}
     const FR={gatelander:"The fox that's had the hen isn't asked in for the eggs.",markman:"I know what you did. Get off my land.",aurennais:"I keep no account with whoever took from my stock, Master. Ours is closed.",oldblood:"You took from the fold. Go."}; /* Finding 44 (quest review, run 41): the line by the farmer's people */
     showMsg(`${def.name||'The farmer'}: “${FR[def.people]||FR.gatelander}”`,'#e8a880');return true;}
+  /* S2235 — poaching (Michael's B on #1540, docs/design/law-in-three-registers.md, the first of its three crimes). A lord's chase is the
+     wooded country (forest and autumn wood, by the cells' regions, lairBiome) of the Gatelands within 600 m of a city whose keep stands
+     (its castle, shopsFor at its prosperity; not burned or abandoned), read from the place by getCell, never from SETTLE. A deer, a boar or a
+     hare (Deer, Hind, Elderstag, Crownstag; Boar, Gatefen Boar; Brown Hare) killed there is poaching: recorded always, and seen
+     by the usual witnesses by day (at night nobody), it is theft, 2 points, and the beast's worth (deer 30, boar 25, hare 5) in that city.
+     The lawful road is the lord's licence, 30 gold at the keep, held for three months of the calendar (keyed by his city in
+     worldState.licences, the character's). Walking into a chase unlicensed says whose it is. The forester, the chase's own witness, is next. */
+  const CHASE_R=600,CHASE_WOOD=new Set(['forest','autumn']),POACH_WORTH={Deer:30,Hind:30,Elderstag:30,Crownstag:30,Boar:25,'Gatefen Boar':25,'Brown Hare':5},LICENCE_GOLD=30;
+  function licenceDays(){return 3*((typeof CAL!=='undefined'&&CAL.monthLen)||30);}
+  function chaseKeep(t){if(!t||t.kind!=='city'||t.lordless)return false;const F=TS(t).flags||{};if(F.burned!=null||F.abandoned!=null)return false;return shopsFor(t,['castle']).length>0;}
+  // the city whose chase holds (x, z), or null
+  function chaseAt(x,z){if(nationAt(x,z)!=='gatelands')return null;const [ci,cj]=cellOf(x,z);let best=null,bd=CHASE_R;
+    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;
+      for(const t of c.sites){if(t.kind!=='city')continue;const d=Math.hypot(t.x-x,t.z-z);if(d<bd&&chaseKeep(t)){bd=d;best=t;}}}
+    if(!best||!CHASE_WOOD.has(lairBiome({x,z})))return null;return best;}
+  function licenceUntil(t){const L=worldState.licences;const v=L&&t&&L[t.id];return typeof v==='number'?v:0;}
+  function licenceHeld(t){return licenceUntil(t)>absMin();}
+  // named action: the lord's licence bought; returns the line
+  function buyLicence(t){if(!chaseKeep(t))return '';if(licenceHeld(t))return `Your licence for the chase runs to ${calDateLine(licenceUntil(t)-1)}.`;
+    if(gold<LICENCE_GOLD)return `The licence is ${LICENCE_GOLD} gold. Come back when you have it.`;gold-=LICENCE_GOLD;if(typeof updateHUD==='function')updateHUD();
+    const until=Math.floor(absMin())+licenceDays()*1440;(worldState.licences||(worldState.licences={}))[t.id]=until;
+    if(typeof addLog==='function')addLog('🦌',`Bought the lord's licence to hunt the chase of ${t.name}, to ${calDateLine(until-1)}.`);
+    return `The chase of ${t.name} is yours to hunt until ${calDateLine(until-1)}. Deer, boar and hare.`;}
+  function licenceTopics(t){if(!chaseKeep(t))return [];
+    return [{label:`A hunting licence. (${LICENCE_GOLD} gold, three months)`,quest:true,avail:()=>!licenceHeld(t),fn:()=>buyLicence(t)},
+      {label:'My hunting licence.',avail:()=>licenceHeld(t),fn:()=>buyLicence(t)}];}
+  function poachKilled(e){if(!e||e.farmStock||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const kind=e.baseName||e.name,worth=POACH_WORTH[kind];if(worth==null)return null;
+    const t=chaseAt(e.x,e.z);if(!t)return null;if(licenceHeld(t))return {licensed:true,site:t.id};
+    (worldState.crimes||(worldState.crimes=[])).push({kind:'poach',site:t.id,house:null,beast:kind,day:dayNow(),min:absMin()});
+    const w=isNight()?null:witnessOf(null,false);if(!w)return {seen:false,site:t.id};
+    bookCrime(t,'theft',worth);
+    showMsg(`${w.name} saw you poach the lord's ${kind.toLowerCase()}.`,'#e88a8a');if(typeof addLog==='function')addLog('👁',`${w.name} saw you poach in the chase of ${t.name}; ${t.name} will not forget it.`);
+    return {seen:true,by:w.name,site:t.id,worth};}
+  // each half second in the world: walking into a chase you hold no licence for says whose it is, once each time you enter
+  let _chaseT=0,_chaseIn=null;
+  function tickChase(dt){_chaseT-=dt;if(_chaseT>0)return;_chaseT=.5;let t=null;try{t=chaseAt(px,pz);}catch(e){}const id=t?t.id:null;
+    if(id&&id!==_chaseIn&&!licenceHeld(t))showMsg(`The lord's chase of ${t.name}. Its deer, boar and hare are his; his licence is sold at the keep.`,'#e8d8a0');
+    _chaseIn=id;}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
   function bountyAt(site){const c=fineRecAt(typeof site==='string'?site:site.id);return c?c.bounty:0;} /* S2229 — Aurenne's is the ledger's */
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];

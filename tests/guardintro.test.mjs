@@ -122,5 +122,22 @@ const fd = await page.evaluate(([A]) => { const S = WORLD.settle.get(A); worldSt
   const q = contractTake(S, L); qComplete(q); const t = lordTopics(S.site).find(x => /done/.test(x.label)); const line = t && t.fn(); return { line, gold: gold - g0, ledger: fineRec(S).bounty }; }, auIds);
 console.log(JSON.stringify(fd));
 check(`turned in to the Factor: “${fd.line}”, no gold`, /contract is met.*ledger is clear/.test(fd.line || '') && fd.gold === 0 && fd.ledger === 0, fd);
+// S2235 (Michael's B on #1540, the first new crime): poaching. A lord's chase is the Gatelands' wood within 600 m of a city whose keep
+// stands; a deer, boar or hare killed there is theft (2 points and its worth) when seen by day, recorded when not; the lord's licence,
+// 30 gold for three months, makes it lawful. A real deer, killed by the game's own kill, in the first chase found.
+const pc = await page.evaluate(() => { let F = null;
+  for (let j = 0; j < GRID && !F; j++) for (let i = 0; i < GRID && !F; i++) { const c = getCell(i, j); if (!c || !c.sites) continue;
+    for (const t of c.sites) { if (F || t.kind !== 'city' || !chaseKeep(t)) continue;
+      for (let k = 0; k < 400 && !F; k++) { const a = k * 2.399, d = 150 + (k % 9) * 50, x = t.x + Math.sin(a) * d, z = t.z + Math.cos(a) * d; if ((chaseAt(x, z) || {}).id === t.id) F = { t, x, z }; } } }
+  if (!F) return { none: true }; const { t, x, z } = F, W = witnessOf; witnessOf = () => ({ name: 'Eamon' }); forceTime(12);
+  const kill = () => { const e = buildZoneEnemy(sc, STATIC_SOL, x, z, 'Deer', null, { tier: 1, key: 'poachtest' }); ZONES.world.enemies.push(e); killZoneEnemy(e, sc); return e; };
+  const C = worldState.crime || (worldState.crime = {}); delete C[t.id]; const n0 = (worldState.crimes || []).length;
+  kill(); const seen = (C[t.id] || {}).bounty || 0, rec = (worldState.crimes || []).slice(n0).map(c => c.kind).join();
+  gold = 100; const T = lordTopics(t).find(q => /hunting licence/.test(q.label)); const line = T && T.fn();
+  delete C[t.id]; kill(); const after = (C[t.id] || {}).bounty || 0; witnessOf = W;
+  return { site: t.name, seen, rec, line, gold, after, far: !!chaseAt(t.x + 900, t.z + 900) }; });
+console.log(JSON.stringify(pc));
+check(`poaching in the chase of ${pc.site}: a deer seen killed by day fines ${pc.seen} (50 and its 30); the lord's licence for 30 (“${pc.line}”), then none`,
+  !pc.none && pc.seen === 80 && pc.rec === 'poach' && /yours to hunt until/.test(pc.line || '') && pc.gold === 70 && pc.after === 0, pc);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
