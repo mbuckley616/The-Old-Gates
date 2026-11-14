@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Poaching — whose woods are a lord's chase (one city's, every lord's town, or every settlement's)? (from the systems builder, 2026-11-14, #1562)
+**The question.** Poaching (B on #1540) puts a lord's chase in the wooded cells within 600 m of a town with a keep. Only a city has a keep, and only while its prosperity is 80 or more: today the Gatelands hold one chase, Ballyowen's, and it comes and goes with its prosperity. Most players would never meet the crime or its licence.
+
+**Options.**
+- **A.** As built: a city whose keep stands. One chase today, Ballyowen's.
+- **B (recommended).** Any Gatelands town or city with a lord, keep or not (not a village, port or garrison). A chase beside most towns; the licence bought from that lord.
+- **C.** B, plus the villages: every settlement's wood is someone's. Hunting becomes mostly licences.
+
+**Recommendation.** B: the point is a choice inside hunting with a lawful road beside it (30 gold, three months); one chase hides it, every wood claimed turns hunting into paperwork.
+
 ## Answered
 ### The adventurer's kit: a pack, the pack plus a spyglass, rod and net, or those plus wear? (from the designer, 13 Nov 2026, #1504)
 **The question.** Backlog L8's adventurer's kit (OG-098) asks a use for each thing carried. Most of it is built (pick, hatchet, joiner's kit, shovel, skinning knife, mess kit, bedrolls, tent, water vessels, cloaks), but nothing makes what you carry a choice, and nothing in the game is a pack, a spyglass, a rod or a net. How far should the kit go? Page: `docs/design/adventurers-kit.md`.
