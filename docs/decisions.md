@@ -41,6 +41,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 - **B (recommended).** #1278's rule carried to a beast: the muzzle and the jaw glow in the tell's colour (about 2.5% of the hide), with a small glare in the open mouth; the rest keeps its colour. Reads from the camera at 5.8 m. One bodies session (`hcTick`).
 - **C.** The eyes alone flare, with a glare round each. The quietest; at dusk you can miss them.
 
+### Law in three registers: three courts, three courts and three new crimes, or a law that travels? (from the designer, 14 Nov 2026, #1540)
+**The question.** Backlog L (OG-117) asks for the Crown's court, the Mark's legal duel and the Compact's tribunal, plus new crimes, but today one law (fine, halt, yield, cells, confession) runs on all three islands and only the guards' voices differ. How far should the islands' law differ? Page: https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/law-in-three-registers.md
+
+**Options.**
+- **A.** Three courts over today's crimes: the Gatelands' restitution and the stocks (an hour per 50 gold, at most 6); the Mark's claim to the wronged, fought to a yield by noon (win: void, lose: 1.5×); Aurenne's one ledger for the island (10% a game-week, capped at double), a contract to work it off, prison (a night per 100 gold, at most 3). Three systems sessions, one look.
+- **B (recommended).** A, plus three crimes inside loops already built, each with a lawful road and shown before it bites: poaching in a lord's chase (a 30-gold season's licence), smuggling cargo past the Compact's tenth through a cove's fence (a tithe-ship's search, one in four), and sacrilege, selling gate salvage in a Prior's town. Six systems sessions, one look, one bodies.
+- **C.** B, plus a record that travels across a nation, bounty hunters over 300 gold, banishment after three guards dead, and cells you can break out of. A deep-work session and six systems sessions; banishment closes a third of the world.
+
+**Recommendation.** B: three choices made inside hunting, sailing and gate salvage, the law kept local as the canon's three governments are, every cost in gold, favour or game hours. Gate trespass and unlicensed gate work are left out: on the home island they would make the core loop unlawful.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
