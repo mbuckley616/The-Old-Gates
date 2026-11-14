@@ -65,16 +65,17 @@ check('a real swing at the drawn guard hurts him', sw2 && after && after.hp < be
 const f1 = await fight(60 * 120, 'dlg'); const yld = { name: await page.evaluate(() => dlgOpen ? document.getElementById('dlg-name').textContent : null), greet: await said(), choices: await choices() };
 const sY = await state(); const held = await drawn();
 console.log('yield', JSON.stringify(f1), JSON.stringify(yld), JSON.stringify(sY), JSON.stringify(held));
-check('his blows bring you under 30% and he offers the yield, by name: double the fine, or the cells; he holds while you talk', yld.name === gd && sY.hp > 0 && sY.hp < sY.maxHP * .3 && yld.choices.includes('Pay double (150 gold)') && yld.choices.includes('The cells.') && held.every(e => !e.alert), { f1, yld, sY });
+check('his blows bring you under 30% and he offers the yield, by name: double the fine, or the stocks (the Crown\'s court, S2227); he holds while you talk', yld.name === gd && sY.hp > 0 && sY.hp < sY.maxHP * .3 && yld.choices.includes('Pay double (150 gold)') && yld.choices.includes('The stocks (2 h).') && held.every(e => !e.alert), { f1, yld, sY });
 
-// 5. the cells: a night, the stolen goods and the gold taken in the town go back, the fine clears, the record stays
+// 5. the stocks (S2227, Michael's B on #1540: Dunmore is the Crown's, and the stocks replace the cells): an hour a 50 gold of the fine,
+// the stolen goods and the gold taken in the town go back, the fine clears, the record stays, and you stand on the plaza
 await page.evaluate(() => { BAG.push({ name: 'Stolen ring', ico: '💍', type: 'misc', value: 30, stolen: true }); worldState.crime.dunmore.loot = 40; });
-await click('^The cells'); const cellsLine = await said(); await page.waitForTimeout(2500); await g.frames(2); await g.hide();
+await click('^The stocks'); const cellsLine = await said(); await page.waitForTimeout(2500); await g.frames(2); await g.hide();
 const sC = await state(); const afterCells = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const keep = S.houses.find(h => h.type === 'castle');
-  return { stolenLeft: BAG.filter(i => i.stolen).length, keep: !!keep, nearKeep: keep ? Math.hypot(px - keep.exitX, pz - keep.exitZ) : Math.hypot(px - S.site.x, pz - S.site.z), drawn: ZONES.world.enemies.filter(e => e._guard && !e.dead).length, guardBack: window._gd.g.visible && !window._gd._drawn }; });
+  return { stolenLeft: BAG.filter(i => i.stolen).length, keep: !!keep, nearKeep: Math.hypot(px - S.site.x, pz - S.site.z - 2), drawn: ZONES.world.enemies.filter(e => e._guard && !e.dead).length, guardBack: window._gd.g.visible && !window._gd._drawn }; });
 console.log('cells', cellsLine, JSON.stringify(sC), JSON.stringify(afterCells));
-check('the cells: morning at seven by the keep (Dunmore has none: the town\'s centre), the ring and the 40 gold gone, the fine cleared, half health, the guard back on his beat', /Come along|cells/.test(cellsLine) && Math.abs(sC.hour - 7) < .05 && afterCells.nearKeep != null && afterCells.nearKeep < 3 && afterCells.stolenLeft === 0 && sC.gold === 460 && sC.bounty === 0 && sC.hp >= sC.maxHP * .5 && afterCells.drawn === 0 && afterCells.guardBack, { sC, afterCells });
-check('the cells clear the fine, not the record: favour still −3, three points still owed', sC.favor === -3 && sC.debt === 3, sC);
+check(`the stocks: two hours on (${sY.hour} → ${sC.hour}) on the plaza, the ring and the 40 gold gone, the fine cleared, half health, the guard back on his beat`, ((sC.hour - sY.hour + 24) % 24) >= 2 && ((sC.hour - sY.hour + 24) % 24) <= 2.6 && afterCells.nearKeep != null && afterCells.nearKeep < 3 && afterCells.stolenLeft === 0 && sC.gold === 460 && sC.bounty === 0 && sC.hp >= sC.maxHP * .5 && afterCells.drawn === 0 && afterCells.guardBack, { sC, afterCells });
+check('the stocks clear the fine, not the record: favour still −3, three points still owed', sC.favor === -3 && sC.debt === 3, sC);
 
 // 6. a guard struck: he draws at once; killed, the gates shut and the Church hears
 await page.evaluate(() => { PHP = maxHP; });

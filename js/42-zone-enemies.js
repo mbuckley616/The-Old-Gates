@@ -1863,6 +1863,7 @@ function killZoneEnemy(e,sc,tag=''){
   const items = e.wild?[]:rollContainerLoot('corpse', null, null, lootDropChance(e), e.id?`${e.id}:corpse:${lootDay()}`:undefined, e.tier); // S478 — a keyed foe's corpse rolls on its id; S1707 — an animal carries only its meat
   if(e.wild&&typeof wildTaken==='function')wildTaken(e);
   if(e.farmStock&&typeof stockKilled==='function')try{stockKilled(e);}catch(err){console.warn('stock',err);} /* S2008 — a farm's beast is theft (#1275 B) */
+  if(!e.farmStock&&typeof poachKilled==='function')try{poachKilled(e);}catch(err){console.warn('poach',err);} /* S2235 — a beast of a lord's chase (#1540 B) */
   bodyMeat(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); /* S1486 — meat off a bear, a boar or a wolf */
   bodyHide(e,items); /* S2123 — its hide, for a skinning knife */
   bodyPicks(e,items,e.id?`${e.id}:corpse:${lootDay()}`:undefined); // S633 — a bandit's, kobold's, skeleton's or goblin's body may hold picks (#191 A)

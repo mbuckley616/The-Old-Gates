@@ -44,7 +44,7 @@ function isStackable(it){
   return false;
 }
 // S732 — a stack is one name and one mark: stolen goods stack only with stolen goods (the cells take BAG[i].stolen whole).
-function sameStack(a,b){return a.name===b.name&&!a.stolen===!b.stolen&&(a.brewKey||'')===(b.brewKey||'');} /* S1483 — tinctures stack by strength and day */
+function sameStack(a,b){return a.name===b.name&&!a.stolen===!b.stolen&&(a.stolenAt||'')===(b.stolenAt||'')&& /* S2227 — and from one town */(a.brewKey||'')===(b.brewKey||'');} /* S1483 — tinctures stack by strength and day */
 function bagAdd(item){
   // v64 — Honor the incoming item's qty when stackable. Pre-v64 this always
   // added "1 of name" regardless of the item.qty field, so arrow bundles

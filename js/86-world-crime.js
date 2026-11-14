@@ -505,7 +505,7 @@
     if(m.userData.asleep){if(sleeperNear())wakeSleeper(m,true);else if(!homeAsleepNow(currentHouse))wakeSleeper(m,false);}
     else if(!m.userData.woke&&homeAsleepNow(currentHouse))laySleeper(m);}
   // a seen crime's cost to its town: favour and debt by its points, the fine 25 a point and the goods' value (S1827: shared with piracy)
-  function bookCrime(site,kind,value){const pts=CRIME_PTS[kind]||1;addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const b0=c.bounty;const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();if(typeof lampCrime==='function')lampCrime(c,fst?Math.round(fee*.5):fee);if(kind==='lock')c.lockFine=(c.lockFine||0)+c.bounty-b0; /* S1795 — the part of the fine that is lock crimes, for Word given */ /* S550 — a feast day halves a petty crime's fine */ /* S168 — a theft's fine is 50 and the goods' value (the spec) */
+  function bookCrime(site,kind,value){const pts=CRIME_PTS[kind]||1;addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const b0=c.bounty;const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();delete c.claimLost; /* S2228 — a new wrong, a new claim */if(typeof lampCrime==='function')lampCrime(c,fst?Math.round(fee*.5):fee);if(kind==='lock')c.lockFine=(c.lockFine||0)+c.bounty-b0; /* S1795 — the part of the fine that is lock crimes, for Word given */ /* S550 — a feast day halves a petty crime's fine */ /* S168 — a theft's fine is 50 and the goods' value (the spec) */
     return c;}
   function seenCrime(kind,house,w,value){const site=houseSite(house);
     if(site)bookCrime(site,kind,value);
@@ -613,11 +613,49 @@
   function farmerRefuses(def){const fid=def&&def._farm,R=worldState.refuse;if(!fid||!R||R['farm:'+fid]==null)return false;if(dayNow()>=R['farm:'+fid]){delete R['farm:'+fid];return false;}
     const FR={gatelander:"The fox that's had the hen isn't asked in for the eggs.",markman:"I know what you did. Get off my land.",aurennais:"I keep no account with whoever took from my stock, Master. Ours is closed.",oldblood:"You took from the fold. Go."}; /* Finding 44 (quest review, run 41): the line by the farmer's people */
     showMsg(`${def.name||'The farmer'}: “${FR[def.people]||FR.gatelander}”`,'#e8a880');return true;}
+  /* S2235 — poaching (Michael's B on #1540, docs/design/law-in-three-registers.md, the first of its three crimes). A lord's chase is the
+     wooded country (forest and autumn wood, by the cells' regions, lairBiome) of the Gatelands within 600 m of a city whose keep stands
+     (its castle, shopsFor at its prosperity; not burned or abandoned), read from the place by getCell, never from SETTLE. A deer, a boar or a
+     hare (Deer, Hind, Elderstag, Crownstag; Boar, Gatefen Boar; Brown Hare) killed there is poaching: recorded always, and seen
+     by the usual witnesses by day (at night nobody), it is theft, 2 points, and the beast's worth (deer 30, boar 25, hare 5) in that city.
+     The lawful road is the lord's licence, 30 gold at the keep, held for three months of the calendar (keyed by his city in
+     worldState.licences, the character's). Walking into a chase unlicensed says whose it is. The forester, the chase's own witness, is next. */
+  const CHASE_R=600,CHASE_WOOD=new Set(['forest','autumn']),POACH_WORTH={Deer:30,Hind:30,Elderstag:30,Crownstag:30,Boar:25,'Gatefen Boar':25,'Brown Hare':5},LICENCE_GOLD=30;
+  function licenceDays(){return 3*((typeof CAL!=='undefined'&&CAL.monthLen)||30);}
+  function chaseKeep(t){if(!t||t.kind!=='city'||t.lordless)return false;const F=TS(t).flags||{};if(F.burned!=null||F.abandoned!=null)return false;return shopsFor(t,['castle']).length>0;}
+  // the city whose chase holds (x, z), or null
+  function chaseAt(x,z){if(nationAt(x,z)!=='gatelands')return null;const [ci,cj]=cellOf(x,z);let best=null,bd=CHASE_R;
+    for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;
+      for(const t of c.sites){if(t.kind!=='city')continue;const d=Math.hypot(t.x-x,t.z-z);if(d<bd&&chaseKeep(t)){bd=d;best=t;}}}
+    if(!best||!CHASE_WOOD.has(lairBiome({x,z})))return null;return best;}
+  function licenceUntil(t){const L=worldState.licences;const v=L&&t&&L[t.id];return typeof v==='number'?v:0;}
+  function licenceHeld(t){return licenceUntil(t)>absMin();}
+  // named action: the lord's licence bought; returns the line
+  function buyLicence(t){if(!chaseKeep(t))return '';if(licenceHeld(t))return `Your licence for the chase runs to ${calDateLine(licenceUntil(t)-1)}.`;
+    if(gold<LICENCE_GOLD)return `The licence is ${LICENCE_GOLD} gold. Come back when you have it.`;gold-=LICENCE_GOLD;if(typeof updateHUD==='function')updateHUD();
+    const until=Math.floor(absMin())+licenceDays()*1440;(worldState.licences||(worldState.licences={}))[t.id]=until;
+    if(typeof addLog==='function')addLog('🦌',`Bought the lord's licence to hunt the chase of ${t.name}, to ${calDateLine(until-1)}.`);
+    return `The chase of ${t.name} is yours to hunt until ${calDateLine(until-1)}. Deer, boar and hare.`;}
+  function licenceTopics(t){if(!chaseKeep(t))return [];
+    return [{label:`A hunting licence. (${LICENCE_GOLD} gold, three months)`,quest:true,avail:()=>!licenceHeld(t),fn:()=>buyLicence(t)},
+      {label:'My hunting licence.',avail:()=>licenceHeld(t),fn:()=>buyLicence(t)}];}
+  function poachKilled(e){if(!e||e.farmStock||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const kind=e.baseName||e.name,worth=POACH_WORTH[kind];if(worth==null)return null;
+    const t=chaseAt(e.x,e.z);if(!t)return null;if(licenceHeld(t))return {licensed:true,site:t.id};
+    (worldState.crimes||(worldState.crimes=[])).push({kind:'poach',site:t.id,house:null,beast:kind,day:dayNow(),min:absMin()});
+    const w=isNight()?null:witnessOf(null,false);if(!w)return {seen:false,site:t.id};
+    bookCrime(t,'theft',worth);
+    showMsg(`${w.name} saw you poach the lord's ${kind.toLowerCase()}.`,'#e88a8a');if(typeof addLog==='function')addLog('👁',`${w.name} saw you poach in the chase of ${t.name}; ${t.name} will not forget it.`);
+    return {seen:true,by:w.name,site:t.id,worth};}
+  // each half second in the world: walking into a chase you hold no licence for says whose it is, once each time you enter
+  let _chaseT=0,_chaseIn=null;
+  function tickChase(dt){_chaseT-=dt;if(_chaseT>0)return;_chaseT=.5;let t=null;try{t=chaseAt(px,pz);}catch(e){}const id=t?t.id:null;
+    if(id&&id!==_chaseIn&&!licenceHeld(t))showMsg(`The lord's chase of ${t.name}. Its deer, boar and hare are his; his licence is sold at the keep.`,'#e8d8a0');
+    _chaseIn=id;}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
-  function bountyAt(site){const C=worldState.crime;const c=C&&C[typeof site==='string'?site:site.id];return c?c.bounty:0;}
+  function bountyAt(site){const c=fineRecAt(typeof site==='string'?site:site.id);return c?c.bounty:0;} /* S2229 — Aurenne's is the ledger's */
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];
-    return [{label:`Pay my fine (${b} gold)`,quest:true,fn:()=>{if(gold<b)return `The fine is ${b} gold. Come back when you have it.`;gold-=b;updateHUD();worldState.crime[site.id].bounty=0;worldState.crime[site.id].shut=false;if(typeof addLog==='function')addLog('⚖',`Paid a fine of ${b} gold at ${site.name}.`);return 'Paid. The town will still remember for a while; give it time.';}}];}
-  function tickCrimeDay(){tickPicksFound();const C=worldState.crime;if(!C)return;const day=dayNow();for(const id in C){const c=C[id];if(c.debt>0&&day-c.last>=3){c.debt--;c.last=day;addFavor(id,1);}}}
+    return [{label:`Pay my fine (${b} gold)`,quest:true,fn:()=>{if(gold<b)return `The fine is ${b} gold. Come back when you have it.`;gold-=b;updateHUD();const _f=fineRecAt(site.id);if(_f)_f.bounty=0;worldState.crime[site.id]&&(worldState.crime[site.id].shut=false);if(typeof addLog==='function')addLog('⚖',`Paid a fine of ${b} gold at ${site.name}.`);return 'Paid. The town will still remember for a while; give it time.';}}];}
+  function tickCrimeDay(){tickPicksFound();const C=worldState.crime;if(!C)return;try{ledgerSweep();ledgerInterest();}catch(e){} /* S2229 */const day=dayNow();for(const id in C){if(isLedgerKey(id))continue;const c=C[id];if(c.debt>0&&day-c.last>=3){c.debt--;c.last=day;addFavor(id,1);}}}
   // ── S157: guards (the crime system, part 3 of 4) ──
   // With a fine on you, a guard within five units and a clear line stops you: pay, or he draws. Drawn, the guard
   // stands in as a zone enemy (the Bandit body for now, in the watch's red) and the guard himself steps out of the
@@ -631,24 +669,27 @@
   function drawnAt(S){return ZONES.world.enemies.filter(e=>e._guard&&!e.dead&&e._guard.site===S.site.id);}
   function tickCrime(dt,now){
     CR.cool=Math.max(0,CR.cool-dt);try{tickSent(dt,false);}catch(e){}try{tickPicksFound();}catch(e){}const S=nearSite();if(!S)return;const c=crimeOf(S);const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;
+    const f=fineRec(S),sh=!!(c&&c.shut); /* S2229 — the fine is Aurenne's ledger there; a shut gate is still the town's */
     const drawn=drawnAt(S);
     if(drawn.length){ // the fight: they hold while you talk; at low health, the offer to yield
-      if(!c||(c.bounty<=0&&!c.shut)){standDown(S);return;} // S433 — the fine paid to the lord mid-fight: nothing left to fight over (he fought on, and no yield could come)
+      if(!f||(f.bounty<=0&&!sh)){standDown(S);return;} // S433 — the fine paid to the lord mid-fight: nothing left to fight over (he fought on, and no yield could come)
       if(talking){drawn.forEach(e=>{e.alert=false;e.atkCd=Math.max(e.atkCd||0,.6);});return;}
       drawn.forEach(e=>{e.alert=true;});
-      if(!CR.yielded&&PHP<maxHP*.3&&c&&c.bounty>0){CR.yielded=true;offerYield(S,c);}
+      if(!CR.yielded&&PHP<maxHP*.3&&f&&f.bounty>0){CR.yielded=true;offerYield(S,f);}
       return;}
     CR.yielded=false;
-    if(!c||c.bounty<=0||talking)return;if(!c.shut&&CR.cool>0)return; // shut gates: no talk, no cooldown
+    if(CLAIM)return; /* S2228 — the claim's bout: no other halt */
+    if(c&&c.claimAt!=null){if(absMin()<c.claimAt&&!c.shut)return;delete c.claimAt;} /* S2228 — the halt waits for 6:00 */
+    if(!f||f.bounty<=0||talking)return;if(!sh&&CR.cool>0)return;if(!sh&&contractLive(f))return; /* S2230 — the contract runs */ // shut gates: no talk, no cooldown
     for(const n of guardsOf(S)){if(!n.g.visible||n._retreated||n._drawn)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>5)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;
-      if(c.shut)guardDraw(n,S);else confront(n,S,c);return;}
+      if(sh)guardDraw(n,S);else confront(n,S,f);return;}
   }
   // S1173 — a guard's blow before the yield (Michael's A on #456). Until the yield has been offered, a drawn guard's blow
   // that would take you under its line stops just under it (29% of health, 38 of a new character's 130), and the next
   // tick makes the offer, in the street or in a room. A heavy blow still takes you from 75 to the line in one. Once you
   // choose *Fight on* (the offer made, CR.yielded), or with no fine to offer terms on, his blows land in full. Only the blow
   // that crosses the line is held: already under it (out of the town's reach, where no offer comes) nothing is.
-  function guardBlowCap(e,dmg){if(!e||!e._guard||CR.yielded)return dmg;const C=worldState.crime,c=C&&C[e._guard.site];if(!c||c.bounty<=0)return dmg;
+  function guardBlowCap(e,dmg){if(!e||!e._guard||CR.yielded)return dmg;const c=fineRecAt(e._guard.site); /* S2229 */if(!c||c.bounty<=0)return dmg;
     const line=Math.ceil(maxHP*.3)-1;if(PHP<=line)return dmg;return Math.min(dmg,PHP-line);}
   // S239 — guards indoors (Michael, issue #23: B). Seen indoors with a fine on you, the nearest guard on duty is sent.
   // Half a minute on (or when he has walked there, if that is longer) he comes in by the door and halts you where you
@@ -673,7 +714,7 @@
     CR.sent={site:siteId,house:null,npc:best,t:0,ct:0,from:{x:best.g.position.x,z:best.g.position.z},door:null,out:null,walk:0,phase:'chase',mesh:null};
     best._chase=true;best._follow=false;CR.cool=0;return best;}
   function endSent(){const s=CR.sent;if(!s)return;if(s.mesh&&s.mesh.parent)s.mesh.parent.remove(s.mesh);if(s.enemy){const i=ZONES.world.enemies.indexOf(s.enemy);if(i>=0)ZONES.world.enemies.splice(i,1);}if(s.npc)s.npc._chase=false;CR.sent=null;}
-  function tickSent(dt,indoor){const s=CR.sent;if(!s)return;const C=worldState.crime;const c=C&&C[s.site];if(!c||c.bounty<=0){endSent();return;}
+  function tickSent(dt,indoor){const s=CR.sent;if(!s)return;const c=fineRecAt(s.site); /* S2229 — Aurenne's ledger */if(!c||c.bounty<=0){endSent();return;}
     const S=SETTLE.get(s.site);const n=s.npc;if(!S||!n||(n._drawn&&s.phase!=='fight')){endSent();return;}
     s.t+=dt;const talking=(typeof dlgOpen!=='undefined')&&dlgOpen;
     if(indoor){CR.cool=Math.max(0,CR.cool-dt);/* S241 — the halt's minute runs indoors too (it only ran in the street's tick) */const inHouse=typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.id===s.house;
@@ -791,14 +832,19 @@
   function yieldLines(S){return YIELD_LINES[peopleOfSite(S.site)]||YIELD_LINES.markman;}
   function confrontIndoor(s,S,c){CR.cool=60;const fine=c.bounty;const n=s.npc;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
-      {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);endSent();return L.pay;}},
+      {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);if(courtOf(S)==='mark'){delete c.claimLost;claimKeepersBack(S);} /* S2228 */endSent();return L.pay;}},
+      ...restitutionTopic(S,c,()=>confrontIndoor(s,S,c),true),
+      ...contractTopic(s.npc,S,c),
       ...talkDownTopic(S,c,()=>confrontIndoor(s,S,c)),
       ...wordGivenTopic(S,c,true),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardFightIndoor(s,S);},60);return L.refuse;}},
       {label:'Not now.',bye:true}]});}
   function confront(n,S,c){CR.cool=60;if(CR.sent&&CR.sent.npc===n)endSent();/* S239 — caught: the chase is over */const fine=c.bounty;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
-      {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);return L.pay;}},
+      {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);if(courtOf(S)==='mark'){delete c.claimLost;claimKeepersBack(S);} /* S2228 — the claim paid: the keepers serve you again */return L.pay;}},
+      ...restitutionTopic(S,c,()=>confront(n,S,c),false),
+      ...claimTopic(n,S,c),
+      ...contractTopic(n,S,c),
       ...talkDownTopic(S,c,()=>confront(n,S,c)),
       ...wordGivenTopic(S,c,false),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return L.refuse;}},
@@ -817,6 +863,144 @@
   function wordGivenTopic(S,c,indoor){if(!wordGivenOk(c))return [];
     return [{label:'Give my word. (Speech)',quest:true,fn:()=>{if(!wordGiven(S,c))return '';if(indoor)endSent();showMsg('Word given. The fine is waived.','#c8e88a');
       setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}}];}
+  /* S2227 — law in three registers (Michael's B on #1540, docs/design/law-in-three-registers.md), the Gatelands' court: the Crown's.
+     The points, the witnesses, the favour and the halt stay as built; how you settle changes by the island the town stands on (courtOf).
+     - Restitution, at the halt: the stolen goods you carry from this town (an item's stolenAt, laid when a box is robbed) are handed back,
+       and the fine falls by their worth (buyPrice × qty); the 25 a point stays, since the fine was laid as 25 a point plus the worth. The
+       gold stolen (c.loot) is not goods: it stays owed. A fine left over opens the halt again on the new sum.
+     - The stocks, after the yield, in place of the cells: an hour on the plaza for every 50 gold of the fine, at least 1 and at most 6
+       (stocksHours); the fine is cleared and the stolen goods and gold taken, as the cells take them. The clock runs those hours and you
+       stand on the plaza after. The stocks themselves are the look builder's to draw; the guard's words for the court are the quest
+       writer's (the page), so the two choices speak only as the narrator for now.
+     The Mark's duel and Aurenne's ledger are the next two sessions; until then both keep the cells as built. */
+  function courtOf(S){const s=S&&S.site;if(!s)return null;try{return nationAt(s.x,s.z);}catch(e){return null;}}
+  function stolenFrom(S){return BAG.filter(b=>b&&b.stolen&&b.stolenAt&&b.stolenAt===S.site.id);}
+  function stolenWorth(L){return L.reduce((a,b)=>a+(b.buyPrice||0)*(b.qty||1),0);}
+  // named action: the goods handed back. Returns the gold the fine fell by, or 0
+  function restitute(S,c){if(courtOf(S)!=='gatelands'||!c||c.bounty<=0)return 0;const L=stolenFrom(S);if(!L.length)return 0;const w=stolenWorth(L),f0=c.bounty;
+    for(const it of L){const i=BAG.indexOf(it);if(i>=0)BAG.splice(i,1);}c.bounty=Math.max(0,c.bounty-w);if(c.lockFine)c.lockFine=Math.min(c.lockFine,c.bounty);if(c.bounty===0)c.shut=false;
+    if(typeof addLog==='function')addLog('⚖',`Handed back ${L.length===1?L[0].name.toLowerCase():L.length+' stolen things'} at ${S.site.name}: the fine fell from ${f0} to ${c.bounty} gold.`);
+    if(typeof renderInv==='function')renderInv();return f0-c.bounty;}
+  function restitutionTopic(S,c,reopen,indoor){if(courtOf(S)!=='gatelands'||!c||c.bounty<=0)return [];const L=stolenFrom(S);if(!L.length)return [];
+    const left=Math.max(0,c.bounty-stolenWorth(L));
+    return [{label:left?`Hand back the goods (the fine falls to ${left} gold)`:'Hand back the goods (the fine is met)',quest:true,fn:()=>{if(!restitute(S,c))return '';
+      if(c.bounty>0){showMsg(`The goods are handed back. ${c.bounty} gold is still owed.`,'#c8e88a');setTimeout(()=>{try{closeDialog();}catch(e){}reopen();},60);return '';}
+      CR.cool=5;if(indoor)endSent();showMsg('The goods are handed back. The fine is met.','#c8e88a');setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}}];}
+  function stocksHours(c){return Math.max(1,Math.min(6,Math.ceil((c&&c.bounty||0)/50)));}
+  // named action: the stocks (the Crown's court, after the yield)
+  function toStocks(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toStocks(S,c);else setTimeout(w,100);};setTimeout(w,100);return;}
+    const h=stocksHours(c);standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;delete c.lockFine;
+    const back=Math.min(Math.max(0,gold),c.loot||0);if(back>0){gold-=back;stolen++;}c.loot=0;
+    doFade(()=>{advanceClock(h*60);px=S.site.x;pz=S.site.z+2;jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
+      showMsg(`${h} ${h===1?'hour':'hours'} in the stocks on the plaza. ${stolen?'They took what you stole'+(back?` (${back} gold)`:'')+'. ':''}You are let go.`,'#c8b880');
+      if(typeof addLog==='function')addLog('⛓',`${h} ${h===1?'hour':'hours'} in the stocks at ${S.site.name}${stolen?'; the stolen goods were taken'+(back?`, and ${back} gold`:''):''}.`);
+      if(typeof renderInv==='function')renderInv();if(typeof updateHUD==='function')updateHUD();});}
+  /* S2229 — law in three registers (Michael's B on #1540), Aurenne's court: the Compact's ledger. A fine booked in a town of Aurenne
+     is owed to the Compact, one book for the island (worldState.crime['ledger:aurenne'], the character's as the rest of the record):
+     every writer still books the town's record as built, and ledgerSweep moves its fine (and the gold stolen, and the lock part)
+     onto the ledger whenever the fine is read (fineRec). The favour, the points of debt, a shut gate and a town's talk-down stay the
+     town's. So any Aurenne town's guard halts you for the whole book, and paying one pays it. Left unpaid it grows 10% a game-week
+     (rounded up), never past double what was booked on it (L.base). After the yield, prison in place of the cells: a night for every
+     100 gold, 1 to 3 (prisonNights), the fine cleared and the stolen goods and gold taken; you come out at the keep's door at 7:00.
+     The contract (a commission whose pay goes to the fine) is the next session. Named actions: ledgerSweep, toPrison. */
+  const LEDGER_KEY='ledger:aurenne',LEDGER_WEEK=.1,LEDGER_CAP=2,PRISON_PER=100,PRISON_MAX=3;
+  function ledgerRec(){const C=worldState.crime||(worldState.crime={});return C[LEDGER_KEY]||(C[LEDGER_KEY]={bounty:0,debt:0,last:0,base:0,since:0,weeks:0});}
+  function isLedgerKey(id){return typeof id==='string'&&id.indexOf('ledger:')===0;}
+  function siteCourt(id){const t=SITE[id];try{if(t)return nationAt(t.x,t.z);const m=/^c(-?\d+)_(-?\d+)_/.exec(String(id));return m?nationKeyOf(+m[1],+m[2]):null;}catch(e){return null;}} /* a town's court by its id, loaded or not (SITE holds the loaded cells' only) */
+  function ledgerSweep(){const C=worldState.crime;if(!C)return null;let L=C[LEDGER_KEY]||null;
+    for(const id in C){if(isLedgerKey(id))continue;const c=C[id];if(!(c.bounty>0||c.loot>0))continue;if(siteCourt(id)!=='aurenne')continue;
+      L=ledgerRec();if(!(L.bounty>0)){L.base=0;L.since=dayNow();L.weeks=0;}
+      const b=c.bounty>0?c.bounty:0;L.bounty+=b;L.base+=b;L.loot=(L.loot||0)+(c.loot||0);if(c.lockFine)L.lockFine=(L.lockFine||0)+c.lockFine;if(c.feast)L.feast=c.feast;L.last=dayNow();
+      c.bounty=0;c.loot=0;delete c.lockFine;}
+    if(L&&!(L.bounty>0)){L.bounty=0;L.base=0;L.weeks=0;delete L.lockFine;}return L;}
+  // the record the fine is kept on: Aurenne's ledger, else the town's own
+  function fineRec(S){if(!S||!S.site)return null;if(courtOf(S)==='aurenne'){ledgerSweep();return ledgerRec();}return crimeOf(S);}
+  function fineRecAt(id){if(siteCourt(id)==='aurenne'){ledgerSweep();return ledgerRec();}return worldState.crime&&worldState.crime[id];}
+  // the week's interest, from tickCrimeDay: 10% a game-week since the first fine on the book, never past double what was booked
+  function ledgerInterest(){const C=worldState.crime,L=C&&C[LEDGER_KEY];if(!L||!(L.bounty>0))return;const w=Math.floor((dayNow()-(L.since||0))/7);
+    while((L.weeks||0)<w){L.weeks=(L.weeks||0)+1;L.bounty=Math.min(Math.round(L.base*LEDGER_CAP),Math.ceil(L.bounty*Math.round(100*(1+LEDGER_WEEK))/100));}}
+  function prisonNights(c){return Math.max(1,Math.min(PRISON_MAX,Math.ceil((c&&c.bounty||0)/PRISON_PER)));}
+  // named action: prison (the Compact's court, after the yield)
+  function toPrison(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toPrison(S,c);else setTimeout(w,100);};setTimeout(w,100);return;}
+    const nights=prisonNights(c);standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;delete c.lockFine;c.base=0;c.weeks=0;
+    const back=Math.min(Math.max(0,gold),c.loot||0);if(back>0){gold-=back;stolen++;}c.loot=0;
+    doFade(()=>{const gtm=worldState.gameTimeMinutes||0;const to=(gtm<7*60?7*60-gtm:1440-gtm+7*60)+(nights-1)*1440;advanceClock(to);worldState.gameTimeMinutes=7*60; /* advanceClock wraps the day once only */
+      const keep=S.houses.find(h=>h.type==='castle');if(keep){px=keep.exitX!=null?keep.exitX:keep.doorX;pz=keep.exitZ!=null?keep.exitZ:keep.doorZ+2;}else{px=S.site.x;pz=S.site.z;}jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
+      const nn=nights===1?'A night':`${nights} nights`;
+      showMsg(`${nn} in the Compact's prison. ${stolen?'They took what you stole'+(back?` (${back} gold)`:'')+'. ':''}The ledger is clear. It is morning.`,'#c8b880');
+      if(typeof addLog==='function')addLog('⛓',`${nn} in prison at ${S.site.name}${stolen?'; the stolen goods were taken'+(back?`, and ${back} gold`:''):''}. The Compact's ledger is clear.`);
+      if(typeof renderInv==='function')renderInv();if(typeof updateHUD==='function')updateHUD();});}
+  /* S2230 — Aurenne's court, the contract (Michael's B on #1540): at the halt, besides paying, the Factor sets a commission whose
+     pay goes to the fine. The commission is the town's own work as built (townQuestFor: its lord, the Factor of an Aurennais town, gives
+     it; a job already taken there is the one), due in 5 days (CONTRACT_DAYS) by the dated work's own lapse (q.due). While it runs the
+     guards let you by, unless the ledger has grown past what the contract was set against (a new wrong is halted for). Done and
+     turned in to the Factor, no gold is paid: the ledger falls by the sum it was set against (c.contract.sum), to nothing if nothing
+     was added. The date passing takes the work back, and the ledger stands. Named actions: contractTake, contractTurnIn. */
+  const CONTRACT_DAYS=5;
+  function contractQuest(c){const K=c&&c.contract;if(!K)return null;const q=qFind(K.q);if(!q||q.lapsed||q.turnedIn){delete c.contract;return null;}return q;}
+  function contractLive(c){const q=contractQuest(c);return !!q&&c.bounty<=c.contract.sum;}
+  function contractTopic(n,S,c){if(courtOf(S)!=='aurenne'||!c||c.bounty<=0||contractQuest(c))return [];const due=absMin()+CONTRACT_DAYS*1440;
+    return [{label:`A contract. (the Factor's work, by ${calDateLine(due-1)})`,quest:true,fn:()=>{const q=contractTake(S,c);if(!q)return '';
+      setTimeout(()=>{try{closeDialog();}catch(e){}},60);showMsg(`A contract: ${q.objective}, by ${calDateLine(q.due-1)}. Done, the ledger is cleared.`,'#c8e88a');return '';}}];}
+  // named action: the contract taken at the halt
+  function contractTake(S,c){if(courtOf(S)!=='aurenne'||!c||c.bounty<=0||contractQuest(c))return null;let q=townQuestFor(S.site);if(!q||q.turnedIn)q=townQuestFor(S.site,null,true);if(!q)return null;
+    if(!qFind(q.id))qAdd(q);q.contract=1;q.due=Math.floor(absMin())+CONTRACT_DAYS*1440;c.contract={q:q.id,sum:c.bounty,due:q.due,site:S.site.id};CR.cool=5;
+    if(typeof addLog==='function')addLog('⚖',`A contract with the Compact at ${S.site.name}: ${q.title}, for a ledger of ${c.bounty} gold.`);return q;}
+  // named action: the contract's work turned in to the Factor. Returns the gold the ledger fell by, or null when it is ordinary work
+  function contractTurnIn(q){const L=ledgerSweep()||ledgerRec();if(!q||!q.contract||!L.contract||L.contract.q!==q.id)return null;const f0=L.bounty;
+    L.bounty=Math.max(0,L.bounty-L.contract.sum);if(L.bounty===0){L.base=0;L.weeks=0;L.loot=0;delete L.lockFine;}delete L.contract;q.turnedIn=true;q.paid=0;
+    xp+=Math.round((q.reward||0)*.9);if(typeof chkLvl==='function')chkLvl();if(typeof updateHUD==='function')updateHUD();
+    if(typeof addLog==='function')addLog('⚖',`${q.title}: the contract is met. The Compact's ledger fell from ${f0} to ${L.bounty} gold.`);
+    qJournal(q,'complete',`Turned in to ${q.giver}: the Compact's ledger, ${L.bounty?`${L.bounty} gold still owed`:'cleared'}.`);return f0-L.bounty;}
+  /* S2228 — law in three registers (Michael's B on #1540), the Mark's court: the reeve and the claim. In a town of the Mark the fine
+     is a claim, and at the halt you may fight it, to a yield, against the town's sword: the guard who halted you, at the law's tier 3
+     (GUARD_TIER), under the bout's rules (boutStart: a 5 m ring laid where you stand, over the rope by a metre or down is a loss, he
+     kneels at a quarter of his health and is spared after 3 s unstruck, the 0.4 s held blow). Only from 6:00 to noon, the yard's
+     duel hours (DUEL_OPEN, DUEL_CLOSE: "a quarrel finished by noon"); asked outside them, the halt waits until 6:00 (c.claimAt) and
+     the guards let you by. Won: the claim is void (the fine and the gold stolen are owed no more), half the favour it cost comes back
+     (c.debt, the points not yet forgiven), and the town's wronged keepers serve you again. Lost: the claim stands at 1.5×, and the
+     guard halts you for it; the claim is fought once (c.claimLost, cleared by a new wrong or the fine paid). Paid at the halt, the
+     keepers serve you again too. A blow that kills him after the yield is a guard's death (guardKilled): the gates shut. No claim
+     for a guard's death (c.shut), and none indoors: the halt in a room is as built, and outside you are halted again. The reeve's
+     words are the quest writer's; the halt's two lines speak as the narrator for now. Named actions: claimStart, claimEnd. */
+  const CLAIM_LOSS=1.5;
+  let CLAIM=null; /* {foe,npc,site,x,z,f0,end} */
+  function claimHours(){return typeof duelRingHours==='function'?duelRingHours():(hourNow()>=6&&hourNow()<12);}
+  function nextSixAt(){const m=absMin(),d=Math.floor(m/1440);let t=d*1440+360;if(t<=m)t+=1440;return t;}
+  // the keepers this town's wrongs turned away serve you again (the day the claim is paid or won)
+  function claimKeepersBack(S){const R=worldState.refuse;if(!R)return 0;let n=0;for(const h of (S.houses||[]))if(R[h.id]!=null){delete R[h.id];n++;}return n;}
+  function claimOk(S,c){return courtOf(S)==='mark'&&!!c&&c.bounty>0&&!c.shut&&!c.claimLost&&!CLAIM&&!BOUT;}
+  function claimTopic(n,S,c){if(!claimOk(S,c))return [];
+    if(!claimHours())return [{label:'Fight the claim. (from 6:00)',quest:true,fn:()=>{c.claimAt=nextSixAt();CR.cool=5;
+      if(typeof addLog==='function')addLog('⚖',`The claim at ${S.site.name} is set for 6:00. Until then the guards let you by.`);
+      setTimeout(()=>{try{closeDialog();}catch(e){}},60);showMsg('The claim is fought between 6:00 and noon. Until then the guards let you by.','#c8e88a');return '';}}];
+    return [{label:`Fight the claim. (to a yield; lose, and it is ${Math.ceil(c.bounty*CLAIM_LOSS)} gold)`,quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}claimStart(n,S,c);},60);return '';}}];}
+  // named action: the claim's bout begins, the guard who halted you the town's sword
+  function claimStart(n,S,c){if(!claimOk(S,c)||!claimHours()||n._drawn)return null;delete c.claimAt;
+    const gx=n.g.position.x,gz=n.g.position.z,x=px,z=pz;const e=guardEnemy(n,S,sc,STATIC_SOL,gx,gz);delete e._guard;e._claim=S.site.id;
+    e.name=e.displayName=(n.def&&n.def.name)||'The town’s sword';e.homeX=x;e.homeZ=z;
+    CLAIM={foe:e,npc:n,site:S.site.id,x,z,f0:c.bounty,end:null};
+    boutStart({foe:e,x,z,r:BOUT_R,on:{
+      yield:()=>showMsg(`${e.name} goes down on one knee.`,'#e8d8a0'),
+      won:()=>claimEnd('won'),lost:(b,how)=>claimEnd('lost',how),murder:()=>claimEnd('murder')}});
+    showMsg(`The claim is fought here, to a yield. ${e.name} draws.`,'#e8d8a0');
+    if(typeof addLog==='function')addLog('⚔',`Fought the claim of ${c.bounty} gold at ${S.site.name}.`);return CLAIM;}
+  // named action: the claim's end, won, lost, murder or left (the bout gone some other way: a loss)
+  function claimEnd(how,why){const L=CLAIM;if(!L)return null;CLAIM=null;if(typeof boutEnd==='function')boutEnd(L.foe);const e=L.foe,n=L.npc,S=SETTLE.get(L.site);
+    const C=worldState.crime||(worldState.crime={});const c=C[L.site]||(C[L.site]={bounty:0,debt:0,last:0});const name=e.name;
+    if(how==='murder'){e._guard={site:L.site,npc:n};L.end=how;return L;} /* killZoneEnemy, which asked, books the guard's death next (guardKilled) */
+    if(e&&!e.dead){e.dead=true;try{(e.mesh&&e.mesh.parent||sc).remove(e.mesh);}catch(err){}const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
+    try{const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}catch(err){}
+    if(n){n._drawn=false;n._retreated=false;n.g.visible=true;if(n.dot)n.dot.visible=true;}
+    if(how==='won'){const back=Math.floor((c.debt||0)/2);if(back>0){addFavor(L.site,back);c.debt-=back;}c.bounty=0;c.loot=0;delete c.lockFine;delete c.claimLost;
+      const kb=S?claimKeepersBack(S):0;CR.cool=5;
+      showMsg(`${name} is spared. The claim is void${back?`, and the town comes round by ${back}`:''}.`,'#e8d8a0');
+      if(typeof addLog==='function')addLog('⚖',`Won the claim at ${S?S.site.name:L.site}: void.${kb?' The keepers will serve you again.':''}`);}
+    else{c.bounty=Math.ceil(c.bounty*CLAIM_LOSS);c.claimLost=1;PHP=Math.max(PHP,1);CR.cool=0;
+      showMsg(why==='rope'?`You step over the rope. The claim stands, at ${c.bounty} gold.`:`You go down. The claim stands, at ${c.bounty} gold.`,'#e8d8a0');
+      if(typeof addLog==='function')addLog('⚖',`Lost the claim at ${S?S.site.name:L.site}: ${c.bounty} gold owed.`);}
+    if(typeof updateHUD==='function')updateHUD();L.end=how;L.why=why||null;return L;}
+  function tickClaim(dt){const L=CLAIM;if(!L)return;if(!BOUT||BOUT.foe!==L.foe){claimEnd('lost','left');return;}boutTick(dt);}
   const GUARD_TIER=3;
   function guardDraw(n,S){if(n._drawn)return null;return guardEnemy(n,S,sc,STATIC_SOL,n.g.position.x,n.g.position.z);}
   function guardEnemy(n,S,scn,sol,x,z){n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false; // S241 — in the street, or in a room
@@ -833,7 +1017,9 @@
     const L=yieldLines(S);const gn=D_.map(e=>e._guard&&e._guard.npc&&e._guard.npc.def&&e._guard.npc.def.name).find(Boolean)||'The guard'; // S171 — the guard who drew speaks, by name
     openDialog({name:gn,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(dbl)],topics:[
       {label:`Pay double (${dbl} gold)`,quest:true,fn:()=>{if(gold<dbl)return L.poor;gold-=dbl;updateHUD();c.bounty=0;c.shut=false;standDown(S);if(typeof addLog==='function')addLog('⚖',`Yielded and paid ${dbl} gold at ${S.site.name}.`);return L.pay;}},
-      {label:'The cells.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toCells(S,c);},60);return L.cells;}},
+      courtOf(S)==='aurenne'?{label:`Prison (${prisonNights(c)} ${prisonNights(c)===1?'night':'nights'}).`,quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toPrison(S,c);},60);return '';}} /* S2229 — the Compact's court */
+      :courtOf(S)==='gatelands'?{label:`The stocks (${stocksHours(c)} h).`,quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toStocks(S,c);},60);return '';}} /* S2227 — the Crown's court (#1540 B) */
+        :{label:'The cells.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toCells(S,c);},60);return L.cells;}},
       {label:'Fight on.',bye:true}]});}
   function toCells(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toCells(S,c);else setTimeout(w,100);};setTimeout(w,100);return;} // S241 — taken from a room: out first
     standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;
@@ -855,13 +1041,13 @@
   function churchNoteAt(siteId){const N=(worldState.church&&worldState.church.notes)||[];return N.find(n=>n.kind==='guard'&&n.site===siteId&&!n.absolved);}
   function penanceTopics(site){const c=recordAt(site);if(!c)return [];const note=churchNoteAt(site.id);if(c.debt<=0&&!note)return []; /* S425 — no favour owed and no guard's death to hear: a fine alone is the lord's, and the tithe bought nothing */
     return [{label:'Confess.',quest:true,fn:()=>{
-      if(note&&(c.bounty>0||c.shut))return 'A guard of this town is dead by your hand, and the town is not paid. I will not hear you until it is.';
+      if(note&&(bountyAt(site)>0||c.shut))return 'A guard of this town is dead by your hand, and the town is not paid. I will not hear you until it is.';
       const day=dayNow();if(c.confessed!=null&&day-c.confessed<3)return 'You have confessed. Now live it; come back to me in a few days.';
       if(gold<25)return 'The tithe is 25 gold. The Weaver keeps no accounts, but the roof does.';
       gold-=25;updateHUD();c.confessed=day;if(c.debt>0){c.debt--;addFavor(site,1);}if(note)note.absolved=day;
       if(typeof addLog==='function')addLog('🕯',`Confessed at ${site.name}; a tithe of 25 gold.`);
       return note?'It is heard. The dead man had a name; learn it. Go, and do not come back to me for the same thing.':'It is heard. The town will come round the sooner for it. Go gently.';}}];}
-  function nationRecord(nk){const C=worldState.crime||{};for(const id in C){const c=C[id];if(!(c.bounty>0||c.shut))continue;const t=SITE[id];if(t&&nationKeyOf(...cellOf(t.x,t.z))===nk)return t;}return null;}
+  function nationRecord(nk){const C=worldState.crime||{};if(nk==='aurenne'){const L=ledgerSweep();if(L&&L.bounty>0)return {name:'the Compact\'s ledger',id:LEDGER_KEY};} /* S2229 */for(const id in C){if(isLedgerKey(id))continue;const c=C[id];if(!(c.bounty>0||c.shut))continue;const t=SITE[id];if(t&&nationKeyOf(...cellOf(t.x,t.z))===nk)return t;}return null;}
   // striking a townsperson: the victim always sees it; a struck guard draws at once, anyone else runs
   function strikeNpc(fx,fz){const S=nearSite();if(!S)return false;let best=null,bd=2.2;
     for(const n of S.npcs||[]){if(!n.g.visible||n._retreated||n._drawn)continue;const ex=n.g.position.x-px,ez=n.g.position.z-pz,d=Math.hypot(ex,ez);if(d>=bd)continue;if((ex*fx+ez*fz)/(d||1)<=.45)continue;best=n;bd=d;}
@@ -886,9 +1072,9 @@
     // S604 — the takings roll on the box's own stream, `<house id>:box:<day>` (CLAUDE.md's co-op rules), as the barrels do (S471)
     const R=seededRng('loot',X.id+':box:'+lootDay()),rpick=a=>a[Math.floor(R()*a.length)];
     const items=[];let coins=0;const site=houseSite(X.house);const p=site?prosperity(site):50;
-    if(X.kind==='home'){coins=2+Math.floor(R()*11);items.push({name:rpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(R()*22),qty:1,stolen:true});}
+    if(X.kind==='home'){coins=2+Math.floor(R()*11);items.push({name:rpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(R()*22),qty:1,stolen:true,stolenAt:site?site.id:null});}
     else{coins=Math.round(boxCoins(p,X.type)*(.8+R()*.4));
-      try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},rpick(tbl),{qty:1,stolen:true}));}}catch(e){}}
+      try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},rpick(tbl),{qty:1,stolen:true,stolenAt:site?site.id:null})); /* S2227 — the goods know their town, for the Gatelands' restitution */}}catch(e){}}
     gold+=coins;let got=0;items.forEach(it=>{if(typeof bagAdd==='function'){bagAdd(it);got++;}});
     (worldState.boxes||(worldState.boxes={}))[X.id]={taken:dayNow()};noteCrime('theft',X.house,coins+items.reduce((a,it)=>a+(it.buyPrice||0),0),coins);
     showMsg(`${coins} gold${got?', and '+items.map(i=>i.name.toLowerCase()).join(', '):''}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Took ${coins} gold from ${X.kind==='home'?'a chest in':'the strongbox at'} ${X.house.name}.`);
@@ -1970,6 +2156,63 @@
     if(activeZoneId!=='world'||!SHIP.mesh||SHIP.sailing||!onDeck()||Math.abs(SHIP.speed||0)>NET_KNOTS){NET.on=null;showMsg('You haul the net in empty.','#a0a090');return;}
     if(performance.now()-N.t0>=NET_MS)netHaul();}
   function tickNetted(){for(const s of LIFE.fish)if(s.im)s.im.visible=!schoolNetted(s);}
+  // S2234 — the spyglass (Michael's B on #1504, docs/design/adventurers-kit.md; GLASS_ITEM, 50-travel.js). Used from the bag, it is raised:
+  // the view narrows ×5 (glassZoom, read by the loop's field of view in 90-main.js) and a step, a jump, a blow struck or taken, leaving the
+  // open world or putting it away lowers it. At the helm the keys steer her, so only a blow lowers it there. Four times a second
+  // (tickGlass) it reads what lies in the narrow view, out to its reach:
+  // - its reach (glassReach) is the weather's sight (WX.sightM, #679: fog's 60 m), capped at 1,000 m; after dusk (_nightFactor over .5) it
+  //   is 0, so the glass sees no further than your eye and the hilltop is a clear day's thing;
+  // - a ship (OTHER) within 800 m and the reach, nearest the view's middle within her own breadth and 1°, shows a card: her trade
+  //   (a merchantman, a black sail, or the ship a quest of yours is after), her build, her waters, and her hull and rig if hurt;
+  // - a town, a fort, a lair or a gate's door (GLASS_KINDS) within the reach, inside the narrow view and over no ridge (glassClear samples
+  //   the ground every 10 m against the line of sight), not yet discovered, is sighted: worldState.sighted[id], the character's key
+  //   (SS_CHAR_WS, the S242 list). The map pencils it with its name (83-world-generator.js); fast travel still wants it walked to.
+  //   Places by and off the road are never sighted (#1292 A). Sighting gives no experience: discovering does.
+  const GLASS={up:false,php:0,t:0,ship:null,el:null,ring:null};const GLASS_ZOOM=5,GLASS_SHIP=800,GLASS_PLACE=1000;
+  const GLASS_KINDS={city:1,town:1,village:1,port:1,garrison:1,lair:1,fort:1,cave:1};
+  function hasGlass(){return BAG.some(b=>b&&b.tool==='glass');}
+  function glassCan(){return activeZoneId==='world'&&lid==='overworld'&&!isInterior()&&!isSwimming()&&!dead;}
+  function glassReach(){if(!glassCan())return 0;if(typeof _nightFactor==='function'&&_nightFactor()>.5)return 0;return Math.min(GLASS_PLACE,WX.sightM||WX_SIGHT.clear);}
+  function glassZoom(){if(GLASS.up&&!glassCan())glassDown();return GLASS.up?GLASS_ZOOM:1;}
+  function glassSighted(id){return !!(worldState.sighted&&worldState.sighted[id]);}
+  function glassRaise(){if(!hasGlass())return false;if(!glassCan()){showMsg('Not here.','#a0a090');return false;}
+    GLASS.up=true;GLASS.php=PHP;GLASS.t=0;GLASS.ship=null;glassDress(true);return true;}
+  function glassDown(){if(!GLASS.up)return;GLASS.up=false;GLASS.ship=null;glassDress(false);}
+  function glassToggle(){return GLASS.up?(glassDown(),true):glassRaise();}
+  // the narrow view's ring and the ship's card: two plain elements made on first use
+  function glassDress(on){if(on&&!GLASS.ring){const r=document.createElement('div');r.id='glass-ring';r.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:40;display:none;background:radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 0,rgba(0,0,0,0) 38vmin,rgba(8,6,4,.92) 41vmin)';document.body.appendChild(r);GLASS.ring=r;
+      const c=document.createElement('div');c.id='glass-card';c.style.cssText='position:fixed;left:50%;top:calc(50% + 24vmin);transform:translateX(-50%);pointer-events:none;z-index:41;display:none;padding:8px 14px;background:rgba(28,20,12,.86);border:1px solid #8a6a3a;border-radius:4px;color:#e8d8b0;font:14px Georgia,serif;text-align:center;min-width:180px';document.body.appendChild(c);GLASS.el=c;}
+    if(GLASS.ring)GLASS.ring.style.display=on?'block':'none';if(GLASS.el&&!on)GLASS.el.style.display='none';}
+  // what the card says of a ship: her trade, her build, her waters, and her bars when hurt
+  function glassCard(o){const quest=String(o.id||'').startsWith('story:')||o.oswy;const trade=quest?(o.name||'The ship you are after'):o.kind==='pirate'?'A black sail':'A merchantman';
+    const nk=typeof nationAt==='function'?nationAt(o.x,o.z):null,N=nk&&NATIONS[nk];const L=[trade,`${o.cls||'ship'}${N?' · in the waters of '+N.name:''}`];
+    const hurt=[];if(o.hull<o.hullMax)hurt.push(`hull ${Math.max(0,Math.round(o.hull))} of ${o.hullMax}`);if(o.rig<100)hurt.push(`rig ${Math.max(0,Math.round(o.rig))} of 100`);if(hurt.length)L.push(hurt.join(' · '));
+    return L;}
+  // the ground under the line from the eye to a place, every 10 m: nothing over a ridge is sighted
+  function glassClear(ex,ey,ez,tx,ty,tz){const d=Math.hypot(tx-ex,tz-ez),n=Math.floor(d/10);for(let k=1;k<n;k++){const f=k/n;if(worldH(ex+(tx-ex)*f,ez+(tz-ez)*f)>ey+(ty-ey)*f)return false;}return true;}
+  const _glV=new THREE.Vector3();
+  function glassLook(){const reach=glassReach();const out={ship:null,sighted:[]};if(!reach)return out;
+    CAM.updateMatrixWorld();CAM.getWorldDirection(_glV);const dx=_glV.x,dy=_glV.y,dz=_glV.z,ex=CAM.position.x,ey=CAM.position.y,ez=CAM.position.z;
+    const ang=(x,y,z)=>{const vx=x-ex,vy=y-ey,vz=z-ez,L=Math.hypot(vx,vy,vz)||1;return Math.acos(Math.max(-1,Math.min(1,(vx*dx+vy*dy+vz*dz)/L)));};
+    let best=null,ba=Infinity;for(const o of OTHER){if(o.dead)continue;const d=Math.hypot(o.x-ex,o.z-ez);if(d>Math.min(GLASS_SHIP,reach))continue;
+      const a=ang(o.x,SEA_Y+3,o.z),lim=Math.atan((o.L||12)/2/Math.max(1,d))+Math.PI/180;if(a<lim&&a<ba){ba=a;best=o;}}
+    out.ship=best;
+    // the narrow view's own frustum: half its height and half its width, from the zoomed field of view
+    const vh=Math.atan(Math.tan(CAM.fov*Math.PI/360)),hh=Math.atan(Math.tan(vh)*(CAM.aspect||1.6)),yawV=Math.atan2(dx,dz);
+    const [ci,cj]=cellOf(ex,ez);for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){let c;try{c=getCell(i,j);}catch(e){continue;}if(!c)continue;
+      for(const e of mapEntries(c)){if(!GLASS_KINDS[e.kind]||discovered(e.id)||glassSighted(e.id))continue;const d=Math.hypot(e.x-ex,e.z-ez);if(d>reach||d<1)continue;
+        let h=Math.atan2(e.x-ex,e.z-ez)-yawV;while(h>Math.PI)h-=2*Math.PI;while(h<-Math.PI)h+=2*Math.PI;if(Math.abs(h)>hh)continue;
+        const ty=worldH(e.x,e.z)+4,v=Math.atan2(ty-ey,d)-Math.asin(Math.max(-1,Math.min(1,dy)));if(Math.abs(v)>vh)continue;
+        if(!glassClear(ex,ey,ez,e.x,ty,e.z))continue;out.sighted.push(e);}}
+    return out;}
+  // named action: a place sighted through the glass (the character's knowledge, like wdisc)
+  function sightPlace(id,name){if(!worldState.sighted)worldState.sighted={};if(worldState.sighted[id]||discovered(id))return false;worldState.sighted[id]=1;
+    showMsg(`Sighted: ${name}. Pencilled on your map.`,'#c8c0a8');if(typeof addLog==='function')addLog('🔭',`Sighted ${name} through the glass.`);return true;}
+  function tickGlass(dt){if(!GLASS.up)return;
+    const steps=!SHIP.sailing&&(K['KeyW']||K['KeyA']||K['KeyS']||K['KeyD']||K['ArrowUp']||K['ArrowDown']||K['ArrowLeft']||K['ArrowRight']||K['Space']);
+    if(!hasGlass()||!glassCan()||PHP<GLASS.php||steps){glassDown();return;}GLASS.php=PHP;
+    GLASS.t-=dt;if(GLASS.t>0)return;GLASS.t=.25;const R=glassLook();GLASS.ship=R.ship;for(const e of R.sighted)sightPlace(e.id,e.name);
+    if(GLASS.el){if(R.ship){GLASS.el.innerHTML=glassCard(R.ship).map((l,i)=>i?`<div style="font-size:12px;color:#b8a880">${l}</div>`:`<div style="font-weight:600">${l}</div>`).join('');GLASS.el.style.display='block';}else GLASS.el.style.display='none';}}
   function rodPrompt(){if(NET.on)return 'Netting…';if(deckSchool())return "Press 'E' to cast the net";if(ROD.cast)return ROD.cast.told?"Press 'E' to strike":"Press 'E' to reel in";return rodSpot()?"Press 'E' to cast":null;}
   function rodAct(){if(NET.on)return true;{const ds=deckSchool();if(ds)return netCast(ds);}if(ROD.cast)return rodStrike();const s=rodSpot();return s?rodCast(s):false;}
   function fishPrompt(){return nearSchool()||nearTrout()?"Press 'E' to catch a fish":rodPrompt();}
@@ -1982,7 +2225,7 @@
     const item={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish',food:'fish'}; /* S2028 — a main for the pot */
     if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
     if(typeof bagAdd==='function'){bagAdd(item);if(typeof gateGift==='function'&&gateGift('uisce')&&uisceWaters()&&(typeof canCarry!=='function'||canCarry(item)))bagAdd(Object.assign({},item));} /* S1359 — Uisce's face: two fish a catch in the Gatelands' waters */s.cool=18+R()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
-  function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;tickRod();tickNet();tickNetted();} /* S2214 — the rod's cast; S2215 — the net, and a netted school out of sight */
+  function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;tickRod();tickNet();tickNetted();tickGlass(dt);} /* S2214 — the rod's cast; S2215 — the net, and a netted school out of sight */
   // ── whales ──
   const WHALES=[];
   function spawnWhale(x,z){const c=k=>new THREE.Color(k);const g=mergeParts([{geo:new THREE.CylinderGeometry(1.6,.7,14,10),color:c(0x3a4650),rx:Math.PI/2,jitter:.03},{geo:new THREE.SphereGeometry(1.7,10,8),color:c(0x3a4650),z:7,jitter:.03},{geo:new THREE.BoxGeometry(5.2,.3,2.2),color:c(0x2e3a44),z:-8.2,jitter:.03},{geo:new THREE.ConeGeometry(.5,1.2,4),color:c(0x2e3a44),y:1.6,z:-2},{geo:new THREE.BoxGeometry(2.6,.25,1.4),color:c(0x2e3a44),x:2.2,z:2.5,y:-.6},{geo:new THREE.BoxGeometry(2.6,.25,1.4),color:c(0x2e3a44),x:-2.2,z:2.5,y:-.6}]);
