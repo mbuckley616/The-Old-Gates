@@ -4121,7 +4121,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     } else if(type==='misc'||type==='shipwright'){
       // S290 — the general goods on the kit: crates, sacks tied at the neck, shelves of pots, bowls and plates, a balance on
       // the counter; the barrels are the interiors' kit barrel. The sacks stood in the back room; now in front of it
-      {const K=furnKit(),room=K.bake(K.goods(W,DS,H,FN,FSEED,BZ>0));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      {const K=furnKit(),st=house.siteId&&typeof SITE!=='undefined'?SITE[house.siteId]:null,mi=type==='misc',port=mi&&!!st&&st.kind==='port',room=K.bake(K.goods(W,DS,H,FN,FSEED,BZ>0,{rods:mi,net:port,glass:port}));room.userData.furn=true;room.userData.goodsKit={rods:mi,net:port,glass:port};sc_.add(room);furnSwap(room);} /* S2237 — the rod, the net and the glass where survivalFor sells them (#1504 B) */
       if(BZ){_intBarrel(sc_,.6,DS-.7);_intBarrel(sc_,.6,DS-1.45);_intBarrel(sc_,1.3,DS-.75);} /* S1258 — by the street door, west: the east end of the back wall is the keeper's room's door */
       else{_intBarrel(sc_,W-1.0,1.2);_intBarrel(sc_,W-1.9,1.1);_intBarrel(sc_,W-1.4,2.0);}
       counter();

@@ -574,7 +574,7 @@ function furnBuild(THREE, SK) {
     p(lathe([[.001, 0], [.07, 0], [.08, .06], [.07, .1], [.05, .1], [.04, .03], [.001, .03]], 12), 0x8a8478, W / 2 + 1.2, .69, 3.0);
     p(SK.cyl(.012, .016, .16, 6), 0x9a8a70, W / 2 + 1.22, .79, 3.0, 0, 0, .5);
     return p; }
-  function goods(W, D, H, n, seed, back) { const p = Parts(), s = seed || 1;
+  function goods(W, D, H, n, seed, back, kit) { const p = Parts(), s = seed || 1;
     for (let k = 0; k < 3; k++) p.put(crate(.5, n, s + k), 1.0 + k * .9, 1.0, (k - 1) * .15);
     p.put(crate(.45, n, s + 3), 1.45, 1.0, .3, .5);
     /* S1258 — back: the keeper's room stands behind the north wall, its door at the east end; the shelves leave that end clear and
@@ -582,6 +582,57 @@ function furnBuild(THREE, SK) {
     for (let k = 0; k < 3; k++) p.put(sack(s + 4 + k, [0xb8a070, 0x9a8a60, 0xc0b080][k]), back ? W - .5 - k * .55 : W - .6 - k * .65, back ? D - .9 : D - 3.9, k * .7); /* S896 — east of the partition door's swing */
     [.62, 1.05].forEach((y, i) => p.put(shelf(back ? W - 2.7 : W - 2, n, s + 8 + i, 'mixed'), back ? W / 2 - .35 : W / 2, 0, 0, y));
     p.put(scales(s + 11), W / 2 + Math.min(1.4, W * .25 - .3), 3.0, 0, .69);
+    /* S2237 — the spyglass shut on the counter of a harbour's goods shop (#1504 B); the rods' rack and the net stand by a whole wall,
+       found once the room stands (goodsKitDress, 84) */
+    if (kit && kit.glass) p.put(counterGlass(n, s + 25), W / 2 - Math.min(1.25, W * .25 - .35), 3.0, .35, .69);
+    return p; }
+  // a stick from a to b, r thick (a cylinder turned onto the line)
+  const UP = new THREE.Vector3(0, 1, 0);
+  const stick = (p, a, b, r0, r1, col, seg) => { const d = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), L = d.length();
+    const e = new THREE.Euler().setFromQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, d.normalize()));
+    p(SK.cyl(r1, r0, L, seg || 6), col, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2, e.x, e.y, e.z); return p; };
+  // S2237 — the rods' rack (the wall at z 0, the room along +z): a footboard with three sockets and a rail at 1.0 with three notches;
+  // three hazel rods of three lengths (the bodies kit's rod, 2.86 m, here 1.95 in the kit's unit) leaning to the wall, their joints
+  // whipped in cord, and a hank of line hung from a peg on the rail
+  function rodRack(n, seed) { const r = rng(seed || 91), p = Parts(), W = WOOD[n] || WOOD.gatelands, HZ = 0x8a6a44, DH = 0x5e4630, CD = 0xcfc4a0;
+    p(SK.rbox(.7, .05, .16, .012, 1), jit(W.wood, r), 0, .025, .08);
+    for (const x of [-.22, 0, .22]) p(SK.cyl(.032, .032, .03, 8), W.dark, x, .052, .1);
+    p(SK.rbox(.74, .06, .035, .01, 1), jit(W.wood, r), 0, 1.0, .02);
+    for (const x of [-.33, .33]) p(SK.rbox(.05, .07, .03, .008, 1), W.dark, x, 1.0, .05);
+    [-.22, 0, .22].forEach((x, i) => { const t = 1.8 + (r() - .5) * .08, lean = .04 + r() * .015, tx = x + (r() - .5) * .06;
+      const at = f => [x + (tx - x) * f, .06 + (t - .06) * f, .1 - (.1 - lean) * f];
+      const L = [[0, .36, .011, .009, HZ], [.36, .68, .008, .006, HZ], [.68, 1, .005, .002, HZ]];
+      for (const [f0, f1, r0, r1, c] of L) stick(p, at(f0), at(f1), r0, r1, jit(c, r, .08));
+      stick(p, at(.03), at(.12), .0125, .0125, CD, 8);
+      for (const f of [.36, .68]) stick(p, at(f - .012), at(f + .012), .0105 - f * .006, .0105 - f * .006, CD, 6);
+      p(SK.ball(.012, 6, 4), DH, ...at(0)); });
+    p(SK.cyl(.008, .008, .06, 5), W.dark, .3, 1.0, .06, Math.PI / 2, 0, 0);
+    p(SK.torus(.055, .006, 4, 14), CD, .3, .95, .085, 0, 0, 0, 1, 1.25, 1); p(SK.torus(.05, .006, 4, 14), jit(CD, r, .1), .305, .945, .09, 0, .2, 0, 1, 1.3, 1);
+    return p; }
+  // S2237 — a seine hung to dry on the wall (the wall at z 0, the net facing +z): the head rope on three pegs at 1.55 with its corks,
+  // the mesh in two runs of diagonal twine 0.14 apart, the foot rope at 0.62 sagging between its leads
+  function hungNet(seed) { const r = rng(seed || 93), p = Parts(), TW = 0x8a7a5a, RP = 0x6a5a3a, CK = 0xb08a58, LD = 0x5a5a5e, w = 1.1, top = 1.55, bot = .62, sp = .14;
+    const sag = x => .07 * (1 - (2 * x / w) ** 2), yb = x => bot + sag(x) * -1 + .07, zz = y => .025 + (top - y) * .05;
+    for (const x of [-w / 2, 0, w / 2]) p(SK.cyl(.012, .012, .07, 5), 0x3a2a1a, x, top + .02, .035, Math.PI / 2, 0, 0);
+    stick(p, [-w / 2 - .04, top, .03], [w / 2 + .04, top, .03], .007, .007, RP, 5);
+    for (let k = 0; k < 7; k++) { const x = -w / 2 + .08 + k * (w - .16) / 6; p(SK.cyl(.028, .028, .05, 8), jit(CK, r, .1), x, top - .012, .04, 0, 0, Math.PI / 2); }
+    const N = 10; let prev = null;
+    for (let k = 0; k <= N; k++) { const x = -w / 2 + k * w / N, pt = [x, yb(x), zz(yb(x))]; if (prev) stick(p, prev, pt, .007, .007, RP, 5); prev = pt;
+      if (k % 2 === 0 && k > 0 && k < N) p(SK.cyl(.016, .016, .05, 6), LD, x, pt[1] - .01, pt[2], 0, 0, Math.PI / 2); }
+    // the twine: lines of x + y = c and x − y = c across the panel, cut at its edges (the foot rope's sag kept)
+    for (const s of [1, -1]) for (let c = -w / 2 - (top - bot); c < w / 2 + (top - bot); c += sp) { const pts = [];
+      for (let k = 0; k <= 24; k++) { const y = bot + (top - bot) * k / 24, x = c + s * (y - bot); if (x < -w / 2 || x > w / 2) continue; const y2 = Math.max(y, yb(x));
+        if (y2 > top) continue; pts.push([x, y2, zz(y2) + .004 * Math.sin(k * 1.7 + c * 9)]); }
+      for (let k = 0; k + 4 < pts.length; k += 4) stick(p, pts[k], pts[k + 4], .0035, .0035, jit(TW, r, .05), 3);
+      if (pts.length > 1 && (pts.length - 1) % 4) stick(p, pts[(pts.length - 1) - (pts.length - 1) % 4], pts[pts.length - 1], .0035, .0035, TW, 3); }
+    return p; }
+  // S2237 — the spyglass shut on the counter (the bodies kit's glass, its draws run in: 0.41 m, 0.28 in the kit's unit) on a cradle of
+  // two notched blocks, along x
+  function counterGlass(n, seed) { const p = Parts(), W = WOOD[n] || WOOD.gatelands, BR = 0xb8923e, DB = 0x80662b, LG = 0x2e1e12, k = 1 / 1.444, Z = Math.PI / 2;
+    for (const x of [-.07, .07]) p(SK.rbox(.03, .025, .06, .006, 1), W.dark, x, .0125, 0);
+    const y = .025 + .027 * k, cx = (x0, x1, rr, c, seg) => p(SK.cyl(rr * k, rr * k, (x1 - x0) * k, seg || 12), c, (x0 + x1) / 2 * k, y, 0, 0, 0, Z);
+    cx(-.17, .07, .026, LG, 14); for (let i = 0; i < 3; i++) cx(-.13 + i * .07, -.124 + i * .07, .0272, 0x1e140c, 14);
+    cx(-.21, -.17, .029, BR, 16); cx(.07, .096, .0275, DB, 14); cx(.096, .14, .0195, BR); cx(.14, .155, .021, DB); cx(.155, .18, .0145, BR); cx(.18, .2, .0175, DB);
     return p; }
   // ── S512: the barber and dyer (Michael's B on #144), from the Session 505 prototype ──
   const BRASS = 0xc8a048, LINEN = 0xe4dccb, STEEL = 0xb8c0c4, PLUSH = 0x6a2a1e;
@@ -949,7 +1000,7 @@ function furnBuild(THREE, SK) {
   const WIN_LEAD = { inn: 1, barber: 1, weapon: 1, armor: 1, potion: 1, misc: 1, shipwright: 1, guild_f: 1, guild_m: 1, chapel: 1, church: 1, castle: 1 };
   function winKind(type, tall) { return tall && (type === 'church' || type === 'castle') ? 'C' : WIN_LEAD[type] ? 'A' : 'B'; }
   function windowFrame(kind, w, h, n, seed) { return kind === 'C' ? winArch(w, h, seed) : kind === 'A' ? winLead(w, h, n, seed) : winShutter(w, h, n, seed); }
-  return { winLead, winShutter, winArch, winKind, windowFrame, Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, homeAt, inn, innAt, armouryAt, barberAt, churchAt, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, barberChair, washstand, barberMirror, barberBench, basinSign, dyerCorner, barber, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
+  return { winLead, winShutter, winArch, winKind, windowFrame, Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, homeAt, inn, innAt, armouryAt, barberAt, churchAt, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, barberChair, washstand, barberMirror, barberBench, basinSign, dyerCorner, rodRack, hungNet, counterGlass, barber, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
 }
 
 let _FURN = null;

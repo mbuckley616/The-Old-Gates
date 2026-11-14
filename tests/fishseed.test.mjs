@@ -96,6 +96,22 @@ const gl = await page.evaluate(() => { const keep = BAG.splice(0), out = {}; for
 console.log('glass', JSON.stringify(gl));
 check(`the spyglass: sold at the harbour, raised from the bag (×${gl.zoom}), ${gl.reach} m by a clear noon and ${gl.night} after dusk; a black sail at 300 m carded (${gl.card && gl.card.join(' / ')}); a step lowers it`,
   gl.shop && !gl.no && gl.up && gl.zoom === 5 && gl.reach === 1000 && gl.night === 0 && gl.card && gl.card[0] === 'A black sail' && gl.stepped && gl.zoom2 === 1, gl);
+
+// S2237 — the three things where they are sold (#1504 B, the look's part): in a harbour's goods shop, entered, the rods' rack stands by a
+// whole side wall (a solid, in no other), the net hangs on a side wall clear of the rack, and the glass lies on the counter in the room's bake
+await page.evaluate(() => { const h = WORLD.settle.get('portclare').houses.find(h => h.type === 'misc'); if (h) { px = h.exitX; pz = h.exitZ; forceTime(12); goToInterior(h); } });
+for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+const kit = await page.evaluate(() => { const h = currentHouse; if (!isInterior() || !h) return { in: false };
+  let room = null, G = null; interiorScene.traverse(o => { if (o.userData && o.userData.goodsKit) room = o; if (o.userData && o.userData.goodsKitPieces) G = o; });
+  const W = h._roomW, D = h._roomD, k = G && G.userData.kit, rack = INT_SOL.find(s => s.goodsKit === 'rods');
+  const hits = rack ? INT_SOL.filter(s => s !== rack && s.y1 > .05 && s.y0 < 1.5 && s.x0 < rack.x1 - .01 && s.x1 > rack.x0 + .01 && s.z0 < rack.z1 - .01 && s.z1 > rack.z0 + .01).length : -1;
+  const side = q => q && Math.min(q.x, W - q.x) < .15 && q.z > .3 && q.z < D - .3;
+  const out = { in: true, h: h.name, flags: room && room.userData.goodsKit, draws: G ? G.children.filter(m => m.isMesh).length : 0, tris: k && k.tris, rods: k && k.rods, net: k && k.net, hits,
+    sides: !!k && side(k.rods) && side(k.net), apart: !!k && !!k.rods && !!k.net && Math.hypot(k.rods.x - k.net.x, k.rods.z - k.net.z) > 1.2 };
+  exitInterior(); return out; });
+console.log('kit', JSON.stringify(kit));
+check(`a harbour's goods shop (${kit && kit.h}) shows the rods' rack and the net on its side walls and the glass on its counter (${kit && kit.tris} triangles, ${kit && kit.draws} draw)`,
+  !!kit && kit.in && kit.flags && kit.flags.rods && kit.flags.net && kit.flags.glass && kit.draws === 1 && kit.tris < 4000 && kit.sides && kit.apart && kit.hits === 0, kit);
 stop();
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
