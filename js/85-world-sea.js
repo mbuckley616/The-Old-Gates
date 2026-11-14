@@ -809,6 +809,36 @@
       for(const [k,o] of VILLAGES){if(VILLAGES.size<=3)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});VILLAGES.delete(k);}}
     else{VILLAGES.delete(key);VILLAGES.set(key,V);}
     ch.group.add(V.group);ch.village=V;}
+  // S2208 — the drowned quarter on Aurenne's bed (OG-125, card F11; undersea.js's sunkenQuarter as PKIT.places.quarter): a few chunks of
+  // Aurenne's sea (QUARTER_ODDS, never a wreck's or a whale's chunk) hold a town's bridge and theatre. Its spot is the first of six hashed
+  // ones in the chunk, each tried at four headings, where the theatre's orchestra is 6.5 to 10 m down, eight points round its cavea and
+  // its stage wall 4 to 11 m down, the bridge's ends and pier faces 7.2 to 10 m down and its ramps' feet deeper than 3 m, and the shore
+  // behind it: the ground 60 to 90 m behind the orchestra rises above 3 m deep, so the quarter lies off a coast, not in the open sea. The
+  // bed is read by placeH (the land keyed by place). {x,z,ry,bed} or null: x,z the orchestra's middle (in the chunk), ry its heading.
+  const QUARTER_ODDS=1/90,QUARTERS=new Map();
+  function sunkenQuarterSpot(cx,cz){
+    if(hash01(cx,cz,190)>QUARTER_ODDS||wreckSpot(cx,cz)||whaleFallSpot(cx,cz))return null;
+    let nk='';try{nk=nationKeyOf(...cellOf(cx*CHUNK+CHUNK/2,cz*CHUNK+CHUNK/2));}catch(e){}if(nk!=='aurenne')return null;
+    for(let k=0;k<6;k++){const tx=cx*CHUNK+12+hash01(cx+k,cz,191)*(CHUNK-24),tz=cz*CHUNK+12+hash01(cz,cx+k,192)*(CHUNK-24),r0=hash01(cx,cz+k,193)*Math.PI*2;
+      const bed=placeH(tx,tz);if(!(bed<-6.5&&bed>-10))continue;
+      for(let q=0;q<4;q++){const ry=r0+q*Math.PI/2,co=Math.cos(ry),s_=Math.sin(ry),B=(u,v)=>placeH(tx+(u-12)*co+v*s_,tz-(u-12)*s_+v*co);let ok=true;
+        for(const [u,v] of [[-3,15],[27,15],[12,15],[-3,0],[27,0],[12,-9],[0,-9],[24,-9]]){const b=B(u,v);if(!(b<-4&&b>-11)){ok=false;break;}}
+        for(const u of [-38,-27.6,-16.4,-6]){if(!ok)break;for(const v of [-16.3,-11.7]){const b=B(u,v);if(!(b<-7.2&&b>-10)){ok=false;break;}}}
+        if(!ok||!(B(-48,-14)<-3&&B(4,-14)<-3))continue;
+        let shore=false;for(let v=60;v<=90&&!shore;v+=10)for(const u of [-20,12,40])if(B(u,v)>-3){shore=true;break;}
+        if(shore)return {x:tx,z:tz,ry,bed:+bed.toFixed(2)};}}
+    return null;}
+  // built when its chunk loads (new look only), on the drawn ground (meshH) in its own frame; the last three built are kept whole
+  function spawnSunkenQuarter(ch){
+    if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.quarter)return;
+    const key=chunkKey(ch.cx,ch.cz);let Q=QUARTERS.get(key);
+    if(!Q){const D=sunkenQuarterSpot(ch.cx,ch.cz);if(!D)return;const co=Math.cos(D.ry),s_=Math.sin(D.ry),ox=D.x-12*co,oz=D.z+12*s_;
+      let M=null;try{M=PKIT.places.quarter({key:'quarter:'+key,land:(lx,lz)=>meshH(ox+lx*co+lz*s_,oz-lx*s_+lz*co)-SEA_Y});}catch(e){console.warn('sunken quarter',key,e);return;}
+      M.group.position.set(ox,SEA_Y,oz);M.group.rotation.y=D.ry;M.group.name='sunkenQuarter';
+      Q={...D,ox,oz,key,group:M.group,tris:M.tris,draws:M.draws,M};QUARTERS.set(key,Q);
+      for(const [k,o] of QUARTERS){if(QUARTERS.size<=3)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});QUARTERS.delete(k);}}
+    else{QUARTERS.delete(key);QUARTERS.set(key,Q);}
+    ch.group.add(Q.group);ch.quarter=Q;}
   function spawnWreck(ch){
     const w=wreckSpot(ch.cx,ch.cz);if(!w)return;
     const x=w.x,z=w.z,y=worldH(x,z),ry=hash01(ch.cx,ch.cz,153)*Math.PI*2;
