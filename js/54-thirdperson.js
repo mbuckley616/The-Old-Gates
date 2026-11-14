@@ -694,17 +694,18 @@ function tpArmSig(){const L=lookNow();let pp='gatelander';try{pp=WORLD.playerPeo
 // tool and swings as it is. Nothing here decides an outcome: the strikes are tickMining's and tickFelling's, on their own clocks.
 const WORK_TOOL={pick:{name:'Pick',weaponShape:'pick',twoHand:true,matCol:0x7a7e86,matGuard:0x5a3a22},hatchet:{name:'Hatchet',weaponShape:'hatchet',matCol:0x9a9ea6,matGuard:0x5a3a22},
   rod:{name:'Fishing Rod',weaponShape:'rod',matCol:0x8a6a44,matGuard:0x8a6a44},
-  net:{name:'(the net)',bare:true}}; /* S2224 — the rod while a line is out (ROD_FX below); S2225 — the hands bare on the net's rope (NET_FX) */
+  net:{name:'(the net)',bare:true},
+  glass:{name:'Spyglass',weaponShape:'glass',matCol:0xb8903c,matGuard:0xb8903c}}; /* S2224 — the rod while a line is out (ROD_FX below); S2225 — the hands bare on the net's rope (NET_FX); S2236 — the spyglass raised (GLASS_FX) */
 const WORK_SWING=.72;
 const WORK={tool:null,axe:null,swung:false,left:1e9,n:0};
-function workKind(){if(typeof MINE!=='undefined'&&MINE)return 'pick';if(typeof CHOP!=='undefined'&&CHOP)return chopTool()==='axe'?'axe':'hatchet';return rodOut()?'rod':netOut()?'net':null;}
+function workKind(){if(typeof MINE!=='undefined'&&MINE)return 'pick';if(typeof CHOP!=='undefined'&&CHOP)return chopTool()==='axe'?'axe':'hatchet';return rodOut()?'rod':netOut()?'net':glassOut()?'glass':null;}
 function workShown(){const k=WORK.tool;return k==='axe'?WORK.axe:k?WORK_TOOL[k]:null;}
 // fn run with the work's piece as the weapon in hand, and the real one put back after
 function workWield(fn){const t=workShown(),w=EQ.weapon;if(!t||t===w)return fn();EQ.weapon=t.bare?null:t;try{return fn();}finally{EQ.weapon=w;}}
 function workTick(){const k=workKind();
   if(k!==WORK.tool){WORK.tool=k;WORK.axe=k==='axe'?EQ.weapon:null;WORK.swung=false;WORK.left=1e9;
     if(typeof sheathView==='function')sheathView();else if(typeof buildViewmodel==='function')buildViewmodel();}
-  if(!k||k==='rod'||k==='net')return;
+  if(!k||k==='rod'||k==='net'||k==='glass')return;
   const left=MINE?MINE.t:CHOP.tm;if(left>WORK.left+.05)WORK.swung=false;WORK.left=left;
   if(WORK.swung||left>ANIM_PARAMS.swing.impactPoint*WORK_SWING||swingT>0||(typeof SWING!=='undefined'&&SWING)||typeof vmSword==='undefined'||!vmSword)return;
   WORK.swung=true;WORK.n++;swingT=WORK_SWING;const u=vmSword.userData;u.swingMax=WORK_SWING;u.swingVariant=2;u.swingIsPower=false;}
@@ -814,6 +815,37 @@ function netTick(R){if(!netOut()||typeof activeZoneId==='undefined'||activeZoneI
 // third person, after tpPose: both arms out low on the rope, hand over hand as it pays out and as it is hauled
 function tpNetArms(R,P){const now=performance.now()/1000,w=P.purse>0?.35*Math.sin(now*10):P.t<3?.25*Math.sin(now*6):0;
   tpSet(R.shL,-.95+w,0,.12,1);tpSet(R.shR,-.95-w,0,-.12,1);tpSet(R.elL,-.45-Math.max(0,w),0,0,1);tpSet(R.elR,-.45-Math.max(0,-w),0,0,1);}
+// S2236 — the spyglass raised (Michael's B on #1504, the bodies part; 86-world-crime.js's GLASS): while it is up it is in your right fist
+// (WORK_TOOL.glass, the kit's draw-tube) and both hands hold it to the right eye, the right on the first draw by the eye and the left
+// under the barrel, along the view (yaw and pitch). It comes up over GLASS_MS from the fist's carry and goes down the same way when it
+// is lowered, then is put away. In third person the camera comes to the eye as it comes up (by GLASS_CAM of the raise), so the narrow
+// view is the eye's, and the body, too close to see past, is hidden; lowered, the camera goes back out. In first person the view model is
+// hidden while it is up or going down: the glass's ring is the view. Read from GLASS.up and the wall clock; nothing here decides an outcome
+const GLASS_MS=450,GLASS_CAM=.6,GLASS_EYE=.1155,GLASS_FX={up:false,t0:0,end:0,until:0,u0:0,u:0,eye:new THREE.Vector3(),dir:new THREE.Vector3()};
+const _glM=new THREE.Matrix4(),_glP=new THREE.Vector3(),_glQ=new THREE.Quaternion(),_glS=new THREE.Vector3(),_glP2=new THREE.Vector3(),_glQ2=new THREE.Quaternion(),_glR=new THREE.Vector3();
+function glassWatch(){const F=GLASS_FX,up=typeof GLASS!=='undefined'&&!!GLASS.up,now=performance.now();if(up===F.up)return up;
+  if(up){F.t0=now-F.u*GLASS_MS;F.until=0;}else{F.end=now;F.u0=F.u;F.until=now+F.u*GLASS_MS;}F.up=up;return up;}
+function glassOut(){return glassWatch()||performance.now()<GLASS_FX.until;}
+// how far it is raised, 0 (in the fist's carry) to 1 (at the eye)
+function glassPhase(){const F=GLASS_FX,now=performance.now();F.u=glassWatch()?_rdEase((now-F.t0)/GLASS_MS):now<F.until?F.u0*_rdEase((F.until-now)/(F.u0*GLASS_MS||1)):0;return F.u;}
+// the eye the glass is put to (the gameplay eye, where the narrow view is drawn from) and the view's direction
+function glassEye(camY){const F=GLASS_FX,cp=Math.cos(pitch);F.dir.set(-Math.sin(yaw)*cp,Math.sin(pitch),-Math.cos(yaw)*cp);F.eye.set(px,camY,pz);return F;}
+// third person, after tpPose: both wrists aimed at the glass's hold (R.mantle's two-handed reach, as the crossbow's span uses it; the
+// builder's wrists by tpHBMantle), the right on the first draw 6 cm ahead of the eye cup, the left under the barrel 0.4 m out
+function tpGlassArms(R,u,camY){const F=glassEye(camY),D=F.dir,rt=_glR.set(Math.cos(yaw),0,-Math.sin(yaw)),dn=_glP2.crossVectors(D,rt).normalize();
+  const at=(f,r,d)=>F.eye.clone().addScaledVector(D,f).addScaledVector(rt,r).addScaledVector(dn,d);
+  R.root.updateMatrixWorld(true);
+  R.mantle={w:u,T:[at(.4,-.02,.06),at(.03,.035,.07)],q:[R.shL.quaternion.clone(),R.elL.quaternion.clone(),R.shR.quaternion.clone(),R.elR.quaternion.clone()],glass:true};
+  tpMantleArms(R,null);}
+// after tpHBPose: the builder's copy of the glass turned in the fist onto the view by u and, by u³, set from the fist's place to the eye's
+// (it rides in the fist as the arm comes up and closes the last centimetres at the top), its eye cup at the eye and its barrel along the view
+function tpGlassHeld(R,u,camY){const W=R.weapon,H=R.rig.hb,h=H&&R.hbHeld&&R.hbHeld.find(x=>x.o===W);if(!h)return false;const c=h.c,F=glassEye(camY);
+  H.root.updateMatrixWorld(true);c.updateMatrixWorld(true);c.matrixWorld.decompose(_glP,_glQ,_glS);
+  _glQ2.setFromUnitVectors(_rdY,F.dir);_glQ.slerp(_glQ2,u);_glP.lerp(_glP2.copy(F.eye).addScaledVector(F.dir,GLASS_EYE+.005),u*u*u);
+  _glM.compose(_glP,_glQ,_glS).premultiply(_tpHm.copy(H.root.matrixWorld).invert());c.matrix.copy(_glM);c.matrixWorldNeedsUpdate=true;c.updateMatrixWorld(true);return true;}
+// the third-person camera brought to the eye as the glass comes up (after tpCamera)
+function tpGlassCam(u,camY){if(u<=0)return;const k=_rdEase(u/GLASS_CAM),F=glassEye(camY);CAM.position.lerp(F.eye,k);
+  TP.near=Math.hypot(CAM.position.x-px,CAM.position.z-pz);TP.dist=Math.hypot(CAM.position.x-px,CAM.position.y-camY,CAM.position.z-pz);}
 function tpUpdate(dt,st){
   workTick();
   if(!thirdPerson){
@@ -821,12 +853,14 @@ function tpUpdate(dt,st){
     if(TP.hidVM){TP.hidVM=false;VM_SCENE.visible=true;}
     if(typeof fpHBCheck==='function')fpHBCheck();
     rodTick(null);netTick(null);
+    {const gh=glassOut();if(gh)VM_SCENE.visible=false;else if(TP.glassVM)VM_SCENE.visible=true;TP.glassVM=gh;} /* S2236 — the glass's ring is the view */
     return;}
   if(!TP.hidVM){TP.hidVM=true;VM_SCENE.visible=false;}
   tpEnsure();
   const R=TP.rig;if(!scene)return;
   if(R.root.parent!==scene){if(R.root.parent)R.root.parent.remove(R.root);scene.add(R.root);}
   tpCamera(dt,st.camY);
+  const glassU=glassOut()?glassPhase():0;tpGlassCam(glassU,st.camY); /* S2236 — the camera to the eye as the glass comes up */
   // on a ship's deck or a platform jumpY already carries the height
   R.root.position.set(px,jumpY,pz);R.root.rotation.y=yaw+Math.PI;
   /* S880 (F2a) — swimming, the body sinks to its shoulders: the head's top a quarter metre over the sea; S1084 (F2b) reads the swimmer's line (SWIM_Y, 1.45 under it now) */
@@ -844,7 +878,9 @@ function tpUpdate(dt,st){
   tpRollTumble(R,st.roll);
   const rodK=R.weapon&&R.weapon.userData.kit==='rod'&&rodOut()?rodPhase():null;if(rodK)tpRodArm(R,rodK); /* S2224 — the rod held out */
   if(!rodK&&netOut())tpNetArms(R,netPhase()); /* S2225 — the net on its rope */
+  const glassK=glassU>0&&R.weapon&&R.weapon.userData.kit==='glass'&&!R.mantle;if(glassK)tpGlassArms(R,glassU,st.camY); /* S2236 — the glass to the eye */
   tpHBPose(R); // F10 — the builder's body follows the driver
+  if(glassK)tpGlassHeld(R,glassU,st.camY);
   rodTick(R);netTick(R);
   // too close to see past: step out of the way
   R.root.visible=TP.near>.32||TP.dist>.55;

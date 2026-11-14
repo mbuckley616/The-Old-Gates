@@ -187,6 +187,23 @@ const net = await drive(() => { const out = {}, _od = onDeck, keep = { mesh: SHI
 console.log('  net:', JSON.stringify(net));
 check('a net out lies in a ring 3 m off you on the water, its floats on the surface and its curtain under them, a rope from your bare hands to the first float, both arms out on it; ended, it is pursed in and then gone',
   net.out && net.out.inScene && net.out.corksOnWater && Math.abs(net.out.ring - 3) < .01 && net.out.spread > 2 && net.out.spread < 2.5 && net.out.deep > 1.2 && net.out.ropeFromHands < .01 && net.out.ropeToCork < .01 && net.out.arms < -.5 && net.out.armsR < -.5 && net.out.bare && net.pursed.on && net.pursed.spread < 1.2 && net.gone, net);
+// the spyglass raised (Session 2236; Michael's B on #1504): up, the kit's draw-tube is in your right fist and the builder's copy of it lies
+// along the view with its eye cup at the eye, the right wrist by it and the left under the barrel; the third-person camera comes to the eye
+// and the body, too close to see past, is hidden. Lowered, it is put away and the camera goes back. In first person the view model is
+// hidden while it is up and shown again after. The raise runs on the wall clock (GLASS_MS), so its start is set back here
+const glass = await drive(() => { const out = {}; BAG.length = 0; BAG.push({ ...GLASS_ITEM }); EQ.weapon = null; pitch = .1; const back = () => { GLASS_FX.t0 = performance.now() - 2 * GLASS_MS; GLASS_FX.until = 0; };
+  try { thirdPerson = true; for (let i = 0; i < 3; i++) step(); out.camOut = +TP.dist.toFixed(2); glassRaise(); step(); back(); for (let i = 0; i < 3; i++) step();
+    const R = TP.rig, H = R.rig.hb, h = R.hbHeld && R.hbHeld.find(x => x.o === R.weapon), E = GLASS_FX.eye, D = GLASS_FX.dir, piece = h && h.c.children[0].children[0];
+    if (piece) { piece.updateMatrixWorld(true); const cup = new THREE.Vector3(0, -GLASS_EYE, 0).applyMatrix4(piece.matrixWorld), ax = new THREE.Vector3(0, 1, 0).applyQuaternion(piece.getWorldQuaternion(new THREE.Quaternion())), wr = n => new THREE.Vector3().setFromMatrixPosition(H.P.byName['wrist.' + n].matrixWorld).sub(E);
+      out.up = { kit: R.weapon.userData.kit, cup: +cup.distanceTo(E).toFixed(3), axis: +ax.dot(D).toFixed(3), size: +piece.getWorldScale(new THREE.Vector3()).x.toFixed(3), wrR: +wr('R').length().toFixed(3), wrL: +wr('L').dot(D).toFixed(3), cam: +TP.dist.toFixed(3), hidden: !R.root.visible }; }
+    glassDown(); step(); GLASS_FX.until = performance.now() - 1; for (let i = 0; i < 3; i++) step(); out.down = { kind: workKind(), cam: +TP.dist.toFixed(2), shown: TP.rig.root.visible };
+    thirdPerson = false; for (let i = 0; i < 3; i++) step(); glassRaise(); back(); for (let i = 0; i < 3; i++) step(); out.fp = { vm: VM_SCENE.visible, kind: workKind() };
+    glassDown(); step(); GLASS_FX.until = performance.now() - 1; for (let i = 0; i < 3; i++) step(); out.fpDown = { vm: VM_SCENE.visible, kind: workKind() };
+  } finally { glassDown(); thirdPerson = true; pitch = 0; BAG.length = 0; } for (let i = 0; i < 3; i++) step(); return out; });
+console.log('  glass:', JSON.stringify(glass));
+check('the spyglass raised is in your right fist at its true size, its eye cup at the eye (within 1 cm) and its barrel along the view, the right wrist by the eye and the left under the barrel; the camera at the eye and the body hidden; lowered, put away with the camera back out; in first person the view model hidden while it is up',
+  glass.up && glass.up.kit === 'glass' && glass.up.cup < .01 && glass.up.axis > .999 && Math.abs(glass.up.size - 1) < .01 && glass.up.wrR < .16 && glass.up.wrL > .3 && glass.up.wrL < .55 && glass.up.cam < .05 && glass.up.hidden
+  && glass.down.kind === null && Math.abs(glass.down.cam - glass.camOut) < .3 && glass.down.shown && glass.fp.vm === false && glass.fp.kind === 'glass' && glass.fpDown.vm === true && glass.fpDown.kind === null, glass);
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
 
