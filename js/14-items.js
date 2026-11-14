@@ -84,7 +84,17 @@ function itemWeight(it){
   }
   return w * (it.qty || 1);
 }
-function bagWeight(){let t=0; for(const it of BAG) t+=itemWeight(it); return t;}
+function bagWeight(){let t=0; for(const it of BAG) t+=itemWeight(it); return t-packCarried();}
+// S2213 — the adventurer's kit, A (Michael's B on #1504, docs/design/adventurers-kit.md): a pack (2 kg, 40 gold, at every goods shop,
+// by island in looks only: the Gatelands' wicker creel, the Mark's birch frame, Aurenne's saddle-roll). The first 20 kg of tools and
+// goods in the bag (anything not `equip`: never a weapon, armour, a ring, a shield or a cloak) weigh nothing; past 10 kg in it the
+// roll is the heavy roll (rollLoad, 12-character.js). One pack counts, and the pack itself is weighed. It saves as a bag item.
+const PACK_HOLD=20,PACK_HEAVY=10,PACK_DEF={gatelands:{name:'Wicker Creel',ico:'🧺'},mark:{name:'Birch Pack Frame',ico:'🎒'},aurenne:{name:'Saddle-Roll',ico:'🎒'}};
+function packItem(nk){const k=PACK_DEF[nk]?nk:'gatelands',P=PACK_DEF[k];return {name:P.name,ico:P.ico,type:'misc',weight:2,buyPrice:40,sellMult:.4,tool:'pack',pack:k};}
+function hasPack(){return BAG.some(b=>b&&b.tool==='pack');}
+function packable(it){return !!it&&it.type!=='equip'&&it.tool!=='pack';}
+// what the pack holds: the packable bag's weight, to its 20 kg
+function packCarried(){if(!hasPack())return 0;let s=0;for(const it of BAG)if(packable(it))s+=itemWeight(it);return Math.min(PACK_HOLD,s);}
 // S977 — Fitted (Armour 25): the five worn pieces weigh half; a shield, the weapon, rings and the cloak as before
 const ARMOUR_SLOTS=['head','chest','hands','legs','feet'];
 function equipWeight(){const fit=perk('armour',25)?.5:1;let t=0; for(const k of Object.keys(EQ)) t+=itemWeight(EQ[k])*(ARMOUR_SLOTS.includes(k)?fit:1); return t;}

@@ -235,7 +235,7 @@ function bulwarkMult(){return perk('guard',50)?1.5:1;}
 // wear on the five armour slots does not count toward the load that makes a roll heavy.
 function unbowedMult(){return perk('armour',50)?1.25:1;}
 function holdTheLine(before,max,heavy){return !heavy&&perk('armour',75)&&before>max/2;}
-function rollLoad(){let w=totalCarryWeight();if(perk('armour',100)){const fit=perk('armour',25)?.5:1;for(const k of ARMOUR_SLOTS)w-=itemWeight(EQ[k])*fit;}return w;}
+function rollLoad(){if(typeof packCarried==='function'&&packCarried()>PACK_HEAVY)return Infinity; /* S2213 — past 10 kg in the pack the roll is heavy (#1504 B) */let w=totalCarryWeight();if(perk('armour',100)){const fit=perk('armour',25)?.5:1;for(const k of ARMOUR_SLOTS)w-=itemWeight(EQ[k])*fit;}return w;}
 // S1051 — the Arms perks, each read off the weapon in your hand (weaponSkill: none is Hand-to-hand, a blunt wType is Blunt,
 // the rest but the bow is Blade). `armsPerk('blade',50)` is true when the hand holds a blade and Blade's Long riposte is held.
 // Blade: Long riposte (50) the riposte window 0.8 → 1.2 s; Crossing (75) a perfect parry also staggers a second attacker within

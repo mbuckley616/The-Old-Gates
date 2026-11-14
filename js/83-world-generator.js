@@ -3521,7 +3521,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S2212 (card F9, Michael's A on #1518: as drawn, for all 68 town houses; OG-115, OG-034) — on the new look a Markish home standing as
+  // S2216 (card F9, Michael's A on #1518: as drawn, for all 68 town houses; OG-115, OG-034) — on the new look a Markish home standing as
   // the kit's town house (lot.kit.kind 'marktown', S2003: 4.2 to 6.6 m of gable by 3.4 to 7 m, two storeys jettied 0.4 m) is the town
   // house's own two floors inside (PKIT.mk.townroom, rooms.js's Session 2188), in the street's own shell and options (its stream the lot's
   // windows, so the shell inside is the shell outside): below, the stue round the fire on a peis at the stack (or under a stone hood and a
@@ -3935,7 +3935,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
     if(kitAurHomeOne(house))return buildKitAurHomeOne(house); /* S1968 — Aurenne's one-storey home inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */
-    if(kitMarkTownRoom(house))return buildKitMarkTownRoom(house); /* S2212 — a Markish town house: its two floors inside, at their true size */
+    if(kitMarkTownRoom(house))return buildKitMarkTownRoom(house); /* S2216 — a Markish town house: its two floors inside, at their true size */
     if(kitChurchHall(house))return buildKitChurchHall(house); /* S1326 — the Church of the Weaver inside, at its true size */
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
     if(kitHuntCabin(house))return buildKitHuntCabin(house); /* S2196 — the Mark's hunting cabin off the road, its room */

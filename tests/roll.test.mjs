@@ -30,6 +30,28 @@ const hr = await rollOnce();
 await page.evaluate(() => { const i = BAG.findIndex(it => it._ballast); if (i >= 0) BAG.splice(i, 1); });
 check('over 70% of carry weight it is 1.8 units in 0.6 s', hr.ok && hr.heavy && hr.dur === .6 && Math.abs(hr.d - 1.8) < .12, { load: +heavy.toFixed(2), ...hr });
 
+// S2213 — the pack (Michael's B on #1504): the first 20 kg of tools and goods weigh nothing (never a weapon or armour); past 10 kg in it
+// the roll is the heavy roll; one at every goods shop, by island in looks; the Kit tab lists the working kit
+const pk = await page.evaluate(() => { const keep = BAG.splice(0); const out = {};
+  const goods = kg => ({ name: 'Test Goods', type: 'misc', weight: kg, qty: 1, _tg: 1 }), sword = { name: 'Test Sword', type: 'equip', slot: 'weapon', weight: 6, qty: 1 };
+  BAG.push(goods(15), sword); out.none = +bagWeight().toFixed(2);
+  BAG.push(packItem('mark')); out.with15 = +bagWeight().toFixed(2);
+  BAG.splice(0); BAG.push(packItem('aurenne'), goods(25), sword); out.with25 = +bagWeight().toFixed(2);
+  BAG.splice(0); BAG.push(packItem('gatelands'), goods(8)); out.load8 = packCarried();
+  out.kit = kitRows().map(r => (r.it ? '+' : '-') + r.lbl).join(); const d = document.createElement('div'); renderKitList(d); out.kitRows = d.children.length; out.kitText = d.children[0].textContent;
+  anchoredPlaces(); out.stock = {}; for (const c of CELLS.values()) { if (c.type === 'sea') continue; const nk = nationKeyOf(c.i, c.j); if (out.stock[nk]) continue;
+    const t = c.sites.find(t => t.kind === 'village'); if (t) { const p = survivalFor({ type: 'misc', siteId: t.id }).find(i => i.tool === 'pack'); out.stock[nk] = p ? `${p.name}:${p.buyPrice}:${p.weight}` : 'none';
+      out.innPack = survivalFor({ type: 'inn', siteId: t.id }).some(i => i.tool === 'pack'); } }
+  window._keepBag = keep; return out; });
+const rollPack = async kg => { await page.evaluate(kg => { BAG.splice(0); BAG.push(packItem('gatelands'), { name: 'Test Goods', type: 'misc', weight: kg, qty: 1 }); }, kg); return rollOnce(); };
+const p8 = await rollPack(8), p12 = await rollPack(12);
+await page.evaluate(() => { BAG.splice(0); BAG.push(...window._keepBag); delete window._keepBag; });
+console.log(JSON.stringify({ pk, p8: p8.heavy, p12: p12.heavy }));
+check('a pack carries the first 20 kg of goods weightless, never a weapon, and weighs 2 kg itself', pk.none === 21 && pk.with15 === 8 && pk.with25 === 13, pk);
+check('8 kg in the pack rolls light, 12 kg rolls heavy', p8.ok && !p8.heavy && p12.ok && p12.heavy, { p8, p12 });
+check('every goods shop sells its island\'s pack at 40 gold and 2 kg; an inn does not', pk.stock.gatelands === 'Wicker Creel:40:2' && pk.stock.mark === 'Birch Pack Frame:40:2' && pk.stock.aurenne === 'Saddle-Roll:40:2' && pk.innPack === false, pk.stock);
+check('the Kit tab lists the working kit, the pack held with its load', pk.kitRows === 13 && /^\+Pack,-/.test(pk.kit) && /8\.0 \/ 20 kg in it/.test(pk.kitText), { kit: pk.kit, t: pk.kitText });
+
 const r = await page.evaluate(() => {
   const out = {};
   // the distance does not depend on the frames: 60 ticks, 5 ticks, or one
