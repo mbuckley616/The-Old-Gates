@@ -1907,7 +1907,7 @@
   }
   // ── fish ──
   const FISH_KINDS={shallow:['Herring','Bream','Mackerel'],deep:['Cod','Silverfin','Ling'],cold:['Char','Haddock'],warm:['Grouper','Snapper']};
-  function nearSchool(){if(!isSwimming())return null;if(typeof gateToll==='function'&&gateToll('uisce')&&uisceWaters())return null; /* S1359 — Uisce's toll: no fish in the Gatelands' waters */for(const s of LIFE.fish){if(s.cool>0)continue;if(Math.hypot(px-s.cx,pz-s.cz)<s.r+1.4&&Math.abs(jumpY-s.y)<1.6)return s;}return null;}
+  function nearSchool(){if(!isSwimming())return null;if(typeof gateToll==='function'&&gateToll('uisce')&&uisceWaters())return null; /* S1359 — Uisce's toll: no fish in the Gatelands' waters */for(const s of LIFE.fish){if(s.cool>0||schoolNetted(s))continue; /* S2215 — a netted school is gone for the day */if(Math.hypot(px-s.cx,pz-s.cz)<s.r+1.4&&Math.abs(jumpY-s.y)<1.6)return s;}return null;}
   // S1759 — a trout in a river or a lake (#1014 A): swimming, within reach of one that has not darted off, E takes it by hand, as the sea's
   // catch (the same reach; Uisce's toll and face hold for it as for the sea's fish in the Gatelands' waters)
   function nearTrout(){if(!isSwimming())return null;if(typeof gateToll==='function'&&gateToll('uisce')&&uisceWaters())return null;let best=null,bd=1.4;
@@ -1947,10 +1947,33 @@
     if(activeZoneId!=='world'||isInterior()||isSwimming()||SHIP.sailing||Math.hypot(px-C.x,pz-C.z)>ROD_LEAVE||!hasRod()){ROD.cast=null;return;}
     if(t>=C.bite&&!C.told){C.told=true;showMsg('A bite! Strike!','#ffd070');try{splash(false);}catch(e){}}
     if(t>=C.bite+ROD_STRIKE){ROD.cast=null;showMsg('It got away.','#a0a090');}}
-  function rodPrompt(){if(ROD.cast)return ROD.cast.told?"Press 'E' to strike":"Press 'E' to reel in";return rodSpot()?"Press 'E' to cast":null;}
-  function rodAct(){if(ROD.cast)return rodStrike();const s=rodSpot();return s?rodCast(s):false;}
+  // S2215 — the net (Michael's B on #1504, the page's table): on your own deck, not at the helm, with her making 2 knots or less, a net
+  // in the bag and a school under you (within its spread and 3 m), E casts the net. 8 s later (the wall clock: a dropped frame changes
+  // nothing) it comes up with 3 to 5 fish into the sea chest, where the cook takes them (crewCook); the school is gone until the next day.
+  // Leaving the deck, taking the helm or her passing 2 knots hauls it in empty. The haul is seeded `<chunk>:<day>` (the co-op rules), its
+  // fish the school's own (FISH_KINDS by climate and bed, as a swimmer's catch), and the school's day is kept in worldState.netted
+  // (the world's: a school is a place's).
+  const NET={on:null};const NET_MS=8000,NET_KNOTS=2,NET_N0=3,NET_N1=5;
+  function schoolNetted(s){const n=worldState.netted;return !!(n&&s&&s.chunk&&n[s.chunk]===lootDay());}
+  function deckSchool(){if(activeZoneId!=='world'||!SHIP.mesh||SHIP.sailing||!onDeck()||Math.abs(SHIP.speed||0)>NET_KNOTS||!BAG.some(b=>b&&b.tool==='net'))return null;
+    if(typeof gateToll==='function'&&gateToll('uisce')&&uisceWaters())return null;
+    for(const s of LIFE.fish){if(schoolNetted(s))continue;if(Math.hypot(px-s.cx,pz-s.cz)<s.r+3)return s;}return null;}
+  function netCast(s){NET.on={s,t0:performance.now(),x:px,z:pz};if(typeof sfxNoise==='function')try{sfxNoise(.2,0,0,.08,700);}catch(e){}showMsg('You pay the net out over the side.','#88aacc');return true;}
+  function netHaul(){const N=NET.on;NET.on=null;const s=N.s,day=lootDay(),R=seededRng('net',(s.chunk||(Math.round(s.cx)+','+Math.round(s.cz)))+':'+day);
+    const [i,j]=cellOf(s.cx,s.cz),cl=climateOfCell(i,j),bed=worldH(s.cx,s.cz),n=NET_N0+Math.floor(R()*(NET_N1-NET_N0+1));const got=[];
+    for(let k=0;k<n;k++){const pool=(cl==='cold'&&R()<.5)?FISH_KINDS.cold:(cl==='warm'&&R()<.5)?FISH_KINDS.warm:bed<-5?FISH_KINDS.deep:FISH_KINDS.shallow;
+      const name=pool[Math.floor(R()*pool.length)],big=R()<.12;const it={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish',food:'fish'};_stashAdd(it);got.push(it.name);}
+    if(!worldState.netted)worldState.netted={};for(const k in worldState.netted)if(worldState.netted[k]!==day)delete worldState.netted[k];
+    worldState.netted[s.chunk||(Math.round(s.cx)+','+Math.round(s.cz))]=day;if(s.im)s.im.visible=false;splash(false);
+    showMsg(`The net comes up with ${n} fish. Into the sea chest.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Netted ${n} fish: ${got.join(', ')}.`);return got;}
+  function tickNet(){const N=NET.on;if(!N)return;
+    if(activeZoneId!=='world'||!SHIP.mesh||SHIP.sailing||!onDeck()||Math.abs(SHIP.speed||0)>NET_KNOTS){NET.on=null;showMsg('You haul the net in empty.','#a0a090');return;}
+    if(performance.now()-N.t0>=NET_MS)netHaul();}
+  function tickNetted(){for(const s of LIFE.fish)if(s.im)s.im.visible=!schoolNetted(s);}
+  function rodPrompt(){if(NET.on)return 'Netting…';if(deckSchool())return "Press 'E' to cast the net";if(ROD.cast)return ROD.cast.told?"Press 'E' to strike":"Press 'E' to reel in";return rodSpot()?"Press 'E' to cast":null;}
+  function rodAct(){if(NET.on)return true;{const ds=deckSchool();if(ds)return netCast(ds);}if(ROD.cast)return rodStrike();const s=rodSpot();return s?rodCast(s):false;}
   function fishPrompt(){return nearSchool()||nearTrout()?"Press 'E' to catch a fish":rodPrompt();}
-  function catchFish(){const s=nearSchool();if(!s&&!isSwimming()&&(ROD.cast||rodSpot()))return rodAct();if(!s){const t=nearTrout();return t?takeTrout(t):false;}
+  function catchFish(){const s=nearSchool();if(!s&&!isSwimming()&&(ROD.cast||NET.on||deckSchool()||rodSpot()))return rodAct();if(!s){const t=nearTrout();return t?takeTrout(t):false;}
     const [i,j]=cellOf(px,pz);const cl=climateOfCell(i,j);const bed=worldH(px,pz);
     // S605 — the catch rolls on the school's stream, `<chunk>:fish:<minute>` (co-op rules; a school is one a chunk, S508's key by place and minute)
     const R=seededRng('fish',(s.chunk||(Math.round(s.cx)+','+Math.round(s.cz)))+':fish:'+Math.floor(worldState.gameTimeAbsMinutes||0));
@@ -1959,7 +1982,7 @@
     const item={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish',food:'fish'}; /* S2028 — a main for the pot */
     if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
     if(typeof bagAdd==='function'){bagAdd(item);if(typeof gateGift==='function'&&gateGift('uisce')&&uisceWaters()&&(typeof canCarry!=='function'||canCarry(item)))bagAdd(Object.assign({},item));} /* S1359 — Uisce's face: two fish a catch in the Gatelands' waters */s.cool=18+R()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
-  function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;tickRod();} /* S2214 — the rod's cast */
+  function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;tickRod();tickNet();tickNetted();} /* S2214 — the rod's cast; S2215 — the net, and a netted school out of sight */
   // ── whales ──
   const WHALES=[];
   function spawnWhale(x,z){const c=k=>new THREE.Color(k);const g=mergeParts([{geo:new THREE.CylinderGeometry(1.6,.7,14,10),color:c(0x3a4650),rx:Math.PI/2,jitter:.03},{geo:new THREE.SphereGeometry(1.7,10,8),color:c(0x3a4650),z:7,jitter:.03},{geo:new THREE.BoxGeometry(5.2,.3,2.2),color:c(0x2e3a44),z:-8.2,jitter:.03},{geo:new THREE.ConeGeometry(.5,1.2,4),color:c(0x2e3a44),y:1.6,z:-2},{geo:new THREE.BoxGeometry(2.6,.25,1.4),color:c(0x2e3a44),x:2.2,z:2.5,y:-.6},{geo:new THREE.BoxGeometry(2.6,.25,1.4),color:c(0x2e3a44),x:-2.2,z:2.5,y:-.6}]);

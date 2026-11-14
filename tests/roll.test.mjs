@@ -50,7 +50,7 @@ console.log(JSON.stringify({ pk, p8: p8.heavy, p12: p12.heavy }));
 check('a pack carries the first 20 kg of goods weightless, never a weapon, and weighs 2 kg itself', pk.none === 21 && pk.with15 === 8 && pk.with25 === 13, pk);
 check('8 kg in the pack rolls light, 12 kg rolls heavy', p8.ok && !p8.heavy && p12.ok && p12.heavy, { p8, p12 });
 check('every goods shop sells its island\'s pack at 40 gold and 2 kg; an inn does not', pk.stock.gatelands === 'Wicker Creel:40:2' && pk.stock.mark === 'Birch Pack Frame:40:2' && pk.stock.aurenne === 'Saddle-Roll:40:2' && pk.innPack === false, pk.stock);
-check('the Kit tab lists the working kit, the pack held with its load', pk.kitRows === 12 && /^\+Pack,-/.test(pk.kit) && /8\.0 \/ 20 kg in it/.test(pk.kitText), { kit: pk.kit, t: pk.kitText });
+check('the Kit tab lists the working kit, the pack held with its load', pk.kitRows === 13 && /^\+Pack,-/.test(pk.kit) && /8\.0 \/ 20 kg in it/.test(pk.kitText), { kit: pk.kit, t: pk.kitText });
 
 const r = await page.evaluate(() => {
   const out = {};
