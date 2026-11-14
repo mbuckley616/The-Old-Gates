@@ -83,6 +83,19 @@ check('on deck over a school with a net, E pays it out; past 2 knots it comes in
 check('8 s later 3 to 5 fish go into the sea chest, the same haul for the same school and day', net.stillOn && net.n >= 3 && net.n <= 5 && net.same, net);
 check('the netted school is gone, from the deck and to a swimmer, until the next day (worldState.netted, saved)', net.netted && net.gone && net.nextDay && net.saved, net);
 check('a net at a harbour\'s goods shop, 30 gold and 3 kg; not at an inland one', net.stock, net);
+// S2226 — the spyglass (Michael's B on #1504): sold at a harbour's goods shop; used from the bag it narrows the view ×5 to a clear day's
+// 1,000 m (nothing past the eye after dusk, fog's 60 m in fog); a ship in the view's middle within 800 m shows her card; a step lowers it
+const gl = await page.evaluate(() => { const keep = BAG.splice(0), out = {}; forceTime(12); const W = WORLD.wx, k0 = [W.type, W.next, W.k];
+  try { out.shop = survivalFor({ type: 'misc', siteId: 'portclare' }).some(i => i.tool === 'glass'); out.no = glassRaise(); BAG.push({ ...GLASS_ITEM }); out.up = glassRaise(); out.zoom = glassZoom();
+    W.type = W.next = 'clear'; W.k = 1; WX.sightM = 2400; out.reach = glassReach(); forceTime(23); out.night = glassReach(); forceTime(12);
+    CAM.updateMatrixWorld(); const v = new THREE.Vector3(); CAM.getWorldDirection(v); const L = Math.hypot(v.x, v.z);
+    const A = spawnOtherShip('pirate', CAM.position.x + v.x / L * 300, CAM.position.z + v.z / L * 300); const S = glassLook().ship; out.card = S === A ? glassCard(A) : null; despawnOtherShip(A); OTHER.splice(OTHER.indexOf(A), 1);
+    K['KeyW'] = true; tickGlass(1 / 60); out.stepped = !GLASS.up; out.zoom2 = glassZoom();
+  } finally { K['KeyW'] = false; glassDown(); BAG.splice(0); BAG.push(...keep); W.type = k0[0]; W.next = k0[1]; W.k = k0[2]; }
+  return out; });
+console.log('glass', JSON.stringify(gl));
+check(`the spyglass: sold at the harbour, raised from the bag (×${gl.zoom}), ${gl.reach} m by a clear noon and ${gl.night} after dusk; a black sail at 300 m carded (${gl.card && gl.card.join(' / ')}); a step lowers it`,
+  gl.shop && !gl.no && gl.up && gl.zoom === 5 && gl.reach === 1000 && gl.night === 0 && gl.card && gl.card[0] === 'A black sail' && gl.stepped && gl.zoom2 === 1, gl);
 stop();
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -1338,9 +1338,9 @@ function gardenPlant(h,bi,what,v){if(!homeMine(h)||!homeFitted(h,'garden'))retur
 function gardenTake(h,bi){const L=gardenBeds(h),e=L[bi];if(!e)return {done:false,why:'The bed is bare.'};if(!gardenReady(e))return {done:false,why:'It is not ready.'};
   const it=e.k==='second'?secondItem(e.s,GARDEN_SECOND):{...e.item,qty:GARDEN_HERB};if(typeof canCarry==='function'&&!canCarry(it))return {done:false,why:'Too heavy to carry!'};
   bagAdd(it);L[bi]=null;skillUse(e.k==='second'?'cooking':'alchemy',1,'garden:'+h.id+':'+bi+':'+e.at);return {done:true,got:`${it.qty} ${it.name}`};}
-function gardenLeft(e){const m=Math.max(0,GARDEN_DAYS*1440-(gameMinNow()-e.at)),d=Math.floor(m/1440),hh=Math.ceil((m%1440)/60);return d?`${d} d ${hh} h`:`${hh} h`;}
+function gardenLeft(e){const m=Math.max(0,GARDEN_DAYS*1440-(gameMinNow()-e.at)),H=Math.ceil(m/60),d=Math.floor(H/24),hh=H%24; /* S2220 — the hours ceiled before the days are taken, so 7,199.9 minutes is 5 d, not 4 d 24 h */return d?(hh?`${d} d ${hh} h`:`${d} d`):`${hh} h`;}
 // the beds' rows on the house's page
-function gardenRows(h,btn){const L=gardenBeds(h),secs=gardenSeconds(h).filter(k=>bagCount(b=>b.second===k)>0),herbs=[...new Set(BAG.filter(b=>b&&b.type==='herb').map(b=>b.name))];
+function gardenRows(h,btn){const L=gardenBeds(h),secs=gardenSeconds(h).filter(k=>bagCount(b=>b.second===k)>0),herbs=[...new Set(BAG.filter(b=>b&&b.type==='herb'&&!b.spec).map(b=>b.name))]; /* S2220 — a rare specimen is not offered: gardenPlant refuses it (S2160) */
   let s='';L.forEach((e,bi)=>{s+=`<div style="padding-left:12px">Bed ${bi+1}: `;
     if(e){const nm=e.k==='second'?DISH_SECONDS[e.s].name:e.item.name;s+=`${nm} <i style="font-size:12px;color:#8a7050">${gardenReady(e)?'ready':gardenLeft(e)+' more'}</i> `+btn('bed:'+bi+':take','Gather',gardenReady(e));}
     else{s+='<i style="font-size:12px;color:#8a7050">bare</i> ';secs.forEach(k=>{s+=btn('bed:'+bi+':second',`Sow ${DISH_SECONDS[k].name.toLowerCase()}`,true).replace('data-a=',`data-v="${k}" data-a=`);});
@@ -1349,6 +1349,7 @@ function gardenRows(h,btn){const L=gardenBeds(h),secs=gardenSeconds(h).filter(k=
     s+='</div>';});
   return s;}
 const NET_ITEM={name:'Fishing Net',ico:'🥅',type:'misc',weight:3,buyPrice:30,sellMult:.4,tool:'net'}; /* S2215 — Michael's B on #1504: from your deck over a school (86-world-crime.js) */
+const GLASS_ITEM={name:'Spyglass',ico:'🔭',type:'misc',weight:1,buyPrice:60,sellMult:.4,tool:'glass'}; /* S2226 — Michael's B on #1504: used from the bag, the view narrows ×5 (86-world-crime.js) */
 const ROD_ITEM={name:'Fishing Rod',ico:'🎣',type:'misc',weight:1,buyPrice:15,sellMult:.4,tool:'rod'}; /* S2214 — Michael's B on #1504: cast at water 0.6 m deep (86-world-crime.js) */
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish',food:'fish'};} /* S2028 — food, which the save keeps */
 // S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
@@ -1363,7 +1364,7 @@ function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];cons
   try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));if(h.type==='misc')out.push(...campGearFor(nk)); /* S2090 — the rolls and the tent */if(h.type==='misc')out.push(packItem(nk)); /* S2213 — the island's pack (#1504 B) */if(nk==='mark')out.push(waterItem('canteen'));if(nk==='aurenne')out.push(waterItem('flask'));
     for(const k in DISH_SECONDS)if(DISH_SECONDS[k].isle===nk)out.push(secondItem(k));
     if(h.type==='inn'){out.push(dishOfDayItem(h));isleSeconds(nk).forEach(k=>out.push(cupItem(k)));}}}catch(e){} /* S2013 — by island; S2028 — its three seconds; S2035 — the inn's dish of the day and its three cups */
-  const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port'){out.push({...SURV_ITEMS.fish});if(h.type==='misc')out.push(saltFor(h));if(h.type==='misc')out.push({...NET_ITEM});} /* S2215 — the net at a harbour's goods shop (#1504 B) */ /* S2123 — salt at a harbour's goods shop */return out;}
+  const st=h.siteId&&typeof SITE!=='undefined'?SITE[h.siteId]:null;if(st&&st.kind==='port'){out.push({...SURV_ITEMS.fish});if(h.type==='misc')out.push(saltFor(h));if(h.type==='misc')out.push({...NET_ITEM});if(h.type==='misc')out.push({...GLASS_ITEM});} /* S2215 — the net at a harbour's goods shop (#1504 B) */ /* S2123 — salt at a harbour's goods shop */return out;}
 // the buff bar's pill for fed
 function fedPill(){const C=cupNow(),cp=C?`<span class="buff-pill" title="${DISH_RIDER[C.r].label} — a cup, ${Math.ceil(C.until-gameMinNow())} min remaining"><span class="bp-ico">🍺</span><span class="bp-time">${pillMin(Math.ceil(C.until-gameMinNow()))}</span></span>`:''; /* S2035 — a cup */
   return fedPill1()+cp;}

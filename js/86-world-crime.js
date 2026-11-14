@@ -792,6 +792,7 @@
   function confrontIndoor(s,S,c){CR.cool=60;const fine=c.bounty;const n=s.npc;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);endSent();return L.pay;}},
+      ...restitutionTopic(S,c,()=>confrontIndoor(s,S,c),true),
       ...talkDownTopic(S,c,()=>confrontIndoor(s,S,c)),
       ...wordGivenTopic(S,c,true),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardFightIndoor(s,S);},60);return L.refuse;}},
@@ -799,6 +800,7 @@
   function confront(n,S,c){CR.cool=60;if(CR.sent&&CR.sent.npc===n)endSent();/* S239 — caught: the chase is over */const fine=c.bounty;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);return L.pay;}},
+      ...restitutionTopic(S,c,()=>confront(n,S,c),false),
       ...talkDownTopic(S,c,()=>confront(n,S,c)),
       ...wordGivenTopic(S,c,false),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return L.refuse;}},
@@ -817,6 +819,38 @@
   function wordGivenTopic(S,c,indoor){if(!wordGivenOk(c))return [];
     return [{label:'Give my word. (Speech)',quest:true,fn:()=>{if(!wordGiven(S,c))return '';if(indoor)endSent();showMsg('Word given. The fine is waived.','#c8e88a');
       setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}}];}
+  /* S2227 — law in three registers (Michael's B on #1540, docs/design/law-in-three-registers.md), the Gatelands' court: the Crown's.
+     The points, the witnesses, the favour and the halt stay as built; how you settle changes by the island the town stands on (courtOf).
+     - Restitution, at the halt: the stolen goods you carry from this town (an item's stolenAt, laid when a box is robbed) are handed back,
+       and the fine falls by their worth (buyPrice × qty); the 25 a point stays, since the fine was laid as 25 a point plus the worth. The
+       gold stolen (c.loot) is not goods: it stays owed. A fine left over opens the halt again on the new sum.
+     - The stocks, after the yield, in place of the cells: an hour on the plaza for every 50 gold of the fine, at least 1 and at most 6
+       (stocksHours); the fine is cleared and the stolen goods and gold taken, as the cells take them. The clock runs those hours and you
+       stand on the plaza after. The stocks themselves are the look builder's to draw; the guard's words for the court are the quest
+       writer's (the page), so the two choices speak only as the narrator for now.
+     The Mark's duel and Aurenne's ledger are the next two sessions; until then both keep the cells as built. */
+  function courtOf(S){const s=S&&S.site;if(!s)return null;try{return nationAt(s.x,s.z);}catch(e){return null;}}
+  function stolenFrom(S){return BAG.filter(b=>b&&b.stolen&&b.stolenAt&&b.stolenAt===S.site.id);}
+  function stolenWorth(L){return L.reduce((a,b)=>a+(b.buyPrice||0)*(b.qty||1),0);}
+  // named action: the goods handed back. Returns the gold the fine fell by, or 0
+  function restitute(S,c){if(courtOf(S)!=='gatelands'||!c||c.bounty<=0)return 0;const L=stolenFrom(S);if(!L.length)return 0;const w=stolenWorth(L),f0=c.bounty;
+    for(const it of L){const i=BAG.indexOf(it);if(i>=0)BAG.splice(i,1);}c.bounty=Math.max(0,c.bounty-w);if(c.lockFine)c.lockFine=Math.min(c.lockFine,c.bounty);if(c.bounty===0)c.shut=false;
+    if(typeof addLog==='function')addLog('⚖',`Handed back ${L.length===1?L[0].name.toLowerCase():L.length+' stolen things'} at ${S.site.name}: the fine fell from ${f0} to ${c.bounty} gold.`);
+    if(typeof renderInv==='function')renderInv();return f0-c.bounty;}
+  function restitutionTopic(S,c,reopen,indoor){if(courtOf(S)!=='gatelands'||!c||c.bounty<=0)return [];const L=stolenFrom(S);if(!L.length)return [];
+    const left=Math.max(0,c.bounty-stolenWorth(L));
+    return [{label:left?`Hand back the goods (the fine falls to ${left} gold)`:'Hand back the goods (the fine is met)',quest:true,fn:()=>{if(!restitute(S,c))return '';
+      if(c.bounty>0){showMsg(`The goods are handed back. ${c.bounty} gold is still owed.`,'#c8e88a');setTimeout(()=>{try{closeDialog();}catch(e){}reopen();},60);return '';}
+      CR.cool=5;if(indoor)endSent();showMsg('The goods are handed back. The fine is met.','#c8e88a');setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}}];}
+  function stocksHours(c){return Math.max(1,Math.min(6,Math.ceil((c&&c.bounty||0)/50)));}
+  // named action: the stocks (the Crown's court, after the yield)
+  function toStocks(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toStocks(S,c);else setTimeout(w,100);};setTimeout(w,100);return;}
+    const h=stocksHours(c);standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;delete c.lockFine;
+    const back=Math.min(Math.max(0,gold),c.loot||0);if(back>0){gold-=back;stolen++;}c.loot=0;
+    doFade(()=>{advanceClock(h*60);px=S.site.x;pz=S.site.z+2;jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
+      showMsg(`${h} ${h===1?'hour':'hours'} in the stocks on the plaza. ${stolen?'They took what you stole'+(back?` (${back} gold)`:'')+'. ':''}You are let go.`,'#c8b880');
+      if(typeof addLog==='function')addLog('⛓',`${h} ${h===1?'hour':'hours'} in the stocks at ${S.site.name}${stolen?'; the stolen goods were taken'+(back?`, and ${back} gold`:''):''}.`);
+      if(typeof renderInv==='function')renderInv();if(typeof updateHUD==='function')updateHUD();});}
   const GUARD_TIER=3;
   function guardDraw(n,S){if(n._drawn)return null;return guardEnemy(n,S,sc,STATIC_SOL,n.g.position.x,n.g.position.z);}
   function guardEnemy(n,S,scn,sol,x,z){n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false; // S241 — in the street, or in a room
@@ -833,7 +867,8 @@
     const L=yieldLines(S);const gn=D_.map(e=>e._guard&&e._guard.npc&&e._guard.npc.def&&e._guard.npc.def.name).find(Boolean)||'The guard'; // S171 — the guard who drew speaks, by name
     openDialog({name:gn,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(dbl)],topics:[
       {label:`Pay double (${dbl} gold)`,quest:true,fn:()=>{if(gold<dbl)return L.poor;gold-=dbl;updateHUD();c.bounty=0;c.shut=false;standDown(S);if(typeof addLog==='function')addLog('⚖',`Yielded and paid ${dbl} gold at ${S.site.name}.`);return L.pay;}},
-      {label:'The cells.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toCells(S,c);},60);return L.cells;}},
+      courtOf(S)==='gatelands'?{label:`The stocks (${stocksHours(c)} h).`,quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toStocks(S,c);},60);return '';}} /* S2227 — the Crown's court (#1540 B) */
+        :{label:'The cells.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toCells(S,c);},60);return L.cells;}},
       {label:'Fight on.',bye:true}]});}
   function toCells(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toCells(S,c);else setTimeout(w,100);};setTimeout(w,100);return;} // S241 — taken from a room: out first
     standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;
@@ -886,9 +921,9 @@
     // S604 — the takings roll on the box's own stream, `<house id>:box:<day>` (CLAUDE.md's co-op rules), as the barrels do (S471)
     const R=seededRng('loot',X.id+':box:'+lootDay()),rpick=a=>a[Math.floor(R()*a.length)];
     const items=[];let coins=0;const site=houseSite(X.house);const p=site?prosperity(site):50;
-    if(X.kind==='home'){coins=2+Math.floor(R()*11);items.push({name:rpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(R()*22),qty:1,stolen:true});}
+    if(X.kind==='home'){coins=2+Math.floor(R()*11);items.push({name:rpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(R()*22),qty:1,stolen:true,stolenAt:site?site.id:null});}
     else{coins=Math.round(boxCoins(p,X.type)*(.8+R()*.4));
-      try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},rpick(tbl),{qty:1,stolen:true}));}}catch(e){}}
+      try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},rpick(tbl),{qty:1,stolen:true,stolenAt:site?site.id:null})); /* S2227 — the goods know their town, for the Gatelands' restitution */}}catch(e){}}
     gold+=coins;let got=0;items.forEach(it=>{if(typeof bagAdd==='function'){bagAdd(it);got++;}});
     (worldState.boxes||(worldState.boxes={}))[X.id]={taken:dayNow()};noteCrime('theft',X.house,coins+items.reduce((a,it)=>a+(it.buyPrice||0),0),coins);
     showMsg(`${coins} gold${got?', and '+items.map(i=>i.name.toLowerCase()).join(', '):''}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Took ${coins} gold from ${X.kind==='home'?'a chest in':'the strongbox at'} ${X.house.name}.`);
@@ -1970,6 +2005,63 @@
     if(activeZoneId!=='world'||!SHIP.mesh||SHIP.sailing||!onDeck()||Math.abs(SHIP.speed||0)>NET_KNOTS){NET.on=null;showMsg('You haul the net in empty.','#a0a090');return;}
     if(performance.now()-N.t0>=NET_MS)netHaul();}
   function tickNetted(){for(const s of LIFE.fish)if(s.im)s.im.visible=!schoolNetted(s);}
+  // S2226 — the spyglass (Michael's B on #1504, docs/design/adventurers-kit.md; GLASS_ITEM, 50-travel.js). Used from the bag, it is raised:
+  // the view narrows ×5 (glassZoom, read by the loop's field of view in 90-main.js) and a step, a jump, a blow struck or taken, leaving the
+  // open world or putting it away lowers it. At the helm the keys steer her, so only a blow lowers it there. Four times a second
+  // (tickGlass) it reads what lies in the narrow view, out to its reach:
+  // - its reach (glassReach) is the weather's sight (WX.sightM, #679: fog's 60 m), capped at 1,000 m; after dusk (_nightFactor over .5) it
+  //   is 0, so the glass sees no further than your eye and the hilltop is a clear day's thing;
+  // - a ship (OTHER) within 800 m and the reach, nearest the view's middle within her own breadth and 1°, shows a card: her trade
+  //   (a merchantman, a black sail, or the ship a quest of yours is after), her build, her waters, and her hull and rig if hurt;
+  // - a town, a fort, a lair or a gate's door (GLASS_KINDS) within the reach, inside the narrow view and over no ridge (glassClear samples
+  //   the ground every 10 m against the line of sight), not yet discovered, is sighted: worldState.sighted[id], the character's key
+  //   (SS_CHAR_WS, the S242 list). The map pencils it with its name (83-world-generator.js); fast travel still wants it walked to.
+  //   Places by and off the road are never sighted (#1292 A). Sighting gives no experience: discovering does.
+  const GLASS={up:false,php:0,t:0,ship:null,el:null,ring:null};const GLASS_ZOOM=5,GLASS_SHIP=800,GLASS_PLACE=1000;
+  const GLASS_KINDS={city:1,town:1,village:1,port:1,garrison:1,lair:1,fort:1,cave:1};
+  function hasGlass(){return BAG.some(b=>b&&b.tool==='glass');}
+  function glassCan(){return activeZoneId==='world'&&lid==='overworld'&&!isInterior()&&!isSwimming()&&!dead;}
+  function glassReach(){if(!glassCan())return 0;if(typeof _nightFactor==='function'&&_nightFactor()>.5)return 0;return Math.min(GLASS_PLACE,WX.sightM||WX_SIGHT.clear);}
+  function glassZoom(){if(GLASS.up&&!glassCan())glassDown();return GLASS.up?GLASS_ZOOM:1;}
+  function glassSighted(id){return !!(worldState.sighted&&worldState.sighted[id]);}
+  function glassRaise(){if(!hasGlass())return false;if(!glassCan()){showMsg('Not here.','#a0a090');return false;}
+    GLASS.up=true;GLASS.php=PHP;GLASS.t=0;GLASS.ship=null;glassDress(true);return true;}
+  function glassDown(){if(!GLASS.up)return;GLASS.up=false;GLASS.ship=null;glassDress(false);}
+  function glassToggle(){return GLASS.up?(glassDown(),true):glassRaise();}
+  // the narrow view's ring and the ship's card: two plain elements made on first use
+  function glassDress(on){if(on&&!GLASS.ring){const r=document.createElement('div');r.id='glass-ring';r.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:40;display:none;background:radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 0,rgba(0,0,0,0) 38vmin,rgba(8,6,4,.92) 41vmin)';document.body.appendChild(r);GLASS.ring=r;
+      const c=document.createElement('div');c.id='glass-card';c.style.cssText='position:fixed;left:50%;top:calc(50% + 24vmin);transform:translateX(-50%);pointer-events:none;z-index:41;display:none;padding:8px 14px;background:rgba(28,20,12,.86);border:1px solid #8a6a3a;border-radius:4px;color:#e8d8b0;font:14px Georgia,serif;text-align:center;min-width:180px';document.body.appendChild(c);GLASS.el=c;}
+    if(GLASS.ring)GLASS.ring.style.display=on?'block':'none';if(GLASS.el&&!on)GLASS.el.style.display='none';}
+  // what the card says of a ship: her trade, her build, her waters, and her bars when hurt
+  function glassCard(o){const quest=String(o.id||'').startsWith('story:')||o.oswy;const trade=quest?(o.name||'The ship you are after'):o.kind==='pirate'?'A black sail':'A merchantman';
+    const nk=typeof nationAt==='function'?nationAt(o.x,o.z):null,N=nk&&NATIONS[nk];const L=[trade,`${o.cls||'ship'}${N?' · in the waters of '+N.name:''}`];
+    const hurt=[];if(o.hull<o.hullMax)hurt.push(`hull ${Math.max(0,Math.round(o.hull))} of ${o.hullMax}`);if(o.rig<100)hurt.push(`rig ${Math.max(0,Math.round(o.rig))} of 100`);if(hurt.length)L.push(hurt.join(' · '));
+    return L;}
+  // the ground under the line from the eye to a place, every 10 m: nothing over a ridge is sighted
+  function glassClear(ex,ey,ez,tx,ty,tz){const d=Math.hypot(tx-ex,tz-ez),n=Math.floor(d/10);for(let k=1;k<n;k++){const f=k/n;if(worldH(ex+(tx-ex)*f,ez+(tz-ez)*f)>ey+(ty-ey)*f)return false;}return true;}
+  const _glV=new THREE.Vector3();
+  function glassLook(){const reach=glassReach();const out={ship:null,sighted:[]};if(!reach)return out;
+    CAM.updateMatrixWorld();CAM.getWorldDirection(_glV);const dx=_glV.x,dy=_glV.y,dz=_glV.z,ex=CAM.position.x,ey=CAM.position.y,ez=CAM.position.z;
+    const ang=(x,y,z)=>{const vx=x-ex,vy=y-ey,vz=z-ez,L=Math.hypot(vx,vy,vz)||1;return Math.acos(Math.max(-1,Math.min(1,(vx*dx+vy*dy+vz*dz)/L)));};
+    let best=null,ba=Infinity;for(const o of OTHER){if(o.dead)continue;const d=Math.hypot(o.x-ex,o.z-ez);if(d>Math.min(GLASS_SHIP,reach))continue;
+      const a=ang(o.x,SEA_Y+3,o.z),lim=Math.atan((o.L||12)/2/Math.max(1,d))+Math.PI/180;if(a<lim&&a<ba){ba=a;best=o;}}
+    out.ship=best;
+    // the narrow view's own frustum: half its height and half its width, from the zoomed field of view
+    const vh=Math.atan(Math.tan(CAM.fov*Math.PI/360)),hh=Math.atan(Math.tan(vh)*(CAM.aspect||1.6)),yawV=Math.atan2(dx,dz);
+    const [ci,cj]=cellOf(ex,ez);for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){let c;try{c=getCell(i,j);}catch(e){continue;}if(!c)continue;
+      for(const e of mapEntries(c)){if(!GLASS_KINDS[e.kind]||discovered(e.id)||glassSighted(e.id))continue;const d=Math.hypot(e.x-ex,e.z-ez);if(d>reach||d<1)continue;
+        let h=Math.atan2(e.x-ex,e.z-ez)-yawV;while(h>Math.PI)h-=2*Math.PI;while(h<-Math.PI)h+=2*Math.PI;if(Math.abs(h)>hh)continue;
+        const ty=worldH(e.x,e.z)+4,v=Math.atan2(ty-ey,d)-Math.asin(Math.max(-1,Math.min(1,dy)));if(Math.abs(v)>vh)continue;
+        if(!glassClear(ex,ey,ez,e.x,ty,e.z))continue;out.sighted.push(e);}}
+    return out;}
+  // named action: a place sighted through the glass (the character's knowledge, like wdisc)
+  function sightPlace(id,name){if(!worldState.sighted)worldState.sighted={};if(worldState.sighted[id]||discovered(id))return false;worldState.sighted[id]=1;
+    showMsg(`Sighted: ${name}. Pencilled on your map.`,'#c8c0a8');if(typeof addLog==='function')addLog('🔭',`Sighted ${name} through the glass.`);return true;}
+  function tickGlass(dt){if(!GLASS.up)return;
+    const steps=!SHIP.sailing&&(K['KeyW']||K['KeyA']||K['KeyS']||K['KeyD']||K['ArrowUp']||K['ArrowDown']||K['ArrowLeft']||K['ArrowRight']||K['Space']);
+    if(!hasGlass()||!glassCan()||PHP<GLASS.php||steps){glassDown();return;}GLASS.php=PHP;
+    GLASS.t-=dt;if(GLASS.t>0)return;GLASS.t=.25;const R=glassLook();GLASS.ship=R.ship;for(const e of R.sighted)sightPlace(e.id,e.name);
+    if(GLASS.el){if(R.ship){GLASS.el.innerHTML=glassCard(R.ship).map((l,i)=>i?`<div style="font-size:12px;color:#b8a880">${l}</div>`:`<div style="font-weight:600">${l}</div>`).join('');GLASS.el.style.display='block';}else GLASS.el.style.display='none';}}
   function rodPrompt(){if(NET.on)return 'Netting…';if(deckSchool())return "Press 'E' to cast the net";if(ROD.cast)return ROD.cast.told?"Press 'E' to strike":"Press 'E' to reel in";return rodSpot()?"Press 'E' to cast":null;}
   function rodAct(){if(NET.on)return true;{const ds=deckSchool();if(ds)return netCast(ds);}if(ROD.cast)return rodStrike();const s=rodSpot();return s?rodCast(s):false;}
   function fishPrompt(){return nearSchool()||nearTrout()?"Press 'E' to catch a fish":rodPrompt();}
@@ -1982,7 +2074,7 @@
     const item={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish',food:'fish'}; /* S2028 — a main for the pot */
     if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
     if(typeof bagAdd==='function'){bagAdd(item);if(typeof gateGift==='function'&&gateGift('uisce')&&uisceWaters()&&(typeof canCarry!=='function'||canCarry(item)))bagAdd(Object.assign({},item));} /* S1359 — Uisce's face: two fish a catch in the Gatelands' waters */s.cool=18+R()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
-  function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;tickRod();tickNet();tickNetted();} /* S2214 — the rod's cast; S2215 — the net, and a netted school out of sight */
+  function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;tickRod();tickNet();tickNetted();tickGlass(dt);} /* S2214 — the rod's cast; S2215 — the net, and a netted school out of sight */
   // ── whales ──
   const WHALES=[];
   function spawnWhale(x,z){const c=k=>new THREE.Color(k);const g=mergeParts([{geo:new THREE.CylinderGeometry(1.6,.7,14,10),color:c(0x3a4650),rx:Math.PI/2,jitter:.03},{geo:new THREE.SphereGeometry(1.7,10,8),color:c(0x3a4650),z:7,jitter:.03},{geo:new THREE.BoxGeometry(5.2,.3,2.2),color:c(0x2e3a44),z:-8.2,jitter:.03},{geo:new THREE.ConeGeometry(.5,1.2,4),color:c(0x2e3a44),y:1.6,z:-2},{geo:new THREE.BoxGeometry(2.6,.25,1.4),color:c(0x2e3a44),x:2.2,z:2.5,y:-.6},{geo:new THREE.BoxGeometry(2.6,.25,1.4),color:c(0x2e3a44),x:-2.2,z:2.5,y:-.6}]);

@@ -63,6 +63,7 @@ function doBash(){
   else showMsg('Bash!', '#888');
 }
 function attack(isPower, _isDeferred){
+  if(typeof glassDown==='function')glassDown(); /* S2226 — a blow lowers the spyglass */
   if(playerStaggered(performance.now()/1000))return; // S281
   if(DRINK&&!_isDeferred)return; // S940 — no swing while you drink
   if(isOverworldZone()){attackZoneEnemies(isPower, _isDeferred);return;}
@@ -749,6 +750,7 @@ function useItem(i){
   if(it.cup){drinkCup(i);return;} /* S2035 — an inn's cup */
   if(it.meal){eatMeal(i);return;} /* S1486 — a meal leaves you fed */
   if(it.name===TINDERBOX_NAME||it.log||it.food||it.second||it._typeKey==='fish'){useFireThing(i);return;} /* S1486 — a fire, and what it makes */
+  if(it.tool==='glass'){if(typeof glassToggle==='function')glassToggle();return;} /* S2226 — the spyglass raised or lowered */
   if(it.tool==='shovel'){useShovelThing();return;} /* S2138 — clay */
   if(it.jar&&!it.meal){useJarThing();return;} /* S2139 — a meal into a jar */
   if(it.tool==='pick'||it.ore||it.ingot){useOreThing(i);return;} /* S1491 — a pick at a vein */
