@@ -320,6 +320,13 @@ const astro = await page.evaluate(() => { const one = o => { const P = HB.makePe
 const as = astro.travel.st || {};
 check('Aldwyn travels with his astrolabe on his belt at the right hip: 0 points of him inside it, his arm and staff clear, the thong to the belt; the herald and the study carry none',
   astro.travel.on && /^spine0[12]$/.test(astro.travel.bone) && astro.travel.thong && as.inside === 0 && as.tested > 10 && !as.armIn && as.turn < -.5 && as.turn > -2.1 && as.tris < 2000 && !astro.study.on && !astro.herald.on, astro);
+// S2202 (L2, OG-053's belt of instruments and Q6's seal): the seal matrix, the penner and the inkhorn on one ring at the front-left of the
+// travelling dress's belt, carried by the hips: nothing of him inside any of them, his left arm and what his fists hold clear; no other dress
+const skit = await page.evaluate(() => { const one = o => { const P = HB.makePerson(HB.castGenome('Aldwyn', o), { hoodStats: false }), a = P.root.getObjectByName('scholarKit'); return { on: !!a, bone: a && a.parent && a.parent.name, seal: !!(a && a.getObjectByName('sealFace')), thong: !!P.root.getObjectByName('scholarThong'), st: P.scholarKit }; };
+  return { travel: one({ outfit: 'travel' }), study: one({ outfit: 'study' }), herald: one({}) }; });
+const sk = skit.travel.st || {};
+check('Aldwyn travels with his seal, penner and inkhorn on his belt at the front-left: 0 points of him inside them, his arm clear, under 3 cm off the belt; the herald and the study carry none',
+  skit.travel.on && skit.travel.seal && /^spine0[12]$/.test(skit.travel.bone) && skit.travel.thong && sk.inside === 0 && sk.tested > 10 && !sk.armIn && sk.turn > 0 && sk.turn < 1 && sk.out < .03 && sk.tris < 2500 && !skit.study.on && !skit.herald.on, skit);
 // S2144 (L2, OG-053's rolled maps of the gates): three map rolls in Aldwyn's satchel on the travelling dress, standing out past both its
 // ends, nothing of him within them; neither other dress carries them
 const maps = await page.evaluate(() => { const one = o => { const P = HB.makePerson(HB.castGenome('Aldwyn', o), { hoodStats: false }); let n = 0, on = null; P.root.traverse(m => { if (m.name === 'mapRoll') { n++; on = m.parent && m.parent.name; } }); return { n, on, st: P.satchel && P.satchel.maps }; };
