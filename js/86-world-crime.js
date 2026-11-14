@@ -185,6 +185,13 @@
   function wxSightBlend(cur,nxt,mix,h){const a=wxDen(cur,h||0),b=wxDen(nxt,h||0);return Math.sqrt(3)/(a+(b-a)*(mix||0));}
   // the same figure for the foes' sight in the open (canSeePlayer): nobody sees you through fog the land itself is lost in
   function wxSightCap(){if(typeof activeZoneId==='undefined'||activeZoneId!=='world'||lid!=='overworld'||(typeof isInterior==='function'&&isInterior()))return Infinity;return WX.sightM||WX_SIGHT.clear;}
+  /* S2211 — Michael's B on #1511 (OG-138, backlog L12), its first half: rain and snow cover your steps, in the open only. The share of
+     the walking hearing (3 m) a foe keeps: rain or snow 2/3 (2 m), a storm, heavy rain or a blizzard 1/2 (1.5 m); by the weather's
+     kind, as the sight is, eased through a change and through WX.heavy. hearingRadius (10-player.js) floors sneaking at the still 0.9 m. */
+  const WX_HEAR={rain:2/3,snow:2/3,storm:.5};
+  function wxHearKind(t,h){const k=WX_HEAR[t]||1;return (t==='rain'||t==='snow')?k+(.5-k)*(h||0):k;}
+  function wxHearScale(){if(typeof activeZoneId==='undefined'||activeZoneId!=='world'||lid!=='overworld'||(typeof isInterior==='function'&&isInterior()))return 1;
+    const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?(WX.k||0):0,h=WX.heavy||0;const a=wxHearKind(cur,h),b=wxHearKind(nxt,h);return a+(b-a)*mix;}
   const _tmpWx=new THREE.Color(),_tmpWx2=new THREE.Color();
   window.devWeather=function(t){if(!t)return wxName(WX.type,WX.heavy>.5)+(WX.next!==WX.type?' → '+wxName(WX.next,WX.nextHeavy===WX.next):'');wxSetNext(t);WX.k=0;WX.timer=240;return 'weather → '+t;};
 
