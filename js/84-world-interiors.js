@@ -377,6 +377,35 @@
     for(const o of interiorScene.children.filter(o=>o.userData&&o.userData.homeFit))interiorScene.remove(o);
     for(const A of [INT_SOL,FOOTHOLDS])if(A)for(let i=A.length-1;i>=0;i--)if(A[i].homeFit)A.splice(i,1);
     h._fits={};for(const k of Object.keys(HOMEFIT_LAY))if(homeFitted(h,k)){try{HOMEFIT_LAY[k](h);}catch(e){console.warn('home fit '+k,e);}}}
+  // ── S2237 — the adventurer's kit where it is sold (#1504 B, the look's part): in a goods shop's room (its bake's userData.goodsKit, set by
+  // buildInteriorFor as survivalFor stocks it) the rods' rack stands by a whole wall, and at a harbour's the net hangs on another; the
+  // glass lies on the counter in the room's own bake. Found as the house's fittings are (homeWallSpot, homeWallWhole's rays up to
+  // 2.1 m, since the rods stand 2.6 m), the rack first, a solid, so the net keeps off it. One mesh for both, in the kit's unit scaled by
+  // SCALE.ROOM_K; a side wall with no whole stretch leaves the piece out. Runs as you go in (goToInterior), on the new look.
+  const GOODS_RACK={w:.74,d:.17},GOODS_NET={w:1.2,d:.06};
+  function goodsKitDress(h){if(window.OG_LOOK!=='new'||!h||h.type!=='misc'||typeof isInterior!=='function'||!isInterior()||currentHouse!==h||!interiorScene)return null;
+    for(const o of interiorScene.children.filter(o=>o.userData&&o.userData.goodsKitPieces))interiorScene.remove(o);
+    for(let i=INT_SOL.length-1;i>=0;i--)if(INT_SOL[i].goodsKit)INT_SOL.splice(i,1);
+    let flags=null;interiorScene.traverse(o=>{if(!flags&&o.userData&&o.userData.goodsKit)flags=o.userData.goodsKit;});if(!flags||!(flags.rods||flags.net))return null;
+    const RK=(typeof SCALE!=='undefined'&&SCALE.ROOM_K)||1.444,K=furnKit(),P=K.Parts(),out={};let n='gatelands';try{n=nationAt(h.doorX,h.doorZ)||n;}catch(e){}
+    const seed=String(h.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7)%100000;
+    const tall=ys=>(x,z,nx,nz,ax,az,w)=>Math.abs(nx)>.5&&goodsWallFlat(x,z,nx,nz,ax,az,w,ys); /* the side walls only: the back wall holds the shelves and crates, the front the street door */
+    if(flags.rods){const sp=homeWallSpot(h,GOODS_RACK.w*RK,GOODS_RACK.d*RK,.5,tall([.5,1.0,1.5,2.1]));
+      if(sp){P.put(K.rodRack(n,seed+21),sp.x/RK,sp.z/RK,sp.ry);const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:1.6,goodsKit:'rods'});out.rods={x:sp.x,z:sp.z,ry:sp.ry};}}
+    if(flags.net){const sp=homeWallSpot(h,GOODS_NET.w*RK,GOODS_NET.d*RK,.3,tall([1.0,1.5,2.1]));
+      if(sp){P.put(K.hungNet(seed+23),sp.x/RK,sp.z/RK,sp.ry);out.net={x:sp.x,z:sp.z,ry:sp.ry};}}
+    if(!out.rods&&!out.net)return out;
+    const G=K.bake(P);G.scale.setScalar(RK);G.userData.goodsKitPieces=true;G.userData.kit={tris:G.userData.tris,...out};
+    G.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(G);return out;}
+  // S2237 — the wall flat behind a thing hung on it: homeWallWhole's rays, but each must meet a lit surface (a window's view is a
+  // MeshBasicMaterial plane behind its glass, which homeWallWhole counts as wall) 0.2 m or more back from 0.3 m in (a window's jambs stand
+  // 0.22 m into a shop's room, and the rods would stand through them)
+  function goodsWallFlat(x,z,nx,nz,ax,az,w,ys){const ms=[];interiorScene.updateMatrixWorld(true);
+    interiorScene.traverse(o=>{if(o.isMesh&&o.visible&&!o.userData.daylight&&!o.userData.goodsKitPieces)ms.push(o);});
+    HF_D.set(-nx,0,-nz);const n=Math.max(2,Math.ceil((w-.04)/.1));
+    for(let k=0;k<=n;k++){const u=-w/2+.02+(w-.04)*k/n;for(const y of ys){HF_O.set(x+ax*u+nx*.3,y,z+az*u+nz*.3);HF_RAY.set(HF_O,HF_D);HF_RAY.far=.45;
+      const q=HF_RAY.intersectObjects(ms,false)[0];if(!q||q.distance<.2||(q.object.material&&q.object.material.isMeshBasicMaterial))return false;}}
+    return true;}
   // the ground floor's free spots by a wall for a thing w wide and d deep (its foot from the wall, plus `front` clear before it): the outer
   // walls back, west and east, then each face of a partition (a solid from the floor past 2 m, under 0.3 thick and 1.8 long), the front
   // wall last, each from its middle outward in steps of 0.1 m. What stands upstairs (a bed, the roof's hatch) does not count.
