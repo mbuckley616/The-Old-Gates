@@ -2914,7 +2914,7 @@
   // rack stand in every town with a smith ... and at every fishing harbour (drying racks only)"): curesOf(house) names them (50-travel.js),
   // and each stands in its house's yard, behind the house or beside it, its long side along the wall, the posts a solid. Nothing is rolled:
   // the spots are tried in one order and the first clear one taken (half a metre clear of the town's solids, of every door and step-out by 2.5 m, of a
-  // road by 3.5 m, out of the sea, and on ground that falls under 0.8 m across it). What hangs on it is what worldState.racks holds for its
+  // road by 3.5 m, 0.3 m off the town's walks (S2233), out of the sea, and on ground that falls under 0.8 m across it). What hangs on it is what worldState.racks holds for its
   // key, in the order hung: a hide salted until it is ready, then leather; meat or a fish raw, then jerky or stockfish (rackSlotsFor).
   // townRacksLive (from houseLod, every frame) shows a rack within RACK_SHOW and reads its slots again once a second; set() rebuilds only
   // when they differ. -> [{g, key, kind, house, x, z, t}] (S.racks); [] on the old look
@@ -2927,13 +2927,22 @@
   // and until now it kept clear of its own door only, so a garden was dug 2.3 m from a neighbour's (Róisín's Goods, Dunmore, s1572)
   function yardDoors(site,houses){const S=site&&typeof SETTLE!=='undefined'&&SETTLE.get(site.id),all=new Set(houses);if(S&&Array.isArray(S.houses))for(const h of S.houses)all.add(h);
     const doors=[];for(const h of all){if(!h)continue;if(h.doorX!=null)doors.push([h.doorX,h.doorZ]);if(h.exitX!=null)doors.push([h.exitX,h.exitZ]);}return doors;}
-  function townRacks(site,houses,sol,group){if(window.OG_LOOK!=='new'||typeof curesOf!=='function'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.rack)return [];
+  // S2233 — the town's walks (S.paths: its streets 2.4 m wide, the ring lane 2.2, every door's footpath 1.3) as segments, for the yard's racks
+  // and garden to keep a hand clear of: roadInfo knows the roads only, so a garden fitted from the page could be dug across a shop's walk
+  // (the critic's s1572, Dunmore's). walks: the town's S.paths while it builds (SETTLE does not hold it yet), else SETTLE's.
+  // -> {near(x,z,m)}: true when (x,z) is within m of a walk's edge
+  function yardWalks(site,walks){const S=!walks&&site&&typeof SETTLE!=='undefined'&&SETTLE.get(site.id),P=walks||(S&&S.paths)||[],segs=[];
+    for(const p of P){if(!p||!p.pts)continue;for(let i=0;i<p.pts.length-1;i++){const a=p.pts[i],b=p.pts[i+1],vx=b.x-a.x,vz=b.z-a.z,L2=vx*vx+vz*vz,hw=(p.w||1.3)/2;
+      segs.push({ax:a.x,az:a.z,vx,vz,L2,hw,x0:Math.min(a.x,b.x)-hw,x1:Math.max(a.x,b.x)+hw,z0:Math.min(a.z,b.z)-hw,z1:Math.max(a.z,b.z)+hw});}}
+    return {segs,near(x,z,m){for(const q of segs){if(x<q.x0-m||x>q.x1+m||z<q.z0-m||z>q.z1+m)continue;let u=q.L2?((x-q.ax)*q.vx+(z-q.az)*q.vz)/q.L2:0;u=u<0?0:u>1?1:u;
+      if(Math.hypot(x-q.ax-q.vx*u,z-q.az-q.vz*u)<q.hw+m)return true;}return false;}};}
+  function townRacks(site,houses,sol,group,walks){if(window.OG_LOOK!=='new'||typeof curesOf!=='function'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.rack)return [];
     const out=[],hit=(x,z,R)=>sol.some(s=>{const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
-    const doors=yardDoors(site,houses);
+    const doors=yardDoors(site,houses),WK=yardWalks(site,walks);
     const HW=1.7,HD=1.05; /* the larger of the two racks' halves on any island (the Mark's hjell 3.2 m long, the Gatelands' sills 1.9 deep), with a hand's room */
     const clear=(x,z,ry)=>{const c=Math.cos(ry),s_=Math.sin(ry);let lo=1e9,hi=-1e9;
       for(let u=-HW;u<=HW+1e-6;u+=HW/3)for(let v=-HD;v<=HD+1e-6;v+=HD/2){const wx=x+u*c+v*s_,wz=z-u*s_+v*c;if(hit(wx,wz,.5))return false;
-        if(doors.some(([a,b])=>Math.hypot(wx-a,wz-b)<2.5))return false;const y=worldH(wx,wz);if(y<SEA_Y+.3)return false;lo=Math.min(lo,y);hi=Math.max(hi,y);}
+        if(doors.some(([a,b])=>Math.hypot(wx-a,wz-b)<2.5))return false;if(WK.near(wx,wz,.3))return false;const y=worldH(wx,wz);if(y<SEA_Y+.3)return false;lo=Math.min(lo,y);hi=Math.max(hi,y);}
       if(hi-lo>.8)return false;try{const ri=roadInfo(x,z);if(ri&&ri.d<3.5+HD)return false;}catch(e){}return true;};
     for(const h of houses){const RS=curesOf(h),lot=h._lot;if(!RS.length||!lot)continue;
       const tx=lot.tx,tz=lot.tz,w=lot.w||6,d=lot.d||6,at=(u,v)=>[lot.x+u*tz+v*tx,lot.z-u*tx+v*tz],along=Math.atan2(tx,tz),deep=along+Math.PI/2;
@@ -2964,7 +2973,7 @@
   // a cross of paths, the island's edging, each bed growing what worldState.garden holds for it (the systems builder's S2140) at its stage:
   // 'sown' for its first fifth of GARDEN_DAYS, then 'growing', then 'ready'. Stood as the racks are (S2136): behind the house, then beside it,
   // a garden's depth further out each way, each a path's width (1.6 m) off the house, the first spot clear of the town's solids (the racks of your house among them, laid first), of every
-  // door by 2.5 m, of a road and of the sea, on ground that falls under 0.8 m across it. Its four beds are solids (bt 'garden'), the paths
+  // door by 2.5 m, of a road, of the town's walks by 0.3 m (S2233) and of the sea, on ground that falls under 0.8 m across it. Its four beds are solids (bt 'garden'), the paths
   // between them free, and its middle, where the paths cross, is the yard's spot for the rules (h._yardFits.garden, S2153's homeYardAt): every
   // bed is within reach of it. A herb sown is the plant kit's own (plantGeo, 30-plants.js), three to a bed, sized by its stage.
   // townGardensLive (from houseLod) shows a garden within RACK_SHOW and reads its beds again once a second; set() rebuilds only when they differ.
@@ -2984,13 +2993,13 @@
       Object.assign(g.userData.garden,{beds:JSON.parse(JSON.stringify(bd||[])),tris:Math.round(tris),draws,herbs,box:K.box,plots:K.plots});};
     g.userData.garden={island:isle,key,beds:null,tris:0,draws:0,herbs:0,box:null,plots:[],set(bd){if(JSON.stringify(bd||[])!==JSON.stringify(this.beds))build(bd);}};
     build(o.beds||[null,null,null,null]);return g;}
-  function townGardens(site,houses,sol,group){if(window.OG_LOOK!=='new'||typeof homeMine!=='function'||typeof homeFitted!=='function'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.garden)return [];
+  function townGardens(site,houses,sol,group,walks){if(window.OG_LOOK!=='new'||typeof homeMine!=='function'||typeof homeFitted!=='function'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.garden)return [];
     const out=[],hit=(x,z,R)=>sol.some(s=>{const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
-    const doors=yardDoors(site,houses);
+    const doors=yardDoors(site,houses),WK=yardWalks(site,walks);
     const HW=2.15,HD=1.65; /* the largest garden's halves (Aurenne's with its jar 4.35 m long, the Mark's logs 3.4 deep), with a hand's room */
     const clear=(x,z,ry)=>{const c=Math.cos(ry),s_=Math.sin(ry);let lo=1e9,hi=-1e9;
       for(let u=-HW;u<=HW+1e-6;u+=HW/4)for(let v=-HD;v<=HD+1e-6;v+=HD/3){const wx=x+u*c+v*s_,wz=z-u*s_+v*c;if(hit(wx,wz,.4))return false;
-        if(doors.some(([a,b])=>Math.hypot(wx-a,wz-b)<2.5))return false;const y=worldH(wx,wz);if(y<SEA_Y+.3)return false;lo=Math.min(lo,y);hi=Math.max(hi,y);}
+        if(doors.some(([a,b])=>Math.hypot(wx-a,wz-b)<2.5))return false;if(WK.near(wx,wz,.3))return false;const y=worldH(wx,wz);if(y<SEA_Y+.3)return false;lo=Math.min(lo,y);hi=Math.max(hi,y);}
       if(hi-lo>.8)return false;try{const ri=roadInfo(x,z);if(ri&&ri.d<3.5+HD)return false;}catch(e){}return true;};
     for(const h of houses){if(!h||!h._lot||!homeMine(h)||!homeFitted(h,'garden'))continue;const lot=h._lot;
       const tx=lot.tx,tz=lot.tz,w=lot.w||6,d=lot.d||6,at=(u,v)=>[lot.x+u*tz+v*tx,lot.z-u*tx+v*tz],along=Math.atan2(tx,tz),deep=along+Math.PI/2;
