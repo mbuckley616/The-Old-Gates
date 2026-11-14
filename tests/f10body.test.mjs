@@ -167,6 +167,26 @@ const rod = await drive(() => { const out = {}; BAG.length = 0; BAG.push({ ...RO
 console.log('  rod:', JSON.stringify(rod));
 check('a line out puts the rod in your hand in both views (the builder\'s copy in third person), held out 35° with its tip 2–3.5 m up (4 in first person, carried from the view model\'s camera) and 2–3.2 m ahead; the line runs from the tip to a float on the cast\'s spot; ended, it is lifted, then put away',
   ['tp', 'fp'].every(k => { const r = rod[k]; return r && r.kit === 'rod' && r.e === 35 && r.up > 2 && r.up < (k === 'fp' ? 4 : 3.5) && r.ahead > 2 && r.ahead < 3.2 && r.float !== null && r.float < .01 && Math.abs(r.floatY) < .02 && r.lineFromTip < .01 && rod[k + 'Lift'] === 'rod' && rod[k + 'After'] === null && rod[k + 'Gone']; }) && rod.tp.inBuilder, rod);
+// the net's cast (Session 2225; Michael's B on #1504): while the net is out (NET.on, from a deck: stubbed here) it is laid in a ring on the
+// water, its cork floats on the surface and its curtain hanging under them, a rope from your hands to the first float, both arms out on
+// it; when it ends it is pursed and lifted to your hands, then gone. The haul itself is kept off (its clock set far ahead)
+const net = await drive(() => { const out = {}, _od = onDeck, keep = { mesh: SHIP.mesh, sailing: SHIP.sailing, speed: SHIP.speed }; BAG.length = 0; BAG.push({ ...NET_ITEM });
+  onDeck = () => true; SHIP.mesh = SHIP.mesh || new THREE.Group(); SHIP.sailing = false; SHIP.speed = 1;
+  try { thirdPerson = true; NET.on = null; NET_FX.until = 0; for (let i = 0; i < 3; i++) step();
+    const f = [-Math.sin(yaw), -Math.cos(yaw)]; NET.on = { s: { cx: px + f[0] * 6, cz: pz + f[1] * 6, r: 4 }, t0: performance.now() + 1e7, x: px, z: pz }; step(); NET_FX.t0 = performance.now() - 5000; for (let i = 0; i < 3; i++) step();
+    const F = NET_FX, R = TP.rig, sea = SEA_Y, cy = []; for (let c = 0; c < NET_CORKS; c++) { const m = new THREE.Matrix4(); F.corks.getMatrixAt(c, m); cy.push(new THREE.Vector3().setFromMatrixPosition(m)); }
+    const a = F.mesh.geometry.attributes.position; let lo = 0; for (let i = 0; i < a.count; i++) lo = Math.min(lo, a.getY(i) - sea);
+    const r = F.rope.geometry.attributes.position, by = R.rig.hb.P.byName, h = new THREE.Vector3().setFromMatrixPosition(by['wrist.L'].matrixWorld).add(new THREE.Vector3().setFromMatrixPosition(by['wrist.R'].matrixWorld)).multiplyScalar(.5);
+    out.out = { inScene: F.mesh.parent === scene && F.corks.parent === scene && F.rope.parent === scene, corksOnWater: cy.every(p => Math.abs(p.y - sea) < .05), ring: +Math.hypot(F.ctr.x - px, F.ctr.z - pz).toFixed(2),
+      spread: +Math.max(...cy.map(p => Math.hypot(p.x - F.ctr.x, p.z - F.ctr.z))).toFixed(2), deep: +(-lo).toFixed(2), ropeFromHands: +Math.hypot(r.getX(0) - h.x, r.getY(0) - h.y, r.getZ(0) - h.z).toFixed(3),
+      ropeToCork: +Math.hypot(r.getX(r.count - 1) - cy[0].x, r.getZ(r.count - 1) - cy[0].z).toFixed(3), arms: +R.shL.rotation.x.toFixed(2), armsR: +R.shR.rotation.x.toFixed(2), bare: workKind() === 'net' && !R.weapon };
+    NET.on = null; step(); NET_FX.end = performance.now() - 1000; step(); { const ps = Array.from({ length: NET_CORKS }, (_, c) => { const m = new THREE.Matrix4(); F.corks.getMatrixAt(c, m); return new THREE.Vector3().setFromMatrixPosition(m); }), mid = ps.reduce((v, p) => v.add(p), new THREE.Vector3()).multiplyScalar(1 / ps.length);
+      out.pursed = { on: netOut(), spread: +Math.max(...ps.map(p => Math.hypot(p.x - mid.x, p.z - mid.z))).toFixed(2), up: +(mid.y - sea).toFixed(2) }; }
+    NET_FX.until = performance.now() - 1; for (let i = 0; i < 3; i++) step(); out.gone = !netOut() && !F.mesh.parent && !F.corks.parent && !F.rope.parent;
+  } finally { onDeck = _od; Object.assign(SHIP, keep); NET.on = null; BAG.length = 0; } for (let i = 0; i < 3; i++) step(); return out; });
+console.log('  net:', JSON.stringify(net));
+check('a net out lies in a ring 3 m off you on the water, its floats on the surface and its curtain under them, a rope from your bare hands to the first float, both arms out on it; ended, it is pursed in and then gone',
+  net.out && net.out.inScene && net.out.corksOnWater && Math.abs(net.out.ring - 3) < .01 && net.out.spread > 2 && net.out.spread < 2.5 && net.out.deep > 1.2 && net.out.ropeFromHands < .01 && net.out.ropeToCork < .01 && net.out.arms < -.5 && net.out.armsR < -.5 && net.out.bare && net.pursed.on && net.pursed.spread < 1.2 && net.gone, net);
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
 

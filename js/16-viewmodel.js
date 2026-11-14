@@ -300,7 +300,7 @@ let _fpSwordH=0;
 function fpSwordFit(k){const w=k.children[0];if(!w)return;const h=o=>{const b=new THREE.Box3().setFromObject(o);return b.max.y-b.min.y;};
   if(!_fpSwordH)_fpSwordH=h(buildWeapon('sword'));const s=_fpSwordH/Math.max(.1,h(w));w.scale.multiplyScalar(s);}
 function buildViewmodel(){
-  if(typeof workShown==='function'){const t=workShown();if(t&&EQ.weapon!==t)return workWield(buildViewmodel);} /* S1520 — the pick or the hatchet while you work (54-thirdperson.js) */
+  if(typeof workShown==='function'){const t=workShown();if(t&&EQ.weapon!==(t.bare?null:t))return workWield(buildViewmodel);} /* S2225 — the net's bare hands: the hand empty is already its own */ /* S1520 — the pick or the hatchet while you work (54-thirdperson.js) */
   if(vmSword){if(vmSword.userData.fistL)VM_SCENE.remove(vmSword.userData.fistL);VM_SCENE.remove(vmSword);vmSword=null;}
   vmGlow=null;vmEnchantLight=null;
   // v70.2 — clear the weapon arm bridge; rebuilt at the end with the new hand.

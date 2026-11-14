@@ -693,17 +693,18 @@ function tpArmSig(){const L=lookNow();let pp='gatelander';try{pp=WORLD.playerPeo
 // overhead chop each strike, begun so that its hit (ANIM_PARAMS.swing.impactPoint) lands on the strike. A war axe at a tree is its own
 // tool and swings as it is. Nothing here decides an outcome: the strikes are tickMining's and tickFelling's, on their own clocks.
 const WORK_TOOL={pick:{name:'Pick',weaponShape:'pick',twoHand:true,matCol:0x7a7e86,matGuard:0x5a3a22},hatchet:{name:'Hatchet',weaponShape:'hatchet',matCol:0x9a9ea6,matGuard:0x5a3a22},
-  rod:{name:'Fishing Rod',weaponShape:'rod',matCol:0x8a6a44,matGuard:0x8a6a44}}; /* S2224 — the rod while a line is out (ROD_FX below) */
+  rod:{name:'Fishing Rod',weaponShape:'rod',matCol:0x8a6a44,matGuard:0x8a6a44},
+  net:{name:'(the net)',bare:true}}; /* S2224 — the rod while a line is out (ROD_FX below); S2225 — the hands bare on the net's rope (NET_FX) */
 const WORK_SWING=.72;
 const WORK={tool:null,axe:null,swung:false,left:1e9,n:0};
-function workKind(){if(typeof MINE!=='undefined'&&MINE)return 'pick';if(typeof CHOP!=='undefined'&&CHOP)return chopTool()==='axe'?'axe':'hatchet';return rodOut()?'rod':null;}
+function workKind(){if(typeof MINE!=='undefined'&&MINE)return 'pick';if(typeof CHOP!=='undefined'&&CHOP)return chopTool()==='axe'?'axe':'hatchet';return rodOut()?'rod':netOut()?'net':null;}
 function workShown(){const k=WORK.tool;return k==='axe'?WORK.axe:k?WORK_TOOL[k]:null;}
 // fn run with the work's piece as the weapon in hand, and the real one put back after
-function workWield(fn){const t=workShown(),w=EQ.weapon;if(!t||t===w)return fn();EQ.weapon=t;try{return fn();}finally{EQ.weapon=w;}}
+function workWield(fn){const t=workShown(),w=EQ.weapon;if(!t||t===w)return fn();EQ.weapon=t.bare?null:t;try{return fn();}finally{EQ.weapon=w;}}
 function workTick(){const k=workKind();
   if(k!==WORK.tool){WORK.tool=k;WORK.axe=k==='axe'?EQ.weapon:null;WORK.swung=false;WORK.left=1e9;
     if(typeof sheathView==='function')sheathView();else if(typeof buildViewmodel==='function')buildViewmodel();}
-  if(!k||k==='rod')return;
+  if(!k||k==='rod'||k==='net')return;
   const left=MINE?MINE.t:CHOP.tm;if(left>WORK.left+.05)WORK.swung=false;WORK.left=left;
   if(WORK.swung||left>ANIM_PARAMS.swing.impactPoint*WORK_SWING||swingT>0||(typeof SWING!=='undefined'&&SWING)||typeof vmSword==='undefined'||!vmSword)return;
   WORK.swung=true;WORK.n++;swingT=WORK_SWING;const u=vmSword.userData;u.swingMax=WORK_SWING;u.swingVariant=2;u.swingIsPower=false;}
@@ -767,13 +768,59 @@ function rodTick(R){if(!rodOut()||typeof activeZoneId==='undefined'||activeZoneI
   const a=F.line.geometry.attributes.position,n=a.count,d=F.tip.distanceTo(F.fl),sag=(P.fly<1?.02:P.bite?.01:.07)*d;
   for(let i=0;i<n;i++){const u=i/(n-1);a.setXYZ(i,F.tip.x+(F.fl.x-F.tip.x)*u,F.tip.y+(F.fl.y+.11-F.tip.y)*u-sag*4*u*(1-u),F.tip.z+(F.fl.z-F.tip.z)*u);}
   a.needsUpdate=true;}
+// S2225 — the net's cast (Michael's B on #1504; 86-world-crime.js's NET): from your deck the net is paid out over the side and laid round
+// in a ring on the water, a purse seine: a head rope of cork floats on the surface and a curtain of mesh 1.4 m deep under it, 12 m long,
+// ringed 2.2 m about a point 3 m off you toward the school (or ahead). It runs out over the first 3 s (NET_MS is 8) while the curtain sinks,
+// lies to the haul, and in the 1.2 s after NET.on ends it is pursed (the ring drawn in to 0.3 m) and lifted to your hands. A rope runs from
+// your hands to the head rope's first float. Third person: both arms out low, paying out hand over hand, then hauling. All of it is read
+// from NET.on and the wall clock; nothing here decides an outcome (the haul is netHaul's)
+const NET_LEN=12,NET_R=2.2,NET_OFF2=3,NET_DEEP=1.4,NET_COLS=41,NET_ROWS=6,NET_CORKS=14;
+const NET_FX={c:null,t0:0,end:0,until:0,last:null,ctr:new THREE.Vector3(),a0:0,mesh:null,corks:null,rope:null,hand:new THREE.Vector3(),seen:false};
+function netWatch(){const F=NET_FX,N=typeof NET!=='undefined'?NET.on:null,now=performance.now();if(N===F.c)return N;
+  if(N){F.t0=now;F.until=0;F.last=N;const s=N.s;let dx=s?s.cx-px:0,dz=s?s.cz-pz:0,d=Math.hypot(dx,dz);if(d<.5){dx=-Math.sin(yaw);dz=-Math.cos(yaw);d=1;}
+    F.ctr.set(px+dx/d*NET_OFF2,0,pz+dz/d*NET_OFF2);F.a0=Math.atan2(-dx/d,-dz/d);}
+  else if(F.c){F.end=now;F.until=now+1200;}F.c=N;return N;}
+function netOut(){return !!netWatch()||performance.now()<NET_FX.until;}
+// pay: how much of the net is out (0–1); sink: how far the curtain hangs (0–1); purse: the haul (0–1)
+function netPhase(){const F=NET_FX,N=netWatch(),now=performance.now();
+  if(N){const t=(now-F.t0)/1000;return {t,pay:_rdEase(t/3),sink:_rdEase((t-.4)/3),purse:0};}
+  const u=(now-F.end)/1200;return {t:u,pay:1,sink:1,purse:_rdEase(u)};}
+function netBuild(){const F=NET_FX;
+  const g=new THREE.BufferGeometry(),n=(NET_ROWS*(NET_COLS-1)+NET_COLS*(NET_ROWS-1))*2;g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*3),3));
+  F.mesh=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:0x9a8a66,transparent:true,opacity:.8}));F.mesh.frustumCulled=false;F.mesh.name='netMesh';
+  F.corks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.05,.05,.07,8),new THREE.MeshStandardMaterial({color:0xb08a58,roughness:.85}),NET_CORKS);F.corks.frustumCulled=false;F.corks.name='netCorks';
+  F.rope=rodLine();F.rope.material=F.rope.material.clone();F.rope.material.color.setHex(0x8a7a58);F.rope.material.opacity=.95;F.rope.name='netRope';}
+function netHide(){const F=NET_FX;for(const o of [F.mesh,F.corks,F.rope])if(o&&o.parent)o.parent.remove(o);F.seen=false;}
+const _ntM=new THREE.Matrix4(),_ntP=new THREE.Vector3();
+// the point of the head rope at u (0 at the first float, 1 at the net's end), and row v's depth under it
+function netAt(P,u,v,out){const F=NET_FX,sea=typeof SEA_Y==='number'?SEA_Y:0,r=NET_R+(.3-NET_R)*P.purse,L=Math.min(NET_LEN/r,Math.PI*1.9),a=F.a0+u*P.pay*L,
+    cx=F.ctr.x+(F.hand.x-F.ctr.x)*P.purse*.6,cz=F.ctr.z+(F.hand.z-F.ctr.z)*P.purse*.6,lift=(F.hand.y-.3-sea)*P.purse;
+  return out.set(cx+Math.sin(a)*r,sea+.02+lift-v*NET_DEEP*P.sink*(1-.6*P.purse),cz+Math.cos(a)*r);}
+function netTick(R){if(!netOut()||typeof activeZoneId==='undefined'||activeZoneId!=='world'||typeof scene==='undefined'||!scene){netHide();return;}
+  const F=NET_FX,P=netPhase();if(!F.mesh)netBuild();
+  // your hands: the builder's wrists in third person, else a little ahead of and under the eye
+  let hd=false;if(thirdPerson&&R&&R.rig.hb){const by=R.rig.hb.P.byName,a=by&&by['wrist.L'],b=by&&by['wrist.R'];if(a&&b){F.hand.setFromMatrixPosition(a.matrixWorld).add(_ntP.setFromMatrixPosition(b.matrixWorld)).multiplyScalar(.5);hd=true;}}
+  if(!hd){CAM.updateMatrixWorld();F.hand.set(.1,-.45,-.5).applyMatrix4(CAM.matrixWorld);}
+  for(const o of [F.mesh,F.corks,F.rope])if(o.parent!==scene)scene.add(o);F.seen=true;
+  const a=F.mesh.geometry.attributes.position;let k=0;const put=(u,v)=>{netAt(P,u,v,_ntP);a.setXYZ(k++,_ntP.x,_ntP.y,_ntP.z);};
+  for(let j=0;j<NET_ROWS;j++)for(let i=0;i<NET_COLS-1;i++){put(i/(NET_COLS-1),j/(NET_ROWS-1));put((i+1)/(NET_COLS-1),j/(NET_ROWS-1));}
+  for(let i=0;i<NET_COLS;i++)for(let j=0;j<NET_ROWS-1;j++){put(i/(NET_COLS-1),j/(NET_ROWS-1));put(i/(NET_COLS-1),(j+1)/(NET_ROWS-1));}
+  a.needsUpdate=true;
+  const bob=performance.now()/1000;for(let c=0;c<NET_CORKS;c++){netAt(P,c/(NET_CORKS-1),0,_ntP);_ntP.y+=.01*Math.sin(bob*2+c);F.corks.setMatrixAt(c,_ntM.makeTranslation(_ntP.x,_ntP.y,_ntP.z));}
+  F.corks.instanceMatrix.needsUpdate=true;
+  const r=F.rope.geometry.attributes.position,n=r.count;netAt(P,0,0,_ntP);const d=F.hand.distanceTo(_ntP);
+  for(let i=0;i<n;i++){const u=i/(n-1);r.setXYZ(i,F.hand.x+(_ntP.x-F.hand.x)*u,F.hand.y+(_ntP.y-F.hand.y)*u-.06*d*4*u*(1-u),F.hand.z+(_ntP.z-F.hand.z)*u);}
+  r.needsUpdate=true;}
+// third person, after tpPose: both arms out low on the rope, hand over hand as it pays out and as it is hauled
+function tpNetArms(R,P){const now=performance.now()/1000,w=P.purse>0?.35*Math.sin(now*10):P.t<3?.25*Math.sin(now*6):0;
+  tpSet(R.shL,-.95+w,0,.12,1);tpSet(R.shR,-.95-w,0,-.12,1);tpSet(R.elL,-.45-Math.max(0,w),0,0,1);tpSet(R.elR,-.45-Math.max(0,-w),0,0,1);}
 function tpUpdate(dt,st){
   workTick();
   if(!thirdPerson){
     if(TP.rig&&TP.rig.root.visible)TP.rig.root.visible=false;
     if(TP.hidVM){TP.hidVM=false;VM_SCENE.visible=true;}
     if(typeof fpHBCheck==='function')fpHBCheck();
-    rodTick(null);
+    rodTick(null);netTick(null);
     return;}
   if(!TP.hidVM){TP.hidVM=true;VM_SCENE.visible=false;}
   tpEnsure();
@@ -796,8 +843,9 @@ function tpUpdate(dt,st){
   if(R.rig.B.cloak||R.rig.B.hairB)peopleSwing(R.rig,dt); // S277 — your own back hair (and a cloak, should you wear one) swings as the townsfolk's (S267)
   tpRollTumble(R,st.roll);
   const rodK=R.weapon&&R.weapon.userData.kit==='rod'&&rodOut()?rodPhase():null;if(rodK)tpRodArm(R,rodK); /* S2224 — the rod held out */
+  if(!rodK&&netOut())tpNetArms(R,netPhase()); /* S2225 — the net on its rope */
   tpHBPose(R); // F10 — the builder's body follows the driver
-  rodTick(R);
+  rodTick(R);netTick(R);
   // too close to see past: step out of the way
   R.root.visible=TP.near>.32||TP.dist>.55;
 }
