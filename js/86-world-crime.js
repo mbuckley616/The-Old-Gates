@@ -914,10 +914,15 @@
       CR.cool=5;if(indoor)endSent();showMsg('The goods are handed back. The fine is met.','#c8e88a');setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}}];}
   function stocksHours(c){return Math.max(1,Math.min(6,Math.ceil((c&&c.bounty||0)/50)));}
   // named action: the stocks (the Crown's court, after the yield)
+  /* S2238 — where the stocks let you go: a step (1 m) in front of their boards, on the square's side, facing its middle (S.stocks, the
+     look builder's S2226 piece; the sitter faces in). A town with no stocks built (the old look, or no clear spot) lets you go 2 m south
+     of its middle, as before. */
+  function stocksLetGo(S){const K=S&&S.stocks,cx=S.site.x,cz=S.site.z;if(!K)return {x:cx,z:cz+2,yaw:null};
+    const x=K.x+Math.sin(K.ry),z=K.z+Math.cos(K.ry);return {x,z,yaw:Math.atan2(-(cx-x),-(cz-z))};}
   function toStocks(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toStocks(S,c);else setTimeout(w,100);};setTimeout(w,100);return;}
     const h=stocksHours(c);standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;delete c.lockFine;
     const back=Math.min(Math.max(0,gold),c.loot||0);if(back>0){gold-=back;stolen++;}c.loot=0;
-    doFade(()=>{advanceClock(h*60);px=S.site.x;pz=S.site.z+2;jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
+    doFade(()=>{advanceClock(h*60);const L=stocksLetGo(S);px=L.x;pz=L.z;if(L.yaw!=null)yaw=L.yaw;jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
       showMsg(`${h} ${h===1?'hour':'hours'} in the stocks on the plaza. ${stolen?'They took what you stole'+(back?` (${back} gold)`:'')+'. ':''}You are let go.`,'#c8b880');
       if(typeof addLog==='function')addLog('⛓',`${h} ${h===1?'hour':'hours'} in the stocks at ${S.site.name}${stolen?'; the stolen goods were taken'+(back?`, and ${back} gold`:''):''}.`);
       if(typeof renderInv==='function')renderInv();if(typeof updateHUD==='function')updateHUD();});}
