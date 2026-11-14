@@ -781,6 +781,34 @@
       for(const [k,o] of WHALE_FALLS){if(WHALE_FALLS.size<=4)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});WHALE_FALLS.delete(k);}}
     else{WHALE_FALLS.delete(key);WHALE_FALLS.set(key,W);}
     ch.group.add(W.group);ch.whale=W;}
+  // S2203 — the sunken village on the Gatelands' bed (OG-125, card F11; undersea.js's sunkenVillage as PKIT.places.village): a few chunks
+  // of the Gatelands' sea (VILLAGE_ODDS, never a wreck's or a whale's chunk) hold a drowned lane of seven roofless cottages. Its spot is
+  // the first of six hashed ones in the chunk, each tried at four headings, where the lane runs down the bed: its head 2 to 6.5 m under
+  // the sea, every point of the lane and of both rows of cottages (9 m either side) 4.8 to 10 m down, and its far end at least 1.5 m
+  // deeper than its head. The bed is read by placeH (the land keyed by place), as the wreck's and the whale's spots are. {x,z,ry,head,end}
+  // or null: x,z the lane's middle (inside the chunk), ry its heading (the lane runs along -z of its frame from its head at +26).
+  const VILLAGE_ODDS=1/40,VILLAGES=new Map();
+  function sunkenVillageSpot(cx,cz){
+    if(hash01(cx,cz,180)>VILLAGE_ODDS||wreckSpot(cx,cz)||whaleFallSpot(cx,cz))return null;
+    let nk='gatelands';try{nk=nationKeyOf(...cellOf(cx*CHUNK+CHUNK/2,cz*CHUNK+CHUNK/2));}catch(e){}if(nk!=='gatelands')return null;
+    for(let k=0;k<6;k++){const tx=cx*CHUNK+12+hash01(cx+k,cz,181)*(CHUNK-24),tz=cz*CHUNK+12+hash01(cz,cx+k,182)*(CHUNK-24),r0=hash01(cx,cz+k,183)*Math.PI*2;
+      if(placeH(tx,tz)>-4.8)continue;
+      for(let q=0;q<4;q++){const ry=r0+q*Math.PI/2,co=Math.cos(ry),s_=Math.sin(ry),B=(u,v)=>placeH(tx+u*co+(v+26)*s_,tz-u*s_+(v+26)*co);
+        const head=B(0,-4);if(!(head<-2&&head>-6.5))continue;const end=B(0,-46);if(!(end<head-1.5))continue;let ok=true;
+        for(let v=-8;v>=-48&&ok;v-=5)for(const u of [-9,-4,0,4,9]){const b=B(u,v);if(!(b<-4.8&&b>-10)){ok=false;break;}}
+        if(ok)return {x:tx,z:tz,ry,head:+head.toFixed(2),end:+end.toFixed(2)};}}
+    return null;}
+  // built when its chunk loads (new look only), on the drawn ground (meshH) in its own frame; the last three built are kept whole, as the whale falls are
+  function spawnSunkenVillage(ch){
+    if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.village)return;
+    const key=chunkKey(ch.cx,ch.cz);let V=VILLAGES.get(key);
+    if(!V){const D=sunkenVillageSpot(ch.cx,ch.cz);if(!D)return;const co=Math.cos(D.ry),s_=Math.sin(D.ry),hx=D.x+26*s_,hz=D.z+26*co;
+      let M=null;try{M=PKIT.places.village({key:'village:'+key,land:(lx,lz)=>meshH(hx+lx*co+lz*s_,hz-lx*s_+lz*co)-SEA_Y});}catch(e){console.warn('sunken village',key,e);return;}
+      M.group.position.set(hx,SEA_Y,hz);M.group.rotation.y=D.ry;M.group.name='sunkenVillage';
+      V={...D,hx,hz,key,group:M.group,tris:M.tris,draws:M.draws,M};VILLAGES.set(key,V);
+      for(const [k,o] of VILLAGES){if(VILLAGES.size<=3)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});VILLAGES.delete(k);}}
+    else{VILLAGES.delete(key);VILLAGES.set(key,V);}
+    ch.group.add(V.group);ch.village=V;}
   function spawnWreck(ch){
     const w=wreckSpot(ch.cx,ch.cz);if(!w)return;
     const x=w.x,z=w.z,y=worldH(x,z),ry=hash01(ch.cx,ch.cz,153)*Math.PI*2;

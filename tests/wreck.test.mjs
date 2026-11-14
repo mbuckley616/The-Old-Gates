@@ -1,7 +1,7 @@
 // The wreck and the world's chests on the kit (Session 259, H.5): a sea-floor wreck is a hull broken in two, open ribs
 // on a keel with rotted planking, a stem, a snapped mast; the wreck's sea chest and the lairs' and bandit camps' hoards
 // are S198's kit chest at the old box's size, their lids opening on the hinge. Session 2170 adds the whale fall on the open bed, Session 2200
-// the drowned arches off the Gatelands' ports.
+// the drowned arches off the Gatelands' ports, Session 2203 the sunken village on the Gatelands' bed.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
@@ -74,5 +74,24 @@ if (da.near) { await page.evaluate(t => WORLD.enter(t.x, t.z, 0, 'test'), da.nea
   check(`the nearest (${da.near.id}) is built with its town: ${a.tris} triangles in ${a.draws} draws (under 12k, four draws)`, !a.none && a.inScene && a.lod && a.tris < 12000 && a.draws === 4, a);
   check(`every pier is footed under the drawn bed beside it, ${a.standing} stand a metre or more clear of it, the deck ${a.deckY} m under the sea over the whole bays`, !a.none && a.piers.every(p => p.foot < p.bed - .3) && a.standing >= 3 && a.deckY < -1.5 && a.deck.every(b => b < a.deckY + .3), a);
   check(`clear of the quay (${a.inPlat} points within 3 m of it) and of the berth (${a.toBerth} m)`, !a.none && a.inPlat === 0 && a.toBerth > 8, a); }
+// Session 2203 — the sunken village (OG-125, card F11; PKIT.places.village, undersea.js's sunkenVillage): a few chunks of the Gatelands'
+// sea hold a drowned lane of seven roofless cottages running down the bed, the same spots when asked again, none off the Gatelands or in a
+// wreck's or a whale's chunk; the nearest is built with its chunk, its cottages settled on the drawn bed with their broken tops under the sea
+const sv = await page.evaluate(() => { const N = Math.ceil(WORLD.SIZE * GRID / CHUNK), L = []; for (let cx = 0; cx < N; cx++) for (let cz = 0; cz < N; cz++) { if (hash01(cx, cz, 180) > VILLAGE_ODDS) continue; const d = sunkenVillageSpot(cx, cz); if (d) L.push({ cx, cz, ...d }); }
+  const again = L.every(d => { const e = sunkenVillageSpot(d.cx, d.cz); return e && e.x === d.x && e.z === d.z && e.ry === d.ry; }), others = L.filter(d => wreckSpot(d.cx, d.cz) || whaleFallSpot(d.cx, d.cz)).length,
+    off = L.filter(d => nationKeyOf(...cellOf(d.cx * CHUNK + CHUNK / 2, d.cz * CHUNK + CHUNK / 2)) !== 'gatelands').length;
+  L.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); return { n: L.length, again, others, off, near: L[0] }; });
+check(`${sv.n} sunken villages lie on the Gatelands' bed (15 to 120), the same when asked again, none off the Gatelands, none in a wreck's or a whale's chunk`, sv.n >= 15 && sv.n <= 120 && sv.again && sv.others === 0 && sv.off === 0, sv);
+if (sv.near) { const D = sv.near, key = `${D.cx},${D.cz}`;
+  await page.evaluate(D => WORLD.enter(D.x, D.z, 0, 'test'), D);
+  for (let k = 0; k < 40; k++) { await g.spin('clear', 20); if (await page.evaluate(k => !!(chunks.get(k) && chunks.get(k).village), key)) break; }
+  const v = await page.evaluate(k => { const ch = chunks.get(k); if (!ch || !ch.village) return { none: true }; const V = ch.village, M = V.M, co = Math.cos(V.ry), s_ = Math.sin(V.ry), W = (u, v) => [V.hx + u * co + v * s_, V.hz - u * s_ + v * co];
+    const houses = M.houses.map(h => ({ bed: +(meshH(...W(h.x, h.z)) - SEA_Y).toFixed(2), top: h.top, roof: h.roof, broken: h.walls, caps: h.caps }));
+    const out = { tris: V.tris, draws: V.draws, colours: V.group.children.every(m => !!m.geometry.attributes.color), head: V.head, end: V.end, houses, inScene: !!(V.group.parent === ch.group && ch.group.parent), wall: M.wall };
+    const grp = V.group; dropChunk(k); out.gone = !grp.parent || !grp.parent.parent; buildChunk(...k.split(',').map(Number)); const c2 = chunks.get(k); out.same = !!(c2 && c2.village && c2.village.group === grp && grp.parent === c2.group); return out; }, key);
+  console.log(JSON.stringify(v));
+  check(`the nearest is built with its chunk, its lane from ${v.head} to ${v.end} m down: ${v.tris} triangles in ${v.draws} draws (under 40k, under 13 draws, vertex-coloured)`, !v.none && v.inScene && v.tris < 40000 && v.draws <= 12 && v.colours, v);
+  check('seven cottages, each roofless and its walls broken in courses with tops between them, standing 0.8 to 4 m over the bed at its middle (the plinth shows downhill) and at least 1.5 m under the sea', !v.none && v.houses.length === 7 && v.houses.every(h => h.roof >= 3 && h.broken > 50 && h.caps > 50 && h.top - h.bed > .8 && h.top - h.bed < 4 && h.top < -1.5), v.houses);
+  check('its chunk dropped takes it out of the scene, and loaded again takes the same village back', v.gone && v.same, v); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
