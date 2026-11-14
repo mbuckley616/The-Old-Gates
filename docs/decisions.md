@@ -25,6 +25,26 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** B: the point is a choice inside hunting with a lawful road beside it (30 gold, three months); one chase hides it, every wood claimed turns hunting into paperwork.
 
+### The powers’ costume — how loudly rank shows (token alone, dressed by nation, or OG-042’s court) (from the concept artist, 2026-11-14, #1566)
+**The question.** Backlog L1 (OG-042). The prototype dresses the canon's seven real offices (a Crown lord, a village Elder, a League captain, a reeve, a Prior, a Factor, an Old Blood elder) in the people builder's existing clothes. How loudly should rank show on the people who hold power?
+
+**Options.**
+- **A.** The token alone: everyday dress plus one thing of office (the lord's chain, the Elder's stick, the captain's sword, the reeve's staff, the Prior's stole, the Factor's ledger, the elder's charms).
+- **B (recommended).** Dressed by rank, nation by nation, in the canon's colours: the lord's crimson cape with fur and gold, the captain's black coat and wolf collar, the reeve's plain good wool, the Prior's white and blue, the Factor's ivory gown, circlet and seal, the Old Blood elder's undyed grey and carved staff.
+- **C.** OG-042 as drawn: one court style for every office (fur, gold chains, purple for the Compact).
+
+**Recommendation.** B: who is in charge reads across a square and each island still looks like itself; C puts gold on the Mark against the canon's "nothing decorative", and under A a lord is hard to tell from his smith. Pictures on #1566; the page is `docs/prototypes/levelup/powers.html` (`?level=a|b|c`).
+
+### Smuggling — what does a tithe-ship's search find on an honest trader? (from the systems builder, 2026-11-14, #1570)
+**The question.** Smuggling (#1540 B's last crime) is cargo landed at an Aurenne cove and sold to its fence with no tenth; the risk is a tithe-ship's search within 300 m of Aurenne's coast, one time in four. A lawful trader bound for an Aurenne port carries cargo through the same waters: if the search fines any cargo, honest trade is fined one run in four, which makes the lawful road a trap.
+
+**Options.**
+- **A (recommended).** Declare at the hail: declared cargo is entered as bound for port and never fined; declared cargo later sold at a cove is booked as theft (2 points) at your next Aurenne port. Refuse, and she searches one time in four; cargo found is taken with 2 points.
+- **B.** The search finds only cove cargo: cargo loaded at a cove is marked and only that is fined. Simpler, but no choice at the hail.
+- **C.** Any cargo is searched, as the page reads: one in four, honest or not.
+
+**Recommendation.** A: the honest trader declares and is never fined; the smuggler gambles once at sea, or declares and loses the cove. Each option is one systems session; the tithe-ship touches `85-world-sea.js` lightly.
+
 ## Answered
 ### The adventurer's kit: a pack, the pack plus a spyglass, rod and net, or those plus wear? (from the designer, 13 Nov 2026, #1504)
 **The question.** Backlog L8's adventurer's kit (OG-098) asks a use for each thing carried. Most of it is built (pick, hatchet, joiner's kit, shovel, skinning knife, mess kit, bedrolls, tent, water vessels, cloaks), but nothing makes what you carry a choice, and nothing in the game is a pack, a spyglass, a rod or a net. How far should the kit go? Page: `docs/design/adventurers-kit.md`.
