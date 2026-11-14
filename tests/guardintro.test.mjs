@@ -100,5 +100,27 @@ await page.waitForTimeout(3000);
 const au_p = await page.evaluate(([A, t0]) => ({ d: (worldState.gameTimeAbsMinutes - t0) / 60, h: worldState.gameTimeMinutes / 60, led: fineRecAt(A).bounty, cup: BAG.some(b => b.name === 'A brass cup'), nat: nationRecord('aurenne') }), [auIds[0], au_y.t0]);
 console.log(JSON.stringify(au_y), JSON.stringify(au_p));
 check(`the yield offers *${au_y.lbl.find(x => /Prison/.test(x))}*; taken, ${au_p.d.toFixed(1)} h pass to 7:00, the ledger is clear and the stolen cup taken`, au_y.lbl.some(x => /Prison \(3 nights\)\./.test(x)) && !au_y.lbl.some(x => /cells/.test(x)) && Math.abs(au_p.d - (20 + 48)) < 0.1 && Math.abs(au_p.h - 7) < .1 && au_p.led === 0 && !au_p.cup && !au_p.nat, au_p);
+// S2230 (Michael's B on #1540, Aurenne's contract): at the halt the Factor's work (the town's own job) is set against the ledger, due
+// in 5 days; the guards let you by while it runs unless the ledger grows; turned in, no gold and the ledger falls by its sum; lapsed, it stands.
+const k = await page.evaluate(([A]) => { const S = WORLD.settle.get(A); forceTime(11); worldState.crime = {};
+  bookCrime(S.site, 'theft', 70); const L = fineRec(S); const labels = () => [...document.querySelectorAll('#dlg-choices > button')].map(b => b.textContent.trim());
+  const n = (S.npcs || []).find(x => x.def && x.def.role === 'Guard'); px = n.g.position.x + 2; pz = n.g.position.z;
+  confront(n, S, L); const halt = labels(); try { closeDialog(); } catch (e) {}
+  const g0 = gold; const q = contractTake(S, L); const r = { halt, ledger: L.bounty, title: q && q.title, active: !!qFind(q.id), days: (q.due - absMin()) / 1440, again: contractTopic(n, S, L).length };
+  CR.cool = 0; tickCrime(1 / 60, 0); r.letBy = !dlgOpen; try { closeDialog(); } catch (e) {}
+  bookCrime(S.site, 'lock', 0); fineRec(S); CR.cool = 0; tickCrime(1 / 60, 0); r.haltNew = dlgOpen; try { closeDialog(); } catch (e) {}
+  qComplete(q); const paid = qTurnIn(q); r.paid = paid; r.gold = gold - g0; r.after = fineRec(S).bounty; r.turned = q.turnedIn;
+  return r; }, auIds);
+console.log(JSON.stringify(k));
+check(`the halt offers *${k.halt.find(x => /contract/.test(x))}*; taken on a ledger of ${k.ledger}, ${k.title}, due in ${k.days.toFixed(2)} days, the guards let you by`, k.halt.some(x => /A contract\. \(the Factor.s work, by /.test(x)) && k.ledger === 120 && k.active && Math.abs(k.days - 5) < .01 && k.again === 0 && k.letBy, k);
+check(`a new wrong while it runs is halted for; done and turned in, no gold (${k.gold}) and the ledger 145 → ${k.after}`, k.haltNew && k.paid === 0 && k.gold === 0 && k.after === 25 && k.turned, k);
+const lp = await page.evaluate(([A]) => { const S = WORLD.settle.get(A); worldState.crime = {}; bookCrime(S.site, 'theft', 30); const L = fineRec(S);
+  const q = contractTake(S, L); const live0 = contractLive(L); worldState.gameTimeAbsMinutes += 6 * 1440; _datedAt = 0; tickDatedWork(); return { live0, lapsed: !!q.lapsed, live: contractLive(L), ledger: L.bounty, topic: contractTopic(null, S, L).length }; }, auIds);
+console.log(JSON.stringify(lp));
+check(`past the 5 days the work is taken back and the ledger (${lp.ledger}) stands; a new contract may be asked`, lp.live0 && lp.lapsed && !lp.live && lp.ledger === 80 && lp.topic === 1, lp);
+const fd = await page.evaluate(([A]) => { const S = WORLD.settle.get(A); worldState.crime = {}; bookCrime(S.site, 'theft', 30); const L = fineRec(S); const g0 = gold;
+  const q = contractTake(S, L); qComplete(q); const t = lordTopics(S.site).find(x => /done/.test(x.label)); const line = t && t.fn(); return { line, gold: gold - g0, ledger: fineRec(S).bounty }; }, auIds);
+console.log(JSON.stringify(fd));
+check(`turned in to the Factor: “${fd.line}”, no gold`, /contract is met.*ledger is clear/.test(fd.line || '') && fd.gold === 0 && fd.ledger === 0, fd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

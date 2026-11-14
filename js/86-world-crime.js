@@ -642,7 +642,7 @@
     CR.yielded=false;
     if(CLAIM)return; /* S2228 — the claim's bout: no other halt */
     if(c&&c.claimAt!=null){if(absMin()<c.claimAt&&!c.shut)return;delete c.claimAt;} /* S2228 — the halt waits for 6:00 */
-    if(!f||f.bounty<=0||talking)return;if(!sh&&CR.cool>0)return; // shut gates: no talk, no cooldown
+    if(!f||f.bounty<=0||talking)return;if(!sh&&CR.cool>0)return;if(!sh&&contractLive(f))return; /* S2230 — the contract runs */ // shut gates: no talk, no cooldown
     for(const n of guardsOf(S)){if(!n.g.visible||n._retreated||n._drawn)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>5)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;
       if(sh)guardDraw(n,S);else confront(n,S,f);return;}
   }
@@ -796,6 +796,7 @@
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);if(courtOf(S)==='mark'){delete c.claimLost;claimKeepersBack(S);} /* S2228 */endSent();return L.pay;}},
       ...restitutionTopic(S,c,()=>confrontIndoor(s,S,c),true),
+      ...contractTopic(s.npc,S,c),
       ...talkDownTopic(S,c,()=>confrontIndoor(s,S,c)),
       ...wordGivenTopic(S,c,true),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardFightIndoor(s,S);},60);return L.refuse;}},
@@ -805,6 +806,7 @@
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);if(courtOf(S)==='mark'){delete c.claimLost;claimKeepersBack(S);} /* S2228 — the claim paid: the keepers serve you again */return L.pay;}},
       ...restitutionTopic(S,c,()=>confront(n,S,c),false),
       ...claimTopic(n,S,c),
+      ...contractTopic(n,S,c),
       ...talkDownTopic(S,c,()=>confront(n,S,c)),
       ...wordGivenTopic(S,c,false),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return L.refuse;}},
@@ -890,6 +892,28 @@
       showMsg(`${nn} in the Compact's prison. ${stolen?'They took what you stole'+(back?` (${back} gold)`:'')+'. ':''}The ledger is clear. It is morning.`,'#c8b880');
       if(typeof addLog==='function')addLog('⛓',`${nn} in prison at ${S.site.name}${stolen?'; the stolen goods were taken'+(back?`, and ${back} gold`:''):''}. The Compact's ledger is clear.`);
       if(typeof renderInv==='function')renderInv();if(typeof updateHUD==='function')updateHUD();});}
+  /* S2230 — Aurenne's court, the contract (Michael's B on #1540): at the halt, besides paying, the Factor sets a commission whose
+     pay goes to the fine. The commission is the town's own work as built (townQuestFor: its lord, the Factor of an Aurennais town, gives
+     it; a job already taken there is the one), due in 5 days (CONTRACT_DAYS) by the dated work's own lapse (q.due). While it runs the
+     guards let you by, unless the ledger has grown past what the contract was set against (a new wrong is halted for). Done and
+     turned in to the Factor, no gold is paid: the ledger falls by the sum it was set against (c.contract.sum), to nothing if nothing
+     was added. The date passing takes the work back, and the ledger stands. Named actions: contractTake, contractTurnIn. */
+  const CONTRACT_DAYS=5;
+  function contractQuest(c){const K=c&&c.contract;if(!K)return null;const q=qFind(K.q);if(!q||q.lapsed||q.turnedIn){delete c.contract;return null;}return q;}
+  function contractLive(c){const q=contractQuest(c);return !!q&&c.bounty<=c.contract.sum;}
+  function contractTopic(n,S,c){if(courtOf(S)!=='aurenne'||!c||c.bounty<=0||contractQuest(c))return [];const due=absMin()+CONTRACT_DAYS*1440;
+    return [{label:`A contract. (the Factor's work, by ${calDateLine(due-1)})`,quest:true,fn:()=>{const q=contractTake(S,c);if(!q)return '';
+      setTimeout(()=>{try{closeDialog();}catch(e){}},60);showMsg(`A contract: ${q.objective}, by ${calDateLine(q.due-1)}. Done, the ledger is cleared.`,'#c8e88a');return '';}}];}
+  // named action: the contract taken at the halt
+  function contractTake(S,c){if(courtOf(S)!=='aurenne'||!c||c.bounty<=0||contractQuest(c))return null;let q=townQuestFor(S.site);if(!q||q.turnedIn)q=townQuestFor(S.site,null,true);if(!q)return null;
+    if(!qFind(q.id))qAdd(q);q.contract=1;q.due=Math.floor(absMin())+CONTRACT_DAYS*1440;c.contract={q:q.id,sum:c.bounty,due:q.due,site:S.site.id};CR.cool=5;
+    if(typeof addLog==='function')addLog('⚖',`A contract with the Compact at ${S.site.name}: ${q.title}, for a ledger of ${c.bounty} gold.`);return q;}
+  // named action: the contract's work turned in to the Factor. Returns the gold the ledger fell by, or null when it is ordinary work
+  function contractTurnIn(q){const L=ledgerSweep()||ledgerRec();if(!q||!q.contract||!L.contract||L.contract.q!==q.id)return null;const f0=L.bounty;
+    L.bounty=Math.max(0,L.bounty-L.contract.sum);if(L.bounty===0){L.base=0;L.weeks=0;L.loot=0;delete L.lockFine;}delete L.contract;q.turnedIn=true;q.paid=0;
+    xp+=Math.round((q.reward||0)*.9);if(typeof chkLvl==='function')chkLvl();if(typeof updateHUD==='function')updateHUD();
+    if(typeof addLog==='function')addLog('⚖',`${q.title}: the contract is met. The Compact's ledger fell from ${f0} to ${L.bounty} gold.`);
+    qJournal(q,'complete',`Turned in to ${q.giver}: the Compact's ledger, ${L.bounty?`${L.bounty} gold still owed`:'cleared'}.`);return f0-L.bounty;}
   /* S2228 — law in three registers (Michael's B on #1540), the Mark's court: the reeve and the claim. In a town of the Mark the fine
      is a claim, and at the halt you may fight it, to a yield, against the town's sword: the guard who halted you, at the law's tier 3
      (GUARD_TIER), under the bout's rules (boutStart: a 5 m ring laid where you stand, over the rope by a metre or down is a loss, he
