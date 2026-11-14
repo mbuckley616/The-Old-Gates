@@ -103,14 +103,15 @@ const hit = await page.evaluate(async () => { const wait = ms => new Promise(r =
   for (let k = 0; k < 6 && e.hp === hp0; k++) { PHP = maxHP; PPOST.stagUntil = 0; PPOST.posture = PPOST.maxPosture; const dx = e.x - px, dz = e.z - pz; yaw = Math.atan2(-dx, -dz); pitch = -.1; atkCd = 0; stamina = 100; attack(false); for (let w = 0; w < 60 && _pendingStrike; w++) await wait(250); await wait(100); } // S274 — wait for the blow to land: on a slow runner 700 ms was a third of the swing
   return { hp0, hp: e.hp }; });
 check('your blows land on him indoors', hit.hp < hit.hp0, hit);
-// at a fifth of health he offers the yield; the cells take you out of the room and to the morning
-await page.evaluate(() => { PHP = Math.round(maxHP * .2); WORLD.tickInterior(1 / 60, performance.now()); });
+// at a fifth of health he offers the yield; the stocks (Dunmore's court is the Crown's since S2227, in place of the cells) take you out
+// of the room, an hour a 50 gold of the fine, onto the plaza
+const h0 = await page.evaluate(() => { PHP = Math.round(maxHP * .2); const h = worldState.gameTimeAbsMinutes; WORLD.tickInterior(1 / 60, performance.now()); return h; });
 const y = await dlg();
-await page.evaluate(() => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /cells/.test(x.textContent)); if (b) b.click(); });
+await page.evaluate(() => { const b = [...document.querySelectorAll('#dlg-choices > *')].find(x => /The stocks/.test(x.textContent)); if (b) b.click(); });
 await page.waitForTimeout(9000); await g.hide();
-const cells = await page.evaluate(() => ({ inside: isInterior(), zone: activeZoneId, hour: Math.floor(gameHour()), fine: WORLD.bountyAt('dunmore'), guards: ZONES.world.enemies.filter(e => e._guard && !e.dead).length }));
+const cells = await page.evaluate((h0) => ({ inside: isInterior(), zone: activeZoneId, mins: Math.round(worldState.gameTimeAbsMinutes - h0), fine: WORLD.bountyAt('dunmore'), guards: ZONES.world.enemies.filter(e => e._guard && !e.dead).length }), h0);
 console.log('yield', JSON.stringify(y), JSON.stringify(cells));
-check('at a fifth of health he offers the yield; the cells take you out of the room to the morning, the fine cleared', /cells/.test(y.text || '') && !cells.inside && cells.zone === 'world' && cells.hour === 7 && cells.fine === 0 && cells.guards === 0, { y, cells });
+check(`at a fifth of health he offers the yield; the stocks take you out of the room, ${cells.mins} minutes, the fine cleared`, (y.choices || []).some(x => /The stocks \(\d h\)/.test(x)) && !cells.inside && cells.zone === 'world' && cells.mins >= 60 && cells.mins <= 6 * 60 + 60 && cells.fine === 0 && cells.guards === 0, { y, cells });
 // 6. run out of the door mid-fight: he follows and fights on in the street, as hurt as he was
 await page.evaluate(() => { forceTime(13); const c = worldState.crime.dunmore; c.bounty = 60; c.shut = false; });
 await enter(house2);
