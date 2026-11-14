@@ -2366,7 +2366,7 @@ function hbHairOnCloak(P){const st=P.cloak&&P.cloak.hairOver;if(!st)return null;
 // S1224 — the builder's body as points in the world, for the bed (personLie): its middle level's vertices that a triangle uses (the whole
 // body baked, less the hair's cards and what a garment's cut discards), each skinned on the CPU by the posed bones
 function hbSkinPts(rig){const H=rig.hb,mid=hbMid(rig);if(!mid)return new Float32Array(0);const G=mid.geometry,pa=G.attributes.position,v=new THREE.Vector3();
-  if(!H.used){const u=new Uint8Array(pa.count),ix=G.index.array;for(let i=0;i<ix.length;i++)u[ix[i]]=1;const a=[];for(let i=0;i<u.length;i++)if(u[i])a.push(i);H.used=Uint32Array.from(a);}
+  if(!H.used){const u=new Uint8Array(pa.count),ix=G.index.array,hr=G.userData.hair||[];for(let i=0;i<ix.length;i++)u[ix[i]]=1;for(let k=0;k<hr.length;k+=2)u.fill(0,hr[k],hr[k+1]); /* S2231 — not the hair's ribbons */const a=[];for(let i=0;i<u.length;i++)if(u[i])a.push(i);H.used=Uint32Array.from(a);}
   rig.root.updateMatrixWorld(true);const out=new Float32Array(H.used.length*3);
   for(let k=0;k<H.used.length;k++){v.fromBufferAttribute(pa,H.used[k]);mid.applyBoneTransform(H.used[k],v);out[k*3]=v.x;out[k*3+1]=v.y;out[k*3+2]=v.z;}
   return out;}
@@ -2614,14 +2614,36 @@ function hbCutFn(u){const c=u.cut;let h=null;
   const key=u.hole;return b=>{if(c&&(b.y<c[0]||b.y>c[1]||Math.abs(b.x)>(c[2]!=null?c[2]:9)))return true;if(!h)return false;
     try{return !!h(b);}catch(e){h=null;HB_HOLES.set(key,null);return false;}};}
 const HB_MID_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.88,metalness:0,side:THREE.DoubleSide});
+// S2231 — the hair in the middle level. The bake left the strand cards out (they are cut by their texture's alpha, which a vertex colour
+// cannot carry), so from 16 to 42 m a head of long hair was its scalp's shell, a beard was gone and every townsperson read cropped or bald.
+// Now each of the hair's, the beard's and the moustache's cards (strandCards in people.js: one run of point pairs a strand) gives the bake
+// every `str`-th strand through every `pts`-th of its points, root and tip kept, each pair spread `w` times about its middle so the fewer,
+// opaque ribbons cover what the many cut ones did, in the card's colour darkened to the texture's mean (`col`). The head's hair by HB_MID_HAIR.hair
+// (Niamh's loose hair 220k card triangles to about 7k), the beard and moustache, short and few, by .face. Read from the cards' whole index
+// (S2182's every-3rd at Middle is only what the full level draws). A card laid any other way is left out.
+const HB_MID_HAIR={re:/^(hair|beard|moust)$/,hair:{str:5,pts:6,w:3.2},face:{str:1,pts:4,w:1.6},col:.6};
+function hbHairLow(o){const g=o.geometry,K=o.name==='hair'?HB_MID_HAIR.hair:HB_MID_HAIR.face,ix=(g.userData.hairIx&&g.userData.hairIx[1])||g.index,pa=g.attributes.position,na=g.attributes.normal,s=g.attributes.skinIndex,w=g.attributes.skinWeight;
+  if(!ix||!pa||!s||!w||!o.material||Array.isArray(o.material))return null;const A=ix.array,runs=[];let r=null,prev=-9;
+  for(let q=0;q+5<A.length;q+=6){const a=A[q];if(A[q+1]!==a+1||A[q+2]!==a+2)return null;if(a!==prev+2){r=[a];runs.push(r);}r.push(a+2);prev=a;}
+  const pos=[],nor=[],si=[],sw=[],idx=[];let nv=0;
+  for(let t=0;t<runs.length;t+=K.str){const R=runs[t],keep=[];for(let i=0;i<R.length;i+=K.pts)keep.push(R[i]);if(keep[keep.length-1]!==R[R.length-1])keep.push(R[R.length-1]);if(keep.length<2)continue;
+    for(let i=0;i<keep.length;i++){const a=keep[i];
+      for(let e=0;e<2;e++){const v=a+e;for(let c=0;c<3;c++){const m=(pa.getComponent(a,c)+pa.getComponent(a+1,c))/2;pos.push(m+(pa.getComponent(v,c)-m)*K.w);nor.push(na?na.getComponent(a,c):c===1?1:0);}
+        for(let c=0;c<4;c++){si.push(s.getComponent(a,c));sw.push(w.getComponent(a,c));}}
+      if(i){const b=nv-2;idx.push(b,b+1,nv,b+1,nv+1,nv);}nv+=2;}}
+  if(!idx.length)return null;const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));G.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+  G.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));G.setIndex(idx);
+  return {isMesh:true,isSkinnedMesh:true,name:o.name,geometry:G,material:{color:o.material.color.clone().multiplyScalar(HB_MID_HAIR.col)},userData:{},hair:true};}
 function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map((b,i)=>[b,i])),rootI=bi.get(P.byName.root);
   P.root.updateMatrixWorld(true);
   // S1294 — what is baked, counted first, so the arrays are made once at their size (the bake pushed into plain arrays: 60 to 340 ms a body)
   const list=[];let NV=0,NI=0;
-  P.root.traverse(o=>{if(!o.isMesh||skip.has(o)||o.userData.tell)return;const g=o.geometry,pa=g.attributes.position,m=o.material; /* S2192 — never a tell's strips */
+  P.root.traverse(o=>{if(!o.isMesh||o.userData.tell)return; /* S2192 — never a tell's strips */
+    if(skip.has(o)){const lo=HB_MID_HAIR.re.test(o.name)&&hbHairLow(o);if(lo){list.push(lo);NV+=lo.geometry.attributes.position.count;NI+=lo.geometry.index.count;}return;}
+    const g=o.geometry,pa=g.attributes.position,m=o.material;
     if(!pa||Array.isArray(m)||m.transparent)return;list.push(o);NV+=pa.count;NI+=g.index?g.index.count:pa.count;});
-  const pos=new Float32Array(NV*3),nor=new Float32Array(NV*3),col=new Float32Array(NV*3),si=new Uint16Array(NV*4),sw=new Float32Array(NV*4),idx=new Uint32Array(NI),v=new THREE.Vector3(),n=new THREE.Vector3(),M=new THREE.Matrix4(),N=new THREE.Matrix3(),I=new THREE.Matrix4(),c=new THREE.Color();let base=0,ni=0;
-  for(const o of list){const g=o.geometry,pa=g.attributes.position,na=g.attributes.normal,ca=g.attributes.color,m=o.material;
+  const pos=new Float32Array(NV*3),nor=new Float32Array(NV*3),col=new Float32Array(NV*3),si=new Uint16Array(NV*4),sw=new Float32Array(NV*4),idx=new Uint32Array(NI),v=new THREE.Vector3(),n=new THREE.Vector3(),M=new THREE.Matrix4(),N=new THREE.Matrix3(),I=new THREE.Matrix4(),c=new THREE.Color(),hair=[];let base=0,ni=0;
+  for(const o of list){const g=o.geometry,pa=g.attributes.position,na=g.attributes.normal,ca=g.attributes.color,m=o.material;if(o.hair)hair.push(base,base+pa.count);
     c.copy(m.color||c.setRGB(1,1,1));const vc=!!(ca&&m.vertexColors),rigid=!o.isSkinnedMesh;let b=0;
     if(rigid){let p=o.parent;while(p&&!p.isBone)p=p.parent;b=p?bi.get(p):rootI;M.copy(sk.boneInverses[b]).invert().multiply(I.copy(bones[b].matrixWorld).invert()).multiply(o.matrixWorld);N.getNormalMatrix(M);}
     const s=g.attributes.skinIndex,w=g.attributes.skinWeight;
@@ -2636,7 +2658,7 @@ function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map
       idx[ni++]=base+a;idx[ni++]=base+b2;idx[ni++]=base+c3;}
     base+=pa.count;}
   const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.BufferAttribute(pos,3));G.setAttribute('normal',new THREE.BufferAttribute(nor,3));
-  G.setAttribute('color',new THREE.BufferAttribute(col,3));G.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));
+  G.setAttribute('color',new THREE.BufferAttribute(col,3));G.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));G.userData.hair=hair;
   G.setIndex(new THREE.BufferAttribute(NV>65536?idx.slice(0,ni):Uint16Array.from(idx.subarray(0,ni)),1));
   const mesh=new THREE.SkinnedMesh(G,HB_MID_MAT);mesh.name='mid';mesh.bind(sk,new THREE.Matrix4());mesh.bindMode='detached';mesh.bindMatrixInverse.identity();
   mesh.castShadow=false;mesh.receiveShadow=true;mesh.visible=false;return mesh;}
