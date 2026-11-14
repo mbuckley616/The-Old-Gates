@@ -275,7 +275,7 @@ const FP_AIR={dip:.07,drop:.04,back:.05,roll:.25};
 function vmAirDip(){if(!vmSword)return;const P=airPose(performance.now()/1000),ln=P.lean,tk=P.tuck*(1-ln);if(tk<=0&&ln<=0)return;
   const dy=-FP_AIR.dip*tk-FP_AIR.drop*ln,dz=FP_AIR.back*ln,fL=vmSword.userData.fistL;
   vmSword.position.y+=dy;vmSword.position.z+=dz;vmSword.rotation.z+=FP_AIR.roll*P.s*ln;if(fL){fL.position.y+=dy;fL.position.z+=dz;}}
-const FP_LEVEL={spear:1.15,crossbow:1.5};
+const FP_LEVEL={spear:1.15,crossbow:1.5,rod:.96}; /* S2224 — the rod held out at 35° over the water (54-thirdperson.js's rodTick turns it through the cast) */
 // S1476 — the crossbow's 2.0 s span drawn (XBOW, #745 2 A): the prod tipped up toward you and the bow drawn in (0–0.35 s), so the
 // string is in view as it is hauled back to the nut (0.35–1.45), the bolt laid in the groove (1.55), the bow let back down level
 // (1.6–2.0). Spanned: the string on the nut and the bolt in place until the shot lets the string fly home (spanT back to 0). d is
@@ -300,7 +300,7 @@ let _fpSwordH=0;
 function fpSwordFit(k){const w=k.children[0];if(!w)return;const h=o=>{const b=new THREE.Box3().setFromObject(o);return b.max.y-b.min.y;};
   if(!_fpSwordH)_fpSwordH=h(buildWeapon('sword'));const s=_fpSwordH/Math.max(.1,h(w));w.scale.multiplyScalar(s);}
 function buildViewmodel(){
-  if(typeof workShown==='function'){const t=workShown();if(t&&EQ.weapon!==t)return workWield(buildViewmodel);} /* S1520 — the pick or the hatchet while you work (54-thirdperson.js) */
+  if(typeof workShown==='function'){const t=workShown();if(t&&EQ.weapon!==(t.bare?null:t))return workWield(buildViewmodel);} /* S2225 — the net's bare hands: the hand empty is already its own */ /* S1520 — the pick or the hatchet while you work (54-thirdperson.js) */
   if(vmSword){if(vmSword.userData.fistL)VM_SCENE.remove(vmSword.userData.fistL);VM_SCENE.remove(vmSword);vmSword=null;}
   vmGlow=null;vmEnchantLight=null;
   // v70.2 — clear the weapon arm bridge; rebuilt at the end with the new hand.

@@ -798,13 +798,13 @@ const WPN_GEO=new Map();
 // S1509 — the kit's pieces are drawn to the old person (1.233 tall) and grow with the body that carries them (×1.2 to ×1.35), which
 // brings most of them to their true length: a sword 0.89 m, a longsword 1.17, an axe 0.76. Three were drawn in true metres and came out
 // too big: the knife 0.49 m, the spear 2.97, the crossbow 1.40. These are carried at their own size, whatever the stature (wpnTrue)
-const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet','impl']);
+const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet','impl','rod']);
 function wpnIsTrue(kind){return WPN_TRUE.has(kind)||/^(sword|spear|crossbow):/.test(kind||'');} /* S2118 — a sword by its make is drawn in metres */
 function wpnTrue(kind,w,holder){if(wpnIsTrue(kind)&&holder&&holder.scale.x>0)w.scale.setScalar(1/holder.scale.x);return w;}
 // S1550 — the length of Bowyer's two bows to the plain bow's (#851 A: the longbow 1.5×, the war bow 1.7×), by the item's bowKind
 const BOW_LEN={longbow:1.5,warbow:1.7};
 function bowLenOf(w){return (w&&BOW_LEN[w.bowKind])||1;}
-const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','spear','crossbow','pick','hatchet','round','kite','tower'];
+const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','spear','crossbow','pick','hatchet','rod','round','kite','tower'];
 // tint (S227, the player's weapons): {metal, guard, wood, glow} colours in place of steel, brass, the bow's wood and the crystal
 function wpnBuild(kind,rust,tint){tint=tint||{};
   const L=[],o=new THREE.Object3D();const RU=0x6a3e24;
@@ -840,6 +840,14 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       for(const sd of [-1,1])add(SK.cone(.016,.23,6),'metal',DSTEEL,[sd*.135,.685,0],[0,0,-sd*(Math.PI/2+.16)]);},
     hatchet:()=>{add(SK.cyl(.013,.016,.4,8),'matte',WOOD,[0,.12,0]);grip(.09,.017,-.07);const sh=new THREE.Shape();sh.moveTo(0,-.02);sh.lineTo(-.04,-.035);sh.quadraticCurveTo(-.1,-.06,-.095,.015);sh.quadraticCurveTo(-.1,.07,-.065,.08);sh.lineTo(0,.03);sh.lineTo(0,-.02);
       add(new THREE.ExtrudeGeometry(sh,{depth:.005,bevelEnabled:true,bevelThickness:.004,bevelSize:.003,bevelSegments:2}),'metal',STEEL,[-.01,.27,-.0025]);add(SK.rbox(.032,.055,.03,.008,2),'metal',DSTEEL,[0,.285,0]);},
+    // S2224 — the fishing rod (#1504 B, 50-travel.js's ROD_ITEM), in true metres: a hazel rod of three lengths, 2.86 m from the butt to
+    // the tip's loop, the fist on a cord-whipped grip 0.25 m up from the butt; the joints bound with cord, the lengths tapering from 3 cm
+    // at the butt to 5 mm at the tip, where the line is tied to a small loop (ROD_TIP, the line's end in 54-thirdperson.js)
+    rod:()=>{const HZ=0x8a6a44,DH=0x5e4630,CD=0xcfc4a0;add(SK.cyl(.0125,.015,.34,8),'matte',HZ,[0,-.08,0]);add(SK.cyl(.0165,.0165,.24,10),'matte',CD,[0,-.03,0]);
+      for(let i=0;i<5;i++)add(SK.torus(.0168,.0022,4,10),'matte',DH,[0,-.14+i*.055,0],[Math.PI/2,0,0]);add(SK.ball(.016,8,6),'matte',DH,[0,-.25,0]);
+      add(SK.cyl(.0085,.0125,1.02,8),'matte',HZ,[0,.6,0]);add(SK.cyl(.011,.011,.05,8),'matte',CD,[0,1.1,0]);
+      add(SK.cyl(.0055,.0085,.9,6),'matte',HZ,[0,1.55,0]);add(SK.cyl(.0075,.0075,.04,6),'matte',CD,[0,2,0]);
+      add(SK.cyl(.0025,.0055,.6,6),'matte',HZ,[0,2.3,0]);add(SK.torus(.006,.0012,4,8),'matte',DH,[0,2.606,0]);},
     staff:()=>{add(SK.bumpy(SK.cyl(.016,.022,1.0,8,10),.004,23,30),'matte',DWOOD,[0,.22,0]);for(let i=0;i<3;i++){const a=i/3*Math.PI*2;add(SK.cone(.008,.12,5),'matte',DWOOD,[Math.cos(a)*.022,.76,Math.sin(a)*.022],[Math.sin(a)*-.35,0,Math.cos(a)*.35]);}
       add(new THREE.OctahedronGeometry(.04,0),'glow',GLOW,[0,.8,0],null,[1,1.5,1]);add(SK.ball(.09,10,8),'halo',HALO,[0,.8,0]);},
     claymore:()=>{grip(.22,.016,-.14);add(SK.ball(.028,10,8),'metal',DSTEEL,[0,-.155,0]);add(SK.rbox(.27,.026,.036,.01,2),'metal',DSTEEL,[0,.065,0]);[-1,1].forEach(sd=>add(SK.ball(.016,6,5),'metal',DSTEEL,[sd*.135,.065,0]));add(blade(.76,.052,.06),'metal',STEEL,[0,.078,0]);},
