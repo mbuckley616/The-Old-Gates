@@ -1918,8 +1918,39 @@
     const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);wildTaken(e);
     bagAdd(item);if(typeof gateGift==='function'&&gateGift('uisce')&&uisceWaters()&&(typeof canCarry!=='function'||canCarry(item)))bagAdd(riverFishItem(e.baseName));
     splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
-  function fishPrompt(){return nearSchool()||nearTrout()?"Press 'E' to catch a fish":null;}
-  function catchFish(){const s=nearSchool();if(!s){const t=nearTrout();return t?takeTrout(t):false;}
+  // S2214 — the rod (Michael's B on #1504, docs/design/adventurers-kit.md; ROD_ITEM, 50-travel.js): standing, a rod in the bag, E at
+  // water 0.6 m deep 1 to 4 m in front of you casts. A bite comes 15 to 45 game minutes later (as many real seconds), and E within one
+  // game minute of it (1.0 s) strikes; E before it reels in, and a bite left past its minute gets away. Walking 2 m off, swimming, a
+  // deck under sail or leaving the open world ends the cast. The water's own fish: a river's or a lake's (a trout; in the Gatelands over
+  // a bed more than 3 m down a River Pike one time in two; in the Mark's rivers a Riverjaw Salmon one time in two, the wild fish's own
+  // rule) or the sea's (FISH_KINDS, by climate and the bed, as a school's catch). Seeded `rod:<cell>:<day>:<cast>` (the co-op rules).
+  // Nothing bites in the Gatelands' waters under Uisce's toll. The cast is not saved.
+  const ROD={cast:null,n:{}};const ROD_REACH=4,ROD_DEEP=.6,ROD_STRIKE=1,ROD_LEAVE=2;
+  function hasRod(){return BAG.some(b=>b&&b.tool==='rod');}
+  function rodSpot(){if(activeZoneId!=='world'||isInterior()||isSwimming()||SHIP.sailing||!onGround||!hasRod())return null;
+    const fx=-Math.sin(yaw),fz=-Math.cos(yaw);for(const da of [0,-.35,.35,-.7,.7])for(let r=1;r<=ROD_REACH;r+=.5){const c=Math.cos(da),s=Math.sin(da),dx=fx*c-fz*s,dz=fx*s+fz*c;
+      const x=px+dx*r,z=pz+dz*r;if(SEA_Y-worldH(x,z)>=ROD_DEEP)return {x,z};}return null;}
+  function rodFish(x,z,R){const [i,j]=cellOf(x,z);let isle=null;try{isle=nationKeyOf(i,j);}catch(err){}
+    const inland=wildRiverNear(x,z,0)||wildLakeNear(x,z);
+    if(inland){const half=R()<.5;if(isle==='gatelands'&&SEA_Y-worldH(x,z)>3&&half)return riverFishItem('River Pike');if(isle==='mark'&&wildRiverNear(x,z,0)&&half)return riverFishItem('Riverjaw Salmon');return troutItem();}
+    const cl=climateOfCell(i,j),bed=worldH(x,z);const pool=(cl==='cold'&&R()<.5)?FISH_KINDS.cold:(cl==='warm'&&R()<.5)?FISH_KINDS.warm:bed<-5?FISH_KINDS.deep:FISH_KINDS.shallow;
+    const name=pool[Math.floor(R()*pool.length)],big=R()<.12;return {name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish',food:'fish'};}
+  function rodCast(spot){const t=worldState.gameTimeAbsMinutes||0,day=lootDay(),[i,j]=cellOf(spot.x,spot.z);ROD.n[day]=(ROD.n[day]||0)+1;
+    const key=`${i},${j}:${day}:${ROD.n[day]}`,R=seededRng('rod',key);const barren=typeof gateToll==='function'&&gateToll('uisce')&&uisceWaters();
+    ROD.cast={x:px,z:pz,wx:spot.x,wz:spot.z,at:t,bite:barren?Infinity:t+15+R()*30,R,key};if(typeof sfxNoise==='function')try{sfxNoise(.12,0,0,.05,900);}catch(e){}showMsg('You cast the line.','#88aacc');return true;}
+  function rodStrike(){const C=ROD.cast,t=worldState.gameTimeAbsMinutes||0;ROD.cast=null;
+    if(t<C.bite){showMsg('You reel in.','#a0a090');return true;}
+    if(t>=C.bite+ROD_STRIKE){showMsg('It got away.','#a0a090');return true;}
+    const item=rodFish(C.wx,C.wz,C.R);if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
+    bagAdd(item);splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
+  function tickRod(){const C=ROD.cast;if(!C)return;const t=worldState.gameTimeAbsMinutes||0;
+    if(activeZoneId!=='world'||isInterior()||isSwimming()||SHIP.sailing||Math.hypot(px-C.x,pz-C.z)>ROD_LEAVE||!hasRod()){ROD.cast=null;return;}
+    if(t>=C.bite&&!C.told){C.told=true;showMsg('A bite! Strike!','#ffd070');try{splash(false);}catch(e){}}
+    if(t>=C.bite+ROD_STRIKE){ROD.cast=null;showMsg('It got away.','#a0a090');}}
+  function rodPrompt(){if(ROD.cast)return ROD.cast.told?"Press 'E' to strike":"Press 'E' to reel in";return rodSpot()?"Press 'E' to cast":null;}
+  function rodAct(){if(ROD.cast)return rodStrike();const s=rodSpot();return s?rodCast(s):false;}
+  function fishPrompt(){return nearSchool()||nearTrout()?"Press 'E' to catch a fish":rodPrompt();}
+  function catchFish(){const s=nearSchool();if(!s&&!isSwimming()&&(ROD.cast||rodSpot()))return rodAct();if(!s){const t=nearTrout();return t?takeTrout(t):false;}
     const [i,j]=cellOf(px,pz);const cl=climateOfCell(i,j);const bed=worldH(px,pz);
     // S605 — the catch rolls on the school's stream, `<chunk>:fish:<minute>` (co-op rules; a school is one a chunk, S508's key by place and minute)
     const R=seededRng('fish',(s.chunk||(Math.round(s.cx)+','+Math.round(s.cz)))+':fish:'+Math.floor(worldState.gameTimeAbsMinutes||0));
@@ -1928,7 +1959,7 @@
     const item={name:(big?'Fine ':'')+name,ico:'🐟',type:'misc',weight:big?1.2:.6,sellMult:big?1.2:.7,buyPrice:big?26:9,qty:1,_typeKey:'fish',food:'fish'}; /* S2028 — a main for the pot */
     if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
     if(typeof bagAdd==='function'){bagAdd(item);if(typeof gateGift==='function'&&gateGift('uisce')&&uisceWaters()&&(typeof canCarry!=='function'||canCarry(item)))bagAdd(Object.assign({},item));} /* S1359 — Uisce's face: two fish a catch in the Gatelands' waters */s.cool=18+R()*12;splash(false);showMsg(`Caught a ${item.name}.`,'#88cc88');if(typeof addLog==='function')addLog('🐟',`Caught a ${item.name}.`);return true;}
-  function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;}
+  function tickSchoolCool(dt){for(const s of LIFE.fish)if(s.cool>0)s.cool-=dt;tickRod();} /* S2214 — the rod's cast */
   // ── whales ──
   const WHALES=[];
   function spawnWhale(x,z){const c=k=>new THREE.Color(k);const g=mergeParts([{geo:new THREE.CylinderGeometry(1.6,.7,14,10),color:c(0x3a4650),rx:Math.PI/2,jitter:.03},{geo:new THREE.SphereGeometry(1.7,10,8),color:c(0x3a4650),z:7,jitter:.03},{geo:new THREE.BoxGeometry(5.2,.3,2.2),color:c(0x2e3a44),z:-8.2,jitter:.03},{geo:new THREE.ConeGeometry(.5,1.2,4),color:c(0x2e3a44),y:1.6,z:-2},{geo:new THREE.BoxGeometry(2.6,.25,1.4),color:c(0x2e3a44),x:2.2,z:2.5,y:-.6},{geo:new THREE.BoxGeometry(2.6,.25,1.4),color:c(0x2e3a44),x:-2.2,z:2.5,y:-.6}]);

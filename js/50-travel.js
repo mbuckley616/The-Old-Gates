@@ -1348,6 +1348,7 @@ function gardenRows(h,btn){const L=gardenBeds(h),secs=gardenSeconds(h).filter(k=
       if(!secs.length&&!herbs.length)s+='<i style="font-size:12px;color:#8a7050">nothing to sow: this island’s seconds, or a herb you have picked</i>';}
     s+='</div>';});
   return s;}
+const ROD_ITEM={name:'Fishing Rod',ico:'🎣',type:'misc',weight:1,buyPrice:15,sellMult:.4,tool:'rod'}; /* S2214 — Michael's B on #1504: cast at water 0.6 m deep (86-world-crime.js) */
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish',food:'fish'};} /* S2028 — food, which the save keeps */
 // S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
 const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};
@@ -1357,6 +1358,7 @@ function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];cons
   if(h.type==='misc')out.push({...SURV_ITEMS.messkit}); /* S2028 — the mess kit at every goods shop */
   if(h.type==='misc')out.push({...SURV_ITEMS.skinknife}); /* S2123 — the skinning knife at every goods shop */
   if(h.type==='misc')out.push({...SURV_ITEMS.shovel}); /* S2138 — the shovel at every goods shop */
+  if(h.type==='misc')out.push({...ROD_ITEM}); /* S2214 — the rod at every goods shop (#1504 B) */
   try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);if(t){const nk=nationKeyOf(...cellOf(t.x,t.z));if(h.type==='misc')out.push(...campGearFor(nk)); /* S2090 — the rolls and the tent */if(h.type==='misc')out.push(packItem(nk)); /* S2213 — the island's pack (#1504 B) */if(nk==='mark')out.push(waterItem('canteen'));if(nk==='aurenne')out.push(waterItem('flask'));
     for(const k in DISH_SECONDS)if(DISH_SECONDS[k].isle===nk)out.push(secondItem(k));
     if(h.type==='inn'){out.push(dishOfDayItem(h));isleSeconds(nk).forEach(k=>out.push(cupItem(k)));}}}catch(e){} /* S2013 — by island; S2028 — its three seconds; S2035 — the inn's dish of the day and its three cups */

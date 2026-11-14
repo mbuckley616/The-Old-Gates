@@ -388,6 +388,7 @@ const KIT_ROWS=[
   {has:b=>typeof TINDERBOX_NAME!=='undefined'&&b.name===TINDERBOX_NAME,lbl:'Tinderbox',line:'a campfire',sold:'goods shops and inns'},
   {has:b=>!!b.roll,lbl:'Bedroll',line:'a night in the open',sold:'goods shops'},
   {has:b=>!!b.tent,lbl:'Tent',line:'a night in the open one grade better, and the weather one grade less',sold:'goods shops'},
+  {has:b=>b.tool==='rod',lbl:'Fishing rod',line:'cast at water 0.6 m deep; strike within a second of the bite',sold:'goods shops'},
   {has:b=>!!b.vessel,lbl:'Water vessel',line:'water to drink on the road',sold:'goods shops and inns'},
 ];
 function kitRows(){return KIT_ROWS.map(R=>{const it=BAG.find(b=>b&&R.has(b));return {lbl:R.lbl,line:R.line,sold:R.sold,it:it||null};});}
