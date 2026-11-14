@@ -192,6 +192,17 @@
   function wxHearKind(t,h){const k=WX_HEAR[t]||1;return (t==='rain'||t==='snow')?k+(.5-k)*(h||0):k;}
   function wxHearScale(){if(typeof activeZoneId==='undefined'||activeZoneId!=='world'||lid!=='overworld'||(typeof isInterior==='function'&&isInterior()))return 1;
     const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?(WX.k||0):0,h=WX.heavy||0;const a=wxHearKind(cur,h),b=wxHearKind(nxt,h);return a+(b-a)*mix;}
+  /* S2212 — Michael's B on #1511, its second half: the wind carries an arrow sideways along windDir(), in the open only (no wind
+     indoors, in a gate or in a legacy zone). Across the flight at a breeze's 0.4 m/s², rain or snow's 0.8, a storm's or a blizzard's 2.0
+     (plain snow eases to it with WX.heavy; heavy rain stays rain's 0.8). A full crosswind drifts a 28 m/s arrow 0.23 / 0.46 / 1.15 m at
+     30 m. Read off the clock and the weather, both saved, so co-op holds. Long eye (Bow 75) halves it for your own arrows (tickArrowMotion). */
+  const WX_WIND={rain:.8,snow:.8,storm:2};
+  function wxWindKind(t,h){const k=WX_WIND[t]||.4;return t==='snow'?k+(2-k)*(h||0):k;}
+  function wxWindAcc(){if(typeof activeZoneId==='undefined'||activeZoneId!=='world'||lid!=='overworld'||(typeof isInterior==='function'&&isInterior()))return 0;
+    const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?(WX.k||0):0,h=WX.heavy||0;const a=wxWindKind(cur,h),b=wxWindKind(nxt,h);return a+(b-a)*mix;}
+  // the crosswind on a flight (vx, vz): the wind's push less its share along the flight, so a head or tail wind carries nothing
+  function arrowWindAcc(vx,vz,mult){const A=wxWindAcc()*(mult==null?1:mult);if(!A)return null;const w=windDir(),wx=Math.sin(w)*A,wz=Math.cos(w)*A;
+    const l=Math.hypot(vx,vz);if(l<1e-6)return null;const dx=vx/l,dz=vz/l,along=wx*dx+wz*dz;return {x:wx-along*dx,z:wz-along*dz};}
   const _tmpWx=new THREE.Color(),_tmpWx2=new THREE.Color();
   window.devWeather=function(t){if(!t)return wxName(WX.type,WX.heavy>.5)+(WX.next!==WX.type?' → '+wxName(WX.next,WX.nextHeavy===WX.next):'');wxSetNext(t);WX.k=0;WX.timer=240;return 'weather → '+t;};
 
