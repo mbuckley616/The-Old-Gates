@@ -1152,7 +1152,7 @@ function fireZoneArrow(e,sc){const T=targetOf(e),ax=T.x-e.x,az=T.z-e.z,ad=Math.h
   const m=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.7),new THREE.MeshLambertMaterial({color:0x9a7a4a}));const y=activeTerrainH(e.x,e.z)+1.0;m.position.set(e.x,y,e.z);m.rotation.y=Math.atan2(ax,az);sc.add(m);
   ZARROWS.push({m,x:e.x,z:e.z,y,vx:ax/ad*17,vz:az/ad*17,life:1.6,dmg:e.dmg,from:e,sc});}
 function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZARROWS[i];a.life-=dt;
-    {const wa=(typeof arrowWindAcc==='function')?arrowWindAcc(a.vx,a.vz,1):null;if(wa){a.vx+=wa.x*dt;a.vz+=wa.z*dt;a.m.rotation.y=Math.atan2(a.vx,a.vz);}} /* S2212 — #1511 B: a foe's arrow drifts on the same wind as yours */
+    {const wa=(typeof arrowWindAcc==='function')?arrowWindAcc(a.vx,a.vz,1):null;if(wa){a.vx+=wa.x*dt;a.vz+=wa.z*dt;a.m.rotation.y=Math.atan2(a.vx,a.vz);}} /* S2216 — #1511 B: a foe's arrow drifts on the same wind as yours */
    a.x+=a.vx*dt;a.z+=a.vz*dt;a.m.position.set(a.x,a.y,a.z);
     const dh=Math.hypot(px-a.x,pz-a.z);const hit=dh<.75&&!rollUntouchable(performance.now()/1000);const ground=activeTerrainH(a.x,a.z)>a.y;
     if(hit&&!dead){const raw=foeBlow(a.from,a.dmg+Math.floor(foeRand(a.from)*4)); /* S940 — armour as a share, as of every blow */

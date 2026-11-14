@@ -41,7 +41,7 @@ check('a foe hears you walk at 3 m and sneak at 1 m in clear weather and fog', h
 check('rain or snow covers your steps to 2 m, a storm, heavy rain or a blizzard to 1.5 m', hear.rain[0] === 2 && hear.snow[0] === 2 && hear.storm[0] === 1.5 && hear.heavyrain[0] === 1.5 && hear.blizzard[0] === 1.5, hear);
 check('sneaking in any rain is heard at the still 0.9 m, never under it', [hear.rain, hear.storm, hear.blizzard].every(x => x[1] === 0.9) && hear.still === 0.9, hear);
 check('indoors the rain covers nothing; a change eases between (2.5 m halfway)', hear.rainInside[0] === 3 && hear.halfway === 2.5, hear);
-// S2212 — #1511 B: the wind carries an arrow across its flight in the open: 0.4 m/s² (a breeze), 0.8 (rain or snow), 2.0 (a storm or a
+// S2216 — #1511 B: the wind carries an arrow across its flight in the open: 0.4 m/s² (a breeze), 0.8 (rain or snow), 2.0 (a storm or a
 // blizzard); a full 28 m/s crosswind shot drifts 0.23 / 0.46 / 1.15 m at 30 m. A head wind carries nothing, nor does a room; Long eye halves it;
 // a foe's 17 m/s arrow drifts on the same wind
 const wind = await page.evaluate(() => { const wx = WORLD.wx, keep = { type: wx.type, next: wx.next, k: wx.k, heavy: wx.heavy, lid };

@@ -192,7 +192,7 @@
   function wxHearKind(t,h){const k=WX_HEAR[t]||1;return (t==='rain'||t==='snow')?k+(.5-k)*(h||0):k;}
   function wxHearScale(){if(typeof activeZoneId==='undefined'||activeZoneId!=='world'||lid!=='overworld'||(typeof isInterior==='function'&&isInterior()))return 1;
     const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?(WX.k||0):0,h=WX.heavy||0;const a=wxHearKind(cur,h),b=wxHearKind(nxt,h);return a+(b-a)*mix;}
-  /* S2212 — Michael's B on #1511, its second half: the wind carries an arrow sideways along windDir(), in the open only (no wind
+  /* S2216 — Michael's B on #1511, its second half: the wind carries an arrow sideways along windDir(), in the open only (no wind
      indoors, in a gate or in a legacy zone). Across the flight at a breeze's 0.4 m/s², rain or snow's 0.8, a storm's or a blizzard's 2.0
      (plain snow eases to it with WX.heavy; heavy rain stays rain's 0.8). A full crosswind drifts a 28 m/s arrow 0.23 / 0.46 / 1.15 m at
      30 m. Read off the clock and the weather, both saved, so co-op holds. Long eye (Bow 75) halves it for your own arrows (tickArrowMotion). */

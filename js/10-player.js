@@ -1227,7 +1227,7 @@ function tickArrowMotion(arrow, dt, isOW){
   if(ud.life <= 0) return 'expired';
   // Apply gravity to vy (in-place; vy on the userData is the live velocity).
   ud.vy = (ud.vy || 0) - arrowGravity(arrow) * dt; /* S982 — Long eye halves it past 50 m */
-  // S2212 — Michael's B on #1511: the wind carries it across its flight in the open (arrowWindAcc, 86-world-crime.js); Long eye halves it
+  // S2216 — Michael's B on #1511: the wind carries it across its flight in the open (arrowWindAcc, 86-world-crime.js); Long eye halves it
   if(isOW && typeof arrowWindAcc === 'function'){ const wa = arrowWindAcc(ud.vx, ud.vz, ud.longEye ? .5 : 1); if(wa){ ud.vx += wa.x * dt; ud.vz += wa.z * dt; } }
   // Sub-step motion to catch fast arrows through thin walls. ARROW_SPEED 28
   // × dt 0.016 ≈ 0.45u per frame; tile walls are 1.0u thick so single-step

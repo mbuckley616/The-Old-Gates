@@ -1239,6 +1239,7 @@ function hcAttach(rig,C){const tA=performance.now();
   rig.hc={W,C,map,s0,t0,fur,small,ik,feet,hb,scorp,bug,arms,wings,sway,garg,merge:!!HC_KINDS[hcKind(rig)].merge,unhunch:!!HC_KINDS[hcKind(rig)].unhunch,rest:K.rest?Object.entries(K.rest):null,ank:K.person&&ik?map.map(([j],i)=>/^an/.test(j)?i:-1).filter(i=>i>=0):null,glow:meshes.map(m=>m.material.userData&&m.material.userData.uGlow).filter(u=>u&&u.value&&u.value.isColor),mid:null,bits:C.B.bits.map(b=>b.obj),hide:meshes.filter(m=>!fur.includes(m)),lift:K.legless?.24*SCALE.ROOM_K-(K.float||0):0,hip0:sp?B.body.position.clone():K.person?new THREE.Vector3(0,PW.HIPS,0):new THREE.Vector3(B.hips.position.x,wolfHipY(rig.k),B.hips.position.z),pos0:by.spine0.position.clone(),k:1/(f*C.S),L:-1,drv:rig.mesh.material,em:-1};
   rig.hc.gr=hcGroundLegs(rig,by,K,W);
   if(HC_KINDS[hcKind(rig)].night)rig.hc.night=rig.hc.glow.map(u=>u.value.clone()); /* S1853 — a glow lit only at night (the Lanternfox), its full colour kept */
+  if(rig.e&&!sp&&!K.person&&!hcTellGear(rig))hcJawOn(rig); /* S2210 — a beast foe's tell on its muzzle and jaw (Michael's B on #1522); a peaceful animal never tells */
   HC_BODY.ms+=performance.now()-tA;HC_BODY.n++;}
 // Session 1785: the watcher (S1784, 42-zone-enemies.js' watchMake; Michael's B on #1005, as the prototype's wrongness.js has it) sits.
 // The kit's own `sit` gait poses its body, not a copy of the driver's stand: the haunches down on its hocks, the forelegs straight,
@@ -1297,7 +1298,7 @@ function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs
 // a builder's foe's does (hbTell, S2092): a blade's two edges and a spear's head round its outline as thin strips, a maul's iron head in a
 // skin of light a tenth larger, and the glare on its middle. Built once, from the kit's own gear (creatures.js P.gear: the blade, the
 // head up +y, its flat across x). The group hangs on the gear's bone beside it, not in it, so it still shows at the middle level, where
-// a merged kind's gear is baked into one mesh (hcBake) and hidden. The beasts (no gear) still glow whole: DECISION #1522
+// a merged kind's gear is baked into one mesh (hcBake) and hidden. The beasts (no gear) light their jaws (hcJawOn, S2210, #1522 B)
 const HC_TELL_GEAR={sword:1,spear:1,maul:1};
 function hcTellGear(rig){const H=rig.hc;if(H.gearT===undefined){H.gearT=null;H.C.root.traverse(o=>{if(!H.gearT&&HC_TELL_GEAR[o.name])H.gearT=o;});}return H.gearT;}
 function hcTellBuild(g){const kind=g.name,D={g:new THREE.Group(),kind,mid:new THREE.Vector3(),look:'none'};D.g.name='tellEdge';D.g.visible=false;
@@ -1313,8 +1314,40 @@ function hcTellBuild(g){const kind=g.name,D={g:new THREE.Group(),kind,mid:new TH
   if(part)D.g.add(part);
   D.glare=new THREE.Sprite(new THREE.SpriteMaterial({map:hbTellTex(),color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
   D.glare.position.copy(D.mid);D.g.add(D.glare);D.g.position.copy(g.position);D.g.quaternion.copy(g.quaternion);D.g.scale.copy(g.scale);g.parent.add(D.g);g.userData.tell=D;return D;}
-// lit by the driver's emissive; false for a kind that holds nothing of the kit's (it glows whole, as before)
-function hcTell(rig,em){const H=rig.hc,g=hcTellGear(rig);if(!g)return false;const D=g.userData.tell||hcTellBuild(g);H.tellD=D;H.tellK=hbTellLight(D,em);return true;}
+// lit by the driver's emissive; a beast with no gear lights its jaws (hcJawLight); false for a kind with neither (it glows whole, as before)
+function hcTell(rig,em){const H=rig.hc,g=hcTellGear(rig);if(!g){if(!H.jaw)return false;H.tellK=hcJawLight(H.jaw,em);return true;}const D=g.userData.tell||hcTellBuild(g);H.tellD=D;H.tellK=hbTellLight(D,em);return true;}
+// Session 2210 (Michael's B on #1522, "the muzzle and jaw glow"; the prototype is docs/prototypes/levelup/beasttells.js): #1278's rule
+// carried to the beasts that hold nothing (the wolves, the Dire Wolf, the bears, the boars, the corrupted three, the Ash Hound). What bites
+// is the weapon, so in the tell's last 0.15 s the muzzle and the jaw take the tell's colour and the rest of the hide keeps its own. The
+// mask is read once from the bind pose: 1 on skin weighted to the jaw bone, and on skin weighted to the head from half the head's length
+// (ahead of the eyes) growing whole by three quarters; about 2.5% of a wolf's hide. It is one attribute (aTell) on the hide and every fur
+// shell (each shell is a copy of the hide's geometry), and one uniform (uTell) the hide's and the shells' shaders add to their emissive,
+// at half the tell's hue (a surface, not a blade's line). A small glare (a sprite on the head bone) sits in the open mouth at 0.82 of the
+// head's length, a third of its radius low. Built at attach for every beast foe (rig.e; prewarmFoes builds them too), so the shader's one variant is compiled with the body,
+// never at a first bite. The far level is still the old driver, which glows whole.
+const HC_JAW={eye:.5,whole:.75,hue:.5,at:.82,low:.35,size:2.4,glare:.35};
+function hcJawMask(C){const B=C.B,F=B&&B.headFrame,hi=B&&B.by&&B.by.head?B.by.head.i:-1,ji=B&&B.by&&B.by.jaw?B.by.jaw.i:-1;if(!F||hi<0)return null;
+  const geo=C.meshes[0].geometry,P=geo.attributes.position,SI=geo.attributes.skinIndex,SW=geo.attributes.skinWeight;if(!SI||!SW)return null;
+  const a=new Float32Array(P.count),v=new THREE.Vector3();let s=0;
+  for(let i=0;i<P.count;i++){let wh=0,wj=0;for(let q=0;q<4;q++){const b=SI.getComponent(i,q),w=SW.getComponent(i,q);if(b===hi)wh+=w;else if(b===ji)wj+=w;}
+    if(!wh&&!wj)continue;const t=THREE.MathUtils.smoothstep(v.fromBufferAttribute(P,i).sub(F.base).dot(F.dir)/F.len,HC_JAW.eye,HC_JAW.whole);
+    a[i]=Math.min(1,wj+wh*t);s+=a[i];}
+  return s>0?{a,share:s/P.count}:null;}
+function hcJawOn(rig){const H=rig.hc,C=H.C,M=hcJawMask(C);if(!M)return;const u={value:new THREE.Color(0,0,0)};
+  for(const o of [...H.hide,...H.fur]){if(o.name!=='hide'&&!/^fur/.test(o.name))continue;const m=o.material,prev=m.onBeforeCompile,k0=m.customProgramCacheKey();
+    if(o.geometry.attributes.position.count!==M.a.length)continue;o.geometry.setAttribute('aTell',new THREE.BufferAttribute(M.a,1));
+    m.onBeforeCompile=function(s,r){prev.call(this,s,r);s.uniforms.uTell=u;
+      s.vertexShader='attribute float aTell; varying float vTell;\n'+s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vTell = aTell;');
+      s.fragmentShader='uniform vec3 uTell; varying float vTell;\n'+s.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance += uTell * vTell;');};
+    m.customProgramCacheKey=()=>k0+'|tell';m.clone=hbClone;m.needsUpdate=true;}
+  const F=C.B.headFrame,hb=C.byName.head,p=F.base.clone().addScaledVector(F.dir,F.len*HC_JAW.at).addScaledVector(F.up,-F.r*HC_JAW.low).sub(C.B.by.head.p);
+  const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:hbTellTex(),color:0xffffff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));
+  gl.name='tellGlare';gl.userData.tell=1;gl.position.copy(p);gl.scale.setScalar(F.r*HC_JAW.size);gl.visible=false;gl.castShadow=false;hb.add(gl);
+  H.jaw={u,glare:gl,share:M.share};}
+// the jaws lit by the driver's emissive at its height k (0 puts them out), as hbTellLight lights a blade
+function hcJawLight(J,em){const r=(em>>16&255)/255,gC=(em>>8&255)/255,b=(em&255)/255,k=Math.min(1,r/.75);
+  if(!k){J.u.value.setRGB(0,0,0);J.glare.visible=false;J.k=0;return 0;}
+  const h=HC_JAW.hue*k;J.u.value.setRGB(h,gC/r*h,b/r*h);J.glare.material.color.setRGB(1,gC/r,b/r);J.glare.material.opacity=HC_JAW.glare*k;J.glare.visible=true;J.k=k;return k;}
 // Session 1273: the kit's horse has its legs in other proportions than the driver's, so the driver's joint turns copied onto it lift a
 // planted hoof up to 11 cm off the ground at the trot. Each leg is bent back onto the driver's paw height (its rest offset kept) by
 // two passes of turns at its three upper joints about the body's own side axis, so the leg stays in its plane and the stride is the
