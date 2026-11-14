@@ -792,6 +792,7 @@
   function confrontIndoor(s,S,c){CR.cool=60;const fine=c.bounty;const n=s.npc;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);endSent();return L.pay;}},
+      ...restitutionTopic(S,c,()=>confrontIndoor(s,S,c),true),
       ...talkDownTopic(S,c,()=>confrontIndoor(s,S,c)),
       ...wordGivenTopic(S,c,true),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardFightIndoor(s,S);},60);return L.refuse;}},
@@ -799,6 +800,7 @@
   function confront(n,S,c){CR.cool=60;if(CR.sent&&CR.sent.npc===n)endSent();/* S239 — caught: the chase is over */const fine=c.bounty;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
       {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);return L.pay;}},
+      ...restitutionTopic(S,c,()=>confront(n,S,c),false),
       ...talkDownTopic(S,c,()=>confront(n,S,c)),
       ...wordGivenTopic(S,c,false),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return L.refuse;}},
@@ -817,6 +819,38 @@
   function wordGivenTopic(S,c,indoor){if(!wordGivenOk(c))return [];
     return [{label:'Give my word. (Speech)',quest:true,fn:()=>{if(!wordGiven(S,c))return '';if(indoor)endSent();showMsg('Word given. The fine is waived.','#c8e88a');
       setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}}];}
+  /* S2222 — law in three registers (Michael's B on #1540, docs/design/law-in-three-registers.md), the Gatelands' court: the Crown's.
+     The points, the witnesses, the favour and the halt stay as built; how you settle changes by the island the town stands on (courtOf).
+     - Restitution, at the halt: the stolen goods you carry from this town (an item's stolenAt, laid when a box is robbed) are handed back,
+       and the fine falls by their worth (buyPrice × qty); the 25 a point stays, since the fine was laid as 25 a point plus the worth. The
+       gold stolen (c.loot) is not goods: it stays owed. A fine left over opens the halt again on the new sum.
+     - The stocks, after the yield, in place of the cells: an hour on the plaza for every 50 gold of the fine, at least 1 and at most 6
+       (stocksHours); the fine is cleared and the stolen goods and gold taken, as the cells take them. The clock runs those hours and you
+       stand on the plaza after. The stocks themselves are the look builder's to draw; the guard's words for the court are the quest
+       writer's (the page), so the two choices speak only as the narrator for now.
+     The Mark's duel and Aurenne's ledger are the next two sessions; until then both keep the cells as built. */
+  function courtOf(S){const s=S&&S.site;if(!s)return null;try{return nationAt(s.x,s.z);}catch(e){return null;}}
+  function stolenFrom(S){return BAG.filter(b=>b&&b.stolen&&b.stolenAt&&b.stolenAt===S.site.id);}
+  function stolenWorth(L){return L.reduce((a,b)=>a+(b.buyPrice||0)*(b.qty||1),0);}
+  // named action: the goods handed back. Returns the gold the fine fell by, or 0
+  function restitute(S,c){if(courtOf(S)!=='gatelands'||!c||c.bounty<=0)return 0;const L=stolenFrom(S);if(!L.length)return 0;const w=stolenWorth(L),f0=c.bounty;
+    for(const it of L){const i=BAG.indexOf(it);if(i>=0)BAG.splice(i,1);}c.bounty=Math.max(0,c.bounty-w);if(c.lockFine)c.lockFine=Math.min(c.lockFine,c.bounty);if(c.bounty===0)c.shut=false;
+    if(typeof addLog==='function')addLog('⚖',`Handed back ${L.length===1?L[0].name.toLowerCase():L.length+' stolen things'} at ${S.site.name}: the fine fell from ${f0} to ${c.bounty} gold.`);
+    if(typeof renderInv==='function')renderInv();return f0-c.bounty;}
+  function restitutionTopic(S,c,reopen,indoor){if(courtOf(S)!=='gatelands'||!c||c.bounty<=0)return [];const L=stolenFrom(S);if(!L.length)return [];
+    const left=Math.max(0,c.bounty-stolenWorth(L));
+    return [{label:left?`Hand back the goods (the fine falls to ${left} gold)`:'Hand back the goods (the fine is met)',quest:true,fn:()=>{if(!restitute(S,c))return '';
+      if(c.bounty>0){showMsg(`The goods are handed back. ${c.bounty} gold is still owed.`,'#c8e88a');setTimeout(()=>{try{closeDialog();}catch(e){}reopen();},60);return '';}
+      CR.cool=5;if(indoor)endSent();showMsg('The goods are handed back. The fine is met.','#c8e88a');setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}}];}
+  function stocksHours(c){return Math.max(1,Math.min(6,Math.ceil((c&&c.bounty||0)/50)));}
+  // named action: the stocks (the Crown's court, after the yield)
+  function toStocks(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toStocks(S,c);else setTimeout(w,100);};setTimeout(w,100);return;}
+    const h=stocksHours(c);standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;delete c.lockFine;
+    const back=Math.min(Math.max(0,gold),c.loot||0);if(back>0){gold-=back;stolen++;}c.loot=0;
+    doFade(()=>{advanceClock(h*60);px=S.site.x;pz=S.site.z+2;jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
+      showMsg(`${h} ${h===1?'hour':'hours'} in the stocks on the plaza. ${stolen?'They took what you stole'+(back?` (${back} gold)`:'')+'. ':''}You are let go.`,'#c8b880');
+      if(typeof addLog==='function')addLog('⛓',`${h} ${h===1?'hour':'hours'} in the stocks at ${S.site.name}${stolen?'; the stolen goods were taken'+(back?`, and ${back} gold`:''):''}.`);
+      if(typeof renderInv==='function')renderInv();if(typeof updateHUD==='function')updateHUD();});}
   const GUARD_TIER=3;
   function guardDraw(n,S){if(n._drawn)return null;return guardEnemy(n,S,sc,STATIC_SOL,n.g.position.x,n.g.position.z);}
   function guardEnemy(n,S,scn,sol,x,z){n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false; // S241 — in the street, or in a room
@@ -833,7 +867,8 @@
     const L=yieldLines(S);const gn=D_.map(e=>e._guard&&e._guard.npc&&e._guard.npc.def&&e._guard.npc.def.name).find(Boolean)||'The guard'; // S171 — the guard who drew speaks, by name
     openDialog({name:gn,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(dbl)],topics:[
       {label:`Pay double (${dbl} gold)`,quest:true,fn:()=>{if(gold<dbl)return L.poor;gold-=dbl;updateHUD();c.bounty=0;c.shut=false;standDown(S);if(typeof addLog==='function')addLog('⚖',`Yielded and paid ${dbl} gold at ${S.site.name}.`);return L.pay;}},
-      {label:'The cells.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toCells(S,c);},60);return L.cells;}},
+      courtOf(S)==='gatelands'?{label:`The stocks (${stocksHours(c)} h).`,quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toStocks(S,c);},60);return '';}} /* S2222 — the Crown's court (#1540 B) */
+        :{label:'The cells.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toCells(S,c);},60);return L.cells;}},
       {label:'Fight on.',bye:true}]});}
   function toCells(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toCells(S,c);else setTimeout(w,100);};setTimeout(w,100);return;} // S241 — taken from a room: out first
     standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;
@@ -886,9 +921,9 @@
     // S604 — the takings roll on the box's own stream, `<house id>:box:<day>` (CLAUDE.md's co-op rules), as the barrels do (S471)
     const R=seededRng('loot',X.id+':box:'+lootDay()),rpick=a=>a[Math.floor(R()*a.length)];
     const items=[];let coins=0;const site=houseSite(X.house);const p=site?prosperity(site):50;
-    if(X.kind==='home'){coins=2+Math.floor(R()*11);items.push({name:rpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(R()*22),qty:1,stolen:true});}
+    if(X.kind==='home'){coins=2+Math.floor(R()*11);items.push({name:rpick(['A carved bird','A tin locket','A worn ring','A child’s top','A bone comb','A prayer card','A lock of hair in paper']),ico:'🎁',type:'misc',weight:.1,sellMult:1,buyPrice:8+Math.floor(R()*22),qty:1,stolen:true,stolenAt:site?site.id:null});}
     else{coins=Math.round(boxCoins(p,X.type)*(.8+R()*.4));
-      try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},rpick(tbl),{qty:1,stolen:true}));}}catch(e){}}
+      try{const tbl=(typeof SHOP_STOCK!=='undefined')&&(SHOP_STOCK[X.type]||SHOP_STOCK.misc);if(tbl&&tbl.length){items.push(Object.assign({},rpick(tbl),{qty:1,stolen:true,stolenAt:site?site.id:null})); /* S2222 — the goods know their town, for the Gatelands' restitution */}}catch(e){}}
     gold+=coins;let got=0;items.forEach(it=>{if(typeof bagAdd==='function'){bagAdd(it);got++;}});
     (worldState.boxes||(worldState.boxes={}))[X.id]={taken:dayNow()};noteCrime('theft',X.house,coins+items.reduce((a,it)=>a+(it.buyPrice||0),0),coins);
     showMsg(`${coins} gold${got?', and '+items.map(i=>i.name.toLowerCase()).join(', '):''}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Took ${coins} gold from ${X.kind==='home'?'a chest in':'the strongbox at'} ${X.house.name}.`);
