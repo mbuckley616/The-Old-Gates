@@ -1313,7 +1313,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
-function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null};}
+function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,play:rig.play||null};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1339,7 +1339,7 @@ function pwSit(t,o){const p=pwZero(),S=o.sit||{},br=Math.sin(t*1.3),c=S.c||0,lk=
   p.hipsY=PW.L2+PW.FOOT+PW.HIPJ;return p;}
 function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);for(const m in w)w[m]+=((m===mode?1:0)-w[m])*k;
   const out=pwZero();let tot=0;
-  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):m==='sleep'?pwSleep(t,o):m==='sit'?pwSit(t,o):pwIdle(t,o);
+  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):m==='sleep'?pwSleep(t,o):m==='sit'?pwSit(t,o):m==='play'?pwPlay(t,o,ph):pwIdle(t,o);
     PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
   if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}return out;}
 function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
@@ -1589,6 +1589,7 @@ function tickPeople(dt,now){
     if(rig.g.gargoyle&&rig.e&&rig.e.dormant)mode='crouch'; // S210 — a sleeping gargoyle is a statue
     if(rig.sleep)mode='sleep'; // S752 — asleep in bed (personLie)
     if(rig.sit)mode='sit'; // S2197 — on a bench (the ring's watchers, ringCrowdTick)
+    if(rig.play)mode='play'; /* S2206 — a child at a game (kidsTick) */
     if(rig.g.ghoul&&mode==='run')mode='walk'; // S534 — a ghoul never runs: a fast hobble on its limp
     if(rig.g.wraith){mode='idle';root.position.y=(.24+.05*Math.sin(now*.0021+rig.g.phase))*SCALE.ROOM_K;} // a wraith takes no steps: it glides, a little off the ground (S905, F2a: as high against its taller body as before)
     const t=now/1000*rig.g.tempo+rig.g.phase;
@@ -1605,6 +1606,7 @@ function tickPeople(dt,now){
   if(HB_TINTQ.length)hbTintDrain(4); // S1468 — the named foes' drivers take their genome's colours, a few a frame
   if(HB_RIGS.size)hbTick(now); // S1195 (F4) — the builder's bodies follow their drivers
   if(RING_CROWD.on)ringCrowdTick(now); /* S2197 — the ring's watchers */
+  if(KIDS.on)kidsTick(now,dt); /* S2206 — children at play in the towns by day */
   if(PEOPLE_HIQ.length)personHiDrain(); // S1487 — a foe's near copy, once its driver is seen near without a builder's body over it
 }
 // ═══ THE RING'S WATCHERS (S2197; arenas L, Michael's B on #914, owed since S1662) ════════════════════════════════════════════
@@ -1648,6 +1650,190 @@ function ringCrowdTick(now){const C=RING_CROWD;if(!C.on||typeof WORLD==='undefin
   if(!C.hp||hp[0]<C.hp[0]-.99||hp[1]<C.hp[1]-.99||hp[0]>C.hp[0]||hp[1]>C.hp[1])C.hp=hp;
   for(const g of C.list){const S=g.userData.rig.sit;let d=Math.atan2(lx-g.position.x,lz-g.position.z)-g.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));
     S.look+=(Math.max(-1,Math.min(1,d))-S.look)*.08;const u=(now-S.at)/1100;S.c=u>0&&u<1?Math.sin(u*Math.PI):0;}}
+// ═══ CHILDREN AT PLAY (S2206; Michael's B on #1445: "at play, by island"; backlog L9, OG-116) ═══════════════════════════════
+// The concept artist's kids.js (docs/prototypes/levelup/kids.js, S1111) in the game. By day (KIDS.from to KIDS.to, the clock's hours) a
+// town or village you are within KIDS.far of has two to four children out at its island's games near its square: the Gatelands' hoop
+// driven with a hazel stick, a ball thrown between two, a rag doll held; the Mark's play fight with ash swords and quartered shields;
+// Aurenne's kite on its line, knucklebones on the ground between two, a terracotta horse pulled on a string. At dusk they are indoors
+// (gone), and they go at once when you leave or go in. Who plays what, and where, is seeded by the town and the day; a child is always
+// the same child (keyed `kid:<site>:<i>`, so the builder's genome, a child's, 11 to 15, is rolled once). Nobody in it talks, is a
+// witness or is saved: bodies and toys only, as the ring's watchers. The pose is the driver's (pwPlay, a mode in pwBlend like the sit),
+// so the builder's body takes it through hbPose; what a hand holds rides the builder's palm (kidPalm), and goes with the body past
+// HBODY.mid, where only the driver's distant copy stands. The toys are kids.js's, in metres.
+const KIDS={on:true,from:9,to:18,far:80,list:[],key:null,site:null,mats:{}};
+const KID_GAMES={gatelands:[['hoop'],['ball','ball'],['doll']],mark:[['spar','spar'],['spar','spar']],aurenne:[['kite'],['bones','bones'],['horse']]};
+// the clear ground a game wants round its middle (m)
+const KID_ROOM={hoop:4.6,ball:3.4,doll:1.2,spar:1.8,kite:2,bones:1.6,horse:3.4};
+const KID_PEOPLE={gatelands:'gatelander',mark:'markman',aurenne:'aurennais'};
+function kidMat(k,col,o){const M=KIDS.mats;if(M[k])return M[k];o=o||{};let map=null;
+  if(o.draw){const c=document.createElement('canvas');c.width=o.w||64;c.height=o.h||64;o.draw(c.getContext('2d'),c.width,c.height);map=new THREE.CanvasTexture(c);if(!THREE_LEGACY)map.colorSpace=THREE.SRGBColorSpace;}
+  return M[k]=new THREE.MeshStandardMaterial({color:map?0xffffff:col,map,roughness:o.rough!=null?o.rough:.75,metalness:o.metal||0,side:o.side||THREE.FrontSide});}
+function kidMesh(geo,m,x,y,z,rx,ry,rz){const o=new THREE.Mesh(geo,m);o.position.set(x||0,y||0,z||0);if(rx||ry||rz)o.rotation.set(rx||0,ry||0,rz||0);o.castShadow=true;return o;}
+function kidRod(g,a,b,r,m,seg,r2){const d=b.clone().sub(a),L=d.length(),geo=new THREE.CylinderGeometry(r2!=null?r2:r,r,L,seg||6,1);geo.translate(0,L/2,0);
+  const o=kidMesh(geo,m,a.x,a.y,a.z);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());g.add(o);return o;}
+// the toys, each in its own frame in metres (kids.js's TOYS, the same sizes)
+const KID_TOYS={
+  // an ash hoop 0.6 m across in its XY plane, the centre at the origin
+  hoop:()=>{const g=new THREE.Group();g.add(kidMesh(new THREE.TorusGeometry(.3,.011,6,40),kidMat('ash',0xb89466)));return g;},
+  // the hazel stick, its grip at the origin, along +y; scaled to the reach each frame
+  stick:()=>{const g=new THREE.Group(),V=THREE.Vector3;kidRod(g,new V(),new V(0,.22,0),.009,kidMat('hazelP',0x9a7650),6);kidRod(g,new V(0,.22,0),new V(0,1,0),.009,kidMat('hazel',0x6c5238),6,.006);return g;},
+  // a stitched leather ball, 0.16 m
+  ball:()=>{const g=new THREE.Group();g.add(kidMesh(new THREE.SphereGeometry(.08,14,10),kidMat('ball',0,{w:128,h:64,rough:.8,draw:(x,w,h)=>{x.fillStyle='#8a5a34';x.fillRect(0,0,w,h);x.strokeStyle='#3a2414';x.lineWidth=2;x.setLineDash([4,3]);for(let i=0;i<4;i++){x.beginPath();x.moveTo(i*w/4,0);x.lineTo(i*w/4,h);x.stroke();}x.beginPath();x.moveTo(0,h/2);x.lineTo(w,h/2);x.stroke();}})));return g;},
+  // a rag doll 0.3 m: a linen head with a stitched face, wool hair, a dyed dress; its middle at the origin, facing +z
+  doll:()=>{const g=new THREE.Group(),V=THREE.Vector3,lin=kidMat('linen',0xe0d0b4,{rough:.9}),dress=kidMat('dollDress',0x9e3428,{rough:.95});
+    g.add(kidMesh(new THREE.SphereGeometry(.045,12,9),kidMat('dollFace',0,{rough:.9,draw:(x,w,h)=>{x.fillStyle='#e2d6bc';x.fillRect(0,0,w,h);x.fillStyle='#2a2018';x.fillRect(20,26,5,5);x.fillRect(39,26,5,5);x.strokeStyle='#8a3a2a';x.lineWidth=2;x.beginPath();x.arc(32,36,7,.3,Math.PI-.3);x.stroke();}}),0,.11,0,0,-Math.PI/2,0));
+    g.add(kidMesh(new THREE.SphereGeometry(.048,10,6,0,Math.PI*2,0,1.4),kidMat('dollHair',0x8c5628,{rough:1}),0,.113,-.004));
+    g.add(kidMesh(new THREE.ConeGeometry(.062,.15,10,1,true),dress,0,-.015,0));g.add(kidMesh(new THREE.CylinderGeometry(.03,.036,.07,8),dress,0,.045,0));
+    for(const s of [-1,1]){kidRod(g,new V(s*.03,.065,0),new V(s*.075,0,.02),.012,lin,5);kidRod(g,new V(s*.022,-.08,0),new V(s*.028,-.15,.01),.013,lin,5);}return g;},
+  // a child's sword of ash, 0.56 m; the grip's middle at the origin, the blade up +y
+  sword:()=>{const g=new THREE.Group(),w=kidMat('ashS',0xb4906a),sh=new THREE.Shape();sh.moveTo(-.022,0);sh.lineTo(.022,0);sh.lineTo(.02,.36);sh.lineTo(0,.41);sh.lineTo(-.02,.36);sh.closePath();
+    const blade=new THREE.ExtrudeGeometry(sh,{depth:.01,bevelEnabled:true,bevelThickness:.003,bevelSize:.004,bevelSegments:1});blade.translate(0,.07,-.005);g.add(kidMesh(blade,w));
+    g.add(kidMesh(new THREE.BoxGeometry(.13,.022,.03),w,0,.06,0));g.add(kidMesh(new THREE.CylinderGeometry(.014,.014,.1,8),kidMat('cord',0x5c3824,{rough:.9})));g.add(kidMesh(new THREE.SphereGeometry(.02,8,6),w,0,-.06,0));return g;},
+  // a round shield 0.36 m of limewood boards, quartered as the Mark paints its own, a black rim and an iron boss; the grip at the origin, the face to +z
+  shield:(blue)=>{const g=new THREE.Group(),cols=blue?['#2a5a8a','#e6d8b4']:['#a8382a','#e6d8b4'];
+    const face=kidMat('shield'+(blue?'B':'R'),0,{w:128,h:128,rough:.8,draw:(x,w,h)=>{for(let i=0;i<4;i++){x.fillStyle=cols[i%2];x.beginPath();x.moveTo(64,64);x.arc(64,64,64,i*Math.PI/2,(i+1)*Math.PI/2);x.fill();}x.strokeStyle='#1e1a16';x.lineWidth=8;x.beginPath();x.arc(64,64,60,0,7);x.stroke();}});
+    const disc=new THREE.CylinderGeometry(.18,.18,.012,28);disc.rotateX(Math.PI/2);const uv=disc.attributes.uv,P=disc.attributes.position;for(let i=0;i<P.count;i++)if(Math.abs(P.getZ(i))>.005)uv.setXY(i,P.getX(i)/.36+.5,P.getY(i)/.36+.5);
+    const bk=kidMat('board',0x5c4230,{rough:.9}),o=kidMesh(disc,[bk,face,bk],0,0,.03);g.add(o);
+    g.add(kidMesh(new THREE.SphereGeometry(.045,12,6,0,Math.PI*2,0,Math.PI/2),kidMat('boss',0x292624,{rough:.5,metal:.4}),0,0,.036,Math.PI/2,0,0));return g;},
+  // a kite of split cane and dyed linen, 0.66 by 0.95 m, an ochre sun on indigo, a tail of rag bows; the bridle's knot at the origin, the face to +z
+  kite:()=>{const g=new THREE.Group(),V=THREE.Vector3,cane=kidMat('cane',0xc6ac76),sh=new THREE.Shape();sh.moveTo(0,.5);sh.lineTo(.33,.14);sh.lineTo(0,-.45);sh.lineTo(-.33,.14);sh.closePath();
+    const geo=new THREE.ShapeGeometry(sh),uv=geo.attributes.uv,P=geo.attributes.position;for(let i=0;i<P.count;i++)uv.setXY(i,P.getX(i)/.66+.5,(P.getY(i)+.45)/.95);
+    g.add(kidMesh(geo,kidMat('kite',0,{w:128,h:128,rough:.85,side:THREE.DoubleSide,draw:(x,w,h)=>{x.fillStyle='#26407a';x.fillRect(0,0,w,h);x.fillStyle='#d8a238';x.beginPath();x.arc(64,75,22,0,7);x.fill();
+      for(let i=0;i<12;i++){const a=i*Math.PI/6;x.beginPath();x.moveTo(64+Math.cos(a)*25,75+Math.sin(a)*25);x.lineTo(64+Math.cos(a+.13)*37,75+Math.sin(a+.13)*37);x.lineTo(64+Math.cos(a+.26)*25,75+Math.sin(a+.26)*25);x.fill();}x.strokeStyle='#b8402a';x.lineWidth=5;x.strokeRect(3,3,w-6,h-6);}})));
+    kidRod(g,new V(0,-.45,-.006),new V(0,.5,-.006),.004,cane,4);kidRod(g,new V(-.33,.14,-.008),new V(.33,.14,-.008),.004,cane,4);
+    const bows=kidMat('bowW',0xd8c69a,{rough:.95,side:THREE.DoubleSide}),red=kidMat('bowR',0xb83424,{rough:.95,side:THREE.DoubleSide}),tail=new THREE.Group();tail.name='tail';g.add(tail);
+    for(let i=1;i<10;i++)tail.add(kidMesh(new THREE.PlaneGeometry(.07,.025),i%2?red:bows,0,-.45-i*.22,-.02-i*.04,0,0,Math.sin(i)*.4));return g;},
+  // five knucklebones, ivory and worn, 2.5 cm, scattered about the origin on the ground
+  bones:(seed)=>{const g=new THREE.Group(),m=kidMat('bone',0xe6dcbc,{rough:.55}),r=pRng(seed||1);
+    for(let i=0;i<5;i++){const geo=new THREE.DodecahedronGeometry(1,0);geo.scale(.0125,.008,.009);const a=r()*6.3,d=.03+r()*.16;g.add(kidMesh(geo,m,Math.cos(a)*d,.008,Math.sin(a)*d,r(),r()*6,r()*.5));}return g;},
+  bone1:()=>{const g=new THREE.Group(),geo=new THREE.DodecahedronGeometry(1,0);geo.scale(.0125,.008,.009);g.add(kidMesh(geo,kidMat('bone',0xe6dcbc,{rough:.55}),0,0,0,.6,.3,.2));return g;},
+  // a terracotta horse on four wheels, 0.2 m long; its nose to +z, the string's knot at its chest
+  horse:()=>{const g=new THREE.Group(),V=THREE.Vector3,clay=kidMat('clay',0xb8643a,{rough:.85}),wd=kidMat('wheel',0x806048);
+    const body=new THREE.CapsuleGeometry(.035,.1,4,10);body.rotateX(Math.PI/2);g.add(kidMesh(body,clay,0,.1,0));
+    kidRod(g,new V(0,.11,.06),new V(0,.17,.1),.022,clay,8,.018);const head=new THREE.CapsuleGeometry(.018,.045,3,8);head.rotateX(1.1);g.add(kidMesh(head,clay,0,.175,.125));
+    g.add(kidMesh(new THREE.BoxGeometry(.012,.05,.07),kidMat('mane',0x2a1a12,{rough:.9}),0,.17,.085,-.75,0,0));
+    for(const sx of [-1,1])for(const sz of [-1,1]){kidRod(g,new V(sx*.022,.1,sz*.05),new V(sx*.024,.035,sz*.05),.011,clay,6);const wh=new THREE.CylinderGeometry(.028,.028,.01,12);wh.rotateZ(Math.PI/2);g.add(kidMesh(wh,wd,sx*.04,.028,sz*.05));}return g;},
+};
+// a line through world points, as a thin line (the kite's line, the horse's string); its points are set each frame
+function kidLine(n){const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*3),3));
+  const l=new THREE.Line(geo,KIDS.mats.line||(KIDS.mats.line=new THREE.LineBasicMaterial({color:0xd8ccb0})));l.frustumCulled=false;return l;}
+function kidLineSet(l,pts){const a=l.geometry.attributes.position;for(let i=0;i<pts.length&&i<a.count;i++)a.setXYZ(i,pts[i].x,pts[i].y,pts[i].z);a.needsUpdate=true;}
+// S2206 — a child's game, the driver's pose (kids.js's play() poses the builder's bones by reach; in the game the driver is posed and
+// the builder copies it). o.play = {game, k: 0 or 1 of a pair, u: the game's own phase 0..1, set by kidsTick}. Moving games (the hoop at a
+// run, the horse at a walk) take the gait from the stride's phase ph and set the arms over it.
+function pwPlay(t,o,ph){const K=o.play||{},G=K.game,u=K.u||0,br=Math.sin(t*1.6);let p;
+  const ease=x=>x<=0?0:x>=1?1:x*x*(3-2*x),bump=(a,b,x)=>ease((x-a)/(b-a));
+  if(G==='hoop'){p=pwRun(ph,o);p.shR=[-.75,0,-.12];p.elR=[-.55,0,0];p.wrR=[.2,0,0];p.spine[0]+=.08;}
+  else if(G==='horse'){p=pwWalk(ph,o);p.shR=[.42,0,-.18];p.elR=[-.18,0,0];p.wrR=[0,0,0];p.neck[1]=-.55;p.head[1]=-.25;}
+  else{p=pwZero();p.hipsY=PW.HIPS;p.spine=[.02*br,0,0];p.shL=[0,0,.08];p.shR=[0,0,-.08];p.elL=[-.15,0,0];p.elR=[-.15,0,0];
+    if(G==='doll'){p.spine[0]+=.08;p.neck=[.3,0,0];p.head=[.15,0,0];p.shL=[-.5,0,.04];p.elL=[-1.15,0,0];p.shR=[-.42,0,-.04];p.elR=[-1.3,0,0];p.hips=[0,.06*Math.sin(t*.7),0];}
+    else if(G==='ball'){
+      // u on the child's own clock: 0 the release (its mate's comes at .5); the mate's ball lands in both hands at .8, raised from .62,
+      // and is drawn back over the shoulder through the wind-up to 1
+      const wind=bump(.8,.98,u),fol=u<.18?1-u/.18:0,cat=bump(.62,.74,u)*(1-bump(.8,.88,u));
+      p.thL=[-.3*wind,0,.05];p.knL=[.15,0,0];p.thR=[.22,0,-.05];p.knR=[.25,0,0];p.anR=[.1,0,0];p.spine=[.06-.12*wind+.12*fol,-.25*wind,0];p.neck=[-.12,0,0];
+      p.shR=[-(.3+2.3*wind+1.1*fol)*(1-cat)-1.35*cat,0,-.12-.2*wind];p.elR=[-(.2+1.3*wind)*(1-cat)-.35*cat,0,0];
+      p.shL=[-(.2+1.1*wind)*(1-cat)-1.35*cat,0,.12];p.elL=[-.3*(1-cat)-.35*cat,0,0];}
+    else if(G==='spar'){
+      // u: 0 to .3 a blow down at the other's shield, else the guard; the other's shield comes up for it
+      const s=Math.sin(Math.min(1,u/.3)*Math.PI),blk=K.blk||0;
+      p.thL=[-.38,0,.1];p.knL=[.42,0,0];p.anL=[-.04,0,0];p.thR=[.28,0,-.1];p.knR=[.38,0,0];p.anR=[-.66,0,0];p.hipsY=PW.HIPS-.035;
+      p.spine=[.1+.22*s,.25,0];p.neck=[-.08,-.2,0];p.head=[-.04,-.05,0];
+      p.shR=[-2.3+1.5*s,0,-.32+.1*s];p.elR=[-.95+.75*s,0,0];p.wrR=[.3*s,0,0];
+      p.shL=[-1.15-.35*blk,0,.32];p.elL=[-1.35+.2*blk,0,0];}
+    else if(G==='kite'){const tg=Math.sin(t*.9)*.5+Math.sin(t*2.3)*.2;
+      p.thL=[-.25,0,.06];p.knL=[.12,0,0];p.anL=[.13,0,0];p.thR=[.12,0,-.06];p.knR=[.14,0,0];p.anR=[-.26,0,0];
+      p.spine=[-.14+.04*tg,0,0];p.neck=[-.42,0,0];p.head=[-.32,0,0];p.shR=[-1.75-.12*tg,0,-.05];p.elR=[-.45,0,0];p.shL=[-1.5-.12*tg,0,.08];p.elL=[-.65,0,0];}
+    else if(G==='bones'){
+      // kneeling: k 0 tosses a bone up off the back of the hand and catches it (u), k 1 sweeps the rest up from the ground
+      p.thL=[-.12,0,.12];p.thR=[-.12,0,-.12];p.knL=[1.78,0,0];p.knR=[1.78,0,0];p.anL=[.62,0,0];p.anR=[.62,0,0];p.hipsY=PW.L1*Math.cos(.12)+.045+PW.HIPJ;
+      if(!K.k){const up=Math.sin(u*Math.PI*2);p.spine=[.36,0,0];p.neck=[.1,0,0];p.head=[.12-.25*Math.max(0,up),0,0];p.shR=[-1.05-.25*up,0,-.08];p.elR=[-.75+.2*up,0,0];p.wrR=[-.4*up,0,0];p.shL=[-.25,0,.1];p.elL=[-.5,0,0];}
+      else{const sw=Math.sin(u*Math.PI*2);p.spine=[.72,0,0];p.neck=[-.18,0,0];p.head=[.2,0,0];p.shR=[-.95+.2*sw,0,-.25+.15*sw];p.elR=[-.15,0,0];p.shL=[-.3,0,.12];p.elL=[-.6,0,0];}}}
+  return p;}
+// where a held thing sits: the builder's palm while its body is shown (fingers f, palm out n, the hand's breadth k index-ward),
+// or null past HBODY.mid (the distant copy has no hands to fill)
+const _kv=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3()];
+function kidPalm(rig,s){const H=rig.hb;if(!H||!H.P||H.L===2||!H.root.visible)return null;const by=H.P.byName,w=by['wrist.'+s],f3=by['finger3-1.'+s],f2=by['finger2-1.'+s],f5=by['finger5-1.'+s];if(!w||!f3||!f2||!f5)return null;
+  const W=_kv[0].setFromMatrixPosition(w.matrixWorld),F=_kv[1].setFromMatrixPosition(f3.matrixWorld).sub(W),len=F.length();F.normalize();
+  const Kd=_kv[2].setFromMatrixPosition(f2.matrixWorld).sub(_kv[3].setFromMatrixPosition(f5.matrixWorld)).normalize(),N=(s==='L'?F.clone().cross(Kd):Kd.clone().cross(F)).normalize();
+  return {p:W.clone().addScaledVector(F,len*.75).addScaledVector(N,.012),f:F.clone(),k:Kd.clone(),n:N};}
+// a toy placed in the world frame: at p, its own +y along Y, its +z toward Z
+function kidPlace(o,p,Y,Z){const y=Y.clone().normalize(),z=Z.clone().addScaledVector(y,-Z.dot(y)).normalize(),x=y.clone().cross(z);
+  o.matrixAutoUpdate=false;o.matrix.makeBasis(x,y,z).setPosition(p);o.matrixWorldNeedsUpdate=true;}
+function kidSpots(S,isle,r){const site=S.site,units=KID_GAMES[isle]||KID_GAMES.gatelands,idx=units.map((_,i)=>i);
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  const want=2+Math.floor(r()*3),out=[],taken=[];let n=0;
+  const clear=(x,z,R)=>{if(solidAt(x,z))return false;for(let a=0;a<8;a++){const A=a*Math.PI/4;for(const f of [.5,1])if(solidAt(x+Math.cos(A)*R*f,z+Math.sin(A)*R*f))return false;}
+    const h=groundY(x,z);for(let a=0;a<4;a++){const A=a*Math.PI/2;if(Math.abs(groundY(x+Math.cos(A)*R,z+Math.sin(A)*R)-h)>R*.18)return false;}return !(typeof SWIM_Y!=='undefined'&&h<=SWIM_Y);};
+  for(const ui of idx){const U=units[ui];if(n+U.length>want&&n>=2)continue;const R=KID_ROOM[U[0]];
+    for(let t=0;t<40;t++){const a=r()*Math.PI*2,d=4+r()*Math.max(6,Math.min(26,(site.pad||30)*.5)),x=site.x+Math.cos(a)*d,z=site.z+Math.sin(a)*d;
+      if(taken.some(q=>Math.hypot(q.x-x,q.z-z)<q.R+R+1.5))continue;if(!clear(x,z,R))continue;
+      taken.push({x,z,R});out.push({games:U,x,z,y:groundY(x,z),ry:r()*Math.PI*2,ui});n+=U.length;break;}
+    if(n>=want)break;}
+  return out;}
+function kidsDrop(){const C=KIDS;for(const k of C.list){if(k.g.parent)k.g.parent.remove(k.g);for(const o of k.toys)if(o.parent)o.parent.remove(o);}C.list=[];C.key=null;C.site=null;}
+function kidsFill(S,key){const C=KIDS,site=S.site;if(typeof scene==='undefined'||!scene)return 0;let isle='gatelands';
+  try{const c=cellOf(site.x,site.z),n=nationKeyOf(c[0],c[1]);if(KID_GAMES[n])isle=n;}catch(e){}
+  const r=pRng(pHash('kids|'+key)),spots=kidSpots(S,isle,r);let ci=0;
+  for(const U of spots){const pair=U.games.length===2,gap=U.games[0]==='ball'?5:U.games[0]==='spar'?1.5:U.games[0]==='bones'?.95:0,c=Math.cos(U.ry),s=Math.sin(U.ry),T=performance.now()/1000+r()*10;
+    U.games.forEach((G,k)=>{const i=ci++,pr=pRng(pHash(`kid:${site.id}:${i}`)),u=pr(),people=isle==='gatelands'&&u<.14?'oldblood':KID_PEOPLE[isle];
+      const g=buildNPCMesh({role:'Child',people},{nation:isle,key:`kid:${site.id}:${i}`}),rig=g.userData.rig;
+      for(const q in rig.w)rig.w[q]=0;rig.w.play=1;rig.play={game:G,k,u:0,blk:0};
+      const off=pair?(k?.5:-.5)*gap:0,x=U.x+s*off,z=U.z+c*off;g.position.set(x,groundY(x,z),z);g.rotation.y=pair&&k?U.ry+Math.PI:U.ry; /* a pair face each other along the line between them */scene.add(g);
+      const K={g,rig,G,k,U,T0:T,toys:[],i,dir:pr()<.5?1:-1,a0:pr()*Math.PI*2};
+      const add=(o)=>{o.matrixAutoUpdate=false;scene.add(o);K.toys.push(o);return o;};
+      if(G==='hoop'){K.hoop=add(KID_TOYS.hoop());K.stick=add(KID_TOYS.stick());}
+      else if(G==='ball'&&!k){K.ball=add(KID_TOYS.ball());}
+      else if(G==='doll')K.doll=add(KID_TOYS.doll());
+      else if(G==='spar'){K.sword=add(KID_TOYS.sword());K.shield=add(KID_TOYS.shield(k===1));}
+      else if(G==='kite'){K.kite=add(KID_TOYS.kite());K.line=add(kidLine(13));}
+      else if(G==='bones'&&!k){K.bones=add(KID_TOYS.bones(pHash(site.id)));K.bone=add(KID_TOYS.bone1());}
+      else if(G==='horse'){K.horse=add(KID_TOYS.horse());K.str=add(kidLine(2));}
+      if(pair)K.mate=k?C.list[C.list.length-1]:null;C.list.push(K);});
+    const L=C.list;if(pair){L[L.length-1].mate=L[L.length-2];L[L.length-2].mate=L[L.length-1];}}
+  C.key=key;C.site=S;return C.list.length;}
+function kidsTick(now,dt){const C=KIDS;if(!C.on||typeof WORLD==='undefined'||typeof SETTLE==='undefined'||typeof hbOn!=='function'||!hbOn())return;
+  const out=typeof activeZoneId!=='undefined'&&activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior());
+  const h=typeof gameHour==='function'?gameHour():12,day=h>=C.from&&h<C.to;
+  if(!out&&day&&(!C.site||Math.hypot(px-C.site.site.x,pz-C.site.site.z)>C.far+10)){let best=null,bd=C.far;
+    for(const S of SETTLE.values()){const k=S.site&&S.site.kind;if(k!=='village'&&k!=='town'&&k!=='city')continue;const d=Math.hypot(px-S.site.x,pz-S.site.z);if(d<bd){bd=d;best=S;}}
+    if(best){const key=`${best.site.id}:${typeof gameDayNow==='function'?gameDayNow():0}`;if(C.key!==key){kidsDrop();kidsFill(best,key);}}}
+  if(!C.list.length)return;
+  if(out||!day||!C.site||Math.hypot(px-C.site.site.x,pz-C.site.site.z)>C.far+10||C.list.some(k=>k.g.parent!==scene)){kidsDrop();return;}
+  const t=now/1000,V=THREE.Vector3,up=new V(0,1,0);
+  for(const K of C.list){const g=K.g,rig=K.rig,P=rig.play,U=K.U,fw=new V(Math.sin(g.rotation.y),0,Math.cos(g.rotation.y));
+    if(K.G==='hoop'||K.G==='horse'){const R=K.G==='hoop'?3.2:2.2,w=(K.G==='hoop'?2.3:.75)/R*K.dir,a=K.a0+w*(t-K.T0);
+      g.position.set(U.x+Math.cos(a)*R,0,U.z+Math.sin(a)*R);g.position.y=groundY(g.position.x,g.position.z);
+      const vx=-Math.sin(a)*K.dir,vz=Math.cos(a)*K.dir;g.rotation.y=Math.atan2(vx,vz);fw.set(vx,0,vz);
+      if(K.hoop){const b=a+.95/R*K.dir,hx=U.x+Math.cos(b)*R,hz=U.z+Math.sin(b)*R,hy=groundY(hx,hz)+.3,spin=(t-K.T0)*2.3/.3;
+        const ax=new V(Math.cos(b),0,Math.sin(b));K.hoop.matrix.makeBasis(up.clone().cross(ax),up,ax).multiply(new THREE.Matrix4().makeRotationZ(-spin*K.dir));
+        K.hoop.matrix.setPosition(hx,hy,hz);K.hoop.matrixWorldNeedsUpdate=true;K.hoopAt=new V(hx,hy,hz).addScaledVector(new V(vx,0,vz),-.21).add(new V(0,.2,0));}
+      if(K.horse){const b=a-.95/R*K.dir,hx=U.x+Math.cos(b)*R,hz=U.z+Math.sin(b)*R;K.horseAt=new V(hx,groundY(hx,hz),hz);
+        kidPlace(K.horse,K.horseAt,up,new V(-Math.sin(b)*K.dir,0,Math.cos(b)*K.dir));}}
+    else g.position.y=groundY(g.position.x,g.position.z);
+    // the game's phase: a pair shares one clock, half a turn apart (a ball goes there and back; blows are traded)
+    const per=K.G==='ball'?3.4:K.G==='spar'?2.6:K.G==='bones'?2.2:1;P.u=(((t-K.T0)/per+(K.k?.5:0))%1+1)%1;
+    if(K.G==='spar'&&K.mate){const mu=(((t-K.T0)/per+(K.mate.k?.5:0))%1+1)%1;P.blk=mu<.32?Math.sin(Math.min(1,mu/.3)*Math.PI):0;}
+    g.updateMatrixWorld(true);
+    const pR=kidPalm(rig,'R'),pL=kidPalm(rig,'L'),shown=!!pR;
+    if(K.stick){K.stick.visible=shown;if(shown&&K.hoopAt){const d=K.hoopAt.clone().sub(pR.p),L=d.length()+.12;kidPlace(K.stick,pR.p.clone().addScaledVector(d,-.12/(L-.12)),d,fw);K.stick.matrix.scale(new V(1,L,1));}}
+    if(K.doll){const ch=g.position.clone().add(new V(0,(rig.g.height||1)*.78*SCALE.PERSON_MODEL*.92,0)).addScaledVector(fw,.17);if(pR&&pL)ch.copy(pR.p).lerp(pL.p,.5).add(new V(0,.05,0)).addScaledVector(fw,.03);kidPlace(K.doll,ch,new V(0,1,0).addScaledVector(fw,-.2),fw);}
+    if(K.sword){K.sword.visible=shown;if(shown)kidPlace(K.sword,pR.p,pR.k.clone().addScaledVector(up,.9),pR.n);}
+    if(K.shield){K.shield.visible=!!pL;if(pL)kidPlace(K.shield,pL.p.clone().addScaledVector(fw,.04),up,fw);}
+    if(K.kite){const tg=Math.sin(t*.9),kp=g.position.clone().addScaledVector(fw,16).add(new V(0,9+.8*tg,0)).add(new V(fw.z,0,-fw.x).multiplyScalar(1.4*Math.sin(t*.37)));
+      kidPlace(K.kite,kp,new V(0,1,0).addScaledVector(fw,-.4).add(new V(fw.z,0,-fw.x).multiplyScalar(.25*Math.sin(t*.6))),fw.clone().negate().add(new V(0,-.35,0)));
+      const a=pR?pR.p:g.position.clone().add(new V(0,1.3,0)).addScaledVector(fw,.35),pts=[];for(let i=0;i<=12;i++){const q=i/12;pts.push(a.clone().lerp(kp,q).add(new V(0,-1.1*4*q*(1-q),0)));}kidLineSet(K.line,pts);
+      const tl=K.kite.getObjectByName('tail');if(tl)tl.children.forEach((b,i)=>{b.position.x=Math.sin(t*2.1+i*.7)*.05*i/9;});}
+    if(K.horse&&K.horseAt){const a=pR?pR.p:g.position.clone().add(new V(0,.6,0));kidLineSet(K.str,[a,K.horseAt.clone().add(new V(0,.12,0)).addScaledVector(fw,.05)]);}
+    if(K.bones){const mid=K.mate?g.position.clone().lerp(K.mate.g.position,.5):g.position.clone().addScaledVector(fw,.45);mid.y=groundY(mid.x,mid.z);kidPlace(K.bones,mid,up,fw);
+      const up1=Math.max(0,Math.sin(P.u*Math.PI*2));K.bone.visible=shown;if(shown){const bp=pR.p.clone().add(new V(0,.04+.3*up1,0));kidPlace(K.bone,bp,up,fw);}}
+    if(K.ball){const A=K,B=K.mate;if(B){const u=P.u,hA=kidPalm(A.rig,'R'),hB=kidPalm(B.rig,'R'),cA=kidPalm(A.rig,'L'),cB=kidPalm(B.rig,'L');
+      // on the thrower's clock: in flight to B to .3, in B's hand to its release at .5, back in flight to .8, in A's hand to 1
+      const fwOf=k=>new V(Math.sin(k.g.rotation.y),0,Math.cos(k.g.rotation.y)),hand=(k,h)=>h?h.p.clone().addScaledVector(h.n,.07):k.g.position.clone().add(new V(0,1.15,0)).addScaledVector(fwOf(k),.3),
+        both=(k,h,c)=>h&&c?h.p.clone().lerp(c.p,.5).addScaledVector(fwOf(k),.07):hand(k,h),arc=(a,b,q)=>a.lerp(b,q).add(new V(0,1.1*4*q*(1-q),0));
+      const bp=u<.3?arc(hand(A,hA),both(B,hB,cB),u/.3):u<.5?(u<.34?both(B,hB,cB):hand(B,hB)):u<.8?arc(hand(B,hB),both(A,hA,cA),(u-.5)/.3):(u<.84?both(A,hA,cA):hand(A,hA));
+      kidPlace(K.ball,bp,up,fw);}}}
+}
 // ═══ THE BUILDER'S BODIES (v80 S1195, card F4) ═══════════════════════════════════════════════════════════════════════════
 // On the new look a townsperson wears the builder's body (docs/design/character-builder.md): MakeHuman's CC0 body morphed by
 // a genome, its 163-bone skeleton, the wardrobe and the hair cards, all from docs/prototypes/levelup/people.js, which the
@@ -1684,7 +1870,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,lantern:null,shield:null,crossbow:null});
   if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
-  if(/^ring:/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
+  if(/^(ring|kid):/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
   if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
   HB_GENOMES.set(g.hbKey,G);return G;}
 /* S1980 (L1, OG-001/OG-065; owed by Session 1977) — the role's staff. An elder or a hermit carries the driver's stick (personGenome's role),
