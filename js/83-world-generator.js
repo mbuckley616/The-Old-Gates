@@ -1377,7 +1377,7 @@ function genSettlement(site){
   // S1073 — a kit town's houses (one group for the town, S.kitLod) by the same rule, measured from the town's centre less half its
   // houses' reach: near the town the kit's houses, from outside it their far copy
   function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
-    for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod,S.cairnLod,S.whLod,S.thLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
+    for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod,S.cairnLod,S.whLod,S.thLod,S.archLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     if(S.racks&&S.racks.length)townRacksLive(S,cp); /* S2136 — shown near, and what hangs kept to worldState.racks */
     if(S.gardens&&S.gardens.length)townGardensLive(S,cp); /* S2165 — and your garden's beds kept to worldState.garden */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */

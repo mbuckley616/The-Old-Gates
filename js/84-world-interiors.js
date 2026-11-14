@@ -295,6 +295,7 @@
     for(let k=0;k<5;k++){const t=-len/2+2+r()*10;const bx=mx+sd.dx*t-sd.dz*(r()-.5)*(QW-2),bz=mz+sd.dz*t+sd.dx*(r()-.5)*(QW-2);
       if(r()<.5){const cr=new THREE.Mesh(SK.rbox(.9,.8,.9,.05,2),new THREE.MeshLambertMaterial({color:0x7a5a28}));cr.position.set(bx,QY+.5,bz);cr.rotation.y=r();group.add(cr);} // S250 — the town's rounded crate
       else{const net=new THREE.Mesh(netHeapGeo(k),SETTLE_MAT);net.position.set(bx,QY+.1,bz);group.add(net);}} // S250 — a heap of net with cork floats (it was a wireframe cone)
+    try{addDrownedArches(S,site,sd);}catch(e){console.warn('drowned arches',e);} /* S2200 — OG-125's causeway off a Gatelands port */
     // harbourmaster at the landward end of the quay
     const hx=startX+sd.dx*3-sd.dz*2,hz=startZ+sd.dz*3+sd.dx*2;
     const def=makeDef(site,S.reg,r,'Harbourmaster',pick(r,(NAMES[S.reg]||NAMES.irish).m),{x:hx,z:hz,bCol:0x2a3a5a,sCol:0xc09070,topics:[...ferryTopics(site),cargoTopic(site),{label:'What comes through here?',response:'Salt fish, timber, wool, and trouble. Mostly fish.'}]});
@@ -302,6 +303,29 @@
     const hn=spawnNPC(def,ang+Math.PI,true);hn.sched={type:'harbour',door:{x:hx,z:hz},plaza:{x:site.x,z:site.z}};S.npcs.push(hn); // v80 S235 — on the quay by day (was 'keeper': hidden 8–18 as if behind a counter)
   }
 
+  // S2200 — the drowned arches beside a Gatelands port (OG-125, card F11; undersea.js's drownedArches as PKIT.places.arches): one Gatelands
+  // port in two by its id keeps an old causeway running out parallel to its quay, on the side away from the breakwater and the berth, 22 to
+  // 30 m off the quay's line. It starts where the bed (placeH, keyed by place) first falls past 1.9 m under the sea with a bank behind it,
+  // and only where its whole 42 m and both its flanks stay between 1.6 and 9.5 m down and fall past 4.5 m somewhere, so the arches show.
+  // {x,z,ry,u,s0} (the landward end, its heading, its offset from the quay) or null. New look only.
+  const ARCHES_ODDS=.5;
+  function drownedArchesSpot(site,sd){
+    if(!sd||site.kind!=='port')return null;
+    let nk='gatelands';try{nk=nationKeyOf(...cellOf(site.x,site.z));}catch(e){}if(nk!=='gatelands')return null;
+    if(pHash(site.id+'|arches')%1000/1000>=ARCHES_ODDS)return null;
+    const q=quayLine(site,sd,1.1),p={x:-sd.dz,z:sd.dx},at=(u,s)=>[q.startX+sd.dx*s+p.x*u,q.startZ+sd.dz*s+p.z*u];
+    for(const u of [-22,-26,-30]){let s0=null;for(let s=-29;s<=40;s++){if(placeH(...at(u,s))<-1.9){s0=s;break;}}if(s0==null||placeH(...at(u,s0-4))<-1.6)continue;
+      let ok=true,deep=0;for(let t=1;t<=42&&ok;t+=2)for(const v of [-3,0,3]){const b=placeH(...at(u+v,s0+t));if(!(b<-1.6&&b>-9.5)){ok=false;break;}deep=Math.min(deep,b);}
+      if(!ok||deep>-4.5)continue;const [x,z]=at(u,s0-1);return {x,z,ry:Math.atan2(-sd.dx,-sd.dz),u,s0};}
+    return null;}
+  function addDrownedArches(S,site,sd){
+    if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.arches)return;
+    const D0=drownedArchesSpot(site,sd);if(!D0)return;const D={...D0},co=Math.cos(D.ry),s_=Math.sin(D.ry);
+    for(let k=0;k<8&&worldH(D.x-1.8*s_,D.z-1.8*co)-SEA_Y>-1.9;k++){D.x+=sd.dx;D.z+=sd.dz;D.slid=k+1;} /* the drawn bed (the port's stamp in it) can stand higher than the place-keyed one the spot was chosen by: slide out until the first pier's is under the deck */
+    let A=null;try{A=PKIT.places.arches({key:site.id+':arches',land:(lx,lz)=>worldH(D.x+lx*co+lz*s_,D.z-lx*s_+lz*co)-SEA_Y});}catch(e){console.warn('drowned arches',site.id,e);return;}
+    const G=new THREE.Group();G.name='drownedArches';G.userData.noBake=true;A.group.position.set(D.x,SEA_Y,D.z);A.group.rotation.y=D.ry;G.add(A.group);S.group.add(G);
+    const mid=-21,cx=D.x+mid*s_,cz=D.z+mid*co;
+    S.arches={...D,tris:A.tris,draws:A.draws,M:A,group:A.group};S.archLod={hi:G,lo:new THREE.Group(),x:cx,z:cz,r:30};}
   // S433 — a quay on a river bank (Michael's C on #112, the towns on the banks): a settlement within a short walk of
   // navigable water gets a stone quay along the bank on the harbour's kit, narrower (5 across, 20 long), its outer face
   // a little over the water; bollards on the water side, a boat or two moored to it, crates and a net on the land

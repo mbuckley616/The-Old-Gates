@@ -1,6 +1,7 @@
 // The wreck and the world's chests on the kit (Session 259, H.5): a sea-floor wreck is a hull broken in two, open ribs
 // on a keel with rotted planking, a stem, a snapped mast; the wreck's sea chest and the lairs' and bandit camps' hoards
-// are S198's kit chest at the old box's size, their lids opening on the hinge. Session 2170 adds the whale fall on the open bed.
+// are S198's kit chest at the old box's size, their lids opening on the hinge. Session 2170 adds the whale fall on the open bed, Session 2200
+// the drowned arches off the Gatelands' ports.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
@@ -52,5 +53,26 @@ if (wf.near) { const D = wf.near, key = `${D.cx},${D.cz}`;
   check(`the nearest is built with her chunk, on a bed ${w.bed} m down: ${w.tris} triangles in ${w.draws} draw (under 20k, one draw, vertex-coloured), ${w.len} m long`, !w.none && w.inScene && w.draws === 1 && w.tris < 20000 && w.colours && w.len > 18 && w.len < 21, w);
   check(`her vertebrae lie on the drawn bed, 5 to 12 cm into it (${w.sinkMin}..${w.sinkMax}); the cage's gap ${w.gap && w.gap.clear} m wide and ${w.gap && w.gap.high} m high`, w.sinkMin > -.12 && w.sinkMax < -.05 && w.gap && w.gap.clear > .9 && w.gap.high > 1.5, w);
   check('her chunk dropped takes her out of the scene, and loaded again takes the same bones back', w.gone && w.same, w); }
+// Session 2200 — the drowned arches (OG-125, card F11; PKIT.places.arches, undersea.js's drownedArches): one Gatelands port in two keeps an
+// old causeway out from the bank beside its quay, where the bed allows: the same ports when asked again, none off the Gatelands; the nearest
+// is built with its town, its piers footed under the drawn bed, its deck 1.75 m under the sea, clear of the quay and the berth
+const da = await page.evaluate(() => { const P = allPorts(), L = P.map(t => ({ id: t.id, nk: nationKeyOf(...cellOf(t.x, t.z)), d: drownedArchesSpot(t, shoreDir(t)) }));
+  const again = L.every(o => { const e = drownedArchesSpot(P.find(t => t.id === o.id), shoreDir(P.find(t => t.id === o.id))); return o.d ? e && e.x === o.d.x && e.z === o.d.z : !e; });
+  const gl = L.filter(o => o.nk === 'gatelands'), wl = L.filter(o => o.d).map(o => { const t = P.find(p => p.id === o.id); return { id: o.id, x: t.x, z: t.z, dist: Math.hypot(t.x - px, t.z - pz) }; }).sort((a, b) => a.dist - b.dist);
+  return { ports: gl.length, n: gl.filter(o => o.d).length, off: L.filter(o => o.d && o.nk !== 'gatelands').length, again, near: wl[0] }; });
+check(`${da.n} of ${da.ports} Gatelands ports keep drowned arches (3 to 18), none off the Gatelands, the same when asked again`, da.n >= 3 && da.n <= 18 && da.off === 0 && da.again, da);
+if (da.near) { await page.evaluate(t => WORLD.enter(t.x, t.z, 0, 'test'), da.near);
+  for (let k = 0; k < 40; k++) { await g.spin('clear', 30); if (await page.evaluate(id => { const S = WORLD.settlements.get(id); return !!(S && S.arches); }, da.near.id)) break; }
+  const a = await page.evaluate(id => { const S = WORLD.settlements.get(id); if (!S || !S.arches) return { none: true }; const A = S.arches, M = A.M, co = Math.cos(A.ry), s_ = Math.sin(A.ry), W = (u, v) => [A.x + u * co + v * s_, A.z - u * s_ + v * co];
+    const piers = M.arcade.bays.map(b => ({ z: b.z, foot: b.pier[0], top: b.pier[1], bed: +(worldH(...W(0, b.z)) - SEA_Y).toFixed(2) }));
+    const deck = M.arcade.bays.filter(b => b.whole).map(b => +(worldH(...W(0, b.z)) - SEA_Y).toFixed(2));
+    const t = WORLD.SITE[id] || allPorts().find(p => p.id === id), sd = shoreDir(t), plat = ZONES.world.platforms.find(p => p.site === id), berth = plat && quayBerth(plat, sd);
+    const pts = []; for (let v = M.arcade.z0 + 1; v >= M.arcade.z1; v -= 1) for (const u of [-1.3, 1.3]) pts.push(W(u, v));
+    const inPlat = plat ? pts.filter(([x, z]) => x > plat.x0 - 3 && x < plat.x1 + 3 && z > plat.z0 - 3 && z < plat.z1 + 3).length : -1, toBerth = berth ? +Math.min(...pts.map(([x, z]) => Math.hypot(x - berth.x, z - berth.z))).toFixed(1) : -1;
+    return { tris: A.tris, draws: A.draws, inScene: !!(A.group.parent && A.group.parent.parent), lod: !!S.archLod, piers, deck, standing: piers.filter(p => p.top - p.bed > 1).length, deckY: M.arcade.deck, inPlat, toBerth }; }, da.near.id);
+  console.log(JSON.stringify(a));
+  check(`the nearest (${da.near.id}) is built with its town: ${a.tris} triangles in ${a.draws} draws (under 12k, four draws)`, !a.none && a.inScene && a.lod && a.tris < 12000 && a.draws === 4, a);
+  check(`every pier is footed under the drawn bed beside it, ${a.standing} stand a metre or more clear of it, the deck ${a.deckY} m under the sea over the whole bays`, !a.none && a.piers.every(p => p.foot < p.bed - .3) && a.standing >= 3 && a.deckY < -1.5 && a.deck.every(b => b < a.deckY + .3), a);
+  check(`clear of the quay (${a.inPlat} points within 3 m of it) and of the berth (${a.toBerth} m)`, !a.none && a.inPlat === 0 && a.toBerth > 8, a); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
