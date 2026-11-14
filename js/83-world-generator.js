@@ -1863,12 +1863,12 @@ function genSettlement(site){
     if(cellPx>=520){ctx.font='italic 600 14px Georgia, serif';for(const c of cells){ctx.fillStyle='rgba(70,50,30,.55)';c.regions.forEach(r=>{const [x,y]=mapToScreen(r.x,r.z);ctx.fillText(r.name||r.id,x,y-14);});ctx.fillStyle='rgba(60,70,90,.6)';c.lakes.forEach(l=>{const [x,y]=mapToScreen(l.x,l.z);ctx.fillText(l.name,x,y+4);});ctx.fillStyle='rgba(60,50,40,.7)';c.peaks.forEach(p=>{const [x,y]=mapToScreen(p.x,p.z);ctx.fillText(p.name,x,y-10);});ctx.font='italic 600 20px Georgia, serif';ctx.fillStyle='rgba(70,50,30,.45)';const [nx,ny]=mapToScreen(c.ox+SIZE/2,c.oz+120);ctx.fillText(c.name||'',nx,ny);ctx.font='italic 600 14px Georgia, serif';}}
     // icons
     const entries=[];const isc=Math.max(.9,Math.min(2.2,cellPx/420))*(Math.min(cw,ch)/700);
-    if(cellPx>=60){for(const c of cells)for(const e of mapEntries(c)){if(e.kind==='quest')continue;if(!discovered(e.id))continue;if(cellPx<160&&!e.major)continue;if(!mapAllowed(e))continue;entries.push(e);}}
+    if(cellPx>=60){for(const c of cells)for(const e of mapEntries(c)){if(e.kind==='quest')continue;const _pen=!discovered(e.id)&&typeof glassSighted==='function'&&glassSighted(e.id); /* S2226 — sighted through the glass: pencilled */if(!discovered(e.id)&&!_pen)continue;if(cellPx<160&&!e.major&&!_pen)continue;if(!mapAllowed(e))continue;if(_pen)e.pencil=true;entries.push(e);}}
     MAP._entries=entries;
     for(const e of entries){const [sx,sy]=mapToScreen(e.x,e.z);ctx.save();ctx.translate(sx,sy);
       if(MAP.hover===e.id||MAP.sel===e.id){ctx.beginPath();ctx.arc(0,0,13*isc,0,Math.PI*2);ctx.fillStyle='rgba(255,230,160,.35)';ctx.fill();}
-      drawIcon(ctx,e.kind,isc,true);
-      if(cellPx>=260||e.kind==='city'||MAP.hover===e.id){ctx.font=`${Math.round(11*isc)}px Georgia, serif`;ctx.fillStyle='#2a1c10';ctx.strokeStyle='rgba(240,228,200,.8)';ctx.lineWidth=3;ctx.strokeText(e.name,0,14*isc+4);ctx.fillText(e.name,0,14*isc+4);}
+      if(e.pencil){ctx.globalAlpha=.42;ctx.filter='grayscale(1)';}drawIcon(ctx,e.kind,isc,true);if(e.pencil){ctx.filter='none';ctx.globalAlpha=1;}
+      if(cellPx>=260||e.kind==='city'||e.pencil||MAP.hover===e.id){ctx.font=`${e.pencil?'italic ':''}${Math.round(11*isc)}px Georgia, serif`;ctx.fillStyle=e.pencil?'#5a5048':'#2a1c10';ctx.strokeStyle='rgba(240,228,200,.8)';ctx.lineWidth=3;ctx.strokeText(e.name,0,14*isc+4);ctx.fillText(e.name,0,14*isc+4);}
       ctx.restore();}
     // S496 — your notes pinned to the map (DECISION #132, part C)
     MAP._notes=[];(worldState.mapNotes||[]).forEach((n,i)=>{if(!n)return;const [sx,sy]=mapToScreen(n.x,n.z);if(sx<-20||sy<-20||sx>cw+20||sy>ch+20)return;MAP._notes.push({i,sx,sy});const on=MAP.hover==='note:'+i||MAP.sel==='note:'+i;
@@ -2012,7 +2012,7 @@ function genSettlement(site){
     if(!e){const mk=mapMarksHtml();body.innerHTML=mk||'<div class="wm-placeholder">Scroll to zoom, drag to pan.<br><br>Hover a place to learn more; click a discovered place to travel there.<br><br>Places appear as you find them.</div>';if(mk)mapWireMarks(body);return;}
     const k=discovered(e.id);
     const tsite=(e.kind in BASE_P)?siteAnywhere(e.id):null;
-    body.innerHTML=`<div style="font:600 16px Georgia,serif;color:#e8d8a0">${e.name}</div><div style="color:#b8a880;font-size:12px;margin:4px 0 10px">${e.sub}${tsite?' · '+stateLine(tsite):''}</div>`+(k&&e.noTravel?`<div style="color:#8a7a60;font-size:12px">Found on foot; no road's end to travel to. ${Math.round(Math.hypot(e.x-px,e.z-pz))}u away</div>`:k?`<button type="button" id="w80-travel" style="padding:8px 12px;background:#3a2a16;color:#f0e2c0;border:1px solid #8a6a3a;border-radius:4px;cursor:pointer;font:14px Georgia,serif">Travel to ${e.name}</button><div style="color:#8a7a60;font-size:11px;margin-top:6px">${Math.round(Math.hypot(e.x-px,e.z-pz))}u away</div>`:'<div style="color:#8a7a60;font-size:12px">Not yet discovered.</div>');
+    body.innerHTML=`<div style="font:600 16px Georgia,serif;color:#e8d8a0">${e.name}</div><div style="color:#b8a880;font-size:12px;margin:4px 0 10px">${e.sub}${tsite?' · '+stateLine(tsite):''}</div>`+(k&&e.noTravel?`<div style="color:#8a7a60;font-size:12px">Found on foot; no road's end to travel to. ${Math.round(Math.hypot(e.x-px,e.z-pz))}u away</div>`:k?`<button type="button" id="w80-travel" style="padding:8px 12px;background:#3a2a16;color:#f0e2c0;border:1px solid #8a6a3a;border-radius:4px;cursor:pointer;font:14px Georgia,serif">Travel to ${e.name}</button><div style="color:#8a7a60;font-size:11px;margin-top:6px">${Math.round(Math.hypot(e.x-px,e.z-pz))}u away</div>`:(e.pencil?'<div style="color:#8a7a60;font-size:12px">Sighted through the glass. Walk there once to travel.</div>':'<div style="color:#8a7a60;font-size:12px">Not yet discovered.</div>'));
     const b=document.getElementById('w80-travel');if(b)b.onclick=()=>fastTravel(e.id);
   }
   function openMap(){
