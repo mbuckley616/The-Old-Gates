@@ -106,5 +106,14 @@ const crops = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'
   o.kept = bagCount(b => b.second === 'butter') === n0; o.bare = !L[1]; bagTake(b => b.second === 'butter', n0); homeUnfit(h, 'garden'); return o; }, pick.id);
 check(`a garden bed takes crops only (${crops.isle}: ${crops.secs && crops.secs.join(', ')}); butter is refused (“${crops.butter && crops.butter.why}”) and kept, curd refused`,
   crops.isle === 'gatelands' && crops.secs.join() === 'oats,apples' && !crops.butter.done && crops.kept && crops.bare && !crops.curd.done, crops);
+// S2220 (critic 14 Nov): a rare specimen is not offered for a bed (gardenPlant refuses it, S2160), and a bed just sown reads 5 d, not 4 d 24 h
+const spc = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id);
+  const r = homeFitRec(h); if (!r.fit.includes('garden')) r.fit.push('garden'); const L = gardenBeds(h); L[2] = null;
+  const it = specItem('whispercap'); bagAdd(it); const btn = (a, t) => `<b data-a="${a}">${t}</b>`;
+  const o = { name: it.name, rows: gardenRows(h, btn).includes('Plant ' + it.name), refused: !gardenPlant(h, 2, 'herb', it.name).done };
+  o.fresh = gardenLeft({ at: gameMinNow() - 0.1 }); o.hour = gardenLeft({ at: gameMinNow() - (GARDEN_DAYS * 1440 - 59.9) }); o.mid = gardenLeft({ at: gameMinNow() - 1500 }); o.days = GARDEN_DAYS;
+  bagTake(b => b.spec === 'whispercap', 1); L[2] = null; homeUnfit(h, 'garden'); return o; }, pick.id);
+check(`a specimen (${spc.name}) is not offered for a bed and is refused; a bed sown a moment ago reads “${spc.fresh} more”, a day on “${spc.mid}”, its last hour “${spc.hour}”`,
+  !spc.rows && spc.refused && spc.fresh === spc.days + ' d' && spc.hour === '1 h' && !/24 h/.test(spc.mid), spc);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

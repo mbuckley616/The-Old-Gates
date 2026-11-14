@@ -1338,9 +1338,9 @@ function gardenPlant(h,bi,what,v){if(!homeMine(h)||!homeFitted(h,'garden'))retur
 function gardenTake(h,bi){const L=gardenBeds(h),e=L[bi];if(!e)return {done:false,why:'The bed is bare.'};if(!gardenReady(e))return {done:false,why:'It is not ready.'};
   const it=e.k==='second'?secondItem(e.s,GARDEN_SECOND):{...e.item,qty:GARDEN_HERB};if(typeof canCarry==='function'&&!canCarry(it))return {done:false,why:'Too heavy to carry!'};
   bagAdd(it);L[bi]=null;skillUse(e.k==='second'?'cooking':'alchemy',1,'garden:'+h.id+':'+bi+':'+e.at);return {done:true,got:`${it.qty} ${it.name}`};}
-function gardenLeft(e){const m=Math.max(0,GARDEN_DAYS*1440-(gameMinNow()-e.at)),d=Math.floor(m/1440),hh=Math.ceil((m%1440)/60);return d?`${d} d ${hh} h`:`${hh} h`;}
+function gardenLeft(e){const m=Math.max(0,GARDEN_DAYS*1440-(gameMinNow()-e.at)),H=Math.ceil(m/60),d=Math.floor(H/24),hh=H%24; /* S2220 — the hours ceiled before the days are taken, so 7,199.9 minutes is 5 d, not 4 d 24 h */return d?(hh?`${d} d ${hh} h`:`${d} d`):`${hh} h`;}
 // the beds' rows on the house's page
-function gardenRows(h,btn){const L=gardenBeds(h),secs=gardenSeconds(h).filter(k=>bagCount(b=>b.second===k)>0),herbs=[...new Set(BAG.filter(b=>b&&b.type==='herb').map(b=>b.name))];
+function gardenRows(h,btn){const L=gardenBeds(h),secs=gardenSeconds(h).filter(k=>bagCount(b=>b.second===k)>0),herbs=[...new Set(BAG.filter(b=>b&&b.type==='herb'&&!b.spec).map(b=>b.name))]; /* S2220 — a rare specimen is not offered: gardenPlant refuses it (S2160) */
   let s='';L.forEach((e,bi)=>{s+=`<div style="padding-left:12px">Bed ${bi+1}: `;
     if(e){const nm=e.k==='second'?DISH_SECONDS[e.s].name:e.item.name;s+=`${nm} <i style="font-size:12px;color:#8a7050">${gardenReady(e)?'ready':gardenLeft(e)+' more'}</i> `+btn('bed:'+bi+':take','Gather',gardenReady(e));}
     else{s+='<i style="font-size:12px;color:#8a7050">bare</i> ';secs.forEach(k=>{s+=btn('bed:'+bi+':second',`Sow ${DISH_SECONDS[k].name.toLowerCase()}`,true).replace('data-a=',`data-v="${k}" data-a=`);});
