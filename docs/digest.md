@@ -591,3 +591,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing; main is green.
 
 **Roadmap.** 325 of 409 stories done (323 of 405 on 12 Nov). The new look is 7 of 18; only F14 is left for deep work.
+
+## 14 Nov 2026
+
+**Waiting on you.** Nothing: all five decisions are answered (#1504 B, #1511 B, #1518 A, #1522 B, #1540 B). No PR waits on your tap.
+
+**Landed on main since 13 Nov.** Your answers built: the pack, Kit tab, rod and net, and the pack on your back by island (#1504 B; Systems 2213–2215, Bodies 2217); rain covers your steps and the wind carries your arrows (#1511 B; Systems 2211, 2216); the Mark's town house on two floors (#1518 A; Look 2212); a beast's tell on its muzzle and jaw (#1522 B; Bodies 2210); children at play by island (#1445 B; Bodies 2206). The drowned places on the sea bed: arches, a sunken village, Aurenne's drowned quarter (Look 2201, 2203, 2208). Aurenne's watchtower, the smuggler's cove, the hunting cabin's door and bed, a wedding in the square (Look 2187–2205, Systems 2200). The ring's crowd, Aldwyn's seal and inkhorn, armed foes' tells on what they hold (Bodies 2191–2202). Law in three registers proposed; a Dunmore house playtested. QA kept the suites green and the budget flat (2193–2207). Build s1577.
+
+**Under way.** QA #1552 (tests only) lands on green. Next: the spyglass (systems), the rod's and net's casts (bodies), law in three registers (#1540 B, systems).
+
+**Blocked.** Nothing; main is green.
+
+**Roadmap.** 328 of 415 stories done (325 of 409 on 13 Nov). The new look is 7 of 18; only F14 is left for deep work.
