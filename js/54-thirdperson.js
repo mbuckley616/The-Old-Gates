@@ -37,7 +37,11 @@ function tpHex(s,def){if(typeof s==='number')return s;if(typeof s==='string'&&s[
 function tpMatColor(it,def){if(!it)return def;if(it.matCol!=null)return it.matCol;const name=(it.name||'').toLowerCase();for(const k in ICO_MAT){if((it.material||'').toLowerCase()===k||name.startsWith(k+' ')||name.includes(' '+k+' '))return tpHex(ICO_MAT[k],def);}
   if(/leather|hide|hood|cap\b|boots|breeches|gloves/.test(name))return 0x6a4a2e;if(/tunic|robe|cloth|shirt|trousers/.test(name))return 0x6a5a44;if(/iron|rusty/.test(name))return 0x8a8f98;if(/steel|plate|chain|mail/.test(name))return 0xb8bcc4;return def;}
 function tpIsCloth(it){if(!it)return true;const n=(it.name||'').toLowerCase();return /tunic|robe|cloth|breeches|trousers|shirt|hood|cap\b|leather|hide|worn|tattered|boots|gloves/.test(n)&&!/cuirass|plate|mail|helm|greaves|gauntlet|sabaton/.test(n);}
-function tpSig(){const L=lookNow();const k=(L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','weapon','offhand','amulet','ammo','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|');let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}return k+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype;}
+function tpSig(){const L=lookNow();const k=(L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','weapon','offhand','amulet','ammo','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|');let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}return k+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype+'#'+tpPackKind();}
+// S2217 — the pack in the bag (Michael's B on #1504, the systems builder's packItem), drawn on your back by island: the Gatelands' wicker
+// creel, the Mark's birch pack frame with its hide bundle, Aurenne's striped saddle-roll (people.js's D.backpack, buildBackpack)
+const TP_PACK={gatelands:{kind:'creel',col:[.92,.74,.48]},mark:{kind:'frame',col:[.42,.3,.2]},aurenne:{kind:'roll',col:[.55,.16,.1]}};
+function tpPackKind(){if(typeof BAG==='undefined')return '';const it=BAG.find(b=>b&&b.tool==='pack');return it?(TP_PACK[it.pack]?it.pack:'gatelands'):'';}
 function tpBox(w,h,d,col,parent,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color:col}));m.position.set(x||0,y||0,z||0);parent.add(m);return m;}
 function tpGroup(parent,x,y,z){const g=new THREE.Group();g.position.set(x||0,y||0,z||0);g.rotation.order='YXZ';parent.add(g);return g;}
 // ── weapons: built along +y from the grip (the hand's local "up" once the forearm is raised) ──
@@ -115,6 +119,7 @@ function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign(
   // S2109 — a robe's raised hood takes its tier's dressing (helms.js's hoodDress; OG-052's antlered and haloed hoods on the high robes):
   // Mithril's and Obsidian's a ring, Adamant's antlers, Draconic's crescent, Demonic's horns, Cosmic's halo; the low tiers' hoods stay plain
   if(Lh&&Lh.line==='robe'&&Lh.tier)D.tier=Lh.tier;
+  {const Pk=TP_PACK[o.pack];if(Pk){D.backpack=Pk.col;D.backpackKind=Pk.kind;}}
   const K=o.cloak;if(K){D.cloak=hbRGB(K.col);if(K.cut==='short'){D.cape=true;D.cloakLen=.6;}else D.cloakLen=.85;D.brooch=[.62,.47,.22];
     if(K.fur!=null)D.cloakFur=hbRGB(K.fur);if(K.trim!=null)D.cloakHem=hbRGB(K.trim);if(K.hood)D.hood=o.hd&&(tpIsCloth(o.hd)||Lh)?'up':'down';}
   return G;}
@@ -190,7 +195,7 @@ function tpBuild(lookIn,ppIn,reuse){
   const E=lookHBGenome(LK,pp,playerName,g.female);
   if(E){const K=EQ.back&&EQ.back.cloak?(TP_CLOAK[EQ.back.cloak]||TP_CLOAK.wool):null;
     rig.hbG=tpHBDress(E.G,{AR,ch,lg,ft,hd,gl,clothCol,legsCol,chestCol,bootCol,helmCol:hd?tpMatColor(hd,0x8a8f98):0x8a8f98,robe:!!(ch&&!ch.line&&/robe/i.test(ch.name||'')),
-      cloak:K?{col:EQ.back.col!=null?EQ.back.col:K.col,cut:K.cut,hood:!!K.hood,fur:K.fur,trim:K.trim}:null});
+      cloak:K?{col:EQ.back.col!=null?EQ.back.col:K.col,cut:K.cut,hood:!!K.hood,fur:K.fur,trim:K.trim}:null,pack:tpPackKind()});
     // F10, part two — a change of kit that leaves the dressed genome as it was (a weapon, a shield, a ring) keeps the builder's body
     // that was built for it: carried over from the body this one replaces (reuse, TP.rig) onto the new driver, not built again
     const key=JSON.stringify(rig.hbG),old=reuse&&reuse.rig&&reuse.rig.hb&&reuse.hbKey===key?reuse:null;R.hbKey=key;

@@ -2936,6 +2936,164 @@ function buildSatchel(G, body, byName, meshes, root) {
   const tris = lg.index.count / 3 + ig.index.count / 3 + idx.length / 3 + (mapsSt ? mapsSt.tris : 0);
   return { mesh: bag, stats: { turn: +a.toFixed(2), turns, lift: +lift.toFixed(2), lean: +lean.toFixed(3), armIn, inside, armInside, near: +near.toFixed(4), top: +(yTop - legL.y).toFixed(3), tris, maps: mapsSt, strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps: pts.length } } };
 }
+// ── the pack on the back (Session 2217, L8; OG-098's travel pack; Michael's B on #1504: "by island, in looks only") ──
+// Three packs, one by island, each carried high on the back by two shoulder straps. `backpack` is the main colour (the wicker, the
+// hide, the wool), `backpackKind` which:
+// - 'creel', the Gatelands' wicker creel: a basket 46 cm tall, 38 cm across its mouth and 30 at its foot, 23 cm deep at the mouth and
+//   17 at the foot, flat against the back and full in front, open at the top with a rolled rim and a linen bundle standing in it.
+//   Woven from willow, on the basket's own weave (wickerTex, Session 1033).
+// - 'frame', the Mark's pack frame: two birch poles 66 cm long, 32 cm apart, rising 4 cm over the nape, three crossbars and a shelf of
+//   two short poles at the foot. A bundle of hide (34 × 42 × 17 cm) stands on the shelf, lashed on with three turns of rope. The birch
+//   keeps its bark (birchTex: white, with dark lenticels across it and a darker knot here and there).
+// - 'roll', Aurenne's saddle-roll: a roll of striped wool 48 cm long and 19 across, carried across the shoulder blades, striped as a
+//   woven blanket is (a madder ground, cream and dark stripes toward each end, an ochre band at the middle), its ends showing the cloth
+//   wound on itself, tied with two leather straps.
+// Built in its own frame: x across (S), y up its back (U), z out of the back (N); its top edge at y 0, its back on z 0 (the roll's is
+// curved, backZ). It leans with the back as far as the back lets it: the upper half and the lower half each laid on their furthest point
+// within its outline, as the satchel is, and its back sits 5 mm outside whatever lies within that outline (the back, the hair, a cloak or a
+// hood lying down). The arms' own points are left out: the pack rides between them, and the test is that none is inside it.
+// Two straps of the belt's leather, 3 cm wide, leave its top and go over each shoulder, down the chest, under the arm and back to its
+// foot, laid along rays from inside the body as the guige is (4.5 mm over the furthest point within 3 cm of each ray, bridging hollows).
+// The pack and its straps are rigid, carried by the chest bone
+const BACKPACK = {
+  creel: { W: .38, Wb: .30, H: .46, T: .23, Tb: .17, top: -.05, anc: [[.11, -.035], [.12, -.42]] },
+  frame: { W: .36, Wb: .36, H: .66, T: .21, Tb: .21, top: .04, anc: [[.13, -.17], [.14, -.6]] },
+  roll: { W: .48, Wb: .48, H: .19, T: .19, Tb: .19, top: -.1, anc: [[.15, -.01], [.15, -.18]] },
+};
+function rollEndTex() {
+  if (FIT_TEX.rollEnd) return FIT_TEX.rollEnd;
+  const N = 128, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), h = N / 2;
+  x.fillStyle = '#d8d0c8'; x.fillRect(0, 0, N, N); x.strokeStyle = 'rgba(40,20,14,.8)'; x.lineWidth = 2.2; x.beginPath();
+  for (let a = 0; a < Math.PI * 2 * 6; a += .05) { const r = h * (.12 + .86 * a / (Math.PI * 2 * 6)), px = h + r * Math.cos(a), py = h + r * Math.sin(a); a ? x.lineTo(px, py) : x.moveTo(px, py); } x.stroke();
+  x.fillStyle = '#20140e'; x.beginPath(); x.arc(h, h, h * .1, 0, Math.PI * 2); x.fill();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return (FIT_TEX.rollEnd = t);
+}
+function birchTex() {
+  if (FIT_TEX.birch) return FIT_TEX.birch;
+  const N = 128, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'); let s = 7;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  x.fillStyle = '#e8e4da'; x.fillRect(0, 0, N, N);
+  for (let k = 0; k < 220; k++) { x.fillStyle = `rgba(150,140,120,${.15 + .2 * rnd()})`; x.fillRect(rnd() * N, rnd() * N, 2 + rnd() * 10, 1); }
+  // the lenticels: short dark dashes across the pole (u runs round it, v along it)
+  for (let k = 0; k < 70; k++) { x.fillStyle = `rgba(30,26,22,${.55 + .4 * rnd()})`; const w = 3 + rnd() * 16; x.fillRect(rnd() * N, rnd() * N, w, 1 + rnd() * 1.6); }
+  for (let k = 0; k < 4; k++) { x.fillStyle = 'rgba(25,22,18,.85)'; x.beginPath(); x.ellipse(rnd() * N, rnd() * N, 5 + rnd() * 6, 3 + rnd() * 3, 0, 0, Math.PI * 2); x.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; return (FIT_TEX.birch = t);
+}
+// geometries merged with their normals and uvs (mergeGeoms keeps positions only)
+function mergeUV(gs) { const pos = [], nor = [], uv = [], idx = []; let n = 0;
+  for (let g of gs) { if (!g.index) g.setIndex([...Array(g.attributes.position.count).keys()]); if (!g.attributes.normal) g.computeVertexNormals(); const p = g.attributes.position, q = g.attributes.normal, u = g.attributes.uv;
+    for (let i = 0; i < p.count; i++) { pos.push(p.getX(i), p.getY(i), p.getZ(i)); nor.push(q.getX(i), q.getY(i), q.getZ(i)); uv.push(u ? u.getX(i) : 0, u ? u.getY(i) : 0); } for (const i of g.index.array) idx.push(i + n); n += p.count; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); return g; }
+// a pole from a to b (in the pack's frame), r its radius, its uv along it
+function poleGeom(a, b, r, seg = 8) { const d = b.clone().sub(a), g = new THREE.CylinderGeometry(r, r, d.length(), seg, 1, false); g.translate(0, d.length() / 2, 0);
+  g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()))); g.translate(a.x, a.y, a.z);
+  const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i), uv.getY(i) * b.distanceTo(a) * 3); return g; }
+// the creel's body: a D in plan (flat to the back, full in front) lofted from its foot to its mouth; u round it, v up it
+function creelGeom(P) { const NU = 28, NV = 10, pos = [], uv = [], idx = [];
+  const sec = (t, w, d) => { const ph = t * Math.PI, c = Math.cos(ph), s = Math.sin(ph), e = .7; return [w / 2 * Math.sign(c) * Math.abs(c) ** e, d * Math.abs(s) ** e]; };
+  for (let j = 0; j <= NV; j++) { const f = j / NV, y = -P.H + f * P.H, w = P.Wb + (P.W - P.Wb) * f, d = P.Tb + (P.T - P.Tb) * f;
+    for (let i = 0; i <= NU; i++) { const t = i / NU; let px, pz; if (t <= .75) { [px, pz] = sec(t / .75, w, d); } else { const k = (t - .75) / .25; px = -w / 2 + w * k; pz = 0; } pos.push(px, y, pz + .004); uv.push(t * 4, f * P.H * 12.5); } }
+  for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const a = j * (NU + 1) + i, b = a + NU + 1; idx.push(a, a + 1, b, a + 1, b + 1, b); }
+  // the foot: a fan from its middle
+  const c0 = pos.length / 3; pos.push(0, -P.H, P.Tb * .45); uv.push(.5, .5); for (let i = 0; i < NU; i++) idx.push(c0, i + 1, i);
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return { g, rim: (t) => sec(t, P.W, P.T) }; }
+function backpackParts(D, P, kind) {
+  const V = THREE.Vector3, grp = new THREE.Group(), col = sRGB(...(Array.isArray(D.backpack) ? D.backpack : [.6, .45, .26])), add = (g, m, nm) => { const me = new THREE.Mesh(g, m); me.name = nm; me.castShadow = me.receiveShadow = true; me.userData.shield = true; grp.add(me); return me; };
+  const rope = new THREE.MeshStandardMaterial({ color: sRGB(.55, .47, .34), roughness: .95 });
+  const withBase = g => { g.setAttribute('aBase', g.attributes.position); return g; };
+  if (kind === 'creel') {
+    const { g, rim } = creelGeom(P), tex = wickerTex(), wm = new THREE.MeshStandardMaterial({ color: col, map: tex, bumpMap: tex, bumpScale: 1.4, roughness: .8, side: THREE.DoubleSide }); add(g, wm, 'packBody');
+    // the rim: a rod rolled round the mouth, and a second a third of the way down
+    for (const [f, r] of [[1, .011], [.36, .007]]) { const w = P.Wb + (P.W - P.Wb) * f, d = P.Tb + (P.T - P.Tb) * f, pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40; let px, pz; if (t <= .75) { const ph = t / .75 * Math.PI, c = Math.cos(ph), s = Math.sin(ph); px = w / 2 * Math.sign(c) * Math.abs(c) ** .7; pz = d * Math.abs(s) ** .7; } else { px = -w / 2 + w * (t - .75) / .25; pz = 0; } pts.push(new V(px, -P.H + f * P.H, pz + .004)); }
+      add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 60, r, 6, true), new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(.85), map: tex, roughness: .85 }), 'packRim'); }
+    // the linen bundle standing in its mouth
+    const b = new THREE.SphereGeometry(.1, 14, 10); b.scale(P.W * .42 / .1 * .9, .7, P.T * .42 / .1 * .85); b.translate(0, .005, P.T * .45); add(withBase(b), clothMat(sRGB(.78, .74, .64), 'linen'), 'packLinen');
+  } else if (kind === 'frame') {
+    const bm = new THREE.MeshStandardMaterial({ color: 0xffffff, map: birchTex(), roughness: .8 }), poles = [], up = [-1, 1].map(s => s * .16);
+    for (const x of up) poles.push(poleGeom(new V(x, -P.H, .016), new V(x * .94, 0, .02), .017));
+    for (const y of [-.04, -.33, -.6]) poles.push(poleGeom(new V(-.18, y, .02), new V(.18, y, .02), .012));
+    for (const x of up) poles.push(poleGeom(new V(x, -P.H + .015, .016), new V(x, -P.H + .045, .22), .013));
+    add(mergeUV(poles), bm, 'packFrame');
+    // the hide bundle on the shelf, lashed with three turns of rope round it and the frame
+    const BW = .34, BH = .42, BT = .17, bev = .035, s = new THREE.Shape(); { const x = BW / 2 - bev, y = BH / 2 - bev; s.moveTo(-x, -BH / 2); s.lineTo(x, -BH / 2); s.quadraticCurveTo(BW / 2, -BH / 2, BW / 2, -y); s.lineTo(BW / 2, y); s.quadraticCurveTo(BW / 2, BH / 2, x, BH / 2); s.lineTo(-x, BH / 2); s.quadraticCurveTo(-BW / 2, BH / 2, -BW / 2, y); s.lineTo(-BW / 2, -y); s.quadraticCurveTo(-BW / 2, -BH / 2, -x, -BH / 2); }
+    const bg = new THREE.ExtrudeGeometry(s, { depth: BT - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: bev * .6, bevelSegments: 3, curveSegments: 4 }); bg.translate(0, -P.H + .06 + BH / 2, .045 + bev);
+    { const p = bg.attributes.position; for (let i = 0; i < p.count; i++) { const zz = p.getZ(i) - .045, fx = 1 - (p.getX(i) / (BW / 2)) ** 2; p.setZ(i, p.getZ(i) + .025 * Math.max(0, fx) * zz / BT); } bg.computeVertexNormals(); }
+    add(withBase(bg), clothMat(col, 'leather', { rough: .8 }), 'packHide');
+    const turns = []; for (const y of [-P.H + .06 + BH * .2, -P.H + .06 + BH * .55, -P.H + .06 + BH * .88]) { const pts = [], hw = BW / 2 + .006, z0 = .005, z1 = .045 + BT + .02; for (const [px, pz] of [[-hw, z0], [hw, z0], [hw + .004, (z0 + z1) / 2], [hw * .9, z1], [0, z1 + .012], [-hw * .9, z1], [-hw - .004, (z0 + z1) / 2]]) pts.push(new V(px, y, pz)); turns.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 40, .005, 5, true)); }
+    add(mergeUV(turns), rope, 'packRope');
+  } else {
+    // the stripes as a woven blanket's, from each end inward: the madder ground, a cream, a dark, a cream, the ground, an ochre band at the middle
+    const r = P.H / 2, cream = sRGB(.84, .78, .64), dark = sRGB(.16, .1, .08), ochre = sRGB(.72, .5, .18), mats = { g: clothMat(col, 'wool'), c: clothMat(cream, 'wool'), d: clothMat(dark, 'wool'), o: clothMat(ochre, 'wool') };
+    const half = [['g', .05], ['c', .012], ['d', .014], ['c', .012], ['g', .08], ['o', .024]], bands = [...half, ...half.slice(0, -1).reverse()], tot = bands.reduce((a, [, w]) => a + w, 0), by = { g: [], c: [], d: [], o: [] };
+    let x0 = -P.W / 2; for (const [k, w] of bands) { const L = w / tot * P.W, g = new THREE.CylinderGeometry(r, r, L, 20, 1, true); g.rotateZ(Math.PI / 2); g.translate(x0 + L / 2, -r, r); by[k].push(g); x0 += L; }
+    for (const k in by) add(withBase(mergeGeoms(by[k])), mats[k], k === 'g' ? 'packRoll' : 'packRollStripe');
+    // its two ends: the cloth wound on itself (rollEndTex, a spiral of its edge round a dark core)
+    const em = new THREE.MeshStandardMaterial({ color: col, map: rollEndTex(), roughness: .95 });
+    for (const sx of [-1, 1]) { const e = new THREE.CircleGeometry(r, 20); e.rotateY(sx * Math.PI / 2); e.translate(sx * P.W / 2, -r, r); add(e, em, 'packRollEnd'); }
+    // the two straps that tie it, 2.2 cm of leather round it
+    const ties = []; for (const x of [-.15, .15]) { const t = new THREE.CylinderGeometry(r + .003, r + .003, .022, 28, 1, true); t.rotateZ(Math.PI / 2); t.translate(x, -r, r); ties.push(t); }
+    add(withBase(mergeGeoms(ties)), clothMat(sRGB(...(D.belt || [.3, .2, .13])), 'leather', { side: THREE.DoubleSide }), 'packTies');
+  }
+  return grp;
+}
+// the curved back of the roll: how far its back stands off the plane at height v (its top at 0)
+const backpackBackZ = (kind, P, v) => { if (kind !== 'roll') return 0; const r = P.H / 2, dy = v + r; return Math.abs(dy) >= r ? r : r - Math.sqrt(r * r - dy * dy); };
+// a strap laid along rays from inside the body (the guige's way): each ray's surface within 3 cm of it (8 cm for a rigid piece's points),
+// 4.5 mm over it, no dip narrower than 16 steps, pulled taut
+function rayStrap(clouds, guide) {
+  const rays = []; for (let k = 0; k < guide.length - 1; k++) for (let s = 0; s < 6; s++) { const t = s / 6; rays.push({ c: guide[k].c.clone().lerp(guide[k + 1].c, t), d: guide[k].d.clone().lerp(guide[k + 1].d, t).normalize() }); } rays.push(guide[guide.length - 1]);
+  for (const r of rays) { let far = 0; eachPoint(clouds, (x, y, z, i) => { const dx = x - r.c.x, dy = y - r.c.y, dz = z - r.c.z, dd = dx * r.d.x + dy * r.d.y + dz * r.d.z; if (dd <= 0 || dd > .45) return; if (Math.hypot(dx - r.d.x * dd, dy - r.d.y * dd, dz - r.d.z * dd) < (i < 0 ? .08 : .03) && dd > far) far = dd; }); r.far = far + .0045; }
+  { const f0 = rays.map(r => r.far); for (let k = 0; k < rays.length; k++) { let L = 0, Rr = 0; for (let j = 1; j <= 8; j++) { if (k - j >= 0) L = Math.max(L, f0[k - j]); if (k + j < rays.length) Rr = Math.max(Rr, f0[k + j]); } rays[k].far = Math.max(f0[k], Math.min(L, Rr) - .004); } }
+  for (let p = 0; p < 4; p++) for (let k = 1; k < rays.length - 1; k++) rays[k].far = Math.max(rays[k].far, (rays[k - 1].far + rays[k + 1].far) / 2 - .002);
+  return { pts: rays.map(r => r.c.clone().addScaledVector(r.d, r.far)), nrm: rays.map(r => r.d) };
+}
+function strapMesh(pts, nrm, W, mat, name) {
+  const pos = [], idx = []; for (let k = 0; k < pts.length; k++) { const t = pts[Math.min(k + 1, pts.length - 1)].clone().sub(pts[Math.max(k - 1, 0)]).normalize(), side = new THREE.Vector3().crossVectors(t, nrm[k]).normalize();
+    for (const s of [-1, 1]) { const p = pts[k].clone().addScaledVector(side, s * W); pos.push(p.x, p.y, p.z); } if (k) { const o = (k - 1) * 2; idx.push(o, o + 2, o + 1, o + 1, o + 2, o + 3); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); g.setAttribute('aBase', g.attributes.position);
+  const m = new THREE.Mesh(g, mat); m.name = name; m.castShadow = m.receiveShadow = true; m.userData.shield = true; return m;
+}
+function buildBackpack(G, body, byName, meshes, root) {
+  const D = G.dress, kind = BACKPACK[D.backpackKind] ? D.backpackKind : 'creel', P = BACKPACK[kind], R0 = PACK.rest, V = THREE.Vector3, CLEAR = .005, chest = byName['spine03'] || byName['spine04'];
+  const neck = new V().setFromMatrixPosition(byName['neck01'].matrixWorld), armAny = i => i >= 0 && Math.abs(R0[i * 3]) > .2 && R0[i * 3 + 1] < .6;
+  const clouds = wornClouds(body, meshes, root, true), C0 = new V(0, neck.y + P.top, neck.z);
+  const frame = lean => { const N = new V(0, Math.sin(lean), -Math.cos(lean)), U = new V(0, Math.cos(lean), Math.sin(lean)); return { S: new V().crossVectors(U, N), U, N }; };
+  const halfW = v => (P.Wb + (P.W - P.Wb) * (1 + v / P.H)) / 2;
+  // the furthest point within the outline, less the back's own curve there, in a band of its height (fr..to of it, from the top down)
+  const reach = (F, fr = 0, to = 1) => { let other = -1; eachPoint(clouds, (x, y, z, i) => { if (armAny(i)) return; const dx = x - C0.x, dy = y - C0.y, dz = z - C0.z, v = dx * F.U.x + dy * F.U.y + dz * F.U.z;
+    if (v > .008 || v < -P.H - .008 || -v < fr * P.H || -v > to * P.H) return; const u = dx * F.S.x + dy * F.S.y + dz * F.S.z; if (Math.abs(u) > halfW(Math.min(0, v)) + .008) return; const d = dx * F.N.x + dy * F.N.y + dz * F.N.z; if (d < -.3) return; other = Math.max(other, d - backpackBackZ(kind, P, Math.max(-P.H, Math.min(0, v)))); }); return other; };
+  const F0 = frame(0), lean = Math.max(0, Math.min(.3, Math.atan2(reach(F0, 0, .5) - reach(F0, .5, 1), P.H / 2))), F = frame(lean), back = reach(F) + CLEAR, C = C0.clone().addScaledVector(F.N, back);
+  const grp = backpackParts(D, P, kind); grp.name = 'backpack'; grp.userData.kind = kind; grp.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(F.S, F.U, F.N)); grp.position.copy(C); root.add(grp); root.updateMatrixWorld(true);
+  const inv = grp.matrixWorld.clone().invert(), v = new V();
+  // the promise: no point of the person or what they wear inside it (within its outline, between its back and 8 cm in), the arms counted apart
+  let inside = 0, armInside = 0, near = 1; eachPoint(clouds, (x, y, z, i) => { v.set(x, y, z).applyMatrix4(inv); if (v.y > 0 || v.y < -P.H || Math.abs(v.x) > halfW(v.y)) return; const bz = backpackBackZ(kind, P, v.y);
+    if (v.z > bz - .001 && v.z < bz + .08) { if (armAny(i)) armInside++; else inside++; } else if (v.z <= bz - .001 && !armAny(i)) near = Math.min(near, bz - v.z); });
+  // the straps: from the pack's top over each shoulder, down the chest, under the arm and back to its foot (the arms' skin left out, as
+  // under the guige; nothing over the neck's foot and 3 cm)
+  const strapClouds = wornClouds(body, meshes, root).filter(c => !(c.m && /^(backpack|pack)/.test(c.m.name))).map(c => c.ids ? { X: c.X, ids: c.ids.filter(i => !armAny(i) && c.X[i * 3 + 1] < neck.y + .06) } : { X: c.X.filter((_, k) => c.X[k - k % 3 + 1] < neck.y + .03), ids: null });
+  const anchor = (u, vv, s) => new V(s * u, vv, backpackBackZ(kind, P, vv) + .006).applyMatrix4(grp.matrixWorld);
+  const under = p => { const q = p.clone().applyMatrix4(inv); return q.y < .01 && q.y > -P.H - .01 && Math.abs(q.x) < halfW(Math.max(-P.H, Math.min(0, q.y))) + .01 && q.z < P.T && q.z > -.12; };
+  const lmat = clothMat(sRGB(...(D.belt || [.3, .2, .13])), 'leather', { side: THREE.DoubleSide }), straps = []; let through = 0, tested = 0, worst = 0, len = 0, steps = 0;
+  const sY = neck.y - .02, zc = neck.z + .02, armY = neck.y - .3;
+  for (const s of [-1, 1]) { const guide = [], add = (c, d) => guide.push({ c, d: d.normalize() }), sh = new V(s * .125, sY - .12, zc), top = anchor(P.anc[0][0], P.anc[0][1], s), bot = anchor(P.anc[1][0], P.anc[1][1], s);
+    for (let k = 0; k <= 5; k++) { const t = k / 5; add(new V(s * (.11 + .015 * t), Math.min(top.y, sY - .05) + (sY - .12 - Math.min(top.y, sY - .05)) * t, zc), new V(0, .45 * t, -1)); }
+    for (let k = 1; k <= 8; k++) { const ph = -1.25 + k / 8 * 2.5; add(sh.clone(), new V(0, Math.cos(ph), Math.sin(ph))); }
+    for (let k = 1; k <= 10; k++) { const t = k / 10; add(sh.clone().lerp(new V(s * .14, armY, zc), t), new V(s * .2 * t, .45 * (1 - t), 1)); }
+    for (let k = 1; k <= 10; k++) { const a = k / 10 * Math.PI; add(new V(s * .1, armY, zc), new V(s * Math.sin(a), 0, Math.cos(a))); }
+    for (let k = 1; k <= 4; k++) { const t = k / 4; add(new V(s * .1, armY + (bot.y - armY) * t, zc), new V(s * .2 * (1 - t), 0, -1)); }
+    let { pts, nrm } = rayStrap(strapClouds, guide);
+    // each end runs from where it would pass under the pack straight to its anchor
+    const trim = (Pp, Nn, e) => { let k = 0; while (k < Pp.length - 1 && under(Pp[k])) k++; const out = Pp.slice(k), on = Nn.slice(k), f = out[0], n = Math.max(1, Math.round(f.distanceTo(e) / .01)), pre = [], pn = []; for (let j = 0; j < n; j++) { pre.push(e.clone().lerp(f, j / n)); pn.push(on[0]); } return [pre.concat(out), pn.concat(on)]; };
+    [pts, nrm] = trim(pts, nrm, top); pts.reverse(); nrm.reverse(); [pts, nrm] = trim(pts, nrm, bot); pts.reverse(); nrm.reverse();
+    const m = strapMesh(pts, nrm, .015, lmat, 'packStrap'); straps.push(m);
+    for (let k = 0; k < pts.length; k++) { const d = nrm[k], t0 = pts[Math.min(k + 1, pts.length - 1)].clone().sub(pts[Math.max(k - 1, 0)]), t = t0.addScaledVector(d, -t0.dot(d)).normalize(), side = new V().crossVectors(t, d).normalize(), p0 = pts[k]; if (under(p0)) continue;
+      eachPoint(strapClouds, (x, y, z) => { const dx = x - p0.x, dy = y - p0.y, dz = z - p0.z; if (Math.abs(dx * t.x + dy * t.y + dz * t.z) > .006 || Math.abs(dx * side.x + dy * side.y + dz * side.z) > .015) return; const h = dx * d.x + dy * d.y + dz * d.z; if (h < -.03 || h > .03) return; tested++; if (h > -.001) { through++; worst = Math.max(worst, h); } }); }
+    for (let k = 1; k < pts.length; k++) len += pts[k].distanceTo(pts[k - 1]); steps += pts.length; }
+  for (const m of straps) root.add(m); root.updateMatrixWorld(true); chest.attach(grp); for (const m of straps) chest.attach(m);
+  let tris = 0; for (const o of [grp, ...straps]) o.traverse(m => { if (m.isMesh) tris += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; });
+  let draws = straps.length ? 1 : 0; grp.traverse(m => { if (m.isMesh) draws++; });
+  return { mesh: grp, stats: { kind, lean: +lean.toFixed(3), back: +back.toFixed(3), inside, armInside, near: +near.toFixed(4), tris, draws, top: +(C.y - neck.y).toFixed(3), strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps } } };
+}
 // the end of a rolled map (Session 2144): the sheet wound on itself, a spiral of its edge in faint ink round a dark hollow core
 function mapsTex() {
   if (FIT_TEX.maps) return FIT_TEX.maps;
@@ -4713,6 +4871,9 @@ function* makePersonSteps(G, o = {}) {
   // the satchel (Session 2113), over everything worn, before the shield
   yield;
   let satchelStats = null; if (D.satchel) satchelStats = buildSatchel(G, body, byName, meshes, root).stats;
+  // the pack on the back (Session 2217), over everything worn and the satchel's strap
+  yield;
+  let backpackStats = null; if (D.backpack) { root.updateMatrixWorld(true); backpackStats = buildBackpack(G, body, byName, meshes, root).stats; }
   // the round shield (Session 904), last: it is laid outside everything else, and lifts the left arm clear where it must. Under a
   // cloak, which hangs over the arm that holds it, or a shoulder cape, which stands 8 cm out over the board's top edge, it is slung on the back (Session 905)
   yield;
@@ -4756,7 +4917,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, astrolabe: astroStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -4779,7 +4940,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'book', 'penner', 'seal', 'astrolabe', 'maps'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');

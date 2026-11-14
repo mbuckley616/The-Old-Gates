@@ -139,6 +139,16 @@ const bow = await drive(() => { const out = {}; EQ.weapon = { name: 'Hunting Bow
 console.log('  bow draw:', JSON.stringify(bow));
 check('drawing a bow opens the right fist into the hook (the first fingers\' tips 2 cm further out), the little finger folded, and closes it after',
   bow.drawn.tip > bow.rest.tip + .02 && Math.abs(bow.drawn.pinky - bow.rest.pinky) < .002 && Math.abs(bow.after.tip - bow.rest.tip) < .002, bow);
+// the pack on the back by island (Session 2217; Michael's B on #1504): the Gatelands' wicker creel, the Mark's birch frame, Aurenne's
+// saddle-roll, built by people.js's buildBackpack on the chest bone with its two straps, 0 points of the body inside it; gone when sold
+const packs = await drive(() => { const out = {}, look = () => { const P = TP.rig.rig.hb && TP.rig.rig.hb.P, b = P && P.root.getObjectByName('backpack'); let straps = 0; if (P) P.root.traverse(o => { if (o.name === 'packStrap' && o.visible) straps++; });
+    return b ? { kind: b.userData.kind, bone: b.parent && b.parent.name, straps, inside: P.backpack && P.backpack.inside, arm: P.backpack && P.backpack.armInside, through: P.backpack && P.backpack.strap.worst } : null; };
+  EQ.back = null; EQ.head = null; EQ.weapon = null; EQ.offhand = null; const keep = BAG.slice(); BAG.length = 0;
+  for (const nk of ['gatelands', 'mark', 'aurenne']) { BAG.length = 0; BAG.push(packItem(nk)); for (let i = 0; i < 4; i++) step(); out[nk] = look(); }
+  BAG.length = 0; for (let i = 0; i < 4; i++) step(); out.none = look(); BAG.push(...keep); for (let i = 0; i < 4; i++) step(); return out; });
+console.log('  packs:', JSON.stringify(packs));
+check('a pack in the bag is on your back by island (creel, frame, saddle-roll) on the chest bone, two straps, nothing of you inside it or through them; none without one',
+  [['gatelands', 'creel'], ['mark', 'frame'], ['aurenne', 'roll']].every(([nk, k]) => { const p = packs[nk]; return p && p.kind === k && /^spine0[34]$/.test(p.bone) && p.straps === 2 && p.inside === 0 && p.arm === 0 && p.through <= 0; }) && packs.none === null, packs);
 check('in third person the new body bakes no middle level (it is baked when first person asks)', worn.mid === false, { mid: worn.mid });
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
@@ -156,6 +166,8 @@ if (process.env.F10_SHOTS) {
   await shot('f10-third-rest.png', .6, () => { swingT = 0; EQ.back = null; });
   await shot('f10-third-swing.png', .6, () => { swingT = ANIM_PARAMS.swing.normalDur * .62; _pendingStrike = null; });
   await shot('f10-cloak-back.png', Math.PI + .3, () => { swingT = 0; EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' }; });
+  for (const nk of ['gatelands', 'mark', 'aurenne']) await shot(`f10-pack-${nk}.png`, Math.PI + .7, new Function(`swingT = 0; EQ.back = null; for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].tool === 'pack') BAG.splice(i, 1); BAG.push(packItem('${nk}'));`));
+  await page.evaluate(() => { for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i] && BAG[i].tool === 'pack') BAG.splice(i, 1); });
   await shot('f10-third-helm-steel.png', .6, () => { EQ.back = null; EQ.head = { name: 'Steel Helm', slot: 'head', material: 'Steel', tier: 4 }; });
   await shot('f10-third-helm-draconic.png', .6, () => { EQ.head = { name: 'Draconic Helm', slot: 'head', material: 'Draconic', tier: 8 }; });
   // the chest by its family (Session 1260); shot()'s prep is sent as source, so each names its tier itself
