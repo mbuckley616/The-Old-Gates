@@ -75,5 +75,30 @@ await g.spin(null, 5);
 const mr = await page.evaluate(id => ({ bout: !!WORLD.bout, shut: !!worldState.crime[id].shut, bounty: worldState.crime[id].bounty }), id);
 console.log(mu, JSON.stringify(mr));
 check(`a blow after the yield is a guard's death: the gates shut (${mr.bounty})`, mu === 'yielded' && !mr.bout && mr.shut, mr);
+// S2229 (Michael's B on #1540, Aurenne's court): a fine booked in a town of Aurenne is on the Compact's one ledger for the island, so
+// another Aurenne town's guard halts you for it; it grows 10% a game-week, never past double; after the yield, prison, a night a 100
+// gold (1 to 3), the ledger cleared and the stolen goods taken.
+const auIds = await page.evaluate(() => { anchoredPlaces(); const S = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'aurenne').flatMap(c => c.sites); const T = S.filter(s => s.kind === 'town'); return T.slice(0, 2).map(s => s.id); });
+check(`two towns of Aurenne (${auIds})`, auIds.length === 2 && await g.settle(auIds[0]));
+const au_a = await page.evaluate(([A, B]) => { const S = WORLD.settle.get(A); forceTime(11);
+  worldState.crime = { dunmore: { bounty: 40, debt: 1, last: dayNow() } }; BAG.splice(0, BAG.length, ...BAG.filter(b => !b.stolen));
+  bookCrime(S.site, 'theft', 40); const L = fineRec(S); const town = worldState.crime[A].bounty;
+  const r = { town, ledger: L.bounty, atB: bountyAt(B), dun: bountyAt('dunmore'), nat: (nationRecord('aurenne') || {}).name, court: courtOf(S), debt: worldState.crime[A].debt };
+  const n = (S.npcs || []).find(x => x.def && x.def.role === 'Guard'); px = n.g.position.x + 2; pz = n.g.position.z; CR.cool = 0; tickCrime(1 / 60, 0);
+  r.halt = [...document.querySelectorAll('#dlg-choices > button')].map(b => b.textContent.trim()); try { closeDialog(); } catch (e) {}
+  const d0 = worldState.gameTimeAbsMinutes; const wk = []; for (let k = 1; k <= 12; k++) { worldState.gameTimeAbsMinutes = d0 + k * 7 * 1440; tickCrimeDay(); wk.push(fineRec(S).bounty); } r.wk = wk;
+  worldState.gameTimeAbsMinutes = d0 + 12 * 7 * 1440; worldState.gameTimeMinutes = 11 * 60;
+  return r; }, auIds);
+console.log(JSON.stringify(au_a));
+check(`a theft in ${auIds[0]} (90) is on the Compact's ledger, not the town's (${au_a.town}), and ${auIds[1]}'s guard would halt you for ${au_a.atB}; Dunmore's 40 its own`, au_a.court === 'aurenne' && au_a.town === 0 && au_a.ledger === 90 && au_a.atB === 90 && au_a.dun === 40 && au_a.debt === 2 && au_a.nat === "the Compact's ledger", au_a);
+check(`the guard halts you for the ledger: ${au_a.halt[0]}`, /Pay the fine \(90 gold\)/.test(au_a.halt[0]), au_a.halt);
+check(`10% a week, capped at double: ${au_a.wk.join(' → ')}`, au_a.wk[0] === 99 && au_a.wk[1] === 109 && au_a.wk[3] === 132 && au_a.wk[11] === 180 && au_a.wk[7] === 180, au_a.wk);
+const au_y = await page.evaluate(([A]) => { const S = WORLD.settle.get(A); const L = fineRec(S); L.bounty = 250; BAG.push({ name: 'A brass cup', type: 'misc', buyPrice: 10, qty: 1, stolen: true });
+  offerYield(S, L); const lbl = [...document.querySelectorAll('#dlg-choices > button')].map(b => b.textContent.trim()); try { closeDialog(); } catch (e) {}
+  const t0 = worldState.gameTimeAbsMinutes, h0 = worldState.gameTimeMinutes; toPrison(S, L); return { lbl, t0, h0 }; }, auIds);
+await page.waitForTimeout(3000);
+const au_p = await page.evaluate(([A, t0]) => ({ d: (worldState.gameTimeAbsMinutes - t0) / 60, h: worldState.gameTimeMinutes / 60, led: fineRecAt(A).bounty, cup: BAG.some(b => b.name === 'A brass cup'), nat: nationRecord('aurenne') }), [auIds[0], au_y.t0]);
+console.log(JSON.stringify(au_y), JSON.stringify(au_p));
+check(`the yield offers *${au_y.lbl.find(x => /Prison/.test(x))}*; taken, ${au_p.d.toFixed(1)} h pass to 7:00, the ledger is clear and the stolen cup taken`, au_y.lbl.some(x => /Prison \(3 nights\)\./.test(x)) && !au_y.lbl.some(x => /cells/.test(x)) && Math.abs(au_p.d - (20 + 48)) < 0.1 && Math.abs(au_p.h - 7) < .1 && au_p.led === 0 && !au_p.cup && !au_p.nat, au_p);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
