@@ -3,7 +3,7 @@
 // and an Ash Hound (its own plan since Session 1274) ahead of you in the open world: each wolf on the kit's skeleton, its genome rolled from its
 // foe id (`wolf:<id>`); its hips at its driver's height; three levels by distance (the hide and fur near, the hide and its ears, the driver
 // far); a run that moves the kit's bones with its paws by the driver's; the tell's glow on the kit's hide; and killed, a corpse
-// darkened with its shaders kept that falls with its driver. Pictures: docs/prototypes/f4/f4-wolves.jpg and f4-wolves-near.jpg.
+// darkened with its shaders kept that falls with its driver. Pictures: docs/prototypes/f4/f4-wolves.jpg, f4-wolves-near.jpg and (S2210) f4-wolves-tell.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
 const OUT = path.join(ROOT, 'docs', 'prototypes', 'f4'); fs.mkdirSync(OUT, { recursive: true });
@@ -69,11 +69,19 @@ const trot = await page.evaluate(() => { const f = _W[0], e = f.e, rig = f.rig, 
   return { moved: +moved.toFixed(3), worst: +worst.toFixed(3), hip: +wolfHipY(rig.k).toFixed(2), scale: +rig.root.scale.x.toFixed(2), w: Object.fromEntries(Object.entries(rig.w).map(([k, v]) => [k, +v.toFixed(2)])) }; });
 check(`a run turns the kit's bones (by ${trot.moved}) and its paws keep within ${trot.worst} m of the driver's`, trot.moved > .02 && trot.worst < .25, trot);
 
-// the tell's glow reaches the kit's hide, and goes out with it
-const glow = await page.evaluate(() => { const f = _W[0], rig = f.rig, mats = () => [...rig.hc.hide, ...rig.hc.fur].map(o => o.material);
-  const lit = () => mats().filter(m => m.emissive && m.emissive.getHex() !== 0).length;
-  telegraphPulse(f.e, 1); tickCreatures(1 / 60, 6e5); const on = lit(), all = mats().length; telegraphReset(f.e); tickCreatures(1 / 60, 6e5 + 17); return { on, all, off: lit() }; });
-check('the tell\'s glow lights the kit\'s hide and fur and goes out with it', glow.on > 0 && glow.on === glow.all && glow.off === 0, glow);
+// S2210 (Michael's B on #1522): at the tell's height a beast's hide and fur keep their own colours and its muzzle and jaw take the
+// colour (the mask's uniform, uTell), gold for a light blow and red for a heavy one, with a glare in the mouth; out with the tell
+const glow = await page.evaluate(() => { let t = 6e5; return _W.map(f => { const H = f.rig && f.rig.hc; if (!H) return { n: f.n, none: true };
+  const lit = () => [...H.hide, ...H.fur].map(o => o.material).filter(m => m.emissive && m.emissive.getHex() !== 0).length, J = H.jaw;
+  const now = () => ({ body: lit(), jaw: J ? J.u.value.toArray().map(x => +x.toFixed(2)) : null, glare: !!(J && J.glare.visible) });
+  const out = { n: f.n, share: J ? +J.share.toFixed(4) : 0, attr: [...H.hide, ...H.fur].filter(o => o.geometry.attributes.aTell).length, of: H.hide.length + H.fur.length };
+  f.e.telegraphMax = .9; for (const heavy of [false, true]) { f.e._heavy = heavy; telegraphPulse(f.e, 1); tickCreatures(1 / 60, t += 17); out[heavy ? 'heavy' : 'light'] = now(); }
+  telegraphReset(f.e); f.e._heavy = false; tickCreatures(1 / 60, t += 17); out.off = now(); return out; }); });
+console.log('  tell:', JSON.stringify(glow));
+const jawOk = x => !x.none && x.share > .004 && x.share < .08 && x.attr >= 1 && x.light.body === 0 && x.heavy.body === 0 && x.light.glare && x.heavy.glare
+  && x.light.jaw[0] > .3 && x.light.jaw[1] > .5 * x.light.jaw[0] && x.heavy.jaw[1] < .25 * x.heavy.jaw[0] && x.off.body === 0 && x.off.jaw[0] === 0 && !x.off.glare;
+check(`at the tell's height each beast's hide stays dark and its muzzle and jaw take the colour (${glow.map(x => x.n + ' ' + (x.share * 100).toFixed(1) + '%').join(', ')} of the hide; gold, then red); out with the tell`,
+  glow.every(jawOk), glow.filter(x => !jawOk(x)));
 
 // the pictures: the line from 7 m, then the wolf from 3 m
 await page.evaluate(() => { const a = _W[0].e, b = _W[3].e, mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = mx - fx * 7; pz = mz - fz * 7; pitch = -.12; });
@@ -82,6 +90,10 @@ await page.screenshot({ path: path.join(OUT, 'f4-wolves.jpg') });
 await page.evaluate(() => { const f = _W[1].e; const fx = -Math.sin(yaw), fz = -Math.cos(yaw); px = f.x - fx * 3; pz = f.z - fz * 3; pitch = -.2; });
 for (let i = 0; i < 6; i++) { await page.evaluate(() => tickCreatures(1 / 60, performance.now())); await g.frames(1); }
 await page.screenshot({ path: path.join(OUT, 'f4-wolves-near.jpg') });
+// S2210: the Snow Wolf at a heavy blow's tell from 3 m, its muzzle and jaw red (#1522 B)
+await page.evaluate(() => { const e = _W[1].e; e.telegraphMax = .9; e._heavy = true; telegraphPulse(e, 1); tickCreatures(1 / 60, performance.now()); });
+await g.frames(2); await page.screenshot({ path: path.join(OUT, 'f4-wolves-tell.jpg') });
+await page.evaluate(() => { const e = _W[1].e; telegraphReset(e); e._heavy = false; tickCreatures(1 / 60, performance.now()); });
 
 const dead = await page.evaluate(() => { const f = _W[2], rig = f.rig, before = []; rig.hc.W.traverse(o => { if (o.isMesh) before.push([o, o.material]); });
   f.e.hp = 0; killZoneEnemy(f.e, WORLD.scene, '');
