@@ -4589,6 +4589,41 @@ function joinerBench(o = {}) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, BM[k]); m.name = 'bench:' + k; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, foot: { x0: -L / 2, x1: L / 2, z0: 0, z1: D + .26 }, top: H, rack: o.rack !== false };
 }
+// ── the stocks (Session 2226; Michael's B on #1540, law-in-three-registers.md: the Gatelands' court puts you in the stocks on the plaza,
+// an hour for every 50 gold of the fine, 1 to 6; S2222 built the rule and asked the look builder for the piece). A parish's stocks of
+// weathered oak: a sill on the ground, two posts 0.95 m high with caps, and between them two boards meeting at 0.44 m, the lower fixed and
+// the upper hinged at its left end (an iron strap over the seam) and shut at its right by a hasp and padlock. The seam is cut into four
+// ankle holes, 0.11 by 0.16 m, two pairs for two sitters. Behind the boards, a plank bench at 0.42 m on two slab legs.
+//   PKIT.props.stocks({ key }) -> { group, tris, draws, holes (the four holes' middles, x along the boards at y 0.44, z 0), seat { z, y },
+//   box { w, d, h } } in its own frame: the boards along x centred on 0, the legs' side toward +z (the sitter faces +z from the bench at
+//   z -0.5), the ground at y = 0 (the sill sunk 0.06 into it). One mesh a material: the oak and the iron, two in all.
+let SKM = null;
+function parishStocks(o = {}) {
+  if (!SKM) SKM = { oak: mat('wood', { ns: 1.1, color: 0xc4bcae, rough: .95 }), seat: mat('wood', { ns: .9, color: 0xc8b89c, rough: .9 }), iron: new THREE.MeshStandardMaterial({ color: 0x2c2826, roughness: .6, metalness: .6 }) };
+  const rr = stream(String(o.key || 'stocks')), B = new Map(), box = (k, w, h, d, x, y, z, rx = 0, rz = 0) => { const g = new THREE.BoxGeometry(w, h, d).toNonIndexed(); if (rx) g.rotateX(rx); if (rz) g.rotateZ(rz); g.translate(x, y, z); if (!B.has(k)) B.set(k, []); B.get(k).push(g); };
+  const jit = a => (rr() - .5) * a;
+  // the sill, the posts and their caps
+  box('oak', 2.0, .14, .24, 0, .01, 0, 0, jit(.006));
+  for (const sx of [-1, 1]) { box('oak', .14, .95, .14, sx * .85, .475, 0, 0, jit(.012)); box('oak', .19, .045, .19, sx * .85, .97, 0); }
+  // the boards between the posts, their ends in the posts' grooves: the lower whole to 0.36, cut between the holes to the seam at 0.44;
+  // the upper cut from the seam to 0.52, whole to 0.66
+  const T = .07, X0 = -.82, X1 = .82, HW = .055, holes = [-.6, -.36, .36, .6];
+  box('oak', X1 - X0, .18, T, 0, .27, 0); box('oak', X1 - X0, .14, T, 0, .59, 0);
+  const cuts = [X0, ...holes.flatMap(h => [h - HW, h + HW]), X1];
+  for (let i = 0; i < cuts.length; i += 2) { const a = cuts[i], b = cuts[i + 1], m = (a + b) / 2; box('oak', b - a, .08, T, m, .40, 0); box('oak', b - a, .08, T, m, .48, 0); }
+  // the iron: the hinge's strap at the left end, both faces, and the hasp with its padlock at the right on the legs' face; a bolt head
+  // on each post where the sill's tenon is pinned
+  for (const f of [-1, 1]) box('iron', .2, .05, .012, -.71, .44, f * (T / 2 + .006));
+  box('iron', .045, .18, .014, .74, .45, T / 2 + .007); box('iron', .07, .08, .035, .74, .35, T / 2 + .03); box('iron', .04, .04, .012, .74, .405, T / 2 + .03);
+  for (const sx of [-1, 1]) for (const f of [-1, 1]) box('iron', .035, .035, .012, sx * .85, .08, f * .076);
+  // the bench behind: a plank on two slab legs, a little askew
+  const bz = -.5, tilt = jit(.03);
+  box('seat', 1.7, .06, .3, jit(.04), .42, bz, 0, tilt);
+  for (const sx of [-1, 1]) box('seat', .07, .39, .26, sx * .66, .195, bz);
+  const group = new THREE.Group(); group.name = 'stocks'; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); g.computeBoundingSphere(); const m = new THREE.Mesh(g, SKM[k]); m.name = 'stocks:' + k; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, holes: holes.map(x => ({ x, y: .44, z: 0 })), seat: { z: bz, y: .45 }, box: { w: 2.0, d: .9, h: .99 } };
+}
 // ── the clay oven and the kiln (Session 2147; Michael's B on #1420, resources-and-crafting.md's fittings: "a clay oven, 6 clay, laid by
 // hand (a cob oven)" and "a kiln, 10 clay"), the house's two fittings of clay, each to stand against a wall of your room.
 //   'oven'  a cob dome 0.84 m across on a plinth 0.72 m high, its mouth a dark arch at the front with the embers' glow at its back, a flue
@@ -10985,7 +11020,7 @@ function aurenneOrrery(hAt, o = {}) {
       const m = new THREE.Mesh(g, DQM[k]); m.name = 'quarter:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     return { group, tris: Math.round(tris), draws: group.children.length, bridge, theatre };
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
