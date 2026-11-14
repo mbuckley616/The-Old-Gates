@@ -1105,3 +1105,39 @@ Neither shows at any spot: Land and Other are the same calls as s1545 everywhere
 Bodies 139); High 2.64 M (+2%). **Portclare's square at noon, High, 2.06 M against 1.82 M at s1545 (+13%)** is the square's known swing,
 not a build's: Bodies 43 → 60 calls, one townsperson inside the full level's ring when High is counted. The same view has read 1.81–1.82 M
 (s1478, s1490, s1515, s1545) and 2.05–2.06 M (s1483, s1536, s1565), under High's 4 M either way. Every other row is within 4% of s1545.
+
+### s1582 — 2026-11-14 19:16 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 592 | 1.10 M | 0 | 0 | 121 | 127 | 253 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | Middle | 766 | 1.84 M | 155 | 6 | 122 | 127 | 265 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | High | 816 | 2.32 M | 187 | 6 | 122 | 127 | 283 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Low | 647 | 1.06 M | 0 | 0 | 119 | 183 | 253 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Middle | 832 | 1.78 M | 167 | 6 | 119 | 183 | 265 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | High | 892 | 2.32 M | 209 | 6 | 119 | 183 | 283 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| the field west of Dunmore, noon | Low | 558 | 648k | 0 | 0 | 121 | 113 | 281 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 666 | 1.07 M | 83 | 6 | 121 | 113 | 300 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 713 | 1.53 M | 122 | 6 | 121 | 113 | 308 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 641 | 633k | 0 | 0 | 124 | 192 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 809 | 1.12 M | 143 | 6 | 124 | 192 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 861 | 1.64 M | 187 | 6 | 124 | 192 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+
+### s1582 — 2026-11-14 19:24 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 363 | 688k | 0 | 0 | 32 | 64 | 192 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | Middle | 558 | 1.46 M | 157 | 6 | 48 | 64 | 208 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | High | 613 | 2.06 M | 192 | 6 | 57 | 64 | 219 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+s1582 (QA, Session 2231): `budget` and `budgetport` green, 1/1 each, after the day's six merges (the Gatelands' stocks S2226, the bench and
+garden fits S2222–2223, the rod's and net's casts S2224–2225, the spyglass S2221). No spot rose by more than 3% in calls or triangles. Houses
+is the only family that moved everywhere: +3 calls in Dunmore's street (124 → 127), +6 in the field (107 → 113, 186 → 192), which is the
+stocks and the fitted racks and gardens; Land and Other are the same calls as s1565 at every spot. Dunmore's street at noon, Middle, 1.84 M
+against 1.96 M (−6%) and High 2.32 M against 2.64 M (−12%) is the known swing the other way: Bodies 139 → 122 at Middle, nobody inside the
+full level's ring when it was counted. Portclare's square at High is 2.06 M again (Bodies 57). The inn (34 calls, 26k) and the gate (102 calls,
+397k) are unchanged to the triangle. A second run of `budget` an hour earlier, unrecorded, read the same within 1% (Dunmore noon Middle 1.97 M
+with a body near).
