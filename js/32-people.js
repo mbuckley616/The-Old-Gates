@@ -2366,7 +2366,7 @@ function hbHairOnCloak(P){const st=P.cloak&&P.cloak.hairOver;if(!st)return null;
 // S1224 — the builder's body as points in the world, for the bed (personLie): its middle level's vertices that a triangle uses (the whole
 // body baked, less the hair's cards and what a garment's cut discards), each skinned on the CPU by the posed bones
 function hbSkinPts(rig){const H=rig.hb,mid=hbMid(rig);if(!mid)return new Float32Array(0);const G=mid.geometry,pa=G.attributes.position,v=new THREE.Vector3();
-  if(!H.used){const u=new Uint8Array(pa.count),ix=G.index.array,hr=G.userData.hair||[];for(let i=0;i<ix.length;i++)u[ix[i]]=1;for(let k=0;k<hr.length;k+=2)u.fill(0,hr[k],hr[k+1]); /* S2231 — not the hair's ribbons */const a=[];for(let i=0;i<u.length;i++)if(u[i])a.push(i);H.used=Uint32Array.from(a);}
+  if(!H.used){const u=new Uint8Array(pa.count),ix=G.index.array,hr=G.userData.hair||[];for(let i=0;i<ix.length;i++)u[ix[i]]=1;for(let k=0;k<hr.length;k+=2)u.fill(0,hr[k],hr[k+1]); /* S2232 — not the hair's ribbons */const a=[];for(let i=0;i<u.length;i++)if(u[i])a.push(i);H.used=Uint32Array.from(a);}
   rig.root.updateMatrixWorld(true);const out=new Float32Array(H.used.length*3);
   for(let k=0;k<H.used.length;k++){v.fromBufferAttribute(pa,H.used[k]);mid.applyBoneTransform(H.used[k],v);out[k*3]=v.x;out[k*3+1]=v.y;out[k*3+2]=v.z;}
   return out;}
@@ -2614,7 +2614,7 @@ function hbCutFn(u){const c=u.cut;let h=null;
   const key=u.hole;return b=>{if(c&&(b.y<c[0]||b.y>c[1]||Math.abs(b.x)>(c[2]!=null?c[2]:9)))return true;if(!h)return false;
     try{return !!h(b);}catch(e){h=null;HB_HOLES.set(key,null);return false;}};}
 const HB_MID_MAT=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.88,metalness:0,side:THREE.DoubleSide});
-// S2231 — the hair in the middle level. The bake left the strand cards out (they are cut by their texture's alpha, which a vertex colour
+// S2232 — the hair in the middle level. The bake left the strand cards out (they are cut by their texture's alpha, which a vertex colour
 // cannot carry), so from 16 to 42 m a head of long hair was its scalp's shell, a beard was gone and every townsperson read cropped or bald.
 // Now each of the hair's, the beard's and the moustache's cards (strandCards in people.js: one run of point pairs a strand) gives the bake
 // every `str`-th strand through every `pts`-th of its points, root and tip kept, each pair spread `w` times about its middle so the fewer,

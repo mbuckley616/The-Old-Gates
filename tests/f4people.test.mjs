@@ -223,7 +223,7 @@ const mid = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb 
   const m = rig.hb.mid, t = (m.geometry.index.count / 3) | 0; let full = 0; for (const o of rig.hb.full) full += ((o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3) | 0;
   return { key: rig.g.hbKey, level: rig.hb.L, shown: shown.length, mid: shown[0] === m, skinned: m.isSkinnedMesh && m.skeleton === rig.hb.P.skeleton, tris: t, fullTris: full, ok: !!rig.hb.full.length }; });
 check('a body in the middle range is one mesh on its own skeleton, the whole body baked', mid.level === 1 && mid.shown === 1 && mid.mid && mid.skinned && mid.tris > 10000, mid);
-// S2231 — the middle level keeps the hair: a head of long hair bakes a few thousand opaque ribbons from its cards (it was the scalp's shell
+// S2232 — the middle level keeps the hair: a head of long hair bakes a few thousand opaque ribbons from its cards (it was the scalp's shell
 // alone, bald from 16 to 42 m), and a bed's fit (hbSkinPts) never reads them
 const midHair = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.hb && !r.foe && !r.hbLazy && r.root.parent === WORLD.scene && r.hb.full.some(o => o.name === 'hair' && o.geometry.index && (o.geometry.userData.hairIx && o.geometry.userData.hairIx[1] || o.geometry.index).count > 3e5));
   const rig = rs[0]; if (!rig) return { none: true }; const m = hbMid(rig); if (!m) return { fail: true }; const hr = m.geometry.userData.hair || [];
