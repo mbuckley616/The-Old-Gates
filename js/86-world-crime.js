@@ -505,7 +505,7 @@
     if(m.userData.asleep){if(sleeperNear())wakeSleeper(m,true);else if(!homeAsleepNow(currentHouse))wakeSleeper(m,false);}
     else if(!m.userData.woke&&homeAsleepNow(currentHouse))laySleeper(m);}
   // a seen crime's cost to its town: favour and debt by its points, the fine 25 a point and the goods' value (S1827: shared with piracy)
-  function bookCrime(site,kind,value){const pts=CRIME_PTS[kind]||1;addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const b0=c.bounty;const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();if(typeof lampCrime==='function')lampCrime(c,fst?Math.round(fee*.5):fee);if(kind==='lock')c.lockFine=(c.lockFine||0)+c.bounty-b0; /* S1795 — the part of the fine that is lock crimes, for Word given */ /* S550 — a feast day halves a petty crime's fine */ /* S168 — a theft's fine is 50 and the goods' value (the spec) */
+  function bookCrime(site,kind,value){const pts=CRIME_PTS[kind]||1;addFavor(site,-pts);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});const b0=c.bounty;const fee=25*pts+Math.max(0,Math.round(value||0)),fst=typeof feastOn==='function'&&feastOn(absMin());c.bounty+=fst?Math.round(fee*.5):fee;if(fst)c.feast=dayNow();c.debt+=pts;c.last=dayNow();delete c.claimLost; /* S2228 — a new wrong, a new claim */if(typeof lampCrime==='function')lampCrime(c,fst?Math.round(fee*.5):fee);if(kind==='lock')c.lockFine=(c.lockFine||0)+c.bounty-b0; /* S1795 — the part of the fine that is lock crimes, for Word given */ /* S550 — a feast day halves a petty crime's fine */ /* S168 — a theft's fine is 50 and the goods' value (the spec) */
     return c;}
   function seenCrime(kind,house,w,value){const site=houseSite(house);
     if(site)bookCrime(site,kind,value);
@@ -639,6 +639,8 @@
       if(!CR.yielded&&PHP<maxHP*.3&&c&&c.bounty>0){CR.yielded=true;offerYield(S,c);}
       return;}
     CR.yielded=false;
+    if(CLAIM)return; /* S2228 — the claim's bout: no other halt */
+    if(c&&c.claimAt!=null){if(absMin()<c.claimAt&&!c.shut)return;delete c.claimAt;} /* S2228 — the halt waits for 6:00 */
     if(!c||c.bounty<=0||talking)return;if(!c.shut&&CR.cool>0)return; // shut gates: no talk, no cooldown
     for(const n of guardsOf(S)){if(!n.g.visible||n._retreated||n._drawn)continue;const d=Math.hypot(px-n.g.position.x,pz-n.g.position.z);if(d>5)continue;if(!clearLine(px,pz,n.g.position.x,n.g.position.z))continue;
       if(c.shut)guardDraw(n,S);else confront(n,S,c);return;}
@@ -791,7 +793,7 @@
   function yieldLines(S){return YIELD_LINES[peopleOfSite(S.site)]||YIELD_LINES.markman;}
   function confrontIndoor(s,S,c){CR.cool=60;const fine=c.bounty;const n=s.npc;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
-      {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);endSent();return L.pay;}},
+      {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);if(courtOf(S)==='mark'){delete c.claimLost;claimKeepersBack(S);} /* S2228 */endSent();return L.pay;}},
       ...restitutionTopic(S,c,()=>confrontIndoor(s,S,c),true),
       ...talkDownTopic(S,c,()=>confrontIndoor(s,S,c)),
       ...wordGivenTopic(S,c,true),
@@ -799,8 +801,9 @@
       {label:'Not now.',bye:true}]});}
   function confront(n,S,c){CR.cool=60;if(CR.sent&&CR.sent.npc===n)endSent();/* S239 — caught: the chase is over */const fine=c.bounty;const name=(n.def&&n.def.name)||'The guard';const L=haltLines(S);
     openDialog({name,role:'Guard',ico:'⚔',noIntro:true,greeting:[talkedGreet(S,c,fine)||L.greet(fine,S.site.name)+feastFineLine(S,c)],topics:[
-      {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);return L.pay;}},
+      {label:`Pay the fine (${fine} gold)`,quest:true,fn:()=>{if(gold<fine)return L.poor;gold-=fine;updateHUD();c.bounty=0;c.shut=false;CR.cool=5;if(typeof addLog==='function')addLog('⚖',`Paid ${fine} gold to ${name} at ${S.site.name}.`);if(courtOf(S)==='mark'){delete c.claimLost;claimKeepersBack(S);} /* S2228 — the claim paid: the keepers serve you again */return L.pay;}},
       ...restitutionTopic(S,c,()=>confront(n,S,c),false),
+      ...claimTopic(n,S,c),
       ...talkDownTopic(S,c,()=>confront(n,S,c)),
       ...wordGivenTopic(S,c,false),
       {label:'I’ll not pay.',quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}guardDraw(n,S);},60);return L.refuse;}},
@@ -851,6 +854,55 @@
       showMsg(`${h} ${h===1?'hour':'hours'} in the stocks on the plaza. ${stolen?'They took what you stole'+(back?` (${back} gold)`:'')+'. ':''}You are let go.`,'#c8b880');
       if(typeof addLog==='function')addLog('⛓',`${h} ${h===1?'hour':'hours'} in the stocks at ${S.site.name}${stolen?'; the stolen goods were taken'+(back?`, and ${back} gold`:''):''}.`);
       if(typeof renderInv==='function')renderInv();if(typeof updateHUD==='function')updateHUD();});}
+  /* S2228 — law in three registers (Michael's B on #1540), the Mark's court: the reeve and the claim. In a town of the Mark the fine
+     is a claim, and at the halt you may fight it, to a yield, against the town's sword: the guard who halted you, at the law's tier 3
+     (GUARD_TIER), under the bout's rules (boutStart: a 5 m ring laid where you stand, over the rope by a metre or down is a loss, he
+     kneels at a quarter of his health and is spared after 3 s unstruck, the 0.4 s held blow). Only from 6:00 to noon, the yard's
+     duel hours (DUEL_OPEN, DUEL_CLOSE: "a quarrel finished by noon"); asked outside them, the halt waits until 6:00 (c.claimAt) and
+     the guards let you by. Won: the claim is void (the fine and the gold stolen are owed no more), half the favour it cost comes back
+     (c.debt, the points not yet forgiven), and the town's wronged keepers serve you again. Lost: the claim stands at 1.5×, and the
+     guard halts you for it; the claim is fought once (c.claimLost, cleared by a new wrong or the fine paid). Paid at the halt, the
+     keepers serve you again too. A blow that kills him after the yield is a guard's death (guardKilled): the gates shut. No claim
+     for a guard's death (c.shut), and none indoors: the halt in a room is as built, and outside you are halted again. The reeve's
+     words are the quest writer's; the halt's two lines speak as the narrator for now. Named actions: claimStart, claimEnd. */
+  const CLAIM_LOSS=1.5;
+  let CLAIM=null; /* {foe,npc,site,x,z,f0,end} */
+  function claimHours(){return typeof duelRingHours==='function'?duelRingHours():(hourNow()>=6&&hourNow()<12);}
+  function nextSixAt(){const m=absMin(),d=Math.floor(m/1440);let t=d*1440+360;if(t<=m)t+=1440;return t;}
+  // the keepers this town's wrongs turned away serve you again (the day the claim is paid or won)
+  function claimKeepersBack(S){const R=worldState.refuse;if(!R)return 0;let n=0;for(const h of (S.houses||[]))if(R[h.id]!=null){delete R[h.id];n++;}return n;}
+  function claimOk(S,c){return courtOf(S)==='mark'&&!!c&&c.bounty>0&&!c.shut&&!c.claimLost&&!CLAIM&&!BOUT;}
+  function claimTopic(n,S,c){if(!claimOk(S,c))return [];
+    if(!claimHours())return [{label:'Fight the claim. (from 6:00)',quest:true,fn:()=>{c.claimAt=nextSixAt();CR.cool=5;
+      if(typeof addLog==='function')addLog('⚖',`The claim at ${S.site.name} is set for 6:00. Until then the guards let you by.`);
+      setTimeout(()=>{try{closeDialog();}catch(e){}},60);showMsg('The claim is fought between 6:00 and noon. Until then the guards let you by.','#c8e88a');return '';}}];
+    return [{label:`Fight the claim. (to a yield; lose, and it is ${Math.ceil(c.bounty*CLAIM_LOSS)} gold)`,quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}claimStart(n,S,c);},60);return '';}}];}
+  // named action: the claim's bout begins, the guard who halted you the town's sword
+  function claimStart(n,S,c){if(!claimOk(S,c)||!claimHours()||n._drawn)return null;delete c.claimAt;
+    const gx=n.g.position.x,gz=n.g.position.z,x=px,z=pz;const e=guardEnemy(n,S,sc,STATIC_SOL,gx,gz);delete e._guard;e._claim=S.site.id;
+    e.name=e.displayName=(n.def&&n.def.name)||'The town’s sword';e.homeX=x;e.homeZ=z;
+    CLAIM={foe:e,npc:n,site:S.site.id,x,z,f0:c.bounty,end:null};
+    boutStart({foe:e,x,z,r:BOUT_R,on:{
+      yield:()=>showMsg(`${e.name} goes down on one knee.`,'#e8d8a0'),
+      won:()=>claimEnd('won'),lost:(b,how)=>claimEnd('lost',how),murder:()=>claimEnd('murder')}});
+    showMsg(`The claim is fought here, to a yield. ${e.name} draws.`,'#e8d8a0');
+    if(typeof addLog==='function')addLog('⚔',`Fought the claim of ${c.bounty} gold at ${S.site.name}.`);return CLAIM;}
+  // named action: the claim's end, won, lost, murder or left (the bout gone some other way: a loss)
+  function claimEnd(how,why){const L=CLAIM;if(!L)return null;CLAIM=null;if(typeof boutEnd==='function')boutEnd(L.foe);const e=L.foe,n=L.npc,S=SETTLE.get(L.site);
+    const C=worldState.crime||(worldState.crime={});const c=C[L.site]||(C[L.site]={bounty:0,debt:0,last:0});const name=e.name;
+    if(how==='murder'){e._guard={site:L.site,npc:n};L.end=how;return L;} /* killZoneEnemy, which asked, books the guard's death next (guardKilled) */
+    if(e&&!e.dead){e.dead=true;try{(e.mesh&&e.mesh.parent||sc).remove(e.mesh);}catch(err){}const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
+    try{const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}catch(err){}
+    if(n){n._drawn=false;n._retreated=false;n.g.visible=true;if(n.dot)n.dot.visible=true;}
+    if(how==='won'){const back=Math.floor((c.debt||0)/2);if(back>0){addFavor(L.site,back);c.debt-=back;}c.bounty=0;c.loot=0;delete c.lockFine;delete c.claimLost;
+      const kb=S?claimKeepersBack(S):0;CR.cool=5;
+      showMsg(`${name} is spared. The claim is void${back?`, and the town comes round by ${back}`:''}.`,'#e8d8a0');
+      if(typeof addLog==='function')addLog('⚖',`Won the claim at ${S?S.site.name:L.site}: void.${kb?' The keepers will serve you again.':''}`);}
+    else{c.bounty=Math.ceil(c.bounty*CLAIM_LOSS);c.claimLost=1;PHP=Math.max(PHP,1);CR.cool=0;
+      showMsg(why==='rope'?`You step over the rope. The claim stands, at ${c.bounty} gold.`:`You go down. The claim stands, at ${c.bounty} gold.`,'#e8d8a0');
+      if(typeof addLog==='function')addLog('⚖',`Lost the claim at ${S?S.site.name:L.site}: ${c.bounty} gold owed.`);}
+    if(typeof updateHUD==='function')updateHUD();L.end=how;L.why=why||null;return L;}
+  function tickClaim(dt){const L=CLAIM;if(!L)return;if(!BOUT||BOUT.foe!==L.foe){claimEnd('lost','left');return;}boutTick(dt);}
   const GUARD_TIER=3;
   function guardDraw(n,S){if(n._drawn)return null;return guardEnemy(n,S,sc,STATIC_SOL,n.g.position.x,n.g.position.z);}
   function guardEnemy(n,S,scn,sol,x,z){n._drawn=true;n._retreated=true;n.g.visible=false;if(n.dot)n.dot.visible=false; // S241 — in the street, or in a room
