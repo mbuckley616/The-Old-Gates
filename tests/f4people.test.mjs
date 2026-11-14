@@ -223,6 +223,16 @@ const mid = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb 
   const m = rig.hb.mid, t = (m.geometry.index.count / 3) | 0; let full = 0; for (const o of rig.hb.full) full += ((o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3) | 0;
   return { key: rig.g.hbKey, level: rig.hb.L, shown: shown.length, mid: shown[0] === m, skinned: m.isSkinnedMesh && m.skeleton === rig.hb.P.skeleton, tris: t, fullTris: full, ok: !!rig.hb.full.length }; });
 check('a body in the middle range is one mesh on its own skeleton, the whole body baked', mid.level === 1 && mid.shown === 1 && mid.mid && mid.skinned && mid.tris > 10000, mid);
+// S2232 — the middle level keeps the hair: a head of long hair bakes a few thousand opaque ribbons from its cards (it was the scalp's shell
+// alone, bald from 16 to 42 m), and a bed's fit (hbSkinPts) never reads them
+const midHair = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.hb && !r.foe && !r.hbLazy && r.root.parent === WORLD.scene && r.hb.full.some(o => o.name === 'hair' && o.geometry.index && (o.geometry.userData.hairIx && o.geometry.userData.hairIx[1] || o.geometry.index).count > 3e5));
+  const rig = rs[0]; if (!rig) return { none: true }; const m = hbMid(rig); if (!m) return { fail: true }; const hr = m.geometry.userData.hair || [];
+  let hv = 0; for (let k = 0; k < hr.length; k += 2) hv += hr[k + 1] - hr[k];
+  let cards = 0; for (const o of rig.hb.full) if (o.name === 'hair') cards += (o.geometry.userData.hairIx && o.geometry.userData.hairIx[1] || o.geometry.index).count / 3;
+  rig.hb.used = null; const pts = hbSkinPts(rig).length / 3, used = rig.hb.used.length; let inHair = 0; for (const i of rig.hb.used) for (let k = 0; k < hr.length; k += 2) if (i >= hr[k] && i < hr[k + 1]) inHair++;
+  return { key: rig.g.hbKey, hairVerts: hv, ribbons: hv / 2 - 1, cards: Math.round(cards), pts, used, inHair }; });
+check(`a head of long hair keeps its hair in the middle level (${midHair.hairVerts} points of ribbon from ${midHair.cards} card triangles), and a bed's fit reads none of it`,
+  midHair.none || (midHair.hairVerts > 1500 && midHair.hairVerts < 16000 && midHair.inHair === 0 && midHair.pts === midHair.used), midHair);
 // S2182 — a near body's hair cards are drawn through every 3rd strand point at Middle (and Low), every point at High; the same strands
 const hairQ = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb && !r.foe && !r.hbLazy && r.hb.full.some(m => m.name === 'hair' && m.geometry.index));
   if (!rig) return null; const m = rig.hb.full.find(o => o.name === 'hair'), g = m.geometry, tris = () => g.index.count / 3, used = () => new Set(g.index.array).size;
