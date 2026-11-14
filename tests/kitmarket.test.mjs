@@ -16,6 +16,15 @@ const info = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), 
     doorUp: +(activeTerrainH(h.doorX, h.doorZ) - M.y).toFixed(2), exitUp: +(activeTerrainH(h.exitX, h.exitZ) - M.y).toFixed(2) } : null; });
 check(`Dunmore's market house has its room upstairs, a house of its own (${info && info.id}), its door on the stair's landing (${info && info.doorUp} m up)`, !!info && info.id === 'g_dunmore_6000' && info.door < .6 && info.exitClear && Math.abs(info.doorUp - 3.6) < .05 && Math.abs(info.exitUp - 3.6) < .05, info);
 check('nobody keeps it, and it is never locked', !!info && info.nobody && info.open, info);
+// S2226 (Michael's B on #1540) — the Gatelands' stocks on Dunmore's square: the kit's piece (348 triangles in 3 draws), 5.5 to 8 m out from
+// the square's middle and facing it, its two ends and its bench clear of the streets and the plots by 1.2 m, the boards and the bench solids
+const stk = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), T = S.stocks; if (!T) return null; const G = S.group.children.find(o => o.name === 'stocks');
+  const c = Math.cos(T.ry), s = Math.sin(T.ry), pts = [[0, 0], [-1, 0], [1, 0], [-1, -.6], [1, -.6], [0, .6]].map(([lx, lz]) => [T.x + lx * c + lz * s, T.z - lx * s + lz * c]);
+  const facing = (Math.sin(T.ry) * (S.site.x - T.x) + Math.cos(T.ry) * (S.site.z - T.z)) / Math.hypot(S.site.x - T.x, S.site.z - T.z);
+  return { tris: T.tris, draws: T.draws, meshes: G ? G.children.filter(m => m.isMesh).length : 0, d: +Math.hypot(T.x - S.site.x, T.z - S.site.z).toFixed(2), facing: +facing.toFixed(3),
+    road: +Math.min(...pts.map(([x, z]) => { const r = roadInfo(x, z, true); return r ? r.d : 99; })).toFixed(2), sols: S.sol.filter(q => q.stocks).length }; });
+check(`Dunmore's square has the stocks (${stk && `${stk.tris} triangles in ${stk.meshes} meshes, ${stk.d} m out, ${stk.road} m from a street's middle`}), facing in, the boards and the bench solid`,
+  !!stk && stk.meshes === 3 && stk.tris > 250 && stk.tris < 500 && stk.d >= 5.5 && stk.d <= 8 && stk.facing > .99 && stk.road >= 2.6 + 1.2 && stk.sols === 2, stk);
 // S1912 — the stair is climbed from the square: walked through the game's own loop at fixed 1/60 steps (the draw held off), W held toward
 // the landing from a metre off the stair's foot; up every step and onto the landing with nothing in the way, no rise over a riser's 0.2;
 // E there takes you in. From the ground beside the stair, under the landing, E does not.

@@ -621,6 +621,19 @@ function genSettlement(site){
     // the chimney's pier in the west bays, the four stalls under the arches, the beam's pans and the stair's mass up the east end solids too.
     // The stair is not climbed outside (the world has no footholds): its foot is where the room's door will be (S.market.foot). The far copy
     // is the walls' box, the hipped roof's ridge along its length and the stair's block. S.market keeps where it stands, for the checks.
+    // S2226 (Michael's B on #1540; S2222's court): the Gatelands' stocks stand on the square of every town, village and port of the island,
+    // 5.5 to 8 m out from its middle, the sitter facing in. The spot is the first of twelve bearings, turned by the town's own stream, clear
+    // of the streets, the plots, the well, the lord's place, the lamps, the stalls and the spot the court lets you go (2 m south of the middle).
+    // S.stocks keeps where they stand ({x, z, ry, seat}: the bench's middle, for the court to sit you there); two solids, the boards and the bench.
+    function kitStocks(){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.stocks||nationAt(cx,cz)!=='gatelands')return;
+      const rs=PKIT.stream(`${site.id}:stocks`),a0=rs()*Math.PI*2,rad=5.5+rs()*2.5,keep=[{x:cx+6,z:cz+4,r:2.6},{x:cx+3,z:cz-4,r:2},{x:cx,z:cz+2,r:2},{x:cx,z:cz,r:2.2},...[-1,1].flatMap(a=>[-1,1].map(b=>({x:cx+a*9,z:cz+b*9,r:1.6}))),...(S._stallAt||[]).map(q=>({x:q.x,z:q.z,r:2.8}))];
+      let at=null;for(let k=0;k<12&&!at;k++){const a=a0+k*Math.PI/6,x=cx+Math.cos(a)*rad,z=cz+Math.sin(a)*rad;const ry_=Math.atan2(cx-x,cz-z),cr=Math.cos(ry_),sr=Math.sin(ry_),pts=[[0,0],[-1,0],[1,0],[-1,-.6],[1,-.6],[0,.6]].map(([lx,lz])=>[x+lx*cr+lz*sr,z-lx*sr+lz*cr]);if(pts.some(([qx,qz])=>{const ri=roadInfo(qx,qz,true);return ri&&ri.d<ROAD_HALF+1.2||inPlot(qx,qz,1.0);}))continue;if(keep.some(q=>Math.hypot(q.x-x,q.z-z)<q.r+1.2))continue;at={x,z};}
+      if(!at)return;const ry=Math.atan2(cx-at.x,cz-at.z),P=PKIT.props.stocks({key:`${site.id}:stocks`}),y=worldH(at.x,at.z)-.06,G=P.group;
+      G.position.set(at.x,y,at.z);G.rotation.y=ry;G.userData.noBake=true;G.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});group.add(G);
+      const c=Math.cos(ry),s_=Math.sin(ry),W_=lz=>({x:at.x+lz*s_,z:at.z+lz*c});
+      {const m=W_(0);sol.push({cx:m.x,cz:m.z,rx:1.0,rz:.12,c,s:s_,h:.99,bt:'wall',stocks:true});}
+      {const m=W_(P.seat.z);sol.push({cx:m.x,cz:m.z,rx:.85,rz:.15,c,s:s_,h:.45,bt:'wall',stocks:true});}
+      const st=W_(P.seat.z);S.stocks={x:at.x,z:at.z,ry,seat:{x:st.x,z:st.z,y:y+P.seat.y},tris:P.tris,draws:P.draws};}
     function kitMarket(L){const G=PKIT.gl.market({r:PKIT.stream(`${site.id}:market`)}),U=G.userData,c=Math.cos(L.ry),s_=Math.sin(L.ry),y=worldH(L.x,L.z)-.06;
       if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
       G.position.set(L.x-cx,y,L.z-cz);G.rotation.y=L.ry;G.traverse(o=>{if(o.isMesh){o.castShadow=o.name!=='dark';o.receiveShadow=true;}});kitG.add(G);
@@ -990,9 +1003,10 @@ function genSettlement(site){
         const ang=r()*Math.PI*2,rad0=9+r()*5,sx=cx+Math.cos(ang)*rad0,sz=cz+Math.sin(ang)*rad0;
         const ri=roadInfo(sx,sz,true);if(ri&&ri.d<4)continue;
         if(inPlot(sx,sz,1.5)){if(!PLOTS.some(P=>P.type!=='market'&&inPlotOf(P,sx,sz,1.5)))try{stallGeoLo(r).dispose();}catch(e){}continue;} /* S1138 — not in the church's yard; S1997 — a stall only the market house's square (S1904) leaves out still takes its draws, so the guards and villagers drawn after it keep the names they had before it (townbarrels) */
-        addMesh(stallGeo(r),sx,sz,ang+Math.PI/2,1.4);
+        addMesh(stallGeo(r),sx,sz,ang+Math.PI/2,1.4);S._stallAt=(S._stallAt||[]).concat([{x:sx,z:sz}]);
       }
     }
+    if(plan.rows>0&&!burnedV&&!abandonedV)try{kitStocks();}catch(e){console.warn('stocks',e);} /* S2226 — the Gatelands' stocks on the square (#1540 B) */
     {const MP=PLOTS.find(P=>P.type==='market');if(MP&&plan.rows>0)try{kitMarket(MP.lot);}catch(e){console.warn('market',e);}} /* S1904 — the market house on its plot */
     {const AP=PLOTS.find(P=>P.type==='academy');if(AP)try{kitAcademy(AP.lot);}catch(e){console.warn('academy',e);}} /* S1959 — the Mages' academy on its plot */
     // Walls with gates where roads cross; towers at the gates.
