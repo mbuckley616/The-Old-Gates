@@ -798,13 +798,13 @@ const WPN_GEO=new Map();
 // S1509 — the kit's pieces are drawn to the old person (1.233 tall) and grow with the body that carries them (×1.2 to ×1.35), which
 // brings most of them to their true length: a sword 0.89 m, a longsword 1.17, an axe 0.76. Three were drawn in true metres and came out
 // too big: the knife 0.49 m, the spear 2.97, the crossbow 1.40. These are carried at their own size, whatever the stature (wpnTrue)
-const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet','impl','rod']);
+const WPN_TRUE=new Set(['dagger','spear','crossbow','pick','hatchet','impl','rod','glass']);
 function wpnIsTrue(kind){return WPN_TRUE.has(kind)||/^(sword|spear|crossbow):/.test(kind||'');} /* S2118 — a sword by its make is drawn in metres */
 function wpnTrue(kind,w,holder){if(wpnIsTrue(kind)&&holder&&holder.scale.x>0)w.scale.setScalar(1/holder.scale.x);return w;}
 // S1550 — the length of Bowyer's two bows to the plain bow's (#851 A: the longbow 1.5×, the war bow 1.7×), by the item's bowKind
 const BOW_LEN={longbow:1.5,warbow:1.7};
 function bowLenOf(w){return (w&&BOW_LEN[w.bowKind])||1;}
-const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','spear','crossbow','pick','hatchet','rod','round','kite','tower'];
+const WPN_KINDS=['dagger','sword','cutlass','longsword','claymore','axe','greataxe','mace','flail','warhammer','greatclub','staff','bow','spear','crossbow','pick','hatchet','rod','glass','round','kite','tower'];
 // tint (S227, the player's weapons): {metal, guard, wood, glow} colours in place of steel, brass, the bow's wood and the crystal
 function wpnBuild(kind,rust,tint){tint=tint||{};
   const L=[],o=new THREE.Object3D();const RU=0x6a3e24;
@@ -848,6 +848,17 @@ function wpnBuild(kind,rust,tint){tint=tint||{};
       add(SK.cyl(.0085,.0125,1.02,8),'matte',HZ,[0,.6,0]);add(SK.cyl(.011,.011,.05,8),'matte',CD,[0,1.1,0]);
       add(SK.cyl(.0055,.0085,.9,6),'matte',HZ,[0,1.55,0]);add(SK.cyl(.0075,.0075,.04,6),'matte',CD,[0,2,0]);
       add(SK.cyl(.0025,.0055,.6,6),'matte',HZ,[0,2.3,0]);add(SK.torus(.006,.0012,4,8),'matte',DH,[0,2.606,0]);},
+    // S2236 — the spyglass (#1504 B, 50-travel.js's GLASS_ITEM), in true metres, drawn out to its length as it is only shown raised: three
+    // brass draws from the eyepiece to a leather-covered barrel, 0.77 m from the eye cup to the objective's rim. The fist is on the
+    // first draw at the origin, the eye cup 0.115 m behind it (GLASS_EYE, 54-thirdperson.js), the barrel ahead along +y
+    glass:()=>{const BR=BRASS,DB=new THREE.Color(BRASS).multiplyScalar(.7).getHex(),LG=0x2e1e12,LS=0x1a2228;
+      add(SK.cyl(.0175,.016,.03,12),'metal',DB,[0,-.1,0]);add(SK.cyl(.011,.011,.002,10),'metal',LS,[0,-.1155,0]);
+      add(SK.cyl(.0145,.0145,.26,12),'metal',BR,[0,.045,0]);add(SK.torus(.0152,.0016,4,12),'metal',DB,[0,-.084,0],[Math.PI/2,0,0]);
+      add(SK.cyl(.0195,.0195,.23,12),'metal',BR,[0,.27,0]);add(SK.cyl(.021,.021,.018,12),'metal',DB,[0,.16,0]);add(SK.torus(.0202,.0018,4,12),'metal',DB,[0,.382,0],[Math.PI/2,0,0]);
+      add(SK.cyl(.026,.025,.24,14),'matte',LG,[0,.5,0]);add(SK.cyl(.0275,.0275,.026,14),'metal',DB,[0,.385,0]);
+      for(let i=0;i<3;i++)add(SK.torus(.026,.0015,4,14),'matte',0x1e140c,[0,.43+i*.06,0],[Math.PI/2,0,0]);
+      add(SK.cyl(.0285,.03,.04,16),'metal',BR,[0,.635,0]);add(SK.cyl(.024,.024,.002,14),'metal',LS,[0,.651,0]);
+      add(SK.torus(.0285,.002,4,16),'metal',DB,[0,.655,0],[Math.PI/2,0,0]);},
     staff:()=>{add(SK.bumpy(SK.cyl(.016,.022,1.0,8,10),.004,23,30),'matte',DWOOD,[0,.22,0]);for(let i=0;i<3;i++){const a=i/3*Math.PI*2;add(SK.cone(.008,.12,5),'matte',DWOOD,[Math.cos(a)*.022,.76,Math.sin(a)*.022],[Math.sin(a)*-.35,0,Math.cos(a)*.35]);}
       add(new THREE.OctahedronGeometry(.04,0),'glow',GLOW,[0,.8,0],null,[1,1.5,1]);add(SK.ball(.09,10,8),'halo',HALO,[0,.8,0]);},
     claymore:()=>{grip(.22,.016,-.14);add(SK.ball(.028,10,8),'metal',DSTEEL,[0,-.155,0]);add(SK.rbox(.27,.026,.036,.01,2),'metal',DSTEEL,[0,.065,0]);[-1,1].forEach(sd=>add(SK.ball(.016,6,5),'metal',DSTEEL,[sd*.135,.065,0]));add(blade(.76,.052,.06),'metal',STEEL,[0,.078,0]);},
