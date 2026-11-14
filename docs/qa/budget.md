@@ -1100,7 +1100,7 @@ into reach, 108 → 124 calls; inside 1.2 M). Every other row is within 1% of s1
 | The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  |
 
-s1565 (QA, Session 2206): `budget` and `budgetport` green, 1/1 each, after tonight's drowned arches (S2200) and sunken village (S2203).
+s1565 (QA, Session 2207): `budget` and `budgetport` green, 1/1 each, after tonight's drowned arches (S2200) and sunken village (S2203).
 Neither shows at any spot: Land and Other are the same calls as s1545 everywhere. Dunmore's street at noon, Middle, 1.96 M again (765 calls,
 Bodies 139); High 2.64 M (+2%). **Portclare's square at noon, High, 2.06 M against 1.82 M at s1545 (+13%)** is the square's known swing,
 not a build's: Bodies 43 → 60 calls, one townsperson inside the full level's ring when High is counted. The same view has read 1.81–1.82 M
