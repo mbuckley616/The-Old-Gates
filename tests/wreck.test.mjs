@@ -104,13 +104,13 @@ if (sv.near) { const D = sv.near, key = `${D.cx},${D.cz}`;
   // back wall and stop inside it; risen over its broken top, the same stroke carries you over and out. A query with no feet passes.
   const sw = await page.evaluate(k => { const V = chunks.get(k).village, M = V.M, co = Math.cos(V.ry), s_ = Math.sin(V.ry), W = (u, v) => [V.hx + u * co + v * s_, V.hz - u * s_ + v * co], Lx = (x, z) => (x - V.hx) * co - (z - V.hz) * s_;
     const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {}; let t = performance.now(); prevT = t;
-    const run = n => { for (let i = 0; i < n; i++) { t += 1000 / 60; loop(t); } }, keys = o => { for (const kk in K) K[kk] = false; Object.assign(K, o || {}); };
+    const run = n => { for (let i = 0; i < n; i++) { t += 1000 / 60; loop(t); } }, keys = o => { for (const kk in K) K[kk] = false; Object.assign(K, o || {}); HELD_KEYS.KeyW = !!(o && o.KeyW); }; /* the stroke reads K, the dive HELD_KEYS (let go of W and you rise) */
     const P = SEA_SOLS.get('village:' + k), t0 = performance.now(); P.grid = null; seaSolBuild(P); const r = { ms: +(performance.now() - t0).toFixed(1), cells: P.grid.size };
     try { for (const h of M.houses) { const sx = h.x > 0 ? 1 : -1, back = Math.abs(h.x) + h.d / 2, [cx, cz] = W(h.x, h.z), sp = seaSolSpan(cx, cz, meshH(cx, cz) + .95); if (!sp) continue; const y0 = sp.lo + .05;
         const path = []; for (let u = Math.abs(h.x); u < back + .6; u += .1) path.push(solidAt(...W(sx * u, h.z), y0)); if (!path.some(b => b) || y0 > SEA_Y + h.top - .5) continue;
         const dx = sx * co, dz = -sx * s_; yaw = Math.atan2(-dx, -dz); pitch = 0;
         const go = y => { px = cx; pz = cz; jumpY = y; DIVE.depth = y; onGround = true; velY = 0; PHP = maxHP; DIVE.breath = 1; run(2); keys({ KeyW: true }); run(240); keys(); run(2); return +(Math.abs(Lx(px, pz))).toFixed(2); };
-        r.house = { x: h.x, d: h.d, back: +back.toFixed(2), top: h.top, y0: +(y0 - SEA_Y).toFixed(2) }; r.stopped = go(y0); r.swimming = WORLD.isSwimming(); r.over = go(SEA_Y + h.top + .6);
+        r.house = { x: h.x, d: h.d, back: +back.toFixed(2), top: h.top, y0: +(y0 - SEA_Y).toFixed(2) }; r.stopped = go(y0); r.swimming = WORLD.isSwimming(); r.held = +(jumpY - SEA_Y).toFixed(2); r.over = go(SEA_Y + h.top + .6);
         r.noY = path.length && !solidAt(...W(sx * (back - .3), h.z)); break; } }
     finally { window.requestAnimationFrame = raf; REN.render = rr; }
     return r; }, key);
