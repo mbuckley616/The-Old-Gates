@@ -1,7 +1,8 @@
 // The wreck and the world's chests on the kit (Session 259, H.5): a sea-floor wreck is a hull broken in two, open ribs
 // on a keel with rotted planking, a stem, a snapped mast; the wreck's sea chest and the lairs' and bandit camps' hoards
 // are S198's kit chest at the old box's size, their lids opening on the hinge. Session 2170 adds the whale fall on the open bed, Session 2200
-// the drowned arches off the Gatelands' ports, Session 2203 the sunken village on the Gatelands' bed.
+// the drowned arches off the Gatelands' ports, Session 2203 the sunken village on the Gatelands' bed,
+// Session 2208 the drowned quarter on Aurenne's.
 import { boot, check } from './lib/game.mjs';
 import fs from 'fs';
 const g = await boot(); const { page } = g;
@@ -93,5 +94,24 @@ if (sv.near) { const D = sv.near, key = `${D.cx},${D.cz}`;
   check(`the nearest is built with its chunk, its lane from ${v.head} to ${v.end} m down: ${v.tris} triangles in ${v.draws} draws (under 40k, under 13 draws, vertex-coloured)`, !v.none && v.inScene && v.tris < 40000 && v.draws <= 12 && v.colours, v);
   check('seven cottages, each roofless and its walls broken in courses with tops between them, standing 0.8 to 4 m over the bed at its middle (the plinth shows downhill) and at least 1.5 m under the sea', !v.none && v.houses.length === 7 && v.houses.every(h => h.roof >= 3 && h.broken > 50 && h.caps > 50 && h.top - h.bed > .8 && h.top - h.bed < 4 && h.top < -1.5), v.houses);
   check('its chunk dropped takes it out of the scene, and loaded again takes the same village back', v.gone && v.same, v); }
+// Session 2208 — the drowned quarter (OG-125, card F11; PKIT.places.quarter, undersea.js's sunkenQuarter): a few chunks of Aurenne's sea, off
+// a coast, hold a town's bridge (its middle span fallen) and its theatre; the nearest is built with its chunk on the drawn bed, every top
+// at least 1.8 m under the sea
+const sq = await page.evaluate(() => { const N = Math.ceil(WORLD.SIZE * GRID / CHUNK), L = []; for (let cx = 0; cx < N; cx++) for (let cz = 0; cz < N; cz++) { if (hash01(cx, cz, 190) > QUARTER_ODDS) continue; const d = sunkenQuarterSpot(cx, cz); if (d) L.push({ cx, cz, ...d }); }
+  const again = L.every(d => { const e = sunkenQuarterSpot(d.cx, d.cz); return e && e.x === d.x && e.z === d.z && e.ry === d.ry; }), others = L.filter(d => wreckSpot(d.cx, d.cz) || whaleFallSpot(d.cx, d.cz)).length,
+    off = L.filter(d => nationKeyOf(...cellOf(d.cx * CHUNK + CHUNK / 2, d.cz * CHUNK + CHUNK / 2)) !== 'aurenne').length;
+  L.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); return { n: L.length, again, others, off, near: L[0] }; });
+check(`${sq.n} drowned quarters lie on Aurenne's bed (10 to 90), the same when asked again, none off Aurenne, none in a wreck's or a whale's chunk`, sq.n >= 10 && sq.n <= 90 && sq.again && sq.others === 0 && sq.off === 0, sq);
+if (sq.near) { const D = sq.near, key = `${D.cx},${D.cz}`;
+  await page.evaluate(D => WORLD.enter(D.x, D.z, 0, 'test'), D);
+  for (let k = 0; k < 40; k++) { await g.spin('clear', 20); if (await page.evaluate(k => !!(chunks.get(k) && chunks.get(k).quarter), key)) break; }
+  const v = await page.evaluate(k => { const ch = chunks.get(k); if (!ch || !ch.quarter) return { none: true }; const Q = ch.quarter, M = Q.M, Bq = M.bridge, T = M.theatre; let top = -Infinity;
+    Q.group.children.forEach(m => { const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) top = Math.max(top, P.getY(i)); });
+    const out = { tris: Q.tris, draws: Q.draws, colours: Q.group.children.every(m => !!m.geometry.attributes.color), top: +top.toFixed(2), deck: Bq.deck, spring: Bq.spring, ground: Bq.ground, fallen: Bq.fallen.length, base: T.base, foot: T.foot, wedges: T.wedges.length, columns: T.columns, wall: T.wall, inScene: !!(Q.group.parent === ch.group && ch.group.parent) };
+    const grp = Q.group; dropChunk(k); out.gone = !grp.parent || !grp.parent.parent; buildChunk(...k.split(',').map(Number)); const c2 = chunks.get(k); out.same = !!(c2 && c2.quarter && c2.quarter.group === grp && grp.parent === c2.group); return out; }, key);
+  console.log(JSON.stringify(v));
+  check(`the nearest is built with its chunk: ${v.tris} triangles in ${v.draws} draws (under 12k, 2 draws, vertex-coloured), its highest point ${v.top} m (at least 1.8 m under the sea)`, !v.none && v.inScene && v.tris < 12000 && v.draws === 2 && v.colours && v.top <= -1.79, v);
+  check('its bridge springs over the bed and its deck stands over the arches, its middle span on the bed; its theatre has seven wedges standing, six columns, its stage wall on the bed', !v.none && v.spring > v.ground[1] && v.deck - v.spring > 4 && v.fallen === 18 && v.wedges === 7 && v.columns.length === 6 && v.wall.foot < v.base, v);
+  check('its chunk dropped takes it out of the scene, and loaded again takes the same quarter back', v.gone && v.same, v); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
