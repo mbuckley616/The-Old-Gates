@@ -346,7 +346,8 @@ function loop(now){
   // for a small "rush" punch. Reverts to sprint/idle FOV after lunge expires
   // via the same dt*8 lerp.
   const targetFOV = (lungeT > 0 ? LUNGE_FOV : (sprinting?85:75)) + SETTINGS.fov - 75; /* S691 — the settings' field of view moves all three */
-  CAM.fov+=(targetFOV-CAM.fov)*Math.min(1,dt*8);CAM.updateProjectionMatrix();
+  const _gz=typeof glassZoom==='function'?glassZoom():1,_fovT=_gz>1?2*Math.atan(Math.tan(targetFOV*Math.PI/360)/_gz)*180/Math.PI:targetFOV; /* S2234 — the spyglass narrows the view ×5 (86-world-crime.js) */
+  CAM.fov+=(_fovT-CAM.fov)*Math.min(1,dt*8);CAM.updateProjectionMatrix();
 
   let mdx=0,mdz=0;
   if(K['KeyW']||K['ArrowUp']){mdx+=fwdX;mdz+=fwdZ;}
