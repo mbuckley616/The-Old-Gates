@@ -44,7 +44,10 @@ const stockAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settl
   for (let i = 0; i < 60; i++) WORLD.tick(1 / 60, performance.now());
   const c = Math.cos(F.ry), s_ = Math.sin(F.ry), loc = e => { const dx = e.homeX - F.x, dz = e.homeZ - F.z; /* where it was laid: a hen may have pecked a step since */ return [+(dx * c - dz * s_).toFixed(1), +(dx * s_ + dz * c).toFixed(1)]; };
   const ch = [...WILD_CH].find(q => q.cx === Math.floor(F.cx / CHUNK) && q.cz === Math.floor(F.cz / CHUNK)); if (!ch) return { none: true };
-  const mine = () => ch.wild.filter(e => e.farmStock && e._wildKey.startsWith(`farm:${F.id}:`)), A = mine().map(e => [e.baseName, e._wildKey, loc(e)]);
+  /* Session 2218 (QA): read where the stock is laid from a fresh lay. A beast that bolts sets its home where it stops (tickWildOne), so after the
+     60 ticks a startled hen's home was off the yard and A differed from B (FLAKY on CI run 43495495051, 13 Nov); `moved` counts them */
+  const mine = () => ch.wild.filter(e => e.farmStock && e._wildKey.startsWith(`farm:${F.id}:`)), A0 = mine().map(e => [e.baseName, e._wildKey, loc(e)]);
+  wildDrop(ch); wildSpawnChunk(ch); const A = mine().map(e => [e.baseName, e._wildKey, loc(e)]), moved = A0.filter(a => JSON.stringify(a) !== JSON.stringify(A.find(b => b[1] === a[1]))).length;
   const yard = F.yard.slice(0, 2), inYard = ([, , [u, v]]) => yard.some(r => u >= r.x0 && u <= r.x1 && v >= r.z0 && v <= r.z1);
   const hens = A.filter(a => a[0] === 'Hen'), field = A.filter(a => a[0] !== 'Hen'), kinds = [...new Set(field.map(a => a[0]))];
   const offLot = field.every(a => { const [u, v] = a[2]; return !(u >= FARM_LOT.x0 && u <= FARM_LOT.x1 && v >= FARM_LOT.z0 && v <= FARM_LOT.z1); });
@@ -52,7 +55,7 @@ const stockAt = id => page.evaluate(id => { forceTime(12); const S = WORLD.settl
   const f = mine().find(e => e.baseName !== 'Hen'); let at8 = null, at2 = null;
   if (f) { px = f.x + 8; pz = f.z; for (let i = 0; i < 120; i++) tickWildOne(f, 1 / 60); at8 = (f._w || {}).mode; px = f.x + 2; pz = f.z; for (let i = 0; i < 20; i++) tickWildOne(f, 1 / 60); at2 = (f._w || {}).mode; }
   forceTime(23); wildDrop(ch); wildSpawnChunk(ch); const night = mine().map(e => e.baseName); forceTime(12); wildDrop(ch); wildSpawnChunk(ch);
-  return { A: same ? undefined : A, B: same ? undefined : B, hens: hens.length, henYard: hens.every(inYard), field: field.length, kinds, offLot, same, at8, at2, night }; }, id);
+  return { moved, A: same ? undefined : A, B: same ? undefined : B, hens: hens.length, henYard: hens.every(inYard), field: field.length, kinds, offLot, same, at8, at2, night }; }, id);
 const stockOK = T => !T.none && T.hens >= 2 && T.hens <= 4 && T.henYard && T.field >= 2 && T.kinds.length === 1 && ['Cow', 'Sheep', 'Goat'].includes(T.kinds[0]) && T.offLot && T.same && T.at8 !== 'flee' && T.at2 === 'flee' && !T.night.includes('Hen') && T.night.length === T.field;
 // Session 2008 (Michael's B on #1275): a farm's beast struck dead is theft. Seen (the farmer 3 m off, facing you): the farm's town loses 2
 // favour, the fine is 50 and the beast's worth (STOCK_WORTH), and the farmer will not talk ("I know what you did.") for 5 days; unseen

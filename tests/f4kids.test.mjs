@@ -4,6 +4,9 @@
 // and the day. Bodies only: no talk, no witness, nothing saved. KIDS, kidsFill and kidsTick are in js/32-people.js.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
+// Session 2218 (QA): the town is waited for before it is looked for. The suite ran the job queue for at most 20 s and then read SETTLE,
+// and on a loaded runner the home province's village was not built yet (`none`, FLAKY on CI run 43568535888, 14 Nov).
+const built = await g.settle('hearthwick');
 const errs = []; page.on('pageerror', e => errs.push(String(e)));
 await page.evaluate(() => REN.setSize(320, 180, false));
 const r = await page.evaluate(() => {
@@ -35,7 +38,7 @@ const r = await page.evaluate(() => {
   forceTime(11); tickPeople(1 / 60, 9.1e5); out.back = KIDS.list.length; px += 300; tickPeople(1 / 60, 9.2e5); out.away = KIDS.list.length; px -= 300;
   out.saved = JSON.stringify(worldState).includes('kid:'); return out;
 });
-console.log(JSON.stringify(r));
+console.log(JSON.stringify({ settled: built, ...r }));
 check(`by day at 11h, ${r.site} (${r.kind}, ${r.isle}) has ${r.n} children out at play (${(r.games || []).join(', ')}), every one a child at its island's games`, !r.none && r.n >= 2 && r.n <= 4 && r.allIsle && r.child && r.play, r);
 check(`all ${r.built} take the builder's body, carry nothing of a grown townsman's (${r.carry}), and stand on clear ground within 32 m of the square with ${r.toys} toys`, r.built === r.n && r.carry === 0 && r.clear && r.near && r.toys >= r.n, r);
 check(`what a hand holds is in the builder's palm (${(r.held || []).map(h => h[0] + ' ' + h[1] + ' m').join(', ') || 'nothing held here'})`, (r.held || []).every(h => h[1] < .15), r);
