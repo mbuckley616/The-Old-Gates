@@ -3,54 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### The adventurer's kit: a pack, the pack plus a spyglass, rod and net, or those plus wear? (from the designer, 13 Nov 2026, #1504)
-**The question.** Backlog L8's adventurer's kit (OG-098) asks a use for each thing carried. Most of it is built (pick, hatchet, joiner's kit, shovel, skinning knife, mess kit, bedrolls, tent, water vessels, cloaks), but nothing makes what you carry a choice, and nothing in the game is a pack, a spyglass, a rod or a net. How far should the kit go? Page: `docs/design/adventurers-kit.md`.
-
-**Options.**
-- **A.** A pack (2 kg, 40 gold): the first 20 kg of tools and goods weigh nothing, never armour or weapons; past 10 kg in it the roll is the heavy roll. By island in looks only. A *Kit* tab in the inventory. One systems session, one bodies.
-- **B (recommended).** A, plus a spyglass (ships read to 800 m; towns, forts, lairs and gate doors *sighted* in pencil to 1,000 m, no fast travel; bound by fog and dark), a rod (cast from a bank, a bite in 15–45 s, a 1 s strike) and a net (from your deck over a school, 3–5 fish, feeds the crew). Three systems sessions, one bodies, one look.
-- **C.** B, plus wear (pick 300 strikes, hatchet 60 trees, mended at the smith) and footing (ice and mud, nailed boots). Three more systems sessions and a deep-work session.
-
-**Recommendation.** B: the pack makes the load a choice without raising a fighter's numbers, and the glass, rod and net are the sheet's three verbs nothing answers; wear is a chore and footing is L11's own proposal.
-
-### Weather in a sneak and a shot: rain covers your steps, wind carries your arrows, or neither? (from the systems builder, 13 Nov 2026, #1511)
-**The question.** OG-138 (*Weather that matters*, backlog L12) asks for weather that changes play; so far it changes only how far you see (Session 1420, C on #679). Two of its rules are the systems builder's: *rain masking sound for sneaking* and *wind bending arrows*. Today a foe hears you walking at 3 m, sneaking at 1 m, standing still at 0.9 m; an arrow leaves a full draw at 28 m/s and falls 4 m/s²; the world's wind (`windDir()`, read off the clock, gusting in a storm) moves only the sails and the smoke. Should the weather change how you are heard and where your arrows fly?
-
-**Options.**
-- **A.** Rain and snow cover your steps, outdoors only: a foe hears you walking at 2 m in rain or snow, 1.5 m in a storm, heavy rain or a blizzard; sneaking is floored at the still 0.9 m. Arrows unchanged. One session.
-- **B (recommended).** A, plus the wind carries your arrows sideways along `windDir()`: a breeze 0.4 m/s², rain or snow 0.8, a storm or blizzard gusting at 2.0 (0.23 / 0.46 / 1.15 m of drift at 30 m; 0.9 / 1.8 / 4.6 m at 60). No wind indoors or in gates; the foes' arrows drift the same; Long eye halves it. Two sessions.
-- **C.** Neither: the weather stays a matter of sight.
-
-**Recommendation.** B: a storm that covers your steps but spoils your shot is a choice with two sides (feeling 2, a world that pushes back); every number is read from the weather and the clock, already saved and seeded, so co-op holds.
-
-### The Mark's town house inside: as drawn, one room, or not yet? (from the look builder, 13 Nov 2026, #1518)
-**The question.** Michael's C on #1300 put the kit's town house on the Mark's tight lots (Session 2003): 68 homes in the four ports and the city, which inside still open on the old generated room. The look builder has drawn a room for them (`markTownRoom`, `docs/prototypes/levelup/rooms.js`, `rooms.html?room=marktown`), built in the street's own shell at every lot size (4.2–6.6 m by 3.4–7 m), after Bergen's wharf houses: downstairs a living room with a raised hearth (a stone hood and wooden flue where there is no chimney), table, bench and a hanging lamp; a 13-step stair to a landing; upstairs a loft open to the roof with a bed of furs, the game's chest, a cradle where it fits and sacks under the hoist door. 2,600–3,288 triangles in 14 draws; the prototype's checks pass at all 36 sizes. Picture: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2187/docs/prototypes/levelup/rooms-marktown-sheet.jpg
-
-**Options.**
-- **A (recommended).** As drawn: it goes into the game next for all 68 town houses, as the longhouse did.
-- **B.** One room only: the ground floor as drawn, the bed downstairs in place of the stair; upstairs stays unreachable storage.
-- **C.** Leave them on the generated room for now.
-
-**Note.** In the shallowest houses (3.4 m deep) the stair is a ladder-stair at 62°; with no climbing, you walk it as a steep ramp.
-
-### A beast's tell: the body glows, the jaws, or the eyes? (from the bodies builder, 13 Nov 2026, #1522)
-**The question.** A foe's blow is warned by its wind-up and, in the tell's last 0.15 s, a colour: gold for a light blow, red for a heavy one. Michael's B on #1278 moved a person's colour off the body onto the weapon's edge (Session 2092). The beasts on the wolf's driver (the wolves, the Dire Wolf, the bears, the boars, the corrupted three) hold no weapon, so on the new look their whole hide still lights up. Where should a beast's tell show? Pictures (A, B, C left to right): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/beasttells-wolf.jpg, https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/beasttells-bear.jpg, https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/beasttells-heavy.jpg (dusk, red). Prototype: `docs/prototypes/levelup/beasttells.html`.
-
-**Options.**
-- **A.** As today: the whole body glows gold or red.
-- **B (recommended).** #1278's rule carried to a beast: the muzzle and the jaw glow in the tell's colour (about 2.5% of the hide), with a small glare in the open mouth; the rest keeps its colour. Reads from the camera at 5.8 m. One bodies session (`hcTick`).
-- **C.** The eyes alone flare, with a glare round each. The quietest; at dusk you can miss them.
-
-### Law in three registers: three courts, three courts and three new crimes, or a law that travels? (from the designer, 14 Nov 2026, #1540)
-**The question.** Backlog L (OG-117) asks for the Crown's court, the Mark's legal duel and the Compact's tribunal, plus new crimes, but today one law (fine, halt, yield, cells, confession) runs on all three islands and only the guards' voices differ. How far should the islands' law differ? Page: https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/law-in-three-registers.md
-
-**Options.**
-- **A.** Three courts over today's crimes: the Gatelands' restitution and the stocks (an hour per 50 gold, at most 6); the Mark's claim to the wronged, fought to a yield by noon (win: void, lose: 1.5×); Aurenne's one ledger for the island (10% a game-week, capped at double), a contract to work it off, prison (a night per 100 gold, at most 3). Three systems sessions, one look.
-- **B (recommended).** A, plus three crimes inside loops already built, each with a lawful road and shown before it bites: poaching in a lord's chase (a 30-gold season's licence), smuggling cargo past the Compact's tenth through a cove's fence (a tithe-ship's search, one in four), and sacrilege, selling gate salvage in a Prior's town. Six systems sessions, one look, one bodies.
-- **C.** B, plus a record that travels across a nation, bounty hunters over 300 gold, banishment after three guards dead, and cells you can break out of. A deep-work session and six systems sessions; banishment closes a third of the world.
-
-**Recommendation.** B: three choices made inside hunting, sailing and gate salvage, the law kept local as the canon's three governments are, every cost in gold, favour or game hours. Gate trespass and unlicensed gate work are left out: on the home island they would make the core loop unlawful.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -64,6 +16,64 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### The adventurer's kit: a pack, the pack plus a spyglass, rod and net, or those plus wear? (from the designer, 13 Nov 2026, #1504)
+**The question.** Backlog L8's adventurer's kit (OG-098) asks a use for each thing carried. Most of it is built (pick, hatchet, joiner's kit, shovel, skinning knife, mess kit, bedrolls, tent, water vessels, cloaks), but nothing makes what you carry a choice, and nothing in the game is a pack, a spyglass, a rod or a net. How far should the kit go? Page: `docs/design/adventurers-kit.md`.
+
+**Options.**
+- **A.** A pack (2 kg, 40 gold): the first 20 kg of tools and goods weigh nothing, never armour or weapons; past 10 kg in it the roll is the heavy roll. By island in looks only. A *Kit* tab in the inventory. One systems session, one bodies.
+- **B (recommended).** A, plus a spyglass (ships read to 800 m; towns, forts, lairs and gate doors *sighted* in pencil to 1,000 m, no fast travel; bound by fog and dark), a rod (cast from a bank, a bite in 15–45 s, a 1 s strike) and a net (from your deck over a school, 3–5 fish, feeds the crew). Three systems sessions, one bodies, one look.
+- **C.** B, plus wear (pick 300 strikes, hatchet 60 trees, mended at the smith) and footing (ice and mud, nailed boots). Three more systems sessions and a deep-work session.
+
+**Recommendation.** B: the pack makes the load a choice without raising a fighter's numbers, and the glass, rod and net are the sheet's three verbs nothing answers; wear is a chore and footing is L11's own proposal.
+
+Michael: **B, The pack, plus a spyglass, rod and net.** (14 Nov 2026, tapped on the control room)
+
+### Weather in a sneak and a shot: rain covers your steps, wind carries your arrows, or neither? (from the systems builder, 13 Nov 2026, #1511)
+**The question.** OG-138 (*Weather that matters*, backlog L12) asks for weather that changes play; so far it changes only how far you see (Session 1420, C on #679). Two of its rules are the systems builder's: *rain masking sound for sneaking* and *wind bending arrows*. Today a foe hears you walking at 3 m, sneaking at 1 m, standing still at 0.9 m; an arrow leaves a full draw at 28 m/s and falls 4 m/s²; the world's wind (`windDir()`, read off the clock, gusting in a storm) moves only the sails and the smoke. Should the weather change how you are heard and where your arrows fly?
+
+**Options.**
+- **A.** Rain and snow cover your steps, outdoors only: a foe hears you walking at 2 m in rain or snow, 1.5 m in a storm, heavy rain or a blizzard; sneaking is floored at the still 0.9 m. Arrows unchanged. One session.
+- **B (recommended).** A, plus the wind carries your arrows sideways along `windDir()`: a breeze 0.4 m/s², rain or snow 0.8, a storm or blizzard gusting at 2.0 (0.23 / 0.46 / 1.15 m of drift at 30 m; 0.9 / 1.8 / 4.6 m at 60). No wind indoors or in gates; the foes' arrows drift the same; Long eye halves it. Two sessions.
+- **C.** Neither: the weather stays a matter of sight.
+
+**Recommendation.** B: a storm that covers your steps but spoils your shot is a choice with two sides (feeling 2, a world that pushes back); every number is read from the weather and the clock, already saved and seeded, so co-op holds.
+
+Michael: **B, A, plus the wind carries your arrows.** (14 Nov 2026, tapped on the control room)
+
+### The Mark's town house inside: as drawn, one room, or not yet? (from the look builder, 13 Nov 2026, #1518)
+**The question.** Michael's C on #1300 put the kit's town house on the Mark's tight lots (Session 2003): 68 homes in the four ports and the city, which inside still open on the old generated room. The look builder has drawn a room for them (`markTownRoom`, `docs/prototypes/levelup/rooms.js`, `rooms.html?room=marktown`), built in the street's own shell at every lot size (4.2–6.6 m by 3.4–7 m), after Bergen's wharf houses: downstairs a living room with a raised hearth (a stone hood and wooden flue where there is no chimney), table, bench and a hanging lamp; a 13-step stair to a landing; upstairs a loft open to the roof with a bed of furs, the game's chest, a cradle where it fits and sacks under the hoist door. 2,600–3,288 triangles in 14 draws; the prototype's checks pass at all 36 sizes. Picture: https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2187/docs/prototypes/levelup/rooms-marktown-sheet.jpg
+
+**Options.**
+- **A (recommended).** As drawn: it goes into the game next for all 68 town houses, as the longhouse did.
+- **B.** One room only: the ground floor as drawn, the bed downstairs in place of the stair; upstairs stays unreachable storage.
+- **C.** Leave them on the generated room for now.
+
+**Note.** In the shallowest houses (3.4 m deep) the stair is a ladder-stair at 62°; with no climbing, you walk it as a steep ramp.
+
+Michael: **A, As drawn, for all 68 town houses.** (14 Nov 2026, tapped on the control room)
+
+### A beast's tell: the body glows, the jaws, or the eyes? (from the bodies builder, 13 Nov 2026, #1522)
+**The question.** A foe's blow is warned by its wind-up and, in the tell's last 0.15 s, a colour: gold for a light blow, red for a heavy one. Michael's B on #1278 moved a person's colour off the body onto the weapon's edge (Session 2092). The beasts on the wolf's driver (the wolves, the Dire Wolf, the bears, the boars, the corrupted three) hold no weapon, so on the new look their whole hide still lights up. Where should a beast's tell show? Pictures (A, B, C left to right): https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/beasttells-wolf.jpg, https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/beasttells-bear.jpg, https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/beasttells-heavy.jpg (dusk, red). Prototype: `docs/prototypes/levelup/beasttells.html`.
+
+**Options.**
+- **A.** As today: the whole body glows gold or red.
+- **B (recommended).** #1278's rule carried to a beast: the muzzle and the jaw glow in the tell's colour (about 2.5% of the hide), with a small glare in the open mouth; the rest keeps its colour. Reads from the camera at 5.8 m. One bodies session (`hcTick`).
+- **C.** The eyes alone flare, with a glare round each. The quietest; at dusk you can miss them.
+
+Michael: **B, The muzzle and jaw glow.** (14 Nov 2026, tapped on the control room)
+
+### Law in three registers: three courts, three courts and three new crimes, or a law that travels? (from the designer, 14 Nov 2026, #1540)
+**The question.** Backlog L (OG-117) asks for the Crown's court, the Mark's legal duel and the Compact's tribunal, plus new crimes, but today one law (fine, halt, yield, cells, confession) runs on all three islands and only the guards' voices differ. How far should the islands' law differ? Page: https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/law-in-three-registers.md
+
+**Options.**
+- **A.** Three courts over today's crimes: the Gatelands' restitution and the stocks (an hour per 50 gold, at most 6); the Mark's claim to the wronged, fought to a yield by noon (win: void, lose: 1.5×); Aurenne's one ledger for the island (10% a game-week, capped at double), a contract to work it off, prison (a night per 100 gold, at most 3). Three systems sessions, one look.
+- **B (recommended).** A, plus three crimes inside loops already built, each with a lawful road and shown before it bites: poaching in a lord's chase (a 30-gold season's licence), smuggling cargo past the Compact's tenth through a cove's fence (a tithe-ship's search, one in four), and sacrilege, selling gate salvage in a Prior's town. Six systems sessions, one look, one bodies.
+- **C.** B, plus a record that travels across a nation, bounty hunters over 300 gold, banishment after three guards dead, and cells you can break out of. A deep-work session and six systems sessions; banishment closes a third of the world.
+
+**Recommendation.** B: three choices made inside hunting, sailing and gate salvage, the law kept local as the canon's three governments are, every cost in gold, favour or game hours. Gate trespass and unlicensed gate work are left out: on the home island they would make the core loop unlawful.
+
+Michael: **B, A, plus three new crimes with a lawful road.** (14 Nov 2026, tapped on the control room)
+
 ### Can the garden grow butter and curd? (from the systems builder, 2026-11-12, #1495)
 **The question.** Resources and crafting B (#1420) gave your house a garden whose four beds grow "its own island's seconds". Two of those seconds are not plants: the Gatelands' **butter** and the Mark's **curd**. As built (Session 2140) you can sow butter and gather 4 butter five days later, and the look builder (Session 2165) draws those beds as clover. Aurenne's three (wheat, dates, olives) are all crops.
 
