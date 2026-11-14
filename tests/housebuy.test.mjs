@@ -55,9 +55,13 @@ await g.frames(2);
 const fit = await page.evaluate(() => { const h = currentHouse, B = interiorScene.children.find(o => o.userData.homeFit === 'bench'), sp = h._fits && h._fits.bench, mine = INT_SOL.find(s => s.homeFit === 'bench');
   const others = mine ? INT_SOL.filter(s => !s.homeFit && s.y0 < 1.6 && s.y1 > .05 && s.x0 < mine.x1 && s.x1 > mine.x0 && s.z0 < mine.z1 && s.z1 > mine.z0).length : -1;
   const sx = px, sz = pz, far = homeFitHere('bench'); let at = false; if (sp) { px = sp.x; pz = sp.z; at = homeFitHere('bench'); px = sx; pz = sz; }
-  return { placed: !!B, sp, others, inRoom: !!mine && mine.x0 >= 0 && mine.z0 >= 0 && mine.x1 <= h._roomW && mine.z1 <= h._roomD, at, far, L: B && B.userData.kit.L }; });
-check(fit.placed ? `a workbench fitted stands in Your House (${fit.L} m, its front at ${fit.sp.x}, ${fit.sp.z}), clear of the room's solids, worked from its front` : 'a workbench fitted in a room with no whole wall free for it is worked anywhere in the house (the rules\' fallback)',
-  fit.placed ? fit.others === 0 && fit.inRoom && fit.at && !fit.far : !fit.sp && fit.far, fit);
+  /* S2222 — a rack of tools hangs only on whole wall: rays every 0.1 m across the rack at 1.05 and 1.3 m meet the wall (Maeve's, s1572: over two sashes); a bench with none stands before a window */
+  let rackWall = null; if (B && B.userData.kit.rack) { const ms = []; interiorScene.traverse(o => { if (o.isMesh && o.visible && !o.userData.daylight) { for (let p = o; p; p = p.parent) if (p.userData && p.userData.homeFit) return; ms.push(o); } });
+    const ry = B.rotation.y, nx = Math.sin(ry), nz = Math.cos(ry), ax = Math.cos(ry), az = -Math.sin(ry), R = new THREE.Raycaster(), hw = B.userData.kit.L / 2 - .02; rackWall = 0; let n = 0;
+    for (let u = -hw; u <= hw + 1e-6; u += .1) for (const y of [1.05, 1.3]) { n++; R.set(new THREE.Vector3(B.position.x + ax * u + nx * .3, y, B.position.z + az * u + nz * .3), new THREE.Vector3(-nx, 0, -nz)); R.far = .45; if (R.intersectObjects(ms, false).length) rackWall++; } rackWall = rackWall + '/' + n; }
+  return { placed: !!B, sp, others, inRoom: !!mine && mine.x0 >= 0 && mine.z0 >= 0 && mine.x1 <= h._roomW && mine.z1 <= h._roomD, at, far, L: B && B.userData.kit.L, rack: B && B.userData.kit.rack, rackWall }; });
+check(fit.placed ? `a workbench fitted stands in Your House (${fit.L} m, its front at ${fit.sp.x}, ${fit.sp.z}), clear of the room's solids, worked from its front, its rack ${fit.rack ? 'on whole wall (' + fit.rackWall + ' rays)' : 'left off before a window'}` : 'a workbench fitted in a room with no whole wall free for it is worked anywhere in the house (the rules\' fallback)',
+  fit.placed ? fit.others === 0 && fit.inRoom && fit.at && !fit.far && (!fit.rack || fit.rackWall.split('/')[0] === fit.rackWall.split('/')[1]) : !fit.sp && fit.far, fit);
 // S2147 (the look builder): a clay oven and a kiln fitted (PKIT.props.clay) stand by a wall too, each clear of the room's solids and of the
 // bench, worked from its front; a room with no wall free for one keeps the rules' fallback for it
 const clay = await page.evaluate(() => { const h = currentHouse, r = homeFitRec(h); for (const k of ['oven', 'kiln']) if (!r.fit.includes(k)) r.fit.push(k); homeFitsDress(h); const o = {};
