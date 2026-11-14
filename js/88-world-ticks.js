@@ -512,6 +512,7 @@
     tickLightPool(dt);tickWeather(dt);tickSmoke(dt);tickShip(dt);tickSailTrim(dt);tickBehaviours(dt);cabinUpdate();tickSchoolCool(dt);tickWhales(dt,now||performance.now());tickBoarding(dt);tickHullCollisions(dt);tickShipLeaks(dt);tickOtherShips(dt,now||performance.now());tickHooks(dt);tickBolts(dt);tickPots(dt);tickGuns(dt);tickShipFires(dt);tickMerchantHands(dt);sunkWrecksTick(dt);tickCrew();tickSharks();tickFish(dt,now||performance.now());tickGulls(dt,now||performance.now());tickDolphins(dt,now||performance.now());
     stream(px,pz,false);
     tickWildSpawn(dt); /* S1707 — the peaceful animals */
+    try{tickChase(dt);}catch(e){} /* S2235 — the lord's chase said as you walk into it */
     houseLod();
     landTick(dt); // S1181 (F3): the new look's grass, a chunk a frame, and its wind
     try{tickWonders();}catch(e){console.warn('wonders',e);} /* S1614 — the Skyfall Fields (82-world-structures.js) */
@@ -522,7 +523,7 @@
     tickTownNPCs(dt,now||performance.now());try{tickCrime(dt,now||performance.now());}catch(e){}
     tickChatter(dt);
     ensureTaskWorldObjects();tickPickups();qTick();
-    tickHerbSync(dt);tickAshenmoorStory();tickProsperity();tickRents();tickDatedWork();tickCaravans(dt);tickCoaches(dt);tickStory();try{tickDuel(dt);}catch(e){console.warn('duel',e);}try{tickSpar();}catch(e){console.warn('spar',e);}try{tickBrawl(dt);}catch(e){console.warn('brawl',e);}try{tickLadder(dt);}catch(e){console.warn('ladder',e);}try{tickSpire(dt);}catch(e){console.warn('spire',e);}tickSiteDeaths();tickVarek(dt);tickHerald();tickTremor();tickNightRoads();sweepLights();
+    tickHerbSync(dt);tickAshenmoorStory();tickProsperity();tickRents();tickDatedWork();tickCaravans(dt);tickCoaches(dt);tickStory();try{tickDuel(dt);}catch(e){console.warn('duel',e);}try{tickSpar();}catch(e){console.warn('spar',e);}try{tickBrawl(dt);}catch(e){console.warn('brawl',e);}try{tickClaim(dt);}catch(e){console.warn('claim',e);}try{tickLadder(dt);}catch(e){console.warn('ladder',e);}try{tickSpire(dt);}catch(e){console.warn('spire',e);}tickSiteDeaths();tickVarek(dt);tickHerald();tickTremor();tickNightRoads();sweepLights();
     tickCleared();
     tickDiscovery(dt);
     waysideLamps(); /* S2048 — the coach's lamp at night */

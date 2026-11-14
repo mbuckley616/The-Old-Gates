@@ -389,6 +389,7 @@ const KIT_ROWS=[
   {has:b=>!!b.roll,lbl:'Bedroll',line:'a night in the open',sold:'goods shops'},
   {has:b=>!!b.tent,lbl:'Tent',line:'a night in the open one grade better, and the weather one grade less',sold:'goods shops'},
   {has:b=>b.tool==='rod',lbl:'Fishing rod',line:'cast at water 0.6 m deep; strike within a second of the bite',sold:'goods shops'},
+  {has:b=>b.tool==='glass',lbl:'Spyglass',line:'the view ×5 by day: a ship’s card, and far places pencilled on your map',sold:'harbour goods shops'},
   {has:b=>b.tool==='net',lbl:'Fishing net',line:'from your deck over a school: 3 to 5 fish for the sea chest',sold:'harbour goods shops'},
   {has:b=>!!b.vessel,lbl:'Water vessel',line:'water to drink on the road',sold:'goods shops and inns'},
 ];
