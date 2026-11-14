@@ -2,11 +2,15 @@
 // Clodagh's Goods, 4.6 units from its door with the house between. Each guard joins the beat at his own point and walked
 // to it in a straight line; the house was in the way, and sliding along its wall kept npcStep's give-up from firing.
 // Now a beat point he makes no headway on is reached by the town's street grid, and the grid's path starts from his own cell.
+// S2209: a resident who comes out as you near (tickSettlements) keeps her own town in n._settle (its street grid, its raid), not the last one built.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
 for (const id of ['dunmore', 'portclare']) {
   await g.settle(id);
+  const own = await page.evaluate((id) => { const S = WORLD.settle.get(id); for (let f = 0; f < 60 * 6; f++) WORLD.tick(1 / 60, performance.now());
+    const R = S.residents.filter(r => r.n); return { n: R.length, other: R.filter(r => r.n._settle !== S).map(r => r.def.name) }; }, id);
+  check(`${id}: every resident who comes out carries her own town, not the last one built (S2209; ${own.n} out)`, own.n > 0 && own.other.length === 0, own);
   const r = await page.evaluate((id) => { forceTime(23); const S = WORLD.settle.get(id); const G = WORLD.guardsOf(S);
     px = S.site.x + 300; pz = S.site.z;
     const shops = S.houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper);
