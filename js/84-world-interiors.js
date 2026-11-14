@@ -325,7 +325,7 @@
     let A=null;try{A=PKIT.places.arches({key:site.id+':arches',land:(lx,lz)=>worldH(D.x+lx*co+lz*s_,D.z-lx*s_+lz*co)-SEA_Y});}catch(e){console.warn('drowned arches',site.id,e);return;}
     const G=new THREE.Group();G.name='drownedArches';G.userData.noBake=true;A.group.position.set(D.x,SEA_Y,D.z);A.group.rotation.y=D.ry;G.add(A.group);S.group.add(G);
     const mid=-21,cx=D.x+mid*s_,cz=D.z+mid*co;
-    S.arches={...D,tris:A.tris,draws:A.draws,M:A,group:A.group};S.archLod={hi:G,lo:new THREE.Group(),x:cx,z:cz,r:30};}
+    S.arches={...D,tris:A.tris,draws:A.draws,M:A,group:A.group};S.archLod={hi:G,lo:new THREE.Group(),x:cx,z:cz,r:30};seaSolAdd(site.id+':arches',A.group);}
   // S433 — a quay on a river bank (Michael's C on #112, the towns on the banks): a settlement within a short walk of
   // navigable water gets a stone quay along the bank on the harbour's kit, narrower (5 across, 20 long), its outer face
   // a little over the water; bollards on the water side, a boat or two moored to it, crates and a net on the land
