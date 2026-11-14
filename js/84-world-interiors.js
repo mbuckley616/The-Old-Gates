@@ -325,7 +325,7 @@
     let A=null;try{A=PKIT.places.arches({key:site.id+':arches',land:(lx,lz)=>worldH(D.x+lx*co+lz*s_,D.z-lx*s_+lz*co)-SEA_Y});}catch(e){console.warn('drowned arches',site.id,e);return;}
     const G=new THREE.Group();G.name='drownedArches';G.userData.noBake=true;A.group.position.set(D.x,SEA_Y,D.z);A.group.rotation.y=D.ry;G.add(A.group);S.group.add(G);
     const mid=-21,cx=D.x+mid*s_,cz=D.z+mid*co;
-    S.arches={...D,tris:A.tris,draws:A.draws,M:A,group:A.group};S.archLod={hi:G,lo:new THREE.Group(),x:cx,z:cz,r:30};}
+    S.arches={...D,tris:A.tris,draws:A.draws,M:A,group:A.group};S.archLod={hi:G,lo:new THREE.Group(),x:cx,z:cz,r:30};seaSolAdd(site.id+':arches',A.group);}
   // S433 — a quay on a river bank (Michael's C on #112, the towns on the banks): a settlement within a short walk of
   // navigable water gets a stone quay along the bank on the harbour's kit, narrower (5 across, 20 long), its outer face
   // a little over the water; bollards on the water side, a boat or two moored to it, crates and a net on the land
@@ -412,8 +412,9 @@
   // the bench is the kit's 1.5 m one where it fits, else its 1.1 m one (a full room: Dunmore's townhouse)
   function homeBenchLay(h){if(typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.bench)return;let B=null,sp=null;
     for(const L of [1.5,1.1]){const f={x0:-L/2,x1:L/2,z0:0,z1:.86};sp=homeWallSpot(h,f.x1-f.x0,f.z1-f.z0,.8,homeWallWhole);if(sp){B=PKIT.props.bench({L});break;}}
+    if(!sp)for(const L of [1.5,1.1]){const f={x0:-L/2,x1:L/2,z0:0,z1:.86};sp=homeWallSpot(h,f.x1-f.x0,f.z1-f.z0,.8,homeWallLow);if(sp){B=PKIT.props.bench({L,rack:false});break;}} /* S2222 — no whole wall free: the bench before a window, its rack left off */
     if(!sp)return;
-    B.group.position.set(sp.x,0,sp.z);B.group.rotation.y=sp.ry;B.group.userData.homeFit='bench';B.group.userData.kit={tris:B.tris,draws:B.draws,L:B.foot.x1-B.foot.x0};
+    B.group.position.set(sp.x,0,sp.z);B.group.rotation.y=sp.ry;B.group.userData.homeFit='bench';B.group.userData.kit={tris:B.tris,draws:B.draws,L:B.foot.x1-B.foot.x0,rack:!!B.rack};
     B.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(B.group);
     const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:B.top,homeFit:'bench'});FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:B.top,homeFit:'bench'});
     h._fits.bench={x:+sp.front[0].toFixed(3),z:+sp.front[1].toFixed(3)};}
@@ -426,14 +427,17 @@
     P.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(P.group);
     const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:P.top,homeFit:kind});FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:P.top,homeFit:kind});
     h._fits[kind]={x:+sp.front[0].toFixed(3),z:+sp.front[1].toFixed(3)};}
-  // the wall behind a thing w wide is whole: from 0.3 m into the room, rays back to the wall at 0.5, 1.0 and 1.4 m up, at its middle and
-  // 0.1 m in from each end, each meet the room within 0.45 m (a doorway, an open window or the stair's well lets one through: the
+  // the wall behind a thing w wide is whole: from 0.3 m into the room, rays back to the wall at 0.5, 1.0 and 1.4 m up, every 0.1 m across
+  // its width (S2222; its middle and 0.1 m in from each end until then), each meet the room within 0.45 m (a doorway, an open window or the stair's well lets one through: the
   // townhouse's back door, where the first try hung the bench's tools)
   const HF_RAY=new THREE.Raycaster(),HF_O=new THREE.Vector3(),HF_D=new THREE.Vector3();
-  function homeWallWhole(x,z,nx,nz,ax,az,w){const ms=[];interiorScene.updateMatrixWorld(true);
+  // S2222 — the wall is whole under a window's sill (0.5 m up), not a doorway: where a bench may stand without its rack
+  function homeWallLow(x,z,nx,nz,ax,az,w){return homeWallWhole(x,z,nx,nz,ax,az,w,[.5]);}
+  function homeWallWhole(x,z,nx,nz,ax,az,w,ys){ys=ys||[.5,1.0,1.4];const ms=[];interiorScene.updateMatrixWorld(true);
     interiorScene.traverse(o=>{if(o.isMesh&&o.visible&&!o.userData.daylight){for(let p=o;p;p=p.parent)if(p.userData&&p.userData.homeFit)return;ms.push(o);}});
     HF_D.set(-nx,0,-nz);HF_RAY.far=.45;
-    for(const u of [-w/2+.1,0,w/2-.1])for(const y of [.5,1.0,1.4]){HF_O.set(x+ax*u+nx*.3,y,z+az*u+nz*.3);HF_RAY.set(HF_O,HF_D);HF_RAY.far=.45;if(!HF_RAY.intersectObjects(ms,false).length)return false;}
+    const n=Math.max(2,Math.ceil((w-.04)/.1)),us=[];for(let k=0;k<=n;k++)us.push(-w/2+.02+(w-.04)*k/n); /* S2222 — every 0.1 m across its width, not its middle and ends only: Maeve's bench stood on 1.1 m of wall between two sashes and its rack hung over both (the critic, s1572) */
+    for(const u of us)for(const y of ys){HF_O.set(x+ax*u+nx*.3,y,z+az*u+nz*.3);HF_RAY.set(HF_O,HF_D);HF_RAY.far=.45;if(!HF_RAY.intersectObjects(ms,false).length)return false;}
     return true;}
   // the yard's racks for your own house: struck and stood again by what is fitted now (townRacks lays what curesOf gives, the fitted ones)
   function homeYardRacks(h){const S=typeof SETTLE!=='undefined'&&SETTLE.get(h.siteId);if(!S||!S.group||!Array.isArray(S.racks)||typeof townRacks!=='function')return;

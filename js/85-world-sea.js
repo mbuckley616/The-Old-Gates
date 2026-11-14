@@ -685,7 +685,8 @@
     const fwd=HELD_KEYS.KeyW,down=pitch<-.35,up=pitch>.35||HELD_KEYS.Space;
     let vy=0;
     if(fwd&&down)vy=-2.2;else if((fwd&&up)||HELD_KEYS.Space)vy=2.4;else if(!fwd)vy=.6; // buoyancy
-    DIVE.depth=Math.min(SWIM_Y,Math.max(bed+.9,DIVE.depth+vy*dt)); /* S1084 (F2b) — a body lying in the water clears the bed by 0.90 (0.55), and never rises over the swimmer's line */
+    const d0=DIVE.depth;DIVE.depth=Math.min(SWIM_Y,Math.max(bed+.9,DIVE.depth+vy*dt)); /* S1084 (F2b) — a body lying in the water clears the bed by 0.90 (0.55), and never rises over the swimmer's line */
+    {const sp=seaSolSpan(px,pz,d0);if(sp){if(DIVE.depth<sp.lo)DIVE.depth=Math.min(Math.max(d0,sp.lo),SWIM_Y);if(DIVE.depth>sp.hi)DIVE.depth=Math.max(Math.min(d0,sp.hi),bed+.9);}} /* S2220 — a drowned place's stone under you is a floor, over you a roof */
     const under=DIVE.depth<SWIM_Y-.15;
     if(under!==DIVE.under){DIVE.under=under;if(under)splash(false);}
     if(under){if(!(typeof fxOn==='function'&&fxOn('waterbreath'))&&!(typeof gateGift==='function'&&gateGift('uisce')))DIVE.breath=Math.max(0,DIVE.breath-dt/breathSecs()); /* S976 — Long breath (Athletics 50) */if(DIVE.breath<=0){DIVE.hurtT-=dt;if(DIVE.hurtT<=0){DIVE.hurtT=1;PHP=Math.max(0,PHP-6);updateHUD();if(PHP<=0&&typeof playerDead==='function')playerDead();}}}
@@ -778,9 +779,9 @@
       let M=null;try{M=PKIT.places.whale({key:'whale:'+key,land:(lx,lz)=>meshH(D.x+lx*co+lz*s_,D.z-lx*s_+lz*co)-y0});}catch(e){console.warn('whale fall',key,e);return;}
       M.group.position.set(D.x,y0,D.z);M.group.rotation.y=D.ry;M.group.name='whaleFall';
       W={...D,y:y0,key,group:M.group,tris:M.tris,draws:M.draws,M};WHALE_FALLS.set(key,W);
-      for(const [k,o] of WHALE_FALLS){if(WHALE_FALLS.size<=4)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});WHALE_FALLS.delete(k);}}
+      for(const [k,o] of WHALE_FALLS){if(WHALE_FALLS.size<=4)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});WHALE_FALLS.delete(k);SEA_SOLS.delete('whale:'+k);}}
     else{WHALE_FALLS.delete(key);WHALE_FALLS.set(key,W);}
-    ch.group.add(W.group);ch.whale=W;}
+    ch.group.add(W.group);ch.whale=W;seaSolAdd('whale:'+key,W.group);}
   // S2203 — the sunken village on the Gatelands' bed (OG-125, card F11; undersea.js's sunkenVillage as PKIT.places.village): a few chunks
   // of the Gatelands' sea (VILLAGE_ODDS, never a wreck's or a whale's chunk) hold a drowned lane of seven roofless cottages. Its spot is
   // the first of six hashed ones in the chunk, each tried at four headings, where the lane runs down the bed: its head 2 to 6.5 m under
@@ -806,9 +807,9 @@
       let M=null;try{M=PKIT.places.village({key:'village:'+key,land:(lx,lz)=>meshH(hx+lx*co+lz*s_,hz-lx*s_+lz*co)-SEA_Y});}catch(e){console.warn('sunken village',key,e);return;}
       M.group.position.set(hx,SEA_Y,hz);M.group.rotation.y=D.ry;M.group.name='sunkenVillage';
       V={...D,hx,hz,key,group:M.group,tris:M.tris,draws:M.draws,M};VILLAGES.set(key,V);
-      for(const [k,o] of VILLAGES){if(VILLAGES.size<=3)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});VILLAGES.delete(k);}}
+      for(const [k,o] of VILLAGES){if(VILLAGES.size<=3)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});VILLAGES.delete(k);SEA_SOLS.delete('village:'+k);}}
     else{VILLAGES.delete(key);VILLAGES.set(key,V);}
-    ch.group.add(V.group);ch.village=V;}
+    ch.group.add(V.group);ch.village=V;seaSolAdd('village:'+key,V.group);}
   // S2208 — the drowned quarter on Aurenne's bed (OG-125, card F11; undersea.js's sunkenQuarter as PKIT.places.quarter): a few chunks of
   // Aurenne's sea (QUARTER_ODDS, never a wreck's or a whale's chunk) hold a town's bridge and theatre. Its spot is the first of six hashed
   // ones in the chunk, each tried at four headings, where the theatre's orchestra is 6.5 to 10 m down, eight points round its cavea and
@@ -836,9 +837,49 @@
       let M=null;try{M=PKIT.places.quarter({key:'quarter:'+key,land:(lx,lz)=>meshH(ox+lx*co+lz*s_,oz-lx*s_+lz*co)-SEA_Y});}catch(e){console.warn('sunken quarter',key,e);return;}
       M.group.position.set(ox,SEA_Y,oz);M.group.rotation.y=D.ry;M.group.name='sunkenQuarter';
       Q={...D,ox,oz,key,group:M.group,tris:M.tris,draws:M.draws,M};QUARTERS.set(key,Q);
-      for(const [k,o] of QUARTERS){if(QUARTERS.size<=3)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});QUARTERS.delete(k);}}
+      for(const [k,o] of QUARTERS){if(QUARTERS.size<=3)break;if(chunks.has(k))continue;if(o.group.parent)o.group.parent.remove(o.group);o.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});QUARTERS.delete(k);SEA_SOLS.delete('quarter:'+k);}}
     else{QUARTERS.delete(key);QUARTERS.set(key,Q);}
-    ch.group.add(Q.group);ch.quarter=Q;}
+    ch.group.add(Q.group);ch.quarter=Q;seaSolAdd('quarter:'+key,Q.group);}
+  // S2220 — the drowned places are stone to a swimmer (the whale fall, the drowned arches, the sunken village, the drowned quarter: until
+  // now you swam through every wall). Each place's solids are read off its own drawn meshes the first time you swim within its reach, in
+  // its own frame, on a grid of 0.5 m columns: every triangle but the kelp is sampled every 0.25 m, and a column's stone is the spans
+  // between a face looking down and the face looking up above it (a span with no floor under it runs down into the bed, as the courses
+  // and the piers are sunk), with the walls' upright faces as thin bands. Spans closer than the body's height are one. So a door, a gap
+  // in a broken wall and the opening under an arch stay open, a wall broken low is swum over, and a deck is a roof. Only the swimmer's own
+  // step feels them (solidAt with the feet's height): a ship's hull, the foes, arrows and the camera pass over, as the arches were built
+  // for a hull to. The body is the feet's height y (jumpY: SWIM_Y at the surface, DIVE.depth under it) from 0.2 under to 0.9 over, 0.3 round.
+  const SEA_SOLS=new Map(),SEA_CELL=.5,SEA_LO=.2,SEA_HI=.9,SEA_R=.3,SEA_V=new THREE.Vector3();
+  function seaSolAdd(key,group){const P=SEA_SOLS.get(key);if(P&&P.group===group)return;SEA_SOLS.set(key,{key,group,grid:null,inv:null,r:null});}
+  function seaSolLive(P){let o=P.group;for(let k=0;k<8&&o;k++){if(o===sc)return true;o=o.parent;}return false;}
+  function seaSolBuild(P){
+    const g=P.group,G=new Map(),inv=new THREE.Matrix4(),M=new THREE.Matrix4(),a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),e1=new THREE.Vector3(),e2=new THREE.Vector3();
+    g.updateMatrixWorld(true);inv.copy(g.matrixWorld).invert();let r=0;
+    const ev=(x,y,z,t)=>{const k=Math.floor(x/SEA_CELL)+','+Math.floor(z/SEA_CELL);let L=G.get(k);if(!L)G.set(k,L=[]);L.push(y,t);r=Math.max(r,Math.hypot(x,z));};
+    g.traverse(m=>{if(!m.isMesh||/kelp/.test(m.name||''))return;M.multiplyMatrices(inv,m.matrixWorld);const Pa=m.geometry.attributes.position,I=m.geometry.index,nt=(I?I.count:Pa.count)/3;
+      for(let t=0;t<nt;t++){const i0=I?I.getX(3*t):3*t,i1=I?I.getX(3*t+1):3*t+1,i2=I?I.getX(3*t+2):3*t+2;
+        a.fromBufferAttribute(Pa,i0).applyMatrix4(M);b.fromBufferAttribute(Pa,i1).applyMatrix4(M);c.fromBufferAttribute(Pa,i2).applyMatrix4(M);
+        e1.subVectors(b,a);e2.subVectors(c,a);const ny=e1.cross(e2).normalize().y,ty=ny>.3?1:ny<-.3?-1:0;
+        const N=Math.max(1,Math.ceil(Math.max(a.distanceTo(b),b.distanceTo(c),c.distanceTo(a))/.25));
+        for(let i=0;i<=N;i++)for(let j=0;j<=N-i;j++){const u=i/N,v=j/N,w=1-u-v;ev(a.x*w+b.x*u+c.x*v,a.y*w+b.y*u+c.y*v,a.z*w+b.z*u+c.z*v,ty);}}});
+    for(const [k,L] of G){const E=[];for(let i=0;i<L.length;i+=2)E.push([L[i],L[i+1]]);E.sort((p,q)=>p[0]-q[0]);
+      const S=[];let inside=false,st=0,last=-1e9;
+      for(const [y,t] of E){if(t<0){if(!inside){inside=true;st=y;}}else if(t>0){S.push([inside?st:last,y]);inside=false;last=y;}else S.push([y-.13,y+.13]);}
+      if(inside)S.push([st,st+.25]);S.sort((p,q)=>p[0]-q[0]);
+      const out=[];for(const sp of S){const o=out[out.length-1];if(o&&sp[0]<=o[1]+SEA_LO+SEA_HI)o[1]=Math.max(o[1],sp[1]);else out.push([sp[0],sp[1]]);}
+      G.set(k,out);}
+    P.grid=G;P.inv=inv;P.r=r+1;return P;}
+  // the place's spans under a swimmer's body at x,z (four corners of the body's square): [[y0,y1],…] in its frame, and the feet there
+  function seaSolAt(x,z,y,fn){
+    for(const P of SEA_SOLS.values()){if(!seaSolLive(P))continue;const gp=P.group.matrixWorld.elements,d=Math.hypot(x-gp[12],z-gp[14]);if(P.r!=null&&d>P.r+SEA_R)continue;if(P.r==null&&d>90)continue;
+      if(!P.grid)seaSolBuild(P);if(d>P.r+SEA_R)continue;SEA_V.set(x,y,z).applyMatrix4(P.inv);const lx=SEA_V.x,ly=SEA_V.y,lz=SEA_V.z;
+      for(const [ox,oz] of [[-SEA_R,-SEA_R],[SEA_R,-SEA_R],[-SEA_R,SEA_R],[SEA_R,SEA_R]]){const L=P.grid.get(Math.floor((lx+ox)/SEA_CELL)+','+Math.floor((lz+oz)/SEA_CELL));if(L&&fn(L,ly,y-ly))return true;}}
+    return false;}
+  // true when the body at x,z with its feet at y stands in a drowned place's stone (solidAt's hook, only for the swimmer's own step)
+  function seaSolHit(x,z,y){if(!SEA_SOLS.size||y==null)return false;return seaSolAt(x,z,y,(L,ly)=>L.some(s=>s[1]>ly-SEA_LO&&s[0]<ly+SEA_HI));}
+  // the feet's room at x,z from y: {lo,hi} in world y (no lower than the stone under you, no higher than under the stone over you)
+  function seaSolSpan(x,z,y){let lo=-1e9,hi=1e9;if(!SEA_SOLS.size)return null;
+    seaSolAt(x,z,y,(L,ly,off)=>{for(const s of L){if(s[1]<=ly-SEA_LO+.05)lo=Math.max(lo,s[1]+SEA_LO+off);else if(s[0]>=ly+SEA_HI-.05)hi=Math.min(hi,s[0]-SEA_HI+off);}return false;});
+    return lo>-1e9||hi<1e9?{lo,hi}:null;}
   function spawnWreck(ch){
     const w=wreckSpot(ch.cx,ch.cz);if(!w)return;
     const x=w.x,z=w.z,y=worldH(x,z),ry=hash01(ch.cx,ch.cz,153)*Math.PI*2;

@@ -74,7 +74,13 @@ if (da.near) { await page.evaluate(t => WORLD.enter(t.x, t.z, 0, 'test'), da.nea
   console.log(JSON.stringify(a));
   check(`the nearest (${da.near.id}) is built with its town: ${a.tris} triangles in ${a.draws} draws (under 12k, four draws)`, !a.none && a.inScene && a.lod && a.tris < 12000 && a.draws === 4, a);
   check(`every pier is footed under the drawn bed beside it, ${a.standing} stand a metre or more clear of it, the deck ${a.deckY} m under the sea over the whole bays`, !a.none && a.piers.every(p => p.foot < p.bed - .3) && a.standing >= 3 && a.deckY < -1.5 && a.deck.every(b => b < a.deckY + .3), a);
-  check(`clear of the quay (${a.inPlat} points within 3 m of it) and of the berth (${a.toBerth} m)`, !a.none && a.inPlat === 0 && a.toBerth > 8, a); }
+  check(`clear of the quay (${a.inPlat} points within 3 m of it) and of the berth (${a.toBerth} m)`, !a.none && a.inPlat === 0 && a.toBerth > 8, a);
+  // Session 2220 — the drowned places are stone to a swimmer (their solids read off their own meshes): a whole pier stops you at its middle,
+  // its deck is a floor to a swimmer coming down onto it, and nothing stops a query without the feet's height (a hull, a foe, an arrow)
+  const as = await page.evaluate(id => { const A = WORLD.settlements.get(id).arches, M = A.M, co = Math.cos(A.ry), s_ = Math.sin(A.ry), W = (u, v) => [A.x + u * co + v * s_, A.z - u * s_ + v * co];
+    const b = M.arcade.bays.find(b => b.whole && b.top - b.ground > 2.5) || M.arcade.bays[1], mid = SEA_Y + (b.pier[0] + b.pier[1]) / 2, [x, z] = W(0, b.z), bayZ = b.z - (M.arcade.span + M.arcade.pier[1]) / 2, [bx, bz] = W(0, bayZ);
+    const sp = seaSolSpan(bx, bz, SEA_Y + M.arcade.deck + 1); return { key: SEA_SOLS.has(id + ':arches'), pier: solidAt(x, z, Math.max(mid, meshH(x, z) + .95)), noY: solidAt(x, z), over: solidAt(x, z, SEA_Y + M.arcade.deck + .6), floor: sp && +(sp.lo - SEA_Y).toFixed(2), deck: M.arcade.deck }; }, da.near.id);
+  check(`its stone is solid to a swimmer: a pier stops you, its deck (${as.deck}) is a floor at ${as.floor} coming down, a query with no feet passes`, as.key && as.pier && !as.noY && !as.over && as.floor > as.deck && as.floor < as.deck + .5, as); }
 // Session 2203 — the sunken village (OG-125, card F11; PKIT.places.village, undersea.js's sunkenVillage): a few chunks of the Gatelands'
 // sea hold a drowned lane of seven roofless cottages running down the bed, the same spots when asked again, none off the Gatelands or in a
 // wreck's or a whale's chunk; the nearest is built with its chunk, its cottages settled on the drawn bed with their broken tops under the sea
@@ -93,7 +99,23 @@ if (sv.near) { const D = sv.near, key = `${D.cx},${D.cz}`;
   console.log(JSON.stringify(v));
   check(`the nearest is built with its chunk, its lane from ${v.head} to ${v.end} m down: ${v.tris} triangles in ${v.draws} draws (under 40k, under 13 draws, vertex-coloured)`, !v.none && v.inScene && v.tris < 40000 && v.draws <= 12 && v.colours, v);
   check('seven cottages, each roofless and its walls broken in courses with tops between them, standing 0.8 to 4 m over the bed at its middle (the plinth shows downhill) and at least 1.5 m under the sea', !v.none && v.houses.length === 7 && v.houses.every(h => h.roof >= 3 && h.broken > 50 && h.caps > 50 && h.top - h.bed > .8 && h.top - h.bed < 4 && h.top < -1.5), v.houses);
-  check('its chunk dropped takes it out of the scene, and loaded again takes the same village back', v.gone && v.same, v); }
+  check('its chunk dropped takes it out of the scene, and loaded again takes the same village back', v.gone && v.same, v);
+  // Session 2220 — the drowned places are stone to a swimmer: driven through the game's own loop, from a cottage's floor you swim at its
+  // back wall and stop inside it; risen over its broken top, the same stroke carries you over and out. A query with no feet passes.
+  const sw = await page.evaluate(k => { const V = chunks.get(k).village, M = V.M, co = Math.cos(V.ry), s_ = Math.sin(V.ry), W = (u, v) => [V.hx + u * co + v * s_, V.hz - u * s_ + v * co], Lx = (x, z) => (x - V.hx) * co - (z - V.hz) * s_;
+    const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {}; let t = performance.now(); prevT = t;
+    const run = n => { for (let i = 0; i < n; i++) { t += 1000 / 60; loop(t); } }, keys = o => { for (const kk in K) K[kk] = false; Object.assign(K, o || {}); HELD_KEYS.KeyW = !!(o && o.KeyW); }; /* the stroke reads K, the dive HELD_KEYS (let go of W and you rise) */
+    const P = SEA_SOLS.get('village:' + k), t0 = performance.now(); P.grid = null; seaSolBuild(P); const r = { ms: +(performance.now() - t0).toFixed(1), cells: P.grid.size };
+    try { for (const h of M.houses) { const sx = h.x > 0 ? 1 : -1, back = Math.abs(h.x) + h.d / 2, [cx, cz] = W(h.x, h.z), sp = seaSolSpan(cx, cz, meshH(cx, cz) + .95); if (!sp) continue; const y0 = sp.lo + .05;
+        const path = []; for (let u = Math.abs(h.x); u < back + .6; u += .1) path.push(solidAt(...W(sx * u, h.z), y0)); if (!path.some(b => b) || y0 > SEA_Y + h.top - .5) continue;
+        const dx = sx * co, dz = -sx * s_; yaw = Math.atan2(-dx, -dz); pitch = 0;
+        const go = y => { px = cx; pz = cz; jumpY = y; DIVE.depth = y; onGround = true; velY = 0; PHP = maxHP; DIVE.breath = 1; run(2); keys({ KeyW: true }); run(240); keys(); run(2); return +(Math.abs(Lx(px, pz))).toFixed(2); };
+        r.house = { x: h.x, d: h.d, back: +back.toFixed(2), top: h.top, y0: +(y0 - SEA_Y).toFixed(2) }; r.stopped = go(y0); r.swimming = WORLD.isSwimming(); r.held = +(jumpY - SEA_Y).toFixed(2); r.over = go(SEA_Y + h.top + .6);
+        r.noY = path.length && !solidAt(...W(sx * (back - .3), h.z)); break; } }
+    finally { window.requestAnimationFrame = raf; REN.render = rr; }
+    return r; }, key);
+  console.log(JSON.stringify(sw));
+  check(`a cottage's back wall stops a swimmer inside it (${sw.stopped} m out, the wall's face at ${sw.house && sw.house.back}), and over its broken top the same stroke carries on to ${sw.over} m; the solids built in ${sw.ms} ms`, sw.house && sw.stopped < sw.house.back - .3 && sw.stopped > Math.abs(sw.house.x) && sw.over > sw.house.back + 1 && sw.noY && sw.ms < 400, sw); }
 // Session 2208 — the drowned quarter (OG-125, card F11; PKIT.places.quarter, undersea.js's sunkenQuarter): a few chunks of Aurenne's sea, off
 // a coast, hold a town's bridge (its middle span fallen) and its theatre; the nearest is built with its chunk on the drawn bed, every top
 // at least 1.8 m under the sea
@@ -112,6 +134,11 @@ if (sq.near) { const D = sq.near, key = `${D.cx},${D.cz}`;
   console.log(JSON.stringify(v));
   check(`the nearest is built with its chunk: ${v.tris} triangles in ${v.draws} draws (under 12k, 2 draws, vertex-coloured), its highest point ${v.top} m (at least 1.8 m under the sea)`, !v.none && v.inScene && v.tris < 12000 && v.draws === 2 && v.colours && v.top <= -1.79, v);
   check('its bridge springs over the bed and its deck stands over the arches, its middle span on the bed; its theatre has seven wedges standing, six columns, its stage wall on the bed', !v.none && v.spring > v.ground[1] && v.deck - v.spring > 4 && v.fallen === 18 && v.wedges === 7 && v.columns.length === 6 && v.wall.foot < v.base, v);
-  check('its chunk dropped takes it out of the scene, and loaded again takes the same quarter back', v.gone && v.same, v); }
+  check('its chunk dropped takes it out of the scene, and loaded again takes the same quarter back', v.gone && v.same, v);
+  // Session 2220 — the bridge's standing arch is a roof to a swimmer under it, its pier stops you, the opening under it is open
+  const qs = await page.evaluate(k => { const Q = chunks.get(k).quarter, co = Math.cos(Q.ry), s_ = Math.sin(Q.ry), W = (u, v) => [Q.ox + u * co + v * s_, Q.oz - u * s_ + v * co], B = Q.M.bridge;
+    const [ax, az] = W(-31.2, -14), [qx, qz] = W(-26.6, -14), y = Math.max(meshH(ax, az) + .95, SEA_Y + B.spring + .3), sp = seaSolSpan(ax, az, y);
+    return { open: !solidAt(ax, az, y), pier: solidAt(qx, qz, Math.max(meshH(qx, qz) + .95, SEA_Y + B.spring)), roof: sp && sp.hi < 1e8 ? +(sp.hi - SEA_Y).toFixed(2) : null, deck: B.deck, spring: B.spring, y: +(y - SEA_Y).toFixed(2) }; }, key);
+  check(`the bridge's standing arch is open under it at ${qs.y}, a roof at ${qs.roof} (the deck ${qs.deck}), its pier solid`, qs.open && qs.pier && qs.roof != null && qs.roof < qs.deck && qs.roof > qs.y, qs); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -55,9 +55,13 @@ await g.frames(2);
 const fit = await page.evaluate(() => { const h = currentHouse, B = interiorScene.children.find(o => o.userData.homeFit === 'bench'), sp = h._fits && h._fits.bench, mine = INT_SOL.find(s => s.homeFit === 'bench');
   const others = mine ? INT_SOL.filter(s => !s.homeFit && s.y0 < 1.6 && s.y1 > .05 && s.x0 < mine.x1 && s.x1 > mine.x0 && s.z0 < mine.z1 && s.z1 > mine.z0).length : -1;
   const sx = px, sz = pz, far = homeFitHere('bench'); let at = false; if (sp) { px = sp.x; pz = sp.z; at = homeFitHere('bench'); px = sx; pz = sz; }
-  return { placed: !!B, sp, others, inRoom: !!mine && mine.x0 >= 0 && mine.z0 >= 0 && mine.x1 <= h._roomW && mine.z1 <= h._roomD, at, far, L: B && B.userData.kit.L }; });
-check(fit.placed ? `a workbench fitted stands in Your House (${fit.L} m, its front at ${fit.sp.x}, ${fit.sp.z}), clear of the room's solids, worked from its front` : 'a workbench fitted in a room with no whole wall free for it is worked anywhere in the house (the rules\' fallback)',
-  fit.placed ? fit.others === 0 && fit.inRoom && fit.at && !fit.far : !fit.sp && fit.far, fit);
+  /* S2222 — a rack of tools hangs only on whole wall: rays every 0.1 m across the rack at 1.05 and 1.3 m meet the wall (Maeve's, s1572: over two sashes); a bench with none stands before a window */
+  let rackWall = null; if (B && B.userData.kit.rack) { const ms = []; interiorScene.traverse(o => { if (o.isMesh && o.visible && !o.userData.daylight) { for (let p = o; p; p = p.parent) if (p.userData && p.userData.homeFit) return; ms.push(o); } });
+    const ry = B.rotation.y, nx = Math.sin(ry), nz = Math.cos(ry), ax = Math.cos(ry), az = -Math.sin(ry), R = new THREE.Raycaster(), hw = B.userData.kit.L / 2 - .02; rackWall = 0; let n = 0;
+    for (let u = -hw; u <= hw + 1e-6; u += .1) for (const y of [1.05, 1.3]) { n++; R.set(new THREE.Vector3(B.position.x + ax * u + nx * .3, y, B.position.z + az * u + nz * .3), new THREE.Vector3(-nx, 0, -nz)); R.far = .45; if (R.intersectObjects(ms, false).length) rackWall++; } rackWall = rackWall + '/' + n; }
+  return { placed: !!B, sp, others, inRoom: !!mine && mine.x0 >= 0 && mine.z0 >= 0 && mine.x1 <= h._roomW && mine.z1 <= h._roomD, at, far, L: B && B.userData.kit.L, rack: B && B.userData.kit.rack, rackWall }; });
+check(fit.placed ? `a workbench fitted stands in Your House (${fit.L} m, its front at ${fit.sp.x}, ${fit.sp.z}), clear of the room's solids, worked from its front, its rack ${fit.rack ? 'on whole wall (' + fit.rackWall + ' rays)' : 'left off before a window'}` : 'a workbench fitted in a room with no whole wall free for it is worked anywhere in the house (the rules\' fallback)',
+  fit.placed ? fit.others === 0 && fit.inRoom && fit.at && !fit.far && (!fit.rack || fit.rackWall.split('/')[0] === fit.rackWall.split('/')[1]) : !fit.sp && fit.far, fit);
 // S2147 (the look builder): a clay oven and a kiln fitted (PKIT.props.clay) stand by a wall too, each clear of the room's solids and of the
 // bench, worked from its front; a room with no wall free for one keeps the rules' fallback for it
 const clay = await page.evaluate(() => { const h = currentHouse, r = homeFitRec(h); for (const k of ['oven', 'kiln']) if (!r.fit.includes(k)) r.fit.push(k); homeFitsDress(h); const o = {};
@@ -91,12 +95,15 @@ const gd = await page.evaluate((id) => { if (isInterior()) exitInterior(); const
   if (!o.stood) return o; const x0 = px, z0 = pz; px = sp.x; pz = sp.z; const Y = homeYardAt(); o.at = !!Y && Y.h === h && Y.k === 'garden'; o.free = !WORLD.solidAt(px, pz);
   const c = Math.cos(G.g.rotation.y), s_ = Math.sin(G.g.rotation.y), U = G.g.userData.garden;
   o.beds = U.plots.map(P => { const bx = G.x + P.x * c + P.z * s_, bz = G.z - P.x * s_ + P.z * c; return { solid: WORLD.solidAt(bx, bz), d: +Math.hypot(bx - sp.x, bz - sp.z).toFixed(2) }; });
+  /* S2222 — fitted from the page (the house alone), it still keeps off every door of the town and the step before it: no bed's corner within 2 m (Róisín's Goods, s1572: 2.3 m from her step) */
+  { let md = 1e9, who = ''; for (const P of U.plots) for (const [u, v] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const lx = P.x + u * P.w / 2, lz = P.z + v * P.d / 2, wx = G.x + lx * c + lz * s_, wz = G.z - lx * s_ + lz * c;
+      for (const q of S.houses) for (const [a, b] of [[q.doorX, q.doorZ], [q.exitX, q.exitZ]]) { if (a == null) continue; const d = Math.hypot(wx - a, wz - b); if (d < md) { md = d; who = q.id; } } } o.door = { d: +md.toFixed(2), who }; }
   o.draws0 = U.draws; o.tris0 = U.tris; worldState.garden[id][0] = { k: 'second', s: 'oats', at: gameMinNow() - GARDEN_DAYS * 1440 }; U.set(gardenBedsOf(h));
   o.ready = U.beds[0] && U.beds[0].stage === 'ready'; o.tris1 = U.tris; o.draws1 = U.draws; worldState.garden[id][0] = null;
   homeUnfit(h, 'garden'); o.gone = !S.gardens.some(G => G.house === id) && !S.sol.some(s => s.bt === 'garden' && s.house === id) && !(h._yardFits && h._yardFits.garden) && !homeYardAt();
   px = x0; pz = z0; return o; }, pick.id);
-check(`a garden fitted stands in the yard (${gd.tris0} tris in ${gd.draws0} draws bare, ${gd.tris1} with ripe oats): four beds solid, its middle free and the house's spot, every bed within 2.3 m; taken out, it goes`,
-  gd.stood && gd.sol === 4 && gd.at && gd.free && gd.beds.length === 4 && gd.beds.every(b => b.solid && b.d < 2.3) && gd.ready && gd.tris1 > gd.tris0 && gd.draws1 <= 6 && gd.gone, gd);
+check(`a garden fitted stands in the yard (${gd.tris0} tris in ${gd.draws0} draws bare, ${gd.tris1} with ripe oats): four beds solid, its middle free and the house's spot, every bed within 2.3 m and none within 2 m of a door of the town; taken out, it goes`,
+  gd.stood && gd.sol === 4 && gd.at && gd.free && gd.door.d >= 2 && gd.beds.length === 4 && gd.beds.every(b => b.solid && b.d < 2.3) && gd.ready && gd.tris1 > gd.tris0 && gd.draws1 <= 6 && gd.gone, gd);
 // S2175 (Michael's A on #1495): a bed grows crops only; butter and curd stay bought. A Gatelands house offers oats and apples, not butter,
 // and sowing butter or curd is refused with nothing taken from the bag
 const crops = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id);

@@ -4566,6 +4566,7 @@ function hallFixtures(list) {
 //   PKIT.props.bench() -> { group, tris, draws, foot: { x0, x1, z0, z1 }, top } in the wall's frame: the wall at z = 0, the bench
 //   toward +z, its length along x centred on 0, the floor at y = 0. One mesh a material, three in all. PKIT.props.bench({ L }) is the
 //   same bench at another length (Session 2143: 1.1 m, a short one for a full room), the plank in work and its shavings scaled to it.
+//   PKIT.props.bench({ rack: false }) leaves the rack of tools off the wall (Session 2222: the bench stood before a window).
 let BM = null;
 function joinerBench(o = {}) {
   if (!BM) BM = { wood: new THREE.MeshStandardMaterial({ color: 0x9a7650, roughness: .8 }), dark: new THREE.MeshStandardMaterial({ color: 0x4e3622, roughness: .85 }), iron: new THREE.MeshStandardMaterial({ color: 0x2a2826, roughness: .5, metalness: .6 }) };
@@ -4578,15 +4579,15 @@ function joinerBench(o = {}) {
   // a plank in work and an offcut on the top, shavings
   box('wood', .9 * q, .04, .14, -.15 * q, H + .02, D * .55, .04); box('wood', .3, .04, .12, .35 * q, H + .02, .16, -.3);
   for (let k = 0; k < 6; k++) box('wood', .05, .006, .02, (-.55 + k * .09) * q, H + .003, .32 + (k % 3) * .05, k * .9);
-  // the rack on the wall: a board, and on its pegs the tools
-  box('dark', 1.1, .05, .04, 0, 1.3, .02); for (let k = 0; k < 5; k++) box('dark', .02, .02, .08, -.44 + k * .22, 1.32, .06);
+  // the rack on the wall: a board, and on its pegs the tools (o.rack false, none: Session 2222, a bench stood before a window)
+  if (o.rack !== false) { box('dark', 1.1, .05, .04, 0, 1.3, .02); for (let k = 0; k < 5; k++) box('dark', .02, .02, .08, -.44 + k * .22, 1.32, .06);
   box('iron', .5, .12, .006, -.44, 1.16, .07); box('dark', .12, .1, .03, -.13, 1.16, .07) /* the saw, its blade and handle */;
   box('dark', .22, .07, .06, .02, 1.22, .08); box('iron', .04, .02, .06, .02, 1.27, .08) /* the plane */;
   box('dark', .03, .22, .03, .24, 1.17, .07); box('dark', .12, .07, .07, .24, 1.05, .07) /* the mallet, head down */;
-  for (const x of [.4, .46]) { box('dark', .025, .1, .025, x, 1.22, .07); box('iron', .012, .12, .006, x, 1.11, .07); }
+  for (const x of [.4, .46]) { box('dark', .025, .1, .025, x, 1.22, .07); box('iron', .012, .12, .006, x, 1.11, .07); } }
   const group = new THREE.Group(); group.name = 'joiner bench'; let tris = 0;
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, BM[k]); m.name = 'bench:' + k; group.add(m); tris += g.attributes.position.count / 3; }
-  return { group, tris: Math.round(tris), draws: group.children.length, foot: { x0: -L / 2, x1: L / 2, z0: 0, z1: D + .26 }, top: H };
+  return { group, tris: Math.round(tris), draws: group.children.length, foot: { x0: -L / 2, x1: L / 2, z0: 0, z1: D + .26 }, top: H, rack: o.rack !== false };
 }
 // ── the clay oven and the kiln (Session 2147; Michael's B on #1420, resources-and-crafting.md's fittings: "a clay oven, 6 clay, laid by
 // hand (a cob oven)" and "a kiln, 10 clay"), the house's two fittings of clay, each to stand against a wall of your room.
