@@ -2922,9 +2922,14 @@
   function rackSlotsFor(key){const L=(worldState.racks&&worldState.racks[key])||[],now=typeof gameMinNow==='function'?gameMinNow():0,M=typeof RACK_MIN!=='undefined'?RACK_MIN:360;
     return [0,1,2,3].map(i=>{const e=L[i];if(!e)return null;const ready=now-e.at>=M;
       return e.k==='hide'?(ready?'leather':'salted'):e.k==='fish'?(ready?'fishdry':'fish'):(ready?'jerky':'meat');});}
+  // S2222 — every door of the town and the step before it (doorX/Z, exitX/Z), for the yard's racks and garden to keep 2.5 m from: the
+  // houses passed and the town's own. A rack or a garden fitted from the house's page is laid with that house alone (homeYardRacks, 84),
+  // and until now it kept clear of its own door only, so a garden was dug 2.3 m from a neighbour's (Róisín's Goods, Dunmore, s1572)
+  function yardDoors(site,houses){const S=site&&typeof SETTLE!=='undefined'&&SETTLE.get(site.id),all=new Set(houses);if(S&&Array.isArray(S.houses))for(const h of S.houses)all.add(h);
+    const doors=[];for(const h of all){if(!h)continue;if(h.doorX!=null)doors.push([h.doorX,h.doorZ]);if(h.exitX!=null)doors.push([h.exitX,h.exitZ]);}return doors;}
   function townRacks(site,houses,sol,group){if(window.OG_LOOK!=='new'||typeof curesOf!=='function'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.rack)return [];
     const out=[],hit=(x,z,R)=>sol.some(s=>{const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
-    const doors=[];for(const h of houses){if(h.doorX!=null)doors.push([h.doorX,h.doorZ]);if(h.exitX!=null)doors.push([h.exitX,h.exitZ]);}
+    const doors=yardDoors(site,houses);
     const HW=1.7,HD=1.05; /* the larger of the two racks' halves on any island (the Mark's hjell 3.2 m long, the Gatelands' sills 1.9 deep), with a hand's room */
     const clear=(x,z,ry)=>{const c=Math.cos(ry),s_=Math.sin(ry);let lo=1e9,hi=-1e9;
       for(let u=-HW;u<=HW+1e-6;u+=HW/3)for(let v=-HD;v<=HD+1e-6;v+=HD/2){const wx=x+u*c+v*s_,wz=z-u*s_+v*c;if(hit(wx,wz,.5))return false;
@@ -2981,7 +2986,7 @@
     build(o.beds||[null,null,null,null]);return g;}
   function townGardens(site,houses,sol,group){if(window.OG_LOOK!=='new'||typeof homeMine!=='function'||typeof homeFitted!=='function'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.garden)return [];
     const out=[],hit=(x,z,R)=>sol.some(s=>{const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
-    const doors=[];for(const h of houses){if(h.doorX!=null)doors.push([h.doorX,h.doorZ]);if(h.exitX!=null)doors.push([h.exitX,h.exitZ]);}
+    const doors=yardDoors(site,houses);
     const HW=2.15,HD=1.65; /* the largest garden's halves (Aurenne's with its jar 4.35 m long, the Mark's logs 3.4 deep), with a hand's room */
     const clear=(x,z,ry)=>{const c=Math.cos(ry),s_=Math.sin(ry);let lo=1e9,hi=-1e9;
       for(let u=-HW;u<=HW+1e-6;u+=HW/4)for(let v=-HD;v<=HD+1e-6;v+=HD/3){const wx=x+u*c+v*s_,wz=z-u*s_+v*c;if(hit(wx,wz,.4))return false;

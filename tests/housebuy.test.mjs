@@ -91,12 +91,15 @@ const gd = await page.evaluate((id) => { if (isInterior()) exitInterior(); const
   if (!o.stood) return o; const x0 = px, z0 = pz; px = sp.x; pz = sp.z; const Y = homeYardAt(); o.at = !!Y && Y.h === h && Y.k === 'garden'; o.free = !WORLD.solidAt(px, pz);
   const c = Math.cos(G.g.rotation.y), s_ = Math.sin(G.g.rotation.y), U = G.g.userData.garden;
   o.beds = U.plots.map(P => { const bx = G.x + P.x * c + P.z * s_, bz = G.z - P.x * s_ + P.z * c; return { solid: WORLD.solidAt(bx, bz), d: +Math.hypot(bx - sp.x, bz - sp.z).toFixed(2) }; });
+  /* S2222 — fitted from the page (the house alone), it still keeps off every door of the town and the step before it: no bed's corner within 2 m (Róisín's Goods, s1572: 2.3 m from her step) */
+  { let md = 1e9, who = ''; for (const P of U.plots) for (const [u, v] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const lx = P.x + u * P.w / 2, lz = P.z + v * P.d / 2, wx = G.x + lx * c + lz * s_, wz = G.z - lx * s_ + lz * c;
+      for (const q of S.houses) for (const [a, b] of [[q.doorX, q.doorZ], [q.exitX, q.exitZ]]) { if (a == null) continue; const d = Math.hypot(wx - a, wz - b); if (d < md) { md = d; who = q.id; } } } o.door = { d: +md.toFixed(2), who }; }
   o.draws0 = U.draws; o.tris0 = U.tris; worldState.garden[id][0] = { k: 'second', s: 'oats', at: gameMinNow() - GARDEN_DAYS * 1440 }; U.set(gardenBedsOf(h));
   o.ready = U.beds[0] && U.beds[0].stage === 'ready'; o.tris1 = U.tris; o.draws1 = U.draws; worldState.garden[id][0] = null;
   homeUnfit(h, 'garden'); o.gone = !S.gardens.some(G => G.house === id) && !S.sol.some(s => s.bt === 'garden' && s.house === id) && !(h._yardFits && h._yardFits.garden) && !homeYardAt();
   px = x0; pz = z0; return o; }, pick.id);
-check(`a garden fitted stands in the yard (${gd.tris0} tris in ${gd.draws0} draws bare, ${gd.tris1} with ripe oats): four beds solid, its middle free and the house's spot, every bed within 2.3 m; taken out, it goes`,
-  gd.stood && gd.sol === 4 && gd.at && gd.free && gd.beds.length === 4 && gd.beds.every(b => b.solid && b.d < 2.3) && gd.ready && gd.tris1 > gd.tris0 && gd.draws1 <= 6 && gd.gone, gd);
+check(`a garden fitted stands in the yard (${gd.tris0} tris in ${gd.draws0} draws bare, ${gd.tris1} with ripe oats): four beds solid, its middle free and the house's spot, every bed within 2.3 m and none within 2 m of a door of the town; taken out, it goes`,
+  gd.stood && gd.sol === 4 && gd.at && gd.free && gd.door.d >= 2 && gd.beds.length === 4 && gd.beds.every(b => b.solid && b.d < 2.3) && gd.ready && gd.tris1 > gd.tris0 && gd.draws1 <= 6 && gd.gone, gd);
 // S2175 (Michael's A on #1495): a bed grows crops only; butter and curd stay bought. A Gatelands house offers oats and apples, not butter,
 // and sowing butter or curd is refused with nothing taken from the bag
 const crops = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id);
