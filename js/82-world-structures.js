@@ -1780,16 +1780,18 @@
     if(t==='castle')return h>=8&&h<20;
     if(t==='guild_f'||t==='guild_m')return true;
     if(t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='huntcabin'||t==='market'||t==='academy')return false; /* S1963 — nor the academy's library; S1480 — and a farm's byre (S1475, and its barn): nobody keeps them; S1905, nor the room over a market house */
-    if(t==='home'){if(house.shuttered)return false;if(house.ownedByPlayer||ownedHouse(house.id))return false;return h>=(house.farm&&!feastNow()?HRS.eve:HRS.night)||h<HRS.dawn;} /* S1471 — a farmer is in from the evening (#762 A) */
+    if(t==='home'){if(house.shuttered)return false;if(house.ownedByPlayer||ownedHouse(house.id))return false;return h>=(house.farm&&!feastNow(house.siteId)?HRS.eve:HRS.night)||h<HRS.dawn;} /* S1471 — a farmer is in from the evening (#762 A) */
     return h>=HRS.shopOpen&&h<HRS.shopClose; // shops
   }
   function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='huntcabin'||t==='market'||t==='academy')return false;return !npcInsideNow(house);} /* S1480 — a byre (S1475, a barn) is never locked */
-  function feastNow(){return typeof feastOn==='function'&&!!feastOn();}
-  function feastR(r){return feastNow()?Math.min(r,18):r;}
+  // S2205 — a feast fills every square; a town keeping a wedding today (*A Fish for the Wedding*'s fine fish brought, erWeddingAt) fills its own
+  // square the same way, for that town and that day (backlog A, the fish's hook owed to the look builder)
+  function feastNow(siteId){return typeof feastOn==='function'&&!!feastOn()||!!siteId&&!!(worldState.quests&&worldState.quests.length)&&typeof erWeddingAt==='function'&&erWeddingAt(siteId);} /* asked only with a journal: QJ() would make one */
+  function feastR(r,f){return f?Math.min(r,18):r;}
   function scheduleFor(n,h){
     try{if(typeof QUEST_DEFS!=='undefined'&&n.def&&QUEST_DEFS.some(q=>q.giver===n.def.name&&(qState(q.id)==='available'||qState(q.id)==='active'||qState(q.id)==='reward')||qState(q.id)==='active'&&(q.objectives||[]).some(o=>o.type==='talk_to'&&o.npc===n.def.name)))return {go:(n.sched&&n.sched.door)||{x:n.def.x,z:n.def.z},idle:true};}catch(e){} // v80 — a quest giver is always findable (S236: and whoever an active quest sends you to)
     const sc_=n.sched;if(!sc_)return {idle:true};
-    const eve=h>=HRS.eve&&h<HRS.night,night=h>=HRS.night||h<HRS.dawn,day=!eve&&!night;
+    const eve=h>=HRS.eve&&h<HRS.night,night=h>=HRS.night||h<HRS.dawn,day=!eve&&!night,fst=feastNow(n.def&&n.def._siteId||n._settle&&n._settle.site&&n._settle.site.id); /* the person's own town first: a resident's _settle can name the town built before theirs (S2205 found Hearthwick’s on Ashenmoor) */
     switch(sc_.type){
       case 'keeper':
         if(h>=HRS.shopOpen&&h<HRS.shopClose)return {hide:true};
@@ -1804,18 +1806,18 @@
       // its middle (a resident's reach is the whole pad, 50–90), from morning until night, where on any other day the evening takes them home or to the inn
       case 'resident':
         if(night)return {hide:true};
-        if(eve&&!feastNow())return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true};
-        return {wander:sc_.plaza,r:feastR(sc_.padR||14)};
+        if(eve&&!fst)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true};
+        return {wander:sc_.plaza,r:feastR(sc_.padR||14,fst)};
       // S1471 (Michael's A on #762) — a farmer keeps the yard by day, from the yard door to the spots of it (farmYard), and goes in by
       // that door at evening; on a feast day the square, as a resident, from the front door. No yard read: a resident's day.
       case 'farmer': {const Y=sc_.yard;
         if(night)return {hide:true};
-        if(feastNow()||!Y)return {wander:sc_.plaza,r:feastR(sc_.padR||14),from:sc_.door};
+        if(fst||!Y)return {wander:sc_.plaza,r:feastR(sc_.padR||14,fst),from:sc_.door};
         if(eve)return {go:Y.door,thenHide:true,from:Y.door,yard:Y};
         return {pts:Y.pts,from:Y.door};}
       case 'villager':
-        if(night||eve&&h>=20&&!feastNow())return {hide:true};
-        return {wander:sc_.plaza,r:feastR(sc_.padR||14)};
+        if(night||eve&&h>=20&&!fst)return {hide:true};
+        return {wander:sc_.plaza,r:feastR(sc_.padR||14,fst)};
       case 'guard': {const B=(h>=19||h<6.5)&&beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};} // v80 S166 — the lantern beat after dark
       case 'constable': return (h>=19||h<6.5)?{hide:true}:{patrol:[sc_.a,sc_.b]}; // S268 — the day constable, the watchman's other half
       case 'watch': {if(!(h>=19||h<6.5))return {hide:true};const B=beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};}
