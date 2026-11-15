@@ -614,7 +614,7 @@
     const FR={gatelander:"The fox that's had the hen isn't asked in for the eggs.",markman:"I know what you did. Get off my land.",aurennais:"I keep no account with whoever took from my stock, Master. Ours is closed.",oldblood:"You took from the fold. Go."}; /* Finding 44 (quest review, run 41): the line by the farmer's people */
     showMsg(`${def.name||'The farmer'}: “${FR[def.people]||FR.gatelander}”`,'#e8a880');return true;}
   /* S2235 — poaching (Michael's B on #1540, docs/design/law-in-three-registers.md, the first of its three crimes). A lord's chase is the
-     wooded country (forest and autumn wood, by the cells' regions, lairBiome) of the Gatelands within 600 m of a city whose keep stands
+     wooded country (forest and autumn wood, by the cells' regions, lairBiome) of the Gatelands within 600 m of a town or city with a lord (S2251; until then a city whose keep stood)
      (its castle, shopsFor at its prosperity; not burned or abandoned), read from the place by getCell, never from SETTLE. A deer, a boar or a
      hare (Deer, Hind, Elderstag, Crownstag; Boar, Gatefen Boar; Brown Hare) killed there is poaching: recorded always, and seen
      by the usual witnesses by day (at night nobody), it is theft, 2 points, and the beast's worth (deer 30, boar 25, hare 5) in that city.
@@ -622,22 +622,25 @@
      worldState.licences, the character's). Walking into a chase unlicensed says whose it is. The forester, the chase's own witness, is next. */
   const CHASE_R=600,CHASE_WOOD=new Set(['forest','autumn']),POACH_WORTH={Deer:30,Hind:30,Elderstag:30,Crownstag:30,Boar:25,'Gatefen Boar':25,'Brown Hare':5},LICENCE_GOLD=30;
   function licenceDays(){return 3*((typeof CAL!=='undefined'&&CAL.monthLen)||30);}
-  function chaseKeep(t){if(!t||t.kind!=='city'||t.lordless)return false;const F=TS(t).flags||{};if(F.burned!=null||F.abandoned!=null)return false;return shopsFor(t,['castle']).length>0;}
-  // the city whose chase holds (x, z), or null
+  /* S2251 — Michael's B on #1562: a chase is any Gatelands town's or city's that has a lord, keep or not (not a village, a port, a garrison
+     or a farm); before, only a city whose keep stood (one chase in the Gatelands, Ballyowen's, coming and going with its prosperity) */
+  const CHASE_KINDS=new Set(['town','city']);
+  function chaseLord(t){if(!t||!CHASE_KINDS.has(t.kind)||t.lordless)return false;const F=TS(t).flags||{};return F.burned==null&&F.abandoned==null;}
+  // the town or city whose chase holds (x, z), or null (the nearest, where two reach)
   function chaseAt(x,z){if(nationAt(x,z)!=='gatelands')return null;const [ci,cj]=cellOf(x,z);let best=null,bd=CHASE_R;
     for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;
-      for(const t of c.sites){if(t.kind!=='city')continue;const d=Math.hypot(t.x-x,t.z-z);if(d<bd&&chaseKeep(t)){bd=d;best=t;}}}
+      for(const t of c.sites){if(!CHASE_KINDS.has(t.kind))continue;const d=Math.hypot(t.x-x,t.z-z);if(d<bd&&chaseLord(t)){bd=d;best=t;}}}
     if(!best||!CHASE_WOOD.has(lairBiome({x,z})))return null;return best;}
   function licenceUntil(t){const L=worldState.licences;const v=L&&t&&L[t.id];return typeof v==='number'?v:0;}
   function licenceHeld(t){return licenceUntil(t)>absMin();}
   // named action: the lord's licence bought; returns the line
   /* S2246 — quest review Finding 46: the lord sells his own wood in his own voice */
-  function buyLicence(t){if(!chaseKeep(t))return '';if(licenceHeld(t))return `Your licence runs to ${calDateLine(licenceUntil(t)-1)}. The wood keeps its own count, and so do I.`;
+  function buyLicence(t){if(!chaseLord(t))return '';if(licenceHeld(t))return `Your licence runs to ${calDateLine(licenceUntil(t)-1)}. The wood keeps its own count, and so do I.`;
     if(gold<LICENCE_GOLD)return `The licence is ${LICENCE_GOLD} gold, and a light purse never brought a stag home. Come back when it's heavier.`;gold-=LICENCE_GOLD;if(typeof updateHUD==='function')updateHUD();
     const until=Math.floor(absMin())+licenceDays()*1440;(worldState.licences||(worldState.licences={}))[t.id]=until;
     if(typeof addLog==='function')addLog('🦌',`Bought the lord's licence to hunt the chase of ${t.name}, to ${calDateLine(until-1)}.`);
     return `The chase of ${t.name} is open to you until ${calDateLine(until-1)}: deer, boar and hare. Take what the wood can spare, and it'll spare it again.`;}
-  function licenceTopics(t){if(!chaseKeep(t))return [];
+  function licenceTopics(t){if(!chaseLord(t))return [];
     return [{label:`A hunting licence. (${LICENCE_GOLD} gold, three months)`,quest:true,avail:()=>!licenceHeld(t),fn:()=>buyLicence(t)},
       {label:'My hunting licence.',avail:()=>licenceHeld(t),fn:()=>buyLicence(t)}];}
   function poachKilled(e){if(!e||e.farmStock||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const kind=e.baseName||e.name,worth=POACH_WORTH[kind];if(worth==null)return null;
@@ -650,7 +653,7 @@
   // each half second in the world: walking into a chase you hold no licence for says whose it is, once each time you enter
   let _chaseT=0,_chaseIn=null;
   function tickChase(dt){_chaseT-=dt;if(_chaseT>0)return;_chaseT=.5;let t=null;try{t=chaseAt(px,pz);}catch(e){}const id=t?t.id:null;
-    if(id&&id!==_chaseIn&&!licenceHeld(t))showMsg(`The lord's chase of ${t.name}. Its deer, boar and hare are his; his licence is sold at the keep.`,'#e8d8a0');
+    if(id&&id!==_chaseIn&&!licenceHeld(t))showMsg(`The lord's chase of ${t.name}. Its deer, boar and hare are his; his licence is sold in ${t.name}.`,'#e8d8a0');
     _chaseIn=id;}
   /* S2241 — the chase's edge on the map (the page's "no trap": "a chase's edge on the map in the lord's colour", the Crown's crimson). The local
      map and the minimap sample their view in squares of `cell` metres; each square whose middle is in a chase (chaseAt, the rule itself, so it
@@ -662,7 +665,7 @@
   // the cities whose chase reaches into the square of half-side r about (x, z)
   function chaseCitiesNear(x,z,r){const out=[],R=r+CHASE_R,[c0,r0]=cellOf(x-R,z-R),[c1,r1]=cellOf(x+R,z+R);
     for(let j=r0;j<=r1;j++)for(let i=c0;i<=c1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;
-      for(const t of c.sites)if(t.kind==='city'&&Math.abs(t.x-x)<R&&Math.abs(t.z-z)<R&&chaseKeep(t))out.push(t);}
+      for(const t of c.sites)if(CHASE_KINDS.has(t.kind)&&Math.abs(t.x-x)<R&&Math.abs(t.z-z)<R&&chaseLord(t))out.push(t);}
     return out;}
   // is (x, z) in a chase of one of `cities`: the rule of chaseAt (the Gatelands, within CHASE_R, the wood)
   function chaseIn(x,z,cities){let near=false;for(const t of cities)if(Math.hypot(t.x-x,t.z-z)<CHASE_R){near=true;break;}
