@@ -789,7 +789,7 @@ function piece(add, op, F) {
       for (const y of [.25, (spring - op.y) * .5, spring - op.y - .25]) { B('iron', op.w * .44, .07, .015, l + op.w * .22, op.y + y, z0 + .02); B('iron', op.w * .44, .07, .015, r - op.w * .22, op.y + y, z0 + .02); }
       if (op.kind === 'load') B('dress', op.w + .2, .1, inset + .1, op.x, op.y - .05, (-inset + .1) / 2); break; }
     case 'shopwin': { glass(op.y, 'glass'); sash(op.y, top, ...(op.bars || [4, 2])); B(F.paint, op.w + .1, op.y, .1, op.x, op.y / 2, z0 + .1); B('dress', op.w + .1, .08, inset + .12, op.x, op.y - .04, (-inset + .12) / 2); break; }
-    case 'shopdoor': { const gl = op.y + 1.0; leaf(F.paint, l, r, op.y, gl); glass(gl); sash(gl, top - .5, 2, 2); sash(top - .5, top, 2, 1); step(); break; }
+    case 'shopdoor': { const gl = op.y + 1.0; if (op.ajar) /* Session 2240: the merchant's room hangs its own leaf, open; the fanlight stays */ { glass(top - .5); sash(top - .5, top, 2, 1); step(); break; } leaf(F.paint, l, r, op.y, gl); glass(gl); sash(gl, top - .5, 2, 2); sash(top - .5, top, 2, 1); step(); break; }
     case 'vent': { glass(op.y, 'glass'); sash(op.y, top, 1, 3); B('dress', op.w + .2, .08, inset + .1, op.x, op.y - .04, (-inset + .1) / 2); break; }
   }
 }
@@ -1009,7 +1009,9 @@ function bayPlan(kind, n, o = {}) {
   else if (kind === 'merchant') { const g = SCALE.storey.shop, dx = last - .35, x0 = xs[0] - .45, x1 = dx - .55 - .45;
     O.front = [{ kind: 'shopwin', x: (x0 + x1) / 2, y: .62, w: x1 - x0, h: 2.05, bars: [Math.max(2, Math.round((x1 - x0) / 1.15)), 2] }, { kind: 'shopdoor', x: dx, y: 0, w: 1.1, h: 2.65 },
       ...xs.map(x => win(x, g[0] + .4, .95, 1.95, [3, 3])), ...xs.map(x => win(x, g[0] + g[1] + .35, .9, 1.35, [3, 1]))];
-    O.back = [{ kind: 'plank', x: -dx, y: 0, w: 1.0, h: 2.1 }, win(-(xs[0] + .5), .9, .9, 1.6, [2, 2]), win(-(xs[0] + .5), g[0] + .4, .9, 1.7, [2, 2])];
+    // (Session 2240) the back door into the kitchen, 0.35 m in from the west bay's middle, the windows over it, clear of the partition: behind the
+    // shop door the room's stair has its half-landing on the back wall, where the drawn back door stood (a back face's x runs mirrored)
+    O.back = [{ kind: 'plank', x: -xs[0] - .35, y: 0, w: .95, h: 2.1 }, win(.1875, .9, .9, 1.6, [2, 2]), win(.1875, g[0] + .4, .9, 1.7, [2, 2]), win(.1875, g[0] + g[1] + .35, .9, 1.4, [2, 2])];
     P.shop = { ...P.shop, w: w - .4 }; P.sign = { ...P.sign, x: -w / 2 + .2 }; P.doorX = dx; }
   return P;
 }
