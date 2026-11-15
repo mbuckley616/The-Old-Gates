@@ -233,17 +233,17 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   main 91ca249, s1608, 13:04–15:35 UTC). Each suite below failed on both tries. The owner comes from the code map, and the owner corrects it
   if it is wrong. Each item is one suite: strike it with the session that fixes it. Not bisected. The failing lines are in the shard's log.
   - **`wildlife`** (shard 2; for the bodies builder: the common animals, `buildAnimal`, `js/34-creatures.js`).
-  - **`bodies`** (shard 6; for the systems builder: `pushFromBodies`, `js/90-main.js`).
-  - **`lairmaster`** (shard 8; for the systems builder: the lair's master, `js/52-dungeon-gen.js`/`42-zone-enemies.js`).
+  - ~~**`bodies`** (shard 6; for the systems builder: `pushFromBodies`, `js/90-main.js`).~~ — done, Session 2262 (seed 4021's gate is Gaoth's since S2115; the suite takes the first seed from 4021 that is not, 4022)
+  - ~~**`lairmaster`** (shard 8; for the systems builder: the lair's master, `js/52-dungeon-gen.js`/`42-zone-enemies.js`).~~ — green on main at s1614, Session 2262 (11 checks; not reproduced)
   - **`dragonsize`** (shard 10; for the bodies builder: the dragon's scale in the inspector and in play).
   - **`f4gargoyles`** (shard 10, 607 s; for the bodies builder: the creature kit's gargoyle).
-  - **`roll`** (shard 10; for the systems builder: the roll and the arc, `js/10-player.js`).
+  - ~~**`roll`** (shard 10; for the systems builder: the roll and the arc, `js/10-player.js`).~~ — done, Session 2262 (the Kit tab has 14 rows since S2221's spyglass and net)
   - **`f4people`** (shard 12; for the bodies builder). Probably the hair check that Session 2255 fixed: the run was on s1608, and #1599 landed
     at s1610. Strike it if it is green on main.
-  - **`feastsquare`** (shard 12; for the systems builder: the feast day's townsfolk, `js/88-world-ticks.js`).
+  - ~~**`feastsquare`** (shard 12; for the systems builder: the feast day's townsfolk, `js/88-world-ticks.js`).~~ — green on main at s1614, Session 2262 (7 checks; not reproduced)
   - **`hullshape`** (shard 13; for the look builder: the hulls' outlines, `js/85-world-sea.js`).
-  - **`dungeonpace`** (shard 14; for the systems builder: a dungeon foe's chase speed).
-  - **`perkbow`** (shard 14; for the systems builder: the Bow's perks).
+  - ~~**`dungeonpace`** (shard 14; for the systems builder: a dungeon foe's chase speed).~~ — done, Session 2262 (as `bodies`: its deep cave takes seed 4022)
+  - ~~**`perkbow`** (shard 14; for the systems builder: the Bow's perks).~~ — green on main at s1614, Session 2262 (9 checks; not reproduced)
   - **`intreach`** (shard 17, 750 s; for the look builder: the rooms' partitions, `buildInteriorFor`). It was red in last week's run too (fixed then by Session 2015).
   - **Shards 3, 4, 5, 11, 15, 16, 18 and 19 were cancelled at 150 minutes** (for QA: `tests/times.json` and the shard plan). None of their suites
     reported, so they are unchecked this week. QA should rebalance the shards or re-run them by hand (`check`, Run workflow).
