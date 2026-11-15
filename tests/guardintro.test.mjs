@@ -191,5 +191,28 @@ for (const id of prior) { if (!(await g.settle(id))) continue;
 console.log(JSON.stringify([sm, sr]));
 check(`gate salvage: taken in a gate (${sm.gate}), not in a fort; sold in ${sr && sr.id}, a Prior's town, warned, not paid, taken, the ledger +${sr && sr.fine}, the Church's note`,
   sm.gate.join() === 'Iron Sword' && !sm.fort.length && !!sr && sr.warned && sr.paid === 0 && !sr.kept && sr.fine === 50 && sr.note === 'sacrilege', [sm, sr]);
+// S2252 (Michael's A on #1570): a tithe-ship's hail in Aurenne's waters. Declared cargo is entered and kept; refused, she searches one time
+// in four by her id's stream: found, every load is taken and the nearest Aurenne town books theft (50 on the ledger); passed, nothing. The
+// hail names the search and offers both answers; closed with no answer, it is a refusal.
+const tt = await page.evaluate(() => { let t = null;
+  for (let j = 0; j < GRID && !t; j++) for (let i = 0; i < GRID && !t; i++) { const c = getCell(i, j); if (c && c.sites) t = c.sites.find(s => s.kind === 'port' && nationAt(s.x, s.z) === 'aurenne') || null; }
+  if (!t) return { none: true };
+  let sea = null; for (let k = 0; k < 64 && !sea; k++) { const a = k * .7, d = 120 + (k % 8) * 40, x = t.x + Math.cos(a) * d, z = t.z + Math.sin(a) * d; if (worldH(x, z) < -4 && aurCoastNear(x, z)) sea = [x, z]; }
+  const load = () => { for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i].type === 'cargo') BAG.splice(i, 1); const it = cargoItem('salt'); it.qty = 3; BAG.push(it); };
+  const salt = () => (BAG.find(b => b.type === 'cargo' && b.cargo === 'salt') || { qty: 0 }).qty;
+  const ids = { found: null, passed: null }; for (let k = 0; k < 200 && !(ids.found && ids.passed); k++) { const id = 'tithe:t' + k, f = seededRng('tithe', id + ':search')() < TITHE_SEARCH; if (f && !ids.found) ids.found = id; if (!f && !ids.passed) ids.passed = id; }
+  const ship = id => ({ id, x: t.x, z: t.z }), led = () => { const S = titheSite(t.x, t.z); return S ? (fineRecAt(S.id) || { bounty: 0 }).bounty : -1; };
+  const out = { port: t.name, sea: !!sea, land: aurCoastNear(t.x, t.z) };
+  load(); let o = ship('tithe:decl'); titheHail(o); out.labels = [...document.querySelectorAll('#dlg-choices > button')].map(b => b.textContent.trim());
+  out.greet = document.getElementById('dlg-text') ? document.getElementById('dlg-text').textContent : ''; out.decl = titheAnswer(o, true); try { closeDialog(); } catch (e) {}
+  out.declKept = salt(); out.declared = JSON.stringify((worldState.tithe || {}).declared && worldState.tithe.declared.goods);
+  load(); o = ship(ids.passed); let l0 = led(); _titheAsk = o; out.pass = titheAnswer(o, false); out.passKept = salt(); out.passFine = led() - l0;
+  load(); o = ship(ids.found); l0 = led(); const n0 = (worldState.crimes || []).length; titheHail(o); try { closeDialog(); } catch (e) {} _titheT = 0; tickTithe(1);
+  out.foundKept = salt(); out.foundFine = led() - l0; out.rec = (worldState.crimes || []).slice(n0).map(c => c.kind).join(); out.asked = _titheAsk === null;
+  return out; });
+console.log(JSON.stringify(tt));
+check(`the tithe-ship off ${tt.port}: Aurenne's water within 300 m of its shore (${tt.sea}); the hail offers *${(tt.labels || []).join('* / *')}*; declared, 3 salt kept and entered; refused and passed, kept and no fine; refused by closing the hail and found, taken, the ledger +${tt.foundFine}`,
+  !tt.none && tt.sea && !tt.land && (tt.labels || []).some(l => /^Declare the cargo/.test(l)) && tt.labels.includes('Refuse.') && tt.declKept === 3 && /"salt":3/.test(tt.declared)
+  && tt.passKept === 3 && tt.passFine === 0 && tt.foundKept === 0 && tt.foundFine === 50 && tt.rec === 'smuggle' && tt.asked, tt);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
