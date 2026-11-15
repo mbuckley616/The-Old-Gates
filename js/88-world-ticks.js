@@ -568,7 +568,7 @@
       const p=roadPoint(road,fd.fortAt==null?bestU:fd.fortAt),nx=p.nx!=null?p.nx:Math.cos(p.ang),nz=p.nz!=null?p.nz:-Math.sin(p.ang);
       const off=(fd.fortOff==null?120:fd.fortOff)*(fd.fortSide==null?(nz>0?-1:1):fd.fortSide);let wx=p.x+nx*off,wz=p.z+nz*off;
       for(const t of pads){const dd=Math.hypot(wx-t.x,wz-t.z),min=t.pad+120;if(dd<min){const dx=wx-t.x,dz=wz-t.z,L=Math.hypot(dx,dz)||1;wx=t.x+dx/L*min;wz=t.z+dz/L*min;}}
-      return {x:wx,z:wz};}
+      return homeFortClear(wx,wz,fd,road,pads);} /* S2274 — off every road's line, as placeDoor */
     return fixedDoorSpot(e);
   }
   // Where is everything — for the devlog / console.
