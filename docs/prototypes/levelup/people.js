@@ -1425,13 +1425,26 @@ function buildTabard(G, body, byName) {
   grid(back.map(f => Array.from({ length: NR }, (_, r) => at(f, r / (NR - 1)))), (c, r, R) => edgeTrim(c, r, R) || (r < 2 && Math.abs(back[c][0].x - cx) <= hole + .01));
   for (const sideOf of [c => front[c][0].x < cx - hole, c => front[c][0].x > cx + hole]) { const cs = []; for (let c = 0; c < NC; c++) if (sideOf(c)) cs.push(c); if (cs.length < 2) continue;
     grid(cs.map(c => { const a = back[c][0], e = front[c][0], lift = .012 + .5 * Math.abs(a.y - e.y); return Array.from({ length: 7 }, (_, k) => { const u = k / 6, q = a.clone().lerp(e, u); q.y += lift * Math.sin(Math.PI * u); return q; }); }), (c, r) => c === 0 || c === cs.length - 1); }
+  // Session 2242 (#1540 B; OG-091) — a sign on the breast, D.tabardSign: 'shuttle', the Weaver's (the Church's sign, canon §4.1, worn by
+  // its inquisitor in OG-091's red where the sheet drew a cross). A shuttle lying level, sharp at both ends, 17 cm by 3.6, with the gold
+  // pirn in its slot (the church's shuttle carries gold thread); each point laid on the front panel where it falls, 3 mm proud (the pirn
+  // 4.5), so it bends with the cloth
+  let sign = 0; if (D.tabardSign === 'shuttle') {
+    const zAt = (x, y) => { const u = (x - (cx - W)) / (2 * W) * (NC - 1), c0 = Math.max(0, Math.min(NC - 2, Math.floor(u))), t = Math.max(0, Math.min(1, u - c0));
+      const z1 = c => { const L = front[c]; let best = L[0]; for (const q of L) if (Math.abs(q.y - y) < Math.abs(best.y - y)) best = q; return best.z; }; return z1(c0) * (1 - t) + z1(c0 + 1) * t; };
+    const red = sRGB(...(D.tabardSignCol || [.62, .1, .08])), gilt = sRGB(.74, .57, .22), y0 = nY - .2, L = .17, H = .036, N = 24;
+    const strip = (hw, hh, colr, off, xs) => { const base = pos.length / 3;
+      for (let i = 0; i <= N; i++) { const x = cx + (-hw + 2 * hw * i / N), s = (x - cx) / hw, h = hh * Math.pow(Math.max(0, 1 - s * s), xs);
+        for (const yy of [y0 + h, y0, y0 - h]) { pos.push(x, yy, zAt(x, yy) + off); col.push(colr.r, colr.g, colr.b); } }
+      for (let i = 0; i < N; i++) for (let k = 0; k < 2; k++) { const a = base + i * 3 + k, b = a + 3; idx.push(a, b, a + 1, a + 1, b, b + 1); } };
+    const i0 = idx.length; strip(L / 2, H / 2, red, .003, 1.1); strip(.03, .006, gilt, .0045, .25); sign = (idx.length - i0) / 3; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 26 }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'tabard'; mesh.castShadow = mesh.receiveShadow = true; mesh.frustumCulled = false;
   // nothing of the torso, inside the tabard's width and between the shoulders and its hem, in front of the front or behind the back
   let tested = 0, out = 0; for (let i = 0; i < n; i++) { if (!B[i]) continue; const x = PP[i * 3], y = PP[i * 3 + 1], z0 = PP[i * 3 + 2], o = OFF(i, x, y); if (Math.abs(x - cx) > W - .01 || y > nY - .1 || y < yHem + .01) continue;
     const c = Math.round((x - cx + W) / (2 * W) * (NC - 1)), j = Math.round((nY + .05 - y) / step), fr = front[c].find(q => Math.abs(q.y - (nY + .05 - j * step)) < step / 2), bk = back[c].find(q => Math.abs(q.y - (nY + .05 - j * step)) < step / 2); if (!fr || !bk) continue;
     tested++; if (z0 + o > fr.z - .004 || z0 - o < bk.z + .004) out++; }
-  return { mesh, stats: { columns: NC, width: +(2 * W).toFixed(3), hemDrop: +(nY - yHem).toFixed(3), tris: idx.length / 3, tested, out, belted: !!D.belt } };
+  return { mesh, stats: { columns: NC, width: +(2 * W).toFixed(3), hemDrop: +(nY - yHem).toFixed(3), tris: idx.length / 3, tested, out, belted: !!D.belt, sign } };
 }
 
 // ── the Aurennais' sash over one shoulder (Session 989, L1; OG-056: "a long patterned sash wrapped over one shoulder", OG-044's

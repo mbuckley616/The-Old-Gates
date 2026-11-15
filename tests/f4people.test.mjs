@@ -316,6 +316,17 @@ const satchel = await page.evaluate(() => { const one = o => { const P = HB.make
   return { travel: one({ outfit: 'travel' }), herald: one({}) }; });
 const st = satchel.travel.st || {};
 check('Aldwyn travels in the charcoal coat with the satchel on his hip: 0 points inside the bag, his arm clear of it, nothing through its strap; the herald carries none', satchel.travel.bag && satchel.travel.strap && satchel.travel.coat && satchel.travel.onHip && st.inside === 0 && st.armInside === 0 && !st.armIn && st.strap.through === 0 && st.strap.tested > 100 && st.strap.len > 1.2 && st.strap.len < 2.2 && !satchel.herald.bag && !satchel.herald.coat, satchel);
+// S2242 (#1540 B; OG-048, OG-091): the law's two officers by their role's word. The lord's forester in moss green and a leather jerkin under the
+// lord's crimson hooded cape, a crossbow in his fist; the Church's inquisitor in a long white tabard over mail, the red shuttle on its
+// breast and a white hood, and white far off too. Nothing of either body comes through the tabard
+const office = await page.evaluate(() => { const one = (def) => { const root = buildNPCMesh(def, { key: 'otest' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+    const D = r.hbG.dress, P = HB.makePerson(r.hbG, { hoodStats: false }), has = n => !!P.root.getObjectByName(n);
+    return { cape: !!D.cape, crimson: !!(D.cloak && D.cloak[0] > .4 && D.cloak[1] < .2), hood: has('hoodUp'), crossbow: has('crossbow') || !!D.crossbow, jerkin: !!D.waistcoatLeather, mail: has('mail'), tabard: has('tabard'),
+      sign: P.tabard ? P.tabard.sign : 0, out: P.tabard ? P.tabard.out : null, tested: P.tabard ? P.tabard.tested : 0, far: r.g.cloth && r.g.cloth.isColor ? +r.g.cloth.r.toFixed(2) : null, guard: GUARD_ROLE.test(def.role.toLowerCase()) }; };
+  return { forester: one({ role: 'Forester', name: 'Tadhg', people: 'gatelander' }), inquisitor: one({ role: 'Inquisitor', name: 'Alain', people: 'aurennais' }) }; });
+console.log('  office:', JSON.stringify(office));
+check('the lord\'s forester wears the crimson hooded cape over a leather jerkin and carries a crossbow; he is not a guard', office.forester.cape && office.forester.crimson && office.forester.hood && office.forester.crossbow && office.forester.jerkin && !office.forester.tabard && !office.forester.guard, office.forester);
+check('the Church\'s inquisitor wears the white tabard over mail with the red shuttle on it (nothing of the body through it) and a white hood, white far off', office.inquisitor.mail && office.inquisitor.tabard && office.inquisitor.sign > 100 && office.inquisitor.out === 0 && office.inquisitor.tested > 1000 && office.inquisitor.hood && office.inquisitor.far > .8, office.inquisitor);
 // S2135 (L2, OG-053): Aldwyn's private study, the cream undertunic under the red over-robe worn open, his journal shut in his right fist
 // by its spine, the wheel on its covers: nothing of him within a centimetre of it; neither other dress carries it
 const study = await page.evaluate(() => { const one = o => { const P = HB.makePerson(HB.castGenome('Aldwyn', o), { hoodStats: false }), b = P.root.getObjectByName('book'); return { book: !!b, on: b && b.parent && b.parent.name, coat: !!P.root.getObjectByName('coat'), dev: !!P.root.getObjectByName('bookDevice'), st: P.book }; };
