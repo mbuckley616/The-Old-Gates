@@ -1209,7 +1209,7 @@ function buildNPCMesh(def,opts){
   let g=def.name&&!def.authored?PEOPLE_GENOMES.get(key):null;
   if(!g){g=personGenome(def,opts);if(def.name)PEOPLE_GENOMES.set(key,g);}
   if(def.authored&&def.name)g.castOk=true;
-  if(def.bearer)g.bearer=def.bearer; /* S2272 — a bier's bearer (the road's mourners): stripped and in mourning by hbGenome */
+  if(def.bearer)g.bearer=def.bearer; /* S2273 — a bier's bearer (the road's mourners): stripped and in mourning by hbGenome */
   if(hbOn()&&!opts.noBuilder&&!g.hbKey){const pw=hbPowerOf(def,g);if(pw){g.power=pw;g.gear=HB_POWER[pw].staff?'stick':null;}} /* S2260 (#1566 B) — the town's head dressed by office; the driver holds a staff or nothing (a Mark captain's guard spear dropped) */
   if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
   let gb=g,G=g.hbKey&&hbOn()?HB_GENOMES.get(g.hbKey):null;
@@ -1363,7 +1363,7 @@ function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);f
   for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):m==='sleep'?pwSleep(t,o):m==='sit'?pwSit(t,o):m==='play'?pwPlay(t,o,ph):pwIdle(t,o);
     PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
   if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}
-  if(o.bear&&!w.sleep)pwBear(out,o.bear); /* S2272 — a bier's bearer: the arms on its poles, whatever the legs do */
+  if(o.bear&&!w.sleep)pwBear(out,o.bear); /* S2273 — a bier's bearer: the arms on its poles, whatever the legs do */
   return out;}
 function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
   B.hips.position.y=P.hipsY;B.hips.position.x=P.sway;
@@ -1857,7 +1857,7 @@ function kidsTick(now,dt){const C=KIDS;if(!C.on||typeof WORLD==='undefined'||typ
       const bp=u<.3?arc(hand(A,hA),both(B,hB,cB),u/.3):u<.5?(u<.34?both(B,hB,cB):hand(B,hB)):u<.8?arc(hand(B,hB),both(A,hA,cA),(u-.5)/.3):(u<.84?both(A,hA,cA):hand(A,hA));
       kidPlace(K.ball,bp,up,fw);}}}
 }
-// ═══ THE BIER (S2272; the road's mourners, Michael's B on #1587, "one in six bound for a gate are mourners with a bier") ════
+// ═══ THE BIER (S2273; the road's mourners, Michael's B on #1587, "one in six bound for a gate are mourners with a bier") ════
 // Two walk the road with their dead to a gate for the Church's blessing (canon §3.1, the Clearing). Session 2270 walked them side by side
 // with nothing between them; now one goes before and one behind, BIER.gap apart, and the bier rides their four hands: two ash poles
 // BIER.len long and BIER.w apart, three cross-bars and a board, the dead wrapped in a linen shroud (head behind, feet first) and a pall
@@ -1948,7 +1948,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   if(/^(ring|kid):/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
-  if(g.bearer)G.dress=hbBearerDress(G); /* S2272 — a bier's bearer: in mourning, nothing in the hands, no cloak for the arms to pass through */
+  if(g.bearer)G.dress=hbBearerDress(G); /* S2273 — a bier's bearer: in mourning, nothing in the hands, no cloak for the arms to pass through */
   if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
   if(!cast&&!g.child&&HB_PACK_ROLE.test(g.role||''))G.dress=hbRolePack(g,G); /* S2239 — a traveller's pack, by island */
   if(!cast&&!g.child){const O=hbOfficeDress(g,G);if(O)G.dress=O;} /* S2242 — the lord's forester and the Church's inquisitor */

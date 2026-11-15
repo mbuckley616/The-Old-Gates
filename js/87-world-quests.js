@@ -2281,7 +2281,7 @@ const giver=`${lord.title} ${lord.name}`;
   function pilgrimDef(T,rd,p,k){const home=roadfolkHome(T,rd),Q=pilgrimPlan(T,rd),r=seededRng('roadfolk',T.id+(k?':'+k:''));const [i,j]=cellOf(home.x,home.z);const nat=nationOf(i,j);const bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
     const nm=pick(r,r()<.5?bank.m:bank.f);const G=Q.goal;
     const topics=Q.mourners?[]:[{label:'Where are you bound?',fn:()=>{sightPlace(G.id,G.name,`Pencilled ${G.name} on the map, where a pilgrim was bound.`);return `To ${G.kind==='shrine'?'the ':''}${G.name}. It lies ${compassWord(G.x-px,G.z-pz)} of here.`;}}];
-    const def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:Q.mourners?0x2a2622:0x8a7a5e,topics});def._siteId=home.id;def.roadfolk=T.id;if(Q.mourners){def.bearer=k?-1:1;def._twin='bier';} /* S2272 — the bier's bearers (32-people.js), not the town's own of that name */
+    const def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:Q.mourners?0x2a2622:0x8a7a5e,topics});def._siteId=home.id;def.roadfolk=T.id;if(Q.mourners){def.bearer=k?-1:1;def._twin='bier';} /* S2273 — the bier's bearers (32-people.js), not the town's own of that name */
     return def;}
   function buildTraveller(T,rd,p){
     if(T.kind==='pilgrim'){const Q=pilgrimPlan(T,rd);const n=spawnNPC(pilgrimDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const D={T,rd,npc:n,follow:[]};
@@ -2300,7 +2300,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(roadAmbushTick(D,p,dt||0))continue;
       const y=worldH(p.x,p.z);D.npc.g.position.set(p.x,y,p.z);D.npc.g.rotation.y=p.ang;D.npc.def.x=p.x;D.npc.def.z=p.z;D.npc.home={x:p.x,z:p.z};D.npc.dot.position.set(p.x,y+1.5,p.z);
       if(D.beast){const bx=p.x-Math.sin(p.ang)*1.6,bz=p.z-Math.cos(p.ang)*1.6;D.beast.position.set(bx,worldH(bx,bz),bz);D.beast.rotation.y=p.ang;}
-      for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2272 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
+      for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
         const fx=q?q.x:p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=q?q.z:p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=worldH(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=q?q.ang:p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}
       if(D.bier)bierTick(D);}}
   // ═══ FACTIONS AND ANCHORED PLACES (Session S) ════════════════════════

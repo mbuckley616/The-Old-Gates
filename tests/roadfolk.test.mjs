@@ -3,7 +3,7 @@
 // an end and a kind. Where one is comes from the clock and the pace. Within 400 m the nearest four are drawn; the merchant (session 1)
 // walks at 1.1 m a game minute with his mule and sells 6 to 10 rows of a goods shop's stock at his home town's prices ×1.1.
 // Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
-// Session 2272: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
+// Session 2273: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -124,7 +124,7 @@ const BIER_GAP = await page.evaluate(() => BIER.gap);
 const mm = await page.evaluate((id) => { const D = ROADWALK.get(id); return D ? { bodies: 1 + D.follow.length, talk: npcs.includes(D.npc) || D.follow.some(f => npcs.includes(f.npc)), sep: +Math.hypot(D.npc.g.position.x - D.follow[0].npc.g.position.x, D.npc.g.position.z - D.follow[0].npc.g.position.z).toFixed(2) } : { keys: [...ROADWALK.keys()], near: roadfolkNow().filter(o => o.T.id === id).map(o => [o.p.x - px, o.p.z - pz]) }; }, pil.mourn.id);
 console.log(JSON.stringify({ mo, mm }));
 check('mourners walk two together, one before the other along the road, and nobody can speak to them', mo && mm && mm.bodies === 2 && !mm.talk && mm.sep > BIER_GAP - .3 && mm.sep < BIER_GAP + .05, mm);
-// S2272 — the bier between them: its poles run through the four palms, and its bearers hold nothing and wear no cloak over their arms
+// S2273 — the bier between them: its poles run through the four palms, and its bearers hold nothing and wear no cloak over their arms
 // (the builder's bodies are built one at a time after the load; attach these two at once, as f4people does)
 await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return; for (const N of [D.npc, D.follow[0].npc]) { const rig = N.g.userData.rig; if (!rig.hb && rig.hbG) { hbAttach(rig); if (rig.hb) { hbLevel(rig, 0); hbPose(rig); } } } }, pil.mourn.id);
 await g.spin(null, 2);
