@@ -38,7 +38,7 @@ check('the kit\'s door is 2.05 m, as the game\'s (07-scale.js)', more.door.h ===
 // the plans by bays (Session 1064; Michael's C on #396), copied from pieces.js's Session 1063: each plan on each count of bays it takes
 // is that many bays and its ends wide and builds to the prototype's triangles (pieces.check.mjs's numbers); baysFor fits a lot of 6 to
 // 10 m with the most whole bays; a lot given bays and a depth builds them, and one without is as drawn
-const BAYTRIS = { cottage: [1230, 1556, 1826], farmhouse: [1744, 2144], townhouse: [4443, 5033, 5631, 6221], merchant: [4018, 4426, 4846] };
+const BAYTRIS = { cottage: [1230, 1556, 1826], farmhouse: [1744, 2144], townhouse: [4443, 5033, 5631, 6221], merchant: [4196, 4604, 5024] } /* (Session 2268) the merchant: its back door into the kitchen and a third back window, pieces.js's Session 2240 */;
 const bays = await page.evaluate(T => { const G = PKIT.gl, out = [];
   for (const kind in T) { const B = G.BAYS[kind]; for (let n = B.min; n <= B.max; n++) { const P = Object.assign(G.bayPlan(kind, n, {}), { r: PKIT.stream('bays') }), b = G.building(P);
     out.push({ kind, n, w: b.userData.size.w, want: +(n * B.bay + 2 * B.end).toFixed(3), tris: b.userData.tris, rec: T[kind][n - B.min] }); b.traverse(m => m.geometry && m.geometry.dispose()); } }

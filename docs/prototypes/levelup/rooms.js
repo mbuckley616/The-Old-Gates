@@ -2171,7 +2171,7 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
         else bolt(CX0 + .26, y, cz + .55, 'linen', Math.PI / 2); } }
     candles.push(candle(CX0 + .2, F0 + CH, CZ1 - .15));
     // the shop's strongbox in the keeper's walk at the counter's end, under the window's end
-    bx('oak', -X + .42, -X + 1.02, F0, F0 + .5, CZ1 + .1, CZ1 + .55, 'chest', 0); bx('iron', -X + .42, -X + 1.02, F0 + .38, F0 + .42, CZ1 + .09, CZ1 + .56);
+    if (o.chest !== false) { bx('oak', -X + .42, -X + 1.02, F0, F0 + .5, CZ1 + .1, CZ1 + .55, 'chest', 0); bx('iron', -X + .42, -X + 1.02, F0 + .38, F0 + .42, CZ1 + .09, CZ1 + .56); } /* (Session 2268) o.chest false: the game sets its own lidded strongbox here */
     // the window's board at the sill, the trade's show on it (an apothecary's two show globes of coloured water)
     { const y = sw.y - .04, z0 = Z - .3; bx('oak', wx0, wx1, y, y + .03, z0, Z - .01, 'board', 0); const zc = z0 + .15;
       if (MR === 'potion') { for (const [f, k] of [[.25, 'blue'], [.75, 'wool']]) { const x = wx0 + (wx1 - wx0) * f; put(new THREE.SphereGeometry(.13, 14, 10), k, x, y + .03 + .16, zc); put(new THREE.CylinderGeometry(.03, .05, .1, 8), k, x, y + .03 + .33, zc); } stock('x', zc, wx0 + (wx1 - wx0) * .35, wx0 + (wx1 - wx0) * .65, y + .03); }
