@@ -13,6 +13,8 @@
 // the foot of her main course and runs over her sails at 0.55 m/s, flames on the cloth at its front (the added cloud) and smoke rising off
 // them; the cloth behind is charred on her own copy of each sail's geometry, the shared bake left clean; when it is out the flames stop and
 // the char stays; when she is gone her copies are let go.
+// Session 2264 (#1582 A, the prototype's founder): a black galleon foundering goes down by the head (0.12 rad at the end, on an ease, beside
+// the rules' 3 m and 0.35 rad), in 260 points of broken water at her sides, strongest halfway; none when she is gone.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -118,4 +120,14 @@ check(`a black galleon's rig alight: the fire seats at her main course's foot ($
   fire.lit && fire.front > 2.4 && fire.front < 2.6 && fire.fl > 60 && fire.fl <= 360 && fire.sm > 60 && fire.add <= 1400 && fire.charred > 50 && fire.seat && Math.abs(fire.seat[0]) < 1.5, fire);
 check(`put out, the flames stop and the char stays (${fire.out[1]} points), on her own copies (the shared bake clean); gone, her fire is let go`,
   fire.out[0] === 0 && fire.out[1] === fire.charred && fire.out[2] === 0 && fire.clean && fire.gone, fire);
+// S2264: a founder by the head
+const fd = await page.evaluate(() => { const hk = hookClock; let T = hookClock(); window.hookClock = () => T; const out = [];
+  const h = spawnOtherShip('pirate', SHIP.x + 70, SHIP.z, 'test:founder', 'galleon'); placeOther(h); h.speed = 0; h.founder = SHIP_FOUNDER_S;
+  for (let i = 0; i < 9 * 60 && OTHER.includes(h); i++) { T += 1 / 60; otherDown(h, 1 / 60); seaFxTick(1 / 60);
+    if (i === 59 || i === 239 || i === 449) out.push({ u: +(1 - h.founder / SHIP_FOUNDER_S).toFixed(2), head: +h.mesh.rotation.x.toFixed(3), list: +h.mesh.rotation.z.toFixed(3), water: h._water }); }
+  seaFxTick(1 / 60); const gone = !OTHER.includes(h), vis = SEA_FX.mix.visible; window.hookClock = hk; return { out, gone, vis }; });
+console.log(JSON.stringify(fd));
+const [f1, f2, f3] = fd.out;
+check(`a foundering galleon goes down by the head (${f1.head}, ${f2.head}, ${f3.head} rad at ${f1.u}, ${f2.u}, ${f3.u} of the way, beside the rules' list ${f3.list}) in ${f2.water} points of broken water; gone, none`,
+  f1.head > 0 && f1.head < f2.head && f2.head < f3.head && f3.head <= .12 && Math.abs(f2.head - .06) < .005 && f2.water === 260 && f1.water === 260 && fd.gone && !fd.vis, fd);
 await g.close();

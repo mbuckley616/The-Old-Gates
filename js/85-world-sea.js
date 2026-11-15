@@ -585,7 +585,7 @@
         put(M,x+nx/nl*cx,y+cy,z+nz/nl*cx,.09,...I,1);put(M,x-nx/nl*cx,y-cy,z-nz/nl*cx,.09,...I,1);put(M,x,y,z,.03,...I,1);}
       else if(b.k==='grape'){const sp=.5+u*b.dur*6;for(const g of b.grape)put(M,x+g[0]*sp,y+g[1]*sp,z+g[2]*sp,.035,...I,1);}
       else{put(M,x,y,z,.09,...I,1);if(b.k==='shell'){put(A,x,y+.075,z,.09,1,.7,.3,1);put(A,x,y+.09,z,.06,1,.45,.15,.8);}}}
-    for(const q of FL)put(A,q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7]); /* S2261 — a rig's flames */
+    for(const q of FL)put(q[8]?M:A,q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7]); /* S2261 — a rig's flames; S2264 — a founder's broken water, in the mixed */
     for(const [p,B] of [[SEA_FX.mix,M],[SEA_FX.add,A]]){p.position.set(ox,oy,oz);p.geometry.setDrawRange(0,B.n);p.visible=B.n>0;
       p.geometry.attributes.position.needsUpdate=p.geometry.attributes.aSize.needsUpdate=p.geometry.attributes.aCol.needsUpdate=true;}
     SEA_FX.n={mix:M.n,add:A.n};}
@@ -643,7 +643,20 @@
         FL.push([x+J(),y+h*.25,z+J(),1+R()*.6,1,.62+R()*.25,.22,.45],[x+J(),y+h*.7,z+J(),.75+R()*.4,1,.4,.1,.38],[x+J(),y+h*1.2,z+J(),.45+R()*.3,.9,.22,.05,.3]);f.flames+=3;}
       let k=dt*40;while(nb&&k>0){if(k<1&&Math.random()>k)break;k--;const q=Math.floor(Math.random()*nb),p=band[q*2],j=band[q*2+1];_sfA.set(p.pos[j*3],p.pos[j*3+1],p.pos[j*3+2]).applyMatrix4(p.me.matrixWorld);
         seaFxPush({x:_sfA.x,y:_sfA.y+1,z:_sfA.z,vx:0,vy:0,vz:0,drag:0,g:0,rise:1.8,s0:.8,s1:5.5,c:[.16,.14,.13],a:.5,life:4.3,wind:true,fire:true});}}
-    return FL;}
+    seaFounderTick(now,FL);return FL;}
+  // S2264 (card F11; Michael's A on #1582, the prototype S2244's founder) — a ship foundering, seen. The rules settle her 3 m and list her
+  // 0.35 rad over 8 s (otherDown, 86-world-crime.js); she goes down by the head too, 0.12 rad at the end on an ease (her own pitch: the
+  // mesh's Euler order YXZ, so the yaw is first and the bow dips along her own length; the same pose while it is 0), and the sea breaks round
+  // her where her sides meet it: 260 points of white water (0.25 to 0.6 m) on her outline 1.05 to 1.4 times out from her sides, 0.12 m
+  // over the sea (the prototype's 0.03 sank under the drawn swell), strongest halfway down (sin πu), in the mixed cloud. It reads only o.founder. Cosmetic: a stream keyed by her id and the tenth of a second (the water churns).
+  const SEA_HEAD=.12;
+  function seaFounderTick(now,FL){for(const o of OTHER){if(o.founder==null||!o.mesh){if(o.mesh&&o._water)o._water=0;continue;}
+      const m=o.mesh,u=Math.max(0,Math.min(1,1-o.founder/(typeof SHIP_FOUNDER_S!=='undefined'?SHIP_FOUNDER_S:8))),e=u*u*(3-2*u),k=Math.sin(Math.PI*u);
+      if(m.rotation.order!=='YXZ')m.rotation.order='YXZ';m.rotation.x=SEA_HEAD*e;o._water=0;if(k<=.02)continue;
+      let s=(String(o.id||'ship').split('').reduce((h,c)=>(h*31+c.charCodeAt(0))%2147483647,7)+Math.floor(now*10)*7919)%2147483647||1;const R=()=>(s=(s*16807)%2147483647)/2147483647;
+      const L=o.L||20,W=o.W||6,c=Math.cos(m.rotation.y),sn=Math.sin(m.rotation.y);
+      for(let i=0;i<260;i++){const z=-L/2+R()*L,x=(R()<.5?-1:1)*(W/2)*Math.sqrt(Math.max(0,1-(2*z/L)**2))*(1.05+R()*.4);
+        FL.push([o.x+x*c+z*sn,SEA_Y+.12+R()*.06,o.z-x*sn+z*c,.25+R()*.35,.95,.97,1,.7*k,1]);o._water++;}}}
   // your own: on while she has one fitted, and laid on whatever ballistaBears() finds while you sail
   function shipBallistaTick(){const m=SHIP.mesh;if(!m||!m.userData.kit)return;const want=typeof shipFitted==='function'&&shipFitted('ballista');
     if(want!==!!m.userData.ballista)shipBallistaOn(m,want);if(!m.userData.ballista)return;const o=SHIP.sailing&&typeof ballistaBears==='function'?ballistaBears():null;shipBallistaAim(m,o?o.x:null,o?o.z:null);}
