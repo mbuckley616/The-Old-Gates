@@ -520,7 +520,7 @@
   // or a column of spray 3.7 m high (grape short of her deck, or a ship gone). Every point is one of two pooled clouds (SEA_FX: the
   // smoke, shot, spray and splinters mixed, the flashes and fuses added): 2 draws in a fight, none out of one. Cosmetic: Math.random.
   // The clouds sit at a local origin near the camera and their points are written relative to it (the world's float32 gotcha).
-  const SEA_FX={mix:null,add:null,P:[],live:new Map(),vol:{},cap:{mix:2400,add:240}};
+  const SEA_FX={mix:null,add:null,P:[],live:new Map(),vol:{},cap:{mix:2400,add:1400}}; /* S2261 — the added cloud 240 → 1,400: a rig's flames (three tongues on up to 120 points of cloth a ship) */
   function seaFxMat(add){return new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:add?THREE.AdditiveBlending:THREE.NormalBlending,uniforms:{uScale:{value:600}},
     vertexShader:'attribute float aSize;attribute vec4 aCol;uniform float uScale;varying vec4 vC;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vC=aCol;gl_PointSize=aSize*uScale/max(.1,-mv.z);gl_Position=projectionMatrix*mv;}',
     fragmentShader:'varying vec4 vC;void main(){vec2 d=gl_PointCoord-.5;float r=length(d)*2.;if(r>1.)discard;float a=vC.a*(1.-smoothstep(.2,1.,r));float lit=1.08-.3*gl_PointCoord.y;gl_FragColor=vec4(vC.rgb*lit,a);}'});}
@@ -566,8 +566,8 @@
       if(!cur.has(f)){L.delete(f);if(!b.fired){b.fired=true;seaFxGun(b.from,b.from.e);}const T=b.to,gone=!T.tg.mesh||T.tg.dead||T.tg.founder!=null&&T.tg!==SHIP;
         if(T.short||gone)seaFxSplash(T.x,T.z);else seaFxSplinters(T,T.e,b.k==='grape'?6:b.k==='chain'?10:24);}}
     if(!L.size)SEA_FX.vol={};
-    seaFxDraw(dt,now);}
-  function seaFxDraw(dt,now){const P=SEA_FX.P,L=SEA_FX.live;if(!P.length&&!L.size){if(SEA_FX.mix)SEA_FX.mix.visible=SEA_FX.add.visible=false;return;}
+    seaFxDraw(dt,now,seaFireTick(dt,now));}
+  function seaFxDraw(dt,now,FL){const P=SEA_FX.P,L=SEA_FX.live;FL=FL||[];if(!P.length&&!L.size&&!FL.length){if(SEA_FX.mix)SEA_FX.mix.visible=SEA_FX.add.visible=false;return;}
     if(!SEA_FX.mix){SEA_FX.mix=seaFxCloud(SEA_FX.cap.mix,false);SEA_FX.add=seaFxCloud(SEA_FX.cap.add,true);}
     for(const p of [SEA_FX.mix,SEA_FX.add])if(p.parent!==sc){if(p.parent)p.parent.remove(p);sc.add(p);}
     const o=CAM.position,ox=Math.round(o.x),oy=Math.round(o.y),oz=Math.round(o.z),w=typeof windDir==='function'?windDir():0,wx=Math.sin(w)*1.5,wz=Math.cos(w)*1.5;
@@ -585,9 +585,65 @@
         put(M,x+nx/nl*cx,y+cy,z+nz/nl*cx,.09,...I,1);put(M,x-nx/nl*cx,y-cy,z-nz/nl*cx,.09,...I,1);put(M,x,y,z,.03,...I,1);}
       else if(b.k==='grape'){const sp=.5+u*b.dur*6;for(const g of b.grape)put(M,x+g[0]*sp,y+g[1]*sp,z+g[2]*sp,.035,...I,1);}
       else{put(M,x,y,z,.09,...I,1);if(b.k==='shell'){put(A,x,y+.075,z,.09,1,.7,.3,1);put(A,x,y+.09,z,.06,1,.45,.15,.8);}}}
+    for(const q of FL)put(A,q[0],q[1],q[2],q[3],q[4],q[5],q[6],q[7]); /* S2261 — a rig's flames */
     for(const [p,B] of [[SEA_FX.mix,M],[SEA_FX.add,A]]){p.position.set(ox,oy,oz);p.geometry.setDrawRange(0,B.n);p.visible=B.n>0;
       p.geometry.attributes.position.needsUpdate=p.geometry.attributes.aSize.needsUpdate=p.geometry.attributes.aCol.needsUpdate=true;}
     SEA_FX.n={mix:M.n,add:A.n};}
+  // S2261 (card F11; Michael's A on #1582, "the char kept until refitted"; the prototype S2244's rigFire) — a rig alight, seen. The rules
+  // light a black sail's rig (lightRig: o.burn seconds, 86-world-crime.js) and burn it out or let her hands douse it; nothing showed. A fire
+  // seats at the foot of her main course (her lowest cloth within 1.5 m of the main mast) and runs up and out over her sails at 0.55 m/s
+  // while o.burn lasts (a vertex's distance from the seat, less a quarter of its height above it: fire climbs). Three tongues of flame stand
+  // on every third point of cloth in the front's last metre (up to 120 points a ship, in the added cloud), smoke rises off them on the wind (40 puffs a second,
+  // 4.3 s, in the mixed), and the cloth behind the front is scorched to a brown-black. The char is a colour per vertex on her own copy of
+  // each sailed geometry and her own copies of the cloth's materials, so the shared bake stays clean and the char stays after the flames
+  // stop, for as long as she sails. No draw is added. It only reads the rules' o.burn. Its rolls are cosmetic (a stream a tenth of a second).
+  const SEA_FIRE=new Map(),SEA_FIRE_RATE=.55,SEA_FIRE_MAX=120,_sfA=new THREE.Vector3(),_sfMI=new THREE.Matrix4();
+  function seaClothMat(m){const u=m&&m.userData;return !!u&&(u.swatch==='cloth'||!!u.jib||u.black==='cloth');}
+  // her sails once, when she first catches: each of her meshes (the hull's bake and each rig) that holds cloth gets its own geometry with a
+  // colour attribute and its own cloth materials that read it; the seat is found in her own space and carried into each mesh's space
+  function seaFireLight(o){const m=o.mesh;if(!m)return null;m.updateMatrixWorld(true);_sfMI.copy(m.matrixWorld).invert();const parts=[];
+    for(const me of [m,...(m.userData.rigs||[]).map(q=>q.m)]){const G=me.geometry,arr=Array.isArray(me.material),mats=[].concat(me.material);if(!G||!G.attributes.position)continue;
+      const cl=new Set();mats.forEach((x,i)=>{if(seaClothMat(x))cl.add(i);});if(!cl.size)continue;
+      const I=G.index,Pa=G.attributes.position,N=Pa.count,vs=new Set();
+      if(!arr||!G.groups.length){for(let k=0;k<N;k++)vs.add(k);}
+      else for(const g of G.groups){if(!cl.has(g.materialIndex|0))continue;const e=Math.min(g.start+g.count,I?I.count:N);for(let k=g.start;k<e;k++)vs.add(I?I.getX(k):k);}
+      if(!vs.size)continue;
+      const had=G.attributes.color,one=!mats.some((x,i)=>cl.has(i)&&x.vertexColors),C=new Float32Array(N*3);
+      if(had)for(let k=0;k<N;k++){C[k*3]=had.getX(k);C[k*3+1]=had.getY(k);C[k*3+2]=had.getZ(k);}else C.fill(1);
+      const idx=Int32Array.from(vs),pos=new Float32Array(idx.length*3),base=new Float32Array(idx.length*3);
+      idx.forEach((v,j)=>{pos[j*3]=Pa.getX(v);pos[j*3+1]=Pa.getY(v);pos[j*3+2]=Pa.getZ(v);for(let c=0;c<3;c++){if(one)C[v*3+c]=1;base[j*3+c]=C[v*3+c];}});
+      const g2=G.clone();g2.setAttribute('color',new THREE.BufferAttribute(C,3));
+      const own=mats.map((x,i)=>{if(!cl.has(i))return x;const c=x.clone();c.vertexColors=true;c.needsUpdate=true;return c;});
+      me.geometry=g2;me.material=arr?own:own[0];me.updateMatrixWorld(true);
+      parts.push({me,g2,idx,pos,base,own:own.filter((x,i)=>cl.has(i)),toShip:new THREE.Matrix4().multiplyMatrices(_sfMI,me.matrixWorld),F:null,d:new Float32Array(idx.length)});}
+    if(!parts.length)return null;
+    const sq=(m.userData.rigs||[]).find(q=>q.type==='square'),mz=sq?sq.m.position.z:0;let best=null,lo=1e9,any=null,alo=1e9;
+    for(const p of parts)for(let j=0;j<p.idx.length;j++){_sfA.set(p.pos[j*3],p.pos[j*3+1],p.pos[j*3+2]).applyMatrix4(p.toShip);
+      if(_sfA.y<alo){alo=_sfA.y;any=_sfA.clone();}if(Math.abs(_sfA.x)<1.5&&Math.abs(_sfA.z-mz)<1.5&&_sfA.y<lo){lo=_sfA.y;best=_sfA.clone();}}
+    const seat=best||any;for(const p of parts){p.F=seat.clone().applyMatrix4(new THREE.Matrix4().copy(p.toShip).invert());
+      for(let j=0;j<p.idx.length;j++){const x=p.pos[j*3]-p.F.x,y=p.pos[j*3+1]-p.F.y,z=p.pos[j*3+2]-p.F.z;p.d[j]=Math.hypot(x,y,z)-y*.25;}}
+    return {mesh:m,parts,seat:[+seat.x.toFixed(2),+seat.y.toFixed(2),+seat.z.toFixed(2)],front:.3,charred:0,flames:0};}
+  function seaFireDrop(f){for(const p of f.parts){p.g2.dispose();p.own.forEach(x=>x.dispose());}}
+  // the cloth behind the front, scorched: white where it is whole, to a brown-black (0.105, 0.09, 0.08 of its own colour) where it is gone
+  function seaFireChar(f){let n=0;for(const p of f.parts){const C=p.g2.attributes.color;
+      for(let j=0;j<p.idx.length;j++){const b=Math.max(0,Math.min(1,(f.front-p.d[j]-.2)/.8)),k=1-.9*b,v=p.idx[j];if(b>.5)n++;
+        C.array[v*3]=p.base[j*3]*k*(1+.05*b);C.array[v*3+1]=p.base[j*3+1]*k*(1-.1*b);C.array[v*3+2]=p.base[j*3+2]*k*(1-.2*b);}
+      C.needsUpdate=true;}f.charred=n;}
+  // once a frame (seaFxTick): a ship that catches is taken up, a live fire's front runs on, chars, flames and smokes; a fire whose ship is
+  // gone is let go. -> the flames' points, [x, y, z, size, r, g, b, a] in the world, for seaFxDraw's added cloud
+  function seaFireTick(dt,now){const FL=[];if(typeof OTHER==='undefined')return FL;
+    for(const o of OTHER)if(o.burn>0&&o.mesh&&!o.dead&&o.founder==null&&!SEA_FIRE.has(o)){const f=seaFireLight(o);if(f)SEA_FIRE.set(o,f);}
+    let s=(Math.floor(now*10)*16807+4242)%2147483647||1;const R=()=>(s=(s*16807)%2147483647)/2147483647;
+    for(const [o,f] of SEA_FIRE){if(!OTHER.includes(o)||o.mesh!==f.mesh){seaFireDrop(f);SEA_FIRE.delete(o);continue;}
+      const live=o.burn>0&&!o.dead&&o.founder==null;f.flames=0;if(!live)continue;f.front+=dt*SEA_FIRE_RATE;seaFireChar(f);
+      const band=[];for(const p of f.parts)for(let j=0;j<p.idx.length;j++){const d=p.d[j];if(d<=f.front&&d>=f.front-1)band.push(p,j);}
+      const nb=band.length/2,st=Math.max(3,Math.ceil(nb/SEA_FIRE_MAX));
+      for(let b=0;b<nb;b+=st){const p=band[b*2],j=band[b*2+1];_sfA.set(p.pos[j*3],p.pos[j*3+1],p.pos[j*3+2]).applyMatrix4(p.me.matrixWorld);
+        const h=.5+R()*.9,J=()=>(R()-.5)*.35,x=_sfA.x,y=_sfA.y,z=_sfA.z;
+        FL.push([x+J(),y+h*.25,z+J(),1+R()*.6,1,.62+R()*.25,.22,.45],[x+J(),y+h*.7,z+J(),.75+R()*.4,1,.4,.1,.38],[x+J(),y+h*1.2,z+J(),.45+R()*.3,.9,.22,.05,.3]);f.flames+=3;}
+      let k=dt*40;while(nb&&k>0){if(k<1&&Math.random()>k)break;k--;const q=Math.floor(Math.random()*nb),p=band[q*2],j=band[q*2+1];_sfA.set(p.pos[j*3],p.pos[j*3+1],p.pos[j*3+2]).applyMatrix4(p.me.matrixWorld);
+        seaFxPush({x:_sfA.x,y:_sfA.y+1,z:_sfA.z,vx:0,vy:0,vz:0,drag:0,g:0,rise:1.8,s0:.8,s1:5.5,c:[.16,.14,.13],a:.5,life:4.3,wind:true,fire:true});}}
+    return FL;}
   // your own: on while she has one fitted, and laid on whatever ballistaBears() finds while you sail
   function shipBallistaTick(){const m=SHIP.mesh;if(!m||!m.userData.kit)return;const want=typeof shipFitted==='function'&&shipFitted('ballista');
     if(want!==!!m.userData.ballista)shipBallistaOn(m,want);if(!m.userData.ballista)return;const o=SHIP.sailing&&typeof ballistaBears==='function'?ballistaBears():null;shipBallistaAim(m,o?o.x:null,o?o.z:null);}
