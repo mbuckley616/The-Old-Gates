@@ -753,7 +753,7 @@
      the cargo is entered as bound for port (worldState.tithe.declared, the character's) and never fined. Refuse, or close the hail with no
      answer, and she searches one time in four, on a stream keyed by her id (the day), so a reload does not change it: every load aboard
      is taken, and the nearest Aurenne town books it as theft, 2 points, on the Compact's ledger. Outrun her for three minutes and she
-     falls astern. Owed: the cove's fence, and declared cargo sold there booked at your next Aurenne port (A's second half). */
+     falls astern. The cove's fence, and declared cargo sold there booked at your next Aurenne port (A's second half): S2257, fenceSell. */
   const TITHE_R=300,TITHE_SEARCH=.25,TITHE_HAIL=60,TITHE_GIVEUP=180;
   // is (x, z) water within TITHE_R of Aurenne's shore: sixteen bearings, the first land on each read for its nation
   function aurCoastNear(x,z){if(worldH(x,z)>-1)return false;
@@ -774,6 +774,7 @@
   function titheSteer(o){return o&&o.tithe&&!o.hailed&&SHIP.mesh?{x:SHIP.x,z:SHIP.z}:null;}
   let _titheT=0,_titheAsk=null;
   function tickTithe(dt){_titheT-=dt;if(_titheT>0)return;_titheT=2;const T=worldState.tithe||(worldState.tithe={});
+    try{titheCap();titheOwedBook();}catch(e){} /* S2257 — the declared cargo kept to what you carry; owed cove sales booked at the port you walk into */
     if(_titheAsk&&!dlgOpen)titheAnswer(_titheAsk,false); /* the hail closed with no answer is a refusal */
     let o=OTHER.find(q=>q.tithe&&!q.dead);
     if(!o){if(T.day===dayNow()||!SHIP.sailing||!SHIP.mesh||!cargoAboard().n||!aurCoastNear(SHIP.x,SHIP.z))return;
@@ -806,6 +807,68 @@
     if(typeof addLog==='function')addLog('⚓',`Refused a tithe-ship's hail and was searched: ${titheGoods(P.goods)} taken${t?`, and entered against you at ${t.name}`:''}.`);
     if(typeof updateHUD==='function')updateHUD();
     return "Undeclared, and found. It is the Compact's now, Master, and the entry is made against your name.";}
+  /* S2257 — smuggling's other half (#1540 B; Michael's A on #1570): the cove's fence. Aurenne's smuggler's cove (S2105, an off-road place
+     of kind 'cove') keeps one man before its open boathouse, at every hour. E at him opens the factor's board in his own mode (fenceSite):
+     he sells nothing and buys every good at the full price, what the nearest Aurenne port's factor would bid before the Compact's tenth,
+     with the cove's own 4% a crate and the market's heal (cargoPress, keyed by the cove). Crates come from her hold when your ship lies
+     within 140 m, else from your back, as at a quay. Declared cargo (worldState.tithe.declared, S2252) is kept no larger than what you
+     carry (titheCap, every tick); a declared crate sold here (the declared count above what is left after the sale) is owed, and the
+     next Aurenne port, town or city you walk into books it as theft (2 points), once for what is owed, with the narrator's toast. The
+     board says so before you sell. His spoken lines wait on the quest writer; he has none, and the board is the narrator's. */
+  const FENCE_NEAR=150,FENCE_TOUCH=3,_fenceBody=new Map();let _fenceT=0,_fenceCoves=[];
+  function fenceCoves(){const out=[];for(const L of LOADED.values()){const D=L.cell&&L.cell._offroad;if(D&&D.kind==='cove'&&D.group&&D.houses&&D.houses[1])out.push({D,c:L.cell});}return out;}
+  // where the fence stands: 1.4 m before the middle boathouse's open door, facing across the beach (the piece's +x), on its shingle
+  function fenceSpot(D){const hs=D.houses[1],co=Math.cos(D.ry),s_=Math.sin(D.ry),lx=hs.x+1.4,lz=hs.z;
+    return {x:D.x+lx*co+lz*s_,z:D.z-lx*s_+lz*co,y:D.y+(D.shape&&D.shape.walk?D.shape.walk(lx,lz):hs.gy),ry:Math.atan2(co,-s_)};}
+  function fenceOut(id){const b=_fenceBody.get(id);if(b){if(b.g.parent)b.g.parent.remove(b.g);_fenceBody.delete(id);}}
+  function tickFence(dt){const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());
+    if(!on){for(const id of [..._fenceBody.keys()])fenceOut(id);_fenceCoves=[];return;}
+    _fenceT-=dt;if(_fenceT<=0){_fenceT=2;try{_fenceCoves=fenceCoves();}catch(e){_fenceCoves=[];}}
+    const keep=new Set();
+    for(const {D,c} of _fenceCoves){const P=fenceSpot(D);if(Math.hypot(P.x-px,P.z-pz)>FENCE_NEAR)continue;keep.add(D.id);
+      let b=_fenceBody.get(D.id);if(!b){const nm=NAMES[c.reg]||NAMES.aurennais,r=seededRng('fence:name',D.id),def={name:nm.m[Math.floor(r()*nm.m.length)],role:'Fence',female:false,people:'aurennais',x:P.x,z:P.z,_siteId:D.id};
+        const g=buildNPCMesh(def,{nation:'aurenne',key:'fence:'+D.id});g.userData.fence=D.id;sc.add(g);b={g,def,D};_fenceBody.set(D.id,b);}
+      b.g.position.set(P.x,P.y,P.z);b.g.rotation.y=P.ry;b.def.x=P.x;b.def.z=P.z;}
+    for(const id of [..._fenceBody.keys()])if(!keep.has(id))fenceOut(id);}
+  function fenceNear(){let best=null,bd=FENCE_TOUCH;for(const b of _fenceBody.values()){if(!b.g.parent)continue;const d=Math.hypot(px-b.g.position.x,pz-b.g.position.z);if(d<bd){bd=d;best=b;}}return best;}
+  // the board's site for a cove: its id keys the cove's own market; port is the Aurenne port whose factor's bid it pays
+  function fenceSite(D){return {id:D.id,name:D.name,x:D.x,z:D.z,fence:true,port:titheSite(D.x,D.z)};}
+  function fenceBid(C,key){const g=CARGO_GOODS[key];if(!g)return 0;const P=C.port;
+    return Math.max(1,Math.round(g.v*(g.home==='aurenne'?CARGO_HOME:P?cargoAbroad(P):CARGO_ABROAD)*(P?cargoWorld(P,key):1)*cargoPress(C,key).p*CARGO_CUT));}
+  // declared cargo kept no larger than what you carry (a crate sold, searched, sunk or dropped is no longer declared)
+  function titheCap(){const T=worldState.tithe,Dc=T&&T.declared;if(!Dc||!Dc.goods)return;const P=cargoAboard();
+    for(const k in Dc.goods){const n=Math.min(Dc.goods[k],P.goods[k]||0);if(n>0)Dc.goods[k]=n;else delete Dc.goods[k];}
+    if(!Object.keys(Dc.goods).length)delete T.declared;}
+  // named action: one crate of key sold to the fence at cove C
+  function fenceSell(C,key){const g=CARGO_GOODS[key];if(!g)return '';titheCap();const have=cargoHave(key),fromHold=shipHere(C)&&have.hold>0;
+    if(!fromHold&&!have.bag)return `You have no ${g.n.toLowerCase()} here.`;
+    const p=fenceBid(C,key);
+    if(fromHold){const h=holdOf();h[key]--;if(h[key]<=0)delete h[key];}
+    else{const i=BAG.findIndex(it=>it.type==='cargo'&&it.cargo===key);const it=BAG[i];it.qty=(it.qty||1)-1;if(it.qty<=0)BAG.splice(i,1);}
+    gold+=p;cargoPush(C,key,1-CARGO_STEP);const ws=worldState.stats||(worldState.stats={});ws.goldIn=(ws.goldIn||0)+p;
+    const T=worldState.tithe||(worldState.tithe={}),dec=T.declared&&T.declared.goods&&T.declared.goods[key]||0,left=cargoAboard().goods[key]||0;let owed=false;
+    if(dec>left){const O=T.owed||(T.owed={goods:{},cove:C.id,day:dayNow()});O.goods[key]=(O.goods[key]||0)+dec-left;O.cove=C.id;O.coveName=C.name;titheCap();owed=true;}
+    if(typeof updateHUD==='function')updateHUD();if(typeof sndGoldJingle==='function')sndGoldJingle();
+    return `Sold a ${g.n.toLowerCase()} for ${p} gold, and no tenth.`+(owed?' It was declared to the Compact: the next Aurenne port will have word of it.':'');}
+  // S2258 — named action: a piece of gate salvage sold to the fence at a counter's price. Not sacrilege: the page names a cove's fence among
+  // salvage's lawful roads (the Gatelands, the Mark, an Aurenne town with no church), so nothing is booked and the Church hears nothing
+  function fenceSalvage(C,i){const it=BAG[i];if(!it||!it.salvage||it.unique)return '';const p=sellPrice(it);BAG.splice(i,1);gold+=p;
+    const ws=worldState.stats||(worldState.stats={});ws.goldIn=(ws.goldIn||0)+p;if(typeof updateHUD==='function')updateHUD();if(typeof sndGoldJingle==='function')sndGoldJingle();
+    if(typeof addLog==='function')addLog('⚓',`Sold the ${it.name}, gate salvage, to the fence at ${C.name}.`);
+    return `Sold the ${it.name} for ${p} gold. The fence asks nothing about where it came from.`;}
+  function fenceNotes(C){const T=worldState.tithe;let s='The fence pays the full price, and no tenth. He sells nothing.';titheCap();if(BAG.some(it=>it&&it.salvage))s+=' He takes gate salvage at a counter\u2019s price, and the Church hears nothing of it.';
+    const Dc=T&&T.declared&&T.declared.goods;if(Dc&&Object.keys(Dc).length)s+=` Declared to the Compact: ${titheGoods(Dc)}. Sold here, it is entered against you at your next Aurenne port.`;
+    return s;}
+  function fenceInteract(){const b=fenceNear();if(!b)return false;openCargoPanel(fenceSite(b.D));return true;}
+  function fencePrompt(){const b=fenceNear();return b?`${b.def.name}, Fence — press 'E' to sell him cargo`:null;}
+  // the owed booking: the first Aurenne port, town or city you walk into after selling declared cargo at a cove (tickTithe)
+  function titheOwedBook(){const T=worldState.tithe,O=T&&T.owed;if(!O||!O.goods||!Object.keys(O.goods).length)return null;
+    const S=nearSite();if(!S||!S.site||!['port','town','city'].includes(S.site.kind)||nationAt(S.site.x,S.site.z)!=='aurenne')return null;
+    const t=S.site;bookCrime(t,'theft',0);
+    (worldState.crimes||(worldState.crimes=[])).push({kind:'smuggle',site:t.id,house:null,goods:O.goods,cove:O.cove||null,day:dayNow(),min:absMin()});
+    showMsg(`${t.name} has word of the declared cargo you sold at ${O.coveName||'a cove'}. It is entered against you.`,'#e88a8a');
+    if(typeof addLog==='function')addLog('⚓',`Sold ${titheGoods(O.goods)}, declared to the Compact, at ${O.coveName||'a cove'}: entered against you at ${t.name}.`);
+    delete T.owed;return t;}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
   function bountyAt(site){const c=fineRecAt(typeof site==='string'?site:site.id);return c?c.bounty:0;} /* S2229 — Aurenne's is the ledger's */
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];
@@ -2418,22 +2481,25 @@ function cargoFill(site,key){const g=CARGO_GOODS[key];if(!g||g.home!==cargoNatio
   let n=0,paid=0;while(n<200&&holdUsed()+g.w<=holdCap()){const p=cargoAsk(site,key);if(gold<p)break;if(!/^Bought/.test(cargoBuy(site,key)))break;n++;paid+=p;}
   if(!n)return holdUsed()+g.w>holdCap()?'No room in the hold.':`A ${g.n.toLowerCase()} is ${cargoAsk(site,key)} gold.`;
   return `Took aboard ${n} × ${g.n.toLowerCase()} for ${paid} gold.`;}
-function cargoPanelDraw(){const ov=document.getElementById('cargoui');if(!ov||!cargoSite)return;const site=cargoSite,nk=cargoNation(site),here=shipHere(site);
+function cargoPanelDraw(){const ov=document.getElementById('cargoui');if(!ov||!cargoSite)return;const site=cargoSite,FN=!!site.fence,nk=FN?'':cargoNation(site),here=shipHere(site); /* S2257 — a cove's fence: no ask, his own bid */
   const B='background:none;border:1px solid #8a7040;border-radius:3px;font:14px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 7px;margin-left:3px';
   const keys=Object.keys(CARGO_GOODS).sort((a,b)=>(CARGO_GOODS[a].home===nk?0:1)-(CARGO_GOODS[b].home===nk?0:1));
   let h='<tr style="font-size:12px;color:#6a5a3a;text-align:right"><td style="text-align:left">Good</td><td>Ask</td><td>Bid</td><td>Held</td><td></td></tr>';
-  for(const k of keys){const g=CARGO_GOODS[k],own=g.home===nk,hv=cargoHave(k),held=(here?hv.hold:0)+hv.bag,bid=cargoBid(site,k).net;
+  for(const k of keys){const g=CARGO_GOODS[k],own=g.home===nk,hv=cargoHave(k),held=(here?hv.hold:0)+hv.bag,bid=FN?fenceBid(site,k):cargoBid(site,k).net;
     const heldTxt=held?(hv.bag&&here&&hv.hold?`${hv.hold} + ${hv.bag}`:`${held}`):'—';
     h+=`<tr data-k="${k}" style="text-align:right"><td style="text-align:left">${g.n}</td><td>${own?cargoAsk(site,k):'—'}</td><td>${bid}</td><td title="aboard + carried">${heldTxt}</td><td style="white-space:nowrap">`+
       `<button type="button" data-a="sell" style="${B}"${held?'':' disabled'}>−</button><button type="button" data-a="buy" style="${B}"${own?'':' disabled'}>+</button>`+
       `<button type="button" data-a="fill" style="${B}"${own&&here?'':' disabled'}>Fill</button></td></tr>`;}
+  if(FN){const sv=BAG.map((it,i)=>[it,i]).filter(([it])=>it&&it.salvage); /* S2258 — gate salvage at the fence: the page's lawful road (the sacrilege row) */
+    if(sv.length){h+='<tr style="font-size:12px;color:#6a5a3a;text-align:right"><td style="text-align:left;padding-top:6px">Gate salvage</td><td></td><td>Bid</td><td></td><td></td></tr>';
+      for(const [it,i] of sv)h+=`<tr data-i="${i}" style="text-align:right"><td style="text-align:left">${it.name}</td><td>—</td><td>${sellPrice(it)}</td><td>1</td><td style="white-space:nowrap"><button type="button" data-a="salv" style="${B}">−</button></td></tr>`;}}
   ov.querySelector('#cargo-rows').innerHTML=h;
-  for(const b of ov.querySelectorAll('#cargo-rows button')){if(b.disabled)b.style.opacity='.35';const k=b.closest('tr').dataset.k,a=b.dataset.a;
-    b.onclick=()=>{cargoSaid=a==='buy'?cargoBuy(site,k):a==='sell'?cargoSell(site,k):cargoFill(site,k);cargoPanelDraw();};}
+  for(const b of ov.querySelectorAll('#cargo-rows button')){if(b.disabled)b.style.opacity='.35';const k=b.closest('tr').dataset.k,a=b.dataset.a;if(a==='salv'){const i=+b.closest('tr').dataset.i;b.onclick=()=>{cargoSaid=fenceSalvage(site,i);cargoPanelDraw();};continue;}
+    b.onclick=()=>{cargoSaid=a==='sell'?(FN?fenceSell(site,k):cargoSell(site,k)):FN?'':a==='buy'?cargoBuy(site,k):cargoFill(site,k);cargoPanelDraw();};}
   const ship=worldState.ship,used=here?holdUsed():0,cap=here?holdCap():0;
   ov.querySelector('#cargo-hold').innerHTML=!ship?'You have no ship: what you buy, you carry.':!here?`The ${SHIP.name} is not at this harbour; what you buy, you carry.`:
     `The ${SHIP.name}'s hold: ${used} of ${cap}<div style="height:9px;margin-top:4px;border:1px solid #8a7040;background:rgba(138,112,64,.12)"><div id="cargo-bar" style="height:100%;width:${Math.min(100,Math.round(used/Math.max(1,cap)*100))}%;background:#8a6a3a"></div></div>`;
-  ov.querySelector('#cargo-notes').textContent=cargoNotes(site);
+  ov.querySelector('#cargo-notes').textContent=FN?fenceNotes(site):cargoNotes(site);
   ov.querySelector('#cargo-said').textContent=cargoSaid;ov.querySelector('#cargo-gold').textContent=`Your purse: ${gold} gold`;}
 function openCargoPanel(site){if(!site)return;
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
@@ -2450,7 +2516,7 @@ function openCargoPanel(site){if(!site)return;
       '<span id="cargo-gold" style="font-size:14px"></span>'+
       '<button type="button" id="cargo-done" style="background:none;border:none;font:18px Georgia,serif;color:#3a2c18;cursor:pointer">Done</button></div></div>';
     document.body.appendChild(ov);ov.querySelector('#cargo-done').onclick=closeCargoPanel;}
-  cargoSite=site;cargoSaid='';ov.querySelector('#cargo-title').textContent=`The factor’s board — ${site.name}`;
+  cargoSite=site;cargoSaid='';ov.querySelector('#cargo-title').textContent=site.fence?`The fence — ${site.name}`:`The factor’s board — ${site.name}`;
   ov.style.display='flex';cargoOpen=true;cargoPanelDraw();}
 function closeCargoPanel(){const ov=document.getElementById('cargoui');if(ov)ov.style.display='none';cargoOpen=false;cargoSite=null;if(typeof G!=='undefined'&&G&&G.focus)G.focus();}
 window.addEventListener('keydown',e=>{if(!cargoOpen)return;if(e.code==='Escape'||e.code==='KeyE'){if(!e.repeat)closeCargoPanel();e.preventDefault();e.stopPropagation();}},true);

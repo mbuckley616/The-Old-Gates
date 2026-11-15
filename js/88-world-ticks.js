@@ -515,6 +515,7 @@
     try{tickChase(dt);}catch(e){} /* S2235 — the lord's chase said as you walk into it */
     try{tickForester(dt);}catch(e){} /* S2254 — the lord's forester walks his chase by day */
     try{tickTithe(dt);}catch(e){} /* S2252 — the Compact's tithe-ship and her hail (#1570 A) */
+    try{tickFence(dt);}catch(e){} /* S2257 — the cove's fence (#1570 A's second half) */
     houseLod();
     landTick(dt); // S1181 (F3): the new look's grass, a chunk a frame, and its wind
     try{tickWonders();}catch(e){console.warn('wonders',e);} /* S1614 — the Skyfall Fields (82-world-structures.js) */
