@@ -651,6 +651,35 @@
   function tickChase(dt){_chaseT-=dt;if(_chaseT>0)return;_chaseT=.5;let t=null;try{t=chaseAt(px,pz);}catch(e){}const id=t?t.id:null;
     if(id&&id!==_chaseIn&&!licenceHeld(t))showMsg(`The lord's chase of ${t.name}. Its deer, boar and hare are his; his licence is sold at the keep.`,'#e8d8a0');
     _chaseIn=id;}
+  /* S2241 — the chase's edge on the map (the page's "no trap": "a chase's edge on the map in the lord's colour", the Crown's crimson). The local
+     map and the minimap sample their view in squares of `cell` metres; each square whose middle is in a chase (chaseAt, the rule itself, so it
+     follows whichever towns hold one) is tinted, and every side it shares with a square outside is drawn as the edge. The cities that could hold
+     a chase are found first from the view's cells, so a view with none costs nine getCell reads; the wood test is kept per 8 m square for a game day. */
+  const CHASE_COL='#b8323a',_chaseWood=new Map();let _chaseWoodDay=-1;
+  function chaseWoodAt(x,z){const d=dayNow();if(d!==_chaseWoodDay||_chaseWood.size>40000){_chaseWood.clear();_chaseWoodDay=d;}
+    const k=Math.round(x/8)+','+Math.round(z/8);let v=_chaseWood.get(k);if(v===undefined){v=CHASE_WOOD.has(lairBiome({x,z}));_chaseWood.set(k,v);}return v;}
+  // the cities whose chase reaches into the square of half-side r about (x, z)
+  function chaseCitiesNear(x,z,r){const out=[],R=r+CHASE_R,[c0,r0]=cellOf(x-R,z-R),[c1,r1]=cellOf(x+R,z+R);
+    for(let j=r0;j<=r1;j++)for(let i=c0;i<=c1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;
+      for(const t of c.sites)if(t.kind==='city'&&Math.abs(t.x-x)<R&&Math.abs(t.z-z)<R&&chaseKeep(t))out.push(t);}
+    return out;}
+  // is (x, z) in a chase of one of `cities`: the rule of chaseAt (the Gatelands, within CHASE_R, the wood)
+  function chaseIn(x,z,cities){let near=false;for(const t of cities)if(Math.hypot(t.x-x,t.z-z)<CHASE_R){near=true;break;}
+    return near&&nationAt(x,z)==='gatelands'&&chaseWoodAt(x,z);}
+  // draws the edge on a map whose view is the square from (x0, z0) to (x0 + n·cell, z0 + n·cell), toS turning metres to the canvas, s its pixels a metre
+  function chaseEdge(ctx,toS,x0,z0,n,cell,s){if(activeZoneId!=='world')return 0;
+    const cities=chaseCitiesNear(x0+n*cell/2,z0+n*cell/2,n*cell/2);if(!cities.length)return 0;
+    const G=new Uint8Array(n*n);let k=0;
+    for(let j=0;j<n;j++)for(let i=0;i<n;i++)if(chaseIn(x0+(i+.5)*cell,z0+(j+.5)*cell,cities)){G[j*n+i]=1;k++;}
+    if(!k)return 0;
+    ctx.save();ctx.fillStyle='rgba(184,50,58,.16)';
+    for(let j=0;j<n;j++)for(let i=0;i<n;i++)if(G[j*n+i]){const [sx,sz]=toS(x0+i*cell,z0+j*cell);ctx.fillRect(sx,sz,cell*s+1,cell*s+1);}
+    ctx.strokeStyle=CHASE_COL;ctx.lineWidth=Math.max(1.5,Math.min(3,cell*s*.35));ctx.lineCap='square';ctx.beginPath();
+    const side=(ax,az,bx,bz)=>{const [a1,a2]=toS(ax,az),[b1,b2]=toS(bx,bz);ctx.moveTo(a1,a2);ctx.lineTo(b1,b2);};
+    for(let j=0;j<n;j++)for(let i=0;i<n;i++){if(!G[j*n+i])continue;const X=x0+i*cell,Z=z0+j*cell;
+      if(i>0&&!G[j*n+i-1])side(X,Z,X,Z+cell);if(i<n-1&&!G[j*n+i+1])side(X+cell,Z,X+cell,Z+cell);
+      if(j>0&&!G[(j-1)*n+i])side(X,Z,X+cell,Z);if(j<n-1&&!G[(j+1)*n+i])side(X,Z+cell,X+cell,Z+cell);}
+    ctx.stroke();ctx.restore();return k;}
   /* S2240 — sacrilege (Michael's B on #1540, docs/design/law-in-three-registers.md, the second of its three crimes). "Gate-grubbing is
      sacrilege to the Church" (canon, Aurenne's contempt). A piece taken in a gate (a dungeon that is no fort, lair or tutorial) is gate
      salvage: arms, armour and curiosities, never gold, a stack or a unique, marked it.salvage as it goes into the bag (takeLootItem) and
