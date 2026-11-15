@@ -57,10 +57,12 @@ check('a genome is the same rolled twice from its key', again);
 // On the head's bone alone it swung through the sheet's back with each nod of the driver (dunmore#4:Niamh, 14% of the points by the
 // cloak out of it, by up to 2.1 cm). Over 4 s in the street, every loose head under a long cloak (not a cape) whole within the eye's ring
 // (S2260: Niamh is Dunmore's Mayor and since #1566 B wears the Crown's crimson cape, so the eye stands 3 m from the street's first loose head
-// under a long cloak, Maeve, until her body is whole)
-const loose = await page.evaluate(() => { const T = [...HB_RIGS].find(r => r.hbG && r.hbG.hair && r.hbG.hair.style === 'loose' && r.hbG.dress && r.hbG.dress.cloak && !r.hbG.dress.cape && r.root.parent === WORLD.scene && r.root.visible);
-  const eye = () => { const p = T ? T.root.position : WORLD.siteAnywhere('dunmore'), x = p.x, z = p.z + (T ? 3 : 4); CAM.position.set(x, worldH(x, z) + 1.65, z); CAM.updateMatrixWorld(true); };
-  eye(); for (let i = 0; i < 60; i++) tickPeople(1 / 60, 5.9e5 + i * 17); for (let k = 0; T && k < 600 && !(T.hb && T.hb.P && T.hb.L === 0); k++) { eye(); tickPeople(1 / 60, 5.91e5 + k * (HBODY.gap + 1)); }
+// under a long cloak whose hair is drawn (Dunmore's first), until that body is whole)
+const loose = await page.evaluate(() => { const C = [...HB_RIGS].filter(r => r.hbG && r.hbG.hair && r.hbG.hair.style === 'loose' && r.hbG.dress && r.hbG.dress.cloak && !r.hbG.dress.cape && r.root.parent === WORLD.scene && r.root.visible)
+    .sort((a, b) => /^dunmore/.test(b.g.hbKey) - /^dunmore/.test(a.g.hbKey));
+  let T = null; const eye = () => { const p = T.root.position, x = p.x, z = p.z + 3; CAM.position.set(x, worldH(x, z) + 1.65, z); CAM.updateMatrixWorld(true); };
+  for (const c of C) { T = c; let t = 5.9e5; for (let k = 0; k < 600 && !(T.hb && T.hb.P && T.hb.L === 0); k++) { eye(); tickPeople(1 / 60, t += HBODY.gap + 1); } if (T.hb && T.hb.root.getObjectByName('hair')) break; T = null; } /* a hooded head draws no hair */
+  if (T) { eye(); for (let i = 0; i < 60; i++) tickPeople(1 / 60, 5.99e5 + i * 17); }
   const rigs = [...HB_RIGS].filter(r => r.hb && r.hb.P && r.hb.L === 0 && r.hbG && r.hbG.hair && r.hbG.hair.style === 'loose' && r.hbG.dress && r.hbG.dress.cloak && !r.hbG.dress.cape && !!r.hb.root.getObjectByName('hair') && !!r.hb.root.getObjectByName('cloak'));
   const count = rig => { const H = rig.hb, ms = []; H.root.updateMatrixWorld(true); H.root.traverse(o => { if (o.isSkinnedMesh) ms.push(o); });
     const posed = m => { const n = m.geometry.attributes.position.count, o = new Float32Array(n * 3), v = new THREE.Vector3(); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); o[i * 3] = v.x; o[i * 3 + 1] = v.y; o[i * 3 + 2] = v.z; } return o; };
