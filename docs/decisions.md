@@ -15,45 +15,28 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
-### Poaching — whose woods are a lord's chase (one city's, every lord's town, or every settlement's)? (from the systems builder, 2026-11-14, #1562)
-**The question.** Poaching (B on #1540) puts a lord's chase in the wooded cells within 600 m of a town with a keep. Only a city has a keep, and only while its prosperity is 80 or more: today the Gatelands hold one chase, Ballyowen's, and it comes and goes with its prosperity. Most players would never meet the crime or its licence.
+### The road between towns — the road's ground, the road's people, or both with escorts? (from the designer, 2026-11-15, #1587)
+**The question.** Backlog L's *The road between towns* (OG-118) asks for fords, frozen crossings, passes, a checkpoint and travellers to meet. Today the road has only the caravans and coaches you buy and the bandits, and the world's events (sieges, sacks, plague) reach you only if you are standing near. How far should the road go?
 
 **Options.**
-- **A.** As built: a city whose keep stands. One chase today, Ballyowen's.
-- **B (recommended).** Any Gatelands town or city with a lord, keep or not (not a village, port or garrison). A chase beside most towns; the licence bought from that lord.
-- **C.** B, plus the villages: every settlement's wood is someone's. Hunting becomes mostly licences.
+- **A.** The road's ground: fords on the small tracks (×0.7 to wade, flooded 12 game hours after heavy rain), the Mark's lakes and narrow rivers frozen in winter (thin at the thaw), snow off the passes' track (×0.75), a well every 800 m on Aurenne's roads. Three systems sessions, two look; the ice waits on F3's river water.
+- **B (recommended).** The road's people: 2 to 6 travellers a road a day by the two towns' prosperity, seeded by road and day: a merchant's pack train, pilgrims who mark a shrine or gate, a rider with the newest news, an official who pays for the camp breaking his road, and families fleeing a town besieged, sacked or plagued. Plus a bridge down 1 in 30 a week until a lord's mend or two weeks pass. Five systems sessions, one bodies, one look, one quest-writer run.
+- **C.** B and A, plus escorts (the game's first companion, a deep-work session) and a round of the shrines. About nine systems sessions and a deep-work one.
 
-**Recommendation.** B: the point is a choice inside hunting with a lawful road beside it (30 gold, three months); one chase hides it, every wood claimed turns hunting into paperwork.
+**Recommendation.** B: it brings the world's consequences onto the road as people you can see and answer, with every cost in gold, favour or a fight and no new crime or meter; A is mostly look work on F3's water and can follow. Page: `docs/design/the-road-between-towns.md`.
 
-### The powers’ costume — how loudly rank shows (token alone, dressed by nation, or OG-042’s court) (from the concept artist, 2026-11-14, #1566)
-**The question.** Backlog L1 (OG-042). The prototype dresses the canon's seven real offices (a Crown lord, a village Elder, a League captain, a reeve, a Prior, a Factor, an Old Blood elder) in the people builder's existing clothes. How loudly should rank show on the people who hold power?
-
-**Options.**
-- **A.** The token alone: everyday dress plus one thing of office (the lord's chain, the Elder's stick, the captain's sword, the reeve's staff, the Prior's stole, the Factor's ledger, the elder's charms).
-- **B (recommended).** Dressed by rank, nation by nation, in the canon's colours: the lord's crimson cape with fur and gold, the captain's black coat and wolf collar, the reeve's plain good wool, the Prior's white and blue, the Factor's ivory gown, circlet and seal, the Old Blood elder's undyed grey and carved staff.
-- **C.** OG-042 as drawn: one court style for every office (fur, gold chains, purple for the Compact).
-
-**Recommendation.** B: who is in charge reads across a square and each island still looks like itself; C puts gold on the Mark against the canon's "nothing decorative", and under A a lord is hard to tell from his smith. Pictures on #1566; the page is `docs/prototypes/levelup/powers.html` (`?level=a|b|c`).
-
-### Smuggling — what does a tithe-ship's search find on an honest trader? (from the systems builder, 2026-11-14, #1570)
-**The question.** Smuggling (#1540 B's last crime) is cargo landed at an Aurenne cove and sold to its fence with no tenth; the risk is a tithe-ship's search within 300 m of Aurenne's coast, one time in four. A lawful trader bound for an Aurenne port carries cargo through the same waters: if the search fines any cargo, honest trade is fined one run in four, which makes the lawful road a trap.
+## Answered
+### A sea fight's smoke, fire and founder — as drawn, without the char, or only the flash and the splash? (from the look builder, 2026-11-15, #1582)
+**The question.** Today the guns fire unseen, a burning rig shows nothing, and a sinking ship drops straight down. Session 2244's prototype draws a broadside's flash and smoke, the shot in flight, the splash and splinters, a burning sail's flames and its char, and the founder going down by the head in broken water; at most 4 draws in a fight. Picture: `docs/prototypes/levelup/ships-fx.jpg` (raw from `auto/look-2243`).
 
 **Options.**
-- **A (recommended).** Declare at the hail: declared cargo is entered as bound for port and never fined; declared cargo later sold at a cove is booked as theft (2 points) at your next Aurenne port. Refuse, and she searches one time in four; cargo found is taken with 2 points.
-- **B.** The search finds only cove cargo: cargo loaded at a cove is marked and only that is fined. Simpler, but no choice at the hail.
-- **C.** Any cargo is searched, as the page reads: one in four, honest or not.
+- **A (recommended).** As drawn, the char kept on a doused sail until she is refitted.
+- **B.** As A, but a doused sail is whole again: no char.
+- **C.** Only the flash, the splash and the founder's broken water: no smoke clouds and no flames.
 
-**Recommendation.** A: the honest trader declares and is never fined; the smuggler gambles once at sea, or declares and loses the cove. Each option is one systems session; the tithe-ship touches `85-world-sea.js` lightly.
+**Recommendation.** A.
 
-### A town's shop inside — the merchant's house as drawn, the shop alone, or not yet? (from the look builder, 2026-11-15, #1574)
-**The question.** A Gatelands town's armourer, apothecary, goods shop and barber stand in the street as the kit's merchant's house, but inside they still open on the old generated room. Session 2240's prototype (card F9; OG-043, OG-115; `rooms.html?room=merchant&trade=misc|potion|armor|barber`) draws one: the shop across the whole front with a 0.95 m counter, the keeper's walk and shelves of stock; the trade's piece against the cross wall; the townhouse's hall, stair, kitchen and four family rooms behind and above. 3 to 5 bays by 6.75 to 9 m, 10.3k to 17.2k triangles in 19 to 20 draws.
-
-**Options.**
-- **A (recommended).** As drawn, for the four trades in every Gatelands town. The merchant's back door moves into the kitchen, so the outside changes too.
-- **B.** The shop only: the ground floor as drawn, the stair door shut and the upper floors out of reach.
-- **C.** Leave the towns' shops on the generated room for now.
-
-**Recommendation.** A. Pictures on #1574: goods, apothecary, armourer, barber, the counter, outside (raw from `auto/look-2240`).
+Michael: **A, As drawn, char kept until refitted.** (15 Nov 2026, tapped on the control room)
 
 ### A ship's ballista and guns — the engine at the bow off the centreline, and the galleon's guns run out? (from the look builder, 2026-11-15, #1580)
 **The question.** Naval combat B's first look session (Session 2243, prototype) draws a torsion ballista on a turning post, 0.8 m to starboard of each class's bow so its bolt flies past the stem, the bowsprit and the stays (on the centreline every bow's rig sat in the bolt's line), on the forecastle where she has one. The galleon's lids swing up 110° and her twelve guns run out. Picture: `docs/prototypes/levelup/ships-arms.jpg` (raw from `auto/look-2243`).
@@ -65,17 +48,56 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A. On the cutter the engine stands just forward of her mast, because her bow is too fine for its swing.
 
-### A sea fight's smoke, fire and founder — as drawn, without the char, or only the flash and the splash? (from the look builder, 2026-11-15, #1582)
-**The question.** Today the guns fire unseen, a burning rig shows nothing, and a sinking ship drops straight down. Session 2244's prototype draws a broadside's flash and smoke, the shot in flight, the splash and splinters, a burning sail's flames and its char, and the founder going down by the head in broken water; at most 4 draws in a fight. Picture: `docs/prototypes/levelup/ships-fx.jpg` (raw from `auto/look-2243`).
+Michael: **A, As drawn, in the game on the new look.** (15 Nov 2026, tapped on the control room)
+
+### A town's shop inside — the merchant's house as drawn, the shop alone, or not yet? (from the look builder, 2026-11-15, #1574)
+**The question.** A Gatelands town's armourer, apothecary, goods shop and barber stand in the street as the kit's merchant's house, but inside they still open on the old generated room. Session 2240's prototype (card F9; OG-043, OG-115; `rooms.html?room=merchant&trade=misc|potion|armor|barber`) draws one: the shop across the whole front with a 0.95 m counter, the keeper's walk and shelves of stock; the trade's piece against the cross wall; the townhouse's hall, stair, kitchen and four family rooms behind and above. 3 to 5 bays by 6.75 to 9 m, 10.3k to 17.2k triangles in 19 to 20 draws.
 
 **Options.**
-- **A (recommended).** As drawn, the char kept on a doused sail until she is refitted.
-- **B.** As A, but a doused sail is whole again: no char.
-- **C.** Only the flash, the splash and the founder's broken water: no smoke clouds and no flames.
+- **A (recommended).** As drawn, for the four trades in every Gatelands town. The merchant's back door moves into the kitchen, so the outside changes too.
+- **B.** The shop only: the ground floor as drawn, the stair door shut and the upper floors out of reach.
+- **C.** Leave the towns' shops on the generated room for now.
 
-**Recommendation.** A.
+**Recommendation.** A. Pictures on #1574: goods, apothecary, armourer, barber, the counter, outside (raw from `auto/look-2240`).
 
-## Answered
+Michael: **A, As drawn, in every Gatelands town.** (15 Nov 2026, tapped on the control room)
+
+### Smuggling — what does a tithe-ship's search find on an honest trader? (from the systems builder, 2026-11-14, #1570)
+**The question.** Smuggling (#1540 B's last crime) is cargo landed at an Aurenne cove and sold to its fence with no tenth; the risk is a tithe-ship's search within 300 m of Aurenne's coast, one time in four. A lawful trader bound for an Aurenne port carries cargo through the same waters: if the search fines any cargo, honest trade is fined one run in four, which makes the lawful road a trap.
+
+**Options.**
+- **A (recommended).** Declare at the hail: declared cargo is entered as bound for port and never fined; declared cargo later sold at a cove is booked as theft (2 points) at your next Aurenne port. Refuse, and she searches one time in four; cargo found is taken with 2 points.
+- **B.** The search finds only cove cargo: cargo loaded at a cove is marked and only that is fined. Simpler, but no choice at the hail.
+- **C.** Any cargo is searched, as the page reads: one in four, honest or not.
+
+**Recommendation.** A: the honest trader declares and is never fined; the smuggler gambles once at sea, or declares and loses the cove. Each option is one systems session; the tithe-ship touches `85-world-sea.js` lightly.
+
+Michael: **A, Declare at the hail.** (15 Nov 2026, tapped on the control room)
+
+### The powers’ costume — how loudly rank shows (token alone, dressed by nation, or OG-042’s court) (from the concept artist, 2026-11-14, #1566)
+**The question.** Backlog L1 (OG-042). The prototype dresses the canon's seven real offices (a Crown lord, a village Elder, a League captain, a reeve, a Prior, a Factor, an Old Blood elder) in the people builder's existing clothes. How loudly should rank show on the people who hold power?
+
+**Options.**
+- **A.** The token alone: everyday dress plus one thing of office (the lord's chain, the Elder's stick, the captain's sword, the reeve's staff, the Prior's stole, the Factor's ledger, the elder's charms).
+- **B (recommended).** Dressed by rank, nation by nation, in the canon's colours: the lord's crimson cape with fur and gold, the captain's black coat and wolf collar, the reeve's plain good wool, the Prior's white and blue, the Factor's ivory gown, circlet and seal, the Old Blood elder's undyed grey and carved staff.
+- **C.** OG-042 as drawn: one court style for every office (fur, gold chains, purple for the Compact).
+
+**Recommendation.** B: who is in charge reads across a square and each island still looks like itself; C puts gold on the Mark against the canon's "nothing decorative", and under A a lord is hard to tell from his smith. Pictures on #1566; the page is `docs/prototypes/levelup/powers.html` (`?level=a|b|c`).
+
+Michael: **B, Dressed by rank, nation by nation.** (15 Nov 2026, tapped on the control room)
+
+### Poaching — whose woods are a lord's chase (one city's, every lord's town, or every settlement's)? (from the systems builder, 2026-11-14, #1562)
+**The question.** Poaching (B on #1540) puts a lord's chase in the wooded cells within 600 m of a town with a keep. Only a city has a keep, and only while its prosperity is 80 or more: today the Gatelands hold one chase, Ballyowen's, and it comes and goes with its prosperity. Most players would never meet the crime or its licence.
+
+**Options.**
+- **A.** As built: a city whose keep stands. One chase today, Ballyowen's.
+- **B (recommended).** Any Gatelands town or city with a lord, keep or not (not a village, port or garrison). A chase beside most towns; the licence bought from that lord.
+- **C.** B, plus the villages: every settlement's wood is someone's. Hunting becomes mostly licences.
+
+**Recommendation.** B: the point is a choice inside hunting with a lawful road beside it (30 gold, three months); one chase hides it, every wood claimed turns hunting into paperwork.
+
+Michael: **B, Any town or city with a lord, keep or not.** (15 Nov 2026, tapped on the control room)
+
 ### The adventurer's kit: a pack, the pack plus a spyglass, rod and net, or those plus wear? (from the designer, 13 Nov 2026, #1504)
 **The question.** Backlog L8's adventurer's kit (OG-098) asks a use for each thing carried. Most of it is built (pick, hatchet, joiner's kit, shovel, skinning knife, mess kit, bedrolls, tent, water vessels, cloaks), but nothing makes what you carry a choice, and nothing in the game is a pack, a spyglass, a rod or a net. How far should the kit go? Page: `docs/design/adventurers-kit.md`.
 
