@@ -2172,6 +2172,134 @@ const giver=`${lord.title} ${lord.name}`;
     }
   }
   function removeCaravan(key){const C=CARAVANS.get(key);if(!C)return;sc.remove(C.cart);sc.remove(C.mule);sc.remove(C.npc.g);sc.remove(C.npc.dot);const k=npcs.indexOf(C.npc);if(k>=0)npcs.splice(k,1);CARAVANS.delete(key);}
+  // ═══ THE ROAD'S PEOPLE (S2268 — Michael's B on #1587, docs/design/the-road-between-towns.md; session 1: the day's roll and the merchant)
+  // Each road between two settlements sends its travellers for the day, read from its key and the day (co-op rules: seededRng, never the
+  // frame): 2 + both ends' prosperity ÷ 50 departures, 2 to 6, halved on a broken trade route, each with its hour (06:00 to 18:00, a rider
+  // at any hour), its end and its kind by weight (a merchant 3, or 6 when a trade route joins the ends; a pilgrim 2, the Gatelands 3, only
+  // where a shrine or a lesser gate lies within 1,500 m of the road; a rider 1, +2 while either end has had a siege, a sack, a fire, plague,
+  // an occupation or its abandonment in the last 3 days; an official 1), and 2 families more from an end that has had one in the last 20
+  // days, on a stream of their own so the rest stand. Where a traveller is comes from the clock and the pace (a game minute each real
+  // second): the same family at the same bend for a friend. Yesterday's walkers are still on a long road. Within 400 m of you, the nearest
+  // four are drawn. This session draws the merchant and his mule; the other kinds are rolled and wait on their sessions.
+  const ROADFOLK={merchant:{pace:1.1,w:3},pilgrim:{pace:1.3,w:2},rider:{pace:5.5,w:1},official:{pace:1.3,w:1},family:{pace:1.0,w:0}};
+  const ROADFOLK_NEAR=400,ROADFOLK_DRAWN=4,ROADFOLK_MUL=1.1,ROADFOLK_PILGRIM=1500,ROADFOLK_NEWS=3*1440,ROADFOLK_FLED=20*1440;
+  const ROADFOLK_DRAW={merchant:1,pilgrim:1};
+  const ROAD_EVENT_FLAGS=['besieged','sacked','burned','plague','occupied','abandoned'];
+  const _roadDays=new Map(),_roadShrine=new Map(),ROADWALK=new Map();
+  function roadLenOf(rd){if(rd._len!=null)return rd._len;const P=rd.pts,cum=[0];for(let i=1;i<P.length;i++)cum.push(cum[i-1]+Math.hypot(P[i].x-P[i-1].x,P[i].z-P[i-1].z));rd._cum=cum;rd._len=cum[cum.length-1];return rd._len;}
+  function roadAtDist(rd,d,rev){const L=roadLenOf(rd),cum=rd._cum,P=rd.pts;let s=Math.max(0,Math.min(L,rev?L-d:d));let lo=0,hi=cum.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(cum[m]<=s)lo=m;else hi=m;}
+    const p0=P[lo],p1=P[Math.min(P.length-1,lo+1)],seg=Math.max(1e-6,cum[Math.min(cum.length-1,lo+1)]-cum[lo]),f=Math.min(1,(s-cum[lo])/seg);const sx=rev?-1:1;
+    return {x:p0.x+(p1.x-p0.x)*f,z:p0.z+(p1.z-p0.z)*f,ang:Math.atan2((p1.x-p0.x)*sx,(p1.z-p0.z)*sx)};}
+  function roadfolkRoad(rd){const d=rd.def;return d.via!=='spur'&&d.via!=='quay'&&!!siteAnywhere(d.a)&&!!siteAnywhere(d.b);}
+  // a shrine, or a lesser gate (a cave door that is no lair's and no great gate), within 1,500 m of the road's line: read off the cells' own data
+  // the shrines and lesser gates (a cave door that is no lair's and no great gate's) within 1,500 m of the road's line, read off the cells'
+  // own data and sorted by id, so a pilgrim's goal is the same whatever has loaded: {id, name, kind:'shrine'|'gate', x, z}; the id is the map's
+  function roadShrines(rd){const key=routeKey(rd.def.a,rd.def.b);if(_roadShrine.has(key))return _roadShrine.get(key);const P=rd.pts,step=Math.max(1,Math.floor(P.length/12)),cells=new Set();
+    for(let i=0;i<P.length;i+=step){const [ci,cj]=cellOf(P[i].x,P[i].z);for(let a=ci-1;a<=ci+1;a++)for(let b=cj-1;b<=cj+1;b++)if(a>=0&&b>=0&&a<GRID&&b<GRID)cells.add(a+','+b);}
+    const near=(x,z)=>{for(let i=0;i<P.length;i+=step)if(Math.hypot(P[i].x-x,P[i].z-z)<ROADFOLK_PILGRIM)return true;return Math.hypot(P[P.length-1].x-x,P[P.length-1].z-z)<ROADFOLK_PILGRIM;};const out=[];
+    for(const k of [...cells].sort()){const m=k.split(','),c=getCell(+m[0],+m[1]);
+      for(const t of c.sites)if(t.kind==='shrine'&&near(t.x,t.z))out.push({id:t.id,name:t.name,kind:'shrine',x:t.x,z:t.z});
+      for(const e of c.doors){if(e.wet||e.kind!=='cave_door'||e.lairDoor||e.cell!==k||greatSchoolOf(e))continue;const p=fixedDoorSpot(e);if(p&&near(p.x,p.z))out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'),kind:'gate',x:p.x,z:p.z});}}
+    out.sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0);_roadShrine.set(key,out);return out;}
+  function roadHasShrine(rd){return roadShrines(rd).length>0;}
+  function roadEndNews(site,within){const st=worldState.towns&&worldState.towns[site.id];if(!st)return false;const now=worldState.gameTimeAbsMinutes||0;return ROAD_EVENT_FLAGS.some(f=>st.flags[f]!=null&&now-st.flags[f]<=within);}
+  // the day's departures on one road: [{id, kind, from:'a'|'b', at (the absolute minute), pace}]. Kept for the day once read
+  function roadTravellers(rd,day){const key=routeKey(rd.def.a,rd.def.b),ck=key+':'+day;if(_roadDays.has(ck))return _roadDays.get(ck);
+    const a=siteAnywhere(rd.def.a),b=siteAnywhere(rd.def.b),out=[];if(!a||!b){_roadDays.set(ck,out);return out;}
+    const r=seededRng('road',ck),rt=routes()[key];let n=Math.max(2,Math.min(6,2+Math.floor((prosperity(a)+prosperity(b))/50)));if(rt&&rt.broken)n=Math.max(1,Math.round(n/2));
+    const isle=nationAt((a.x+b.x)/2,(a.z+b.z)/2),W={merchant:rt&&!rt.broken?6:3,pilgrim:roadHasShrine(rd)?(isle==='gatelands'?3:2):0,rider:1+(roadEndNews(a,ROADFOLK_NEWS)||roadEndNews(b,ROADFOLK_NEWS)?2:0),official:1};
+    const tot=Object.values(W).reduce((s,v)=>s+v,0);
+    for(let k=0;k<n;k++){let u=r()*tot,kind='official';for(const q in W){if(u<W[q]){kind=q;break;}u-=W[q];}const from=r()<.5?'a':'b',h=r();
+      const at=day*1440+Math.floor(kind==='rider'?h*1440:360+h*720);out.push({id:`road:${key}:${day}:${k}`,kind,from,at,pace:ROADFOLK[kind].pace,road:key});}
+    const fr=seededRng('roadfam',ck);for(const [end,other] of [['a',b],['b',a]]){const s=end==='a'?a:b;if(!roadEndNews(s,ROADFOLK_FLED))continue;
+      for(let k=0;k<2;k++)out.push({id:`road:${key}:${day}:f${end}${k}`,kind:'family',from:end,at:day*1440+Math.floor(360+fr()*720),pace:ROADFOLK.family.pace,road:key});}
+    _roadDays.set(ck,out);if(_roadDays.size>400){const f=_roadDays.keys().next().value;_roadDays.delete(f);}return out;}
+  // where a traveller is now, or null while not yet set out or arrived
+  // S2270 — a pilgrim's way (the page's pilgrim row): along the road from his end to its point nearest his shrine or gate, then off the road
+  // straight to it, and gone on arriving. His goal is one of the road's shrines and gates by his id; one in six bound for a gate are mourners
+  // with their dead (the Clearing, canon §3.1). Kept per traveller, as the roll is
+  function pilgrimPlan(T,rd){if(T._plan)return T._plan;const L=roadShrines(rd);if(!L.length)return (T._plan={none:true});const r=seededRng('pilgrim',T.id),G=L[Math.floor(r()*L.length)%L.length];
+    roadLenOf(rd);const P=rd.pts;let bi=0,bd=Infinity;for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<bd){bd=d;bi=i;}}
+    const along=T.from==='b'?rd._len-rd._cum[bi]:rd._cum[bi];return (T._plan={goal:G,mourners:G.kind==='gate'&&r()<1/6,along,off:bd,bx:P[bi].x,bz:P[bi].z});}
+  function pilgrimAt(T,rd,d){const Q=pilgrimPlan(T,rd);if(Q.none)return null;if(d<0||d>Q.along+Q.off)return null;if(d<=Q.along){const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
+    const f=(d-Q.along)/Math.max(1e-6,Q.off),x=Q.bx+(Q.goal.x-Q.bx)*f,z=Q.bz+(Q.goal.z-Q.bz)*f;return {x,z,ang:Math.atan2(Q.goal.x-Q.bx,Q.goal.z-Q.bz),d,off:true};}
+  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));if(T.kind==='pilgrim')return pilgrimAt(T,rd,d);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
+  function roadfolkHome(T,rd){return siteAnywhere(T.from==='a'?rd.def.a:rd.def.b);}
+  function roadfolkDest(T,rd){return siteAnywhere(T.from==='a'?rd.def.b:rd.def.a);}
+  // every traveller on the loaded roads now (today's and yesterday's departures), with where they are
+  function roadfolkNow(){const now=worldState.gameTimeAbsMinutes||0,day=Math.floor(now/1440),out=[];
+    for(const rd of ROADS){if(!roadfolkRoad(rd))continue;for(const dd of [day-1,day])for(const T of roadTravellers(rd,dd)){const p=travellerAt(T,rd,now);if(p)out.push({T,rd,p});}}
+    return out;}
+  // the merchant's pack: 6 to 10 rows of a goods shop's stock, his own by his id, at his home town's prices ×1.1
+  function merchantPack(T){const r=seededRng('roadpack',T.id),src=(typeof SHOP_STOCK!=='undefined'&&SHOP_STOCK.misc)||[];const idx=src.map((_,i)=>i);
+    for(let i=idx.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+    const n=Math.min(src.length,6+Math.floor(r()*5));return idx.slice(0,n).sort((x,y)=>x-y).map(i=>Object.assign({},src[i]));}
+  function merchantHouse(T,rd,name){const home=roadfolkHome(T,rd),R=rfRec(T.id);return {id:T.id,name,keeper:name,type:'misc',siteId:home?home.id:null,roadMul:R&&R.saved&&R.day===dayNow()?ROADFOLK_SAVED:ROADFOLK_MUL,pack:merchantPack(T),roadfolk:true};}
+  function merchantDef(T,rd,p){const home=roadfolkHome(T,rd),dest=roadfolkDest(T,rd),r=seededRng('roadfolk',T.id);const [i,j]=cellOf(home.x,home.z);const nat=nationOf(i,j);
+    const nm=pick(r,(NAMES[PEOPLES[nat.people].names]||NAMES.irish).m);
+    let def=null;def=makeDef(home,home.reg||'irish',r,'Merchant',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x5a4630,sCol:0xd4a878,topics:[{label:'Browse your wares.',trade:true,fn:()=>{currentHouse=merchantHouse(T,rd,def.name);}}]});
+    def._siteId=home.id;def.roadfolk=T.id;
+    def.bound=dest?dest.name:null;return def;}
+  // S2269 — the merchant's ambush (the page's merchant row): near a live bandit camp (one within 500 m of the road's midpoint, read off the
+  // cells, not cleared) the road's ambush odds (the encounter table's: 0.12 where the Crown patrols, 0.26 in Aurenne, 0.34 in the Mark) fall
+  // on him, by his own id: at a point 35 to 65% of his way, 3 or 4 of the camp's bandits (a captain at tier 2 and up) fall on him, but only
+  // while you are within 150 m of him (CARAVAN_WATCH) as he reaches it; out of sight he passes. He runs back 30 m and his mule stands. Kill
+  // them all and he goes on, late by the fight, sells at ×0.8 that day and his town gives +1 favour; go 250 m off (CARAVAN_LEAVE) or out
+  // of the world with them alive and his pack is taken, and he is off the road for the day. Kept in worldState.roadfolk by his id (the
+  // world's: the outcome, the day, the minutes he lost), so a load neither springs it twice nor forgets it.
+  const ROADFOLK_SAVED=.8;
+  function rfRec(id){const S=worldState.roadfolk;return S?S[id]||null:null;}
+  function rfSet(id,o){const S=worldState.roadfolk||(worldState.roadfolk={});S[id]=Object.assign(S[id]||{},o);return S[id];}
+  function rfPrune(){const S=worldState.roadfolk;if(!S)return;const d=dayNow();for(const id in S)if(d-(S[id].day||0)>3)delete S[id];}
+  function roadCamp(rd){const a=siteAnywhere(rd.def.a),b=siteAnywhere(rd.def.b);if(!a||!b)return null;const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2,[ci,cj]=cellOf(mx,mz);let best=null,bd=500;
+    for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;for(const t of getCell(i,j).sites){if(t.kind!=='bcamp'||(worldState.lairs&&worldState.lairs[t.id]))continue;const d=Math.hypot(t.x-mx,t.z-mz);if(d<bd||(d===bd&&best&&t.id<best.id)){bd=d;best=t;}}}
+    return best;}
+  function roadAmbushOdds(rd){const a=siteAnywhere(rd.def.a),b=siteAnywhere(rd.def.b),[ci,cj]=cellOf((a.x+b.x)/2,(a.z+b.z)/2),nk=nationKeyOf(ci,cj);return nk==='gatelands'?.12:nk==='mark'?.34:.26;}
+  function merchantAmbush(T,rd){if(T.kind!=='merchant')return null;const camp=roadCamp(rd);if(!camp)return null;const r=seededRng('roadambush',T.id);if(r()>=roadAmbushOdds(rd))return null;
+    return {f:.35+.3*r(),n:3+(r()<.5?1:0),camp:camp.name};}
+  function springRoadAmbush(D,A,p){const T=D.T,now=worldState.gameTimeAbsMinutes||0,ang=p.ang,enemies=[];
+    for(let k=0;k<A.n;k++){const t=(k/A.n)*Math.PI*2+ang;const ex=p.x+Math.sin(t)*6,ez=p.z+Math.cos(t)*6;const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,k===0&&worldTierAt(p.x,p.z)>=2?'Bandit Captain':'Bandit',null)),'roadfolk:'+T.id+':'+k);
+      e.alert=true;e.homeX=p.x;e.homeZ=p.z;e._roadfolk=T.id;ZONES.world.enemies.push(e);enemies.push(e);}
+    D.attack={enemies,x:p.x,z:p.z,ang,fled:0,at:now,camp:A.camp};rfSet(T.id,{sprung:true,day:dayNow()});
+    showMsg(`Bandits of ${A.camp} fall on ${D.npc.def.name}'s pack train!`,'#ff8060');}
+  function roadAmbushTick(D,p,dt){const T=D.T,R=rfRec(T.id),home=roadfolkHome(T,D.rd);
+    if(!D.attack){if(R&&R.sprung)return false;const A=merchantAmbush(T,D.rd);if(!A)return false;const L=roadLenOf(D.rd),at=A.f*L;
+      if(p.d>=at&&p.d<at+30&&Math.hypot(px-p.x,pz-p.z)<CARAVAN_WATCH){springRoadAmbush(D,A,p);}else return false;}
+    const K=D.attack;
+    if(K.enemies.every(e=>e.dead)){K.enemies.forEach(e=>{e._roadfolk=null;});const now=worldState.gameTimeAbsMinutes||0;
+      rfSet(T.id,{saved:true,day:dayNow(),lag:((R&&R.lag)||0)+(now-K.at)+K.fled/T.pace});delete D.attack;if(home)addFavor(home,1);
+      showMsg(`The bandits are dead. ${D.npc.def.name} gathers his mule and goes on, and his prices are kinder for it today.`,'#e8d8a0');
+      if(typeof addLog==='function')addLog('🐴',`Drove the bandits of ${K.camp} off ${D.npc.def.name}, a merchant of ${home?home.name:'the road'}.`);return false;}
+    if(Math.hypot(px-K.x,pz-K.z)>CARAVAN_LEAVE){K.enemies.forEach(e=>{e._roadfolk=null;});rfSet(T.id,{lost:true,day:dayNow()});
+      showMsg(`The bandits of ${K.camp} took ${D.npc.def.name}'s pack.`,'#ff8060');if(typeof addLog==='function')addLog('🐴',`The bandits of ${K.camp} robbed ${D.npc.def.name}, a merchant of ${home?home.name:'the road'}.`);
+      dropTraveller(T.id);return true;}
+    if(K.fled<30){const s=Math.min(30-K.fled,4.5*dt);K.fled+=s;}
+    const x=K.x-Math.sin(K.ang)*K.fled,z=K.z-Math.cos(K.ang)*K.fled,y=worldH(x,z);D.npc.g.position.set(x,y,z);D.npc.g.rotation.y=K.ang+Math.PI;D.npc.def.x=x;D.npc.def.z=z;D.npc.home={x,z};D.npc.dot.position.set(x,y+1.5,z);
+    return true;}
+  // a pilgrim tells you where he is bound, and it is pencilled on your map (sightPlace, the spyglass's own: worldState.sighted, the character's);
+  // the mourners are not spoken to at all: two walk together with their dead and nobody is in the world's talk list
+  function pilgrimDef(T,rd,p,k){const home=roadfolkHome(T,rd),Q=pilgrimPlan(T,rd),r=seededRng('roadfolk',T.id+(k?':'+k:''));const [i,j]=cellOf(home.x,home.z);const nat=nationOf(i,j);const bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
+    const nm=pick(r,r()<.5?bank.m:bank.f);const G=Q.goal;
+    const topics=Q.mourners?[]:[{label:'Where are you bound?',fn:()=>{sightPlace(G.id,G.name,`Pencilled ${G.name} on the map, where a pilgrim was bound.`);return `To ${G.kind==='shrine'?'the ':''}${G.name}. It lies ${compassWord(G.x-px,G.z-pz)} of here.`;}}];
+    const def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:Q.mourners?0x2a2622:0x8a7a5e,topics});def._siteId=home.id;def.roadfolk=T.id;return def;}
+  function buildTraveller(T,rd,p){
+    if(T.kind==='pilgrim'){const Q=pilgrimPlan(T,rd);const n=spawnNPC(pilgrimDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const D={T,rd,npc:n,follow:[]};
+      if(Q.mourners){const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);D.mute=true;const n2=spawnNPC(pilgrimDef(T,rd,p,1),p.ang,true);n2.sched={type:'lost'};const k2=npcs.indexOf(n2);if(k2>=0)npcs.splice(k2,1);D.follow.push({npc:n2,side:1.0,back:0});}
+      return D;}
+    const n=spawnNPC(merchantDef(T,rd,p),p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();try{const rg=buildAnimal('Pack Mule',T.id,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
+    return {T,rd,npc:n,beast:g,follow:[]};}
+  function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);ROADWALK.delete(id);}
+  function tickRoadfolk(dt){if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
+    if(Math.random()<.002)rfPrune();
+    const all=roadfolkNow().filter(o=>ROADFOLK_DRAW[o.T.kind]).map(o=>(o.dist=Math.hypot(o.p.x-px,o.p.z-pz),o)).filter(o=>o.dist<ROADFOLK_NEAR).sort((x,y)=>x.dist-y.dist||(x.T.id<y.T.id?-1:1)).slice(0,ROADFOLK_DRAWN);
+    for(const D of ROADWALK.values())if(D.attack&&!all.some(o=>o.T.id===D.T.id)){const p=D.stop||{x:D.attack.x,z:D.attack.z,ang:D.attack.ang,d:0};roadAmbushTick(D,p,dt||0);} /* a fight holds its merchant though the clock walks his place on */
+    const keep=new Set(all.map(o=>o.T.id));for(const [id,D] of [...ROADWALK.entries()])if(!keep.has(id)&&!D.attack)dropTraveller(id);
+    for(const {T,rd,p} of all){let D=ROADWALK.get(T.id);
+      if(!D){D=buildTraveller(T,rd,p);ROADWALK.set(T.id,D);{const R=rfRec(T.id);if(R&&R.sprung&&!R.saved&&!R.lost){rfSet(T.id,{lost:true});dropTraveller(T.id);continue;}} /* a fight left unfinished by a load: his pack was taken */}
+      if(roadAmbushTick(D,p,dt||0))continue;
+      const y=worldH(p.x,p.z);D.npc.g.position.set(p.x,y,p.z);D.npc.g.rotation.y=p.ang;D.npc.def.x=p.x;D.npc.def.z=p.z;D.npc.home={x:p.x,z:p.z};D.npc.dot.position.set(p.x,y+1.5,p.z);
+      if(D.beast){const bx=p.x-Math.sin(p.ang)*1.6,bz=p.z-Math.cos(p.ang)*1.6;D.beast.position.set(bx,worldH(bx,bz),bz);D.beast.rotation.y=p.ang;}
+      for(const F of D.follow){const fx=p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=worldH(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}}}
   // ═══ FACTIONS AND ANCHORED PLACES (Session S) ════════════════════════
   // Three nations you can rise in; past the second rank the other two close.
   // The story's named places are picked from the generated world once, by constraint.

@@ -2432,8 +2432,8 @@
         if(!glassClear(ex,ey,ez,e.x,ty,e.z))continue;out.sighted.push(e);}}
     return out;}
   // named action: a place sighted through the glass (the character's knowledge, like wdisc)
-  function sightPlace(id,name){if(!worldState.sighted)worldState.sighted={};if(worldState.sighted[id]||discovered(id))return false;worldState.sighted[id]=1;
-    showMsg(`Sighted: ${name}. Pencilled on your map.`,'#c8c0a8');if(typeof addLog==='function')addLog('🔭',`Sighted ${name} through the glass.`);return true;}
+  function sightPlace(id,name,log){if(!worldState.sighted)worldState.sighted={};if(worldState.sighted[id]||discovered(id))return false;worldState.sighted[id]=1; /* S2270 — a pilgrim's word pencils it too, with its own log line */
+    showMsg(log?`${name}: pencilled on your map.`:`Sighted: ${name}. Pencilled on your map.`,'#c8c0a8');if(typeof addLog==='function')addLog(log?'🗺':'🔭',log||`Sighted ${name} through the glass.`);return true;}
   function tickGlass(dt){if(!GLASS.up)return;
     const steps=!SHIP.sailing&&(K['KeyW']||K['KeyA']||K['KeyS']||K['KeyD']||K['ArrowUp']||K['ArrowDown']||K['ArrowLeft']||K['ArrowRight']||K['Space']);
     if(!hasGlass()||!glassCan()||PHP<GLASS.php||steps){glassDown();return;}GLASS.php=PHP;
