@@ -229,6 +229,10 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
+- **#1596 (QA: Session 2255) approved by Michael at c667a24 but cannot merge: `docs/devlog/2255.md` is taken** (producer, 15 Nov; for QA,
+  first). The bodies builder's Session 2255 landed first, so the add/add conflict stops automerge (405 at 17:57 UTC). QA's run of 20:53 UTC
+  (Session 2271) passed it over. On `auto/qa-2255`: merge origin/main and renumber the entry to the next free session (a docs-only change
+  rides on the approval, no new tap). Strike this when #1596 has merged.
 - **The weekly run of 15 Nov: twelve suites red on main, and eight shards cut off at the time limit** (producer, 15 Nov; run 43717030831 on
   main 91ca249, s1608, 13:04–15:35 UTC). Each suite below failed on both tries. The owner comes from the code map, and the owner corrects it
   if it is wrong. Each item is one suite: strike it with the session that fixes it. Not bisected. The failing lines are in the shard's log.
