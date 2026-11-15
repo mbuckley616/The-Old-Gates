@@ -4711,8 +4711,11 @@ function* makePersonSteps(G, o = {}) {
     // the plait over the shoulder (Session 1448), and every braid and tail down the back (Session 1449): what lies below the neck rides the chest, not
     // the head, so a turn of the head no longer swings it across the breast or the back. Its locks, ties, brush and a tail's strands pass from the head's
     // bone to the chest's (the necklace's) between 2 cm over the neck's base and 8 cm under it
-    if (/^(plait|braid|braids|tail|shaved)$/.test(H.stats.style)) { const chB = ix.bones.findIndex(b => b.name === 'spine03'), y0 = heads['neck01'].y + .02, y1 = heads['neck01'].y - .08;
-      for (const m of H.meshes) if (/^(braid\d|tie|brush|tail)$/.test(m.name)) { const pa = m.geometry.attributes.position, si = m.geometry.attributes.skinIndex.array, sw = m.geometry.attributes.skinWeight.array;
+    // Loose hair too (Session 2255): on the head's bone alone, what fell down the back swung with every nod and turn of the game's driver
+    // while a cloak hung still from the root, and its strands came through the sheet's back by up to 2 cm (dunmore#4:Niamh, 5,150 points)
+    const looseRide = H.stats.style === 'loose';
+    if (looseRide || /^(plait|braid|braids|tail|shaved)$/.test(H.stats.style)) { const chB = ix.bones.findIndex(b => b.name === 'spine03'), y0 = heads['neck01'].y + .02, y1 = heads['neck01'].y - .08;
+      for (const m of H.meshes) if (looseRide ? m.name === 'hair' : /^(braid\d|tie|brush|tail)$/.test(m.name)) { const pa = m.geometry.attributes.position, si = m.geometry.attributes.skinIndex.array, sw = m.geometry.attributes.skinWeight.array;
         for (let i = 0; i < pa.count; i++) { const k = Math.max(0, Math.min(1, (y0 - pa.getY(i)) / (y0 - y1))), w = k * k * (3 - 2 * k); si[i * 4] = headB; sw[i * 4] = 1 - w; si[i * 4 + 1] = chB; sw[i * 4 + 1] = w; } } }
     yield;
     { const B = buildBrows(P, G, headB); meshes.push(B.mesh); browStats = B.stats; }
