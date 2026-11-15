@@ -45,6 +45,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A: the honest trader declares and is never fined; the smuggler gambles once at sea, or declares and loses the cove. Each option is one systems session; the tithe-ship touches `85-world-sea.js` lightly.
 
+### A town's shop inside — the merchant's house as drawn, the shop alone, or not yet? (from the look builder, 2026-11-15, #1574)
+**The question.** A Gatelands town's armourer, apothecary, goods shop and barber stand in the street as the kit's merchant's house, but inside they still open on the old generated room. Session 2240's prototype (card F9; OG-043, OG-115; `rooms.html?room=merchant&trade=misc|potion|armor|barber`) draws one: the shop across the whole front with a 0.95 m counter, the keeper's walk and shelves of stock; the trade's piece against the cross wall; the townhouse's hall, stair, kitchen and four family rooms behind and above. 3 to 5 bays by 6.75 to 9 m, 10.3k to 17.2k triangles in 19 to 20 draws.
+
+**Options.**
+- **A (recommended).** As drawn, for the four trades in every Gatelands town. The merchant's back door moves into the kitchen, so the outside changes too.
+- **B.** The shop only: the ground floor as drawn, the stair door shut and the upper floors out of reach.
+- **C.** Leave the towns' shops on the generated room for now.
+
+**Recommendation.** A. Pictures on #1574: goods, apothecary, armourer, barber, the counter, outside (raw from `auto/look-2240`).
+
 ## Answered
 ### The adventurer's kit: a pack, the pack plus a spyglass, rod and net, or those plus wear? (from the designer, 13 Nov 2026, #1504)
 **The question.** Backlog L8's adventurer's kit (OG-098) asks a use for each thing carried. Most of it is built (pick, hatchet, joiner's kit, shovel, skinning knife, mess kit, bedrolls, tent, water vessels, cloaks), but nothing makes what you carry a choice, and nothing in the game is a pack, a spyglass, a rod or a net. How far should the kit go? Page: `docs/design/adventurers-kit.md`.
