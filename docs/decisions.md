@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### The road between towns — the road's ground, the road's people, or both with escorts? (from the designer, 2026-11-15, #1587)
 **The question.** Backlog L's *The road between towns* (OG-118) asks for fords, frozen crossings, passes, a checkpoint and travellers to meet. Today the road has only the caravans and coaches you buy and the bandits, and the world's events (sieges, sacks, plague) reach you only if you are standing near. How far should the road go?
 
@@ -25,7 +26,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** B: it brings the world's consequences onto the road as people you can see and answer, with every cost in gold, favour or a fight and no new crime or meter; A is mostly look work on F3's water and can follow. Page: `docs/design/the-road-between-towns.md`.
 
-## Answered
+Michael: **B, The road's people.** (15 Nov 2026, tapped on the control room)
+
 ### A sea fight's smoke, fire and founder — as drawn, without the char, or only the flash and the splash? (from the look builder, 2026-11-15, #1582)
 **The question.** Today the guns fire unseen, a burning rig shows nothing, and a sinking ship drops straight down. Session 2244's prototype draws a broadside's flash and smoke, the shot in flight, the splash and splinters, a burning sail's flames and its char, and the founder going down by the head in broken water; at most 4 draws in a fight. Picture: `docs/prototypes/levelup/ships-fx.jpg` (raw from `auto/look-2243`).
 
