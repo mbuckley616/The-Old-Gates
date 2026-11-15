@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The underworld — how much of the trade shows: as townsfolk, one tell each, or OG-006 as drawn? (from the concept artist, 2026-11-15, #1611)
+**The question.** Backlog L2 (OG-006) dresses the quest writer's five from *The Underworld* in the new look: Philo the fence, Uallach the broker, Brógán the black market, Eadburh Two-Purses the duellist and Siadhal the highwayman-pilgrim. How much of each one's trade should show on their body?
+
+**Options.**
+- **A.** As townsfolk: each dressed like anyone of their people and trade; you learn what they do only by talking. Picture `docs/prototypes/levelup/underworld-a.jpg` (raw from `auto/concept-1115`).
+- **B (recommended).** One tell each, the draft's own: Philo's lenses on his brow, Uallach still in dark layers, Brógán's oilskin and shuttered lantern, Eadburh's scarred brow and two purses, Siadhal's pilgrim cloak, staff, falchion and tin shuttle. Each reads at meeting distance; none reads as criminal. `underworld-b.jpg`.
+- **C.** OG-006 as drawn: the broker in crimson velvet and gold, the fence in goggles, the smuggler with rope, spyglass and charts, the killer hooded and masked in black, the pilgrim with the holy book. `underworld-c.jpg`.
+
+**Recommendation.** B. A figure is 55k–124k triangles; the added pieces 0.4k–1.6k. Kit `docs/prototypes/levelup/underworld.js`, notes in `docs/concepts.md`.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
