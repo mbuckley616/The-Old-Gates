@@ -36,7 +36,7 @@ for (const ty of types) {
     const spawn = !intSolidAt(px, pz, .3, 0) && !intSolidAt(W / 2, intArrivalZ(currentHouse), .3, 0), way = !intSolidAt(intDoorX(currentHouse), D - .7, .3, 0); /* S2018: in from the door itself (a kit hall's is off the middle) */
     // the beds: a kit bed's length along its own z, measured on the baked mesh's box where the bed stands
     const beds = (INT_BEDS || []).length;
-    return { W: +W.toFixed(2), D: +D.toFixed(2), entrance, ceil, doors, tables, out, over: over.slice(0, 4), nOver: over.length, spawn, way, beds, two: !!currentHouse.two, forge: !!currentHouse._forge };
+    return { W: +W.toFixed(2), D: +D.toFixed(2), entrance, ceil, doors, tables, out, over: over.slice(0, 4), nOver: over.length, spawn, way, beds, two: !!currentHouse.two, forge: !!currentHouse._forge, merchant: currentHouse._merchant ? [currentHouse.kit.bays, +currentHouse.d.toFixed(2)] : null };
   });
   all[ty] = r; console.log(ty, JSON.stringify(r));
   await page.evaluate(() => { try { exitInterior(); } catch (e) {} }); await page.waitForTimeout(1500);
@@ -49,7 +49,11 @@ check('an inn\'s taproom is 10 to 12 m by 7.5 to 9 (the coaching inn\'s front, i
 // door standing open and its roof open to the tie beams, so it is measured as that piece, not as a shop
 const FG = all.weapon && all.weapon.forge ? all.weapon : null;
 if (FG) check('a smith\'s forge is its piece\'s inside, 7.2 by 4.8 (the kit\'s forge, 8.4 by 6 m)', Math.abs(FG.W - 7.2) < .05 && Math.abs(FG.D - 4.8) < .05, [FG.W, FG.D]);
-check('a shop is 7 to 9 m wide and 7 to 8.5 deep, with 4.7 more for the keeper\'s room behind its partition in a deep house', ['weapon', 'armor', 'potion', 'misc'].every(t => !all[t] || (t === 'weapon' && FG) || (all[t].W >= 6.99 && all[t].W <= 9.01 && all[t].D >= 6.99 && all[t].D <= 13.21)), Object.fromEntries(['weapon', 'armor', 'potion', 'misc', 'barber'].map(t => [t, all[t] && [all[t].W, all[t].D]])));
+// S2272 (#1574 A): a Gatelands town's armourer, apothecary, goods shop and barber are the merchant's house inside (rooms.js's S2240): measured
+// as its piece, its bays of 1.95 m and their end piers less the walls (bays × 1.95 − 0.3) by the house's depth less its walls (0.9)
+const MR = ['armor', 'potion', 'misc', 'barber'].filter(t => all[t] && all[t].merchant);
+if (MR.length) check(`a shop in a merchant's house is its piece's inside (${MR.map(t => `${t} ${all[t].W} by ${all[t].D}`).join(', ')})`, MR.every(t => { const [n, d] = all[t].merchant; return Math.abs(all[t].W - (n * 1.95 - .3)) < .02 && Math.abs(all[t].D - (d - .9)) < .02; }), MR.map(t => [t, all[t].W, all[t].D, all[t].merchant]));
+check('a shop is 7 to 9 m wide and 7 to 8.5 deep, with 4.7 more for the keeper\'s room behind its partition in a deep house', ['weapon', 'armor', 'potion', 'misc'].every(t => !all[t] || (t === 'weapon' && FG) || all[t].merchant || (all[t].W >= 6.99 && all[t].W <= 9.01 && all[t].D >= 6.99 && all[t].D <= 13.21)), Object.fromEntries(['weapon', 'armor', 'potion', 'misc', 'barber'].map(t => [t, all[t] && [all[t].W, all[t].D]])));
 check('a church\'s nave is 8 to 10 m wide', !all.church || (all.church.W >= 7.99 && all.church.W <= 10.01), all.church && [all.church.W, all.church.D]);
 for (const t of types) { const r = all[t]; if (!r) continue;
   check(`${t}: the entrance's leaf is 1.1 to 1.25 of a 1.8 m person (or a church's, a keep's or a guild hall's great door, a forge's cart door), and the eye .75 to .85 of it`, (t === 'church' || t === 'castle' || t === 'guild_f') ? r.entrance > 2.6 : (t === 'weapon' && r.forge) ? r.entrance >= 2.4 && r.entrance <= 2.8 /* S2018: the forge's cart door */ : (r.entrance / P >= 1.1 && r.entrance / P <= 1.25 && 1.65 / r.entrance >= .749 /* 2.2 m, the foundation's door (#514), is .75 to the float (S1396) */ && 1.65 / r.entrance <= .85), r.entrance);

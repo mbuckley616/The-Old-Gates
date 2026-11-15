@@ -2417,6 +2417,84 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S2272 (card F9; Michael's A on #1574; OG-043, OG-115) — on the new look a Gatelands town's armourer, apothecary, goods shop and barber
+  // standing as the kit's merchant's house (lot.kit.kind 'merchant', 3 to 5 bays, 6.75 m deep or more) opens on the merchant's house
+  // inside (PKIT.gl.townhouse with o.merchant, rooms.js's Session 2240): the shop across the whole front, the counter along the west side
+  // with the keeper's walk and the shelves of stock on the gable behind it, the show at the window, the trade's piece against the cross
+  // wall; behind and over it the townhouse's hall, dog-leg stair, kitchen and the family's four rooms. Drawn in metres and moved into the
+  // room's frame as the townhouse's is. The keeper stands in the walk behind the counter facing the shop; the shop's strongbox is the
+  // game's lidded chest at the walk's window end, where the prototype draws it (o.chest false leaves the drawn one out).
+  function kitMerchant(house){const k=house&&house.kit;return !!(house&&['armor','potion','misc','barber'].includes(house.type)&&k&&k.kind==='merchant'&&[3,4,5].includes(k.bays)&&house.d>=6.75-1e-6&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.townhouse);}
+  function buildKitMerchant(house){
+    const T=PKIT.gl.townhouse({merchant:house.type,bays:house.kit.bays,d:+house.d.toFixed(2),color:house.kit.colour,paint:house.kit.paint,chest:false},PKIT.stream(house.id+':merchant')),I=T.inner,X=I.x1,Z=I.z1,F0=T.floors[0],W=2*X,D=2*Z;
+    const s=(house.kit.door||0)<0?-1:1,rx=x=>X+s*x,rz=z=>z+Z,ry=y=>y-F0,FL=T.floors.map(y=>+(y-F0).toFixed(3)),S=T.shop;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.ceils[2]-F0).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._merchant=T;house._mirror=s;
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-F0,Z);T.group.scale.x=s;T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    {const E=new THREE.Object3D();E.position.set(rx(T.door.x),0,D);E.userData.entrance=true;E.userData.leaf=[T.door.w,+(T.door.h-.5).toFixed(3)];sc_.add(E);} /* the shop door's glazed leaf to its transom (the fanlight's 0.5 m over it) */
+    const fr=(q,y0,y1)=>{const a=rx(q.x0),b=rx(q.x1);return {x0:Math.min(a,b),x1:Math.max(a,b),z0:rz(q.z0),z1:rz(q.z1),y0,y1};};
+    const foot=b=>FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});
+    // the solids are the prototype's boxes, as the townhouse's; the shop's counter, shelves, drawers, armour stands and the window's board
+    // are solids with no foothold on top (no standing on the counter)
+    const TALL=['partition','leaf','breast','press','dresser','clothespress','bunks','counter','shelves','drawers','stand','board'];
+    for(const q of T.boxes){const f=FL[q.fl];let y0=ry(q.y0),y1=ry(q.y1);
+      if(['chair','stool','settee','settle'].includes(q.tag)){y0=f;y1=f+STEP_UP;}else if(['table','halltable','washstand','smalltable'].includes(q.tag))y0=f;else if(q.tag==='bed'){y0=f;y1=f+.55;}
+      const b=fr(q,y0,y1);SOL.push(b);if(!TALL.includes(q.tag))foot(b);}
+    for(const q of T.steps){const b=fr(q,ry(q.y)-.22,ry(q.y));SOL.push(b);foot(b);}
+    for(const q of T.landings){const b=fr(q,ry(q.y)-.2,ry(q.y));SOL.push(b);foot(b);}
+    for(const q of T.rail)SOL.push(fr({x0:q.x0,x1:q.x1,z0:q.z,z1:q.z+.07},FL[2],ry(q.y)));
+    const wl=fr(T.well,0,0),hole={x0:wl.x0,x1:wl.x1,z0:wl.z0,z1:wl.z1};
+    for(const y of [FL[1],FL[2]])FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:D,y,hole});
+    // the doors: on the ground floor the kitchen's in the hall's partition and the hall's off the shop (the hall's bay closed at the
+    // landing's front, as upstairs); upstairs as the townhouse's
+    {const P=T.part,K=T.kdoor,kz=(K.z0+K.z1)/2,kw=K.z1-K.z0,dr=(x,z,fl,ang,w,h)=>intDoorAt(sc_,SOL,rx(x),rz(z),FL[fl],ang,0x4a3420,{w:w-.04,h:h-.04});
+      dr(P.x,kz,0,0,kw,2.1);
+      for(const fl of [0,1,2])dr(P.x+1.05,P.h,fl,Math.PI/2,.9,2.05);
+      for(const fl of [1,2])if(T.upOK)dr(P.x,kz,fl,0,kw,2.05);
+      if(!T.upOK)dr(-X+3.025,P.z,2,Math.PI/2,.85,2.05);}
+    // the shop's strongbox (S155) in the keeper's walk at the counter's window end, its lid to the walk
+    {const bx=rx(S.chest.x),bz=rz(S.chest.z),bg=new THREE.Group(),shell=buildChestShell(bg,.45,0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=Math.PI;sc_.add(bg);
+      SOL.push({x0:bx-.3,x1:bx+.3,z0:bz-.24,z1:bz+.24,y0:0,y1:.5});
+      INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:'shop',type:house.type,house,open:false};}
+    // the day beyond every window and the open shop and back doors, by the hour, as the townhouse's
+    {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),hd=T.d/2+.08;
+      const P=[],out=(x,y,z,w,h,a)=>{const g=new THREE.PlaneGeometry(w+.1,h+.1).toNonIndexed();g.rotateY(a);g.translate(rx(x),ry(y+h/2),rz(z));P.push(g.attributes.position.array);g.dispose();};
+      for(const q of T.windows)out(q.x,q.y,q.face==='front'?hd:-hd,q.w,q.h,q.face==='front'?Math.PI:0);
+      out(T.door.x,F0,hd,T.door.w,T.door.h,Math.PI);out(T.back.x,F0,-hd,T.back.w,T.back.h,0);
+      const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
+    // the light: the three fires (the kitchen's range, the drawing room's and the dining room's grates; the shop keeps none), the lamps
+    // (the shop's two, the kitchen's and the rooms' above) and the room's warmth; the fires' flames ride in a group of their own as the
+    // townhouse's, so a Mages' cold hearth shows ash
+    const KA=kitRoomAir(sc_,.45),abed=homeAsleepNow(house);if(abed)KA.fire*=.4;
+    const L=(x,y,z,c,i,d)=>{const l=new THREE.PointLight(c,i*(c===0xff6a20?KA.fire:KA.lamp),d);l.position.set(x,y,z);sc_.add(l);return l;};
+    const cold=coldHearthHouse(house),fls=T.fires.map(F=>{const l=L(rx(F[0]+.5),ry(F[1]),rz(F[2]),0xff6a20,cold?0:1.3,6);l.userData.lit=1.3*KA.fire;return l;});
+    T.lamps.forEach((p,i)=>L(rx(p[0]),ry(p[1]),rz(p[2]),0xffaa44,abed?(i?0:.35):1.0,7));
+    {const hf=new THREE.Group();hf.name='hearthFire';T.room.add(hf);
+      for(const m of T.room.children.filter(m=>m.isMesh&&(m.name==='ember'||m.name==='flame'))){if(m.name==='ember'){hf.add(m);continue;}
+        const P=m.geometry.attributes.position,lo=[],hi=[];for(let i=0;i<P.count;i+=3){const x=(P.getX(i)+P.getX(i+1)+P.getX(i+2))/3,dst=x<-X+.45?lo:hi;for(let k=0;k<3;k++)dst.push(P.getX(i+k),P.getY(i+k),P.getZ(i+k));}
+        const mk=a=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(a,3));g.computeVertexNormals();const q=new THREE.Mesh(g,m.material);q.name='flame';return q;};
+        m.geometry.dispose();T.room.remove(m);hf.add(mk(lo));if(hi.length)T.room.add(mk(hi));}
+      hf.visible=!cold;const holder=new THREE.Group();holder.userData.hearthFire=hf;holder.userData.hearthLight=fls[0];holder.userData.hearthLights=fls;if(cold)holder.userData.coldHouse=house;sc_.add(holder);furnSwap(holder);}
+    // the barber's chair before its glass against the cross wall: sit in it (S561, openBarberChair)
+    if(house.type==='barber'){const c=T.boxes.find(q=>q.tag==='chair'&&q.fl===0);if(c)INT_CHAIR={x:+rx((c.x0+c.x1)/2).toFixed(3),z:+rz((c.z0+c.z1)/2).toFixed(3),house};}
+    // the keeper in the walk behind the counter, 1.6 m short of the strongbox at its window end (or at the counter's cross-wall end, if
+    // that is nearer the box), half turned (0.45 rad) from the window toward the shop: the box, every spot it opens from, the shop door and
+    // the counter's front are all within 60° of his face (a witness, S368); a spot behind him in his own walk is not one the box opens from
+    const kz=Math.max(S.counter.z0+.15,S.chest.z-1.6),npc={x:rx(S.keeper.x),z:rz(kz)},nry=s*.45;
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=nry;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    // where you stand on coming in: a step in from the shop door (0.9 m), on its line or slid along the front to the first spot 0.35 m
+    // clear of the ground floor's solids (the open leaf, the corner's sacks), facing the counter's front (S2265's rule for the kit rooms)
+    {const az=rz(Z-.9),F1=FL[1],clear=x=>!SOL.some(b=>b.y0<F1-.5&&x+.35>b.x0&&x-.35<b.x1&&az+.35>b.z0&&az-.35<b.z1),ax=[0,-.3,-.5,.3,-.7,.5,-.9].map(d=>rx(T.door.x+d)).find(x=>x>.4&&x<W-.4&&clear(x));
+      house._arriveX=+(ax??rx(T.door.x)).toFixed(3);house._arriveZ=+az.toFixed(3);
+      const fx=rx(S.front[0]),fz=rz(S.front[1]);house._arriveYaw=+Math.atan2(-(fx-house._arriveX),-(fz-house._arriveZ)).toFixed(4);}
+    return sc_;
+  }
   // S1459 (card F9; Michael's A on #303, C on #744; OG-115) — on the new look the farmhouse of a Gatelands village's farm (S1455's
   // villageFarm; its home record S1459's) is the farmhouse's own room inside (PKIT.gl.farmhouse, rooms.js's Session 1192), in the
   // farmstead's shell (PLANS.farmhouse, green paint): the hall to the straight stair, the kitchen round the open hearth east of it, the
@@ -3941,6 +4019,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitCoachRoom(house))return buildKitCoachRoom(house); /* S1368 — a town's coaching inn inside, at its true size */
     if(kitCottage(house))return buildKitCottage(house); /* S1392 — a Gatelands village's cottage inside, at its true size */
     if(kitTownhouse(house))return buildKitTownhouse(house); /* S1437 — a Gatelands town's townhouse inside, at its true size */
+    if(kitMerchant(house))return buildKitMerchant(house); /* S2272 — a Gatelands town's shop in the merchant's house, at its true size (#1574 A) */
     if(kitFarmhouse(house))return buildKitFarmhouse(house); /* S1459 — a Gatelands village farm's house inside, at its true size */
     if(kitByre(house))return buildKitByre(house); /* S1480 — a Gatelands farm's byre inside, at its true size */
     if(kitBarn(house))return buildKitBarn(house); /* S1475 — a Gatelands farm's barn inside, at its true size */
