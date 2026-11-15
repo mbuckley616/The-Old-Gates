@@ -5,6 +5,7 @@
 // Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
 // Session 2273: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
 // Session 2274: a rider at 5.5 m a game minute reins in when you come within 6 m and gives the newest event within two cells to the journal and the map.
+// Session 2275: families from a town fallen in the last 20 days walk to the other end; 15 gold owes +1 favour there once it is whole, +2 at most.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -175,4 +176,27 @@ const h4 = await page.evaluate((id) => { const D = ROADWALK.get(id); return D ? 
 console.log(JSON.stringify({ h3, h4 }));
 const rv = h3 && h4 ? Math.hypot(h4.x - h3.x, h4.z - h3.z) / (h4.t - h3.t) : 0;
 check('left, he rides on at 5.5 m a game minute and does not stop again', h3 && h4 && !h3.halted && !h4.halted && Math.abs(rv - 5.5) < .4, rv);
+// S2275 — families: burn a road's end, find its family on the road, give, and the favour waits for the town to stand again
+const fm = await page.evaluate(() => { const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440);
+  for (const rd of ROADS.filter(roadfolkRoad)) { if (roadLenOf(rd) < 400) continue; const a = siteAnywhere(rd.def.a); if (!a || storyRuin(a)) continue;
+    TS(a).flags.burned = now; _roadDays.clear(); const L = roadTravellers(rd, day + 1).filter(T => T.kind === 'family'); if (!L.length) { delete TS(a).flags.burned; continue; }
+    const T = L[0]; const t = T.at + 100 / T.pace; const p = travellerAt(T, rd, t); worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; px = p.x + Math.cos(p.ang) * 4; pz = p.z - Math.sin(p.ang) * 4;
+    return { id: T.id, from: T.from, n: L.length, site: a.id, name: a.name, kinds: roadTravellers(rd, day + 1).map(T => T.kind) }; }
+  return null; });
+console.log(JSON.stringify(fm));
+check('a town burned today sends two families down its roads, from its end', fm && fm.n === 2 && fm.from === 'a', fm);
+await g.cells(); await g.spin(null, 4);
+const fg = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) return { drawn: false };
+  const t = D.npc.def._extra.find(t => /Take this/.test(t.label)); gold = 40; const fav0 = WORLD.favor ? 0 : 0; const f0 = (worldState.favor || {})[o.site] || 0;
+  const resp = t.fn(t); const g1 = gold, again = t.avail(), f1 = (worldState.favor || {})[o.site] || 0, owed = (worldState.roadAlms[o.site] || {}).owed;
+  return { drawn: true, two: 1 + D.follow.length, inTalk: npcs.includes(D.npc), second: npcs.includes(D.follow[0].npc), resp, g1, again, f0, f1, owed, charKey: !!SS_CHAR_WS.roadAlms }; }, fm);
+console.log(JSON.stringify(fg));
+check('the family walk two together; given 15 gold, the gift is once and the favour owed while the town lies burned', fg.drawn && fg.two === 2 && fg.inTalk && !fg.second && fg.g1 === 25 && fg.again === false && fg.f1 === fg.f0 && fg.owed === 1 && fg.charKey, fg);
+const fp = await page.evaluate((o) => { const f0 = (worldState.favor || {})[o.site] || 0; delete TS(siteAnywhere(o.site)).flags.burned; familyPay();
+  const f1 = (worldState.favor || {})[o.site] || 0; const E = worldState.roadAlms[o.site]; E.owed = 0; E.n = 2; TS(siteAnywhere(o.site)); const before = E.n;
+  // a third gift (another family) counts for nothing more
+  const T = { id: o.id + 'x', from: 'a' }; const rd = ROADWALK.get(o.id).rd; gold = 40; familyGive(T, rd); familyPay(); const f2 = (worldState.favor || {})[o.site] || 0;
+  return { f0, f1, f2, E: worldState.roadAlms[o.site], gold }; }, fm);
+console.log(JSON.stringify(fp));
+check('once the town is whole the favour is paid (+1), and past +2 a town a gift adds none', fp.f1 === fp.f0 + 1 && fp.f2 === fp.f1 && fp.E.n === 2 && fp.E.owed === 0 && fp.gold === 25, fp);
 stop(); await g.close();

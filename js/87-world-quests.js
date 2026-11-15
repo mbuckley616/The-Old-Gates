@@ -2183,7 +2183,7 @@ const giver=`${lord.title} ${lord.name}`;
   // four are drawn. This session draws the merchant and his mule; the other kinds are rolled and wait on their sessions.
   const ROADFOLK={merchant:{pace:1.1,w:3},pilgrim:{pace:1.3,w:2},rider:{pace:5.5,w:1},official:{pace:1.3,w:1},family:{pace:1.0,w:0}};
   const ROADFOLK_NEAR=400,ROADFOLK_DRAWN=4,ROADFOLK_MUL=1.1,ROADFOLK_PILGRIM=1500,ROADFOLK_NEWS=3*1440,ROADFOLK_FLED=20*1440;
-  const ROADFOLK_DRAW={merchant:1,pilgrim:1,rider:1};
+  const ROADFOLK_DRAW={merchant:1,pilgrim:1,rider:1,family:1};
   const ROAD_EVENT_FLAGS=['besieged','sacked','burned','plague','occupied','abandoned'];
   const _roadDays=new Map(),_roadShrine=new Map(),ROADWALK=new Map();
   function roadLenOf(rd){if(rd._len!=null)return rd._len;const P=rd.pts,cum=[0];for(let i=1;i<P.length;i++)cum.push(cum[i-1]+Math.hypot(P[i].x-P[i-1].x,P[i].z-P[i-1].z));rd._cum=cum;rd._len=cum[cum.length-1];return rd._len;}
@@ -2318,7 +2318,28 @@ const giver=`${lord.title} ${lord.name}`;
       D.halt={at:now,lag0:(R&&R.lag)||0};rfSet(T.id,{hailed:true,day:dayNow()});showMsg(`${D.npc.def.name}, ${D.npc.def.post}, reins in.`,'#e8d8a0');}
     const H=D.halt;if(now-H.at>=RIDER_WAIT||Math.hypot(px-D.npc.def.x,pz-D.npc.def.z)>RIDER_LET){rfSet(T.id,{lag:H.lag0+Math.min(RIDER_WAIT,now-H.at)});delete D.halt;return false;}
     rfSet(T.id,{lag:H.lag0+(now-H.at)});return true;}
+  // S2275 — a family on the road (the page's family row): two more a day from an end besieged, sacked, burned, plagued, occupied or abandoned in
+  // the last 20 days, walking at 1.0 m a game minute to the other end; two people side by side (the handcart is the bodies builder's). Give
+  // them 15 gold and their town owes you +1 favour, paid once it is whole again (none of those six flags), at most +2 a town however often you
+  // give. The gift is kept on the family's record (worldState.roadfolk, the world's: one gift a family), the favour owed in worldState.roadAlms
+  // (the character's, beside favor: {siteId: {n: favour counted, owed}}); the owed favour is paid on the day's first tick that finds the town whole.
+  const FAMILY_ALMS=15,FAMILY_CAP=2;
+  function townWhole(site){const st=worldState.towns&&worldState.towns[site.id||site];return !st||!ROAD_EVENT_FLAGS.some(f=>st.flags[f]!=null);}
+  function familyGive(T,rd){const home=roadfolkHome(T,rd),R=rfRec(T.id);if(R&&R.alms)return 'You have given already. God keep you.';
+    if(gold<FAMILY_ALMS)return 'You have not the coin to spare. Nor have we.';gold-=FAMILY_ALMS;if(typeof updateHUD==='function')updateHUD();rfSet(T.id,{alms:true,day:dayNow()});
+    const A=worldState.roadAlms||(worldState.roadAlms={}),E=A[home.id]||(A[home.id]={n:0,owed:0});if(E.n<FAMILY_CAP){E.n++;E.owed++;}
+    if(typeof addLog==='function')addLog('🪙',`Gave ${FAMILY_ALMS} gold to a family on the road from ${home.name}.`);
+    if(E.owed&&townWhole(home))familyPay();
+    return `Bless you. When ${home.name} stands again, they will hear of this.`;}
+  function familyPay(){const A=worldState.roadAlms;if(!A)return;for(const id of Object.keys(A).sort()){const E=A[id];if(!E.owed)continue;const t=siteAnywhere(id);if(!t||!townWhole(t))continue;
+    addFavor(t,E.owed);if(typeof addLog==='function')addLog('🪙',`${t.name} stands again, and remembers what you gave its people on the road.`);E.owed=0;}}
+  let _almsDay=-1;
+  function familyDef(T,rd,p,k){const home=roadfolkHome(T,rd),r=seededRng('roadfolk',T.id+(k?':'+k:'')),[i,j]=cellOf(home.x,home.z),nat=nationOf(i,j),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
+    const nm=pick(r,k?bank.f:bank.m);const topics=k?[]:[{label:`Here. Take this. (${FAMILY_ALMS} gold)`,avail:()=>!(rfRec(T.id)||{}).alms,fn:()=>familyGive(T,rd)}];
+    const def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x5e5446,topics});def._siteId=home.id;def.roadfolk=T.id;return def;}
   function buildTraveller(T,rd,p){
+    if(T.kind==='family'){const n=spawnNPC(familyDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const n2=spawnNPC(familyDef(T,rd,p,1),p.ang,true);n2.sched={type:'lost'};const k2=npcs.indexOf(n2);if(k2>=0)npcs.splice(k2,1);
+      return {T,rd,npc:n,follow:[{npc:n2,side:1.0,back:0}]};}
     if(T.kind==='rider'){const n=spawnNPC(riderDef(T,rd,p),p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();try{const rg=riderBeast(T,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
       const rig=n.g.userData.rig;if(rig)rig.sit={v:0,look:0,c:0};return {T,rd,npc:n,beast:g,follow:[],mount:true};}
     if(T.kind==='pilgrim'){const Q=pilgrimPlan(T,rd);const n=spawnNPC(pilgrimDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const D={T,rd,npc:n,follow:[]};
@@ -2329,6 +2350,7 @@ const giver=`${lord.title} ${lord.name}`;
   function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);if(D.bier){sc.remove(D.bier);D.bier.traverse(o=>{if(o.geometry)o.geometry.dispose();});}ROADWALK.delete(id);}
   function tickRoadfolk(dt){if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
     if(Math.random()<.002)rfPrune();
+    {const d=dayNow();if(d!==_almsDay){_almsDay=d;familyPay();}} /* S2275 — favour owed for alms, paid once the town is whole */
     const all=roadfolkNow().filter(o=>ROADFOLK_DRAW[o.T.kind]).map(o=>(o.dist=Math.hypot(o.p.x-px,o.p.z-pz),o)).filter(o=>o.dist<ROADFOLK_NEAR).sort((x,y)=>x.dist-y.dist||(x.T.id<y.T.id?-1:1)).slice(0,ROADFOLK_DRAWN);
     for(const D of ROADWALK.values())if(D.attack&&!all.some(o=>o.T.id===D.T.id)){const p=D.stop||{x:D.attack.x,z:D.attack.z,ang:D.attack.ang,d:0};roadAmbushTick(D,p,dt||0);} /* a fight holds its merchant though the clock walks his place on */
     const keep=new Set(all.map(o=>o.T.id));for(const [id,D] of [...ROADWALK.entries()])if(!keep.has(id)&&!D.attack)dropTraveller(id);
