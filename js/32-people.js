@@ -1891,7 +1891,16 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   if(/^(ring|kid):/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
   if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
+  if(!cast&&!g.child&&HB_PACK_ROLE.test(g.role||''))G.dress=hbRolePack(g,G); /* S2239 — a traveller's pack, by island */
   HB_GENOMES.set(g.hbKey,G);return G;}
+/* S2239 (#1504 B; owed by Session 2217's "Needs eyes") — a traveller's pack. The pack the player buys is on their back by island (S2217,
+   TP_PACK in 54-thirdperson.js), and nobody else wore one. Whoever's role says they are on the road (the coaching inns' travellers waiting
+   for the coach, a travelling merchant or scholar, a pedlar, a pilgrim) now carries the same pack by the nation they stand in: the
+   Gatelands' willow creel, the Mark's birch frame, Aurenne's saddle-roll. The cast keep their sheet (Corwin). A walking staff stays; the
+   pack is rigid on the chest bone, so nothing else changes */
+const HB_PACK_ROLE=/travel|pedlar|pilgrim/;
+function hbRolePack(g,G){const Pk=(typeof TP_PACK!=='undefined'&&(TP_PACK[g.nation]||TP_PACK.gatelands))||{kind:'creel',col:[.92,.74,.48]};
+  return Object.assign({},G.dress||{},{backpack:Pk.col.slice(),backpackKind:Pk.kind});}
 /* S1980 (L1, OG-001/OG-065; owed by Session 1977) — the role's staff. An elder or a hermit carries the driver's stick (personGenome's role),
    but people.js rolls its walking staff on only a third of the old, so four of Dunmore's six (Sinéad, Lorcan, Maeve, Fíachra) held the
    driver's grip, the elbow bent at pwHold's 0.45, round an empty fist. Their genome now takes the staff the builder would have rolled for
