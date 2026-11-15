@@ -5824,6 +5824,86 @@ function shipBanner(S, nation) {
   return { nation, at, foot: [0, +fy.toFixed(3), +fz.toFixed(3)], rake, len: +len.toFixed(3), hoist: +h.toFixed(2), fly: +fly.toFixed(2),
     staff: { geo: G.sg, mat: SHIP_FLAGM.get('staff') }, flag: { geo: G.fg, mat: shipFlagMat(nation), y: +(len - .1 - h).toFixed(3) },
     head: +(fy + len * Math.cos(rake)).toFixed(2), tris: G.tris, draws: 2 }; }
+// ── a ship's ballista (Session 2250, card F11; Michael's A on #1580, the prototype Session 2243's ships-arms.js): a torsion engine on a
+// pivot, in true metres, +z forward, y 0 the deck it stands on. The pedestal (two crossed soles strapped in iron, four braces, a post to
+// an iron turntable) stays; what turns (the fork, the stock with its trough, slider, claw and windlass, the head's two skein frames, the
+// arms drawn back 40° and the string, the bolt laid in the trough) is its own group, `turn`, turned about the post by rotation.y. What
+// turns is the land engine's measure at 0.8, the bolt's bed 1.36 m over the deck. o.dress 'gatelands' oiled oak and black iron, 'mark'
+// tarred timber and red arms, 'aurenne' pale wood and bronze. Baked once a dress; each call is new meshes on the shared bake.
+//   PKIT.ships.ballista(o) -> { group, turn, tris, draws, R, bed, head }
+//   PKIT.ships.fitBallista(S) -> { x, y, z, lv } where on kit hull S it stands (as ships-arms.js's fitBallista: as far forward as its
+//   whole ±30° sweep keeps 0.12 m inside her rail, 0.8 m to starboard, or nearer the centreline where her bow is too fine), or null
+const SHIP_ARMS_M = new Map(), SHIP_ARMS_G = new Map();
+function shipArmsMats(dress) { if (SHIP_ARMS_M.has(dress)) return SHIP_ARMS_M.get(dress);
+  const MK = dress === 'mark', AU = dress === 'aurenne';
+  const M = { frame: mat('wood', { ns: .8, color: MK ? 0x2e2723 : AU ? 0xd8b98a : 0xb08658, rough: .65 }),
+    stock: mat('wood', { ns: .9, color: MK ? 0x6a4a32 : AU ? 0xc9a676 : 0x9c7448, rough: .7 }),
+    arm: mat('wood', { ns: .7, color: MK ? 0x8a2a20 : AU ? 0x7a5236 : 0x6e4e32, rough: .6 }),
+    metal: new THREE.MeshStandardMaterial({ color: AU ? 0xa8783a : 0x2c2a28, roughness: AU ? .38 : .5, metalness: AU ? .85 : .6 }),
+    sinew: new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: .95 }),
+    cord: new THREE.MeshStandardMaterial({ color: 0xcfc2a0, roughness: .9 }),
+    dark: new THREE.MeshStandardMaterial({ color: 0x0c0a08, roughness: 1 }) };
+  SHIP_ARMS_M.set(dress, M); return M; }
+function shipArmsKit() { const B = new Map();
+  const put = (geo, key, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, .6);
+    if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
+  const rod = (a, b, r0, r1, key, seg = 6) => { const A = new THREE.Vector3(...a), Bv = new THREE.Vector3(...b), d = Bv.clone().sub(A), g = new THREE.CylinderGeometry(r1, r0, d.length(), seg);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize())); const m = A.clone().add(Bv).multiplyScalar(.5); return put(g, key, m.x, m.y, m.z); };
+  return { B, put, rod }; }
+function shipArmsBake(dress) { if (SHIP_ARMS_G.has(dress)) return SHIP_ARMS_G.get(dress);
+  const SC = .8, LIFT = .3, P = shipArmsKit(), T = shipArmsKit();
+  { const { put, rod } = P; /* the pedestal, which does not turn */
+    for (const a of [0, Math.PI / 2]) { put(new THREE.BoxGeometry(1.1, .16, .2), 'frame', 0, .085, 0, 0, a); for (const e of [-1, 1]) put(new THREE.BoxGeometry(.04, .165, .22), 'metal', e * .45 * Math.cos(a), .0875, -e * .45 * Math.sin(a), 0, a); }
+    for (const [x, z] of [[.42, .12], [-.42, -.12], [.12, -.42], [-.12, .42]]) put(new THREE.CylinderGeometry(.025, .025, .02, 6), 'metal', x, .17, z);
+    put(new THREE.BoxGeometry(.22, .94, .22), 'frame', 0, .63, 0);
+    for (const [x, z] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) rod([x * .1, .6, z * .1], [x * .44, .16, z * .44], .035, .035, 'frame');
+    put(new THREE.BoxGeometry(.24, .05, .24), 'metal', 0, LIFT + .73, 0); put(new THREE.CylinderGeometry(.19, .19, .05, 16), 'metal', 0, LIFT + .78, 0); }
+  const { put, rod } = T, SY = 1.08;
+  put(new THREE.CylinderGeometry(.17, .17, .04, 14), 'frame', 0, .825, 0);
+  for (const e of [-1, 1]) put(new THREE.BoxGeometry(.05, .22, .2), 'frame', e * .13, .94, 0);
+  rod([-.18, .97, 0], [.18, .97, 0], .025, .025, 'metal');
+  const z0 = -.95, z1 = 1.0; for (const e of [-1, 1]) put(new THREE.BoxGeometry(.07, .16, z1 - z0), 'stock', e * .075, SY - .08, (z0 + z1) / 2);
+  put(new THREE.BoxGeometry(.08, .06, z1 - z0), 'stock', 0, SY - .13, (z0 + z1) / 2); put(new THREE.BoxGeometry(.075, .01, z1 - z0 - .1), 'dark', 0, SY - .095, (z0 + z1) / 2);
+  for (const z of [-.8, -.25, .5]) put(new THREE.BoxGeometry(.23, .17, .035), 'metal', 0, SY - .08, z);
+  const CZ = -.38;
+  put(new THREE.BoxGeometry(.07, .05, 1.0), 'frame', 0, SY - .02, CZ + .3); put(new THREE.BoxGeometry(.08, .07, .1), 'metal', 0, SY + .035, CZ); put(new THREE.BoxGeometry(.02, .12, .03), 'metal', 0, SY - .06, CZ - .08, -.5);
+  const HZ = .82, HH = .34; for (const e of [-1, 1]) { for (const x of [.13, .4]) put(new THREE.BoxGeometry(.07, HH * 2 + .12, .14), 'frame', e * x, SY, HZ);
+    for (const s of [-1, 1]) { put(new THREE.CylinderGeometry(.12, .12, .045, 12), 'metal', e * .265, SY + s * (HH + .085), HZ); put(new THREE.BoxGeometry(.26, .025, .03), 'metal', e * .265, SY + s * (HH + .12), HZ, 0, e * .5); }
+    const sk = new THREE.CylinderGeometry(.075, .075, HH * 2 - .04, 10, 6, true), Q = sk.attributes.position; for (let k = 0; k < Q.count; k++) { const a0 = Math.atan2(Q.getZ(k), Q.getX(k)), a = a0 + Q.getY(k) * 6, r = .072 + .008 * Math.cos(6 * a); Q.setX(k, r * Math.cos(a0)); Q.setZ(k, r * Math.sin(a0)); } sk.computeVertexNormals();
+    put(sk, 'sinew', e * .265, SY, HZ); }
+  for (const s of [-1, 1]) put(new THREE.BoxGeometry(.94, .09, .16), 'frame', 0, SY + s * (HH + .02), HZ);
+  for (const s of [-1, 1]) for (const e of [-1, 1]) put(new THREE.BoxGeometry(.03, .1, .17), 'metal', e * .44, SY + s * (HH + .02), HZ);
+  const ad = 40 * Math.PI / 180, AL = .75, tip = e => [e * (.265 + AL * Math.cos(ad)), SY + .01, HZ - AL * Math.sin(ad) - .02];
+  for (const e of [-1, 1]) { const t = tip(e); rod([e * .265, SY + .01, HZ - .03], t, .045, .026, 'arm'); put(new THREE.SphereGeometry(.03, 6, 4), 'metal', ...t); rod(t, [0, SY + .045, CZ + .02], .008, .008, 'cord', 4); }
+  { const bz = CZ + .06, by = SY + .045, L = 1.2; /* the bolt laid in the trough (ships-arms.js's boltInto) */
+    rod([0, by, bz], [0, by, bz + L - .14], .022, .022, 'stock'); put(new THREE.ConeGeometry(.04, .16, 4).rotateX(Math.PI / 2).rotateZ(Math.PI / 4), 'metal', 0, by, bz + L - .07);
+    put(new THREE.CylinderGeometry(.026, .03, .06, 6).rotateX(Math.PI / 2), 'metal', 0, by, bz + L - .17);
+    for (let k = 0; k < 3; k++) put(new THREE.BoxGeometry(.006, .055, .22).translate(0, .045, 0).rotateZ(k * Math.PI * 2 / 3 + Math.PI / 2), 'frame', 0, by, bz + .16); }
+  const WZ = -.85, WY = SY - .1; rod([-.27, WY, WZ], [.27, WY, WZ], .035, .035, 'frame'); rod([0, WY + .03, WZ], [0, SY - .01, CZ - .1], .01, .01, 'cord', 4);
+  for (const e of [-1, 1]) { put(new THREE.CylinderGeometry(.06, .06, .04, 10).rotateZ(Math.PI / 2), 'metal', e * .27, WY, WZ);
+    for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + Math.PI / 4; rod([e * .27, WY, WZ], [e * .27, WY + .21 * Math.sin(a), WZ + .21 * Math.cos(a)], .018, .014, 'frame'); rod([e * .27, WY + .21 * Math.sin(a), WZ + .21 * Math.cos(a)], [e * .37, WY + .21 * Math.sin(a), WZ + .21 * Math.cos(a)], .016, .016, 'frame'); } }
+  let R = .62; for (const gs of T.B.values()) for (const g of gs) { g.translate(0, -.8, 0).scale(SC, SC, SC).translate(0, .8 + LIFT, 0); const Q = g.attributes.position; for (let k = 0; k < Q.count; k++) R = Math.max(R, Math.hypot(Q.getX(k), Q.getZ(k))); }
+  const bake = K => { const out = []; let tris = 0; for (const [k, gs] of K.B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); out.push([k, g]); tris += g.attributes.position.count / 3; } return { out, tris }; };
+  const pb = bake(P), tb = bake(T);
+  const r = { ped: pb.out, turn: tb.out, tris: Math.round(pb.tris + tb.tris), R: +R.toFixed(3), bed: +(.8 + (SY + .045 - .8) * SC + LIFT).toFixed(3), head: { z: HZ * SC, y: +(.8 + (SY - .8) * SC + LIFT).toFixed(3) } };
+  SHIP_ARMS_G.set(dress, r); return r; }
+function shipBallista(o = {}) { const dress = SHIP_SWATCHES[o.dress] ? o.dress : 'gatelands', M = shipArmsMats(dress), b = shipArmsBake(dress), group = new THREE.Group(), turn = new THREE.Group();
+  const mk = (list, into) => { for (const [k, g] of list) { const m = new THREE.Mesh(g, M[k]); m.name = 'ballista:' + k; m.castShadow = k !== 'dark'; m.receiveShadow = true; into.add(m); } };
+  mk(b.ped, group); mk(b.turn, turn); turn.name = 'ballista:turn'; group.add(turn); group.name = 'ballista';
+  return { group, turn, dress, tris: b.tris, draws: b.ped.length + b.turn.length, R: b.R, bed: b.bed, head: b.head }; }
+const SHIP_ARC = Math.PI / 6;
+function shipBallistaPlan() { const ad = 40 * Math.PI / 180, tx = .265 + .75 * Math.cos(ad), tz = .82 - .75 * Math.sin(ad) - .02, P = [];
+  for (const e of [-1, 1]) { P.push([e * .47, .9], [e * .47, .75], [e * (tx + .03), tz], [e * .11, 1.0], [e * .11, -.95]); for (let k = 0; k < 4; k++) { const a = k * Math.PI / 2 + Math.PI / 4; P.push([e * .385, -.85 + .225 * Math.cos(a)]); } }
+  return P.map(([x, z]) => [x * .8, z * .8]); }
+function shipFitBallista(S) { if (!S || !S.at) return null; const F = S.fore, half0 = z => S.at(z).b;
+  const D = F ? { y: F.y, z0: F.z0 + .25, zmin: F.z0 + .1, z1: F.z1 - .1, half: z => half0(z) - .09, lv: 'hi' }
+    : (() => { const mz = Math.max(S.mast[1], ...(S.masts || []).map(m => m[1])); return { y: 1.0, z0: mz + .45, zmin: mz + .3, z1: S.L / 2 - .2, half: z => Math.min(S.deckAt(z), half0(z) - .06) - .05, lv: null }; })();
+  const P = shipBallistaPlan(), clear = .12;
+  const fits = (X, z) => { if (z < D.z0) return false; for (let a = -SHIP_ARC; a <= SHIP_ARC + 1e-6; a += SHIP_ARC / 6) { const c = Math.cos(a), s = Math.sin(a);
+      for (const [x, pz] of P) { const wx = X + x * c + pz * s, wz = -x * s + pz * c + z; if (wz > D.z1 || wz < D.zmin || Math.abs(wx) > D.half(wz) - clear) return false; } } return true; };
+  for (const X of [-.8, -.75, -.7, -.65, -.6, -.55, -.5]) for (let t = D.z1; t >= D.z0; t -= .05) if (fits(X, t)) return { x: X, y: D.y, z: +t.toFixed(2), lv: D.lv };
+  return null; }
 // a sail through four corners (or three, d = c), bilinear, bellied out to +x most in its middle (ships.js's quadSail)
 function shipQuadSail(a, b, c, d, belly, nu = 12, nv = 12) { const P = [], U = [], v3 = q => new THREE.Vector3(...q), A = v3(a), B = v3(b), C = v3(c), D = v3(d), at = (u, v) => A.clone().lerp(B, u).lerp(D.clone().lerp(C, u), v).add(new THREE.Vector3(belly * Math.sin(Math.PI * u) * Math.sin(Math.PI * Math.min(1, v * 1.1)), 0, 0));
   for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) for (const [u, v] of [[i, j], [i + 1, j], [i + 1, j + 1], [i, j], [i + 1, j + 1], [i, j + 1]]) { const p = at(u / nu, v / nv); P.push(p.x, p.y, p.z); U.push(u / nu, v / nv); }
@@ -11020,7 +11100,7 @@ function aurenneOrrery(hAt, o = {}) {
       const m = new THREE.Mesh(g, DQM[k]); m.name = 'quarter:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     return { group, tris: Math.round(tris), draws: group.children.length, bridge, theatre };
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

@@ -444,6 +444,7 @@
     if(!look&&r.kit){shipSwatchOn(mesh);shipBannerOn(mesh);} /* S1843 — your own ship in the yard's colours; S1919 — and her banner */
     if(look==='merchant'&&r.kit)shipBannerOn(mesh,r.dress); /* S2126 — a merchantman flies her own nation's banner, the dress as built */
     if(look==='pirate'&&r.kit)shipBlackOn(mesh); /* S2162 — #1454 A: a black sail, the hull of her waters, no colours */
+    if(r.kit&&(!look&&typeof shipFitted==='function'&&shipFitted('ballista')||look==='pirate'&&kind==='cutter'))shipBallistaOn(mesh,true); /* S2250 — #1580 A: her ballista, fitted or a black cutter's */
     return mesh;
   }
   // S2162 (card F11, L6; Michael's A on #1454, the prototype S2127's blackSail) — a black sail's dress on a kit hull: her bake's materials
@@ -476,6 +477,23 @@
     const flag=new THREE.Mesh(B.flag.geo,B.flag.mat);flag.position.y=B.flag.y;flag.castShadow=true;pivot.add(flag);mesh.add(pivot);
     (ud.rigs||(ud.rigs=[])).push({m:flag,type:'flag',a:0,banner:true});ud.trimSnap=true;
     ud.banner={nation:B.nation,at:B.at,foot:B.foot,hoist:B.hoist,fly:B.fly,head:B.head,tris:B.tris,draws:B.draws,pivot,flag};return ud.banner;}
+  // S2250 (card F11; Michael's A on #1580, the prototype S2243's ships-arms.js) — a ship's ballista on a kit hull: PKIT.ships.ballista
+  // stood where PKIT.ships.fitBallista finds room at her bow (0.8 m to starboard so the bolt flies past the stem, the bowsprit and the stays;
+  // on the forecastle where she has one), its pedestal a solid of the deck (a prop of 0.6 m). on: your own ship while shipFitted('ballista'),
+  // a black-sail cutter always (herBallista). The fit is kept on the shared bake; the engine is new meshes on PKIT's shared bake.
+  // -> ud.ballista ({group, turn, fit, yaw, tris, draws}) or null. shipBallistaAim turns its head onto a point in the world, ±30° of her bow.
+  function shipBallistaOn(mesh,on){const ud=mesh&&mesh.userData;if(!ud)return null;const r=SHIP_GEO.get(ud.bakeKey);
+    if(ud.ballista){if(ud.ballista.group.parent)ud.ballista.group.parent.remove(ud.ballista.group);ud.ballista=null;ud.props=(ud.props||[]).filter(p=>!p.bal);}
+    if(!on||!r||!r.kit||typeof PKIT==='undefined'||!PKIT.ships.ballista)return null;if(r.balFit===undefined)r.balFit=PKIT.ships.fitBallista(r.kit);const f=r.balFit;if(!f)return null;
+    const B=PKIT.ships.ballista({dress:r.dress});B.group.position.set(f.x,f.y,f.z);mesh.add(B.group);
+    const pr={x:f.x,z:f.z,r:.6,bal:true};if(f.lv)pr.lv=f.lv;ud.props=(ud.props||[]).concat([pr]); /* a new list: the bake's is shared by every hull of her kind */
+    ud.ballista={group:B.group,turn:B.turn,fit:f,yaw:0,t:performance.now(),tris:B.tris,draws:B.draws};return ud.ballista;}
+  function shipBallistaAim(mesh,tx,tz){const b=mesh&&mesh.userData.ballista;if(!b)return;const now=performance.now(),dt=Math.min(.1,(now-b.t)/1000);b.t=now;let want=0;
+    if(tx!=null){const ry=mesh.rotation.y,c=Math.cos(ry),s=Math.sin(ry),dx=tx-mesh.position.x,dz=tz-mesh.position.z,lx=dx*c-dz*s-b.fit.x,lz=dx*s+dz*c-b.fit.z;want=Math.max(-Math.PI/6,Math.min(Math.PI/6,Math.atan2(lx,lz)));}
+    const d=want-b.yaw,st=1.2*dt;b.yaw+=Math.abs(d)<st?d:Math.sign(d)*st;b.turn.rotation.y=b.yaw;}
+  // your own: on while she has one fitted, and laid on whatever ballistaBears() finds while you sail
+  function shipBallistaTick(){const m=SHIP.mesh;if(!m||!m.userData.kit)return;const want=typeof shipFitted==='function'&&shipFitted('ballista');
+    if(want!==!!m.userData.ballista)shipBallistaOn(m,want);if(!m.userData.ballista)return;const o=SHIP.sailing&&typeof ballistaBears==='function'?ballistaBears():null;shipBallistaAim(m,o?o.x:null,o?o.z:null);}
   // S330 (Michael's 1, #57) — trim a ship's sails to the wind. th is the way the wind blows, against the bow in the hull's frame (0 dead astern,
   // +/-PI/2 on the beam, towards +x or -x). Square yards brace round to bisect the wind and the bow, at most 35 degrees; a gaff's
   // boom swings to leeward, out to 72 degrees running and in to 15 close-hauled; the gaff sails and the jib belly to leeward
@@ -640,6 +658,7 @@
     SHIP._raiseT=(SHIP._raiseT||0)-dt;if(SHIP._raiseT<=0){SHIP._raiseT=1;tickShipRaise();}
     tickShipCrew(dt); /* S1737 — her crew at their stations (86-world-crime.js) */
     if(!SHIP.mesh)return;
+    shipBallistaTick(); /* S2250 — her ballista, fitted or taken out at the yard, and laid on what bears */
     if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
     if(SHIP.sailing){
       const fwd=(HELD_KEYS.KeyW?1:0)-(HELD_KEYS.KeyS?.5:0),turn=(HELD_KEYS.KeyA?1:0)-(HELD_KEYS.KeyD?1:0);SHIP.turn=turn;
@@ -1072,6 +1091,7 @@
   function despawnOtherShip(o){sc.remove(o.mesh);const i=ZONES.world.platforms.indexOf(o.plat);if(i>=0)ZONES.world.platforms.splice(i,1);o.crew.forEach(e=>{if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const k=ZONES.world.enemies.indexOf(e);if(k>=0)ZONES.world.enemies.splice(k,1);}else if(!e._afloat)purgeBody(e);});if(o.chest&&typeof ZONE_CORPSES!=='undefined'){const k=ZONE_CORPSES.indexOf(o.chest);if(k>=0)ZONE_CORPSES.splice(k,1);}const j=OTHER.indexOf(o);if(j>=0)OTHER.splice(j,1);}
   function placeOther(o){
     o.mesh.position.set(o.x,SEA_Y+Math.sin(performance.now()*.0011+o.x)*.05,o.z);o.mesh.rotation.y=o.yaw+Math.PI;
+    if(o.mesh.userData.ballista)shipBallistaAim(o.mesh,...(typeof herBallistaBears==='function'&&herBallistaBears(o)&&!o.dead&&!o.struck?[SHIP.x,SHIP.z]:[null,null])); /* S2250 — a black cutter's engine laid on you */
     shipPlatBox(o.plat,o.mesh,o.x,o.z,o.yaw,o.L,o.W);
   }
   function atSea(){return activeZoneId==='world'&&(SHIP.sailing||isSwimming()||onDeck())&&worldH(px,pz)<-3;}
