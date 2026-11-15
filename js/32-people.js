@@ -1209,6 +1209,7 @@ function buildNPCMesh(def,opts){
   let g=def.name&&!def.authored?PEOPLE_GENOMES.get(key):null;
   if(!g){g=personGenome(def,opts);if(def.name)PEOPLE_GENOMES.set(key,g);}
   if(def.authored&&def.name)g.castOk=true;
+  if(hbOn()&&!opts.noBuilder&&!g.hbKey){const pw=hbPowerOf(def,g);if(pw){g.power=pw;g.gear=HB_POWER[pw].staff?'stick':null;}} /* S2260 (#1566 B) — the town's head dressed by office; the driver holds a staff or nothing (a Mark captain's guard spear dropped) */
   if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
   let gb=g,G=g.hbKey&&hbOn()?HB_GENOMES.get(g.hbKey):null;
   if(G){const W=hbSeasonDress(g,G);if(W!==G&&W.dress.coat&&!(G.dress||{}).coat){gb=Object.assign({},g,{cloth:new THREE.Color(...W.dress.coat)});gb.sleeve=gb.cloth.clone().multiplyScalar(.9);}G=W;} /* S1763 — the distant copy in the coat's colour */
@@ -1915,8 +1916,39 @@ const HB_OFFICE=[
     waistcoat:[.36,.24,.15],waistcoatLeather:true,cloak:[.5,.12,.1],cape:true,cloakLen:.55,hood:'up',crossbow:[.42,.3,.2]}},
   {re:/inquisitor/,dress:{tunic:[.3,.3,.32],trousers:[.3,.3,.32],boots:[.2,.16,.12],belt:[.24,.17,.11],mail:[.55,.56,.58],tabard:[.88,.86,.8],
     tabardTrim:[.62,.1,.08],tabardLen:.9,tabardSign:'shuttle',tabardSignCol:[.62,.1,.08],cowl:[.86,.84,.78]}}];
-function hbOfficeDress(g,G){const o=HB_OFFICE.find(o=>o.re.test(String(g.role||'').toLowerCase()));if(!o)return null;
+function hbOfficeDress(g,G){const P=g.power&&HB_POWER[g.power];
+  if(P){const D=Object.assign(Object.fromEntries((HB.GARMENTS||[]).map(k=>[k,null])),HB.DRESS_FLAGS,HB_OFFICE_STRIP,{skirt:g.female?'long':'short'},JSON.parse(JSON.stringify(P)));
+    if(g.female&&g.power==='lord'){D.sword=null;D.swordMake=null;D.skirtColor=D.trousers;}
+    if(!g.female&&!D.trousers&&!D.robe)D.trousers=[.24,.2,.16];return D;} /* a man under a woman's sheet (the Elder's) takes dark wool trousers */
+  const o=HB_OFFICE.find(o=>o.re.test(String(g.role||'').toLowerCase()));if(!o)return null;
   return Object.assign({},G.dress||{},HB_OFFICE_STRIP,o.dress);}
+/* S2260 (#1566 B, "Dressed by rank, nation by nation"; L1, OG-042) — the powers' costume. The head of every town stands by its well
+   (lordFor, `_lord`, titled by its nation's NATIONS.titles), and wore what the townsfolk roll, a Mark captain a guard's mail and spear.
+   Now the office is dressed as the concept artist's sheet has it at level b (docs/prototypes/levelup/powers.js, the kit's own garments):
+   the Crown's lord or lady (and a town's Mayor, the Crown's man over a town) in crimson with fur, a gold hem, the herald's brooch and
+   the gold chain, an arming sword in a lord's hand, a lady's long gown in its place; a Gatelands village Elder in the green cape with the
+   crimson hem and the carved staff; the League's captain in black with the wolf collar and iron, the Norse sword; the Mark's reeve (a
+   town's and a port's) in plain good wool, the leather waistcoat, a short grey cape with wolf and the ash staff; the Compact's Prior in
+   white with the blue stole edged gold, a gold amulet and the gilt book; the Factor in ivory with a blue border, the circlet with its
+   blue stone, gold earrings, the ledger and the seal. The person keeps their own roll (face, sex, age, stature); only the dress is the
+   office's. The Old Blood rule nobody, so no town has an elder of theirs; a Gatelands Harbour Reeve or garrison Captain, the Mark's and
+   Aurenne's village Elders and Aurenne's Marshal have no sheet and keep the roll */
+const HB_POWER_TITLE={gatelands:{lord:'lord',lady:'lord',mayor:'lord',elder:'elder'},mark:{captain:'captain',reeve:'reeve','harbour reeve':'reeve'},
+  aurenne:{prior:'prior',factor:'factor'}};
+const HB_POWER={
+  lord:{tunic:[.2,.16,.14],trousers:[.14,.12,.11],boots:[.16,.1,.07],belt:[.16,.1,.07],necklace:[.74,.56,.2],cloak:[.46,.07,.06],cape:true,cloakLen:.95,
+    cloakFur:[.5,.42,.32],cloakHem:[.74,.56,.2],brooch:[.74,.56,.2],broochMake:'herald',sword:[.62,.45,.22],swordMake:'arming'},
+  elder:{tunic:[.62,.56,.44],skirtColor:[.3,.22,.16],boots:[.3,.2,.13],belt:[.36,.25,.16],cuffs:[.3,.36,.22],cloak:[.16,.26,.17],cape:true,cloakLen:.95,
+    brooch:[.6,.6,.62],cloakHem:[.46,.07,.06],staff:[.36,.26,.16],staffMake:'carved'},
+  captain:{tunic:[.16,.15,.15],trousers:[.1,.1,.1],boots:[.1,.08,.07],belt:[.12,.09,.07],coat:[.07,.07,.08],coatLen:.7,coatFur:[.52,.5,.47],
+    coatTrim:[.42,.43,.45],sword:[.42,.43,.45],swordMake:'norse'},
+  reeve:{tunic:[.3,.28,.25],trousers:[.18,.17,.16],boots:[.2,.13,.09],belt:[.2,.13,.09],waistcoat:[.24,.16,.1],waistcoatLeather:true,cloak:[.2,.2,.21],
+    cape:true,cloakLen:.8,cloakFur:[.52,.5,.47],brooch:[.42,.43,.45],staff:[.4,.32,.22],staffMake:'ash'},
+  prior:{tunic:[.86,.84,.78],robe:[.86,.84,.78],skirtColor:[.86,.84,.78],sandals:[.3,.2,.12],cord:[.74,.6,.3],sash:[.1,.2,.46],sashBorder:[.74,.56,.2],
+    sashPrint:false,amulet:[.74,.56,.2],book:[.12,.18,.4],bookGilt:[.74,.56,.2]},
+  factor:{tunic:[.84,.78,.64],skirtColor:[.84,.78,.64],skirt:'long',sandals:[.36,.24,.14],sash:[.1,.2,.46],sashBorder:[.74,.56,.2],gownBorder:[.1,.2,.46],
+    earrings:[.74,.56,.2],circlet:[.74,.56,.2],circletStone:[.1,.2,.46],book:[.12,.18,.4],bookGilt:[.74,.56,.2],seal:[.74,.56,.2]}};
+function hbPowerOf(def,g){if(!def||!def._lord)return null;const T=HB_POWER_TITLE[g.nation];return (T&&T[String(def.role||'').toLowerCase()])||null;}
 function hbRolePack(g,G){const Pk=(typeof TP_PACK!=='undefined'&&(TP_PACK[g.nation]||TP_PACK.gatelands))||{kind:'creel',col:[.92,.74,.48]};
   return Object.assign({},G.dress||{},{backpack:Pk.col.slice(),backpackKind:Pk.kind});}
 /* S1980 (L1, OG-001/OG-065; owed by Session 1977) — the role's staff. An elder or a hermit carries the driver's stick (personGenome's role),

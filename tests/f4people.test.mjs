@@ -357,6 +357,19 @@ const fcape = await page.evaluate(() => { const root = buildNPCMesh({ role: 'For
   return { cloak: true, crossbow: true, fwd: +fwd.toFixed(3), inBox, out: P.cloak.through ? P.cloak.through.out : null }; });
 check('the forester\'s cape opens on the crossbow\'s side: under 0.32 m in front of his neck, under 60 of its points in the crossbow\'s box, none of him through it', fcape.cloak && fcape.crossbow && fcape.fwd < .32 && fcape.inBox < 60 && fcape.out === 0, fcape);
 check('the Church\'s inquisitor wears the white tabard over mail with the red shuttle on it (nothing of the body through it) and a white hood, white far off', office.inquisitor.mail && office.inquisitor.tabard && office.inquisitor.sign > 100 && office.inquisitor.out === 0 && office.inquisitor.tested > 1000 && office.inquisitor.hood && office.inquisitor.far > .8, office.inquisitor);
+// S2260 (#1566 B, dressed by rank, nation by nation): the head of a town by its well (`_lord`) wears the concept artist's sheet for the
+// office, whatever the roll; a guard captain who is not the town's head is still a guard
+const powers = await page.evaluate(() => { const one = (def, nation, lord = true) => { const root = buildNPCMesh(Object.assign({ _lord: lord }, def), { key: 'ptest', nation }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+    const D = r.hbG.dress, P = HB.makePerson(r.hbG, { hoodStats: false }), has = n => !!P.root.getObjectByName(n);
+    return { power: r.g.power || null, mail: !!D.mail, spear: !!D.spear, cloak: has('cloak'), crimson: !!(D.cloak && D.cloak[0] > .4 && D.cloak[1] < .1), fur: has('collar0') || has('coatFur0'), coat: has('coat'), sword: has('swordBlade'), staff: has('staffWood'), sash: has('sash'), book: has('bookBlock'), circlet: has('circletBand'), seal: has('sealFace'), legs: !!(D.trousers || D.robe || D.skirt === 'long'), out: P.cloak && P.cloak.through ? P.cloak.through.out : 0 }; };
+  return { lord: one({ role: 'Lord', name: 'Cathal', people: 'gatelander' }, 'gatelands'), elder: one({ role: 'Elder', name: 'Brigid', people: 'gatelander' }, 'gatelands'),
+    captain: one({ role: 'Captain', name: 'Hesta', people: 'markman' }, 'mark'), reeve: one({ role: 'Reeve', name: 'Orm', people: 'markman' }, 'mark'),
+    prior: one({ role: 'Prior', name: 'Anselme', people: 'aurennais' }, 'aurenne'), factor: one({ role: 'Factor', name: 'Isaure', people: 'aurennais' }, 'aurenne'),
+    guard: one({ role: 'Captain', name: 'Hesta', people: 'markman' }, 'mark', false) }; });
+console.log('  powers:', JSON.stringify(powers));
+{ const P = powers; check('the town\'s head is dressed by office: the lord in crimson and fur with a sword, the Elder\'s staff, the captain\'s black coat with fur and a sword, the reeve\'s staff and fur, the Prior\'s stole and book, the Factor\'s circlet, ledger and seal; none through a cloak; a captain who is not the head is still a guard',
+  P.lord.power === 'lord' && P.lord.crimson && P.lord.fur && P.lord.sword && P.elder.staff && P.elder.cloak && P.elder.legs && P.captain.coat && P.captain.fur && P.captain.sword && !P.captain.mail && !P.captain.spear
+  && P.reeve.staff && P.reeve.fur && P.prior.sash && P.prior.book && P.factor.circlet && P.factor.book && P.factor.seal && [P.lord, P.elder, P.reeve].every(x => x.out === 0) && P.guard.power === null && P.guard.mail, P); }
 // S2135 (L2, OG-053): Aldwyn's private study, the cream undertunic under the red over-robe worn open, his journal shut in his right fist
 // by its spine, the wheel on its covers: nothing of him within a centimetre of it; neither other dress carries it
 const study = await page.evaluate(() => { const one = o => { const P = HB.makePerson(HB.castGenome('Aldwyn', o), { hoodStats: false }), b = P.root.getObjectByName('book'); return { book: !!b, on: b && b.parent && b.parent.name, coat: !!P.root.getObjectByName('coat'), dev: !!P.root.getObjectByName('bookDevice'), st: P.book }; };
