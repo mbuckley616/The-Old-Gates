@@ -2212,7 +2212,7 @@ const giver=`${lord.title} ${lord.name}`;
       for(let k=0;k<2;k++)out.push({id:`road:${key}:${day}:f${end}${k}`,kind:'family',from:end,at:day*1440+Math.floor(360+fr()*720),pace:ROADFOLK.family.pace,road:key});}
     _roadDays.set(ck,out);if(_roadDays.size>400){const f=_roadDays.keys().next().value;_roadDays.delete(f);}return out;}
   // where a traveller is now, or null while not yet set out or arrived
-  function travellerAt(T,rd,now){const d=T.pace*(now-T.at);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
+  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
   function roadfolkHome(T,rd){return siteAnywhere(T.from==='a'?rd.def.a:rd.def.b);}
   function roadfolkDest(T,rd){return siteAnywhere(T.from==='a'?rd.def.b:rd.def.a);}
   // every traveller on the loaded roads now (today's and yesterday's departures), with where they are
@@ -2223,19 +2223,58 @@ const giver=`${lord.title} ${lord.name}`;
   function merchantPack(T){const r=seededRng('roadpack',T.id),src=(typeof SHOP_STOCK!=='undefined'&&SHOP_STOCK.misc)||[];const idx=src.map((_,i)=>i);
     for(let i=idx.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
     const n=Math.min(src.length,6+Math.floor(r()*5));return idx.slice(0,n).sort((x,y)=>x-y).map(i=>Object.assign({},src[i]));}
-  function merchantHouse(T,rd,name){const home=roadfolkHome(T,rd);return {id:T.id,name,keeper:name,type:'misc',siteId:home?home.id:null,roadMul:ROADFOLK_MUL,pack:merchantPack(T),roadfolk:true};}
+  function merchantHouse(T,rd,name){const home=roadfolkHome(T,rd),R=rfRec(T.id);return {id:T.id,name,keeper:name,type:'misc',siteId:home?home.id:null,roadMul:R&&R.saved&&R.day===dayNow()?ROADFOLK_SAVED:ROADFOLK_MUL,pack:merchantPack(T),roadfolk:true};}
   function merchantDef(T,rd,p){const home=roadfolkHome(T,rd),dest=roadfolkDest(T,rd),r=seededRng('roadfolk',T.id);const [i,j]=cellOf(home.x,home.z);const nat=nationOf(i,j);
     const nm=pick(r,(NAMES[PEOPLES[nat.people].names]||NAMES.irish).m);
     let def=null;def=makeDef(home,home.reg||'irish',r,'Merchant',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x5a4630,sCol:0xd4a878,topics:[{label:'Browse your wares.',trade:true,fn:()=>{currentHouse=merchantHouse(T,rd,def.name);}}]});
     def._siteId=home.id;def.roadfolk=T.id;
     def.bound=dest?dest.name:null;return def;}
+  // S2269 — the merchant's ambush (the page's merchant row): near a live bandit camp (one within 500 m of the road's midpoint, read off the
+  // cells, not cleared) the road's ambush odds (the encounter table's: 0.12 where the Crown patrols, 0.26 in Aurenne, 0.34 in the Mark) fall
+  // on him, by his own id: at a point 35 to 65% of his way, 3 or 4 of the camp's bandits (a captain at tier 2 and up) fall on him, but only
+  // while you are within 150 m of him (CARAVAN_WATCH) as he reaches it; out of sight he passes. He runs back 30 m and his mule stands. Kill
+  // them all and he goes on, late by the fight, sells at ×0.8 that day and his town gives +1 favour; go 250 m off (CARAVAN_LEAVE) or out
+  // of the world with them alive and his pack is taken, and he is off the road for the day. Kept in worldState.roadfolk by his id (the
+  // world's: the outcome, the day, the minutes he lost), so a load neither springs it twice nor forgets it.
+  const ROADFOLK_SAVED=.8;
+  function rfRec(id){const S=worldState.roadfolk;return S?S[id]||null:null;}
+  function rfSet(id,o){const S=worldState.roadfolk||(worldState.roadfolk={});S[id]=Object.assign(S[id]||{},o);return S[id];}
+  function rfPrune(){const S=worldState.roadfolk;if(!S)return;const d=dayNow();for(const id in S)if(d-(S[id].day||0)>3)delete S[id];}
+  function roadCamp(rd){const a=siteAnywhere(rd.def.a),b=siteAnywhere(rd.def.b);if(!a||!b)return null;const mx=(a.x+b.x)/2,mz=(a.z+b.z)/2,[ci,cj]=cellOf(mx,mz);let best=null,bd=500;
+    for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;for(const t of getCell(i,j).sites){if(t.kind!=='bcamp'||(worldState.lairs&&worldState.lairs[t.id]))continue;const d=Math.hypot(t.x-mx,t.z-mz);if(d<bd||(d===bd&&best&&t.id<best.id)){bd=d;best=t;}}}
+    return best;}
+  function roadAmbushOdds(rd){const a=siteAnywhere(rd.def.a),b=siteAnywhere(rd.def.b),[ci,cj]=cellOf((a.x+b.x)/2,(a.z+b.z)/2),nk=nationKeyOf(ci,cj);return nk==='gatelands'?.12:nk==='mark'?.34:.26;}
+  function merchantAmbush(T,rd){if(T.kind!=='merchant')return null;const camp=roadCamp(rd);if(!camp)return null;const r=seededRng('roadambush',T.id);if(r()>=roadAmbushOdds(rd))return null;
+    return {f:.35+.3*r(),n:3+(r()<.5?1:0),camp:camp.name};}
+  function springRoadAmbush(D,A,p){const T=D.T,now=worldState.gameTimeAbsMinutes||0,ang=p.ang,enemies=[];
+    for(let k=0;k<A.n;k++){const t=(k/A.n)*Math.PI*2+ang;const ex=p.x+Math.sin(t)*6,ez=p.z+Math.cos(t)*6;const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,k===0&&worldTierAt(p.x,p.z)>=2?'Bandit Captain':'Bandit',null)),'roadfolk:'+T.id+':'+k);
+      e.alert=true;e.homeX=p.x;e.homeZ=p.z;e._roadfolk=T.id;ZONES.world.enemies.push(e);enemies.push(e);}
+    D.attack={enemies,x:p.x,z:p.z,ang,fled:0,at:now,camp:A.camp};rfSet(T.id,{sprung:true,day:dayNow()});
+    showMsg(`Bandits of ${A.camp} fall on ${D.npc.def.name}'s pack train!`,'#ff8060');}
+  function roadAmbushTick(D,p,dt){const T=D.T,R=rfRec(T.id),home=roadfolkHome(T,D.rd);
+    if(!D.attack){if(R&&R.sprung)return false;const A=merchantAmbush(T,D.rd);if(!A)return false;const L=roadLenOf(D.rd),at=A.f*L;
+      if(p.d>=at&&p.d<at+30&&Math.hypot(px-p.x,pz-p.z)<CARAVAN_WATCH){springRoadAmbush(D,A,p);}else return false;}
+    const K=D.attack;
+    if(K.enemies.every(e=>e.dead)){K.enemies.forEach(e=>{e._roadfolk=null;});const now=worldState.gameTimeAbsMinutes||0;
+      rfSet(T.id,{saved:true,day:dayNow(),lag:((R&&R.lag)||0)+(now-K.at)+K.fled/T.pace});delete D.attack;if(home)addFavor(home,1);
+      showMsg(`The bandits are dead. ${D.npc.def.name} gathers his mule and goes on, and his prices are kinder for it today.`,'#e8d8a0');
+      if(typeof addLog==='function')addLog('🐴',`Drove the bandits of ${K.camp} off ${D.npc.def.name}, a merchant of ${home?home.name:'the road'}.`);return false;}
+    if(Math.hypot(px-K.x,pz-K.z)>CARAVAN_LEAVE){K.enemies.forEach(e=>{e._roadfolk=null;});rfSet(T.id,{lost:true,day:dayNow()});
+      showMsg(`The bandits of ${K.camp} took ${D.npc.def.name}'s pack.`,'#ff8060');if(typeof addLog==='function')addLog('🐴',`The bandits of ${K.camp} robbed ${D.npc.def.name}, a merchant of ${home?home.name:'the road'}.`);
+      dropTraveller(T.id);return true;}
+    if(K.fled<30){const s=Math.min(30-K.fled,4.5*dt);K.fled+=s;}
+    const x=K.x-Math.sin(K.ang)*K.fled,z=K.z-Math.cos(K.ang)*K.fled,y=worldH(x,z);D.npc.g.position.set(x,y,z);D.npc.g.rotation.y=K.ang+Math.PI;D.npc.def.x=x;D.npc.def.z=z;D.npc.home={x,z};D.npc.dot.position.set(x,y+1.5,z);
+    return true;}
   function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;if(D.npc){sc.remove(D.npc.g);sc.remove(D.npc.dot);const k=npcs.indexOf(D.npc);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);ROADWALK.delete(id);}
-  function tickRoadfolk(){if(activeZoneId!=='world'){for(const id of [...ROADWALK.keys()])dropTraveller(id);return;}
+  function tickRoadfolk(dt){if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
+    if(Math.random()<.002)rfPrune();
     const all=roadfolkNow().filter(o=>ROADFOLK_DRAW[o.T.kind]).map(o=>(o.dist=Math.hypot(o.p.x-px,o.p.z-pz),o)).filter(o=>o.dist<ROADFOLK_NEAR).sort((x,y)=>x.dist-y.dist||(x.T.id<y.T.id?-1:1)).slice(0,ROADFOLK_DRAWN);
-    const keep=new Set(all.map(o=>o.T.id));for(const id of [...ROADWALK.keys()])if(!keep.has(id))dropTraveller(id);
+    for(const D of ROADWALK.values())if(D.attack&&!all.some(o=>o.T.id===D.T.id)){const p=D.stop||{x:D.attack.x,z:D.attack.z,ang:D.attack.ang,d:0};roadAmbushTick(D,p,dt||0);} /* a fight holds its merchant though the clock walks his place on */
+    const keep=new Set(all.map(o=>o.T.id));for(const [id,D] of [...ROADWALK.entries()])if(!keep.has(id)&&!D.attack)dropTraveller(id);
     for(const {T,rd,p} of all){let D=ROADWALK.get(T.id);
       if(!D){const def=merchantDef(T,rd,p);const n=spawnNPC(def,p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();try{const rg=buildAnimal('Pack Mule',T.id,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
-        D={T,rd,npc:n,beast:g};ROADWALK.set(T.id,D);}
+        D={T,rd,npc:n,beast:g};ROADWALK.set(T.id,D);{const R=rfRec(T.id);if(R&&R.sprung&&!R.saved&&!R.lost){rfSet(T.id,{lost:true});dropTraveller(T.id);continue;}} /* a fight left unfinished by a load: his pack was taken */}
+      if(roadAmbushTick(D,p,dt||0))continue;
       const y=worldH(p.x,p.z);D.npc.g.position.set(p.x,y,p.z);D.npc.g.rotation.y=p.ang;D.npc.def.x=p.x;D.npc.def.z=p.z;D.npc.home={x:p.x,z:p.z};D.npc.dot.position.set(p.x,y+1.5,p.z);
       const bx=p.x-Math.sin(p.ang)*1.6,bz=p.z-Math.cos(p.ang)*1.6;D.beast.position.set(bx,worldH(bx,bz),bz);D.beast.rotation.y=p.ang;}}
   // ═══ FACTIONS AND ANCHORED PLACES (Session S) ════════════════════════

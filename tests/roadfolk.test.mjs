@@ -2,6 +2,7 @@
 // its day's travellers from its key and the day: 2 + both ends' prosperity ÷ 50, 2 to 6 (halved on a broken route), each with an hour,
 // an end and a kind. Where one is comes from the clock and the pace. Within 400 m the nearest four are drawn; the merchant (session 1)
 // walks at 1.1 m a game minute with his mule and sells 6 to 10 rows of a goods shop's stock at his home town's prices ×1.1.
+// Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -50,4 +51,40 @@ await g.spin(null, 5);
 const gone = await page.evaluate((id) => ({ has: ROADWALK.has(id), d: [...ROADWALK.values()].map(D => Math.round(Math.hypot(D.npc.g.position.x - px, D.npc.g.position.z - pz))), npcs: npcs.length }), m.id);
 console.log(JSON.stringify(gone));
 check('dropped past 400 m', !gone.has && gone.d.every(d => d < 400), gone);
+
+// S2269 — the merchant's ambush near a live camp: find one, stand by him as he reaches its point
+const findAmb = () => page.evaluate((skip) => {
+  const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440);
+  for (let dd = day + 1; dd < day + 60; dd++) for (const rd of ROADS.filter(roadfolkRoad)) for (const T of roadTravellers(rd, dd)) {
+    if (skip.includes(T.id)) continue; const A = merchantAmbush(T, rd); if (!A) continue; const L = roadLenOf(rd), at = A.f * L;
+    const t = T.at + (at + 5) / T.pace; worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440;
+    const p = travellerAt(T, rd, t); px = p.x + 8; pz = p.z; const home = roadfolkHome(T, rd);
+    return { id: T.id, A, odds: roadAmbushOdds(rd), camp: roadCamp(rd).id, favor0: (worldState.favor || {})[home.id] || 0, home: home.id };
+  }
+  return null; }, skipped);
+const skipped = [];
+const amb = await findAmb();
+console.log(JSON.stringify(amb));
+check('a merchant on a road by a live camp draws an ambush by his id', !!amb && amb.A.n >= 3 && amb.A.f >= .35 && amb.A.f <= .65, amb);
+skipped.push(amb.id);
+await g.cells(); await g.spin(null, 4);
+const sp = await page.evaluate((id) => { const D = ROADWALK.get(id); const E = ZONES.world.enemies.filter(e => e._roadfolk === id && !e.dead);
+  return { drawn: !!D, attack: !!(D && D.attack), bandits: E.length, kinds: E.map(e => e.name || e.type), rec: worldState.roadfolk && worldState.roadfolk[id] }; }, amb.id);
+console.log(JSON.stringify(sp));
+check('with you by him as he reaches it, 3 or 4 bandits fall on him', sp.attack && sp.bandits === amb.A.n, sp);
+await g.spin(null, 120);
+const won = await page.evaluate(({ id, home }) => { ZONES.world.enemies.filter(e => e._roadfolk === id && !e.dead).forEach(e => killZoneEnemy(e, WORLD.scene)); WORLD.tick(1 / 60, performance.now()); WORLD.tick(1 / 60, performance.now());
+  const D = ROADWALK.get(id), R = worldState.roadfolk[id]; const t = D.npc.def.topics.find(t => t.trade); t.fn(t); const H = currentHouse; const it = H.pack[0];
+  const out = { saved: R.saved, lag: R.lag, attack: !!D.attack, mul: H.roadMul, cost: shopCost(it), want: Math.max(1, Math.round(it.buyPrice * WORLD.priceMulAt(H.siteId) * .8 * (1 - barterPct()))), favor: (worldState.favor || {})[home] || 0 };
+  currentHouse = null; return out; }, amb);
+console.log(JSON.stringify(won));
+check('kill them and he goes on, late by the fight, selling at ×0.8 that day', won.saved && !won.attack && won.lag > 0 && won.mul === .8 && won.cost === won.want, won);
+check('his town gives +1 favour', won.favor === amb.favor0 + 1, { won, amb });
+// a second one, walked away from: his pack is taken and he is off the road that day
+const amb2 = await findAmb(); skipped.push(amb2.id);
+await g.cells(); await g.spin(null, 4);
+const lost = await page.evaluate((id) => { const D = ROADWALK.get(id); const sprung = !!(D && D.attack); px += 300; WORLD.tick(1 / 60, performance.now());
+  const R = worldState.roadfolk[id]; const T = D.T; return { sprung, lost: R.lost, drawn: ROADWALK.has(id), onRoad: !!travellerAt(T, D.rd, worldState.gameTimeAbsMinutes), saveKey: JSON.parse(ssStringify(worldState)).roadfolk[id] }; }, amb2.id);
+console.log(JSON.stringify(lost));
+check('walk 250 m off with them alive and his pack is taken; he is off the road, and it is in the save', lost.sprung && lost.lost && !lost.drawn && !lost.onRoad && lost.saveKey && lost.saveKey.lost, lost);
 stop(); await g.close();
