@@ -884,6 +884,7 @@ function renderShop(){
   {const jk=[...joinerKitFor(currentHouse),...feathersFor(currentHouse)];if(jk.length)stock=[...stock,...jk.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1517 — the joiner's kit beside them, feathers at the goods shop */
   {const cp=clayPotFor(currentHouse);if(cp.length)stock=[...stock,...cp.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1837 — the clay pot at an apothecary and the goods shop */
   {const sv=survivalFor(currentHouse);if(sv.length)stock=[...stock,...sv.filter(a=>!stock.some(b=>b.name===a.name))];} /* S1486 — the tinderbox and produce at the goods shop and the inn, fish in a port */ /* S1483 — the mortar at an apothecary and the Mages' Guild */ // S564 — the light line at the armourer, robes at a goods shop
+  if(currentHouse.pack)stock=currentHouse.pack.slice(); /* S2268 — a merchant on the road sells his own pack and nothing of a counter's */
   // v61au: Charisma-gated stock (chaReq). No-op until items carry the field.
   const _cha = ATTRS.charisma||0;
   stock = stock.filter(it => !it.chaReq || _cha >= it.chaReq);
@@ -1007,6 +1008,7 @@ function itemDesc(it){
 // v80 S169 — the town's price at the counter: indoors the house's own town (the room's coordinates are no place on the
 // map), outdoors the nearest town. Prosperity and the faction discount. A bought-back item keeps what you were paid for it.
 function shopMul(){try{if(typeof WORLD==='undefined')return 1;
+  if(typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.roadMul)return (currentHouse.siteId?WORLD.priceMulAt(currentHouse.siteId):1)*currentHouse.roadMul; /* S2268 — the road's merchant: his home town's prices ×1.1 */
   if(typeof isInterior==='function'&&isInterior()){return (typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.siteId)?WORLD.priceMulAt(currentHouse.siteId):1;}
   return activeZoneId==='world'?WORLD.priceMulHere():1;}catch(e){return 1;}}
 // S339 (Michael's A on #61) — Charisma's barter, as its card says: 1% a point off what you pay and on what you're paid
