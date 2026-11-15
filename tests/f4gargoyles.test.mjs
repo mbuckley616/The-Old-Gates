@@ -127,9 +127,11 @@ const ga = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos
   const H = rig.hc; if (!H) return { hc: false, kinds, kind: rig.hcKind, fail: !!rig.hcFail };
   for (let i = 0; i < 60; i++) { tickPeople(1 / 60, 4.2e5 + i * 16.7); tickCreatures(1 / 60, 4.2e5 + i * 16.7); }
   const span = P => (P.parts.find(([k]) => k === 'wings') || [, {}])[1].span, S = _S[1].rig.hc;
-  const lum = W => { let t = 0, k = 0; W.traverse(o => { if (o.isMesh && o.material && o.material.color && !(o.material.emissive && o.material.emissive.b > .5)) { const c = o.material.color; t += (c.r + c.g + c.b) / 3; k++; } }); return k ? +(t / k).toFixed(3) : 0; };
+  /* S2266 — the stone's shade is its genome's coat: the mean of the materials' colours read mostly the spurs (the hide and wings are white
+     materials, their colour in the vertices), and swung by seed (Cloch's 0.30–0.33, Gaoth's 0.365–0.39), so one seed fell under the margin */
+  const lum = H => { const c = H.C.plan.palette.coat; return +((c[0] + c[1] + c[2]) / 3).toFixed(3); };
   let blue = 0, ember = 0; H.W.traverse(o => { if (o.isMesh && o.material && o.material.emissive) { const em = o.material.emissive; if (em.b > .5 && em.b > em.r) blue++; if (em.r > .5 && em.r > em.b) ember++; } });
-  return { hc: true, kinds, kind: rig.hcKind, seed: H.C.g.seed, want: HC.hashKey('foe:' + e.id), span: span(H.C.plan), steadySpan: span(S.C.plan), lum: lum(H.W), steadyLum: lum(S.W), blue, ember,
+  return { hc: true, kinds, kind: rig.hcKind, seed: H.C.g.seed, want: HC.hashKey('foe:' + e.id), span: span(H.C.plan), steadySpan: span(S.C.plan), lum: lum(H), steadyLum: lum(S), blue, ember,
     wings: H.garg && H.garg.wings.length, tris: H.C.stats.tris, steadyTris: S.C.stats.tris, driver: rig.mesh.visible }; });
 console.log('  gaoth:', JSON.stringify(ga));
 check(`a steady Gaoth gate's gargoyle wears the kit's Gaoth gargoyle (${ga.tris} triangles, Cloch's ${ga.steadyTris}): its stone paler (${ga.lum} against ${ga.steadyLum}), its wings ${ga.span} m to Cloch's ${ga.steadySpan}, ${ga.blue} blue-lit meshes and no ember, keyed by its foe id; the kinds by gate ${(ga.kinds || []).join(', ')}`,
