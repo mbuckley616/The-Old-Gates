@@ -603,3 +603,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing; main is green.
 
 **Roadmap.** 328 of 415 stories done (325 of 409 on 13 Nov). The new look is 7 of 18; only F14 is left for deep work.
+
+## 15 Nov 2026
+
+**Waiting on you.** One decision: the road between towns (#1587, B recommended: the road's people). One pipeline PR to approve: QA: Session 2255 (a change to a shared test kit runs the suites that import it).
+
+**Landed on main since 14 Nov.** Your answers built: law in three registers (#1540 B): the Crown's court and the stocks, the Mark's yield, Aurenne's ledger and contract, poaching and the lord's licence, sacrilege, and the forester who walks his chase (Systems 2222–2254); a chase beside every lordly town (#1562 B; 2251); the tithe-ship's hail (#1570 A; 2252); the spyglass, rod and net (#1504 B; Systems 2221, Bodies 2224–2236, Look 2237). The ship's ballista in the game (#1580 A; Look 2250); prototypes of the merchant's house and the sea fight (Look 2240–2244). The stocks on the square, the drowned places solid to a swimmer, the traveller's pack, hair cheaper at distance (Look 2221–2226, Bodies 2231–2253). The Three Courts drafted; the road between towns proposed; a playtest. QA kept the budget flat. Build s1608.
+
+**Under way.** Look #1594 (the galleon's guns run out) lands once renumbered. The weekly full run on main started 13:04 UTC.
+
+**Blocked.** Nothing; main is green.
+
+**Roadmap.** 331 of 421 stories done (328 of 415 on 14 Nov). The new look is 7 of 18; only F14 is left for deep work.
