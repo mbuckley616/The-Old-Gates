@@ -5,7 +5,7 @@ import fs from 'fs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 const enter = async type => { await page.evaluate(() => { try { if (interiorScene) exitInterior(); } catch (e) {} }); await page.waitForTimeout(1500); await g.hide();
-  const ok = await page.evaluate(type => { const kitRoom = x => ['kitForge', 'kitAurSmithy', 'kitMarkSmithy', 'kitApothecary', 'kitAurApothecary', 'kitMarkApothecary'].some(f => typeof window[f] === 'function' && window[f](x)); /* S1997: the kit's own smithies and apothecaries, which their own suites walk */
+  const ok = await page.evaluate(type => { const kitRoom = x => ['kitForge', 'kitAurSmithy', 'kitMarkSmithy', 'kitApothecary', 'kitAurApothecary', 'kitMarkApothecary', 'kitMerchant' /* S2268: a town's shop in the merchant's house, tests/kitmerchant */].some(f => typeof window[f] === 'function' && window[f](x)); /* S1997: the kit's own smithies and apothecaries, which their own suites walk */
     let h = null; for (const S of WORLD.settle.values()) { h = S.houses.find(x => x.type === type && !kitRoom(x)); if (h) break; } if (!h) return false; window._S = h; px = h.exitX; pz = h.exitZ; goToInterior(h); return true; }, type);
   if (ok) { await page.waitForTimeout(4000); await g.hide(); } return ok; };
 // S896 (card F2a): a shop is laid out in the furniture kit's unit and built SCALE.ROOM_K (1.444) larger, so the places and heights
@@ -47,7 +47,7 @@ const others = [], pics = [];
 // S1997: an apothecary that stands as the kit's (S1876, S1881, S1894; their own suites walk it) is passed over, as the smithy is, when
 // every one loaded is the kit's; otherwise the old room is checked
 const kitOnly = [];
-for (const t of ['armor', 'potion', 'misc']) { if (!(await enter(t))) { if (await page.evaluate(t => { let n = 0, all = 0; for (const S of WORLD.settle.values()) for (const x of S.houses) if (x.type === t) { all++; if (['kitApothecary', 'kitAurApothecary', 'kitMarkApothecary'].some(f => typeof window[f] === 'function' && window[f](x))) n++; } return n > 0 && n === all; }, t)) kitOnly.push(t); continue; } const o = await look();
+for (const t of ['armor', 'potion', 'misc']) { if (!(await enter(t))) { if (await page.evaluate(t => { let n = 0, all = 0; for (const S of WORLD.settle.values()) for (const x of S.houses) if (x.type === t) { all++; if (['kitApothecary', 'kitAurApothecary', 'kitMarkApothecary', 'kitMerchant' /* S2268 */].some(f => typeof window[f] === 'function' && window[f](x))) n++; } return n > 0 && n === all; }, t)) kitOnly.push(t); continue; } const o = await look();
   const x = await page.evaluate(() => { const KR = SCALE.ROOM_K, W = _S.intW / KR, Z = _S._shopZ || 0, D = _S.intD / KR - Z, A = furnKit().armouryAt(W, D); let barrels = 0, crates = 0; interiorScene.traverse(m => { if (m.isMesh && INT_KIT_GEO.get('barrel') && m.geometry === INT_KIT_GEO.get('barrel').body) barrels++; });
     return { stand: _S.type !== 'armor' || A.stands.some(sx => intSolidAt(sx * KR, (1.6 + Z) * KR, .1)), still: FOOTHOLDS.some(f => f.y / KR > .55 && f.y / KR < .7 && (W - 1.6) * KR > f.x0 && (W - 1.6) * KR < f.x1 && (1.8 + Z) * KR > f.z0 && (1.8 + Z) * KR < f.z1), barrels }; });
   others.push({ type: t, furn: o.furn, tris: o.tris, fire: o.fire, counter: o.counter, meshes: o.meshes, ...x });
@@ -57,7 +57,7 @@ console.log(JSON.stringify(others));
 const by = t => others.find(o => o.type === t) || {};
 console.log('the kit\'s rooms only:', JSON.stringify(kitOnly));
 check('the armourer, the apothecary and the general goods are each a room bake and the kit\'s counter, footholds where they were', others.length + kitOnly.length === 3 && others.every(o => o.furn === 2 && o.counter && o.tris[0] > 3000), others);
-check('the armour stands stand, the apothecary\'s still is a foothold and glows (its brew in the flame mesh), the goods\' barrels are the kit\'s', by('armor').stand && (kitOnly.includes('potion') || by('potion').still && by('potion').fire) && by('misc').barrels === 3, others);
+check('the armour stands stand, the apothecary\'s still is a foothold and glows (its brew in the flame mesh), the goods\' barrels are the kit\'s', (kitOnly.includes('armor') || by('armor').stand) && (kitOnly.includes('potion') || by('potion').still && by('potion').fire) && (kitOnly.includes('misc') || by('misc').barrels === 3), others);
 const grid = await page.evaluate(ps => new Promise(res => { const c = document.createElement('canvas'); let x = null, k = 0; ps.forEach((p, i) => { const im = new Image(); im.onload = () => { if (!x) { c.width = im.width * ps.length; c.height = im.height; x = c.getContext('2d'); } x.drawImage(im, i * im.width, 0); if (++k === ps.length) res(c.toDataURL()); }; im.src = p; }); }), pics);
 fs.writeFileSync('tests/out/shops3.png', Buffer.from(grid.split(',')[1], 'base64'));
 check('no page errors', g.errs.length === 0, g.errs);
