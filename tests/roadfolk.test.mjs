@@ -4,6 +4,7 @@
 // walks at 1.1 m a game minute with his mule and sells 6 to 10 rows of a goods shop's stock at his home town's prices ×1.1.
 // Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
 // Session 2273: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
+// Session 2274: a rider at 5.5 m a game minute reins in when you come within 6 m and gives the newest event within two cells to the journal and the map.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -139,4 +140,39 @@ const bi = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D || !
 console.log(JSON.stringify(bi));
 check('the mourners carry a bier, its two poles through their four palms (within 4 cm)', bi.bier && bi.shown && bi.off.every(d => d !== null && d < .04) && bi.bear[0] === 1 && bi.bear[1] === -1, bi);
 check('its bearers hold nothing and wear no cloak, cape or mantle; the bier under 2,000 triangles', bi.bier && bi.dress.every(l => l.length === 0) && bi.tris < 2000, bi);
+// S2274 — the rider: find one mid-road on a loaded road, stand 3 m off him, and he reins in; asked, he gives the news; walk off and he rides on
+const rf = await page.evaluate(() => { const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440);
+  for (let dd = day + 1; dd < day + 40; dd++) for (const rd of ROADS.filter(roadfolkRoad)) for (const T of roadTravellers(rd, dd)) { if (T.kind !== 'rider') continue;
+    const L = roadLenOf(rd); if (L < 400) continue; const t = T.at + (L * .5) / T.pace; const p = travellerAt(T, rd, t); if (!p) continue;
+    worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; px = p.x + Math.cos(p.ang) * 3; pz = p.z - Math.sin(p.ang) * 3;
+    return { id: T.id, a: rd.def.a, b: rd.def.b }; }
+  return null; });
+console.log(JSON.stringify(rf));
+check('a rider found', !!rf);
+await g.cells(); await g.spin(null, 4);
+const h1 = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return { drawn: false, keys: [...ROADWALK.keys()] }; const rig = D.npc.g.userData.rig;
+  return { drawn: true, halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, sit: !!(rig && rig.sit), horse: D.beast.children.length, lift: +(D.npc.g.position.y - worldH(D.npc.g.position.x, D.npc.g.position.z)).toFixed(2), inTalk: npcs.includes(D.npc), post: D.npc.def.post }; }, rf.id);
+console.log(JSON.stringify(h1));
+check('a rider is drawn seated on his horse, and within 6 m he reins in', h1.drawn && h1.sit && h1.horse === 1 && h1.lift > .5 && h1.halted && h1.inTalk, h1);
+await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 5);
+await g.spin(null, 4);
+const h2 = await page.evaluate((id) => { const D = ROADWALK.get(id); return { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, lag: (worldState.roadfolk[id] || {}).lag }; }, rf.id);
+console.log(JSON.stringify(h2));
+check('he stands while you are by him, the minutes his lag', h2.halted && Math.hypot(h2.x - h1.x, h2.z - h1.z) < .05 && Math.abs(h2.lag - (h2.t - h1.t)) < .01 && h2.t - h1.t > 4.9, { h1, h2 });
+const nw = await page.evaluate((o) => { const D = ROADWALK.get(o.id); const t = D.npc.def.topics.find(t => t.label === 'What news?');
+  const none = t.fn(t); const site = siteAnywhere(o.a); const st = TS(site); st.siegeBy = st.siegeBy || 'mark'; st.flags.besieged = worldState.gameTimeAbsMinutes - 1440;
+  const n0 = (worldState.mapNotes || []).length, j0 = GAME_LOG.length; const resp = t.fn(t); const n1 = (worldState.mapNotes || []).length, j1 = GAME_LOG.length; t.fn(t);
+  const n2 = (worldState.mapNotes || []).length; const note = worldState.mapNotes[n1 - 1]; delete st.flags.besieged;
+  return { none, resp, town: site.name, notes: [n0, n1, n2], logs: j1 - j0, note: note && { text: note.text, d: Math.round(Math.hypot(note.x - site.x, note.z - site.z)) }, log: GAME_LOG[GAME_LOG.length - 1].text }; }, rf);
+console.log(JSON.stringify(nw));
+check('asked, he gives the newest event near him, to the journal and pinned on the map at the town, once', nw.resp.includes(nw.town + ' is under siege') && nw.resp.includes('yesterday') && nw.notes[1] === nw.notes[0] + 1 && nw.notes[2] === nw.notes[1] && nw.logs === 1 && nw.note && nw.note.d < 1, nw);
+await page.evaluate((id) => { const D = ROADWALK.get(id); px = D.npc.def.x + 40; pz = D.npc.def.z; }, rf.id);
+await g.spin(null, 30);
+const h3 = await page.evaluate((id) => { const D = ROADWALK.get(id); return D ? { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes } : null; }, rf.id);
+await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 2);
+await g.spin(null, 4);
+const h4 = await page.evaluate((id) => { const D = ROADWALK.get(id); return D ? { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes } : null; }, rf.id);
+console.log(JSON.stringify({ h3, h4 }));
+const rv = h3 && h4 ? Math.hypot(h4.x - h3.x, h4.z - h3.z) / (h4.t - h3.t) : 0;
+check('left, he rides on at 5.5 m a game minute and does not stop again', h3 && h4 && !h3.halted && !h4.halted && Math.abs(rv - 5.5) < .4, rv);
 stop(); await g.close();
