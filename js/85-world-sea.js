@@ -1126,6 +1126,7 @@
       } else {
         if(!o.wp||Math.hypot(o.wp.x-o.x,o.wp.z-o.z)<20){for(let k=0;k<10;k++){const a=Math.random()*Math.PI*2,d=150+Math.random()*250;const x=o.x+Math.cos(a)*d,z=o.z+Math.sin(a)*d;if(worldH(x,z)<-4){o.wp={x,z};break;}}}
         if(o.wp){tx=o.wp.x;tz=o.wp.z;}
+        if(o.tithe&&typeof titheSteer==='function'){const ts=titheSteer(o);if(ts){tx=ts.x;tz=ts.z;o.wp=null;}} /* S2252 — a tithe-ship steers for your ship until she has hailed (86) */
         if(o.kind!=='pirate'&&typeof headGiveWay==='function'){const gw=headGiveWay(o);if(gw){tx=gw.x;tz=gw.z;o.wp=null;}} /* S1734 — the skull: merchantmen give way */
       }
       if(tx!=null){const want=Math.atan2(-(tx-o.x),-(tz-o.z));let d=want-o.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));o.yaw+=Math.max(-.5*dt,Math.min(.5*dt,d));o.speed+=((o.top||(o.kind==='pirate'?6.5:4.5))*otherSpeedMul(o)-o.speed)*Math.min(1,dt*.6);}

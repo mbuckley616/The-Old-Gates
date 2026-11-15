@@ -122,12 +122,12 @@ const fd = await page.evaluate(([A]) => { const S = WORLD.settle.get(A); worldSt
   const q = contractTake(S, L); qComplete(q); const t = lordTopics(S.site).find(x => /done/.test(x.label)); const line = t && t.fn(); return { line, gold: gold - g0, ledger: fineRec(S).bounty }; }, auIds);
 console.log(JSON.stringify(fd));
 check(`turned in to the Factor: “${fd.line}”, no gold`, /contract is met.*ledger is clear/.test(fd.line || '') && fd.gold === 0 && fd.ledger === 0, fd);
-// S2235 (Michael's B on #1540, the first new crime): poaching. A lord's chase is the Gatelands' wood within 600 m of a city whose keep
-// stands; a deer, boar or hare killed there is theft (2 points and its worth) when seen by day, recorded when not; the lord's licence,
+// S2235 (Michael's B on #1540, the first new crime): poaching. A lord's chase is the Gatelands' wood within 600 m of a town or city
+// with a lord (S2251, #1562 B); a deer, boar or hare killed there is theft (2 points and its worth) when seen by day, recorded when not; the lord's licence,
 // 30 gold for three months, makes it lawful. A real deer, killed by the game's own kill, in the first chase found.
 const pc = await page.evaluate(() => { let F = null;
   for (let j = 0; j < GRID && !F; j++) for (let i = 0; i < GRID && !F; i++) { const c = getCell(i, j); if (!c || !c.sites) continue;
-    for (const t of c.sites) { if (F || t.kind !== 'city' || !chaseKeep(t)) continue;
+    for (const t of c.sites) { if (F || !chaseLord(t)) continue;
       for (let k = 0; k < 400 && !F; k++) { const a = k * 2.399, d = 150 + (k % 9) * 50, x = t.x + Math.sin(a) * d, z = t.z + Math.cos(a) * d; if ((chaseAt(x, z) || {}).id === t.id) F = { t, x, z }; } } }
   if (!F) return { none: true }; const { t, x, z } = F, W = witnessOf; witnessOf = () => ({ name: 'Eamon' }); forceTime(12);
   const kill = () => { const e = buildZoneEnemy(sc, STATIC_SOL, x, z, 'Deer', null, { tier: 1, key: 'poachtest' }); ZONES.world.enemies.push(e); killZoneEnemy(e, sc); return e; };
@@ -139,6 +139,18 @@ const pc = await page.evaluate(() => { let F = null;
 console.log(JSON.stringify(pc));
 check(`poaching in the chase of ${pc.site}: a deer seen killed by day fines ${pc.seen} (50 and its 30); the lord's licence for 30 (“${pc.line}”), then none`,
   !pc.none && pc.seen === 80 && pc.rec === 'poach' && /is open to you until/.test(pc.line || '') && pc.gold === 70 && pc.after === 0, pc);
+// S2251 (Michael's B on #1562): a chase is any Gatelands town's or city's with a lord, keep or not; never a village's, a port's or a garrison's.
+// Over every Gatelands site of the world's cells: the kinds that hold one, and a town with no keep whose lord sells the licence.
+const ch = await page.evaluate(() => { const by = {}; let nokeep = null;
+  for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { const c = getCell(i, j); if (!c || !c.sites) continue;
+    for (const t of c.sites) { if (nationAt(t.x, t.z) !== 'gatelands') continue; const k = t.kind, o = by[k] || (by[k] = { n: 0, chase: 0 }); o.n++;
+      if (chaseLord(t)) { o.chase++; if (!nokeep && !(t.kind === 'city' && shopsFor(t, ['castle']).length)) nokeep = t; } } }
+  const T = nokeep && lordTopics(nokeep).find(q => /hunting licence/.test(q.label));
+  return { by, nokeep: nokeep && nokeep.name + ' (' + nokeep.kind + ')', topic: T && T.label }; });
+console.log(JSON.stringify(ch));
+const chN = Object.values(ch.by).reduce((a, o) => a + o.chase, 0), lordN = ['town', 'city'].reduce((a, k) => a + ((ch.by[k] || {}).n || 0), 0);
+check(`${chN} chases in the Gatelands, one for each of its ${lordN} towns and cities that stands; no village, port or garrison holds one; ${ch.nokeep}, keepless, sells *${ch.topic}*`,
+  chN >= 3 && chN <= lordN && chN === ((ch.by.town || {}).chase || 0) + ((ch.by.city || {}).chase || 0) && /hunting licence/.test(ch.topic || ''), ch);
 // S2241 (the page's "no trap"): the chase's edge on the local map, in the Crown's crimson. Every tinted square of the map's view is in the
 // chase by chaseAt itself and every square chaseAt holds is tinted; the drawn map has crimson where the chase is; a view with no chase draws none.
 // The view is centred on the chase's rim, 600 m from its city on the line through the chase's first spot, so both sides are in it
@@ -151,11 +163,13 @@ const ce = await page.evaluate(([x0, z0]) => { const P = [px, pz], R = 130, cell
     if (inC) held++; if (inC === tinted.has(i + ',' + j)) agree++; else disagree++; }
   const cv = document.createElement('canvas'); cv.width = cv.height = 260; const c2 = cv.getContext('2d'); drawLocalMap(c2, 260, R, true);
   const D = c2.getImageData(0, 0, 260, 260).data; let red = 0; for (let i = 0; i < D.length; i += 4) if (Math.abs(D[i] - 184) < 6 && Math.abs(D[i + 1] - 50) < 6 && Math.abs(D[i + 2] - 58) < 6) red++;
-  px = x + 5000; pz = z + 5000; const far = chaseEdge(ctx, toS, px - R, pz - R, n, cell, s), t0 = performance.now(); for (let r = 0; r < 20; r++) chaseEdge(ctx, toS, px - R, pz - R, n, cell, s);
+  let fx = x + 5000, fz = z + 5000; /* S2251: with a chase by every lord's town, 5 km off may be another's; take the first view with no lord's town in reach */
+  for (let d = 2000, q = 0; d <= 14000 && chaseCitiesNear(fx, fz, R).length; q++) { const a = q * .785; fx = x + Math.cos(a) * d; fz = z + Math.sin(a) * d; if (q % 8 === 7) d += 1000; }
+  px = fx; pz = fz; const far = chaseEdge(ctx, toS, px - R, pz - R, n, cell, s), t0 = performance.now(); for (let r = 0; r < 20; r++) chaseEdge(ctx, toS, px - R, pz - R, n, cell, s);
   const msFar = (performance.now() - t0) / 20; px = x; pz = z; const t1 = performance.now(); for (let r = 0; r < 20; r++) chaseEdge(ctx, toS, px - R, pz - R, n, cell, s);
   const msNear = (performance.now() - t1) / 20; [px, pz] = P; return { k, n: n * n, held, agree, disagree, strokes: ctx.st, red, far, msFar: +msFar.toFixed(2), msNear: +msNear.toFixed(2) }; }, [pc.x, pc.z]);
 console.log(JSON.stringify(ce));
-check(`the chase's edge on the map: ${ce.k} of ${ce.n} squares tinted, every one in the chase and none outside (${ce.disagree} wrong), ${ce.red} crimson pixels drawn; none 5 km off`,
+check(`the chase's edge on the map: ${ce.k} of ${ce.n} squares tinted, every one in the chase and none outside (${ce.disagree} wrong), ${ce.red} crimson pixels drawn; none in a view with no lord's town in reach`,
   ce.k > 0 && ce.k < ce.n && ce.k === ce.held && ce.disagree === 0 && ce.strokes >= 1 && ce.red > 20 && ce.far === 0, ce);
 // S2245 (Michael's B on #1540, sacrilege): a piece taken in a gate is gate salvage (not in a fort); sold in an Aurenne town whose church
 // stands, the row warns first, the sale is not made, the piece is taken, the ledger books 2 points' 50 and the Church has a note
@@ -177,5 +191,28 @@ for (const id of prior) { if (!(await g.settle(id))) continue;
 console.log(JSON.stringify([sm, sr]));
 check(`gate salvage: taken in a gate (${sm.gate}), not in a fort; sold in ${sr && sr.id}, a Prior's town, warned, not paid, taken, the ledger +${sr && sr.fine}, the Church's note`,
   sm.gate.join() === 'Iron Sword' && !sm.fort.length && !!sr && sr.warned && sr.paid === 0 && !sr.kept && sr.fine === 50 && sr.note === 'sacrilege', [sm, sr]);
+// S2252 (Michael's A on #1570): a tithe-ship's hail in Aurenne's waters. Declared cargo is entered and kept; refused, she searches one time
+// in four by her id's stream: found, every load is taken and the nearest Aurenne town books theft (50 on the ledger); passed, nothing. The
+// hail names the search and offers both answers; closed with no answer, it is a refusal.
+const tt = await page.evaluate(() => { let t = null;
+  for (let j = 0; j < GRID && !t; j++) for (let i = 0; i < GRID && !t; i++) { const c = getCell(i, j); if (c && c.sites) t = c.sites.find(s => s.kind === 'port' && nationAt(s.x, s.z) === 'aurenne') || null; }
+  if (!t) return { none: true };
+  let sea = null; for (let k = 0; k < 64 && !sea; k++) { const a = k * .7, d = 120 + (k % 8) * 40, x = t.x + Math.cos(a) * d, z = t.z + Math.sin(a) * d; if (worldH(x, z) < -4 && aurCoastNear(x, z)) sea = [x, z]; }
+  const load = () => { for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i].type === 'cargo') BAG.splice(i, 1); const it = cargoItem('salt'); it.qty = 3; BAG.push(it); };
+  const salt = () => (BAG.find(b => b.type === 'cargo' && b.cargo === 'salt') || { qty: 0 }).qty;
+  const ids = { found: null, passed: null }; for (let k = 0; k < 200 && !(ids.found && ids.passed); k++) { const id = 'tithe:t' + k, f = seededRng('tithe', id + ':search')() < TITHE_SEARCH; if (f && !ids.found) ids.found = id; if (!f && !ids.passed) ids.passed = id; }
+  const ship = id => ({ id, x: t.x, z: t.z }), led = () => { const S = titheSite(t.x, t.z); return S ? (fineRecAt(S.id) || { bounty: 0 }).bounty : -1; };
+  const out = { port: t.name, sea: !!sea, land: aurCoastNear(t.x, t.z) };
+  load(); let o = ship('tithe:decl'); titheHail(o); out.labels = [...document.querySelectorAll('#dlg-choices > button')].map(b => b.textContent.trim());
+  out.greet = document.getElementById('dlg-text') ? document.getElementById('dlg-text').textContent : ''; out.decl = titheAnswer(o, true); try { closeDialog(); } catch (e) {}
+  out.declKept = salt(); out.declared = JSON.stringify((worldState.tithe || {}).declared && worldState.tithe.declared.goods);
+  load(); o = ship(ids.passed); let l0 = led(); _titheAsk = o; out.pass = titheAnswer(o, false); out.passKept = salt(); out.passFine = led() - l0;
+  load(); o = ship(ids.found); l0 = led(); const n0 = (worldState.crimes || []).length; titheHail(o); try { closeDialog(); } catch (e) {} _titheT = 0; tickTithe(1);
+  out.foundKept = salt(); out.foundFine = led() - l0; out.rec = (worldState.crimes || []).slice(n0).map(c => c.kind).join(); out.asked = _titheAsk === null;
+  return out; });
+console.log(JSON.stringify(tt));
+check(`the tithe-ship off ${tt.port}: Aurenne's water within 300 m of its shore (${tt.sea}); the hail offers *${(tt.labels || []).join('* / *')}*; declared, 3 salt kept and entered; refused and passed, kept and no fine; refused by closing the hail and found, taken, the ledger +${tt.foundFine}`,
+  !tt.none && tt.sea && !tt.land && (tt.labels || []).some(l => /^\d+\. Declare the cargo/.test(l)) && tt.labels.some(l => /^\d+\. Refuse\.$/.test(l)) && tt.declKept === 3 && /"salt":3/.test(tt.declared)
+  && tt.passKept === 3 && tt.passFine === 0 && tt.foundKept === 0 && tt.foundFine === 50 && tt.rec === 'smuggle' && tt.asked, tt);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

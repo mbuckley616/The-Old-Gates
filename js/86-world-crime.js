@@ -614,7 +614,7 @@
     const FR={gatelander:"The fox that's had the hen isn't asked in for the eggs.",markman:"I know what you did. Get off my land.",aurennais:"I keep no account with whoever took from my stock, Master. Ours is closed.",oldblood:"You took from the fold. Go."}; /* Finding 44 (quest review, run 41): the line by the farmer's people */
     showMsg(`${def.name||'The farmer'}: “${FR[def.people]||FR.gatelander}”`,'#e8a880');return true;}
   /* S2235 — poaching (Michael's B on #1540, docs/design/law-in-three-registers.md, the first of its three crimes). A lord's chase is the
-     wooded country (forest and autumn wood, by the cells' regions, lairBiome) of the Gatelands within 600 m of a city whose keep stands
+     wooded country (forest and autumn wood, by the cells' regions, lairBiome) of the Gatelands within 600 m of a town or city with a lord (S2251; until then a city whose keep stood)
      (its castle, shopsFor at its prosperity; not burned or abandoned), read from the place by getCell, never from SETTLE. A deer, a boar or a
      hare (Deer, Hind, Elderstag, Crownstag; Boar, Gatefen Boar; Brown Hare) killed there is poaching: recorded always, and seen
      by the usual witnesses by day (at night nobody), it is theft, 2 points, and the beast's worth (deer 30, boar 25, hare 5) in that city.
@@ -622,22 +622,25 @@
      worldState.licences, the character's). Walking into a chase unlicensed says whose it is. The forester, the chase's own witness, is next. */
   const CHASE_R=600,CHASE_WOOD=new Set(['forest','autumn']),POACH_WORTH={Deer:30,Hind:30,Elderstag:30,Crownstag:30,Boar:25,'Gatefen Boar':25,'Brown Hare':5},LICENCE_GOLD=30;
   function licenceDays(){return 3*((typeof CAL!=='undefined'&&CAL.monthLen)||30);}
-  function chaseKeep(t){if(!t||t.kind!=='city'||t.lordless)return false;const F=TS(t).flags||{};if(F.burned!=null||F.abandoned!=null)return false;return shopsFor(t,['castle']).length>0;}
-  // the city whose chase holds (x, z), or null
+  /* S2251 — Michael's B on #1562: a chase is any Gatelands town's or city's that has a lord, keep or not (not a village, a port, a garrison
+     or a farm); before, only a city whose keep stood (one chase in the Gatelands, Ballyowen's, coming and going with its prosperity) */
+  const CHASE_KINDS=new Set(['town','city']);
+  function chaseLord(t){if(!t||!CHASE_KINDS.has(t.kind)||t.lordless)return false;const F=TS(t).flags||{};return F.burned==null&&F.abandoned==null;}
+  // the town or city whose chase holds (x, z), or null (the nearest, where two reach)
   function chaseAt(x,z){if(nationAt(x,z)!=='gatelands')return null;const [ci,cj]=cellOf(x,z);let best=null,bd=CHASE_R;
     for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;
-      for(const t of c.sites){if(t.kind!=='city')continue;const d=Math.hypot(t.x-x,t.z-z);if(d<bd&&chaseKeep(t)){bd=d;best=t;}}}
+      for(const t of c.sites){if(!CHASE_KINDS.has(t.kind))continue;const d=Math.hypot(t.x-x,t.z-z);if(d<bd&&chaseLord(t)){bd=d;best=t;}}}
     if(!best||!CHASE_WOOD.has(lairBiome({x,z})))return null;return best;}
   function licenceUntil(t){const L=worldState.licences;const v=L&&t&&L[t.id];return typeof v==='number'?v:0;}
   function licenceHeld(t){return licenceUntil(t)>absMin();}
   // named action: the lord's licence bought; returns the line
   /* S2246 — quest review Finding 46: the lord sells his own wood in his own voice */
-  function buyLicence(t){if(!chaseKeep(t))return '';if(licenceHeld(t))return `Your licence runs to ${calDateLine(licenceUntil(t)-1)}. The wood keeps its own count, and so do I.`;
+  function buyLicence(t){if(!chaseLord(t))return '';if(licenceHeld(t))return `Your licence runs to ${calDateLine(licenceUntil(t)-1)}. The wood keeps its own count, and so do I.`;
     if(gold<LICENCE_GOLD)return `The licence is ${LICENCE_GOLD} gold, and a light purse never brought a stag home. Come back when it's heavier.`;gold-=LICENCE_GOLD;if(typeof updateHUD==='function')updateHUD();
     const until=Math.floor(absMin())+licenceDays()*1440;(worldState.licences||(worldState.licences={}))[t.id]=until;
     if(typeof addLog==='function')addLog('🦌',`Bought the lord's licence to hunt the chase of ${t.name}, to ${calDateLine(until-1)}.`);
     return `The chase of ${t.name} is open to you until ${calDateLine(until-1)}: deer, boar and hare. Take what the wood can spare, and it'll spare it again.`;}
-  function licenceTopics(t){if(!chaseKeep(t))return [];
+  function licenceTopics(t){if(!chaseLord(t))return [];
     return [{label:`A hunting licence. (${LICENCE_GOLD} gold, three months)`,quest:true,avail:()=>!licenceHeld(t),fn:()=>buyLicence(t)},
       {label:'My hunting licence.',avail:()=>licenceHeld(t),fn:()=>buyLicence(t)}];}
   function poachKilled(e){if(!e||e.farmStock||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const kind=e.baseName||e.name,worth=POACH_WORTH[kind];if(worth==null)return null;
@@ -650,7 +653,7 @@
   // each half second in the world: walking into a chase you hold no licence for says whose it is, once each time you enter
   let _chaseT=0,_chaseIn=null;
   function tickChase(dt){_chaseT-=dt;if(_chaseT>0)return;_chaseT=.5;let t=null;try{t=chaseAt(px,pz);}catch(e){}const id=t?t.id:null;
-    if(id&&id!==_chaseIn&&!licenceHeld(t))showMsg(`The lord's chase of ${t.name}. Its deer, boar and hare are his; his licence is sold at the keep.`,'#e8d8a0');
+    if(id&&id!==_chaseIn&&!licenceHeld(t))showMsg(`The lord's chase of ${t.name}. Its deer, boar and hare are his; his licence is sold in ${t.name}.`,'#e8d8a0');
     _chaseIn=id;}
   /* S2241 — the chase's edge on the map (the page's "no trap": "a chase's edge on the map in the lord's colour", the Crown's crimson). The local
      map and the minimap sample their view in squares of `cell` metres; each square whose middle is in a chase (chaseAt, the rule itself, so it
@@ -662,7 +665,7 @@
   // the cities whose chase reaches into the square of half-side r about (x, z)
   function chaseCitiesNear(x,z,r){const out=[],R=r+CHASE_R,[c0,r0]=cellOf(x-R,z-R),[c1,r1]=cellOf(x+R,z+R);
     for(let j=r0;j<=r1;j++)for(let i=c0;i<=c1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;
-      for(const t of c.sites)if(t.kind==='city'&&Math.abs(t.x-x)<R&&Math.abs(t.z-z)<R&&chaseKeep(t))out.push(t);}
+      for(const t of c.sites)if(CHASE_KINDS.has(t.kind)&&Math.abs(t.x-x)<R&&Math.abs(t.z-z)<R&&chaseLord(t))out.push(t);}
     return out;}
   // is (x, z) in a chase of one of `cities`: the rule of chaseAt (the Gatelands, within CHASE_R, the wood)
   function chaseIn(x,z,cities){let near=false;for(const t of cities)if(Math.hypot(t.x-x,t.z-z)<CHASE_R){near=true;break;}
@@ -707,6 +710,65 @@
     showMsg(`Gate salvage, in a Prior's town: the ${it.name} is taken for the Church, and ${t.name} will not forget it.`,'#e88a8a');
     if(typeof addLog==='function')addLog('🕯',`Offered the ${it.name}, gate salvage, at ${t.name}. It was taken for the Church, and the Church has a note of it.`);
     return true;}
+  /* S2252 — smuggling's search (Michael's A on #1570, docs/design/law-in-three-registers.md, the third of #1540 B's crimes). A tithe-ship
+     of the Compact keeps Aurenne's waters: sailing your own ship within 300 m of Aurenne's coast with cargo aboard (in her hold or on your
+     back), one bears down on you, once a game day, and hails within 60 m. The hail names the search (the page's "no trap"). Declare, and
+     the cargo is entered as bound for port (worldState.tithe.declared, the character's) and never fined. Refuse, or close the hail with no
+     answer, and she searches one time in four, on a stream keyed by her id (the day), so a reload does not change it: every load aboard
+     is taken, and the nearest Aurenne town books it as theft, 2 points, on the Compact's ledger. Outrun her for three minutes and she
+     falls astern. Owed: the cove's fence, and declared cargo sold there booked at your next Aurenne port (A's second half). */
+  const TITHE_R=300,TITHE_SEARCH=.25,TITHE_HAIL=60,TITHE_GIVEUP=180;
+  // is (x, z) water within TITHE_R of Aurenne's shore: sixteen bearings, the first land on each read for its nation
+  function aurCoastNear(x,z){if(worldH(x,z)>-1)return false;
+    for(let k=0;k<16;k++){const a=k*Math.PI/8,c=Math.cos(a),s_=Math.sin(a);for(let d=50;d<=TITHE_R;d+=50){const X=x+c*d,Z=z+s_*d;if(worldH(X,Z)>0){if(nationAt(X,Z)==='aurenne')return true;break;}}}
+    return false;}
+  // every load you carry by sea: the hold's and the bag's, by good
+  function cargoAboard(){const goods={},h=(worldState.ship&&worldState.ship.hold)||{};let n=0;
+    for(const k in h)if(CARGO_GOODS[k]&&h[k]>0){goods[k]=(goods[k]||0)+h[k];n+=h[k];}
+    for(const it of BAG)if(it.type==='cargo'&&CARGO_GOODS[it.cargo]){const q=it.qty||1;goods[it.cargo]=(goods[it.cargo]||0)+q;n+=q;}
+    return {goods,n};}
+  function titheGoods(g){return Object.keys(g).map(k=>`${g[k]} × ${CARGO_GOODS[k].n.toLowerCase()}`).join(', ');}
+  // the town whose ledger a search books: the nearest Aurenne port, town or city of the cells round her
+  function titheSite(x,z){const [ci,cj]=cellOf(x,z);let best=null,bd=1e9;
+    for(let j=cj-2;j<=cj+2;j++)for(let i=ci-2;i<=ci+2;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;
+      for(const t of c.sites){if(!['port','town','city'].includes(t.kind)||nationAt(t.x,t.z)!=='aurenne')continue;const d=Math.hypot(t.x-x,t.z-z);if(d<bd){bd=d;best=t;}}}
+    return best;}
+  // her heading while she has a hail to make (tickOtherShips, 85): your ship
+  function titheSteer(o){return o&&o.tithe&&!o.hailed&&SHIP.mesh?{x:SHIP.x,z:SHIP.z}:null;}
+  let _titheT=0,_titheAsk=null;
+  function tickTithe(dt){_titheT-=dt;if(_titheT>0)return;_titheT=2;const T=worldState.tithe||(worldState.tithe={});
+    if(_titheAsk&&!dlgOpen)titheAnswer(_titheAsk,false); /* the hail closed with no answer is a refusal */
+    let o=OTHER.find(q=>q.tithe&&!q.dead);
+    if(!o){if(T.day===dayNow()||!SHIP.sailing||!SHIP.mesh||!cargoAboard().n||!aurCoastNear(SHIP.x,SHIP.z))return;
+      const id=`tithe:${dayNow()}`,r=seededRng('tithe',id);
+      for(let k=0;k<12;k++){const a=r()*Math.PI*2,d=180+r()*100,x=SHIP.x+Math.cos(a)*d,z=SHIP.z+Math.sin(a)*d;if(worldH(x,z)>=-4)continue;
+        o=spawnOtherShip('merchant',x,z,id);o.tithe=true;o.name='a tithe-ship';o.titheT=0;T.day=dayNow();
+        showMsg("A tithe-ship of the Compact bears down on you, flying the hail.",'#e8d8a0');break;}
+      return;}
+    if(o.hailed)return;o.titheT=(o.titheT||0)+2;
+    if(SHIP.mesh&&Math.hypot(o.x-SHIP.x,o.z-SHIP.z)<TITHE_HAIL&&cargoAboard().n){titheHail(o);return;}
+    if(o.titheT>TITHE_GIVEUP||!cargoAboard().n){o.hailed=true;showMsg('The tithe-ship falls astern.','#c8b880');}}
+  // named action: the hail, and the choice
+  function titheHail(o){o.hailed=true;_titheAsk=o;const P=cargoAboard();
+    openDialog({name:'A tithe-ship',role:"The Compact's revenue",ico:'⚓',noIntro:true,
+      greeting:["Heave to, in the name of the Compact. Declare your cargo, Master, and it is entered as bound for port, to pay its tenth at the quay. Refuse, and we may come aboard and search: what we find undeclared is taken, and entered against you."],
+      topics:[{label:`Declare the cargo. (${titheGoods(P.goods)})`,fn:()=>titheAnswer(o,true)},{label:'Refuse.',fn:()=>titheAnswer(o,false)}]});
+    return o;}
+  // named action: the hail answered; returns her answer
+  function titheAnswer(o,declare){if(!o||_titheAsk!==o)return '';_titheAsk=null;const P=cargoAboard(),T=worldState.tithe||(worldState.tithe={});
+    if(declare){T.declared={goods:P.goods,day:dayNow(),min:absMin()};
+      if(typeof addLog==='function')addLog('⚓',`Declared ${titheGoods(P.goods)} to a tithe-ship of the Compact: entered as bound for port.`);
+      return "Entered as bound for port. Pay your tenth at the quay, Master, and the sea is yours.";}
+    if(seededRng('tithe',o.id+':search')()>=TITHE_SEARCH){if(typeof addLog==='function')addLog('⚓','Refused a tithe-ship’s hail. She let you pass.');
+      return "As you please, Master. The Compact's waters are wide, and its ledger is long.";}
+    const h=worldState.ship&&worldState.ship.hold;if(h)for(const k in h)if(CARGO_GOODS[k])delete h[k];
+    for(let i=BAG.length-1;i>=0;i--)if(BAG[i].type==='cargo'&&CARGO_GOODS[BAG[i].cargo])BAG.splice(i,1);
+    const t=titheSite(o.x,o.z);if(t)bookCrime(t,'theft',0);
+    (worldState.crimes||(worldState.crimes=[])).push({kind:'smuggle',site:t?t.id:null,house:null,goods:P.goods,day:dayNow(),min:absMin()});
+    showMsg(`The tithe-ship's men search you and take ${titheGoods(P.goods)}.`,'#e88a8a');
+    if(typeof addLog==='function')addLog('⚓',`Refused a tithe-ship's hail and was searched: ${titheGoods(P.goods)} taken${t?`, and entered against you at ${t.name}`:''}.`);
+    if(typeof updateHUD==='function')updateHUD();
+    return "Undeclared, and found. It is the Compact's now, Master, and the entry is made against your name.";}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
   function bountyAt(site){const c=fineRecAt(typeof site==='string'?site:site.id);return c?c.bounty:0;} /* S2229 — Aurenne's is the ledger's */
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];
