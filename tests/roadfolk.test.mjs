@@ -4,9 +4,9 @@
 // walks at 1.1 m a game minute with his mule and sells 6 to 10 rows of a goods shop's stock at his home town's prices ×1.1.
 // Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
 // Session 2273: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
-// Session 2274: a rider at 5.5 m a game minute reins in when you come within 6 m and gives the newest event within two cells to the journal and the map.
-// Session 2275: families from a town fallen in the last 20 days walk to the other end; 15 gold owes +1 favour there once it is whole, +2 at most.
-// Session 2276: an official on a road a live camp breaks writes you a writ on it, paid 40 + 10 a tier when the camp is cleared.
+// Session 2275: a rider at 5.5 m a game minute reins in when you come within 6 m and gives the newest event within two cells to the journal and the map.
+// Session 2276: families from a town fallen in the last 20 days walk to the other end; 15 gold owes +1 favour there once it is whole, +2 at most.
+// Session 2277: an official on a road a live camp breaks writes you a writ on it, paid 40 + 10 a tier when the camp is cleared.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -142,7 +142,7 @@ const bi = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D || !
 console.log(JSON.stringify(bi));
 check('the mourners carry a bier, its two poles through their four palms (within 4 cm)', bi.bier && bi.shown && bi.off.every(d => d !== null && d < .04) && bi.bear[0] === 1 && bi.bear[1] === -1, bi);
 check('its bearers hold nothing and wear no cloak, cape or mantle; the bier under 2,000 triangles', bi.bier && bi.dress.every(l => l.length === 0) && bi.tris < 2000, bi);
-// S2274 — the rider: find one mid-road on a loaded road, stand 3 m off him, and he reins in; asked, he gives the news; walk off and he rides on
+// S2275 — the rider: find one mid-road on a loaded road, stand 3 m off him, and he reins in; asked, he gives the news; walk off and he rides on
 const rf = await page.evaluate(() => { const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440);
   for (let dd = day + 1; dd < day + 40; dd++) for (const rd of ROADS.filter(roadfolkRoad)) for (const T of roadTravellers(rd, dd)) { if (T.kind !== 'rider') continue;
     const L = roadLenOf(rd); if (L < 400) continue; const t = T.at + (L * .5) / T.pace; const p = travellerAt(T, rd, t); if (!p) continue;
@@ -177,7 +177,7 @@ const h4 = await page.evaluate((id) => { const D = ROADWALK.get(id); return D ? 
 console.log(JSON.stringify({ h3, h4 }));
 const rv = h3 && h4 ? Math.hypot(h4.x - h3.x, h4.z - h3.z) / (h4.t - h3.t) : 0;
 check('left, he rides on at 5.5 m a game minute and does not stop again', h3 && h4 && !h3.halted && !h4.halted && Math.abs(rv - 5.5) < .4, rv);
-// S2275 — families: burn a road's end, find its family on the road, give, and the favour waits for the town to stand again
+// S2276 — families: burn a road's end, find its family on the road, give, and the favour waits for the town to stand again
 const fm = await page.evaluate(() => { const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440);
   for (const rd of ROADS.filter(roadfolkRoad)) { if (roadLenOf(rd) < 400) continue; const a = siteAnywhere(rd.def.a); if (!a || storyRuin(a)) continue;
     TS(a).flags.burned = now; _roadDays.clear(); const L = roadTravellers(rd, day + 1).filter(T => T.kind === 'family'); if (!L.length) { delete TS(a).flags.burned; continue; }
@@ -200,7 +200,7 @@ const fp = await page.evaluate((o) => { const f0 = (worldState.favor || {})[o.si
   return { f0, f1, f2, E: worldState.roadAlms[o.site], gold }; }, fm);
 console.log(JSON.stringify(fp));
 check('once the town is whole the favour is paid (+1), and past +2 a town a gift adds none', fp.f1 === fp.f0 + 1 && fp.f2 === fp.f1 && fp.E.n === 2 && fp.E.owed === 0 && fp.gold === 25, fp);
-// S2276 — the official's writ: an official on a road with a live camp, asked, writes it; clearing the camp pays it
+// S2277 — the official's writ: an official on a road with a live camp, asked, writes it; clearing the camp pays it
 const of = await page.evaluate(() => { const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440);
   for (let dd = day + 1; dd < day + 80; dd++) for (const rd of ROADS.filter(roadfolkRoad)) { if (!roadCamp(rd)) continue; for (const T of roadTravellers(rd, dd)) { if (T.kind !== 'official') continue;
     const t = T.at + Math.min(200, roadLenOf(rd) * .3) / T.pace; const p = travellerAt(T, rd, t); if (!p) continue; worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; px = p.x + Math.cos(p.ang) * 4; pz = p.z - Math.sin(p.ang) * 4;

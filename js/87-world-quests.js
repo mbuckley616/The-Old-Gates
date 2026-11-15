@@ -390,7 +390,7 @@ const giver=`${lord.title} ${lord.name}`;
       else if(q.kind==='errand'&&q.sub==='watch'){if(d.done){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,`the ${d.fold}`,'\ud83c\udf19');} /* S1776 */
       else if(q.kind==='road'||q.kind==='cull')push(d.x,d.z,GREEN,q.kind==='road'?'the camp':plural(2,q.data.target),q.kind==='road'?'\u26fa':'\u2620');
       else if(q.kind==='duel'&&d.state!=='lost')push(d.x,d.z,GREEN,'the yard','\u2694');
-      else if(q.kind==='writ')push(d.x,d.z,GREEN,d.camp||'the camp','\u26fa'); /* S2276 */
+      else if(q.kind==='writ')push(d.x,d.z,GREEN,d.camp||'the camp','\u26fa'); /* S2277 */
       else if(q.kind==='warcamp'||q.kind==='garrison')push(d.x,d.z,GREEN,q.kind==='warcamp'?'the camp':'the plaza','\u2694');} /* S2130 */
     // guild tasks
     const G=worldState.guild;if(G)for(const g in G){const t=G[g].active;if(!t||taskDone(t))continue;const x=t.sx!=null?t.sx:t.x!=null?t.x:(t.siteId?(siteAnywhere(t.siteId)||{}).x:null),z=t.sz!=null?t.sz:t.z!=null?t.z:(t.siteId?(siteAnywhere(t.siteId)||{}).z:null);if(x!=null)push(x,z,t.kind==='clear'?RED:GREEN,t.short,t.kind==='relic'?'\u25c6':(t.kind==='beast'||t.kind==='wizard'||t.kind==='creature'||t.kind==='hunt')?'\u2620':undefined);}
@@ -1873,7 +1873,7 @@ const giver=`${lord.title} ${lord.name}`;
   }
   function sack(t,camp){const st=TS(t);flag(t,'sacked',true);st.p=15;const lord=lordFor(t);if(typeof addLog==='function')addLog('🔥',`${t.name} was sacked by the bandits of ${camp.name}.`);showMsg(`Word comes that ${t.name} has been sacked.`,'#ff8060');}
   function markRoadCleared(a,b){(worldState.roadsCleared||(worldState.roadsCleared={}))[a+'|'+b]=worldState.gameTimeAbsMinutes||0;}
-  function markLairDead(siteId){(worldState.lairs||(worldState.lairs={}))[siteId]=worldState.gameTimeAbsMinutes||0;if(typeof roadWritPay==='function')roadWritPay(siteId);} /* S2276 — a road-warden's writ on the camp is paid */
+  function markLairDead(siteId){(worldState.lairs||(worldState.lairs={}))[siteId]=worldState.gameTimeAbsMinutes||0;if(typeof roadWritPay==='function')roadWritPay(siteId);} /* S2277 — a road-warden's writ on the camp is paid */
   // S719 — canon §12, Michael’s B on #227: a slain lair-beast doubles the herbs of the glade nearest its lair, if that glade lies
   // within 700 units (the reach at which a lair weighs on a town). Read from the cells' own sites, whatever has loaded; a cell is
   // 2,400 across, so the glades within 700 of any lair within 700 of this glade lie in the 5×5 cells round it.
@@ -2133,7 +2133,7 @@ const giver=`${lord.title} ${lord.name}`;
   function roadAt(pts,u){u=Math.max(0,Math.min(1,u));const fi=u*(pts.length-1);const i0=Math.min(pts.length-2,Math.floor(fi)),f=fi-i0;const p0=pts[i0],p1=pts[i0+1];return {x:p0.x+(p1.x-p0.x)*f,z:p0.z+(p1.z-p0.z)*f,ang:Math.atan2(p1.x-p0.x,p1.z-p0.z)};}
   function cartMesh(){const c=x=>new THREE.Color(x);return new THREE.Mesh(mergeParts([{geo:new THREE.BoxGeometry(1.6,.5,1.0),color:c(0x6a4a2a),y:.6},{geo:new THREE.CylinderGeometry(.42,.42,.12,10),color:c(0x3a2a1a),x:0,y:.42,z:.6,rx:Math.PI/2},{geo:new THREE.CylinderGeometry(.42,.42,.12,10),color:c(0x3a2a1a),x:0,y:.42,z:-.6,rx:Math.PI/2},{geo:new THREE.BoxGeometry(.9,.5,.7),color:c(0x9a8a6a),y:1.1},{geo:new THREE.BoxGeometry(.08,.08,1.8),color:c(0x4a3018),y:.5,z:1.3}]),VC_MAT);}
   function overturn(m,x,z,ang){m.position.set(x,worldH(x,z)+.5,z);m.rotation.set(0,ang,0);m.rotateZ(Math.PI*.5);}
-  function breakRoute(key,rt,campName){const a=siteAnywhere(rt.a),b=siteAnywhere(rt.b);rt.broken=true;rt.by=campName;rt.brokenAt=worldState.gameTimeAbsMinutes||0; /* S2274 — when, for a rider's news */
+  function breakRoute(key,rt,campName){const a=siteAnywhere(rt.a),b=siteAnywhere(rt.b);rt.broken=true;rt.by=campName;rt.brokenAt=worldState.gameTimeAbsMinutes||0; /* S2275 — when, for a rider's news */
     if(!rt.wreck){const rd=ROADS.find(r=>routeKey(r.def.a,r.def.b)===key);if(rd){const u=rt.threat?Math.min(1,rt.threat.f*2):.5;const p=roadAt(rd.pts,u);rt.wreck={x:p.x,z:p.z,ang:p.ang};}}
     delete rt.threat;const C=CARAVANS.get(key);if(C&&C.attack)C.attack.enemies.forEach(e=>{e._caravan=null;});removeCaravan(key);
     if(a&&b){showMsg(`The ${a.name}–${b.name} caravan was taken by the bandits of ${campName}.`,'#ff8060');if(typeof addLog==='function')addLog('🐴',`Trade route ${a.name}–${b.name} broken by ${campName}.`);}}
@@ -2284,7 +2284,7 @@ const giver=`${lord.title} ${lord.name}`;
     const topics=Q.mourners?[]:[{label:'Where are you bound?',fn:()=>{sightPlace(G.id,G.name,`Pencilled ${G.name} on the map, where a pilgrim was bound.`);return `To ${G.kind==='shrine'?'the ':''}${G.name}. It lies ${compassWord(G.x-px,G.z-pz)} of here.`;}}];
     const def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:Q.mourners?0x2a2622:0x8a7a5e,topics});def._siteId=home.id;def.roadfolk=T.id;if(Q.mourners){def.bearer=k?-1:1;def._twin='bier';} /* S2273 — the bier's bearers (32-people.js), not the town's own of that name */
     return def;}
-  // S2274 — the rider (the page's rider row): the Crown's post on the Gatelands, a reeve's rider on the Mark, the Compact's courier in Aurenne,
+  // S2275 — the rider (the page's rider row): the Crown's post on the Gatelands, a reeve's rider on the Mark, the Compact's courier in Aurenne,
   // at 5.5 m a game minute. Come within 6 m of him, or stand in the road as he comes, and he reins in (RIDER_HAIL): he waits while you are
   // within 10 m, an hour of the clock at most (RIDER_WAIT), and only the once. The minutes he stands are his lag in worldState.roadfolk, as the
   // merchant's fight is, so the clock still says where he is. Asked, he gives the newest event within two cells of him in the last 20 days
@@ -2319,7 +2319,7 @@ const giver=`${lord.title} ${lord.name}`;
       D.halt={at:now,lag0:(R&&R.lag)||0};rfSet(T.id,{hailed:true,day:dayNow()});showMsg(`${D.npc.def.name}, ${D.npc.def.post}, reins in.`,'#e8d8a0');}
     const H=D.halt;if(now-H.at>=RIDER_WAIT||Math.hypot(px-D.npc.def.x,pz-D.npc.def.z)>RIDER_LET){rfSet(T.id,{lag:H.lag0+Math.min(RIDER_WAIT,now-H.at)});delete D.halt;return false;}
     rfSet(T.id,{lag:H.lag0+(now-H.at)});return true;}
-  // S2275 — a family on the road (the page's family row): two more a day from an end besieged, sacked, burned, plagued, occupied or abandoned in
+  // S2276 — a family on the road (the page's family row): two more a day from an end besieged, sacked, burned, plagued, occupied or abandoned in
   // the last 20 days, walking at 1.0 m a game minute to the other end; two people side by side (the handcart is the bodies builder's). Give
   // them 15 gold and their town owes you +1 favour, paid once it is whole again (none of those six flags), at most +2 a town however often you
   // give. The gift is kept on the family's record (worldState.roadfolk, the world's: one gift a family), the favour owed in worldState.roadAlms
@@ -2338,7 +2338,7 @@ const giver=`${lord.title} ${lord.name}`;
   function familyDef(T,rd,p,k){const home=roadfolkHome(T,rd),r=seededRng('roadfolk',T.id+(k?':'+k:'')),[i,j]=cellOf(home.x,home.z),nat=nationOf(i,j),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
     const nm=pick(r,k?bank.f:bank.m);const topics=k?[]:[{label:`Here. Take this. (${FAMILY_ALMS} gold)`,avail:()=>!(rfRec(T.id)||{}).alms,fn:()=>familyGive(T,rd)}];
     const def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x5e5446,topics});def._siteId=home.id;def.roadfolk=T.id;return def;}
-  // S2276 — the official (the page's official row): the Crown's road-warden on the Gatelands, a reeve's man on the Mark, the Compact's clerk in
+  // S2277 — the official (the page's official row): the Crown's road-warden on the Gatelands, a reeve's man on the Mark, the Compact's clerk in
   // Aurenne, walking at 1.3 m a game minute with a guard beside him. Where a live bandit camp breaks his road (the merchant's test: one within
   // 500 m of the road's midpoint, not cleared) he writes you a writ on it, a quest of its own (kind 'writ', id writ:<camp>, in the journal and
   // on the map at the camp), and it pays 40 + 10 a tier of the camp's ground the moment the camp is cleared (markLairDead). One writ a camp.
@@ -2368,14 +2368,14 @@ const giver=`${lord.title} ${lord.name}`;
   function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);if(D.bier){sc.remove(D.bier);D.bier.traverse(o=>{if(o.geometry)o.geometry.dispose();});}ROADWALK.delete(id);}
   function tickRoadfolk(dt){if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
     if(Math.random()<.002)rfPrune();
-    {const d=dayNow();if(d!==_almsDay){_almsDay=d;familyPay();}} /* S2275 — favour owed for alms, paid once the town is whole */
+    {const d=dayNow();if(d!==_almsDay){_almsDay=d;familyPay();}} /* S2276 — favour owed for alms, paid once the town is whole */
     const all=roadfolkNow().filter(o=>ROADFOLK_DRAW[o.T.kind]).map(o=>(o.dist=Math.hypot(o.p.x-px,o.p.z-pz),o)).filter(o=>o.dist<ROADFOLK_NEAR).sort((x,y)=>x.dist-y.dist||(x.T.id<y.T.id?-1:1)).slice(0,ROADFOLK_DRAWN);
     for(const D of ROADWALK.values())if(D.attack&&!all.some(o=>o.T.id===D.T.id)){const p=D.stop||{x:D.attack.x,z:D.attack.z,ang:D.attack.ang,d:0};roadAmbushTick(D,p,dt||0);} /* a fight holds its merchant though the clock walks his place on */
     const keep=new Set(all.map(o=>o.T.id));for(const [id,D] of [...ROADWALK.entries()])if(!keep.has(id)&&!D.attack)dropTraveller(id);
     for(let {T,rd,p} of all){let D=ROADWALK.get(T.id);
       if(!D){D=buildTraveller(T,rd,p);ROADWALK.set(T.id,D);{const R=rfRec(T.id);if(R&&R.sprung&&!R.saved&&!R.lost){rfSet(T.id,{lost:true});dropTraveller(T.id);continue;}} /* a fight left unfinished by a load: his pack was taken */}
       if(roadAmbushTick(D,p,dt||0))continue;
-      if(riderTick(D,p)){const q=travellerAt(T,rd,worldState.gameTimeAbsMinutes||0);if(q)p=q;} /* S2274 — reined in: the clock, less the minutes he has stood, is where he stands */
+      if(riderTick(D,p)){const q=travellerAt(T,rd,worldState.gameTimeAbsMinutes||0);if(q)p=q;} /* S2275 — reined in: the clock, less the minutes he has stood, is where he stands */
       const y=worldH(p.x,p.z);D.npc.g.position.set(p.x,y+(D.mount?RIDER_SEAT:0),p.z);D.npc.g.rotation.y=p.ang;D.npc.def.x=p.x;D.npc.def.z=p.z;D.npc.home={x:p.x,z:p.z};D.npc.dot.position.set(p.x,y+1.5,p.z);
       if(D.beast){const bk=D.mount?0:1.6,bx=p.x-Math.sin(p.ang)*bk,bz=p.z-Math.cos(p.ang)*bk;D.beast.position.set(bx,worldH(bx,bz),bz);D.beast.rotation.y=p.ang;}
       for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
