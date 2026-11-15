@@ -1141,3 +1141,94 @@ against 1.96 M (−6%) and High 2.32 M against 2.64 M (−12%) is the known swin
 full level's ring when it was counted. Portclare's square at High is 2.06 M again (Bodies 57). The inn (34 calls, 26k) and the gate (102 calls,
 397k) are unchanged to the triangle. A second run of `budget` an hour earlier, unrecorded, read the same within 1% (Dunmore noon Middle 1.97 M
 with a body near).
+
+### s1591 — 2026-11-15 00:59 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 594 | 1.10 M | 0 | 0 | 121 | 127 | 254 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | Middle | 768 | 1.84 M | 155 | 6 | 122 | 127 | 266 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, noon | High | 835 | 2.59 M | 187 | 6 | 139 | 127 | 284 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Low | 649 | 1.06 M | 0 | 0 | 119 | 183 | 254 | 93 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | Middle | 834 | 1.78 M | 167 | 6 | 119 | 183 | 266 | 93 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| Dunmore street, midnight | High | 894 | 2.32 M | 209 | 6 | 119 | 183 | 284 | 93 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 |
+| the field west of Dunmore, noon | Low | 559 | 648k | 0 | 0 | 121 | 113 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | Middle | 667 | 1.07 M | 83 | 6 | 121 | 113 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, noon | High | 714 | 1.53 M | 122 | 6 | 121 | 113 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Low | 657 | 678k | 0 | 0 | 140 | 192 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | Middle | 809 | 1.12 M | 143 | 6 | 124 | 192 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+| the field west of Dunmore, dawn | High | 861 | 1.64 M | 187 | 6 | 124 | 192 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 |
+
+### s1591 — 2026-11-15 01:06 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 363 | 688k | 0 | 0 | 32 | 64 | 192 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | Middle | 558 | 1.46 M | 157 | 6 | 48 | 64 | 208 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | High | 604 | 1.82 M | 192 | 6 | 48 | 64 | 219 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+### s1591 — 2026-11-15 01:13 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 364 | 688k | 0 | 0 | 32 | 64 | 192 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | Middle | 558 | 1.46 M | 157 | 6 | 47 | 64 | 208 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| Portclare square, noon | High | 604 | 1.82 M | 192 | 6 | 47 | 64 | 219 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  |
+
+s1591 (QA, Session 2239): `budget` 1/1 and `budgetport` 1/1, after nine merges since s1582 (the goods shops' rods, net and spyglass S2237,
+the spyglass raised S2236, the bald middle level's hair S2231, gardens off the walks S2233, poaching S2235 and the producer's and concept
+artist's docs). Draw calls are flat everywhere: +1 to +19, all in Land (+1) and Other (+1) and the one swing below. Houses is unchanged at
+every spot, so the goods shops' racks are indoors only, as built. Triangles move only with Bodies, the known swing: Dunmore's street at
+noon, High, reads 2.59 M against 2.32 M (+12%), with Bodies 122 → 139 calls, a townsperson inside the full level's ring this time (s1565
+read 2.64 M the same way); the field at dawn, Low, 678k against 633k (+7%), Bodies 124 → 140. Portclare's square at High went the other way,
+2.06 M → 1.82 M (Bodies 57 → 48). The middle level's hair ribbons (S2231, +33–50k a long-haired body) do not show at any spot. The inn
+(34 calls, 26k) and the gate (102 calls, 397k) are unchanged to the triangle. Every ceiling held.
+
+### s1600 — 2026-11-15 07:10 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 364 | 690k | 0 | 0 | 33 | 64 | 192 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 331, 621k |
+| Portclare square, noon | Middle | 557 | 1.46 M | 157 | 6 | 47 | 64 | 208 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 502, 1.31 M |
+| Portclare square, noon | High | 603 | 1.82 M | 192 | 6 | 47 | 64 | 219 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 546, 1.64 M |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  | 33, 20k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  | 68, 352k |
+
+### s1600 — 2026-11-15 07:10 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 611 | 1.22 M | 0 | 0 | 139 | 127 | 254 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 472, 923k |
+| Dunmore street, noon | Middle | 785 | 1.97 M | 155 | 6 | 140 | 127 | 266 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 617, 1.60 M |
+| Dunmore street, noon | High | 873 | 2.71 M | 187 | 6 | 178 | 127 | 284 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 666, 2.08 M |
+| Dunmore street, midnight | Low | 648 | 1.06 M | 0 | 0 | 119 | 183 | 254 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 529, 923k |
+| Dunmore street, midnight | Middle | 833 | 1.78 M | 167 | 6 | 119 | 183 | 266 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 711, 1.63 M |
+| Dunmore street, midnight | High | 893 | 2.32 M | 209 | 6 | 119 | 183 | 284 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 766, 2.16 M |
+| the field west of Dunmore, noon | Low | 558 | 648k | 0 | 0 | 121 | 113 | 281 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 437, 484k |
+| the field west of Dunmore, noon | Middle | 666 | 1.07 M | 83 | 6 | 121 | 113 | 300 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 544, 898k |
+| the field west of Dunmore, noon | High | 713 | 1.53 M | 122 | 6 | 121 | 113 | 308 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 589, 1.36 M |
+| the field west of Dunmore, dawn | Low | 657 | 678k | 0 | 0 | 140 | 192 | 281 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 517, 485k |
+| the field west of Dunmore, dawn | Middle | 809 | 1.12 M | 143 | 6 | 124 | 192 | 300 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 682, 963k |
+| the field west of Dunmore, dawn | High | 861 | 1.64 M | 187 | 6 | 124 | 192 | 308 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 728, 1.47 M |
+
+### s1600 — 2026-11-15 07:17 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 363 | 688k | 0 | 0 | 32 | 64 | 191 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 331, 621k |
+| Portclare square, noon | Middle | 560 | 1.46 M | 157 | 6 | 50 | 64 | 207 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 502, 1.31 M |
+| Portclare square, noon | High | 617 | 2.06 M | 192 | 6 | 61 | 64 | 218 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 544, 1.63 M |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  | 33, 20k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  | 68, 352k |
+
+Session 2249 (QA): the tables from s1600 on carry a last column, the frame counted again with every body hidden (the place's own calls
+and triangles). The two Portclare tables above are two runs of `budgetport` side by side with `budget` (the second suite runs both). Against
+s1591, booted from that commit with the same kit, the place's own triangles are unchanged at every spot (to 640 triangles); only the
+bodies moved. Dunmore's street at noon read 1.22 M at Low, over the 1.2 M ceiling (`budget` red), with 300k of it bodies; a second run
+read 1.10 M with 181k of bodies, and s1591's 1.10 M with 178k. At High the same spot's bodies read 504k and 240k on two runs of one build,
+Portclare's 425k and 186k. A townsperson inside the full level's ring adds 100–260k triangles; at Low the street has 277k of room over
+the place's 923k. Filed in backlog I for the bodies builder.
