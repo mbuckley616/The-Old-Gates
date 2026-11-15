@@ -1246,7 +1246,7 @@ function coachRoom(o = {}, r = stream('coachroom')) {
 // merchant: 'misc' (bolts of cloth and crocks, the brass scales, a bank of drawers), 'potion' (jars, the scales and a mortar, two show
 // globes in the window, a dresser of jars), 'armor' (helms and folded mail, armour stands, shields in a crate), 'barber' (linen and
 // bottles, the strop and razors, the barber's chair before a glass, a wash stand, the basin in the window). The game's KIT_SHOPS
-// that stand in a merchant's house in a town (js/83-world-generator.js): armor, potion, misc and barber. Copied into the kit in Session 2268
+// that stand in a merchant's house in a town (js/83-world-generator.js): armor, potion, misc and barber. Copied into the kit in Session 2272
 // (Michael's A on #1574), with pieces.js's back door into the kitchen and the shop door's leaf left to the room (`ajar`).
 const MERCHANT_SIGN = { misc: 'GENERAL STORES · GOODS', potion: 'APOTHECARY · DRUGGIST', armor: 'ARMOURER', barber: 'BARBER · SURGEON' };
 // ── the Gatelands townhouse as a room (rooms.js's Session 1189, Michael's A on #303; laid out by bays in Session 1427; card F9), copied
@@ -1395,7 +1395,7 @@ function townhouseRoom(o = {}, r = stream('townhouse')) {
         else bolt(CX0 + .26, y, cz + .55, 'linen', Math.PI / 2); } }
     candles.push(candle(CX0 + .2, F0 + CH, CZ1 - .15));
     // the shop's strongbox in the keeper's walk at the counter's end, under the window's end
-    if (o.chest !== false) { bx('oak', -X + .42, -X + 1.02, F0, F0 + .5, CZ1 + .1, CZ1 + .55, 'chest', 0); bx('iron', -X + .42, -X + 1.02, F0 + .38, F0 + .42, CZ1 + .09, CZ1 + .56); } /* (Session 2268) o.chest false: the game sets its own lidded strongbox here */
+    if (o.chest !== false) { bx('oak', -X + .42, -X + 1.02, F0, F0 + .5, CZ1 + .1, CZ1 + .55, 'chest', 0); bx('iron', -X + .42, -X + 1.02, F0 + .38, F0 + .42, CZ1 + .09, CZ1 + .56); } /* (Session 2272) o.chest false: the game sets its own lidded strongbox here */
     // the window's board at the sill, the trade's show on it (an apothecary's two show globes of coloured water)
     { const y = sw.y - .04, z0 = Z - .3; bx('oak', wx0, wx1, y, y + .03, z0, Z - .01, 'board', 0); const zc = z0 + .15;
       if (MR === 'potion') { for (const [f, k] of [[.25, 'blue'], [.75, 'wool']]) { const x = wx0 + (wx1 - wx0) * f; put(new THREE.SphereGeometry(.13, 14, 10), k, x, y + .03 + .16, zc); put(new THREE.CylinderGeometry(.03, .05, .1, 8), k, x, y + .03 + .33, zc); } stock('x', zc, wx0 + (wx1 - wx0) * .35, wx0 + (wx1 - wx0) * .65, y + .03); }

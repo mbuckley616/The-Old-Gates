@@ -1,4 +1,4 @@
-// A Gatelands town's shop inside the merchant's house on the new look (Session 2268; card F9, Michael's A on DECISION #1574: the
+// A Gatelands town's shop inside the merchant's house on the new look (Session 2272; card F9, Michael's A on DECISION #1574: the
 // merchant's house as drawn, in every Gatelands town). On ?look=new a town's armourer, apothecary, goods shop and barber stand in the
 // street as the kit's merchant's house (3 to 5 bays, 6.75 to 8 m deep); inside it is PKIT.gl.townhouse with o.merchant (rooms.js's
 // Session 2240): the shop across the front, the counter along the west side, the keeper's walk and the stock on the gable behind it, the

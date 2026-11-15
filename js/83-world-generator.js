@@ -2417,7 +2417,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S2268 (card F9; Michael's A on #1574; OG-043, OG-115) — on the new look a Gatelands town's armourer, apothecary, goods shop and barber
+  // S2272 (card F9; Michael's A on #1574; OG-043, OG-115) — on the new look a Gatelands town's armourer, apothecary, goods shop and barber
   // standing as the kit's merchant's house (lot.kit.kind 'merchant', 3 to 5 bays, 6.75 m deep or more) opens on the merchant's house
   // inside (PKIT.gl.townhouse with o.merchant, rooms.js's Session 2240): the shop across the whole front, the counter along the west side
   // with the keeper's walk and the shelves of stock on the gable behind it, the show at the window, the trade's piece against the cross
@@ -4019,7 +4019,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitCoachRoom(house))return buildKitCoachRoom(house); /* S1368 — a town's coaching inn inside, at its true size */
     if(kitCottage(house))return buildKitCottage(house); /* S1392 — a Gatelands village's cottage inside, at its true size */
     if(kitTownhouse(house))return buildKitTownhouse(house); /* S1437 — a Gatelands town's townhouse inside, at its true size */
-    if(kitMerchant(house))return buildKitMerchant(house); /* S2268 — a Gatelands town's shop in the merchant's house, at its true size (#1574 A) */
+    if(kitMerchant(house))return buildKitMerchant(house); /* S2272 — a Gatelands town's shop in the merchant's house, at its true size (#1574 A) */
     if(kitFarmhouse(house))return buildKitFarmhouse(house); /* S1459 — a Gatelands village farm's house inside, at its true size */
     if(kitByre(house))return buildKitByre(house); /* S1480 — a Gatelands farm's byre inside, at its true size */
     if(kitBarn(house))return buildKitBarn(house); /* S1475 — a Gatelands farm's barn inside, at its true size */

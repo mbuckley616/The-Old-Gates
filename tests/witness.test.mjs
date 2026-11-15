@@ -9,7 +9,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 
 const rows = [];
-// Session 2268 (#1574 A): Dunmore's armourer, apothecaries and goods shops are the merchant's house inside now, the strongbox by the
+// Session 2272 (#1574 A): Dunmore's armourer, apothecaries and goods shops are the merchant's house inside now, the strongbox by the
 // keeper in the shop and no back room; the back room's checks (#516, #824 C) take the generated shops that keep one, Ashenmoor's three
 // and Droichead's goods shop, beside Dunmore's
 const shops = [];
@@ -25,7 +25,7 @@ for (const [site, id] of shops) {
     // at the strongbox, as the critic stood
     px = X.x; pz = X.z + .8; const dBox = Math.hypot(px - kx, pz - kz); const atBox = W(); const lineBox = WORLD.intSightLine(kx, kz, px, pz);
     // a step from the keeper, in plain view: always seen
-    px = kx + (Math.abs(X.x - kx) > .3 ? (X.x > kx ? 1.5 : -1.5) : (kx < h.intW / 2 ? 1.5 : -1.5)); pz = kz; const near = W(); /* (S2268) a box in line with the keeper: the step into the room, not into the wall behind him */
+    px = kx + (Math.abs(X.x - kx) > .3 ? (X.x > kx ? 1.5 : -1.5) : (kx < h.intW / 2 ? 1.5 : -1.5)); pz = kz; const near = W(); /* (S2272) a box in line with the keeper: the step into the room, not into the wall behind him */
     // Session 1436: the same spot a storey up (3 m) is not seen, and seen again with the keeper on that floor too (a resident woken upstairs)
     jumpY = 3; const nearUp = W(); K.userData.floorY = 3; const nearBoth = W(); K.userData.floorY = null; jumpY = 0;
     // at the strongbox again with every door of the room open: the keeper at the counter sees you exactly when the box is in reach

@@ -49,7 +49,7 @@ check('an inn\'s taproom is 10 to 12 m by 7.5 to 9 (the coaching inn\'s front, i
 // door standing open and its roof open to the tie beams, so it is measured as that piece, not as a shop
 const FG = all.weapon && all.weapon.forge ? all.weapon : null;
 if (FG) check('a smith\'s forge is its piece\'s inside, 7.2 by 4.8 (the kit\'s forge, 8.4 by 6 m)', Math.abs(FG.W - 7.2) < .05 && Math.abs(FG.D - 4.8) < .05, [FG.W, FG.D]);
-// S2268 (#1574 A): a Gatelands town's armourer, apothecary, goods shop and barber are the merchant's house inside (rooms.js's S2240): measured
+// S2272 (#1574 A): a Gatelands town's armourer, apothecary, goods shop and barber are the merchant's house inside (rooms.js's S2240): measured
 // as its piece, its bays of 1.95 m and their end piers less the walls (bays × 1.95 − 0.3) by the house's depth less its walls (0.9)
 const MR = ['armor', 'potion', 'misc', 'barber'].filter(t => all[t] && all[t].merchant);
 if (MR.length) check(`a shop in a merchant's house is its piece's inside (${MR.map(t => `${t} ${all[t].W} by ${all[t].D}`).join(', ')})`, MR.every(t => { const [n, d] = all[t].merchant; return Math.abs(all[t].W - (n * 1.95 - .3)) < .02 && Math.abs(all[t].D - (d - .9)) < .02; }), MR.map(t => [t, all[t].W, all[t].D, all[t].merchant]));
