@@ -4382,6 +4382,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
         col=`rgb(${(c.r*255*k)|0},${(c.g*255*k)|0},${(c.b*255*k)|0})`;}
       const [sx,sz]=toS(x,z);ctx.fillStyle=col;ctx.fillRect(sx,sz,cell*s+1,cell*s+1);
     }
+    if(typeof chaseEdge==='function')try{chaseEdge(ctx,toS,px-radius,pz-radius,Math.ceil(radius*2/cell),cell,s);}catch(e){} /* S2241 — a lord's chase tinted, its edge in the Crown's crimson (86) */
     // roads
     ctx.strokeStyle='#b8a070';ctx.lineWidth=Math.max(1.5,3*s);ctx.lineCap='round';
     for(const rd of ROADS){const pts=rd.pts;let on=false;ctx.beginPath();for(let i=0;i<pts.length;i++){const p=pts[i];if(Math.abs(p.x-px)>radius+10||Math.abs(p.z-pz)>radius+10){on=false;continue;}const [sx,sz]=toS(p.x,p.z);if(!on){ctx.moveTo(sx,sz);on=true;}else ctx.lineTo(sx,sz);}ctx.stroke();}
