@@ -80,6 +80,13 @@ const loose = await page.evaluate(() => { const C = [...HB_RIGS].filter(r => r.h
 console.log('  loose under a cloak:', JSON.stringify(loose));
 check('loose hair under a long cloak rides the chest below the neck and stays under the sheet as they walk: under 2% of the hair by the cloak outside it, none by 1.2 cm',
   loose.length >= 1 && loose.every(r => r.chest && r.n > 1000 && r.share < .02 && r.worst < .012), loose);
+// S2266 — a shoulder cape rides the chest (hbCapeChest): on the root, the spine's bend carried the loose hair under it out through its back
+// (Niamh 2.8% → 0.5% of her hair by the cape, Caoimhe 10% → 4.2%)
+const capeRide = await page.evaluate(() => [...HB_RIGS].filter(r => r.hb && r.hb.P && r.hbG && r.hbG.dress && r.hbG.dress.cape && r.hb.root.getObjectByName('cloak')).map(r => { const sk = r.hb.P.skeleton, il = sk.bones.indexOf(r.hb.P.byName.root), ic = sk.bones.indexOf(r.hb.P.byName.spine03); let root = 0, chest = 0;
+  r.hb.root.traverse(m => { if (!m.isSkinnedMesh || !/^(cloak|cloakHem|brooch|collar\d)$/.test(m.name)) return; const si = m.geometry.attributes.skinIndex.array, sw = m.geometry.attributes.skinWeight.array; for (let i = 0; i < si.length; i++) if (sw[i] > 0) { if (si[i] === il) root++; if (si[i] === ic) chest++; } });
+  return { key: r.g.hbKey, root, chest }; }));
+console.log("  cape rides:", JSON.stringify(capeRide));
+check(`a shoulder cape rides the chest, none of it on the root (${capeRide.length} caped bodies: ${capeRide.map(c => c.key + " " + c.chest).join(", ")})`, capeRide.length >= 1 && capeRide.every(c => c.root === 0 && c.chest > 1000), capeRide);
 
 
 // S1763 (L1, OG-109's winter column): in winter, out of doors, a share of each people wear the kit's winter coat (the Aurennais the

@@ -67,9 +67,10 @@ const hunt = await page.evaluate(() => { forceTime(12); PHP = maxHP; dead = fals
     if (atkCd <= 0 && !_pendingStrike && swings < 4) { attack(false); swings++; } }, 240);
   e._duelHold = false; const c = ZONE_CORPSES.slice(c0).find(k => k.name === e.name || k.body === e.mesh) || ZONE_CORPSES[ZONE_CORPSES.length - 1];
   return { dead: !!e.dead, swings, frames, items: c ? c.items.map(i => i.name + '×' + (i.qty || 1)) : null, meat: c ? c.items.filter(i => i.food === 'meat').reduce((a, i) => a + (i.qty || 1), 0) : 0,
-    other: c ? c.items.filter(i => i.food !== 'meat').length : -1, mates: mates.length, bolted: mates.filter(o => o._w && o._w.mode === 'flee').length, wait, taken: WILD_TAKEN.get(e._wildKey) === lootDay() }; });
-check(`one blow kills a deer (${hunt.swings} swing), its body ${JSON.stringify(hunt.items)}: 2 to 4 meat and nothing else, taken for the day`,
-  hunt.dead && hunt.swings === 1 && hunt.meat >= 2 && hunt.meat <= 4 && hunt.other === 0 && hunt.taken, hunt);
+    other: c ? c.items.filter(i => i.food !== 'meat' && !i._skin).length : -1, hide: c ? c.items.filter(i => i._skin).reduce((a, i) => a + (i.qty || 1), 0) : -1, mates: mates.length, bolted: mates.filter(o => o._w && o._w.mode === 'flee').length, wait, taken: WILD_TAKEN.get(e._wildKey) === lootDay() }; });
+// S2266 — since S2123 a body that gives meat also lies with its hide (a deer's 1), taken with a skinning knife: meat, one hide, nothing else
+check(`one blow kills a deer (${hunt.swings} swing), its body ${JSON.stringify(hunt.items)}: 2 to 4 meat, its one hide and nothing else, taken for the day`,
+  hunt.dead && hunt.swings === 1 && hunt.meat >= 2 && hunt.meat <= 4 && hunt.hide === 1 && hunt.other === 0 && hunt.taken, hunt);
 check(`its herd bolts (${hunt.bolted} of ${hunt.mates}); a grazing herd beside you did not stop you passing time`, hunt.mates > 0 && hunt.bolted === hunt.mates && hunt.wait && hunt.wait.ok, hunt);
 
 const away = await page.evaluate(() => { const n0 = ZONES.world.enemies.filter(e => e.wild && !e.dead).length; px += 1500; stream(px, pz, true); _wildT = 0; tickWildSpawn(.1);
