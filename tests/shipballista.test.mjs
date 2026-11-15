@@ -3,6 +3,9 @@
 // 0.6 at z 6.45 on the game's caravel, built with her cabin, where the prototype's took 0.65 at 6.3; on the cog's and the galleon's forecastle); its four feet on her deck; the bolt's line clear of her hull and rig to 40 m at 0 and
 // ±30°; your own ship carries it while it is fitted and loses it when it is taken out; its pedestal is solid; a black-sail cutter carries
 // one, its head laid on you when you are in her arc; one engine is 1,924 triangles in 9 draws.
+// Session 2254 (the second half of #1580 A): the galleon's guns. Her lids are out of the hull's bake, shut in 2 draws; a side runs out
+// (the lid up 110°, a saker's muzzle 0.55 m outside, the port dark) while it bears, alone or with the other, in 4 more; your own runs out
+// the side a black galleon lies on while you sail and shuts both when you do not, and hers runs out the side that bears on you.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -36,6 +39,16 @@ const r = await page.evaluate(() => { const out = { fit: {}, feet: {}, line: {} 
   o.yaw = Math.atan2(-(SHIP.x - o.x), -(SHIP.z - o.z)) + .35; SHIP.sailing = true;
   out.bears = typeof herBallistaBears === 'function' ? herBallistaBears(o) : null;
   for (let i = 0; i < 30; i++) { o.mesh.userData.ballista.t -= 100; placeOther(o); } out.herYaw = +o.mesh.userData.ballista.yaw.toFixed(3);
+  // the galleon's gun deck (S2254): the sides apart, the muzzles outside her planking, and both ways in play
+  { const m = WORLD.buildShipMesh(22, 7, 'pirate', 'galleon', 'mark'), G = m.userData.gunDeck, n = q => q.visible ? q.geometry.groups.length : 0, st = () => [n(G.lids), n(G.guns)];
+    out.deck = { shut: st() }; shipGunsOut(m, true, false); out.deck.port = st(); shipGunsOut(m, true, true); out.deck.both = st(); out.deck.mats = G.lids.material.every(x => [].concat(m.material).includes(x));
+    out.deck.tris = [G.lids.userData.base.tris, G.guns.userData.base.tris]; m.position.set(0, 0, 0); m.rotation.set(0, 0, 0); m.updateMatrixWorld(true);
+    const K = SHIP_GEO.get(m.userData.bakeKey).kit; out.deck.muz = K.ports.map(([e, z, y]) => { rc.set(V(e * 4.5, y + .08, z), V(-e, 0, 0)); const a = rc.intersectObject(G.guns, false)[0], b = rc.intersectObject(m, false)[0]; return a && b ? +(Math.abs(a.point.x) - Math.abs(b.point.x)).toFixed(2) : null; }); }
+  { worldState.ship = { cls: 'galleon', fit: [], hold: { round: 12 }, name: 'Test Heron', hull: 200, rig: 100 }; const os = SHIP.sailing; SHIP.sailing = false;
+    if (SHIP.mesh) sc.remove(SHIP.mesh); SHIP.mesh = null; spawnShip(px + 80, pz, 0); const G = SHIP.mesh.userData.gunDeck; shipGunsTick(); out.gun = { harbour: G && [G.port, G.stbd] };
+    const rx = Math.cos(SHIP.yaw), rz = -Math.sin(SHIP.yaw), h = spawnOtherShip('pirate', SHIP.x + rx * 60, SHIP.z + rz * 60, 'test:gungalleon', 'galleon'); h.yaw = SHIP.yaw;
+    SHIP.sailing = true; shipGunsTick(); out.gun.sail = [G.port, G.stbd]; placeOther(h); const H = h.mesh.userData.gunDeck; out.gun.her = H && [H.port, H.stbd];
+    SHIP.sailing = false; shipGunsTick(); out.gun.moored = [G.port, G.stbd]; despawnOtherShip(h); const k3 = OTHER.indexOf(h); if (k3 >= 0) OTHER.splice(k3, 1); SHIP.sailing = os; }
   SHIP.sailing = false; despawnOtherShip(o); despawnOtherShip(bs); const k = OTHER.indexOf(o); if (k >= 0) OTHER.splice(k, 1); const k2 = OTHER.indexOf(bs); if (k2 >= 0) OTHER.splice(k2, 1);
   worldState.ship = was; return out; });
 console.log(JSON.stringify(r));
@@ -51,4 +64,10 @@ check('your own ship carries it while it is fitted, loses it when it is taken ou
 check('its pedestal is solid, a pace off it is not, and the shared bake\'s props are untouched', r.solid === true && r.clear === false && r.shared === false, { ownOn: r.ownOn, ownOff: r.ownOff, ownBack: r.ownBack, solid: r.solid, clear: r.clear, shared: r.shared, cutter: r.cutter, sloop: r.sloop, bears: r.bears, herYaw: r.herYaw });
 check('a black-sail cutter carries one and a black sloop does not', r.cutter && !r.sloop, { ownOn: r.ownOn, ownOff: r.ownOff, ownBack: r.ownBack, solid: r.solid, clear: r.clear, shared: r.shared, cutter: r.cutter, sloop: r.sloop, bears: r.bears, herYaw: r.herYaw });
 check(`her engine is laid on you in its arc (${r.herYaw} rad, you 0.35 to port of her bow)`, r.bears === true && Math.abs(r.herYaw + .35) < .05, { ownOn: r.ownOn, ownOff: r.ownOff, ownBack: r.ownBack, solid: r.solid, clear: r.clear, shared: r.shared, cutter: r.cutter, sloop: r.sloop, bears: r.bears, herYaw: r.herYaw });
+const D = r.deck, U = r.gun;
+check(`the galleon's lids are her own: shut ${D.shut[0]} draws, one side run out ${D.port.join('+')}, both ${D.both.join('+')} (${D.tris[0]} and ${D.tris[1]} triangles), in her hull's materials`,
+  D.shut.join() === '2,0' && D.port.join() === '2,4' && D.both.join() === '0,4' && D.mats, D);
+check(`her twelve guns' muzzles stand out of her planking (${Math.min(...D.muz)} to ${Math.max(...D.muz)} m at 0.1 m off the bore)`, D.muz.length === 12 && D.muz.every(v => v > .4 && v < .6), D.muz);
+check('your galleon\'s lids are shut in harbour, her starboard runs out while you sail with a black galleon there, and shuts when you stop; hers runs out her port, toward you',
+  U.harbour && U.harbour.join() === 'false,false' && U.sail.join() === 'false,true' && U.moored.join() === 'false,false' && U.her && U.her.join() === 'true,false', U);
 await g.close();

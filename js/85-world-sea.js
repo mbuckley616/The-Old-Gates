@@ -268,7 +268,7 @@
   // and a forecastle (fore) over her first 3 m, open beneath on two posts (lo) with its ladder up the middle running aft from its edge; the
   // forecastle's rail and its forward end are 'hi' (as the aftcastle's after end now is), and under the ladder's upper half a 'deck' box, so nobody at the deck's height walks in under its treads. Her
   // hatch is her own, aft of the mast, since L/2-3.2 falls at the forecastle's ladder; her lashed cargo stands on deck as props.
-  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:-1.05,dress}):kind==='caravel'?PKIT.ships.caravel({cabin:true}):kind==='cog'?PKIT.ships.cog({dress,cabin:true}):kind==='galleon'?PKIT.ships.galleon({dress,cabin:true}):PKIT.ships.sloop({dress}),P=[];
+  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:-1.05,dress}):kind==='caravel'?PKIT.ships.caravel({cabin:true}):kind==='cog'?PKIT.ships.cog({dress,cabin:true}):kind==='galleon'?PKIT.ships.galleon({dress,cabin:true,lidsApart:true}):PKIT.ships.sloop({dress}),P=[];
     const zz=[];for(let z=S.zs;z<=S.zb;z+=.05)if(S.deckAt(z)>.45)zz.push(z);const z0=zz[0],z1=zz[zz.length-1];
     if(S.masts)for(const [x,z] of S.masts)P.push({x,z,r:.19});else P.push({x:0,z:S.mast[1],r:.17});P.push({x:-.45,z:S.mast[1]-.7,r:.17});const h=S.hatch;for(const q of S.hatches||[h])P.push({x:0,z:(q.z0+q.z1)/2,hx:(q.x1-q.x0)/2,hz:(q.z1-q.z0)/2,ry:0}); /* S1552 — the galleon's two */
     const C=S.castle;if(C){const w=Math.min(C.cw(C.z1),S.deckAt(C.z1)+.05),a=C.cw(C.z1)-.04,g=C.ladders.map(lx=>[lx-.36,lx+.36]),seg=(x0,x1,lv)=>{if(x1>x0)P.push({x:(x0+x1)/2,z:C.z1,hx:(x1-x0)/2,hz:.05,ry:0,lv});};
@@ -282,7 +282,7 @@
     const bk=(S.cabinItems||[]).find(q=>q.name==='bunk'),berth=bk?{x:bk.box[3]+.35,z:(bk.box[2]+bk.box[5])/2,hz:(bk.box[5]-bk.box[2])/2}:null;
     const ct=(S.cabinItems||[]).find(q=>q.name==='chart table'),chart=ct?{x:(ct.box[0]+ct.box[3])/2,z:(ct.box[2]+ct.box[5])/2,hx:(ct.box[3]-ct.box[0])/2,hz:(ct.box[5]-ct.box[2])/2}:null; /* S1880 — the cabin's chart table, E at it (chartDeckNear) */
     return {geo:S.hull.geo,mats:S.hull.mats,deck:{z0,z1,at:z=>z<z0||z>z1?0:S.deckAt(z)-.06},L:S.L,W:S.W,zs:S.zs,zb:S.zb,
-      rigs:S.rigs.map(q=>({geo:q.geo,mats:q.mats,z:q.z,type:q.type})),props:P,at:S.at,tiller:S.tiller,wheel:S.wheel,castle:C||null,fore:F||null,helm:S.helm||null,hatchZ:(h.z0+h.z1)/2,hatchOut:Math.max(1.2,(h.z1-h.z0)/2+.7),kit:S,dress,berth,chart};}
+      rigs:S.rigs.map(q=>({geo:q.geo,mats:q.mats,z:q.z,type:q.type})),props:P,at:S.at,tiller:S.tiller,wheel:S.wheel,lids:S.lids||null,guns:S.guns||null,castle:C||null,fore:F||null,helm:S.helm||null,hatchZ:(h.z0+h.z1)/2,hatchOut:Math.max(1.2,(h.z1-h.z0)/2+.7),kit:S,dress,berth,chart};}
   // a harbour boat: an open clinker boat with thwarts, oars shipped, a stubby mast with the sail furled; four paints
   function boatBake(v){const key='boat|'+v;let r=SHIP_GEO.get(key);if(r)return r;
     const R=(()=>{let s=(v*2654435761+12345)>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})();const B=new ShipBake();const paint=[0x5a6a4a,0x6a3a2a,0x3a4a6a,0x7a6a4a][v%4];
@@ -443,7 +443,7 @@
     mesh.userData.trimSnap=true;
     if(!look&&r.kit){shipSwatchOn(mesh);shipBannerOn(mesh);} /* S1843 — your own ship in the yard's colours; S1919 — and her banner */
     if(look==='merchant'&&r.kit)shipBannerOn(mesh,r.dress); /* S2126 — a merchantman flies her own nation's banner, the dress as built */
-    if(look==='pirate'&&r.kit)shipBlackOn(mesh); /* S2162 — #1454 A: a black sail, the hull of her waters, no colours */
+    if(r.lids)shipGunDeck(mesh,r);if(look==='pirate'&&r.kit)shipBlackOn(mesh); /* S2162 — #1454 A: a black sail, the hull of her waters, no colours */
     if(r.kit&&(!look&&typeof shipFitted==='function'&&shipFitted('ballista')||look==='pirate'&&kind==='cutter'))shipBallistaOn(mesh,true); /* S2250 — #1580 A: her ballista, fitted or a black cutter's */
     return mesh;
   }
@@ -453,7 +453,7 @@
   function shipBlackOn(mesh){const ud=mesh&&mesh.userData,r=ud&&SHIP_GEO.get(ud.bakeKey);if(!r||!r.kit||!PKIT.ships.black)return null;const d=r.dress||'gatelands';
     mesh.material=PKIT.ships.black(r.mats,d);let n=mesh.material.filter((x,i)=>x!==r.mats[i]).length;
     (ud.rigs||[]).forEach((q,i)=>{const R=r.rigs[i];if(R&&R.mats){q.m.material=PKIT.ships.black(R.mats,d);n+=[].concat(q.m.material).filter((x,j)=>x!==[].concat(R.mats)[j]).length;}});
-    return ud.black={dress:d,swapped:n};}
+    ud.black={dress:d,swapped:n};shipGunMats(mesh);return ud.black;}
   // S1843 (#1133, Michael: as drawn) — the yard's colours: her paint and cloth (worldState.ship.paint, .cloth, indices into her dress's
   // PKIT.ships.SWATCHES; 0 or none the dress as built) laid on a kit hull's materials in place. The bake is shared and untouched; only the
   // mesh's material arrays change, so the yard (the systems builder's paintShip) repaints her by calling this again. sw overrides the
@@ -462,7 +462,7 @@
     const st=worldState.ship||{},o=sw||{paint:st.paint|0,cloth:st.cloth|0},d=r.dress||'gatelands';
     mesh.material=PKIT.ships.swatch(r.mats,d,o);(ud.rigs||[]).forEach((q,i)=>{const R=r.rigs[i];if(R&&R.mats)q.m.material=PKIT.ships.swatch(R.mats,d,o);});
     const W=PKIT.ships.SWATCHES[d],pi=Math.max(0,Math.min(W.paints.length-1,o.paint|0)),ci=Math.max(0,Math.min(W.cloths.length-1,o.cloth|0));
-    return ud.swatch={dress:d,paint:pi,cloth:ci,names:[W.paints[pi].name,W.cloths[ci].name]};}
+    ud.swatch={dress:d,paint:pi,cloth:ci,names:[W.paints[pi].name,W.cloths[ci].name]};shipGunMats(mesh);return ud.swatch;}
   // S1919 (card F11; Michael's A on #1150, the ship sheet's session 5) — her banner: the Crown's, the Mark's or the Compact's
   // (worldState.ship.banner 'gatelands' | 'mark' | 'aurenne'; none, or anything else, flies nothing), PKIT.ships.banner's staff at her
   // stern or the gaff's masthead, the flag a rig of type 'flag' about the staff, so shipTrim streams it down the wind as the black sail's
@@ -491,6 +491,27 @@
   function shipBallistaAim(mesh,tx,tz){const b=mesh&&mesh.userData.ballista;if(!b)return;const now=performance.now(),dt=Math.min(.1,(now-b.t)/1000);b.t=now;let want=0;
     if(tx!=null){const ry=mesh.rotation.y,c=Math.cos(ry),s=Math.sin(ry),dx=tx-mesh.position.x,dz=tz-mesh.position.z,lx=dx*c-dz*s-b.fit.x,lz=dx*s+dz*c-b.fit.z;want=Math.max(-Math.PI/6,Math.min(Math.PI/6,Math.atan2(lx,lz)));}
     const d=want-b.yaw,st=1.2*dt;b.yaw+=Math.abs(d)<st?d:Math.sign(d)*st;b.turn.rotation.y=b.yaw;}
+  // S2254 (card F11; Michael's A on #1580, the prototype S2243's ships-arms.js runOutGuns) — the galleon's gun deck: her twelve lids out of
+  // the hull's bake (PKIT.ships.galleon's lidsApart) as two meshes of her own, the lids shut (r.lids) and the guns run out (r.guns: the lid
+  // swung up 110°, a saker 2.4 m, its muzzle 0.55 m outside, the dark of the port), each on its own geometry over the bake's shared buffers
+  // so a side shows in one and not the other (PKIT.ships.sideGroups). A side runs out while it bears (gunsBear for yours while you sail,
+  // herGunsSide for a black galleon) and stays out SHIP_GUNS_HOLD s after; in harbour, at anchor or with nothing bearing her lids are shut.
+  // The lids' and straps' materials follow her hull's (the yard's colours, a black sail's dress: shipGunMats). Shut: 2 draws; one side
+  // or both run out: 4 more. -> ud.gunDeck ({lids, guns, port, stbd, seen}). shipGunsOut(mesh, port, stbd) sets the sides.
+  const SHIP_GUNS_HOLD=30;
+  function shipGunDeck(mesh,r){const ud=mesh.userData,wrap=b=>{const g=new THREE.BufferGeometry();for(const k in b.geo.attributes)g.setAttribute(k,b.geo.attributes[k]);g.boundingSphere=b.geo.boundingSphere;g.boundingBox=b.geo.boundingBox;
+      const m=new THREE.Mesh(g,b.mats.slice());m.castShadow=true;m.receiveShadow=true;m.userData.base=b;mesh.add(m);return m;};
+    const lids=wrap(r.lids),guns=wrap(r.guns);lids.name='gunlids';guns.name='guns';ud.gunDeck={lids,guns,port:null,stbd:null,seen:{port:-1e9,stbd:-1e9}};shipGunMats(mesh);shipGunsOut(mesh,false,false);return ud.gunDeck;}
+  function shipGunsOut(mesh,port,stbd){const G=mesh&&mesh.userData.gunDeck;if(!G)return null;port=!!port;stbd=!!stbd;if(G.port===port&&G.stbd===stbd)return G;G.port=port;G.stbd=stbd;
+    const sg=PKIT.ships.sideGroups;G.lids.visible=sg(G.lids.geometry,G.lids.userData.base.ranges,!port,!stbd)>0;G.guns.visible=sg(G.guns.geometry,G.guns.userData.base.ranges,port,stbd)>0;return G;}
+  // the lids and straps wear what her hull wears now: each base material found in the bake's list is swapped for the mesh's at that index
+  function shipGunMats(mesh){const ud=mesh&&mesh.userData,G=ud&&ud.gunDeck,r=G&&SHIP_GEO.get(ud.bakeKey);if(!r)return;const now=[].concat(mesh.material);
+    for(const m of [G.lids,G.guns])m.material=m.userData.base.mats.map(x=>{const i=r.mats.indexOf(x);return i>=0&&now[i]?now[i]:x;});}
+  function shipGunsTick(){const m=SHIP.mesh,G=m&&m.userData.gunDeck;if(!G)return;const now=performance.now()/1000,B=SHIP.sailing&&typeof gunsBear==='function'?gunsBear():null;
+    for(const sd of ['port','stbd'])if(B&&B[sd])G.seen[sd]=now;if(!SHIP.sailing)G.seen={port:-1e9,stbd:-1e9};shipGunsOut(m,now-G.seen.port<SHIP_GUNS_HOLD,now-G.seen.stbd<SHIP_GUNS_HOLD);}
+  function herGunsTick(o){const G=o.mesh&&o.mesh.userData.gunDeck;if(!G)return;const now=performance.now()/1000;
+    const sd=!o.dead&&!o.struck&&o.founder==null&&typeof herGuns==='function'&&herGuns(o)&&typeof herGunsSide==='function'?herGunsSide(o):null;if(sd)G.seen[sd]=now;
+    shipGunsOut(o.mesh,now-G.seen.port<SHIP_GUNS_HOLD,now-G.seen.stbd<SHIP_GUNS_HOLD);}
   // your own: on while she has one fitted, and laid on whatever ballistaBears() finds while you sail
   function shipBallistaTick(){const m=SHIP.mesh;if(!m||!m.userData.kit)return;const want=typeof shipFitted==='function'&&shipFitted('ballista');
     if(want!==!!m.userData.ballista)shipBallistaOn(m,want);if(!m.userData.ballista)return;const o=SHIP.sailing&&typeof ballistaBears==='function'?ballistaBears():null;shipBallistaAim(m,o?o.x:null,o?o.z:null);}
@@ -658,7 +679,7 @@
     SHIP._raiseT=(SHIP._raiseT||0)-dt;if(SHIP._raiseT<=0){SHIP._raiseT=1;tickShipRaise();}
     tickShipCrew(dt); /* S1737 — her crew at their stations (86-world-crime.js) */
     if(!SHIP.mesh)return;
-    shipBallistaTick(); /* S2250 — her ballista, fitted or taken out at the yard, and laid on what bears */
+    shipBallistaTick(); /* S2250 — her ballista, fitted or taken out at the yard, and laid on what bears */shipGunsTick(); /* S2254 — her guns run out on a side that bears */
     if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
     if(SHIP.sailing){
       const fwd=(HELD_KEYS.KeyW?1:0)-(HELD_KEYS.KeyS?.5:0),turn=(HELD_KEYS.KeyA?1:0)-(HELD_KEYS.KeyD?1:0);SHIP.turn=turn;
@@ -1092,6 +1113,7 @@
   function placeOther(o){
     o.mesh.position.set(o.x,SEA_Y+Math.sin(performance.now()*.0011+o.x)*.05,o.z);o.mesh.rotation.y=o.yaw+Math.PI;
     if(o.mesh.userData.ballista)shipBallistaAim(o.mesh,...(typeof herBallistaBears==='function'&&herBallistaBears(o)&&!o.dead&&!o.struck?[SHIP.x,SHIP.z]:[null,null])); /* S2250 — a black cutter's engine laid on you */
+    herGunsTick(o); /* S2254 — a black galleon runs out the side that bears on you */
     shipPlatBox(o.plat,o.mesh,o.x,o.z,o.yaw,o.L,o.W);
   }
   function atSea(){return activeZoneId==='world'&&(SHIP.sailing||isSwimming()||onDeck())&&worldH(px,pz)<-3;}
