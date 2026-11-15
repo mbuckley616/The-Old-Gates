@@ -26,6 +26,7 @@ import { Q, W, H, STATS, GLSL_NOISE, makeRenderer, makeComposer, buildTextures, 
 import { gatelandsSloop, markSloop, aurenneSloop, markCutter, aurenneCutter, gatelandsCutter, gatelandsCaravel, markCaravel, aurenneCaravel, gatelandsCog, markCog, aurenneCog, gatelandsGalleon, markGalleon, aurenneGalleon, swatch, banner, blackSail } from './ships.js';
 import { stream } from './pieces.js';
 import { fitBallista, runOutGuns } from './ships-arms.js';
+import { smoke, shot, splash, splinters, rigFire, founder } from './ships-fx.js';
 
 const R = makeRenderer(.85), scene = new THREE.Scene(), VIEW = Q.get('view') || 'quarter'; buildTextures();
 scene.fog = new THREE.FogExp2(new THREE.Color(.74, .80, .88), .0025);
@@ -58,6 +59,15 @@ if (Q.has('black')) blackSail(S, { ghost: Q.get('black') !== 'clean', flag: Q.ge
 /* Session 2243 (ships-arms.js): &ballista[=yaw°] a ballista at her bow, &fire a fire bolt laid, &guns the galleon's guns run out;
    ?view=bow close on the ballista from her waist, ?view=ports low along her side at the guns */
 const BAL = Q.has('ballista') ? fitBallista(S, { yaw: (+Q.get('ballista') || 0) * Math.PI / 180, fire: Q.has('fire') }) : null, GUNS = Q.has('guns') && S.ports ? runOutGuns(S) : null;
+/* Session 2244 (ships-fx.js): &smoke=t a broadside's smoke t s after the first gun (&side=1 port, -1 starboard; needs &guns); &burn=t her
+   rig alight t s (&out=s doused at s); &founder=u her pose u of the way down; &shot a row of the four shot beside her (?view=shot);
+   &splash=t a ball fallen short 9 m off; &splinter=t a hit on her side */
+const FX = {}; if (Q.has('smoke') && S.ports) FX.smoke = smoke(S, +(Q.get('side') || -1), +Q.get('smoke')).userData;
+if (Q.has('burn')) { const G = rigFire(S, +Q.get('burn'), { out: Q.has('out') ? +Q.get('out') : undefined }); FX.burn = G && G.userData; }
+if (Q.has('founder')) { const f = founder(S, +Q.get('founder'), scene); FX.founder = { u: f.u, sink: f.sink, list: f.list, head: f.head, foam: f.cloud.userData.n }; }
+if (Q.has('shot')) { FX.shot = ['round', 'chain', 'grape', 'shell'].map((k, i) => { const g = shot(k); if (k === 'chain') g.rotation.y = Math.PI / 2; g.position.set(-S.W / 2 - 1.6, S.deck + 1.6, -.525 + i * .35); scene.add(g); return k; }); }
+if (Q.has('splash')) scene.add(splash(-S.W / 2 - 9, 2, +Q.get('splash')));
+if (Q.has('splinter') && S.ports) { const [e, z, y] = S.ports.find(p => p[0] < 0) || S.ports[0]; scene.add(splinters([-(S.sect(z + 1.0, .8)[0]) - .05, y + .6, z + 1.0], 40, +Q.get('splinter'), [-1, 0, 0])); }
 scene.add(S.group);
 if (CUT || ACU) Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 17 });
 if (CAR || COG) Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 22, bottom: -5 });
@@ -83,10 +93,12 @@ else if (VIEW === 'deck') { eye = [.9, S.deck + 1.65, -5.2]; at = [-.2, S.deck +
 else if (VIEW === 'lap') { if (CUT) { eye = [3.4, 2.6, 10.2]; at = [0, 2.2, 7.1]; cam.fov = 40; } else if (MSL || ASL) { eye = [3.6, 2.4, 9.6]; at = [0, 1.9, 6.0]; cam.fov = 40; } else { eye = [3.6, .6, 2.2]; at = [2.0, .35, 1.2]; cam.fov = 40; } }
 else { eye = CUT ? [15, 5.6, 16] : [13, 5.2, 14]; at = CUT ? [0, 4.6, .5] : [0, 3.4, .5]; }
 if (VIEW === 'bow' && BAL) { eye = Q.has('front') ? [BAL.x + 1.5, BAL.y + 2.0, BAL.z + 2.3] : [BAL.x + .9, BAL.y + 1.75, BAL.z - 2.3]; at = Q.has('front') ? [BAL.x, BAL.y + 1.0, BAL.z - .1] : [BAL.x - .1, BAL.y + 1.0, BAL.z + .5]; cam.fov = 55; }
+if (VIEW === 'shot') { eye = [-S.W / 2 - .3, S.deck + 1.7, 0]; at = [-S.W / 2 - 1.6, S.deck + 1.6, 0]; cam.fov = 50; }
+if (VIEW === 'fight') { eye = [-S.W / 2 - 22, 5, -16]; at = [-S.W / 2 - 4, 2.5, 0]; cam.fov = 50; }
 if (VIEW === 'ports' && S.ports) { eye = [S.W / 2 + 5, 2.2, -7.5]; at = [S.W / 2 - .5, .9, 0]; cam.fov = 50; }
 cam.position.set(...eye); cam.lookAt(...at);
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); }
 cam.updateProjectionMatrix();
 STATS.ship = { ship: AGL ? 'aurgalleon' : MGL ? 'markgalleon' : MCG ? 'markcog' : ACG ? 'aurcog' : MCV ? 'markcaravel' : GCV ? 'glcaravel' : GCU ? 'glcutter' : ACU ? 'aurcutter' : GAL ? 'galleon' : COG ? 'cog' : CAR ? 'caravel' : CUT ? 'cutter' : MSL ? 'marksloop' : ASL ? 'aursloop' : 'sloop', view: VIEW, tris: S.tris, draws: S.draws, swatch: S.swatch || null, black: S.black || null, banner: S.banner ? (({ group, ...b }) => b)(S.banner) : null,
-  ballista: BAL ? (({ group, deck, ...b }) => b)(BAL) : null, guns: GUNS ? { tris: GUNS.tris, draws: GUNS.draws, n: GUNS.guns.length } : null };
+  ballista: BAL ? (({ group, deck, ...b }) => b)(BAL) : null, guns: GUNS ? { tris: GUNS.tris, draws: GUNS.draws, n: GUNS.guns.length } : null, fx: FX };
 run(makeComposer(R, scene, cam, { bloom: .12, sat: 1.05, vig: .28 }), cam);
