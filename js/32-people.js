@@ -1209,6 +1209,7 @@ function buildNPCMesh(def,opts){
   let g=def.name&&!def.authored?PEOPLE_GENOMES.get(key):null;
   if(!g){g=personGenome(def,opts);if(def.name)PEOPLE_GENOMES.set(key,g);}
   if(def.authored&&def.name)g.castOk=true;
+  if(def.bearer)g.bearer=def.bearer; /* S2273 — a bier's bearer (the road's mourners): stripped and in mourning by hbGenome */
   if(hbOn()&&!opts.noBuilder&&!g.hbKey){const pw=hbPowerOf(def,g);if(pw){g.power=pw;g.gear=HB_POWER[pw].staff?'stick':null;}} /* S2260 (#1566 B) — the town's head dressed by office; the driver holds a staff or nothing (a Mark captain's guard spear dropped) */
   if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
   let gb=g,G=g.hbKey&&hbOn()?HB_GENOMES.get(g.hbKey):null;
@@ -1333,7 +1334,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
-function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,play:rig.play||null};}
+function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,play:rig.play||null,bear:rig.bear||0};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1361,7 +1362,9 @@ function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);f
   const out=pwZero();let tot=0;
   for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):m==='sleep'?pwSleep(t,o):m==='sit'?pwSit(t,o):m==='play'?pwPlay(t,o,ph):pwIdle(t,o);
     PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
-  if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}return out;}
+  if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}
+  if(o.bear&&!w.sleep)pwBear(out,o.bear); /* S2273 — a bier's bearer: the arms on its poles, whatever the legs do */
+  return out;}
 function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
   B.hips.position.y=P.hipsY;B.hips.position.x=P.sway;
   // the wrist keeps a held shaft upright whatever the arm is doing
@@ -1854,6 +1857,60 @@ function kidsTick(now,dt){const C=KIDS;if(!C.on||typeof WORLD==='undefined'||typ
       const bp=u<.3?arc(hand(A,hA),both(B,hB,cB),u/.3):u<.5?(u<.34?both(B,hB,cB):hand(B,hB)):u<.8?arc(hand(B,hB),both(A,hA,cA),(u-.5)/.3):(u<.84?both(A,hA,cA):hand(A,hA));
       kidPlace(K.ball,bp,up,fw);}}}
 }
+// ═══ THE BIER (S2273; the road's mourners, Michael's B on #1587, "one in six bound for a gate are mourners with a bier") ════
+// Two walk the road with their dead to a gate for the Church's blessing (canon §3.1, the Clearing). Session 2270 walked them side by side
+// with nothing between them; now one goes before and one behind, BIER.gap apart, and the bier rides their four hands: two ash poles
+// BIER.len long and BIER.w apart, three cross-bars and a board, the dead wrapped in a linen shroud (head behind, feet first) and a pall
+// of dark wool over the legs. The bearers' arms are the driver's (pwBear, set on rig.bear: 1 before the bier, -1 behind it), hanging a
+// little out to the poles and a little toward the load, the head bowed; the legs walk as ever. Each frame bierTick reads the four palms
+// (kidPalm, the builder's body; the driver's wrists beyond it) and lays the poles through them: their middle, their slope from the back
+// pair to the front pair, their width. One mesh a material, three draws, about 1,100 triangles, built once a bier. No roll decides
+// anything here; the shroud's length is the dead's, seeded by the traveller's id.
+const BIER={len:2.9,w:.56,gap:2.5,y:.012,mats:{}};
+function bierMat(k){const M=BIER.mats;if(M[k])return M[k];const C={wood:[0x8a6c48,.8],linen:[0xd9d0bb,.92],pall:[0x2a2622,.95]}[k];
+  return M[k]=new THREE.MeshStandardMaterial({color:C[0],roughness:C[1],metalness:0,side:k==='pall'?THREE.DoubleSide:THREE.FrontSide});}
+function pwBear(p,s){p.shL=[.1*s,0,.13];p.shR=[.1*s,0,-.13];p.elL=[-.12,0,0];p.elR=[-.12,0,0];p.wrL=[0,.3,.05];p.wrR=[0,-.3,-.05];
+  p.neck=[p.neck[0]+.08,0,0];p.head=[p.head[0]+.12,0,0];}
+function bierBuild(id){const r=pRng(pHash('bier|'+(id||''))),L=1.55+r()*.25,g=new THREE.Group(),parts={wood:[],linen:[],pall:[]};
+  const put=(k,geo,x,y,z,rx)=>{if(rx)geo.rotateX(rx);geo.translate(x,y,z);parts[k].push(geo);};
+  for(const sx of [-1,1])put('wood',new THREE.CylinderGeometry(.022,.022,BIER.len,7,1),sx*BIER.w/2,0,0,Math.PI/2);
+  for(const z of [-.95,0,.95])put('wood',new THREE.BoxGeometry(BIER.w+.03,.035,.05),0,.004,z);
+  put('wood',new THREE.BoxGeometry(BIER.w-.06,.018,2.0),0,.03,0);
+  // the shroud: a lathe of the body's breadth by length, laid along z, flattened; the feet at +z (the way they go), the head at -z
+  const prof=[[0,0],[.045,.01],[.085,.05],[.1,.14],[.095,.3],[.115,.42],[.13,.5],[.155,.62],[.17,.72],[.18,.8],[.19,.86],[.2,.9],[.19,.94],[.12,.965],[.1,.975],[.108,1.0],[.105,1.05],[.085,1.09],[.045,1.115],[0,1.12]];
+  const pts=prof.map(([a,b])=>new THREE.Vector2(a,b*L/1.12)),sh=new THREE.LatheGeometry(pts,14);sh.rotateX(-Math.PI/2);sh.scale(1,.62,1);
+  sh.translate(0,.039+.2*.62,L/2);parts.linen.push(sh);
+  // the pall: a cloth over the legs, laid on the shroud's top and falling over its sides to the board
+  const PL=L*.56,pg=new THREE.PlaneGeometry(.66,PL,16,14);pg.rotateX(-Math.PI/2);const pa=pg.attributes.position,rad=t=>{const u=t*1.12;let i=1;while(i<prof.length-1&&prof[i][1]<u)i++;const [a0,b0]=prof[i-1],[a1,b1]=prof[i];return a0+(a1-a0)*Math.max(0,Math.min(1,(u-b0)/((b1-b0)||1)));};
+  for(let i=0;i<pa.count;i++){const x=pa.getX(i),z=pa.getZ(i)+L/2-PL/2,t=(L/2-z)/L,R=rad(t)+.012,ax=Math.abs(x);let y;
+    if(ax<R)y=.039+.2*.62+Math.sqrt(R*R-ax*ax)*.62;else y=.039+.2*.62-Math.min(.2*.62+.005,(ax-R)*2.2);pa.setXYZ(i,x,y,z);}
+  pg.computeVertexNormals();parts.pall.push(pg);
+  let tris=0;for(const k in parts){const geo=hbMergeGeos(parts[k]);parts[k].forEach(q=>q.dispose());const m=new THREE.Mesh(geo,bierMat(k));m.name='bier:'+k;m.castShadow=true;m.receiveShadow=k!=='pall';g.add(m);tris+=(geo.index?geo.index.count:geo.attributes.position.count)/3;}
+  g.userData.tris=tris;g.userData.bier=true;g.matrixAutoUpdate=false;return g;}
+// three's mergeGeometries for the few plain geometries the bier is made of (position, normal, an index; the vendored three has no addons)
+function hbMergeGeos(list){const P=[],N=[],I=[];for(const q of list){const g=q.index?q:q,p=g.attributes.position,n=g.attributes.normal,b=P.length/3;
+    for(let i=0;i<p.count;i++){P.push(p.getX(i),p.getY(i),p.getZ(i));N.push(n.getX(i),n.getY(i),n.getZ(i));}
+    if(g.index){const ix=g.index.array;for(let i=0;i<ix.length;i++)I.push(ix[i]+b);}else for(let i=0;i<p.count;i++)I.push(b+i);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setIndex(I);g.computeBoundingSphere();return g;}
+// a bearer's dress: nothing held, no long cloak, cape or mantle over the arms that go out to the poles, and its cloth greyed and darkened for mourning
+const HB_BEARER_STRIP={cloak:null,cloakFur:null,cape:null,mantle:null,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,lantern:null,shield:null,
+  chair:null,sword:null,book:null,tankard:null,hammer:null,pipe:null,backpack:null,satchel:null};
+function hbBearerDress(G){const D=Object.assign({},G.dress,HB_BEARER_STRIP);
+  for(const k in D){const v=D[k];if(Array.isArray(v)&&v.length===3&&v.every(c=>typeof c==='number'&&c>=0&&c<=1)){const l=.3*v[0]+.59*v[1]+.11*v[2];D[k]=v.map(c=>(c*.35+l*.65)*.5+.03);} /* toward grey, then darker */}return D;}
+// the road's tick hands the bier its two bearers (D.npc before, D.follow[0].npc behind) once, and calls bierTick after it has set them
+function bierAttach(D){const F=D.follow&&D.follow[0];if(!F)return null;F.side=0;F.back=BIER.gap;F.trail=true;
+  const a=D.npc.g.userData.rig,b=F.npc.g.userData.rig;if(a)a.bear=1;if(b)b.bear=-1;const g=bierBuild(D.T&&D.T.id);D.bier=g;return g;}
+const _bv=[0,1,2,3,4,5,6].map(()=>new THREE.Vector3()),_bm=new THREE.Matrix4();
+function bierHands(N,o){const g=N.g,rig=g.userData.rig;g.updateMatrixWorld(true);const pl=rig&&kidPalm(rig,'L'),pr=rig&&kidPalm(rig,'R');
+  if(pl&&pr){o[0].copy(pl.p);o[1].copy(pr.p);return true;}
+  if(rig&&rig.B&&rig.B.wrL&&rig.B.wrR){rig.B.wrL.getWorldPosition(o[0]);rig.B.wrR.getWorldPosition(o[1]);const d=.07*(rig.g.height||1);o[0].y-=d;o[1].y-=d;return true;}return false;}
+function bierTick(D){const G=D.bier,F=D.follow&&D.follow[0];if(!G||!F)return;const A=[_bv[0],_bv[1]],B=[_bv[2],_bv[3]];
+  if(!bierHands(D.npc,A)||!bierHands(F.npc,B)){G.visible=false;return;}G.visible=D.npc.g.visible!==false;
+  const fm=_bv[4].copy(A[0]).add(A[1]).multiplyScalar(.5),bm=_bv[5].copy(B[0]).add(B[1]).multiplyScalar(.5);
+  const z=_bv[6].copy(fm).sub(bm);if(z.lengthSq()<1e-6)return;z.normalize();
+  const x=new THREE.Vector3(0,1,0).cross(z).normalize(),y=z.clone().cross(x),w=(A[0].distanceTo(A[1])+B[0].distanceTo(B[1]))/2,k=Math.max(.7,Math.min(1.5,w/BIER.w));
+  const c=fm.add(bm).multiplyScalar(.5).addScaledVector(y,-BIER.y);
+  _bm.makeBasis(x.multiplyScalar(k),y,z).setPosition(c);G.matrix.copy(_bm);G.matrixWorldNeedsUpdate=true;G.userData.w=w;}
 // ═══ THE BUILDER'S BODIES (v80 S1195, card F4) ═══════════════════════════════════════════════════════════════════════════
 // On the new look a townsperson wears the builder's body (docs/design/character-builder.md): MakeHuman's CC0 body morphed by
 // a genome, its 163-bone skeleton, the wardrobe and the hair cards, all from docs/prototypes/levelup/people.js, which the
@@ -1891,6 +1948,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   if(/^(ring|kid):/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
+  if(g.bearer)G.dress=hbBearerDress(G); /* S2273 — a bier's bearer: in mourning, nothing in the hands, no cloak for the arms to pass through */
   if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
   if(!cast&&!g.child&&HB_PACK_ROLE.test(g.role||''))G.dress=hbRolePack(g,G); /* S2239 — a traveller's pack, by island */
   if(!cast&&!g.child){const O=hbOfficeDress(g,G);if(O)G.dress=O;} /* S2242 — the lord's forester and the Church's inquisitor */

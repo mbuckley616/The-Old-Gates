@@ -3,6 +3,7 @@
 // an end and a kind. Where one is comes from the clock and the pace. Within 400 m the nearest four are drawn; the merchant (session 1)
 // walks at 1.1 m a game minute with his mule and sells 6 to 10 rows of a goods shop's stock at his home town's prices ×1.1.
 // Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
+// Session 2273: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -119,7 +120,23 @@ const mo = await page.evaluate((id) => { const now = worldState.gameTimeAbsMinut
     const Q = pilgrimPlan(T, rd); const t = T.at + Q.along * .5 / T.pace; worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; const p = travellerAt(T, rd, t); px = p.x + 5; pz = p.z; return true; }
   return false; }, pil.mourn.id);
 await g.cells(); await g.spin(null, 4);
+const BIER_GAP = await page.evaluate(() => BIER.gap);
 const mm = await page.evaluate((id) => { const D = ROADWALK.get(id); return D ? { bodies: 1 + D.follow.length, talk: npcs.includes(D.npc) || D.follow.some(f => npcs.includes(f.npc)), sep: +Math.hypot(D.npc.g.position.x - D.follow[0].npc.g.position.x, D.npc.g.position.z - D.follow[0].npc.g.position.z).toFixed(2) } : { keys: [...ROADWALK.keys()], near: roadfolkNow().filter(o => o.T.id === id).map(o => [o.p.x - px, o.p.z - pz]) }; }, pil.mourn.id);
 console.log(JSON.stringify({ mo, mm }));
-check('mourners walk two together and nobody can speak to them', mo && mm && mm.bodies === 2 && !mm.talk && Math.abs(mm.sep - 1) < .01, mm);
+check('mourners walk two together, one before the other along the road, and nobody can speak to them', mo && mm && mm.bodies === 2 && !mm.talk && mm.sep > BIER_GAP - .3 && mm.sep < BIER_GAP + .05, mm);
+// S2273 — the bier between them: its poles run through the four palms, and its bearers hold nothing and wear no cloak over their arms
+// (the builder's bodies are built one at a time after the load; attach these two at once, as f4people does)
+await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return; for (const N of [D.npc, D.follow[0].npc]) { const rig = N.g.userData.rig; if (!rig.hb && rig.hbG) { hbAttach(rig); if (rig.hb) { hbLevel(rig, 0); hbPose(rig); } } } }, pil.mourn.id);
+await g.spin(null, 2);
+const bi = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D || !D.bier) return { bier: false };
+  const G = D.bier; G.updateMatrixWorld(true); const inv = G.matrixWorld.clone().invert(), out = [];
+  for (const N of [D.npc, D.follow[0].npc]) { N.g.updateMatrixWorld(true); const rig = N.g.userData.rig;
+    for (const s of ['L', 'R']) { const h = kidPalm(rig, s); if (!h) { out.push(null); continue; } const q = h.p.clone().applyMatrix4(inv);
+      out.push(+Math.hypot(Math.abs(q.x) - BIER.w / 2, q.y).toFixed(3)); } }
+  const dress = [D.npc, D.follow[0].npc].map(N => { const G2 = HB_GENOMES.get(N.g.userData.rig.g.hbKey); const d = (G2 && G2.dress) || {};
+    return Object.keys(HB_BEARER_STRIP).filter(k => d[k]); });
+  return { bier: true, tris: G.userData.tris, w: +(G.userData.w || 0).toFixed(3), off: out, bear: [D.npc.g.userData.rig.bear, D.follow[0].npc.g.userData.rig.bear], dress, shown: G.visible && !!G.parent }; }, pil.mourn.id);
+console.log(JSON.stringify(bi));
+check('the mourners carry a bier, its two poles through their four palms (within 4 cm)', bi.bier && bi.shown && bi.off.every(d => d !== null && d < .04) && bi.bear[0] === 1 && bi.bear[1] === -1, bi);
+check('its bearers hold nothing and wear no cloak, cape or mantle; the bier under 2,000 triangles', bi.bier && bi.dress.every(l => l.length === 0) && bi.tris < 2000, bi);
 stop(); await g.close();
