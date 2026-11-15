@@ -6,6 +6,8 @@
 // Each count is split by kind for the builders (the shadow pass, the bloom's passes, the eye's calls by bodies, houses, land and the
 // rest; tests/budgetkit.mjs). The camera stands at a fixed spot looking a fixed way. Frame rate is not measured: software GL is not a
 // target machine. BUDGET_LEDGER=1 appends the table to docs/qa/budget.md; QA's run does that, CI does not.
+// S2249: each row also counts the frame with every body hidden (the place's own calls and triangles, the ledger's last column), which
+// does not swing with whether a townsperson stands near when the count is taken; the ceilings still read the whole frame.
 import { boot, check } from './lib/game.mjs';
 import { budgetKit, budgetEnd, LEVELS } from './budgetkit.mjs';
 const g = await boot({ look: 'new' }); const { page } = g;

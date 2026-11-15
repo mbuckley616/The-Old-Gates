@@ -39,7 +39,13 @@ const count = () => g.page.evaluate(() => {
     const m = o.material, n = Array.isArray(m) ? Math.max(1, (o.geometry.groups || []).length) : 1, kd = kindOf(o); by[kd] = (by[kd] || 0) + n;
     if (kd === 'other') { const t = top(o), nm = t.name || (t.isMesh ? (t.material && t.material.name) || t.type : t.type); otherBy[nm] = (otherBy[nm] || 0) + n; } }));
   const others = Object.entries(otherBy).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  return { calls: all.calls, tris: all.tris, shadow: all.calls - eye.calls, post: eye.calls - bare.calls, eye: bare.calls, by, others, shadowTris: all.tris - eye.tris };
+  // S2249 — the whole frame drawn once more with every body hidden (shadow and bloom as the game has them): what is left is the place's
+  // own cost. Whether a townsperson walks inside the full level's ring when the count is taken swung a town spot's triangles by ±12%
+  // between builds that changed nothing (S2231, S2239); the place's own count does not swing with them. The ceilings read the whole frame.
+  const hid = []; scene.traverse(o => { if (o.visible && (o.isMesh || o.isLine || o.isPoints) && kindOf(o) === 'bodies') hid.push(o); });
+  let place; try { for (const o of hid) o.visible = false; place = one(true, bl); } finally { for (const o of hid) o.visible = true; sm.autoUpdate = au; Q.bloom = bl; }
+  return { calls: all.calls, tris: all.tris, shadow: all.calls - eye.calls, post: eye.calls - bare.calls, eye: bare.calls, by, others, shadowTris: all.tris - eye.tris,
+    placeCalls: place.calls, placeTris: place.tris, bodyTris: all.tris - place.tris };
 });
 // S2110 — the builder's bodies in reach, built before a count. hbTick makes one step of a body a drawn frame and keeps 250 ms of the
 // page's clock between bodies (HBODY.gap); on software GL a frame at Portclare takes about 7 s, so after 8 min of frames 8 of 25 in
@@ -78,8 +84,8 @@ export async function budgetEnd(g, rows, views) {
     check(`at ${name}, every view (${views}) under ${c.tris / 1e6} M triangles`, mine.length === views && overT.length === 0, { over: overT, tris: mine.map(r => r.tris) }); }
   const k = n => n >= 1e6 ? (n / 1e6).toFixed(2) + ' M' : Math.round(n / 1000) + 'k';
   const over = r => CEIL[r.level] && r.calls > CEIL[r.level].calls ? ' **over**' : '';
-  const table = `\n### ${tag} — ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC\n\n| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other |\n|---|---|---|---|---|---|---|---|---|---|---|\n` +
-    rows.map(r => `| ${r.label} | ${r.level} | ${r.calls}${over(r)} | ${k(r.tris)} | ${r.shadow} | ${r.post} | ${r.by.bodies}${r.hb && (r.hb.wait || r.hb.fail) ? ` (${r.hb.wait + r.hb.fail} of ${r.hb.built + r.hb.wait + r.hb.fail} unbuilt)` : ''} | ${r.by.houses} | ${r.by.land} | ${(r.by.other || 0) + (r.by.room || 0) + (r.by.gate || 0)} | ${r.others.map(([n, c]) => `${n} ${c}`).join(', ')} |`).join('\n') + '\n';
+  const table = `\n### ${tag} — ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC\n\n| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n` +
+    rows.map(r => `| ${r.label} | ${r.level} | ${r.calls}${over(r)} | ${k(r.tris)} | ${r.shadow} | ${r.post} | ${r.by.bodies}${r.hb && (r.hb.wait || r.hb.fail) ? ` (${r.hb.wait + r.hb.fail} of ${r.hb.built + r.hb.wait + r.hb.fail} unbuilt)` : ''} | ${r.by.houses} | ${r.by.land} | ${(r.by.other || 0) + (r.by.room || 0) + (r.by.gate || 0)} | ${r.others.map(([n, c]) => `${n} ${c}`).join(', ')} | ${r.placeCalls}, ${k(r.placeTris)} |`).join('\n') + '\n';
   console.log(table);
   if (process.env.BUDGET_LEDGER) fs.appendFileSync(path.join(ROOT, 'docs', 'qa', 'budget.md'), table);
 }

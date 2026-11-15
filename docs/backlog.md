@@ -229,6 +229,15 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
+- **`budget` red at Low when a townsperson stands near: Dunmore's street at noon 1.22 M triangles against 1.2 M** (QA, Session 2249, s1600;
+  for the bodies builder: the builder bodies' levels by distance, `hbLevel` and `HBODY`, `js/32-people.js`). One run of two at s1600 read the
+  street at noon, Low, at 1.22 M: the place's own frame (every body hidden) 923k, the bodies 300k (139 calls). The other run, and s1591 booted
+  with the same kit, read 1.10 M with 178–181k of bodies (121 calls). The place is unchanged between the two builds to 640 triangles; the
+  difference is one or two townsfolk inside the full level's ring when the count is taken, 100–260k triangles more (at High the same spot's
+  bodies read 504k and 240k on two runs of one build; Portclare's 425k and 186k). At Low the street has 277k over the place for every body in
+  sight, so a passer-by near the camera takes it over the ceiling. Not a check to loosen: on Low a body near the eye costs more than the
+  level leaves room for. Perhaps the full level's ring (or its body) is smaller at Low, as the land's rings are. `budget` will be red on any
+  run that counts with someone near; the ledger's new last column (`docs/qa/budget.md`, S2249) reads the place without them.
 - ~~**`weapons` red on main: a skeleton's sword by make is not rusted** (QA, Session 2193, s1550; for the bodies builder: `wpnSword`, `wpnBuild`,
   `js/32-people.js`). *a skeleton carries a rusted sword or its spear…*: of 24 Skeletons built by `buildFoe`, 11 hold `sword:norse` and 0 of
   the 11 are rusted (`rust: 0`). The kit's rule since S226 is that a rusted weapon draws no part on `WPN_MAT.metal`: `wpnBuild`'s `add` turns

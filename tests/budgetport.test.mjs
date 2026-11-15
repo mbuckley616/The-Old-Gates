@@ -2,6 +2,8 @@
 // at noon, the build sheet's fifth view and the critic's worst spot, at each quality level against its ceilings; then two spots for
 // the ledger only, at Middle, since the ceilings are the world's: Dunmore's inn from its door at 20h, and a medium gate (ruins, seed
 // 11) from its entrance.
+// S2249: each row also counts the frame with every body hidden (the place's own calls and triangles, the ledger's last column), which
+// does not swing with whether a townsperson stands near when the count is taken; the ceilings still read the whole frame.
 import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 import { budgetKit, budgetEnd, LEVELS } from './budgetkit.mjs';
