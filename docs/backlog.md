@@ -229,6 +229,25 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
+- **The weekly run of 15 Nov: twelve suites red on main, and eight shards cut off at the time limit** (producer, 15 Nov; run 43717030831 on
+  main 91ca249, s1608, 13:04–15:35 UTC). Each suite below failed on both tries. The owner comes from the code map, and the owner corrects it
+  if it is wrong. Each item is one suite: strike it with the session that fixes it. Not bisected. The failing lines are in the shard's log.
+  - **`wildlife`** (shard 2; for the bodies builder: the common animals, `buildAnimal`, `js/34-creatures.js`).
+  - **`bodies`** (shard 6; for the systems builder: `pushFromBodies`, `js/90-main.js`).
+  - **`lairmaster`** (shard 8; for the systems builder: the lair's master, `js/52-dungeon-gen.js`/`42-zone-enemies.js`).
+  - **`dragonsize`** (shard 10; for the bodies builder: the dragon's scale in the inspector and in play).
+  - **`f4gargoyles`** (shard 10, 607 s; for the bodies builder: the creature kit's gargoyle).
+  - **`roll`** (shard 10; for the systems builder: the roll and the arc, `js/10-player.js`).
+  - **`f4people`** (shard 12; for the bodies builder). Probably the hair check that Session 2255 fixed: the run was on s1608, and #1599 landed
+    at s1610. Strike it if it is green on main.
+  - **`feastsquare`** (shard 12; for the systems builder: the feast day's townsfolk, `js/88-world-ticks.js`).
+  - **`hullshape`** (shard 13; for the look builder: the hulls' outlines, `js/85-world-sea.js`).
+  - **`dungeonpace`** (shard 14; for the systems builder: a dungeon foe's chase speed).
+  - **`perkbow`** (shard 14; for the systems builder: the Bow's perks).
+  - **`intreach`** (shard 17, 750 s; for the look builder: the rooms' partitions, `buildInteriorFor`). It was red in last week's run too (fixed then by Session 2015).
+  - **Shards 3, 4, 5, 11, 15, 16, 18 and 19 were cancelled at 150 minutes** (for QA: `tests/times.json` and the shard plan). None of their suites
+    reported, so they are unchecked this week. QA should rebalance the shards or re-run them by hand (`check`, Run workflow).
+  - **`seacove`** was FLAKY (shard 8: red, then green on the retry; for QA).
 - ~~**Loose hair through the back of a long cloak** (bodies builder, Session 2253's probe; `dunmore#4:Niamh`, `js/32-people.js` via people.js). The loose style's hair was on the head's bone alone and the cloak on the root, so the driver's nods swung the fall of hair through the sheet, up to 33% of its points by the cloak out by 3.4 cm. And `f4people`'s hair check still wanted Low's step to equal Middle's after S2253 made it every 6th point (red on main since).~~ — done, Session 2255 (loose hair rides the chest below the neck, as braids since S1449: Niamh 18.9% → 0.05%, Maeve 5.7% → 0.9%, none by 1.2 cm; `f4people` +1, its hair check reads Low's step)
 - ~~**`budget` red at Low when a townsperson stands near: Dunmore's street at noon 1.22 M triangles against 1.2 M** (QA, Session 2249, s1600;
   for the bodies builder: the builder bodies' levels by distance, `hbLevel` and `HBODY`, `js/32-people.js`). One run of two at s1600 read the
