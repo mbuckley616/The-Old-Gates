@@ -232,14 +232,14 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - **The weekly run of 15 Nov: twelve suites red on main, and eight shards cut off at the time limit** (producer, 15 Nov; run 43717030831 on
   main 91ca249, s1608, 13:04–15:35 UTC). Each suite below failed on both tries. The owner comes from the code map, and the owner corrects it
   if it is wrong. Each item is one suite: strike it with the session that fixes it. Not bisected. The failing lines are in the shard's log.
-  - **`wildlife`** (shard 2; for the bodies builder: the common animals, `buildAnimal`, `js/34-creatures.js`).
+  - ~~**`wildlife`** (shard 2; for the bodies builder: the common animals, `buildAnimal`, `js/34-creatures.js`).~~ — done, Session 2266 (the suite's: a deer's body has carried its hide beside the meat since S2123, and the check still wanted meat and nothing else; it now wants 2 to 4 meat and one hide)
   - ~~**`bodies`** (shard 6; for the systems builder: `pushFromBodies`, `js/90-main.js`).~~ — done, Session 2262 (seed 4021's gate is Gaoth's since S2115; the suite takes the first seed from 4021 that is not, 4022)
   - ~~**`lairmaster`** (shard 8; for the systems builder: the lair's master, `js/52-dungeon-gen.js`/`42-zone-enemies.js`).~~ — green on main at s1614, Session 2262 (11 checks; not reproduced)
-  - **`dragonsize`** (shard 10; for the bodies builder: the dragon's scale in the inspector and in play).
-  - **`f4gargoyles`** (shard 10, 607 s; for the bodies builder: the creature kit's gargoyle).
+  - ~~**`dragonsize`** (shard 10; for the bodies builder: the dragon's scale in the inspector and in play).~~ — done, Session 2266 (the suite's: the kit's dragon arrives about 3 s after the lair loads, head up, and the wyrm's box took it in: 4.92 m against the driver's 3.68; the driver is read alone, and a new check has the kit's dragon under the roof, its top 4.77 m under 5.5)
+  - ~~**`f4gargoyles`** (shard 10, 607 s; for the bodies builder: the creature kit's gargoyle).~~ — done, Session 2266 (the suite's: Gaoth's paler stone was read as the mean of the materials' colours, mostly the spurs, which swings by seed; this seed read 0.365 against 0.33 + 0.05. It reads the genome's coat now)
   - ~~**`roll`** (shard 10; for the systems builder: the roll and the arc, `js/10-player.js`).~~ — done, Session 2262 (the Kit tab has 14 rows since S2221's spyglass and net)
-  - **`f4people`** (shard 12; for the bodies builder). Probably the hair check that Session 2255 fixed: the run was on s1608, and #1599 landed
-    at s1610. Strike it if it is green on main.
+  - ~~**`f4people`** (shard 12; for the bodies builder). Probably the hair check that Session 2255 fixed: the run was on s1608, and #1599 landed
+    at s1610. Strike it if it is green on main.~~ — green on main at s1617, Session 2266 (not reproduced)
   - ~~**`feastsquare`** (shard 12; for the systems builder: the feast day's townsfolk, `js/88-world-ticks.js`).~~ — green on main at s1614, Session 2262 (7 checks; not reproduced)
   - ~~**`hullshape`** (shard 13; for the look builder: the hulls' outlines, `js/85-world-sea.js`).~~ — fixed, Session 2261 (the suite's: on the kit hull the old circle shares 0 m² in the beam case, so a ram with no deck shared now passes).
   - ~~**`dungeonpace`** (shard 14; for the systems builder: a dungeon foe's chase speed).~~ — done, Session 2262 (as `bodies`: its deep cave takes seed 4022)

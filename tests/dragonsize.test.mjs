@@ -30,7 +30,9 @@ check('the inspector\'s dragon stands as tall as a dragon built for the open wor
 await page.evaluate(() => { level = 9; const p = Object.assign({}, PORTALS[0], { id: 'dyn_4021', theme: 'deep', seed: 4021, size: 'medium', interior: 'cave', zone: 'world', tutorial: false, lair: { place: 'Test', boss: 'Wyrm', dragon: true } }); goToDungeon(p); });
 for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && !!window._lairBoss)); k++) await page.waitForTimeout(500);
 const L = await page.evaluate(() => { const e = window._lairBoss; if (!e || !e.limbs || !e.limbs.wolf) return { none: true, name: e && e.name };
-  const root = e.limbs.wolf.root; e.mesh.updateMatrixWorld(true); const b = new THREE.Box3().setFromObject(root);
+  /* S2266 — on the new look the creature kit's dragon (hcAttach, a group named 'kit' in the driver's root) arrives a few seconds after the
+     lair loads, head up: the driver's size is read without it, and the kit's body is checked against the roof below */
+  const root = e.limbs.wolf.root; e.mesh.updateMatrixWorld(true); const b = new THREE.Box3(); root.traverse(o => { if (!o.isMesh) return; for (let q = o; q && q !== root; q = q.parent) if (q.name === 'kit') return; b.union(new THREE.Box3().setFromObject(o)); });
   const shell = k => { let y0 = 1e9, y1 = -1e9; dScene.traverse(o => { if (o.isMesh && o.userData && o.userData.dunShell === k) { o.updateMatrixWorld(true); const bb = new THREE.Box3().setFromObject(o); y0 = Math.min(y0, bb.min.y); y1 = Math.max(y1, bb.max.y); } }); return [+y0.toFixed(2), +y1.toFixed(2)]; };
   return { name: e.name, dragon: !!e.dragon, h: +(b.max.y - b.min.y).toFixed(2), ceil: FLOOR_HEIGHT, s: +(e._wyrmScale || 0).toFixed(2), parts: e.mesh.children.filter(c => c.userData && c.userData.rig).length,
     ceilY: shell('ceiling'), floor: e.floor || 1, tp: (() => { const f = currentFloor; currentFloor = e.floor || 1; const c = +tpCeil().toFixed(2); currentFloor = f; return c; })() };
@@ -41,6 +43,13 @@ check('a lair\'s wyrm is built on the dragon\'s body', !L.none && L.dragon && L.
 check('a dragon\'s lair is cut to 5.5 (Michael\'s A on #421), and the shell\'s roof reaches it (its stone stands up to .1 proud)', L.ceil === 5.5 && L.ceilY[1] >= 5.45 && L.ceilY[1] <= 5.62, L);
 check('its wyrm is built at the full 4.5, standing 3.6–3.8 under the roof', L.s === 4.5 && L.h >= 3.6 && L.h <= 3.8 && L.h < L.ceil, L);
 check('the third-person camera\'s ceiling on the wyrm\'s floor reads the lair\'s height', Math.abs(L.tp - ((L.floor === 2 ? FLOOR2_Y_V : 0) + 5.5 - .25)) < .01, L);
+// S2266 — the kit's dragon, once on it, stands under the same roof (its head and horns about 4.7 over the floor)
+for (let k = 0; k < 40 && !(await page.evaluate(() => !!(window._lairBoss && window._lairBoss.limbs.wolf.hc))); k++) await page.waitForTimeout(500);
+const KB = await page.evaluate(() => { const e = window._lairBoss, w = e.limbs.wolf; if (!w.hc) return { none: true, look: window.OG_LOOK }; e.mesh.updateMatrixWorld(true);
+  const b = new THREE.Box3(); w.root.traverse(o => { if (!o.isMesh) return; for (let q = o; q && q !== w.root; q = q.parent) if (q.name === 'kit') { b.union(new THREE.Box3().setFromObject(o)); return; } });
+  const f = (e.floor === 2 ? FLOOR2_Y : 0); return { top: +(b.max.y - f).toFixed(2), foot: +(b.min.y - f).toFixed(2), ceil: FLOOR_HEIGHT, look: window.OG_LOOK }; });
+console.log(JSON.stringify(KB));
+check(`on the new look the kit's dragon stands under the lair's roof too (its top ${KB.top} m over the floor, the roof ${KB.ceil})`, KB.look === 'new' ? !KB.none && KB.top < KB.ceil - .2 && KB.top > 3.6 : true, KB);
 
 // a lair without a dragon, and a plain cave, keep the old 3.2
 const O = await page.evaluate(() => { const out = {}; for (const [k, lair] of [['beast', { place: 'Test', boss: 'Brute', dragon: false }], ['cave', null]]) {
