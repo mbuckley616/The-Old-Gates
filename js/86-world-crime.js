@@ -464,9 +464,12 @@
   function intFloorOf(o){const f=o&&o.userData&&o.userData.floorY;return f!=null?f:(o?o.position.y:0);}
   function intSameFloor(o){return Math.abs((typeof jumpY==='number'?jumpY:0)-intFloorOf(o))<1.6;}
   function intFaces(o){const dx=px-o.position.x,dz=pz-o.position.z,d=Math.hypot(dx,dz);if(d<1e-3)return true;return (Math.sin(o.rotation.y)*dx+Math.cos(o.rotation.y)*dz)/d>=INT_FOV;}
-  function witnessOf(house,picking){const quiet=!!picking&&perk('locks',75); /* S973 — Quiet work (Locks 75): a pick is seen from half as far */
+  /* S2254 — the witness's reach, shared by the street's eyes and the forester's (the witness rule, one number) */
+  function witR(picking){const quiet=!!picking&&perk('locks',75); /* S973 — Quiet work (Locks 75): a pick is seen from half as far */
     const sneak=(typeof _sneaking!=='undefined')&&_sneaking;let R=cloakOn('hood')?11:12;if(quiet)R*=.5;if(sneak)R*=.5*(1-.4*skillLv('stealth')/100)*inTheDarkMult(); /* S941 — Stealth; S976 — In the dark (Stealth 50) */ /* S552 — the dark hood */if(isNight())R*=.5;
     const scath=gateGift('scath')&&(()=>{const h=((worldState.gameTimeMinutes||0)%1440)/60;return h>=20||h<5;})();if(scath)R=Math.min(R,4); /* S1349 — Scáth's gift: at night, 4 m */
+    return {R,quiet,scath};}
+  function witnessOf(house,picking){const {R,quiet,scath}=witR(picking);
     if(typeof isInterior==='function'&&isInterior()){const inR=Math.min(quiet?WIT_IN/2:WIT_IN,scath?4:1e9); // indoors: whoever is in the room with you, facing you, and can see you
       if(sleeperNear()){wakeSleeper(intNPCMesh,true);return {name:currentHouse.keeper||'the resident'};} /* S739 — a sleeper sees nothing, and hears within two units */
       if(typeof intNPCMesh!=='undefined'&&intNPCMesh&&!sleeperAsleep()&&intSameFloor(intNPCMesh)&&Math.hypot(px-intNPCMesh.position.x,pz-intNPCMesh.position.z)<inR&&intFaces(intNPCMesh)&&intSightLine(intNPCMesh.position.x,intNPCMesh.position.z,px,pz,true))return {name:currentHouse.keeper||'the keeper'};
@@ -619,7 +622,7 @@
      hare (Deer, Hind, Elderstag, Crownstag; Boar, Gatefen Boar; Brown Hare) killed there is poaching: recorded always, and seen
      by the usual witnesses by day (at night nobody), it is theft, 2 points, and the beast's worth (deer 30, boar 25, hare 5) in that city.
      The lawful road is the lord's licence, 30 gold at the keep, held for three months of the calendar (keyed by his city in
-     worldState.licences, the character's). Walking into a chase unlicensed says whose it is. The forester, the chase's own witness, is next. */
+     worldState.licences, the character's). Walking into a chase unlicensed says whose it is. The forester, the chase's own witness, walks it by day (S2254, tickForester). */
   const CHASE_R=600,CHASE_WOOD=new Set(['forest','autumn']),POACH_WORTH={Deer:30,Hind:30,Elderstag:30,Crownstag:30,Boar:25,'Gatefen Boar':25,'Brown Hare':5},LICENCE_GOLD=30;
   function licenceDays(){return 3*((typeof CAL!=='undefined'&&CAL.monthLen)||30);}
   /* S2251 — Michael's B on #1562: a chase is any Gatelands town's or city's that has a lord, keep or not (not a village, a port, a garrison
@@ -646,15 +649,49 @@
   function poachKilled(e){if(!e||e.farmStock||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const kind=e.baseName||e.name,worth=POACH_WORTH[kind];if(worth==null)return null;
     const t=chaseAt(e.x,e.z);if(!t)return null;if(licenceHeld(t))return {licensed:true,site:t.id};
     (worldState.crimes||(worldState.crimes=[])).push({kind:'poach',site:t.id,house:null,beast:kind,day:dayNow(),min:absMin()});
-    const w=isNight()?null:witnessOf(null,false);if(!w)return {seen:false,site:t.id};
+    const w=isNight()?null:(foresterSees()||witnessOf(null,false));if(!w)return {seen:false,site:t.id}; /* S2254 — the forester first, then the street's eyes */
     bookCrime(t,'theft',worth);
     showMsg(`${w.name} saw you poach the lord's ${kind.toLowerCase()}.`,'#e88a8a');if(typeof addLog==='function')addLog('👁',`${w.name} saw you poach in the chase of ${t.name}; ${t.name} will not forget it.`);
-    return {seen:true,by:w.name,site:t.id,worth};}
+    return {seen:true,by:w.name,forester:!!w.forester,site:t.id,worth};}
   // each half second in the world: walking into a chase you hold no licence for says whose it is, once each time you enter
   let _chaseT=0,_chaseIn=null;
   function tickChase(dt){_chaseT-=dt;if(_chaseT>0)return;_chaseT=.5;let t=null;try{t=chaseAt(px,pz);}catch(e){}const id=t?t.id:null;
     if(id&&id!==_chaseIn&&!licenceHeld(t))showMsg(`The lord's chase of ${t.name}. Its deer, boar and hare are his; his licence is sold in ${t.name}.`,'#e8d8a0');
     _chaseIn=id;}
+  /* S2254 — the lord's forester, the chase's own witness by day (#1540 B: "a chase's witness is the lord's forester, one per keep town, by
+     day; at night nobody sees you"; one per chase since #1562 B). He walks a beat through his lord's wood: FORESTER_PTS points of the chase,
+     150 to 550 m from the town, drawn once on the stream forester:<town>, kept only where chaseAt names the same town, and walked as a loop
+     by bearing. Where he is on it is read from the clock (one real second is a game minute, so FORESTER_SPD metres a game minute), never
+     saved or rolled: a reload, a sleep or a friend's world puts him in the same place. A body is built only within FORESTER_NEAR of you, by day,
+     in the open world (buildNPCMesh, the role's word Forester for S2242's dress), and taken out of the scene beyond it (tickPeople drops it).
+     He sees by the witness rule (witR: 12 m, the hood, sneaking, the 120° cone, two metres' hearing, a clear line), no farther than the street.
+     His lines (the quest writer's draft, The Three Courts §2) wait on Michael; until then he has none and the toast is the narrator's. */
+  const FORESTER_PTS=8,FORESTER_SPD=1.2,FORESTER_NEAR=150,_forBeat=new Map(),_forBody=new Map();let _forT=0,_forTowns=[];
+  function foresterBeat(t){if(_forBeat.has(t.id))return _forBeat.get(t.id);const rng=seededRng('forester',t.id),pts=[];
+    for(let k=0;k<FORESTER_PTS*6&&pts.length<FORESTER_PTS;k++){const a=rng()*Math.PI*2,d=150+rng()*400,x=t.x+Math.sin(a)*d,z=t.z+Math.cos(a)*d;
+      let c=null;try{c=chaseAt(x,z);}catch(e){}if(c&&c.id===t.id)pts.push({x:+x.toFixed(2),z:+z.toFixed(2),a:Math.atan2(x-t.x,z-t.z)});}
+    let B=null;if(pts.length>=3){pts.sort((p,q)=>p.a-q.a);const cum=[0];for(let i=0;i<pts.length;i++){const p=pts[i],q=pts[(i+1)%pts.length];cum.push(cum[i]+Math.hypot(q.x-p.x,q.z-p.z));}
+      const nm=NAMES[t.reg]||NAMES.irish,r2=seededRng('forester:name',t.id);B={pts,cum,L:cum[pts.length],name:nm.m[Math.floor(r2()*nm.m.length)]};}
+    _forBeat.set(t.id,B);return B;}
+  // where the forester of t's chase stands at game minute m: {x, z, ry} (he faces the way he walks), or null when his chase has no beat
+  function foresterAt(t,m){const B=foresterBeat(t);if(!B)return null;let s=((m==null?absMin():m)*FORESTER_SPD)%B.L;if(s<0)s+=B.L;
+    let i=0;while(i<B.pts.length-1&&B.cum[i+1]<=s)i++;const p=B.pts[i],q=B.pts[(i+1)%B.pts.length],seg=B.cum[i+1]-B.cum[i]||1,f=(s-B.cum[i])/seg;
+    return {x:p.x+(q.x-p.x)*f,z:p.z+(q.z-p.z)*f,ry:Math.atan2(q.x-p.x,q.z-p.z)};}
+  function foresterOut(id){const b=_forBody.get(id);if(b){if(b.g.parent)b.g.parent.remove(b.g);_forBody.delete(id);}}
+  function tickForester(dt){const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&!isNight();
+    if(!on){for(const id of [..._forBody.keys()])foresterOut(id);_forTowns=[];return;}
+    _forT-=dt;if(_forT<=0){_forT=2;try{_forTowns=chaseCitiesNear(px,pz,FORESTER_NEAR);}catch(e){_forTowns=[];}}
+    const keep=new Set();
+    for(const t of _forTowns){if(!chaseLord(t))continue;const P=foresterAt(t);if(!P||Math.hypot(P.x-px,P.z-pz)>FORESTER_NEAR)continue;keep.add(t.id);
+      let b=_forBody.get(t.id);if(!b){const B=_forBeat.get(t.id),def={name:B.name,role:'Forester',female:false,people:'gatelander',x:P.x,z:P.z,_siteId:t.id};
+        const g=buildNPCMesh(def,{nation:'gatelands',key:'forester:'+t.id});g.userData.forester=t.id;sc.add(g);b={g,def,site:t};_forBody.set(t.id,b);}
+      b.g.position.set(P.x,worldH(P.x,P.z),P.z);b.g.rotation.y=P.ry;b.def.x=P.x;b.def.z=P.z;}
+    for(const id of [..._forBody.keys()])if(!keep.has(id))foresterOut(id);}
+  // the forester who sees you now (the witness rule: witR's reach, his cone, two metres' hearing, a clear line), or null
+  function foresterSees(){if(isNight())return null;const {R}=witR(false);let best=null,bd=R;
+    for(const b of _forBody.values()){const g=b.g;if(!g.parent||!g.visible)continue;const d=Math.hypot(px-g.position.x,pz-g.position.z);if(d>=bd)continue;
+      if(d>=WIT_HEAR&&!intFaces(g))continue;if(!clearLine(px,pz,g.position.x,g.position.z))continue;best=b;bd=d;}
+    return best?{name:best.def.name,forester:true,site:best.site.id}:null;}
   /* S2241 — the chase's edge on the map (the page's "no trap": "a chase's edge on the map in the lord's colour", the Crown's crimson). The local
      map and the minimap sample their view in squares of `cell` metres; each square whose middle is in a chase (chaseAt, the rule itself, so it
      follows whichever towns hold one) is tinted, and every side it shares with a square outside is drawn as the edge. The cities that could hold
