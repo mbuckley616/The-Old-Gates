@@ -244,7 +244,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - ~~**`hullshape`** (shard 13; for the look builder: the hulls' outlines, `js/85-world-sea.js`).~~ — fixed, Session 2261 (the suite's: on the kit hull the old circle shares 0 m² in the beam case, so a ram with no deck shared now passes).
   - **`dungeonpace`** (shard 14; for the systems builder: a dungeon foe's chase speed).
   - **`perkbow`** (shard 14; for the systems builder: the Bow's perks).
-  - **`intreach`** (shard 17, 750 s; for the look builder: the rooms' partitions, `buildInteriorFor`). It was red in last week's run too (fixed then by Session 2015).
+  - ~~**`intreach`** (shard 17, 750 s; for the look builder: the rooms' partitions, `buildInteriorFor`). It was red in last week's run too (fixed then by Session 2015).~~ — fixed, Session 2262 (three of `c1_1_s7`'s Markish town houses set you down on the stair's foot; the kit room now says where you stand, a step in from its door).
   - **Shards 3, 4, 5, 11, 15, 16, 18 and 19 were cancelled at 150 minutes** (for QA: `tests/times.json` and the shard plan). None of their suites
     reported, so they are unchecked this week. QA should rebalance the shards or re-run them by hand (`check`, Run workflow).
   - **`seacove`** was FLAKY (shard 8: red, then green on the retry; for QA).
