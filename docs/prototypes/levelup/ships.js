@@ -724,7 +724,9 @@ export function gatelandsGalleon(o = {}, r = stream('galleon')) {
   // the cream wale under the green; six gun-port lids a side on the gun deck, closed
   for (let i = 0; i + 2 <= NS; i += 2) { const za = zAt(i), zc = zAt(i + 2), u = (NSTR - 2) / NSTR; for (const e of [1, -1]) rod([e * (sect(za, u)[0] + .035), sect(za, u)[1], zr(za, u)], [e * (sect(zc, u)[0] + .035), sect(zc, u)[1], zr(zc, u)], .05, .05, 'cream'); }
   const ports = []; for (const e of [1, -1]) for (let k = 0; k < 6; k++) { const z = -5.5 + k * 2.1, y = DECK - .45, u = (y - keelAt(z)) / (sheerAt(z) - keelAt(z)), p = sect(z, u), n = norm(z, u);
-    put(new THREE.BoxGeometry(.06, .5, .56).rotateZ(-e * Math.atan2(n[1], n[0]) * 0), 'green', e * (p[0] + n[0] * .04), y, z); put(new THREE.BoxGeometry(.03, .06, .56), 'iron', e * (p[0] + n[0] * .08), y + .18, z); ports.push([e, z, y]); }
+    /* o.guns (Session 2243, ships-arms.js runOutGuns): the lid hinged at the port's head and swung up 110°, past level, clear of the gun */
+    if (o.guns) { M.lid = M.green; M.lidIron = M.iron; const th = 110 * Math.PI / 180, hx = e * (p[0] + n[0] * .07), hy = y + .25; put(new THREE.BoxGeometry(.06, .5, .56).translate(0, -.25, 0).rotateZ(e * th), 'lid', hx, hy, z); put(new THREE.BoxGeometry(.03, .06, .56).translate(e * .035, -.07, 0).rotateZ(e * th), 'lidIron', hx, hy, z); }
+    else { put(new THREE.BoxGeometry(.06, .5, .56).rotateZ(-e * Math.atan2(n[1], n[0]) * 0), 'green', e * (p[0] + n[0] * .04), y, z); put(new THREE.BoxGeometry(.03, .06, .56), 'iron', e * (p[0] + n[0] * .08), y + .18, z); } ports.push([e, z, y]); }
   // the castles, as the cog's: green boards from the sheer to 0.25 m over the castle deck, a cream band, a rail at 1.0 m
   const CY = DECK + 2.15, cw = z => sect(z, 1)[0], ZA = zs + 6.0, ZF = zb - 3.5;
   const castleSides = (z0, z1) => { const n = 18; for (const e of [1, -1]) { const rows = []; for (let i = 0; i <= n; i++) { const z = z0 + (z1 - z0) * i / n; rows.push([[e * cw(z), sheerAt(z) - .1, z], [e * cw(z), CY + .25, z]]); }
