@@ -2199,7 +2199,7 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
     if(HBODY.cards.test(o.name)||o.parent===by.head)cards.add(o);});
   /* S2041 — a foe in a long cloak takes the hem's bones too (the Cultist, the Rogue Mage, the Marsh Hag: 167 bones); a caped foe's sheet ends
      above the hips and stays at 163. A foe's front has no `upF`: its hanging hands came out through the front edges with it (the hag 6.7 → 15.8 cm) */
-  const fG=rig.foe&&rig.hbG&&rig.hbG.dress;hbCloakLegs(P,!rig.foe||!!(fG&&fG.cloak&&!fG.cape),!rig.foe&&(rig.hbLazy?'you':true));hbHairOnCloak(P);
+  const fG=rig.foe&&rig.hbG&&rig.hbG.dress;hbCloakLegs(P,!rig.foe||!!(fG&&fG.cloak&&!fG.cape),!rig.foe&&(rig.hbLazy?'you':true));hbHairOnCloak(P);if(rig.hbG&&rig.hbG.dress&&rig.hbG.dress.cape)hbCapeChest(P);
   // F10 (Session 1256) — a body that is only ever seen near (the player's, rig.hbLazy) bakes its middle level when it is first asked for
   // (hbMid: first person's hands, a bed), not at attach: the bake was 200 to 700 ms of every change of what the player wears
   let mid=null;if(!rig.hbLazy){try{mid=hbMerge(P,cards);}catch(e){rig.root.remove(W);rig.hbFail=true;console.warn('F4: the middle level failed for',rig.g.hbKey,e);return;}mid.geometry.boundingSphere=sph.clone();root.add(mid);
@@ -2414,6 +2414,13 @@ function hbHem(rig){const P=rig.hb.P,hem=P&&P.hem;if(!hem)return;P.byName.root.u
     _hbhA.copy(hem.dn).multiplyScalar(Math.cos(b)).addScaledVector(hem.fw,-Math.sin(b));hem.side[j].quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());}}
   if(!hem.front)return;const f=Math.max(0,-aL,-aR)*(hem.you?HB_CLOAK_LEGS.kFYou:HB_CLOAK_LEGS.kF);hem.aF=f;
   _hbhA.copy(hem.dn).multiplyScalar(Math.cos(f)).addScaledVector(hem.fw,Math.sin(f));hem.front.quaternion.setFromUnitVectors(hem.dn,_hbhA.normalize());}
+/* S2266 — a shoulder cape rides the chest. Its sheet, hem, fur collar and brooch hung from the root, while since S2255 loose hair below
+   the neck rides the chest bone (spine03): each bend and breath of the driver's spine carried the hair out through the cape's back by up to
+   2.2 cm (dunmore#4:Niamh, 2.8% of her hair by it; dunmore#3:Caoimhe 10%). A cape is cut to the elbows and sits on the shoulders, so every
+   weight it had on the root passes to the chest; a long cloak, which falls to the legs, keeps the root and its hem's bones */
+function hbCapeChest(P){const sk=P.skeleton,il=sk.bones.indexOf(P.byName.root),ic=P.byName.spine03?sk.bones.indexOf(P.byName.spine03):-1;if(il<0||ic<0)return 0;let n=0;
+  P.root.traverse(o=>{if(!o.isSkinnedMesh||!/^(cloak|cloakHem|brooch|collar\d)$/.test(o.name))return;const g=o.geometry,si=g.attributes.skinIndex.clone(),a=si.array;
+    for(let i=0;i<a.length;i++)if(a[i]===il){a[i]=ic;n++;}g.setAttribute('skinIndex',si);});return n;}
 const HB_HAIR_CLOAK={in:.02,out:.07,cell:.07};
 function hbHairOnCloak(P){const st=P.cloak&&P.cloak.hairOver;if(!st)return null;const sk=P.skeleton,lo=P.byName.root,il=sk.bones.indexOf(lo);if(il<0)return null;
   const hair=[],sheet=[];P.root.traverse(o=>{if(!o.isSkinnedMesh)return;if(/^(braid\d|tie|brush|tail)$/.test(o.name))hair.push(o);else if(/^(cloak|cloakHem|hood|collar\d)$/.test(o.name))sheet.push(o);});
