@@ -212,7 +212,7 @@ const tt = await page.evaluate(() => { let t = null;
   return out; });
 console.log(JSON.stringify(tt));
 check(`the tithe-ship off ${tt.port}: Aurenne's water within 300 m of its shore (${tt.sea}); the hail offers *${(tt.labels || []).join('* / *')}*; declared, 3 salt kept and entered; refused and passed, kept and no fine; refused by closing the hail and found, taken, the ledger +${tt.foundFine}`,
-  !tt.none && tt.sea && !tt.land && (tt.labels || []).some(l => /^Declare the cargo/.test(l)) && tt.labels.includes('Refuse.') && tt.declKept === 3 && /"salt":3/.test(tt.declared)
+  !tt.none && tt.sea && !tt.land && (tt.labels || []).some(l => /^\d+\. Declare the cargo/.test(l)) && tt.labels.some(l => /^\d+\. Refuse\.$/.test(l)) && tt.declKept === 3 && /"salt":3/.test(tt.declared)
   && tt.passKept === 3 && tt.passFine === 0 && tt.foundKept === 0 && tt.foundFine === 50 && tt.rec === 'smuggle' && tt.asked, tt);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
