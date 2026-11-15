@@ -56,8 +56,9 @@ check('a genome is the same rolled twice from its key', again);
 // S2255 (S2253's note): loose hair falls down the back under a long cloak and rides the chest below the neck, as braids have since S1449.
 // On the head's bone alone it swung through the sheet's back with each nod of the driver (dunmore#4:Niamh, 14% of the points by the
 // cloak out of it, by up to 2.1 cm). Over 4 s in the street, every loose head under a long cloak (not a cape) whole within the eye's ring
+// (S2260: a cape too. Niamh is Dunmore's Mayor, and since #1566 B she wears the Crown's crimson cape, so the street held no long cloak at the full level)
 const loose = await page.evaluate(() => { { const t = WORLD.siteAnywhere('dunmore'); CAM.position.set(t.x, worldH(t.x, t.z + 4) + 1.65, t.z + 4); CAM.updateMatrixWorld(true); } for (let i = 0; i < 60; i++) tickPeople(1 / 60, 5.9e5 + i * 17);
-  const rigs = [...HB_RIGS].filter(r => r.hb && r.hb.P && r.hb.L === 0 && r.hbG && r.hbG.hair && r.hbG.hair.style === 'loose' && r.hbG.dress && r.hbG.dress.cloak && !r.hbG.dress.cape && !!r.hb.root.getObjectByName('hair') && !!r.hb.root.getObjectByName('cloak'));
+  const rigs = [...HB_RIGS].filter(r => r.hb && r.hb.P && r.hb.L === 0 && r.hbG && r.hbG.hair && r.hbG.hair.style === 'loose' && r.hbG.dress && r.hbG.dress.cloak && !!r.hb.root.getObjectByName('hair') && !!r.hb.root.getObjectByName('cloak'));
   const count = rig => { const H = rig.hb, ms = []; H.root.updateMatrixWorld(true); H.root.traverse(o => { if (o.isSkinnedMesh) ms.push(o); });
     const posed = m => { const n = m.geometry.attributes.position.count, o = new Float32Array(n * 3), v = new THREE.Vector3(); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); o[i * 3] = v.x; o[i * 3 + 1] = v.y; o[i * 3 + 2] = v.z; } return o; };
     const CP = [], CN = []; for (const m of ms.filter(m => m.name === 'cloak')) { const p = posed(m), gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(p, 3)); gg.setIndex(m.geometry.index); gg.computeVertexNormals(); const nn = gg.attributes.normal.array; for (let i = 0; i < p.length; i++) { CP.push(p[i]); CN.push(nn[i]); } }
@@ -72,7 +73,7 @@ const loose = await page.evaluate(() => { { const t = WORLD.siteAnywhere('dunmor
   for (let f = 0; f < 8; f++) { for (let i = 0; i < 30; i++) tickPeople(1 / 60, 6e5 + f * 1000 + i * 17); rigs.forEach((r, k) => { const c = count(r); res[k].n += c.n; res[k].out += c.out; res[k].worst = Math.max(res[k].worst, +c.worst.toFixed(3)); }); }
   return res.map(r => ({ ...r, share: +(r.out / Math.max(1, r.n)).toFixed(4) })); });
 console.log('  loose under a cloak:', JSON.stringify(loose));
-check('loose hair under a long cloak rides the chest below the neck and stays under the sheet as they walk: under 2% of the hair by the cloak outside it, none by 1.2 cm',
+check('loose hair under a long cloak or a cape rides the chest below the neck and stays under the sheet as they walk: under 2% of the hair by the cloak outside it, none by 1.2 cm',
   loose.length >= 1 && loose.every(r => r.chest && r.n > 1000 && r.share < .02 && r.worst < .012), loose);
 
 
@@ -365,7 +366,7 @@ const powers = await page.evaluate(() => { const one = (def, nation, lord = true
   return { lord: one({ role: 'Lord', name: 'Cathal', people: 'gatelander' }, 'gatelands'), elder: one({ role: 'Elder', name: 'Brigid', people: 'gatelander' }, 'gatelands'),
     captain: one({ role: 'Captain', name: 'Hesta', people: 'markman' }, 'mark'), reeve: one({ role: 'Reeve', name: 'Orm', people: 'markman' }, 'mark'),
     prior: one({ role: 'Prior', name: 'Anselme', people: 'aurennais' }, 'aurenne'), factor: one({ role: 'Factor', name: 'Isaure', people: 'aurennais' }, 'aurenne'),
-    guard: one({ role: 'Captain', name: 'Hesta', people: 'markman' }, 'mark', false) }; });
+    guard: one({ role: 'Captain', name: 'Sigrun', people: 'markman' }, 'mark', false) }; });
 console.log('  powers:', JSON.stringify(powers));
 { const P = powers; check('the town\'s head is dressed by office: the lord in crimson and fur with a sword, the Elder\'s staff, the captain\'s black coat with fur and a sword, the reeve\'s staff and fur, the Prior\'s stole and book, the Factor\'s circlet, ledger and seal; none through a cloak; a captain who is not the head is still a guard',
   P.lord.power === 'lord' && P.lord.crimson && P.lord.fur && P.lord.sword && P.elder.staff && P.elder.cloak && P.elder.legs && P.captain.coat && P.captain.fur && P.captain.sword && !P.captain.mail && !P.captain.spear

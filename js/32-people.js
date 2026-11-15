@@ -1930,7 +1930,7 @@ function hbOfficeDress(g,G){const P=g.power&&HB_POWER[g.power];
    crimson hem and the carved staff; the League's captain in black with the wolf collar and iron, the Norse sword; the Mark's reeve (a
    town's and a port's) in plain good wool, the leather waistcoat, a short grey cape with wolf and the ash staff; the Compact's Prior in
    white with the blue stole edged gold, a gold amulet and the gilt book; the Factor in ivory with a blue border, the circlet with its
-   blue stone, gold earrings, the ledger and the seal. The person keeps their own roll (face, sex, age, stature); only the dress is the
+   blue stone, gold earrings, the ledger and the seal on a sandal-leather belt (the seal hangs from it). The person keeps their own roll (face, sex, age, stature); only the dress is the
    office's. The Old Blood rule nobody, so no town has an elder of theirs; a Gatelands Harbour Reeve or garrison Captain, the Mark's and
    Aurenne's village Elders and Aurenne's Marshal have no sheet and keep the roll */
 const HB_POWER_TITLE={gatelands:{lord:'lord',lady:'lord',mayor:'lord',elder:'elder'},mark:{captain:'captain',reeve:'reeve','harbour reeve':'reeve'},
@@ -1946,7 +1946,7 @@ const HB_POWER={
     cape:true,cloakLen:.8,cloakFur:[.52,.5,.47],brooch:[.42,.43,.45],staff:[.4,.32,.22],staffMake:'ash'},
   prior:{tunic:[.86,.84,.78],robe:[.86,.84,.78],skirtColor:[.86,.84,.78],sandals:[.3,.2,.12],cord:[.74,.6,.3],sash:[.1,.2,.46],sashBorder:[.74,.56,.2],
     sashPrint:false,amulet:[.74,.56,.2],book:[.12,.18,.4],bookGilt:[.74,.56,.2]},
-  factor:{tunic:[.84,.78,.64],skirtColor:[.84,.78,.64],skirt:'long',sandals:[.36,.24,.14],sash:[.1,.2,.46],sashBorder:[.74,.56,.2],gownBorder:[.1,.2,.46],
+  factor:{tunic:[.84,.78,.64],skirtColor:[.84,.78,.64],skirt:'long',sandals:[.36,.24,.14],belt:[.36,.24,.14],sash:[.1,.2,.46],sashBorder:[.74,.56,.2],gownBorder:[.1,.2,.46],
     earrings:[.74,.56,.2],circlet:[.74,.56,.2],circletStone:[.1,.2,.46],book:[.12,.18,.4],bookGilt:[.74,.56,.2],seal:[.74,.56,.2]}};
 function hbPowerOf(def,g){if(!def||!def._lord)return null;const T=HB_POWER_TITLE[g.nation];return (T&&T[String(def.role||'').toLowerCase()])||null;}
 function hbRolePack(g,G){const Pk=(typeof TP_PACK!=='undefined'&&(TP_PACK[g.nation]||TP_PACK.gatelands))||{kind:'creel',col:[.92,.74,.48]};
