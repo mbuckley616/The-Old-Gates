@@ -3521,7 +3521,7 @@ const giver=`${lord.title} ${lord.name}`;
     for(let k=0;k<n;k++){const toB=r()<.5,dest=toB?B:A;const why=pick(r,['Family.','Work, if it’s still there.','A wedding. Not mine.','I’ve a debt to collect.','The same as everyone. Something better.']);
       folk.push({name:fresh(),role:'Traveller',ico:'\u{1F9F3}',greeting:L.trav,
         topics:[{label:'Where are you headed?',response:`${dest?dest.name:'The next town'}. ${why}`},{label:'Farewell.',bye:true}]});}
-    folk.forEach((def,k)=>{const g=buildNPCMesh({role:'villager',name:def.name,bCol:k?0x4a4038:0x3a2a20,sCol:pick(r,P.skin)},{nation:nationAt(house.doorX,house.doorZ),key:'coach_'+key});
+    folk.forEach((def,k)=>{const g=buildNPCMesh({role:k?'traveller':'villager',name:def.name,bCol:k?0x4a4038:0x3a2a20,sCol:pick(r,P.skin)},{nation:nationAt(house.doorX,house.doorZ),key:'coach_'+key});
       let x=W/2,z=D*.7;for(let t=0;t<40;t++){const cx=2.5+r()*(W-5),cz=Math.max(5.5,D*.5)+r()*(D*.5-2.5);if(!solidK(cx,cz,.45)&&!INT_NPCS.some(o=>Math.hypot(o.g.position.x-cx,o.g.position.z-cz)<1.2)){x=cx;z=cz;break;}}g.position.set(x,0,z);g.rotation.y=r()*Math.PI*2;sc_.add(g);
       INT_NPCS.push({g,def,wa:0,wt:1,walk:false,box:{x0:2,x1:W-2,z0:Math.max(5,D*.5),z1:D-2}});});
   }
