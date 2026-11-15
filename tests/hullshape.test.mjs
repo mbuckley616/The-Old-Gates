@@ -50,8 +50,10 @@ const cases = {
 };
 const out = {};
 for (const [k, c] of Object.entries(cases)) { out[k] = { old: await meet({ ...c, which: 'old' }), now: await meet({ ...c, which: 'new' }) }; console.log(k, JSON.stringify(out[k])); }
-// both held driving into each other every tick, so what is left is a tick's way at most: the hulls' depth into each other
-const ok = (r) => r.now.deep <= .3 && r.now.worst < r.old.worst;
+// both held driving into each other every tick, so what is left is a tick's way at most: the hulls' depth into each other.
+// No deck shared at all passes too: on the new look's kit hull (a fine bow) the old circle's 8.06 stops her bow-on to your beam
+// with 0 m² shared, so "less than the old circle" had nothing to beat there (the weekly run of 15 Nov; Session 2261).
+const ok = (r) => r.now.deep <= .3 && (r.now.worst === 0 || r.now.worst < r.old.worst);
 check(`a black sail into your beam at 6.5: ${out.beam.old.deep} units deep (${out.beam.old.worst} m² shared) with the old circle, ${out.beam.now.deep} (${out.beam.now.worst} m²) now`, ok(out.beam), out.beam);
 check(`bow to bow at 6 and 6.5: ${out.bows.old.deep} deep (${out.bows.old.worst} m²) before, ${out.bows.now.deep} (${out.bows.now.worst} m²) now`, ok(out.bows), out.bows);
 check(`her bow into your quarter: ${out.quarter.old.deep} deep (${out.quarter.old.worst} m²) before, ${out.quarter.now.deep} (${out.quarter.now.worst} m²) now`, ok(out.quarter), out.quarter);

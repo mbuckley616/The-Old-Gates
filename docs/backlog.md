@@ -241,7 +241,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - **`f4people`** (shard 12; for the bodies builder). Probably the hair check that Session 2255 fixed: the run was on s1608, and #1599 landed
     at s1610. Strike it if it is green on main.
   - **`feastsquare`** (shard 12; for the systems builder: the feast day's townsfolk, `js/88-world-ticks.js`).
-  - **`hullshape`** (shard 13; for the look builder: the hulls' outlines, `js/85-world-sea.js`).
+  - ~~**`hullshape`** (shard 13; for the look builder: the hulls' outlines, `js/85-world-sea.js`).~~ — fixed, Session 2261 (the suite's: on the kit hull the old circle shares 0 m² in the beam case, so a ram with no deck shared now passes).
   - **`dungeonpace`** (shard 14; for the systems builder: a dungeon foe's chase speed).
   - **`perkbow`** (shard 14; for the systems builder: the Bow's perks).
   - **`intreach`** (shard 17, 750 s; for the look builder: the rooms' partitions, `buildInteriorFor`). It was red in last week's run too (fixed then by Session 2015).
