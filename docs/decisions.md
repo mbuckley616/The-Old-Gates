@@ -55,6 +55,26 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** A. Pictures on #1574: goods, apothecary, armourer, barber, the counter, outside (raw from `auto/look-2240`).
 
+### A ship's ballista and guns — the engine at the bow off the centreline, and the galleon's guns run out? (from the look builder, 2026-11-15, #1580)
+**The question.** Naval combat B's first look session (Session 2243, prototype) draws a torsion ballista on a turning post, 0.8 m to starboard of each class's bow so its bolt flies past the stem, the bowsprit and the stays (on the centreline every bow's rig sat in the bolt's line), on the forecastle where she has one. The galleon's lids swing up 110° and her twelve guns run out. Picture: `docs/prototypes/levelup/ships-arms.jpg` (raw from `auto/look-2243`).
+
+**Options.**
+- **A (recommended).** As drawn, in the game on the new look: on your own ship when the ballista is fitted, on a black-sail cutter's bow, and the galleon's guns run out while she sails with a side able to fire (lids shut in harbour).
+- **B.** The ballista on the centreline, each hull's bowsprit and stays raised clear for it.
+- **C.** A great crossbow (a springald's horn bow on the same stock) in place of the torsion head.
+
+**Recommendation.** A. On the cutter the engine stands just forward of her mast, because her bow is too fine for its swing.
+
+### A sea fight's smoke, fire and founder — as drawn, without the char, or only the flash and the splash? (from the look builder, 2026-11-15, #1582)
+**The question.** Today the guns fire unseen, a burning rig shows nothing, and a sinking ship drops straight down. Session 2244's prototype draws a broadside's flash and smoke, the shot in flight, the splash and splinters, a burning sail's flames and its char, and the founder going down by the head in broken water; at most 4 draws in a fight. Picture: `docs/prototypes/levelup/ships-fx.jpg` (raw from `auto/look-2243`).
+
+**Options.**
+- **A (recommended).** As drawn, the char kept on a doused sail until she is refitted.
+- **B.** As A, but a doused sail is whole again: no char.
+- **C.** Only the flash, the splash and the founder's broken water: no smoke clouds and no flames.
+
+**Recommendation.** A.
+
 ## Answered
 ### The adventurer's kit: a pack, the pack plus a spyglass, rod and net, or those plus wear? (from the designer, 13 Nov 2026, #1504)
 **The question.** Backlog L8's adventurer's kit (OG-098) asks a use for each thing carried. Most of it is built (pick, hatchet, joiner's kit, shovel, skinning knife, mess kit, bedrolls, tent, water vessels, cloaks), but nothing makes what you carry a choice, and nothing in the game is a pack, a spyglass, a rod or a net. How far should the kit go? Page: `docs/design/adventurers-kit.md`.
