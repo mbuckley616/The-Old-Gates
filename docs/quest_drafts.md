@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 46, 14 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 47, 15 Nov: no new calls on the page)
 
 ---
 
@@ -6729,3 +6729,174 @@ Under Might 4 at an eave: *You cannot get a purchase on the eave.*
 
 - The factor's pricing as a hook for §12a's investment (a priced town that a house will lend to): a systems question for later, not this draft's.
 - The Fighters' and Mages' heads handing an errand on to the street (the first run's last note) still stands.
+
+---
+
+## The Three Courts — what the law says at the halt, the chase, the claim and the ledger
+
+*Unapproved. Drafted 15 Nov 2026.* Owed by Michael's B on #1540 (*Law in three registers*, `docs/design/law-in-three-registers.md`: "the quest writer writes the courts' lines"), and by the systems builder's own notes in `86-world-crime.js`: "the guard's words for the court are the quest writer's … so the two choices speak only as the narrator for now" (S2227), "the reeve's words are the quest writer's; the halt's two lines speak as the narrator for now" (S2228). The three courts are on main (Sessions 2227–2230), poaching's first half too (S2235), sacrilege is on PR #1576 (S2240), and the forester and the inquisitor are dressed on PR #1578 (S2242). Everything a person says there today is either the old halt (one court's words on three islands) or the narrator's toast. This draft gives each court its people's mouths. It adds no rule. Two of its lines wait on the systems builder's next pieces (the forester placed in the chase, the inquisitor placed in a Prior's town) and one on a decision (#1570, the tithe-ship's hail); each is marked.
+
+Two findings this run (quest review, run 47) fix what is already wrong and are not repeated here: Finding 46 is the lord's licence (the chase's lord speaking as a clerk), Finding 47 the yield's *a night in the cells* where the court gives the stocks or the prison.
+
+### What the canon fixes, and where it is silent
+
+- §1.2, §1.5 and the nations' table: the Gatelands under the Crown (crimson and gold), the Mark under the Captains' League (*disputes by duel … Captains over garrisons, Reeves over towns*), Aurenne under the Compact (*merchant houses under the Church of the Weaver. Priors over the church's towns, Factors over the houses' ports. Every hull that passes is tithed*). *Crown roads patrolled, Compact ports tithed, Mark duels legal.*
+- Aurenne's pride is *ledgers, learning, paper over oaths*; its contempt is *brawling, duels, and "gate-grubbing" — the Gatelands' salvage trade is sacrilege to the Church*; its slur for the Gatelanders, *gate-grubbers*, *dig up what should stay buried and call it a living*.
+- The canon is silent on what a Gatelands court sounds like, on a forester, and on the inquisitor's office. The plainer thing is chosen: the guard is the court's mouth at the halt in every island, as built; the lord of the town is its seat (a Lord in a city, a Reeve or a Captain in the Mark, a Factor or a Prior in Aurenne), and says the court's terms when asked; the forester is the lord's man in the wood and nothing grander; the inquisitor keeps the Prior's list and nothing more (no torture, no burning: the brief's *never depressing to play*).
+- No new name. The forester and the inquisitor are roles; they take names from their people's bank as any resident does. If *Faith* (27 Oct, unapproved) is approved, its Brother Alain takes the inquisitor's lines in his own town.
+
+### Shape
+
+No quest and no new state, but for one optional mark in §1e. Each line rides a function on main or in the open PRs, named under each section and gathered at the end. Where a narrator's toast stands today and a person is present, the person's line takes its place in the farmer's form (`` `${name}: “…”` ``, Finding 44); where nobody is present the narrator's toast stays as built. Each court is spoken by the island's own people; an Old Blood guard (a few towns' watch) has a line in each, short and exact. A guard of another people in a town (an occupied town's garrison) keeps the halt as built.
+
+---
+
+### 1. The Crown's court — the Gatelands (Gatelander; Old Blood)
+
+**1a. The halt, when you carry goods stolen from this town** (`confront`, `confrontIndoor`: added to the greeting after the fine, only when `restitutionTopic` offers *Hand back the goods*):
+- Gatelander: "And what was carried off from here can be carried back. A thing returned weighs lighter on the scales than a thing paid for."
+- Old Blood: "What you took from here, give back. It counts."
+
+**1b. The goods handed back** (`restitutionTopic`: the toast, as the dialog closes or reopens):
+- Fine left — Gatelander: "Back where they belong, and the fine down to {n} gold. Half a debt is still a debt, so."
+- Fine left — Old Blood: "Given back. {n} gold still."
+- Fine met — Gatelander: "Back where they belong, and the fine met with them. The town will sleep easier, and so might you. Go on."
+- Fine met — Old Blood: "Given back. It is met. Go."
+
+**1c. The stocks chosen** (`offerYield`'s *The stocks ({h} h).*: the toast as the fade begins; the narrator's *{h} hours in the stocks on the plaza. … You are let go.* after it stays):
+- Gatelander: "The stocks, so. {h} {hour|hours}, and every soul in {town} going by to see it. A red face mends quicker than a cut one."
+- Old Blood: "The stocks. {h} {hour|hours}. Sit still."
+
+**1d. The lord, asked about the court** (`lordTopics`, a city's Lord or Lady or a town's Mayor in the Gatelands; label *About my fine.*, shown while `bountyAt(site)>0`):
+- Gatelander: "{n} gold, owed to this town and to the Crown that keeps it. Pay it to any of my guards and that's the end of it. Bring back what was taken from here and it's less. Make them draw on you and it's double, or the stocks, and the whole square counting the hours. The Weaver weaves the long thread; there's no call to tie a knot in it."
+
+**1e. The day after the stocks** (optional; a one-line mark, `c.stocks=dayNow()` in `toStocks`, on the town's crime record, the character's as the rest of it; read by the greeting's tag in `firstWords` for that town's residents that day only):
+- Gatelander, a townsperson: "There's the one from the stocks. Ah, sure, we've all sat somewhere."
+- Old Blood, a townsperson: "You sat on the plaza. It is done now."
+
+---
+
+### 2. The lord's chase — the Gatelands (Gatelander)
+
+Finding 46 gives the lord's three licence lines. The forester is the chase's witness, one per keep city, by day; he is dressed (S2242, `HB_OFFICE`, the role's word *forester*), and placing him is the systems builder's next session. His lines, for that session to carry (`foresterTopics(t)`, role *Forester*):
+
+**2a. The greeting:**
+- In the chase, no licence: "You're in the lord's chase, and everything in it with four legs is his. The licence is thirty gold at the keep. It's cheaper than meeting me twice."
+- In the chase, licensed: "Licensed, are you? Good hunting, then. Leave the hind with a calf at foot; the wood remembers who was greedy."
+- After he saw you poach (a `poach` crime at his chase, booked by his own sight): "I saw it fall. The lord's book had it before the beast was cold."
+
+**2b. The toast when he sees it** (`poachKilled`, in place of *{w} saw you poach the lord's {beast}.* when the witness is the forester; any other witness keeps the narrator's line):
+- "{name}: “That's the lord's {beast}, and I saw it go down.”"
+
+**2c. Topics:**
+- *Whose wood is this?* — "{Lord} {name}'s, and the lord's before that. From the keep's wall to a long walk out, the deer are his, and the boar and the hare. The trees he'll leave you, and the firewood. It's what runs under them that's counted."
+- *What does the licence give me?* — "Three months of the chase: deer, boar and hare, as many as you can carry and as few as you need. Thirty gold at the keep. A licence is dearer than a snare and cheaper than a bad name, and a bad name lasts longer."
+
+At night there is no forester, as the rule has it, and nothing is said.
+
+---
+
+### 3. The reeve's court — the Mark (Markman; Old Blood)
+
+The claim is fought against the guard who halted you, from 6:00 to noon (S2228). The Mark's lord is a Reeve over a town and a Captain over a city or a garrison (`NATIONS.mark.titles`); either is the reeve of this court.
+
+**3a. The halt, added to the greeting while the claim may be fought** (`confront`, when `claimTopic` offers it):
+- In hours — Markman: "Or fight the claim. Here. To a yield."
+- Out of hours — Markman: "Or fight it. Six till noon. Not before."
+- In hours — Old Blood: "Or fight it. Before noon."
+- Out of hours — Old Blood: "Or fight it. At six."
+
+**3b. *Fight the claim. (from 6:00)*** (`claimTopic`, out of hours; the toast in place of the narrator's *The claim is fought between 6:00 and noon…*):
+- Markman: "{name}: “Six, then. Go about your business till. Nobody stops you.”"
+- Old Blood: "{name}: “At six. Go.”"
+
+**3c. The claim begins** (`claimStart`; the guard's toast, then the narrator's *The claim is fought here, to a yield. {name} draws.* as built):
+- Markman: "{name}: “To a yield. Iron and blood, and no more of the blood than it takes.”"
+- Old Blood: "{name}: “To a yield.”"
+
+**3d. He kneels** (`boutStart`'s `yield`, in place of *{name} goes down on one knee.*):
+- Markman: "{name} goes down on one knee. “Yours. Enough.”"
+- Old Blood: "{name} goes down on one knee. “Enough.”"
+
+**3e. The claim's end** (`claimEnd`, in place of its two toasts; the log lines stay):
+- Won — Markman: "{name} is spared. “Void, then. Fair fought.”" and, when favour returns, " The town comes round by {n}."
+- Won — Old Blood: "{name} is spared. “It is void.”" (and the same tail)
+- Lost, down — Markman: "You go down. “Claim stands. Half again: {n} gold.”"
+- Lost, over the rope — Markman: "You step over the rope. “Out's out. Claim stands: {n} gold.”"
+- Lost — Old Blood: "“It stands. {n} gold.”" (after the narrator's *You go down.* or *You step over the rope.*)
+
+**3f. The reeve, asked** (`lordTopics` in a Mark town, city or garrison; label *About the claim.*, shown while `bountyAt(site)>0`, or while the gate is shut to you):
+- A claim stands — Markman: "{town} has a claim on you. {n} gold. Pay my sergeant, or fight him for it, six till noon. Win and it's nothing. Lose and it's half again. Don't argue it with me. That's what the sword's for."
+- The claim fought and lost — Markman: "You fought it. You lost it. {n} gold. Pay it."
+- A guard dead by your hand — Markman: "No claim for a dead man. You'll not come through my gate till {town} is paid, and then not gladly."
+
+---
+
+### 4. The Compact's ledger — Aurenne (Aurennais; Old Blood)
+
+The fine is one book for the island (S2229): any Aurenne town's guard halts you for all of it, it grows a tenth a game-week to twice what was entered, and after the yield it is prison. The contract is the Factor's commission set against it (S2230).
+
+**4a. The halt** (`HALT_LINES.aurennais.greet` and `.oldblood.greet`, when `courtOf(S)==='aurenne'`, in place of *entered against you in {town}*):
+- Aurennais: "A moment, Master. There is a sum of {n} gold entered against you in the Compact's ledger. Settle it now, or I am obliged to draw."
+- Aurennais, when the ledger has grown (`L.weeks>0`), added: "It has kept its interest since it was entered, as ledgers do."
+- Old Blood: "Stop. The Compact's book has {n} gold by your name. Pay, or I draw."
+
+**4b. *A contract.*** (`contractTopic`; the guard's toast in place of the narrator's *A contract: …*):
+- Aurennais: "{name}: “The Factor will set a commission against the sum, Master: {objective}, by {date}. Complete it, and the entry is struck.”"
+- Old Blood: "{name}: “Work for the Factor: {objective}, by {date}. Then it is clear.”"
+
+**4c. The Factor, at the turn-in** (`lordTopics`' *It's done.*, in place of *The contract is met. The Compact's ledger is …*):
+- Ledger clear: "The commission is complete, and the entry struck. The ledger holds nothing against you, Master. It is a pleasant condition; I recommend it."
+- Ledger still owed: "The commission is complete, and the contract with it. The ledger stands at {n} gold, Master, for what was entered since. We will expect it."
+
+**4d. Prison chosen** (`offerYield`'s *Prison ({n} nights).*; the toast as the fade begins; the narrator's *A night in the Compact's prison. … The ledger is clear. It is morning.* stays):
+- Aurennais: "Prison, then: {a night|n nights}. It will be entered, Master, and the account closed when you come out."
+- Old Blood: "Prison. {A night|n nights}."
+
+**4e. The Factor or the Prior, asked** (`lordTopics` in Aurenne; label *My account with the Compact.*, shown while the ledger holds anything):
+- Aurennais: "{n} gold, Master, entered once for every town of the Compact, so that it may be settled at any of them. It accrues by a tenth each week, to no more than twice the sum first entered. Any guard will take payment, or set you a commission against it. The Compact prefers its accounts closed. It is not particular how."
+
+---
+
+### 5. Sacrilege — a Prior's town in Aurenne (Aurennais)
+
+**5a. The keeper, as the piece is taken** (PR #1576's sacrilege sale, before the narrator's *Gate salvage, in a Prior's town: …*, which stays):
+- Aurennais: "{keeper}: “I may not buy this, Master, and you may not keep it here. What comes out of a gate is the Church's in this town; I am obliged to hold it for the Prior.”"
+
+**5b. The inquisitor** (dressed, S2242; placing him is the systems builder's, role *Inquisitor*, one in a Prior's town, who reads `worldState.church.notes` of kind `sacrilege`):
+- Greeting, no note of you: "Good day, Master. I keep the Prior's list of what has come out of the gates, and of who carried it. Your name is not on it. That is a good place for a name to be."
+- Greeting, a note of you: "Master. The Church has a note of you: {item}, out of a gate, offered at a counter in {town}. It is entered. A second entry would be a longer conversation."
+- *Why is it forbidden?* — "What the gates hold should stay where it was laid, Master. The Gatelanders dig it up and call it a living; we call it what it is. Sell such things in the Gatelands if you must. They have no Prior there to enter it."
+- Contradicted, as §2 asks: the Gatelander's own word on it, any Gatelands goods-keeper offered a piece of salvage while the Church's line shows in Aurenne, never in the Gatelands (*the trade's line*, `makeDef`'s, optional): "Sacrilege, they call it over the water. Here we call it the harvest, and the Weaver never sent a bill for it."
+
+---
+
+### 6. The tithe-ship's hail — Aurenne's waters (Aurennais; waits on #1570)
+
+Written for #1570's **A** (declare at the hail), the recommendation; under B or C only *found* and *nothing found* are used. The speaker is the tithe-ship's master, role *Tithe-master*, by hail across the water (a toast; no dialog panel at sea).
+- The hail: "Heave to, in the Compact's name. Declare your hold, Master: the tenth is paid at the quay, and a declared hold is not searched."
+- Declared: "Entered: your cargo, bound for port. Good sailing."
+- Refused: "As you wish. The Compact searches one hull in four. You will learn presently whether you are the fourth."
+- Searched, found: "Undeclared cargo in the Compact's waters. It is taken, Master, and entered."
+- Searched, nothing found: "Nothing to enter. You may proceed."
+- Declared cargo sold at a cove, booked at the next port (the ledger's log line, the narrator's): "The Compact's ledger has your declared cargo, and no tenth paid on it at any quay."
+
+---
+
+### What in the code would carry it
+
+- **The halt** (`86-world-crime.js`): `confront` and `confrontIndoor` add §1a's, §3a's and §4a's sentence to `L.greet(...)` by `courtOf(S)` and the guard's people (`peopleOfSite`), through one table beside `HALT_LINES`, `COURT_ADD = {gatelands:{gatelander, oldblood}, mark:{markman, oldblood}, aurenne:{aurennais, oldblood}}`; a table entry missing means nothing is added. §4a's halt greeting for Aurenne is `HALT_LINES.aurennais.greet`'s and `.oldblood.greet`'s, chosen when the court is the Compact's.
+- **The toasts by a person**: `restitutionTopic` (§1b), `offerYield`'s stocks and prison topics (§1c, §4d, as a `showMsg` before `toStocks` and `toPrison`), `claimTopic`, `claimStart`, the bout's `yield`, `claimEnd` (§3b–3e), `contractTopic` (§4b), the sacrilege sale (§5a, `currentHouse`'s keeper's name or *The keeper*), `poachKilled` (§2b, when the witness's role is *Forester*). Each keeps its log line.
+- **The lord's topics**: one function in `86-world-crime.js`, `courtLordTopics(site)`, spread into `lordTopics` (`87-world-quests.js`) beside `licenceTopics`: §1d's *About my fine.*, §3f's *About the claim.*, §4e's *My account with the Compact.*, by `courtOf`. §4c replaces the contract's line in *It's done.*
+- **The forester and the inquisitor**: their topics as `foresterTopics(t)` and `inquisitorTopics(t)` beside `licenceTopics`, given to the def the systems builder places; until they stand, their lines are not built.
+- **§1e**: `c.stocks` on the town's crime record (no new `worldState` key; the record is the character's, as `crime` is), read by `firstWords`' tag for that site on that day.
+- **§6**: the systems builder's tithe-ship, once #1570 is answered.
+- **A test** (extend `guardintro` or `crime3` rather than a new suite): a halt in each court reads its court's added sentence; the stocks and prison toasts and the claim's toasts carry the guard's name and line; *About the claim.* appears at a Mark town's reeve with a claim on you and answers.
+
+### Checked against the canon
+
+- **Register.** Every Gatelander line turns aside or carries a figure (*weighs lighter on the scales*, *half a debt is still a debt*, *a red face mends quicker than a cut one*, *cheaper than a bad name*, *the Weaver weaves the long thread*) and none is a bare yes or no; the Weaver is named twice, in sayings (the lord's long thread, the keeper's bill), and nobody swears here, since nobody needs to. Every Markman line is short, has no honorific, and swears once, on iron and blood. Every Aurennais line is formal, uses *Master*, speaks in entries, terms, accounts and commissions, and swears nothing. The Old Blood say the least, and exactly.
+- **The slur.** *Gate-grubbers* is not said; its gloss (*dig it up and call it a living*) is the inquisitor's, a work-and-gods slur, never a body. It is contradicted by a named people in the same draft: the Gatelands keeper's *we call it the harvest*.
+- **Facts.** A Reeve over a town and a Captain over a city, as the titles have it; Priors over the church's towns (the sacrilege town is a Prior's, as S2240 reads it); the tenth at the quay; the claim *finished by noon*. No line promises a punishment the rule does not give (Finding 47's reason), and no line gives a number the rule does not hold: thirty gold, three months, a tenth a week to twice the sum, half again, six till noon.
+- **Tone.** Nobody is hanged, branded or tortured; the worst is the stocks, a night in prison, and a note.
+- **No chosen-one line**; nobody here knows the player as anything but a debtor.
