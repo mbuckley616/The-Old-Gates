@@ -1813,3 +1813,43 @@ A playtest, as the turn after 12 Nov's new look falls. Yesterday's run (13 Nov) 
 - Nothing groomed this run.
 
 No proposal this run.
+
+## 2026-11-15 — The new look: the merchant's house inside (four trades), a ship's arms and a sea fight's shot, fire and foundering, the Mark's town house inside in the game, a bought sloop with her ballista (build s1606, read to Session 2253)
+
+The new look's turn, after 14 Nov's playtest. Read Sessions 2210 to 2253. Two prototype pages had new work since 12 Nov: `rooms.html?room=merchant` (S2240, card F9, OG-043 and OG-115) and `ships.html` with the arms and the effects (S2243 and S2244, OG-017). Two pieces of that line have reached the game: the Mark's town house inside (S2212, OG-034 and OG-115) and the ship's ballista (S2250). I served the folder over http as `shoot.mjs` does and took 960×540 frames of my own (eleven), then booted the game on the new look at 1280×720 for the town house and the ballista. No page errors on any page or in the game.
+
+**The merchant's house inside** (pictures: `docs/critic/2026-11-15-merchant-armour-show.jpg`, `-merchant-barber.jpg`). Four trades on 4 bays by 8 m: misc 11,776, potion 16,080, armour 15,576 and barber 12,336 (3 bays) triangles, in 19 or 20 draws over the shell's 4,496 in 13. The cheapest page on the line for what it holds.
+1. **The shop window is a modern shopfront.** It runs the whole street side from a 0.9 m sill to the ceiling, in panes I make about a metre square, four or five wide. OG-043's Gatelands shops (the alchemy shop, the smithy) have small windows of leaded or many-paned glass under thatch and stone, with the goods hung outside or on a board. At this size it reads as a Victorian draper's, and the sill's display row sits in front of a wall of sky. It also lets the whole of the viewer's flat green ground into every view (the viewer's, not the room's, but the window is what lets it in).
+2. **The helms on their stands read as table lamps.** On the armour shop's show side four stands stand in a row, each a dark post under a black half-sphere; two more sit on the window sill. At 3 m they are mushroom lamps, not helms; the cuirasses under them are black boxes, as S2240 said. A nasal, a brim or a crest, or the bodies kit's real pieces, would fix the read.
+3. **The barber's mirror is a blank white canvas.** A dark frame on the side wall round a flat pale field: it reads as an empty painting. Tin-backed glass of the period is grey and dim; a dull blue-grey, or a faint copy of the window's light, would read as glass.
+4. **The counter is a black slab** in every trade (S2240's own note, confirmed): in the misc shop's counter view its top, front and ends are one dark mass with no edge. A lighter top board would be enough.
+What reads: the potion shop's wall of jars and the bottles on the sill are the best shelf-dressing in the kit; the barber's chair with its red seat, the basin stand and the swing lamp make the trade obvious from the door. The floor's boards and the sun's window shapes on them are good.
+
+**A ship's arms and a sea fight** (pictures: `docs/critic/2026-11-15-galleon-sail-alight.jpg`, `-galleon-guns-flash.jpg`). Ships 24,284 (sloop) to 43,216 (galleon) triangles in 9 to 12 draws; the ballista 1,924 in 7; the guns 6,192 in 2.
+5. **Fire on a sail reads as a stain, not a fire.** The galleon's main course at 6 s (`burn=6`, 228 flames, 152 smoke) is a pale cream, half-transparent patch with an orange rim, and the harp shows through it; no tongue of flame stands above the yard, and the smoke is a thin grey wisp off the masthead. OG-017's "explosive shot (fire)" is the one shot that should be legible at 200 m; at 20 m this is not. Hotter colour at the core, flame standing clear of the cloth, and a darker, wider smoke column.
+6. **The broadside's flash is small and sits low.** At 0.1 s (`smoke=0.1&side=1`) I see two small pale discs near the waterline, under the run-out muzzles rather than at them, and one smoke puff. S2244 asked whether it wants twice the size: yes, and at the muzzle.
+7. **The guns run out at 0.55 m over the sea**, as S2243 says, and from the bow quarter the muzzles are almost in the water. In a seaway those ports would be shut. It is #323's port line, not this session's; I would raise the gun deck before the guns reach the game, or the first wave in rough weather will look wrong.
+What reads: the smoke at 2 s (`view=fight`) is a good bank, cotton wool up close as S2244 says, but it hides the far ship's hull the way powder smoke did, which is what it is for. The cog halfway down (`founder=0.5`) lists and settles in a ring of foam and reads at once. The ballista on the cog's forecastle (picture not kept) is a small dark frame that fits the castle; from 15 m off the bow it reads as an engine and not as clutter.
+
+**The Mark's town house inside, in the game** (picture: `docs/critic/2026-11-15-marktown-stue-night.png`). The first Markish place with town houses on this seed is `c1_1_s1` (11 of them). Wulfstan's House, `g_c1_1_s1_24`, is 4.8 by 6.97 m; inside it is 4.3 by 6.47 m, the floors at 0.40 and 3.06 m, so a storey of 2.66 m, inside visual-foundation's 2.6 to 3.0. The stair is 13 risers of 0.205 m on a going of 0.22, about 43°: a ship's stair, steep but honest. At noon *No one is in*; at 22:00 Wulfstan stood by the stack with *Press E to talk*.
+- The plank walls are orange, not orange-brown (S2212's first *Needs eyes*): under the lamps at noon and at 22:00 they are the brightest thing in the frame, a saturated tangerine with dark grain. OG-034's Mark is dark tarred timber and carved posts, and the street outside is tar-dark. The joists and the stair read the right brown; the walls want to come down to them.
+- The window on the stair wall at noon is a flat pale-blue panel with no bars, set in a box that stands proud of the planks. It reads as a light, not a window.
+- At 22:00 the windows go dark as they should, but the room is lit as brightly as at noon and I could not see the fire on the peis from the door (it may be behind the stack from that side).
+- Wulfstan's cap, at 3 m, is a black half-sphere sitting back on his head, larger than the skull: from the front it reads as a bowl. For the bodies builder's eyes, not a bug.
+
+**A bought sloop with her ballista, in the game.** At `c1_1_s1`'s quay `buyShip` gave me the *Mercy*, a Mark sloop with the dragon head, and `worldState.ship.fit=['ballista']` put the engine on her (`userData.ballista` set). I could only stand in the water off her quarter: from there the bow hides it. Its swing and the bolt left in the trough (S2250's *Needs eyes*) were not judged.
+
+**What was wrong in today's game.** Nothing confirmed. Two of my frames came out grey and black: both were my script putting the eye where no one stands (a house record has `doorX`/`exitX`, not `x`), not the game. No backlog line this run.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2212: walls orange (judged, above); the loft's last 0.7 m out of reach, a shop's town house keeping its old room, and the ladder-stair in the shallowest houses were not reached (I walked one house, 6.97 m deep).
+- S2240: the armour stands' blocks and half-spheres (judged: they read as lamps); the counter almost black (judged: yes); the night window's sky (the viewer's; not shot).
+- S2243: the cutter's engine under the staysail (not shot); the tarred engine black in shade (not shot); guns at 0.55 m (judged: too low to look right); lids at 110° (from aft they are thin slabs, agreed).
+- S2244: the flash small (judged: yes, and low); smoke as cotton wool (agreed, and it still does its work); the ball invisible (agreed, no trail wanted); the char's grid (not shot at 6 s doused).
+- S2250: see above, not judged.
+- Not judged headless: S2210's beast tells, S2211 and S2216 (rain covering steps, wind on arrows), S2213 to S2239's pack, rod, net and spyglass in the hand, S2226 to S2245's courts, stocks, poaching and officers, S2232 and S2253's hair levels, S2252's tithe-ship. The frame counter is off in the harness; the prototype pages' counts are above.
+
+**Backlog notes**
+- My 14 Nov items (s1572: the garden at the shop door, the bench's rack, *Plant Whispercap*, *4 d 24 h*) were appended at the foot of the file, under L12, not in section I (lines 812 to 815); they are struck as done (S2220 to S2233), so nothing is lost, but the next critic line should go at the end of section I (before *J.*).
+
+No proposal this run.
