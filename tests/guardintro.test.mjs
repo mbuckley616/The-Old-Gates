@@ -157,7 +157,7 @@ const ce = await page.evaluate(([x0, z0]) => { const P = [px, pz], R = 130, cell
 console.log(JSON.stringify(ce));
 check(`the chase's edge on the map: ${ce.k} of ${ce.n} squares tinted, every one in the chase and none outside (${ce.disagree} wrong), ${ce.red} crimson pixels drawn; none 5 km off`,
   ce.k > 0 && ce.k < ce.n && ce.k === ce.held && ce.disagree === 0 && ce.strokes >= 1 && ce.red > 20 && ce.far === 0, ce);
-// S2243 (Michael's B on #1540, sacrilege): a piece taken in a gate is gate salvage (not in a fort); sold in an Aurenne town whose church
+// S2245 (Michael's B on #1540, sacrilege): a piece taken in a gate is gate salvage (not in a fort); sold in an Aurenne town whose church
 // stands, the row warns first, the sale is not made, the piece is taken, the ledger books 2 points' 50 and the Church has a note
 const sm = await page.evaluate(() => { const z0 = activeZoneId, p0 = currentPortal, out = {};
   for (const [k, P] of [['gate', { seed: 77, theme: 'ruins', name: 'A gate' }], ['fort', { seed: 78, interior: 'fort_keep', name: 'A fort' }]]) {

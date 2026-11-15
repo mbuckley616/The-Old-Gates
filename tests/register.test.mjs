@@ -32,7 +32,7 @@ const yl = await page.evaluate(async (setup) => { const wait = ms => new Promise
   return { refuse, greet, poor, wantRefuse: H.refuse, want: Y.greet(50, yieldPen(S, worldState.crime.dunmore)), wantPoor: Y.poor }; }, setup);
 console.log(JSON.stringify(yl));
 check('refused, he draws in the same voice; the yield too', yl.refuse === yl.wantRefuse && yl.greet === yl.want && yl.poor === yl.wantPoor, yl);
-// S2244 (quest review Finding 47): Dunmore is the Crown's, so the yield offers the stocks, as the topic beside it does, not the cells
+// S2246 (quest review Finding 47): Dunmore is the Crown's, so the yield offers the stocks, as the topic beside it does, not the cells
 check(`the yield names the Crown's court's punishment: “${yl.greet}”`, /in the stocks\.$/.test(yl.greet || '') && !/cells/.test(yl.greet + yl.poor), yl.greet);
 
 // the guild head's greeting, in the hall

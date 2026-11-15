@@ -427,7 +427,7 @@
   // sneaking halves the range and night halves it again. Seen, the town's favour drops on the canon's scale, the
   // wronged keeper refuses your custom for five days, and a fine accrues that the lord will take. Favour lost to
   // crime comes back a point for every three quiet days.
-  const CRIME_PTS={lock:1,theft:2,assault:3,sacrilege:2}; /* S2243 — sacrilege, the page's 2 points */
+  const CRIME_PTS={lock:1,theft:2,assault:3,sacrilege:2}; /* S2245 — sacrilege, the page's 2 points */
   // indoors, a wall between you and the keeper hides you (S182, the critic's section I): only what stands across eye
   // height counts (walls, partitions, a shut door), not a counter or a table you could see over
   function intClearLine(ax,az,bx,bz){if(typeof INT_SOL==='undefined')return true;const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.25));
@@ -631,7 +631,7 @@
   function licenceUntil(t){const L=worldState.licences;const v=L&&t&&L[t.id];return typeof v==='number'?v:0;}
   function licenceHeld(t){return licenceUntil(t)>absMin();}
   // named action: the lord's licence bought; returns the line
-  /* S2244 — quest review Finding 46: the lord sells his own wood in his own voice */
+  /* S2246 — quest review Finding 46: the lord sells his own wood in his own voice */
   function buyLicence(t){if(!chaseKeep(t))return '';if(licenceHeld(t))return `Your licence runs to ${calDateLine(licenceUntil(t)-1)}. The wood keeps its own count, and so do I.`;
     if(gold<LICENCE_GOLD)return `The licence is ${LICENCE_GOLD} gold, and a light purse never brought a stag home. Come back when it's heavier.`;gold-=LICENCE_GOLD;if(typeof updateHUD==='function')updateHUD();
     const until=Math.floor(absMin())+licenceDays()*1440;(worldState.licences||(worldState.licences={}))[t.id]=until;
@@ -681,7 +681,7 @@
       if(i>0&&!G[j*n+i-1])side(X,Z,X,Z+cell);if(i<n-1&&!G[j*n+i+1])side(X+cell,Z,X+cell,Z+cell);
       if(j>0&&!G[(j-1)*n+i])side(X,Z,X+cell,Z);if(j<n-1&&!G[(j+1)*n+i])side(X,Z+cell,X+cell,Z+cell);}
     ctx.stroke();ctx.restore();return k;}
-  /* S2243 — sacrilege (Michael's B on #1540, docs/design/law-in-three-registers.md, the second of its three crimes). "Gate-grubbing is
+  /* S2245 — sacrilege (Michael's B on #1540, docs/design/law-in-three-registers.md, the second of its three crimes). "Gate-grubbing is
      sacrilege to the Church" (canon, Aurenne's contempt). A piece taken in a gate (a dungeon that is no fort, lair or tutorial) is gate
      salvage: arms, armour and curiosities, never gold, a stack or a unique, marked it.salvage as it goes into the bag (takeLootItem) and
      saved with it. Sold in a Prior's town, an Aurenne town whose church stands (the canon's "Priors over the church's towns"; the Prior
@@ -881,7 +881,7 @@
       poor:'You have not got it. The other, or the blade.',
       pay:'It is paid. Go.',
       cells:'Come. The cells are quiet.'}};
-  /* S2244 — quest review Finding 47: the yield names the punishment its court gives (the stocks, the Compact's prison, the cells) */
+  /* S2246 — quest review Finding 47: the yield names the punishment its court gives (the stocks, the Compact's prison, the cells) */
   const YIELD_PEN={gatelands:c=>{const h=stocksHours(c);return `${h} ${h===1?'hour':'hours'} in the stocks`;},aurenne:c=>{const n=prisonNights(c);return `${n===1?'a night':n+' nights'} in the Compact’s prison`;}};
   function yieldPen(S,c){const f=YIELD_PEN[courtOf(S)];return f?f(c):'a night in the cells';}
   // S550 — on the feast day a fine was halved, the guard says so after the halt (the Old Blood keep no watch: the Gatelander line)
