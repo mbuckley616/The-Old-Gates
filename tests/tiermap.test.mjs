@@ -29,5 +29,19 @@ check(`each label is the grade its live portal fights at (${seen.length} portals
 check(`a lair's cavern (${r.lairs.length}) reads one grade above a plain gate where it stands, a wyrm's two`, r.lairs.length > 0 && r.lairs.every(x => x.step === (x.dragon ? 2 : 1) || (x.step > 0 && x.sub.endsWith('Very Hard'))), r.lairs);
 check('the labels are the same at level 20 as at level 1', JSON.stringify(r.a) === JSON.stringify(r.b), Object.keys(r.a).filter(k => r.a[k] !== r.b[k]).map(k => [r.a[k], r.b[k]]));
 check('the map\'s panel shows the grade', !!r.one && !!r.panel && r.panel.includes(r.one.want), { one: r.one, panel: r.panel });
+// Session 2274 (the bodies builder, s1623): the Old Garrison's wall stood across the Hearthwick–Droichead road, 25 m from its line,
+// and every traveller walked into it. Each home fort's ring (27 m round its door's x and z + 4) now keeps 41 m from every home road,
+// that road is free of the place's solids, and doorSpot (a fort whose cell has not loaded) names the spot placeDoor chose.
+const forts = await page.evaluate(() => HOME_ROAD_DEFS.filter(d => d.fort).map(d => { const w = dungeonWorldPos[d.fort]; if (!w) return { fort: d.fort };
+  const e = CELL_DOORS.find(e => e.seed === d.fort); delete dungeonWorldPos[d.fort]; const q = e ? doorSpot(e) : null; dungeonWorldPos[d.fort] = w;
+  return { fort: d.fort, x: Math.round(w.x), z: Math.round(w.z), road: Math.round(homeFortRoadD(w.x, w.z + 4)), spot: q ? +Math.hypot(q.x - w.x, q.z - w.z).toFixed(1) : null }; }));
+const garr = await page.evaluate(() => { const rd = ROADS.find(r => r.def.fort === 7100); let n = 0, bad = 0;
+  for (let i = 0; i < rd.pts.length - 1; i++) for (let k = 0; k < 6; k++) { const a = rd.pts[i], b = rd.pts[i + 1], t = k / 6; n++; if (settleSolid(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t, .3)) bad++; }
+  return { n, bad }; });
+console.log('forts', JSON.stringify(forts), 'garrison road', JSON.stringify(garr));
+const placedF = forts.filter(f => f.x != null);
+check(`each placed home fort's ring keeps 41 m from every home road (${placedF.map(f => f.fort + ' ' + f.road).join(', ')})`, placedF.length >= 4 && placedF.every(f => f.road >= 41), forts);
+check(`the Old Garrison's road is clear of the place's solids (${garr.bad} of ${garr.n} points)`, garr.n > 100 && garr.bad === 0, garr);
+check('doorSpot names the spot placeDoor chose, for a home fort not yet loaded', placedF.every(f => f.spot != null && f.spot < 1), forts);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -1474,6 +1474,30 @@
     ironhaven:{x:()=>SITE.ironhaven.x,z:()=>SITE.ironhaven.z,local:100,scale:2.6},
   };
   let dungeonWorldPos={}; // seed -> {x,z}
+  /* S2274 — a home fort's ring clear of every road. A fort is set 120 m off its road, then pushed out of each pad by the pad and
+     120 m, one pad at a time; where three villages crowd a short road (Hearthwick, Droichead and Colmán's Rest round the Old
+     Garrison) the pushes put it back over the road: its ring stood 25 m from the line, its wall across the road, and every
+     traveller walked into it. A spot whose ring (27 m round x, z+4) keeps HF_CLEAR from every home road's line is kept as it is,
+     so every other fort stands where it stood. Otherwise the nearest spot that does, along the road (u .2 to .8), either side,
+     90 to 180 m off, out of every pad by its 120 m (or, failing that, by the ring and 40 m), and within 165 m of the road's
+     straight midpoint, where the farms' plan (`farmGates`, 240 m) leaves the fort its room. placeDoor and doorSpot (88) both ask it. */
+  const HF_CLEAR=27+14;let _hfLines=null;
+  function homeFortLines(){if(_hfLines)return _hfLines;const out=[];for(const d of HOME_ROAD_DEFS){const A=siteAnywhere(d.a),B=siteAnywhere(d.b);if(A&&B)out.push(roadCurve(d,A,B));}return (_hfLines=out);}
+  function homeFortRoadD(x,z){let b=1e9;for(const P of homeFortLines())for(let i=0;i<P.length-1;i++){const a=P[i],q=P[i+1],vx=q.x-a.x,vz=q.z-a.z,l2=vx*vx+vz*vz||1;let u=((x-a.x)*vx+(z-a.z)*vz)/l2;u=u<0?0:u>1?1:u;const e=Math.hypot(x-a.x-vx*u,z-a.z-vz*u);if(e<b)b=e;}return b;}
+  function homeFortClear(wx,wz,fd,road,pads){
+    if(homeFortRoadD(wx,wz+4)>=HF_CLEAR)return {x:wx,z:wz};
+    const A=siteAnywhere(fd.a),B=siteAnywhere(fd.b),mx=A&&B?(A.x+B.x)/2:wx,mz=A&&B?(A.z+B.z)/2:wz;
+    let best=null,bc=1e9;
+    for(const strict of [true,false]){
+      for(let u=.2;u<=.801;u+=.05)for(const side of [-1,1])for(let off=90;off<=180;off+=10){
+        const p=roadPoint(road,u),nx=p.nx!=null?p.nx:Math.cos(p.ang),nz=p.nz!=null?p.nz:-Math.sin(p.ang),x=p.x+nx*off*side,z=p.z+nz*off*side;
+        if(Math.hypot(x-mx,z-mz)>165)continue;
+        if(homeFortRoadD(x,z+4)<HF_CLEAR)continue;
+        if(pads.some(t=>Math.hypot(x-t.x,z-t.z)<(strict?t.pad+120:t.pad+27+40)))continue;
+        const c=Math.hypot(x-wx,z-wz);if(c<bc){bc=c;best={x,z};}}
+      if(best)return best;}
+    return {x:wx,z:wz};
+  }
   function placeDungeons(){}
   function placeDoor(e,cellK){
     const fortRoad={};ROAD_DEFS.forEach(d=>{if(d.fort)fortRoad[d.fort]=d;});
@@ -1494,6 +1518,7 @@
         const off=(d.fortOff==null?120:d.fortOff)*(d.fortSide==null?autoSide:d.fortSide);
         wx=p.x+nx*off;wz=p.z+nz*off;
         for(const t of SITES){if(t.pad<=0)continue;const dd=Math.hypot(wx-t.x,wz-t.z);const min=t.pad+120;if(dd<min){const dx=wx-t.x,dz=wz-t.z,L=Math.hypot(dx,dz)||1;wx=t.x+dx/L*min;wz=t.z+dz/L*min;}}
+        {const q=homeFortClear(wx,wz,d,road,SITES.filter(t=>t.pad>0));wx=q.x;wz=q.z;} /* S2274 — off every road's line */
       } else if(e.zone==='gen'){
         wx=e.x;wz=e.z;
         for(let k=0;k<10;k++){const ri=roadInfo(wx,wz);const st=e.lairDoor?(stampsNear(wx,wz).find(o=>o.id!=='site_'+e.lairSite&&o.kind!=='graze'&&Math.hypot(wx-o.x,wz-o.z)<o.r)||null):stampAt(wx,wz); /* S702 — a lair's own pad does not push its cavern door out */
