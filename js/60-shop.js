@@ -115,6 +115,7 @@ function takeLootItem(idx){
     // bagAdd may refuse if adding would push total carry weight over 125% of max.
     if(!canCarry(it)){showMsg('Too heavy to carry!','#cc8844');return;}
     if(it.gateOrb!=null){takeGateOrb(it.gateOrb);delete it.gateOrb;} /* S1858 — a gate's orb, taken once */
+    if(typeof markSalvage==='function')markSalvage(it); /* S2245 — a piece taken in a gate is gate salvage (86-world-crime.js) */
     bagAdd(it);
     showMsg(`Obtained: ${it.name}`, '#c8a84a');
     // v61d0 — Fire receive_item event so quest objectives that gate on
@@ -816,6 +817,8 @@ function shopRowHTML(it, side, priceVal, affordable, locked, fullStock){
   }
   /* S1863 — an implement's row says what it changes (the page's "the rule, not a percentage"), on both sides */
   if(typeof implementRule==='function'){ const r=implementRule(it); if(r) note += `<span class="sh-note sh-impl">${r}</span>`; }
+  /* S2245 — gate salvage's row in Aurenne, before it bites */
+  if(side==='sell'&&typeof sacrilegeNote==='function'){ const r=sacrilegeNote(it); if(r) note += `<span class="sh-note warn">${r}</span>`; }
   const wt    = itemWeight(it);
   const priceCol = side==='buy' && !affordable ? '#6a5230' : (side==='sell' ? '#6ed36e' : '#c8a84a');
   return `
@@ -1074,6 +1077,7 @@ function sellItem(i,sp){
   }
   if(it.type==='cargo'){showMsg(`A harbour's factor buys trade goods, not a shop.`,'#c8a84a');return;} // S390
   if(!(sp>0)){showMsg(`${it.name} is not worth a coin at the counter.`,'#c8a84a');return;} // S366 — a single arrow
+  if(typeof sellSacrilege==='function'&&sellSacrilege(i)){updateHUD();renderShop();return;} /* S2245 — gate salvage in a Prior's town (#1540 B) */
   const finalSp=Math.round(sp*_buffMult('goldFind',1));
   const tithe=typeof bladeTithe==='function'?bladeTithe(finalSp):0; /* S787 — the Crown's twentieth, while the Gate-Blade is on you under licence */
   gold+=finalSp-tithe;(worldState.stats||(worldState.stats={})).sold=((worldState.stats||{}).sold||0)+1;(worldState.stats||{}).goldIn=((worldState.stats||{}).goldIn||0)+finalSp;

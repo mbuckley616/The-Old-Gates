@@ -135,9 +135,47 @@ const pc = await page.evaluate(() => { let F = null;
   kill(); const seen = (C[t.id] || {}).bounty || 0, rec = (worldState.crimes || []).slice(n0).map(c => c.kind).join();
   gold = 100; const T = lordTopics(t).find(q => /hunting licence/.test(q.label)); const line = T && T.fn();
   delete C[t.id]; kill(); const after = (C[t.id] || {}).bounty || 0; witnessOf = W;
-  return { site: t.name, seen, rec, line, gold, after, far: !!chaseAt(t.x + 900, t.z + 900) }; });
+  return { site: t.name, seen, rec, line, gold, after, far: !!chaseAt(t.x + 900, t.z + 900), x, z }; });
 console.log(JSON.stringify(pc));
 check(`poaching in the chase of ${pc.site}: a deer seen killed by day fines ${pc.seen} (50 and its 30); the lord's licence for 30 (“${pc.line}”), then none`,
-  !pc.none && pc.seen === 80 && pc.rec === 'poach' && /yours to hunt until/.test(pc.line || '') && pc.gold === 70 && pc.after === 0, pc);
+  !pc.none && pc.seen === 80 && pc.rec === 'poach' && /is open to you until/.test(pc.line || '') && pc.gold === 70 && pc.after === 0, pc);
+// S2241 (the page's "no trap"): the chase's edge on the local map, in the Crown's crimson. Every tinted square of the map's view is in the
+// chase by chaseAt itself and every square chaseAt holds is tinted; the drawn map has crimson where the chase is; a view with no chase draws none.
+// The view is centred on the chase's rim, 600 m from its city on the line through the chase's first spot, so both sides are in it
+const ce = await page.evaluate(([x0, z0]) => { const P = [px, pz], R = 130, cell = Math.max(4, R / 14), n = Math.ceil(R * 2 / cell), T = chaseAt(x0, z0);
+  const dd = Math.hypot(x0 - T.x, z0 - T.z), x = T.x + (x0 - T.x) / dd * 600, z = T.z + (z0 - T.z) / dd * 600; px = x; pz = z;
+  const fills = [], ctx = { save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() { this.st++; }, st: 0, fillRect(a, b) { fills.push([a, b]); } };
+  const s = 1, toS = (X, Z) => [X - (px - R), Z - (pz - R)], k = chaseEdge(ctx, toS, px - R, pz - R, n, cell, s);
+  let agree = 0, disagree = 0, held = 0; const tinted = new Set(fills.map(([a, b]) => Math.round(a / cell) + ',' + Math.round(b / cell)));
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const X = px - R + (i + .5) * cell, Z = pz - R + (j + .5) * cell, inC = !!chaseAt(X, Z);
+    if (inC) held++; if (inC === tinted.has(i + ',' + j)) agree++; else disagree++; }
+  const cv = document.createElement('canvas'); cv.width = cv.height = 260; const c2 = cv.getContext('2d'); drawLocalMap(c2, 260, R, true);
+  const D = c2.getImageData(0, 0, 260, 260).data; let red = 0; for (let i = 0; i < D.length; i += 4) if (Math.abs(D[i] - 184) < 6 && Math.abs(D[i + 1] - 50) < 6 && Math.abs(D[i + 2] - 58) < 6) red++;
+  px = x + 5000; pz = z + 5000; const far = chaseEdge(ctx, toS, px - R, pz - R, n, cell, s), t0 = performance.now(); for (let r = 0; r < 20; r++) chaseEdge(ctx, toS, px - R, pz - R, n, cell, s);
+  const msFar = (performance.now() - t0) / 20; px = x; pz = z; const t1 = performance.now(); for (let r = 0; r < 20; r++) chaseEdge(ctx, toS, px - R, pz - R, n, cell, s);
+  const msNear = (performance.now() - t1) / 20; [px, pz] = P; return { k, n: n * n, held, agree, disagree, strokes: ctx.st, red, far, msFar: +msFar.toFixed(2), msNear: +msNear.toFixed(2) }; }, [pc.x, pc.z]);
+console.log(JSON.stringify(ce));
+check(`the chase's edge on the map: ${ce.k} of ${ce.n} squares tinted, every one in the chase and none outside (${ce.disagree} wrong), ${ce.red} crimson pixels drawn; none 5 km off`,
+  ce.k > 0 && ce.k < ce.n && ce.k === ce.held && ce.disagree === 0 && ce.strokes >= 1 && ce.red > 20 && ce.far === 0, ce);
+// S2245 (Michael's B on #1540, sacrilege): a piece taken in a gate is gate salvage (not in a fort); sold in an Aurenne town whose church
+// stands, the row warns first, the sale is not made, the piece is taken, the ledger books 2 points' 50 and the Church has a note
+const sm = await page.evaluate(() => { const z0 = activeZoneId, p0 = currentPortal, out = {};
+  for (const [k, P] of [['gate', { seed: 77, theme: 'ruins', name: 'A gate' }], ['fort', { seed: 78, interior: 'fort_keep', name: 'A fort' }]]) {
+    activeZoneId = 'dungeon'; currentPortal = P; const C = { items: [{ name: 'Iron Sword', type: 'equip', slot: 'weapon', atk: [3, 5], buyPrice: 40, qty: 1 }, { name: 'Health Potion', type: 'potion', heal: 30, qty: 3, buyPrice: 10 }], displayName: 'Chest' };
+    openLoot(C); const n0 = BAG.length; takeAllLoot(); closeLoot(); out[k] = BAG.slice(n0).filter(b => b.salvage).map(b => b.name); BAG.splice(n0); }
+  activeZoneId = z0; currentPortal = p0; return out; });
+const prior = await page.evaluate(() => { const S = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'aurenne').flatMap(c => c.sites); return S.filter(s => ['town', 'port', 'village'].includes(s.kind)).slice(0, 6).map(s => s.id); });
+let sr = null;
+for (const id of prior) { if (!(await g.settle(id))) continue;
+  sr = await page.evaluate(id => { const S = WORLD.settle.get(id); if (!priorsTown(S.site)) return null; const h = S.houses.find(h => h.keeper && h.type !== 'home' && h.type !== 'church'); if (!h) return null;
+    currentHouse = h; BAG.push({ name: 'Iron Sword', type: 'equip', slot: 'weapon', atk: [3, 5], buyPrice: 40, qty: 1, salvage: true }); const i = BAG.length - 1;
+    openShop(); const row = [...document.querySelectorAll('#sh-bag .sh-row')].map(r => r.textContent).find(t => /Iron Sword/.test(t)) || '';
+    const g0 = gold, l0 = (fineRecAt(id) || { bounty: 0 }).bounty, n0 = ((worldState.church || {}).notes || []).length;
+    sellItem(i, counterSellPrice(BAG[i])); closeShop(); currentHouse = null;
+    return { id, warned: /The Church calls this sacrilege/.test(row), paid: gold - g0, kept: BAG.some(b => b.salvage), fine: (fineRecAt(id) || { bounty: 0 }).bounty - l0, note: worldState.church.notes.slice(n0).map(x => x.kind).join() }; }, id);
+  if (sr) break; }
+console.log(JSON.stringify([sm, sr]));
+check(`gate salvage: taken in a gate (${sm.gate}), not in a fort; sold in ${sr && sr.id}, a Prior's town, warned, not paid, taken, the ledger +${sr && sr.fine}, the Church's note`,
+  sm.gate.join() === 'Iron Sword' && !sm.fort.length && !!sr && sr.warned && sr.paid === 0 && !sr.kept && sr.fine === 50 && sr.note === 'sacrilege', [sm, sr]);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

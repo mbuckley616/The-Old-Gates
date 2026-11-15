@@ -427,7 +427,7 @@
   // sneaking halves the range and night halves it again. Seen, the town's favour drops on the canon's scale, the
   // wronged keeper refuses your custom for five days, and a fine accrues that the lord will take. Favour lost to
   // crime comes back a point for every three quiet days.
-  const CRIME_PTS={lock:1,theft:2,assault:3};
+  const CRIME_PTS={lock:1,theft:2,assault:3,sacrilege:2}; /* S2245 — sacrilege, the page's 2 points */
   // indoors, a wall between you and the keeper hides you (S182, the critic's section I): only what stands across eye
   // height counts (walls, partitions, a shut door), not a counter or a table you could see over
   function intClearLine(ax,az,bx,bz){if(typeof INT_SOL==='undefined')return true;const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.25));
@@ -631,11 +631,12 @@
   function licenceUntil(t){const L=worldState.licences;const v=L&&t&&L[t.id];return typeof v==='number'?v:0;}
   function licenceHeld(t){return licenceUntil(t)>absMin();}
   // named action: the lord's licence bought; returns the line
-  function buyLicence(t){if(!chaseKeep(t))return '';if(licenceHeld(t))return `Your licence for the chase runs to ${calDateLine(licenceUntil(t)-1)}.`;
-    if(gold<LICENCE_GOLD)return `The licence is ${LICENCE_GOLD} gold. Come back when you have it.`;gold-=LICENCE_GOLD;if(typeof updateHUD==='function')updateHUD();
+  /* S2246 — quest review Finding 46: the lord sells his own wood in his own voice */
+  function buyLicence(t){if(!chaseKeep(t))return '';if(licenceHeld(t))return `Your licence runs to ${calDateLine(licenceUntil(t)-1)}. The wood keeps its own count, and so do I.`;
+    if(gold<LICENCE_GOLD)return `The licence is ${LICENCE_GOLD} gold, and a light purse never brought a stag home. Come back when it's heavier.`;gold-=LICENCE_GOLD;if(typeof updateHUD==='function')updateHUD();
     const until=Math.floor(absMin())+licenceDays()*1440;(worldState.licences||(worldState.licences={}))[t.id]=until;
     if(typeof addLog==='function')addLog('🦌',`Bought the lord's licence to hunt the chase of ${t.name}, to ${calDateLine(until-1)}.`);
-    return `The chase of ${t.name} is yours to hunt until ${calDateLine(until-1)}. Deer, boar and hare.`;}
+    return `The chase of ${t.name} is open to you until ${calDateLine(until-1)}: deer, boar and hare. Take what the wood can spare, and it'll spare it again.`;}
   function licenceTopics(t){if(!chaseKeep(t))return [];
     return [{label:`A hunting licence. (${LICENCE_GOLD} gold, three months)`,quest:true,avail:()=>!licenceHeld(t),fn:()=>buyLicence(t)},
       {label:'My hunting licence.',avail:()=>licenceHeld(t),fn:()=>buyLicence(t)}];}
@@ -651,6 +652,61 @@
   function tickChase(dt){_chaseT-=dt;if(_chaseT>0)return;_chaseT=.5;let t=null;try{t=chaseAt(px,pz);}catch(e){}const id=t?t.id:null;
     if(id&&id!==_chaseIn&&!licenceHeld(t))showMsg(`The lord's chase of ${t.name}. Its deer, boar and hare are his; his licence is sold at the keep.`,'#e8d8a0');
     _chaseIn=id;}
+  /* S2241 — the chase's edge on the map (the page's "no trap": "a chase's edge on the map in the lord's colour", the Crown's crimson). The local
+     map and the minimap sample their view in squares of `cell` metres; each square whose middle is in a chase (chaseAt, the rule itself, so it
+     follows whichever towns hold one) is tinted, and every side it shares with a square outside is drawn as the edge. The cities that could hold
+     a chase are found first from the view's cells, so a view with none costs nine getCell reads; the wood test is kept per 8 m square for a game day. */
+  const CHASE_COL='#b8323a',_chaseWood=new Map();let _chaseWoodDay=-1;
+  function chaseWoodAt(x,z){const d=dayNow();if(d!==_chaseWoodDay||_chaseWood.size>40000){_chaseWood.clear();_chaseWoodDay=d;}
+    const k=Math.round(x/8)+','+Math.round(z/8);let v=_chaseWood.get(k);if(v===undefined){v=CHASE_WOOD.has(lairBiome({x,z}));_chaseWood.set(k,v);}return v;}
+  // the cities whose chase reaches into the square of half-side r about (x, z)
+  function chaseCitiesNear(x,z,r){const out=[],R=r+CHASE_R,[c0,r0]=cellOf(x-R,z-R),[c1,r1]=cellOf(x+R,z+R);
+    for(let j=r0;j<=r1;j++)for(let i=c0;i<=c1;i++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);if(!c||!c.sites)continue;
+      for(const t of c.sites)if(t.kind==='city'&&Math.abs(t.x-x)<R&&Math.abs(t.z-z)<R&&chaseKeep(t))out.push(t);}
+    return out;}
+  // is (x, z) in a chase of one of `cities`: the rule of chaseAt (the Gatelands, within CHASE_R, the wood)
+  function chaseIn(x,z,cities){let near=false;for(const t of cities)if(Math.hypot(t.x-x,t.z-z)<CHASE_R){near=true;break;}
+    return near&&nationAt(x,z)==='gatelands'&&chaseWoodAt(x,z);}
+  // draws the edge on a map whose view is the square from (x0, z0) to (x0 + n·cell, z0 + n·cell), toS turning metres to the canvas, s its pixels a metre
+  function chaseEdge(ctx,toS,x0,z0,n,cell,s){if(activeZoneId!=='world')return 0;
+    const cities=chaseCitiesNear(x0+n*cell/2,z0+n*cell/2,n*cell/2);if(!cities.length)return 0;
+    const G=new Uint8Array(n*n);let k=0;
+    for(let j=0;j<n;j++)for(let i=0;i<n;i++)if(chaseIn(x0+(i+.5)*cell,z0+(j+.5)*cell,cities)){G[j*n+i]=1;k++;}
+    if(!k)return 0;
+    ctx.save();ctx.fillStyle='rgba(184,50,58,.16)';
+    for(let j=0;j<n;j++)for(let i=0;i<n;i++)if(G[j*n+i]){const [sx,sz]=toS(x0+i*cell,z0+j*cell);ctx.fillRect(sx,sz,cell*s+1,cell*s+1);}
+    ctx.strokeStyle=CHASE_COL;ctx.lineWidth=Math.max(1.5,Math.min(3,cell*s*.35));ctx.lineCap='square';ctx.beginPath();
+    const side=(ax,az,bx,bz)=>{const [a1,a2]=toS(ax,az),[b1,b2]=toS(bx,bz);ctx.moveTo(a1,a2);ctx.lineTo(b1,b2);};
+    for(let j=0;j<n;j++)for(let i=0;i<n;i++){if(!G[j*n+i])continue;const X=x0+i*cell,Z=z0+j*cell;
+      if(i>0&&!G[j*n+i-1])side(X,Z,X,Z+cell);if(i<n-1&&!G[j*n+i+1])side(X+cell,Z,X+cell,Z+cell);
+      if(j>0&&!G[(j-1)*n+i])side(X,Z,X+cell,Z);if(j<n-1&&!G[(j+1)*n+i])side(X,Z+cell,X+cell,Z+cell);}
+    ctx.stroke();ctx.restore();return k;}
+  /* S2245 — sacrilege (Michael's B on #1540, docs/design/law-in-three-registers.md, the second of its three crimes). "Gate-grubbing is
+     sacrilege to the Church" (canon, Aurenne's contempt). A piece taken in a gate (a dungeon that is no fort, lair or tutorial) is gate
+     salvage: arms, armour and curiosities, never gold, a stack or a unique, marked it.salvage as it goes into the bag (takeLootItem) and
+     saved with it. Sold in a Prior's town, an Aurenne town whose church stands (the canon's "Priors over the church's towns"; the Prior
+     keeps the parish), the sale is not made: the piece is taken for the Church, the town books 2 points (the crime system's fine with
+     them, which Aurenne's ledger carries), and the Church has a note of it (worldState.church.notes, kind 'sacrilege'), for the
+     inquisitor. The lawful road is to sell it in the Gatelands or the Mark, or in an Aurenne town with no church. No trap: anywhere in
+     Aurenne a salvage piece's row at the counter says *The Church calls this sacrilege*. */
+  function inGate(){try{const P=typeof currentPortal!=='undefined'&&currentPortal;return activeZoneId==='dungeon'&&!!P&&!P.tutorial&&!dunKeepKind(P);}catch(e){return false;}}
+  function salvageable(it){return !!it&&(it.type==='equip'||it.type==='misc')&&!it.unique&&!it.artifact&&!it.quest&&!(typeof isStackable==='function'&&isStackable(it));}
+  // the mark, laid as a piece is taken from a gate's chest or body
+  function markSalvage(it){if(salvageable(it)&&inGate())it.salvage=true;return it;}
+  function counterSite(){const h=typeof currentHouse!=='undefined'&&currentHouse;return h&&h.siteId?siteAnywhere(h.siteId):null;}
+  // standing in Aurenne: at a counter, its town's nation; outside, the ground's
+  function inAurenne(){try{const t=counterSite();if(t)return nationAt(t.x,t.z)==='aurenne';if(typeof isInterior==='function'&&isInterior())return false;return activeZoneId==='world'&&nationAt(px,pz)==='aurenne';}catch(e){return false;}}
+  function priorsTown(t){if(!t||nationAt(t.x,t.z)!=='aurenne')return false;const F=TS(t).flags||{};if(F.burned!=null||F.abandoned!=null)return false;
+    const S=SETTLE.get(t.id);return !!(S&&S.houses&&S.houses.some(x=>x.type==='church'));}
+  function sacrilegeNote(it){return it&&it.salvage&&inAurenne()?'The Church calls this sacrilege':'';}
+  // named action, asked by sellItem before it pays: true when the sale was sacrilege and the piece is taken
+  function sellSacrilege(i){const it=BAG[i];if(!it||!it.salvage)return false;const t=counterSite();if(!priorsTown(t))return false;
+    BAG.splice(i,1);bookCrime(t,'sacrilege',0);
+    (worldState.church||(worldState.church={notes:[]})).notes.push({kind:'sacrilege',site:t.id,item:it.name,day:dayNow()});
+    (worldState.crimes||(worldState.crimes=[])).push({kind:'sacrilege',site:t.id,house:currentHouse?currentHouse.id:null,item:it.name,day:dayNow(),min:absMin()});
+    showMsg(`Gate salvage, in a Prior's town: the ${it.name} is taken for the Church, and ${t.name} will not forget it.`,'#e88a8a');
+    if(typeof addLog==='function')addLog('🕯',`Offered the ${it.name}, gate salvage, at ${t.name}. It was taken for the Church, and the Church has a note of it.`);
+    return true;}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
   function bountyAt(site){const c=fineRecAt(typeof site==='string'?site:site.id);return c?c.bounty:0;} /* S2229 — Aurenne's is the ledger's */
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];
@@ -809,22 +865,25 @@
       refuse:'Then the blade.'}};
   const TALKED_LINES={gatelander:f=>`A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: ${f} gold, and we’ll say no more about it.`,markman:f=>`Aye, all right. Half. ${f} gold, and don’t make me sorry.`,aurennais:f=>`You argue it well, Master. The town will accept half, on these terms: ${f} gold, and the matter closed.`,oldblood:f=>`Half, then. ${f} gold.`}; /* S986 — quest review Finding 31: the guard gives way in his people's voice */
   const YIELD_LINES={
-    gatelander:{greet:d=>`A bent knee mends faster than a broken head. ${d} gold, or a night in the cells.`,
-      poor:'You haven’t got it. Then it’s the cells, or the sword again, and I’d not choose the sword.',
+    gatelander:{greet:(d,p)=>`A bent knee mends faster than a broken head. ${d} gold, or ${p}.`,
+      poor:'You haven’t got it. Then it’s the other road, or the sword again, and I’d not choose the sword.',
       pay:'That’s the wiser road. Go on, and go quiet.',
       cells:'Come along, so. The cells are dry, at least.'},
-    markman:{greet:d=>`Yield, and it goes easier. ${d} gold, or a night in the cells.`,
-      poor:'You haven’t got it. The cells, then, or fight on.',
+    markman:{greet:(d,p)=>`Yield, and it goes easier. ${d} gold, or ${p}.`,
+      poor:'You haven’t got it. The other, then, or fight on.',
       pay:'Wise. Go on, then.',
       cells:'Come along, then.'},
-    aurennais:{greet:d=>`Yield, and the terms improve. ${d} gold, Master, or a night in the cells.`,
-      poor:'You have not the sum, Master. The cells, then, or we continue.',
+    aurennais:{greet:(d,p)=>`Yield, and the terms improve. ${d} gold, Master, or ${p}.`,
+      poor:'You have not the sum, Master. The other term, then, or we continue.',
       pay:'Settled, and noted. You may go.',
       cells:'The cells, then. It will be entered in the town’s book.'},
-    oldblood:{greet:d=>`Yield. ${d} gold, or the cells until light.`,
-      poor:'You have not got it. The cells, or the blade.',
+    oldblood:{greet:(d,p)=>`Yield. ${d} gold, or ${p}.`,
+      poor:'You have not got it. The other, or the blade.',
       pay:'It is paid. Go.',
       cells:'Come. The cells are quiet.'}};
+  /* S2246 — quest review Finding 47: the yield names the punishment its court gives (the stocks, the Compact's prison, the cells) */
+  const YIELD_PEN={gatelands:c=>{const h=stocksHours(c);return `${h} ${h===1?'hour':'hours'} in the stocks`;},aurenne:c=>{const n=prisonNights(c);return `${n===1?'a night':n+' nights'} in the Compact’s prison`;}};
+  function yieldPen(S,c){const f=YIELD_PEN[courtOf(S)];return f?f(c):'a night in the cells';}
   // S550 — on the feast day a fine was halved, the guard says so after the halt (the Old Blood keep no watch: the Gatelander line)
   function feastFineLine(S,c){if(!c||c.feast!==dayNow()||typeof FEAST_FINE==='undefined')return '';return ' '+(FEAST_FINE[peopleOfSite(S.site)]||FEAST_FINE.gatelander);}
   function talkedGreet(S,c,fine){if(!c||!c.talkedNow)return '';delete c.talkedNow;return (TALKED_LINES[peopleOfSite(S.site)]||TALKED_LINES.markman)(fine);}
@@ -888,10 +947,15 @@
       CR.cool=5;if(indoor)endSent();showMsg('The goods are handed back. The fine is met.','#c8e88a');setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}}];}
   function stocksHours(c){return Math.max(1,Math.min(6,Math.ceil((c&&c.bounty||0)/50)));}
   // named action: the stocks (the Crown's court, after the yield)
+  /* S2238 — where the stocks let you go: a step (1 m) in front of their boards, on the square's side, facing its middle (S.stocks, the
+     look builder's S2226 piece; the sitter faces in). A town with no stocks built (the old look, or no clear spot) lets you go 2 m south
+     of its middle, as before. */
+  function stocksLetGo(S){const K=S&&S.stocks,cx=S.site.x,cz=S.site.z;if(!K)return {x:cx,z:cz+2,yaw:null};
+    const x=K.x+Math.sin(K.ry),z=K.z+Math.cos(K.ry);return {x,z,yaw:Math.atan2(-(cx-x),-(cz-z))};}
   function toStocks(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toStocks(S,c);else setTimeout(w,100);};setTimeout(w,100);return;}
     const h=stocksHours(c);standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;delete c.lockFine;
     const back=Math.min(Math.max(0,gold),c.loot||0);if(back>0){gold-=back;stolen++;}c.loot=0;
-    doFade(()=>{advanceClock(h*60);px=S.site.x;pz=S.site.z+2;jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
+    doFade(()=>{advanceClock(h*60);const L=stocksLetGo(S);px=L.x;pz=L.z;if(L.yaw!=null)yaw=L.yaw;jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
       showMsg(`${h} ${h===1?'hour':'hours'} in the stocks on the plaza. ${stolen?'They took what you stole'+(back?` (${back} gold)`:'')+'. ':''}You are let go.`,'#c8b880');
       if(typeof addLog==='function')addLog('⛓',`${h} ${h===1?'hour':'hours'} in the stocks at ${S.site.name}${stolen?'; the stolen goods were taken'+(back?`, and ${back} gold`:''):''}.`);
       if(typeof renderInv==='function')renderInv();if(typeof updateHUD==='function')updateHUD();});}
@@ -1015,7 +1079,7 @@
     const n=e._guard.npc;if(n){n._drawn=false;n._retreated=false;n.g.visible=true;if(n.dot)n.dot.visible=true;}}}
   function offerYield(S,c){const dbl=c.bounty*2;const D_=drawnAt(S);D_.forEach(e=>{e.alert=false;e.atkCd=Math.max(e.atkCd||0,.6);}); // they hold while the offer stands
     const L=yieldLines(S);const gn=D_.map(e=>e._guard&&e._guard.npc&&e._guard.npc.def&&e._guard.npc.def.name).find(Boolean)||'The guard'; // S171 — the guard who drew speaks, by name
-    openDialog({name:gn,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(dbl)],topics:[
+    openDialog({name:gn,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(dbl,yieldPen(S,c))],topics:[
       {label:`Pay double (${dbl} gold)`,quest:true,fn:()=>{if(gold<dbl)return L.poor;gold-=dbl;updateHUD();c.bounty=0;c.shut=false;standDown(S);if(typeof addLog==='function')addLog('⚖',`Yielded and paid ${dbl} gold at ${S.site.name}.`);return L.pay;}},
       courtOf(S)==='aurenne'?{label:`Prison (${prisonNights(c)} ${prisonNights(c)===1?'night':'nights'}).`,quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toPrison(S,c);},60);return '';}} /* S2229 — the Compact's court */
       :courtOf(S)==='gatelands'?{label:`The stocks (${stocksHours(c)} h).`,quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toStocks(S,c);},60);return '';}} /* S2227 — the Crown's court (#1540 B) */
