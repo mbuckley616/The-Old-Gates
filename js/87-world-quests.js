@@ -390,6 +390,7 @@ const giver=`${lord.title} ${lord.name}`;
       else if(q.kind==='errand'&&q.sub==='watch'){if(d.done){const g=siteAnywhere(q.erSite);if(g)push(g.x,g.z,GREEN,`report to ${q.giver}`);}else push(d.x,d.z,GREEN,`the ${d.fold}`,'\ud83c\udf19');} /* S1776 */
       else if(q.kind==='road'||q.kind==='cull')push(d.x,d.z,GREEN,q.kind==='road'?'the camp':plural(2,q.data.target),q.kind==='road'?'\u26fa':'\u2620');
       else if(q.kind==='duel'&&d.state!=='lost')push(d.x,d.z,GREEN,'the yard','\u2694');
+      else if(q.kind==='writ')push(d.x,d.z,GREEN,d.camp||'the camp','\u26fa'); /* S2276 */
       else if(q.kind==='warcamp'||q.kind==='garrison')push(d.x,d.z,GREEN,q.kind==='warcamp'?'the camp':'the plaza','\u2694');} /* S2130 */
     // guild tasks
     const G=worldState.guild;if(G)for(const g in G){const t=G[g].active;if(!t||taskDone(t))continue;const x=t.sx!=null?t.sx:t.x!=null?t.x:(t.siteId?(siteAnywhere(t.siteId)||{}).x:null),z=t.sz!=null?t.sz:t.z!=null?t.z:(t.siteId?(siteAnywhere(t.siteId)||{}).z:null);if(x!=null)push(x,z,t.kind==='clear'?RED:GREEN,t.short,t.kind==='relic'?'\u25c6':(t.kind==='beast'||t.kind==='wizard'||t.kind==='creature'||t.kind==='hunt')?'\u2620':undefined);}
@@ -1872,7 +1873,7 @@ const giver=`${lord.title} ${lord.name}`;
   }
   function sack(t,camp){const st=TS(t);flag(t,'sacked',true);st.p=15;const lord=lordFor(t);if(typeof addLog==='function')addLog('🔥',`${t.name} was sacked by the bandits of ${camp.name}.`);showMsg(`Word comes that ${t.name} has been sacked.`,'#ff8060');}
   function markRoadCleared(a,b){(worldState.roadsCleared||(worldState.roadsCleared={}))[a+'|'+b]=worldState.gameTimeAbsMinutes||0;}
-  function markLairDead(siteId){(worldState.lairs||(worldState.lairs={}))[siteId]=worldState.gameTimeAbsMinutes||0;}
+  function markLairDead(siteId){(worldState.lairs||(worldState.lairs={}))[siteId]=worldState.gameTimeAbsMinutes||0;if(typeof roadWritPay==='function')roadWritPay(siteId);} /* S2276 — a road-warden's writ on the camp is paid */
   // S719 — canon §12, Michael’s B on #227: a slain lair-beast doubles the herbs of the glade nearest its lair, if that glade lies
   // within 700 units (the reach at which a lair weighs on a town). Read from the cells' own sites, whatever has loaded; a cell is
   // 2,400 across, so the glades within 700 of any lair within 700 of this glade lie in the 5×5 cells round it.
@@ -2183,7 +2184,7 @@ const giver=`${lord.title} ${lord.name}`;
   // four are drawn. This session draws the merchant and his mule; the other kinds are rolled and wait on their sessions.
   const ROADFOLK={merchant:{pace:1.1,w:3},pilgrim:{pace:1.3,w:2},rider:{pace:5.5,w:1},official:{pace:1.3,w:1},family:{pace:1.0,w:0}};
   const ROADFOLK_NEAR=400,ROADFOLK_DRAWN=4,ROADFOLK_MUL=1.1,ROADFOLK_PILGRIM=1500,ROADFOLK_NEWS=3*1440,ROADFOLK_FLED=20*1440;
-  const ROADFOLK_DRAW={merchant:1,pilgrim:1,rider:1,family:1};
+  const ROADFOLK_DRAW={merchant:1,pilgrim:1,rider:1,family:1,official:1};
   const ROAD_EVENT_FLAGS=['besieged','sacked','burned','plague','occupied','abandoned'];
   const _roadDays=new Map(),_roadShrine=new Map(),ROADWALK=new Map();
   function roadLenOf(rd){if(rd._len!=null)return rd._len;const P=rd.pts,cum=[0];for(let i=1;i<P.length;i++)cum.push(cum[i-1]+Math.hypot(P[i].x-P[i-1].x,P[i].z-P[i-1].z));rd._cum=cum;rd._len=cum[cum.length-1];return rd._len;}
@@ -2337,7 +2338,24 @@ const giver=`${lord.title} ${lord.name}`;
   function familyDef(T,rd,p,k){const home=roadfolkHome(T,rd),r=seededRng('roadfolk',T.id+(k?':'+k:'')),[i,j]=cellOf(home.x,home.z),nat=nationOf(i,j),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
     const nm=pick(r,k?bank.f:bank.m);const topics=k?[]:[{label:`Here. Take this. (${FAMILY_ALMS} gold)`,avail:()=>!(rfRec(T.id)||{}).alms,fn:()=>familyGive(T,rd)}];
     const def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x5e5446,topics});def._siteId=home.id;def.roadfolk=T.id;return def;}
+  // S2276 — the official (the page's official row): the Crown's road-warden on the Gatelands, a reeve's man on the Mark, the Compact's clerk in
+  // Aurenne, walking at 1.3 m a game minute with a guard beside him. Where a live bandit camp breaks his road (the merchant's test: one within
+  // 500 m of the road's midpoint, not cleared) he writes you a writ on it, a quest of its own (kind 'writ', id writ:<camp>, in the journal and
+  // on the map at the camp), and it pays 40 + 10 a tier of the camp's ground the moment the camp is cleared (markLairDead). One writ a camp.
+  // His part as a witness on the road waits with robbing the road's people (strikeNpc reads only a site's townsfolk).
+  const OFFICIAL_POST={gatelands:"the Crown\u2019s road-warden",mark:"a reeve\u2019s man",aurenne:"the Compact\u2019s clerk"};
+  function writPay(camp){return 40+10*Math.max(0,worldTierAt(camp.x,camp.z)|0);}
+  function officialTell(T,rd,def){const camp=roadCamp(rd);if(!camp)return 'The road is quiet, and long may it stay so. Good day to you.';
+    const id='writ:'+camp.id,have=qFind(id);if(have)return have.turnedIn?'The writ on that camp is paid. The road is the better for it.':`You have my writ on ${camp.name}. Clear it and it pays.`;
+    const n=writPay(camp);qAdd({id,kind:'writ',giver:def.name,giverSite:null,title:`A writ on ${camp.name}`,desc:`${def.name}, ${def.post}: the bandits of ${camp.name} have the road. Clear the camp and the writ pays ${n} gold.`,objective:`Clear ${camp.name}`,reward:n,data:{campId:camp.id,camp:camp.name,x:camp.x,z:camp.z}});
+    return `The bandits of ${camp.name} have this road, ${compassWord(camp.x-def.x,camp.z-def.z)} of here. Clear the camp and the writ pays ${n} gold. I have set it down.`;}
+  function roadWritPay(siteId){const q=qFind('writ:'+siteId);if(!q||q.turnedIn)return;qComplete(q);const paid=qTurnIn(q);showMsg(`The writ on ${q.data.camp} is paid: ${paid} gold.`,'#e8d8a0');}
+  function officialDef(T,rd,p,k){const home=roadfolkHome(T,rd),r=seededRng('roadfolk',T.id+(k?':'+k:'')),[i,j]=cellOf(home.x,home.z),nat=nationOf(i,j),nk=nationKeyOf(i,j),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
+    const nm=pick(r,bank.m);let def=null;const topics=k?[]:[{label:'Any trouble on the road?',fn:()=>officialTell(T,rd,def)}];
+    def=makeDef(home,home.reg||'irish',r,k?'Guard':'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:k?0x4a4a50:0x2e3440,topics});def._siteId=home.id;def.roadfolk=T.id;def.post=OFFICIAL_POST[nk]||OFFICIAL_POST.gatelands;return def;}
   function buildTraveller(T,rd,p){
+    if(T.kind==='official'){const n=spawnNPC(officialDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const n2=spawnNPC(officialDef(T,rd,p,1),p.ang,true);n2.sched={type:'lost'};const k2=npcs.indexOf(n2);if(k2>=0)npcs.splice(k2,1);
+      return {T,rd,npc:n,follow:[{npc:n2,side:1.0,back:0}]};}
     if(T.kind==='family'){const n=spawnNPC(familyDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const n2=spawnNPC(familyDef(T,rd,p,1),p.ang,true);n2.sched={type:'lost'};const k2=npcs.indexOf(n2);if(k2>=0)npcs.splice(k2,1);
       return {T,rd,npc:n,follow:[{npc:n2,side:1.0,back:0}]};}
     if(T.kind==='rider'){const n=spawnNPC(riderDef(T,rd,p),p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();try{const rg=riderBeast(T,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
