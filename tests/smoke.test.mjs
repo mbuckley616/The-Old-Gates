@@ -95,7 +95,9 @@ check('a coaching inn smokes from its own chimney (on its roof, within 5 of the 
 // from the main loop, always (a forge), on the same wind
 await page.evaluate(() => { goToZone('overworld', 25.75, 15, 0, 'x'); });
 // the zone change fades before the old village is built: wait for its scene and its forge's chimney, not a frame count
-await page.waitForFunction(() => activeZoneId === 'overworld' && scene && scene.userData && scene.userData.chimneys && scene.userData.chimneys.length, null, { timeout: 120000 });
+// Session 2271: polled every 0.5 s, not on frames (Playwright's default): the village is built in the fade's callback, and a frame
+// there takes 3-19 s on software GL, longer with a second boot beside it, so a frame-polled wait timed out with the village standing
+await page.waitForFunction(() => activeZoneId === 'overworld' && scene && scene.userData && scene.userData.chimneys && scene.userData.chimneys.length, null, { timeout: 120000, polling: 500 });
 // g.spin ticks WORLD.tick, which does not run here; the main loop calls WORLD.smokeLegacy, so real frames must move the smoke's clock
 const t0 = await page.evaluate(() => WORLD.smoke.t); await g.frames(6); const loopRan = await page.evaluate(t0 => { const S = scene.userData.smokeS; return !!S && WORLD.smoke.t > t0; }, t0);
 check('in the old village the game\'s own loop drives the smoke (its clock moves over real frames)', loopRan, { t0, loopRan });
