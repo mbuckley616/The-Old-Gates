@@ -3610,6 +3610,11 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};
       if(abed)laySleeper(intNPCMesh);}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    // S2261 — where you stand on coming in: a step in from the door (0.9 m, as the other kit rooms), on the door's line or slid along the
+    // front wall to the first spot 0.35 m clear of the ground floor's solids. The room's middle 1.75 m in (intArrivalZ's) fell on the stair's
+    // foot where the stair climbs the door's side wall in a shallow house (three of c1_1_s7's, the weekly run of 15 Nov: intreach)
+    {const az=rz(Z-.9),clear=x=>!SOL.some(s=>s.y0<F1-.5&&x+.35>s.x0&&x-.35<s.x1&&az+.35>s.z0&&az-.35<s.z1),ax=[0,-.3,.3,-.5,.5,-.7,.7].map(d=>rx(T.door.x+d)).find(x=>x>.4&&x<W-.4&&clear(x));
+      house._arriveX=+(ax??rx(T.door.x)).toFixed(3);house._arriveZ=+az.toFixed(3);}
     return sc_;
   }
   // S1320 (card F9, Michael's 1 A and 2 B on #602) — on the new look an Aurennais port's inn on the quay (lot.kit.kind 'aurtavern', S1320's

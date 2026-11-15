@@ -9,6 +9,12 @@
 // Session 2259 (#1582 A, the prototype S2244's ships-fx.js): a broadside seen. Round shot at a black galleon 70 m abeam: six guns flash
 // at their ports (the kit's six on the side toward her, 0.6 m outside her deck's edge) and blow 40 puffs each, six balls fly, and each lands
 // in 24 splinters at her side as the rules take her hull; grape at 120 m falls short in spray. Two draws in a fight, none after it.
+// Session 2263 (#1582 A, the prototype's rigFire): a rig alight seen. A black galleon's rig lit (lightRig, 2 a second for 8 s): the fire seats at
+// the foot of her main course and runs over her sails at 0.55 m/s, flames on the cloth at its front (the added cloud) and smoke rising off
+// them; the cloth behind is charred on her own copy of each sail's geometry, the shared bake left clean; when it is out the flames stop and
+// the char stays; when she is gone her copies are let go.
+// Session 2264 (#1582 A, the prototype's founder): a black galleon foundering goes down by the head (0.12 rad at the end, on an ease, beside
+// the rules' 3 m and 0.35 rad), in 260 points of broken water at her sides, strongest halfway; none when she is gone.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -97,4 +103,31 @@ check(`a broadside is seen: ${fx.balls} balls, ${fx.flash} flashes at once, ${fx
 check(`each gun fires from its own port on the side toward her, 0.6 m out of her deck's edge (${fx.muz && fx.muz.map(m => m[1]).join(', ')} along her)`,
   fx.muz && fx.muz.length === 6 && new Set(fx.muz.map(m => m[1])).size === 6 && fx.muz.every(m => Math.abs(m[2] - .6) < .02 && m[3] < 68) && fx.muz.every(m => Math.sign(m[0]) === Math.sign(fx.muz[0][0])), fx.muz);
 check(`grape at 120 m falls short of her deck in spray (${fx.spray} drops, ${fx.grapeSpl} splinters)`, fx.grape && fx.spray === 6 * 70 && fx.grapeSpl === 0, fx);
+// S2263: a rig alight
+const fire = await page.evaluate(() => { const out = {}, hk = hookClock; let T = hookClock(); window.hookClock = () => T;
+  const run = (n, see) => { for (let i = 0; i < n; i++) { T += 1 / 60; tickShipFires(1 / 60); seaFxTick(1 / 60); if (see) see(i); } };
+  const h = spawnOtherShip('pirate', SHIP.x + 70, SHIP.z, 'test:firegalleon', 'galleon'); placeOther(h);
+  const B = SHIP_GEO.get(h.mesh.userData.bakeKey), hadC = !!B.geo.attributes.color, rigC = B.rigs.map(q => !!q.geo.attributes.color);
+  out.lit = lightRig(h, 2, 8); h.douse = null; let fl = 0, sm = 0, add = 0;
+  run(240, () => { const f = SEA_FIRE.get(h); fl = Math.max(fl, f ? f.flames : 0); sm = Math.max(sm, SEA_FX.P.filter(q => q.fire).length); add = Math.max(add, (SEA_FX.n || {}).add || 0); });
+  const f = SEA_FIRE.get(h); Object.assign(out, { fl, sm, add, front: f && +f.front.toFixed(2), charred: f && f.charred, verts: f && f.parts.reduce((a, p) => a + p.idx.length, 0), seat: f && f.seat });
+  h.burn = 0; run(300); out.out = [f.flames, f.charred, SEA_FX.P.filter(q => q.fire).length];
+  out.clean = !!B.geo.attributes.color === hadC && B.rigs.every((q, i) => !!q.geo.attributes.color === rigC[i]) && h.mesh.userData.rigs.some((q, i) => q.m.geometry !== B.rigs[i].geo);
+  despawnOtherShip(h); run(1); out.gone = !SEA_FIRE.has(h);
+  window.hookClock = hk; return out; });
+console.log(JSON.stringify(fire));
+check(`a black galleon's rig alight: the fire seats at her main course's foot (${fire.seat}) and runs ${fire.front} m in 4 s, ${fire.fl} flames and ${fire.sm} puffs of smoke, ${fire.charred} of her ${fire.verts} points of cloth charred`,
+  fire.lit && fire.front > 2.4 && fire.front < 2.6 && fire.fl > 60 && fire.fl <= 360 && fire.sm > 60 && fire.add <= 1400 && fire.charred > 50 && fire.seat && Math.abs(fire.seat[0]) < 1.5, fire);
+check(`put out, the flames stop and the char stays (${fire.out[1]} points), on her own copies (the shared bake clean); gone, her fire is let go`,
+  fire.out[0] === 0 && fire.out[1] === fire.charred && fire.out[2] === 0 && fire.clean && fire.gone, fire);
+// S2264: a founder by the head
+const fd = await page.evaluate(() => { const hk = hookClock; let T = hookClock(); window.hookClock = () => T; const out = [];
+  const h = spawnOtherShip('pirate', SHIP.x + 70, SHIP.z, 'test:founder', 'galleon'); placeOther(h); h.speed = 0; h.founder = SHIP_FOUNDER_S;
+  for (let i = 0; i < 9 * 60 && OTHER.includes(h); i++) { T += 1 / 60; otherDown(h, 1 / 60); seaFxTick(1 / 60);
+    if (i === 59 || i === 239 || i === 449) out.push({ u: +(1 - h.founder / SHIP_FOUNDER_S).toFixed(2), head: +h.mesh.rotation.x.toFixed(3), list: +h.mesh.rotation.z.toFixed(3), water: h._water }); }
+  seaFxTick(1 / 60); const gone = !OTHER.includes(h), vis = SEA_FX.mix.visible; window.hookClock = hk; return { out, gone, vis }; });
+console.log(JSON.stringify(fd));
+const [f1, f2, f3] = fd.out;
+check(`a foundering galleon goes down by the head (${f1.head}, ${f2.head}, ${f3.head} rad at ${f1.u}, ${f2.u}, ${f3.u} of the way, beside the rules' list ${f3.list}) in ${f2.water} points of broken water; gone, none`,
+  f1.head > 0 && f1.head < f2.head && f2.head < f3.head && f3.head <= .12 && Math.abs(f2.head - .06) < .005 && f2.water === 260 && f1.water === 260 && fd.gone && !fd.vis, fd);
 await g.close();
