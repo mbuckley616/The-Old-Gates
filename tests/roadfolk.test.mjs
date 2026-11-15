@@ -2,6 +2,7 @@
 // its day's travellers from its key and the day: 2 + both ends' prosperity ÷ 50, 2 to 6 (halved on a broken route), each with an hour,
 // an end and a kind. Where one is comes from the clock and the pace. Within 400 m the nearest four are drawn; the merchant (session 1)
 // walks at 1.1 m a game minute with his mule and sells 6 to 10 rows of a goods shop's stock at his home town's prices ×1.1.
+// Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -87,4 +88,38 @@ const lost = await page.evaluate((id) => { const D = ROADWALK.get(id); const spr
   const R = worldState.roadfolk[id]; const T = D.T; return { sprung, lost: R.lost, drawn: ROADWALK.has(id), onRoad: !!travellerAt(T, D.rd, worldState.gameTimeAbsMinutes), saveKey: JSON.parse(ssStringify(worldState)).roadfolk[id] }; }, amb2.id);
 console.log(JSON.stringify(lost));
 check('walk 250 m off with them alive and his pack is taken; he is off the road, and it is in the save', lost.sprung && lost.lost && !lost.drawn && !lost.onRoad && lost.saveKey && lost.saveKey.lost, lost);
+
+// S2270 — pilgrims and mourners
+const pil = await page.evaluate(() => {
+  const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440); let one = null, mourn = null, n = 0, nm = 0, bad = [];
+  for (let dd = day + 1; dd < day + 40; dd++) for (const rd of ROADS.filter(roadfolkRoad)) for (const T of roadTravellers(rd, dd)) {
+    if (T.kind !== 'pilgrim') continue; n++; const Q = pilgrimPlan(T, rd); if (Q.none) { bad.push(T.id); continue; }
+    const dRoad = Math.min(...rd.pts.map(q => Math.hypot(q.x - Q.goal.x, q.z - Q.goal.z)));
+    if (dRoad > 1500) bad.push([T.id, dRoad]);
+    if (Q.mourners) { nm++; const dm = Math.hypot(rd.pts[0].x - 13100, rd.pts[0].z - 25450); if (!mourn || dm < mourn.dm) mourn = { T, rd, dm }; } else if (!one && Q.off > 40) one = { T, rd };
+  }
+  const put = (o, frac) => { const Q = pilgrimPlan(o.T, o.rd), d = frac * Q.along; const t = o.T.at + d / o.T.pace; worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; const p = travellerAt(o.T, o.rd, t); px = p.x + 5; pz = p.z; return { id: o.T.id, goal: Q.goal, along: Q.along, off: Q.off, t }; };
+  return { n, nm, bad, one: one && put(one, .5), mourn: mourn && { id: mourn.T.id } , _m: mourn && [mourn.rd.def.a, mourn.rd.def.b, mourn.T.id] };
+});
+console.log(JSON.stringify(pil).slice(0, 900));
+check('every pilgrim is bound for a shrine or lesser gate within 1,500 m of his road', pil.n > 0 && pil.bad.length === 0, pil.bad.slice(0, 5));
+check('about one in six bound for a gate are mourners (some over 40 days)', pil.nm > 0, pil.nm);
+await g.cells(); await g.spin(null, 4);
+const talk = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) return { drawn: false, keys: [...ROADWALK.keys()] }; const t = D.npc.def.topics.find(t => t.label === 'Where are you bound?');
+  const before = !!(worldState.sighted && worldState.sighted[o.goal.id]); const resp = t.fn(t); return { drawn: true, inTalk: npcs.includes(D.npc), before, after: !!(worldState.sighted && worldState.sighted[o.goal.id]), resp }; }, pil.one);
+console.log(JSON.stringify(talk));
+check('a pilgrim on the road is drawn; asked, he names his goal and it is pencilled on your map', talk.drawn && talk.inTalk && !talk.before && talk.after && talk.resp.includes(pil.one.goal.name), talk);
+const off = await page.evaluate((o) => { const D = ROADWALK.get(o.id); const T = D.T, rd = D.rd; const Q = pilgrimPlan(T, rd);
+  const mid = travellerAt(T, rd, T.at + (Q.along + Q.off / 2) / T.pace), done = travellerAt(T, rd, T.at + (Q.along + Q.off + 5) / T.pace);
+  return { midOff: mid && mid.off, midToGoal: mid && Math.round(Math.hypot(mid.x - Q.goal.x, mid.z - Q.goal.z)), half: Math.round(Q.off / 2), done }; }, pil.one);
+console.log(JSON.stringify(off));
+check('past the road\'s nearest point he walks off it to his goal, and is gone on arriving', off.midOff && Math.abs(off.midToGoal - off.half) <= 2 && off.done === null, off);
+const mo = await page.evaluate((id) => { const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440);
+  for (let dd = day - 2; dd < day + 40; dd++) for (const rd of ROADS.filter(roadfolkRoad)) for (const T of roadTravellers(rd, dd)) { if (T.id !== id) continue;
+    const Q = pilgrimPlan(T, rd); const t = T.at + Q.along * .5 / T.pace; worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; const p = travellerAt(T, rd, t); px = p.x + 5; pz = p.z; return true; }
+  return false; }, pil.mourn.id);
+await g.cells(); await g.spin(null, 4);
+const mm = await page.evaluate((id) => { const D = ROADWALK.get(id); return D ? { bodies: 1 + D.follow.length, talk: npcs.includes(D.npc) || D.follow.some(f => npcs.includes(f.npc)), sep: +Math.hypot(D.npc.g.position.x - D.follow[0].npc.g.position.x, D.npc.g.position.z - D.follow[0].npc.g.position.z).toFixed(2) } : { keys: [...ROADWALK.keys()], near: roadfolkNow().filter(o => o.T.id === id).map(o => [o.p.x - px, o.p.z - pz]) }; }, pil.mourn.id);
+console.log(JSON.stringify({ mo, mm }));
+check('mourners walk two together and nobody can speak to them', mo && mm && mm.bodies === 2 && !mm.talk && Math.abs(mm.sep - 1) < .01, mm);
 stop(); await g.close();

@@ -2183,7 +2183,7 @@ const giver=`${lord.title} ${lord.name}`;
   // four are drawn. This session draws the merchant and his mule; the other kinds are rolled and wait on their sessions.
   const ROADFOLK={merchant:{pace:1.1,w:3},pilgrim:{pace:1.3,w:2},rider:{pace:5.5,w:1},official:{pace:1.3,w:1},family:{pace:1.0,w:0}};
   const ROADFOLK_NEAR=400,ROADFOLK_DRAWN=4,ROADFOLK_MUL=1.1,ROADFOLK_PILGRIM=1500,ROADFOLK_NEWS=3*1440,ROADFOLK_FLED=20*1440;
-  const ROADFOLK_DRAW={merchant:1};
+  const ROADFOLK_DRAW={merchant:1,pilgrim:1};
   const ROAD_EVENT_FLAGS=['besieged','sacked','burned','plague','occupied','abandoned'];
   const _roadDays=new Map(),_roadShrine=new Map(),ROADWALK=new Map();
   function roadLenOf(rd){if(rd._len!=null)return rd._len;const P=rd.pts,cum=[0];for(let i=1;i<P.length;i++)cum.push(cum[i-1]+Math.hypot(P[i].x-P[i-1].x,P[i].z-P[i-1].z));rd._cum=cum;rd._len=cum[cum.length-1];return rd._len;}
@@ -2192,13 +2192,16 @@ const giver=`${lord.title} ${lord.name}`;
     return {x:p0.x+(p1.x-p0.x)*f,z:p0.z+(p1.z-p0.z)*f,ang:Math.atan2((p1.x-p0.x)*sx,(p1.z-p0.z)*sx)};}
   function roadfolkRoad(rd){const d=rd.def;return d.via!=='spur'&&d.via!=='quay'&&!!siteAnywhere(d.a)&&!!siteAnywhere(d.b);}
   // a shrine, or a lesser gate (a cave door that is no lair's and no great gate), within 1,500 m of the road's line: read off the cells' own data
-  function roadHasShrine(rd){const key=routeKey(rd.def.a,rd.def.b);if(_roadShrine.has(key))return _roadShrine.get(key);const P=rd.pts,step=Math.max(1,Math.floor(P.length/12)),cells=new Set();
+  // the shrines and lesser gates (a cave door that is no lair's and no great gate's) within 1,500 m of the road's line, read off the cells'
+  // own data and sorted by id, so a pilgrim's goal is the same whatever has loaded: {id, name, kind:'shrine'|'gate', x, z}; the id is the map's
+  function roadShrines(rd){const key=routeKey(rd.def.a,rd.def.b);if(_roadShrine.has(key))return _roadShrine.get(key);const P=rd.pts,step=Math.max(1,Math.floor(P.length/12)),cells=new Set();
     for(let i=0;i<P.length;i+=step){const [ci,cj]=cellOf(P[i].x,P[i].z);for(let a=ci-1;a<=ci+1;a++)for(let b=cj-1;b<=cj+1;b++)if(a>=0&&b>=0&&a<GRID&&b<GRID)cells.add(a+','+b);}
-    const near=(x,z)=>{for(let i=0;i<P.length;i+=step)if(Math.hypot(P[i].x-x,P[i].z-z)<ROADFOLK_PILGRIM)return true;return Math.hypot(P[P.length-1].x-x,P[P.length-1].z-z)<ROADFOLK_PILGRIM;};let on=false;
-    for(const k of [...cells].sort()){if(on)break;const m=k.split(','),c=getCell(+m[0],+m[1]);
-      for(const t of c.sites)if(t.kind==='shrine'&&near(t.x,t.z)){on=true;break;}
-      if(!on)for(const e of c.doors){if(e.wet||e.kind!=='cave_door'||e.lairDoor||e.cell!==k||greatSchoolOf(e))continue;const p=fixedDoorSpot(e);if(p&&near(p.x,p.z)){on=true;break;}}}
-    _roadShrine.set(key,on);return on;}
+    const near=(x,z)=>{for(let i=0;i<P.length;i+=step)if(Math.hypot(P[i].x-x,P[i].z-z)<ROADFOLK_PILGRIM)return true;return Math.hypot(P[P.length-1].x-x,P[P.length-1].z-z)<ROADFOLK_PILGRIM;};const out=[];
+    for(const k of [...cells].sort()){const m=k.split(','),c=getCell(+m[0],+m[1]);
+      for(const t of c.sites)if(t.kind==='shrine'&&near(t.x,t.z))out.push({id:t.id,name:t.name,kind:'shrine',x:t.x,z:t.z});
+      for(const e of c.doors){if(e.wet||e.kind!=='cave_door'||e.lairDoor||e.cell!==k||greatSchoolOf(e))continue;const p=fixedDoorSpot(e);if(p&&near(p.x,p.z))out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'),kind:'gate',x:p.x,z:p.z});}}
+    out.sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0);_roadShrine.set(key,out);return out;}
+  function roadHasShrine(rd){return roadShrines(rd).length>0;}
   function roadEndNews(site,within){const st=worldState.towns&&worldState.towns[site.id];if(!st)return false;const now=worldState.gameTimeAbsMinutes||0;return ROAD_EVENT_FLAGS.some(f=>st.flags[f]!=null&&now-st.flags[f]<=within);}
   // the day's departures on one road: [{id, kind, from:'a'|'b', at (the absolute minute), pace}]. Kept for the day once read
   function roadTravellers(rd,day){const key=routeKey(rd.def.a,rd.def.b),ck=key+':'+day;if(_roadDays.has(ck))return _roadDays.get(ck);
@@ -2212,7 +2215,15 @@ const giver=`${lord.title} ${lord.name}`;
       for(let k=0;k<2;k++)out.push({id:`road:${key}:${day}:f${end}${k}`,kind:'family',from:end,at:day*1440+Math.floor(360+fr()*720),pace:ROADFOLK.family.pace,road:key});}
     _roadDays.set(ck,out);if(_roadDays.size>400){const f=_roadDays.keys().next().value;_roadDays.delete(f);}return out;}
   // where a traveller is now, or null while not yet set out or arrived
-  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
+  // S2270 — a pilgrim's way (the page's pilgrim row): along the road from his end to its point nearest his shrine or gate, then off the road
+  // straight to it, and gone on arriving. His goal is one of the road's shrines and gates by his id; one in six bound for a gate are mourners
+  // with their dead (the Clearing, canon §3.1). Kept per traveller, as the roll is
+  function pilgrimPlan(T,rd){if(T._plan)return T._plan;const L=roadShrines(rd);if(!L.length)return (T._plan={none:true});const r=seededRng('pilgrim',T.id),G=L[Math.floor(r()*L.length)%L.length];
+    roadLenOf(rd);const P=rd.pts;let bi=0,bd=Infinity;for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<bd){bd=d;bi=i;}}
+    const along=T.from==='b'?rd._len-rd._cum[bi]:rd._cum[bi];return (T._plan={goal:G,mourners:G.kind==='gate'&&r()<1/6,along,off:bd,bx:P[bi].x,bz:P[bi].z});}
+  function pilgrimAt(T,rd,d){const Q=pilgrimPlan(T,rd);if(Q.none)return null;if(d<0||d>Q.along+Q.off)return null;if(d<=Q.along){const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
+    const f=(d-Q.along)/Math.max(1e-6,Q.off),x=Q.bx+(Q.goal.x-Q.bx)*f,z=Q.bz+(Q.goal.z-Q.bz)*f;return {x,z,ang:Math.atan2(Q.goal.x-Q.bx,Q.goal.z-Q.bz),d,off:true};}
+  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));if(T.kind==='pilgrim')return pilgrimAt(T,rd,d);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
   function roadfolkHome(T,rd){return siteAnywhere(T.from==='a'?rd.def.a:rd.def.b);}
   function roadfolkDest(T,rd){return siteAnywhere(T.from==='a'?rd.def.b:rd.def.a);}
   // every traveller on the loaded roads now (today's and yesterday's departures), with where they are
@@ -2265,18 +2276,30 @@ const giver=`${lord.title} ${lord.name}`;
     if(K.fled<30){const s=Math.min(30-K.fled,4.5*dt);K.fled+=s;}
     const x=K.x-Math.sin(K.ang)*K.fled,z=K.z-Math.cos(K.ang)*K.fled,y=worldH(x,z);D.npc.g.position.set(x,y,z);D.npc.g.rotation.y=K.ang+Math.PI;D.npc.def.x=x;D.npc.def.z=z;D.npc.home={x,z};D.npc.dot.position.set(x,y+1.5,z);
     return true;}
-  function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;if(D.npc){sc.remove(D.npc.g);sc.remove(D.npc.dot);const k=npcs.indexOf(D.npc);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);ROADWALK.delete(id);}
+  // a pilgrim tells you where he is bound, and it is pencilled on your map (sightPlace, the spyglass's own: worldState.sighted, the character's);
+  // the mourners are not spoken to at all: two walk together with their dead and nobody is in the world's talk list
+  function pilgrimDef(T,rd,p,k){const home=roadfolkHome(T,rd),Q=pilgrimPlan(T,rd),r=seededRng('roadfolk',T.id+(k?':'+k:''));const [i,j]=cellOf(home.x,home.z);const nat=nationOf(i,j);const bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
+    const nm=pick(r,r()<.5?bank.m:bank.f);const G=Q.goal;
+    const topics=Q.mourners?[]:[{label:'Where are you bound?',fn:()=>{sightPlace(G.id,G.name,`Pencilled ${G.name} on the map, where a pilgrim was bound.`);return `To ${G.kind==='shrine'?'the ':''}${G.name}. It lies ${compassWord(G.x-px,G.z-pz)} of here.`;}}];
+    const def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:Q.mourners?0x2a2622:0x8a7a5e,topics});def._siteId=home.id;def.roadfolk=T.id;return def;}
+  function buildTraveller(T,rd,p){
+    if(T.kind==='pilgrim'){const Q=pilgrimPlan(T,rd);const n=spawnNPC(pilgrimDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const D={T,rd,npc:n,follow:[]};
+      if(Q.mourners){const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);D.mute=true;const n2=spawnNPC(pilgrimDef(T,rd,p,1),p.ang,true);n2.sched={type:'lost'};const k2=npcs.indexOf(n2);if(k2>=0)npcs.splice(k2,1);D.follow.push({npc:n2,side:1.0,back:0});}
+      return D;}
+    const n=spawnNPC(merchantDef(T,rd,p),p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();try{const rg=buildAnimal('Pack Mule',T.id,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
+    return {T,rd,npc:n,beast:g,follow:[]};}
+  function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);ROADWALK.delete(id);}
   function tickRoadfolk(dt){if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
     if(Math.random()<.002)rfPrune();
     const all=roadfolkNow().filter(o=>ROADFOLK_DRAW[o.T.kind]).map(o=>(o.dist=Math.hypot(o.p.x-px,o.p.z-pz),o)).filter(o=>o.dist<ROADFOLK_NEAR).sort((x,y)=>x.dist-y.dist||(x.T.id<y.T.id?-1:1)).slice(0,ROADFOLK_DRAWN);
     for(const D of ROADWALK.values())if(D.attack&&!all.some(o=>o.T.id===D.T.id)){const p=D.stop||{x:D.attack.x,z:D.attack.z,ang:D.attack.ang,d:0};roadAmbushTick(D,p,dt||0);} /* a fight holds its merchant though the clock walks his place on */
     const keep=new Set(all.map(o=>o.T.id));for(const [id,D] of [...ROADWALK.entries()])if(!keep.has(id)&&!D.attack)dropTraveller(id);
     for(const {T,rd,p} of all){let D=ROADWALK.get(T.id);
-      if(!D){const def=merchantDef(T,rd,p);const n=spawnNPC(def,p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();try{const rg=buildAnimal('Pack Mule',T.id,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
-        D={T,rd,npc:n,beast:g};ROADWALK.set(T.id,D);{const R=rfRec(T.id);if(R&&R.sprung&&!R.saved&&!R.lost){rfSet(T.id,{lost:true});dropTraveller(T.id);continue;}} /* a fight left unfinished by a load: his pack was taken */}
+      if(!D){D=buildTraveller(T,rd,p);ROADWALK.set(T.id,D);{const R=rfRec(T.id);if(R&&R.sprung&&!R.saved&&!R.lost){rfSet(T.id,{lost:true});dropTraveller(T.id);continue;}} /* a fight left unfinished by a load: his pack was taken */}
       if(roadAmbushTick(D,p,dt||0))continue;
       const y=worldH(p.x,p.z);D.npc.g.position.set(p.x,y,p.z);D.npc.g.rotation.y=p.ang;D.npc.def.x=p.x;D.npc.def.z=p.z;D.npc.home={x:p.x,z:p.z};D.npc.dot.position.set(p.x,y+1.5,p.z);
-      const bx=p.x-Math.sin(p.ang)*1.6,bz=p.z-Math.cos(p.ang)*1.6;D.beast.position.set(bx,worldH(bx,bz),bz);D.beast.rotation.y=p.ang;}}
+      if(D.beast){const bx=p.x-Math.sin(p.ang)*1.6,bz=p.z-Math.cos(p.ang)*1.6;D.beast.position.set(bx,worldH(bx,bz),bz);D.beast.rotation.y=p.ang;}
+      for(const F of D.follow){const fx=p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=worldH(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}}}
   // ═══ FACTIONS AND ANCHORED PLACES (Session S) ════════════════════════
   // Three nations you can rise in; past the second rank the other two close.
   // The story's named places are picked from the generated world once, by constraint.
