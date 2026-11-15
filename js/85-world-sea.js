@@ -268,7 +268,7 @@
   // and a forecastle (fore) over her first 3 m, open beneath on two posts (lo) with its ladder up the middle running aft from its edge; the
   // forecastle's rail and its forward end are 'hi' (as the aftcastle's after end now is), and under the ladder's upper half a 'deck' box, so nobody at the deck's height walks in under its treads. Her
   // hatch is her own, aft of the mast, since L/2-3.2 falls at the forecastle's ladder; her lashed cargo stands on deck as props.
-  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:-1.05,dress}):kind==='caravel'?PKIT.ships.caravel({cabin:true}):kind==='cog'?PKIT.ships.cog({dress,cabin:true}):kind==='galleon'?PKIT.ships.galleon({dress,cabin:true}):PKIT.ships.sloop({dress}),P=[];
+  function shipBakeKit(kind,dress){const S=kind==='cutter'?PKIT.ships.cutter({hatchZ:-1.05,dress}):kind==='caravel'?PKIT.ships.caravel({cabin:true}):kind==='cog'?PKIT.ships.cog({dress,cabin:true}):kind==='galleon'?PKIT.ships.galleon({dress,cabin:true,lidsApart:true}):PKIT.ships.sloop({dress}),P=[];
     const zz=[];for(let z=S.zs;z<=S.zb;z+=.05)if(S.deckAt(z)>.45)zz.push(z);const z0=zz[0],z1=zz[zz.length-1];
     if(S.masts)for(const [x,z] of S.masts)P.push({x,z,r:.19});else P.push({x:0,z:S.mast[1],r:.17});P.push({x:-.45,z:S.mast[1]-.7,r:.17});const h=S.hatch;for(const q of S.hatches||[h])P.push({x:0,z:(q.z0+q.z1)/2,hx:(q.x1-q.x0)/2,hz:(q.z1-q.z0)/2,ry:0}); /* S1552 — the galleon's two */
     const C=S.castle;if(C){const w=Math.min(C.cw(C.z1),S.deckAt(C.z1)+.05),a=C.cw(C.z1)-.04,g=C.ladders.map(lx=>[lx-.36,lx+.36]),seg=(x0,x1,lv)=>{if(x1>x0)P.push({x:(x0+x1)/2,z:C.z1,hx:(x1-x0)/2,hz:.05,ry:0,lv});};
@@ -282,7 +282,7 @@
     const bk=(S.cabinItems||[]).find(q=>q.name==='bunk'),berth=bk?{x:bk.box[3]+.35,z:(bk.box[2]+bk.box[5])/2,hz:(bk.box[5]-bk.box[2])/2}:null;
     const ct=(S.cabinItems||[]).find(q=>q.name==='chart table'),chart=ct?{x:(ct.box[0]+ct.box[3])/2,z:(ct.box[2]+ct.box[5])/2,hx:(ct.box[3]-ct.box[0])/2,hz:(ct.box[5]-ct.box[2])/2}:null; /* S1880 — the cabin's chart table, E at it (chartDeckNear) */
     return {geo:S.hull.geo,mats:S.hull.mats,deck:{z0,z1,at:z=>z<z0||z>z1?0:S.deckAt(z)-.06},L:S.L,W:S.W,zs:S.zs,zb:S.zb,
-      rigs:S.rigs.map(q=>({geo:q.geo,mats:q.mats,z:q.z,type:q.type})),props:P,at:S.at,tiller:S.tiller,wheel:S.wheel,castle:C||null,fore:F||null,helm:S.helm||null,hatchZ:(h.z0+h.z1)/2,hatchOut:Math.max(1.2,(h.z1-h.z0)/2+.7),kit:S,dress,berth,chart};}
+      rigs:S.rigs.map(q=>({geo:q.geo,mats:q.mats,z:q.z,type:q.type})),props:P,at:S.at,tiller:S.tiller,wheel:S.wheel,lids:S.lids||null,guns:S.guns||null,castle:C||null,fore:F||null,helm:S.helm||null,hatchZ:(h.z0+h.z1)/2,hatchOut:Math.max(1.2,(h.z1-h.z0)/2+.7),kit:S,dress,berth,chart};}
   // a harbour boat: an open clinker boat with thwarts, oars shipped, a stubby mast with the sail furled; four paints
   function boatBake(v){const key='boat|'+v;let r=SHIP_GEO.get(key);if(r)return r;
     const R=(()=>{let s=(v*2654435761+12345)>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};})();const B=new ShipBake();const paint=[0x5a6a4a,0x6a3a2a,0x3a4a6a,0x7a6a4a][v%4];
@@ -443,7 +443,7 @@
     mesh.userData.trimSnap=true;
     if(!look&&r.kit){shipSwatchOn(mesh);shipBannerOn(mesh);} /* S1843 — your own ship in the yard's colours; S1919 — and her banner */
     if(look==='merchant'&&r.kit)shipBannerOn(mesh,r.dress); /* S2126 — a merchantman flies her own nation's banner, the dress as built */
-    if(look==='pirate'&&r.kit)shipBlackOn(mesh); /* S2162 — #1454 A: a black sail, the hull of her waters, no colours */
+    if(r.lids)shipGunDeck(mesh,r);if(look==='pirate'&&r.kit)shipBlackOn(mesh); /* S2162 — #1454 A: a black sail, the hull of her waters, no colours */
     if(r.kit&&(!look&&typeof shipFitted==='function'&&shipFitted('ballista')||look==='pirate'&&kind==='cutter'))shipBallistaOn(mesh,true); /* S2250 — #1580 A: her ballista, fitted or a black cutter's */
     return mesh;
   }
@@ -453,7 +453,7 @@
   function shipBlackOn(mesh){const ud=mesh&&mesh.userData,r=ud&&SHIP_GEO.get(ud.bakeKey);if(!r||!r.kit||!PKIT.ships.black)return null;const d=r.dress||'gatelands';
     mesh.material=PKIT.ships.black(r.mats,d);let n=mesh.material.filter((x,i)=>x!==r.mats[i]).length;
     (ud.rigs||[]).forEach((q,i)=>{const R=r.rigs[i];if(R&&R.mats){q.m.material=PKIT.ships.black(R.mats,d);n+=[].concat(q.m.material).filter((x,j)=>x!==[].concat(R.mats)[j]).length;}});
-    return ud.black={dress:d,swapped:n};}
+    ud.black={dress:d,swapped:n};shipGunMats(mesh);return ud.black;}
   // S1843 (#1133, Michael: as drawn) — the yard's colours: her paint and cloth (worldState.ship.paint, .cloth, indices into her dress's
   // PKIT.ships.SWATCHES; 0 or none the dress as built) laid on a kit hull's materials in place. The bake is shared and untouched; only the
   // mesh's material arrays change, so the yard (the systems builder's paintShip) repaints her by calling this again. sw overrides the
@@ -462,7 +462,7 @@
     const st=worldState.ship||{},o=sw||{paint:st.paint|0,cloth:st.cloth|0},d=r.dress||'gatelands';
     mesh.material=PKIT.ships.swatch(r.mats,d,o);(ud.rigs||[]).forEach((q,i)=>{const R=r.rigs[i];if(R&&R.mats)q.m.material=PKIT.ships.swatch(R.mats,d,o);});
     const W=PKIT.ships.SWATCHES[d],pi=Math.max(0,Math.min(W.paints.length-1,o.paint|0)),ci=Math.max(0,Math.min(W.cloths.length-1,o.cloth|0));
-    return ud.swatch={dress:d,paint:pi,cloth:ci,names:[W.paints[pi].name,W.cloths[ci].name]};}
+    ud.swatch={dress:d,paint:pi,cloth:ci,names:[W.paints[pi].name,W.cloths[ci].name]};shipGunMats(mesh);return ud.swatch;}
   // S1919 (card F11; Michael's A on #1150, the ship sheet's session 5) — her banner: the Crown's, the Mark's or the Compact's
   // (worldState.ship.banner 'gatelands' | 'mark' | 'aurenne'; none, or anything else, flies nothing), PKIT.ships.banner's staff at her
   // stern or the gaff's masthead, the flag a rig of type 'flag' about the staff, so shipTrim streams it down the wind as the black sail's
@@ -491,6 +491,103 @@
   function shipBallistaAim(mesh,tx,tz){const b=mesh&&mesh.userData.ballista;if(!b)return;const now=performance.now(),dt=Math.min(.1,(now-b.t)/1000);b.t=now;let want=0;
     if(tx!=null){const ry=mesh.rotation.y,c=Math.cos(ry),s=Math.sin(ry),dx=tx-mesh.position.x,dz=tz-mesh.position.z,lx=dx*c-dz*s-b.fit.x,lz=dx*s+dz*c-b.fit.z;want=Math.max(-Math.PI/6,Math.min(Math.PI/6,Math.atan2(lx,lz)));}
     const d=want-b.yaw,st=1.2*dt;b.yaw+=Math.abs(d)<st?d:Math.sign(d)*st;b.turn.rotation.y=b.yaw;}
+  // S2256 (card F11; Michael's A on #1580, the prototype S2243's ships-arms.js runOutGuns) — the galleon's gun deck: her twelve lids out of
+  // the hull's bake (PKIT.ships.galleon's lidsApart) as two meshes of her own, the lids shut (r.lids) and the guns run out (r.guns: the lid
+  // swung up 110°, a saker 2.4 m, its muzzle 0.55 m outside, the dark of the port), each on its own geometry over the bake's shared buffers
+  // so a side shows in one and not the other (PKIT.ships.sideGroups). A side runs out while it bears (gunsBear for yours while you sail,
+  // herGunsSide for a black galleon) and stays out SHIP_GUNS_HOLD s after; in harbour, at anchor or with nothing bearing her lids are shut.
+  // The lids' and straps' materials follow her hull's (the yard's colours, a black sail's dress: shipGunMats). Shut: 2 draws; one side
+  // or both run out: 4 more. -> ud.gunDeck ({lids, guns, port, stbd, seen}). shipGunsOut(mesh, port, stbd) sets the sides.
+  const SHIP_GUNS_HOLD=30;
+  function shipGunDeck(mesh,r){const ud=mesh.userData,wrap=b=>{const g=new THREE.BufferGeometry();for(const k in b.geo.attributes)g.setAttribute(k,b.geo.attributes[k]);g.boundingSphere=b.geo.boundingSphere;g.boundingBox=b.geo.boundingBox;
+      const m=new THREE.Mesh(g,b.mats.slice());m.castShadow=true;m.receiveShadow=true;m.userData.base=b;mesh.add(m);return m;};
+    const lids=wrap(r.lids),guns=wrap(r.guns);lids.name='gunlids';guns.name='guns';ud.gunDeck={lids,guns,port:null,stbd:null,seen:{port:-1e9,stbd:-1e9}};shipGunMats(mesh);shipGunsOut(mesh,false,false);return ud.gunDeck;}
+  function shipGunsOut(mesh,port,stbd){const G=mesh&&mesh.userData.gunDeck;if(!G)return null;port=!!port;stbd=!!stbd;if(G.port===port&&G.stbd===stbd)return G;G.port=port;G.stbd=stbd;
+    const sg=PKIT.ships.sideGroups;G.lids.visible=sg(G.lids.geometry,G.lids.userData.base.ranges,!port,!stbd)>0;G.guns.visible=sg(G.guns.geometry,G.guns.userData.base.ranges,port,stbd)>0;return G;}
+  // the lids and straps wear what her hull wears now: each base material found in the bake's list is swapped for the mesh's at that index
+  function shipGunMats(mesh){const ud=mesh&&mesh.userData,G=ud&&ud.gunDeck,r=G&&SHIP_GEO.get(ud.bakeKey);if(!r)return;const now=[].concat(mesh.material);
+    for(const m of [G.lids,G.guns])m.material=m.userData.base.mats.map(x=>{const i=r.mats.indexOf(x);return i>=0&&now[i]?now[i]:x;});}
+  function shipGunsTick(){const m=SHIP.mesh,G=m&&m.userData.gunDeck;if(!G)return;const now=performance.now()/1000,B=SHIP.sailing&&typeof gunsBear==='function'?gunsBear():null;
+    for(const sd of ['port','stbd'])if(B&&B[sd])G.seen[sd]=now;if(!SHIP.sailing)G.seen={port:-1e9,stbd:-1e9};shipGunsOut(m,now-G.seen.port<SHIP_GUNS_HOLD,now-G.seen.stbd<SHIP_GUNS_HOLD);}
+  function herGunsTick(o){const G=o.mesh&&o.mesh.userData.gunDeck;if(!G)return;const now=performance.now()/1000;
+    const sd=!o.dead&&!o.struck&&o.founder==null&&typeof herGuns==='function'&&herGuns(o)&&typeof herGunsSide==='function'?herGunsSide(o):null;if(sd)G.seen[sd]=now;
+    shipGunsOut(o.mesh,now-G.seen.port<SHIP_GUNS_HOLD,now-G.seen.stbd<SHIP_GUNS_HOLD);}
+  // S2259 (card F11; Michael's A on #1582, the prototype S2244's ships-fx.js: smoke, shot, splash, splinters) — a broadside seen. The rules
+  // fly the balls unseen (GUNS.fly for yours, HER_BALLS for a black galleon's; 86-world-crime.js); this reads both lists each frame and
+  // draws, for each ball: its gun's flash (0.12 s) and 40 puffs of smoke blown out of her port (6–14 m/s, a drag of 1.1/s, swelling to
+  // about 3 m, rising and drifting on the wind, thinning over 6 s); the ball in flight (a 9 cm iron ball; chain two half-balls 0.5 m
+  // apart, turning; grape nine 3.5 cm balls spreading; a shell's fuse alight); and where it lands, oak splinters out of her side (a hit)
+  // or a column of spray 3.7 m high (grape short of her deck, or a ship gone). Every point is one of two pooled clouds (SEA_FX: the
+  // smoke, shot, spray and splinters mixed, the flashes and fuses added): 2 draws in a fight, none out of one. Cosmetic: Math.random.
+  // The clouds sit at a local origin near the camera and their points are written relative to it (the world's float32 gotcha).
+  const SEA_FX={mix:null,add:null,P:[],live:new Map(),vol:{},cap:{mix:2400,add:240}};
+  function seaFxMat(add){return new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:add?THREE.AdditiveBlending:THREE.NormalBlending,uniforms:{uScale:{value:600}},
+    vertexShader:'attribute float aSize;attribute vec4 aCol;uniform float uScale;varying vec4 vC;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vC=aCol;gl_PointSize=aSize*uScale/max(.1,-mv.z);gl_Position=projectionMatrix*mv;}',
+    fragmentShader:'varying vec4 vC;void main(){vec2 d=gl_PointCoord-.5;float r=length(d)*2.;if(r>1.)discard;float a=vC.a*(1.-smoothstep(.2,1.,r));float lit=1.08-.3*gl_PointCoord.y;gl_FragColor=vec4(vC.rgb*lit,a);}'});}
+  function seaFxCloud(n,add){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*3),3));g.setAttribute('aSize',new THREE.BufferAttribute(new Float32Array(n),1));
+    g.setAttribute('aCol',new THREE.BufferAttribute(new Float32Array(n*4),4));g.setDrawRange(0,0);const p=new THREE.Points(g,seaFxMat(add));p.frustumCulled=false;p.renderOrder=3;p.visible=false;p.name=add?'seafx-add':'seafx-mix';
+    p.onBeforeRender=(r,s,cam)=>{if(!cam.isPerspectiveCamera)return;const v=new THREE.Vector2();r.getDrawingBufferSize(v);p.material.uniforms.uScale.value=v.y/(2*Math.tan(cam.fov*Math.PI/360));};return p;}
+  // one particle: q = {x,y,z, vx,vy,vz, drag, g (gravity, m/s², down), rise (m/s up, added), s0, s1, k (swell rate), c:[r,g,b], a, fade (s; 0: linear over life), life, add, wind}
+  function seaFxPush(q){q.t=0;SEA_FX.P.push(q);if(SEA_FX.P.length>SEA_FX.cap.mix+SEA_FX.cap.add)SEA_FX.P.shift();return q;}
+  // a gun's flash and smoke at its muzzle m (world), blown out along e (a unit vector, her side's outward normal on the water)
+  function seaFxGun(m,e){const R=Math.random,ex=e[0],ez=e[1];
+    for(let k=0;k<6;k++)seaFxPush({x:m.x+ex*k*.25,y:m.y+(R()-.5)*.1,z:m.z+ez*k*.25,vx:ex*1.5*k,vy:0,vz:ez*1.5*k,drag:0,g:0,s0:(.9-k*.12)*1.4,s1:(.9-k*.12)*.8,c:[1,.62+k*.05,.25],a:.95,life:.12,add:true});
+    for(let k=0;k<40;k++){const v0=6+R()*8,ang=(R()-.5)*.9,el=(R()-.3)*.5,c=Math.cos(ang),s=Math.sin(ang),dx=ex*c-ez*s,dz=ez*c+ex*s,gr=.8+R()*.14;
+      seaFxPush({x:m.x,y:m.y,z:m.z,vx:dx*v0*Math.cos(el),vy:v0*Math.sin(el),vz:dz*v0*Math.cos(el),drag:1.1,g:0,rise:.35,acc:.1,s0:.3,s1:2.5*(.5+R()*.9),k:1.6,c:[gr,gr,gr*.98],a:.35+R()*.5,fade:6,life:6,wind:true});}}
+  // splinters out of a ship's side at p, thrown along e (her side's outward normal)
+  function seaFxSplinters(p,e,n){const R=Math.random;
+    for(let k=0;k<n;k++){const v=3+R()*6,ang=(R()-.5)*1.6,el=R()*.9,c=Math.cos(ang),s=Math.sin(ang),dx=e[0]*c-e[1]*s,dz=e[1]*c+e[0]*s;
+      seaFxPush({x:p.x,y:p.y,z:p.z,vx:dx*v*Math.cos(el),vy:v*Math.sin(el),vz:dz*v*Math.cos(el),drag:0,g:9.8,s0:.06+R()*.08,s1:null,c:[.62,.46,.3],a:1,life:1.2});}
+    for(let k=0;k<8;k++)seaFxPush({x:p.x+e[0]*.3,y:p.y+(R()-.3)*.4,z:p.z+e[1]*.3+(R()-.5)*.5,vx:e[0],vy:0,vz:e[1],drag:0,g:0,s0:.4,s1:1.8,k:.9,c:[.55,.5,.44],a:.5,life:1.2});}
+  // a column of spray where a ball falls in the sea at (x, z): 70 drops thrown 4–8.5 m/s up, and a ring spreading on the water
+  function seaFxSplash(x,z){const R=Math.random,y=SEA_Y;
+    for(let k=0;k<70;k++){const v=4+R()*4.5,a=R()*Math.PI*2,sp=R()*.9*1.2;seaFxPush({x,y,z,vx:Math.cos(a)*sp,vy:v,vz:Math.sin(a)*sp,drag:0,g:9.8,floor:y,s0:.25+R()*.35,s1:.9+R()*.35,k:.6,c:[.92,.96,1],a:.85,life:1.6});}
+    for(let k=0;k<16;k++){const a=k/16*Math.PI*2;seaFxPush({x:x+Math.cos(a)*.4,y:y+.05,z:z+Math.sin(a)*.4,vx:Math.cos(a)*1.6,vy:0,vz:Math.sin(a)*1.6,drag:0,g:0,s0:.6,s1:null,c:[.95,.97,1],a:.6,life:1.6});}}
+  // her muzzle for the i-th of a broadside's six balls on the side facing (tx, tz): the kit's i-th port on that side, aft to fore as the rules
+  // count them, 0.6 m outside her deck's edge; a hull with no ports, her rail at the rules' place. -> {x,y,z,e:[ex,ez]}
+  const _sfV=new THREE.Vector3();
+  function seaFxMuzzle(mesh,L,i,n,tx,tz){const r=SHIP_GEO.get(mesh.userData.bakeKey),K=r&&r.kit,along=(i/Math.max(1,n-1)-.5)*L*.6;mesh.updateMatrixWorld();
+    const side=e=>{_sfV.set(e,0,0).transformDirection(mesh.matrixWorld);return [_sfV.x,_sfV.z];},sp=side(1),dx=tx-mesh.position.x,dz=tz-mesh.position.z,e=sp[0]*dx+sp[1]*dz>=0?1:-1,out=[sp[0]*e,sp[1]*e];
+    const Q=K&&K.ports?K.ports.filter(p=>p[0]===e).sort((a,b)=>a[1]-b[1]):[],best=Q.length?Q[Math.round(i/Math.max(1,n-1)*(Q.length-1))]:null; /* her +z is the prow, as the rules' along */
+    const lx=best?e*(K.deckAt(best[1])+.6):e*((r&&r.W||4)/2),ly=best?best[2]:1.0,lz=best?best[1]:along;
+    _sfV.set(lx,ly,lz).applyMatrix4(mesh.matrixWorld);return {x:_sfV.x,y:_sfV.y,z:_sfV.z,e:out};}
+  // where a ball meets a ship: her side toward (fx, fz), 1.2 m over the sea (chain: in her rig, 5 m up)
+  function seaFxAim(mesh,W,fx,fz,k){const dx=fx-mesh.position.x,dz=fz-mesh.position.z,d=Math.hypot(dx,dz)||1;return {x:mesh.position.x+dx/d*W/2,y:SEA_Y+(k==='chain'?5:1.2),z:mesh.position.z+dz/d*W/2,e:[dx/d,dz/d]};}
+  function seaFxBall(f,from,to,k){const L=SEA_FX.live;L.set(f,{f,k,from,to,t0:f.t0,dur:Math.max(.05,f.dur),fired:false,spin:Math.random()*6,grape:k==='grape'?Array.from({length:9},()=>[(Math.random()-.5),(Math.random()-.5),(Math.random()-.5)]):null});}
+  // once a frame (tickShip): new balls are taken up, their guns fire on the rules' clock, the balls fly, and those the rules have landed strike
+  function seaFxTick(dt){if(!(typeof LAND!=='undefined'&&LAND.on))return;const now=typeof hookClock==='function'?hookClock():performance.now()/1000,L=SEA_FX.live,cur=new Set();
+    const take=(list,mine)=>{if(!list)return;for(const f of list){cur.add(f);if(L.has(f))continue;const sh=mine?SHIP:f.o,tg=mine?f.o:SHIP;if(!sh||!sh.mesh||!tg||!tg.mesh)continue;
+      const key=(mine?'g':'h')+':'+f.vol,i=SEA_FX.vol[key]=(SEA_FX.vol[key]??-1)+1,m=seaFxMuzzle(sh.mesh,sh.L||(sh===SHIP?SHIP.L:20),i,BROADSIDE.guns,tg.x,tg.z);
+      const k=mine?f.k:'round',W=tg.W||(tg===SHIP?SHIP.W:6),to=seaFxAim(tg.mesh,W,m.x,m.z,k);
+      if(k==='grape'){const d=Math.max(0,Math.hypot(tg.x-m.x,tg.z-m.z)-W/2);if(d>BROADSIDE.grapeR){const u=BROADSIDE.grapeR/Math.max(1,Math.hypot(to.x-m.x,to.z-m.z));to.x=m.x+(to.x-m.x)*u;to.z=m.z+(to.z-m.z)*u;to.y=SEA_Y;to.short=true;}}
+      to.tg=tg;seaFxBall(f,m,to,k);}};
+    take(typeof GUNS!=='undefined'?GUNS.fly:null,true);take(typeof HER_BALLS!=='undefined'?HER_BALLS:null,false);
+    for(const [f,b] of L){if(!b.fired&&now>=b.t0){b.fired=true;seaFxGun(b.from,b.from.e);}
+      if(!cur.has(f)){L.delete(f);if(!b.fired){b.fired=true;seaFxGun(b.from,b.from.e);}const T=b.to,gone=!T.tg.mesh||T.tg.dead||T.tg.founder!=null&&T.tg!==SHIP;
+        if(T.short||gone)seaFxSplash(T.x,T.z);else seaFxSplinters(T,T.e,b.k==='grape'?6:b.k==='chain'?10:24);}}
+    if(!L.size)SEA_FX.vol={};
+    seaFxDraw(dt,now);}
+  function seaFxDraw(dt,now){const P=SEA_FX.P,L=SEA_FX.live;if(!P.length&&!L.size){if(SEA_FX.mix)SEA_FX.mix.visible=SEA_FX.add.visible=false;return;}
+    if(!SEA_FX.mix){SEA_FX.mix=seaFxCloud(SEA_FX.cap.mix,false);SEA_FX.add=seaFxCloud(SEA_FX.cap.add,true);}
+    for(const p of [SEA_FX.mix,SEA_FX.add])if(p.parent!==sc){if(p.parent)p.parent.remove(p);sc.add(p);}
+    const o=CAM.position,ox=Math.round(o.x),oy=Math.round(o.y),oz=Math.round(o.z),w=typeof windDir==='function'?windDir():0,wx=Math.sin(w)*1.5,wz=Math.cos(w)*1.5;
+    const M={n:0,P:SEA_FX.mix.geometry.attributes.position.array,S:SEA_FX.mix.geometry.attributes.aSize.array,C:SEA_FX.mix.geometry.attributes.aCol.array,cap:SEA_FX.cap.mix},
+      A={n:0,P:SEA_FX.add.geometry.attributes.position.array,S:SEA_FX.add.geometry.attributes.aSize.array,C:SEA_FX.add.geometry.attributes.aCol.array,cap:SEA_FX.cap.add};
+    const put=(B,x,y,z,s,r,g,b,a)=>{if(B.n>=B.cap||a<.01)return;const i=B.n++;B.P[i*3]=x-ox;B.P[i*3+1]=y-oy;B.P[i*3+2]=z-oz;B.S[i]=s;B.C[i*4]=r;B.C[i*4+1]=g;B.C[i*4+2]=b;B.C[i*4+3]=a;};
+    for(let j=P.length-1;j>=0;j--){const q=P[j];q.t+=dt;if(q.t>=q.life){P.splice(j,1);continue;}
+      if(q.drag){const f=Math.exp(-q.drag*dt);q.vx*=f;q.vy*=f;q.vz*=f;}q.vy-=(q.g||0)*dt;q.x+=(q.vx+(q.wind?wx:0))*dt;q.y+=(q.vy+(q.rise||0)+(q.acc||0)*q.t)*dt;q.z+=(q.vz+(q.wind?wz:0))*dt;
+      if(q.floor!=null&&q.y<q.floor){q.y=q.floor;q.vx=q.vz=q.vy=0;}
+      const u=q.t/q.life,s=q.s1==null?q.s0:q.k?q.s0+(q.s1-q.s0)*(1-Math.exp(-q.k*q.t)):q.s0+(q.s1-q.s0)*u,a=q.fade?q.a*Math.exp(-q.t/q.fade)*Math.min(1,q.t*12+.2)*(1-u*u):q.a*(q.add?1:1-u);
+      put(q.add?A:M,q.x,q.y,q.z,s,q.c[0],q.c[1],q.c[2],a);}
+    // the balls in flight: a flat arc from the muzzle to where the rules land them
+    for(const b of L.values()){if(!b.fired)continue;const u=Math.min(1,(now-b.t0)/b.dur),F=b.from,T=b.to,x=F.x+(T.x-F.x)*u,z=F.z+(T.z-F.z)*u,y=F.y+(T.y-F.y)*u+4.9*b.dur*b.dur*u*(1-u),I=[.12,.11,.1];
+      if(b.k==='chain'){const a=b.spin+u*b.dur*14,cx=Math.cos(a)*.25,cy=Math.sin(a)*.25,nx=-(T.z-F.z),nz=T.x-F.x,nl=Math.hypot(nx,nz)||1;
+        put(M,x+nx/nl*cx,y+cy,z+nz/nl*cx,.09,...I,1);put(M,x-nx/nl*cx,y-cy,z-nz/nl*cx,.09,...I,1);put(M,x,y,z,.03,...I,1);}
+      else if(b.k==='grape'){const sp=.5+u*b.dur*6;for(const g of b.grape)put(M,x+g[0]*sp,y+g[1]*sp,z+g[2]*sp,.035,...I,1);}
+      else{put(M,x,y,z,.09,...I,1);if(b.k==='shell'){put(A,x,y+.075,z,.09,1,.7,.3,1);put(A,x,y+.09,z,.06,1,.45,.15,.8);}}}
+    for(const [p,B] of [[SEA_FX.mix,M],[SEA_FX.add,A]]){p.position.set(ox,oy,oz);p.geometry.setDrawRange(0,B.n);p.visible=B.n>0;
+      p.geometry.attributes.position.needsUpdate=p.geometry.attributes.aSize.needsUpdate=p.geometry.attributes.aCol.needsUpdate=true;}
+    SEA_FX.n={mix:M.n,add:A.n};}
   // your own: on while she has one fitted, and laid on whatever ballistaBears() finds while you sail
   function shipBallistaTick(){const m=SHIP.mesh;if(!m||!m.userData.kit)return;const want=typeof shipFitted==='function'&&shipFitted('ballista');
     if(want!==!!m.userData.ballista)shipBallistaOn(m,want);if(!m.userData.ballista)return;const o=SHIP.sailing&&typeof ballistaBears==='function'?ballistaBears():null;shipBallistaAim(m,o?o.x:null,o?o.z:null);}
@@ -658,8 +755,9 @@
     tickNetClimb(dt);
     SHIP._raiseT=(SHIP._raiseT||0)-dt;if(SHIP._raiseT<=0){SHIP._raiseT=1;tickShipRaise();}
     tickShipCrew(dt); /* S1737 — her crew at their stations (86-world-crime.js) */
+    seaFxTick(dt); /* S2259 — a broadside's flash, smoke, shot and where it lands (#1582 A) */
     if(!SHIP.mesh)return;
-    shipBallistaTick(); /* S2250 — her ballista, fitted or taken out at the yard, and laid on what bears */
+    shipBallistaTick(); /* S2250 — her ballista, fitted or taken out at the yard, and laid on what bears */shipGunsTick(); /* S2256 — her guns run out on a side that bears */
     if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
     if(SHIP.sailing){
       const fwd=(HELD_KEYS.KeyW?1:0)-(HELD_KEYS.KeyS?.5:0),turn=(HELD_KEYS.KeyA?1:0)-(HELD_KEYS.KeyD?1:0);SHIP.turn=turn;
@@ -1093,6 +1191,7 @@
   function placeOther(o){
     o.mesh.position.set(o.x,SEA_Y+Math.sin(performance.now()*.0011+o.x)*.05,o.z);o.mesh.rotation.y=o.yaw+Math.PI;
     if(o.mesh.userData.ballista)shipBallistaAim(o.mesh,...(typeof herBallistaBears==='function'&&herBallistaBears(o)&&!o.dead&&!o.struck?[SHIP.x,SHIP.z]:[null,null])); /* S2250 — a black cutter's engine laid on you */
+    herGunsTick(o); /* S2256 — a black galleon runs out the side that bears on you */
     shipPlatBox(o.plat,o.mesh,o.x,o.z,o.yaw,o.L,o.W);
   }
   function atSea(){return activeZoneId==='world'&&(SHIP.sailing||isSwimming()||onDeck())&&worldH(px,pz)<-3;}
