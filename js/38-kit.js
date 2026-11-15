@@ -6904,13 +6904,13 @@ function mkCog(o = {}) {
 // in tanned cloths; red-brown below, tarred black above and on the castles, the transom and the lids, gilt), Aurenne's (tallow below,
 // oiled above, blue and gilt; the fore square with the sun-star on its course and the spritsail kept, the main and the mizzen lateens on
 // masts raked 4° forward, shrouds to port only).
-//   PKIT.ships.galleon(o) -> as PKIT.ships.cog, with hatches (both), ports ([[side, z, y]]), lids and guns (o.lidsApart, Session 2254: shipSideBake's, else null), masts ([[x, z]]: main, fore, mizzen) and rigs
+//   PKIT.ships.galleon(o) -> as PKIT.ships.cog, with hatches (both), ports ([[side, z, y]]), lids and guns (o.lidsApart, Session 2256: shipSideBake's, else null), masts ([[x, z]]: main, fore, mizzen) and rigs
 //   [square, square, gaff] or [lateen, square, lateen] (the main first). o.dress as the sloop's. o.cabin (Session 1581) the great cabin furnished; o.open (Session 1584) both hatches open to the hold (galleonBase).
 //   Differences from the prototype: 48 sections and 14 strakes (its 60 and 16 put her past 40k triangles); each rig in its own frame (the
 //   squares' yards and sails about their masts, the gaff about the mizzen, each lateen about its sling, slung to starboard), which the
 //   game trims; the braces, the gaff's sheet, the lateens' tacks and sheets are left off, as the other hulls'; the spritsail stays in
 //   the hull, square under the bowsprit; a bucket and a coil of rope by the main mast, as the other hulls'.
-// ── the galleon's gun deck a side at a time (Session 2254; card F11, Michael's A on #1580; ships-arms.js's runOutGuns, ships.js's o.guns) ──
+// ── the galleon's gun deck a side at a time (Session 2256; card F11, Michael's A on #1580; ships-arms.js's runOutGuns, ships.js's o.guns) ──
 // shipLidShut: a port's lid shut flush on her side with its iron hinge strap (the hull's own, as before). shipGunOut: the lid hinged at the
 // port's head and swung up 110°, past level, clear of the gun; a saker turned in the lathe, 2.4 m, its muzzle 0.55 m outside the planking;
 // the dark of the open port behind it. shipSideBake(M, fill) bakes fill(put, rod, e) for e = 1 (port, +x) and -1 (starboard) into one
@@ -6974,7 +6974,7 @@ function mkGalleon(o = {}) {
   for (let i = 0; i + 2 <= NS; i += 2) { const za = zAt(i), zc = zAt(i + 2), u = (NSTR - 2) / NSTR; for (const e of [1, -1]) rod([e * (sect(za, u)[0] + .035), sect(za, u)[1], zr(za, u)], [e * (sect(zc, u)[0] + .035), sect(zc, u)[1], zr(zc, u)], .05, .05, 'cream'); }
   const ports = [], PQ = []; for (const e of [1, -1]) for (let k = 0; k < 6; k++) { const z = -5.5 + k * 2.1, y = DECK - .45, u = (y - keelAt(z)) / (sheerAt(z) - keelAt(z)), p = sect(z, u), n = norm(z, u);
     PQ.push({ e, z, y, p, n }); if (!o.lidsApart) shipLidShut(put, e, z, y, p, n); ports.push([e, +z.toFixed(2), +y.toFixed(2)]); }
-  /* o.lidsApart (Session 2254, #1580 A): the lids out of the hull, as S.lids (shut) and S.guns (run out), a side at a time (shipSideBake) */
+  /* o.lidsApart (Session 2256, #1580 A): the lids out of the hull, as S.lids (shut) and S.guns (run out), a side at a time (shipSideBake) */
   let lids = null, guns = null;
   if (o.lidsApart) { const at = (put, e, f) => { for (const q of PQ) if (q.e === e) f(put, q.e, q.z, q.y, q.p, q.n); };
     lids = shipSideBake(M, (put, rod, e) => at(put, e, shipLidShut));

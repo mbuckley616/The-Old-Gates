@@ -491,7 +491,7 @@
   function shipBallistaAim(mesh,tx,tz){const b=mesh&&mesh.userData.ballista;if(!b)return;const now=performance.now(),dt=Math.min(.1,(now-b.t)/1000);b.t=now;let want=0;
     if(tx!=null){const ry=mesh.rotation.y,c=Math.cos(ry),s=Math.sin(ry),dx=tx-mesh.position.x,dz=tz-mesh.position.z,lx=dx*c-dz*s-b.fit.x,lz=dx*s+dz*c-b.fit.z;want=Math.max(-Math.PI/6,Math.min(Math.PI/6,Math.atan2(lx,lz)));}
     const d=want-b.yaw,st=1.2*dt;b.yaw+=Math.abs(d)<st?d:Math.sign(d)*st;b.turn.rotation.y=b.yaw;}
-  // S2254 (card F11; Michael's A on #1580, the prototype S2243's ships-arms.js runOutGuns) — the galleon's gun deck: her twelve lids out of
+  // S2256 (card F11; Michael's A on #1580, the prototype S2243's ships-arms.js runOutGuns) — the galleon's gun deck: her twelve lids out of
   // the hull's bake (PKIT.ships.galleon's lidsApart) as two meshes of her own, the lids shut (r.lids) and the guns run out (r.guns: the lid
   // swung up 110°, a saker 2.4 m, its muzzle 0.55 m outside, the dark of the port), each on its own geometry over the bake's shared buffers
   // so a side shows in one and not the other (PKIT.ships.sideGroups). A side runs out while it bears (gunsBear for yours while you sail,
@@ -679,7 +679,7 @@
     SHIP._raiseT=(SHIP._raiseT||0)-dt;if(SHIP._raiseT<=0){SHIP._raiseT=1;tickShipRaise();}
     tickShipCrew(dt); /* S1737 — her crew at their stations (86-world-crime.js) */
     if(!SHIP.mesh)return;
-    shipBallistaTick(); /* S2250 — her ballista, fitted or taken out at the yard, and laid on what bears */shipGunsTick(); /* S2254 — her guns run out on a side that bears */
+    shipBallistaTick(); /* S2250 — her ballista, fitted or taken out at the yard, and laid on what bears */shipGunsTick(); /* S2256 — her guns run out on a side that bears */
     if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
     if(SHIP.sailing){
       const fwd=(HELD_KEYS.KeyW?1:0)-(HELD_KEYS.KeyS?.5:0),turn=(HELD_KEYS.KeyA?1:0)-(HELD_KEYS.KeyD?1:0);SHIP.turn=turn;
@@ -1113,7 +1113,7 @@
   function placeOther(o){
     o.mesh.position.set(o.x,SEA_Y+Math.sin(performance.now()*.0011+o.x)*.05,o.z);o.mesh.rotation.y=o.yaw+Math.PI;
     if(o.mesh.userData.ballista)shipBallistaAim(o.mesh,...(typeof herBallistaBears==='function'&&herBallistaBears(o)&&!o.dead&&!o.struck?[SHIP.x,SHIP.z]:[null,null])); /* S2250 — a black cutter's engine laid on you */
-    herGunsTick(o); /* S2254 — a black galleon runs out the side that bears on you */
+    herGunsTick(o); /* S2256 — a black galleon runs out the side that bears on you */
     shipPlatBox(o.plat,o.mesh,o.x,o.z,o.yaw,o.L,o.W);
   }
   function atSea(){return activeZoneId==='world'&&(SHIP.sailing||isSwimming()||onDeck())&&worldH(px,pz)<-3;}

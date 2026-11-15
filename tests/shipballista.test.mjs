@@ -3,7 +3,7 @@
 // 0.6 at z 6.45 on the game's caravel, built with her cabin, where the prototype's took 0.65 at 6.3; on the cog's and the galleon's forecastle); its four feet on her deck; the bolt's line clear of her hull and rig to 40 m at 0 and
 // ±30°; your own ship carries it while it is fitted and loses it when it is taken out; its pedestal is solid; a black-sail cutter carries
 // one, its head laid on you when you are in her arc; one engine is 1,924 triangles in 9 draws.
-// Session 2254 (the second half of #1580 A): the galleon's guns. Her lids are out of the hull's bake, shut in 2 draws; a side runs out
+// Session 2256 (the second half of #1580 A): the galleon's guns. Her lids are out of the hull's bake, shut in 2 draws; a side runs out
 // (the lid up 110°, a saker's muzzle 0.55 m outside, the port dark) while it bears, alone or with the other, in 4 more; your own runs out
 // the side a black galleon lies on while you sail and shuts both when you do not, and hers runs out the side that bears on you.
 import { boot, check } from './lib/game.mjs';
@@ -39,7 +39,7 @@ const r = await page.evaluate(() => { const out = { fit: {}, feet: {}, line: {} 
   o.yaw = Math.atan2(-(SHIP.x - o.x), -(SHIP.z - o.z)) + .35; SHIP.sailing = true;
   out.bears = typeof herBallistaBears === 'function' ? herBallistaBears(o) : null;
   for (let i = 0; i < 30; i++) { o.mesh.userData.ballista.t -= 100; placeOther(o); } out.herYaw = +o.mesh.userData.ballista.yaw.toFixed(3);
-  // the galleon's gun deck (S2254): the sides apart, the muzzles outside her planking, and both ways in play
+  // the galleon's gun deck (S2256): the sides apart, the muzzles outside her planking, and both ways in play
   { const m = WORLD.buildShipMesh(22, 7, 'pirate', 'galleon', 'mark'), G = m.userData.gunDeck, n = q => q.visible ? q.geometry.groups.length : 0, st = () => [n(G.lids), n(G.guns)];
     out.deck = { shut: st() }; shipGunsOut(m, true, false); out.deck.port = st(); shipGunsOut(m, true, true); out.deck.both = st(); out.deck.mats = G.lids.material.every(x => [].concat(m.material).includes(x));
     out.deck.tris = [G.lids.userData.base.tris, G.guns.userData.base.tris]; m.position.set(0, 0, 0); m.rotation.set(0, 0, 0); m.updateMatrixWorld(true);
