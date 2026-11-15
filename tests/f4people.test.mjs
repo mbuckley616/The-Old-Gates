@@ -326,6 +326,14 @@ const office = await page.evaluate(() => { const one = (def) => { const root = b
   return { forester: one({ role: 'Forester', name: 'Tadhg', people: 'gatelander' }), inquisitor: one({ role: 'Inquisitor', name: 'Alain', people: 'aurennais' }) }; });
 console.log('  office:', JSON.stringify(office));
 check('the lord\'s forester wears the crimson hooded cape over a leather jerkin and carries a crossbow; he is not a guard', office.forester.cape && office.forester.crimson && office.forester.hood && office.forester.crossbow && office.forester.jerkin && !office.forester.tabard && !office.forester.guard, office.forester);
+// S2247: his cape opens on the crossbow's side, as over a staff (S1798): it reached 0.46 m in front of his neck, a slab over the stock, with 101 of
+// its points inside the crossbow's box; now 0.25 m and 33
+const fcape = await page.evaluate(() => { const root = buildNPCMesh({ role: 'Forester', name: 'Tadhg', people: 'gatelander' }, { key: 'otest' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+  const P = HB.makePerson(r.hbG, { hoodStats: false }); P.root.updateMatrixWorld(true); const cl = P.root.getObjectByName('cloak'), cb = P.root.getObjectByName('crossbow'), n = new THREE.Vector3(), v = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(n);
+  if (!cl || !cb) return { cloak: !!cl, crossbow: !!cb }; const bb = new THREE.Box3().setFromObject(cb), pa = cl.geometry.attributes.position; let fwd = -1, inBox = 0;
+  for (let i = 0; i < pa.count; i++) { v.fromBufferAttribute(pa, i).applyMatrix4(cl.matrixWorld); fwd = Math.max(fwd, v.z - n.z); if (bb.containsPoint(v)) inBox++; }
+  return { cloak: true, crossbow: true, fwd: +fwd.toFixed(3), inBox, out: P.cloak.through ? P.cloak.through.out : null }; });
+check('the forester\'s cape opens on the crossbow\'s side: under 0.32 m in front of his neck, under 60 of its points in the crossbow\'s box, none of him through it', fcape.cloak && fcape.crossbow && fcape.fwd < .32 && fcape.inBox < 60 && fcape.out === 0, fcape);
 check('the Church\'s inquisitor wears the white tabard over mail with the red shuttle on it (nothing of the body through it) and a white hood, white far off', office.inquisitor.mail && office.inquisitor.tabard && office.inquisitor.sign > 100 && office.inquisitor.out === 0 && office.inquisitor.tested > 1000 && office.inquisitor.hood && office.inquisitor.far > .8, office.inquisitor);
 // S2135 (L2, OG-053): Aldwyn's private study, the cream undertunic under the red over-robe worn open, his journal shut in his right fist
 // by its spine, the wheel on its covers: nothing of him within a centimetre of it; neither other dress carries it
