@@ -20,7 +20,7 @@ check('refuse, and the guard draws: an enemy stands in for him and he leaves the
 // and its court offers the stocks in place of the cells: an hour a 50 gold of the fine, the goods taken, and you stand on its plaza
 const cells = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); BAG.push({ name: 'A tin locket', ico: '🎁', type: 'misc', weight: .1, qty: 1, stolen: true }); BAG.push({ name: 'Honest bread', ico: '🍞', type: 'misc', weight: .1, qty: 1 });
   PHP = Math.round(maxHP * .2); const abs0 = worldState.gameTimeAbsMinutes || 0; WORLD.tickCrime(1 / 60, performance.now());
-  const offered = dlgOpen && /cells|Yield/.test(dlgNPC.greeting[0]); const yielder = dlgNPC && dlgNPC.name; window._yieldName = yielder; const held = ZONES.world.enemies.filter(x => x._guard && !x.dead).every(x => !x.alert);
+  const offered = dlgOpen && /cells|stocks|prison|Yield/.test(dlgNPC.greeting[0]); const yielder = dlgNPC && dlgNPC.name; window._yieldName = yielder; const held = ZONES.world.enemies.filter(x => x._guard && !x.dead).every(x => !x.alert);
   const t = dlgNPC.topics.find(x => /stocks/i.test(x.label)); const hrs = +(/\((\d) h\)/.exec(t.label) || [])[1]; const line = t.fn();
   // the cells run inside a screen fade, which on a slow machine can take longer than any fixed pause: wait for the clock to move
   for (let k = 0; k < 240 && (worldState.gameTimeAbsMinutes || 0) === abs0; k++) await wait(250); await wait(300);

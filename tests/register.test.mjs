@@ -8,7 +8,7 @@ const stop = g.keepAlive();
 // the tables: all four peoples, every line filled
 const tab = await page.evaluate(() => { const P = ['gatelander', 'markman', 'aurennais', 'oldblood']; const S = WORLD.settle.get('dunmore');
   const H = WORLD.haltLines(S), Y = WORLD.yieldLines(S), G = WORLD.guildGreet;
-  return { dunmore: WORLD.peopleOfSite(S.site), halt: H.greet(40, 'Dunmore'), yield: Y.greet(80),
+  return { dunmore: WORLD.peopleOfSite(S.site), halt: H.greet(40, 'Dunmore'), yield: Y.greet(80, yieldPen(S, { bounty: 40 })),
     full: P.every(p => G.guild_f[p].length === 2 && G.guild_m[p].length === 2),
     mk: G.guild_f.markman[0] }; });
 console.log(JSON.stringify(tab));
@@ -29,9 +29,11 @@ const yl = await page.evaluate(async (setup) => { const wait = ms => new Promise
   const refuse = dlgNPC.topics[1].fn(); await wait(300); PHP = Math.round(maxHP * .2); WORLD.tickCrime(1 / 60, performance.now());
   const greet = dlgOpen && dlgNPC.greeting[0]; gold = 0; const poor = dlgNPC.topics[0].fn(); closeDialog();
   const S = WORLD.settle.get('dunmore'); const H = WORLD.haltLines(S), Y = WORLD.yieldLines(S);
-  return { refuse, greet, poor, wantRefuse: H.refuse, want: Y.greet(50), wantPoor: Y.poor }; }, setup);
+  return { refuse, greet, poor, wantRefuse: H.refuse, want: Y.greet(50, yieldPen(S, worldState.crime.dunmore)), wantPoor: Y.poor }; }, setup);
 console.log(JSON.stringify(yl));
 check('refused, he draws in the same voice; the yield too', yl.refuse === yl.wantRefuse && yl.greet === yl.want && yl.poor === yl.wantPoor, yl);
+// S2244 (quest review Finding 47): Dunmore is the Crown's, so the yield offers the stocks, as the topic beside it does, not the cells
+check(`the yield names the Crown's court's punishment: “${yl.greet}”`, /in the stocks\.$/.test(yl.greet || '') && !/cells/.test(yl.greet + yl.poor), yl.greet);
 
 // the guild head's greeting, in the hall
 const gh = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const out = [];

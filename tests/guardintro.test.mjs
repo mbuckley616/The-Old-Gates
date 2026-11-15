@@ -138,7 +138,7 @@ const pc = await page.evaluate(() => { let F = null;
   return { site: t.name, seen, rec, line, gold, after, far: !!chaseAt(t.x + 900, t.z + 900), x, z }; });
 console.log(JSON.stringify(pc));
 check(`poaching in the chase of ${pc.site}: a deer seen killed by day fines ${pc.seen} (50 and its 30); the lord's licence for 30 (“${pc.line}”), then none`,
-  !pc.none && pc.seen === 80 && pc.rec === 'poach' && /yours to hunt until/.test(pc.line || '') && pc.gold === 70 && pc.after === 0, pc);
+  !pc.none && pc.seen === 80 && pc.rec === 'poach' && /is open to you until/.test(pc.line || '') && pc.gold === 70 && pc.after === 0, pc);
 // S2241 (the page's "no trap"): the chase's edge on the local map, in the Crown's crimson. Every tinted square of the map's view is in the
 // chase by chaseAt itself and every square chaseAt holds is tinted; the drawn map has crimson where the chase is; a view with no chase draws none.
 // The view is centred on the chase's rim, 600 m from its city on the line through the chase's first spot, so both sides are in it

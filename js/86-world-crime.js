@@ -631,11 +631,12 @@
   function licenceUntil(t){const L=worldState.licences;const v=L&&t&&L[t.id];return typeof v==='number'?v:0;}
   function licenceHeld(t){return licenceUntil(t)>absMin();}
   // named action: the lord's licence bought; returns the line
-  function buyLicence(t){if(!chaseKeep(t))return '';if(licenceHeld(t))return `Your licence for the chase runs to ${calDateLine(licenceUntil(t)-1)}.`;
-    if(gold<LICENCE_GOLD)return `The licence is ${LICENCE_GOLD} gold. Come back when you have it.`;gold-=LICENCE_GOLD;if(typeof updateHUD==='function')updateHUD();
+  /* S2244 — quest review Finding 46: the lord sells his own wood in his own voice */
+  function buyLicence(t){if(!chaseKeep(t))return '';if(licenceHeld(t))return `Your licence runs to ${calDateLine(licenceUntil(t)-1)}. The wood keeps its own count, and so do I.`;
+    if(gold<LICENCE_GOLD)return `The licence is ${LICENCE_GOLD} gold, and a light purse never brought a stag home. Come back when it's heavier.`;gold-=LICENCE_GOLD;if(typeof updateHUD==='function')updateHUD();
     const until=Math.floor(absMin())+licenceDays()*1440;(worldState.licences||(worldState.licences={}))[t.id]=until;
     if(typeof addLog==='function')addLog('🦌',`Bought the lord's licence to hunt the chase of ${t.name}, to ${calDateLine(until-1)}.`);
-    return `The chase of ${t.name} is yours to hunt until ${calDateLine(until-1)}. Deer, boar and hare.`;}
+    return `The chase of ${t.name} is open to you until ${calDateLine(until-1)}: deer, boar and hare. Take what the wood can spare, and it'll spare it again.`;}
   function licenceTopics(t){if(!chaseKeep(t))return [];
     return [{label:`A hunting licence. (${LICENCE_GOLD} gold, three months)`,quest:true,avail:()=>!licenceHeld(t),fn:()=>buyLicence(t)},
       {label:'My hunting licence.',avail:()=>licenceHeld(t),fn:()=>buyLicence(t)}];}
@@ -864,22 +865,25 @@
       refuse:'Then the blade.'}};
   const TALKED_LINES={gatelander:f=>`A soft word turns a hard fine, they say, and you’ve a softer word than most. Half, so: ${f} gold, and we’ll say no more about it.`,markman:f=>`Aye, all right. Half. ${f} gold, and don’t make me sorry.`,aurennais:f=>`You argue it well, Master. The town will accept half, on these terms: ${f} gold, and the matter closed.`,oldblood:f=>`Half, then. ${f} gold.`}; /* S986 — quest review Finding 31: the guard gives way in his people's voice */
   const YIELD_LINES={
-    gatelander:{greet:d=>`A bent knee mends faster than a broken head. ${d} gold, or a night in the cells.`,
-      poor:'You haven’t got it. Then it’s the cells, or the sword again, and I’d not choose the sword.',
+    gatelander:{greet:(d,p)=>`A bent knee mends faster than a broken head. ${d} gold, or ${p}.`,
+      poor:'You haven’t got it. Then it’s the other road, or the sword again, and I’d not choose the sword.',
       pay:'That’s the wiser road. Go on, and go quiet.',
       cells:'Come along, so. The cells are dry, at least.'},
-    markman:{greet:d=>`Yield, and it goes easier. ${d} gold, or a night in the cells.`,
-      poor:'You haven’t got it. The cells, then, or fight on.',
+    markman:{greet:(d,p)=>`Yield, and it goes easier. ${d} gold, or ${p}.`,
+      poor:'You haven’t got it. The other, then, or fight on.',
       pay:'Wise. Go on, then.',
       cells:'Come along, then.'},
-    aurennais:{greet:d=>`Yield, and the terms improve. ${d} gold, Master, or a night in the cells.`,
-      poor:'You have not the sum, Master. The cells, then, or we continue.',
+    aurennais:{greet:(d,p)=>`Yield, and the terms improve. ${d} gold, Master, or ${p}.`,
+      poor:'You have not the sum, Master. The other term, then, or we continue.',
       pay:'Settled, and noted. You may go.',
       cells:'The cells, then. It will be entered in the town’s book.'},
-    oldblood:{greet:d=>`Yield. ${d} gold, or the cells until light.`,
-      poor:'You have not got it. The cells, or the blade.',
+    oldblood:{greet:(d,p)=>`Yield. ${d} gold, or ${p}.`,
+      poor:'You have not got it. The other, or the blade.',
       pay:'It is paid. Go.',
       cells:'Come. The cells are quiet.'}};
+  /* S2244 — quest review Finding 47: the yield names the punishment its court gives (the stocks, the Compact's prison, the cells) */
+  const YIELD_PEN={gatelands:c=>{const h=stocksHours(c);return `${h} ${h===1?'hour':'hours'} in the stocks`;},aurenne:c=>{const n=prisonNights(c);return `${n===1?'a night':n+' nights'} in the Compact’s prison`;}};
+  function yieldPen(S,c){const f=YIELD_PEN[courtOf(S)];return f?f(c):'a night in the cells';}
   // S550 — on the feast day a fine was halved, the guard says so after the halt (the Old Blood keep no watch: the Gatelander line)
   function feastFineLine(S,c){if(!c||c.feast!==dayNow()||typeof FEAST_FINE==='undefined')return '';return ' '+(FEAST_FINE[peopleOfSite(S.site)]||FEAST_FINE.gatelander);}
   function talkedGreet(S,c,fine){if(!c||!c.talkedNow)return '';delete c.talkedNow;return (TALKED_LINES[peopleOfSite(S.site)]||TALKED_LINES.markman)(fine);}
@@ -1075,7 +1079,7 @@
     const n=e._guard.npc;if(n){n._drawn=false;n._retreated=false;n.g.visible=true;if(n.dot)n.dot.visible=true;}}}
   function offerYield(S,c){const dbl=c.bounty*2;const D_=drawnAt(S);D_.forEach(e=>{e.alert=false;e.atkCd=Math.max(e.atkCd||0,.6);}); // they hold while the offer stands
     const L=yieldLines(S);const gn=D_.map(e=>e._guard&&e._guard.npc&&e._guard.npc.def&&e._guard.npc.def.name).find(Boolean)||'The guard'; // S171 — the guard who drew speaks, by name
-    openDialog({name:gn,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(dbl)],topics:[
+    openDialog({name:gn,role:'Guard',ico:'⚔',noIntro:true,greeting:[L.greet(dbl,yieldPen(S,c))],topics:[
       {label:`Pay double (${dbl} gold)`,quest:true,fn:()=>{if(gold<dbl)return L.poor;gold-=dbl;updateHUD();c.bounty=0;c.shut=false;standDown(S);if(typeof addLog==='function')addLog('⚖',`Yielded and paid ${dbl} gold at ${S.site.name}.`);return L.pay;}},
       courtOf(S)==='aurenne'?{label:`Prison (${prisonNights(c)} ${prisonNights(c)===1?'night':'nights'}).`,quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toPrison(S,c);},60);return '';}} /* S2229 — the Compact's court */
       :courtOf(S)==='gatelands'?{label:`The stocks (${stocksHours(c)} h).`,quest:true,fn:()=>{setTimeout(()=>{try{closeDialog();}catch(e){}toStocks(S,c);},60);return '';}} /* S2227 — the Crown's court (#1540 B) */
