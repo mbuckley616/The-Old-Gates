@@ -427,7 +427,7 @@
   // sneaking halves the range and night halves it again. Seen, the town's favour drops on the canon's scale, the
   // wronged keeper refuses your custom for five days, and a fine accrues that the lord will take. Favour lost to
   // crime comes back a point for every three quiet days.
-  const CRIME_PTS={lock:1,theft:2,assault:3};
+  const CRIME_PTS={lock:1,theft:2,assault:3,sacrilege:2}; /* S2240 — sacrilege, the page's 2 points */
   // indoors, a wall between you and the keeper hides you (S182, the critic's section I): only what stands across eye
   // height counts (walls, partitions, a shut door), not a counter or a table you could see over
   function intClearLine(ax,az,bx,bz){if(typeof INT_SOL==='undefined')return true;const d=Math.hypot(bx-ax,bz-az);const n=Math.max(1,Math.ceil(d/.25));
@@ -651,6 +651,32 @@
   function tickChase(dt){_chaseT-=dt;if(_chaseT>0)return;_chaseT=.5;let t=null;try{t=chaseAt(px,pz);}catch(e){}const id=t?t.id:null;
     if(id&&id!==_chaseIn&&!licenceHeld(t))showMsg(`The lord's chase of ${t.name}. Its deer, boar and hare are his; his licence is sold at the keep.`,'#e8d8a0');
     _chaseIn=id;}
+  /* S2240 — sacrilege (Michael's B on #1540, docs/design/law-in-three-registers.md, the second of its three crimes). "Gate-grubbing is
+     sacrilege to the Church" (canon, Aurenne's contempt). A piece taken in a gate (a dungeon that is no fort, lair or tutorial) is gate
+     salvage: arms, armour and curiosities, never gold, a stack or a unique, marked it.salvage as it goes into the bag (takeLootItem) and
+     saved with it. Sold in a Prior's town, an Aurenne town whose church stands (the canon's "Priors over the church's towns"; the Prior
+     keeps the parish), the sale is not made: the piece is taken for the Church, the town books 2 points (the crime system's fine with
+     them, which Aurenne's ledger carries), and the Church has a note of it (worldState.church.notes, kind 'sacrilege'), for the
+     inquisitor. The lawful road is to sell it in the Gatelands or the Mark, or in an Aurenne town with no church. No trap: anywhere in
+     Aurenne a salvage piece's row at the counter says *The Church calls this sacrilege*. */
+  function inGate(){try{const P=typeof currentPortal!=='undefined'&&currentPortal;return activeZoneId==='dungeon'&&!!P&&!P.tutorial&&!dunKeepKind(P);}catch(e){return false;}}
+  function salvageable(it){return !!it&&(it.type==='equip'||it.type==='misc')&&!it.unique&&!it.artifact&&!it.quest&&!(typeof isStackable==='function'&&isStackable(it));}
+  // the mark, laid as a piece is taken from a gate's chest or body
+  function markSalvage(it){if(salvageable(it)&&inGate())it.salvage=true;return it;}
+  function counterSite(){const h=typeof currentHouse!=='undefined'&&currentHouse;return h&&h.siteId?siteAnywhere(h.siteId):null;}
+  // standing in Aurenne: at a counter, its town's nation; outside, the ground's
+  function inAurenne(){try{const t=counterSite();if(t)return nationAt(t.x,t.z)==='aurenne';if(typeof isInterior==='function'&&isInterior())return false;return activeZoneId==='world'&&nationAt(px,pz)==='aurenne';}catch(e){return false;}}
+  function priorsTown(t){if(!t||nationAt(t.x,t.z)!=='aurenne')return false;const F=TS(t).flags||{};if(F.burned!=null||F.abandoned!=null)return false;
+    const S=SETTLE.get(t.id);return !!(S&&S.houses&&S.houses.some(x=>x.type==='church'));}
+  function sacrilegeNote(it){return it&&it.salvage&&inAurenne()?'The Church calls this sacrilege':'';}
+  // named action, asked by sellItem before it pays: true when the sale was sacrilege and the piece is taken
+  function sellSacrilege(i){const it=BAG[i];if(!it||!it.salvage)return false;const t=counterSite();if(!priorsTown(t))return false;
+    BAG.splice(i,1);bookCrime(t,'sacrilege',0);
+    (worldState.church||(worldState.church={notes:[]})).notes.push({kind:'sacrilege',site:t.id,item:it.name,day:dayNow()});
+    (worldState.crimes||(worldState.crimes=[])).push({kind:'sacrilege',site:t.id,house:currentHouse?currentHouse.id:null,item:it.name,day:dayNow(),min:absMin()});
+    showMsg(`Gate salvage, in a Prior's town: the ${it.name} is taken for the Church, and ${t.name} will not forget it.`,'#e88a8a');
+    if(typeof addLog==='function')addLog('🕯',`Offered the ${it.name}, gate salvage, at ${t.name}. It was taken for the Church, and the Church has a note of it.`);
+    return true;}
   function refusesTrade(house){const R=worldState.refuse;if(!R||!house||R[house.id]==null)return false;if(dayNow()>=R[house.id]){delete R[house.id];return false;}return true;}
   function bountyAt(site){const c=fineRecAt(typeof site==='string'?site:site.id);return c?c.bounty:0;} /* S2229 — Aurenne's is the ledger's */
   function fineTopics(site){const b=bountyAt(site);if(b<=0)return [];
@@ -888,10 +914,15 @@
       CR.cool=5;if(indoor)endSent();showMsg('The goods are handed back. The fine is met.','#c8e88a');setTimeout(()=>{try{closeDialog();}catch(e){}},60);return '';}}];}
   function stocksHours(c){return Math.max(1,Math.min(6,Math.ceil((c&&c.bounty||0)/50)));}
   // named action: the stocks (the Crown's court, after the yield)
+  /* S2238 — where the stocks let you go: a step (1 m) in front of their boards, on the square's side, facing its middle (S.stocks, the
+     look builder's S2226 piece; the sitter faces in). A town with no stocks built (the old look, or no clear spot) lets you go 2 m south
+     of its middle, as before. */
+  function stocksLetGo(S){const K=S&&S.stocks,cx=S.site.x,cz=S.site.z;if(!K)return {x:cx,z:cz+2,yaw:null};
+    const x=K.x+Math.sin(K.ry),z=K.z+Math.cos(K.ry);return {x,z,yaw:Math.atan2(-(cx-x),-(cz-z))};}
   function toStocks(S,c){if(typeof isInterior==='function'&&isInterior()){try{closeDialog();}catch(e){}try{exitInterior();}catch(e){}let k=0;const w=()=>{if(!isInterior()||++k>60)toStocks(S,c);else setTimeout(w,100);};setTimeout(w,100);return;}
     const h=stocksHours(c);standDown(S);let stolen=0;for(let i=BAG.length-1;i>=0;i--)if(BAG[i].stolen){BAG.splice(i,1);stolen++;}c.bounty=0;c.shut=false;delete c.lockFine;
     const back=Math.min(Math.max(0,gold),c.loot||0);if(back>0){gold-=back;stolen++;}c.loot=0;
-    doFade(()=>{advanceClock(h*60);px=S.site.x;pz=S.site.z+2;jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
+    doFade(()=>{advanceClock(h*60);const L=stocksLetGo(S);px=L.x;pz=L.z;if(L.yaw!=null)yaw=L.yaw;jumpY=0;PHP=Math.max(PHP,Math.round(maxHP*.5));
       showMsg(`${h} ${h===1?'hour':'hours'} in the stocks on the plaza. ${stolen?'They took what you stole'+(back?` (${back} gold)`:'')+'. ':''}You are let go.`,'#c8b880');
       if(typeof addLog==='function')addLog('⛓',`${h} ${h===1?'hour':'hours'} in the stocks at ${S.site.name}${stolen?'; the stolen goods were taken'+(back?`, and ${back} gold`:''):''}.`);
       if(typeof renderInv==='function')renderInv();if(typeof updateHUD==='function')updateHUD();});}

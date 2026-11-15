@@ -139,5 +139,25 @@ const pc = await page.evaluate(() => { let F = null;
 console.log(JSON.stringify(pc));
 check(`poaching in the chase of ${pc.site}: a deer seen killed by day fines ${pc.seen} (50 and its 30); the lord's licence for 30 (“${pc.line}”), then none`,
   !pc.none && pc.seen === 80 && pc.rec === 'poach' && /yours to hunt until/.test(pc.line || '') && pc.gold === 70 && pc.after === 0, pc);
+// S2240 (Michael's B on #1540, sacrilege): a piece taken in a gate is gate salvage (not in a fort); sold in an Aurenne town whose church
+// stands, the row warns first, the sale is not made, the piece is taken, the ledger books 2 points' 50 and the Church has a note
+const sm = await page.evaluate(() => { const z0 = activeZoneId, p0 = currentPortal, out = {};
+  for (const [k, P] of [['gate', { seed: 77, theme: 'ruins', name: 'A gate' }], ['fort', { seed: 78, interior: 'fort_keep', name: 'A fort' }]]) {
+    activeZoneId = 'dungeon'; currentPortal = P; const C = { items: [{ name: 'Iron Sword', type: 'equip', slot: 'weapon', atk: [3, 5], buyPrice: 40, qty: 1 }, { name: 'Health Potion', type: 'potion', heal: 30, qty: 3, buyPrice: 10 }], displayName: 'Chest' };
+    openLoot(C); const n0 = BAG.length; takeAllLoot(); closeLoot(); out[k] = BAG.slice(n0).filter(b => b.salvage).map(b => b.name); BAG.splice(n0); }
+  activeZoneId = z0; currentPortal = p0; return out; });
+const prior = await page.evaluate(() => { const S = [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'aurenne').flatMap(c => c.sites); return S.filter(s => ['town', 'port', 'village'].includes(s.kind)).slice(0, 6).map(s => s.id); });
+let sr = null;
+for (const id of prior) { if (!(await g.settle(id))) continue;
+  sr = await page.evaluate(id => { const S = WORLD.settle.get(id); if (!priorsTown(S.site)) return null; const h = S.houses.find(h => h.keeper && h.type !== 'home' && h.type !== 'church'); if (!h) return null;
+    currentHouse = h; BAG.push({ name: 'Iron Sword', type: 'equip', slot: 'weapon', atk: [3, 5], buyPrice: 40, qty: 1, salvage: true }); const i = BAG.length - 1;
+    openShop(); const row = [...document.querySelectorAll('#sh-bag .sh-row')].map(r => r.textContent).find(t => /Iron Sword/.test(t)) || '';
+    const g0 = gold, l0 = (fineRecAt(id) || { bounty: 0 }).bounty, n0 = ((worldState.church || {}).notes || []).length;
+    sellItem(i, counterSellPrice(BAG[i])); closeShop(); currentHouse = null;
+    return { id, warned: /The Church calls this sacrilege/.test(row), paid: gold - g0, kept: BAG.some(b => b.salvage), fine: (fineRecAt(id) || { bounty: 0 }).bounty - l0, note: worldState.church.notes.slice(n0).map(x => x.kind).join() }; }, id);
+  if (sr) break; }
+console.log(JSON.stringify([sm, sr]));
+check(`gate salvage: taken in a gate (${sm.gate}), not in a fort; sold in ${sr && sr.id}, a Prior's town, warned, not paid, taken, the ledger +${sr && sr.fine}, the Church's note`,
+  sm.gate.join() === 'Iron Sword' && !sm.fort.length && !!sr && sr.warned && sr.paid === 0 && !sr.kept && sr.fine === 50 && sr.note === 'sacrilege', [sm, sr]);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
