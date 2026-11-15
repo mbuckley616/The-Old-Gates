@@ -6,6 +6,9 @@
 // Session 2256 (the second half of #1580 A): the galleon's guns. Her lids are out of the hull's bake, shut in 2 draws; a side runs out
 // (the lid up 110°, a saker's muzzle 0.55 m outside, the port dark) while it bears, alone or with the other, in 4 more; your own runs out
 // the side a black galleon lies on while you sail and shuts both when you do not, and hers runs out the side that bears on you.
+// Session 2259 (#1582 A, the prototype S2244's ships-fx.js): a broadside seen. Round shot at a black galleon 70 m abeam: six guns flash
+// at their ports (the kit's six on the side toward her, 0.6 m outside her deck's edge) and blow 40 puffs each, six balls fly, and each lands
+// in 24 splinters at her side as the rules take her hull; grape at 120 m falls short in spray. Two draws in a fight, none after it.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -70,4 +73,28 @@ check(`the galleon's lids are her own: shut ${D.shut[0]} draws, one side run out
 check(`her twelve guns' muzzles stand out of her planking (${Math.min(...D.muz)} to ${Math.max(...D.muz)} m at 0.1 m off the bore)`, D.muz.length === 12 && D.muz.every(v => v > .4 && v < .6), D.muz);
 check('your galleon\'s lids are shut in harbour, her starboard runs out while you sail with a black galleon there, and shuts when you stop; hers runs out her port, toward you',
   U.harbour && U.harbour.join() === 'false,false' && U.sail.join() === 'false,true' && U.moored.join() === 'false,false' && U.her && U.her.join() === 'true,false', U);
+// S2259: a broadside seen. The rules' clock (hookClock) is driven by the test, a 60th of a second a step, so every frame is the same
+const fx = await page.evaluate(() => { const out = {}, hk = hookClock; let T = hookClock(); window.hookClock = () => T;
+  worldState.ship = { cls: 'galleon', fit: [], hold: { round: 12, grape: 6 }, name: 'Test Heron', hull: 200, rig: 100 };
+  if (SHIP.mesh) sc.remove(SHIP.mesh); SHIP.mesh = null; spawnShip(px + 80, pz, 0); SHIP.sailing = true;
+  const rx = Math.cos(SHIP.yaw), rz = -Math.sin(SHIP.yaw), h = spawnOtherShip('pirate', SHIP.x + rx * 70, SHIP.z + rz * 70, 'test:fxgalleon', 'galleon'); h.yaw = SHIP.yaw; placeOther(h);
+  const run = (n, see) => { for (let i = 0; i < n; i++) { T += 1 / 60; seaFxTick(1 / 60); tickGuns(1 / 60); if (see) see(i); } };
+  const h0 = h.hull; let flash = 0, puffs = 0, balls = 0, spl = 0, draws = 0;
+  out.fired = fireBroadside() === true;
+  run(150, () => { const n = SEA_FX.n || { mix: 0, add: 0 }; flash = Math.max(flash, n.add); puffs = Math.max(puffs, SEA_FX.P.filter(q => q.wind).length); balls = Math.max(balls, SEA_FX.live.size);
+    spl = Math.max(spl, SEA_FX.P.filter(q => q.c[0] === .62).length); draws = Math.max(draws, +SEA_FX.mix.visible + +SEA_FX.add.visible);
+    if (!out.muz && SEA_FX.live.size === 6) { const m = SHIP.mesh; m.updateMatrixWorld(); out.muz = [...SEA_FX.live.values()].map(b => { const v = m.worldToLocal(new THREE.Vector3(b.from.x, b.from.y, b.from.z));
+      return [+v.x.toFixed(2), +v.z.toFixed(1), +(Math.abs(v.x) - SHIP_GEO.get(m.userData.bakeKey).kit.deckAt(v.z)).toFixed(2), +Math.hypot(b.from.x - h.x, b.from.z - h.z).toFixed(1)]; }); } });
+  Object.assign(out, { flash, puffs, balls, spl, draws, hull: h0 - h.hull });
+  run(420); out.after = [SEA_FX.P.length, SEA_FX.live.size, +SEA_FX.mix.visible + +SEA_FX.add.visible];
+  // grape at 120 m: short of her deck, in spray
+  h.x = SHIP.x + rx * 120; h.z = SHIP.z + rz * 120; placeOther(h); GUNS.t = { port: -1e9, stbd: -1e9 }; gunsShot('grape'); out.grape = fireBroadside() === true; let spray = 0, sp2 = 0;
+  run(150, () => { spray = Math.max(spray, SEA_FX.P.filter(q => q.c[0] === .92).length); sp2 = Math.max(sp2, SEA_FX.P.filter(q => q.c[0] === .62).length); }); out.spray = spray; out.grapeSpl = sp2;
+  window.hookClock = hk; SHIP.sailing = false; despawnOtherShip(h); const k = OTHER.indexOf(h); if (k >= 0) OTHER.splice(k, 1); return out; });
+console.log(JSON.stringify(fx));
+check(`a broadside is seen: ${fx.balls} balls, ${fx.flash} flashes at once, ${fx.puffs} puffs, ${fx.spl} splinters at her side as the rules took ${fx.hull} hull, in ${fx.draws} draws; none left after`,
+  fx.fired && fx.balls === 6 && fx.flash >= 6 && fx.puffs === 240 && fx.spl === 144 && fx.hull === 36 && fx.draws === 2 && fx.after.join() === '0,0,0', fx);
+check(`each gun fires from its own port on the side toward her, 0.6 m out of her deck's edge (${fx.muz && fx.muz.map(m => m[1]).join(', ')} along her)`,
+  fx.muz && fx.muz.length === 6 && new Set(fx.muz.map(m => m[1])).size === 6 && fx.muz.every(m => Math.abs(m[2] - .6) < .02 && m[3] < 68) && fx.muz.every(m => Math.sign(m[0]) === Math.sign(fx.muz[0][0])), fx.muz);
+check(`grape at 120 m falls short of her deck in spray (${fx.spray} drops, ${fx.grapeSpl} splinters)`, fx.grape && fx.spray === 6 * 70 && fx.grapeSpl === 0, fx);
 await g.close();
