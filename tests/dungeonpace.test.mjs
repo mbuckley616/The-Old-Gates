@@ -19,7 +19,11 @@ check(`the dungeon's table on 85–110% of your walk: ${table.map(r => `${r.k} $
   Math.abs(table[0].chase - 3.26) < .01 && Math.abs(table[5].chase - 4.21) < .01 && table.every((r, i) => i === 0 || r.chase >= table[i - 1].chase), table);
 
 const rows = [], sights = [], walks = [];
-for (const [seed, theme, interior] of [[4021, 'deep', 'cave'], [777, 'undead', 'cave']]) {
+/* S2262 — seed 4021's gate is Gaoth's since S2115 (one gate in six by seed): its wisps, Gargoyles and Phantoms, not the deep's roster;
+   the first seed from 4021 whose gate is not Gaoth's */
+const deepSeed = await page.evaluate(() => { let s = 4021; while (seededRng('gaoth', s)() < 1 / 6) s++; return s; });
+console.log(' deep seed', deepSeed);
+for (const [seed, theme, interior] of [[deepSeed, 'deep', 'cave'], [777, 'undead', 'cave']]) {
   await page.evaluate(() => { window._prevDScene = typeof dScene !== 'undefined' ? dScene : null; }); /* S810 — from one gate straight into the next, wait for the new gate's own scene (as enterDungeon since S765) */
   await page.evaluate(({ seed, theme, interior }) => { level = 4; const p = Object.assign({}, PORTALS[0], { theme, seed, size: 'medium', interior, zone: 'world', tutorial: false, diff: 'hard' }); goToDungeon(p); }, { seed, theme, interior });
   for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene && dScene !== window._prevDScene)); k++) await page.waitForTimeout(500);

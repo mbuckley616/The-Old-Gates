@@ -43,7 +43,11 @@ check('W into a townsperson in Dunmore stops you at 0.55 (0.3 + 0.25)', folk.min
 /* S631 — the door is built from its own seed (`makePortalDef`), not copied from PORTALS[0] (another door on CI). Each foe is set on
    open ground found by a scan of floor 1, not on its own cell: the foes wander through the real-time waits, and on CI one had
    walked off open ground, so only two were measured */
-await page.evaluate(() => { level = 4; const p = makePortalDef({ theme: 'deep', seed: 4021, size: 'medium', interior: 'cave', zone: 'world' }); goToDungeon(p); });
+/* S2262 — seed 4021's gate is Gaoth's since S2115 (one gate in six by seed): wisps and a flying dusk eagle, not the deep's roster this
+   measures; the first seed from 4021 whose gate is not Gaoth's */
+await page.evaluate(() => { let s = 4021; while (seededRng('gaoth', s)() < 1 / 6) s++; window._dseed = s; });
+console.log('seed', await page.evaluate(() => window._dseed));
+await page.evaluate(() => { level = 4; const p = makePortalDef({ theme: 'deep', seed: window._dseed, size: 'medium', interior: 'cave', zone: 'world' }); goToDungeon(p); });
 for (let k = 0; k < 40 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(500);
 await page.waitForTimeout(1500);
 const dun = await page.evaluate(() => { const out = [];
