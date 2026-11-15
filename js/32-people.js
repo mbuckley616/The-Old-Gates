@@ -2623,9 +2623,11 @@ function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.e
 // was 194k of her 232k triangles at the full level, and one townsperson inside HBODY.near put Dunmore's street over Middle's 2.0 M
 // (backlog I, QA S2179). At the full level a strand card (hair, tail, brush: strandCards in people.js, one run of point pairs a strand)
 // is drawn through every HB_HAIR_STEP-th of its points, its root and tip kept: the index only, the points untouched, so the strand's
-// line, width and texture are as built. Every point at High, every 3rd (27 mm chords; side by side at 1.5 m no different) at Middle
-// and Low: Niamh's hair 220k to 75k. The player's own body is always whole.
-const HB_HAIR_STEP=[3,3,1],HB_HAIR_CARDS=/^(hair|tail|brush)$/;
+// line, width and texture are as built. Every point at High, every 3rd (27 mm chords; side by side at 1.5 m no different) at Middle:
+// Niamh's hair 220k to 75k. The player's own body is always whole.
+// S2253 — every 6th (54 mm chords) at Low: a loose head still read 67–75k at every 3rd, and one or two townsfolk inside Low's 10 m put
+// Dunmore's street over Low's 1.2 M (backlog I, QA S2249). Low's ring is 10 m, where a 54 mm chord on a curl is a few pixels.
+const HB_HAIR_STEP=[6,3,1],HB_HAIR_CARDS=/^(hair|tail|brush)$/;
 function hbHairIndex(g,k){const ix=g.userData.hairIx||(g.userData.hairIx={});if(ix[k])return ix[k];const a0=ix[1]||(ix[1]=g.index),A=a0.array,out=[];
   const emit=rows=>{for(let i=0;i+1<rows.length;i++){const a=rows[i],b=rows[i+1];out.push(a,a+1,b,a+1,b+1,b);}};
   let rows=null,prev=-9,n=0;const flush=()=>{if(!rows)return;const keep=[];for(let i=0;i<rows.length;i+=k)keep.push(rows[i]);if(keep[keep.length-1]!==rows[rows.length-1])keep.push(rows[rows.length-1]);emit(keep);};
