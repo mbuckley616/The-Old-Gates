@@ -9,9 +9,14 @@ const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
 
 const rows = [];
-const shops = await page.evaluate(() => { forceTime(13); const S = WORLD.settle.get('dunmore'); return S.houses.filter(x => /weapon|armor|potion|misc/.test(x.type) && x.keeper).map(x => x.id); });
-for (const id of shops) {
-  await page.evaluate((id) => { const h = WORLD.settle.get('dunmore').houses.find(x => x.id === id); window._h = h; forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); }, id);
+// Session 2268 (#1574 A): Dunmore's armourer, apothecaries and goods shops are the merchant's house inside now, the strongbox by the
+// keeper in the shop and no back room; the back room's checks (#516, #824 C) take the generated shops that keep one, Ashenmoor's three
+// and Droichead's goods shop, beside Dunmore's
+const shops = [];
+for (const site of ['dunmore', 'ashenmoor', 'droichead']) { if (site !== 'dunmore') await g.settle(site);
+  shops.push(...await page.evaluate(site => { forceTime(13); const S = WORLD.settle.get(site); const hs = S ? S.houses.filter(x => x.siteId === site && /weapon|armor|potion|misc/.test(x.type) && x.keeper) : []; hs.forEach(x => (window._hs || (window._hs = {}))[x.id] = x); return hs.map(x => [site, x.id]); }, site)); }
+for (const [site, id] of shops) {
+  await page.evaluate(([site, id]) => { const h = window._hs[id]; window._h = h; if (isInterior()) exitInterior(); forceTime(13); px = h.exitX; pz = h.exitZ; goToInterior(h); }, [site, id]);
   await page.waitForTimeout(4500); await g.hide();
   rows.push(await page.evaluate(() => { const h = window._h; const X = WORLD.intBox; const K = intNPCMesh; if (!X || !K) return { name: h.name, none: true };
     const kx = K.position.x, kz = K.position.z; jumpY = 0; const R = WIT_IN;
@@ -20,7 +25,7 @@ for (const id of shops) {
     // at the strongbox, as the critic stood
     px = X.x; pz = X.z + .8; const dBox = Math.hypot(px - kx, pz - kz); const atBox = W(); const lineBox = WORLD.intSightLine(kx, kz, px, pz);
     // a step from the keeper, in plain view: always seen
-    px = kx + (X.x > kx ? 1.5 : -1.5); pz = kz; const near = W();
+    px = kx + (Math.abs(X.x - kx) > .3 ? (X.x > kx ? 1.5 : -1.5) : (kx < h.intW / 2 ? 1.5 : -1.5)); pz = kz; const near = W(); /* (S2268) a box in line with the keeper: the step into the room, not into the wall behind him */
     // Session 1436: the same spot a storey up (3 m) is not seen, and seen again with the keeper on that floor too (a resident woken upstairs)
     jumpY = 3; const nearUp = W(); K.userData.floorY = 3; const nearBoth = W(); K.userData.floorY = null; jumpY = 0;
     // at the strongbox again with every door of the room open: the keeper at the counter sees you exactly when the box is in reach

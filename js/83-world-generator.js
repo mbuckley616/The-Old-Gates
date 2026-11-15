@@ -2480,9 +2480,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       hf.visible=!cold;const holder=new THREE.Group();holder.userData.hearthFire=hf;holder.userData.hearthLight=fls[0];holder.userData.hearthLights=fls;if(cold)holder.userData.coldHouse=house;sc_.add(holder);furnSwap(holder);}
     // the barber's chair before its glass against the cross wall: sit in it (S561, openBarberChair)
     if(house.type==='barber'){const c=T.boxes.find(q=>q.tag==='chair'&&q.fl===0);if(c)INT_CHAIR={x:+rx((c.x0+c.x1)/2).toFixed(3),z:+rz((c.z0+c.z1)/2).toFixed(3),house};}
-    // the keeper in the walk behind the counter, half turned to the window's end: the shop door and the counter's front are in front of him,
-    // and so is the strongbox at the walk's end (a witness sees 60° either side of his face, S368)
-    const npc={x:rx(S.keeper.x),z:rz(S.keeper.z)},nry=Math.atan2(s,1);
+    // the keeper in the walk behind the counter, 1.6 m short of the strongbox at its window end (or at the counter's cross-wall end, if
+    // that is nearer the box), half turned (0.45 rad) from the window toward the shop: the box, every spot it opens from, the shop door and
+    // the counter's front are all within 60° of his face (a witness, S368); a spot behind him in his own walk is not one the box opens from
+    const kz=Math.max(S.counter.z0+.15,S.chest.z-1.6),npc={x:rx(S.keeper.x),z:rz(kz)},nry=s*.45;
     if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=nry;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};}
