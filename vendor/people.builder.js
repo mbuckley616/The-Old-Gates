@@ -1440,7 +1440,10 @@ function buildCloak(G, body, byName, rnd) {
   // A shoulder cape over a staff (Session 1798, section I): draped over the grip's forearm, the cape's right side came out level with it
   // as a flat slab 38 cm in front of the neck. It opens on the right as the full cloak does, but from the side itself (the cloak's start, just
   // forward of it, caught the forearm in a point at the hem), so the shoulder and upper arm stay under it and the forearm comes out in front
-  const capeStaff = cape && !!D.staff && !D.spear && !D.crossbow;
+  // A shoulder cape over a crossbow (Session 2247, the forester's crimson cape, S2242): never opened, the cape's right side lay over the
+  // forearm and the stock held forward of it and stood out from the shoulder as a slab. The stock is held as the staff is, the upper arm
+  // at the side and the forearm forward, so it opens the same way, from the side
+  const capeStaff = cape && (!!D.staff || !!D.crossbow && !D.chair) && !D.spear;
   const thrown = !!(D.spear || D.crossbow || D.staff || D.basket || D.lantern || D.book) && (!cape || capeStaff), low = thrown && !D.spear && !D.crossbow && !D.basket && !D.lantern && !D.book;
   const th0 = capeStaff ? -Math.PI / 2 - .15 : low ? -Math.PI / 2 - .33 : thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
   // the shoulder line, set out evenly along itself (Session 1944): the furthest point in each of K evenly turned directions is not evenly
