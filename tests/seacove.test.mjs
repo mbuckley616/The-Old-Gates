@@ -63,7 +63,7 @@ await page.waitForTimeout(1500);
 const ld = await page.evaluate(async () => {
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
   const T = currentHouse._limeCave, Bd = T.bounds, FY = T.low - .25, E = T.escape, L = INT_LADDERS.find(l => l.house === currentHouse.id);
-  // Session 2267: the page's clock is held to the loop's own time, so the climb (read from performance.now()) moves 1/60 s a frame
+  // Session 2268: the page's clock is held to the loop's own time, so the climb (read from performance.now()) moves 1/60 s a frame
   // however long a frame takes; a 1 s stall on a loaded runner had finished it inside run(1) and left LCLIMB null (weekly run, 15 Nov)
   const pn = performance.now; let t = pn.call(performance); prevT = t; performance.now = () => t; const run = n => { for (let i = 0; i < n; i++) { t += 1000 / 60; loop(t); } };
   const r = { L: !!L };
