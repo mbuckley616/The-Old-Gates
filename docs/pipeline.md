@@ -13,7 +13,8 @@ runner-minutes, run on main after each merge in 20 shards from the account's one
 and the PRs queued 8 to 31 minutes behind each one. So:
 - **A pull request runs the smoke set and the suites it adds or edits** (`tests/lib/select.mjs`): `looknew`, `saves`,
   `resolver`, `player`, `dungeon`, `autosave`, about eleven minutes of suites in two short shards. The selection by the
-  names a change reaches (19 Oct, `tests/lib/toplevel.cjs`) is gone.
+  names a change reaches (19 Oct, `tests/lib/toplevel.cjs`) is gone. A shared kit beside the suites (`tests/budgetkit.mjs`)
+  counts as an edit of every suite that imports it (Session 2255).
 - **A docs-only PR runs no suites** (parse only). Parse also checks the generated bundles (`three_bundle.py`,
   `people_bundle.py`, `creatures_bundle.py --check`; the last two since Session 1381, carrying Session 1225's #527), so a PR
   that edits `docs/prototypes/levelup/people.js`, a sibling it imports, or `creatures.js` commits the rebuilt `vendor/` copy with it.
