@@ -1892,6 +1892,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(/^(ring|kid):/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
   if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
   if(!cast&&!g.child&&HB_PACK_ROLE.test(g.role||''))G.dress=hbRolePack(g,G); /* S2239 — a traveller's pack, by island */
+  if(!cast&&!g.child){const O=hbOfficeDress(g,G);if(O)G.dress=O;} /* S2242 — the lord's forester and the Church's inquisitor */
   HB_GENOMES.set(g.hbKey,G);return G;}
 /* S2239 (#1504 B; owed by Session 2217's "Needs eyes") — a traveller's pack. The pack the player buys is on their back by island (S2217,
    TP_PACK in 54-thirdperson.js), and nobody else wore one. Whoever's role says they are on the road (the coaching inns' travellers waiting
@@ -1899,6 +1900,23 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
    Gatelands' willow creel, the Mark's birch frame, Aurenne's saddle-roll. The cast keep their sheet (Corwin). A walking staff stays; the
    pack is rigid on the chest bone, so nothing else changes */
 const HB_PACK_ROLE=/travel|pedlar|pilgrim/;
+/* S2242 (#1540 B, law in three registers: "one bodies for the forester and the inquisitor"; OG-048, OG-091) — two officers of the law,
+   dressed by their office whatever they rolled. The lord's forester, the witness of a chase in the Gatelands: moss-green wool and a leather
+   jerkin for the wood, leg wraps and boots, a crossbow in the fist, and the lord's crimson only as a short hooded cape, so he reads as
+   the lord's man at the chase's crimson edge. The Church's inquisitor in a Prior's town, who hears the sacrilege notes (OG-091's Brother
+   Alain: "hooded, white over mail", the sheet's red cross made the Weaver's shuttle, canon §4.1): mail under a long white tabard edged
+   in red with the red shuttle on the breast, a white hood (the kit's cowl, so no cloak hides the mail or the sign), and nothing in his hands (the kit's book carries the herald's wheel). No one has the role yet: the
+   systems builder's forester and inquisitor take it by their role's word. Not a guard (GUARD_ROLE, whose "warden" a forester avoids) */
+const HB_OFFICE_STRIP={cowl:null,cloak:null,cloakFur:null,hood:null,cape:null,mantle:null,spear:null,staff:null,crossbow:null,basket:null,basketCloth:null,
+  lantern:null,shield:null,chair:null,burnous:null,apron:null,bib:null,robe:null,coat:null,hammer:null,tankard:null,book:null,pipe:null,backpack:null,
+  sash:null,sashBelt:null,shoulderWrap:null,skirt:null,skirtColor:null,helm:null,mail:null,scales:null,plate:null,wrap:null,scarf:null,sandals:null};
+const HB_OFFICE=[
+  {re:/forester|gamekeeper|verderer/,dress:{tunic:[.26,.33,.2],trousers:[.3,.27,.2],boots:[.24,.17,.11],legWraps:[.45,.38,.3],belt:[.24,.17,.11],
+    waistcoat:[.36,.24,.15],waistcoatLeather:true,cloak:[.5,.12,.1],cape:true,cloakLen:.55,hood:'up',crossbow:[.42,.3,.2]}},
+  {re:/inquisitor/,dress:{tunic:[.3,.3,.32],trousers:[.3,.3,.32],boots:[.2,.16,.12],belt:[.24,.17,.11],mail:[.55,.56,.58],tabard:[.88,.86,.8],
+    tabardTrim:[.62,.1,.08],tabardLen:.9,tabardSign:'shuttle',tabardSignCol:[.62,.1,.08],cowl:[.86,.84,.78]}}];
+function hbOfficeDress(g,G){const o=HB_OFFICE.find(o=>o.re.test(String(g.role||'').toLowerCase()));if(!o)return null;
+  return Object.assign({},G.dress||{},HB_OFFICE_STRIP,o.dress);}
 function hbRolePack(g,G){const Pk=(typeof TP_PACK!=='undefined'&&(TP_PACK[g.nation]||TP_PACK.gatelands))||{kind:'creel',col:[.92,.74,.48]};
   return Object.assign({},G.dress||{},{backpack:Pk.col.slice(),backpackKind:Pk.kind});}
 /* S1980 (L1, OG-001/OG-065; owed by Session 1977) — the role's staff. An elder or a hermit carries the driver's stick (personGenome's role),
@@ -1934,6 +1952,8 @@ function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   if(D.tunic){g.cloth=C(D.tunic);g.sleeve=C(D.tunic).multiplyScalar(.9);}
   /* S1846 — a coat worn over it (the builder's coatOn: Corwin's open coat, the navigator's) is the outer colour, body and sleeves */
   if(D.coat&&!D.robe&&!D.mail&&!D.scales&&!D.tabard&&!D.chair){g.cloth=C(D.coat);g.sleeve=C(D.coat).multiplyScalar(.9);}
+  /* S2242 — a tabard (the inquisitor's white) is the body's colour far off, over mail's sleeves */
+  if(D.tabard){g.cloth=C(D.tabard);if(D.mail)g.sleeve=C(D.mail);}
   const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
 // S1763 (L1, OG-109's winter column) — the winter dress: in winter (calDay's season) a share of each people, out of doors, wear the
