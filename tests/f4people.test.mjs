@@ -53,6 +53,28 @@ const again = await page.evaluate((keys) => keys.every(k => { const r = [...HB_R
   return JSON.stringify(HB.toSaved(HB.rollGenome(k, o))) === JSON.stringify(HB.toSaved(HB.rollGenome(k, o))); }), who.sample);
 check('a genome is the same rolled twice from its key', again);
 
+// S2255 (S2253's note): loose hair falls down the back under a long cloak and rides the chest below the neck, as braids have since S1449.
+// On the head's bone alone it swung through the sheet's back with each nod of the driver (dunmore#4:Niamh, 14% of the points by the
+// cloak out of it, by up to 2.1 cm). Over 4 s in the street, every loose head under a long cloak (not a cape) whole within the eye's ring
+const loose = await page.evaluate(() => { { const t = WORLD.siteAnywhere('dunmore'); CAM.position.set(t.x, worldH(t.x, t.z + 4) + 1.65, t.z + 4); CAM.updateMatrixWorld(true); } for (let i = 0; i < 60; i++) tickPeople(1 / 60, 5.9e5 + i * 17);
+  const rigs = [...HB_RIGS].filter(r => r.hb && r.hb.P && r.hb.L === 0 && r.hbG && r.hbG.hair && r.hbG.hair.style === 'loose' && r.hbG.dress && r.hbG.dress.cloak && !r.hbG.dress.cape && !!r.hb.root.getObjectByName('hair') && !!r.hb.root.getObjectByName('cloak'));
+  const count = rig => { const H = rig.hb, ms = []; H.root.updateMatrixWorld(true); H.root.traverse(o => { if (o.isSkinnedMesh) ms.push(o); });
+    const posed = m => { const n = m.geometry.attributes.position.count, o = new Float32Array(n * 3), v = new THREE.Vector3(); for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); o[i * 3] = v.x; o[i * 3 + 1] = v.y; o[i * 3 + 2] = v.z; } return o; };
+    const CP = [], CN = []; for (const m of ms.filter(m => m.name === 'cloak')) { const p = posed(m), gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(p, 3)); gg.setIndex(m.geometry.index); gg.computeVertexNormals(); const nn = gg.attributes.normal.array; for (let i = 0; i < p.length; i++) { CP.push(p[i]); CN.push(nn[i]); } }
+    const cell = .04, grid = new Map(), key = (x, y, z) => Math.floor(x / cell) + ',' + Math.floor(y / cell) + ',' + Math.floor(z / cell);
+    for (let q = 0; q < CP.length; q += 3) { const h = key(CP[q], CP[q + 1], CP[q + 2]); let l = grid.get(h); if (!l) grid.set(h, l = []); l.push(q); }
+    const nk = new THREE.Vector3(); H.P.byName.neck01.getWorldPosition(nk); let n = 0, out = 0, worst = 0;
+    for (const m of ms.filter(m => m.name === 'hair')) { const a = posed(m); for (let i = 0; i < a.length; i += 3) { if (a[i + 1] > nk.y - .1) continue; let best = -1, bd = .0016; const cx = Math.floor(a[i] / cell), cy = Math.floor(a[i + 1] / cell), cz = Math.floor(a[i + 2] / cell);
+      for (let u = -1; u <= 1; u++) for (let v = -1; v <= 1; v++) for (let w = -1; w <= 1; w++) { const l = grid.get((cx + u) + ',' + (cy + v) + ',' + (cz + w)); if (l) for (const q of l) { const d = (CP[q] - a[i]) ** 2 + (CP[q + 1] - a[i + 1]) ** 2 + (CP[q + 2] - a[i + 2]) ** 2; if (d < bd) { bd = d; best = q; } } }
+      if (best < 0) continue; n++; const s = (a[i] - CP[best]) * CN[best] + (a[i + 1] - CP[best + 1]) * CN[best + 1] + (a[i + 2] - CP[best + 2]) * CN[best + 2]; if (s > 0) { out++; worst = Math.max(worst, s); } } }
+    return { n, out, worst }; };
+  const res = rigs.map(r => ({ key: r.g.hbKey, n: 0, out: 0, worst: 0, chest: (() => { const sk = r.hb.P.skeleton, cb = sk.bones.findIndex(b => b.name === 'spine03'); let on = 0; r.hb.root.traverse(m => { if (m.name === 'hair' && m.geometry.attributes.skinIndex.array.includes(cb)) on++; }); return on > 0; })() }));
+  for (let f = 0; f < 8; f++) { for (let i = 0; i < 30; i++) tickPeople(1 / 60, 6e5 + f * 1000 + i * 17); rigs.forEach((r, k) => { const c = count(r); res[k].n += c.n; res[k].out += c.out; res[k].worst = Math.max(res[k].worst, +c.worst.toFixed(3)); }); }
+  return res.map(r => ({ ...r, share: +(r.out / Math.max(1, r.n)).toFixed(4) })); });
+console.log('  loose under a cloak:', JSON.stringify(loose));
+check('loose hair under a long cloak rides the chest below the neck and stays under the sheet as they walk: under 2% of the hair by the cloak outside it, none by 1.2 cm',
+  loose.length >= 1 && loose.every(r => r.chest && r.n > 1000 && r.share < .02 && r.worst < .012), loose);
+
 
 // S1763 (L1, OG-109's winter column): in winter, out of doors, a share of each people wear the kit's winter coat (the Aurennais the
 // burnous); indoors and out of winter, none. 40 villagers a people under a test key, rolled in winter, indoors and in autumn
@@ -233,15 +255,15 @@ const midHair = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => 
   return { key: rig.g.hbKey, hairVerts: hv, ribbons: hv / 2 - 1, cards: Math.round(cards), pts, used, inHair }; });
 check(`a head of long hair keeps its hair in the middle level (${midHair.hairVerts} points of ribbon from ${midHair.cards} card triangles), and a bed's fit reads none of it`,
   midHair.none || (midHair.hairVerts > 1500 && midHair.hairVerts < 16000 && midHair.inHair === 0 && midHair.pts === midHair.used), midHair);
-// S2182 — a near body's hair cards are drawn through every 3rd strand point at Middle (and Low), every point at High; the same strands
+// S2182 — a near body's hair cards are drawn through every 3rd strand point at Middle (S2253: every 6th at Low), every point at High; the same strands
 const hairQ = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb && !r.foe && !r.hbLazy && r.hb.full.some(m => m.name === 'hair' && m.geometry.index));
   if (!rig) return null; const m = rig.hb.full.find(o => o.name === 'hair'), g = m.geometry, tris = () => g.index.count / 3, used = () => new Set(g.index.array).size;
   const q0 = SETTINGS.quality, at = q => { SETTINGS.quality = q; hbLevel(rig, 1); hbLevel(rig, 0); return { tris: tris(), pts: used() }; };
   const hi = at(2), mid = at(1), lo = at(0); SETTINGS.quality = q0; hbLevel(rig, 1);
   return { key: rig.g.hbKey, hi, mid, lo, pos: g.attributes.position.count }; });
 console.log('  hair by quality:', JSON.stringify(hairQ));
-check(`a near body's hair is drawn through every 3rd strand point at Middle (${hairQ && hairQ.mid.tris} of ${hairQ && hairQ.hi.tris} triangles) and whole at High`,
-  hairQ && hairQ.hi.pts === hairQ.pos && hairQ.mid.tris < hairQ.hi.tris * .4 && hairQ.mid.tris > hairQ.hi.tris * .25 && hairQ.lo.tris === hairQ.mid.tris, hairQ);
+check(`a near body's hair is drawn through every 3rd strand point at Middle (${hairQ && hairQ.mid.tris} of ${hairQ && hairQ.hi.tris} triangles), every 6th at Low (${hairQ && hairQ.lo.tris}) and whole at High`,
+  hairQ && hairQ.hi.pts === hairQ.pos && hairQ.mid.tris < hairQ.hi.tris * .4 && hairQ.mid.tris > hairQ.hi.tris * .25 && hairQ.lo.tris < hairQ.mid.tris * .75 && hairQ.lo.tris > hairQ.hi.tris * .12, hairQ);
 // far away every body is the cheap level
 const far = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); CAM.position.set(t.x, worldH(t.x, t.z + 70) + 1.65, t.z + 70); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 5e5);
   const rs = [...HB_RIGS].filter(r => r.hb && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) > HBODY.mid + 1);
