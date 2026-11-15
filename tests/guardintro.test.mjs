@@ -139,6 +139,30 @@ const pc = await page.evaluate(() => { let F = null;
 console.log(JSON.stringify(pc));
 check(`poaching in the chase of ${pc.site}: a deer seen killed by day fines ${pc.seen} (50 and its 30); the lord's licence for 30 (“${pc.line}”), then none`,
   !pc.none && pc.seen === 80 && pc.rec === 'poach' && /is open to you until/.test(pc.line || '') && pc.gold === 70 && pc.after === 0, pc);
+// S2254 (#1540 B: "a chase's witness is the lord's forester ... by day"): the forester walks a seeded beat through his lord's wood, read from
+// the clock; a body stands only near you by day; he sees by the witness rule, ahead of him and not behind; a deer killed before him is booked
+// with no other witness; at night he is gone.
+const fo = await page.evaluate(() => { let t = null;
+  for (let j = 0; j < GRID && !t; j++) for (let i = 0; i < GRID && !t; i++) { const c = getCell(i, j); if (!c || !c.sites) continue;
+    for (const s of c.sites) if (!t && chaseLord(s) && foresterBeat(s)) t = s; }
+  if (!t) return { none: true }; const B = foresterBeat(t), inChase = B.pts.filter(p => (chaseAt(p.x, p.z) || {}).id === t.id).length;
+  const m0 = Math.ceil(((worldState.gameTimeAbsMinutes || 0) + 1) / (B.L / FORESTER_SPD)) * (B.L / FORESTER_SPD); worldState.gameTimeAbsMinutes = m0; forceTime(12);
+  const P0 = foresterAt(t); _forBeat.delete(t.id); const P1 = foresterAt(t), same = Math.hypot(P0.x - P1.x, P0.z - P1.z) < 1e-6;
+  const SP = [px, pz]; px = P0.x + 30; pz = P0.z; _forT = 0; tickForester(.1); const b = _forBody.get(t.id), body = !!(b && b.g.parent === sc), role = b && b.def.role,
+    at = b ? Math.hypot(b.g.position.x - P0.x, b.g.position.z - P0.z) : -1;
+  let ahead = null; for (let d = 3; d <= 8 && !ahead; d++) { const x = P0.x + Math.sin(P0.ry) * d, z = P0.z + Math.cos(P0.ry) * d; if (clearLine(x, z, P0.x, P0.z)) { px = x; pz = z; const w = foresterSees(); if (w) ahead = { d, w }; } }
+  const AH = [px, pz]; px = P0.x - Math.sin(P0.ry) * 5; pz = P0.z - Math.cos(P0.ry) * 5; const behind = foresterSees();
+  px = AH[0]; pz = AH[1]; const W = witnessOf; witnessOf = () => null; const C = worldState.crime || (worldState.crime = {}); delete C[t.id]; const L = worldState.licences; if (L) delete L[t.id];
+  const e = buildZoneEnemy(sc, STATIC_SOL, P0.x, P0.z, 'Deer', null, { tier: 1, key: 'foresttest' }); ZONES.world.enemies.push(e); killZoneEnemy(e, sc);
+  const booked = (C[t.id] || {}).bounty || 0; witnessOf = W; delete C[t.id];
+  worldState.gameTimeAbsMinutes = m0 + 60; tickForester(.1); const moved = Math.hypot(b.g.position.x - P0.x, b.g.position.z - P0.z), along = foresterAt(t);
+  forceTime(0); tickForester(.1); const night = { body: _forBody.size, sees: !!foresterSees(), gone: !b.g.parent }; forceTime(12);
+  px = P0.x + 2000; pz = P0.z; _forT = 0; tickForester(.1); const far = _forBody.has(t.id); px = SP[0]; pz = SP[1];
+  return { site: t.name, n: B.pts.length, inChase, L: Math.round(B.L), name: B.name, same, body, role, at: +at.toFixed(3), ahead: ahead && ahead.d, by: ahead && ahead.w.name, behind: !!behind, booked, moved: Math.round(moved), toNext: Math.round(Math.hypot(along.x - b.g.position.x, along.z - b.g.position.z)), night, far }; });
+console.log(JSON.stringify(fo));
+check(`the forester of ${fo.site}, ${fo.name}, walks ${fo.n} points of his chase (${fo.L} m round) by the clock; seen ${fo.ahead} m ahead, not 5 m behind; a deer killed before him books ${fo.booked}; an hour on he has walked ${fo.moved} m; at night and 2 km off, no body`,
+  !fo.none && fo.n >= 3 && fo.inChase === fo.n && fo.same && fo.body && fo.role === 'Forester' && fo.at < .01 && fo.ahead && fo.by === fo.name && !fo.behind && fo.booked === 80 &&
+  fo.moved > 0 && fo.moved <= 72 && fo.toNext < .01 && fo.night.body === 0 && !fo.night.sees && fo.night.gone && !fo.far, fo);
 // S2251 (Michael's B on #1562): a chase is any Gatelands town's or city's with a lord, keep or not; never a village's, a port's or a garrison's.
 // Over every Gatelands site of the world's cells: the kinds that hold one, and a town with no keep whose lord sells the licence.
 const ch = await page.evaluate(() => { const by = {}; let nokeep = null;
