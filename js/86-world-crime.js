@@ -850,7 +850,13 @@
     if(dec>left){const O=T.owed||(T.owed={goods:{},cove:C.id,day:dayNow()});O.goods[key]=(O.goods[key]||0)+dec-left;O.cove=C.id;O.coveName=C.name;titheCap();owed=true;}
     if(typeof updateHUD==='function')updateHUD();if(typeof sndGoldJingle==='function')sndGoldJingle();
     return `Sold a ${g.n.toLowerCase()} for ${p} gold, and no tenth.`+(owed?' It was declared to the Compact: the next Aurenne port will have word of it.':'');}
-  function fenceNotes(C){const T=worldState.tithe;let s='The fence pays the full price, and no tenth. He sells nothing.';titheCap();
+  // S2258 — named action: a piece of gate salvage sold to the fence at a counter's price. Not sacrilege: the page names a cove's fence among
+  // salvage's lawful roads (the Gatelands, the Mark, an Aurenne town with no church), so nothing is booked and the Church hears nothing
+  function fenceSalvage(C,i){const it=BAG[i];if(!it||!it.salvage||it.unique)return '';const p=sellPrice(it);BAG.splice(i,1);gold+=p;
+    const ws=worldState.stats||(worldState.stats={});ws.goldIn=(ws.goldIn||0)+p;if(typeof updateHUD==='function')updateHUD();if(typeof sndGoldJingle==='function')sndGoldJingle();
+    if(typeof addLog==='function')addLog('⚓',`Sold the ${it.name}, gate salvage, to the fence at ${C.name}.`);
+    return `Sold the ${it.name} for ${p} gold. The fence asks nothing about where it came from.`;}
+  function fenceNotes(C){const T=worldState.tithe;let s='The fence pays the full price, and no tenth. He sells nothing.';titheCap();if(BAG.some(it=>it&&it.salvage))s+=' He takes gate salvage at a counter\u2019s price, and the Church hears nothing of it.';
     const Dc=T&&T.declared&&T.declared.goods;if(Dc&&Object.keys(Dc).length)s+=` Declared to the Compact: ${titheGoods(Dc)}. Sold here, it is entered against you at your next Aurenne port.`;
     return s;}
   function fenceInteract(){const b=fenceNear();if(!b)return false;openCargoPanel(fenceSite(b.D));return true;}
@@ -2484,8 +2490,11 @@ function cargoPanelDraw(){const ov=document.getElementById('cargoui');if(!ov||!c
     h+=`<tr data-k="${k}" style="text-align:right"><td style="text-align:left">${g.n}</td><td>${own?cargoAsk(site,k):'—'}</td><td>${bid}</td><td title="aboard + carried">${heldTxt}</td><td style="white-space:nowrap">`+
       `<button type="button" data-a="sell" style="${B}"${held?'':' disabled'}>−</button><button type="button" data-a="buy" style="${B}"${own?'':' disabled'}>+</button>`+
       `<button type="button" data-a="fill" style="${B}"${own&&here?'':' disabled'}>Fill</button></td></tr>`;}
+  if(FN){const sv=BAG.map((it,i)=>[it,i]).filter(([it])=>it&&it.salvage); /* S2258 — gate salvage at the fence: the page's lawful road (the sacrilege row) */
+    if(sv.length){h+='<tr style="font-size:12px;color:#6a5a3a;text-align:right"><td style="text-align:left;padding-top:6px">Gate salvage</td><td></td><td>Bid</td><td></td><td></td></tr>';
+      for(const [it,i] of sv)h+=`<tr data-i="${i}" style="text-align:right"><td style="text-align:left">${it.name}</td><td>—</td><td>${sellPrice(it)}</td><td>1</td><td style="white-space:nowrap"><button type="button" data-a="salv" style="${B}">−</button></td></tr>`;}}
   ov.querySelector('#cargo-rows').innerHTML=h;
-  for(const b of ov.querySelectorAll('#cargo-rows button')){if(b.disabled)b.style.opacity='.35';const k=b.closest('tr').dataset.k,a=b.dataset.a;
+  for(const b of ov.querySelectorAll('#cargo-rows button')){if(b.disabled)b.style.opacity='.35';const k=b.closest('tr').dataset.k,a=b.dataset.a;if(a==='salv'){const i=+b.closest('tr').dataset.i;b.onclick=()=>{cargoSaid=fenceSalvage(site,i);cargoPanelDraw();};continue;}
     b.onclick=()=>{cargoSaid=a==='sell'?(FN?fenceSell(site,k):cargoSell(site,k)):FN?'':a==='buy'?cargoBuy(site,k):cargoFill(site,k);cargoPanelDraw();};}
   const ship=worldState.ship,used=here?holdUsed():0,cap=here?holdCap():0;
   ov.querySelector('#cargo-hold').innerHTML=!ship?'You have no ship: what you buy, you carry.':!here?`The ${SHIP.name} is not at this harbour; what you buy, you carry.`:

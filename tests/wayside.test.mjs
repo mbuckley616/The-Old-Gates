@@ -532,14 +532,18 @@ if (cv) {
     const C = fenceSite(D), out = { name: b.def.name, role: b.def.role, gy: +(groundY(P.x, P.z) - P.y).toFixed(2), prompt: fencePrompt(), port: C.port && C.port.name };
     out.portBid = C.port ? cargoBid(C.port, 'silver') : null; out.bid = fenceBid(C, 'silver'); out.open = fenceInteract();
     out.title = document.getElementById('cargo-title').textContent; out.btns = [...document.querySelectorAll('#cargo-rows tr[data-k="silver"] button')].map(x => x.dataset.a + (x.disabled ? '-' : '+')).join();
-    out.s1 = fenceSell(C, 'silver'); out.o1 = !!worldState.tithe.owed; out.s2 = fenceSell(C, 'silver'); out.o2 = JSON.stringify(worldState.tithe.owed && worldState.tithe.owed.goods); closeCargoPanel();
+    out.s1 = fenceSell(C, 'silver'); out.o1 = !!worldState.tithe.owed; out.s2 = fenceSell(C, 'silver'); out.o2 = JSON.stringify(worldState.tithe.owed && worldState.tithe.owed.goods);
+    /* Session 2258: gate salvage at his board, a counter's price, nothing booked */
+    const sw = { name: 'Gate-worn Sword', ico: '🗡', type: 'equip', slot: 'weapon', atk: [3, 6], buyPrice: 40, sellMult: .4, weight: 3, qty: 1 }; { sw.salvage = true; BAG.push(sw); cargoPanelDraw(); const row = [...document.querySelectorAll('#cargo-rows tr[data-i]')].find(r => +r.dataset.i === BAG.indexOf(sw));
+      const pr = sellPrice(sw), gg = gold, cr = (worldState.crimes || []).length, nt = ((worldState.church || {}).notes || []).length; out.salv = { row: !!row, said: fenceSalvage(C, BAG.indexOf(sw)), paid: gold - gg, price: pr, gone: !BAG.includes(sw), crimes: (worldState.crimes || []).length - cr, notes: ((worldState.church || {}).notes || []).length - nt }; }
+    closeCargoPanel();
     const t = C.port, keep = nearSite, l0 = (fineRecAt(t.id) || { bounty: 0 }).bounty; nearSite = () => ({ site: t }); try { out.booked = !!titheOwedBook(); } finally { nearSite = keep; }
     out.fine = (fineRecAt(t.id) || { bounty: 0 }).bounty - l0; out.left = !!worldState.tithe.owed; out.rec = worldState.crimes.slice(-1)[0].kind; worldState.tithe = T0 || {};
     for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i].type === 'cargo') BAG.splice(i, 1); return out; }, cv.id);
   console.log(JSON.stringify(fe));
-  check(`the cove's fence, ${fe.name}, on the shingle (${fe.gy} m): *${fe.prompt}*; ${fe.bid} for silver where ${fe.port}'s factor bids ${fe.portBid && fe.portBid.raw} less its tenth; sells nothing; a declared chest sold there booked at the port, +${fe.fine}`,
+  check(`the cove's fence, ${fe.name}, on the shingle (${fe.gy} m): *${fe.prompt}*; ${fe.bid} for silver where ${fe.port}'s factor bids ${fe.portBid && fe.portBid.raw} less its tenth; sells nothing; a declared chest sold there booked at the port, +${fe.fine}; gate salvage sold at his board for ${fe.salv && fe.salv.paid}, nothing booked`,
     !fe.none && fe.role === 'Fence' && Math.abs(fe.gy) < .05 && /press 'E'/.test(fe.prompt || '') && fe.portBid && fe.bid === fe.portBid.raw && fe.open && /^The fence/.test(fe.title) && fe.btns === 'sell+,buy-,fill-'
-    && !fe.o1 && /no tenth\. It was declared/.test(fe.s2) && fe.o2 === '{"silver":1}' && fe.booked && fe.fine === 50 && !fe.left && fe.rec === 'smuggle', fe);
+    && fe.salv && fe.salv.row && fe.salv.paid === fe.salv.price && fe.salv.paid > 0 && fe.salv.gone && fe.salv.crimes === 0 && fe.salv.notes === 0 && !fe.o1 && /no tenth\. It was declared/.test(fe.s2) && fe.o2 === '{"silver":1}' && fe.booked && fe.fine === 50 && !fe.left && fe.rec === 'smuggle', fe);
 }
 // Session 2063 (QA's S2060: two shepherd's huts 2.5 km out drawn whole in Dunmore's view): the places by a road and off it are hidden past
 // 450 m of you and shown within it; nothing else of them changes
