@@ -1204,11 +1204,13 @@ function buildFoe(type,x,z,genome,eyeCol,arm){
 }
 function buildNPCMesh(def,opts){
   opts=opts||{};if(def._twin)opts=Object.assign({},opts,{key:(opts.key||'')+'#'+def._twin}); // S248 — a second Cathal in Dunmore is another man
+  if(def.roadfolk!=null)opts=Object.assign({},opts,{key:(opts.key||'')+'#road:'+def.roadfolk}); // S2291 — one of the road's people is not the namesake at home (a rider was Hearthwick's guard Cormac, spear and all)
   const key=(def.name||'')+'|'+(opts.key||'');
   // the same name in the same place is the same person, behind the counter as in the street
   let g=def.name&&!def.authored?PEOPLE_GENOMES.get(key):null;
   if(!g){g=personGenome(def,opts);if(def.name)PEOPLE_GENOMES.set(key,g);}
   if(def.authored&&def.name)g.castOk=true;
+  if(def.rider)g.rider=true; /* S2291 — the road's rider: both hands at the reins, so stripped as the carter is */
   if(def.carter)g.carter=true; /* S2282 — a handcart's pusher: stripped of what is held and of a cloak by hbGenome */
   if(def.bearer)g.bearer=def.bearer; /* S2273 — a bier's bearer (the road's mourners): stripped and in mourning by hbGenome */
   if(hbOn()&&!opts.noBuilder&&!g.hbKey){const pw=hbPowerOf(def,g);if(pw){g.power=pw;g.gear=HB_POWER[pw].staff?'stick':null;}} /* S2260 (#1566 B) — the town's head dressed by office; the driver holds a staff or nothing (a Mark captain's guard spear dropped) */
@@ -1367,18 +1369,53 @@ function pwSit(t,o){const p=pwZero(),S=o.sit||{},br=Math.sin(t*1.3),c=S.c||0,lk=
 function pwRide(t,o){const p=pwZero(),R=o.ride||{},br=Math.sin(t*1.3),bob=R.bob||0;
   p.thL=[-.85,.7,.4];p.thR=[-.85,-.7,-.4];p.knL=[1.15,0,0];p.knR=[1.15,0,0];p.anL=[-.2,0,-.25];p.anR=[-.2,0,.25];
   p.spine=[.06+.015*br-.25*bob,0,0];p.neck=[-.04+.2*bob,0,0];p.head=[0,0,0];
-  p.shL=[-.42,0,.08];p.elL=[-1.15,0,0];p.wrL=[.2,0,-.1];p.shR=[-.42,0,-.08];p.elR=[-1.15,0,0];p.wrR=[.2,0,.1];
+  // S2291: the hands together at the reins, a fist's breadth either side of the withers' line (the builder's palms ±0.11 m, 0.39 m before the hips,
+  // 0.3 m over the seat); the upper arms turned in, where S2289's held them out at ±0.29, as a staff or a spear had them
+  p.shL=[-.25,-.3,-.2];p.elL=[-1.05,0,0];p.wrL=[.1,0,0];p.shR=[-.25,.3,.2];p.elR=[-1.05,0,0];p.wrR=[.1,0,0];
   p.hipsY=R.hy||(PW.L2+PW.FOOT+PW.HIPJ);return p;}
 // the seat on a horse: the hips' joint RIDE.pad over the back, the back RIDE.back over the horse's feet at its build (scaled by the driver's
 // root), riding its stride (the driver's hips over their rest). rig.ride = {beast: the horse's driver rig}, set by rideMount.
 const RIDE={back:1.45,at:1.6,pad:.08};
 const _rideV=new THREE.Vector3();
-function rideMount(rig,beast){if(!rig)return;delete rig.sit;rig.ride={beast:beast||null,hy:0,bob:0};for(const k in rig.w)rig.w[k]=0;rig.w.ride=1;}
+// S2291 — the horse he rides is saddled (the kit's riding kinds, HC_KINDS' 'Riding Horse': P.saddle where his hips sit) unless its body is built
+function rideMount(rig,beast){if(!rig)return;delete rig.sit;rig.ride={beast:beast||null,hy:0,bob:0};for(const k in rig.w)rig.w[k]=0;rig.w.ride=1;
+  if(beast&&!beast.hc&&!beast.hcKind&&(beast.name==='Horse'||beast.name==='Grey Horse'))beast.hcKind=beast.name==='Horse'?'Riding Horse':'Grey Riding Horse';}
 function rideTick(rig){const R=rig.ride,H=R.beast;rig.root.updateWorldMatrix(true,false);const s=_rideV.setFromMatrixScale(rig.root.matrixWorld).y||1;_rideV.setFromMatrixPosition(rig.root.matrixWorld);const y0=_rideV.y;
   if(!H||!H.root||!H.root.parent){R.hy=PW.L2+PW.FOOT+PW.HIPJ;R.bob=0;return;}
   H.root.updateWorldMatrix(true,false);const k=_rideV.setFromMatrixScale(H.root.matrixWorld).y||RIDE.at;_rideV.setFromMatrixPosition(H.root.matrixWorld);
   const bob=H.B&&H.B.hips&&H.k?(H.B.hips.position.y-wolfHipY(H.k))*k:0;R.bob+=(bob-R.bob)*.5;
   R.hy=(_rideV.y+RIDE.back*k/RIDE.at+R.bob+RIDE.pad-y0)/s;}
+// ═══ THE REINS (S2291; S2289's rider held nothing) ═══
+// A rider's reins: one leather strap from the bit's left ring to his left fist, across between his fists in a loose bight over the withers,
+// and from his right fist to the bit's right ring. The bit is on the kit horse's head bone (the corners of its mouth, from the kit's own
+// headFrame: every kit bone's rest rotation is the identity, so the offset in body space is the offset in the bone's frame); the fists are
+// his palms (kidPalm; the driver's wrists beyond the builder's level). One ribbon mesh of three spans under the horse's group, its points
+// rewritten each frame by reinsTick in that group's frame (never world coordinates in the vertices). No reins until the horse's kit body is
+// built. The saddle's and the blanket's colours are RIDE_TACK's.
+const RIDE_TACK={blanket:0x5c2c22,leather:0x3c2414,w:.018,n:10,sag:[.035,.15,.035],mat:null};
+const _rtv=[0,1,2,3,4,5,6].map(()=>new THREE.Vector3()),_rtm=new THREE.Matrix4();
+function reinsBuild(){const n=RIDE_TACK.n,V=3*(n+1)*2,g=new THREE.BufferGeometry(),I=[];
+  g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(V*3),3));g.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(V*3),3));
+  for(let sp=0;sp<3;sp++)for(let i=0;i<n;i++){const a=(sp*(n+1)+i)*2;I.push(a,a+1,a+2,a+1,a+3,a+2);}g.setIndex(I);
+  const M=RIDE_TACK.mat||(RIDE_TACK.mat=new THREE.MeshStandardMaterial({color:RIDE_TACK.leather,roughness:.7,metalness:0,side:THREE.DoubleSide}));
+  const m=new THREE.Mesh(g,M);m.name='reins';m.castShadow=true;m.frustumCulled=false;m.matrixAutoUpdate=false;return m;}
+// the bit's two rings, in the world: the mouth's corners on the kit head (H: the horse's driver rig, its kit body H.hc)
+function reinsBit(H,L,R){const C=H&&H.hc&&H.hc.C,F=C&&C.B&&C.B.headFrame,hb=C&&C.byName&&C.byName.head;if(!F||!hb)return false;
+  hb.updateWorldMatrix(true,false);for(const [o,sd] of [[L,1],[R,-1]]){o.copy(F.dir).multiplyScalar(F.len*.8).addScaledVector(F.up,-F.r*.3);o.x+=sd*F.r*.6;o.applyMatrix4(hb.matrixWorld);}return true;}
+function reinsTick(D){const N=D.npc,rig=N&&N.g.userData.rig,H=rig&&rig.ride&&rig.ride.beast,G=D.beast;if(!G||!H)return;
+  let m=D.reins;const L=_rtv[0],R=_rtv[1],hand=[_rtv[2],_rtv[3]];
+  if(!reinsBit(H,L,R)||!bierHands(N,hand)){if(m)m.visible=false;return;}
+  if(!m){m=D.reins=reinsBuild();G.add(m);}m.visible=N.g.visible!==false&&H.root.visible!==false;
+  G.updateMatrixWorld(true);_rtm.copy(G.matrixWorld).invert();for(const v of [L,R,hand[0],hand[1]])v.applyMatrix4(_rtm);
+  const n=RIDE_TACK.n,w=RIDE_TACK.w/2,P=m.geometry.attributes.position,Nn=m.geometry.attributes.normal,spans=[[L,hand[0]],[hand[0],hand[1]],[hand[1],R]],q=_rtv[4],t=_rtv[5],s=_rtv[6];
+  // G may carry a scale; the strap's width is the world's
+  const gs=1/(new THREE.Vector3().setFromMatrixScale(G.matrixWorld).y||1);
+  spans.forEach(([a,b],sp)=>{const sag=RIDE_TACK.sag[sp]*gs;t.copy(b).sub(a).normalize();s.set(-t.z,0,t.x);if(s.lengthSq()<1e-6)s.set(1,0,0);s.normalize().multiplyScalar(w*gs);
+    const nx=t.y*s.z-t.z*s.y,ny=t.z*s.x-t.x*s.z,nz=t.x*s.y-t.y*s.x,nl=Math.hypot(nx,ny,nz)||1;
+    for(let i=0;i<=n;i++){const u=i/n;q.copy(a).lerp(b,u);q.y-=sag*4*u*(1-u);const k=(sp*(n+1)+i)*2;
+      P.setXYZ(k,q.x-s.x,q.y-s.y,q.z-s.z);P.setXYZ(k+1,q.x+s.x,q.y+s.y,q.z+s.z);Nn.setXYZ(k,nx/nl,ny/nl,nz/nl);Nn.setXYZ(k+1,nx/nl,ny/nl,nz/nl);}});
+  P.needsUpdate=true;Nn.needsUpdate=true;m.matrix.identity();m.matrixWorldNeedsUpdate=true;
+  D.reinsAt={L:L.clone(),R:R.clone(),hl:hand[0].clone(),hr:hand[1].clone()};}
 function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);for(const m in w)w[m]+=((m===mode?1:0)-w[m])*k;
   const out=pwZero();let tot=0;
   for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):m==='sleep'?pwSleep(t,o):m==='sit'?pwSit(t,o):m==='ride'?pwRide(t,o):m==='play'?pwPlay(t,o,ph):pwIdle(t,o);
@@ -2026,7 +2063,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   if(/^(ring|kid):/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
-  if(g.carter)G.dress=Object.assign({},G.dress,HB_BEARER_STRIP); /* S2282 — a handcart's pusher: nothing in the hands, no cloak for the arms to reach through */
+  if(g.carter||g.rider)G.dress=Object.assign({},G.dress,HB_BEARER_STRIP); /* S2282 — a handcart's pusher: nothing in the hands, no cloak for the arms to reach through */
   if(g.bearer)G.dress=hbBearerDress(G); /* S2273 — a bier's bearer: in mourning, nothing in the hands, no cloak for the arms to pass through */
   if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
   if(!cast&&!g.child&&HB_PACK_ROLE.test(g.role||''))G.dress=hbRolePack(g,G); /* S2239 — a traveller's pack, by island */

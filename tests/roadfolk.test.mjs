@@ -12,6 +12,7 @@
 // the nearer lord mends it for 250 gold + 2 a metre (or 20 planks and Joinery 25), up 2 days after.
 // Session 2287: striking one of them is an assault at the nearer end of the road.
 // Session 2289: the rider rides astride (pwRide), the hips on the horse's back, the legs either side of its barrel.
+// Session 2291: his horse saddled, the reins from his fists to the bit, nothing else in his hands.
 // Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
@@ -193,6 +194,16 @@ check('a rider is drawn seated on his horse, and within 6 m he reins in', h1.dra
 // the barrel (0.20 to 0.27 m a side), the left on the left; the old pose hung the shins straight down through the horse's shoulder
 { const S = h1.seat; check('he rides astride: the hips over the horse\'s back, a knee and an ankle down either side of its barrel', !!S && S.w > .9 && S.hips[1] > 1.3 && S.hips[1] < 1.6 && Math.abs(S.hips[0]) < .05
   && S.knL[0] > .3 && S.knR[0] < -.3 && S.anL[0] > .28 && S.anR[0] < -.28 && S.anL[1] < 1.1 && S.anR[1] < 1.1, S); }
+// S2291 — his horse is saddled (the kit's saddle on the riding kind) and he holds the reins: nothing else in his hands, the straps from his two fists
+// to the bit's rings, the rings ahead of and below the fists; and he is not the namesake at home (a rider was Hearthwick's guard, spear and all)
+{ await page.evaluate((id) => { const H = ROADWALK.get(id).npc.g.userData.rig.ride.beast; if (!H.hc && !H.hcFail) hcAttach(H); }, rf.id); await g.frames(3);
+  const T = await page.evaluate((id) => { const D = ROADWALK.get(id), rig = D.npc.g.userData.rig, H = rig.ride.beast, P = H.hc && HC.PLANS[hcPlan(hcKind(H))], dz = (rig.hbG && rig.hbG.dress) || {};
+    const A = D.reinsAt, f = v => v.toArray().map(x => +x.toFixed(3));
+    return { kind: hcKind(H), saddle: !!P && P.parts.some(([k]) => k === 'saddle'), held: Object.keys(HB_BEARER_STRIP).filter(k => dz[k]), key: rig.g.hbKey, shown: !!(D.reins && D.reins.visible && D.reins.parent === D.beast),
+      reins: A && { L: f(A.L), R: f(A.R), hl: f(A.hl), hr: f(A.hr) } }; }, rf.id);
+  console.log(JSON.stringify(T)); const R = T.reins;
+  check('his horse is saddled, he holds nothing but the reins, from his fists to the bit ahead of and below them', /Riding Horse$/.test(T.kind) && T.saddle && T.held.length === 0 && /#road:/.test(T.key) && T.shown && !!R
+    && Math.abs(R.hl[0] - R.hr[0]) < .4 && Math.abs(R.L[0] - R.R[0]) < .25 && R.L[2] > R.hl[2] + .5 && R.R[2] > R.hr[2] + .5 && R.L[1] < R.hl[1] && R.R[1] < R.hr[1], T); }
 await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 5);
 await g.spin(null, 4);
 const h2 = await page.evaluate((id) => { const D = ROADWALK.get(id); return { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, lag: (worldState.roadfolk[id] || {}).lag }; }, rf.id);
