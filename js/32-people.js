@@ -1401,7 +1401,10 @@ function reinsBuild(){const n=RIDE_TACK.n,V=3*(n+1)*2,g=new THREE.BufferGeometry
   const m=new THREE.Mesh(g,M);m.name='reins';m.castShadow=true;m.frustumCulled=false;m.matrixAutoUpdate=false;return m;}
 // the bit's two rings, in the world: the mouth's corners on the kit head (H: the horse's driver rig, its kit body H.hc)
 function reinsBit(H,L,R){const C=H&&H.hc&&H.hc.C,F=C&&C.B&&C.B.headFrame,hb=C&&C.byName&&C.byName.head;if(!F||!hb)return false;
-  hb.updateWorldMatrix(true,false);for(const [o,sd] of [[L,1],[R,-1]]){o.copy(F.dir).multiplyScalar(F.len*.8).addScaledVector(F.up,-F.r*.3);o.x+=sd*F.r*.6;o.applyMatrix4(hb.matrixWorld);}return true;}
+  hb.updateWorldMatrix(true,false);
+  /* S2294 — a bridled horse's reins are tied at its bit's rings (P.bridle's, in the body's space; the head bone's rest is its base, unrotated) */
+  const rg=C.B.bridle&&C.B.bridle.rings;if(rg){L.copy(rg[0]).sub(F.base).applyMatrix4(hb.matrixWorld);R.copy(rg[1]).sub(F.base).applyMatrix4(hb.matrixWorld);return true;}
+  for(const [o,sd] of [[L,1],[R,-1]]){o.copy(F.dir).multiplyScalar(F.len*.8).addScaledVector(F.up,-F.r*.3);o.x+=sd*F.r*.6;o.applyMatrix4(hb.matrixWorld);}return true;}
 function reinsTick(D){const N=D.npc,rig=N&&N.g.userData.rig,H=rig&&rig.ride&&rig.ride.beast,G=D.beast;if(!G||!H)return;
   let m=D.reins;const L=_rtv[0],R=_rtv[1],hand=[_rtv[2],_rtv[3]];
   if(!reinsBit(H,L,R)||!bierHands(N,hand)){if(m)m.visible=false;return;}
