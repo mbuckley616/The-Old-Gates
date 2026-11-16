@@ -1125,7 +1125,7 @@ const CLOAK_ARM_ROOM = .03;
 // per vertex of the pack: m where the vertex's heaviest bone is the lower forearm, the wrist, a metacarpal or a finger, else 0
 function armRoomV(m) { const B = PACK.ix.bones, arm = PACK.armBones || (PACK.armBones = new Uint8Array(B.map(b => /^(lowerarm02|wrist|finger|metacarpal)/.test(b.name) ? 1 : 0))), r = new Float32Array(PACK.N);
   for (let v = 0; v < PACK.N; v++) { let b = 0, w = 0; for (let q = 0; q < 4; q++) if (PACK.skinWeight[v * 4 + q] > w) { w = PACK.skinWeight[v * 4 + q]; b = PACK.skinIndex[v * 4 + q]; } if (arm[b]) r[v] = m; } return r; }
-function buildCloak(G, body, byName, rnd) {
+function buildCloak(G, body, byName, rnd, hairMeshes = null) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
   // a shoulder cape (Session 841; OG-059's short red capes on round brass pins, OG-048): cut to the elbows, wrapped round
@@ -1190,6 +1190,24 @@ function buildCloak(G, body, byName, rnd) {
   // to the body's outline below it, along a smooth step; then folds are laid down whole columns, out and in, deepening
   // toward the hem, never in closer than the body allows; the hem rises on a fold's ridge and drops in its trough.
   const worn = wornMask(D), H = buildHang(cols, R, PP, neck, clearAt, len, rnd, wornMask(D, { armRoom: cape ? 0 : CLOAK_ARM_ROOM, mantle: !cape }));
+  // a shoulder cape over loose hair (Session 2285, S2267's note): the cape is cleared of the body alone, and loose hair falls from the back
+  // of the head over the shoulder blades further out than that, so 4% of Caoimhe's came out through her cape's back by up to 2.6 cm. Each
+  // column now stands 1 cm over the hair's own outline (its furthest strand at each angle and height round the neck's axis) below 3 cm
+  // under the neck, rising to it and falling from it gently down the column (0.4 cm out for each centimetre down), as over a hand
+  let overHair = 0; if (cape && hairMeshes) { const HP = []; for (const m of hairMeshes) if (m.name === 'hair') { const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
+    if (HP.length) { const nH = HP.length / 3, BH = new Uint8Array(nH).fill(1); BH.off = new Float32Array(nH); const hairR = radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH);
+      const pols = cols.map(c => c.map(q => ({ th: Math.atan2(q.x - neck.x, -(q.z - neck.z)), r: Math.hypot(q.x - neck.x, q.z - neck.z) })));
+      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r > 0 && c[r].y < neckY - .03 ? Math.max(p.r, hairR(p.th, c[r].y) + .01) : p.r), b = a.slice();
+        for (let r = 1; r < R; r++) for (let d = -8; d <= 8; d++) { const j = r + d; if (j < 1 || j >= R) continue; const v = a[j] - .4 * .0105 * Math.abs(d); if (v > b[r]) b[r] = v; }
+        return b.map((v, r) => Math.max(0, v - pol[r].r)); });
+      // and across the columns: the hair's outline is read strand by strand, so neighbouring columns wanted different lifts and the cape's top
+      // stood in a zigzag; the lift is each column's and its neighbours' greatest, blurred 1-2-1 (never under what the column itself needs), twice
+      for (let it = 0; it < 2; it++) { const M = D.map((d, k) => d.map((v, r) => Math.max(v, k > 0 ? D[k - 1][r] : 0, k < K - 1 ? D[k + 1][r] : 0)));
+        D = M.map((d, k) => d.map((v, r) => (2 * v + (k > 0 ? M[k - 1][r] : v) + (k < K - 1 ? M[k + 1][r] : v)) / 4)); }
+      // and down each column the same way, four times: the outline is read in 2 cm bands, and the cape stood in steps a band apart
+      for (let it = 0; it < 4; it++) D = D.map(d => { const M = d.map((v, r) => r < 1 ? v : Math.max(v, r > 1 ? d[r - 1] : 0, r < R - 1 ? d[r + 1] : 0));
+        return M.map((v, r) => r < 1 ? v : (2 * v + (r > 1 ? M[r - 1] : v) + (r < R - 1 ? M[r + 1] : v)) / 4); });
+      cols.forEach((c, k) => { for (let r = 1; r < R; r++) if (D[k][r] > 1e-5) { const p = pols[k][r], rr = p.r + D[k][r]; c[r].x = neck.x + Math.sin(p.th) * rr; c[r].z = neck.z - Math.cos(p.th) * rr; overHair++; } }); } }
   // the sheet
   const pos = [], uv = [], idx = [];
   for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
@@ -1231,7 +1249,7 @@ function buildCloak(G, body, byName, rnd) {
   boss.position.copy(br.position).addScaledVector(nrm, knot ? -.002 : br.userData.device ? .0036 : .005).add(new THREE.Vector3(0, knot ? -.016 : 0, 0)); out.push(boss);
   for (const m of out) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
   let minClear = 1, under = 0; for (const c of cols) for (const q of c) { const hit = heightOver(S, q); if (hit) { minClear = Math.min(minClear, hit.h); if (hit.h < .005) under++; } }
-  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3), cape, hemDrop: +(neck.y - cols.reduce((a, c) => a + c[R - 1].y, 0) / K).toFixed(3), hem: !!D.cloakHem, thrown, ...H.stats, through: armsThrough(cols, R, PP, neck, worn), point: pointStats } };
+  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3), cape, ...overHair ? { overHair } : {}, hemDrop: +(neck.y - cols.reduce((a, c) => a + c[R - 1].y, 0) / K).toFixed(3), hem: !!D.cloakHem, thrown, ...H.stats, through: armsThrough(cols, R, PP, neck, worn), point: pointStats } };
 }
 
 // the body round the neck's axis: for each height (2 cm) and angle (4°) the furthest point of the posed body, so a
@@ -4885,7 +4903,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let coatHoodSt = null; if (coat && D.coatHood === 'down') { root.updateMatrixWorld(true); const C = buildCoatHoodDown(G, body, byName, meshes); for (const m of C.meshes) root.add(m); coatHoodSt = C.stats; }
   yield;
-  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND); for (const m of C.meshes) root.add(m); cloakStats = C.stats;
+  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND, D.cape && hairStats && hairStats.style === 'loose' ? meshes : null); for (const m of C.meshes) root.add(m); cloakStats = C.stats;
     if (!D.cape && hairStats && /^(braid|braids|tail|shaved)$/.test(hairStats.style)) cloakStats.hairOver = hairOverCloak(meshes, C.meshes); }
   // the satchel (Session 2113), over everything worn, before the shield
   yield;

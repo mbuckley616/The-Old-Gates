@@ -1275,11 +1275,14 @@
       return note?'It is heard. The dead man had a name; learn it. Go, and do not come back to me for the same thing.':'It is heard. The town will come round the sooner for it. Go gently.';}}];}
   function nationRecord(nk){const C=worldState.crime||{};if(nk==='aurenne'){const L=ledgerSweep();if(L&&L.bounty>0)return {name:'the Compact\'s ledger',id:LEDGER_KEY};} /* S2229 */for(const id in C){if(isLedgerKey(id))continue;const c=C[id];if(!(c.bounty>0||c.shut))continue;const t=SITE[id];if(t&&nationKeyOf(...cellOf(t.x,t.z))===nk)return t;}return null;}
   // striking a townsperson: the victim always sees it; a struck guard draws at once, anyone else runs
-  function strikeNpc(fx,fz){const S=nearSite();if(!S)return false;let best=null,bd=2.2;
+  // S2287 — the assault's record, one named action: the town's favour −3, its fine +75, three points owed (S157's numbers)
+  function bookAssault(site,road){addFavor(site,-3);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});c.bounty+=75;c.debt+=3;c.last=dayNow();if(typeof lampCrime==='function')lampCrime(c,75);
+    (worldState.crimes||(worldState.crimes=[])).push(Object.assign({kind:'assault',site:site.id,house:null,day:dayNow(),min:absMin()},road?{road}:{}));return c;}
+  function strikeNpc(fx,fz){if(typeof strikeRoadfolk==='function'&&strikeRoadfolk(fx,fz))return true; /* S2287 — the road's people (87-world-quests.js) */
+    const S=nearSite();if(!S)return false;let best=null,bd=2.2;
     for(const n of S.npcs||[]){if(!n.g.visible||n._retreated||n._drawn)continue;const ex=n.g.position.x-px,ez=n.g.position.z-pz,d=Math.hypot(ex,ez);if(d>=bd)continue;if((ex*fx+ez*fz)/(d||1)<=.45)continue;best=n;bd=d;}
     if(!best)return false;const name=(best.def&&best.def.name)||'someone';const site=S.site;
-    addFavor(site,-3);const C=worldState.crime||(worldState.crime={});const c=C[site.id]||(C[site.id]={bounty:0,debt:0,last:0});c.bounty+=75;c.debt+=3;c.last=dayNow();if(typeof lampCrime==='function')lampCrime(c,75);
-    (worldState.crimes||(worldState.crimes=[])).push({kind:'assault',site:site.id,house:null,day:dayNow(),min:absMin()});
+    bookAssault(site);
     if(best.sched&&(best.sched.type==='guard'||best.sched.type==='watch'||best.sched.type==='constable')){showMsg(`You struck ${name}.`,'#ff6060');guardDraw(best,S);}
     else{best._scared=performance.now()+20000;showMsg(`You struck ${name}. ${site.name} will not forget it.`,'#ff6060');if(typeof addLog==='function')addLog('👁',`Struck ${name} at ${site.name}.`);}
     return true;}
