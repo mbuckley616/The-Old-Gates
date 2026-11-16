@@ -507,6 +507,11 @@ function genSettlement(site){
         // is the healer's hall of rooms.js (Session 937) where it fits whole: the smithy's hall, 6.4 by 9 m under shingle, carved, no
         // chimney but the louver over the long hearth; with its porch where that fits too. Inside it is the healer's hall (kitMarkApothecary).
         if(MK&&t==='potion')for(const porch of [true,false]){const S={roof:'shingle',w:6.4,d:9,porch,chimney:false,carve:true,wall:o1.wall},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'markhall',o:S,ext:E,w0,d0,stoop:E[1],apothecary:true,shell:`${site.id}:windows:${lot.n}`};return;}}
+        // S2303 (card F9; Michael's A on #1632; OG-043, OG-115) — a Markish goods shop, armourer or barber ('misc', 'armor', 'barber') is the
+        // trader's hall of rooms.js (Session 2290) where it fits whole: the smithy's hall, 6.4 by 9 m under shingle, carved, no chimney but the
+        // louver over the long hearth; with its porch where that fits too. Inside it is the trader's hall (kitMarkTrader). A lot with no room
+        // for it takes PKIT.mk.lot's hall, or the town house (S2003), as before.
+        if(MK&&(t==='misc'||t==='armor'||t==='barber'))for(const porch of [true,false]){const S={roof:'shingle',w:6.4,d:9,porch,chimney:false,carve:true,wall:o1.wall},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'markhall',o:S,ext:E,w0,d0,stoop:E[1],trader:t,shell:`${site.id}:windows:${lot.n}`};return;}}
         for(const v of vars){const E=ext(v);if(!fit(W0,D0,E))continue;const w=most(W0,v.w,q=>fit(q,D0,E)),d=most(D0,v.d,q=>fit(w,q,E));
           if(!fit(w,d,E))continue;const o=Object.assign({},v,{w,d});lot.kit={kind:MK?'markhall':'aurhouse',o,ext:E,w0,d0};if(!MK)lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1831 — the street's stream, which the rooms inside draw their shell from */if(MK)lot.kit.stoop=E[1];if(inn)lot.kit.alehall=true;return;}
         // S2003 (card F6, Michael's C on #1300; OG-034, OG-025) — a Markish home or shop whose lot will not take the hall is the kit's town
@@ -3549,6 +3554,57 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
+  // S2303 (card F9; Michael's A on #1632; OG-043, OG-115) — on the new look a Markish goods shop, armourer or barber that stands as
+  // rooms.js's trader's hall (lot.kit.trader, the Mark hall of 6.4 by 9 m under shingle) opens on it (PKIT.mk.trader, Session 2290) inside
+  // the street's own shell: the low long hearth under the louver; down the right the counter of upright boards under an oak top, the
+  // keeper's walk behind it with the shelves of stock and the strongbox at its door end; down the left the trade's own (furs and wadmal;
+  // byrnies on stands under round shields; the barber's chair before a bronze glass, the basin and the kettle over the fire); the bed of
+  // furs across the back. Drawn in metres and moved into the room's frame as the healer's hall is (nothing scaled). The shop's strongbox is
+  // the game's lidded chest where the prototype draws its own (o.chest false leaves the drawn one out).
+  function kitMarkTrader(house){return !!(house&&['misc','armor','barber'].includes(house.type)&&house.kit&&house.kit.kind==='markhall'&&house.kit.trader===house.type&&house.kit.o&&house.kit.shell&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.mk&&PKIT.mk.trader);}
+  function buildKitMarkTrader(house){
+    const k=house.kit,T=PKIT.mk.trader({trade:house.type,shell:k.shell,house:k.o,chest:false},PKIT.stream(house.id+':marktrader')),I=T.inner,X=I.x1,Z=I.z1,FY=T.floor,W=2*X,D=2*Z;
+    const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-FY,dr=T.door,C=T.counter;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.tieBeam-FY).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(dr.x).toFixed(3);house._markTrader=T;
+    /* you arrive 1 m inside the door on the hall's axis, facing where you stand to buy */
+    house._arriveX=+rx(dr.x).toFixed(3);house._arriveZ=+rz(Z-1.0).toFixed(3);
+    house._arriveYaw=+Math.atan2(-(rx(T.front[0])-house._arriveX),-(rz(T.front[1])-house._arriveZ)).toFixed(4);
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(X,-FY,Z);T.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});sc_.add(T.group);
+    {const E=new THREE.Object3D();E.position.set(rx(dr.x),0,D);E.userData.entrance=true;E.userData.leaf=[dr.w,dr.h];sc_.add(E);}
+    // the solids are the prototype's boxes (the posts, the hearth, the counter, the shelves, the trade's pieces, the casks, the bed, the
+    // door's leaf). The hearth's kerb is low, but its fire (and the barber's kettle on its tripod) stand to 1.2 m: it is solid to 1.4 m, so
+    // you cannot walk into the fire. The counter, the shelves and the stands are solids with no foothold on top; the crate's, the casks',
+    // the bench's, the chair's and the bed's tops are footholds (the bed at its furs).
+    const FOOT=['crate','cask','cask2','bench','chair','bed','washstand'];
+    for(const q of T.boxes){const y1=q.tag==='hearth'?q.y0+1.4:q.tag==='bed'?q.y1+.16:q.y1,b={x0:rx(q.x0),x1:rx(q.x1),z0:rz(q.z0),z1:rz(q.z1),y0:Math.max(0,ry(q.y0)),y1:ry(y1)};SOL.push(b);if(FOOT.includes(q.tag))FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:b.y1});}
+    // the shop's strongbox (S155) at the keeper's walk's door end, where the prototype draws its own (o.chest false leaves that out)
+    {const bx=rx(T.chest.x),bz=rz(T.chest.z),bg=new THREE.Group(),shell=buildChestShell(bg,.5,0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=-Math.PI/2;sc_.add(bg);
+      SOL.push({x0:bx-.26,x1:bx+.26,z0:bz-.3,z1:bz+.3,y0:0,y1:.5});
+      INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:'shop',type:house.type,house,open:false};}
+    // the day beyond the side walls' shuttered windows (the hall's, one every 4 m) and the open front door, by the hour, and in through them
+    {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day});
+      for(const z of T.windows)for(const sx of [-1,1]){const m=new THREE.Mesh(new THREE.PlaneGeometry(.7,.6),M);m.position.set(rx(sx*(T.w/2+.08)),1.51,rz(z));m.rotation.y=-sx*Math.PI/2;m.userData.daylight=true;sc_.add(m);}
+      const m=new THREE.Mesh(new THREE.PlaneGeometry(dr.w+.1,dr.h+.1),M);m.position.set(rx(dr.x),dr.h/2,rz(dr.z)+.08);m.rotation.y=Math.PI;m.userData.daylight=true;sc_.add(m);}
+    kitDaylight(sc_,[...T.windows.flatMap(z=>[-1,1].map(sx=>({x:rx(sx*X),y:1.55,z:rz(z),nx:-sx,nz:0,w:.6,h:.5}))),{x:rx(dr.x),y:dr.h*.7,z:D,nx:0,nz:-1,w:dr.w,h:dr.h}]);
+    // the light: the long hearth's fire, the iron lamp from the front tie beam over the customers' side
+    const KA=kitRoomAir(sc_,.4);
+    {const l=new THREE.PointLight(0xff6a20,1.6*KA.fire,8);l.position.set(rx(T.fire[0]),ry(T.fire[1]+.4),rz(T.fire[2]));sc_.add(l);}
+    {const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,8);l.position.set(rx(T.lamp[0]),ry(T.lamp[1]-.1),rz(T.lamp[2]));sc_.add(l);}
+    // the barber's chair right of the hearth before its glass: sit in it (S561, openBarberChair)
+    if(house.type==='barber'&&T.trade.chair)INT_CHAIR={x:+rx(T.trade.chair.x).toFixed(3),z:+rz(T.trade.chair.z).toFixed(3),house};
+    // the keeper in his walk behind the counter, 0.3 m back of where you stand to buy, half turned from the counter toward the door: the strongbox at the
+    // walk's door end, the counter's front and the door are all before him (a witness, S368)
+    const kx=rx(T.keeper.x),kz=rz(Math.max(C.z0+.3,Math.min(T.front[1]-.3,T.chest.z-1.3))),bxz=[INT_BOX.x-kx,INT_BOX.z-kz],fr=[rx(T.front[0])-kx,rz(T.front[1])-kz];
+    const nry=+Math.atan2(bxz[0]/Math.hypot(...bxz)+fr[0]/Math.hypot(...fr),bxz[1]/Math.hypot(...bxz)+fr[1]/Math.hypot(...fr)).toFixed(4);
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+      g.rotation.y=nry;g.position.set(kx,0,kz);sc_.add(g);intNPCMesh=g;intNPCPos={x:kx,z:kz};
+      intNPCMesh.userData.amble={wa:0,wt:1,minZ:kz,maxZ:kz,minX:kx,maxX:kx,speed:.25,paused:true,ry:nry};}
+    else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
+    return sc_;
+  }
   // S1453 (card F9, Michael's A on #311 and #303; OG-115) — on the new look a Markish home standing as the kit's hall (lot.kit.kind
   // 'markhall', S1286, fitted to its lot: 5.6 to 8.4 m wide, 6.5 to 14.5 deep) is the Mark's longhouse inside (PKIT.mk.longhouse,
   // rooms.js's Session 870, laid out by size in Session 1452), in the street's own shell with its own options: the drawn plan (the long
@@ -4030,6 +4086,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitAurApothecary(house))return buildKitAurApothecary(house); /* S1894 — an Aurennais apothecary inside, at its true size */
     if(kitMarkSmithy(house))return buildKitMarkSmithy(house); /* S1869 — a Markish smithy inside, at its true size */
     if(kitMarkApothecary(house))return buildKitMarkApothecary(house); /* S1881 — a Markish apothecary inside, at its true size */
+    if(kitMarkTrader(house))return buildKitMarkTrader(house); /* S2303 — a Markish goods shop, armourer or barber inside, at its true size (#1632 A) */
     if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
     if(kitAurHomeOne(house))return buildKitAurHomeOne(house); /* S1968 — Aurenne's one-storey home inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */

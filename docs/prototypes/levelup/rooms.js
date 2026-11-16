@@ -1462,7 +1462,7 @@ export function markTrader(o = {}, r = stream('trader')) {
   bx('board', S.x0, S.x1, FY, S.y, S.z0, S.z0 + .03); bx('board', S.x0, S.x1, FY, S.y, S.z1 - .03, S.z1); boxes.push({ tag: 'shelves', x0: S.x0, x1: S.x1, y0: FY, y1: S.y, z0: S.z0, z1: S.z1 });
   [.1, .6, 1.1, 1.6, 2.07].forEach((y, k) => { bx('board', S.x0, S.x1, FY + y, FY + y + .03, S.z0, S.z1); if (k < 4) stock(X - .18, S.z0, S.z1, FY + y + .03, k); });
   // the strongbox at the keeper's walk's door end, iron-banded
-  const chest = { x: X - .3, z: C.z1 + .55 }; bx('oak', X - .6, X - .02, FY, FY + .5, chest.z - .23, chest.z + .23, 'chest'); for (const dz of [-.15, .15]) bx('iron', X - .62, X, FY + .02, FY + .52, chest.z + dz - .02, chest.z + dz + .02);
+  const chest = { x: X - .3, z: C.z1 + .55 }; if (o.chest !== false) { bx('oak', X - .6, X - .02, FY, FY + .5, chest.z - .23, chest.z + .23, 'chest'); for (const dz of [-.15, .15]) bx('iron', X - .62, X, FY + .02, FY + .52, chest.z + dz - .02, chest.z + dz + .02); } /* o.chest false: the game hangs its own lidded box there (S2303) */
   // ── the trade's side, the left, between the windows
   const L0 = (WZ.find(z => z < 0) ?? -d / 4) + .45, L1 = (WZ.find(z => z > 0) ?? d / 4) - .45, trade = {};
   if (T === 'armor') { const n = Math.max(2, Math.min(4, Math.floor((L1 - L0) / .8))), zs = Array.from({ length: n }, (_, i) => L0 + .3 + i * (L1 - L0 - .6) / Math.max(1, n - 1)); trade.stands = [];
@@ -1509,7 +1509,7 @@ export function markTrader(o = {}, r = stream('trader')) {
   const KX = (C.x1 + S.x0) / 2, keeper = { x: KX, z: (C.z0 + C.z1) / 2, face: 'x-' }, front = [C.x0 - .45, (C.z0 + C.z1) / 2];
   // the walks: in at the door to the counter's front; round the counter's door end into the keeper's walk and along it; to the trade's
   // side; round the hearth's left to the bed (and for the barber, to the chair)
-  const ez = C.z1 + .22, paths = [[[0, Z - .1], [front[0], ez], front], [[0, Z - .1], [.45, ez], [KX, ez], [KX, C.z0 + .1]], [[0, Z - .1], [-.4, L1], [-1.3, (L0 + L1) / 2]], [[0, Z - .1], [0, H.z1 + .45], [-.9, H.z1 + .1], [-.9, -Z + 1.3], [.5, -Z + 1.25]]];
+  const ez = C.z1 + .22, paths = [[[0, Z - .1], [front[0], ez], front], [[0, Z - .1], [.45, ez], [KX, ez], [KX, C.z0 + .1]], [[0, Z - .1], [-.4, L1], [-1.3, (L0 + L1) / 2]], [[0, Z - .1], [0, H.z1 + .45], [-1.0, H.z1 + .3], [-.95, -Z + 1.3], [.5, -Z + 1.25]]] /* round the hearth's corner by a body's width (S2303) */;
   if (T === 'barber') paths.push([[0, Z - .1], [0, H.z1 + .45], [trade.chair.x, H.z1 + .45], [trade.chair.x, trade.chair.z + .5]]);
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'water'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(hall.group, group);
