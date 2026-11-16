@@ -1397,6 +1397,8 @@ export function markApothecary(o = {}, r = stream('markapo')) {
 //   - barber: a waiting bench down the left wall, the chair right of the hearth facing a polished bronze glass on its stand, a wash stand
 //     and basin beside it, a kettle on an iron tripod over the fire; razors, a strop, combs and shears on the counter.
 //   Behind the hearth the trader's bed of furs across the back, a cask in the other corner; a lamp from the front tie beam.
+//   o.w, o.d (Session 2308): the hall's size. Under 8 m deep (the Mark's wide shallow lots) it is short: one window a side at the middle, the
+//   front posts just before the hearth, the counter, shelves and trade's side in front of the window; it holds from 6.8 by 6.8 to 8.4 by 7.9 m.
 //   -> { group, shell, room, tris, draws, shellTris, shellCalls, inner, under(x), floor, tieBeam, hearth, louver, fire, counter {x0, x1,
 //        z0, z1, y}, keeper {x, z, face}, chest {x, z}, front [x, z] (where you stand to buy), shelves, trade, paths, boxes, lamp, windows,
 //        door, w, d }
@@ -1421,7 +1423,10 @@ export function markTrader(o = {}, r = stream('trader')) {
   // the floor: planks on the footing
   for (let x = -X; x < X - .05;) { const dx = Math.min(X - x, .22 + r() * .08); bx('plank', x + .005, x + dx - .005, FY - .04, FY, -Z, Z); x += dx; }
   // the frame (the longhouse's): two rows of posts, purlins and tie beams; rafters and a board lining under the shingle
-  const PXr = X - 1.0, TB = WP + .25, posts = [-Z + 1.15, .6];
+  // (Session 2308) a short hall, under 8 m deep (a Markish lot wide and shallow, 6.8 to 8.4 by 6.8 to 7.9 m), has one window a side, at its
+  // middle: the front row of posts stands just before the hearth's kerb, and the counter (1.1 to 1.8 m long), the shelves and the trade's
+  // side run in front of the window (SHORT). Under 6.8 m deep the counter is shorter than a metre. From 8 m deep the hall is as drawn.
+  const SHORT = d < 8, PXr = X - 1.0, TB = WP + .25, posts = [-Z + 1.15, SHORT ? (hall.louver ?? -1.35) + .85 : .6];
   for (const sx of [-1, 1]) { for (const z of posts) bx('post', sx * PXr - .11, sx * PXr + .11, FY, TB, z - .11, z + .11, 'post'); bx('post', sx * PXr - .12, sx * PXr + .12, TB, TB + .24, -Z, Z); }
   for (const z of posts) bx('post', -PXr - .1, PXr + .1, TB, TB + .24, z - .1, z + .1);
   const XL = w / 2 - .02, rl = X / Math.cos(hall.pitch); for (const sx of [-1, 1]) { const xm = sx * X / 2, rz = -sx * hall.pitch;
@@ -1447,7 +1452,7 @@ export function markTrader(o = {}, r = stream('trader')) {
     else if (T === 'barber') { if (k % 3 === 2) { cup(c, y, a + .1); a += .2; } else { put(new THREE.BoxGeometry(.24, .1, .24), 'linen', c, y + .05, a + .13); a += .3; } }
     else { if (k % 3 === 1) { pot(c, y, a + .09); a += .22; } else { bolt(c, y, a + .18, k % 2 ? 'furPale' : 'wadmal', Math.PI / 2); a += .38; } } } };
   // ── the counter: from 0.9 m inside the door's wall back to the front posts, on the right; upright boards under an oak top
-  const C = { x0: .9, x1: 1.45, z0: posts[1] + .4, z1: Z - 1.65, y: FY + .95 }; { const { x0, x1, z0, z1, y } = C;
+  const CX0 = SHORT ? Math.max(.9, X - 2.05) : .9, CZ1 = Z - 1.65, C = { x0: CX0, x1: CX0 + .55, z0: SHORT ? Math.max(posts[1] + .55, CZ1 - 1.8) : posts[1] + .4, z1: CZ1, y: FY + .95 }; { const { x0, x1, z0, z1, y } = C;
     bx('board', x0 + .04, x1 - .04, FY, y - .05, z0, z1, 'counter'); for (let z = z0 + .02; z + .2 <= z1 - .01; z += .22) bx('plank', x0, x0 + .04, FY + .02, y - .07, z, z + .2);
     bx('oak', x0 - .03, x1 + .02, y - .05, y, z0 - .03, z1 + .03); const cz = (z0 + z1) / 2;
     if (T === 'armor') { helm(x0 + .25, y, cz + .3, -Math.PI / 2); mail(x0 + .27, y, cz - .25, Math.PI / 2); }
@@ -1458,13 +1463,13 @@ export function markTrader(o = {}, r = stream('trader')) {
       for (const s2 of [-.19, .19]) { for (let k = 0; k < 3; k++) { const a = k * 2.094; pipe('rope', [sx, y + .345, cz + s2], [sx + Math.cos(a) * .06, y + .12, cz + s2 + Math.sin(a) * .06], .002, 3); } put(new THREE.SphereGeometry(.07, 12, 4, 0, Math.PI * 2, Math.PI * .62, Math.PI * .38), 'bronze', sx, y + .16, cz + s2); }
       bolt(x0 + .27, y, cz + .5, 'wadmal', Math.PI / 2); pot(x0 + .27, y, cz - .6, .06); } }
   // the shelves of stock on the right wall, between its windows: four boards of deal (the board's wood), 2.1 m high
-  const SZ0 = Math.max(posts[1] - 1.0, (WZ.find(z => z < 0) ?? -d / 4) + .45), SZ1 = (WZ.find(z => z > 0) ?? d / 4) - .4, S = { x0: X - .36, x1: X, z0: SZ0, z1: SZ1, y: FY + 2.1 };
+  const SZ0 = SHORT ? WZ[0] + .55 : Math.max(posts[1] - 1.0, (WZ.find(z => z < 0) ?? -d / 4) + .45), SZ1 = SHORT ? C.z1 + .22 : (WZ.find(z => z > 0) ?? d / 4) - .4, S = { x0: X - .36, x1: X, z0: SZ0, z1: SZ1, y: FY + 2.1 };
   bx('board', S.x0, S.x1, FY, S.y, S.z0, S.z0 + .03); bx('board', S.x0, S.x1, FY, S.y, S.z1 - .03, S.z1); boxes.push({ tag: 'shelves', x0: S.x0, x1: S.x1, y0: FY, y1: S.y, z0: S.z0, z1: S.z1 });
   [.1, .6, 1.1, 1.6, 2.07].forEach((y, k) => { bx('board', S.x0, S.x1, FY + y, FY + y + .03, S.z0, S.z1); if (k < 4) stock(X - .18, S.z0, S.z1, FY + y + .03, k); });
   // the strongbox at the keeper's walk's door end, iron-banded
   const chest = { x: X - .3, z: C.z1 + .55 }; if (o.chest !== false) { bx('oak', X - .6, X - .02, FY, FY + .5, chest.z - .23, chest.z + .23, 'chest'); for (const dz of [-.15, .15]) bx('iron', X - .62, X, FY + .02, FY + .52, chest.z + dz - .02, chest.z + dz + .02); } /* o.chest false: the game hangs its own lidded box there (S2303) */
   // ── the trade's side, the left, between the windows
-  const L0 = (WZ.find(z => z < 0) ?? -d / 4) + .45, L1 = (WZ.find(z => z > 0) ?? d / 4) - .45, trade = {};
+  const L0 = SHORT ? WZ[0] + .55 : (WZ.find(z => z < 0) ?? -d / 4) + .45, L1 = SHORT ? Z - 1.0 : (WZ.find(z => z > 0) ?? d / 4) - .45, trade = {};
   if (T === 'armor') { const n = Math.max(2, Math.min(4, Math.floor((L1 - L0) / .8))), zs = Array.from({ length: n }, (_, i) => L0 + .3 + i * (L1 - L0 - .6) / Math.max(1, n - 1)); trade.stands = [];
     for (const [i, z] of zs.entries()) { const x = -X + .45; trade.stands.push([x, z]);
       for (const ry of [0, Math.PI / 2]) put(new THREE.BoxGeometry(.42, .05, .07), 'oak', x, FY + .025, z, ry) /* the cross foot */; bx('oak', x - .025, x + .025, FY, FY + 1.5, z - .025, z + .025);
@@ -1509,7 +1514,9 @@ export function markTrader(o = {}, r = stream('trader')) {
   const KX = (C.x1 + S.x0) / 2, keeper = { x: KX, z: (C.z0 + C.z1) / 2, face: 'x-' }, front = [C.x0 - .45, (C.z0 + C.z1) / 2];
   // the walks: in at the door to the counter's front; round the counter's door end into the keeper's walk and along it; to the trade's
   // side; round the hearth's left to the bed (and for the barber, to the chair)
-  const ez = C.z1 + .22, paths = [[[0, Z - .1], [front[0], ez], front], [[0, Z - .1], [.45, ez], [KX, ez], [KX, C.z0 + .1]], [[0, Z - .1], [-.4, L1], [-1.3, (L0 + L1) / 2]], [[0, Z - .1], [0, H.z1 + .45], [-1.0, H.z1 + .3], [-.95, -Z + 1.3], [.5, -Z + 1.25]]] /* round the hearth's corner by a body's width (S2303) */;
+  // (Session 2308) in a short hall the walk to the trade's side goes in past the door's leaf first, and the walk behind the hearth keeps 0.2 m
+  // off its kerb
+  const ez = C.z1 + .22, bz = SHORT ? Math.min(-Z + 1.3, H.z0 - .2) : null, paths = [[[0, Z - .1], [front[0], ez], front], [[0, Z - .1], [.45, ez], [KX, ez], [KX, C.z0 + .1]], SHORT ? [[0, Z - .1], [0, Z - 1.4], [-1.3, (L0 + L1) / 2]] : [[0, Z - .1], [-.4, L1], [-1.3, (L0 + L1) / 2]], SHORT ? [[0, Z - .1], [0, H.z1 + .45], [-1.0, H.z1 + .3], [-.95, bz], [.5, bz]] : [[0, Z - .1], [0, H.z1 + .45], [-1.0, H.z1 + .3], [-.95, -Z + 1.3], [.5, -Z + 1.25]]] /* round the hearth's corner by a body's width (S2303) */;
   if (T === 'barber') paths.push([[0, Z - .1], [0, H.z1 + .45], [trade.chair.x, H.z1 + .45], [trade.chair.x, trade.chair.z + .5]]);
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'water'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(hall.group, group);
