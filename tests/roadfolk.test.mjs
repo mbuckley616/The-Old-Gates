@@ -153,14 +153,15 @@ console.log(JSON.stringify(rf));
 check('a rider found', !!rf);
 await g.cells(); await g.spin(null, 4);
 const h1 = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return { drawn: false, keys: [...ROADWALK.keys()] }; const rig = D.npc.g.userData.rig;
-  return { drawn: true, halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, sit: !!(rig && rig.sit), horse: D.beast.children.length, lift: +(D.npc.g.position.y - worldH(D.npc.g.position.x, D.npc.g.position.z)).toFixed(2), inTalk: npcs.includes(D.npc), post: D.npc.def.post }; }, rf.id);
+  return { drawn: true, halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, sit: !!(rig && rig.sit), horse: D.beast.children.length, lift: +(D.npc.g.position.y - worldH(D.npc.g.position.x, D.npc.g.position.z)).toFixed(2), inTalk: npcs.includes(D.npc), post: D.npc.def.post, lag: (worldState.roadfolk[id] || {}).lag || 0 }; }, rf.id);
 console.log(JSON.stringify(h1));
 check('a rider is drawn seated on his horse, and within 6 m he reins in', h1.drawn && h1.sit && h1.horse === 1 && h1.lift > .5 && h1.halted && h1.inTalk, h1);
 await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 5);
 await g.spin(null, 4);
 const h2 = await page.evaluate((id) => { const D = ROADWALK.get(id); return { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, lag: (worldState.roadfolk[id] || {}).lag }; }, rf.id);
 console.log(JSON.stringify(h2));
-check('he stands while you are by him, the minutes his lag', h2.halted && Math.hypot(h2.x - h1.x, h2.z - h1.z) < .05 && Math.abs(h2.lag - (h2.t - h1.t)) < .01 && h2.t - h1.t > 4.9, { h1, h2 });
+// Session 2280 (QA): his lag counts from the tick he reined in, which can be a tick or two before h1 is read, so h1's lag is read too
+check('he stands while you are by him, the minutes his lag', h2.halted && Math.hypot(h2.x - h1.x, h2.z - h1.z) < .05 && Math.abs(h2.lag - h1.lag - (h2.t - h1.t)) < .01 && h2.t - h1.t > 4.9, { h1, h2 });
 const nw = await page.evaluate((o) => { const D = ROADWALK.get(o.id); const t = D.npc.def.topics.find(t => t.label === 'What news?');
   const none = t.fn(t); const site = siteAnywhere(o.a); const st = TS(site); st.siegeBy = st.siegeBy || 'mark'; st.flags.besieged = worldState.gameTimeAbsMinutes - 1440;
   const n0 = (worldState.mapNotes || []).length, j0 = GAME_LOG.length; const resp = t.fn(t); const n1 = (worldState.mapNotes || []).length, j1 = GAME_LOG.length; t.fn(t);
