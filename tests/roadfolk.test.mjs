@@ -10,6 +10,7 @@
 // Session 2277: an official on a road a live camp breaks writes you a writ on it, paid 40 + 10 a tier when the camp is cleared.
 // Session 2283: a bridge rolls 1 in 30 a game-week and is down two weeks, drawn broken (the look's S2281) with the river's bed in its gap; riders tell of it;
 // the nearer lord mends it for 250 gold + 2 a metre (or 20 planks and Joinery 25), up 2 days after.
+// Session 2287: striking one of them is an assault at the nearer end of the road.
 // Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
@@ -54,6 +55,15 @@ const shop = await page.evaluate((id) => { const D = ROADWALK.get(id); const t =
 console.log(JSON.stringify(shop));
 check('6 to 10 rows', shop.rows >= 6 && shop.rows <= 10, shop.rows);
 check('home prices ×1.1', shop.cost === shop.want, shop);
+// Session 2287: striking him is an assault booked at the nearer end of his road (the town's +75 fine, 3 points owed, −3 favour); state restored after
+const hit = await page.evaluate((id) => { const D = ROADWALK.get(id); const N = D.npc; const snap = JSON.stringify({ c: worldState.crime || null, l: worldState.crimes || null, t: worldState.favor || null });
+  px = N.g.position.x + 1.5; pz = N.g.position.z; const a = siteAnywhere(D.rd.def.a), b = siteAnywhere(D.rd.def.b); const near = Math.hypot(a.x - px, a.z - pz) <= Math.hypot(b.x - px, b.z - pz) ? a : b;
+  const c0 = ((worldState.crime || {})[near.id] || { bounty: 0, debt: 0 }); const b0 = c0.bounty, d0 = c0.debt, f0 = favor(near);
+  const ok = WORLD.strikeNpc(-1, 0); const c = worldState.crime[near.id]; const last = worldState.crimes[worldState.crimes.length - 1];
+  const out = { ok, near: near.id, fine: c.bounty - b0, debt: c.debt - d0, fav: favor(near) - f0, last };
+  const S = JSON.parse(snap); worldState.crime = S.c || undefined; worldState.crimes = S.l || undefined; worldState.favor = S.t || {}; return out; }, m.id);
+console.log(JSON.stringify(hit));
+check('striking the road\'s merchant is an assault at the nearer end of his road: +75 fine, 3 owed, −3 favour', hit.ok && hit.fine === 75 && hit.debt === 3 && hit.fav === -3 && hit.last.kind === 'assault' && hit.last.site === hit.near && hit.last.road === m.id, hit);
 // far away: gone
 await page.evaluate(() => { px += 900; });
 await g.spin(null, 5);
