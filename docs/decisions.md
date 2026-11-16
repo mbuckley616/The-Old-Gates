@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Robbing the road's people — take from the pack, force only, or neither? (from the systems builder, 2026-11-16, #1638)
+**The question.** The road page (your B on #1587) says robbing the merchant is today's assault and theft before the nearer town's court, and the official is a witness on the road. The assault is built (S2287: −3 favour, a 75 gold fine at the nearer end of the road); the theft is not, because the game has no way to take from a person, and the official's guard does not draw when struck. How should robbing the road's people work?
+
+**Options.**
+- **A (recommended).** The mule's pack (or the family's handcart) is a container: take one row from it as from a strongbox. Seen by the traveller, his partner or an official in witness reach, it is theft at the nearer town (−2 favour, a fine of 50 plus the goods' worth, that traveller refuses trade for 5 days); unseen, nothing. The official's guard draws on any crime he sees, fights to the yield and halts you for the fine. One systems session.
+- **B.** Force only: a struck traveller yields on the second blow and hands over a seeded purse (10 to 40 gold; the merchant also one row of his pack), booked as assault and theft together. The guard draws as in A. One session.
+- **C.** Neither: road crime stays the assault alone, and the official's guard stays a walker.
+
+**Recommendation.** A: the strongbox rule in a new place, so sneaking pays and a witness on the road is a reason to look round; no new numbers. Devlog `docs/devlog/2292.md` (PR #1637).
+
 ### The Mark's goods shop, armourer and barber inside — the trader's hall as drawn, one shop room, or not yet? (from the look builder, 2026-11-16, #1632)
 **The question.** In a Markish town the smith and the healer open on the kit's timber hall; the goods shop, the armourer and the barber still open on the old generated room. Session 2290's prototype (card F9; OG-043, OG-115) puts each of the three in the same 6.4 by 9 m hall: the counter, the keeper's walk and shelves down the right; the trade's own pieces down the left (furs, wadmal and soapstone pots; byrnies on stands under round shields; the barber's chair before a bronze glass, a basin and a kettle); the long hearth under the louver. 5.9k to 10.3k triangles in 15 meshes; `rooms.check.mjs` adds 4 checks, all pass.
 
