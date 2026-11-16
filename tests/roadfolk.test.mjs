@@ -3,6 +3,7 @@
 // an end and a kind. Where one is comes from the clock and the pace. Within 400 m the nearest four are drawn; the merchant (session 1)
 // walks at 1.1 m a game minute with his mule and sells 6 to 10 rows of a goods shop's stock at his home town's prices ×1.1.
 // Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
+// Session 2297: his leg off the road is dry; a shrine no point of the road reaches dry is no goal of its pilgrims.
 // Session 2273: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
 // Session 2275: a rider at 5.5 m a game minute reins in when you come within 6 m and gives the newest event within two cells to the journal and the map.
 // Session 2282: the family's man pushes a handcart, its grips in his palms and its wheels on the road ahead.
@@ -15,9 +16,12 @@
 // Session 2291: his horse saddled, the reins from his fists to the bit, nothing else in his hands.
 // Session 2294: the horse bridled, the reins tied at its bit's rings.
 // Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
+// Session 2299: they greet and part without the town's door lines (Come in out of it, Mind the door).
+// Session 2298: at a bridge down the road's people turn at the bank, as the coach draws up there, and walk back to the end they came from.
 // Session 2290: over a bridge the road's walkers, the caravans and the coaches stand on the deck's setts (roadY), not on the causeway.
 // Session 2301: his mule's pack (and a family's handcart) robbed as a strongbox: unseen nothing, seen a theft at the nearer end.
 // Session 2302: the official's guard draws on a crime he sees and fights to the town's yield.
+// Session 2306: the pilgrim's leg is read from where it leaves the road: one begun on a bridge stepped into the river.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -141,24 +145,33 @@ check('walk 250 m off with them alive and his pack is taken; he is off the road,
 
 // S2270 — pilgrims and mourners
 const pil = await page.evaluate(() => {
-  const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440); let one = null, mourn = null, n = 0, nm = 0, bad = [];
+  const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440); let one = null, mourn = null, n = 0, nm = 0, bad = [], wet = [];
   for (let dd = day + 1; dd < day + 40; dd++) for (const rd of ROADS.filter(roadfolkRoad)) for (const T of roadTravellers(rd, dd)) {
     if (T.kind !== 'pilgrim') continue; n++; const Q = pilgrimPlan(T, rd); if (Q.none) { bad.push(T.id); continue; }
     const dRoad = Math.min(...rd.pts.map(q => Math.hypot(q.x - Q.goal.x, q.z - Q.goal.z)));
     if (dRoad > 1500) bad.push([T.id, dRoad]);
+    for (let f = 0; f < Q.off; f += 10) { const q = travellerAt(T, rd, T.at + (Q.along + f) / T.pace); if (q && rawH(q.x, q.z) < -0.5) { wet.push([T.id, Q.goal.name, Math.round(f), Math.round(rawH(q.x, q.z) * 10) / 10]); break; } }
     if (Q.mourners) { nm++; const dm = Math.hypot(rd.pts[0].x - 13100, rd.pts[0].z - 25450); if (!mourn || dm < mourn.dm) mourn = { T, rd, dm }; } else if (!one && Q.off > 40) one = { T, rd };
   }
   const put = (o, frac) => { const Q = pilgrimPlan(o.T, o.rd), d = frac * Q.along; const t = o.T.at + d / o.T.pace; worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; const p = travellerAt(o.T, o.rd, t); px = p.x + 5; pz = p.z; return { id: o.T.id, goal: Q.goal, along: Q.along, off: Q.off, t }; };
-  return { n, nm, bad, one: one && put(one, .5), mourn: mourn && { id: mourn.T.id } , _m: mourn && [mourn.rd.def.a, mourn.rd.def.b, mourn.T.id] };
+  return { n, nm, bad, wet, one: one && put(one, .5), mourn: mourn && { id: mourn.T.id } , _m: mourn && [mourn.rd.def.a, mourn.rd.def.b, mourn.T.id] };
 });
 console.log(JSON.stringify(pil).slice(0, 900));
 check('every pilgrim is bound for a shrine or lesser gate within 1,500 m of his road', pil.n > 0 && pil.bad.length === 0, pil.bad.slice(0, 5));
+check('a pilgrim\'s leg off the road never goes under the sea or the water: every 10 m of it over −0.5 m, from where it leaves the road (S2297, S2306)', pil.n > 0 && pil.wet.length === 0, pil.wet.slice(0, 5));
 check('about one in six bound for a gate are mourners (some over 40 days)', pil.nm > 0, pil.nm);
 await g.cells(); await g.spin(null, 4);
 const talk = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) return { drawn: false, keys: [...ROADWALK.keys()] }; const t = D.npc.def.topics.find(t => t.label === 'Where are you bound?');
   const before = !!(worldState.sighted && worldState.sighted[o.goal.id]); const resp = t.fn(t); return { drawn: true, inTalk: npcs.includes(D.npc), before, after: !!(worldState.sighted && worldState.sighted[o.goal.id]), resp }; }, pil.one);
 console.log(JSON.stringify(talk));
 check('a pilgrim on the road is drawn; asked, he names his goal and it is pencilled on your map', talk.drawn && talk.inTalk && !talk.before && talk.after && talk.resp.includes(pil.one.goal.name), talk);
+// S2299 — the road's people greet and part as on the road: no door, no hearth, from the same pools
+const gw = await page.evaluate((o) => { const D = ROADWALK.get(o.id), def = D.npc.def, site = siteAnywhere(def._siteId) || null, out = new Set(); const saved = worldState.met; const tem = def.temper, pp = worldState.people;
+  for (const t of TEMPER_IDS) for (const p of ['gatelander', 'markman', 'aurennais', 'oldblood']) { def.temper = t; worldState.people = p;
+    for (let i = 0; i < 12; i++) { worldState.met = {}; out.add(firstWords(def, site)); worldState.met = { [metKey(def, site)]: 2 }; out.add(firstWords(def, site)); const tp = def.topics; out.add(tp[tp.length - 1].label); } }
+  def.temper = tem; worldState.people = pp; worldState.met = saved; const L = [...out]; return { n: L.length, bad: L.filter(l => AT_HOME_LINE.test(l)) }; }, pil.one);
+console.log(JSON.stringify(gw));
+check('the road\'s people greet and part with no door or hearth in it, every temper and people (S2299)', gw.n > 20 && gw.bad.length === 0, gw);
 const off = await page.evaluate((o) => { const D = ROADWALK.get(o.id); const T = D.T, rd = D.rd; const Q = pilgrimPlan(T, rd);
   const mid = travellerAt(T, rd, T.at + (Q.along + Q.off / 2) / T.pace), done = travellerAt(T, rd, T.at + (Q.along + Q.off + 5) / T.pace);
   return { midOff: mid && mid.off, midToGoal: mid && Math.round(Math.hypot(mid.x - Q.goal.x, mid.z - Q.goal.z)), half: Math.round(Q.off / 2), done }; }, pil.one);
@@ -377,6 +390,17 @@ const cr = await page.evaluate(() => { const K = { village: 1, town: 1, city: 1,
   return { key, id: b.id, u: o.u, k: o.k, dps }; });
 console.log(JSON.stringify(cr));
 check('a route over a bridge down earns half (with its coach, +1 a day)', cr && cr.dps.reduce((a, b) => a + b, 0) === 6, cr);
+// S2298 — the road's people turn at the bank of a bridge down, back to the end they came from; one who reached it before it fell walks on
+const tb = await page.evaluate((r) => { const rd = ROADS.find(x => routeKey(x.def.a, x.def.b) === r.key), b = SITE[r.id] || siteAnywhere(r.id), D = bridgeDown(b); if (!D) return { down: false };
+  const near = (p) => Math.hypot(p.x - b.x, p.z - b.z), half = b.bridge.len / 2; let after = null, before = null;
+  for (let dd = Math.floor(D.at / 1440) - 3; dd < Math.floor(D.at / 1440) + 4; dd++) for (const T of roadTravellers(rd, dd)) { if (T.kind === 'pilgrim') continue;
+    const B = roadTurnBank(T, rd, 0), tB = T.at + (B == null ? 0 : B / T.pace);
+    if (B != null && B > 20 && !after) { let minD = 1e9, back = false, home = null; for (let t = T.at; t < T.at + 2 * B / T.pace + 30; t += 0.5) { const p = travellerAt(T, rd, t); if (!p) { if (t > tB) home = home ?? t; continue; } minD = Math.min(minD, near(p)); if (p.back) back = true; }
+      after = { id: T.id, kind: T.kind, bank: Math.round(B), minD: +minD.toFixed(1), half: +half.toFixed(1), back, home: home != null && home >= T.at + 2 * B / T.pace - 1 }; }
+    if (B == null && !before) { const L = roadLenOf(rd); let crossed = false; for (let t = T.at; t < T.at + L / T.pace; t += 0.5) { const p = travellerAt(T, rd, t); if (p && near(p) < 3) { crossed = t < D.at; break; } } if (crossed) before = { id: T.id }; } }
+  return { down: true, after, before }; }, cr);
+console.log(JSON.stringify(tb));
+check('at a bridge down the road\'s people turn at its bank and walk home; one over it before it fell walks on (S2298)', tb.down && tb.after && tb.after.back && tb.after.minD >= tb.after.half + 3 && tb.after.home && tb.before, tb);
 await g.cells(); await g.spin(null, 5);
 await page.evaluate((r) => { const C = COACHES.get(r.key); C.u = r.u - r.k - .01; C.state = 'run'; C.dir = 1; C.stopped = true; }, cr);
 await g.spin(null, 200);
