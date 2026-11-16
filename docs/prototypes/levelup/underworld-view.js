@@ -3,7 +3,7 @@
 // scale | high or x,y,z,tx,ty,tz, &who=philo|uallach|brogan|eadburh|siadhal (close, face and scale), &turn=1 shows their backs.
 import * as THREE from 'three';
 import { Q, W, H, STILL, STATS, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, treeKit, run, reseed } from './common.js';
-import { loadPack, makePerson, rollGenome, statureOf, heightFor, GARMENTS, DRESS_FLAGS } from './people.js';
+import { loadPack, makePerson, rollGenome, statureOf, heightFor, GARMENTS, DRESS_FLAGS, castGenome } from './people.js';
 import { shrineTextures } from './shrines.js';
 import { UNDERWORLD as POWERS, ORDER, underGenome, underProps } from './underworld.js';
 
@@ -34,9 +34,11 @@ cam.updateProjectionMatrix();
 const comp = makeComposer(R, scene, cam, { bloom: .2, bloomT: .9, sat: 1.06, vig: .26 });
 R.info.autoReset = !STILL;
 const P = { rollGenome, heightFor, GARMENTS, DRESS_FLAGS };
+// &cast=1 (the bodies builder, Session 2307): each from people.js's own CAST (Michael's B on #1611), the kit's pieces alone, no underProps
+const CASTED = Q.has('cast'), CAST_NAME = { philo: 'Philo', uallach: 'Uallach', brogan: 'Brógán', eadburh: 'Eadburh', siadhal: 'Siadhal' };
 loadPack('mh/').then(() => { STATS.level = LEVEL; STATS.under = [];
-  for (const k of (Q.get("only") ? [Q.get("only")] : ORDER)) { STATS.at = k; const t0 = performance.now(), G = underGenome(k, LEVEL, P), M = makePerson(G); scene.add(M.root);
-    M.root.position.x = X(k); M.root.position.z = 0; const propTris = underProps(M, G, LEVEL); let tris = 0;
+  for (const k of (Q.get("only") ? [Q.get("only")] : ORDER)) { STATS.at = k; const t0 = performance.now(), G = CASTED ? castGenome(CAST_NAME[k]) : underGenome(k, LEVEL, P), M = makePerson(G); scene.add(M.root);
+    M.root.position.x = X(k); M.root.position.z = 0; const propTris = CASTED ? 0 : underProps(M, G, LEVEL); let tris = 0;
     M.root.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
     STATS.under.push({ k, propTris, height: +statureOf(G).toFixed(3), tris: Math.round(tris), ms: Math.round(performance.now() - t0) }); }
 }).catch(e => { STATS.err = String(e && e.stack || e); console.error(e); }).finally(() => { R.info.reset(); run(comp, cam); STATS.tris = R.info.render.triangles; STATS.calls = R.info.render.calls; });
