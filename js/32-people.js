@@ -1385,6 +1385,51 @@ function rideTick(rig){const R=rig.ride,H=R.beast;rig.root.updateWorldMatrix(tru
   H.root.updateWorldMatrix(true,false);const k=_rideV.setFromMatrixScale(H.root.matrixWorld).y||RIDE.at;_rideV.setFromMatrixPosition(H.root.matrixWorld);
   const bob=H.B&&H.B.hips&&H.k?(H.B.hips.position.y-wolfHipY(H.k))*k:0;R.bob+=(bob-R.bob)*.5;
   R.hy=(_rideV.y+RIDE.back*k/RIDE.at+R.bob+RIDE.pad-y0)/s;}
+/* S2300 — a rider's skirt (the tunic's, a coat's or mail's) sits on the saddle. The pack weights a skirt to the thighs, and pwRide swings
+   them forward and out, so its back panel came up with the backs of the thighs and stood out behind him over the cantle as a flat shelf
+   (S2291's road-tack-back.jpg). Once he is posed astride (and his horse's body built), each point of the skirt is re-seated on the pelvis
+   alone, where it should be drawn: in front and at the sides where the thighs carry it now (the ride's legs do not move), behind him as
+   it hangs standing (pelvis-only, its own rest), blended between by the point's angle round the hips (HB_RIDE_SKIRT.back to .side), and
+   anything under the top of what the horse has there (the saddle, the hide) laid on it, .clear over it. The skinIndex and skinWeight are
+   the pack's, shared by every body (CLAUDE.md), so they are replaced, not written; the position and normal are the garment's own. Then
+   the middle level is baked again from the seated skirt. Once per rider. */
+const HB_RIDE_SKIRT={re:/^(skirt|coatSkirt|mailSkirt)$/,back:100*Math.PI/180,side:150*Math.PI/180,legClear:.025,clear:.008,cell:.015};
+function hbRideSkirt(rig){const H=rig.hb,R=rig.ride,G=R&&R.beast;if(!H||H.rideSkirt)return;
+  if(G&&G.root&&!G.hc&&!G.hcFail)return; /* the horse's own body first: the skirt is laid on its saddle */
+  H.rideSkirt=true;const P=H.P,sk=P.skeleton,by=P.byName,ip=sk.bones.indexOf(by.root),C=HB_RIDE_SKIRT;if(ip<0)return;
+  const list=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&C.re.test(o.name))list.push(o);});if(!list.length)return;
+  H.root.updateMatrixWorld(true);const v=new THREE.Vector3(),w=new THREE.Vector3(),Mp=new THREE.Matrix4().multiplyMatrices(by.root.matrixWorld,sk.boneInverses[ip]),Mi=Mp.clone().invert();
+  /* what the horse has under him: the top of its saddle and hide on a grid in its root's frame, round the seat */
+  let F=null,Gi=null,Gm=null;if(G&&G.hc){G.root.updateWorldMatrix(true,false);Gm=G.root.matrixWorld;Gi=Gm.clone().invert();by.root.getWorldPosition(v).applyMatrix4(Gi);
+    const cx=v.x,cz=v.z,ext=.45,n=Math.ceil(2*ext/C.cell),top=new Float32Array(n*n).fill(-1e9);
+    G.root.traverse(o=>{if(!o.isSkinnedMesh||!(o.name===''||o.name==='hide'))return;const pa=o.geometry.attributes.position,seen=new Uint8Array(pa.count),ix=o.geometry.index;
+      for(let q=0;q<(ix?ix.count:pa.count);q++){const i=ix?ix.getX(q):q;if(seen[i])continue;seen[i]=1;w.fromBufferAttribute(pa,i);o.applyBoneTransform(i,w);if(o.bindMode!=='detached'||!o.bindMatrix.equals(_hbIdM))w.applyMatrix4(o.matrixWorld);w.applyMatrix4(Gi);
+        const a=Math.floor((w.x-cx+ext)/C.cell),b=Math.floor((w.z-cz+ext)/C.cell);if(a<0||b<0||a>=n||b>=n)continue;const k=a*n+b;if(w.y>top[k])top[k]=w.y;}});
+    F=(x,z)=>{const a=Math.floor((x-cx+ext)/C.cell),b=Math.floor((z-cz+ext)/C.cell);if(a<0||b<0||a>=n||b>=n)return -1e9;return top[a*n+b];};}
+  /* the hips' middle in the body's rest (bind) frame, and its forward: the angle round it is read there */
+  const hl=by['upperleg01.L'],hr=by['upperleg01.R'],bL=new THREE.Vector3().setFromMatrixPosition(sk.boneInverses[sk.bones.indexOf(hl)].clone().invert()),bR=new THREE.Vector3().setFromMatrixPosition(sk.boneInverses[sk.bones.indexOf(hr)].clone().invert());
+  const mid=bL.clone().add(bR).multiplyScalar(.5),ss=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
+  /* the thighs as he sits: each one's axis from the hip joint to the knee, and how far its flesh (or the trousers over it) reaches from
+     the axis at twelve steps along it; a point that hangs inside one is pushed out to it */
+  const legs=[];for(const s of ['L','R']){const a=by['upperleg01.'+s].getWorldPosition(new THREE.Vector3()),b=by['lowerleg01.'+s].getWorldPosition(new THREE.Vector3()),d=b.clone().sub(a),len=d.length();d.divideScalar(len);
+    const own=new Set(['upperleg01.'+s,'upperleg02.'+s].map(n=>sk.bones.indexOf(by[n]))),r=new Float32Array(12);
+    P.root.traverse(o=>{if(!o.isSkinnedMesh||!/^(|body|trousers)$/.test(o.name))return;const pa=o.geometry.attributes.position,si=o.geometry.attributes.skinIndex,sw=o.geometry.attributes.skinWeight,ids=new Set(o.geometry.index?o.geometry.index.array:[]);
+      for(const i of ids){let k=0;for(let c=0;c<4;c++)if(own.has(si.getComponent(i,c)))k+=sw.getComponent(i,c);if(k<.5)continue;w.fromBufferAttribute(pa,i);o.applyBoneTransform(i,w);
+        const t=w.clone().sub(a).dot(d)/len;if(t<0||t>=1)continue;const q=Math.floor(t*12),rr=w.clone().sub(a).addScaledVector(d,-t*len).length();if(rr>r[q])r[q]=rr;}});
+    legs.push({a,d,len,r});}
+  const outOfLegs=q=>{for(const L of legs){const u=q.clone().sub(L.a),t=u.dot(L.d)/L.len;if(t<0||t>=1)continue;const R=L.r[Math.floor(t*12)]+C.legClear;if(!R)continue;u.addScaledVector(L.d,-t*L.len);const rr=u.length();if(rr<R&&rr>1e-5)q.addScaledVector(u,(R-rr)/rr);}return q;};
+  const kScale=new THREE.Vector3().setFromMatrixScale(Gm||H.root.matrixWorld).y||1,clear=C.clear*(Gm?1/kScale:1);let moved=0,laid=0;
+  for(const o of list){const g=o.geometry,pa=g.attributes.position,sI=g.attributes.skinIndex,sW=g.attributes.skinWeight,nI=new Uint16Array(sI.count*4),nW=new Float32Array(sW.count*4);
+    nI.set(sI.array);nW.set(sW.array);const ids=new Set(g.index?g.index.array:[]);
+    for(const i of ids){v.fromBufferAttribute(pa,i);const th=Math.atan2(Math.abs(v.x-mid.x),-(v.z-mid.z)),f=1-ss(C.back,C.side,th);
+      w.copy(v);o.applyBoneTransform(i,w);const pr=outOfLegs(v.clone().applyMatrix4(Mp));w.lerp(pr,f);
+      if(F){w.applyMatrix4(Gi);const t=F(w.x,w.z)+clear;if(w.y<t){w.y=t;laid++;}w.applyMatrix4(Gm);}
+      w.applyMatrix4(Mi);if(w.distanceToSquared(v)>1e-10)moved++;pa.setXYZ(i,w.x,w.y,w.z);for(let c=0;c<4;c++){nI[i*4+c]=c?0:ip;nW[i*4+c]=c?0:1;}}
+    pa.needsUpdate=true;g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(nI,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(nW,4));g.computeVertexNormals();}
+  H.rideSkirtN={moved,laid};
+  if(H.mid){const old=H.mid,cards=new Set();old.parent&&old.parent.remove(old);P.root.traverse(o=>{if(o.isMesh&&(HBODY.cards.test(o.name)||o.parent===by.head))cards.add(o);});
+    try{const m=hbMerge(P,cards);m.geometry.boundingSphere=old.geometry.boundingSphere;m.material=old.material;m.visible=old.visible;P.root.add(m);H.mid=m;old.geometry.dispose();}catch(e){P.root.add(old);console.warn('F4: the rider\'s middle level was not baked again',e);}}}
+const _hbIdM=new THREE.Matrix4();
 // ═══ THE REINS (S2291; S2289's rider held nothing) ═══
 // A rider's reins: one leather strap from the bit's left ring to his left fist, across between his fists in a loose bight over the withers,
 // and from his right fist to the bit's right ring. The bit is on the kit horse's head bone (the corners of its mouth, from the kit's own
@@ -2976,7 +3021,7 @@ function hbTick(now){let best=null,bd=HBODY.build;
     const d=Math.hypot(CAM.position.x-top.position.x,CAM.position.z-top.position.z);
     if(!rig.hb){if(!busy&&!HBODY.job&&!rig.hbFail&&d<bd){bd=d;best=rig;}continue;}
     const L=rig.hb.L,a=HBODY.near+(L>0?-1:1),b=HBODY.mid+(L>1?-1:1);hbLevel(rig,rig.hb.cold?2:d<a?0:d<b?1:2);
-    if(rig.hb.L<2){hbPose(rig);if(rig.hb.glow)hbGlow(rig);if(rig.hb.held.length)hbHold(rig);}}
+    if(rig.hb.L<2){hbPose(rig);if(rig.hb.glow)hbGlow(rig);if(rig.hb.held.length)hbHold(rig);if(rig.ride&&!rig.hb.rideSkirt&&rig.w&&rig.w.ride>.99)hbRideSkirt(rig);}} /* S2300 — a rider's skirt seated on the saddle, once */
   if(best&&best.hbFoe&&!best.hbG){try{best.hbG=hbFoeGenome(best);}catch(e){best.hbFail=true;console.warn('F4: no genome for the foe',best.hbFoe,e);best=null;}}
   if(best&&HB.makePersonIter){try{HBODY.job={rig:best,it:HB.makePersonIter(best.hbG,HB_LEAN),ms:0,steps:0};}catch(e){best.hbFail=true;console.warn('F4: makePerson failed for',best.g.hbKey,e);}best=null;}
   const step=!best&&HBODY.job&&!busy;if(step)best=hbBuildStep(now);

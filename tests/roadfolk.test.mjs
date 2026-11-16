@@ -215,6 +215,20 @@ check('a rider is drawn seated on his horse, and within 6 m he reins in', h1.dra
     return { bridle: true, mesh: !!mesh, tris: Bd.tris, off: ring.map((r, i) => +(r.distanceTo(end[i]) * 1000).toFixed(2)), apart: +(ring[0].distanceTo(ring[1]) * 100).toFixed(1) }; }, rf.id);
   console.log(JSON.stringify(T));
   check('his horse is bridled and the reins are tied at the bit\'s rings', T.bridle && T.mesh && T.off.every(d => d < 1) && T.apart > 10 && T.apart < 40, T); }
+// S2300 — his tunic's skirt sits on the saddle: once he is posed astride, every point of it is on the pelvis alone (the thighs' weights
+// carried its back up and out behind him over the cantle, 0.347 m a side), and behind his hips it hangs within 0.3 m a side of his middle
+{ for (let i = 0; i < 60; i++) { const ok = await page.evaluate((id) => { const r = ROADWALK.get(id).npc.g.userData.rig; return !!(r.hb && r.hb.rideSkirt) || !!r.hbFail; }, rf.id); if (ok) break; await g.frames(2); }
+  const S = await page.evaluate((id) => { const D = ROADWALK.get(id), rig = D.npc.g.userData.rig, H = rig.ride.beast; if (!rig.hb) return { hb: false, fail: !!rig.hbFail };
+    const P = rig.hb.P, by = P.byName; let sk = null; P.root.traverse(o => { if (o.isSkinnedMesh && /^(skirt|coatSkirt|mailSkirt)$/.test(o.name) && !sk) sk = o; }); if (!sk) return { hb: true, seated: rig.hb.rideSkirt, skirt: false };
+    if (rig.hb.L !== 0) hbLevel(rig, 0); hbPose(rig); H.root.updateWorldMatrix(true, false); rig.hb.root.updateMatrixWorld(true);
+    const Gi = H.root.matrixWorld.clone().invert(), k = new THREE.Vector3().setFromMatrixScale(H.root.matrixWorld).y, v = new THREE.Vector3();
+    const hip = by['upperleg01.L'].getWorldPosition(new THREE.Vector3()).add(by['upperleg01.R'].getWorldPosition(new THREE.Vector3())).multiplyScalar(.5).applyMatrix4(Gi);
+    const ids = [...new Set(sk.geometry.index.array)], si = sk.geometry.attributes.skinIndex, sw = sk.geometry.attributes.skinWeight, bones = new Set(); let wide = 0;
+    for (const i of ids) { for (let c = 0; c < 4; c++) if (sw.getComponent(i, c) > 0) bones.add(sk.skeleton.bones[si.getComponent(i, c)].name);
+      v.fromBufferAttribute(sk.geometry.attributes.position, i); sk.applyBoneTransform(i, v); v.applyMatrix4(Gi); if (v.z < hip.z - .02) wide = Math.max(wide, Math.abs(v.x - hip.x) * k); }
+    return { hb: true, seated: rig.hb.rideSkirt, skirt: sk.name, n: ids.length, bones: [...bones], wide: +wide.toFixed(3), N: rig.hb.rideSkirtN }; }, rf.id);
+  console.log(JSON.stringify(S));
+  check('his tunic\'s skirt sits on the saddle: on his pelvis alone, within 0.3 m a side behind his hips', S.hb && S.seated && (!S.skirt || (S.bones.length === 1 && S.bones[0] === 'root' && S.wide > .1 && S.wide < .3)), S); }
 await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 5);
 await g.spin(null, 4);
 const h2 = await page.evaluate((id) => { const D = ROADWALK.get(id); return { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, lag: (worldState.roadfolk[id] || {}).lag }; }, rf.id);
