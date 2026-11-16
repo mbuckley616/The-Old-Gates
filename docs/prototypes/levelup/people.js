@@ -1196,10 +1196,15 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
   // under the neck, rising to it and falling from it gently down the column (0.4 cm out for each centimetre down), as over a hand
   let overHair = 0; if (cape && hairMeshes) { const HP = []; for (const m of hairMeshes) if (m.name === 'hair') { const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
     if (HP.length) { const nH = HP.length / 3, BH = new Uint8Array(nH).fill(1); BH.off = new Float32Array(nH); const hairR = radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH);
-      for (const c of cols) { const pol = c.map(q => ({ th: Math.atan2(q.x - neck.x, -(q.z - neck.z)), r: Math.hypot(q.x - neck.x, q.z - neck.z) }));
-        const a = pol.map((p, r) => r > 0 && c[r].y < neckY - .03 ? Math.max(p.r, hairR(p.th, c[r].y) + .01) : p.r), b = a.slice();
+      const pols = cols.map(c => c.map(q => ({ th: Math.atan2(q.x - neck.x, -(q.z - neck.z)), r: Math.hypot(q.x - neck.x, q.z - neck.z) })));
+      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r > 0 && c[r].y < neckY - .03 ? Math.max(p.r, hairR(p.th, c[r].y) + .01) : p.r), b = a.slice();
         for (let r = 1; r < R; r++) for (let d = -8; d <= 8; d++) { const j = r + d; if (j < 1 || j >= R) continue; const v = a[j] - .4 * .0105 * Math.abs(d); if (v > b[r]) b[r] = v; }
-        for (let r = 1; r < R; r++) if (b[r] > pol[r].r + 1e-5) { c[r].x = neck.x + Math.sin(pol[r].th) * b[r]; c[r].z = neck.z - Math.cos(pol[r].th) * b[r]; overHair++; } } } }
+        return b.map((v, r) => Math.max(0, v - pol[r].r)); });
+      // and across the columns: the hair's outline is read strand by strand, so neighbouring columns wanted different lifts and the cape's top
+      // stood in a zigzag; the lift is each column's and its neighbours' greatest, blurred 1-2-1 (never under what the column itself needs), twice
+      for (let it = 0; it < 2; it++) { const M = D.map((d, k) => d.map((v, r) => Math.max(v, k > 0 ? D[k - 1][r] : 0, k < K - 1 ? D[k + 1][r] : 0)));
+        D = M.map((d, k) => d.map((v, r) => (2 * v + (k > 0 ? M[k - 1][r] : v) + (k < K - 1 ? M[k + 1][r] : v)) / 4)); }
+      cols.forEach((c, k) => { for (let r = 1; r < R; r++) if (D[k][r] > 1e-5) { const p = pols[k][r], rr = p.r + D[k][r]; c[r].x = neck.x + Math.sin(p.th) * rr; c[r].z = neck.z - Math.cos(p.th) * rr; overHair++; } }); } }
   // the sheet
   const pos = [], uv = [], idx = [];
   for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
