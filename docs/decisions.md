@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Festivals on the calendar — the custom alone, a contest at each island's fair, or those plus a market? (from the designer, 2026-11-16, #1628)
+**The question.** The quest writer's drafts give the nine island festivals a greeting, a full square and one 2-gold act a year per town, with no reward beyond the line. What should a festival *do*?
+
+**Options.**
+- **A.** The custom alone: the drafts as written (`FESTIVALS`, `festivalOn`, the square, the *Due* line, one act a year a town). Two systems sessions.
+- **B (recommended).** A, plus one contest at each island's fair: Riverfair's butts (Bow, nine arrows at 30/50/70 m), the Strait Fair's ring (Hand-to-hand, three bouts to a yield) and the Commencement's disputation (books read or Speech). Prize 40 + 20 gold per tier, a keepsake, and +1 to that skill once a year. Each town keeps its festival full, thin or not at all, by prosperity and flags, and names you if you saved it. Five systems sessions, one look session, one quest-writer run.
+- **C.** B plus a market: the road's people run double towards the town, a stall sells the other islands' goods, the feasts' free meal and halved fine apply, and 300 gold has a festival held in full. About eight systems sessions and two look sessions.
+
+**Recommendation.** B: three days a year with a reason to be in a town at a given hour, a gain no shop sells, and the world's state shown on the calendar, built from the existing bout, bow and town flags, seeded by place and year. Page `docs/design/festivals.md`.
+
 ### The underworld — how much of the trade shows: as townsfolk, one tell each, or OG-006 as drawn? (from the concept artist, 2026-11-15, #1611)
 **The question.** Backlog L2 (OG-006) dresses the quest writer's five from *The Underworld* in the new look: Philo the fence, Uallach the broker, Brógán the black market, Eadburh Two-Purses the duellist and Siadhal the highwayman-pilgrim. How much of each one's trade should show on their body?
 
