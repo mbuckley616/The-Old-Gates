@@ -7,9 +7,9 @@
 // Session 2275: a rider at 5.5 m a game minute reins in when you come within 6 m and gives the newest event within two cells to the journal and the map.
 // Session 2276: families from a town fallen in the last 20 days walk to the other end; 15 gold owes +1 favour there once it is whole, +2 at most.
 // Session 2277: an official on a road a live camp breaks writes you a writ on it, paid 40 + 10 a tier when the camp is cleared.
-// Session 2281: a bridge rolls 1 in 30 a game-week and is down two weeks: its middle span a solid, the river beside it open; riders tell of it;
+// Session 2282: a bridge rolls 1 in 30 a game-week and is down two weeks, drawn broken (the look's S2281) with the river's bed in its gap; riders tell of it;
 // the nearer lord mends it for 250 gold + 2 a metre (or 20 planks and Joinery 25), up 2 days after.
-// Session 2282: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
+// Session 2283: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -156,14 +156,15 @@ console.log(JSON.stringify(rf));
 check('a rider found', !!rf);
 await g.cells(); await g.spin(null, 4);
 const h1 = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return { drawn: false, keys: [...ROADWALK.keys()] }; const rig = D.npc.g.userData.rig;
-  return { drawn: true, halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, sit: !!(rig && rig.sit), horse: D.beast.children.length, lift: +(D.npc.g.position.y - worldH(D.npc.g.position.x, D.npc.g.position.z)).toFixed(2), inTalk: npcs.includes(D.npc), post: D.npc.def.post }; }, rf.id);
+  return { drawn: true, halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, sit: !!(rig && rig.sit), horse: D.beast.children.length, lift: +(D.npc.g.position.y - worldH(D.npc.g.position.x, D.npc.g.position.z)).toFixed(2), inTalk: npcs.includes(D.npc), post: D.npc.def.post, lag: (worldState.roadfolk[id] || {}).lag || 0 }; }, rf.id);
 console.log(JSON.stringify(h1));
 check('a rider is drawn seated on his horse, and within 6 m he reins in', h1.drawn && h1.sit && h1.horse === 1 && h1.lift > .5 && h1.halted && h1.inTalk, h1);
 await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 5);
 await g.spin(null, 4);
 const h2 = await page.evaluate((id) => { const D = ROADWALK.get(id); return { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, lag: (worldState.roadfolk[id] || {}).lag }; }, rf.id);
 console.log(JSON.stringify(h2));
-check('he stands while you are by him, the minutes his lag', h2.halted && Math.hypot(h2.x - h1.x, h2.z - h1.z) < .05 && Math.abs(h2.lag - (h2.t - h1.t)) < .01 && h2.t - h1.t > 4.9, { h1, h2 });
+// Session 2280 (QA): his lag counts from the tick he reined in, which can be a tick or two before h1 is read, so h1's lag is read too
+check('he stands while you are by him, the minutes his lag', h2.halted && Math.hypot(h2.x - h1.x, h2.z - h1.z) < .05 && Math.abs(h2.lag - h1.lag - (h2.t - h1.t)) < .01 && h2.t - h1.t > 4.9, { h1, h2 });
 const nw = await page.evaluate((o) => { const D = ROADWALK.get(o.id); const t = D.npc.def.topics.find(t => t.label === 'What news?');
   const none = t.fn(t); const site = siteAnywhere(o.a); const st = TS(site); st.siegeBy = st.siegeBy || 'mark'; st.flags.besieged = worldState.gameTimeAbsMinutes - 1440;
   const n0 = (worldState.mapNotes || []).length, j0 = GAME_LOG.length; const resp = t.fn(t); const n1 = (worldState.mapNotes || []).length, j1 = GAME_LOG.length; t.fn(t);
@@ -219,23 +220,25 @@ const ow = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) re
 console.log(JSON.stringify(ow));
 check('he walks with a guard and writes a writ on the camp, 40 + 10 a tier, once', ow.drawn && ow.two === 2 && !ow.guardTalk && ow.kind === 'writ' && ow.reward === 40 + 10 * of.tier && ow.resp.includes(of.name) && /You have my writ/.test(ow.again), ow);
 check('clearing the camp pays the writ', ow.turned && ow.paid === ow.want, ow);
-// S2281 — a bridge down
+// S2282 — a bridge down
 const bd = await page.evaluate(() => { const bs = SITES.filter(b => b.kind === 'bridge' && b.bridge); let n = 0, N = 0; for (const b of bs) for (let w = 0; w < 300; w++) { N++; if (bridgeFell(b.id, w)) n++; }
   const b = bs[0]; if (!b) return null; let w = 1; while (!(bridgeFell(b.id, w) && !bridgeFell(b.id, w - 1))) w++;
   const t = w * 7 * 1440 + 600; worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; px = b.x; pz = b.z; return { id: b.id, len: Math.round(b.bridge.len), rate: n / N, bs: bs.length }; });
 console.log(JSON.stringify(bd));
 check('bridges on the roads, falling about 1 in 30 a week', bd && bd.bs > 0 && bd.rate > .02 && bd.rate < .05, bd);
 await g.spin(null, 3);
-const bg = await page.evaluate((id) => { const b = SITE[id], s = Math.sin(b.bridge.ang), c = Math.cos(b.bridge.ang); const G = BRDN_GAPS.find(G => G.id === id); const [, off] = gapLocal(G, px, pz);
-  const deck = []; for (let d = -8; d <= 8; d++) { const x = b.x + s * d, z = b.z + c * d; deck.push(solidAt(x, z, worldH(x, z)) ? 1 : 0); }
-  const beside = [-6, 6].map(o => solidAt(b.x + c * o, b.z - s * o, 0));
+const bg = await page.evaluate((id) => { const b = SITE[id];
+  const drawn = BRIDGE_GAPS.has(id), mid = worldH(b.x, b.z), deckY = b.bridge.y;
   const L = siteAnywhere(bridgeLordSite(b)), T = bridgeMendTopics(L); const news = riderNews(b.x, b.z); gold = 1000; const said = T[1].fn(); const left = gold, again = T[1].avail();
-  worldState.gameTimeAbsMinutes += 2 * 1440; worldState.gameTimeMinutes = worldState.gameTimeAbsMinutes % 1440; return { off, deck: deck.join(''), beside, news: news && news.line, said, left, again, up: bridgeDown(b) === null, cost: bridgeCost(b) }; }, bd.id);
+  const still = BRIDGE_GAPS.has(id);
+  worldState.gameTimeAbsMinutes += 2 * 1440; worldState.gameTimeMinutes = worldState.gameTimeAbsMinutes % 1440; return { drawn, drop: +(deckY - mid).toFixed(2), still, news: news && news.line, said, left, again, up: bridgeDown(b) === null, cost: bridgeCost(b) }; }, bd.id);
+await g.spin(null, 3);
+bg.whole = await page.evaluate((id) => !BRIDGE_GAPS.has(id), bd.id);
 console.log(JSON.stringify(bg));
-check('down: a solid across the middle of the deck, open water beside it, and you dropped off the span', /^0+1+0+$/.test(bg.deck) && !bg.beside[0] && !bg.beside[1] && bg.off > 2.45, bg);
+check('down by the roll: drawn broken, the ground in its gap the river\'s bed, drawn whole again once mended', bg.drawn && bg.drop > 1 && bg.still && bg.whole, bg);
 check('a rider tells of it', /is down/.test(bg.news || ''), bg.news);
 check('the lord mends it for 250 + 2 a metre, up two days after', bg.cost === 250 + 2 * bd.len && bg.left === 1000 - bg.cost && !bg.again && bg.up, bg);
-// S2282 — the coach at the bank, the route at half
+// S2283 — the coach at the bank, the route at half
 const cr = await page.evaluate(() => { const K = { village: 1, town: 1, city: 1, port: 1 };
   const rd = ROADS.find(rd => rd.def && siteAnywhere(rd.def.a) && siteAnywhere(rd.def.b) && siteAnywhere(rd.def.a).kind in K && siteAnywhere(rd.def.b).kind in K && roadBridges(rd).length); if (!rd) return null;
   const o = roadBridges(rd)[0], b = SITE[o.id] || siteAnywhere(o.id); let w = 1; while (!(bridgeFell(b.id, w) && !bridgeFell(b.id, w - 1))) w++;

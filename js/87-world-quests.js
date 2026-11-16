@@ -2384,21 +2384,24 @@ const giver=`${lord.title} ${lord.name}`;
       for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
         const fx=q?q.x:p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=q?q.z:p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=worldH(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=q?q.ang:p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}
       if(D.bier)bierTick(D);}}
-  // S2281 — a bridge down (the page's bridge row, #1587 B, the road page's fifth systems session): every bridge rolls 1 in 30 a game-week
+  // S2282 — a bridge down (the page's bridge row, #1587 B, the road page's fifth systems session): every bridge rolls 1 in 30 a game-week
   // (seededRng('bridge', id+':'+week), so the clock alone says which are down and a load or a friend reads the same) and stays down two
-  // weeks unless mended. While it is down its middle span is gone: a solid across the deck at mid-span (bridgeGapSolid, read by solidAt),
-  // and a step there when it falls drops you off the side into the river. Swim it meanwhile. The nearer lord (the nearest town with a lord,
-  // read from the cells' data) offers to mend it: 250 gold plus 2 a metre, or 20 planks and Joinery 25; it stands again 2 days after.
-  // The mend is the world's record, worldState.bridges[id] = {paid: day, up: day}, through mendBridge; riders carry the news (riderNews).
-  // The broken span's shape is the look builder's; the coach stopping at the bank and a route over it earning half are the next session's.
-  const BRDN_ODDS=30,BRDN_WEEKS=2,BRDN_GOLD=250,BRDN_PER_M=2,BRDN_PLANKS=20,BRDN_JOIN=25,BRDN_DAYS=2,BRDN_HALF=2.45;
+  // weeks unless mended. The look builder's S2281 draws it (bridgeGeo's down, bridgeFit: the middle pier and its two arches gone, the ground
+  // in the gap the river's bed, BRIDGE_GAPS) from bridgeIsDown(id), which reads bridgeDownId here; tickBridges redraws a loaded bridge
+  // (bridgeRedraw) the minute it falls or stands again. Swim it meanwhile. The nearer lord (the nearest town with a lord, read from the
+  // cells' data) offers to mend it: 250 gold plus 2 a metre, or 20 planks and Joinery 25; it stands again 2 days after. The mend is the
+  // world's record, worldState.bridges[id] = {paid: day, up: day, how}, through mendBridge; riders carry the news (riderNews). A record's
+  // `down` (true or false) is a hand's override, the tests' (bridges): it wins over the roll either way.
+  const BRDN_ODDS=30,BRDN_WEEKS=2,BRDN_GOLD=250,BRDN_PER_M=2,BRDN_PLANKS=20,BRDN_JOIN=25,BRDN_DAYS=2;
   function bridgeFell(id,w){return w>=0&&seededRng('bridge',id+':'+w)()<1/BRDN_ODDS;}
   // the fall in force now, or null: {week, at (game minutes), mending (the day it stands again, while paid and not yet up)}
-  function bridgeDown(site){if(!site||site.kind!=='bridge'||!site.bridge)return null;const d=dayNow(),w=Math.floor(d/7),rec=(worldState.bridges||{})[site.id];
-    for(let ww=w;ww>w-BRDN_WEEKS;ww--){if(!bridgeFell(site.id,ww))continue;
+  function bridgeDownId(id){if(!id)return null;const d=dayNow(),w=Math.floor(d/7),rec=(worldState.bridges||{})[id];
+    if(rec&&rec.down!=null)return rec.down?{week:w,at:w*7*1440,mending:null,hand:true}:null;
+    for(let ww=w;ww>w-BRDN_WEEKS;ww--){if(!bridgeFell(id,ww))continue;
       if(rec&&rec.paid!=null&&rec.paid>=ww*7){if(d>=rec.up)return null;return {week:ww,at:ww*7*1440,mending:rec.up};}
       return {week:ww,at:ww*7*1440,mending:null};}
     return null;}
+  function bridgeDown(site){return site&&site.kind==='bridge'&&site.bridge?bridgeDownId(site.id):null;}
   function bridgeLen(site){return Math.round(site.bridge.len);}
   function bridgeCost(site){return BRDN_GOLD+BRDN_PER_M*bridgeLen(site);}
   // the nearer lord: the nearest village, town, port or city with a lord, in the bridge's cell and its eight neighbours
@@ -2434,19 +2437,17 @@ const giver=`${lord.title} ${lord.name}`;
   function roadBridgesDown(rd){return roadBridges(rd).filter(o=>{const b=siteAnywhere(o.id)||SITE[o.id];return b&&bridgeDown(b);});}
   // the bank a coach running from u0 in direction dir must stop on, short of the first bridge down ahead of it; null when the way is clear
   function bridgeBank(rd,u0,dir){let best=null;for(const o of roadBridgesDown(rd)){const bank=o.u-dir*o.k;if(dir>0?bank<u0-1e-6:bank>u0+1e-6)continue;if(dir>0?o.u-o.k*.5<u0:o.u+o.k*.5>u0)continue;if(best==null||(dir>0?bank<best:bank>best))best=bank;}return best;}
-  // the gaps of the bridges down, refreshed once a game minute (and at once after a mend): {x,z,s,c,hl}, in the deck's frame
-  let BRDN_GAPS=[],_brdnAt=-1;const _brdnSaid=new Set();
-  function bridgeGap(b){const len=b.bridge.len;return {id:b.id,x:b.x,z:b.z,s:Math.sin(b.bridge.ang),c:Math.cos(b.bridge.ang),hl:Math.min(4,len*.2)};}
-  function gapLocal(G,x,z){const dx=x-G.x,dz=z-G.z;return [dx*G.s+dz*G.c,dx*G.c-dz*G.s];}
-  function bridgeGapSolid(x,z,R){if(!BRDN_GAPS.length||activeZoneId!=='world')return false;R=R||.3;
-    for(const G of BRDN_GAPS){const [a,c]=gapLocal(G,x,z);if(Math.abs(a)<G.hl+R&&Math.abs(c)<BRDN_HALF)return true;}return false;}
+  // the bridges down, read once a game minute (and at once after a mend): a loaded bridge whose state has changed is drawn again (the look's
+  // bridgeRedraw), and coming within 20 m of one on the road says so once a fall
+  let BRDN_SET=new Set(),_brdnAt=-1;const _brdnSaid=new Set();
   function tickBridges(){const m=Math.floor(worldState.gameTimeAbsMinutes||0);if(m===_brdnAt)return;_brdnAt=m;
-    const was=new Set(BRDN_GAPS.map(G=>G.id));BRDN_GAPS=SITES.filter(b=>b.kind==='bridge'&&b.bridge&&bridgeDown(b)).map(bridgeGap);
-    for(const G of BRDN_GAPS){const b=SITE[G.id];const [a,c]=gapLocal(G,px,pz);
-      if(!was.has(G.id)&&Math.abs(a)<G.hl&&Math.abs(c)<BRDN_HALF){const sd=c<0?-1:1,off=BRDN_HALF+1.2;px=G.x+G.s*a+G.c*sd*off;pz=G.z+G.c*a-G.s*sd*off; /* the span gives way under you: off the side, into the river */
-        showMsg(`${b.name} gives way under you.`,'#ff9a60');}
-      const k=G.id+':'+bridgeDown(b).week;if(!_brdnSaid.has(k)&&Math.hypot(px-G.x,pz-G.z)<G.hl+20&&Math.abs(c)<8){_brdnSaid.add(k);const L=siteAnywhere(bridgeLordSite(b)||'');
-        showMsg(`${b.name} is down: its middle span lies in the river.${L?` The lord at ${L.name} may see it mended.`:''}`,'#e8c890');}}}
+    const now=new Set(SITES.filter(b=>b.kind==='bridge'&&b.bridge&&bridgeDown(b)).map(b=>b.id));
+    for(const id of now)if(!BRDN_SET.has(id)&&typeof bridgeRedraw==='function')bridgeRedraw(id);
+    for(const id of BRDN_SET)if(!now.has(id)&&typeof bridgeRedraw==='function')bridgeRedraw(id);
+    BRDN_SET=now;
+    for(const id of now){const b=SITE[id],D=bridgeDown(b),s=Math.sin(b.bridge.ang),c=Math.cos(b.bridge.ang),dx=px-b.x,dz=pz-b.z;
+      if(Math.abs(dx*c-dz*s)>8||Math.abs(dx*s+dz*c)>b.bridge.len/2+20)continue;const k=id+':'+D.week;if(_brdnSaid.has(k))continue;_brdnSaid.add(k);
+      const L=siteAnywhere(bridgeLordSite(b)||'');showMsg(`${b.name} is down: its middle span lies in the river.${L?` The lord at ${L.name} may see it mended.`:''}`,'#e8c890');}}
   // ═══ FACTIONS AND ANCHORED PLACES (Session S) ════════════════════════
   // Three nations you can rise in; past the second rank the other two close.
   // The story's named places are picked from the generated world once, by constraint.

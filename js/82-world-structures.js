@@ -1246,29 +1246,62 @@
   // stones stands proud on each face, the piers get pointed cutwaters up- and downstream, a string course runs under
   // the rails, the deck is paved in setts, and the rails are two courses of blocks on a mortar core with a coping and
   // a post at each end. drop: from the deck down to the river bed.
-  function bridgeGeo(len,drop,seed){const r=pRng(seed>>>0),P=[];const add=(geo,col,x,y,z,rx,ry,rz,j)=>P.push({geo,color:new THREE.Color(col),x,y,z,rx,ry,rz,jitter:j==null?.06:j});
+  // S2281 (#1587 B, the road's one look session: the broken span) — down: the pier nearest the middle has gone and both arches it
+  // carried with it. Each side keeps a stub of its arch (a tenth to a fifth of the vault from the springing) under a ragged break up to
+  // the deck; the setts, rails and coping end raggedly over the gap; the pier is a stump to the water, and the fallen stone lies about it on
+  // the bed, two slabs of the deck among it, tilted. geo.userData.gap is the gap at the deck in local z (z0 < z1), what the ground reads.
+  function bridgeGeo(len,drop,seed,down){const r=pRng(seed>>>0),P=[];const add=(geo,col,x,y,z,rx,ry,rz,j)=>P.push({geo,color:new THREE.Color(col),x,y,z,rx,ry,rz,jitter:j==null?.06:j});
     const vary=(c,a)=>new THREE.Color(c).multiplyScalar(1-a+r()*a*2).getHex();
     const W=2.6,top=.22,crown=-.6,yb=-drop+.15,piers=Math.max(1,Math.round(len/9)),pz=[];for(let q=0;q<piers;q++)pz.push(-len/2+len*(q+.5)/piers);
     const spans=[];const edges=[-len/2+2,...pz.flatMap(z=>[z-1.1,z+1.1]),len/2-2];for(let q=0;q<edges.length;q+=2){const z0=edges[q],z1=edges[q+1],sp=z1-z0;if(sp<2)continue;
       const ys=Math.max(yb+.4,crown-sp/2),h=Math.max(.3,Math.min(sp/2,crown-ys)),R=(sp*sp/4+h*h)/(2*h);spans.push({z0,z1,ys,h,R,zc:(z0+z1)/2,yc:ys+h-R,al:Math.asin(Math.min(1,sp/2/R))});}
-    const sh=new THREE.Shape();sh.moveTo(-len/2,-drop);sh.lineTo(len/2,-drop);sh.lineTo(len/2,top);sh.lineTo(-len/2,top);sh.lineTo(-len/2,-drop);
-    for(const a of spans){const h=new THREE.Path();h.moveTo(a.z0,yb);h.lineTo(a.z1,yb);h.lineTo(a.z1,a.ys);const N=14;for(let i=1;i<N;i++){const t=Math.PI/2-a.al+2*a.al*i/N;h.lineTo(a.zc+a.R*Math.cos(t),a.yc+a.R*Math.sin(t));}h.lineTo(a.z0,a.ys);h.lineTo(a.z0,yb);sh.holes.push(h);}
-    const body=new THREE.ExtrudeGeometry(sh,{depth:W*2,bevelEnabled:false,curveSegments:4});body.translate(0,0,-W);add(body,0x8a8078,0,0,0,0,Math.PI/2,0,.02);
-    // the arch stones: a ring on each face, the keystone a little larger (local z is minus the profile's u)
+    const arcPath=(h,a,t0,t1,N)=>{for(let i=1;i<N;i++){const t=t0+(t1-t0)*i/N;h.lineTo(a.zc+a.R*Math.cos(t),a.yc+a.R*Math.sin(t));}};
+    let gone=null; // the fallen pier (profile u), its two spans, how much of each vault stands (fL, fR), and the break's ends at the deck (uL < uR)
+    if(down){let pk=0;for(let q=1;q<pz.length;q++)if(Math.abs(pz[q])<Math.abs(pz[pk]))pk=q;const p=pz[pk];
+      const sL=spans.find(a=>Math.abs(a.z1-(p-1.1))<1e-6)||null,sR=spans.find(a=>Math.abs(a.z0-(p+1.1))<1e-6)||null;
+      const fL=.1+r()*.1,fR=.1+r()*.1;const end=(a,f,s)=>{if(!a)return {u:p-s*1.1,y:yb};const t=s<0?Math.PI/2+a.al-2*a.al*f:Math.PI/2-a.al+2*a.al*f;return {u:a.zc+a.R*Math.cos(t),y:a.yc+a.R*Math.sin(t)};};
+      const eL=end(sL,fL,-1),eR=end(sR,fR,1);gone={p,sL,sR,fL,fR,eL,eR,uL:eL.u+.25+r()*.5,uR:eR.u-.25-r()*.5};}
+    const body=(sh)=>{const g=new THREE.ExtrudeGeometry(sh,{depth:W*2,bevelEnabled:false,curveSegments:4});g.translate(0,0,-W);add(g,0x8a8078,0,0,0,0,Math.PI/2,0,.02);};
+    const holeOf=a=>{const h=new THREE.Path();h.moveTo(a.z0,yb);h.lineTo(a.z1,yb);h.lineTo(a.z1,a.ys);arcPath(h,a,Math.PI/2-a.al,Math.PI/2+a.al,14);h.lineTo(a.z0,a.ys);h.lineTo(a.z0,yb);return h;};
+    if(!gone){const sh=new THREE.Shape();sh.moveTo(-len/2,-drop);sh.lineTo(len/2,-drop);sh.lineTo(len/2,top);sh.lineTo(-len/2,top);sh.lineTo(-len/2,-drop);
+      for(const a of spans)sh.holes.push(holeOf(a));body(sh);}
+    else{const G=gone;
+      // the ragged break from the vault's stub up to the deck: three teeth between the stub's end and the deck's
+      const teeth=(sh,a,b)=>{for(let i=1;i<4;i++){const t=i/4,o=(i%2?.35:-.25)*(.5+r());sh.lineTo(a.u+(b.u-a.u)*t+o,a.y+(b.y-a.y)*t+(r()-.5)*.3);}};
+      const L=new THREE.Shape(),aL=G.sL;L.moveTo(-len/2,-drop);
+      if(aL){L.lineTo(aL.z0,-drop);L.lineTo(aL.z0,aL.ys);arcPath(L,aL,Math.PI/2+aL.al,Math.PI/2+aL.al-2*aL.al*G.fL,6);}else L.lineTo(G.p-1.1,-drop);
+      L.lineTo(G.eL.u,G.eL.y);teeth(L,G.eL,{u:G.uL,y:top});L.lineTo(G.uL,top);L.lineTo(-len/2,top);L.lineTo(-len/2,-drop);
+      for(const a of spans)if(a.z1<=(aL?aL.z0:G.p-1.1)+1e-6)L.holes.push(holeOf(a));body(L);
+      const Rr=new THREE.Shape(),aR=G.sR;Rr.moveTo(len/2,-drop);Rr.lineTo(len/2,top);Rr.lineTo(G.uR,top);teeth(Rr,{u:G.uR,y:top},G.eR);Rr.lineTo(G.eR.u,G.eR.y);
+      if(aR){arcPath(Rr,aR,Math.PI/2-aR.al+2*aR.al*G.fR,Math.PI/2-aR.al,6);Rr.lineTo(aR.z1,aR.ys);Rr.lineTo(aR.z1,-drop);}else Rr.lineTo(G.p+1.1,-drop);
+      Rr.lineTo(len/2,-drop);for(const a of spans)if(a.z0>=(aR?aR.z1:G.p+1.1)-1e-6)Rr.holes.push(holeOf(a));body(Rr);}
+    // in local z (minus the profile's u) the gap at the deck runs from zg0 to zg1; a piece over it is left out, its edge ragged by j
+    const zg0=gone?-gone.uR:0,zg1=gone?-gone.uL:0,over=(z0,z1,j)=>!!gone&&z1>zg0-j&&z0<zg1+j;
+    // the arch stones: a ring on each face, the keystone a little larger (local z is minus the profile's u); a fallen vault keeps its stub's
     for(const a of spans){const N=Math.max(7,Math.round(a.R*2*a.al/.55));for(let i=0;i<N;i++){const t=Math.PI/2+a.al-2*a.al*(i+.5)/N,rr=a.R+.22,key=i===(N>>1);
+      if(gone&&((a===gone.sL&&(i+.5)/N>gone.fL)||(a===gone.sR&&(i+.5)/N<1-gone.fR)))continue;
       const L=a.R*2*a.al/N-.05;for(const sx of [-1,1])add(new THREE.BoxGeometry(.14,key?.56:.44,L),vary(0x9a9084,.08),sx*(W+.05),a.yc+rr*Math.sin(t)+(key?.04:0),-(a.zc+rr*Math.cos(t)),t-Math.PI/2,0,0,.04);}}
     // cutwaters, pointed up- and downstream, to the arches' springing, capped with a stone pyramid
     const yCut=Math.min(...spans.map(a=>a.ys),crown-.4),ch=yCut+drop;
-    if(ch>.3)for(const z of pz)for(const sx of [-1,1]){const rr=1.27;add(new THREE.CylinderGeometry(rr,rr,ch,3),0x6e675e,sx*(W+rr*.5-.02),-drop+ch/2,z,0,sx*Math.PI/2,0,.08);add(SK.cone(rr,.9,3),0x7a7268,sx*(W+rr*.5-.02),yCut+.45,z,0,sx*Math.PI/2,0,.06);}
+    if(ch>.3)for(const z of pz){if(gone&&z===gone.p)continue;for(const sx of [-1,1]){const rr=1.27;add(new THREE.CylinderGeometry(rr,rr,ch,3),0x6e675e,sx*(W+rr*.5-.02),-drop+ch/2,-z,0,sx*Math.PI/2,0,.08);add(SK.cone(rr,.9,3),0x7a7268,sx*(W+rr*.5-.02),yCut+.45,-z,0,sx*Math.PI/2,0,.06);}}
     // a string course under the rails, the deck paved in rows of slabs laid broken-joint
-    for(const sx of [-1,1])add(SK.rbox(.24,.18,len,.05,1),0x7a7268,sx*(W-.02),.04,0,0,0,0,.05);
-    for(let z=-len/2+.45;z<len/2-.3;z+=.9){let x=-2.15;while(x<2.1){const w=Math.min(2.15-x,.9+r()*.9);if(w>.2)add(new THREE.BoxGeometry(w-.05,.06,.84),vary(0x736c62,.12),x+w/2,top+.03,z,0,0,0,.05);x+=w;}}
+    const runs=gone?[[-len/2,zg0],[zg1,len/2]]:[[-len/2,len/2]];
+    for(const sx of [-1,1])for(const [z0,z1] of runs)add(SK.rbox(.24,.18,z1-z0,.05,1),0x7a7268,sx*(W-.02),.04,(z0+z1)/2,0,0,0,.05);
+    for(let z=-len/2+.45;z<len/2-.3;z+=.9){let x=-2.15;while(x<2.1){const w=Math.min(2.15-x,.9+r()*.9);if(w>.2&&!(gone&&over(z-.42,z+.42,r()*.5)))add(new THREE.BoxGeometry(w-.05,.06,.84),vary(0x736c62,.12),x+w/2,top+.03,z,0,0,0,.05);x+=w;}}
     // the rails: a mortar core, two courses of blocks laid broken-joint, a coping, a post at each end
-    for(const sx of [-1,1]){const x=sx*2.45;add(new THREE.BoxGeometry(.26,.78,len-.6),0x4e4940,x,top+.39,0,0,0,0,.03);
-      for(let c=0;c<2;c++){let z=-len/2+.6,L=c?.5+r()*.5:1.1+r()*.5;while(z<len/2-.65){L=Math.min(len/2-.6-z,L);add(new THREE.BoxGeometry(.34,.36,L-.05),vary(0x8e8478,.12),x,top+.2+c*.39,z+L/2,0,0,0,.05);z+=L;L=1.1+r()*.5;}}
-      for(let z=-len/2+.6;z<len/2-.65;){const L=Math.min(len/2-.6-z,2.4);add(SK.rbox(.44,.14,L-.03,.05,1),vary(0xa0978a,.06),x,top+.86,z+L/2,0,0,0,.04);z+=L;}
+    for(const sx of [-1,1]){const x=sx*2.45;for(const [z0,z1] of runs){const a=Math.max(z0,-len/2+.3)+(gone&&z0>-len/2?.3:0),b=Math.min(z1,len/2-.3)-(gone&&z1<len/2?.3:0);if(b-a>.1)add(new THREE.BoxGeometry(.26,.78,b-a),0x4e4940,x,top+.39,(a+b)/2,0,0,0,.03);}
+      for(let c=0;c<2;c++){let z=-len/2+.6,L=c?.5+r()*.5:1.1+r()*.5;while(z<len/2-.65){L=Math.min(len/2-.6-z,L);if(!(gone&&over(z,z+L,c*.4+r()*.4)))add(new THREE.BoxGeometry(.34,.36,L-.05),vary(0x8e8478,.12),x,top+.2+c*.39,z+L/2,0,0,0,.05);z+=L;L=1.1+r()*.5;}}
+      for(let z=-len/2+.6;z<len/2-.65;){const L=Math.min(len/2-.6-z,2.4);if(!(gone&&over(z,z+L,.6+r()*.5)))add(SK.rbox(.44,.14,L-.03,.05,1),vary(0xa0978a,.06),x,top+.86,z+L/2,0,0,0,.04);z+=L;}
       for(const e of [-1,1]){add(SK.rbox(.6,1.3,.6,.08,1),vary(0x8a8078,.06),x,top+.65,e*(len/2-.3),0,0,0,.05);add(SK.cone(.43,.35,4),0x9a9084,x,top+1.47,e*(len/2-.3),0,Math.PI/4,0,.04);}}
-    return mergeParts(P);}
+    if(gone){const zp=-gone.p,hS=Math.max(.6,drop*.55),zA=gone.sR?-gone.sR.z1:zp-1.1,zB=gone.sL?-gone.sL.z0:zp+1.1;
+      // the pier's stump, broken off ragged, a cutwater's stub on each side; then the fallen stone heaped about it, highest by the pier
+      add(new THREE.BoxGeometry(W*2-.2,hS,2.2),0x6e675e,0,-drop+hS/2,zp,0,0,0,.08);
+      for(let i=0;i<5;i++)add(new THREE.BoxGeometry(.7+r()*1.2,.3+r()*.5,.6+r()*.9),vary(0x7a7268,.1),(r()-.5)*(W*2-1),-drop+hS+.1,zp+(r()-.5)*1.4,(r()-.5)*.5,r()*3,(r()-.5)*.5,.06);
+      for(const sx of [-1,1])add(new THREE.CylinderGeometry(1.27,1.27,hS*.7,3),0x6e675e,sx*(W+.6),-drop+hS*.35,zp,0,sx*Math.PI/2,0,.08);
+      const n=14+Math.round(zB-zA);for(let i=0;i<n;i++){const z=zA+r()*(zB-zA),k=1-Math.min(1,Math.abs(z-zp)/((zB-zA)/2)),w=.4+r()*1.1;
+        add(new THREE.BoxGeometry(w,.3+r()*.5,.4+r()*.9),vary(0x8a8078,.14),(r()-.5)*(W*2+3),-drop+.15+k*hS*.6*r(),z,(r()-.5)*1.2,r()*3,(r()-.5)*1.2,.06);}
+      for(const e of [-1,1]){const z=zp+e*(1.6+r()*1.5);add(new THREE.BoxGeometry(W*1.5,.5,2.2+r()*.8),vary(0x736c62,.08),(r()-.5)*1.5,-drop+.6+r()*.4,z,e*(.35+r()*.25),(r()-.5)*.5,(r()-.5)*.4,.04);}}
+    const geo=mergeParts(P);geo.userData.gap=gone?{z0:zg0,z1:zg1}:null;return geo;}
   // S803 — one name per place reaches the bridges (poinames, the producer's filing of 13 Oct): a bridge took its river's or its
   // road's name, and every border road is *the Border Road*, so five *Border Road Bridge*s stood in ten cells and two *Stanwater
   // Bridge*s in one. A name already held by a place in the world gives way to the nearest settlement's (*Dunmore Bridge*), then
@@ -1286,10 +1319,30 @@
           // (the cell is cached with it) and is built again: the old test skipped it, so a reloaded cell lost its bridges
           const prev=c.sites.find(t=>t.kind==='bridge'&&Math.hypot(t.x-mx,t.z-mz)<40);if(prev&&built.has(prev))continue;
           const len=Math.hypot(b.x-a.x,b.z-a.z)+6;const ang=Math.atan2(b.x-a.x,b.z-a.z);const y=Math.max(a.y,b.y,SEA_Y+.9)+.25;
-          const g=new THREE.Mesh(bridgeGeo(len,y-bed+.05,Math.round(mx)*31+Math.round(mz)),VC_MAT);g.position.set(mx,y,mz);g.rotation.y=ang;g.castShadow=true;g.receiveShadow=true;g.userData.bridge=true; // S248 — a stone arch bridge on the kit (it was a deck, two rails and piers as boxes)
-          sc.add(g);const s_=Math.sin(ang),c_=Math.cos(ang);for(const sx of [-1,1]){STATIC_SOL.push({cx:mx+c_*sx*2.45,cz:mz-s_*sx*2.45,rx:.2,rz:len/2,c:Math.cos(ang),s:Math.sin(ang),cell:k});}
-          if(prev){built.add(prev);continue;}const name=bridgeName(`${(rv.name||rd.def.via||'the river').replace(/^the /,'')} Bridge`,mx,mz,c);const site={id:`bridge_${k}_${c.sites.length}`,name,kind:'bridge',x:mx,z:mz,pad:0,cell:k,bridge:{y,len,ang}};c.sites.push(site);SITES.push(site);SITE[site.id]=site;built.add(site);
+          // S248 — a stone arch bridge on the kit (it was a deck, two rails and piers as boxes); S2281 — built down when the world says so (bridgeIsDown)
+          const id=prev?prev.id:`bridge_${k}_${c.sites.length}`,drop=y-bed+.05,seed=Math.round(mx)*31+Math.round(mz);
+          const g=new THREE.Mesh(bridgeGeo(len,drop,seed,bridgeIsDown(id)),VC_MAT);g.position.set(mx,y,mz);g.rotation.y=ang;g.castShadow=true;g.receiveShadow=true;g.userData.bridge=true;g.userData.bridgeId=id;
+          g.userData.span={len,drop,seed,ang,cell:k};sc.add(g);bridgeFit(g);
+          if(prev){built.add(prev);continue;}const name=bridgeName(`${(rv.name||rd.def.via||'the river').replace(/^the /,'')} Bridge`,mx,mz,c);const site={id,name,kind:'bridge',x:mx,z:mz,pad:0,cell:k,bridge:{y,len,ang}};c.sites.push(site);SITES.push(site);SITE[site.id]=site;built.add(site);
         }}}}
+  // S2281 (#1587 B: the broken span) — what a bridge's state asks of the look. The state is the systems builder's (the page's bridge
+  // session: `worldState.bridges`, the world's, down and mended, by the site's id); the look reads it here and nowhere else, so the
+  // record's shape can change in this one line. bridgeFit lays a bridge's rails (two solids, or four either side of a gap) and its
+  // ground: a gap (BRIDGE_GAPS, read by worldH) takes the road's causeway out from under the fallen span, so the ground there is the
+  // river's bed and you fall from the break into the water; the chunks under it take their heights again and their road strips are
+  // laid again (a strip follows worldH). bridgeRedraw(id) builds a loaded bridge again from the state, after the systems builder's
+  // action has changed it; a bridge not loaded is built from the state when its cell loads.
+  function bridgeIsDown(id){return typeof bridgeDownId==='function'&&!!bridgeDownId(id);} /* S2282 — the systems builder's roll (bridgeDownId, 87): the week's fall, a mend, or a hand's `down` */
+  function bridgeFit(g){const id=g.userData.bridgeId,S=g.userData.span,ang=S.ang,len=S.len,mx=g.position.x,mz=g.position.z,s_=Math.sin(ang),c_=Math.cos(ang);
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].bridge===id)STATIC_SOL.splice(i,1);
+    const gap=g.geometry.userData.gap,runs=gap?[[-len/2,gap.z0],[gap.z1,len/2]]:[[-len/2,len/2]];
+    for(const sx of [-1,1])for(const [a,b] of runs){const u=(a+b)/2;STATIC_SOL.push({cx:mx+c_*sx*2.45+s_*u,cz:mz-s_*sx*2.45+c_*u,rx:.2,rz:(b-a)/2,c:c_,s:s_,cell:S.cell,bridge:id});}
+    const had=BRIDGE_GAPS.has(id);if(gap)BRIDGE_GAPS.set(id,{x:mx,z:mz,s:s_,c:c_,z0:gap.z0,z1:gap.z1});else BRIDGE_GAPS.delete(id);
+    if(gap||had)bridgeGround(mx,mz,len/2+ROAD_BLEND+2);}
+  function bridgeGround(x,z,R){for(const ch of chunks.values()){const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK;if(x+R<x0||x-R>x0+CHUNK||z+R<z0||z-R>z0+CHUNK)continue;refreshChunkTerrain(ch);
+    for(const o of [...ch.group.children])if(o.userData.ribbon){ch.group.remove(o);o.geometry.dispose();}buildRoadRibbons(ch.cx,ch.cz,ch.group);}}
+  function bridgeRedraw(id){const g=sc.children.find(o=>o.userData.bridgeId===id);if(!g)return false;const S=g.userData.span,old=g.geometry;
+    g.geometry=bridgeGeo(S.len,S.drop,S.seed,bridgeIsDown(id));old.dispose();bridgeFit(g);return true;}
   function addFortSpurs(){}
   function addFortSpur(e,cellK){
     {
