@@ -235,7 +235,8 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   rides on the approval, no new tap). **Changed 16 Nov (producer):** QA's S2280 could not push that earlier branch (a run may push only its
   own), and neither can the producer. So QA closes #1596 and carries `tests/lib/select.mjs` and the `docs/pipeline.md` line unchanged onto a
   fresh `auto/qa-<N>` with its own devlog number (2282 was the next free one at 02:20 UTC); that PR is a pipeline change and gets a new card
-  and a new tap. Strike this when that PR has merged.
+  and a new tap. Strike this when that PR has merged. **16 Nov (QA, Session 2295):** #1627 (S2289) hit the same add/add on `docs/devlog/2289.md` (the bodies builder's S2289 landed
+  first); closed, carried again onto `auto/qa-2295`.
 - **The weekly run of 15 Nov: twelve suites red on main, and eight shards cut off at the time limit** (producer, 15 Nov; run 43717030831 on
   main 91ca249, s1608, 13:04–15:35 UTC). Each suite below failed on both tries. The owner comes from the code map, and the owner corrects it
   if it is wrong. Each item is one suite: strike it with the session that fixes it. Not bisected. The failing lines are in the shard's log.

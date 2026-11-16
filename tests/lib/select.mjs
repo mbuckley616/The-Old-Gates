@@ -38,6 +38,11 @@ export function selectSuites({ base, head = 'HEAD', full = false } = {}) {
   if (changed.length && changed.every(f => f.startsWith('docs/'))) return pack('none', [], 'only docs/ changed');
   const smoke = SMOKE.filter(s => all.includes(s)), picked = new Set(smoke);
   for (const f of changed) { const m = /^tests\/([^/]+)\.test\.mjs$/.exec(f); if (m && all.includes(m[1])) picked.add(m[1]); }
+  // Session 2255: a shared kit beside the suites (tests/budgetkit.mjs) takes every suite that imports it, as if each had been edited
+  for (const f of changed) { const m = /^tests\/([^/]+)\.mjs$/.exec(f); if (!m || m[1].endsWith('.test') || m[1] === 'run') continue;
+    const name = new RegExp(`from\\s+['"]\\./${m[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\.mjs['"]`);
+    for (const s of all) { let t = ''; try { t = fs.readFileSync(path.join(root, 'tests', `${s}.test.mjs`), 'utf8'); } catch (e) {}
+      if (name.test(t)) picked.add(s); } }
   // a suite struck from tests/skip.json runs, to show it passes
   if (changed.includes('tests/skip.json')) { let was = {}; try { was = skipped(git('show', `${base}:tests/skip.json`)); } catch (e) {}
     for (const s of Object.keys(was)) if (all.includes(s)) picked.add(s); }
