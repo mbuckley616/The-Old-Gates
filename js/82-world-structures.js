@@ -166,7 +166,7 @@
       ()=>{L.forts=[];c.doors.filter(e=>e.kind==='fort_door'&&dungeonWorldPos[e.seed]).forEach(e=>{const S=buildFortCompound(e,dungeonWorldPos[e.seed],k);L.forts.push(S);});},
       ()=>track(()=>buildSiteMarkersFor(c)),
       ()=>track(()=>buildCampsFor(c,k)),
-      ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)if(STATIC_SOL[n].cell==null)STATIC_SOL[n].cell=k; /* S2285 — a solid that names its cell keeps it (a bridge redrawn while another cell loads) */L.staticsBuilt=true;L.staticsPending=false;
+      ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)if(STATIC_SOL[n].cell==null){STATIC_SOL[n].cell=k;STATIC_SOL[n].statics=true;} /* S2285 — a solid that names its cell keeps it (a bridge redrawn while another cell loads); the statics' own are marked, for dropStatics */L.staticsBuilt=true;L.staticsPending=false;
         // bake: every plain top-level static mesh in this cell into cluster meshes
         const flat=[];(L.statics2||[]).forEach(o=>{if(o.isMesh&&!o.userData.noBake)flat.push(o);else if(o.isGroup)o.children.filter(c=>c.isMesh).forEach(c=>{c.userData.parentGroup=o;});});
         const baked=bakeMeshes(flat,sc,new Set());L.statics2=(L.statics2||[]).filter(o=>o.parent).concat(baked);},
@@ -177,7 +177,7 @@
     (L.statics2||[]).forEach(o=>sc.remove(o));L.statics2=[];
     (L.forts||[]).forEach(S=>{sc.remove(S.group);SETTLE.delete(S.site.id);unregLights(S.site.id);if(S.impostorId&&IMPOSTORS[S.impostorId])IMPOSTORS[S.impostorId].visible=true;});L.forts=[];unregLights('cell:'+k);
     L.portals.forEach(p=>{const i=portals.indexOf(p);if(i>=0)portals.splice(i,1);});L.portals=[];
-    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell===k&&STATIC_SOL[i].rx!==undefined)STATIC_SOL.splice(i,1);
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell===k&&STATIC_SOL[i].statics&&STATIC_SOL[i].rx!==undefined)STATIC_SOL.splice(i,1); /* S2285 — the statics' own solids: the cell's (a bridge's rails, a quay's walls) stay until the cell unloads, as their meshes do; they went at 900 m and never came back */
     for(let i=beds.length-1;i>=0;i--)if(beds[i].cell===k)beds.splice(i,1);
     for(let i=STAMPS.length-1;i>=0;i--)if(STAMPS[i].cell===k&&String(STAMPS[i].id).startsWith('camp_')){sgRemove(STAMPS[i]);STAMPS.splice(i,1);}
     L.staticsBuilt=false;
