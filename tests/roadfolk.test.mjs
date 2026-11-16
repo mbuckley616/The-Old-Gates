@@ -18,6 +18,7 @@
 // Session 2290: over a bridge the road's walkers, the caravans and the coaches stand on the deck's setts (roadY), not on the causeway.
 // Session 2301: his mule's pack (and a family's handcart) robbed as a strongbox: unseen nothing, seen a theft at the nearer end.
 // Session 2302: the official's guard draws on a crime he sees and fights to the town's yield.
+// Session 2305: a pilgrim leaves the road where his line to the goal stays out of water deeper than a wade; a goal with no such line is not his road's.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -141,18 +142,21 @@ check('walk 250 m off with them alive and his pack is taken; he is off the road,
 
 // S2270 — pilgrims and mourners
 const pil = await page.evaluate(() => {
-  const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440); let one = null, mourn = null, n = 0, nm = 0, bad = [];
+  const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440); let one = null, mourn = null, n = 0, nm = 0, bad = [], wet = [];
   for (let dd = day + 1; dd < day + 40; dd++) for (const rd of ROADS.filter(roadfolkRoad)) for (const T of roadTravellers(rd, dd)) {
     if (T.kind !== 'pilgrim') continue; n++; const Q = pilgrimPlan(T, rd); if (Q.none) { bad.push(T.id); continue; }
     const dRoad = Math.min(...rd.pts.map(q => Math.hypot(q.x - Q.goal.x, q.z - Q.goal.z)));
+    for (let s = 0; s <= Q.off - 20; s += 5) { const f = s / Math.max(1, Q.off); if (rawH(Q.bx + (Q.goal.x - Q.bx) * f, Q.bz + (Q.goal.z - Q.bz) * f) < SEA_Y - .6) { wet.push([T.id, Q.goal.id, Math.round(s)]); break; } }
     if (dRoad > 1500) bad.push([T.id, dRoad]);
     if (Q.mourners) { nm++; const dm = Math.hypot(rd.pts[0].x - 13100, rd.pts[0].z - 25450); if (!mourn || dm < mourn.dm) mourn = { T, rd, dm }; } else if (!one && Q.off > 40) one = { T, rd };
   }
   const put = (o, frac) => { const Q = pilgrimPlan(o.T, o.rd), d = frac * Q.along; const t = o.T.at + d / o.T.pace; worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; const p = travellerAt(o.T, o.rd, t); px = p.x + 5; pz = p.z; return { id: o.T.id, goal: Q.goal, along: Q.along, off: Q.off, t }; };
-  return { n, nm, bad, one: one && put(one, .5), mourn: mourn && { id: mourn.T.id } , _m: mourn && [mourn.rd.def.a, mourn.rd.def.b, mourn.T.id] };
+  const ash = ROADS.find(rd => routeKey(rd.def.a, rd.def.b) === 'ashfeld|redwater_ford'), cl = ash && roadShrines(ash).find(G => G.name === 'Shrine of Cluainnagh');
+  return { n, nm, bad, wet, cl: cl ? cl.ap : null, one: one && put(one, .5), mourn: mourn && { id: mourn.T.id } , _m: mourn && [mourn.rd.def.a, mourn.rd.def.b, mourn.T.id] };
 });
 console.log(JSON.stringify(pil).slice(0, 900));
 check('every pilgrim is bound for a shrine or lesser gate within 1,500 m of his road', pil.n > 0 && pil.bad.length === 0, pil.bad.slice(0, 5));
+check('S2305: no pilgrim\'s leg off the road crosses water deeper than 0.6 m (the Shrine of Cluainnagh, over the sea from the Ashfeld road, is not its goal)', pil.wet.length === 0 && pil.cl === -1, { wet: pil.wet.slice(0, 5), cl: pil.cl });
 check('about one in six bound for a gate are mourners (some over 40 days)', pil.nm > 0, pil.nm);
 await g.cells(); await g.spin(null, 4);
 const talk = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) return { drawn: false, keys: [...ROADWALK.keys()] }; const t = D.npc.def.topics.find(t => t.label === 'Where are you bound?');

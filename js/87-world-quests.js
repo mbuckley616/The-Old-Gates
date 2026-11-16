@@ -2190,7 +2190,7 @@ const giver=`${lord.title} ${lord.name}`;
   // second): the same family at the same bend for a friend. Yesterday's walkers are still on a long road. Within 400 m of you, the nearest
   // four are drawn. This session draws the merchant and his mule; the other kinds are rolled and wait on their sessions.
   const ROADFOLK={merchant:{pace:1.1,w:3},pilgrim:{pace:1.3,w:2},rider:{pace:5.5,w:1},official:{pace:1.3,w:1},family:{pace:1.0,w:0}};
-  const ROADFOLK_NEAR=400,ROADFOLK_DRAWN=4,ROADFOLK_MUL=1.1,ROADFOLK_PILGRIM=1500,ROADFOLK_NEWS=3*1440,ROADFOLK_FLED=20*1440;
+  const ROADFOLK_NEAR=400,ROADFOLK_DRAWN=4,ROADFOLK_MUL=1.1,ROADFOLK_PILGRIM=1500,PILGRIM_WADE=.6,ROADFOLK_NEWS=3*1440,ROADFOLK_FLED=20*1440;
   const ROADFOLK_DRAW={merchant:1,pilgrim:1,rider:1,family:1,official:1};
   const ROAD_EVENT_FLAGS=['besieged','sacked','burned','plague','occupied','abandoned'];
   const _roadDays=new Map(),_roadShrine=new Map(),ROADWALK=new Map();
@@ -2209,7 +2209,16 @@ const giver=`${lord.title} ${lord.name}`;
       for(const t of c.sites)if(t.kind==='shrine'&&near(t.x,t.z))out.push({id:t.id,name:t.name,kind:'shrine',x:t.x,z:t.z});
       for(const e of c.doors){if(e.wet||e.kind!=='cave_door'||e.lairDoor||e.cell!==k||greatSchoolOf(e))continue;const p=fixedDoorSpot(e);if(p&&near(p.x,p.z))out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'),kind:'gate',x:p.x,z:p.z});}}
     out.sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0);_roadShrine.set(key,out);return out;}
-  function roadHasShrine(rd){return roadShrines(rd).length>0;}
+  // S2305 — the critic's s1641: the leg off the road ran straight to the goal over the sea bed. A pilgrim leaves the road where his line to the
+  // goal stays out of water deeper than a wade (PILGRIM_WADE under the sea's level, read on rawH, the same whatever has loaded); of the road's
+  // points (every step-th and the nearest) the nearest such within ROADFOLK_PILGRIM is his, and a goal with none is not one of this road's.
+  // Read lazily, a goal at a time, and kept on it (G.ap, −1 for none): read for every goal of every road at once it was 0.9 s
+  function pilgrimDryLine(x0,z0,x1,z1){const L=Math.hypot(x1-x0,z1-z0),n=Math.max(1,Math.ceil(L/6));
+    for(let k=0;k<n;k++){const f=k/n;if(L*(1-f)<20)break;if(rawH(x0+(x1-x0)*f,z0+(z1-z0)*f)<SEA_Y-PILGRIM_WADE)return false;}return true;}
+  function pilgrimApproach(P,step,G){const C=[];let bi=0,bd=Infinity;for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<bd){bd=d;bi=i;}if(i%step===0||i===P.length-1)C.push([i,d]);}
+    C.push([bi,bd]);C.sort((a,b)=>a[1]-b[1]||a[0]-b[0]);for(const [i,d] of C){if(d>ROADFOLK_PILGRIM)break;if(pilgrimDryLine(P[i].x,P[i].z,G.x,G.z))return i;}return -1;}
+  function pilgrimGoalOk(rd,G){if(G.ap===undefined){const P=rd.pts;G.ap=pilgrimApproach(P,Math.max(1,Math.floor(P.length/12)),G);}return G.ap>=0;}
+  function roadHasShrine(rd){return roadShrines(rd).some(G=>pilgrimGoalOk(rd,G));}
   function roadEndNews(site,within){const st=worldState.towns&&worldState.towns[site.id];if(!st)return false;const now=worldState.gameTimeAbsMinutes||0;return ROAD_EVENT_FLAGS.some(f=>st.flags[f]!=null&&now-st.flags[f]<=within);}
   // the day's departures on one road: [{id, kind, from:'a'|'b', at (the absolute minute), pace}]. Kept for the day once read
   function roadTravellers(rd,day){const key=routeKey(rd.def.a,rd.def.b),ck=key+':'+day;if(_roadDays.has(ck))return _roadDays.get(ck);
@@ -2226,8 +2235,9 @@ const giver=`${lord.title} ${lord.name}`;
   // S2270 — a pilgrim's way (the page's pilgrim row): along the road from his end to its point nearest his shrine or gate, then off the road
   // straight to it, and gone on arriving. His goal is one of the road's shrines and gates by his id; one in six bound for a gate are mourners
   // with their dead (the Clearing, canon §3.1). Kept per traveller, as the roll is
-  function pilgrimPlan(T,rd){if(T._plan)return T._plan;const L=roadShrines(rd);if(!L.length)return (T._plan={none:true});const r=seededRng('pilgrim',T.id),G=L[Math.floor(r()*L.length)%L.length];
-    roadLenOf(rd);const P=rd.pts;let bi=0,bd=Infinity;for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<bd){bd=d;bi=i;}}
+  function pilgrimPlan(T,rd){if(T._plan)return T._plan;const L=roadShrines(rd);if(!L.length)return (T._plan={none:true});const r=seededRng('pilgrim',T.id),k0=Math.floor(r()*L.length)%L.length;let G=null;
+    for(let k=0;k<L.length&&!G;k++){const H=L[(k0+k)%L.length];if(pilgrimGoalOk(rd,H))G=H;}if(!G)return (T._plan={none:true});
+    roadLenOf(rd);const P=rd.pts,bi=G.ap,bd=Math.hypot(P[bi].x-G.x,P[bi].z-G.z);
     const along=T.from==='b'?rd._len-rd._cum[bi]:rd._cum[bi];return (T._plan={goal:G,mourners:G.kind==='gate'&&r()<1/6,along,off:bd,bx:P[bi].x,bz:P[bi].z});}
   function pilgrimAt(T,rd,d){const Q=pilgrimPlan(T,rd);if(Q.none)return null;if(d<0||d>Q.along+Q.off)return null;if(d<=Q.along){const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
     const f=(d-Q.along)/Math.max(1e-6,Q.off),x=Q.bx+(Q.goal.x-Q.bx)*f,z=Q.bz+(Q.goal.z-Q.bz)*f;return {x,z,ang:Math.atan2(Q.goal.x-Q.bx,Q.goal.z-Q.bz),d,off:true};}
