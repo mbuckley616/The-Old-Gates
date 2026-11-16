@@ -189,6 +189,7 @@
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
     if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
     if(c._aq&&c._aq.walks){aqWalkDrop(c._aq.id);c._aq.walks=null;} /* S1927 — the aqueduct's channel */
+    bridgeWalkDrop(null,k); /* S2285 — the bridges' decks */
     if(c._wayside&&c._wayside.lamp){unregLight(c._wayside.lamp.light);c._wayside.lamp=null;} /* S2048 — the coach's lamp */
     if(c._wayside&&c._wayside.patch)offroadPatchDrop(c._wayside.id); /* S2065 — the expedition's laid-back ground */
     if(c._offroad&&c._offroad.patch)offroadPatchDrop(c._offroad.id); /* S2044 — a place off the road's own ground */
@@ -1337,8 +1338,22 @@
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].bridge===id)STATIC_SOL.splice(i,1);
     const gap=g.geometry.userData.gap,runs=gap?[[-len/2,gap.z0],[gap.z1,len/2]]:[[-len/2,len/2]];
     for(const sx of [-1,1])for(const [a,b] of runs){const u=(a+b)/2;STATIC_SOL.push({cx:mx+c_*sx*2.45+s_*u,cz:mz-s_*sx*2.45+c_*u,rx:.2,rz:(b-a)/2,c:c_,s:s_,cell:S.cell,bridge:id});}
+    bridgeWalkDrop(id);for(const [a,b] of runs)ZONES.world.platforms.push(bridgeWalk(id,S.cell,mx,mz,g.position.y+BRIDGE_SETTS,s_,c_,a,b,len));
     const had=BRIDGE_GAPS.has(id);if(gap)BRIDGE_GAPS.set(id,{x:mx,z:mz,s:s_,c:c_,z0:gap.z0,z1:gap.z1});else BRIDGE_GAPS.delete(id);
     if(gap||had)bridgeGround(mx,mz,len/2+ROAD_BLEND+2);}
+  // S2285 — the deck you walk. The ground under a bridge is the road's causeway, 0.5 to 0.8 m under the setts (12 m at a deep
+  // crossing), so you walked through the deck with the rails at your chest. Each run of the deck (one, or two either side of a gap) is
+  // a platform of the world's, as an aqueduct's channel is, its top the setts' (BRIDGE_SETTS over the mesh's origin) between the rails.
+  // The road meets the deck's ends at its own height, so the last BRIDGE_RAMP metres of each end ramp from the ground under you up to
+  // the setts; where a bank stands over the deck's end the ground wins. You take the deck from its ends only: the player when the feet
+  // are within 0.6 of its top, anyone else when the ground is (as the aqueduct's walk), so a swimmer under the arches stays in the water.
+  const BRIDGE_SETTS=.28,BRIDGE_RAMP=2.5,BRIDGE_HW=2.25;
+  function bridgeWalk(id,cell,X,Z,y,s,c,u0,u1,len){const hw=BRIDGE_HW,xs=[],zs=[];for(const u of [u0,u1])for(const v of [-hw,hw]){xs.push(X+u*s+v*c);zs.push(Z+u*c-v*s);}
+    return {x0:Math.min(...xs),x1:Math.max(...xs),z0:Math.min(...zs),z1:Math.max(...zs),y,deck:y,bridge:id,cell,
+      inside(wx,wz){const dx=wx-X,dz=wz-Z,u=dx*s+dz*c,v=dx*c-dz*s;if(u<u0||u>u1||Math.abs(v)>hw)return false;
+        const e=len/2-Math.abs(u),gr=meshH(wx,wz),yy=e<BRIDGE_RAMP?gr+(this.deck-gr)*Math.max(0,e)/BRIDGE_RAMP:this.deck;if(gr>yy)return false;this.y=yy;
+        if(wx===px&&wz===pz)return jumpY>=yy-.6;return gr>=yy-.6;}};}
+  function bridgeWalkDrop(id,cell){const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].bridge&&(id!=null?P[i].bridge===id:P[i].cell===cell))P.splice(i,1);}
   function bridgeGround(x,z,R){for(const ch of chunks.values()){const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK;if(x+R<x0||x-R>x0+CHUNK||z+R<z0||z-R>z0+CHUNK)continue;refreshChunkTerrain(ch);
     for(const o of [...ch.group.children])if(o.userData.ribbon){ch.group.remove(o);o.geometry.dispose();}buildRoadRibbons(ch.cx,ch.cz,ch.group);}}
   function bridgeRedraw(id){const g=sc.children.find(o=>o.userData.bridgeId===id);if(!g)return false;const S=g.userData.span,old=g.geometry;
