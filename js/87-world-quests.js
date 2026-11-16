@@ -1816,7 +1816,19 @@ const giver=`${lord.title} ${lord.name}`;
   // the drift home (`round`) are rounded together as before: carried too, they sank every town a third of the way in 120 days.
   function driveProsperity(site,dd,round){const st=TS(site);st.pf=Math.round(((st.pf||0)+dd)*1e6)/1e6;const w=Math.trunc(st.pf);st.pf-=w;
     const n=st.p+w+Math.round(round||0);if(n!==st.p)setProsperity(site,n);if((st.p>=100&&st.pf>0)||(st.p<=0&&st.pf<0))st.pf=0;}
-  function flag(site,name,on){const st=TS(site);if(on)st.flags[name]=worldState.gameTimeAbsMinutes||0;else delete st.flags[name];if(SETTLE.has(site.id||site))disposeSettlement(site.id||site);}
+  function flag(site,name,on){const st=TS(site);if(on)st.flags[name]=worldState.gameTimeAbsMinutes||0;else{if(st.flags[name]!=null)(st.ended||(st.ended={}))[name]=worldState.gameTimeAbsMinutes||0;delete st.flags[name];} /* S2313 — when a flag lifted (festivalState's 28 days) */if(SETTLE.has(site.id||site))disposeSettlement(site.id||site);}
+  // S2313 — a town keeps its festival as its year allows (Michael's B on #1628, docs/design/festivals.md, the table *The town keeps it as
+  // it can*): 'none' while it is burned, sacked, plagued, abandoned, besieged or occupied; 'named' (full, and the town names you) at
+  // favour 3 or more, or when you freed it this year (st.freed, a siege broken or a garrison put out); 'thin' (the custom and the act,
+  // no contest) under prosperity 50 or within 28 days of a siege, plague, sack, burning or occupation lifted; else 'full'. Read on the
+  // day from the town's own state, so the same town keeps the same festival whatever has loaded. Only a town (BASE_P's kinds) keeps one.
+  const FEST_GONE=['burned','sacked','plague','abandoned','besieged','occupied'],FEST_THIN_P=50,FEST_THIN_DAYS=28,FEST_NAMED_FAVOR=3;
+  function festivalState(site,at){const s=typeof site==='string'?siteAnywhere(site):site;if(!s||!(s.kind in BASE_P))return 'none';
+    const st=TS(s),F=st.flags,now=at!=null?at:(worldState.gameTimeAbsMinutes||0);if(FEST_GONE.some(k=>F[k]!=null))return 'none';
+    const fr=st.freed,frAt=fr&&fr.day!=null?fr.day*1440:null;
+    if(favor(s)>=FEST_NAMED_FAVOR||frAt!=null&&frAt<=now&&calDay(frAt).year===calDay(now).year)return 'named';
+    const E=st.ended||{},recent=FEST_GONE.some(k=>E[k]!=null&&now-E[k]<FEST_THIN_DAYS*1440)||frAt!=null&&now-frAt<FEST_THIN_DAYS*1440;
+    return st.p<FEST_THIN_P||recent?'thin':'full';}
   // what the generator reads
   function lotFactor(site,P){const p=P!=null?P:prosperity(site);return .35+.65*(p/100);}                     // 35%–100% of the plan
   function shopsFor(site,list,P){const p=P!=null?P:prosperity(site);const order={forge:0,goods:10,inn:20,apothecary:30,church:35,armoury:45,shipwright:40,guild_f:60,guild_m:60,keep:80,castle:80};return list.filter(t=>p>=(order[t]==null?0:order[t]));}
@@ -4028,6 +4040,7 @@ const giver=`${lord.title} ${lord.name}`;
     const cs=worldState.coachSeat;if(cs&&typeof cs.at==='number'){const m=((cs.tod%1440)+1440)%1440;out.push({at:cs.at,icon:'🐎',text:`Your seat on the ${Math.floor(m/60)}:${String(Math.round(m%60)).padStart(2,'0')} coach.`});}
     const GG=worldState.guild;if(GG)for(const g in GG){const t=GG[g]&&GG[g].active;if(t&&t.due&&t.doneAt==null&&!taskDone(t))out.push({at:t.due-1,icon:'📜',text:`${t.short} — for the ${GUILD_DEF[g].name}: ${Math.round((t.gold||0)*1.25)} gold if it is done by then; after it, the task is taken back.`});}
     const nf=typeof nextFeast==='function'?nextFeast(now):null;if(nf)out.push({at:nf.at,icon:nf.f.ico,text:`${nf.f.name} — ${nf.f.due}`,feast:nf.f.key}); /* S550 — the next feast (today's, on the day) */
+    {const nv=nextFestival(now,isleAt(px,pz));if(nv)out.push({at:nv.at,icon:nv.f.ico,text:`${nv.f.name} — ${nv.f.due}`,festival:nv.f.key});} /* S2313 — the next festival of the island you stand on */
     qActive().forEach(q=>{if(q.due&&!q.done)out.push({at:q.due-1,icon:'📜',text:`${q.title} — for ${q.giver}: ${Math.round((q.reward||0)*1.25)} gold if it is done by then; after it, the work is taken back.`});});
     return out.filter(e=>isFinite(e.at)).sort((a,b)=>a.at-b.at);
   }
