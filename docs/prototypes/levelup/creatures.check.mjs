@@ -498,6 +498,18 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
       for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i).sub(L.at).applyQuaternion(iq); if (Math.abs(v.z) > .02 || v.length() > L.lim) continue; v.fromBufferAttribute(P, i).sub(L.c).applyQuaternion(iq); worst = Math.max(worst, Math.hypot(v.x / L.rx, v.y / L.ry)); }
       out[k] = +worst.toFixed(3); } return out; });
   for (const [k, w] of Object.entries(collar)) check(`${k}: the collar sits round the neck, the hide in its plane reaching ${w} of its ring (under the leather's inner edge at 0.8, over 0.55)`, w < .8 && w > .55, w);
+  // the bridle sits on the head (Session 2294, the road's rider's horse): every point of its straps stands over the hide's nearest point by
+  // 0.3 to 3 cm (laid on it, not sunk in it nor floating off it), the rings stand at the mouth's corners (within 5 cm of the hide, a hand
+  // apart), and it adds under 1,500 triangles
+  const bridle = await page.evaluate(async () => { const K = await import('./creatures.js'), out = {};
+    for (const k of ['ridinghorse']) { const C = K.build(K.genome(k, k + ':check')), Bd = C.B.bridle, hide = C.meshes.find(m => m.name === 'hide').geometry.attributes.position, hp = [];
+      const H = C.B.headFrame; for (let i = 0; i < hide.count; i++) { const x = hide.getX(i), y = hide.getY(i), z = hide.getZ(i); if ((x - H.base.x) ** 2 + (y - H.base.y) ** 2 + (z - H.base.z) ** 2 < (H.len * 1.3) ** 2) hp.push([x, y, z]); }
+      const near = p => { let d = 1e9; for (const q of hp) d = Math.min(d, (p.x - q[0]) ** 2 + (p.y - q[1]) ** 2 + (p.z - q[2]) ** 2); return Math.sqrt(d); };
+      const m = C.root.getObjectByName('bridle'), P = m.geometry.attributes.position, hb = m.parent, v = new hide.constructor(3, 3); let lo = 1e9, hi = 0; const T = await import('three'), w = new T.Vector3(), base = C.B.by.head.p;
+      for (let i = 0; i < P.count; i++) { w.fromBufferAttribute(P, i).add(m.position).add(base); const d = near(w); lo = Math.min(lo, d); hi = Math.max(hi, d); }
+      out[k] = { lo: +(lo * 100).toFixed(2), hi: +(hi * 100).toFixed(2), rings: Bd.rings.map(r => +(near(r) * 100).toFixed(1)), apart: +(Bd.rings[0].distanceTo(Bd.rings[1]) * 100).toFixed(1), tris: Bd.tris }; } return out; });
+  for (const [k, b] of Object.entries(bridle)) check(`${k}: the bridle lies on the head (its straps ${b.lo}–${b.hi} cm off the hide), the bit's rings at the mouth (${b.rings.join(', ')} cm from the hide, ${b.apart} cm apart), ${b.tris} triangles`,
+    b.lo > .3 && b.hi < 3 && b.rings.every(r => r < 5) && b.apart > 8 && b.apart < 22 && b.tris < 1500, b);
   check('no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 if (process.argv.includes('--shots')) {
   const shot = async (name, q, w = 1920, h = 1080) => { const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));

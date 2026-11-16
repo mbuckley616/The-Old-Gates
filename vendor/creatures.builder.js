@@ -1825,6 +1825,40 @@ P.saddle = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) *
   const drape = (r, ry, len, th, c) => { const g = new THREE.CylinderGeometry(1, 1, len, 24, 1, true, Math.PI / 2 - th / 2, th); g.rotateZ(Math.PI / 2); g.rotateY(Math.PI / 2); g.scale(r, ry, 1); const m = new THREE.Mesh(g, stdMat(c, { rough: .8 })); m.material.side = THREE.DoubleSide; m.position.copy(sp.p); return m; };
   B.bit(sp.bone, drape(R * 1.06, Ry * 1.06, o.len * 1.25, 2.3, B.tone('blanket'))); B.bit(sp.bone, drape(R * 1.09, Ry * 1.09, o.len, 1.6, B.tone('leather')));
   const horn = new THREE.Mesh(new THREE.CylinderGeometry(o.len * .05, o.len * .07, o.len * .22, 10), stdMat(B.tone('leather'), { rough: .6 })); horn.position.copy(sp.p).add(V(0, Ry * 1.12, o.len * .42)); B.bit(sp.bone, horn); };
+// a bridle on the head (Session 2294, the road's rider's horse): the headstall laid on the grown skin of the head and jaw, rigid on the
+// head bone. A crownpiece over the poll behind the ears, a browband across the forehead, a noseband round the face, a cheekpiece down
+// each side to the bit's rings at the mouth's corners, and the bit's bar through the mouth between them. No throatlatch: the kit's
+// throat is the neck's skin, 28 cm under the head's axis, so a strap round it would hang in the air under the jaw.
+// Each strap is a flat leather band 1 cm proud of the hide (over the fur). `B.bridle.rings` are the rings' centres in the body's
+// space, where the reins are tied; `B.bridle.clear` the least height of any strap's point over the skin it was laid on.
+P.bridle = (B, o) => { (B.after ||= []).push(geo => { const H = B.headFrame; if (!H || !B.by.head) return;
+  const pos = geo.attributes.position, SI = geo.attributes.skinIndex, SW = geo.attributes.skinWeight, hi = B.by.head.i, ji = B.by.jaw ? B.by.jaw.i : -1, X = V(1, 0, 0), pts = [];
+  // the skin the head carries, and behind the jaw (where the throat's skin is the neck's) any skin within reach of the head's axis
+  for (let i = 0; i < pos.count; i++) { let w = 0; for (let c = 0; c < 4; c++) { const b = SI.getComponent(i, c); if (b === hi || b === ji) w += SW.getComponent(i, c); }
+    const rel = V(pos.getX(i), pos.getY(i), pos.getZ(i)).sub(H.base), a = rel.dot(H.dir) / H.len, u = rel.dot(H.up); if (w < .5 && !(a > -.3 && a < .4 && Math.hypot(u, rel.x) < 2.2 * H.r)) continue; pts.push([a, u, rel.x]); }
+  const fl = (B.plan.fur?.len || 0) * .8, lift = fl + (o.lift ?? .005), W = o.w ?? .022, M = stdMat(B.tone('leather'), { rough: .6 });
+  const iron = B.plan.palette.iron ? B.tone('iron') : new THREE.Color().setRGB(.5, .5, .52, THREE.SRGBColorSpace), IM = new THREE.MeshStandardMaterial({ color: iron, roughness: .35, metalness: .6 });
+  // the skin's farthest point at `f` of the head's length and the angle `th` round its axis (0 over the top, +90° the left side)
+  const surf = (f, th) => { let R = 0; for (let tol = 1; tol <= 4 && !R; tol *= 2) for (const [a, u, x] of pts) { if (Math.abs(a - f) * H.len > .012 * tol) continue; const r = Math.hypot(u, x); if (r < 1e-4) continue;
+      let d = Math.atan2(x, u) - th; d = Math.atan2(Math.sin(d), Math.cos(d)); if (Math.abs(d) > 9 * DEG * tol) continue; if (r > R) R = r; }
+    const n = H.up.clone().multiplyScalar(Math.cos(th)).addScaledVector(X, Math.sin(th)); return { p: H.base.clone().addScaledVector(H.dir, H.len * f).addScaledVector(n, R + lift), n, R }; };
+  const gs = [], line = (path, steps = 10, closed = false) => { const L = []; for (let k = 0; k < path.length - 1; k++) { const [f0, t0] = path[k], [f1, t1] = path[k + 1], N = closed || k < path.length - 2 ? steps : steps + 1;
+      for (let j = 0; j < N; j++) { const u = j / steps; L.push(surf(lerp(f0, f1, u), lerp(t0, t1, u) * DEG)); } }
+    if (closed) L.push(L[0]); const P = [], I = [];
+    for (let k = 0; k < L.length; k++) { const T = L[Math.min(L.length - 1, k + 1)].p.clone().sub(L[Math.max(0, k - 1)].p).normalize(), wd = L[k].n.clone().cross(T).normalize().multiplyScalar(W / 2);
+      P.push(...L[k].p.clone().sub(wd).toArray(), ...L[k].p.clone().add(wd).toArray()); if (k) { const a = (k - 1) * 2; I.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setIndex(I); gs.push(g); return L; };
+  const cf = o.crown ?? .04, bf = o.brow ?? .14, nf = o.nose ?? .6, rf = o.ring ?? .8, side = o.side ?? 112;
+  line([[cf, -95], [cf, 0], [cf, 95]], 12);                         // the crownpiece over the poll
+  line([[bf, -88], [bf - .02, 0], [bf, 88]], 10);                   // the browband
+  line([[nf, 0], [nf, 180], [nf, 360]], 18, true);                  // the noseband round the face
+  const ring = [], ri = o.ringR ?? .028;
+  for (const sd of [1, -1]) { line([[cf, 95 * sd], [nf, 100 * sd], [rf - .03, side * sd]], 10);   // a cheekpiece to its ring
+    const q = surf(rf, side * sd * DEG), c = q.p.clone().addScaledVector(q.n, ri * .4); ring.push(c);
+    const t = new THREE.Mesh(new THREE.TorusGeometry(ri, ri * .16, 6, 16), IM); t.position.copy(c); t.quaternion.setFromUnitVectors(V(0, 0, 1), X); t.name = 'bit'; B.bit('head', t); }
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(ri * .2, ri * .2, ring[0].distanceTo(ring[1]), 6), IM); bar.position.copy(ring[0]).lerp(ring[1], .5); bar.quaternion.setFromUnitVectors(V(0, 1, 0), ring[0].clone().sub(ring[1]).normalize()); bar.name = 'bit'; B.bit('head', bar);
+  const g = mergeGeometries(gs); g.computeVertexNormals(); const m = new THREE.Mesh(g, M); m.material.side = THREE.DoubleSide; m.name = 'bridle'; B.bit('head', m);
+  B.bridle = { rings: ring.map(r => r.clone()), tris: g.index.count / 3 + 2 * 6 * 16 * 2 + 6 * 2 * 2, w: W }; }); };
 // or (Session 919, OG-088's corrupted row) `crystal`: each a cluster of glassy shards out of the hide (the Shatterhorn's crystal
 // horns), leaning back and to either side by turns, so the back bristles with them as the blight boar's and the frost bear's do
 // `dorsal` (Session 926): out of the back, square to the spine, not straight up (an upright body's back faces behind it)
@@ -3544,7 +3578,11 @@ Object.assign(PLANS, {
   draughthorse: re(PLANS.horse, { name: 'Draught horse', src: 'OG-046 (beasts of burden: the horse in harness)', coatAs: 'horse', scale: 1.1, palette: { ...PLANS.horse.palette, ...GEAR }, parts: [...PLANS.horse.parts, ['harness', { kind: 'collar', at: .28, fit: 1.4 }]] }),
   yokedox: re(PLANS.ox, { name: 'Yoked ox', src: 'OG-046 (beasts of burden: the ox under its yoke)', coatAs: 'ox', scale: PLANS.ox.scale, speedK: PLANS.ox.speedK, palette: { ...PLANS.ox.palette, ...GEAR }, parts: [...PLANS.ox.parts, ['harness', { kind: 'yoke', at: .7, over: .5, fit: 1.05 }]] })
 });
-const HARNESSED = ['packmule', 'draughthorse', 'yokedox'];
+// the riding horse (Session 2294, the road's rider's): the horse saddled (the giant goat's saddle, set where the rider's hips sit) and
+// bridled, in the game's RIDE_TACK colours (a dark madder blanket, brown leather)
+PLANS.ridinghorse = re(PLANS.horse, { name: 'Riding horse', src: 'OG-046 (beasts of burden: the horse, saddled and bridled for a rider)', coatAs: 'horse', palette: { ...PLANS.horse.palette, blanket: [.36, .17, .13], leather: [.235, .14, .08] },
+  parts: [...PLANS.horse.parts, ['saddle', { at: .36, len: .6 }], ['bridle', {}]] });
+const HARNESSED = ['packmule', 'draughthorse', 'yokedox', 'ridinghorse'];
 
 // ── Session 919: the corrupted (OG-088's second row; backlog L4, "corrupted animals by school"). A gate's antibodies wear
 // the animals of its country, and each is a change of shape, never a recolour: the gate's work shows in what grows out of it.

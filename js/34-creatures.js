@@ -1036,7 +1036,7 @@ const HC_WRAITH_REST={spine:[.42,0,0],neck:[.22,0,0],head:[-.42,0,0],shL:[-1.8,0
 const HC_TROLL_COAT={cave:{coat:0x6e7a5c,saddle:0x5a664c,belly:0x7e8a6c,skin:0x646e54},forest:{coat:0x5a6e40,saddle:0x4a5a34,belly:0x6a7e50,skin:0x52643a,moss:0x34501a},
   frost:{coat:0xaebac2,saddle:0x96a4ae,belly:0xc0cad0,skin:0xa2aeb6,moss:0xe0e4e8}};
 const HC_KINDS={'Wolf':{plan:'wolf'},'Snow Wolf':{plan:'wolf',own:true},'Dire Wolf':{plan:'ironwolf',own:true},'Boar':{plan:'boar'},'Cave Bear':{plan:'bear',own:true,ik:true},'Frost Wraith Bear':{plan:'frostbear',own:true,ik:true},'Blight Boar':{plan:'blightboar',own:true},'Stag of Shadows':{plan:'shadowstag',own:true,ik:true}, /* S1933 — a failing gate's corrupted animals (OG-088, #1201 B), on the Cave Bear's, the Boar's and the Elderstag's drivers (gateCorruptBody) */
-  'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},'Riding Horse':{plan:'horse',own:true,ik:true,coatOf:'Horse',saddle:{at:.36,len:.6}},'Grey Riding Horse':{plan:'horse',own:true,ik:true,coatOf:'Grey Horse',saddle:{at:.36,len:.6}},'Mule':{plan:'mule',ik:true},
+  'Ash Hound':{plan:'ashhound'},'Horse':{plan:'horse',own:true,ik:true},'Grey Horse':{plan:'horse',own:true,ik:true},'Riding Horse':{plan:'horse',own:true,ik:true,coatOf:'Horse',saddle:{at:.36,len:.6},bridle:{}},'Grey Riding Horse':{plan:'horse',own:true,ik:true,coatOf:'Grey Horse',saddle:{at:.36,len:.6},bridle:{}},'Mule':{plan:'mule',ik:true},
   'Spider':{plan:'spider',own:true,spider:true,cell:.028,merge:true},'Sand Scorpion':{plan:'dunescorpion',own:true,spider:true,cell:.02,merge:true},
   'Bog Crawler':{plan:'bogcrawler',own:true,spider:true,cell:.018,merge:true},'Faolchú':{plan:'faolchu',own:true,cell:.03,unhunch:true,arms:true},
   'Dragon':{plan:'dragon',own:true,cell:.11,wings:true,sway:true},
@@ -1144,9 +1144,10 @@ function hcPlan(name){const K=HC_KINDS[name];if(!K.own)return K.plan;const id='g
   if(!HC.PLANS[id]&&(K.spider||!WOLF_KINDS[K.coatOf||name]))HC.PLANS[id]=Object.assign({},HC.PLANS[K.plan],{name,cell:K.cell},K.bare?{parts:HC.PLANS[K.plan].parts.map(([k,o])=>k==='head'?[k,Object.assign({},o,{antlers:null})]:[k,o])}:{});
   // a riding horse (Session 2291, the road's rider): the horse's coat (K.coatOf) and the kit's saddle on its back (P.saddle, the giant
   // goat's and the post hare's: a wool blanket under a leather seat and a horn), set where the rider's hips sit (K.saddle), in RIDE_TACK's colours
+  // and (Session 2294) the kit's bridle on its head (P.bridle: crownpiece, browband, noseband, cheekpieces, the bit's rings and bar; K.bridle)
   if(!HC.PLANS[id]){const k=WOLF_KINDS[K.coatOf||name],c=h=>[(h>>16&255)/255,(h>>8&255)/255,(h&255)/255],P=HC.PLANS[K.plan];
     HC.PLANS[id]=Object.assign({},P,K.cell?{cell:K.cell}:{},{name,palette:Object.assign({},P.palette,{coat:c(k.coat),saddle:c(k.saddle),belly:c(k.belly)},P.palette.mane?{mane:c(k.saddle)}:{},K.saddle?{blanket:c(RIDE_TACK.blanket),leather:c(RIDE_TACK.leather)}:{})},
-      K.saddle?{parts:[...P.parts,['saddle',K.saddle]]}:{});}
+      K.saddle?{parts:[...P.parts,['saddle',K.saddle],...(K.bridle?[['bridle',K.bridle]]:[])]}:{});}
   // Session 1969 (L3, OG-031: "Stonefang Wolf and Frostreach Bear as reskins of the Snow Wolf and Cave Bear"): a kind named in
   // HC_ISLE_COATS takes, on an island it names, that kit plan's own coat, saddle and belly, and on any other island keeps its own
   // (the Snow Wolf stays white in Aurenne's snow, not the lowland wolf's sand)

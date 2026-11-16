@@ -13,6 +13,7 @@
 // Session 2287: striking one of them is an assault at the nearer end of the road.
 // Session 2289: the rider rides astride (pwRide), the hips on the horse's back, the legs either side of its barrel.
 // Session 2291: his horse saddled, the reins from his fists to the bit, nothing else in his hands.
+// Session 2294: the horse bridled, the reins tied at its bit's rings.
 // Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
 // Session 2290: over a bridge the road's walkers, the caravans and the coaches stand on the deck's setts (roadY), not on the causeway.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
@@ -205,6 +206,15 @@ check('a rider is drawn seated on his horse, and within 6 m he reins in', h1.dra
   console.log(JSON.stringify(T)); const R = T.reins;
   check('his horse is saddled, he holds nothing but the reins, from his fists to the bit ahead of and below them', /Riding Horse$/.test(T.kind) && T.saddle && T.held.length === 0 && /#road:/.test(T.key) && T.shown && !!R
     && Math.abs(R.hl[0] - R.hr[0]) < .4 && Math.abs(R.L[0] - R.R[0]) < .25 && R.L[2] > R.hl[2] + .5 && R.R[2] > R.hr[2] + .5 && R.L[1] < R.hl[1] && R.R[1] < R.hr[1], T); }
+// S2294 — his horse is bridled (the kit's P.bridle on the riding kind: the headstall on its head bone, the bit's rings and bar) and the
+// reins are tied at those rings: each end within a millimetre of its ring's centre in the world, a hand or two apart across the mouth
+{ const T = await page.evaluate((id) => { const D = ROADWALK.get(id), H = D.npc.g.userData.rig.ride.beast, C = H.hc && H.hc.C, Bd = C && C.B.bridle; if (!Bd) return { bridle: false };
+    const hb = C.byName.head, F = C.B.headFrame; hb.updateWorldMatrix(true, false); D.beast.updateMatrixWorld(true);
+    const ring = Bd.rings.map(r => r.clone().sub(F.base).applyMatrix4(hb.matrixWorld)), end = [D.reinsAt.L, D.reinsAt.R].map(v => v.clone().applyMatrix4(D.beast.matrixWorld));
+    let mesh = null; hb.traverse(o => { if (o.name === 'bridle') mesh = o; });
+    return { bridle: true, mesh: !!mesh, tris: Bd.tris, off: ring.map((r, i) => +(r.distanceTo(end[i]) * 1000).toFixed(2)), apart: +(ring[0].distanceTo(ring[1]) * 100).toFixed(1) }; }, rf.id);
+  console.log(JSON.stringify(T));
+  check('his horse is bridled and the reins are tied at the bit\'s rings', T.bridle && T.mesh && T.off.every(d => d < 1) && T.apart > 10 && T.apart < 40, T); }
 await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 5);
 await g.spin(null, 4);
 const h2 = await page.evaluate((id) => { const D = ROADWALK.get(id); return { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, lag: (worldState.roadfolk[id] || {}).lag }; }, rf.id);
