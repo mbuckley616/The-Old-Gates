@@ -1,9 +1,13 @@
 
   // ── Solids ───────────────────────────────────────────────────────────
+  // S2285 — a static solid that carries its turn (c, s: a bridge's rails, a cave's or an aqueduct's blocks) is tested in its own frame, as
+  // impactInBox (74) and the towns' own tests do; this test and the camera's read it as a box on the world's axes, so a bridge not laid
+  // north to south had its rails across its deck (a 43 m bridge at 25° blocked you 6 m short of its middle and slid you off the side)
+  function solBoxHit(s,x,z,R){const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;}
   // v80 S126 — the camera ignores posts, trunks and stakes; walls, rocks and houses pull it in
   function camSolid(x,z){const R=.12,MIN=.55;const cx=Math.floor(x/CHUNK),cz=Math.floor(z/CHUNK);
     for(let dz=-1;dz<=1;dz++)for(let dx=-1;dx<=1;dx++){const ch=chunks.get(chunkKey(cx+dx,cz+dz));if(!ch)continue;const sol=ch.sol;for(let i=0;i<sol.length;i++){const s=sol[i];if(Math.max(s.rx,s.rz)<MIN)continue;if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;}}
-    for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(Math.max(s.rx,s.rz)<MIN)continue;if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;}
+    for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(Math.max(s.rx,s.rz)<MIN)continue;if(solBoxHit(s,x,z,R))return true;}
     if(settleSolid(x,z,R,MIN))return true;return false;}
   // S1927 — a solid may carry its top (world y): one asked with the feet's height y (the player's own step, currentZoneSolid's third
   // argument) passes over it when y stands within STEP_UP of that top, so you walk along an aqueduct's channel over its arcade. Asked
@@ -22,7 +26,7 @@
       const sol=ch.sol;
       for(let i=0;i<sol.length;i++){const s=sol[i];if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;}
     }
-    for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(s.top!=null&&y!=null&&y>=s.top-STEP_UP)continue;if(Math.abs(x-s.cx)<s.rx+R&&Math.abs(z-s.cz)<s.rz+R)return true;}
+    for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(s.top!=null&&y!=null&&y>=s.top-STEP_UP)continue;if(solBoxHit(s,x,z,R))return true;}
     if(settleSolid(x,z,R))return true;
     if(typeof shipPropSolid==='function'&&shipPropSolid(x,z,R))return true; /* S616 — barrels, crates and masts on a deck */
     return false;
