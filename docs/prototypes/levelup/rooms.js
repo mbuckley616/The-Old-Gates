@@ -2178,7 +2178,8 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
   plan.interior = true; plan.r = stream(MR ? 'merchant-shell' : 'townhouse-shell');
   const fd = plan.open.front.find(q => q.kind === 'fan' || q.kind === 'shopdoor'); fd.ajar = true; plan.open.back[0].ajar = true;
   const shell = gatelandsBuilding(plan), M = { ...mats(), dress: glMats().dress, plaster: mat('plaster', { ns: .35, color: 0xf2ede2, rough: .95 }), wax: new THREE.MeshStandardMaterial({ color: 0xeee2c4, roughness: .6 }),
-    brass: new THREE.MeshStandardMaterial({ color: 0xb8903e, roughness: .32, metalness: .85 }), rug: mat('plaster', { ns: .3, color: 0x6a2a24, rough: 1 }) }, B = new Map(), boxes = [];
+    brass: new THREE.MeshStandardMaterial({ color: 0xb8903e, roughness: .32, metalness: .85 }), rug: mat('plaster', { ns: .3, color: 0x6a2a24, rough: 1 }),
+    /* (Session 2293) the looking glass silvered, not a white board; the armourer's mail, helms and byrnies (the critic, s1606) */ mirror: new THREE.MeshStandardMaterial({ color: 0x8e9ca6, roughness: .1, metalness: .3 }), mail: new THREE.MeshStandardMaterial({ color: 0x5a5c60, roughness: .62, metalness: .7 }) }, B = new Map(), boxes = [];
   const t = plan.t, X = plan.w / 2 - t, Z = plan.d / 2 - t, g = plan.floors, F0 = .03, F1 = g[0], F2 = g[0] + g[1], EAVE = g[0] + g[1] + g[2], SL = .25 /* a floor's depth, boards to ceiling */;
   const CE = [F1 - SL, F2 - SL, EAVE - .2], floors = [F0, F1, F2];
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const q = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(q.attributes)) if (!['position', 'normal'].includes(k)) q.deleteAttribute(k);
@@ -2264,14 +2265,14 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
     if (shelves) for (const xx of [x0, x1 - .03]) bx('oak', xx, xx + .03, y0 + h, y0 + h + .4 + shelves * .36, z1 - .25, z1); };
   const rug = (fl, x0, x1, z0, z1) => bx('rug', x0, x1, floors[fl], floors[fl] + .01, z0, z1);
   const lamp = (fl, x, z, drop = .6) => { const y = CE[fl] - drop; bx('iron', x - .005, x + .005, y + .1, CE[fl], z - .005, z + .005); put(new THREE.CylinderGeometry(.13, .08, .08, 10), 'brass', x, y, z); put(new THREE.SphereGeometry(.06, 8, 6).scale(1, .5, 1), 'glow', x, y + .05, z); return [x, y, z, fl]; };
-  const candle = (x, y, z) => { put(new THREE.CylinderGeometry(.04, .05, .02, 10), 'brass', x, y + .01, z); put(new THREE.CylinderGeometry(.016, .018, .15, 8), 'wax', x, y + .095, z); put(new THREE.SphereGeometry(.011, 5, 4).scale(1, 2.2, 1), 'flame', x, y + .185, z); return [x, y + .2, z]; };
+  const candle = (x, y, z) => { put(new THREE.CylinderGeometry(.04, .05, .02, 10), 'brass', x, y + .01, z); put(new THREE.CylinderGeometry(.016, .018, .15, 8), 'linen', x, y + .095, z) /* (Session 2293) the wax in the linen's draw: the looking glass and the armourer's mail take two of their own */; put(new THREE.SphereGeometry(.011, 5, 4).scale(1, 2.2, 1), 'flame', x, y + .185, z); return [x, y + .2, z]; };
   const lamps = [], candles = []; let shopAt = null;
   const zR = Math.max(Math.min(-Z + 2.05, kz1 - 1.35), -Z + 1.7) /* the range's middle: 2.05 m off the back wall as drawn, short of the dresser */;
   const parlourFire = MR ? null : fireplace(0, cF, 1.5) /* a shop keeps no fire: its stock on the gable */, range = fireplace(0, zR, 2.1, true), drawFire = fireplace(1, cF, 1.6), dineFire = fireplace(1, cB, 1.5);
   // ground: the hall (a hall table and a mirror between the two doors where they leave room), the parlour (two chairs at the fire, a round
   // table, a press of good delft), the kitchen (the range, a dresser of plates, the table and two stools, the back door)
   if (!MR) { const hz1 = pdc - .65, hz0 = Math.max(hz1 - .8, ka1 + .15); if (hz1 - hz0 >= .5) { table(0, PX + pt, PX + pt + .4, hz0, hz1, .8, 'oak', 'halltable'); bx('oak', PX + pt, PX + pt + .02, F0 + 1.3, F0 + 2.0, hz0 + .1, hz1 - .1);
-    bx('delft', PX + pt + .02, PX + pt + .03, F0 + 1.35, F0 + 1.95, hz0 + .15, hz1 - .15) /* the hall glass */; candles.push(candle(PX + pt + .2, F0 + .8, (hz0 + hz1) / 2)); } }
+    bx('mirror', PX + pt + .02, PX + pt + .03, F0 + 1.35, F0 + 1.95, hz0 + .15, hz1 - .15) /* the hall glass */; candles.push(candle(PX + pt + .2, F0 + .8, (hz0 + hz1) / 2)); } }
   lamps.push(lamp(0, PX + 1.0, Z - 1.45, .5));
   if (!MR) {
   rug(0, -X + .75, -X + 2.55, Math.max(fz0 + .1, cF - 1.3), Math.min(Z - .1, cF + 1.2)); chair(0, -X + .9, cF - .95, 'z+', 'oak', true); chair(0, -X + .9, cF + 1.0, 'z-', 'oak', true);
@@ -2283,12 +2284,14 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
     const XW = PX - pt, CX0 = -X + 1.08, CX1 = -X + 1.6, CZ0 = fz0 + .8, CZ1 = Math.max(CZ0 + .9, Z - 1.0), CH = .95, sw = plan.open.front.find(q => q.kind === 'shopwin'), wx0 = sw.x - sw.w / 2 + .05, wx1 = sw.x + sw.w / 2 - .05;
     const jar = (x, y, z, rr, h, k) => put(new THREE.CylinderGeometry(rr, rr * 1.05, h, 10), k, x, y + h / 2, z);
     const bolt = (x, y, z, k, ry = 0) => put(new THREE.BoxGeometry(.32, .14, .22), k, x, y + .07, z, ry);
-    const helm = (x, y, z) => { put(new THREE.SphereGeometry(.12, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), 'iron', x, y, z); put(new THREE.CylinderGeometry(.125, .125, .03, 12), 'iron', x, y + .015, z); };
+    /* (Session 2293) a helm with its brow band, crest and nasal, as the Mark's trader's hall draws it (S2290), so it reads as a helm, not a lamp (the critic, s1606); face is its front's turn */
+    const helm = (x, y, z, face = 0) => { put(new THREE.SphereGeometry(.115, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 1.12, 1.05), 'mail', x, y, z, face); put(new THREE.CylinderGeometry(.12, .12, .035, 12, 1, true), 'iron', x, y + .015, z);
+      put(new THREE.BoxGeometry(.018, .02, .25), 'iron', x, y + .125, z, face); put(new THREE.BoxGeometry(.028, .11, .014), 'iron', x + Math.sin(face) * .122, y - .04, z + Math.cos(face) * .122, face) /* the nasal */; };
     const flask = (x, y, z, k) => { put(new THREE.SphereGeometry(.05, 8, 6), k, x, y + .05, z); put(new THREE.CylinderGeometry(.015, .018, .07, 6), k, x, y + .12, z); };
     // what stands on a shelf, by trade: a step of ware along a run from a0 to a1 (along z on the gable, along x elsewhere)
     const stock = (along, c, a0, a1, y, k0) => { let k = k0 || 0; for (let a = a0 + .12; a < a1 - .1; k++) { const P = q => along === 'z' ? [c, y, a + q] : [a + q, y, c];
       if (MR === 'potion') { const big = k % 3 === 0, rr = big ? .075 : .05; jar(...P(rr), rr, big ? .2 : .14, ['crock', 'delft', 'crock', 'blue'][k % 4]); a += rr * 2 + .05; }
-      else if (MR === 'armor') { if (k % 2) { helm(...P(.13)); a += .32; } else { const [x, yy, z] = P(.14); put(new THREE.BoxGeometry(along === 'z' ? .26 : .3, .06, along === 'z' ? .3 : .26), 'iron', x, yy + .03, z); put(new THREE.BoxGeometry(along === 'z' ? .2 : .26, .05, along === 'z' ? .26 : .2), 'iron', x, yy + .085, z); a += .34; } }
+      else if (MR === 'armor') { if (k % 2) { helm(...P(.13), along === 'z' ? Math.PI / 2 : 0); a += .32; } else { const [x, yy, z] = P(.14); put(new THREE.BoxGeometry(along === 'z' ? .26 : .3, .06, along === 'z' ? .3 : .26), 'iron', x, yy + .03, z); put(new THREE.BoxGeometry(along === 'z' ? .2 : .26, .05, along === 'z' ? .26 : .2), 'iron', x, yy + .085, z); a += .34; } }
       else if (MR === 'barber') { if (k % 3 === 2) { flask(...P(.06), 'blue'); a += .14; } else { const [x, yy, z] = P(.13); put(new THREE.BoxGeometry(.24, .1, .24), 'linen', x, yy + .05, z); a += .3; } }
       else { if (k % 4 === 3) { jar(...P(.09), .09, .2, 'crock'); a += .22; } else { const [x, yy, z] = P(.17); bolt(x, yy, z, ['wool', 'linen', 'blue', 'paint'][k % 4], along === 'z' ? Math.PI / 2 : 0); a += .38; } } } };
     // the stock on the gable behind the counter: open shelves of deal, floor to 2.3 m, its goods on four boards
@@ -2297,7 +2300,7 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
     // the counter, along the gable from the cross wall's end to a metre short of the window: a panelled front in the shop's paint, an oak top
     bx('paint', CX0, CX1, F0, F0 + CH - .04, CZ0, CZ1, 'counter', 0); bx('oak', CX0 - .03, CX1 + .05, F0 + CH - .04, F0 + CH, CZ0 - .03, CZ1 + .03);
     for (let z = CZ0 + .25; z < CZ1 - .2; z += .55) bx('oak', CX1, CX1 + .015, F0 + .15, F0 + CH - .15, z, z + .3);
-    { const cz = (CZ0 + CZ1) / 2, y = F0 + CH; if (MR === 'armor') { helm(CX0 + .25, y, cz + .3); bx('iron', CX0 + .15, CX0 + .4, y, y + .03, cz - .5, cz - .2) /* a mail coif folded */; }
+    { const cz = (CZ0 + CZ1) / 2, y = F0 + CH; if (MR === 'armor') { helm(CX0 + .25, y, cz + .3, Math.PI / 2); bx('iron', CX0 + .15, CX0 + .4, y, y + .03, cz - .5, cz - .2) /* a mail coif folded */; }
       else if (MR === 'barber') { bx('oak', CX0 + .2, CX0 + .3, y, y + .02, cz - .3, cz + .3) /* the strop */; for (const dz of [-.1, .05]) bx('iron', CX0 + .35, CX0 + .37, y, y + .015, cz + dz, cz + dz + .16) /* razors */; put(new THREE.CylinderGeometry(.16, .1, .08, 14), 'delft', CX0 + .26, y + .04, cz + .55); }
       else { /* the brass scales: a post, a beam and two pans */ bx('brass', CX0 + .24, CX0 + .27, y, y + .32, cz - .015, cz + .015); bx('brass', CX0 + .245, CX0 + .265, y + .3, y + .32, cz - .22, cz + .22);
         for (const s2 of [-.2, .2]) put(new THREE.CylinderGeometry(.08, .06, .02, 12), 'brass', CX0 + .255, y + .14, cz + s2); bx('oak', CX0 + .15, CX0 + .36, y, y + .03, cz - .3, cz + .3);
@@ -2317,9 +2320,13 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
     if (MR === 'potion' && cw1 - cw0 >= .8) { press(0, cw0, cw1, fz0, fz0 + .42, 1.0, 'paint', 'dresser', 0); for (const k of [0, 1, 2]) { const yy = F0 + 1.0 + .4 + k * .36; bx('oak', cw0, cw1, yy - .02, yy, fz0, fz0 + .25); stock('x', fz0 + .12, cw0, cw1, yy, k); }
       bx('oak', cw0, cw1, F0 + 1.0, F0 + 2.1, fz0, fz0 + .03); for (const xx of [cw0, cw1 - .03]) bx('oak', xx, xx + .03, F0 + 1.0, F0 + 2.1, fz0, fz0 + .25); }
     else if (MR === 'armor') { for (let x = cw0 + .25; x <= cw1 - .25; x += .7) { const z = fz0 + .35; bx('oak', x - .2, x + .2, F0, F0 + .05, z - .2, z + .2, 'stand', 0); bx('oak', x - .025, x + .025, F0, F0 + 1.45, z - .025, z + .025, 'stand', 0);
-      bx('iron', x - .2, x + .2, F0 + .85, F0 + 1.35, z - .12, z + .12, 'stand', 0); bx('iron', x - .27, x + .27, F0 + 1.3, F0 + 1.38, z - .1, z + .1); helm(x, F0 + 1.45, z); } }
+      bx('oak', x - .22, x + .22, F0 + 1.3, F0 + 1.35, z - .03, z + .03) /* the shoulders */;
+      /* (Session 2293) a byrnie, not a black box (the critic, s1606): the mail a tapered tube flattened to a chest, its neck, short sleeves hanging and a belt, as S2290's stands */
+      put(new THREE.CylinderGeometry(.17, .23, .72, 12, 1, true).scale(1, 1, .62), 'mail', x, F0 + .97, z); put(new THREE.CylinderGeometry(.175, .175, .05, 12).scale(1, 1, .62), 'iron', x, F0 + 1.32, z) /* the neck */;
+      for (const s2 of [-1, 1]) put(new THREE.CylinderGeometry(.06, .075, .28, 8, 1, true), 'mail', x + s2 * .2, F0 + 1.16, z, 0, .6, 0, s2 * .22) /* the sleeves */;
+      bx('iron', x - .2, x + .2, F0 + .73, F0 + .77, z - .13, z + .13) /* the belt */; boxes.push({ tag: 'stand', x0: x - .28, x1: x + .28, y0: F0, y1: F0 + 1.35, z0: z - .15, z1: z + .15, fl: 0 }); helm(x, F0 + 1.45, z); } }
     else if (MR === 'barber') { const x = Math.min((cw0 + cw1) / 2, XW - .95), z = fz0 + .85; chair(0, x, z, 'z-', 'oak', true); bx('oak', x - .2, x + .2, F0 + .98, F0 + 1.22, z + .19, z + .23) /* the headrest */;
-      bx('oak', x - .35, x + .35, F0 + 1.2, F0 + 1.95, fz0, fz0 + .03); bx('delft', x - .3, x + .3, F0 + 1.25, F0 + 1.9, fz0 + .03, fz0 + .035) /* the glass */; table(0, x + .45, x + .85, fz0 + .05, fz0 + .45, .8, 'oak', 'washstand'); put(new THREE.CylinderGeometry(.16, .1, .09, 14), 'delft', x + .65, F0 + .845, fz0 + .25); }
+      bx('brass', x - .35, x + .35, F0 + 1.2, F0 + 1.95, fz0, fz0 + .03); bx('mirror', x - .3, x + .3, F0 + 1.25, F0 + 1.9, fz0 + .03, fz0 + .035) /* the glass, silvered in a gilt frame (Session 2293) */; table(0, x + .45, x + .85, fz0 + .05, fz0 + .45, .8, 'oak', 'washstand'); put(new THREE.CylinderGeometry(.16, .1, .09, 14), 'delft', x + .65, F0 + .845, fz0 + .25); }
     else if (cw1 - cw0 >= .8) { press(0, cw0, cw1, fz0, fz0 + .45, 1.5, 'oak', 'drawers', 0); for (let y = F0 + .2; y < F0 + 1.4; y += .3) for (let x = cw0 + .05; x < cw1 - .1; x += .4) bx('brass', x + .17, x + .21, y + .1, y + .14, fz0 + .45, fz0 + .47); }
     // sacks and a barrel in the east corner by the hall's door, out of the walks from the shop door
     if (MR !== 'barber') { const ex = Math.max(PX + 1.85, X - .55), ez = PH + pt + .45, zL = Z - fd.w - .1 /* short of the shop door's open leaf */; if (X - ex >= .4 && ez + .35 <= zL) { if (MR === 'armor') { bx('oak', ex - .2, X - .05, F0, F0 + .5, ez - .35, ez + .35, 'barrel', 0); for (let k = 0; k < 3; k++) put(new THREE.CylinderGeometry(.22, .22, .03, 14), 'paint', ex + .1 + k * .03, F0 + .74, ez - .2 + k * .2, 0, .6, 0, Math.PI / 2 - .25) /* shields leant in a crate */; }
@@ -2335,7 +2342,7 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
   if (wide > 3.5) { const x0 = -X + 5.6, x1 = -X + 7.0, z0 = -Z + .05, z1 = -Z + .55; bx('oak', x0, x1, F0 + .41, F0 + .45, z0, z1, 'settle', 0); bx('oak', x0, x1, F0, F0 + 1.4, z0, z0 + .05); for (const x of [x0, x1 - .05]) bx('oak', x, x + .05, F0, F0 + .7, z0, z1); }
   // first floor: the drawing room (the fire with a mirror over it, two armchairs, a settee on the cross wall, a round table, a rug) and
   // the dining room behind (the table and four chairs, a sideboard on the back wall)
-  rug(1, -X + .65, -X + 3.35, Math.max(fz0 + .1, cF - 1.3), Math.min(Z - .1, cF + 1.3)); chair(1, -X + .9, cF - .95, 'z+', 'oak', true); chair(1, -X + .9, cF + 1.0, 'z-', 'oak', true); bx('oak', -X + .35, -X + .37, drawFire.y + .3, drawFire.y + 1.2, cF - .5, cF + .5); bx('delft', -X + .37, -X + .38, drawFire.y + .36, drawFire.y + 1.14, cF - .44, cF + .44) /* the looking glass over the mantel */;
+  rug(1, -X + .65, -X + 3.35, Math.max(fz0 + .1, cF - 1.3), Math.min(Z - .1, cF + 1.3)); chair(1, -X + .9, cF - .95, 'z+', 'oak', true); chair(1, -X + .9, cF + 1.0, 'z-', 'oak', true); bx('oak', -X + .35, -X + .37, drawFire.y + .3, drawFire.y + 1.2, cF - .5, cF + .5); bx('mirror', -X + .37, -X + .38, drawFire.y + .36, drawFire.y + 1.14, cF - .44, cF + .44) /* the looking glass over the mantel */;
   const FD = Z - fz0, sx1 = PX - pt - .05, sx0 = Math.max(-X + 2.3, sx1 - 1.55), settee = FD >= 3.1 /* under 7.8 m deep the front room has no room for it */;
   if (settee) { const y0 = F1, x1 = sx1, x0 = sx0, z0 = fz0, z1 = fz0 + .7; bx('wool', x0, x1, y0 + .2, y0 + .45, z0, z1, 'settee', 1); bx('wool', x0, x1, y0 + .45, y0 + .95, z0, z0 + .16); for (const xx of [x0, x1 - .12]) bx('wool', xx, xx + .12, y0 + .45, y0 + .7, z0, z1); for (const xx of [x0 + .05, x1 - .05]) for (const zz of [z0 + .05, z1 - .05]) bx('oak', xx - .025, xx + .025, y0, y0 + .2, zz - .025, zz + .025); }
   { const tr = settee ? .45 : .42, g2 = new THREE.CylinderGeometry(tr, tr, .04, 20), x = -X + 2.2; put(g2, 'oak', x, F1 + .72, cF); bx('oak', x - .05, x + .05, F1, F1 + .7, cF - .05, cF + .05); boxes.push({ tag: 'roundtable', x0: x - tr, x1: x + tr, y0: F1, y1: F1 + .74, z0: cF - tr, z1: cF + tr, fl: 1 }); candles.push(candle(x, F1 + .74, cF)); }
