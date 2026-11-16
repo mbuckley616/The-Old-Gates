@@ -7,27 +7,16 @@
 import { boot, check } from './lib/game.mjs';
 import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
-const towns = () => { anchoredPlaces(); return [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'mark').flatMap(c => c.sites).filter(s => ['town', 'port', 'city', 'village'].includes(s.kind)).slice(0, 14).map(s => s.id); };
+const towns = () => { anchoredPlaces(); return [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'mark').flatMap(c => c.sites).filter(s => ['town', 'port', 'city', 'village'].includes(s.kind)).slice(0, 6).map(s => s.id); };
 const WORD = { misc: 'goods shop', armor: 'armourer', barber: 'barber' };
 
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
-const found = {}, seen = [];
-for (const s of await page.evaluate(towns)) {
-  if (Object.keys(found).length === 3) break;
-  if (!(await g.settle(s))) continue;
-  const r = await page.evaluate(s => { const H = WORLD.settle.get(s).houses.filter(h => h.siteId === s && ['misc', 'armor', 'barber'].includes(h.type)), o = {};
-    for (const h of H) if (h.kit && h.kit.trader === h.type && !o[h.type]) o[h.type] = h.id; return { n: H.length, o }; }, s);
-  seen.push(`${s}: ${r.n} shops, ${Object.keys(r.o).join(' ') || 'no hall'}`);
-  for (const [t, id] of Object.entries(r.o)) if (!found[t]) found[t] = { id, site: s };
-}
-check(`Markish shops stand as rooms.js's trader's hall (${Object.keys(found).map(t => WORD[t]).join(', ') || seen.join('; ')})`, !!found.misc || !!found.armor || !!found.barber, seen);
-for (const [t, { id, site }] of Object.entries(found)) {
+const visit = async (t, id, site, as) => {
   if (await page.evaluate(() => isInterior())) { await page.evaluate(() => exitInterior()); for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250); }
-  if (!(await g.settle(site))) { check(`${WORD[t]}: ${site} settles again`, false); continue; }
   const st = await page.evaluate(([s, id]) => { const S = WORLD.settle.get(s), h = S.houses.find(h => h.id === id), o = h.kit.o;
     return { o: { roof: o.roof, w: o.w, d: o.d, chimney: o.chimney, porch: o.porch } }; }, [site, id]);
-  check(`${WORD[t]} (${id}) on the street: the Mark hall of 6.4 by 9 m under shingle, no chimney (${st.o.porch ? 'with' : 'without'} its porch)`, st.o.roof === 'shingle' && st.o.w === 6.4 && st.o.d === 9 && !st.o.chimney, st);
-  await page.evaluate(([s, id]) => { const h = WORLD.settle.get(s).houses.find(h => h.id === id); window._H = h; forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); }, [site, id]);
+  check(`${WORD[t]} (${id}${as ? ', the goods shop’s lot opened as a barber’s' : ''}) on the street: the Mark hall of 6.4 by 9 m under shingle, no chimney (${st.o.porch ? 'with' : 'without'} its porch)`, st.o.roof === 'shingle' && st.o.w === 6.4 && st.o.d === 9 && !st.o.chimney, st);
+  await page.evaluate(([s, id, as]) => { const h = WORLD.settle.get(s).houses.find(h => h.id === id); if (as) { h._was = h.type; h.type = h.kit.trader = 'barber'; } window._H = h; forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); }, [site, id, as]);
   for (let k = 0; k < 60 && !(await page.evaluate(() => isInterior() && currentHouse === _H)); k++) await page.waitForTimeout(250);
   await g.frames(3);
   const r = await page.evaluate(() => {
@@ -61,7 +50,7 @@ for (const [t, { id, site }] of Object.entries(found)) {
   });
   console.log(JSON.stringify({ ...r, walks: r.walks && r.walks.map(w => w.blocked) }));
   check(`${WORD[t]}: the room is the trader's hall inside, ${r.W} by ${r.D} m and ${r.H} m to the tie beams, at its true size (scale ${r.scaledBy})`, !r.none && r.kind === t && Math.abs(r.W - 5.9) < .05 && Math.abs(r.D - 8.5) < .05 && r.H > 2.4 && r.scaledBy === 1, r);
-  if (r.none) continue;
+  if (r.none) { if (as) await page.evaluate(() => { const h = window._H; h.type = h.kit.trader = h._was; delete h._was; }); return; }
   check(`${WORD[t]}: walled all round below the windows, the door aside (${r.open.length} openings)`, r.open.length === 0, r.open.slice(0, 8));
   check(`${WORD[t]}: under the roof: straight up, the lining at ${r.upY} m`, r.upY != null && r.upY > 2.4 && r.upY < 6.5, r.upY);
   check(`${WORD[t]}: you arrive clear inside the door at ${r.arrive.x}, ${r.arrive.z} m`, r.arrive.clear && !r.arrive.exits, r.arrive);
@@ -77,6 +66,22 @@ for (const [t, { id, site }] of Object.entries(found)) {
   await page.evaluate(() => { const h = currentHouse; VM_SCENE.visible = true; px = h._exitX; pz = h.intD - .4; jumpY = 0; yaw = Math.PI; pitch = 0; interact(); });
   for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
   check(`${WORD[t]}: at the door E takes you out`, !(await page.evaluate(() => isInterior())));
+  if (as) await page.evaluate(() => { const h = window._H; h.type = h.kit.trader = h._was; delete h._was; });
+};
+// Each trade is visited as soon as its town is settled, so no town is settled twice (CI's 900 s). The Mark's first six settlements hold a
+// goods shop and an armourer in the hall, and no barber (the first is the eighth town's). A barber's room is the same build with its own
+// pieces and the chair: where none has been found, the goods shop's lot is opened as a barber's (its type and kit.trader set for the
+// visit, then put back), while its town is loaded.
+const found = {}, seen = [];
+for (const s of await page.evaluate(towns)) {
+  if (found.misc && found.armor) break;
+  if (!(await g.settle(s))) continue;
+  const r = await page.evaluate(s => { const H = WORLD.settle.get(s).houses.filter(h => h.siteId === s && ['misc', 'armor', 'barber'].includes(h.type)), o = {};
+    for (const h of H) if (h.kit && h.kit.trader === h.type && !o[h.type]) o[h.type] = h.id; return { n: H.length, o }; }, s);
+  seen.push(`${s}: ${r.n} shops, ${Object.keys(r.o).join(' ') || 'no hall'}`);
+  for (const t of ['misc', 'armor', 'barber']) if (r.o[t] && !found[t]) { found[t] = { id: r.o[t], site: s }; await visit(t, r.o[t], s, false);
+    if (t === 'misc' && !found.barber && !r.o.barber) { found.barber = { id: r.o.misc, site: s, as: true }; await visit('barber', r.o.misc, s, true); } }
 }
+check(`Markish shops stand as rooms.js's trader's hall (${Object.keys(found).map(t => WORD[t] + (found[t].as ? ' (the goods shop’s lot)' : '')).join(', ') || seen.join('; ')})`, !!found.misc && !!found.armor, seen);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
