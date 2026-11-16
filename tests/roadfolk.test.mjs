@@ -16,6 +16,7 @@
 // Session 2294: the horse bridled, the reins tied at its bit's rings.
 // Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
 // Session 2290: over a bridge the road's walkers, the caravans and the coaches stand on the deck's setts (roadY), not on the causeway.
+// Session 2301: his mule's pack (and a family's handcart) robbed as a strongbox: unseen nothing, seen a theft at the nearer end.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -68,6 +69,32 @@ const hit = await page.evaluate((id) => { const D = ROADWALK.get(id); const N = 
   const S = JSON.parse(snap); worldState.crime = S.c || undefined; worldState.crimes = S.l || undefined; worldState.favor = S.t || {}; return out; }, m.id);
 console.log(JSON.stringify(hit));
 check('striking the road\'s merchant is an assault at the nearer end of his road: +75 fine, 3 owed, −3 favour', hit.ok && hit.fine === 75 && hit.debt === 3 && hit.fav === -3 && hit.last.kind === 'assault' && hit.last.site === hit.near && hit.last.road === m.id, hit);
+// Session 2301 (Michael's A on #1638): his mule's pack is a container. From behind the mule, out of his sight and hearing, E takes one row
+// and only the record knows; heard at his elbow it is a theft at the nearer end (−2 favour, 50 + the goods' worth), he will not trade for
+// 5 days, and the row is gone from his pack. Once a traveller. State restored after.
+const rob = await page.evaluate((id) => { const D = ROADWALK.get(id); const N = D.npc, B = D.beast; const snap = JSON.stringify({ c: worldState.crime || null, l: worldState.crimes || null, t: worldState.favor || null, r: worldState.roadfolk || null, f: worldState.refuse || null }); const bag0 = BAG.length;
+  const a = N.g.rotation.y, fx = Math.sin(a), fz = Math.cos(a), sx = Math.cos(a), sz = -Math.sin(a);
+  const others = [...ROADWALK.values()].filter(o => o !== D); others.forEach(o => { o.npc.g.visible = false; });
+  const stand = (x, z) => { px = x; pz = z; yaw = Math.atan2(-(B.position.x - px), -(B.position.z - pz)); };
+  const restore = () => { const S = JSON.parse(snap); worldState.crime = S.c || undefined; worldState.crimes = S.l || undefined; worldState.favor = S.t || {}; worldState.roadfolk = S.r || undefined; worldState.refuse = S.f || undefined; BAG.length = bag0; };
+  const a0 = siteAnywhere(D.rd.def.a), b0 = siteAnywhere(D.rd.def.b), nearOf = () => Math.hypot(a0.x - px, a0.z - pz) <= Math.hypot(b0.x - px, b0.z - pz) ? a0 : b0;
+  const rows0 = merchantPack(D.T).length;
+  // behind the mule
+  stand(B.position.x - fx * 1.0 + sx * 1.2, B.position.z - fz * 1.0 + sz * 1.2); const near1 = nearOf(); const cA = ((worldState.crime || {})[near1.id] || { bounty: 0 }).bounty;
+  const p1 = roadPackPrompt(), w1 = roadWitness(); const ok1 = roadPackTake(); const it1 = BAG[BAG.length - 1];
+  const unseen = { prompt: p1, wit: w1 && w1.name, ok: ok1, got: BAG.length - bag0, item: it1 && it1.name, stolen: it1 && it1.stolen, fine: ((worldState.crime || {})[near1.id] || { bounty: 0 }).bounty - cA, last: worldState.crimes[worldState.crimes.length - 1], again: roadPackPrompt(), rows: merchantPack(D.T).length };
+  roadPackTake(); unseen.twice = BAG.length - bag0;
+  restore();
+  // at his elbow, between him and the mule
+  stand(N.g.position.x - fx * .8 + sx * 1.0, N.g.position.z - fz * .8 + sz * 1.0); const near2 = nearOf(); const c0 = ((worldState.crime || {})[near2.id] || { bounty: 0, debt: 0 }), bb = c0.bounty, dd = c0.debt, ff = favor(near2);
+  const w2 = roadWitness(); const ok2 = roadPackTake(); const it2 = BAG[BAG.length - 1]; const c = worldState.crime[near2.id];
+  const seen = { wit: w2 && w2.name, by: N.def.name, ok: ok2, item: it2 && it2.name, worth: it2 && it2.buyPrice, fine: c.bounty - bb, debt: c.debt - dd, fav: favor(near2) - ff, refuse: (worldState.refuse || {})[id] - dayNow(), rows: merchantPack(D.T).length, inPack: merchantPack(D.T).filter(r => r.name === (it2 && it2.name)).length, inPack0: merchantPack(Object.assign({}, D.T, { id: D.T.id })).length };
+  currentHouse = merchantHouse(D.T, D.rd, N.def.name); seen.refuses = WORLD.refusesTrade(currentHouse); currentHouse = null;
+  restore(); others.forEach(o => { o.npc.g.visible = true; });
+  return { rows0, unseen, seen }; }, m.id);
+console.log(JSON.stringify(rob));
+check('from behind his mule, unseen: one row of his pack, stolen, no fine, once', !!rob.unseen.prompt && !rob.unseen.wit && rob.unseen.ok && rob.unseen.got === 1 && rob.unseen.stolen && rob.unseen.fine === 0 && rob.unseen.last.kind === 'theft' && rob.unseen.last.road === m.id && rob.unseen.rows === rob.rows0 - 1 && rob.unseen.twice === 1 && /nothing more/.test(rob.unseen.again), rob.unseen);
+check('at his elbow he sees it: theft at the nearer end (+50 and its worth, 2 owed, −2 favour), no trade for 5 days', rob.seen.ok && rob.seen.wit === rob.seen.by && rob.seen.fine === 50 + rob.seen.worth && rob.seen.debt === 2 && rob.seen.fav === -2 && rob.seen.refuse === 5 && rob.seen.refuses && rob.seen.rows === rob.rows0 - 1, rob.seen);
 // far away: gone
 await page.evaluate(() => { px += 900; });
 await g.spin(null, 5);

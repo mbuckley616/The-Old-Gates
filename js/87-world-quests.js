@@ -2241,7 +2241,8 @@ const giver=`${lord.title} ${lord.name}`;
   // the merchant's pack: 6 to 10 rows of a goods shop's stock, his own by his id, at his home town's prices ×1.1
   function merchantPack(T){const r=seededRng('roadpack',T.id),src=(typeof SHOP_STOCK!=='undefined'&&SHOP_STOCK.misc)||[];const idx=src.map((_,i)=>i);
     for(let i=idx.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
-    const n=Math.min(src.length,6+Math.floor(r()*5));return idx.slice(0,n).sort((x,y)=>x-y).map(i=>Object.assign({},src[i]));}
+    const n=Math.min(src.length,6+Math.floor(r()*5));const R=rfRec(T.id),took=R&&R.took; /* S2301 — less the row taken from his mule */
+    return idx.slice(0,n).sort((x,y)=>x-y).map(i=>Object.assign({},src[i])).filter((it,k,A)=>!took||it.name!==took||A.findIndex(o=>o.name===took)!==k);}
   function merchantHouse(T,rd,name){const home=roadfolkHome(T,rd),R=rfRec(T.id);return {id:T.id,name,keeper:name,type:'misc',siteId:home?home.id:null,roadMul:R&&R.saved&&R.day===dayNow()?ROADFOLK_SAVED:ROADFOLK_MUL,pack:merchantPack(T),roadfolk:true};}
   function merchantDef(T,rd,p){const home=roadfolkHome(T,rd),dest=roadfolkDest(T,rd),r=seededRng('roadfolk',T.id);const [i,j]=cellOf(home.x,home.z);const nat=nationOf(i,j);
     const nm=pick(r,(NAMES[PEOPLES[nat.people].names]||NAMES.irish).m);
@@ -2398,6 +2399,42 @@ const giver=`${lord.title} ${lord.name}`;
     if(!best)return false;const a=siteAnywhere(bD.rd.def.a),b=siteAnywhere(bD.rd.def.b);const site=!a?b:!b?a:Math.hypot(a.x-px,a.z-pz)<=Math.hypot(b.x-px,b.z-pz)?a:b;if(!site)return false;
     const name=(best.def&&best.def.name)||'someone';bookAssault(site,bD.T.id);
     showMsg(`You struck ${name}. ${site.name} will hear of it.`,'#ff6060');if(typeof addLog==='function')addLog('👁',`Struck ${name} on the road near ${site.name}.`);return true;}
+  // S2301 — robbing the road's people (Michael's A on #1638: "take from the mule's pack, as from a strongbox"). The merchant's mule
+  // (his pack) and the family's handcart are containers: aimed at within ROADPACK_REACH, E takes one row, once a traveller. The pack's
+  // row is the seeded one of his pack (`roadrob`, by his id), and it is gone from his shop after; the handcart holds 2 to 4 rows of a goods
+  // shop's stock (`roadcart`, by the family's id), what a family saved from home. Seen by anyone on the road or in a town in the witness
+  // rule's reach (witR, the street's cone, and its two metres of hearing), it is the theft of the crime system at the nearer end of his
+  // road (bookCrime: −2 favour, a fine of 50 and the goods' worth), and the merchant will not trade with you for 5 days; unseen, it is
+  // only the record. Kept in worldState.roadfolk[id].took (the world's), so a load neither gives the row twice nor puts it back.
+  const ROADPACK_REACH=2.2,ROADPACK_AIM=Math.cos(Math.PI/5);
+  function familyCart(T){const r=seededRng('roadcart',T.id),src=(typeof SHOP_STOCK!=='undefined'&&SHOP_STOCK.misc)||[];if(!src.length)return [];const n=2+Math.floor(r()*3),out=[],seen=new Set();
+    for(let k=0;k<n*4&&out.length<n;k++){const i=Math.floor(r()*src.length);if(seen.has(i))continue;seen.add(i);out.push(Object.assign({},src[i]));}return out;}
+  function roadPackRows(T){const R=rfRec(T.id);if(R&&R.took)return [];return T.kind==='merchant'?merchantPack(T):T.kind==='family'?familyCart(T):[];}
+  function roadPackAt(D){if(D.T.kind==='merchant'&&D.beast&&!D.attack)return {x:D.beast.position.x,z:D.beast.position.z,what:'pack',whose:D.npc.def.name};
+    if(D.T.kind==='family'&&D.cart&&D.cart.visible!==false){const g=D.npc.g,a=g.rotation.y;return {x:g.position.x+Math.sin(a)*1.3,z:g.position.z+Math.cos(a)*1.3,what:'handcart',whose:D.npc.def.name};}return null;}
+  function roadPackNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;const fx=-Math.sin(yaw),fz=-Math.cos(yaw);let best=null,bd=ROADPACK_REACH;
+    for(const D of ROADWALK.values()){if(!D.npc||!D.npc.g.visible)continue;const P=roadPackAt(D);if(!P)continue;const dx=P.x-px,dz=P.z-pz,d=Math.hypot(dx,dz);if(d>=bd)continue;
+      if(d>.4&&(dx*fx+dz*fz)/d<ROADPACK_AIM)continue;best={D,P};bd=d;}
+    if(!best)return null;let tn=null;try{tn=talkTargetNow();}catch(e){}if(tn&&Math.hypot(tn.g.position.x-px,tn.g.position.z-pz)<bd)return null; /* the person you face is nearer: E talks */
+    return best;}
+  function roadPackPrompt(){const N=roadPackNear();if(!N)return null;const R=rfRec(N.D.T.id);
+    return R&&R.took?`${N.P.whose}'s ${N.P.what} — nothing more you can get at`:`${N.P.whose}'s ${N.P.what} — Press 'E' to take from it`;}
+  // whoever sees you at it: the road's people (every walker, the guard and the mourners too) and then the townsfolk, by the street's rule
+  function roadWitness(){const {R}=witR(false);let best=null,bd=R;
+    for(const D of ROADWALK.values())for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N||!N.g||!N.g.visible)continue;const d=Math.hypot(px-N.g.position.x,pz-N.g.position.z);if(d>=bd)continue;
+      if(d>=WIT_HEAR&&!intFaces(N.g))continue;if(!clearLine(px,pz,N.g.position.x,N.g.position.z))continue;best={name:(N.def&&N.def.name)||'someone',npc:N,D};bd=d;}
+    return best||witnessOf(null,false);}
+  function roadPackTake(){const N=roadPackNear();if(!N)return false;const {D,P}=N,T=D.T;if((rfRec(T.id)||{}).took){showMsg(`There is nothing more you can get at in ${P.whose}'s ${P.what}.`,'#c8b880');return true;}
+    const rows=roadPackRows(T);if(!rows.length)return false;const r=seededRng('roadrob',T.id),row=rows[Math.floor(r()*rows.length)];
+    const a=siteAnywhere(D.rd.def.a),b=siteAnywhere(D.rd.def.b);const site=!a?b:!b?a:Math.hypot(a.x-px,a.z-pz)<=Math.hypot(b.x-px,b.z-pz)?a:b;
+    const it=Object.assign({},row,{qty:1,stolen:true,stolenAt:site?site.id:null});const worth=it.buyPrice||0;
+    rfSet(T.id,{took:row.name,day:dayNow()});if(typeof bagAdd==='function')bagAdd(it);
+    (worldState.crimes||(worldState.crimes=[])).push({kind:'theft',site:site?site.id:null,house:null,road:T.id,day:dayNow(),min:absMin()});
+    const w=roadWitness();
+    if(w){if(site)bookCrime(site,'theft',worth);if(T.kind==='merchant')(worldState.refuse||(worldState.refuse={}))[T.id]=dayNow()+5;
+      showMsg(`${w.name} saw you take what was not yours.`,'#e88a8a');if(typeof addLog==='function')addLog('👁',`${w.name} saw you take from ${P.whose}'s ${P.what} on the road${site?'; '+site.name+' will not forget it':''}.`);}
+    else{showMsg(`${it.name}, from ${P.whose}'s ${P.what}.`,'#e8d8a0');if(typeof addLog==='function')addLog('💰',`Took ${it.name.toLowerCase()} from ${P.whose}'s ${P.what} on the road${site?' near '+site.name:''}.`);}
+    if(typeof renderInv==='function')renderInv();return true;}
   function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);if(D.bier){sc.remove(D.bier);D.bier.traverse(o=>{if(o.geometry)o.geometry.dispose();});}if(D.cart){sc.remove(D.cart);D.cart.traverse(o=>{if(o.geometry)o.geometry.dispose();});}if(D.reins)D.reins.geometry.dispose();ROADWALK.delete(id);}
   function tickRoadfolk(dt){if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
     if(Math.random()<.002)rfPrune();
