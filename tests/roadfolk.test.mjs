@@ -11,6 +11,7 @@
 // Session 2283: a bridge rolls 1 in 30 a game-week and is down two weeks, drawn broken (the look's S2281) with the river's bed in its gap; riders tell of it;
 // the nearer lord mends it for 250 gold + 2 a metre (or 20 planks and Joinery 25), up 2 days after.
 // Session 2287: striking one of them is an assault at the nearer end of the road.
+// Session 2289: the rider rides astride (pwRide), the hips on the horse's back, the legs either side of its barrel.
 // Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
@@ -180,10 +181,18 @@ const rf = await page.evaluate(() => { const now = worldState.gameTimeAbsMinutes
 console.log(JSON.stringify(rf));
 check('a rider found', !!rf);
 await g.cells(); await g.spin(null, 4);
+await g.frames(3); /* S2289 — the pose is the people's tick's, run on the game's own frames, not g.spin's */
 const h1 = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return { drawn: false, keys: [...ROADWALK.keys()] }; const rig = D.npc.g.userData.rig;
-  return { drawn: true, halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, sit: !!(rig && rig.sit), horse: D.beast.children.length, lift: +(D.npc.g.position.y - worldH(D.npc.g.position.x, D.npc.g.position.z)).toFixed(2), inTalk: npcs.includes(D.npc), post: D.npc.def.post, lag: (worldState.roadfolk[id] || {}).lag || 0 }; }, rf.id);
+  return { drawn: true, halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, sit: !!(rig && rig.ride && !rig.sit), horse: D.beast.children.length,
+    seat: (() => { if (!rig || !rig.B) return null; D.beast.updateMatrixWorld(true); D.npc.g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(D.beast.matrixWorld).invert(), v = new THREE.Vector3();
+      const at = b => { rig.B[b].getWorldPosition(v); v.applyMatrix4(inv); return [+v.x.toFixed(3), +v.y.toFixed(3), +v.z.toFixed(3)]; };
+      return { hips: at('hips'), knL: at('knL'), knR: at('knR'), anL: at('anL'), anR: at('anR'), w: +rig.w.ride.toFixed(2) }; })(), lift: +(D.npc.g.position.y - worldH(D.npc.g.position.x, D.npc.g.position.z)).toFixed(2), inTalk: npcs.includes(D.npc), post: D.npc.def.post, lag: (worldState.roadfolk[id] || {}).lag || 0 }; }, rf.id);
 console.log(JSON.stringify(h1));
 check('a rider is drawn seated on his horse, and within 6 m he reins in', h1.drawn && h1.sit && h1.horse === 1 && h1.lift > .5 && h1.halted && h1.inTalk, h1);
+// S2289 — astride, not on the bench pose: the hips 5 to 15 cm over the horse's back (1.30 m at the saddle standing, higher in its stride), each knee and ankle out past
+// the barrel (0.20 to 0.27 m a side), the left on the left; the old pose hung the shins straight down through the horse's shoulder
+{ const S = h1.seat; check('he rides astride: the hips over the horse\'s back, a knee and an ankle down either side of its barrel', !!S && S.w > .9 && S.hips[1] > 1.3 && S.hips[1] < 1.6 && Math.abs(S.hips[0]) < .05
+  && S.knL[0] > .3 && S.knR[0] < -.3 && S.anL[0] > .28 && S.anR[0] < -.28 && S.anL[1] < 1.1 && S.anR[1] < 1.1, S); }
 await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 5);
 await g.spin(null, 4);
 const h2 = await page.evaluate((id) => { const D = ROADWALK.get(id); return { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, lag: (worldState.roadfolk[id] || {}).lag }; }, rf.id);
