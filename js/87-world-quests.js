@@ -199,7 +199,7 @@
       const expanded=[];for(const tp of list){expanded.push(tp);}
       // follow-ups live inside the folders: expand them there
       [you,place].forEach(arr=>{for(let i=arr.length-1;i>=0;i--){const tp=arr[i];if(tp.then&&def._asked&&def._asked.has(tp.label))tp.then.forEach((x,k)=>arr.splice(i+1+k,0,Object.assign({},x,{label:'  \u21b3 '+x.label})));}});
-      expanded.push({label:Math.random()<.5?pick(Math.random,(PEOPLES[def.people||'gatelander']).bye):pick(Math.random,T.bye),bye:true});
+      expanded.push({label:Math.random()<.5?roadPick(def,(PEOPLES[def.people||'gatelander']).bye):roadPick(def,T.bye),bye:true}); /* S2299 — roadPick: no door on the road */
       // remember what was asked (wrap fn/response so choosing marks it)
       return expanded.map(tp=>{const w=Object.assign({},tp);const orig=w.fn;w.fn=(c)=>{(def._asked||(def._asked=new Set())).add(tp.label);const rr=orig?orig(c):undefined;return rr;};if(!orig&&!w.response&&Object.getOwnPropertyDescriptor(tp,'response')){}return w;});
     }});
@@ -928,13 +928,17 @@ const giver=`${lord.title} ${lord.name}`;
      by 1, once in each town a day (worldState.speech.heard[site] is the day it last did) */
   function hearingFirst(site){if(!site||!site.id||!perk('speech',75))return false;const W=worldState.speech||(worldState.speech={}),H=W.heard||(W.heard={}),d=dayNow();
     if(H[site.id]===d)return false;H[site.id]=d;addFavor(site,1);if(typeof addLog==='function')addLog('🗣',`A first word well taken at ${site.name}: favour +1.`);return true;}
+  // S2299 — the road's people (def.roadfolk) meet you on the road, not at their door: from the same pools they leave out the lines said at a
+  // door or a hearth (the door, come in, sit, welcome, the look of home); a pool all of whose lines are such is kept whole
+  const AT_HOME_LINE=/\bdoor\b|\bcome in\b|\bcome closer\b|\bsit\b|\bwelcome\b|look of home|slower than you're used to/i;
+  function roadPick(def,arr){if(!def||!def.roadfolk||!arr)return pick(Math.random,arr);const a=arr.filter(l=>!AT_HOME_LINE.test(l));return pick(Math.random,a.length?a:arr);}
   function firstWords(def,site){
     const key=metKey(def,site),n=metCount(key),sp=GREET_FIRST[def.people]?def.people:'gatelander',pp=GREET_FIRST[playerPeople()]?playerPeople():'gatelander',T=TEMPERS[def.temper];
     let g;
     if(n===0){
-      if(def._roleGreet&&Math.random()<1/3)g=pick(Math.random,def._roleGreet);
-      else{g=pick(Math.random,GREET_FIRST[sp][pp]);if(pp==='oldblood'&&Math.random()<1/3)g+=' '+peopleGreeting(def);}
-    }else g=(T&&Math.random()<1/3)?pick(Math.random,T.greet):pick(Math.random,(pp==='oldblood'?GREET_AGAIN_OB:GREET_AGAIN)[sp]);
+      if(def._roleGreet&&Math.random()<1/3)g=roadPick(def,def._roleGreet);
+      else{g=roadPick(def,GREET_FIRST[sp][pp]);if(pp==='oldblood'&&Math.random()<1/3)g+=' '+peopleGreeting(def);}
+    }else g=(T&&Math.random()<1/3)?roadPick(def,T.greet):roadPick(def,(pp==='oldblood'?GREET_AGAIN_OB:GREET_AGAIN)[sp]);
     const G=GREET_TAG[sp];
     const owner=worldState.owned&&site&&Object.values(worldState.owned).some(o=>o.site===site.id)?G.owner:'';
     const rank=worldState.guild&&((worldState.guild.guild_f&&worldState.guild.guild_f.done>=3)||(worldState.guild.guild_m&&worldState.guild.guild_m.done>=3))?G.guild:'';
