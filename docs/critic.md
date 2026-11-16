@@ -1853,3 +1853,42 @@ What reads: the smoke at 2 s (`view=fight`) is a good bank, cotton wool up close
 - My 14 Nov items (s1572: the garden at the shop door, the bench's rack, *Plant Whispercap*, *4 d 24 h*) were appended at the foot of the file, under L12, not in section I (lines 812 to 815); they are struck as done (S2220 to S2233), so nothing is lost, but the next critic line should go at the end of section I (before *J.*).
 
 No proposal this run.
+
+## 2026-11-16 — The road's people: a merchant and his mule, a pilgrim to her shrine, a rider astride, an official and his guard, mourners with their bier, a family out of burned Ashenmoor, a bridge down on the West Track; two of Dunmore's shops in the merchant's house (build s1641, read to Session 2290)
+
+A playtest, after 15 Nov's new-look run. Read Sessions 2254 to 2290: most of it is #1587 B, the road's people (S2268 to S2289), so that is what I played. Seven boots of the game on the new look at 1280×720 from the home province (13100, 25450), each a script of my own in `tests/tmp/`. I put myself beside each kind of traveller at a daytime hour on the roads around Hearthwick and Salthaven (the clock set to the minute the roll gives them; I did not walk 400 m to them), pressed E, read the dialog box and clicked its topics. No page errors in any boot. 71 travelled roads are loaded at the start; every one had 3 or 4 departures for the day.
+
+**What was wrong.**
+1. **A pilgrim walks the sea bed to her shrine.** `pilgrimAt` walks a pilgrim from the road's nearest point straight to her goal. From the Ashfeld–Redwater Ford road the Shrine of Cluainnagh (13126, 27266) is 1,371 m off, and 213 of the 343 points I sampled every 4 m on that line are under the sea. I set the clock to 17:48 on day 4 and stood off pilgrim `road:ashfeld|redwater_ford:4:1` at (12960, 26428): she is drawn at y −8.00, on the bed, 8 m under the surface (`SEA_Y` 0), walking. Three of the nine pilgrim legs I sampled cross water like this (the Shrine of Kilshane too, 200 of 327); two others cross slopes over 35° for a fifth of their length (the Black Forge, 71 of 326). S2270 named the straight line through whatever stands in the way; the sea is the case a player will notice, because the minimap shows her dot in the water. To the backlog.
+2. **The road's people walk inside a bridge, not on its deck.** `tickRoadfolk` stands every traveller at `worldH`, which under a bridge is the causeway, the same ground S2288 took the player off. On the Coastal Road's bridge (`bridge_5,10_23`, Carraig Mór–Salthaven) a merchant at the middle stands 1.78 m under the setts, hidden in the masonry; on the North Approach's (`bridge_5,10_26`) an official stands 5.75 m under. On the one bridge I found down (`bridge_6,9_25`, the Border Road to Inisnashane, 51 m) a merchant walks on through the gap at 0.6 m, on the water at the broken stub (picture: `docs/critic/2026-11-16-road-merchant-in-bridge-gap.jpg`). S2284 stops the coach at the bank; the people on foot do not stop. To the backlog. Whether they should wait, turn back or wade is a design call; the deck is not. The systems builder's S2292 (`roadY`, PR #1637, carrying S2290's work) puts them on the deck and was not on main at s1641; my backlog line is for checking once it lands, with the bridge-down half still open.
+3. **The merchant's house's shop window is black at noon.** The panes are glass at 14% opacity in front of the room's black background, so the window from sill to ceiling is a wall of night at 11:00 (Clodagh's Goods), 12:00 (Bríd's Armoury) and 15:00 (Cathal's Apothecary). Tadhg's House in the same town at noon has a pale window. The street side is the shop's whole long wall, so this is most of the view as you come in (picture: `docs/critic/2026-11-16-dunmore-goods-black-window.jpg`). To the backlog.
+4. **The road's people greet you with the town's lines** (low). A rider on La Route Royale: *A face from home. Come in out of it.* A pilgrim's parting: *Mind the door.* A family fleeing burned Ashenmoor: *You've the look of home about you.* They come from the kin greeting pool (`87-world-quests.js`, the `gatelander` row) and the gruff farewell, written for someone at their own door. S2286 gave the road's people their own answers; the greeting and the goodbye are still the town's. To the backlog.
+
+**What worked.**
+- **The mourners and their bier** read at 5 m: two bearers in dark clothes, the shrouded body between them on its poles, at a pilgrim's walk (picture: `-road-mourners-bier.jpg`). Pressing E at them does nothing, as S2270 meant: you cannot talk to them.
+- **The rider astride** (S2289) reads as a man on a horse from the front at 4 m: hips on the back, legs either side of the barrel, a short man's knees clear (picture: `-road-rider-astride.jpg`). Bare-backed and no reins, as S2289 says.
+- **The official and his guard**: a man in green with a mailed spearman at his shoulder, both on the road's line (picture: `-road-official-guard.jpg`).
+- **The merchant's pack** is honest: Cormac of Salthaven sold a Torch at 9, Lockpicks at 13, a Health Potion at 20; I paid 9 for the torch and it was in the bag. The Pack Mule walks 1.60 m behind him on the ground (picture: `-road-merchant-mule.jpg`, at 14 m). His topic is *Let me see your pack.*, as S2286 fixed.
+- **The pilgrim** answered *To the Shrine of Cluainnagh. It lies south of here.* and the map took the note.
+- **The family's alms with no money**: *An empty hand can’t fill another. Keep your road, and we’ll keep ours.* That is a good line. The topic still offers *(15 gold)* when you have less than 15; the answer covers it.
+- **A bridge down from the bank** (the West Track bridge, 31 m) reads as a broken span: the near deck ends at a stub over open water, and the far deck stands beyond. The stub is one grey, as S2281 says.
+- **Dunmore's shops buy and sell honestly**: a Bronze Helmet at 14 from Bríd, sold back for 6.
+- Every traveller I sampled (46, across seven days and two hours) stood on the ground they walk; none in a solid. My scan of every travelled road's line for `solidAt` found three single 2 m hits (Ashenmoor–Salthaven at 12769, 25697; the North Approach at 12928, 25000; the Mountain Pass at 12988, 25204), probably rail ends at a bridge or a post at a road's edge. I did not chase them. The Old Garrison crossing (S2273, fixed S2274) is clear.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2268: the mule at 1.6 m reads as led from the side; from behind the merchant hides it (judged). The generic greeting: see item 4.
+- S2269: the ambush was not met; I did not stand by a camp at the hour.
+- S2270: the pilgrim through whatever stands between: see item 1. The mourners say nothing (judged: right).
+- S2273: the bier reads as carried at a walk (judged). The bearers out of step: I could not see it in a still.
+- S2275 and S2289: the rider's seat (judged, above); the canter at 5.5 m/s I could not judge from stills.
+- S2276: two walking side by side read as travellers, not a family, until the handcart (S2282). I did not get a clear frame of the cart.
+- S2277: the road-warden in the townsfolk's roll (judged: he reads as a man with a guard, not as an office).
+- S2281, S2283, S2284: the break reads as a bridge down (judged, above). Travellers through the gap: item 2.
+- S2288: the player's deck I did not walk (my W did not drive the step under the harness); the travellers' deck is item 2.
+- S2272: the window (item 3); the helms on stands still read as table lamps in the game at s1641, as they did in the prototype (15 Nov). The look builder's S2293 (PR #1639, open) redraws them.
+- Not judged headless: S2254's forester (I did not cross him), S2257 and S2258's fence (one cove, not visited), S2260's town heads' dress, S2255, S2267 and S2285's hair under capes, S2256, S2259, S2263 and S2264's ship scenes, S2290's Mark trader's hall (the prototype; next new-look run).
+
+**Backlog notes**
+- Nothing new. S2274 struck the Old Garrison line at the foot of section I.
+
+No proposal this run.
