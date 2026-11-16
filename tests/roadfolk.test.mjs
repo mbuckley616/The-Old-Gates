@@ -5,7 +5,7 @@
 // Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
 // Session 2273: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
 // Session 2275: a rider at 5.5 m a game minute reins in when you come within 6 m and gives the newest event within two cells to the journal and the map.
-// Session 2279: the family's man pushes a handcart, its grips in his palms and its wheels on the road ahead.
+// Session 2281: the family's man pushes a handcart, its grips in his palms and its wheels on the road ahead.
 // Session 2276: families from a town fallen in the last 20 days walk to the other end; 15 gold owes +1 favour there once it is whole, +2 at most.
 // Session 2277: an official on a road a live camp breaks writes you a writ on it, paid 40 + 10 a tier when the camp is cleared.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
@@ -168,15 +168,15 @@ console.log(JSON.stringify(rf));
 check('a rider found', !!rf);
 await g.cells(); await g.spin(null, 4);
 const h1 = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return { drawn: false, keys: [...ROADWALK.keys()] }; const rig = D.npc.g.userData.rig;
-  return { drawn: true, halted: !!D.halt, at: D.halt && D.halt.at, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, sit: !!(rig && rig.sit), horse: D.beast.children.length, lift: +(D.npc.g.position.y - worldH(D.npc.g.position.x, D.npc.g.position.z)).toFixed(2), inTalk: npcs.includes(D.npc), post: D.npc.def.post }; }, rf.id);
+  return { drawn: true, halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, sit: !!(rig && rig.sit), horse: D.beast.children.length, lift: +(D.npc.g.position.y - worldH(D.npc.g.position.x, D.npc.g.position.z)).toFixed(2), inTalk: npcs.includes(D.npc), post: D.npc.def.post, lag: (worldState.roadfolk[id] || {}).lag || 0 }; }, rf.id);
 console.log(JSON.stringify(h1));
 check('a rider is drawn seated on his horse, and within 6 m he reins in', h1.drawn && h1.sit && h1.horse === 1 && h1.lift > .5 && h1.halted && h1.inTalk, h1);
 await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 5);
 await g.spin(null, 4);
-// (S2278: his lag runs from the minute he reined in, which can be a few frames before h1 is read, during g.cells; so it is measured from that minute)
 const h2 = await page.evaluate((id) => { const D = ROADWALK.get(id); return { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, lag: (worldState.roadfolk[id] || {}).lag }; }, rf.id);
 console.log(JSON.stringify(h2));
-check('he stands while you are by him, the minutes his lag', h2.halted && Math.hypot(h2.x - h1.x, h2.z - h1.z) < .05 && Math.abs(h2.lag - (h2.t - h1.at)) < .01 && h2.t - h1.t > 4.9, { h1, h2 });
+// Session 2280 (QA): his lag counts from the tick he reined in, which can be a tick or two before h1 is read, so h1's lag is read too
+check('he stands while you are by him, the minutes his lag', h2.halted && Math.hypot(h2.x - h1.x, h2.z - h1.z) < .05 && Math.abs(h2.lag - h1.lag - (h2.t - h1.t)) < .01 && h2.t - h1.t > 4.9, { h1, h2 });
 const nw = await page.evaluate((o) => { const D = ROADWALK.get(o.id); const t = D.npc.def.topics.find(t => t.label === 'What news?');
   const none = t.fn(t); const site = siteAnywhere(o.a); const st = TS(site); st.siegeBy = st.siegeBy || 'mark'; st.flags.besieged = worldState.gameTimeAbsMinutes - 1440;
   const n0 = (worldState.mapNotes || []).length, j0 = GAME_LOG.length; const resp = t.fn(t); const n1 = (worldState.mapNotes || []).length, j1 = GAME_LOG.length; t.fn(t);
@@ -209,7 +209,7 @@ const fg = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) re
   return { drawn: true, two: 1 + D.follow.length, inTalk: npcs.includes(D.npc), second: npcs.includes(D.follow[0].npc), resp, g1, again, f0, f1, owed, charKey: !!SS_CHAR_WS.roadAlms }; }, fm);
 console.log(JSON.stringify(fg));
 check('the family walk two together; given 15 gold, the gift is once and the favour owed while the town lies burned', fg.drawn && fg.two === 2 && fg.inTalk && !fg.second && fg.g1 === 25 && fg.again === false && fg.f1 === fg.f0 && fg.owed === 1 && fg.charKey, fg);
-// S2279 — the family's handcart: the man pushes it, its grips through his palms, its wheels on the road ahead; he holds nothing and wears no cloak
+// S2281 — the family's handcart: the man pushes it, its grips through his palms, its wheels on the road ahead; he holds nothing and wears no cloak
 await nearBodies(fm.id); await g.spin(null, 6); await nearBodies(fm.id);
 const ct = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D || !D.cart) return { cart: false }; const G = D.cart; G.updateMatrixWorld(true);
   const rig = D.npc.g.userData.rig; D.npc.g.updateMatrixWorld(true); const inv = G.matrixWorld.clone().invert(), off = [];
