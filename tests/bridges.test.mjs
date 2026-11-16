@@ -86,7 +86,7 @@ check('down, the ground in the gap is the river\'s bed (no causeway), and at the
 check('down, nothing of the deck over the gap\'s middle (a line straight down meets the stone below the old deck, or nothing), and the road\'s strip no longer crosses it', d && (d.down.deckHit === null || d.down.deckHit < -.5) && (d.down.strip === null || d.down.strip < -1), d && { deckHit: d.down.deckHit, strip: d.down.strip });
 check('a cell loaded again with the bridge down builds it down, four rails', d && d.reload && d.reload.gap && d.reload.rails === 4, d && d.reload);
 check('mended, it is the bridge it was: the same triangles, two rails, the causeway back and no gap left', d && d.mended.tris === d.before.tris && d.mended.rails === 2 && d.mended.mid === d.before.mid && d.mended.gaps === 0, d && { before: d.before, mended: d.mended });
-// Session 2285: the deck is walked on its setts. A bridge's causeway lies 0.5 to 0.8 m under the setts (12 m at a deep crossing), and you
+// Session 2288: the deck is walked on its setts. A bridge's causeway lies 0.5 to 0.8 m under the setts (12 m at a deep crossing), and you
 // walked it with the rails at your chest; and the rails were tested as boxes on the world's axes, so one not laid north to south lay
 // across its deck. Each intact bridge is walked end to end by the game's own loop, held whole by hand: you reach the far end, your feet
 // stay on the setts over the middle (the ramps are the last 2.5 m of each end), and a swimmer under its middle stays in the water.
@@ -107,7 +107,7 @@ const w = await page.evaluate(() => { worldState.bridges = {}; for (const s of W
   const plats = id ? ZONES.world.platforms.filter(p => p.bridge === id).length : 0; if (id) { worldState.bridges[id] = { down: false }; WORLD.bridgeRedraw(id); }
   return { out, plats, whole: id ? ZONES.world.platforms.filter(p => p.bridge === id).length : 0, turned: out.filter(o => Math.abs(Math.sin(2 * o.ang)) > .3).length }; });
 console.log(JSON.stringify(w));
-check('every bridge is walked end to end by the loop, across bridges laid at a slant too (Session 2285)', w.out.length > 0 && w.out.every(o => o.left < .5), w.out.map(o => o.id + ' ' + o.ang + ' left ' + o.left + ' in ' + o.ticks));
+check('every bridge is walked end to end by the loop, across bridges laid at a slant too (Session 2288)', w.out.length > 0 && w.out.every(o => o.left < .5), w.out.map(o => o.id + ' ' + o.ang + ' left ' + o.left + ' in ' + o.ticks));
 check('over the middle your feet are on the setts, within 0.25 (they were 0.5 to 12 m under)', w.out.every(o => o.lo > -.25 && o.hi < .25), w.out.map(o => [o.id, o.lo, o.hi]));
 check('a swimmer under a bridge\'s middle stays in the water: the deck is not their ground', w.out.every(o => o.under < -.5), w.out.map(o => [o.id, o.under]));
 check('a rail blocks in its own frame and the deck between does not', w.out.every(o => o.rail && !o.open), w.out.map(o => [o.id, o.rail, o.open]));

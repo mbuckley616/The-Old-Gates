@@ -1,6 +1,6 @@
 
   // ── Solids ───────────────────────────────────────────────────────────
-  // S2285 — a static solid that carries its turn (c, s: a bridge's rails, a cave's or an aqueduct's blocks) is tested in its own frame, as
+  // S2288 — a static solid that carries its turn (c, s: a bridge's rails, a cave's or an aqueduct's blocks) is tested in its own frame, as
   // impactInBox (74) and the towns' own tests do; this test and the camera's read it as a box on the world's axes, so a bridge not laid
   // north to south had its rails across its deck (a 43 m bridge at 25° blocked you 6 m short of its middle and slid you off the side)
   function solBoxHit(s,x,z,R){const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;}
@@ -626,7 +626,7 @@
       ()=>track(()=>buildImpostorsFor(c)),
       ()=>{try{track(()=>placeTunnel(c,k));}catch(e){console.warn('tunnel',e);}}, /* S1828 — a trade tunnel's portals (after the statics, so its solids are the cell's too) */
       ()=>track(()=>buildFarFor(c)),
-      ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)if(STATIC_SOL[n].cell==null)STATIC_SOL[n].cell=k; /* S2285 — a solid that names its cell keeps it (a bridge redrawn while another cell loads) */L.pending=false;if(c.home)homeLoaded();},
+      ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)if(STATIC_SOL[n].cell==null)STATIC_SOL[n].cell=k; /* S2288 — a solid that names its cell keeps it (a bridge redrawn while another cell loads) */L.pending=false;if(c.home)homeLoaded();},
     ];
     return steps;
   }
