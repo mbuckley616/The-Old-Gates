@@ -17,6 +17,7 @@
 // Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
 // Session 2290: over a bridge the road's walkers, the caravans and the coaches stand on the deck's setts (roadY), not on the causeway.
 // Session 2301: his mule's pack (and a family's handcart) robbed as a strongbox: unseen nothing, seen a theft at the nearer end.
+// Session 2302: the official's guard draws on a crime he sees and fights to the town's yield.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -332,6 +333,21 @@ const ow = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) re
 console.log(JSON.stringify(ow));
 check('he walks with a guard and writes a writ on the camp, 40 + 10 a tier, once', ow.drawn && ow.two === 2 && !ow.guardTalk && ow.kind === 'writ' && ow.reward === 40 + 10 * of.tier && ow.resp.includes(of.name) && /You have my writ/.test(ow.again), ow);
 check('clearing the camp pays the writ', ow.turned && ow.paid === ow.want, ow);
+// S2302 (#1638 A): his guard is the road's law. Struck, he draws (keyed by the nearer end); under 30% of your health the town's yield is
+// offered; the fine paid, he stands down and walks with his officer again. State restored after.
+const law = await page.evaluate((o) => { const D = ROADWALK.get(o.id); const G = D.follow[0].npc, O = D.npc; const snap = JSON.stringify({ c: worldState.crime || null, l: worldState.crimes || null, t: worldState.favor || null }); const hp0 = PHP;
+  const vx = G.g.position.x - O.g.position.x, vz = G.g.position.z - O.g.position.z, vl = Math.hypot(vx, vz) || 1;
+  px = G.g.position.x + vx / vl * 1.2; pz = G.g.position.z + vz / vl * 1.2; const fx = -vx / vl, fz = -vz / vl; yaw = Math.atan2(-fx, -fz);
+  const a = siteAnywhere(D.rd.def.a), b = siteAnywhere(D.rd.def.b); const near = Math.hypot(a.x - px, a.z - pz) <= Math.hypot(b.x - px, b.z - pz) ? a : b;
+  const ok = WORLD.strikeNpc(fx, fz); const E = ZONES.world.enemies.filter(e => e._roadGuard === o.id && !e.dead);
+  const out = { ok, drawn: E.length, site: E[0] && E[0]._guard.site, near: near.id, hidden: !G.g.visible, name: E[0] && E[0].name };
+  PHP = Math.floor(maxHP * .2); roadGuardTick(); out.yielded = CR.yielded; out.dlg = typeof dlgOpen !== 'undefined' && dlgOpen; out.title = (document.getElementById('dlg-name') || {}).textContent || null;
+  try { closeDialog(); } catch (e) {}
+  const f = fineRecAt(near.id); out.fine = f && f.bounty; if (f) f.bounty = 0; roadGuardTick(); roadGuardTick();
+  out.after = ZONES.world.enemies.filter(e => e._roadGuard === o.id && !e.dead).length; out.back = G.g.visible && !G._drawn; out.reset = !CR.yielded;
+  const S = JSON.parse(snap); worldState.crime = S.c || undefined; worldState.crimes = S.l || undefined; worldState.favor = S.t || {}; PHP = hp0; return out; }, of);
+console.log(JSON.stringify(law));
+check('struck, the official\'s guard draws for the nearer end; under 30% the yield is offered; the fine paid, he stands down', law.ok && law.drawn === 1 && law.site === law.near && law.hidden && law.yielded && law.dlg && law.fine >= 75 && law.after === 0 && law.back && law.reset, law);
 // S2283 — a bridge down
 const bd = await page.evaluate(() => { const bs = SITES.filter(b => b.kind === 'bridge' && b.bridge); let n = 0, N = 0; for (const b of bs) for (let w = 0; w < 300; w++) { N++; if (bridgeFell(b.id, w)) n++; }
   const b = bs[0]; if (!b) return null; let w = 1; while (!(bridgeFell(b.id, w) && !bridgeFell(b.id, w - 1))) w++;
