@@ -129,8 +129,17 @@ console.log(JSON.stringify({ mo, mm }));
 check('mourners walk two together, one before the other along the road, and nobody can speak to them', mo && mm && mm.bodies === 2 && !mm.talk && mm.sep > BIER_GAP - .3 && mm.sep < BIER_GAP + .05, mm);
 // S2273 — the bier between them: its poles run through the four palms, and its bearers hold nothing and wear no cloak over their arms
 // (the builder's bodies are built one at a time after the load; attach these two at once, as f4people does)
-await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return; for (const N of [D.npc, D.follow[0].npc]) { const rig = N.g.userData.rig; if (!rig.hb && rig.hbG) { hbAttach(rig); if (rig.hb) { hbLevel(rig, 0); hbPose(rig); } } } }, pil.mourn.id);
-await g.spin(null, 2);
+// (S2278: a body the game's own hbTick built first stays at the far level while its shaders warm, `hb.cold`, and the warming waits behind
+// every body still in the build queue; warm these two here, as they are attached here, and cancel the game's own build of either, which
+// would hang a second, cold body on it when it finished)
+for (let k = 0; k < 40; k++) {
+  const ready = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return true; let ok = true;
+    for (const N of [D.npc, D.follow[0].npc]) { const rig = N.g.userData.rig; if (HBODY.job && HBODY.job.rig === rig) HBODY.job = null; if (!rig.hb && rig.hbG) { hbAttach(rig); if (rig.hb) { hbLevel(rig, 0); hbPose(rig); } }
+      const H = rig.hb; if (H && Array.isArray(H.cold)) { while (H.cold.length) { const o = H.cold.pop(); try { hbCompile(o, false); hbUpload(o); } catch (e) {} } H.cold = false; }
+      if (H && !H.cold && H.L === 2) { hbLevel(rig, 0); hbPose(rig); }
+      if (!H || H.cold || H.L === 2) ok = false; } return ok; }, pil.mourn.id);
+  await g.spin(null, 2); if (ready) break;
+}
 const bi = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D || !D.bier) return { bier: false };
   const G = D.bier; G.updateMatrixWorld(true); const inv = G.matrixWorld.clone().invert(), out = [];
   for (const N of [D.npc, D.follow[0].npc]) { N.g.updateMatrixWorld(true); const rig = N.g.userData.rig;
