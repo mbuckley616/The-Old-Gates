@@ -16,6 +16,7 @@
 // Session 2291: his horse saddled, the reins from his fists to the bit, nothing else in his hands.
 // Session 2294: the horse bridled, the reins tied at its bit's rings.
 // Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
+// Session 2299: they greet and part without the town's door lines (Come in out of it, Mind the door).
 // Session 2298: at a bridge down the road's people turn at the bank, as the coach draws up there, and walk back to the end they came from.
 // Session 2290: over a bridge the road's walkers, the caravans and the coaches stand on the deck's setts (roadY), not on the causeway.
 // Session 2301: his mule's pack (and a family's handcart) robbed as a strongbox: unseen nothing, seen a theft at the nearer end.
@@ -163,6 +164,13 @@ const talk = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) 
   const before = !!(worldState.sighted && worldState.sighted[o.goal.id]); const resp = t.fn(t); return { drawn: true, inTalk: npcs.includes(D.npc), before, after: !!(worldState.sighted && worldState.sighted[o.goal.id]), resp }; }, pil.one);
 console.log(JSON.stringify(talk));
 check('a pilgrim on the road is drawn; asked, he names his goal and it is pencilled on your map', talk.drawn && talk.inTalk && !talk.before && talk.after && talk.resp.includes(pil.one.goal.name), talk);
+// S2299 — the road's people greet and part as on the road: no door, no hearth, from the same pools
+const gw = await page.evaluate((o) => { const D = ROADWALK.get(o.id), def = D.npc.def, site = siteAnywhere(def._siteId) || null, out = new Set(); const saved = worldState.met; const tem = def.temper, pp = worldState.people;
+  for (const t of TEMPER_IDS) for (const p of ['gatelander', 'markman', 'aurennais', 'oldblood']) { def.temper = t; worldState.people = p;
+    for (let i = 0; i < 12; i++) { worldState.met = {}; out.add(firstWords(def, site)); worldState.met = { [metKey(def, site)]: 2 }; out.add(firstWords(def, site)); const tp = def.topics; out.add(tp[tp.length - 1].label); } }
+  def.temper = tem; worldState.people = pp; worldState.met = saved; const L = [...out]; return { n: L.length, bad: L.filter(l => AT_HOME_LINE.test(l)) }; }, pil.one);
+console.log(JSON.stringify(gw));
+check('the road\'s people greet and part with no door or hearth in it, every temper and people (S2299)', gw.n > 20 && gw.bad.length === 0, gw);
 const off = await page.evaluate((o) => { const D = ROADWALK.get(o.id); const T = D.T, rd = D.rd; const Q = pilgrimPlan(T, rd);
   const mid = travellerAt(T, rd, T.at + (Q.along + Q.off / 2) / T.pace), done = travellerAt(T, rd, T.at + (Q.along + Q.off + 5) / T.pace);
   return { midOff: mid && mid.off, midToGoal: mid && Math.round(Math.hypot(mid.x - Q.goal.x, mid.z - Q.goal.z)), half: Math.round(Q.off / 2), done }; }, pil.one);
