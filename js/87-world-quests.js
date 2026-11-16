@@ -321,7 +321,8 @@ const giver=`${lord.title} ${lord.name}`;
     return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{tickDatedWork();const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id)){datedWork(q,site);qAdd(q);}if(q.done)return `You've done it? Then ${datedPay(q)} gold, with the ${site.kind}'s thanks.`;return q.desc+(q.due?` (${q.reward} gold; ${Math.round(q.reward*1.25)} if it is done by ${calDateLine(q.due-1)}. After that, the work goes to someone else.)`:` (${q.reward} gold.)`);}},
             {label:'It\u2019s done.',quest:true,avail:()=>{tickDatedWork();return qActive().some(q=>q.giverSite===site.id&&!q.faction&&q.done);},fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction&&q.done)||qActive().find(q=>q.giverSite===site.id&&!q.faction); /* S2130 — a finished job first */if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const _k=!!q.contract;const paid=qTurnIn(q);if(_k&&q.paid===0){addFavor(site,1);return `The contract is met. The Compact's ledger is ${bountyAt(site)>0?`down to ${bountyAt(site)} gold`:'clear'}.`;} /* S2230 */if(q.kind==='warcamp'||q.kind==='garrison')return warFill(WAR_THANKS[q.kind][_lp]||WAR_THANKS[q.kind].gatelander,{paid,town:site.name}); /* S2130 — Under Another Flag §2: the favour breakSiege and liberate gave stands */addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
             erHedgeLordTopic(site), /* S2021 — the hedge's deed, in Aurenne */
-            ...(typeof licenceTopics==='function'?licenceTopics(site):[]), /* S2235 — the lord's licence to hunt his chase (#1540 B) */
+            ...(typeof licenceTopics==='function'?licenceTopics(site):[]),
+            ...bridgeMendTopics(site), /* S2281 — a bridge down near the town: mended for gold, or by your own planks */ /* S2235 — the lord's licence to hunt his chase (#1540 B) */
             {label:'How fares the town?',get response(){return `${site.name} is ${stateSaid(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
@@ -2299,7 +2300,8 @@ const giver=`${lord.title} ${lord.name}`;
       if(F.sacked!=null)ev.push({t:F.sacked,site:t,line:`${t.name} was sacked.`});
       if(F.burned!=null)ev.push({t:F.burned,site:t,line:`${t.name} has burned.`});
       if(F.plague!=null)ev.push({t:F.plague,site:t,line:`There is sickness at ${t.name}.`});
-      if(st.freed&&st.freed.day!=null)ev.push({t:st.freed.day*1440,site:t,line:`${t.name} is free again.`});}}
+      if(st.freed&&st.freed.day!=null)ev.push({t:st.freed.day*1440,site:t,line:`${t.name} is free again.`});}
+      for(const t of getCell(i,j).sites){if(t.kind!=='bridge')continue;const D=bridgeDown(t);if(D&&D.mending==null)ev.push({t:D.at,site:t,line:`${t.name} is down. The middle span is in the river.`});}} /* S2281 — a bridge down */
     const R=worldState.routes||{};for(const k of Object.keys(R).sort()){const rt=R[k];if(!rt||!rt.broken||rt.brokenAt==null)continue;const a=near[rt.a]||null,b=near[rt.b]||null;if(!a&&!b)continue;
       const A=a||siteAnywhere(rt.a),B=b||siteAnywhere(rt.b);if(!A||!B)continue;ev.push({t:rt.brokenAt,site:a||b,line:`The ${A.name}\u2013${B.name} caravan was taken${rt.by?' by the bandits of '+rt.by:''}.`});}
     const live=ev.filter(e=>now-e.t<=RIDER_NEWS).sort((p,q)=>q.t-p.t||(p.site.id<q.site.id?-1:1));return live[0]||null;}
@@ -2381,6 +2383,57 @@ const giver=`${lord.title} ${lord.name}`;
       for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
         const fx=q?q.x:p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=q?q.z:p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=worldH(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=q?q.ang:p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}
       if(D.bier)bierTick(D);}}
+  // S2281 — a bridge down (the page's bridge row, #1587 B, the road page's fifth systems session): every bridge rolls 1 in 30 a game-week
+  // (seededRng('bridge', id+':'+week), so the clock alone says which are down and a load or a friend reads the same) and stays down two
+  // weeks unless mended. While it is down its middle span is gone: a solid across the deck at mid-span (bridgeGapSolid, read by solidAt),
+  // and a step there when it falls drops you off the side into the river. Swim it meanwhile. The nearer lord (the nearest town with a lord,
+  // read from the cells' data) offers to mend it: 250 gold plus 2 a metre, or 20 planks and Joinery 25; it stands again 2 days after.
+  // The mend is the world's record, worldState.bridges[id] = {paid: day, up: day}, through mendBridge; riders carry the news (riderNews).
+  // The broken span's shape is the look builder's; the coach stopping at the bank and a route over it earning half are the next session's.
+  const BRDN_ODDS=30,BRDN_WEEKS=2,BRDN_GOLD=250,BRDN_PER_M=2,BRDN_PLANKS=20,BRDN_JOIN=25,BRDN_DAYS=2,BRDN_HALF=2.45;
+  function bridgeFell(id,w){return w>=0&&seededRng('bridge',id+':'+w)()<1/BRDN_ODDS;}
+  // the fall in force now, or null: {week, at (game minutes), mending (the day it stands again, while paid and not yet up)}
+  function bridgeDown(site){if(!site||site.kind!=='bridge'||!site.bridge)return null;const d=dayNow(),w=Math.floor(d/7),rec=(worldState.bridges||{})[site.id];
+    for(let ww=w;ww>w-BRDN_WEEKS;ww--){if(!bridgeFell(site.id,ww))continue;
+      if(rec&&rec.paid!=null&&rec.paid>=ww*7){if(d>=rec.up)return null;return {week:ww,at:ww*7*1440,mending:rec.up};}
+      return {week:ww,at:ww*7*1440,mending:null};}
+    return null;}
+  function bridgeLen(site){return Math.round(site.bridge.len);}
+  function bridgeCost(site){return BRDN_GOLD+BRDN_PER_M*bridgeLen(site);}
+  // the nearer lord: the nearest village, town, port or city with a lord, in the bridge's cell and its eight neighbours
+  function bridgeLordSite(b){if(b._lordSite!==undefined)return b._lordSite;const [ci,cj]=cellOf(b.x,b.z);let best=null,bd=1e18;
+    for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;for(const t of getCell(i,j).sites){if(!['city','town','port','village'].includes(t.kind)||t.lordless)continue;
+      const dd=(t.x-b.x)**2+(t.z-b.z)**2;if(dd<bd||(dd===bd&&best&&t.id<best.id)){bd=dd;best=t;}}}
+    return (b._lordSite=best?best.id:null);}
+  function bridgesDownFor(site){return SITES.filter(b=>b.kind==='bridge'&&bridgeLordSite(b)===site.id).map(b=>({b,D:bridgeDown(b)})).filter(o=>o.D&&o.D.mending==null).sort((p,q)=>p.b.id<q.b.id?-1:1);}
+  // the named action: the mend paid (by gold or by your own planks), the bridge up again 2 days on
+  function mendBridge(id,how){const b=SITE[id];const D=b&&bridgeDown(b);if(!D||D.mending!=null)return false;const d=dayNow();
+    const W=worldState.bridges||(worldState.bridges={});W[id]={paid:d,up:d+BRDN_DAYS,how};_brdnAt=-1;return true;}
+  function bridgeMendTopics(site){
+    const first=()=>bridgesDownFor(site)[0]||null;
+    return [{label:'The bridge is down.',quest:true,avail:()=>!!first(),fn:()=>{const o=first();if(!o)return 'The bridges stand, as far as I know.';const b=o.b;
+        return `${b.name}, aye. The middle span went into the river ${riderAgo(o.D.at)}. The masons ask ${bridgeCost(b)} gold for ${bridgeLen(b)} metres of it, and the town has not got it to spare. Or a joiner could do it with ${BRDN_PLANKS} planks. Two days' work, either way.`;}},
+      {label:'I\u2019ll pay the masons.',quest:true,avail:()=>!!first(),fn:()=>{const o=first();if(!o)return 'The bridges stand, as far as I know.';const b=o.b,c=bridgeCost(b);
+        if(gold<c)return `${c} gold, and you have ${gold}. Come back when you have it.`;
+        gold-=c;if(typeof updateHUD==='function')updateHUD();mendBridge(b.id,'gold');if(typeof addLog==='function')addLog('🌉',`You paid ${c} gold to mend ${b.name}. It stands again in ${BRDN_DAYS} days.`);
+        return `${c} gold. The masons will be on it by morning, and it will stand in two days.`;}},
+      {label:'I\u2019ll mend it myself.',quest:true,avail:()=>!!first()&&skillLv('joinery')>=BRDN_JOIN,fn:()=>{const o=first();if(!o)return 'The bridges stand, as far as I know.';const b=o.b,n=plankCount();
+        if(n<BRDN_PLANKS)return `With your own hands? Then you'll want ${BRDN_PLANKS} planks for the span. You have ${n}.`;
+        bagTake(x=>x.plank,BRDN_PLANKS);mendBridge(b.id,'planks');if(typeof addLog==='function')addLog('🌉',`You mended ${b.name} with ${BRDN_PLANKS} planks. It stands again in ${BRDN_DAYS} days.`);
+        return `Then the timber's yours and the work is too. Two days, and it will carry a cart again.`;}}];}
+  // the gaps of the bridges down, refreshed once a game minute (and at once after a mend): {x,z,s,c,hl}, in the deck's frame
+  let BRDN_GAPS=[],_brdnAt=-1;const _brdnSaid=new Set();
+  function bridgeGap(b){const len=b.bridge.len;return {id:b.id,x:b.x,z:b.z,s:Math.sin(b.bridge.ang),c:Math.cos(b.bridge.ang),hl:Math.min(4,len*.2)};}
+  function gapLocal(G,x,z){const dx=x-G.x,dz=z-G.z;return [dx*G.s+dz*G.c,dx*G.c-dz*G.s];}
+  function bridgeGapSolid(x,z,R){if(!BRDN_GAPS.length||activeZoneId!=='world')return false;R=R||.3;
+    for(const G of BRDN_GAPS){const [a,c]=gapLocal(G,x,z);if(Math.abs(a)<G.hl+R&&Math.abs(c)<BRDN_HALF)return true;}return false;}
+  function tickBridges(){const m=Math.floor(worldState.gameTimeAbsMinutes||0);if(m===_brdnAt)return;_brdnAt=m;
+    const was=new Set(BRDN_GAPS.map(G=>G.id));BRDN_GAPS=SITES.filter(b=>b.kind==='bridge'&&b.bridge&&bridgeDown(b)).map(bridgeGap);
+    for(const G of BRDN_GAPS){const b=SITE[G.id];const [a,c]=gapLocal(G,px,pz);
+      if(!was.has(G.id)&&Math.abs(a)<G.hl&&Math.abs(c)<BRDN_HALF){const sd=c<0?-1:1,off=BRDN_HALF+1.2;px=G.x+G.s*a+G.c*sd*off;pz=G.z+G.c*a-G.s*sd*off; /* the span gives way under you: off the side, into the river */
+        showMsg(`${b.name} gives way under you.`,'#ff9a60');}
+      const k=G.id+':'+bridgeDown(b).week;if(!_brdnSaid.has(k)&&Math.hypot(px-G.x,pz-G.z)<G.hl+20&&Math.abs(c)<8){_brdnSaid.add(k);const L=siteAnywhere(bridgeLordSite(b)||'');
+        showMsg(`${b.name} is down: its middle span lies in the river.${L?` The lord at ${L.name} may see it mended.`:''}`,'#e8c890');}}}
   // ═══ FACTIONS AND ANCHORED PLACES (Session S) ════════════════════════
   // Three nations you can rise in; past the second rank the other two close.
   // The story's named places are picked from the generated world once, by constraint.

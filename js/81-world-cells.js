@@ -14,6 +14,7 @@
     const R=.3;
     if(y!=null&&AQ_WALKS.length&&aqWalkBlocks(x,z,y,R))return true;
     if(y!=null&&typeof seaSolHit==='function'&&seaSolHit(x,z,y))return true; /* S2220 — a drowned place's stone, to the swimmer's own step (85) */
+    if(typeof bridgeGapSolid==='function'&&bridgeGapSolid(x,z,R))return true; /* S2281 — a bridge down: its middle span is gone (87) */
     const WMAX=SIZE*GRID;if(x<R||z<R||x>WMAX-R||z>WMAX-R)return true; // continent edge
     // deep water is swimmable (groundY lifts the ground to the surface); nothing to block here
     const cx=Math.floor(x/CHUNK),cz=Math.floor(z/CHUNK);
