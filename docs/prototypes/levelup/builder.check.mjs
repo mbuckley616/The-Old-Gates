@@ -1071,6 +1071,25 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   for (const [k, ms] of Object.entries(r)) check(`${k}: the rolls face out of themselves (${ms.map(([n, f]) => `${n} ${(f.out * 100).toFixed(1)}%`).join(', ')}), so a single-sided roll is drawn and lit from outside`,
     ms.length >= ({ braids: 4, braid: 2, bun: 1, 'hood down': 1, 'hood up': 1, necklace: 1, bodice: 4, cord: 3, kite: 1, hoplon: 1, 'fur collar': 6 })[k] && ms.every(([, f]) => f.out > .95), ms);
   check('the rolls: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the underworld's five (Session 2307, L2, OG-006; Michael's B on #1611): each from CAST builds at the sheet's stature, saves and loads
+// back the same, Eadburh wears her scar and her two purses (hung from the belt's edge, nothing through them, apart, under the edge);
+// Philo's lenses on his brow (Session 2307) and Siadhal's tin shuttle on its cord (Session 2307) clear of what they wear
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const r = await page.evaluate(async () => { const K = await import('./people.js'), out = {};
+    for (const [n, m] of [['Philo', 1.74], ['Uallach', 1.56], ['Brógán', 1.78], ['Eadburh', 1.84], ['Siadhal', 1.8]]) { const G = K.castGenome(n), p = K.makePerson(G), s1 = JSON.stringify(K.toSaved(G));
+      let purses = 0; p.root.traverse(o => { if (o.name === 'purse') purses++; });
+      out[n] = { off: +Math.abs(K.statureOf(G) - m).toFixed(4), people: G.people, scar: G.scar, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), purses, charms: p.beltCharms, lenses: p.lenses, shuttle: p.shuttle }; }
+    return out; });
+  check(`the underworld's five build from CAST at their sheets' statures (${Object.entries(r).map(([n, v]) => `${n} ${v.off}`).join(', ')} m off), save and load back the same`,
+    Object.values(r).every(v => v.off < .01 && v.saved) && r.Uallach.people === 'oldblood' && r.Philo.people === 'aurennais', r);
+  { const e = r.Eadburh, c = e.charms || {}; check(`Eadburh Two-Purses: her left brow's scar and two purses on her belt (${c.pieces}), nothing through them (${c.pieceIn} of ${c.tested}), apart (${c.touch} touching), their tops ${c.top} m under the belt's edge, no cord under the tunic (${c.thongIn})`,
+    e.scar === 'L' && e.purses === 2 && c.pieces?.length === 2 && !c.hidden?.length && c.pieceIn === 0 && c.touch === 0 && c.top < 0 && c.thongIn === 0 && c.air < .005, c); }
+  { const L = r.Philo.lenses || {}; check(`Philo's lenses on his brow (Session 2307): a band ${L.y} m over the eyes, ${L.bandR} m round, ${L.lenses} lenses, the nearest of his skin and hair ${L.near} m off them (${L.inside} within 1 mm), ${L.tris} triangles`,
+    L.lenses === 3 && L.inside === 0 && L.near > .001 && L.y > .03 && L.y < .06 && L.bandR?.[0] > .05 && L.bandR?.[1] < .14 && L.tris < 3000, L); }
+  { const S = r.Siadhal.shuttle || {}; check(`Siadhal's tin shuttle on its cord (Session 2307): ${S.under} m under the neck, ${S.out} m out from what he wears, nothing in front of it (${S.through}), its cord over the chest (${S.cordIn} of ${S.cordTested} under), on ${S.bone}`,
+    S.through === 0 && S.out > 0 && S.out < .01 && S.cordIn === 0 && S.cordTested > 10 && /^spine/.test(S.bone || '') && S.tris < 2000, S); }
+  check('the underworld\'s five: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
   const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
