@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The Mark's goods shop, armourer and barber inside — the trader's hall as drawn, one shop room, or not yet? (from the look builder, 2026-11-16, #1632)
+**The question.** In a Markish town the smith and the healer open on the kit's timber hall; the goods shop, the armourer and the barber still open on the old generated room. Session 2290's prototype (card F9; OG-043, OG-115) puts each of the three in the same 6.4 by 9 m hall: the counter, the keeper's walk and shelves down the right; the trade's own pieces down the left (furs, wadmal and soapstone pots; byrnies on stands under round shields; the barber's chair before a bronze glass, a basin and a kettle); the long hearth under the louver. 5.9k to 10.3k triangles in 15 meshes; `rooms.check.mjs` adds 4 checks, all pass.
+
+**Options.**
+- **A (recommended).** As drawn, for the three trades in every Markish town whose lot takes the hall, as the smith and the healer do. The town houses' shops (S2003's tight lots) keep the old room for now.
+- **B.** One room for all three: the counter and shelves as drawn, without the left side's trade pieces.
+- **C.** Leave the Mark's shops on the generated room for now.
+
+**Recommendation.** A. Pictures: [goods shop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-trader-misc-hall.jpg), [furs](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-trader-misc-trade.jpg), [armourer](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-trader-armor-trade.jpg), [barber](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-trader-barber-chair.jpg), [night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-trader-misc-hall-night.jpg).
+
 ### Festivals on the calendar — the custom alone, a contest at each island's fair, or those plus a market? (from the designer, 2026-11-16, #1628)
 **The question.** The quest writer's drafts give the nine island festivals a greeting, a full square and one 2-gold act a year per town, with no reward beyond the line. What should a festival *do*?
 
