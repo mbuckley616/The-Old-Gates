@@ -79,6 +79,7 @@ def build(name, title, note, srcfile, use_common, query=''):
         if "from './kids.js'" in s: s = kits(s, ['pieces', 'shrines', 'kids'])
         if "from './powers.js'" in s: s = kits(s, ['shrines', 'powers'])
         if "from './underworld.js'" in s: s = kits(s, ['shrines', 'underworld'])
+        if "from './guildheads.js'" in s: s = kits(s, ['shrines', 'guildheads'])
         if "from './festivals.js'" in s: s = kits(s, ['pieces', 'shrines', 'creatures', 'festivals'])
         if "from './naves.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'naves'])
         if "from './impacts.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'bind', 'impacts'])
@@ -230,4 +231,5 @@ build('singing-ship.html', 'The singing ship', 'The singing ship in fog (Sea leg
 build('festivals-green.html', 'The Gatelands’ festivals', 'The Gatelands’ three festivals on the green (L9, OG-107; the quest writer’s Festivals on the Calendar, I): the Greening’s pole and ribbons, Riverfair’s booths and the blessing at the water, the Night of the Lanterns. ?fest=greening|riverfair|lanterns, &level=a|b|c (A the custom alone, B the green dressed, C the town dressed), &cam=wide|close|scale|high. Drag to look.', 'festivals-view.js', True)
 build('powers-costume.html', 'The powers’ costume', 'The powers’ costume (L1, OG-042): the dress and things of rank on the canon’s seven offices, a lord and an Elder of the Gatelands, a captain and a reeve of the Mark, a Prior and a Factor of the Compact, an elder of the Old Blood. ?level=a|b|c, &cam=wide|close|scale|high, &who=lord|elder|captain|reeve|prior|factor|oldblood, &turn=1. Drag to look.', 'powers-view.js', True)
 build('underworld-five.html', 'The underworld', 'The underworld (L2, OG-006; the quest writer’s The Underworld): the five of the draft, Philo the fence, Uallach the broker, Brógán the black market, Eadburh Two-Purses and Siadhal the highwayman-pilgrim. ?level=a|b|c (A as townsfolk, B one tell each, C OG-006 as drawn), &cam=wide|close|face|scale|high, &who=philo|uallach|brogan|eadburh|siadhal, &turn=1. Drag to look.', 'underworld-view.js', True)
+build('guild-heads.html', 'The guild heads', 'The guild heads (L2, OG-064): the Fighters’ Guildmaster and the Mages’ Archmage as a Gatelander, a Markman, an Aurennais and one of the Old Blood. ?level=a|b|c (A their people’s own, B the guild’s livery over their people, C OG-064 as drawn), &cam=wide|close|face|scale|high, &who=f_gl|f_mk|f_au|f_ob|m_gl|m_mk|m_au|m_ob, &turn=1. Drag to look.', 'guildheads-view.js', True)
 print('ok')
