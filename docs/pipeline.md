@@ -25,7 +25,8 @@ and the PRs queued 8 to 31 minutes behind each one. So:
 - **Every suite boots the new look** (Session 1226, Michael, 20 Oct 2026). One that is red or too slow there is named in
   `tests/skip.json` and runs nowhere (a QA card in `docs/qa/skipped.md`); striking it from the list runs it in that PR. The
   shards are packed by `tests/times.json`, the new look's seconds per suite; refreshing it is not a harness change and runs
-  nothing. A shard has 90 minutes (the new look is about 1.5 times slower; a full run is about 55 minutes a shard at twenty).
+  nothing. A pull request's shard has 90 minutes (the new look is about 1.5 times slower); a full run's has 240 (Session 2304: the
+  weekly run's runners differ by up to 2.8 times in speed, and 150 cut eight of twenty shards on 15 Nov).
 
 ## How a PR merges now
 - **`automerge`** (`.github/workflows/automerge.yml`, `scripts/automerge.mjs`) runs when a check finishes and every fifteen
