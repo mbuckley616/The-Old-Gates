@@ -84,9 +84,14 @@ check('loose hair under a long cloak rides the chest below the neck and stays un
 // (Niamh 2.8% → 0.5% of her hair by the cape, Caoimhe 10% → 4.2%)
 const capeRide = await page.evaluate(() => [...HB_RIGS].filter(r => r.hb && r.hb.P && r.hbG && r.hbG.dress && r.hbG.dress.cape && r.hb.root.getObjectByName('cloak')).map(r => { const sk = r.hb.P.skeleton, il = sk.bones.indexOf(r.hb.P.byName.root), ic = sk.bones.indexOf(r.hb.P.byName.spine03); let root = 0, chest = 0;
   r.hb.root.traverse(m => { if (!m.isSkinnedMesh || !/^(cloak|cloakHem|brooch|collar\d)$/.test(m.name)) return; const si = m.geometry.attributes.skinIndex.array, sw = m.geometry.attributes.skinWeight.array; for (let i = 0; i < si.length; i++) if (sw[i] > 0) { if (si[i] === il) root++; if (si[i] === ic) chest++; } });
-  return { key: r.g.hbKey, root, chest }; }));
+  return { key: r.g.hbKey, root, chest, loose: r.hbG.hair && r.hbG.hair.style === 'loose' && !!r.hb.root.getObjectByName('hair'), over: r.hb.P.cloak ? r.hb.P.cloak.overHair || 0 : -1 }; }));
 console.log("  cape rides:", JSON.stringify(capeRide));
 check(`a shoulder cape rides the chest, none of it on the root (${capeRide.length} caped bodies: ${capeRide.map(c => c.key + " " + c.chest).join(", ")})`, capeRide.length >= 1 && capeRide.every(c => c.root === 0 && c.chest > 1000), capeRide);
+// S2285 (S2267's note): a cape is cleared of the body, and loose hair falls from the back of the head further out than that, so 4% of
+// Caoimhe's came out through the cape's back by up to 2.6 cm; a cape over loose hair now stands 1 cm over the hair's own outline
+// (buildCloak's overHair: the cape's points it moved out); measured in the street, Caoimhe 4.2% → 0.9% (1.4 cm), Niamh 0.5% → 0.2%
+const capeLoose = capeRide.filter(c => c.loose);
+check(`a shoulder cape over loose hair stands over the hair (${capeLoose.map(c => c.key + " " + c.over).join(", ")})`, capeLoose.length >= 1 && capeLoose.every(c => c.over > 100), capeLoose);
 
 
 // S1763 (L1, OG-109's winter column): in winter, out of doors, a share of each people wear the kit's winter coat (the Aurennais the
