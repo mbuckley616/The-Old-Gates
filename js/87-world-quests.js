@@ -2218,8 +2218,9 @@ const giver=`${lord.title} ${lord.name}`;
   // never goes under the sea or any water (ground under −0.5 m by rawH; the 24 nearest points tried, 3 apart). The road's list of goals is
   // tested every 40 m, so a shrine or gate no point of the road reaches dry is no goal of its pilgrims; the line is tested again every 5 m once
   // per goal, when a pilgrim is first bound there, and he takes the next goal on the list if it fails. {bi, off} or null
+  // S2306 — read from the line's first point: a road point on a bridge stands over the river, and a leg begun there stepped off its side
   function pilgrimDryLine(ax,az,bx,bz,steps){const L=Math.hypot(bx-ax,bz-az);
-    for(const st of steps){const n=Math.max(1,Math.ceil(L/st));for(let k=1;k<n;k++){const f=k/n;if(rawH(ax+(bx-ax)*f,az+(bz-az)*f)<-.5)return false;}}return true;}
+    for(const st of steps){const n=Math.max(1,Math.ceil(L/st));for(let k=0;k<n;k++){const f=k/n;if(rawH(ax+(bx-ax)*f,az+(bz-az)*f)<-.5)return false;}}return true;}
   function pilgrimApproach(P,G,steps){const C=[];for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<ROADFOLK_PILGRIM)C.push([d,i]);}
     if(!C.length)C.push([Math.hypot(P[P.length-1].x-G.x,P[P.length-1].z-G.z),P.length-1]);C.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
     const tried=[];for(const [d,i] of C){if(tried.length>=24)break;if(tried.some(t=>Math.abs(t-i)<3))continue;tried.push(i);if(pilgrimDryLine(P[i].x,P[i].z,G.x,G.z,steps))return {bi:i,off:d};}return null;}
