@@ -5,11 +5,12 @@
 // Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
 // Session 2273: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
 // Session 2275: a rider at 5.5 m a game minute reins in when you come within 6 m and gives the newest event within two cells to the journal and the map.
+// Session 2282: the family's man pushes a handcart, its grips in his palms and its wheels on the road ahead.
 // Session 2276: families from a town fallen in the last 20 days walk to the other end; 15 gold owes +1 favour there once it is whole, +2 at most.
 // Session 2277: an official on a road a live camp breaks writes you a writ on it, paid 40 + 10 a tier when the camp is cleared.
-// Session 2282: a bridge rolls 1 in 30 a game-week and is down two weeks, drawn broken (the look's S2281) with the river's bed in its gap; riders tell of it;
+// Session 2283: a bridge rolls 1 in 30 a game-week and is down two weeks, drawn broken (the look's S2281) with the river's bed in its gap; riders tell of it;
 // the nearer lord mends it for 250 gold + 2 a metre (or 20 planks and Joinery 25), up 2 days after.
-// Session 2283: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
+// Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -132,8 +133,21 @@ console.log(JSON.stringify({ mo, mm }));
 check('mourners walk two together, one before the other along the road, and nobody can speak to them', mo && mm && mm.bodies === 2 && !mm.talk && mm.sep > BIER_GAP - .3 && mm.sep < BIER_GAP + .05, mm);
 // S2273 — the bier between them: its poles run through the four palms, and its bearers hold nothing and wear no cloak over their arms
 // (the builder's bodies are built one at a time after the load; attach these two at once, as f4people does)
-await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return; for (const N of [D.npc, D.follow[0].npc]) { const rig = N.g.userData.rig; if (!rig.hb && rig.hbG) { hbAttach(rig); if (rig.hb) { hbLevel(rig, 0); hbPose(rig); } } } }, pil.mourn.id);
-await g.spin(null, 2);
+// (S2278: a body the game's own hbTick built first stays at the far level while its shaders warm, `hb.cold`, and the warming waits behind
+// every body still in the build queue; warm these two here, as they are attached here, and cancel the game's own build of either, which
+// would hang a second, cold body on it when it finished; and stand 4 m beside them, since under load the clock runs on through g.cells and
+// walks them past the far level's 42 m; the camera with you, since g.spin's ticks do not move it and hbTick measures from it)
+const nearBodies = async (id) => { for (let k = 0; k < 40; k++) {
+  const ready = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D) return true; let ok = true;
+    { const q = D.npc.g.position, a = D.npc.g.rotation.y; px = q.x + Math.cos(a) * 4; pz = q.z - Math.sin(a) * 4; CAM.position.set(px, q.y + 1.6, pz); }
+    for (const N of [D.npc, D.follow[0].npc]) { const rig = N.g.userData.rig; if (HBODY.job && HBODY.job.rig === rig) HBODY.job = null; if (!rig.hb && rig.hbG) { hbAttach(rig); if (rig.hb) { hbLevel(rig, 0); hbPose(rig); } }
+      const H = rig.hb; if (H && Array.isArray(H.cold)) { while (H.cold.length) { const o = H.cold.pop(); try { hbCompile(o, false); hbUpload(o); } catch (e) {} } H.cold = false; }
+      if (H && !H.cold && H.L === 2) { hbLevel(rig, 0); hbPose(rig); }
+      if (!H || H.cold || H.L === 2) ok = false; } return ok; }, id);
+  await g.spin(null, 2); if (ready) break;
+}
+};
+await nearBodies(pil.mourn.id);
 const bi = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D || !D.bier) return { bier: false };
   const G = D.bier; G.updateMatrixWorld(true); const inv = G.matrixWorld.clone().invert(), out = [];
   for (const N of [D.npc, D.follow[0].npc]) { N.g.updateMatrixWorld(true); const rig = N.g.userData.rig;
@@ -141,7 +155,8 @@ const bi = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D || !
       out.push(+Math.hypot(Math.abs(q.x) - BIER.w / 2, q.y).toFixed(3)); } }
   const dress = [D.npc, D.follow[0].npc].map(N => { const G2 = HB_GENOMES.get(N.g.userData.rig.g.hbKey); const d = (G2 && G2.dress) || {};
     return Object.keys(HB_BEARER_STRIP).filter(k => d[k]); });
-  return { bier: true, tris: G.userData.tris, w: +(G.userData.w || 0).toFixed(3), off: out, bear: [D.npc.g.userData.rig.bear, D.follow[0].npc.g.userData.rig.bear], dress, shown: G.visible && !!G.parent }; }, pil.mourn.id);
+  return { bier: true, tris: G.userData.tris, w: +(G.userData.w || 0).toFixed(3), off: out, bear: [D.npc.g.userData.rig.bear, D.follow[0].npc.g.userData.rig.bear], dress, shown: G.visible && !!G.parent,
+    hb: [D.npc, D.follow[0].npc].map(N => { const r = N.g.userData.rig, H = r.hb; return H ? [H.L, !!H.cold, H.root.visible, !!H.P, N.g.visible] : [r.hbG ? 'nohb' : 'nogenome', !!r.hbFail]; }) }; }, pil.mourn.id);
 console.log(JSON.stringify(bi));
 check('the mourners carry a bier, its two poles through their four palms (within 4 cm)', bi.bier && bi.shown && bi.off.every(d => d !== null && d < .04) && bi.bear[0] === 1 && bi.bear[1] === -1, bi);
 check('its bearers hold nothing and wear no cloak, cape or mantle; the bier under 2,000 triangles', bi.bier && bi.dress.every(l => l.length === 0) && bi.tris < 2000, bi);
@@ -197,6 +212,21 @@ const fg = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) re
   return { drawn: true, two: 1 + D.follow.length, inTalk: npcs.includes(D.npc), second: npcs.includes(D.follow[0].npc), resp, g1, again, f0, f1, owed, charKey: !!SS_CHAR_WS.roadAlms }; }, fm);
 console.log(JSON.stringify(fg));
 check('the family walk two together; given 15 gold, the gift is once and the favour owed while the town lies burned', fg.drawn && fg.two === 2 && fg.inTalk && !fg.second && fg.g1 === 25 && fg.again === false && fg.f1 === fg.f0 && fg.owed === 1 && fg.charKey, fg);
+// S2282 — the family's handcart: the man pushes it, its grips through his palms, its wheels on the road ahead; he holds nothing and wears no cloak
+await nearBodies(fm.id); await g.spin(null, 6); await nearBodies(fm.id);
+const ct = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D || !D.cart) return { cart: false }; const G = D.cart; G.updateMatrixWorld(true);
+  const rig = D.npc.g.userData.rig; D.npc.g.updateMatrixWorld(true); const inv = G.matrixWorld.clone().invert(), off = [];
+  for (const s of ['L', 'R']) { const h = kidPalm(rig, s); if (!h) { off.push(null); continue; } const q = h.p.clone().applyMatrix4(inv); off.push(+Math.hypot(Math.abs(q.x) - CART.hw, q.y, q.z).toFixed(3)); }
+  const W = G.userData.wheels, gap = [-1, 1].map(sx => { const c = new THREE.Vector3(sx * CART.track, 0, 0).applyMatrix4(W.matrixWorld); return +(c.y - CART.r - worldH(c.x, c.z)).toFixed(3); });
+  const r0 = G.userData.roll; const G2 = HB_GENOMES.get(rig.g.hbKey), d = (G2 && G2.dress) || {};
+  return { cart: true, shown: G.visible && !!G.parent, tris: G.userData.tris, off, gap, r0, push: rig.push, follow: D.follow[0].npc.g.userData.rig.push || 0, dress: Object.keys(HB_BEARER_STRIP).filter(k => d[k]),
+    hb: rig.hb ? [rig.hb.L, !!rig.hb.cold, rig.hb.root.visible, +Math.hypot(CAM.position.x - D.npc.g.position.x, CAM.position.z - D.npc.g.position.z).toFixed(1)] : 'nohb' }; }, fm.id);
+await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 1);
+await g.spin(null, 4);
+ct.r1 = await page.evaluate((id) => { const D = ROADWALK.get(id); return D && D.cart ? D.cart.userData.roll : null; }, fm.id);
+console.log(JSON.stringify(ct));
+check('the man pushes a handcart: its grips in his palms (within 3 cm), both wheels on the road (within 3 cm), and they turn as it goes (a game minute: about a metre)', ct.cart && ct.shown && ct.push === 1 && !ct.follow && ct.off.every(d => d !== null && d < .03) && ct.gap.every(d => Math.abs(d) < .03) && ct.r1 - ct.r0 > .5, ct);
+check('he holds nothing and wears no cloak, cape or mantle; the cart under 2,500 triangles', ct.cart && ct.dress.length === 0 && ct.tris < 2500, ct);
 const fp = await page.evaluate((o) => { const f0 = (worldState.favor || {})[o.site] || 0; delete TS(siteAnywhere(o.site)).flags.burned; familyPay();
   const f1 = (worldState.favor || {})[o.site] || 0; const E = worldState.roadAlms[o.site]; E.owed = 0; E.n = 2; TS(siteAnywhere(o.site)); const before = E.n;
   // a third gift (another family) counts for nothing more
@@ -220,7 +250,7 @@ const ow = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) re
 console.log(JSON.stringify(ow));
 check('he walks with a guard and writes a writ on the camp, 40 + 10 a tier, once', ow.drawn && ow.two === 2 && !ow.guardTalk && ow.kind === 'writ' && ow.reward === 40 + 10 * of.tier && ow.resp.includes(of.name) && /You have my writ/.test(ow.again), ow);
 check('clearing the camp pays the writ', ow.turned && ow.paid === ow.want, ow);
-// S2282 — a bridge down
+// S2283 — a bridge down
 const bd = await page.evaluate(() => { const bs = SITES.filter(b => b.kind === 'bridge' && b.bridge); let n = 0, N = 0; for (const b of bs) for (let w = 0; w < 300; w++) { N++; if (bridgeFell(b.id, w)) n++; }
   const b = bs[0]; if (!b) return null; let w = 1; while (!(bridgeFell(b.id, w) && !bridgeFell(b.id, w - 1))) w++;
   const t = w * 7 * 1440 + 600; worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; px = b.x; pz = b.z; return { id: b.id, len: Math.round(b.bridge.len), rate: n / N, bs: bs.length }; });
@@ -238,7 +268,7 @@ console.log(JSON.stringify(bg));
 check('down by the roll: drawn broken, the ground in its gap the river\'s bed, drawn whole again once mended', bg.drawn && bg.drop > 1 && bg.still && bg.whole, bg);
 check('a rider tells of it', /is down/.test(bg.news || ''), bg.news);
 check('the lord mends it for 250 + 2 a metre, up two days after', bg.cost === 250 + 2 * bd.len && bg.left === 1000 - bg.cost && !bg.again && bg.up, bg);
-// S2283 — the coach at the bank, the route at half
+// S2284 — the coach at the bank, the route at half
 const cr = await page.evaluate(() => { const K = { village: 1, town: 1, city: 1, port: 1 };
   const rd = ROADS.find(rd => rd.def && siteAnywhere(rd.def.a) && siteAnywhere(rd.def.b) && siteAnywhere(rd.def.a).kind in K && siteAnywhere(rd.def.b).kind in K && roadBridges(rd).length); if (!rd) return null;
   const o = roadBridges(rd)[0], b = SITE[o.id] || siteAnywhere(o.id); let w = 1; while (!(bridgeFell(b.id, w) && !bridgeFell(b.id, w - 1))) w++;

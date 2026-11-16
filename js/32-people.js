@@ -1209,6 +1209,7 @@ function buildNPCMesh(def,opts){
   let g=def.name&&!def.authored?PEOPLE_GENOMES.get(key):null;
   if(!g){g=personGenome(def,opts);if(def.name)PEOPLE_GENOMES.set(key,g);}
   if(def.authored&&def.name)g.castOk=true;
+  if(def.carter)g.carter=true; /* S2282 — a handcart's pusher: stripped of what is held and of a cloak by hbGenome */
   if(def.bearer)g.bearer=def.bearer; /* S2273 — a bier's bearer (the road's mourners): stripped and in mourning by hbGenome */
   if(hbOn()&&!opts.noBuilder&&!g.hbKey){const pw=hbPowerOf(def,g);if(pw){g.power=pw;g.gear=HB_POWER[pw].staff?'stick':null;}} /* S2260 (#1566 B) — the town's head dressed by office; the driver holds a staff or nothing (a Mark captain's guard spear dropped) */
   if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
@@ -1334,7 +1335,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
-function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,play:rig.play||null,bear:rig.bear||0};}
+function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,play:rig.play||null,bear:rig.bear||0,push:rig.push||0};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1364,6 +1365,7 @@ function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);f
     PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
   if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}
   if(o.bear&&!w.sleep)pwBear(out,o.bear); /* S2273 — a bier's bearer: the arms on its poles, whatever the legs do */
+  if(o.push&&!w.sleep)pwPush(out); /* S2282 — a handcart's pusher: the hands on its grips */
   return out;}
 function pwApply(rig,P){const B=rig.B;PW.JOINTS.forEach(j=>{const r=P[j];B[j].rotation.set(r[0],r[1],r[2]);});
   B.hips.position.y=P.hipsY;B.hips.position.x=P.sway;
@@ -1911,6 +1913,61 @@ function bierTick(D){const G=D.bier,F=D.follow&&D.follow[0];if(!G||!F)return;con
   const x=new THREE.Vector3(0,1,0).cross(z).normalize(),y=z.clone().cross(x),w=(A[0].distanceTo(A[1])+B[0].distanceTo(B[1]))/2,k=Math.max(.7,Math.min(1.5,w/BIER.w));
   const c=fm.add(bm).multiplyScalar(.5).addScaledVector(y,-BIER.y);
   _bm.makeBasis(x.multiplyScalar(k),y,z).setPosition(c);G.matrix.copy(_bm);G.matrixWorldNeedsUpdate=true;G.userData.w=w;}
+// ═══ THE HANDCART (S2282; the road's families, Michael's B on #1587, "a family with a handcart from a town you let fall") ═══
+// Session 2276 walked a fallen town's families as a man and a woman side by side, with nothing of their goods. Now the man pushes a
+// two-wheeled handcart before him and the woman walks at his side. The cart: two ash shafts CART.len from the grips to the axle, a bed of
+// boards with low sides, an iron-shod pair of spoked wheels CART.r in radius, and what they could carry, seeded by the family's id: a
+// chest, sacks, a rolled bedding, a pot, a stool. The pusher's arms are the driver's (pwPush, on rig.push), reaching forward and down to
+// the grips, the back a little bent; the legs walk as ever. Each frame cartTick reads his palms (kidPalm; the driver's wrists beyond the
+// builder's level), lays the grips through them, and pitches the shafts down to the axle, which it sets on the road CART.len ahead; the
+// wheels turn by the ground the axle covers. One mesh a material for the cart and two for the wheels, under 2,500 triangles, built once a
+// cart. Nothing here decides an outcome: the load is the family's own, by its id.
+const CART={len:1.7,hw:.3,r:.42,track:.52,mats:{}};
+function cartMat(k){const M=CART.mats;if(M[k])return M[k];const C={wood:[0x8f7250,.82],dark:[0x5a4532,.85],iron:[0x3a3836,.6,.5],hemp:[0xb09a72,.95],wool:[0x6e5a48,.95],blue:[0x4a5868,.95],red:[0x7a4438,.95]}[k];
+  return M[k]=new THREE.MeshStandardMaterial({color:C[0],roughness:C[1],metalness:C[2]||0});}
+function pwPush(p){p.shL=[-.36,0,.1];p.shR=[-.36,0,-.1];p.elL=[-.3,0,0];p.elR=[-.3,0,0];p.wrL=[.15,.3,.05];p.wrR=[.15,-.3,-.05];
+  p.spine=[p.spine[0]+.16,p.spine[1]*.3,p.spine[2]];p.head=[p.head[0]-.1,0,0];}
+function cartBuild(id){const r=pRng(pHash('cart|'+(id||''))),g=new THREE.Group(),parts={wood:[],dark:[],iron:[],hemp:[],wool:[],blue:[],red:[]},wp={wood:[],iron:[]};
+  const L=CART.len,hw=CART.hw,R=CART.r,T=CART.track;
+  const box=(k,w,h,d,x,y,z,ry,P)=>{const q=new THREE.BoxGeometry(w,h,d);if(ry)q.rotateY(ry);q.translate(x,y,z);(P||parts)[k].push(q);};
+  // the shafts, the grips at z 0, the axle at z L; the bed sits on them from 0.55 m to past the axle
+  for(const sx of [-1,1]){const q=new THREE.CylinderGeometry(.024,.024,L+.3,7,1);q.rotateX(Math.PI/2);q.translate(sx*hw,0,(L+.3)/2-.02);parts.wood.push(q);}
+  const z0=.55,z1=L+.28,bw=.86,by=.045;box('wood',bw,.025,z1-z0,0,by,(z0+z1)/2);
+  for(const z of [z0+.06,(z0+z1)/2,z1-.06])box('dark',bw+.04,.04,.06,0,by-.03,z);
+  for(const sx of [-1,1])box('wood',.025,.2,z1-z0,sx*(bw/2),by+.11,(z0+z1)/2);
+  box('wood',bw,.2,.025,0,by+.11,z1);box('wood',bw,.12,.025,0,by+.07,z0);
+  // the axle, under the shafts at the hub
+  {const q=new THREE.CylinderGeometry(.03,.03,2*T+.12,6,1);q.rotateZ(Math.PI/2);q.translate(0,0,L);parts.iron.push(q);}
+  // the load: a chest at the front, then two or three sacks, the bedding rolled across, a pot or a stool on top; by the family's id
+  const top=by+.0125,dye=['wool','blue','red'][Math.floor(r()*3)];let z=z1-.06;
+  const chest=r()<.75;if(chest){const cw=.5+r()*.15,cd=.32,ch=.3;box('dark',cw,ch,cd,(r()-.5)*.1,top+ch/2,z-cd/2);box('iron',cw+.01,.03,cd+.01,0,top+ch-.04,z-cd/2);z-=cd+.03;}
+  const ns=2+Math.floor(r()*2);for(let i=0;i<ns;i++){const q=new THREE.SphereGeometry(.2,10,7);const sx=.9+r()*.25,sy=.75+r()*.3,sz=.8+r()*.3;q.scale(sx,sy,sz);
+    const x=(i%2?1:-1)*(.17+r()*.05),zz=z-.18-Math.floor(i/2)*.32;q.translate(x,top+.2*sy*.92,zz);parts.hemp.push(q);}
+  const zb=z-.18-Math.floor((ns-1)/2)*.32-.3;{const q=new THREE.CylinderGeometry(.13,.13,bw-.06,12,1);q.rotateZ(Math.PI/2);q.translate(0,top+.13,Math.max(z0+.15,zb));parts[dye].push(q);
+    for(const sx of [-.25,.25]){const t=new THREE.TorusGeometry(.135,.012,4,12);t.rotateY(Math.PI/2);t.translate(sx,top+.13,Math.max(z0+.15,zb));parts.hemp.push(t);}}
+  if(r()<.6){const pts=[[0,0],[.1,0],[.13,.04],[.14,.1],[.12,.15],[.1,.17],[.11,.18]].map(([a,b])=>new THREE.Vector2(a,b)),q=new THREE.LatheGeometry(pts,12);q.translate(-.05+(r()-.5)*.1,top+.33,z-.15);parts.iron.push(q);}
+  else{const sy0=top+.36,sz0=z-.2;box('dark',.32,.035,.32,0,sy0,sz0);for(const a of [0,1,2,3]){const ax=(a%2?1:-1)*.11,az=(a<2?1:-1)*.11;const q=new THREE.CylinderGeometry(.016,.016,.28,5,1);q.translate(ax,sy0+.155,sz0+az);parts.dark.push(q);}} /* a stool, legs up */
+  // the wheels: an iron tyre, a felloe, a hub and eight spokes, centred on the axle (their own group, turned by cartTick)
+  for(const sx of [-1,1]){const x=sx*T;
+    {const q=new THREE.TorusGeometry(R-.02,.022,5,22);q.rotateY(Math.PI/2);q.translate(x,0,0);wp.iron.push(q);}
+    {const q=new THREE.TorusGeometry(R-.06,.03,4,22);q.rotateY(Math.PI/2);q.translate(x,0,0);wp.wood.push(q);}
+    {const q=new THREE.CylinderGeometry(.06,.06,.12,8,1);q.rotateZ(Math.PI/2);q.translate(x,0,0);wp.wood.push(q);}
+    for(let i=0;i<8;i++){const q=new THREE.BoxGeometry(.022,R-.08,.03);q.translate(0,(R-.08)/2+.03,0);q.rotateX(i*Math.PI/4);q.translate(x,0,0);wp.wood.push(q);}}
+  let tris=0;const add=(P,par,nm)=>{for(const k in P){if(!P[k].length)continue;const geo=hbMergeGeos(P[k]);P[k].forEach(q=>q.dispose());const m=new THREE.Mesh(geo,cartMat(k));m.name=nm+k;m.castShadow=true;m.receiveShadow=true;par.add(m);tris+=geo.index.count/3;}};
+  add(parts,g,'cart:');const W=new THREE.Group();W.position.set(0,0,L);W.name='cart:wheels';add(wp,W,'wheel:');g.add(W);
+  g.userData.tris=tris;g.userData.cart=true;g.userData.wheels=W;g.userData.roll=0;g.matrixAutoUpdate=false;return g;}
+// the road's tick hands the cart its pusher (D.npc) once, and calls cartTick after it has set him
+function cartAttach(D){const a=D.npc&&D.npc.g.userData.rig;if(!a)return null;a.push=1;const g=cartBuild(D.T&&D.T.id);D.cart=g;return g;}
+const _cv=[0,1,2,3,4].map(()=>new THREE.Vector3()),_cm=new THREE.Matrix4();
+function cartTick(D){const G=D.cart;if(!G)return;const H=[_cv[0],_cv[1]];if(!bierHands(D.npc,H)){G.visible=false;return;}G.visible=D.npc.g.visible!==false;
+  const h=_cv[2].copy(H[0]).add(H[1]).multiplyScalar(.5),ang=D.npc.g.rotation.y,fx=Math.sin(ang),fz=Math.cos(ang),L=CART.len,gy=(x,z)=>typeof worldH==='function'?worldH(x,z):0;
+  // the axle CART.len from the grips, on the ground ahead: two passes find where the shafts' slope lands it
+  let ax=h.x+fx*L*.9,az=h.z+fz*L*.9,ay=gy(ax,az)+CART.r;
+  for(let i=0;i<2;i++){const dy=Math.min(L*.95,Math.abs(h.y-ay)),dh=Math.sqrt(L*L-dy*dy);ax=h.x+fx*dh;az=h.z+fz*dh;ay=gy(ax,az)+CART.r;}
+  const z=_cv[3].set(ax-h.x,ay-h.y,az-h.z).normalize(),x=new THREE.Vector3(0,1,0).cross(z).normalize(),y=z.clone().cross(x),w=H[0].distanceTo(H[1]),k=Math.max(.8,Math.min(1.3,w/(2*CART.hw)));
+  _cm.makeBasis(x.multiplyScalar(k),y,z).setPosition(h);G.matrix.copy(_cm);G.matrixWorldNeedsUpdate=true;G.userData.w=w;
+  const U=G.userData,last=U.axle;if(last){const d=Math.hypot(ax-last.x,az-last.z);if(d<3)U.roll+=d*Math.sign((ax-last.x)*fx+(az-last.z)*fz||1);last.x=ax;last.z=az;}else U.axle={x:ax,z:az};
+  U.wheels.rotation.x=U.roll/CART.r;U.ay=ay-CART.r;}
 // ═══ THE BUILDER'S BODIES (v80 S1195, card F4) ═══════════════════════════════════════════════════════════════════════════
 // On the new look a townsperson wears the builder's body (docs/design/character-builder.md): MakeHuman's CC0 body morphed by
 // a genome, its 163-bone skeleton, the wardrobe and the hair cards, all from docs/prototypes/levelup/people.js, which the
@@ -1948,6 +2005,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   if(/^(ring|kid):/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
+  if(g.carter)G.dress=Object.assign({},G.dress,HB_BEARER_STRIP); /* S2282 — a handcart's pusher: nothing in the hands, no cloak for the arms to reach through */
   if(g.bearer)G.dress=hbBearerDress(G); /* S2273 — a bier's bearer: in mourning, nothing in the hands, no cloak for the arms to pass through */
   if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
   if(!cast&&!g.child&&HB_PACK_ROLE.test(g.role||''))G.dress=hbRolePack(g,G); /* S2239 — a traveller's pack, by island */

@@ -9,7 +9,7 @@ fs.mkdirSync('tests/out', { recursive: true });
 // the cells load through a job queue in real time; drain it so every bridge in reach is built before measuring
 await page.evaluate(() => { for (let k = 0; k < 600 && (WORLD.jobs.length || [...WORLD.LOADED.values()].some(L => L.pending)); k++) { WORLD.tick(1 / 60, performance.now());
   while (WORLD.jobs.length) { const j = WORLD.jobs.shift(); let more = false; try { more = j.fn(); } catch (e) {} if (more) WORLD.jobs.push(j); } } });
-// S2282 — bridges fall by the systems builder's weekly roll (1 in 30, two weeks), so one near the start can be down on the boot clock:
+// S2283 — bridges fall by the systems builder's weekly roll (1 in 30, two weeks), so one near the start can be down on the boot clock:
 // every loaded bridge is held whole by hand (`down: false`, the record's override) while this suite measures them
 await page.evaluate(() => { worldState.bridges = {}; for (const s of WORLD.SITES) if (s.kind === 'bridge') { worldState.bridges[s.id] = { down: false }; WORLD.bridgeRedraw(s.id); } });
 const r = await page.evaluate(() => {

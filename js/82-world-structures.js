@@ -1332,7 +1332,7 @@
   // river's bed and you fall from the break into the water; the chunks under it take their heights again and their road strips are
   // laid again (a strip follows worldH). bridgeRedraw(id) builds a loaded bridge again from the state, after the systems builder's
   // action has changed it; a bridge not loaded is built from the state when its cell loads.
-  function bridgeIsDown(id){return typeof bridgeDownId==='function'&&!!bridgeDownId(id);} /* S2282 — the systems builder's roll (bridgeDownId, 87): the week's fall, a mend, or a hand's `down` */
+  function bridgeIsDown(id){return typeof bridgeDownId==='function'&&!!bridgeDownId(id);} /* S2283 — the systems builder's roll (bridgeDownId, 87): the week's fall, a mend, or a hand's `down` */
   function bridgeFit(g){const id=g.userData.bridgeId,S=g.userData.span,ang=S.ang,len=S.len,mx=g.position.x,mz=g.position.z,s_=Math.sin(ang),c_=Math.cos(ang);
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].bridge===id)STATIC_SOL.splice(i,1);
     const gap=g.geometry.userData.gap,runs=gap?[[-len/2,gap.z0],[gap.z1,len/2]]:[[-len/2,len/2]];

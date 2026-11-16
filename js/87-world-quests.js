@@ -322,7 +322,7 @@ const giver=`${lord.title} ${lord.name}`;
             {label:'It\u2019s done.',quest:true,avail:()=>{tickDatedWork();return qActive().some(q=>q.giverSite===site.id&&!q.faction&&q.done);},fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction&&q.done)||qActive().find(q=>q.giverSite===site.id&&!q.faction); /* S2130 — a finished job first */if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const _k=!!q.contract;const paid=qTurnIn(q);if(_k&&q.paid===0){addFavor(site,1);return `The contract is met. The Compact's ledger is ${bountyAt(site)>0?`down to ${bountyAt(site)} gold`:'clear'}.`;} /* S2230 */if(q.kind==='warcamp'||q.kind==='garrison')return warFill(WAR_THANKS[q.kind][_lp]||WAR_THANKS[q.kind].gatelander,{paid,town:site.name}); /* S2130 — Under Another Flag §2: the favour breakSiege and liberate gave stands */addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
             erHedgeLordTopic(site), /* S2021 — the hedge's deed, in Aurenne */
             ...(typeof licenceTopics==='function'?licenceTopics(site):[]),
-            ...bridgeMendTopics(site), /* S2281 — a bridge down near the town: mended for gold, or by your own planks */ /* S2235 — the lord's licence to hunt his chase (#1540 B) */
+            ...bridgeMendTopics(site), /* S2283 — a bridge down near the town: mended for gold, or by your own planks */ /* S2235 — the lord's licence to hunt his chase (#1540 B) */
             {label:'How fares the town?',get response(){return `${site.name} is ${stateSaid(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
@@ -2122,7 +2122,7 @@ const giver=`${lord.title} ${lord.name}`;
       delete rt.threat;
       // the camp picks an hour on the outbound leg, u .35–.65 of the road; tickCaravans springs it (Session 179)
       if(camp){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);rt.threat={day,camp:camp.name,f:.175+seededRng('threat',key+':'+day)()*.15,won:false,started:false};} /* S679 — the hour rolls on the route and the day (co-op rules), not Math.random */
-      {const rd=ROADS.find(r=>routeKey(r.def.a,r.def.b)===key),half=rd&&roadBridgesDown(rd).length; /* S2282 — a route over a bridge down earns half: prosperity is whole points (+.8 rounds to +1 a day), so half is the day's +1 on even days only */
+      {const rd=ROADS.find(r=>routeKey(r.def.a,r.def.b)===key),half=rd&&roadBridgesDown(rd).length; /* S2284 — a route over a bridge down earns half: prosperity is whole points (+.8 rounds to +1 a day), so half is the day's +1 on even days only */
        if(!half||dayNow()%2===0){setProsperity(a,prosperity(a)+.8);setProsperity(b,prosperity(b)+.8);}}}
     const Cs=coaches();for(const key in Cs){const a=siteAnywhere(Cs[key].a),b=siteAnywhere(Cs[key].b);if(a&&b){setProsperity(a,prosperity(a)+1);setProsperity(b,prosperity(b)+1);}}}
   function caravanDef(a,b){const [i,j]=cellOf(a.x,a.z);const nat=nationOf(i,j);return makeDef(a,a.reg||'irish',Math.random,'Merchant',pick(Math.random,(NAMES[PEOPLES[nat.people].names]||NAMES.irish).m),{people:nat.people,x:a.x,z:a.z,bCol:0x6a4a2a,sCol:0xd4a878,topics:[{label:'What are you carrying?',response:`${a.name} wool and ${b.name} iron, this week. Next week the other way round. The road's kinder than it was.`},{label:'Anything for sale?',trade:true,goods:[{name:'Travel Ration',ico:'🍞',type:'potion',heal:12,buyPrice:6,sellMult:.4},{name:'Lamp Oil',ico:'🪔',type:'misc',buyPrice:9,sellMult:.5},{name:'Bolt of Cloth',ico:'🧵',type:'misc',buyPrice:22,sellMult:.6}]}]});}
@@ -2302,7 +2302,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(F.burned!=null)ev.push({t:F.burned,site:t,line:`${t.name} has burned.`});
       if(F.plague!=null)ev.push({t:F.plague,site:t,line:`There is sickness at ${t.name}.`});
       if(st.freed&&st.freed.day!=null)ev.push({t:st.freed.day*1440,site:t,line:`${t.name} is free again.`});}
-      for(const t of getCell(i,j).sites){if(t.kind!=='bridge')continue;const D=bridgeDown(t);if(D&&D.mending==null)ev.push({t:D.at,site:t,line:`${t.name} is down. The middle span is in the river.`});}} /* S2281 — a bridge down */
+      for(const t of getCell(i,j).sites){if(t.kind!=='bridge')continue;const D=bridgeDown(t);if(D&&D.mending==null)ev.push({t:D.at,site:t,line:`${t.name} is down. The middle span is in the river.`});}} /* S2283 — a bridge down */
     const R=worldState.routes||{};for(const k of Object.keys(R).sort()){const rt=R[k];if(!rt||!rt.broken||rt.brokenAt==null)continue;const a=near[rt.a]||null,b=near[rt.b]||null;if(!a&&!b)continue;
       const A=a||siteAnywhere(rt.a),B=b||siteAnywhere(rt.b);if(!A||!B)continue;ev.push({t:rt.brokenAt,site:a||b,line:`The ${A.name}\u2013${B.name} caravan was taken${rt.by?' by the bandits of '+rt.by:''}.`});}
     const live=ev.filter(e=>now-e.t<=RIDER_NEWS).sort((p,q)=>q.t-p.t||(p.site.id<q.site.id?-1:1));return live[0]||null;}
@@ -2323,7 +2323,7 @@ const giver=`${lord.title} ${lord.name}`;
     const H=D.halt;if(now-H.at>=RIDER_WAIT||Math.hypot(px-D.npc.def.x,pz-D.npc.def.z)>RIDER_LET){rfSet(T.id,{lag:H.lag0+Math.min(RIDER_WAIT,now-H.at)});delete D.halt;return false;}
     rfSet(T.id,{lag:H.lag0+(now-H.at)});return true;}
   // S2276 — a family on the road (the page's family row): two more a day from an end besieged, sacked, burned, plagued, occupied or abandoned in
-  // the last 20 days, walking at 1.0 m a game minute to the other end; two people side by side (the handcart is the bodies builder's). Give
+  // the last 20 days, walking at 1.0 m a game minute to the other end; two people side by side, the man pushing the handcart (32-people.js, S2282). Give
   // them 15 gold and their town owes you +1 favour, paid once it is whole again (none of those six flags), at most +2 a town however often you
   // give. The gift is kept on the family's record (worldState.roadfolk, the world's: one gift a family), the favour owed in worldState.roadAlms
   // (the character's, beside favor: {siteId: {n: favour counted, owed}}); the owed favour is paid on the day's first tick that finds the town whole.
@@ -2340,7 +2340,7 @@ const giver=`${lord.title} ${lord.name}`;
   let _almsDay=-1;
   function familyDef(T,rd,p,k){const home=roadfolkHome(T,rd),r=seededRng('roadfolk',T.id+(k?':'+k:'')),[i,j]=cellOf(home.x,home.z),nat=nationOf(i,j),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
     const nm=pick(r,k?bank.f:bank.m);const topics=k?[]:[{label:`Here. Take this. (${FAMILY_ALMS} gold)`,avail:()=>!(rfRec(T.id)||{}).alms,fn:()=>familyGive(T,rd)}];
-    const def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x5e5446,topics});def._siteId=home.id;def.roadfolk=T.id;return def;}
+    const def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x5e5446,topics});def._siteId=home.id;def.roadfolk=T.id;def._twin='cart';if(!k)def.carter=true;return def;} /* S2282 — the man pushes the handcart (32-people.js); not the town's own of that name */
   // S2277 — the official (the page's official row): the Crown's road-warden on the Gatelands, a reeve's man on the Mark, the Compact's clerk in
   // Aurenne, walking at 1.3 m a game minute with a guard beside him. Where a live bandit camp breaks his road (the merchant's test: one within
   // 500 m of the road's midpoint, not cleared) he writes you a writ on it, a quest of its own (kind 'writ', id writ:<camp>, in the journal and
@@ -2360,7 +2360,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(T.kind==='official'){const n=spawnNPC(officialDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const n2=spawnNPC(officialDef(T,rd,p,1),p.ang,true);n2.sched={type:'lost'};const k2=npcs.indexOf(n2);if(k2>=0)npcs.splice(k2,1);
       return {T,rd,npc:n,follow:[{npc:n2,side:1.0,back:0}]};}
     if(T.kind==='family'){const n=spawnNPC(familyDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const n2=spawnNPC(familyDef(T,rd,p,1),p.ang,true);n2.sched={type:'lost'};const k2=npcs.indexOf(n2);if(k2>=0)npcs.splice(k2,1);
-      return {T,rd,npc:n,follow:[{npc:n2,side:1.0,back:0}]};}
+      const D={T,rd,npc:n,follow:[{npc:n2,side:1.0,back:0}]};if(typeof cartAttach==='function'){const cg=cartAttach(D);if(cg)sc.add(cg);}return D;} /* S2282 — the family's handcart */
     if(T.kind==='rider'){const n=spawnNPC(riderDef(T,rd,p),p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();try{const rg=riderBeast(T,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
       const rig=n.g.userData.rig;if(rig)rig.sit={v:0,look:0,c:0};return {T,rd,npc:n,beast:g,follow:[],mount:true};}
     if(T.kind==='pilgrim'){const Q=pilgrimPlan(T,rd);const n=spawnNPC(pilgrimDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const D={T,rd,npc:n,follow:[]};
@@ -2368,7 +2368,7 @@ const giver=`${lord.title} ${lord.name}`;
       return D;}
     const n=spawnNPC(merchantDef(T,rd,p),p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();try{const rg=buildAnimal('Pack Mule',T.id,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
     return {T,rd,npc:n,beast:g,follow:[]};}
-  function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);if(D.bier){sc.remove(D.bier);D.bier.traverse(o=>{if(o.geometry)o.geometry.dispose();});}ROADWALK.delete(id);}
+  function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);if(D.bier){sc.remove(D.bier);D.bier.traverse(o=>{if(o.geometry)o.geometry.dispose();});}if(D.cart){sc.remove(D.cart);D.cart.traverse(o=>{if(o.geometry)o.geometry.dispose();});}ROADWALK.delete(id);}
   function tickRoadfolk(dt){if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
     if(Math.random()<.002)rfPrune();
     {const d=dayNow();if(d!==_almsDay){_almsDay=d;familyPay();}} /* S2276 — favour owed for alms, paid once the town is whole */
@@ -2383,8 +2383,8 @@ const giver=`${lord.title} ${lord.name}`;
       if(D.beast){const bk=D.mount?0:1.6,bx=p.x-Math.sin(p.ang)*bk,bz=p.z-Math.cos(p.ang)*bk;D.beast.position.set(bx,worldH(bx,bz),bz);D.beast.rotation.y=p.ang;}
       for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
         const fx=q?q.x:p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=q?q.z:p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=worldH(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=q?q.ang:p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}
-      if(D.bier)bierTick(D);}}
-  // S2282 — a bridge down (the page's bridge row, #1587 B, the road page's fifth systems session): every bridge rolls 1 in 30 a game-week
+      if(D.bier)bierTick(D);if(D.cart)cartTick(D);}}
+  // S2283 — a bridge down (the page's bridge row, #1587 B, the road page's fifth systems session): every bridge rolls 1 in 30 a game-week
   // (seededRng('bridge', id+':'+week), so the clock alone says which are down and a load or a friend reads the same) and stays down two
   // weeks unless mended. The look builder's S2281 draws it (bridgeGeo's down, bridgeFit: the middle pier and its two arches gone, the ground
   // in the gap the river's bed, BRIDGE_GAPS) from bridgeIsDown(id), which reads bridgeDownId here; tickBridges redraws a loaded bridge
@@ -2425,7 +2425,7 @@ const giver=`${lord.title} ${lord.name}`;
         if(n<BRDN_PLANKS)return `With your own hands? Then you'll want ${BRDN_PLANKS} planks for the span. You have ${n}.`;
         bagTake(x=>x.plank,BRDN_PLANKS);mendBridge(b.id,'planks');if(typeof addLog==='function')addLog('🌉',`You mended ${b.name} with ${BRDN_PLANKS} planks. It stands again in ${BRDN_DAYS} days.`);
         return `Then the timber's yours and the work is too. Two days, and it will carry a cart again.`;}}];}
-  // S2282 — the bridges on a road (the page's bridge row, its coach and its route): every bridge site within 15 m of the road's line, in the
+  // S2284 — the bridges on a road (the page's bridge row, its coach and its route): every bridge site within 15 m of the road's line, in the
   // cells its points cross, read from the cells' data (a bridge is a site of its cell once the cell's roads have been laid). Each is {id, u}, u
   // the road's own fraction (roadPoint's, by point index) at the bridge, and k, the half-length plus 4 m in u: the bank a coach draws up on.
   // Cached on the road while the number of bridges in those cells stays the same.
@@ -3866,7 +3866,7 @@ const giver=`${lord.title} ${lord.name}`;
         if(C.stopT<=0&&!(C.holdTo&&nowM<C.holdTo&&seatHeldFor(C,key,C.resumeDir||C.dir))){if(C.holdTo&&seatHeldFor(C,key,C.resumeDir||C.dir)){worldState.coachSeat=null;showMsg('The coach could not wait any longer. Your seat has gone with it.','#c8b880');}
           C.holdTo=0;C.state='run';C.dir=C.resumeDir||C.dir;C.stopped=true;}}
       if(C.state==='run'){const u0=C.u;C.u+=C.dir*COACH_SPEED*dt/C.len;
-        {const bk=bridgeBank(rd,u0,C.dir);if(bk!=null&&(C.dir>0?C.u>=bk:C.u<=bk)){C.u=bk;C.state='wait';C.halted=true;C.bank=bk;C.resumeDir=C.dir;C.dir=0;if(C.riding)showMsg('The coach draws up at the bank. The bridge is down.','#c8b880');}} /* S2282 — the coach stops at the bank of a bridge down, and goes on when it stands */
+        {const bk=bridgeBank(rd,u0,C.dir);if(bk!=null&&(C.dir>0?C.u>=bk:C.u<=bk)){C.u=bk;C.state='wait';C.halted=true;C.bank=bk;C.resumeDir=C.dir;C.dir=0;if(C.riding)showMsg('The coach draws up at the bank. The bridge is down.','#c8b880');}} /* S2284 — the coach stops at the bank of a bridge down, and goes on when it stands */
         if(C.state==='run'&&!C.stopped&&(u0-.5)*(C.u-.5)<=0&&u0!==.5){C.u=.5;C.state='stop';C.stopT=COACH_STOP;C.resumeDir=C.dir;}
         if(C.u>=1){C.u=1;C.state='wait';C.stopped=false;}if(C.u<=0){C.u=0;C.state='wait';C.stopped=false;}}
       const p=roadPoint(rd,C.u);const fwd=C.dir;const ang=p.ang+(fwd<0?Math.PI:0);const y=worldH(p.x,p.z);
