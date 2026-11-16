@@ -1882,9 +1882,10 @@
     return h>=HRS.shopOpen&&h<HRS.shopClose; // shops
   }
   function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='huntcabin'||t==='market'||t==='academy')return false;return !npcInsideNow(house);} /* S1480 — a byre (S1475, a barn) is never locked */
+  // S2310 — and a festival fills the squares of its island’s towns that keep it (festivalHere, 60-shop.js)
   // S2205 — a feast fills every square; a town keeping a wedding today (*A Fish for the Wedding*'s fine fish brought, erWeddingAt) fills its own
   // square the same way, for that town and that day (backlog A, the fish's hook owed to the look builder)
-  function feastNow(siteId){return typeof feastOn==='function'&&!!feastOn()||!!siteId&&!!(worldState.quests&&worldState.quests.length)&&typeof erWeddingAt==='function'&&erWeddingAt(siteId);} /* asked only with a journal: QJ() would make one */
+  function feastNow(siteId){return typeof feastOn==='function'&&!!feastOn()||!!siteId&&typeof festivalHere==='function'&&!!festivalHere(siteId)||!!siteId&&!!(worldState.quests&&worldState.quests.length)&&typeof erWeddingAt==='function'&&erWeddingAt(siteId);} /* asked only with a journal: QJ() would make one */
   function feastR(r,f){return f?Math.min(r,18):r;}
   function scheduleFor(n,h){
     try{if(typeof QUEST_DEFS!=='undefined'&&n.def&&QUEST_DEFS.some(q=>q.giver===n.def.name&&(qState(q.id)==='available'||qState(q.id)==='active'||qState(q.id)==='reward')||qState(q.id)==='active'&&(q.objectives||[]).some(o=>o.type==='talk_to'&&o.npc===n.def.name)))return {go:(n.sched&&n.sched.door)||{x:n.def.x,z:n.def.z},idle:true};}catch(e){} // v80 — a quest giver is always findable (S236: and whoever an active quest sends you to)

@@ -347,7 +347,70 @@ const FEAST_FINE={gatelander:'It’s a feast, so it’s half. Don’t make me so
 function feastOn(at){const c=calDay(at);return FEASTS.find(f=>f.month===c.month&&f.dom===c.dom)||null;}
 function nextFeast(at){const now=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0),d0=Math.floor(Math.max(0,now)/1440);
   for(let d=d0;d<d0+CAL.monthLen*CAL.months;d++){const f=feastOn(d*1440);if(f)return {f,at:d*1440};}return null;}
-function feastGreeting(def){if(!def||!def._siteId)return null;const f=feastOn();return f?(f.greet[def.people]||f.greet.gatelander):null;}
+function feastGreeting(def){if(!def||!def._siteId)return null;const f=feastOn();if(f)return f.greet[def.people]||f.greet.gatelander; /* S2310 — a feast wins; none shares a festival's date */
+  const h=festivalHere(def._siteId);return h?(h.f.greet[def.people]||h.f.greet.gatelander):null;}
+// S2310 — the nine island festivals (Michael's B on #1628, docs/design/festivals.md; the names, dates, customs and lines are the
+// quest writer's drafts, *Festivals on the Calendar* I–III, docs/quest_drafts.md). Each is kept by the towns of one island only
+// (nation, isleAt), each on its god's day; greet is by the speaker's people, as a feast's. A town keeps its festival as its year
+// allows (festivalState, 87-world-quests.js): full, thin or not at all. A festival fills the square as a feast does, and nothing
+// is free: the inn's meal and the halved fine stay the four feasts'. First Snow falls on its fallback, Culling 28, until the
+// night snow first lies in the town is read (snow:true; owed).
+const FESTIVALS=[
+  {key:'greening',name:'The Greening',nation:'gatelands',month:2,dom:3,ico:'🎀',due:'a ribbon on the pole from every house, and the first lambs shown.',
+    greet:{gatelander:'A green Greening to you. Every house ties a ribbon on the pole today, and a house that doesn’t tie one has no lambs to count. There’s ribbon at the pole if you’ve none of your own. Nobody asks whose house you are.',
+      markman:'Greening. They tie rags on a pole and walk a lamb round it. Good lamb, mind. Ate one like it at home.',
+      aurennais:'A fair Greening to you, Master, as they say here. It is the country’s spring observance: one ribbon to each household, and a lamb presented to the god of beasts. The Church has no view on it that I would repeat on a day like this.',
+      oldblood:'Bealtaine, we said. The pole is younger than the word. The lambs are older than both.'}},
+  {key:'riverfair',name:'Riverfair',nation:'gatelands',month:4,dom:18,ico:'🐴',due:'horses and wool at the water, and the water blessed at noon.',
+    greet:{gatelander:'Riverfair, and every horse in the county is for sale and none of them is the one you want. Buy late. A man who brought a horse to the fair doesn’t want to walk it home.',
+      markman:'Riverfair. Good horses, bad prices. Buy the bay. The grey bites.',
+      aurennais:'It is Riverfair, Master, the inland trade. The terms are verbal, which I find bracing, and the horses are excellent, which I find harder to account for.',
+      oldblood:'Aonach na hAbhann. The river’s fair. At noon they give the sea a cup back. It is owed more.'}},
+  {key:'lanterns',name:'The Night of the Lanterns',nation:'gatelands',month:7,dom:26,ico:'🏮',due:'at dusk, a lantern for each who went into a gate and did not come out.',
+    greet:{gatelander:'It’s the Night of the Lanterns tonight. You’ll be wanting to stand in the square at dusk, whether you’ve anyone to send one for or not. They go up so slow you’d think they were sorry to leave.',
+      markman:'Lantern night. For the ones the gates kept. Lot of them in this trade. Stand with them. It’s short.',
+      aurennais:'It is the Night of the Lanterns, Master. The Church would say those it remembers went where they had no business going. I say only that the lanterns are very well made, and that one should be in the square at dusk.',
+      oldblood:'Oíche na Lóchrann. They send a light after the ones who went in. We used to ask what the light would find. We stopped asking.'}},
+  {key:'blaze',name:'The Blaze',nation:'mark',month:9,dom:15,ico:'🔥',due:'every hearth put out, and lit again from one fire on the square.',
+    greet:{markman:'Blaze tonight. Hearth’s out till dusk, so don’t ask for a hot meal. Bring a log to the square. Everyone does.',
+      gatelander:'It’s their Blaze tonight. They let every fire in the town go out, and then they wonder why it’s cold. A fire you share burns longer, they say here, and I’ll not argue with a Markman about fire.',
+      aurennais:'It is the Blaze, Master, the Mark’s midwinter. Every hearth is extinguished and relit from a single fire. A fine principle of common supply, I think. They would not thank me for calling it that.',
+      oldblood:'Tine Chnámh. The bone-fire. It was a fire for the dead, once. They burn wood in it now. They feel warm, so they do not ask.'}},
+  {key:'straitfair',name:'The Strait Fair',nation:'mark',month:5,dom:4,ico:'⛵',due:'boats at first light, the ring till noon, and oaths before the reeve.',
+    greet:{markman:'Fair day. Boats at first light, ring till noon. You’ve a quarrel, the ring’s there. You’ve none, watch.',
+      gatelander:'It’s the Strait Fair. They settle a year’s grudges in a morning, which is quicker than we manage, and they’re friends by noon, which is quicker again. I’ve seen worse ways. Not many louder.',
+      aurennais:'It is the Strait Fair, Master. Disputes are resolved in a roped ring by noon, and I am told the resolutions hold better than most contracts. I have stopped finding that a comfort.',
+      oldblood:'Aonach an Chaolais. The strait’s fair. The rope was a line of stones, once. They fought inside it and nobody died. The rope remembers the half of that they kept.'}},
+  {key:'firstsnow',name:'First Snow',nation:'mark',month:8,dom:28,snow:true,ico:'❄',due:'the first night snow lies in Culling or Longnight, the town sits up outside till first light.',
+    greet:{markman:'Snow’s lying. Nobody sleeps inside tonight. Fires on the square. Bring furs.',
+      gatelander:'First Snow, they call it. The whole town sits out in it all night to prove they can. I said I’d sit an hour. That was three winters ago, and I’ve sat every one since.',
+      aurennais:'It is First Snow, Master. The town spends the night outdoors, by agreement, in the cold. I have attended twice. I cannot account for it, and I would not miss it.',
+      oldblood:'An Chéad Sneachta. The first snow. They sit out under the sky because the old ones did. The old ones were watching the sky for something. These ones are only cold, and glad of each other.'}},
+  {key:'commencement',name:'The Commencement',nation:'aurenne',month:3,dom:6,ico:'📜',due:'the academy’s year opens; the town’s admitted are read from the steps at ten.',
+    greet:{aurennais:'It is the Commencement, Master. The academy’s year opens today, and the names it has admitted from the town are read from the steps at ten. There is a subscription for their books, should you be minded. There is always a subscription.',
+      gatelander:'It’s their Commencement. They read out on the steps which of their children are off to the academy, and the whole town claps like it’s a wedding. A child that goes up the white towers comes home talking strange, they say. They clap anyway, and I’d clap with them.',
+      markman:'Reading day. They read the kids’ names off a paper and clap. Kid goes off to learn letters. I learned mine at forty. Took a week.',
+      oldblood:'An Chéad Léamh. The first reading. There was a law about reading, once. It was not about names.'}},
+  {key:'caravan',name:'The Caravan',nation:'aurenne',month:6,dom:9,ico:'🐪',due:'the saffron in from beyond the dunes, and a pinch of the first bale to every household.',
+    greet:{aurennais:'The caravan is in, Master, from beyond the dunes. The first bale is open on the square, a pinch to every household by the old contract. The contract is older than the Compact, and it has been renegotiated less.',
+      gatelander:'The caravan’s in. Saffron and dates and salt, and a man who’ll sell you a carpet if you stand still. Never stand still at a caravan, they say. I stood still once. It’s a good carpet.',
+      markman:'Caravan’s in. Spice and dates. Dear, but it’s honest dear. They weigh it in front of you.',
+      oldblood:'An Cróch. The saffron. A flower’s heart, pulled by hand, three threads at a time. They carry it across the dunes for that. Nothing else is worth carrying so far.'}},
+  {key:'lamps',name:'The Lamps on the Water',nation:'aurenne',month:11,dom:4,ico:'🪔',due:'at dusk, the ledger read at the quay and a lamp on the ebb for every hull at sea.',
+    greet:{aurennais:'It is the Lamps tonight, Master. A lamp on the water for every hull in the ledger that is out, to light her in. The ships of the Compact come back, as you will have heard. We should not like to be asked to prove that it is the lamps.',
+      gatelander:'It’s their Lamps tonight. A light on the water for every ship they’ve got out, and one for each that’s not coming home. Their ships come back, mostly. Ours don’t, and we’ve no lamps for them. I’ve wondered about that.',
+      markman:'Lamps tonight. They float one out for every ship they’ve got at sea. Pretty. We just count ours when they’re back.',
+      oldblood:'Soilse na Mara. The sea’s lights. They set them out to bring the ships in. The sea takes the lamps either way.'}}];
+// the day's festival for an island (none named: any island's); nextFestival as nextFeast, for one island
+function festivalOn(at,nation){const c=calDay(at);return FESTIVALS.find(f=>(!nation||f.nation===nation)&&f.month===c.month&&f.dom===c.dom)||null;}
+function nextFestival(at,nation){const now=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0),d0=Math.floor(Math.max(0,now)/1440);
+  for(let d=d0;d<d0+CAL.monthLen*CAL.months;d++){const f=festivalOn(d*1440,nation);if(f)return {f,at:d*1440};}return null;}
+// a town's festival today, if its island keeps one and the town keeps it (festivalState not 'none'): {f, state} or null
+const _festIsle=new Map(); /* a site's island, fixed by the seed */
+function festivalHere(siteId,at){if(!siteId||!festivalOn(at)||typeof siteAnywhere!=='function'||typeof festivalState!=='function')return null;
+  const s=siteAnywhere(siteId);if(!s||s.x==null)return null;if(!_festIsle.has(siteId))_festIsle.set(siteId,isleAt(s.x,s.z));
+  const f=festivalOn(at,_festIsle.get(siteId));if(!f)return null;
+  const state=festivalState(s,at);return state==='none'?null:{f,state};}
 function calOrd(d){return d+((d%10===1&&d%100!==11)?'st':(d%10===2&&d%100!==12)?'nd':(d%10===3&&d%100!==13)?'rd':'th');}
 // S498 — the calendar's own date, *Seaday, the 4th of Reaping* (the Due view, a map note, the hour you wake on the rest slip)
 function calDateLine(at){const c=calDay(at);return `${c.day.name}, the ${calOrd(c.dom)} of ${CAL.monthNames[c.month]}`;}
