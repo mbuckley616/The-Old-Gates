@@ -2316,7 +2316,7 @@ const giver=`${lord.title} ${lord.name}`;
   function riderDef(T,rd,p){const home=roadfolkHome(T,rd),r=seededRng('roadfolk',T.id),[i,j]=cellOf(home.x,home.z),nat=nationOf(i,j),nk=nationKeyOf(i,j);
     const nm=pick(r,(NAMES[PEOPLES[nat.people].names]||NAMES.irish).m),post=RIDER_POST[nk]||RIDER_POST.gatelands;let def=null;
     def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x3a4458,sCol:0x2a2420,topics:[{label:'What news?',fn:()=>riderTell(T,def.x,def.z,post,def.people)}]});
-    def._siteId=home.id;def.roadfolk=T.id;def.post=post;return def;}
+    def._siteId=home.id;def.roadfolk=T.id;def.post=post;def.rider=true;return def;}
   function riderBeast(T,isle){const rg=buildWolf(isle!=='mark'&&(pHash(T.id)&1)?'Grey Horse':'Horse',1.6);rg.hcKey='rider:'+T.id;if(ANIMAL_ISLES.includes(isle))rg.hcIsland=isle;return rg;}
   // the halt: true while he stands (his place is then the clock's, the lag growing with the minutes he waits)
   function riderTick(D,p){const T=D.T;if(T.kind!=='rider')return false;const now=worldState.gameTimeAbsMinutes||0,R=rfRec(T.id);
@@ -2393,7 +2393,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(!best)return false;const a=siteAnywhere(bD.rd.def.a),b=siteAnywhere(bD.rd.def.b);const site=!a?b:!b?a:Math.hypot(a.x-px,a.z-pz)<=Math.hypot(b.x-px,b.z-pz)?a:b;if(!site)return false;
     const name=(best.def&&best.def.name)||'someone';bookAssault(site,bD.T.id);
     showMsg(`You struck ${name}. ${site.name} will hear of it.`,'#ff6060');if(typeof addLog==='function')addLog('👁',`Struck ${name} on the road near ${site.name}.`);return true;}
-  function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);if(D.bier){sc.remove(D.bier);D.bier.traverse(o=>{if(o.geometry)o.geometry.dispose();});}if(D.cart){sc.remove(D.cart);D.cart.traverse(o=>{if(o.geometry)o.geometry.dispose();});}ROADWALK.delete(id);}
+  function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);if(D.bier){sc.remove(D.bier);D.bier.traverse(o=>{if(o.geometry)o.geometry.dispose();});}if(D.cart){sc.remove(D.cart);D.cart.traverse(o=>{if(o.geometry)o.geometry.dispose();});}if(D.reins)D.reins.geometry.dispose();ROADWALK.delete(id);}
   function tickRoadfolk(dt){if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
     if(Math.random()<.002)rfPrune();
     {const d=dayNow();if(d!==_almsDay){_almsDay=d;familyPay();}} /* S2276 — favour owed for alms, paid once the town is whole */
@@ -2408,7 +2408,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(D.beast){const bk=D.mount?0:1.6,bx=p.x-Math.sin(p.ang)*bk,bz=p.z-Math.cos(p.ang)*bk;D.beast.position.set(bx,worldH(bx,bz),bz);D.beast.rotation.y=p.ang;}
       for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
         const fx=q?q.x:p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=q?q.z:p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=worldH(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=q?q.ang:p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}
-      if(D.bier)bierTick(D);if(D.cart)cartTick(D);}}
+      if(D.bier)bierTick(D);if(D.cart)cartTick(D);if(D.mount&&typeof reinsTick==='function')reinsTick(D);}}
   // S2283 — a bridge down (the page's bridge row, #1587 B, the road page's fifth systems session): every bridge rolls 1 in 30 a game-week
   // (seededRng('bridge', id+':'+week), so the clock alone says which are down and a load or a friend reads the same) and stays down two
   // weeks unless mended. The look builder's S2281 draws it (bridgeGeo's down, bridgeFit: the middle pier and its two arches gone, the ground
