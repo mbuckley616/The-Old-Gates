@@ -2354,7 +2354,7 @@ const giver=`${lord.title} ${lord.name}`;
   // Aurenne, walking at 1.3 m a game minute with a guard beside him. Where a live bandit camp breaks his road (the merchant's test: one within
   // 500 m of the road's midpoint, not cleared) he writes you a writ on it, a quest of its own (kind 'writ', id writ:<camp>, in the journal and
   // on the map at the camp), and it pays 40 + 10 a tier of the camp's ground the moment the camp is cleared (markLairDead). One writ a camp.
-  // His part as a witness on the road waits with robbing the road's people (strikeNpc reads only a site's townsfolk).
+  // His part as a witness on the road waits with robbing the road's people (a theft on the road; S2287 books a strike on them).
   const OFFICIAL_POST={gatelands:"the Crown\u2019s road-warden",mark:"a reeve\u2019s man",aurenne:"the Compact\u2019s clerk"};
   function writPay(camp){return 40+10*Math.max(0,worldTierAt(camp.x,camp.z)|0);}
   /* S2286 — quest review Finding 50: the official's four lines by people (the Gatelands' as before) */
@@ -2385,6 +2385,14 @@ const giver=`${lord.title} ${lord.name}`;
       return D;}
     const n=spawnNPC(merchantDef(T,rd,p),p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();try{const rg=buildAnimal('Pack Mule',T.id,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
     return {T,rd,npc:n,beast:g,follow:[]};}
+  // S2287 — striking one of the road's people (the page's merchant row: "today's assault … before the nearer town's court"): the one within
+  // 2.2 m in front of you, as strikeNpc picks a townsperson, is booked as an assault at whichever of the road's two ends is nearer to you
+  // (bookAssault, 86-world-crime.js). The victim always sees it; a traveller keeps to the road, so nobody runs.
+  function strikeRoadfolk(fx,fz){let best=null,bd=2.2,bD=null;
+    for(const D of ROADWALK.values())for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N||!N.g||!N.g.visible)continue;const ex=N.g.position.x-px,ez=N.g.position.z-pz,d=Math.hypot(ex,ez);if(d>=bd)continue;if((ex*fx+ez*fz)/(d||1)<=.45)continue;best=N;bd=d;bD=D;}
+    if(!best)return false;const a=siteAnywhere(bD.rd.def.a),b=siteAnywhere(bD.rd.def.b);const site=!a?b:!b?a:Math.hypot(a.x-px,a.z-pz)<=Math.hypot(b.x-px,b.z-pz)?a:b;if(!site)return false;
+    const name=(best.def&&best.def.name)||'someone';bookAssault(site,bD.T.id);
+    showMsg(`You struck ${name}. ${site.name} will hear of it.`,'#ff6060');if(typeof addLog==='function')addLog('👁',`Struck ${name} on the road near ${site.name}.`);return true;}
   function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);if(D.bier){sc.remove(D.bier);D.bier.traverse(o=>{if(o.geometry)o.geometry.dispose();});}if(D.cart){sc.remove(D.cart);D.cart.traverse(o=>{if(o.geometry)o.geometry.dispose();});}ROADWALK.delete(id);}
   function tickRoadfolk(dt){if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
     if(Math.random()<.002)rfPrune();
