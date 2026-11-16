@@ -507,7 +507,7 @@ function genSettlement(site){
         // is the healer's hall of rooms.js (Session 937) where it fits whole: the smithy's hall, 6.4 by 9 m under shingle, carved, no
         // chimney but the louver over the long hearth; with its porch where that fits too. Inside it is the healer's hall (kitMarkApothecary).
         if(MK&&t==='potion')for(const porch of [true,false]){const S={roof:'shingle',w:6.4,d:9,porch,chimney:false,carve:true,wall:o1.wall},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'markhall',o:S,ext:E,w0,d0,stoop:E[1],apothecary:true,shell:`${site.id}:windows:${lot.n}`};return;}}
-        // S2301 (card F9; Michael's A on #1632; OG-043, OG-115) — a Markish goods shop, armourer or barber ('misc', 'armor', 'barber') is the
+        // S2303 (card F9; Michael's A on #1632; OG-043, OG-115) — a Markish goods shop, armourer or barber ('misc', 'armor', 'barber') is the
         // trader's hall of rooms.js (Session 2290) where it fits whole: the smithy's hall, 6.4 by 9 m under shingle, carved, no chimney but the
         // louver over the long hearth; with its porch where that fits too. Inside it is the trader's hall (kitMarkTrader). A lot with no room
         // for it takes PKIT.mk.lot's hall, or the town house (S2003), as before.
@@ -3554,7 +3554,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     return sc_;
   }
-  // S2301 (card F9; Michael's A on #1632; OG-043, OG-115) — on the new look a Markish goods shop, armourer or barber that stands as
+  // S2303 (card F9; Michael's A on #1632; OG-043, OG-115) — on the new look a Markish goods shop, armourer or barber that stands as
   // rooms.js's trader's hall (lot.kit.trader, the Mark hall of 6.4 by 9 m under shingle) opens on it (PKIT.mk.trader, Session 2290) inside
   // the street's own shell: the low long hearth under the louver; down the right the counter of upright boards under an oak top, the
   // keeper's walk behind it with the shelves of stock and the strongbox at its door end; down the left the trade's own (furs and wadmal;
@@ -4086,7 +4086,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitAurApothecary(house))return buildKitAurApothecary(house); /* S1894 — an Aurennais apothecary inside, at its true size */
     if(kitMarkSmithy(house))return buildKitMarkSmithy(house); /* S1869 — a Markish smithy inside, at its true size */
     if(kitMarkApothecary(house))return buildKitMarkApothecary(house); /* S1881 — a Markish apothecary inside, at its true size */
-    if(kitMarkTrader(house))return buildKitMarkTrader(house); /* S2301 — a Markish goods shop, armourer or barber inside, at its true size (#1632 A) */
+    if(kitMarkTrader(house))return buildKitMarkTrader(house); /* S2303 — a Markish goods shop, armourer or barber inside, at its true size (#1632 A) */
     if(kitAurHome(house))return buildKitAurHome(house); /* S1831 — Aurenne's flat over the dyer's shop inside, at its true size */
     if(kitAurHomeOne(house))return buildKitAurHomeOne(house); /* S1968 — Aurenne's one-storey home inside, at its true size */
     if(kitLonghouse(house))return buildKitLonghouse(house); /* S1453 — a Markish home: the longhouse inside, at its true size */

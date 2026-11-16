@@ -1,4 +1,4 @@
-// A Markish goods shop, armourer and barber, on the street and inside, on the new look (Session 2301; card F9, Michael's A on #1632;
+// A Markish goods shop, armourer and barber, on the street and inside, on the new look (Session 2303; card F9, Michael's A on #1632;
 // rooms.js's markTrader of Session 2290; OG-043, OG-115). A Markish 'misc', 'armor' or 'barber' shop that fits stands as pieces.js's Mark
 // hall of 6.4 by 9 m under shingle (lot.kit.trader), and opens on the trader's hall at its true size (PKIT.mk.trader) inside the street's
 // own shell: walled below the windows but the door; you arrive clear; the prototype's walks on foot; no walking into the hearth's fire; the
