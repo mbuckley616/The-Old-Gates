@@ -19,6 +19,7 @@
 // Session 2301: his mule's pack (and a family's handcart) robbed as a strongbox: unseen nothing, seen a theft at the nearer end.
 // Session 2302: the official's guard draws on a crime he sees and fights to the town's yield.
 // Session 2305: a pilgrim leaves the road where his line to the goal stays out of water deeper than a wade; a goal with no such line is not his road's.
+// Session 2306: a walker of the road stops on the bank of a bridge down, as the coach does, and goes on when it stands.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -390,6 +391,18 @@ await g.spin(null, 120);
 const cg = await page.evaluate((r) => COACHES.get(r.key).u, cr);
 console.log(JSON.stringify({ cb, cg }));
 check('the coach draws up at the bank and goes on when the bridge stands', cb.state === 'wait' && cb.halted && Math.abs(cb.u - (cr.u - cr.k)) < 1e-6 && cg > cr.u, { cb, cg });
+// S2306 — a walker of the road stops on the bank of a bridge down, as the coach does, and goes on when it stands
+const wb = await page.evaluate(() => { const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440), keep = JSON.stringify(worldState.bridges || {});
+  for (const rd of ROADS.filter(roadfolkRoad)) { const B = roadBridges(rd); if (!B.length) continue; const o = B[0], b = siteAnywhere(o.id) || SITE[o.id];
+    for (const T of roadTravellers(rd, day + 1)) { if (T.kind === 'pilgrim') continue; const L = roadLenOf(rd), s = rd._cum[Math.round(o.u * (rd.pts.length - 1))], sw = T.from === 'b' ? L - s : s, tMid = T.at + sw / T.pace;
+      const W = worldState.bridges || (worldState.bridges = {}); W[o.id] = { down: false }; rd._bdAt = -1; worldState.gameTimeAbsMinutes = tMid; const up = travellerAt(T, rd, tMid);
+      W[o.id] = { down: true }; rd._bdAt = -1; const dn = travellerAt(T, rd, tMid), later = travellerAt(T, rd, tMid + 300);
+      W[o.id] = { down: false }; rd._bdAt = -1; const again = travellerAt(T, rd, tMid + 300);
+      worldState.bridges = JSON.parse(keep); rd._bdAt = -1; worldState.gameTimeAbsMinutes = now;
+      return { bridge: o.id, kind: T.kind, half: +(b.bridge.len / 2).toFixed(1), up: up && Math.round(Math.hypot(up.x - b.x, up.z - b.z)), dn: dn && +Math.hypot(dn.x - b.x, dn.z - b.z).toFixed(1), held: !!(dn && dn.bank && later && later.bank && later.d === dn.d), again: again && Math.round(again.d - dn.d) }; } }
+  return null; });
+console.log(JSON.stringify(wb));
+check('a walker who would be on a bridge down stands on its bank, half its length and 4 m back, and goes on when it stands', wb && wb.up < 2 && Math.abs(wb.dn - (wb.half + 4)) < 1.5 && wb.held && wb.again > 100, wb);
 // S2290 — over a bridge the road's walkers and the coach stand on the setts (S2288's deck), not on the causeway under it
 await page.evaluate((r) => { worldState.gameTimeAbsMinutes = Math.floor(worldState.gameTimeAbsMinutes) + 1; worldState.gameTimeMinutes = worldState.gameTimeAbsMinutes % 1440; const C = COACHES.get(r.key); C.u = r.u; C.state = 'wait'; C.dir = 0; C.halted = false; }, cr); /* the next minute: tickBridges draws it whole */
 await g.spin(null, 1);

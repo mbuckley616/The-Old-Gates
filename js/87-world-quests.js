@@ -2241,7 +2241,16 @@ const giver=`${lord.title} ${lord.name}`;
     const along=T.from==='b'?rd._len-rd._cum[bi]:rd._cum[bi];return (T._plan={goal:G,mourners:G.kind==='gate'&&r()<1/6,along,off:bd,bx:P[bi].x,bz:P[bi].z});}
   function pilgrimAt(T,rd,d){const Q=pilgrimPlan(T,rd);if(Q.none)return null;if(d<0||d>Q.along+Q.off)return null;if(d<=Q.along){const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
     const f=(d-Q.along)/Math.max(1e-6,Q.off),x=Q.bx+(Q.goal.x-Q.bx)*f,z=Q.bz+(Q.goal.z-Q.bz)*f;return {x,z,ang:Math.atan2(Q.goal.x-Q.bx,Q.goal.z-Q.bz),d,off:true};}
-  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));if(T.kind==='pilgrim')return pilgrimAt(T,rd,d);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
+  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;let d=T.pace*(now-T.at-(R&&R.lag||0));
+    if(d>0){const bk=roadfolkBank(T,rd,d);if(bk!=null)return Object.assign(roadAtDist(rd,bk,T.from==='b'),{d:bk,bank:true});}
+    if(T.kind==='pilgrim')return pilgrimAt(T,rd,d);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
+  // S2306 — the critic's s1641: on a bridge down a merchant walked on through the gap. A walker of the road stops on the bank short of a bridge
+  // down, as S2284's coach does (half its length and 4 m back), if he reached that bank after it fell, and stands there while it is down; he goes
+  // on when it stands, or is gone with his day (yesterday's and today's departures). A pilgrim bound off the road short of the bridge is not held.
+  // The bridges down on a road are read once a game minute (rd._bd)
+  function roadfolkBank(T,rd,d){const m=Math.floor(worldState.gameTimeAbsMinutes||0);if(rd._bdAt!==m){rd._bdAt=m;rd._bd=roadBridgesDown(rd).map(o=>{const b=siteAnywhere(o.id)||SITE[o.id];return {s:roadLenOf(rd)&&rd._cum[Math.round(o.u*(rd.pts.length-1))],h:b.bridge.len/2+4,at:bridgeDown(b).at};});}
+    if(!rd._bd.length)return null;const L=roadLenOf(rd),Q=T.kind==='pilgrim'?pilgrimPlan(T,rd):null;if(Q&&Q.none)return null;const lim=Q?Q.along:L;let best=null;
+    for(const o of rd._bd){const bank=(T.from==='b'?L-o.s:o.s)-o.h;if(bank<0||d<=bank||bank>=lim)continue;if(T.at+bank/T.pace<o.at)continue;if(best==null||bank<best)best=bank;}return best;}
   function roadfolkHome(T,rd){return siteAnywhere(T.from==='a'?rd.def.a:rd.def.b);}
   function roadfolkDest(T,rd){return siteAnywhere(T.from==='a'?rd.def.b:rd.def.a);}
   // every traveller on the loaded roads now (today's and yesterday's departures), with where they are
@@ -2480,7 +2489,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(riderTick(D,p)){const q=travellerAt(T,rd,worldState.gameTimeAbsMinutes||0);if(q)p=q;} /* S2275 — reined in: the clock, less the minutes he has stood, is where he stands */
       const y=roadY(p.x,p.z);D.npc.g.position.set(p.x,y+(D.mount?RIDER_SEAT:0),p.z);D.npc.g.rotation.y=p.ang;D.npc.def.x=p.x;D.npc.def.z=p.z;D.npc.home={x:p.x,z:p.z};D.npc.dot.position.set(p.x,y+1.5,p.z);
       if(D.beast){const bk=D.mount?0:1.6,bx=p.x-Math.sin(p.ang)*bk,bz=p.z-Math.cos(p.ang)*bk;D.beast.position.set(bx,roadY(bx,bz),bz);D.beast.rotation.y=p.ang;}
-      for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
+      for(const F of D.follow){let q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null;if(q&&q.bank&&p.bank)q=roadAtDist(rd,Math.max(0,p.d-F.back),T.from==='b'); /* S2306 — both held at a bank: the back bearer stands his length behind */ /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
         const fx=q?q.x:p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=q?q.z:p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=roadY(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=q?q.ang:p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}
       if(D.bier)bierTick(D);if(D.cart)cartTick(D);if(D.mount&&typeof reinsTick==='function')reinsTick(D);}}
   // S2283 — a bridge down (the page's bridge row, #1587 B, the road page's fifth systems session): every bridge rolls 1 in 30 a game-week
