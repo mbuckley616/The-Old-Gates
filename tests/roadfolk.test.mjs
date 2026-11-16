@@ -3,6 +3,7 @@
 // an end and a kind. Where one is comes from the clock and the pace. Within 400 m the nearest four are drawn; the merchant (session 1)
 // walks at 1.1 m a game minute with his mule and sells 6 to 10 rows of a goods shop's stock at his home town's prices ×1.1.
 // Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
+// Session 2297: his leg off the road is dry; a shrine no point of the road reaches dry is no goal of its pilgrims.
 // Session 2273: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
 // Session 2275: a rider at 5.5 m a game minute reins in when you come within 6 m and gives the newest event within two cells to the journal and the map.
 // Session 2282: the family's man pushes a handcart, its grips in his palms and its wheels on the road ahead.
@@ -141,18 +142,20 @@ check('walk 250 m off with them alive and his pack is taken; he is off the road,
 
 // S2270 — pilgrims and mourners
 const pil = await page.evaluate(() => {
-  const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440); let one = null, mourn = null, n = 0, nm = 0, bad = [];
+  const now = worldState.gameTimeAbsMinutes || 0, day = Math.floor(now / 1440); let one = null, mourn = null, n = 0, nm = 0, bad = [], wet = [];
   for (let dd = day + 1; dd < day + 40; dd++) for (const rd of ROADS.filter(roadfolkRoad)) for (const T of roadTravellers(rd, dd)) {
     if (T.kind !== 'pilgrim') continue; n++; const Q = pilgrimPlan(T, rd); if (Q.none) { bad.push(T.id); continue; }
     const dRoad = Math.min(...rd.pts.map(q => Math.hypot(q.x - Q.goal.x, q.z - Q.goal.z)));
     if (dRoad > 1500) bad.push([T.id, dRoad]);
+    for (let f = 10; f < Q.off; f += 10) { const q = travellerAt(T, rd, T.at + (Q.along + f) / T.pace); if (q && rawH(q.x, q.z) < -0.5) { wet.push([T.id, Q.goal.name, Math.round(f), Math.round(rawH(q.x, q.z) * 10) / 10]); break; } }
     if (Q.mourners) { nm++; const dm = Math.hypot(rd.pts[0].x - 13100, rd.pts[0].z - 25450); if (!mourn || dm < mourn.dm) mourn = { T, rd, dm }; } else if (!one && Q.off > 40) one = { T, rd };
   }
   const put = (o, frac) => { const Q = pilgrimPlan(o.T, o.rd), d = frac * Q.along; const t = o.T.at + d / o.T.pace; worldState.gameTimeAbsMinutes = t; worldState.gameTimeMinutes = t % 1440; const p = travellerAt(o.T, o.rd, t); px = p.x + 5; pz = p.z; return { id: o.T.id, goal: Q.goal, along: Q.along, off: Q.off, t }; };
-  return { n, nm, bad, one: one && put(one, .5), mourn: mourn && { id: mourn.T.id } , _m: mourn && [mourn.rd.def.a, mourn.rd.def.b, mourn.T.id] };
+  return { n, nm, bad, wet, one: one && put(one, .5), mourn: mourn && { id: mourn.T.id } , _m: mourn && [mourn.rd.def.a, mourn.rd.def.b, mourn.T.id] };
 });
 console.log(JSON.stringify(pil).slice(0, 900));
 check('every pilgrim is bound for a shrine or lesser gate within 1,500 m of his road', pil.n > 0 && pil.bad.length === 0, pil.bad.slice(0, 5));
+check('a pilgrim\'s leg off the road never goes under the sea or the water: every 10 m of it over −0.5 m (S2297)', pil.n > 0 && pil.wet.length === 0, pil.wet.slice(0, 5));
 check('about one in six bound for a gate are mourners (some over 40 days)', pil.nm > 0, pil.nm);
 await g.cells(); await g.spin(null, 4);
 const talk = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) return { drawn: false, keys: [...ROADWALK.keys()] }; const t = D.npc.def.topics.find(t => t.label === 'Where are you bound?');
