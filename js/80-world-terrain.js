@@ -244,9 +244,14 @@
   function propH(x,z){const g=CHUNK/SEGS;const x0=Math.floor(x/g)*g,z0=Math.floor(z/g)*g;const u=(x-x0)/g,v=(z-z0)/g;const h00=worldH(x0,z0),h10=worldH(x0+g,z0),h01=worldH(x0,z0+g),h11=worldH(x0+g,z0+g);const bil=h00*(1-u)*(1-v)+h10*u*(1-v)+h01*(1-u)*v+h11*u*v;const tri=(u+v<1)?(h00+(h10-h00)*u+(h01-h00)*v):(h11+(h01-h11)*(1-u)+(h10-h11)*(1-v));return Math.max(worldH(x,z),bil,tri)+.06;}
   window.propH=propH;
   function meshH(x,z){const g=CHUNK/SEGS;const x0=Math.floor(x/g)*g,z0=Math.floor(z/g)*g;const u=(x-x0)/g,v=(z-z0)/g;const h00=worldH(x0,z0),h10=worldH(x0+g,z0),h01=worldH(x0,z0+g),h11=worldH(x0+g,z0+g);return (u+v<1)?(h00+(h10-h00)*u+(h01-h00)*v):(h11+(h01-h11)*(1-u)+(h10-h11)*(1-v));}
+  // S2281 — a bridge down (bridgeFit, 82-world-structures.js): the gap under its fallen span, by the bridge's id, in its own frame (along
+  // its axis z0 to z1, across within the road's blend). There the ground is the river's bed: the road's causeway is gone with the span.
+  const BRIDGE_GAPS=new Map();
+  function inBridgeGap(x,z){for(const G of BRIDGE_GAPS.values()){const dx=x-G.x,dz=z-G.z,u=dx*G.s+dz*G.c;if(u<G.z0||u>G.z1)continue;if(Math.abs(dx*G.c-dz*G.s)<ROAD_BLEND+.5)return true;}return false;}
   function worldH(x,z){
   // v80 S132 — the height of the drawn ground: the chunk mesh is worldH sampled every 4u and interpolated, so between vertices it can sit above the analytic surface; small props sit on the drawn ground
     let h=baseH(x,z);
+    if(BRIDGE_GAPS.size&&inBridgeGap(x,z))return h;
     const ri=roadInfo(x,z);
     if(ri){
       const t=1-sstep(ROAD_HALF,ROAD_BLEND,ri.d);

@@ -5,7 +5,7 @@
 // Session 2270: a pilgrim leaves the road for a shrine or lesser gate within 1,500 m and pencils it on your map when asked; mourners say nothing.
 // Session 2273: the mourners carry their dead on a bier, one before and one behind it, its poles in their hands.
 // Session 2275: a rider at 5.5 m a game minute reins in when you come within 6 m and gives the newest event within two cells to the journal and the map.
-// Session 2281: the family's man pushes a handcart, its grips in his palms and its wheels on the road ahead.
+// Session 2282: the family's man pushes a handcart, its grips in his palms and its wheels on the road ahead.
 // Session 2276: families from a town fallen in the last 20 days walk to the other end; 15 gold owes +1 favour there once it is whole, +2 at most.
 // Session 2277: an official on a road a live camp breaks writes you a writ on it, paid 40 + 10 a tier when the camp is cleared.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
@@ -209,7 +209,7 @@ const fg = await page.evaluate((o) => { const D = ROADWALK.get(o.id); if (!D) re
   return { drawn: true, two: 1 + D.follow.length, inTalk: npcs.includes(D.npc), second: npcs.includes(D.follow[0].npc), resp, g1, again, f0, f1, owed, charKey: !!SS_CHAR_WS.roadAlms }; }, fm);
 console.log(JSON.stringify(fg));
 check('the family walk two together; given 15 gold, the gift is once and the favour owed while the town lies burned', fg.drawn && fg.two === 2 && fg.inTalk && !fg.second && fg.g1 === 25 && fg.again === false && fg.f1 === fg.f0 && fg.owed === 1 && fg.charKey, fg);
-// S2281 — the family's handcart: the man pushes it, its grips through his palms, its wheels on the road ahead; he holds nothing and wears no cloak
+// S2282 — the family's handcart: the man pushes it, its grips through his palms, its wheels on the road ahead; he holds nothing and wears no cloak
 await nearBodies(fm.id); await g.spin(null, 6); await nearBodies(fm.id);
 const ct = await page.evaluate((id) => { const D = ROADWALK.get(id); if (!D || !D.cart) return { cart: false }; const G = D.cart; G.updateMatrixWorld(true);
   const rig = D.npc.g.userData.rig; D.npc.g.updateMatrixWorld(true); const inv = G.matrixWorld.clone().invert(), off = [];
