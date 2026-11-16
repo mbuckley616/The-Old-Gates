@@ -2208,7 +2208,17 @@ const giver=`${lord.title} ${lord.name}`;
     for(const k of [...cells].sort()){const m=k.split(','),c=getCell(+m[0],+m[1]);
       for(const t of c.sites)if(t.kind==='shrine'&&near(t.x,t.z))out.push({id:t.id,name:t.name,kind:'shrine',x:t.x,z:t.z});
       for(const e of c.doors){if(e.wet||e.kind!=='cave_door'||e.lairDoor||e.cell!==k||greatSchoolOf(e))continue;const p=fixedDoorSpot(e);if(p&&near(p.x,p.z))out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'),kind:'gate',x:p.x,z:p.z});}}
-    out.sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0);_roadShrine.set(key,out);return out;}
+    const dry=out.filter(G=>pilgrimApproach(P,G,[40]));
+    dry.sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0);_roadShrine.set(key,dry);return dry;}
+  // S2297 — the leg off the road is walked dry: a pilgrim leaves the road at its point nearest the goal from which the straight line to it
+  // never goes under the sea or any water (ground under −0.5 m by rawH; the 24 nearest points tried, 3 apart). The road's list of goals is
+  // tested every 40 m, so a shrine or gate no point of the road reaches dry is no goal of its pilgrims; the line is tested again every 5 m once
+  // per goal, when a pilgrim is first bound there, and he takes the next goal on the list if it fails. {bi, off} or null
+  function pilgrimDryLine(ax,az,bx,bz,steps){const L=Math.hypot(bx-ax,bz-az);
+    for(const st of steps){const n=Math.max(1,Math.ceil(L/st));for(let k=1;k<n;k++){const f=k/n;if(rawH(ax+(bx-ax)*f,az+(bz-az)*f)<-.5)return false;}}return true;}
+  function pilgrimApproach(P,G,steps){const C=[];for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<ROADFOLK_PILGRIM)C.push([d,i]);}
+    if(!C.length)C.push([Math.hypot(P[P.length-1].x-G.x,P[P.length-1].z-G.z),P.length-1]);C.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+    const tried=[];for(const [d,i] of C){if(tried.length>=24)break;if(tried.some(t=>Math.abs(t-i)<3))continue;tried.push(i);if(pilgrimDryLine(P[i].x,P[i].z,G.x,G.z,steps))return {bi:i,off:d};}return null;}
   function roadHasShrine(rd){return roadShrines(rd).length>0;}
   function roadEndNews(site,within){const st=worldState.towns&&worldState.towns[site.id];if(!st)return false;const now=worldState.gameTimeAbsMinutes||0;return ROAD_EVENT_FLAGS.some(f=>st.flags[f]!=null&&now-st.flags[f]<=within);}
   // the day's departures on one road: [{id, kind, from:'a'|'b', at (the absolute minute), pace}]. Kept for the day once read
@@ -2226,8 +2236,9 @@ const giver=`${lord.title} ${lord.name}`;
   // S2270 — a pilgrim's way (the page's pilgrim row): along the road from his end to its point nearest his shrine or gate, then off the road
   // straight to it, and gone on arriving. His goal is one of the road's shrines and gates by his id; one in six bound for a gate are mourners
   // with their dead (the Clearing, canon §3.1). Kept per traveller, as the roll is
-  function pilgrimPlan(T,rd){if(T._plan)return T._plan;const L=roadShrines(rd);if(!L.length)return (T._plan={none:true});const r=seededRng('pilgrim',T.id),G=L[Math.floor(r()*L.length)%L.length];
-    roadLenOf(rd);const P=rd.pts;let bi=0,bd=Infinity;for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<bd){bd=d;bi=i;}}
+  function pilgrimPlan(T,rd){if(T._plan)return T._plan;const L=roadShrines(rd);if(!L.length)return (T._plan={none:true});const r=seededRng('pilgrim',T.id),g0=Math.floor(r()*L.length)%L.length;
+    roadLenOf(rd);const P=rd.pts;let G=null,A=null;for(let k=0;k<L.length&&!A;k++){G=L[(g0+k)%L.length];if(G._fine===undefined)G._fine=pilgrimApproach(P,G,[40,5]);A=G._fine;}
+    if(!A)return (T._plan={none:true});const bi=A.bi,bd=A.off;
     const along=T.from==='b'?rd._len-rd._cum[bi]:rd._cum[bi];return (T._plan={goal:G,mourners:G.kind==='gate'&&r()<1/6,along,off:bd,bx:P[bi].x,bz:P[bi].z});}
   function pilgrimAt(T,rd,d){const Q=pilgrimPlan(T,rd);if(Q.none)return null;if(d<0||d>Q.along+Q.off)return null;if(d<=Q.along){const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
     const f=(d-Q.along)/Math.max(1e-6,Q.off),x=Q.bx+(Q.goal.x-Q.bx)*f,z=Q.bz+(Q.goal.z-Q.bz)*f;return {x,z,ang:Math.atan2(Q.goal.x-Q.bx,Q.goal.z-Q.bz),d,off:true};}
