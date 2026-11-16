@@ -2942,10 +2942,11 @@ export function markCabin(o = {}, r = stream('markcabin')) {
 //   -> { group, shell, room, tris, draws, shellTris, shellCalls, inner (the ground floor's), innerUp, floors [F0, F1], joists (their
 //        underside), under(x), stack, flue, hearth, fire, stair { x0, x1, z0, z1, rise, going, n, landing }, well, door, paths [{ fl, pts }],
 //        boxes (tagged, fl), bed, chest, table, lamps [[x, y, z, fl]], candles, w, d, jetty }
+export const TOWN_TRADES = ['misc', 'armor', 'barber', 'potion', 'weapon'];
 export function markTownRoom(o = {}, r = stream('marktownroom')) {
   const w = o.w ?? 5.4, d = o.d ?? 5.2, chim = !!o.chimney, side = o.side ?? 1;
   const S = markTownHouse({ w, d, wall: o.wall ?? 1, chimney: chim, pitch: o.pitch, h2: o.h2, side, interior: true }, stream(o.shell || 'marktown-shell'));
-  const M = longMats(), B = new Map(), boxes = [];
+  const TR = TOWN_TRADES.includes(o.trade) ? o.trade : null, M = TR ? { ...longMats() } : longMats(), B = new Map(), boxes = [];
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
     if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
@@ -2992,22 +2993,121 @@ export function markTownRoom(o = {}, r = stream('marktownroom')) {
   const doorZ = R(dr.x - .65, dr.x + .65, Z1 - 1.15, Z1), foot = R(st.x0 - .05, st.x1 + .05, st.z1, st.z1 + .75), offL = R(ss > 0 ? st.x0 - .75 : st.x1 + .75, ss > 0 ? st.x1 : st.x0, Z0, Z0 + LD + .1);
   const hearthF = chim ? R(peis.x1, peis.x1 + .6, peis.z0, peis.z1) : R(peis.x0, peis.x1, peis.z1, peis.z1 + .6);
   const inD = [dr.x, Z1 - .9], ft = [sxm, st.z1 + .45], hf = [(hearthF.x0 + hearthF.x1) / 2, (hearthF.z0 + hearthF.z1) / 2];
-  const zA = Math.min(inD[1], Math.max(hf[1], peis.z1 + .35)), walks0 = [[[dr.x, Z1 - .05], [dr.x, Math.max(ft[1], inD[1])], ft] /* in to the stair foot's depth, then across to it */, [inD, [inD[0], zA], [hf[0], zA], hf]], along = (pts, h = .2) => { const q = []; for (let s = 0; s + 1 < pts.length; s++) { const [x0, z0] = pts[s], [x1, z1] = pts[s + 1], n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / .15));
+  const zA = Math.min(inD[1], Math.max(hf[1], peis.z1 + .35)), walks0 = [[[dr.x, Z1 - .05], [dr.x, Math.max(ft[1], inD[1])], ft] /* in to the stair foot's depth, then across to it */, TR ? [inD, [inD[0], Z1 - 1.25], [hf[0], Z1 - 1.25], hf] /* a shop: in past the door's leaf, across, then down the room's middle, leaving its side wall to the counter */ : [inD, [inD[0], zA], [hf[0], zA], hf]], along = (pts, h = .2) => { const q = []; for (let s = 0; s + 1 < pts.length; s++) { const [x0, z0] = pts[s], [x1, z1] = pts[s + 1], n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / .15));
       for (let k = 0; k <= n; k++) { const x = x0 + (x1 - x0) * k / n, z = z0 + (z1 - z0) * k / n; q.push(R(x - h, x + h, z - h, z + h)); } } return q; };
   const keep0 = [doorZ, foot, hearthF, R(st.x0, st.x1, st.z0, st.z1), peis, stack, ...walks0.flatMap(p => along(p))], keep1 = [well, offL, stack, R(st.x0, st.x1, Z0, well.z0)];
   const fits = (b, fl, m = .05) => (fl ? keep1 : keep0).every(k => !hit(b, k, m)) && boxes.every(q => q.fl !== fl || !q.tag || !hit(b, q, m)) && b.x0 >= -X - 1e-6 && b.x1 <= X + 1e-6 && b.z0 >= Z0 - 1e-6 && b.z1 <= (fl ? Z1u : Z1) + 1e-6;
   const first = (cands, fl) => cands.find(b => fits(b, fl));
   // ── the table on the wall away from the stair, its bench on the room side, a shelf of bowls over it; the lamp from the joists over it
-  const tw = -ss, tx = tw * X, tbl = first([.6, .45].flatMap(h => [Z1 - 1.15 - h, Z1 - 1.65 - h, 0, Z0 + .3 + h, Z0 + .05 + h].map(zc => R(tx, tx - tw * 1.15, zc - h, zc + h))), 0) /* 1.2 m long, else a small one of 0.9 */;
+  const tw = -ss, tx = tw * X, tbl = TR ? null : first([.6, .45].flatMap(h => [Z1 - 1.15 - h, Z1 - 1.65 - h, 0, Z0 + .3 + h, Z0 + .05 + h].map(zc => R(tx, tx - tw * 1.15, zc - h, zc + h))), 0) /* 1.2 m long, else a small one of 0.9 */;
   let table = null, lamps = [], candles = [];
-  const tbl2 = tbl || first([.45, .35].flatMap(h => [Z1 - 1.15 - h, 0, Z0 + .05 + h, (Z0 + Z1) / 2].map(zc => R(tx, tx - tw * .7, zc - h, zc + h))), 0), small = !tbl && !!tbl2;
+  const tbl2 = tbl || (TR ? null : first([.45, .35].flatMap(h => [Z1 - 1.15 - h, 0, Z0 + .05 + h, (Z0 + Z1) / 2].map(zc => R(tx, tx - tw * .7, zc - h, zc + h))), 0)), small = !tbl && !!tbl2;
   if (tbl2) { const t = R(tx, tx - tw * (small ? .62 : .78), tbl2.z0, tbl2.z1), y = FY + .74; table = { ...t, y }; bx('oak', t.x0, t.x1, y - .05, y, t.z0, t.z1, 'table'); for (const x of [t.x0 + .07, t.x1 - .07]) for (const z of [t.z0 + .07, t.z1 - .07]) bx('oak', x - .035, x + .035, FY, y - .05, z - .035, z + .035);
     if (!small) { const bxx = R(tx - tw * .88, tx - tw * 1.15, t.z0 + .05, t.z1 - .05); bx('oak', bxx.x0, bxx.x1, FY + .41, FY + .45, bxx.z0, bxx.z1, 'bench'); for (const z of [bxx.z0 + .1, bxx.z1 - .1]) bx('oak', bxx.x0 + .04, bxx.x1 - .04, FY, FY + .41, z - .03, z + .03);
       boxes.push({ tag: 'bench', ...bxx, y0: FY, y1: FY + .45, fl: 0 }); }
     const shx = R(tx, tx - tw * .24, t.z0 + .1, t.z1 - .1); bx('oak', shx.x0, shx.x1, FY + 1.86, FY + 1.89, shx.z0, shx.z1, 'shelf'); for (let i = 0; i < 4; i++) put(new THREE.CylinderGeometry(.08, .05, .06, 10), i % 2 ? 'crock' : 'oak', tx - tw * .12, FY + 1.92, shx.z0 + .12 + i * (shx.z1 - shx.z0 - .24) / 3);
     put(new THREE.CylinderGeometry(.11, .09, .05, 12), 'oak', (t.x0 + t.x1) / 2, y + .025, (t.z0 + t.z1) / 2 - .2) /* a bowl */; const cx = (t.x0 + t.x1) / 2 + tw * .15, cz = (t.z0 + t.z1) / 2 + .25;
     put(new THREE.CylinderGeometry(.016, .018, .12, 8), 'linen', cx, y + .06, cz); put(new THREE.SphereGeometry(.011, 5, 4).scale(1, 2.2, 1), 'flame', cx, y + .13, cz); candles.push([cx, y + .14, cz, 0]); }
-  { const lx = table ? (table.x0 + table.x1) / 2 - tw * .5 : 0, lz = table ? (table.z0 + table.z1) / 2 : (Z0 + Z1) / 2, ly = JY - .55; bx('iron', lx - .005, lx + .005, ly + .05, JY, lz - .005, lz + .005);
+  // ── the shop (o.trade, Session 2305): the stue is the trade's floor and the household lives over it. Along the wall away from the stair,
+  //    where the table stands in a home: a low shelf of stock against the wall (0.95 m, under the side windows' sills), the keeper's walk
+  //    (0.6 m), and the counter (0.5 m deep, 0.95 high) facing the room, 1.0 to 1.8 m long; the walk runs on 0.65 m past one end of the
+  //    counter, which is how the keeper gets in, and the strongbox stands at its other, dead end. The trade's own piece goes on the free
+  //    floor where it fits: a byrnie on its stand under a round shield (armor), a crate of soapstone pots and a short pole of furs (misc),
+  //    the chair before a bronze glass (barber), a pole of drying herbs and the crate (potion: the healer's crocks on the shelf, a mortar on
+  //    the counter). A trade with no room for its counter is left as the home (shop null): the game keeps the generated room there.
+  let shop = null;
+  if (TR) { const SHD = .28, WK = .57, CD = .48, B0 = SHD + WK, B1 = B0 + CD, wx = tw * X, xb = wx - tw * B1, cand = [];
+    for (const L of [1.8, 1.5, 1.2, 1.0]) for (const open of [-1, 1]) for (let zc1 = Z1 - .1; zc1 - L - .65 >= Z0 - 1e-6; zc1 -= .1) { const zc0 = zc1 - L;
+      cand.push({ L, open, zc0: open < 0 ? zc0 : zc0, zc1, reg: open < 0 ? R(wx, xb, zc0 - .65, zc1) : R(wx, xb, zc0, zc1 + .65) }); }
+    const frontOK = c => { const fz = (c.zc0 + c.zc1) / 2, f = R(xb, xb - tw * .6, fz - .3, fz + .3); return [stack, peis, well, R(st.x0, st.x1, st.z0, st.z1), foot].every(k => !hit(f, k, .02)) && boxes.every(q => q.fl !== 0 || !q.tag || !hit(f, q, .02)) && f.x0 >= -X && f.x1 <= X && f.z1 <= Z1; };
+    const lw = dr.w, leafB = (() => { const lx0 = -ss < 0 ? dr.x - lw / 2 - .07 : dr.x + lw / 2 + .01; return R(lx0, lx0 + .06, Z1 - lw, Z1); })(), inD0 = [dr.x, Z1 - 1.25];
+    const walksOf = c => { const fz = (c.zc0 + c.zc1) / 2, kx = wx - tw * (SHD + WK / 2), front = [xb - tw * .42, fz], mz = c.open < 0 ? c.zc0 - .33 : c.zc1 + .33, chZ = c.open < 0 ? c.zc1 - .3 : c.zc0 + .3,
+        keeper = { x: kx, z: c.open < 0 ? Math.max(c.zc0 + .25, chZ - .6) : Math.min(c.zc1 - .25, chZ + .6) }, mouth = [xb - tw * .35, mz];
+      return { front, mouth, kx, chZ, keeper, pFront: [[dr.x, Z1 - .05], inD0, [front[0], inD0[1]], front], pKeep: [[dr.x, Z1 - .05], inD0, [mouth[0], inD0[1]], mouth, [kx, mz], [kx, keeper.z]] }; };
+    const pathOK = (pts, n, own) => along(pts.slice(0, n), .17).every(q => [stack, peis, leafB, well, R(st.x0, st.x1, st.z0, st.z1), ...own].every(k => !hit(q, k, 0)) && boxes.every(b => b.fl !== 0 || !b.tag || !hit(q, b, 0)));
+    const c = cand.find(c => { if ((c.open > 0 ? c.zc1 + .65 : c.zc1) > Z1 + 1e-6 || !fits(c.reg, 0) || hit(c.reg, leafB, .05) || !frontOK(c)) return false; const W2 = walksOf(c), cb = R(wx - tw * B0, xb, c.zc0, c.zc1); return pathOK(W2.pFront, 4, [cb]) && pathOK(W2.pKeep, 4, [cb]); });
+    if (c) { const SM = { mail: new THREE.MeshStandardMaterial({ color: 0x5a5c60, roughness: .62, metalness: .7 }), bronze: new THREE.MeshStandardMaterial({ color: 0xc09a58, roughness: .18, metalness: .9 }),
+        soap: mat('stone', { ns: .6, color: 0x4a4e48 }), wadmal: mat('plaster', { ns: .4, color: 0x7a6a52, rough: 1 }), horn: new THREE.MeshStandardMaterial({ color: 0xc8b48a, roughness: .45 }),
+        red: mat('wood', { ns: .5, color: 0x8a2a1e, rough: .7 }), heath: mat('thatch', { ns: .6, color: 0x8a5a7e, rough: 1 }), rope: mat('thatch', { ns: .4, color: 0xa08a60, rough: 1 }), steel: M.steel || new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: .3, metalness: .85 }) };
+      Object.assign(M, SM);
+      const helm = (x, y, z, face = 0) => { put(new THREE.SphereGeometry(.115, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 1.12, 1.05), 'steel', x, y, z); put(new THREE.CylinderGeometry(.12, .12, .035, 12, 1, true), 'iron', x, y + .015, z);
+        put(new THREE.BoxGeometry(.018, .02, .25), 'iron', x, y + .125, z, face); put(new THREE.BoxGeometry(.028, .11, .014), 'iron', x + Math.sin(face) * .122, y - .04, z + Math.cos(face) * .122, face); };
+      const mailF = (x, y, z) => { put(new THREE.BoxGeometry(.24, .05, .3), 'mail', x, y + .025, z); put(new THREE.BoxGeometry(.2, .04, .24), 'iron', x, y + .07, z); };
+      const bolt = (x, y, z, k) => put(new THREE.BoxGeometry(.22, .13, .34), k, x, y + .065, z);
+      const pot = (x, y, z, rr = .07) => { put(new THREE.CylinderGeometry(rr, rr * .85, rr * 1.6, 10), 'soap', x, y + rr * .8, z); put(new THREE.TorusGeometry(rr * .95, .008, 4, 10).rotateX(Math.PI / 2), 'iron', x, y + rr * 1.5, z); };
+      const cup = (x, y, z) => { const g = new THREE.ConeGeometry(.035, .2, 8); g.rotateZ(Math.PI / 2 + .3); put(g, 'horn', x, y + .04, z, .3); };
+      const pipe = (key, a, b, rad, seg = 6) => { const A = new THREE.Vector3(...a), D = new THREE.Vector3(...b).sub(A), g = new THREE.CylinderGeometry(rad, rad, D.length(), seg, 1, true);
+        g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), D.clone().normalize())); g.translate(A.x + D.x / 2, A.y + D.y / 2, A.z + D.z / 2); put(g, key); };
+      const ware = (x, y, z, k) => { if (TR === 'armor') { if (k % 2) helm(x, y + .02, z, -tw * Math.PI / 2); else mailF(x, y, z); } else if (TR === 'barber') { if (k % 3 === 2) cup(x, y, z); else put(new THREE.BoxGeometry(.2, .1, .24), 'linen', x, y + .05, z); }
+        else if (TR === 'weapon') { if (k % 2) { put(new THREE.BoxGeometry(.04, .03, .2), 'oak', x, y + .015, z - .06); put(new THREE.BoxGeometry(.05, .025, .2), 'steel', x, y + .0125, z + .12) /* an axe head on its haft's stub */; }
+          else { put(new THREE.BoxGeometry(.035, .012, .26), 'steel', x, y + .006, z + .05); put(new THREE.BoxGeometry(.03, .025, .11), 'oak', x, y + .0125, z - .14) /* a seax */; } }
+        else if (TR === 'potion') { if (k % 3 === 2) put(new THREE.CylinderGeometry(.045, .045, .2, 6), k % 2 ? 'heath' : 'herb', x, y + .1, z, 0, .6, Math.PI / 2) /* a bundle laid down */; else { put(new THREE.CylinderGeometry(.06, .07, .16, 10), 'crock', x, y + .08, z); put(new THREE.CylinderGeometry(.03, .03, .03, 8), 'oak', x, y + .175, z); } }
+        else { if (k % 3 === 1) pot(x, y, z); else bolt(x, y, z, k % 2 ? 'furPale' : 'wadmal'); } };
+      // the counter: upright boards under an oak top, its front to the room
+      const C = { ...R(wx - tw * B0, xb, c.zc0, c.zc1), y: FY + .95 }, cx0 = Math.min(C.x0, C.x1);
+      bx('board', C.x0 + .04, C.x1 - .04, FY, C.y - .05, C.z0, C.z1, 'counter'); const fx = tw > 0 ? C.x0 : C.x1;
+      for (let z = C.z0 + .02; z + .2 <= C.z1 - .01; z += .22) bx('plank', tw > 0 ? fx : fx - .04, tw > 0 ? fx + .04 : fx, FY + .02, C.y - .07, z, z + .2);
+      bx('oak', C.x0 - .02, C.x1 + .02, C.y - .05, C.y, C.z0 - .03, C.z1 + .03); const ccx = (C.x0 + C.x1) / 2, ccz = (C.z0 + C.z1) / 2;
+      if (TR === 'armor') { helm(ccx, C.y, ccz + .25, -tw * Math.PI / 2); mailF(ccx, C.y, ccz - .25); }
+      else if (TR === 'barber') { bx('oak', ccx - .05, ccx + .05, C.y, C.y + .02, ccz - .3, ccz + .3) /* the strop */; for (const dz of [-.1, .05]) bx('iron', ccx + .1, ccx + .12, C.y, C.y + .015, ccz + dz, ccz + dz + .16) /* razors */;
+        bx('horn', ccx - .1, ccx + .1, C.y, C.y + .012, ccz + .35, ccz + .4) /* a comb */; pipe('iron', [ccx - .08, C.y + .01, ccz - .45], [ccx + .1, C.y + .01, ccz - .35], .008, 5) /* shears */; }
+      else if (TR === 'weapon') { /* a sword laid on the counter along it, a whetstone */ put(new THREE.BoxGeometry(.05, .012, .72), 'steel', ccx, C.y + .006, ccz + .1); put(new THREE.BoxGeometry(.16, .025, .03), 'iron', ccx, C.y + .0125, ccz - .27);
+        put(new THREE.BoxGeometry(.035, .03, .12), 'oak', ccx, C.y + .015, ccz - .35); put(new THREE.SphereGeometry(.03, 8, 6), 'iron', ccx, C.y + .03, ccz - .42); bx('soap', ccx - .03, ccx + .03, C.y, C.y + .03, ccz - .62, ccz - .5); }
+      else if (TR === 'potion') { /* a soapstone mortar and its pestle, a horn spoon, two stoppered crocks */ put(new THREE.CylinderGeometry(.11, .08, .12, 12), 'soap', ccx, C.y + .06, ccz - .2); pipe('oak', [ccx, C.y + .08, ccz - .2], [ccx + .06, C.y + .26, ccz - .26], .018, 6);
+        for (const dz of [.15, .32]) { put(new THREE.CylinderGeometry(.06, .07, .16, 10), 'crock', ccx, C.y + .08, ccz + dz); put(new THREE.CylinderGeometry(.03, .03, .03, 8), 'oak', ccx, C.y + .175, ccz + dz); } bx('horn', ccx - .02, ccx + .02, C.y, C.y + .015, ccz - .55, ccz - .37); }
+      else { /* the folding balance: a post, the beam, a pan at each end */ bx('oak', ccx - .09, ccx + .09, C.y, C.y + .03, ccz - .22, ccz + .22); bx('bronze', ccx - .012, ccx + .012, C.y + .03, C.y + .34, ccz - .012, ccz + .012); bx('bronze', ccx - .008, ccx + .008, C.y + .32, C.y + .335, ccz - .18, ccz + .18);
+        for (const s2 of [-.17, .17]) { for (let k = 0; k < 3; k++) { const a = k * 2.094; pipe('iron', [ccx, C.y + .325, ccz + s2], [ccx + Math.cos(a) * .05, C.y + .11, ccz + s2 + Math.sin(a) * .05], .002, 3); } put(new THREE.SphereGeometry(.06, 12, 4, 0, Math.PI * 2, Math.PI * .62, Math.PI * .38), 'bronze', ccx, C.y + .15, ccz + s2); } }
+      { const ez = c.open < 0 ? C.z1 - .12 : C.z0 + .12, ex = wx - tw * (B0 + .12); put(new THREE.CylinderGeometry(.05, .04, .025, 10), 'kerb', ex, C.y + .012, ez); put(new THREE.CylinderGeometry(.018, .02, .1, 8), 'linen', ex, C.y + .075, ez);
+        put(new THREE.SphereGeometry(.011, 5, 4).scale(1, 2.2, 1), 'flame', ex, C.y + .14, ez); candles.push([ex, C.y + .15, ez, 0]) /* a tallow candle in a stone dish at the counter's end */; }
+      // the low shelf of stock against the wall, the walk's length: three boards on four uprights, 0.95 m, wares on each
+      const SZ0 = c.open < 0 ? c.zc0 - .65 : c.zc0, SZ1 = c.open < 0 ? c.zc1 : c.zc1 + .65, S = { ...R(wx, wx - tw * SHD, SZ0, SZ1), y: FY + .95 };
+      for (const z of [S.z0, S.z0 + (S.z1 - S.z0) / 3, S.z0 + 2 * (S.z1 - S.z0) / 3, S.z1 - .03]) bx('board', S.x0, S.x1, FY, S.y, Math.min(z, S.z1 - .03), Math.min(z, S.z1 - .03) + .03);
+      boxes.push({ tag: 'shelves', ...S, y0: FY, y1: S.y, fl: 0 });
+      [.08, .5, .92].forEach((y, k) => { bx('board', S.x0, S.x1, FY + y, FY + y + .03, S.z0, S.z1); for (let z = S.z0 + .2, i = k; z < S.z1 - .15; z += .32, i++) ware(wx - tw * SHD / 2, FY + y + .03, z, i); });
+      // the strongbox at the walk's dead end (o.chest false: the game's own)
+      const { kx, chZ, keeper, front, mouth, pFront, pKeep } = walksOf(c), chest = { x: kx, z: chZ };
+      if (o.chest !== false) { bx('oak', kx - .27, kx + .27, FY, FY + .48, chZ - .22, chZ + .22); for (const dz of [-.14, .14]) bx('iron', kx - .29, kx + .29, FY + .02, FY + .5, chZ + dz - .02, chZ + dz + .02); }
+      boxes.push({ tag: 'strongbox', x0: kx - .27, x1: kx + .27, y0: FY, y1: FY + .5, z0: chZ - .22, z1: chZ + .22, fl: 0 });
+      // the walks (walksOf): in at the door to the counter's front, and to the walk's open end and along it to where the keeper stands; kept clear
+      keep0.push(...along(pFront), ...along(pKeep));
+      // the trade's piece where it fits on the free floor: against a side wall (front, middle or back), else against the front or back wall.
+      // A spot is (along, across): along the wall, and out from it; bxA draws a box in those terms.
+      const trade = {}, spots = (la, lc) => { const out = []; for (const xs of [ss, -ss]) for (const z of [Z1 - .1 - la, (Z0 + Z1) / 2 - la / 2, Z0 + .1]) out.push({ b: R(xs * X, xs * (X - lc), z, z + la), ax: 'z', s: xs });
+          for (const zs of [1, -1]) for (const x of [-la / 2, ss * (X - .1 - la), -ss * (X - .1 - la)]) { const z0 = zs > 0 ? Z1 - lc : Z0; out.push({ b: R(x, x + la, z0, z0 + lc), ax: 'x', s: zs }); } return out; },
+        pick = (la, lc) => spots(la, lc).find(p => fits(p.b, 0)),
+        AX = p => { const b = p.b, A = p.ax === 'z' ? [b.z0, b.z1] : [b.x0, b.x1], Cw = p.ax === 'z' ? (p.s > 0 ? b.x1 : b.x0) : (p.s > 0 ? b.z1 : b.z0) /* the wall's face */;
+          return { a0: A[0], a1: A[1], am: (A[0] + A[1]) / 2, c: k => Cw - p.s * k /* k out from the wall */, xz: (a, k) => p.ax === 'z' ? [Cw - p.s * k, a] : [a, Cw - p.s * k],
+            box: (key, a0, a1, y0, y1, k0, k1) => { const c0 = Cw - p.s * k0, c1 = Cw - p.s * k1; if (p.ax === 'z') bx(key, Math.min(c0, c1), Math.max(c0, c1), y0, y1, a0, a1); else bx(key, a0, a1, y0, y1, Math.min(c0, c1), Math.max(c0, c1)); },
+            ry: p.ax === 'z' ? 0 : Math.PI / 2 /* turns a piece drawn along z to run along x */, out: p.ax === 'z' ? -p.s * Math.PI / 2 : (p.s > 0 ? Math.PI : 0) /* the yaw that faces the room */ }; };
+      if (TR === 'armor') { const p = pick(.62, .5); if (p) { const A = AX(p), [x, z] = A.xz(A.am, .25); trade.stand = [x, z];
+          for (const ry of [0, Math.PI / 2]) put(new THREE.BoxGeometry(.42, .05, .07), 'oak', x, FY + .025, z, ry); bx('oak', x - .025, x + .025, FY, FY + 1.5, z - .025, z + .025); put(new THREE.BoxGeometry(.06, .05, .44), 'oak', x, FY + 1.355, z, A.ry);
+          put(new THREE.CylinderGeometry(.17, .23, .72, 12, 1, true).scale(.62, 1, 1), 'mail', x, FY + .98, z, A.ry); put(new THREE.CylinderGeometry(.175, .175, .05, 12).scale(.62, 1, 1), 'iron', x, FY + 1.33, z, A.ry);
+          for (const s of [-1, 1]) { const [sx2, sz2] = p.ax === 'z' ? [x, z + s * .2] : [x + s * .2, z]; put(new THREE.CylinderGeometry(.06, .075, .28, 8, 1, true), 'mail', sx2, FY + 1.17, sz2, A.ry, .6, s * .22, 0); }
+          put(new THREE.BoxGeometry(.4, .04, .4), 'iron', x, FY + .76, z); helm(x, FY + 1.5, z, A.out); boxes.push({ tag: 'stand', ...p.b, y0: FY, y1: FY + 1.65, fl: 0 });
+          /* a round shield on the wall over it */ const sh = new THREE.CylinderGeometry(.34, .34, .025, 20), [hx, hz] = A.xz(A.am, .015), sy = Math.min(JY - .42, FY + 2.0); sh.rotateZ(Math.PI / 2); put(sh, 'red', hx, sy, hz, A.ry);
+          const bo = new THREE.SphereGeometry(.065, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2); bo.rotateZ(-Math.PI / 2); const [bx2, bz2] = A.xz(A.am, .03); put(bo, 'iron', bx2, sy, bz2, A.out + Math.PI / 2);
+          const rim = new THREE.TorusGeometry(.34, .012, 4, 20); rim.rotateY(Math.PI / 2); const [rx2, rz2] = A.xz(A.am, .02); put(rim, 'iron', rx2, sy, rz2, A.ry); } }
+      else if (TR === 'barber') { /* the chair facing the glass on its stand, 0.8 m before it along the wall */ const p = pick(1.3, .7); if (p) { const A = AX(p), back = A.a1 > (p.ax === 'z' ? (Z0 + Z1) / 2 : 0) /* the chair at the end toward the room's middle */,
+          ca = back ? A.a0 + .3 : A.a1 - .3, ma = back ? A.a1 - .1 : A.a0 + .1, fs = back ? 1 : -1 /* along +a from the chair to the glass */, [cx, cz] = A.xz(ca, .35), [gx, gz] = A.xz(ma, .35);
+          A.box('oak', ca - .22, ca + .22, FY + .44, FY + .48, .1, .6); for (const da of [-.18, .18]) for (const dk of [.14, .56]) A.box('oak', ca + da - .025, ca + da + .025, FY, FY + .44, dk - .025, dk + .025);
+          A.box('oak', ca - fs * .24, ca - fs * .2, FY + .48, FY + 1.15, .1, .6); A.box('oak', ca - fs * .28, ca - fs * .24, FY + 1.0, FY + 1.18, .1, .6); trade.chair = { x: cx, z: cz, face: p.ax === 'z' ? (fs > 0 ? 'z+' : 'z-') : (fs > 0 ? 'x+' : 'x-') };
+          bx('oak', gx - .03, gx + .03, FY, FY + 1.25, gz - .03, gz + .03); for (const ry of [0, Math.PI / 2]) put(new THREE.BoxGeometry(.36, .05, .06), 'oak', gx, FY + .025, gz, ry);
+          { const g = new THREE.CylinderGeometry(.2, .2, .02, 24); g.rotateX(Math.PI / 2); const [mx, mz] = A.xz(ma - fs * .02, .35); put(g, 'bronze', mx, FY + 1.42, mz, p.ax === 'z' ? 0 : Math.PI / 2); put(new THREE.TorusGeometry(.2, .015, 5, 24), 'oak', mx, FY + 1.42, mz, p.ax === 'z' ? 0 : Math.PI / 2); } trade.glass = { x: gx, z: gz };
+          boxes.push({ tag: 'chair', ...p.b, y0: FY, y1: FY + 1.62, fl: 0 }); } }
+      else if (TR === 'weapon') { /* a rack of spears and axes against a wall: two posts, a rail at 1.2 m, the spears' butts in a trough */ const p = pick(1.1, .35); if (p) { const A = AX(p), a0 = A.a0 + .08, a1 = A.a1 - .08;
+          for (const a of [a0, a1]) { const [x, z] = A.xz(a, .12); bx('oak', x - .035, x + .035, FY, FY + 1.3, z - .035, z + .035); } A.box('oak', a0, a1, FY + 1.18, FY + 1.24, .08, .16); A.box('oak', a0, a1, FY, FY + .12, .06, .3);
+          let k = 0; for (let a = a0 + .14; a < a1 - .1; a += .16, k++) { const [x, z] = A.xz(a, .2), [tx, tz] = A.xz(a, .1); if (k % 3 === 2) { pipe('oak', [tx, FY + 1.24, tz], [tx, FY + .55, tz], .016, 6); const [hx, hz] = A.xz(a, .17); put(new THREE.BoxGeometry(.03, .12, .14), 'steel', hx, FY + .62, hz, A.ry); }
+            else { pipe('oak', [x, FY + .1, z], [tx, FY + 2.0, tz], .015, 6); const [sx, sz] = A.xz(a, .095); put(new THREE.ConeGeometry(.025, .26, 4), 'steel', sx, FY + 2.12, sz); } }
+          trade.rack = { a0, a1 }; boxes.push({ tag: 'rack', ...p.b, y0: FY, y1: FY + 2.25, fl: 0 }); }
+        const q = pick(.5, .6); if (q) { bx('board', q.b.x0, q.b.x1, FY, FY + .35, q.b.z0, q.b.z1, 'crate'); const qx = (q.b.x0 + q.b.x1) / 2, qz = (q.b.z0 + q.b.z1) / 2; for (const dz of [-.12, 0, .12]) put(new THREE.BoxGeometry(.4, .03, .05), 'iron', qx, FY + .37, qz + dz) /* bar iron */; trade.crate = [qx, qz]; } }
+      else { /* a short pole of furs, and a crate of soapstone pots */ const p = pick(1.1, .4); if (p) { const A = AX(p), a0 = A.a0 + .1, a1 = A.a1 - .1, [x0, z0] = A.xz(a0, .2), [x1, z1] = A.xz(a1, .2);
+          for (const [x, z] of [[x0, z0], [x1, z1]]) { bx('post', x - .04, x + .04, FY, FY + 1.95, z - .04, z + .04); for (const ry of [0, Math.PI / 2]) put(new THREE.BoxGeometry(.36, .05, .06), 'post', x, FY + .025, z, ry); } pipe('post', [x0, FY + 1.9, z0], [x1, FY + 1.9, z1], .03, 8);
+          if (TR === 'potion') for (let a = a0 + .15, k = 0; a < a1 - .1; a += .14, k++) { const [hx, hz] = A.xz(a, .2), Lh = .22 + r() * .12; pipe('rope', [hx, FY + 1.9, hz], [hx, FY + 1.9 - .12, hz], .004, 3); put(new THREE.ConeGeometry(.06, Lh, 6), k % 3 === 1 ? 'heath' : 'herb', hx, FY + 1.78 - Lh / 2, hz, 0, .6, Math.PI) /* a bundle, heads down */; }
+          else { const furs = ['fur', 'furGrey', 'furPale']; for (let a = a0 + .22, k = 0; a < a1 - .15; a += .3, k++) { const Lf = .85 + r() * .3; A.box(furs[k % 3], a - .15, a + .15, FY + 1.88 - Lf, FY + 1.88, .185, .215); } }
+          trade.rack = { x0, z0, x1, z1 }; boxes.push({ tag: 'rack', ...p.b, y0: FY, y1: FY + 1.95, fl: 0 }); }
+        const q = pick(.5, .6); if (q) { bx('board', q.b.x0, q.b.x1, FY, FY + .35, q.b.z0, q.b.z1, 'crate'); const qx = (q.b.x0 + q.b.x1) / 2, qz = (q.b.z0 + q.b.z1) / 2; for (const [dx, dz] of [[-.14, -.12], [.14, -.12], [-.14, .12], [.14, .12]]) pot(qx + dx, FY + .35, qz + dz, .065); trade.crate = [qx, qz]; } }
+      shop = { trade: TR, counter: C, keeper, chest, front, mouth, shelves: S, open: c.open, walks: [pFront, pKeep], ...trade }; } }
+  { const lx = shop ? shop.front[0] + tw * .2 : table ? (table.x0 + table.x1) / 2 - tw * .5 : 0, lz = shop ? shop.front[1] : table ? (table.z0 + table.z1) / 2 : (Z0 + Z1) / 2, ly = JY - .55; bx('iron', lx - .005, lx + .005, ly + .05, JY, lz - .005, lz + .005);
     put(new THREE.SphereGeometry(.09, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), 'iron', lx, ly, lz); put(new THREE.SphereGeometry(.02, 6, 5).scale(1, 2, 1), 'flame', lx + .05, ly + .03, lz); lamps.push([lx, ly, lz, 0]); }
   // the loft's lamp: an iron bowl of oil on a chain from the tie beam nearest the middle, over the floor clear of the well
   { const tz = ties.filter(z => !(z > stack.z0 - .15 && z < stack.z1 + .15)).sort((a, b) => Math.abs(a - (Z0 + Z1u) / 2) - Math.abs(b - (Z0 + Z1u) / 2))[0] ?? (Z0 + Z1u) / 2, lx = -ss * Math.min(.9, X - .6), ly = TOP - .45;
@@ -3049,8 +3149,9 @@ export function markTownRoom(o = {}, r = stream('marktownroom')) {
   // the walks: in at the door to the stair's foot, and to the fire's front; upstairs off the landing to the bed's side
   const paths = walks0.map(pts => ({ fl: 0, pts }));
   paths.push({ fl: 1, pts: bed ? bedWalk(bed) : [lnd, off] });
+  if (shop) for (const pts of shop.walks) paths.push({ fl: 0, pts, shop: true });
   const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'glow'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
   const all = new THREE.Group(); all.add(S.group, group);
   return { group: all, shell: S.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: S.tris, shellCalls: S.draws, inner: { x0: -X, x1: X, z0: Z0, z1: Z1 }, innerUp: { x0: -X, x1: X, z0: Z0, z1: Z1u },
-    floors: [FY, F1], joists: JY, top: TOP, under, stack, flue: !chim, chimney: chim, hearth: peis, fire, stair: st, well, door: { x: dr.x, z: d / 2, w: dr.w, h: dr.h, y0: S.sill }, paths, boxes, bed, chest, table, lamps, candles, w, d, jetty: J, ss };
+    floors: [FY, F1], joists: JY, top: TOP, under, stack, flue: !chim, chimney: chim, hearth: peis, fire, stair: st, well, door: { x: dr.x, z: d / 2, w: dr.w, h: dr.h, y0: S.sill }, paths, boxes, bed, chest, table, lamps, candles, w, d, jetty: J, ss, shop };
 }
