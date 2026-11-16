@@ -2242,7 +2242,17 @@ const giver=`${lord.title} ${lord.name}`;
     const along=T.from==='b'?rd._len-rd._cum[bi]:rd._cum[bi];return (T._plan={goal:G,mourners:G.kind==='gate'&&r()<1/6,along,off:bd,bx:P[bi].x,bz:P[bi].z});}
   function pilgrimAt(T,rd,d){const Q=pilgrimPlan(T,rd);if(Q.none)return null;if(d<0||d>Q.along+Q.off)return null;if(d<=Q.along){const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
     const f=(d-Q.along)/Math.max(1e-6,Q.off),x=Q.bx+(Q.goal.x-Q.bx)*f,z=Q.bz+(Q.goal.z-Q.bz)*f;return {x,z,ang:Math.atan2(Q.goal.x-Q.bx,Q.goal.z-Q.bz),d,off:true};}
-  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));if(T.kind==='pilgrim')return pilgrimAt(T,rd,d);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
+  // S2298 — a bridge down on his way (the page's bridge row: the coach stops at the bank): a walker or a rider comes to the bank, the bridge's
+  // half-length and 4 m short of its middle as the coach's, turns there and goes back along the road to the end he came from at his own pace,
+  // gone on arriving. Only a bridge already down when he reaches its bank turns him, so one who crossed before it fell walks on. The bank's
+  // distance along his way, or null
+  function roadTurnBank(T,rd,lag){const P=rd.pts,n=P.length;if(n<2)return null;const L=roadLenOf(rd),rev=T.from==='b';let best=null;
+    for(const o of roadBridgesDown(rd)){const b=siteAnywhere(o.id)||SITE[o.id],D=b&&bridgeDown(b);if(!D)continue;const i=Math.round(o.u*(n-1)),at=rev?L-rd._cum[i]:rd._cum[i];
+      const bank=Math.max(0,at-(b.bridge.len/2+4));if(at<0||T.at+lag+bank/T.pace<D.at)continue;if(best==null||bank<best)best=bank;}
+    return best;}
+  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));
+    if(d>0){const B=roadTurnBank(T,rd,R&&R.lag||0);if(B!=null&&d>B&&(T.kind!=='pilgrim'||B<pilgrimPlan(T,rd).along)){if(d>=2*B)return null;const p=roadAtDist(rd,2*B-d,T.from==='b');p.ang+=Math.PI;p.d=d;p.back=true;return p;}}
+    if(T.kind==='pilgrim')return pilgrimAt(T,rd,d);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
   function roadfolkHome(T,rd){return siteAnywhere(T.from==='a'?rd.def.a:rd.def.b);}
   function roadfolkDest(T,rd){return siteAnywhere(T.from==='a'?rd.def.b:rd.def.a);}
   // every traveller on the loaded roads now (today's and yesterday's departures), with where they are

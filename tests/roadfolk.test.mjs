@@ -16,6 +16,7 @@
 // Session 2291: his horse saddled, the reins from his fists to the bit, nothing else in his hands.
 // Session 2294: the horse bridled, the reins tied at its bit's rings.
 // Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
+// Session 2298: at a bridge down the road's people turn at the bank, as the coach draws up there, and walk back to the end they came from.
 // Session 2290: over a bridge the road's walkers, the caravans and the coaches stand on the deck's setts (roadY), not on the causeway.
 // Session 2301: his mule's pack (and a family's handcart) robbed as a strongbox: unseen nothing, seen a theft at the nearer end.
 // Session 2302: the official's guard draws on a crime he sees and fights to the town's yield.
@@ -380,6 +381,17 @@ const cr = await page.evaluate(() => { const K = { village: 1, town: 1, city: 1,
   return { key, id: b.id, u: o.u, k: o.k, dps }; });
 console.log(JSON.stringify(cr));
 check('a route over a bridge down earns half (with its coach, +1 a day)', cr && cr.dps.reduce((a, b) => a + b, 0) === 6, cr);
+// S2298 — the road's people turn at the bank of a bridge down, back to the end they came from; one who reached it before it fell walks on
+const tb = await page.evaluate((r) => { const rd = ROADS.find(x => routeKey(x.def.a, x.def.b) === r.key), b = SITE[r.id] || siteAnywhere(r.id), D = bridgeDown(b); if (!D) return { down: false };
+  const near = (p) => Math.hypot(p.x - b.x, p.z - b.z), half = b.bridge.len / 2; let after = null, before = null;
+  for (let dd = Math.floor(D.at / 1440) - 3; dd < Math.floor(D.at / 1440) + 4; dd++) for (const T of roadTravellers(rd, dd)) { if (T.kind === 'pilgrim') continue;
+    const B = roadTurnBank(T, rd, 0), tB = T.at + (B == null ? 0 : B / T.pace);
+    if (B != null && B > 20 && !after) { let minD = 1e9, back = false, home = null; for (let t = T.at; t < T.at + 2 * B / T.pace + 30; t += 0.5) { const p = travellerAt(T, rd, t); if (!p) { if (t > tB) home = home ?? t; continue; } minD = Math.min(minD, near(p)); if (p.back) back = true; }
+      after = { id: T.id, kind: T.kind, bank: Math.round(B), minD: +minD.toFixed(1), half: +half.toFixed(1), back, home: home != null && home >= T.at + 2 * B / T.pace - 1 }; }
+    if (B == null && !before) { const L = roadLenOf(rd); let crossed = false; for (let t = T.at; t < T.at + L / T.pace; t += 0.5) { const p = travellerAt(T, rd, t); if (p && near(p) < 3) { crossed = t < D.at; break; } } if (crossed) before = { id: T.id }; } }
+  return { down: true, after, before }; }, cr);
+console.log(JSON.stringify(tb));
+check('at a bridge down the road\'s people turn at its bank and walk home; one over it before it fell walks on (S2298)', tb.down && tb.after && tb.after.back && tb.after.minD >= tb.after.half + 3 && tb.after.home && tb.before, tb);
 await g.cells(); await g.spin(null, 5);
 await page.evaluate((r) => { const C = COACHES.get(r.key); C.u = r.u - r.k - .01; C.state = 'run'; C.dir = 1; C.stopped = true; }, cr);
 await g.spin(null, 200);
