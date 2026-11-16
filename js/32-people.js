@@ -1981,7 +1981,7 @@ function cartBuild(id){const r=pRng(pHash('cart|'+(id||''))),g=new THREE.Group()
 function cartAttach(D){const a=D.npc&&D.npc.g.userData.rig;if(!a)return null;a.push=1;const g=cartBuild(D.T&&D.T.id);D.cart=g;return g;}
 const _cv=[0,1,2,3,4].map(()=>new THREE.Vector3()),_cm=new THREE.Matrix4();
 function cartTick(D){const G=D.cart;if(!G)return;const H=[_cv[0],_cv[1]];if(!bierHands(D.npc,H)){G.visible=false;return;}G.visible=D.npc.g.visible!==false;
-  const h=_cv[2].copy(H[0]).add(H[1]).multiplyScalar(.5),ang=D.npc.g.rotation.y,fx=Math.sin(ang),fz=Math.cos(ang),L=CART.len,gy=(x,z)=>typeof worldH==='function'?worldH(x,z):0;
+  const h=_cv[2].copy(H[0]).add(H[1]).multiplyScalar(.5),ang=D.npc.g.rotation.y,fx=Math.sin(ang),fz=Math.cos(ang),L=CART.len,gy=(x,z)=>typeof roadY==='function'?roadY(x,z):typeof worldH==='function'?worldH(x,z):0;
   // the axle CART.len from the grips, on the ground ahead: two passes find where the shafts' slope lands it
   let ax=h.x+fx*L*.9,az=h.z+fz*L*.9,ay=gy(ax,az)+CART.r;
   for(let i=0;i<2;i++){const dy=Math.min(L*.95,Math.abs(h.y-ay)),dh=Math.sqrt(L*L-dy*dy);ax=h.x+fx*dh;az=h.z+fz*dh;ay=gy(ax,az)+CART.r;}
