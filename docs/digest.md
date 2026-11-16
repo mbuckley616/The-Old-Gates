@@ -615,3 +615,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing; main is green.
 
 **Roadmap.** 331 of 421 stories done (328 of 415 on 14 Nov). The new look is 7 of 18; only F14 is left for deep work.
+
+## 16 Nov 2026
+
+**Waiting on you.** Four decisions: the underworld's dress (#1611, B), festivals (#1628, B), the Mark's goods shop, armourer and barber inside (#1632, A), robbing the road's people (#1638, A). One pipeline PR to approve: QA: Session 2295 (the change you approved on #1596, carried again).
+
+**Landed on main since 15 Nov.** Your answer built: the road's people (#1587 B): the day's travellers and the merchant's ambush, pilgrims, mourners carrying their dead, families with a handcart, the official's writ, the rider astride, saddled, reined and bridled; a bridge down that turns the coach at the bank; striking a traveller is an assault (Systems 2268–2292, Bodies 2273–2294, Look 2281). The ship's rig alight and a ship foundering (Look 2263–2264, F11). The merchant's house in the game, the Gatelands shop's wares redrawn, the Mark's trader's hall prototyped (Look 2272, 2290, 2293). Bridges walked on their setts; the Old Garrison off the Hearthwick road. Festivals proposed; a playtest of the road. QA fixed `hullshape`, `intreach` and four bodies reds from the weekly run. Build s1646.
+
+**Under way.** QA #1643 waits for your tap. Next: the rider's tunic over the cantle (bodies), the weekly run's shard limit (QA).
+
+**Blocked.** Nothing; main is green on every PR since. The weekly run's twelve reds are filed in section I.
+
+**Roadmap.** 332 of 422 stories done (331 of 421 on 15 Nov). The new look is 7 of 18; only F14 is left for deep work.
