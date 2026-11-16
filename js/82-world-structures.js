@@ -166,7 +166,7 @@
       ()=>{L.forts=[];c.doors.filter(e=>e.kind==='fort_door'&&dungeonWorldPos[e.seed]).forEach(e=>{const S=buildFortCompound(e,dungeonWorldPos[e.seed],k);L.forts.push(S);});},
       ()=>track(()=>buildSiteMarkersFor(c)),
       ()=>track(()=>buildCampsFor(c,k)),
-      ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)STATIC_SOL[n].cell=k;L.staticsBuilt=true;L.staticsPending=false;
+      ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)if(STATIC_SOL[n].cell==null){STATIC_SOL[n].cell=k;STATIC_SOL[n].statics=true;} /* S2288 — a solid that names its cell keeps it (a bridge redrawn while another cell loads); the statics' own are marked, for dropStatics */L.staticsBuilt=true;L.staticsPending=false;
         // bake: every plain top-level static mesh in this cell into cluster meshes
         const flat=[];(L.statics2||[]).forEach(o=>{if(o.isMesh&&!o.userData.noBake)flat.push(o);else if(o.isGroup)o.children.filter(c=>c.isMesh).forEach(c=>{c.userData.parentGroup=o;});});
         const baked=bakeMeshes(flat,sc,new Set());L.statics2=(L.statics2||[]).filter(o=>o.parent).concat(baked);},
@@ -177,7 +177,7 @@
     (L.statics2||[]).forEach(o=>sc.remove(o));L.statics2=[];
     (L.forts||[]).forEach(S=>{sc.remove(S.group);SETTLE.delete(S.site.id);unregLights(S.site.id);if(S.impostorId&&IMPOSTORS[S.impostorId])IMPOSTORS[S.impostorId].visible=true;});L.forts=[];unregLights('cell:'+k);
     L.portals.forEach(p=>{const i=portals.indexOf(p);if(i>=0)portals.splice(i,1);});L.portals=[];
-    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell===k&&STATIC_SOL[i].rx!==undefined)STATIC_SOL.splice(i,1);
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell===k&&STATIC_SOL[i].statics&&STATIC_SOL[i].rx!==undefined)STATIC_SOL.splice(i,1); /* S2288 — the statics' own solids: the cell's (a bridge's rails, a quay's walls) stay until the cell unloads, as their meshes do; they went at 900 m and never came back */
     for(let i=beds.length-1;i>=0;i--)if(beds[i].cell===k)beds.splice(i,1);
     for(let i=STAMPS.length-1;i>=0;i--)if(STAMPS[i].cell===k&&String(STAMPS[i].id).startsWith('camp_')){sgRemove(STAMPS[i]);STAMPS.splice(i,1);}
     L.staticsBuilt=false;
@@ -189,6 +189,7 @@
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
     if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
     if(c._aq&&c._aq.walks){aqWalkDrop(c._aq.id);c._aq.walks=null;} /* S1927 — the aqueduct's channel */
+    bridgeWalkDrop(null,k); /* S2288 — the bridges' decks */
     if(c._wayside&&c._wayside.lamp){unregLight(c._wayside.lamp.light);c._wayside.lamp=null;} /* S2048 — the coach's lamp */
     if(c._wayside&&c._wayside.patch)offroadPatchDrop(c._wayside.id); /* S2065 — the expedition's laid-back ground */
     if(c._offroad&&c._offroad.patch)offroadPatchDrop(c._offroad.id); /* S2044 — a place off the road's own ground */
@@ -1334,11 +1335,28 @@
   // action has changed it; a bridge not loaded is built from the state when its cell loads.
   function bridgeIsDown(id){return typeof bridgeDownId==='function'&&!!bridgeDownId(id);} /* S2283 — the systems builder's roll (bridgeDownId, 87): the week's fall, a mend, or a hand's `down` */
   function bridgeFit(g){const id=g.userData.bridgeId,S=g.userData.span,ang=S.ang,len=S.len,mx=g.position.x,mz=g.position.z,s_=Math.sin(ang),c_=Math.cos(ang);
-    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].bridge===id)STATIC_SOL.splice(i,1);
     const gap=g.geometry.userData.gap,runs=gap?[[-len/2,gap.z0],[gap.z1,len/2]]:[[-len/2,len/2]];
-    for(const sx of [-1,1])for(const [a,b] of runs){const u=(a+b)/2;STATIC_SOL.push({cx:mx+c_*sx*2.45+s_*u,cz:mz-s_*sx*2.45+c_*u,rx:.2,rz:(b-a)/2,c:c_,s:s_,cell:S.cell,bridge:id});}
+    // S2288 — the rails are rewritten in place, not spliced out: a cell loading now tags its solids by their index from where it began
+    // (solStart), so a splice under it would shift them. A rail no longer wanted (mended, four to two) is emptied and lets go of its bridge.
+    const had_=STATIC_SOL.filter(q=>q.bridge===id),want=[];
+    for(const sx of [-1,1])for(const [a,b] of runs){const u=(a+b)/2;want.push({cx:mx+c_*sx*2.45+s_*u,cz:mz-s_*sx*2.45+c_*u,rx:.2,rz:(b-a)/2,c:c_,s:s_,cell:S.cell,bridge:id});}
+    want.forEach((q,i)=>{if(had_[i])Object.assign(had_[i],q);else STATIC_SOL.push(q);});for(let i=want.length;i<had_.length;i++)Object.assign(had_[i],{rx:-1,rz:-1,bridge:null});
+    bridgeWalkDrop(id);for(const [a,b] of runs)ZONES.world.platforms.push(bridgeWalk(id,S.cell,mx,mz,g.position.y+BRIDGE_SETTS,s_,c_,a,b,len));
     const had=BRIDGE_GAPS.has(id);if(gap)BRIDGE_GAPS.set(id,{x:mx,z:mz,s:s_,c:c_,z0:gap.z0,z1:gap.z1});else BRIDGE_GAPS.delete(id);
     if(gap||had)bridgeGround(mx,mz,len/2+ROAD_BLEND+2);}
+  // S2288 — the deck you walk. The ground under a bridge is the road's causeway, 0.5 to 0.8 m under the setts (12 m at a deep
+  // crossing), so you walked through the deck with the rails at your chest. Each run of the deck (one, or two either side of a gap) is
+  // a platform of the world's, as an aqueduct's channel is, its top the setts' (BRIDGE_SETTS over the mesh's origin) between the rails.
+  // The road meets the deck's ends at its own height, so the last BRIDGE_RAMP metres of each end ramp from the ground under you up to
+  // the setts; where a bank stands over the deck's end the ground wins. You take the deck from its ends only: the player when the feet
+  // are within 0.6 of its top, anyone else when the ground is (as the aqueduct's walk), so a swimmer under the arches stays in the water.
+  const BRIDGE_SETTS=.28,BRIDGE_RAMP=2.5,BRIDGE_HW=2.25;
+  function bridgeWalk(id,cell,X,Z,y,s,c,u0,u1,len){const hw=BRIDGE_HW,xs=[],zs=[];for(const u of [u0,u1])for(const v of [-hw,hw]){xs.push(X+u*s+v*c);zs.push(Z+u*c-v*s);}
+    return {x0:Math.min(...xs),x1:Math.max(...xs),z0:Math.min(...zs),z1:Math.max(...zs),y,deck:y,bridge:id,cell,
+      inside(wx,wz){const dx=wx-X,dz=wz-Z,u=dx*s+dz*c,v=dx*c-dz*s;if(u<u0||u>u1||Math.abs(v)>hw)return false;
+        const e=len/2-Math.abs(u),gr=meshH(wx,wz),yy=e<BRIDGE_RAMP?gr+(this.deck-gr)*Math.max(0,e)/BRIDGE_RAMP:this.deck;if(gr>yy)return false;this.y=yy;
+        if(wx===px&&wz===pz)return jumpY>=yy-.6;return gr>=yy-.6;}};}
+  function bridgeWalkDrop(id,cell){const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].bridge&&(id!=null?P[i].bridge===id:P[i].cell===cell))P.splice(i,1);}
   function bridgeGround(x,z,R){for(const ch of chunks.values()){const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK;if(x+R<x0||x-R>x0+CHUNK||z+R<z0||z-R>z0+CHUNK)continue;refreshChunkTerrain(ch);
     for(const o of [...ch.group.children])if(o.userData.ribbon){ch.group.remove(o);o.geometry.dispose();}buildRoadRibbons(ch.cx,ch.cz,ch.group);}}
   function bridgeRedraw(id){const g=sc.children.find(o=>o.userData.bridgeId===id);if(!g)return false;const S=g.userData.span,old=g.geometry;
