@@ -86,6 +86,32 @@ check('down, the ground in the gap is the river\'s bed (no causeway), and at the
 check('down, nothing of the deck over the gap\'s middle (a line straight down meets the stone below the old deck, or nothing), and the road\'s strip no longer crosses it', d && (d.down.deckHit === null || d.down.deckHit < -.5) && (d.down.strip === null || d.down.strip < -1), d && { deckHit: d.down.deckHit, strip: d.down.strip });
 check('a cell loaded again with the bridge down builds it down, four rails', d && d.reload && d.reload.gap && d.reload.rails === 4, d && d.reload);
 check('mended, it is the bridge it was: the same triangles, two rails, the causeway back and no gap left', d && d.mended.tris === d.before.tris && d.mended.rails === 2 && d.mended.mid === d.before.mid && d.mended.gaps === 0, d && { before: d.before, mended: d.mended });
+// Session 2285: the deck is walked on its setts. A bridge's causeway lies 0.5 to 0.8 m under the setts (12 m at a deep crossing), and you
+// walked it with the rails at your chest; and the rails were tested as boxes on the world's axes, so one not laid north to south lay
+// across its deck. Each intact bridge is walked end to end by the game's own loop, held whole by hand: you reach the far end, your feet
+// stay on the setts over the middle (the ramps are the last 2.5 m of each end), and a swimmer under its middle stays in the water.
+const w = await page.evaluate(() => { worldState.bridges = {}; for (const s of WORLD.SITES) if (s.kind === 'bridge') { worldState.bridges[s.id] = { down: false }; WORLD.bridgeRedraw(s.id); }
+  const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {}; const out = [];
+  try { for (const m of WORLD.scene.children.filter(o => o.userData.bridge)) { const S = m.userData.span, sx = Math.sin(S.ang), cz = Math.cos(S.ang), deck = m.position.y + .28;
+    const W = (u, v = 0) => ({ x: m.position.x + sx * u + cz * v, z: m.position.z + cz * u - sx * v }), f = W(-S.len / 2 - 4), T = W(S.len / 2 + 4);
+    for (const k in K) K[k] = false; px = f.x; pz = f.z; jumpY = activeTerrainH(px, pz); velY = 0; onGround = true; stamina = maxStamina; ROLL = null; pitch = 0;
+    let t = performance.now(), n = 0, lo = 1e9, hi = -1e9; prevT = t;
+    for (; n < 2400; n++) { if (Math.hypot(T.x - px, T.z - pz) < .3) break; yaw = Math.atan2(-(T.x - px), -(T.z - pz)); K['KeyW'] = true; t += 1000 / 60; loop(t);
+      const u = (px - m.position.x) * sx + (pz - m.position.z) * cz; if (Math.abs(u) < S.len / 2 - 2.6) { lo = Math.min(lo, jumpY - deck); hi = Math.max(hi, jumpY - deck); } }
+    for (const k in K) K[k] = false; const left = +Math.hypot(T.x - px, T.z - pz).toFixed(2);
+    const mid = W(0); px = mid.x; pz = mid.z; jumpY = WORLD.SEA_Y - 1.4; const under = +(activeTerrainH(px, pz) - deck).toFixed(2);
+    const rail = W(0, 2.45), open = W(0, 1.2); out.push({ id: m.userData.bridgeId, ang: +S.ang.toFixed(2), len: +S.len.toFixed(1), ticks: n, left, lo: +lo.toFixed(2), hi: +hi.toFixed(2), under,
+      rail: currentZoneSolid(rail.x, rail.z, deck), open: currentZoneSolid(open.x, open.z, deck) }); } }
+  finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; for (const k in K) K[k] = false; }
+  const id = out.length ? out[0].id : null; if (id) { worldState.bridges[id] = { down: true }; WORLD.bridgeRedraw(id); }
+  const plats = id ? ZONES.world.platforms.filter(p => p.bridge === id).length : 0; if (id) { worldState.bridges[id] = { down: false }; WORLD.bridgeRedraw(id); }
+  return { out, plats, whole: id ? ZONES.world.platforms.filter(p => p.bridge === id).length : 0, turned: out.filter(o => Math.abs(Math.sin(2 * o.ang)) > .3).length }; });
+console.log(JSON.stringify(w));
+check('every bridge is walked end to end by the loop, across bridges laid at a slant too (Session 2285)', w.out.length > 0 && w.out.every(o => o.left < .5), w.out.map(o => o.id + ' ' + o.ang + ' left ' + o.left + ' in ' + o.ticks));
+check('over the middle your feet are on the setts, within 0.25 (they were 0.5 to 12 m under)', w.out.every(o => o.lo > -.25 && o.hi < .25), w.out.map(o => [o.id, o.lo, o.hi]));
+check('a swimmer under a bridge\'s middle stays in the water: the deck is not their ground', w.out.every(o => o.under < -.5), w.out.map(o => [o.id, o.under]));
+check('a rail blocks in its own frame and the deck between does not', w.out.every(o => o.rail && !o.open), w.out.map(o => [o.id, o.rail, o.open]));
+check('the deck is one walk whole and two either side of a gap', w.whole === 1 && w.plats === 2, { whole: w.whole, down: w.plats });
 for (const [k, u] of Object.entries(r.shots)) fs.writeFileSync(`tests/out/bridge-${k}.png`, Buffer.from(u.split(',')[1], 'base64'));
 delete r.shots; console.log(JSON.stringify(r));
 check('there are bridges in the loaded world', r.n > 0, r.n);
