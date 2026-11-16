@@ -1383,6 +1383,140 @@ export function markApothecary(o = {}, r = stream('markapo')) {
     hearth: H, louver: lz, fires, fire: fires[0], still, cauldron, table, mortar, bench, board, bed, stations, door: { x: 0, z: d / 2, w: hall.door.w, h: hall.door.h }, paths, boxes, lamp, windows: hall.windows, w, d };
 }
 
+// markTrader(o, r) (Session 2290, card F9; L5's interiors by nation, OG-043's shops by nation, the Mark's "timber hall with carved posts";
+//   OG-115's prop list): the Mark's hall of pieces.js (shingle, 6.4 by 9 m, its smoke louver, o.interior), as the smithy (930) and the
+//   healer's hall (937), for the three trades a Markish town still opens on the old generated room: o.trade 'misc' (the goods shop),
+//   'armor' (the armourer) and 'barber'. The longhouse's frame and planked floor; a low long hearth under the louver, warm for whoever
+//   waits. Down the right side the trade: a counter of upright boards under an oak top, 0.95 m, from a metre inside the door to the front
+//   posts, the keeper's walk behind it, open shelves of stock on the wall between its windows, the strongbox at the walk's door end. The
+//   left side is the trade's own, between the side walls' windows:
+//   - misc: a pole rack of hanging furs and fleeces, bolts of wadmal and soapstone pots on the shelves, a steelyard on the counter, a crate
+//     of soapstone pots and two casks by the door;
+//   - armor: four byrnies on T-stands (a cross foot, a post, the shoulders' bar, the mail a tapered tube with short sleeves, a helm with its
+//     nasal and brow band on the post's head), round shields with iron bosses on the wall over them, helms and folded mail on the shelves;
+//   - barber: a waiting bench down the left wall, the chair right of the hearth facing a polished bronze glass on its stand, a wash stand
+//     and basin beside it, a kettle on an iron tripod over the fire; razors, a strop, combs and shears on the counter.
+//   Behind the hearth the trader's bed of furs across the back, a cask in the other corner; a lamp from the front tie beam.
+//   -> { group, shell, room, tris, draws, shellTris, shellCalls, inner, under(x), floor, tieBeam, hearth, louver, fire, counter {x0, x1,
+//        z0, z1, y}, keeper {x, z, face}, chest {x, z}, front [x, z] (where you stand to buy), shelves, trade, paths, boxes, lamp, windows,
+//        door, w, d }
+export const TRADER_TRADES = ['misc', 'armor', 'barber'];
+export function markTrader(o = {}, r = stream('trader')) {
+  const T = TRADER_TRADES.includes(o.trade) ? o.trade : 'misc';
+  const w = o.w ?? 6.4, d = o.d ?? 9, hall = markHall({ roof: 'shingle', w, d, porch: o.porch ?? true, chimney: false, carve: true, wall: o.wall ?? 2, interior: true }, stream(o.shell || 'trader-shell'));
+  const P = apoMats(), M = { ...longMats(), iron: P.iron, steel: P.steel, oak: P.oak, ember: P.ember, flame: P.flame, linen: P.linen, rope: P.rope, water: P.water,
+    soap: mat('stone', { ns: .6, color: 0x4a4e48 }), horn: new THREE.MeshStandardMaterial({ color: 0xc8b48a, roughness: .45 }), wadmal: mat('plaster', { ns: .4, color: 0x7a6a52, rough: 1 }),
+    red: mat('wood', { ns: .5, color: 0x8a2a1e, rough: .7 }), blue: mat('wood', { ns: .5, color: 0x2e4a6a, rough: .7 }), bronze: new THREE.MeshStandardMaterial({ color: 0xc09a58, roughness: .18, metalness: .9 }),
+    mail: new THREE.MeshStandardMaterial({ color: 0x5a5c60, roughness: .62, metalness: .7 }) /* ringed mail: duller than the plate's steel */ }, B = new Map(), boxes = [];
+  const AL = { plank: 'board', log: 'post' };
+  const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { key = AL[key] || key; const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
+    g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
+    if (!B.has(key)) B.set(key, []); B.get(key).push(g); return g; };
+  const bx = (key, x0, x1, y0, y1, z0, z1, tag) => { put(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), key, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); if (tag) boxes.push({ tag, x0, x1, y0, y1, z0, z1 }); };
+  const pipe = (key, a, b, rad, seg = 8) => { const A = new THREE.Vector3(...a), D = new THREE.Vector3(...b).sub(A), g = new THREE.CylinderGeometry(rad, rad, D.length(), seg, 1, true);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), D.clone().normalize())); g.translate(A.x + D.x / 2, A.y + D.y / 2, A.z + D.z / 2); put(g, key); };
+  const X = w / 2 - .25, Z = d / 2 - .25, FY = hall.sill + .04, tp = Math.tan(hall.pitch), under = x => hall.ry0 + (w / 2 + hall.ov - Math.abs(x)) * tp - .02, WP = hall.sill + hall.wh;
+  // the side walls' windows (pieces.js: one per 4 m of depth, 0.6 m wide, 1.3 to 1.8 m over the footing): nothing tall stands across them
+  const WZ = hall.windows || [-d / 4, d / 4];
+  // the floor: planks on the footing
+  for (let x = -X; x < X - .05;) { const dx = Math.min(X - x, .22 + r() * .08); bx('plank', x + .005, x + dx - .005, FY - .04, FY, -Z, Z); x += dx; }
+  // the frame (the longhouse's): two rows of posts, purlins and tie beams; rafters and a board lining under the shingle
+  const PXr = X - 1.0, TB = WP + .25, posts = [-Z + 1.15, .6];
+  for (const sx of [-1, 1]) { for (const z of posts) bx('post', sx * PXr - .11, sx * PXr + .11, FY, TB, z - .11, z + .11, 'post'); bx('post', sx * PXr - .12, sx * PXr + .12, TB, TB + .24, -Z, Z); }
+  for (const z of posts) bx('post', -PXr - .1, PXr + .1, TB, TB + .24, z - .1, z + .1);
+  const XL = w / 2 - .02, rl = X / Math.cos(hall.pitch); for (const sx of [-1, 1]) { const xm = sx * X / 2, rz = -sx * hall.pitch;
+    for (let z = -Z + .3; z < Z; z += 1.0) put(new THREE.BoxGeometry(rl, .14, .1), 'post', xm, under(xm) - .03 - .07 / Math.cos(hall.pitch), z, 0, .8, 0, rz);
+    put(new THREE.BoxGeometry(XL / Math.cos(hall.pitch), .02, 2 * Z), 'board', sx * XL / 2, under(XL / 2) - .01, 0, 0, .8, 0, rz); }
+  // the hearth under the louver: a kerb of stones round an ash bed, 0.2 m high, 1.0 by 1.5 m, one fire
+  const lz = hall.louver ?? -1.35, H = { x0: -.5, x1: .5, z0: lz - .75, z1: lz + .75, y: FY + .2 }; bx('ash', H.x0 + .08, H.x1 - .08, FY, H.y - .06, H.z0 + .08, H.z1 - .08); boxes.push({ tag: 'hearth', ...H, y0: FY, y1: H.y });
+  for (let k = 0; k < 20; k++) { const t = k / 20, per = 2 * (H.x1 - H.x0 + H.z1 - H.z0), s = t * per, wx = H.x1 - H.x0, wz = H.z1 - H.z0; let x, z;
+    if (s < wx) { x = H.x0 + s; z = H.z0 + .07; } else if (s < wx + wz) { x = H.x1 - .07; z = H.z0 + s - wx; } else if (s < 2 * wx + wz) { x = H.x1 - (s - wx - wz); z = H.z1 - .07; } else { x = H.x0 + .07; z = H.z1 - (s - 2 * wx - wz); }
+    const g = new THREE.IcosahedronGeometry(.09 + r() * .02, 1); g.scale(1.1, .9, 1); put(g, 'kerb', Math.min(H.x1 - .09, Math.max(H.x0 + .09, x)), FY + .09, Math.min(H.z1 - .09, Math.max(H.z0 + .09, z)), r() * 3); }
+  const fire = [0, H.y - .02, lz]; { const [fx, fy, fz] = fire; for (let i = 0; i < 4; i++) { const g = new THREE.CylinderGeometry(.04, .045, .5, 6); g.rotateZ(Math.PI / 2); put(g, 'oak', fx, fy - .06 + (i % 2) * .05, fz, i * .8 + .4); }
+    put(new THREE.SphereGeometry(.15, 10, 6).scale(1.1, .35, 1.1), 'ember', fx, fy - .07, fz); for (let i = 0; i < 3; i++) put(new THREE.ConeGeometry(.045, .14 + i * .05, 7), 'flame', fx + (i - 1) * .05, fy + .04, fz + (i - 1) * .04); }
+  // ── the wares, drawn small: a helm with its brow band, crest and nasal (so it reads as a helm, not a lamp: the critic, s1606); a bolt of
+  // cloth; a soapstone pot; a horn cup; folded mail
+  const helm = (x, y, z, face = 0) => { put(new THREE.SphereGeometry(.115, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 1.12, 1.05), 'steel', x, y, z); put(new THREE.CylinderGeometry(.12, .12, .035, 12, 1, true), 'iron', x, y + .015, z);
+    put(new THREE.BoxGeometry(.018, .02, .25), 'iron', x, y + .125, z, face); const fx = Math.sin(face), fz = Math.cos(face); put(new THREE.BoxGeometry(.028, .11, .014), 'iron', x + fx * .122, y - .04, z + fz * .122, face) /* the nasal */; };
+  const bolt = (x, y, z, k, ry = 0) => put(new THREE.BoxGeometry(.34, .13, .22), k, x, y + .065, z, ry);
+  const pot = (x, y, z, rr = .07) => { put(new THREE.CylinderGeometry(rr, rr * .85, rr * 1.6, 10), 'soap', x, y + rr * .8, z); put(new THREE.TorusGeometry(rr * .95, .008, 4, 10).rotateX(Math.PI / 2), 'iron', x, y + rr * 1.5, z); };
+  const cup = (x, y, z) => { const g = new THREE.ConeGeometry(.035, .2, 8); g.rotateZ(Math.PI / 2 + .3); put(g, 'horn', x, y + .04, z, .3); };
+  const mail = (x, y, z, ry = 0) => { put(new THREE.BoxGeometry(.3, .05, .24), 'mail', x, y + .025, z, ry); put(new THREE.BoxGeometry(.24, .04, .2), 'iron', x, y + .07, z, ry); };
+  const stock = (c, a0, a1, y, k0 = 0) => { let k = k0; for (let a = a0 + .06; a < a1 - .4; k++) {
+    if (T === 'armor') { if (k % 2) { helm(c, y + .02, a + .13, -Math.PI / 2); a += .32; } else { mail(c, y, a + .15, Math.PI / 2); a += .34; } }
+    else if (T === 'barber') { if (k % 3 === 2) { cup(c, y, a + .1); a += .2; } else { put(new THREE.BoxGeometry(.24, .1, .24), 'linen', c, y + .05, a + .13); a += .3; } }
+    else { if (k % 3 === 1) { pot(c, y, a + .09); a += .22; } else { bolt(c, y, a + .18, k % 2 ? 'furPale' : 'wadmal', Math.PI / 2); a += .38; } } } };
+  // ── the counter: from 0.9 m inside the door's wall back to the front posts, on the right; upright boards under an oak top
+  const C = { x0: .9, x1: 1.45, z0: posts[1] + .4, z1: Z - 1.65, y: FY + .95 }; { const { x0, x1, z0, z1, y } = C;
+    bx('board', x0 + .04, x1 - .04, FY, y - .05, z0, z1, 'counter'); for (let z = z0 + .02; z + .2 <= z1 - .01; z += .22) bx('plank', x0, x0 + .04, FY + .02, y - .07, z, z + .2);
+    bx('oak', x0 - .03, x1 + .02, y - .05, y, z0 - .03, z1 + .03); const cz = (z0 + z1) / 2;
+    if (T === 'armor') { helm(x0 + .25, y, cz + .3, -Math.PI / 2); mail(x0 + .27, y, cz - .25, Math.PI / 2); }
+    else if (T === 'barber') { bx('oak', x0 + .2, x0 + .3, y, y + .02, cz - .3, cz + .3) /* the strop */; for (const dz of [-.1, .05]) bx('iron', x0 + .35, x0 + .37, y, y + .015, cz + dz, cz + dz + .16) /* razors */;
+      for (const dz of [.4, .52]) bx('horn', x0 + .15, x0 + .35, y, y + .012, cz + dz, cz + dz + .05) /* combs of horn */; pipe('iron', [x0 + .2, y + .01, cz - .55], [x0 + .38, y + .01, cz - .45], .008, 5) /* shears */; }
+    else { /* a trader's folding balance of bronze on the counter: a post, the beam across it, a pan on three cords at each end (a hanging steelyard
+      read as a floor lamp in the first picture) */ const sx = x0 + .27; bx('oak', sx - .1, sx + .1, y, y + .03, cz - .25, cz + .25); bx('bronze', sx - .012, sx + .012, y + .03, y + .36, cz - .012, cz + .012); bx('bronze', sx - .008, sx + .008, y + .34, y + .355, cz - .2, cz + .2);
+      for (const s2 of [-.19, .19]) { for (let k = 0; k < 3; k++) { const a = k * 2.094; pipe('rope', [sx, y + .345, cz + s2], [sx + Math.cos(a) * .06, y + .12, cz + s2 + Math.sin(a) * .06], .002, 3); } put(new THREE.SphereGeometry(.07, 12, 4, 0, Math.PI * 2, Math.PI * .62, Math.PI * .38), 'bronze', sx, y + .16, cz + s2); }
+      bolt(x0 + .27, y, cz + .5, 'wadmal', Math.PI / 2); pot(x0 + .27, y, cz - .6, .06); } }
+  // the shelves of stock on the right wall, between its windows: four boards of deal (the board's wood), 2.1 m high
+  const SZ0 = Math.max(posts[1] - 1.0, (WZ.find(z => z < 0) ?? -d / 4) + .45), SZ1 = (WZ.find(z => z > 0) ?? d / 4) - .4, S = { x0: X - .36, x1: X, z0: SZ0, z1: SZ1, y: FY + 2.1 };
+  bx('board', S.x0, S.x1, FY, S.y, S.z0, S.z0 + .03); bx('board', S.x0, S.x1, FY, S.y, S.z1 - .03, S.z1); boxes.push({ tag: 'shelves', x0: S.x0, x1: S.x1, y0: FY, y1: S.y, z0: S.z0, z1: S.z1 });
+  [.1, .6, 1.1, 1.6, 2.07].forEach((y, k) => { bx('board', S.x0, S.x1, FY + y, FY + y + .03, S.z0, S.z1); if (k < 4) stock(X - .18, S.z0, S.z1, FY + y + .03, k); });
+  // the strongbox at the keeper's walk's door end, iron-banded
+  const chest = { x: X - .3, z: C.z1 + .55 }; bx('oak', X - .6, X - .02, FY, FY + .5, chest.z - .23, chest.z + .23, 'chest'); for (const dz of [-.15, .15]) bx('iron', X - .62, X, FY + .02, FY + .52, chest.z + dz - .02, chest.z + dz + .02);
+  // ── the trade's side, the left, between the windows
+  const L0 = (WZ.find(z => z < 0) ?? -d / 4) + .45, L1 = (WZ.find(z => z > 0) ?? d / 4) - .45, trade = {};
+  if (T === 'armor') { const n = Math.max(2, Math.min(4, Math.floor((L1 - L0) / .8))), zs = Array.from({ length: n }, (_, i) => L0 + .3 + i * (L1 - L0 - .6) / Math.max(1, n - 1)); trade.stands = [];
+    for (const [i, z] of zs.entries()) { const x = -X + .45; trade.stands.push([x, z]);
+      for (const ry of [0, Math.PI / 2]) put(new THREE.BoxGeometry(.42, .05, .07), 'oak', x, FY + .025, z, ry) /* the cross foot */; bx('oak', x - .025, x + .025, FY, FY + 1.5, z - .025, z + .025);
+      bx('oak', x - .03, x + .03, FY + 1.33, FY + 1.38, z - .22, z + .22) /* the shoulders, across the room's depth: the mail faces the hall */;
+      put(new THREE.CylinderGeometry(.17, .23, .72, 12, 1, true).scale(.62, 1, 1), 'mail', x, FY + .98, z); put(new THREE.CylinderGeometry(.175, .175, .05, 12).scale(.62, 1, 1), 'iron', x, FY + 1.33, z) /* the neck */;
+      for (const s of [-1, 1]) put(new THREE.CylinderGeometry(.06, .075, .28, 8, 1, true), 'mail', x, FY + 1.17, z + s * .2, 0, .6, s * .22, 0) /* the sleeves, short, hanging */;
+      bx('iron', x - .2, x + .2, FY + .74, FY + .78, z - .2, z + .2) /* the belt */; helm(x, FY + 1.5, z, Math.PI / 2);
+      boxes.push({ tag: 'stand', x0: x - .24, x1: x + .24, y0: FY, y1: FY + 1.65, z0: z - .3, z1: z + .3 });
+      /* a round shield over each stand, on the wall: boards in two colours, an iron boss and rim */ const sy = FY + 2.05, sh = new THREE.CylinderGeometry(.36, .36, .025, 20); sh.rotateZ(Math.PI / 2);
+      put(sh, i % 2 ? 'blue' : 'red', -X + .015, sy, z); const bo = new THREE.SphereGeometry(.07, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2); bo.rotateZ(-Math.PI / 2); put(bo, 'iron', -X + .03, sy, z);
+      const rim = new THREE.TorusGeometry(.36, .012, 4, 20); rim.rotateY(Math.PI / 2); put(rim, 'iron', -X + .02, sy, z); } }
+  else if (T === 'barber') { /* the waiting bench down the left wall */ const b = { x0: -X, x1: -X + .42, z0: L0 + .1, z1: L1 - .1, y: FY + .45 }; bx('board', b.x0, b.x1, b.y - .05, b.y, b.z0, b.z1, 'bench');
+      for (const z of [b.z0 + .1, b.z1 - .16]) bx('post', b.x0 + .05, b.x1 - .05, FY, b.y - .05, z, z + .06); bx('fur', b.x0 + .04, b.x1 - .04, b.y, b.y + .03, b.z0 + .2, b.z0 + 1.0); trade.bench = b;
+      /* the chair right of the hearth, its back to the fire's side, facing the glass on its stand */ const cx = 1.15, cz = lz + .55; bx('oak', cx - .25, cx + .25, FY + .44, FY + .48, cz - .22, cz + .22, 'chair');
+      for (const dx of [-.21, .21]) for (const dz of [-.18, .18]) bx('oak', cx + dx - .025, cx + dx + .025, FY, FY + .44, cz + dz - .025, cz + dz + .025);
+      bx('oak', cx - .25, cx + .25, FY + .48, FY + 1.15, cz + .2, cz + .24) /* its back */; bx('oak', cx - .25, cx + .25, FY + 1.0, FY + 1.18, cz + .24, cz + .28) /* the headrest */; trade.chair = { x: cx, z: cz, face: 'z-' };
+      const mz = cz - .95; bx('oak', cx - .03, cx + .03, FY, FY + 1.25, mz - .03, mz + .03, 'glass'); for (const ry of [0, Math.PI / 2]) put(new THREE.BoxGeometry(.4, .05, .06), 'oak', cx, FY + .025, mz, ry);
+      { const g = new THREE.CylinderGeometry(.2, .2, .02, 24); g.rotateX(Math.PI / 2); put(g, 'bronze', cx, FY + 1.42, mz + .02); const rr = new THREE.TorusGeometry(.2, .015, 5, 24); put(rr, 'oak', cx, FY + 1.42, mz + .02); } trade.glass = { x: cx, z: mz, y: FY + 1.42 };
+      const wx = cx + .6; for (const dx of [-.15, .15]) for (const dz of [-.15, .15]) bx('oak', wx + dx - .02, wx + dx + .02, FY, FY + .8, mz + dz - .02, mz + dz + .02); bx('oak', wx - .2, wx + .2, FY + .78, FY + .82, mz - .2, mz + .2);
+      boxes.push({ tag: 'washstand', x0: wx - .2, x1: wx + .2, y0: FY, y1: FY + .82, z0: mz - .2, z1: mz + .2 }); put(new THREE.CylinderGeometry(.17, .1, .09, 16), 'bronze', wx, FY + .865, mz); put(new THREE.CircleGeometry(.15, 16).rotateX(-Math.PI / 2), 'water', wx, FY + .89, mz);
+      /* the kettle on its tripod over the fire */ const apex = [fire[0], FY + 1.2, fire[2]]; for (let k = 0; k < 3; k++) { const a = k * 2.094 + .5; pipe('iron', [Math.cos(a) * .42, FY, fire[2] + Math.sin(a) * .42], apex, .014, 5); }
+      bx('iron', -.005, .005, FY + .62, apex[1], fire[2] - .005, fire[2] + .005); put(new THREE.SphereGeometry(.15, 14, 8).scale(1, .8, 1), 'iron', 0, FY + .55, fire[2]); put(new THREE.TorusGeometry(.1, .008, 4, 12, Math.PI), 'iron', 0, FY + .62, fire[2]); }
+  else { /* the pole rack of furs and fleeces down the left wall */ const x = -X + .35, z0 = L0 + .1, z1 = L1 - .1; for (const z of [z0, z1]) { bx('post', x - .04, x + .04, FY, FY + 1.95, z - .04, z + .04); for (const ry of [0, Math.PI / 2]) put(new THREE.BoxGeometry(.4, .05, .06), 'post', x, FY + .025, z, ry); }
+      pipe('post', [x, FY + 1.9, z0], [x, FY + 1.9, z1], .03, 8); boxes.push({ tag: 'rack', x0: x - .2, x1: x + .2, y0: FY, y1: FY + 1.95, z0: z0 - .2, z1: z1 + .2 });
+      const furs = ['fur', 'furGrey', 'furPale', 'fur', 'furGrey']; for (let z = z0 + .3, k = 0; z < z1 - .25; z += .32 + r() * .1, k++) { const L = .9 + r() * .35; bx(furs[k % furs.length], x - .015, x + .015, FY + 1.88 - L, FY + 1.88, z - .17, z + .17); bx(furs[(k + 2) % furs.length], x + .015, x + .03, FY + 1.88 - L * .6, FY + 1.88, z - .12, z + .12); }
+      trade.rack = { x, z0, z1 };
+      /* a crate of soapstone pots on the floor before the rack's door end */ const cz0 = Math.max(z1 + .25, L1 - .2); if (cz0 + .5 < Z - 1.0) { bx('board', -X + .05, -X + .65, FY, FY + .35, cz0, cz0 + .5, 'crate'); for (const [dx, dz] of [[.15, .13], [.42, .13], [.15, .37], [.42, .37]]) pot(-X + .05 + dx, FY + .35, cz0 + dz, .065); } }
+  // two casks by the door on the left (not where the crate stands)
+  for (const cx of [-X + .35, -X + 1.0]) { const cz = Z - .5; put(new THREE.CylinderGeometry(.26, .26, .7, 14), 'oak', cx, FY + .35, cz); put(new THREE.SphereGeometry(.28, 14, 8).scale(1, 1.2, 1), 'oak', cx, FY + .35, cz); for (const yy of [.12, .58]) put(new THREE.TorusGeometry(.265, .012, 4, 16).rotateX(Math.PI / 2), 'iron', cx, FY + yy, cz);
+    boxes.push({ tag: 'cask', x0: cx - .28, x1: cx + .28, y0: FY, y1: FY + .7, z0: cz - .28, z1: cz + .28 }); }
+  // the trader's bed of furs on a platform across the back left, a cask in the back right corner
+  const bed = { x0: -X, x1: -.5, z0: -Z, z1: -Z + .85 }; { const { x0, x1, z0, z1 } = bed; bx('board', x0, x1, FY, FY + .4, z0, z1, 'bed'); bx('fur', x0 + .05, x1 - .05, FY + .4, FY + .5, z0 + .05, z1 - .05); bx('furPale', x0 + .3, x0 + 1.4, FY + .5, FY + .56, z0 + .1, z1 - .1); bx('furGrey', x0 + .05, x0 + .5, FY + .5, FY + .62, z0 + .1, z1 - .1); }
+  { const cx = X - .4, cz = -Z + .45; put(new THREE.CylinderGeometry(.3, .3, .8, 14), 'oak', cx, FY + .4, cz); put(new THREE.SphereGeometry(.32, 14, 8).scale(1, 1.25, 1), 'oak', cx, FY + .4, cz); for (const yy of [.12, .68]) put(new THREE.TorusGeometry(.305, .012, 4, 16).rotateX(Math.PI / 2), 'iron', cx, FY + yy, cz);
+    boxes.push({ tag: 'cask2', x0: cx - .32, x1: cx + .32, y0: FY, y1: FY + .8, z0: cz - .32, z1: cz + .32 }); }
+  // the lamp: an iron bowl on a chain from the front tie beam, over the customers' side
+  const lamp = [-.9, TB - .6, posts[1]]; bx('iron', lamp[0] - .005, lamp[0] + .005, lamp[1] + .05, TB, lamp[2] - .005, lamp[2] + .005);
+  put(new THREE.SphereGeometry(.09, 10, 6, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), 'iron', ...lamp); put(new THREE.SphereGeometry(.02, 6, 5).scale(1, 2, 1), 'flame', lamp[0] + .05, lamp[1] + .03, lamp[2]);
+  // the front door, hung open against the front wall, left of the doorway
+  { const leaf = { x0: -hall.door.w / 2 - .07, x1: -hall.door.w / 2 - .01, z0: Z - hall.door.w - .01, z1: Z - .01 }; bx('board', leaf.x0, leaf.x1, FY, FY + hall.door.h - .12, leaf.z0, leaf.z1, 'door');
+    for (const y of [.5, 1.5]) bx('iron', leaf.x0 - .02, leaf.x0, FY + y - .03, FY + y + .03, leaf.z0 + .1, leaf.z1 - .05); }
+  // where people stand: the keeper in his walk facing the counter's middle; you before it
+  const KX = (C.x1 + S.x0) / 2, keeper = { x: KX, z: (C.z0 + C.z1) / 2, face: 'x-' }, front = [C.x0 - .45, (C.z0 + C.z1) / 2];
+  // the walks: in at the door to the counter's front; round the counter's door end into the keeper's walk and along it; to the trade's
+  // side; round the hearth's left to the bed (and for the barber, to the chair)
+  const ez = C.z1 + .22, paths = [[[0, Z - .1], [front[0], ez], front], [[0, Z - .1], [.45, ez], [KX, ez], [KX, C.z0 + .1]], [[0, Z - .1], [-.4, L1], [-1.3, (L0 + L1) / 2]], [[0, Z - .1], [0, H.z1 + .45], [-.9, H.z1 + .1], [-.9, -Z + 1.3], [.5, -Z + 1.25]]];
+  if (T === 'barber') paths.push([[0, Z - .1], [0, H.z1 + .45], [trade.chair.x, H.z1 + .45], [trade.chair.x, trade.chair.z + .5]]);
+  const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !['flame', 'ember', 'water'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  const all = new THREE.Group(); all.add(hall.group, group);
+  return { group: all, shell: hall.group, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: hall.tris, shellCalls: hall.draws, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, under, floor: FY, tieBeam: TB,
+    hearth: H, louver: lz, fire, fires: [fire], counter: C, keeper, chest, front, shelves: S, trade, bed, door: { x: 0, z: d / 2, w: hall.door.w, h: hall.door.h }, paths, boxes, lamp, windows: WZ, kind: T, w, d };
+}
+
 // aurenneApothecary(o, r) (Session 938, card F9; L5's interiors by nation, OG-043's Aurennais alchemy shop of glassware and tilework,
 //   OG-114's ceramics and glass, OG-133's four steps; Michael's A on #303): the Roman house of pieces.js with its arcade (one storey, 7.2
 //   by 6.0 m), as the smithy (931), as an apothecary of glass and glazed jars. A tiled counter across the shop, the brass scales on its
