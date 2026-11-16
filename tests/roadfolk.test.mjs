@@ -9,6 +9,7 @@
 // Session 2277: an official on a road a live camp breaks writes you a writ on it, paid 40 + 10 a tier when the camp is cleared.
 // Session 2281: a bridge rolls 1 in 30 a game-week and is down two weeks: its middle span a solid, the river beside it open; riders tell of it;
 // the nearer lord mends it for 250 gold + 2 a metre (or 20 planks and Joinery 25), up 2 days after.
+// Session 2282: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -234,4 +235,24 @@ console.log(JSON.stringify(bg));
 check('down: a solid across the middle of the deck, open water beside it, and you dropped off the span', /^0+1+0+$/.test(bg.deck) && !bg.beside[0] && !bg.beside[1] && bg.off > 2.45, bg);
 check('a rider tells of it', /is down/.test(bg.news || ''), bg.news);
 check('the lord mends it for 250 + 2 a metre, up two days after', bg.cost === 250 + 2 * bd.len && bg.left === 1000 - bg.cost && !bg.again && bg.up, bg);
+// S2282 — the coach at the bank, the route at half
+const cr = await page.evaluate(() => { const K = { village: 1, town: 1, city: 1, port: 1 };
+  const rd = ROADS.find(rd => rd.def && siteAnywhere(rd.def.a) && siteAnywhere(rd.def.b) && siteAnywhere(rd.def.a).kind in K && siteAnywhere(rd.def.b).kind in K && roadBridges(rd).length); if (!rd) return null;
+  const o = roadBridges(rd)[0], b = SITE[o.id] || siteAnywhere(o.id); let w = 1; while (!(bridgeFell(b.id, w) && !bridgeFell(b.id, w - 1))) w++;
+  const key = routeKey(rd.def.a, rd.def.b), cs = coaches(); for (const k in cs) delete cs[k]; cs[key] = { a: rd.def.a, b: rd.def.b };
+  const R = routes(); for (const k in R) delete R[k]; R[key] = { a: rd.def.a, b: rd.def.b, opened: 0, broken: false }; const A = siteAnywhere(rd.def.a); setProsperity(A, 40); delete (worldState.bridges || {})[b.id];
+  const dps = []; for (let d = 0; d < 4; d++) { worldState.gameTimeAbsMinutes = (w * 7 + d) * 1440 + 600; const q0 = prosperity(A); tickRoutesDay(); dps.push(prosperity(A) - q0); }
+  worldState.gameTimeMinutes = worldState.gameTimeAbsMinutes % 1440; const m = roadPoint(rd, o.u); px = m.x + 30; pz = m.z;
+  return { key, id: b.id, u: o.u, k: o.k, dps }; });
+console.log(JSON.stringify(cr));
+check('a route over a bridge down earns half (with its coach, +1 a day)', cr && cr.dps.reduce((a, b) => a + b, 0) === 6, cr);
+await g.cells(); await g.spin(null, 5);
+await page.evaluate((r) => { const C = COACHES.get(r.key); C.u = r.u - r.k - .01; C.state = 'run'; C.dir = 1; C.stopped = true; }, cr);
+await g.spin(null, 200);
+const cb = await page.evaluate((r) => { const C = COACHES.get(r.key); return { u: C.u, state: C.state, halted: C.halted }; }, cr);
+await page.evaluate((r) => { worldState.bridges = { [r.id]: { paid: dayNow(), up: dayNow() } }; }, cr);
+await g.spin(null, 120);
+const cg = await page.evaluate((r) => COACHES.get(r.key).u, cr);
+console.log(JSON.stringify({ cb, cg }));
+check('the coach draws up at the bank and goes on when the bridge stands', cb.state === 'wait' && cb.halted && Math.abs(cb.u - (cr.u - cr.k)) < 1e-6 && cg > cr.u, { cb, cg });
 stop(); await g.close();

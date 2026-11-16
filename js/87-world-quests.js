@@ -2122,7 +2122,8 @@ const giver=`${lord.title} ${lord.name}`;
       delete rt.threat;
       // the camp picks an hour on the outbound leg, u .35–.65 of the road; tickCaravans springs it (Session 179)
       if(camp){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);rt.threat={day,camp:camp.name,f:.175+seededRng('threat',key+':'+day)()*.15,won:false,started:false};} /* S679 — the hour rolls on the route and the day (co-op rules), not Math.random */
-      setProsperity(a,prosperity(a)+.8);setProsperity(b,prosperity(b)+.8);}
+      {const rd=ROADS.find(r=>routeKey(r.def.a,r.def.b)===key),half=rd&&roadBridgesDown(rd).length; /* S2282 — a route over a bridge down earns half: prosperity is whole points (+.8 rounds to +1 a day), so half is the day's +1 on even days only */
+       if(!half||dayNow()%2===0){setProsperity(a,prosperity(a)+.8);setProsperity(b,prosperity(b)+.8);}}}
     const Cs=coaches();for(const key in Cs){const a=siteAnywhere(Cs[key].a),b=siteAnywhere(Cs[key].b);if(a&&b){setProsperity(a,prosperity(a)+1);setProsperity(b,prosperity(b)+1);}}}
   function caravanDef(a,b){const [i,j]=cellOf(a.x,a.z);const nat=nationOf(i,j);return makeDef(a,a.reg||'irish',Math.random,'Merchant',pick(Math.random,(NAMES[PEOPLES[nat.people].names]||NAMES.irish).m),{people:nat.people,x:a.x,z:a.z,bCol:0x6a4a2a,sCol:0xd4a878,topics:[{label:'What are you carrying?',response:`${a.name} wool and ${b.name} iron, this week. Next week the other way round. The road's kinder than it was.`},{label:'Anything for sale?',trade:true,goods:[{name:'Travel Ration',ico:'🍞',type:'potion',heal:12,buyPrice:6,sellMult:.4},{name:'Lamp Oil',ico:'🪔',type:'misc',buyPrice:9,sellMult:.5},{name:'Bolt of Cloth',ico:'🧵',type:'misc',buyPrice:22,sellMult:.6}]}]});}
   // The ambush (Session 179, Michael's answer B on issue #18). A camp near the road sets a threat for the day
@@ -2421,6 +2422,18 @@ const giver=`${lord.title} ${lord.name}`;
         if(n<BRDN_PLANKS)return `With your own hands? Then you'll want ${BRDN_PLANKS} planks for the span. You have ${n}.`;
         bagTake(x=>x.plank,BRDN_PLANKS);mendBridge(b.id,'planks');if(typeof addLog==='function')addLog('🌉',`You mended ${b.name} with ${BRDN_PLANKS} planks. It stands again in ${BRDN_DAYS} days.`);
         return `Then the timber's yours and the work is too. Two days, and it will carry a cart again.`;}}];}
+  // S2282 — the bridges on a road (the page's bridge row, its coach and its route): every bridge site within 15 m of the road's line, in the
+  // cells its points cross, read from the cells' data (a bridge is a site of its cell once the cell's roads have been laid). Each is {id, u}, u
+  // the road's own fraction (roadPoint's, by point index) at the bridge, and k, the half-length plus 4 m in u: the bank a coach draws up on.
+  // Cached on the road while the number of bridges in those cells stays the same.
+  function roadBridges(rd){const pts=rd.pts;if(!pts||pts.length<2)return [];const cs=new Set();for(const p of pts){const [i,j]=cellOf(p.x,p.z);if(i>=0&&j>=0&&i<GRID&&j<GRID)cs.add(i+','+j);}
+    const bs=[];for(const k of cs){const [i,j]=k.split(',').map(Number);for(const t of getCell(i,j).sites)if(t.kind==='bridge'&&t.bridge)bs.push(t);}
+    if(rd._brN===bs.length&&rd._br)return rd._br;const L=Math.max(1,roadLen(rd)),out=[];
+    for(const b of bs){let bi=-1,bd=225;for(let n=0;n<pts.length;n++){const d=(pts[n].x-b.x)**2+(pts[n].z-b.z)**2;if(d<bd){bd=d;bi=n;}}if(bi<0)continue;out.push({id:b.id,u:bi/(pts.length-1),k:(b.bridge.len/2+4)/L});}
+    out.sort((p,q)=>p.u-q.u);rd._brN=bs.length;rd._br=out;return out;}
+  function roadBridgesDown(rd){return roadBridges(rd).filter(o=>{const b=siteAnywhere(o.id)||SITE[o.id];return b&&bridgeDown(b);});}
+  // the bank a coach running from u0 in direction dir must stop on, short of the first bridge down ahead of it; null when the way is clear
+  function bridgeBank(rd,u0,dir){let best=null;for(const o of roadBridgesDown(rd)){const bank=o.u-dir*o.k;if(dir>0?bank<u0-1e-6:bank>u0+1e-6)continue;if(dir>0?o.u-o.k*.5<u0:o.u+o.k*.5>u0)continue;if(best==null||(dir>0?bank<best:bank>best))best=bank;}return best;}
   // the gaps of the bridges down, refreshed once a game minute (and at once after a mend): {x,z,s,c,hl}, in the deck's frame
   let BRDN_GAPS=[],_brdnAt=-1;const _brdnSaid=new Set();
   function bridgeGap(b){const len=b.bridge.len;return {id:b.id,x:b.x,z:b.z,s:Math.sin(b.bridge.ang),c:Math.cos(b.bridge.ang),hl:Math.min(4,len*.2)};}
@@ -3843,7 +3856,7 @@ const giver=`${lord.title} ${lord.name}`;
       seatCatchUp(C,key); // S267 — a seat held: the coach is at the inn if its call has come
       // schedule: leaves the a-end at 06:00 and the b-end at 18:00; otherwise waits at a station
       const h=hourNow();
-      if(C.state==='wait'){if(roadBroken(a,b)){C.halted=true;}else{C.halted=false;if(C.u>0.001&&C.u<0.999){C.state='run';C.dir=C.resumeDir||1;}else if(h>=6&&h<6.2&&C.u<=0.001){C.state='run';C.dir=1;}else if(h>=18&&h<18.2&&C.u>=0.999){C.state='run';C.dir=-1;}}}
+      if(C.state==='wait'){if(roadBroken(a,b)){C.halted=true;}else{C.halted=false;if(C.u>0.001&&C.u<0.999){const dd=C.resumeDir||1;if(C.bank!=null&&bridgeBank(rd,C.u,dd)!=null){C.halted=true;}else{C.bank=null;C.state='run';C.dir=dd;}}else if(h>=6&&h<6.2&&C.u<=0.001){C.state='run';C.dir=1;}else if(h>=18&&h<18.2&&C.u>=0.999){C.state='run';C.dir=-1;}}}
       if(C.state==='run'&&roadBroken(a,b)&&C.u>.02&&C.u<.98){C.state='wait';C.halted=true;C.resumeDir=C.dir;C.dir=0;} // the coach halts where it is and goes on when the road is clear
       // S178 — the coach draws up at the coaching inn halfway, once each way, and goes on after COACH_STOP
       if(C.state==='stop'){C.stopT-=dt;const nowM=worldState.gameTimeAbsMinutes||0;
@@ -3852,7 +3865,8 @@ const giver=`${lord.title} ${lord.name}`;
         if(C.stopT<=0&&!(C.holdTo&&nowM<C.holdTo&&seatHeldFor(C,key,C.resumeDir||C.dir))){if(C.holdTo&&seatHeldFor(C,key,C.resumeDir||C.dir)){worldState.coachSeat=null;showMsg('The coach could not wait any longer. Your seat has gone with it.','#c8b880');}
           C.holdTo=0;C.state='run';C.dir=C.resumeDir||C.dir;C.stopped=true;}}
       if(C.state==='run'){const u0=C.u;C.u+=C.dir*COACH_SPEED*dt/C.len;
-        if(!C.stopped&&(u0-.5)*(C.u-.5)<=0&&u0!==.5){C.u=.5;C.state='stop';C.stopT=COACH_STOP;C.resumeDir=C.dir;}
+        {const bk=bridgeBank(rd,u0,C.dir);if(bk!=null&&(C.dir>0?C.u>=bk:C.u<=bk)){C.u=bk;C.state='wait';C.halted=true;C.bank=bk;C.resumeDir=C.dir;C.dir=0;if(C.riding)showMsg('The coach draws up at the bank. The bridge is down.','#c8b880');}} /* S2282 — the coach stops at the bank of a bridge down, and goes on when it stands */
+        if(C.state==='run'&&!C.stopped&&(u0-.5)*(C.u-.5)<=0&&u0!==.5){C.u=.5;C.state='stop';C.stopT=COACH_STOP;C.resumeDir=C.dir;}
         if(C.u>=1){C.u=1;C.state='wait';C.stopped=false;}if(C.u<=0){C.u=0;C.state='wait';C.stopped=false;}}
       const p=roadPoint(rd,C.u);const fwd=C.dir;const ang=p.ang+(fwd<0?Math.PI:0);const y=worldH(p.x,p.z);
       C.cart.position.set(p.x,y,p.z);C.cart.rotation.y=ang;
