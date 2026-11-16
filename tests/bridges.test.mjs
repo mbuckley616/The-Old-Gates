@@ -46,6 +46,43 @@ const r = await page.evaluate(() => {
     reload = { first: a1, gone, second: a2 }; }
   return { n: sites.length, each, deck, through, solid, reload, shots };
 });
+// Session 2281 (#1587 B, the broken span): a bridge down. The systems builder's state (`worldState.bridges[id].down`) is set by hand here and
+// the look asked to draw it again (`bridgeRedraw`): the pier nearest the middle and its two arches are gone, the rails are four solids
+// either side of the gap, the ground under the gap is the river's bed (no causeway), the road's strip no longer crosses it, and mended it
+// is the bridge it was, to the triangle. A cell loaded with the bridge down builds it down.
+const d = await page.evaluate(() => {
+  const m = WORLD.scene.children.find(o => o.userData.bridge && o.userData.bridgeId); if (!m) return null; const id = m.userData.bridgeId, S = m.userData.span, s = WORLD.SITE[id];
+  const tris0 = m.geometry.attributes.position.count / 3, sx = Math.sin(S.ang), cz = Math.cos(S.ang); const at = u => [m.position.x + sx * u, m.position.z + cz * u];
+  const rails = () => WORLD.STATIC_SOL.filter(q => q.bridge === id).length; const hAt = u => +(WORLD.worldH(...at(u)) - m.position.y).toFixed(2);
+  const before = { tris: tris0, rails: rails(), mid: hAt(0), end: hAt(S.len / 2 - 1) };
+  worldState.bridges = { [id]: { down: true } }; WORLD.bridgeRedraw(id); const gap = m.geometry.userData.gap;
+  const mid = gap ? (gap.z0 + gap.z1) / 2 : 0; const bed = +(WORLD.baseH(...at(mid)) - m.position.y).toFixed(2);
+  m.updateMatrixWorld(true); const ray = new THREE.Raycaster(new THREE.Vector3(at(mid)[0], m.position.y + 5, at(mid)[1]), new THREE.Vector3(0, -1, 0)); const hit = ray.intersectObject(m)[0];
+  // the road's strips near the gap: the highest strip vertex over the gap's middle metre
+  let strip = -1e9; for (const ch of WORLD.chunkList()) for (const o of ch.group.children) { if (!o.userData.ribbon) continue; const p = o.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++) { const dx = p.getX(i) - m.position.x, dz = p.getZ(i) - m.position.z, u = dx * sx + dz * cz, v = dx * cz - dz * sx; if (Math.abs(u - mid) < 2 && Math.abs(v) < 3) strip = Math.max(strip, p.getY(i) - m.position.y); } }
+  const downR = { gap: gap && +(gap.z1 - gap.z0).toFixed(2), tris: m.geometry.attributes.position.count / 3, rails: rails(), mid: hAt(mid), bed, end: hAt(S.len / 2 - 1), deckHit: hit ? +(hit.point.y - m.position.y).toFixed(2) : null, strip: strip === -1e9 ? null : +strip.toFixed(2), gaps: WORLD.bridgeGaps.size };
+  // the picture: the broken bridge from the bank, noon, no fog
+  const snap = () => { const cv = REN.domElement, o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL(); };
+  const cam = new THREE.PerspectiveCamera(50, REN.domElement.width / REN.domElement.height, .3, 600); const a = S.ang, dd = 24;
+  cam.position.set(m.position.x + Math.cos(a) * dd + sx * 6, m.position.y + 5, m.position.z - Math.sin(a) * dd + cz * 6); cam.lookAt(m.position.x + sx * mid, m.position.y - 1, m.position.z + cz * mid);
+  CAM.position.copy(cam.position); WORLD.tick(1 / 60, performance.now()); WORLD.scene.updateMatrixWorld(true); const fog = WORLD.scene.fog; WORLD.scene.fog = null; REN.render(WORLD.scene, cam); const pic = snap();
+  WORLD.scene.fog = fog;
+  // a cell loaded again with the bridge still down builds it down
+  const [ci, cj] = S.cell.split(',').map(Number); WORLD.unloadCell(S.cell); WORLD.loadCell(ci, cj); const m2 = WORLD.scene.children.find(o => o.userData.bridgeId === id);
+  const reload = m2 ? { gap: !!m2.geometry.userData.gap, rails: rails() } : null;
+  worldState.bridges = { [id]: { down: false } }; const m3 = WORLD.scene.children.find(o => o.userData.bridgeId === id); WORLD.bridgeRedraw(id);
+  const mended = { tris: m3.geometry.attributes.position.count / 3, rails: rails(), mid: hAt(0), gaps: WORLD.bridgeGaps.size };
+  delete worldState.bridges; return { id, before, down: downR, reload, mended, pic };
+});
+if (d) { fs.writeFileSync('tests/out/bridge-down.png', Buffer.from(d.pic.split(',')[1], 'base64')); delete d.pic; }
+console.log(JSON.stringify(d));
+check('a bridge down (Session 2281): its middle pier and two arches gone, the gap at the deck 8 m and more, and fewer triangles than whole', d && d.down.gap >= 8 && d.down.tris < d.before.tris, d && { gap: d.down.gap, tris: [d.before.tris, d.down.tris] });
+check('down, its rails are four solids, two either side of the gap', d && d.before.rails === 2 && d.down.rails === 4, d && [d.before.rails, d.down.rails]);
+check('down, the ground in the gap is the river\'s bed (no causeway), and at the deck\'s ends it is the road\'s as before', d && d.down.mid === d.down.bed && d.down.mid < d.before.mid - 1.5 && d.down.end === d.before.end, d && { mid: [d.before.mid, d.down.mid, d.down.bed], end: [d.before.end, d.down.end] });
+check('down, nothing of the deck over the gap\'s middle (a line straight down meets the stone below the old deck, or nothing), and the road\'s strip no longer crosses it', d && (d.down.deckHit === null || d.down.deckHit < -.5) && (d.down.strip === null || d.down.strip < -1), d && { deckHit: d.down.deckHit, strip: d.down.strip });
+check('a cell loaded again with the bridge down builds it down, four rails', d && d.reload && d.reload.gap && d.reload.rails === 4, d && d.reload);
+check('mended, it is the bridge it was: the same triangles, two rails, the causeway back and no gap left', d && d.mended.tris === d.before.tris && d.mended.rails === 2 && d.mended.mid === d.before.mid && d.mended.gaps === 0, d && { before: d.before, mended: d.mended });
 for (const [k, u] of Object.entries(r.shots)) fs.writeFileSync(`tests/out/bridge-${k}.png`, Buffer.from(u.split(',')[1], 'base64'));
 delete r.shots; console.log(JSON.stringify(r));
 check('there are bridges in the loaded world', r.n > 0, r.n);
