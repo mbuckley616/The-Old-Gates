@@ -2378,8 +2378,8 @@ const giver=`${lord.title} ${lord.name}`;
       return {T,rd,npc:n,follow:[{npc:n2,side:1.0,back:0}]};}
     if(T.kind==='family'){const n=spawnNPC(familyDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const n2=spawnNPC(familyDef(T,rd,p,1),p.ang,true);n2.sched={type:'lost'};const k2=npcs.indexOf(n2);if(k2>=0)npcs.splice(k2,1);
       const D={T,rd,npc:n,follow:[{npc:n2,side:1.0,back:0}]};if(typeof cartAttach==='function'){const cg=cartAttach(D);if(cg)sc.add(cg);}return D;} /* S2282 — the family's handcart */
-    if(T.kind==='rider'){const n=spawnNPC(riderDef(T,rd,p),p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();try{const rg=riderBeast(T,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
-      const rig=n.g.userData.rig;if(rig)rig.sit={v:0,look:0,c:0};return {T,rd,npc:n,beast:g,follow:[],mount:true};}
+    if(T.kind==='rider'){const n=spawnNPC(riderDef(T,rd,p),p.ang,true);n.sched={type:'lost'};const g=new THREE.Group();let rg=null;try{rg=riderBeast(T,nationAt(p.x,p.z));if(rg)g.add(rg.root);}catch(e){}sc.add(g);
+      const rig=n.g.userData.rig;if(rig)rideMount(rig,rg);return {T,rd,npc:n,beast:g,follow:[],mount:true};}
     if(T.kind==='pilgrim'){const Q=pilgrimPlan(T,rd);const n=spawnNPC(pilgrimDef(T,rd,p,0),p.ang,true);n.sched={type:'lost'};const D={T,rd,npc:n,follow:[]};
       if(Q.mourners){const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);D.mute=true;const n2=spawnNPC(pilgrimDef(T,rd,p,1),p.ang,true);n2.sched={type:'lost'};const k2=npcs.indexOf(n2);if(k2>=0)npcs.splice(k2,1);D.follow.push({npc:n2,side:1.0,back:0});if(typeof bierAttach==='function'){const bg=bierAttach(D);if(bg)sc.add(bg);}}
       return D;}

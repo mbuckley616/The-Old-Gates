@@ -1335,7 +1335,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
-function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,play:rig.play||null,bear:rig.bear||0,push:rig.push||0};}
+function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,ride:rig.ride||null,play:rig.play||null,bear:rig.bear||0,push:rig.push||0};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1359,9 +1359,29 @@ function pwSit(t,o){const p=pwZero(),S=o.sit||{},br=Math.sin(t*1.3),c=S.c||0,lk=
   p.neck[1]=lk*.4;p.head[1]=lk*.6;
   if(c>0){const r=p.shR,e=p.elR;p.shR=[r[0]+(-2.75-r[0])*c,0,r[2]+(-.3-r[2])*c];p.elR=[e[0]+(-.35-e[0])*c,0,0];p.spine[0]-=.12*c;p.head[0]-=.25*c;}
   p.hipsY=PW.L2+PW.FOOT+PW.HIPJ;return p;}
+// S2289 — astride a horse (#1587 B's rider; the systems builder's S2275 sat him on the bench pose, the shins hanging straight down through
+// the horse's shoulder and the seat 0.3 m inside its back). The thighs open 0.4 and turn out 0.7 round the pelvis's upright, pitched
+// 0.85 forward, the knees bent 1.15: at a rider's 1.24 the knee stands 0.35 m out from the spine at 1.32 m, the ankle 0.32 out at 1.0,
+// both clear of the barrel (0.22–0.26 m a side, measured on the kit's horse). The hands are low and forward at the reins over the withers,
+// the back upright and giving to the horse's stride. o.ride.hy (figure units) puts the hips on the saddle: set each frame by rideTick.
+function pwRide(t,o){const p=pwZero(),R=o.ride||{},br=Math.sin(t*1.3),bob=R.bob||0;
+  p.thL=[-.85,.7,.4];p.thR=[-.85,-.7,-.4];p.knL=[1.15,0,0];p.knR=[1.15,0,0];p.anL=[-.2,0,-.25];p.anR=[-.2,0,.25];
+  p.spine=[.06+.015*br-.25*bob,0,0];p.neck=[-.04+.2*bob,0,0];p.head=[0,0,0];
+  p.shL=[-.42,0,.08];p.elL=[-1.15,0,0];p.wrL=[.2,0,-.1];p.shR=[-.42,0,-.08];p.elR=[-1.15,0,0];p.wrR=[.2,0,.1];
+  p.hipsY=R.hy||(PW.L2+PW.FOOT+PW.HIPJ);return p;}
+// the seat on a horse: the hips' joint RIDE.pad over the back, the back RIDE.back over the horse's feet at its build (scaled by the driver's
+// root), riding its stride (the driver's hips over their rest). rig.ride = {beast: the horse's driver rig}, set by rideMount.
+const RIDE={back:1.45,at:1.6,pad:.08};
+const _rideV=new THREE.Vector3();
+function rideMount(rig,beast){if(!rig)return;delete rig.sit;rig.ride={beast:beast||null,hy:0,bob:0};for(const k in rig.w)rig.w[k]=0;rig.w.ride=1;}
+function rideTick(rig){const R=rig.ride,H=R.beast;rig.root.updateWorldMatrix(true,false);const s=_rideV.setFromMatrixScale(rig.root.matrixWorld).y||1;_rideV.setFromMatrixPosition(rig.root.matrixWorld);const y0=_rideV.y;
+  if(!H||!H.root||!H.root.parent){R.hy=PW.L2+PW.FOOT+PW.HIPJ;R.bob=0;return;}
+  H.root.updateWorldMatrix(true,false);const k=_rideV.setFromMatrixScale(H.root.matrixWorld).y||RIDE.at;_rideV.setFromMatrixPosition(H.root.matrixWorld);
+  const bob=H.B&&H.B.hips&&H.k?(H.B.hips.position.y-wolfHipY(H.k))*k:0;R.bob+=(bob-R.bob)*.5;
+  R.hy=(_rideV.y+RIDE.back*k/RIDE.at+R.bob+RIDE.pad-y0)/s;}
 function pwBlend(rig,mode,t,ph,dt,o){const w=rig.w;const k=1-Math.exp(-dt/.11);for(const m in w)w[m]+=((m===mode?1:0)-w[m])*k;
   const out=pwZero();let tot=0;
-  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):m==='sleep'?pwSleep(t,o):m==='sit'?pwSit(t,o):m==='play'?pwPlay(t,o,ph):pwIdle(t,o);
+  for(const m in w){const wm=w[m];if(wm<.001)continue;tot+=wm;const p=m==='walk'?pwWalk(ph,o):m==='run'?pwRun(ph,o):m==='wave'?pwWave(t,o):m==='crouch'?pwCrouch(t,o):m==='sleep'?pwSleep(t,o):m==='sit'?pwSit(t,o):m==='ride'?pwRide(t,o):m==='play'?pwPlay(t,o,ph):pwIdle(t,o);
     PW.JOINTS.forEach(j=>{const a=out[j],b=p[j];a[0]+=b[0]*wm;a[1]+=b[1]*wm;a[2]+=b[2]*wm;});out.sway+=p.sway*wm;out.hipsY+=p.hipsY*wm;}
   if(tot>0){PW.JOINTS.forEach(j=>{const a=out[j];a[0]/=tot;a[1]/=tot;a[2]/=tot;});out.sway/=tot;out.hipsY/=tot;}
   if(o.bear&&!w.sleep)pwBear(out,o.bear); /* S2273 — a bier's bearer: the arms on its poles, whatever the legs do */
@@ -1614,6 +1634,7 @@ function tickPeople(dt,now){
     if(rig.g.gargoyle&&rig.e&&rig.e.dormant)mode='crouch'; // S210 — a sleeping gargoyle is a statue
     if(rig.sleep)mode='sleep'; // S752 — asleep in bed (personLie)
     if(rig.sit)mode='sit'; // S2197 — on a bench (the ring's watchers, ringCrowdTick)
+    if(rig.ride){mode='ride';rideTick(rig);} /* S2289 — astride a horse (the road's rider) */
     if(rig.play)mode='play'; /* S2206 — a child at a game (kidsTick) */
     if(rig.g.ghoul&&mode==='run')mode='walk'; // S534 — a ghoul never runs: a fast hobble on its limp
     if(rig.g.wraith){mode='idle';root.position.y=(.24+.05*Math.sin(now*.0021+rig.g.phase))*SCALE.ROOM_K;} // a wraith takes no steps: it glides, a little off the ground (S905, F2a: as high against its taller body as before)
