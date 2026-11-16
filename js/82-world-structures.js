@@ -166,7 +166,7 @@
       ()=>{L.forts=[];c.doors.filter(e=>e.kind==='fort_door'&&dungeonWorldPos[e.seed]).forEach(e=>{const S=buildFortCompound(e,dungeonWorldPos[e.seed],k);L.forts.push(S);});},
       ()=>track(()=>buildSiteMarkersFor(c)),
       ()=>track(()=>buildCampsFor(c,k)),
-      ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)STATIC_SOL[n].cell=k;L.staticsBuilt=true;L.staticsPending=false;
+      ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)if(STATIC_SOL[n].cell==null)STATIC_SOL[n].cell=k; /* S2285 — a solid that names its cell keeps it (a bridge redrawn while another cell loads) */L.staticsBuilt=true;L.staticsPending=false;
         // bake: every plain top-level static mesh in this cell into cluster meshes
         const flat=[];(L.statics2||[]).forEach(o=>{if(o.isMesh&&!o.userData.noBake)flat.push(o);else if(o.isGroup)o.children.filter(c=>c.isMesh).forEach(c=>{c.userData.parentGroup=o;});});
         const baked=bakeMeshes(flat,sc,new Set());L.statics2=(L.statics2||[]).filter(o=>o.parent).concat(baked);},
@@ -1335,9 +1335,12 @@
   // action has changed it; a bridge not loaded is built from the state when its cell loads.
   function bridgeIsDown(id){return typeof bridgeDownId==='function'&&!!bridgeDownId(id);} /* S2283 — the systems builder's roll (bridgeDownId, 87): the week's fall, a mend, or a hand's `down` */
   function bridgeFit(g){const id=g.userData.bridgeId,S=g.userData.span,ang=S.ang,len=S.len,mx=g.position.x,mz=g.position.z,s_=Math.sin(ang),c_=Math.cos(ang);
-    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].bridge===id)STATIC_SOL.splice(i,1);
     const gap=g.geometry.userData.gap,runs=gap?[[-len/2,gap.z0],[gap.z1,len/2]]:[[-len/2,len/2]];
-    for(const sx of [-1,1])for(const [a,b] of runs){const u=(a+b)/2;STATIC_SOL.push({cx:mx+c_*sx*2.45+s_*u,cz:mz-s_*sx*2.45+c_*u,rx:.2,rz:(b-a)/2,c:c_,s:s_,cell:S.cell,bridge:id});}
+    // S2285 — the rails are rewritten in place, not spliced out: a cell loading now tags its solids by their index from where it began
+    // (solStart), so a splice under it would shift them. A rail no longer wanted (mended, four to two) is emptied and lets go of its bridge.
+    const had_=STATIC_SOL.filter(q=>q.bridge===id),want=[];
+    for(const sx of [-1,1])for(const [a,b] of runs){const u=(a+b)/2;want.push({cx:mx+c_*sx*2.45+s_*u,cz:mz-s_*sx*2.45+c_*u,rx:.2,rz:(b-a)/2,c:c_,s:s_,cell:S.cell,bridge:id});}
+    want.forEach((q,i)=>{if(had_[i])Object.assign(had_[i],q);else STATIC_SOL.push(q);});for(let i=want.length;i<had_.length;i++)Object.assign(had_[i],{rx:-1,rz:-1,bridge:null});
     bridgeWalkDrop(id);for(const [a,b] of runs)ZONES.world.platforms.push(bridgeWalk(id,S.cell,mx,mz,g.position.y+BRIDGE_SETTS,s_,c_,a,b,len));
     const had=BRIDGE_GAPS.has(id);if(gap)BRIDGE_GAPS.set(id,{x:mx,z:mz,s:s_,c:c_,z0:gap.z0,z1:gap.z1});else BRIDGE_GAPS.delete(id);
     if(gap||had)bridgeGround(mx,mz,len/2+ROAD_BLEND+2);}

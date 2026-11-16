@@ -626,7 +626,7 @@
       ()=>track(()=>buildImpostorsFor(c)),
       ()=>{try{track(()=>placeTunnel(c,k));}catch(e){console.warn('tunnel',e);}}, /* S1828 — a trade tunnel's portals (after the statics, so its solids are the cell's too) */
       ()=>track(()=>buildFarFor(c)),
-      ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)STATIC_SOL[n].cell=k;L.pending=false;if(c.home)homeLoaded();},
+      ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)if(STATIC_SOL[n].cell==null)STATIC_SOL[n].cell=k; /* S2285 — a solid that names its cell keeps it (a bridge redrawn while another cell loads) */L.pending=false;if(c.home)homeLoaded();},
     ];
     return steps;
   }
