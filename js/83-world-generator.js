@@ -2462,7 +2462,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),hd=T.d/2+.08;
       const P=[],out=(x,y,z,w,h,a)=>{const g=new THREE.PlaneGeometry(w+.1,h+.1).toNonIndexed();g.rotateY(a);g.translate(rx(x),ry(y+h/2),rz(z));P.push(g.attributes.position.array);g.dispose();};
       for(const q of T.windows)out(q.x,q.y,q.face==='front'?hd:-hd,q.w,q.h,q.face==='front'?Math.PI:0);
-      out(T.door.x,F0,hd,T.door.w,T.door.h,Math.PI);out(T.back.x,F0,-hd,T.back.w,T.back.h,0);
+      if(S&&S.win)out(S.win.x,S.win.y,hd,S.win.w,S.win.h,Math.PI) /* (Session 2296) the shop window too: it was left black (the critic, s1641) */;out(T.door.x,F0,hd,T.door.w,T.door.h,Math.PI);out(T.back.x,F0,-hd,T.back.w,T.back.h,0);
       const A=new Float32Array(P.reduce((n,a)=>n+a.length,0));let o=0;for(const a of P){A.set(a,o);o+=a.length;}
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(A,3));const m=new THREE.Mesh(g,M);m.userData.daylight=true;sc_.add(m);}
     // the light: the three fires (the kitchen's range, the drawing room's and the dining room's grates; the shop keeps none), the lamps
