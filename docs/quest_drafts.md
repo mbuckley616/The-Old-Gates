@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 47, 15 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 48, 16 Nov: no new calls on the page)
 
 ---
 
