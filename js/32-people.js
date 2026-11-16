@@ -1393,10 +1393,10 @@ function rideTick(rig){const R=rig.ride,H=R.beast;rig.root.updateWorldMatrix(tru
    anything under the top of what the horse has there (the saddle, the hide) laid on it, .clear over it. The skinIndex and skinWeight are
    the pack's, shared by every body (CLAUDE.md), so they are replaced, not written; the position and normal are the garment's own. Then
    the middle level is baked again from the seated skirt. Once per rider. */
-const HB_RIDE_SKIRT={re:/^(skirt|coatSkirt|mailSkirt)$/,back:100*Math.PI/180,side:150*Math.PI/180,legClear:.025,clear:.008,cell:.015};
+const HB_RIDE_SKIRT={re:/^(skirt|coatSkirt|mailSkirt)$/,back:100*Math.PI/180,side:150*Math.PI/180,legClear:.025,clear:.008,cell:.015,iters:160,grav:.0005,pin:.04,squash:.92,hipClear:.012};
 function hbRideSkirt(rig){const H=rig.hb,R=rig.ride,G=R&&R.beast;if(!H||H.rideSkirt)return;
   if(G&&G.root&&!G.hc&&!G.hcFail)return; /* the horse's own body first: the skirt is laid on its saddle */
-  H.rideSkirt=true;const P=H.P,sk=P.skeleton,by=P.byName,ip=sk.bones.indexOf(by.root),C=HB_RIDE_SKIRT;if(ip<0)return;
+  H.rideSkirt=true;const t0=performance.now(),P=H.P,sk=P.skeleton,by=P.byName,ip=sk.bones.indexOf(by.root),C=HB_RIDE_SKIRT;if(ip<0)return;
   const list=[];P.root.traverse(o=>{if(o.isSkinnedMesh&&C.re.test(o.name))list.push(o);});if(!list.length)return;
   H.root.updateMatrixWorld(true);const v=new THREE.Vector3(),w=new THREE.Vector3(),Mp=new THREE.Matrix4().multiplyMatrices(by.root.matrixWorld,sk.boneInverses[ip]),Mi=Mp.clone().invert();
   /* what the horse has under him: the top of its saddle and hide on a grid in its root's frame, round the seat */
@@ -1417,14 +1417,38 @@ function hbRideSkirt(rig){const H=rig.hb,R=rig.ride,G=R&&R.beast;if(!H||H.rideSk
       for(const i of ids){let k=0;for(let c=0;c<4;c++)if(own.has(si.getComponent(i,c)))k+=sw.getComponent(i,c);if(k<.5)continue;w.fromBufferAttribute(pa,i);o.applyBoneTransform(i,w);
         const t=w.clone().sub(a).dot(d)/len;if(t<0||t>=1)continue;const q=Math.floor(t*12),rr=w.clone().sub(a).addScaledVector(d,-t*len).length();if(rr>r[q])r[q]=rr;}});
     legs.push({a,d,len,r});}
-  const outOfLegs=q=>{for(const L of legs){const u=q.clone().sub(L.a),t=u.dot(L.d)/L.len;if(t<0||t>=1)continue;const R=L.r[Math.floor(t*12)]+C.legClear;if(!R)continue;u.addScaledVector(L.d,-t*L.len);const rr=u.length();if(rr<R&&rr>1e-5)q.addScaledVector(u,(R-rr)/rr);}return q;};
+  const legR=(r,t)=>{const f=Math.max(0,Math.min(11,t*12-.5)),k=Math.floor(f),e=f-k,a=r[k],b=r[Math.min(11,k+1)];return a&&b?a+(b-a)*e:Math.max(a,b);}; /* S2304 — the radius read between the twelve steps, not stepped (the hem caught on each step) */
+  const outOfLegs=q=>{for(const L of legs){const u=q.clone().sub(L.a),t=u.dot(L.d)/L.len;if(t<0||t>=1.08)continue;const R0=legR(L.r,Math.min(t,.999));if(!R0)continue;const R=R0+C.legClear;u.addScaledVector(L.d,-t*L.len);const rr=u.length();if(rr<R&&rr>1e-5)q.addScaledVector(u,(R-rr)/rr);}return q;};
+  /* S2304 — the hips as he sits, round the vertical through his pelvis: how far his flesh (or the trousers) reaches at 24 bearings and 4 cm
+     steps of height, thighs aside (they are the legs' above); the cloth is kept outside it */
+  const hipC=by.root.getWorldPosition(new THREE.Vector3()),hipY0=hipC.y-.3,HB_=24,HH=18,hipR=new Float32Array(HB_*HH),bearing=(x,z)=>Math.floor(((Math.atan2(x,z)/(2*Math.PI)+1)%1)*HB_)%HB_;
+  {const thigh=new Set();for(const s of ['L','R'])for(const n of ['upperleg01.'+s,'upperleg02.'+s])thigh.add(sk.bones.indexOf(by[n]));
+    P.root.traverse(o=>{if(!o.isSkinnedMesh||!/^(|body|trousers)$/.test(o.name))return;const pa=o.geometry.attributes.position,si=o.geometry.attributes.skinIndex,sw=o.geometry.attributes.skinWeight,ids=new Set(o.geometry.index?o.geometry.index.array:[]);
+      for(const i of ids){let k=0;for(let c=0;c<4;c++)if(thigh.has(si.getComponent(i,c)))k+=sw.getComponent(i,c);if(k>.35)continue;w.fromBufferAttribute(pa,i);o.applyBoneTransform(i,w);
+        const h=Math.floor((w.y-hipY0)/.04);if(h<0||h>=HH)continue;const dx=w.x-hipC.x,dz=w.z-hipC.z,rr=Math.hypot(dx,dz);if(rr>.32)continue;const b=bearing(dx,dz)*HH+h;if(rr>hipR[b])hipR[b]=rr;}});}
+  const outOfHips=q=>{const h=Math.floor((q.y-hipY0)/.04);if(h<0||h>=HH)return q;const dx=q.x-hipC.x,dz=q.z-hipC.z,rr=Math.hypot(dx,dz),R=hipR[bearing(dx,dz)*HH+h];if(R&&rr<R+C.hipClear&&rr>1e-5){const k=(R+C.hipClear)/rr;q.x=hipC.x+dx*k;q.z=hipC.z+dz*k;}return q;};
   const kScale=new THREE.Vector3().setFromMatrixScale(Gm||H.root.matrixWorld).y||1,clear=C.clear*(Gm?1/kScale:1);let moved=0,laid=0;
   for(const o of list){const g=o.geometry,pa=g.attributes.position,sI=g.attributes.skinIndex,sW=g.attributes.skinWeight,nI=new Uint16Array(sI.count*4),nW=new Float32Array(sW.count*4);
     nI.set(sI.array);nW.set(sW.array);const ids=new Set(g.index?g.index.array:[]);
+    const N=pa.count,X=new Float32Array(N*3),R0=new Float32Array(N*3),rep=new Int32Array(N).fill(-1),weld=new Map();let topY=-1e9;
+    const onSaddle=(q,count)=>{if(!F)return;q.applyMatrix4(Gi);const t=F(q.x,q.z)+clear;if(q.y<t){q.y=t;if(count)laid++;}q.applyMatrix4(Gm);};
     for(const i of ids){v.fromBufferAttribute(pa,i);const th=Math.atan2(Math.abs(v.x-mid.x),-(v.z-mid.z)),f=1-ss(C.back,C.side,th);
-      w.copy(v);o.applyBoneTransform(i,w);const pr=outOfLegs(v.clone().applyMatrix4(Mp));w.lerp(pr,f);
-      if(F){w.applyMatrix4(Gi);const t=F(w.x,w.z)+clear;if(w.y<t){w.y=t;laid++;}w.applyMatrix4(Gm);}
-      w.applyMatrix4(Mi);if(w.distanceToSquared(v)>1e-10)moved++;pa.setXYZ(i,w.x,w.y,w.z);for(let c=0;c<4;c++){nI[i*4+c]=c?0:ip;nW[i*4+c]=c?0:1;}}
+      w.copy(v);o.applyBoneTransform(i,w);const rv=v.clone().applyMatrix4(Mp),pr=outOfLegs(rv.clone());w.lerp(pr,f);onSaddle(w,true);
+      X[i*3]=w.x;X[i*3+1]=w.y;X[i*3+2]=w.z;R0[i*3]=rv.x;R0[i*3+1]=rv.y;R0[i*3+2]=rv.z;if(rv.y>topY)topY=rv.y;
+      const k=Math.round(v.x*1e3)+','+Math.round(v.y*1e3)+','+Math.round(v.z*1e3);if(!weld.has(k))weld.set(k,i);rep[i]=weld.get(k);}
+    /* S2304 — the lap's part rides the thighs and the hanging part hangs, and where the two met the cloth tore: edges up to 0.30 m against
+       a median of 0.044. So the seated skirt is let fall as cloth, a few dozen steps: each edge back to no longer than its rest length
+       (and no shorter than squash of it), the waistband (pin of the top) held, a little gravity, and kept out of the thighs and off the saddle */
+    const E=[],seenE=new Set(),ix=g.index.array;for(let t=0;t<ix.length;t+=3)for(let e=0;e<3;e++){let a=rep[ix[t+e]],b=rep[ix[t+(e+1)%3]];if(a===b||a<0||b<0)continue;if(a>b){const z=a;a=b;b=z;}const k=a*N+b;if(seenE.has(k))continue;seenE.add(k);
+      E.push(a,b,Math.hypot(R0[a*3]-R0[b*3],R0[a*3+1]-R0[b*3+1],R0[a*3+2]-R0[b*3+2]));}
+    const reps=[...new Set(rep.filter(r=>r>=0))],free=reps.filter(r=>R0[r*3+1]<topY-C.pin),inv=new Uint8Array(N);for(const r of free)inv[r]=1;
+    for(let it=0;it<C.iters;it++){for(const r of free)X[r*3+1]-=C.grav;
+      for(let pass=0;pass<2;pass++)for(let e=0;e<E.length;e+=3){const a=E[e],b=E[e+1],L=E[e+2],dx=X[b*3]-X[a*3],dy=X[b*3+1]-X[a*3+1],dz=X[b*3+2]-X[a*3+2],d=Math.hypot(dx,dy,dz);if(d<1e-6)continue;
+        let c=0;if(d>L)c=(d-L)/d;else if(d<L*C.squash)c=(d-L*C.squash)/d;if(!c)continue;const wa=inv[a],wb=inv[b],ws=wa+wb;if(!ws)continue;
+        const ka=c*wa/ws,kb=c*wb/ws;X[a*3]+=dx*ka;X[a*3+1]+=dy*ka;X[a*3+2]+=dz*ka;X[b*3]-=dx*kb;X[b*3+1]-=dy*kb;X[b*3+2]-=dz*kb;}
+      for(const r of free){w.set(X[r*3],X[r*3+1],X[r*3+2]);outOfLegs(w);outOfHips(w);onSaddle(w,false);X[r*3]=w.x;X[r*3+1]=w.y;X[r*3+2]=w.z;}}
+    let longest=0;for(let e=0;e<E.length;e+=3){const a=E[e],b=E[e+1],q=Math.hypot(X[b*3]-X[a*3],X[b*3+1]-X[a*3+1],X[b*3+2]-X[a*3+2])/(E[e+2]||1);if(q>longest){longest=q;H.rideSkirtWorst=[a,b].map(r=>[R0[r*3]-hipC.x,R0[r*3+1]-hipC.y,R0[r*3+2]-hipC.z,X[r*3]-hipC.x,X[r*3+1]-hipC.y,X[r*3+2]-hipC.z].map(x=>+x.toFixed(3)));}}H.rideSkirtStretch=+longest.toFixed(2);H.rideSkirtMs=Math.round(performance.now()-t0);
+    for(const i of ids){const r=rep[i];v.fromBufferAttribute(pa,i);w.set(X[r*3],X[r*3+1],X[r*3+2]).applyMatrix4(Mi);if(w.distanceToSquared(v)>1e-10)moved++;pa.setXYZ(i,w.x,w.y,w.z);for(let c=0;c<4;c++){nI[i*4+c]=c?0:ip;nW[i*4+c]=c?0:1;}}
     pa.needsUpdate=true;g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(nI,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(nW,4));g.computeVertexNormals();}
   H.rideSkirtN={moved,laid};
   if(H.mid){const old=H.mid,cards=new Set();old.parent&&old.parent.remove(old);P.root.traverse(o=>{if(o.isMesh&&(HBODY.cards.test(o.name)||o.parent===by.head))cards.add(o);});
