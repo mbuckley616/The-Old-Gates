@@ -14,6 +14,7 @@
 // Session 2289: the rider rides astride (pwRide), the hips on the horse's back, the legs either side of its barrel.
 // Session 2291: his horse saddled, the reins from his fists to the bit, nothing else in his hands.
 // Session 2284: a coach draws up at the bank of a bridge down and goes on when it stands; a route over one earns half (+1 on even days).
+// Session 2290: over a bridge the road's walkers, the caravans and the coaches stand on the deck's setts (roadY), not on the causeway.
 // Session 2269: by a live camp the road's ambush odds fall on him by his id while you are within 150 m; saved, ×0.8 and +1 favour; left, robbed.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -318,4 +319,13 @@ await g.spin(null, 120);
 const cg = await page.evaluate((r) => COACHES.get(r.key).u, cr);
 console.log(JSON.stringify({ cb, cg }));
 check('the coach draws up at the bank and goes on when the bridge stands', cb.state === 'wait' && cb.halted && Math.abs(cb.u - (cr.u - cr.k)) < 1e-6 && cg > cr.u, { cb, cg });
+// S2290 — over a bridge the road's walkers and the coach stand on the setts (S2288's deck), not on the causeway under it
+await page.evaluate((r) => { worldState.gameTimeAbsMinutes = Math.floor(worldState.gameTimeAbsMinutes) + 1; worldState.gameTimeMinutes = worldState.gameTimeAbsMinutes % 1440; const C = COACHES.get(r.key); C.u = r.u; C.state = 'wait'; C.dir = 0; C.halted = false; }, cr); /* the next minute: tickBridges draws it whole */
+await g.spin(null, 1);
+const ck = await page.evaluate((r) => { const C = COACHES.get(r.key), c = C.cart.position, P = ZONES.world.platforms.filter(p => p.bridge === r.id && p.top);
+  let deck = null; for (const p of P) { const t = p.top(c.x, c.z); if (t != null) deck = t; }
+  const h = C.horses[0].position; let hd = null; for (const p of P) { const t = p.top(h.x, h.z); if (t != null) hd = t; }
+  return { gaps: BRIDGE_GAPS.has(r.id), runs: P.length, cart: +c.y.toFixed(3), deck: deck == null ? null : +deck.toFixed(3), ground: +worldH(c.x, c.z).toFixed(3), horse: +h.y.toFixed(3), hdeck: hd == null ? null : +hd.toFixed(3), roadY: +roadY(c.x, c.z).toFixed(3) }; }, cr);
+console.log(JSON.stringify(ck));
+check('over a bridge the coach and its horses stand on the setts, not on the causeway under them', !ck.gaps && ck.runs === 1 && ck.deck !== null && Math.abs(ck.cart - ck.deck) < .01 && ck.deck - ck.ground > .2 && ck.hdeck !== null && Math.abs(ck.horse - ck.hdeck) < .01, ck);
 stop(); await g.close();

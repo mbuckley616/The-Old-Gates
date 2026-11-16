@@ -2134,6 +2134,11 @@ const giver=`${lord.title} ${lord.name}`;
   const CARAVAN_WATCH=150,CARAVAN_LEAVE=250;const WRECKS=new Map();
   function roadAt(pts,u){u=Math.max(0,Math.min(1,u));const fi=u*(pts.length-1);const i0=Math.min(pts.length-2,Math.floor(fi)),f=fi-i0;const p0=pts[i0],p1=pts[i0+1];return {x:p0.x+(p1.x-p0.x)*f,z:p0.z+(p1.z-p0.z)*f,ang:Math.atan2(p1.x-p0.x,p1.z-p0.z)};}
   function cartMesh(){const c=x=>new THREE.Color(x);return new THREE.Mesh(mergeParts([{geo:new THREE.BoxGeometry(1.6,.5,1.0),color:c(0x6a4a2a),y:.6},{geo:new THREE.CylinderGeometry(.42,.42,.12,10),color:c(0x3a2a1a),x:0,y:.42,z:.6,rx:Math.PI/2},{geo:new THREE.CylinderGeometry(.42,.42,.12,10),color:c(0x3a2a1a),x:0,y:.42,z:-.6,rx:Math.PI/2},{geo:new THREE.BoxGeometry(.9,.5,.7),color:c(0x9a8a6a),y:1.1},{geo:new THREE.BoxGeometry(.08,.08,1.8),color:c(0x4a3018),y:.5,z:1.3}]),VC_MAT);}
+  // S2290 — the height a walker of the road stands at: the ground, or a bridge's deck where the road crosses one (S2288's platforms,
+  // their top). The deck's own walk lifts only the player there; the road's people, the caravans and the coaches keep the road's line,
+  // so over a bridge they are on its setts, not on the causeway under it.
+  function roadY(x,z){let y=worldH(x,z);const P=ZONES.world&&ZONES.world.platforms;if(P)for(let i=0;i<P.length;i++){const p=P[i];
+    if(!p.bridge||!p.top||x<p.x0||x>p.x1||z<p.z0||z>p.z1)continue;const t=p.top(x,z);if(t!=null&&t>y)y=t;}return y;}
   function overturn(m,x,z,ang){m.position.set(x,worldH(x,z)+.5,z);m.rotation.set(0,ang,0);m.rotateZ(Math.PI*.5);}
   function breakRoute(key,rt,campName){const a=siteAnywhere(rt.a),b=siteAnywhere(rt.b);rt.broken=true;rt.by=campName;rt.brokenAt=worldState.gameTimeAbsMinutes||0; /* S2275 — when, for a rider's news */
     if(!rt.wreck){const rd=ROADS.find(r=>routeKey(r.def.a,r.def.b)===key);if(rd){const u=rt.threat?Math.min(1,rt.threat.f*2):.5;const p=roadAt(rd.pts,u);rt.wreck={x:p.x,z:p.z,ang:p.ang};}}
@@ -2164,14 +2169,14 @@ const giver=`${lord.title} ${lord.name}`;
         const mule=new THREE.Mesh(mergeParts([{geo:new THREE.BoxGeometry(.5,.55,1.1),color:c(0x5a4a3a),y:.75},{geo:new THREE.BoxGeometry(.3,.35,.5),color:c(0x5a4a3a),y:1.05,z:.7},{geo:new THREE.BoxGeometry(.12,.7,.12),color:c(0x4a3a2a),x:.18,y:.35,z:.4},{geo:new THREE.BoxGeometry(.12,.7,.12),color:c(0x4a3a2a),x:-.18,y:.35,z:.4},{geo:new THREE.BoxGeometry(.12,.7,.12),color:c(0x4a3a2a),x:.18,y:.35,z:-.4},{geo:new THREE.BoxGeometry(.12,.7,.12),color:c(0x4a3a2a),x:-.18,y:.35,z:-.4},{geo:new THREE.BoxGeometry(.6,.3,.5),color:c(0x8a6a3a),y:1.1}]),VC_MAT);sc.add(mule);
         C={npc:n,cart,mule,road:rd,t:((worldState.gameTimeAbsMinutes||0)%1440)/1440,dir:1,lagF:0};CARAVANS.set(key,C);}
       // under attack: the cart lies where it went over, the mule stands, the merchant runs back along the road
-      if(C.attack){const A=C.attack;if(A.fled<30){const s=Math.min(30-A.fled,4.5*dt);A.fled+=s;const x=C.npc.g.position.x-Math.sin(A.ang)*s,z=C.npc.g.position.z-Math.cos(A.ang)*s;C.npc.g.position.set(x,worldH(x,z),z);C.npc.g.rotation.y=A.ang+Math.PI;C.npc.def.x=x;C.npc.def.z=z;C.npc.home={x,z};}continue;}
+      if(C.attack){const A=C.attack;if(A.fled<30){const s=Math.min(30-A.fled,4.5*dt);A.fled+=s;const x=C.npc.g.position.x-Math.sin(A.ang)*s,z=C.npc.g.position.z-Math.cos(A.ang)*s;C.npc.g.position.set(x,roadY(x,z),z);C.npc.g.rotation.y=A.ang+Math.PI;C.npc.def.x=x;C.npc.def.z=z;C.npc.home={x,z};}continue;}
       // after a fight the caravan runs late, and makes the time up a quarter faster until it is back on its hour
       if(C.lagF>0)C.lagF=Math.max(0,C.lagF-dt/1440*.25);
       // one leg per game-day: the fraction of the day is the position along the road, out and back
       const dayF=Math.max(0,((worldState.gameTimeAbsMinutes||0)%1440)/1440-(C.lagF||0));const u=dayF<.5?dayF*2:2-dayF*2;const pts=C.road.pts;const fi=u*(pts.length-1);const i0=Math.min(pts.length-2,Math.floor(fi)),f=fi-i0;const p0=pts[i0],p1=pts[i0+1];const x=p0.x+(p1.x-p0.x)*f,z=p0.z+(p1.z-p0.z)*f;const fwd=dayF<.5?1:-1;const ang=Math.atan2((p1.x-p0.x)*fwd,(p1.z-p0.z)*fwd);
-      C.npc.g.position.set(x,worldH(x,z),z);C.npc.g.rotation.y=ang;C.npc.def.x=x;C.npc.def.z=z;C.npc.home={x,z};
-      C.mule.position.set(x-Math.sin(ang)*1.4,worldH(x,z),z-Math.cos(ang)*1.4);C.mule.rotation.y=ang;
-      C.cart.position.set(x-Math.sin(ang)*3.0,worldH(x,z),z-Math.cos(ang)*3.0);C.cart.rotation.y=ang;
+      C.npc.g.position.set(x,roadY(x,z),z);C.npc.g.rotation.y=ang;C.npc.def.x=x;C.npc.def.z=z;C.npc.home={x,z};
+      {const mx=x-Math.sin(ang)*1.4,mz=z-Math.cos(ang)*1.4;C.mule.position.set(mx,roadY(mx,mz),mz);};C.mule.rotation.y=ang;
+      {const cx=x-Math.sin(ang)*3.0,cz=z-Math.cos(ang)*3.0;C.cart.position.set(cx,roadY(cx,cz),cz);};C.cart.rotation.y=ang;
     }
   }
   function removeCaravan(key){const C=CARAVANS.get(key);if(!C)return;sc.remove(C.cart);sc.remove(C.mule);sc.remove(C.npc.g);sc.remove(C.npc.dot);const k=npcs.indexOf(C.npc);if(k>=0)npcs.splice(k,1);CARAVANS.delete(key);}
@@ -2277,7 +2282,7 @@ const giver=`${lord.title} ${lord.name}`;
       showMsg(`The bandits of ${K.camp} took ${D.npc.def.name}'s pack.`,'#ff8060');if(typeof addLog==='function')addLog('🐴',`The bandits of ${K.camp} robbed ${D.npc.def.name}, a merchant of ${home?home.name:'the road'}.`);
       dropTraveller(T.id);return true;}
     if(K.fled<30){const s=Math.min(30-K.fled,4.5*dt);K.fled+=s;}
-    const x=K.x-Math.sin(K.ang)*K.fled,z=K.z-Math.cos(K.ang)*K.fled,y=worldH(x,z);D.npc.g.position.set(x,y,z);D.npc.g.rotation.y=K.ang+Math.PI;D.npc.def.x=x;D.npc.def.z=z;D.npc.home={x,z};D.npc.dot.position.set(x,y+1.5,z);
+    const x=K.x-Math.sin(K.ang)*K.fled,z=K.z-Math.cos(K.ang)*K.fled,y=roadY(x,z);D.npc.g.position.set(x,y,z);D.npc.g.rotation.y=K.ang+Math.PI;D.npc.def.x=x;D.npc.def.z=z;D.npc.home={x,z};D.npc.dot.position.set(x,y+1.5,z);
     return true;}
   // a pilgrim tells you where he is bound, and it is pencilled on your map (sightPlace, the spyglass's own: worldState.sighted, the character's);
   // the mourners are not spoken to at all: two walk together with their dead and nobody is in the world's talk list
@@ -2404,10 +2409,10 @@ const giver=`${lord.title} ${lord.name}`;
       if(!D){D=buildTraveller(T,rd,p);ROADWALK.set(T.id,D);{const R=rfRec(T.id);if(R&&R.sprung&&!R.saved&&!R.lost){rfSet(T.id,{lost:true});dropTraveller(T.id);continue;}} /* a fight left unfinished by a load: his pack was taken */}
       if(roadAmbushTick(D,p,dt||0))continue;
       if(riderTick(D,p)){const q=travellerAt(T,rd,worldState.gameTimeAbsMinutes||0);if(q)p=q;} /* S2275 — reined in: the clock, less the minutes he has stood, is where he stands */
-      const y=worldH(p.x,p.z);D.npc.g.position.set(p.x,y+(D.mount?RIDER_SEAT:0),p.z);D.npc.g.rotation.y=p.ang;D.npc.def.x=p.x;D.npc.def.z=p.z;D.npc.home={x:p.x,z:p.z};D.npc.dot.position.set(p.x,y+1.5,p.z);
-      if(D.beast){const bk=D.mount?0:1.6,bx=p.x-Math.sin(p.ang)*bk,bz=p.z-Math.cos(p.ang)*bk;D.beast.position.set(bx,worldH(bx,bz),bz);D.beast.rotation.y=p.ang;}
+      const y=roadY(p.x,p.z);D.npc.g.position.set(p.x,y+(D.mount?RIDER_SEAT:0),p.z);D.npc.g.rotation.y=p.ang;D.npc.def.x=p.x;D.npc.def.z=p.z;D.npc.home={x:p.x,z:p.z};D.npc.dot.position.set(p.x,y+1.5,p.z);
+      if(D.beast){const bk=D.mount?0:1.6,bx=p.x-Math.sin(p.ang)*bk,bz=p.z-Math.cos(p.ang)*bk;D.beast.position.set(bx,roadY(bx,bz),bz);D.beast.rotation.y=p.ang;}
       for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
-        const fx=q?q.x:p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=q?q.z:p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=worldH(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=q?q.ang:p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}
+        const fx=q?q.x:p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=q?q.z:p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=roadY(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=q?q.ang:p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}
       if(D.bier)bierTick(D);if(D.cart)cartTick(D);if(D.mount&&typeof reinsTick==='function')reinsTick(D);}}
   // S2283 — a bridge down (the page's bridge row, #1587 B, the road page's fifth systems session): every bridge rolls 1 in 30 a game-week
   // (seededRng('bridge', id+':'+week), so the clock alone says which are down and a load or a friend reads the same) and stays down two
@@ -3895,9 +3900,9 @@ const giver=`${lord.title} ${lord.name}`;
         {const bk=bridgeBank(rd,u0,C.dir);if(bk!=null&&(C.dir>0?C.u>=bk:C.u<=bk)){C.u=bk;C.state='wait';C.halted=true;C.bank=bk;C.resumeDir=C.dir;C.dir=0;if(C.riding)showMsg('The coach draws up at the bank. The bridge is down.','#c8b880');}} /* S2284 — the coach stops at the bank of a bridge down, and goes on when it stands */
         if(C.state==='run'&&!C.stopped&&(u0-.5)*(C.u-.5)<=0&&u0!==.5){C.u=.5;C.state='stop';C.stopT=COACH_STOP;C.resumeDir=C.dir;}
         if(C.u>=1){C.u=1;C.state='wait';C.stopped=false;}if(C.u<=0){C.u=0;C.state='wait';C.stopped=false;}}
-      const p=roadPoint(rd,C.u);const fwd=C.dir;const ang=p.ang+(fwd<0?Math.PI:0);const y=worldH(p.x,p.z);
+      const p=roadPoint(rd,C.u);const fwd=C.dir;const ang=p.ang+(fwd<0?Math.PI:0);const y=roadY(p.x,p.z);
       C.cart.position.set(p.x,y,p.z);C.cart.rotation.y=ang;
-      C.horses.forEach((hm,k)=>{const ox=(k?-.45:.45);hm.position.set(p.x+Math.sin(ang)*3.2+Math.cos(ang)*ox,worldH(p.x,p.z),p.z+Math.cos(ang)*3.2-Math.sin(ang)*ox);hm.rotation.y=ang;});
+      C.horses.forEach((hm,k)=>{const ox=(k?-.45:.45);const hx=p.x+Math.sin(ang)*3.2+Math.cos(ang)*ox,hz=p.z+Math.cos(ang)*3.2-Math.sin(ang)*ox;hm.position.set(hx,roadY(hx,hz),hz);hm.rotation.y=ang;});
       const rd2=C.ride||{z:-.3,y:1.9},rx=p.x+Math.sin(ang)*(rd2.z+.3),rz=p.z+Math.cos(ang)*(rd2.z+.3); /* S2181 — the platform and the rider at the vehicle's own standing place (the old coach's: .3 behind the middle, 1.9 up) */
       C.plat.x0=rx-1.2;C.plat.x1=rx+1.2;C.plat.z0=rz-1.7;C.plat.z1=rz+1.7;C.plat.y=y+rd2.y;
       if(C.riding){px=p.x+Math.sin(ang)*rd2.z;pz=p.z+Math.cos(ang)*rd2.z;jumpY=y+rd2.y;}
