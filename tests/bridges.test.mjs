@@ -9,6 +9,9 @@ fs.mkdirSync('tests/out', { recursive: true });
 // the cells load through a job queue in real time; drain it so every bridge in reach is built before measuring
 await page.evaluate(() => { for (let k = 0; k < 600 && (WORLD.jobs.length || [...WORLD.LOADED.values()].some(L => L.pending)); k++) { WORLD.tick(1 / 60, performance.now());
   while (WORLD.jobs.length) { const j = WORLD.jobs.shift(); let more = false; try { more = j.fn(); } catch (e) {} if (more) WORLD.jobs.push(j); } } });
+// S2283 — bridges fall by the systems builder's weekly roll (1 in 30, two weeks), so one near the start can be down on the boot clock:
+// every loaded bridge is held whole by hand (`down: false`, the record's override) while this suite measures them
+await page.evaluate(() => { worldState.bridges = {}; for (const s of WORLD.SITES) if (s.kind === 'bridge') { worldState.bridges[s.id] = { down: false }; WORLD.bridgeRedraw(s.id); } });
 const r = await page.evaluate(() => {
   const sites = WORLD.SITES.filter(s => s.kind === 'bridge'); const meshes = WORLD.scene.children.filter(o => o.userData.bridge);
   const each = sites.map(s => { const m = meshes.find(o => Math.hypot(o.position.x - s.x, o.position.z - s.z) < .01); if (!m) return { none: true };
@@ -55,7 +58,7 @@ const d = await page.evaluate(() => {
   const tris0 = m.geometry.attributes.position.count / 3, sx = Math.sin(S.ang), cz = Math.cos(S.ang); const at = u => [m.position.x + sx * u, m.position.z + cz * u];
   const rails = () => WORLD.STATIC_SOL.filter(q => q.bridge === id).length; const hAt = u => +(WORLD.worldH(...at(u)) - m.position.y).toFixed(2);
   const before = { tris: tris0, rails: rails(), mid: hAt(0), end: hAt(S.len / 2 - 1) };
-  worldState.bridges = { [id]: { down: true } }; WORLD.bridgeRedraw(id); const gap = m.geometry.userData.gap;
+  worldState.bridges[id] = { down: true }; WORLD.bridgeRedraw(id); const gap = m.geometry.userData.gap;
   const mid = gap ? (gap.z0 + gap.z1) / 2 : 0; const bed = +(WORLD.baseH(...at(mid)) - m.position.y).toFixed(2);
   m.updateMatrixWorld(true); const ray = new THREE.Raycaster(new THREE.Vector3(at(mid)[0], m.position.y + 5, at(mid)[1]), new THREE.Vector3(0, -1, 0)); const hit = ray.intersectObject(m)[0];
   // the road's strips near the gap: the highest strip vertex over the gap's middle metre
@@ -71,7 +74,7 @@ const d = await page.evaluate(() => {
   // a cell loaded again with the bridge still down builds it down
   const [ci, cj] = S.cell.split(',').map(Number); WORLD.unloadCell(S.cell); WORLD.loadCell(ci, cj); const m2 = WORLD.scene.children.find(o => o.userData.bridgeId === id);
   const reload = m2 ? { gap: !!m2.geometry.userData.gap, rails: rails() } : null;
-  worldState.bridges = { [id]: { down: false } }; const m3 = WORLD.scene.children.find(o => o.userData.bridgeId === id); WORLD.bridgeRedraw(id);
+  worldState.bridges[id] = { down: false }; const m3 = WORLD.scene.children.find(o => o.userData.bridgeId === id); WORLD.bridgeRedraw(id);
   const mended = { tris: m3.geometry.attributes.position.count / 3, rails: rails(), mid: hAt(0), gaps: WORLD.bridgeGaps.size };
   delete worldState.bridges; return { id, before, down: downR, reload, mended, pic };
 });

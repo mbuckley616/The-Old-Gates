@@ -321,7 +321,8 @@ const giver=`${lord.title} ${lord.name}`;
     return [{label:'I\u2019m looking for work.',quest:true,fn:()=>{tickDatedWork();const q=townQuestFor(site);if(!q.turnedIn&&!qFind(q.id)){datedWork(q,site);qAdd(q);}if(q.done)return `You've done it? Then ${datedPay(q)} gold, with the ${site.kind}'s thanks.`;return q.desc+(q.due?` (${q.reward} gold; ${Math.round(q.reward*1.25)} if it is done by ${calDateLine(q.due-1)}. After that, the work goes to someone else.)`:` (${q.reward} gold.)`);}},
             {label:'It\u2019s done.',quest:true,avail:()=>{tickDatedWork();return qActive().some(q=>q.giverSite===site.id&&!q.faction&&q.done);},fn:()=>{tickDatedWork();const q=qActive().find(q=>q.giverSite===site.id&&!q.faction&&q.done)||qActive().find(q=>q.giverSite===site.id&&!q.faction); /* S2130 — a finished job first */if(!q)return "You've nothing from me to finish.";if(!q.done)return `Not yet — ${q.objective}.`;const _k=!!q.contract;const paid=qTurnIn(q);if(_k&&q.paid===0){addFavor(site,1);return `The contract is met. The Compact's ledger is ${bountyAt(site)>0?`down to ${bountyAt(site)} gold`:'clear'}.`;} /* S2230 */if(q.kind==='warcamp'||q.kind==='garrison')return warFill(WAR_THANKS[q.kind][_lp]||WAR_THANKS[q.kind].gatelander,{paid,town:site.name}); /* S2130 — Under Another Flag §2: the favour breakSiege and liberate gave stands */addFavor(site,1);const more=tutOnTurnIn(q,site);return `${paid} gold. ${more?'Good.'+more:pick(Math.random,["Good.","The town won't forget it.","There'll be more."])}`;}},
             erHedgeLordTopic(site), /* S2021 — the hedge's deed, in Aurenne */
-            ...(typeof licenceTopics==='function'?licenceTopics(site):[]), /* S2235 — the lord's licence to hunt his chase (#1540 B) */
+            ...(typeof licenceTopics==='function'?licenceTopics(site):[]),
+            ...bridgeMendTopics(site), /* S2283 — a bridge down near the town: mended for gold, or by your own planks */ /* S2235 — the lord's licence to hunt his chase (#1540 B) */
             {label:'How fares the town?',get response(){return `${site.name} is ${stateSaid(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
@@ -2121,7 +2122,8 @@ const giver=`${lord.title} ${lord.name}`;
       delete rt.threat;
       // the camp picks an hour on the outbound leg, u .35–.65 of the road; tickCaravans springs it (Session 179)
       if(camp){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440);rt.threat={day,camp:camp.name,f:.175+seededRng('threat',key+':'+day)()*.15,won:false,started:false};} /* S679 — the hour rolls on the route and the day (co-op rules), not Math.random */
-      setProsperity(a,prosperity(a)+.8);setProsperity(b,prosperity(b)+.8);}
+      {const rd=ROADS.find(r=>routeKey(r.def.a,r.def.b)===key),half=rd&&roadBridgesDown(rd).length; /* S2284 — a route over a bridge down earns half: prosperity is whole points (+.8 rounds to +1 a day), so half is the day's +1 on even days only */
+       if(!half||dayNow()%2===0){setProsperity(a,prosperity(a)+.8);setProsperity(b,prosperity(b)+.8);}}}
     const Cs=coaches();for(const key in Cs){const a=siteAnywhere(Cs[key].a),b=siteAnywhere(Cs[key].b);if(a&&b){setProsperity(a,prosperity(a)+1);setProsperity(b,prosperity(b)+1);}}}
   function caravanDef(a,b){const [i,j]=cellOf(a.x,a.z);const nat=nationOf(i,j);return makeDef(a,a.reg||'irish',Math.random,'Merchant',pick(Math.random,(NAMES[PEOPLES[nat.people].names]||NAMES.irish).m),{people:nat.people,x:a.x,z:a.z,bCol:0x6a4a2a,sCol:0xd4a878,topics:[{label:'What are you carrying?',response:`${a.name} wool and ${b.name} iron, this week. Next week the other way round. The road's kinder than it was.`},{label:'Anything for sale?',trade:true,goods:[{name:'Travel Ration',ico:'🍞',type:'potion',heal:12,buyPrice:6,sellMult:.4},{name:'Lamp Oil',ico:'🪔',type:'misc',buyPrice:9,sellMult:.5},{name:'Bolt of Cloth',ico:'🧵',type:'misc',buyPrice:22,sellMult:.6}]}]});}
   // The ambush (Session 179, Michael's answer B on issue #18). A camp near the road sets a threat for the day
@@ -2299,7 +2301,8 @@ const giver=`${lord.title} ${lord.name}`;
       if(F.sacked!=null)ev.push({t:F.sacked,site:t,line:`${t.name} was sacked.`});
       if(F.burned!=null)ev.push({t:F.burned,site:t,line:`${t.name} has burned.`});
       if(F.plague!=null)ev.push({t:F.plague,site:t,line:`There is sickness at ${t.name}.`});
-      if(st.freed&&st.freed.day!=null)ev.push({t:st.freed.day*1440,site:t,line:`${t.name} is free again.`});}}
+      if(st.freed&&st.freed.day!=null)ev.push({t:st.freed.day*1440,site:t,line:`${t.name} is free again.`});}
+      for(const t of getCell(i,j).sites){if(t.kind!=='bridge')continue;const D=bridgeDown(t);if(D&&D.mending==null)ev.push({t:D.at,site:t,line:`${t.name} is down. The middle span is in the river.`});}} /* S2283 — a bridge down */
     const R=worldState.routes||{};for(const k of Object.keys(R).sort()){const rt=R[k];if(!rt||!rt.broken||rt.brokenAt==null)continue;const a=near[rt.a]||null,b=near[rt.b]||null;if(!a&&!b)continue;
       const A=a||siteAnywhere(rt.a),B=b||siteAnywhere(rt.b);if(!A||!B)continue;ev.push({t:rt.brokenAt,site:a||b,line:`The ${A.name}\u2013${B.name} caravan was taken${rt.by?' by the bandits of '+rt.by:''}.`});}
     const live=ev.filter(e=>now-e.t<=RIDER_NEWS).sort((p,q)=>q.t-p.t||(p.site.id<q.site.id?-1:1));return live[0]||null;}
@@ -2381,6 +2384,70 @@ const giver=`${lord.title} ${lord.name}`;
       for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
         const fx=q?q.x:p.x+Math.cos(p.ang)*F.side-Math.sin(p.ang)*F.back,fz=q?q.z:p.z-Math.sin(p.ang)*F.side-Math.cos(p.ang)*F.back,fy=worldH(fx,fz);F.npc.g.position.set(fx,fy,fz);F.npc.g.rotation.y=q?q.ang:p.ang;F.npc.def.x=fx;F.npc.def.z=fz;F.npc.dot.position.set(fx,fy+1.5,fz);}
       if(D.bier)bierTick(D);if(D.cart)cartTick(D);}}
+  // S2283 — a bridge down (the page's bridge row, #1587 B, the road page's fifth systems session): every bridge rolls 1 in 30 a game-week
+  // (seededRng('bridge', id+':'+week), so the clock alone says which are down and a load or a friend reads the same) and stays down two
+  // weeks unless mended. The look builder's S2281 draws it (bridgeGeo's down, bridgeFit: the middle pier and its two arches gone, the ground
+  // in the gap the river's bed, BRIDGE_GAPS) from bridgeIsDown(id), which reads bridgeDownId here; tickBridges redraws a loaded bridge
+  // (bridgeRedraw) the minute it falls or stands again. Swim it meanwhile. The nearer lord (the nearest town with a lord, read from the
+  // cells' data) offers to mend it: 250 gold plus 2 a metre, or 20 planks and Joinery 25; it stands again 2 days after. The mend is the
+  // world's record, worldState.bridges[id] = {paid: day, up: day, how}, through mendBridge; riders carry the news (riderNews). A record's
+  // `down` (true or false) is a hand's override, the tests' (bridges): it wins over the roll either way.
+  const BRDN_ODDS=30,BRDN_WEEKS=2,BRDN_GOLD=250,BRDN_PER_M=2,BRDN_PLANKS=20,BRDN_JOIN=25,BRDN_DAYS=2;
+  function bridgeFell(id,w){return w>=0&&seededRng('bridge',id+':'+w)()<1/BRDN_ODDS;}
+  // the fall in force now, or null: {week, at (game minutes), mending (the day it stands again, while paid and not yet up)}
+  function bridgeDownId(id){if(!id)return null;const d=dayNow(),w=Math.floor(d/7),rec=(worldState.bridges||{})[id];
+    if(rec&&rec.down!=null)return rec.down?{week:w,at:w*7*1440,mending:null,hand:true}:null;
+    for(let ww=w;ww>w-BRDN_WEEKS;ww--){if(!bridgeFell(id,ww))continue;
+      if(rec&&rec.paid!=null&&rec.paid>=ww*7){if(d>=rec.up)return null;return {week:ww,at:ww*7*1440,mending:rec.up};}
+      return {week:ww,at:ww*7*1440,mending:null};}
+    return null;}
+  function bridgeDown(site){return site&&site.kind==='bridge'&&site.bridge?bridgeDownId(site.id):null;}
+  function bridgeLen(site){return Math.round(site.bridge.len);}
+  function bridgeCost(site){return BRDN_GOLD+BRDN_PER_M*bridgeLen(site);}
+  // the nearer lord: the nearest village, town, port or city with a lord, in the bridge's cell and its eight neighbours
+  function bridgeLordSite(b){if(b._lordSite!==undefined)return b._lordSite;const [ci,cj]=cellOf(b.x,b.z);let best=null,bd=1e18;
+    for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;for(const t of getCell(i,j).sites){if(!['city','town','port','village'].includes(t.kind)||t.lordless)continue;
+      const dd=(t.x-b.x)**2+(t.z-b.z)**2;if(dd<bd||(dd===bd&&best&&t.id<best.id)){bd=dd;best=t;}}}
+    return (b._lordSite=best?best.id:null);}
+  function bridgesDownFor(site){return SITES.filter(b=>b.kind==='bridge'&&bridgeLordSite(b)===site.id).map(b=>({b,D:bridgeDown(b)})).filter(o=>o.D&&o.D.mending==null).sort((p,q)=>p.b.id<q.b.id?-1:1);}
+  // the named action: the mend paid (by gold or by your own planks), the bridge up again 2 days on
+  function mendBridge(id,how){const b=SITE[id];const D=b&&bridgeDown(b);if(!D||D.mending!=null)return false;const d=dayNow();
+    const W=worldState.bridges||(worldState.bridges={});W[id]={paid:d,up:d+BRDN_DAYS,how};_brdnAt=-1;return true;}
+  function bridgeMendTopics(site){
+    const first=()=>bridgesDownFor(site)[0]||null;
+    return [{label:'The bridge is down.',quest:true,avail:()=>!!first(),fn:()=>{const o=first();if(!o)return 'The bridges stand, as far as I know.';const b=o.b;
+        return `${b.name}, aye. The middle span went into the river ${riderAgo(o.D.at)}. The masons ask ${bridgeCost(b)} gold for ${bridgeLen(b)} metres of it, and the town has not got it to spare. Or a joiner could do it with ${BRDN_PLANKS} planks. Two days' work, either way.`;}},
+      {label:'I\u2019ll pay the masons.',quest:true,avail:()=>!!first(),fn:()=>{const o=first();if(!o)return 'The bridges stand, as far as I know.';const b=o.b,c=bridgeCost(b);
+        if(gold<c)return `${c} gold, and you have ${gold}. Come back when you have it.`;
+        gold-=c;if(typeof updateHUD==='function')updateHUD();mendBridge(b.id,'gold');if(typeof addLog==='function')addLog('🌉',`You paid ${c} gold to mend ${b.name}. It stands again in ${BRDN_DAYS} days.`);
+        return `${c} gold. The masons will be on it by morning, and it will stand in two days.`;}},
+      {label:'I\u2019ll mend it myself.',quest:true,avail:()=>!!first()&&skillLv('joinery')>=BRDN_JOIN,fn:()=>{const o=first();if(!o)return 'The bridges stand, as far as I know.';const b=o.b,n=plankCount();
+        if(n<BRDN_PLANKS)return `With your own hands? Then you'll want ${BRDN_PLANKS} planks for the span. You have ${n}.`;
+        bagTake(x=>x.plank,BRDN_PLANKS);mendBridge(b.id,'planks');if(typeof addLog==='function')addLog('🌉',`You mended ${b.name} with ${BRDN_PLANKS} planks. It stands again in ${BRDN_DAYS} days.`);
+        return `Then the timber's yours and the work is too. Two days, and it will carry a cart again.`;}}];}
+  // S2284 — the bridges on a road (the page's bridge row, its coach and its route): every bridge site within 15 m of the road's line, in the
+  // cells its points cross, read from the cells' data (a bridge is a site of its cell once the cell's roads have been laid). Each is {id, u}, u
+  // the road's own fraction (roadPoint's, by point index) at the bridge, and k, the half-length plus 4 m in u: the bank a coach draws up on.
+  // Cached on the road while the number of bridges in those cells stays the same.
+  function roadBridges(rd){const pts=rd.pts;if(!pts||pts.length<2)return [];const cs=new Set();for(const p of pts){const [i,j]=cellOf(p.x,p.z);if(i>=0&&j>=0&&i<GRID&&j<GRID)cs.add(i+','+j);}
+    const bs=[];for(const k of cs){const [i,j]=k.split(',').map(Number);for(const t of getCell(i,j).sites)if(t.kind==='bridge'&&t.bridge)bs.push(t);}
+    if(rd._brN===bs.length&&rd._br)return rd._br;const L=Math.max(1,roadLen(rd)),out=[];
+    for(const b of bs){let bi=-1,bd=225;for(let n=0;n<pts.length;n++){const d=(pts[n].x-b.x)**2+(pts[n].z-b.z)**2;if(d<bd){bd=d;bi=n;}}if(bi<0)continue;out.push({id:b.id,u:bi/(pts.length-1),k:(b.bridge.len/2+4)/L});}
+    out.sort((p,q)=>p.u-q.u);rd._brN=bs.length;rd._br=out;return out;}
+  function roadBridgesDown(rd){return roadBridges(rd).filter(o=>{const b=siteAnywhere(o.id)||SITE[o.id];return b&&bridgeDown(b);});}
+  // the bank a coach running from u0 in direction dir must stop on, short of the first bridge down ahead of it; null when the way is clear
+  function bridgeBank(rd,u0,dir){let best=null;for(const o of roadBridgesDown(rd)){const bank=o.u-dir*o.k;if(dir>0?bank<u0-1e-6:bank>u0+1e-6)continue;if(dir>0?o.u-o.k*.5<u0:o.u+o.k*.5>u0)continue;if(best==null||(dir>0?bank<best:bank>best))best=bank;}return best;}
+  // the bridges down, read once a game minute (and at once after a mend): a loaded bridge whose state has changed is drawn again (the look's
+  // bridgeRedraw), and coming within 20 m of one on the road says so once a fall
+  let BRDN_SET=new Set(),_brdnAt=-1;const _brdnSaid=new Set();
+  function tickBridges(){const m=Math.floor(worldState.gameTimeAbsMinutes||0);if(m===_brdnAt)return;_brdnAt=m;
+    const now=new Set(SITES.filter(b=>b.kind==='bridge'&&b.bridge&&bridgeDown(b)).map(b=>b.id));
+    for(const id of now)if(!BRDN_SET.has(id)&&typeof bridgeRedraw==='function')bridgeRedraw(id);
+    for(const id of BRDN_SET)if(!now.has(id)&&typeof bridgeRedraw==='function')bridgeRedraw(id);
+    BRDN_SET=now;
+    for(const id of now){const b=SITE[id],D=bridgeDown(b),s=Math.sin(b.bridge.ang),c=Math.cos(b.bridge.ang),dx=px-b.x,dz=pz-b.z;
+      if(Math.abs(dx*c-dz*s)>8||Math.abs(dx*s+dz*c)>b.bridge.len/2+20)continue;const k=id+':'+D.week;if(_brdnSaid.has(k))continue;_brdnSaid.add(k);
+      const L=siteAnywhere(bridgeLordSite(b)||'');showMsg(`${b.name} is down: its middle span lies in the river.${L?` The lord at ${L.name} may see it mended.`:''}`,'#e8c890');}}
   // ═══ FACTIONS AND ANCHORED PLACES (Session S) ════════════════════════
   // Three nations you can rise in; past the second rank the other two close.
   // The story's named places are picked from the generated world once, by constraint.
@@ -3790,7 +3857,7 @@ const giver=`${lord.title} ${lord.name}`;
       seatCatchUp(C,key); // S267 — a seat held: the coach is at the inn if its call has come
       // schedule: leaves the a-end at 06:00 and the b-end at 18:00; otherwise waits at a station
       const h=hourNow();
-      if(C.state==='wait'){if(roadBroken(a,b)){C.halted=true;}else{C.halted=false;if(C.u>0.001&&C.u<0.999){C.state='run';C.dir=C.resumeDir||1;}else if(h>=6&&h<6.2&&C.u<=0.001){C.state='run';C.dir=1;}else if(h>=18&&h<18.2&&C.u>=0.999){C.state='run';C.dir=-1;}}}
+      if(C.state==='wait'){if(roadBroken(a,b)){C.halted=true;}else{C.halted=false;if(C.u>0.001&&C.u<0.999){const dd=C.resumeDir||1;if(C.bank!=null&&bridgeBank(rd,C.u,dd)!=null){C.halted=true;}else{C.bank=null;C.state='run';C.dir=dd;}}else if(h>=6&&h<6.2&&C.u<=0.001){C.state='run';C.dir=1;}else if(h>=18&&h<18.2&&C.u>=0.999){C.state='run';C.dir=-1;}}}
       if(C.state==='run'&&roadBroken(a,b)&&C.u>.02&&C.u<.98){C.state='wait';C.halted=true;C.resumeDir=C.dir;C.dir=0;} // the coach halts where it is and goes on when the road is clear
       // S178 — the coach draws up at the coaching inn halfway, once each way, and goes on after COACH_STOP
       if(C.state==='stop'){C.stopT-=dt;const nowM=worldState.gameTimeAbsMinutes||0;
@@ -3799,7 +3866,8 @@ const giver=`${lord.title} ${lord.name}`;
         if(C.stopT<=0&&!(C.holdTo&&nowM<C.holdTo&&seatHeldFor(C,key,C.resumeDir||C.dir))){if(C.holdTo&&seatHeldFor(C,key,C.resumeDir||C.dir)){worldState.coachSeat=null;showMsg('The coach could not wait any longer. Your seat has gone with it.','#c8b880');}
           C.holdTo=0;C.state='run';C.dir=C.resumeDir||C.dir;C.stopped=true;}}
       if(C.state==='run'){const u0=C.u;C.u+=C.dir*COACH_SPEED*dt/C.len;
-        if(!C.stopped&&(u0-.5)*(C.u-.5)<=0&&u0!==.5){C.u=.5;C.state='stop';C.stopT=COACH_STOP;C.resumeDir=C.dir;}
+        {const bk=bridgeBank(rd,u0,C.dir);if(bk!=null&&(C.dir>0?C.u>=bk:C.u<=bk)){C.u=bk;C.state='wait';C.halted=true;C.bank=bk;C.resumeDir=C.dir;C.dir=0;if(C.riding)showMsg('The coach draws up at the bank. The bridge is down.','#c8b880');}} /* S2284 — the coach stops at the bank of a bridge down, and goes on when it stands */
+        if(C.state==='run'&&!C.stopped&&(u0-.5)*(C.u-.5)<=0&&u0!==.5){C.u=.5;C.state='stop';C.stopT=COACH_STOP;C.resumeDir=C.dir;}
         if(C.u>=1){C.u=1;C.state='wait';C.stopped=false;}if(C.u<=0){C.u=0;C.state='wait';C.stopped=false;}}
       const p=roadPoint(rd,C.u);const fwd=C.dir;const ang=p.ang+(fwd<0?Math.PI:0);const y=worldH(p.x,p.z);
       C.cart.position.set(p.x,y,p.z);C.cart.rotation.y=ang;
