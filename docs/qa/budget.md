@@ -1232,3 +1232,36 @@ bodies moved. Dunmore's street at noon read 1.22 M at Low, over the 1.2 M ceilin
 read 1.10 M with 181k of bodies, and s1591's 1.10 M with 178k. At High the same spot's bodies read 504k and 240k on two runs of one build,
 Portclare's 425k and 186k. A townsperson inside the full level's ring adds 100–260k triangles; at Low the street has 277k of room over
 the place's 923k. Filed in backlog I for the bodies builder.
+
+### s1627 — 2026-11-16 01:04 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 595 | 1.10 M | 0 | 0 | 124 | 129 | 251 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 471, 921k |
+| Dunmore street, noon | Middle | 770 | 1.85 M | 156 | 6 | 125 | 129 | 263 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 619, 1.61 M |
+| Dunmore street, noon | High | 820 | 2.34 M | 188 | 6 | 125 | 129 | 281 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 668, 2.09 M |
+| Dunmore street, midnight | Low | 650 | 1.07 M | 0 | 0 | 122 | 185 | 251 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 528, 922k |
+| Dunmore street, midnight | Middle | 836 | 1.79 M | 168 | 6 | 122 | 185 | 263 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 711, 1.63 M |
+| Dunmore street, midnight | High | 898 | 2.34 M | 212 | 6 | 122 | 185 | 281 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 766, 2.16 M |
+| the field west of Dunmore, noon | Low | 561 | 658k | 0 | 0 | 126 | 114 | 278 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 435, 482k |
+| the field west of Dunmore, noon | Middle | 669 | 1.08 M | 83 | 6 | 126 | 114 | 297 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 542, 899k |
+| the field west of Dunmore, noon | High | 715 | 1.57 M | 121 | 6 | 126 | 114 | 305 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 586, 1.39 M |
+| the field west of Dunmore, dawn | Low | 644 | 649k | 0 | 0 | 129 | 193 | 278 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 515, 483k |
+| the field west of Dunmore, dawn | Middle | 812 | 1.14 M | 143 | 6 | 129 | 193 | 297 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 680, 963k |
+| the field west of Dunmore, dawn | High | 865 | 1.68 M | 188 | 6 | 129 | 193 | 305 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 727, 1.50 M |
+
+### s1627 — 2026-11-16 01:15 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 366 | 691k | 0 | 0 | 33 | 65 | 192 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 333, 622k |
+| Portclare square, noon | Middle | 560 | 1.46 M | 157 | 6 | 48 | 65 | 208 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 504, 1.31 M |
+| Portclare square, noon | High | 614 | 2.05 M | 192 | 6 | 56 | 65 | 219 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 548, 1.64 M |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  | 33, 20k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  | 68, 352k |
+
+Session 2279 (QA): s1627, 27 merges after s1600. `budget` 1/1 and `budgetport` 1/1, every ceiling held; no spot rose more than 10%. The
+place's own frame (every body hidden) is unchanged at every spot to 3k triangles and 4 calls, so the moves are the bodies'. Dunmore's
+street at noon, Low, is back under the ceiling, 1.22 → 1.10 M (bodies 300k → 179k, 139 → 124 calls), after the bodies builder's lighter
+hair at Low (Session 2253); Middle 1.97 → 1.85 M, High 2.71 → 2.34 M, the same swing. The largest rise is the field at dawn, High,
+1.64 → 1.68 M (+2.4%, the place +30k). Portclare, the inn and the gate are within 1% of s1600.
