@@ -2240,7 +2240,7 @@ const giver=`${lord.title} ${lord.name}`;
   function merchantHouse(T,rd,name){const home=roadfolkHome(T,rd),R=rfRec(T.id);return {id:T.id,name,keeper:name,type:'misc',siteId:home?home.id:null,roadMul:R&&R.saved&&R.day===dayNow()?ROADFOLK_SAVED:ROADFOLK_MUL,pack:merchantPack(T),roadfolk:true};}
   function merchantDef(T,rd,p){const home=roadfolkHome(T,rd),dest=roadfolkDest(T,rd),r=seededRng('roadfolk',T.id);const [i,j]=cellOf(home.x,home.z);const nat=nationOf(i,j);
     const nm=pick(r,(NAMES[PEOPLES[nat.people].names]||NAMES.irish).m);
-    let def=null;def=makeDef(home,home.reg||'irish',r,'Merchant',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x5a4630,sCol:0xd4a878,topics:[{label:'Browse your wares.',trade:true,fn:()=>{currentHouse=merchantHouse(T,rd,def.name);}}]});
+    let def=null;def=makeDef(home,home.reg||'irish',r,'Merchant',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x5a4630,sCol:0xd4a878,topics:[{label:'Let me see your pack.',trade:true,fn:()=>{currentHouse=merchantHouse(T,rd,def.name);}}]});
     def._siteId=home.id;def.roadfolk=T.id;
     def.bound=dest?dest.name:null;return def;}
   // S2269 — the merchant's ambush (the page's merchant row): near a live bandit camp (one within 500 m of the road's midpoint, read off the
@@ -2307,13 +2307,15 @@ const giver=`${lord.title} ${lord.name}`;
       const A=a||siteAnywhere(rt.a),B=b||siteAnywhere(rt.b);if(!A||!B)continue;ev.push({t:rt.brokenAt,site:a||b,line:`The ${A.name}\u2013${B.name} caravan was taken${rt.by?' by the bandits of '+rt.by:''}.`});}
     const live=ev.filter(e=>now-e.t<=RIDER_NEWS).sort((p,q)=>q.t-p.t||(p.site.id<q.site.id?-1:1));return live[0]||null;}
   function riderAgo(t){const d=Math.floor((worldState.gameTimeAbsMinutes||0)/1440)-Math.floor(t/1440);return d<=0?'today':d===1?'yesterday':`${d} days ago`;}
-  function riderTell(T,x,z,post){const E=riderNews(x,z);if(!E)return 'Nothing on this road worth the telling. Good day to you.';
+  /* S2286 — quest review Finding 50: the rider's empty answer by people */
+  const RIDER_QUIET={gatelander:'Nothing on this road worth the telling. Good day to you.',markman:'Nothing worth telling. Go on.',aurennais:'Nothing on this road worth the entering, Master. Good day.'};
+  function riderTell(T,x,z,post,pp){const E=riderNews(x,z);if(!E)return RIDER_QUIET[pp]||RIDER_QUIET.gatelander;
     const text=`${E.line} Word of ${post}, ${riderAgo(E.t)}.`;
     if(!(worldState.mapNotes||[]).some(n=>n&&n.text===text)){if(typeof pinMapNote==='function')pinMapNote(E.site.x,E.site.z,text);if(typeof addLog==='function')addLog('📜',`A rider on the road: ${E.line}`);showMsg('A note pinned on your map.','#c8c0a8');}
     return `${E.line} That was ${riderAgo(E.t)}.`;}
   function riderDef(T,rd,p){const home=roadfolkHome(T,rd),r=seededRng('roadfolk',T.id),[i,j]=cellOf(home.x,home.z),nat=nationOf(i,j),nk=nationKeyOf(i,j);
     const nm=pick(r,(NAMES[PEOPLES[nat.people].names]||NAMES.irish).m),post=RIDER_POST[nk]||RIDER_POST.gatelands;let def=null;
-    def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x3a4458,sCol:0x2a2420,topics:[{label:'What news?',fn:()=>riderTell(T,def.x,def.z,post)}]});
+    def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x3a4458,sCol:0x2a2420,topics:[{label:'What news?',fn:()=>riderTell(T,def.x,def.z,post,def.people)}]});
     def._siteId=home.id;def.roadfolk=T.id;def.post=post;return def;}
   function riderBeast(T,isle){const rg=buildWolf(isle!=='mark'&&(pHash(T.id)&1)?'Grey Horse':'Horse',1.6);rg.hcKey='rider:'+T.id;if(ANIMAL_ISLES.includes(isle))rg.hcIsland=isle;return rg;}
   // the halt: true while he stands (his place is then the clock's, the lag growing with the minutes he waits)
@@ -2329,12 +2331,19 @@ const giver=`${lord.title} ${lord.name}`;
   // (the character's, beside favor: {siteId: {n: favour counted, owed}}); the owed favour is paid on the day's first tick that finds the town whole.
   const FAMILY_ALMS=15,FAMILY_CAP=2;
   function townWhole(site){const st=worldState.towns&&worldState.towns[site.id||site];return !st||!ROAD_EVENT_FLAGS.some(f=>st.flags[f]!=null);}
-  function familyGive(T,rd){const home=roadfolkHome(T,rd),R=rfRec(T.id);if(R&&R.alms)return 'You have given already. God keep you.';
-    if(gold<FAMILY_ALMS)return 'You have not the coin to spare. Nor have we.';gold-=FAMILY_ALMS;if(typeof updateHUD==='function')updateHUD();rfSet(T.id,{alms:true,day:dayNow()});
+  function familyGive(T,rd){const home=roadfolkHome(T,rd),R=rfRec(T.id);
+    /* S2286 — quest review Finding 48: the family answers by its people */
+    const [fi,fj]=cellOf(home.x,home.z),fp=nationOf(fi,fj).people;
+    const FL={gatelander:{again:'You gave once, and the Weaver saw it the first time. Keep the rest for your own road.',none:'An empty hand can’t fill another. Keep your road, and we’ll keep ours.',thanks:`Weaver keep you. When ${home.name} stands again, it will know whose bread it ate on the road.`},
+      markman:{again:'You gave already. That’s enough. Iron and blood, friend.',none:'You’ve nothing to spare. Nor have we. Go on.',thanks:`Aye. When ${home.name} stands again, they’ll know your name there.`},
+      aurennais:{again:'You have given already, Master, and it is entered.',none:'You have not the sum to spare, Master. Nor have we.',thanks:`We are in your debt, Master. When ${home.name} stands again, the debt will be honoured.`}};
+    const fl=FL[fp]||FL.gatelander;
+    if(R&&R.alms)return fl.again;
+    if(gold<FAMILY_ALMS)return fl.none;gold-=FAMILY_ALMS;if(typeof updateHUD==='function')updateHUD();rfSet(T.id,{alms:true,day:dayNow()});
     const A=worldState.roadAlms||(worldState.roadAlms={}),E=A[home.id]||(A[home.id]={n:0,owed:0});if(E.n<FAMILY_CAP){E.n++;E.owed++;}
     if(typeof addLog==='function')addLog('🪙',`Gave ${FAMILY_ALMS} gold to a family on the road from ${home.name}.`);
     if(E.owed&&townWhole(home))familyPay();
-    return `Bless you. When ${home.name} stands again, they will hear of this.`;}
+    return fl.thanks;}
   function familyPay(){const A=worldState.roadAlms;if(!A)return;for(const id of Object.keys(A).sort()){const E=A[id];if(!E.owed)continue;const t=siteAnywhere(id);if(!t||!townWhole(t))continue;
     addFavor(t,E.owed);if(typeof addLog==='function')addLog('🪙',`${t.name} stands again, and remembers what you gave its people on the road.`);E.owed=0;}}
   let _almsDay=-1;
@@ -2348,10 +2357,18 @@ const giver=`${lord.title} ${lord.name}`;
   // His part as a witness on the road waits with robbing the road's people (strikeNpc reads only a site's townsfolk).
   const OFFICIAL_POST={gatelands:"the Crown\u2019s road-warden",mark:"a reeve\u2019s man",aurenne:"the Compact\u2019s clerk"};
   function writPay(camp){return 40+10*Math.max(0,worldTierAt(camp.x,camp.z)|0);}
-  function officialTell(T,rd,def){const camp=roadCamp(rd);if(!camp)return 'The road is quiet, and long may it stay so. Good day to you.';
-    const id='writ:'+camp.id,have=qFind(id);if(have)return have.turnedIn?'The writ on that camp is paid. The road is the better for it.':`You have my writ on ${camp.name}. Clear it and it pays.`;
+  /* S2286 — quest review Finding 50: the official's four lines by people (the Gatelands' as before) */
+  const OFFICIAL_LINES={
+    gatelander:{quiet:()=>'The road is quiet, and long may it stay so. Good day to you.',paid:()=>'The writ on that camp is paid. The road is the better for it.',have:c=>`You have my writ on ${c}. Clear it and it pays.`,
+      set:(c,d,n)=>`The bandits of ${c} have this road, ${d} of here. Clear the camp and the writ pays ${n} gold. I have set it down.`},
+    markman:{quiet:()=>'Quiet road. Keep it so.',paid:()=>'That writ’s paid. Good work.',have:c=>`You’ve my writ on ${c}. Clear it, get paid.`,
+      set:(c,d,n)=>`Bandits out of ${c} have this road, ${d} of here. Clear the camp, the writ pays ${n} gold. It’s marked.`},
+    aurennais:{quiet:()=>'The road is quiet, Master, and the Compact would keep it so. Good day.',paid:()=>'That writ is settled, Master, and the account closed.',have:c=>`The writ on ${c} stands in your name, Master. Clear the camp and it is honoured.`,
+      set:(c,d,n)=>`The bandits of ${c} hold this road, ${d} of here, Master. Clear the camp and the writ pays ${n} gold. It is entered in your name.`}};
+  function officialTell(T,rd,def){const OL=OFFICIAL_LINES[def&&def.people]||OFFICIAL_LINES.gatelander,camp=roadCamp(rd);if(!camp)return OL.quiet();
+    const id='writ:'+camp.id,have=qFind(id);if(have)return have.turnedIn?OL.paid():OL.have(camp.name);
     const n=writPay(camp);qAdd({id,kind:'writ',giver:def.name,giverSite:null,title:`A writ on ${camp.name}`,desc:`${def.name}, ${def.post}: the bandits of ${camp.name} have the road. Clear the camp and the writ pays ${n} gold.`,objective:`Clear ${camp.name}`,reward:n,data:{campId:camp.id,camp:camp.name,x:camp.x,z:camp.z}});
-    return `The bandits of ${camp.name} have this road, ${compassWord(camp.x-def.x,camp.z-def.z)} of here. Clear the camp and the writ pays ${n} gold. I have set it down.`;}
+    return OL.set(camp.name,compassWord(camp.x-def.x,camp.z-def.z),n);}
   function roadWritPay(siteId){const q=qFind('writ:'+siteId);if(!q||q.turnedIn)return;qComplete(q);const paid=qTurnIn(q);showMsg(`The writ on ${q.data.camp} is paid: ${paid} gold.`,'#e8d8a0');}
   function officialDef(T,rd,p,k){const home=roadfolkHome(T,rd),r=seededRng('roadfolk',T.id+(k?':'+k:'')),[i,j]=cellOf(home.x,home.z),nat=nationOf(i,j),nk=nationKeyOf(i,j),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
     const nm=pick(r,bank.m);let def=null;const topics=k?[]:[{label:'Any trouble on the road?',fn:()=>officialTell(T,rd,def)}];
@@ -2414,17 +2431,18 @@ const giver=`${lord.title} ${lord.name}`;
   function mendBridge(id,how){const b=SITE[id];const D=b&&bridgeDown(b);if(!D||D.mending!=null)return false;const d=dayNow();
     const W=worldState.bridges||(worldState.bridges={});W[id]={paid:d,up:d+BRDN_DAYS,how};_brdnAt=-1;return true;}
   function bridgeMendTopics(site){
+    const aur=nationAt(site.x,site.z)==='aurenne'; /* S2286 — quest review Finding 49: an Aurennais lord's forms */
     const first=()=>bridgesDownFor(site)[0]||null;
     return [{label:'The bridge is down.',quest:true,avail:()=>!!first(),fn:()=>{const o=first();if(!o)return 'The bridges stand, as far as I know.';const b=o.b;
-        return `${b.name}, aye. The middle span went into the river ${riderAgo(o.D.at)}. The masons ask ${bridgeCost(b)} gold for ${bridgeLen(b)} metres of it, and the town has not got it to spare. Or a joiner could do it with ${BRDN_PLANKS} planks. Two days' work, either way.`;}},
+        return aur?`${b.name}, Master. The middle span went into the river ${riderAgo(o.D.at)}. The masons’ estimate is ${bridgeCost(b)} gold for ${bridgeLen(b)} metres of it, and the town’s accounts will not bear it. Or a joiner could do it with ${BRDN_PLANKS} planks. Two days’ work, on either contract.`:`${b.name}, aye. The middle span went into the river ${riderAgo(o.D.at)}. The masons ask ${bridgeCost(b)} gold for ${bridgeLen(b)} metres of it, and the town has not got it to spare. Or a joiner could do it with ${BRDN_PLANKS} planks. Two days' work, either way.`;}},
       {label:'I\u2019ll pay the masons.',quest:true,avail:()=>!!first(),fn:()=>{const o=first();if(!o)return 'The bridges stand, as far as I know.';const b=o.b,c=bridgeCost(b);
-        if(gold<c)return `${c} gold, and you have ${gold}. Come back when you have it.`;
+        if(gold<c)return aur?`${c} gold, Master, and you hold ${gold}. We may settle when the sum is in hand.`:`${c} gold, and you have ${gold}. Come back when you have it.`;
         gold-=c;if(typeof updateHUD==='function')updateHUD();mendBridge(b.id,'gold');if(typeof addLog==='function')addLog('🌉',`You paid ${c} gold to mend ${b.name}. It stands again in ${BRDN_DAYS} days.`);
-        return `${c} gold. The masons will be on it by morning, and it will stand in two days.`;}},
+        return aur?`${c} gold, received. The masons begin by morning, and it will stand in two days.`:`${c} gold. The masons will be on it by morning, and it will stand in two days.`;}},
       {label:'I\u2019ll mend it myself.',quest:true,avail:()=>!!first()&&skillLv('joinery')>=BRDN_JOIN,fn:()=>{const o=first();if(!o)return 'The bridges stand, as far as I know.';const b=o.b,n=plankCount();
-        if(n<BRDN_PLANKS)return `With your own hands? Then you'll want ${BRDN_PLANKS} planks for the span. You have ${n}.`;
+        if(n<BRDN_PLANKS)return aur?`With your own hands, Master? Then the span wants ${BRDN_PLANKS} planks. You hold ${n}.`:`With your own hands? Then you'll want ${BRDN_PLANKS} planks for the span. You have ${n}.`;
         bagTake(x=>x.plank,BRDN_PLANKS);mendBridge(b.id,'planks');if(typeof addLog==='function')addLog('🌉',`You mended ${b.name} with ${BRDN_PLANKS} planks. It stands again in ${BRDN_DAYS} days.`);
-        return `Then the timber's yours and the work is too. Two days, and it will carry a cart again.`;}}];}
+        return aur?`Then the timber is yours, and the work with it. Two days, and it will carry a cart again.`:`Then the timber's yours and the work is too. Two days, and it will carry a cart again.`;}}];}
   // S2284 — the bridges on a road (the page's bridge row, its coach and its route): every bridge site within 15 m of the road's line, in the
   // cells its points cross, read from the cells' data (a bridge is a site of its cell once the cell's roads have been laid). Each is {id, u}, u
   // the road's own fraction (roadPoint's, by point index) at the bridge, and k, the half-length plus 4 m in u: the bank a coach draws up on.
