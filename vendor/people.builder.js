@@ -1502,6 +1502,9 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
       // stood in a zigzag; the lift is each column's and its neighbours' greatest, blurred 1-2-1 (never under what the column itself needs), twice
       for (let it = 0; it < 2; it++) { const M = D.map((d, k) => d.map((v, r) => Math.max(v, k > 0 ? D[k - 1][r] : 0, k < K - 1 ? D[k + 1][r] : 0)));
         D = M.map((d, k) => d.map((v, r) => (2 * v + (k > 0 ? M[k - 1][r] : v) + (k < K - 1 ? M[k + 1][r] : v)) / 4)); }
+      // and down each column the same way, four times: the outline is read in 2 cm bands, and the cape stood in steps a band apart
+      for (let it = 0; it < 4; it++) D = D.map(d => { const M = d.map((v, r) => r < 1 ? v : Math.max(v, r > 1 ? d[r - 1] : 0, r < R - 1 ? d[r + 1] : 0));
+        return M.map((v, r) => r < 1 ? v : (2 * v + (r > 1 ? M[r - 1] : v) + (r < R - 1 ? M[r + 1] : v)) / 4); });
       cols.forEach((c, k) => { for (let r = 1; r < R; r++) if (D[k][r] > 1e-5) { const p = pols[k][r], rr = p.r + D[k][r]; c[r].x = neck.x + Math.sin(p.th) * rr; c[r].z = neck.z - Math.cos(p.th) * rr; overHair++; } }); } }
   // the sheet
   const pos = [], uv = [], idx = [];
