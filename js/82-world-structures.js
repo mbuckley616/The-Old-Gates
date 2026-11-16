@@ -1350,12 +1350,14 @@
   // The road meets the deck's ends at its own height, so the last BRIDGE_RAMP metres of each end ramp from the ground under you up to
   // the setts; where a bank stands over the deck's end the ground wins. You take the deck from its ends only: the player when the feet
   // are within 0.6 of its top, anyone else when the ground is (as the aqueduct's walk), so a swimmer under the arches stays in the water.
+  // top(x,z) is the deck's height at a point of the run whoever stands there (S2290: the road's walkers, caravans and coaches, roadY in 87).
   const BRIDGE_SETTS=.28,BRIDGE_RAMP=2.5,BRIDGE_HW=2.25;
   function bridgeWalk(id,cell,X,Z,y,s,c,u0,u1,len){const hw=BRIDGE_HW,xs=[],zs=[];for(const u of [u0,u1])for(const v of [-hw,hw]){xs.push(X+u*s+v*c);zs.push(Z+u*c-v*s);}
     return {x0:Math.min(...xs),x1:Math.max(...xs),z0:Math.min(...zs),z1:Math.max(...zs),y,deck:y,bridge:id,cell,
-      inside(wx,wz){const dx=wx-X,dz=wz-Z,u=dx*s+dz*c,v=dx*c-dz*s;if(u<u0||u>u1||Math.abs(v)>hw)return false;
-        const e=len/2-Math.abs(u),gr=meshH(wx,wz),yy=e<BRIDGE_RAMP?gr+(this.deck-gr)*Math.max(0,e)/BRIDGE_RAMP:this.deck;if(gr>yy)return false;this.y=yy;
-        if(wx===px&&wz===pz)return jumpY>=yy-.6;return gr>=yy-.6;}};}
+      top(wx,wz){const dx=wx-X,dz=wz-Z,u=dx*s+dz*c,v=dx*c-dz*s;if(u<u0||u>u1||Math.abs(v)>hw)return null;
+        const e=len/2-Math.abs(u),gr=meshH(wx,wz),yy=e<BRIDGE_RAMP?gr+(this.deck-gr)*Math.max(0,e)/BRIDGE_RAMP:this.deck;return gr>yy?null:yy;},
+      inside(wx,wz){const yy=this.top(wx,wz);if(yy==null)return false;this.y=yy;
+        if(wx===px&&wz===pz)return jumpY>=yy-.6;return meshH(wx,wz)>=yy-.6;}};}
   function bridgeWalkDrop(id,cell){const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].bridge&&(id!=null?P[i].bridge===id:P[i].cell===cell))P.splice(i,1);}
   function bridgeGround(x,z,R){for(const ch of chunks.values()){const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK;if(x+R<x0||x-R>x0+CHUNK||z+R<z0||z-R>z0+CHUNK)continue;refreshChunkTerrain(ch);
     for(const o of [...ch.group.children])if(o.userData.ribbon){ch.group.remove(o);o.geometry.dispose();}buildRoadRibbons(ch.cx,ch.cz,ch.group);}}
