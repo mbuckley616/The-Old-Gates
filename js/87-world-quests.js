@@ -199,7 +199,7 @@
       const expanded=[];for(const tp of list){expanded.push(tp);}
       // follow-ups live inside the folders: expand them there
       [you,place].forEach(arr=>{for(let i=arr.length-1;i>=0;i--){const tp=arr[i];if(tp.then&&def._asked&&def._asked.has(tp.label))tp.then.forEach((x,k)=>arr.splice(i+1+k,0,Object.assign({},x,{label:'  \u21b3 '+x.label})));}});
-      expanded.push({label:Math.random()<.5?pick(Math.random,(PEOPLES[def.people||'gatelander']).bye):pick(Math.random,T.bye),bye:true});
+      expanded.push({label:Math.random()<.5?roadPick(def,(PEOPLES[def.people||'gatelander']).bye):roadPick(def,T.bye),bye:true}); /* S2299 — roadPick: no door on the road */
       // remember what was asked (wrap fn/response so choosing marks it)
       return expanded.map(tp=>{const w=Object.assign({},tp);const orig=w.fn;w.fn=(c)=>{(def._asked||(def._asked=new Set())).add(tp.label);const rr=orig?orig(c):undefined;return rr;};if(!orig&&!w.response&&Object.getOwnPropertyDescriptor(tp,'response')){}return w;});
     }});
@@ -928,13 +928,17 @@ const giver=`${lord.title} ${lord.name}`;
      by 1, once in each town a day (worldState.speech.heard[site] is the day it last did) */
   function hearingFirst(site){if(!site||!site.id||!perk('speech',75))return false;const W=worldState.speech||(worldState.speech={}),H=W.heard||(W.heard={}),d=dayNow();
     if(H[site.id]===d)return false;H[site.id]=d;addFavor(site,1);if(typeof addLog==='function')addLog('🗣',`A first word well taken at ${site.name}: favour +1.`);return true;}
+  // S2299 — the road's people (def.roadfolk) meet you on the road, not at their door: from the same pools they leave out the lines said at a
+  // door or a hearth (the door, come in, sit, welcome, the look of home); a pool all of whose lines are such is kept whole
+  const AT_HOME_LINE=/\bdoor\b|\bcome in\b|\bcome closer\b|\bsit\b|\bwelcome\b|look of home|slower than you're used to/i;
+  function roadPick(def,arr){if(!def||!def.roadfolk||!arr)return pick(Math.random,arr);const a=arr.filter(l=>!AT_HOME_LINE.test(l));return pick(Math.random,a.length?a:arr);}
   function firstWords(def,site){
     const key=metKey(def,site),n=metCount(key),sp=GREET_FIRST[def.people]?def.people:'gatelander',pp=GREET_FIRST[playerPeople()]?playerPeople():'gatelander',T=TEMPERS[def.temper];
     let g;
     if(n===0){
-      if(def._roleGreet&&Math.random()<1/3)g=pick(Math.random,def._roleGreet);
-      else{g=pick(Math.random,GREET_FIRST[sp][pp]);if(pp==='oldblood'&&Math.random()<1/3)g+=' '+peopleGreeting(def);}
-    }else g=(T&&Math.random()<1/3)?pick(Math.random,T.greet):pick(Math.random,(pp==='oldblood'?GREET_AGAIN_OB:GREET_AGAIN)[sp]);
+      if(def._roleGreet&&Math.random()<1/3)g=roadPick(def,def._roleGreet);
+      else{g=roadPick(def,GREET_FIRST[sp][pp]);if(pp==='oldblood'&&Math.random()<1/3)g+=' '+peopleGreeting(def);}
+    }else g=(T&&Math.random()<1/3)?roadPick(def,T.greet):roadPick(def,(pp==='oldblood'?GREET_AGAIN_OB:GREET_AGAIN)[sp]);
     const G=GREET_TAG[sp];
     const owner=worldState.owned&&site&&Object.values(worldState.owned).some(o=>o.site===site.id)?G.owner:'';
     const rank=worldState.guild&&((worldState.guild.guild_f&&worldState.guild.guild_f.done>=3)||(worldState.guild.guild_m&&worldState.guild.guild_m.done>=3))?G.guild:'';
@@ -2208,7 +2212,18 @@ const giver=`${lord.title} ${lord.name}`;
     for(const k of [...cells].sort()){const m=k.split(','),c=getCell(+m[0],+m[1]);
       for(const t of c.sites)if(t.kind==='shrine'&&near(t.x,t.z))out.push({id:t.id,name:t.name,kind:'shrine',x:t.x,z:t.z});
       for(const e of c.doors){if(e.wet||e.kind!=='cave_door'||e.lairDoor||e.cell!==k||greatSchoolOf(e))continue;const p=fixedDoorSpot(e);if(p&&near(p.x,p.z))out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'),kind:'gate',x:p.x,z:p.z});}}
-    out.sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0);_roadShrine.set(key,out);return out;}
+    const dry=out.filter(G=>pilgrimApproach(P,G,[40]));
+    dry.sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0);_roadShrine.set(key,dry);return dry;}
+  // S2297 — the leg off the road is walked dry: a pilgrim leaves the road at its point nearest the goal from which the straight line to it
+  // never goes under the sea or any water (ground under −0.5 m by rawH; the 24 nearest points tried, 3 apart). The road's list of goals is
+  // tested every 40 m, so a shrine or gate no point of the road reaches dry is no goal of its pilgrims; the line is tested again every 5 m once
+  // per goal, when a pilgrim is first bound there, and he takes the next goal on the list if it fails. {bi, off} or null
+  // S2306 — read from the line's first point: a road point on a bridge stands over the river, and a leg begun there stepped off its side
+  function pilgrimDryLine(ax,az,bx,bz,steps){const L=Math.hypot(bx-ax,bz-az);
+    for(const st of steps){const n=Math.max(1,Math.ceil(L/st));for(let k=0;k<n;k++){const f=k/n;if(rawH(ax+(bx-ax)*f,az+(bz-az)*f)<-.5)return false;}}return true;}
+  function pilgrimApproach(P,G,steps){const C=[];for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<ROADFOLK_PILGRIM)C.push([d,i]);}
+    if(!C.length)C.push([Math.hypot(P[P.length-1].x-G.x,P[P.length-1].z-G.z),P.length-1]);C.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+    const tried=[];for(const [d,i] of C){if(tried.length>=24)break;if(tried.some(t=>Math.abs(t-i)<3))continue;tried.push(i);if(pilgrimDryLine(P[i].x,P[i].z,G.x,G.z,steps))return {bi:i,off:d};}return null;}
   function roadHasShrine(rd){return roadShrines(rd).length>0;}
   function roadEndNews(site,within){const st=worldState.towns&&worldState.towns[site.id];if(!st)return false;const now=worldState.gameTimeAbsMinutes||0;return ROAD_EVENT_FLAGS.some(f=>st.flags[f]!=null&&now-st.flags[f]<=within);}
   // the day's departures on one road: [{id, kind, from:'a'|'b', at (the absolute minute), pace}]. Kept for the day once read
@@ -2226,12 +2241,23 @@ const giver=`${lord.title} ${lord.name}`;
   // S2270 — a pilgrim's way (the page's pilgrim row): along the road from his end to its point nearest his shrine or gate, then off the road
   // straight to it, and gone on arriving. His goal is one of the road's shrines and gates by his id; one in six bound for a gate are mourners
   // with their dead (the Clearing, canon §3.1). Kept per traveller, as the roll is
-  function pilgrimPlan(T,rd){if(T._plan)return T._plan;const L=roadShrines(rd);if(!L.length)return (T._plan={none:true});const r=seededRng('pilgrim',T.id),G=L[Math.floor(r()*L.length)%L.length];
-    roadLenOf(rd);const P=rd.pts;let bi=0,bd=Infinity;for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<bd){bd=d;bi=i;}}
+  function pilgrimPlan(T,rd){if(T._plan)return T._plan;const L=roadShrines(rd);if(!L.length)return (T._plan={none:true});const r=seededRng('pilgrim',T.id),g0=Math.floor(r()*L.length)%L.length;
+    roadLenOf(rd);const P=rd.pts;let G=null,A=null;for(let k=0;k<L.length&&!A;k++){G=L[(g0+k)%L.length];if(G._fine===undefined)G._fine=pilgrimApproach(P,G,[40,5]);A=G._fine;}
+    if(!A)return (T._plan={none:true});const bi=A.bi,bd=A.off;
     const along=T.from==='b'?rd._len-rd._cum[bi]:rd._cum[bi];return (T._plan={goal:G,mourners:G.kind==='gate'&&r()<1/6,along,off:bd,bx:P[bi].x,bz:P[bi].z});}
   function pilgrimAt(T,rd,d){const Q=pilgrimPlan(T,rd);if(Q.none)return null;if(d<0||d>Q.along+Q.off)return null;if(d<=Q.along){const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
     const f=(d-Q.along)/Math.max(1e-6,Q.off),x=Q.bx+(Q.goal.x-Q.bx)*f,z=Q.bz+(Q.goal.z-Q.bz)*f;return {x,z,ang:Math.atan2(Q.goal.x-Q.bx,Q.goal.z-Q.bz),d,off:true};}
-  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));if(T.kind==='pilgrim')return pilgrimAt(T,rd,d);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
+  // S2298 — a bridge down on his way (the page's bridge row: the coach stops at the bank): a walker or a rider comes to the bank, the bridge's
+  // half-length and 4 m short of its middle as the coach's, turns there and goes back along the road to the end he came from at his own pace,
+  // gone on arriving. Only a bridge already down when he reaches its bank turns him, so one who crossed before it fell walks on. The bank's
+  // distance along his way, or null
+  function roadTurnBank(T,rd,lag){const P=rd.pts,n=P.length;if(n<2)return null;const L=roadLenOf(rd),rev=T.from==='b';let best=null;
+    for(const o of roadBridgesDown(rd)){const b=siteAnywhere(o.id)||SITE[o.id],D=b&&bridgeDown(b);if(!D)continue;const i=Math.round(o.u*(n-1)),at=rev?L-rd._cum[i]:rd._cum[i];
+      const bank=Math.max(0,at-(b.bridge.len/2+4));if(at<0||T.at+lag+bank/T.pace<D.at)continue;if(best==null||bank<best)best=bank;}
+    return best;}
+  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));
+    if(d>0){const B=roadTurnBank(T,rd,R&&R.lag||0);if(B!=null&&d>B&&(T.kind!=='pilgrim'||B<pilgrimPlan(T,rd).along)){if(d>=2*B)return null;const p=roadAtDist(rd,2*B-d,T.from==='b');p.ang+=Math.PI;p.d=d;p.back=true;return p;}}
+    if(T.kind==='pilgrim')return pilgrimAt(T,rd,d);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
   function roadfolkHome(T,rd){return siteAnywhere(T.from==='a'?rd.def.a:rd.def.b);}
   function roadfolkDest(T,rd){return siteAnywhere(T.from==='a'?rd.def.b:rd.def.a);}
   // every traveller on the loaded roads now (today's and yesterday's departures), with where they are
