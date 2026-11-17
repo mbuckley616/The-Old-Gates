@@ -1265,3 +1265,36 @@ place's own frame (every body hidden) is unchanged at every spot to 3k triangles
 street at noon, Low, is back under the ceiling, 1.22 → 1.10 M (bodies 300k → 179k, 139 → 124 calls), after the bodies builder's lighter
 hair at Low (Session 2253); Middle 1.97 → 1.85 M, High 2.71 → 2.34 M, the same swing. The largest rise is the field at dawn, High,
 1.64 → 1.68 M (+2.4%, the place +30k). Portclare, the inn and the gate are within 1% of s1600.
+
+### s1668 — 2026-11-17 07:00 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 594 | 1.10 M | 0 | 0 | 124 | 129 | 250 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 470, 919k |
+| Dunmore street, noon | Middle | 769 | 1.85 M | 156 | 6 | 125 | 129 | 262 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 617, 1.61 M |
+| Dunmore street, noon | High | 819 | 2.33 M | 188 | 6 | 125 | 129 | 280 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 666, 2.08 M |
+| Dunmore street, midnight | Low | 649 | 1.07 M | 0 | 0 | 122 | 185 | 250 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 527, 919k |
+| Dunmore street, midnight | Middle | 835 | 1.79 M | 168 | 6 | 122 | 185 | 262 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 710, 1.63 M |
+| Dunmore street, midnight | High | 897 | 2.34 M | 212 | 6 | 122 | 185 | 280 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 765, 2.16 M |
+| the field west of Dunmore, noon | Low | 561 | 656k | 0 | 0 | 126 | 114 | 278 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 435, 480k |
+| the field west of Dunmore, noon | Middle | 669 | 1.08 M | 83 | 6 | 126 | 114 | 297 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 542, 897k |
+| the field west of Dunmore, noon | High | 715 | 1.57 M | 121 | 6 | 126 | 114 | 305 | 43 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 586, 1.39 M |
+| the field west of Dunmore, dawn | Low | 644 | 647k | 0 | 0 | 129 | 193 | 278 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 515, 481k |
+| the field west of Dunmore, dawn | Middle | 812 | 1.14 M | 143 | 6 | 129 | 193 | 297 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 680, 961k |
+| the field west of Dunmore, dawn | High | 865 | 1.68 M | 188 | 6 | 129 | 193 | 305 | 44 | Mesh 28, oldGate 4, cave mouth 4, Group 4, quaywall 2 | 727, 1.50 M |
+
+### s1668 — 2026-11-17 07:07 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 365 | 687k | 0 | 0 | 33 | 65 | 191 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 332, 620k |
+| Portclare square, noon | Middle | 560 | 1.46 M | 157 | 6 | 49 | 65 | 207 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 503, 1.31 M |
+| Portclare square, noon | High | 607 | 1.82 M | 192 | 6 | 50 | 65 | 218 | 76 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 545, 1.63 M |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  | 33, 20k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  | 68, 352k |
+
+Session 2323 (QA): s1668, 41 merges after s1627. `budget` 2/2 (it runs `budgetport` too, by its name) and `budgetport` 1/1. Every
+ceiling held, and no spot rose more than 10%. The place's own frame, with every body hidden, is within 3k triangles and 2 calls at every
+spot. Dunmore's four views, the inn and the gate are within 1% of s1627. The one move over 10% is a fall: Portclare's square at High,
+2.05 M → 1.82 M (−11%), and 614 → 607 calls. The place is 1.64 → 1.63 M, so the bodies went from about 410k to 190k triangles (56 → 50
+calls), and Middle and Low are unchanged there. Not bisected. A second `budgetport` run at 07:14 read the same to 0.1k and is not kept.

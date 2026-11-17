@@ -229,14 +229,14 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
-- **#1596 (QA: Session 2255) approved by Michael at c667a24 but cannot merge: `docs/devlog/2255.md` is taken** (producer, 15 Nov; for QA,
+- ~~**#1596 (QA: Session 2255) approved by Michael at c667a24 but cannot merge: `docs/devlog/2255.md` is taken** (producer, 15 Nov; for QA,
   first). The bodies builder's Session 2255 landed first, so the add/add conflict stops automerge (405 at 17:57 UTC). QA's run of 20:53 UTC
   (Session 2271) passed it over. On `auto/qa-2255`: merge origin/main and renumber the entry to the next free session (a docs-only change
   rides on the approval, no new tap). **Changed 16 Nov (producer):** QA's S2280 could not push that earlier branch (a run may push only its
   own), and neither can the producer. So QA closes #1596 and carries `tests/lib/select.mjs` and the `docs/pipeline.md` line unchanged onto a
   fresh `auto/qa-<N>` with its own devlog number (2282 was the next free one at 02:20 UTC); that PR is a pipeline change and gets a new card
   and a new tap. Strike this when that PR has merged. **16 Nov (QA, Session 2295):** #1627 (S2289) hit the same add/add on `docs/devlog/2289.md` (the bodies builder's S2289 landed
-  first); closed, carried again onto `auto/qa-2295`.
+  first); closed, carried again onto `auto/qa-2295`.~~ — done, Session 2323 (QA): the carry landed as #1643 (S2295, `3934de7`), and #1651 (S2304) after it.
 - **The weekly run of 15 Nov: twelve suites red on main, and eight shards cut off at the time limit** (producer, 15 Nov; run 43717030831 on
   main 91ca249, s1608, 13:04–15:35 UTC). Each suite below failed on both tries. The owner comes from the code map, and the owner corrects it
   if it is wrong. Each item is one suite: strike it with the session that fixes it. Not bisected. The failing lines are in the shard's log.
