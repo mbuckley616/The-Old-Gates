@@ -27,12 +27,14 @@ const count = [];
 for (const d of [21, 22]) {
   await page.evaluate((d) => { worldState.gameTimeAbsMinutes = d * 1440 + 18.6 * 60; worldState.gameTimeMinutes = 18.6 * 60; const S = WORLD.settle.get('dunmore'); px = S.site.x + 30; pz = S.site.z + 30; }, d);
   await g.spin(null, 3600);
-  count.push(await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), c = S.site; let near = 0, out = 0;
-    for (const n of S.npcs) { if (!n.g.visible || n._retreated) continue; out++; if (Math.hypot(n.g.position.x - c.x, n.g.position.z - c.z) < 22) near++; }
+  count.push(await page.evaluate(() => { const FEAST_KINDS = new Set(['resident', 'villager', 'farmer']); const S = WORLD.settle.get('dunmore'), c = S.site; let near = 0, out = 0;
+    for (const n of S.npcs) { if (!n.g.visible || n._retreated || !FEAST_KINDS.has(n.sched && n.sched.type)) continue; out++; if (Math.hypot(n.g.position.x - c.x, n.g.position.z - c.z) < 22) near++; }
     return { near, out, hour: +(worldState.gameTimeMinutes / 60).toFixed(2) }; }));
 }
 console.log(JSON.stringify(count));
 // (the ordinary evening runs first and sends some indoors for good, so the two are compared by the share of those still out)
+// Only the people the feast's rule moves are counted (Session 2311): residents, villagers and farmers. Keepers and guards keep their
+// hours either way, and an ordinary evening's keepers cross the square to the inn, which put the two shares on the margin (0.50 to 0.60).
 check('a minute into the evening, of those out, more are about the square on the feast', count[1].near >= count[0].near && count[1].near / count[1].out > count[0].near / count[0].out + .1, count);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -249,6 +249,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - ~~**`f4people`** (shard 12; for the bodies builder). Probably the hair check that Session 2255 fixed: the run was on s1608, and #1599 landed
     at s1610. Strike it if it is green on main.~~ — green on main at s1617, Session 2266 (not reproduced)
   - ~~**`feastsquare`** (shard 12; for the systems builder: the feast day's townsfolk, `js/88-world-ticks.js`).~~ — green on main at s1614, Session 2262 (7 checks; not reproduced)
+  - ~~**`feastsquare`** again (red on main at s1655 and s1657, seen by the systems builder, S2310).~~ — done, Session 2311 (the suite's: it counted keepers and guards, whose hours are the same on a feast, and an ordinary evening's keepers cross the square to the inn; shares 0.50 against 0.60, on the +0.1 margin. It counts the people the feast's rule moves, residents, villagers and farmers: 0.35 against 0.75, 3/3)
   - ~~**`hullshape`** (shard 13; for the look builder: the hulls' outlines, `js/85-world-sea.js`).~~ — fixed, Session 2261 (the suite's: on the kit hull the old circle shares 0 m² in the beam case, so a ram with no deck shared now passes).
   - ~~**`dungeonpace`** (shard 14; for the systems builder: a dungeon foe's chase speed).~~ — done, Session 2262 (as `bodies`: its deep cave takes seed 4022)
   - ~~**`perkbow`** (shard 14; for the systems builder: the Bow's perks).~~ — green on main at s1614, Session 2262 (9 checks; not reproduced)
