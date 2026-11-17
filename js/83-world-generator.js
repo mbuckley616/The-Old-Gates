@@ -1411,6 +1411,20 @@ function genSettlement(site){
         G.position.set(at.x,y0,at.z);G.rotation.y=ry;G.userData.noBake=true;G.visible=false;group.add(G);
         const [qx,qz]=W_(R.post.x,R.post.z);S.fair={id:`${site.id}:fair`,site:site.id,x:at.x,z:at.z,y:y0,ry,r:R.r,post:{x:qx,z:qz},road:!!at.road,out:!!at.out,group:G,tris:R.tris,draws:R.draws};}
     }catch(e){console.warn('fair ring',e);}
+    /* S2351 (Michael's B on #1628, Festivals III) — the Commencement's table and the Caravan's scale (PKIT.props.bursar and .saffron,
+       38-kit.js) at the bursar's and the caravan-master's own spots (BURSAR_AT and CARAVAN_AT off the site, 87-world-quests.js): built
+       hidden in every Aurennais place, each table 0.75 m in front of its keeper toward the square's middle, its front to the middle, the
+       keeper behind it (slid sideways up to 0.9 m off a solid); shown while the keeper is out (festStallsLive). Nothing of either is solid. */
+    if(window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.props&&PKIT.props.bursar&&isleAt(site.x,site.z)==='aurenne'&&!burnedV&&!abandonedV)try{
+      S.stalls=[];for(const [key,mk,A] of [['bursar','bursar',typeof BURSAR_AT!=='undefined'?BURSAR_AT:null],['caravan','saffron',typeof CARAVAN_AT!=='undefined'?CARAVAN_AT:null]]){if(!A)continue;
+        const L=Math.hypot(A[0],A[1])||1,fx=-A[0]/L,fz=-A[1]/L,ry=Math.atan2(fx,fz),c=Math.cos(ry),s_=Math.sin(ry);
+        /* slid along its own length (0, then ±0.3 to ±0.9 m) until no point of its 1.5 by 0.75 m footprint is on a solid; the keeper stays where 87 puts him, behind it */
+        const at=sl=>[site.x+A[0]+fx*.75+c*sl,site.z+A[1]+fz*.75-s_*sl],clr=sl=>{const [x0,z0]=at(sl);for(const lx of [-.75,-.25,.25,.75])for(const lz of [-.38,0,.38]){const qx=x0+lx*c+lz*s_,qz=z0-lx*s_+lz*c;if(solidAt(qx,qz)||SB.some(P=>kitRc(P,qx,qz)<.05))return false;}return true;};
+        const SB=sol.map(q=>({x:q.cx,z:q.cz,w:2*q.rx,d:2*q.rz,ry:q.c!==undefined?Math.atan2(q.s,q.c):0})); /* the town's own solids, not yet in solidAt's grid while it builds (as the ring's search reads them) */
+        let slide=0;for(const sl of [0,.3,-.3,.6,-.6,.9,-.9])if(clr(sl)){slide=sl;break;}const [x,z]=at(slide),y0=worldH(x,z);
+        const T=PKIT.props[mk]({ground:(lx,lz)=>worldH(x+lx*c+lz*s_,z-lx*s_+lz*c)-y0}),G=T.group;G.position.set(x,y0,z);G.rotation.y=ry;G.userData.noBake=true;G.visible=false;group.add(G);
+        S.stalls.push({key,site:site.id,x,z,y:y0,ry,slide,group:G,tris:T.tris,draws:T.draws});}
+    }catch(e){console.warn('feast stalls',e);}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
@@ -1442,6 +1456,7 @@ function genSettlement(site){
     for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod,S.cairnLod,S.whLod,S.thLod,S.archLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     if(S.racks&&S.racks.length)townRacksLive(S,cp); /* S2136 — shown near, and what hangs kept to worldState.racks */
     if(S.gardens&&S.gardens.length)townGardensLive(S,cp);
+    if(S.stalls&&S.stalls.length)festStallsLive(S,cp); /* S2351 — the bursar's table and the caravan's scale, out with their keepers */
     if(S.fair)fairRingLive(S,cp); /* S2333 — the Strait Fair's ring, up on its morning */ /* S2165 — and your garden's beds kept to worldState.garden */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
     const L=S.lodMeshes;if(!L)continue;
@@ -1454,6 +1469,9 @@ function genSettlement(site){
     if(typeof festivalHere!=='function'||typeof hourNow!=='function')return false;const h=festivalHere(F.site);if(!h||h.f.key!=='straitfair'||h.state==='thin')return false;
     const hr=hourNow();return hr>=FAIR_OPEN&&hr<FAIR_CLOSE;}
   function fairRingLive(S,cp){const F=S.fair;F.group.visible=Math.hypot(F.x-cp.x,F.z-cp.z)<HOUSE_LOD.far&&fairRingUp(S);}
+  // S2351 — a feast's table (S.stalls) stands while its keeper is out: bursarOn and caravanOn (87) read the day, the hours and the town
+  function festStallsLive(S,cp){let s=null;for(const T of S.stalls){let on=false;if(Math.hypot(T.x-cp.x,T.z-cp.z)<HOUSE_LOD.far)try{s=s||siteAnywhere(T.site);
+    const f=T.key==='bursar'?(typeof bursarOn==='function'?bursarOn:null):(typeof caravanOn==='function'?caravanOn:null);on=!!(s&&f&&f(s));}catch(e){}T.group.visible=on;}}
   // the ring standing (or that would stand) for a place: what fairRingStart takes when no middle is given
   function fairRingOf(site){const s=typeof site==='string'?site:site&&site.id,S=s&&SETTLE.get(s);return S&&S.fair||null;}
   // S1657 — the Mark's yards (genSettlement's S.yards): the yard whose rope is within 2.5 m of x,z, and the rack you stand at (1.6 m
