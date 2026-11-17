@@ -710,9 +710,9 @@ const giver=`${lord.title} ${lord.name}`;
     return GOD_SHRINE.get(god.name);}
   function godOf(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13);return GODS[h%GODS.length];}
   const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
-  function shrinePrompt(){{const fa=festActPrompt();if(fa)return fa;} /* S2324 — the festival's act */{const cp=erCartPrompt();if(cp)return cp;} /* S1947 — the stuck cart, at the shrine's hook in the world's prompt */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
+  function shrinePrompt(){{const fa=festActPrompt();if(fa)return fa;} /* S2324 — the festival's act */{const bp=buttsPrompt();if(bp)return bp;} /* S2333 — the butts' mark */{const cp=erCartPrompt();if(cp)return cp;} /* S1947 — the stuck cart, at the shrine's hook in the world's prompt */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
   // S497 — on its god's own day (calDay, the calendar's week) a shrine's boon lasts twice as long, two days; the once a day stays
-  function shrineInteract(){if(festActInteract())return true; /* S2324 */if(erCartInteract())return true; /* S1947 — the stuck cart */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
+  function shrineInteract(){if(festActInteract())return true; /* S2324 */if(buttsInteract())return true; /* S2333 */if(erCartInteract())return true; /* S1947 — the stuck cart */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){const er=erPrayerAt(S);showMsg(er||'The altar is quiet. Come back tomorrow.',er?'#e8d8a0':'#c8b880');return true;} /* S1817 — a carried prayer is said on a quiet day too */
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(seededRng('boon',S.site.id+':'+Math.floor(abs/1440))()*SHRINE_BOONS.length)]; /* S679 — the boon rolls on the shrine and the day (co-op rules), not Math.random */if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
@@ -3814,6 +3814,16 @@ const giver=`${lord.title} ${lord.name}`;
     const F=worldState.festivals||(worldState.festivals={}),k=key+':'+s.id,r=F[k]||(F[k]={});if(r.act===c.year)return null;r.act=c.year;r.actN=c.n;delete r.thanked;
     showMsg(A.log,'#e8d8a0');if(typeof addLog==='function')addLog(A.ico,A.log);return r;}
   function festActInteract(){const a=festActHere();if(!a)return false;festAct(a.key,a.site);return true;}
+  // S2333 — the butts on E. On Riverfair, in a Gatelands town that keeps it, standing within BUTT_PROMPT_R of the lane's mark (buttsLaneOf,
+  // S2331), E steps you up: buttsStart({site}), its refusal (the hours, the thin year, no bow, shot this year) shown as the narrator's.
+  // The marshal who will speak for it (Festivals on the Calendar IV, unapproved) replaces only the words. Off Riverfair the lane is the
+  // town's practice ground and asks nothing. Hooked beside the festivals' acts in shrinePrompt and shrineInteract.
+  const BUTT_PROMPT_R=2.5;
+  function buttsMarkHere(){if(typeof isInterior==='function'&&isInterior())return null;if(BUTTS||FAIRRING||DISP||BOUT||typeof buttsLaneOf!=='function')return null;
+    const S=nearSite();if(!S||!S.site)return null;const s=S.site,h=festivalHere(s.id);if(!h||h.f.key!=='riverfair'||h.state==='none')return null;
+    const L=buttsLaneOf(s);if(!L||Math.hypot(px-L.x,pz-L.z)>BUTT_PROMPT_R)return null;return s;}
+  function buttsPrompt(){return buttsMarkHere()?"Press 'E' to step up to the mark":null;}
+  function buttsInteract(){const s=buttsMarkHere();if(!s)return false;const R=buttsStart({site:s});if(R&&R.say)showMsg(R.say,'#e8d8a0');return true;}
   // the day's word after an act (feastGreeting): a Gatelander of the town, once, the same day; the lord's line on the Greening
   function festActGreeting(def,h){if(!def||!h)return null;const A=FEST_ACTS[h.f.key],s=siteAnywhere(def._siteId);if(!s)return null;
     {const LL=FEST_LORD_LINE[h.f.key];if(def._lord&&LL&&def.people===LL.who)return LL.line;}
