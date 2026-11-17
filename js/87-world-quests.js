@@ -710,9 +710,9 @@ const giver=`${lord.title} ${lord.name}`;
     return GOD_SHRINE.get(god.name);}
   function godOf(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13);return GODS[h%GODS.length];}
   const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
-  function shrinePrompt(){{const cp=erCartPrompt();if(cp)return cp;} /* S1947 — the stuck cart, at the shrine's hook in the world's prompt */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
+  function shrinePrompt(){{const fa=festActPrompt();if(fa)return fa;} /* S2324 — the festival's act */{const cp=erCartPrompt();if(cp)return cp;} /* S1947 — the stuck cart, at the shrine's hook in the world's prompt */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
   // S497 — on its god's own day (calDay, the calendar's week) a shrine's boon lasts twice as long, two days; the once a day stays
-  function shrineInteract(){if(erCartInteract())return true; /* S1947 — the stuck cart */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
+  function shrineInteract(){if(festActInteract())return true; /* S2324 */if(erCartInteract())return true; /* S1947 — the stuck cart */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){const er=erPrayerAt(S);showMsg(er||'The altar is quiet. Come back tomorrow.',er?'#e8d8a0':'#c8b880');return true;} /* S1817 — a carried prayer is said on a quiet day too */
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(seededRng('boon',S.site.id+':'+Math.floor(abs/1440))()*SHRINE_BOONS.length)]; /* S679 — the boon rolls on the shrine and the day (co-op rules), not Math.random */if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
@@ -3595,7 +3595,7 @@ const giver=`${lord.title} ${lord.name}`;
     const k=buttsOpenFor(o.site,o);if(!k.ok)return k;if(!EQ.weapon||weaponSkill(EQ.weapon)!=='bow'||!EQ.ammo)return {say:'You’ll want a bow and arrows for the butts.'};
     const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;let dx=o.dx,dz=o.dz;if(dx==null){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}const n=Math.hypot(dx,dz)||1;
     const B=BUTTS={site:s,x,z,dx:dx/n,dz:dz/n,end:0,shots:[],year:k.year,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),rivals:buttRivals(s,k.year),mesh:o.mesh===false?null:buttMesh()};
-    const F=worldState.festivals||(worldState.festivals={});F['riverfair:'+s.id]={year:k.year,won:false,score:0}; /* the try is used once you step up */
+    const F=worldState.festivals||(worldState.festivals={});F['riverfair:'+s.id]=Object.assign({},F['riverfair:'+s.id],{year:k.year,won:false,score:0}); /* S2324 — the act's year stays */ /* the try is used once you step up */
     if(B.mesh)sc.add(B.mesh);buttPlace(B);
     showMsg(`The butts. Three ends of three, at ${BUTT_ENDS.join(', ')} m. The best of the town shot ${Math.max(...B.rivals.map(q=>q.total))}.`,'#e8d8a0');
     return {ok:true,rivals:B.rivals.map(q=>q.total)};}
@@ -3661,7 +3661,7 @@ const giver=`${lord.title} ${lord.name}`;
   function fairRingStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
     const k=fairRingOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
     const R=FAIRRING={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,n:0,foe:null,held:kitHold(),assaults:0,end:null};
-    const F=worldState.festivals||(worldState.festivals={});F['straitfair:'+s.id]={year:k.year,won:false,quarrels:0};
+    const F=worldState.festivals||(worldState.festivals={});F['straitfair:'+s.id]=Object.assign({},F['straitfair:'+s.id],{year:k.year,won:false,quarrels:0}); /* S2324 — the act's year stays */
     showMsg('The rope goes up. Three quarrels, fists, each to a yield.','#e8d8a0');fairRingBout(R);return {ok:true,tier:R.tier};}
   function fairRingEnd(how,why){const R=FAIRRING;if(!R)return null;FAIRRING=null;const e=R.foe;
     if(how==='murder'){ringCrime(R.site.id,'murder',MURDER_PTS);arenaState().banUntil=Math.max(arenaState().banUntil||0,dayNow()+RING_BAN_DAYS);boutEnd(e);}
@@ -3703,7 +3703,7 @@ const giver=`${lord.title} ${lord.name}`;
   function dispStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
     const k=dispOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
     const D=DISP={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,qs:dispQuestions(s,k.year),n:0,answers:[],end:null};
-    const F=worldState.festivals||(worldState.festivals={});F['disputation:'+s.id]={year:k.year,won:false,answered:0}; /* the try is used once you sit */
+    const F=worldState.festivals||(worldState.festivals={});F['disputation:'+s.id]=Object.assign({},F['disputation:'+s.id],{year:k.year,won:false,answered:0}); /* S2324 — the act's year stays */ /* the try is used once you sit */
     showMsg('The examiners are seated. Three questions, each upon a book; two answered carry the seal.','#e8d8a0');dispAsk(D);
     return {ok:true,qs:D.qs.slice(),tier:D.tier};}
   // the question now put: 'book' answers it only if you have read its book; 'argue' is the Speech check at this question's DISP_CHECK
@@ -3774,6 +3774,105 @@ const giver=`${lord.title} ${lord.name}`;
     const c=calDay();if(c.month!==FIRSTSNOW_MONTH||c.dom>=28)return;
     const S=nearSite();if(!S||!S.site||!(S.site.kind in BASE_P)||isleAt(S.site.x,S.site.z)!=='mark')return;
     const r=(worldState.firstSnow||{})[S.site.id];if(r&&r.year===c.year)return;firstSnowLies(S.site);}
+  // S2324 — the festivals' acts, the Gatelands' first two (Michael's B on #1628, docs/design/festivals.md: "the custom and the act" in a
+  // full or thin year, and in a named town "the act is given, not sold"; the acts and their lines are *Festivals on the Calendar, I*
+  // §3 and §4, word for word). The Greening's ribbon: on the day, within FEST_POLE_R of the green's middle (the pole is the look
+  // builder's). Riverfair's cup: from 12:00 to 13:00, within FEST_WATER_R of the town's water (its river quay's foot, else its well).
+  // Once a year a town: worldState.festivals['<key>:'+site].act = year (the character's, beside the contest's record, which keeps it),
+  // actN the day it was done. After the ribbon, the next Gatelander of that town to greet you that day says so, once (thanked).
+  // The priest's walk to the water at noon and his line are owed to the townsfolk's hours. Named action: festAct.
+  const FEST_POLE_R=4,FEST_WATER_R=6,FEST_BLESS_H=12;
+  const FEST_ACTS={greening:{prompt:'Press \'E\' to tie a ribbon to the pole',ico:'🎀',
+      log:'You tie a ribbon to the pole among the town’s. It is not a house’s colour, and nobody minds.',
+      thanks:'That was yours, the plain one? Good. The pole doesn’t care who you are, only that you came.',who:'gatelander'},
+    riverfair:{prompt:'Press \'E\' to pour a cup for the sea',ico:'🐴',log:'You pour a cup into the water. It goes the way the river goes.'},
+    blaze:{prompt:'Press \'E\' to put a log on the fire',ico:'🔥',night:true,who:'markman', /* S2326 — draft II §2 */
+      log:'You put a log on the fire. It catches. Someone you don’t know claps you once on the shoulder and moves off.',
+      thanks:'Saw your log go on. Good. A stranger’s log burns same as ours.'}};
+  const FEST_LORD_LINE={greening:{who:'gatelander',line:'It’s the Greening, and I’ve no business for anyone who isn’t carrying a lamb. Come back tomorrow, when the beasts are counted and the arguing starts.'},
+    blaze:{who:'markman',line:'Blaze. No business till tomorrow. Bring a log or stand back from the fire.'}};
+  // S2326 — the Blaze's night runs from 17:00 to first light (FEST_NIGHT), past midnight into the next date: the festival a night act reads
+  const FEST_NIGHT=[17,6];
+  function festNightHere(s){const hr=hourNow();if(hr>=FEST_NIGHT[0]){const h=festivalHere(s.id);return h&&FEST_ACTS[h.f.key]&&FEST_ACTS[h.f.key].night?h:null;}
+    if(hr<FEST_NIGHT[1]){const h=festivalHere(s.id,absMin()-1440);return h&&FEST_ACTS[h.f.key]&&FEST_ACTS[h.f.key].night?h:null;}return null;}
+  // the town's water: the river quay's foot, 3 m inland of where the bank meets the river, else the well on the square (6 E, 4 S)
+  function festWaterAt(s){if(s.quaySpot&&s.bank)return {x:s.quaySpot.x-s.bank.dx*3,z:s.quaySpot.z-s.bank.dz*3};return {x:s.x+6,z:s.z+4};}
+  function festActRec(key,site){const F=worldState.festivals||{};return F[key+':'+(site.id||site)]||null;}
+  function festActDone(key,site,year){const r=festActRec(key,site);return !!r&&r.act===(year!=null?year:calDay(absMin()).year);}
+  // where you could do the day's act now: {key, site, prompt} or null
+  function festActHere(){if(typeof isInterior==='function'&&isInterior())return null;if(BUTTS||FAIRRING||DISP||BOUT)return null;
+    const S=nearSite();if(!S||!S.site)return null;const s=S.site,h=festNightHere(s)||festivalHere(s.id);if(!h||h.state==='none')return null;const A=FEST_ACTS[h.f.key];if(!A)return null;
+    if(A.night&&!festNightHere(s))return null;if(festActDone(h.f.key,s,h.f.key==='blaze'?calDay(absMin()-(hourNow()<FEST_NIGHT[1]?1440:0)).year:null))return null;
+    if(h.f.key==='greening'||h.f.key==='blaze'){if(Math.hypot(px-s.x,pz-s.z)>FEST_POLE_R)return null;} /* the pole, the fire: the square's middle */
+    else if(h.f.key==='riverfair'){if(hourNow()!==FEST_BLESS_H)return null;const w=festWaterAt(s);if(Math.hypot(px-w.x,pz-w.z)>FEST_WATER_R)return null;}
+    else return null;
+    return {key:h.f.key,site:s,state:h.state,prompt:A.prompt};}
+  function festActPrompt(){const a=festActHere();return a?a.prompt:null;}
+  function festAct(key,site){const s=typeof site==='string'?siteAnywhere(site):site,A=FEST_ACTS[key];if(!s||!A)return null;const c=calDay(absMin()-(A.night&&hourNow()<FEST_NIGHT[1]?1440:0)); /* a night's act is the evening's date */
+    const F=worldState.festivals||(worldState.festivals={}),k=key+':'+s.id,r=F[k]||(F[k]={});if(r.act===c.year)return null;r.act=c.year;r.actN=c.n;delete r.thanked;
+    showMsg(A.log,'#e8d8a0');if(typeof addLog==='function')addLog(A.ico,A.log);return r;}
+  function festActInteract(){const a=festActHere();if(!a)return false;festAct(a.key,a.site);return true;}
+  // the day's word after an act (feastGreeting): a Gatelander of the town, once, the same day; the lord's line on the Greening
+  function festActGreeting(def,h){if(!def||!h)return null;const A=FEST_ACTS[h.f.key],s=siteAnywhere(def._siteId);if(!s)return null;
+    {const LL=FEST_LORD_LINE[h.f.key];if(def._lord&&LL&&def.people===LL.who)return LL.line;}
+    if(!A||!A.thanks||def.people!==A.who)return null;const r=festActRec(h.f.key,s),c=calDay(absMin());
+    if(!r||r.act!==c.year||r.actN!==c.n||r.thanked===c.n)return null;r.thanked=c.n;return A.thanks;}
+  // S2325 — the festivals' acts, the third: the Night of the Lanterns' lantern (*Festivals on the Calendar, I* §5, word for word). From
+  // 18:00 to 22:00 on the night, in a Gatelands town keeping it, the lanternmaker stands on the square (LANTERN_AT off its middle, clear of
+  // the cairn and the well), a townsperson of the town's people (peopleOfSite), named by site and year. Topic *A lantern*: two gold, or
+  // nothing in a town that names you (the design page's "given, not sold"); four answers. *For me* buys nothing, the two gold given back;
+  // the year's lantern is still spent. The act is worldState.festivals['lanterns:'+site] = {act, actN, sent}. At 22:00, on the square,
+  // once a night, the last lantern's line; the next day a Gatelander of the town who saw you send one says so, once (festAfterGreeting).
+  // The lanterns rising are the look builder's. Named action: lanternSend.
+  const LANTERN_OPEN=18,LANTERN_CLOSE=22,LANTERN_PRICE=2,LANTERN_AT=[-4,5],LANTERN_NEAR=160,LANTERN_SQUARE=30;
+  const LANTERN_LINES={gatelander:{greet:'Two for a lantern, and the paper’s dry, so it’ll go. You needn’t tell me who it’s for. Most don’t.',
+      answers:['Then go on and let it up. They’ll know their own. That’s the one thing every lantern’s agreed on.',
+        'That’s kind. There’s always a last one, and nobody’s ever sure who. Let it up, and it’ll find them, or it won’t, and either way it’s been sent.',
+        'Nor should you. A lantern isn’t a ledger. Up it goes.'],
+      me:'That’s not done. You’re standing in front of me. … Here. I’ll not take the two for it. Let it up for somebody else, and come back next year with a name.'},
+    markman:{greet:'Two. Paper’s dry. Don’t need to know who.',me:'No. You’re here. Take it back. Send it for a man who isn’t.'},
+    aurennais:{greet:'Two, Master, and the paper is dry; I make no warranty beyond that. You need not name the beneficiary.',me:'I cannot sell you that, Master. The terms presume an absence. Take the coin back, and send it for somebody who is not standing in front of me.'},
+    oldblood:{greet:'Two. It goes up. You need not say.',me:'No. The light goes after the ones who went in. You came out.'}};
+  const LANTERN_ASK=['For someone who didn’t come back.','For whoever went in last and wasn’t found.','I’d rather not say.','For me.'];
+  const LANTERN_LOG={sent:'You let the lantern go. It rises with the others until you cannot tell which is yours.',me:'The lanternmaker gives back your two gold and turns to the next.',
+    last:'The last lantern goes out of sight. Along the square, one by one, the lamps are lit.',after:'You stood with us last night. That’s remembered here longer than a coin is.'};
+  let LANTERN=null; /* {npc, site, year} */let _lantT=0,_lantLast='';
+  function lanternOn(s){const h=festivalHere(s.id);if(!h||h.f.key!=='lanterns'||h.state==='none')return null;const hr=hourNow();return hr>=LANTERN_OPEN&&hr<LANTERN_CLOSE?h:null;}
+  function lanternOut(){const L=LANTERN;if(!L)return;const n=L.npc;if(n){sc.remove(n.g);sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);}LANTERN=null;}
+  function lanternDef(s,year,h){const gp=peopleOfSite(s),r=seededRng('lanternmaker',s.id+':'+year),bank=NAMES[(PEOPLES[gp]||PEOPLES.gatelander).names]||NAMES.irish;
+    const female=r()<.5,L=female&&bank.f&&bank.f.length?bank.f:bank.m,x=s.x+LANTERN_AT[0],z=s.z+LANTERN_AT[1],LL=LANTERN_LINES[gp]||LANTERN_LINES.gatelander;
+    const def={name:L[Math.floor(r()*L.length)],role:'Lanternmaker',ico:'🏮',female,people:gp,x,z,_siteId:s.id,_lantern:true,greeting:[LL.greet],
+      get topics(){return [...(festActDone('lanterns',s)?[]:[{label:'A lantern.',folder:true,response:'Who is it for?',
+        follow:LANTERN_ASK.map((q,i)=>({label:q,fn:()=>lanternSend(s,i,gp)}))}]),{label:'Farewell.',bye:true}];}};
+    return def;}
+  function lanternSend(site,i,gp){const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return '';const c=calDay(absMin()),LL=LANTERN_LINES[gp]||LANTERN_LINES.gatelander;
+    if(festActDone('lanterns',s))return LL.greet;const named=festivalState(s)==='named',me=i===3;
+    if(!me&&!named&&gold<LANTERN_PRICE)return 'You have not the two gold.';
+    const F=worldState.festivals||(worldState.festivals={}),r=F['lanterns:'+s.id]||(F['lanterns:'+s.id]={});r.act=c.year;r.actN=c.n;r.sent=!me;delete r.thanked;
+    if(me){if(!named){showMsg(LANTERN_LOG.me,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.me);}return LL.me;}
+    if(!named){gold-=LANTERN_PRICE;if(typeof updateHUD==='function')updateHUD();}
+    showMsg(LANTERN_LOG.sent,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.sent);
+    return gp==='gatelander'?LL.answers[i]:LANTERN_LOG.sent;}
+  function tickLanterns(dt){_lantT-=dt;if(_lantT>0)return;_lantT=1;try{tickBlazeLight();}catch(e){} /* S2326 */
+    const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
+    const h=s&&isleAt(s.x,s.z)==='gatelands'?lanternOn(s):null,yr=calDay(absMin()).year;
+    if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(LANTERN&&(LANTERN.site.id!==s.id||LANTERN.year!==yr))lanternOut();
+      if(!LANTERN){const def=lanternDef(s,yr,h),n=spawnNPC(def,Math.atan2(-LANTERN_AT[0],-LANTERN_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);LANTERN={npc:n,site:s,year:yr};}}
+    else if(LANTERN)lanternOut();
+    if(!s||!on)return;const fh=festivalHere(s.id);if(!fh||fh.f.key!=='lanterns'||fh.state==='none'||hourNow()!==LANTERN_CLOSE)return;
+    const k=s.id+':'+calDay(absMin()).n;if(_lantLast===k||Math.hypot(px-s.x,pz-s.z)>LANTERN_SQUARE)return;_lantLast=k;
+    showMsg(LANTERN_LOG.last,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.last);}
+  // S2326 — the Blaze after midnight: its Markman's word still that night, and at first light, on the square, once, the fire let die
+  function festNightGreeting(def){if(!def||!def._siteId||def._lantern||def.people!=='markman')return null;const s=siteAnywhere(def._siteId);if(!s)return null;
+    const h=festNightHere(s);if(!h||hourNow()>=FEST_NIGHT[0])return null;const r=festActRec(h.f.key,s),c=calDay(absMin());
+    if(!r||r.actN!==c.n-1||r.thanked===c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return FEST_ACTS[h.f.key].thanks;}
+  let _blazeLast='';function tickBlazeLight(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||hourNow()!==FEST_NIGHT[1])return;
+    const S=nearSite(),s=S&&S.site;if(!s||Math.hypot(px-s.x,pz-s.z)>LANTERN_SQUARE)return;const h=festivalHere(s.id,absMin()-1440);if(!h||h.f.key!=='blaze'||h.state==='none')return;
+    const k=s.id+':'+calDay(absMin()).n;if(_blazeLast===k)return;_blazeLast=k;const L='The fire on the square is let die. Every chimney in the town is smoking.';
+    showMsg(L,'#e8d8a0');if(typeof addLog==='function')addLog('🔥',L);}
+  // the day after a lantern sent: a Gatelander of that town, once (feastGreeting, on a day with no festival)
+  function festAfterGreeting(def){if(!def||def._lantern||def.people!=='gatelander')return null;const r=festActRec('lanterns',def._siteId),c=calDay(absMin());
+    if(!r||!r.sent||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return LANTERN_LOG.after;}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,

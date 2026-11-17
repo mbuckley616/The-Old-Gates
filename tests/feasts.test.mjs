@@ -254,5 +254,97 @@ const fs = await page.evaluate(() => {
 });
 console.log(JSON.stringify(fs));
 check('First Snow: Culling 28 until the snow is seen; not before 18:00 or under the cover; seen on Culling 12 at 19:00 it is kept that day and not on the 28th; another Markish town and the next year keep the 28th', fs.mark === 'mark' && fs.date.join() === '8,12' && fs.before.join() === ',firstsnow' && !fs.early && !fs.thin && fs.rec && fs.after.join() === 'firstsnow,,' && fs.otherTown === 'firstsnow' && fs.second && fs.nextYear === 'firstsnow', fs);
+// 11. the festivals' acts (Session 2324): the Greening's ribbon at the green's middle and Riverfair's cup at the water at noon, once a
+// town a year; the next Gatelander to greet you that day says so, once; the lord's Greening line
+await g.settle('dunmore');
+const fa = await page.evaluate(() => {
+  const site = siteAnywhere('dunmore'), S = WORLD.settle.get('dunmore'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const mark = ladderSites().find(s => isleAt(s.x, s.z) === 'mark');
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, p0 = [px, pz];
+  const at = (f, yr, h) => { worldState.gameTimeAbsMinutes = (((yr - CAL.startYear) * CAL.months + f.month - CAL.startMonth) * CAL.monthLen + f.dom - 1) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const gr = FESTIVALS.find(f => f.key === 'greening'), rf = FESTIVALS.find(f => f.key === 'riverfair');
+  const folk = (S.npcs || []).find(n => n.def && n.def.people === 'gatelander' && !n.def._lord), lord = S.lordNpc;
+  st.p = 70; st.flags = {}; worldState.festivals = {}; let here = { site }; nearSite = () => here;
+  const out = { folk: !!folk, lordPeople: lord && lord.def.people };
+  try {
+    at(gr, 28, 10); px = site.x + 2; pz = site.z; out.prompt = festActPrompt(); px = site.x + 10; out.far = festActPrompt(); px = site.x + 2;
+    out.greet0 = folk && feastGreeting(folk.def); out.lord = lord && feastGreeting(lord.def);
+    out.did = festActInteract(); out.rec = JSON.parse(JSON.stringify(worldState.festivals['greening:' + site.id] || null));
+    out.after = festActPrompt(); out.again = festActInteract();
+    out.thanks = folk && feastGreeting(folk.def); out.thanks2 = folk && feastGreeting(folk.def);
+    at(gr, 29, 10); out.nextYear = festActPrompt();
+    here = { site: mark }; px = mark.x + 1; pz = mark.z; out.markPrompt = festActPrompt(); here = { site }; px = site.x; pz = site.z;
+    const w = festWaterAt(site); px = w.x + 3; pz = w.z;
+    at(rf, 28, 11); out.cup11 = festActPrompt(); at(rf, 28, 12); out.cup12 = festActPrompt(); out.poured = festActInteract();
+    out.cupRec = JSON.parse(JSON.stringify(worldState.festivals['riverfair:' + site.id] || null)); out.butts = buttsOpenFor(site, { force: true }).ok === true;
+    at(rf, 28, 13); worldState.festivals = {}; out.cup13 = festActPrompt();
+    out.charKey = !!SS_CHAR_WS.festivals && /'festivals'/.test(_applyLoadData.toString());
+  } finally { worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.greenGreet = gr.greet.gatelander;
+  return out;
+});
+console.log(JSON.stringify(fa).slice(0, 2500));
+check('the Greening: a ribbon at the green\'s middle (not 10 m off, not in a Markish town), once a town a year, its line in the log; again next year', /tie a ribbon/.test(fa.prompt) && fa.far === null && fa.did && fa.rec && fa.rec.act === 28 && fa.after === null && fa.again === false && /tie a ribbon/.test(fa.nextYear || '') && fa.markPrompt === null, fa);
+check('after the ribbon the next Gatelander says so, once, then the day\'s greeting again; the lord gives the Greening\'s line', fa.folk && fa.greet0 === fa.greenGreet && /the plain one\?/.test(fa.thanks) && fa.thanks2 === fa.greenGreet && (fa.lordPeople !== 'gatelander' || /carrying a lamb/.test(fa.lord)), fa);
+check('Riverfair\'s cup at the water only from 12:00 to 13:00; poured once, and the butts still open to you; the character\'s save', fa.cup11 === null && /pour a cup/.test(fa.cup12) && fa.poured && fa.cupRec && fa.cupRec.act === 28 && fa.butts && fa.cup13 === null && fa.charKey, fa);
+// 12. the Night of the Lanterns (Session 2325): the lanternmaker on the square from 18:00 to 22:00, a lantern for two gold, *For me*
+// for nothing, given in a town that names you; the last lantern's line at 22:00; the next day's word, once
+await g.settle('dunmore');
+const ln = await page.evaluate(() => {
+  const site = siteAnywhere('dunmore'), S = WORLD.settle.get('dunmore'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, fs0 = festivalState, p0 = [px, pz], g0 = gold;
+  const lf = FESTIVALS.find(f => f.key === 'lanterns');
+  const at = (dom, h) => { worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + lf.month - CAL.startMonth) * CAL.monthLen + dom - 1) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const tick = () => { _lantT = 0; tickLanterns(1); };
+  const folk = (S.npcs || []).find(n => n.def && n.def.people === 'gatelander' && !n.def._lord && !n.def._lantern);
+  const labels = () => LANTERN.npc.def.topics.map(t => t.label);
+  const choose = i => { const T = LANTERN.npc.def.topics.find(t => t.label === 'A lantern.'); const c = T.follow[i]; return c.fn(c); };
+  st.p = 70; st.flags = {}; worldState.festivals = {}; nearSite = () => ({ site }); px = site.x; pz = site.z;
+  const out = {};
+  try {
+    at(26, 17); tick(); out.at17 = !!LANTERN;
+    at(26, 19); tick(); out.at19 = !!LANTERN && LANTERN.npc.def.role; out.people = LANTERN && LANTERN.npc.def.people; out.greet = LANTERN && dlgGreeting(LANTERN.npc.def);
+    out.labels = labels(); gold = 10;
+    out.me = choose(3); out.meGold = gold; out.meRec = JSON.parse(JSON.stringify(worldState.festivals['lanterns:' + site.id])); out.labelsAfter = labels();
+    worldState.festivals = {}; out.sent = choose(0); out.sentGold = gold; out.rec = JSON.parse(JSON.stringify(worldState.festivals['lanterns:' + site.id]));
+    worldState.festivals = {}; gold = 1; out.poor = choose(1); out.poorRec = !!worldState.festivals['lanterns:' + site.id];
+    festivalState = () => 'named'; out.given = choose(1); out.givenGold = gold; festivalState = fs0;
+    _lantLast = ''; at(26, 22); tick(); out.at22 = !!LANTERN; out.last = _lantLast === site.id + ':' + calDay(worldState.gameTimeAbsMinutes).n;
+    at(27, 10); out.next = folk && feastGreeting(folk.def); out.next2 = folk && feastGreeting(folk.def);
+    worldState.festivals['lanterns:' + site.id].sent = false; delete worldState.festivals['lanterns:' + site.id].thanked; out.nextMe = folk && feastGreeting(folk.def);
+  } finally { festivalState = fs0; if (LANTERN) lanternOut(); worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; gold = g0; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.L = LANTERN_LINES.gatelander; out.LOG = LANTERN_LOG;
+  return out;
+});
+console.log(JSON.stringify(ln).slice(0, 2500));
+check('the lanternmaker stands on the square on the Night from 18:00 to 22:00 (not at 17:00 or 22:00), and greets with her own line', !ln.at17 && ln.at19 === 'Lanternmaker' && !ln.at22 && (ln.people !== 'gatelander' || ln.greet === ln.L.greet) && ln.labels.includes('A lantern.'), ln);
+check('*For me* costs nothing and spends the year\'s lantern; a lantern sent costs two gold with her answer; short of two, nothing; a town that names you gives it', ln.meGold === 10 && ln.meRec.sent === false && !ln.labelsAfter.includes('A lantern.') && ln.sentGold === 8 && ln.rec.sent === true && ln.rec.act === 28 && /will know their own|They’ll know their own/.test(ln.sent) && /two gold/.test(ln.poor) && !ln.poorRec && ln.givenGold === 1, ln);
+check('the last lantern\'s line at 22:00 on the square; the next day a Gatelander says you stood with them, once, and not for *For me*', ln.last && ln.next === ln.LOG.after && ln.next2 !== ln.LOG.after && ln.nextMe !== ln.LOG.after, ln);
+// 13. the Blaze (Session 2326): a log on the square's fire from 17:00 to first light, once a town a year; the reeve's line; a Markman's
+// word that night, once, past midnight too; first light's line on the square
+const bz = await page.evaluate(() => {
+  const site = ladderSites().find(s => isleAt(s.x, s.z) === 'mark'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, p0 = [px, pz];
+  const bf = FESTIVALS.find(f => f.key === 'blaze');
+  const at = (dd, h) => { worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + bf.month - CAL.startMonth) * CAL.monthLen + bf.dom - 1 + dd) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const man = () => ({ _siteId: site.id, people: 'markman', greeting: ['-'] }), reeve = { _siteId: site.id, people: 'markman', _lord: true, greeting: ['-'] };
+  st.p = 70; st.flags = {}; worldState.festivals = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1;
+  const out = { mark: isleAt(site.x, site.z) };
+  try {
+    at(0, 15); out.p15 = festActPrompt(); out.reeve = feastGreeting(reeve);
+    at(0, 20); out.p20 = festActPrompt(); px = site.x + 8; out.far = festActPrompt(); px = site.x + 1;
+    at(1, 2); out.p02 = festActPrompt(); out.did = festActInteract(); out.rec = JSON.parse(JSON.stringify(worldState.festivals['blaze:' + site.id] || null));
+    out.again = festActPrompt(); out.thanks = feastGreeting(man()); out.thanks2 = feastGreeting(man());
+    at(1, 7); out.p07 = festActPrompt();
+    worldState.festivals = {}; at(0, 21); festActInteract(); out.eve = feastGreeting(man()); at(1, 1); out.eveAfter = feastGreeting(man());
+    _blazeLast = ''; at(1, 6); tickBlazeLight(); out.light = _blazeLast; tickBlazeLight(); out.light2 = _blazeLast;
+  } finally { worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.T = FEST_ACTS.blaze.thanks; out.R = FEST_LORD_LINE.blaze.line; out.ev = bf.dom;
+  return out;
+});
+console.log(JSON.stringify(bz).slice(0, 2000));
+check('the Blaze: a log on the square\'s fire from 17:00 to first light (not at 15:00 or 7:00, not 8 m off), the night\'s act on the evening\'s year, once', bz.mark === 'mark' && bz.p15 === null && /put a log/.test(bz.p20) && bz.far === null && /put a log/.test(bz.p02) && bz.did && bz.rec && bz.rec.act === 28 && bz.again === null && bz.p07 === null, bz);
+check('the reeve\'s Blaze line; a Markman\'s word that night once, before midnight or after, and not again', bz.reeve === bz.R && bz.thanks === bz.T && bz.thanks2 !== bz.T && bz.eve === bz.T && bz.eveAfter !== bz.T, bz);
+check('first light on the square after the Blaze: the fire let die, once', bz.light && bz.light === bz.light2 && bz.light.startsWith(''), bz);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
