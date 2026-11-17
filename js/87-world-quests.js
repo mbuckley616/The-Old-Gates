@@ -3623,7 +3623,7 @@ const giver=`${lord.title} ${lord.name}`;
     const me=F['riverfair:'+B.site.id]||(F['riverfair:'+B.site.id]={year:B.year});me.score=total;me.won=won;
     let paid=0,skill=false;if(won){paid=payPurse(BUTT_PURSE+BUTT_PURSE_TIER*(Math.max(1,B.tier)-1));
       bagAdd({name:`Silver Arrow of ${B.site.name||'Riverfair'}`,ico:'🏹',type:'misc',weight:.1,buyPrice:0,sellMult:0,keepsake:'riverfair',site:B.site.id,year:B.year,desc:`Won at the butts, Riverfair, in the ${calOrd(B.year)} year of the Peace.`});
-      const S=F.skill||(F.skill={});if(S.riverfair!==B.year){S.riverfair=B.year;skill=buttsSkillUp('bow');}}
+      festCrown('riverfair',B.site,B.year);const S=F.skill||(F.skill={});if(S.riverfair!==B.year){S.riverfair=B.year;skill=buttsSkillUp('bow');}}
     showMsg(won?`${total} against ${best}. The purse is yours: ${paid} gold, and a silver arrow.${skill?' Your Bow rises.':''}`:how==='shot'?`${total} against ${best}. Not this year.`:`Your nine are not shot. Not this year.`,'#e8d8a0');
     B.how=how;B.total=total;B.best=best;B.won=won;B.paid=paid;B.skill=skill;return B;}
   // the contest's point of skill: a level, as a skill book's (the level's marks too)
@@ -3671,7 +3671,7 @@ const giver=`${lord.title} ${lord.name}`;
     me.quarrels=R.n;me.won=how==='won';let paid=0,skill=false;
     if(me.won){paid=payPurse(FAIR_PURSE+FAIR_PURSE_TIER*(Math.max(1,R.tier)-1));
       bagAdd({name:`Reeve’s Iron Ring of ${R.site.name||'the Strait Fair'}`,ico:'💍',type:'misc',weight:.05,buyPrice:0,sellMult:0,keepsake:'straitfair',site:R.site.id,year:R.year,desc:`Won in the ring at the Strait Fair, in the ${calOrd(R.year)} year of the Peace.`});
-      const S=F.skill||(F.skill={});if(S.straitfair!==R.year){S.straitfair=R.year;skill=buttsSkillUp('hand');}}
+      festCrown('straitfair',R.site,R.year);const S=F.skill||(F.skill={});if(S.straitfair!==R.year){S.straitfair=R.year;skill=buttsSkillUp('hand');}}
     showMsg(how==='won'?`Three quarrels, three yields. The purse is yours: ${paid} gold, and the reeve’s ring.${skill?' Your Hand-to-hand rises.':''}`:how==='murder'?`${e?e.name:'The fighter'} is dead. The fair goes quiet, and the rings of the Mark are shut to you.`:how==='lost'?(why==='rope'?'You step over the rope. Not this year.':'You go down. Not this year.'):'The ring breaks up. Not this year.','#e8d8a0');
     R.end=how;R.paid=paid;R.skill=skill;return R;}
   function tickFairRing(dt){const R=FAIRRING;if(!R)return;if(!BOUT||BOUT.foe!==R.foe){fairRingEnd('left');return;}boutTick(dt);}
@@ -3721,7 +3721,7 @@ const giver=`${lord.title} ${lord.name}`;
     me.answered=right;me.won=won;let paid=0,skill=false;
     if(won){paid=payPurse(DISP_PURSE+DISP_PURSE_TIER*(Math.max(1,D.tier)-1));
       bagAdd({name:`Scholar’s Seal of ${D.site.name||'the Commencement'}`,ico:'🔏',type:'misc',weight:.05,buyPrice:0,sellMult:0,keepsake:'commencement',site:D.site.id,year:D.year,desc:`Sealed at the Commencement, ${D.site.name||'Aurenne'}, in the ${calOrd(D.year)} year of the Peace.`});
-      const S=F.skill||(F.skill={});if(S.commencement!==D.year){S.commencement=D.year;skill=buttsSkillUp('speech');}}
+      festCrown('commencement',D.site,D.year);const S=F.skill||(F.skill={});if(S.commencement!==D.year){S.commencement=D.year;skill=buttsSkillUp('speech');}}
     const nw=['None','One','Two','Three'][right]||String(right);
     showMsg(won?`${nw} of three. The purse is yours: ${paid} gold, and the scholar’s seal.${skill?' Your Speech rises.':''}`:how==='left'?'You leave the table. The examiners enter it as withdrawn.':`${nw} of three. Not this year.`,'#e8d8a0');
     D.end=how;D.right=right;D.paid=paid;D.skill=skill;return D;}
@@ -3731,6 +3731,34 @@ const giver=`${lord.title} ${lord.name}`;
     {label:'I would sit the disputation.',quest:true,avail:()=>!DISP,fn:()=>{const k=dispStart({site});return k.ok?'The first question is put.':k.say;}},
     {label:'Answer from the book.',quest:true,avail:()=>dispCanBook(),fn:()=>{const a=dispAnswer('book');return a&&a.say?a.say:'Entered as answered.';}},
     {label:'Argue it.',quest:true,avail:()=>!!DISP&&DISP.n<DISP_N,fn:()=>{const a=dispAnswer('argue');return a&&a.say?a.say:a&&a.ok?'Allowed.':'Not allowed.';}}];}
+  // S2320 — festivals B session 5, the post and the town's memory (Michael's B on #1628, docs/design/festivals.md: "The winner's name
+  // is cut on a post (as ringPostNames does) and said by the town until next year's"). Each island's fair has one contest (FEST_CONTEST);
+  // its champion a town and year is worldState.festChampions['<key>:'+site] = {year, name, you} (the world's: the post is the town's),
+  // written when you win (festCrown, from buttsEnd, fairRingEnd, dispEnd). A year you did not win, the town's own champion stands: a
+  // name of the town's people, seeded by festival, site and year (a friend reads the same post). The town says the champion whose
+  // contest has closed, this year's after the window, last year's before it, until the next (festChampionNow). No champion where the
+  // town keeps no contest now (a thin year, or kept not at all) beyond those already cut. The post (festPostNames) carries the last
+  // FEST_POST_N, newest first. Where the post stands and what the town says of its champion are the look builder's and the quest
+  // writer's: festPostNames(site) and festChampionNow(site) are what they read. Named action: festCrown.
+  const FEST_CONTEST={riverfair:BUTT_CLOSE,straitfair:FAIR_CLOSE,commencement:DISP_CLOSE},FEST_POST_N=5;
+  function festContestOf(site){const s=typeof site==='string'?siteAnywhere(site):site;if(!s||s.x==null)return null;const isle=isleAt(s.x,s.z);
+    return FESTIVALS.find(f=>f.nation===isle&&FEST_CONTEST[f.key]!=null)||null;}
+  // the minute this year's window closes: the festival's day at its contest's last hour
+  function festCloseAt(f,year){const mAbs=(year-CAL.startYear)*CAL.months+f.month-CAL.startMonth;return (mAbs*CAL.monthLen+f.dom-1)*1440+FEST_CONTEST[f.key]*60;}
+  function festCrown(key,site,year){const C=worldState.festChampions||(worldState.festChampions={});
+    C[key+':'+site.id]={year,name:typeof playerName==='string'&&playerName?playerName:'Traveller',you:true};return C[key+':'+site.id];}
+  function festTownChampion(site,key,year){const r=seededRng('champion',key+':'+site.id+':'+year),gp=peopleOfSite(site),bank=NAMES[(PEOPLES[gp]||PEOPLES.gatelander).names]||NAMES.irish;
+    const L=r()<.4&&bank.f&&bank.f.length?bank.f:bank.m;return {year,name:L[Math.floor(r()*L.length)],you:false};}
+  // the champion of a year's contest, once its window has closed (null before, or before the calendar began)
+  function festChampion(site,key,year){const s=typeof site==='string'?siteAnywhere(site):site,f=FESTIVALS.find(q=>q.key===key);if(!s||!f||year<CAL.startYear)return null;
+    const at=festCloseAt(f,year);if(at<0)return null;const C=(worldState.festChampions||{})[key+':'+s.id];if(C&&C.year===year)return C;
+    if((worldState.gameTimeAbsMinutes||0)<at)return null;return festTownChampion(s,key,year);}
+  function festChampionNow(site){const s=typeof site==='string'?siteAnywhere(site):site,f=festContestOf(s);if(!f)return null;
+    const st=festivalState(s);if(st==='none'||st==='thin'){const C=(worldState.festChampions||{})[f.key+':'+s.id];return C?Object.assign({key:f.key},C):null;}
+    const yr=calDay(absMin()).year;const c=festChampion(s,f.key,yr)||festChampion(s,f.key,yr-1);return c?Object.assign({key:f.key},c):null;}
+  // the post: the last FEST_POST_N champions, newest first
+  function festPostNames(site){const s=typeof site==='string'?siteAnywhere(site):site,f=festContestOf(s);if(!f)return [];const yr=calDay(absMin()).year,out=[];
+    for(let y=yr;y>=CAL.startYear&&out.length<FEST_POST_N;y--){const c=festChampion(s,f.key,y);if(c)out.push(c);}return out;}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,
