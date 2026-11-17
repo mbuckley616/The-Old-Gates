@@ -593,7 +593,7 @@ function personBakeQ(g,q){
   if(g.hollow)bodyOpen=true;
   // hats
   if(g.hat==='coif'&&cap){cap.userData.col=C(0xd8d0c0);cap.scale.set(g.jaw*1.05,1.1,1.08);}
-  if(g.hat==='kerchief'&&cap){cap.userData.col=mixC(cloth,0xffffff,.2);cap.scale.set(g.jaw*1.06,1.1,1.1);part(SK.ball(.03,8,6),mixC(cloth,0xffffff,.2),head,0,.06,-.13);}
+  if(g.hat==='kerchief'&&cap){const kc=g.hatCol!=null?C(g.hatCol):mixC(cloth,0xffffff,.2);cap.userData.col=kc;cap.scale.set(g.jaw*1.06,1.1,1.1);part(SK.ball(.03,8,6),kc,head,0,.06,-.13);}
   if(g.hat==='flatcap')part(SK.lathe([[0,0],[.15,0],[.155,.02],[.14,.05],[0,.06]],16),mixC(sleeve,0x000000,.2),head,0,.21,.01).rotation.x=-.2;
   if(g.hat==='fur'){part(SK.cyl(.15*hs,.145*hs,.12,14),C(0x6a5a48),head,0,.225,-.01);part(SK.torus(.145*hs,.03,6,16),C(0x7a6a56),head,0,.17,-.01).rotation.x=Math.PI/2;}
   // S555 — the wraith's hood is deeper, its opening turned to the front and a little down, with a peak at the back of the crown
@@ -1217,7 +1217,7 @@ function buildNPCMesh(def,opts){
   if(hbOn()&&!opts.noBuilder&&!g.hbKey&&!g.power){const gh=hbGuildOf(def);if(gh){g.guildHead=gh;g.gear=gh==='m'?'stick':null;}} /* S2329 (#1658 B) — a guild's head: the Archmage's driver holds the staff */ /* S2260 (#1566 B) — the town's head dressed by office; the driver holds a staff or nothing (a Mark captain's guard spear dropped) */
   if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
   let gb=g,G=g.hbKey&&hbOn()?HB_GENOMES.get(g.hbKey):null;
-  if(G){const W=hbSeasonDress(g,G);if(W!==G&&W.dress.coat&&!(G.dress||{}).coat){gb=Object.assign({},g,{cloth:new THREE.Color(...W.dress.coat)});gb.sleeve=gb.cloth.clone().multiplyScalar(.9);}G=W;} /* S1763 — the distant copy in the coat's colour */
+  if(G){const W=hbSeasonDress(g,G);if(W!==G&&W.dress.coat&&!(G.dress||{}).coat){gb=Object.assign({},g,{cloth:new THREE.Color(...W.dress.coat)});gb.sleeve=gb.cloth.clone().multiplyScalar(.9);}if(W!==G&&!G.cast)hbDriverHead(gb=gb===g?Object.assign({},g):gb,W.dress||{});G=W;} /* S2332 — a winter coat's hood up on the stand-in too */ /* S1763 — the distant copy in the coat's colour */
   const rig=buildPerson(gb);if(G){rig.hbG=G;HB_RIGS.add(rig);}
   return rig.root;
 }
@@ -2267,6 +2267,28 @@ function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   /* S2242 — a tabard (the inquisitor's white) is the body's colour far off, over mail's sleeves */
   if(D.tabard){g.cloth=C(D.tabard);if(D.mail)g.sleeve=C(D.mail);}
   const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);}
+/* S2332 (section I, critic 17 Nov, s1674) — the stand-in wears the genome's head, beard, hair and apron. The driver is drawn until the builder's
+   body is made (and stays the far copy), and it wore its own roll: a white-haired doll became a turbaned man with a grey beard, a hatted rider
+   a bareheaded one. Colours were already the genome's (hbTint); now its headwear is people.js's own order (a helm, then a hood up, then a wrap
+   or headscarf, drawn as the kerchief in the wrap's colour), and no hat the builder does not draw (straw, brim, coif, cap, fur, chaperon); a
+   beard by the genome's length; the hair's style the nearest of the driver's; the apron, the cloak, the satchel and the book as worn. The
+   gear and the sex stay the driver's (the gait and the hands' pose drive the builder's body) */
+const HB_DRIVER_HAIR={short:'crop',loose:'straight',braid:'braid',braids:'twin',tail:'tied',bun:'bun',crown:'braid',plait:'braid',shaved:'buzz'};
+function hbDriverHead(g,D){const hx=a=>(Math.round(a[0]*255)<<16)|(Math.round(a[1]*255)<<8)|Math.round(a[2]*255);
+  const coat=!!(D.coat&&!D.robe&&!D.mail&&!D.scales&&!D.tabard&&!D.chair),cowl=!!(D.cowl&&!(D.cloak&&D.hood)&&!coat);
+  const hood=D.cloak&&D.hood==='up'?D.cloak:coat&&D.coatHood==='up'?D.coat:cowl?(Array.isArray(D.cowl)?D.cowl:null):null;
+  g.hatCol=null;
+  if(D.helm){g.hat='helm';if(Array.isArray(D.helm))g.helmCol=hx(D.helm);}
+  else if(hood||cowl){g.hat='hood';g.hoodCol=hood?hx(hood):null;}
+  else if(D.wrap||D.scarf){g.hat='kerchief';const w=Array.isArray(D.wrap)?D.wrap:Array.isArray(D.scarf)?D.scarf:null;if(w)g.hatCol=hx(w);if(g.style==='thin'||!PEOPLE_CAPPED.has(g.style))g.style='crop';} /* the kerchief is drawn on the hair's cap, which a balding head has none of */
+  else if(g.hat!=='crown')g.hat='none';}
+function hbDriverLook(g,G){const D=G.dress||{},H=G.hair||{};
+  const st=HB_DRIVER_HAIR[H.style];if(st&&!(g.style==='thin'&&st==='crop'))g.style=st;
+  if(!g.female&&!g.child){const b=+G.beard||0;g.beard=b<.05?'none':b<.25?'stubble':b<.5?'short':b<.85?'full':'long';}
+  hbDriverHead(g,D);
+  g.apron=D.apron?(Array.isArray(D.apron)?(Math.round(D.apron[0]*255)<<16)|(Math.round(D.apron[1]*255)<<8)|Math.round(D.apron[2]*255):g.apron||0x5a4a38):null;
+  g.cloak=!!D.cloak&&!D.cape;
+  g.extras=(g.extras||[]).filter(x=>x==='satchel'||x==='bag'?!!D.satchel:x==='book'?!!D.book:true);}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
 // S1763 (L1, OG-109's winter column) — the winter dress: in winter (calDay's season) a share of each people, out of doors, wear the
 // kit's winter coat (S1147) over what they rolled: a Gatelander one in two (fur-trimmed on half), a Markman nearly all (fur-lined,
@@ -2369,7 +2391,7 @@ const CREW_LINES={
 function crewLine(r,people){const L=CREW_LINES[people]||CREW_LINES.gatelander;try{if(r==='carpenter'){const b=shipBars();return L.carpenter(Math.round(b.hull),b.hullMax);}
   if(r==='cook')return crewAt('cook')?L.cook:L.cookNo;
   if(r==='navigator')return crewAt('navigator')?L.nav:L.navNo;}catch(e){}return '';}
-function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{const G=hbGenome(g);if(G.cast)hbCastDriver(g,G);hbTint(g,G);}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
+function hbPrep(g,key){if(g.hbKey)return;g.hbKey=key;try{const G=hbGenome(g);if(G.cast)hbCastDriver(g,G);else hbDriverLook(g,G);hbTint(g,G);}catch(e){console.warn('F4: no genome for',key,e);g.hbKey=null;}}
 // the human foes (S1201): which of FOE_DRESS wear the builder's body (the people, not the dead, the stone or the folk of the hills),
 // and what each wears over the builder's own rolled clothes, from its FOE_DRESS colour (c): the weapon and shield stay the game's
 // kit, held by the driver's bones, so the builder's own spear, staff, crossbow, basket and shield are taken off every one
