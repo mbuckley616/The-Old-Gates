@@ -6077,6 +6077,66 @@ function contestRing(o = {}) {
   const tris = mergeByMaterial(g);
   return { group: g, tris, draws: g.children.length, r: FRING.r, post: { x: 0, z: pz }, stakes: pts.map(p => [p.x, p.z]) };
 }
+// ── the Commencement's table and the Caravan's scale (Session 2351; Michael's B on #1628, *Festivals on the Calendar, III*: "a bursar sits
+// at a table on the square taking subscriptions", "every household is weighed one pinch of the first bale"). What the drafts name and no
+// more: the town's dressing for a feast day (OG-107's bunting, awnings and garlands) is the concept artist's festivals.js, not yet asked.
+// Both stand on a cedar table of Aurenne's rooms (1.4 by 0.66 m, the board at 0.76 m on four square legs and a stretcher) in front of the
+// one who keeps it, its front (+z) to the square's middle and its keeper 0.75 m behind its middle at -z.
+//   the bursar's: an indigo cloth over the board falling 0.3 m at the front; the subscription book open (two pages on leather boards), an
+//     inkwell and a quill, a brass dish with the morning's coins.
+//   the caravan-master's: a brass hand balance on a stand (a post of 0.38 m, a beam of 0.4, two pans on three cords each), a dish of the
+//     threads, a weight-box; on the ground at the keeper's left the first bale in sacking under two leather straps, opened at the top on
+//     its red-gold heap, and two more bales stacked behind it.
+//   PKIT.props.bursar(o) / PKIT.props.saffron(o) -> { group, tris, draws, keeper: { x, z } } in its own frame: the table's middle at the
+//     origin, the ground at y = 0, the front +z. o.ground(lx, lz) -> the ground's height there less the middle's (each leg and bale stands
+//     on it; the board is level at 0.76 over the highest leg's foot).
+const FSTALL = { w: 1.4, d: .66, h: .76, keeper: -.75 };
+function festMats() {
+  if (FSTALL.M) return FSTALL.M; const col = (r, g_, b) => new THREE.Color().setRGB(r, g_, b, THREE.SRGBColorSpace), std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: col(...c), roughness: o.r ?? .9, metalness: o.m ?? 0, side: o.side ?? THREE.FrontSide });
+  return FSTALL.M = { cedar: mat('wood', { ns: 1, color: col(.62, .44, .3) }), cloth: std([.17, .22, .42], { r: 1, side: THREE.DoubleSide }), paper: std([.9, .86, .74], { r: .95 }), board: std([.36, .2, .12], { r: .7 }),
+    ink: std([.05, .05, .07], { r: .3 }), quill: std([.94, .92, .86], { r: .8, side: THREE.DoubleSide }), brass: std([.72, .56, .24], { r: .32, m: .85 }), cord: std([.6, .5, .34], { r: 1 }),
+    sack: mat('plaster', { ns: .6, color: col(.5, .42, .3), rough: 1 }), strap: std([.3, .19, .11], { r: .7 }), saffron: std([.56, .12, .04], { r: .95 }) };
+}
+function festTable(o, kind) {
+  const { V, g, add, rod } = buttParts(), M = festMats(), G0 = o.ground || (() => 0), { w, d, h } = FSTALL; g.name = kind === 'bursar' ? 'bursar table' : 'caravan scale';
+  const box = (sx, sy, sz, m, x, y, z, ry = 0) => { const b = add(new THREE.BoxGeometry(sx, sy, sz), m, V(x, y, z)); b.rotation.y = ry; return b; };
+  const legs = []; for (const sx of [-1, 1]) for (const sz of [-1, 1]) legs.push([sx * (w / 2 - .08), sz * (d / 2 - .08)]);
+  const top = Math.max(...legs.map(([x, z]) => G0(x, z))) + h;
+  for (const [x, z] of legs) box(.06, top - G0(x, z) - .04 + .1, .06, M.cedar, x, (top - .04 + G0(x, z) - .1) / 2, z);
+  box(w - .2, .05, .04, M.cedar, 0, top - .55, 0); for (const sx of [-1, 1]) box(.04, .05, d - .2, M.cedar, sx * (w / 2 - .08), top - .55, 0);
+  box(w, .045, d, M.cedar, 0, top - .0225, 0);
+  if (kind === 'bursar') {
+    box(w + .04, .006, d + .04, M.cloth, 0, top + .003, 0); box(w + .04, .3, .006, M.cloth, 0, top - .15, d / 2 + .023);
+    for (const s of [-1, 1]) { const p = box(.24, .012, .32, M.board, s * .118, top + .012, -.02); p.rotation.z = -s * .05; const q = box(.22, .014, .3, M.paper, s * .112, top + .024, -.02); q.rotation.z = -s * .05; }
+    add(new THREE.CylinderGeometry(.028, .034, .05, 10), M.ink, V(.4, top + .031, -.12));
+    { const qg = new THREE.ConeGeometry(.012, .28, 4, 1, true); qg.translate(0, .14, 0); const qm = add(qg, M.quill, V(.4, top + .05, -.12)); qm.rotation.set(.35, 0, -.5); }
+    add(new THREE.CylinderGeometry(.09, .07, .02, 16), M.brass, V(-.42, top + .016, .1));
+    for (let k = 0; k < 5; k++) add(new THREE.CylinderGeometry(.014, .014, .004, 8), M.brass, V(-.42 + Math.cos(k * 2.4) * .035, top + .029 + k * .004, .1 + Math.sin(k * 2.4) * .035));
+  } else {
+    const bx = -.18, bz = -.06; box(.2, .025, .14, M.cedar, bx, top + .012, bz); rod(V(bx, top + .02, bz), V(bx, top + .4, bz), .008, M.brass, 6);
+    box(.4, .012, .012, M.brass, bx, top + .4, bz); add(new THREE.SphereGeometry(.014, 8, 6), M.brass, V(bx, top + .405, bz));
+    for (const s of [-1, 1]) { const ex = bx + s * .19, py = top + .16; add(new THREE.CylinderGeometry(.075, .06, .012, 16), M.brass, V(ex, py, bz));
+      for (let k = 0; k < 3; k++) { const a = k * 2.094; rod(V(ex + Math.cos(a) * .065, py + .006, bz + Math.sin(a) * .065), V(ex, top + .394, bz), .0016, M.cord, 3); } }
+    add(new THREE.SphereGeometry(.03, 8, 5), M.saffron, V(bx + .19, top + .17, bz)).scale.set(1, .35, 1);
+    add(new THREE.CylinderGeometry(.08, .065, .025, 16), M.brass, V(.28, top + .013, .1)); add(new THREE.SphereGeometry(.06, 10, 6), M.saffron, V(.28, top + .024, .1)).scale.set(1, .3, 1);
+    box(.16, .07, .1, M.cedar, .5, top + .035, -.12); for (let k = 0; k < 3; k++) add(new THREE.CylinderGeometry(.012 + k * .004, .012 + k * .004, .02 + k * .006, 8), M.brass, V(.45 + k * .05, top + .08 + k * .003, -.12));
+    /* a bale is a pillow of sacking: a box of 4 by 3 by 4 faces, each face's middle pushed out 9% (its corners held), so it reads as cloth over saffron, not a crate */
+    const pillow = (bw, bh, bd) => { const q = new THREE.BoxGeometry(bw, bh, bd, 4, 3, 4), P = q.attributes.position, h = [bw / 2, bh / 2, bd / 2];
+      for (let i = 0; i < P.count; i++) { const v = [P.getX(i), P.getY(i), P.getZ(i)], u = v.map((a, k) => a / h[k]);
+        for (let k = 0; k < 3; k++) { const o1 = u[(k + 1) % 3], o2 = u[(k + 2) % 3]; v[k] *= 1 + .09 * (1 - o1 * o1) * (1 - o2 * o2) * (k === 1 ? .5 : 1); } P.setXYZ(i, ...v); }
+      q.computeVertexNormals(); return q; };
+    const bale = (x, z, y, ry, open) => { const bw = .78, bh = .55, bd = .55, b = add(pillow(bw, bh, bd), M.sack, V(x, y + bh / 2, z)); b.rotation.y = ry;
+      for (const s of [-.28, .28]) { const st = box(.05, bh + .02, bd + .02, M.strap, x + Math.cos(ry) * s * bw, y + bh / 2, z - Math.sin(ry) * s * bw, ry); st.scale.y = 1; }
+      if (open) { const r0 = box(bw * .9, .07, bd * .9, M.sack, x, y + bh + .02, z, ry); r0.rotation.x = .02; const hg = new THREE.IcosahedronGeometry(.2, 2), HP = hg.attributes.position; for (let i = 0; i < HP.count; i++) { const yy = HP.getY(i); HP.setY(i, Math.max(0, yy) * (.8 + .4 * Math.abs(Math.sin(HP.getX(i) * 41 + HP.getZ(i) * 29)))); }
+        hg.computeVertexNormals(); const hp = add(hg, M.saffron, V(x, y + bh + .045, z)); hp.scale.set(1.3, .45, 1); hp.rotation.y = ry; }
+      return b; };
+    const kx = w / 2 + .62, kz = FSTALL.keeper * .55; bale(kx, kz, G0(kx, kz), .2, true);
+    const sx2 = kx + .35, sz2 = kz - .75, y2 = Math.max(G0(sx2 - .4, sz2), G0(sx2 + .4, sz2)); bale(sx2, sz2, y2, -.1, false); bale(sx2 + .05, sz2 + .02, y2 + .55, .15, false);
+  }
+  const tris = mergeByMaterial(g);
+  return { group: g, tris, draws: g.children.length, keeper: { x: 0, z: FSTALL.keeper }, w, d, h };
+}
+const bursarTable = (o = {}) => festTable(o, 'bursar'), caravanScale = (o = {}) => festTable(o, 'saffron');
 // ── ships (card F11, backlog L6, OG-004; Session 1531): the Gatelands sloop of docs/prototypes/levelup/ships.js (gatelandsSloop,
 // Session 858; Michael's A on #306: the square sail, the harp, a tiller on the small hulls), in the game's sloop's numbers (L 13, W 4.4,
 // draft 1.05, the deck 1.0 over the sea): clinker strakes lapped, tarred below the water and oak above, the sheer strake green under a
@@ -11546,7 +11606,7 @@ function aurenneOrrery(hAt, o = {}) {
       const m = new THREE.Mesh(g, DQM[k]); m.name = 'quarter:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     return { group, tris: Math.round(tris), draws: group.children.length, bridge, theatre };
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, trader: markTrader, TRADER_TRADES, TOWN_TRADES, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
