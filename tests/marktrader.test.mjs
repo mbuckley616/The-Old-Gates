@@ -77,7 +77,7 @@ for (const s of await page.evaluate(towns)) {
   if (found.misc && found.armor) break;
   if (!(await g.settle(s))) continue;
   const r = await page.evaluate(s => { const H = WORLD.settle.get(s).houses.filter(h => h.siteId === s && ['misc', 'armor', 'barber'].includes(h.type)), o = {};
-    for (const h of H) if (h.kit && h.kit.trader === h.type && !o[h.type]) o[h.type] = h.id; return { n: H.length, o }; }, s);
+    for (const h of H) if (h.kit && h.kit.trader === h.type && h.kit.o.d === 9 && !o[h.type]) o[h.type] = h.id; return { n: H.length, o }; }, s);
   seen.push(`${s}: ${r.n} shops, ${Object.keys(r.o).join(' ') || 'no hall'}`);
   for (const t of ['misc', 'armor', 'barber']) if (r.o[t] && !found[t]) { found[t] = { id: r.o[t], site: s }; await visit(t, r.o[t], s, false);
     if (t === 'misc' && !found.barber && !r.o.barber) { found.barber = { id: r.o.misc, site: s, as: true }; await visit('barber', r.o.misc, s, true); } }

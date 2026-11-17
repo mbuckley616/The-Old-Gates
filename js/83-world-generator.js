@@ -513,7 +513,15 @@ function genSettlement(site){
         // for it takes PKIT.mk.lot's hall, or the town house (S2003), as before.
         if(MK&&(t==='misc'||t==='armor'||t==='barber'))for(const porch of [true,false]){const S={roof:'shingle',w:6.4,d:9,porch,chimney:false,carve:true,wall:o1.wall},E=ext(S);if(fit(S.w,S.d,E)){lot.kit={kind:'markhall',o:S,ext:E,w0,d0,stoop:E[1],trader:t,shell:`${site.id}:windows:${lot.n}`};return;}}
         for(const v of vars){const E=ext(v);if(!fit(W0,D0,E))continue;const w=most(W0,v.w,q=>fit(q,D0,E)),d=most(D0,v.d,q=>fit(w,q,E));
-          if(!fit(w,d,E))continue;const o=Object.assign({},v,{w,d});lot.kit={kind:MK?'markhall':'aurhouse',o,ext:E,w0,d0};if(!MK)lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1831 — the street's stream, which the rooms inside draw their shell from */if(MK)lot.kit.stoop=E[1];if(inn)lot.kit.alehall=true;return;}
+          if(!fit(w,d,E))continue;
+          // S2328 (card F9; Michael's A on #1662 and on #1666; OG-043, OG-115) — a Markish goods shop, armourer or barber whose lot took no
+          // 6.4 by 9 m hall but takes one of 6.8 by 6.8 m or more is the trader's hall short (rooms.js's Session 2310), and a weaponsmith's of
+          // 6.0 by 6.55 m or more the smith's hall at the lot's size (Session 2312): under shingle, carved, no chimney but the louver, as the
+          // drawn halls are, at the hall's fitted size held to what the prototypes check (8.4 by 7.9 m at most). Inside, kitMarkTrader and
+          // kitMarkSmithy at that size.
+          if(MK){const tr=t==='misc'||t==='armor'||t==='barber',sm=t==='weapon';if((tr&&w>=6.8&&d>=6.8)||(sm&&w>=6.0&&d>=6.55)){const S={roof:'shingle',w:Math.min(w,8.4),d:Math.min(d,7.9),porch:!!v.porch,chimney:false,carve:true,wall:o1.wall};
+            lot.kit={kind:'markhall',o:S,ext:E,w0,d0,stoop:E[1],shell:`${site.id}:windows:${lot.n}`};if(tr)lot.kit.trader=t;else lot.kit.smithy=true;return;}}
+          const o=Object.assign({},v,{w,d});lot.kit={kind:MK?'markhall':'aurhouse',o,ext:E,w0,d0};if(!MK)lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1831 — the street's stream, which the rooms inside draw their shell from */if(MK)lot.kit.stoop=E[1];if(inn)lot.kit.alehall=true;return;}
         // S2003 (card F6, Michael's C on #1300; OG-034, OG-025) — a Markish home or shop whose lot will not take the hall is the kit's town
         // house (PKIT.mk.townhouse, Session 1986): gable to the street, two storeys jettied 0.4 m, on a low footing with 0.6 m of steps, 4.2 to
         // 6.6 m wide and 3.4 to 7 deep, its front on the lot's street line as the hall's. Its pitch (46 to 58°), its upper storey (2.35 to 2.6 m)
@@ -3474,7 +3482,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // longhouse is (nothing scaled). The smith stands behind the anvil on the forge's side, facing the door; the forge you work at is smithForge's.
   function kitMarkSmithy(house){return !!(house&&house.type==='weapon'&&house.kit&&house.kit.kind==='markhall'&&house.kit.smithy&&house.kit.o&&house.kit.shell&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.mk&&PKIT.mk.smithy);}
   function buildKitMarkSmithy(house){
-    const k=house.kit,T=PKIT.mk.smithy({shell:k.shell,house:k.o},PKIT.stream(house.id+':marksmithy')),I=T.inner,X=I.x1,Z=I.z1,FY=T.floor,W=2*X,D=2*Z;
+    const k=house.kit,T=PKIT.mk.smithy({shell:k.shell,house:k.o,w:k.o.w,d:k.o.d},PKIT.stream(house.id+':marksmithy')),I=T.inner,X=I.x1,Z=I.z1,FY=T.floor,W=2*X,D=2*Z;
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-FY,dr=T.door;
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.tieBeam-FY).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(dr.x).toFixed(3);house._markSmithy=T;
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
@@ -3563,7 +3571,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the game's lidded chest where the prototype draws its own (o.chest false leaves the drawn one out).
   function kitMarkTrader(house){return !!(house&&['misc','armor','barber'].includes(house.type)&&house.kit&&house.kit.kind==='markhall'&&house.kit.trader===house.type&&house.kit.o&&house.kit.shell&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.mk&&PKIT.mk.trader);}
   function buildKitMarkTrader(house){
-    const k=house.kit,T=PKIT.mk.trader({trade:house.type,shell:k.shell,house:k.o,chest:false},PKIT.stream(house.id+':marktrader')),I=T.inner,X=I.x1,Z=I.z1,FY=T.floor,W=2*X,D=2*Z;
+    const k=house.kit,T=PKIT.mk.trader({trade:house.type,shell:k.shell,house:k.o,chest:false,w:k.o.w,d:k.o.d},PKIT.stream(house.id+':marktrader')),I=T.inner,X=I.x1,Z=I.z1,FY=T.floor,W=2*X,D=2*Z;
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-FY,dr=T.door,C=T.counter;
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.tieBeam-FY).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(dr.x).toFixed(3);house._markTrader=T;
     /* you arrive 1 m inside the door on the hall's axis, facing where you stand to buy */
@@ -3676,7 +3684,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // boarded flue), the table, the 13-riser stair up the side wall to a landing at the back; above, the loft under the roof with the bed of
   // furs, the cradle and the sacks. Drawn in metres and moved into the room's frame as the longhouse is (nothing scaled). The room is the
   // ground floor's inside; the upper floor runs on 0.4 m over the jetty, which the room's depth does not reach (the sacks stand there).
-  // S2324 (Michael's A on #1653: as drawn, each trade with its own piece) — a Markish shop on a tight lot (a goods shop, armourer, barber,
+  // S2327 (Michael's A on #1653: as drawn, each trade with its own piece) — a Markish shop on a tight lot (a goods shop, armourer, barber,
   // healer or weaponsmith standing as the town house) opens on the same two floors with the stue as the trade's floor (rooms.js's
   // Session 2305, o.trade): the low shelf of stock, the keeper's walk and the counter along the wall away from the stair, the strongbox at
   // the walk's dead end, the trade's own piece on the free floor, the household's loft above. A size with no room for a counter (shop

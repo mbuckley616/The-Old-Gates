@@ -12,7 +12,7 @@ const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 let id = null, site = null; const seen = [];
 for (const s of await page.evaluate(towns)) {
   if (!(await g.settle(s))) continue;
-  const r = await page.evaluate(s => { const H = WORLD.settle.get(s).houses.filter(h => h.siteId === s && h.type === 'weapon'); return { n: H.length, sm: (H.find(h => h.kit && h.kit.smithy) || {}).id || null }; }, s);
+  const r = await page.evaluate(s => { const H = WORLD.settle.get(s).houses.filter(h => h.siteId === s && h.type === 'weapon'); return { n: H.length, sm: (H.find(h => h.kit && h.kit.smithy && h.kit.o.d === 9) || {}).id || null }; }, s);
   seen.push(`${s}: ${r.n} smith${r.n === 1 ? '' : 's'}${r.sm ? ', the kit’s' : ''}`); if (r.sm) { id = r.sm; site = s; break; }
 }
 check(`a Markish smithy stands as rooms.js's smithy (${id || seen.join('; ')})`, !!id, seen);

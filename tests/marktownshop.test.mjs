@@ -1,4 +1,4 @@
-// A Markish shop on a tight lot, inside, on the new look (Session 2324; card F9, Michael's A on #1653: as drawn, each trade with its own
+// A Markish shop on a tight lot, inside, on the new look (Session 2327; card F9, Michael's A on #1653: as drawn, each trade with its own
 // piece; rooms.js's markTownRoom with o.trade, Session 2305; OG-043, OG-115). A goods shop, armourer, barber, healer or weaponsmith whose lot
 // stands as the town house (lot.kit.kind 'marktown', S2003) opens on the town house's two floors with the stue as the trade's floor: the
 // shelf of stock, the keeper's walk and the counter along the wall away from the stair, the strongbox at the walk's dead end, the trade's
