@@ -429,5 +429,34 @@ const wg = await page.evaluate(() => {
 console.log(JSON.stringify(wg).slice(0, 2000));
 check(`the wager: a Markman at the water (${wg.kind}, ${wg.fromPad} m past the pad) from 5:00, not at 4:00, gone at noon and in an occupied town; three boats asked from 5:00, none offered at 7:00 without a bet`, !wg.at4 && wg.at5 && wg.who[0] === 'markman' && !wg.at12 && !wg.occupied && wg.ask === 'Which boat?' && wg.follow.length === 3 && !wg.at7.includes('A bet on the boats.'), wg);
 check('2 gold on a boat (short of two, nothing), once; before 8:00 the same word; from 8:00 a win pays 6 once, a loss tells third; the race the same for a site and year, not every year alike; the ring\'s try untouched', /two gold/.test(wg.poor) && !wg.poorBet && wg.placed === wg.L.placed && wg.gold1 === 8 && wg.again === wg.L.placed && wg.gold2 === 8 && wg.early === wg.L.placed && wg.won === wg.L.won && wg.gold3 === 14 && wg.won2 === wg.L.won && wg.gold4 === 14 && wg.lost === wg.L.lost && wg.gold5 === 8 && wg.same && new Set(wg.years).size > 1 && wg.ring, wg);
+// 17. the Caravan's first bale (Session 2336): the caravan-master on the square from 6:00 to 18:00, not while occupied; three topics; a
+// pinch at 2 gold once a year, the twist of saffron and the log; the Factor's day line; the next day an Aurennais says so, once
+const cv = await page.evaluate(() => {
+  let site = null; for (let j = 0; j < GRID && !site; j++) for (let i = 0; i < GRID && !site; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; site = c.sites.find(s => s.kind === 'town' || s.kind === 'city') || null; }
+  const st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, p0 = [px, pz], g0 = gold, msgs = [], sm = window.showMsg;
+  const cf = FESTIVALS.find(f => f.key === 'caravan');
+  const at = (dd, h) => { worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + cf.month - CAL.startMonth) * CAL.monthLen + cf.dom - 1 + dd) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const au = () => ({ _siteId: site.id, people: 'aurennais', greeting: ['-'] }), lord = { _siteId: site.id, people: 'aurennais', _lord: true, greeting: ['-'] };
+  st.p = 70; st.flags = {}; worldState.festivals = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1;
+  const out = { isle: isleAt(site.x, site.z) }; const bag0 = BAG.length;
+  try { window.showMsg = m => msgs.push(m);
+    at(0, 5); tickCaravan(); out.at5 = !!CARAVAN;
+    at(0, 7); tickCaravan(); out.at7 = CARAVAN && [CARAVAN.npc.def ? CARAVAN.npc.def.role : null, CARAVAN.npc.def ? CARAVAN.npc.def.people : null];
+    const d = caravanDef(site, 28); out.labels = d.topics.map(t => t.label); out.name2 = caravanDef(site, 28).name === d.name;
+    out.lord = feastGreeting(lord);
+    gold = 1; out.poor = caravanPinch(site); out.poorDone = festActDone('caravan', site);
+    gold = 10; out.pinch = caravanPinch(site); out.gold = gold; out.item = BAG.length > bag0 ? BAG[BAG.length - 1].name : null; out.log = msgs[msgs.length - 1];
+    out.labels2 = d.topics.map(t => t.label);
+    at(1, 10); out.next = feastGreeting(au()); out.next2 = feastGreeting(au());
+    at(0, 18); tickCaravan(); out.at18 = !!CARAVAN;
+    at(0, 9); st.flags = { occupied: true }; tickCaravan(); out.occupied = !!CARAVAN; st.flags = {};
+  } finally { window.showMsg = sm; if (CARAVAN) caravanOut(); while (BAG.length > bag0) BAG.pop(); gold = g0; worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.L = CARAVAN_LINES; out.LL = FEST_LORD_LINE.caravan.line;
+  return out;
+});
+console.log(JSON.stringify(cv).slice(0, 2000));
+check(`the Caravan: the caravan-master (${cv.at7}) on the square from 6:00, not at 5:00 or 18:00 or while occupied, the same name for a site and year; his three topics; the Factor's day line`, cv.isle === 'aurenne' && !cv.at5 && cv.at7 && !cv.at18 && !cv.occupied && cv.name2 && JSON.stringify(cv.labels) === JSON.stringify(['How was the road?', 'Why the same day everywhere?', 'A pinch of saffron', 'Farewell.']) && cv.lord === cv.LL, cv);
+check('a pinch at 2 gold (short of two, nothing): the twist of saffron, the log, offered once a year; the next day an Aurennais says so, once', /two gold/.test(cv.poor) && !cv.poorDone && cv.pinch === cv.L.pinch && cv.gold === 8 && cv.item === 'A twist of saffron' && cv.log === cv.L.log && !cv.labels2.includes('A pinch of saffron') && cv.next === cv.L.after && cv.next2 !== cv.L.after, cv);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
