@@ -346,5 +346,33 @@ console.log(JSON.stringify(bz).slice(0, 2000));
 check('the Blaze: a log on the square\'s fire from 17:00 to first light (not at 15:00 or 7:00, not 8 m off), the night\'s act on the evening\'s year, once', bz.mark === 'mark' && bz.p15 === null && /put a log/.test(bz.p20) && bz.far === null && /put a log/.test(bz.p02) && bz.did && bz.rec && bz.rec.act === 28 && bz.again === null && bz.p07 === null, bz);
 check('the reeve\'s Blaze line; a Markman\'s word that night once, before midnight or after, and not again', bz.reeve === bz.R && bz.thanks === bz.T && bz.thanks2 !== bz.T && bz.eve === bz.T && bz.eveAfter !== bz.T, bz);
 check('first light on the square after the Blaze: the fire let die, once', bz.light && bz.light === bz.light2 && bz.light.startsWith(''), bz);
+// 14. the alehall on the Blaze and First Snow (Session 2330): the keeper's day line till 17:00; on First Snow's night no places, past
+// midnight too; a place already taken holds
+const ah = await page.evaluate(() => {
+  const site = ladderSites().find(s => isleAt(s.x, s.z) === 'mark'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, r0 = worldState.rented, fs0 = worldState.firstSnow;
+  const bf = FESTIVALS.find(f => f.key === 'blaze'), sf = FESTIVALS.find(f => f.key === 'firstsnow');
+  const at = (f, dd, h) => { worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + f.month - CAL.startMonth) * CAL.monthLen + f.dom - 1 + dd) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const keeper = { _siteId: site.id, people: 'markman', _alehall: 1, greeting: ['-'] }, plain = { _siteId: site.id, people: 'markman', greeting: ['-'] };
+  const house = { id: 'g_' + site.id + '_99', type: 'inn', kit: { alehall: true }, siteId: site.id, siteKind: site.kind, name: 'The Hall' };
+  const bed = () => { const T = innTopics(house, 'markman').find(t => t.label === 'A bed for the night?'); return { r: T.response, f: T.follow.map(x => x.label) }; };
+  st.p = 70; st.flags = {}; worldState.rented = null; worldState.firstSnow = {};
+  const out = {};
+  try {
+    at(bf, 0, 10); out.blaze10 = feastGreeting(keeper); out.blazePlain = feastGreeting(plain);
+    at(bf, 0, 19); out.blaze19 = feastGreeting(keeper);
+    at(bf, -1, 10); out.dayBefore = feastGreeting(keeper);
+    at(sf, 0, 15); out.snow15 = feastGreeting(keeper); out.bed15 = bed();
+    at(sf, 0, 20); out.snow20 = feastGreeting(keeper); out.bed20 = bed();
+    at(sf, 1, 3); out.snow03 = feastGreeting(keeper); out.bed03 = bed();
+    at(sf, 1, 7); out.snow07 = feastGreeting(keeper); out.bed07 = bed();
+    at(sf, 0, 20); worldState.rented = { id: house.id, room: 0, bench: 1, until: worldState.gameTimeAbsMinutes + 600 }; out.mine = bed();
+  } finally { worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.rented = r0; worldState.firstSnow = fs0; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.L = ALEHALL_FEST;
+  return out;
+});
+console.log(JSON.stringify(ah).slice(0, 2000));
+check('the alehall on the Blaze: *Hearth’s out…* from its keeper till 17:00, not after, not from another Markman, not the day before', ah.blaze10 === ah.L.blazeDay && ah.blazePlain !== ah.L.blazeDay && ah.blaze19 !== ah.L.blazeDay && ah.dayBefore !== ah.L.blazeDay, ah);
+check('the alehall on First Snow: from 18:00 to first light *No places tonight…*, and the bed lets no place; at 15:00 and 7:00 the bench is let as ever; a place taken holds', ah.snow15 !== ah.L.firstSnow && ah.bed15.f.length === 2 && ah.snow20 === ah.L.firstSnow && ah.bed20.r === ah.L.firstSnow && ah.bed20.f.length === 0 && ah.snow03 === ah.L.firstSnow && ah.bed03.f.length === 0 && ah.snow07 !== ah.L.firstSnow && ah.bed07.f.length === 2 && ah.mine.r === ah.L.firstSnowMine && ah.mine.f.length === 0, ah);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

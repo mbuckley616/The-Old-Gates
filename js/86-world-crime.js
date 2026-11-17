@@ -281,6 +281,18 @@
       not:'Suit yourself. The fire’s free.'}};
   const INN_BENCH_GREET=["Fire's lit. Find a bench.","Benches by the wall. Bowl's on the way.","We don't ask where you've been. Boots off, though."];
   function innBench(house){return !!(house&&house.type==='inn'&&house.kit&&house.kit.alehall);}
+  // S2330 — the alehall on the Mark's two festivals (*Festivals on the Calendar, II* §2 and §4, word for word; Michael's B on #1628). On the
+  // Blaze, until 17:00, the keeper greets with the cold hearth. On First Snow's night, from 18:00 to first light, the benches are on the
+  // square: the keeper greets with it, and *A bed for the night?* lets no place; a place already taken holds, and he says so. In a town
+  // keeping the festival (full, thin or named), as the acts.
+  const ALEHALL_FEST={blazeDay:'Hearth’s out. Blaze. Cold porridge or nothing till dusk.',firstSnow:'No places tonight. Benches are on the square. Go and sit on one.',
+    firstSnowMine:'Your place is yours. Nobody’ll stop you sleeping in it. Everyone’ll know, mind.'};
+  const FIRSTSNOW_NIGHT=[18,6],BLAZE_DUSK=17;
+  function festKept(siteId,key,at){const h=typeof festivalHere==='function'?festivalHere(siteId,at):null;return !!(h&&h.f.key===key&&h.state!=='none');}
+  function firstSnowNight(siteId){if(!siteId)return false;const hr=hourNow();if(hr>=FIRSTSNOW_NIGHT[0])return festKept(siteId,'firstsnow');
+    if(hr<FIRSTSNOW_NIGHT[1])return festKept(siteId,'firstsnow',absMin()-1440);return false;}
+  function alehallFestLine(def){if(!def||!def._alehall||!def._siteId)return null;if(firstSnowNight(def._siteId))return ALEHALL_FEST.firstSnow;
+    if(hourNow()<BLAZE_DUSK&&festKept(def._siteId,'blaze'))return ALEHALL_FEST.blazeDay;return null;}
   function innBenchName(k){if(k==null)return 'a place on the bench';if(k>5)return 'a place on the benches';
     return `${['the place by the door','the middle place','the place by the counter'][k%3]} on the ${k<3?'left':'right'} bench`;}
   // S783 — the Waylamp at the inns (the approved draft's words, by the inn's people): the holder's *The lamp over the door?* and
@@ -314,10 +326,11 @@
   function innTopics(house,people){const L=innBench(house)?(INN_BENCH_LINES[people]||INN_BENCH_LINES.markman):(INN_ROOM_LINES[people]||INN_ROOM_LINES.markman);const cap=t=>t.replace(/^./,c=>c.toUpperCase());
     return [{label:'Something to eat and drink?',trade:true,fn:()=>{feastMeal(house);}},{label:'A bed for the night?',
           get response(){const price=innPrice(house),n=innRooms(house),taken=innTaken(house),free=innFreeRoom(house);
+            if(innBench(house)&&firstSnowNight(house.siteId))return rentedNow(house.id)?ALEHALL_FEST.firstSnowMine:ALEHALL_FEST.firstSnow; /* S2330 — First Snow: no places tonight */
             if(rentedNow(house.id)){const mine=myRoom(house.id);return mine==null?L.made:L.madeNamed(cap(innRoomName(mine,n,house)));}
             const others=taken===0?L.empty:taken===1?L.one:L.many(taken);
             const fl=feastInnLine(people),lf=!house.coachInn&&typeof lampFree==='function'&&lampFree()?(LAMP_HELD[people]||LAMP_HELD.gatelander).room+' ':'';return lf+(fl?fl+' ':'')+L.offer(others,price,innRoomName(free,n,house));}, /* S784 — the Waylamp's bearer: the lamp's line first, then the house's own offer */
-          get follow(){const price=innPrice(house);if(rentedNow(house.id))return [];
+          get follow(){const price=innPrice(house);if(rentedNow(house.id)||(innBench(house)&&firstSnowNight(house.siteId)))return [];
             const lamp=!house.coachInn&&typeof lampFree==='function'&&lampFree();
             return [{label:lamp?'Yes.':`Yes. ${price} gold.`,quest:true,fn:()=>{const n=innRooms(house),free=innFreeRoom(house);
               if(free==null)return L.full;
