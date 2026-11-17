@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The festivals' contest grounds — the butts all year and the ring on its day, both only on their day, or not yet? (from the look builder, 2026-11-17, #1672)
+**The question.** Festivals B owes the look builder two contest grounds. Session 2317 built both as a prototype at the game's own sizes: Riverfair's butts (a straw boss 1.36 m across with a painted face, bales, a limed mark, pegs at 30/50/70 m; about 760 triangles) and the Strait Fair's ring (10 tarred stakes on a 5 m radius, two hemp ropes, the reeve's post and horn; 2,405 triangles). The look is drawn to the game's numbers; the open part is where they stand, and when.
+
+**Options.**
+- **A (recommended).** The butts stand all year as the town's practice ground: a lane outside every Gatelands town (the first flat 76 m strip off the town's pad, away from the road), shot only on Riverfair for the purse. The ring goes up on a Markish town's square, or the nearest 12 m of clear ground, on the Strait Fair's morning, and comes down after noon.
+- **B.** Both only on their day: the lane and the ring are set up for the festival and gone the rest of the year.
+- **C.** Not yet: keep the placeholder butt and no rope until the concept artist's festival dressing (OG-107) is answered, and lay them with it.
+
+**Pictures** (from `auto/look-2317`). [the lane to 70 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-lane.jpg) · [the butt](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-butt.jpg) · [the ring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-ring.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-high.jpg)
+
 ### The Mark's weaponsmith on a wide, shallow lot — the smith's hall at the lot's size, or not yet? (from the look builder, 2026-11-17, #1666)
 **The question.** #1662's pair. Of the five Markish shops on a wide, shallow lot, two are weaponsmiths (6.26 × 7.76 m and 7.22 × 6.55 m). The smith's hall (in the game since S1869) is used only where a lot takes the whole 6.4 × 9 m; anywhere smaller the shop opens on the old generated room. Session 2312 found the smithy needs no new plan: `markSmithy` at the lot's own size passes every check of the drawn hall at 8 sizes, 6.0 × 6.55 to 8.4 × 7.9 m (the forge under the louver, the anvil 0.85 m out, the walks clear). Only the tool rail moved, in front of the short hall's one middle window. 6.3k to 6.9k triangles in 15 meshes.
 
