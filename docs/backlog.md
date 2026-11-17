@@ -260,11 +260,11 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - **Seven more from the cut shards, never reported** (QA, Session 2336). A cut shard prints no summary, so the twelve above are the shards
     that finished. Read from the cut shards' own logs, four suites failed both tries and three more failed once. Each was run again here on main
     at s1677 (dec2b2f), first two or three at a time, then alone where it went red.
-    - **`hubreturn`** red twice on CI, red here (for the systems builder: the sheet's portrait, `sheetFigDraw`, `js/66-hub.js`). Opening Inventory
+    - ~~**`hubreturn`** red twice on CI, red here (for the systems builder: the sheet's portrait, `sheetFigDraw`, `js/66-hub.js`). Opening Inventory
       compiles the portrait's programs, and on SwiftShader that holds the page's thread. Here the page answered nothing for 108 s, with two boots beside
       it, so the armour sub-tab's click ran out of its 30 s. Alone it held 50 s, and 60 s with one boot beside it. The function's comment says about 17 s once
       a boot. The suite's part is fixed (Session 2336: it waits for the compile, 2/2 green). Whether 50 s against 17 is a regression is the systems
-      builder's to read; a player's GPU compiles in parallel.
+      builder's to read; a player's GPU compiles in parallel.~~ — read, Session 2344: not a regression. S2066's build (s1440) and main (s1682) compile the same 20 programs for the same 15 materials, side by side 148 s and 123 s; S2066's own entry said 17–48 s, and the comment's 17 s was its low end. On SwiftShader `compileAsync` resolves in 34 ms and every program is compiled in the first draw; the window's quad now goes through `compileAsync` too (on a GPU, 6 programs instead of 7 compiled in the draw: the shadow pass's skinned depth programs, which three gives no compile of their own)
     - **`scaleratio`** red twice on CI, red here (for the look builder: the Mark's kit houses, `js/82-world-structures.js`/`83-world-generator.js`).
       *c3_5_s6: every storey is 1.45 to 1.7 of the person* has 3 storeys to measure, `[2.82,2.85,2.85]`, and asks for at least 4. The town's
       houses are the kit's now: `markhall` halls with `wallH` 3.7 (shops, the alehall) or 3.2 (one storey, 2.06 and 1.78 of a 1.8 m person), and
