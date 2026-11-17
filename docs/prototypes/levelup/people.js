@@ -2355,18 +2355,35 @@ function buildBeltCharms(G, body, byName, meshes, root) {
   const want = []; if (D.amulet) want.push({ kind: 'amulet', ds: 0, L: .045, r: .0265, T: .011, top: .0295 });
   if (D.charms) want.push({ kind: 'tooth', ds: -.042, L: .03, r: .013, T: .012, top: .014 }, { kind: 'ring', ds: .04, L: .026, r: .0092, T: .0034, top: .0075 }, { kind: 'bead', ds: .063, L: .036, r: .0066, T: .013, top: .0066 });
   // two purses (Session 2307, Eadburh Two-Purses; Michael's B on #1611): a leather bag 9.6 cm deep gathered at its neck, one each side
-  // of the buckle 0.4 rad round, hung 1.2 cm under the edge on its own cord; the right one madder red, so the two read as two
-  if (D.purses) want.push({ kind: 'purse', at: .4, L: .01, r: .038, T: .046, top: .052, c: D.purses }, { kind: 'purse', at: -.4, L: .01, r: .038, T: .046, top: .052, c: [.32, .1, .08] });
+  // of the buckle 0.4 rad round, hung under the edge on its own cord, 2.5 cm (Session 2322); the right one madder red, so the two read as two
+  if (D.purses) want.push({ kind: 'purse', at: .4, L: .025, r: .038, T: .046, top: .052, c: D.purses }, { kind: 'purse', at: -.4, L: .025, r: .038, T: .046, top: .052, c: [.32, .1, .08] });
   // how far a point must move out along N so nothing it lies on comes within T/2 of it, over a disc of radius r
   const clearAt = (Q, N, r, T) => { let deep = 0; for (let q = 0; q < NC; q++) { const dx = CP[q * 3] - Q.x, dy = CP[q * 3 + 1] - Q.y, dz = CP[q * 3 + 2] - Q.z, hh = dx * N.x + dy * N.y + dz * N.z; if (hh < -.03 || hh > .03) continue; if (Math.hypot(dx - N.x * hh, dy - N.y * hh, dz - N.z * hh) > r) continue; deep = Math.max(deep, hh + T / 2 + .0005); } return deep; };
+  // a purse's shape (Session 2322): the lathe's radius at a height along its axis from its middle, the bag 0.6 as deep as it is wide
+  const PH = .096, PURSE = []; for (let i = 0; i <= 14; i++) { const t = i / 14; PURSE.push([-PH / 2 + PH * t - .004, .003 + .035 * Math.sin(Math.PI * Math.min(1, t * 1.12)) * (1 - .62 * t ** 3)]); }
+  PURSE.push([PH / 2 - .001, .0095], [PH / 2 + .007, .0125]);
+  const purseR = y => { if (y < PURSE[0][0] || y > PURSE[PURSE.length - 1][0]) return 0; let k = 0; while (k < PURSE.length - 2 && PURSE[k + 1][0] < y) k++; const f = (y - PURSE[k][0]) / ((PURSE[k + 1][0] - PURSE[k][0]) || 1); return PURSE[k][1] + f * (PURSE[k + 1][1] - PURSE[k][1]); };
+  // how far inside the bag (in its own frame: x across, y up its axis, z out) the deepest of what it lies on comes, with a margin; and how
+  // near behind it the nearest comes (the bag resting, not floating)
+  const purseIn = (Q, X, Y, Z, m) => { let deep = -1, near = 1, n = 0; for (let q = 0; q < NC; q++) { const dx = CP[q * 3] - Q.x, dy = CP[q * 3 + 1] - Q.y, dz = CP[q * 3 + 2] - Q.z, ly = dx * Y.x + dy * Y.y + dz * Y.z, rr = purseR(ly);
+      if (rr <= 0) continue; const lx = dx * X.x + dy * X.y + dz * X.z, lz = dx * Z.x + dy * Z.y + dz * Z.z; if (Math.abs(lx) > rr) continue; const half = .6 * rr * Math.sqrt(1 - (lx / rr) ** 2); n++;
+      if (Math.abs(lz) < half + m) deep = Math.max(deep, half + m - Math.abs(lz)); else if (lz < 0) near = Math.min(near, -lz - half); } return { deep, near, n }; };
   const pieces = [], hidden = [];
   for (const w of want) { const P0 = pointAt(w.at != null ? sAt(w.at) : sA + side * w.ds); if (!P0) { hidden.push(w.kind); continue; } const { ph, E } = P0, N = radial(ph), Q = E.clone().addScaledVector(up, -(w.L + w.top));
+    // Session 2322: a purse hangs from its neck, and the neck from its cord straight down under the belt's edge (S2307 pushed the whole bag
+    // out level, so its cord ran out 1.3 rad off plumb to a neck 4 cm off the belt). The neck is pushed out only as far as the tunic under it
+    // asks; the bag then swings out from the neck about the belt's line, only as far as what it rests on (the blousing, the hip) asks
+    if (w.kind === 'purse') { const X = up.clone().cross(N).normalize(), H = E.clone().addScaledVector(up, -w.L); H.addScaledVector(N, clearAt(H, N, .011, .012));
+      let th = 0, Y, Z, Qp, fit = null; for (; th <= 1.2001; th += .01) { Y = up.clone().multiplyScalar(Math.cos(th)).addScaledVector(N, -Math.sin(th)); Z = X.clone().cross(Y); Qp = H.clone().addScaledVector(Y, -(PH / 2 + .007)); fit = purseIn(Qp, X, Y, Z, .0008); if (fit.deep <= 0) break; }
+      if (fit.deep > 0) { hidden.push(w.kind); continue; }
+      let hid = false; for (let q = 0; q < NA && !hid; q++) { const dx = AP[q * 3] - Qp.x, dy = AP[q * 3 + 1] - Qp.y, dz = AP[q * 3 + 2] - Qp.z, hh = dx * Z.x + dy * Z.y + dz * Z.z; if (hh < w.T / 2 + .0005 || hh > .15) continue; if (Math.hypot(dx - Z.x * hh, dy - Z.y * hh, dz - Z.z * hh) < w.r) hid = true; } if (hid) { hidden.push(w.kind); continue; }
+      pieces.push({ ...w, ph, E, N, Q: Qp, H: H.clone().addScaledVector(Y, -.008).addScaledVector(Z, -.0055), X, Y, Z, tilt: +th.toFixed(2) }); continue; }
     for (let it = 0; it < 4; it++) { let deep = -1; for (let q = 0; q < NC; q++) { const dx = CP[q * 3] - Q.x, dy = CP[q * 3 + 1] - Q.y, dz = CP[q * 3 + 2] - Q.z, hh = dx * N.x + dy * N.y + dz * N.z; if (hh < -.03 || hh > .02 + w.T) continue; if (Math.hypot(dx - N.x * hh, dy - N.y * hh, dz - N.z * hh) > w.r) continue; deep = Math.max(deep, hh + w.T / 2 + .0007); } if (deep <= 0) break; Q.addScaledVector(N, deep); }
     let hid = false; for (let q = 0; q < NA && !hid; q++) { const dx = AP[q * 3] - Q.x, dy = AP[q * 3 + 1] - Q.y, dz = AP[q * 3 + 2] - Q.z, hh = dx * N.x + dy * N.y + dz * N.z; if (hh < w.T / 2 + .0005 || hh > .15) continue; if (Math.hypot(dx - N.x * hh, dy - N.y * hh, dz - N.z * hh) < w.r) hid = true; } if (hid) { hidden.push(w.kind); continue; }
     pieces.push({ ...w, ph, E, N, Q, H: Q.clone().addScaledVector(up, w.top) }); }
   const iron = new THREE.MeshStandardMaterial({ color: sRGB(.3, .3, .32), metalness: .75, roughness: .5 }), leather = new THREE.MeshStandardMaterial({ color: sRGB(...(D.charms || D.belt || [.3, .2, .13])), roughness: .8 });
   const grp = new THREE.Group(); grp.name = 'beltCharms'; let tris = 0; const add = (g, mat, at, q, name) => { const m = new THREE.Mesh(g, mat); m.quaternion.copy(q); m.position.copy(at); m.castShadow = true; if (name) m.name = name; grp.add(m); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; return m; };
-  for (const p of pieces) { const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(up.clone().cross(p.N).normalize(), up, p.N)), loc = v => p.Q.clone().add(v.applyQuaternion(q));
+  for (const p of pieces) { const q = new THREE.Quaternion().setFromRotationMatrix(p.Y ? new THREE.Matrix4().makeBasis(p.X, p.Y, p.Z) : new THREE.Matrix4().makeBasis(up.clone().cross(p.N).normalize(), up, p.N)), loc = v => p.Q.clone().add(v.applyQuaternion(q));
     if (p.kind === 'amulet') { const r = .022, T = .009, bev = .0025;
       const disc = new THREE.LatheGeometry([[0, -T / 2], [r - bev, -T / 2], [r, -T / 2 + bev], [r, T / 2 - bev], [r - bev, T / 2], [0, T / 2]].map(([a, b]) => new THREE.Vector2(a, b)), 32); disc.rotateX(Math.PI / 2);
       add(disc, new THREE.MeshStandardMaterial({ color: sRGB(...D.amulet), roughness: .82, map: STONE_TEX(), bumpMap: STONE_TEX(), bumpScale: 1.5 }), p.Q, q, 'amulet');
@@ -2394,12 +2411,13 @@ function buildBeltCharms(G, body, byName, meshes, root) {
   // piece's top is under the belt's edge, and no thong runs under what is worn
   let pieceIn = 0, tested = 0, gap = 1, air = 0, touch = 0, top = -9, thongIn = 0, thongTested = 0;
   for (const p of pieces) { top = Math.max(top, p.H.y - yE); let near = .05;
+    if (p.Y) { const f = purseIn(p.Q, p.X, p.Y, p.Z, 0); tested += f.n; if (f.deep > 0) pieceIn++; else { gap = Math.min(gap, f.near); air = Math.max(air, f.near); } } else {
     for (let q = 0; q < NC; q++) { const dx = CP[q * 3] - p.Q.x, dy = CP[q * 3 + 1] - p.Q.y, dz = CP[q * 3 + 2] - p.Q.z, hh = dx * p.N.x + dy * p.N.y + dz * p.N.z; if (hh < -.05 || hh > .01 + p.T) continue; if (Math.hypot(dx - p.N.x * hh, dy - p.N.y * hh, dz - p.N.z * hh) > p.r) continue; tested++; if (hh > -p.T / 2) pieceIn++; else { gap = Math.min(gap, -p.T / 2 - hh); near = Math.min(near, -p.T / 2 - hh); } }
-    air = Math.max(air, near);
+    air = Math.max(air, near); }
     for (let k = 2; k <= 10; k++) { const S = p.thong[k]; thongTested++; for (let q = 0; q < NC; q++) { const dx = CP[q * 3] - S.x, dy = CP[q * 3 + 1] - S.y, dz = CP[q * 3 + 2] - S.z, hh = dx * p.N.x + dy * p.N.y + dz * p.N.z; if (hh < .0012 || hh > .03) continue; if (Math.hypot(dx - p.N.x * hh, dy - p.N.y * hh, dz - p.N.z * hh) < .003) { thongIn++; break; } } } }
   for (let a = 0; a < pieces.length; a++) for (let b = a + 1; b < pieces.length; b++) if (pieces[a].Q.distanceTo(pieces[b].Q) < pieces[a].r + pieces[b].r + .002) touch++;
   root.add(grp); hipB.attach(grp);
-  return { mesh: grp, stats: { pieces: pieces.map(p => p.kind), hidden, ph: pieces.map(p => +p.ph.toFixed(2)), slant: Math.max(0, ...pieces.map(p => p.slant)), lift: +Math.max(0, ...pieces.map(p => p.lift)).toFixed(4), pieceIn, tested, gap: +gap.toFixed(4), air: +air.toFixed(4), touch, top: +top.toFixed(4), thongIn, thongTested, low: +Math.min(...pieces.map(p => p.Q.y - p.r - yE)).toFixed(3), tris } };
+  return { mesh: grp, stats: { pieces: pieces.map(p => p.kind), hidden, ph: pieces.map(p => +p.ph.toFixed(2)), slant: Math.max(0, ...pieces.map(p => p.slant)), tilt: pieces.filter(p => p.Y).map(p => p.tilt), lift: +Math.max(0, ...pieces.map(p => p.lift)).toFixed(4), pieceIn, tested, gap: +gap.toFixed(4), air: +air.toFixed(4), touch, top: +top.toFixed(4), thongIn, thongTested, low: +Math.min(...pieces.map(p => p.Q.y - p.r - yE)).toFixed(3), tris } };
 }
 
 // ── the eyebrows (Session 824, Michael's note on #272: "eyebrows look pretty fugly still") ──
