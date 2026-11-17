@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 48, 16 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 49, 17 Nov: no new calls on the page)
 
 ---
 
@@ -6900,3 +6900,182 @@ Written for #1570's **A** (declare at the hail), the recommendation; under B or 
 - **Facts.** A Reeve over a town and a Captain over a city, as the titles have it; Priors over the church's towns (the sacrilege town is a Prior's, as S2240 reads it); the tenth at the quay; the claim *finished by noon*. No line promises a punishment the rule does not give (Finding 47's reason), and no line gives a number the rule does not hold: thirty gold, three months, a tenth a week to twice the sum, half again, six till noon.
 - **Tone.** Nobody is hanged, branded or tortured; the worst is the stocks, a night in prison, and a note.
 - **No chosen-one line**; nobody here knows the player as anything but a debtor.
+
+## Festivals on the Calendar, IV — the contests' words: the marshal at the butts, the ringkeeper and the reeve, the examiners' nine questions
+
+*Unapproved.* Owed to Michael's B on #1628 (16 Nov; `docs/design/festivals.md`, *Direction B*: "one quest-writer run, the contests' words: the butts' marshal, the examiners' nine questions an island's academy can ask"). The systems builder has built the butts (S2314) and the ring (S2315) with placeholder speakers, and the disputation is its next session: this draft gives all three their people and every word they say. The narrator's lines already on main (the ends' scores, the keepsakes, *The rope goes up*) stay as they are, with Findings 52–54 (review run 49) applied. What a thin, unkept or named festival says on its other days (the greetings, the lords) is the design's fifth session and the next run's draft: here only the three contests' own refusals.
+
+**What the canon gives, and where it is silent.**
+- §2: Gatelanders speak in proverbs and indirection and never give a bare yes or no; Markmen in short sentences, *aye*, oaths on iron and blood, no honorifics; the Aurennais formally, with honorifics and contract words, and never an oath.
+- §1.2: the Mark settles quarrels by duel, *a quarrel finished by noon*. The canon is silent on who fights a stranger at a fair: the plainer thing is chosen, that a quarrel left with no one to finish it is fought out by the first stranger over the rope, standing for the other side. Nobody is hurt past a yield, and the stranger carries nothing away but the result.
+- The academy (§1, the *Institutional* register; `On the Seals`): it teaches to Comprehension, certifies it, records Mastery *without endorsement*, and looks down on the folk register while its own catalogue concedes that *Caor* means a berry. The examiners ask only of books the game holds (`BOOKS`), so a question can be answered by having read it (`booksRead`). Every answer below is the book's own text.
+- No chosen one: the seal, the arrow and the ring are a year's prize, given to whoever wins, and next year's winner has them too.
+
+### 1. Riverfair's butts — the marshal
+
+**Who.** A townsperson of the town, the role *Marshal*, generated from the town's people by `makeDef` and keyed `<site>:marshal` (a Gatelander in a Gatelands town; a port's blend may give a Markman or an Aurennais). Stands by the mark from 10:00 to 14:00 on Riverfair while the festival is full. Topic, the player's: **Put my name down for the butts.** It calls `buttsStart`; every `say` it returns becomes the marshal's line below.
+
+**Gatelander:**
+- greeting: "Nine arrows: three at the near butt, three at the middle, three at the far. The best of the town shot {best} this morning. The butt doesn't care whose son you are, they say, and it's the one fair judge at the fair."
+- the start: "Toe the mark, and loose when you're ready. An arrow loosed off the mark is an arrow given to the river."
+- no bow: "A bow first, and arrows to it. The butt will wait for you; it's waited for better."
+- shot this year: "You've had your nine. If we gave anyone a second nine, we'd be at it till Leaffall."
+- a thin year: "No butts this year. You don't miss the purse till the well's dry, they say, and it's dry. Next year, Weaver willing."
+- before ten: "Not yet. The butts are set at ten." · after two: "Drawn for the year. Come at ten next Riverfair, and come early."
+- won: "{total} to {best}. There's the purse, and the silver arrow with it. The far butt sorts them, they say, and it sorted you the right way."
+- lost: "{total} to {best}. The far butt sorts them, they say. It'll be there next year, and so will you, I'd think."
+
+**Markman:**
+- greeting: "Nine arrows. Three ends. Town's best shot {best}. Beat it."
+- the start: "Toe the mark. Loose when ready."
+- no bow: "No bow, no butts."
+- shot this year: "You shot. Once a year."
+- a thin year: "No butts this year. No purse."
+- before ten: "Ten. Not before." · after two: "Done. Next year."
+- won: "{total} to {best}. Purse is yours. Arrow too. Good eye."
+- lost: "{total} to {best}. Not enough. Next year."
+
+**Aurennais:**
+- greeting: "Nine arrows, Master, in three ends, at thirty, fifty and seventy. The town's best stands at {best}. The terms are the same for every name on the sheet, which is the whole of their merit."
+- the start: "From the mark, Master, and at your own time. An arrow loosed from anywhere else is not entered."
+- no bow: "The terms require a bow and arrows, Master. The butts provide neither."
+- shot this year: "Your name is entered for this year already, Master, and the sheet is closed to it."
+- a thin year: "There is no purse this year, Master, and so no contest. The town regrets it more than it can afford to."
+- before ten: "The sheet opens at ten, Master." · after two: "The sheet is closed for the year, Master."
+- won: "{total} against {best}, Master. The purse and the arrow are yours, and the sheet records it."
+- lost: "{total} against {best}, Master. The sheet records it, and it will be open again next year."
+
+The narrator's lines (*Shoot from the mark, or it doesn't count.*, *You walk off the mark. The marshal scratches your name.*, *Your quiver's empty.*, the ends' scores, the keepsake) stay.
+
+### 2. The Strait Fair's ring — the ringkeeper, the three and the reeve
+
+**Who.** The ringkeeper of *Festivals on the Calendar, II* §5, a Markman always (the ring is the Mark's), keyed `<site>:ringkeeper`, at the rope from 5:00 to 12:00. His greeting there (*Not till somebody's got a quarrel with you. Give it a year.*) was written while the ring could only be watched; it gives way to the lines below. Topic, the player's: **I'll take a quarrel.** It calls `fairRingStart`.
+
+**The ringkeeper (Markman):**
+- greeting: "Fair day. Ring's open till noon. A quarrel with nobody to finish it comes to the rope, and the first stranger over stands for the other side. Three of them today. Fists. To a yield."
+- the start, before the first: "In you go. Here's the first."
+- each fighter, as he steps in (`{name}` the fighter's, `{q}` his quarrel, below): "{name}. {q} You're the other side."
+- a fighter struck after his yield (with the narrator's *That is assault.*): "He's down. Hands off him."
+- you go down: "Down. That's his quarrel won, and it's not yours to carry. Get up."
+- you step over the rope: "Out of the rope, out of the ring. Settled against you."
+- a fighter killed (after the narrator's line): "He yielded. You saw him. Off my square."
+- fought this year: "You've fought. Once a year. Watch."
+- a thin year (Finding 53's line, his): "No ring this year. The town's too lean to put a purse on it."
+- before five: "Rope's up at first light." · after noon: "Ring's down. The reeve's at the oaths."
+- the rings shut to you (the ban): "Shut. Every ring from here to the strait. Your name's known." (*The Mark's Rings*' line, the same man's word.)
+- an occupied town (*II* §5, unchanged): "No fair this year. No ring while their flag's up. We'll hold two next year."
+
+**The three.** Each fighter is named as *The Mark's Rings* §1 names a ring's fighters (a name from the Markish bank and a byname, rolled on the foe's key `strait:<site>:<year>:<n>` with `seededRng('ringname', key)`); until that is built, Finding 52's *The first comer*. His quarrel is rolled on the same key from these nine, none twice in one year's three:
+1. "Boundary wall. Says it's a foot on his side."
+2. "Net cut loose off the strand. Says somebody did it."
+3. "A dog that took his hens."
+4. "Three gold, owed since last winter."
+5. "Boat borrowed. Came back holed."
+6. "A word said in the alehall."
+7. "Somebody's been in his seat on the bench."
+8. "Cow calved over the stream. Says the calf's his."
+9. "A bride's father who said yes and then said no."
+
+**The reeve** (the town's lord, a Markman), when the third has yielded, before the narrator's *Three quarrels, three yields. The purse is yours …*:
+> "Three settled. More than I'll settle all year. Here. Iron keep it on your hand."
+
+And if the player talks to him later that day:
+> "Three in a morning. Folk'll talk. Let them."
+
+### 3. The Commencement's disputation — the examiners and their nine questions
+
+**Who.** Three examiners of the academy at a table at the foot of the church's steps (the customs house's in a port) from 9:00 to 12:00 on the Commencement while the festival is full, Aurennais always (the academy's). The one who speaks is the presiding examiner, keyed `<site>:examiner`, named from `NAMES.aurennais` on the site, titled *Examiner* in talk; the other two are townsfolk-shaped and silent. Topic, the player's: **I would sit the disputation.** The examiners call the player *Candidate*, never *Master*: at the table the player holds that office and no other, and in Aurenne an office is the name.
+
+**The rule** (the design's, unchanged): three questions drawn from the nine below, one a book, by `seededRng('disputation', site.id+':'+year)`; a question is answered by having read its book, or by a Speech check (40 for the first question, 55 the second, 70 the third); two of three win. The choice at each question shows **Answer from the book.** only if `booksRead` holds its book, and **Argue it.** always.
+
+**The presiding examiner:**
+- greeting: "The disputation, Candidate. Three questions, each upon a book the academy keeps, and two answered to the examiners' satisfaction carry the seal. The candidate is not required to have read the books. The examiners merely observe that it helps."
+- the start: "The examiners are seated. The first question is put."
+- between: "The second question." · "The third question."
+- won: "Two of three, Candidate, which is the sufficiency the terms require. The seal is yours, and the academy will be pleased to be reminded of you." (Three of three: "Three of three, Candidate. The terms required two. The examiners have entered the third as a courtesy to the academy.")
+- lost: "{n} of three, Candidate. The terms are two. The disputation sits again next Commencement, and the library is open in the meantime."
+- sat this year: "The candidate has sat this year, and the result is entered. The academy does not hear an appeal from itself."
+- a thin year: "There is no disputation this year, Candidate. The town has not subscribed the purse, and the examiners do not sit without one. The academy regrets it in writing."
+- before nine: "The examiners sit at nine, Candidate." · after noon: "The examiners have risen for the year."
+- the player walks away mid-question (beyond 12 m): "The candidate has withdrawn. The examiners enter it as such." (a loss)
+
+**The nine.** Each: the question; the player's answer from the book; the examiner on it; the player's argued answer; the examiner if the check passes; the examiner if it fails.
+
+1. **The Forge-Man's Third Treatise** (`aldrics_third`)
+   - Q: "The Forge-Man's Third Treatise holds that a proper strike does not begin at the shoulder. Where does it begin, Candidate, and where does it leave?"
+   - Book: "At the foot planted in the earth. It travels the spine and leaves at the wrist. The shoulder is only the path."
+   - On it: "Precisely so. The forge-man would have been gratified, had he signed it."
+   - Argued: "Wherever the man swinging it is standing, I'd think."
+   - Passes: "Not the book's answer, Candidate, but the book's sense. The examiners will allow it."
+   - Fails: "The examiners cannot allow it. The foot, by way of the spine, and out at the wrist. The treatise is in the library, and the library is open."
+2. **The Stoic's Rampart** (`stoics_rampart`)
+   - Q: "The Stoic's Rampart says the shield does not save the soldier. What, by its account, does the shield buy?"
+   - Book: "A breath. A breath to remember your footing, the footing to remember the blade, and the blade to answer. So it saves you after all, only not the way the young think."
+   - On it: "Entered as answered. The collection is anonymous, and the examiners suspect a sergeant."
+   - Argued: "Time. Enough of it to do something else."
+   - Passes: "Time is a breath held on longer terms. The examiners will allow it."
+   - Fails: "A breath, Candidate. The examiners regret the distinction. The garrison at Mur Pierre would not."
+3. **The Fletcher's Hand** (`fletchers_hand`)
+   - Q: "The Fletcher's Hand names a mistake of beginners and a mistake of masters. Name both, Candidate, and what the author calls precision."
+   - Book: "Beginners work too quickly and masters too slowly. Precision is one correct motion made without pause, because the hand has made it ten thousand times."
+   - On it: "Exactly so. The examiners have marked it without pause."
+   - Argued: "Haste in the young and care in the old, and precision somewhere between."
+   - Passes: "Somewhere between is not a measurement, Candidate. It is, however, the right neighbourhood. Allowed."
+   - Fails: "Not as the book has it. Quickly and slowly, Candidate, and precision a motion the hand has made ten thousand times. The book is short. The examiners commend it to you."
+4. **The Wind's Account** (`winds_account`)
+   - Q: "The courier of The Wind's Account says the road is longer than the map. What does the map promise, Candidate, and what does the road give instead?"
+   - Book: "The map promises a straight line. The road gives a river to cross, a landowner to argue with, and a hill the cartographer was too polite to draw."
+   - On it: "Answered. The academy's cartographers have asked that the last clause be struck. The request is under consideration."
+   - Argued: "The map promises the shortest way. The road gives the one there is."
+   - Passes: "An economical answer, Candidate. The courier would have run with it. Allowed."
+   - Fails: "The examiners were hoping for the landowner. Not allowed."
+5. **Letters from Ashwold** (`letters_from_ashwold`)
+   - Q: "In the Letters from Ashwold the young healer asks her teacher how she keeps going. What is the teacher's answer?"
+   - Book: "That she doesn't. She stops every evening and doesn't believe she'll begin again, and every morning she begins again. The world only asks for the beginning part."
+   - On it: "Answered, Candidate. The examiners will put the next question in a moment."
+   - Argued: "She doesn't think about it. She goes on."
+   - Passes: "Not the letter, Candidate, and not against it. Allowed, on the understanding that you will read it."
+   - Fails: "No. She stops, Candidate, and she begins again, and the letter is very clear that both are real. Not allowed."
+6. **Of Binding Stones** (`of_binding_stones`)
+   - Q: "A draft from the Royal Herald's office has come into the academy's library by a route the academy does not discuss. Of Binding Stones holds that the sigils were cut for a purpose. What was it, Candidate?"
+   - Book: "To hold something still. Not something in the stone: the stone itself, the world, at that point and at that moment."
+   - On it: "That is the draft's argument. The academy does not endorse it, Candidate, and you are not asked to. You were asked whether you had read it, and you have."
+   - Argued: "To keep something in. Or out."
+   - Passes: "In or out is a door's purpose, Candidate, and the draft would say a sigil is not a door. The examiners will allow the shape of it."
+   - Fails: "Not the draft's answer. The examiners can say no more of a draft the academy does not hold."
+7. **On the Seals** (`on_the_seals`)
+   - Q: "On the Seals is the academy's own primer. Name the three degrees in which a working is received, Candidate, and the one the academy certifies."
+   - Book: "Impression, Comprehension and Mastery. The academy teaches and certifies Comprehension, and records Mastery without endorsement."
+   - On it: "Answered in full, and in the approved form. The examiners note *without endorsement*, which a candidate seldom troubles to recall."
+   - Argued: "Three. The academy certifies the middle one, which is the one it can teach."
+   - Passes: "The candidate has not named them, and has understood them better than most who can. Allowed, with a reservation entered."
+   - Fails: "Impression, Comprehension and Mastery, Candidate. It is our own primer. The examiners are a little hurt."
+8. **The Seventh Niche** (`seventh_niche`)
+   - Q: "The Seventh Niche is set down in the form the Church's schools require. Name the form, Candidate, and the reservation its clerk records."
+   - Book: "The question, the case for, the case against, and the answer. The clerk doesn't dispute the answer. The clerk notes only that it has been paid for twice."
+   - On it: "Answered. The examiners will not ask what the clerk meant. It is not on the paper."
+   - Argued: "Question and answer, with the two cases between. And the clerk wasn't satisfied."
+   - Passes: "Loosely put, Candidate, and the clerk's dissatisfaction is the candidate's inference. A fair one. Allowed."
+   - Fails: "The form has four parts, Candidate, and the reservation is in the clerk's own words. Not allowed."
+9. **The Words on the Stones** (`words_on_stones`)
+   - Q: "A hedge-schoolmaster's glossary, The Words on the Stones, gives the academy's *Caor* an older meaning than ours. What did the schoolmaster's grandmother call caor, Candidate?"
+   - Book: "The rowan's berries, red on the branch at the back end of the year, and a spark that jumps the hearth. A small red thing that starts a larger one. Never a weapon."
+   - On it: "Answered. The academy's own catalogue arrives at *a berry* by a longer road. The examiners find that it did arrive."
+   - Argued: "Something small that starts something larger."
+   - Passes: "That is the grandmother's sense, if not her berries. Allowed."
+   - Fails: "A berry, Candidate. The academy's catalogue concedes as much in a footnote. Not allowed."
+
+**The narrator**, at the end, in the contests' form: won, *Two of three. The purse is yours: {paid} gold, and the scholar's seal. Your Speech rises.* (or *Three of three.*); lost, *{n} of three. Not this year.* The keepsake: **Scholar's Seal of {town}**, *Sealed at the Commencement, {town}, in the {n}th year of the Peace.*
+
+### Register and canon, checked
+- *Gatelanders*: every line of the marshal's that refuses or judges goes by *they say* or a proverb (*the butt doesn't care whose son you are*, *you don't miss the purse till the well's dry*); no bare yes or no; the one oath is the Weaver's.
+- *Markmen*: the marshal, the ringkeeper and the reeve in sentences of two to eight words, no honorific, *iron keep it on your hand* the one oath. The quarrels are a town's small business (walls, nets, hens, a seat on the bench), not a feud with the player.
+- *Aurennais*: *Master* from the marshal, *Candidate* from the examiners (an office, which is how Aurenne honours); terms, sheets, entries and sufficiencies; no oath anywhere. The examiners' condescension to the hedge-schoolmaster is answered by their own primer's footnote, and the academy's draft from the Herald's office is held by *a route the academy does not discuss*: §1's academies that *know this and pretend otherwise*.
+- *Slurs*: none. The academy's view of the folk register is shown, and undone in the same question.
+- *Facts*: every book's answer is its own text on main (`14-items.js`, `20-quests.js`); Mur Pierre is the Rampart's garrison; *Leaffall* is the calendar's month; the prizes and numbers are the design's.
+
+### What in the code would carry it
+- **`87-world-quests.js`** (the festivals block, S2313–2315): a `FEST_TALK` table, `{butts:{gatelander,markman,aurennais}, ring:{markman}, disp:{aurennais}}`, each a map of the keys above (`greet`, `start`, `nobow`, `done`, `thin`, `early`, `late`, `won`, `lost`, …), read where `buttsOpenFor`, `buttsStart`, `buttsEnd`, `fairRingOpenFor`, `fairRingStart`, `fairRingEnd` return a `say` or call `showMsg` today; the speaker's people from the def that called (the marshal's `def.people`), the narrator's lines left where they are. The ring's quarrels as `FAIR_QUARRELS`, rolled with the fighter's name on the foe's key. The disputation (the design's session 4): `DISP_Q` (the nine, each `{book, q, book_a, on, arg, pass, fail}`), `dispStart`/`dispAnswer`/`dispEnd`, the check by the Speech skill as the haggle and the persuasion read it, `booksRead.has(book)`, `seededRng('disputation', site.id+':'+year)`; a dialog panel of the `openDialog` kind (choices as topics), no new UI.
+- **`83-world-generator.js`** (`makeDef`): the three roles, *Marshal*, *Ringkeeper*, *Examiner*, placed by the festival's own spawn at the day's hours (the design's session 5 puts the post beside them).
+- **Saved state:** nothing new. `worldState.festivals['riverfair:'+site]`, `['straitfair:'+site]` and `['commencement-disp:'+site]` (the year sat, the result) are the design's, already in the S242 list and `SS_CHAR_WS`; names and quarrels roll on ids by place and year; the examiners' draw is seeded, so a friend at the same table is asked the same three.
+- **Tests:** `tests/feasts` (where S2314–2315 test the butts and the ring) gains: the marshal's greeting by people, the ring's three named with three different quarrels, a disputation with one book read answered without a check, and a save and load keeping *sat this year*.

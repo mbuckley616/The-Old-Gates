@@ -6,7 +6,9 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `7f5000c6` | run 48: Sessions 2243–2284 as merged (build s1632), about 75 new player-readable lines: the tithe-ship, the fence, gate salvage, the road's people (the merchant, the pilgrim, the mourners, the family, the rider, the official) and the bridge down; four findings (48–51), all on the road's people's voices |
+| main | `5dd85826` | run 49: Sessions 2285–2316 as merged (build s1662), about 110 new player-readable lines: the nine festivals' greetings and due lines (*Festivals on the Calendar* I–III word for word, the draft's straight quotes curled), Findings 48–51 applied as written (the family's thanks by people, the Aurennais lord's bridge, the rider and the official by people, *Let me see your pack.*), robbing the road's people, Riverfair's butts and the Strait Fair's ring (S2314–2315, the narrator's plain voice, with placeholder speakers). Three findings (52–54), on the ring's fighters' names and the contests' hours and thin year |
+| auto/qa-2304 | `40258bc7` | run 49: open PR #1651 (`.github/`, `docs/`: no line a player reads) |
+| main (run 48) | `7f5000c6` | run 48: Sessions 2243–2284 as merged (build s1632), about 75 new player-readable lines: the tithe-ship, the fence, gate salvage, the road's people (the merchant, the pilgrim, the mourners, the family, the rider, the official) and the bridge down; four findings (48–51), all on the road's people's voices |
 | auto/qa-2255 | `c667a247` | run 48: open PR #1596 (tests and `docs/pipeline.md`: no line a player reads) |
 | main (run 47) | `69487e1b` | run 47: Sessions 2203–2242 as merged (build s1594), about 90 new player-readable lines: the pack, the rod, the net and the spyglass (the Kit tab's rows, *You cast the line.*, *A bite! Strike!*, *It got away.*, *You pay the net out over the side.*, *Sighted: {name}. Pencilled on your map.*, the ship's card's *A black sail* and *A merchantman*), the three courts (restitution, the stocks, the claim fought to a yield, the Compact's ledger, prison, the contract) and poaching. The narrator's plain voice throughout, right for it. Two findings: the chase's lord sells his licence as a clerk (Finding 46), and the yield still offers *a night in the cells* where the Crown's court gives the stocks and the Compact's gives its prison (Finding 47). Owed words the systems builder left to me (the reeve, the forester, the courts' spoken lines): drafted, *The Three Courts* |
 | auto/bodies-2242, auto/systems-2240, auto/qa-2239 | `8f37052b`, `038aa9fc`, `a83d719e` | run 47: open PRs #1578 (the forester's and the inquisitor's dress in `32-people.js`: no line a player reads), #1576 (sacrilege: *Gate salvage, in a Prior's town: the {item} is taken for the Church, and {town} will not forget it.* and its log line, the narrator's, fine; the keeper's own word is in *The Three Courts* §5) and #1573 (tests only) |
@@ -48,6 +50,54 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 ---
+
+## Run 49 — 17 Nov 2026
+
+About 110 player-readable strings read on main from `7f5000c6` to `5dd85826` (Sessions 2285–2316, build s1662) and on the one open PR from another lane (#1651, QA: `.github/` and docs, no line a player reads). Three findings (52–54).
+
+**main.** The nine festivals (S2313) carry *Festivals on the Calendar* I–III's greetings and due lines word for word, by the speaker's people: the Gatelander's proverb, the Markman's four short sentences, the Aurennais's *Master* and his contracts, the Old Blood's older word. Findings 48–51 are applied exactly as written (S2286 and after). Robbing the road's people (S2301) speaks through the narrator and the theft's existing lines (*{name} saw you take what was not yours.*). The butts (S2314) and the ring (S2315) are the narrator's plain voice (*Shoot from the mark, or it doesn't count.*, *You walk off the mark. The marshal scratches your name.*, *The rope goes up. Three quarrels, fists, each to a yield.*, the keepsakes' *Won at the butts, Riverfair, in the {n}th year of the Peace.*), right for it; their speakers are placeholders, and their words are drafted today (*Festivals on the Calendar, IV*). Three small faults remain, below, which the builder can apply before that draft is approved.
+
+**Michael's calls:** none newer than 16 Oct on the drafts page.
+
+**Built:** nothing. Every approved draft is built but *The Seventh Niche*'s niche, which waits on §1a's approval. No `FREEZE:` issue is open.
+
+### Finding 52 — main — the Strait Fair's fighters are named for their quarrels
+
+**Where.** `87-world-quests.js`, `FAIR_NAMES` and `fairRingFoe`/`fairRingBout` (S2315): `e.name=e.displayName=FAIR_NAMES[R.n]||'The quarrel'`, and between bouts `` `${e.name} is spared. ${FAIR_NAMES[R.n]}.` ``
+
+**Text.** *The first quarrel goes down on one knee.* · *The first quarrel is spared. The second quarrel.* (and the name over the health bar, *The first quarrel*).
+
+**Why.** A quarrel is the thing fought over, not the man fighting it: the town's fighters kneel, yield and are spared under the dispute's name, and the line between bouts announces nobody. The Mark names a fighter by a byname (§2); until *Festivals on the Calendar, IV* §2 gives each one a name and a quarrel, a plain name for the man stands.
+
+**Replacement.** `FAIR_NAMES=['The first comer','The second comer','The third comer']`, the fallback `'The comer'`, and the line between bouts:
+```
+showMsg(`${e.name} is spared. ${FAIR_NAMES[R.n]} steps over the rope.`,'#e8d8a0');
+```
+The narrator's other lines (*The rope goes up. Three quarrels, fists, each to a yield.*, *Three quarrels, three yields.*) stay: there the quarrels are the quarrels.
+
+### Finding 53 — main — the ring's thin year gives the wrong reason
+
+**Where.** `87-world-quests.js`, `fairRingOpenFor` (S2315), the `h.state==='thin'` return.
+
+**Text.** *No ring this year. There's nobody with a quarrel worth the rope.*
+
+**Why.** A festival is thin when the town is poor or just out of a plague, a siege or a sack (`festivalState`; the design's table: *no contest, a line says why*). A town that has had a hard year has more quarrels, not fewer; what it lacks is the purse, as the butts' line says rightly (*The town can't find the purse.*).
+
+**Replacement.** `return {say:'No ring this year. The town’s too lean to put a purse on it.'};`
+
+### Finding 54 — main — the contests' hours read *10h* and *5h*
+
+**Where.** `87-world-quests.js`, `buttsOpenFor` and `fairRingOpenFor` (S2314–2315).
+
+**Text.** *The butts are shot from 10h to 14h.* · *The ring is fought from 5h till noon.*
+
+**Why.** Nothing else the player reads gives an hour that way: the courts say *(from 6:00)*, the clock *7:40 am*. *10h* reads as a measure.
+
+**Replacement.**
+```
+return {say:`The butts are shot from ${BUTT_OPEN}:00 to ${BUTT_CLOSE}:00.`};
+return {say:`The ring is fought from ${FAIR_OPEN}:00 till noon.`};
+```
 
 ## Run 48 — 16 Nov 2026
 
