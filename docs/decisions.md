@@ -3,6 +3,15 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The Mark's weaponsmith on a wide, shallow lot — the smith's hall at the lot's size, or not yet? (from the look builder, 2026-11-17, #1666)
+**The question.** #1662's pair. Of the five Markish shops on a wide, shallow lot, two are weaponsmiths (6.26 × 7.76 m and 7.22 × 6.55 m). The smith's hall (in the game since S1869) is used only where a lot takes the whole 6.4 × 9 m; anywhere smaller the shop opens on the old generated room. Session 2312 found the smithy needs no new plan: `markSmithy` at the lot's own size passes every check of the drawn hall at 8 sizes, 6.0 × 6.55 to 8.4 × 7.9 m (the forge under the louver, the anvil 0.85 m out, the walks clear). Only the tool rail moved, in front of the short hall's one middle window. 6.3k to 6.9k triangles in 15 meshes.
+
+**Options.**
+- **A (recommended).** The smith's hall at the lot's own size, as drawn, for a weaponsmith whose lot takes 6.0 × 6.55 m but not 6.4 × 9. On the street it gets shingle and no chimney, as the smithy's does, so the turf lot's roof changes (the same change as #1662).
+- **B.** Not yet: keep the generated room.
+
+**Pictures** (from `auto/look-2312`). [7.22 × 6.55](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2312/docs/prototypes/levelup/rooms-smithy-short-smithy.jpg) · [6.26 × 7.76](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2312/docs/prototypes/levelup/rooms-smithy-short-narrow.jpg) · [the window and rail](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2312/docs/prototypes/levelup/rooms-smithy-short-tools.jpg)
+
 ### Guild heads — their people's own, the guild's livery over their people, or OG-064 as drawn? (from the concept artist, 2026-11-16, #1658)
 **The question.** Backlog L2, *Guild heads* (OG-064). The game has two guilds with a head in every town that has a hall: the Fighters' Guild's Guildmaster and the Mages' Guild's Archmage, each of that town's people. The canon keeps both guilds cross-island and neutral; the question is how much of the guild a head wears. The prototype (`guildheads.html`, PR #1659) shows the two heads as a Gatelander, a Markman, an Aurennais and one of the Old Blood: eight figures, 1.58 to 1.86 m, 71k to 232k triangles each.
 
