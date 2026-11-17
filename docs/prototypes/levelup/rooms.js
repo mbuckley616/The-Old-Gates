@@ -1041,7 +1041,10 @@ export function markSmithy(o = {}, r = stream('smithy')) {
   // the tool chest on the left, its lid up; tongs and hammers on pegs on the left wall between the windows
   { const x0 = -X + .1, x1 = -X + .8, z0 = posts[1] - .75, z1 = posts[1] - .2; bx('oak', x0, x1, FY, FY + .42, z0, z1, 'chest'); bx('iron', x0, x1, FY + .3, FY + .33, z1, z1 + .02);
     put(new THREE.BoxGeometry(x1 - x0, .03, z1 - z0), 'oak', (x0 + x1) / 2, FY + .42 + (z1 - z0) / 2 * .9, z0 - .02, 0, .6, -1.2, 0);
-    for (let k = 0; k < 7; k++) { const z = lz + .9 + k * .26, L = .4 + (k % 3) * .1; bx('oak', -X, -X + .1, FY + 1.75, FY + 1.78, z - .015, z + .015); if (k % 3 === 1) { bx('oak', -X + .05, -X + .08, FY + 1.75 - L, FY + 1.75, z - .015, z + .015); bx('iron', -X + .03, -X + .1, FY + 1.7 - L, FY + 1.79 - L, z - .05, z + .05); }
+    /* (Session 2312) a short hall's one side window stands at the middle (pieces.js: one a side under 8 m deep), where the rail ran: the rail
+       goes in front of it then, 0.45 m from its middle. The drawn 9 m hall's windows are clear of it, so it is unchanged there. */
+    let t0 = lz + .9; for (const wz of hall.windows) if (t0 < wz + .4 && t0 + 1.6 > wz - .4) t0 = wz + .45; boxes.push({ tag: 'tools', x0: -X, x1: -X + .1, y0: FY + 1.05, y1: FY + 1.78, z0: t0 - .05, z1: t0 + 1.6 });
+    for (let k = 0; k < 7; k++) { const z = t0 + k * .26, L = .4 + (k % 3) * .1; bx('oak', -X, -X + .1, FY + 1.75, FY + 1.78, z - .015, z + .015); if (k % 3 === 1) { bx('oak', -X + .05, -X + .08, FY + 1.75 - L, FY + 1.75, z - .015, z + .015); bx('iron', -X + .03, -X + .1, FY + 1.7 - L, FY + 1.79 - L, z - .05, z + .05); }
       else { bx('iron', -X + .05, -X + .07, FY + 1.75 - L, FY + 1.75, z - .03, z - .01); bx('iron', -X + .05, -X + .07, FY + 1.75 - L, FY + 1.75, z + .01, z + .03); } } }
   // the bench down the right wall with a vice; the whetstone in the back right corner
   const bench = { x0: X - .7, x1: X, z0: posts[1] + .25, z1: posts[1] + 2.2, y: FY + .88 }; { const { x0, x1, z0, z1, y } = bench; bx('oak', x0, x1, y - .08, y, z0, z1, 'bench'); for (const x of [x0 + .05, x1 - .12]) for (const z of [z0 + .04, z1 - .1]) bx('oak', x, x + .07, FY, y - .08, z, z + .07);
