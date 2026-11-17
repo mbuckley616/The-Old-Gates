@@ -388,6 +388,21 @@ console.log('  powers:', JSON.stringify(powers));
 { const P = powers; check('the town\'s head is dressed by office: the lord in crimson and fur with a sword, the Elder\'s staff, the captain\'s black coat with fur and a sword, the reeve\'s staff and fur, the Prior\'s stole and book, the Factor\'s circlet, ledger and seal; none through a cloak; a captain who is not the head is still a guard',
   P.lord.power === 'lord' && P.lord.crimson && P.lord.fur && P.lord.sword && P.elder.staff && P.elder.cloak && P.elder.legs && P.captain.coat && P.captain.fur && P.captain.sword && !P.captain.mail && !P.captain.spear
   && P.reeve.staff && P.reeve.fur && P.prior.sash && P.prior.book && P.factor.circlet && P.factor.book && P.factor.seal && [P.lord, P.elder, P.reeve].every(x => x.out === 0) && P.guard.power === null && P.guard.mail, P); }
+// S2329 (#1658 B; OG-064): a guild's head wears the guild's livery over their people's own: the Guildmaster mail under the oxblood tabard
+// with the crossed swords and a sword of their people's make, the Archmage the deep blue robe with the star and a staff of their people's
+// wood (the driver holds it); a guild member is not dressed so, and nothing of the body comes through the tabard
+const guilds = await page.evaluate(() => { const one = (def) => { const root = buildNPCMesh(Object.assign({ _siteId: 'gtest' }, def), { key: 'gtest' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r);
+    const D = r.hbG.dress, P = HB.makePerson(r.hbG, { hoodStats: false }), has = n => !!P.root.getObjectByName(n), T = P.tabard || {};
+    return { head: r.g.guildHead || null, gear: r.g.gear || null, people: r.hbG.people, mail: !!D.mail, tabard: has('tabard'), sign: T.sign || 0, out: T.out ?? -1, tested: T.tested || 0, sword: has('swordBlade'), swordMake: D.swordMake, staff: has('staffWood'), staffMake: D.staffMake, robe: !!D.robe, blue: !!(D.robe && D.robe[2] > .3 && D.robe[0] < .2), star: P.guildStar || null, basket: !!D.basket }; };
+  const ppl = ['gatelander', 'markman', 'aurennais', 'oldblood'], out = {};
+  ppl.forEach((pp, i) => { out['f_' + pp] = one({ role: 'Guildmaster', name: 'Gm' + i, people: pp }); out['m_' + pp] = one({ role: 'Archmage', name: 'Am' + i, people: pp }); });
+  out.member = one({ role: 'Adept of the Mages', name: 'Mem', people: 'markman' }); return out; });
+console.log('  guild heads:', JSON.stringify(guilds));
+{ const G = guilds, F = ['gatelander', 'markman', 'aurennais', 'oldblood'].map(p => G['f_' + p]), M = ['gatelander', 'markman', 'aurennais', 'oldblood'].map(p => G['m_' + p]);
+  check('the guild heads in the livery over their people (#1658 B): each Guildmaster mail under the tabard with the crossed swords, nothing through it, a sword of their make (arming, norse, nimcha, falchion); each Archmage the blue robe with the star clear of what is worn and a staff of their wood, the driver holding it; a member not so',
+    F.every(f => f.head === 'f' && f.mail && f.tabard && f.sign > 50 && f.out === 0 && f.tested > 500 && f.sword && !f.staff && !f.basket) && F.map(f => f.swordMake).join() === 'arming,norse,nimcha,falchion'
+    && M.every(m => m.head === 'm' && m.gear === 'stick' && m.robe && m.blue && m.staff && !m.tabard && m.star && m.star.through === 0 && m.star.out > .003 && m.star.out < .006) && M.map(m => m.staffMake).join() === 'hazel,ash,olive,carved'
+    && G.member.head === null && !G.member.star, G); }
 // S2135 (L2, OG-053): Aldwyn's private study, the cream undertunic under the red over-robe worn open, his journal shut in his right fist
 // by its spine, the wheel on its covers: nothing of him within a centimetre of it; neither other dress carries it
 const study = await page.evaluate(() => { const one = o => { const P = HB.makePerson(HB.castGenome('Aldwyn', o), { hoodStats: false }), b = P.root.getObjectByName('book'); return { book: !!b, on: b && b.parent && b.parent.name, coat: !!P.root.getObjectByName('coat'), dev: !!P.root.getObjectByName('bookDevice'), st: P.book }; };

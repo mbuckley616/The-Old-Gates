@@ -22,7 +22,8 @@
 //      would not wear.
 // GUILDS[key] is the sheet; guildGenome(key, level, P) makes the genome (P carries people.js's rollGenome, heightFor, GARMENTS and
 // DRESS_FLAGS, as powers.js does). guildProps(M, G) adds what people.js does not have (the crossed swords and the gold sword on the
-// tabard, the star, the ring of light), placed on the made body's own surface or the tabard's, and returns their triangles.
+// tabard at c, the ring of light; at b the crossed swords and the star are the kit's own since Session 2329, `tabardSign: 'swords'` and
+// `guildStar`), placed on the made body's own surface or the tabard's, and returns their triangles.
 import * as THREE from 'three';
 
 const OX = [.42, .1, .1], OXT = [.84, .74, .56], MB = [.12, .2, .4], MBT = [.76, .8, .9], CRIMSON = [.46, .07, .06], GOLD = [.74, .56, .2],
@@ -62,8 +63,8 @@ function dressOf(S, level) {
   const own = JSON.parse(JSON.stringify(S.own)), props = {};
   if (S.guild === 'f') {
     if (level === 'a') return { D: { ...own, sword: STEEL, swordMake: S.sword }, props };
-    if (level === 'b') { const D = { ...own, mail: IRON, tabard: OX, tabardTrim: OXT, tabardLen: .7, sword: STEEL, swordMake: S.sword };
-      delete D.sash; delete D.sashBorder; delete D.dots; props.device = 'swords'; return { D, props }; }
+    if (level === 'b') { const D = { ...own, mail: IRON, tabard: OX, tabardTrim: OXT, tabardLen: .7, tabardSign: 'swords', sword: STEEL, swordMake: S.sword };
+      delete D.sash; delete D.sashBorder; delete D.dots; return { D, props }; }
     const D = { tunic: [.3, .1, .08], trousers: [.14, .12, .11], boots: [.12, .09, .07], belt: [.16, .1, .07], mail: STEEL, plate: 'plate', vambrace: STEEL, vambraceKind: 'sheet',
       gloves: STEEL, glovesKind: 'sheet', greaves: STEEL, greavesKind: 'sheet', cuisses: true, tabard: CRIMSON, tabardTrim: GOLD, tabardLen: .75,
       cloak: CRIMSON, cape: true, cloakLen: 1, cloakHem: GOLD, brooch: GOLD, sword: STEEL, swordMake: 'arming' };
@@ -71,7 +72,7 @@ function dressOf(S, level) {
   }
   if (level === 'a') return { D: { ...own, book: [.3, .18, .1], bookGilt: GOLD }, props };
   if (level === 'b') { const D = { ...own, tunic: MB, robe: MB, skirtColor: MB, gownBorder: MBT, cuffs: MBT, staff: [.36, .27, .18], staffMake: S.staff };
-    delete D.trousers; delete D.skirt; delete D.sash; delete D.sashBorder; if (!D.cord) D.cord = MBT; props.star = MBT; return { D, props }; }
+    delete D.trousers; delete D.skirt; delete D.sash; delete D.sashBorder; if (!D.cord) D.cord = MBT; D.guildStar = MBT; return { D, props }; }
   const D = { tunic: MID, robe: MID, skirtColor: MID, gownBorder: GOLD, cuffs: GOLD, dots: GOLD, dotsStyle: 'powder', cord: GOLD, sandals: [.3, .2, .12],
     necklace: GOLD, cloak: MID, cape: true, cloakLen: 1, cloakHem: GOLD, brooch: GOLD };
   props.ring = true; return { D, props };
