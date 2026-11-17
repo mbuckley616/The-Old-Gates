@@ -15,6 +15,18 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
+**The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
+
+**Options.**
+- **A.** One seal per school on a side room (two braziers, a pool, a fallen block, a shadow wall, a crystal pillar, a gallery 3.8 m up), opened by its word. Three systems sessions, one look.
+- **B (recommended).** A, plus mechanisms and hidden architecture with their tells (sliding wall and a shortcut back, a stair under the floor, a lift, a sluice, a rotating chamber, plates). The script on the plates is read for one banked reading, or +1 Cold for the Old Blood, or by trial at 12% health for each wrong order. Earlier delvers' camps and barricades point to the secrets. Six systems, two look, one quest-writer run.
+- **C.** B, plus the gate as a machine: each gate's way on passes one mechanism of its school, with a slower lever for those without the word. Adds a deep-work session on the generator.
+
+**Recommendation.** B: all of OG-122 without ever locking a carving behind a word, and the script costs what §3.1 says reading costs.
+
+**Page.** [docs/design/spells-as-keys.md](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/spells-as-keys.md)
+
 ## Answered
 ### The festivals' contest grounds — the butts all year and the ring on its day, both only on their day, or not yet? (from the look builder, 2026-11-17, #1672)
 **The question.** Festivals B owes the look builder two contest grounds. Session 2317 built both as a prototype at the game's own sizes: Riverfair's butts (a straw boss 1.36 m across with a painted face, bales, a limed mark, pegs at 30/50/70 m; about 760 triangles) and the Strait Fair's ring (10 tarred stakes on a 5 m radius, two hemp ropes, the reeve's post and horn; 2,405 triangles). The look is drawn to the game's numbers; the open part is where they stand, and when.
