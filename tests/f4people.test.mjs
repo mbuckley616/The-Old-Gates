@@ -414,6 +414,19 @@ console.log('  guild heads:', JSON.stringify(guilds));
     F.every(f => f.head === 'f' && f.mail && f.tabard && f.sign > 50 && f.out === 0 && f.tested > 500 && f.sword && !f.staff && !f.basket) && F.map(f => f.swordMake).join() === 'arming,norse,nimcha,falchion'
     && M.every(m => m.head === 'm' && m.gear === 'stick' && m.robe && m.blue && m.staff && !m.tabard && m.star && m.star.through === 0 && m.star.out > .003 && m.star.out < .006) && M.map(m => m.staffMake).join() === 'hazel,ash,olive,carved'
     && G.member.head === null && !G.member.star, G); }
+// S2349 (S2329's owed note): the far copy's skirt is the genome's. A long skirt or a robe is the driver's dress to the shin, in the skirt's
+// own colour (counted on the hips' bone, as the legs ride the thighs); anything else is the tunic's skirt over the legs. The driver rolled
+// its own, and 46 of 208 changed shape at the builder's ring
+const skirts = await page.evaluate(() => { const one = (def) => { const root = buildNPCMesh(Object.assign({ _siteId: 'sktest' }, def), { key: 'sktest' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete(r); return r; };
+  const roles = ['villager', 'farmer', 'innkeeper', 'herbalist', 'merchant', 'priest', 'elder'], o = { n: 0, long: 0, wrong: 0, two: 0, twoOk: 0 };
+  for (const pk of ['aurennais', 'gatelander', 'markman', 'oldblood']) for (let i = 0; i < 24; i++) { const x = one({ role: roles[i % roles.length], name: 'Sk' + pk + i, people: pk, female: i % 2 === 1 }); if (!x) continue;
+    const D = x.hbG.dress || {}, want = !!(D.robe || D.skirt === 'long'); o.n++; if (want) o.long++; if (want !== !!x.g.dress) o.wrong++;
+    const sc = D.robe || D.skirtColor; if (want && sc && D.tunic && sc.some((c, j) => Math.abs(c - D.tunic[j]) > .08)) { o.two++; const ca = x.mesh.geometry.attributes.color, si = x.mesh.geometry.attributes.skinIndex, hb = x.mesh.skeleton.bones.findIndex(b => b.name === 'hips'); let n = 0;
+      for (let k = 0; k < ca.count; k++) if (si.getX(k) === hb && Math.abs(ca.getX(k) - x.g.skirtCol.r) < .02 && Math.abs(ca.getY(k) - x.g.skirtCol.g) < .02 && Math.abs(ca.getZ(k) - x.g.skirtCol.b) < .02) n++; if (n >= 24) o.twoOk++; } }
+  const am = one({ role: 'Archmage', name: 'SkAm', people: 'markman', female: false }), gm = one({ role: 'Guildmaster', name: 'SkGm', people: 'aurennais', female: true });
+  o.archmage = !!am.g.dress; o.guildmaster = !!gm.g.dress; return o; });
+check(`the far copy wears the genome's skirt: ${skirts.long} of ${skirts.n} in a long skirt or robe, ${skirts.wrong} wrong; ${skirts.twoOk} of ${skirts.two} long skirts unlike the tunic drawn in their own colour on the hips; a man Archmage's robe is a dress far off, a woman Guildmaster's trousers are not`,
+  skirts.n >= 80 && skirts.long > 10 && skirts.wrong === 0 && skirts.two > 5 && skirts.twoOk === skirts.two && skirts.archmage && !skirts.guildmaster, skirts);
 // S2135 (L2, OG-053): Aldwyn's private study, the cream undertunic under the red over-robe worn open, his journal shut in his right fist
 // by its spine, the wheel on its covers: nothing of him within a centimetre of it; neither other dress carries it
 const study = await page.evaluate(() => { const one = o => { const P = HB.makePerson(HB.castGenome('Aldwyn', o), { hoodStats: false }), b = P.root.getObjectByName('book'); return { book: !!b, on: b && b.parent && b.parent.name, coat: !!P.root.getObjectByName('coat'), dev: !!P.root.getObjectByName('bookDevice'), st: P.book }; };
