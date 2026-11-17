@@ -254,9 +254,13 @@ check('a rider is drawn seated on his horse, and within 6 m he reins in', h1.dra
     const ids = [...new Set(sk.geometry.index.array)], si = sk.geometry.attributes.skinIndex, sw = sk.geometry.attributes.skinWeight, bones = new Set(); let wide = 0;
     for (const i of ids) { for (let c = 0; c < 4; c++) if (sw.getComponent(i, c) > 0) bones.add(sk.skeleton.bones[si.getComponent(i, c)].name);
       v.fromBufferAttribute(sk.geometry.attributes.position, i); sk.applyBoneTransform(i, v); v.applyMatrix4(Gi); if (v.z < hip.z - .02) wide = Math.max(wide, Math.abs(v.x - hip.x) * k); }
-    return { hb: true, seated: rig.hb.rideSkirt, skirt: sk.name, n: ids.length, bones: [...bones], wide: +wide.toFixed(3), N: rig.hb.rideSkirtN }; }, rf.id);
+    const W = new Map(); for (const i of ids) { v.fromBufferAttribute(sk.geometry.attributes.position, i); sk.applyBoneTransform(i, v); W.set(i, v.clone()); }
+    const ix = sk.geometry.index.array; let edge = 0; for (let t = 0; t < ix.length; t += 3) for (let e = 0; e < 3; e++) edge = Math.max(edge, W.get(ix[t + e]).distanceTo(W.get(ix[t + (e + 1) % 3])));
+    return { hb: true, seated: rig.hb.rideSkirt, skirt: sk.name, n: ids.length, bones: [...bones], wide: +wide.toFixed(3), edge: +edge.toFixed(3), N: rig.hb.rideSkirtN }; }, rf.id);
   console.log(JSON.stringify(S));
-  check('his tunic\'s skirt sits on the saddle: on his pelvis alone, within 0.3 m a side behind his hips', S.hb && S.seated && (!S.skirt || (S.bones.length === 1 && S.bones[0] === 'root' && S.wide > .1 && S.wide < .3)), S); }
+  check('his tunic\'s skirt sits on the saddle: on his pelvis alone, within 0.3 m a side behind his hips', S.hb && S.seated && (!S.skirt || (S.bones.length === 1 && S.bones[0] === 'root' && S.wide > .1 && S.wide < .3)), S);
+  // S2311 — and its hem is whole where the lap's part meets the hanging part (#1652): no edge of it longer than 0.15 m as he sits (0.30 m before)
+  check('his tunic\'s skirt is whole at the hips: no edge longer than 0.15 m', S.hb && (!S.skirt || S.edge < .15), S); }
 await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 5);
 await g.spin(null, 4);
 const h2 = await page.evaluate((id) => { const D = ROADWALK.get(id); return { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, lag: (worldState.roadfolk[id] || {}).lag }; }, rf.id);
