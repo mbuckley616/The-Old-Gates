@@ -16,15 +16,16 @@ for (const id of ids) {
     return { id, kind: site.kind, stalls: S.stalls.map(T => { const c = Math.cos(T.ry), s = Math.sin(T.ry), at = (lx, lz) => [T.x + lx * c + lz * s, T.z - lx * s + lz * c];
       let solid = 0; for (const lx of [-.75, -.25, .25, .75]) for (const lz of [-.38, 0, .38]) { const [x, z] = at(lx, lz); if (solidAt(x, z)) solid++; }
       const A = T.key === 'bursar' ? BURSAR_AT : CARAVAN_AT, kx = site.x + A[0], kz = site.z + A[1], [qx, qz] = at(-(T.slide || 0), -.75);
+      const [ex, ez] = festKeeperAt(site, T.key, A), back = { lx: +((ex - T.x) * c - (ez - T.z) * s).toFixed(2), lz: +((ex - T.x) * s + (ez - T.z) * c).toFixed(2) };
       let door = 1e9; for (const h of S.houses) if (h.doorX != null) door = Math.min(door, Math.hypot(h.doorX - T.x, h.doorZ - T.z));
       return { key: T.key, slide: T.slide, solid, keeper: +Math.hypot(qx - kx, qz - kz).toFixed(3), toMid: +(Math.hypot(T.x - site.x, T.z - site.z) - Math.hypot(kx - site.x, kz - site.z)).toFixed(2),
-        door: +door.toFixed(1), tris: T.tris, draws: T.draws, hidden: !T.group.visible }; }) }; }, id));
+        door: +door.toFixed(1), back, tris: T.tris, draws: T.draws, hidden: !T.group.visible }; }) }; }, id));
 }
 console.log(JSON.stringify(out));
 for (const r of out) {
   check(`${r.id} (${r.kind}) has the bursar's table and the caravan's scale`, !r.none && r.stalls.length === 2 && r.stalls[0].key === 'bursar' && r.stalls[1].key === 'caravan', r);
-  for (const T of r.none ? [] : r.stalls) check(`  the ${T.key}'s: its keeper's spot ${T.keeper} m from where the keeper stands, the table ${-T.toMid} m nearer the middle (0.75 back from it, slid along); ${T.tris} triangles in ${T.draws} draws; ${T.solid} of 12 points of it on a solid (slid ${T.slide} m); the nearest door ${T.door} m; down on an ordinary day`,
-    T.keeper < .01 && T.solid === 0 && Math.abs(T.slide) <= .9 && T.toMid < -.3 && T.toMid > -1.7 && T.tris <= 4000 && T.draws <= 10 && T.hidden, T);
+  for (const T of r.none ? [] : r.stalls) check(`  the ${T.key}'s: its keeper's spot ${T.keeper} m from where the keeper stands, the table ${-T.toMid} m nearer the middle (0.75 back from it, slid along); ${T.tris} triangles in ${T.draws} draws; ${T.solid} of 12 points of it on a solid (slid ${T.slide} m); the nearest door ${T.door} m; down on an ordinary day; the keeper behind its middle (${T.back.lx}, ${T.back.lz})`,
+    T.keeper < .01 && Math.abs(T.back.lx) < .02 && Math.abs(T.back.lz + .75) < .02 && T.solid === 0 && Math.abs(T.slide) <= .9 && T.toMid < -.3 && T.toMid > -1.7 && T.tris <= 4000 && T.draws <= 10 && T.hidden, T);
 }
 // the days: each up with its keeper in its hours on its day, down outside them
 const id = out.find(r => !r.none).id; await g.settle(id);
@@ -37,9 +38,9 @@ const d = await page.evaluate(id => { const site = siteAnywhere(id), S = WORLD.s
     o.cDawn = at(nc, 5.5); o.cNoon = at(nc, 12); o.cDusk = at(nc, 18.5);
     st.flags = { occupied: true }; o.occupied = at(nc, 12); st.flags = {};
     at(nb, 10); tickBursar(); if (BURSAR) { const T = S.stalls[0], n = BURSAR.npc.g.position, c = Math.cos(T.ry), s = Math.sin(T.ry), dx = n.x - T.x, dz = n.z - T.z;
-      o.bk = { lz: +(dx * s + dz * c).toFixed(2), lx: +(dx * c - dz * s + T.slide).toFixed(2) }; bursarOut(); }
+      o.bk = { lz: +(dx * s + dz * c).toFixed(2), lx: +(dx * c - dz * s).toFixed(2), slide: T.slide }; bursarOut(); }
     at(nc, 12); tickCaravan(); if (CARAVAN) { const T = S.stalls[1], n = CARAVAN.npc.g.position, c = Math.cos(T.ry), s = Math.sin(T.ry), dx = n.x - T.x, dz = n.z - T.z;
-      o.ck = { lz: +(dx * s + dz * c).toFixed(2), lx: +(dx * c - dz * s + T.slide).toFixed(2) }; caravanOut(); }
+      o.ck = { lz: +(dx * s + dz * c).toFixed(2), lx: +(dx * c - dz * s).toFixed(2), slide: T.slide }; caravanOut(); }
   } finally { Object.assign(st, keep); worldState.festivals = {}; }
   return o; }, id);
 console.log(JSON.stringify(d));
@@ -47,7 +48,7 @@ check(`on the Commencement the table is down at 8:30 (${!d.bDawn[0]}), up at 10:
   !d.bDawn[0] && d.bTen[0] && !d.bNoon[0] && !d.bBefore[0] && !d.bTen[1], d);
 check(`on the Caravan the scale is down at 5:30 (${!d.cDawn[1]}), up at noon (${d.cNoon[1]}), down at 18:30 (${!d.cDusk[1]}), and not in an occupied town (${!d.occupied[1]}); the table down (${!d.cNoon[0]})`,
   !d.cDawn[1] && d.cNoon[1] && !d.cDusk[1] && !d.occupied[1] && !d.cNoon[0], d);
-check(`the bursar stands behind the table (${JSON.stringify(d.bk)}) and the caravan-master behind the scale (${JSON.stringify(d.ck)}), 0.75 m back, behind it however far it was slid`,
+check(`the bursar stands behind the table (${JSON.stringify(d.bk)}) and the caravan-master behind the scale (${JSON.stringify(d.ck)}), 0.75 m back, behind its middle however far it was slid (S2356: the keeper slides with it)`,
   d.bk && d.ck && Math.abs(d.bk.lz + .75) < .05 && Math.abs(d.bk.lx) < .05 && Math.abs(d.ck.lz + .75) < .05 && Math.abs(d.ck.lx) < .05, d);
 
 // a picture of each on its morning, from the subscriber's side
