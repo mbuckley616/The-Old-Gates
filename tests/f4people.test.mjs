@@ -140,6 +140,16 @@ check('on a feast day seven in ten of the Mark\'s folk wear the woven bands (a m
   feast.k1 === 'kindling' && feast.k2 === null && FM.n === 40 && FM.bands >= 20 && FM.bands <= 36 && FM.knee >= 1 && FM.apron === 0 && FM.same === 0 && feast.others === 0 && feast.after === 0, feast);
 check('the bands are woven into the tunic, the skirt and the cuffs as the kit builds them; on the Empty Chair (winter) a coat goes over them out of doors, not by the hearth',
   !!feast.built && feast.built.loz.includes('tunic') && feast.built.knee && feast.k3 === 'emptychair' && feast.season3 === 'winter' && feast.chairOut.coat >= 15 && feast.chairIn.bands === FM.bands && feast.chairIn.coat === 0, feast);
+// S2343 (L1, OG-109's Aurenne travel column): the kit's veil (S1237) on the road's people. An Aurennais traveller (def.roadfolk) with a
+// wrap that is not a headscarf draws its end across the face, three in five; nobody at home, and no other people
+const veil = await page.evaluate(() => { const o = {}; const one = (def, key) => { const root = buildNPCMesh(def, { key }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete(r); return r; };
+  for (const pk of ['aurennais', 'gatelander', 'markman', 'oldblood']) for (const road of [true, false]) { const s = o[pk + (road ? ':road' : ':home')] = { n: 0, wrap: 0, veil: 0 };
+    for (let i = 0; i < 60; i++) { const r = one({ role: 'villager', name: 'V' + pk + i, people: pk, female: i % 2 === 1, ...(road ? { roadfolk: 'v' + i } : {}) }, 'vtest'); if (!r) continue;
+      s.n++; const D = r.hbG.dress; if (D.wrap && !D.scarf) s.wrap++; if (D.veil) s.veil++; } }
+  let G = null; for (let i = 0; i < 60 && !G; i++) { const r = one({ role: 'villager', name: 'Vb' + i, people: 'aurennais', roadfolk: 'vb' + i }, 'vbody'); if (r && r.hbG.dress.veil) G = r.hbG; }
+  const P = G && HB.makePerson(G, { hoodStats: false }); return { o, onHead: !!(P && P.byName['head'].getObjectByName('veil')) }; });
+check(`an Aurennais on the road with a wrap draws the veil (${veil.o['aurennais:road'].veil} of ${veil.o['aurennais:road'].wrap}), on the head bone; nobody at home or of another people`,
+  veil.o['aurennais:road'].veil >= veil.o['aurennais:road'].wrap * .35 && veil.o['aurennais:road'].veil > 0 && veil.onHead && Object.entries(veil.o).every(([k, v]) => k === 'aurennais:road' || v.veil === 0), JSON.stringify(veil.o));
 
 // walking: a walker's builder bones follow the driver's stride
 const walk = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb && r.root.visible && r.root.parent === WORLD.scene && PEOPLE_RIGS.has(r) && !r.sleep && !r.g.gear && r.hb.L === 0); const root = rig.root, fy = root.rotation.y, sk = rig.hb.P.skeleton;
