@@ -265,11 +265,11 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
       it, so the armour sub-tab's click ran out of its 30 s. Alone it held 50 s, and 60 s with one boot beside it. The function's comment says about 17 s once
       a boot. The suite's part is fixed (Session 2336: it waits for the compile, 2/2 green). Whether 50 s against 17 is a regression is the systems
       builder's to read; a player's GPU compiles in parallel.
-    - **`scaleratio`** red twice on CI, red here (for the look builder: the Mark's kit houses, `js/82-world-structures.js`/`83-world-generator.js`).
+    - ~~**`scaleratio`** red twice on CI, red here (for the look builder: the Mark's kit houses, `js/82-world-structures.js`/`83-world-generator.js`).
       *c3_5_s6: every storey is 1.45 to 1.7 of the person* has 3 storeys to measure, `[2.82,2.85,2.85]`, and asks for at least 4. The town's
       houses are the kit's now: `markhall` halls with `wallH` 3.7 (shops, the alehall) or 3.2 (one storey, 2.06 and 1.78 of a 1.8 m person), and
       `marktown` houses at 5.15–5.18 over two storeys (1.43–1.44, just under 1.45). Kit houses are left out of the storey count. So either the Mark's
-      halls and town houses are outside the rule (then the suite should say so and measure the Mark elsewhere), or they break it. The look builder's call.
+      halls and town houses are outside the rule (then the suite should say so and measure the Mark elsewhere), or they break it. The look builder's call.~~ — done, Session 2344 (they broke it: the town house's storeys to 2.7, its door to 2.15, the turf hall's wall to 2.65; the suite reads the Mark's leaves and counts every house's storeys but the forge's)
     - **`saveui`** red twice on CI: each try killed at `run.mjs`'s 900 s per-suite cap (for QA). It took 772 s on 8 Nov. Here it was killed at
       900 s with two boots beside it and took 636 s alone. The weekly run's slow runners run at 1.43–1.67 of the table, so it cannot finish there.
       Backlog K's rule for `budget` and `keeperwalk` (S1924) holds: shorten the suite (its fixed `W(…)` waits), not a longer cap. In backlog K.

@@ -1795,7 +1795,7 @@ function markMats() {
   MM.shingle.side = THREE.DoubleSide; for (const m of Object.values(MM.turf)) m.side = THREE.DoubleSide; return MM;
 }
 function markHall(o, r) {
-  const Mt = markMats(), g = new THREE.Group(), w = o.w, d = o.d, turf = o.roof === 'turf', Turf = Mt.turf[o.turf || 'dry'], foot = o.low ? .36 : .8, NR = o.low ? 2 : 5, wh = turf ? 2.4 : 2.9, pitch = (turf ? 32 : 52) * Math.PI / 180, rise = Math.tan(pitch) * (w / 2 + .5);
+  const Mt = markMats(), g = new THREE.Group(), w = o.w, d = o.d, turf = o.roof === 'turf', Turf = Mt.turf[o.turf || 'dry'], foot = o.low ? .36 : .8, NR = o.low ? 2 : 5, wh = turf ? 2.65 : 2.9 /* S2344: the turf hall's wall 2.4 -> 2.65, a storey of 1.47 people (SCALE.STOREY_MIN 2.6) */, pitch = (turf ? 32 : 52) * Math.PI / 180, rise = Math.tan(pitch) * (w / 2 + .5);
   const wallM = Mt.wall[o.wall ?? Math.floor(r() * Mt.wall.length)];
   const add = (geo, m, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, uv = .5, slopeX) => { if (m.map) worldUV(geo, uv, { slopeX }); const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, rz, 'YXZ'); mesh.castShadow = m !== Mt.dark && m !== Mt.glow; mesh.receiveShadow = true; g.add(mesh); return mesh; };
   const box = (a, b, c) => new THREE.BoxGeometry(a, b, c);
@@ -1860,9 +1860,9 @@ function markHall(o, r) {
 // their beast heads, a hoist beam under the ridge for the loft, and the same stone footing kept low (0.36 m, two rises of 0.18) so the steps
 // take 0.6 m. o.w 4.2 to 6.6 (the gable), o.d 3.4 to 7 (to the street), o.wall (a stain), o.chimney, o.jetty (default on), o.storeys (1 | 2,
 // default 2), o.interior (as the hall's); for the game (Session 2003, the critic's 8 Nov: seven in a row read as one terrace) o.pitch (degrees,
-// default the hall's 52), o.h2 (the upper storey, default 2.35) and o.side (-1 | 1, the door's side, else drawn from r). One mesh per material. -> as markHall's: { group, tris, draws, roofTop, sill, front, stairOut, ... }
+// default the hall's 52), o.h2 (the upper storey, default 2.7 since S2344; 2.35 before) and o.side (-1 | 1, the door's side, else drawn from r). One mesh per material. -> as markHall's: { group, tris, draws, roofTop, sill, front, stairOut, ... }
 function markTownHouse(o, r) {
-  const Mt = markMats(), g = new THREE.Group(), w = o.w, d = o.d, two = o.storeys !== 1, foot = .36, h1 = 2.6, h2 = two ? o.h2 ?? 2.35 : 0, J = two && o.jetty !== false ? .4 : 0;
+  const Mt = markMats(), g = new THREE.Group(), w = o.w, d = o.d, two = o.storeys !== 1, foot = .36, h1 = 2.7 /* S2344: SCALE.STOREY (was 2.6) */, h2 = two ? o.h2 ?? 2.7 : 0, J = two && o.jetty !== false ? .4 : 0;
   const pitch = (o.pitch ?? 52) * Math.PI / 180, tp = Math.tan(pitch), T = .2, wallM = Mt.wall[o.wall ?? Math.floor(r() * Mt.wall.length)], top = foot + h1 + h2;
   const add = (geo, m, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, uv = .5, slopeX) => { if (m.map) worldUV(geo, uv, { slopeX }); const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, rz, 'YXZ'); mesh.castShadow = m !== Mt.dark && m !== Mt.glow; mesh.receiveShadow = true; g.add(mesh); return mesh; };
   const box = (a, b, c) => new THREE.BoxGeometry(a, b, c), V = (a, b) => new THREE.Vector2(a, b);
@@ -1876,7 +1876,7 @@ function markTownHouse(o, r) {
   // the footing: rough stone, a little proud of the walls
   add(box(w + .24, foot, d + .24), Mt.stone, 0, foot / 2, 0, 0, 0, 0, .45);
   // the door: off the middle on a gable wide enough for a window beside it
-  const door = { w: 1.0, h: 2.0, x: w >= 5.2 ? (o.side ?? (r() < .5 ? -1 : 1)) * (w / 2 - 1.15) : 0 }, gw = { w: .6, h: .5 };
+  const door = { w: 1.0, h: 2.15 /* S2344: the leaf 2.05, SCALE.DOOR_H (was 1.9 under a 2.0 head) */, x: w >= 5.2 ? (o.side ?? (r() < .5 ? -1 : 1)) * (w / 2 - 1.15) : 0 }, gw = { w: .6, h: .5 };
   // the ground storey's front: the door under a rounded head, a window beside it when there is room
   { const s = new THREE.Shape([V(-w / 2, 0), V(w / 2, 0), V(w / 2, h1), ...(two ? [] : [V(0, h1 + (w / 2) * tp)]), V(-w / 2, h1)]);
     const h = new THREE.Path(), dx = door.x; h.moveTo(dx - door.w / 2, 0); h.lineTo(dx + door.w / 2, 0); h.lineTo(dx + door.w / 2, door.h - .22); h.quadraticCurveTo(dx, door.h + .1, dx - door.w / 2, door.h - .22); h.lineTo(dx - door.w / 2, 0); s.holes.push(h);
