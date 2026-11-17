@@ -14,7 +14,7 @@ const site = await page.evaluate(() => {
 });
 check('there is a shrine of An Spéir', !!site, site);
 check('the shrine is built', await g.settle(site.id), site.id);
-// Session 2333: the chunks round the player are streamed on the game's own frames, and with other boots beside it the suite once read
+// Session 2336: the chunks round the player are streamed on the game's own frames, and with other boots beside it the suite once read
 // before any chunk's encounter had spawned (0 foes, 15 Nov's weekly run and here). Wait for the chunk foes (up to 180 s), then read.
 // The wild animals (`_wildKey`, 88-world-ticks.js) carry a chunk too but are not `spawnChunkEncounters`' foes: a hare by a village's
 // fields is no breach (a Brown Hare by Hearthwick's pad read as one here at s1677). They are left out of both checks.

@@ -14,7 +14,7 @@ out.firstClose = await tab();
 await page.evaluate(() => G.focus());
 out.reopen0 = await tab();
 await page.click('.hub-tab:nth-child(1)'); await g.frames(2);
-// Session 2333: the Inventory's first showing draws your body in the sheet's portrait, and its first draw compiles the body's programs
+// Session 2336: the Inventory's first showing draws your body in the sheet's portrait, and its first draw compiles the body's programs
 // (`sheetFigDraw`, 66-hub.js). Headless SwiftShader compiles on the page's own thread, so the page answers nothing until that is done:
 // 108 s here at s1677 with two other boots beside it, and the armour sub-tab's click ran out of its 30 s on both tries of the weekly
 // run of 15 Nov. Wait for the compile to end (and the portrait's draw it owes), then click.

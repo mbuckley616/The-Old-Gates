@@ -278,13 +278,13 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `houses` | 6/14 | pass | pass | 58 |  |
 | `hptail` | 2/14 | pass | pass | 65 |  |
 | `hubregen` | 2/14 | pass | pass | 42 |  |
-| `hubreturn` | 9/14 | pass | red | 124 | 15 Nov weekly: red twice (the armour sub-tab's click, 30 s). Red here at s1677: opening Inventory compiles the sheet portrait's programs and holds the page about 108 s on SwiftShader. Section I, Session 2333 |
+| `hubreturn` | 9/14 | pass | red | 124 | 15 Nov weekly: red twice (the armour sub-tab's click, 30 s). Red here at s1677: opening Inventory compiles the sheet portrait's programs and holds the page about 108 s on SwiftShader. Section I, Session 2336 |
 | `hullbakes` | 7/14 | pass | pass | 62 |  |
 | `hullshape` | 4/14 | pass | red | 46 | 15 Nov weekly: red twice; filed in section I (producer), fixed since |
 | `huntvariant` | 7/14 | pass | pass | 43 |  |
 | `icecave` | w15/20 | — | pass | 203 |  |
 | `implements` | w12/20 | — | pass | 152 |  |
-| `innrooms` | w3/20 | — | flaky | 1207 | Failed then passed on the retry (a 60 s wait); section I, Session 2333 |
+| `innrooms` | w3/20 | — | flaky | 1207 | Failed then passed on the retry (a 60 s wait); section I, Session 2336 |
 | `innvoice` | 7/14 | pass | pass | 75 |  |
 | `inspdungeons` | w17/20 | — | pass | 5 |  |
 | `inspector` | w19/20 | — | pass | 43 |  |
@@ -400,7 +400,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `oldsaves` | w3/20 | — | pass | 256 |  |
 | `overcast` | w4/20 | — | pass | 171 |  |
 | `packshape` | 3/14 | pass | pass | 64 |  |
-| `padspawn` | w16/20 | — | flaky | 489 | Failed then passed on the retry (0 chunk foes loaded); red here at s1677, section I, Session 2333 |
+| `padspawn` | w16/20 | — | flaky | 489 | Failed then passed on the retry (0 chunk foes loaded); red here at s1677, section I, Session 2336 |
 | `panelfocus` | 2/14 | pass | pass | 437 | Red at the 900 s cap on 15 Oct with two shards sharing four cores (four 8 s `locator.click` timeouts in its panel walk); run alone on 16 Oct (Session 971's run) it passed in 437 s, inside CI's old-look 270–546 s. Load, not the look: no owner. |
 | `parryclock` | 3/14 | pass | pass | 66 |  |
 | `parrydeath` | 5/14 | pass | pass | 43 |  |
@@ -473,8 +473,8 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `savepic` | 4/14 | pass | pass | 67 |  |
 | `saveretry` | 6/14 | pass | pass | 56 |  |
 | `saves` | 2/14 | pass | pass | 76 |  |
-| `saveui` | 6/14 | pass | red | 140 | 15 Nov weekly: red twice, each try killed at run.mjs's 900 s cap (772 s on 8 Nov). Section I, Session 2333 |
-| `scaleratio` | 6/14 | pass | red | 355 | 15 Nov weekly: red twice. c3_5_s6 (the Mark) has 3 storeys to measure and the check asks for at least 4: its houses are the kit's halls now. Red here at s1677. Section I, Session 2333 |
+| `saveui` | 6/14 | pass | red | 140 | 15 Nov weekly: red twice, each try killed at run.mjs's 900 s cap (772 s on 8 Nov). Section I, Session 2336 |
+| `scaleratio` | 6/14 | pass | red | 355 | 15 Nov weekly: red twice. c3_5_s6 (the Mark) has 3 storeys to measure and the check asks for at least 4: its houses are the kit's halls now. Red here at s1677. Section I, Session 2336 |
 | `scalerooms` | w14/20 | — | pass | 183 |  |
 | `schoolroster` | 6/14 | pass | pass | 154 |  |
 | `scorpion` | 9/14 | pass | pass | 40 |  |
@@ -645,12 +645,12 @@ in it from an earlier shard (the shards reshuffle as suites are added; the 18 ke
 shared the four cores (six boots), and the try took about 1,490 s against CI's 219. Run alone afterwards (`--no-retry`), it passed 10 of 10 in about 7 minutes:
 the load's, not the look's. Shards 11–14: owed. 202 of the suite's 459 files were not in this ledger before this session; 154 still are not.
 
-**Every file, 17 Nov (Session 2333).** Since 20 Oct every CI run boots the new look, so the weekly full run is this ledger's run. The 322 files
+**Every file, 17 Nov (Session 2336).** Since 20 Oct every CI run boots the new look, so the weekly full run is this ledger's run. The 322 files
 not in it are added from the weekly run of 15 Nov (43717030831, main 91ca249, s1608; shard written `wN/20`), read from each shard's log: a
 finished shard's summary, and for the eight cut shards each suite's start to the next's (a retry noted). The old-look column is `—` for them.
 Of the 631 files: 584 passed there first try; 12 red twice in finished shards (filed by the producer, all since fixed or green); 4 red twice
 in cut shards and never reported (`ashenburn`, `hubreturn`, `saveui`, `scaleratio`), 3 failed once in cut shards (`cairn`, `innrooms`,
 `padspawn`) and `seacove` FLAKY; 8 were cut mid-suite and 13 never started (Session 2271 ran all 21 at s1617: green, `smoke` after its
-fix); 6 are newer than the run and passed on their own pull requests (584 + 12 + 4 + 3 + 1 + 8 + 13 + 6 = 631). The seven unreported were run again on main at s1677: section I, Session 2333.
+fix); 6 are newer than the run and passed on their own pull requests (584 + 12 + 4 + 3 + 1 + 8 + 13 + 6 = 631). The seven unreported were run again on main at s1677: section I, Session 2336.
 The 309 older rows keep their October results, with 15 Nov's written beside any that was not a first-try pass.
 
