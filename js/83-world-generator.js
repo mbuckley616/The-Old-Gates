@@ -1387,6 +1387,30 @@ function genSettlement(site){
       let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */for(const Y of S.yards||[])r=Math.max(r,Math.hypot(Y.x-cx,Y.z-cz)+Y.r+2);if(S.market)r=Math.max(r,Math.hypot(S.market.x-cx,S.market.z-cz)+S.market.r); /* S1904 — and the market house */if(S.academy)r=Math.max(r,Math.hypot(S.academy.cx-cx,S.academy.cz-cz)+S.academy.r); /* S1959 — and the academy */ /* S1658 — and a yard outside the walls */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
     try{S.racks=townRacks(site,houses,sol,group,S.paths);}catch(e){console.warn('racks',e);S.racks=[];} /* S2136 — the smith's and the harbour's racks in their yards */
     try{S.gardens=townGardens(site,houses,sol,group,S.paths);}catch(e){console.warn('gardens',e);S.gardens=[];} /* S2165 — your house's garden in its yard, after the racks */
+    /* S2333 (Michael's A on #1672) — the Strait Fair's ring (PKIT.props.ring, 38-kit.js: FAIR_R's 5 m rope on ten stakes, the reeve's post 0.7 m
+       outside it): it goes up on the square of every Markish place that keeps the fair (fairRingOpenFor's kinds), or the nearest clear
+       ground, on the fair's morning, and comes down after noon (fairRingLive). Its place is searched once every lot, plot and solid stands,
+       out from the square's middle (0 to 30 m in 1.5 m steps, 16 bearings turned by the town's own stream), inside the walls: clear of every
+       lot, plot and solid by 0.6 m over its 5.9 m reach, of the yard's and the ladder's rings, on ground that falls under 1.2 m across it;
+       first off every road's bed, then (no square has 12 m of that) over the street, the morning's crowd standing in it. Else outside the
+       walls, as the yard's is (kitClearAt), with a noFlat stamp. Nothing of it is solid: the rope is the bout's line, not a wall. It is built
+       hidden, and S.fair keeps where it stands. Searched after the racks and the gardens, which stand clear of solids and so would not see it. */
+    if(window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.props&&PKIT.props.ring&&nationOf(ni,nj).people==='markman'&&['village','town','city','port','garrison','outpost'].includes(site.kind)&&!burnedV&&!abandonedV)try{
+      const YR=5.9,rs=PKIT.stream(`${site.id}:fair`),a0=rs()*Math.PI*2,lots=kitLots(),rc=kitRc,avoid=[...(S.yards||[]).map(Y=>({x:Y.x,z:Y.z,r:Y.r+1.9})),...(S.ring?[{x:S.ring.x,z:S.ring.z,r:12.4}]:[])];
+      const clear=(x,z,road)=>{if(Math.hypot(x-cx,z-cz)+YR>inner-1)return false;if(avoid.some(A=>Math.hypot(x-A.x,z-A.z)<YR+A.r+1))return false;
+        if(!road)for(let k=0;k<16;k++){const a=k/16*Math.PI*2;for(const f of [.5,1]){const ri=roadInfo(x+Math.cos(a)*YR*f,z+Math.sin(a)*YR*f);if(ri&&ri.d<ROAD_HALF+.5)return false;}}
+        for(const l of lots)if(rc(l,x,z)<YR+.6)return false;for(const P of PLOTS)if(rc(P,x,z)<YR+.6)return false;for(const Q of [...(S.racks||[]),...(S.gardens||[])])if(Q&&Q.x!=null&&Math.hypot(Q.x-x,Q.z-z)<YR+2.5)return false;
+        for(const q of sol){const P={x:q.cx,z:q.cz,w:2*q.rx,d:2*q.rz,ry:q.c!==undefined?Math.atan2(q.s,q.c):0};if(rc(P,x,z)<YR+.6)return false;}
+        let lo=worldH(x,z),hi=lo;for(let k=0;k<12;k++){const a=k/12*Math.PI*2;for(const f of [.5,1]){const y=worldH(x+Math.cos(a)*YR*f,z+Math.sin(a)*YR*f);lo=Math.min(lo,y);hi=Math.max(hi,y);}}return hi-lo<1.2;};
+      let at=null;for(const road of [false,true]){for(let rr=0;rr<=30&&!at;rr+=1.5)for(let k=0;k<(rr?16:1)&&!at;k++){const a=a0+k*Math.PI/8,x=cx+Math.cos(a)*rr,z=cz+Math.sin(a)*rr;if(clear(x,z,road))at={x,z,road};}if(at)break;}
+      if(!at){const b0=rs()*Math.PI*2;for(let k=0;k<32&&!at;k++){const da=(k&1?-1:1)*Math.ceil(k/2)*.2;for(let dd=4;dd<=24&&!at;dd+=2){const rr=inner+YR+dd,x=cx+Math.sin(b0+da)*rr,z=cz+Math.cos(b0+da)*rr;
+        if(avoid.some(A=>Math.hypot(x-A.x,z-A.z)<YR+A.r+3))continue;if(kitClearAt(x,z,true,YR))at={x,z,out:true};}}
+        if(at&&!STAMPS.some(q=>q.id==='fair_'+site.id)){const st=addStamp({id:'fair_'+site.id,kind:'yard',noFlat:true,x:at.x,z:at.z,r:YR+.5,blend:1,y:0});try{clearScatterUnder([st]);}catch(e){}}}
+      if(at){const ry=Math.atan2(cx-at.x,cz-at.z)+Math.PI,c=Math.cos(ry),s_=Math.sin(ry),y0=worldH(at.x,at.z),W_=(lx,lz)=>[at.x+lx*c+lz*s_,at.z-lx*s_+lz*c]; /* the reeve's post on the side away from the middle */
+        const R=PKIT.props.ring({ground:(lx,lz)=>{const [x,z]=W_(lx,lz);return worldH(x,z)-y0;}}),G=R.group;
+        G.position.set(at.x,y0,at.z);G.rotation.y=ry;G.userData.noBake=true;G.visible=false;group.add(G);
+        const [qx,qz]=W_(R.post.x,R.post.z);S.fair={id:`${site.id}:fair`,site:site.id,x:at.x,z:at.z,y:y0,ry,r:R.r,post:{x:qx,z:qz},road:!!at.road,out:!!at.out,group:G,tris:R.tris,draws:R.draws};}
+    }catch(e){console.warn('fair ring',e);}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
@@ -1417,12 +1441,21 @@ function genSettlement(site){
   function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
     for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod,S.cairnLod,S.whLod,S.thLod,S.archLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     if(S.racks&&S.racks.length)townRacksLive(S,cp); /* S2136 — shown near, and what hangs kept to worldState.racks */
-    if(S.gardens&&S.gardens.length)townGardensLive(S,cp); /* S2165 — and your garden's beds kept to worldState.garden */
+    if(S.gardens&&S.gardens.length)townGardensLive(S,cp);
+    if(S.fair)fairRingLive(S,cp); /* S2333 — the Strait Fair's ring, up on its morning */ /* S2165 — and your garden's beds kept to worldState.garden */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
       const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));
       const near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:m.visible;m.visible=near;if(twin)twin.visible=!near;}}}
+  // S2333 (Michael's A on #1672) — the Strait Fair's ring (S.fair) stands from FAIR_OPEN on the fair's morning in a place that keeps it full or
+  // named, and comes down at noon; while a contest runs in it, it stays up past noon. Shown only within the houses' near reach.
+  function fairRingUp(S){const F=S.fair;if(!F)return false;if(typeof FAIRRING!=='undefined'&&FAIRRING&&FAIRRING.site&&FAIRRING.site.id===F.site)return true;
+    if(typeof festivalHere!=='function'||typeof hourNow!=='function')return false;const h=festivalHere(F.site);if(!h||h.f.key!=='straitfair'||h.state==='thin')return false;
+    const hr=hourNow();return hr>=FAIR_OPEN&&hr<FAIR_CLOSE;}
+  function fairRingLive(S,cp){const F=S.fair;F.group.visible=Math.hypot(F.x-cp.x,F.z-cp.z)<HOUSE_LOD.far&&fairRingUp(S);}
+  // the ring standing (or that would stand) for a place: what fairRingStart takes when no middle is given
+  function fairRingOf(site){const s=typeof site==='string'?site:site&&site.id,S=s&&SETTLE.get(s);return S&&S.fair||null;}
   // S1657 — the Mark's yards (genSettlement's S.yards): the yard whose rope is within 2.5 m of x,z, and the rack you stand at (1.6 m
   // from its front). The rack hands you a staff: sparStart (87-world-quests.js) when it exists, by the yard's hours (8h–18h).
   function yardAt(x,z){for(const S of SETTLE.values())for(const Y of S.yards||[])if(Math.hypot(x-Y.x,z-Y.z)<Y.r+2.5)return Y;return null;}

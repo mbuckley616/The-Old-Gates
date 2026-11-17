@@ -3661,7 +3661,7 @@ const giver=`${lord.title} ${lord.name}`;
       won:()=>{fairRingDrop(e);R.n++;if(R.n>=FAIR_N){fairRingEnd('won');return;}showMsg(`${e.name} is spared. ${FAIR_NAMES[R.n]} steps over the rope.`,'#e8d8a0');fairRingBout(R);},
       lost:(b,how)=>fairRingEnd('lost',how),murder:()=>fairRingEnd('murder')}});}
   function fairRingStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
-    const k=fairRingOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
+    const k=fairRingOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,FR=o.x==null&&typeof fairRingOf==='function'?fairRingOf(s):null,x=o.x!=null?o.x:FR?FR.x:px,z=o.z!=null?o.z:FR?FR.z:pz; /* S2333 — no middle given: the town's ring (the look builder's) */
     const R=FAIRRING={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,n:0,foe:null,held:kitHold(),assaults:0,end:null};
     const F=worldState.festivals||(worldState.festivals={});F['straitfair:'+s.id]=Object.assign({},F['straitfair:'+s.id],{year:k.year,won:false,quarrels:0}); /* S2324 — the act's year stays */
     showMsg('The rope goes up. Three quarrels, fists, each to a yield.','#e8d8a0');fairRingBout(R);return {ok:true,tier:R.tier};}
