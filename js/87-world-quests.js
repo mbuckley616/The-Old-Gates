@@ -3581,7 +3581,7 @@ const giver=`${lord.title} ${lord.name}`;
   function buttsOpenFor(site,o){o=o||{};const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return {say:'There are no butts here.'};
     const h=festivalHere(s.id);if(!h||h.f.key!=='riverfair')return {say:'The butts are shot at Riverfair.'};
     if(h.state==='thin')return {say:'There’s no shooting this year. The town can’t find the purse.'};
-    const hr=hourNow();if(!o.force&&(hr<BUTT_OPEN||hr>=BUTT_CLOSE))return {say:`The butts are shot from ${BUTT_OPEN}h to ${BUTT_CLOSE}h.`};
+    const hr=hourNow();if(!o.force&&(hr<BUTT_OPEN||hr>=BUTT_CLOSE))return {say:`The butts are shot from ${BUTT_OPEN}:00 to ${BUTT_CLOSE}:00.`};
     const F=worldState.festivals||{},me=F['riverfair:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have shot here this year.'};
     return {ok:true,site:s,state:h.state,year:yr};}
   function buttMesh(){const g=new THREE.Group(),straw=new THREE.MeshLambertMaterial({color:0xb89a58});
@@ -3591,7 +3591,7 @@ const giver=`${lord.title} ${lord.name}`;
     return g;}
   function buttPlace(B){const D=BUTT_ENDS[B.end],x=B.x+B.dx*D,z=B.z+B.dz*D,y=activeTerrainH(x,z)+BUTT_Y;B.cx=x;B.cy=y;B.cz=z;
     if(B.mesh){B.mesh.position.set(x,y,z);B.mesh.rotation.y=Math.atan2(-B.dx,-B.dz);}}
-  function buttsStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING)return {say:'You are already in a contest.'};
+  function buttsStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
     const k=buttsOpenFor(o.site,o);if(!k.ok)return k;if(!EQ.weapon||weaponSkill(EQ.weapon)!=='bow'||!EQ.ammo)return {say:'You’ll want a bow and arrows for the butts.'};
     const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;let dx=o.dx,dz=o.dz;if(dx==null){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}const n=Math.hypot(dx,dz)||1;
     const B=BUTTS={site:s,x,z,dx:dx/n,dz:dz/n,end:0,shots:[],year:k.year,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),rivals:buttRivals(s,k.year),mesh:o.mesh===false?null:buttMesh()};
@@ -3623,7 +3623,7 @@ const giver=`${lord.title} ${lord.name}`;
     const me=F['riverfair:'+B.site.id]||(F['riverfair:'+B.site.id]={year:B.year});me.score=total;me.won=won;
     let paid=0,skill=false;if(won){paid=payPurse(BUTT_PURSE+BUTT_PURSE_TIER*(Math.max(1,B.tier)-1));
       bagAdd({name:`Silver Arrow of ${B.site.name||'Riverfair'}`,ico:'🏹',type:'misc',weight:.1,buyPrice:0,sellMult:0,keepsake:'riverfair',site:B.site.id,year:B.year,desc:`Won at the butts, Riverfair, in the ${calOrd(B.year)} year of the Peace.`});
-      const S=F.skill||(F.skill={});if(S.riverfair!==B.year){S.riverfair=B.year;skill=buttsSkillUp('bow');}}
+      festCrown('riverfair',B.site,B.year);const S=F.skill||(F.skill={});if(S.riverfair!==B.year){S.riverfair=B.year;skill=buttsSkillUp('bow');}}
     showMsg(won?`${total} against ${best}. The purse is yours: ${paid} gold, and a silver arrow.${skill?' Your Bow rises.':''}`:how==='shot'?`${total} against ${best}. Not this year.`:`Your nine are not shot. Not this year.`,'#e8d8a0');
     B.how=how;B.total=total;B.best=best;B.won=won;B.paid=paid;B.skill=skill;return B;}
   // the contest's point of skill: a level, as a skill book's (the level's marks too)
@@ -3638,17 +3638,17 @@ const giver=`${lord.title} ${lord.name}`;
   // rings of the Mark shut 28 days). One try a town a year (worldState.festivals['straitfair:'+site]). The ring's rope and the reeve
   // who calls it are the look builder's and the quest writer's: fairRingStart({site,x,z}) is what they call, and the fighters' names
   // and the lines here are placeholders. Named actions: fairRingStart, fairRingEnd.
-  const FAIR_OPEN=5,FAIR_CLOSE=12,FAIR_R=5,FAIR_N=3,FAIR_PURSE=40,FAIR_PURSE_TIER=20,FAIR_NAMES=['The first quarrel','The second quarrel','The third quarrel'];
+  const FAIR_OPEN=5,FAIR_CLOSE=12,FAIR_R=5,FAIR_N=3,FAIR_PURSE=40,FAIR_PURSE_TIER=20,FAIR_NAMES=['The first comer','The second comer','The third comer'];
   let FAIRRING=null; /* {site,x,z,tier,year,n,foe,held,assaults,end} */
   function fairRingOpenFor(site,o){o=o||{};const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return {say:'There is no ring here.'};
     const h=festivalHere(s.id);if(!h||h.f.key!=='straitfair')return {say:'The ring is fought at the Strait Fair.'};
-    if(h.state==='thin')return {say:'No ring this year. There’s nobody with a quarrel worth the rope.'};
-    const hr=hourNow();if(!o.force&&(hr<FAIR_OPEN||hr>=FAIR_CLOSE))return {say:`The ring is fought from ${FAIR_OPEN}h till noon.`};
+    if(h.state==='thin')return {say:'No ring this year. The town’s too lean to put a purse on it.'};
+    const hr=hourNow();if(!o.force&&(hr<FAIR_OPEN||hr>=FAIR_CLOSE))return {say:`The ring is fought from ${FAIR_OPEN}:00 till noon.`};
     if(dayNow()<(arenaState().banUntil||0))return {say:'The rings of the Mark are shut to you.'};
     const F=worldState.festivals||{},me=F['straitfair:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have fought here this year.'};
     return {ok:true,site:s,state:h.state,year:yr};}
   function fairRingFoe(R){const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,R.x,R.z,'Bandit',null,{tier:R.tier})),`strait:${R.site.id}:${R.year}:${R.n}`);
-    e.name=e.displayName=FAIR_NAMES[R.n]||'The quarrel';e._disarmed=true;e._questTag='straitfair';e.homeX=R.x;e.homeZ=R.z;
+    e.name=e.displayName=FAIR_NAMES[R.n]||'The comer';e._disarmed=true;e._questTag='straitfair';e.homeX=R.x;e.homeZ=R.z;
     if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);return e;}
   function fairRingDrop(e){if(!e)return;boutEnd(e);if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
     const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
@@ -3656,9 +3656,9 @@ const giver=`${lord.title} ${lord.name}`;
     boutStart({foe:e,x:R.x,z:R.z,r:FAIR_R,on:{
       yield:()=>showMsg(`${e.name} goes down on one knee.`,'#e8d8a0'),
       struck:()=>{R.assaults++;ringCrime(R.site.id,'assault',CRIME_PTS.assault);showMsg(`You struck ${e.name} after the yield. That is assault.`,'#ff6060');},
-      won:()=>{fairRingDrop(e);R.n++;if(R.n>=FAIR_N){fairRingEnd('won');return;}showMsg(`${e.name} is spared. ${FAIR_NAMES[R.n]}.`,'#e8d8a0');fairRingBout(R);},
+      won:()=>{fairRingDrop(e);R.n++;if(R.n>=FAIR_N){fairRingEnd('won');return;}showMsg(`${e.name} is spared. ${FAIR_NAMES[R.n]} steps over the rope.`,'#e8d8a0');fairRingBout(R);},
       lost:(b,how)=>fairRingEnd('lost',how),murder:()=>fairRingEnd('murder')}});}
-  function fairRingStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING)return {say:'You are already in a contest.'};
+  function fairRingStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
     const k=fairRingOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
     const R=FAIRRING={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,n:0,foe:null,held:kitHold(),assaults:0,end:null};
     const F=worldState.festivals||(worldState.festivals={});F['straitfair:'+s.id]={year:k.year,won:false,quarrels:0};
@@ -3671,10 +3671,109 @@ const giver=`${lord.title} ${lord.name}`;
     me.quarrels=R.n;me.won=how==='won';let paid=0,skill=false;
     if(me.won){paid=payPurse(FAIR_PURSE+FAIR_PURSE_TIER*(Math.max(1,R.tier)-1));
       bagAdd({name:`Reeve’s Iron Ring of ${R.site.name||'the Strait Fair'}`,ico:'💍',type:'misc',weight:.05,buyPrice:0,sellMult:0,keepsake:'straitfair',site:R.site.id,year:R.year,desc:`Won in the ring at the Strait Fair, in the ${calOrd(R.year)} year of the Peace.`});
-      const S=F.skill||(F.skill={});if(S.straitfair!==R.year){S.straitfair=R.year;skill=buttsSkillUp('hand');}}
+      festCrown('straitfair',R.site,R.year);const S=F.skill||(F.skill={});if(S.straitfair!==R.year){S.straitfair=R.year;skill=buttsSkillUp('hand');}}
     showMsg(how==='won'?`Three quarrels, three yields. The purse is yours: ${paid} gold, and the reeve’s ring.${skill?' Your Hand-to-hand rises.':''}`:how==='murder'?`${e?e.name:'The fighter'} is dead. The fair goes quiet, and the rings of the Mark are shut to you.`:how==='lost'?(why==='rope'?'You step over the rope. Not this year.':'You go down. Not this year.'):'The ring breaks up. Not this year.','#e8d8a0');
     R.end=how;R.paid=paid;R.skill=skill;return R;}
   function tickFairRing(dt){const R=FAIRRING;if(!R)return;if(!BOUT||BOUT.foe!==R.foe){fairRingEnd('left');return;}boutTick(dt);}
+  // S2319 — festivals B session 4, the Commencement's disputation (Michael's B on #1628, docs/design/festivals.md, *The contests*). On
+  // the Commencement (Shearing 6), 9:00 to 12:00, in an Aurennais town keeping it full or named, the examiners put three questions,
+  // each upon a book the academy keeps: three of DISP_BOOKS (the nine *Festivals on the Calendar, IV* names, those the game holds),
+  // drawn by seededRng('disputation', site and year), so a friend at the same table is asked the same three. A question is answered
+  // from the book if you have read it (booksRead), or argued: a Speech check, passed at DISP_CHECK (40 for the first, 55 the second,
+  // 70 the third; the page's 40 + 15 a question), read off the level, no roll. Two of three win: the purse 40 + 20 gold a tier above
+  // the first, the scholar's seal named for the town and year, and +1 Speech once a year whatever the town; each question answered is
+  // a use of Speech at full weight. Losing costs the try. Once begun it runs to its end, past noon too; walking DISP_LEAVE from the
+  // table withdraws you, a loss. One try a town a year (worldState.festivals['disputation:'+site], the character's). The table, the
+  // examiners and their questions' words are the look builder's and the quest writer's: dispStart({site,x,z}) and dispTopics() are
+  // what they call, and the lines here are placeholders. Named actions: dispStart, dispAnswer, dispEnd.
+  const DISP_OPEN=9,DISP_CLOSE=12,DISP_N=3,DISP_WIN=2,DISP_CHECK=[40,55,70],DISP_LEAVE=12,DISP_PURSE=40,DISP_PURSE_TIER=20,
+    DISP_BOOKS=['aldrics_third','stoics_rampart','fletchers_hand','winds_account','letters_from_ashwold','of_binding_stones','on_the_seals','seventh_niche','words_on_stones'];
+  let DISP=null; /* {site,x,z,tier,year,qs:[book ids],n,answers:[{book,how,ok}],end} */
+  function dispBook(id){return BOOKS.find(b=>b.id===id)||null;}
+  // the three, seeded by site and year: a Fisher–Yates draw of the pool the game holds
+  function dispQuestions(site,year){const r=seededRng('disputation',site.id+':'+year),P=DISP_BOOKS.filter(dispBook);
+    for(let i=P.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[P[i],P[j]]=[P[j],P[i]];}return P.slice(0,DISP_N);}
+  function dispOpenFor(site,o){o=o||{};const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return {say:'There is no disputation here.'};
+    const h=festivalHere(s.id);if(!h||h.f.key!=='commencement')return {say:'The disputation sits at the Commencement.'};
+    if(h.state==='thin')return {say:'No disputation this year. The town has not subscribed the purse.'};
+    const hr=hourNow();if(!o.force&&(hr<DISP_OPEN||hr>=DISP_CLOSE))return {say:`The examiners sit from ${DISP_OPEN}:00 till noon.`};
+    const F=worldState.festivals||{},me=F['disputation:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have sat here this year.'};
+    return {ok:true,site:s,state:h.state,year:yr};}
+  function dispAsk(D){const b=dispBook(D.qs[D.n]);showMsg(`The ${['first','second','third'][D.n]||'next'} question, upon ${b?b.name:'a book'}.`,'#e8d8a0');}
+  function dispStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
+    const k=dispOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
+    const D=DISP={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,qs:dispQuestions(s,k.year),n:0,answers:[],end:null};
+    const F=worldState.festivals||(worldState.festivals={});F['disputation:'+s.id]={year:k.year,won:false,answered:0}; /* the try is used once you sit */
+    showMsg('The examiners are seated. Three questions, each upon a book; two answered carry the seal.','#e8d8a0');dispAsk(D);
+    return {ok:true,qs:D.qs.slice(),tier:D.tier};}
+  // the question now put: 'book' answers it only if you have read its book; 'argue' is the Speech check at this question's DISP_CHECK
+  function dispCanBook(){const D=DISP;return !!D&&D.n<DISP_N&&booksRead.has(D.qs[D.n]);}
+  function dispAnswer(how){const D=DISP;if(!D||D.n>=DISP_N)return null;const book=D.qs[D.n],need=DISP_CHECK[D.n];
+    if(how==='book'&&!booksRead.has(book))return {say:'You have not read it.'};
+    const ok=how==='book'||skillLv('speech')>=need;D.answers.push({book,how,ok,need});
+    if(ok&&typeof skillUse==='function')skillUse('speech',1,'disputation:'+D.site.id+':'+D.year+':'+D.n);
+    showMsg(ok?'The examiners allow it.':'The examiners cannot allow it.','#e8d8a0');
+    D.n++;const right=D.answers.filter(a=>a.ok).length;
+    if(D.n>=DISP_N)dispEnd(right>=DISP_WIN?'won':'lost');else dispAsk(D);
+    return {ok,right,n:D.n};}
+  function dispEnd(how){const D=DISP;if(!D)return null;DISP=null;const right=D.answers.filter(a=>a.ok).length,won=how==='won'&&right>=DISP_WIN;
+    const F=worldState.festivals||(worldState.festivals={}),me=F['disputation:'+D.site.id]||(F['disputation:'+D.site.id]={year:D.year});
+    me.answered=right;me.won=won;let paid=0,skill=false;
+    if(won){paid=payPurse(DISP_PURSE+DISP_PURSE_TIER*(Math.max(1,D.tier)-1));
+      bagAdd({name:`Scholar’s Seal of ${D.site.name||'the Commencement'}`,ico:'🔏',type:'misc',weight:.05,buyPrice:0,sellMult:0,keepsake:'commencement',site:D.site.id,year:D.year,desc:`Sealed at the Commencement, ${D.site.name||'Aurenne'}, in the ${calOrd(D.year)} year of the Peace.`});
+      festCrown('commencement',D.site,D.year);const S=F.skill||(F.skill={});if(S.commencement!==D.year){S.commencement=D.year;skill=buttsSkillUp('speech');}}
+    const nw=['None','One','Two','Three'][right]||String(right);
+    showMsg(won?`${nw} of three. The purse is yours: ${paid} gold, and the scholar’s seal.${skill?' Your Speech rises.':''}`:how==='left'?'You leave the table. The examiners enter it as withdrawn.':`${nw} of three. Not this year.`,'#e8d8a0');
+    D.end=how;D.right=right;D.paid=paid;D.skill=skill;return D;}
+  function tickDisp(){const D=DISP;if(!D)return;if(Math.hypot(px-D.x,pz-D.z)>DISP_LEAVE)dispEnd('left');}
+  // the presiding examiner's topics (the quest writer's words go here): sit, and while a question is put, answer from the book or argue it
+  function dispTopics(site){return [
+    {label:'I would sit the disputation.',quest:true,avail:()=>!DISP,fn:()=>{const k=dispStart({site});return k.ok?'The first question is put.':k.say;}},
+    {label:'Answer from the book.',quest:true,avail:()=>dispCanBook(),fn:()=>{const a=dispAnswer('book');return a&&a.say?a.say:'Entered as answered.';}},
+    {label:'Argue it.',quest:true,avail:()=>!!DISP&&DISP.n<DISP_N,fn:()=>{const a=dispAnswer('argue');return a&&a.say?a.say:a&&a.ok?'Allowed.':'Not allowed.';}}];}
+  // S2320 — festivals B session 5, the post and the town's memory (Michael's B on #1628, docs/design/festivals.md: "The winner's name
+  // is cut on a post (as ringPostNames does) and said by the town until next year's"). Each island's fair has one contest (FEST_CONTEST);
+  // its champion a town and year is worldState.festChampions['<key>:'+site] = {year, name, you} (the world's: the post is the town's),
+  // written when you win (festCrown, from buttsEnd, fairRingEnd, dispEnd). A year you did not win, the town's own champion stands: a
+  // name of the town's people, seeded by festival, site and year (a friend reads the same post). The town says the champion whose
+  // contest has closed, this year's after the window, last year's before it, until the next (festChampionNow). No champion where the
+  // town keeps no contest now (a thin year, or kept not at all) beyond those already cut. The post (festPostNames) carries the last
+  // FEST_POST_N, newest first. Where the post stands and what the town says of its champion are the look builder's and the quest
+  // writer's: festPostNames(site) and festChampionNow(site) are what they read. Named action: festCrown.
+  const FEST_CONTEST={riverfair:BUTT_CLOSE,straitfair:FAIR_CLOSE,commencement:DISP_CLOSE},FEST_POST_N=5;
+  function festContestOf(site){const s=typeof site==='string'?siteAnywhere(site):site;if(!s||s.x==null)return null;const isle=isleAt(s.x,s.z);
+    return FESTIVALS.find(f=>f.nation===isle&&FEST_CONTEST[f.key]!=null)||null;}
+  // the minute this year's window closes: the festival's day at its contest's last hour
+  function festCloseAt(f,year){const mAbs=(year-CAL.startYear)*CAL.months+f.month-CAL.startMonth;return (mAbs*CAL.monthLen+f.dom-1)*1440+FEST_CONTEST[f.key]*60;}
+  function festCrown(key,site,year){const C=worldState.festChampions||(worldState.festChampions={});
+    C[key+':'+site.id]={year,name:typeof playerName==='string'&&playerName?playerName:'Traveller',you:true};return C[key+':'+site.id];}
+  function festTownChampion(site,key,year){const r=seededRng('champion',key+':'+site.id+':'+year),gp=peopleOfSite(site),bank=NAMES[(PEOPLES[gp]||PEOPLES.gatelander).names]||NAMES.irish;
+    const L=r()<.4&&bank.f&&bank.f.length?bank.f:bank.m;return {year,name:L[Math.floor(r()*L.length)],you:false};}
+  // the champion of a year's contest, once its window has closed (null before, or before the calendar began)
+  function festChampion(site,key,year){const s=typeof site==='string'?siteAnywhere(site):site,f=FESTIVALS.find(q=>q.key===key);if(!s||!f||year<CAL.startYear)return null;
+    const at=festCloseAt(f,year);if(at<0)return null;const C=(worldState.festChampions||{})[key+':'+s.id];if(C&&C.year===year)return C;
+    if((worldState.gameTimeAbsMinutes||0)<at)return null;return festTownChampion(s,key,year);}
+  function festChampionNow(site){const s=typeof site==='string'?siteAnywhere(site):site,f=festContestOf(s);if(!f)return null;
+    const st=festivalState(s);if(st==='none'||st==='thin'){const C=(worldState.festChampions||{})[f.key+':'+s.id];return C?Object.assign({key:f.key},C):null;}
+    const yr=calDay(absMin()).year;const c=festChampion(s,f.key,yr)||festChampion(s,f.key,yr-1);return c?Object.assign({key:f.key},c):null;}
+  // the post: the last FEST_POST_N champions, newest first
+  function festPostNames(site){const s=typeof site==='string'?siteAnywhere(site):site,f=festContestOf(s);if(!f)return [];const yr=calDay(absMin()).year,out=[];
+    for(let y=yr;y>=CAL.startYear&&out.length<FEST_POST_N;y--){const c=festChampion(s,f.key,y);if(c)out.push(c);}return out;}
+  // S2321 — First Snow's night (festivals B session 5; draft II's rule: the first day in Culling or Longnight that the snow lies over
+  // the town at 18:00, else Culling 28). The only snow the game keeps is the weather where you stand (WX.cover), so a town's night is
+  // read when you are in it: from 18:00 on a day of Culling before the 28th, snow lying at FIRSTSNOW_COVER (the level the herbs' snow
+  // reads), in a town of the Mark that has no night yet this year, writes worldState.firstSnow[site]={year,n} (the world's) and First
+  // Snow is kept there that day (festivalHere), not again on the 28th. A town you are not in keeps the fallback. Snow after the 28th is
+  // too late: the night has been sat. Named action: firstSnowLies.
+  const FIRSTSNOW_COVER=.5,FIRSTSNOW_HOUR=18,FIRSTSNOW_MONTH=8;
+  function firstSnowLies(site,at){const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return null;const c=calDay(at);
+    const R=worldState.firstSnow||(worldState.firstSnow={});if(R[s.id]&&R[s.id].year===c.year)return null;R[s.id]={year:c.year,n:c.n};
+    if(typeof addLog==='function')addLog('❄',`The first snow lies at ${s.name}. The town sits up tonight.`);return R[s.id];}
+  let _fsT=0;function tickFirstSnow(){_fsT-=1/60;if(_fsT>0)return;_fsT=2;
+    if(typeof WX==='undefined'||(WX.cover||0)<FIRSTSNOW_COVER||hourNow()<FIRSTSNOW_HOUR)return;
+    const c=calDay();if(c.month!==FIRSTSNOW_MONTH||c.dom>=28)return;
+    const S=nearSite();if(!S||!S.site||!(S.site.kind in BASE_P)||isleAt(S.site.x,S.site.z)!=='mark')return;
+    const r=(worldState.firstSnow||{})[S.site.id];if(r&&r.year===c.year)return;firstSnowLies(S.site);}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,

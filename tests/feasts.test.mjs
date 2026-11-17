@@ -135,7 +135,7 @@ const bt = await page.evaluate(() => {
 console.log(JSON.stringify(bt).slice(0, 2500));
 check('the rivals are seeded by site and year (the same twice, another year another field), their skill in the town\'s band, and their totals their nine arrows', bt.seeded && bt.band, bt.rivals);
 check('the field: a city\'s best averages about 23 of 45, a village\'s about 13', bt.cityBest > 19 && bt.cityBest < 28 && bt.vilBest > 9 && bt.vilBest < 17 && bt.cityBest > bt.vilBest + 5, [bt.cityBest, bt.vilBest]);
-check('the butts are shot on Riverfair from 10h, in a town keeping it full; not thin, not on another day', /from 10h to 14h/.test(bt.early) && /no shooting this year/.test(bt.thin) && /shot at Riverfair/.test(bt.otherDay), [bt.early, bt.thin, bt.otherDay]);
+check('the butts are shot on Riverfair from 10:00, in a town keeping it full; not thin, not on another day', /from 10:00 to 14:00/.test(bt.early) && /no shooting this year/.test(bt.thin) && /shot at Riverfair/.test(bt.otherDay), [bt.early, bt.thin, bt.otherDay]);
 check('the butt stands 30 m from the mark; an arrow loosed 3 m off the mark does not count', bt.r0 && bt.butt30 === 30 && bt.meshIn && bt.offMark === 0, bt);
 check('three ends at 30, 50 and 70 m; 5, 3 and a miss then six 5s make 38, the arrows that score 5 planted in the face', bt.dists.join() === '30,30,30,50,50,50,70,70,70' && Object.values(bt.after).some(f => f.score === 38) && bt.planted >= 7, [bt.dists, bt.after, bt.planted]);
 check('38 beats the town\'s best: the purse (40 + 20 a tier), a silver arrow named for the town, Bow 30 → 31, and one try a town a year', Object.values(bt.after).some(f => f.won) && bt.gold >= 40 && bt.gold % 20 === 0 && bt.arrow.length === 1 && /^Silver Arrow of /.test(bt.arrow[0]) && bt.bow === 31 && bt.after.skill && /shot here this year/.test(bt.again), bt);
@@ -166,9 +166,93 @@ const fr = await page.evaluate(() => {
   return out;
 });
 console.log(JSON.stringify(fr).slice(0, 2000));
-check('the ring is fought at the Strait Fair from 5h till noon, in a Markish town keeping it full; not in Dunmore, not in a thin year', fr.isle === 'mark' && /from 5h till noon/.test(fr.early) && /Strait Fair/.test(fr.dunmore) && /No ring this year/.test(fr.thin), fr);
-check('three quarrels in turn, each a disarmed fighter, your sword on the rack', fr.ok && fr.seen.length === 3 && fr.seen.every(([nm, dis, w]) => nm && dis && w === null) && fr.seen.map(q => q[0]).join('|') === 'The first quarrel|The second quarrel|The third quarrel', fr.seen);
+check('the ring is fought at the Strait Fair from 5:00 till noon, in a Markish town keeping it full; not in Dunmore, not in a thin year', fr.isle === 'mark' && /from 5:00 till noon/.test(fr.early) && /Strait Fair/.test(fr.dunmore) && /No ring this year/.test(fr.thin), fr);
+check('three quarrels in turn, each a disarmed fighter, your sword on the rack', fr.ok && fr.seen.length === 3 && fr.seen.every(([nm, dis, w]) => nm && dis && w === null) && fr.seen.map(q => q[0]).join('|') === 'The first comer|The second comer|The third comer', fr.seen);
 check('three yields win: the purse (40 + 20 a tier), the reeve\'s ring named for the town, Hand-to-hand 20 → 21, the sword back, one try a town a year', fr.ringNull && Object.values(fr.after).some(f => f.won && f.quarrels === 3) && fr.gold >= 40 && fr.gold % 20 === 0 && fr.ring.length === 1 && /^Reeve’s Iron Ring of /.test(fr.ring[0]) && fr.hand === 21 && fr.weapon === 'Test Sword' && /fought here this year/.test(fr.again), fr);
 check('a fall in the second quarrel loses it: held at 1 health, nothing paid, the sword back', fr.lost.q2 === 1 && fr.lost.down && fr.lost.gone && fr.lost.f.won === false && fr.lost.f.quarrels === 1 && fr.lost.gold === fr.gold && fr.lost.hp === 1 && fr.lost.weapon === 'Test Sword', fr.lost);
+// 8. the Commencement's disputation (Session 2319, festivals B session 4): three questions upon books, two answered win, in an Aurennais town
+const dp = await page.evaluate(() => {
+  let site = null; for (let j = 0; j < GRID && !site; j++) for (let i = 0; i < GRID && !site; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; site = c.sites.find(s => s.kind === 'town' || s.kind === 'city') || null; }
+  const st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags, fav: favor(site) }));
+  const cm = FESTIVALS.find(f => f.key === 'commencement'), n = ((cm.month - CAL.startMonth + 12) % 12) * 28 + cm.dom - 1;
+  const at = (h, yr) => { worldState.gameTimeAbsMinutes = ((yr || 0) * CAL.monthLen * CAL.months + n) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  st.p = 70; st.flags = {}; (worldState.favor || (worldState.favor = {}))[site.id] = 0; worldState.festivals = {};
+  const sk0 = JSON.stringify(SKILLS.speech), g0 = gold, br0 = [...booksRead], x0 = px, z0 = pz;
+  const out = { isle: isleAt(site.x, site.z), kind: site.kind };
+  try {
+    const q1 = dispQuestions(site, 27), q2 = dispQuestions(site, 27), q3 = dispQuestions(site, 28);
+    out.seeded = JSON.stringify(q1) === JSON.stringify(q2) && JSON.stringify(q1) !== JSON.stringify(q3) && new Set(q1).size === 3 && q1.every(b => DISP_BOOKS.includes(b) && dispBook(b));
+    at(8); out.early = dispOpenFor(site).say; at(10);
+    out.dunmore = dispOpenFor('dunmore').say; st.p = 40; out.thin = dispOpenFor(site).say; st.p = 70;
+    // a win: the first argued at Speech 45 (passes 40), the second from the book read, the third argued (fails 70)
+    booksRead.clear(); SKILLS.speech = { lv: 45, p: 0 };
+    const R = dispStart({ site, x: px, z: pz }); out.ok = R.ok; out.qs = R.qs; booksRead.add(R.qs[1]);
+    out.bookBefore = dispCanBook(); out.unread = dispAnswer('book'); const a1 = dispAnswer('argue'); out.bookNow = dispCanBook();
+    const a2 = dispAnswer('book'); const a3 = dispAnswer('argue'); out.answers = [a1, a2, a3];
+    out.after = JSON.parse(JSON.stringify(worldState.festivals)); out.gold = gold - g0; out.speech = SKILLS.speech.lv;
+    out.seal = BAG.filter(b => b.keepsake === 'commencement').map(b => b.name); out.again = dispOpenFor(site).say; out.done = !DISP;
+    out.topics = dispTopics(site).map(t => [t.label, t.avail()]); out.champ = (worldState.festChampions || {})['commencement:' + site.id];
+    // a loss the next year: Speech 20, nothing read; nothing paid, no second point. And a withdrawal: walk 13 m off
+    at(10, 1); booksRead.clear(); SKILLS.speech = { lv: 20, p: 0 }; const g1 = gold;
+    dispStart({ site, x: px, z: pz }); for (let k = 0; k < 3; k++) dispAnswer('argue');
+    out.lost = { f: JSON.parse(JSON.stringify(worldState.festivals['disputation:' + site.id])), gold: gold - g1, speech: SKILLS.speech.lv, done: !DISP };
+    at(10, 2); dispStart({ site, x: px, z: pz }); px += 13; tickDisp(); px = x0;
+    out.left = { done: !DISP, f: JSON.parse(JSON.stringify(worldState.festivals['disputation:' + site.id])) };
+  } finally { if (DISP) dispEnd('left'); px = x0; pz = z0; SKILLS.speech = JSON.parse(sk0); booksRead.clear(); br0.forEach(b => booksRead.add(b));
+    for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i].keepsake === 'commencement') BAG.splice(i, 1); Object.assign(st, { p: keep.p, flags: keep.flags }); worldState.favor[site.id] = keep.fav; worldState.festivals = {}; }
+  return out;
+});
+console.log(JSON.stringify(dp).slice(0, 2000));
+check('the disputation sits at the Commencement from 9:00 till noon, in an Aurennais town keeping it full; not in Dunmore, not in a thin year', dp.isle === 'aurenne' && /from 9:00 till noon/.test(dp.early) && /Commencement/.test(dp.dunmore) && /No disputation this year/.test(dp.thin), dp);
+check('three questions upon three different books the game holds, the same three for a site and year, others the next year', dp.seeded && dp.qs.length === 3, dp.qs);
+check('a book answers only once read; Speech 45 passes the first (40) and fails the third (70); two of three win the purse (40 + 20 a tier), the scholar\'s seal and Speech 45 → 46, one try a town a year', dp.ok && !dp.bookBefore && /not read/.test(dp.unread.say) && dp.bookNow && dp.answers.map(a => a.ok).join() === 'true,true,false' && dp.done && Object.values(dp.after).some(f => f.won && f.answered === 2) && dp.gold >= 40 && dp.gold % 20 === 0 && dp.seal.length === 1 && /^Scholar’s Seal of /.test(dp.seal[0]) && dp.speech === 46 && /sat here this year/.test(dp.again) && dp.champ && dp.champ.you && dp.champ.year === dp.after['disputation:' + Object.keys(dp.after).find(k => k.startsWith('disputation:')).slice(12)].year, dp);
+check('none of three at Speech 20 loses, nothing paid; walking off the table withdraws, a loss', dp.lost.done && dp.lost.f.won === false && dp.lost.f.answered === 0 && dp.lost.gold === 0 && dp.lost.speech === 20 && dp.left.done && dp.left.f.won === false, { lost: dp.lost, left: dp.left });
+// 9. the post and the town's memory (Session 2320, festivals B session 5): the contest's champion a town and year, yours or the town's
+const ch = await page.evaluate(() => {
+  const site = siteAnywhere('dunmore'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags, fav: favor(site) }));
+  const rf = FESTIVALS.find(f => f.key === 'riverfair'), t0 = worldState.gameTimeAbsMinutes, c0 = worldState.festChampions;
+  const at = (yr, h) => { worldState.gameTimeAbsMinutes = ((yr - CAL.startYear) * CAL.months + rf.month - CAL.startMonth) * CAL.monthLen * 1440 + (rf.dom - 1) * 1440 + h * 60; };
+  st.p = 70; st.flags = {}; worldState.festChampions = {};
+  const out = { contest: (festContestOf(site) || {}).key };
+  try {
+    at(28, 11); out.day = (calDay(worldState.gameTimeAbsMinutes).dom === rf.dom && calDay(worldState.gameTimeAbsMinutes).year === 28);
+    out.before = festChampion(site, 'riverfair', 28); out.nowBefore = festChampionNow(site);
+    at(28, 15); const a = festChampion(site, 'riverfair', 28), b = festChampion(site, 'riverfair', 28); out.town = a; out.same = JSON.stringify(a) === JSON.stringify(b);
+    out.other = festChampion(site, 'riverfair', 29) === null && JSON.stringify(festTownChampion(site, 'riverfair', 29)) !== JSON.stringify(a);
+    festCrown('riverfair', site, 28); out.mine = festChampionNow(site);
+    at(31, 11); out.post = festPostNames(site).map(c => [c.year, c.name, c.you]); out.nowLater = festChampionNow(site);
+    st.p = 40; out.thin = festChampionNow(site); st.p = 70;
+    out.saved = /'festChampions'/.test(_applyLoadData.toString()) && !SS_CHAR_WS.festChampions;
+  } finally { worldState.gameTimeAbsMinutes = t0; worldState.festChampions = c0; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  return out;
+});
+console.log(JSON.stringify(ch).slice(0, 2000));
+check('a Gatelands town\'s contest is Riverfair\'s; no champion before the butts close; after, the town\'s own, a name seeded by site and year', ch.contest === 'riverfair' && ch.day && ch.before === null && ch.nowBefore === null && ch.town && ch.town.name && ch.town.you === false && ch.same && ch.other, ch);
+check('a win is cut as yours; three years on, before the butts close, the post reads three years newest first with yours last and the town says last year\'s; a thin year keeps only what you won; the world\'s save', ch.mine && ch.mine.you && ch.mine.year === 28 && ch.post.length === 3 && ch.post.map(p => p[0]).join() === '30,29,28' && ch.post[2][2] === true && ch.post.slice(0, 2).every(p => p[2] === false) && ch.nowLater && ch.nowLater.year === 30 && ch.thin && ch.thin.you && ch.saved, ch);
+// 10. First Snow's night (Session 2321): a Markish town where you saw the snow lie at nightfall in Culling keeps it that day, not on the 28th
+const fs = await page.evaluate(() => {
+  const L = ladderSites(), site = L[0], other = L.find(s => s.id !== site.id && isleAt(s.x, s.z) === 'mark'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, cv0 = WX.cover, ns0 = nearSite, f0 = worldState.firstSnow;
+  const day = (yr, dom) => ((yr - CAL.startYear) * CAL.months + 8 - CAL.startMonth) * CAL.monthLen + dom - 1;
+  const at = (yr, dom, h) => { worldState.gameTimeAbsMinutes = day(yr, dom) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const key = (yr, dom) => { const h = festivalHere(site.id, day(yr, dom) * 1440 + 600); return h ? h.f.key : null; };
+  const tick = () => { for (let k = 0; k < 130; k++) tickFirstSnow(); };
+  st.p = 70; st.flags = {}; worldState.firstSnow = {}; nearSite = () => ({ site });
+  const out = { mark: isleAt(site.x, site.z), other: other && other.id };
+  try {
+    out.before = [key(28, 12), key(28, 28)];
+    at(28, 12, 17); WX.cover = .8; tick(); out.early = !!(worldState.firstSnow[site.id]);
+    at(28, 12, 19); WX.cover = .2; tick(); out.thin = !!(worldState.firstSnow[site.id]);
+    WX.cover = .8; tick(); out.rec = JSON.parse(JSON.stringify(worldState.firstSnow[site.id] || null));
+    out.after = [key(28, 12), key(28, 28), key(28, 13)];
+    out.otherTown = other ? (festivalHere(other.id, day(28, 28) * 1440 + 600) || { f: {} }).f.key : 'firstsnow';
+    at(28, 20, 19); tick(); out.second = worldState.firstSnow[site.id].n === out.rec.n;
+    out.nextYear = key(29, 28);
+    const S = calDay(day(28, 12) * 1440); out.date = [S.month, S.dom];
+  } finally { worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; WX.cover = cv0; nearSite = ns0; worldState.firstSnow = f0; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  return out;
+});
+console.log(JSON.stringify(fs));
+check('First Snow: Culling 28 until the snow is seen; not before 18:00 or under the cover; seen on Culling 12 at 19:00 it is kept that day and not on the 28th; another Markish town and the next year keep the 28th', fs.mark === 'mark' && fs.date.join() === '8,12' && fs.before.join() === ',firstsnow' && !fs.early && !fs.thin && fs.rec && fs.after.join() === 'firstsnow,,' && fs.otherTown === 'firstsnow' && fs.second && fs.nextYear === 'firstsnow', fs);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
