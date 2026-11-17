@@ -48,7 +48,7 @@ check(`on the Commencement the table is down at 8:30 (${!d.bDawn[0]}), up at 10:
   !d.bDawn[0] && d.bTen[0] && !d.bNoon[0] && !d.bBefore[0] && !d.bTen[1], d);
 check(`on the Caravan the scale is down at 5:30 (${!d.cDawn[1]}), up at noon (${d.cNoon[1]}), down at 18:30 (${!d.cDusk[1]}), and not in an occupied town (${!d.occupied[1]}); the table down (${!d.cNoon[0]})`,
   !d.cDawn[1] && d.cNoon[1] && !d.cDusk[1] && !d.occupied[1] && !d.cNoon[0], d);
-check(`the bursar stands behind the table (${JSON.stringify(d.bk)}) and the caravan-master behind the scale (${JSON.stringify(d.ck)}), 0.75 m back, behind its middle however far it was slid (S2356: the keeper slides with it)`,
+check(`the bursar stands behind the table (${JSON.stringify(d.bk)}) and the caravan-master behind the scale (${JSON.stringify(d.ck)}), 0.75 m back, behind its middle however far it was slid (S2358: the keeper slides with it)`,
   d.bk && d.ck && Math.abs(d.bk.lz + .75) < .05 && Math.abs(d.bk.lx) < .05 && Math.abs(d.ck.lz + .75) < .05 && Math.abs(d.ck.lx) < .05, d);
 
 // a picture of each on its morning, from the subscriber's side

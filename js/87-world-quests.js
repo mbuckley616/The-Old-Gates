@@ -3976,7 +3976,7 @@ const giver=`${lord.title} ${lord.name}`;
     const c=calDay(absMin()),F=worldState.festivals||(worldState.festivals={}),r=F['caravan:'+s.id]||(F['caravan:'+s.id]={});r.act=c.year;r.actN=c.n;delete r.thanked;
     bagAdd({name:'A twist of saffron',ico:'🌼',type:'misc',weight:0,buyPrice:2,sellMult:.5,site:s.id,year:c.year,desc:'Eleven red threads in a twist of paper, from the first bale of the year. In Aurenne a thread goes into the first bread of the season. Nobody calls it luck.'});
     showMsg(CARAVAN_LINES.log,'#e8d8a0');if(typeof addLog==='function')addLog('🐪',CARAVAN_LINES.log);return CARAVAN_LINES.pinch;}
-  // S2356 — a keeper stands behind the middle of their table: where S2351's table slid along its length off a solid (genSettlement's S.stalls,
+  // S2358 — a keeper stands behind the middle of their table: where S2351's table slid along its length off a solid (genSettlement's S.stalls,
   // 83), the keeper slides with it, so the bursar is not left at its end. No table (the old look, a place not built yet): the spot as laid.
   function festKeeperAt(s,key,A){const S=typeof SETTLE!=='undefined'&&SETTLE.get(s.id),T=S&&S.stalls&&S.stalls.find(t=>t.key===key),sl=T&&T.slide||0;
     return [s.x+A[0]+(sl?Math.cos(T.ry)*sl:0),s.z+A[1]-(sl?Math.sin(T.ry)*sl:0)];}

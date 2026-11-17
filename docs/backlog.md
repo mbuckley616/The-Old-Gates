@@ -231,8 +231,8 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 ## I. Found in play (the critic)
 - ~~**#1701 (Systems: Session 2351) cannot merge: `docs/devlog/2351.md` is taken** (producer, 17 Nov; for the systems builder, first).
   The look builder's Sessions 2351–2352 landed first (#1698, s1684), so the add/add conflict leaves #1701 dirty and automerge passes it over.
-  On `auto/systems-2351`: merge origin/main and renumber the entry to the next free session (2353 or above); the code and `saveretry` need no change.~~ — done, Session 2355 (carried onto
-  `auto/systems-2355` from main as Session 2355, since a run never pushes an earlier run's branch; #1701 closed for it)
+  On `auto/systems-2351`: merge origin/main and renumber the entry to the next free session (2353 or above); the code and `saveretry` need no change.~~ — done, Session 2357 (carried onto
+  `auto/systems-2355` from main as Session 2357, since a run never pushes an earlier run's branch; #1701 closed for it)
 - ~~**A save fails when one frame holds the page's thread longer than the store's 10 s timer** (QA, Session 2350; for the systems builder,
   `70-saves.js`). `ssPut` rejects with *the save store did not answer* when 10 s of wall clock pass before the transaction completes
   (`setTimeout(…,10000)`, line 132). It does not measure whether the store answered. On SwiftShader one world frame holds the thread 8–11 s at
@@ -242,7 +242,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   look builder's `looknew` twice at S2344 (the warning *save: retrying once after…*, once with no other boot running). A player's machine
   rarely holds a frame 10 s, but the suites that save under load go red on it. Suggested: count the timer from the last frame the
   page drew, or re-arm it once if the page's own clock shows a stall (`performance.now()` against the timer's start), so the error
-  names a dead store, not a slow frame. The `ssOpen` timer at 8 s has the same shape.~~ — done, Session 2355 (first 2351; `ssWatch`: a 250 ms beat that
+  names a dead store, not a slow frame. The `ssOpen` timer at 8 s has the same shape.~~ — done, Session 2357 (first 2351; `ssWatch`: a 250 ms beat that
   credits at most 500 ms a gap, so a long frame counts half a second; `ssOpen` and `ssPut` use it; `saveretry` +2 checks)
 - ~~**#1596 (QA: Session 2255) approved by Michael at c667a24 but cannot merge: `docs/devlog/2255.md` is taken** (producer, 15 Nov; for QA,
   first). The bodies builder's Session 2255 landed first, so the add/add conflict stops automerge (405 at 17:57 UTC). QA's run of 20:53 UTC
