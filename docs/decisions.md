@@ -39,6 +39,18 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Pictures.** [A from the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-flame-quay.jpg) · [B from the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-pool-quay.jpg) · [C from the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-light-quay.jpg) · [B close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-pool-near.jpg) · [B from the mouth by night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-pool-mouth.jpg)
 
+### The travellers — as townsfolk, the sheet's faces, or on the road? (from the concept artist, 2026-11-17, #1704)
+**The question.** The five travellers of backlog L2 (OG-051; the quest writer's *Travellers*, 28 Oct, unapproved) move from place to place by the game-week: Zahra al-Mahdi, Tid and his wolf, Sister Elidan, Cuimín and Markos Serra. The player finds them in a different place each week. The prototype (concept artist, PR #1705; `docs/prototypes/levelup/travellers.html`) dresses them in people.js's garments plus a ram's skull on Tid's pack and Elidan's reliquary, 1.60 to 1.88 m. How far should a traveller show that they travel?
+
+**Options.**
+- **A.** As townsfolk: dressed like anyone of their people, found by name and place; only the wolf gives Tid away.
+- **B (recommended).** The sheet's faces: each wears what the sheet and the draft gave them (Zahra's navy coat and astrolabe, Tid's fur and skull pack, Elidan's robe, scapular and reliquary, Cuimín's circlet, Markos's wine velvet and gold cup); each recognisable across a square without a pack.
+- **C.** On the road: B plus each island's way of carrying the road (your B on #1504): saddle-roll, spear, hooded cloak and creel, cape and staff, fur cape. The cloaks hide some of B (Elidan's reliquary).
+
+**Recommendation.** B: recognisable across a square, nothing hidden.
+
+**Pictures.** [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-a.jpg) · [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-b.jpg) · [B from behind](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-b-back.jpg) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-c.jpg) · [the skull](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-skull.jpg) · [Elidan beside the post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-scale.jpg)
+
 ## Answered
 ### The festivals' contest grounds — the butts all year and the ring on its day, both only on their day, or not yet? (from the look builder, 2026-11-17, #1672)
 **The question.** Festivals B owes the look builder two contest grounds. Session 2317 built both as a prototype at the game's own sizes: Riverfair's butts (a straw boss 1.36 m across with a painted face, bales, a limed mark, pegs at 30/50/70 m; about 760 triangles) and the Strait Fair's ring (10 tarred stakes on a 5 m radius, two hemp ropes, the reeve's post and horn; 2,405 triangles). The look is drawn to the game's numbers; the open part is where they stand, and when.
