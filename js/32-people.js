@@ -1393,7 +1393,7 @@ function rideTick(rig){const R=rig.ride,H=R.beast;rig.root.updateWorldMatrix(tru
    anything under the top of what the horse has there (the saddle, the hide) laid on it, .clear over it. The skinIndex and skinWeight are
    the pack's, shared by every body (CLAUDE.md), so they are replaced, not written; the position and normal are the garment's own. Then
    the middle level is baked again from the seated skirt. Once per rider. */
-const HB_RIDE_SKIRT={re:/^(skirt|coatSkirt|mailSkirt)$/,back:100*Math.PI/180,side:150*Math.PI/180,legClear:.025,clear:.008,cell:.015};
+const HB_RIDE_SKIRT={re:/^(skirt|coatSkirt|mailSkirt)$/,back:100*Math.PI/180,side:150*Math.PI/180,legClear:.025,clear:.008,cell:.015,d0:-.03,d1:.02,rounds:8,smooth:3,lam:.5,pin:.03,capA:2.6,capB:2.7,cap:0,capPass:6,alt:10};
 function hbRideSkirt(rig){const H=rig.hb,R=rig.ride,G=R&&R.beast;if(!H||H.rideSkirt)return;
   if(G&&G.root&&!G.hc&&!G.hcFail)return; /* the horse's own body first: the skirt is laid on its saddle */
   H.rideSkirt=true;const P=H.P,sk=P.skeleton,by=P.byName,ip=sk.bones.indexOf(by.root),C=HB_RIDE_SKIRT;if(ip<0)return;
@@ -1417,12 +1417,49 @@ function hbRideSkirt(rig){const H=rig.hb,R=rig.ride,G=R&&R.beast;if(!H||H.rideSk
       for(const i of ids){let k=0;for(let c=0;c<4;c++)if(own.has(si.getComponent(i,c)))k+=sw.getComponent(i,c);if(k<.5)continue;w.fromBufferAttribute(pa,i);o.applyBoneTransform(i,w);
         const t=w.clone().sub(a).dot(d)/len;if(t<0||t>=1)continue;const q=Math.floor(t*12),rr=w.clone().sub(a).addScaledVector(d,-t*len).length();if(rr>r[q])r[q]=rr;}});
     legs.push({a,d,len,r});}
-  const outOfLegs=q=>{for(const L of legs){const u=q.clone().sub(L.a),t=u.dot(L.d)/L.len;if(t<0||t>=1)continue;const R=L.r[Math.floor(t*12)]+C.legClear;if(!R)continue;u.addScaledVector(L.d,-t*L.len);const rr=u.length();if(rr<R&&rr>1e-5)q.addScaledVector(u,(R-rr)/rr);}return q;};
+  /* S2311 — how far a point is inside a thigh (its radius there plus legClear, less its distance from the axis; under 0 outside), and a point
+     inside pushed out along the side its lap place lies on (lp, which the thigh carries round itself): the old push went straight out from the
+     axis, so two neighbours either side of it were thrown to opposite sides of the thigh, 0.2 to 0.3 m apart (the seam's tear, #1652) */
+  const _u=new THREE.Vector3(),_e=new THREE.Vector3(),_x=new THREE.Vector3(),legAt=(L,q,o)=>{o.copy(q).sub(L.a);const t=o.dot(L.d)/L.len;if(t<0||t>=1)return 0;const r=L.r[Math.floor(t*12)];if(!r)return 0;o.addScaledVector(L.d,-t*L.len);return r+C.legClear;};
+  const inLegs=q=>{let b=-1;for(const L of legs){const R=legAt(L,q,_u);if(R)b=Math.max(b,R-_u.length());}return b;};
+  const outOfLegs=(q,lp)=>{for(const L of legs){const R=legAt(L,q,_u);if(!R||_u.length()>=R)continue;_e.copy(lp).sub(L.a);_e.addScaledVector(L.d,-_e.dot(L.d));const el=_e.length();if(el<1e-5)continue;_e.divideScalar(el);
+      const c=_u.dot(_e),ax=_x.copy(_u).addScaledVector(_e,-c).length(),need=Math.sqrt(Math.max(0,R*R-ax*ax));if(c<need)q.addScaledVector(_e,need-c);}return q;};
+  /* S2316 — a point's place hanging from the pelvis pushed straight out of the thighs (S2300's), and the hips' middle: how far that place
+     reaches out from the hips across the ground is the cap on the hanging part's reach below */
+  const outRad=q=>{for(const L of legs){const R=legAt(L,q,_u);if(!R)continue;const rr=_u.length();if(rr<R&&rr>1e-5)q.addScaledVector(_u,(R-rr)/rr);}return q;};
+  const hw=legs[0].a.clone().add(legs[1].a).multiplyScalar(.5),hReach=(x,z)=>Math.hypot(x-hw.x,z-hw.z);
   const kScale=new THREE.Vector3().setFromMatrixScale(Gm||H.root.matrixWorld).y||1,clear=C.clear*(Gm?1/kScale:1);let moved=0,laid=0;
   for(const o of list){const g=o.geometry,pa=g.attributes.position,sI=g.attributes.skinIndex,sW=g.attributes.skinWeight,nI=new Uint16Array(sI.count*4),nW=new Float32Array(sW.count*4);
-    nI.set(sI.array);nW.set(sW.array);const ids=new Set(g.index?g.index.array:[]);
-    for(const i of ids){v.fromBufferAttribute(pa,i);const th=Math.atan2(Math.abs(v.x-mid.x),-(v.z-mid.z)),f=1-ss(C.back,C.side,th);
-      w.copy(v);o.applyBoneTransform(i,w);const pr=outOfLegs(v.clone().applyMatrix4(Mp));w.lerp(pr,f);
+    nI.set(sI.array);nW.set(sW.array);const ids=new Set(g.index?g.index.array:[]),N=pa.count;
+    /* S2311 — the seam (#1652). Each point (welded at the shell's seams) goes to its lap place where the thighs carry it, or its rest place
+       hanging from the pelvis, by its angle round the hips as before, and now also to its lap place wherever its rest place would be inside a
+       thigh (the lap place is on the thigh's surface). Then the moves are smoothed over the cloth (the mean of the neighbours', smooth passes,
+       the waistband's top pin held) and anything inside a thigh pushed out to the lap's side, rounds times, so the lap's part and the hanging
+       part meet without tearing: edges at most 0.10 m and 2.8 times their rest length (were 0.30 m and 5.6 times) */
+    const rep=new Int32Array(N).fill(-1),weld=new Map(),R0=new Float32Array(N*3),LP=new Float32Array(N*3),Dv=new Float32Array(N*3),TH=new Float32Array(N),HG=new Float32Array(N),U=[];let top=-1e9;
+    for(const i of ids){v.fromBufferAttribute(pa,i);const k=Math.round(v.x*2e3)+','+Math.round(v.y*2e3)+','+Math.round(v.z*2e3);if(!weld.has(k)){weld.set(k,i);U.push(i);}rep[i]=weld.get(k);if(rep[i]!==i)continue;
+      const th=Math.atan2(Math.abs(v.x-mid.x),-(v.z-mid.z)),rv=v.clone().applyMatrix4(Mp);w.copy(v);o.applyBoneTransform(i,w);
+      const f=(1-ss(C.back,C.side,th))*(1-ss(C.d0,C.d1,inLegs(rv)));R0.set([rv.x,rv.y,rv.z],i*3);LP.set([w.x,w.y,w.z],i*3);w.lerp(rv,f);Dv.set([w.x-rv.x,w.y-rv.y,w.z-rv.z],i*3);if(rv.y>top)top=rv.y;
+      TH[i]=th;outRad(w.copy(rv));HG[i]=hReach(w.x,w.z);}
+    const nb=new Map(),ix=g.index.array;for(let t=0;t<ix.length;t+=3)for(let e=0;e<3;e++){const a=rep[ix[t+e]],b=rep[ix[t+(e+1)%3]];if(a===b)continue;
+      for(const [p,q] of [[a,b],[b,a]]){if(R0[p*3+1]>top-C.pin)continue;let z=nb.get(p);if(!z)nb.set(p,z=new Set());z.add(q);}}
+    const fr=[...nb].map(([p,z])=>[p,[...z]]),nD=new Float32Array(N*3),lp=new THREE.Vector3();
+    for(let r=0;r<C.rounds;r++){for(let it=0;it<C.smooth;it++){nD.set(Dv);for(const [p,q] of fr)for(let c=0;c<3;c++){let x=0;for(const j of q)x+=Dv[j*3+c];nD[p*3+c]=Dv[p*3+c]*(1-C.lam)+C.lam*x/q.length;}Dv.set(nD);}
+      for(const p of U){w.set(R0[p*3]+Dv[p*3],R0[p*3+1]+Dv[p*3+1],R0[p*3+2]+Dv[p*3+2]);outOfLegs(w,lp.fromArray(LP,p*3));Dv.set([w.x-R0[p*3],w.y-R0[p*3+1],w.z-R0[p*3+2]],p*3);}}
+    /* S2316 — the bell (#1652). The push along the lap's side closed the seam, but the side hem then followed the lap's own swing out, 0.37 to
+       0.42 m a side behind the hips. So the part under capB round the hips (149°) has its reach across the ground capped at its S2300 hanging
+       place's (cap over it), fading to none at capB from capA; then, alt times, whatever the cap left inside a thigh is pushed out to the lap's
+       side again, the moves smoothed, and capped again; last, every such point pushed clear. Offline, on the road rider: longest edge 0.098 m
+       (2.3 times its rest; S2311 0.100), none over 0.10, 0.284 m a side behind the hips (S2311 0.425, S2300 0.248), no point inside a thigh */
+    const sm=k=>{for(let it=0;it<k;it++){nD.set(Dv);for(const [p,q] of fr)for(let c=0;c<3;c++){let x=0;for(const j of q)x+=Dv[j*3+c];nD[p*3+c]=Dv[p*3+c]*(1-C.lam)+C.lam*x/q.length;}Dv.set(nD);}};
+    const cap=()=>{for(const p of U){const wg=1-ss(C.capA,C.capB,TH[p]);if(!wg)continue;const x=R0[p*3]+Dv[p*3],z=R0[p*3+2]+Dv[p*3+2],r=hReach(x,z),lim=HG[p]+C.cap;if(r<=lim)continue;
+      const k=1-wg*(1-lim/r);Dv[p*3]=hw.x+(x-hw.x)*k-R0[p*3];Dv[p*3+2]=hw.z+(z-hw.z)*k-R0[p*3+2];}};
+    const clearLegs=all=>{for(const p of U){if(TH[p]>C.capB)continue;w.set(R0[p*3]+Dv[p*3],R0[p*3+1]+Dv[p*3+1],R0[p*3+2]+Dv[p*3+2]);if(!all&&inLegs(w)<=0)continue;
+      outOfLegs(w,lp.fromArray(LP,p*3));Dv.set([w.x-R0[p*3],w.y-R0[p*3+1],w.z-R0[p*3+2]],p*3);}};
+    for(let k=0;k<C.capPass;k++){cap();sm(2);}
+    for(let k=0;k<C.alt;k++){clearLegs(false);sm(2);if(k<C.alt-1)cap();}
+    clearLegs(true);
+    for(const i of ids){const r=rep[i];v.fromBufferAttribute(pa,i);w.set(R0[r*3]+Dv[r*3],R0[r*3+1]+Dv[r*3+1],R0[r*3+2]+Dv[r*3+2]);
       if(F){w.applyMatrix4(Gi);const t=F(w.x,w.z)+clear;if(w.y<t){w.y=t;laid++;}w.applyMatrix4(Gm);}
       w.applyMatrix4(Mi);if(w.distanceToSquared(v)>1e-10)moved++;pa.setXYZ(i,w.x,w.y,w.z);for(let c=0;c<4;c++){nI[i*4+c]=c?0:ip;nW[i*4+c]=c?0:1;}}
     pa.needsUpdate=true;g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(nI,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(nW,4));g.computeVertexNormals();}
