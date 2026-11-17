@@ -480,7 +480,7 @@ function personBakeQ(g,q){
     for(let i=0;i<rp.count;i++){const y=rp.getY(i);if(y>-.38-DL)continue;const a=Math.atan2(rp.getX(i),rp.getZ(i)),k=Math.min(1,(-.38-DL-y)/.06);
       rp.setY(i,y-k*(.03+.11*Math.pow(.5+.5*Math.sin(a*6+Math.sin(a*2.3)*1.7),2)));rp.setX(i,rp.getX(i)*(1-.1*k));rp.setZ(i,rp.getZ(i)*(1-.1*k));}
     rg.computeVertexNormals();part(rg,cloth,hips).scale.z=.8;}
-  else part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),cloth,hips).scale.z=.76;
+  else part(SK.lathe(hem.map(q=>[q[0]*bw*(fem?1.04:1),q[1]])),g.dress&&g.skirtCol?C(g.skirtCol):cloth,hips).scale.z=.76;
   // the trim on the hem follows the skirt it edges: the same width (a woman's skirt is 4% wider) and the same flattening
   // front to back (the torus's y is the body's depth once it is laid flat); round, it stood off the cloth (playtest s162)
   if(!g.shirt&&!g.wraith){const r=part(SK.torus((g.dress?.247:.214)*bw*(fem?1.04:1),.012,5,22),trim,hips,0,g.dress?-.36-DL:-.125,0);r.rotation.x=Math.PI/2;r.scale.y=.76;}
@@ -2253,7 +2253,7 @@ function hbRoleStaff(g,G){const D=G.dress||{};if(D.spear||D.crossbow||D.chair)re
 const HB_CAST_SITE={Bram:'ashenmoor',Edna:'ashenmoor',Corwin:'ashenmoor',Niamh:'inis_rua',Áine:'carraig_mor'};
 // the driver follows the sheet: its sex (the gait, the far copy's skirt), its age and the cast's stature, so the builder's body, scaled to
 // the driver's, stands as tall as the sheet has them (Edna's town roll had made her a young man of 1.85)
-function hbCastDriver(g,G){const C=HB.CAST[G.cast];g.female=G.g<.5;g.dress=g.female;g.age=G.age>=.8?'elder':G.age<.58?'young':'adult';
+function hbCastDriver(g,G){const C=HB.CAST[G.cast];g.female=G.g<.5;g.dress=hbLongSkirt(G.dress||{});g.age=G.age>=.8?'elder':G.age<.58?'young':'adult';
   g.height=C.metres/(personScale(g)*SCALE.PERSON_MODEL);if(G.beard<.05)g.beard='none';hbCastDress(g,G);}
 /* S1832 (section I, critic 4 Nov) — and the sheet's dress, not the role's or the roll's: past 42 m Corwin wore the merchant's brimmed hat
    and bag, Edna the herbalist's kerchief and no stick, and both changed at the line. The cast wear no hat (a hood only when it is up); a
@@ -2275,7 +2275,8 @@ function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   if(D.coat&&!D.robe&&!D.mail&&!D.scales&&!D.tabard&&!D.chair){g.cloth=C(D.coat);g.sleeve=C(D.coat).multiplyScalar(.9);}
   /* S2242 — a tabard (the inquisitor's white) is the body's colour far off, over mail's sleeves */
   if(D.tabard){g.cloth=C(D.tabard);if(D.mail)g.sleeve=C(D.mail);}
-  const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);}
+  const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);
+  g.skirtCol=g.dress&&(D.skirtColor||D.robe)?C(D.robe||D.skirtColor):null;} /* S2349 — the long skirt in its own colour, not the tunic's */
 /* S2332 (section I, critic 17 Nov, s1674) — the stand-in wears the genome's head, beard, hair and apron. The driver is drawn until the builder's
    body is made (and stays the far copy), and it wore its own roll: a white-haired doll became a turbaned man with a grey beard, a hatted rider
    a bareheaded one. Colours were already the genome's (hbTint); now its headwear is people.js's own order (a helm, then a hood up, then a wrap
@@ -2291,7 +2292,11 @@ function hbDriverHead(g,D){const hx=a=>(Math.round(a[0]*255)<<16)|(Math.round(a[
   else if(hood||cowl){g.hat='hood';g.hoodCol=hood?hx(hood):null;}
   else if(D.wrap||D.scarf){g.hat='kerchief';const w=Array.isArray(D.wrap)?D.wrap:Array.isArray(D.scarf)?D.scarf:null;if(w)g.hatCol=hx(w);if(g.style==='thin'||!PEOPLE_CAPPED.has(g.style))g.style='crop';} /* the kerchief is drawn on the hair's cap, which a balding head has none of */
   else if(g.hat!=='crown')g.hat='none';}
-function hbDriverLook(g,G){const D=G.dress||{},H=G.hair||{};
+/* S2349 (S2329's owed note) — the far copy's skirt is the genome's: a long skirt or a robe is the driver's dress to the shin, anything else
+   its tunic's skirt over the legs. The driver rolled its own (seven women in ten), so 46 of 208 townsfolk changed shape at the builder's
+   ring: an Archmage in the guild's robe was a man in blue trousers far off, a Guildmaster in mail and trousers a woman in a gown */
+function hbLongSkirt(D){return !!(D.robe||D.skirt==='long');}
+function hbDriverLook(g,G){const D=G.dress||{},H=G.hair||{};g.dress=hbLongSkirt(D);
   const st=HB_DRIVER_HAIR[H.style];if(st&&!(g.style==='thin'&&st==='crop'))g.style=st;
   if(!g.female&&!g.child){const b=+G.beard||0;g.beard=b<.05?'none':b<.25?'stubble':b<.5?'short':b<.85?'full':'long';}
   hbDriverHead(g,D);
