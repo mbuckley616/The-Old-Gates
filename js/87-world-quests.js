@@ -3555,6 +3555,79 @@ const giver=`${lord.title} ${lord.name}`;
     showMsg(how==='won'?`${e.name} is spared. The stakes are yours: ${paid} gold.`:how==='lost'?(why==='rope'?'You step over the rope. The stakes go to the other side.':'You go down. The stakes go to the other side.'):how==='murder'?`${e.name} is dead. The yard goes quiet, and the rings of the Mark are shut to you.`:'The brawl is called off. Your stake comes back.','#e8d8a0');
     return B;}
   function tickBrawl(dt){const B=BRAWL;if(!B)return;if(!BOUT||BOUT.foe!==B.foe){brawlEnd('left');return;}boutTick(dt);}
+  // S2314 — festivals B session 2, Riverfair's butts (Michael's B on #1628, docs/design/festivals.md, *The contests*). On Riverfair
+  // (Haysel 18), 10h to 14h, in a Gatelands town keeping it full or named (festivalState), you shoot three ends of three arrows from
+  // a mark at a butt 30, then 50, then 70 m off: a face 1.2 m across, rings of 0.2, 0.4 and 0.6 m scoring 5, 3 and 1. You win if
+  // your nine beat the best of three townsfolk, whose skill is seeded by festival, site and year (20–45 a village, 30–60 a town,
+  // 40–75 a city) and whose arrows fall about the centre by BUTT_SPREAD (each axis, metres per metre of range: 0.003 at skill 100,
+  // 0.015 at 0; the city's 75 averages about 23 of 45, a village's 30 about 11). A win pays 40 + 20 gold a tier above the first (the
+  // brawl's 50 + 50 less: no stake), a silver arrow named for the town and year, and +1 Bow once a year whatever the town. One try a
+  // town a year (worldState.festivals['riverfair:'+site], the character's). Once begun it runs to its end: an arrow loosed off the
+  // mark (BUTT_MARK_R) does not count, and walking BUTT_LEAVE from the mark, or running out of arrows, ends it with what is shot.
+  // The mark, the butt's look and the marshal's words are the look builder's and the quest writer's: buttsStart({site,x,z,dx,dz})
+  // is what they call, and the straw boss here is a placeholder. Named actions: buttsStart, buttsEnd. Rolls: seededRng('butts', …).
+  const BUTT_ENDS=[30,50,70],BUTT_RINGS=[[.2,5],[.4,3],[.6,1]],BUTT_R=.6,BUTT_Y=1.2,BUTT_OPEN=10,BUTT_CLOSE=14,BUTT_MARK_R=1.5,BUTT_LEAVE=20,
+    BUTT_SPREAD=[.003,.012],BUTT_PURSE=40,BUTT_PURSE_TIER=20,BUTT_SKILL={village:[20,45],town:[30,60],city:[40,75]};
+  let BUTTS=null; /* {site,x,z,dx,dz,end,shots:[{end,arrow,score}],rivals,mesh,year,tier} */
+  function buttScore(r){for(const [rr,s] of BUTT_RINGS)if(r<=rr)return s;return 0;}
+  // the three rivals: their skill and their nine arrows, seeded by festival, site and year (a friend meets the same field)
+  function buttRivals(site,year){const r=seededRng('butts',site.id+':'+year),R=BUTT_SKILL[site.kind]||BUTT_SKILL.town,out=[];
+    for(let k=0;k<3;k++){const sk=Math.round(R[0]+r()*(R[1]-R[0])),ends=[];
+      for(const D of BUTT_ENDS){const sg=D*(BUTT_SPREAD[0]+BUTT_SPREAD[1]*(1-sk/100)),e=[];
+        for(let a=0;a<3;a++){const u=Math.max(1e-9,r()),rad=sg*Math.sqrt(-2*Math.log(u));r();e.push(buttScore(rad));} /* Rayleigh: a 2-D normal's distance */
+        ends.push(e);}
+      out.push({skill:sk,ends,total:ends.flat().reduce((a,b)=>a+b,0)});}
+    return out;}
+  function buttsOpenFor(site,o){o=o||{};const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return {say:'There are no butts here.'};
+    const h=festivalHere(s.id);if(!h||h.f.key!=='riverfair')return {say:'The butts are shot at Riverfair.'};
+    if(h.state==='thin')return {say:'There’s no shooting this year. The town can’t find the purse.'};
+    const hr=hourNow();if(!o.force&&(hr<BUTT_OPEN||hr>=BUTT_CLOSE))return {say:`The butts are shot from ${BUTT_OPEN}h to ${BUTT_CLOSE}h.`};
+    const F=worldState.festivals||{},me=F['riverfair:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have shot here this year.'};
+    return {ok:true,site:s,state:h.state,year:yr};}
+  function buttMesh(){const g=new THREE.Group(),straw=new THREE.MeshLambertMaterial({color:0xb89a58});
+    const boss=new THREE.Mesh(new THREE.CylinderGeometry(BUTT_R+.08,BUTT_R+.08,.3,20),straw);boss.rotation.x=Math.PI/2;g.add(boss);
+    const cols=[0xe8e0c8,0x3a5a8a,0xc0a030];for(let k=BUTT_RINGS.length-1;k>=0;k--){const f=new THREE.Mesh(new THREE.CircleGeometry(BUTT_RINGS[k][0],20),new THREE.MeshLambertMaterial({color:cols[k]}));f.position.z=.152+.002*(2-k);g.add(f);}
+    for(const sx of [-.45,.45]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.08,BUTT_Y+.2,.08),straw);leg.position.set(sx,-(BUTT_Y)/2+.05,-.25);leg.rotation.x=.25;g.add(leg);}
+    return g;}
+  function buttPlace(B){const D=BUTT_ENDS[B.end],x=B.x+B.dx*D,z=B.z+B.dz*D,y=activeTerrainH(x,z)+BUTT_Y;B.cx=x;B.cy=y;B.cz=z;
+    if(B.mesh){B.mesh.position.set(x,y,z);B.mesh.rotation.y=Math.atan2(-B.dx,-B.dz);}}
+  function buttsStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS)return {say:'You are already in a contest.'};
+    const k=buttsOpenFor(o.site,o);if(!k.ok)return k;if(!EQ.weapon||weaponSkill(EQ.weapon)!=='bow'||!EQ.ammo)return {say:'You’ll want a bow and arrows for the butts.'};
+    const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;let dx=o.dx,dz=o.dz;if(dx==null){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}const n=Math.hypot(dx,dz)||1;
+    const B=BUTTS={site:s,x,z,dx:dx/n,dz:dz/n,end:0,shots:[],year:k.year,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),rivals:buttRivals(s,k.year),mesh:o.mesh===false?null:buttMesh()};
+    const F=worldState.festivals||(worldState.festivals={});F['riverfair:'+s.id]={year:k.year,won:false,score:0}; /* the try is used once you step up */
+    if(B.mesh)sc.add(B.mesh);buttPlace(B);
+    showMsg(`The butts. Three ends of three, at ${BUTT_ENDS.join(', ')} m. The best of the town shot ${Math.max(...B.rivals.map(q=>q.total))}.`,'#e8d8a0');
+    return {ok:true,rivals:B.rivals.map(q=>q.total)};}
+  // fireArrow's: an arrow loosed from the mark is the end's next, up to three an end
+  function buttsLoose(arrow){const B=BUTTS;if(!B)return false;
+    if(Math.hypot(px-B.x,pz-B.z)>BUTT_MARK_R){showMsg('Shoot from the mark, or it doesn’t count.','#e8d8a0');return false;}
+    const inEnd=B.shots.filter(q=>q.end===B.end).length;if(inEnd>=3)return false;
+    const shot={end:B.end,arrow,score:null};B.shots.push(shot);arrow.userData.butt=shot;return true;}
+  // tickArrowMotion's, each sub-step: the arrow crossing the butt's face. True when it struck the face (planted there).
+  function buttsCross(arrow,ddx,ddy,ddz){const B=BUTTS,ud=arrow.userData,shot=ud.butt;if(!B||!shot||shot.score!=null||shot.end!==B.end)return false;
+    const p=arrow.position,d1=(p.x-B.cx)*B.dx+(p.z-B.cz)*B.dz,d0=d1-(ddx*B.dx+ddz*B.dz);if(!(d0<0&&d1>=0))return false;
+    const t=d0/(d0-d1),hx=p.x-ddx*(1-t),hy=p.y-ddy*(1-t),hz=p.z-ddz*(1-t),lat=(hx-B.cx)*B.dz-(hz-B.cz)*B.dx,r=Math.hypot(lat,hy-B.cy);
+    shot.score=buttScore(r);shot.r=r;if(!shot.score)return false;
+    p.set(hx-B.dx*.05,hy,hz-B.dz*.05);if(typeof skillUse==='function')skillUse('bow',1,'butts:'+shot.end+':'+B.shots.indexOf(shot));return true;}
+  function tickButts(){const B=BUTTS;if(!B)return;
+    if(Math.hypot(px-B.x,pz-B.z)>BUTT_LEAVE){showMsg('You walk off the mark. The marshal scratches your name.','#e8d8a0');buttsEnd('left');return;}
+    for(const q of B.shots)if(q.score==null){const ud=q.arrow.userData;if(ud.stuck||!q.arrow.parent||ud.life<=0)q.score=0;}
+    const E=B.shots.filter(q=>q.end===B.end);
+    if(E.length===3&&E.every(q=>q.score!=null)){const t=E.reduce((a,q)=>a+q.score,0);showMsg(`At ${BUTT_ENDS[B.end]} m: ${E.map(q=>q.score).join(', ')}. ${t} for the end.`,'#e8d8a0');
+      B.end++;if(B.end>=BUTT_ENDS.length){buttsEnd('shot');return;}buttPlace(B);return;}
+    if(!EQ.ammo&&B.shots.every(q=>q.score!=null)){showMsg('Your quiver’s empty.','#e8d8a0');buttsEnd('shot');}}
+  function buttsTotal(B){return B.shots.reduce((a,q)=>a+(q.score||0),0);}
+  function buttsEnd(how){const B=BUTTS;if(!B)return null;BUTTS=null;if(B.mesh&&B.mesh.parent)B.mesh.parent.remove(B.mesh);
+    const total=buttsTotal(B),best=Math.max(...B.rivals.map(q=>q.total)),won=how==='shot'&&total>best,F=worldState.festivals||(worldState.festivals={});
+    const me=F['riverfair:'+B.site.id]||(F['riverfair:'+B.site.id]={year:B.year});me.score=total;me.won=won;
+    let paid=0,skill=false;if(won){paid=payPurse(BUTT_PURSE+BUTT_PURSE_TIER*(Math.max(1,B.tier)-1));
+      bagAdd({name:`Silver Arrow of ${B.site.name||'Riverfair'}`,ico:'🏹',type:'misc',weight:.1,buyPrice:0,sellMult:0,keepsake:'riverfair',site:B.site.id,year:B.year,desc:`Won at the butts, Riverfair, in the ${calOrd(B.year)} year of the Peace.`});
+      const S=F.skill||(F.skill={});if(S.riverfair!==B.year){S.riverfair=B.year;skill=buttsSkillUp('bow');}}
+    showMsg(won?`${total} against ${best}. The purse is yours: ${paid} gold, and a silver arrow.${skill?' Your Bow rises.':''}`:how==='shot'?`${total} against ${best}. Not this year.`:`Your nine are not shot. Not this year.`,'#e8d8a0');
+    B.how=how;B.total=total;B.best=best;B.won=won;B.paid=paid;B.skill=skill;return B;}
+  // the contest's point of skill: a level, as a skill book's (the level's marks too)
+  function buttsSkillUp(id){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)return false;s.lv++;skillMark(id,1);return true;}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,
