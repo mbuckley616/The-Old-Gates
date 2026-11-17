@@ -3790,7 +3790,10 @@ const giver=`${lord.title} ${lord.name}`;
     riverfair:{prompt:'Press \'E\' to pour a cup for the sea',ico:'🐴',log:'You pour a cup into the water. It goes the way the river goes.'},
     blaze:{prompt:'Press \'E\' to put a log on the fire',ico:'🔥',night:true,who:'markman', /* S2326 — draft II §2 */
       log:'You put a log on the fire. It catches. Someone you don’t know claps you once on the shoulder and moves off.',
-      thanks:'Saw your log go on. Good. A stranger’s log burns same as ours.'}};
+      thanks:'Saw your log go on. Good. A stranger’s log burns same as ours.'},
+    firstsnow:{prompt:'Press \'E\' to sit with them till first light',ico:'❄',night:true,from:18,sit:true,who:'markman', /* S2334 — draft II §4 */
+      log:'You sat the night out with them. Somebody told the year’s dead by their nicknames. Nobody asked yours.',
+      after:'You sat it out. Aye. That’s a winter. You’re from here now, near enough.'}};
   const FEST_LORD_LINE={greening:{who:'gatelander',line:'It’s the Greening, and I’ve no business for anyone who isn’t carrying a lamb. Come back tomorrow, when the beasts are counted and the arguing starts.'},
     blaze:{who:'markman',line:'Blaze. No business till tomorrow. Bring a log or stand back from the fire.'}};
   // S2326 — the Blaze's night runs from 17:00 to first light (FEST_NIGHT), past midnight into the next date: the festival a night act reads
@@ -3804,16 +3807,27 @@ const giver=`${lord.title} ${lord.name}`;
   // where you could do the day's act now: {key, site, prompt} or null
   function festActHere(){if(typeof isInterior==='function'&&isInterior())return null;if(BUTTS||FAIRRING||DISP||BOUT)return null;
     const S=nearSite();if(!S||!S.site)return null;const s=S.site,h=festNightHere(s)||festivalHere(s.id);if(!h||h.state==='none')return null;const A=FEST_ACTS[h.f.key];if(!A)return null;
-    if(A.night&&!festNightHere(s))return null;if(festActDone(h.f.key,s,h.f.key==='blaze'?calDay(absMin()-(hourNow()<FEST_NIGHT[1]?1440:0)).year:null))return null;
-    if(h.f.key==='greening'||h.f.key==='blaze'){if(Math.hypot(px-s.x,pz-s.z)>FEST_POLE_R)return null;} /* the pole, the fire: the square's middle */
+    if(A.night&&!festNightHere(s))return null;if(A.from&&hourNow()>=FEST_NIGHT[1]&&hourNow()<A.from)return null; /* S2334 — First Snow's night from 18:00 */
+    if(festActDone(h.f.key,s,A.night?calDay(absMin()-(hourNow()<FEST_NIGHT[1]?1440:0)).year:null))return null;
+    if(h.f.key==='greening'||h.f.key==='blaze'||h.f.key==='firstsnow'){if(Math.hypot(px-s.x,pz-s.z)>FEST_POLE_R)return null;} /* the pole, the fire: the square's middle */
     else if(h.f.key==='riverfair'){if(hourNow()!==FEST_BLESS_H)return null;const w=festWaterAt(s);if(Math.hypot(px-w.x,pz-w.z)>FEST_WATER_R)return null;}
     else return null;
     return {key:h.f.key,site:s,state:h.state,prompt:A.prompt};}
   function festActPrompt(){const a=festActHere();return a?a.prompt:null;}
-  function festAct(key,site){const s=typeof site==='string'?siteAnywhere(site):site,A=FEST_ACTS[key];if(!s||!A)return null;const c=calDay(absMin()-(A.night&&hourNow()<FEST_NIGHT[1]?1440:0)); /* a night's act is the evening's date */
+  function festAct(key,site,quiet){const s=typeof site==='string'?siteAnywhere(site):site,A=FEST_ACTS[key];if(!s||!A)return null;const c=calDay(absMin()-(A.night&&hourNow()<FEST_NIGHT[1]?1440:0)); /* a night's act is the evening's date */
     const F=worldState.festivals||(worldState.festivals={}),k=key+':'+s.id,r=F[k]||(F[k]={});if(r.act===c.year)return null;r.act=c.year;r.actN=c.n;delete r.thanked;
-    showMsg(A.log,'#e8d8a0');if(typeof addLog==='function')addLog(A.ico,A.log);return r;}
-  function festActInteract(){const a=festActHere();if(!a)return false;festAct(a.key,a.site);return true;}
+    if(!quiet){showMsg(A.log,'#e8d8a0');if(typeof addLog==='function')addLog(A.ico,A.log);}return r;}
+  function festActInteract(){const a=festActHere();if(!a)return false;if(FEST_ACTS[a.key].sit)festSitUp(a);else festAct(a.key,a.site);return true;}
+  // S2334 — First Snow's act (draft II §4, word for word): on the square after dusk, E sits the night out with the town. It is the Wait to
+  // first light (FEST_NIGHT[1], 6:00), refused as the Wait is (_canWait: foes near, a panel open), with no prompt between. The year is
+  // spent when you sit; at first light the log, and r.sat, which the next day's Markman reads. Named action: festSitUp.
+  function festSitUp(a){const w=typeof _canWait==='function'?_canWait():{ok:true};if(!w.ok){if(w.reason)showMsg(w.reason,'#a89060');return null;}
+    const A=FEST_ACTS[a.key],r=festAct(a.key,a.site,true);if(!r)return null;
+    doFade(()=>{const m0=worldState.gameTimeMinutes||0,mins=((FEST_NIGHT[1]*60-m0)%1440+1440)%1440;
+      worldState.gameTimeMinutes=(m0+mins)%1440;worldState.gameTimeAbsMinutes=(worldState.gameTimeAbsMinutes||0)+mins;r.sat=true;
+      if(typeof updateHUD==='function')updateHUD();if(typeof saveGame==='function')saveGame();
+      showMsg(A.log,'#e8d8a0');if(typeof addLog==='function')addLog(A.ico,A.log);});
+    return r;}
   // S2333 — the butts on E. On Riverfair, in a Gatelands town that keeps it, standing within BUTT_PROMPT_R of the lane's mark (buttsLaneOf,
   // S2331), E steps you up: buttsStart({site}), its refusal (the hours, the thin year, no bow, shot this year) shown as the narrator's.
   // The marshal who will speak for it (Festivals on the Calendar IV, unapproved) replaces only the words. Off Riverfair the lane is the
@@ -3876,14 +3890,17 @@ const giver=`${lord.title} ${lord.name}`;
     showMsg(LANTERN_LOG.last,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.last);}
   // S2326 — the Blaze after midnight: its Markman's word still that night, and at first light, on the square, once, the fire let die
   function festNightGreeting(def){if(!def||!def._siteId||def._lantern||def.people!=='markman')return null;const s=siteAnywhere(def._siteId);if(!s)return null;
-    const h=festNightHere(s);if(!h||hourNow()>=FEST_NIGHT[0])return null;const r=festActRec(h.f.key,s),c=calDay(absMin());
+    const h=festNightHere(s);if(!h||hourNow()>=FEST_NIGHT[0]||!FEST_ACTS[h.f.key].thanks)return null;const r=festActRec(h.f.key,s),c=calDay(absMin());
     if(!r||r.actN!==c.n-1||r.thanked===c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return FEST_ACTS[h.f.key].thanks;}
   let _blazeLast='';function tickBlazeLight(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||hourNow()!==FEST_NIGHT[1])return;
     const S=nearSite(),s=S&&S.site;if(!s||Math.hypot(px-s.x,pz-s.z)>LANTERN_SQUARE)return;const h=festivalHere(s.id,absMin()-1440);if(!h||h.f.key!=='blaze'||h.state==='none')return;
     const k=s.id+':'+calDay(absMin()).n;if(_blazeLast===k)return;_blazeLast=k;const L='The fire on the square is let die. Every chimney in the town is smoking.';
     showMsg(L,'#e8d8a0');if(typeof addLog==='function')addLog('🔥',L);}
   // the day after a lantern sent: a Gatelander of that town, once (feastGreeting, on a day with no festival)
-  function festAfterGreeting(def){if(!def||def._lantern||def.people!=='gatelander')return null;const r=festActRec('lanterns',def._siteId),c=calDay(absMin());
+  function festAfterGreeting(def){if(!def||def._lantern)return null;
+    if(def.people==='markman'){const r=festActRec('firstsnow',def._siteId),c=calDay(absMin()); /* S2334 — the day after First Snow sat out */
+      if(!r||!r.sat||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return FEST_ACTS.firstsnow.after;}
+    if(def.people!=='gatelander')return null;const r=festActRec('lanterns',def._siteId),c=calDay(absMin());
     if(!r||!r.sent||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return LANTERN_LOG.after;}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout

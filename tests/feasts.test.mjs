@@ -374,5 +374,29 @@ const ah = await page.evaluate(() => {
 console.log(JSON.stringify(ah).slice(0, 2000));
 check('the alehall on the Blaze: *Hearth’s out…* from its keeper till 17:00, not after, not from another Markman, not the day before', ah.blaze10 === ah.L.blazeDay && ah.blazePlain !== ah.L.blazeDay && ah.blaze19 !== ah.L.blazeDay && ah.dayBefore !== ah.L.blazeDay, ah);
 check('the alehall on First Snow: from 18:00 to first light *No places tonight…*, and the bed lets no place; at 15:00 and 7:00 the bench is let as ever; a place taken holds', ah.snow15 !== ah.L.firstSnow && ah.bed15.f.length === 2 && ah.snow20 === ah.L.firstSnow && ah.bed20.r === ah.L.firstSnow && ah.bed20.f.length === 0 && ah.snow03 === ah.L.firstSnow && ah.bed03.f.length === 0 && ah.snow07 !== ah.L.firstSnow && ah.bed07.f.length === 2 && ah.mine.r === ah.L.firstSnowMine && ah.mine.f.length === 0, ah);
+// 15. First Snow sat out (Session 2334): from 18:00 on the square, E is the Wait to first light; the log at 6:00, once a winter; the
+// next day a Markman of the town says so, once, and a Gatelander does not
+const sn = await page.evaluate(async () => {
+  const site = ladderSites().find(s => isleAt(s.x, s.z) === 'mark'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, fs0 = worldState.firstSnow, ns0 = nearSite, p0 = [px, pz], sm = window.showMsg;
+  const sf = FESTIVALS.find(f => f.key === 'firstsnow'), msgs = [];
+  const at = (dd, h) => { worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + sf.month - CAL.startMonth) * CAL.monthLen + sf.dom - 1 + dd) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const man = () => ({ _siteId: site.id, people: 'markman', greeting: ['-'] }), gl = () => ({ _siteId: site.id, people: 'gatelander', greeting: ['-'] });
+  st.p = 70; st.flags = {}; worldState.festivals = {}; worldState.firstSnow = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1;
+  const out = {};
+  try { window.showMsg = m => msgs.push(m);
+    at(0, 17); out.p17 = festActPrompt();
+    at(0, 20); out.p20 = festActPrompt(); px = site.x + 8; out.far = festActPrompt(); px = site.x + 1;
+    const a0 = worldState.gameTimeAbsMinutes; out.did = festActInteract(); await new Promise(r => setTimeout(r, 900));
+    out.hour = hourNow(); out.mins = worldState.gameTimeAbsMinutes - a0; out.log = msgs[msgs.length - 1]; out.rec = JSON.parse(JSON.stringify(worldState.festivals['firstsnow:' + site.id] || null));
+    at(0, 22); out.again = festActPrompt();
+    at(1, 10); out.gl = feastGreeting(gl()); out.next = feastGreeting(man()); out.next2 = feastGreeting(man());
+  } finally { window.showMsg = sm; worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; worldState.firstSnow = fs0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.A = FEST_ACTS.firstsnow;
+  return out;
+});
+console.log(JSON.stringify(sn).slice(0, 2000));
+check('First Snow: from 18:00 on the square (not at 17:00, not 8 m off) E sits you up till first light: 10 hours pass, the log at 6:00, the winter\'s act on the year', sn.p17 === null && sn.p20 === sn.A.prompt && sn.far === null && sn.did && Math.abs(sn.hour - 6) < .05 && Math.abs(sn.mins - 600) < 3 && sn.log === sn.A.log && sn.rec && sn.rec.act === 28 && sn.rec.sat && sn.again === null, sn);
+check('the next day a Markman of the town says you sat it out, once; a Gatelander does not', sn.next === sn.A.after && sn.next2 !== sn.A.after && sn.gl !== sn.A.after, sn);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
