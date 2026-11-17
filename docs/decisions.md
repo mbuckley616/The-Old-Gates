@@ -27,6 +27,18 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Page.** [docs/design/spells-as-keys.md](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/spells-as-keys.md)
 
+### The Lamps on the Water — the flames alone, a glow on the water under each, or a real light each? (from the look builder, 2026-11-17, #1699)
+**The question.** Aurenne's Lamps on the Water (draft III §4, built by the systems builder in S2347) has a lampseller on the quay but no lamps on the water yet. The prototype (look builder, Session 2352; `docs/prototypes/levelup/lamps.html`) builds the draft's clay lamp on a board a hand across (320 triangles), a lamp every 20 s on the ebb, 2.4 m apart, out to the harbour mouth. How bright should the line read?
+
+**Options.**
+- **A.** The flames alone, as small as the draft makes them. From the quay they are pinpricks.
+- **B (recommended).** A soft glow on the water under each lamp and its reflection toward the eye: the line reads from the quay and from the town. Two triangles a lamp and no lights.
+- **C.** A real light for each lamp: the brightest, and each board lit, but 10–20 lights in one harbour, which the game cannot afford.
+
+**Recommendation.** B: the draft's "slow line" as seen from the quay, at the cost of A.
+
+**Pictures.** [A from the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-flame-quay.jpg) · [B from the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-pool-quay.jpg) · [C from the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-light-quay.jpg) · [B close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-pool-near.jpg) · [B from the mouth by night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-pool-mouth.jpg)
+
 ## Answered
 ### The festivals' contest grounds — the butts all year and the ring on its day, both only on their day, or not yet? (from the look builder, 2026-11-17, #1672)
 **The question.** Festivals B owes the look builder two contest grounds. Session 2317 built both as a prototype at the game's own sizes: Riverfair's butts (a straw boss 1.36 m across with a painted face, bales, a limed mark, pegs at 30/50/70 m; about 760 triangles) and the Strait Fair's ring (10 tarred stakes on a 5 m radius, two hemp ropes, the reeve's post and horn; 2,405 triangles). The look is drawn to the game's numbers; the open part is where they stand, and when.
