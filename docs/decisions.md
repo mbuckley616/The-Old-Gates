@@ -3,54 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### The festivals' contest grounds — the butts all year and the ring on its day, both only on their day, or not yet? (from the look builder, 2026-11-17, #1672)
-**The question.** Festivals B owes the look builder two contest grounds. Session 2317 built both as a prototype at the game's own sizes: Riverfair's butts (a straw boss 1.36 m across with a painted face, bales, a limed mark, pegs at 30/50/70 m; about 760 triangles) and the Strait Fair's ring (10 tarred stakes on a 5 m radius, two hemp ropes, the reeve's post and horn; 2,405 triangles). The look is drawn to the game's numbers; the open part is where they stand, and when.
-
-**Options.**
-- **A (recommended).** The butts stand all year as the town's practice ground: a lane outside every Gatelands town (the first flat 76 m strip off the town's pad, away from the road), shot only on Riverfair for the purse. The ring goes up on a Markish town's square, or the nearest 12 m of clear ground, on the Strait Fair's morning, and comes down after noon.
-- **B.** Both only on their day: the lane and the ring are set up for the festival and gone the rest of the year.
-- **C.** Not yet: keep the placeholder butt and no rope until the concept artist's festival dressing (OG-107) is answered, and lay them with it.
-
-**Pictures** (from `auto/look-2317`). [the lane to 70 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-lane.jpg) · [the butt](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-butt.jpg) · [the ring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-ring.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-high.jpg)
-
-### The Mark's weaponsmith on a wide, shallow lot — the smith's hall at the lot's size, or not yet? (from the look builder, 2026-11-17, #1666)
-**The question.** #1662's pair. Of the five Markish shops on a wide, shallow lot, two are weaponsmiths (6.26 × 7.76 m and 7.22 × 6.55 m). The smith's hall (in the game since S1869) is used only where a lot takes the whole 6.4 × 9 m; anywhere smaller the shop opens on the old generated room. Session 2312 found the smithy needs no new plan: `markSmithy` at the lot's own size passes every check of the drawn hall at 8 sizes, 6.0 × 6.55 to 8.4 × 7.9 m (the forge under the louver, the anvil 0.85 m out, the walks clear). Only the tool rail moved, in front of the short hall's one middle window. 6.3k to 6.9k triangles in 15 meshes.
-
-**Options.**
-- **A (recommended).** The smith's hall at the lot's own size, as drawn, for a weaponsmith whose lot takes 6.0 × 6.55 m but not 6.4 × 9. On the street it gets shingle and no chimney, as the smithy's does, so the turf lot's roof changes (the same change as #1662).
-- **B.** Not yet: keep the generated room.
-
-**Pictures** (from `auto/look-2312`). [7.22 × 6.55](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2312/docs/prototypes/levelup/rooms-smithy-short-smithy.jpg) · [6.26 × 7.76](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2312/docs/prototypes/levelup/rooms-smithy-short-narrow.jpg) · [the window and rail](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2312/docs/prototypes/levelup/rooms-smithy-short-tools.jpg)
-
-### Guild heads — their people's own, the guild's livery over their people, or OG-064 as drawn? (from the concept artist, 2026-11-16, #1658)
-**The question.** Backlog L2, *Guild heads* (OG-064). The game has two guilds with a head in every town that has a hall: the Fighters' Guild's Guildmaster and the Mages' Guild's Archmage, each of that town's people. The canon keeps both guilds cross-island and neutral; the question is how much of the guild a head wears. The prototype (`guildheads.html`, PR #1659) shows the two heads as a Gatelander, a Markman, an Aurennais and one of the Old Blood: eight figures, 1.58 to 1.86 m, 71k to 232k triangles each.
-
-**Options.**
-- **A.** Their people's own: a townsperson of standing, the guild only the sign over the door. The Guildmaster carries a sword of their people's make, the Archmage a book.
-- **B (recommended).** The guild's livery over their people: the Guildmaster in mail under an oxblood tabard with the crossed swords, the Archmage in a deep blue robe with the guild's star and a staff; each keeps their people's cloak, fur, sash, charms, hair and sword make. The guild reads from across a square, the people from the cloak.
-- **C.** OG-064 as drawn, one look whatever the people: plate under a crimson surcoat with a gold sword, midnight blue strewn with gold with a ring of light. Crimson and gold are the Crown's colours, which a neutral guild would not wear.
-
-**Pictures.** [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-a.jpg) · [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-b.jpg) · [B from behind](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-b-back.jpg) · [the Gatelander Archmage at B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-b-close-m_gl.jpg) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-c.jpg) · [in scale beside the 1.8 m post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-scale.jpg).
-
-### The Mark's shops on a wide, shallow lot — the trader's hall short, the counter alone, or not yet? (from the look builder, 2026-11-16, #1662)
-**The question.** Five Markish shops in the Mark's first three ports and its city (two goods shops, a barber, two weaponsmiths) stand in a hall 7 to 8.3 m wide but only 6.6 to 7.8 m deep, and open on the old generated room. The trader's hall chosen on #1632 needs 8 m of depth: in less, its counter is under a metre and its shelves stand across the side window. Session 2310's prototype (card F9; OG-043, OG-115) draws the hall short: one window a side at the middle, the front posts just before the hearth, the counter (1.1 to 1.8 m), the shelves and the trade's own piece in front of the window, the hearth, bed and strongbox as drawn. It holds from 6.8 × 6.8 m to 8.4 × 7.9 m; from 8 m deep the hall is exactly as drawn. 24 short halls at 5.4k to 8.0k triangles in 15 meshes.
-
-**Options.**
-- **A (recommended).** The trader's hall short, as drawn, for a goods shop, armourer or barber whose lot takes 6.8 × 6.8 m but not 6.4 × 9. On the street it is shingled with no chimney, as the trader's is. The weaponsmith's short hall follows as its own prototype.
-- **B.** The short hall with the counter and shelves alone, without the trade's own pieces.
-- **C.** Not yet: keep the generated room.
-
-**Pictures** (from `auto/look-2310`). [goods shop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2310/docs/prototypes/levelup/rooms-trader-short-misc-hall.jpg) · [furs before the window](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2310/docs/prototypes/levelup/rooms-trader-short-misc-trade.jpg) · [armourer's counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2310/docs/prototypes/levelup/rooms-trader-short-armor-counter.jpg) · [barber's chair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2310/docs/prototypes/levelup/rooms-trader-short-barber-chair.jpg)
-### The Mark's town-house shops inside — the trade's floor under the home, a plain counter, or not yet? (from the look builder, 2026-11-16, #1653)
-**The question.** Where a Markish lot is too tight for the timber hall it stands as the two-storey town house. Homes there already open on the town house's own floors (your A on #1518); shops there still open on the old generated room. In the Mark's first three ports and its city there are nine (four healers, three goods shops, two weaponsmiths); an armourer or a barber can land there too. The prototype (`rooms.html?room=marktown&trade=…`, Session 2305) makes the ground floor the shop and keeps the household's loft above: along the wall away from the stair a low shelf of stock, the keeper's walk and a counter (1.0 to 1.8 m), the strongbox at the walk's dead end, and each trade's own piece on the free floor (goods: a pole of furs and a crate of soapstone pots; armourer: a byrnie on its stand under a round shield; barber: the chair facing a bronze glass; healer: herbs drying on a pole; weaponsmith: a rack of spears and axes). The counter fits in 230 of the check's 300 sizes, every common 6.6 m lot among them; 2,810 to 6,446 triangles in 19 meshes or fewer.
-
-**Options.**
-- **A (recommended).** As drawn, each trade with its own pieces. A size with no room for a counter keeps the generated room.
-- **B.** The counter and shelf alone, the same for every trade.
-- **C.** Not yet: keep the generated room.
-
-**Pictures.** [healer](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-marktown-potion-shop.jpg) · [weaponsmith's counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-marktown-weapon-counter.jpg) · [goods shop, with the stack](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-marktown-misc-trade.jpg) · [goods shop, the counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-marktown-misc-counter.jpg) · [armourer](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-marktown-armor-trade.jpg). The armourer's stand and the barber's chair sit dim in the back corner.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -64,6 +16,65 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### The festivals' contest grounds — the butts all year and the ring on its day, both only on their day, or not yet? (from the look builder, 2026-11-17, #1672)
+**The question.** Festivals B owes the look builder two contest grounds. Session 2317 built both as a prototype at the game's own sizes: Riverfair's butts (a straw boss 1.36 m across with a painted face, bales, a limed mark, pegs at 30/50/70 m; about 760 triangles) and the Strait Fair's ring (10 tarred stakes on a 5 m radius, two hemp ropes, the reeve's post and horn; 2,405 triangles). The look is drawn to the game's numbers; the open part is where they stand, and when.
+
+**Options.**
+- **A (recommended).** The butts stand all year as the town's practice ground: a lane outside every Gatelands town (the first flat 76 m strip off the town's pad, away from the road), shot only on Riverfair for the purse. The ring goes up on a Markish town's square, or the nearest 12 m of clear ground, on the Strait Fair's morning, and comes down after noon.
+- **B.** Both only on their day: the lane and the ring are set up for the festival and gone the rest of the year.
+- **C.** Not yet: keep the placeholder butt and no rope until the concept artist's festival dressing (OG-107) is answered, and lay them with it.
+
+**Pictures** (from `auto/look-2317`). [the lane to 70 m](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-lane.jpg) · [the butt](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-butt.jpg) · [the ring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-ring.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2317/docs/prototypes/levelup/contests-high.jpg)
+
+Michael: **A, Butts all year, ring on its day.** (16 Nov 2026, tapped on the control room)
+
+### The Mark's weaponsmith on a wide, shallow lot — the smith's hall at the lot's size, or not yet? (from the look builder, 2026-11-17, #1666)
+**The question.** #1662's pair. Of the five Markish shops on a wide, shallow lot, two are weaponsmiths (6.26 × 7.76 m and 7.22 × 6.55 m). The smith's hall (in the game since S1869) is used only where a lot takes the whole 6.4 × 9 m; anywhere smaller the shop opens on the old generated room. Session 2312 found the smithy needs no new plan: `markSmithy` at the lot's own size passes every check of the drawn hall at 8 sizes, 6.0 × 6.55 to 8.4 × 7.9 m (the forge under the louver, the anvil 0.85 m out, the walks clear). Only the tool rail moved, in front of the short hall's one middle window. 6.3k to 6.9k triangles in 15 meshes.
+
+**Options.**
+- **A (recommended).** The smith's hall at the lot's own size, as drawn, for a weaponsmith whose lot takes 6.0 × 6.55 m but not 6.4 × 9. On the street it gets shingle and no chimney, as the smithy's does, so the turf lot's roof changes (the same change as #1662).
+- **B.** Not yet: keep the generated room.
+
+**Pictures** (from `auto/look-2312`). [7.22 × 6.55](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2312/docs/prototypes/levelup/rooms-smithy-short-smithy.jpg) · [6.26 × 7.76](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2312/docs/prototypes/levelup/rooms-smithy-short-narrow.jpg) · [the window and rail](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2312/docs/prototypes/levelup/rooms-smithy-short-tools.jpg)
+
+Michael: **A, The smith's hall at the lot's size, as drawn.** (16 Nov 2026, tapped on the control room)
+
+### Guild heads — their people's own, the guild's livery over their people, or OG-064 as drawn? (from the concept artist, 2026-11-16, #1658)
+**The question.** Backlog L2, *Guild heads* (OG-064). The game has two guilds with a head in every town that has a hall: the Fighters' Guild's Guildmaster and the Mages' Guild's Archmage, each of that town's people. The canon keeps both guilds cross-island and neutral; the question is how much of the guild a head wears. The prototype (`guildheads.html`, PR #1659) shows the two heads as a Gatelander, a Markman, an Aurennais and one of the Old Blood: eight figures, 1.58 to 1.86 m, 71k to 232k triangles each.
+
+**Options.**
+- **A.** Their people's own: a townsperson of standing, the guild only the sign over the door. The Guildmaster carries a sword of their people's make, the Archmage a book.
+- **B (recommended).** The guild's livery over their people: the Guildmaster in mail under an oxblood tabard with the crossed swords, the Archmage in a deep blue robe with the guild's star and a staff; each keeps their people's cloak, fur, sash, charms, hair and sword make. The guild reads from across a square, the people from the cloak.
+- **C.** OG-064 as drawn, one look whatever the people: plate under a crimson surcoat with a gold sword, midnight blue strewn with gold with a ring of light. Crimson and gold are the Crown's colours, which a neutral guild would not wear.
+
+**Pictures.** [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-a.jpg) · [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-b.jpg) · [B from behind](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-b-back.jpg) · [the Gatelander Archmage at B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-b-close-m_gl.jpg) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-c.jpg) · [in scale beside the 1.8 m post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/guildheads-scale.jpg).
+
+Michael: **B, Guild livery over their people's own.** (16 Nov 2026, tapped on the control room)
+
+### The Mark's shops on a wide, shallow lot — the trader's hall short, the counter alone, or not yet? (from the look builder, 2026-11-16, #1662)
+**The question.** Five Markish shops in the Mark's first three ports and its city (two goods shops, a barber, two weaponsmiths) stand in a hall 7 to 8.3 m wide but only 6.6 to 7.8 m deep, and open on the old generated room. The trader's hall chosen on #1632 needs 8 m of depth: in less, its counter is under a metre and its shelves stand across the side window. Session 2310's prototype (card F9; OG-043, OG-115) draws the hall short: one window a side at the middle, the front posts just before the hearth, the counter (1.1 to 1.8 m), the shelves and the trade's own piece in front of the window, the hearth, bed and strongbox as drawn. It holds from 6.8 × 6.8 m to 8.4 × 7.9 m; from 8 m deep the hall is exactly as drawn. 24 short halls at 5.4k to 8.0k triangles in 15 meshes.
+
+**Options.**
+- **A (recommended).** The trader's hall short, as drawn, for a goods shop, armourer or barber whose lot takes 6.8 × 6.8 m but not 6.4 × 9. On the street it is shingled with no chimney, as the trader's is. The weaponsmith's short hall follows as its own prototype.
+- **B.** The short hall with the counter and shelves alone, without the trade's own pieces.
+- **C.** Not yet: keep the generated room.
+
+**Pictures** (from `auto/look-2310`). [goods shop](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2310/docs/prototypes/levelup/rooms-trader-short-misc-hall.jpg) · [furs before the window](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2310/docs/prototypes/levelup/rooms-trader-short-misc-trade.jpg) · [armourer's counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2310/docs/prototypes/levelup/rooms-trader-short-armor-counter.jpg) · [barber's chair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2310/docs/prototypes/levelup/rooms-trader-short-barber-chair.jpg)
+
+Michael: **A, Short trader's hall as drawn, with trade pieces.** (16 Nov 2026, tapped on the control room)
+
+### The Mark's town-house shops inside — the trade's floor under the home, a plain counter, or not yet? (from the look builder, 2026-11-16, #1653)
+**The question.** Where a Markish lot is too tight for the timber hall it stands as the two-storey town house. Homes there already open on the town house's own floors (your A on #1518); shops there still open on the old generated room. In the Mark's first three ports and its city there are nine (four healers, three goods shops, two weaponsmiths); an armourer or a barber can land there too. The prototype (`rooms.html?room=marktown&trade=…`, Session 2305) makes the ground floor the shop and keeps the household's loft above: along the wall away from the stair a low shelf of stock, the keeper's walk and a counter (1.0 to 1.8 m), the strongbox at the walk's dead end, and each trade's own piece on the free floor (goods: a pole of furs and a crate of soapstone pots; armourer: a byrnie on its stand under a round shield; barber: the chair facing a bronze glass; healer: herbs drying on a pole; weaponsmith: a rack of spears and axes). The counter fits in 230 of the check's 300 sizes, every common 6.6 m lot among them; 2,810 to 6,446 triangles in 19 meshes or fewer.
+
+**Options.**
+- **A (recommended).** As drawn, each trade with its own pieces. A size with no room for a counter keeps the generated room.
+- **B.** The counter and shelf alone, the same for every trade.
+- **C.** Not yet: keep the generated room.
+
+**Pictures.** [healer](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-marktown-potion-shop.jpg) · [weaponsmith's counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-marktown-weapon-counter.jpg) · [goods shop, with the stack](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-marktown-misc-trade.jpg) · [goods shop, the counter](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-marktown-misc-counter.jpg) · [armourer](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rooms-marktown-armor-trade.jpg). The armourer's stand and the barber's chair sit dim in the back corner.
+
+Michael: **A, As drawn, each trade with its own piece.** (16 Nov 2026, tapped on the control room)
+
 ### Robbing the road's people — take from the pack, force only, or neither? (from the systems builder, 2026-11-16, #1638)
 **The question.** The road page (your B on #1587) says robbing the merchant is today's assault and theft before the nearer town's court, and the official is a witness on the road. The assault is built (S2287: −3 favour, a 75 gold fine at the nearer end of the road); the theft is not, because the game has no way to take from a person, and the official's guard does not draw when struck. How should robbing the road's people work?
 
