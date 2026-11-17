@@ -6120,18 +6120,23 @@ function festTable(o, kind) {
     add(new THREE.SphereGeometry(.03, 8, 5), M.saffron, V(bx + .19, top + .17, bz)).scale.set(1, .35, 1);
     add(new THREE.CylinderGeometry(.08, .065, .025, 16), M.brass, V(.28, top + .013, .1)); add(new THREE.SphereGeometry(.06, 10, 6), M.saffron, V(.28, top + .024, .1)).scale.set(1, .3, 1);
     box(.16, .07, .1, M.cedar, .5, top + .035, -.12); for (let k = 0; k < 3; k++) add(new THREE.CylinderGeometry(.012 + k * .004, .012 + k * .004, .02 + k * .006, 8), M.brass, V(.45 + k * .05, top + .08 + k * .003, -.12));
-    /* a bale is a pillow of sacking: a box of 4 by 3 by 4 faces, each face's middle pushed out 9% (its corners held), so it reads as cloth over saffron, not a crate */
-    const pillow = (bw, bh, bd) => { const q = new THREE.BoxGeometry(bw, bh, bd, 4, 3, 4), P = q.attributes.position, h = [bw / 2, bh / 2, bd / 2];
-      for (let i = 0; i < P.count; i++) { const v = [P.getX(i), P.getY(i), P.getZ(i)], u = v.map((a, k) => a / h[k]);
-        for (let k = 0; k < 3; k++) { const o1 = u[(k + 1) % 3], o2 = u[(k + 2) % 3]; v[k] *= 1 + .09 * (1 - o1 * o1) * (1 - o2 * o2) * (k === 1 ? .5 : 1); } P.setXYZ(i, ...v); }
+    /* a bale is a pillow of sacking (S2354, rounder than S2351's box with its faces pushed out): a box of faces projected onto a rounded
+       box (a superellipsoid of power 3.2, so its edges and corners are soft), its underside settled flat where it bears, its top slumped
+       a little at the middle, as a sack of loose saffron does. seg -> the box's faces along x, y, z; band -> a slice, the y-z section at its middle carried through its width (a strap) */
+    const pillow = (bw, bh, bd, seg = [6, 4, 4], band = false) => { const q = new THREE.BoxGeometry(bw, bh, bd, ...seg), P = q.attributes.position, h = [bw / 2, bh / 2, bd / 2], N = 3.2;
+      for (let i = 0; i < P.count; i++) { const u = [P.getX(i) / h[0], P.getY(i) / h[1], P.getZ(i) / h[2]], ux = u[0]; if (band) u[0] = 0; const L = Math.hypot(...u), d = L > 1e-6 ? u.map(a => a / L) : [0, 0, 0];
+        const r = L > 1e-6 ? Math.pow(d.reduce((t, a) => t + Math.pow(Math.abs(a), N), 0), -1 / N) : 0, v = d.map((a, k) => a * r);
+        if (band) v[0] = ux; if (v[1] < -.86) v[1] = -.86; if (v[1] > 0) v[1] -= .1 * v[1] * (1 - v[0] * v[0]) * (1 - v[2] * v[2]);
+        P.setXYZ(i, v[0] * h[0], ((v[1] + .86) / 1.86 * 2 - 1) * h[1], v[2] * h[2]); }
       q.computeVertexNormals(); return q; };
     const bale = (x, z, y, ry, open) => { const bw = .78, bh = .55, bd = .55, b = add(pillow(bw, bh, bd), M.sack, V(x, y + bh / 2, z)); b.rotation.y = ry;
-      for (const s of [-.28, .28]) { const st = box(.05, bh + .02, bd + .02, M.strap, x + Math.cos(ry) * s * bw, y + bh / 2, z - Math.sin(ry) * s * bw, ry); st.scale.y = 1; }
-      if (open) { const r0 = box(bw * .9, .07, bd * .9, M.sack, x, y + bh + .02, z, ry); r0.rotation.x = .02; const hg = new THREE.IcosahedronGeometry(.2, 2), HP = hg.attributes.position; for (let i = 0; i < HP.count; i++) { const yy = HP.getY(i); HP.setY(i, Math.max(0, yy) * (.8 + .4 * Math.abs(Math.sin(HP.getX(i) * 41 + HP.getZ(i) * 29)))); }
-        hg.computeVertexNormals(); const hp = add(hg, M.saffron, V(x, y + bh + .045, z)); hp.scale.set(1.3, .45, 1); hp.rotation.y = ry; }
+      /* a strap is the same rounded box, thin, at the section it girds (the superellipse's (1 - .72^3.2)^(1/3.2) = 0.85 of the middle's), drawn at 0.93 so it stands proud */
+      for (const s of [-.28, .28]) { const st = add(pillow(.06, bh, bd, [1, 4, 6], true), M.strap, V(x + Math.cos(ry) * s * bw, y + bh / 2, z - Math.sin(ry) * s * bw)); st.rotation.y = ry; st.scale.set(1, .93, .93); }
+      if (open) { const r0 = add(pillow(bw * .78, .07, bd * .78, [4, 1, 3]), M.sack, V(x, y + bh * .95, z)); r0.rotation.y = ry; const hg = new THREE.IcosahedronGeometry(.2, 2), HP = hg.attributes.position; for (let i = 0; i < HP.count; i++) { const yy = HP.getY(i); HP.setY(i, Math.max(0, yy) * (.8 + .4 * Math.abs(Math.sin(HP.getX(i) * 41 + HP.getZ(i) * 29)))); }
+        hg.computeVertexNormals(); const hp = add(hg, M.saffron, V(x, y + bh * .95 + .02, z)); hp.scale.set(1.3, .45, 1); hp.rotation.y = ry; }
       return b; };
     const kx = w / 2 + .62, kz = FSTALL.keeper * .55; bale(kx, kz, G0(kx, kz), .2, true);
-    const sx2 = kx + .35, sz2 = kz - .75, y2 = Math.max(G0(sx2 - .4, sz2), G0(sx2 + .4, sz2)); bale(sx2, sz2, y2, -.1, false); bale(sx2 + .05, sz2 + .02, y2 + .55, .15, false);
+    const sx2 = kx + .35, sz2 = kz - .75, y2 = Math.max(G0(sx2 - .4, sz2), G0(sx2 + .4, sz2)); bale(sx2, sz2, y2, -.1, false); bale(sx2 + .05, sz2 + .02, y2 + .53, .15, false);
   }
   const tris = mergeByMaterial(g);
   return { group: g, tris, draws: g.children.length, keeper: { x: 0, z: FSTALL.keeper }, w, d, h };

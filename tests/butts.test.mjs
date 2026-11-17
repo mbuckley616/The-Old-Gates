@@ -37,6 +37,16 @@ check(`the lane is cleared (${r.unstamped} points outside its clearing) and noth
 check(`an arrow's line from the mark, 1.5 m up, to each face clears the ground by ${r.clear} m`, r.clear >= .25, r.clear);
 check(`the butt's face at the 30 m peg, ${r.faceUp} m up; ${r.draws} draws (10 or fewer) and ${r.tris} triangles (6,000 or fewer)`, r.faceAt < .01 && Math.abs(r.faceUp - 1.2) < .35 && r.draws <= 10 && r.tris <= 6000, r);
 
+// 2b. no herb grows on the lane (Session 2354): neither the scatter's after the lane is stamped, nor one a chunk grew before its cell stamped it;
+// and the scatter's own rule refuses the lane at every point down it
+const hb = await page.evaluate(() => { const B = WORLD.settle.get('dunmore').butts, lane = STAMPS.filter(s => s.butts && s.id.startsWith('butts_dunmore_'));
+  const on = h => !h.offPad && !h.harvested && lane.some(s => Math.hypot(h.x - s.x, h.z - s.z) < s.r);
+  const left = ZONES.world.herbs.filter(on).map(h => h.id); let near = 0; for (const h of ZONES.world.herbs) if (!h.offPad && lane.some(s => Math.hypot(h.x - s.x, h.z - s.z) < s.r + 12)) near++;
+  let refused = 0, asked = 0; for (const s of lane) for (let a = 0; a < 6.28; a += .8) { asked++; if (onButtsLane(s.x + Math.cos(a) * 3, s.z + Math.sin(a) * 3)) refused++; }
+  return { stamps: lane.length, left, near, refused, asked }; });
+console.log(JSON.stringify(hb));
+check(`no herb on the lane's ${hb.stamps} clearings (${hb.left.length} left; ${hb.near} grow within 12 m of it), and the scatter refuses ${hb.refused} of ${hb.asked} points on it`, hb.stamps >= 15 && hb.left.length === 0 && hb.refused === hb.asked, hb);
+
 // 3a. the mark on E (Session 2337): on Riverfair the mark offers the butts and E steps you up; the day before, or 4 m off, it asks nothing;
 // before ten E gives the hours and starts nothing
 const pr = await page.evaluate(() => { const site = siteAnywhere('dunmore'), B = WORLD.settle.get('dunmore').butts, st = TS(site), keep = { p: st.p, flags: st.flags };

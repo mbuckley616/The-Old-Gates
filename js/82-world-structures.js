@@ -446,8 +446,10 @@
   function buttsLaneShow(site,on){const s=typeof site==='string'?site:site&&site.id,S=s&&SETTLE.get(s);if(S&&S.butts&&S.butts.butt)S.butts.butt.visible=!!on;}
   // the lane's clearing: noFlat stamps down its middle, so the scatter stands no tree or rock on it and the ground is worn as a mown lane is
   function buttsLaneStamps(c,k){const out=[];for(const t of c.sites){const L=buttsLane(t,c);if(!L)continue;
-      for(let v=-BUTTS_BACK;v<=BUTTS_LEN-BUTTS_BACK+.01;v+=5)out.push(addStamp({id:`${L.id}_${Math.round(v)}`,kind:'door',noFlat:true,butts:true,x:L.x+L.dx*v,z:L.z+L.dz*v,r:3.8,blend:1,y:0,cell:k}));}
+      for(let v=-BUTTS_BACK;v<=BUTTS_LEN-BUTTS_BACK+.01;v+=5){const st=addStamp({id:`${L.id}_${Math.round(v)}`,kind:'door',noFlat:true,butts:true,x:L.x+L.dx*v,z:L.z+L.dz*v,r:3.8,blend:1,y:0,cell:k});out.push(st);dropHerbsOnPad(st);}}
     return out;}
+  /* S2354 — no herb grows on the lane: the scatter's okSpot asks this (a lane's stamp may sit under a site's or another's, so stampAt's first is not enough) */
+  function onButtsLane(x,z){const arr=stampsNear(x,z);for(let i=0;i<arr.length;i++){const s=arr[i];if(s.butts&&Math.hypot(x-s.x,z-s.z)<s.r)return true;}return false;}
   // S1473 (card F6, Michael's C on #744, its second half) — the farms alone in the country: in a Gatelands cell on the new look, one
   // (one cell in three, two) beside the cell's own roads between its places, each on a road of its own, the house to the road as a
   // village's farm stands. Each stands at least LONE_GAP farther from every pad than a village's farm may, and as far from another lone
@@ -2285,7 +2287,7 @@
   // floor (the critic, 2 Nov). Stamping a pad now takes away the scatter's herbs already inside it, so what grows on a pad no longer
   // depends on what loaded first. A herb bed (h.bed) and a site's own herbs (a glade's, ids by the site) are not the scatter's and stay.
   function dropHerbsOnPad(s){
-    if(!s||s.kind!=='site'||!ZONES.world||!ZONES.world.herbs)return 0;const R=s.r-6;if(R<=0)return 0;const L=ZONES.world.herbs;let n=0;
+    if(!s||!(s.kind==='site'||s.butts)||!ZONES.world||!ZONES.world.herbs)return 0;const R=s.butts?s.r:s.r-6; /* S2354 — and a butts lane's clearing, all of it */if(R<=0)return 0;const L=ZONES.world.herbs;let n=0;
     for(let i=L.length-1;i>=0;i--){const h=L[i];if(h.bed||!/^-?\d+,-?\d+:(herb|verge|hot):\d+$/.test(h.id)||Math.hypot(h.x-s.x,h.z-s.z)>=R)continue;
       L.splice(i,1);h.offPad=true;h.g.visible=false;if(h.gl)h.gl.intensity=0;if(h.inst)syncHerbInstance(h);n++;}
     return n;
@@ -2301,7 +2303,7 @@
     let n=Math.floor((8+hash01(ch.cx,ch.cz,120)*8)*dens); // v80 — denser: 8–16 a chunk before the biome factor
     // S514 — each herb is <chunk>:herb|verge|hot:<i>, the placing try that put it (co-op rules), so a spot refused on one machine moves no other's id
     const put=(hx,hz,type,k)=>{const def=HERB_DEF[type];if(!def)return false;const g=new THREE.Group();g.position.set(hx,worldH(hx,hz),hz);const gl={intensity:0,parent:null};const h={id:ch.cx+','+ch.cz+':'+k,x:hx,z:hz,type,def,g,gl,harvested:false,respawnT:0,ph:Math.random()*Math.PI*2};ZONES.world.herbs.push(h);ch.herbs.push(h);return true;};
-    const okSpot=(hx,hz)=>{if(solidAt(hx,hz))return false;const ri=roadInfo(hx,hz);if(ri&&ri.d<ROAD_HALF+1.2)return false;const st=stampAt(hx,hz);if(st&&st.kind==='site'&&Math.hypot(hx-st.x,hz-st.z)<st.r-6)return false;return true;};
+    const okSpot=(hx,hz)=>{if(solidAt(hx,hz))return false;const ri=roadInfo(hx,hz);if(ri&&ri.d<ROAD_HALF+1.2)return false;const st=stampAt(hx,hz);if(st&&st.kind==='site'&&Math.hypot(hx-st.x,hz-st.z)<st.r-6)return false;if(onButtsLane(hx,hz))return false;return true;};
     let placed=0;
     for(let i=0;i<n*3&&placed<n;i++){
       const hx=ch.cx*CHUNK+3+hash01(ch.cx+i,ch.cz,121)*(CHUNK-6),hz=ch.cz*CHUNK+3+hash01(ch.cz,ch.cx+i,122)*(CHUNK-6);
