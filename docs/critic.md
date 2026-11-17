@@ -1892,3 +1892,37 @@ A playtest, after 15 Nov's new-look run. Read Sessions 2254 to 2290: most of it 
 - Nothing new. S2274 struck the Old Garrison line at the foot of section I.
 
 No proposal this run.
+
+## 2026-11-17 — The new look: the Mark's town-house shops and the smith's hall in the game, Dunmore's armoury and its shop window, the guild heads in Dunmore's halls, the road's rider saddled and bridled; the contest grounds, the underworld's five and the guild livery in their prototypes (build s1674, read to Session 2329)
+
+A new-look run, after 16 Nov's playtest. Read Sessions 2291 to 2329. Five boots of the game on the new look at 1280×720, each a script of my own in `tests/tmp/`; `node tests/run.mjs export` 1/1 first. No page errors in any boot that finished (two were cut off by my own 25-minute limit while three Chromiums shared the box). For the prototypes I read the pages' committed pictures (`contests-*.jpg`, `underworld-cast-*.jpg`, `guildlivery-2329-*.jpg`) rather than shoot them again, because the game boots had the machine. Judged against OG-043 (the Mark's timber halls with carved posts, the Gatelands' stone) and OG-115 (the homes and their trades).
+
+**What was wrong.**
+1. **A person you walk up to is someone else until the builder's body arrives.** The stand-in drawn before `hbTick` has built a body is not the same man in a cheaper form: it has another head of hair, another colour of clothes, and the old painted face. In the Mark's first port (`c1_1_s1`) at 12:00, Menas the healer is a white-haired, white-bearded doll at your elbow as you come in (`docs/critic/2026-11-17-mark-healer-arrival.jpg`); his builder body, once made, wears a blue turban over a dark grey beard (`-mark-healer-keeper.jpg`). On the Carraig Mór–Salthaven road at 10:58, Ruairí the rider is a red-haired figure in a hat and yellow (`-rider-before-builder.jpg`), and a few frames later a brown-haired, bearded man in green (`-rider-quarter.jpg`). In Dunmore's Fighters' Guild at 12:00 all four people are dolls on entry (0 of 4 builder bodies, `-fighters-hall-dolls.jpg`), and all four are builder bodies 600 frames later (`-fighters-hall-builder.jpg`); the Archmage Sorcha is a blue-tinted doll with a staff until then (`-archmage-doll.jpg`). The wait is software GL's here; on Michael's machine it is probably a second or two a person, one at a time, so a hall of four may take several seconds. The swap itself is by design (S1195). What is wrong is that the person changes: a player who has just read Menas's face reads a different one. To the backlog, for the bodies builder (low).
+2. **Dunmore's armoury reads as a tailor's at noon.** With the window now pale by day (S2296 works: `-dunmore-goods-window-noon.jpg`, and grey at 19:30, `-dunmore-goods-window-1930.jpg`), the room's wares are the problem. Bríd's byrnies on their stands are flat black sleeved shapes with no ring texture: from the door they read as black coats on dress forms (`-dunmore-armoury-byrnies.jpg`). The helms on posts by the window are black discs on stalks and still read as table lamps (`-dunmore-armoury-noon.jpg`). S2293 named both under *Needs eyes*; I confirm both in play. A look note, not a backlog line.
+
+**What worked.**
+- **Niall's Forge** (the Mark's smith's hall, `g_c1_1_s1_1`) once his body is built: a bearded smith in a red cape between the hearth and the anvil, the hammer's block at his knee and the rack of spears behind; the hall reads as OG-043's Markish smithy (`-mark-smith-keeper.jpg`). 7 lights.
+- **Osgyth's Stores** (the town-house goods shop, S2327): Osgyth in a wolf-fur cape behind the counter's scale, shelves of stock behind her, the counter 1.19 m from where you buy, *Press E* in reach. The shop opens on the goods list (*Rope, salt, candles, and questions.*). (`-mark-goods-keeper.jpg`). The open door leaf takes the left 40% of the arrival view, as S2327 says.
+- **The road's rider** (S2291, S2294, S2316): saddled, with the reins from his fists to the bit's rings, and the bridle reads on the grey from 4.5 m (`-rider-front-reins.jpg`). He reins in and is named.
+- **The contest grounds** (S2317, prototype): the lane reads as a mown stripe to the butt, and the butt as a straw boss on its trestle with bales behind. The ring reads as a ring: ten stakes, two ropes, the reeve's post. The earth is a flat brown disc, which S2317 names.
+- **The guild livery** (S2329, prototype): eight in a row, the oxblood tabards and the blue robes read from across the square, as Michael's B meant.
+
+**The builders' questions to me.**
+- S2316 (the bodies builder, Slack): *does the skirt parted over the horn read as a riding tunic?* From the front at 4.5 m the parting is not visible; he reads as a man in a short tunic astride. From behind, the tan skirt lies over the croup and reads as a saddle-cloth or a rolled blanket, not as his tunic, because it is a different colour from the green above the belt (`-rider-back-skirt.jpg`). Nothing torn.
+- S2317 and S2314 (the look and systems builders): *70 m reads small.* It does. At the game's 75° and 720 rows, a degree is about 8 pixels: the 1.2 m face at 70 m is 8 pixels across and the 0.4 m gold is under 3, smaller than the crosshair. At 1080 rows, 12 and 4. Nothing in the game narrows the view for a drawn bow (the spyglass does, ×5, S2234). See the proposal below. Whether the arrow's drop and the wind are fair at 70 m I could not judge headless.
+- S2307: Philo's third lens, from straight on at the cast's distance, reads as goggles pushed up on the brow, not a chimney. Siadhal's falchion: hidden, as S2307 says; his hood and staff are his tell from afar, and that is enough.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2296: judged (above): pale by day, grey at dusk. The street is not drawn through it; across a 6.9 m window it reads as bright fog, which is better than night.
+- S2293: judged (above): the helms still lamps, the mail black coats.
+- S2327: the arrival in the goods shop (judged: the leaf, above); in the healer's you arrive 1.29 m off Menas's left shoulder and his stand-in's face fills a third of the view (`-mark-healer-arrival.jpg`). The armourer's, barber's and weaponsmith's town-house shops I did not enter (the port has none of them as town houses).
+- S2328 and S2303: not walked. The port's free halls are a 12.5 m goods hall (Eoin's) and the forge; neither is a short hall.
+- S2329: in the game, Gráinne the Guildmaster wears a plaid cape over both shoulders, so the tabard shows only between its edges, and from the door at 6 m the crossed swords are two pale marks, barely read. Her sword stands point-up beside her head, as the driver holds every sword at rest (Eadburh's in the cast does the same). In the prototype's row the third Guildmaster is barefoot under his mail (`guildlivery-2329-wide.jpg`), which reads oddly for a master-at-arms. Sorcha the Archmage I saw only as the stand-in.
+- S2291, S2294, S2300, S2316: judged (above).
+- Not judged headless: S2307's purses (S2322) up close, the festivals' acts (S2324–2326, systems with nothing drawn yet), the commencement (S2319), First Snow (S2321).
+
+**Backlog notes**
+- Section I's struck critic lines of 7 and 14 Nov (the cart, the garden, the bench rack, the Whispercap, the *24 h*) stand at the foot of L12 (lines 855–859), not in section I. Harmless, but the next critic appending at the end of the file would land in L12.
+
+**Proposal:** one, *A drawn bow narrows the view*, in `docs/proposals.md`.
