@@ -83,12 +83,16 @@ jobs:
     # 1 Nov (41305372499) packed its 20 shards to 63 minutes by tests/times.json and they took 70 to 135: 11 were cut at 90:00
     # and 23 suites never ran. The table is re-measured from that run (83 minutes a shard), and 150 leaves room for a retry
     # and a slow runner. Twenty stays the most shards: more would only queue (GitHub Free runs twenty jobs at once).
+    # 16 Nov 2026 (Session 2304, backlog K): a full run has 240, not 150 (GitHub's job limit is 360). The weekly run of 15 Nov
+    # (43717030831) drew runners of two speeds: nine shards ran their suites at 0.60-0.88 of tests/times.json and finished in 73-92
+    # minutes, eleven at 1.17-1.67 and needed 120-167, and eight of those were cut at 150 with 21 suites never started. The table's
+    # mean is right; the spread is the machine's, so the limit, not the table, moves. A pull request keeps 90.
     needs: plan
     if: needs.plan.outputs.mode != 'none'
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ needs.plan.outputs.mode == 'full' && 150 || 90 }}
+    timeout-minutes: ${{ needs.plan.outputs.mode == 'full' && 240 || 90 }}
     env:
-      RETRY_BUDGET_MIN: ${{ needs.plan.outputs.mode == 'full' && 140 || 80 }}
+      RETRY_BUDGET_MIN: ${{ needs.plan.outputs.mode == 'full' && 230 || 80 }}
     strategy:
       fail-fast: false
       matrix:
