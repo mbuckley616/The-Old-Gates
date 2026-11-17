@@ -38,6 +38,22 @@ console.log(JSON.stringify(d));
 check(`the ring is down at 4:30 (${!d.dawn}), up at 9:00 (${d.morning}), down after noon (${!d.noon}), and not put up in a lean year (${!d.thin})`, !d.dawn && d.morning && !d.noon && !d.thin, d);
 check(`fairRingStart with no middle fights in the ring (${d.mid} m off its middle); it stays up past noon while the bout runs and comes down after`, d.ok && d.mid < .01 && d.during && !d.after, d);
 
+// Session 2345: the ring on E. Inside the rope while it stands, the world's prompt is the ring's and E steps you in; the day before, after
+// noon and 3 m outside the rope there is no prompt; in the bout the prompt is gone; a second try the same year gives its refusal.
+const e = await page.evaluate(id => { const site = siteAnywhere(id), S = WORLD.settle.get(id), F = S.fair, st = TS(site), keep = { p: st.p, flags: st.flags }, o = {};
+  const sf = FESTIVALS.find(f => f.key === 'straitfair'), n = ((sf.month - CAL.startMonth + 12) % 12) * 28 + sf.dom - 1;
+  const at = (d, h) => { worldState.gameTimeAbsMinutes = d * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  st.p = 70; st.flags = {}; worldState.festivals = {};
+  try { px = F.x + 1; pz = F.z; at(n - 1, 9); o.before = fairRingPrompt(); at(n, 13); o.after = fairRingPrompt();
+    at(n, 9); o.on = fairRingPrompt(); o.world = shipPrompt(); px = F.x + F.r + 3; o.off = fairRingPrompt(); px = F.x + F.r + .5; o.rope = fairRingPrompt();
+    o.e = shrineInteract(); o.started = !!FAIRRING; o.mid = FAIRRING ? +Math.hypot(FAIRRING.x - F.x, FAIRRING.z - F.z).toFixed(3) : null; o.during = fairRingPrompt();
+    fairRingEnd('left'); o.again = fairRingPrompt(); const m = []; const sm = showMsg; window.showMsg = t => m.push(t); try { o.e2 = shrineInteract(); } finally { window.showMsg = sm; } o.say2 = m[0]; o.started2 = !!FAIRRING;
+  } finally { if (FAIRRING) fairRingEnd('left'); Object.assign(st, keep); worldState.festivals = {}; }
+  return o; }, id);
+console.log(JSON.stringify(e));
+check(`on the fair's morning inside the rope the world's prompt is the ring's (${e.world}), and at the rope (${!!e.rope}); the day before ${e.before}, after noon ${e.after}, 3 m outside ${e.off}`, e.on === "Press 'E' to step into the ring" && e.world === e.on && e.rope === e.on && !e.before && !e.after && !e.off, e);
+check(`E steps you into the ring (${e.mid} m off its middle), the prompt gone while you fight; the same year E gives *${e.say2}* and starts nothing`, e.e && e.started && e.mid < .01 && !e.during && e.again === e.on && e.e2 && /this year/.test(e.say2 || '') && !e.started2, e);
+
 // a picture on the fair's morning, from outside the rope
 const pic = path.join(here, '../docs/prototypes/kit-fair-ring.png');
 await page.evaluate(id => { const F = WORLD.settle.get(id).fair, site = siteAnywhere(id), st = TS(site); st.p = 70; st.flags = {};
