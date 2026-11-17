@@ -7,8 +7,14 @@ const g = await boot(); const { page } = g;
 // Session 658: the first two checks failed on CI (8 Oct, three runs on main; the slot empty, the menu open) and never in the
 // container, which runs an older Chromium than CI installs. The store's own words for a failure are kept, and shown in the detail.
 const said = []; page.on('console', m => { if (m.type() === 'error' || /save|store/i.test(m.text())) said.push(m.text().slice(0, 160)); });
+// Session 2350: the suite runs at Low. On software GL every world frame held the page's thread 8–11 s at Middle, and every step here
+// (each save's picture, each load, each click) waited behind one; alone it took 575 s at s1682 and a slow weekly runner was cut at
+// run.mjs's 900 s cap (15 Nov, both tries). Low is what the game's own first-run probe sets on a machine this slow (`qualityProbe`,
+// over 28 ms a frame), and the setting lives in og.settings, never in a save, so every reload below keeps it and no check reads it.
+await page.evaluate(() => { SETTINGS.quality = 0; SETTINGS.qualityProbed = true; settingsSave(); qualityApply(); });
 await g.intoWorld();
 const W = (ms) => page.waitForTimeout(ms);
+const T0 = Date.now(); const took = (t) => Math.round((Date.now() - t) / 1000);
 // Session 1213: the title is ready when Load Game shows (the save store has read its index, every script has run). On the new look
 // the page carries three.js 0.170 and the people's 13 MB pack, and on CI a reload was not ready 5 s on (#443's run 39316849862:
 // back at the title with Load Game still hidden, its click did nothing). A reload waits for the title, up to 120 s, not a fixed 5 s.
@@ -63,10 +69,13 @@ check('the Load tab loads the slot: 654 gold', (await page.evaluate(() => gold))
 
 // export by the button: a real file
 await page.evaluate(() => openSLMenu('load', false)); await W(400);
-const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }),
+// Session 2350: the download waits for the export, up to 180 s, not 15 (the export reads every save and its picture while the world's
+// frames hold the thread: 6–10 s for one save here, and at s1682 the three saves' export missed the 15 s alone)
+const tExp = Date.now();
+const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 180000 }),
   page.evaluate(() => [...document.querySelectorAll('#sl-slots button')].find(b => /Export/.test(b.textContent)).click())]);
 const file = await dl.path(); const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
-check('Export writes a file holding the slot and the autosave', doc.format === 'the-old-gates/character' && doc.saves.length >= 2 && dl.suggestedFilename().endsWith('.json'), { name: dl.suggestedFilename(), saves: doc.saves.length });
+check('Export writes a file holding the slot and the autosave', doc.format === 'the-old-gates/character' && doc.saves.length >= 2 && dl.suggestedFilename().endsWith('.json'), { name: dl.suggestedFilename(), saves: doc.saves.length, s: took(tExp) });
 
 // delete the character by its button (twice), reload: nothing left
 await page.evaluate(() => { const b = [...document.querySelectorAll('#sl-slots button')].find(b => /Delete character/.test(b.textContent)); b.click(); b.click(); }); await W(1500);
@@ -84,7 +93,7 @@ await titleReady(); await W(1000);
 const back0 = await page.evaluate(() => ({ title: getComputedStyle(document.getElementById('ov')).display !== 'none', started: typeof started !== 'undefined' && started, lgb: getComputedStyle(document.getElementById('lgb')).display !== 'none' }));
 check('closing the title\'s Load menu without loading returns to the title', back0.title && !back0.started && back0.lgb, back0);
 await page.evaluate(() => document.getElementById('lgb').click()); await W(1500);
-const [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 10000 }),
+const [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 180000 }),
   page.evaluate(() => [...document.querySelectorAll('#sl-slots button')].find(b => /Import/.test(b.textContent)).click())]);
 await fc.setFiles(file); await W(2500);
 const imp = await page.evaluate(() => ({ chars: ssChars().map(c => c.name + ':' + c.saves.length), rows: document.querySelectorAll('#sl-slots .sl-slot').length }));
@@ -97,4 +106,5 @@ await clickRow(i); await W(300); await clickRow(i); await loaded(654); await g.h
 const back = await page.evaluate(() => ({ started, gold, name: playerName }));
 check('after another reload, the imported slot loads from the title: Wren, 654 gold', back.started && back.gold === 654 && back.name === 'Wren', { back, rows });
 check('no page errors', g.errs.length === 0, g.errs);
+console.log(`  saveui: ${took(T0)} s from the world's entry, quality ${await page.evaluate(() => SETTINGS.quality)}`);
 await g.close();

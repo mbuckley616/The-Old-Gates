@@ -473,7 +473,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `savepic` | 4/14 | pass | pass | 67 |  |
 | `saveretry` | 6/14 | pass | pass | 56 |  |
 | `saves` | 2/14 | pass | pass | 76 |  |
-| `saveui` | 6/14 | pass | red | 140 | 15 Nov weekly: red twice, each try killed at run.mjs's 900 s cap (772 s on 8 Nov). Section I, Session 2336 |
+| `saveui` | 6/14 | pass | pass alone (red under load: the store's timer, section I) | 508 | 15 Nov weekly: red twice, each try killed at run.mjs's 900 s cap (772 s on 8 Nov). Shortened, Session 2350: at Low, 508 s alone, 13/13; 628 s beside a second boot, 9/13 (the store's 10 s timer behind a long frame, the systems builder's) |
 | `scaleratio` | 6/14 | pass | red | 355 | 15 Nov weekly: red twice. c3_5_s6 (the Mark) has 3 storeys to measure and the check asks for at least 4: its houses are the kit's halls now. Red here at s1677. Section I, Session 2336 |
 | `scalerooms` | w14/20 | — | pass | 183 |  |
 | `schoolroster` | 6/14 | pass | pass | 154 |  |
