@@ -39,7 +39,9 @@ const measure = () => page.evaluate(() => {
   // (A farmhouse's transom door would read to its transom's head, its rail as thin as a glazed door's: no town has one, villages do.)
   const KEY = new Map(); if (typeof PKIT !== 'undefined') { const M = PKIT.gl.mats(); for (const k in M) KEY.set(M[k], k);
     /* S1310 — and Aurenne's house (PKIT.au, Session 1287): a leaf of one of its door colours with its iron, in a dressed stone surround */
-    if (PKIT.au) { const A = PKIT.au.mats(); A.door.forEach((m, i) => KEY.set(m, 'p:au' + i)); if (!KEY.has(A.iron)) KEY.set(A.iron, 'iron'); if (!KEY.has(A.stone)) KEY.set(A.stone, 'dress'); } }
+    if (PKIT.au) { const A = PKIT.au.mats(); A.door.forEach((m, i) => KEY.set(m, 'p:au' + i)); if (!KEY.has(A.iron)) KEY.set(A.iron, 'iron'); if (!KEY.has(A.stone)) KEY.set(A.stone, 'dress'); }
+    /* S2344 — and the Mark's halls and town houses (PKIT.mk, S1286 and S2003): the leaf is the door's planks with their iron straps; the wall round it ends it */
+    if (PKIT.mk) { const M = PKIT.mk.mats(); KEY.set(M.door, 'p:mk'); if (!KEY.has(M.iron)) KEY.set(M.iron, 'iron'); } }
   // and a kit house's rays meet only its own building (the town's baked meshes cost every ray a pass over the whole town)
   let kitG = null; Sx.group.traverse(o => { if (o.name === 'kit houses') kitG = o; });
   const ownKit = b => { if (!kitG) return null; const v = new THREE.Vector3(); let best = null, bd = 1e9;
@@ -49,15 +51,16 @@ const measure = () => page.evaluate(() => {
     return k.startsWith('p:') || k === 'iron' ? 'leaf' : k === 'glass' || k === 'lit' ? 'glass' : k === 'frame' ? 'frame' : k === 'dress' ? 'dress' : 'end'; };
   // (2 cm a step while the ray stays on the leaf or its glass; back to the last such step and 5 mm a step through anything else)
   const kitRun = (ox, oz, nx, nz, base) => { const at = y => hitOf(ox, base + y, oz, -nx, -nz);
-    if (kind(at(.6)[0]) !== 'leaf') return null;
-    let t = .6, rail = null, fine = false;
-    for (let y = .62; y < 5;) { const c = kind(at(y)[0]), ok = c === 'leaf' || c === 'glass';
+    /* S2344: a Markish hall's door is up five steps on a 0.8 m footing, so the first leaf is sought from 0.6 to 1.6 */
+    let y0 = .6; while (y0 <= 1.6 && kind(at(y0)[0]) !== 'leaf') y0 += .1; if (y0 > 1.6) return null;
+    let t = y0, rail = null, fine = false;
+    for (let y = y0 + .02; y < 5;) { const c = kind(at(y)[0]), ok = c === 'leaf' || c === 'glass';
       if (!fine && !ok) { fine = true; y = t + .005; continue; }
       if (c === 'frame') { if (rail == null) rail = y; if (y - rail >= .065) { t = rail; break; } y += .005; continue; }
       if (!ok) { if (rail != null) t = rail; break; }
       rail = null; t = y; fine = false; y += .02; }
     const footAt = y => { const c = kind(at(y).find(q => !(kind(q) === 'dress' && q.point.y < base + .3))); return c === 'leaf' || c === 'glass' || c === 'frame'; };
-    let f = .6; fine = false; for (let y = .58; y > -1;) { if (footAt(y)) { f = y; y -= fine ? .005 : .02; continue; } if (fine) break; fine = true; y = f - .005; }
+    let f = y0; fine = false; for (let y = y0 - .02; y > -1;) { if (footAt(y)) { f = y; y -= fine ? .005 : .02; continue; } if (fine) break; fine = true; y = f - .005; }
     return { f, t }; };
   const clipped = [], va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3();
   const clipNear = (ms, dx, dz, nx, nz) => { const qx = [dx + nx * 1.1, dx - nx * 2.1], qz = [dz + nz * 1.1, dz - nz * 2.1], pad = .25;
@@ -93,7 +96,8 @@ const measure = () => page.evaluate(() => {
       let f = 1.3, t = 1.3; for (let y = 1.3; y > -1; y -= .005) { const d = hitAt(ox, base + y, oz, -nx, -nz); if (d == null || Math.abs(d - dm) > .006) break; f = y; }
       for (let y = 1.3; y < 5; y += .005) { const d = hitAt(ox, base + y, oz, -nx, -nz); if (d == null || Math.abs(d - dm) > .006) break; t = y; }
       if (!best || t - f > best.t - best.f) best = { f, t, dm, ox, oz }; }
-    if (!best) continue; const foot = best.f, top = best.t;
+    /* S2344: a house whose door was not read (an open shop's doorway) still has its storeys counted */
+    const foot = best ? best.f : null, top = best ? best.t : null;
     out.push({ id: h.id, type: h.type, kit: h.kit ? h.kit.kind : null, two: !!h.two, storeys: h.storeys || 1, style: h.style, leafTop: top, foot, wallH: h.wallH || null });
   }
   for (const c of clipped) c.geometry.dispose();
@@ -107,7 +111,7 @@ for (const t of towns) {
   const m = await measure();
   const H = (m.houses || []).filter(h => h.leafTop != null && h.foot != null);
   const doors = H.map(h => +(h.leafTop - h.foot).toFixed(2));
-  const storeys = H.filter(h => h.wallH != null).map(h => +(h.wallH / h.storeys).toFixed(2)); const odd = H.filter(h => { const d = h.leafTop - h.foot; return d / P < 1.1 || d / P > 1.25; }).map(h => h.id + ':' + h.type + ':' + (h.leafTop - h.foot).toFixed(2));
+  const storeys = (m.houses || []).filter(h => h.wallH != null && h.kit !== 'forge' /* the smithy's one high room under its 3.2 m eaves is no dwelling's storey (scalerooms' exception, S2018) */).map(h => +(h.wallH / h.storeys).toFixed(2)); const odd = H.filter(h => { const d = h.leafTop - h.foot; return d / P < 1.1 || d / P > 1.25; }).map(h => h.id + ':' + h.type + ':' + (h.leafTop - h.foot).toFixed(2));
   const r = { town: t.id, nat: t.nat, houses: H.length, doors: [Math.min(...doors), Math.max(...doors)], storeys: [Math.min(...storeys), Math.max(...storeys)] };
   console.log(JSON.stringify(r));
   check(`${t.id} (${t.nat}): every house door is 1.1 to 1.25 of a 1.8 m person (${H.length} doors measured)`, H.length >= 4 && !odd.length, { ...r, odd });
