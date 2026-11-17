@@ -3591,7 +3591,7 @@ const giver=`${lord.title} ${lord.name}`;
     return g;}
   function buttPlace(B){const D=BUTT_ENDS[B.end],x=B.x+B.dx*D,z=B.z+B.dz*D,y=activeTerrainH(x,z)+BUTT_Y;B.cx=x;B.cy=y;B.cz=z;
     if(B.mesh){B.mesh.position.set(x,y,z);B.mesh.rotation.y=Math.atan2(-B.dx,-B.dz);}}
-  function buttsStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING)return {say:'You are already in a contest.'};
+  function buttsStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
     const k=buttsOpenFor(o.site,o);if(!k.ok)return k;if(!EQ.weapon||weaponSkill(EQ.weapon)!=='bow'||!EQ.ammo)return {say:'You’ll want a bow and arrows for the butts.'};
     const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;let dx=o.dx,dz=o.dz;if(dx==null){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}const n=Math.hypot(dx,dz)||1;
     const B=BUTTS={site:s,x,z,dx:dx/n,dz:dz/n,end:0,shots:[],year:k.year,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),rivals:buttRivals(s,k.year),mesh:o.mesh===false?null:buttMesh()};
@@ -3658,7 +3658,7 @@ const giver=`${lord.title} ${lord.name}`;
       struck:()=>{R.assaults++;ringCrime(R.site.id,'assault',CRIME_PTS.assault);showMsg(`You struck ${e.name} after the yield. That is assault.`,'#ff6060');},
       won:()=>{fairRingDrop(e);R.n++;if(R.n>=FAIR_N){fairRingEnd('won');return;}showMsg(`${e.name} is spared. ${FAIR_NAMES[R.n]} steps over the rope.`,'#e8d8a0');fairRingBout(R);},
       lost:(b,how)=>fairRingEnd('lost',how),murder:()=>fairRingEnd('murder')}});}
-  function fairRingStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING)return {say:'You are already in a contest.'};
+  function fairRingStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
     const k=fairRingOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
     const R=FAIRRING={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,n:0,foe:null,held:kitHold(),assaults:0,end:null};
     const F=worldState.festivals||(worldState.festivals={});F['straitfair:'+s.id]={year:k.year,won:false,quarrels:0};
@@ -3675,6 +3675,62 @@ const giver=`${lord.title} ${lord.name}`;
     showMsg(how==='won'?`Three quarrels, three yields. The purse is yours: ${paid} gold, and the reeve’s ring.${skill?' Your Hand-to-hand rises.':''}`:how==='murder'?`${e?e.name:'The fighter'} is dead. The fair goes quiet, and the rings of the Mark are shut to you.`:how==='lost'?(why==='rope'?'You step over the rope. Not this year.':'You go down. Not this year.'):'The ring breaks up. Not this year.','#e8d8a0');
     R.end=how;R.paid=paid;R.skill=skill;return R;}
   function tickFairRing(dt){const R=FAIRRING;if(!R)return;if(!BOUT||BOUT.foe!==R.foe){fairRingEnd('left');return;}boutTick(dt);}
+  // S2319 — festivals B session 4, the Commencement's disputation (Michael's B on #1628, docs/design/festivals.md, *The contests*). On
+  // the Commencement (Shearing 6), 9:00 to 12:00, in an Aurennais town keeping it full or named, the examiners put three questions,
+  // each upon a book the academy keeps: three of DISP_BOOKS (the nine *Festivals on the Calendar, IV* names, those the game holds),
+  // drawn by seededRng('disputation', site and year), so a friend at the same table is asked the same three. A question is answered
+  // from the book if you have read it (booksRead), or argued: a Speech check, passed at DISP_CHECK (40 for the first, 55 the second,
+  // 70 the third; the page's 40 + 15 a question), read off the level, no roll. Two of three win: the purse 40 + 20 gold a tier above
+  // the first, the scholar's seal named for the town and year, and +1 Speech once a year whatever the town; each question answered is
+  // a use of Speech at full weight. Losing costs the try. Once begun it runs to its end, past noon too; walking DISP_LEAVE from the
+  // table withdraws you, a loss. One try a town a year (worldState.festivals['disputation:'+site], the character's). The table, the
+  // examiners and their questions' words are the look builder's and the quest writer's: dispStart({site,x,z}) and dispTopics() are
+  // what they call, and the lines here are placeholders. Named actions: dispStart, dispAnswer, dispEnd.
+  const DISP_OPEN=9,DISP_CLOSE=12,DISP_N=3,DISP_WIN=2,DISP_CHECK=[40,55,70],DISP_LEAVE=12,DISP_PURSE=40,DISP_PURSE_TIER=20,
+    DISP_BOOKS=['aldrics_third','stoics_rampart','fletchers_hand','winds_account','letters_from_ashwold','of_binding_stones','on_the_seals','seventh_niche','words_on_stones'];
+  let DISP=null; /* {site,x,z,tier,year,qs:[book ids],n,answers:[{book,how,ok}],end} */
+  function dispBook(id){return BOOKS.find(b=>b.id===id)||null;}
+  // the three, seeded by site and year: a Fisher–Yates draw of the pool the game holds
+  function dispQuestions(site,year){const r=seededRng('disputation',site.id+':'+year),P=DISP_BOOKS.filter(dispBook);
+    for(let i=P.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[P[i],P[j]]=[P[j],P[i]];}return P.slice(0,DISP_N);}
+  function dispOpenFor(site,o){o=o||{};const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return {say:'There is no disputation here.'};
+    const h=festivalHere(s.id);if(!h||h.f.key!=='commencement')return {say:'The disputation sits at the Commencement.'};
+    if(h.state==='thin')return {say:'No disputation this year. The town has not subscribed the purse.'};
+    const hr=hourNow();if(!o.force&&(hr<DISP_OPEN||hr>=DISP_CLOSE))return {say:`The examiners sit from ${DISP_OPEN}:00 till noon.`};
+    const F=worldState.festivals||{},me=F['disputation:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have sat here this year.'};
+    return {ok:true,site:s,state:h.state,year:yr};}
+  function dispAsk(D){const b=dispBook(D.qs[D.n]);showMsg(`The ${['first','second','third'][D.n]||'next'} question, upon ${b?b.name:'a book'}.`,'#e8d8a0');}
+  function dispStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
+    const k=dispOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
+    const D=DISP={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,qs:dispQuestions(s,k.year),n:0,answers:[],end:null};
+    const F=worldState.festivals||(worldState.festivals={});F['disputation:'+s.id]={year:k.year,won:false,answered:0}; /* the try is used once you sit */
+    showMsg('The examiners are seated. Three questions, each upon a book; two answered carry the seal.','#e8d8a0');dispAsk(D);
+    return {ok:true,qs:D.qs.slice(),tier:D.tier};}
+  // the question now put: 'book' answers it only if you have read its book; 'argue' is the Speech check at this question's DISP_CHECK
+  function dispCanBook(){const D=DISP;return !!D&&D.n<DISP_N&&booksRead.has(D.qs[D.n]);}
+  function dispAnswer(how){const D=DISP;if(!D||D.n>=DISP_N)return null;const book=D.qs[D.n],need=DISP_CHECK[D.n];
+    if(how==='book'&&!booksRead.has(book))return {say:'You have not read it.'};
+    const ok=how==='book'||skillLv('speech')>=need;D.answers.push({book,how,ok,need});
+    if(ok&&typeof skillUse==='function')skillUse('speech',1,'disputation:'+D.site.id+':'+D.year+':'+D.n);
+    showMsg(ok?'The examiners allow it.':'The examiners cannot allow it.','#e8d8a0');
+    D.n++;const right=D.answers.filter(a=>a.ok).length;
+    if(D.n>=DISP_N)dispEnd(right>=DISP_WIN?'won':'lost');else dispAsk(D);
+    return {ok,right,n:D.n};}
+  function dispEnd(how){const D=DISP;if(!D)return null;DISP=null;const right=D.answers.filter(a=>a.ok).length,won=how==='won'&&right>=DISP_WIN;
+    const F=worldState.festivals||(worldState.festivals={}),me=F['disputation:'+D.site.id]||(F['disputation:'+D.site.id]={year:D.year});
+    me.answered=right;me.won=won;let paid=0,skill=false;
+    if(won){paid=payPurse(DISP_PURSE+DISP_PURSE_TIER*(Math.max(1,D.tier)-1));
+      bagAdd({name:`Scholar’s Seal of ${D.site.name||'the Commencement'}`,ico:'🔏',type:'misc',weight:.05,buyPrice:0,sellMult:0,keepsake:'commencement',site:D.site.id,year:D.year,desc:`Sealed at the Commencement, ${D.site.name||'Aurenne'}, in the ${calOrd(D.year)} year of the Peace.`});
+      const S=F.skill||(F.skill={});if(S.commencement!==D.year){S.commencement=D.year;skill=buttsSkillUp('speech');}}
+    const nw=['None','One','Two','Three'][right]||String(right);
+    showMsg(won?`${nw} of three. The purse is yours: ${paid} gold, and the scholar’s seal.${skill?' Your Speech rises.':''}`:how==='left'?'You leave the table. The examiners enter it as withdrawn.':`${nw} of three. Not this year.`,'#e8d8a0');
+    D.end=how;D.right=right;D.paid=paid;D.skill=skill;return D;}
+  function tickDisp(){const D=DISP;if(!D)return;if(Math.hypot(px-D.x,pz-D.z)>DISP_LEAVE)dispEnd('left');}
+  // the presiding examiner's topics (the quest writer's words go here): sit, and while a question is put, answer from the book or argue it
+  function dispTopics(site){return [
+    {label:'I would sit the disputation.',quest:true,avail:()=>!DISP,fn:()=>{const k=dispStart({site});return k.ok?'The first question is put.':k.say;}},
+    {label:'Answer from the book.',quest:true,avail:()=>dispCanBook(),fn:()=>{const a=dispAnswer('book');return a&&a.say?a.say:'Entered as answered.';}},
+    {label:'Argue it.',quest:true,avail:()=>!!DISP&&DISP.n<DISP_N,fn:()=>{const a=dispAnswer('argue');return a&&a.say?a.say:a&&a.ok?'Allowed.':'Not allowed.';}}];}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,
