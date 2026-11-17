@@ -320,5 +320,31 @@ console.log(JSON.stringify(ln).slice(0, 2500));
 check('the lanternmaker stands on the square on the Night from 18:00 to 22:00 (not at 17:00 or 22:00), and greets with her own line', !ln.at17 && ln.at19 === 'Lanternmaker' && !ln.at22 && (ln.people !== 'gatelander' || ln.greet === ln.L.greet) && ln.labels.includes('A lantern.'), ln);
 check('*For me* costs nothing and spends the year\'s lantern; a lantern sent costs two gold with her answer; short of two, nothing; a town that names you gives it', ln.meGold === 10 && ln.meRec.sent === false && !ln.labelsAfter.includes('A lantern.') && ln.sentGold === 8 && ln.rec.sent === true && ln.rec.act === 28 && /will know their own|They’ll know their own/.test(ln.sent) && /two gold/.test(ln.poor) && !ln.poorRec && ln.givenGold === 1, ln);
 check('the last lantern\'s line at 22:00 on the square; the next day a Gatelander says you stood with them, once, and not for *For me*', ln.last && ln.next === ln.LOG.after && ln.next2 !== ln.LOG.after && ln.nextMe !== ln.LOG.after, ln);
+// 13. the Blaze (Session 2326): a log on the square's fire from 17:00 to first light, once a town a year; the reeve's line; a Markman's
+// word that night, once, past midnight too; first light's line on the square
+const bz = await page.evaluate(() => {
+  const site = ladderSites().find(s => isleAt(s.x, s.z) === 'mark'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, p0 = [px, pz];
+  const bf = FESTIVALS.find(f => f.key === 'blaze');
+  const at = (dd, h) => { worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + bf.month - CAL.startMonth) * CAL.monthLen + bf.dom - 1 + dd) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const man = () => ({ _siteId: site.id, people: 'markman', greeting: ['-'] }), reeve = { _siteId: site.id, people: 'markman', _lord: true, greeting: ['-'] };
+  st.p = 70; st.flags = {}; worldState.festivals = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1;
+  const out = { mark: isleAt(site.x, site.z) };
+  try {
+    at(0, 15); out.p15 = festActPrompt(); out.reeve = feastGreeting(reeve);
+    at(0, 20); out.p20 = festActPrompt(); px = site.x + 8; out.far = festActPrompt(); px = site.x + 1;
+    at(1, 2); out.p02 = festActPrompt(); out.did = festActInteract(); out.rec = JSON.parse(JSON.stringify(worldState.festivals['blaze:' + site.id] || null));
+    out.again = festActPrompt(); out.thanks = feastGreeting(man()); out.thanks2 = feastGreeting(man());
+    at(1, 7); out.p07 = festActPrompt();
+    worldState.festivals = {}; at(0, 21); festActInteract(); out.eve = feastGreeting(man()); at(1, 1); out.eveAfter = feastGreeting(man());
+    _blazeLast = ''; at(1, 6); tickBlazeLight(); out.light = _blazeLast; tickBlazeLight(); out.light2 = _blazeLast;
+  } finally { worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.T = FEST_ACTS.blaze.thanks; out.R = FEST_LORD_LINE.blaze.line; out.ev = bf.dom;
+  return out;
+});
+console.log(JSON.stringify(bz).slice(0, 2000));
+check('the Blaze: a log on the square\'s fire from 17:00 to first light (not at 15:00 or 7:00, not 8 m off), the night\'s act on the evening\'s year, once', bz.mark === 'mark' && bz.p15 === null && /put a log/.test(bz.p20) && bz.far === null && /put a log/.test(bz.p02) && bz.did && bz.rec && bz.rec.act === 28 && bz.again === null && bz.p07 === null, bz);
+check('the reeve\'s Blaze line; a Markman\'s word that night once, before midnight or after, and not again', bz.reeve === bz.R && bz.thanks === bz.T && bz.thanks2 !== bz.T && bz.eve === bz.T && bz.eveAfter !== bz.T, bz);
+check('first light on the square after the Blaze: the fire let die, once', bz.light && bz.light === bz.light2 && bz.light.startsWith(''), bz);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -3784,30 +3784,38 @@ const giver=`${lord.title} ${lord.name}`;
   const FEST_POLE_R=4,FEST_WATER_R=6,FEST_BLESS_H=12;
   const FEST_ACTS={greening:{prompt:'Press \'E\' to tie a ribbon to the pole',ico:'🎀',
       log:'You tie a ribbon to the pole among the town’s. It is not a house’s colour, and nobody minds.',
-      thanks:'That was yours, the plain one? Good. The pole doesn’t care who you are, only that you came.'},
-    riverfair:{prompt:'Press \'E\' to pour a cup for the sea',ico:'🐴',log:'You pour a cup into the water. It goes the way the river goes.'}};
-  const FEST_LORD_LINE={greening:'It’s the Greening, and I’ve no business for anyone who isn’t carrying a lamb. Come back tomorrow, when the beasts are counted and the arguing starts.'};
+      thanks:'That was yours, the plain one? Good. The pole doesn’t care who you are, only that you came.',who:'gatelander'},
+    riverfair:{prompt:'Press \'E\' to pour a cup for the sea',ico:'🐴',log:'You pour a cup into the water. It goes the way the river goes.'},
+    blaze:{prompt:'Press \'E\' to put a log on the fire',ico:'🔥',night:true,who:'markman', /* S2326 — draft II §2 */
+      log:'You put a log on the fire. It catches. Someone you don’t know claps you once on the shoulder and moves off.',
+      thanks:'Saw your log go on. Good. A stranger’s log burns same as ours.'}};
+  const FEST_LORD_LINE={greening:{who:'gatelander',line:'It’s the Greening, and I’ve no business for anyone who isn’t carrying a lamb. Come back tomorrow, when the beasts are counted and the arguing starts.'},
+    blaze:{who:'markman',line:'Blaze. No business till tomorrow. Bring a log or stand back from the fire.'}};
+  // S2326 — the Blaze's night runs from 17:00 to first light (FEST_NIGHT), past midnight into the next date: the festival a night act reads
+  const FEST_NIGHT=[17,6];
+  function festNightHere(s){const hr=hourNow();if(hr>=FEST_NIGHT[0]){const h=festivalHere(s.id);return h&&FEST_ACTS[h.f.key]&&FEST_ACTS[h.f.key].night?h:null;}
+    if(hr<FEST_NIGHT[1]){const h=festivalHere(s.id,absMin()-1440);return h&&FEST_ACTS[h.f.key]&&FEST_ACTS[h.f.key].night?h:null;}return null;}
   // the town's water: the river quay's foot, 3 m inland of where the bank meets the river, else the well on the square (6 E, 4 S)
   function festWaterAt(s){if(s.quaySpot&&s.bank)return {x:s.quaySpot.x-s.bank.dx*3,z:s.quaySpot.z-s.bank.dz*3};return {x:s.x+6,z:s.z+4};}
   function festActRec(key,site){const F=worldState.festivals||{};return F[key+':'+(site.id||site)]||null;}
   function festActDone(key,site,year){const r=festActRec(key,site);return !!r&&r.act===(year!=null?year:calDay(absMin()).year);}
   // where you could do the day's act now: {key, site, prompt} or null
   function festActHere(){if(typeof isInterior==='function'&&isInterior())return null;if(BUTTS||FAIRRING||DISP||BOUT)return null;
-    const S=nearSite();if(!S||!S.site)return null;const s=S.site,h=festivalHere(s.id);if(!h||h.state==='none')return null;const A=FEST_ACTS[h.f.key];if(!A)return null;
-    if(festActDone(h.f.key,s))return null;
-    if(h.f.key==='greening'){if(Math.hypot(px-s.x,pz-s.z)>FEST_POLE_R)return null;}
+    const S=nearSite();if(!S||!S.site)return null;const s=S.site,h=festNightHere(s)||festivalHere(s.id);if(!h||h.state==='none')return null;const A=FEST_ACTS[h.f.key];if(!A)return null;
+    if(A.night&&!festNightHere(s))return null;if(festActDone(h.f.key,s,h.f.key==='blaze'?calDay(absMin()-(hourNow()<FEST_NIGHT[1]?1440:0)).year:null))return null;
+    if(h.f.key==='greening'||h.f.key==='blaze'){if(Math.hypot(px-s.x,pz-s.z)>FEST_POLE_R)return null;} /* the pole, the fire: the square's middle */
     else if(h.f.key==='riverfair'){if(hourNow()!==FEST_BLESS_H)return null;const w=festWaterAt(s);if(Math.hypot(px-w.x,pz-w.z)>FEST_WATER_R)return null;}
     else return null;
     return {key:h.f.key,site:s,state:h.state,prompt:A.prompt};}
   function festActPrompt(){const a=festActHere();return a?a.prompt:null;}
-  function festAct(key,site){const s=typeof site==='string'?siteAnywhere(site):site,A=FEST_ACTS[key];if(!s||!A)return null;const c=calDay(absMin());
+  function festAct(key,site){const s=typeof site==='string'?siteAnywhere(site):site,A=FEST_ACTS[key];if(!s||!A)return null;const c=calDay(absMin()-(A.night&&hourNow()<FEST_NIGHT[1]?1440:0)); /* a night's act is the evening's date */
     const F=worldState.festivals||(worldState.festivals={}),k=key+':'+s.id,r=F[k]||(F[k]={});if(r.act===c.year)return null;r.act=c.year;r.actN=c.n;delete r.thanked;
     showMsg(A.log,'#e8d8a0');if(typeof addLog==='function')addLog(A.ico,A.log);return r;}
   function festActInteract(){const a=festActHere();if(!a)return false;festAct(a.key,a.site);return true;}
   // the day's word after an act (feastGreeting): a Gatelander of the town, once, the same day; the lord's line on the Greening
   function festActGreeting(def,h){if(!def||!h)return null;const A=FEST_ACTS[h.f.key],s=siteAnywhere(def._siteId);if(!s)return null;
-    if(def._lord&&def.people==='gatelander'&&FEST_LORD_LINE[h.f.key])return FEST_LORD_LINE[h.f.key];
-    if(!A||!A.thanks||def.people!=='gatelander')return null;const r=festActRec(h.f.key,s),c=calDay(absMin());
+    {const LL=FEST_LORD_LINE[h.f.key];if(def._lord&&LL&&def.people===LL.who)return LL.line;}
+    if(!A||!A.thanks||def.people!==A.who)return null;const r=festActRec(h.f.key,s),c=calDay(absMin());
     if(!r||r.act!==c.year||r.actN!==c.n||r.thanked===c.n)return null;r.thanked=c.n;return A.thanks;}
   // S2325 — the festivals' acts, the third: the Night of the Lanterns' lantern (*Festivals on the Calendar, I* §5, word for word). From
   // 18:00 to 22:00 on the night, in a Gatelands town keeping it, the lanternmaker stands on the square (LANTERN_AT off its middle, clear of
@@ -3845,7 +3853,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(!named){gold-=LANTERN_PRICE;if(typeof updateHUD==='function')updateHUD();}
     showMsg(LANTERN_LOG.sent,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.sent);
     return gp==='gatelander'?LL.answers[i]:LANTERN_LOG.sent;}
-  function tickLanterns(dt){_lantT-=dt;if(_lantT>0)return;_lantT=1;
+  function tickLanterns(dt){_lantT-=dt;if(_lantT>0)return;_lantT=1;try{tickBlazeLight();}catch(e){} /* S2326 */
     const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
     const h=s&&isleAt(s.x,s.z)==='gatelands'?lanternOn(s):null,yr=calDay(absMin()).year;
     if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(LANTERN&&(LANTERN.site.id!==s.id||LANTERN.year!==yr))lanternOut();
@@ -3854,6 +3862,14 @@ const giver=`${lord.title} ${lord.name}`;
     if(!s||!on)return;const fh=festivalHere(s.id);if(!fh||fh.f.key!=='lanterns'||fh.state==='none'||hourNow()!==LANTERN_CLOSE)return;
     const k=s.id+':'+calDay(absMin()).n;if(_lantLast===k||Math.hypot(px-s.x,pz-s.z)>LANTERN_SQUARE)return;_lantLast=k;
     showMsg(LANTERN_LOG.last,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.last);}
+  // S2326 — the Blaze after midnight: its Markman's word still that night, and at first light, on the square, once, the fire let die
+  function festNightGreeting(def){if(!def||!def._siteId||def._lantern||def.people!=='markman')return null;const s=siteAnywhere(def._siteId);if(!s)return null;
+    const h=festNightHere(s);if(!h||hourNow()>=FEST_NIGHT[0])return null;const r=festActRec(h.f.key,s),c=calDay(absMin());
+    if(!r||r.actN!==c.n-1||r.thanked===c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return FEST_ACTS[h.f.key].thanks;}
+  let _blazeLast='';function tickBlazeLight(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||hourNow()!==FEST_NIGHT[1])return;
+    const S=nearSite(),s=S&&S.site;if(!s||Math.hypot(px-s.x,pz-s.z)>LANTERN_SQUARE)return;const h=festivalHere(s.id,absMin()-1440);if(!h||h.f.key!=='blaze'||h.state==='none')return;
+    const k=s.id+':'+calDay(absMin()).n;if(_blazeLast===k)return;_blazeLast=k;const L='The fire on the square is let die. Every chimney in the town is smoking.';
+    showMsg(L,'#e8d8a0');if(typeof addLog==='function')addLog('🔥',L);}
   // the day after a lantern sent: a Gatelander of that town, once (feastGreeting, on a day with no festival)
   function festAfterGreeting(def){if(!def||def._lantern||def.people!=='gatelander')return null;const r=festActRec('lanterns',def._siteId),c=calDay(absMin());
     if(!r||!r.sent||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return LANTERN_LOG.after;}
