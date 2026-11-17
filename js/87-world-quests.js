@@ -3584,7 +3584,8 @@ const giver=`${lord.title} ${lord.name}`;
     const hr=hourNow();if(!o.force&&(hr<BUTT_OPEN||hr>=BUTT_CLOSE))return {say:`The butts are shot from ${BUTT_OPEN}:00 to ${BUTT_CLOSE}:00.`};
     const F=worldState.festivals||{},me=F['riverfair:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have shot here this year.'};
     return {ok:true,site:s,state:h.state,year:yr};}
-  function buttMesh(){const g=new THREE.Group(),straw=new THREE.MeshLambertMaterial({color:0xb89a58});
+  function buttMesh(){if(window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.props&&PKIT.props.butt)try{return PKIT.props.butt().group;}catch(e){console.warn('butt',e);} /* S2331 — the kit's butt and bales, its origin the face's middle (38-kit.js) */
+    const g=new THREE.Group(),straw=new THREE.MeshLambertMaterial({color:0xb89a58});
     const boss=new THREE.Mesh(new THREE.CylinderGeometry(BUTT_R+.08,BUTT_R+.08,.3,20),straw);boss.rotation.x=Math.PI/2;g.add(boss);
     const cols=[0xe8e0c8,0x3a5a8a,0xc0a030];for(let k=BUTT_RINGS.length-1;k>=0;k--){const f=new THREE.Mesh(new THREE.CircleGeometry(BUTT_RINGS[k][0],20),new THREE.MeshLambertMaterial({color:cols[k]}));f.position.z=.152+.002*(2-k);g.add(f);}
     for(const sx of [-.45,.45]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.08,BUTT_Y+.2,.08),straw);leg.position.set(sx,-(BUTT_Y)/2+.05,-.25);leg.rotation.x=.25;g.add(leg);}
@@ -3593,10 +3594,11 @@ const giver=`${lord.title} ${lord.name}`;
     if(B.mesh){B.mesh.position.set(x,y,z);B.mesh.rotation.y=Math.atan2(-B.dx,-B.dz);}}
   function buttsStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
     const k=buttsOpenFor(o.site,o);if(!k.ok)return k;if(!EQ.weapon||weaponSkill(EQ.weapon)!=='bow'||!EQ.ammo)return {say:'You’ll want a bow and arrows for the butts.'};
-    const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;let dx=o.dx,dz=o.dz;if(dx==null){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}const n=Math.hypot(dx,dz)||1;
+    const s=k.site,Ln=o.x==null&&typeof buttsLaneOf==='function'?buttsLaneOf(s):null; /* S2331 — the town's own lane (#1672 A): its mark and its line */
+    const x=o.x!=null?o.x:Ln?Ln.x:px,z=o.z!=null?o.z:Ln?Ln.z:pz;let dx=o.dx,dz=o.dz;if(dx==null&&Ln){dx=Ln.dx;dz=Ln.dz;}if(dx==null){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}const n=Math.hypot(dx,dz)||1;
     const B=BUTTS={site:s,x,z,dx:dx/n,dz:dz/n,end:0,shots:[],year:k.year,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),rivals:buttRivals(s,k.year),mesh:o.mesh===false?null:buttMesh()};
     const F=worldState.festivals||(worldState.festivals={});F['riverfair:'+s.id]=Object.assign({},F['riverfair:'+s.id],{year:k.year,won:false,score:0}); /* S2324 — the act's year stays */ /* the try is used once you step up */
-    if(B.mesh)sc.add(B.mesh);buttPlace(B);
+    if(B.mesh){sc.add(B.mesh);if(typeof buttsLaneShow==='function')buttsLaneShow(s,false);}buttPlace(B);
     showMsg(`The butts. Three ends of three, at ${BUTT_ENDS.join(', ')} m. The best of the town shot ${Math.max(...B.rivals.map(q=>q.total))}.`,'#e8d8a0');
     return {ok:true,rivals:B.rivals.map(q=>q.total)};}
   // fireArrow's: an arrow loosed from the mark is the end's next, up to three an end
@@ -3618,7 +3620,7 @@ const giver=`${lord.title} ${lord.name}`;
       B.end++;if(B.end>=BUTT_ENDS.length){buttsEnd('shot');return;}buttPlace(B);return;}
     if(!EQ.ammo&&B.shots.every(q=>q.score!=null)){showMsg('Your quiver’s empty.','#e8d8a0');buttsEnd('shot');}}
   function buttsTotal(B){return B.shots.reduce((a,q)=>a+(q.score||0),0);}
-  function buttsEnd(how){const B=BUTTS;if(!B)return null;BUTTS=null;if(B.mesh&&B.mesh.parent)B.mesh.parent.remove(B.mesh);
+  function buttsEnd(how){const B=BUTTS;if(!B)return null;BUTTS=null;if(B.mesh&&B.mesh.parent)B.mesh.parent.remove(B.mesh);if(typeof buttsLaneShow==='function')buttsLaneShow(B.site,true);
     const total=buttsTotal(B),best=Math.max(...B.rivals.map(q=>q.total)),won=how==='shot'&&total>best,F=worldState.festivals||(worldState.festivals={});
     const me=F['riverfair:'+B.site.id]||(F['riverfair:'+B.site.id]={year:B.year});me.score=total;me.won=won;
     let paid=0,skill=false;if(won){paid=payPurse(BUTT_PURSE+BUTT_PURSE_TIER*(Math.max(1,B.tier)-1));

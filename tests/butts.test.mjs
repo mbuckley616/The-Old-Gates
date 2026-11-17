@@ -1,0 +1,63 @@
+// Riverfair's butts, the town's practice ground all year, on the new look (Session 2331; Michael's A on #1672; contests.js of Session 2317).
+// Every Gatelands town, village, city and port lays a lane 76 m long off its pad and away from its roads (buttsLane, 82), the same whatever
+// has loaded; the scatter is cleared off it (buttsLaneStamps); the town stands the mark, three pegs and the butt with its bales at 30 m
+// (kitButts, 83; PKIT.props.butts and .butt, 38-kit.js). At Dunmore: the pieces within their draws, nothing solid on the lane but the
+// butt, an arrow's line from the mark clear of the ground to every end, and a contest begun with no mark given shot down the town's own
+// lane with the kit's butt, the standing butt lifted while it runs and back after. One picture from the mark.
+import { boot, check } from './lib/game.mjs';
+import path from 'path'; import { fileURLToPath } from 'url';
+const here = path.dirname(fileURLToPath(import.meta.url));
+
+const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
+// 1. the census: every Gatelands place of the four kinds, each lane chosen twice (the second time from nothing cached) the same
+const cen = await page.evaluate(() => { anchoredPlaces(); const cells = [...CELLS.values()].filter(c => c.type !== 'sea' && nationOf(c.i, c.j).people === 'gatelander');
+  let n = 0, got = 0, same = 0, rise = 0; const diff = [];
+  for (const c of cells) for (const s of c.sites) { if (!['city', 'town', 'village', 'port'].includes(s.kind) || s.islet) continue; n++;
+    const a = buttsLane(s, c), A = JSON.stringify(a); delete s._butts; delete c._buttsNear; const b = buttsLane(s, c);
+    if (A === JSON.stringify(b)) same++; else diff.push(s.id); if (a) { got++; rise = Math.max(rise, a.rise); } }
+  return { n, got, same, diff: diff.slice(0, 5), rise }; });
+console.log(JSON.stringify(cen));
+check(`the census: ${cen.got} of ${cen.n} Gatelands places lay a lane (at least four in five), the steepest rising ${cen.rise} m over 76 m`, cen.n > 50 && cen.got >= cen.n * .8 && cen.rise <= 6, cen);
+check('each lane is chosen the same from nothing cached', cen.same === cen.n, cen.diff);
+
+// 2. Dunmore's lane where it stands
+check('Dunmore is built', await g.settle('dunmore'));
+const r = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), B = S && S.butts; if (!B) return { none: true };
+  const site = siteAnywhere('dunmore'), L = buttsLane(site), c = Math.cos(B.ry), s_ = Math.sin(B.ry), W = (lx, lz) => [B.x + lx * c + lz * s_, B.z - lx * s_ + lz * c];
+  const blocked = [], unstamped = []; for (let v = -3; v <= 72; v += 1.5) for (const u of [-1.2, 0, 1.2]) { const [x, z] = W(u, -v); if (!stampAt(x, z)) unstamped.push([u, v]);
+    if (v > 28 && v < 33) continue; /* the butt's own */ if (solidAt(x, z)) blocked.push([u, v]); }
+  const gy = v => { const [x, z] = W(0, -v); return worldH(x, z); }, eye = gy(0) + 1.5; let clear = 9;
+  for (const D of [30, 50, 70]) { const fy = gy(D) + 1.2; for (let v = 1; v < D - 1; v += .5) clear = Math.min(clear, eye + (fy - eye) * v / D - gy(v)); }
+  const f = B.face, [fx, fz] = W(0, -30), pad = Math.hypot(B.x - site.x, B.z - site.z) - site.pad;
+  return { same: !!L && L.x === B.x && L.z === B.z, pad: +pad.toFixed(1), blocked: blocked.length, at: blocked.slice(0, 4), unstamped: unstamped.length, clear: +clear.toFixed(2),
+    faceAt: +Math.hypot(f.x - fx, f.z - fz).toFixed(3), faceUp: +(f.y - gy(30)).toFixed(2), draws: B.draws, tris: B.tris, road: (() => { let m = 99; for (let v = -4; v <= 72; v += 2) { const [x, z] = W(0, -v), ri = roadInfo(x, z); if (ri) m = Math.min(m, ri.d); } return +m.toFixed(1); })() }; });
+console.log(JSON.stringify(r));
+check(`Dunmore's lane stands where the cells chose it, its mark ${r.pad} m off the pad, ${r.road} m from the nearest road's line`, !r.none && r.same && r.pad > 4 && r.road > 9, r);
+check(`the lane is cleared (${r.unstamped} points outside its clearing) and nothing solid stands on it but the butt (${r.blocked})`, r.unstamped === 0 && r.blocked === 0, r.at);
+check(`an arrow's line from the mark, 1.5 m up, to each face clears the ground by ${r.clear} m`, r.clear >= .25, r.clear);
+check(`the butt's face at the 30 m peg, ${r.faceUp} m up; ${r.draws} draws (10 or fewer) and ${r.tris} triangles (6,000 or fewer)`, r.faceAt < .01 && Math.abs(r.faceUp - 1.2) < .35 && r.draws <= 10 && r.tris <= 6000, r);
+
+// 3. the contest down the lane: begun with no mark given, it takes the lane's; the kit's butt moves from end to end, the standing one lifted
+const ct = await page.evaluate(() => { const site = siteAnywhere('dunmore'), S = WORLD.settle.get('dunmore'), B = S.butts, st = TS(site), keep = { p: st.p, flags: st.flags };
+  const rf = FESTIVALS.find(f => f.key === 'riverfair'), n = ((rf.month - CAL.startMonth + 12) % 12) * 28 + rf.dom - 1; worldState.gameTimeAbsMinutes = n * 1440 + 660; worldState.gameTimeMinutes = 660;
+  st.p = 70; st.flags = {}; worldState.festivals = {}; const w0 = EQ.weapon, a0 = EQ.ammo; px = B.x; pz = B.z;
+  EQ.weapon = { name: 'Test Bow', ico: '🏹', type: 'equip', slot: 'weapon', atk: [5, 7], weaponShape: 'bow', wType: 'pierce', twoHand: true, weight: 3 };
+  EQ.ammo = { name: 'Iron Arrow', ico: '➶', type: 'ammo', qty: 30, arrowDmg: [2, 12] }; const out = {};
+  try { const R = buttsStart({ site }); out.ok = R.ok; out.say = R.say; if (!BUTTS) return out;
+    out.mark = +Math.hypot(BUTTS.x - B.x, BUTTS.z - B.z).toFixed(3); out.line = +(BUTTS.dx * B.dx + BUTTS.dz * B.dz).toFixed(4); out.kit = BUTTS.mesh && BUTTS.mesh.name; out.lifted = !B.butt.visible;
+    const shoot = () => { fireArrow(1); const a = ZB[ZB.length - 1], Q = BUTTS; a.position.set(Q.cx - Q.dx * .4, Q.cy, Q.cz - Q.dz * .4); a.userData.vx = Q.dx * 30; a.userData.vz = Q.dz * 30; a.userData.vy = 0;
+      for (let k = 0; k < 10; k++) { tickArrowMotion(a, 1 / 60, true); tickButts(); } };
+    const ends = []; for (let k = 0; k < 9 && BUTTS; k++) { ends.push(+Math.hypot(BUTTS.cx - B.x, BUTTS.cz - B.z).toFixed(1)); shoot(); }
+    out.shots = (worldState.festivals, ZB.filter(a => a.userData.butt).map(a => [a.userData.butt.end, a.userData.butt.score, a.userData.butt.r && +a.userData.butt.r.toFixed(3)])); out.ends = [...new Set(ends)]; out.done = !BUTTS; out.score = (worldState.festivals['riverfair:' + site.id] || {}).score; out.back = B.butt.visible;
+  } finally { if (BUTTS) buttsEnd('left'); EQ.weapon = w0; EQ.ammo = a0; Object.assign(st, keep); worldState.festivals = {}; }
+  return out; });
+console.log(JSON.stringify(ct));
+check(`buttsStart with no mark takes the lane's: on its mark (${ct.mark} m), down its line, with the kit's butt, the standing one lifted`, ct.ok && ct.mark < .01 && ct.line > .9999 && ct.kit === 'butt' && ct.lifted, ct);
+check(`nine arrows to the middle score ${ct.score} at ${ct.ends && ct.ends.join(', ')} m down the lane, and the standing butt is back after`, ct.done && ct.score === 45 && ct.back && JSON.stringify(ct.ends) === '[30,50,70]', ct);
+
+// 4. a picture from just behind the mark, down the lane at eleven
+const pic = path.join(here, '../docs/prototypes/kit-butts-lane.png');
+await page.evaluate(() => { const B = WORLD.settle.get('dunmore').butts; forceTime(11); VM_SCENE.visible = false; thirdPerson = false; px = B.x - B.dx * 1.5 + B.dz * .6; pz = B.z - B.dz * 1.5 - B.dx * .6; yaw = B.ry; pitch = -.06; });
+await g.spin(null, 8); await g.frames(6); await page.screenshot({ path: pic }); console.log(`  (picture: ${path.relative(path.join(here, '..'), pic)})`);
+await page.evaluate(() => { VM_SCENE.visible = true; });
+await g.close();
