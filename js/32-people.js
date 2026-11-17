@@ -2153,9 +2153,18 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(g.bearer)G.dress=hbBearerDress(G); /* S2273 — a bier's bearer: in mourning, nothing in the hands, no cloak for the arms to pass through */
   if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
   if(!cast&&!g.child&&HB_PACK_ROLE.test(g.role||''))G.dress=hbRolePack(g,G); /* S2239 — a traveller's pack, by island */
+  if(!cast)G.dress=hbRoadVeil(g,G); /* S2343 — an Aurennais on the road draws the wrap's end across the face */
   if(!cast&&!g.child){const O=hbOfficeDress(g,G);if(O)G.dress=O;} /* S2242 — the lord's forester and the Church's inquisitor */
   if(!cast&&g.guildHead)G.dress=hbGuildDress(g,G); /* S2329 (#1658 B) — a guild's head in its livery over their people's own */
   HB_GENOMES.set(g.hbKey,G);return G;}
+/* S2343 (backlog L1, OG-109's Aurenne travel column; the kit's veil, S1237, worn by no one until the road had people) — the veil on
+   the road. One of the road's people (a merchant, a pilgrim or a mourner, the post rider, a family with its cart: def.roadfolk, keyed
+   `#road:`) who is Aurennais and wears a wrap that is not a headscarf draws its end across the face, three in five, against the dust and
+   the sun: in the Aurennais' indigo two in three, else the wrap's own cloth. people.js's own rule leaves it off under a helm or a raised
+   hood. From a stream keyed by the genome's key, so a traveller wears it every time you meet them; nobody at home wears it. */
+const HB_VEIL={p:.6,indigo:[.12,.14,.3],pIndigo:2/3};
+function hbRoadVeil(g,G){const D=G.dress||{},k=g.hbKey||'';if(!/#road:/.test(k)||g.people!=='aurennais'||!D.wrap||D.scarf||D.veil)return D;
+  const r=pRng(pHash(k+'|veil'));if(r()>=HB_VEIL.p)return D;return Object.assign({},D,{veil:r()<HB_VEIL.pIndigo?HB_VEIL.indigo:true});}
 /* S2239 (#1504 B; owed by Session 2217's "Needs eyes") — a traveller's pack. The pack the player buys is on their back by island (S2217,
    TP_PACK in 54-thirdperson.js), and nobody else wore one. Whoever's role says they are on the road (the coaching inns' travellers waiting
    for the coach, a travelling merchant or scholar, a pedlar, a pilgrim) now carries the same pack by the nation they stand in: the
