@@ -24,5 +24,17 @@ check('refused twice, it fails as before: no slot 2, the reason named in the men
 
 await refuse(0); const plain = await save(2, 500);
 check('a store that answers writes once, with nothing retried', plain.ok && plain.row === 500 && !plain.retried && plain.refused === 0, plain);
+// S2351 — the store's wall counts the time the page was free, not the clock (QA's S2350: one 8–11 s frame on SwiftShader failed a save).
+// the frame starts in a microtask queued after ssPut's own: the write is open and its wall set, and its answer waits behind the frame
+const stall = await page.evaluate(() => { const p = ssPut('stall:test', 'x').then(() => 'ok', e => e.message);
+  return Promise.resolve().then(() => {}).then(() => { const t = performance.now(); while (performance.now() - t < 11000); return p; }); });
+check('a write behind an 11 s frame lands: the frame is not counted as the store\'s silence', stall === 'ok', stall);
+// the world's frames are idled for it (the loop hands the frame to an open INSPECTOR): each one holds SwiftShader seconds and counts 0.5 s
+const dead = await page.evaluate(() => { const db0 = SS.db, t0 = performance.now(), I = INSPECTOR, o0 = I.open, f0 = I.frame;
+  I.open = true; I.frame = () => {}; SS.db = { transaction: () => ({ objectStore: () => ({ put() {} }) }) };
+  const p = ssPut('dead:test', 'x').then(() => 'ok', e => e.message); SS.db = db0;
+  return p.then(m => { I.open = o0; I.frame = f0; return { m, s: Math.round((performance.now() - t0) / 100) / 10 }; }); });
+check('a store that never answers is still named, after 10 s free: "the save store did not answer"', dead.m === 'the save store did not answer' && dead.s >= 9.5 && dead.s < 30, dead);
+await page.evaluate(() => ssDel('stall:test'));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
