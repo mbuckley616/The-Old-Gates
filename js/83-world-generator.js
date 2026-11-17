@@ -3676,9 +3676,19 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // boarded flue), the table, the 13-riser stair up the side wall to a landing at the back; above, the loft under the roof with the bed of
   // furs, the cradle and the sacks. Drawn in metres and moved into the room's frame as the longhouse is (nothing scaled). The room is the
   // ground floor's inside; the upper floor runs on 0.4 m over the jetty, which the room's depth does not reach (the sacks stand there).
-  function kitMarkTownRoom(house){const k=house&&house.kit;return !!(house&&house.type==='home'&&k&&k.kind==='marktown'&&k.o&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.mk&&PKIT.mk.townroom);}
+  // S2324 (Michael's A on #1653: as drawn, each trade with its own piece) — a Markish shop on a tight lot (a goods shop, armourer, barber,
+  // healer or weaponsmith standing as the town house) opens on the same two floors with the stue as the trade's floor (rooms.js's
+  // Session 2305, o.trade): the low shelf of stock, the keeper's walk and the counter along the wall away from the stair, the strongbox at
+  // the walk's dead end, the trade's own piece on the free floor, the household's loft above. A size with no room for a counter (shop
+  // null) keeps the generated room: the predicate builds the room once to know, and the build takes that room (MT_SHOP_T).
+  let MT_SHOP_T=null;
+  const MT_TRADES=['misc','armor','barber','potion','weapon'];
+  function kitMarkTownRoom(house){const k=house&&house.kit;if(!(house&&(house.type==='home'||MT_TRADES.includes(house.type))&&k&&k.kind==='marktown'&&k.o&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.mk&&PKIT.mk.townroom))return false;
+    if(house.type==='home')return true;if(house._mtShop!==undefined)return house._mtShop;
+    const T=mtRoom(house),drop=T=>T.group.traverse(o=>{if(o.isMesh)o.geometry.dispose();});house._mtShop=!!T.shop;if(T.shop){if(MT_SHOP_T)drop(MT_SHOP_T.T);MT_SHOP_T={id:house.id,T};}else drop(T);return house._mtShop;}
+  function mtRoom(house){return PKIT.mk.townroom(Object.assign({},house.kit.o,{chest:false,shell:house.kit.shell},house.type==='home'?{}:{trade:house.type}),PKIT.stream(house.id+':marktown'));}
   function buildKitMarkTownRoom(house){
-    const T=PKIT.mk.townroom(Object.assign({},house.kit.o,{chest:false,shell:house.kit.shell}),PKIT.stream(house.id+':marktown')),I=T.inner,X=I.x1,Z=I.z1,FY=T.floors[0],W=2*X,D=2*Z;
+    const T=MT_SHOP_T&&MT_SHOP_T.id===house.id&&house.type!=='home'?MT_SHOP_T.T:mtRoom(house),I=T.inner,X=I.x1,Z=I.z1,FY=T.floors[0],W=2*X,D=2*Z,SH=T.shop;MT_SHOP_T=null;
     const rx=x=>x+X,rz=z=>z+Z,ry=y=>y-FY,F1=+ry(T.floors[1]).toFixed(3),FL=[0,F1],st=T.stair;
     house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+ry(T.top).toFixed(3);house._exitD=.8;house._exitW=1.0;house._exitX=+rx(T.door.x).toFixed(3);house._markTown=T;
     const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x120a06);sc_.fog=new THREE.Fog(0x120a06,Math.max(W,D)*.8*SCALE.ROOM_K,Math.max(W,D)*2.4*SCALE.ROOM_K);
@@ -3690,8 +3700,8 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // the bed, the cradle, the sacks, the door's open leaf); the bench is held to STEP_UP and the table stands from its floor, as the
     // townhouse's; the bed stands to its furs (0.55). A box's top is a foothold but a tall one's. The stair's own box (its whole run) and the
     // rail's (the whole well) are the prototype's checks: here the treads and the rail are laid one by one below
-    const TALL=['peis','stack','leaf','bed','shelf','cradle','sacks'];
-    for(const q of T.boxes){if(q.tag==='stair'||q.tag==='rail'||q.tag==='chest')continue;const f=FL[q.fl||0];let y0=ry(q.y0),y1=ry(q.y1);
+    const TALL=['peis','stack','leaf','bed','shelf','cradle','sacks','counter','shelves','stand','chair','rack'];
+    for(const q of T.boxes){if(q.tag==='stair'||q.tag==='rail'||q.tag==='chest'||q.tag==='strongbox')continue;const f=FL[q.fl||0];let y0=ry(q.y0),y1=ry(q.y1);
       if(q.tag==='bench'){y0=f;y1=f+STEP_UP;}else if(q.tag==='table')y0=f;else if(q.tag==='bed'){y0=f;y1=f+.55;}
       const b=fr(q,y0,y1);SOL.push(b);if(!TALL.includes(q.tag))foot(b);}
     // the stair's 12 treads (the 13th rise is onto the landing), each a foothold; under each a solid from the floor to 0.45 m below it, so
@@ -3703,11 +3713,15 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // the upper floor over the whole house, open over the stair's well (the landing is the floor's)
     {const wl=fr(T.well,0,0);FOOTHOLDS.push({x0:0,x1:W,z0:0,z1:rz(T.innerUp.z1),y:F1,hole:{x0:wl.x0,x1:wl.x1,z0:wl.z0,z1:wl.z1}});}
     // the bed of furs in the loft is the resident's (the sleeper lies in it, head to -z)
-    {const b=fr(T.bed,0,0),x=(b.x0+b.x1)/2,cz=(b.z0+b.z1)/2;INT_BEDS.push({x,z:cz+.2,y:F1,owner:'home',room:null,cz});intBedPos={x,z:cz+.2};}
+    if(!SH&&T.bed){const b=fr(T.bed,0,0),x=(b.x0+b.x1)/2,cz=(b.z0+b.z1)/2;INT_BEDS.push({x,z:cz+.2,y:F1,owner:'home',room:null,cz});intBedPos={x,z:cz+.2};}
     // the home's chest in the drawn chest's place at the bed's foot, its lid to the room
-    {const c=T.chest,bx=rx((c.x0+c.x1)/2),bz=rz((c.z0+c.z1)/2),wide=c.x1-c.x0>c.z1-c.z0,rot=wide?(bz<D/2?0:Math.PI):(bx<W/2?Math.PI/2:-Math.PI/2),hx=wide?.32:.28,hz=wide?.28:.32;
+    if(T.chest){const c=T.chest,bx=rx((c.x0+c.x1)/2),bz=rz((c.z0+c.z1)/2),wide=c.x1-c.x0>c.z1-c.z0,rot=wide?(bz<D/2?0:Math.PI):(bx<W/2?Math.PI/2:-Math.PI/2),hx=wide?.32:.28,hz=wide?.28:.32;
       const bg=new THREE.Group(),shell=buildChestShell(bg,.45,0x6a4a2c);bg.position.set(bx,F1,bz);bg.rotation.y=rot;sc_.add(bg);SOL.push({x0:bx-hx,x1:bx+hx,z0:bz-hz,z1:bz+hz,y0:F1,y1:F1+.5});
-      INT_BOX={x:bx,z:bz,y:F1,lid:shell.lid,g:bg,id:house.id,kind:'home',type:'home',house,open:false};}
+      if(!SH)INT_BOX={x:bx,z:bz,y:F1,lid:shell.lid,g:bg,id:house.id,kind:'home',type:'home',house,open:false};}
+    // a shop's strongbox (S155) at the keeper's walk's dead end, its lid to the walk; the barber's chair before its glass (S561)
+    if(SH){const bx=rx(SH.chest.x),bz=rz(SH.chest.z),bg=new THREE.Group(),shell=buildChestShell(bg,.5,0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=SH.open<0?Math.PI:0;sc_.add(bg);
+      SOL.push({x0:bx-.26,x1:bx+.26,z0:bz-.22,z1:bz+.22,y0:0,y1:.5});INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:'shop',type:house.type,house,open:false};
+      if(house.type==='barber'&&SH.chair)INT_CHAIR={x:+rx(SH.chair.x).toFixed(3),z:+rz(SH.chair.z).toFixed(3),house};}
     // a bought house's cellar: the hatch in the boards between the door's way in and the table's wall, clear of the fire's walk
     if(hasCellar(house)){const tw=-T.ss,hx=rx(tw*Math.max(.1,X-.9)),hz=rz(I.z1-1.6),ok=!intSolidAt(hx,hz,.45,0);const at=ok?[hx,hz]:[rx(T.door.x),rz(I.z1-1.9)];
       const lid=new THREE.Mesh(new THREE.BoxGeometry(.8,.04,.8),new THREE.MeshLambertMaterial({color:0x3a2612}));lid.position.set(at[0],.02,at[1]);sc_.add(lid);
@@ -3738,17 +3752,21 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
         m.geometry.dispose();T.room.remove(m);if(lo.length)hf.add(mk(lo));if(hi.length)T.room.add(mk(hi));}
       hf.visible=!cold;const holder=new THREE.Group();holder.userData.hearthFire=hf;holder.userData.hearthLight=hl;if(cold)holder.userData.coldHouse=house;sc_.add(holder);furnSwap(holder);}
     // the resident, before the fire where the walk to it ends, facing it
-    const hp=T.paths[1].pts[T.paths[1].pts.length-1],npc={x:rx(hp[0]),z:rz(hp[1])},nry=Math.atan2(rx(F[0])-npc.x,rz(F[2])-npc.z);
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    // (a shop's keeper in his walk, facing between the strongbox and where you stand to buy: both before him, a witness, S368)
+    const hp=T.paths[1].pts[T.paths[1].pts.length-1],npc=SH?{x:rx(SH.keeper.x),z:rz(SH.keeper.z)}:{x:rx(hp[0]),z:rz(hp[1])};let nry=Math.atan2(rx(F[0])-npc.x,rz(F[2])-npc.z);
+    if(SH){const a=[rx(SH.chest.x)-npc.x,rz(SH.chest.z)-npc.z],b=[rx(SH.front[0])-npc.x,rz(SH.front[1])-npc.z],la=Math.hypot(...a)||1,lb=Math.hypot(...b)||1;nry=+Math.atan2(a[0]/la+b[0]/lb,a[1]/la+b[1]/lb).toFixed(4);}
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:SH?'Merchant':'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=nry;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};
-      if(abed)laySleeper(intNPCMesh);}
+      if(abed&&!SH)laySleeper(intNPCMesh);}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
     // S2261 — where you stand on coming in: a step in from the door (0.9 m, as the other kit rooms), on the door's line or slid along the
     // front wall to the first spot 0.35 m clear of the ground floor's solids. The room's middle 1.75 m in (intArrivalZ's) fell on the stair's
     // foot where the stair climbs the door's side wall in a shallow house (three of c1_1_s7's, the weekly run of 15 Nov: intreach)
-    {const az=rz(Z-.9),clear=x=>!SOL.some(s=>s.y0<F1-.5&&x+.35>s.x0&&x-.35<s.x1&&az+.35>s.z0&&az-.35<s.z1),ax=[0,-.3,.3,-.5,.5,-.7,.7].map(d=>rx(T.door.x+d)).find(x=>x>.4&&x<W-.4&&clear(x));
-      house._arriveX=+(ax??rx(T.door.x)).toFixed(3);house._arriveZ=+az.toFixed(3);}
+    // (in a shop a step past the door's open leaf, the shop's own way in (S2305), so the leaf does not stand across your view of the counter)
+    {const az=rz(Z-(SH?Math.max(.9,T.door.w+.15):.9)),clear=x=>!SOL.some(s=>s.y0<F1-.5&&x+.35>s.x0&&x-.35<s.x1&&az+.35>s.z0&&az-.35<s.z1),ax=[0,-.3,.3,-.5,.5,-.7,.7].map(d=>rx(T.door.x+d)).find(x=>x>.4&&x<W-.4&&clear(x));
+      house._arriveX=+(ax??rx(T.door.x)).toFixed(3);house._arriveZ=+az.toFixed(3);
+      if(SH)house._arriveYaw=+Math.atan2(-(rx(SH.front[0])-house._arriveX),-(rz(SH.front[1])-house._arriveZ)).toFixed(4);}
     return sc_;
   }
   // S1320 (card F9, Michael's 1 A and 2 B on #602) — on the new look an Aurennais port's inn on the quay (lot.kit.kind 'aurtavern', S1320's
