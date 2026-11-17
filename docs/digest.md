@@ -627,3 +627,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing; main is green on every PR since. The weekly run's twelve reds are filed in section I.
 
 **Roadmap.** 332 of 422 stories done (331 of 421 on 15 Nov). The new look is 7 of 18; only F14 is left for deep work.
+
+## 17 Nov 2026
+
+**Waiting on you.** One decision: spells as keys, and secrets (#1678, B recommended: seals, mechanisms, hidden rooms and the script). No merge waits for you.
+
+**Landed on main since 16 Nov.** Your answers built: the Mark's town-house shops, its short trader's hall and short smithy (#1653, #1662, #1666 A; Look 2305–2328); the guild heads in livery over their people's own (#1658 B; Bodies 2329); Riverfair's butts outside every Gatelands town (#1672 A; Look 2331); robbing the road's people and the official's guard (#1638 A; Systems 2301–2302); festivals (#1628 B): the nine on the calendar, Riverfair's butts, the Strait Fair's ring, the Commencement's disputation, champions, the Blaze, First Snow, the Night of the Lanterns (Systems 2313–2330); the underworld's five dressed (#1611 B; Bodies 2307). Your approved QA 2304 (the weekly run's 240-minute shards). The rider's skirt fixed (Bodies 2316). Spells as keys proposed; Festivals IV drafted; a playtest. QA kept the budgets flat. Build s1677.
+
+**Under way.** Bodies #1688 (the far stand-in wears the builder's head, beard and cloak) lands on green.
+
+**Blocked.** Nothing; main is green. STUCK #1652 is fixed on main and waits for the bodies builder to close it.
+
+**Roadmap.** 337 of 433 stories done (332 of 422 on 16 Nov). The new look is 7 of 18; only F14 is left for deep work.
