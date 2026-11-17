@@ -374,5 +374,139 @@ const ah = await page.evaluate(() => {
 console.log(JSON.stringify(ah).slice(0, 2000));
 check('the alehall on the Blaze: *Hearth’s out…* from its keeper till 17:00, not after, not from another Markman, not the day before', ah.blaze10 === ah.L.blazeDay && ah.blazePlain !== ah.L.blazeDay && ah.blaze19 !== ah.L.blazeDay && ah.dayBefore !== ah.L.blazeDay, ah);
 check('the alehall on First Snow: from 18:00 to first light *No places tonight…*, and the bed lets no place; at 15:00 and 7:00 the bench is let as ever; a place taken holds', ah.snow15 !== ah.L.firstSnow && ah.bed15.f.length === 2 && ah.snow20 === ah.L.firstSnow && ah.bed20.r === ah.L.firstSnow && ah.bed20.f.length === 0 && ah.snow03 === ah.L.firstSnow && ah.bed03.f.length === 0 && ah.snow07 !== ah.L.firstSnow && ah.bed07.f.length === 2 && ah.mine.r === ah.L.firstSnowMine && ah.mine.f.length === 0, ah);
+// 15. First Snow sat out (Session 2338): from 18:00 on the square, E is the Wait to first light; the log at 6:00, once a winter; the
+// next day a Markman of the town says so, once, and a Gatelander does not
+const sn = await page.evaluate(async () => {
+  const site = ladderSites().find(s => isleAt(s.x, s.z) === 'mark'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, fs0 = worldState.firstSnow, ns0 = nearSite, p0 = [px, pz], sm = window.showMsg;
+  const sf = FESTIVALS.find(f => f.key === 'firstsnow'), msgs = [];
+  const at = (dd, h) => { worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + sf.month - CAL.startMonth) * CAL.monthLen + sf.dom - 1 + dd) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const man = () => ({ _siteId: site.id, people: 'markman', greeting: ['-'] }), gl = () => ({ _siteId: site.id, people: 'gatelander', greeting: ['-'] });
+  st.p = 70; st.flags = {}; worldState.festivals = {}; worldState.firstSnow = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1;
+  const out = {};
+  try { window.showMsg = m => msgs.push(m);
+    at(0, 17); out.p17 = festActPrompt();
+    at(0, 20); out.p20 = festActPrompt(); px = site.x + 8; out.far = festActPrompt(); px = site.x + 1;
+    const a0 = worldState.gameTimeAbsMinutes; out.did = festActInteract(); await new Promise(r => setTimeout(r, 900));
+    out.hour = hourNow(); out.mins = worldState.gameTimeAbsMinutes - a0; out.log = msgs[msgs.length - 1]; out.rec = JSON.parse(JSON.stringify(worldState.festivals['firstsnow:' + site.id] || null));
+    at(0, 22); out.again = festActPrompt();
+    at(1, 10); out.gl = feastGreeting(gl()); out.next = feastGreeting(man()); out.next2 = feastGreeting(man());
+  } finally { window.showMsg = sm; worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; worldState.firstSnow = fs0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.A = FEST_ACTS.firstsnow;
+  return out;
+});
+console.log(JSON.stringify(sn).slice(0, 2000));
+check('First Snow: from 18:00 on the square (not at 17:00, not 8 m off) E sits you up till first light: 10 hours pass, the log at 6:00, the winter\'s act on the year', sn.p17 === null && sn.p20 === sn.A.prompt && sn.far === null && sn.did && Math.abs(sn.hour - 6) < .05 && Math.abs(sn.mins - 600) < 3 && sn.log === sn.A.log && sn.rec && sn.rec.act === 28 && sn.rec.sat && sn.again === null, sn);
+check('the next day a Markman of the town says you sat it out, once; a Gatelander does not', sn.next === sn.A.after && sn.next2 !== sn.A.after && sn.gl !== sn.A.after, sn);
+// 16. the Strait Fair's wager on the boats (Session 2339): a Markman at the water from 5:00 till noon; 2 gold on one of three from 5:00
+// to 7:00; from 8:00 the race told, a win paying 6 once; the race seeded by site and year; the ring's try untouched; none while occupied
+const wg = await page.evaluate(() => {
+  const marks = ladderSites().filter(s => isleAt(s.x, s.z) === 'mark'), site = marks.find(s => s.kind === 'port') || marks[0], st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, p0 = [px, pz], g0 = gold;
+  const sf = FESTIVALS.find(f => f.key === 'straitfair');
+  const at = (yr, h) => { worldState.gameTimeAbsMinutes = (((yr - CAL.startYear) * CAL.months + sf.month - CAL.startMonth) * CAL.monthLen + sf.dom - 1) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  st.p = 70; st.flags = {}; worldState.festivals = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1;
+  const labels = () => WAGER ? WAGER.npc.def ? WAGER.npc.def.topics.map(t => t.label) : null : null;
+  const out = { kind: site.kind };
+  try {
+    at(28, 4); tickWager(); out.at4 = !!WAGER;
+    at(28, 5); tickWager(); out.at5 = !!WAGER; const d = WAGER && wagerDef(site, 28, festivalHere(site.id)); out.who = d && [d.people, d.role]; out.fromPad = d && +(Math.hypot(d.x - site.x, d.z - site.z) - site.pad).toFixed(1);
+    const T = d.topics.find(t => t.label === 'A bet on the boats.'); out.follow = T && T.follow && T.follow.map(f => f.label); out.ask = T && T.response;
+    const win = wagerWinner(site, 28); out.same = win === wagerWinner(site, 28); out.years = [28, 29, 30, 31, 32, 33].map(y => wagerWinner(site, y));
+    gold = 1; out.poor = wagerPlace(site, win); out.poorBet = !!wagerBet(site);
+    gold = 10; out.placed = wagerPlace(site, win); out.gold1 = gold; out.again = wagerPlace(site, (win + 1) % 3); out.gold2 = gold;
+    at(28, 6); out.early = wagerHear(site); out.topics6 = d.topics.map(t => t.label);
+    at(28, 9); out.won = wagerHear(site); out.gold3 = gold; out.won2 = wagerHear(site); out.gold4 = gold;
+    out.ring = (fairRingOpenFor(site) || {}).ok;
+    at(29, 6); gold = 10; out.placed29 = wagerPlace(site, (wagerWinner(site, 29) + 1) % 3); at(29, 9); out.lost = wagerHear(site); out.gold5 = gold;
+    at(30, 7); out.at7 = d.topics.map(t => t.label);
+    at(30, 12); tickWager(); out.at12 = !!WAGER;
+    at(30, 6); st.flags = { occupied: true }; tickWager(); out.occupied = !!WAGER; st.flags = {};
+  } finally { if (WAGER) wagerOut(); gold = g0; worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.L = WAGER_LINES;
+  return out;
+});
+console.log(JSON.stringify(wg).slice(0, 2000));
+check(`the wager: a Markman at the water (${wg.kind}, ${wg.fromPad} m past the pad) from 5:00, not at 4:00, gone at noon and in an occupied town; three boats asked from 5:00, none offered at 7:00 without a bet`, !wg.at4 && wg.at5 && wg.who[0] === 'markman' && !wg.at12 && !wg.occupied && wg.ask === 'Which boat?' && wg.follow.length === 3 && !wg.at7.includes('A bet on the boats.'), wg);
+check('2 gold on a boat (short of two, nothing), once; before 8:00 the same word; from 8:00 a win pays 6 once, a loss tells third; the race the same for a site and year, not every year alike; the ring\'s try untouched', /two gold/.test(wg.poor) && !wg.poorBet && wg.placed === wg.L.placed && wg.gold1 === 8 && wg.again === wg.L.placed && wg.gold2 === 8 && wg.early === wg.L.placed && wg.won === wg.L.won && wg.gold3 === 14 && wg.won2 === wg.L.won && wg.gold4 === 14 && wg.lost === wg.L.lost && wg.gold5 === 8 && wg.same && new Set(wg.years).size > 1 && wg.ring, wg);
+// 17. the Caravan's first bale (Session 2340): the caravan-master on the square from 6:00 to 18:00, not while occupied; three topics; a
+// pinch at 2 gold once a year, the twist of saffron and the log; the Factor's day line; the next day an Aurennais says so, once
+const cv = await page.evaluate(() => {
+  let site = null; for (let j = 0; j < GRID && !site; j++) for (let i = 0; i < GRID && !site; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; site = c.sites.find(s => s.kind === 'town' || s.kind === 'city') || null; }
+  const st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, p0 = [px, pz], g0 = gold, msgs = [], sm = window.showMsg;
+  const cf = FESTIVALS.find(f => f.key === 'caravan');
+  const at = (dd, h) => { worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + cf.month - CAL.startMonth) * CAL.monthLen + cf.dom - 1 + dd) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const au = () => ({ _siteId: site.id, people: 'aurennais', greeting: ['-'] }), lord = { _siteId: site.id, people: 'aurennais', _lord: true, greeting: ['-'] };
+  st.p = 70; st.flags = {}; worldState.festivals = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1;
+  const out = { isle: isleAt(site.x, site.z) }; const bag0 = BAG.length;
+  try { window.showMsg = m => msgs.push(m);
+    at(0, 5); tickCaravan(); out.at5 = !!CARAVAN;
+    at(0, 7); tickCaravan(); out.at7 = CARAVAN && [CARAVAN.npc.def ? CARAVAN.npc.def.role : null, CARAVAN.npc.def ? CARAVAN.npc.def.people : null];
+    const d = caravanDef(site, 28); out.labels = d.topics.map(t => t.label); out.name2 = caravanDef(site, 28).name === d.name;
+    out.lord = feastGreeting(lord);
+    gold = 1; out.poor = caravanPinch(site); out.poorDone = festActDone('caravan', site);
+    gold = 10; out.pinch = caravanPinch(site); out.gold = gold; out.item = BAG.length > bag0 ? BAG[BAG.length - 1].name : null; out.log = msgs[msgs.length - 1];
+    out.labels2 = d.topics.map(t => t.label);
+    at(1, 10); out.next = feastGreeting(au()); out.next2 = feastGreeting(au());
+    at(0, 18); tickCaravan(); out.at18 = !!CARAVAN;
+    at(0, 9); st.flags = { occupied: true }; tickCaravan(); out.occupied = !!CARAVAN; st.flags = {};
+  } finally { window.showMsg = sm; if (CARAVAN) caravanOut(); while (BAG.length > bag0) BAG.pop(); gold = g0; worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.L = CARAVAN_LINES; out.LL = FEST_LORD_LINE.caravan.line;
+  return out;
+});
+console.log(JSON.stringify(cv).slice(0, 2000));
+check(`the Caravan: the caravan-master (${cv.at7}) on the square from 6:00, not at 5:00 or 18:00 or while occupied, the same name for a site and year; his three topics; the Factor's day line`, cv.isle === 'aurenne' && !cv.at5 && cv.at7 && !cv.at18 && !cv.occupied && cv.name2 && JSON.stringify(cv.labels) === JSON.stringify(['How was the road?', 'Why the same day everywhere?', 'A pinch of saffron', 'Farewell.']) && cv.lord === cv.LL, cv);
+check('a pinch at 2 gold (short of two, nothing): the twist of saffron, the log, offered once a year; the next day an Aurennais says so, once', /two gold/.test(cv.poor) && !cv.poorDone && cv.pinch === cv.L.pinch && cv.gold === 8 && cv.item === 'A twist of saffron' && cv.log === cv.L.log && !cv.labels2.includes('A pinch of saffron') && cv.next === cv.L.after && cv.next2 !== cv.L.after, cv);
+// 18. the Commencement's subscription (Session 2341): the bursar on the square from 9:00 to 12:00; 2 gold entered three ways, once a year;
+// the roll's line at noon on the square, once, for the way entered; the next day an Aurennais says so, once
+const bs = await page.evaluate(() => {
+  let site = null; for (let j = 0; j < GRID && !site; j++) for (let i = 0; i < GRID && !site; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; site = c.sites.find(s => s.kind === 'town' || s.kind === 'city') || null; }
+  const st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, p0 = [px, pz], g0 = gold, n0 = playerName, msgs = [], sm = window.showMsg;
+  const cf = FESTIVALS.find(f => f.key === 'commencement');
+  const at = (yr, dd, h, mm) => { worldState.gameTimeAbsMinutes = (((yr - CAL.startYear) * CAL.months + cf.month - CAL.startMonth) * CAL.monthLen + cf.dom - 1 + dd) * 1440 + h * 60 + (mm || 0); worldState.gameTimeMinutes = h * 60 + (mm || 0); };
+  const au = () => ({ _siteId: site.id, people: 'aurennais', greeting: ['-'] });
+  st.p = 70; st.flags = {}; worldState.festivals = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1; playerName = 'Ysolde';
+  const out = { gp: peopleOfSite(site) };
+  try { window.showMsg = m => msgs.push(m);
+    at(28, 0, 8); tickBursar(); out.at8 = !!BURSAR;
+    at(28, 0, 10); tickBursar(); out.at10 = BURSAR && BURSAR.npc.def ? BURSAR.npc.def.role : !!BURSAR; const d = bursarDef(site, 28);
+    const T = d.topics.find(t => t.label === 'A subscription'); out.ask = T && T.response; out.follow = T && T.follow.map(f => f.label);
+    gold = 1; out.poor = bursarSubscribe(site, 0, out.gp); out.poorDone = festActDone('commencement', site);
+    gold = 10; out.named = bursarSubscribe(site, 0, out.gp); out.gold = gold; out.log = msgs[msgs.length - 1]; out.after = d.topics.map(t => t.label);
+    at(28, 0, 12, 10); _bursarLast = ''; msgs.length = 0; tickBursar(); tickBursar(); out.noon = msgs.slice(); out.at12 = !!BURSAR;
+    at(28, 1, 10); out.next = feastGreeting(au()); out.next2 = feastGreeting(au());
+    worldState.festivals = {}; at(29, 0, 10); gold = 10; out.off = bursarSubscribe(site, 2, out.gp); at(29, 0, 12, 40); _bursarLast = ''; msgs.length = 0; tickBursar(); out.late = msgs.slice(); at(29, 0, 12, 5); px = site.x + 40; tickBursar(); out.far = msgs.slice(); px = site.x + 1; tickBursar(); out.offNoon = msgs.slice();
+    at(29, 0, 10); st.flags = { occupied: true }; tickBursar(); out.occupied = !!BURSAR; st.flags = {};
+  } finally { window.showMsg = sm; if (BURSAR) bursarOut(); playerName = n0; gold = g0; worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.L = BURSAR_LINES[out.gp] || BURSAR_LINES.aurennais; out.LOG = BURSAR_LOG;
+  return out;
+});
+console.log(JSON.stringify(bs).slice(0, 2000));
+check(`the Commencement: the bursar (${bs.at10}, ${bs.gp}) on the square from 9:00, not at 8:00 or 12:00 or while occupied; *How shall I enter it?* three ways; 2 gold (short of two, nothing), the answer with your name, the log, once a year`, !bs.at8 && bs.at10 && !bs.at12 && !bs.occupied && bs.ask === 'How shall I enter it?' && bs.follow.length === 3 && /two gold/.test(bs.poor) && !bs.poorDone && bs.named === bs.L.answers[0].replace('{player}', 'Ysolde') && bs.gold === 8 && bs.log === bs.LOG.paid && !bs.after.includes('A subscription'), bs);
+check('at noon on the square the roll is read for the way you entered, once (not at 12:40, not 40 m off); the next day an Aurennais says so, once', bs.noon.length === 1 && bs.noon[0] === bs.LOG.noon[0] && bs.next === bs.LOG.after && bs.next2 !== bs.LOG.after && bs.off === bs.L.answers[2] && bs.late.length === 0 && bs.far.length === 0 && bs.offNoon.length === 1 && bs.offNoon[0] === bs.LOG.noon[2], bs);
+// 19. the Commencement's reading at ten and the lords' Commencement and Lamps lines (Session 2342)
+const cr = await page.evaluate(() => {
+  let site = null; for (let j = 0; j < GRID && !site; j++) for (let i = 0; i < GRID && !site; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; site = c.sites.find(s => s.kind === 'town') || null; }
+  const st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, ns0 = nearSite, p0 = [px, pz], msgs = [], sm = window.showMsg;
+  const at = (key, h, mm) => { const f = FESTIVALS.find(q => q.key === key); worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + f.month - CAL.startMonth) * CAL.monthLen + f.dom - 1) * 1440 + h * 60 + (mm || 0); worldState.gameTimeMinutes = h * 60 + (mm || 0); };
+  const lord = { _siteId: site.id, people: 'aurennais', _lord: true, greeting: ['-'] };
+  st.p = 70; st.flags = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1;
+  const out = {};
+  try { window.showMsg = m => msgs.push(m);
+    at('commencement', 9); out.lordC = feastGreeting(lord); at('lamps', 9); out.lordL = feastGreeting(lord);
+    at('commencement', 10, 5); _commLast = ''; tickBursar(); tickBursar(); out.ten = msgs.filter(m => m.startsWith('At ten')); out.want = commReadLine(site, 28);
+    msgs.length = 0; _commLast = ''; at('commencement', 10, 40); tickBursar(); out.late = msgs.filter(m => m.startsWith('At ten')).length;
+    at('commencement', 10, 5); px = site.x + 40; tickBursar(); out.far = msgs.filter(m => m.startsWith('At ten')).length; px = site.x + 1;
+    const n = [0, 0, 0, 0]; for (let y = 1; y <= 300; y++) n[commAdmitted(site, y).length]++; out.counts = n; out.same = JSON.stringify(commAdmitted(site, 31)) === JSON.stringify(commAdmitted(site, 31));
+    let one = 0; for (let y = 1; y <= 40 && !one; y++) if (commAdmitted(site, y).length === 1) one = y; out.oneLine = one ? commReadLine(site, one) : null;
+  } finally { window.showMsg = sm; worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.LC = FEST_LORD_LINE.commencement.line; out.LL = FEST_LORD_LINE.lamps.line;
+  return out;
+});
+console.log(JSON.stringify(cr).slice(0, 2000));
+check(`the Commencement's reading at ten on the square, once (not at 10:40, not 40 m off); admitted none, one or two over 300 years ${JSON.stringify(cr.counts)}, the same for a year; the Factor's or Prior's lines on the Commencement and the Lamps`, cr.ten.length === 1 && cr.ten[0] === cr.want && cr.late === 0 && cr.far === 0 && cr.counts[0] > 110 && cr.counts[1] > 70 && cr.counts[2] > 25 && cr.counts[3] === 0 && cr.same && /stands, and the square applauds until (she|he) sits again\.$/.test(cr.oneLine || '') && cr.lordC === cr.LC && cr.lordL === cr.LL, cr);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -37,6 +37,25 @@ check(`the lane is cleared (${r.unstamped} points outside its clearing) and noth
 check(`an arrow's line from the mark, 1.5 m up, to each face clears the ground by ${r.clear} m`, r.clear >= .25, r.clear);
 check(`the butt's face at the 30 m peg, ${r.faceUp} m up; ${r.draws} draws (10 or fewer) and ${r.tris} triangles (6,000 or fewer)`, r.faceAt < .01 && Math.abs(r.faceUp - 1.2) < .35 && r.draws <= 10 && r.tris <= 6000, r);
 
+// 3a. the mark on E (Session 2337): on Riverfair the mark offers the butts and E steps you up; the day before, or 4 m off, it asks nothing;
+// before ten E gives the hours and starts nothing
+const pr = await page.evaluate(() => { const site = siteAnywhere('dunmore'), B = WORLD.settle.get('dunmore').butts, st = TS(site), keep = { p: st.p, flags: st.flags };
+  const rf = FESTIVALS.find(f => f.key === 'riverfair'), n = ((rf.month - CAL.startMonth + 12) % 12) * 28 + rf.dom - 1;
+  const at = (day, h) => { worldState.gameTimeAbsMinutes = day * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  st.p = 70; st.flags = {}; worldState.festivals = {}; const w0 = EQ.weapon, a0 = EQ.ammo, msgs = [], sm = window.showMsg; const out = {};
+  EQ.weapon = { name: 'Test Bow', ico: '🏹', type: 'equip', slot: 'weapon', atk: [5, 7], weaponShape: 'bow', wType: 'pierce', twoHand: true, weight: 3 };
+  EQ.ammo = { name: 'Iron Arrow', ico: '➶', type: 'ammo', qty: 30, arrowDmg: [2, 12] };
+  try { window.showMsg = (m, c) => { msgs.push(m); };
+    px = B.x; pz = B.z; at(n - 1, 11); out.before = buttsPrompt();
+    at(n, 11); out.on = buttsPrompt(); out.world = shipPrompt(); px = B.x + B.dz * 4; pz = B.z - B.dx * 4; out.off = buttsPrompt(); px = B.x; pz = B.z;
+    at(n, 9); out.early = shrineInteract(); out.earlyBut = !!BUTTS; out.earlySay = msgs[msgs.length - 1];
+    at(n, 11); out.e = shrineInteract(); out.started = !!BUTTS; out.mark = BUTTS ? +Math.hypot(BUTTS.x - B.x, BUTTS.z - B.z).toFixed(3) : null; out.during = buttsPrompt();
+  } finally { window.showMsg = sm; if (BUTTS) buttsEnd('left'); EQ.weapon = w0; EQ.ammo = a0; Object.assign(st, keep); worldState.festivals = {}; }
+  return out; });
+console.log(JSON.stringify(pr));
+check(`on Riverfair at the mark the world's prompt is the butts' (${pr.world}); the day before ${pr.before}, 4 m off ${pr.off}`, pr.on === "Press 'E' to step up to the mark" && pr.world === pr.on && !pr.before && !pr.off, pr);
+check(`E at 9:00 gives the hours (${pr.earlySay}) and starts nothing; at 11:00 it steps you up on the lane's mark, and the prompt is gone while you shoot`, pr.early && !pr.earlyBut && /10:00/.test(pr.earlySay || '') && pr.e && pr.started && pr.mark < .01 && !pr.during, pr);
+
 // 3. the contest down the lane: begun with no mark given, it takes the lane's; the kit's butt moves from end to end, the standing one lifted
 const ct = await page.evaluate(() => { const site = siteAnywhere('dunmore'), S = WORLD.settle.get('dunmore'), B = S.butts, st = TS(site), keep = { p: st.p, flags: st.flags };
   const rf = FESTIVALS.find(f => f.key === 'riverfair'), n = ((rf.month - CAL.startMonth + 12) % 12) * 28 + rf.dom - 1; worldState.gameTimeAbsMinutes = n * 1440 + 660; worldState.gameTimeMinutes = 660;
