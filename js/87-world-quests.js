@@ -710,9 +710,9 @@ const giver=`${lord.title} ${lord.name}`;
     return GOD_SHRINE.get(god.name);}
   function godOf(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13);return GODS[h%GODS.length];}
   const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
-  function shrinePrompt(){{const fa=festActPrompt();if(fa)return fa;} /* S2324 — the festival's act */{const bp=buttsPrompt();if(bp)return bp;} /* S2337 — the butts' mark */{const fp=fairRingPrompt();if(fp)return fp;} /* S2345 — the Strait Fair's ring */{const cp=erCartPrompt();if(cp)return cp;} /* S1947 — the stuck cart, at the shrine's hook in the world's prompt */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
+  function shrinePrompt(){{const fa=festActPrompt();if(fa)return fa;} /* S2324 — the festival's act */{const bp=buttsPrompt();if(bp)return bp;} /* S2337 — the butts' mark */{const fp=fairRingPrompt();if(fp)return fp;} /* S2346 — the Strait Fair's ring */{const cp=erCartPrompt();if(cp)return cp;} /* S1947 — the stuck cart, at the shrine's hook in the world's prompt */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
   // S497 — on its god's own day (calDay, the calendar's week) a shrine's boon lasts twice as long, two days; the once a day stays
-  function shrineInteract(){if(festActInteract())return true; /* S2324 */if(buttsInteract())return true; /* S2337 */if(fairRingInteract())return true; /* S2345 */if(erCartInteract())return true; /* S1947 — the stuck cart */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
+  function shrineInteract(){if(festActInteract())return true; /* S2324 */if(buttsInteract())return true; /* S2337 */if(fairRingInteract())return true; /* S2346 */if(erCartInteract())return true; /* S1947 — the stuck cart */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){const er=erPrayerAt(S);showMsg(er||'The altar is quiet. Come back tomorrow.',er?'#e8d8a0':'#c8b880');return true;} /* S1817 — a carried prayer is said on a quiet day too */
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(seededRng('boon',S.site.id+':'+Math.floor(abs/1440))()*SHRINE_BOONS.length)]; /* S679 — the boon rolls on the shrine and the day (co-op rules), not Math.random */if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
@@ -3813,7 +3813,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(A.night&&!festNightHere(s))return null;if(A.from&&hourNow()>=FEST_NIGHT[1]&&hourNow()<A.from)return null; /* S2338 — First Snow's night from 18:00 */
     if(festActDone(h.f.key,s,A.night?calDay(absMin()-(hourNow()<FEST_NIGHT[1]?1440:0)).year:null))return null;
     if(h.f.key==='greening'||h.f.key==='blaze'||h.f.key==='firstsnow'){if(Math.hypot(px-s.x,pz-s.z)>FEST_POLE_R)return null;} /* the pole, the fire: the square's middle */
-    else if(h.f.key==='riverfair'){if(Math.floor(hourNow())!==FEST_BLESS_H)return null; /* S2347 — the hour, not its first minute */const w=festWaterAt(s);if(Math.hypot(px-w.x,pz-w.z)>FEST_WATER_R)return null;}
+    else if(h.f.key==='riverfair'){if(Math.floor(hourNow())!==FEST_BLESS_H)return null; /* S2348 — the hour, not its first minute */const w=festWaterAt(s);if(Math.hypot(px-w.x,pz-w.z)>FEST_WATER_R)return null;}
     else return null;
     return {key:h.f.key,site:s,state:h.state,prompt:A.prompt};}
   function festActPrompt(){const a=festActHere();return a?a.prompt:null;}
@@ -3841,7 +3841,7 @@ const giver=`${lord.title} ${lord.name}`;
     const L=buttsLaneOf(s);if(!L||Math.hypot(px-L.x,pz-L.z)>BUTT_PROMPT_R)return null;return s;}
   function buttsPrompt(){return buttsMarkHere()?"Press 'E' to step up to the mark":null;}
   function buttsInteract(){const s=buttsMarkHere();if(!s)return false;const R=buttsStart({site:s});if(R&&R.say)showMsg(R.say,'#e8d8a0');return true;}
-  // S2345 — the Strait Fair's ring on E. While the ring stands (fairRingUp, 83: the fair's morning, 5:00 to noon, in a Markish place keeping
+  // S2346 — the Strait Fair's ring on E. While the ring stands (fairRingUp, 83: the fair's morning, 5:00 to noon, in a Markish place keeping
   // it full or named; S2333), standing inside its rope or within FAIR_PROMPT_R of it, E steps you in: fairRingStart({site}), fought in the ring
   // (fairRingOf), its refusal (shut to you, fought this year) shown as the narrator's. The reeve who will call it (Festivals on the Calendar IV,
   // unapproved) replaces only the words. Hooked beside the butts in shrinePrompt and shrineInteract.
@@ -3892,20 +3892,20 @@ const giver=`${lord.title} ${lord.name}`;
     if(!named){gold-=LANTERN_PRICE;if(typeof updateHUD==='function')updateHUD();}
     showMsg(LANTERN_LOG.sent,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.sent);
     return gp==='gatelander'?LL.answers[i]:LANTERN_LOG.sent;}
-  function tickLanterns(dt){_lantT-=dt;if(_lantT>0)return;_lantT=1;try{tickBlazeLight();}catch(e){} /* S2326 */try{tickWager();}catch(e){console.warn('wager',e);} /* S2339 */try{tickCaravan();}catch(e){console.warn('caravan',e);} /* S2340 */try{tickLamps();}catch(e){console.warn('lamps',e);} /* S2346 */try{tickBursar();}catch(e){console.warn('bursar',e);} /* S2341 */
+  function tickLanterns(dt){_lantT-=dt;if(_lantT>0)return;_lantT=1;try{tickBlazeLight();}catch(e){} /* S2326 */try{tickWager();}catch(e){console.warn('wager',e);} /* S2339 */try{tickCaravan();}catch(e){console.warn('caravan',e);} /* S2340 */try{tickLamps();}catch(e){console.warn('lamps',e);} /* S2347 */try{tickBursar();}catch(e){console.warn('bursar',e);} /* S2341 */
     const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
     const h=s&&isleAt(s.x,s.z)==='gatelands'?lanternOn(s):null,yr=calDay(absMin()).year;
     if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(LANTERN&&(LANTERN.site.id!==s.id||LANTERN.year!==yr))lanternOut();
       if(!LANTERN){const def=lanternDef(s,yr,h),n=spawnNPC(def,Math.atan2(-LANTERN_AT[0],-LANTERN_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);LANTERN={npc:n,site:s,year:yr};}}
     else if(LANTERN)lanternOut();
-    if(!s||!on)return;const fh=festivalHere(s.id);if(!fh||fh.f.key!=='lanterns'||fh.state==='none'||Math.floor(hourNow())!==LANTERN_CLOSE)return; /* S2347 */
+    if(!s||!on)return;const fh=festivalHere(s.id);if(!fh||fh.f.key!=='lanterns'||fh.state==='none'||Math.floor(hourNow())!==LANTERN_CLOSE)return; /* S2348 */
     const k=s.id+':'+calDay(absMin()).n;if(_lantLast===k||Math.hypot(px-s.x,pz-s.z)>LANTERN_SQUARE)return;_lantLast=k;
     showMsg(LANTERN_LOG.last,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.last);}
   // S2326 — the Blaze after midnight: its Markman's word still that night, and at first light, on the square, once, the fire let die
   function festNightGreeting(def){if(!def||!def._siteId||def._lantern||def.people!=='markman')return null;const s=siteAnywhere(def._siteId);if(!s)return null;
     const h=festNightHere(s);if(!h||hourNow()>=FEST_NIGHT[0]||!FEST_ACTS[h.f.key].thanks)return null;const r=festActRec(h.f.key,s),c=calDay(absMin());
     if(!r||r.actN!==c.n-1||r.thanked===c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return FEST_ACTS[h.f.key].thanks;}
-  let _blazeLast='';function tickBlazeLight(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||Math.floor(hourNow())!==FEST_NIGHT[1])return; /* S2347 */
+  let _blazeLast='';function tickBlazeLight(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||Math.floor(hourNow())!==FEST_NIGHT[1])return; /* S2348 */
     const S=nearSite(),s=S&&S.site;if(!s||Math.hypot(px-s.x,pz-s.z)>LANTERN_SQUARE)return;const h=festivalHere(s.id,absMin()-1440);if(!h||h.f.key!=='blaze'||h.state==='none')return;
     const k=s.id+':'+calDay(absMin()).n;if(_blazeLast===k)return;_blazeLast=k;const L='The fire on the square is let die. Every chimney in the town is smoking.';
     showMsg(L,'#e8d8a0');if(typeof addLog==='function')addLog('🔥',L);}
@@ -3914,7 +3914,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(def.people==='markman'){const r=festActRec('firstsnow',def._siteId),c=calDay(absMin()); /* S2338 — the day after First Snow sat out */
       if(!r||!r.sat||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return FEST_ACTS.firstsnow.after;}
     if(def.people==='aurennais'){const c=calDay(absMin()); /* S2340 — the day after a pinch; S2341, after a subscription */
-      for(const [k,L] of [['caravan',CARAVAN_LINES.after],['commencement',BURSAR_LOG.after],['lamps',LAMPW_LOG.after]]){ /* S2346 — the day after a lamp set */const r=festActRec(k,def._siteId);
+      for(const [k,L] of [['caravan',CARAVAN_LINES.after],['commencement',BURSAR_LOG.after],['lamps',LAMPW_LOG.after]]){ /* S2347 — the day after a lamp set */const r=festActRec(k,def._siteId);
         if(!r||r.as===undefined&&k==='commencement'||r.actN!==c.n-1||r.thanked===c.n)continue;r.thanked=c.n;return L;}
       return null;}
     if(def.people!=='gatelander')return null;const r=festActRec('lanterns',def._siteId),c=calDay(absMin());
@@ -3986,7 +3986,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(CARAVAN&&(CARAVAN.site.id!==s.id||CARAVAN.year!==yr))caravanOut();
       if(!CARAVAN){const def=caravanDef(s,yr),n=spawnNPC(def,Math.atan2(-CARAVAN_AT[0],-CARAVAN_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);CARAVAN={npc:n,site:s,year:yr};}}
     else if(CARAVAN)caravanOut();}
-  // S2346 — the Lamps on the Water (*Festivals on the Calendar, III* §4, word for word; Michael's B on #1628). On the Lamps (Lean 4), in an
+  // S2347 — the Lamps on the Water (*Festivals on the Calendar, III* §4, word for word; Michael's B on #1628). On the Lamps (Lean 4), in an
   // Aurennais town keeping it and not occupied, the lampseller stands from 17:00 to 22:00 at the quay's foot in a port (quayLine), else on
   // the square (LAMPW_AT; the draft's fountain, which no square has yet): a townsperson of the town's people (peopleOfSite), named by
   // seededRng('lampseller', site and year). Topic *A lamp*: two gold, or nothing in a town that names you (as the lantern, S2325), once a

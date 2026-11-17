@@ -309,7 +309,7 @@ const ln = await page.evaluate(() => {
     worldState.festivals = {}; out.sent = choose(0); out.sentGold = gold; out.rec = JSON.parse(JSON.stringify(worldState.festivals['lanterns:' + site.id]));
     worldState.festivals = {}; gold = 1; out.poor = choose(1); out.poorRec = !!worldState.festivals['lanterns:' + site.id];
     festivalState = () => 'named'; out.given = choose(1); out.givenGold = gold; festivalState = fs0;
-    _lantLast = ''; at(26, 22.4); tick(); /* S2347: 22:24, the hour and not only its first minute */ out.at22 = !!LANTERN; out.last = _lantLast === site.id + ':' + calDay(worldState.gameTimeAbsMinutes).n;
+    _lantLast = ''; at(26, 22.4); tick(); /* S2348: 22:24, the hour and not only its first minute */ out.at22 = !!LANTERN; out.last = _lantLast === site.id + ':' + calDay(worldState.gameTimeAbsMinutes).n;
     at(27, 10); out.next = folk && feastGreeting(folk.def); out.next2 = folk && feastGreeting(folk.def);
     worldState.festivals['lanterns:' + site.id].sent = false; delete worldState.festivals['lanterns:' + site.id].thanked; out.nextMe = folk && feastGreeting(folk.def);
   } finally { festivalState = fs0; if (LANTERN) lanternOut(); worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; gold = g0; Object.assign(st, { p: keep.p, flags: keep.flags }); }
@@ -337,7 +337,7 @@ const bz = await page.evaluate(() => {
     out.again = festActPrompt(); out.thanks = feastGreeting(man()); out.thanks2 = feastGreeting(man());
     at(1, 7); out.p07 = festActPrompt();
     worldState.festivals = {}; at(0, 21); festActInteract(); out.eve = feastGreeting(man()); at(1, 1); out.eveAfter = feastGreeting(man());
-    _blazeLast = ''; at(1, 6.4); tickBlazeLight(); /* S2347: 6:24 */ out.light = _blazeLast; tickBlazeLight(); out.light2 = _blazeLast;
+    _blazeLast = ''; at(1, 6.4); tickBlazeLight(); /* S2348: 6:24 */ out.light = _blazeLast; tickBlazeLight(); out.light2 = _blazeLast;
   } finally { worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
   out.T = FEST_ACTS.blaze.thanks; out.R = FEST_LORD_LINE.blaze.line; out.ev = bf.dom;
   return out;
@@ -508,7 +508,7 @@ const cr = await page.evaluate(() => {
 });
 console.log(JSON.stringify(cr).slice(0, 2000));
 check(`the Commencement's reading at ten on the square, once (not at 10:40, not 40 m off); admitted none, one or two over 300 years ${JSON.stringify(cr.counts)}, the same for a year; the Factor's or Prior's lines on the Commencement and the Lamps`, cr.ten.length === 1 && cr.ten[0] === cr.want && cr.late === 0 && cr.far === 0 && cr.counts[0] > 110 && cr.counts[1] > 70 && cr.counts[2] > 25 && cr.counts[3] === 0 && cr.same && /stands, and the square applauds until (she|he) sits again\.$/.test(cr.oneLine || '') && cr.lordC === cr.LC && cr.lordL === cr.LL, cr);
-// 19. the Lamps on the Water (Session 2346): the lampseller from 17:00 to 22:00, at the quay's foot in a port, on the square inland, not
+// 19. the Lamps on the Water (Session 2347): the lampseller from 17:00 to 22:00, at the quay's foot in a port, on the square inland, not
 // while occupied; *A lamp* at 2 gold once a year, four answers, the fourth only with a ship; the ledger from 18:00 to 18:30 near her, once;
 // none, one or two hulls struck in six, three and one in ten; the next day an Aurennais says so, once
 const lm = await page.evaluate(() => {

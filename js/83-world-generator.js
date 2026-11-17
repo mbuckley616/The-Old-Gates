@@ -529,7 +529,7 @@ function genSettlement(site){
         // fitted after every lot has had its try at the hall (mkLater), so a town house's lot and its apron never take a hall's place.
         lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;
         if(MK&&!inn)mkLater.push(()=>{const E=[.12,.6,.12,.12];if(fit(4.2,3.4,E)){const w=most(4.2,6.6,q=>fit(q,3.4,E)),d=most(3.4,7,q=>fit(w,q,E));
-          if(fit(w,d,E)){const q=PKIT.stream(`${site.id}:townhouse:${lot.n}`),o={w,d,wall:o1.wall,chimney:!!o1.chimney,pitch:+(46+q()*12).toFixed(1),h2:+(2.35+q()*.25).toFixed(2),side:q()<.5?-1:1};
+          if(fit(w,d,E)){const q=PKIT.stream(`${site.id}:townhouse:${lot.n}`),o={w,d,wall:o1.wall,chimney:!!o1.chimney,pitch:+(46+q()*12).toFixed(1),h2:+(2.7+q()*.2).toFixed(2),side:q()<.5?-1:1};
             lot.kit={kind:'marktown',o,ext:E,w0,d0,stoop:E[1],shell:`${site.id}:windows:${lot.n}`};return;}}
           lot.w=w0;lot.d=d0;lot.x=x0;lot.z=z0;});});
         for(const f of mkLater)f();}
@@ -728,7 +728,7 @@ function genSettlement(site){
       const eave=H.sill+H.wh,ridge=H.ry0+(o.w/2+H.ov)*Math.tan(H.pitch),turf=o.roof==='turf',mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(lot.x+hz*s_,y,lot.z+hz*c);
       {const b=new THREE.BoxGeometry(o.w+.3,eave,o.d+.3).toNonIndexed();b.translate(0,eave/2,0);kitLo.push([b,mx,PKIT.mk.mats().wall[o.wall].color.clone().multiplyScalar(.5)]);}
       {const r=kitRoof(o.d/2+(turf?.4:.6),o.w/2+H.ov,H.ry0,ridge);r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(...(turf?[.42,.36,.24]:[.16,.15,.15]))]);}
-      lot._kitDoor=0;lot._wallH=eave;lot._storeys=1;lot.two=false;k.tris=H.tris;k.calls=H.draws;k.colour=o.roof;k.door=0;
+      lot._kitDoor=0;lot._wallH=H.wh;lot._storeys=1;lot.two=false;k.tris=H.tris;k.calls=H.draws;k.colour=o.roof; /* S2344 — the wall over its floor, as S1321's: a storey is floor to eaves (was the footing's top to the eaves from the ground) */k.door=0;
       const sm=o.chimney?{u:-o.w/4,v:-o.d*.25,y:ridge+.95}:{u:0,v:-o.d*.15,y:ridge+.6};S.chimneys.push({x:lot.x+sm.u*c+(hz+sm.v)*s_,y:y+sm.y,z:lot.z-sm.u*s_+(hz+sm.v)*c,t:type||'home',k:0});}
     // S2003 — the Markish town house (PKIT.mk.townhouse, its options as fitted above; its lit windows keyed by the town and the lot): set back
     // on its lot by its steps and the footing's 0.12 m, the door its own (off the middle on a gable of 5.2 m or more); its far copy a box for

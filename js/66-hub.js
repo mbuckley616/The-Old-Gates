@@ -733,7 +733,7 @@ function sheetFigGiveBack(R,keep){const root=R.root;SHEET_FIG.scene.remove(root)
 // ready: where the browser compiles in parallel (KHR_parallel_shader_compile) that is off the main thread. The shadow pass's depth programs
 // for the skinned parts (6 at s1682) have no compile of their own in three and are made in the first draw. Headless SwiftShader has no
 // such extension: compileAsync resolves at once and every program (20 at s1682, 15 materials) is compiled in the first draw, which holds
-// the page 50 s alone and 75–150 s beside other boots, once a boot (Session 2344; the same 20 at S2066's build, s1440)
+// the page 50 s alone and 75–150 s beside other boots, once a boot (Session 2345; the same 20 at S2066's build, s1440)
 function sheetFigDraw(){const F=SHEET_FIG,cv=document.getElementById('eq-fig');F.owed=false;if(!cv||!sheetFigOk()||F.compiling)return false;
   const t0=performance.now(),dpr=Math.min(2,window.devicePixelRatio||1),W=Math.round(200*dpr),H=Math.round(332*dpr);
   let R;try{R=tpEnsure();}catch(e){F.err='build: '+e.message;return false;}

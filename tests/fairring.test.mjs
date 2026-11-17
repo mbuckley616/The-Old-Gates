@@ -38,7 +38,7 @@ console.log(JSON.stringify(d));
 check(`the ring is down at 4:30 (${!d.dawn}), up at 9:00 (${d.morning}), down after noon (${!d.noon}), and not put up in a lean year (${!d.thin})`, !d.dawn && d.morning && !d.noon && !d.thin, d);
 check(`fairRingStart with no middle fights in the ring (${d.mid} m off its middle); it stays up past noon while the bout runs and comes down after`, d.ok && d.mid < .01 && d.during && !d.after, d);
 
-// Session 2345: the ring on E. Inside the rope while it stands, the world's prompt is the ring's and E steps you in; the day before, after
+// Session 2346: the ring on E. Inside the rope while it stands, the world's prompt is the ring's and E steps you in; the day before, after
 // noon and 3 m outside the rope there is no prompt; in the bout the prompt is gone; a second try the same year gives its refusal.
 const e = await page.evaluate(id => { const site = siteAnywhere(id), S = WORLD.settle.get(id), F = S.fair, st = TS(site), keep = { p: st.p, flags: st.flags }, o = {};
   const sf = FESTIVALS.find(f => f.key === 'straitfair'), n = ((sf.month - CAL.startMonth + 12) % 12) * 28 + sf.dom - 1;
