@@ -729,9 +729,11 @@ function sheetFigLend(R){const F=SHEET_FIG,rig=R.rig,root=R.root,keep={p:root.pa
 function sheetFigGiveBack(R,keep){const root=R.root;SHEET_FIG.scene.remove(root);if(keep.p)keep.p.add(root);root.position.copy(keep.pos);root.rotation.copy(keep.rot);root.visible=keep.vis;
   if(keep.L>0)hbLevel(R.rig,keep.L);for(const [m,c,f] of keep.m){m.castShadow=c;m.frustumCulled=f;}root.updateMatrixWorld(true);}
 // draw the body into the canvas now; false (with SHEET_FIG.err) when there is nothing to draw yet. The first draw of a material it has
-// not drawn before compiles its programs first (compileAsync, for the target) and draws when they are ready: where the browser compiles
-// in parallel (KHR_parallel_shader_compile) that is off the main thread. Headless SwiftShader has no such extension: there the body's
-// programs for this light hold the page about 17 s, once a boot
+// not drawn before compiles its programs first (compileAsync, for the target, and the window's quad for its own) and draws when they are
+// ready: where the browser compiles in parallel (KHR_parallel_shader_compile) that is off the main thread. The shadow pass's depth programs
+// for the skinned parts (6 at s1682) have no compile of their own in three and are made in the first draw. Headless SwiftShader has no
+// such extension: compileAsync resolves at once and every program (20 at s1682, 15 materials) is compiled in the first draw, which holds
+// the page 50 s alone and 75–150 s beside other boots, once a boot (Session 2345; the same 20 at S2066's build, s1440)
 function sheetFigDraw(){const F=SHEET_FIG,cv=document.getElementById('eq-fig');F.owed=false;if(!cv||!sheetFigOk()||F.compiling)return false;
   const t0=performance.now(),dpr=Math.min(2,window.devicePixelRatio||1),W=Math.round(200*dpr),H=Math.round(332*dpr);
   let R;try{R=tpEnsure();}catch(e){F.err='build: '+e.message;return false;}
@@ -739,7 +741,7 @@ function sheetFigDraw(){const F=SHEET_FIG,cv=document.getElementById('eq-fig');F
   sheetFigSetup(W,H);if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}
   const mats=[];R.root.traverse(m=>{if(m.isMesh)for(const x of [].concat(m.material))if(x&&!F.done.has(x))mats.push(x);});
   if(mats.length&&typeof REN.compileAsync==='function'){let keep;F.compiling=true;
-    try{keep=sheetFigLend(R);REN.setRenderTarget(F.rt);var p=REN.compileAsync(F.scene,F.cam);}catch(e){F.compiling=false;F.err='compile: '+e.message;return false;}finally{REN.setRenderTarget(null);if(keep)sheetFigGiveBack(R,keep);}
+    try{keep=sheetFigLend(R);REN.setRenderTarget(F.rt);var p=REN.compileAsync(F.scene,F.cam);REN.setRenderTarget(F.out);p=Promise.all([p,REN.compileAsync(F.qs,F.qc)]);}catch(e){F.compiling=false;F.err='compile: '+e.message;return false;}finally{REN.setRenderTarget(null);if(keep)sheetFigGiveBack(R,keep);}
     p.then(()=>{for(const x of mats)F.done.add(x);F.compiling=false;F.err='';if(hubOpen)sheetFigOwe();},e=>{F.compiling=false;F.err='compile: '+(e&&e.message);});
     F.err='compiling';return false;}
   for(const x of mats)F.done.add(x);
