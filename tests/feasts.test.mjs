@@ -458,5 +458,33 @@ const cv = await page.evaluate(() => {
 console.log(JSON.stringify(cv).slice(0, 2000));
 check(`the Caravan: the caravan-master (${cv.at7}) on the square from 6:00, not at 5:00 or 18:00 or while occupied, the same name for a site and year; his three topics; the Factor's day line`, cv.isle === 'aurenne' && !cv.at5 && cv.at7 && !cv.at18 && !cv.occupied && cv.name2 && JSON.stringify(cv.labels) === JSON.stringify(['How was the road?', 'Why the same day everywhere?', 'A pinch of saffron', 'Farewell.']) && cv.lord === cv.LL, cv);
 check('a pinch at 2 gold (short of two, nothing): the twist of saffron, the log, offered once a year; the next day an Aurennais says so, once', /two gold/.test(cv.poor) && !cv.poorDone && cv.pinch === cv.L.pinch && cv.gold === 8 && cv.item === 'A twist of saffron' && cv.log === cv.L.log && !cv.labels2.includes('A pinch of saffron') && cv.next === cv.L.after && cv.next2 !== cv.L.after, cv);
+// 18. the Commencement's subscription (Session 2337): the bursar on the square from 9:00 to 12:00; 2 gold entered three ways, once a year;
+// the roll's line at noon on the square, once, for the way entered; the next day an Aurennais says so, once
+const bs = await page.evaluate(() => {
+  let site = null; for (let j = 0; j < GRID && !site; j++) for (let i = 0; i < GRID && !site; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; site = c.sites.find(s => s.kind === 'town' || s.kind === 'city') || null; }
+  const st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, p0 = [px, pz], g0 = gold, n0 = playerName, msgs = [], sm = window.showMsg;
+  const cf = FESTIVALS.find(f => f.key === 'commencement');
+  const at = (yr, dd, h, mm) => { worldState.gameTimeAbsMinutes = (((yr - CAL.startYear) * CAL.months + cf.month - CAL.startMonth) * CAL.monthLen + cf.dom - 1 + dd) * 1440 + h * 60 + (mm || 0); worldState.gameTimeMinutes = h * 60 + (mm || 0); };
+  const au = () => ({ _siteId: site.id, people: 'aurennais', greeting: ['-'] });
+  st.p = 70; st.flags = {}; worldState.festivals = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1; playerName = 'Ysolde';
+  const out = { gp: peopleOfSite(site) };
+  try { window.showMsg = m => msgs.push(m);
+    at(28, 0, 8); tickBursar(); out.at8 = !!BURSAR;
+    at(28, 0, 10); tickBursar(); out.at10 = BURSAR && BURSAR.npc.def ? BURSAR.npc.def.role : !!BURSAR; const d = bursarDef(site, 28);
+    const T = d.topics.find(t => t.label === 'A subscription'); out.ask = T && T.response; out.follow = T && T.follow.map(f => f.label);
+    gold = 1; out.poor = bursarSubscribe(site, 0, out.gp); out.poorDone = festActDone('commencement', site);
+    gold = 10; out.named = bursarSubscribe(site, 0, out.gp); out.gold = gold; out.log = msgs[msgs.length - 1]; out.after = d.topics.map(t => t.label);
+    at(28, 0, 12, 10); _bursarLast = ''; msgs.length = 0; tickBursar(); tickBursar(); out.noon = msgs.slice(); out.at12 = !!BURSAR;
+    at(28, 1, 10); out.next = feastGreeting(au()); out.next2 = feastGreeting(au());
+    worldState.festivals = {}; at(29, 0, 10); gold = 10; out.off = bursarSubscribe(site, 2, out.gp); at(29, 0, 12, 40); _bursarLast = ''; msgs.length = 0; tickBursar(); out.late = msgs.slice(); at(29, 0, 12, 5); px = site.x + 40; tickBursar(); out.far = msgs.slice(); px = site.x + 1; tickBursar(); out.offNoon = msgs.slice();
+    at(29, 0, 10); st.flags = { occupied: true }; tickBursar(); out.occupied = !!BURSAR; st.flags = {};
+  } finally { window.showMsg = sm; if (BURSAR) bursarOut(); playerName = n0; gold = g0; worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.L = BURSAR_LINES[out.gp] || BURSAR_LINES.aurennais; out.LOG = BURSAR_LOG;
+  return out;
+});
+console.log(JSON.stringify(bs).slice(0, 2000));
+check(`the Commencement: the bursar (${bs.at10}, ${bs.gp}) on the square from 9:00, not at 8:00 or 12:00 or while occupied; *How shall I enter it?* three ways; 2 gold (short of two, nothing), the answer with your name, the log, once a year`, !bs.at8 && bs.at10 && !bs.at12 && !bs.occupied && bs.ask === 'How shall I enter it?' && bs.follow.length === 3 && /two gold/.test(bs.poor) && !bs.poorDone && bs.named === bs.L.answers[0].replace('{player}', 'Ysolde') && bs.gold === 8 && bs.log === bs.LOG.paid && !bs.after.includes('A subscription'), bs);
+check('at noon on the square the roll is read for the way you entered, once (not at 12:40, not 40 m off); the next day an Aurennais says so, once', bs.noon.length === 1 && bs.noon[0] === bs.LOG.noon[0] && bs.next === bs.LOG.after && bs.next2 !== bs.LOG.after && bs.off === bs.L.answers[2] && bs.late.length === 0 && bs.far.length === 0 && bs.offNoon.length === 1 && bs.offNoon[0] === bs.LOG.noon[2], bs);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

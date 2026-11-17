@@ -3880,7 +3880,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(!named){gold-=LANTERN_PRICE;if(typeof updateHUD==='function')updateHUD();}
     showMsg(LANTERN_LOG.sent,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.sent);
     return gp==='gatelander'?LL.answers[i]:LANTERN_LOG.sent;}
-  function tickLanterns(dt){_lantT-=dt;if(_lantT>0)return;_lantT=1;try{tickBlazeLight();}catch(e){} /* S2326 */try{tickWager();}catch(e){console.warn('wager',e);} /* S2335 */try{tickCaravan();}catch(e){console.warn('caravan',e);} /* S2336 */
+  function tickLanterns(dt){_lantT-=dt;if(_lantT>0)return;_lantT=1;try{tickBlazeLight();}catch(e){} /* S2326 */try{tickWager();}catch(e){console.warn('wager',e);} /* S2335 */try{tickCaravan();}catch(e){console.warn('caravan',e);} /* S2336 */try{tickBursar();}catch(e){console.warn('bursar',e);} /* S2337 */
     const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
     const h=s&&isleAt(s.x,s.z)==='gatelands'?lanternOn(s):null,yr=calDay(absMin()).year;
     if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(LANTERN&&(LANTERN.site.id!==s.id||LANTERN.year!==yr))lanternOut();
@@ -3901,8 +3901,10 @@ const giver=`${lord.title} ${lord.name}`;
   function festAfterGreeting(def){if(!def||def._lantern)return null;
     if(def.people==='markman'){const r=festActRec('firstsnow',def._siteId),c=calDay(absMin()); /* S2334 — the day after First Snow sat out */
       if(!r||!r.sat||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return FEST_ACTS.firstsnow.after;}
-    if(def.people==='aurennais'){const r=festActRec('caravan',def._siteId),c=calDay(absMin()); /* S2336 — the day after a pinch */
-      if(!r||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return CARAVAN_LINES.after;}
+    if(def.people==='aurennais'){const c=calDay(absMin()); /* S2336 — the day after a pinch; S2337, after a subscription */
+      for(const [k,L] of [['caravan',CARAVAN_LINES.after],['commencement',BURSAR_LOG.after]]){const r=festActRec(k,def._siteId);
+        if(!r||r.as===undefined&&k==='commencement'||r.actN!==c.n-1||r.thanked===c.n)continue;r.thanked=c.n;return L;}
+      return null;}
     if(def.people!=='gatelander')return null;const r=festActRec('lanterns',def._siteId),c=calDay(absMin());
     if(!r||!r.sent||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return LANTERN_LOG.after;}
   // S2335 — the Strait Fair's wager on the boats (*Festivals on the Calendar, II* §3, word for word; Michael's B on #1628). On the Fair
@@ -3972,6 +3974,50 @@ const giver=`${lord.title} ${lord.name}`;
     if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(CARAVAN&&(CARAVAN.site.id!==s.id||CARAVAN.year!==yr))caravanOut();
       if(!CARAVAN){const def=caravanDef(s,yr),n=spawnNPC(def,Math.atan2(-CARAVAN_AT[0],-CARAVAN_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);CARAVAN={npc:n,site:s,year:yr};}}
     else if(CARAVAN)caravanOut();}
+  // S2337 — the Commencement's subscription to the scholars' purse (*Festivals on the Calendar, III* §2, word for word; Michael's B on
+  // #1628). On the Commencement (Shearing 6), in an Aurennais town keeping it and not occupied, the bursar sits on the square
+  // (BURSAR_AT off its middle) from 9:00 to 12:00, a townsperson of the town's people (peopleOfSite), named by seededRng('bursar', site
+  // and year). Topic *A subscription*: 2 gold, once a year a town (worldState.festivals['commencement:'+site] = {act, actN, as}; the
+  // disputation keeps its own, 'disputation:'), entered three ways, answered in the bursar's people's voice; the log. At noon, on the
+  // square (BURSAR_SQUARE), from 12:00 to 12:30, the roll's line once for the way you entered; the next day an Aurennais of the town
+  // says so, once. The table is the look builder's. Named action: bursarSubscribe.
+  const BURSAR_OPEN=9,BURSAR_CLOSE=12,BURSAR_PRICE=2,BURSAR_AT=[5,-4],BURSAR_SQUARE=30;
+  const BURSAR_ASK=['Under my name.','As a friend of the town.','Leave my name off.'];
+  const BURSAR_LINES={aurennais:{greet:'The scholars’ purse, Master. Books and passage for the town’s admitted, by subscription. Two gold enters a name on the roll, and the roll is read at noon.',
+      answers:['Entered, Master: {player}. You will be read at noon in the order you paid, which is after the cooper. The order is by date of payment and not by rank. It is the whole of the town’s democracy, and the town is very proud of it.',
+        'Entered, Master: a friend of the town. It is the commonest name on the roll, and the most generous. I have never known why.',
+        'Then I shall enter the sum and not the name. The ledger must balance. The roll need not.']},
+    gatelander:{greet:'It’s the scholars’ purse. Two gold puts your name on the roll, and the roll’s read at noon. I’d not say it buys you anything, but a name read in a square is a name that’s been heard.',
+      answers:['Down you go, after the cooper. They read by who paid first, not who’s grandest. It’s the one thing here I’d take home.','A friend of the town. Half the roll’s that. You’d think the town had more friends than people.','Then it’s a coin with no name on it, and the books won’t mind.']},
+    markman:{greet:'Purse for the kids’ books. Two gold. Your name’s read at noon.',answers:['Down. After the cooper.','Friend of the town. Aye. Most are.','No name. Fine. Coin’s coin.']},
+    oldblood:{greet:'The purse for their books. Two. Your name is read at noon, if you wish it read.',answers:['Written.','Written, as a friend.','The coin, then, and not the name. That is the older way.']}};
+  const BURSAR_LOG={paid:'You subscribe two gold to the scholars’ purse.',
+    noon:['At noon the subscribers are read in the order they paid. Yours is among them, after the cooper’s. Nobody turns round, which in Aurenne is a compliment.',
+      'At noon the subscribers are read in the order they paid. “A friend of the town” is read four times. One of them is yours.',
+      'At noon the subscribers are read in the order they paid. Yours is not among them, and the sum is.'],
+    after:'You subscribed to the purse yesterday, Master. The town will remember it, in writing, which is the only way we remember anything.'};
+  let BURSAR=null,_bursarLast=''; /* {npc, site, year} */
+  function bursarOn(s){const h=festivalHere(s.id);if(!h||h.f.key!=='commencement'||h.state==='none')return null;if(TS(s).flags&&TS(s).flags.occupied)return null;
+    const hr=hourNow();return hr>=BURSAR_OPEN&&hr<BURSAR_CLOSE?h:null;}
+  function bursarSubscribe(site,i,gp){const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return '';const LL=BURSAR_LINES[gp]||BURSAR_LINES.aurennais;
+    if(festActDone('commencement',s))return LL.greet;if(gold<BURSAR_PRICE)return 'You have not the two gold.';gold-=BURSAR_PRICE;if(typeof updateHUD==='function')updateHUD();
+    const c=calDay(absMin()),F=worldState.festivals||(worldState.festivals={}),r=F['commencement:'+s.id]||(F['commencement:'+s.id]={});r.act=c.year;r.actN=c.n;r.as=i;delete r.thanked;
+    showMsg(BURSAR_LOG.paid,'#e8d8a0');if(typeof addLog==='function')addLog('📜',BURSAR_LOG.paid);return LL.answers[i].replace('{player}',playerName||'Traveller');}
+  function bursarDef(s,year){const gp=peopleOfSite(s),r=seededRng('bursar',s.id+':'+year),bank=NAMES[(PEOPLES[gp]||PEOPLES.aurennais).names]||NAMES.irish,
+    female=r()<.5,L=female&&bank.f&&bank.f.length?bank.f:bank.m,LL=BURSAR_LINES[gp]||BURSAR_LINES.aurennais;
+    return {name:L[Math.floor(r()*L.length)],role:'Bursar',ico:'📜',female,people:gp,x:s.x+BURSAR_AT[0],z:s.z+BURSAR_AT[1],_siteId:s.id,_lantern:true,greeting:[LL.greet],
+      get topics(){return [...(festActDone('commencement',s)?[]:[{label:'A subscription',folder:true,response:'How shall I enter it?',
+        follow:BURSAR_ASK.map((q,i)=>({label:q,fn:()=>bursarSubscribe(s,i,gp)}))}]),{label:'Farewell.',bye:true}];}};}
+  function bursarOut(){const B=BURSAR;if(!B)return;const n=B.npc;if(n){sc.remove(n.g);sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);}BURSAR=null;}
+  function tickBursar(){const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
+    const h=s&&isleAt(s.x,s.z)==='aurenne'?bursarOn(s):null,yr=calDay(absMin()).year;
+    if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(BURSAR&&(BURSAR.site.id!==s.id||BURSAR.year!==yr))bursarOut();
+      if(!BURSAR){const def=bursarDef(s,yr),n=spawnNPC(def,Math.atan2(-BURSAR_AT[0],-BURSAR_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);BURSAR={npc:n,site:s,year:yr};}}
+    else if(BURSAR)bursarOut();
+    if(!s||!on||worldState.gameTimeMinutes<BURSAR_CLOSE*60||worldState.gameTimeMinutes>=BURSAR_CLOSE*60+30)return;
+    const r=festActRec('commencement',s),c=calDay(absMin());if(!r||r.actN!==c.n||r.as==null)return;
+    const k=s.id+':'+c.n;if(_bursarLast===k||Math.hypot(px-s.x,pz-s.z)>BURSAR_SQUARE)return;_bursarLast=k;
+    const L=BURSAR_LOG.noon[r.as]||BURSAR_LOG.noon[0];showMsg(L,'#e8d8a0');if(typeof addLog==='function')addLog('📜',L);}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,
