@@ -140,5 +140,35 @@ check('the butt stands 30 m from the mark; an arrow loosed 3 m off the mark does
 check('three ends at 30, 50 and 70 m; 5, 3 and a miss then six 5s make 38, the arrows that score 5 planted in the face', bt.dists.join() === '30,30,30,50,50,50,70,70,70' && Object.values(bt.after).some(f => f.score === 38) && bt.planted >= 7, [bt.dists, bt.after, bt.planted]);
 check('38 beats the town\'s best: the purse (40 + 20 a tier), a silver arrow named for the town, Bow 30 → 31, and one try a town a year', Object.values(bt.after).some(f => f.won) && bt.gold >= 40 && bt.gold % 20 === 0 && bt.arrow.length === 1 && /^Silver Arrow of /.test(bt.arrow[0]) && bt.bow === 31 && bt.after.skill && /shot here this year/.test(bt.again), bt);
 check('nine misses lose: nothing paid; a second win the same year pays the purse but no second point of Bow; walking 20 m off the mark ends it, lost', bt.lost.ok && bt.lost.f.score === 0 && !bt.lost.f.won && bt.lost.gold === bt.gold && bt.second.bow === 0 && bt.second.gold === 2 * bt.gold && bt.left.gone && bt.left.mesh && bt.left.f === false, bt);
+// 7. the Strait Fair's ring (Session 2315, festivals B session 3): three quarrels in a row, fists, each to a yield, in a Markish town
+const fr = await page.evaluate(() => {
+  const site = ladderSites()[0], st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags, fav: favor(site) }));
+  const sf = FESTIVALS.find(f => f.key === 'straitfair'), n = ((sf.month - CAL.startMonth + 12) % 12) * 28 + sf.dom - 1;
+  const at = h => { worldState.gameTimeAbsMinutes = n * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  st.p = 70; st.flags = {}; (worldState.favor || (worldState.favor = {}))[site.id] = 0; worldState.festivals = {};
+  const w0 = EQ.weapon, sk0 = JSON.stringify(SKILLS.hand), g0 = gold, hp0 = PHP, A = arenaState(), ban0 = A.banUntil;
+  EQ.weapon = { name: 'Test Sword', ico: '🗡', type: 'equip', slot: 'weapon', atk: [5, 7], wType: 'slash', weight: 3 }; SKILLS.hand = { lv: 20, p: 0 }; A.banUntil = 0;
+  const out = { isle: isleAt(site.x, site.z), kind: site.kind };
+  const yieldAll = () => { const seen = []; for (let q = 0; q < 3 && FAIRRING; q++) { seen.push([BOUT && BOUT.foe.name, BOUT && BOUT.foe._disarmed, EQ.weapon ? EQ.weapon.name : null]); boutYield(); for (let k = 0; k < 220 && FAIRRING && FAIRRING.n === q; k++) tickFairRing(1 / 60); } return seen; };
+  try {
+    at(4); out.early = fairRingOpenFor(site).say; at(8);
+    out.dunmore = fairRingOpenFor('dunmore').say;
+    st.p = 40; out.thin = fairRingOpenFor(site).say; st.p = 70;
+    const R = fairRingStart({ site, x: px, z: pz }); out.ok = R.ok; out.seen = yieldAll();
+    out.after = JSON.parse(JSON.stringify(worldState.festivals)); out.gold = gold - g0; out.hand = SKILLS.hand.lv; out.ring = BAG.filter(b => b.keepsake === 'straitfair').map(b => b.name);
+    out.weapon = EQ.weapon && EQ.weapon.name; out.again = fairRingOpenFor(site).say; out.ringNull = !FAIRRING && !BOUT;
+    // a fall in the second quarrel loses it all: nothing paid, the sword back, held at 1 health
+    worldState.festivals['straitfair:' + site.id].year = 0; fairRingStart({ site, x: px, z: pz }); boutYield(); for (let k = 0; k < 220 && FAIRRING && FAIRRING.n === 0; k++) tickFairRing(1 / 60);
+    const q2 = FAIRRING && FAIRRING.n; PHP = 0; const down = boutDown();
+    out.lost = { q2, down, f: JSON.parse(JSON.stringify(worldState.festivals['straitfair:' + site.id])), gold: gold - g0, hp: PHP, weapon: EQ.weapon && EQ.weapon.name, gone: !FAIRRING };
+  } finally { if (FAIRRING) fairRingEnd('left'); EQ.weapon = w0; SKILLS.hand = JSON.parse(sk0); PHP = hp0; A.banUntil = ban0;
+    for (let i = BAG.length - 1; i >= 0; i--) if (BAG[i].keepsake === 'straitfair' || BAG[i].name === 'Test Sword') BAG.splice(i, 1); Object.assign(st, { p: keep.p, flags: keep.flags }); worldState.favor[site.id] = keep.fav; worldState.festivals = {}; }
+  return out;
+});
+console.log(JSON.stringify(fr).slice(0, 2000));
+check('the ring is fought at the Strait Fair from 5h till noon, in a Markish town keeping it full; not in Dunmore, not in a thin year', fr.isle === 'mark' && /from 5h till noon/.test(fr.early) && /Strait Fair/.test(fr.dunmore) && /No ring this year/.test(fr.thin), fr);
+check('three quarrels in turn, each a disarmed fighter, your sword on the rack', fr.ok && fr.seen.length === 3 && fr.seen.every(([nm, dis, w]) => nm && dis && w === null) && fr.seen.map(q => q[0]).join('|') === 'The first quarrel|The second quarrel|The third quarrel', fr.seen);
+check('three yields win: the purse (40 + 20 a tier), the reeve\'s ring named for the town, Hand-to-hand 20 → 21, the sword back, one try a town a year', fr.ringNull && Object.values(fr.after).some(f => f.won && f.quarrels === 3) && fr.gold >= 40 && fr.gold % 20 === 0 && fr.ring.length === 1 && /^Reeve’s Iron Ring of /.test(fr.ring[0]) && fr.hand === 21 && fr.weapon === 'Test Sword' && /fought here this year/.test(fr.again), fr);
+check('a fall in the second quarrel loses it: held at 1 health, nothing paid, the sword back', fr.lost.q2 === 1 && fr.lost.down && fr.lost.gone && fr.lost.f.won === false && fr.lost.f.quarrels === 1 && fr.lost.gold === fr.gold && fr.lost.hp === 1 && fr.lost.weapon === 'Test Sword', fr.lost);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

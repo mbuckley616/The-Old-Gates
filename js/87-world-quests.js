@@ -3591,7 +3591,7 @@ const giver=`${lord.title} ${lord.name}`;
     return g;}
   function buttPlace(B){const D=BUTT_ENDS[B.end],x=B.x+B.dx*D,z=B.z+B.dz*D,y=activeTerrainH(x,z)+BUTT_Y;B.cx=x;B.cy=y;B.cz=z;
     if(B.mesh){B.mesh.position.set(x,y,z);B.mesh.rotation.y=Math.atan2(-B.dx,-B.dz);}}
-  function buttsStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS)return {say:'You are already in a contest.'};
+  function buttsStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING)return {say:'You are already in a contest.'};
     const k=buttsOpenFor(o.site,o);if(!k.ok)return k;if(!EQ.weapon||weaponSkill(EQ.weapon)!=='bow'||!EQ.ammo)return {say:'You’ll want a bow and arrows for the butts.'};
     const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;let dx=o.dx,dz=o.dz;if(dx==null){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}const n=Math.hypot(dx,dz)||1;
     const B=BUTTS={site:s,x,z,dx:dx/n,dz:dz/n,end:0,shots:[],year:k.year,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),rivals:buttRivals(s,k.year),mesh:o.mesh===false?null:buttMesh()};
@@ -3628,6 +3628,53 @@ const giver=`${lord.title} ${lord.name}`;
     B.how=how;B.total=total;B.best=best;B.won=won;B.paid=paid;B.skill=skill;return B;}
   // the contest's point of skill: a level, as a skill book's (the level's marks too)
   function buttsSkillUp(id){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)return false;s.lv++;skillMark(id,1);return true;}
+  // S2315 — festivals B session 3, the Strait Fair's ring (Michael's B on #1628, docs/design/festivals.md, *The contests*). On the
+  // Strait Fair (Highsun 4), 5h to 12h, in a Markish town keeping it full or named, you fight three quarrels in a row in the ring,
+  // fists only (your weapon and shield to the rack, as the brawl's), each a bout to a yield under the bout's rules (the rope, the
+  // yield at a quarter, the 0.4 s held blow, spared after 3 s, the ring holds you at 1). The three are the brawl's fighter by the
+  // town's tier (worldTierAt), keyed by site, year and quarrel. Win all three and the purse is 40 + 20 gold a tier above the first,
+  // the reeve's iron ring named for the town and year, and +1 Hand-to-hand once a year whatever the town. A loss in any quarrel ends
+  // it with nothing; there is no stake. A blow after a yield is assault (as the brawl's), a kill murder (the ladder's: 5 points, the
+  // rings of the Mark shut 28 days). One try a town a year (worldState.festivals['straitfair:'+site]). The ring's rope and the reeve
+  // who calls it are the look builder's and the quest writer's: fairRingStart({site,x,z}) is what they call, and the fighters' names
+  // and the lines here are placeholders. Named actions: fairRingStart, fairRingEnd.
+  const FAIR_OPEN=5,FAIR_CLOSE=12,FAIR_R=5,FAIR_N=3,FAIR_PURSE=40,FAIR_PURSE_TIER=20,FAIR_NAMES=['The first quarrel','The second quarrel','The third quarrel'];
+  let FAIRRING=null; /* {site,x,z,tier,year,n,foe,held,assaults,end} */
+  function fairRingOpenFor(site,o){o=o||{};const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return {say:'There is no ring here.'};
+    const h=festivalHere(s.id);if(!h||h.f.key!=='straitfair')return {say:'The ring is fought at the Strait Fair.'};
+    if(h.state==='thin')return {say:'No ring this year. There’s nobody with a quarrel worth the rope.'};
+    const hr=hourNow();if(!o.force&&(hr<FAIR_OPEN||hr>=FAIR_CLOSE))return {say:`The ring is fought from ${FAIR_OPEN}h till noon.`};
+    if(dayNow()<(arenaState().banUntil||0))return {say:'The rings of the Mark are shut to you.'};
+    const F=worldState.festivals||{},me=F['straitfair:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have fought here this year.'};
+    return {ok:true,site:s,state:h.state,year:yr};}
+  function fairRingFoe(R){const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,R.x,R.z,'Bandit',null,{tier:R.tier})),`strait:${R.site.id}:${R.year}:${R.n}`);
+    e.name=e.displayName=FAIR_NAMES[R.n]||'The quarrel';e._disarmed=true;e._questTag='straitfair';e.homeX=R.x;e.homeZ=R.z;
+    if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);return e;}
+  function fairRingDrop(e){if(!e)return;boutEnd(e);if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
+    const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
+  function fairRingBout(R){const e=R.foe=fairRingFoe(R);
+    boutStart({foe:e,x:R.x,z:R.z,r:FAIR_R,on:{
+      yield:()=>showMsg(`${e.name} goes down on one knee.`,'#e8d8a0'),
+      struck:()=>{R.assaults++;ringCrime(R.site.id,'assault',CRIME_PTS.assault);showMsg(`You struck ${e.name} after the yield. That is assault.`,'#ff6060');},
+      won:()=>{fairRingDrop(e);R.n++;if(R.n>=FAIR_N){fairRingEnd('won');return;}showMsg(`${e.name} is spared. ${FAIR_NAMES[R.n]}.`,'#e8d8a0');fairRingBout(R);},
+      lost:(b,how)=>fairRingEnd('lost',how),murder:()=>fairRingEnd('murder')}});}
+  function fairRingStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING)return {say:'You are already in a contest.'};
+    const k=fairRingOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
+    const R=FAIRRING={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,n:0,foe:null,held:kitHold(),assaults:0,end:null};
+    const F=worldState.festivals||(worldState.festivals={});F['straitfair:'+s.id]={year:k.year,won:false,quarrels:0};
+    showMsg('The rope goes up. Three quarrels, fists, each to a yield.','#e8d8a0');fairRingBout(R);return {ok:true,tier:R.tier};}
+  function fairRingEnd(how,why){const R=FAIRRING;if(!R)return null;FAIRRING=null;const e=R.foe;
+    if(how==='murder'){ringCrime(R.site.id,'murder',MURDER_PTS);arenaState().banUntil=Math.max(arenaState().banUntil||0,dayNow()+RING_BAN_DAYS);boutEnd(e);}
+    else fairRingDrop(e);
+    if(how==='lost'){PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();}
+    kitReturn(R.held);const F=worldState.festivals||(worldState.festivals={}),me=F['straitfair:'+R.site.id]||(F['straitfair:'+R.site.id]={year:R.year});
+    me.quarrels=R.n;me.won=how==='won';let paid=0,skill=false;
+    if(me.won){paid=payPurse(FAIR_PURSE+FAIR_PURSE_TIER*(Math.max(1,R.tier)-1));
+      bagAdd({name:`Reeve’s Iron Ring of ${R.site.name||'the Strait Fair'}`,ico:'💍',type:'misc',weight:.05,buyPrice:0,sellMult:0,keepsake:'straitfair',site:R.site.id,year:R.year,desc:`Won in the ring at the Strait Fair, in the ${calOrd(R.year)} year of the Peace.`});
+      const S=F.skill||(F.skill={});if(S.straitfair!==R.year){S.straitfair=R.year;skill=buttsSkillUp('hand');}}
+    showMsg(how==='won'?`Three quarrels, three yields. The purse is yours: ${paid} gold, and the reeve’s ring.${skill?' Your Hand-to-hand rises.':''}`:how==='murder'?`${e?e.name:'The fighter'} is dead. The fair goes quiet, and the rings of the Mark are shut to you.`:how==='lost'?(why==='rope'?'You step over the rope. Not this year.':'You go down. Not this year.'):'The ring breaks up. Not this year.','#e8d8a0');
+    R.end=how;R.paid=paid;R.skill=skill;return R;}
+  function tickFairRing(dt){const R=FAIRRING;if(!R)return;if(!BOUT||BOUT.foe!==R.foe){fairRingEnd('left');return;}boutTick(dt);}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,
