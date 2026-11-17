@@ -399,6 +399,24 @@ console.log('  powers:', JSON.stringify(powers));
 { const P = powers; check('the town\'s head is dressed by office: the lord in crimson and fur with a sword, the Elder\'s staff, the captain\'s black coat with fur and a sword, the reeve\'s staff and fur, the Prior\'s stole and book, the Factor\'s circlet, ledger and seal; none through a cloak; a captain who is not the head is still a guard',
   P.lord.power === 'lord' && P.lord.crimson && P.lord.fur && P.lord.sword && P.elder.staff && P.elder.cloak && P.elder.legs && P.captain.coat && P.captain.fur && P.captain.sword && !P.captain.mail && !P.captain.spear
   && P.reeve.staff && P.reeve.fur && P.prior.sash && P.prior.book && P.factor.circlet && P.factor.book && P.factor.seal && [P.lord, P.elder, P.reeve].every(x => x.out === 0) && P.guard.power === null && P.guard.mail, P); }
+// S2353 (L1; OG-048, OG-025, OG-044): a town's guard by their people. The Crown's (a Gatelander) mail under the crimson tabard edged in gold;
+// the Mark's hold guard mail and a round shield on the arm, red quartered in blue; the Compact's (an Aurennais) bronze scales and a bronze
+// shield over blue and white; the Old Blood's the plain mail. Nothing of the body through the tabard or inside the shield, and far off the
+// guard is the tabard's or the mail's colour, not the tunic's
+const guards = await page.evaluate(() => { const one = (people, nation, fem) => { const root = buildNPCMesh({ role: 'guard', name: fem ? 'Una' : 'Bran', people, female: fem }, { key: 'gtest' + people, nation }),
+    r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+    const D = r.hbG.dress, P = HB.makePerson(r.hbG, { hoodStats: false }), has = n => !!P.root.getObjectByName(n), far = r.g.cloth;
+    return { people: r.g.people, mail: has('mail'), scales: !!D.scales, bronze: !!(D.mail && D.mail[0] > .55 && D.mail[2] < .3), tabard: has('tabard'), crimson: !!(D.tabard && D.tabard[0] > .5 && D.tabard[1] < .1),
+      tabOut: P.tabard ? P.tabard.out : null, shield: P.shield ? P.shield.on : null, inside: P.shield ? P.shield.inside : null, metal: !!D.shieldMetal, blue: !!(D.tunic && D.tunic[2] > .5 && D.tunic[0] < .2),
+      helm: !!D.helm, spear: !!D.spear, cloak: !!D.cloak, far: [+far.r.toFixed(2), +far.g.toFixed(2), +far.b.toFixed(2)] }; };
+  return { crown: one('gatelander', 'gatelands', false), hold: one('markman', 'mark', false), compact: one('aurennais', 'aurenne', false), compactW: one('aurennais', 'aurenne', true), oldblood: one('oldblood', 'gatelands', false) }; });
+console.log('  guards:', JSON.stringify(guards));
+{ const G = guards, near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < .02);
+  check('a guard is dressed by their people: the Crown\'s crimson tabard over mail, the hold guard\'s round shield on the arm, the Compact\'s bronze scales and bronze shield over blue, the Old Blood\'s plain mail; none through the tabard or the shield; far off the tabard\'s or the mail\'s colour',
+    Object.values(G).every(x => x.mail && x.helm && x.spear && !x.cloak) && G.crown.people === 'gatelander' && G.crown.tabard && G.crown.crimson && G.crown.tabOut === 0 && G.crown.shield === null && near(G.crown.far, [.55, .08, .08])
+    && G.hold.people === 'markman' && !G.hold.tabard && G.hold.shield === 'arm' && G.hold.inside === 0 && !G.hold.scales && near(G.hold.far, [.5, .51, .53])
+    && [G.compact, G.compactW].every(x => x.people === 'aurennais' && x.scales && x.bronze && x.blue && x.shield === 'arm' && x.inside === 0 && x.metal && near(x.far, [.62, .45, .22]))
+    && G.oldblood.people === 'oldblood' && !G.oldblood.tabard && !G.oldblood.scales && G.oldblood.shield === null && near(G.oldblood.far, [.55, .56, .58]), G); }
 // S2329 (#1658 B; OG-064): a guild's head wears the guild's livery over their people's own: the Guildmaster mail under the oxblood tabard
 // with the crossed swords and a sword of their people's make, the Archmage the deep blue robe with the star and a staff of their people's
 // wood (the driver holds it); a guild member is not dressed so, and nothing of the body comes through the tabard

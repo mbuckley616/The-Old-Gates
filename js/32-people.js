@@ -2145,7 +2145,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   const people=HB.PEOPLES[g.people]?g.people:'gatelander',cast=hbCastName(g);
   G=cast?HB.castGenome(cast,{people}):HB.rollGenome(g.hbKey,{people,g:g.female?0:1,child:!!g.child,old:g.age==='elder'});
   // a guard is known by his mail, helm and spear (the town's guards keep their old kit's role; the armour tiers are F10's)
-  if(GUARD_ROLE.test(g.role||''))G.dress=Object.assign({},G.dress,{mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,hood:null,basket:null,staff:null,lantern:null,shield:null,crossbow:null});
+  if(GUARD_ROLE.test(g.role||''))G.dress=hbGuardDress(people,G);
   if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
   if(/^(ring|kid):/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
@@ -2157,6 +2157,25 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(!cast&&!g.child){const O=hbOfficeDress(g,G);if(O)G.dress=O;} /* S2242 — the lord's forester and the Church's inquisitor */
   if(!cast&&g.guildHead)G.dress=hbGuildDress(g,G); /* S2329 (#1658 B) — a guild's head in its livery over their people's own */
   HB_GENOMES.set(g.hbKey,G);return G;}
+/* S2353 (backlog L1: OG-048's Crown guards, OG-025's hold guards, OG-044's Compact guards) — a town's guard dressed by their people, in the
+   kit's own guard dress (builder.check.mjs's pictures: builder-armour-crown, -shield-crown, builder-scales-guard, -scales-kit). Every guard
+   wore the same iron mail, kettle helm and spear. Now a Gatelander guard is the Crown's: the mail under a crimson tabard edged in gold. A
+   Markman is a hold guard: the mail and the helm with a round shield on the left arm, painted red and quartered in blue (the Mark's cuff
+   bands). An Aurennais is the Compact's: blue and white (not the Crown's red), a cuirass of bronze scales, a bronze helm and a bronze-faced
+   round shield. The Old Blood rule nobody, so a guard of theirs keeps the plain mail. Each keeps their own roll under it (face, hair, the
+   tunic's colour but the Compact's blue); what the hands held, a cloak (the spear's arm reaches through it, and a shield would be slung)
+   and what the armour covers go. The spear is every guard's (the driver holds it) */
+const HB_GUARD_STRIP={mail:[.55,.56,.58],helm:[.42,.43,.45],spear:[.46,.33,.2],cloak:null,cloakFur:null,hood:null,cape:null,basket:null,basketCloth:null,
+  staff:null,lantern:null,shield:null,crossbow:null,sword:null,tankard:null,hammer:null,book:null,pipe:null,chair:null,satchel:null,backpack:null,apron:null,
+  coat:null,coatFur:null,coatHood:null,robe:null,burnous:null,mantle:null,shoulderWrap:null,sash:null,sashBelt:null,waistcoat:null,wrap:null,scarf:null,veil:null};
+const HB_GUARD={
+  gatelander:{tabard:[.55,.08,.08],tabardTrim:[.72,.55,.2],tabardLen:.7},
+  markman:{mail:[.5,.51,.53],helm:[.46,.47,.49],shield:[.5,.14,.12],shieldPaint:[.2,.28,.45]},
+  aurennais:{tunic:[.16,.3,.55],trousers:[.86,.84,.78],mail:[.62,.45,.22],scales:true,helm:[.62,.45,.22],shield:[.62,.45,.22],shieldRim:[.6,.45,.22],
+    shieldMetal:true,cuffs:null,beltCoins:null,necklace:null}};
+function hbGuardDress(people,G){const D=Object.assign({},G.dress||{},HB_GUARD_STRIP,JSON.parse(JSON.stringify(HB_GUARD[people]||{})));
+  if(people==='aurennais'&&D.skirtColor)D.skirtColor=D.tunic.slice(); /* a woman of the Compact in its blue to the ankle, as builder-scales-woman */
+  return D;}
 /* S2343 (backlog L1, OG-109's Aurenne travel column; the kit's veil, S1237, worn by no one until the road had people) — the veil on
    the road. One of the road's people (a merchant, a pilgrim or a mourner, the post rider, a family with its cart: def.roadfolk, keyed
    `#road:`) who is Aurennais and wears a wrap that is not a headscarf draws its end across the face, three in five, against the dust and
@@ -2275,6 +2294,8 @@ function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   if(D.coat&&!D.robe&&!D.mail&&!D.scales&&!D.tabard&&!D.chair){g.cloth=C(D.coat);g.sleeve=C(D.coat).multiplyScalar(.9);}
   /* S2242 — a tabard (the inquisitor's white) is the body's colour far off, over mail's sleeves */
   if(D.tabard){g.cloth=C(D.tabard);if(D.mail)g.sleeve=C(D.mail);}
+  /* S2353 — mail with no tabard over it is the body's colour far off too: a hold guard grey, the Compact's bronze (whose scales stop short at the elbow, so the sleeves stay the tunic's) */
+  else if(D.mail&&!D.robe&&!D.chair){g.cloth=C(D.mail);if(!D.scales)g.sleeve=C(D.mail).multiplyScalar(.9);}
   const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);
   g.skirtCol=g.dress&&(D.skirtColor||D.robe)?C(D.robe||D.skirtColor):null;} /* S2349 — the long skirt in its own colour, not the tunic's */
 /* S2332 (section I, critic 17 Nov, s1674) — the stand-in wears the genome's head, beard, hair and apron. The driver is drawn until the builder's
