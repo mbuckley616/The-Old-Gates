@@ -1450,15 +1450,34 @@ function buildTabard(G, body, byName) {
   // its inquisitor in OG-091's red where the sheet drew a cross). A shuttle lying level, sharp at both ends, 17 cm by 3.6, with the gold
   // pirn in its slot (the church's shuttle carries gold thread); each point laid on the front panel where it falls, 3 mm proud (the pirn
   // 4.5), so it bends with the cloth
+  const zAt = (x, y) => { const u = (x - (cx - W)) / (2 * W) * (NC - 1), c0 = Math.max(0, Math.min(NC - 2, Math.floor(u))), t = Math.max(0, Math.min(1, u - c0));
+    const z1 = c => { const L = front[c]; let best = L[0]; for (const q of L) if (Math.abs(q.y - y) < Math.abs(best.y - y)) best = q; return best.z; }; return z1(c0) * (1 - t) + z1(c0 + 1) * t; };
   let sign = 0; if (D.tabardSign === 'shuttle') {
-    const zAt = (x, y) => { const u = (x - (cx - W)) / (2 * W) * (NC - 1), c0 = Math.max(0, Math.min(NC - 2, Math.floor(u))), t = Math.max(0, Math.min(1, u - c0));
-      const z1 = c => { const L = front[c]; let best = L[0]; for (const q of L) if (Math.abs(q.y - y) < Math.abs(best.y - y)) best = q; return best.z; }; return z1(c0) * (1 - t) + z1(c0 + 1) * t; };
     const red = sRGB(...(D.tabardSignCol || [.62, .1, .08])), gilt = sRGB(.74, .57, .22), y0 = nY - .2, L = .17, H = .036, N = 24;
     const strip = (hw, hh, colr, off, xs) => { const base = pos.length / 3;
       for (let i = 0; i <= N; i++) { const x = cx + (-hw + 2 * hw * i / N), s = (x - cx) / hw, h = hh * Math.pow(Math.max(0, 1 - s * s), xs);
         for (const yy of [y0 + h, y0, y0 - h]) { pos.push(x, yy, zAt(x, yy) + off); col.push(colr.r, colr.g, colr.b); } }
       for (let i = 0; i < N; i++) for (let k = 0; k < 2; k++) { const a = base + i * 3 + k, b = a + 3; idx.push(a, b, a + 1, a + 1, b, b + 1); } };
     const i0 = idx.length; strip(L / 2, H / 2, red, .003, 1.1); strip(.03, .006, gilt, .0045, .25); sign = (idx.length - i0) / 3; }
+  // Session 2329 (#1658 B; OG-064) — D.tabardSign 'swords': the Fighters' Guild's crossed swords, as its hall sign has them (SIGN_STYLE's
+  // guild_f), on its Guildmaster's oxblood tabard. Two arming swords 20 cm long, point up, each turned 0.62 rad off upright to cross at
+  // their middles 25 cm under the neck's root: grip, cross and a blade tapering to its point, in the trim's pale colour (or
+  // tabardSignCol). Every point is laid on the front panel where it falls, as the shuttle's are, 3 mm proud; the second sword 0.8 mm over
+  // the first where they cross
+  if (D.tabardSign === 'swords') {
+    const pale = sRGB(...(D.tabardSignCol || D.tabardTrim || [.84, .74, .56])), y0 = nY - .25, L = .2, i0 = idx.length;
+    // a band along the direction (dx, dy) from the point a: at k+1 stations u (in metres along it), each with its half width
+    const band = (ax, ay, dx, dy, us, hw, off) => { const base = pos.length / 3, nx = -dy, ny = dx;
+      for (let k = 0; k < us.length; k++) for (const s of [-1, 0, 1]) { const x = ax + dx * us[k] + nx * s * hw[k], y = ay + dy * us[k] + ny * s * hw[k]; pos.push(x, y, zAt(x, y) + off); col.push(pale.r, pale.g, pale.b); }
+      for (let k = 0; k < us.length - 1; k++) for (let j = 0; j < 2; j++) { const a = base + k * 3 + j, b = a + 3; idx.push(a, b, a + 1, a + 1, b, b + 1); } };
+    for (const [rot, off] of [[.62, .003], [-.62, .0038]]) { const dx = -Math.sin(rot), dy = Math.cos(rot), ax = cx - dx * L * .45, ay = y0 - dy * L * .45;
+      const grip = L * .03, bw = L * .055, us = [], hw = [];
+      for (const [u, w] of [[0, grip * 1.6], [L * .03, grip * 1.6], [L * .035, grip], [L * .17, grip], [L * .2, bw], [L * .45, bw * .93], [L * .7, bw * .86], [L * .88, bw * .8], [L * .94, bw * .45], [L, 0]]) { us.push(u); hw.push(w); }
+      band(ax, ay, dx, dy, us, hw, off);
+      // the cross: a bar 8 cm across the blade's foot, 6 mm deep
+      const gx = ax + dx * L * .185, gy = ay + dy * L * .185, px = Math.cos(rot), py = Math.sin(rot), cw = L * .2;
+      band(gx - px * cw, gy - py * cw, px, py, [0, cw * .1, cw, cw * 1.9, cw * 2], [L * .012, L * .015, L * .015, L * .015, L * .012], off + .0004); }
+    sign = (idx.length - i0) / 3; }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 26 }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'tabard'; mesh.castShadow = mesh.receiveShadow = true; mesh.frustumCulled = false;
   // nothing of the torso, inside the tabard's width and between the shoulders and its hem, in front of the front or behind the back
@@ -4338,6 +4357,25 @@ function buildShuttle(G, body, byName, meshes, root) {
   root.add(grp); bone.attach(grp);
   return { mesh: grp, stats: { under: +(nk.y - yC).toFixed(3), out: +(bb.min.z - fz).toFixed(4), through, cordIn, cordTested, bone: bone.name, tris: Math.round(tris) } };
 }
+// ── the Mages' Guild's star (Session 2329; Michael's B on #1658, OG-064: the guild's livery over the people's own) ──
+// The hall sign's star (SIGN_STYLE's guild_m) worn as a brooch on the Archmage's deep blue robe: eight points, 7 cm across tip to tip
+// (the long points 3.6 cm from the middle, the short 2.6, the notches 1.4), 4 mm thick, its middle 6 cm to the wearer's right of the
+// middle line and 20 cm under the neck's root. It is laid 4 mm out from the frontmost of whatever is worn there, as the shuttle is, and
+// carried by the spine's bone nearest it. `guildStar` is the metal (the guild's pale: the cuffs' and the cord's colour)
+function buildGuildStar(G, body, byName, meshes, root) {
+  const D = G.dress, clouds = wornClouds(body, meshes, root, false), loc = n => root.worldToLocal(byName[n].getWorldPosition(new THREE.Vector3())); root.updateMatrixWorld(true);
+  const nk = loc('neck01'), yC = nk.y - .2, xC = nk.x - .06, R = .036, T = .004;
+  let fz = -9; eachPoint(clouds, (px, py, pz) => { if (Math.abs(py - yC) < R + .004 && Math.abs(px - xC) < R + .004 && pz > fz) fz = pz; });
+  const sh = new THREE.Shape(); for (let i = 0; i < 16; i++) { const a = Math.PI / 2 + i * Math.PI / 8, r = i % 2 ? .014 : (i % 4 ? .026 : R), x = Math.cos(a) * r, y = Math.sin(a) * r; i ? sh.lineTo(x, y) : sh.moveTo(x, y); }
+  const g = new THREE.ExtrudeGeometry(sh, { depth: T, bevelEnabled: true, bevelSize: .0012, bevelThickness: .0012, bevelSegments: 1 }); g.translate(xC, yC, fz + .004 + .0012);
+  const m = new THREE.MeshStandardMaterial({ color: sRGB(...D.guildStar), metalness: .85, roughness: .32, emissive: sRGB(...D.guildStar), emissiveIntensity: .12 });
+  const grp = new THREE.Group(); grp.name = 'guildStar'; const o = new THREE.Mesh(g, m); o.name = 'guildStarMetal'; o.castShadow = o.receiveShadow = true; o.userData.shield = true; grp.add(o);
+  // the promise: nothing worn in front of the star's face, nor through it
+  let through = 0; const bb = new THREE.Box3().setFromBufferAttribute(g.attributes.position); eachPoint(clouds, (x, y, z) => { if (x > bb.min.x && x < bb.max.x && y > bb.min.y && y < bb.max.y && z > bb.min.z) through++; });
+  const bone = ['spine05', 'spine04', 'spine03', 'spine02'].map(n => byName[n]).filter(Boolean).sort((p, q) => Math.abs(loc(p.name).y - yC) - Math.abs(loc(q.name).y - yC))[0];
+  root.add(grp); bone.attach(grp);
+  return { mesh: grp, stats: { under: +(nk.y - yC).toFixed(3), side: +(nk.x - xC).toFixed(3), out: +(bb.min.z - fz).toFixed(4), through, bone: bone.name, tris: Math.round((g.index ? g.index.count : g.attributes.position.count) / 3) } };
+}
 function buildPipe(G, body, byName, meshes, root, heads, jp, bones) {
   const D = G.dress, K = PIPE, side = D.pipeSide === 'R' ? 'R' : 'L', sg = side === 'R' ? -1 : 1, head = byName['head'], tail = n => jp(bones.find(b => b.name === n).tail);
   // the corner of the mouth, between the lips' corners, and the mouthpiece the stem's length inside it along the stem
@@ -5053,6 +5091,8 @@ function* makePersonSteps(G, o = {}) {
   let lensStats = null; if (D.lenses && !D.helm && !hoodUpOn(D) && !veilOn(D) && !(D.tier && tierHelmOn(D))) lensStats = buildLenses(G, body, byName, meshes, root)?.stats ?? null;
   // the Weaver's shuttle on its cord (Session 2307), over everything worn on the breast
   let shuttleStats = null; if (D.shuttle && !D.tabard) shuttleStats = buildShuttle(G, body, byName, meshes, root)?.stats ?? null;
+  // the Mages' Guild's star (Session 2329), over everything worn on the breast but a tabard
+  let starStats = null; if (D.guildStar && !D.tabard) starStats = buildGuildStar(G, body, byName, meshes, root)?.stats ?? null;
   let pipeStats = null; if (D.pipe && !D.helm && !hoodUpOn(D) && !veilOn(D) && !(D.tier && tierHelmOn(D))) pipeStats = buildPipe(G, body, byName, meshes, root, heads, jp, ix.bones).stats;
   // the wheeled chair (Session 1106), last, built to the seated body and everything on it
   yield;
@@ -5066,7 +5106,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, lenses: lensStats, shuttle: shuttleStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, lenses: lensStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -5089,7 +5129,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'shuttle'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'shuttle', 'guildStar'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');

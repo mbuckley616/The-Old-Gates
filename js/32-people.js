@@ -1213,7 +1213,8 @@ function buildNPCMesh(def,opts){
   if(def.rider)g.rider=true; /* S2291 — the road's rider: both hands at the reins, so stripped as the carter is */
   if(def.carter)g.carter=true; /* S2282 — a handcart's pusher: stripped of what is held and of a cloak by hbGenome */
   if(def.bearer)g.bearer=def.bearer; /* S2273 — a bier's bearer (the road's mourners): stripped and in mourning by hbGenome */
-  if(hbOn()&&!opts.noBuilder&&!g.hbKey){const pw=hbPowerOf(def,g);if(pw){g.power=pw;g.gear=HB_POWER[pw].staff?'stick':null;}} /* S2260 (#1566 B) — the town's head dressed by office; the driver holds a staff or nothing (a Mark captain's guard spear dropped) */
+  if(hbOn()&&!opts.noBuilder&&!g.hbKey){const pw=hbPowerOf(def,g);if(pw){g.power=pw;g.gear=HB_POWER[pw].staff?'stick':null;}}
+  if(hbOn()&&!opts.noBuilder&&!g.hbKey&&!g.power){const gh=hbGuildOf(def);if(gh){g.guildHead=gh;g.gear=gh==='m'?'stick':null;}} /* S2329 (#1658 B) — a guild's head: the Archmage's driver holds the staff */ /* S2260 (#1566 B) — the town's head dressed by office; the driver holds a staff or nothing (a Mark captain's guard spear dropped) */
   if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
   let gb=g,G=g.hbKey&&hbOn()?HB_GENOMES.get(g.hbKey):null;
   if(G){const W=hbSeasonDress(g,G);if(W!==G&&W.dress.coat&&!(G.dress||{}).coat){gb=Object.assign({},g,{cloth:new THREE.Color(...W.dress.coat)});gb.sleeve=gb.cloth.clone().multiplyScalar(.9);}G=W;} /* S1763 — the distant copy in the coat's colour */
@@ -2153,6 +2154,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(!cast&&g.gear==='stick'&&!(G.dress&&G.dress.staff))G.dress=hbRoleStaff(g,G); /* S1980 — the elder's and the hermit's staff */
   if(!cast&&!g.child&&HB_PACK_ROLE.test(g.role||''))G.dress=hbRolePack(g,G); /* S2239 — a traveller's pack, by island */
   if(!cast&&!g.child){const O=hbOfficeDress(g,G);if(O)G.dress=O;} /* S2242 — the lord's forester and the Church's inquisitor */
+  if(!cast&&g.guildHead)G.dress=hbGuildDress(g,G); /* S2329 (#1658 B) — a guild's head in its livery over their people's own */
   HB_GENOMES.set(g.hbKey,G);return G;}
 /* S2239 (#1504 B; owed by Session 2217's "Needs eyes") — a traveller's pack. The pack the player buys is on their back by island (S2217,
    TP_PACK in 54-thirdperson.js), and nobody else wore one. Whoever's role says they are on the road (the coaching inns' travellers waiting
@@ -2207,6 +2209,25 @@ const HB_POWER={
     sashPrint:false,amulet:[.74,.56,.2],book:[.12,.18,.4],bookGilt:[.74,.56,.2]},
   factor:{tunic:[.84,.78,.64],skirtColor:[.84,.78,.64],skirt:'long',sandals:[.36,.24,.14],belt:[.36,.24,.14],sash:[.1,.2,.46],sashBorder:[.74,.56,.2],gownBorder:[.1,.2,.46],
     earrings:[.74,.56,.2],circlet:[.74,.56,.2],circletStone:[.1,.2,.46],book:[.12,.18,.4],bookGilt:[.74,.56,.2],seal:[.74,.56,.2]}};
+/* S2329 (#1658 B, "the guild's livery over their people's own"; L2, OG-064) — the guild heads. Every town with a hall has a Fighters'
+   Guildmaster and a Mages' Archmage of the town's people (guildDef, 83-world-generator.js), and both wore what the townsfolk roll. Now the
+   guild is worn as the hall sign has it (the concept artist's level b, docs/prototypes/levelup/guildheads.js): the Guildmaster in mail
+   under an oxblood tabard with a pale border, the sign's crossed swords on the breast (the kit's tabardSign 'swords'), and a sword of
+   their people's make; the Archmage in a deep blue robe with pale cuffs and cord, the guild's star at the breast (the kit's guildStar)
+   and a staff of their people's wood. Each keeps their own roll (face, hair, stature, the cloak and its fur, the charms and the amulet);
+   what the hands held and what the livery covers (a sash, an apron, a coat) go; a cloak is worn as a cape (0.85 at most). The driver holds the Archmage's staff ('stick') */
+const HB_GUILD_OX=[.42,.1,.1],HB_GUILD_OXT=[.84,.74,.56],HB_GUILD_MB=[.12,.2,.4],HB_GUILD_MBT=[.76,.8,.9];
+const HB_GUILD_MAKE={gatelander:{sword:'arming',staff:'hazel'},markman:{sword:'norse',staff:'ash'},aurennais:{sword:'nimcha',staff:'olive'},oldblood:{sword:'falchion',staff:'carved'}};
+const HB_GUILD_STRIP={spear:null,staff:null,crossbow:null,shield:null,basket:null,basketCloth:null,lantern:null,tankard:null,hammer:null,chair:null,book:null,
+  pipe:null,backpack:null,satchel:null,sword:null,helm:null,apron:null,bib:false,coat:null,coatFur:null,coatHood:null,waistcoat:null,sash:null,sashBorder:null,
+  sashBelt:null,shoulderWrap:null,burnous:false,mantle:null,tabard:null,tabardSign:null,robe:null,mail:null,scales:false,plate:null,dots:null};
+function hbGuildOf(def){if(!def||!def._siteId)return null;const r=String(def.role||'');return r==='Guildmaster'?'f':r==='Archmage'?'m':null;}
+function hbGuildDress(g,G){const D=Object.assign({},G.dress||{},HB_GUILD_STRIP),M=HB_GUILD_MAKE[G.people]||HB_GUILD_MAKE.gatelander;
+  if(D.hood==='up')D.hood=null;if(D.cloak){D.cape=true;D.cloakLen=Math.min(D.cloakLen??.8,.85);} /* their cloak worn as a cape, as the sheet has it: a closed cloak hides the sword (swordOn) and the livery */
+  if(g.guildHead==='f'){Object.assign(D,{mail:[.42,.43,.45],tabard:HB_GUILD_OX.slice(),tabardTrim:HB_GUILD_OXT.slice(),tabardLen:.7,tabardSign:'swords',
+    sword:[.56,.58,.62],swordMake:M.sword,skirt:'short',skirtColor:null});if(!D.trousers)D.trousers=[.24,.2,.16];if(!D.boots&&!D.sandals)D.boots=[.2,.14,.1];return D;}
+  return Object.assign(D,{tunic:HB_GUILD_MB.slice(),robe:HB_GUILD_MB.slice(),skirtColor:HB_GUILD_MB.slice(),skirt:'long',trousers:null,cuffs:HB_GUILD_MBT.slice(),
+    cuffBand:null,cord:D.cord||HB_GUILD_MBT.slice(),guildStar:HB_GUILD_MBT.slice(),staff:[.36,.27,.18],staffMake:M.staff,bands:null,gownBorder:null,coatTrim:null});}
 function hbPowerOf(def,g){if(!def||!def._lord)return null;const T=HB_POWER_TITLE[g.nation];return (T&&T[String(def.role||'').toLowerCase()])||null;}
 function hbRolePack(g,G){const Pk=(typeof TP_PACK!=='undefined'&&(TP_PACK[g.nation]||TP_PACK.gatelands))||{kind:'creel',col:[.92,.74,.48]};
   return Object.assign({},G.dress||{},{backpack:Pk.col.slice(),backpackKind:Pk.kind});}
