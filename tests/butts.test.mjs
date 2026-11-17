@@ -37,7 +37,7 @@ check(`the lane is cleared (${r.unstamped} points outside its clearing) and noth
 check(`an arrow's line from the mark, 1.5 m up, to each face clears the ground by ${r.clear} m`, r.clear >= .25, r.clear);
 check(`the butt's face at the 30 m peg, ${r.faceUp} m up; ${r.draws} draws (10 or fewer) and ${r.tris} triangles (6,000 or fewer)`, r.faceAt < .01 && Math.abs(r.faceUp - 1.2) < .35 && r.draws <= 10 && r.tris <= 6000, r);
 
-// 3a. the mark on E (Session 2333): on Riverfair the mark offers the butts and E steps you up; the day before, or 4 m off, it asks nothing;
+// 3a. the mark on E (Session 2337): on Riverfair the mark offers the butts and E steps you up; the day before, or 4 m off, it asks nothing;
 // before ten E gives the hours and starts nothing
 const pr = await page.evaluate(() => { const site = siteAnywhere('dunmore'), B = WORLD.settle.get('dunmore').butts, st = TS(site), keep = { p: st.p, flags: st.flags };
   const rf = FESTIVALS.find(f => f.key === 'riverfair'), n = ((rf.month - CAL.startMonth + 12) % 12) * 28 + rf.dom - 1;

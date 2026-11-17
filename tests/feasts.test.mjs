@@ -374,7 +374,7 @@ const ah = await page.evaluate(() => {
 console.log(JSON.stringify(ah).slice(0, 2000));
 check('the alehall on the Blaze: *Hearth’s out…* from its keeper till 17:00, not after, not from another Markman, not the day before', ah.blaze10 === ah.L.blazeDay && ah.blazePlain !== ah.L.blazeDay && ah.blaze19 !== ah.L.blazeDay && ah.dayBefore !== ah.L.blazeDay, ah);
 check('the alehall on First Snow: from 18:00 to first light *No places tonight…*, and the bed lets no place; at 15:00 and 7:00 the bench is let as ever; a place taken holds', ah.snow15 !== ah.L.firstSnow && ah.bed15.f.length === 2 && ah.snow20 === ah.L.firstSnow && ah.bed20.r === ah.L.firstSnow && ah.bed20.f.length === 0 && ah.snow03 === ah.L.firstSnow && ah.bed03.f.length === 0 && ah.snow07 !== ah.L.firstSnow && ah.bed07.f.length === 2 && ah.mine.r === ah.L.firstSnowMine && ah.mine.f.length === 0, ah);
-// 15. First Snow sat out (Session 2334): from 18:00 on the square, E is the Wait to first light; the log at 6:00, once a winter; the
+// 15. First Snow sat out (Session 2338): from 18:00 on the square, E is the Wait to first light; the log at 6:00, once a winter; the
 // next day a Markman of the town says so, once, and a Gatelander does not
 const sn = await page.evaluate(async () => {
   const site = ladderSites().find(s => isleAt(s.x, s.z) === 'mark'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
@@ -398,7 +398,7 @@ const sn = await page.evaluate(async () => {
 console.log(JSON.stringify(sn).slice(0, 2000));
 check('First Snow: from 18:00 on the square (not at 17:00, not 8 m off) E sits you up till first light: 10 hours pass, the log at 6:00, the winter\'s act on the year', sn.p17 === null && sn.p20 === sn.A.prompt && sn.far === null && sn.did && Math.abs(sn.hour - 6) < .05 && Math.abs(sn.mins - 600) < 3 && sn.log === sn.A.log && sn.rec && sn.rec.act === 28 && sn.rec.sat && sn.again === null, sn);
 check('the next day a Markman of the town says you sat it out, once; a Gatelander does not', sn.next === sn.A.after && sn.next2 !== sn.A.after && sn.gl !== sn.A.after, sn);
-// 16. the Strait Fair's wager on the boats (Session 2335): a Markman at the water from 5:00 till noon; 2 gold on one of three from 5:00
+// 16. the Strait Fair's wager on the boats (Session 2339): a Markman at the water from 5:00 till noon; 2 gold on one of three from 5:00
 // to 7:00; from 8:00 the race told, a win paying 6 once; the race seeded by site and year; the ring's try untouched; none while occupied
 const wg = await page.evaluate(() => {
   const marks = ladderSites().filter(s => isleAt(s.x, s.z) === 'mark'), site = marks.find(s => s.kind === 'port') || marks[0], st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
@@ -429,7 +429,7 @@ const wg = await page.evaluate(() => {
 console.log(JSON.stringify(wg).slice(0, 2000));
 check(`the wager: a Markman at the water (${wg.kind}, ${wg.fromPad} m past the pad) from 5:00, not at 4:00, gone at noon and in an occupied town; three boats asked from 5:00, none offered at 7:00 without a bet`, !wg.at4 && wg.at5 && wg.who[0] === 'markman' && !wg.at12 && !wg.occupied && wg.ask === 'Which boat?' && wg.follow.length === 3 && !wg.at7.includes('A bet on the boats.'), wg);
 check('2 gold on a boat (short of two, nothing), once; before 8:00 the same word; from 8:00 a win pays 6 once, a loss tells third; the race the same for a site and year, not every year alike; the ring\'s try untouched', /two gold/.test(wg.poor) && !wg.poorBet && wg.placed === wg.L.placed && wg.gold1 === 8 && wg.again === wg.L.placed && wg.gold2 === 8 && wg.early === wg.L.placed && wg.won === wg.L.won && wg.gold3 === 14 && wg.won2 === wg.L.won && wg.gold4 === 14 && wg.lost === wg.L.lost && wg.gold5 === 8 && wg.same && new Set(wg.years).size > 1 && wg.ring, wg);
-// 17. the Caravan's first bale (Session 2336): the caravan-master on the square from 6:00 to 18:00, not while occupied; three topics; a
+// 17. the Caravan's first bale (Session 2340): the caravan-master on the square from 6:00 to 18:00, not while occupied; three topics; a
 // pinch at 2 gold once a year, the twist of saffron and the log; the Factor's day line; the next day an Aurennais says so, once
 const cv = await page.evaluate(() => {
   let site = null; for (let j = 0; j < GRID && !site; j++) for (let i = 0; i < GRID && !site; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; site = c.sites.find(s => s.kind === 'town' || s.kind === 'city') || null; }
@@ -458,7 +458,7 @@ const cv = await page.evaluate(() => {
 console.log(JSON.stringify(cv).slice(0, 2000));
 check(`the Caravan: the caravan-master (${cv.at7}) on the square from 6:00, not at 5:00 or 18:00 or while occupied, the same name for a site and year; his three topics; the Factor's day line`, cv.isle === 'aurenne' && !cv.at5 && cv.at7 && !cv.at18 && !cv.occupied && cv.name2 && JSON.stringify(cv.labels) === JSON.stringify(['How was the road?', 'Why the same day everywhere?', 'A pinch of saffron', 'Farewell.']) && cv.lord === cv.LL, cv);
 check('a pinch at 2 gold (short of two, nothing): the twist of saffron, the log, offered once a year; the next day an Aurennais says so, once', /two gold/.test(cv.poor) && !cv.poorDone && cv.pinch === cv.L.pinch && cv.gold === 8 && cv.item === 'A twist of saffron' && cv.log === cv.L.log && !cv.labels2.includes('A pinch of saffron') && cv.next === cv.L.after && cv.next2 !== cv.L.after, cv);
-// 18. the Commencement's subscription (Session 2337): the bursar on the square from 9:00 to 12:00; 2 gold entered three ways, once a year;
+// 18. the Commencement's subscription (Session 2341): the bursar on the square from 9:00 to 12:00; 2 gold entered three ways, once a year;
 // the roll's line at noon on the square, once, for the way entered; the next day an Aurennais says so, once
 const bs = await page.evaluate(() => {
   let site = null; for (let j = 0; j < GRID && !site; j++) for (let i = 0; i < GRID && !site; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; site = c.sites.find(s => s.kind === 'town' || s.kind === 'city') || null; }
@@ -486,7 +486,7 @@ const bs = await page.evaluate(() => {
 console.log(JSON.stringify(bs).slice(0, 2000));
 check(`the Commencement: the bursar (${bs.at10}, ${bs.gp}) on the square from 9:00, not at 8:00 or 12:00 or while occupied; *How shall I enter it?* three ways; 2 gold (short of two, nothing), the answer with your name, the log, once a year`, !bs.at8 && bs.at10 && !bs.at12 && !bs.occupied && bs.ask === 'How shall I enter it?' && bs.follow.length === 3 && /two gold/.test(bs.poor) && !bs.poorDone && bs.named === bs.L.answers[0].replace('{player}', 'Ysolde') && bs.gold === 8 && bs.log === bs.LOG.paid && !bs.after.includes('A subscription'), bs);
 check('at noon on the square the roll is read for the way you entered, once (not at 12:40, not 40 m off); the next day an Aurennais says so, once', bs.noon.length === 1 && bs.noon[0] === bs.LOG.noon[0] && bs.next === bs.LOG.after && bs.next2 !== bs.LOG.after && bs.off === bs.L.answers[2] && bs.late.length === 0 && bs.far.length === 0 && bs.offNoon.length === 1 && bs.offNoon[0] === bs.LOG.noon[2], bs);
-// 19. the Commencement's reading at ten and the lords' Commencement and Lamps lines (Session 2338)
+// 19. the Commencement's reading at ten and the lords' Commencement and Lamps lines (Session 2342)
 const cr = await page.evaluate(() => {
   let site = null; for (let j = 0; j < GRID && !site; j++) for (let i = 0; i < GRID && !site; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; site = c.sites.find(s => s.kind === 'town') || null; }
   const st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
