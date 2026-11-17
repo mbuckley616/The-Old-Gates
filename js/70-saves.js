@@ -117,21 +117,27 @@ function unmakeWorld(){SS.unmaking=true;const at=Date.now();try{localStorage.set
     const gone=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith('OGS_')||k.startsWith('DOS_save_')))gone.push(k);}gone.forEach(k=>localStorage.removeItem(k));}catch(e){}
   return Promise.all(keys.flatMap(k=>[ssDel(k),ssDel(ssWorldKey(k)),ssDel(ssPicKey(k))])).then(()=>ssClearStore()).then(ok=>({at,rows:keys.length,cleared:ok}));}
 function ssSaveIndex(){try{localStorage.setItem(SS_INDEX_KEY,JSON.stringify(SS.idx));}catch(e){}}
+// v80 S2351 — the store's wall: it counts the time the page was free to hear the store, not the clock. A 250 ms beat credits at most
+// 500 ms however long the gap since the last, so a frame that holds the thread 10 s (SwiftShader, S2350) counts as half a second and a
+// write that completed behind it is heard first; a store that never answers is still named after the full span. Returns its cancel.
+function ssWatch(ms,onEnd){let live=0,last=performance.now(),tm=0,done=false;
+  const beat=()=>{if(done)return;const now=performance.now();live+=Math.min(now-last,500);last=now;if(live>=ms){done=true;onEnd();return;}tm=setTimeout(beat,250);};
+  tm=setTimeout(beat,250);return()=>{done=true;clearTimeout(tm);};}
 function ssOpen(){return new Promise((res,rej)=>{if(SS.db||SS.fallback)return res(SS.db);
   if(typeof indexedDB==='undefined'){SS.fallback=true;return res(null);}
   // v80 S137 — settle exactly once; a request that never answers (blocked, stalled) is an error with a name, not a hang
-  let settled=false;const fin=(f,v)=>{if(settled)return;settled=true;clearTimeout(to);f(v);};
-  const to=setTimeout(()=>fin(rej,new Error('the save store did not open')),8000);
+  let settled=false;const fin=(f,v)=>{if(settled)return;settled=true;to();f(v);};
+  const to=ssWatch(8000,()=>fin(rej,new Error('the save store did not open')));
   let req;try{req=indexedDB.open('the_old_gates',1);}catch(e){SS.fallback=true;return fin(res,null);}
   req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('saves'))db.createObjectStore('saves');};
   req.onsuccess=()=>{const db=req.result;db.onversionchange=()=>{try{db.close();}catch(e){}if(SS.db===db)SS.db=null;};db.onclose=()=>{if(SS.db===db)SS.db=null;};SS.db=db;fin(res,db);};
   req.onerror=()=>{SS.fallback=true;fin(res,null);};});}
 function ssPut(key,str,retried){return ssOpen().then(db=>new Promise((res,rej)=>{if(!db){try{localStorage.setItem('OGS_'+key,str);res(true);}catch(e){rej(e);}return;}
   // v80 S137 — a quota failure arrives as 'abort', not 'error'; without onabort the promise never settled and the menu just sat there
-  let settled=false;const fin=(f,v)=>{if(settled)return;settled=true;clearTimeout(to);f(v);};
-  const to=setTimeout(()=>fin(rej,new Error('the save store did not answer')),10000);
+  let settled=false;const fin=(f,v)=>{if(settled)return;settled=true;to();f(v);};
+  const to=ssWatch(10000,()=>fin(rej,new Error('the save store did not answer')));
   let tx;try{tx=db.transaction('saves','readwrite');tx.objectStore('saves').put(str,key);}
-  catch(e){if(e&&e.name==='InvalidStateError'&&!retried){if(SS.db===db)SS.db=null;clearTimeout(to);settled=true;return ssPut(key,str,true).then(res,rej);}return fin(rej,e);}
+  catch(e){if(e&&e.name==='InvalidStateError'&&!retried){if(SS.db===db)SS.db=null;to();settled=true;return ssPut(key,str,true).then(res,rej);}return fin(rej,e);}
   tx.oncomplete=()=>fin(res,true);tx.onerror=()=>fin(rej,tx.error||new Error('the write failed'));tx.onabort=()=>fin(rej,tx.error||new Error('the write was aborted'));}));}
 function ssGet(key){if(SS.cache[key])return Promise.resolve(SS.cache[key]);return ssOpen().then(db=>new Promise((res,rej)=>{if(!db){res(localStorage.getItem('OGS_'+key));return;}
   const tx=db.transaction('saves','readonly');tx.onabort=()=>rej(tx.error||new Error('the read was aborted'));const rq=tx.objectStore('saves').get(key);rq.onsuccess=()=>res(rq.result||null);rq.onerror=()=>rej(rq.error);}));}
