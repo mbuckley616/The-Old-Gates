@@ -220,6 +220,7 @@ function fireArrow(strength,o){
   };
   sc.add(arrowGroup);
   if(isOW) ZB.push(arrowGroup); else BALLS.push(arrowGroup);
+  if(isOW && typeof buttsLoose === 'function') buttsLoose(arrowGroup); /* S2314 — an arrow from Riverfair's mark is the end's next */
   // ── Audio + feedback ─────────────────────────────────────────
   sndBowRelease(strength);
   // Light HUD feedback — strength readout + arrows-remaining nudge so the

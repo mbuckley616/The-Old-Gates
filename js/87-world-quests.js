@@ -199,7 +199,7 @@
       const expanded=[];for(const tp of list){expanded.push(tp);}
       // follow-ups live inside the folders: expand them there
       [you,place].forEach(arr=>{for(let i=arr.length-1;i>=0;i--){const tp=arr[i];if(tp.then&&def._asked&&def._asked.has(tp.label))tp.then.forEach((x,k)=>arr.splice(i+1+k,0,Object.assign({},x,{label:'  \u21b3 '+x.label})));}});
-      expanded.push({label:Math.random()<.5?pick(Math.random,(PEOPLES[def.people||'gatelander']).bye):pick(Math.random,T.bye),bye:true});
+      expanded.push({label:Math.random()<.5?roadPick(def,(PEOPLES[def.people||'gatelander']).bye):roadPick(def,T.bye),bye:true}); /* S2299 — roadPick: no door on the road */
       // remember what was asked (wrap fn/response so choosing marks it)
       return expanded.map(tp=>{const w=Object.assign({},tp);const orig=w.fn;w.fn=(c)=>{(def._asked||(def._asked=new Set())).add(tp.label);const rr=orig?orig(c):undefined;return rr;};if(!orig&&!w.response&&Object.getOwnPropertyDescriptor(tp,'response')){}return w;});
     }});
@@ -928,13 +928,17 @@ const giver=`${lord.title} ${lord.name}`;
      by 1, once in each town a day (worldState.speech.heard[site] is the day it last did) */
   function hearingFirst(site){if(!site||!site.id||!perk('speech',75))return false;const W=worldState.speech||(worldState.speech={}),H=W.heard||(W.heard={}),d=dayNow();
     if(H[site.id]===d)return false;H[site.id]=d;addFavor(site,1);if(typeof addLog==='function')addLog('🗣',`A first word well taken at ${site.name}: favour +1.`);return true;}
+  // S2299 — the road's people (def.roadfolk) meet you on the road, not at their door: from the same pools they leave out the lines said at a
+  // door or a hearth (the door, come in, sit, welcome, the look of home); a pool all of whose lines are such is kept whole
+  const AT_HOME_LINE=/\bdoor\b|\bcome in\b|\bcome closer\b|\bsit\b|\bwelcome\b|look of home|slower than you're used to/i;
+  function roadPick(def,arr){if(!def||!def.roadfolk||!arr)return pick(Math.random,arr);const a=arr.filter(l=>!AT_HOME_LINE.test(l));return pick(Math.random,a.length?a:arr);}
   function firstWords(def,site){
     const key=metKey(def,site),n=metCount(key),sp=GREET_FIRST[def.people]?def.people:'gatelander',pp=GREET_FIRST[playerPeople()]?playerPeople():'gatelander',T=TEMPERS[def.temper];
     let g;
     if(n===0){
-      if(def._roleGreet&&Math.random()<1/3)g=pick(Math.random,def._roleGreet);
-      else{g=pick(Math.random,GREET_FIRST[sp][pp]);if(pp==='oldblood'&&Math.random()<1/3)g+=' '+peopleGreeting(def);}
-    }else g=(T&&Math.random()<1/3)?pick(Math.random,T.greet):pick(Math.random,(pp==='oldblood'?GREET_AGAIN_OB:GREET_AGAIN)[sp]);
+      if(def._roleGreet&&Math.random()<1/3)g=roadPick(def,def._roleGreet);
+      else{g=roadPick(def,GREET_FIRST[sp][pp]);if(pp==='oldblood'&&Math.random()<1/3)g+=' '+peopleGreeting(def);}
+    }else g=(T&&Math.random()<1/3)?roadPick(def,T.greet):roadPick(def,(pp==='oldblood'?GREET_AGAIN_OB:GREET_AGAIN)[sp]);
     const G=GREET_TAG[sp];
     const owner=worldState.owned&&site&&Object.values(worldState.owned).some(o=>o.site===site.id)?G.owner:'';
     const rank=worldState.guild&&((worldState.guild.guild_f&&worldState.guild.guild_f.done>=3)||(worldState.guild.guild_m&&worldState.guild.guild_m.done>=3))?G.guild:'';
@@ -1812,7 +1816,19 @@ const giver=`${lord.title} ${lord.name}`;
   // the drift home (`round`) are rounded together as before: carried too, they sank every town a third of the way in 120 days.
   function driveProsperity(site,dd,round){const st=TS(site);st.pf=Math.round(((st.pf||0)+dd)*1e6)/1e6;const w=Math.trunc(st.pf);st.pf-=w;
     const n=st.p+w+Math.round(round||0);if(n!==st.p)setProsperity(site,n);if((st.p>=100&&st.pf>0)||(st.p<=0&&st.pf<0))st.pf=0;}
-  function flag(site,name,on){const st=TS(site);if(on)st.flags[name]=worldState.gameTimeAbsMinutes||0;else delete st.flags[name];if(SETTLE.has(site.id||site))disposeSettlement(site.id||site);}
+  function flag(site,name,on){const st=TS(site);if(on)st.flags[name]=worldState.gameTimeAbsMinutes||0;else{if(st.flags[name]!=null)(st.ended||(st.ended={}))[name]=worldState.gameTimeAbsMinutes||0;delete st.flags[name];} /* S2313 — when a flag lifted (festivalState's 28 days) */if(SETTLE.has(site.id||site))disposeSettlement(site.id||site);}
+  // S2313 — a town keeps its festival as its year allows (Michael's B on #1628, docs/design/festivals.md, the table *The town keeps it as
+  // it can*): 'none' while it is burned, sacked, plagued, abandoned, besieged or occupied; 'named' (full, and the town names you) at
+  // favour 3 or more, or when you freed it this year (st.freed, a siege broken or a garrison put out); 'thin' (the custom and the act,
+  // no contest) under prosperity 50 or within 28 days of a siege, plague, sack, burning or occupation lifted; else 'full'. Read on the
+  // day from the town's own state, so the same town keeps the same festival whatever has loaded. Only a town (BASE_P's kinds) keeps one.
+  const FEST_GONE=['burned','sacked','plague','abandoned','besieged','occupied'],FEST_THIN_P=50,FEST_THIN_DAYS=28,FEST_NAMED_FAVOR=3;
+  function festivalState(site,at){const s=typeof site==='string'?siteAnywhere(site):site;if(!s||!(s.kind in BASE_P))return 'none';
+    const st=TS(s),F=st.flags,now=at!=null?at:(worldState.gameTimeAbsMinutes||0);if(FEST_GONE.some(k=>F[k]!=null))return 'none';
+    const fr=st.freed,frAt=fr&&fr.day!=null?fr.day*1440:null;
+    if(favor(s)>=FEST_NAMED_FAVOR||frAt!=null&&frAt<=now&&calDay(frAt).year===calDay(now).year)return 'named';
+    const E=st.ended||{},recent=FEST_GONE.some(k=>E[k]!=null&&now-E[k]<FEST_THIN_DAYS*1440)||frAt!=null&&now-frAt<FEST_THIN_DAYS*1440;
+    return st.p<FEST_THIN_P||recent?'thin':'full';}
   // what the generator reads
   function lotFactor(site,P){const p=P!=null?P:prosperity(site);return .35+.65*(p/100);}                     // 35%–100% of the plan
   function shopsFor(site,list,P){const p=P!=null?P:prosperity(site);const order={forge:0,goods:10,inn:20,apothecary:30,church:35,armoury:45,shipwright:40,guild_f:60,guild_m:60,keep:80,castle:80};return list.filter(t=>p>=(order[t]==null?0:order[t]));}
@@ -2208,7 +2224,18 @@ const giver=`${lord.title} ${lord.name}`;
     for(const k of [...cells].sort()){const m=k.split(','),c=getCell(+m[0],+m[1]);
       for(const t of c.sites)if(t.kind==='shrine'&&near(t.x,t.z))out.push({id:t.id,name:t.name,kind:'shrine',x:t.x,z:t.z});
       for(const e of c.doors){if(e.wet||e.kind!=='cave_door'||e.lairDoor||e.cell!==k||greatSchoolOf(e))continue;const p=fixedDoorSpot(e);if(p&&near(p.x,p.z))out.push({id:'door_'+e.seed,name:e.canonicalName||(typeof dungeonName==='function'?dungeonName(e.seed,e.theme):'an old gate'),kind:'gate',x:p.x,z:p.z});}}
-    out.sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0);_roadShrine.set(key,out);return out;}
+    const dry=out.filter(G=>pilgrimApproach(P,G,[40]));
+    dry.sort((x,y)=>x.id<y.id?-1:x.id>y.id?1:0);_roadShrine.set(key,dry);return dry;}
+  // S2297 — the leg off the road is walked dry: a pilgrim leaves the road at its point nearest the goal from which the straight line to it
+  // never goes under the sea or any water (ground under −0.5 m by rawH; the 24 nearest points tried, 3 apart). The road's list of goals is
+  // tested every 40 m, so a shrine or gate no point of the road reaches dry is no goal of its pilgrims; the line is tested again every 5 m once
+  // per goal, when a pilgrim is first bound there, and he takes the next goal on the list if it fails. {bi, off} or null
+  // S2306 — read from the line's first point: a road point on a bridge stands over the river, and a leg begun there stepped off its side
+  function pilgrimDryLine(ax,az,bx,bz,steps){const L=Math.hypot(bx-ax,bz-az);
+    for(const st of steps){const n=Math.max(1,Math.ceil(L/st));for(let k=0;k<n;k++){const f=k/n;if(rawH(ax+(bx-ax)*f,az+(bz-az)*f)<-.5)return false;}}return true;}
+  function pilgrimApproach(P,G,steps){const C=[];for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<ROADFOLK_PILGRIM)C.push([d,i]);}
+    if(!C.length)C.push([Math.hypot(P[P.length-1].x-G.x,P[P.length-1].z-G.z),P.length-1]);C.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+    const tried=[];for(const [d,i] of C){if(tried.length>=24)break;if(tried.some(t=>Math.abs(t-i)<3))continue;tried.push(i);if(pilgrimDryLine(P[i].x,P[i].z,G.x,G.z,steps))return {bi:i,off:d};}return null;}
   function roadHasShrine(rd){return roadShrines(rd).length>0;}
   function roadEndNews(site,within){const st=worldState.towns&&worldState.towns[site.id];if(!st)return false;const now=worldState.gameTimeAbsMinutes||0;return ROAD_EVENT_FLAGS.some(f=>st.flags[f]!=null&&now-st.flags[f]<=within);}
   // the day's departures on one road: [{id, kind, from:'a'|'b', at (the absolute minute), pace}]. Kept for the day once read
@@ -2226,12 +2253,23 @@ const giver=`${lord.title} ${lord.name}`;
   // S2270 — a pilgrim's way (the page's pilgrim row): along the road from his end to its point nearest his shrine or gate, then off the road
   // straight to it, and gone on arriving. His goal is one of the road's shrines and gates by his id; one in six bound for a gate are mourners
   // with their dead (the Clearing, canon §3.1). Kept per traveller, as the roll is
-  function pilgrimPlan(T,rd){if(T._plan)return T._plan;const L=roadShrines(rd);if(!L.length)return (T._plan={none:true});const r=seededRng('pilgrim',T.id),G=L[Math.floor(r()*L.length)%L.length];
-    roadLenOf(rd);const P=rd.pts;let bi=0,bd=Infinity;for(let i=0;i<P.length;i++){const d=Math.hypot(P[i].x-G.x,P[i].z-G.z);if(d<bd){bd=d;bi=i;}}
+  function pilgrimPlan(T,rd){if(T._plan)return T._plan;const L=roadShrines(rd);if(!L.length)return (T._plan={none:true});const r=seededRng('pilgrim',T.id),g0=Math.floor(r()*L.length)%L.length;
+    roadLenOf(rd);const P=rd.pts;let G=null,A=null;for(let k=0;k<L.length&&!A;k++){G=L[(g0+k)%L.length];if(G._fine===undefined)G._fine=pilgrimApproach(P,G,[40,5]);A=G._fine;}
+    if(!A)return (T._plan={none:true});const bi=A.bi,bd=A.off;
     const along=T.from==='b'?rd._len-rd._cum[bi]:rd._cum[bi];return (T._plan={goal:G,mourners:G.kind==='gate'&&r()<1/6,along,off:bd,bx:P[bi].x,bz:P[bi].z});}
   function pilgrimAt(T,rd,d){const Q=pilgrimPlan(T,rd);if(Q.none)return null;if(d<0||d>Q.along+Q.off)return null;if(d<=Q.along){const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
     const f=(d-Q.along)/Math.max(1e-6,Q.off),x=Q.bx+(Q.goal.x-Q.bx)*f,z=Q.bz+(Q.goal.z-Q.bz)*f;return {x,z,ang:Math.atan2(Q.goal.x-Q.bx,Q.goal.z-Q.bz),d,off:true};}
-  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));if(T.kind==='pilgrim')return pilgrimAt(T,rd,d);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
+  // S2298 — a bridge down on his way (the page's bridge row: the coach stops at the bank): a walker or a rider comes to the bank, the bridge's
+  // half-length and 4 m short of its middle as the coach's, turns there and goes back along the road to the end he came from at his own pace,
+  // gone on arriving. Only a bridge already down when he reaches its bank turns him, so one who crossed before it fell walks on. The bank's
+  // distance along his way, or null
+  function roadTurnBank(T,rd,lag){const P=rd.pts,n=P.length;if(n<2)return null;const L=roadLenOf(rd),rev=T.from==='b';let best=null;
+    for(const o of roadBridgesDown(rd)){const b=siteAnywhere(o.id)||SITE[o.id],D=b&&bridgeDown(b);if(!D)continue;const i=Math.round(o.u*(n-1)),at=rev?L-rd._cum[i]:rd._cum[i];
+      const bank=Math.max(0,at-(b.bridge.len/2+4));if(at<0||T.at+lag+bank/T.pace<D.at)continue;if(best==null||bank<best)best=bank;}
+    return best;}
+  function travellerAt(T,rd,now){const R=rfRec(T.id);if(R&&R.lost)return null;const d=T.pace*(now-T.at-(R&&R.lag||0));
+    if(d>0){const B=roadTurnBank(T,rd,R&&R.lag||0);if(B!=null&&d>B&&(T.kind!=='pilgrim'||B<pilgrimPlan(T,rd).along)){if(d>=2*B)return null;const p=roadAtDist(rd,2*B-d,T.from==='b');p.ang+=Math.PI;p.d=d;p.back=true;return p;}}
+    if(T.kind==='pilgrim')return pilgrimAt(T,rd,d);if(d<0||d>roadLenOf(rd))return null;const p=roadAtDist(rd,d,T.from==='b');p.d=d;return p;}
   function roadfolkHome(T,rd){return siteAnywhere(T.from==='a'?rd.def.a:rd.def.b);}
   function roadfolkDest(T,rd){return siteAnywhere(T.from==='a'?rd.def.b:rd.def.a);}
   // every traveller on the loaded roads now (today's and yesterday's departures), with where they are
@@ -3517,6 +3555,126 @@ const giver=`${lord.title} ${lord.name}`;
     showMsg(how==='won'?`${e.name} is spared. The stakes are yours: ${paid} gold.`:how==='lost'?(why==='rope'?'You step over the rope. The stakes go to the other side.':'You go down. The stakes go to the other side.'):how==='murder'?`${e.name} is dead. The yard goes quiet, and the rings of the Mark are shut to you.`:'The brawl is called off. Your stake comes back.','#e8d8a0');
     return B;}
   function tickBrawl(dt){const B=BRAWL;if(!B)return;if(!BOUT||BOUT.foe!==B.foe){brawlEnd('left');return;}boutTick(dt);}
+  // S2314 — festivals B session 2, Riverfair's butts (Michael's B on #1628, docs/design/festivals.md, *The contests*). On Riverfair
+  // (Haysel 18), 10h to 14h, in a Gatelands town keeping it full or named (festivalState), you shoot three ends of three arrows from
+  // a mark at a butt 30, then 50, then 70 m off: a face 1.2 m across, rings of 0.2, 0.4 and 0.6 m scoring 5, 3 and 1. You win if
+  // your nine beat the best of three townsfolk, whose skill is seeded by festival, site and year (20–45 a village, 30–60 a town,
+  // 40–75 a city) and whose arrows fall about the centre by BUTT_SPREAD (each axis, metres per metre of range: 0.003 at skill 100,
+  // 0.015 at 0; the city's 75 averages about 23 of 45, a village's 30 about 11). A win pays 40 + 20 gold a tier above the first (the
+  // brawl's 50 + 50 less: no stake), a silver arrow named for the town and year, and +1 Bow once a year whatever the town. One try a
+  // town a year (worldState.festivals['riverfair:'+site], the character's). Once begun it runs to its end: an arrow loosed off the
+  // mark (BUTT_MARK_R) does not count, and walking BUTT_LEAVE from the mark, or running out of arrows, ends it with what is shot.
+  // The mark, the butt's look and the marshal's words are the look builder's and the quest writer's: buttsStart({site,x,z,dx,dz})
+  // is what they call, and the straw boss here is a placeholder. Named actions: buttsStart, buttsEnd. Rolls: seededRng('butts', …).
+  const BUTT_ENDS=[30,50,70],BUTT_RINGS=[[.2,5],[.4,3],[.6,1]],BUTT_R=.6,BUTT_Y=1.2,BUTT_OPEN=10,BUTT_CLOSE=14,BUTT_MARK_R=1.5,BUTT_LEAVE=20,
+    BUTT_SPREAD=[.003,.012],BUTT_PURSE=40,BUTT_PURSE_TIER=20,BUTT_SKILL={village:[20,45],town:[30,60],city:[40,75]};
+  let BUTTS=null; /* {site,x,z,dx,dz,end,shots:[{end,arrow,score}],rivals,mesh,year,tier} */
+  function buttScore(r){for(const [rr,s] of BUTT_RINGS)if(r<=rr)return s;return 0;}
+  // the three rivals: their skill and their nine arrows, seeded by festival, site and year (a friend meets the same field)
+  function buttRivals(site,year){const r=seededRng('butts',site.id+':'+year),R=BUTT_SKILL[site.kind]||BUTT_SKILL.town,out=[];
+    for(let k=0;k<3;k++){const sk=Math.round(R[0]+r()*(R[1]-R[0])),ends=[];
+      for(const D of BUTT_ENDS){const sg=D*(BUTT_SPREAD[0]+BUTT_SPREAD[1]*(1-sk/100)),e=[];
+        for(let a=0;a<3;a++){const u=Math.max(1e-9,r()),rad=sg*Math.sqrt(-2*Math.log(u));r();e.push(buttScore(rad));} /* Rayleigh: a 2-D normal's distance */
+        ends.push(e);}
+      out.push({skill:sk,ends,total:ends.flat().reduce((a,b)=>a+b,0)});}
+    return out;}
+  function buttsOpenFor(site,o){o=o||{};const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return {say:'There are no butts here.'};
+    const h=festivalHere(s.id);if(!h||h.f.key!=='riverfair')return {say:'The butts are shot at Riverfair.'};
+    if(h.state==='thin')return {say:'There’s no shooting this year. The town can’t find the purse.'};
+    const hr=hourNow();if(!o.force&&(hr<BUTT_OPEN||hr>=BUTT_CLOSE))return {say:`The butts are shot from ${BUTT_OPEN}h to ${BUTT_CLOSE}h.`};
+    const F=worldState.festivals||{},me=F['riverfair:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have shot here this year.'};
+    return {ok:true,site:s,state:h.state,year:yr};}
+  function buttMesh(){const g=new THREE.Group(),straw=new THREE.MeshLambertMaterial({color:0xb89a58});
+    const boss=new THREE.Mesh(new THREE.CylinderGeometry(BUTT_R+.08,BUTT_R+.08,.3,20),straw);boss.rotation.x=Math.PI/2;g.add(boss);
+    const cols=[0xe8e0c8,0x3a5a8a,0xc0a030];for(let k=BUTT_RINGS.length-1;k>=0;k--){const f=new THREE.Mesh(new THREE.CircleGeometry(BUTT_RINGS[k][0],20),new THREE.MeshLambertMaterial({color:cols[k]}));f.position.z=.152+.002*(2-k);g.add(f);}
+    for(const sx of [-.45,.45]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.08,BUTT_Y+.2,.08),straw);leg.position.set(sx,-(BUTT_Y)/2+.05,-.25);leg.rotation.x=.25;g.add(leg);}
+    return g;}
+  function buttPlace(B){const D=BUTT_ENDS[B.end],x=B.x+B.dx*D,z=B.z+B.dz*D,y=activeTerrainH(x,z)+BUTT_Y;B.cx=x;B.cy=y;B.cz=z;
+    if(B.mesh){B.mesh.position.set(x,y,z);B.mesh.rotation.y=Math.atan2(-B.dx,-B.dz);}}
+  function buttsStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING)return {say:'You are already in a contest.'};
+    const k=buttsOpenFor(o.site,o);if(!k.ok)return k;if(!EQ.weapon||weaponSkill(EQ.weapon)!=='bow'||!EQ.ammo)return {say:'You’ll want a bow and arrows for the butts.'};
+    const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;let dx=o.dx,dz=o.dz;if(dx==null){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}const n=Math.hypot(dx,dz)||1;
+    const B=BUTTS={site:s,x,z,dx:dx/n,dz:dz/n,end:0,shots:[],year:k.year,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),rivals:buttRivals(s,k.year),mesh:o.mesh===false?null:buttMesh()};
+    const F=worldState.festivals||(worldState.festivals={});F['riverfair:'+s.id]={year:k.year,won:false,score:0}; /* the try is used once you step up */
+    if(B.mesh)sc.add(B.mesh);buttPlace(B);
+    showMsg(`The butts. Three ends of three, at ${BUTT_ENDS.join(', ')} m. The best of the town shot ${Math.max(...B.rivals.map(q=>q.total))}.`,'#e8d8a0');
+    return {ok:true,rivals:B.rivals.map(q=>q.total)};}
+  // fireArrow's: an arrow loosed from the mark is the end's next, up to three an end
+  function buttsLoose(arrow){const B=BUTTS;if(!B)return false;
+    if(Math.hypot(px-B.x,pz-B.z)>BUTT_MARK_R){showMsg('Shoot from the mark, or it doesn’t count.','#e8d8a0');return false;}
+    const inEnd=B.shots.filter(q=>q.end===B.end).length;if(inEnd>=3)return false;
+    const shot={end:B.end,arrow,score:null};B.shots.push(shot);arrow.userData.butt=shot;return true;}
+  // tickArrowMotion's, each sub-step: the arrow crossing the butt's face. True when it struck the face (planted there).
+  function buttsCross(arrow,ddx,ddy,ddz){const B=BUTTS,ud=arrow.userData,shot=ud.butt;if(!B||!shot||shot.score!=null||shot.end!==B.end)return false;
+    const p=arrow.position,d1=(p.x-B.cx)*B.dx+(p.z-B.cz)*B.dz,d0=d1-(ddx*B.dx+ddz*B.dz);if(!(d0<0&&d1>=0))return false;
+    const t=d0/(d0-d1),hx=p.x-ddx*(1-t),hy=p.y-ddy*(1-t),hz=p.z-ddz*(1-t),lat=(hx-B.cx)*B.dz-(hz-B.cz)*B.dx,r=Math.hypot(lat,hy-B.cy);
+    shot.score=buttScore(r);shot.r=r;if(!shot.score)return false;
+    p.set(hx-B.dx*.05,hy,hz-B.dz*.05);if(typeof skillUse==='function')skillUse('bow',1,'butts:'+shot.end+':'+B.shots.indexOf(shot));return true;}
+  function tickButts(){const B=BUTTS;if(!B)return;
+    if(Math.hypot(px-B.x,pz-B.z)>BUTT_LEAVE){showMsg('You walk off the mark. The marshal scratches your name.','#e8d8a0');buttsEnd('left');return;}
+    for(const q of B.shots)if(q.score==null){const ud=q.arrow.userData;if(ud.stuck||!q.arrow.parent||ud.life<=0)q.score=0;}
+    const E=B.shots.filter(q=>q.end===B.end);
+    if(E.length===3&&E.every(q=>q.score!=null)){const t=E.reduce((a,q)=>a+q.score,0);showMsg(`At ${BUTT_ENDS[B.end]} m: ${E.map(q=>q.score).join(', ')}. ${t} for the end.`,'#e8d8a0');
+      B.end++;if(B.end>=BUTT_ENDS.length){buttsEnd('shot');return;}buttPlace(B);return;}
+    if(!EQ.ammo&&B.shots.every(q=>q.score!=null)){showMsg('Your quiver’s empty.','#e8d8a0');buttsEnd('shot');}}
+  function buttsTotal(B){return B.shots.reduce((a,q)=>a+(q.score||0),0);}
+  function buttsEnd(how){const B=BUTTS;if(!B)return null;BUTTS=null;if(B.mesh&&B.mesh.parent)B.mesh.parent.remove(B.mesh);
+    const total=buttsTotal(B),best=Math.max(...B.rivals.map(q=>q.total)),won=how==='shot'&&total>best,F=worldState.festivals||(worldState.festivals={});
+    const me=F['riverfair:'+B.site.id]||(F['riverfair:'+B.site.id]={year:B.year});me.score=total;me.won=won;
+    let paid=0,skill=false;if(won){paid=payPurse(BUTT_PURSE+BUTT_PURSE_TIER*(Math.max(1,B.tier)-1));
+      bagAdd({name:`Silver Arrow of ${B.site.name||'Riverfair'}`,ico:'🏹',type:'misc',weight:.1,buyPrice:0,sellMult:0,keepsake:'riverfair',site:B.site.id,year:B.year,desc:`Won at the butts, Riverfair, in the ${calOrd(B.year)} year of the Peace.`});
+      const S=F.skill||(F.skill={});if(S.riverfair!==B.year){S.riverfair=B.year;skill=buttsSkillUp('bow');}}
+    showMsg(won?`${total} against ${best}. The purse is yours: ${paid} gold, and a silver arrow.${skill?' Your Bow rises.':''}`:how==='shot'?`${total} against ${best}. Not this year.`:`Your nine are not shot. Not this year.`,'#e8d8a0');
+    B.how=how;B.total=total;B.best=best;B.won=won;B.paid=paid;B.skill=skill;return B;}
+  // the contest's point of skill: a level, as a skill book's (the level's marks too)
+  function buttsSkillUp(id){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)return false;s.lv++;skillMark(id,1);return true;}
+  // S2315 — festivals B session 3, the Strait Fair's ring (Michael's B on #1628, docs/design/festivals.md, *The contests*). On the
+  // Strait Fair (Highsun 4), 5h to 12h, in a Markish town keeping it full or named, you fight three quarrels in a row in the ring,
+  // fists only (your weapon and shield to the rack, as the brawl's), each a bout to a yield under the bout's rules (the rope, the
+  // yield at a quarter, the 0.4 s held blow, spared after 3 s, the ring holds you at 1). The three are the brawl's fighter by the
+  // town's tier (worldTierAt), keyed by site, year and quarrel. Win all three and the purse is 40 + 20 gold a tier above the first,
+  // the reeve's iron ring named for the town and year, and +1 Hand-to-hand once a year whatever the town. A loss in any quarrel ends
+  // it with nothing; there is no stake. A blow after a yield is assault (as the brawl's), a kill murder (the ladder's: 5 points, the
+  // rings of the Mark shut 28 days). One try a town a year (worldState.festivals['straitfair:'+site]). The ring's rope and the reeve
+  // who calls it are the look builder's and the quest writer's: fairRingStart({site,x,z}) is what they call, and the fighters' names
+  // and the lines here are placeholders. Named actions: fairRingStart, fairRingEnd.
+  const FAIR_OPEN=5,FAIR_CLOSE=12,FAIR_R=5,FAIR_N=3,FAIR_PURSE=40,FAIR_PURSE_TIER=20,FAIR_NAMES=['The first quarrel','The second quarrel','The third quarrel'];
+  let FAIRRING=null; /* {site,x,z,tier,year,n,foe,held,assaults,end} */
+  function fairRingOpenFor(site,o){o=o||{};const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return {say:'There is no ring here.'};
+    const h=festivalHere(s.id);if(!h||h.f.key!=='straitfair')return {say:'The ring is fought at the Strait Fair.'};
+    if(h.state==='thin')return {say:'No ring this year. There’s nobody with a quarrel worth the rope.'};
+    const hr=hourNow();if(!o.force&&(hr<FAIR_OPEN||hr>=FAIR_CLOSE))return {say:`The ring is fought from ${FAIR_OPEN}h till noon.`};
+    if(dayNow()<(arenaState().banUntil||0))return {say:'The rings of the Mark are shut to you.'};
+    const F=worldState.festivals||{},me=F['straitfair:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have fought here this year.'};
+    return {ok:true,site:s,state:h.state,year:yr};}
+  function fairRingFoe(R){const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,R.x,R.z,'Bandit',null,{tier:R.tier})),`strait:${R.site.id}:${R.year}:${R.n}`);
+    e.name=e.displayName=FAIR_NAMES[R.n]||'The quarrel';e._disarmed=true;e._questTag='straitfair';e.homeX=R.x;e.homeZ=R.z;
+    if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);return e;}
+  function fairRingDrop(e){if(!e)return;boutEnd(e);if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
+    const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
+  function fairRingBout(R){const e=R.foe=fairRingFoe(R);
+    boutStart({foe:e,x:R.x,z:R.z,r:FAIR_R,on:{
+      yield:()=>showMsg(`${e.name} goes down on one knee.`,'#e8d8a0'),
+      struck:()=>{R.assaults++;ringCrime(R.site.id,'assault',CRIME_PTS.assault);showMsg(`You struck ${e.name} after the yield. That is assault.`,'#ff6060');},
+      won:()=>{fairRingDrop(e);R.n++;if(R.n>=FAIR_N){fairRingEnd('won');return;}showMsg(`${e.name} is spared. ${FAIR_NAMES[R.n]}.`,'#e8d8a0');fairRingBout(R);},
+      lost:(b,how)=>fairRingEnd('lost',how),murder:()=>fairRingEnd('murder')}});}
+  function fairRingStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING)return {say:'You are already in a contest.'};
+    const k=fairRingOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
+    const R=FAIRRING={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,n:0,foe:null,held:kitHold(),assaults:0,end:null};
+    const F=worldState.festivals||(worldState.festivals={});F['straitfair:'+s.id]={year:k.year,won:false,quarrels:0};
+    showMsg('The rope goes up. Three quarrels, fists, each to a yield.','#e8d8a0');fairRingBout(R);return {ok:true,tier:R.tier};}
+  function fairRingEnd(how,why){const R=FAIRRING;if(!R)return null;FAIRRING=null;const e=R.foe;
+    if(how==='murder'){ringCrime(R.site.id,'murder',MURDER_PTS);arenaState().banUntil=Math.max(arenaState().banUntil||0,dayNow()+RING_BAN_DAYS);boutEnd(e);}
+    else fairRingDrop(e);
+    if(how==='lost'){PHP=Math.max(PHP,1);if(typeof updateHUD==='function')updateHUD();}
+    kitReturn(R.held);const F=worldState.festivals||(worldState.festivals={}),me=F['straitfair:'+R.site.id]||(F['straitfair:'+R.site.id]={year:R.year});
+    me.quarrels=R.n;me.won=how==='won';let paid=0,skill=false;
+    if(me.won){paid=payPurse(FAIR_PURSE+FAIR_PURSE_TIER*(Math.max(1,R.tier)-1));
+      bagAdd({name:`Reeve’s Iron Ring of ${R.site.name||'the Strait Fair'}`,ico:'💍',type:'misc',weight:.05,buyPrice:0,sellMult:0,keepsake:'straitfair',site:R.site.id,year:R.year,desc:`Won in the ring at the Strait Fair, in the ${calOrd(R.year)} year of the Peace.`});
+      const S=F.skill||(F.skill={});if(S.straitfair!==R.year){S.straitfair=R.year;skill=buttsSkillUp('hand');}}
+    showMsg(how==='won'?`Three quarrels, three yields. The purse is yours: ${paid} gold, and the reeve’s ring.${skill?' Your Hand-to-hand rises.':''}`:how==='murder'?`${e?e.name:'The fighter'} is dead. The fair goes quiet, and the rings of the Mark are shut to you.`:how==='lost'?(why==='rope'?'You step over the rope. Not this year.':'You go down. Not this year.'):'The ring breaks up. Not this year.','#e8d8a0');
+    R.end=how;R.paid=paid;R.skill=skill;return R;}
+  function tickFairRing(dt){const R=FAIRRING;if(!R)return;if(!BOUT||BOUT.foe!==R.foe){fairRingEnd('left');return;}boutTick(dt);}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,
@@ -4002,6 +4160,7 @@ const giver=`${lord.title} ${lord.name}`;
     const cs=worldState.coachSeat;if(cs&&typeof cs.at==='number'){const m=((cs.tod%1440)+1440)%1440;out.push({at:cs.at,icon:'🐎',text:`Your seat on the ${Math.floor(m/60)}:${String(Math.round(m%60)).padStart(2,'0')} coach.`});}
     const GG=worldState.guild;if(GG)for(const g in GG){const t=GG[g]&&GG[g].active;if(t&&t.due&&t.doneAt==null&&!taskDone(t))out.push({at:t.due-1,icon:'📜',text:`${t.short} — for the ${GUILD_DEF[g].name}: ${Math.round((t.gold||0)*1.25)} gold if it is done by then; after it, the task is taken back.`});}
     const nf=typeof nextFeast==='function'?nextFeast(now):null;if(nf)out.push({at:nf.at,icon:nf.f.ico,text:`${nf.f.name} — ${nf.f.due}`,feast:nf.f.key}); /* S550 — the next feast (today's, on the day) */
+    {const nv=nextFestival(now,isleAt(px,pz));if(nv)out.push({at:nv.at,icon:nv.f.ico,text:`${nv.f.name} — ${nv.f.due}`,festival:nv.f.key});} /* S2313 — the next festival of the island you stand on */
     qActive().forEach(q=>{if(q.due&&!q.done)out.push({at:q.due-1,icon:'📜',text:`${q.title} — for ${q.giver}: ${Math.round((q.reward||0)*1.25)} gold if it is done by then; after it, the work is taken back.`});});
     return out.filter(e=>isFinite(e.at)).sort((a,b)=>a.at-b.at);
   }

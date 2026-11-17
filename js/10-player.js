@@ -1249,6 +1249,7 @@ function tickArrowMotion(arrow, dt, isOW){
     //   1. Hit a wall (overworld zone solid or dungeon dSolid)
     //   2. Hit the ground (overworld terrain or dungeon floor Y)
     if(isOW){
+      if(ud.butt && typeof buttsCross === 'function' && buttsCross(arrow, ud.vx * sdt, ud.vy * sdt, ud.vz * sdt)){ stuckThisFrame = true; break; } /* S2314 — Riverfair's butts: the arrow in the face */
       if(currentZoneSolid(arrow.position.x, arrow.position.z)){
         // Hit a wall. Back the arrow up a fraction so it visually plants
         // ON the wall surface rather than inside the geometry.
