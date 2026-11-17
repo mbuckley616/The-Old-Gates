@@ -229,5 +229,30 @@ const ch = await page.evaluate(() => {
 console.log(JSON.stringify(ch).slice(0, 2000));
 check('a Gatelands town\'s contest is Riverfair\'s; no champion before the butts close; after, the town\'s own, a name seeded by site and year', ch.contest === 'riverfair' && ch.day && ch.before === null && ch.nowBefore === null && ch.town && ch.town.name && ch.town.you === false && ch.same && ch.other, ch);
 check('a win is cut as yours; three years on, before the butts close, the post reads three years newest first with yours last and the town says last year\'s; a thin year keeps only what you won; the world\'s save', ch.mine && ch.mine.you && ch.mine.year === 28 && ch.post.length === 3 && ch.post.map(p => p[0]).join() === '30,29,28' && ch.post[2][2] === true && ch.post.slice(0, 2).every(p => p[2] === false) && ch.nowLater && ch.nowLater.year === 30 && ch.thin && ch.thin.you && ch.saved, ch);
+// 10. First Snow's night (Session 2321): a Markish town where you saw the snow lie at nightfall in Culling keeps it that day, not on the 28th
+const fs = await page.evaluate(() => {
+  const L = ladderSites(), site = L[0], other = L.find(s => s.id !== site.id && isleAt(s.x, s.z) === 'mark'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, cv0 = WX.cover, ns0 = nearSite, f0 = worldState.firstSnow;
+  const day = (yr, dom) => ((yr - CAL.startYear) * CAL.months + 8 - CAL.startMonth) * CAL.monthLen + dom - 1;
+  const at = (yr, dom, h) => { worldState.gameTimeAbsMinutes = day(yr, dom) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const key = (yr, dom) => { const h = festivalHere(site.id, day(yr, dom) * 1440 + 600); return h ? h.f.key : null; };
+  const tick = () => { for (let k = 0; k < 130; k++) tickFirstSnow(); };
+  st.p = 70; st.flags = {}; worldState.firstSnow = {}; nearSite = () => ({ site });
+  const out = { mark: isleAt(site.x, site.z), other: other && other.id };
+  try {
+    out.before = [key(28, 12), key(28, 28)];
+    at(28, 12, 17); WX.cover = .8; tick(); out.early = !!(worldState.firstSnow[site.id]);
+    at(28, 12, 19); WX.cover = .2; tick(); out.thin = !!(worldState.firstSnow[site.id]);
+    WX.cover = .8; tick(); out.rec = JSON.parse(JSON.stringify(worldState.firstSnow[site.id] || null));
+    out.after = [key(28, 12), key(28, 28), key(28, 13)];
+    out.otherTown = other ? (festivalHere(other.id, day(28, 28) * 1440 + 600) || { f: {} }).f.key : 'firstsnow';
+    at(28, 20, 19); tick(); out.second = worldState.firstSnow[site.id].n === out.rec.n;
+    out.nextYear = key(29, 28);
+    const S = calDay(day(28, 12) * 1440); out.date = [S.month, S.dom];
+  } finally { worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; WX.cover = cv0; nearSite = ns0; worldState.firstSnow = f0; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  return out;
+});
+console.log(JSON.stringify(fs));
+check('First Snow: Culling 28 until the snow is seen; not before 18:00 or under the cover; seen on Culling 12 at 19:00 it is kept that day and not on the 28th; another Markish town and the next year keep the 28th', fs.mark === 'mark' && fs.date.join() === '8,12' && fs.before.join() === ',firstsnow' && !fs.early && !fs.thin && fs.rec && fs.after.join() === 'firstsnow,,' && fs.otherTown === 'firstsnow' && fs.second && fs.nextYear === 'firstsnow', fs);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

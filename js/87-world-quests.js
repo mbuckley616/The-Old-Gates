@@ -3759,6 +3759,21 @@ const giver=`${lord.title} ${lord.name}`;
   // the post: the last FEST_POST_N champions, newest first
   function festPostNames(site){const s=typeof site==='string'?siteAnywhere(site):site,f=festContestOf(s);if(!f)return [];const yr=calDay(absMin()).year,out=[];
     for(let y=yr;y>=CAL.startYear&&out.length<FEST_POST_N;y--){const c=festChampion(s,f.key,y);if(c)out.push(c);}return out;}
+  // S2321 — First Snow's night (festivals B session 5; draft II's rule: the first day in Culling or Longnight that the snow lies over
+  // the town at 18:00, else Culling 28). The only snow the game keeps is the weather where you stand (WX.cover), so a town's night is
+  // read when you are in it: from 18:00 on a day of Culling before the 28th, snow lying at FIRSTSNOW_COVER (the level the herbs' snow
+  // reads), in a town of the Mark that has no night yet this year, writes worldState.firstSnow[site]={year,n} (the world's) and First
+  // Snow is kept there that day (festivalHere), not again on the 28th. A town you are not in keeps the fallback. Snow after the 28th is
+  // too late: the night has been sat. Named action: firstSnowLies.
+  const FIRSTSNOW_COVER=.5,FIRSTSNOW_HOUR=18,FIRSTSNOW_MONTH=8;
+  function firstSnowLies(site,at){const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return null;const c=calDay(at);
+    const R=worldState.firstSnow||(worldState.firstSnow={});if(R[s.id]&&R[s.id].year===c.year)return null;R[s.id]={year:c.year,n:c.n};
+    if(typeof addLog==='function')addLog('❄',`The first snow lies at ${s.name}. The town sits up tonight.`);return R[s.id];}
+  let _fsT=0;function tickFirstSnow(){_fsT-=1/60;if(_fsT>0)return;_fsT=2;
+    if(typeof WX==='undefined'||(WX.cover||0)<FIRSTSNOW_COVER||hourNow()<FIRSTSNOW_HOUR)return;
+    const c=calDay();if(c.month!==FIRSTSNOW_MONTH||c.dom>=28)return;
+    const S=nearSite();if(!S||!S.site||!(S.site.kind in BASE_P)||isleAt(S.site.x,S.site.z)!=='mark')return;
+    const r=(worldState.firstSnow||{})[S.site.id];if(r&&r.year===c.year)return;firstSnowLies(S.site);}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,

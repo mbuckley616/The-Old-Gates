@@ -354,7 +354,7 @@ function feastGreeting(def){if(!def||!def._siteId)return null;const f=feastOn();
 // (nation, isleAt), each on its god's day; greet is by the speaker's people, as a feast's. A town keeps its festival as its year
 // allows (festivalState, 87-world-quests.js): full, thin or not at all. A festival fills the square as a feast does, and nothing
 // is free: the inn's meal and the halved fine stay the four feasts'. First Snow falls on its fallback, Culling 28, until the
-// night snow first lies in the town is read (snow:true; owed).
+// night snow first lies in the town is read (snow:true; Session 2321: festivalHere, from a night you saw it lie there).
 const FESTIVALS=[
   {key:'greening',name:'The Greening',nation:'gatelands',month:2,dom:3,ico:'🎀',due:'a ribbon on the pole from every house, and the first lambs shown.',
     greet:{gatelander:'A green Greening to you. Every house ties a ribbon on the pole today, and a house that doesn’t tie one has no lambs to count. There’s ribbon at the pole if you’ve none of your own. Nobody asks whose house you are.',
@@ -407,9 +407,17 @@ function nextFestival(at,nation){const now=at!=null?at:((worldState&&worldState.
   for(let d=d0;d<d0+CAL.monthLen*CAL.months;d++){const f=festivalOn(d*1440,nation);if(f)return {f,at:d*1440};}return null;}
 // a town's festival today, if its island keeps one and the town keeps it (festivalState not 'none'): {f, state} or null
 const _festIsle=new Map(); /* a site's island, fixed by the seed */
-function festivalHere(siteId,at){if(!siteId||!festivalOn(at)||typeof siteAnywhere!=='function'||typeof festivalState!=='function')return null;
+// S2321 — First Snow's night: a town of the Mark where you saw the snow lie at nightfall in Culling keeps it that day
+// (worldState.firstSnow[site]={year,n}, tickFirstSnow), and not again on the fallback, Culling 28
+function festivalSnowDay(siteId,year){const R=worldState&&worldState.firstSnow,r=R&&R[siteId];return r&&r.year===year?r.n:null;}
+function festivalHere(siteId,at){if(!siteId||typeof siteAnywhere!=='function'||typeof festivalState!=='function')return null;
+  const snowRec=!!(worldState&&worldState.firstSnow&&worldState.firstSnow[siteId]);if(!festivalOn(at)&&!snowRec)return null;
   const s=siteAnywhere(siteId);if(!s||s.x==null)return null;if(!_festIsle.has(siteId))_festIsle.set(siteId,isleAt(s.x,s.z));
-  const f=festivalOn(at,_festIsle.get(siteId));if(!f)return null;
+  let f=festivalOn(at,_festIsle.get(siteId));
+  if(snowRec){const c=calDay(at),sn=festivalSnowDay(siteId,c.year);
+    if(f&&f.snow&&sn!=null&&sn!==c.n)f=null;
+    else if(!f&&sn===c.n)f=FESTIVALS.find(q=>q.snow&&q.nation===_festIsle.get(siteId))||null;}
+  if(!f)return null;
   const state=festivalState(s,at);return state==='none'?null:{f,state};}
 function calOrd(d){return d+((d%10===1&&d%100!==11)?'st':(d%10===2&&d%100!==12)?'nd':(d%10===3&&d%100!==13)?'rd':'th');}
 // S498 — the calendar's own date, *Seaday, the 4th of Reaping* (the Due view, a map note, the hour you wake on the rest slip)
