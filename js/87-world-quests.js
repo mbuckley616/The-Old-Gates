@@ -3809,6 +3809,54 @@ const giver=`${lord.title} ${lord.name}`;
     if(def._lord&&def.people==='gatelander'&&FEST_LORD_LINE[h.f.key])return FEST_LORD_LINE[h.f.key];
     if(!A||!A.thanks||def.people!=='gatelander')return null;const r=festActRec(h.f.key,s),c=calDay(absMin());
     if(!r||r.act!==c.year||r.actN!==c.n||r.thanked===c.n)return null;r.thanked=c.n;return A.thanks;}
+  // S2325 — the festivals' acts, the third: the Night of the Lanterns' lantern (*Festivals on the Calendar, I* §5, word for word). From
+  // 18:00 to 22:00 on the night, in a Gatelands town keeping it, the lanternmaker stands on the square (LANTERN_AT off its middle, clear of
+  // the cairn and the well), a townsperson of the town's people (peopleOfSite), named by site and year. Topic *A lantern*: two gold, or
+  // nothing in a town that names you (the design page's "given, not sold"); four answers. *For me* buys nothing, the two gold given back;
+  // the year's lantern is still spent. The act is worldState.festivals['lanterns:'+site] = {act, actN, sent}. At 22:00, on the square,
+  // once a night, the last lantern's line; the next day a Gatelander of the town who saw you send one says so, once (festAfterGreeting).
+  // The lanterns rising are the look builder's. Named action: lanternSend.
+  const LANTERN_OPEN=18,LANTERN_CLOSE=22,LANTERN_PRICE=2,LANTERN_AT=[-4,5],LANTERN_NEAR=160,LANTERN_SQUARE=30;
+  const LANTERN_LINES={gatelander:{greet:'Two for a lantern, and the paper’s dry, so it’ll go. You needn’t tell me who it’s for. Most don’t.',
+      answers:['Then go on and let it up. They’ll know their own. That’s the one thing every lantern’s agreed on.',
+        'That’s kind. There’s always a last one, and nobody’s ever sure who. Let it up, and it’ll find them, or it won’t, and either way it’s been sent.',
+        'Nor should you. A lantern isn’t a ledger. Up it goes.'],
+      me:'That’s not done. You’re standing in front of me. … Here. I’ll not take the two for it. Let it up for somebody else, and come back next year with a name.'},
+    markman:{greet:'Two. Paper’s dry. Don’t need to know who.',me:'No. You’re here. Take it back. Send it for a man who isn’t.'},
+    aurennais:{greet:'Two, Master, and the paper is dry; I make no warranty beyond that. You need not name the beneficiary.',me:'I cannot sell you that, Master. The terms presume an absence. Take the coin back, and send it for somebody who is not standing in front of me.'},
+    oldblood:{greet:'Two. It goes up. You need not say.',me:'No. The light goes after the ones who went in. You came out.'}};
+  const LANTERN_ASK=['For someone who didn’t come back.','For whoever went in last and wasn’t found.','I’d rather not say.','For me.'];
+  const LANTERN_LOG={sent:'You let the lantern go. It rises with the others until you cannot tell which is yours.',me:'The lanternmaker gives back your two gold and turns to the next.',
+    last:'The last lantern goes out of sight. Along the square, one by one, the lamps are lit.',after:'You stood with us last night. That’s remembered here longer than a coin is.'};
+  let LANTERN=null; /* {npc, site, year} */let _lantT=0,_lantLast='';
+  function lanternOn(s){const h=festivalHere(s.id);if(!h||h.f.key!=='lanterns'||h.state==='none')return null;const hr=hourNow();return hr>=LANTERN_OPEN&&hr<LANTERN_CLOSE?h:null;}
+  function lanternOut(){const L=LANTERN;if(!L)return;const n=L.npc;if(n){sc.remove(n.g);sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);}LANTERN=null;}
+  function lanternDef(s,year,h){const gp=peopleOfSite(s),r=seededRng('lanternmaker',s.id+':'+year),bank=NAMES[(PEOPLES[gp]||PEOPLES.gatelander).names]||NAMES.irish;
+    const female=r()<.5,L=female&&bank.f&&bank.f.length?bank.f:bank.m,x=s.x+LANTERN_AT[0],z=s.z+LANTERN_AT[1],LL=LANTERN_LINES[gp]||LANTERN_LINES.gatelander;
+    const def={name:L[Math.floor(r()*L.length)],role:'Lanternmaker',ico:'🏮',female,people:gp,x,z,_siteId:s.id,_lantern:true,greeting:[LL.greet],
+      get topics(){return [...(festActDone('lanterns',s)?[]:[{label:'A lantern.',folder:true,response:'Who is it for?',
+        follow:LANTERN_ASK.map((q,i)=>({label:q,fn:()=>lanternSend(s,i,gp)}))}]),{label:'Farewell.',bye:true}];}};
+    return def;}
+  function lanternSend(site,i,gp){const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return '';const c=calDay(absMin()),LL=LANTERN_LINES[gp]||LANTERN_LINES.gatelander;
+    if(festActDone('lanterns',s))return LL.greet;const named=festivalState(s)==='named',me=i===3;
+    if(!me&&!named&&gold<LANTERN_PRICE)return 'You have not the two gold.';
+    const F=worldState.festivals||(worldState.festivals={}),r=F['lanterns:'+s.id]||(F['lanterns:'+s.id]={});r.act=c.year;r.actN=c.n;r.sent=!me;delete r.thanked;
+    if(me){if(!named){showMsg(LANTERN_LOG.me,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.me);}return LL.me;}
+    if(!named){gold-=LANTERN_PRICE;if(typeof updateHUD==='function')updateHUD();}
+    showMsg(LANTERN_LOG.sent,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.sent);
+    return gp==='gatelander'?LL.answers[i]:LANTERN_LOG.sent;}
+  function tickLanterns(dt){_lantT-=dt;if(_lantT>0)return;_lantT=1;
+    const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
+    const h=s&&isleAt(s.x,s.z)==='gatelands'?lanternOn(s):null,yr=calDay(absMin()).year;
+    if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(LANTERN&&(LANTERN.site.id!==s.id||LANTERN.year!==yr))lanternOut();
+      if(!LANTERN){const def=lanternDef(s,yr,h),n=spawnNPC(def,Math.atan2(-LANTERN_AT[0],-LANTERN_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);LANTERN={npc:n,site:s,year:yr};}}
+    else if(LANTERN)lanternOut();
+    if(!s||!on)return;const fh=festivalHere(s.id);if(!fh||fh.f.key!=='lanterns'||fh.state==='none'||hourNow()!==LANTERN_CLOSE)return;
+    const k=s.id+':'+calDay(absMin()).n;if(_lantLast===k||Math.hypot(px-s.x,pz-s.z)>LANTERN_SQUARE)return;_lantLast=k;
+    showMsg(LANTERN_LOG.last,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.last);}
+  // the day after a lantern sent: a Gatelander of that town, once (feastGreeting, on a day with no festival)
+  function festAfterGreeting(def){if(!def||def._lantern||def.people!=='gatelander')return null;const r=festActRec('lanterns',def._siteId),c=calDay(absMin());
+    if(!r||!r.sent||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return LANTERN_LOG.after;}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,

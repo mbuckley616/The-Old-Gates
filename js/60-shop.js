@@ -347,8 +347,8 @@ const FEAST_FINE={gatelander:'It’s a feast, so it’s half. Don’t make me so
 function feastOn(at){const c=calDay(at);return FEASTS.find(f=>f.month===c.month&&f.dom===c.dom)||null;}
 function nextFeast(at){const now=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0),d0=Math.floor(Math.max(0,now)/1440);
   for(let d=d0;d<d0+CAL.monthLen*CAL.months;d++){const f=feastOn(d*1440);if(f)return {f,at:d*1440};}return null;}
-function feastGreeting(def){if(!def||!def._siteId)return null;const f=feastOn();if(f)return f.greet[def.people]||f.greet.gatelander; /* S2313 — a feast wins; none shares a festival's date */
-  const h=festivalHere(def._siteId);if(!h)return null;{const a=typeof festActGreeting==='function'?festActGreeting(def,h):null;if(a)return a;} /* S2324 — after the act, and the lord's line */
+function feastGreeting(def){if(!def||!def._siteId||def._lantern)return null; /* S2325 — the lanternmaker says her own */const f=feastOn();if(f)return f.greet[def.people]||f.greet.gatelander; /* S2313 — a feast wins; none shares a festival's date */
+  const h=festivalHere(def._siteId);if(!h)return typeof festAfterGreeting==='function'?festAfterGreeting(def):null; /* S2325 — the day after a lantern */{const a=typeof festActGreeting==='function'?festActGreeting(def,h):null;if(a)return a;} /* S2324 — after the act, and the lord's line */
   return h.f.greet[def.people]||h.f.greet.gatelander;}
 // S2313 — the nine island festivals (Michael's B on #1628, docs/design/festivals.md; the names, dates, customs and lines are the
 // quest writer's drafts, *Festivals on the Calendar* I–III, docs/quest_drafts.md). Each is kept by the towns of one island only

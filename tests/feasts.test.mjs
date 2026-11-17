@@ -287,5 +287,38 @@ console.log(JSON.stringify(fa).slice(0, 2500));
 check('the Greening: a ribbon at the green\'s middle (not 10 m off, not in a Markish town), once a town a year, its line in the log; again next year', /tie a ribbon/.test(fa.prompt) && fa.far === null && fa.did && fa.rec && fa.rec.act === 28 && fa.after === null && fa.again === false && /tie a ribbon/.test(fa.nextYear || '') && fa.markPrompt === null, fa);
 check('after the ribbon the next Gatelander says so, once, then the day\'s greeting again; the lord gives the Greening\'s line', fa.folk && fa.greet0 === fa.greenGreet && /the plain one\?/.test(fa.thanks) && fa.thanks2 === fa.greenGreet && (fa.lordPeople !== 'gatelander' || /carrying a lamb/.test(fa.lord)), fa);
 check('Riverfair\'s cup at the water only from 12:00 to 13:00; poured once, and the butts still open to you; the character\'s save', fa.cup11 === null && /pour a cup/.test(fa.cup12) && fa.poured && fa.cupRec && fa.cupRec.act === 28 && fa.butts && fa.cup13 === null && fa.charKey, fa);
+// 12. the Night of the Lanterns (Session 2325): the lanternmaker on the square from 18:00 to 22:00, a lantern for two gold, *For me*
+// for nothing, given in a town that names you; the last lantern's line at 22:00; the next day's word, once
+await g.settle('dunmore');
+const ln = await page.evaluate(() => {
+  const site = siteAnywhere('dunmore'), S = WORLD.settle.get('dunmore'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, fs0 = festivalState, p0 = [px, pz], g0 = gold;
+  const lf = FESTIVALS.find(f => f.key === 'lanterns');
+  const at = (dom, h) => { worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + lf.month - CAL.startMonth) * CAL.monthLen + dom - 1) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const tick = () => { _lantT = 0; tickLanterns(1); };
+  const folk = (S.npcs || []).find(n => n.def && n.def.people === 'gatelander' && !n.def._lord && !n.def._lantern);
+  const labels = () => LANTERN.npc.def.topics.map(t => t.label);
+  const choose = i => { const T = LANTERN.npc.def.topics.find(t => t.label === 'A lantern.'); const c = T.follow[i]; return c.fn(c); };
+  st.p = 70; st.flags = {}; worldState.festivals = {}; nearSite = () => ({ site }); px = site.x; pz = site.z;
+  const out = {};
+  try {
+    at(26, 17); tick(); out.at17 = !!LANTERN;
+    at(26, 19); tick(); out.at19 = !!LANTERN && LANTERN.npc.def.role; out.people = LANTERN && LANTERN.npc.def.people; out.greet = LANTERN && dlgGreeting(LANTERN.npc.def);
+    out.labels = labels(); gold = 10;
+    out.me = choose(3); out.meGold = gold; out.meRec = JSON.parse(JSON.stringify(worldState.festivals['lanterns:' + site.id])); out.labelsAfter = labels();
+    worldState.festivals = {}; out.sent = choose(0); out.sentGold = gold; out.rec = JSON.parse(JSON.stringify(worldState.festivals['lanterns:' + site.id]));
+    worldState.festivals = {}; gold = 1; out.poor = choose(1); out.poorRec = !!worldState.festivals['lanterns:' + site.id];
+    festivalState = () => 'named'; out.given = choose(1); out.givenGold = gold; festivalState = fs0;
+    _lantLast = ''; at(26, 22); tick(); out.at22 = !!LANTERN; out.last = _lantLast === site.id + ':' + calDay(worldState.gameTimeAbsMinutes).n;
+    at(27, 10); out.next = folk && feastGreeting(folk.def); out.next2 = folk && feastGreeting(folk.def);
+    worldState.festivals['lanterns:' + site.id].sent = false; delete worldState.festivals['lanterns:' + site.id].thanked; out.nextMe = folk && feastGreeting(folk.def);
+  } finally { festivalState = fs0; if (LANTERN) lanternOut(); worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; gold = g0; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.L = LANTERN_LINES.gatelander; out.LOG = LANTERN_LOG;
+  return out;
+});
+console.log(JSON.stringify(ln).slice(0, 2500));
+check('the lanternmaker stands on the square on the Night from 18:00 to 22:00 (not at 17:00 or 22:00), and greets with her own line', !ln.at17 && ln.at19 === 'Lanternmaker' && !ln.at22 && (ln.people !== 'gatelander' || ln.greet === ln.L.greet) && ln.labels.includes('A lantern.'), ln);
+check('*For me* costs nothing and spends the year\'s lantern; a lantern sent costs two gold with her answer; short of two, nothing; a town that names you gives it', ln.meGold === 10 && ln.meRec.sent === false && !ln.labelsAfter.includes('A lantern.') && ln.sentGold === 8 && ln.rec.sent === true && ln.rec.act === 28 && /will know their own|They’ll know their own/.test(ln.sent) && /two gold/.test(ln.poor) && !ln.poorRec && ln.givenGold === 1, ln);
+check('the last lantern\'s line at 22:00 on the square; the next day a Gatelander says you stood with them, once, and not for *For me*', ln.last && ln.next === ln.LOG.after && ln.next2 !== ln.LOG.after && ln.nextMe !== ln.LOG.after, ln);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
