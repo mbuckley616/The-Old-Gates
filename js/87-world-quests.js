@@ -3879,7 +3879,7 @@ const giver=`${lord.title} ${lord.name}`;
     if(!named){gold-=LANTERN_PRICE;if(typeof updateHUD==='function')updateHUD();}
     showMsg(LANTERN_LOG.sent,'#e8d8a0');if(typeof addLog==='function')addLog('🏮',LANTERN_LOG.sent);
     return gp==='gatelander'?LL.answers[i]:LANTERN_LOG.sent;}
-  function tickLanterns(dt){_lantT-=dt;if(_lantT>0)return;_lantT=1;try{tickBlazeLight();}catch(e){} /* S2326 */
+  function tickLanterns(dt){_lantT-=dt;if(_lantT>0)return;_lantT=1;try{tickBlazeLight();}catch(e){} /* S2326 */try{tickWager();}catch(e){console.warn('wager',e);} /* S2335 */
     const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
     const h=s&&isleAt(s.x,s.z)==='gatelands'?lanternOn(s):null,yr=calDay(absMin()).year;
     if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(LANTERN&&(LANTERN.site.id!==s.id||LANTERN.year!==yr))lanternOut();
@@ -3902,6 +3902,42 @@ const giver=`${lord.title} ${lord.name}`;
       if(!r||!r.sat||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return FEST_ACTS.firstsnow.after;}
     if(def.people!=='gatelander')return null;const r=festActRec('lanterns',def._siteId),c=calDay(absMin());
     if(!r||!r.sent||r.actN!==c.n-1||r.thanked===c.n)return null;r.thanked=c.n;return LANTERN_LOG.after;}
+  // S2335 — the Strait Fair's wager on the boats (*Festivals on the Calendar, II* §3, word for word; Michael's B on #1628). On the Fair
+  // (Highsun 4), in a Markish town keeping it and not occupied, a Markman stands at the town's water from first light (WAGER_OPEN) till
+  // the fair ends at noon (WAGER_GONE): the sea quay's foot in a port (quayLine), the river quay's foot (festWaterAt), else on the square
+  // (WAGER_AT; the draft's ringkeeper takes it inland once the ring stands). Topic *A bet on the boats.*: from 5:00 to 7:00, 2 gold on one
+  // of three boats, once a year a town. The race is seededRng('straitfair', site and year), the same for a friend; from 8:00 the topic
+  // tells it, and a win pays 6 once. Kept in the ring's record, worldState.festivals['straitfair:'+site].bet = {year, pick, paid}, its
+  // own field, so the ring's year is untouched. Named actions: wagerPlace, wagerHear.
+  const WAGER_OPEN=5,WAGER_CLOSE=7,WAGER_NEWS=8,WAGER_GONE=12,WAGER_STAKE=2,WAGER_PAY=6,WAGER_AT=[5,-4];
+  const WAGER_BOATS=['The black one.','The one with the old man at the oar.','Whichever’s last off the beach.'];
+  const WAGER_LINES={placed:'Two on it. Aye. You’ll hear at the quay by eight.',won:'Yours came in first. Six. Don’t spend it all on the ring.',
+    lost:'Yours came in third. Rowed like a man with a tithe-man on his back. Two’s gone.'};
+  let WAGER=null; /* {npc, site, year} */
+  function wagerOn(s){const h=festivalHere(s.id);if(!h||h.f.key!=='straitfair'||h.state==='none')return null;if(TS(s).flags&&TS(s).flags.occupied)return null;
+    const hr=hourNow();return hr>=WAGER_OPEN&&hr<WAGER_GONE?h:null;}
+  function wagerRec(s){const F=worldState.festivals||(worldState.festivals={}),k='straitfair:'+s.id;return F[k]||(F[k]={});}
+  function wagerBet(s){const r=(worldState.festivals||{})['straitfair:'+s.id],b=r&&r.bet;return b&&b.year===calDay(absMin()).year?b:null;}
+  function wagerWinner(s,year){return Math.floor(seededRng('straitfair',s.id+':'+year)()*WAGER_BOATS.length);}
+  function wagerSpot(s){if(s.kind==='port'&&typeof shoreDir==='function'){const sd=shoreDir(s);if(sd){const q=quayLine(s,sd,1.1);return {x:q.startX-sd.dx*3+sd.dz*2,z:q.startZ-sd.dz*3-sd.dx*2};}}
+    if(s.quaySpot&&s.bank)return festWaterAt(s);return {x:s.x+WAGER_AT[0],z:s.z+WAGER_AT[1]};}
+  function wagerPlace(site,i){const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return '';const hr=hourNow();
+    if(wagerBet(s))return WAGER_LINES.placed;if(hr<WAGER_OPEN||hr>=WAGER_CLOSE){const h=festivalHere(s.id);return h?h.f.greet.markman:'';}if(gold<WAGER_STAKE)return 'You have not the two gold.';
+    gold-=WAGER_STAKE;if(typeof updateHUD==='function')updateHUD();wagerRec(s).bet={year:calDay(absMin()).year,pick:i,paid:false};return WAGER_LINES.placed;}
+  function wagerHear(site){const s=typeof site==='string'?siteAnywhere(site):site,b=s&&wagerBet(s);if(!b)return null;if(hourNow()<WAGER_NEWS)return WAGER_LINES.placed;
+    const won=b.pick===wagerWinner(s,b.year);if(won&&!b.paid){b.paid=true;payPurse(WAGER_PAY);}b.told=true;return won?WAGER_LINES.won:WAGER_LINES.lost;}
+  function wagerDef(s,year,h){const r=seededRng('wager',s.id+':'+year),bank=NAMES[PEOPLES.markman.names]||NAMES.irish,female=r()<.3,L=female&&bank.f&&bank.f.length?bank.f:bank.m,p=wagerSpot(s);
+    return {name:L[Math.floor(r()*L.length)],role:'Resident',ico:'⛵',female,people:'markman',x:p.x,z:p.z,_siteId:s.id,_lantern:true,greeting:[h.f.greet.markman],
+      get topics(){const hr=hourNow(),b=wagerBet(s),T=[];
+        if(b)T.push({label:'A bet on the boats.',fn:()=>wagerHear(s)});
+        else if(hr>=WAGER_OPEN&&hr<WAGER_CLOSE)T.push({label:'A bet on the boats.',folder:true,response:'Which boat?',follow:WAGER_BOATS.map((q,i)=>({label:q,fn:()=>wagerPlace(s,i)}))});
+        T.push({label:'Farewell.',bye:true});return T;}};}
+  function wagerOut(){const W=WAGER;if(!W)return;const n=W.npc;if(n){sc.remove(n.g);sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);}WAGER=null;}
+  function tickWager(){const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
+    const h=s&&isleAt(s.x,s.z)==='mark'?wagerOn(s):null,yr=calDay(absMin()).year;
+    if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(WAGER&&(WAGER.site.id!==s.id||WAGER.year!==yr))wagerOut();
+      if(!WAGER){const def=wagerDef(s,yr,h),n=spawnNPC(def,Math.atan2(s.x-def.x,s.z-def.z),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);WAGER={npc:n,site:s,year:yr};}}
+    else if(WAGER)wagerOut();}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,

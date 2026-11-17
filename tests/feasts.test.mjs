@@ -398,5 +398,36 @@ const sn = await page.evaluate(async () => {
 console.log(JSON.stringify(sn).slice(0, 2000));
 check('First Snow: from 18:00 on the square (not at 17:00, not 8 m off) E sits you up till first light: 10 hours pass, the log at 6:00, the winter\'s act on the year', sn.p17 === null && sn.p20 === sn.A.prompt && sn.far === null && sn.did && Math.abs(sn.hour - 6) < .05 && Math.abs(sn.mins - 600) < 3 && sn.log === sn.A.log && sn.rec && sn.rec.act === 28 && sn.rec.sat && sn.again === null, sn);
 check('the next day a Markman of the town says you sat it out, once; a Gatelander does not', sn.next === sn.A.after && sn.next2 !== sn.A.after && sn.gl !== sn.A.after, sn);
+// 16. the Strait Fair's wager on the boats (Session 2335): a Markman at the water from 5:00 till noon; 2 gold on one of three from 5:00
+// to 7:00; from 8:00 the race told, a win paying 6 once; the race seeded by site and year; the ring's try untouched; none while occupied
+const wg = await page.evaluate(() => {
+  const marks = ladderSites().filter(s => isleAt(s.x, s.z) === 'mark'), site = marks.find(s => s.kind === 'port') || marks[0], st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, p0 = [px, pz], g0 = gold;
+  const sf = FESTIVALS.find(f => f.key === 'straitfair');
+  const at = (yr, h) => { worldState.gameTimeAbsMinutes = (((yr - CAL.startYear) * CAL.months + sf.month - CAL.startMonth) * CAL.monthLen + sf.dom - 1) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  st.p = 70; st.flags = {}; worldState.festivals = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1;
+  const labels = () => WAGER ? WAGER.npc.def ? WAGER.npc.def.topics.map(t => t.label) : null : null;
+  const out = { kind: site.kind };
+  try {
+    at(28, 4); tickWager(); out.at4 = !!WAGER;
+    at(28, 5); tickWager(); out.at5 = !!WAGER; const d = WAGER && wagerDef(site, 28, festivalHere(site.id)); out.who = d && [d.people, d.role]; out.fromPad = d && +(Math.hypot(d.x - site.x, d.z - site.z) - site.pad).toFixed(1);
+    const T = d.topics.find(t => t.label === 'A bet on the boats.'); out.follow = T && T.follow && T.follow.map(f => f.label); out.ask = T && T.response;
+    const win = wagerWinner(site, 28); out.same = win === wagerWinner(site, 28); out.years = [28, 29, 30, 31, 32, 33].map(y => wagerWinner(site, y));
+    gold = 1; out.poor = wagerPlace(site, win); out.poorBet = !!wagerBet(site);
+    gold = 10; out.placed = wagerPlace(site, win); out.gold1 = gold; out.again = wagerPlace(site, (win + 1) % 3); out.gold2 = gold;
+    at(28, 6); out.early = wagerHear(site); out.topics6 = d.topics.map(t => t.label);
+    at(28, 9); out.won = wagerHear(site); out.gold3 = gold; out.won2 = wagerHear(site); out.gold4 = gold;
+    out.ring = (fairRingOpenFor(site) || {}).ok;
+    at(29, 6); gold = 10; out.placed29 = wagerPlace(site, (wagerWinner(site, 29) + 1) % 3); at(29, 9); out.lost = wagerHear(site); out.gold5 = gold;
+    at(30, 7); out.at7 = d.topics.map(t => t.label);
+    at(30, 12); tickWager(); out.at12 = !!WAGER;
+    at(30, 6); st.flags = { occupied: true }; tickWager(); out.occupied = !!WAGER; st.flags = {};
+  } finally { if (WAGER) wagerOut(); gold = g0; worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.L = WAGER_LINES;
+  return out;
+});
+console.log(JSON.stringify(wg).slice(0, 2000));
+check(`the wager: a Markman at the water (${wg.kind}, ${wg.fromPad} m past the pad) from 5:00, not at 4:00, gone at noon and in an occupied town; three boats asked from 5:00, none offered at 7:00 without a bet`, !wg.at4 && wg.at5 && wg.who[0] === 'markman' && !wg.at12 && !wg.occupied && wg.ask === 'Which boat?' && wg.follow.length === 3 && !wg.at7.includes('A bet on the boats.'), wg);
+check('2 gold on a boat (short of two, nothing), once; before 8:00 the same word; from 8:00 a win pays 6 once, a loss tells third; the race the same for a site and year, not every year alike; the ring\'s try untouched', /two gold/.test(wg.poor) && !wg.poorBet && wg.placed === wg.L.placed && wg.gold1 === 8 && wg.again === wg.L.placed && wg.gold2 === 8 && wg.early === wg.L.placed && wg.won === wg.L.won && wg.gold3 === 14 && wg.won2 === wg.L.won && wg.gold4 === 14 && wg.lost === wg.L.lost && wg.gold5 === 8 && wg.same && new Set(wg.years).size > 1 && wg.ring, wg);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
