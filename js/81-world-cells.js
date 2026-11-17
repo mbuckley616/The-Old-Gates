@@ -606,6 +606,7 @@
            try{const cs=tunnelStamps(c,k);if(cs.length){L.stamps.push(...cs);refreshChunksNearWater(cs);}}catch(e){console.warn('tunnel',e);} /* S1828 — a trade tunnel's two portals */
            try{const cs=waysideStamps(c,k);if(cs.length){L.stamps.push(...cs);refreshChunksNearWater(cs);}}catch(e){console.warn('wayside',e);} /* S2007 — a place by the road's pad and clearings */
            try{const cs=offroadStamps(c,k);if(cs.length){L.stamps.push(...cs);refreshChunksNearWater(cs);}}catch(e){console.warn('offroad',e);} /* S2038 — a place off the road's stance and clearing */
+           try{const cs=buttsLaneStamps(c,k);if(cs.length){L.stamps.push(...cs);refreshChunksNearWater(cs);}}catch(e){console.warn('butts lane',e);} /* S2331 — Riverfair's butts' lane cleared (#1672 A) */
            // ports: the shore shelf that meets the quay, stamped now so the chunks are built with it
            c.sites.forEach(t=>{if(t.kind!=='port')return;const sd=shoreDir(t);if(!sd)return;let x=t.x+sd.dx*t.pad,z=t.z+sd.dz*t.pad,n=0;while(worldH(x,z)>1.3&&n<80){x+=sd.dx*3;z+=sd.dz*3;n++;}t.quayStart={x,z};const q=addStamp({id:'quay_'+t.id,kind:'door',x:x-sd.dx*6,z:z-sd.dz*6,r:9,blend:16,y:1.05,cell:cellKey(c.i,c.j)});L.stamps.push(q);
              // the shipwright's own flat pad at the quay head

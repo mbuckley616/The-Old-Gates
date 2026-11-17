@@ -395,6 +395,59 @@
       for(const R2 of X.roads)if(farmSegD(C.ox+uu*C.c_+vv*C.s_,C.oz-uu*C.s_+vv*C.c_,R2.pts)<ROAD_BLEND+.4)return false;}
     return true;
   }
+  // S2331 (Michael's A on #1672) — Riverfair's butts stand all year as a Gatelands town's practice ground: a lane 76 m long outside every
+  // town, village, city and port of the island on the new look, the first near-flat strip off the town's pad and away from its roads. Laid
+  // from the cells alone, by a stream keyed by the town, as villageFarm is (the roads' lines from their defs, the pads, gates and farms
+  // round it, the wayside and off-road places, the sea and the rivers), and the ground read by placeH under the town's own pad, so the lane
+  // stands in the same place whatever has loaded. Candidates: the mark 8, 20, then 34 m off the pad's edge on 24 bearings, the lane running
+  // straight out or along the pad either way. A lane fits when its 20 m by 6 m samples are dry, off every road's bed, clear of the rest, its
+  // ground steps at most 0.5 m in 4 m and tilts at most 0.6 m across, and an arrow from the mark (1.5 m up) to each butt's face clears the
+  // ground by 0.3 m. -> {id, x, z, dx, dz, ry, y} (the mark's middle, downrange, the kit's turn, the mark's ground), kept on the site, or null.
+  const BUTTS_KINDS={city:1,town:1,village:1,port:1},BUTTS_LEN=76,BUTTS_BACK=4,BUTTS_HALF=3,BUTTS_ENDS=[30,50,70];
+  function buttsLane(t,c){
+    if(t._butts!==undefined)return t._butts;
+    if(!BUTTS_KINDS[t.kind]||!(t.pad>0)||t.islet||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.butts){t._butts=null;return null;}
+    if(!c){const [ci,cj]=cellOf(t.x,t.z);c=getCell(ci,cj);}
+    if(c.type==='sea'||nationOf(c.i,c.j).people!=='gatelander'){t._butts=null;return null;}
+    const port=t.kind==='port',R0=port?t.pad*.72:t.pad,B0=port?t.pad*.3:Math.max(30,t.pad*.7),Y0=port?Math.max(SEA_Y+1.3,Math.min(landH(t.x,t.z),3.0)):Math.max(SEA_Y+1.6,landH(t.x,t.z));
+    t._butts=null;const N=c._buttsNear||(c._buttsNear=(()=>{const X=farmNear(c),near=X.near; /* the cell's neighbourhood once, for all its towns */
+      return {roads:X.roads,sites:near.flatMap(n=>n.sites).filter(s=>s.pad>0&&s.kind!=='portal'),gates:farmGates(near),
+        farms:[...near.flatMap(n=>n.sites.filter(s=>s.kind==='village').map(s=>villageFarm(s,n))),...near.flatMap(n=>loneFarms(n))].filter(Boolean),
+        places:near.flatMap(n=>{const o=[];try{const w=waysideAt(n);if(w)o.push(w);}catch(e){}try{const w=offroadAt(n);if(w)o.push(w);}catch(e){}return o;})};})());
+    const reach=R0+34+BUTTS_LEN+20,by=(x,z,m)=>Math.hypot(x-t.x,z-t.z)<reach+m; /* only what can come near a lane */
+    const pads=N.sites.filter(s=>s!==t&&by(s.x,s.z,s.pad+40)),gates=N.gates.filter(q=>by(q.x,q.z,q.m)),farms=N.farms.filter(f=>by(f.cx,f.cz,FARM_R+6)),places=N.places.filter(p=>by(p.x,p.z,45));
+    const X={roads:N.roads.map(R2=>{const P=[];for(let i=0;i<R2.pts.length-1;i++){const a=R2.pts[i],b=R2.pts[i+1];if(by((a.x+b.x)/2,(a.z+b.z)/2,Math.hypot(b.x-a.x,b.z-a.z)/2+ROAD_BLEND+2)){if(!P.length||P[P.length-1]!==a)P.push(a);P.push(b);}else if(P.length&&P[P.length-1]!==null)P.push(null);}
+      const out=[];let cur=[];for(const q of P){if(q===null){if(cur.length>1)out.push({pts:cur});cur=[];}else cur.push(q);}if(cur.length>1)out.push({pts:cur});return out;}).flat()};
+    const hAt=(x,z)=>{const h=rawH(x,z),d=Math.hypot(x-t.x,z-t.z);if(d>=R0+B0)return h;const q=d<=R0?1:1-(d-R0)/B0,e=q*q*(3-2*q);return h*(1-e)+Y0*e;};
+    const fits=(mx,mz,dx,dz)=>{const ry=Math.atan2(-dx,-dz),co=Math.cos(ry),s_=Math.sin(ry),W=(lx,lz)=>[mx+lx*co+lz*s_,mz-lx*s_+lz*co],hc=[];
+      for(let v=-BUTTS_BACK;v<=BUTTS_LEN-BUTTS_BACK+.01;v+=4){const row=[];
+        for(const u of [-BUTTS_HALF,0,BUTTS_HALF]){const [x,z]=W(u,-v);
+          if(Math.hypot(x-t.x,z-t.z)<R0+3)return null;
+          for(const s of pads)if(Math.hypot(x-s.x,z-s.z)<s.pad+40)return null;
+          for(const q of gates)if(Math.hypot(x-q.x,z-q.z)<Math.max(20,q.m-FARM_R))return null;
+          for(const f of farms)if(Math.hypot(x-f.cx,z-f.cz)<FARM_R+6)return null;
+          for(const p of places)if(Math.hypot(x-p.x,z-p.z)<45)return null;
+          for(const R2 of X.roads)if(farmSegD(x,z,R2.pts)<ROAD_BLEND+1.5)return null;
+          if(farmWet(x,z))return null;const h=hAt(x,z);if(h<2)return null;row.push(h);}
+        if(Math.abs(row[0]-row[1])>.6||Math.abs(row[2]-row[1])>.6)return null;hc.push(row[1]);}
+      for(let i=1;i<hc.length;i++)if(Math.abs(hc[i]-hc[i-1])>.5)return null;
+      const at=v=>{const f=(v+BUTTS_BACK)/4,i=Math.min(hc.length-2,Math.floor(f));return hc[i]+(hc[i+1]-hc[i])*(f-i);},eye=at(0)+1.5;
+      for(const D of BUTTS_ENDS){const fy=at(D)+1.2;for(let v=2;v<D-1;v+=2)if(eye+(fy-eye)*v/D<at(v)+.3)return null;}
+      return {ry,y:+at(0).toFixed(3),rise:+(Math.max(...hc)-Math.min(...hc)).toFixed(2)};};
+    withPlace(t.x,t.z,()=>{const r=PKIT.stream('butts:'+t.id),a0=r()*Math.PI*2,turn=r()<.5?1:-1;
+      for(const off of [8,20,34])for(let k=0;k<24&&!t._butts;k++){const a=a0+k*Math.PI/12,ux=Math.sin(a),uz=Math.cos(a),mx=t.x+ux*(R0+off),mz=t.z+uz*(R0+off);
+        for(const [dx,dz] of [[ux,uz],[uz*turn,-ux*turn],[-uz*turn,ux*turn]]){const F=fits(mx,mz,dx,dz);
+          if(F){t._butts={id:'butts_'+t.id,x:+mx.toFixed(3),z:+mz.toFixed(3),dx:+dx.toFixed(5),dz:+dz.toFixed(5),ry:F.ry,y:F.y,rise:F.rise,off};break;}}}});
+    return t._butts;
+  }
+  // the lane where it stands (genSettlement's S.butts, else as chosen from the cells) and the standing butt shown or lifted: what buttsStart
+  // and buttsEnd (87) read, so the contest is shot down the town's own lane with the kit's butt
+  function buttsLaneOf(site){const s=typeof site==='string'?(SITE[site]||null):site;if(!s)return null;const S=SETTLE.get(s.id);if(S&&S.butts)return S.butts;const L=buttsLane(s);return L?{id:L.id,x:L.x,z:L.z,dx:L.dx,dz:L.dz,ry:L.ry}:null;}
+  function buttsLaneShow(site,on){const s=typeof site==='string'?site:site&&site.id,S=s&&SETTLE.get(s);if(S&&S.butts&&S.butts.butt)S.butts.butt.visible=!!on;}
+  // the lane's clearing: noFlat stamps down its middle, so the scatter stands no tree or rock on it and the ground is worn as a mown lane is
+  function buttsLaneStamps(c,k){const out=[];for(const t of c.sites){const L=buttsLane(t,c);if(!L)continue;
+      for(let v=-BUTTS_BACK;v<=BUTTS_LEN-BUTTS_BACK+.01;v+=5)out.push(addStamp({id:`${L.id}_${Math.round(v)}`,kind:'door',noFlat:true,butts:true,x:L.x+L.dx*v,z:L.z+L.dz*v,r:3.8,blend:1,y:0,cell:k}));}
+    return out;}
   // S1473 (card F6, Michael's C on #744, its second half) — the farms alone in the country: in a Gatelands cell on the new look, one
   // (one cell in three, two) beside the cell's own roads between its places, each on a road of its own, the house to the road as a
   // village's farm stands. Each stands at least LONE_GAP farther from every pad than a village's farm may, and as far from another lone

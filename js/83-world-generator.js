@@ -647,6 +647,16 @@ function genSettlement(site){
       {const m=W_(0);sol.push({cx:m.x,cz:m.z,rx:1.0,rz:.12,c,s:s_,h:.99,bt:'wall',stocks:true});}
       {const m=W_(P.seat.z);sol.push({cx:m.x,cz:m.z,rx:.85,rz:.15,c,s:s_,h:.45,bt:'wall',stocks:true});}
       const st=W_(P.seat.z);S.stocks={x:at.x,z:at.z,ry,seat:{x:st.x,z:st.z,y:y+P.seat.y},tris:P.tris,draws:P.draws};}
+    // S2331 (Michael's A on #1672) — Riverfair's butts, the town's practice ground all year: the lane buttsLane chose from the cells (82), its
+    // mark, the three pegs and, standing at the 30 m peg, the butt with its bales (PKIT.props.butts and .butt, 38-kit.js), each piece on its
+    // own ground. The standing butt is its own group, so the contest can lift it while its own butt is moved from end to end (buttsLaneShow).
+    // One solid, the stand and the bales behind the face; the stake and the pegs are too thin to stop you. S.butts keeps where it stands.
+    function kitButts(){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.butts||typeof buttsLane!=='function')return;
+      const L=buttsLane(site);if(!L)return;const y0=worldH(L.x,L.z)-.02,c=Math.cos(L.ry),s_=Math.sin(L.ry),W_=(lx,lz)=>({x:L.x+lx*c+lz*s_,z:L.z-lx*s_+lz*c}),gr=(lx,lz)=>{const q=W_(lx,lz);return worldH(q.x,q.z)-.02-y0;};
+      const P=PKIT.props.butts({key:L.id,end:-1,ground:gr}),G=P.group;G.position.set(L.x,y0,L.z);G.rotation.y=L.ry;G.userData.noBake=true;group.add(G);
+      const D=BUTTS_ENDS[0],fy=y0+Math.min(gr(-.5,-D),gr(.5,-D),gr(0,-D-.9))+1.2,f=W_(0,-D),B=PKIT.props.butt(),BG=B.group;BG.position.set(f.x,fy,f.z);BG.rotation.y=L.ry;BG.userData.noBake=true;group.add(BG);
+      const m=W_(0,-D-1.25);sol.push({cx:m.x,cz:m.z,rx:1.1,rz:.7,c,s:s_,h:1.95,bt:'wall',butts:true}); /* from 0.55 m behind the face (the solid test pads a solid by 0.3 m), so an arrow meets the face first */
+      S.butts={id:L.id,x:L.x,z:L.z,dx:L.dx,dz:L.dz,ry:L.ry,y:y0,face:{x:f.x,y:fy,z:f.z},lane:G,butt:BG,tris:P.tris+B.tris,draws:P.draws+B.draws};}
     function kitMarket(L){const G=PKIT.gl.market({r:PKIT.stream(`${site.id}:market`)}),U=G.userData,c=Math.cos(L.ry),s_=Math.sin(L.ry),y=worldH(L.x,L.z)-.06;
       if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
       G.position.set(L.x-cx,y,L.z-cz);G.rotation.y=L.ry;G.traverse(o=>{if(o.isMesh){o.castShadow=o.name!=='dark';o.receiveShadow=true;}});kitG.add(G);
@@ -1020,6 +1030,7 @@ function genSettlement(site){
       }
     }
     if(plan.rows>0&&!burnedV&&!abandonedV)try{kitStocks();}catch(e){console.warn('stocks',e);} /* S2226 — the Gatelands' stocks on the square (#1540 B) */
+    if(!burnedV&&!abandonedV)try{kitButts();}catch(e){console.warn('butts',e);} /* S2331 — Riverfair's butts outside the town (#1672 A) */
     {const MP=PLOTS.find(P=>P.type==='market');if(MP&&plan.rows>0)try{kitMarket(MP.lot);}catch(e){console.warn('market',e);}} /* S1904 — the market house on its plot */
     {const AP=PLOTS.find(P=>P.type==='academy');if(AP)try{kitAcademy(AP.lot);}catch(e){console.warn('academy',e);}} /* S1959 — the Mages' academy on its plot */
     // Walls with gates where roads cross; towers at the gates.

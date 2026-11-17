@@ -5982,6 +5982,74 @@ function houseGarden(island, o = {}) {
   const W = 2 * BW + PATH + (island === 'mark' ? .4 : .1) + (island === 'aurenne' ? .45 : 0), D = 2 * BD + PATH + (island === 'mark' ? .4 : .1);
   return { group, tris: Math.round(tris), draws: group.children.length, island, beds, box: { w: +W.toFixed(2), d: +D.toFixed(2), h: EDGE }, plots, at };
 }
+// ── Riverfair's butts (Session 2331; Michael's A on #1672: the butts stand all year as the town's practice ground, a lane outside every
+// Gatelands town, shot only on Riverfair for the purse). Copied from docs/prototypes/levelup/contests.js (Session 2317), its sizes the
+// game's (js/87-world-quests.js: BUTT_ENDS, BUTT_RINGS, BUTT_R, BUTT_Y, BUTT_MARK_R): a straw boss 1.36 m across and 0.3 deep in twelve
+// hoops of cord, a painted linen face 1.2 m across (weld, madder and cream at 0.2, 0.4 and 0.6 m) with its middle 1.2 m up, leant back
+// 8 degrees on an ash stand; two bales and one across behind it; the mark, a limed line 3 m across with a peeled stake and a woad ribbon
+// 1.55 m off its middle; a range peg with its number cut in a board at 30, 50 and 70 m. Only the colour space differs from the prototype.
+//   PKIT.props.butt({ bales }) -> { group, tris, draws } in the face's own frame: the face's middle at the origin, looking +z, the ground
+//     at y = -1.2 (BUTT_Y); the bales 1.6 m behind (o.bales false leaves them off). What buttsStart moves from end to end (buttMesh).
+//   PKIT.props.butts({ key, end, ground }) -> { group, tris, draws, face { x, y, z } } the lane in its own frame: the mark's middle at the
+//     origin, downrange -z, the ground at y = 0; the pegs at x 1.6, the butt and its bales at the peg of BUTT.ends[end] (o.end -1: none).
+//     ground(lx, lz) -> the ground's height there less the mark's, so each piece stands on its own ground (the lane is near flat, not flat).
+const BUTT = { ends: [30, 50, 70], rings: [[.2, 5], [.4, 3], [.6, 1]], r: .6, y: 1.2, markR: 1.5, lean: 8 * Math.PI / 180, boss: .68, depth: .3 };
+let BTM = null;
+function buttMats() {
+  if (BTM) return BTM;
+  const can = (w, h, draw) => { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.NoColorSpace; t.anisotropy = 4; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+  const lcg = s => () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
+  const straw = can(256, 64, (x, w, h) => { x.fillStyle = '#b89a58'; x.fillRect(0, 0, w, h); const r = lcg(3);
+    for (let i = 0; i < 420; i++) { const y = r() * h, x0 = r() * w; x.strokeStyle = `hsla(${40 + r() * 10},${45 + r() * 20}%,${42 + r() * 30}%,.7)`; x.lineWidth = .6 + r() * 1.2; x.beginPath(); x.moveTo(x0, y); x.lineTo(x0 + 20 + r() * 40, y + (r() - .5) * 3); x.stroke(); } });
+  const face = can(512, 512, (x, w) => { const c = w / 2, k = c / BUTT.r, cols = ['#d9a92a', '#a8301e', '#ece4cc']; x.fillStyle = '#ece4cc'; x.fillRect(0, 0, w, w);
+    for (let i = BUTT.rings.length - 1; i >= 0; i--) { x.beginPath(); x.arc(c, c, BUTT.rings[i][0] * k, 0, 6.2832); x.fillStyle = cols[i]; x.fill(); x.lineWidth = 3; x.strokeStyle = '#2a2018'; x.stroke(); }
+    x.globalAlpha = .07; x.strokeStyle = '#000'; x.lineWidth = 1; for (let i = 0; i < w; i += 4) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, w); x.stroke(); x.beginPath(); x.moveTo(0, i); x.lineTo(w, i); x.stroke(); } x.globalAlpha = 1; });
+  face.wrapS = face.wrapT = THREE.ClampToEdgeWrapping;
+  const board = can(512, 64, (x, w, h) => { x.fillStyle = '#c8b694'; x.fillRect(0, 0, w, h); x.fillStyle = '#3a2a1a'; x.font = 'bold 44px serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; BUTT.ends.forEach((n, i) => x.fillText(String(n), (i + .5) * w / 4, h / 2 + 2)); });
+  const col = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
+  BTM = { straw: new THREE.MeshStandardMaterial({ map: straw, roughness: .92 }), face: new THREE.MeshStandardMaterial({ map: face, roughness: .92 }), board: new THREE.MeshStandardMaterial({ map: board, roughness: .9 }),
+    cord: new THREE.MeshStandardMaterial({ color: col(.72, .63, .45), roughness: 1 }), ash: mat('wood', { ns: .8, color: col(.78, .68, .52) }),
+    lime: new THREE.MeshStandardMaterial({ color: col(.93, .92, .86), roughness: 1 }), woad: new THREE.MeshStandardMaterial({ color: col(.16, .28, .56), roughness: .9, side: THREE.DoubleSide }) };
+  return BTM;
+}
+function buttParts() {
+  const M = buttMats(), V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z), Y = V(0, 1, 0), g = new THREE.Group();
+  const add = (geo, m, p = V(), par = g) => { const o = new THREE.Mesh(geo, m); o.position.copy(p); o.castShadow = o.receiveShadow = true; par.add(o); return o; };
+  const rod = (a, b, r, m, seg = 7, r2 = r, par = g) => { const d = b.clone().sub(a), L = d.length(), geo = new THREE.CylinderGeometry(r2, r, L, seg, 1); geo.translate(0, L / 2, 0); const o = add(geo, m, a, par); o.quaternion.setFromUnitVectors(Y, d.normalize()); return o; };
+  return { M, V, g, add, rod };
+}
+// the butt alone, its face's middle at (0, BUTT.y, 0) of the ground's frame (contests.js's PROPS.butt), then the bales 1.6 m behind
+function buttPieces(G, x0, y0, z0, bales) {
+  const { M, V, add, rod } = buttParts(), tilt = new THREE.Group(), g = new THREE.Group(); tilt.position.set(0, BUTT.y, 0); tilt.rotation.x = -BUTT.lean; g.add(tilt);
+  const boss = add(new THREE.CylinderGeometry(BUTT.boss, BUTT.boss, BUTT.depth, 28, 1, true), M.straw, V(), tilt); boss.rotation.x = Math.PI / 2;
+  const back = add(new THREE.CircleGeometry(BUTT.boss, 28), M.straw, V(0, 0, -BUTT.depth / 2), tilt); back.rotation.y = Math.PI;
+  add(new THREE.RingGeometry(BUTT.r, BUTT.boss, 28, 1), M.straw, V(0, 0, BUTT.depth / 2), tilt);
+  add(new THREE.CircleGeometry(BUTT.r, 36), M.face, V(0, 0, BUTT.depth / 2 + .004), tilt);
+  for (let i = 0; i < 12; i++) { const a = i / 12 * 6.2832, o = add(new THREE.BoxGeometry(.03, .026, BUTT.depth + .02), M.cord, V(Math.cos(a) * (BUTT.boss + .005), Math.sin(a) * (BUTT.boss + .005), 0), tilt); o.rotation.z = a; }
+  const fy = BUTT.y - BUTT.boss * .82;
+  rod(V(-.62, 0, .22), V(-.5, BUTT.y + .25, -.06), .035, M.ash, 6, .03, g); rod(V(.62, 0, .22), V(.5, BUTT.y + .25, -.06), .035, M.ash, 6, .03, g);
+  rod(V(0, 0, -.95), V(0, BUTT.y + .3, -.2), .035, M.ash, 6, .03, g); rod(V(-.62, fy, .06), V(.62, fy, .06), .03, M.ash, 6, .03, g); rod(V(-.52, .35, .17), V(.52, .35, .17), .025, M.ash, 6, .025, g);
+  const n = V(0, 0, 1).applyAxisAngle(V(1, 0, 0), -BUTT.lean), off = n.multiplyScalar(BUTT.depth / 2 + .004); for (const o of g.children) o.position.sub(off);
+  if (bales) { const bale = (x, y, ry) => { const b = add(new THREE.BoxGeometry(1.0, .42, .5), M.straw, V(x, y + .21, -1.6), g); b.rotation.y = ry; for (const dx of [-.25, .25]) add(new THREE.BoxGeometry(.02, .44, .52), M.cord, V(dx, 0, 0), b); };
+    bale(-.52, 0, 0); bale(.52, 0, 0); bale(-.52, .42, 0); bale(.52, .42, 0); bale(0, .84, .02); }
+  g.position.set(x0, y0, z0); G.add(g); return g;
+}
+function contestButt(o = {}) {
+  const group = new THREE.Group(); group.name = 'butt'; buttPieces(group, 0, -BUTT.y, 0, o.bales !== false);
+  const tris = mergeByMaterial(group); return { group, tris, draws: group.children.length };
+}
+function contestButts(o = {}) {
+  const { M, V, g, add, rod } = buttParts(), G0 = o.ground || (() => 0), end = o.end == null ? 0 : o.end; g.name = 'butts';
+  // the mark: the limed line across the lane at the origin, the stake at its west end with the ribbon tied at its head
+  const sx = -1.55, sy = G0(sx, 0); rod(V(sx, sy - .2, 0), V(sx, sy + 1.1, 0), .035, M.ash, 7, .028); add(new THREE.ConeGeometry(.03, .06, 7), M.ash, V(sx, sy + 1.13, 0));
+  { const c = new THREE.CatmullRomCurve3([V(sx, sy + 1.02, 0), V(sx + .06, sy + .99, .02), V(sx + .1, sy + .82, .05), V(sx + .13, sy + .66, .03)]); add(new THREE.TubeGeometry(c, 10, .009, 3, false), M.woad); }
+  { const ln = add(new THREE.PlaneGeometry(3, .08, 6, 1), M.lime, V(0, 0, 0)); ln.rotation.x = -Math.PI / 2; const P = ln.geometry.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, G0(P.getX(i), 0) + .03); ln.castShadow = false; }
+  // the pegs, their boards back up the lane (+z); one board texture holds the three numbers, a quarter each
+  BUTT.ends.forEach((D, i) => { const z = -D + .3, y = G0(1.6, z); rod(V(1.6, y - .2, z), V(1.6, y + .75, z), .03, M.ash, 6);
+    const b = new THREE.BoxGeometry(.32, .16, .025), uv = b.attributes.uv; for (let k = 0; k < uv.count; k++) uv.setX(k, (i + uv.getX(k)) / 4); add(b, M.board, V(1.6, y + .72, z + .035)); });
+  let face = null; if (end >= 0 && end < BUTT.ends.length) { const D = BUTT.ends[end], y = Math.min(G0(-.5, -D), G0(.5, -D), G0(0, -D - .9)); buttPieces(g, 0, y, -D, true); face = { x: 0, y: y + BUTT.y, z: -D }; }
+  const tris = mergeByMaterial(g); return { group: g, tris, draws: g.children.length, face, ends: BUTT.ends.slice(), markR: BUTT.markR };
+}
 // ── ships (card F11, backlog L6, OG-004; Session 1531): the Gatelands sloop of docs/prototypes/levelup/ships.js (gatelandsSloop,
 // Session 858; Michael's A on #306: the square sail, the harp, a tiller on the small hulls), in the game's sloop's numbers (L 13, W 4.4,
 // draft 1.05, the deck 1.0 over the sea): clinker strakes lapped, tarred below the water and oak above, the sheer strake green under a
@@ -11451,7 +11519,7 @@ function aurenneOrrery(hAt, o = {}) {
       const m = new THREE.Mesh(g, DQM[k]); m.name = 'quarter:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     return { group, tris: Math.round(tris), draws: group.children.length, bridge, theatre };
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, trader: markTrader, TRADER_TRADES, TOWN_TRADES, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
