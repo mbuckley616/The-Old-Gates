@@ -254,5 +254,38 @@ const fs = await page.evaluate(() => {
 });
 console.log(JSON.stringify(fs));
 check('First Snow: Culling 28 until the snow is seen; not before 18:00 or under the cover; seen on Culling 12 at 19:00 it is kept that day and not on the 28th; another Markish town and the next year keep the 28th', fs.mark === 'mark' && fs.date.join() === '8,12' && fs.before.join() === ',firstsnow' && !fs.early && !fs.thin && fs.rec && fs.after.join() === 'firstsnow,,' && fs.otherTown === 'firstsnow' && fs.second && fs.nextYear === 'firstsnow', fs);
+// 11. the festivals' acts (Session 2324): the Greening's ribbon at the green's middle and Riverfair's cup at the water at noon, once a
+// town a year; the next Gatelander to greet you that day says so, once; the lord's Greening line
+await g.settle('dunmore');
+const fa = await page.evaluate(() => {
+  const site = siteAnywhere('dunmore'), S = WORLD.settle.get('dunmore'), st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const mark = ladderSites().find(s => isleAt(s.x, s.z) === 'mark');
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals, ns0 = nearSite, p0 = [px, pz];
+  const at = (f, yr, h) => { worldState.gameTimeAbsMinutes = (((yr - CAL.startYear) * CAL.months + f.month - CAL.startMonth) * CAL.monthLen + f.dom - 1) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const gr = FESTIVALS.find(f => f.key === 'greening'), rf = FESTIVALS.find(f => f.key === 'riverfair');
+  const folk = (S.npcs || []).find(n => n.def && n.def.people === 'gatelander' && !n.def._lord), lord = S.lordNpc;
+  st.p = 70; st.flags = {}; worldState.festivals = {}; let here = { site }; nearSite = () => here;
+  const out = { folk: !!folk, lordPeople: lord && lord.def.people };
+  try {
+    at(gr, 28, 10); px = site.x + 2; pz = site.z; out.prompt = festActPrompt(); px = site.x + 10; out.far = festActPrompt(); px = site.x + 2;
+    out.greet0 = folk && feastGreeting(folk.def); out.lord = lord && feastGreeting(lord.def);
+    out.did = festActInteract(); out.rec = JSON.parse(JSON.stringify(worldState.festivals['greening:' + site.id] || null));
+    out.after = festActPrompt(); out.again = festActInteract();
+    out.thanks = folk && feastGreeting(folk.def); out.thanks2 = folk && feastGreeting(folk.def);
+    at(gr, 29, 10); out.nextYear = festActPrompt();
+    here = { site: mark }; px = mark.x + 1; pz = mark.z; out.markPrompt = festActPrompt(); here = { site }; px = site.x; pz = site.z;
+    const w = festWaterAt(site); px = w.x + 3; pz = w.z;
+    at(rf, 28, 11); out.cup11 = festActPrompt(); at(rf, 28, 12); out.cup12 = festActPrompt(); out.poured = festActInteract();
+    out.cupRec = JSON.parse(JSON.stringify(worldState.festivals['riverfair:' + site.id] || null)); out.butts = buttsOpenFor(site, { force: true }).ok === true;
+    at(rf, 28, 13); worldState.festivals = {}; out.cup13 = festActPrompt();
+    out.charKey = !!SS_CHAR_WS.festivals && /'festivals'/.test(_applyLoadData.toString());
+  } finally { worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.greenGreet = gr.greet.gatelander;
+  return out;
+});
+console.log(JSON.stringify(fa).slice(0, 2500));
+check('the Greening: a ribbon at the green\'s middle (not 10 m off, not in a Markish town), once a town a year, its line in the log; again next year', /tie a ribbon/.test(fa.prompt) && fa.far === null && fa.did && fa.rec && fa.rec.act === 28 && fa.after === null && fa.again === false && /tie a ribbon/.test(fa.nextYear || '') && fa.markPrompt === null, fa);
+check('after the ribbon the next Gatelander says so, once, then the day\'s greeting again; the lord gives the Greening\'s line', fa.folk && fa.greet0 === fa.greenGreet && /the plain one\?/.test(fa.thanks) && fa.thanks2 === fa.greenGreet && (fa.lordPeople !== 'gatelander' || /carrying a lamb/.test(fa.lord)), fa);
+check('Riverfair\'s cup at the water only from 12:00 to 13:00; poured once, and the butts still open to you; the character\'s save', fa.cup11 === null && /pour a cup/.test(fa.cup12) && fa.poured && fa.cupRec && fa.cupRec.act === 28 && fa.butts && fa.cup13 === null && fa.charKey, fa);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

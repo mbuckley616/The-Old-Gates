@@ -710,9 +710,9 @@ const giver=`${lord.title} ${lord.name}`;
     return GOD_SHRINE.get(god.name);}
   function godOf(site){const h=String(site.id).split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,13);return GODS[h%GODS.length];}
   const SHRINE_BOONS=[{type:'swiftness',mult:1.25,label:'the Boon of the Road'},{type:'warding',mult:.75,label:'the Boon of Stone'},{type:'regen',mult:1,rate:RENEWAL_RATE,label:'the Boon of Renewal'},{type:'meleeDmg',mult:1.2,label:'the Boon of the Arm'},{type:'spellCost',mult:.7,label:'the Boon of the Mind'}];
-  function shrinePrompt(){{const cp=erCartPrompt();if(cp)return cp;} /* S1947 — the stuck cart, at the shrine's hook in the world's prompt */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
+  function shrinePrompt(){{const fa=festActPrompt();if(fa)return fa;} /* S2324 — the festival's act */{const cp=erCartPrompt();if(cp)return cp;} /* S1947 — the stuck cart, at the shrine's hook in the world's prompt */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)<2.6)return `Press 'E' to pray to ${S.god?S.god.name+', '+S.god.en:'the altar'}`;}return null;}
   // S497 — on its god's own day (calDay, the calendar's week) a shrine's boon lasts twice as long, two days; the once a day stays
-  function shrineInteract(){if(erCartInteract())return true; /* S1947 — the stuck cart */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
+  function shrineInteract(){if(festActInteract())return true; /* S2324 */if(erCartInteract())return true; /* S1947 — the stuck cart */for(const S of SETTLE.values()){if(S.site.kind!=='shrine'||!S.altar)continue;if(Math.hypot(px-S.altar.x,pz-S.altar.z)>=2.6)continue;
     const st=worldState.shrines||(worldState.shrines={});const abs=worldState.gameTimeAbsMinutes||0;if(st[S.site.id]&&abs-st[S.site.id]<1440){const er=erPrayerAt(S);showMsg(er||'The altar is quiet. Come back tomorrow.',er?'#e8d8a0':'#c8b880');return true;} /* S1817 — a carried prayer is said on a quiet day too */
     st[S.site.id]=abs;PHP=effMaxHP();mana=effMaxMana();if(typeof stamina!=='undefined')stamina=effMaxStamina();updateHUD();
     const b=(S.god&&S.god.boon)||SHRINE_BOONS[Math.floor(seededRng('boon',S.site.id+':'+Math.floor(abs/1440))()*SHRINE_BOONS.length)]; /* S679 — the boon rolls on the shrine and the day (co-op rules), not Math.random */if(S.god&&!S.god.boon){const d=nearestSigilDoorFrom(S.site);if(d&&typeof bagAdd==='function'){bagAdd({name:`Rubbing: ${d.name}`,ico:'📜',type:'rubbing',seed:d.seed,gate:d.name,weight:.2,sellMult:.3,buyPrice:60,qty:1});showMsg(`You are restored. The Weaver leaves a rubbing on the altar: ${d.name}.`,'#e8d8a0');}else showMsg('You are restored.','#e8d8a0');}
@@ -3595,7 +3595,7 @@ const giver=`${lord.title} ${lord.name}`;
     const k=buttsOpenFor(o.site,o);if(!k.ok)return k;if(!EQ.weapon||weaponSkill(EQ.weapon)!=='bow'||!EQ.ammo)return {say:'You’ll want a bow and arrows for the butts.'};
     const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;let dx=o.dx,dz=o.dz;if(dx==null){dx=-Math.sin(yaw);dz=-Math.cos(yaw);}const n=Math.hypot(dx,dz)||1;
     const B=BUTTS={site:s,x,z,dx:dx/n,dz:dz/n,end:0,shots:[],year:k.year,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),rivals:buttRivals(s,k.year),mesh:o.mesh===false?null:buttMesh()};
-    const F=worldState.festivals||(worldState.festivals={});F['riverfair:'+s.id]={year:k.year,won:false,score:0}; /* the try is used once you step up */
+    const F=worldState.festivals||(worldState.festivals={});F['riverfair:'+s.id]=Object.assign({},F['riverfair:'+s.id],{year:k.year,won:false,score:0}); /* S2324 — the act's year stays */ /* the try is used once you step up */
     if(B.mesh)sc.add(B.mesh);buttPlace(B);
     showMsg(`The butts. Three ends of three, at ${BUTT_ENDS.join(', ')} m. The best of the town shot ${Math.max(...B.rivals.map(q=>q.total))}.`,'#e8d8a0');
     return {ok:true,rivals:B.rivals.map(q=>q.total)};}
@@ -3661,7 +3661,7 @@ const giver=`${lord.title} ${lord.name}`;
   function fairRingStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
     const k=fairRingOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
     const R=FAIRRING={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,n:0,foe:null,held:kitHold(),assaults:0,end:null};
-    const F=worldState.festivals||(worldState.festivals={});F['straitfair:'+s.id]={year:k.year,won:false,quarrels:0};
+    const F=worldState.festivals||(worldState.festivals={});F['straitfair:'+s.id]=Object.assign({},F['straitfair:'+s.id],{year:k.year,won:false,quarrels:0}); /* S2324 — the act's year stays */
     showMsg('The rope goes up. Three quarrels, fists, each to a yield.','#e8d8a0');fairRingBout(R);return {ok:true,tier:R.tier};}
   function fairRingEnd(how,why){const R=FAIRRING;if(!R)return null;FAIRRING=null;const e=R.foe;
     if(how==='murder'){ringCrime(R.site.id,'murder',MURDER_PTS);arenaState().banUntil=Math.max(arenaState().banUntil||0,dayNow()+RING_BAN_DAYS);boutEnd(e);}
@@ -3703,7 +3703,7 @@ const giver=`${lord.title} ${lord.name}`;
   function dispStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING||DISP)return {say:'You are already in a contest.'};
     const k=dispOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;
     const D=DISP={site:s,x,z,tier:o.tier!=null?o.tier:worldTierAt(s.x,s.z),year:k.year,qs:dispQuestions(s,k.year),n:0,answers:[],end:null};
-    const F=worldState.festivals||(worldState.festivals={});F['disputation:'+s.id]={year:k.year,won:false,answered:0}; /* the try is used once you sit */
+    const F=worldState.festivals||(worldState.festivals={});F['disputation:'+s.id]=Object.assign({},F['disputation:'+s.id],{year:k.year,won:false,answered:0}); /* S2324 — the act's year stays */ /* the try is used once you sit */
     showMsg('The examiners are seated. Three questions, each upon a book; two answered carry the seal.','#e8d8a0');dispAsk(D);
     return {ok:true,qs:D.qs.slice(),tier:D.tier};}
   // the question now put: 'book' answers it only if you have read its book; 'argue' is the Speech check at this question's DISP_CHECK
@@ -3774,6 +3774,41 @@ const giver=`${lord.title} ${lord.name}`;
     const c=calDay();if(c.month!==FIRSTSNOW_MONTH||c.dom>=28)return;
     const S=nearSite();if(!S||!S.site||!(S.site.kind in BASE_P)||isleAt(S.site.x,S.site.z)!=='mark')return;
     const r=(worldState.firstSnow||{})[S.site.id];if(r&&r.year===c.year)return;firstSnowLies(S.site);}
+  // S2324 — the festivals' acts, the Gatelands' first two (Michael's B on #1628, docs/design/festivals.md: "the custom and the act" in a
+  // full or thin year, and in a named town "the act is given, not sold"; the acts and their lines are *Festivals on the Calendar, I*
+  // §3 and §4, word for word). The Greening's ribbon: on the day, within FEST_POLE_R of the green's middle (the pole is the look
+  // builder's). Riverfair's cup: from 12:00 to 13:00, within FEST_WATER_R of the town's water (its river quay's foot, else its well).
+  // Once a year a town: worldState.festivals['<key>:'+site].act = year (the character's, beside the contest's record, which keeps it),
+  // actN the day it was done. After the ribbon, the next Gatelander of that town to greet you that day says so, once (thanked).
+  // The priest's walk to the water at noon and his line are owed to the townsfolk's hours. Named action: festAct.
+  const FEST_POLE_R=4,FEST_WATER_R=6,FEST_BLESS_H=12;
+  const FEST_ACTS={greening:{prompt:'Press \'E\' to tie a ribbon to the pole',ico:'🎀',
+      log:'You tie a ribbon to the pole among the town’s. It is not a house’s colour, and nobody minds.',
+      thanks:'That was yours, the plain one? Good. The pole doesn’t care who you are, only that you came.'},
+    riverfair:{prompt:'Press \'E\' to pour a cup for the sea',ico:'🐴',log:'You pour a cup into the water. It goes the way the river goes.'}};
+  const FEST_LORD_LINE={greening:'It’s the Greening, and I’ve no business for anyone who isn’t carrying a lamb. Come back tomorrow, when the beasts are counted and the arguing starts.'};
+  // the town's water: the river quay's foot, 3 m inland of where the bank meets the river, else the well on the square (6 E, 4 S)
+  function festWaterAt(s){if(s.quaySpot&&s.bank)return {x:s.quaySpot.x-s.bank.dx*3,z:s.quaySpot.z-s.bank.dz*3};return {x:s.x+6,z:s.z+4};}
+  function festActRec(key,site){const F=worldState.festivals||{};return F[key+':'+(site.id||site)]||null;}
+  function festActDone(key,site,year){const r=festActRec(key,site);return !!r&&r.act===(year!=null?year:calDay(absMin()).year);}
+  // where you could do the day's act now: {key, site, prompt} or null
+  function festActHere(){if(typeof isInterior==='function'&&isInterior())return null;if(BUTTS||FAIRRING||DISP||BOUT)return null;
+    const S=nearSite();if(!S||!S.site)return null;const s=S.site,h=festivalHere(s.id);if(!h||h.state==='none')return null;const A=FEST_ACTS[h.f.key];if(!A)return null;
+    if(festActDone(h.f.key,s))return null;
+    if(h.f.key==='greening'){if(Math.hypot(px-s.x,pz-s.z)>FEST_POLE_R)return null;}
+    else if(h.f.key==='riverfair'){if(hourNow()!==FEST_BLESS_H)return null;const w=festWaterAt(s);if(Math.hypot(px-w.x,pz-w.z)>FEST_WATER_R)return null;}
+    else return null;
+    return {key:h.f.key,site:s,state:h.state,prompt:A.prompt};}
+  function festActPrompt(){const a=festActHere();return a?a.prompt:null;}
+  function festAct(key,site){const s=typeof site==='string'?siteAnywhere(site):site,A=FEST_ACTS[key];if(!s||!A)return null;const c=calDay(absMin());
+    const F=worldState.festivals||(worldState.festivals={}),k=key+':'+s.id,r=F[k]||(F[k]={});if(r.act===c.year)return null;r.act=c.year;r.actN=c.n;delete r.thanked;
+    showMsg(A.log,'#e8d8a0');if(typeof addLog==='function')addLog(A.ico,A.log);return r;}
+  function festActInteract(){const a=festActHere();if(!a)return false;festAct(a.key,a.site);return true;}
+  // the day's word after an act (feastGreeting): a Gatelander of the town, once, the same day; the lord's line on the Greening
+  function festActGreeting(def,h){if(!def||!h)return null;const A=FEST_ACTS[h.f.key],s=siteAnywhere(def._siteId);if(!s)return null;
+    if(def._lord&&def.people==='gatelander'&&FEST_LORD_LINE[h.f.key])return FEST_LORD_LINE[h.f.key];
+    if(!A||!A.thanks||def.people!=='gatelander')return null;const r=festActRec(h.f.key,s),c=calDay(absMin());
+    if(!r||r.act!==c.year||r.actN!==c.n||r.thanked===c.n)return null;r.thanked=c.n;return A.thanks;}
   // S1645 — arenas-build.md session 3's rest: the ladder's call, its bout, the purse and the potion forfeit (Michael's B on #914). You
   // speak to a ring's master (the look builder's and the quest writer's: ladderCall is what the master calls) and your next bout
   // (rank + 1) is called at the next hour, from 9h to 17h: so the master takes a call from 8h until 16h59. One bout a game day: a win,
