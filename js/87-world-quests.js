@@ -3581,7 +3581,7 @@ const giver=`${lord.title} ${lord.name}`;
   function buttsOpenFor(site,o){o=o||{};const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return {say:'There are no butts here.'};
     const h=festivalHere(s.id);if(!h||h.f.key!=='riverfair')return {say:'The butts are shot at Riverfair.'};
     if(h.state==='thin')return {say:'There’s no shooting this year. The town can’t find the purse.'};
-    const hr=hourNow();if(!o.force&&(hr<BUTT_OPEN||hr>=BUTT_CLOSE))return {say:`The butts are shot from ${BUTT_OPEN}h to ${BUTT_CLOSE}h.`};
+    const hr=hourNow();if(!o.force&&(hr<BUTT_OPEN||hr>=BUTT_CLOSE))return {say:`The butts are shot from ${BUTT_OPEN}:00 to ${BUTT_CLOSE}:00.`};
     const F=worldState.festivals||{},me=F['riverfair:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have shot here this year.'};
     return {ok:true,site:s,state:h.state,year:yr};}
   function buttMesh(){const g=new THREE.Group(),straw=new THREE.MeshLambertMaterial({color:0xb89a58});
@@ -3638,17 +3638,17 @@ const giver=`${lord.title} ${lord.name}`;
   // rings of the Mark shut 28 days). One try a town a year (worldState.festivals['straitfair:'+site]). The ring's rope and the reeve
   // who calls it are the look builder's and the quest writer's: fairRingStart({site,x,z}) is what they call, and the fighters' names
   // and the lines here are placeholders. Named actions: fairRingStart, fairRingEnd.
-  const FAIR_OPEN=5,FAIR_CLOSE=12,FAIR_R=5,FAIR_N=3,FAIR_PURSE=40,FAIR_PURSE_TIER=20,FAIR_NAMES=['The first quarrel','The second quarrel','The third quarrel'];
+  const FAIR_OPEN=5,FAIR_CLOSE=12,FAIR_R=5,FAIR_N=3,FAIR_PURSE=40,FAIR_PURSE_TIER=20,FAIR_NAMES=['The first comer','The second comer','The third comer'];
   let FAIRRING=null; /* {site,x,z,tier,year,n,foe,held,assaults,end} */
   function fairRingOpenFor(site,o){o=o||{};const s=typeof site==='string'?siteAnywhere(site):site;if(!s)return {say:'There is no ring here.'};
     const h=festivalHere(s.id);if(!h||h.f.key!=='straitfair')return {say:'The ring is fought at the Strait Fair.'};
-    if(h.state==='thin')return {say:'No ring this year. There’s nobody with a quarrel worth the rope.'};
-    const hr=hourNow();if(!o.force&&(hr<FAIR_OPEN||hr>=FAIR_CLOSE))return {say:`The ring is fought from ${FAIR_OPEN}h till noon.`};
+    if(h.state==='thin')return {say:'No ring this year. The town’s too lean to put a purse on it.'};
+    const hr=hourNow();if(!o.force&&(hr<FAIR_OPEN||hr>=FAIR_CLOSE))return {say:`The ring is fought from ${FAIR_OPEN}:00 till noon.`};
     if(dayNow()<(arenaState().banUntil||0))return {say:'The rings of the Mark are shut to you.'};
     const F=worldState.festivals||{},me=F['straitfair:'+s.id],yr=calDay(absMin()).year;if(me&&me.year===yr)return {say:'You have fought here this year.'};
     return {ok:true,site:s,state:h.state,year:yr};}
   function fairRingFoe(R){const e=keyFoe(unlockFoe(buildZoneEnemy(sc,STATIC_SOL,R.x,R.z,'Bandit',null,{tier:R.tier})),`strait:${R.site.id}:${R.year}:${R.n}`);
-    e.name=e.displayName=FAIR_NAMES[R.n]||'The quarrel';e._disarmed=true;e._questTag='straitfair';e.homeX=R.x;e.homeZ=R.z;
+    e.name=e.displayName=FAIR_NAMES[R.n]||'The comer';e._disarmed=true;e._questTag='straitfair';e.homeX=R.x;e.homeZ=R.z;
     if(e.mesh&&!e.mesh.parent)sc.add(e.mesh);ZONES.world.enemies.push(e);return e;}
   function fairRingDrop(e){if(!e)return;boutEnd(e);if(!e.dead){if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);const i=ZONES.world.enemies.indexOf(e);if(i>=0)ZONES.world.enemies.splice(i,1);}
     const k=staggered.findIndex(q=>q.e===e);if(k>=0)staggered.splice(k,1);}
@@ -3656,7 +3656,7 @@ const giver=`${lord.title} ${lord.name}`;
     boutStart({foe:e,x:R.x,z:R.z,r:FAIR_R,on:{
       yield:()=>showMsg(`${e.name} goes down on one knee.`,'#e8d8a0'),
       struck:()=>{R.assaults++;ringCrime(R.site.id,'assault',CRIME_PTS.assault);showMsg(`You struck ${e.name} after the yield. That is assault.`,'#ff6060');},
-      won:()=>{fairRingDrop(e);R.n++;if(R.n>=FAIR_N){fairRingEnd('won');return;}showMsg(`${e.name} is spared. ${FAIR_NAMES[R.n]}.`,'#e8d8a0');fairRingBout(R);},
+      won:()=>{fairRingDrop(e);R.n++;if(R.n>=FAIR_N){fairRingEnd('won');return;}showMsg(`${e.name} is spared. ${FAIR_NAMES[R.n]} steps over the rope.`,'#e8d8a0');fairRingBout(R);},
       lost:(b,how)=>fairRingEnd('lost',how),murder:()=>fairRingEnd('murder')}});}
   function fairRingStart(o){o=o||{};if(BOUT||SPAR||BRAWL||LBOUT||BUTTS||FAIRRING)return {say:'You are already in a contest.'};
     const k=fairRingOpenFor(o.site,o);if(!k.ok)return k;const s=k.site,x=o.x!=null?o.x:px,z=o.z!=null?o.z:pz;

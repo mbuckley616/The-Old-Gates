@@ -135,7 +135,7 @@ const bt = await page.evaluate(() => {
 console.log(JSON.stringify(bt).slice(0, 2500));
 check('the rivals are seeded by site and year (the same twice, another year another field), their skill in the town\'s band, and their totals their nine arrows', bt.seeded && bt.band, bt.rivals);
 check('the field: a city\'s best averages about 23 of 45, a village\'s about 13', bt.cityBest > 19 && bt.cityBest < 28 && bt.vilBest > 9 && bt.vilBest < 17 && bt.cityBest > bt.vilBest + 5, [bt.cityBest, bt.vilBest]);
-check('the butts are shot on Riverfair from 10h, in a town keeping it full; not thin, not on another day', /from 10h to 14h/.test(bt.early) && /no shooting this year/.test(bt.thin) && /shot at Riverfair/.test(bt.otherDay), [bt.early, bt.thin, bt.otherDay]);
+check('the butts are shot on Riverfair from 10:00, in a town keeping it full; not thin, not on another day', /from 10:00 to 14:00/.test(bt.early) && /no shooting this year/.test(bt.thin) && /shot at Riverfair/.test(bt.otherDay), [bt.early, bt.thin, bt.otherDay]);
 check('the butt stands 30 m from the mark; an arrow loosed 3 m off the mark does not count', bt.r0 && bt.butt30 === 30 && bt.meshIn && bt.offMark === 0, bt);
 check('three ends at 30, 50 and 70 m; 5, 3 and a miss then six 5s make 38, the arrows that score 5 planted in the face', bt.dists.join() === '30,30,30,50,50,50,70,70,70' && Object.values(bt.after).some(f => f.score === 38) && bt.planted >= 7, [bt.dists, bt.after, bt.planted]);
 check('38 beats the town\'s best: the purse (40 + 20 a tier), a silver arrow named for the town, Bow 30 → 31, and one try a town a year', Object.values(bt.after).some(f => f.won) && bt.gold >= 40 && bt.gold % 20 === 0 && bt.arrow.length === 1 && /^Silver Arrow of /.test(bt.arrow[0]) && bt.bow === 31 && bt.after.skill && /shot here this year/.test(bt.again), bt);
@@ -166,8 +166,8 @@ const fr = await page.evaluate(() => {
   return out;
 });
 console.log(JSON.stringify(fr).slice(0, 2000));
-check('the ring is fought at the Strait Fair from 5h till noon, in a Markish town keeping it full; not in Dunmore, not in a thin year', fr.isle === 'mark' && /from 5h till noon/.test(fr.early) && /Strait Fair/.test(fr.dunmore) && /No ring this year/.test(fr.thin), fr);
-check('three quarrels in turn, each a disarmed fighter, your sword on the rack', fr.ok && fr.seen.length === 3 && fr.seen.every(([nm, dis, w]) => nm && dis && w === null) && fr.seen.map(q => q[0]).join('|') === 'The first quarrel|The second quarrel|The third quarrel', fr.seen);
+check('the ring is fought at the Strait Fair from 5:00 till noon, in a Markish town keeping it full; not in Dunmore, not in a thin year', fr.isle === 'mark' && /from 5:00 till noon/.test(fr.early) && /Strait Fair/.test(fr.dunmore) && /No ring this year/.test(fr.thin), fr);
+check('three quarrels in turn, each a disarmed fighter, your sword on the rack', fr.ok && fr.seen.length === 3 && fr.seen.every(([nm, dis, w]) => nm && dis && w === null) && fr.seen.map(q => q[0]).join('|') === 'The first comer|The second comer|The third comer', fr.seen);
 check('three yields win: the purse (40 + 20 a tier), the reeve\'s ring named for the town, Hand-to-hand 20 → 21, the sword back, one try a town a year', fr.ringNull && Object.values(fr.after).some(f => f.won && f.quarrels === 3) && fr.gold >= 40 && fr.gold % 20 === 0 && fr.ring.length === 1 && /^Reeve’s Iron Ring of /.test(fr.ring[0]) && fr.hand === 21 && fr.weapon === 'Test Sword' && /fought here this year/.test(fr.again), fr);
 check('a fall in the second quarrel loses it: held at 1 health, nothing paid, the sword back', fr.lost.q2 === 1 && fr.lost.down && fr.lost.gone && fr.lost.f.won === false && fr.lost.f.quarrels === 1 && fr.lost.gold === fr.gold && fr.lost.hp === 1 && fr.lost.weapon === 'Test Sword', fr.lost);
 check('no page errors', g.errs.length === 0, g.errs);
