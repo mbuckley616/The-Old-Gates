@@ -486,5 +486,27 @@ const bs = await page.evaluate(() => {
 console.log(JSON.stringify(bs).slice(0, 2000));
 check(`the Commencement: the bursar (${bs.at10}, ${bs.gp}) on the square from 9:00, not at 8:00 or 12:00 or while occupied; *How shall I enter it?* three ways; 2 gold (short of two, nothing), the answer with your name, the log, once a year`, !bs.at8 && bs.at10 && !bs.at12 && !bs.occupied && bs.ask === 'How shall I enter it?' && bs.follow.length === 3 && /two gold/.test(bs.poor) && !bs.poorDone && bs.named === bs.L.answers[0].replace('{player}', 'Ysolde') && bs.gold === 8 && bs.log === bs.LOG.paid && !bs.after.includes('A subscription'), bs);
 check('at noon on the square the roll is read for the way you entered, once (not at 12:40, not 40 m off); the next day an Aurennais says so, once', bs.noon.length === 1 && bs.noon[0] === bs.LOG.noon[0] && bs.next === bs.LOG.after && bs.next2 !== bs.LOG.after && bs.off === bs.L.answers[2] && bs.late.length === 0 && bs.far.length === 0 && bs.offNoon.length === 1 && bs.offNoon[0] === bs.LOG.noon[2], bs);
+// 19. the Commencement's reading at ten and the lords' Commencement and Lamps lines (Session 2338)
+const cr = await page.evaluate(() => {
+  let site = null; for (let j = 0; j < GRID && !site; j++) for (let i = 0; i < GRID && !site; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; site = c.sites.find(s => s.kind === 'town') || null; }
+  const st = TS(site), keep = JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }));
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, ns0 = nearSite, p0 = [px, pz], msgs = [], sm = window.showMsg;
+  const at = (key, h, mm) => { const f = FESTIVALS.find(q => q.key === key); worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + f.month - CAL.startMonth) * CAL.monthLen + f.dom - 1) * 1440 + h * 60 + (mm || 0); worldState.gameTimeMinutes = h * 60 + (mm || 0); };
+  const lord = { _siteId: site.id, people: 'aurennais', _lord: true, greeting: ['-'] };
+  st.p = 70; st.flags = {}; nearSite = () => ({ site }); px = site.x + 1; pz = site.z + 1;
+  const out = {};
+  try { window.showMsg = m => msgs.push(m);
+    at('commencement', 9); out.lordC = feastGreeting(lord); at('lamps', 9); out.lordL = feastGreeting(lord);
+    at('commencement', 10, 5); _commLast = ''; tickBursar(); tickBursar(); out.ten = msgs.filter(m => m.startsWith('At ten')); out.want = commReadLine(site, 28);
+    msgs.length = 0; _commLast = ''; at('commencement', 10, 40); tickBursar(); out.late = msgs.filter(m => m.startsWith('At ten')).length;
+    at('commencement', 10, 5); px = site.x + 40; tickBursar(); out.far = msgs.filter(m => m.startsWith('At ten')).length; px = site.x + 1;
+    const n = [0, 0, 0, 0]; for (let y = 1; y <= 300; y++) n[commAdmitted(site, y).length]++; out.counts = n; out.same = JSON.stringify(commAdmitted(site, 31)) === JSON.stringify(commAdmitted(site, 31));
+    let one = 0; for (let y = 1; y <= 40 && !one; y++) if (commAdmitted(site, y).length === 1) one = y; out.oneLine = one ? commReadLine(site, one) : null;
+  } finally { window.showMsg = sm; worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; nearSite = ns0; px = p0[0]; pz = p0[1]; Object.assign(st, { p: keep.p, flags: keep.flags }); }
+  out.LC = FEST_LORD_LINE.commencement.line; out.LL = FEST_LORD_LINE.lamps.line;
+  return out;
+});
+console.log(JSON.stringify(cr).slice(0, 2000));
+check(`the Commencement's reading at ten on the square, once (not at 10:40, not 40 m off); admitted none, one or two over 300 years ${JSON.stringify(cr.counts)}, the same for a year; the Factor's or Prior's lines on the Commencement and the Lamps`, cr.ten.length === 1 && cr.ten[0] === cr.want && cr.late === 0 && cr.far === 0 && cr.counts[0] > 110 && cr.counts[1] > 70 && cr.counts[2] > 25 && cr.counts[3] === 0 && cr.same && /stands, and the square applauds until (she|he) sits again\.$/.test(cr.oneLine || '') && cr.lordC === cr.LC && cr.lordL === cr.LL, cr);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

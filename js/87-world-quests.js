@@ -3796,6 +3796,8 @@ const giver=`${lord.title} ${lord.name}`;
       after:'You sat it out. Aye. That’s a winter. You’re from here now, near enough.'}};
   const FEST_LORD_LINE={greening:{who:'gatelander',line:'It’s the Greening, and I’ve no business for anyone who isn’t carrying a lamb. Come back tomorrow, when the beasts are counted and the arguing starts.'},
     blaze:{who:'markman',line:'Blaze. No business till tomorrow. Bring a log or stand back from the fire.'},
+    commencement:{who:'aurennais',line:'It is the Commencement, Master. I am reading names at ten, and I have nothing else to read before then. Tomorrow, if it is business.'}, /* S2338 — draft III §2 */
+    lamps:{who:'aurennais',line:'It is the Lamps tonight, Master. I keep no business after noon on this day, and before noon only a little.'}, /* S2338 — draft III §4 */
     caravan:{who:'aurennais',line:'The caravan is in, Master, and the scale is the only business in the town today. Tomorrow I am at your disposal, at a slightly better rate.'}}; /* S2336 — draft III §3 */
   // S2326 — the Blaze's night runs from 17:00 to first light (FEST_NIGHT), past midnight into the next date: the festival a night act reads
   const FEST_NIGHT=[17,6];
@@ -4008,12 +4010,28 @@ const giver=`${lord.title} ${lord.name}`;
     return {name:L[Math.floor(r()*L.length)],role:'Bursar',ico:'📜',female,people:gp,x:s.x+BURSAR_AT[0],z:s.z+BURSAR_AT[1],_siteId:s.id,_lantern:true,greeting:[LL.greet],
       get topics(){return [...(festActDone('commencement',s)?[]:[{label:'A subscription',folder:true,response:'How shall I enter it?',
         follow:BURSAR_ASK.map((q,i)=>({label:q,fn:()=>bursarSubscribe(s,i,gp)}))}]),{label:'Farewell.',bye:true}];}};}
+  // S2338 — the reading at ten (draft III §2): on the square from 10:00 to 10:30, once a day, the lord reads the town's admitted. None,
+  // one or two from seededRng('commencement', site and year) (none half the time, one a third, two otherwise; a city one more, held to
+  // the draft's two lines), named from the Aurennais bank on the same stream, never residents; *She stands* or *He stands* by the bank.
+  const COMM_READ=10;let _commLast='';
+  function commAdmitted(s,year){const r=seededRng('commencement',s.id+':'+year),u=r();let n=u<.5?0:u<.5+1/3?1:2;if(s.kind==='city')n=Math.min(2,n+1);
+    const bank=NAMES[PEOPLES.aurennais.names]||NAMES.irish,out=[];
+    for(let k=0;k<n;k++){const female=r()<.5,L=female&&bank.f&&bank.f.length?bank.f:bank.m;out.push({name:L[Math.floor(r()*L.length)],female});}return out;}
+  function commReadLine(s,year){const A=commAdmitted(s,year),title=lordFor(s).title;
+    if(!A.length)return `At ten the ${title} reads from the steps that the academy admits no one from ${s.name} this year. There is applause anyway, for the attempt.`;
+    if(A.length===1){const f=A[0].female;return `At ten the ${title} reads one name from the steps, admitted to the academy: ${A[0].name}. ${f?'She':'He'} stands, and the square applauds until ${f?'she':'he'} sits again.`;}
+    return `At ten the ${title} reads two names from the steps, admitted to the academy: ${A[0].name} and ${A[1].name}. They stand. Their families are applauded as if they had written the letters themselves.`;}
+  function tickCommReading(s){if(!s||worldState.gameTimeMinutes<COMM_READ*60||worldState.gameTimeMinutes>=COMM_READ*60+30)return;if(isleAt(s.x,s.z)!=='aurenne')return;
+    const h=festivalHere(s.id);if(!h||h.f.key!=='commencement'||h.state==='none'||(TS(s).flags&&TS(s).flags.occupied))return;
+    const c=calDay(absMin()),k=s.id+':'+c.n;if(_commLast===k||Math.hypot(px-s.x,pz-s.z)>BURSAR_SQUARE)return;_commLast=k;
+    const L=commReadLine(s,c.year);showMsg(L,'#e8d8a0');if(typeof addLog==='function')addLog('📜',L);}
   function bursarOut(){const B=BURSAR;if(!B)return;const n=B.npc;if(n){sc.remove(n.g);sc.remove(n.dot);const k=npcs.indexOf(n);if(k>=0)npcs.splice(k,1);}BURSAR=null;}
   function tickBursar(){const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
     const h=s&&isleAt(s.x,s.z)==='aurenne'?bursarOn(s):null,yr=calDay(absMin()).year;
     if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(BURSAR&&(BURSAR.site.id!==s.id||BURSAR.year!==yr))bursarOut();
       if(!BURSAR){const def=bursarDef(s,yr),n=spawnNPC(def,Math.atan2(-BURSAR_AT[0],-BURSAR_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);BURSAR={npc:n,site:s,year:yr};}}
     else if(BURSAR)bursarOut();
+    if(on)tickCommReading(s); /* S2338 */
     if(!s||!on||worldState.gameTimeMinutes<BURSAR_CLOSE*60||worldState.gameTimeMinutes>=BURSAR_CLOSE*60+30)return;
     const r=festActRec('commencement',s),c=calDay(absMin());if(!r||r.actN!==c.n||r.as==null)return;
     const k=s.id+':'+c.n;if(_bursarLast===k||Math.hypot(px-s.x,pz-s.z)>BURSAR_SQUARE)return;_bursarLast=k;
