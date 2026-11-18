@@ -1702,7 +1702,7 @@ function armsThrough(cols, R, PP, neck, BM) {
 // Each column is the outline of the body and what it wears, in its upright plane: the cloth falls straight below the furthest point above
 // it (the chest, the belly) and is taken in at the belt, then falls straight again to the mid-thigh. No emblem: the
 // Crown's device is not in the canon (the concept art's are the image generator's, docs/art/catalogue.csv).
-function buildTabard(G, body, byName) {
+function buildTabard(G, body, byName, worn = null) {
   // what the outline is read from: the body, the tights' shell when a tunic or trousers are worn (the tunic stands up to
   // 3.5 cm off it), the skirt's shell under a skirt; each with how far its garment stands out
   const D = G.dress, PP = posedBody(body), n = PACK.N, B = new Uint8Array(n);
@@ -1717,12 +1717,19 @@ function buildTabard(G, body, byName) {
   const tunicPush = (x, y) => { const yr = y - yBelt + .162; return .013 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - yr) / .2)) * (1 - .8 * Math.exp(-(((yr - .16) / .03) ** 2))) : 0) + .002; };
   const ramp = (a, b, v) => Math.max(0, Math.min(1, (v - a) / (b - a))), mailOn = (y, yr = y - yBelt + .162) => yr > .06 && yr < .6 ? .009 + .012 * ramp(.2, .1, yr) : 0;
   const OFF = (i, x, y) => B[i] === 2 ? (D.tunic ? tunicPush(x - cx, y) + (mail ? mailOn(y) : 0) : .01) : B[i] === 3 ? .025 : B[i] === 4 ? (yr => .027 + .012 * ramp(.14, -.16, yr) + .03 * ramp(-.14, 0, yr))(y - yBelt + .162) : 0;
+  // the mail's own surface (Session 2384): OFF reads the mail as a push off the tights by height (mailOn) and the belt takes the tabard in
+  // to bz under it, but the mail's shell stands further out than that at the small of the back, and a band of its rings came out through
+  // the back panel at the belt (the Markman Guildmaster's, 3 to 4 cm wide). The posed points of the mail and its skirt that are drawn (their
+  // cuts, as wornClouds reads them) are read beside the body, at their own place, with no push
+  const WP = []; if (worn) for (const m of worn) { if (!m || !/^mail(Skirt)?$/.test(m.name)) continue; const X = posedOf(m), R0 = PACK.rest, cut = m.material.userData.cut;
+    for (const v of new Set(m.geometry.index.array)) { if (m.name === 'mail' ? Math.abs(R0[v * 3]) >= (cut?.[2] ?? .3) : R0[v * 3 + 1] <= (cut?.[0] ?? -.27)) continue; WP.push(X[v * 3], X[v * 3 + 1], X[v * 3 + 2]); } }
   const bz = mail ? .034 : .025, W = sh * .56, NC = 21, yHem = yBelt - .25 - .2 * (D.tabardLen ?? .5), step = .01, clr = (D.mantle ? .05 : D.tunic ? .022 : .012), hole = .068;
   const NY = Math.ceil((nY + .05 - yHem) / step) + 1, front = [], back = [], top = [], cols = [];
   // the body's outline per column: the furthest forward and back, and the top, of the points within 1.5 cm of its x
   for (let c = 0; c < NC; c++) { const x = cx - W + 2 * W * c / (NC - 1), F = new Float32Array(NY).fill(-9), Bk = new Float32Array(NY).fill(9), F1 = F.slice(), B1 = Bk.slice(), TF = F.slice(), TB = Bk.slice(); let yt = -9;
     for (let i = 0; i < n; i++) { if (!B[i] || Math.abs(PP[i * 3] - x) > .015) continue; const y = PP[i * 3 + 1], z = PP[i * 3 + 2], o = OFF(i, PP[i * 3], y); if (y > nY + .05 || y < yHem - .02) continue;
       if (B[i] === 1 && Math.abs(x - cx) > hole && y > yt && Math.abs(z - cz) < .06) yt = y; const j = Math.max(0, Math.min(NY - 1, Math.round((nY + .05 - y) / step))); if (z + o > F[j]) F[j] = z + o; if (z - o < Bk[j]) Bk[j] = z - o; if (B[i] === 1) { if (z > F1[j]) F1[j] = z; if (z < B1[j]) B1[j] = z; } if (B[i] === 2) { if (z > TF[j]) TF[j] = z; if (z < TB[j]) TB[j] = z; } }
+    for (let i = 0; i < WP.length; i += 3) { if (Math.abs(WP[i] - x) > .015) continue; const y = WP[i + 1], z = WP[i + 2]; if (y > nY + .05 || y < yHem - .02) continue; const j = Math.max(0, Math.min(NY - 1, Math.round((nY + .05 - y) / step))); if (z > F[j]) F[j] = z; if (z < Bk[j]) Bk[j] = z; }
     // the neck hole: the front starts at the collar's dip, the back a little higher
     const t = Math.max(0, 1 - Math.abs(x - cx) / hole), yf = Math.abs(x - cx) > hole ? yt + clr : nY - .045 - .03 * t, yb = Math.abs(x - cx) > hole ? yt + clr : nY - .02 - .012 * t;
     // straight below the furthest point above, taken in under the belt (2.5 cm off the tights' shell: over the tunic,
@@ -5318,7 +5325,7 @@ function* makePersonSteps(G, o = {}) {
     const curl = s => { for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.R`]; if (b) b.quaternion.setFromAxisAngle(hinge, s * [1.15, 1.35, .95][j - 1]); } };
     basketGrip = fistGrip(body, byName, root, curl, hinge); }
   yield;
-  let tabardStats = null, tabardMesh = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; tabardMesh = T.mesh; }
+  let tabardStats = null, tabardMesh = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName, meshes.filter(m => /^mail(Skirt)?$/.test(m.name))); root.add(T.mesh); tabardStats = T.stats; tabardMesh = T.mesh; }
   // the sash (Session 989): the arm at its hip is lifted out from the side, three hundredths of a radian at a time, until no point of it is through the band.
   // Its knot's hanging ends (Session 996) fall over the front of the thigh, where the relaxed hand lies: then the arm is swung back
   // from the shoulder, as far again at most, until the hand hangs at the thigh's side behind them
