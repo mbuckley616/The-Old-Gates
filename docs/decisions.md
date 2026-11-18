@@ -63,6 +63,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Page.** [What a gate keeps — build sheet](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/what-a-gate-keeps-build.md)
 
+### The Drowned Spires — a walk at the ebb, always walked, or a boat's place? (from the look builder, 2026-11-18, #1737)
+**The question.** The next Gatelands site after the Weavers' ring (OG-104: "half-sunk towers and bridges at low tide"): six Weaver towers 250 m out from a strand, each 10 m square and about 100 m tall, four with a 16 m spire and two broken, joined by 40 m bridge spans (one broken). The towers stand above the water at any level, so the question is the decks: how deep do the spires stand?
+
+**Options.**
+- **A.** A walk at the ebb: the decks 1 m clear at low water and 3 m under at high, cut off when the tide turns. The game has no tide, so until one is built the decks sit 1 m under all day. [low water](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/spires-a-low.jpg) · [high water](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/spires-a-high.jpg) · [from the sea](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/spires-a-far.jpg)
+- **B (recommended).** Always walked: the decks 2.5 m clear at high water, the towers drowned to their middles. Works with today's sea and reads as a road out to something. [from the sand](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/spires-b.jpg) · [the strand](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/spires-shore.jpg) · [from the sea](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/spires-far.jpg) · [on the deck](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/spires-deck.jpg) · [dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/spires-dusk.jpg)
+- **C.** A boat's place: the decks under at every tide, only the towers and spires above the surface; reached by sea. [from the sand](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/spires-c.jpg)
+
+**Recommendation.** B. It needs no new system; if a tide is ever built, lowering the chain to A is one number (`o.deck`). Owed either way: a passage through each tower at deck height, then the spires in the game on a Gatelands shore.
+
 ## Answered
 ### The festivals' contest grounds — the butts all year and the ring on its day, both only on their day, or not yet? (from the look builder, 2026-11-17, #1672)
 **The question.** Festivals B owes the look builder two contest grounds. Session 2317 built both as a prototype at the game's own sizes: Riverfair's butts (a straw boss 1.36 m across with a painted face, bales, a limed mark, pegs at 30/50/70 m; about 760 triangles) and the Strait Fair's ring (10 tarred stakes on a 5 m radius, two hemp ropes, the reeve's post and horn; 2,405 triangles). The look is drawn to the game's numbers; the open part is where they stand, and when.
