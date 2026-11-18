@@ -3856,6 +3856,10 @@ function buildBook(G, body, byName, meshes, root, grip) {
 // worn, three hundredths of a radian at a time, as for the lantern
 // not under a full cloak: it hangs over the fist at the waist (an Old Blood woman's could not be cleared by lifting the arm 0.6); a cape is fine
 const tankardOn = D => !!D.tankard && !D.basket && !D.lantern && !D.book && !D.chair && !(D.cloak && !D.cape);
+// a sword at rest (Session 2366, the critic's 17 Nov note): held in the fist alone, it was carried as a tankard is, the forearm out and the
+// grip plumb, so the blade stood point-up beside the head (its tip 1.74 to 2.4 m off the ground). Now the arm hangs, the forearm a little
+// forward, the knuckles turned fore and aft and the wrist dropped, so the blade runs forward and down from the fist at DIP below the level
+const SWORD_REST = { ARM: new THREE.Vector3(-.05, -.9, .42), DIP: .5 };
 const TANKARD = { H: .148, rB: .046, rT: .041, wall: .0035, fill: .02, R: .011, gap: .026, top: .136, bot: .016, cr: .01, ARM: new THREE.Vector3(-.1, -.3, .95) };
 const tankR = (y, K = TANKARD) => K.rB + (K.rT - K.rB) * Math.max(0, Math.min(1, y / K.H));
 function tankardParts(D, fit) {
@@ -4984,14 +4988,14 @@ function* makePersonSteps(G, o = {}) {
   // the shaft is laid in the palm and the four fingers close on it (fistGrip). (The elbow's own x is not its hinge: 1.45 rad
   // about it swung the forearm round a cone, backward)
   yield;
-  let spearGrip = null, wristFix = 0; if (D.spear || D.crossbow && !D.chair || D.staff || tankardOn(D) || hammerOn(D) || swordOn(D)) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
+  let spearGrip = null, wristFix = 0; const swordRest = swordOn(D) && !D.spear && !(D.crossbow && !D.chair) && !D.staff && !tankardOn(D) && !hammerOn(D); if (D.spear || D.crossbow && !D.chair || D.staff || tankardOn(D) || hammerOn(D) || swordOn(D)) { const lb = byName['lowerarm01.R'], at = n => new THREE.Vector3().setFromMatrixPosition(byName[n].matrixWorld), wq = () => lb.getWorldQuaternion(new THREE.Quaternion());
     const setWorld = Q => lb.quaternion.copy(lb.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(Q)); root.updateMatrixWorld(true);
-    setWorld(new THREE.Quaternion().setFromUnitVectors(at('wrist.R').sub(at('lowerarm01.R')).normalize(), (D.staff && !D.spear && !D.crossbow ? STAFF_ARM : !D.spear && !(D.crossbow && !D.chair) ? TANKARD.ARM : new THREE.Vector3(-.12, -.2, 1)).clone().normalize()).multiply(wq())); root.updateMatrixWorld(true);
-    const ax = at('wrist.R').sub(at('lowerarm01.R')).normalize(), flat = v => v.addScaledVector(ax, -v.dot(ax)).normalize(), kn = flat(at('finger2-1.R').sub(at('finger5-1.R'))), up = flat(new THREE.Vector3(0, 1, 0));
+    setWorld(new THREE.Quaternion().setFromUnitVectors(at('wrist.R').sub(at('lowerarm01.R')).normalize(), (D.staff && !D.spear && !D.crossbow ? STAFF_ARM : swordRest ? SWORD_REST.ARM : !D.spear && !(D.crossbow && !D.chair) ? TANKARD.ARM : new THREE.Vector3(-.12, -.2, 1)).clone().normalize()).multiply(wq())); root.updateMatrixWorld(true);
+    const ax = at('wrist.R').sub(at('lowerarm01.R')).normalize(), flat = v => v.addScaledVector(ax, -v.dot(ax)).normalize(), kn = flat(at('finger2-1.R').sub(at('finger5-1.R'))), up = flat(swordRest ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0));
     setWorld(new THREE.Quaternion().setFromAxisAngle(ax, Math.atan2(kn.clone().cross(up).dot(ax), kn.dot(up))).multiply(wq())); root.updateMatrixWorld(true);
     // what the roll leaves, the wrist takes: the hand turned so it runs on level from the forearm and its knuckles stand plumb
     const wr = byName['wrist.R'], frame = (L, K) => { K = K.clone().normalize(); L = L.clone().addScaledVector(K, -L.dot(K)).normalize(); return new THREE.Matrix4().makeBasis(L, K, L.clone().cross(K)); };
-    const mid = at('finger3-1.R').add(at('finger4-1.R')).multiplyScalar(.5), cur = frame(mid.sub(at('wrist.R')), at('finger2-1.R').sub(at('finger5-1.R'))), tgt = frame(new THREE.Vector3(ax.x, 0, ax.z), new THREE.Vector3(0, 1, 0));
+    const mid = at('finger3-1.R').add(at('finger4-1.R')).multiplyScalar(.5), cur = frame(mid.sub(at('wrist.R')), at('finger2-1.R').sub(at('finger5-1.R'))), tgt = swordRest ? frame(ax.clone(), new THREE.Vector3(0, -Math.sin(SWORD_REST.DIP), Math.cos(SWORD_REST.DIP))) : frame(new THREE.Vector3(ax.x, 0, ax.z), new THREE.Vector3(0, 1, 0));
     const fix = new THREE.Quaternion().setFromRotationMatrix(tgt.multiply(cur.transpose())); wristFix = +(2 * Math.acos(Math.min(1, Math.abs(fix.w)))).toFixed(3);
     wr.quaternion.copy(wr.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(fix.multiply(wr.getWorldQuaternion(new THREE.Quaternion()))));
     // the fingers' hinge is the knuckles' line, not the bones' own z (36° off it in this skeleton: about z the curled fingers rose
