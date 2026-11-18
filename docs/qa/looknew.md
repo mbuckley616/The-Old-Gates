@@ -164,7 +164,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `dunwarm` | 4/14 | pass | pass | 324 |  |
 | `enchantmotes` | 8/14 | pass | pass | 49 |  |
 | `errands` | w17/20 | — | pass | 141 |  |
-| `export` | 1/14 | pass | pass | 51 |  |
+| `export` | 1/14 | pass | pass | 51 | red alone at s1708 (the autosave's 20 s wait); fixed S2377, at Low, 410–420 s |
 | `f10body` | w15/20 | — | pass | 448 |  |
 | `f10hands` | w13/20 | — | pass | 173 |  |
 | `f10motion` | w11/20 | — | pass | 180 |  |
