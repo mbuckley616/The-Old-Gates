@@ -1758,8 +1758,16 @@ function buildTabard(G, body, byName, worn = null) {
     for (let c = 0; c < cols.length; c++) for (let r = 0; r < R; r++) { const q = cols[c][r], tc = trimRows(c, r, R) ? gold : crim; pos.push(q.x, q.y, q.z); col.push(tc.r, tc.g, tc.b); }
     for (let c = 0; c < cols.length - 1; c++) for (let r = 0; r < R - 1; r++) { const a = base + c * R + r, b = a + R; idx.push(a, a + 1, b, b, a + 1, b + 1); } };
   const edgeTrim = (c, r, R) => c === 0 || c === NC - 1 || r > R - 4;
-  grid(front.map(f => Array.from({ length: NR }, (_, r) => at(f, r / (NR - 1)))), (c, r, R) => edgeTrim(c, r, R) || (r < 2 && Math.abs(front[c][0].x - cx) <= hole + .01));
-  grid(back.map(f => Array.from({ length: NR }, (_, r) => at(f, r / (NR - 1)))), (c, r, R) => edgeTrim(c, r, R) || (r < 2 && Math.abs(back[c][0].x - cx) <= hole + .01));
+  // Session 2390: a column's outline is 1 cm a row and the panel 60 rows to the hem (1.3 to 1.5 cm), so a row's chord cut in under the
+  // outline points it passed over: where the mail's skirt flares under the belt, 1 or 2 of its points stood up to 3 mm out of the front.
+  // Each chord is now lifted at both its ends by the most it falls short of an outline point between them (out at the front, back at the
+  // back), so the panel never lies inside its own outline; no row is added
+  let lifted = 0; const rows = (f, s) => { const R = Array.from({ length: NR }, (_, r) => at(f, r / (NR - 1))), k = (f.length - 1) / (NR - 1), lift = new Float32Array(NR);
+    for (let r = 0; r < NR - 1; r++) { let d = 0; for (let i = Math.ceil(r * k); i <= Math.floor((r + 1) * k); i++) { const t = i / k - r; d = Math.max(d, s * (f[i].z - (R[r].z * (1 - t) + R[r + 1].z * t))); }
+      if (d > 0) { lift[r] = Math.max(lift[r], d); lift[r + 1] = Math.max(lift[r + 1], d); } }
+    for (let r = 0; r < NR; r++) { R[r].z += s * lift[r]; lifted = Math.max(lifted, lift[r]); } return R; };
+  grid(front.map(f => rows(f, 1)), (c, r, R) => edgeTrim(c, r, R) || (r < 2 && Math.abs(front[c][0].x - cx) <= hole + .01));
+  grid(back.map(f => rows(f, -1)), (c, r, R) => edgeTrim(c, r, R) || (r < 2 && Math.abs(back[c][0].x - cx) <= hole + .01));
   for (const sideOf of [c => front[c][0].x < cx - hole, c => front[c][0].x > cx + hole]) { const cs = []; for (let c = 0; c < NC; c++) if (sideOf(c)) cs.push(c); if (cs.length < 2) continue;
     grid(cs.map(c => { const a = back[c][0], e = front[c][0], lift = .012 + .5 * Math.abs(a.y - e.y); return Array.from({ length: 7 }, (_, k) => { const u = k / 6, q = a.clone().lerp(e, u); q.y += lift * Math.sin(Math.PI * u); return q; }); }), (c, r) => c === 0 || c === cs.length - 1); }
   // Session 2242 (#1540 B; OG-091) — a sign on the breast, D.tabardSign: 'shuttle', the Weaver's (the Church's sign, canon §4.1, worn by
@@ -1800,7 +1808,7 @@ function buildTabard(G, body, byName, worn = null) {
   let tested = 0, out = 0; for (let i = 0; i < n; i++) { if (!B[i]) continue; const x = PP[i * 3], y = PP[i * 3 + 1], z0 = PP[i * 3 + 2], o = OFF(i, x, y); if (Math.abs(x - cx) > W - .01 || y > nY - .1 || y < yHem + .01) continue;
     const c = Math.round((x - cx + W) / (2 * W) * (NC - 1)), j = Math.round((nY + .05 - y) / step), fr = front[c].find(q => Math.abs(q.y - (nY + .05 - j * step)) < step / 2), bk = back[c].find(q => Math.abs(q.y - (nY + .05 - j * step)) < step / 2); if (!fr || !bk) continue;
     tested++; if (z0 + o > fr.z - .004 || z0 - o < bk.z + .004) out++; }
-  return { mesh, stats: { columns: NC, width: +(2 * W).toFixed(3), hemDrop: +(nY - yHem).toFixed(3), tris: idx.length / 3, tested, out, belted: !!D.belt, sign } };
+  return { mesh, stats: { columns: NC, width: +(2 * W).toFixed(3), hemDrop: +(nY - yHem).toFixed(3), tris: idx.length / 3, tested, out, belted: !!D.belt, sign, lifted: +lifted.toFixed(4) } };
 }
 
 // ── the Aurennais' sash over one shoulder (Session 989, L1; OG-056: "a long patterned sash wrapped over one shoulder", OG-044's
