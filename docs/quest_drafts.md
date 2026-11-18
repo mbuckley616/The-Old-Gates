@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 49, 17 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 50, 18 Nov: no new calls on the page)
 
 ---
 
@@ -7079,3 +7079,169 @@ And if the player talks to him later that day:
 - **`83-world-generator.js`** (`makeDef`): the three roles, *Marshal*, *Ringkeeper*, *Examiner*, placed by the festival's own spawn at the day's hours (the design's session 5 puts the post beside them).
 - **Saved state:** nothing new. `worldState.festivals['riverfair:'+site]`, `['straitfair:'+site]` and `['commencement-disp:'+site]` (the year sat, the result) are the design's, already in the S242 list and `SS_CHAR_WS`; names and quarrels roll on ids by place and year; the examiners' draw is seeded, so a friend at the same table is asked the same three.
 - **Tests:** `tests/feasts` (where S2314–2315 test the butts and the ring) gains: the marshal's greeting by people, the ring's three named with three different quarrels, a disputation with one book read answered without a check, and a save and load keeping *sat this year*.
+
+---
+
+## Festivals on the Calendar, V — the year a town cannot keep it: thin, not kept, named, and the champion
+
+*Unapproved. Drafted 18 Nov 2026.* Owed by Michael's B on #1628 (`docs/design/festivals.md`, the table *The town keeps it as it can*: a thin year, "no contest, a line says why"; a year not kept, "the greeting says why; the families on the road (#1587) carry it elsewhere"; a named year, "the act is given, not sold, and the lord's greeting is your deed"), and by Session 2320's note on the post: "what the town says of its champion [is] the quest writer's: festPostNames(site) and festChampionNow(site) are what they read." Drafts I–III wrote the full year, IV the contests. This one writes the other three years and the champion. With it, every state `festivalState` returns has its words.
+
+**What the canon gives, and where it is silent.**
+- §12a: a town's year is its prosperity and its flags (`burned`, `sacked`, `plague`, `besieged`, `occupied`, `abandoned`). The design reads them; this draft only speaks them. An abandoned town has nobody in it, so it says nothing.
+- §2: Gatelanders by proverb and indirection, no bare yes or no, the Weaver's oath; Markmen short, *aye*, iron and blood, no honorific; the Aurennais formal, *Master*, contract words, no oath; the Old Blood sparing and exact.
+- §1.2 and §12a: an occupied League town loses its duels. Draft II's occupied line for the Strait Fair and draft III's for the Caravan stand as written; each gets a besieged line beside it here.
+- *Silent: what a town in grief does on its festival day.* The plainer thing: it keeps the custom small and at home (a ribbon on a door, a lantern at the step, a fire in each house), not on the square, and nobody says the gods are angry.
+- *Silent: what a town at war does.* The plainer thing: a festival is put off, not given up, and the town says when it will be kept.
+- *No chosen one.* A town names you for what you did for it this year, and the naming lapses with the year (`festivalState` reads `st.freed` in the year it happened, and favour as it stands). The champion is a year's: next year's holds it after you.
+- *The act is given, not sold* (the design): the custom's coin is the town's. Shops still charge, so no line says *nothing is sold to you*; every named line speaks of the custom only.
+
+**Who speaks.** "Home people" below is the festival's island's people: the Gatelander for the Greening, Riverfair and the Lanterns, the Markman for the Blaze, the Strait Fair and First Snow, the Aurennais for the Commencement, the Caravan and the Lamps. In a mixed town (a port) a townsperson of another people keeps their full-year greeting from drafts I–III in a thin year, since they speak of the custom and not the town's purse, and says the home people's line in a year not kept, since there is then no custom to speak of. The Old Blood keep their full-year line in a thin year and say nothing of the festival in a year not kept.
+
+### 1. A thin year — the greeting says why
+
+**Rule.** `festivalState(site)==='thin'` (prosperity under 50, or a siege, plague, sack, burning or occupation lifted in the last 28 days): a townsperson of the home people greets with the line below in place of the full year's. The act stands; the contest does not (its own refusal is draft IV's).
+
+- **The Greening**, Gatelander:
+  > "A green Greening, such as it is. There's fewer ribbons on the pole than houses this year, and fewer lambs than ribbons. A thin spring's still a spring, they say. Tie one if you've a mind; the pole's not proud."
+- **Riverfair**, Gatelander:
+  > "Riverfair, and half the horses are the ones that didn't sell last year. There's no shooting; the town couldn't find the purse. The priest still goes down to the water at noon. The sea's owed its cup whether we've coin or not."
+- **The Night of the Lanterns**, Gatelander:
+  > "It's the Night of the Lanterns. Fewer will go up than last year, and more of them for this year's. A lantern costs the same in a lean year, they say, and weighs more. Be in the square at dusk."
+- **The Blaze**, Markman:
+  > "Blaze. Wood's short. Still one fire. Bring a log if you've one."
+- **The Strait Fair**, Markman:
+  > "Fair day. No ring. No purse for it. Boats still go out. Quarrels keep a year."
+- **First Snow**, Markman:
+  > "Snow's lying. Thin furs this year. Sit close. Fires on the square."
+- **The Commencement**, Aurennais:
+  > "It is the Commencement, Master, in a modest form. The academy has written, and the names will be read at ten. There is no disputation: the town has not subscribed the purse. The subscription for the books is open, and more needed than usual."
+- **The Caravan**, Aurennais:
+  > "The caravan is in, Master, though it did not stay long. The contract serves a town that cannot buy as well as one that can: a pinch to every household, by weight. The rest of the bales went on to towns with better credit."
+- **The Lamps on the Water**, Aurennais:
+  > "It is the Lamps tonight, Master. Fewer hulls in the ledger this year: some were sold, and some are entered in the other column. The lamps are the same price. We have not found a way to make grief cheaper, and we have tried."
+
+### 2. A year not kept — the greeting says why
+
+**Rule.** `festivalState(site)==='none'` on the festival's day, the town not abandoned: a townsperson of the town greets with the line for the cause. **Grief** is `burned`, `sacked` or `plague`; **war** is `besieged` or `occupied`. Where a festival has two war lines, *besieged* and *occupied* are told apart. No act, no contest, no keeper on the square.
+
+- **The Greening**, Gatelander.
+  - Grief: "No pole this year. You'll see a ribbon on a door here and there. That's a house that had lambs, or had someone, and wants the god to know it. Leave them be."
+  - War: "No Greening this year, not with the soldiers where they are. We'll tie the ribbons when they've gone, and the lambs will be a year older, and nobody'll mind that."
+- **Riverfair**, Gatelander.
+  - Grief: "No fair. Nobody came with horses, and nobody'd have bought. The priest went down to the water alone at noon. The sea's owed its cup in a bad year more than a good one."
+  - War: "No fair, not with the soldiers where they are. A horse brought to market now is a horse given to them. The water'll wait. It's waited longer."
+- **The Night of the Lanterns**, Gatelander.
+  - Grief: "There's no square for it this year. Folk will light one at the door, for the gate's dead and the town's both, and nobody'll ask which. If you see one, don't stand in front of it."
+  - War: "No lanterns, not with the soldiers where they are. A light in the sky's a signal, to a soldier. We'll send them next year, and there'll be more names. Weaver keep the count."
+- **The Blaze**, Markman.
+  - Grief: "No Blaze. No square to light it on. Every man keeps his own fire this year. Cold night."
+  - War: "No Blaze. Not with them here. You don't put your fires out with an enemy at the door."
+- **The Strait Fair**, Markman.
+  - Grief: "No fair. Nobody's quarrelling. Bad sign."
+  - Besieged: "No fair. Our quarrel's outside the wall this year. One at a time."
+  - Occupied (draft II §3, as written): "No fair this year. No ring while their flag's up. We'll hold two next year."
+- **First Snow**, Markman.
+  - Grief: "Snow's lying. Nobody's sitting out. Too many to name. We'll name them next winter."
+  - War: "Snow's lying. No fires on the square. A fire's a mark for a bow. We sit in. Iron keep them cold out there."
+- **The Commencement**, Aurennais.
+  - Grief: "There is no Commencement here this year, Master. The academy has written, and the names will be read privately, in the church, to the families. The academy keeps its terms with a town in mourning. It is one of the few things it does gently."
+  - War: "There is no Commencement here this year, Master. The academy does not write to a town under arms; it holds the places, and the letters, until the town can receive them. It is the only contract I know with a clause for war."
+- **The Caravan**, Aurennais.
+  - Grief: "The caravan has gone round us this year, Master. The contract obliges the first bale to every town that can receive it, and we are not, at present, a town that can receive anything."
+  - Besieged: "The caravan has gone round us, Master. A string does not cross a siege line, and no contract asks it to. The saffron will be dearer next year, and we shall pay it gladly."
+  - Occupied (draft III §3, as written): "The caravan has gone round us this year, Master. A string does not enter a town under another flag. The contract is silent on the point, and the caravan-master is not."
+- **The Lamps on the Water**, Aurennais.
+  - Grief: "There are no lamps on the water tonight, Master. The ledger was not read. When it is, there will be entries in it that no lamp is set for, and the harbourmaster would rather read them once, in a better year."
+  - War: "No lamps tonight, Master. A light on the water shows the harbour to whoever is watching it, and somebody is. The hulls at sea will come in dark. They know the way; it is the one thing we have not had to teach them."
+
+### 3. The families on the road carry it
+
+**Rule.** On an island's festival day, a family on the road (`def.roadfolk==='family'`, the road's people of #1587, fled from a burned or sacked town within `ROADFOLK_FLED`) greets by its people with the line below, `{festival}` the festival's name as the calendar gives it (*the Greening*, *the Blaze*, *the Caravan*, …). Once a day a family.
+
+- Gatelander: "It's {festival} today, and we've no town to keep it in. We'll keep it at the cart, whatever it wants of us. A custom carried is still kept, they say. My mother said it. I'm hoping she was right."
+- Markman: "{Festival} today. Town's gone. We keep it on the road. Same thing, smaller."
+- Aurennais: "It is {festival}, Master, and we observe it on the road this year, which the custom permits, I am told, though nobody wrote the clause down. We have found that a cart is very nearly a household."
+- Old Blood: "It is {festival}. We keep it where we stand. It was kept on the road before there were towns."
+
+### 4. A named year — the lord's greeting is your deed
+
+**Rule.** `festivalState(site)==='named'` on the day: the town's lord (`def._lord`) greets with the line for the deed, in place of `FEST_LORD_LINE`'s. The deed is `st.freed.how` if the town was freed this year (`'siege'`: you broke the siege; `'garrison'`: you put the garrison out), else **favour** (3 or more). By the lord's people; `{festival}` as in §3.
+
+- **Gatelander lord.**
+  - Favour: "You're here for {festival}. Good. The town's put your name forward for it, and the town's not wrong often. What the custom costs, it costs you nothing today. Don't argue; I've argued it already, and lost."
+  - Siege: "It's {festival}, and we're keeping it, which I'd not have wagered on this year. You broke the ring round us. What the custom costs, the town pays for you today, and if you try to pay it yourself you'll offend someone."
+  - Garrison: "It's {festival}, and there's no flag on the keep but ours to see it. You did that. The town's not one for forgetting. What the custom asks, you're given."
+- **Markish lord** (a reeve or a captain).
+  - Favour: "{Festival}. Town says you're one of ours today. Custom costs you nothing. Take it."
+  - Siege: "{Festival}. Kept, because of you. Wall held. Custom's free to you today. Iron and blood, that's owed."
+  - Garrison: "{Festival}. Their flag's down. You took it down. Custom's on the town today. Aye. All of it."
+- **Aurennais lord** (a Prior or a Factor).
+  - Favour: "It is {festival}, Master, and the town has entered you as one of its own for the day. What the custom costs, you will find has been prepaid. I drew up the terms myself; they are generous, and I do not expect to regret them."
+  - Siege: "It is {festival}, Master, and we keep it because the siege was broken, and it was you who broke it. The town's obligation is not discharged by a day's courtesy. It is, however, acknowledged by one: the custom is the town's gift to you today."
+  - Garrison: "It is {festival}, Master, under our own flag, which this year was not to be assumed. You restored it. Today the custom is entered to the town's account and not yours, and the town is glad to carry it."
+- **Old Blood lord.**
+  - Favour: "The town names you today. The custom is given you, not sold. That is the older way of thanks."
+  - Siege: "The wall held, because of you. Today the custom is given you. Take it, and say nothing."
+  - Garrison: "Their flag is down. You took it. Today you are given, not sold to."
+
+**The keepers in a named year.** The act's keeper greets with the line below in place of their own greeting (the choices that follow are drafts I and III's, unchanged). The lanternmaker and the lampseller already take no coin in a named year (`lanternSend`, `lampSet`); the caravan-master and the bursar still do, and the design gives both too: **rule asked** of the systems builder, `caravanPinch` and `bursarSubscribe` take nothing when `festivalState(s)==='named'`, as `lanternSend` and `lampSet` do.
+
+- **The lanternmaker.**
+  - Gatelander: "There's a lantern for you, and the paper's dry, and put your coin away: the town's said you're not to pay for one this year. You needn't tell me who it's for."
+  - Markman: "Lantern. No coin from you. Town says. Don't need to know who."
+  - Aurennais: "A lantern for you, Master, and the town has settled for it; I am instructed not to take your coin, and I am, for once, glad of an instruction. You need not name the beneficiary."
+  - Old Blood: "A lantern. It is given. You need not say."
+- **The lampseller.**
+  - Aurennais: "A lamp for you, Master, prepaid by the town: the oil, the wick and the board. Name the hull or don't. The water reads no ledger, and today neither do I."
+  - Gatelander: "There's a lamp for you, and no coin for it; the town's said so. You needn't say who it's for."
+  - Markman: "Lamp. Town's paid. Who for's your business."
+  - Old Blood: "A lamp. It is given. It goes out on the ebb."
+- **The caravan-master** (Aurennais): "The first bale is open, Master, and your pinch is weighed already: the town has entered you as a household, and paid for you as one. Do not thank me. Thank the scale; it is the only party here that does not haggle."
+- **The bursar.**
+  - Aurennais: "The scholars' purse, Master. The town has subscribed on your behalf, which it has never done before, and I have entered it as an endorsement. Choose how you would be read; the sum is settled."
+  - Gatelander: "It's the scholars' purse, and the town's put the two gold on it for you already. Say how you'd be read. You can tell them it was your idea; nobody here would mind."
+  - Markman: "Purse for the kids' books. Town paid yours. Say how you want it read."
+  - Old Blood: "The purse for their books. The town has paid it for you. Say whether your name is read."
+
+### 5. The champion — what the town says of it
+
+**Rule.** In a town whose island has a contest (`festContestOf(site)`), on any day while `festChampionNow(site)` gives a champion, a townsperson (any of the town's people with talk, not a guard on duty) has a topic by the contest: **Who holds the arrow?** (Riverfair's butts), **Who holds the ring?** (the Strait Fair's ring), **Who holds the seal?** (the Commencement's disputation). The answer is by the champion (`you` or the town's own, `{name}`) and by the speaker: the home people say the contest's own line; any other people says the line for their people, `{prize}` *the arrow*, *the ring* or *the seal*, `{contest}` *the butts*, *the ring* or *the disputation*. **Still held** is the home people's line when the champion's year is not this year's and the town keeps no contest now (a thin year, or not kept): the record is older than the year.
+
+- **Riverfair**, Gatelander.
+  - The town's own: "{name} has it, from the butts at Riverfair. Nine arrows and none in the straw, they say, though they say that every year. It's cut on the post, if you doubt me."
+  - You: "You have, unless you've lost it since. Your name's on the post, and it's a strange thing to see a stranger's name there, and a good one. The arrow stays won till Riverfair comes round."
+  - Still held: "{name} still has it, from the last shooting. There's been none since; the town couldn't find the purse. An arrow held two years is held well, they say, and it's no fault of the archer."
+- **The Strait Fair**, Markman.
+  - The town's own: "{name}. Three quarrels, three yields. Name's on the post."
+  - You: "You. Three quarrels, finished by noon. Name's on the post. Aye. Earned."
+  - Still held: "{name}. Still. No ring since. Holds till there is one."
+- **The Commencement**, Aurennais.
+  - The town's own: "{name}, Master, who answered two of the examiners' three and was sealed for it. The name is cut on the post, which the academy considers a provincial habit, and which the town considers the point."
+  - You: "You hold it, Master. Your name is cut at the top of the post, where the newest goes. It stands as the seal's until the next Commencement, and on the post rather longer."
+  - Still held: "{name} still holds it, Master, from the last disputation. The examiners have not sat since; the title therefore stands uncontested, which is the most comfortable way to hold one."
+- **Any other people.**
+  - Gatelander, the town's own: "{name} holds {prize}, from {contest}. I'd not have backed them, and I'd have been wrong, which is what backing's for."
+  - Gatelander, you: "You do, they tell me. A stranger's name on their post. I'd not have thought it, and I'm glad of it."
+  - Markman, the town's own: "{name}. Won {contest}. Fair win."
+  - Markman, you: "You. Name's on their post. Good."
+  - Aurennais, the town's own: "{name}, Master, by {contest}, and duly recorded. I was not present. I have seen the post, which is the record that matters here."
+  - Aurennais, you: "You do, Master. Your name is on the town's post. I find I am pleased, and I have no stake in it at all."
+  - Old Blood, the town's own: "{name}. The name is cut. It will last longer than they will."
+  - Old Blood, you: "You. Your name is cut on their post. A name cut in wood lasts a little while."
+
+### Register and canon, checked
+- *Gatelanders*: no bare yes or no (*You have, unless you've lost it since*; *You do, they tell me*); the proverbs carry the refusals (*a thin spring's still a spring*, *a custom carried is still kept*, *an arrow held two years is held well*); the one oath is *Weaver keep the count*.
+- *Markmen*: two to eight words a sentence, *aye*, no honorific; the oaths are iron's (*Iron keep them cold out there*) and iron and blood's (the reeve's siege line).
+- *Aurennais*: *Master* throughout; contracts, clauses, ledgers, accounts, prepayment and endorsements; no oath anywhere.
+- *The Old Blood*: one or two sentences, the older way named twice (*the older way of thanks*, *kept on the road before there were towns*), nothing explained.
+- *Slurs*: none. *Facts*: the states, the deeds and the champion are the code's (`festivalState`, `st.freed.how`, `festChampionNow`); every occupied line already on the page is drafts II and III's, unchanged. *No chosen one*: the naming and the title are a year's.
+
+### What in the code would carry it
+- **`87-world-quests.js`** (the festivals block): a `FEST_YEAR` table, `{thin:{<key>:line}, gone:{<key>:{grief, war, besieged?, occupied?}}, road:{<people>:line}, lord:{<people>:{favor, siege, garrison}}, keeper:{lantern:{…}, lamps:{…}, caravan, bursar:{…}}, champ:{riverfair:{them, you, still}, straitfair:{…}, commencement:{…}, other:{<people>:{them, you}}}}`.
+  - `feastGreeting`: in a thin year, the home people's `FEST_YEAR.thin[key]` before `h.f.greet`. A year not kept never reaches `festivalHere` (it returns null on `'none'`), so a small reader beside it, `festivalGone(siteId)` → `{f, why}` (`why` from the town's flags: `grief`, `besieged`, `occupied`; null when abandoned), read after `festivalHere` fails.
+  - `festActGreeting`: in a named year the lord's line by `st.freed` (this year) or favour, before `FEST_LORD_LINE`.
+  - The keepers' defs (`lanternmaker`, `lampseller`, the caravan-master, the bursar): `greeting` from `FEST_YEAR.keeper` when named; `caravanPinch` and `bursarSubscribe` skip the coin when named (the rule asked above).
+  - The road's family (`ROADFOLK`, the family's greeting): on its island's festival day, `FEST_YEAR.road[people]`, once a day.
+- **`83-world-generator.js`** (`makeDef`'s topics): **Who holds the arrow?** / **the ring?** / **the seal?** while `festChampionNow(site)` is non-null, answered from `FEST_YEAR.champ`, `{name}` and the year from its record, *still held* when its year is not this year and `festivalState` is `'thin'` or `'none'`.
+- **Saved state:** nothing new. `festChampions` and `firstSnow` are the world's and saved; the named year reads `st.freed` and favour, both saved. The once-a-day family line keeps no record (a greeting, as the feasts' are).
+- **Tests:** `tests/feasts` gains: a thin Greening greets with its line; a burned town on Riverfair's day greets with grief and an occupied one with war; a named Markish town's reeve says the garrison line after `liberate`; a townsperson's **Who holds the ring?** answers with the town's champion before you win and with *You.* after a won ring.
