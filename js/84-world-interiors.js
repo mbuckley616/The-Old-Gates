@@ -397,6 +397,38 @@
     if(!out.rods&&!out.net)return out;
     const G=K.bake(P);G.scale.setScalar(RK);G.userData.goodsKitPieces=true;G.userData.kit={tris:G.userData.tris,...out};
     G.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(G);return out;}
+  // ── S2368 — the clay oven where you bake (cooking-build.md's session 4, the look's; Michael's B on #1296): ovenHere (50-travel.js)
+  // lets every inn and every Aurennais home bake, and now each shows its oven: the island's PKIT.props.clay('oven') by a whole wall of
+  // the ground floor, found as a home's fitting is (homeWallSpot, homeWallWhole), the small one in a full room, left out if no wall is
+  // free. Clear of the bare wall's shelves and of the room's people. Not in the courtyard house (its kitchen has its bread oven, S1425) nor where you have fitted your own (homeFitsDress lays it).
+  // Its own tag, kitchenOven, so a fitting laid or struck while you stand there (homeFitsDress) leaves it be. Runs as you go in.
+  function kitchenOvenDress(h){if(window.OG_LOOK!=='new'||!h||typeof isInterior!=='function'||!isInterior()||currentHouse!==h||!interiorScene)return null;
+    if(typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.clay)return null;
+    for(const o of interiorScene.children.filter(o=>o.userData&&o.userData.kitchenOven))interiorScene.remove(o);
+    for(const A of [INT_SOL,FOOTHOLDS])if(A)for(let i=A.length-1;i>=0;i--)if(A[i].kitchenOven)A.splice(i,1);
+    const isle=typeof houseIsle==='function'?houseIsle(h):null;
+    if(!(h.type==='inn'||(h.type==='home'&&isle==='aurenne')))return null;
+    if(typeof kitCourtHouse==='function'&&kitCourtHouse(h))return null;
+    if(typeof homeFitted==='function'&&typeof homeMine==='function'&&homeMine(h)&&homeFitted(h,'oven'))return null;
+    let n='gatelands';try{n=nationAt(h.doorX,h.doorZ)||n;}catch(e){}
+    /* the wall itself behind it, not a shelf before the wall (an inn's back bar, S2237's test), and 1.2 m clear of the keeper and the room's folk */
+    /* nor behind a counter: no low solid 1.8 m long or more (a bar, 0.7 to 1.4 m high) across the 2.6 m before it (a taproom's back wall is the keeper's) */
+    const counterFree=(x,z,nx,nz,ax,az,w)=>{const ux=Math.abs(ax),uz=Math.abs(az),a0x=x+nx*.5,a0z=z+nz*.5,a1x=x+nx*2.6,a1z=z+nz*2.6;
+      const B={x0:Math.min(a0x,a1x)-ux*w/2,x1:Math.max(a0x,a1x)+ux*w/2,z0:Math.min(a0z,a1z)-uz*w/2,z1:Math.max(a0z,a1z)+uz*w/2};
+      return !(INT_SOL||[]).some(q=>!q.kitchenOven&&q.y1>.7&&q.y1<1.4&&q.y0<.3&&Math.max(q.x1-q.x0,q.z1-q.z0)>=1.8&&q.x0<B.x1&&q.x1>B.x0&&q.z0<B.z1&&q.z1>B.z0);};
+    const bare=(x,z,nx,nz,ax,az,w)=>counterFree(x,z,nx,nz,ax,az,w)&&homeWallWhole(x,z,nx,nz,ax,az,w)&&goodsWallFlat(x,z,nx,nz,ax,az,w,[.5,1.0,1.4]);
+    const folk=[];for(const q of INT_NPCS||[]){const p=q&&q.g&&q.g.position;if(p)folk.push([p.x,p.z,1.2]);}
+    /* and off the room's own walks on the ground floor (the kit's paths, in the room's frame from its inner corner): the Aurennais home's first, the one-storey home's every one */
+    {const T=h._aurHome||h._aurHomeOne,ps=T&&Array.isArray(T.paths)&&T.inner?(h._aurHome?T.paths.slice(0,1):T.paths):[];
+      for(const P0 of ps){const P=Array.isArray(P0)?P0:(P0&&P0.pts)||[];for(let i=1;i<P.length;i++){const [a,b]=P[i-1],[c,d]=P[i],n=Math.max(1,Math.ceil(Math.hypot(c-a,d-b)/.3));
+        for(let k=0;k<=n;k++)folk.push([a+(c-a)*k/n+T.inner.x1,b+(d-b)*k/n+T.inner.z1,.6]);}}}
+    let P=null,sp=null;for(const small of [false,true]){P=PKIT.props.clay('oven',n,{small});const f=P.foot;sp=homeWallSpot(h,f.x1-f.x0,f.z1-f.z0,.8,bare,folk);if(sp)break;
+      P.group.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+    if(!sp)return {laid:false};const cx=(P.foot.x0+P.foot.x1)/2;for(const c of P.group.children)c.position.x-=cx;
+    P.group.position.set(sp.x,0,sp.z);P.group.rotation.y=sp.ry;P.group.userData.kitchenOven=true;P.group.userData.kit={tris:P.tris,draws:P.draws,island:n,small:P.foot.x1-P.foot.x0<.9};
+    P.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(P.group);
+    const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:P.top,kitchenOven:true});FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:P.top,kitchenOven:true});
+    return {laid:true,x:sp.x,z:sp.z,ry:sp.ry,box:b,island:n,small:P.foot.x1-P.foot.x0<.9,tris:P.tris,draws:P.draws};}
   // S2237 — the wall flat behind a thing hung on it: homeWallWhole's rays, but each must meet a lit surface (a window's view is a
   // MeshBasicMaterial plane behind its glass, which homeWallWhole counts as wall) 0.2 m or more back from 0.3 m in (a window's jambs stand
   // 0.22 m into a shop's room, and the rods would stand through them)
@@ -411,12 +443,12 @@
   // wall last, each from its middle outward in steps of 0.1 m. What stands upstairs (a bed, the roof's hatch) does not count.
   // wallOk(x, z, nx, nz, ax, az, w), if given, is asked last (it may be dear): is the wall whole behind the thing there.
   // -> {x, z, ry, box, front} or null; box is the foot in the room's frame, front the spot 0.3 m before its front edge
-  function homeWallSpot(h,w,d,front,wallOk){const W=h._roomW||h.intW,D=h._roomD||h.intD;if(!W||!D)return null;
+  function homeWallSpot(h,w,d,front,wallOk,more){const W=h._roomW||h.intW,D=h._roomD||h.intD;if(!W||!D)return null;
     const keep=[];const dx=typeof intDoorX==='function'?intDoorX(h):W/2;keep.push([dx,D,1.9]);
     try{keep.push([intArriveX(h),intArrivalZ(h),1.2]);}catch(e){}
     for(const b of INT_BEDS||[])if(!(b.y>1))keep.push([b.x,b.cz!=null?b.cz:b.z,.9]);
     if(INT_BOX&&INT_BOX.x!=null)keep.push([INT_BOX.x,INT_BOX.z,.9]);if(HATCH&&HATCH.active&&!HATCH.roof&&!(HATCH.y>1))keep.push([HATCH.x,HATCH.z,.9]);
-    if(intStashPos)keep.push([intStashPos.x,intStashPos.z,.9]);if(h._fits)for(const k in h._fits)keep.push([h._fits[k].x,h._fits[k].z,.7]); /* S2147 — where you stand at a fitting already laid */for(const q of INT_DOORS||[])if(q&&q.x!=null)keep.push([q.x,q.z,1.2]);
+    if(intStashPos)keep.push([intStashPos.x,intStashPos.z,.9]);if(h._fits)for(const k in h._fits)keep.push([h._fits[k].x,h._fits[k].z,.7]); /* S2147 — where you stand at a fitting already laid */for(const q of INT_DOORS||[])if(q&&q.x!=null)keep.push([q.x,q.z,1.2]);if(more)keep.push(...more); /* S2368 — [x, z, r] a caller keeps clear too (the room's people) */
     const low=[...(INT_SOL||[]).filter(s=>s.y0<1.6&&s.y1>.05),...(FOOTHOLDS||[]).filter(f=>f.y>.05&&f.y<1.6)];
     const over=(a,b)=>a.x0<b.x1&&a.x1>b.x0&&a.z0<b.z1&&a.z1>b.z0;
     // a wall: where it starts (ox, oz), the way it runs (ax, az) for L, and its normal into the room (nx, nz)
