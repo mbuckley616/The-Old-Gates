@@ -1,4 +1,4 @@
-// The budget suites' kit (Session 1297, QA): `budget` (Dunmore's four views) and `budgetport` (Portclare's square, an inn's hall, a
+// The budget suites' kit (Session 1297, QA): `budget` (Dunmore's street), `budgetfield` (the field west of it, S2360) and `budgetport` (Portclare's square, an inn's hall, a
 // gate's floor) share it. Not a suite itself (no .test.mjs). budgetKit(g) returns what a suite measures with, and budgetEnd(g, rows,
 // views) checks the ceilings over the views the suite holds, prints the ledger's table and, with BUDGET_LEDGER=1, appends it to
 // docs/qa/budget.md with the build tag.

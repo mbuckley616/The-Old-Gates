@@ -63,7 +63,8 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `bridgenames` | 2/14 | pass | pass | 104 |  |
 | `bridges` | w1/20 | — | pass | 81 |  |
 | `bronzehelm` | 7/14 | pass | pass | 28 |  |
-| `budget` | w8/20 | — | pass | 409 |  |
+| `budget` | w8/20 | — | pass | 450 | Killed at the 900 s cap alone at s1692 with four views; the field split off to `budgetfield`, Session 2360 |
+| `budgetfield` | PR | — | pass | 420 | New, Session 2360 (the field west of Dunmore, from `budget`) |
 | `budgetport` | w9/20 | — | pass | 421 |  |
 | `buffstack` | 9/14 | pass | pass | 42 |  |
 | `buildsite` | 8/14 | pass | pass | 102 |  |

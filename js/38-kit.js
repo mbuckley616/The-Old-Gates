@@ -99,7 +99,7 @@ const idr = id => { let n = (id * 2654435761) >>> 0; n ^= n >>> 15; return (n % 
   const TEX = {};
   const tex = k => TEX[k] || (TEX[k] = PAINTERS[k]());
   function mat(k, o = {}) { const t = tex(k); return new THREE.MeshStandardMaterial({ map: t.map, normalMap: t.normalMap, normalScale: new THREE.Vector2(o.ns ?? 1, o.ns ?? 1), roughness: o.rough ?? .9, metalness: 0, color: o.color ?? 0xffffff }); }
-  // (Session 2360) ringed mail (the critic, 17 Nov, s1674: Dunmore's byrnies read as black coats, its window's helms as lamps): rows of
+  // (Session 2362) ringed mail (the critic, 17 Nov, s1674: Dunmore's byrnies read as black coats, its window's helms as lamps): rows of
   // rings, each row half a ring over the last, painted as a height with its normal map; 8 rings a tile and the tile repeated 14 times, so a
   // ring is about 1.5 cm at the rooms' 0.6 a metre. Metalness .35, not .7: with no environment to reflect, .7 drew the mail near black.
   PAINTERS.mail = () => { const t = texPair(128, (x, y) => { const n = 8, X = x * n, Y = y * n; let h = 0;
@@ -1385,7 +1385,7 @@ function townhouseRoom(o = {}, r = stream('townhouse')) {
     /* (Session 2293) a helm with its brow band, crest and nasal, as the Mark's trader's hall draws it (S2290), so it reads as a helm, not a lamp (the critic, s1606); face is its front's turn */
     const helm = (x, y, z, face = 0) => { put(new THREE.SphereGeometry(.115, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 1.12, 1.05), 'mail', x, y, z, face); put(new THREE.CylinderGeometry(.12, .12, .035, 12, 1, true), 'iron', x, y + .015, z);
       put(new THREE.BoxGeometry(.018, .02, .25), 'iron', x, y + .125, z, face); put(new THREE.BoxGeometry(.028, .11, .014), 'iron', x + Math.sin(face) * .122, y - .04, z + Math.cos(face) * .122, face) /* the nasal */; };
-    /* (Session 2360) a helm for the window on a turned head-block, its mail aventail hanging to the block's shoulder: on a thin post the
+    /* (Session 2362) a helm for the window on a turned head-block, its mail aventail hanging to the block's shoulder: on a thin post the
        helm alone read as a table lamp from the street and the door (the critic, 17 Nov, s1674); the stand 0.37 m to the helm's rim */
     const helmStand = (x, y, z, face = 0) => { put(new THREE.CylinderGeometry(.062, .085, .37, 12), 'oak', x, y + .185, z); put(new THREE.CylinderGeometry(.118, .165, .2, 14, 1, true), 'mail', x, y + .27, z); helm(x, y + .37, z, face); };
     const flask = (x, y, z, k) => { put(new THREE.SphereGeometry(.05, 8, 6), k, x, y + .05, z); put(new THREE.CylinderGeometry(.015, .018, .07, 6), k, x, y + .12, z); };
@@ -1425,7 +1425,7 @@ function townhouseRoom(o = {}, r = stream('townhouse')) {
       /* (Session 2293) a byrnie, not a black box (the critic, s1606): the mail a tapered tube flattened to a chest, its neck, short sleeves hanging and a belt, as S2290's stands */
       put(new THREE.CylinderGeometry(.17, .23, .72, 12, 1, true).scale(1, 1, .62), 'mail', x, F0 + .97, z); put(new THREE.CylinderGeometry(.175, .175, .05, 12).scale(1, 1, .62), 'iron', x, F0 + 1.32, z) /* the neck */;
       for (const s2 of [-1, 1]) put(new THREE.CylinderGeometry(.06, .075, .28, 8, 1, true), 'mail', x + s2 * .2, F0 + 1.16, z, 0, .6, 0, s2 * .22) /* the sleeves */;
-      bx('iron', x - .2, x + .2, F0 + .73, F0 + .77, z - .13, z + .13) /* the belt */; boxes.push({ tag: 'stand', x0: x - .28, x1: x + .28, y0: F0, y1: F0 + 1.35, z0: z - .15, z1: z + .15, fl: 0 }); helm(x, F0 + 1.45, z); put(new THREE.CylinderGeometry(.118, .165, .12, 14, 1, true), 'mail', x, F0 + 1.39, z) /* (Session 2361) the aventail, from the brow to the neck: the post no longer shows as a lamp's stalk */; } }
+      bx('iron', x - .2, x + .2, F0 + .73, F0 + .77, z - .13, z + .13) /* the belt */; boxes.push({ tag: 'stand', x0: x - .28, x1: x + .28, y0: F0, y1: F0 + 1.35, z0: z - .15, z1: z + .15, fl: 0 }); helm(x, F0 + 1.45, z); put(new THREE.CylinderGeometry(.118, .165, .12, 14, 1, true), 'mail', x, F0 + 1.39, z) /* (Session 2363) the aventail, from the brow to the neck: the post no longer shows as a lamp's stalk */; } }
     else if (MR === 'barber') { const x = Math.min((cw0 + cw1) / 2, XW - .95), z = fz0 + .85; chair(0, x, z, 'z-', 'oak', true); bx('oak', x - .2, x + .2, F0 + .98, F0 + 1.22, z + .19, z + .23) /* the headrest */;
       bx('brass', x - .35, x + .35, F0 + 1.2, F0 + 1.95, fz0, fz0 + .03); bx('mirror', x - .3, x + .3, F0 + 1.25, F0 + 1.9, fz0 + .03, fz0 + .035) /* the glass, silvered in a gilt frame (Session 2293) */; table(0, x + .45, x + .85, fz0 + .05, fz0 + .45, .8, 'oak', 'washstand'); put(new THREE.CylinderGeometry(.16, .1, .09, 14), 'delft', x + .65, F0 + .845, fz0 + .25); }
     else if (cw1 - cw0 >= .8) { press(0, cw0, cw1, fz0, fz0 + .45, 1.5, 'oak', 'drawers', 0); for (let y = F0 + .2; y < F0 + 1.4; y += .3) for (let x = cw0 + .05; x < cw1 - .1; x += .4) bx('brass', x + .17, x + .21, y + .1, y + .14, fz0 + .45, fz0 + .47); }
@@ -4261,7 +4261,7 @@ function markTrader(o = {}, r = stream('trader')) {
       bx('oak', x - .03, x + .03, FY + 1.33, FY + 1.38, z - .22, z + .22) /* the shoulders, across the room's depth: the mail faces the hall */;
       put(new THREE.CylinderGeometry(.17, .23, .72, 12, 1, true).scale(.62, 1, 1), 'mail', x, FY + .98, z); put(new THREE.CylinderGeometry(.175, .175, .05, 12).scale(.62, 1, 1), 'iron', x, FY + 1.33, z) /* the neck */;
       for (const s of [-1, 1]) put(new THREE.CylinderGeometry(.06, .075, .28, 8, 1, true), 'mail', x, FY + 1.17, z + s * .2, 0, .6, s * .22, 0) /* the sleeves, short, hanging */;
-      bx('iron', x - .2, x + .2, FY + .74, FY + .78, z - .2, z + .2) /* the belt */; helm(x, FY + 1.5, z, Math.PI / 2); put(new THREE.CylinderGeometry(.118, .17, .15, 14, 1, true), 'mail', x, FY + 1.425, z) /* (Session 2361) the aventail, from the brow to the neck, over the bare post */;
+      bx('iron', x - .2, x + .2, FY + .74, FY + .78, z - .2, z + .2) /* the belt */; helm(x, FY + 1.5, z, Math.PI / 2); put(new THREE.CylinderGeometry(.118, .17, .15, 14, 1, true), 'mail', x, FY + 1.425, z) /* (Session 2363) the aventail, from the brow to the neck, over the bare post */;
       boxes.push({ tag: 'stand', x0: x - .24, x1: x + .24, y0: FY, y1: FY + 1.65, z0: z - .3, z1: z + .3 });
       /* a round shield over each stand, on the wall: boards in two colours, an iron boss and rim */ const sy = FY + 2.05, sh = new THREE.CylinderGeometry(.36, .36, .025, 20); sh.rotateZ(Math.PI / 2);
       put(sh, i % 2 ? 'blue' : 'red', -X + .015, sy, z); const bo = new THREE.SphereGeometry(.07, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2); bo.rotateZ(-Math.PI / 2); put(bo, 'iron', -X + .03, sy, z);
