@@ -1351,6 +1351,79 @@ function greatKnotProp(o){o=o||{};const school=GK_GLOW[o.school]?o.school:'cloch
   if(knot){knot.position.copy(K);knot.name='knot';group.add(knot);}
   group.name='greatKnot';group.userData.greatKnot={school,state,scale:+s.toFixed(2)};
   return {group,knot,tris:Math.round(tris),draws,scale:+s.toFixed(2),top:+(Cy+RO).toFixed(2),ends:ends.length};}
+// S2375 — what a gate keeps, the look (the build sheet's session 3, docs/design/what-a-gate-keeps-build.md; the concept artist's
+// lesserKeep in docs/prototypes/levelup/vaults.js, OG-123): the keep's things in the gate's own stone, on the new look, in metres with
+// y 0 at the dais's top and +z toward the way in. The coffer is the prototype's: a chest of the gate's pale stone 1.5 by 0.9 m on a
+// plinth, bronze at its eight corners, a band of the school's script round the seam and a ring sigil burning on its lid; its lid is its
+// own group hinged along the back (rotation.x < 0 opens it, as every chest's). The altar the prototype had none of: a die of the pale
+// stone on a darker plinth under a mensa, the script round its neck, and on it the arc, a third of the armillary's ring in bronze with
+// the script on its face, standing on its ends in two cradles. The vein breaks out of a boss of the dark stone in five clusters of
+// hexagonal crystals (each cluster one mesh, so the crystals left show in proportion), leaning up and away from the corner. The altar
+// stands 0.75 m, under the coffer's lid, so from the way in the coffer shows over it. The shaft is
+// the prototype's eye in the roof over the coffer and two faint cones of light down to the dais, with a warm light in the pool.
+// gkeepCoffer(school) -> {group, lid}; gkeepAltar(school) -> group; gkeepArc(school) -> group (named 'gateArc'); gkeepVein(school, id)
+// -> {rock (with its glow), clusters (a group of 5 meshes)}; gkeepShaft(h) -> group, h the roof's height over the dais's top.
+const GKEEP_STONE={tine:[.30,.28,.28],uisce:[.58,.64,.66],cloch:[.70,.66,.60],scath:[.40,.38,.44],solas:[1,.84,.56],gaoth:[.84,.86,.88]};
+const GKEEP_MAT={};
+function gkeepRingTex(){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,256,256);
+  x.strokeStyle='#fff';x.lineCap='round';x.lineWidth=7;for(const r of [118,86])(x.beginPath(),x.arc(128,128,r,0,6.284),x.stroke());x.lineWidth=5;
+  const r=PKIT.stream('gkeep:seal');for(let k=0;k<12;k++){const a=k/12*6.2832+r()*.1;x.beginPath();x.moveTo(128+Math.cos(a)*90,128+Math.sin(a)*90);x.lineTo(128+Math.cos(a)*(r()<.5?114:104),128+Math.sin(a)*(r()<.5?114:104));x.stroke();}
+  x.lineWidth=6;x.beginPath();x.arc(128,128,30,0,6.284);x.stroke();for(let k=0;k<3;k++){const a=k/3*6.2832-1.5708;x.beginPath();x.moveTo(128+Math.cos(a)*30,128+Math.sin(a)*30);x.lineTo(128+Math.cos(a)*80,128+Math.sin(a)*80);x.stroke();}
+  return new THREE.CanvasTexture(c);}
+function gkeepMats(school){school=GKEEP_STONE[school]?school:'cloch';if(GKEEP_MAT[school])return GKEEP_MAT[school];
+  const S=new THREE.Color(...GKEEP_STONE[school]),G=new THREE.Color(...(GK_GLOW[school]||GK_GLOW.cloch)),gk=gkMats(school,'untied'),base=PKIT.gl.mats().ashlar;
+  const stone=(k)=>{const m=base.clone();m.color=S.clone().multiplyScalar(k);m.roughness=.85;return m;};
+  if(!GKEEP_MAT.ring)GKEEP_MAT.ring=gkeepRingTex();
+  return GKEEP_MAT[school]={pale:stone(.85),dark:stone(.62),script:gk.script,
+    seal:new THREE.MeshStandardMaterial({color:0x14100c,emissive:G,emissiveMap:GKEEP_MAT.ring,emissiveIntensity:.95,roughness:.6,metalness:0}),
+    bronze:new THREE.MeshStandardMaterial({color:0x7c5a32,roughness:.5,metalness:.55}),
+    crystal:new THREE.MeshStandardMaterial({color:G.clone().multiplyScalar(.7),emissive:G,emissiveIntensity:.28,roughness:.2,metalness:.15,flatShading:true}),
+    eye:new THREE.MeshBasicMaterial({color:new THREE.Color(1,.96,.86)}),
+    beam:new THREE.MeshBasicMaterial({color:new THREE.Color(1,.92,.74),transparent:true,opacity:.05,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide})};}
+// one mesh a material out of a list of [geometry, key, matrix, uv a metre]
+function gkeepBake(parts,M,name){const B=new Map();for(const [geo,key,m,uv] of parts){const g=geo.index?geo.toNonIndexed():geo;for(const a of Object.keys(g.attributes))if(!['position','normal','uv'].includes(a))g.deleteAttribute(a);
+    if(uv&&g.attributes.uv){const U=g.attributes.uv;for(let i=0;i<U.count;i++)U.setXY(i,U.getX(i)*uv,U.getY(i)*uv);}if(m)g.applyMatrix4(m);if(!B.has(key))B.set(key,[]);B.get(key).push(g);}
+  const out=[];for(const [k,gs] of B){let n=0;for(const g of gs)n+=g.attributes.position.count;const P=new Float32Array(n*3),N=new Float32Array(n*3),U=new Float32Array(n*2);let at=0;
+    for(const g of gs){const c=g.attributes.position.count;P.set(g.attributes.position.array.subarray(0,c*3),at*3);N.set(g.attributes.normal.array.subarray(0,c*3),at*3);if(g.attributes.uv)U.set(g.attributes.uv.array.subarray(0,c*2),at*2);at+=c;g.dispose();}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(N,3));geo.setAttribute('uv',new THREE.BufferAttribute(U,2));geo.computeBoundingSphere();
+    const mesh=new THREE.Mesh(geo,M[k]);mesh.name=name+':'+k;mesh.castShadow=!['script','seal','eye','beam','crystal'].includes(k);mesh.receiveShadow=true;out.push(mesh);}
+  return out;}
+function gkeepTM(x,y,z,ry,rx,rz){return new THREE.Matrix4().compose(new THREE.Vector3(x||0,y||0,z||0),new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0,'YXZ')),new THREE.Vector3(1,1,1));}
+function gkeepCoffer(school){const M=gkeepMats(school),W=1.5,H=.62,D=.9,T=gkeepTM,body=[],top=[];
+  body.push([new THREE.BoxGeometry(W,H,D),'pale',T(0,H/2,0),.3],[new THREE.BoxGeometry(W+.12,.08,D+.12),'pale',T(0,.04,0),.3],[new THREE.BoxGeometry(W+.06,.045,D+.06),'script',T(0,H+.022,0),1.6]);
+  for(const sx of [-1,1])for(const sz of [-1,1]){body.push([new THREE.BoxGeometry(.16,H,.04),'bronze',T(sx*(W/2-.06),H/2,sz*(D/2+.01))],[new THREE.BoxGeometry(.04,H,.16),'bronze',T(sx*(W/2+.01),H/2,sz*(D/2-.06))]);
+    top.push([new THREE.BoxGeometry(.16,.2,.04),'bronze',T(sx*(W/2-.06),.145,D/2+sz*(D/2+.06))],[new THREE.BoxGeometry(.04,.2,.16),'bronze',T(sx*(W/2+.06),.145,D/2+sz*(D/2-.06))]);}
+  /* the lid in the hinge's frame: the hinge along the back of the seam, so the lid's front is at z = D */
+  top.push([new THREE.BoxGeometry(W+.1,.18,D+.1),'pale',T(0,.135,D/2),.3],[new THREE.BoxGeometry(W-.1,.06,D-.2),'pale',T(0,.255,D/2),.3]);
+  {const g=new THREE.CircleGeometry(.26,32);g.rotateX(-Math.PI/2);top.push([g,'seal',T(0,.287,D/2)]);}
+  const group=new THREE.Group(),lid=new THREE.Group();group.name='gateCoffer';lid.name='gateCofferLid';lid.position.set(0,H+.045,-D/2);
+  for(const m of gkeepBake(body,M,'coffer'))group.add(m);for(const m of gkeepBake(top,M,'lid'))lid.add(m);group.add(lid);return {group,lid};}
+function gkeepAltar(school){const M=gkeepMats(school),T=gkeepTM,P=[];
+  P.push([new THREE.BoxGeometry(1.44,.1,.94),'dark',T(0,.05,0),.3],[new THREE.BoxGeometry(1.2,.48,.7),'pale',T(0,.34,0),.3],[new THREE.BoxGeometry(1.24,.05,.74),'script',T(0,.6,0),1.6],
+    [new THREE.BoxGeometry(1.36,.09,.86),'pale',T(0,.67,0),.3],[new THREE.BoxGeometry(1.4,.035,.9),'dark',T(0,.7325,0),.3]); /* 0.75 high: from the way in the coffer's lid shows over it */
+  const g=new THREE.Group();g.name='gateAltar';for(const m of gkeepBake(P,M,'altar'))g.add(m);return g;}
+// the arc: a third of a ring of 0.32 m standing on its two ends in bronze cradles, its face's middle band the school's script; y 0 the mensa
+function gkeepArc(school){const M=gkeepMats(school),T=gkeepTM,R=.32,Ri=.265,th=.07,P=[],a0=Math.PI/2-Math.PI/3,a1=Math.PI/2+Math.PI/3,yc=-Math.sin(a0)*R+.035;
+  {const s=new THREE.Shape();s.absarc(0,0,R,a0,a1,false);s.absarc(0,0,Ri,a1,a0,true);const g=new THREE.ExtrudeGeometry(s,{depth:th,bevelEnabled:false,curveSegments:24});g.translate(0,yc,-th/2);P.push([g,'bronze',null,4]);}
+  {const S=new THREE.Shape();S.absarc(0,0,R+.004,a0,a1,false);S.absarc(0,0,R-.012,a1,a0,true); /* the outer face's band, proud of the bronze */
+    const f=new THREE.ExtrudeGeometry(S,{depth:th*.5,bevelEnabled:false,curveSegments:24});f.translate(0,yc,-th*.25);P.push([f,'script',null,6]);}
+  for(const s of [-1,1])P.push([new THREE.BoxGeometry(.08,.06,.1),'bronze',T(s*Math.cos(a0)*(R+Ri)/2,.035,0),4]);
+  const g=new THREE.Group();g.name='gateArc';for(const m of gkeepBake(P,M,'arc'))g.add(m);return g;}
+// the vein: a boss of the dark stone with five clusters of crystal out of it, leaning toward +z and up; seeded by its id
+function gkeepVein(school,id){const M=gkeepMats(school),r=PKIT.stream('gkeep:vein:'+id),T=gkeepTM;
+  const rock=gkeepBake([[new THREE.DodecahedronGeometry(.6,1).scale(1.25,.75,.8),'dark',T(0,.12,-.15,r()*.4),.5],[new THREE.DodecahedronGeometry(.32,0),'dark',T(.55,.05,.15,r()*3),.5]],M,'vein')[0];
+  rock.name='gateVeinRock';{const L=new THREE.PointLight(new THREE.Color(...(GK_GLOW[school]||GK_GLOW.cloch)),.9,5);L.position.set(0,.9,.6);rock.add(L);} /* its glow, so the corner is found */
+  const clusters=new THREE.Group();clusters.name='gateVein';
+  for(let c=0;c<5;c++){const ax=(c-2)*.28+(r()-.5)*.1,P=[];const n=3+Math.floor(r()*2);
+    for(let i=0;i<n;i++){const L=.35+r()*(c===2?.75:.5),rad=.045+r()*.05,g=new THREE.CylinderGeometry(rad,rad,L,6);g.translate(0,L/2,0);const tip=new THREE.ConeGeometry(rad,rad*2.2,6);tip.translate(0,L+rad*1.1,0);
+      const m=T(ax+(r()-.5)*.16,.15+r()*.15,.05+(r()-.5)*.2,(r()-.5)*.8,.12+r()*.4,-(ax*.55)+(r()-.5)*.3); /* up, and out from the corner */P.push([g,'crystal',m],[tip,'crystal',m]);}
+    for(const mesh of gkeepBake(P,M,'crystal'+c))clusters.add(mesh);}
+  return {rock,clusters};}
+// the eye in the roof and its light: two open cones from h (the roof over the dais's top) down to 0, the eye a bright disc under the roof
+function gkeepShaft(h,school){const M=gkeepMats(school),g=new THREE.Group();g.name='gateKeepShaft';
+  const eye=new THREE.Mesh(new THREE.CircleGeometry(.75,32).rotateX(Math.PI/2),M.eye);eye.position.y=h-.05;g.add(eye);
+  for(const [a,b] of [[.75,1.25],[.55,.95]]){const c=new THREE.Mesh(new THREE.CylinderGeometry(a,b,h-.05,32,1,true),M.beam);c.position.y=(h-.05)/2;c.renderOrder=2;g.add(c);}
+  const L=new THREE.PointLight(0xffecc8,1.5,Math.min(14,h+3));L.position.y=Math.min(3.2,h*.6);g.add(L);g.userData.light=L;return g;}
 // S1376 — whether a gate's floors take Cloch's fallen blocks: a lesser gate (not a great one, not the tutorial) whose door stands on
 // the Mark, while Cloch's toll holds (gateToll, 87-world-quests.js: Cloch torn, and three torn in all). Read on entering, so a gate
 // entered before the toll keeps its passages until you next come in.

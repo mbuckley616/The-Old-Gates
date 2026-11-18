@@ -64,6 +64,13 @@ await page.evaluate((s) => { if (worldState.sigilsRead) delete worldState.sigils
   const e = WORLD.doorAnywhere(s), p = makePortalDef(e); p.zone = 'world'; p.sigil = true; p.theme = p.theme || e.theme; goToDungeon(p); }, seed);
 const inGate = () => page.waitForFunction((s) => activeZoneId === 'dungeon' && typeof dScene !== 'undefined' && dScene !== window._prevDScene && scene === dScene && currentPortal && currentPortal.seed === s && ENEMIES.length > 0, seed, { timeout: 180000, polling: 200 });
 await inGate(); await g.hide();
+// S2375 — the keep dressed on the new look (gkeep*, 56-dungeon-build.js; vaults.js's lesserKeep): the coffer with its hinged lid, the altar,
+// the arc on it, the vein's five clusters, the eye's shaft and its light; a few draws, a few thousand triangles
+const DR = await page.evaluate(() => { const c = CHESTS.find(x => x.coffer != null), L = GATE_KEEP_LIE || {}, S = dScene.getObjectByName('gateKeepShaft'); let tris = 0, draws = 0;
+  for (const o of [c && c.mesh, L.altar && L.altar.mesh, L.vein && L.vein.g, L.vein && L.vein.rock, S]) if (o) o.traverse(m => { if (m.isMesh) { draws++; tris += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; } });
+  return { look: window.OG_LOOK, lid: !!(c && c.lid && c.lid.name === 'gateCofferLid'), altar: !!(L.altar && L.altar.mesh.getObjectByName('gateAltar')), arc: L.altar && L.altar.arc ? L.altar.arc.children.length : 0,
+    clusters: L.vein && L.vein.g ? L.vein.g.children.filter(m => m.isMesh).length : 0, shaft: !!S, light: !!(S && S.userData.light), draws, tris: Math.round(tris) }; });
+check(`the keep is dressed: a hinged coffer, the altar and its arc, ${DR.clusters} clusters of crystal, the eye's shaft; ${DR.draws} draws, ${DR.tris} triangles`, DR.look === 'new' && DR.lid && DR.altar && DR.arc >= 2 && DR.clusters === 5 && DR.shaft && DR.light && DR.draws <= 24 && DR.tris < 6000, DR);
 const A = await page.evaluate((s) => { const C = CHESTS.filter(c => c.coffer != null), c = C[0], sp = _lastGen.spaces[_lastGen.ring], d = sp.dais, out = { n: C.length };
   if (!c) return out; out.id = c.id; out.off = +Math.hypot(c.x - dAt((d.x0 + d.x1) / 2), c.z - dAt((d.z0 + d.z1) / 2)).toFixed(2); out.floor = c.floor === (sp.floor || 1);
   out.y = +(c.mesh.position.y - (c.floor === 2 ? FLOOR2_Y : 0)).toFixed(2); out.items = c.items.map(i => i.name); out.want = gateCofferItems(currentPortal, c.floor).map(i => i.name);

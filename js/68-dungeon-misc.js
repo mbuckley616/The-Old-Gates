@@ -558,9 +558,12 @@ function gateCofferItems(portal,floor){const tier=Math.min(GATE_KEEP.tierMax,dun
 function gateKeepLay(portal,gen){GATE_KEEP_LIE=null;if(!gen||!gen.gate||gen.ring==null||!gateCofferDue(portal))return null;
   const sp=gen.spaces[gen.ring],d=sp&&sp.dais;if(!d)return null;const fl=sp.floor||1,x=dAt((d.x0+d.x1)/2),z=dAt((d.z0+d.z1)/2),y=(fl===2?FLOOR2_Y:0)+.4;
   const K=gateKeepOf(portal.seed),was=Array.isArray(K.coffer),items=was?K.coffer:gateCofferItems(portal,fl);if(was)foundRestore(items);
-  const group=new THREE.Group();const {lid}=buildChestShell(group,.85,0x77726a);group.scale.setScalar(DCELL);group.position.set(x,y,z);group.name='gateCoffer';
+  const group=new THREE.Group(),dress=window.OG_LOOK==='new'&&typeof gkeepCoffer==='function';let lid; /* S2375 — the new look dresses the keep (gkeep*, 56-dungeon-build.js) */
+  if(dress){const C=gkeepCoffer(gateOrbSchool(portal));group.add(C.group);lid=C.lid;}else{lid=buildChestShell(group,.85,0x77726a).lid;group.scale.setScalar(DCELL);}
+  group.position.set(x,y,z);group.name='gateCoffer';
   {const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl);if(t){const dx=dAt(t.c)-x,dz=dAt(t.r)-z;group.rotation.y=Math.abs(dx)>Math.abs(dz)?(dx>0?Math.PI/2:-Math.PI/2):(dz>0?0:Math.PI);}} /* its front to the way in */
   dScene.add(group);
+  if(dress)try{const f=D_CEIL[fl],h=(f?f(x/DCELL,z/DCELL):FLOOR_HEIGHT)-.4,S=gkeepShaft(h,gateOrbSchool(portal));S.position.set(x,y,z);dScene.add(S);}catch(e){console.warn('gkeepShaft',e);}
   const ch={id:`${portal.seed}:${fl}:coffer`,x,z,y:.4,opened:was,lid,treasure:true,coffer:portal.seed,floor:fl,mesh:group,items,displayName:'The Coffer'};
   if(was&&lid)lid.rotation.x=-Math.PI/3;CHESTS.push(ch);try{gateKeepThings(portal,gen,ch);}catch(e){console.warn('gateKeepThings',e);}return ch;}
 function gateCofferShut(ch){const S=worldState.sigilsRead;return !(S&&ch&&S[ch.coffer]!=null);}
@@ -597,15 +600,21 @@ function gateKeepThings(portal,gen,coffer){GATE_KEEP_LIE={altar:null,vein:null};
   const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl),tx=t?dAt(t.c):coffer.x,tz=t?dAt(t.r):coffer.z;
   {let dx=tx-coffer.x,dz=tz-coffer.z;const L=Math.hypot(dx,dz)||1;if(Math.abs(dx)>Math.abs(dz)){dx=Math.sign(dx);dz=0;}else{dz=Math.sign(dz||1);dx=0;} /* toward the way in, along the dais's axis */
     const x=coffer.x+dx*2.6,z=coffer.z+dz*2.6,g=new THREE.Group();g.name='gateAltar';g.position.set(x,y+.4,z);
-    const stone=new THREE.MeshLambertMaterial({color:0x7a756c}),block=new THREE.Mesh(new THREE.BoxGeometry(1.2,.95,.7),stone);block.position.y=.475;block.rotation.y=dx?Math.PI/2:0;g.add(block);
-    let arc=null;if(gateArcDue(portal)){arc=new THREE.Mesh(new THREE.TorusGeometry(.32,.035,6,18,Math.PI*.75),new THREE.MeshLambertMaterial({color:0xb08a3a,emissive:0x2a1c06}));arc.position.y=1.0;arc.rotation.x=-Math.PI/2+.25;arc.name='gateArc';g.add(arc);}
+    const dress=window.OG_LOOK==='new'&&typeof gkeepAltar==='function'; /* S2375 — dressed on the new look, its long side across the way in */
+    if(dress){const a=gkeepAltar(school);a.rotation.y=dx?Math.PI/2:0;g.add(a);}
+    else{const stone=new THREE.MeshLambertMaterial({color:0x7a756c}),block=new THREE.Mesh(new THREE.BoxGeometry(1.2,.95,.7),stone);block.position.y=.475;block.rotation.y=dx?Math.PI/2:0;g.add(block);}
+    let arc=null;if(gateArcDue(portal)){if(dress){arc=gkeepArc(school);arc.position.y=.75;arc.rotation.y=dx?Math.PI/2:0;}
+      else{arc=new THREE.Mesh(new THREE.TorusGeometry(.32,.035,6,18,Math.PI*.75),new THREE.MeshLambertMaterial({color:0xb08a3a,emissive:0x2a1c06}));arc.position.y=1.0;arc.rotation.x=-Math.PI/2+.25;arc.name='gateArc';}g.add(arc);}
     dScene.add(g);DUNGEON_COLUMNS.push({x,z,r:.62,floor:fl,altar:portal.seed});
     GATE_KEEP_LIE.altar={x,z,floor:fl,seed:portal.seed,school,mesh:g,arc};}
   {const R=[[sp.x,sp.y],[sp.x+sp.w-1,sp.y],[sp.x,sp.y+sp.h-1],[sp.x+sp.w-1,sp.y+sp.h-1]],M=fl===2?gen.map2:gen.map,CS=fl===2?gen.cellSpace2:gen.cellSpace;
     const ok=([c,r])=>M&&M[r]&&M[r][c]===1&&(!CS||CS[r][c]===sp.id),cs=R.filter(ok).sort((a,b)=>Math.hypot(dAt(b[0])-tx,dAt(b[1])-tz)-Math.hypot(dAt(a[0])-tx,dAt(a[1])-tz));
     const k=cs[0];if(k){const [c,r]=k,ox=c===sp.x?-1:1,oz=r===sp.y?-1:1,H=DCELL/2-.55,x=dAt(c)+ox*H,z=dAt(r)+oz*H,cap=gateVeinCap(gen.cond);
       const v={id:`${portal.seed}:${fl}:vein`,gate:portal.seed,school,cap,x,z,floor:fl,g:null};
-      const g=new THREE.Group();g.name='gateVein';g.position.set(x,y,z);const col=new THREE.Color((typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[school]&&SCHOOL_DEF[school].col)||'#9ad');
+      const g=new THREE.Group();g.name='gateVein';g.position.set(x,y,z);
+      if(window.OG_LOOK==='new'&&typeof gkeepVein==='function'){const V=gkeepVein(school,v.id),ry=Math.atan2(-ox,-oz);V.rock.position.set(x,y,z);V.rock.rotation.y=ry;dScene.add(V.rock);
+        V.clusters.position.set(x,y,z);V.clusters.rotation.y=ry;dScene.add(V.clusters);v.g=V.clusters;v.rock=V.rock;gateVeinShow(v);GATE_KEEP_LIE.vein=v;return GATE_KEEP_LIE;} /* S2375 — the dressed vein faces the room */
+      const col=new THREE.Color((typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[school]&&SCHOOL_DEF[school].col)||'#9ad');
       const mat=new THREE.MeshLambertMaterial({color:col,emissive:col.clone().multiplyScalar(.35)}),rr=seededRng('gatevein',v.id);
       for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.16+rr()*.12,0),mat);m.scale.y=2+rr()*1.4;m.position.set((rr()-.5)*.6,.25+rr()*.2,(rr()-.5)*.6);m.rotation.set((rr()-.5)*.6,rr()*3,(rr()-.5)*.6);g.add(m);}
       dScene.add(g);v.g=g;gateVeinShow(v);GATE_KEEP_LIE.vein=v;}}
