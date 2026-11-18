@@ -917,7 +917,7 @@ function tickWildOne(e,dt){if(!(dt>0))return;
     if(!ok){if(W.mode==='flee')W.left=0;else{W.mode='graze';W.t=1+e.rng()*3;}}
     else{W.yaw=yaw;e.x=nx;e.z=nz;if(W.mode==='flee')W.left-=st;
       let dy=yaw-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*(W.mode==='flee'?14:5));}}
-  if(e.mesh){const y=typeof activeTerrainH==='function'?activeTerrainH(e.x,e.z):e.mesh.position.y;e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}
+  if(e.mesh){const y=typeof activeTerrainH==='function'?foeY(e):e.mesh.position.y;e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}
 }
 // S1784 — the watcher (L5, OG-096; Michael's B on #1005; placed by watcherAt, 88-world-ticks.js): the hostile Wolf's body, made a peaceful
 // animal (#984 A: one blow, no reward but its meat, never in a fight, no eye-glow) that never hunts and never runs. It stays where it stands
@@ -929,7 +929,7 @@ function watchMake(e){if(!e)return e;e.wild=true;e.watch=true;e.alert=false;e.hp
   if(e.mesh)e.mesh.traverse(o=>{if(o.isMesh||o.isPoints)o.castShadow=false;});return e;}
 function watchTick(e,dt){e.alert=false;const T=targetOf(e);
   let dy=Math.atan2(T.x-e.x,T.z-e.z)-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));const st=WATCH_TURN*dt;e.combatYaw+=Math.max(-st,Math.min(st,dy));
-  if(e.mesh){const y=typeof activeTerrainH==='function'?activeTerrainH(e.x,e.z):e.mesh.position.y;e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}}
+  if(e.mesh){const y=typeof activeTerrainH==='function'?foeY(e):e.mesh.position.y;e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}}
 // S1711 — a bird's flight from you: straight off, bent a little to keep away, over walls, water and slopes alike; down only onto open ground
 function wildFlyStep(e,W,P,T,dt){const F=WILD_FLY;
   const away=Math.atan2(e.x-T.x,e.z-T.z);let dy=away-W.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));if(W.gone<F.far)W.yaw+=dy*Math.min(1,dt*.8);
@@ -941,7 +941,7 @@ function wildFlyStep(e,W,P,T,dt){const F=WILD_FLY;
     if(W.fy<=0&&open){W.fy=0;W.mode='graze';W.t=3+e.rng()*5;e.homeX=e.x;e.homeZ=e.z;}}
   e.aloft=W.fy>F.aloft;
   let dr=W.yaw-e.combatYaw;dr=Math.atan2(Math.sin(dr),Math.cos(dr));e.combatYaw+=dr*Math.min(1,dt*8);
-  if(e.mesh){const g=typeof activeTerrainH==='function'?activeTerrainH(e.x,e.z):0;e.mesh.position.set(e.x,g+W.fy,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}}
+  if(e.mesh){const g=typeof activeTerrainH==='function'?foeY(e):0;e.mesh.position.set(e.x,g+W.fy,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}}
 // S1701 — a person-bodied foe's weapon changed after it is built: the old one and any shield taken away, the kit's `kind` put in the
 // driver's fist as buildFoe puts it (a quarter turn about the shaft, the gear bone), and the genome's weapon set, so foeWeaponKind reads it.
 // On the new look the builder's body carries what the driver holds (hbHold); if that body is already attached, its held list is changed
@@ -1149,7 +1149,7 @@ function alertPack(e,r){try{const E=(activeZoneId==='world'&&ZONES.world)?ZONES.
 // v80 S135 — an archer's arrow: a shaft that flies flat at the player and can be blocked
 const ZARROWS=[];
 function fireZoneArrow(e,sc){const T=targetOf(e),ax=T.x-e.x,az=T.z-e.z,ad=Math.hypot(ax,az)||1;
-  const m=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.7),new THREE.MeshLambertMaterial({color:0x9a7a4a}));const y=activeTerrainH(e.x,e.z)+1.0;m.position.set(e.x,y,e.z);m.rotation.y=Math.atan2(ax,az);sc.add(m);
+  const m=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.7),new THREE.MeshLambertMaterial({color:0x9a7a4a}));const y=foeY(e)+1.0;m.position.set(e.x,y,e.z);m.rotation.y=Math.atan2(ax,az);sc.add(m);
   ZARROWS.push({m,x:e.x,z:e.z,y,vx:ax/ad*17,vz:az/ad*17,life:1.6,dmg:e.dmg,from:e,sc});}
 function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZARROWS[i];a.life-=dt;
     {const wa=(typeof arrowWindAcc==='function')?arrowWindAcc(a.vx,a.vz,1):null;if(wa){a.vx+=wa.x*dt;a.vz+=wa.z*dt;a.m.rotation.y=Math.atan2(a.vx,a.vz);}} /* S2216 — #1511 B: a foe's arrow drifts on the same wind as yours */
@@ -1163,6 +1163,20 @@ function tickZoneArrows(dt,now){for(let i=ZARROWS.length-1;i>=0;i--){const a=ZAR
       else{const hitD=_warded(raw);PHP=Math.max(0,PHP-hitD);lvAct.damageTaken+=hitD;armourUse();hurtT=.4;} /* S762 — the line went with #198 A: the bar's tail says it */
       if(PHP<=0&&!dead)playerDead();}
     if(hit||ground||a.life<=0){a.sc.remove(a.m);ZARROWS.splice(i,1);}}}
+// S2361 — a foe on a bridge walks its deck. S2288 made each run of a deck a platform that lifts the player and, for anyone
+// else, only where the ground is within 0.6 m of it (its ends); S2292 put the road's people on it (roadY). A foe still read
+// the causeway mid-span, 0.8 m under the setts, or the river's bed at a deep crossing. The player's rule, kept for the foe:
+// it steps on where the deck meets the ground (within 0.6 m) and stays on while it is over that bridge's deck (e._deck, the
+// bridge's id); one that walks under a high bridge, or never came up at an end, keeps the ground. Outdoors only.
+function foeDeckTop(id,x,z){const P=ZONES.world&&ZONES.world.platforms;let y=null;if(!P)return null;
+  for(let i=0;i<P.length;i++){const p=P[i];if(!p.bridge||!p.top||(id!=null&&p.bridge!==id)||x<p.x0||x>p.x1||z<p.z0||z>p.z1)continue;const t=p.top(x,z);if(t!=null&&(y==null||t>y))y=t;}return y;}
+function foeY(e){const g=activeTerrainH(e.x,e.z);if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||e.swim){e._deck=null;return g;}
+  const P=ZONES.world&&ZONES.world.platforms;let y=null,on=null;
+  if(P)for(let i=0;i<P.length;i++){const p=P[i];if(!p.bridge||!p.top||e.x<p.x0||e.x>p.x1||e.z<p.z0||e.z>p.z1)continue;const t=p.top(e.x,e.z);
+    if(t==null||t<g-.01)continue;if((e._deck===p.bridge||t-g<=.6)&&(y==null||t>y)){y=t;on=p.bridge;}}
+  e._deck=on;return y==null?g:y;}
+function foeGroundFn(e){if(activeZoneId!=='world'||e._deck==null)return activeTerrainH;const id=e._deck;
+  return (x,z)=>{const t=foeDeckTop(id,x,z);return t!=null?t:activeTerrainH(x,z);};}
 // S616 — a foe whose straight step is blocked (a barrel on a deck, a post, a trunk) slides along it: the step's one axis or
 // the other, else a sidestep to one side, kept until that side is blocked too. It stood still behind it before, for good.
 function foeSlide(e,ux,uz,step){
@@ -1374,7 +1388,7 @@ function tickZoneEnemies(dt,now,sc){
         staggered=staggered.filter(s=>s.e!==e);
         reraiseGuard(e);
       } else {
-        const ety=activeTerrainH(e.x,e.z);
+        const ety=foeY(e);
         e.mesh.position.set(e.x,ety,e.z);
         e.mesh.lookAt(T.x,ety,T.z);
         e.el.position.set(e.x,ety+.8,e.z);
@@ -1384,7 +1398,7 @@ function tickZoneEnemies(dt,now,sc){
     }
     // S441 — a lair beast's charge and its daze (tickBehaviours, the world) move and hold it themselves: no chase and no
     // blow of the ordinary kind meanwhile, or the chase bent the charge off its line and a dazed beast walked after you and bit
-    if(e._charge!=null||e._stun>0){const ety=activeTerrainH(e.x,e.z);e.mesh.position.y=ety;e.el.position.set(e.x,ety+.8,e.z);return;}
+    if(e._charge!=null||e._stun>0){const ety=foeY(e);e.mesh.position.y=ety;e.el.position.set(e.x,ety+.8,e.z);return;}
     // v63 — Directional detection. Vision cone (forward 150° arc) + hearing
     // radius (1.5u omnidirectional). Sight is modulated by detectReduce buffs
     // and sneak; hearing is not. LOS check (step-cast for walls) added — the
@@ -1418,7 +1432,7 @@ function tickZoneEnemies(dt,now,sc){
       const step=e.spd*.3*dt;
       const nx=e.x+dx2/wd*step,nz=e.z+dz2/wd*step;
       if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}
-      const ety=activeTerrainH(e.x,e.z);
+      const ety=foeY(e);
       e.mesh.position.set(e.x,ety,e.z);e.el.position.set(e.x,ety+.8,e.z);
       /* S628 — it faces the way it walks, and looks that way: the body stood at its spawn's turn and the sight cone at a random one, as the dungeon's wander (90-main.js) already turns both */
       if(!e.isBoss){e.combatYaw=Math.atan2(dx2,dz2);e.mesh.lookAt(e.x+dx2/wd,ety,e.z+dz2/wd);}
@@ -1444,8 +1458,8 @@ function tickZoneEnemies(dt,now,sc){
       const nx=e.x+dx2/d*step,nz=e.z+dz2/d*step;
       if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}else foeSlide(e,dx2/d,dz2/d,step);
     }
-    e.mesh.position.set(e.x,activeTerrainH(e.x,e.z),e.z);
-    e.mesh.lookAt(T.x,activeTerrainH(e.x,e.z),T.z);
+    const _gy=foeY(e);e.mesh.position.set(e.x,_gy,e.z);
+    e.mesh.lookAt(T.x,_gy,T.z);
     // v63 — Live-update combatYaw only when NOT mid-attack. The visual mesh
     // turret tracks the player every frame, but combat facing freezes during
     // windup (telegraphT > 0) and recovery (atkCd > 0) — the player can
@@ -1454,7 +1468,7 @@ function tickZoneEnemies(dt,now,sc){
     if(e.telegraphT <= 0 && e.atkCd <= 0){
       e.combatYaw = Math.atan2(T.x - e.x, T.z - e.z);
     }
-    e.el.position.set(e.x,activeTerrainH(e.x,e.z)+.8,e.z);
+    e.el.position.set(e.x,_gy+.8,e.z);
     e.hpFg.scale.x=e.hp/e.maxHp;
     e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;
     if(e.hp<e.maxHp&&e.hpBg&&!e.hpBg.visible){e.hpBg.visible=true;e.hpFg.visible=true;} // v80 — show once hurt
@@ -1484,7 +1498,7 @@ function tickZoneEnemies(dt,now,sc){
         if(e.isBoss && e.bossId==='faolchu' && typeof sndFaolchuBite==='function'){
           sndFaolchuBite();
         }
-        if(_fr.lunge&&e._string!==2&&foeLunge(e,currentZoneSolid)>0){const _ly=activeTerrainH(e.x,e.z);e.mesh.position.set(e.x,_ly,e.z);e.el.position.set(e.x,_ly+.8,e.z);} /* S1041 — the wolf leaps at the bite */
+        if(_fr.lunge&&e._string!==2&&foeLunge(e,currentZoneSolid)>0){const _ly=foeY(e);e.mesh.position.set(e.x,_ly,e.z);e.el.position.set(e.x,_ly+.8,e.z);} /* S1041 — the wolf leaps at the bite */
         if(strikeReaches(e)){
           executeStrike(e, foeBlow(e), now); // S940 — the blow from the attack table, armour as a share
         } else {
@@ -1830,7 +1844,7 @@ function killZoneEnemy(e,sc,tag=''){
   const firstKill=!seenEnemyTypes.has(e.name);
   if(firstKill){seenEnemyTypes.add(e.name);addLog('⚔','First blood — slew '+foeLogName(e));}
   // Corpse system — unified with dungeon via the same loot panel. Mesh slumps + tints; glow+spark mark the body.
-  const groundH=e._fy!=null&&isInterior()?(x,z)=>footholdY(x,z,e._fy,0):activeTerrainH; /* S1439 — a guard killed upstairs falls on his own floor */
+  const groundH=e._fy!=null&&isInterior()?(x,z)=>footholdY(x,z,e._fy,0):foeGroundFn(e); /* S2361 — on a bridge's deck, the deck; S1439 — a guard killed upstairs falls on his own floor */
   const terrainY = e.swim&&activeZoneId==='world'?SEA_Y-.15:typeof activeTerrainH==='function' ? groundH(e.x,e.z) : 0; /* S1759 — a struck trout floats up to the surface */
   // S419 — a people-bodied foe falls as a ragdoll on the ground (Michael's C on #102); the rest slump as before
   if(typeof parryFlashEnd==='function')parryFlashEnd(e); /* S564 — a foe killed while parried falls in its own colours */
