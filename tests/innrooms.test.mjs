@@ -64,18 +64,18 @@ for (const sel of sels) {
     const nx = o ? Math.round(Math.sin(o.rotation.y)) : 0, nz = o ? Math.round(Math.cos(o.rotation.y)) : 0, cx = b ? (b.x0 + b.x1) / 2 : 0, cz = b ? (b.z0 + b.z1) / 2 : 0, P = [1, 1.5, 2, 2.5].map(t => [cx + nx * t, cz + nz * t]);
     const bar = b ? INT_SOL.some(q => q !== b && q.y1 > .7 && q.y1 < 1.4 && q.y0 < .3 && Math.max(q.x1 - q.x0, q.z1 - q.z0) >= 1.8 && P.some(([x, z]) => x > q.x0 && x < q.x1 && z > q.z0 && z < q.z1)) : null;
     return { id: currentHouse.id, oven: ovenHere(), laid: !!o, island: o && o.userData.kit.island, hit, bar, wall: b ? +Math.min(b.x0, b.z0, (currentHouse._roomW || currentHouse.intW) - b.x1, (currentHouse._roomD || currentHouse.intD) - b.z1).toFixed(2) : null }; }));
-  await leave();
   const n = L.rooms.length; const inn = await page.evaluate((sel) => { const h = sel.key ? ZONES.world.houses.find(x => x.coachInn === sel.key) : WORLD.settle.get(sel.town).houses.find(x => x.id === sel.id); return h.name; }, sel);
   counts.push({ inn, n, doors: L.doors.length, stair: L.head.x < L.W / 2 ? 'west' : 'east' });
-  // six nights: the offer and its name, against the door the player would reach
+  // six nights: the offer and its name, against the door the player would reach. Asked from inside the house (Session 2369): the keeper's
+  // topics and the beds' prompts read the rent as it stands, and leaving to ask, then coming back in, drew the town for about a minute an inn
   for (let day = 1; day <= 6; day++) {
     const r = await ask(sel, day, true); const k = r.rented && r.rented.room;
     const sn = seen(L, k), nmOffer = named(r.offer), nmPaid = named(r.paid);
     const guests = /empty tonight/.test(r.offer) ? 0 : /one other guest|one other tonight/i.test(r.offer) ? 1 : +((/(\d+) (?:guests (?:in|are entered)|others) tonight/.exec(r.offer) || [])[1] || -1);
     rows.push({ inn, day, n, room: k, guests, seen: sn, offer: nmOffer, paid: nmPaid, ok: agrees(nmOffer, sn) && agrees(nmPaid, sn), cost: 500 - r.gold, coach: !!sel.key });
   }
-  // the last night's rent: inside, every bed of the gallery, then a night's sleep in your own
-  const last = rows[rows.length - 1]; await ask(sel, 6, true); await enter(sel);
+  // the last night's rent: every bed of the gallery, then a night's sleep in your own
+  const last = rows[rows.length - 1]; await ask(sel, 6, true);
   const beds = await tryBeds(); refusals.push({ inn, room: last.room, guests: last.guests, n, beds });
   if (refusals.length === 1) {
     const sl = await page.evaluate(async () => { const b = INT_BEDS.find(b => b.room === worldState.rented.room); px = b.x; pz = b.z; jumpY = b.y || 0;

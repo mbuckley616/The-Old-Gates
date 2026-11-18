@@ -285,7 +285,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `huntvariant` | 7/14 | pass | pass | 43 |  |
 | `icecave` | w15/20 | — | pass | 203 |  |
 | `implements` | w12/20 | — | pass | 152 |  |
-| `innrooms` | w3/20 | — | flaky | 1207 | Failed then passed on the retry (a 60 s wait); section I, Session 2336 |
+| `innrooms` | w3/20 | — | pass, 591 s alone (was 1,127 s with the ovens, S2368) | 591 | Failed then passed on the retry (a 60 s wait); section I, Session 2336. Shortened, Session 2369: one entry an inn, the nights asked inside |
 | `innvoice` | 7/14 | pass | pass | 75 |  |
 | `inspdungeons` | w17/20 | — | pass | 5 |  |
 | `inspector` | w19/20 | — | pass | 43 |  |
