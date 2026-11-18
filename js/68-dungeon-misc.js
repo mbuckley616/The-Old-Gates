@@ -538,6 +538,35 @@ function lairHoardSpot(e){const map=(e.floor===2&&dMap2)?dMap2:dMap;const fl=e.f
 // S1885 — a hoard's items live in worldState and come back from a save without their enchant's functions: put them back by id
 function foundRestore(items){if(!Array.isArray(items))return;for(const it of items){if(!it||!it.enchantId||(it.enchant&&typeof it.enchant.apply==='function'))continue;
   const e=ARMOR_ENCHANTS.find(x=>x.id===it.enchantId);if(e){it.enchant=e;it.enchantStats=e.apply(it);}}}
+// S2370 — what a gate keeps (what-a-gate-keeps-build.md, Michael's C on #1092; the sheet's first session): a lesser gate's ring chamber is
+// its keep, and on the middle of its dais stands a sealed coffer, the boss chest of Skyrim at the end of the walk. It opens at a touch once
+// this gate's carving is read (worldState.sigilsRead[seed], the character's: whoever touched it, warrior or mage); before, the script round
+// its lid is closed to you. It holds 2 pieces (GATE_KEEP, 14-items.js) of arms, armour or implements, never gold, potions or picks, rolled
+// on the gate's own stream (<seed>:<floor>:coffer, no day: it never refills) at the floor's tier plus one, at most 4; the gate's orb, one
+// gate in three, lies in it on top. A great gate keeps its vault (the sheet's later sessions) and its orb stays in the deepest chest until
+// then; a gate with no carving of its own (a legacy dungeon's) has no coffer. Opened, its list is the world's: worldState.gateKeeps[seed]
+// .coffer holds what is left in it, so what you take stays taken, as a lair's hoard does. A plain stone chest stands in for the look's coffer.
+function gateKeepOf(seed){const K=worldState.gateKeeps||(worldState.gateKeeps={});return K[seed]||(K[seed]={});}
+function gateCofferDue(portal){if(!portal||portal.seed==null||portal.tutorial||portal.lair)return false;
+  if(!(portal.zone==='world'||portal.zone==='gen'))return false;if(typeof SIGIL_PLACEMENTS!=='undefined'&&SIGIL_PLACEMENTS[portal.seed])return false;
+  try{if(typeof greatSchoolOf==='function'&&greatSchoolOf(portal))return false;return typeof gateCarving==='function'&&!!gateCarving(portal.seed);}catch(e){return false;}}
+function gateCofferItems(portal,floor){const tier=Math.min(GATE_KEEP.tierMax,dungeonTier(portal,floor)+GATE_KEEP.tierUp),key=`${portal.seed}:${floor}:coffer`,was=LOOT_SCHOOL;
+  LOOT_SCHOOL=gateOrbSchool(portal);let items;
+  try{items=withLootRng(seededRng('loot',key),()=>withLootTier(tier,()=>{const out=[];for(let i=0;i<GATE_KEEP.cofferN;i++){const it=rollLoot(portal.diffScale,portal.theme,'coffer');if(it)out.push(it);}return out;}));}
+  finally{LOOT_SCHOOL=was;}
+  const orb=gateOrbFor(portal,floor);if(orb)items.unshift(orb);return items;}
+function gateKeepLay(portal,gen){if(!gen||!gen.gate||gen.ring==null||!gateCofferDue(portal))return null;
+  const sp=gen.spaces[gen.ring],d=sp&&sp.dais;if(!d)return null;const fl=sp.floor||1,x=dAt((d.x0+d.x1)/2),z=dAt((d.z0+d.z1)/2),y=(fl===2?FLOOR2_Y:0)+.4;
+  const K=gateKeepOf(portal.seed),was=Array.isArray(K.coffer),items=was?K.coffer:gateCofferItems(portal,fl);if(was)foundRestore(items);
+  const group=new THREE.Group();const {lid}=buildChestShell(group,.85,0x77726a);group.scale.setScalar(DCELL);group.position.set(x,y,z);group.name='gateCoffer';
+  {const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl);if(t){const dx=dAt(t.c)-x,dz=dAt(t.r)-z;group.rotation.y=Math.abs(dx)>Math.abs(dz)?(dx>0?Math.PI/2:-Math.PI/2):(dz>0?0:Math.PI);}} /* its front to the way in */
+  dScene.add(group);
+  const ch={id:`${portal.seed}:${fl}:coffer`,x,z,y:.4,opened:was,lid,treasure:true,coffer:portal.seed,floor:fl,mesh:group,items,displayName:'The Coffer'};
+  if(was&&lid)lid.rotation.x=-Math.PI/3;CHESTS.push(ch);return ch;}
+function gateCofferShut(ch){const S=worldState.sigilsRead;return !(S&&ch&&S[ch.coffer]!=null);}
+// the named action (co-op rules): the coffer opened, its list the world's from now on
+function openCoffer(ch){if(!ch||ch.coffer==null)return false;if(gateCofferShut(ch)){showMsg('The script round its lid is closed to you.','#c8b880');return false;}
+  const K=gateKeepOf(ch.coffer);if(!Array.isArray(K.coffer))K.coffer=ch.items;else ch.items=K.coffer;openLoot(ch);return true;}
 function slayMaster(portal){if(!portal||!portal.lair)return;const M=worldState.masters||(worldState.masters={}),r=M[portal.seed];const was=r===true||!!(r&&r.dead);if(r&&typeof r==='object')r.dead=true;else M[portal.seed]=true;
   if(!was&&typeof cloakMasterSlain==='function')cloakMasterSlain(portal); /* S781 — the Wolf-Mother's Cloak off its master's corpse */
   if(!was&&typeof grantHead==='function')grantHead('skull');} /* S1734 — the first lair beast you kill gives the beast's skull, a figurehead (once) */

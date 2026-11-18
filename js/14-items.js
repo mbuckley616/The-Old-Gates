@@ -206,6 +206,9 @@ const IMPLEMENT_TYPES={
 const IMPLEMENT={heldReach:5.5,laidReach:16,laidDur:1.25,sentReach:45,castTell:.28,cut:.10,foundCut:.20,cutMax:.35,
   tomeWild:.10,tomeWildSteady:.05,tomeMixed:.03,tomeTell:2,orbKeep:60,
   guildPrice:{staff:60,wand:80,tome:120},orbPrice:120,tomeRank:1,orbGate:1/3,foundMaster:1/4,foundChest:1/20,foundChestTier:4,orbEnchants:['mp_regen','magic_boost','fortify_int']}; /* S1850 — the tome: Impression ×0.8 (TIER_MAG_TOME), wild a third as often, every wind-up doubled */
+// S2370 — what a gate keeps (what-a-gate-keeps-build.md, Michael's C on #1092): a lesser gate's coffer holds 2 pieces, its floor's tier
+// plus one and at most 4; a weapon roll in five is a found implement of the gate's school. 68-dungeon-misc.js lays it.
+const GATE_KEEP={cofferN:2,tierUp:1,tierMax:4,implement:1/5};
 // S1850 — the tome (the sheet's second session, its other half the orb's kept cast): an off-hand book, no shield, no block, weight 1.
 const TOME_TYPE={type:'Tome',slot:'offhand',weight:1};
 // S1854 — the orb (the sheet's second session, its first half the tome): an off-hand glass, no shield, no block, weight 1; it keeps one cast.
@@ -466,6 +469,7 @@ function withLootRng(rng,fn){const was=LOOT_RNG;LOOT_RNG=rng;try{return fn();}fi
 // a site's or a wreck's chest the region where it stands. LOOT_TIER is set for one roll by withLootTier; a roll with none set
 // reads the tier where you are (indoors, the town the room belongs to).
 let LOOT_TIER=null;
+let LOOT_SCHOOL=null; /* S2370 — the school a coffer's found implement takes, set for its roll (gateCofferItems) */
 function withLootTier(t,fn){if(t==null)return fn();const was=LOOT_TIER;LOOT_TIER=t;try{return fn();}finally{LOOT_TIER=was;}}
 function lootTierHere(){
   try{
@@ -629,7 +633,7 @@ function guildImplements(make,rank){const out=[];if(typeof SCHOOL_DEF==='undefin
     for(const it of ps){if(!it)continue;it.make=make||'gatelands';it.buyPrice=IMPLEMENT.guildPrice[it.implement==='maul'?'wand':it.implement];it.name+=` of ${SCHOOL_DEF[s].name}`;out.push(it);}}
   return out;}
 // One gate in three (by its seed) keeps an orb of its school: a great gate's school, else the school its carvings are drawn from. It lies
-// in the deepest floor's treasure chest (the vault and the keep are not built yet), found: 20% off its school's words and one enchant
+// in the deepest floor's treasure chest, or since S2370 in a keep's coffer (gateCofferItems), found: 20% off its school's words and one enchant
 // (Clarity, the Mage or Intellect), its material and enchant rolled on the gate's own stream. Taken once (`takeGateOrb`), it is gone for good.
 function gateOrbDue(portal){if(!portal||portal.seed==null||portal.tutorial)return false;
   const W=typeof worldState!=='undefined'&&worldState&&worldState.gateOrbs;if(W&&W[portal.seed])return false;
@@ -640,10 +644,13 @@ function gateOrbItem(portal,school,tier,make){return withLootRng(seededRng('gate
   const it=makeOrb(lootMatTier(portal.diffScale),school,{found:true}),ids=IMPLEMENT.orbEnchants,id=ids[Math.floor(lootRand()*ids.length)],e=ARMOR_ENCHANTS.find(x=>x.id===id); /* S1885 — one draw, not one a row: the orb sometimes had none */
   if(e){it.name+=` ${e.name}`;it.enchant=e;it.enchantId=e.id;it.enchantStats=e.apply(it);}
   if(make)it.make=make;it.gateOrb=String(portal.seed);return it;}));}
-function gateOrbPlace(portal,chests){if(!gateOrbDue(portal)||!chests||!chests.length)return null;const school=gateOrbSchool(portal);if(!school)return null;
+function gateOrbPlace(portal,chests){if(!gateOrbDue(portal)||!chests||!chests.length)return null;if(typeof gateCofferDue==='function'&&gateCofferDue(portal))return null; /* S2370 — a keep's coffer holds it now (gateCofferItems) */
   const deep=Math.max(...chests.map(c=>c.floor||1)),on=chests.filter(c=>(c.floor||1)===deep),tr=on.filter(c=>c.treasure),pool=tr.length?tr:on,ch=pool[pool.length-1];
+  const it=gateOrbFor(portal,deep);if(!it)return null;ch.items.unshift(it);return ch;}
+// the gate's orb, as rolled for a floor's tier: null when the gate keeps none, or its orb is taken
+function gateOrbFor(portal,floor){if(!gateOrbDue(portal))return null;const school=gateOrbSchool(portal);if(!school)return null;
   let make=null;try{if(portal.x!=null&&typeof nationKeyOf==='function')make=nationKeyOf(...cellOf(portal.x,portal.z));}catch(e){}
-  ch.items.unshift(gateOrbItem(portal,school,typeof dungeonTier==='function'?dungeonTier(portal,deep):null,make));return ch;}
+  return gateOrbItem(portal,school,typeof dungeonTier==='function'?dungeonTier(portal,floor):null,make);}
 // S1885 — a found staff, wand or tome (Michael's A on #1169): a lair master's hoard holds one in four (`foundMaster`, on the lair's seed)
 // and a chest's weapon roll of tier 4 or finer is one in twenty (`foundChest`). Of the place's school where it has one (a gate's), else any;
 // its kind, school and one of the orb's enchants drawn from the stream the caller sets (lootRand), found: 20% off its school's words.
@@ -900,7 +907,7 @@ function rollLoot(diffScale, theme, kind){
   // Chance of getting an equip vs consumable/gold — scales up with difficulty
   const equipChance=0.28+(diffScale?diffScale.hp*0.08:0);
   const roll=lootRand();
-  if(roll>equipChance){
+  if(roll>equipChance&&kind!=='coffer'){ /* S2370 — a gate's coffer keeps arms, armour and implements only (what-a-gate-keeps-build.md) */
     // Consumable path — use kind-aware pool (defaults to corpse table if kind is missing)
     return rollConsumable(kind||'corpse');
   }
@@ -913,6 +920,7 @@ function rollLoot(diffScale, theme, kind){
   const typeObj=isWeapon?WEAPON_TYPES[Math.floor(lootRand()*WEAPON_TYPES.length)]
                         :ARMOR_TYPES[Math.floor(lootRand()*ARMOR_TYPES.length)];
   if(isWeapon&&t>=IMPLEMENT.foundChestTier&&(kind==='chest'||kind==='treasure')&&lootRand()<IMPLEMENT.foundChest)return foundImplement(t,foundPlaceSchool()); /* S1885 — #1169 A: one in twenty, in place of the weapon */
+  if(isWeapon&&kind==='coffer'&&lootRand()<GATE_KEEP.implement)return foundImplement(t,LOOT_SCHOOL||foundPlaceSchool()); /* S2370 — a coffer's weapon roll is one in five a found implement of the gate's school */
   if(!isWeapon&&t>=4&&lootRand()<1/12){const ks=Object.keys(CLOAK_KINDS);return makeCloak(ks[Math.floor(lootRand()*ks.length)],t,CLOAK_ENCHANTS[Math.floor(lootRand()*CLOAK_ENCHANTS.length)]);} /* S552 — a magical cloak */
   let armorObj=typeObj;
   if(!isWeapon&&ARMOR_LINES.light.names[typeObj.slot]){const lr=lootRand();if(lr>=.5){const ln=(lr<.75||typeObj.slot==='feet')?'light':'robe';armorObj=lineType(ln,typeObj.slot);}} /* S564 — a body piece: heavy half the time, light a quarter, robes a quarter (no robe boots: light) */
