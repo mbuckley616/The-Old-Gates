@@ -86,6 +86,31 @@ check(`buttsStart with no mark takes the lane's: on its mark (${ct.mark} m), dow
 check(`with the standing butt lifted nothing solid stands 29–33 m down the lane (${ct.solidUp} points; ${ct.solidBack} once it is back, ${ct.solids} solid)`, ct.solidUp === 0 && ct.solidBack > 0 && ct.solids === 1, ct);
 check(`nine arrows to the middle score ${ct.score} at ${ct.ends && ct.ends.join(', ')} m down the lane, and the standing butt is back after`, ct.done && ct.score === 45 && ct.back && JSON.stringify(ct.ends) === '[30,50,70]', ct);
 
+// 3b. real flights (Session 2392): from the mark, a hunting bow's full draw aimed by elevation alone, each arrow flown by tickArrowMotion
+// from the bow (no wind). An arrow lived 2.2 s, and the shortest flight to 70 m is 2.55 s, so the third end could not be hit.
+const fl = await page.evaluate(() => { const site = siteAnywhere('dunmore'), S = WORLD.settle.get('dunmore'), B = S.butts, st = TS(site), keep = { p: st.p, flags: st.flags };
+  const rf = FESTIVALS.find(f => f.key === 'riverfair'), n = ((rf.month - CAL.startMonth + 12) % 12) * 28 + rf.dom - 1; worldState.gameTimeAbsMinutes = n * 1440 + 660; worldState.gameTimeMinutes = 660;
+  st.p = 70; st.flags = {}; worldState.festivals = {}; const w0 = EQ.weapon, a0 = EQ.ammo, wind = window.arrowWindAcc, tp = thirdPerson; px = B.x; pz = B.z; thirdPerson = false;
+  EQ.weapon = { name: 'Test Bow', ico: '🏹', type: 'equip', slot: 'weapon', atk: [5, 7], weaponShape: 'bow', wType: 'pierce', twoHand: true, weight: 3 };
+  EQ.ammo = { name: 'Iron Arrow', ico: '➶', type: 'ammo', qty: 30, arrowDmg: [2, 12] }; const out = { shots: [] };
+  const fly = (x, y, z, vx, vy, vz, Q) => { const dt = 1 / 60; let t = 0; for (let f = 0; f < 600; f++) { t += dt; vy -= ARROW_GRAVITY * dt;
+      for (let k = 0; k < 3; k++) { const d0 = (x - Q.cx) * Q.dx + (z - Q.cz) * Q.dz; x += vx * dt / 3; y += vy * dt / 3; z += vz * dt / 3;
+        if (d0 < 0 && (x - Q.cx) * Q.dx + (z - Q.cz) * Q.dz >= 0) return { y, t }; } } return { y: -1e9, t }; };
+  try { window.arrowWindAcc = null; buttsStart({ site }); if (!BUTTS) return out;
+    for (let k = 0; k < 9 && BUTTS; k++) { const Q = BUTTS, end = Q.end;
+      const sp = () => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw); return { x: px + fx * .5 + rx * .15, z: pz + fz * .5 + rz * .15, y: activeTerrainH(px, pz) + (_eyeHeightCur || .92) }; };
+      yaw = Math.atan2(-Q.dx, -Q.dz); for (let i = 0; i < 3; i++) { const o = sp(); yaw = Math.atan2(-(Q.cx - o.x), -(Q.cz - o.z)); }
+      const o = sp(); let lo = -.2, hi = .5, T = 0; for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2, v = ARROW_SPEED;
+        const r = fly(o.x, o.y, o.z, -Math.sin(yaw) * Math.cos(m) * v, Math.sin(m) * v, -Math.cos(yaw) * Math.cos(m) * v, Q); T = r.t; if (r.y < Q.cy) lo = m; else hi = m; }
+      pitch = (lo + hi) / 2; fireArrow(1); const a = ZB[ZB.length - 1], ud = a.userData; let f = 0;
+      for (; f < 600 && ud.butt && ud.butt.score == null; f++) { tickArrowMotion(a, 1 / 60, true); tickButts(); }
+      out.shots.push([end, ud.butt.score, +(f / 60).toFixed(2), +(pitch * 180 / Math.PI).toFixed(1)]); }
+    out.done = !BUTTS; out.score = (worldState.festivals['riverfair:' + site.id] || {}).score;
+  } finally { window.arrowWindAcc = wind; thirdPerson = tp; if (BUTTS) buttsEnd('left'); EQ.weapon = w0; EQ.ammo = a0; Object.assign(st, keep); worldState.festivals = {}; pitch = 0; }
+  return out; });
+console.log(JSON.stringify(fl));
+check(`nine real flights from the mark, aimed by elevation: each scores (${fl.shots.map(q => q[1]).join(', ')}; ${fl.score} of 45), the 70 m end's in ${fl.shots.slice(6).map(q => q[2]).join(', ')} s`, fl.done && fl.shots.length === 9 && fl.shots.every(q => q[1] > 0), fl);
+
 // 4. a picture from just behind the mark, down the lane at eleven
 const pic = path.join(here, '../docs/prototypes/kit-butts-lane.png');
 await page.evaluate(() => { const B = WORLD.settle.get('dunmore').butts; forceTime(11); VM_SCENE.visible = false; thirdPerson = false; px = B.x - B.dx * 1.5 + B.dz * .6; pz = B.z - B.dz * 1.5 - B.dx * .6; yaw = B.ry; pitch = -.06; });
