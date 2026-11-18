@@ -1194,10 +1194,17 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
   // of the head over the shoulder blades further out than that, so 4% of Caoimhe's came out through her cape's back by up to 2.6 cm. Each
   // column now stands 1 cm over the hair's own outline (its furthest strand at each angle and height round the neck's axis) below 3 cm
   // under the neck, rising to it and falling from it gently down the column (0.4 cm out for each centimetre down), as over a hand
+  // and over a tabard (Session 2382, S2364's owed note): the cape was cleared of the body and a tabard's allowance (clearAt, 6 cm over mail),
+  // but the tabard's back panel hangs flat across the shoulder blades, over the hollow of the spine, so a guild head's cape (worn back,
+  // capeOpen 1) followed the body into that hollow and the panel's red came through it in a strip down the middle of the back. Its columns
+  // stand 1 cm over the tabard's own outline the same way as over loose hair (the call passes the tabard with the hair, or alone), and from
+  // the cape's first row down, where the hair's starts 3 cm under the neck: the tabard's straps came through at the neckline too
   let overHair = 0; if (cape && hairMeshes) { const HP = []; for (const m of hairMeshes) if (m.name === 'hair') { const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
-    if (HP.length) { const nH = HP.length / 3, BH = new Uint8Array(nH).fill(1); BH.off = new Float32Array(nH); const hairR = radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH);
+    for (const m of hairMeshes) if (m.name === 'tabard') { HP.tab = HP.length / 3; const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
+    if (HP.length) { const nH = HP.length / 3, BH = new Uint8Array(nH).fill(1); BH.off = new Float32Array(nH); for (let i = 0; i < nH; i++) if (HP.tab != null && i >= HP.tab) BH[i] = 2;
+      const hairR = radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 1), tabR = HP.tab != null ? radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 2) : null;
       const pols = cols.map(c => c.map(q => ({ th: Math.atan2(q.x - neck.x, -(q.z - neck.z)), r: Math.hypot(q.x - neck.x, q.z - neck.z) })));
-      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r > 0 && c[r].y < neckY - .03 ? Math.max(p.r, hairR(p.th, c[r].y) + .01) : p.r), b = a.slice();
+      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r < 1 ? p.r : Math.max(p.r, c[r].y < neckY - .03 ? hairR(p.th, c[r].y) + .01 : 0, tabR ? tabR(p.th, c[r].y) + .01 : 0)), b = a.slice();
         for (let r = 1; r < R; r++) for (let d = -8; d <= 8; d++) { const j = r + d; if (j < 1 || j >= R) continue; const v = a[j] - .4 * .0105 * Math.abs(d); if (v > b[r]) b[r] = v; }
         return b.map((v, r) => Math.max(0, v - pol[r].r)); });
       // and across the columns: the hair's outline is read strand by strand, so neighbouring columns wanted different lifts and the cape's top
@@ -5015,7 +5022,7 @@ function* makePersonSteps(G, o = {}) {
     const curl = s => { for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.R`]; if (b) b.quaternion.setFromAxisAngle(hinge, s * [1.15, 1.35, .95][j - 1]); } };
     basketGrip = fistGrip(body, byName, root, curl, hinge); }
   yield;
-  let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
+  let tabardStats = null, tabardMesh = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; tabardMesh = T.mesh; }
   // the sash (Session 989): the arm at its hip is lifted out from the side, three hundredths of a radian at a time, until no point of it is through the band.
   // Its knot's hanging ends (Session 996) fall over the front of the thigh, where the relaxed hand lies: then the arm is swung back
   // from the shoulder, as far again at most, until the hand hangs at the thigh's side behind them
@@ -5057,7 +5064,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let coatHoodSt = null; if (coat && D.coatHood === 'down') { root.updateMatrixWorld(true); const C = buildCoatHoodDown(G, body, byName, meshes); for (const m of C.meshes) root.add(m); coatHoodSt = C.stats; }
   yield;
-  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND, D.cape && hairStats && hairStats.style === 'loose' ? meshes : null); for (const m of C.meshes) root.add(m); cloakStats = C.stats;
+  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND, D.cape && (hairStats && hairStats.style === 'loose' || tabardMesh) ? [...(hairStats && hairStats.style === 'loose' ? meshes : []), ...(tabardMesh ? [tabardMesh] : [])] : null); for (const m of C.meshes) root.add(m); cloakStats = C.stats;
     if (!D.cape && hairStats && /^(braid|braids|tail|shaved)$/.test(hairStats.style)) cloakStats.hairOver = hairOverCloak(meshes, C.meshes); }
   // the satchel (Session 2113), over everything worn, before the shield
   yield;

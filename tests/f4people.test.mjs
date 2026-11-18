@@ -426,7 +426,9 @@ console.log('  guards:', JSON.stringify(guards));
 const guilds = await page.evaluate(() => { const one = (def) => { const root = buildNPCMesh(Object.assign({ _siteId: 'gtest' }, def), { key: 'gtest' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r);
     const D = r.hbG.dress, P = HB.makePerson(r.hbG, { hoodStats: false }), has = n => !!P.root.getObjectByName(n), T = P.tabard || {};
     return { head: r.g.guildHead || null, gear: r.g.gear || null, people: r.hbG.people, mail: !!D.mail, tabard: has('tabard'), sign: T.sign || 0, out: T.out ?? -1, tested: T.tested || 0, sword: has('swordBlade'), swordMake: D.swordMake, staff: has('staffWood'), staffMake: D.staffMake, robe: !!D.robe, blue: !!(D.robe && D.robe[2] > .3 && D.robe[0] < .2), star: P.guildStar || null, basket: !!D.basket,
-      cape: !!D.cloak, capeOpen: D.capeOpen ?? null, brooches: (() => { let n = 0; P.root.traverse(o => { if (o.name === 'brooch') n++; }); return n; })(), capeThrough: P.cloak && P.cloak.through ? P.cloak.through.out : 0, boots: !!D.boots && !D.sandals, carry: P.sword ? { tipH: P.sword.tipH, pommelH: P.sword.pommelH, lean: P.sword.lean, inside: P.sword.inside } : null }; };
+      cape: !!D.cloak, capeOpen: D.capeOpen ?? null, brooches: (() => { let n = 0; P.root.traverse(o => { if (o.name === 'brooch') n++; }); return n; })(), capeThrough: P.cloak && P.cloak.through ? P.cloak.through.out : 0, capeTab: (() => { const cp = P.root.getObjectByName('cloak'), tb = P.root.getObjectByName('tabard'); if (!cp || !tb || !D.cape) return null; P.root.updateMatrixWorld(true);
+        const nk = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(nk); const rc = new THREE.Raycaster(), v = new THREE.Vector3(), dz = new THREE.Vector3(0, 0, 1), pa = tb.geometry.attributes.position; rc.far = .06; let n = 0;
+        for (let i = 0; i < pa.count; i++) { v.fromBufferAttribute(pa, i).applyMatrix4(tb.matrixWorld); if (v.z > nk.z) continue; rc.set(v, dz); const h = rc.intersectObject(cp, false); if (h.length && h[0].distance > .001) n++; } return n; })(), boots: !!D.boots && !D.sandals, carry: P.sword ? { tipH: P.sword.tipH, pommelH: P.sword.pommelH, lean: P.sword.lean, inside: P.sword.inside } : null }; };
   const ppl = ['gatelander', 'markman', 'aurennais', 'oldblood'], out = {};
   ppl.forEach((pp, i) => { out['f_' + pp] = one({ role: 'Guildmaster', name: 'Gm' + i, people: pp }); out['m_' + pp] = one({ role: 'Archmage', name: 'Am' + i, people: pp }); });
   out.member = one({ role: 'Adept of the Mages', name: 'Mem', people: 'markman' }); return out; });
@@ -468,7 +470,10 @@ console.log('  guild heads:', JSON.stringify(guilds));
   const caped = F.concat(M).filter(h => h.cape);
   // (an Archmage's cape over the staff already opens on the staff's side, S1798: worn back, it is pinned at the left shoulder alone)
   check(`a guild head's cape is worn back (capeOpen 1; a Guildmaster's pinned at each shoulder, an Archmage's at the left; no arm through it), ${caped.length} of 8 caped; every Guildmaster in boots, not sandals`,
-    caped.length >= 2 && caped.every(h => h.capeOpen === 1 && h.brooches === (h.head === 'f' ? 2 : 1) && h.capeThrough === 0) && F.every(f => f.boots), caped.map(h => [h.people, h.head, h.capeOpen, h.brooches, h.capeThrough])); }
+    caped.length >= 2 && caped.every(h => h.capeOpen === 1 && h.brooches === (h.head === 'f' ? 2 : 1) && h.capeThrough === 0) && F.every(f => f.boots), caped.map(h => [h.people, h.head, h.capeOpen, h.brooches, h.capeThrough]));
+  // S2382 (S2364's owed note): the tabard's back panel no longer comes through a head's cape down the middle of the back; no point of it
+  // stands outside the cape (with the cape within 6 cm behind it, toward the body). The Gatelander had 8, a strip of red over the spine
+  check('no point of a Guildmaster\'s tabard stands outside their cape at the back (the Gatelander\'s showed a strip down the spine)', F.filter(f => f.cape).length >= 1 && F.filter(f => f.cape).every(f => f.capeTab === 0), F.map(f => [f.people, f.capeTab])); }
 // S2349 (S2329's owed note): the far copy's skirt is the genome's. A long skirt or a robe is the driver's dress to the shin, in the skirt's
 // own colour (counted on the hips' bone, as the legs ride the thighs); anything else is the tunic's skirt over the legs. The driver rolled
 // its own, and 46 of 208 changed shape at the builder's ring
