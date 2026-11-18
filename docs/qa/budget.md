@@ -1320,3 +1320,19 @@ calls), and Middle and Low are unchanged there. Not bisected. A second `budgetpo
 | the field west of Dunmore, dawn | Low | 536 | 526k | 0 | 0 | 61 | 201 | 232 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 475, 451k |
 | the field west of Dunmore, dawn | Middle | 706 | 996k | 146 | 6 | 61 | 201 | 250 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 642, 912k |
 | the field west of Dunmore, dawn | High | 760 | 1.53 M | 191 | 6 | 61 | 201 | 259 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 690, 1.43 M |
+
+### s1692 — 2026-11-18 01:44 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 365 | 689k | 0 | 0 | 33 | 65 | 192 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 332, 620k |
+| Portclare square, noon | Middle | 560 | 1.46 M | 157 | 6 | 49 | 65 | 208 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 503, 1.31 M |
+| Portclare square, noon | High | 606 | 1.82 M | 192 | 6 | 49 | 65 | 219 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 545, 1.63 M |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 26k | 0 | 0 | 1 | 0 | 0 | 33 |  | 33, 20k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  | 68, 352k |
+
+Session 2360 (QA): s1692, 24 merges after s1668. `budget` had grown past `run.mjs`'s 900 s cap alone, so its field went to a new file,
+`budgetfield`: the first table above is `budget` (the street, 7/7) and the second `budgetfield` (7/7), then `budgetport` (10/10, 515 s).
+Every ceiling held, and no spot rose more than 10%. The street is within 3% of s1668 (its houses +16 calls at every level). Portclare's
+square, the inn and the gate read the same as s1668 to 1 call and 2k triangles. The field reads lower (noon Low 561 → 451 calls) because
+its own boot has not loaded the street's chunks or built its bodies first (land 278 → 232, bodies 126 → 56): a new baseline, not a fall.
