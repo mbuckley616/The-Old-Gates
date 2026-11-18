@@ -423,7 +423,8 @@ console.log('  guards:', JSON.stringify(guards));
 // wood (the driver holds it); a guild member is not dressed so, and nothing of the body comes through the tabard
 const guilds = await page.evaluate(() => { const one = (def) => { const root = buildNPCMesh(Object.assign({ _siteId: 'gtest' }, def), { key: 'gtest' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r);
     const D = r.hbG.dress, P = HB.makePerson(r.hbG, { hoodStats: false }), has = n => !!P.root.getObjectByName(n), T = P.tabard || {};
-    return { head: r.g.guildHead || null, gear: r.g.gear || null, people: r.hbG.people, mail: !!D.mail, tabard: has('tabard'), sign: T.sign || 0, out: T.out ?? -1, tested: T.tested || 0, sword: has('swordBlade'), swordMake: D.swordMake, staff: has('staffWood'), staffMake: D.staffMake, robe: !!D.robe, blue: !!(D.robe && D.robe[2] > .3 && D.robe[0] < .2), star: P.guildStar || null, basket: !!D.basket }; };
+    return { head: r.g.guildHead || null, gear: r.g.gear || null, people: r.hbG.people, mail: !!D.mail, tabard: has('tabard'), sign: T.sign || 0, out: T.out ?? -1, tested: T.tested || 0, sword: has('swordBlade'), swordMake: D.swordMake, staff: has('staffWood'), staffMake: D.staffMake, robe: !!D.robe, blue: !!(D.robe && D.robe[2] > .3 && D.robe[0] < .2), star: P.guildStar || null, basket: !!D.basket,
+      cape: !!D.cloak, capeOpen: D.capeOpen ?? null, brooches: (() => { let n = 0; P.root.traverse(o => { if (o.name === 'brooch') n++; }); return n; })(), capeThrough: P.cloak && P.cloak.through ? P.cloak.through.out : 0, boots: !!D.boots && !D.sandals }; };
   const ppl = ['gatelander', 'markman', 'aurennais', 'oldblood'], out = {};
   ppl.forEach((pp, i) => { out['f_' + pp] = one({ role: 'Guildmaster', name: 'Gm' + i, people: pp }); out['m_' + pp] = one({ role: 'Archmage', name: 'Am' + i, people: pp }); });
   out.member = one({ role: 'Adept of the Mages', name: 'Mem', people: 'markman' }); return out; });
@@ -432,7 +433,12 @@ console.log('  guild heads:', JSON.stringify(guilds));
   check('the guild heads in the livery over their people (#1658 B): each Guildmaster mail under the tabard with the crossed swords, nothing through it, a sword of their make (arming, norse, nimcha, falchion); each Archmage the blue robe with the star clear of what is worn and a staff of their wood, the driver holding it; a member not so',
     F.every(f => f.head === 'f' && f.mail && f.tabard && f.sign > 50 && f.out === 0 && f.tested > 500 && f.sword && !f.staff && !f.basket) && F.map(f => f.swordMake).join() === 'arming,norse,nimcha,falchion'
     && M.every(m => m.head === 'm' && m.gear === 'stick' && m.robe && m.blue && m.staff && !m.tabard && m.star && m.star.through === 0 && m.star.out > .003 && m.star.out < .006) && M.map(m => m.staffMake).join() === 'hazel,ash,olive,carved'
-    && G.member.head === null && !G.member.star, G); }
+    && G.member.head === null && !G.member.star, G);
+  // S2364 (the critic's 17 Nov note): a head's cape is worn back off the breast, pinned at each shoulder, nothing through it; a Guildmaster in boots
+  const caped = F.concat(M).filter(h => h.cape);
+  // (an Archmage's cape over the staff already opens on the staff's side, S1798: worn back, it is pinned at the left shoulder alone)
+  check(`a guild head's cape is worn back (capeOpen 1; a Guildmaster's pinned at each shoulder, an Archmage's at the left; no arm through it), ${caped.length} of 8 caped; every Guildmaster in boots, not sandals`,
+    caped.length >= 2 && caped.every(h => h.capeOpen === 1 && h.brooches === (h.head === 'f' ? 2 : 1) && h.capeThrough === 0) && F.every(f => f.boots), caped.map(h => [h.people, h.head, h.capeOpen, h.brooches, h.capeThrough])); }
 // S2349 (S2329's owed note): the far copy's skirt is the genome's. A long skirt or a robe is the driver's dress to the shin, in the skirt's
 // own colour (counted on the hips' bone, as the legs ride the thighs); anything else is the tunic's skirt over the legs. The driver rolled
 // its own, and 46 of 208 changed shape at the builder's ring
