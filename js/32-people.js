@@ -1394,7 +1394,7 @@ function rideTick(rig){const R=rig.ride,H=R.beast;rig.root.updateWorldMatrix(tru
    anything under the top of what the horse has there (the saddle, the hide) laid on it, .clear over it. The skinIndex and skinWeight are
    the pack's, shared by every body (CLAUDE.md), so they are replaced, not written; the position and normal are the garment's own. Then
    the middle level is baked again from the seated skirt. Once per rider. */
-const HB_RIDE_SKIRT={re:/^(skirt|coatSkirt|mailSkirt)$/,back:100*Math.PI/180,side:150*Math.PI/180,legClear:.025,clear:.008,cell:.015,d0:-.03,d1:.02,rounds:8,smooth:3,lam:.5,pin:.03,capA:2.6,capB:2.7,cap:0,capPass:6,alt:10,vent:{w:.03,top:-.05,ang:.5,a0:.35,a1:1.2}};
+const HB_RIDE_SKIRT={re:/^(skirt|coatSkirt|mailSkirt)$/,back:100*Math.PI/180,side:150*Math.PI/180,legClear:.025,clear:.008,cell:.015,d0:-.03,d1:.02,rounds:8,smooth:3,lam:.5,pin:.03,capA:2.6,capB:2.7,cap:0,capPass:6,alt:10,vent:{w:.04,top:-.05,ang:.8,a0:.35,a1:1.2}};
 /* S2374 — the vent (the critic, 17 Nov: from behind, the skirt over the croup read as a saddle-cloth). A riding tunic is slit behind as well
    as before (S2300's parting over the horn), so its back does not lie across the horse's croup as one sheet: the triangles of the skirt's
    back middle (within vent.w of the middle, from the hem to vent.top under the hip joints) are left out, and each half's hanging place is
