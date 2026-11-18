@@ -2346,7 +2346,11 @@ function hbDriverLook(g,G){const D=G.dress||{},H=G.hair||{};g.dress=hbLongSkirt(
   hbDriverHead(g,D);
   g.apron=D.apron?(Array.isArray(D.apron)?(Math.round(D.apron[0]*255)<<16)|(Math.round(D.apron[1]*255)<<8)|Math.round(D.apron[2]*255):g.apron||0x5a4a38):null;
   g.cloak=!!D.cloak&&!D.cape;
-  g.extras=(g.extras||[]).filter(x=>x==='satchel'||x==='bag'?!!D.satchel:x==='book'?!!D.book:true);}
+  g.extras=(g.extras||[]).filter(x=>x==='satchel'||x==='bag'?!!D.satchel:x==='book'?!!D.book:true);
+  /* S2387 (critic 18 Nov, note 3) — a town guard's stand-in no longer wears the old armour kit by the town's fortune (S395): its steel
+     chest, arms and legs covered the cloth, so Dunmore's guard was a pale doll in steel until his body came, though hbTint gave the cloth
+     the tabard's crimson (S2353). The builder dresses a guard by their people, not by tier: the driver is that dress's colours and the helm */
+  if(g.guardTier&&g.eq&&g.eq.armour){const e=Object.assign({},g.eq);delete e.armour;g.eq=e;}}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
 // S1763 (L1, OG-109's winter column) — the winter dress: in winter (calDay's season) a share of each people, out of doors, wear the
 // kit's winter coat (S1147) over what they rolled: a Gatelander one in two (fur-trimmed on half), a Markman nearly all (fur-lined,
