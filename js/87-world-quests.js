@@ -3573,7 +3573,9 @@ const giver=`${lord.title} ${lord.name}`;
   // The mark, the butt's look and the marshal's words are the look builder's and the quest writer's: buttsStart({site,x,z,dx,dz})
   // is what they call, and the straw boss here is a placeholder. Named actions: buttsStart, buttsEnd. Rolls: seededRng('butts', …).
   const BUTT_ENDS=[30,50,70],BUTT_RINGS=[[.2,5],[.4,3],[.6,1]],BUTT_R=.6,BUTT_Y=1.2,BUTT_OPEN=10,BUTT_CLOSE=14,BUTT_MARK_R=1.5,BUTT_LEAVE=20,
-    BUTT_SPREAD=[.003,.012],BUTT_PURSE=40,BUTT_PURSE_TIER=20,BUTT_SKILL={village:[20,45],town:[30,60],city:[40,75]};
+    BUTT_SPREAD=[.003,.012],BUTT_PURSE=40,BUTT_PURSE_TIER=20,BUTT_SKILL={village:[20,45],town:[30,60],city:[40,75]},BUTT_FLIGHT=8;
+  // S2392 — an arrow from the mark flies until it lands or meets the face (BUTT_FLIGHT s, not ARROW_LIFE's 2.2): a hunting bow's
+  // full draw (28 m/s, 4 m/s² of drop) needs 2.55 s at the least to reach 70 m, so the third end could not be hit before.
   let BUTTS=null; /* {site,x,z,dx,dz,end,shots:[{end,arrow,score}],rivals,mesh,year,tier} */
   function buttScore(r){for(const [rr,s] of BUTT_RINGS)if(r<=rr)return s;return 0;}
   // the three rivals: their skill and their nine arrows, seeded by festival, site and year (a friend meets the same field)
@@ -3611,7 +3613,7 @@ const giver=`${lord.title} ${lord.name}`;
   function buttsLoose(arrow){const B=BUTTS;if(!B)return false;
     if(Math.hypot(px-B.x,pz-B.z)>BUTT_MARK_R){showMsg('Shoot from the mark, or it doesn’t count.','#e8d8a0');return false;}
     const inEnd=B.shots.filter(q=>q.end===B.end).length;if(inEnd>=3)return false;
-    const shot={end:B.end,arrow,score:null};B.shots.push(shot);arrow.userData.butt=shot;return true;}
+    const shot={end:B.end,arrow,score:null};B.shots.push(shot);arrow.userData.butt=shot;arrow.userData.life=Math.max(arrow.userData.life||0,BUTT_FLIGHT);return true;}
   // tickArrowMotion's, each sub-step: the arrow crossing the butt's face. True when it struck the face (planted there).
   function buttsCross(arrow,ddx,ddy,ddz){const B=BUTTS,ud=arrow.userData,shot=ud.butt;if(!B||!shot||shot.score!=null||shot.end!==B.end)return false;
     const p=arrow.position,d1=(p.x-B.cx)*B.dx+(p.z-B.cz)*B.dz,d0=d1-(ddx*B.dx+ddz*B.dz);if(!(d0<0&&d1>=0))return false;
