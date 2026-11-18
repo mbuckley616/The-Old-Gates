@@ -3,7 +3,7 @@
 // 1.6 km in 11 draws, its stones hung over their pits with the scatter cleared under them, its two broken walls solid where they stand;
 // from 20h to 5h it wakes (the stones drift, the seams burn), by day it is dead stone; and it goes when you leave. Session 1634: the
 // same for Aurenne's Broken Orrery on its headland. Session 1666: the Gatelands' Drowned Ring in its lough.
-// Session 2384: the Weavers' ring of broken arches on a Gatelands headland.
+// Session 2385: the Weavers' ring of broken arches on a Gatelands headland.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -122,7 +122,7 @@ const ln = await page.evaluate(() => { const W = WONDERS.lough.W; forceTime(22);
 check(`at 22h it wakes: the script and the sigil under the water burn Uisce's blue (green ${ln.blue})`, ln.awake && ln.lit && ln.sigil && ln.blue > .8, ln);
 const ld = await page.evaluate(() => { const S = WONDERS.lough; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:lough').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'lough').length }; });
 check('2.5 km off it is dropped, its solids and its boardwalk with it', ld.gone && ld.sol === 0 && ld.plats === 0, ld);
-// Session 2384: the Weavers' ring of broken arches (OG-104; Michael's B on #429) on a headland of the Gatelands. The place is the seed's,
+// Session 2385: the Weavers' ring of broken arches (OG-104; Michael's B on #429) on a headland of the Gatelands. The place is the seed's,
 // clear of every site, door and road; its crown is levelled under the ring; four arches stand 60 m and seven are broken; the standing jambs
 // are solid and the bays between open; the dais's three steps are walked; it goes when you leave.
 const rs = await page.evaluate(() => { const a = wonderRingSite(); WONDERS.ring.site = undefined; const t0 = performance.now(), b = wonderRingSite(), ms = Math.round(performance.now() - t0);

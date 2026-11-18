@@ -8051,7 +8051,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws, piers, walk: { z0: W0, z1: W1, y: +(deck + .03).toFixed(3), w: 1.6, shore }, dais: { r: 13, y: +top.toFixed(2), bed: +bed.toFixed(2) }, tick,
       size: { across: RR * 2, high: +(footY + pierH - WATER).toFixed(1), water: +(WATER - bed).toFixed(1), under: +(WATER - top).toFixed(1), walk: +(W1 - W0).toFixed(1) } };
   }
-  // ── The Weavers' ring of broken arches (Session 2384; backlog L "Ruins at the scale of cliffs", OG-104's Weaver's Ring, Gatelands;
+  // ── The Weavers' ring of broken arches (Session 2385; backlog L "Ruins at the scale of cliffs", OG-104's Weaver's Ring, Gatelands;
   // Michael's B on #429: 60 m arches in a ring 170 m across, the script dead) ──
   // ruins.js's weaverRing (Session 1119, grown in 1134), copied for the world. The prototype's turf disc, cliff, sea and scale post are the
   // world's or left out: the ring stands on a Gatelands headland whose crown a stamp levels, and the sea is the world's. Built over a

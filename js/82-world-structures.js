@@ -3579,7 +3579,7 @@
   function wonderLoughDrop(){const S=WONDERS.lough;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:lough')STATIC_SOL.splice(i,1);S.sol=[];
     const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='lough')P.splice(i,1);S.plats=[];}
-  // The Weavers' ring of broken arches (Session 2384; the kit's PKIT.wonders.ring, from ruins.js; OG-104's Weaver's Ring, Gatelands; Michael's
+  // The Weavers' ring of broken arches (Session 2385; the kit's PKIT.wonders.ring, from ruins.js; OG-104's Weaver's Ring, Gatelands; Michael's
   // B on #429), on the new look only. Its place is one headland of the Gatelands, the same for every load of a seed: on a 50 m grid over the
   // Gatelands' land cells (getCell, all of them), a point at least 12 m over the sea, kept 330 m clear of every site's pad and every door and
   // 200 m of every road's line, dry and over the sea everywhere 130 m round it, whose ground out to 105 m falls no more than RING_FALL; the sea
