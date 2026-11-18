@@ -1713,15 +1713,24 @@ function mineVein(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working th
   if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}
   if(veinLeft(v)<=0){showMsg('The vein is worked out.','#cc8844');return;}
   MINE={v,t:VEIN_STRIKE};showMsg(`You set to the ${ORE_DEF[v.ore].name.toLowerCase()}.`,'#c8b890');}
-function tickMining(dt){if(!MINE)return;const v=MINE.v;
+function tickMining(dt){if(typeof tickArcJoin==='function')tickArcJoin(dt); /* S2372 — three arcs set together (68-dungeon-misc.js) */
+  if(!MINE)return;const v=MINE.v;
+  if(v.gate!=null){tickGateMining(dt);return;} /* S2371 — a gate keep's crystal (68-dungeon-misc.js) */
   if(!veinLive(v)||activeZoneId!=='world'||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}
   MINE.t-=dt;if(MINE.t>0)return;MINE.t+=VEIN_STRIKE;
   const r=strikeVein(v);if(typeof uiNoise==='function')uiNoise(.06,.12,2400);
   if(r.why){showMsg(r.why,'#cc8844');MINE=null;return;}
   if(r.ore){showMsg(`${r.ore}.`+(r.left?'':' The vein is worked out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
   if(!r.left)MINE=null;}
+function tickGateMining(dt){const v=MINE.v;
+  if(!v.g||v.g.parent!==dScene||activeZoneId!=='dungeon'||currentFloor!==v.floor||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}
+  MINE.t-=dt;if(MINE.t>0)return;MINE.t+=VEIN_STRIKE;
+  const r=gateVeinStrike(v);if(typeof uiNoise==='function')uiNoise(.06,.12,2400);
+  if(r.why){showMsg(r.why,'#cc8844');MINE=null;return;}
+  if(r.got){showMsg(`${r.got}.`+(r.left?'':' The crystal is all cut out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
+  if(!r.left)MINE=null;}
 function useOreThing(i){const it=BAG[i];if(!it)return;
-  if(it.tool==='pick'){const v=veinNear();if(v)mineVein(v);else showMsg('Strike a vein with it.','#c8b890');return;}
+  if(it.tool==='pick'){const gv=typeof gateVeinNear==='function'&&gateVeinNear();if(gv){gateMine(gv);return;}const v=veinNear();if(v)mineVein(v);else showMsg('Strike a vein with it.','#c8b890');return;}
   if(it.ore||it.ingot){if(forgeHere())openForgePage();else showMsg(it.ore?'Smelt it at a forge.':'Work it at a forge.','#c8b890');}} /* S1494 — at a smith's, the forge's page */
 // the smith's and the goods shop's pick
 function minersPickFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...PICK_ITEM}]:[];}
@@ -1966,9 +1975,10 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
   let h=head('Smelt')+INGOT_DEF.map(d=>row(S.k==='s'&&S.tier===d.tier,forgeCanSmelt(d.tier),'s'+d.tier,`${MATERIALS[d.tier-1].name} Ingot`)).join('');
   const mk=(f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>ingotCount(t)>=forgeIngots(f.T))&&plankCount()>=forgePlanks(f.T)&&leatherCount()>=forgeLeather(f.T),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'));h+=head('Make')+FORGE_TYPES.map((f,i)=>f.light?'':mk(f,i)).join('')+head('Make, light')+FORGE_TYPES.map((f,i)=>f.light?mk(f,i):'').join(''); /* S2132 — the light line's own row */
   if(P.length)h+=head('Temper')+P.map((it,i)=>row(S.k==='t'&&S.it===it,true,'t'+i,`${it.name}${it.tempers?` (${it.tempers})`:''}`)).join('');
+  const CP=typeof crystalPieces==='function'?crystalPieces():[];if(CP.length)h+=head('Set a crystal')+CP.map((it,i)=>row(S.k==='c'&&S.it===it,bagCount(b=>b.gateCrystal===it.school)>0,'c'+i,it.name)).join(''); /* S2372 — a gate's crystal makes a bought implement found (68-dungeon-misc.js) */
   ov.querySelector('#fg-list').innerHTML=h;
   ov.querySelectorAll('#fg-list [data-k]').forEach(d=>d.onclick=()=>{const k=d.dataset.k,n=+k.slice(1);
-    forgeSel=k[0]==='s'?{k:'s',tier:n}:k[0]==='m'?{k:'m',type:FORGE_TYPES[n].T.type}:{k:'t',it:P[n]};forgeSaid='';forgeDraw();});
+    forgeSel=k[0]==='s'?{k:'s',tier:n}:k[0]==='m'?{k:'m',type:FORGE_TYPES[n].T.type}:k[0]==='c'?{k:'c',it:CP[n]}:{k:'t',it:P[n]};forgeSaid='';forgeDraw();});
   const pad=s=>`<div style="padding-left:12px">${s}</div>`,note=s=>`<div style="padding-left:12px;color:#8a7050;font-style:italic">${s}</div>`;let t='';
   if(S.k==='s'){const D=INGOT_DEF.find(d=>d.tier===S.tier),M=MATERIALS[S.tier-1];
     t=`<div style="font-variant:small-caps;color:#7a1f10">${M.name} Ingot</div>`+D.ore.map(([k,n])=>pad(`${n} ${ORE_DEF[k].name} <i style="font-size:12px;color:#8a7050">(you have ${oreCount(k)})</i>`)).join('')+
@@ -1983,6 +1993,9 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(it.atk?`Attack ${it.atk[0]}–${it.atk[1]}`:`Defence ${it.def}`)+pad(`Tempered ${it.tempers||0} of ${temperMax()}, +${Math.round(TEMPER_STEP*100)}% each`)+
       (ores?pad(`${TEMPER_ORE} ${ores.map(k=>ORE_DEF[k].name).join(' or ')} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>ores.includes(b.ore))})</i>`):note('no ore of its metal'))+
       (smithForge()?`<div style="padding-left:12px;margin-top:4px"><button type="button" id="fg-smith" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 8px">The smith tempers it · ${20*it.tier} gold</button></div>`:'');}
+  else if(S.k==='c'){const it=S.it,sn=schoolName(it.school);
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(`1 gate crystal of ${sn} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.gateCrystal===it.school)})</i>`)+
+      (skillLv('smithing')<CRYSTAL_SET.smithing?note(`asks Smithing ${CRYSTAL_SET.smithing}`):'')+note(`found: ${sn}’s words ${Math.round(IMPLEMENT.foundCut*100)}% cheaper, not ${Math.round(IMPLEMENT.cut*100)}%`);}
   const R=ov.querySelector('#fg-right');R.innerHTML=t;
   R.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{forgeTier=+b.dataset.m;forgeSaid='';forgeDraw();});
   const sm=R.querySelector('#fg-smith');if(sm)sm.onclick=()=>forgeGo(true);
@@ -1990,6 +2003,7 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
 function forgeGo(bySmith){const S=forgeSel;let r;
   if(S.k==='s'){r=forgeSmelt(S.tier);forgeSaid=r.made?`${r.item.name}.`:r.why||'';}
   else if(S.k==='m'){r=forgeMake(S.type,forgeTier||2);forgeSaid=r.made?`${r.item.name}.`:r.why||'';}
+  else if(S.k==='c'){r=forgeSetCrystal(S.it);forgeSaid=r.done?`${S.it.name}: the crystal is set.`:r.why||'';if(r.done)forgeSel={k:'s',tier:2};}
   else if(S.k==='t'){r=forgeTemper(S.it,bySmith);forgeSaid=r.done?`${S.it.name}, tempered ${S.it.tempers} of ${temperMax()}.`:r.why||'';if(r.done&&typeof updateHUD==='function')updateHUD();}
   if(r&&(r.made||r.done)&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');
   if(typeof renderHubInv==='function')renderHubInv();
@@ -3155,6 +3169,7 @@ function interact(){
     return;
   }
   if(typeof knotNear==='function'&&knotNear()){knotUse();return;} /* S1346 — a great gate's knot */
+  if(typeof gateAltarNear==='function'){const a=gateAltarNear();if(a){takeArc(a.seed);return;}const gv=gateVeinNear();if(gv){gateMine(gv);return;}} /* S2371 — a keep's arc and its crystal (68-dungeon-misc.js) */
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
   if(typeof varekListNear==='function'&&varekListNear()){varekListTake();return;} /* S2174 — the worn paper in the crypt */
   if(typeof cloakDenNear==='function'&&cloakDenNear()){cloakDenTake();return;} /* S992 — the cloak, from under its sleeping master */
@@ -3177,7 +3192,7 @@ function interact(){
   // chest — opens panel. Finds any chest on this floor in range whose items aren't exhausted OR hasn't been opened yet
   // (empty-on-spawn chests still show panel once so the "oh, empty" reveal happens).
   const ch=CHESTS.find(c=>c.floor===currentFloor&&lookingAt(c)&&(!c.opened||c.items.length>0)); // v80 — look-at
-  if(ch){ if(ch.locked){tryLockpick(ch);return;} openLoot(ch); return; } // S150 — a locked chest is picked first
+  if(ch){ if(ch.coffer!=null){openCoffer(ch);return;} if(ch.locked){tryLockpick(ch);return;} openLoot(ch); return; } /* S2370 — a gate's coffer opens to its read carving (68-dungeon-misc.js) */ // S150 — a locked chest is picked first
   // barrel — same pattern as chests. v61g7: radius 1.0 → 1.1 for the larger
   // v61g7 container meshes (0.5u footprint vs the old 0.3u).
   if(fortCotNear()){openSleepUI();return;} // v80 S9 — fort cots; S624 — the exit wins when it is nearer

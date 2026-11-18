@@ -538,6 +538,136 @@ function lairHoardSpot(e){const map=(e.floor===2&&dMap2)?dMap2:dMap;const fl=e.f
 // S1885 — a hoard's items live in worldState and come back from a save without their enchant's functions: put them back by id
 function foundRestore(items){if(!Array.isArray(items))return;for(const it of items){if(!it||!it.enchantId||(it.enchant&&typeof it.enchant.apply==='function'))continue;
   const e=ARMOR_ENCHANTS.find(x=>x.id===it.enchantId);if(e){it.enchant=e;it.enchantStats=e.apply(it);}}}
+// S2370 — what a gate keeps (what-a-gate-keeps-build.md, Michael's C on #1092; the sheet's first session): a lesser gate's ring chamber is
+// its keep, and on the middle of its dais stands a sealed coffer, the boss chest of Skyrim at the end of the walk. It opens at a touch once
+// this gate's carving is read (worldState.sigilsRead[seed], the character's: whoever touched it, warrior or mage); before, the script round
+// its lid is closed to you. It holds 2 pieces (GATE_KEEP, 14-items.js) of arms, armour or implements, never gold, potions or picks, rolled
+// on the gate's own stream (<seed>:<floor>:coffer, no day: it never refills) at the floor's tier plus one, at most 4; the gate's orb, one
+// gate in three, lies in it on top. A great gate keeps its vault (the sheet's later sessions) and its orb stays in the deepest chest until
+// then; a gate with no carving of its own (a legacy dungeon's) has no coffer. Opened, its list is the world's: worldState.gateKeeps[seed]
+// .coffer holds what is left in it, so what you take stays taken, as a lair's hoard does. A plain stone chest stands in for the look's coffer.
+function gateKeepOf(seed){const K=worldState.gateKeeps||(worldState.gateKeeps={});return K[seed]||(K[seed]={});}
+function gateCofferDue(portal){if(!portal||portal.seed==null||portal.tutorial||portal.lair)return false;
+  if(!(portal.zone==='world'||portal.zone==='gen'))return false;if(typeof SIGIL_PLACEMENTS!=='undefined'&&SIGIL_PLACEMENTS[portal.seed])return false;
+  try{if(typeof greatSchoolOf==='function'&&greatSchoolOf(portal))return false;return typeof gateCarving==='function'&&!!gateCarving(portal.seed);}catch(e){return false;}}
+function gateCofferItems(portal,floor){const tier=Math.min(GATE_KEEP.tierMax,dungeonTier(portal,floor)+GATE_KEEP.tierUp),key=`${portal.seed}:${floor}:coffer`,was=LOOT_SCHOOL;
+  LOOT_SCHOOL=gateOrbSchool(portal);let items;
+  try{items=withLootRng(seededRng('loot',key),()=>withLootTier(tier,()=>{const out=[];for(let i=0;i<GATE_KEEP.cofferN;i++){const it=rollLoot(portal.diffScale,portal.theme,'coffer');if(it)out.push(it);}return out;}));}
+  finally{LOOT_SCHOOL=was;}
+  const orb=gateOrbFor(portal,floor);if(orb)items.unshift(orb);return items;}
+function gateKeepLay(portal,gen){GATE_KEEP_LIE=null;if(!gen||!gen.gate||gen.ring==null||!gateCofferDue(portal))return null;
+  const sp=gen.spaces[gen.ring],d=sp&&sp.dais;if(!d)return null;const fl=sp.floor||1,x=dAt((d.x0+d.x1)/2),z=dAt((d.z0+d.z1)/2),y=(fl===2?FLOOR2_Y:0)+.4;
+  const K=gateKeepOf(portal.seed),was=Array.isArray(K.coffer),items=was?K.coffer:gateCofferItems(portal,fl);if(was)foundRestore(items);
+  const group=new THREE.Group();const {lid}=buildChestShell(group,.85,0x77726a);group.scale.setScalar(DCELL);group.position.set(x,y,z);group.name='gateCoffer';
+  {const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl);if(t){const dx=dAt(t.c)-x,dz=dAt(t.r)-z;group.rotation.y=Math.abs(dx)>Math.abs(dz)?(dx>0?Math.PI/2:-Math.PI/2):(dz>0?0:Math.PI);}} /* its front to the way in */
+  dScene.add(group);
+  const ch={id:`${portal.seed}:${fl}:coffer`,x,z,y:.4,opened:was,lid,treasure:true,coffer:portal.seed,floor:fl,mesh:group,items,displayName:'The Coffer'};
+  if(was&&lid)lid.rotation.x=-Math.PI/3;CHESTS.push(ch);try{gateKeepThings(portal,gen,ch);}catch(e){console.warn('gateKeepThings',e);}return ch;}
+function gateCofferShut(ch){const S=worldState.sigilsRead;return !(S&&ch&&S[ch.coffer]!=null);}
+// the named action (co-op rules): the coffer opened, its list the world's from now on
+function openCoffer(ch){if(!ch||ch.coffer==null)return false;if(gateCofferShut(ch)){showMsg('The script round its lid is closed to you.','#c8b880');return false;}
+  const K=gateKeepOf(ch.coffer);if(!Array.isArray(K.coffer))K.coffer=ch.items;else ch.items=K.coffer;openLoot(ch);return true;}
+// S2371 — what a gate keeps, session 1's second half: the altar's arc and the crystal vein (what-a-gate-keeps-build.md). Both stand in the
+// keep with the coffer, as plain stand-ins until the look builder dresses the room (the sheet's session 3).
+// The altar, a stone block on the dais between the way in and the coffer, holds one arc of its school's armillary (a working name; the
+// quest writer names them) in one lesser gate in three (seededRng('arc-has', seed); the rate is DECISION #1718, B built until answered).
+// Taken once (worldState.gateKeeps[seed].arc, the world's), it is numbered in the order you find them (worldState.relicArcs.found[school],
+// the character's): the first three of a school are its armillary's, a fourth is plain gate salvage. Weight 1, 40 at a counter, salvage.
+// The vein, a cluster of the gate's crystal in the keep's corner farthest from the way in, gives 3 crystals in a steady gate, 4 in a
+// failing one, 5 in a catastrophic one (worldState.gateKeeps[seed].vein: {n,s}, the world's), struck with a pick as a world vein is
+// (VEIN_STRIKE, the same chance and Mining), and never returns. A crystal: weight 0.5, 25 at a counter. Joining the arcs and setting a
+// crystal at the forge are the sheet's session 2.
+const GATE_ARC={rate:1/3,per:3,weight:1,price:40},GATE_VEIN={steady:3,failing:4,catastrophic:5,weight:.5,price:25};
+let GATE_KEEP_LIE=null; /* the keep's altar and vein as laid: {altar:{x,z,floor,seed,school,mesh,arc}, vein:{…}} */
+function gateArcDue(portal){if(!gateCofferDue(portal))return false;const K=worldState.gateKeeps&&worldState.gateKeeps[portal.seed];if(K&&K.arc)return false;
+  return seededRng('arc-has',portal.seed)()<GATE_ARC.rate;}
+function schoolName(s){return (typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[s]&&SCHOOL_DEF[s].name)||s;}
+function relicArcsOf(){const R=worldState.relicArcs||(worldState.relicArcs={});if(!R.found)R.found={};return R;}
+function arcItem(school,n){const it={name:`Arc of ${schoolName(school)}'s armillary`,ico:'◠',type:'misc',weight:GATE_ARC.weight,buyPrice:GATE_ARC.price,sellMult:1};
+  if(n<=GATE_ARC.per)it.arc={school,n};else{it.name=`Broken arc (${schoolName(school)})`;it.arcSpare=school;}return it;}
+function gateCrystalItem(school){return {name:`Gate crystal of ${schoolName(school)}`,ico:'💠',type:'misc',weight:GATE_VEIN.weight,buyPrice:GATE_VEIN.price,sellMult:1,gateCrystal:school};}
+// the bag's line for an arc: "2 of 3 of Tine's armillary"
+function arcDesc(it){return it&&it.arc?`${it.arc.n} of ${GATE_ARC.per} of ${schoolName(it.arc.school)}'s armillary`:it&&it.arcSpare?'A spare: gate salvage':'';}
+function gateVeinCap(cond){return GATE_VEIN[cond]||GATE_VEIN.steady;}
+function gateVeinRec(seed){const K=worldState.gateKeeps&&worldState.gateKeeps[seed];return (K&&K.vein)||{n:0,s:0};}
+function gateVeinLeft(v){return Math.max(0,v.cap-gateVeinRec(v.gate).n);}
+// laid by gateKeepLay with the coffer, in metres
+function gateKeepThings(portal,gen,coffer){GATE_KEEP_LIE={altar:null,vein:null};const sp=gen.spaces[gen.ring],fl=sp.floor||1,y=fl===2?FLOOR2_Y:0,school=gateOrbSchool(portal);
+  if(!school)return GATE_KEEP_LIE;
+  const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl),tx=t?dAt(t.c):coffer.x,tz=t?dAt(t.r):coffer.z;
+  {let dx=tx-coffer.x,dz=tz-coffer.z;const L=Math.hypot(dx,dz)||1;if(Math.abs(dx)>Math.abs(dz)){dx=Math.sign(dx);dz=0;}else{dz=Math.sign(dz||1);dx=0;} /* toward the way in, along the dais's axis */
+    const x=coffer.x+dx*2.6,z=coffer.z+dz*2.6,g=new THREE.Group();g.name='gateAltar';g.position.set(x,y+.4,z);
+    const stone=new THREE.MeshLambertMaterial({color:0x7a756c}),block=new THREE.Mesh(new THREE.BoxGeometry(1.2,.95,.7),stone);block.position.y=.475;block.rotation.y=dx?Math.PI/2:0;g.add(block);
+    let arc=null;if(gateArcDue(portal)){arc=new THREE.Mesh(new THREE.TorusGeometry(.32,.035,6,18,Math.PI*.75),new THREE.MeshLambertMaterial({color:0xb08a3a,emissive:0x2a1c06}));arc.position.y=1.0;arc.rotation.x=-Math.PI/2+.25;arc.name='gateArc';g.add(arc);}
+    dScene.add(g);DUNGEON_COLUMNS.push({x,z,r:.62,floor:fl,altar:portal.seed});
+    GATE_KEEP_LIE.altar={x,z,floor:fl,seed:portal.seed,school,mesh:g,arc};}
+  {const R=[[sp.x,sp.y],[sp.x+sp.w-1,sp.y],[sp.x,sp.y+sp.h-1],[sp.x+sp.w-1,sp.y+sp.h-1]],M=fl===2?gen.map2:gen.map,CS=fl===2?gen.cellSpace2:gen.cellSpace;
+    const ok=([c,r])=>M&&M[r]&&M[r][c]===1&&(!CS||CS[r][c]===sp.id),cs=R.filter(ok).sort((a,b)=>Math.hypot(dAt(b[0])-tx,dAt(b[1])-tz)-Math.hypot(dAt(a[0])-tx,dAt(a[1])-tz));
+    const k=cs[0];if(k){const [c,r]=k,ox=c===sp.x?-1:1,oz=r===sp.y?-1:1,H=DCELL/2-.55,x=dAt(c)+ox*H,z=dAt(r)+oz*H,cap=gateVeinCap(gen.cond);
+      const v={id:`${portal.seed}:${fl}:vein`,gate:portal.seed,school,cap,x,z,floor:fl,g:null};
+      const g=new THREE.Group();g.name='gateVein';g.position.set(x,y,z);const col=new THREE.Color((typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[school]&&SCHOOL_DEF[school].col)||'#9ad');
+      const mat=new THREE.MeshLambertMaterial({color:col,emissive:col.clone().multiplyScalar(.35)}),rr=seededRng('gatevein',v.id);
+      for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.16+rr()*.12,0),mat);m.scale.y=2+rr()*1.4;m.position.set((rr()-.5)*.6,.25+rr()*.2,(rr()-.5)*.6);m.rotation.set((rr()-.5)*.6,rr()*3,(rr()-.5)*.6);g.add(m);}
+      dScene.add(g);v.g=g;gateVeinShow(v);GATE_KEEP_LIE.vein=v;}}
+  return GATE_KEEP_LIE;}
+function gateVeinShow(v){if(!v||!v.g)return;const left=gateVeinLeft(v),n=v.g.children.length;v.g.children.forEach((m,i)=>{m.visible=i<Math.ceil(n*left/v.cap);});}
+function gateAltarNear(){const A=GATE_KEEP_LIE&&GATE_KEEP_LIE.altar;if(!A||!A.arc||activeZoneId!=='dungeon'||A.floor!==currentFloor)return null;return Math.hypot(px-A.x,pz-A.z)<TOUCH+.6?A:null;}
+function gateVeinNear(){const v=GATE_KEEP_LIE&&GATE_KEEP_LIE.vein;if(!v||activeZoneId!=='dungeon'||v.floor!==currentFloor)return null;return Math.hypot(px-v.x,pz-v.z)<TOUCH+.5?v:null;}
+// the named action (co-op rules): the altar's arc taken; returns the item, or null
+function takeArc(seed){const A=GATE_KEEP_LIE&&GATE_KEEP_LIE.altar;if(!A||A.seed!==seed||!A.arc)return null;
+  const R=relicArcsOf(),n=(R.found[A.school]||0)+1,it=arcItem(A.school,n);if(!canCarry(it)){showMsg('Too heavy to carry!','#cc8844');return null;}
+  R.found[A.school]=n;gateKeepOf(seed).arc=1;if(typeof markSalvage==='function')markSalvage(it);bagAdd(it);
+  if(A.arc.parent)A.arc.parent.remove(A.arc);A.arc=null;
+  showMsg(n<=GATE_ARC.per?`An arc of ${schoolName(A.school)}'s armillary: ${n} of ${GATE_ARC.per}.`:`An arc of ${schoolName(A.school)}'s, and you have its armillary's three. This one is salvage.`,'#d8c890');
+  if(typeof renderHubInv==='function')try{renderHubInv();}catch(e){}return it;}
+// one strike at the keep's vein, on its own stream (the world vein's rule: 0.35 + 0.005 a Mining level); returns {got, left} or {why}
+function gateVeinStrike(v){if(!hasPick())return {why:'You need a pick.'};let r=gateVeinRec(v.gate);if(r.n>=v.cap)return {why:'The crystal is all cut out.'};
+  const it=gateCrystalItem(v.school);if(!canCarry(it))return {why:'Too heavy to carry!'};
+  const got=seededRng('ore',v.id+':'+r.s)()<.35+.005*skillLv('mining');r={n:r.n+(got?1:0),s:r.s+1};gateKeepOf(v.gate).vein=r;
+  if(got){bagAdd(it);skillUse('mining',4);}else skillUse('mining',1);gateVeinShow(v);
+  return {got:got?it.name:null,left:Math.max(0,v.cap-r.n)};}
+function gateMine(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the crystal.','#c8b890');return;}
+  if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}if(gateVeinLeft(v)<=0){showMsg('The crystal is all cut out.','#cc8844');return;}
+  MINE={v,t:VEIN_STRIKE};showMsg('You set to the crystal.','#c8b890');}
+// S2372 — what a gate keeps, session 2 (what-a-gate-keeps-build.md), its parts that need no words: joining, the kept armillary's
+// compass, and the crystal set at the forge. Three arcs of one school in the bag (the first three found: it.arc.n 1 to 3) are set
+// together from the bag in 10 s, no skill (`joinArcs`, the named action): one armillary of the school, weight 3, 150 at a counter (the
+// Mark's: no claimant there), salvage as its arcs were, and worldState.relicArcs.joined[school] set. Carried, it shows on the compass the
+// nearest lesser gate of its school whose coffer you have not opened, within 2,600 m (the rubbings' reach). The Crown's 400 and service
+// and the Prior's service wait on the quest writer's lines (the sheet's session 6). At a forge, Smithing 25 and one crystal of the
+// school set a bought staff, wand, maul or tome of that school: it becomes found, its school's words 20% cheaper, not 10%; 20 minutes.
+const ARMILLARY={join:10,weight:3,price:150,reach:2600},CRYSTAL_SET={smithing:25,min:20};
+let ARC_JOIN=null;
+function arcsHeld(school){return BAG.filter(b=>b&&b.arc&&b.arc.school===school);}
+function armillaryItem(school){return {name:`${schoolName(school)}'s armillary`,ico:'◎',type:'misc',weight:ARMILLARY.weight,buyPrice:ARMILLARY.price,sellMult:1,armillary:school,salvage:true};}
+function joinArcs(school){if(ARC_JOIN){if(ARC_JOIN.school===school){ARC_JOIN=null;showMsg('You leave the arcs as they are.','#c8b890');}return false;}
+  const A=arcsHeld(school);if(A.length<GATE_ARC.per){showMsg(`${A.length} of ${GATE_ARC.per} of ${schoolName(school)}'s armillary.`,'#c8b890');return false;}
+  ARC_JOIN={school,t:ARMILLARY.join};showMsg('You set the arcs together.','#c8b890');return true;}
+function tickArcJoin(dt){const J=ARC_JOIN;if(!J)return;if(arcsHeld(J.school).length<GATE_ARC.per||(typeof dead!=='undefined'&&dead)){ARC_JOIN=null;return;}
+  J.t-=dt;if(J.t>0)return;ARC_JOIN=null;const A=arcsHeld(J.school).slice(0,GATE_ARC.per);
+  for(const a of A){const i=BAG.indexOf(a);if(i>=0)BAG.splice(i,1);}
+  bagAdd(armillaryItem(J.school));const R=relicArcsOf();(R.joined||(R.joined={}))[J.school]=1;
+  showMsg(`The three arcs close into one: ${schoolName(J.school)}'s armillary.`,'#e8d8a0');if(typeof renderHubInv==='function')try{renderHubInv();}catch(e){}}
+// the kept armillary's needle: the nearest lesser gate of a carried armillary's school whose coffer is shut, {x,z,d,seed,school} or null
+let _armCache=null;
+function armillaryGate(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
+  const S=[...new Set(BAG.filter(b=>b&&b.armillary).map(b=>b.armillary))];if(!S.length||typeof carvingTable!=='function')return null;
+  const now=performance.now(),key=S.join()+'|'+Math.round(px/20)+','+Math.round(pz/20);if(_armCache&&_armCache.key===key&&now-_armCache.t<1000)return _armCache.v;
+  const K=worldState.gateKeeps||{};let best=null,bd=ARMILLARY.reach;
+  for(const {D,e} of carvingTable().places){if(!D||!e||!S.includes(D.school)||(typeof SIGIL_PLACEMENTS!=='undefined'&&SIGIL_PLACEMENTS[e.seed]))continue;
+    if(typeof greatSchoolOf==='function'&&greatSchoolOf({seed:e.seed,great:e.great}))continue;if(K[e.seed]&&Array.isArray(K[e.seed].coffer))continue;
+    const p=(typeof dungeonWorldPos!=='undefined'&&dungeonWorldPos[e.seed])||e,d=Math.hypot(p.x-px,p.z-pz);if(d<bd){bd=d;best={x:p.x,z:p.z,d,seed:e.seed,school:D.school};}}
+  _armCache={key,t:now,v:best};return best;}
+// a piece the crystal can set: a staff, wand, maul or tome of a school, not found already
+function crystalSettable(it){const k=implementOf(it);return !!(it&&it.school&&!it.found&&(k==='staff'||k==='wand'||k==='maul'||k==='tome'));}
+function crystalPieces(){const out=[];for(const s of ['weapon','offhand']){const it=EQ[s];if(crystalSettable(it)&&!out.includes(it))out.push(it);}BAG.forEach(b=>{if(crystalSettable(b))out.push(b);});return out;}
+// the named action: one crystal of its school set into the piece at a forge. Returns {done, why}
+function forgeSetCrystal(it){if(!forgeHere())return {done:false,why:'You need a forge.'};if(!crystalSettable(it))return {done:false,why:it&&it.found?'It is found already.':'That takes no crystal.'};
+  if(skillLv('smithing')<CRYSTAL_SET.smithing)return {done:false,why:`A crystal asks Smithing ${CRYSTAL_SET.smithing} (you have ${skillLv('smithing')}).`};
+  const n=bagCount(b=>b.gateCrystal===it.school);if(n<1)return {done:false,why:`You need a gate crystal of ${schoolName(it.school)}.`};
+  const f=forgeFee();if(f)return {done:false,why:f};
+  bagTake(b=>b.gateCrystal===it.school,1);it.found=true;it.crystalSet=1;if(typeof implementDesc==='function')it.desc=implementDesc(it);
+  skillUse('smithing',15,'c'+(_forgeN++));if(typeof advanceClock==='function')advanceClock(CRYSTAL_SET.min);return {done:true};}
 function slayMaster(portal){if(!portal||!portal.lair)return;const M=worldState.masters||(worldState.masters={}),r=M[portal.seed];const was=r===true||!!(r&&r.dead);if(r&&typeof r==='object')r.dead=true;else M[portal.seed]=true;
   if(!was&&typeof cloakMasterSlain==='function')cloakMasterSlain(portal); /* S781 — the Wolf-Mother's Cloak off its master's corpse */
   if(!was&&typeof grantHead==='function')grantHead('skull');} /* S1734 — the first lair beast you kill gives the beast's skull, a figurehead (once) */

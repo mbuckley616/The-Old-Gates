@@ -1581,6 +1581,7 @@ function loop(now){
     const iprEl=document.getElementById('ipr');
     /* S1671 — the prompt names what E does: interact()'s order, the knot first and the way out after a chest, a cot, the forge and a barrel */
     if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
+    else if(typeof gateAltarNear==='function'&&(gateAltarNear()||gateVeinNear())){iprEl.textContent=gateAltarNear()?"Press 'E' to take the arc":(gateVeinLeft(gateVeinNear())>0?"Press 'E' to cut the crystal":'The crystal is all cut out');iprEl.style.opacity='1';iprEl.style.display='block';} /* S2371 */
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
     else if(typeof varekListNear==='function'&&varekListNear()){iprEl.textContent="Press 'E' to take the worn paper";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2174 */
     else if(typeof cloakDenNear==='function'&&cloakDenNear()){iprEl.textContent="Press 'E' to take the grey cloak from under it";iprEl.style.opacity='1';iprEl.style.display='block';} /* S992 */
@@ -1593,7 +1594,7 @@ function loop(now){
     else if(nearCorpsePrompt){iprEl.textContent=`Press 'E' to loot ${nearCorpsePrompt.name}`;iprEl.style.opacity='1';iprEl.style.display='block';}
     else if(nearMimic){ // S150 — a mimic wears the same lock a chest there would
       iprEl.textContent=chestLockedAt(nearMimic.x,nearMimic.z,nearMimic.floor)?"Press 'E' to pick the chest's lock":"Press 'E' to open chest";iprEl.style.opacity='1';iprEl.style.display='block';}
-    else if(nearChest){iprEl.textContent=nearChest.locked?(nearChest.treasure?"Press 'E' to pick the treasure chest's lock":"Press 'E' to pick the chest's lock"):nearChest.treasure?(nearChest.opened?"Press 'E' — treasure chest":"Press 'E' to open treasure"):(nearChest.opened?"Press 'E' — chest":"Press 'E' to open chest");iprEl.style.opacity='1';iprEl.style.display='block';}
+    else if(nearChest){iprEl.textContent=nearChest.coffer!=null?(gateCofferShut(nearChest)?"Press 'E' — a coffer sealed with script":nearChest.opened?"Press 'E' — the coffer":"Press 'E' to open the coffer"):nearChest.locked?(nearChest.treasure?"Press 'E' to pick the treasure chest's lock":"Press 'E' to pick the chest's lock"):nearChest.treasure?(nearChest.opened?"Press 'E' — treasure chest":"Press 'E' to open treasure"):(nearChest.opened?"Press 'E' — chest":"Press 'E' to open chest");iprEl.style.opacity='1';iprEl.style.display='block';}
     else if(nearCot){iprEl.textContent="Press 'E' to rest";iprEl.style.opacity='1';iprEl.style.display='block';}
     else if(typeof dunForgeNear==='function'&&dunForgeNear()){iprEl.textContent="Press 'E' to work the forge";iprEl.style.opacity='1';iprEl.style.display='block';} /* S1514 */
     else if(nearBarrelPrompt){iprEl.textContent="Press 'E' to open "+(nearBarrelPrompt.displayName||'Barrel').toLowerCase();iprEl.style.opacity='1';iprEl.style.display='block';}
