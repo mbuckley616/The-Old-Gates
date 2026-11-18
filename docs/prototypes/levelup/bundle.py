@@ -81,6 +81,7 @@ def build(name, title, note, srcfile, use_common, query=''):
         if "from './underworld.js'" in s: s = kits(s, ['shrines', 'underworld'])
         if "from './guildheads.js'" in s: s = kits(s, ['shrines', 'guildheads'])
         if "from './travellers.js'" in s: s = kits(s, ['shrines', 'creatures', 'travellers'])
+        if "from './rivals.js'" in s: s = kits(s, ['shrines', 'creatures', 'rivals'])
         if "from './festivals.js'" in s: s = kits(s, ['pieces', 'shrines', 'creatures', 'festivals'])
         if "from './naves.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'naves'])
         if "from './impacts.js'" in s: s = kits(s, ['gatekit', 'gatecond', 'bind', 'impacts'])
@@ -234,4 +235,5 @@ build('powers-costume.html', 'The powers’ costume', 'The powers’ costume (L1
 build('underworld-five.html', 'The underworld', 'The underworld (L2, OG-006; the quest writer’s The Underworld): the five of the draft, Philo the fence, Uallach the broker, Brógán the black market, Eadburh Two-Purses and Siadhal the highwayman-pilgrim. ?level=a|b|c (A as townsfolk, B one tell each, C OG-006 as drawn), &cam=wide|close|face|scale|high, &who=philo|uallach|brogan|eadburh|siadhal, &turn=1. Drag to look.', 'underworld-view.js', True)
 build('guild-heads.html', 'The guild heads', 'The guild heads (L2, OG-064): the Fighters’ Guildmaster and the Mages’ Archmage as a Gatelander, a Markman, an Aurennais and one of the Old Blood. ?level=a|b|c (A their people’s own, B the guild’s livery over their people, C OG-064 as drawn), &cam=wide|close|face|scale|high, &who=f_gl|f_mk|f_au|f_ob|m_gl|m_mk|m_au|m_ob, &turn=1. Drag to look.', 'guildheads-view.js', True)
 build('travellers-five.html', 'The travellers', 'The travellers (L2, OG-051; the quest writer’s Travellers): Zahra al-Mahdi the navigator, Tidwulf called Tid and his wolf, Sister Elidan of the shrines, Cuimín the reader and Markos Serra the patron. ?level=a|b|c (A as townsfolk, B the sheet’s faces, C on the road), &cam=wide|close|face|scale|high, &who=zahra|tid|elidan|cuimin|markos, &turn=1. Drag to look.', 'travellers-view.js', True)
+build('rivals-five.html', 'The rivals', 'The rivals (L2, OG-083; the quest writer’s Rivals): the five of the draft, Cynric Stonehand the guide, Lysandra Per-Akhet the patron, Alard de Drac the unmade knight, Ailill the seeker and Tadhg Ó Faoláin the scout with his wolf. ?level=a|b|c (A as the draft dresses them, B armed as the player is armed, C OG-083 as drawn), &cam=wide|close|face|scale|high, &who=cynric|lysandra|alard|ailill|tadhg, &turn=1. Drag to look.', 'rivals-view.js', True)
 print('ok')
