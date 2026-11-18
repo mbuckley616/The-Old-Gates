@@ -1194,10 +1194,17 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
   // of the head over the shoulder blades further out than that, so 4% of Caoimhe's came out through her cape's back by up to 2.6 cm. Each
   // column now stands 1 cm over the hair's own outline (its furthest strand at each angle and height round the neck's axis) below 3 cm
   // under the neck, rising to it and falling from it gently down the column (0.4 cm out for each centimetre down), as over a hand
+  // and over a tabard (Session 2382, S2364's owed note): the cape was cleared of the body and a tabard's allowance (clearAt, 6 cm over mail),
+  // but the tabard's back panel hangs flat across the shoulder blades, over the hollow of the spine, so a guild head's cape (worn back,
+  // capeOpen 1) followed the body into that hollow and the panel's red came through it in a strip down the middle of the back. Its columns
+  // stand 1 cm over the tabard's own outline the same way as over loose hair (the call passes the tabard with the hair, or alone), and from
+  // the cape's first row down, where the hair's starts 3 cm under the neck: the tabard's straps came through at the neckline too
   let overHair = 0; if (cape && hairMeshes) { const HP = []; for (const m of hairMeshes) if (m.name === 'hair') { const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
-    if (HP.length) { const nH = HP.length / 3, BH = new Uint8Array(nH).fill(1); BH.off = new Float32Array(nH); const hairR = radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH);
+    for (const m of hairMeshes) if (m.name === 'tabard') { HP.tab = HP.length / 3; const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
+    if (HP.length) { const nH = HP.length / 3, BH = new Uint8Array(nH).fill(1); BH.off = new Float32Array(nH); for (let i = 0; i < nH; i++) if (HP.tab != null && i >= HP.tab) BH[i] = 2;
+      const hairR = radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 1), tabR = HP.tab != null ? radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 2) : null;
       const pols = cols.map(c => c.map(q => ({ th: Math.atan2(q.x - neck.x, -(q.z - neck.z)), r: Math.hypot(q.x - neck.x, q.z - neck.z) })));
-      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r > 0 && c[r].y < neckY - .03 ? Math.max(p.r, hairR(p.th, c[r].y) + .01) : p.r), b = a.slice();
+      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r < 1 ? p.r : Math.max(p.r, c[r].y < neckY - .03 ? hairR(p.th, c[r].y) + .01 : 0, tabR ? tabR(p.th, c[r].y) + .01 : 0)), b = a.slice();
         for (let r = 1; r < R; r++) for (let d = -8; d <= 8; d++) { const j = r + d; if (j < 1 || j >= R) continue; const v = a[j] - .4 * .0105 * Math.abs(d); if (v > b[r]) b[r] = v; }
         return b.map((v, r) => Math.max(0, v - pol[r].r)); });
       // and across the columns: the hair's outline is read strand by strand, so neighbouring columns wanted different lifts and the cape's top
@@ -1397,7 +1404,7 @@ function armsThrough(cols, R, PP, neck, BM) {
 // Each column is the outline of the body and what it wears, in its upright plane: the cloth falls straight below the furthest point above
 // it (the chest, the belly) and is taken in at the belt, then falls straight again to the mid-thigh. No emblem: the
 // Crown's device is not in the canon (the concept art's are the image generator's, docs/art/catalogue.csv).
-function buildTabard(G, body, byName) {
+function buildTabard(G, body, byName, worn = null) {
   // what the outline is read from: the body, the tights' shell when a tunic or trousers are worn (the tunic stands up to
   // 3.5 cm off it), the skirt's shell under a skirt; each with how far its garment stands out
   const D = G.dress, PP = posedBody(body), n = PACK.N, B = new Uint8Array(n);
@@ -1412,12 +1419,19 @@ function buildTabard(G, body, byName) {
   const tunicPush = (x, y) => { const yr = y - yBelt + .162; return .013 + (Math.abs(x) < .2 ? .022 * Math.max(0, Math.min(1, (.46 - yr) / .2)) * (1 - .8 * Math.exp(-(((yr - .16) / .03) ** 2))) : 0) + .002; };
   const ramp = (a, b, v) => Math.max(0, Math.min(1, (v - a) / (b - a))), mailOn = (y, yr = y - yBelt + .162) => yr > .06 && yr < .6 ? .009 + .012 * ramp(.2, .1, yr) : 0;
   const OFF = (i, x, y) => B[i] === 2 ? (D.tunic ? tunicPush(x - cx, y) + (mail ? mailOn(y) : 0) : .01) : B[i] === 3 ? .025 : B[i] === 4 ? (yr => .027 + .012 * ramp(.14, -.16, yr) + .03 * ramp(-.14, 0, yr))(y - yBelt + .162) : 0;
+  // the mail's own surface (Session 2384): OFF reads the mail as a push off the tights by height (mailOn) and the belt takes the tabard in
+  // to bz under it, but the mail's shell stands further out than that at the small of the back, and a band of its rings came out through
+  // the back panel at the belt (the Markman Guildmaster's, 3 to 4 cm wide). The posed points of the mail and its skirt that are drawn (their
+  // cuts, as wornClouds reads them) are read beside the body, at their own place, with no push
+  const WP = []; if (worn) for (const m of worn) { if (!m || !/^mail(Skirt)?$/.test(m.name)) continue; const X = posedOf(m), R0 = PACK.rest, cut = m.material.userData.cut;
+    for (const v of new Set(m.geometry.index.array)) { if (m.name === 'mail' ? Math.abs(R0[v * 3]) >= (cut?.[2] ?? .3) : R0[v * 3 + 1] <= (cut?.[0] ?? -.27)) continue; WP.push(X[v * 3], X[v * 3 + 1], X[v * 3 + 2]); } }
   const bz = mail ? .034 : .025, W = sh * .56, NC = 21, yHem = yBelt - .25 - .2 * (D.tabardLen ?? .5), step = .01, clr = (D.mantle ? .05 : D.tunic ? .022 : .012), hole = .068;
   const NY = Math.ceil((nY + .05 - yHem) / step) + 1, front = [], back = [], top = [], cols = [];
   // the body's outline per column: the furthest forward and back, and the top, of the points within 1.5 cm of its x
   for (let c = 0; c < NC; c++) { const x = cx - W + 2 * W * c / (NC - 1), F = new Float32Array(NY).fill(-9), Bk = new Float32Array(NY).fill(9), F1 = F.slice(), B1 = Bk.slice(), TF = F.slice(), TB = Bk.slice(); let yt = -9;
     for (let i = 0; i < n; i++) { if (!B[i] || Math.abs(PP[i * 3] - x) > .015) continue; const y = PP[i * 3 + 1], z = PP[i * 3 + 2], o = OFF(i, PP[i * 3], y); if (y > nY + .05 || y < yHem - .02) continue;
       if (B[i] === 1 && Math.abs(x - cx) > hole && y > yt && Math.abs(z - cz) < .06) yt = y; const j = Math.max(0, Math.min(NY - 1, Math.round((nY + .05 - y) / step))); if (z + o > F[j]) F[j] = z + o; if (z - o < Bk[j]) Bk[j] = z - o; if (B[i] === 1) { if (z > F1[j]) F1[j] = z; if (z < B1[j]) B1[j] = z; } if (B[i] === 2) { if (z > TF[j]) TF[j] = z; if (z < TB[j]) TB[j] = z; } }
+    for (let i = 0; i < WP.length; i += 3) { if (Math.abs(WP[i] - x) > .015) continue; const y = WP[i + 1], z = WP[i + 2]; if (y > nY + .05 || y < yHem - .02) continue; const j = Math.max(0, Math.min(NY - 1, Math.round((nY + .05 - y) / step))); if (z > F[j]) F[j] = z; if (z < Bk[j]) Bk[j] = z; }
     // the neck hole: the front starts at the collar's dip, the back a little higher
     const t = Math.max(0, 1 - Math.abs(x - cx) / hole), yf = Math.abs(x - cx) > hole ? yt + clr : nY - .045 - .03 * t, yb = Math.abs(x - cx) > hole ? yt + clr : nY - .02 - .012 * t;
     // straight below the furthest point above, taken in under the belt (2.5 cm off the tights' shell: over the tunic,
@@ -5015,7 +5029,7 @@ function* makePersonSteps(G, o = {}) {
     const curl = s => { for (let f = 2; f <= 5; f++) for (let j = 1; j <= 3; j++) { const b = byName[`finger${f}-${j}.R`]; if (b) b.quaternion.setFromAxisAngle(hinge, s * [1.15, 1.35, .95][j - 1]); } };
     basketGrip = fistGrip(body, byName, root, curl, hinge); }
   yield;
-  let tabardStats = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName); root.add(T.mesh); tabardStats = T.stats; }
+  let tabardStats = null, tabardMesh = null; if (D.tabard) { root.updateMatrixWorld(true); const T = buildTabard(G, body, byName, meshes.filter(m => /^mail(Skirt)?$/.test(m.name))); root.add(T.mesh); tabardStats = T.stats; tabardMesh = T.mesh; }
   // the sash (Session 989): the arm at its hip is lifted out from the side, three hundredths of a radian at a time, until no point of it is through the band.
   // Its knot's hanging ends (Session 996) fall over the front of the thigh, where the relaxed hand lies: then the arm is swung back
   // from the shoulder, as far again at most, until the hand hangs at the thigh's side behind them
@@ -5057,7 +5071,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let coatHoodSt = null; if (coat && D.coatHood === 'down') { root.updateMatrixWorld(true); const C = buildCoatHoodDown(G, body, byName, meshes); for (const m of C.meshes) root.add(m); coatHoodSt = C.stats; }
   yield;
-  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND, D.cape && hairStats && hairStats.style === 'loose' ? meshes : null); for (const m of C.meshes) root.add(m); cloakStats = C.stats;
+  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND, D.cape && (hairStats && hairStats.style === 'loose' || tabardMesh) ? [...(hairStats && hairStats.style === 'loose' ? meshes : []), ...(tabardMesh ? [tabardMesh] : [])] : null); for (const m of C.meshes) root.add(m); cloakStats = C.stats;
     if (!D.cape && hairStats && /^(braid|braids|tail|shaved)$/.test(hairStats.style)) cloakStats.hairOver = hairOverCloak(meshes, C.meshes); }
   // the satchel (Session 2113), over everything worn, before the shield
   yield;
