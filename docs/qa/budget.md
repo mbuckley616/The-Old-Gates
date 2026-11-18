@@ -1336,3 +1336,25 @@ Session 2360 (QA): s1692, 24 merges after s1668. `budget` had grown past `run.mj
 Every ceiling held, and no spot rose more than 10%. The street is within 3% of s1668 (its houses +16 calls at every level). Portclare's
 square, the inn and the gate read the same as s1668 to 1 call and 2k triangles. The field reads lower (noon Low 561 → 451 calls) because
 its own boot has not loaded the street's chunks or built its bodies first (land 278 → 232, bodies 126 → 56): a new baseline, not a fall.
+
+### s1716 — 2026-11-18 19:00 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 611 | 1.11 M | 0 | 0 | 125 | 145 | 250 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 486, 917k |
+| Dunmore street, noon | Middle | 785 | 1.85 M | 157 | 6 | 125 | 145 | 261 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 633, 1.60 M |
+| Dunmore street, noon | High | 839 | 2.31 M | 194 | 6 | 124 | 145 | 279 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 687, 2.06 M |
+| Dunmore street, midnight | Low | 665 | 1.07 M | 0 | 0 | 122 | 201 | 250 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 543, 918k |
+| Dunmore street, midnight | Middle | 851 | 1.78 M | 169 | 6 | 122 | 201 | 261 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 726, 1.62 M |
+| Dunmore street, midnight | High | 918 | 2.31 M | 218 | 6 | 122 | 201 | 279 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 786, 2.14 M |
+
+### s1716 — 2026-11-18 19:08 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| the field west of Dunmore, noon | Low | 451 | 539k | 0 | 0 | 56 | 122 | 232 | 41 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 395, 450k |
+| the field west of Dunmore, noon | Middle | 562 | 941k | 87 | 6 | 56 | 122 | 250 | 41 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 505, 849k |
+| the field west of Dunmore, noon | High | 608 | 1.42 M | 124 | 6 | 56 | 122 | 259 | 41 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 551, 1.32 M |
+| the field west of Dunmore, dawn | Low | 536 | 526k | 0 | 0 | 61 | 201 | 232 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 475, 451k |
+| the field west of Dunmore, dawn | Middle | 706 | 996k | 146 | 6 | 61 | 201 | 250 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 642, 912k |
+| the field west of Dunmore, dawn | High | 760 | 1.53 M | 191 | 6 | 61 | 201 | 259 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 690, 1.43 M |
