@@ -41,7 +41,7 @@ const tryBeds = () => page.evaluate(() => { const out = []; const _m = showMsg; 
     const prompt = WORLD.bedPrompt(b), refused = WORLD.bedInteract(b); out.push({ room: b.room, prompt, sleeps: !refused, said }); } }
   finally { showMsg = _m; } return out; });
 
-const rows = [], refusals = [], counts = [];
+const rows = [], refusals = [], counts = [], ovens = [];
 const sels = [];
 for (const town of ['dunmore', 'portclare']) { await g.settle(town);
   /* Session 1368: a town's coaching inn on the new look is the kit's own room, its eight rooms named by floor and side (kitcoachroom) */
@@ -57,7 +57,14 @@ if (key) sels.push({ key });
 
 for (const sel of sels) {
   if (sel.town) await g.settle(sel.town); else await page.evaluate((k) => { const h = ZONES.world.houses.find(x => x.coachInn === k); px = h.exitX; pz = h.exitZ + 3; }, sel.key);
-  await enter(sel); const L = await layout(); await leave();
+  await enter(sel); const L = await layout();
+  /* Session 2366: the inn's clay oven (kitchenOvenDress, 84), where ovenHere lets you bake: by a wall, on no solid, and not behind the bar */
+  ovens.push(await page.evaluate(() => { const o = interiorScene.children.find(c => c.userData && c.userData.kitchenOven), b = INT_SOL.find(s => s.kitchenOven);
+    const hit = b ? INT_SOL.filter(s => s !== b && s.y0 < 1 && s.y1 > .1 && s.x0 < b.x1 && s.x1 > b.x0 && s.z0 < b.z1 && s.z1 > b.z0).length : null;
+    const nx = o ? Math.round(Math.sin(o.rotation.y)) : 0, nz = o ? Math.round(Math.cos(o.rotation.y)) : 0, cx = b ? (b.x0 + b.x1) / 2 : 0, cz = b ? (b.z0 + b.z1) / 2 : 0, P = [1, 1.5, 2, 2.5].map(t => [cx + nx * t, cz + nz * t]);
+    const bar = b ? INT_SOL.some(q => q !== b && q.y1 > .7 && q.y1 < 1.4 && q.y0 < .3 && Math.max(q.x1 - q.x0, q.z1 - q.z0) >= 1.8 && P.some(([x, z]) => x > q.x0 && x < q.x1 && z > q.z0 && z < q.z1)) : null;
+    return { id: currentHouse.id, oven: ovenHere(), laid: !!o, island: o && o.userData.kit.island, hit, bar, wall: b ? +Math.min(b.x0, b.z0, (currentHouse._roomW || currentHouse.intW) - b.x1, (currentHouse._roomD || currentHouse.intD) - b.z1).toFixed(2) : null }; }));
+  await leave();
   const n = L.rooms.length; const inn = await page.evaluate((sel) => { const h = sel.key ? ZONES.world.houses.find(x => x.coachInn === sel.key) : WORLD.settle.get(sel.town).houses.find(x => x.id === sel.id); return h.name; }, sel);
   counts.push({ inn, n, doors: L.doors.length, stair: L.head.x < L.W / 2 ? 'west' : 'east' });
   // six nights: the offer and its name, against the door the player would reach
@@ -101,5 +108,6 @@ check('the nights include an empty house with a room standing empty, and a guest
 const s0 = refusals[0].sleep;
 check('E at your own bed opens the sleep, eight hours pass (and the minute or so the fade runs), you wake in the room and it is still yours', s0 && s0.opened && s0.slept >= 480 && s0.slept < 490 && s0.indoors && /Your room/.test(s0.stillMine), s0);
 check('when the night you paid for has run out, the bed is the innkeeper\'s to let again', /Ask the innkeeper for a room/.test(refusals[0].expired || ''), refusals[0].expired);
+check(`every inn bakes, and each shows its clay oven by a wall, on no solid and not behind its bar (Session 2366; ${ovens.length} inns)`, ovens.length >= 3 && ovens.every(o => o.oven && o.laid && o.hit === 0 && !o.bar && o.wall < .1), ovens);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
