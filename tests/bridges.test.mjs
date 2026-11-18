@@ -112,6 +112,26 @@ check('over the middle your feet are on the setts, within 0.25 (they were 0.5 to
 check('a swimmer under a bridge\'s middle stays in the water: the deck is not their ground', w.out.every(o => o.under < -.5), w.out.map(o => [o.id, o.under]));
 check('a rail blocks in its own frame and the deck between does not', w.out.every(o => o.rail && !o.open), w.out.map(o => [o.id, o.rail, o.open]));
 check('the deck is one walk whole and two either side of a gap', w.whole === 1 && w.plats === 2, { whole: w.whole, down: w.plats });
+// Session 2361: a foe on a bridge walks its deck. A bandit at one end chases you across to the other by the foes' own tick
+// (`tickZoneEnemies`), and over the middle its feet read the setts; it walked the causeway 0.5 to 0.8 m under them (or the bed of
+// a deep crossing); you are kept 6 m ahead of it, inside its 30 m. One set down under the middle stays on the ground there: the deck is taken from its ends.
+const fw = await page.evaluate(() => { const out = [], keep = ZE, php = PHP;
+  try { for (const m of WORLD.scene.children.filter(o => o.userData.bridge && ZONES.world.platforms.filter(p => p.bridge === o.userData.bridgeId).length === 1)) { /* whole: one walk, not a gap's two */ const S = m.userData.span, sx = Math.sin(S.ang), cz = Math.cos(S.ang), deck = m.position.y + .28;
+    const W = (u, v = 0) => ({ x: m.position.x + sx * u + cz * v, z: m.position.z + cz * u - sx * v }), f = W(-S.len / 2 - 4), T = W(S.len / 2 + 4);
+    px = T.x; pz = T.z; jumpY = activeTerrainH(px, pz); const e = buildZoneEnemy(WORLD.scene, [], f.x, f.z, 'Bandit', null); e.locked = false; e.alert = true; e.isBoss = false;
+    if (!e.mesh.parent) WORLD.scene.add(e.mesh); ZE = [e]; let n = 0, lo = 1e9, hi = -1e9, t = performance.now();
+    for (; n < 3000; n++) { const ue = (e.x - m.position.x) * sx + (e.z - m.position.z) * cz, ahead = W(Math.min(S.len / 2 + 4, ue + 6)); px = ahead.x; pz = ahead.z; jumpY = activeTerrainH(px, pz); PHP = 9999; e.alert = true; e.atkCd = 9; e.telegraphT = 0; t += 1000 / 60; tickZoneEnemies(1 / 60, t, WORLD.scene);
+      const u = (e.x - m.position.x) * sx + (e.z - m.position.z) * cz; if (Math.abs(u) < S.len / 2 - 2.6) { const y = e.mesh.position.y - deck; lo = Math.min(lo, y); hi = Math.max(hi, y); }
+      if (Math.hypot(T.x - e.x, T.z - e.z) < 1.6) break; }
+    const reached = Math.hypot(T.x - e.x, T.z - e.z) < 1.6, mid = W(0); e.x = mid.x; e.z = mid.z; e._deck = null; e.alert = false; e.homeX = mid.x; e.homeZ = mid.z;
+    tickZoneEnemies(1 / 60, t + 17, WORLD.scene); const under = +(e.mesh.position.y - deck).toFixed(2), bed = +(activeTerrainH(e.x, e.z) - deck).toFixed(2);
+    WORLD.scene.remove(e.mesh); if (e.el && e.el.parent) e.el.parent.remove(e.el);
+    out.push({ id: m.userData.bridgeId, reached, ticks: n, lo: +lo.toFixed(2), hi: +hi.toFixed(2), under, bed }); } }
+  finally { ZE = keep; PHP = php; } return out; });
+console.log(JSON.stringify(fw));
+check('a foe chases you across every bridge by its own tick, and reaches the far end (Session 2361)', fw.length > 0 && fw.every(o => o.reached), fw.map(o => o.id + ' ' + o.reached + ' in ' + o.ticks));
+check('over the middle the foe\'s feet are on the setts, within 0.25 (it walked the causeway under them)', fw.every(o => o.lo > -.25 && o.hi < .25), fw.map(o => [o.id, o.lo, o.hi]));
+check('a foe set down under the middle keeps the ground there: the deck is taken only from its ends', fw.every(o => o.under === o.bed && o.under < -.3), fw.map(o => [o.id, o.under, o.bed]));
 for (const [k, u] of Object.entries(r.shots)) fs.writeFileSync(`tests/out/bridge-${k}.png`, Buffer.from(u.split(',')[1], 'base64'));
 delete r.shots; console.log(JSON.stringify(r));
 check('there are bridges in the loaded world', r.n > 0, r.n);

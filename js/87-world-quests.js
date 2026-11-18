@@ -2054,7 +2054,7 @@ const giver=`${lord.title} ${lord.name}`;
   function patrolStep(e,dt){const W=e._beatWay;if(!W||!W.length)return false;const w=W[0];const dx=w.x-e.x,dz=w.z-e.z,d=Math.hypot(dx,dz);
     if(d<(W.length>1?1:3)){W.shift();return W.length>0;}
     const step=Math.min(d,(e._beatPace||e.spd)*dt),nx=e.x+dx/d*step,nz=e.z+dz/d*step;if(currentZoneSolid(nx,nz)){e._beatKey=null;e._beatWay=null;return false;}
-    e.x=nx;e.z=nz;e.walkT=(e.walkT||0)+dt;const y=activeTerrainH(e.x,e.z);e.mesh.position.set(e.x,y,e.z);e.el.position.set(e.x,y+.8,e.z);e.combatYaw=Math.atan2(dx,dz);e.mesh.lookAt(e.x+dx/d,y,e.z+dz/d);return true;}
+    e.x=nx;e.z=nz;e.walkT=(e.walkT||0)+dt;const y=typeof foeY==='function'?foeY(e):activeTerrainH(e.x,e.z);e.mesh.position.set(e.x,y,e.z);e.el.position.set(e.x,y+.8,e.z);e.combatYaw=Math.atan2(dx,dz);e.mesh.lookAt(e.x+dx/d,y,e.z+dz/d);return true;}
   function tickSieges(){if(activeZoneId!=='world')return;
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=worldState.towns&&worldState.towns[t.id];if(!st)continue;const kind=st.flags.besieged!=null?'siege':st.flags.occupied!=null?'occupied':null;
       const S=SIEGES.get(t.id);const d=Math.hypot(px-t.x,pz-t.z);
