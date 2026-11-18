@@ -1047,6 +1047,8 @@ function renderShop(){
   });
 }
 function itemDesc(it){
+  if(it&&(it.arc||it.arcSpare)&&typeof arcDesc==='function')return arcDesc(it); /* S2371 — "2 of 3 of Tine's armillary" (68-dungeon-misc.js) */
+  if(it&&it.gateCrystal)return 'Gate crystal';
   if(it.type==='potion'&&it.heal)return`+${it.heal} HP`;
   if(it.type==='potion'&&it.mana)return`+${it.mana} MP`;
   if(it.type==='potion'&&it.stam)return`+${it.stam} Stamina`;

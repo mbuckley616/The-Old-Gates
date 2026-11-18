@@ -1714,14 +1714,22 @@ function mineVein(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working th
   if(veinLeft(v)<=0){showMsg('The vein is worked out.','#cc8844');return;}
   MINE={v,t:VEIN_STRIKE};showMsg(`You set to the ${ORE_DEF[v.ore].name.toLowerCase()}.`,'#c8b890');}
 function tickMining(dt){if(!MINE)return;const v=MINE.v;
+  if(v.gate!=null){tickGateMining(dt);return;} /* S2371 — a gate keep's crystal (68-dungeon-misc.js) */
   if(!veinLive(v)||activeZoneId!=='world'||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}
   MINE.t-=dt;if(MINE.t>0)return;MINE.t+=VEIN_STRIKE;
   const r=strikeVein(v);if(typeof uiNoise==='function')uiNoise(.06,.12,2400);
   if(r.why){showMsg(r.why,'#cc8844');MINE=null;return;}
   if(r.ore){showMsg(`${r.ore}.`+(r.left?'':' The vein is worked out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
   if(!r.left)MINE=null;}
+function tickGateMining(dt){const v=MINE.v;
+  if(!v.g||v.g.parent!==dScene||activeZoneId!=='dungeon'||currentFloor!==v.floor||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}
+  MINE.t-=dt;if(MINE.t>0)return;MINE.t+=VEIN_STRIKE;
+  const r=gateVeinStrike(v);if(typeof uiNoise==='function')uiNoise(.06,.12,2400);
+  if(r.why){showMsg(r.why,'#cc8844');MINE=null;return;}
+  if(r.got){showMsg(`${r.got}.`+(r.left?'':' The crystal is all cut out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
+  if(!r.left)MINE=null;}
 function useOreThing(i){const it=BAG[i];if(!it)return;
-  if(it.tool==='pick'){const v=veinNear();if(v)mineVein(v);else showMsg('Strike a vein with it.','#c8b890');return;}
+  if(it.tool==='pick'){const gv=typeof gateVeinNear==='function'&&gateVeinNear();if(gv){gateMine(gv);return;}const v=veinNear();if(v)mineVein(v);else showMsg('Strike a vein with it.','#c8b890');return;}
   if(it.ore||it.ingot){if(forgeHere())openForgePage();else showMsg(it.ore?'Smelt it at a forge.':'Work it at a forge.','#c8b890');}} /* S1494 — at a smith's, the forge's page */
 // the smith's and the goods shop's pick
 function minersPickFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...PICK_ITEM}]:[];}
@@ -3155,6 +3163,7 @@ function interact(){
     return;
   }
   if(typeof knotNear==='function'&&knotNear()){knotUse();return;} /* S1346 — a great gate's knot */
+  if(typeof gateAltarNear==='function'){const a=gateAltarNear();if(a){takeArc(a.seed);return;}const gv=gateVeinNear();if(gv){gateMine(gv);return;}} /* S2371 — a keep's arc and its crystal (68-dungeon-misc.js) */
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
   if(typeof varekListNear==='function'&&varekListNear()){varekListTake();return;} /* S2174 — the worn paper in the crypt */
   if(typeof cloakDenNear==='function'&&cloakDenNear()){cloakDenTake();return;} /* S992 — the cloak, from under its sleeping master */

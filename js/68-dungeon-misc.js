@@ -555,18 +555,80 @@ function gateCofferItems(portal,floor){const tier=Math.min(GATE_KEEP.tierMax,dun
   try{items=withLootRng(seededRng('loot',key),()=>withLootTier(tier,()=>{const out=[];for(let i=0;i<GATE_KEEP.cofferN;i++){const it=rollLoot(portal.diffScale,portal.theme,'coffer');if(it)out.push(it);}return out;}));}
   finally{LOOT_SCHOOL=was;}
   const orb=gateOrbFor(portal,floor);if(orb)items.unshift(orb);return items;}
-function gateKeepLay(portal,gen){if(!gen||!gen.gate||gen.ring==null||!gateCofferDue(portal))return null;
+function gateKeepLay(portal,gen){GATE_KEEP_LIE=null;if(!gen||!gen.gate||gen.ring==null||!gateCofferDue(portal))return null;
   const sp=gen.spaces[gen.ring],d=sp&&sp.dais;if(!d)return null;const fl=sp.floor||1,x=dAt((d.x0+d.x1)/2),z=dAt((d.z0+d.z1)/2),y=(fl===2?FLOOR2_Y:0)+.4;
   const K=gateKeepOf(portal.seed),was=Array.isArray(K.coffer),items=was?K.coffer:gateCofferItems(portal,fl);if(was)foundRestore(items);
   const group=new THREE.Group();const {lid}=buildChestShell(group,.85,0x77726a);group.scale.setScalar(DCELL);group.position.set(x,y,z);group.name='gateCoffer';
   {const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl);if(t){const dx=dAt(t.c)-x,dz=dAt(t.r)-z;group.rotation.y=Math.abs(dx)>Math.abs(dz)?(dx>0?Math.PI/2:-Math.PI/2):(dz>0?0:Math.PI);}} /* its front to the way in */
   dScene.add(group);
   const ch={id:`${portal.seed}:${fl}:coffer`,x,z,y:.4,opened:was,lid,treasure:true,coffer:portal.seed,floor:fl,mesh:group,items,displayName:'The Coffer'};
-  if(was&&lid)lid.rotation.x=-Math.PI/3;CHESTS.push(ch);return ch;}
+  if(was&&lid)lid.rotation.x=-Math.PI/3;CHESTS.push(ch);try{gateKeepThings(portal,gen,ch);}catch(e){console.warn('gateKeepThings',e);}return ch;}
 function gateCofferShut(ch){const S=worldState.sigilsRead;return !(S&&ch&&S[ch.coffer]!=null);}
 // the named action (co-op rules): the coffer opened, its list the world's from now on
 function openCoffer(ch){if(!ch||ch.coffer==null)return false;if(gateCofferShut(ch)){showMsg('The script round its lid is closed to you.','#c8b880');return false;}
   const K=gateKeepOf(ch.coffer);if(!Array.isArray(K.coffer))K.coffer=ch.items;else ch.items=K.coffer;openLoot(ch);return true;}
+// S2371 — what a gate keeps, session 1's second half: the altar's arc and the crystal vein (what-a-gate-keeps-build.md). Both stand in the
+// keep with the coffer, as plain stand-ins until the look builder dresses the room (the sheet's session 3).
+// The altar, a stone block on the dais between the way in and the coffer, holds one arc of its school's armillary (a working name; the
+// quest writer names them) in one lesser gate in three (seededRng('arc-has', seed); the rate is DECISION #1718, B built until answered).
+// Taken once (worldState.gateKeeps[seed].arc, the world's), it is numbered in the order you find them (worldState.relicArcs.found[school],
+// the character's): the first three of a school are its armillary's, a fourth is plain gate salvage. Weight 1, 40 at a counter, salvage.
+// The vein, a cluster of the gate's crystal in the keep's corner farthest from the way in, gives 3 crystals in a steady gate, 4 in a
+// failing one, 5 in a catastrophic one (worldState.gateKeeps[seed].vein: {n,s}, the world's), struck with a pick as a world vein is
+// (VEIN_STRIKE, the same chance and Mining), and never returns. A crystal: weight 0.5, 25 at a counter. Joining the arcs and setting a
+// crystal at the forge are the sheet's session 2.
+const GATE_ARC={rate:1/3,per:3,weight:1,price:40},GATE_VEIN={steady:3,failing:4,catastrophic:5,weight:.5,price:25};
+let GATE_KEEP_LIE=null; /* the keep's altar and vein as laid: {altar:{x,z,floor,seed,school,mesh,arc}, vein:{…}} */
+function gateArcDue(portal){if(!gateCofferDue(portal))return false;const K=worldState.gateKeeps&&worldState.gateKeeps[portal.seed];if(K&&K.arc)return false;
+  return seededRng('arc-has',portal.seed)()<GATE_ARC.rate;}
+function schoolName(s){return (typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[s]&&SCHOOL_DEF[s].name)||s;}
+function relicArcsOf(){const R=worldState.relicArcs||(worldState.relicArcs={});if(!R.found)R.found={};return R;}
+function arcItem(school,n){const it={name:`Arc of ${schoolName(school)}'s armillary`,ico:'◠',type:'misc',weight:GATE_ARC.weight,buyPrice:GATE_ARC.price,sellMult:1};
+  if(n<=GATE_ARC.per)it.arc={school,n};else{it.name=`Broken arc (${schoolName(school)})`;it.arcSpare=school;}return it;}
+function gateCrystalItem(school){return {name:`Gate crystal of ${schoolName(school)}`,ico:'💠',type:'misc',weight:GATE_VEIN.weight,buyPrice:GATE_VEIN.price,sellMult:1,gateCrystal:school};}
+// the bag's line for an arc: "2 of 3 of Tine's armillary"
+function arcDesc(it){return it&&it.arc?`${it.arc.n} of ${GATE_ARC.per} of ${schoolName(it.arc.school)}'s armillary`:it&&it.arcSpare?'A spare: gate salvage':'';}
+function gateVeinCap(cond){return GATE_VEIN[cond]||GATE_VEIN.steady;}
+function gateVeinRec(seed){const K=worldState.gateKeeps&&worldState.gateKeeps[seed];return (K&&K.vein)||{n:0,s:0};}
+function gateVeinLeft(v){return Math.max(0,v.cap-gateVeinRec(v.gate).n);}
+// laid by gateKeepLay with the coffer, in metres
+function gateKeepThings(portal,gen,coffer){GATE_KEEP_LIE={altar:null,vein:null};const sp=gen.spaces[gen.ring],fl=sp.floor||1,y=fl===2?FLOOR2_Y:0,school=gateOrbSchool(portal);
+  if(!school)return GATE_KEEP_LIE;
+  const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl),tx=t?dAt(t.c):coffer.x,tz=t?dAt(t.r):coffer.z;
+  {let dx=tx-coffer.x,dz=tz-coffer.z;const L=Math.hypot(dx,dz)||1;if(Math.abs(dx)>Math.abs(dz)){dx=Math.sign(dx);dz=0;}else{dz=Math.sign(dz||1);dx=0;} /* toward the way in, along the dais's axis */
+    const x=coffer.x+dx*2.6,z=coffer.z+dz*2.6,g=new THREE.Group();g.name='gateAltar';g.position.set(x,y+.4,z);
+    const stone=new THREE.MeshLambertMaterial({color:0x7a756c}),block=new THREE.Mesh(new THREE.BoxGeometry(1.2,.95,.7),stone);block.position.y=.475;block.rotation.y=dx?Math.PI/2:0;g.add(block);
+    let arc=null;if(gateArcDue(portal)){arc=new THREE.Mesh(new THREE.TorusGeometry(.32,.035,6,18,Math.PI*.75),new THREE.MeshLambertMaterial({color:0xb08a3a,emissive:0x2a1c06}));arc.position.y=1.0;arc.rotation.x=-Math.PI/2+.25;arc.name='gateArc';g.add(arc);}
+    dScene.add(g);DUNGEON_COLUMNS.push({x,z,r:.62,floor:fl,altar:portal.seed});
+    GATE_KEEP_LIE.altar={x,z,floor:fl,seed:portal.seed,school,mesh:g,arc};}
+  {const R=[[sp.x,sp.y],[sp.x+sp.w-1,sp.y],[sp.x,sp.y+sp.h-1],[sp.x+sp.w-1,sp.y+sp.h-1]],M=fl===2?gen.map2:gen.map,CS=fl===2?gen.cellSpace2:gen.cellSpace;
+    const ok=([c,r])=>M&&M[r]&&M[r][c]===1&&(!CS||CS[r][c]===sp.id),cs=R.filter(ok).sort((a,b)=>Math.hypot(dAt(b[0])-tx,dAt(b[1])-tz)-Math.hypot(dAt(a[0])-tx,dAt(a[1])-tz));
+    const k=cs[0];if(k){const [c,r]=k,ox=c===sp.x?-1:1,oz=r===sp.y?-1:1,H=DCELL/2-.55,x=dAt(c)+ox*H,z=dAt(r)+oz*H,cap=gateVeinCap(gen.cond);
+      const v={id:`${portal.seed}:${fl}:vein`,gate:portal.seed,school,cap,x,z,floor:fl,g:null};
+      const g=new THREE.Group();g.name='gateVein';g.position.set(x,y,z);const col=new THREE.Color((typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[school]&&SCHOOL_DEF[school].col)||'#9ad');
+      const mat=new THREE.MeshLambertMaterial({color:col,emissive:col.clone().multiplyScalar(.35)}),rr=seededRng('gatevein',v.id);
+      for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.16+rr()*.12,0),mat);m.scale.y=2+rr()*1.4;m.position.set((rr()-.5)*.6,.25+rr()*.2,(rr()-.5)*.6);m.rotation.set((rr()-.5)*.6,rr()*3,(rr()-.5)*.6);g.add(m);}
+      dScene.add(g);v.g=g;gateVeinShow(v);GATE_KEEP_LIE.vein=v;}}
+  return GATE_KEEP_LIE;}
+function gateVeinShow(v){if(!v||!v.g)return;const left=gateVeinLeft(v),n=v.g.children.length;v.g.children.forEach((m,i)=>{m.visible=i<Math.ceil(n*left/v.cap);});}
+function gateAltarNear(){const A=GATE_KEEP_LIE&&GATE_KEEP_LIE.altar;if(!A||!A.arc||activeZoneId!=='dungeon'||A.floor!==currentFloor)return null;return Math.hypot(px-A.x,pz-A.z)<TOUCH+.6?A:null;}
+function gateVeinNear(){const v=GATE_KEEP_LIE&&GATE_KEEP_LIE.vein;if(!v||activeZoneId!=='dungeon'||v.floor!==currentFloor)return null;return Math.hypot(px-v.x,pz-v.z)<TOUCH+.5?v:null;}
+// the named action (co-op rules): the altar's arc taken; returns the item, or null
+function takeArc(seed){const A=GATE_KEEP_LIE&&GATE_KEEP_LIE.altar;if(!A||A.seed!==seed||!A.arc)return null;
+  const R=relicArcsOf(),n=(R.found[A.school]||0)+1,it=arcItem(A.school,n);if(!canCarry(it)){showMsg('Too heavy to carry!','#cc8844');return null;}
+  R.found[A.school]=n;gateKeepOf(seed).arc=1;if(typeof markSalvage==='function')markSalvage(it);bagAdd(it);
+  if(A.arc.parent)A.arc.parent.remove(A.arc);A.arc=null;
+  showMsg(n<=GATE_ARC.per?`An arc of ${schoolName(A.school)}'s armillary: ${n} of ${GATE_ARC.per}.`:`An arc of ${schoolName(A.school)}'s, and you have its armillary's three. This one is salvage.`,'#d8c890');
+  if(typeof renderHubInv==='function')try{renderHubInv();}catch(e){}return it;}
+// one strike at the keep's vein, on its own stream (the world vein's rule: 0.35 + 0.005 a Mining level); returns {got, left} or {why}
+function gateVeinStrike(v){if(!hasPick())return {why:'You need a pick.'};let r=gateVeinRec(v.gate);if(r.n>=v.cap)return {why:'The crystal is all cut out.'};
+  const it=gateCrystalItem(v.school);if(!canCarry(it))return {why:'Too heavy to carry!'};
+  const got=seededRng('ore',v.id+':'+r.s)()<.35+.005*skillLv('mining');r={n:r.n+(got?1:0),s:r.s+1};gateKeepOf(v.gate).vein=r;
+  if(got){bagAdd(it);skillUse('mining',4);}else skillUse('mining',1);gateVeinShow(v);
+  return {got:got?it.name:null,left:Math.max(0,v.cap-r.n)};}
+function gateMine(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the crystal.','#c8b890');return;}
+  if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}if(gateVeinLeft(v)<=0){showMsg('The crystal is all cut out.','#cc8844');return;}
+  MINE={v,t:VEIN_STRIKE};showMsg('You set to the crystal.','#c8b890');}
 function slayMaster(portal){if(!portal||!portal.lair)return;const M=worldState.masters||(worldState.masters={}),r=M[portal.seed];const was=r===true||!!(r&&r.dead);if(r&&typeof r==='object')r.dead=true;else M[portal.seed]=true;
   if(!was&&typeof cloakMasterSlain==='function')cloakMasterSlain(portal); /* S781 — the Wolf-Mother's Cloak off its master's corpse */
   if(!was&&typeof grantHead==='function')grantHead('skull');} /* S1734 — the first lair beast you kill gives the beast's skull, a figurehead (once) */

@@ -18,7 +18,8 @@ const P = await page.evaluate(() => {
   let found = 0, weap = 0, other = 0, wrong = 0; const p0 = twenty[0].p, school = gateOrbSchool(p0);
   for (let k = 0; k < 400; k++) withLootRng(seededRng('cofferkind', k), () => { const was = LOOT_SCHOOL; LOOT_SCHOOL = school; try { const it = rollLoot(p0.diffScale, p0.theme, 'coffer');
     if (!it || !(it.slot || it.implement)) other++; else if (it.found) { found++; if (it.school !== school) wrong++; } else if (it.slot === 'weapon') weap++; } finally { LOOT_SCHOOL = was; } });
-  return { rows, n: doors.length, found, weap, other, wrong, school, pick: (twenty.find(x => gateOrbDue(x.p)) || twenty[0]).p };
+  const arcs = doors.filter(x => gateArcDue(x.p)).length, caps = ['steady', 'failing', 'catastrophic'].map(gateVeinCap);
+  return { rows, n: doors.length, found, weap, other, wrong, school, arcs, caps, pick: (twenty.find(x => gateOrbDue(x.p) && gateArcDue(x.p)) || twenty.find(x => gateArcDue(x.p)) || twenty[0]).p };
 });
 console.log('rolls', JSON.stringify({ n: P.n, rows: P.rows.map(r => [r.seed, r.n, r.orb ? 'orb' : '', r.cap, r.mat].join(' ')), found: P.found, weap: P.weap, other: P.other }));
 check(`20 lesser gates with a carving of their own (of ${P.n} in the world)`, P.rows.length === 20, P.n);
@@ -26,6 +27,8 @@ check('each coffer rolls the same twice, on its own stream', P.rows.every(r => r
 check('2 pieces each, plus the orb where the gate keeps one, and no gold', P.rows.every(r => r.n === 2 + (r.orb ? 1 : 0) && r.gold === 0 && r.kit), P.rows.filter(r => !(r.n === 2 + (r.orb ? 1 : 0) && r.gold === 0)));
 check(`the orb lies first in the coffer of every orb gate (${P.rows.filter(r => r.orb).length} of 20)`, P.rows.every(r => r.orb ? r.orbFirst && r.orbs === 1 : r.orbs === 0), P.rows);
 check('nothing in a coffer is a potion, a pick or gold: only arms, armour and implements, over 400 rolls', P.other === 0, P.other);
+check(`one lesser gate's altar in three holds an arc (${P.arcs} of ${P.n}; DECISION #1718's B until answered)`, P.arcs / P.n > .22 && P.arcs / P.n < .45, P.arcs);
+check(`the vein holds 3, 4 and 5 crystals by the gate's condition (${P.caps})`, P.caps.join() === '3,4,5', P.caps);
 const share = P.found / (P.found + P.weap);
 check(`a weapon roll in five is a found implement of the gate's school (${(share * 100).toFixed(0)}% of ${P.found + P.weap}, ${P.wrong} of another school)`, share > .13 && share < .28 && P.wrong === 0, { found: P.found, weap: P.weap, wrong: P.wrong });
 
@@ -55,11 +58,38 @@ check(`shut before the carving is read: "${A.said}"`, A.shut && /closed to you/.
 check('the carving touched, it opens', A.sig && A.read && A.opened, A);
 check(`one piece taken (${A.took}): the coffer keeps the rest, ${A.left.length}`, A.inBag && A.left.length === A.items.length - 1, A);
 check("the coffer's list is the world row's, and a load gives it back", A.worldRow && JSON.stringify(A.loaded) === JSON.stringify(A.left), { worldRow: A.worldRow, loaded: A.loaded, left: A.left });
-// the gate built again: the coffer open, as you left it
+// S2371 — the altar's arc and the crystal vein, in the same keep
+const K = await page.evaluate((s) => { const L = GATE_KEEP_LIE || {}, A = L.altar, v = L.vein, out = { altar: !!A, arcShown: !!(A && A.arc && A.arc.parent), vein: !!v, cond: _lastGen.cond };
+  if (!A || !v) return out; const sp = _lastGen.spaces[_lastGen.ring], t = _lastGen.thresholds.find(t => t.a === _lastGen.ring || t.b === _lastGen.ring), tx = dAt(t.c), tz = dAt(t.r), c = CHESTS.find(x => x.coffer != null);
+  out.altarFore = Math.hypot(A.x - tx, A.z - tz) < Math.hypot(c.x - tx, c.z - tz); out.veinFar = +Math.hypot(v.x - tx, v.z - tz).toFixed(1); out.coffFar = +Math.hypot(c.x - tx, c.z - tz).toFixed(1);
+  out.inRoom = v.x > dAt(sp.x - .5) && v.x < dAt(sp.x + sp.w - .5) && v.z > dAt(sp.y - .5) && v.z < dAt(sp.y + sp.h - .5);
+  out.cap = v.cap; out.want = gateVeinCap(_lastGen.cond); const sm = showMsg; showMsg = () => {};
+  worldState.relicArcs = { found: {} }; px = A.x + .8; pz = A.z; out.near = !!gateAltarNear(); const n0 = BAG.length; interact(); const it = BAG[BAG.length - 1];
+  out.took = BAG.length === n0 + 1 && it.arc ? { n: it.arc.n, school: it.arc.school, want: gateOrbSchool(currentPortal), desc: itemDesc(it), w: it.weight, price: it.buyPrice * it.sellMult, salvage: !!it.salvage } : null;
+  out.arcGone = !A.arc && !(A.mesh.getObjectByName('gateArc')) && worldState.gateKeeps[s].arc === 1 && !gateAltarNear();
+  worldState.relicArcs.found[out.took ? out.took.school : 'tine'] = 3; const sp4 = arcItem(out.took ? out.took.school : 'tine', 4); out.fourth = { arc: !!sp4.arc, spare: !!sp4.arcSpare, desc: itemDesc(sp4) };
+  // the crystal: a pick, Mining 100 so every strike lands, struck until it is all cut out
+  if (!BAG.some(b => b.tool === 'pick')) bagAdd({ ...PICK_ITEM }); const S_ = skillsReady(), ml = S_.mining; S_.mining = { ...(ml || {}), lv: 100 }; px = v.x; pz = v.z;
+  const k0 = BAG.filter(b => b.gateCrystal).reduce((a, b) => a + (b.qty || 1), 0); let strikes = 0, last = null; for (let k = 0; k < 40; k++) { last = gateVeinStrike(v); strikes++; if (last.why || !last.left) break; }
+  out.got = BAG.filter(b => b.gateCrystal).reduce((a, b) => a + (b.qty || 1), 0) - k0; out.strikes = strikes; out.after = gateVeinStrike(v).why; out.shown = v.g.children.filter(m => m.visible).length;
+  const cr = BAG.find(b => b.gateCrystal); out.crystal = cr ? { s: cr.gateCrystal, w: cr.weight, price: cr.buyPrice * cr.sellMult, rows: BAG.filter(b => b.gateCrystal).length } : null;
+  S_.mining = ml; showMsg = sm;
+  const rows = ssSplitPayload(JSON.parse(ssStringify(_buildSavePayload()))); out.arcsChar = !!(rows.c.wS.relicArcs && rows.c.wS.relicArcs.found) && !(rows.w.wS && rows.w.wS.relicArcs);
+  worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes || 0) + 30 * 1440; return out; }, seed);
+console.log('keep', JSON.stringify(K));
+check(`the keep has its altar before the coffer and its vein in the corner farthest from the way in (${K.veinFar} m against the coffer's ${K.coffFar})`, K.altar && K.vein && K.altarFore && K.inRoom && K.veinFar > K.coffFar, K);
+check(`its arc taken: the first of ${K.took && K.took.school}'s armillary, the gate's school, "${K.took && K.took.desc}", weight 1, 40, salvage`, K.arcShown && K.near && K.took && K.took.n === 1 && K.took.school === K.took.want && /^1 of 3 of /.test(K.took.desc) && K.took.w === 1 && K.took.price === 40 && K.took.salvage, K.took);
+check('taken once: gone from the altar, and the world remembers it', K.arcGone, K);
+check(`a fourth arc of a school is plain salvage (${K.fourth.desc})`, !K.fourth.arc && K.fourth.spare, K.fourth);
+check(`a ${K.cond} gate's vein gives ${K.got} crystals (${K.want} wanted) and then none`, K.cap === K.want && K.got === K.want && /cut out/.test(K.after || '') && K.shown === 0, K);
+check('a crystal is of the gate\'s school, weight 0.5, 25, one stack', K.crystal && K.crystal.s === (K.took && K.took.want) && K.crystal.w === .5 && K.crystal.price === 25 && K.crystal.rows === 1, K.crystal);
+check('the arcs found are the character row\'s', K.arcsChar, K.arcsChar);
+// the gate built again, 30 days on: the coffer open, as you left it; the arc and the crystal do not come back
 await page.evaluate((s) => { window._prevDScene = dScene; const e = WORLD.doorAnywhere(s), p = makePortalDef(e); p.zone = 'world'; p.sigil = true; p.theme = p.theme || e.theme; goToDungeon(p); }, seed);
 await inGate();
-const B = await page.evaluate(() => { const c = CHESTS.find(x => x.coffer != null); return c ? { opened: c.opened, items: c.items.map(i => i.name), lid: c.lid ? +c.lid.rotation.x.toFixed(2) : null } : null; });
+const B = await page.evaluate(() => { const c = CHESTS.find(x => x.coffer != null), L = GATE_KEEP_LIE || {}; return c ? { opened: c.opened, items: c.items.map(i => i.name), lid: c.lid ? +c.lid.rotation.x.toFixed(2) : null, arc: !!(L.altar && L.altar.arc), left: L.vein ? gateVeinLeft(L.vein) : null } : null; });
 console.log('again', JSON.stringify(B));
 check('entered again, the coffer stands open with what you left in it', B && B.opened && JSON.stringify(B.items) === JSON.stringify(A.left) && B.lid < 0, B);
+check(`and 30 days on the altar is bare and the vein cut out (${B && B.left} left)`, B && !B.arc && B.left === 0, B);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
