@@ -99,6 +99,14 @@ const idr = id => { let n = (id * 2654435761) >>> 0; n ^= n >>> 15; return (n % 
   const TEX = {};
   const tex = k => TEX[k] || (TEX[k] = PAINTERS[k]());
   function mat(k, o = {}) { const t = tex(k); return new THREE.MeshStandardMaterial({ map: t.map, normalMap: t.normalMap, normalScale: new THREE.Vector2(o.ns ?? 1, o.ns ?? 1), roughness: o.rough ?? .9, metalness: 0, color: o.color ?? 0xffffff }); }
+  // (Session 2362) ringed mail (the critic, 17 Nov, s1674: Dunmore's byrnies read as black coats, its window's helms as lamps): rows of
+  // rings, each row half a ring over the last, painted as a height with its normal map; 8 rings a tile and the tile repeated 14 times, so a
+  // ring is about 1.5 cm at the rooms' 0.6 a metre. Metalness .35, not .7: with no environment to reflect, .7 drew the mail near black.
+  PAINTERS.mail = () => { const t = texPair(128, (x, y) => { const n = 8, X = x * n, Y = y * n; let h = 0;
+      for (let b = -1; b <= 1; b++) { const jj = Math.floor(Y) + b, off = (((jj % 2) + 2) % 2) * .5; for (let a = -1; a <= 1; a++) { const ii = Math.floor(X - off) + a, d = Math.hypot(X - (ii + .5 + off), Y - (jj + .5)); h = Math.max(h, 1 - Math.abs(d - .5) / .17); } }
+      h = Math.max(0, h); const v = .22 + .62 * h ** .7; return [h, v, v * 1.01, v * 1.04]; }, 3);
+    t.map.repeat.set(14, 14); t.normalMap.repeat.set(14, 14); return t; };
+  const mailMat = () => { const t = tex('mail'); return new THREE.MeshStandardMaterial({ map: t.map, normalMap: t.normalMap, color: 0x9ea2a9, roughness: .42, metalness: .35 }); };
   // UVs from position by the face's major axis, so a texture keeps its scale on any box; `slopeX` sends v down the slope
   function worldUV(g, s = 1, o = {}) {
     const P = g.attributes.position, N = g.attributes.normal, uv = new Float32Array(P.count * 2);
@@ -1269,7 +1277,7 @@ function townhouseRoom(o = {}, r = stream('townhouse')) {
   const fd = plan.open.front.find(q => q.kind === 'fan' || q.kind === 'shopdoor'); fd.ajar = true; plan.open.back[0].ajar = true;
   const shell = building(plan), M = { ...roomMats(), dress: glMats().dress, plaster: mat('plaster', { ns: .35, color: 0xf2ede2, rough: .95 }), wax: new THREE.MeshStandardMaterial({ color: 0xeee2c4, roughness: .6 }),
     brass: new THREE.MeshStandardMaterial({ color: 0xb8903e, roughness: .32, metalness: .85 }), rug: mat('plaster', { ns: .3, color: 0x6a2a24, rough: 1 }),
-    /* (Session 2293) the looking glass silvered, not a white board; the armourer's mail, helms and byrnies (the critic, s1606) */ mirror: new THREE.MeshStandardMaterial({ color: 0x8e9ca6, roughness: .1, metalness: .3 }), mail: new THREE.MeshStandardMaterial({ color: 0x5a5c60, roughness: .62, metalness: .7 }) }, B = new Map(), boxes = [];
+    /* (Session 2293) the looking glass silvered, not a white board; the armourer's mail, helms and byrnies (the critic, s1606) */ mirror: new THREE.MeshStandardMaterial({ color: 0x8e9ca6, roughness: .1, metalness: .3 }), mail: mailMat() }, B = new Map(), boxes = [];
   const t = plan.t, X = plan.w / 2 - t, Z = plan.d / 2 - t, g = plan.floors, F0 = .03, F1 = g[0], F2 = g[0] + g[1], EAVE = g[0] + g[1] + g[2], SL = .25 /* a floor's depth, boards to ceiling */;
   const CE = [F1 - SL, F2 - SL, EAVE - .2], floors = [F0, F1, F2];
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { const q = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(q.attributes)) if (!['position', 'normal'].includes(k)) q.deleteAttribute(k);
@@ -1377,6 +1385,9 @@ function townhouseRoom(o = {}, r = stream('townhouse')) {
     /* (Session 2293) a helm with its brow band, crest and nasal, as the Mark's trader's hall draws it (S2290), so it reads as a helm, not a lamp (the critic, s1606); face is its front's turn */
     const helm = (x, y, z, face = 0) => { put(new THREE.SphereGeometry(.115, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 1.12, 1.05), 'mail', x, y, z, face); put(new THREE.CylinderGeometry(.12, .12, .035, 12, 1, true), 'iron', x, y + .015, z);
       put(new THREE.BoxGeometry(.018, .02, .25), 'iron', x, y + .125, z, face); put(new THREE.BoxGeometry(.028, .11, .014), 'iron', x + Math.sin(face) * .122, y - .04, z + Math.cos(face) * .122, face) /* the nasal */; };
+    /* (Session 2362) a helm for the window on a turned head-block, its mail aventail hanging to the block's shoulder: on a thin post the
+       helm alone read as a table lamp from the street and the door (the critic, 17 Nov, s1674); the stand 0.37 m to the helm's rim */
+    const helmStand = (x, y, z, face = 0) => { put(new THREE.CylinderGeometry(.062, .085, .37, 12), 'oak', x, y + .185, z); put(new THREE.CylinderGeometry(.118, .165, .2, 14, 1, true), 'mail', x, y + .27, z); helm(x, y + .37, z, face); };
     const flask = (x, y, z, k) => { put(new THREE.SphereGeometry(.05, 8, 6), k, x, y + .05, z); put(new THREE.CylinderGeometry(.015, .018, .07, 6), k, x, y + .12, z); };
     // what stands on a shelf, by trade: a step of ware along a run from a0 to a1 (along z on the gable, along x elsewhere)
     const stock = (along, c, a0, a1, y, k0) => { let k = k0 || 0; for (let a = a0 + .12; a < a1 - .1; k++) { const P = q => along === 'z' ? [c, y, a + q] : [a + q, y, c];
@@ -1402,7 +1413,7 @@ function townhouseRoom(o = {}, r = stream('townhouse')) {
     // the window's board at the sill, the trade's show on it (an apothecary's two show globes of coloured water)
     { const y = sw.y - .04, z0 = Z - .3; bx('oak', wx0, wx1, y, y + .03, z0, Z - .01, 'board', 0); const zc = z0 + .15;
       if (MR === 'potion') { for (const [f, k] of [[.25, 'blue'], [.75, 'wool']]) { const x = wx0 + (wx1 - wx0) * f; put(new THREE.SphereGeometry(.13, 14, 10), k, x, y + .03 + .16, zc); put(new THREE.CylinderGeometry(.03, .05, .1, 8), k, x, y + .03 + .33, zc); } stock('x', zc, wx0 + (wx1 - wx0) * .35, wx0 + (wx1 - wx0) * .65, y + .03); }
-      else if (MR === 'armor') { for (const f of [.3, .7]) { const x = wx0 + (wx1 - wx0) * f; bx('oak', x - .02, x + .02, y + .03, y + .4, zc - .02, zc + .02); helm(x, y + .4, zc); } }
+      else if (MR === 'armor') { for (const f of [.3, .7]) { const x = wx0 + (wx1 - wx0) * f; helmStand(x, y + .03, zc); } }
       else if (MR === 'barber') { put(new THREE.CylinderGeometry(.13, .08, .07, 16), 'delft', (wx0 + wx1) / 2, y + .065, zc); }
       else stock('x', zc, wx0, wx1, y + .03); }
     // the customers' side: by trade, against the cross wall east of the counter's end (room left to pass behind it) and in the east corner
@@ -1414,7 +1425,7 @@ function townhouseRoom(o = {}, r = stream('townhouse')) {
       /* (Session 2293) a byrnie, not a black box (the critic, s1606): the mail a tapered tube flattened to a chest, its neck, short sleeves hanging and a belt, as S2290's stands */
       put(new THREE.CylinderGeometry(.17, .23, .72, 12, 1, true).scale(1, 1, .62), 'mail', x, F0 + .97, z); put(new THREE.CylinderGeometry(.175, .175, .05, 12).scale(1, 1, .62), 'iron', x, F0 + 1.32, z) /* the neck */;
       for (const s2 of [-1, 1]) put(new THREE.CylinderGeometry(.06, .075, .28, 8, 1, true), 'mail', x + s2 * .2, F0 + 1.16, z, 0, .6, 0, s2 * .22) /* the sleeves */;
-      bx('iron', x - .2, x + .2, F0 + .73, F0 + .77, z - .13, z + .13) /* the belt */; boxes.push({ tag: 'stand', x0: x - .28, x1: x + .28, y0: F0, y1: F0 + 1.35, z0: z - .15, z1: z + .15, fl: 0 }); helm(x, F0 + 1.45, z); } }
+      bx('iron', x - .2, x + .2, F0 + .73, F0 + .77, z - .13, z + .13) /* the belt */; boxes.push({ tag: 'stand', x0: x - .28, x1: x + .28, y0: F0, y1: F0 + 1.35, z0: z - .15, z1: z + .15, fl: 0 }); helm(x, F0 + 1.45, z); put(new THREE.CylinderGeometry(.118, .165, .12, 14, 1, true), 'mail', x, F0 + 1.39, z) /* (Session 2363) the aventail, from the brow to the neck: the post no longer shows as a lamp's stalk */; } }
     else if (MR === 'barber') { const x = Math.min((cw0 + cw1) / 2, XW - .95), z = fz0 + .85; chair(0, x, z, 'z-', 'oak', true); bx('oak', x - .2, x + .2, F0 + .98, F0 + 1.22, z + .19, z + .23) /* the headrest */;
       bx('brass', x - .35, x + .35, F0 + 1.2, F0 + 1.95, fz0, fz0 + .03); bx('mirror', x - .3, x + .3, F0 + 1.25, F0 + 1.9, fz0 + .03, fz0 + .035) /* the glass, silvered in a gilt frame (Session 2293) */; table(0, x + .45, x + .85, fz0 + .05, fz0 + .45, .8, 'oak', 'washstand'); put(new THREE.CylinderGeometry(.16, .1, .09, 14), 'delft', x + .65, F0 + .845, fz0 + .25); }
     else if (cw1 - cw0 >= .8) { press(0, cw0, cw1, fz0, fz0 + .45, 1.5, 'oak', 'drawers', 0); for (let y = F0 + .2; y < F0 + 1.4; y += .3) for (let x = cw0 + .05; x < cw1 - .1; x += .4) bx('brass', x + .17, x + .21, y + .1, y + .14, fz0 + .45, fz0 + .47); }
@@ -2230,7 +2241,7 @@ function markTownRoom(o = {}, r = stream('marktownroom')) {
       return { front, mouth, kx, chZ, keeper, pFront: [[dr.x, Z1 - .05], inD0, [front[0], inD0[1]], front], pKeep: [[dr.x, Z1 - .05], inD0, [mouth[0], inD0[1]], mouth, [kx, mz], [kx, keeper.z]] }; };
     const pathOK = (pts, n, own) => along(pts.slice(0, n), .17).every(q => [stack, peis, leafB, well, R(st.x0, st.x1, st.z0, st.z1), ...own].every(k => !hit(q, k, 0)) && boxes.every(b => b.fl !== 0 || !b.tag || !hit(q, b, 0)));
     const c = cand.find(c => { if ((c.open > 0 ? c.zc1 + .65 : c.zc1) > Z1 + 1e-6 || !fits(c.reg, 0) || hit(c.reg, leafB, .05) || !frontOK(c)) return false; const W2 = walksOf(c), cb = R(wx - tw * B0, xb, c.zc0, c.zc1); return pathOK(W2.pFront, 4, [cb]) && pathOK(W2.pKeep, 4, [cb]); });
-    if (c) { const SM = { mail: new THREE.MeshStandardMaterial({ color: 0x5a5c60, roughness: .62, metalness: .7 }), bronze: new THREE.MeshStandardMaterial({ color: 0xc09a58, roughness: .18, metalness: .9 }),
+    if (c) { const SM = { mail: mailMat(), bronze: new THREE.MeshStandardMaterial({ color: 0xc09a58, roughness: .18, metalness: .9 }),
         soap: mat('stone', { ns: .6, color: 0x4a4e48 }), wadmal: mat('plaster', { ns: .4, color: 0x7a6a52, rough: 1 }), horn: new THREE.MeshStandardMaterial({ color: 0xc8b48a, roughness: .45 }),
         red: mat('wood', { ns: .5, color: 0x8a2a1e, rough: .7 }), heath: mat('thatch', { ns: .6, color: 0x8a5a7e, rough: 1 }), rope: mat('thatch', { ns: .4, color: 0xa08a60, rough: 1 }), steel: M.steel || new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: .3, metalness: .85 }) };
       Object.assign(M, SM);
@@ -3281,7 +3292,7 @@ function guildSpines() {
 //        floor), lamp, dormLamp, windows, w, d }
 function guildHallRoom(o = {}, r = stream('guild')) {
   const MG = o.guild === 'mages', plan = PLANS.guildhall({ ajar: true, guild: MG ? 'mages' : 'fighters' }); plan.interior = true; plan.r = stream(o.shell || 'guild-shell');
-  const shell = building(plan), F = guildForgeMats(), M = { ...roomMats(), steel: F.steel, leather: F.leather, grit: F.grit, red: mat('plaster', { ns: .4, color: 0x7a2020, rough: 1 }), mail: new THREE.MeshStandardMaterial({ color: 0x74767a, roughness: .55, metalness: .35 }) /* matte, with nothing round it to mirror */,
+  const shell = building(plan), F = guildForgeMats(), M = { ...roomMats(), steel: F.steel, leather: F.leather, grit: F.grit, red: mat('plaster', { ns: .4, color: 0x7a2020, rough: 1 }), mail: mailMat() /* matte, with nothing round it to mirror */,
     blue: mat('plaster', { ns: .4, color: 0x24406e, rough: 1 }), gilt: new THREE.MeshStandardMaterial({ color: 0xc8952e, roughness: .3, metalness: .75 }), books: new THREE.MeshStandardMaterial({ map: guildSpines(), roughness: .8 }),
     phial: new THREE.MeshStandardMaterial({ color: 0x3a8a52, emissive: 0x2a9a4a, emissiveIntensity: .35, roughness: .1, transparent: true, opacity: .8 }) }, B = new Map(), boxes = [], t = plan.t, X = plan.w / 2 - t, Z = plan.d / 2 - t, F0 = .05, F1 = plan.floors[0], EAVE = plan.floors[0] + plan.floors[1];
   const p = plan.roof.pitch * Math.PI / 180, tp = Math.tan(p), roofY = z => EAVE + (plan.d / 2 - Math.abs(z)) * tp /* the slate's underside */, LIN = .035 /* the lining under it */;
@@ -4183,7 +4194,7 @@ function markTrader(o = {}, r = stream('trader')) {
   const P = apoRoomMats(), M = { ...longMats(), iron: P.iron, steel: P.steel, oak: P.oak, ember: P.ember, flame: P.flame, linen: P.linen, rope: P.rope, water: P.water,
     soap: mat('stone', { ns: .6, color: 0x4a4e48 }), horn: new THREE.MeshStandardMaterial({ color: 0xc8b48a, roughness: .45 }), wadmal: mat('plaster', { ns: .4, color: 0x7a6a52, rough: 1 }),
     red: mat('wood', { ns: .5, color: 0x8a2a1e, rough: .7 }), blue: mat('wood', { ns: .5, color: 0x2e4a6a, rough: .7 }), bronze: new THREE.MeshStandardMaterial({ color: 0xc09a58, roughness: .18, metalness: .9 }),
-    mail: new THREE.MeshStandardMaterial({ color: 0x5a5c60, roughness: .62, metalness: .7 }) /* ringed mail: duller than the plate's steel */ }, B = new Map(), boxes = [];
+    mail: mailMat() /* ringed mail: duller than the plate's steel */ }, B = new Map(), boxes = [];
   const AL = { plank: 'board', log: 'post' };
   const put = (geo, key, x = 0, y = 0, z = 0, ry = 0, uv = .6, rx = 0, rz = 0) => { key = AL[key] || key; const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal'].includes(k)) g.deleteAttribute(k);
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); worldUV(g, uv);
@@ -4250,7 +4261,7 @@ function markTrader(o = {}, r = stream('trader')) {
       bx('oak', x - .03, x + .03, FY + 1.33, FY + 1.38, z - .22, z + .22) /* the shoulders, across the room's depth: the mail faces the hall */;
       put(new THREE.CylinderGeometry(.17, .23, .72, 12, 1, true).scale(.62, 1, 1), 'mail', x, FY + .98, z); put(new THREE.CylinderGeometry(.175, .175, .05, 12).scale(.62, 1, 1), 'iron', x, FY + 1.33, z) /* the neck */;
       for (const s of [-1, 1]) put(new THREE.CylinderGeometry(.06, .075, .28, 8, 1, true), 'mail', x, FY + 1.17, z + s * .2, 0, .6, s * .22, 0) /* the sleeves, short, hanging */;
-      bx('iron', x - .2, x + .2, FY + .74, FY + .78, z - .2, z + .2) /* the belt */; helm(x, FY + 1.5, z, Math.PI / 2);
+      bx('iron', x - .2, x + .2, FY + .74, FY + .78, z - .2, z + .2) /* the belt */; helm(x, FY + 1.5, z, Math.PI / 2); put(new THREE.CylinderGeometry(.118, .17, .15, 14, 1, true), 'mail', x, FY + 1.425, z) /* (Session 2363) the aventail, from the brow to the neck, over the bare post */;
       boxes.push({ tag: 'stand', x0: x - .24, x1: x + .24, y0: FY, y1: FY + 1.65, z0: z - .3, z1: z + .3 });
       /* a round shield over each stand, on the wall: boards in two colours, an iron boss and rim */ const sy = FY + 2.05, sh = new THREE.CylinderGeometry(.36, .36, .025, 20); sh.rotateZ(Math.PI / 2);
       put(sh, i % 2 ? 'blue' : 'red', -X + .015, sy, z); const bo = new THREE.SphereGeometry(.07, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2); bo.rotateZ(-Math.PI / 2); put(bo, 'iron', -X + .03, sy, z);
