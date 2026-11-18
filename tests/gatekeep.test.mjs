@@ -18,8 +18,13 @@ const P = await page.evaluate(() => {
   let found = 0, weap = 0, other = 0, wrong = 0; const p0 = twenty[0].p, school = gateOrbSchool(p0);
   for (let k = 0; k < 400; k++) withLootRng(seededRng('cofferkind', k), () => { const was = LOOT_SCHOOL; LOOT_SCHOOL = school; try { const it = rollLoot(p0.diffScale, p0.theme, 'coffer');
     if (!it || !(it.slot || it.implement)) other++; else if (it.found) { found++; if (it.school !== school) wrong++; } else if (it.slot === 'weapon') weap++; } finally { LOOT_SCHOOL = was; } });
+  // S2376 — the delver: one keep in three, his things on his own stream
+  const delv = doors.filter(x => gateDelverDue(x.p)), dRows = delv.slice(0, 12).map(({ p }) => { const a = gateDelverItems(p, 1), b = gateDelverItems(p, 1), nm = (D) => D.body.concat(D.camp).map(i => i.name + '|' + (i.value || i.tier || 0)).join(';');
+    const sw = a.body.find(i => i.slot === 'weapon'), gold = a.body.find(i => i.type === 'gold');
+    return { seed: p.seed, same: nm(a) === nm(b), gold: gold && gold.value, sword: sw && sw.weaponType, mat: sw && sw.tier, torch: a.body.some(i => i.torchType === 'torch'), book: a.body.some(i => i.bookId === 'delver_journal'), roll: a.camp.length === 1 && a.camp[0].roll === 'blanket' }; });
+  const delvers = { n: delv.length, rows: dRows };
   const arcs = doors.filter(x => gateArcDue(x.p)).length, caps = ['steady', 'failing', 'catastrophic'].map(gateVeinCap);
-  return { rows, n: doors.length, found, weap, other, wrong, school, arcs, caps, pick: (twenty.find(x => gateOrbDue(x.p) && gateArcDue(x.p)) || twenty.find(x => gateArcDue(x.p)) || twenty[0]).p };
+  return { rows, n: doors.length, delvers, found, weap, other, wrong, school, arcs, caps, pick: (twenty.find(x => gateOrbDue(x.p) && gateArcDue(x.p) && gateDelverDue(x.p)) || twenty.find(x => gateArcDue(x.p) && gateDelverDue(x.p)) || twenty.find(x => gateOrbDue(x.p) && gateArcDue(x.p)) || twenty.find(x => gateArcDue(x.p)) || twenty[0]).p };
 });
 console.log('rolls', JSON.stringify({ n: P.n, rows: P.rows.map(r => [r.seed, r.n, r.orb ? 'orb' : '', r.cap, r.mat].join(' ')), found: P.found, weap: P.weap, other: P.other }));
 check(`20 lesser gates with a carving of their own (of ${P.n} in the world)`, P.rows.length === 20, P.n);
@@ -31,6 +36,10 @@ check(`one lesser gate's altar in three holds an arc (${P.arcs} of ${P.n}; DECIS
 check(`the vein holds 3, 4 and 5 crystals by the gate's condition (${P.caps})`, P.caps.join() === '3,4,5', P.caps);
 const share = P.found / (P.found + P.weap);
 check(`a weapon roll in five is a found implement of the gate's school (${(share * 100).toFixed(0)}% of ${P.found + P.weap}, ${P.wrong} of another school)`, share > .13 && share < .28 && P.wrong === 0, { found: P.found, weap: P.weap, wrong: P.wrong });
+
+const DV = P.delvers;
+check(`one lesser gate's keep in three holds a dead delver (${DV.n} of ${P.n})`, DV.n / P.n > .22 && DV.n / P.n < .45, DV.n);
+check(`his things roll the same twice: a purse of 8 to 20 (${DV.rows.map(r => r.gold)}), a sword, a torch, his journal, and his camp's blanket roll`, DV.rows.length > 0 && DV.rows.every(r => r.same && r.gold >= 8 && r.gold <= 20 && r.sword === 'Sword' && r.torch && r.book && r.roll), DV.rows);
 
 // S2372 — session 2's parts that need no words: three arcs set together, the kept armillary's needle, a crystal set at the forge
 const J = await page.evaluate(() => { const sm = showMsg; showMsg = () => {}; const out = {}, X = 'cloch';
@@ -110,12 +119,30 @@ check(`a fourth arc of a school is plain salvage (${K.fourth.desc})`, !K.fourth.
 check(`a ${K.cond} gate's vein gives ${K.got} crystals (${K.want} wanted) and then none`, K.cap === K.want && K.got === K.want && /cut out/.test(K.after || '') && K.shown === 0, K);
 check('a crystal is of the gate\'s school, weight 0.5, 25, one stack', K.crystal && K.crystal.s === (K.took && K.took.want) && K.crystal.w === .5 && K.crystal.price === 25 && K.crystal.rows === 1, K.crystal);
 check('the arcs found are the character row\'s', K.arcsChar, K.arcsChar);
+// S2376 — the delver in this keep, if it has one: against the dais, his camp near the door, each looted once
+const D = await page.evaluate((s) => { const L = GATE_KEEP_LIE || {}, D = L.delver, out = { due: gateDelverDue(currentPortal), laid: !!D };
+  if (!D) return out; const b = D.body, c = D.camp, sp = _lastGen.spaces[_lastGen.ring], d = sp.dais, t = _lastGen.thresholds.find(t => t.a === _lastGen.ring || t.b === _lastGen.ring), tx = dAt(t.c), tz = dAt(t.r);
+  const X0 = dAt(d.x0) - DCELL / 2, X1 = dAt(d.x1) + DCELL / 2, Z0 = dAt(d.z0) - DCELL / 2, Z1 = dAt(d.z1) + DCELL / 2;
+  out.daisGap = +Math.hypot(Math.max(X0 - b.x, 0, b.x - X1), Math.max(Z0 - b.z, 0, b.z - Z1)).toFixed(2);
+  out.camp = !!c; if (c) { out.campDoor = +Math.hypot(c.x - tx, c.z - tz).toFixed(1); out.bodyDoor = +Math.hypot(b.x - tx, b.z - tz).toFixed(1); }
+  const want = gateDelverItems(currentPortal, b.floor); out.same = JSON.stringify(b.items.map(i => i.name)) === JSON.stringify(want.body.map(i => i.name));
+  const sm = showMsg; showMsg = () => {}; const g0 = gold; out.opened = lootDelver(b) && lootOpen && currentLootContainer === b; while (b.items.length) takeLootItem(0); closeLoot();
+  out.gold = gold - g0; out.journal = BAG.some(i => i.bookId === 'delver_journal'); out.sword = BAG.some(i => i.slot === 'weapon' && i.weaponType === 'Sword' && i.salvage);
+  if (c) { lootDelver(c); takeLootItem(0); closeLoot(); out.roll = BAG.some(i => i.roll === 'blanket'); out.rollHidden = !c.rollMesh.visible; }
+  showMsg = sm; out.kept = JSON.stringify(worldState.gateKeeps[s].delver); return out; }, seed);
+console.log('delver', JSON.stringify(D));
+if (D.laid) {
+  check(`a dead delver lies against the dais (${D.daisGap} m off its side)`, D.daisGap < 1, D);
+  check(`his camp is nearer the way in than he is (${D.campDoor} m against ${D.bodyDoor})`, D.camp && D.campDoor < D.bodyDoor, D);
+  check(`looted: his things as rolled, ${D.gold} gold, his journal and his sword (salvage), the camp's bedroll`, D.same && D.opened && D.gold >= 8 && D.gold <= 20 && D.journal && D.sword && D.roll && D.rollHidden, D);
+} else check('this keep has no delver, as its seed says', !D.due, D);
 // the gate built again, 30 days on: the coffer open, as you left it; the arc and the crystal do not come back
 await page.evaluate((s) => { window._prevDScene = dScene; const e = WORLD.doorAnywhere(s), p = makePortalDef(e); p.zone = 'world'; p.sigil = true; p.theme = p.theme || e.theme; goToDungeon(p); }, seed);
 await inGate();
-const B = await page.evaluate(() => { const c = CHESTS.find(x => x.coffer != null), L = GATE_KEEP_LIE || {}; return c ? { opened: c.opened, items: c.items.map(i => i.name), lid: c.lid ? +c.lid.rotation.x.toFixed(2) : null, arc: !!(L.altar && L.altar.arc), left: L.vein ? gateVeinLeft(L.vein) : null } : null; });
+const B = await page.evaluate(() => { const c = CHESTS.find(x => x.coffer != null), L = GATE_KEEP_LIE || {}, D = L.delver; return c ? { opened: c.opened, items: c.items.map(i => i.name), lid: c.lid ? +c.lid.rotation.x.toFixed(2) : null, arc: !!(L.altar && L.altar.arc), left: L.vein ? gateVeinLeft(L.vein) : null, delver: D ? { body: D.body.items.length, camp: D.camp ? D.camp.items.length : 0, roll: D.camp ? D.camp.rollMesh.visible : false } : null } : null; });
 console.log('again', JSON.stringify(B));
 check('entered again, the coffer stands open with what you left in it', B && B.opened && JSON.stringify(B.items) === JSON.stringify(A.left) && B.lid < 0, B);
 check(`and 30 days on the altar is bare and the vein cut out (${B && B.left} left)`, B && !B.arc && B.left === 0, B);
+if (D.laid) check('entered again, the delver and his camp are bare', B && B.delver && B.delver.body === 0 && B.delver.camp === 0 && !B.delver.roll, B && B.delver);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

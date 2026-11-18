@@ -562,7 +562,7 @@ function gateKeepLay(portal,gen){GATE_KEEP_LIE=null;if(!gen||!gen.gate||gen.ring
   {const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl);if(t){const dx=dAt(t.c)-x,dz=dAt(t.r)-z;group.rotation.y=Math.abs(dx)>Math.abs(dz)?(dx>0?Math.PI/2:-Math.PI/2):(dz>0?0:Math.PI);}} /* its front to the way in */
   dScene.add(group);
   const ch={id:`${portal.seed}:${fl}:coffer`,x,z,y:.4,opened:was,lid,treasure:true,coffer:portal.seed,floor:fl,mesh:group,items,displayName:'The Coffer'};
-  if(was&&lid)lid.rotation.x=-Math.PI/3;CHESTS.push(ch);try{gateKeepThings(portal,gen,ch);}catch(e){console.warn('gateKeepThings',e);}return ch;}
+  if(was&&lid)lid.rotation.x=-Math.PI/3;CHESTS.push(ch);try{gateKeepThings(portal,gen,ch);}catch(e){console.warn('gateKeepThings',e);}try{gateDelverLay(portal,gen,ch);}catch(e){console.warn('gateDelverLay',e);}return ch;}
 function gateCofferShut(ch){const S=worldState.sigilsRead;return !(S&&ch&&S[ch.coffer]!=null);}
 // the named action (co-op rules): the coffer opened, its list the world's from now on
 function openCoffer(ch){if(!ch||ch.coffer==null)return false;if(gateCofferShut(ch)){showMsg('The script round its lid is closed to you.','#c8b880');return false;}
@@ -629,6 +629,62 @@ function gateVeinStrike(v){if(!hasPick())return {why:'You need a pick.'};let r=g
 function gateMine(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the crystal.','#c8b890');return;}
   if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}if(gateVeinLeft(v)<=0){showMsg('The crystal is all cut out.','#cc8844');return;}
   MINE={v,t:VEIN_STRIKE};showMsg('You set to the crystal.','#c8b890');}
+// S2376 — what a gate keeps, session 5's first half (what-a-gate-keeps-build.md): the delver. One lesser gate's keep in three
+// (seededRng('delver-has', seed)) holds a dead man against the dais, beside the coffer, and his cold camp a few steps in from the
+// door. The body, keyed <seed>:<floor>:delver and looted once, holds a purse of 8 to 20 gold (30 to 60 in a vault, when the vaults are
+// built), a sword a tier below the gate, a torch and his journal; the camp holds his bedroll (camp and rest's blanket roll), with a
+// cold hearth, a coil of rope and a dropped torch lying by it. All of it on <seed>:<floor>:delver, no day: it never refills. Opened,
+// each list is the world's (worldState.gateKeeps[seed].delver: {body, camp}), as the coffer's is. The journal is one of the quest
+// writer's eight by seed when they are written (the sheet's session 6); until then its pages are stuck together. Plain stand-ins for
+// the look builder's body and camp (the sheet's session 3). The vault's delver waits for the vault.
+const GATE_DELVER={rate:1/3,purse:[8,20],vaultPurse:[30,60],tierDown:1,camp:2.5};
+BOOKS.push({id:'delver_journal',name:"A delver's journal",ico:'📓',attr:null,pages:['The pages are stuck together with damp.']});
+function gateDelverDue(portal){return gateCofferDue(portal)&&seededRng('delver-has',portal.seed)()<GATE_DELVER.rate;}
+// what he left, rolled on his own stream: {body, camp}
+function gateDelverItems(portal,floor,vault){const r=seededRng('loot',`${portal.seed}:${floor}:delver`),P=vault?GATE_DELVER.vaultPurse:GATE_DELVER.purse;
+  const gold={name:'Gold Coins',ico:'🪙',type:'gold',value:P[0]+Math.floor(r()*(P[1]-P[0]+1))};
+  const tier=Math.max(1,dungeonTier(portal,floor)-GATE_DELVER.tierDown),sw=WEAPON_TYPES.find(w=>w.type==='Sword');
+  const sword=withLootRng(r,()=>withLootTier(tier,()=>makeItem(lootMatTier(portal.diffScale),sw,null,false)));
+  const book=Object.assign(makeBookItem(BOOKS.find(b=>b.id==='delver_journal')),{weight:.3,sellMult:0});
+  return {body:[gold,sword,{...TORCH_ITEM,weight:1},book],camp:[rollItem('blanket')]};}
+// laid by gateKeepLay after the altar and the vein, in metres; returns {body, camp} (the two containers) or null
+function gateDelverLay(portal,gen,coffer){if(!gateDelverDue(portal))return null;const sp=gen.spaces[gen.ring],d=sp&&sp.dais;if(!d)return null;
+  const fl=sp.floor||1,y=fl===2?FLOOR2_Y:0,M=fl===2?gen.map2:gen.map,CS=fl===2?gen.cellSpace2:gen.cellSpace;
+  const ok=(x,z)=>{const c=dCellOf(x),r=dCellOf(z);return !!(M&&M[r]&&M[r][c]===1&&(!CS||CS[r][c]===sp.id))&&!(c>=d.x0&&c<=d.x1&&r>=d.z0&&r<=d.z1);};
+  const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl),tx=t?dAt(t.c):coffer.x,tz=t?dAt(t.r):coffer.z;
+  let ax=tx-coffer.x,az=tz-coffer.z;if(Math.abs(ax)>Math.abs(az)){ax=Math.sign(ax)||1;az=0;}else{az=Math.sign(az)||1;ax=0;} /* toward the way in, along the dais's axis */
+  const qx=-az,qz=ax,rr=seededRng('delver-side',portal.seed),side=rr()<.5?1:-1;
+  const half=ax?(d.z1-d.z0+1)*DCELL/2:(d.x1-d.x0+1)*DCELL/2; /* the dais's half-width across the axis */
+  let bx=null,bz=null,bs=side;for(const s of [side,-side]){const x=coffer.x+qx*s*(half+.6),z=coffer.z+qz*s*(half+.6);if(ok(x,z)){bx=x;bz=z;bs=s;break;}}
+  if(bx==null)return null;
+  const K=gateKeepOf(portal.seed),kept=K.delver&&Array.isArray(K.delver.body)?K.delver:null,items=kept?null:gateDelverItems(portal,fl,false);
+  const body=kept?K.delver.body:items.body,camp=kept?K.delver.camp:items.camp;if(kept){foundRestore(body);}
+  const cloth=new THREE.MeshLambertMaterial({color:0x5b4e3c}),skin=new THREE.MeshLambertMaterial({color:0x9a8e7c}),leather=new THREE.MeshLambertMaterial({color:0x4a3524});
+  // the body: sat against the dais's side, legs out toward the room, head fallen forward
+  const g=new THREE.Group();g.name='gateDelver';g.position.set(bx,y,bz);g.rotation.y=Math.atan2(qx*bs,qz*bs);
+  {const add=(geo,m,x,yy,z,rx)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,yy,z);if(rx)o.rotation.x=rx;g.add(o);return o;};
+    add(new THREE.BoxGeometry(.42,.6,.24),cloth,0,.42,-.22,-.2);add(new THREE.SphereGeometry(.12,8,6),skin,0,.78,-.12);
+    add(new THREE.BoxGeometry(.14,.14,.8),cloth,-.11,.08,.22);add(new THREE.BoxGeometry(.14,.14,.8),cloth,.11,.08,.22);
+    add(new THREE.BoxGeometry(.3,.3,.18),leather,.32,.15,-.12);} /* his pack beside him */
+  dScene.add(g);
+  const bodyC={id:`${portal.seed}:${fl}:delver`,x:bx,z:bz,y:.4,opened:!!kept,delver:portal.seed,part:'body',floor:fl,mesh:g,items:body,displayName:'A dead delver',say:"Press 'E' — a dead delver"};
+  CHESTS.push(bodyC);
+  // the camp: a few steps in from the door, to one side of the way
+  let camp_=null;{const bx0=tx-ax*GATE_DELVER.camp,bz0=tz-az*GATE_DELVER.camp;let cx=null,cz=null;
+    for(const s of [1.6,-1.6,0]){const x=bx0+qx*s,z=bz0+qz*s;if(ok(x,z)){cx=x;cz=z;break;}}
+    if(cx!=null){const c=new THREE.Group();c.name='gateCamp';c.position.set(cx,y,cz);c.rotation.y=Math.atan2(ax,az);
+      const roll=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.7,10),new THREE.MeshLambertMaterial({color:0x7a5f44}));roll.rotation.z=Math.PI/2;roll.position.set(0,.13,.5);roll.name='campRoll';c.add(roll);
+      const stone=new THREE.MeshLambertMaterial({color:0x5e5a54});for(let i=0;i<7;i++){const a=i/7*Math.PI*2,s=new THREE.Mesh(new THREE.BoxGeometry(.14,.1,.12),stone);s.position.set(Math.cos(a)*.3,.05,Math.sin(a)*.3-.35);s.rotation.y=a;c.add(s);}
+      const ash=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.02,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ash.position.set(0,.01,-.35);c.add(ash);
+      const rope=new THREE.Mesh(new THREE.TorusGeometry(.16,.035,6,14),new THREE.MeshLambertMaterial({color:0x9b8458}));rope.rotation.x=-Math.PI/2;rope.position.set(.55,.04,.1);c.add(rope);
+      const brand=new THREE.Mesh(new THREE.CylinderGeometry(.025,.03,.5,6),leather);brand.rotation.z=Math.PI/2-.2;brand.position.set(-.5,.04,-.1);c.add(brand);
+      dScene.add(c);camp_={id:`${portal.seed}:${fl}:camp`,x:cx,z:cz,y:.2,opened:!!kept,delver:portal.seed,part:'camp',floor:fl,mesh:c,rollMesh:roll,items:camp,displayName:'A cold camp',say:"Press 'E' — a cold camp"};
+      if(!camp.some(x=>x.roll))roll.visible=false;CHESTS.push(camp_);}}
+  if(GATE_KEEP_LIE)GATE_KEEP_LIE.delver={body:bodyC,camp:camp_};return {body:bodyC,camp:camp_};}
+// the named action (co-op rules): the delver's body or camp opened, its list the world's from now on
+function lootDelver(ch){if(!ch||ch.delver==null)return false;const K=gateKeepOf(ch.delver);
+  if(!K.delver){const D=GATE_KEEP_LIE&&GATE_KEEP_LIE.delver;K.delver={body:D&&D.body?D.body.items:[],camp:D&&D.camp?D.camp.items:[]};}
+  ch.items=K.delver[ch.part]||(K.delver[ch.part]=[]);openLoot(ch);return true;}
 // S2372 — what a gate keeps, session 2 (what-a-gate-keeps-build.md), its parts that need no words: joining, the kept armillary's
 // compass, and the crystal set at the forge. Three arcs of one school in the bag (the first three found: it.arc.n 1 to 3) are set
 // together from the bag in 10 s, no skill (`joinArcs`, the named action): one armillary of the school, weight 3, 150 at a counter (the
