@@ -2173,8 +2173,14 @@ const HB_GUARD={
   markman:{mail:[.5,.51,.53],helm:[.46,.47,.49],shield:[.5,.14,.12],shieldPaint:[.2,.28,.45]},
   aurennais:{tunic:[.16,.3,.55],trousers:[.86,.84,.78],mail:[.62,.45,.22],scales:true,helm:[.62,.45,.22],shield:[.62,.45,.22],shieldRim:[.6,.45,.22],
     shieldMetal:true,cuffs:null,beltCoins:null,necklace:null}};
+/* S2359 (L1, OG-025; S2353's owed note) — the hold guard's fur. OG-025 draws the Mark's guard with fur over the shoulders of the mail, and
+   S2353 stripped it with the cloak. A cloak cannot go back on (the kit slings a shield under one, and the spear's arm reaches through it),
+   but the kit's fur mantle (S1203's cut) ends at the shoulder's point, over the mail and clear of both arms: a hold guard keeps the mantle
+   they rolled (most Markmen roll one) and one who rolled none wears it in wolf grey */
+const HB_GUARD_FUR=[.4,.37,.33];
 function hbGuardDress(people,G){const D=Object.assign({},G.dress||{},HB_GUARD_STRIP,JSON.parse(JSON.stringify(HB_GUARD[people]||{})));
   if(people==='aurennais'&&D.skirtColor)D.skirtColor=D.tunic.slice(); /* a woman of the Compact in its blue to the ankle, as builder-scales-woman */
+  if(people==='markman')D.mantle=((G.dress||{}).mantle||HB_GUARD_FUR).slice(); /* S2359 — OG-025's hold guard in fur at the shoulders: their own mantle, or wolf grey */
   return D;}
 /* S2343 (backlog L1, OG-109's Aurenne travel column; the kit's veil, S1237, worn by no one until the road had people) — the veil on
    the road. One of the road's people (a merchant, a pilgrim or a mourner, the post rider, a family with its cart: def.roadfolk, keyed
