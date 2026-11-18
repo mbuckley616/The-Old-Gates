@@ -100,6 +100,15 @@ check(`shut before the carving is read: "${A.said}"`, A.shut && /closed to you/.
 check('the carving touched, it opens', A.sig && A.read && A.opened, A);
 check(`one piece taken (${A.took}): the coffer keeps the rest, ${A.left.length}`, A.inBag && A.left.length === A.items.length - 1, A);
 check("the coffer's list is the world row's, and a load gives it back", A.worldRow && JSON.stringify(A.loaded) === JSON.stringify(A.left), { worldRow: A.worldRow, loaded: A.loaded, left: A.left });
+// S2380 — the critic's 18 Nov note: between the altar and the coffer, the crosshair on the coffer's lock, E opens the coffer and leaves the arc
+const Y = await page.evaluate(() => { const L = GATE_KEEP_LIE || {}, A = L.altar, c = CHESTS.find(x => x.coffer != null); if (!A || !A.arc || !c) return { skip: true };
+  const fy = c.floor === 2 ? FLOOR2_Y : 0, eye = fy + SCALE.EYE_STAND, ux = (A.x - c.x) / 2.6, uz = (A.z - c.z) / 2.6, was = thirdPerson; thirdPerson = false;
+  const aim = (o, h) => { yaw = Math.atan2(-(o.x - px), -(o.z - pz)); pitch = Math.atan2(fy + h - eye, Math.hypot(o.x - px, o.z - pz)); CAM.position.set(px, eye, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); };
+  px = c.x + ux * 1.3; pz = c.z + uz * 1.3; aim(c, .75); const out = { inReach: Math.hypot(px - A.x, pz - A.z) < TOUCH + .6, onLock: lookingAt(c), altar: !!gateAltarNear() };
+  const sm = showMsg; showMsg = () => {}; const n0 = BAG.length; interact(); out.opened = lootOpen && currentLootContainer === c; out.arcKept = !!A.arc && BAG.length === n0; if (lootOpen) closeLoot();
+  aim(A, .4 + .75); out.faced = lookingAt(A, TOUCH + .6) && !!gateAltarNear(); showMsg = sm; thirdPerson = was; return out; });
+console.log('aim', JSON.stringify(Y));
+check('between the altar and the coffer, the crosshair on its lock: E opens the coffer and leaves the arc; turned to the altar, the arc is offered', Y.skip || (Y.inReach && Y.onLock && !Y.altar && Y.opened && Y.arcKept && Y.faced), Y);
 // S2371 — the altar's arc and the crystal vein, in the same keep
 const K = await page.evaluate((s) => { const L = GATE_KEEP_LIE || {}, A = L.altar, v = L.vein, out = { altar: !!A, arcShown: !!(A && A.arc && A.arc.parent), vein: !!v, cond: _lastGen.cond };
   if (!A || !v) return out; const sp = _lastGen.spaces[_lastGen.ring], t = _lastGen.thresholds.find(t => t.a === _lastGen.ring || t.b === _lastGen.ring), tx = dAt(t.c), tz = dAt(t.r), c = CHESTS.find(x => x.coffer != null);
