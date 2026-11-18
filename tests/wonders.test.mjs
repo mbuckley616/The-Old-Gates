@@ -3,6 +3,7 @@
 // 1.6 km in 11 draws, its stones hung over their pits with the scatter cleared under them, its two broken walls solid where they stand;
 // from 20h to 5h it wakes (the stones drift, the seams burn), by day it is dead stone; and it goes when you leave. Session 1634: the
 // same for Aurenne's Broken Orrery on its headland. Session 1666: the Gatelands' Drowned Ring in its lough.
+// Session 2385: the Weavers' ring of broken arches on a Gatelands headland.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -121,5 +122,33 @@ const ln = await page.evaluate(() => { const W = WONDERS.lough.W; forceTime(22);
 check(`at 22h it wakes: the script and the sigil under the water burn Uisce's blue (green ${ln.blue})`, ln.awake && ln.lit && ln.sigil && ln.blue > .8, ln);
 const ld = await page.evaluate(() => { const S = WONDERS.lough; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:lough').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'lough').length }; });
 check('2.5 km off it is dropped, its solids and its boardwalk with it', ld.gone && ld.sol === 0 && ld.plats === 0, ld);
+// Session 2385: the Weavers' ring of broken arches (OG-104; Michael's B on #429) on a headland of the Gatelands. The place is the seed's,
+// clear of every site, door and road; its crown is levelled under the ring; four arches stand 60 m and seven are broken; the standing jambs
+// are solid and the bays between open; the dais's three steps are walked; it goes when you leave.
+const rs = await page.evaluate(() => { const a = wonderRingSite(); WONDERS.ring.site = undefined; const t0 = performance.now(), b = wonderRingSite(), ms = Math.round(performance.now() - t0);
+  if (!b) return { none: true }; const sites = [...CELLS.values()].flatMap(c => c.sites), near = sites.reduce((m, t) => Math.min(m, Math.hypot(t.x - b.x, t.z - b.z) - (t.pad || 0)), 1e9);
+  const [i, j] = cellOf(b.x, b.z), [sx, sz] = [b.x - Math.sin(b.ry) * b.dmin, b.z - Math.cos(b.ry) * b.dmin];
+  return { ...b, ms, same: JSON.stringify(a) === JSON.stringify(b), nation: nationKeyOf(i, j), near: Math.round(near), seaAhead: rawH(sx, sz) < 0 }; });
+console.log(JSON.stringify(rs));
+check(`the Weavers' ring stands on a Gatelands headland ${rs.h} m over the sea, the sea on ${rs.seaN} of 16 headings and ${rs.dmin} m off its gone bay, the same asked twice (${rs.ms} ms)`, !rs.none && rs.nation === 'gatelands' && rs.h >= 12 && rs.same && rs.seaAhead, rs);
+check(`its crown falls ${rs.fall} m before the stamp, it stands ${rs.near} m past the nearest site's pad, nothing within 220 m more than 3 m over it (${rs.above})`, rs.fall <= 14 && rs.near >= 330 && rs.above <= 3, rs);
+const rat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 0, 150); return { x, z }; }, rs);
+await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), rat);
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [rat.x, rat.z], { timeout: 60000 });
+await g.cells(); await g.hide();
+const rw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.ring, W = S.W, st = S.site; if (!W) return { none: true };
+  let meshes = 0; W.group.traverse(o => { if (o.isMesh) meshes++; });
+  const q0 = S.stamps[0]; let rim = 0; for (let k = 0; k < 24; k++) rim = Math.max(rim, Math.abs(meshH(st.x + Math.sin(k * .26) * 85, st.z + Math.cos(k * .26) * 85) - q0.y));
+  const at = d => { const [x, z] = wonderToWorld(st, 0, d); return +activeTerrainH(x, z).toFixed(2); };
+  const b = W.bays.find(b => b.cond === 'cracked'), [jx, jz] = wonderToWorld(st, b.jambs[1].x, b.jambs[1].z), [mx, mz] = wonderToWorld(st, b.x, b.z);
+  return { tris: W.tris, draws: W.draws, meshes, rim: +rim.toFixed(2), steps: [at(30), at(14), at(10), at(3)], plats: W.dais.steps.map(p => p.y), sol: S.sol.length, jamb: solidAt(jx, jz), bayOpen: !solidAt(mx, mz), heartOpen: !solidAt(st.x, st.z),
+    standing: W.bays.filter(b => b.cond === 'cracked').map(b => b.top), broken: W.bays.filter(b => b.cond === 'broken').length, inScene: W.group.parent === sc }; });
+console.log(JSON.stringify(rw));
+check(`within 1.6 km it stands: ${rw.standing && rw.standing.length} arches ${rw.standing && rw.standing.join(', ')} m high and ${rw.broken} broken, ${rw.tris} triangles in ${rw.draws} draws`, !rw.none && rw.inScene && rw.standing.length === 4 && rw.standing.every(h => h > 55) && rw.broken === 7 && rw.draws === rw.meshes && rw.draws <= 8 && rw.tris < 20000, rw);
+check(`the crown is level under the ring (the ground on its circle within ${rw.rim} m of the stamp)`, rw.rim < .5, rw);
+check(`you walk up the dais's three steps (${rw.steps.join(' → ')} m)`, rw.steps[0] < rw.plats[0] - .3 && rw.steps[1] === rw.plats[0] && rw.steps[2] === rw.plats[1] && rw.steps[3] === rw.plats[2], rw);
+check(`its ${rw.sol} solids: a standing jamb is solid, the bay between and the heart open`, rw.sol === 96 && rw.jamb && rw.bayOpen && rw.heartOpen, rw);
+const rd = await page.evaluate(() => { const S = WONDERS.ring; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:ring').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'ring').length }; });
+check('2.5 km off it is dropped, its solids and steps with it', rd.gone && rd.sol === 0 && rd.plats === 0, rd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

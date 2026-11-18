@@ -3444,7 +3444,7 @@
   // Stones are cosmetic; the place is the seed's.
   // When it stands (within 1.6 km, in the open world) every stone has a stamp that only clears the scatter under it (noFlat: the
   // ground is not flattened), the walls' standing courses are solids, and from 20h to 5h the stones drift and the seams burn.
-  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
+  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
   function wonderSkyfallSite(){const S=WONDERS.skyfall;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
@@ -3579,9 +3579,59 @@
   function wonderLoughDrop(){const S=WONDERS.lough;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:lough')STATIC_SOL.splice(i,1);S.sol=[];
     const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='lough')P.splice(i,1);S.plats=[];}
+  // The Weavers' ring of broken arches (Session 2385; the kit's PKIT.wonders.ring, from ruins.js; OG-104's Weaver's Ring, Gatelands; Michael's
+  // B on #429), on the new look only. Its place is one headland of the Gatelands, the same for every load of a seed: on a 50 m grid over the
+  // Gatelands' land cells (getCell, all of them), a point at least 12 m over the sea, kept 330 m clear of every site's pad and every door and
+  // 200 m of every road's line, dry and over the sea everywhere 130 m round it, whose ground out to 105 m falls no more than RING_FALL; the sea
+  // within 260 m. Scored as the Orrery's: its height (to 40 m), the sea round it, less its fall, its distance to the water and the ground
+  // within 220 m standing over it. Its -z, the gone bay, faces the nearest water.
+  // One stamp levels the crown 104 m round (blend 24) at the heart's height; the jambs that stand (two an arch, and the gone bay's footings)
+  // are solids; the dais's three steps are platforms you walk up, as the Orrery's.
+  const RING_FALL=14;
+  function wonderRingSite(){const S=WONDERS.ring;if(S.site!==undefined)return S.site;S.site=null;
+    if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
+    const all=[...CELLS.values()],gl=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='gatelands');if(!gl.length)return null;
+    const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
+    const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
+    const segD=(a,b,x,z)=>{const dx=b.x-a.x,dz=b.z-a.z,L=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L));return Math.hypot(a.x+dx*t-x,a.z+dz*t-z);};
+    const keep=[REGIONS.slice(),PEAKS.slice(),INLETS.slice()],gk=new Set(gl.map(c=>c.i+','+c.j)),ring=all.filter(c=>{for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(gk.has((c.i+di)+','+(c.j+dj)))return true;return false;});
+    REGIONS.length=0;PEAKS.length=0;INLETS.length=0;ring.forEach(c=>{c.regions.forEach(q=>REGIONS.push(q));c.peaks.forEach(q=>PEAKS.push(q));(c.inlets||[]).forEach(q=>INLETS.push(q));});
+    const sea=(x,z)=>rawH(x,z)<SEA_Y-.5;let best=null;
+    try{
+    for(const c of gl){const x0=c.i*SIZE-500,x1=(c.i+1)*SIZE+500,z0=c.j*SIZE-500,z1=(c.j+1)*SIZE+500,inB=(x,z)=>x>x0&&x<x1&&z>z0&&z<z1;
+      const cs=sites.filter(s=>inB(s.x,s.z)||(s.pad||0)>100),cd=doors.filter(d=>inB(d.x,d.z)),cr=roads.filter(([p,q])=>!(Math.max(p.x,q.x)<x0||Math.min(p.x,q.x)>x1||Math.max(p.z,q.z)<z0||Math.min(p.z,q.z)>z1));
+    for(let a=25;a<SIZE;a+=50)for(let b=25;b<SIZE;b+=50){const x=c.i*SIZE+a,z=c.j*SIZE+b,r0=rawH(x,z),h=r0-SEA_Y;if(h<12||r0<landH(x,z)-1.5)continue;
+      let near=false;for(let k=0;k<8&&!near;k++)for(const d of [160,240])if(sea(x+Math.sin(k*Math.PI/4)*d,z+Math.cos(k*Math.PI/4)*d)){near=true;break;} /* a coarse look for the sea first */
+      if(!near)continue;
+      if(cs.some(s=>Math.hypot(s.x-x,s.z-z)<330+(s.pad||0))||cd.some(d=>Math.hypot(d.x-x,d.z-z)<330)||cr.some(([p,q])=>segD(p,q,x,z)<200))continue;
+      let lo=1e9,hi=-1e9,ok=true;for(let k=0;k<16&&ok&&hi-lo<=RING_FALL;k++){const t=k*Math.PI/8;for(const rr of [35,70,105,130]){const X=x+Math.sin(t)*rr,Z=z+Math.cos(t)*rr,y=rawH(X,Z);
+        if(y<SEA_Y+1||y<landH(X,Z)-1.5){ok=false;break;}if(rr<=105){lo=Math.min(lo,y);hi=Math.max(hi,y);}}}
+      if(!ok||hi-lo>RING_FALL)continue;
+      let seaN=0,dmin=1e9;for(let k=0;k<16;k++){const t=k*Math.PI/8;for(let d=140;d<=260;d+=40)if(sea(x+Math.sin(t)*d,z+Math.cos(t)*d)){seaN++;dmin=Math.min(dmin,d);break;}}
+      if(!seaN)continue;
+      let above=0;for(let k=0;k<16;k++){const t=k*Math.PI/8;for(const d of [150,185,220])above=Math.max(above,rawH(x+Math.sin(t)*d,z+Math.cos(t)*d)-r0);}
+      const score=Math.min(h,40)+seaN*1.5-(hi-lo)-dmin/15-above*WONDER_ABOVE_K;if(best&&score<=best.score)continue;
+      best={x,z,h:+h.toFixed(1),fall:+(hi-lo).toFixed(1),seaN,dmin,above:+above.toFixed(1),score:+score.toFixed(1),cell:cellKey(c.i,c.j)};}}
+    if(best){let dm=1e9,hd=0;for(let k=0;k<64;k++){const t=k*Math.PI/32;for(let d=100;d<=300;d+=5)if(sea(best.x+Math.sin(t)*d,best.z+Math.cos(t)*d)){if(d<dm){dm=d;hd=t;}break;}}
+      best.dmin=dm;best.ry=+(hd+Math.PI).toFixed(4);best.y=+rawH(best.x,best.z).toFixed(2);}
+    }finally{REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}
+    return (S.site=best);}
+  function wonderRingBuild(){const S=WONDERS.ring,st=wonderRingSite();if(!st||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.ring)return null;
+    if(!S.stamps){S.stamps=[addStamp({id:'wonder_ring',kind:'wonder',x:st.x,z:st.z,r:104,blend:24,y:st.y})];try{clearScatterUnder(S.stamps);}catch(e){console.warn('wonder scatter',e);}}
+    const hAt=(lx,lz)=>{const [x,z]=wonderToWorld(st,lx,lz);return meshH(x,z);};const W=PKIT.wonders.ring(hAt,{sea:SEA_Y});
+    W.sig=wonderCellSig(st);W.group.position.set(st.x,0,st.z);W.group.rotation.y=st.ry;W.group.userData.noBake=true;W.group.updateMatrixWorld(true);sc.add(W.group);S.W=W;
+    S.plats=W.dais.steps.map(p=>({x0:st.x-p.r,x1:st.x+p.r,z0:st.z-p.r,z1:st.z+p.r,y:p.y,wonder:'ring',inside:(wx,wz)=>Math.hypot(wx-st.x,wz-st.z)<p.r}));S.plats.forEach(p=>ZONES.world.platforms.push(p));
+    // a jamb is 6.6 m across the ring and 7.2 m through it, turned with its bay: four boxes on the world's axes, each a quarter of it
+    S.sol=[];const J=W.jamb,box=(lx,lz,a,h)=>{const c=Math.cos(a+st.ry),s_=Math.sin(a+st.ry);for(const u of [-.25,.25])for(const v of [-.25,.25]){const ox=u*J.w,oz=v*J.d,[x,z]=wonderToWorld(st,lx+ox*Math.cos(a)+oz*Math.sin(a),lz-ox*Math.sin(a)+oz*Math.cos(a));
+        S.sol.push({cx:x,cz:z,rx:(Math.abs(c)*J.w+Math.abs(s_)*J.d)/4,rz:(Math.abs(s_)*J.w+Math.abs(c)*J.d)/4,cell:'wonder:ring',h,wonder:true});}};
+    W.bays.forEach(b=>b.jambs.forEach(j=>box(j.x,j.z,b.a,J.h)));W.gone.forEach(g=>box(g.x,g.z,Math.PI,g.h));S.sol.forEach(q=>STATIC_SOL.push(q));
+    return W;}
+  function wonderRingDrop(){const S=WONDERS.ring;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:ring')STATIC_SOL.splice(i,1);S.sol=[];
+    const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='ring')P.splice(i,1);S.plats=[];}
   // from WORLD.tick, every frame in the open world: each wonder built within 1.6 km (checked once a second), animated while it stands.
   // A wonder's site is searched only once you stand on its island's land (the Fields' takes 0.6 s on software GL)
-  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop}];
+  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop}];
   function tickWonders(){if(typeof LAND==='undefined'||!LAND.on)return;const t=performance.now(),due=t-WONDERS._t>1000||WONDERS._t===0&&WONDER_KINDS.some(K=>!WONDERS[K.k].W);if(due)WONDERS._t=t;
     let nk=null;for(const K of WONDER_KINDS){const S=WONDERS[K.k];
       if(S.W&&S.W.group.parent!==sc)K.drop(); /* the world's scene was built again */
