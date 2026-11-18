@@ -2586,7 +2586,7 @@ function hbAttach(rig,P){if(rig.hbTintOwed)hbFoeTint(rig,true);const tA=performa
   // the body. So the right forearm and wrist keep the grip's turn (from the upper arm, which still takes the walk's swing and a blow's
   // wind-up) while the driver holds and stands; a ragdoll or a sleeper takes the driver's again
   const gD=rig.hbG&&rig.hbG.dress||{},grip=(gD.spear||gD.staff)&&!gD.chair?map.map(([j],i)=>j==='elR'||j==='wrR'?i:-1).filter(i=>i>=0).map(i=>({i,q:map[i][1].quaternion.clone()})):null;
-  rig.hb={root:W,P,map,s0,t0,grip,hold:hbCloakArms(gD,map),tw:!rig.hbLazy&&gD&&gD.cloak&&!gD.cape?HB_CLOAK_TWIST:1,lean:!rig.hbLazy&&!!gD&&!!gD.cloak&&!gD.cape,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
+  rig.hb={root:W,P,map,s0,t0,grip,hold:hbSwordArm(hbCloakArms(gD,map),gD,map,P),tw:!rig.hbLazy&&gD&&gD.cloak&&!gD.cape?HB_CLOAK_TWIST:1,lean:!rig.hbLazy&&!!gD&&!!gD.cloak&&!gD.cape,full,mid,cards:mid?null:cards,sph:mid?null:sph,pos0:rb.position.clone(),A:new THREE.Matrix3().setFromMatrix4(Ah),Bi:new THREE.Matrix3().setFromMatrix4(Bp).invert(),kh:hB/hD,L:-1,st,glow:!!rig.foe,drv:rig.mesh.material,em:0,held:[]};
   // a foe's weapon (the game's kit, on the driver's gear bone, or the bow in its left hand) and shield (on the left forearm) hang on
   // the driver's bones, inside the driver's mesh, which is hidden while the builder's body shows: so they are carried in the builder's
   // group then, following their bone each frame (hbHold), the weapon's grip in the builder's fist, closed on it as people.js closes a
@@ -2893,6 +2893,14 @@ const HB_CLOAK_HOLD=1;
    taken off (1: at a run 15 and 26 points out, at most 1.4 cm; .5 left 131 and 121 at 3 cm). A spear, a crossbow, a basket or a lantern
    keeps its arm free */
 const HB_CLOAK_STAFF={k:1};
+/* S2381 — a sword carried lowered at rest (S2366's SWORD_REST) and the walk. The driver swings the right arm 0.32 rad either way, and the
+   blade, 0.8 to 0.9 m beyond the fist, turned that into an arc: a walking Guildmaster's tip went from 0.39 m to 1.32 m off the ground and
+   back each stride, brandished at the hip. So the sword's arm is held to the hips as a cloak's is, HB_SWORD_HOLD.k of the swing taken off,
+   when no cloak holds it already; a blow (hbHoldF) and standing still are left alone */
+const HB_SWORD_HOLD={k:.75};
+function hbSwordArm(S,D,map,P){if(!P||!P.sword||!D||D.spear||D.staff||D.hammer||D.crossbow&&!D.chair)return S;
+  const i=map.map(([j],k)=>/^(sh|el|wr)R$/.test(j)?k:-1).filter(k=>k>=0),free=i.filter(k=>!S||!S.has(k));if(!free.length)return S;
+  const T=S||new Set();T.sword=new Set(free);free.forEach(k=>T.add(k));return T;}
 /* S2014 — the twist left out under a long cloak (Pádraig of Dunmore's left fingertips, out through the front edge by 5 to 11 mm in 13 of 20
    start phases of f4people's walk, at gait phase .61 to .63: the suite's red one run in two). The held arms took the hips' whole turn, so the
    pelvis' yaw swung the forward-hanging hands 5 cm in toward the middle, under the cloak's front edge, which falls back as that knee trails.
@@ -2921,7 +2929,7 @@ function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!r
   if(hf>0){hbRel(B[map[0][0]],rig.root,_hbqH);if(H.tw<1){_hbqA.set(0,_hbqH.y,0,_hbqH.w).normalize();_hbq3.copy(_hbqA).invert();_hbqH.multiply(_hbq3);_hbq3.identity().slerp(_hbqA,H.tw);_hbqH.multiply(_hbq3);}_hbqH.multiply(H.s0[0]);}
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
     if(grip&&(i===grip[0].i||grip[1]&&i===grip[1].i)){b.quaternion.copy(grip[0].i===i?grip[0].q:grip[1].q);continue;}
-    hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]);if(hf>0&&H.hold.has(i)){const k=rig.tpHold?hf*(rig.tpHold[j.slice(-1)]||0):H.hold.staff&&H.hold.staff.has(i)?hf*HB_CLOAK_STAFF.k:hf;if(k>0)_hbq.copy(_hbqA.copy(_hbq).slerp(_hbqH,k));}_hbq.multiply(H.t0[i]);
+    hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]);if(hf>0&&H.hold.has(i)){const k=rig.tpHold?hf*(rig.tpHold[j.slice(-1)]||0):H.hold.staff&&H.hold.staff.has(i)?hf*HB_CLOAK_STAFF.k:H.hold.sword&&H.hold.sword.has(i)?hf*HB_SWORD_HOLD.k:hf;if(k>0)_hbq.copy(_hbqA.copy(_hbq).slerp(_hbqH,k));}_hbq.multiply(H.t0[i]);
     if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
   const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));
   if(grip&&rig.thrust>0){const wb=(map.find(m=>m[0]==='wrR')||[])[1],sp=wb&&foeSpearOf(rig,H.root,wb);if(sp)foeSpearAim(rig,wb,sp);}
