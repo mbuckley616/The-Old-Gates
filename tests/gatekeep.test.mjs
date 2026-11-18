@@ -32,6 +32,32 @@ check(`the vein holds 3, 4 and 5 crystals by the gate's condition (${P.caps})`, 
 const share = P.found / (P.found + P.weap);
 check(`a weapon roll in five is a found implement of the gate's school (${(share * 100).toFixed(0)}% of ${P.found + P.weap}, ${P.wrong} of another school)`, share > .13 && share < .28 && P.wrong === 0, { found: P.found, weap: P.weap, wrong: P.wrong });
 
+// S2372 — session 2's parts that need no words: three arcs set together, the kept armillary's needle, a crystal set at the forge
+const J = await page.evaluate(() => { const sm = showMsg; showMsg = () => {}; const out = {}, X = 'cloch';
+  const T = carvingTable().bySeed, gates = []; for (const s of Object.keys(T)) { if (T[s].school !== X) continue; const e = WORLD.doorAnywhere(+s); if (!e || e.lairDoor || e.kind === 'fort_door') continue; const p = makePortalDef(e); p.zone = 'world'; if (!gateCofferDue(p)) continue; const q = dungeonWorldPos[e.seed] || e; gates.push({ seed: +s, d: Math.hypot(q.x - px, q.z - pz) }); }
+  gates.sort((a, b) => a.d - b.d);
+  const keepRA = worldState.relicArcs; worldState.relicArcs = { found: { cloch: 2 } }; for (let n = 1; n <= 3; n++) bagAdd(arcItem(X, n));
+  out.two = (() => { const b = BAG.filter(x => x.arc && x.arc.school === X); const one = b.pop(); BAG.splice(BAG.indexOf(one), 1); const r = joinArcs(X); bagAdd(one); return r; })();
+  const i = BAG.findIndex(b => b.arc && b.arc.school === X); useItem(i); out.started = !!ARC_JOIN; tickArcJoin(5); out.half = !!ARC_JOIN && arcsHeld(X).length === 3; tickArcJoin(5.1);
+  const A = BAG.find(b => b.armillary === X); out.joined = { arcs: arcsHeld(X).length, item: !!A, name: A && A.name, w: A && A.weight, price: A && A.buyPrice * A.sellMult, salvage: !!(A && A.salvage), flag: !!(worldState.relicArcs.joined && worldState.relicArcs.joined[X]) };
+  _armCache = null; const g1 = armillaryGate(); out.needle = { seed: g1 && g1.seed, want: gates[0] && gates[0].seed, d: g1 && Math.round(g1.d), wantD: gates[0] && Math.round(gates[0].d), school: g1 && g1.school, onCompass: compassPlaces().some(p => p.armillary === X) };
+  const K = worldState.gateKeeps || (worldState.gateKeeps = {}); const was = K[gates[0].seed]; K[gates[0].seed] = { coffer: [] }; _armCache = null; const g2 = armillaryGate(); out.next = { seed: g2 && g2.seed, want: gates[1] && gates[1].d < 2600 ? gates[1].seed : null };
+  if (was) K[gates[0].seed] = was; else delete K[gates[0].seed]; BAG.splice(BAG.indexOf(A), 1); _armCache = null; out.none = armillaryGate() === null;
+  // the forge: a bought Cloch maul and a tome, a crystal, Smithing 20 then 30
+  const fh = forgeHere, sf = smithForge; forgeHere = () => true; smithForge = () => false; const S_ = skillsReady(), sl = S_.smithing;
+  const maul = makeImplement(2, 'wand', X), orb = makeOrb(2, X); bagAdd(maul); bagAdd(orb); const M = BAG[BAG.length - 2]; out.listed = crystalPieces().includes(M) && !crystalPieces().some(b => b.implement === 'orb');
+  out.noCrystal = forgeSetCrystal(M).why; bagAdd(gateCrystalItem(X)); S_.smithing = { ...(sl || {}), lv: 20 }; out.low = forgeSetCrystal(M).why; S_.smithing = { ...(sl || {}), lv: 30 };
+  const t0 = worldState.gameTimeAbsMinutes || 0; const r = forgeSetCrystal(M); out.set = { done: r.done, found: M.found, kind: M.implement, mins: (worldState.gameTimeAbsMinutes || 0) - t0, left: bagCount(b => b.gateCrystal === X), desc: /20% less/.test(M.desc), again: forgeSetCrystal(M).why };
+  const kw = EQ.weapon; EQ.weapon = M; out.cut = implementCut(X); EQ.weapon = kw;
+  BAG.splice(BAG.indexOf(M), 1); BAG.splice(BAG.findIndex(b => b.implement === 'orb'), 1); forgeHere = fh; smithForge = sf; S_.smithing = sl; worldState.relicArcs = keepRA; showMsg = sm; return out; });
+console.log('join', JSON.stringify(J));
+check('two arcs will not join', J.two === false, J.two);
+check(`three arcs, used from the bag, are set together in 10 s into ${J.joined.name}: weight 3, 150 at a counter, salvage`, J.started && J.half && J.joined.arcs === 0 && J.joined.item && J.joined.w === 3 && J.joined.price === 150 && J.joined.salvage && J.joined.flag, J);
+check(`carried, it points the compass at the nearest lesser gate of its school with a shut coffer (${J.needle.d} m, ${J.needle.seed})`, J.needle.seed === J.needle.want && J.needle.school === 'cloch' && J.needle.d <= 2600 && J.needle.onCompass, J.needle);
+check('that coffer opened, it points at the next; set down, at none', J.next.seed === J.next.want && J.none, { next: J.next, none: J.none });
+check(`at the forge a crystal sets a bought maul of its school: refused without one ("${J.noCrystal}") and under Smithing 25 ("${J.low}")`, J.listed && /gate crystal/.test(J.noCrystal) && /Smithing 25/.test(J.low), J);
+check(`set: found, its words ${Math.round(J.cut * 100)}% cheaper, ${J.set.mins} minutes, the crystal spent ("${J.set.again}" again)`, J.set.done && J.set.found && J.set.kind === 'maul' && J.cut === .2 && J.set.mins === 20 && J.set.left === 0 && J.set.desc && /found already/.test(J.set.again), J.set);
+
 // one gate entered, as its door makes its portal
 const seed = P.pick.seed;
 await page.evaluate((s) => { if (worldState.sigilsRead) delete worldState.sigilsRead[s]; if (worldState.gateKeeps) delete worldState.gateKeeps[s]; window._prevDScene = typeof dScene !== 'undefined' ? dScene : null;

@@ -370,6 +370,8 @@ const giver=`${lord.title} ${lord.name}`;
     for(const e of CELL_DOORS){const p=dungeonWorldPos[e.seed]||e;const d=Math.hypot(p.x-px,p.z-pz);if(d>R||d<6)continue;out.push({x:p.x,z:p.z,glyph:e.kind==='fort_door'?'⛫':'◠',label:e.canonicalName||'an old gate',found:!!discovered('door_'+e.seed),d,place:true});}
     /* S1562 — a lodestone carried: the nearest vein, at any range the loaded chunks hold */
     {const v=typeof lodestoneVein==='function'?lodestoneVein():null;if(v&&v.d>=2)out.push({x:v.x,z:v.z,glyph:'◆',label:'a vein',found:true,d:v.d,place:true,lode:true});}
+    /* S2372 — a kept armillary: the nearest gate of its school whose coffer is shut, within 2,600 m (68-dungeon-misc.js) */
+    {const a=typeof armillaryGate==='function'?armillaryGate():null;if(a&&a.d>=6)out.push({x:a.x,z:a.z,glyph:'◎',label:'a shut coffer',found:true,d:a.d,place:true,armillary:a.school});}
     return out;}
   function compassMarkers(){if(activeZoneId!=='world')return [];return liveMarkers();}
   let _liveMk=null; /* S587 — the map asks once a draw, not once a cell */

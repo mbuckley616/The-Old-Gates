@@ -629,6 +629,45 @@ function gateVeinStrike(v){if(!hasPick())return {why:'You need a pick.'};let r=g
 function gateMine(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the crystal.','#c8b890');return;}
   if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}if(gateVeinLeft(v)<=0){showMsg('The crystal is all cut out.','#cc8844');return;}
   MINE={v,t:VEIN_STRIKE};showMsg('You set to the crystal.','#c8b890');}
+// S2372 — what a gate keeps, session 2 (what-a-gate-keeps-build.md), its parts that need no words: joining, the kept armillary's
+// compass, and the crystal set at the forge. Three arcs of one school in the bag (the first three found: it.arc.n 1 to 3) are set
+// together from the bag in 10 s, no skill (`joinArcs`, the named action): one armillary of the school, weight 3, 150 at a counter (the
+// Mark's: no claimant there), salvage as its arcs were, and worldState.relicArcs.joined[school] set. Carried, it shows on the compass the
+// nearest lesser gate of its school whose coffer you have not opened, within 2,600 m (the rubbings' reach). The Crown's 400 and service
+// and the Prior's service wait on the quest writer's lines (the sheet's session 6). At a forge, Smithing 25 and one crystal of the
+// school set a bought staff, wand, maul or tome of that school: it becomes found, its school's words 20% cheaper, not 10%; 20 minutes.
+const ARMILLARY={join:10,weight:3,price:150,reach:2600},CRYSTAL_SET={smithing:25,min:20};
+let ARC_JOIN=null;
+function arcsHeld(school){return BAG.filter(b=>b&&b.arc&&b.arc.school===school);}
+function armillaryItem(school){return {name:`${schoolName(school)}'s armillary`,ico:'◎',type:'misc',weight:ARMILLARY.weight,buyPrice:ARMILLARY.price,sellMult:1,armillary:school,salvage:true};}
+function joinArcs(school){if(ARC_JOIN){if(ARC_JOIN.school===school){ARC_JOIN=null;showMsg('You leave the arcs as they are.','#c8b890');}return false;}
+  const A=arcsHeld(school);if(A.length<GATE_ARC.per){showMsg(`${A.length} of ${GATE_ARC.per} of ${schoolName(school)}'s armillary.`,'#c8b890');return false;}
+  ARC_JOIN={school,t:ARMILLARY.join};showMsg('You set the arcs together.','#c8b890');return true;}
+function tickArcJoin(dt){const J=ARC_JOIN;if(!J)return;if(arcsHeld(J.school).length<GATE_ARC.per||(typeof dead!=='undefined'&&dead)){ARC_JOIN=null;return;}
+  J.t-=dt;if(J.t>0)return;ARC_JOIN=null;const A=arcsHeld(J.school).slice(0,GATE_ARC.per);
+  for(const a of A){const i=BAG.indexOf(a);if(i>=0)BAG.splice(i,1);}
+  bagAdd(armillaryItem(J.school));const R=relicArcsOf();(R.joined||(R.joined={}))[J.school]=1;
+  showMsg(`The three arcs close into one: ${schoolName(J.school)}'s armillary.`,'#e8d8a0');if(typeof renderHubInv==='function')try{renderHubInv();}catch(e){}}
+// the kept armillary's needle: the nearest lesser gate of a carried armillary's school whose coffer is shut, {x,z,d,seed,school} or null
+let _armCache=null;
+function armillaryGate(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
+  const S=[...new Set(BAG.filter(b=>b&&b.armillary).map(b=>b.armillary))];if(!S.length||typeof carvingTable!=='function')return null;
+  const now=performance.now(),key=S.join()+'|'+Math.round(px/20)+','+Math.round(pz/20);if(_armCache&&_armCache.key===key&&now-_armCache.t<1000)return _armCache.v;
+  const K=worldState.gateKeeps||{};let best=null,bd=ARMILLARY.reach;
+  for(const {D,e} of carvingTable().places){if(!D||!e||!S.includes(D.school)||(typeof SIGIL_PLACEMENTS!=='undefined'&&SIGIL_PLACEMENTS[e.seed]))continue;
+    if(typeof greatSchoolOf==='function'&&greatSchoolOf({seed:e.seed,great:e.great}))continue;if(K[e.seed]&&Array.isArray(K[e.seed].coffer))continue;
+    const p=(typeof dungeonWorldPos!=='undefined'&&dungeonWorldPos[e.seed])||e,d=Math.hypot(p.x-px,p.z-pz);if(d<bd){bd=d;best={x:p.x,z:p.z,d,seed:e.seed,school:D.school};}}
+  _armCache={key,t:now,v:best};return best;}
+// a piece the crystal can set: a staff, wand, maul or tome of a school, not found already
+function crystalSettable(it){const k=implementOf(it);return !!(it&&it.school&&!it.found&&(k==='staff'||k==='wand'||k==='maul'||k==='tome'));}
+function crystalPieces(){const out=[];for(const s of ['weapon','offhand']){const it=EQ[s];if(crystalSettable(it)&&!out.includes(it))out.push(it);}BAG.forEach(b=>{if(crystalSettable(b))out.push(b);});return out;}
+// the named action: one crystal of its school set into the piece at a forge. Returns {done, why}
+function forgeSetCrystal(it){if(!forgeHere())return {done:false,why:'You need a forge.'};if(!crystalSettable(it))return {done:false,why:it&&it.found?'It is found already.':'That takes no crystal.'};
+  if(skillLv('smithing')<CRYSTAL_SET.smithing)return {done:false,why:`A crystal asks Smithing ${CRYSTAL_SET.smithing} (you have ${skillLv('smithing')}).`};
+  const n=bagCount(b=>b.gateCrystal===it.school);if(n<1)return {done:false,why:`You need a gate crystal of ${schoolName(it.school)}.`};
+  const f=forgeFee();if(f)return {done:false,why:f};
+  bagTake(b=>b.gateCrystal===it.school,1);it.found=true;it.crystalSet=1;if(typeof implementDesc==='function')it.desc=implementDesc(it);
+  skillUse('smithing',15,'c'+(_forgeN++));if(typeof advanceClock==='function')advanceClock(CRYSTAL_SET.min);return {done:true};}
 function slayMaster(portal){if(!portal||!portal.lair)return;const M=worldState.masters||(worldState.masters={}),r=M[portal.seed];const was=r===true||!!(r&&r.dead);if(r&&typeof r==='object')r.dead=true;else M[portal.seed]=true;
   if(!was&&typeof cloakMasterSlain==='function')cloakMasterSlain(portal); /* S781 — the Wolf-Mother's Cloak off its master's corpse */
   if(!was&&typeof grantHead==='function')grantHead('skull');} /* S1734 — the first lair beast you kill gives the beast's skull, a figurehead (once) */
