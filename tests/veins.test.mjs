@@ -6,6 +6,9 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
+// S2373 — the chunks about you stream in after intoWorld returns: at s1703 two of them had (2 veins), and the lodestone's 120 m found nothing past 40.
+// Wait for the 3 by 3 round you, 9 chunks, before reading the veins
+await page.waitForFunction(() => { const c = Math.floor(px / CHUNK), k = Math.floor(pz / CHUNK); let n = 0; for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) if (chunks.has((c + i) + ',' + (k + j))) n++; return n === 9; }, null, { timeout: 240000, polling: 500 });
 const r = await page.evaluate(() => {
   const out = {};
   BAG.length = 0; worldState.veins = {};
@@ -77,7 +80,9 @@ const r = await page.evaluate(() => {
     const lodes = lv => { SKILLS.mining = { lv, p: 0 }; let got = 0, n = 0; const said = []; for (let i = 0; i < 1500; i++) { const t = at(mk, 3, 'lode:' + lv + ':' + i); delete worldState.veins[t.id];
       BAG.length = 0; bagAdd({ ...PICK_ITEM }); const q = strikeVein(t); if (q.ore) { got++; if (bagCount(b => b.lodestone)) { n++; if (said.length < 1) said.push(q.ore); } } } return { got, n, said }; };
     if (mk) { out.lode.at74 = lodes(74); out.lode.at75 = lodes(75); }
-    BAG.length = 0; px = v.x + 1; pz = v.z; SKILLS.mining = { lv: 25, p: 0 };
+    /* S2373 — stand at a loaded vein with another 40 to 120 m off: the start's own vein had none there once the world's scatter moved (2 within 40 m, none past) */
+    const dd = (a, b) => Math.hypot(a.x - b.x, a.z - b.z), live = VEINS.filter(u => veinLive(u)), far = live.find(a => live.some(b => b !== a && dd(a, b) > 41 && dd(a, b) <= 119)) || v;
+    BAG.length = 0; px = far.x + 1; pz = far.z; SKILLS.mining = { lv: 25, p: 0 }; out.lode.within40 = live.filter(u => Math.hypot(u.x - px, u.z - pz) <= 40).length; out.lode.moved = far !== v;
     out.lode.compass0 = WORLD.compassPlaces().filter(q => q.lode).length; out.lode.dots40 = prospectorDots(ctx, 104, 58);
     bagAdd({ ...LODESTONE_ITEM }); out.lode.dots120 = prospectorDots(ctx, 104, 58);
     out.lode.within120 = VEINS.filter(u => veinLive(u) && Math.hypot(u.x - px, u.z - pz) <= 120).length;
@@ -110,7 +115,7 @@ check('Mining 50: about one ore in four comes double; none at 49', r.dbl49.two =
 check('Prospector (25): the veins within 40 m on the minimap; none at 24', r.dots24 === 0 && r.dots25 === r.within40 && r.dots25 >= 1, [r.dots24, r.dots25, r.within40]);
 check('Lodestone (75) is live; the ground is a tier-3 vein in a cell of the Mark, not tier 2 there, not at home', r.lode.live && r.lode.mark && r.lode.ground3 && !r.lode.ground2 && !r.lode.home3, r.lode);
 check('at 75 about one ore in ten from the Mark\'s highlands brings a lodestone, said with the ore; none at 74', r.lode.at74 && r.lode.at74.n === 0 && r.lode.at75 && Math.abs(r.lode.at75.n / r.lode.at75.got - .1) < .04 && /and a lodestone/.test(r.lode.at75.said[0] || ''), [r.lode.at74, r.lode.at75]);
-check('carried, a lodestone takes Prospector from 40 m to 120 m (past the minimap\'s 58 m on its rim)', r.lode.dots40 === r.dots25 && r.lode.dots120 === r.lode.within120 && r.lode.dots120 > r.lode.dots40, [r.lode.dots40, r.lode.dots120, r.lode.within120, r.lode.past58]);
+check('carried, a lodestone takes Prospector from 40 m to 120 m (past the minimap\'s 58 m on its rim)', r.lode.dots40 === r.lode.within40 && r.lode.dots120 === r.lode.within120 && r.lode.dots120 > r.lode.dots40, [r.lode.dots40, r.lode.within40, r.lode.dots120, r.lode.within120, r.lode.past58, r.lode.moved]);
 check('and the compass points to the nearest vein with ore left; none without a lodestone; the save keeps it', r.lode.compass0 === 0 && r.lode.compass.nearest && r.lode.compass.places === 1 && r.lode.compass.glyph === '◆' && r.lode.saved, r.lode.compass);
 check('veins lie about the home province', r.n >= 2, r.n);
 check('2 to 5 a chunk', r.perMin >= 2 && r.perMax <= 5, [r.perMin, r.perMax]);
