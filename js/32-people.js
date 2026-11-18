@@ -1394,7 +1394,12 @@ function rideTick(rig){const R=rig.ride,H=R.beast;rig.root.updateWorldMatrix(tru
    anything under the top of what the horse has there (the saddle, the hide) laid on it, .clear over it. The skinIndex and skinWeight are
    the pack's, shared by every body (CLAUDE.md), so they are replaced, not written; the position and normal are the garment's own. Then
    the middle level is baked again from the seated skirt. Once per rider. */
-const HB_RIDE_SKIRT={re:/^(skirt|coatSkirt|mailSkirt)$/,back:100*Math.PI/180,side:150*Math.PI/180,legClear:.025,clear:.008,cell:.015,d0:-.03,d1:.02,rounds:8,smooth:3,lam:.5,pin:.03,capA:2.6,capB:2.7,cap:0,capPass:6,alt:10};
+const HB_RIDE_SKIRT={re:/^(skirt|coatSkirt|mailSkirt)$/,back:100*Math.PI/180,side:150*Math.PI/180,legClear:.025,clear:.008,cell:.015,d0:-.03,d1:.02,rounds:8,smooth:3,lam:.5,pin:.03,capA:2.6,capB:2.7,cap:0,capPass:6,alt:10,vent:{w:.03,top:-.05,ang:.5,a0:.35,a1:1.2}};
+/* S2374 — the vent (the critic, 17 Nov: from behind, the skirt over the croup read as a saddle-cloth). A riding tunic is slit behind as well
+   as before (S2300's parting over the horn), so its back does not lie across the horse's croup as one sheet: the triangles of the skirt's
+   back middle (within vent.w of the middle, from the hem to vent.top under the hip joints) are left out, and each half's hanging place is
+   turned round the hips away from the middle, vent.ang at the hem and nothing at the vent's top, most at the back (vent.a0 rad round the
+   hips) and none past vent.a1, so the two halves fall either side of the cantle and the saddle shows between them. */
 function hbRideSkirt(rig){const H=rig.hb,R=rig.ride,G=R&&R.beast;if(!H||H.rideSkirt)return;
   if(G&&G.root&&!G.hc&&!G.hcFail)return; /* the horse's own body first: the skirt is laid on its saddle */
   H.rideSkirt=true;const P=H.P,sk=P.skeleton,by=P.byName,ip=sk.bones.indexOf(by.root),C=HB_RIDE_SKIRT;if(ip<0)return;
@@ -1429,9 +1434,15 @@ function hbRideSkirt(rig){const H=rig.hb,R=rig.ride,G=R&&R.beast;if(!H||H.rideSk
      reaches out from the hips across the ground is the cap on the hanging part's reach below */
   const outRad=q=>{for(const L of legs){const R=legAt(L,q,_u);if(!R)continue;const rr=_u.length();if(rr<R&&rr>1e-5)q.addScaledVector(_u,(R-rr)/rr);}return q;};
   const hw=legs[0].a.clone().add(legs[1].a).multiplyScalar(.5),hReach=(x,z)=>Math.hypot(x-hw.x,z-hw.z);
-  const kScale=new THREE.Vector3().setFromMatrixScale(Gm||H.root.matrixWorld).y||1,clear=C.clear*(Gm?1/kScale:1);let moved=0,laid=0;
+  const kScale=new THREE.Vector3().setFromMatrixScale(Gm||H.root.matrixWorld).y||1,clear=C.clear*(Gm?1/kScale:1);let moved=0,laid=0,ventCut=0;
   for(const o of list){const g=o.geometry,pa=g.attributes.position,sI=g.attributes.skinIndex,sW=g.attributes.skinWeight,nI=new Uint16Array(sI.count*4),nW=new Float32Array(sW.count*4);
-    nI.set(sI.array);nW.set(sW.array);const ids=new Set(g.index?g.index.array:[]),N=pa.count;
+    nI.set(sI.array);nW.set(sW.array);const N=pa.count;let ids=new Set(g.index?g.index.array:[]);
+    const Vt=C.vent&&g.index?(()=>{let y0=1e9;for(const i of ids)y0=Math.min(y0,pa.getY(i));const yt=mid.y+C.vent.top,ia=g.index.array,keep=[];if(yt<=y0+.02)return null;
+      for(let t=0;t<ia.length;t+=3){let cx=0,cy=0,cz=0;for(let e=0;e<3;e++){cx+=pa.getX(ia[t+e]);cy+=pa.getY(ia[t+e]);cz+=pa.getZ(ia[t+e]);}
+        if(cz/3<mid.z&&Math.abs(cx/3-mid.x)<C.vent.w&&cy/3<yt)continue;keep.push(ia[t],ia[t+1],ia[t+2]);}
+      g.setIndex(keep);ids=new Set(keep);ventCut+=(ia.length-keep.length)/3;return {y0,yt};})():null;
+    const vTurn=(q,th)=>{if(!Vt||q.y>=Vt.yt)return th;const dx=q.x-mid.x,dz=q.z-mid.z,r=Math.hypot(dx,dz),d=C.vent.ang*Math.min(1,(Vt.yt-q.y)/(Vt.yt-Vt.y0))*(1-ss(C.vent.a0,C.vent.a1,th));
+      if(d<1e-4||r<1e-4)return th;const t2=th+d;q.x=mid.x+Math.sign(dx||1)*r*Math.sin(t2);q.z=mid.z-r*Math.cos(t2);return t2;};
     /* S2311 — the seam (#1652). Each point (welded at the shell's seams) goes to its lap place where the thighs carry it, or its rest place
        hanging from the pelvis, by its angle round the hips as before, and now also to its lap place wherever its rest place would be inside a
        thigh (the lap place is on the thigh's surface). Then the moves are smoothed over the cloth (the mean of the neighbours', smooth passes,
@@ -1439,7 +1450,7 @@ function hbRideSkirt(rig){const H=rig.hb,R=rig.ride,G=R&&R.beast;if(!H||H.rideSk
        part meet without tearing: edges at most 0.10 m and 2.8 times their rest length (were 0.30 m and 5.6 times) */
     const rep=new Int32Array(N).fill(-1),weld=new Map(),R0=new Float32Array(N*3),LP=new Float32Array(N*3),Dv=new Float32Array(N*3),TH=new Float32Array(N),HG=new Float32Array(N),U=[];let top=-1e9;
     for(const i of ids){v.fromBufferAttribute(pa,i);const k=Math.round(v.x*2e3)+','+Math.round(v.y*2e3)+','+Math.round(v.z*2e3);if(!weld.has(k)){weld.set(k,i);U.push(i);}rep[i]=weld.get(k);if(rep[i]!==i)continue;
-      const th=Math.atan2(Math.abs(v.x-mid.x),-(v.z-mid.z)),rv=v.clone().applyMatrix4(Mp);w.copy(v);o.applyBoneTransform(i,w);
+      const th=vTurn(v,Math.atan2(Math.abs(v.x-mid.x),-(v.z-mid.z))),rv=v.clone().applyMatrix4(Mp);w.copy(v);o.applyBoneTransform(i,w);
       const f=(1-ss(C.back,C.side,th))*(1-ss(C.d0,C.d1,inLegs(rv)));R0.set([rv.x,rv.y,rv.z],i*3);LP.set([w.x,w.y,w.z],i*3);w.lerp(rv,f);Dv.set([w.x-rv.x,w.y-rv.y,w.z-rv.z],i*3);if(rv.y>top)top=rv.y;
       TH[i]=th;outRad(w.copy(rv));HG[i]=hReach(w.x,w.z);}
     const nb=new Map(),ix=g.index.array;for(let t=0;t<ix.length;t+=3)for(let e=0;e<3;e++){const a=rep[ix[t+e]],b=rep[ix[t+(e+1)%3]];if(a===b)continue;
@@ -1464,7 +1475,7 @@ function hbRideSkirt(rig){const H=rig.hb,R=rig.ride,G=R&&R.beast;if(!H||H.rideSk
       if(F){w.applyMatrix4(Gi);const t=F(w.x,w.z)+clear;if(w.y<t){w.y=t;laid++;}w.applyMatrix4(Gm);}
       w.applyMatrix4(Mi);if(w.distanceToSquared(v)>1e-10)moved++;pa.setXYZ(i,w.x,w.y,w.z);for(let c=0;c<4;c++){nI[i*4+c]=c?0:ip;nW[i*4+c]=c?0:1;}}
     pa.needsUpdate=true;g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(nI,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(nW,4));g.computeVertexNormals();}
-  H.rideSkirtN={moved,laid};
+  H.rideSkirtN={moved,laid,vent:ventCut};
   if(H.mid){const old=H.mid,cards=new Set();old.parent&&old.parent.remove(old);P.root.traverse(o=>{if(o.isMesh&&(HBODY.cards.test(o.name)||o.parent===by.head))cards.add(o);});
     try{const m=hbMerge(P,cards);m.geometry.boundingSphere=old.geometry.boundingSphere;m.material=old.material;m.visible=old.visible;P.root.add(m);H.mid=m;old.geometry.dispose();}catch(e){P.root.add(old);console.warn('F4: the rider\'s middle level was not baked again',e);}}}
 const _hbIdM=new THREE.Matrix4();
