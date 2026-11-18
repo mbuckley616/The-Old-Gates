@@ -1,4 +1,4 @@
-// The budgets, the rest (Session 1297, QA; `budget` holds Dunmore's four views and says what is counted and how). Portclare's square
+// The budgets, the rest (Session 1297, QA; `budget` and `budgetfield` hold Dunmore's four views, `budget` says what is counted and how). Portclare's square
 // at noon, the build sheet's fifth view and the critic's worst spot, at each quality level against its ceilings; then two spots for
 // the ledger only, at Middle, since the ceilings are the world's: Dunmore's inn from its door at 20h, and a medium gate (ruins, seed
 // 11) from its entrance.
