@@ -425,6 +425,12 @@ check('no point of the Crown\'s guard\'s mail stands outside the back of the tab
     && G.hold.people === 'markman' && !G.hold.tabard && G.hold.shield === 'arm' && G.hold.inside === 0 && !G.hold.scales && G.hold.fur && !G.crown.fur && !G.compact.fur && near(G.hold.far, [.5, .51, .53])
     && [G.compact, G.compactW].every(x => x.people === 'aurennais' && x.scales && x.bronze && x.blue && x.shield === 'arm' && x.inside === 0 && x.metal && near(x.far, [.62, .45, .22]))
     && G.oldblood.people === 'oldblood' && !G.oldblood.tabard && !G.oldblood.scales && G.oldblood.shield === null && near(G.oldblood.far, [.55, .56, .58]), G); }
+// S2387 (critic 18 Nov, note 3): in a real town (Dunmore's fortune gives the old kit's tier 3) a guard's stand-in wore S395's steel chest,
+// arms and legs over the cloth, so it was a pale doll until the body came. The driver now drops that armour: the tabard's crimson, the mail's sleeves, the helm
+const standin = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => HB_RIGS.has(r) && r.g.guardTier && r.hbG && (r.hbG.dress || {}).tabard);
+  return { n: rs.length, armour: rs.filter(r => r.g.eq && r.g.eq.armour).length, helm: rs.filter(r => r.g.hat === 'helm').length,
+    crimson: rs.filter(r => r.g.cloth.r > .5 && r.g.cloth.g < .1).length, keys: rs.slice(0, 4).map(r => r.g.hbKey) }; });
+check('Dunmore\'s guards\' stand-ins wear no armour kit over the tabard\'s crimson (a pale doll in steel until the body came)', standin.n > 0 && standin.armour === 0 && standin.helm === standin.n && standin.crimson === standin.n, standin);
 // S2329 (#1658 B; OG-064): a guild's head wears the guild's livery over their people's own: the Guildmaster mail under the oxblood tabard
 // with the crossed swords and a sword of their people's make, the Archmage the deep blue robe with the star and a staff of their people's
 // wood (the driver holds it); a guild member is not dressed so, and nothing of the body comes through the tabard
