@@ -390,12 +390,14 @@ check('the Church\'s inquisitor wears the white tabard over mail with the red sh
 // office, whatever the roll; a guard captain who is not the town's head is still a guard
 const powers = await page.evaluate(() => { const one = (def, nation, lord = true) => { const root = buildNPCMesh(Object.assign({ _lord: lord }, def), { key: 'ptest', nation }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
     const D = r.hbG.dress, P = HB.makePerson(r.hbG, { hoodStats: false }), has = n => !!P.root.getObjectByName(n);
-    return { power: r.g.power || null, mail: !!D.mail, spear: !!D.spear, cloak: has('cloak'), crimson: !!(D.cloak && D.cloak[0] > .4 && D.cloak[1] < .1), fur: has('collar0') || has('coatFur0'), coat: has('coat'), sword: has('swordBlade'), staff: has('staffWood'), sash: has('sash'), book: has('bookBlock'), circlet: has('circletBand'), seal: has('sealFace'), legs: !!(D.trousers || D.robe || D.skirt === 'long'), out: P.cloak && P.cloak.through ? P.cloak.through.out : 0 }; };
+    return { power: r.g.power || null, mail: !!D.mail, spear: !!D.spear, cloak: has('cloak'), crimson: !!(D.cloak && D.cloak[0] > .4 && D.cloak[1] < .1), fur: has('collar0') || has('coatFur0'), coat: has('coat'), sword: has('swordBlade'), staff: has('staffWood'), sash: has('sash'), book: has('bookBlock'), circlet: has('circletBand'), seal: has('sealFace'), legs: !!(D.trousers || D.robe || D.skirt === 'long'), out: P.cloak && P.cloak.through ? P.cloak.through.out : 0, carry: P.sword ? { tipH: P.sword.tipH, pommelH: P.sword.pommelH, lean: P.sword.lean, inside: P.sword.inside } : null }; };
   return { lord: one({ role: 'Lord', name: 'Cathal', people: 'gatelander' }, 'gatelands'), elder: one({ role: 'Elder', name: 'Brigid', people: 'gatelander' }, 'gatelands'),
     captain: one({ role: 'Captain', name: 'Hesta', people: 'markman' }, 'mark'), reeve: one({ role: 'Reeve', name: 'Orm', people: 'markman' }, 'mark'),
     prior: one({ role: 'Prior', name: 'Anselme', people: 'aurennais' }, 'aurenne'), factor: one({ role: 'Factor', name: 'Isaure', people: 'aurennais' }, 'aurenne'),
     guard: one({ role: 'Captain', name: 'Sigrun', people: 'markman' }, 'mark', false) }; });
 console.log('  powers:', JSON.stringify(powers));
+// S2366: the lord's and the captain's swords are carried lowered too
+check('the lord\'s and the captain\'s swords are carried lowered at rest: the tip under the pommel and under 0.8 m', [powers.lord, powers.captain].every(h => h.carry && h.carry.tipH < h.carry.pommelH && h.carry.tipH > .15 && h.carry.tipH < .8 && h.carry.lean > 1.83), [powers.lord.carry, powers.captain.carry]);
 { const P = powers; check('the town\'s head is dressed by office: the lord in crimson and fur with a sword, the Elder\'s staff, the captain\'s black coat with fur and a sword, the reeve\'s staff and fur, the Prior\'s stole and book, the Factor\'s circlet, ledger and seal; none through a cloak; a captain who is not the head is still a guard',
   P.lord.power === 'lord' && P.lord.crimson && P.lord.fur && P.lord.sword && P.elder.staff && P.elder.cloak && P.elder.legs && P.captain.coat && P.captain.fur && P.captain.sword && !P.captain.mail && !P.captain.spear
   && P.reeve.staff && P.reeve.fur && P.prior.sash && P.prior.book && P.factor.circlet && P.factor.book && P.factor.seal && [P.lord, P.elder, P.reeve].every(x => x.out === 0) && P.guard.power === null && P.guard.mail, P); }
@@ -424,7 +426,7 @@ console.log('  guards:', JSON.stringify(guards));
 const guilds = await page.evaluate(() => { const one = (def) => { const root = buildNPCMesh(Object.assign({ _siteId: 'gtest' }, def), { key: 'gtest' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r);
     const D = r.hbG.dress, P = HB.makePerson(r.hbG, { hoodStats: false }), has = n => !!P.root.getObjectByName(n), T = P.tabard || {};
     return { head: r.g.guildHead || null, gear: r.g.gear || null, people: r.hbG.people, mail: !!D.mail, tabard: has('tabard'), sign: T.sign || 0, out: T.out ?? -1, tested: T.tested || 0, sword: has('swordBlade'), swordMake: D.swordMake, staff: has('staffWood'), staffMake: D.staffMake, robe: !!D.robe, blue: !!(D.robe && D.robe[2] > .3 && D.robe[0] < .2), star: P.guildStar || null, basket: !!D.basket,
-      cape: !!D.cloak, capeOpen: D.capeOpen ?? null, brooches: (() => { let n = 0; P.root.traverse(o => { if (o.name === 'brooch') n++; }); return n; })(), capeThrough: P.cloak && P.cloak.through ? P.cloak.through.out : 0, boots: !!D.boots && !D.sandals }; };
+      cape: !!D.cloak, capeOpen: D.capeOpen ?? null, brooches: (() => { let n = 0; P.root.traverse(o => { if (o.name === 'brooch') n++; }); return n; })(), capeThrough: P.cloak && P.cloak.through ? P.cloak.through.out : 0, boots: !!D.boots && !D.sandals, carry: P.sword ? { tipH: P.sword.tipH, pommelH: P.sword.pommelH, lean: P.sword.lean, inside: P.sword.inside } : null }; };
   const ppl = ['gatelander', 'markman', 'aurennais', 'oldblood'], out = {};
   ppl.forEach((pp, i) => { out['f_' + pp] = one({ role: 'Guildmaster', name: 'Gm' + i, people: pp }); out['m_' + pp] = one({ role: 'Archmage', name: 'Am' + i, people: pp }); });
   out.member = one({ role: 'Adept of the Mages', name: 'Mem', people: 'markman' }); return out; });
@@ -434,6 +436,9 @@ console.log('  guild heads:', JSON.stringify(guilds));
     F.every(f => f.head === 'f' && f.mail && f.tabard && f.sign > 50 && f.out === 0 && f.tested > 500 && f.sword && !f.staff && !f.basket) && F.map(f => f.swordMake).join() === 'arming,norse,nimcha,falchion'
     && M.every(m => m.head === 'm' && m.gear === 'stick' && m.robe && m.blue && m.staff && !m.tabard && m.star && m.star.through === 0 && m.star.out > .003 && m.star.out < .006) && M.map(m => m.staffMake).join() === 'hazel,ash,olive,carved'
     && G.member.head === null && !G.member.star, G);
+  // S2366 (the critic's 17 Nov note): a sword held at rest is carried lowered, the blade forward and down from the fist (it stood point-up beside the head)
+  check('a Guildmaster\'s sword is carried lowered at rest: the tip under the pommel and under 0.8 m, the blade 15° to 50° below the level, at most 3 points of what is worn against it',
+    F.every(f => f.carry && f.carry.tipH < f.carry.pommelH && f.carry.tipH > .15 && f.carry.tipH < .8 && f.carry.lean > 1.83 && f.carry.lean < 2.44 && f.carry.inside <= 3), F.map(f => f.carry));
   // S2364 (the critic's 17 Nov note): a head's cape is worn back off the breast, pinned at each shoulder, nothing through it; a Guildmaster in boots
   const caped = F.concat(M).filter(h => h.cape);
   // (an Archmage's cape over the staff already opens on the staff's side, S1798: worn back, it is pinned at the left shoulder alone)
