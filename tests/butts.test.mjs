@@ -74,14 +74,16 @@ const ct = await page.evaluate(() => { const site = siteAnywhere('dunmore'), S =
   EQ.ammo = { name: 'Iron Arrow', ico: '➶', type: 'ammo', qty: 30, arrowDmg: [2, 12] }; const out = {};
   try { const R = buttsStart({ site }); out.ok = R.ok; out.say = R.say; if (!BUTTS) return out;
     out.mark = +Math.hypot(BUTTS.x - B.x, BUTTS.z - B.z).toFixed(3); out.line = +(BUTTS.dx * B.dx + BUTTS.dz * B.dz).toFixed(4); out.kit = BUTTS.mesh && BUTTS.mesh.name; out.lifted = !B.butt.visible;
+    const lane = () => { let n = 0; for (let v = 29; v <= 33.01; v += .25) if (currentZoneSolid(B.x + B.dx * v, B.z + B.dz * v)) n++; return n; }; out.solidUp = lane();
     const shoot = () => { fireArrow(1); const a = ZB[ZB.length - 1], Q = BUTTS; a.position.set(Q.cx - Q.dx * .4, Q.cy, Q.cz - Q.dz * .4); a.userData.vx = Q.dx * 30; a.userData.vz = Q.dz * 30; a.userData.vy = 0;
       for (let k = 0; k < 10; k++) { tickArrowMotion(a, 1 / 60, true); tickButts(); } };
     const ends = []; for (let k = 0; k < 9 && BUTTS; k++) { ends.push(+Math.hypot(BUTTS.cx - B.x, BUTTS.cz - B.z).toFixed(1)); shoot(); }
-    out.shots = (worldState.festivals, ZB.filter(a => a.userData.butt).map(a => [a.userData.butt.end, a.userData.butt.score, a.userData.butt.r && +a.userData.butt.r.toFixed(3)])); out.ends = [...new Set(ends)]; out.done = !BUTTS; out.score = (worldState.festivals['riverfair:' + site.id] || {}).score; out.back = B.butt.visible;
+    out.shots = (worldState.festivals, ZB.filter(a => a.userData.butt).map(a => [a.userData.butt.end, a.userData.butt.score, a.userData.butt.r && +a.userData.butt.r.toFixed(3)])); out.ends = [...new Set(ends)]; out.done = !BUTTS; out.score = (worldState.festivals['riverfair:' + site.id] || {}).score; out.back = B.butt.visible; out.solidBack = lane(); out.solids = S.sol.filter(q => q.butts).length;
   } finally { if (BUTTS) buttsEnd('left'); EQ.weapon = w0; EQ.ammo = a0; Object.assign(st, keep); worldState.festivals = {}; }
   return out; });
 console.log(JSON.stringify(ct));
 check(`buttsStart with no mark takes the lane's: on its mark (${ct.mark} m), down its line, with the kit's butt, the standing one lifted`, ct.ok && ct.mark < .01 && ct.line > .9999 && ct.kit === 'butt' && ct.lifted, ct);
+check(`with the standing butt lifted nothing solid stands 29–33 m down the lane (${ct.solidUp} points; ${ct.solidBack} once it is back, ${ct.solids} solid)`, ct.solidUp === 0 && ct.solidBack > 0 && ct.solids === 1, ct);
 check(`nine arrows to the middle score ${ct.score} at ${ct.ends && ct.ends.join(', ')} m down the lane, and the standing butt is back after`, ct.done && ct.score === 45 && ct.back && JSON.stringify(ct.ends) === '[30,50,70]', ct);
 
 // 4. a picture from just behind the mark, down the lane at eleven

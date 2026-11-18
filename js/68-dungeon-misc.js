@@ -672,9 +672,10 @@ function gateDelverLay(portal,gen,coffer){if(!gateDelverDue(portal))return null;
   // the body: sat against the dais's side, legs out toward the room, head fallen forward
   const g=new THREE.Group();g.name='gateDelver';g.position.set(bx,y,bz);g.rotation.y=Math.atan2(qx*bs,qz*bs);
   {const add=(geo,m,x,yy,z,rx)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,yy,z);if(rx)o.rotation.x=rx;g.add(o);return o;};
-    add(new THREE.BoxGeometry(.42,.6,.24),cloth,0,.42,-.22,-.2);add(new THREE.SphereGeometry(.12,8,6),skin,0,.78,-.12);
+    if(window.OG_LOOK==='new'&&typeof gkeepDelver==='function')g.add(gkeepDelver(portal.seed)); /* S2379 — dressed on the new look (56): his bones, cloak, pack and lantern */
+    else{add(new THREE.BoxGeometry(.42,.6,.24),cloth,0,.42,-.22,-.2);add(new THREE.SphereGeometry(.12,8,6),skin,0,.78,-.12);
     add(new THREE.BoxGeometry(.14,.14,.8),cloth,-.11,.08,.22);add(new THREE.BoxGeometry(.14,.14,.8),cloth,.11,.08,.22);
-    add(new THREE.BoxGeometry(.3,.3,.18),leather,.32,.15,-.12);} /* his pack beside him */
+    add(new THREE.BoxGeometry(.3,.3,.18),leather,.32,.15,-.12);}} /* his pack beside him */
   dScene.add(g);
   const bodyC={id:`${portal.seed}:${fl}:delver`,x:bx,z:bz,y:.4,opened:!!kept,delver:portal.seed,part:'body',floor:fl,mesh:g,items:body,displayName:'A dead delver',say:"Press 'E' — a dead delver"};
   CHESTS.push(bodyC);
@@ -682,11 +683,12 @@ function gateDelverLay(portal,gen,coffer){if(!gateDelverDue(portal))return null;
   let camp_=null;{const bx0=tx-ax*GATE_DELVER.camp,bz0=tz-az*GATE_DELVER.camp;let cx=null,cz=null;
     for(const s of [1.6,-1.6,0]){const x=bx0+qx*s,z=bz0+qz*s;if(ok(x,z)){cx=x;cz=z;break;}}
     if(cx!=null){const c=new THREE.Group();c.name='gateCamp';c.position.set(cx,y,cz);c.rotation.y=Math.atan2(ax,az);
-      const roll=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.7,10),new THREE.MeshLambertMaterial({color:0x7a5f44}));roll.rotation.z=Math.PI/2;roll.position.set(0,.13,.5);roll.name='campRoll';c.add(roll);
+      let roll;if(window.OG_LOOK==='new'&&typeof gkeepCamp==='function'){const D=gkeepCamp(portal.seed);c.add(D.group);roll=D.roll;} /* S2379 — dressed on the new look (56) */
+      else{roll=new THREE.Mesh(new THREE.CylinderGeometry(.13,.13,.7,10),new THREE.MeshLambertMaterial({color:0x7a5f44}));roll.rotation.z=Math.PI/2;roll.position.set(0,.13,.5);roll.name='campRoll';c.add(roll);
       const stone=new THREE.MeshLambertMaterial({color:0x5e5a54});for(let i=0;i<7;i++){const a=i/7*Math.PI*2,s=new THREE.Mesh(new THREE.BoxGeometry(.14,.1,.12),stone);s.position.set(Math.cos(a)*.3,.05,Math.sin(a)*.3-.35);s.rotation.y=a;c.add(s);}
       const ash=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.02,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ash.position.set(0,.01,-.35);c.add(ash);
       const rope=new THREE.Mesh(new THREE.TorusGeometry(.16,.035,6,14),new THREE.MeshLambertMaterial({color:0x9b8458}));rope.rotation.x=-Math.PI/2;rope.position.set(.55,.04,.1);c.add(rope);
-      const brand=new THREE.Mesh(new THREE.CylinderGeometry(.025,.03,.5,6),leather);brand.rotation.z=Math.PI/2-.2;brand.position.set(-.5,.04,-.1);c.add(brand);
+      const brand=new THREE.Mesh(new THREE.CylinderGeometry(.025,.03,.5,6),leather);brand.rotation.z=Math.PI/2-.2;brand.position.set(-.5,.04,-.1);c.add(brand);}
       dScene.add(c);camp_={id:`${portal.seed}:${fl}:camp`,x:cx,z:cz,y:.2,opened:!!kept,delver:portal.seed,part:'camp',floor:fl,mesh:c,rollMesh:roll,items:camp,displayName:'A cold camp',say:"Press 'E' — a cold camp"};
       if(!camp.some(x=>x.roll))roll.visible=false;CHESTS.push(camp_);}}
   if(GATE_KEEP_LIE)GATE_KEEP_LIE.delver={body:bodyC,camp:camp_};return {body:bodyC,camp:camp_};}

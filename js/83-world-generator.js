@@ -655,8 +655,8 @@ function genSettlement(site){
       const L=buttsLane(site);if(!L)return;const y0=worldH(L.x,L.z)-.02,c=Math.cos(L.ry),s_=Math.sin(L.ry),W_=(lx,lz)=>({x:L.x+lx*c+lz*s_,z:L.z-lx*s_+lz*c}),gr=(lx,lz)=>{const q=W_(lx,lz);return worldH(q.x,q.z)-.02-y0;};
       const P=PKIT.props.butts({key:L.id,end:-1,ground:gr}),G=P.group;G.position.set(L.x,y0,L.z);G.rotation.y=L.ry;G.userData.noBake=true;group.add(G);
       const D=BUTTS_ENDS[0],fy=y0+Math.min(gr(-.5,-D),gr(.5,-D),gr(0,-D-.9))+1.2,f=W_(0,-D),B=PKIT.props.butt(),BG=B.group;BG.position.set(f.x,fy,f.z);BG.rotation.y=L.ry;BG.userData.noBake=true;group.add(BG);
-      const m=W_(0,-D-1.25);sol.push({cx:m.x,cz:m.z,rx:1.1,rz:.7,c,s:s_,h:1.95,bt:'wall',butts:true}); /* from 0.55 m behind the face (the solid test pads a solid by 0.3 m), so an arrow meets the face first */
-      S.butts={id:L.id,x:L.x,z:L.z,dx:L.dx,dz:L.dz,ry:L.ry,y:y0,face:{x:f.x,y:fy,z:f.z},lane:G,butt:BG,tris:P.tris+B.tris,draws:P.draws+B.draws};}
+      const m=W_(0,-D-1.25),BS={cx:m.x,cz:m.z,rx:1.1,rz:.7,c,s:s_,h:1.95,bt:'wall',butts:true};sol.push(BS); /* from 0.55 m behind the face (the solid test pads a solid by 0.3 m), so an arrow meets the face first */
+      S.butts={id:L.id,x:L.x,z:L.z,dx:L.dx,dz:L.dz,ry:L.ry,y:y0,face:{x:f.x,y:fy,z:f.z},lane:G,butt:BG,sol:BS,tris:P.tris+B.tris,draws:P.draws+B.draws};}
     function kitMarket(L){const G=PKIT.gl.market({r:PKIT.stream(`${site.id}:market`)}),U=G.userData,c=Math.cos(L.ry),s_=Math.sin(L.ry),y=worldH(L.x,L.z)-.06;
       if(!kitG){kitG=new THREE.Group();kitG.name='kit houses';kitG.position.set(cx,0,cz);kitG.userData.noBake=true;group.add(kitG);}
       G.position.set(L.x-cx,y,L.z-cz);G.rotation.y=L.ry;G.traverse(o=>{if(o.isMesh){o.castShadow=o.name!=='dark';o.receiveShadow=true;}});kitG.add(G);
