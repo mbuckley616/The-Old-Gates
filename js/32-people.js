@@ -2893,7 +2893,7 @@ const HB_CLOAK_HOLD=1;
    taken off (1: at a run 15 and 26 points out, at most 1.4 cm; .5 left 131 and 121 at 3 cm). A spear, a crossbow, a basket or a lantern
    keeps its arm free */
 const HB_CLOAK_STAFF={k:1};
-/* S2377 — a sword carried lowered at rest (S2366's SWORD_REST) and the walk. The driver swings the right arm 0.32 rad either way, and the
+/* S2381 — a sword carried lowered at rest (S2366's SWORD_REST) and the walk. The driver swings the right arm 0.32 rad either way, and the
    blade, 0.8 to 0.9 m beyond the fist, turned that into an arc: a walking Guildmaster's tip went from 0.39 m to 1.32 m off the ground and
    back each stride, brandished at the hip. So the sword's arm is held to the hips as a cloak's is, HB_SWORD_HOLD.k of the swing taken off,
    when no cloak holds it already; a blow (hbHoldF) and standing still are left alone */

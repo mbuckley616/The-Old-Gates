@@ -443,7 +443,10 @@
   // the lane where it stands (genSettlement's S.butts, else as chosen from the cells) and the standing butt shown or lifted: what buttsStart
   // and buttsEnd (87) read, so the contest is shot down the town's own lane with the kit's butt
   function buttsLaneOf(site){const s=typeof site==='string'?(SITE[site]||null):site;if(!s)return null;const S=SETTLE.get(s.id);if(S&&S.butts)return S.butts;const L=buttsLane(s);return L?{id:L.id,x:L.x,z:L.z,dx:L.dx,dz:L.dz,ry:L.ry}:null;}
-  function buttsLaneShow(site,on){const s=typeof site==='string'?site:site&&site.id,S=s&&SETTLE.get(s);if(S&&S.butts&&S.butts.butt)S.butts.butt.visible=!!on;}
+  // S2378 — and its solid with it: lifted, the stand and bales no longer stop you or an arrow 30 m down the lane (S.butts.sol, 83), so the
+  // 50 m and 70 m ends can be hit; shown again, the solid is put back once
+  function buttsLaneShow(site,on){const s=typeof site==='string'?site:site&&site.id,S=s&&SETTLE.get(s);if(!S||!S.butts)return;if(S.butts.butt)S.butts.butt.visible=!!on;
+    const B=S.butts.sol;if(!B||!S.sol)return;const i=S.sol.indexOf(B);if(on&&i<0)S.sol.push(B);else if(!on&&i>=0)S.sol.splice(i,1);}
   // the lane's clearing: noFlat stamps down its middle, so the scatter stands no tree or rock on it and the ground is worn as a mown lane is
   function buttsLaneStamps(c,k){const out=[];for(const t of c.sites){const L=buttsLane(t,c);if(!L)continue;
       for(let v=-BUTTS_BACK;v<=BUTTS_LEN-BUTTS_BACK+.01;v+=5){const st=addStamp({id:`${L.id}_${Math.round(v)}`,kind:'door',noFlat:true,butts:true,x:L.x+L.dx*v,z:L.z+L.dz*v,r:3.8,blend:1,y:0,cell:k});out.push(st);dropHerbsOnPad(st);}}

@@ -439,7 +439,7 @@ console.log('  guild heads:', JSON.stringify(guilds));
   // S2366 (the critic's 17 Nov note): a sword held at rest is carried lowered, the blade forward and down from the fist (it stood point-up beside the head)
   check('a Guildmaster\'s sword is carried lowered at rest: the tip under the pommel and under 0.8 m, the blade 15° to 50° below the level, at most 3 points of what is worn against it',
     F.every(f => f.carry && f.carry.tipH < f.carry.pommelH && f.carry.tipH > .15 && f.carry.tipH < .8 && f.carry.lean > 1.83 && f.carry.lean < 2.44 && f.carry.inside <= 3), F.map(f => f.carry));
-  // S2377 (S2366's owed note): on the walk the sword's arm is held to the hips as a cloak's is, three quarters of the swing taken off. The
+  // S2381 (S2366's owed note): on the walk the sword's arm is held to the hips as a cloak's is, three quarters of the swing taken off. The
   // Aurennais Guildmaster (no cape) stood the blade upright at each forward swing, its top 2.11 m off the ground; held, never over 0.80
   const walk = await page.evaluate(() => { const root = buildNPCMesh({ role: 'Guildmaster', name: 'Gm2', people: 'aurennais', _siteId: 'gtest' }, { key: 'gwalk' }), rig = [...HB_RIGS].find(x => x.root === root);
     const c0 = CAM.position.clone(), x0 = px + 30, z0 = pz + 30, inside = isInterior(); root.position.set(x0, 0, z0); root.rotation.y = 0; scene.add(root); let now = Math.max(performance.now(), HBODY.last || 0) + 1e6, n = 0; { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); }
