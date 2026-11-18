@@ -273,7 +273,10 @@ check('a rider is drawn seated on his horse, and within 6 m he reins in', h1.dra
   console.log(JSON.stringify(S));
   check('his tunic\'s skirt sits on the saddle: on his pelvis alone, within 0.3 m a side behind his hips', S.hb && S.seated && (!S.skirt || (S.bones.length === 1 && S.bones[0] === 'root' && S.wide > .1 && S.wide < .3)), S);
   // S2311 — and its hem is whole where the lap's part meets the hanging part (#1652): no edge of it longer than 0.15 m as he sits (0.30 m before)
-  check('his tunic\'s skirt is whole at the hips: no edge longer than 0.15 m', S.hb && (!S.skirt || S.edge < .15), S); }
+  check('his tunic\'s skirt is whole at the hips: no edge longer than 0.15 m', S.hb && (!S.skirt || S.edge < .15), S);
+  // S2374 — and it is vented behind (the critic, 17 Nov: the back lay over the croup as one sheet and read as a saddle-cloth): the back middle's
+  // triangles are left out from the hem up, so its two halves fall either side of the cantle (the critic's rider: 44 of 697 cut)
+  check('his tunic\'s skirt is vented behind, its halves either side of the cantle', S.hb && (!S.skirt || (S.N && S.N.vent >= 20)), S); }
 await page.evaluate((m) => { worldState.gameTimeAbsMinutes += m; worldState.gameTimeMinutes = (worldState.gameTimeMinutes + m) % 1440; }, 5);
 await g.spin(null, 4);
 const h2 = await page.evaluate((id) => { const D = ROADWALK.get(id); return { halted: !!D.halt, x: D.npc.g.position.x, z: D.npc.g.position.z, t: worldState.gameTimeAbsMinutes, lag: (worldState.roadfolk[id] || {}).lag }; }, rf.id);
