@@ -1424,6 +1424,36 @@ function gkeepShaft(h,school){const M=gkeepMats(school),g=new THREE.Group();g.na
   const eye=new THREE.Mesh(new THREE.CircleGeometry(.75,32).rotateX(Math.PI/2),M.eye);eye.position.y=h-.05;g.add(eye);
   for(const [a,b] of [[.75,1.25],[.55,.95]]){const c=new THREE.Mesh(new THREE.CylinderGeometry(a,b,h-.05,32,1,true),M.beam);c.position.y=(h-.05)/2;c.renderOrder=2;g.add(c);}
   const L=new THREE.PointLight(0xffecc8,1.5,Math.min(14,h+3));L.position.y=Math.min(3.2,h*.6);g.add(L);g.userData.light=L;return g;}
+// S2379 — what a gate keeps, the sheet's session 3, its last part: the delver and his camp (vaults.js's delver and camp, OG-123), for the
+// systems builder's gateDelverLay (68). His bones sat against the dais, his back to -z and his legs out to +z, his head dropped, under a
+// rotted cloak; his pack with its strap of bedroll beside him, his lantern out, the split purse by his hand. What his list holds (the
+// purse, the sword, the torch, the journal) is not drawn, so nothing stays on the floor once taken. The camp, the way in its +z: the
+// bedroll laid out with its blanket rolled at the head (one group, campRoll, hidden when the roll is taken), a cold ring of hearth stones
+// round its ash and charred sticks, a coil of rope and a burnt-out torch. One material a kind, shared by every gate.
+function gkeepCampMats(){if(GKEEP_MAT.camp)return GKEEP_MAT.camp;const S=(c,r,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:r,metalness:0},o||{}));
+  return GKEEP_MAT.camp={bone:S(0xb8ac8e,.75),cloth:S(0x5e5240,1,{side:THREE.DoubleSide}),roll:S(0x6e5a40,1),leather:S(0x4a3020,.8),iron:S(0x3a3836,.6,{metalness:.5}),
+    horn:S(0x8a6a40,.5),rope:S(0x8a7650,.95),wood:S(0x3e3024,.95),ash:S(0x2a2724,1),stone:S(0x5e5a54,.95)};}
+function gkeepDelver(seed){const M=gkeepCampMats(),T=gkeepTM,P=[],r=PKIT.stream('gkeep:delver:'+seed);
+  const bone=(a,b,rad=.018)=>{const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),L=A.distanceTo(B),g=new THREE.CylinderGeometry(rad*.8,rad,L,6);g.translate(0,L/2,0);
+    const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),B.clone().sub(A).normalize());P.push([g,'bone',new THREE.Matrix4().compose(A,q,new THREE.Vector3(1,1,1))]);};
+  {const g=new THREE.PlaneGeometry(.7,.9,6,8),Q=g.attributes.position;for(let i=0;i<Q.count;i++){const x=Q.getX(i),y=Q.getY(i);Q.setZ(i,-.1+.05*Math.sin(x*14+r())-Math.max(0,-y)*.2);}g.computeVertexNormals();P.push([g,'cloth',T(0,.5,-.06,0,-.15)]);}
+  bone([0,.12,0],[0,.62,-.04],.02);for(let k=0;k<5;k++)P.push([new THREE.TorusGeometry(.12-k*.008,.008,4,14,Math.PI*1.3),'bone',T(0,.36+k*.05,.02,0,Math.PI/2+.2,Math.PI*1.15)]);
+  P.push([new THREE.BoxGeometry(.28,.1,.14),'bone',T(0,.1,.02)]);
+  {const sk=new THREE.SphereGeometry(.095,12,10);sk.scale(.85,1,1.1);const tilt=.25+r()*.15,turn=.5+r()*.4;P.push([sk,'bone',T(.04,.66,.1,tilt,turn)],[new THREE.BoxGeometry(.08,.03,.07),'bone',T(.05,.58,.17,tilt,turn)]);}
+  for(const s of [-1,1]){const k=s*(r()-.5)*.08;bone([s*.1,.1,.03],[s*.13,.12+k,.46]);bone([s*.13,.12+k,.46],[s*.16,.03,.86],.015);P.push([new THREE.BoxGeometry(.07,.03,.17),'bone',T(s*.16,.02,.92)]);
+    bone([s*.16,.56,0],[s*.2,.32,.06]);bone([s*.2,.32,.06],[s*.08,.2,.3],.012);}
+  P.push([new THREE.BoxGeometry(.36,.46,.2),'leather',T(.48,.23,-.02,.3,0,.12)],[new THREE.CylinderGeometry(.08,.08,.44,10).rotateZ(Math.PI/2),'roll',T(.48,.52,-.02,.3,0,.12)]); /* his pack and its bedroll */
+  P.push([new THREE.BoxGeometry(.12,.2,.12),'iron',T(-.42,.1,.3)],[new THREE.BoxGeometry(.1,.14,.1),'horn',T(-.42,.1,.3)],[new THREE.TorusGeometry(.04,.006,4,10),'iron',T(-.42,.23,.3,0,0,Math.PI/2)]); /* the lantern, out */
+  {const g=new THREE.SphereGeometry(.06,10,8,0,Math.PI*1.4);g.scale(1,.55,1);P.push([g,'leather',T(.2,.03,.62,r()*6)]);} /* the purse, split and empty */
+  const g=new THREE.Group();g.name='gateDelverBody';for(const m of gkeepBake(P,M,'delver'))g.add(m);return g;}
+function gkeepCamp(seed){const M=gkeepCampMats(),T=gkeepTM,P=[],R=[],r=PKIT.stream('gkeep:camp:'+seed);
+  R.push([new THREE.BoxGeometry(.8,.06,1.9),'roll',T(-.35,.03,.15,.1)],[new THREE.CylinderGeometry(.13,.13,.8,10).rotateZ(Math.PI/2),'roll',T(-.44,.1,-.75,.1)]);
+  const hx=.85,hz=-.35;for(let k=0;k<9;k++){const a=k/9*6.283;P.push([new THREE.DodecahedronGeometry(.1+r()*.04),'stone',T(hx+Math.sin(a)*.4,.06,hz+Math.cos(a)*.4,r()*3,r()*3)]);}
+  P.push([new THREE.CylinderGeometry(.3,.34,.04,14),'ash',T(hx,.02,hz)]);for(let k=0;k<4;k++)P.push([new THREE.CylinderGeometry(.025,.03,.5,6).rotateZ(Math.PI/2),'wood',T(hx,.06,hz,k*.8+r()*.3)]);
+  for(let k=0;k<4;k++)P.push([new THREE.TorusGeometry(.22-k*.02,.016,5,20),'rope',T(.5,.016+k*.03,-1.15,0,Math.PI/2)]);
+  P.push([new THREE.CylinderGeometry(.022,.025,.6,6).rotateZ(Math.PI/2),'wood',T(.7,.025,.85,.6)],[new THREE.CylinderGeometry(.04,.035,.12,8).rotateZ(Math.PI/2),'ash',T(.45,.04,1.0,.6)]); /* the torch dropped, burnt out */
+  const g=new THREE.Group();g.name='gateCampDressed';for(const m of gkeepBake(P,M,'camp'))g.add(m);
+  const roll=new THREE.Group();roll.name='campRoll';for(const m of gkeepBake(R,M,'campRoll'))roll.add(m);g.add(roll);return {group:g,roll};}
 // S1376 — whether a gate's floors take Cloch's fallen blocks: a lesser gate (not a great one, not the tutorial) whose door stands on
 // the Mark, while Cloch's toll holds (gateToll, 87-world-quests.js: Cloch torn, and three torn in all). Read on entering, so a gate
 // entered before the toll keeps its passages until you next come in.
