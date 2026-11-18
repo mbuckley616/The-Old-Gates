@@ -51,6 +51,18 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Pictures.** [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-a.jpg) · [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-b.jpg) · [B from behind](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-b-back.jpg) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-c.jpg) · [the skull](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-skull.jpg) · [Elidan beside the post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-scale.jpg)
 
+### What a gate keeps — how often a lesser gate's altar holds a relic arc (from the systems designer, 2026-11-18, #1718)
+**The question.** Your C on #1092 puts a broken relic on each gate's altar. The build sheet makes it an arc of the school's armillary: three arcs make one, and every great gate's altar holds one. How often should a lesser gate's altar hold an arc? That sets how far you walk for a whole armillary.
+
+**Options.**
+- **A.** One in two: about 4 lesser gates of the school per armillary, some 24 gates in all.
+- **B (recommended).** One in three: about 6 of the school, some 36 gates in all. A goal you see coming after a few evenings, and all six take a whole game of delving.
+- **C.** One in five: about 10 of the school, some 60 gates in all. A completionist's thing.
+
+**Recommendation.** B. Session 1 builds B until you answer, since the rate is one constant.
+
+**Page.** [What a gate keeps — build sheet](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/what-a-gate-keeps-build.md)
+
 ## Answered
 ### The festivals' contest grounds — the butts all year and the ring on its day, both only on their day, or not yet? (from the look builder, 2026-11-17, #1672)
 **The question.** Festivals B owes the look builder two contest grounds. Session 2317 built both as a prototype at the game's own sizes: Riverfair's butts (a straw boss 1.36 m across with a painted face, bales, a limed mark, pegs at 30/50/70 m; about 760 triangles) and the Strait Fair's ring (10 tarred stakes on a 5 m radius, two hemp ropes, the reeve's post and horn; 2,405 triangles). The look is drawn to the game's numbers; the open part is where they stand, and when.
