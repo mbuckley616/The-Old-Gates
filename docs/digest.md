@@ -639,3 +639,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing; main is green. STUCK #1652 is fixed on main and waits for the bodies builder to close it.
 
 **Roadmap.** 337 of 433 stories done (332 of 422 on 16 Nov). The new look is 7 of 18; only F14 is left for deep work.
+
+## 18 Nov 2026
+
+**Waiting on you.** Four decisions: spells as keys, and secrets (#1678, B recommended); the Lamps on the Water (#1699, B); the travellers (#1704, B); what a gate keeps, the altar's arc rate (#1718, B, built meanwhile). No merge waits for you.
+
+**Landed on main since 17 Nov.** What a gate keeps (#1092 C) begun: the keep's coffer, the altar's arc, the crystal vein, the arcs joined on the armillary's needle (Systems 2370–2372); the keep dressed on the new look (Look 2375); a dead delver and his cold camp in one keep in three (Systems 2376). Festivals finished: the butts and the Strait Fair's ring on E, First Snow, the wager on the boats, the Caravan's bale, the Commencement's purse and reading, the Lamps prototyped (Systems 2337–2365; Look 2333, 2352). Guards dressed by their people (Bodies 2353, 2359); mail ringed, helms on an aventail (Look 2362–2363); swords carried lowered, the rider's skirt vented (Bodies 2366, 2374); the clay oven in every inn (Look 2368); foes walk and shoot from bridges (Systems 2361, 2367). QA brought `innrooms` to 591 s and split `budget`. Build s1708.
+
+**Under way.** QA #1727 (`export` waits for the autosave) lands on green. Next: the critic's two notes, the butt's solid and the altar before the coffer.
+
+**Blocked.** Nothing; main is green on every PR.
+
+**Roadmap.** 338 of 438 stories done (337 of 433 on 17 Nov). The new look is 7 of 18; only F14 is left for deep work.
