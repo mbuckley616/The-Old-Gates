@@ -67,3 +67,63 @@ export function weaverRing(o = {}) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k] || stone); mesh.name = k; mesh.castShadow = !['turf', 'sea', 'sigil', 'cliff'].includes(k); mesh.receiveShadow = k !== 'sea'; group.add(mesh); tris += g.attributes.position.count / 3; draws++; }
   return { group, tris: Math.round(tris), draws, ground, R, bays, gone, spill, dais, cliff: { z: CLIFF, sea: SEA }, figure, k: K, span: 10 * K, rise: +((9 + 9) * K).toFixed(1) };
 }
+
+// drownedSpires (Session 2389; OG-104's "Drowned Spires", Gatelands: "half-sunk towers and bridges at low tide"): a chain of six Weaver
+// towers striding out from a Gatelands strand into the sea on a gentle curve, a span of the gate kit's bridge between each pair. The sea
+// came up over them (or they sank), so the further out a tower stands the deeper its foot. Everything is the gate kit's at 2.5 times:
+//   - the towers: two of gatekit's piers (4 m square, 20 m high) one on the other at 2.5, so a shaft 10 m square and about 100 m high from
+//     its plinth in the bed, capped by a spire of four faces 16 m high on a corbel band; the lower pier whole and upright; four stand (the upper pier 'cracked', leaning 1.5 to 3° from the string course, the spire with it), two are broken
+//     (above a ragged line about half the upper pier's height the stones are gone into the sea, no spire); a band of weed and wrack 3.6 m deep
+//     round every shaft between the low water and the high (the tide's range here 4 m, a Gatelands spring tide's);
+//   - the spans: gatekit's bridge (a segmental arch of 13 m under a deck 16 m long) at 2.5, so 40 m between the towers' faces, its
+//     deck 10 m wide between parapets 2.5 m high; four stand 'cracked', the fourth is broken (its middle gone, the stones in the sea);
+//   - o.deck: how high the decks' walking face stands over the mean sea (metres; the whole chain is moved with it). The three levels
+//     the DECISION asks: 'a' -1 (clear by 1 m at low water, 3 m under at high: a walk out at the ebb), 'b' 4.5 (clear by 2.5 m at high
+//     water: always walked), 'c' -5.5 (under at every tide: the spires alone, a boat's place);
+//   - o.tide: the water at 'low' (-2), 'mid' (0) or 'high' (+2);
+//   - the strand: sand from the low water up to a turf bank, the bed falling 1 in 14 out to 16 m deep; a 1.75 m post on the sand by the
+//     first tower's foot (the scale, not a person).
+// What the spires were (a gate's outworks, a road to an isle shrine) is the canon's and the quest writer's.
+// -> { group, tris, draws, ground(x, z), sea (y of the water), deck (y of the decks' walking face), towers: [{ i, x, z, ry, cond, foot,
+//   top, wet (m of the shaft above the water), lean }], spans: [{ i, x, z, ry, cond, deck }], figure { x, y, z, h }, k }
+export function drownedSpires(o = {}) {
+  const key = o.key || 'ruins:spires', r = stream(key), K = 2.5, N = 6, D = 50, LV = { a: -1, b: 4.5, c: -5.5 };
+  const DECK = typeof o.deck === 'number' ? o.deck : LV[o.deck] ?? LV.b, SEA = { low: -2, mid: 0, high: 2 }[o.tide] ?? 0, group = new THREE.Group();
+  // the strand: turf above +3 inland (+z), sand below it, the bed falling 1 in 14 seaward (-z) to 16 m deep; rolling a little
+  const ground = (x, z) => { const roll = fbm(x / 40, z / 40, 3) * 1.2, base = z > 0 ? Math.min(7, 1.2 + z * .06) : Math.max(-16, 1.2 + z / 14); return base + roll; };
+  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a); if (!x.attributes.normal) x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  { const N2 = 180, g = new THREE.PlaneGeometry(900, 900, N2, N2); g.rotateX(-Math.PI / 2); g.translate(0, 0, -250); const P = g.attributes.position, col = [];
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), y = ground(x, z); P.setY(i, y); const t = Math.min(1, Math.max(0, (y - 2.6) / 1.2)), w = Math.min(1, Math.max(0, (2.4 - y) / 4.4)) * (y > -2.4 ? 1 : 0);
+      const c = [.62 - .1 * w, .56 - .08 * w, .42 - .02 * w].map((v, j) => v * (1 - t) + [.30, .40, .17][j] * t); col.push(...c); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); worldUV(g, .12); B.set('strand', [g]); }
+  { const g = new THREE.PlaneGeometry(3000, 2400); g.rotateX(-Math.PI / 2); g.translate(0, SEA, -900); put('sea', g); }
+  // the line: from the strand's low-water mark out to sea, bending 14° over its length; tower i at (x_i, z_i), the chain's heading at it
+  const z0 = -40, pts = []; { let x = 0, z = z0, h = 0; for (let i = 0; i < N; i++) { pts.push([x, z, h]); const hn = h + (14 / (N - 1)) * Math.PI / 180; x += Math.sin(hn) * D; z -= Math.cos(hn) * D; h = hn; } }
+  const conds = ['cracked', 'cracked', 'broken', 'cracked', 'cracked', 'broken'], spanConds = ['cracked', 'cracked', 'cracked', 'broken', 'cracked'];
+  const BASE = DECK - 6.45 * K /* the bridge's springing: its deck's walking face 6.45 m over it in the kit */, FOOT = BASE - 12 /* every tower stands on a plinth sunk under the bed */;
+  const piecesBy = new Map(), take = G => { G.updateMatrixWorld(true); G.traverse(m => { if (m.isMesh) (piecesBy.get(m.material) || piecesBy.set(m.material, []).get(m.material)).push(m); }); };
+  const towers = [], spans = [], v = new THREE.Vector3();
+  pts.forEach(([x, z, h], i) => { const hd = i === 0 ? h : (h + pts[i - 1][2]) / 2, ry = -hd, cond = conds[i];
+    // the shaft: two of the kit's piers, one on the other; the lower whole (its foot in the bed, its head a string course), the upper in the tower's condition
+    const G0 = gatePiece('pier', { cond: 'whole', school: 'cloch', key: `${key}:tower:${i}:lo`, ruin: true }), h0 = G0.userData.size.h - .5; G0.scale.setScalar(K); G0.rotation.y = ry; G0.position.set(x, FOOT, z); take(G0);
+    const UP = FOOT + h0 * K, G = gatePiece('pier', { cond, school: 'cloch', key: `${key}:tower:${i}`, ruin: true, ground: (ground(x, z) - .4 - UP) / K /* what falls lies on the bed */ }), U = G.userData; G.scale.setScalar(K); G.rotation.y = ry; G.position.set(x, UP, z); take(G);
+    let top = -Infinity; [G0, G].forEach(Gi => Gi.traverse(m => { if (!m.isMesh) return; const P = m.geometry.attributes.position; for (let j = 0; j < P.count; j += 3) { v.fromBufferAttribute(P, j).applyMatrix4(m.matrixWorld); top = Math.max(top, v.y); } }));
+    const lean = (U.lean || 0) * Math.PI / 180, M4 = new THREE.Matrix4().makeTranslation(x, UP, z).multiply(new THREE.Matrix4().makeRotationY(ry)).multiply(new THREE.Matrix4().makeScale(K, K, K)).multiply(new THREE.Matrix4().makeRotationX(lean));
+    // the spire (on a standing tower only): a corbel band and a cap of four faces, 16 m to its point, leaning with the shaft
+    if (cond === 'cracked') { const h1 = U.size.h; { const g = new THREE.BoxGeometry(5.6, .7, 5.6); g.translate(0, h1 + .35, 0); put('stone', g.applyMatrix4(M4)); }
+      const c = new THREE.ConeGeometry(5.6 / Math.SQRT2 * .96, 16 / K, 4, 3); c.rotateY(Math.PI / 4); c.translate(0, h1 + .7 + 8 / K, 0); put('spire', c.applyMatrix4(M4)); top = Math.max(top, UP + (h1 + .7 + 16 / K) * K); }
+    // the weed: a collar of wrack between the tides on the shaft (the shaft 10 m square at 2.5), where the tower is in the water at all
+    const yb = Math.max(ground(x, z), -2.3), yt = 1.6; if (yt > yb + .2) { const g = new THREE.BoxGeometry(4.06, (yt - yb) / K, 4.06); g.translate(0, ((yt + yb) / 2 - FOOT) / K, 0); put('weed', g.applyMatrix4(G0.matrixWorld)); /* on the lower, upright shaft */ }
+    towers.push({ i, x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(4), cond, foot: +FOOT.toFixed(2), bed: +ground(x, z).toFixed(2), top: +top.toFixed(2), wet: +(top - SEA).toFixed(1), lean: U.lean }); });
+  for (let i = 0; i < N - 1; i++) { const [xa, za] = pts[i], [xb, zb] = pts[i + 1], x = (xa + xb) / 2, z = (za + zb) / 2, hd = pts[i + 1][2], ry = Math.PI / 2 - hd, cond = spanConds[i];
+    const G = gatePiece('bridge', { cond, school: 'cloch', key: `${key}:span:${i}`, ruin: true, ground: (ground(x, z) - .4 - BASE) / K }); G.scale.setScalar(K); G.rotation.y = ry; G.position.set(x, BASE, z); take(G);
+    spans.push({ i, x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(4), cond, deck: +DECK.toFixed(2), fallen: G.userData.fallen }); }
+  // the scale: a plain 1.75 m post on the sand 14 m inshore of the first tower's foot
+  const figure = (() => { const x = 6, z = z0 + 14, y = ground(x, z), h = 1.75, g = new THREE.CylinderGeometry(.2, .24, h, 10); g.translate(x, y + h / 2, z); put('mark', g); return { x, y: +y.toFixed(2), z, h }; })();
+  const M = { strand: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }), sea: new THREE.MeshStandardMaterial({ color: new THREE.Color(.10, .2, .22), roughness: .12, metalness: .1, transparent: true, opacity: .86 }),
+    stone: mat('ashlar', { ns: .8, color: 0xb2ab9e, rough: .85 }), spire: mat('ashlar', { ns: .8, color: 0xa8a294, rough: .85 }), weed: mat('rock', { ns: 1.4, color: 0x3a3a22, rough: .7 }), mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
+  let tris = 0, draws = 0;
+  for (const [m, ms] of piecesBy) { const gs = ms.map(x => { const g = x.geometry.clone(); g.applyMatrix4(x.matrixWorld); return g; }), g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, m); mesh.castShadow = mesh.receiveShadow = true; mesh.name = 'kit:' + (ms[0].userData.key || ''); group.add(mesh); tris += g.attributes.position.count / 3; draws++; }
+  for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['strand', 'sea'].includes(k); mesh.receiveShadow = k !== 'sea'; if (k === 'sea') mesh.renderOrder = 2; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
+  return { group, tris: Math.round(tris), draws, ground, sea: SEA, deck: DECK, towers, spans, figure, k: K, gap: 16 * K };
+}

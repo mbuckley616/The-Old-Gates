@@ -1,3 +1,4 @@
+// Session 2389 adds the Drowned Spires (ruins.js drownedSpires): six towers and five spans, the three deck levels against the tide.
 // node docs/prototypes/levelup/ruins.check.mjs (Session 1119): the Weavers' ring of broken arches on a coast (ruins.js, OG-104). It builds the
 // same twice and in budget; eleven arches of the gate kit at 3 times their size (#429 B) stand on a circle 170 m across, four standing 60 m to their points
 // and seven broken, and not one stone floats or burns (gatekit's `ruin`); no stone lies under the turf; the bay to the sea is gone, its spill
@@ -30,6 +31,23 @@ check(`the bay to the sea is gone: its footings and ${R.spill.length} stones spi
 check(`the cliff: the turf at its edge stands ${R.edge.join(', ')} m over the sea`, R.edge.every(h => h > 25), R.edge);
 check(`the scale: an opening ${R.span} m wide and ${R.rise} m to its point, ${(R.rise / R.figure.h).toFixed(1)} times the 1.75 m post at the foot of bay ${R.figure.bay}; the dais ${2 * R.dais.r} m across`, R.span === 30 && R.rise === 54 && R.figure.h === 1.75 && R.rise / R.figure.h > 30 && st.length && R.bays.find(q => q.i === R.figure.bay).cond === 'cracked', R.figure);
 check('the page: no page errors', errs.length === 0, errs.slice(0, 2));
+// the Drowned Spires (Session 2389; OG-104): six towers and five spans off a strand; the three levels the DECISION asks against the tides
+const S = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./ruins.js');
+  const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 9) h = (h * 31 + Math.round(a[i] * 1e3)) | 0; }); return h; };
+  const a = K.drownedSpires(), b = K.drownedSpires(), lv = {}; for (const l of ['a', 'b', 'c']) lv[l] = K.drownedSpires({ deck: l }).deck;
+  // what of the stone stands above the water with nothing under it: the lowest point of each kit mesh's loose stone is under the mean sea
+  const gaps = []; for (let i = 0; i < a.towers.length - 1; i++) { const p = a.towers[i], q = a.towers[i + 1]; gaps.push(+(Math.hypot(q.x - p.x, q.z - p.z) - 10).toFixed(2)); }
+  let low = Infinity; for (const m of a.group.children) if (m.name.startsWith('kit:')) { const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) low = Math.min(low, P.getY(i)); }
+  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), towers: a.towers, spans: a.spans, lv, gaps, gap: a.gap, low: +low.toFixed(1), figure: a.figure }; });
+{ const st = S.towers.filter(t => t.cond === 'cracked'), br = S.towers.filter(t => t.cond === 'broken');
+  check(`the spires build the same twice and in budget: ${S.tris.toLocaleString()} triangles in ${S.draws} draws`, S.same && S.tris < 120000 && S.draws <= 20, [S.tris, S.draws, S.same]);
+  check(`six towers: ${st.length} standing to ${st.map(t => t.wet).join(', ')} m over the sea, ${br.length} broken to ${br.map(t => t.wet).join(', ')} m; every foot under the bed`, S.towers.length === 6 && st.length === 4 && br.length === 2 && st.every(t => t.wet > 70) && br.every(t => t.wet > 20 && t.wet < 60) && S.towers.every(t => t.foot < t.bed), S.towers);
+  check(`five spans of ${S.gap} m, each between two towers' faces (${S.gaps.join(', ')} m), one broken`, S.spans.length === 5 && S.gaps.every(g => Math.abs(g - S.gap) < .5) && S.spans.filter(s => s.cond === 'broken').length === 1, S.gaps);
+  check(`the levels against a 4 m tide: a's deck at ${S.lv.a} (clear at low water, under at high), b's at ${S.lv.b} (clear at high), c's at ${S.lv.c} (under at low)`, S.lv.a > -2 && S.lv.a < 2 && S.lv.b > 2 && S.lv.c < -2, S.lv);
+  check(`what fell went into the sea: the lowest stone at ${S.low} m, under the low water`, S.low < -2, S.low); }
+for (const v of ['shore', 'span', 'deck', 'sea', 'far', 'far&dusk', 'span&level=a&tide=low', 'span&level=c&tide=high']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+  await pg.goto(`http://localhost:${port}/places.html?still&w=320&h=200&place=spires&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const s = await pg.evaluate(() => window.__stats.place); check(`places.html?place=spires&view=${v} renders: ${s.tris.toLocaleString()} triangles, ${s.towers} towers, no page errors`, s.tris > 0 && s.towers === 6 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
 for (const v of ['ring', 'arch', 'heart', 'far', 'ring&dusk']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/places.html?still&w=320&h=200&place=ring&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
   const s = await pg.evaluate(() => window.__stats.place); check(`places.html?place=ring&view=${v} renders: ${s.tris.toLocaleString()} triangles, ${s.bays} arches, no page errors`, s.tris > 0 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }

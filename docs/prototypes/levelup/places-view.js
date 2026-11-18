@@ -48,6 +48,7 @@ else if (Q.get('place') === 'quarry') await import('./places-quarry-view.js') /*
 else if (Q.get('place') === 'towerhouse') await import('./places-towerhouse-view.js') /* Session 1052: the Gatelands' ruined tower house */;
 else if (Q.get('place') === 'clifffort') await import('./places-clifffort-view.js') /* Session 1053: the Mark's cliff fort */;
 else if (Q.get('place') === 'ring') await import('./places-ring-view.js') /* Session 1119: the Weavers' ring of broken arches on a coast (OG-104) */;
+else if (Q.get('place') === 'spires') await import('./places-spires-view.js') /* Session 2389: the Drowned Spires, Weaver towers half-sunk off a strand (OG-104) */;
 else if (Q.get('place') === 'icemouth') await import('./places-icemouth-view.js') /* Session 1006: the Mark's ice cave mouth */;
 else {
 const R = makeRenderer(1.25), scene = new THREE.Scene(), VIEW = Q.get('view') || 'mine'; buildTextures();

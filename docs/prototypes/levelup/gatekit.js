@@ -15,7 +15,7 @@
 // 'edge' (a chasm's edge, its lip and the face below), 'rail' (a balustrade of 10 m). o.school dresses the stone and the script's light (GK_SCHOOLS, the six from gates.js's table).
 // o.ruin (Session 1119, OG-104's ruins at the scale of cliffs): a ruin out in the world, where the loom holds nothing up: under 'broken'
 // every loose stone falls and none floats, no seam burns, and the script is dead on every stone; under 'cracked' the script is dead.
-// gatePiece(kind, { cond, school, key, ruin }) -> a Group, one mesh a material; userData { kind, cond, school, tris, calls, blocks, moved,
+// gatePiece(kind, { cond, school, key, ruin, ground }) -> a Group, one mesh a material; userData { kind, cond, school, tris, calls, blocks, moved,
 //   floating, fallen, seams, cracks, lean, size: { w, h, d }, key }. Everything that varies comes from a stream keyed by the
 //   piece's key and its condition, so a piece is the same twice and the same piece breaks the same way in every world.
 import * as THREE from 'three';
@@ -243,7 +243,7 @@ function condition(P, cond, key) {
 
 export function gatePiece(kind, o = {}) {
   const cond = GK_CONDS.includes(o.cond) ? o.cond : 'whole', school = GK_SCHOOLS[o.school] ? o.school : 'cloch', key = o.key || `gatekit:${kind}`;
-  const P = BUILD[kind](o); P.ruin = !!o.ruin; const { parts, st } = condition(P, cond, key), M = gkMats(school, cond), by = {};
+  const P = BUILD[kind](o); P.ruin = !!o.ruin; if (typeof o.ground === 'number') P.ground = o.ground; /* Session 2389: where a fallen stone comes to rest, in the piece's frame (the drowned spires' bed, far under the piece's foot) */ const { parts, st } = condition(P, cond, key), M = gkMats(school, cond), by = {};
   for (const p of parts) { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
     if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); (by[p.key] ||= []).push(g); }
   const G = new THREE.Group(); let tris = 0, calls = 0;
