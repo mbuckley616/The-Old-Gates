@@ -149,5 +149,16 @@ for (const p of ['gatelander', 'markman', 'aurennais']) { const J = jobs[p]; if 
   check(`${p}: the town fallen first lapses the job: *${J.lapseLog}*`, J.lapsed && J.lapseLog.includes('The camp outside Testford outlasted the gate. Testford has fallen to the Compact, and the work is on its plaza now.'), J);
   check(`${p}: *I’ll clear the plaza.*: *${J.heldOffer}*; *${J.held && J.held.title}*`, J.heldShown && J.heldOffer.startsWith(OFFER[p][1]) && J.held && J.held.title === 'Testford under the Compact' && J.held.objective === "Kill the Compact's garrison on Testford's plaza", J);
   check(`${p}: freed, thanked: *${J.heldThanks}*`, J.heldDone && J.heldThanks.startsWith(THANKS[p][1]), J); }
+// Session 2385 — a guard on the street does not greet as a host (the critic, 18 Nov: Fionn the Guard's *A face from home. Come in out of it.*
+// at night by the well): every temper, every people, first meetings and later ones; a villager keeps the whole pool
+const gd = await page.evaluate(() => { const dm = WORLD.siteAnywhere('dunmore'), site = { id: 'test_guard_greet', name: 'Guardford', kind: 'town', x: dm.x, z: dm.z };
+  const RX = /\bdoor\b|\bcome in\b|\bcome closer\b|(?:^|[.!?] )sit\b/i, keepP = worldState.people, keepM = worldState.met, out = { guard: new Set(), vill: new Set() };
+  for (const role of ['Guard', 'Villager']) for (const sp of ['gatelander', 'markman', 'aurennais', 'oldblood']) for (const t of TEMPER_IDS) for (const pp of ['gatelander', 'markman', 'aurennais', 'oldblood']) {
+    const def = { name: 'Test ' + role + ' ' + sp, people: sp, role, temper: t }; worldState.people = pp;
+    for (let i = 0; i < 10; i++) { worldState.met = {}; out[role === 'Guard' ? 'guard' : 'vill'].add(firstWords(def, site)); worldState.met = { [metKey(def, site)]: 2 }; out[role === 'Guard' ? 'guard' : 'vill'].add(firstWords(def, site)); } }
+  worldState.people = keepP; worldState.met = keepM; const G = [...out.guard], V = [...out.vill];
+  return { nG: G.length, nV: V.length, bad: G.filter(l => RX.test(l)), villDoor: V.filter(l => RX.test(l)).length, home: G.includes("You've the look of home about you.") }; });
+console.log(JSON.stringify(gd));
+check(`a guard greets with no host's invitation in it (come in, sit, the door), every people and temper: ${gd.nG} lines, ${gd.bad.length} at a door; a villager keeps them (${gd.villDoor})`, gd.nG > 30 && gd.bad.length === 0 && gd.villDoor > 0 && gd.home, gd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

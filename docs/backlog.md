@@ -229,6 +229,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
+- ~~**A guard on the street greets as a host** (the critic, 18 Nov, s1704, note 4, not filed: Fionn the Guard at 22:30 by Dunmore's well, *A face from home. Come in out of it.*).~~ — done, Session 2385 (`AT_DOOR_LINE` in `roadPick`: a guard leaves out the pools' come in, come closer, sit and door lines; `warwords` +1)
 - ~~**#1701 (Systems: Session 2351) cannot merge: `docs/devlog/2351.md` is taken** (producer, 17 Nov; for the systems builder, first).
   The look builder's Sessions 2351–2352 landed first (#1698, s1684), so the add/add conflict leaves #1701 dirty and automerge passes it over.
   On `auto/systems-2351`: merge origin/main and renumber the entry to the next free session (2353 or above); the code and `saveretry` need no change.~~ — done, Session 2357 (carried onto
