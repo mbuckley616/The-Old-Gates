@@ -550,7 +550,7 @@ function goToInterior(house){
     house._roomD=house.intD||_D;
     if(typeof homeFitsDress==='function')homeFitsDress(house); /* S2143 — your house's fittings where they stand (84) */
     if(typeof goodsKitDress==='function')try{goodsKitDress(house);}catch(e){console.warn('goods kit',e);} /* S2237 — the rods' rack and the net in a goods shop (84) */
-    if(typeof kitchenOvenDress==='function')try{kitchenOvenDress(house);}catch(e){console.warn('kitchen oven',e);} /* S2366 — the clay oven in an inn and an Aurennais home (84) */
+    if(typeof kitchenOvenDress==='function')try{kitchenOvenDress(house);}catch(e){console.warn('kitchen oven',e);} /* S2368 — the clay oven in an inn and an Aurennais home (84) */
     px=intArriveX(house); pz=intArrivalZ(house); yaw=house._arriveYaw!=null?house._arriveYaw:0; /* S1406 — a room may say which way you face */ /* S896 — 1.75 in from the door in a cottage of true size (it was 2.2, the middle of a 4.5 m room) */ pitch=0; velY=0; jumpY=0; onGround=true;
     if(window._pendingPos){const P=window._pendingPos;window._pendingPos=null;if(P.x!=null){px=P.x;pz=P.z;}if(P.yaw!=null)yaw=P.yaw;if(P.jumpY!=null)jumpY=P.jumpY;} // v80 — a load puts you where you stood
     // S896 (F2a) — a save made inside a room before the rooms came to true size holds a spot in the old, larger room: off the floor

@@ -58,7 +58,7 @@ if (key) sels.push({ key });
 for (const sel of sels) {
   if (sel.town) await g.settle(sel.town); else await page.evaluate((k) => { const h = ZONES.world.houses.find(x => x.coachInn === k); px = h.exitX; pz = h.exitZ + 3; }, sel.key);
   await enter(sel); const L = await layout();
-  /* Session 2366: the inn's clay oven (kitchenOvenDress, 84), where ovenHere lets you bake: by a wall, on no solid, and not behind the bar */
+  /* Session 2368: the inn's clay oven (kitchenOvenDress, 84), where ovenHere lets you bake: by a wall, on no solid, and not behind the bar */
   ovens.push(await page.evaluate(() => { const o = interiorScene.children.find(c => c.userData && c.userData.kitchenOven), b = INT_SOL.find(s => s.kitchenOven);
     const hit = b ? INT_SOL.filter(s => s !== b && s.y0 < 1 && s.y1 > .1 && s.x0 < b.x1 && s.x1 > b.x0 && s.z0 < b.z1 && s.z1 > b.z0).length : null;
     const nx = o ? Math.round(Math.sin(o.rotation.y)) : 0, nz = o ? Math.round(Math.cos(o.rotation.y)) : 0, cx = b ? (b.x0 + b.x1) / 2 : 0, cz = b ? (b.z0 + b.z1) / 2 : 0, P = [1, 1.5, 2, 2.5].map(t => [cx + nx * t, cz + nz * t]);
@@ -108,6 +108,6 @@ check('the nights include an empty house with a room standing empty, and a guest
 const s0 = refusals[0].sleep;
 check('E at your own bed opens the sleep, eight hours pass (and the minute or so the fade runs), you wake in the room and it is still yours', s0 && s0.opened && s0.slept >= 480 && s0.slept < 490 && s0.indoors && /Your room/.test(s0.stillMine), s0);
 check('when the night you paid for has run out, the bed is the innkeeper\'s to let again', /Ask the innkeeper for a room/.test(refusals[0].expired || ''), refusals[0].expired);
-check(`every inn bakes, and each shows its clay oven by a wall, on no solid and not behind its bar (Session 2366; ${ovens.length} inns)`, ovens.length >= 3 && ovens.every(o => o.oven && o.laid && o.hit === 0 && !o.bar && o.wall < .1), ovens);
+check(`every inn bakes, and each shows its clay oven by a wall, on no solid and not behind its bar (Session 2368; ${ovens.length} inns)`, ovens.length >= 3 && ovens.every(o => o.oven && o.laid && o.hit === 0 && !o.bar && o.wall < .1), ovens);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

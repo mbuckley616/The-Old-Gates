@@ -546,5 +546,49 @@ console.log(JSON.stringify(lm).slice(0, 3000));
 check(`the Lamps: the lampseller (${lm.at17}, ${lm.gp}) at ${lm.port ? 'the quay\'s foot of ' + lm.port : lm.inl} (${lm.fromMid} m off the middle) from 17:00, not at 16:00 or 22:00 or while occupied, the same name for a site and year, greeting in her people's voice`, lm.port && !lm.at16 && lm.at17 === 'Lampseller' && !lm.at22 && !lm.occupied && lm.name2 && lm.greet === (lm.L[lm.gp] || lm.L.aurennais).greet, lm);
 check(`*A lamp* asks *Who is it for?* with three answers, four with a ship; 2 gold (short of two, nothing), the log on the water, once a year`, lm.ask === 'Who is it for?' && lm.follow.length === 3 && lm.followShip === 4 && /two gold/.test(lm.poor) && !lm.poorDone && lm.gold === 8 && lm.log === lm.LOG.sea && !lm.after.includes('A lamp') && (lm.gp !== 'aurennais' || lm.set === lm.L.aurennais.answers[1]), lm);
 check(`the ledger at 18:10 by the quay, once (not at 18:40, not 40 m off); inland the fountain's line; struck none, one, two over 300 years ${JSON.stringify(lm.counts)}, the same for a year; the next day an Aurennais says so, once`, lm.dusk.length === 1 && lm.dusk[0].startsWith(lm.LOG.read) && !lm.late.length && !lm.far.length && (!lm.inl || (lm.inland.length === 1 && /reads from the ledger the names of the town’s people at sea/.test(lm.inland[0]))) && lm.counts[0] > lm.counts[1] && lm.counts[1] > lm.counts[2] && lm.counts[2] > 0 && lm.same && /two more are read, the .+ and the .+, and struck through/.test(lm.two) && lm.next === lm.LOG.after && lm.next2 !== lm.LOG.after, lm);
+// 20. the last lines of drafts II and III (Session 2365): on the Caravan an Aurennais shopkeeper's line; in an occupied town the
+// Caravan's Aurennais and the Strait Fair's Markman say why there is none; abroad, a Markman or an Aurennais on a home festival, once a town a day
+const fl = await page.evaluate(() => {
+  const townOf = nat => { for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { if (nationKeyOf(i, j) !== nat) continue; const c = getCell(i, j); if (c.type === 'sea') continue; const s = c.sites.find(s => s.kind === 'town' || s.kind === 'city'); if (s) return s; } return null; };
+  const au = townOf('aurenne'), mk = townOf('mark'), dm = siteAnywhere('dunmore');
+  const F = k => FESTIVALS.find(f => f.key === k);
+  const at = (k, dd, h) => { const f = F(k); worldState.gameTimeAbsMinutes = (((28 - CAL.startYear) * CAL.months + f.month - CAL.startMonth) * CAL.monthLen + f.dom - 1 + dd) * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const P = (site, people, o) => Object.assign({ _siteId: site.id, people, greeting: ['-'] }, o || {});
+  const keep = [au, mk].map(s => { const st = TS(s); return [st, JSON.parse(JSON.stringify({ p: st.p, flags: st.flags }))]; });
+  const t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, f0 = worldState.festivals;
+  const out = { isles: [isleAt(au.x, au.z), isleAt(mk.x, mk.z), isleAt(dm.x, dm.z)] };
+  try { keep.forEach(([st]) => { st.p = 70; st.flags = {}; }); worldState.festivals = {}; _festAbroad.clear();
+    at('caravan', 0, 10);
+    out.smith = feastGreeting(P(au, 'aurennais', { _houseId: 'h1', role: 'Smith' }));
+    out.barber = feastGreeting(P(au, 'aurennais', { _houseId: 'h2', role: 'Barber' }));
+    out.inn = feastGreeting(P(au, 'aurennais', { _houseId: 'h3', role: 'Innkeeper' }));
+    out.road = feastGreeting(P(au, 'aurennais', { role: 'Merchant' }));
+    out.folk = feastGreeting(P(au, 'aurennais'));
+    out.glSmith = feastGreeting(P(au, 'gatelander', { _houseId: 'h4', role: 'Smith' }));
+    TS(au).flags = { occupied: true };
+    out.occAu = feastGreeting(P(au, 'aurennais')); out.occMk = feastGreeting(P(au, 'markman')); out.occSmith = feastGreeting(P(au, 'aurennais', { _houseId: 'h1', role: 'Smith' }));
+    at('caravan', 1, 10); out.occNext = feastGreeting(P(au, 'aurennais'));
+    TS(au).flags = {};
+    at('straitfair', 0, 9); TS(mk).flags = { occupied: true };
+    out.occFair = feastGreeting(P(mk, 'markman')); out.occFairGl = feastGreeting(P(mk, 'gatelander')); TS(mk).flags = {};
+    out.fair = feastGreeting(P(mk, 'markman'));
+    at('caravan', 0, 10); const A = P(dm, 'aurennais'), B = P(dm, 'aurennais');
+    out.ab1 = feastGreeting(A); out.ab1b = feastGreeting(A); out.abB = feastGreeting(B); out.abMk = feastGreeting(P(mk, 'aurennais')); out.abGl = feastGreeting(P(dm, 'gatelander'));
+    at('caravan', 1, 10); out.abNext = feastGreeting(A);
+    at('blaze', 0, 11); out.blazeAu = feastGreeting(P(au, 'markman')); out.blazeHome = feastGreeting(P(mk, 'markman'));
+    at('straitfair', 0, 9); out.fairDm = feastGreeting(P(dm, 'markman'));
+    at('lamps', 0, 15); out.lampsMk = feastGreeting(P(mk, 'aurennais')); out.lampsDmMk = feastGreeting(P(dm, 'markman'));
+    at('commencement', 0, 8); out.commDm = feastGreeting(P(dm, 'aurennais')); out.commHome = feastGreeting(P(au, 'aurennais'));
+    at('greening', 0, 10); out.greenAu = feastGreeting(P(au, 'gatelander'));
+  } finally { worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; worldState.festivals = f0; keep.forEach(([st, k]) => Object.assign(st, k)); }
+  out.F = Object.fromEntries(['caravan', 'straitfair', 'blaze', 'lamps', 'commencement'].map(k => [k, { greet: F(k).greet, trader: F(k).trader, occ: F(k).occupied, abroad: F(k).abroad }]));
+  return out;
+});
+console.log(JSON.stringify(fl).slice(0, 1500));
+{ const C = fl.F.caravan;
+check('the Caravan in an Aurennais town: a shopkeeper of Aurenne (the smith, the barber) says *Caravan day, Master…*; the innkeeper, a road merchant, the townsfolk and a Gatelander smith greet as the day', fl.isles.join() === 'aurenne,mark,gatelands' && /^Caravan day, Master/.test(C.trader) && fl.smith === C.trader && fl.barber === C.trader && fl.inn === C.greet.aurennais && fl.road === C.greet.aurennais && fl.folk === C.greet.aurennais && fl.glSmith === C.greet.gatelander, fl);
+check('an occupied town: on the Caravan its Aurennais (the smith too) say *The caravan has gone round us…*, a Markman does not, nor the next day; on the Strait Fair its Markman says *No fair this year…*, a Gatelander does not, and freed it is the fair\'s', fl.occAu === C.occ.line && fl.occSmith === C.occ.line && /gone round us/.test(fl.occAu) && fl.occMk !== C.occ.line && fl.occNext !== C.occ.line && fl.occFair === fl.F.straitfair.occ.line && /^No fair this year/.test(fl.occFair) && fl.occFairGl !== fl.occFair && fl.fair === fl.F.straitfair.greet.markman, fl);
+check('abroad: on the Caravan the first Aurennais met in Dunmore says the home line, and again; a second there does not, nor the next day; one in the Mark says it too; a Gatelander does not', fl.ab1 === C.abroad && fl.ab1b === C.abroad && fl.abB !== C.abroad && fl.abNext !== C.abroad && fl.abMk === C.abroad && fl.abGl !== C.abroad, fl);
+check('abroad: a Markman in Aurenne on the Blaze and in Dunmore on the Strait Fair; an Aurennais in the Mark on the Lamps and in Dunmore on the Commencement; at home each says the day\'s own; a Markman says nothing of the Lamps, nor a Gatelander abroad of the Greening', fl.blazeAu === fl.F.blaze.abroad && fl.blazeHome === fl.F.blaze.greet.markman && fl.fairDm === fl.F.straitfair.abroad && fl.lampsMk === fl.F.lamps.abroad && fl.commDm === fl.F.commencement.abroad && fl.commHome === fl.F.commencement.greet.aurennais && fl.lampsDmMk == null && fl.greenAu == null, fl); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

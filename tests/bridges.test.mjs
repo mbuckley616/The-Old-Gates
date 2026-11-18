@@ -132,7 +132,7 @@ console.log(JSON.stringify(fw));
 check('a foe chases you across every bridge by its own tick, and reaches the far end (Session 2361)', fw.length > 0 && fw.every(o => o.reached), fw.map(o => o.id + ' ' + o.reached + ' in ' + o.ticks));
 check('over the middle the foe\'s feet are on the setts, within 0.25 (it walked the causeway under them)', fw.every(o => o.lo > -.25 && o.hi < .25), fw.map(o => [o.id, o.lo, o.hi]));
 check('a foe set down under the middle keeps the ground there: the deck is taken only from its ends', fw.every(o => o.under === o.bed && o.under < -.3), fw.map(o => [o.id, o.under, o.bed]));
-// Session 2365: a kiting archer on a deck (`tickBehaviours`, 85-world-sea.js) looses from the setts it stands on. Its arrows started
+// Session 2367: a kiting archer on a deck (`tickBehaviours`, 85-world-sea.js) looses from the setts it stands on. Its arrows started
 // at the ground under the deck plus 1.2: from 0.4 m over the setts at the shallow crossings to 6 m under them at the deep one.
 const aw = await page.evaluate(() => { const out = [], keep = ZE, ke = ZONES.world.enemies, php = PHP;
   try { for (const m of WORLD.scene.children.filter(o => o.userData.bridge && ZONES.world.platforms.filter(p => p.bridge === o.userData.bridgeId).length === 1)) { const S = m.userData.span, sx = Math.sin(S.ang), cz = Math.cos(S.ang), deck = m.position.y + .28;
@@ -143,7 +143,7 @@ const aw = await page.evaluate(() => { const out = [], keep = ZE, ke = ZONES.wor
     WORLD.scene.remove(e.mesh); if (e.el && e.el.parent) e.el.parent.remove(e.el); } }
   finally { ZE = keep; ZONES.world.enemies = ke; PHP = php; } return out; });
 console.log(JSON.stringify(aw));
-check('an archer on a bridge\'s middle looses from 1.2 m over the setts, not from the ground under the deck (Session 2365)', aw.length > 0 && aw.every(o => o.shot && Math.abs(o.off - 1.2) < .1), aw);
+check('an archer on a bridge\'s middle looses from 1.2 m over the setts, not from the ground under the deck (Session 2367)', aw.length > 0 && aw.every(o => o.shot && Math.abs(o.off - 1.2) < .1), aw);
 for (const [k, u] of Object.entries(r.shots)) fs.writeFileSync(`tests/out/bridge-${k}.png`, Buffer.from(u.split(',')[1], 'base64'));
 delete r.shots; console.log(JSON.stringify(r));
 check('there are bridges in the loaded world', r.n > 0, r.n);

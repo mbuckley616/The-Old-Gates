@@ -397,7 +397,7 @@
     if(!out.rods&&!out.net)return out;
     const G=K.bake(P);G.scale.setScalar(RK);G.userData.goodsKitPieces=true;G.userData.kit={tris:G.userData.tris,...out};
     G.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(G);return out;}
-  // ── S2366 — the clay oven where you bake (cooking-build.md's session 4, the look's; Michael's B on #1296): ovenHere (50-travel.js)
+  // ── S2368 — the clay oven where you bake (cooking-build.md's session 4, the look's; Michael's B on #1296): ovenHere (50-travel.js)
   // lets every inn and every Aurennais home bake, and now each shows its oven: the island's PKIT.props.clay('oven') by a whole wall of
   // the ground floor, found as a home's fitting is (homeWallSpot, homeWallWhole), the small one in a full room, left out if no wall is
   // free. Clear of the bare wall's shelves and of the room's people. Not in the courtyard house (its kitchen has its bread oven, S1425) nor where you have fitted your own (homeFitsDress lays it).
@@ -448,7 +448,7 @@
     try{keep.push([intArriveX(h),intArrivalZ(h),1.2]);}catch(e){}
     for(const b of INT_BEDS||[])if(!(b.y>1))keep.push([b.x,b.cz!=null?b.cz:b.z,.9]);
     if(INT_BOX&&INT_BOX.x!=null)keep.push([INT_BOX.x,INT_BOX.z,.9]);if(HATCH&&HATCH.active&&!HATCH.roof&&!(HATCH.y>1))keep.push([HATCH.x,HATCH.z,.9]);
-    if(intStashPos)keep.push([intStashPos.x,intStashPos.z,.9]);if(h._fits)for(const k in h._fits)keep.push([h._fits[k].x,h._fits[k].z,.7]); /* S2147 — where you stand at a fitting already laid */for(const q of INT_DOORS||[])if(q&&q.x!=null)keep.push([q.x,q.z,1.2]);if(more)keep.push(...more); /* S2366 — [x, z, r] a caller keeps clear too (the room's people) */
+    if(intStashPos)keep.push([intStashPos.x,intStashPos.z,.9]);if(h._fits)for(const k in h._fits)keep.push([h._fits[k].x,h._fits[k].z,.7]); /* S2147 — where you stand at a fitting already laid */for(const q of INT_DOORS||[])if(q&&q.x!=null)keep.push([q.x,q.z,1.2]);if(more)keep.push(...more); /* S2368 — [x, z, r] a caller keeps clear too (the room's people) */
     const low=[...(INT_SOL||[]).filter(s=>s.y0<1.6&&s.y1>.05),...(FOOTHOLDS||[]).filter(f=>f.y>.05&&f.y<1.6)];
     const over=(a,b)=>a.x0<b.x1&&a.x1>b.x0&&a.z0<b.z1&&a.z1>b.z0;
     // a wall: where it starts (ox, oz), the way it runs (ax, az) for L, and its normal into the room (nx, nz)

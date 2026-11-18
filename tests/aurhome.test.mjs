@@ -64,12 +64,12 @@ if (home) {
     check(`the resident's bed and the home's chest are in the flat upstairs (${r.bed && r.bed.y}, ${r.box && r.box.y} m)`, r.bed && Math.abs(r.bed.y - r.FL[1]) < .01 && r.box && r.box.y === r.bed.y, { bed: r.bed, box: r.box });
     check(`the dyer behind the counter at ${r.npc && [r.npc.x, r.npc.z].join(', ')}, clear`, !r.npc || r.npc.clear, r.npc);
     check(`lit (${r.lights} lights) in ${r.draws} draws (40 or fewer), ${r.tris.toLocaleString()} triangles`, r.lights >= 4 && r.lights <= 10 && r.draws <= 40 && r.tris < 80000, r);
-    /* Session 2366: an Aurennais home bakes (ovenHere), and shows its clay oven (kitchenOvenDress, 84): by a wall, on no solid, not behind the dyer's counter */
+    /* Session 2368: an Aurennais home bakes (ovenHere), and shows its clay oven (kitchenOvenDress, 84): by a wall, on no solid, not behind the dyer's counter */
     const ov = await page.evaluate(() => { const o = interiorScene.children.find(c => c.userData && c.userData.kitchenOven), b = INT_SOL.find(s => s.kitchenOven); if (!o) return { oven: ovenHere(), laid: false };
       const hit = INT_SOL.filter(s => s !== b && s.y0 < 1 && s.y1 > .1 && s.x0 < b.x1 && s.x1 > b.x0 && s.z0 < b.z1 && s.z1 > b.z0).length, nx = Math.round(Math.sin(o.rotation.y)), nz = Math.round(Math.cos(o.rotation.y)), cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2;
       const P = [1, 1.5, 2, 2.5].map(t => [cx + nx * t, cz + nz * t]), bar = INT_SOL.some(q => q !== b && q.y1 > .7 && q.y1 < 1.4 && q.y0 < .3 && Math.max(q.x1 - q.x0, q.z1 - q.z0) >= 1.8 && P.some(([x, z]) => x > q.x0 && x < q.x1 && z > q.z0 && z < q.z1));
       return { oven: ovenHere(), laid: true, island: o.userData.kit.island, small: o.userData.kit.small, hit, bar, at: [+o.position.x.toFixed(2), +o.position.z.toFixed(2)] }; });
-    check(`it bakes; a clay oven laid on the ground floor is Aurenne's, by a wall, on no solid and not behind the counter, and off the walks (Session 2366; ${ov.laid ? 'at ' + ov.at : 'the shop has no wall free'})`, ov.oven && (!ov.laid || (ov.island === 'aurenne' && ov.hit === 0 && !ov.bar)), ov);
+    check(`it bakes; a clay oven laid on the ground floor is Aurenne's, by a wall, on no solid and not behind the counter, and off the walks (Session 2368; ${ov.laid ? 'at ' + ov.at : 'the shop has no wall free'})`, ov.oven && (!ov.laid || (ov.island === 'aurenne' && ov.hit === 0 && !ov.bar)), ov);
     fs.mkdirSync(path.join(here, '../docs/prototypes'), { recursive: true });
     const shot = async (name, set) => { await page.evaluate(set); await g.frames(6); await page.screenshot({ path: path.join(here, '../docs/prototypes/' + name) }); console.log('  (picture: docs/prototypes/' + name + ')'); };
     await shot('aurhome-shop-ingame.png', () => { const h = currentHouse; VM_SCENE.visible = false; px = intDoorX(h); pz = h._roomD - .7; jumpY = 0; yaw = 0; pitch = -.05; });

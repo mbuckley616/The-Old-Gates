@@ -1200,7 +1200,7 @@
     if(dt==null){const t=performance.now();dt=Math.min(.1,(t-_bhT)/1000||.016);_bhT=t;}
     const inWorld=activeZoneId==='world';const now=performance.now();const E=inWorld?ZONES.world.enemies:(typeof ENEMIES!=='undefined'?ENEMIES:[]);
     const SC=inWorld?sc:(typeof scene!=='undefined'?scene:sc);const groundAt=(x,z)=>inWorld?worldH(x,z):(typeof activeTerrainH==='function'?activeTerrainH(x,z):0);const blocked=(x,z)=>inWorld?(solidAt(x,z)||worldH(x,z)<=0):(typeof dSolid==='function'?dSolid(x,z):false);
-    /* S2365 — a foe on a bridge stands on its deck (foeY, S2361): its arrows leave from there, not from the bed or causeway under it, and the water under a deck does not stop its step */
+    /* S2367 — a foe on a bridge stands on its deck (foeY, S2361): its arrows leave from there, not from the bed or causeway under it, and the water under a deck does not stop its step */
     const footAt=e=>inWorld&&typeof foeY==='function'?foeY(e):groundAt(e.x,e.z);const blockedE=(e,x,z)=>{if(!blocked(x,z))return false;if(!inWorld||e._deck==null||typeof foeDeckTop!=='function'||solidAt(x,z))return true;return foeDeckTop(e._deck,x,z)==null;};
     const packs=[];for(const e of E){if(e.dead||!e.alert)continue;if(PACK.has(e.name))packs.push(e);}
     if(!inWorld)tickArrows(dt);

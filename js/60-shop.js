@@ -349,8 +349,23 @@ function nextFeast(at){const now=at!=null?at:((worldState&&worldState.gameTimeAb
   for(let d=d0;d<d0+CAL.monthLen*CAL.months;d++){const f=feastOn(d*1440);if(f)return {f,at:d*1440};}return null;}
 function feastGreeting(def){if(!def||!def._siteId||def._lantern)return null; /* S2325 — the lanternmaker says her own */const f=feastOn();if(f)return f.greet[def.people]||f.greet.gatelander; /* S2313 — a feast wins; none shares a festival's date */
   {const a=typeof alehallFestLine==='function'?alehallFestLine(def):null;if(a)return a;} /* S2330 — the alehall on the Blaze and First Snow */
-  const h=festivalHere(def._siteId);if(!h)return typeof festAfterGreeting==='function'?(festNightGreeting(def)||festAfterGreeting(def)):null; /* S2325 — the day after a lantern */{const a=typeof festActGreeting==='function'?festActGreeting(def,h):null;if(a)return a;} /* S2324 — after the act, and the lord's line */
+  const h=festivalHere(def._siteId);if(!h){const o=festOccupiedLine(def)||festAbroadLine(def);if(o)return o; /* S2365 */return typeof festAfterGreeting==='function'?(festNightGreeting(def)||festAfterGreeting(def)):null;} /* S2325 — the day after a lantern */{const a=typeof festActGreeting==='function'?festActGreeting(def,h):null;if(a)return a;} /* S2324 — after the act, and the lord's line */
+  if(h.f.trader&&def.people==='aurennais'&&def._houseId&&FEST_TRADER_ROLES.includes(def.role))return h.f.trader; /* S2365 — the shops' Caravan line */
   return h.f.greet[def.people]||h.f.greet.gatelander;}
+// S2365 — the festivals' last lines of drafts II and III (word for word; Michael's B on #1628). The trader: on the Caravan, an Aurennais
+// keeping a shop (a house's keeper whose trade sells: FEST_TRADER_ROLES) greets with the draft's line in place of the day's. The occupied
+// town: on its island's festival, in a town under another flag (TS(site).flags.occupied), which keeps none (festivalState 'none'), a
+// person of the festival's own people greets with its occupied line (the Strait Fair's Markman, the Caravan's Aurennais); the others
+// greet as any day. Abroad (each draft's §5): on the Mark's Blaze and Strait Fair, and on Aurenne's three, a Markman or an Aurennais in a
+// town of another island greets with the home line, once that day a town: the first met says it, and keeps saying it while the day lasts.
+const FEST_TRADER_ROLES=['Smith','Armourer','Apothecary','Merchant','Barber'],FEST_HOME={gatelander:'gatelands',markman:'mark',aurennais:'aurenne'};
+function festOccupiedLine(def){if(!def||!def._siteId)return null;const isle=festIsleOf(def._siteId);if(!isle)return null;const f=festivalOn(null,isle);
+  if(!f||!f.occupied||def.people!==f.occupied.who||typeof TS!=='function')return null;const s=siteAnywhere(def._siteId);
+  if(!s||typeof BASE_P==='undefined'||!(s.kind in BASE_P)||TS(s).flags.occupied==null)return null;return f.occupied.line;}
+const _festAbroad=new Map(); /* site → the day its abroad line was said; a greeting's, not saved */
+function festAbroadLine(def){if(!def||!def._siteId)return null;const home=FEST_HOME[def.people];if(!home)return null;const f=festivalOn(null,home);if(!f||!f.abroad)return null;
+  const isle=festIsleOf(def._siteId);if(!isle||isle===home)return null;const n=calDay().n;if(def._festAbroad===n)return f.abroad;
+  if(_festAbroad.get(def._siteId)===n)return null;_festAbroad.set(def._siteId,n);def._festAbroad=n;return f.abroad;}
 // S2313 — the nine island festivals (Michael's B on #1628, docs/design/festivals.md; the names, dates, customs and lines are the
 // quest writer's drafts, *Festivals on the Calendar* I–III, docs/quest_drafts.md). Each is kept by the towns of one island only
 // (nation, isleAt), each on its god's day; greet is by the speaker's people, as a feast's. A town keeps its festival as its year
@@ -377,12 +392,15 @@ const FESTIVALS=[
     greet:{markman:'Blaze tonight. Hearth’s out till dusk, so don’t ask for a hot meal. Bring a log to the square. Everyone does.',
       gatelander:'It’s their Blaze tonight. They let every fire in the town go out, and then they wonder why it’s cold. A fire you share burns longer, they say here, and I’ll not argue with a Markman about fire.',
       aurennais:'It is the Blaze, Master, the Mark’s midwinter. Every hearth is extinguished and relit from a single fire. A fine principle of common supply, I think. They would not thank me for calling it that.',
-      oldblood:'Tine Chnámh. The bone-fire. It was a fire for the dead, once. They burn wood in it now. They feel warm, so they do not ask.'}},
+      oldblood:'Tine Chnámh. The bone-fire. It was a fire for the dead, once. They burn wood in it now. They feel warm, so they do not ask.'},
+    abroad:'Blaze at home tonight. Here they keep their fires lit like nothing’s happening.'},
   {key:'straitfair',name:'The Strait Fair',nation:'mark',month:5,dom:4,ico:'⛵',due:'boats at first light, the ring till noon, and oaths before the reeve.',
     greet:{markman:'Fair day. Boats at first light, ring till noon. You’ve a quarrel, the ring’s there. You’ve none, watch.',
       gatelander:'It’s the Strait Fair. They settle a year’s grudges in a morning, which is quicker than we manage, and they’re friends by noon, which is quicker again. I’ve seen worse ways. Not many louder.',
       aurennais:'It is the Strait Fair, Master. Disputes are resolved in a roped ring by noon, and I am told the resolutions hold better than most contracts. I have stopped finding that a comfort.',
-      oldblood:'Aonach an Chaolais. The strait’s fair. The rope was a line of stones, once. They fought inside it and nobody died. The rope remembers the half of that they kept.'}},
+      oldblood:'Aonach an Chaolais. The strait’s fair. The rope was a line of stones, once. They fought inside it and nobody died. The rope remembers the half of that they kept.'},
+    occupied:{who:'markman',line:'No fair this year. No ring while their flag’s up. We’ll hold two next year.'}, /* S2365 — draft II §3 */
+    abroad:'Fair day at home. Nobody here’s got a rope up. They’ll all be arguing till winter.'},
   {key:'firstsnow',name:'First Snow',nation:'mark',month:8,dom:28,snow:true,ico:'❄',due:'the first night snow lies in Culling or Longnight, the town sits up outside till first light.',
     greet:{markman:'Snow’s lying. Nobody sleeps inside tonight. Fires on the square. Bring furs.',
       gatelander:'First Snow, they call it. The whole town sits out in it all night to prove they can. I said I’d sit an hour. That was three winters ago, and I’ve sat every one since.',
@@ -392,17 +410,22 @@ const FESTIVALS=[
     greet:{aurennais:'It is the Commencement, Master. The academy’s year opens today, and the names it has admitted from the town are read from the steps at ten. There is a subscription for their books, should you be minded. There is always a subscription.',
       gatelander:'It’s their Commencement. They read out on the steps which of their children are off to the academy, and the whole town claps like it’s a wedding. A child that goes up the white towers comes home talking strange, they say. They clap anyway, and I’d clap with them.',
       markman:'Reading day. They read the kids’ names off a paper and clap. Kid goes off to learn letters. I learned mine at forty. Took a week.',
-      oldblood:'An Chéad Léamh. The first reading. There was a law about reading, once. It was not about names.'}},
+      oldblood:'An Chéad Léamh. The first reading. There was a law about reading, once. It was not about names.'},
+    abroad:'The academy reads its names today, Master, at home. I was read once. I find I still stand up a little when I think of it.'},
   {key:'caravan',name:'The Caravan',nation:'aurenne',month:6,dom:9,ico:'🐪',due:'the saffron in from beyond the dunes, and a pinch of the first bale to every household.',
     greet:{aurennais:'The caravan is in, Master, from beyond the dunes. The first bale is open on the square, a pinch to every household by the old contract. The contract is older than the Compact, and it has been renegotiated less.',
       gatelander:'The caravan’s in. Saffron and dates and salt, and a man who’ll sell you a carpet if you stand still. Never stand still at a caravan, they say. I stood still once. It’s a good carpet.',
       markman:'Caravan’s in. Spice and dates. Dear, but it’s honest dear. They weigh it in front of you.',
-      oldblood:'An Cróch. The saffron. A flower’s heart, pulled by hand, three threads at a time. They carry it across the dunes for that. Nothing else is worth carrying so far.'}},
+      oldblood:'An Cróch. The saffron. A flower’s heart, pulled by hand, three threads at a time. They carry it across the dunes for that. Nothing else is worth carrying so far.'},
+    trader:'Caravan day, Master. My prices are unchanged, and I would ask you not to compare them with the caravan-master’s, who pays no rent.', /* S2365 — draft III §3 */
+    occupied:{who:'aurennais',line:'The caravan has gone round us this year, Master. A string does not enter a town under another flag. The contract is silent on the point, and the caravan-master is not.'},
+    abroad:'The caravan is in at home today, Master. I am told the saffron here comes from the same bale, by way of four Factors and a considerable margin.'},
   {key:'lamps',name:'The Lamps on the Water',nation:'aurenne',month:11,dom:4,ico:'🪔',due:'at dusk, the ledger read at the quay and a lamp on the ebb for every hull at sea.',
     greet:{aurennais:'It is the Lamps tonight, Master. A lamp on the water for every hull in the ledger that is out, to light her in. The ships of the Compact come back, as you will have heard. We should not like to be asked to prove that it is the lamps.',
       gatelander:'It’s their Lamps tonight. A light on the water for every ship they’ve got out, and one for each that’s not coming home. Their ships come back, mostly. Ours don’t, and we’ve no lamps for them. I’ve wondered about that.',
       markman:'Lamps tonight. They float one out for every ship they’ve got at sea. Pretty. We just count ours when they’re back.',
-      oldblood:'Soilse na Mara. The sea’s lights. They set them out to bring the ships in. The sea takes the lamps either way.'}}];
+      oldblood:'Soilse na Mara. The sea’s lights. They set them out to bring the ships in. The sea takes the lamps either way.'},
+    abroad:'It is the Lamps at home tonight, Master. If you are near the water at dusk, I should be obliged if you would look at it for a moment.'}];
 // the day's festival for an island (none named: any island's); nextFestival as nextFeast, for one island
 function festivalOn(at,nation){const c=calDay(at);return FESTIVALS.find(f=>(!nation||f.nation===nation)&&f.month===c.month&&f.dom===c.dom)||null;}
 function nextFestival(at,nation){const now=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0),d0=Math.floor(Math.max(0,now)/1440);
@@ -411,11 +434,12 @@ function nextFestival(at,nation){const now=at!=null?at:((worldState&&worldState.
 const _festIsle=new Map(); /* a site's island, fixed by the seed */
 // S2321 — First Snow's night: a town of the Mark where you saw the snow lie at nightfall in Culling keeps it that day
 // (worldState.firstSnow[site]={year,n}, tickFirstSnow), and not again on the fallback, Culling 28
+function festIsleOf(siteId){if(!_festIsle.has(siteId)){const s=typeof siteAnywhere==='function'?siteAnywhere(siteId):null;if(!s||s.x==null)return null;_festIsle.set(siteId,isleAt(s.x,s.z));}return _festIsle.get(siteId);}
 function festivalSnowDay(siteId,year){const R=worldState&&worldState.firstSnow,r=R&&R[siteId];return r&&r.year===year?r.n:null;}
 function festivalHere(siteId,at){if(!siteId||typeof siteAnywhere!=='function'||typeof festivalState!=='function')return null;
   const snowRec=!!(worldState&&worldState.firstSnow&&worldState.firstSnow[siteId]);if(!festivalOn(at)&&!snowRec)return null;
-  const s=siteAnywhere(siteId);if(!s||s.x==null)return null;if(!_festIsle.has(siteId))_festIsle.set(siteId,isleAt(s.x,s.z));
-  let f=festivalOn(at,_festIsle.get(siteId));
+  const s=siteAnywhere(siteId);if(!s||s.x==null)return null;
+  let f=festivalOn(at,festIsleOf(siteId));
   if(snowRec){const c=calDay(at),sn=festivalSnowDay(siteId,c.year);
     if(f&&f.snow&&sn!=null&&sn!==c.n)f=null;
     else if(!f&&sn===c.n)f=FESTIVALS.find(q=>q.snow&&q.nation===_festIsle.get(siteId))||null;}
