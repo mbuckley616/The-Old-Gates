@@ -620,8 +620,11 @@ function gateKeepThings(portal,gen,coffer){GATE_KEEP_LIE={altar:null,vein:null};
       dScene.add(g);v.g=g;gateVeinShow(v);GATE_KEEP_LIE.vein=v;}}
   return GATE_KEEP_LIE;}
 function gateVeinShow(v){if(!v||!v.g)return;const left=gateVeinLeft(v),n=v.g.children.length;v.g.children.forEach((m,i)=>{m.visible=i<Math.ceil(n*left/v.cap);});}
-function gateAltarNear(){const A=GATE_KEEP_LIE&&GATE_KEEP_LIE.altar;if(!A||!A.arc||activeZoneId!=='dungeon'||A.floor!==currentFloor)return null;return Math.hypot(px-A.x,pz-A.z)<TOUCH+.6?A:null;}
-function gateVeinNear(){const v=GATE_KEEP_LIE&&GATE_KEEP_LIE.vein;if(!v||activeZoneId!=='dungeon'||v.floor!==currentFloor)return null;return Math.hypot(px-v.x,pz-v.z)<TOUCH+.5?v:null;}
+/* S2380 — the critic's 18 Nov note: the altar stands 2.6 m before the coffer, so from between them E with the crosshair on the coffer's lock took the arc.
+   The altar and the vein answer in reach as before, but give way to a chest the crosshair is on, unless the crosshair is on them too (interact()'s chest test, lookingAt) */
+function gateKeepYields(o,reach){const ch=CHESTS.find(c=>c.floor===currentFloor&&(!c.opened||c.items.length>0)&&lookingAt(c));return !!ch&&!lookingAt(o,reach);}
+function gateAltarNear(){const A=GATE_KEEP_LIE&&GATE_KEEP_LIE.altar;if(!A||!A.arc||activeZoneId!=='dungeon'||A.floor!==currentFloor)return null;return Math.hypot(px-A.x,pz-A.z)<TOUCH+.6&&!gateKeepYields(A,TOUCH+.6)?A:null;}
+function gateVeinNear(){const v=GATE_KEEP_LIE&&GATE_KEEP_LIE.vein;if(!v||activeZoneId!=='dungeon'||v.floor!==currentFloor)return null;return Math.hypot(px-v.x,pz-v.z)<TOUCH+.5&&!gateKeepYields(v,TOUCH+.5)?v:null;}
 // the named action (co-op rules): the altar's arc taken; returns the item, or null
 function takeArc(seed){const A=GATE_KEEP_LIE&&GATE_KEEP_LIE.altar;if(!A||A.seed!==seed||!A.arc)return null;
   const R=relicArcsOf(),n=(R.found[A.school]||0)+1,it=arcItem(A.school,n);if(!canCarry(it)){showMsg('Too heavy to carry!','#cc8844');return null;}
