@@ -149,7 +149,7 @@ for (const p of ['gatelander', 'markman', 'aurennais']) { const J = jobs[p]; if 
   check(`${p}: the town fallen first lapses the job: *${J.lapseLog}*`, J.lapsed && J.lapseLog.includes('The camp outside Testford outlasted the gate. Testford has fallen to the Compact, and the work is on its plaza now.'), J);
   check(`${p}: *I’ll clear the plaza.*: *${J.heldOffer}*; *${J.held && J.held.title}*`, J.heldShown && J.heldOffer.startsWith(OFFER[p][1]) && J.held && J.held.title === 'Testford under the Compact' && J.held.objective === "Kill the Compact's garrison on Testford's plaza", J);
   check(`${p}: freed, thanked: *${J.heldThanks}*`, J.heldDone && J.heldThanks.startsWith(THANKS[p][1]), J); }
-// Session 2385 — a guard on the street does not greet as a host (the critic, 18 Nov: Fionn the Guard's *A face from home. Come in out of it.*
+// Session 2386 — a guard on the street does not greet as a host (the critic, 18 Nov: Fionn the Guard's *A face from home. Come in out of it.*
 // at night by the well): every temper, every people, first meetings and later ones; a villager keeps the whole pool
 const gd = await page.evaluate(() => { const dm = WORLD.siteAnywhere('dunmore'), site = { id: 'test_guard_greet', name: 'Guardford', kind: 'town', x: dm.x, z: dm.z };
   const RX = /\bdoor\b|\bcome in\b|\bcome closer\b|(?:^|[.!?] )sit\b/i, keepP = worldState.people, keepM = worldState.met, out = { guard: new Set(), vill: new Set() };

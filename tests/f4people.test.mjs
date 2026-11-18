@@ -411,9 +411,14 @@ const guards = await page.evaluate(() => { const one = (people, nation, fem) => 
     const D = r.hbG.dress, P = HB.makePerson(r.hbG, { hoodStats: false }), has = n => !!P.root.getObjectByName(n), far = r.g.cloth;
     return { people: r.g.people, mail: has('mail'), scales: !!D.scales, bronze: !!(D.mail && D.mail[0] > .55 && D.mail[2] < .3), tabard: has('tabard'), crimson: !!(D.tabard && D.tabard[0] > .5 && D.tabard[1] < .1),
       tabOut: P.tabard ? P.tabard.out : null, shield: P.shield ? P.shield.on : null, inside: P.shield ? P.shield.inside : null, metal: !!D.shieldMetal, blue: !!(D.tunic && D.tunic[2] > .5 && D.tunic[0] < .2),
-      helm: !!D.helm, spear: !!D.spear, cloak: !!D.cloak, fur: has('mantle0'), armGap: P.shield ? P.shield.armGap : null, far: [+far.r.toFixed(2), +far.g.toFixed(2), +far.b.toFixed(2)] }; };
+      helm: !!D.helm, spear: !!D.spear, cloak: !!D.cloak, fur: has('mantle0'), armGap: P.shield ? P.shield.armGap : null,
+      mailOut: (() => { const tb = P.root.getObjectByName('tabard'); if (!tb) return null; P.root.updateMatrixWorld(true); const nk = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(nk); const rc = new THREE.Raycaster(), v = new THREE.Vector3(), dz = new THREE.Vector3(0, 0, 1); rc.far = .06; let n = 0;
+        P.root.traverse(m => { if (!m.isSkinnedMesh || !/^mail(Skirt)?$/.test(m.name)) return; for (const i of new Set(m.geometry.index.array)) { m.getVertexPosition(i, v); v.applyMatrix4(m.matrixWorld); if (Math.abs(v.x - nk.x) > .13 || v.y > nk.y - .08 || v.z > nk.z) continue; rc.set(v, dz); const h = rc.intersectObject(tb, false); if (h.length && h[0].distance > .001) n++; } }); return n; })(), far: [+far.r.toFixed(2), +far.g.toFixed(2), +far.b.toFixed(2)] }; };
   return { crown: one('gatelander', 'gatelands', false), hold: one('markman', 'mark', false), compact: one('aurennais', 'aurenne', false), compactW: one('aurennais', 'aurenne', true), oldblood: one('oldblood', 'gatelands', false) }; });
 console.log('  guards:', JSON.stringify(guards));
+// S2384: the mail's own shell no longer comes through the back of the tabard at the belt (the Crown's guard: a band of rings across the
+// small of the back, 26 of the mail's points outside the panel, up to 1.2 cm; the tabard now reads the mail's posed surface)
+check('no point of the Crown\'s guard\'s mail stands outside the back of the tabard (a band of rings crossed it at the belt)', guards.crown.mailOut === 0, { crown: guards.crown.mailOut });
 { const G = guards, near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < .02);
   check('a guard is dressed by their people: the Crown\'s crimson tabard over mail, the hold guard\'s round shield on the arm and fur at the shoulders (S2359), the Compact\'s bronze scales and bronze shield over blue, the Old Blood\'s plain mail; none through the tabard or the shield; far off the tabard\'s or the mail\'s colour',
     Object.values(G).every(x => x.mail && x.helm && x.spear && !x.cloak) && G.crown.people === 'gatelander' && G.crown.tabard && G.crown.crimson && G.crown.tabOut === 0 && G.crown.shield === null && near(G.crown.far, [.55, .08, .08])
@@ -426,7 +431,9 @@ console.log('  guards:', JSON.stringify(guards));
 const guilds = await page.evaluate(() => { const one = (def) => { const root = buildNPCMesh(Object.assign({ _siteId: 'gtest' }, def), { key: 'gtest' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r);
     const D = r.hbG.dress, P = HB.makePerson(r.hbG, { hoodStats: false }), has = n => !!P.root.getObjectByName(n), T = P.tabard || {};
     return { head: r.g.guildHead || null, gear: r.g.gear || null, people: r.hbG.people, mail: !!D.mail, tabard: has('tabard'), sign: T.sign || 0, out: T.out ?? -1, tested: T.tested || 0, sword: has('swordBlade'), swordMake: D.swordMake, staff: has('staffWood'), staffMake: D.staffMake, robe: !!D.robe, blue: !!(D.robe && D.robe[2] > .3 && D.robe[0] < .2), star: P.guildStar || null, basket: !!D.basket,
-      cape: !!D.cloak, capeOpen: D.capeOpen ?? null, brooches: (() => { let n = 0; P.root.traverse(o => { if (o.name === 'brooch') n++; }); return n; })(), capeThrough: P.cloak && P.cloak.through ? P.cloak.through.out : 0, boots: !!D.boots && !D.sandals, carry: P.sword ? { tipH: P.sword.tipH, pommelH: P.sword.pommelH, lean: P.sword.lean, inside: P.sword.inside } : null }; };
+      cape: !!D.cloak, capeOpen: D.capeOpen ?? null, brooches: (() => { let n = 0; P.root.traverse(o => { if (o.name === 'brooch') n++; }); return n; })(), capeThrough: P.cloak && P.cloak.through ? P.cloak.through.out : 0, capeTab: (() => { const cp = P.root.getObjectByName('cloak'), tb = P.root.getObjectByName('tabard'); if (!cp || !tb || !D.cape) return null; P.root.updateMatrixWorld(true);
+        const nk = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(nk); const rc = new THREE.Raycaster(), v = new THREE.Vector3(), dz = new THREE.Vector3(0, 0, 1), pa = tb.geometry.attributes.position; rc.far = .06; let n = 0;
+        for (let i = 0; i < pa.count; i++) { v.fromBufferAttribute(pa, i).applyMatrix4(tb.matrixWorld); if (v.z > nk.z) continue; rc.set(v, dz); const h = rc.intersectObject(cp, false); if (h.length && h[0].distance > .001) n++; } return n; })(), boots: !!D.boots && !D.sandals, carry: P.sword ? { tipH: P.sword.tipH, pommelH: P.sword.pommelH, lean: P.sword.lean, inside: P.sword.inside } : null }; };
   const ppl = ['gatelander', 'markman', 'aurennais', 'oldblood'], out = {};
   ppl.forEach((pp, i) => { out['f_' + pp] = one({ role: 'Guildmaster', name: 'Gm' + i, people: pp }); out['m_' + pp] = one({ role: 'Archmage', name: 'Am' + i, people: pp }); });
   out.member = one({ role: 'Adept of the Mages', name: 'Mem', people: 'markman' }); return out; });
@@ -439,25 +446,39 @@ console.log('  guild heads:', JSON.stringify(guilds));
   // S2366 (the critic's 17 Nov note): a sword held at rest is carried lowered, the blade forward and down from the fist (it stood point-up beside the head)
   check('a Guildmaster\'s sword is carried lowered at rest: the tip under the pommel and under 0.8 m, the blade 15° to 50° below the level, at most 3 points of what is worn against it',
     F.every(f => f.carry && f.carry.tipH < f.carry.pommelH && f.carry.tipH > .15 && f.carry.tipH < .8 && f.carry.lean > 1.83 && f.carry.lean < 2.44 && f.carry.inside <= 3), F.map(f => f.carry));
-  // S2381 (S2366's owed note): on the walk the sword's arm is held to the hips as a cloak's is, three quarters of the swing taken off. The
-  // Aurennais Guildmaster (no cape) stood the blade upright at each forward swing, its top 2.11 m off the ground; held, never over 0.80
-  const walk = await page.evaluate(() => { const root = buildNPCMesh({ role: 'Guildmaster', name: 'Gm2', people: 'aurennais', _siteId: 'gtest' }, { key: 'gwalk' }), rig = [...HB_RIGS].find(x => x.root === root);
+  // S2381 (S2366's owed note): on the walk the sword's arm is held to the hips as a cloak's is, three quarters of the swing taken off.
+  // S2382: S2381 measured at 1.3 m/s, past these bodies' run (PW.RUN.on, 1.21 m/s at their scale of 1.25): that was the run, where the
+  // blade stood upright at each forward swing, its top 2.0 to 2.1 m off the ground. At the townsfolk's own pace (npcStep: 0.7, a guard
+  // 0.95) it rose to 1.15 m unheld and 0.82 held. So a body is walked at 0.95 and then run at 1.3, and the gait is read off the rig;
+  // and the lord under his cape walks too: his tip 0.35 to 0.40 m off the ground, the fist 0.84 to 0.88 (0.19 at a run)
+  const walk = await page.evaluate(() => { const go = (def, opt) => { const root = buildNPCMesh(def, opt), rig = [...HB_RIGS].find(x => x.root === root);
     const c0 = CAM.position.clone(), x0 = px + 30, z0 = pz + 30, inside = isInterior(); root.position.set(x0, 0, z0); root.rotation.y = 0; scene.add(root); let now = Math.max(performance.now(), HBODY.last || 0) + 1e6, n = 0; { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); }
     const eye = () => { CAM.position.set(root.position.x + 3, root.position.y + 1.65, root.position.z); CAM.lookAt(root.position.x, root.position.y + 1, root.position.z); CAM.updateMatrixWorld(true); };
     eye(); while ((!rig.hb || rig.hb.cold || rig.hb.L !== 0) && n++ < 3000) { now += HBODY.gap + 1; tickPeople(1 / 60, now); }
     let blade = null; if (rig.hb) rig.hb.P.root.traverse(o => { if (o.name === 'swordBlade') blade = o; });
-    const res = { built: !!rig.hb, blade: !!blade, held: !!(rig.hb && rig.hb.hold && rig.hb.hold.sword && rig.hb.hold.sword.size === 3), lo: 9, hi: 0, top: 0 };
+    const gait = () => ({ lo: 9, hi: 0, top: 0, ran: 0, walked: 0 }), res = { built: !!rig.hb, blade: !!blade, held: !!(rig.hb && rig.hb.hold && rig.hb.hold.size >= 3), sword: !!(rig.hb && rig.hb.hold && rig.hb.hold.sword), walk: gait(), run: gait() };
     if (blade) { const v = new THREE.Vector3(), pa = blade.geometry.attributes.position;
-      for (let i = 0; i < 180; i++) { root.position.z += 1.3 / 60; eye(); now += 1000 / 60; tickPeople(1 / 60, now);
-        if (i < 60) continue; root.updateMatrixWorld(true); let m = 1e9, t = -1e9; for (let k = 0; k < pa.count; k++) { v.fromBufferAttribute(pa, k).applyMatrix4(blade.matrixWorld); m = Math.min(m, v.y); t = Math.max(t, v.y); }
-        const h = m - root.position.y; res.top = Math.max(res.top, t - root.position.y); res.lo = Math.min(res.lo, h); res.hi = Math.max(res.hi, h); } }
-    root.parent.remove(root); HB_RIGS.delete(rig); PEOPLE_RIGS.delete(rig); CAM.position.copy(c0); CAM.updateMatrixWorld(true); res.lo = +res.lo.toFixed(3); res.hi = +res.hi.toFixed(3); res.top = +res.top.toFixed(3); res.inside = inside; res.fail = !!rig.hbFail; return res; });
-  check('a Guildmaster walking with the sword lowered holds its arm (the Aurennais, no cape): the blade stays between 0.15 m and 1.0 m off the ground through the stride (it stood upright, 2.1 m)', walk.built && walk.blade && walk.held && walk.lo > .15 && walk.top < 1, walk);
+      for (let i = 0; i < 360; i++) { root.position.z += (i < 180 ? .95 : 1.3) / 60; eye(); now += 1000 / 60; tickPeople(1 / 60, now);
+        if (i % 180 < 60) continue; const G = i < 180 ? res.walk : res.run; if (rig.run) G.ran++; else G.walked++;
+        root.updateMatrixWorld(true); let m = 1e9, t = -1e9; for (let k = 0; k < pa.count; k++) { v.fromBufferAttribute(pa, k).applyMatrix4(blade.matrixWorld); m = Math.min(m, v.y); t = Math.max(t, v.y); }
+        const h = m - root.position.y; G.top = Math.max(G.top, t - root.position.y); G.lo = Math.min(G.lo, h); G.hi = Math.max(G.hi, h); } }
+    root.parent.remove(root); HB_RIGS.delete(rig); PEOPLE_RIGS.delete(rig); CAM.position.copy(c0); CAM.updateMatrixWorld(true);
+    for (const G of [res.walk, res.run]) { G.lo = +G.lo.toFixed(3); G.hi = +G.hi.toFixed(3); G.top = +G.top.toFixed(3); } res.inside = inside; res.fail = !!rig.hbFail; return res; };
+    return { gm: go({ role: 'Guildmaster', name: 'Gm2', people: 'aurennais', _siteId: 'gtest' }, { key: 'gwalk' }), lord: go({ role: 'Lord', name: 'Cathal', people: 'gatelander', _lord: true }, { key: 'ptest', nation: 'gatelands' }) }; });
+  console.log('  sword walk:', JSON.stringify(walk));
+  { const W = walk.gm, L = walk.lord;
+    check('a Guildmaster with the sword lowered holds its arm (the Aurennais, no cape): walking (0.95 m/s, not running) the blade stays between 0.3 m and 0.95 m off the ground (unheld it rose to 1.15 m); running (1.3 m/s) between 0.15 m and 1.0 m (unheld it stood upright, 2.0 m)',
+      W.built && W.blade && W.held && W.sword && W.walk.walked === 120 && W.walk.ran === 0 && W.walk.lo > .3 && W.walk.top < .95 && W.run.ran === 120 && W.run.lo > .15 && W.run.top < 1, W);
+    check('the lord walking under his cape (0.95 m/s) carries the sword: its lowest point between 0.3 m and 0.5 m off the ground, its highest under 0.9 m',
+      L.built && L.blade && L.held && L.walk.walked === 120 && L.walk.lo > .3 && L.walk.lo < .5 && L.walk.top < .9, L); }
   // S2364 (the critic's 17 Nov note): a head's cape is worn back off the breast, pinned at each shoulder, nothing through it; a Guildmaster in boots
   const caped = F.concat(M).filter(h => h.cape);
   // (an Archmage's cape over the staff already opens on the staff's side, S1798: worn back, it is pinned at the left shoulder alone)
   check(`a guild head's cape is worn back (capeOpen 1; a Guildmaster's pinned at each shoulder, an Archmage's at the left; no arm through it), ${caped.length} of 8 caped; every Guildmaster in boots, not sandals`,
-    caped.length >= 2 && caped.every(h => h.capeOpen === 1 && h.brooches === (h.head === 'f' ? 2 : 1) && h.capeThrough === 0) && F.every(f => f.boots), caped.map(h => [h.people, h.head, h.capeOpen, h.brooches, h.capeThrough])); }
+    caped.length >= 2 && caped.every(h => h.capeOpen === 1 && h.brooches === (h.head === 'f' ? 2 : 1) && h.capeThrough === 0) && F.every(f => f.boots), caped.map(h => [h.people, h.head, h.capeOpen, h.brooches, h.capeThrough]));
+  // S2382 (S2364's owed note): the tabard's back panel no longer comes through a head's cape down the middle of the back; no point of it
+  // stands outside the cape (with the cape within 6 cm behind it, toward the body). The Gatelander had 8, a strip of red over the spine
+  check('no point of a Guildmaster\'s tabard stands outside their cape at the back (the Gatelander\'s showed a strip down the spine)', F.filter(f => f.cape).length >= 1 && F.filter(f => f.cape).every(f => f.capeTab === 0), F.map(f => [f.people, f.capeTab])); }
 // S2349 (S2329's owed note): the far copy's skirt is the genome's. A long skirt or a robe is the driver's dress to the shin, in the skirt's
 // own colour (counted on the hips' bone, as the legs ride the thighs); anything else is the tunic's skirt over the legs. The driver rolled
 // its own, and 46 of 208 changed shape at the builder's ring

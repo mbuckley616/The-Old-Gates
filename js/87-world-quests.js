@@ -933,7 +933,7 @@ const giver=`${lord.title} ${lord.name}`;
   // S2299 — the road's people (def.roadfolk) meet you on the road, not at their door: from the same pools they leave out the lines said at a
   // door or a hearth (the door, come in, sit, welcome, the look of home); a pool all of whose lines are such is kept whole
   const AT_HOME_LINE=/\bdoor\b|\bcome in\b|\bcome closer\b|\bsit\b|\bwelcome\b|look of home|slower than you're used to/i;
-  // S2385 — a guard (the watch, the constable, a gate's or a square's guard) meets you on the street in his own town: from the same pools he
+  // S2386 — a guard (the watch, the constable, a gate's or a square's guard) meets you on the street in his own town: from the same pools he
   // leaves out a host's invitations (come in, come closer, sit, the door), and keeps the rest, the look of home and the welcome among them
   const AT_DOOR_LINE=/\bdoor\b|\bcome in\b|\bcome closer\b|(?:^|[.!?] )sit\b/i;
   function roadPick(def,arr){const rx=!def||!arr?null:def.roadfolk?AT_HOME_LINE:def.role==='Guard'?AT_DOOR_LINE:null;if(!rx)return pick(Math.random,arr);
