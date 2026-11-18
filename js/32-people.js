@@ -2250,6 +2250,12 @@ const HB_POWER={
    their people's make; the Archmage in a deep blue robe with pale cuffs and cord, the guild's star at the breast (the kit's guildStar)
    and a staff of their people's wood. Each keeps their own roll (face, hair, stature, the cloak and its fur, the charms and the amulet);
    what the hands held and what the livery covers (a sash, an apron, a coat) go; a cloak is worn as a cape (0.85 at most). The driver holds the Archmage's staff ('stick') */
+/* S2364 (the critic's 17 Nov note on S2329) — a head's rolled cloak, worn as a cape closed to the throat, hid the livery: Gráinne's plaid cape
+   over both shoulders left the tabard showing only between its edges, and the crossed swords barely read from the door; a closed cape
+   also covers the Archmage's star (S2329's own note). The kit's cape now opens by D.capeOpen (radians either side of the front, .14 closed):
+   at 1.0 it sits back on the shoulders, pinned at each with a brooch, and the breast is the guild's. A Guildmaster under mail wears boots
+   (the Aurennais's sandals showed bare feet under the mail, the sheet's third) */
+const HB_GUILD_CAPE_OPEN=1;
 const HB_GUILD_OX=[.42,.1,.1],HB_GUILD_OXT=[.84,.74,.56],HB_GUILD_MB=[.12,.2,.4],HB_GUILD_MBT=[.76,.8,.9];
 const HB_GUILD_MAKE={gatelander:{sword:'arming',staff:'hazel'},markman:{sword:'norse',staff:'ash'},aurennais:{sword:'nimcha',staff:'olive'},oldblood:{sword:'falchion',staff:'carved'}};
 const HB_GUILD_STRIP={spear:null,staff:null,crossbow:null,shield:null,basket:null,basketCloth:null,lantern:null,tankard:null,hammer:null,chair:null,book:null,
@@ -2257,9 +2263,9 @@ const HB_GUILD_STRIP={spear:null,staff:null,crossbow:null,shield:null,basket:nul
   sashBelt:null,shoulderWrap:null,burnous:false,mantle:null,tabard:null,tabardSign:null,robe:null,mail:null,scales:false,plate:null,dots:null};
 function hbGuildOf(def){if(!def||!def._siteId)return null;const r=String(def.role||'');return r==='Guildmaster'?'f':r==='Archmage'?'m':null;}
 function hbGuildDress(g,G){const D=Object.assign({},G.dress||{},HB_GUILD_STRIP),M=HB_GUILD_MAKE[G.people]||HB_GUILD_MAKE.gatelander;
-  if(D.hood==='up')D.hood=null;if(D.cloak){D.cape=true;D.cloakLen=Math.min(D.cloakLen??.8,.85);} /* their cloak worn as a cape, as the sheet has it: a closed cloak hides the sword (swordOn) and the livery */
+  if(D.hood==='up')D.hood=null;if(D.cloak){D.cape=true;D.cloakLen=Math.min(D.cloakLen??.8,.85);D.capeOpen=HB_GUILD_CAPE_OPEN;} /* their cloak worn as a cape, as the sheet has it: a closed cloak hides the sword (swordOn) and the livery; S2364: worn back off the breast, pinned at each shoulder */
   if(g.guildHead==='f'){Object.assign(D,{mail:[.42,.43,.45],tabard:HB_GUILD_OX.slice(),tabardTrim:HB_GUILD_OXT.slice(),tabardLen:.7,tabardSign:'swords',
-    sword:[.56,.58,.62],swordMake:M.sword,skirt:'short',skirtColor:null});if(!D.trousers)D.trousers=[.24,.2,.16];if(!D.boots&&!D.sandals)D.boots=[.2,.14,.1];return D;}
+    sword:[.56,.58,.62],swordMake:M.sword,skirt:'short',skirtColor:null});if(!D.trousers)D.trousers=[.24,.2,.16];D.boots=D.boots||D.sandals||[.2,.14,.1];D.sandals=null;return D;}
   return Object.assign(D,{tunic:HB_GUILD_MB.slice(),robe:HB_GUILD_MB.slice(),skirtColor:HB_GUILD_MB.slice(),skirt:'long',trousers:null,cuffs:HB_GUILD_MBT.slice(),
     cuffBand:null,cord:D.cord||HB_GUILD_MBT.slice(),guildStar:HB_GUILD_MBT.slice(),staff:[.36,.27,.18],staffMake:M.staff,bands:null,gownBorder:null,coatTrim:null});}
 function hbPowerOf(def,g){if(!def||!def._lord)return null;const T=HB_POWER_TITLE[g.nation];return (T&&T[String(def.role||'').toLowerCase()])||null;}
