@@ -2897,6 +2897,9 @@ const HB_CLOAK_STAFF={k:1};
    blade, 0.8 to 0.9 m beyond the fist, turned that into an arc: a walking Guildmaster's tip went from 0.39 m to 1.32 m off the ground and
    back each stride, brandished at the hip. So the sword's arm is held to the hips as a cloak's is, HB_SWORD_HOLD.k of the swing taken off,
    when no cloak holds it already; a blow (hbHoldF) and standing still are left alone */
+/* S2382 — a correction: S2381's 1.3 m/s is past these bodies' run (PW.RUN.on, 1.21 m/s at their scale of 1.25), so its numbers are the run's.
+   At the townsfolk's walk (npcStep, 0.7; a guard 0.95) the unheld blade rose to 1.15 m, held 0.82; under a cape the tip walks 0.35-0.40 m
+   off the ground (0.19 at the run, where the hips drop) */
 const HB_SWORD_HOLD={k:.75};
 function hbSwordArm(S,D,map,P){if(!P||!P.sword||!D||D.spear||D.staff||D.hammer||D.crossbow&&!D.chair)return S;
   const i=map.map(([j],k)=>/^(sh|el|wr)R$/.test(j)?k:-1).filter(k=>k>=0),free=i.filter(k=>!S||!S.has(k));if(!free.length)return S;

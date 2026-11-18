@@ -439,20 +439,31 @@ console.log('  guild heads:', JSON.stringify(guilds));
   // S2366 (the critic's 17 Nov note): a sword held at rest is carried lowered, the blade forward and down from the fist (it stood point-up beside the head)
   check('a Guildmaster\'s sword is carried lowered at rest: the tip under the pommel and under 0.8 m, the blade 15° to 50° below the level, at most 3 points of what is worn against it',
     F.every(f => f.carry && f.carry.tipH < f.carry.pommelH && f.carry.tipH > .15 && f.carry.tipH < .8 && f.carry.lean > 1.83 && f.carry.lean < 2.44 && f.carry.inside <= 3), F.map(f => f.carry));
-  // S2381 (S2366's owed note): on the walk the sword's arm is held to the hips as a cloak's is, three quarters of the swing taken off. The
-  // Aurennais Guildmaster (no cape) stood the blade upright at each forward swing, its top 2.11 m off the ground; held, never over 0.80
-  const walk = await page.evaluate(() => { const root = buildNPCMesh({ role: 'Guildmaster', name: 'Gm2', people: 'aurennais', _siteId: 'gtest' }, { key: 'gwalk' }), rig = [...HB_RIGS].find(x => x.root === root);
+  // S2381 (S2366's owed note): on the walk the sword's arm is held to the hips as a cloak's is, three quarters of the swing taken off.
+  // S2382: S2381 measured at 1.3 m/s, past these bodies' run (PW.RUN.on, 1.21 m/s at their scale of 1.25): that was the run, where the
+  // blade stood upright at each forward swing, its top 2.0 to 2.1 m off the ground. At the townsfolk's own pace (npcStep: 0.7, a guard
+  // 0.95) it rose to 1.15 m unheld and 0.82 held. So a body is walked at 0.95 and then run at 1.3, and the gait is read off the rig;
+  // and the lord under his cape walks too: his tip 0.35 to 0.40 m off the ground, the fist 0.84 to 0.88 (0.19 at a run)
+  const walk = await page.evaluate(() => { const go = (def, opt) => { const root = buildNPCMesh(def, opt), rig = [...HB_RIGS].find(x => x.root === root);
     const c0 = CAM.position.clone(), x0 = px + 30, z0 = pz + 30, inside = isInterior(); root.position.set(x0, 0, z0); root.rotation.y = 0; scene.add(root); let now = Math.max(performance.now(), HBODY.last || 0) + 1e6, n = 0; { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); }
     const eye = () => { CAM.position.set(root.position.x + 3, root.position.y + 1.65, root.position.z); CAM.lookAt(root.position.x, root.position.y + 1, root.position.z); CAM.updateMatrixWorld(true); };
     eye(); while ((!rig.hb || rig.hb.cold || rig.hb.L !== 0) && n++ < 3000) { now += HBODY.gap + 1; tickPeople(1 / 60, now); }
     let blade = null; if (rig.hb) rig.hb.P.root.traverse(o => { if (o.name === 'swordBlade') blade = o; });
-    const res = { built: !!rig.hb, blade: !!blade, held: !!(rig.hb && rig.hb.hold && rig.hb.hold.sword && rig.hb.hold.sword.size === 3), lo: 9, hi: 0, top: 0 };
+    const gait = () => ({ lo: 9, hi: 0, top: 0, ran: 0, walked: 0 }), res = { built: !!rig.hb, blade: !!blade, held: !!(rig.hb && rig.hb.hold && rig.hb.hold.size >= 3), sword: !!(rig.hb && rig.hb.hold && rig.hb.hold.sword), walk: gait(), run: gait() };
     if (blade) { const v = new THREE.Vector3(), pa = blade.geometry.attributes.position;
-      for (let i = 0; i < 180; i++) { root.position.z += 1.3 / 60; eye(); now += 1000 / 60; tickPeople(1 / 60, now);
-        if (i < 60) continue; root.updateMatrixWorld(true); let m = 1e9, t = -1e9; for (let k = 0; k < pa.count; k++) { v.fromBufferAttribute(pa, k).applyMatrix4(blade.matrixWorld); m = Math.min(m, v.y); t = Math.max(t, v.y); }
-        const h = m - root.position.y; res.top = Math.max(res.top, t - root.position.y); res.lo = Math.min(res.lo, h); res.hi = Math.max(res.hi, h); } }
-    root.parent.remove(root); HB_RIGS.delete(rig); PEOPLE_RIGS.delete(rig); CAM.position.copy(c0); CAM.updateMatrixWorld(true); res.lo = +res.lo.toFixed(3); res.hi = +res.hi.toFixed(3); res.top = +res.top.toFixed(3); res.inside = inside; res.fail = !!rig.hbFail; return res; });
-  check('a Guildmaster walking with the sword lowered holds its arm (the Aurennais, no cape): the blade stays between 0.15 m and 1.0 m off the ground through the stride (it stood upright, 2.1 m)', walk.built && walk.blade && walk.held && walk.lo > .15 && walk.top < 1, walk);
+      for (let i = 0; i < 360; i++) { root.position.z += (i < 180 ? .95 : 1.3) / 60; eye(); now += 1000 / 60; tickPeople(1 / 60, now);
+        if (i % 180 < 60) continue; const G = i < 180 ? res.walk : res.run; if (rig.run) G.ran++; else G.walked++;
+        root.updateMatrixWorld(true); let m = 1e9, t = -1e9; for (let k = 0; k < pa.count; k++) { v.fromBufferAttribute(pa, k).applyMatrix4(blade.matrixWorld); m = Math.min(m, v.y); t = Math.max(t, v.y); }
+        const h = m - root.position.y; G.top = Math.max(G.top, t - root.position.y); G.lo = Math.min(G.lo, h); G.hi = Math.max(G.hi, h); } }
+    root.parent.remove(root); HB_RIGS.delete(rig); PEOPLE_RIGS.delete(rig); CAM.position.copy(c0); CAM.updateMatrixWorld(true);
+    for (const G of [res.walk, res.run]) { G.lo = +G.lo.toFixed(3); G.hi = +G.hi.toFixed(3); G.top = +G.top.toFixed(3); } res.inside = inside; res.fail = !!rig.hbFail; return res; };
+    return { gm: go({ role: 'Guildmaster', name: 'Gm2', people: 'aurennais', _siteId: 'gtest' }, { key: 'gwalk' }), lord: go({ role: 'Lord', name: 'Cathal', people: 'gatelander', _lord: true }, { key: 'ptest', nation: 'gatelands' }) }; });
+  console.log('  sword walk:', JSON.stringify(walk));
+  { const W = walk.gm, L = walk.lord;
+    check('a Guildmaster with the sword lowered holds its arm (the Aurennais, no cape): walking (0.95 m/s, not running) the blade stays between 0.3 m and 0.95 m off the ground (unheld it rose to 1.15 m); running (1.3 m/s) between 0.15 m and 1.0 m (unheld it stood upright, 2.0 m)',
+      W.built && W.blade && W.held && W.sword && W.walk.walked === 120 && W.walk.ran === 0 && W.walk.lo > .3 && W.walk.top < .95 && W.run.ran === 120 && W.run.lo > .15 && W.run.top < 1, W);
+    check('the lord walking under his cape (0.95 m/s) carries the sword: its lowest point between 0.3 m and 0.5 m off the ground, its highest under 0.9 m',
+      L.built && L.blade && L.held && L.walk.walked === 120 && L.walk.lo > .3 && L.walk.lo < .5 && L.walk.top < .9, L); }
   // S2364 (the critic's 17 Nov note): a head's cape is worn back off the breast, pinned at each shoulder, nothing through it; a Guildmaster in boots
   const caped = F.concat(M).filter(h => h.cape);
   // (an Archmage's cape over the staff already opens on the staff's side, S1798: worn back, it is pinned at the left shoulder alone)
