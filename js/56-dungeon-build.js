@@ -1477,6 +1477,7 @@ function buildDungeon(portal){
   if(interiorKey!=='cave'&&!gen.map2&&portal.size!=='small')gen=addUpperFloor(gen,portal.seed); // v80 — forts get an upper floor
   if(gen.gate&&clochBlockDue(portal))gateBlock(gen,portal.seed); /* S1376 — Cloch's toll: a fallen block on each floor of the Mark's lesser gates (52-dungeon-gen.js) */
   if(gen.gate)gateThings(gen,portal.seed); /* S1675 — the braziers and webs a touched word acts on (52-dungeon-gen.js); S1678 the pools */
+  if(gen.gate&&!portal.tutorial)try{gateSecrets(gen,portal.seed,portal.size,gateOrbSchool(portal));}catch(e){gen.secrets=[];console.warn('gateSecrets',e);} /* S2402 — the seals (#1678 B; 68-dungeon-misc.js) */
   if(portal.lair&&!portal.tutorial&&!gen.gate)lairBrush(gen,portal.seed); /* S1708 — a lair cavern's dry brush, for Loscadh's touch (#973 A) */
   if(portal.lair&&!portal.tutorial&&!gen.gate)lairCaverglow(gen,portal.seed); /* S1896 — Caverglow on the way in (#1164 B) */
   if(gen.hall)FLOOR2_Y=-gen.hall.D; /* S1298 — a massive gate's floor two lies its stair hall's flights down (2 or 3 of 4.2 m) */
@@ -3958,6 +3959,7 @@ function buildDungeon(portal){
   dunScaleWhole(dunCellFor(portal),thWallMat);
   try{gateFallBuild(gen);}catch(e){console.warn('gateFallBuild',e);} /* S1376 — Cloch's fallen blocks, in metres */
   try{gateThingsBuild(gen,portal);}catch(e){GATE_THINGS=[];console.warn('gateThingsBuild',e);} /* S1675 — the braziers and webs, in metres */
+  try{gateSecretsBuild(gen,portal);}catch(e){GATE_SECRETS=[];console.warn('gateSecretsBuild',e);} /* S2402 — the seals' placeholders and shut mouths, in metres */
   if(typeof varekListLay==='function')varekListLay(portal); /* S2174 — The Last Entry: the worn paper before the sarcophagus, after the unbound ending (87) */
   try{gateKeepLay(portal,gen);}catch(e){console.warn('gateKeepLay',e);} /* S2370 — a lesser gate's coffer on the ring's dais, in metres (68-dungeon-misc.js) */
   try{knotLay(portal,gen);}catch(e){console.warn('knotLay',e);} /* S1346 — a great gate's knot over the ring's dais, in metres (87-world-quests.js) */

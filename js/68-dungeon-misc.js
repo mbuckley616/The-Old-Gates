@@ -981,3 +981,74 @@ function reloadActiveSlot(){
   });
   return true;
 }
+// S2402 — spells as keys, and secrets (Michael's B on #1678; docs/design/spells-as-keys-build.md, its session 1: the seals). A gate's
+// secrets are laid on its own stream (seededRng('secret', seed)) after its braziers, webs and pools, so none of theirs moves. This
+// session lays the seals only, one a gate and two in a massive gate (the gate's own school first, then one other by seed); the
+// mechanisms of sessions 3 to 5 come after them on the same stream, so a seal's room and id never move. A seal takes a side room
+// with one mouth and no web or pool, and only one whose closing leaves every open cell joined to the floor's start (the entry,
+// or the stair hall's foot on floor two) still reachable: a side room is a leaf, so nothing on the way on is ever shut. A gate with
+// no such room has fewer seals. Each is {id:'<seed>:<floor>:secret<n>', kind:'seal', school, floor, c, r (the mouth), dc, dr (from
+// the mouth into the room), room} in gen.secrets. The keys (Caor on both braziers, Sioc, Cloch Ghéar, Oíche, Solas-Gheal,
+// Séideán) are session 2's; openSecret(id) is the named action they will call. Opened is the world's (worldState.gateSecrets[seed]:
+// {o:[n…], t:{n:items}}), on the S242 list and not the character's.
+const SECRET_SEAL_N={tiny:1,small:1,medium:1,large:1,massive:2};
+const SECRET_SEAL_SHUT={tine:1,cloch:1,scath:1}; /* the stone leaf, the fallen block, the dark wall: the room's mouth is rock until opened */
+const SECRET_SCHOOLS=['tine','uisce','gaoth','cloch','scath','solas'];
+function gateSecrets(gen,seed,size,school){
+  gen.secrets=[];if(!gen||!gen.gate)return gen.secrets;
+  const r=seededRng('secret',seed|0),S=gen.secrets,W=gen.W,H=gen.H;
+  const mapOf=fl=>fl===2?gen.map2:gen.map,open=(M,c,y)=>y>=0&&c>=0&&y<H&&c<W&&M[y][c]>0; /* a chasm's air and its piers too: a gap is crossed by its stones */
+  const starts=fl=>{if(fl===1)return [[gen.entC,gen.entR]];const out=[],CS=gen.cellSpace2,hid=gen.hall&&gen.hall.id;
+    if(CS&&hid!=null)for(let y=0;y<H;y++)for(let c=0;c<W;c++)if(CS[y][c]===hid&&open(gen.map2,c,y))out.push([c,y]);return out;};
+  const reach=(fl,shut)=>{const M=mapOf(fl),got=new Uint8Array(W*H),q=[];
+    for(const [c,y] of starts(fl)){const k=y*W+c;if(open(M,c,y)&&!shut.has(k)&&!got[k]){got[k]=1;q.push(k);}}
+    for(let i=0;i<q.length;i++){const c=q[i]%W,y=(q[i]-c)/W;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const nc=c+a,ny=y+b,k=ny*W+nc;
+      if(!open(M,nc,ny)||shut.has(k)||got[k])continue;got[k]=1;q.push(k);}}return got;};
+  const base={1:reach(1,new Set())};if(gen.map2)base[2]=reach(2,new Set());
+  const taken=new Set((gen.things||[]).filter(t=>t.room).map(t=>t.floor+':'+t.room.x+','+t.room.y));
+  const cand=[];
+  for(const rm of gen.side||[]){const fl=rm.floor||1,M=mapOf(fl);if(!M||!base[fl]||rm.w<2||rm.h<2||taken.has(fl+':'+rm.x+','+rm.y))continue;
+    const mouths=[],inRoom=(x,y)=>x>=rm.x&&x<rm.x+rm.w&&y>=rm.y&&y<rm.y+rm.h;
+    for(let y=rm.y-1;y<=rm.y+rm.h;y++)for(let x=rm.x-1;x<=rm.x+rm.w;x++){if(inRoom(x,y))continue;
+      if(!((x>=rm.x&&x<rm.x+rm.w)||(y>=rm.y&&y<rm.y+rm.h)))continue;if(open(M,x,y))mouths.push([x,y]);}
+    if(mouths.length!==1)continue;const [mx,my]=mouths[0];
+    if(fl===1&&Math.abs(mx-gen.entC)+Math.abs(my-gen.entR)<3)continue;
+    const shut=new Set([my*W+mx]);for(let y=rm.y;y<rm.y+rm.h;y++)for(let x=rm.x;x<rm.x+rm.w;x++)shut.add(y*W+x);
+    const got=reach(fl,shut),B=base[fl];let cuts=false;for(let k=0;k<W*H&&!cuts;k++)if(B[k]&&!got[k]&&!shut.has(k))cuts=true;
+    if(cuts)continue;
+    const dc=mx<rm.x?1:mx>=rm.x+rm.w?-1:0,dr=dc?0:(my<rm.y?1:-1);
+    cand.push({floor:fl,c:mx,r:my,dc,dr,room:{x:rm.x,y:rm.y,w:rm.w,h:rm.h},path:shut});}
+  const own=SECRET_SCHOOLS.includes(school)?school:'cloch',others=SECRET_SCHOOLS.filter(s=>s!==own);
+  const want=[own];if((SECRET_SEAL_N[size]||1)>1)want.push(others[Math.floor(r()*others.length)]);
+  for(const sc of want){const pick=Math.floor(r()*Math.max(1,cand.length));if(!cand.length)break;const q=cand.splice(pick,1)[0];
+    S.push({id:(seed|0)+':'+q.floor+':secret'+S.length,n:S.length,kind:'seal',school:sc,floor:q.floor,c:q.c,r:q.r,dc:q.dc,dr:q.dr,room:q.room,
+      cells:[...q.path]});}
+  return S;}
+// the world's record of a gate's secrets: o, the opened ones' numbers; t, what is left in each one's chest (session 2)
+function gateSecretRec(seed){const G=worldState.gateSecrets||(worldState.gateSecrets={});return G[seed]||(G[seed]={o:[],t:{}});}
+function gateSecretOpen(seed,n){const G=worldState.gateSecrets,R=G&&G[seed];return !!(R&&R.o&&R.o.indexOf(n)>=0);}
+let GATE_SECRETS=[];
+// in metres, after the scaling pass: placeholder props (the look builder's session 6 dresses them) and, for a shut seal, the mouth's solid
+const SECRET_SEAL_COL={tine:0x6d6862,uisce:0x0b1418,gaoth:0x77736a,cloch:0x8a7a62,scath:0x2e2a33,solas:0xe8e2c8};
+function gateSecretsBuild(gen,portal){GATE_SECRETS=[];if(!gen||!gen.secrets||!gen.secrets.length||!portal)return GATE_SECRETS;
+  const Hc=DCELL/2;
+  for(const t of gen.secrets){const y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r),R=t.room,opened=gateSecretOpen(portal.seed,t.n);
+    const mat=new THREE.MeshLambertMaterial({color:SECRET_SEAL_COL[t.school]||0x777777}),grp=new THREE.Group();grp.name='gateSecret';
+    const rec={id:t.id,n:t.n,seed:portal.seed,kind:t.kind,school:t.school,floor:t.floor,x:cx,y,z:cz,opened,group:grp,solid:null,shut:null};
+    if(SECRET_SEAL_SHUT[t.school]){const x=cx+t.dc*(Hc-.3),z=cz+t.dr*(Hc-.3),h=Math.min(FLOOR_HEIGHT,6);
+      const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),mat);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;
+      rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
+      if(!opened)DUNGEON_PROPS.push(rec.solid);else m.visible=false;}
+    else{const x0=dAt(R.x-.5),x1=dAt(R.x+R.w-.5),z0=dAt(R.y-.5),z1=dAt(R.y+R.h-.5),mx=(x0+x1)/2,mz=(z0+z1)/2;
+      if(t.school==='uisce'){const m=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0-.2,z1-z0-.2).rotateX(-Math.PI/2),mat);m.position.set(mx,y+.04,mz);grp.add(m);}
+      else if(t.school==='solas'){const m=new THREE.Mesh(new THREE.BoxGeometry(.6,2.2,.6),mat);m.position.set(cx+t.dc*2.5,y+1.1,cz+t.dr*2.5);grp.add(m);}
+      else if(t.school==='gaoth'){const far=t.dc?(t.dc>0?x1:x0):(t.dr>0?z1:z0),d=1.2,w=t.dc?z1-z0:x1-x0; /* the gallery along the far wall, 3.8 m up */
+        const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?d:w,.3,t.dc?w:d),mat);m.position.set(t.dc?far-t.dc*d/2:mx,y+3.8-.15,t.dc?mz:far-t.dr*d/2);grp.add(m);}}
+    dScene.add(grp);GATE_SECRETS.push(rec);}
+  return GATE_SECRETS;}
+// openSecret: the named action. A secret of the gate you stand in opens for good: its number is kept in the world's record, a shut
+// mouth's rock goes. False if there is no such secret here, or it is open already.
+function openSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.opened)return false;rec.opened=true;
+  const R=gateSecretRec(rec.seed);if(R.o.indexOf(rec.n)<0)R.o.push(rec.n);
+  if(rec.solid){const i=DUNGEON_PROPS.indexOf(rec.solid);if(i>=0)DUNGEON_PROPS.splice(i,1);}if(rec.shut)rec.shut.visible=false;
+  return true;}
