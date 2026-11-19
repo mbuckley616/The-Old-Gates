@@ -104,11 +104,21 @@ const BUILD = {
     bl.push(B([{ key: 'dress', geo: stoneBox(L + .3, .45, T + .4, 0, H + .22, 0) }]));
     for (const u of [-3.5, 3.5]) { const blk = bl.find(b => Math.abs(b.c.x - u) < 1.6 && b.lo > 4.9 && b.lo < 5.1) || bl[0]; blk.parts.push({ key: 'script', geo: scriptQuad(.7, 1.0, u, 5.62, T / 2 + .02, new THREE.Vector3(0, 0, 1), .5) }); }
     return { bl, axis: 'y', size: { w: L, h: H + .45, d: T } }; },
-  pier() { const bl = [], P = 4, H = 20, ch = 1.6; let k = 0;
+  // Session 2415: o.passage = { y, h, w } cuts a way through the pier along z (the Drowned Spires' decks): from y (its floor, the
+  // course under it cut there) h high and w wide, the courses it crosses laid as two side stones and what is over it; no script on the
+  // ±z faces where the passage opens; the ring sigil moves to the first course clear over the passage's head.
+  pier(o = {}) { const bl = [], P = 4, H = 20, ch = 1.6, ps = o.passage; let k = 0, ringK = 6;
+    const ringLo = kk => 1.0 + kk * ch + ch / 2 + .4 - 1.3; /* the ring's quad, 2.6 high */
+    if (ps && ringLo(6) < ps.y + ps.h + .3 && ringLo(6) + 2.6 > ps.y) { ringK = -1; for (let kk = 6; 1.0 + kk * ch < H - 1.2; kk++) if (ringLo(kk) >= ps.y + ps.h + .3) { ringK = kk; break; } }
     { const g = stoneBox(P + .8, 1.0, P + .8, 0, .5, 0); bl.push(B([{ key: 'dress', geo: g }])); }
-    for (let y = 1.0; y < H - 1.2; y += ch, k++) { const parts = [{ key: 'stone', geo: stoneBox(P, ch, P, 0, y + ch / 2, 0) }];
-      for (const [n, x, z] of [[[0, 0, 1], 0, P / 2 + .02], [[0, 0, -1], 0, -P / 2 - .02], [[1, 0, 0], P / 2 + .02, 0], [[-1, 0, 0], -P / 2 - .02, 0]]) parts.push({ key: 'script', geo: scriptQuad(.55, ch - .1, x, y + ch / 2, z, new THREE.Vector3(...n), .7) });
-      if (k === 6) parts.push({ key: 'ring', geo: scriptQuad(2.6, 2.6, 0, y + ch / 2 + .4, P / 2 + .04, new THREE.Vector3(0, 0, 1)) });
+    for (let y = 1.0; y < H - 1.2; y += ch, k++) { const cut = ps && y < ps.y + ps.h && y + ch > ps.y, parts = [];
+      if (!cut) parts.push({ key: 'stone', geo: stoneBox(P, ch, P, 0, y + ch / 2, 0) });
+      else { const a = Math.max(y, ps.y), b = Math.min(y + ch, ps.y + ps.h), sw = (P - ps.w) / 2;
+        if (a > y + .01) parts.push({ key: 'stone', geo: stoneBox(P, a - y, P, 0, (y + a) / 2, 0, .25, .015) });
+        for (const sx of [-1, 1]) parts.push({ key: 'stone', geo: stoneBox(sw, b - a, P, sx * (ps.w / 2 + sw / 2), (a + b) / 2, 0, .25, .015) });
+        if (b < y + ch - .01) parts.push({ key: 'stone', geo: stoneBox(P, y + ch - b, P, 0, (b + y + ch) / 2, 0, .25, .015) }); }
+      for (const [n, x, z] of [[[0, 0, 1], 0, P / 2 + .02], [[0, 0, -1], 0, -P / 2 - .02], [[1, 0, 0], P / 2 + .02, 0], [[-1, 0, 0], -P / 2 - .02, 0]]) if (!(cut && n[2])) parts.push({ key: 'script', geo: scriptQuad(.55, ch - .1, x, y + ch / 2, z, new THREE.Vector3(...n), .7) });
+      if (k === ringK) parts.push({ key: 'ring', geo: scriptQuad(2.6, 2.6, 0, y + ch / 2 + .4, P / 2 + .04, new THREE.Vector3(0, 0, 1)) });
       bl.push(B(parts)); }
     const top = 1.0 + k * ch; bl.push(B([{ key: 'dress', geo: stoneBox(P + .9, .6, P + .9, 0, top + .3, 0) }])); bl.push(B([{ key: 'dress', geo: stoneBox(P + .5, .5, P + .5, 0, top + .85, 0) }]));
     return { bl, axis: 'y', size: { w: P + .9, h: top + 1.1, d: P + .9 } }; },
