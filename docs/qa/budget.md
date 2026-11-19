@@ -1484,3 +1484,23 @@ up 10%; nothing filed.
 | Portclare square, noon | High | 614 | 2.05 M | 192 | 6 | 58 | 65 | 218 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 546, 1.63 M |
 | The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 39 | 27k | 0 | 0 | 1 | 0 | 0 | 38 |  | 38, 20k |
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 105 | 397k | 0 | 0 | 33 | 0 | 0 | 71 |  | 71, 352k |
+
+### s1754 — 2026-11-19 19:33 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 364 | 684k | 0 | 0 | 33 | 65 | 191 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 331, 620k |
+| Portclare square, noon | Middle | 557 | 1.45 M | 157 | 6 | 47 | 65 | 207 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 502, 1.31 M |
+| Portclare square, noon | High | 603 | 1.81 M | 192 | 6 | 47 | 65 | 218 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 545, 1.63 M |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 39 | 27k | 0 | 0 | 1 | 0 | 0 | 38 |  | 38, 20k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 105 | 397k | 0 | 0 | 33 | 0 | 0 | 71 |  | 71, 352k |
+
+Session 2421 (QA): s1754, 9 merges after s1745 (the gate's mechanisms: the sliding wall, barricade, stair under the floor, sluice and
+counterweight lift; the Northlight Altar and the Drowned Spires in the game; the five travellers in the builder's cast; the capes' notch).
+`budget` 585 s, `budgetfield` 569 s, `budgetport` 647 s, each alone and green. The street and the field are identical to s1745 to the call
+(the street at High +1). The gate from its entrance is 102 → 105 calls (+3, all in the gate's own column, 68 → 71: S2409–S2418's mechanisms
+in sight), triangles unchanged at 397k. The inn's hall is unchanged. On the first pass Portclare's square at High read 614 calls and 2.05 M
+triangles (+13% over s1745's 1.82 M), all of it in Bodies: 21 builder bodies built against 19, and 416k body triangles against 182k. The place
+without bodies was unchanged (546 calls, 1.63 M). So a second `budgetport` ran alone (the table at 19:33 UTC above): 603 calls
+and 1.81 M at High, 19 bodies, 182k body triangles. The first pass had two townsfolk passing within the full level's ring when the count was
+taken. That is the swing the ledger's last column exists for, and the place did not move. Nothing is up 10%; nothing filed.
