@@ -20,7 +20,7 @@
 //   figure { x, y, z, h, bay }, k (the arches' scale), span (an opening's width), rise (its height to the point) }
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { mat, worldUV, fbm } from './common.js';
+import { mat, worldUV, fbm, sstep } from './common.js';
 import { gatePiece, stream } from './gatekit.js';
 
 export function weaverRing(o = {}) {
@@ -126,4 +126,82 @@ export function drownedSpires(o = {}) {
   for (const [m, ms] of piecesBy) { const gs = ms.map(x => { const g = x.geometry.clone(); g.applyMatrix4(x.matrixWorld); return g; }), g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, m); mesh.castShadow = mesh.receiveShadow = true; mesh.name = 'kit:' + (ms[0].userData.key || ''); group.add(mesh); tris += g.attributes.position.count / 3; draws++; }
   for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['strand', 'sea'].includes(k); mesh.receiveShadow = k !== 'sea'; if (k === 'sea') mesh.renderOrder = 2; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
   return { group, tris: Math.round(tris), draws, ground, sea: SEA, deck: DECK, towers, spans, figure, k: K, gap: 16 * K };
+}
+
+// northlightAltar (Session 2395; OG-104's "Northlight Altar", the Mark: "a ring of glowing monoliths under an aurora"): a ring of single
+// stones of the Weavers' on a high fell under snow, 120 m across, an altar on a dais at its heart. Not a gate's piece: each monolith is one
+// stone, so it is drawn whole, not of the kit's courses. They do not glow: the script is cut dead in them, as in the ring of arches (#429 B);
+// o.lit draws OG-104 as painted, the script burning pale blue in its grooves, for the DECISION.
+// What OG-104 draws as glowing is read here as their stone, dark and polished by the wind, catching whatever is in the sky.
+//   - the stones: twelve places on the circle, the one to the north empty (the ring's open side, the gap toward the aurora); each 6 to 7 m
+//     wide, 2.8 to 3.2 m thick, sunk 3 m, tapering by a sixth to a shouldered cap of 2.6 m; the two flanking the gap 42 m to their caps,
+//     whole and upright; six more standing 30 to 38 m, leaning up to 4°; two fallen whole toward the heart, half sunk in the snow; one
+//     snapped, its stump 6 to 14 m and its top lying beside it. On each stone's face to the heart, a band of the script 1.8 m wide, cut dead;
+//   - snow drifted against every standing stone and stump on its north side (the wind off the north);
+//   - the heart: a dais of two square steps (16 and 11 m), its axis on the gap, and on it the altar, a slab of the stones' own stone 9 by 3.4 m
+//     on two low blocks, the ring sigil cut dead in its top;
+//   - the fell: level within the ring (±0.2 m), rolling beyond it and rising to the east and west, scoured to the rock in places; a frozen
+//     tarn 96 m across 180 m to the south-west;
+//   - a 1.75 m post at the foot of a standing stone (the scale, not a person).
+// What the stones were for and why the north is open are the canon's and the quest writer's.
+// -> { group, tris, draws, ground(x, z), R, stones: [{ i, a, x, z, cond, h, lean, low, top }], gap: { a, width }, altar: { y, len, w, top },
+//   tarn: { x, z, r, y }, figure { x, y, z, h, stone } }
+export function northlightAltar(o = {}) {
+  const key = o.key || 'ruins:northlight', r = stream(key), N = 12, R = o.R || 60, SINK = 3, group = new THREE.Group();
+  const TARN = { x: -150, z: 95, r: 48 };
+  const g0 = (x, z) => { const d = Math.hypot(x, z), out = sstep(R + 14, R + 90, d); return .2 * fbm(x / 11, z / 11, 2) + out * (fbm(x / 90, z / 90, 4) * 14 + Math.abs(x) * .035); };
+  TARN.y = +(g0(TARN.x, TARN.z) - .6).toFixed(2);
+  const ground = (x, z) => { const t = Math.hypot(x - TARN.x, z - TARN.z), w = 1 - sstep(TARN.r - 4, TARN.r + 26, t); return g0(x, z) * (1 - w) + (TARN.y - 1.2) * w; };
+  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a); if (!['script', 'sigil'].includes(k) && x.attributes.uv) x.deleteAttribute('uv'); x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  // the fell: a square 1,400 m across, snow scoured to grey rock where the noise is high and away from the ring
+  { const N2 = 220, g = new THREE.PlaneGeometry(1400, 1400, N2, N2); g.rotateX(-Math.PI / 2); const P = g.attributes.position, col = [];
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), y = ground(x, z); P.setY(i, y); const s = sstep(.12, .3, fbm(x / 26 + 7, z / 26, 3)) * sstep(R + 10, R + 60, Math.hypot(x, z));
+      col.push(...[.93, .95, .98].map((v, j) => v * (1 - s) + [.44, .43, .42][j] * s)); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); worldUV(g, .08); B.set('fell', [g]); }
+  { const g = new THREE.CircleGeometry(TARN.r + 6, 64); g.rotateX(-Math.PI / 2); g.translate(TARN.x, TARN.y, TARN.z); put('ice', g); }
+  // one monolith in its own frame: the foot at y 0 (3 m under the snow), w wide, t thick, L to the cap's foot; the cap 2.6 m; +z the face to the heart
+  const mono = (w, t, L) => { const b = new THREE.BoxGeometry(w, L, t, 1, 6, 1); b.translate(0, L / 2, 0); const P = b.attributes.position; for (let i = 0; i < P.count; i++) P.setX(i, P.getX(i) * (1 - P.getY(i) / L / 6));
+    const c = new THREE.CylinderGeometry(.5, Math.SQRT1_2, 1, 4, 1); c.rotateY(Math.PI / 4); c.scale(w * 5 / 6, 2.6, t * .92); c.translate(0, L + 1.3, 0);
+    const g = mergeGeometries([b.toNonIndexed(), c.toNonIndexed()], false); g.deleteAttribute('uv'); return g; };
+  const band = (w, L) => { const h = Math.min(L - 6, 22), g = new THREE.PlaneGeometry(1.8, h); g.translate(0, SINK + 2 + h / 2, 0); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * h / 14.4); return g; };
+  const sock = (g, M) => { g.applyMatrix4(M); return g; }, bb = g => { g.computeBoundingBox(); return g.boundingBox; };
+  const stones = [], dirs = [], conds = ['stand', 'stand', 'stand', 'stand', 'stand', 'stand', 'fallen', 'fallen', 'snapped'].sort(() => r() - .5); let ci = 0;
+  for (let i = 1; i < N; i++) { const a = Math.PI + i * 2 * Math.PI / N + (r() - .5) * .04, x = R * Math.sin(a), z = R * Math.cos(a), ry = a + Math.PI, y0 = ground(x, z);
+    const flank = i === 1 || i === N - 1, cond = flank ? 'stand' : conds[ci++], w = 6 + r(), t = 2.8 + r() * .4, h = flank ? 39.4 : 27.4 + r() * 8, L = h + SINK;
+    const lean = cond === 'stand' && !flank ? (r() - .5) * 8 : 0, lax = r() < .5 ? 'x' : 'z', at = new THREE.Matrix4().makeTranslation(x, y0 - SINK, z).multiply(new THREE.Matrix4().makeRotationY(ry));
+    const parts = [];
+    if (cond === 'stand') { const M = at.clone().multiply(lax === 'x' ? new THREE.Matrix4().makeRotationX(lean * Math.PI / 180) : new THREE.Matrix4().makeRotationZ(lean * Math.PI / 180));
+      parts.push(put('mono', sock(mono(w, t, L), M))); const s = band(w, L); s.translate(0, 0, t / 2 + .03); put('script', sock(s, M)); }
+    else if (cond === 'fallen') { /* fallen whole toward the heart, on its face (the script under it), its foot by its socket, nearly half its thickness in the snow */
+      const g = mono(w, t, L); g.rotateX(Math.PI / 2); g.rotateZ((r() - .5) * .06); const b0 = bb(g); g.translate(0, -b0.min.y - t * .45, -1.5 + (r() - .5));
+      const M = new THREE.Matrix4().makeTranslation(x, y0, z).multiply(new THREE.Matrix4().makeRotationY(ry)); parts.push(put('mono', sock(g, M))); }
+    else { /* snapped: the stump stands, broken jagged; the top lies beside it toward the heart, turned a little */
+      const hs = 6 + r() * 8, Ls = hs + SINK, s = new THREE.BoxGeometry(w, Ls, t, 4, 1, 2); s.translate(0, Ls / 2, 0); const P = s.attributes.position;
+      for (let k = 0; k < P.count; k++) if (P.getY(k) > Ls - .01) P.setY(k, Ls - r() * 1.8); parts.push(put('mono', sock(s, at.clone())));
+      const g = mono(w * (1 - hs / L / 6), t, L - Ls); g.rotateX(Math.PI / 2); const b0 = bb(g); g.rotateY((r() - .5) * .6); g.translate(w * .2, -b0.min.y - t * .45, -2 - (r() * 3));
+      parts.push(put('mono', sock(g, new THREE.Matrix4().makeTranslation(x, y0, z).multiply(new THREE.Matrix4().makeRotationY(ry))))); }
+    // the drift against the north side of anything standing
+    if (cond !== 'fallen') { const d = new THREE.SphereGeometry(1, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2); d.scale(w * .55 + 1.2, 1.4 + r() * .8, 4.5 + r() * 2); d.translate(x, y0 - .3, z - t / 2 - 1.8); put('drift', d); }
+    let low = Infinity, top = -Infinity; for (const p of parts) { const q = bb(p); low = Math.min(low, q.min.y); top = Math.max(top, q.max.y); }
+    stones.push({ i, a: +a.toFixed(3), x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(3), cond, flank, w: +w.toFixed(2), t: +t.toFixed(2), h: +(top - y0).toFixed(1), lean: +lean.toFixed(2), low: +(low - y0).toFixed(2), top: +top.toFixed(2) }); }
+  // the heart: two square steps of 0.8 m on the axis of the gap (north, -z), the altar on two low blocks, the sigil cut dead in its top
+  const altar = (() => { let y = ground(0, 0) - .2; for (const [k, s] of [[0, 16], [1, 11]]) { const g = new THREE.BoxGeometry(s, .8, s); g.translate(0, y + .4, 0); put('step', g); y += .8; }
+    for (const z of [-2.8, 2.8]) { const g = new THREE.BoxGeometry(2.6, .6, 1.4); g.translate(0, y + .3, z); put('step', g); }
+    const len = 9, w = 3.4, h = 1.3, g = new THREE.BoxGeometry(w, h, len, 1, 1, 3); g.translate(0, y + .6 + h / 2, 0); g.deleteAttribute('uv'); put('mono', g);
+    const top = y + .6 + h, s = new THREE.PlaneGeometry(3, 3); s.rotateX(-Math.PI / 2); s.translate(0, top + .01, 0); put('sigil', s); return { y: +y.toFixed(2), len, w, top: +top.toFixed(2) }; })();
+  const figure = (() => { const st = stones.filter(s => s.cond === 'stand' && !s.flank).sort((p, q) => q.x - p.x)[0], h = 1.75, x = st.x * .93, z = st.z * .93, y = ground(x, z), g = new THREE.CylinderGeometry(.2, .24, h, 10); g.translate(x, y + h / 2, z); put('mark', g); return { x: +x.toFixed(2), y: +y.toFixed(2), z: +z.toFixed(2), h, stone: st.i }; })();
+  // the textures: the script (a column of the Weavers' marks cut in the stone, dark in the grooves, nothing lit) and the ring sigil
+  const cut = (w, h, draw, bg = '#2c2f34', fg = '#0d0e10') => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, w, h); x.strokeStyle = fg; x.lineCap = 'round'; draw(x); const t = new THREE.CanvasTexture(c); t.anisotropy = 8; return t; };
+  const marks = x => { const rs = stream(key + ':script'); for (let k = 0; k < 12; k++) { const cy = 44 + k * 84, kind = Math.floor(rs() * 4); x.lineWidth = 7; x.beginPath();
+    if (kind === 0) x.arc(64, cy, 30, 0, 7); else if (kind === 1) { x.arc(64, cy, 30, 0, 7); x.moveTo(64, cy - 38); x.lineTo(64, cy + 38); } else if (kind === 2) { x.arc(64, cy, 30, Math.PI * .1, Math.PI * .9); x.moveTo(94, cy - 6); x.arc(64, cy - 6, 30, 0, -Math.PI, true); }
+    else { x.moveTo(64, cy - 36); x.lineTo(64, cy + 36); for (const d of [-20, 0, 20]) { x.moveTo(44, cy + d); x.lineTo(84, cy + d); } } x.stroke(); } }, scriptT = cut(128, 1024, marks), glowT = o.lit ? cut(128, 1024, marks, '#000', '#fff') : null;
+  const sigilT = cut(512, 512, x => { x.lineWidth = 16; x.beginPath(); x.arc(256, 256, 170, 0, 7); x.stroke(); x.lineWidth = 9; x.beginPath(); x.arc(256, 256, 96, 0, 7); x.stroke(); x.lineWidth = 10; x.beginPath(); x.moveTo(256, 30); x.lineTo(256, 482); x.moveTo(30, 256); x.lineTo(482, 256); x.stroke(); });
+  scriptT.wrapT = THREE.RepeatWrapping; if (glowT) glowT.wrapT = THREE.RepeatWrapping;
+  const snow = mat('plaster', { ns: .3, color: 0xffffff, rough: .95 }); snow.vertexColors = true;
+  const M = { fell: snow, ice: new THREE.MeshStandardMaterial({ color: new THREE.Color(.36, .45, .52), roughness: .2, metalness: .05 }), drift: mat('plaster', { ns: .25, color: 0xf4f7fb, rough: .95 }),
+    mono: mat('rock', { ns: .3, color: 0x6a7079, rough: .3 }), script: new THREE.MeshStandardMaterial({ map: scriptT, roughness: .45, polygonOffset: true, polygonOffsetFactor: -2, ...(glowT ? { emissive: new THREE.Color(.45, .9, 1), emissiveMap: glowT, emissiveIntensity: 1.6 } : {}) }),
+    step: mat('ashlar', { ns: .8, color: 0x8e8c88, rough: .85 }), sigil: new THREE.MeshStandardMaterial({ map: sigilT, roughness: .5, polygonOffset: true, polygonOffsetFactor: -2 }), mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
+  let tris = 0, draws = 0;
+  for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['fell', 'ice', 'sigil', 'script'].includes(k); mesh.receiveShadow = true; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
+  return { group, tris: Math.round(tris), draws, ground, R, stones, gap: (() => { const p = stones[0], q = stones[stones.length - 1]; return { a: Math.PI, width: +(Math.hypot(p.x - q.x, p.z - q.z) - (p.w + q.w) / 2).toFixed(1) }; })(), altar, tarn: TARN, figure, sink: SINK };
 }
