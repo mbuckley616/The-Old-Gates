@@ -1580,7 +1580,8 @@ function loop(now){
     const nearDoorObj2=DOORS.find(d=>d.floor===currentFloor&&Math.hypot(px-d.x,pz-d.z)<TOUCH);
     const iprEl=document.getElementById('ipr');
     /* S1671 — the prompt names what E does: interact()'s order, the knot first and the way out after a chest, a cot, the forge and a barrel */
-    if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
+    if(typeof slideStoneNear==='function'&&slideStoneNear()){iprEl.textContent="Press 'E' on the pale stone";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2409 — a sliding wall */
+    else if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
     else if(typeof gateAltarNear==='function'&&(gateAltarNear()||gateVeinNear())){iprEl.textContent=gateAltarNear()?"Press 'E' to take the arc":(gateVeinLeft(gateVeinNear())>0?"Press 'E' to cut the crystal":'The crystal is all cut out');iprEl.style.opacity='1';iprEl.style.display='block';} /* S2371 */
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
     else if(typeof varekListNear==='function'&&varekListNear()){iprEl.textContent="Press 'E' to take the worn paper";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2174 */
