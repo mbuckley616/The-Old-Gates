@@ -226,6 +226,18 @@ check(`walked from the strand up the spit (the sill ${pw.sill} m) and out along 
 check(`no stone stands in the decks' clear way between the parapets (${pw.inWay} points)`, pw.inWay === 0, pw.inWay);
 check(`the broken span's gap is open water (${pw.gapW && pw.gapW.length} steps at ${pw.gapW && Math.max(...pw.gapW)} m)`, pw.gapW.length >= 2 && pw.gapW.every(h => h < pw.D - 3), pw.gapW);
 check(`its ${pw.sol} solids: a passage's side and a parapet block you on the deck; the stone under a tower and a deck blocks a swimmer`, pw.side && pw.parapet && pw.swimTower && pw.swimSpan, pw);
+// Session 2421: a hull meets the towers. Your ship is laid 70 m out to sea beyond the last tower, on the chain's line, and sailed full
+// ahead at it for 30 s of fixed ticks: she stops with her bow off the stone, in deep water (the stone stops her, not the shallows).
+const sh = await page.evaluate(() => { const S = WONDERS.spires, W = S.W, st = S.site, T = W.towers, a = T[4], b = T[5];
+  const [ax, az] = wonderToWorld(st, a.x, a.z), [bx, bz] = wonderToWorld(st, b.x, b.z), L = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / L, uz = (bz - az) / L;
+  const keep = worldState.ship; worldState.ship = { cls: 'sloop', name: 'Test Helm', sails: 0, cargo: 0 }; WORLD.spawnShip(bx + ux * 70, bz + uz * 70, Math.atan2(ux, uz));
+  const clearAtStart = !hullStoneAhead(SHIP.x, SHIP.z, SHIP.yaw, 1, SHIP.L, SHIP.W); SHIP.sailing = true; HELD_KEYS.KeyW = true;
+  let closest = 1e9, top = 0; for (let k = 0; k < 1800; k++) { tickShip(1 / 60); closest = Math.min(closest, Math.hypot(SHIP.x - bx, SHIP.z - bz)); top = Math.max(top, Math.abs(SHIP.speed)); }
+  HELD_KEYS.KeyW = false; const fx = -Math.sin(SHIP.yaw), fz = -Math.cos(SHIP.yaw), bow = { x: SHIP.x + fx * (SHIP.L / 2 + 2), z: SHIP.z + fz * (SHIP.L / 2 + 2) };
+  const r = { clearAtStart, closest: +closest.toFixed(1), top: +top.toFixed(1), speed: +SHIP.speed.toFixed(2), L: SHIP.L, bed: +(worldH(bow.x, bow.z) - SEA_Y).toFixed(1), bowIn: STATIC_SOL.some(q => q.cell === 'wonder:spires' && solBoxHit(q, bow.x, bow.z, 0)) };
+  SHIP.sailing = false; sc.remove(SHIP.mesh); SHIP.mesh = null; worldState.ship = keep; return r; });
+console.log(JSON.stringify(sh));
+check(`a ship sailed full ahead (${sh.top} m/s) at the last tower stops ${sh.closest} m from its middle, her bow outside the stone, in ${-sh.bed} m of water`, sh.clearAtStart && sh.top > 2 && sh.closest >= 5 + sh.L / 2 && Math.abs(sh.speed) < .5 && !sh.bowIn && sh.bed < -1.4, sh);
 const pd = await page.evaluate(() => { const S = WONDERS.spires; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:spires').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'spires').length }; });
 check('2.5 km off it is dropped, its solids and decks with it', pd.gone && pd.sol === 0 && pd.plats === 0, pd);
 check('no page errors', g.errs.length === 0, g.errs);

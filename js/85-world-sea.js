@@ -312,6 +312,12 @@
     for(const p of P){if(p.lv&&(p.lv==='hi'?h<=1.6:p.lv==='lo'?h>1.6:h>=.5))continue;if(p.r!=null){if(Math.hypot(lx-p.x,lz-p.z)<p.r+R)return true;continue;}
       const cr=Math.cos(p.ry),sr=Math.sin(p.ry),ux=lx-p.x,uz=lz-p.z,bx=ux*cr-uz*sr,bz=ux*sr+uz*cr;if(Math.abs(bx)<p.hx+R&&Math.abs(bz)<p.hz+R)return true;}
     return false;}
+  // S2421 — a hull meets a ruin's stone standing in the sea (the Drowned Spires' towers and the stone under their decks): the wonders'
+  // solids (STATIC_SOL, wonder:true) read at the bow and at both shoulders, a quarter of her length forward of the middle, on the side she
+  // moves to (dir 1 ahead, -1 astern). The bow's probe is the shallows' own (L/2+2 out); a shoulder's 0.5 m off her side.
+  function hullStoneAt(x,z,R){for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(s.wonder&&solBoxHit(s,x,z,R))return true;}return false;}
+  function hullStoneAhead(x,z,yaw,dir,L,W){const fx=-Math.sin(yaw)*dir,fz=-Math.cos(yaw)*dir,rx=-fz,rz=fx,b=L/2+2,q=L/4,w=W/2+.5;
+    return hullStoneAt(x+fx*b,z+fz*b,.5)||hullStoneAt(x+fx*q+rx*w,z+fz*q+rz*w,.5)||hullStoneAt(x+fx*q-rx*w,z+fz*q-rz*w,.5);}
   function shipPropSolid(x,z,R){R=R==null?.3:R;
     if(SHIP.mesh&&Math.hypot(x-SHIP.x,z-SHIP.z)<SHIP.L&&shipPropHit(SHIP.mesh,x,z,R))return true;
     for(const o of OTHER){if(Math.hypot(x-o.x,z-o.z)>(o.L||13))continue;if(shipPropHit(o.mesh,x,z,R))return true;
@@ -836,7 +842,7 @@
       // keep the bow in water
       const probe=Math.sign(SHIP.speed)||1;const bx=SHIP.x+fx*probe*(SHIP.L/2+2),bz=SHIP.z+fz*probe*(SHIP.L/2+2);
       const WMAX=SIZE*GRID;
-      if(worldH(bx,bz)>SEA_Y-1.4||bx<20||bz<20||bx>WMAX-20||bz>WMAX-20){const v=Math.abs(SHIP.speed);const w=v>2&&shipBars().hull>0?shipWear((v-2)*4,0):null;if(w&&w.hull)showMsg(`Aground — she strikes the shallows. Hull −${w.hull}.`,'#ff8060');else if(v>.5)showMsg('Aground — shallows ahead.','#c8b880');SHIP.speed=0;}
+      if(worldH(bx,bz)>SEA_Y-1.4||bx<20||bz<20||bx>WMAX-20||bz>WMAX-20||hullStoneAhead(SHIP.x,SHIP.z,SHIP.yaw,probe,SHIP.L,SHIP.W)){const v=Math.abs(SHIP.speed);const w=v>2&&shipBars().hull>0?shipWear((v-2)*4,0):null;if(w&&w.hull)showMsg(`Aground — she strikes the shallows. Hull −${w.hull}.`,'#ff8060');else if(v>.5)showMsg('Aground — shallows ahead.','#c8b880');SHIP.speed=0;}
       SHIP.x+=fx*SHIP.speed*dt;SHIP.z+=fz*SHIP.speed*dt;
       tickSeaWear(dt,fwd);
       // the player stands at the wheel
@@ -1302,7 +1308,7 @@
       }
       if(tx!=null){const want=Math.atan2(-(tx-o.x),-(tz-o.z));let d=want-o.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));o.yaw+=Math.max(-.5*dt,Math.min(.5*dt,d));o.speed+=((o.top||(o.kind==='pirate'?6.5:4.5))*otherSpeedMul(o)-o.speed)*Math.min(1,dt*.6);}
       const fx=-Math.sin(o.yaw),fz=-Math.cos(o.yaw);const bx=o.x+fx*(o.L/2+3),bz=o.z+fz*(o.L/2+3);
-      if(worldH(bx,bz)>-1.8){o.speed=0;o.wp=null;}
+      if(worldH(bx,bz)>-1.8||hullStoneAhead(o.x,o.z,o.yaw,1,o.L,o.W||o.L/3)){o.speed=0;o.wp=null;} /* S2421 — and a ruin's stone standing in the sea */
       o.x+=fx*o.speed*dt;o.z+=fz*o.speed*dt;placeOther(o);
     }
     tickArrows(dt);
