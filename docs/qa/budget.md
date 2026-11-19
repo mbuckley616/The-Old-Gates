@@ -1413,3 +1413,42 @@ the guards' and gate's follow-ups). The three suites ran one after another alone
 `budgetfield` 489 s, `budgetport` 529 s). Every ceiling held, and no view moved more than 1 call or 13k triangles from s1716: the street
 +1 call at each level (an extra piece in "Other"), the field identical in calls and 9–12k triangles lighter, Portclare's square, the inn's hall
 and the gate identical in calls. Nothing is up 10%; nothing filed.
+
+### s1745 — 2026-11-19 13:07 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 611 | 1.10 M | 0 | 0 | 125 | 145 | 250 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 486, 917k |
+| Dunmore street, noon | Middle | 785 | 1.84 M | 157 | 6 | 125 | 145 | 261 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 633, 1.60 M |
+| Dunmore street, noon | High | 839 | 2.30 M | 194 | 6 | 124 | 145 | 279 | 91 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 688, 2.06 M |
+| Dunmore street, midnight | Low | 665 | 1.06 M | 0 | 0 | 122 | 201 | 250 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 543, 918k |
+| Dunmore street, midnight | Middle | 851 | 1.77 M | 169 | 6 | 122 | 201 | 261 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 726, 1.62 M |
+| Dunmore street, midnight | High | 918 | 2.30 M | 218 | 6 | 122 | 201 | 279 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 786, 2.13 M |
+
+### s1745 — 2026-11-19 13:17 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| the field west of Dunmore, noon | Low | 451 | 529k | 0 | 0 | 56 | 122 | 232 | 41 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 395, 450k |
+| the field west of Dunmore, noon | Middle | 562 | 932k | 87 | 6 | 56 | 122 | 250 | 41 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 505, 849k |
+| the field west of Dunmore, noon | High | 608 | 1.41 M | 124 | 6 | 56 | 122 | 259 | 41 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 551, 1.32 M |
+| the field west of Dunmore, dawn | Low | 536 | 514k | 0 | 0 | 61 | 201 | 232 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 475, 451k |
+| the field west of Dunmore, dawn | Middle | 706 | 984k | 146 | 6 | 61 | 201 | 250 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 642, 912k |
+| the field west of Dunmore, dawn | High | 760 | 1.52 M | 191 | 6 | 61 | 201 | 259 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 690, 1.43 M |
+
+### s1745 — 2026-11-19 13:28 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 365 | 684k | 0 | 0 | 34 | 65 | 191 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 331, 620k |
+| Portclare square, noon | Middle | 560 | 1.45 M | 157 | 6 | 50 | 65 | 207 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 502, 1.31 M |
+| Portclare square, noon | High | 606 | 1.82 M | 192 | 6 | 50 | 65 | 218 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 545, 1.63 M |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 39 | 27k | 0 | 0 | 1 | 0 | 0 | 38 |  | 38, 20k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  | 68, 352k |
+
+Session 2408 (QA): s1745, 12 merges after s1733 (the Lamps on the Water, spells as keys' seals and keys, arrows that fly until they land,
+the capes' fronts and bibs). The three suites ran one after another alone, each green (`budget` 572 s, `budgetfield` 577 s, `budgetport`
+680 s, slower than s1733's 498–529 s in a different container). Every ceiling held, and no view moved more than 2 calls from s1733: the
+street 1–2 calls fewer at every level (one fewer body), the field identical in calls, Portclare's square +1 or +2 at each level (the
+lamps' port is not this one; the extra calls are bodies at Low, nothing named in Other), the inn's hall and the gate identical. Nothing is
+up 10%; nothing filed.
