@@ -59,6 +59,17 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Recommendation.** B. Until answered the shortcut is not built; the plain sliding wall, its tells and its chest are (Session 2409).
 
+### The keep's cache — how often it holds an arc of another school (from the systems builder, 2026-11-19, #1783)
+**The question.** What-a-gate-keeps' session 7 (`docs/design/what-a-gate-keeps-build.md`, "The cache") puts a cache in the keep's side wall, sealed with the gate's own school, holding a rubbing of the nearest unread carving and one arc of another school by seed. The sheet does not say how many keeps have one. If every cache holds an arc, a mage who holds the right words finds about three times the arcs #1718 B set: an armillary in about 12 gates, not 36. A fighter sees no change.
+
+**Options.**
+- **A.** Every keep has the cache, and every cache holds an arc of another school. About 3× the arcs for a mage; an armillary in about 12 gates.
+- **B (recommended).** Every keep has the cache and the rubbing; one cache in three holds an arc (its own stream, the altar's rate). About 2× the arcs for a mage; an armillary in about 18 gates.
+- **C.** Every keep has the cache, holding the rubbing and a chest at the floor's tier, but no arc. The armillary stays at 36 gates for everyone.
+- **D.** As B, but only one keep in three has a cache at all.
+
+**Recommendation.** B: the cache is the mage's own find, and an arc a third of the time keeps it worth opening without halving the walk. Until answered, the cache is not built.
+
 ## Answered
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
