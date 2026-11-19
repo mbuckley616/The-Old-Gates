@@ -3496,6 +3496,16 @@
   // Session 1643 (the critic, 31 Oct): S1634's brow stood 6–8 m under the land behind it, cut into the seaward slope, and the nearest
   // town 250 m inland could not see it. The score now loses WONDER_ABOVE_K for each metre of ground within 100 m that stands over it.
   const WONDER_ABOVE_K=1.5;
+  // Session 2410: the herbs a chunk laid before a wonder's stamp moved its ground (a load or a jump beside the wonder: walked in, the stamp
+  // is laid at 1.6 km, before the chunks) stood on the old ground: 7 m over the Drowned Ring's lough, 2.2 m over the Orrery's platform, one
+  // inside a jamb of the Weavers' ring (S2409's probe). Each herb within reach is set on the ground as it is now, or taken away (as
+  // dropHerbsOnPad takes a pad's) where a solid now stands or the dry ground it stood on has gone under the water; a sea-floor herb (`bed`,
+  // spawnSeaHerbs) is set on the bed as it is now (the lough's is sunk 9 m), or taken away where the bed is no longer under the water. Run at the build and once a second while the wonder stands (S.herbR), so a chunk streamed in mid-build is caught too.
+  // Idempotent: a herb already on the ground is only set where it is.
+  function wonderSeatHerbs(x,z,reach){const HL=(ZONES.world&&ZONES.world.herbs)||[];let n=0;
+    for(let i=HL.length-1;i>=0;i--){const h=HL[i];if(Math.hypot(h.x-x,h.z-z)>=reach)continue;const y=worldH(h.x,h.z);
+      if(h.bed?y>-1.2:solidAt(h.x,h.z)||y<SEA_Y+.2&&h.g.position.y>=SEA_Y+.2){HL.splice(i,1);h.offPad=true;h.g.visible=false;if(h.gl)h.gl.intensity=0;n++;}else h.g.position.y=y;if(h.inst)syncHerbInstance(h);}
+    return n;}
   function wonderOrrerySite(){const S=WONDERS.orrery;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],au=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='aurenne');if(!au.length)return null;
@@ -3530,6 +3540,7 @@
     S.plats=W.plats.map(p=>({x0:st.x-p.r,x1:st.x+p.r,z0:st.z-p.r,z1:st.z+p.r,y:p.y,wonder:'orrery',inside:(wx,wz)=>Math.hypot(wx-st.x,wz-st.z)<p.r}));S.plats.forEach(p=>ZONES.world.platforms.push(p));
     S.sol=[];W.cols.forEach(c=>{const [x,z]=wonderToWorld(st,c.x,c.z);S.sol.push({cx:x,cz:z,rx:.7,rz:.7,cell:'wonder:orrery',h:c.h,wonder:true});});
     S.sol.push({cx:st.x,cz:st.z,rx:2.7,rz:2.7,cell:'wonder:orrery',h:3,wonder:true});S.sol.forEach(q=>STATIC_SOL.push(q));
+    S.herbR=44;wonderSeatHerbs(st.x,st.z,S.herbR);
     return W;}
   function wonderOrreryDrop(){const S=WONDERS.orrery;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:orrery')STATIC_SOL.splice(i,1);S.sol=[];
@@ -3575,6 +3586,7 @@
     S.plats.forEach(p=>ZONES.world.platforms.push(p));
     S.sol=[];W.piers.forEach(p=>{if(p.fallen)return;const [x,z]=wonderToWorld(st,p.x,p.z),a=p.a+st.ry,e=3.1*(Math.abs(Math.cos(a))+Math.abs(Math.sin(a)));S.sol.push({cx:x,cz:z,rx:e,rz:e,cell:'wonder:lough',h:p.h,wonder:true});});
     S.sol.forEach(q=>STATIC_SOL.push(q));
+    {const q=S.stamps&&S.stamps[0];S.herbR=q?q.r+q.blend:60;wonderSeatHerbs(st.x,st.z,S.herbR);}
     return W;}
   function wonderLoughDrop(){const S=WONDERS.lough;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:lough')STATIC_SOL.splice(i,1);S.sol=[];
@@ -3625,6 +3637,7 @@
     S.sol=[];const J=W.jamb,box=(lx,lz,a,h)=>{const c=Math.cos(a+st.ry),s_=Math.sin(a+st.ry);for(const u of [-.25,.25])for(const v of [-.25,.25]){const ox=u*J.w,oz=v*J.d,[x,z]=wonderToWorld(st,lx+ox*Math.cos(a)+oz*Math.sin(a),lz-ox*Math.sin(a)+oz*Math.cos(a));
         S.sol.push({cx:x,cz:z,rx:(Math.abs(c)*J.w+Math.abs(s_)*J.d)/4,rz:(Math.abs(s_)*J.w+Math.abs(c)*J.d)/4,cell:'wonder:ring',h,wonder:true});}};
     W.bays.forEach(b=>b.jambs.forEach(j=>box(j.x,j.z,b.a,J.h)));W.gone.forEach(g=>box(g.x,g.z,Math.PI,g.h));S.sol.forEach(q=>STATIC_SOL.push(q));
+    S.herbR=128;wonderSeatHerbs(st.x,st.z,S.herbR);
     return W;}
   function wonderRingDrop(){const S=WONDERS.ring;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:ring')STATIC_SOL.splice(i,1);S.sol=[];
@@ -3675,10 +3688,7 @@
       inside:(wx,wz)=>{const dx=wx-st.x,dz=wz-st.z;return Math.abs(dx*c-dz*s_)<p.s/2&&Math.abs(dx*s_+dz*c)<p.s/2;}}));S.plats.forEach(p=>ZONES.world.platforms.push(p));
     S.sol=W.sol.map(b=>{const [x,z]=wonderToWorld(st,b.x,b.z);return {cx:x,cz:z,rx:b.w/2,rz:b.d/2,c:Math.cos(st.ry+b.ry),s:Math.sin(st.ry+b.ry),h:b.h,cell:'wonder:northlight',wonder:true};});
     S.sol.forEach(q=>STATIC_SOL.push(q));
-    // the herbs laid before the terrace was cut (the stamp moves the ground up to 12 m): each within its reach set on the ground as it is
-    // now, or taken away where a stone now stands (as dropHerbsOnPad takes a pad's)
-    const HL=(ZONES.world&&ZONES.world.herbs)||[];for(let i=HL.length-1;i>=0;i--){const h=HL[i];if(h.bed||Math.hypot(h.x-st.x,h.z-st.z)>=96)continue;
-      if(solidAt(h.x,h.z)){HL.splice(i,1);h.offPad=true;h.g.visible=false;if(h.gl)h.gl.intensity=0;}else h.g.position.y=worldH(h.x,h.z);if(h.inst)syncHerbInstance(h);}
+    S.herbR=96;wonderSeatHerbs(st.x,st.z,S.herbR);
     return W;}
   function wonderNorthDrop(){const S=WONDERS.northlight;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:northlight')STATIC_SOL.splice(i,1);S.sol=[];
@@ -3693,5 +3703,6 @@
         const st=K.site();if(!st)continue;const near=Math.hypot(px-st.x,pz-st.z)<WONDERS.near;
         if(near&&S.W&&S.W.sig!==wonderCellSig(st))K.drop(); /* a cell under it came or went: build it over the ground as it is now */
         if(near&&!S.W)K.build();else if(!near&&S.W)K.drop();}
+      if(due&&S.W&&S.herbR&&S.site)wonderSeatHerbs(S.site.x,S.site.z,S.herbR); /* S2410 — a chunk streamed in under it since */
       if(S.W)S.W.tick(t/1000,wonderAwake());}}
   const SETTLE_MAT=VC_MAT;
