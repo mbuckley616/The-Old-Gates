@@ -7666,7 +7666,12 @@ function gkMats(school, cond) { const k = school + '|' + cond; if (_gkMats[k]) r
   M.ring = new THREE.MeshStandardMaterial({ color: new THREE.Color(.05, .045, .04), emissive: new THREE.Color(...glow), emissiveIntensity: gk, emissiveMap: gkRingTex(), roughness: .6 });
   M.crack = new THREE.MeshStandardMaterial({ color: new THREE.Color(.012, .01, .01), roughness: 1 });
   M.seam = new THREE.MeshStandardMaterial({ color: new THREE.Color(.1, .04, .2), emissive: new THREE.Color(...GK_VIOLET), emissiveIntensity: 1.1, roughness: .4 });
+  M.cut = gkCut(col, gkGlyphTex()); M.cutRing = gkCut(col, gkRingTex());
   return (_gkMats[k] = M); }
+// Session 2425: the script and the sigil cut dead into the stone (a piece built with o.cut): only the glyphs' strokes are drawn, the
+// stone in shadow at the groove's floor, and the face shows through round them. The plain dead plate (the kit's near-black, under every
+// glyph's quad) read by day as a black hole in the stone: a 6.5 m square on each Drowned Spire (S2419's note)
+function gkCut(col, tex) { return new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(.2), alphaMap: tex, alphaTest: .3, roughness: .95, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }); }
 const gkStone = (w, h, d, x, y, z, s = .25, joint = .03) => { const g = new THREE.BoxGeometry(Math.max(.02, w - joint), Math.max(.02, h - joint), Math.max(.02, d - joint)); g.translate(x, y, z); return worldUV(g, s); };
 function gkScriptQuad(w, h, x, y, z, n, rep = 1) { const g = new THREE.PlaneGeometry(w, h), uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i), uv.getY(i) * rep);
   g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), n.clone().normalize())); g.translate(x, y, z); return g; }
@@ -7757,7 +7762,7 @@ function gkCondition(P, cond, key) {
         kind = 'fallen'; st.fallen++; seat = true; }
       st.moved++; }
     const ML = kind === 'fallen' ? M : M.clone().premultiply(L);
-    for (const p of b.parts) out.push({ key: (p.key === 'script' || p.key === 'ring') && (kind === 'fallen' || P.ruin) ? 'dead' : p.key === 'script' && cond === 'cracked' && r() < .33 ? 'dead' : p.key, geo: p.geo.clone().applyMatrix4(ML), kind });
+    for (const p of b.parts) { const dead = (p.key === 'script' || p.key === 'ring') && (kind === 'fallen' || P.ruin) || p.key === 'script' && cond === 'cracked' && r() < .33; out.push({ key: !dead ? p.key : !P.cut ? 'dead' : p.key === 'ring' ? 'cutRing' : 'cut', geo: p.geo.clone().applyMatrix4(ML), kind }); }
     if (cond === 'cracked' && b.parts[0].key !== 'dress' && r() < .3) for (const g of gkCrack(r, b)) { out.push({ key: 'crack', geo: g.applyMatrix4(ML) }); st.cracks++; }
     if (seat && !P.ruin) { const bb = b.box, w = bb.max.x - bb.min.x - .08, d = bb.max.z - bb.min.z - .08, g = new THREE.BoxGeometry(Math.max(.05, w), .05, Math.max(.05, d)); g.translate(b.c.x, bb.min.y + .03, b.c.z); out.push({ key: 'seam', geo: g.applyMatrix4(L) }); st.seams++;
       if (kind === 'floating') { const u = new THREE.BoxGeometry(Math.max(.05, w), .05, Math.max(.05, d)); u.translate(b.c.x, bb.min.y - .03, b.c.z); out.push({ key: 'seam', geo: u.applyMatrix4(M) }); st.seams++; } } }
@@ -7765,14 +7770,14 @@ function gkCondition(P, cond, key) {
 // the piece's parts by material key, each geometry non-indexed with position, normal and uv (for merging into a wonder), and its stats;
 // `standing` is the box of what still stands on its foot (the piece's frame), for the solids
 function gkParts(kind, o = {}) { const cond = ['whole', 'cracked', 'broken'].includes(o.cond) ? o.cond : 'whole', school = GK_SCHOOLS[o.school] ? o.school : 'cloch', key = o.key || `gatekit:${kind}`;
-  const P = GK_BUILD[kind](o); P.ruin = !!o.ruin; if (typeof o.ground === 'number') P.ground = o.ground; /* S2419: where a fallen stone rests, in the piece's frame */ const { parts, st } = gkCondition(P, cond, key), by = {}, standing = new THREE.Box3(), floorIn = new THREE.Box3();
+  const P = GK_BUILD[kind](o); P.ruin = !!o.ruin; P.cut = !!o.cut; /* S2425: dead script cut into the stone, not a dark plate */ if (typeof o.ground === 'number') P.ground = o.ground; /* S2419: where a fallen stone rests, in the piece's frame */ const { parts, st } = gkCondition(P, cond, key), by = {}, standing = new THREE.Box3(), floorIn = new THREE.Box3();
   for (const p of parts) { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
     if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); (by[p.key] ||= []).push(g);
     if (p.kind === 'in' && p.key === 'stone') { g.computeBoundingBox(); standing.union(g.boundingBox); }
     if (p.kind !== 'fallen' && p.key === 'floor') { g.computeBoundingBox(); floorIn.union(g.boundingBox); } }
   return { by, M: gkMats(school, cond), st, size: P.size, standing, floorIn, cond, school, key }; }
 function gatePiece(kind, o = {}) { const R = gkParts(kind, o), G = new THREE.Group(); let tris = 0, calls = 0;
-  for (const k in R.by) { const geo = mergeGeometries(R.by[k]), m = new THREE.Mesh(geo, R.M[k]); m.castShadow = o.shadow !== false && !['script', 'ring', 'seam', 'crack', 'dead'].includes(k); m.receiveShadow = true; m.userData.key = k; G.add(m); tris += geo.attributes.position.count / 3; calls++; }
+  for (const k in R.by) { const geo = mergeGeometries(R.by[k]), m = new THREE.Mesh(geo, R.M[k]); m.castShadow = o.shadow !== false && !['script', 'ring', 'seam', 'crack', 'dead', 'cut', 'cutRing'].includes(k); m.receiveShadow = true; m.userData.key = k; G.add(m); tris += geo.attributes.position.count / 3; calls++; }
   G.userData = { kind, cond: R.cond, school: R.school, key: R.key, tris: Math.round(tris), calls, ...R.st, size: R.size, standing: R.standing }; return G; }
 // wrongness.js's Weaver door (the concept artist, 1 Nov; backlog L5, OG-096's "a Weaver ruin, ancient, purposeful and slightly wrong";
 // Michael's B on #1005, "one impossible element each, nothing lit"; Session 1782): the gate kit's pointed arch, whole, at half its size
@@ -8220,11 +8225,11 @@ function aurenneOrrery(hAt, o = {}) {
     const m4 = (x, y, z, ry, k = K) => new THREE.Matrix4().makeTranslation(x, y, z).multiply(new THREE.Matrix4().makeRotationY(ry)).multiply(new THREE.Matrix4().makeScale(k, k, k));
     const hOut = i => pts[Math.min(N - 1, i + 1)][2]; /* a tower turns to the mean of its two spans' headings (ruins.js, S2419) */
     pts.forEach(([x, z, h], i) => { const hd = i === 0 ? hOut(0) : i === N - 1 ? h : (h + hOut(i)) / 2, ry = -hd, cond = conds[i], bed = hAt(x, z);
-      const W0 = gkParts('pier', { cond: 'whole', school: 'cloch', key: `${key}:tower:${i}:lo`, ruin: true, passage: { y: (DECK - FOOT) / K, h: PASS.h / K, w: PASS.w / K } }), h0 = W0.size.h - .5, T0 = m4(x, FOOT, z, ry); lay(W0, T0);
-      const UP = FOOT + h0 * K, W = gkParts('pier', { cond, school: 'cloch', key: `${key}:tower:${i}`, ruin: true, ground: (bed - .4 - UP) / K }), T = m4(x, UP, z, cond === 'broken' ? ry + Math.PI / 2 : ry); /* a broken tower's upper pier turned a quarter, so its stones fall across the chain, not through the decks (ruins.js, S2419) */
+      const W0 = gkParts('pier', { cond: 'whole', school: 'cloch', key: `${key}:tower:${i}:lo`, ruin: true, cut: true, passage: { y: (DECK - FOOT) / K, h: PASS.h / K, w: PASS.w / K } }), h0 = W0.size.h - .5, T0 = m4(x, FOOT, z, ry); lay(W0, T0);
+      const UP = FOOT + h0 * K, W = gkParts('pier', { cond, school: 'cloch', key: `${key}:tower:${i}`, ruin: true, cut: true, ground: (bed - .4 - UP) / K }), T = m4(x, UP, z, cond === 'broken' ? ry + Math.PI / 2 : ry); /* a broken tower's upper pier turned a quarter, so its stones fall across the chain, not through the decks (ruins.js, S2419) */
       let top = -Infinity; for (const g of W.by.stone || []) { g.applyMatrix4(T); g.computeBoundingBox(); top = Math.max(top, g.boundingBox.max.y); put('stone', g); } for (const k in W.by) if (k !== 'stone') for (const g of W.by[k]) { g.applyMatrix4(T); put(k, g); }
       const lean = (W.st.lean || 0) * Math.PI / 180, M4 = T.clone().multiply(new THREE.Matrix4().makeRotationX(lean));
-      if (cond === 'cracked') { const h1 = W.size.h; { const g = new THREE.BoxGeometry(5.6, .7, 5.6); g.translate(0, h1 + .35, 0); worldUV(g, .25); put('corbel', g.applyMatrix4(M4)); }
+      if (cond === 'cracked') { const h1 = W.size.h; { const g = new THREE.BoxGeometry(5.6, .7, 5.6); g.translate(0, h1 + .35, 0); worldUV(g, .25); put('stone', g.applyMatrix4(M4)); } /* the corbel band is the shaft's stone, as in ruins.js (S2425: its own draw went to the cut sigil) */
         const c = new THREE.ConeGeometry(5.6 / Math.SQRT2 * .96, 16 / K, 4, 3); c.rotateY(Math.PI / 4); c.translate(0, h1 + .7 + 8 / K, 0); worldUV(c, .25); put('spire', c.applyMatrix4(M4)); top = Math.max(top, UP + (h1 + .7 + 16 / K) * K); }
       const yb = Math.max(bed, SEA - 2.3), yt = SEA + 1.6; if (yt > yb + .2) { const g = new THREE.BoxGeometry(4.06, (yt - yb) / K, 4.06); g.translate(0, ((yt + yb) / 2 - FOOT) / K, 0); worldUV(g, .25); put('weed', g.applyMatrix4(T0)); }
       // its solids: the passage's two sides whole, the stone under its floor walked over at the deck; its floor the deck
@@ -8232,7 +8237,7 @@ function aurenneOrrery(hAt, o = {}) {
       sol.push({ x, z, w: PASS.w, d: 10, ry, top: DECK }); plats.push({ x, z, w: PASS.w, d: 10.2, ry, y: DECK, tower: i });
       towers.push({ i, x: +x.toFixed(2), z: +z.toFixed(2), hd: +hd.toFixed(4), ry: +ry.toFixed(4), cond, foot: +FOOT.toFixed(2), bed: +bed.toFixed(2), top: +top.toFixed(2), lean: W.st.lean }); });
     for (let i = 0; i < N - 1; i++) { const [xa, za] = pts[i], [xb, zb] = pts[i + 1], x = (xa + xb) / 2, z = (za + zb) / 2, hd = pts[i + 1][2], ry = Math.PI / 2 - hd, cond = spanConds[i];
-      const W = gkParts('bridge', { cond, school: 'cloch', key: `${key}:span:${i}`, ruin: true, ground: (hAt(x, z) - .4 - BASE) / K }); lay(W, m4(x, BASE, z, ry));
+      const W = gkParts('bridge', { cond, school: 'cloch', key: `${key}:span:${i}`, ruin: true, cut: true, ground: (hAt(x, z) - .4 - BASE) / K }); lay(W, m4(x, BASE, z, ry));
       // what of the deck is still in place, along the span (the broken one keeps one end): walked at the deck between the parapets, solid under it, the parapets solid
       const f = W.floorIn, x0 = Math.max(-8, f.min.x) * K, x1 = Math.min(8, f.max.x) * K, mx = (x0 + x1) / 2, L = x1 - x0, ux = Math.cos(ry), uz = -Math.sin(ry), cx = x + ux * mx, cz = z + uz * mx, vx = Math.sin(ry), vz = Math.cos(ry);
       if (L > .5) { sol.push({ x: cx, z: cz, w: L, d: 10, ry, top: DECK }); plats.push({ x: cx, z: cz, w: L + .2, d: 8, ry, y: DECK, span: i });
@@ -8240,11 +8245,11 @@ function aurenneOrrery(hAt, o = {}) {
       spans.push({ i, x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(4), cond, x0: +x0.toFixed(2), x1: +x1.toFixed(2), fallen: W.st.fallen }); }
     if (!_dsMats) { const pale = new THREE.Color(.70, .66, .60).convertLinearToSRGB(), dead = new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .085, .08), roughness: .9 });
       _dsMats = { stone: mat('ashlar', { ns: 1.0, color: pale }), dress: mat('ashlar', { ns: .7, color: pale.clone().multiplyScalar(.82) }), floor: mat('slab', { ns: .8, color: pale.clone().multiplyScalar(.75), rough: .5 }), dead, crack: new THREE.MeshStandardMaterial({ color: new THREE.Color(.012, .01, .01), roughness: 1 }),
-        corbel: mat('ashlar', { ns: .8, color: 0xb2ab9e, rough: .85 }), spire: mat('ashlar', { ns: .8, color: 0xa8a294, rough: .85 }), weed: mat('rock', { ns: 1.4, color: 0x3a3a22, rough: .7 }) }; }
+        cut: gkCut(pale, gkGlyphTex()), cutRing: gkCut(pale, gkRingTex()), spire: mat('ashlar', { ns: .8, color: 0xa8a294, rough: .85 }), weed: mat('rock', { ns: 1.4, color: 0x3a3a22, rough: .7 }) }; }
     let tris = 0, draws = 0;
     for (const [k, gs] of B) { const clean = gs.map(g => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a); if (!x.attributes.normal) x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); return x; });
       const g = mergeGeometries(clean); clean.forEach(x => x.dispose()); const m = new THREE.Mesh(g, _dsMats[k] || _dsMats.dead); m.name = 'spires:' + k; m.userData.key = k;
-      m.castShadow = !['dead', 'crack', 'weed'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
+      m.castShadow = !['dead', 'cut', 'cutRing', 'crack', 'weed'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
     return { group, tris: Math.round(tris), draws, deck: DECK, sea: SEA, towers, spans, sol, plats, passage: { ...PASS }, k: K, gap: 16 * K, tick() {} };
   }
   // ── the Gatelands' monastic ruin (Session 1715, card F8; OG-121's Gatelands panel; the prototype is places.js's gatelandsAbbey, Session
