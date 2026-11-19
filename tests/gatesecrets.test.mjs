@@ -70,6 +70,9 @@ if (pick) {
     const R = worldState.gateSecrets && worldState.gateSecrets[currentPortal.seed];
     return { found: true, shut, first, open, again, shown: q.shut.visible, rec: R && R.o.slice(), n: q.n }; }, pick.id);
   console.log('run', JSON.stringify(run));
+  // S2423 — every kind is laid now (the sheet's session 5): each secret the gate draws is built
+  const laid = await page.evaluate(() => ({ drawn: GATE_SECRETS_GEN.secrets.map(s => s.kind), built: GATE_SECRETS.filter(s => s.kind !== 'barricade').map(s => s.kind), every: Object.keys(SECRET_BUILT).sort().join() }));
+  check(`every secret the gate draws is laid (${laid.built.join(', ')}), every kind built (${laid.every})`, laid.built.join() === laid.drawn.join() && laid.every === 'lift,plates,seal,slide,sluice,stair,turn', laid);
   check(`in the gate its mouth is rock until opened (${pick.school}, ${pick.id})`, run.found && run.shut, run);
   check('openSecret opens it for good: the rock gone, kept in the world\'s record, and a second call does nothing', run.first && run.open && !run.again && !run.shown && JSON.stringify(run.rec) === JSON.stringify([run.n]), run);
 }

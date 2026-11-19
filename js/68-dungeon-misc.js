@@ -1045,7 +1045,7 @@ function gateSecrets(gen,seed,size,school){
 const SECRET_BAR_P=1/4,SECRET_BAR_BLOWS=3;
 const SECRET_N={tiny:1,small:1,medium:2,large:3,massive:4};
 const SECRET_MECH=['slide','stair','lift','sluice','turn','plates'],SECRET_ONCE={turn:1,plates:1};
-const SECRET_BUILT={seal:1,slide:1,stair:1,sluice:1,lift:1}; /* the kinds laid so far: the turning chamber and the plates come in session 5 */
+const SECRET_BUILT={seal:1,slide:1,stair:1,sluice:1,lift:1,turn:1,plates:1}; /* every kind is laid since S2423 (the sheet's session 5) */
 // the world's record of a gate's secrets: o, the opened ones' numbers; t, what is left in each one's chest (session 2)
 function gateSecretRec(seed){const G=worldState.gateSecrets||(worldState.gateSecrets={});return G[seed]||(G[seed]={o:[],t:{}});}
 function gateSecretOpen(seed,n){const G=worldState.gateSecrets,R=G&&G[seed];return !!(R&&R.o&&R.o.indexOf(n)>=0);}
@@ -1078,6 +1078,8 @@ function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR
     else if(t.kind==='stair'){stairBuild(t,rec,grp,y,opened);chestY=y-STAIR_DROP;} /* S2416 — the chest in the cellar, against the far wall */
     else if(t.kind==='sluice')sluiceBuild(t,rec,grp,y,cx,cz,opened); /* S2417 */
     else if(t.kind==='lift')liftBuild(t,rec,grp,y,gen,opened); /* S2418 */
+    else if(t.kind==='plates'){platesBuild(t,rec,grp,y,opened,portal);chestAt=rec.chestAt;} /* S2423 */
+    else if(t.kind==='turn'){turnBuild(t,rec,grp,y,opened);chestAt=rec.chestAt;} /* S2423 */
     else if(SECRET_SEAL_SHUT[t.school]){const x=cx+t.dc*(Hc-.3),z=cz+t.dr*(Hc-.3),h=Math.min(FLOOR_HEIGHT,6);
       const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),mat);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;rec.kx=x;rec.kz=z;
       rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
@@ -1110,14 +1112,14 @@ function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR
 // a seal's chest: what is left in it is the world's once opened (t[n]), else rolled on its own key a tier above the floor. Solas's
 // stands in its niche and is in the gate's chests only once the niche turns open.
 function secretChest(t,portal,rec,x,z,yy,G0){const was=G0&&G0.t&&Array.isArray(G0.t[t.n]),key=t.id+':chest';
-  const up=t.kind==='seal'?SECRET_TIER_UP:0; /* #1757's B: a seal's chest a tier above its floor, a mechanism's at the floor's own */
-  const items=was?G0.t[t.n]:rollContainerLoot('chest',portal.diffScale,portal.theme,undefined,key,Math.min(4,dungeonTier(portal,t.floor)+up));
+  const up=t.kind==='seal'||t.kind==='plates'?SECRET_TIER_UP:0; /* #1757's B: a seal's chest a tier above its floor, a mechanism's at the floor's own; S2423 — the plates' cache a rich chest a tier above */
+  const items=was?G0.t[t.n]:rollContainerLoot(t.kind==='plates'?'treasure':'chest',portal.diffScale,portal.theme,undefined,key,Math.min(4,dungeonTier(portal,t.floor)+up));
   if(was)foundRestore(items);
   const group=new THREE.Group(),lid=buildChestShell(group,.75,0x6e5a40).lid;group.scale.setScalar(DCELL);group.position.set(x,yy,z);group.name='secretChest';
   group.rotation.y=t.dc?(t.dc<0?Math.PI/2:-Math.PI/2):(t.dr<0?0:Math.PI);dScene.add(group); /* its front to the room's mouth */
   const ch={id:key,x,z,y:yy-rec.y,standY:yy,opened:was,lid,floor:t.floor,mesh:group,items,displayName:'Chest',secret:t.id};
   if(was&&lid)lid.rotation.x=-Math.PI/3;
-  if((t.school==='solas'||t.kind==='stair')&&!rec.opened)group.visible=false;else if(!(t.kind==='sluice'&&!rec.opened))CHESTS.push(ch); /* S2416 — the cellar's, too; S2417 — the sluice's is seen behind its grate, and taken once it is open */
+  if((t.school==='solas'||t.kind==='stair'||t.kind==='plates'||t.kind==='turn')&&!rec.opened)group.visible=false;else if(!(t.kind==='sluice'&&!rec.opened))CHESTS.push(ch); /* S2416 — the cellar's, too; S2417 — the sluice's is seen behind its grate, and taken once it is open */
   return ch;}
 // openSecret: the named action. A secret of the gate you stand in opens for good: its number is kept in the world's record, a shut
 // mouth's rock goes, and its key's mark stays (the braziers lit, the water frozen, the script lit, the niche open).
@@ -1130,7 +1132,9 @@ function openSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.o
   if(rec.kind==='stair')stairOpen(rec); /* S2416 */
   if(rec.kind==='sluice')sluiceOpen(rec); /* S2417 */
   if(rec.kind==='lift')liftOpen(rec); /* S2418 */
-  if(rec.chest&&CHESTS.indexOf(rec.chest)<0){rec.chest.mesh.visible=true;CHESTS.push(rec.chest);}
+  if(rec.kind==='plates'&&rec.cache){rec.cache.visible=false;const i=DUNGEON_PROPS.indexOf(rec.cacheSolid);if(i>=0)DUNGEON_PROPS.splice(i,1);} /* S2423 */
+  if(rec.kind==='turn')turnOpen(rec); /* S2423 — its chest is shown once the drum has turned (turnTick) */
+  else if(rec.chest&&CHESTS.indexOf(rec.chest)<0){rec.chest.mesh.visible=true;CHESTS.push(rec.chest);}
   return true;}
 // takeSecret: the named action. A seal's chest opened: from now on its list is the world's record's, so what you take stays taken
 function takeSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id),ch=rec&&rec.chest;if(!ch||CHESTS.indexOf(ch)<0)return false;
@@ -1148,6 +1152,8 @@ function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!c
     if(rec.kind==='stair'){if(STAIR_PRY&&STAIR_PRY.rec===rec)stairPryTick(rec,here);continue;}
     if(rec.kind==='sluice'){sluiceTick(rec,here);continue;}
     if(rec.kind==='lift'){liftTick(rec,here);continue;}
+    if(rec.kind==='plates'){platesTick(rec,here);continue;} /* S2423 */
+    if(rec.kind==='turn'){turnTick(rec,here);continue;} /* S2423 */
     if(rec.opened)continue;
     if(rec.school==='tine'){const B=rec.braziers||[];for(const b of B)if(b.lit&&b.litAt==null)b.litAt=playClockS;
       if(B.length===2&&B[0].lit&&B[1].lit&&Math.abs(B[0].litAt-B[1].litAt)<=SECRET_TINE_S){secretOpenSay(rec);continue;}
@@ -1444,3 +1450,118 @@ function liftTick(rec,here){
   if(rec.downAt==null||!rec.bridge||rec.bridge.h<=0)return;const k=Math.min(1,(playClockS-rec.downAt)/LIFT_DOWN_S);
   if(rec.vane&&k<1)rec.vane.mesh.rotation.y+=.2;
   liftPlace(rec,LIFT_HANG*(1-k*k));if(k>=1){if(FOOTHOLDS.indexOf(rec.bridge.hold)<0)FOOTHOLDS.push(rec.bridge.hold);try{sfxNoise(.6,0,0,.2,120);}catch(e){}}}
+// S2423 — the plates in sequence and the script (the sheet's session 5; its tables B and "The script"). Four plates in a row across the
+// room, 2.2 m short of its far wall, one already sunk; above them, on the far wall, a lintel cut in the script; against the wall behind
+// them a sealed cache, a stone block round a rich chest a tier above the floor (#1757's B, built until it is answered). The order is the
+// secret's own (seededRng('plates', id)), and the sunk plate is its first, so three plates are left: six orders. A plate is pressed by
+// stepping onto it (pressPlate, the named action); when the three free plates are down, the right order opens the cache for good and a
+// wrong one fires the plates' spikes for 12% of your health, the same in every gate, and the three rise again. The script on the lintel
+// is read once for good (readScript, the named action; the world's record's r): for one banked reading, or for 1 Cold by an Old Blood
+// reader who chooses it (Shift+E), or for nothing by one who holds all four words of the gate's school. Read, the lintel shows each
+// plate's place in the order as cut marks over it. Placeholders: the look builder's session 7.
+const PLATES_N=4,PLATES_HURT=.12,PLATE_HALF=.4,PLATES_IN=2.2,PLATES_LINTEL_Y=2.3,PLATES_SPIKE_S=.6;
+function plateOrder(id,n){const r=seededRng('plates',id),o=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(r()*(i+1));[o[i],o[j]]=[o[j],o[i]];}return o;}
+// the room's frame for a mechanism's layout: at(d, s) is d metres in from the far wall and s across, to the right of one walking in
+function secretFrame(t,A){const far=t.dc?(t.dc>0?A.x1:A.x0):(t.dr>0?A.z1:A.z0),near=t.dc?(t.dc>0?A.x0:A.x1):(t.dr>0?A.z0:A.z1),mx=(A.x0+A.x1)/2,mz=(A.z0+A.z1)/2;
+  const rx=-t.dr,rz=t.dc,Wd=t.dc?A.z1-A.z0:A.x1-A.x0,D=Math.abs(far-near);
+  return {mx,mz,Wd,D,rx,rz,at:(d,s)=>t.dc?[far-t.dc*d,mz+rz*(s||0)]:[mx+rx*(s||0),far-t.dr*d]};}
+function platesBuild(t,rec,grp,y,opened,portal){const F=secretFrame(t,rec.area),stone=new THREE.MeshLambertMaterial({color:0x6a665e});
+  const sp=Math.min(1.2,(F.Wd-.8)/PLATES_N),sz=Math.min(PLATE_HALF*2,sp-.2),order=plateOrder(t.id,PLATES_N);
+  rec.order=order;rec.pressed=[];rec.onPlate=-1;rec.plates=[];rec.plateSchool=gateOrbSchool(portal);
+  for(let i=0;i<PLATES_N;i++){const [x,z]=F.at(PLATES_IN,(i-(PLATES_N-1)/2)*sp),m=new THREE.Mesh(new THREE.BoxGeometry(sz,.1,sz),stone);m.position.set(x,y+.05,z);grp.add(m);
+    const spikes=new THREE.Group();for(let k=0;k<4;k++){const c=new THREE.Mesh(new THREE.ConeGeometry(.05,.45,5),new THREE.MeshLambertMaterial({color:0x8a8a8a}));c.position.set((k%2-.5)*sz*.5,.2,((k>>1)-.5)*sz*.5);spikes.add(c);}
+    spikes.position.set(x,y,z);spikes.visible=false;grp.add(spikes);
+    rec.plates.push({x,z,half:sz/2,mesh:m,spikes,sunk:i===order[0]||opened});}
+  for(const p of rec.plates)p.mesh.position.y=y+(p.sunk?-.02:.05);
+  // the lintel over them on the far wall, and the cut marks shown once the script is read
+  const span=sp*PLATES_N+.4,[lx,lz]=F.at(.12,0),lin=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.24:span,.5,t.dc?span:.24),new THREE.MeshLambertMaterial({color:0x4d4a44}));
+  lin.position.set(lx,y+PLATES_LINTEL_Y,lz);grp.add(lin);rec.lintel={x:lx,z:lz,y:y+PLATES_LINTEL_Y,mesh:lin};rec.kx=lx;rec.kz=lz;
+  const glyph=new THREE.MeshLambertMaterial({color:0xb8b0a0});
+  for(let g=0;g<7;g++){const [gx,gz]=F.at(.24,(g-3)*span/8),q=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.02:.1,.22,t.dc?.1:.02),glyph);q.position.set(gx,y+PLATES_LINTEL_Y+.02,gz);grp.add(q);}
+  rec.marks=new THREE.Group();rec.marks.visible=false;grp.add(rec.marks);
+  for(let i=0;i<PLATES_N;i++){const n=order.indexOf(i)+1;for(let k=0;k<n;k++){const [mx,mz]=F.at(.25,(i-(PLATES_N-1)/2)*sp+(k-(n-1)/2)*.07),q=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.02:.03,.18,t.dc?.03:.02),glyph);
+    q.position.set(mx,y+PLATES_LINTEL_Y-.38,mz);rec.marks.add(q);}}
+  if(scriptRead(rec))rec.marks.visible=true;
+  // the cache: a stone block round the chest against the far wall
+  const [cx,cz]=F.at(.6,0),blk=new THREE.Mesh(new THREE.BoxGeometry(1.1,1.1,1.1),stone);blk.position.set(cx,y+.55,cz);grp.add(blk);rec.cache=blk;
+  rec.cacheSolid={x0:cx-.55,x1:cx+.55,z0:cz-.55,z1:cz+.55,floor:t.floor,secret:t.id};
+  if(opened)blk.visible=false;else DUNGEON_PROPS.push(rec.cacheSolid);
+  rec.chestAt=[cx,cz];}
+function scriptRead(rec){const R=worldState.gateSecrets&&worldState.gateSecrets[rec.seed];return !!(R&&Array.isArray(R.r)&&R.r.indexOf(rec.n)>=0);}
+// the ways the script is open to you now: know (all four words of the gate's school held), reading (one banked), cold (the Old Blood)
+function scriptWays(rec){const S=rec.plateSchool,ws=WORDS.filter(w=>w.school===S);
+  return {know:ws.length>0&&ws.every(w=>knownWords[w.id]>0),reading:readingsHeld()>=1,cold:typeof WORLD!=='undefined'&&WORLD.playerPeople()==='oldblood'};}
+// the named action: the script read by one way ('know', 'reading' or 'cold'); 'read', or why not ('noop', 'none')
+function readScript(id,way){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.kind!=='plates')return 'none';if(scriptRead(rec))return 'noop';
+  const W=scriptWays(rec);if(!W[way])return 'none';
+  if(way==='reading')registerOf().readings--;else if(way==='cold'){worldState.cold=(worldState.cold||0)+1;}
+  const R=gateSecretRec(rec.seed);if(!Array.isArray(R.r))R.r=[];R.r.push(rec.n);rec.marks.visible=true;return 'read';}
+// the lintel in reach and under the crosshair, its script unread and its plates not yet solved
+function scriptLintelNear(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return null;
+  for(const s of GATE_SECRETS){if(s.kind!=='plates'||s.opened||scriptRead(s)||s.floor!==currentFloor||s.seed!==currentPortal.seed||!s.lintel)continue;
+    if(Math.hypot(px-s.lintel.x,pz-s.lintel.z)<PLATES_IN+1.4&&aimAt({mesh:s.lintel.mesh},PLATES_IN+2.4))return s;}return null;}
+function scriptPrompt(s){const W=scriptWays(s);if(W.know)return "Press 'E' to read the script";
+  const a=[];if(W.reading)a.push("Press 'E' to read the script (a reading)");if(W.cold)a.push((W.reading?"Shift+E":"Press 'E'")+' to read it (you grow colder)');
+  return a.length?a.join(' · '):'The script is closed to you';}
+// E at the lintel: Shift chooses the Old Blood's way where both are open
+function scriptE(s){const W=scriptWays(s),cold=W.cold&&(!W.reading||K['ShiftLeft']||K['ShiftRight']);
+  const way=W.know?'know':cold?'cold':W.reading?'reading':null;if(!way){showMsg('The script is closed to you.','#c8b880');return null;}
+  const r=readScript(s.id,way);if(r!=='read')return null;
+  showMsg(way==='cold'?'The cuts come clear over the plates. Something at the edge of your attention turns to look. You are colder.':'The cuts come clear: the order is marked over the plates.',way==='cold'?'#a0a8c0':'#c8b880');return way;}
+// the named action: plate n of a plates secret (or of a turning chamber's three) pressed. When every free plate is down the order is
+// judged: right, the secret opens; wrong, the plates rise again (and a plates secret's spikes take 12% of your health). 'down',
+// 'open', 'wrong' or 'noop'.
+function pressPlate(id,n){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.opened)return 'noop';const P=rec.plates||rec.tplates,p=P&&P[n];if(!p||p.sunk)return 'noop';
+  p.sunk=true;p.mesh.position.y=rec.y-.02;rec.pressed.push(n);try{sfxNoise(.15,0,0,.08,260);}catch(e){}
+  if(P.some(q=>!q.sunk))return 'down';
+  const want=rec.kind==='plates'?rec.order.slice(1):rec.torder;
+  if(want.every((v,i)=>rec.pressed[i]===v)){if(rec.kind==='plates'){openSecret(id);showMsg('The last plate sinks home, and the cache\'s stone drops into the floor.','#c8b880');}
+    else{openSecret(id);showMsg('The plates hold, and the floor begins to turn.','#c8b880');}return 'open';}
+  rec.pressed=[];for(let i=0;i<P.length;i++){if(rec.kind==='plates'&&i===rec.order[0])continue;P[i].sunk=false;P[i].mesh.position.y=rec.y+.05;}
+  if(rec.kind==='plates'){const hurt=Math.round(maxHP*PLATES_HURT);PHP=Math.max(0,PHP-hurt);lvAct.damageTaken+=hurt;rec.spikeAt=playClockS;for(const q of P)q.spikes.visible=true;
+    updateHUD();showMsg('Spikes drive up through the plates.','#e08a6a');try{sfxNoise(.3,0,0,.2,900);}catch(e){}if(PHP<=0)playerDead();}
+  else showMsg('The plates rise again.','#c8b880');
+  return 'wrong';}
+// the plate under your feet, stepped onto (not stood on: a plate that rises under you is pressed again only once you step off it)
+function platesStep(rec,P,here){let on=-1;if(here&&!dead&&jumpY<rec.y+.35)for(let i=0;i<P.length;i++){const p=P[i];if(Math.abs(px-p.x)<p.half&&Math.abs(pz-p.z)<p.half){on=i;break;}}
+  if(on!==rec.onPlate){rec.onPlate=on;if(on>=0&&!P[on].sunk)pressPlate(rec.id,on);}}
+function platesTick(rec,here){if(rec.spikeAt!=null&&playClockS-rec.spikeAt>=PLATES_SPIKE_S){rec.spikeAt=null;for(const q of rec.plates)q.spikes.visible=false;}
+  if(rec.opened){if(rec.cache.visible){rec.cache.visible=false;const i=DUNGEON_PROPS.indexOf(rec.cacheSolid);if(i>=0)DUNGEON_PROPS.splice(i,1);}return;}
+  platesStep(rec,rec.plates,here);}
+// S2423 — the rotating chamber (table B): a ring of floor stones in another course (the tell) under a stone drum in the room's middle,
+// its one open quarter, the chest in it, turned to the side wall. Solas-Gheal laid within 3 m of the crystal pillar by the mouth for 3 s
+// (the seal's own light rule), or three plates by the mouth stepped on in the order painted on the far wall (painted, not written: the
+// fighter's tell; a wrong order lets them rise, nothing more), opens it: kept at once, the drum turns 90° in 4 s to face you, and then
+// the chest in it can be opened, at the floor's own tier (#1757's B: a mechanism's find). Placeholders: the look builder's session 7.
+const TURN_S=4,TURN_PLATES=3,TURN_H=1.5,TURN_COLS=[0xb08a3a,0x4f8a7a,0x9a3a2a];
+function turnBuild(t,rec,grp,y,opened){const F=secretFrame(t,rec.area),half=Math.min(F.Wd,F.D)/2,r=Math.max(.8,Math.min(1.3,half-1.3)),h=TURN_H;
+  const stone=new THREE.MeshLambertMaterial({color:0x6e6a62,side:THREE.DoubleSide});
+  // the ring of floor stones laid in another course
+  const ring=new THREE.Mesh(new THREE.RingGeometry(r+.05,r+.45,28,1).rotateX(-Math.PI/2),new THREE.MeshLambertMaterial({color:0x8a8070}));ring.position.set(F.mx,y+.015,F.mz);grp.add(ring);
+  for(let k=0;k<14;k++){const a=k/14*Math.PI*2,j=new THREE.Mesh(new THREE.BoxGeometry(.03,.01,.4),new THREE.MeshLambertMaterial({color:0x3c3934}));j.position.set(F.mx+Math.sin(a)*(r+.25),y+.025,F.mz+Math.cos(a)*(r+.25));j.rotation.y=a;grp.add(j);}
+  // the drum: three quarters of a cylinder, its open quarter at its local +z, the two cut faces closed
+  const drum=new THREE.Group();drum.position.set(F.mx,y,F.mz);grp.add(drum);
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,24,1,false,Math.PI/4,Math.PI*1.5),stone);body.position.y=h/2;drum.add(body);
+  const lidT=new THREE.Mesh(new THREE.CylinderGeometry(r,r,.08,24),stone);lidT.position.y=h+.04;drum.add(lidT);
+  for(const s of [-1,1]){const f=new THREE.Mesh(new THREE.BoxGeometry(.08,h,r),stone);f.position.set(Math.sin(s*Math.PI/4)*r/2,h/2,Math.cos(s*Math.PI/4)*r/2);f.rotation.y=s*Math.PI/4;drum.add(f);}
+  const open=Math.atan2(-t.dc,-t.dr);rec.turnOpen=open;rec.drum=drum;rec.drumR=r;drum.rotation.y=opened?open:open-Math.PI/2;
+  rec.col={x:F.mx,z:F.mz,r,floor:t.floor,secret:t.id};DUNGEON_COLUMNS.push(rec.col);
+  rec.chestAt=[F.mx-t.dc*(r-.5),F.mz-t.dr*(r-.5)];
+  // the crystal pillar by the mouth, to the left of one walking in
+  const ps=-(F.Wd/2-.5),[kx,kz]=F.at(F.D-.6,ps),pm=new THREE.Mesh(new THREE.BoxGeometry(.5,2,.5),new THREE.MeshLambertMaterial({color:0xe8e2c8}));pm.position.set(kx,y+1,kz);grp.add(pm);
+  rec.kx=kx;rec.kz=kz;rec.pillar=pm;if(opened)pm.material.emissive=new THREE.Color(0x8a8460);
+  // three plates across the way in, coloured; the painting on the far wall gives their order, left to right
+  const order=plateOrder(t.id+':turn',TURN_PLATES),din=Math.max(F.D/2+r+.55,F.D-1.4);rec.torder=order;rec.pressed=[];rec.onPlate=-1;rec.tplates=[];
+  for(let i=0;i<TURN_PLATES;i++){const [x,z]=F.at(din,(i-1)*1.1),m=new THREE.Mesh(new THREE.BoxGeometry(.7,.1,.7),new THREE.MeshLambertMaterial({color:TURN_COLS[i]}));m.position.set(x,y+(opened?-.02:.05),z);grp.add(m);
+    rec.tplates.push({x,z,half:.35,mesh:m,sunk:!!opened});}
+  for(let k=0;k<TURN_PLATES;k++){const [x,z]=F.at(.05,(k-1)*.7),q=new THREE.Mesh(new THREE.PlaneGeometry(.5,.5),new THREE.MeshLambertMaterial({color:TURN_COLS[order[k]],side:THREE.DoubleSide}));
+    q.position.set(x,y+2.2,z);q.rotation.y=t.dc?Math.PI/2:0;grp.add(q);}}
+function turnTick(rec,here){
+  if(rec.opened){if(rec.turnAt==null)return;const k=Math.min(1,(playClockS-rec.turnAt)/TURN_S);rec.drum.rotation.y=rec.turnOpen-Math.PI/2*(1-k);
+    if(k>=1){rec.turnAt=null;if(rec.chest&&CHESTS.indexOf(rec.chest)<0){rec.chest.mesh.visible=true;CHESTS.push(rec.chest);}try{sfxNoise(.5,0,0,.15,110);}catch(e){}}
+    return;}
+  const L=typeof laidLive==='function'?laidLive():null; /* the seal's own light rule: Solas-Gheal laid within 3 m for 3 s */
+  if(here&&L&&L.light&&Math.hypot(L.x-rec.kx,L.z-rec.kz)<=SECRET_SOLAS_R+1e-6){if(rec.lit0==null)rec.lit0=playClockS;else if(playClockS-rec.lit0>=SECRET_SOLAS_S-1e-6&&openSecret(rec.id)){showMsg('The light runs down the crystal into the floor, and the floor begins to turn.','#c8b880');return;}}
+  else rec.lit0=null;
+  platesStep(rec,rec.tplates,here);}
+function turnOpen(rec){rec.turnAt=playClockS;if(rec.pillar)rec.pillar.material.emissive=new THREE.Color(0x8a8460);for(const p of rec.tplates||[]){p.sunk=true;p.mesh.position.y=rec.y-.02;}try{sfxNoise(TURN_S,0,0,.12,90);}catch(e){}}
