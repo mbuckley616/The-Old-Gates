@@ -1397,3 +1397,19 @@ triangles, 5 draws, as built). The hall is far under any ceiling (39 of 1000 cal
 | the field west of Dunmore, dawn | Low | 536 | 514k | 0 | 0 | 61 | 201 | 232 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 475, 451k |
 | the field west of Dunmore, dawn | Middle | 706 | 984k | 146 | 6 | 61 | 201 | 250 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 642, 912k |
 | the field west of Dunmore, dawn | High | 760 | 1.52 M | 191 | 6 | 61 | 201 | 259 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 690, 1.43 M |
+
+### s1733 — 2026-11-19 07:21 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 364 | 684k | 0 | 0 | 33 | 65 | 191 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 331, 620k |
+| Portclare square, noon | Middle | 558 | 1.45 M | 157 | 6 | 48 | 65 | 207 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 502, 1.31 M |
+| Portclare square, noon | High | 604 | 1.82 M | 192 | 6 | 48 | 65 | 218 | 75 | Mesh 31, oldGate 14, cave mouth 8, sea cave mouth 8, Group 6 | 546, 1.63 M |
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 39 | 27k | 0 | 0 | 1 | 0 | 0 | 38 |  | 38, 20k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 102 | 397k | 0 | 0 | 33 | 0 | 0 | 68 |  | 68, 352k |
+
+Session 2400 (QA): s1733, 17 merges after s1716 (the children kept out of dead towns, the side-opened capes, the Scarred Gate's prototype,
+the guards' and gate's follow-ups). The three suites ran one after another alone in a cloud container, all green (`budget` 498 s,
+`budgetfield` 489 s, `budgetport` 529 s). Every ceiling held, and no view moved more than 1 call or 13k triangles from s1716: the street
++1 call at each level (an extra piece in "Other"), the field identical in calls and 9–12k triangles lighter, Portclare's square, the inn's hall
+and the gate identical in calls. Nothing is up 10%; nothing filed.
