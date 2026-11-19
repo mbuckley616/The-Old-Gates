@@ -546,6 +546,31 @@ console.log(JSON.stringify(lm).slice(0, 3000));
 check(`the Lamps: the lampseller (${lm.at17}, ${lm.gp}) at ${lm.port ? 'the quay\'s foot of ' + lm.port : lm.inl} (${lm.fromMid} m off the middle) from 17:00, not at 16:00 or 22:00 or while occupied, the same name for a site and year, greeting in her people's voice`, lm.port && !lm.at16 && lm.at17 === 'Lampseller' && !lm.at22 && !lm.occupied && lm.name2 && lm.greet === (lm.L[lm.gp] || lm.L.aurennais).greet, lm);
 check(`*A lamp* asks *Who is it for?* with three answers, four with a ship; 2 gold (short of two, nothing), the log on the water, once a year`, lm.ask === 'Who is it for?' && lm.follow.length === 3 && lm.followShip === 4 && /two gold/.test(lm.poor) && !lm.poorDone && lm.gold === 8 && lm.log === lm.LOG.sea && !lm.after.includes('A lamp') && (lm.gp !== 'aurennais' || lm.set === lm.L.aurennais.answers[1]), lm);
 check(`the ledger at 18:10 by the quay, once (not at 18:40, not 40 m off); inland the fountain's line; struck none, one, two over 300 years ${JSON.stringify(lm.counts)}, the same for a year; the next day an Aurennais says so, once`, lm.dusk.length === 1 && lm.dusk[0].startsWith(lm.LOG.read) && !lm.late.length && !lm.far.length && (!lm.inl || (lm.inland.length === 1 && /reads from the ledger the names of the town’s people at sea/.test(lm.inland[0]))) && lm.counts[0] > lm.counts[1] && lm.counts[1] > lm.counts[2] && lm.counts[2] > 0 && lm.same && /two more are read, the .+ and the .+, and struck through/.test(lm.two) && lm.next === lm.LOG.after && lm.next2 !== lm.LOG.after, lm);
+// 19b. the lamps on the ebb (Session 2405, Michael's B on #1699): a port's line runs from water beside the quay out toward the mouth, through
+// water all the way; one lamp a hull at sea (10 to 16), then yours, then the struck last; a lamp every 3 minutes from dusk, 2.4 m apart as
+// they go in, never past the mouth; four instanced meshes for the whole line and no light
+const ll = await page.evaluate(() => {
+  const ports = []; for (let j = 0; j < GRID && ports.length < 4; j++) for (let i = 0; i < GRID && ports.length < 4; i++) { if (nationKeyOf(i, j) !== 'aurenne') continue; const c = getCell(i, j); if (c.type === 'sea') continue; c.sites.filter(s => s.kind === 'port' && lampsPort(s)).forEach(s => ports.push(s)); }
+  const f0 = worldState.festivals, out = { ports: ports.length, paths: [] };
+  try {
+    for (const s of ports) { const P = lampLinePath(s); if (!P) { out.paths.push(null); continue; } let dry = 0; for (let d = 0; d <= P.L; d += 1) if (worldH(P.ox + P.dx * d, P.oz + P.dz * d) > SEA_Y - .3) dry++; out.paths.push({ id: s.id, L: P.L, dry }); }
+    const s = ports.find(p => lampLinePath(p)); if (!s) return out;
+    let y = 1; while (y < 300 && lampsStruck(s, y).length < 1) y++;
+    worldState.festivals = {}; const o0 = lampLineOrder(s, y); worldState.festivals = { ['lamps:' + s.id]: { act: y, actN: 1, for: 0 } }; const o1 = lampLineOrder(s, y);
+    out.o0 = o0.join(','); out.o1 = o1.join(','); out.struck = lampsStruck(s, y).length;
+    const L = lampLineBuild(s, y, lampLinePath(s)); out.n = L.n;
+    const A = i => lampLineAt(L, i, 0); out.before = lampLineAt(L, 1, 2.9) === null; out.gap = +(lampLineAt(L, 0, 3).s - lampLineAt(L, 1, 3).s).toFixed(2);
+    let mono = true, max = 0; for (let m = 0; m <= 240; m += 5) for (let i = 0; i < L.n; i++) { const a = lampLineAt(L, i, m), b = lampLineAt(L, i, m + 5); if (a && b && b.s < a.s) mono = false; if (a) max = Math.max(max, a.s); }
+    out.mono = mono; out.maxS = +max.toFixed(1); out.L = L.L; out.A0 = !!A(0);
+    let meshes = 0, inst = 0, lights = 0; L.g.traverse(o => { if (o.isMesh) meshes++; if (o.isInstancedMesh) inst++; if (o.isLight) lights++; }); out.meshes = meshes; out.inst = inst; out.lights = lights;
+    LAMPLINE = L; lampLineOut(); out.gone = !L.g.parent && LAMPLINE === null;
+  } finally { worldState.festivals = f0; }
+  return out;
+});
+console.log(JSON.stringify(ll));
+check(`the lamps on the ebb: every Aurennais port's line (${ll.ports} read) runs through water from the quay toward the mouth, ${JSON.stringify(ll.paths)}`, ll.ports >= 1 && ll.paths.some(p => p) && ll.paths.every(p => !p || (p.L >= 20 && p.dry === 0)));
+check(`a lamp a hull at sea (10 to 16), then yours, then the struck last (${ll.o1}); one every 3 minutes from dusk, ${ll.gap} m apart as they go in (2.4 less the ebb's slowing), never past the mouth (${ll.maxS} of ${ll.L} m); ${ll.inst} instanced meshes, ${ll.lights} lights`, /^(sea,){10,16}mine(,struck){1,2}$/.test(ll.o1) && ll.o0 === ll.o1.replace('mine,', '') && ll.o1.split('struck').length - 1 === ll.struck && ll.A0 && ll.before && Math.abs(ll.gap - 2.4) < .1 && ll.mono && ll.maxS < ll.L && ll.meshes === 4 && ll.inst === 4 && ll.lights === 0 && ll.gone);
+
 // 20. the last lines of drafts II and III (Session 2365): on the Caravan an Aurennais shopkeeper's line; in an occupied town the
 // Caravan's Aurennais and the Strait Fair's Markman say why there is none; abroad, a Markman or an Aurennais on a home festival, once a town a day
 const fl = await page.evaluate(() => {
