@@ -27,6 +27,7 @@ function doBash(){
   // attacker point dead-ahead so localForward ≈ 1 and the shove drives straight out.
   shieldImpact('bash', 30, px + fwdX, pz + fwdZ);
   sndBash(hasShield);
+  if(typeof barricadeBash==='function'&&barricadeBash())return; /* S2411 — a gate's barricade takes the blow (68-dungeon-misc.js) */
   // Resolve against the active enemy list.
   const list = isOverworldZone() ? ZE : ENEMIES;
   let landed = false, anyGuard = false;

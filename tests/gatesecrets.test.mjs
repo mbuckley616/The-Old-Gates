@@ -35,6 +35,8 @@ const pure = await page.evaluate(() => { const out = { rows: [], bad: [] };
       two: seals.length < 2 || seals[1].school !== seals[0].school, order: S.every((q, k) => (k < seals.length) === (q.kind === 'seal')),
       kinds: mech.map(q => q.kind), mechOk: mech.every(q => SECRET_MECH.includes(q.kind) && (q.kind !== 'lift' || sp([q.floor, 'chasm'])) && (q.kind !== 'sluice' || sp([q.floor, 'flooded'])))
         && ['turn', 'plates'].every(k => mech.filter(q => q.kind === k).length <= 1) && rooms.size === S.length };
+    const bq = a.barricade; row.bar = !!bq; row.barOk = !bq || (bq.id === seed + ':' + bq.floor + ':barricade' && !rooms.has(bq.floor + ':' + bq.room.x + ',' + bq.room.y) && !things.has(bq.floor + ':' + bq.room.x + ',' + bq.room.y)
+      && (bq.floor === 2 ? a.map2 : a.map)[bq.r][bq.c] === 1 && JSON.stringify(bq) === JSON.stringify(b.barricade) && bq.scene >= 0 && bq.scene < 6);
     out.rows.push(row); if (!(row.same && row.n <= row.max && row.all <= row.maxAll && (!row.n || row.first === school) && row.ids && row.path && row.free && row.two && row.order && row.mechOk)) out.bad.push(row); }
   return out; });
 const R = pure.rows, full = R.filter(r => r.n === r.max).length, none = R.filter(r => !r.n).length;
@@ -43,6 +45,9 @@ check(`40 gates built twice lay the same seals, ids <seed>:<floor>:secret<n> (${
 check(`the table's count or fewer: one a gate, two in a massive one (${full} full, ${none} with none)`, R.every(r => r.n <= r.max) && full >= 30, R.map(r => r.size + ' ' + r.n));
 check(`the first seal is the gate's own school, a massive gate's second another (${R.filter(r => r.n && r.first === r.school && r.two).length} of ${R.filter(r => r.n).length})`, R.every(r => !r.n || (r.first === r.school && r.two)), pure.bad);
 check(`no secret takes a web's or a pool's room, and with every secret shut the entry still reaches the ring (${R.filter(r => r.path && r.free).length} of 40)`, R.every(r => r.path && r.free), pure.bad);
+// S2411 — the barricade: one gate in four, on its own stream, a bare mouth of a room no secret, web or pool holds
+const bars = R.filter(r => r.bar).length;
+check(`a barricade in about one gate in four (${bars} of 40), across a bare mouth of a room nothing else holds, the same on both builds`, R.every(r => r.barOk) && bars >= 4 && bars <= 18, R.filter(r => !r.barOk));
 // S2409 — the mechanisms after the seals: two secrets in a medium gate, three in a large, four in a massive, each kind where it can stand
 const kindsSeen = R.flatMap(r => r.kinds), mechFull = R.filter(r => r.all === r.maxAll).length;
 check(`after the seals the mechanisms, to the table's count (${mechFull} of 40 full; kinds ${JSON.stringify([...new Set(kindsSeen)].sort())}): the lift by a chasm, the sluice by a flooded hall, the turning chamber and the plates once, one room each`,
@@ -135,6 +140,21 @@ const K6 = pick ? await page.evaluate((id) => {
     const R = worldState.gateSecrets[currentPortal.seed]; o.kept = R.o.includes(r.n);
     o.tier = JSON.stringify(rollContainerLoot('chest', currentPortal.diffScale, currentPortal.theme, undefined, r.chest.id, Math.min(4, dungeonTier(currentPortal, 1))).map(i => i.name)) === JSON.stringify(r.chest.items.map(i => i.name));
     for (const T of [near, far]) { dScene.remove(T.fl); TORCHES.splice(TORCHES.indexOf(T), 1); } pitch = 0; out.slide = o; }
+  // S2411 — the barricade at the same mouth: three blows of doBash, or Caor touched; its chest at the floor's tier, kept
+  { const one = () => { clear(); for (let i = GATE_THINGS.length - 1; i >= 0; i--) if (GATE_THINGS[i].kind === 'barricade') GATE_THINGS.splice(i, 1);
+      gen.secrets = []; gen.barricade = Object.assign({}, base, { kind: 'barricade', n: 'b', id: currentPortal.seed + ':1:barricade', school: null, scene: 0 }); gateSecretsBuild(gen, currentPortal); currentFloor = 1;
+      return GATE_SECRETS.find(q => q.kind === 'barricade'); };
+    const o = {}; let r = one(); const [sx, sz] = mid(r); o.shut = dSolid(sx, sz);
+    const bash = () => { atkCd = 0; stamina = maxStamina; doBash(); };
+    _reset(ox, oz, 0, 0); yaw = yawTo(r.kx, r.kz); bash(); o.far = r.blows; /* a cell and more off: out of the bash's reach */
+    _reset(r.kx - base.dc * .75, r.kz - base.dr * .75, 0, 0); yaw = yawTo(r.kx, r.kz) + Math.PI; bash(); o.behind = r.blows; yaw = yawTo(r.kx, r.kz);
+    bash(); bash(); o.two = r.blows; o.twoShut = !r.opened && dSolid(sx, sz); bash(); o.three = r.opened && !dSolid(sx, sz) && !r.shut.visible;
+    const R = worldState.gateSecrets[currentPortal.seed]; o.kept = R.o.includes('b');
+    o.tier = JSON.stringify(rollContainerLoot('chest', currentPortal.diffScale, currentPortal.theme, undefined, r.chest.id, Math.min(4, dungeonTier(currentPortal, 1))).map(i => i.name)) === JSON.stringify(r.chest.items.map(i => i.name));
+    const n0 = r.chest.items.length; takeSecret(r.id); if (r.chest.items.length) takeLootItem(0); o.left = [n0, R.t.b && R.t.b.length]; closeLoot();
+    r = one(); _reset(r.kx - base.dc * 1.2, r.kz - base.dr * 1.2, 0, 0); yaw = yawTo(r.kx, r.kz); const t = touchGateThing('caor'); o.found = !!t && t.kind === 'barricade';
+    o.burn = !!t && touchThing('caor', t) && r.opened && !dSolid(sx, sz); o.notThing = !GATE_THINGS.includes(r.planks);
+    for (let i = GATE_THINGS.length - 1; i >= 0; i--) if (GATE_THINGS[i].kind === 'barricade') GATE_THINGS.splice(i, 1); gen.barricade = null; out.bar = o; }
   clear(); return out; }, pick.id) : null;
 console.log('keys', JSON.stringify(K6));
 if (K6) {
@@ -150,5 +170,8 @@ if (K6) {
   check(`the sliding wall: rock, one stone 15% paler (×${W.pale}), a flame 2.5 m off leans toward it (${W.lean}) and one 6 m off does not (${W.leanFar}), dust within ${W.dust} m of it, the air heard at 1 m (${W.air1}) and not at 3`, W.shut && W.paleOk && W.lean > .25 && W.leanFar === 0 && W.dust <= 1.2 && W.air1 > 0 && W.air3 === 0, W);
   check(`E on the pale stone, aimed at (${W.prompt}), opens it: it slides away in 1.2 s, kept in the world's record, the flames upright again, its chest at the floor's own tier`, W.aimed && W.offAim && /pale stone/.test(W.prompt) && W.open && W.sliding && W.gone && W.kept && W.leanAfter === 0 && W.tier, W);
 }
+if (K6) { const B = K6.bar;
+  check(`the barricade: rock to the bash out of reach (${B.far}) or behind you (${B.behind}), two blows crack it and the third breaks it, kept; its chest at the floor's tier (${B.left[0]} in it, ${B.left[1]} left)`, B.shut && B.far === 0 && B.behind === 0 && B.two === 2 && B.twoShut && B.three && B.kept && B.tier && B.left[1] === B.left[0] - 1, B);
+  check('Caor touched at the barricade burns it away', B.found && B.burn && B.notThing, B); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
