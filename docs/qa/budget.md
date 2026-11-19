@@ -1375,3 +1375,14 @@ Every ceiling held. The street and the field read the same as s1692 to 1 call an
 the same to 2 calls and 3k triangles; the gate's keep is not in view from the entrance. **The inn's hall rose 34 → 39 calls (+15%,
 over the 10% line), 26k → 27k triangles**: the 5 draws are the island's clay oven by a bare wall that S2366 put in every inn (580
 triangles, 5 draws, as built). The hall is far under any ceiling (39 of 1000 calls); the rise is reported for the producer, not filed.
+
+### s1733 — 2026-11-19 07:04 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 612 | 1.10 M | 0 | 0 | 125 | 145 | 250 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 487, 917k |
+| Dunmore street, noon | Middle | 786 | 1.84 M | 157 | 6 | 125 | 145 | 261 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 635, 1.60 M |
+| Dunmore street, noon | High | 841 | 2.31 M | 194 | 6 | 125 | 145 | 279 | 92 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 689, 2.06 M |
+| Dunmore street, midnight | Low | 666 | 1.06 M | 0 | 0 | 122 | 201 | 250 | 93 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 544, 918k |
+| Dunmore street, midnight | Middle | 852 | 1.77 M | 169 | 6 | 122 | 201 | 261 | 93 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 727, 1.62 M |
+| Dunmore street, midnight | High | 919 | 2.30 M | 218 | 6 | 122 | 201 | 279 | 93 | Mesh 46, oldGate 20, sea cave mouth 8, cave mouth 7, weaver door 4 | 787, 2.13 M |
