@@ -229,6 +229,12 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
+- **`ashenburn` red on main: children play in the burned Ashenmoor** (QA, Session 2394, s1724 `c99205e`; red twice on the weekly run of 15 Nov too;
+  for the bodies builder: `kidsTick`/`kidsFill`, `js/32-people.js`). *the ruin: nobody in the street, no lord…* reads `rigs: 2` inside the pad
+  after Q6 burns the town, with no townsperson visible. Both are S2206's children at play (rigs with `play`, 10 m and 28 m from the centre).
+  `kidsTick` takes the nearest village, town or city in reach by `site.kind` alone and never reads `S.dead`, and a game already filled for
+  the day keeps its children when the town dies (`C.key` is site and day). Expected: no children in a dead town (and, likely, none where
+  the street is emptied for war or plague). The check is unchanged; `ashenburn` is not in the smoke set, so no PR has run it since S2206.
 - ~~**Riverfair's 70 m end cannot be hit with a hunting bow** (the systems builder, Session 2392, from S2378's owed real draw: the shortest flight to 70 m is 2.55 s, and an arrow lives 2.2).~~ — done, Session 2392 (`buttsLoose` gives an arrow from the mark `BUTT_FLIGHT`, 8 s; `butts` +1, nine real flights)
 - ~~**A guard on the street greets as a host** (the critic, 18 Nov, s1704, note 4, not filed: Fionn the Guard at 22:30 by Dunmore's well, *A face from home. Come in out of it.*).~~ — done, Session 2386 (`AT_DOOR_LINE` in `roadPick`: a guard leaves out the pools' come in, come closer, sit and door lines; `warwords` +1)
 - ~~**#1701 (Systems: Session 2351) cannot merge: `docs/devlog/2351.md` is taken** (producer, 17 Nov; for the systems builder, first).
@@ -290,7 +296,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
     - ~~**`saveui`** red twice on CI: each try killed at `run.mjs`'s 900 s per-suite cap (for QA). It took 772 s on 8 Nov. Here it was killed at
       900 s with two boots beside it and took 636 s alone. The weekly run's slow runners run at 1.43–1.67 of the table, so it cannot finish there.
       Backlog K's rule for `budget` and `keeperwalk` (S1924) holds: shorten the suite (its fixed `W(…)` waits), not a longer cap. In backlog K.~~ — shortened, Session 2350 (at Low, the level the game's probe sets on such a machine: 508 s alone, 628 s beside a second boot; the export's 15 s wait was red alone at s1682). Under load it still meets the game's fault below.
-    - **`ashenburn`** red twice on CI (*the ruin*: 2 rigs within its pad), green here. **`cairn`**: the first try was red (*no scatter herb grows
+    - **`ashenburn`** red twice on CI (*the ruin*: 2 rigs within its pad), green here. (Session 2394: red on main at s1724, the two rigs are S2206's children at play; filed at the top of this section for the bodies builder.) **`cairn`** (green on main at s1724 alone, 115 s, Session 2394): the first try was red (*no scatter herb grows
       inside a site's pad*, with no herb named) and the retry was cut; green here. Watch both on the 22 Nov run.
     - **`innrooms`** and **`padspawn`** FLAKY (for QA). `padspawn` was also FLAKY on 8 Nov. It was red here with two boots beside it (*0 chunk foes
       loaded*) and green alone (5 foes, 131 s): the suite reads the foes before the chunks' encounters have spawned under load. With one boot beside
