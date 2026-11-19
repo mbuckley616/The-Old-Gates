@@ -1045,7 +1045,7 @@ function gateSecrets(gen,seed,size,school){
 const SECRET_BAR_P=1/4,SECRET_BAR_BLOWS=3;
 const SECRET_N={tiny:1,small:1,medium:2,large:3,massive:4};
 const SECRET_MECH=['slide','stair','lift','sluice','turn','plates'],SECRET_ONCE={turn:1,plates:1};
-const SECRET_BUILT={seal:1,slide:1,stair:1}; /* the kinds laid so far: the lift, the sluice, the turning chamber and the plates come in sessions 4 and 5 */
+const SECRET_BUILT={seal:1,slide:1,stair:1,sluice:1}; /* the kinds laid so far: the lift, the turning chamber and the plates come in sessions 4 and 5 */
 // the world's record of a gate's secrets: o, the opened ones' numbers; t, what is left in each one's chest (session 2)
 function gateSecretRec(seed){const G=worldState.gateSecrets||(worldState.gateSecrets={});return G[seed]||(G[seed]={o:[],t:{}});}
 function gateSecretOpen(seed,n){const G=worldState.gateSecrets,R=G&&G[seed];return !!(R&&R.o&&R.o.indexOf(n)>=0);}
@@ -1065,7 +1065,7 @@ const SECRET_TINE_S=20,SECRET_COLD=.05,SECRET_LEDGE=1.5,SECRET_GALLERY=3.8,SECRE
 const SECRET_SAY={tine:'The stone leaf grinds aside.',uisce:'The black water freezes over.',cloch:'The block lifts and lodges on the lintel.',
   scath:'The dark wall stays a doorway.',solas:'The script on the crystal lights, and a niche turns open.',gaoth:'You stand in the gallery.'};
 let GATE_SECRETS_GEN=null,DPROP_Y=null; /* DPROP_Y: the feet a prop with a top is tested at (the ledge), set only for your own step */
-function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR_PRY=null;if(!gen||!gen.secrets||!(gen.secrets.length||gen.barricade)||!portal)return GATE_SECRETS;
+function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR_PRY=null;SLUICE_TURN=null;if(!gen||!gen.secrets||!(gen.secrets.length||gen.barricade)||!portal)return GATE_SECRETS;
   const Hc=DCELL/2,G0=worldState.gateSecrets&&worldState.gateSecrets[portal.seed];
   for(const t of gen.secrets){if(!SECRET_BUILT[t.kind])continue;const y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r),R=t.room,opened=gateSecretOpen(portal.seed,t.n);
     const mat=new THREE.MeshLambertMaterial({color:SECRET_SEAL_COL[t.school]||0x777777}),grp=new THREE.Group();grp.name='gateSecret';
@@ -1076,6 +1076,7 @@ function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR
     let chestY=y,chestAt=at(1.0);
     if(t.kind==='slide')slideBuild(t,rec,grp,y,cx,cz,opened);
     else if(t.kind==='stair'){stairBuild(t,rec,grp,y,opened);chestY=y-STAIR_DROP;} /* S2416 — the chest in the cellar, against the far wall */
+    else if(t.kind==='sluice')sluiceBuild(t,rec,grp,y,cx,cz,opened); /* S2417 */
     else if(SECRET_SEAL_SHUT[t.school]){const x=cx+t.dc*(Hc-.3),z=cz+t.dr*(Hc-.3),h=Math.min(FLOOR_HEIGHT,6);
       const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),mat);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;rec.kx=x;rec.kz=z;
       rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
@@ -1115,7 +1116,7 @@ function secretChest(t,portal,rec,x,z,yy,G0){const was=G0&&G0.t&&Array.isArray(G
   group.rotation.y=t.dc?(t.dc<0?Math.PI/2:-Math.PI/2):(t.dr<0?0:Math.PI);dScene.add(group); /* its front to the room's mouth */
   const ch={id:key,x,z,y:yy-rec.y,standY:yy,opened:was,lid,floor:t.floor,mesh:group,items,displayName:'Chest',secret:t.id};
   if(was&&lid)lid.rotation.x=-Math.PI/3;
-  if((t.school==='solas'||t.kind==='stair')&&!rec.opened)group.visible=false;else CHESTS.push(ch); /* S2416 — the cellar's, too */
+  if((t.school==='solas'||t.kind==='stair')&&!rec.opened)group.visible=false;else if(!(t.kind==='sluice'&&!rec.opened))CHESTS.push(ch); /* S2416 — the cellar's, too; S2417 — the sluice's is seen behind its grate, and taken once it is open */
   return ch;}
 // openSecret: the named action. A secret of the gate you stand in opens for good: its number is kept in the world's record, a shut
 // mouth's rock goes, and its key's mark stays (the braziers lit, the water frozen, the script lit, the niche open).
@@ -1126,6 +1127,7 @@ function openSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.o
   if(rec.thing){rec.thing.frozen=true;rec.mat.color.setHex(0x8fa8b6);}
   if(rec.pillar)rec.mat.emissive=new THREE.Color(0x8a8460);
   if(rec.kind==='stair')stairOpen(rec); /* S2416 */
+  if(rec.kind==='sluice')sluiceOpen(rec); /* S2417 */
   if(rec.chest&&CHESTS.indexOf(rec.chest)<0){rec.chest.mesh.visible=true;CHESTS.push(rec.chest);}
   return true;}
 // takeSecret: the named action. A seal's chest opened: from now on its list is the world's record's, so what you take stays taken
@@ -1142,6 +1144,7 @@ function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!c
   for(const rec of GATE_SECRETS){if(rec.seed!==currentPortal.seed)continue;const here=currentFloor===rec.floor;
     if(rec.kind==='slide'){air=Math.max(air,slideTick(rec,here));continue;}
     if(rec.kind==='stair'){if(STAIR_PRY&&STAIR_PRY.rec===rec)stairPryTick(rec,here);continue;}
+    if(rec.kind==='sluice'){sluiceTick(rec,here);continue;}
     if(rec.opened)continue;
     if(rec.school==='tine'){const B=rec.braziers||[];for(const b of B)if(b.lit&&b.litAt==null)b.litAt=playClockS;
       if(B.length===2&&B[0].lit&&B[1].lit&&Math.abs(B[0].litAt-B[1].litAt)<=SECRET_TINE_S){secretOpenSay(rec);continue;}
@@ -1330,3 +1333,52 @@ function stairPryTick(rec,here){const P=STAIR_PRY,dt=Math.max(0,Math.min(1,playC
   if(P.strike>=STAIR_STRIKE){P.strike-=STAIR_STRIKE;try{sfxNoise(.06,1,1,.2,1600);sfxTone(520,380,.08,.05,'triangle');}catch(e){}}
   if(P.alert>=STAIR_ALERT){P.alert-=STAIR_ALERT;stairLoud(rec);}
   if(rec.pry>=STAIR_PICK_S-1e-6&&openSecret(rec.id)){STAIR_PRY=null;showMsg('The slab comes up, and a stair goes down.','#c8b880');try{sfxNoise(.5,0,0,.2,200);}catch(e){}}}
+// S2417 — the sluice (the sheet's session 4; its table B). A side room on a floor with a flooded hall stands at 0.8 m of black water
+// behind an iron grate across its mouth, flush with the wall line; the chest is seen in it. Beside the grate, on your side, a wheel on a
+// post. Held (E held down, within reach and aimed at it) for 8 s of the play clock, or Tonn laid within 2.5 m of the grate (layWord asks
+// sluiceLaid first: Tonn has no laid shape of its own yet), the sluice opens: it is kept at once in the world's record (openSecret), the
+// water drains over 10 s, and then the grate rises into the lintel in 1.5 s and the room is open. Letting go keeps what is turned (the
+// co-op rule for a held wheel). Its chest is the floor's own tier (#1757's B: a mechanism's find). Placeholders: the look builder's session 7.
+const SLUICE_DEPTH=.8,SLUICE_HOLD=8,SLUICE_DRAIN=10,SLUICE_RISE=1.5,SLUICE_TONN_R=2.5,SLUICE_SPIN=1.6;
+let SLUICE_TURN=null;
+function sluiceBuild(t,rec,grp,y,cx,cz,opened){const H=DCELL/2,h=Math.min(FLOOR_HEIGHT,6),gx=cx+t.dc*(H+.08),gz=cz+t.dr*(H+.08),A=rec.area;
+  const iron=new THREE.MeshLambertMaterial({color:0x3a3633}),grate=new THREE.Group();grate.name='sluiceGrate';grate.position.set(gx,y,gz);grp.add(grate);
+  const lx=t.dr?1:0,lz=t.dc?1:0; /* along the wall line */
+  for(let k=0;k<9;k++){const o=(k/8-.5)*(DCELL-.12),b=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,h,6),iron);b.position.set(lx*o,h/2,lz*o);grate.add(b);}
+  for(const hy of [.25,1.4,2.6]){const f=new THREE.Mesh(new THREE.BoxGeometry(lx?DCELL:.06,.08,lz?DCELL:.06),iron);f.position.set(0,hy,0);grate.add(f);}
+  rec.grate=grate;rec.grateH=h;rec.kx=gx;rec.kz=gz;
+  rec.grateSolid=t.dc?{x0:gx-.12,x1:gx+.12,z0:gz-H,z1:gz+H,floor:t.floor,secret:t.id}:{x0:gx-H,x1:gx+H,z0:gz-.12,z1:gz+.12,floor:t.floor,secret:t.id};
+  // the water: one plane over the room's floor, 0.8 m up
+  const wm=new THREE.MeshLambertMaterial({color:0x1d2a2e,transparent:true,opacity:.86,depthWrite:false}),water=new THREE.Mesh(new THREE.PlaneGeometry(A.x1-A.x0-.1,A.z1-A.z0-.1).rotateX(-Math.PI/2),wm);
+  water.position.set((A.x0+A.x1)/2,y+SLUICE_DEPTH,(A.z0+A.z1)/2);grp.add(water);rec.water=water;
+  // the wheel on its post, on your side of the grate and to one side of the mouth, its face to the corridor
+  const wx=cx+t.dc*(H-.55)+lx*(H-.45),wz=cz+t.dr*(H-.55)+lz*(H-.45),post=new THREE.Mesh(new THREE.BoxGeometry(.14,1.05,.14),new THREE.MeshLambertMaterial({color:0x4a3a2a}));
+  post.position.set(wx,y+.52,wz);grp.add(post);
+  const wheel=new THREE.Group();wheel.position.set(wx-t.dc*.1,y+1.05,wz-t.dr*.1);wheel.rotation.y=t.dc?Math.PI/2:0;grp.add(wheel);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.32,.035,6,16),iron);wheel.add(rim);
+  for(let k=0;k<4;k++){const sp=new THREE.Mesh(new THREE.BoxGeometry(.62,.035,.035),iron);sp.rotation.z=k*Math.PI/4;wheel.add(sp);}
+  rec.wheel={x:wx,z:wz,y:y+1.05,mesh:wheel,turned:0};
+  if(opened){water.visible=false;grate.visible=false;}else DUNGEON_PROPS.push(rec.grateSolid);}
+// openSecret's part: the drain starts now (kept already); the tick lowers the water and then raises the grate
+function sluiceOpen(rec){if(SLUICE_TURN&&SLUICE_TURN.rec===rec)SLUICE_TURN=null;rec.drainAt=playClockS;}
+// the wheel in reach and under the crosshair, its sluice shut
+function sluiceWheelNear(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return null;
+  for(const s of GATE_SECRETS){if(s.kind!=='sluice'||s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed||!s.wheel)continue;
+    if(Math.hypot(px-s.wheel.x,pz-s.wheel.z)<TOUCH+.6&&aimAt({mesh:s.wheel.mesh},TOUCH+.6))return s;}return null;}
+// E on the wheel: you take hold of it (the tick turns it while E is held)
+function sluiceGrip(s){if(!s||s.opened)return false;if(!SLUICE_TURN||SLUICE_TURN.rec!==s)SLUICE_TURN={rec:s,last:playClockS};return true;}
+// Tonn laid within 2.5 m of a shut grate opens its sluice: the id, or null
+function sluiceLaid(word,x,z){if(word!=='tonn'||!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return null;
+  for(const s of GATE_SECRETS){if(s.kind!=='sluice'||s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed)continue;
+    if(Math.hypot(s.kx-x,s.kz-z)<=SLUICE_TONN_R+1e-6&&openSecret(s.id)){showMsg('The wave strikes the sluice gate, and the water begins to run out.','#a8c8e8');return s.id;}}
+  return null;}
+function sluiceTick(rec,here){const W=rec.wheel;
+  if(!rec.opened){const T=SLUICE_TURN;if(!T||T.rec!==rec)return;const dt=Math.max(0,Math.min(1,playClockS-T.last));T.last=playClockS;
+    if(!here||dead||!K['KeyE']||Math.hypot(px-W.x,pz-W.z)>TOUCH+1.2){SLUICE_TURN=null;return;} /* let go: what is turned is kept */
+    W.turned+=dt;W.mesh.rotation.z+=dt*SLUICE_SPIN;
+    if(W.turned>=SLUICE_HOLD-1e-6&&openSecret(rec.id)){showMsg('The wheel turns home, and the water begins to run out.','#a8c8e8');try{sfxNoise(1.2,0,0,.12,320);}catch(e){}}
+    return;}
+  if(rec.drainAt==null)return;const k=(playClockS-rec.drainAt)/SLUICE_DRAIN;
+  if(rec.water.visible){rec.water.position.y=rec.y+SLUICE_DEPTH*Math.max(0,1-k)+.02;if(k>=1)rec.water.visible=false;}
+  if(k>=1&&rec.grate.visible){const i=DUNGEON_PROPS.indexOf(rec.grateSolid);if(i>=0){DUNGEON_PROPS.splice(i,1);showMsg('The grate rises.','#c8b880');}
+    const q=Math.min(1,(playClockS-rec.drainAt-SLUICE_DRAIN)/SLUICE_RISE);rec.grate.position.y=rec.y+rec.grateH*q;if(q>=1)rec.grate.visible=false;}}

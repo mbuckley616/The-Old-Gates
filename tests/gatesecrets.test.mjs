@@ -168,6 +168,22 @@ const K6 = pick ? await page.evaluate((id) => {
     // up: back the way you came
     yaw = yawTo(px - ux, pz - uz); K.KeyW = true; _drive(() => jumpY > -.05 && (along() - nearE) * u < -.3, 400); K.KeyW = false;
     o.up = +jumpY.toFixed(2); o.errs = 0; clear(); out.stair = o; }
+  // S2417 — the sluice at the same mouth: the grate and the water, the wheel held 8 s (let go, the turn is kept), or Tonn laid on the grate;
+  // the water drains in 10 s and then the grate rises
+  { const one = () => { clear(); gen.secrets = [Object.assign({}, base, { kind: 'sluice', school: null })]; gateSecretsBuild(gen, currentPortal); currentFloor = 1; return GATE_SECRETS[0]; };
+    let r = one(); const o = {}, ux = base.dc, uz = base.dr, W = r.wheel, gs = r.grateSolid, gx = (gs.x0 + gs.x1) / 2, gz = (gs.z0 + gs.z1) / 2;
+    o.shut = dSolid(gx, gz) && r.water.visible && +(r.water.position.y - r.y).toFixed(2) === .8 && !CHESTS.includes(r.chest) && r.chest.mesh.visible;
+    _reset(W.x - ux * 1.0, W.z - uz * 1.0, 0, 0); yaw = yawTo(W.x, W.z); _drive(i => i >= 1, 3); pitch = Math.atan2(W.y - CAM.position.y, 1.0); _drive(i => i >= 1, 3);
+    o.prompt = document.getElementById('ipr').textContent; o.aimed = sluiceWheelNear() === r;
+    interact(); K.KeyE = true; for (let i = 0; i < 8; i++) { playClockS += .5; gateSecretsTick(); } o.four = +W.turned.toFixed(2);
+    K.KeyE = false; playClockS += .5; gateSecretsTick(); o.letGo = !SLUICE_TURN && +W.turned.toFixed(2) === o.four; playClockS += 20; gateSecretsTick(); o.kept = +W.turned.toFixed(2);
+    interact(); K.KeyE = true; for (let i = 0; i < 9; i++) { playClockS += .5; gateSecretsTick(); } K.KeyE = false; o.open = r.opened; o.rec = worldState.gateSecrets[currentPortal.seed].o.includes(r.n);
+    o.stillShut = dSolid(gx, gz) && r.water.visible; playClockS += 5; gateSecretsTick(); o.half = +(r.water.position.y - r.y).toFixed(2);
+    playClockS += 5.1; gateSecretsTick(); o.drained = !r.water.visible && !dSolid(gx, gz); playClockS += 1.6; gateSecretsTick(); o.risen = !r.grate.visible;
+    o.chest = CHESTS.includes(r.chest);
+    o.tier = JSON.stringify(rollContainerLoot('chest', currentPortal.diffScale, currentPortal.theme, undefined, r.chest.id, Math.min(4, dungeonTier(currentPortal, 1))).map(i => i.name)) === JSON.stringify(r.chest.items.map(i => i.name));
+    r = one(); pitch = 0; _reset(r.kx - ux * 6, r.kz - uz * 6, 0, 0); o.far = layWord('tonn', null, r.kx - ux * 4, r.kz - uz * 4).ok === true || r.opened;
+    o.tonn = layWord('tonn', null, r.kx - ux * 1.2, r.kz - uz * 1.2).ok && r.opened && r.drainAt != null; laidEnd(); clear(); out.sluice = o; }
   // S2411 — the barricade at the same mouth: three blows of doBash, or Caor touched; its chest at the floor's tier, kept
   { const one = () => { clear(); for (let i = GATE_THINGS.length - 1; i >= 0; i--) if (GATE_THINGS[i].kind === 'barricade') GATE_THINGS.splice(i, 1);
       gen.secrets = []; gen.barricade = Object.assign({}, base, { kind: 'barricade', n: 'b', id: currentPortal.seed + ':1:barricade', school: null, scene: 0 }); gateSecretsBuild(gen, currentPortal); currentFloor = 1;
@@ -202,6 +218,10 @@ if (K6) { const T = K6.stair;
   check(`the stair under the floor: the slab's step is hollow (${T.hollow}) and two cells off it is not; shut, the ground over it is the floor (${T.base0}) and its chest hidden; Cloch Ghéar laid on it lifts it, and the floor's cell is cut (${T.cut} triangles, ${T.left} left)`, T.hidden && T.hollow && T.notFar && T.base0 === 0 && T.lay && T.clochOpen && T.cut >= 2 && T.left === 0, T);
   check(`the pick: E sets to it, and a foe 10 m off comes and one 40 m off does not; ${T.ten} s of 20 and still shut; E stops it and the work is kept (${T.kept}); 20 s in all opens it (the floor's cell cut, ${T.leftPick} triangles left over it; ${T.steps} steps), kept, its chest at the floor's tier`, T.near && T.working && T.alert[0] && !T.alert[1] && Math.abs(T.ten - 10) < .01 && T.tenShut && T.stopped && T.kept === T.ten && T.open && T.leftPick === 0 && T.steps === 11 && T.rec && T.tier, T);
   check(`walked down the steps to the cellar (${T.down.y} m, ${T.down.past.toFixed(2)} m past the stair), the mouth a wall under the floor and open over it, and walked up again (${T.up} m)`, T.down.y <= -2.95 && T.down.past > 0 && T.wallBelow && T.openAbove && T.up > -.05, T); }
+if (K6) { const U = K6.sluice;
+  check(`the sluice: a grate across the mouth, 0.8 m of water behind it, its chest seen and out of reach; the wheel aimed at (${U.prompt})`, U.shut && U.aimed && /turn the wheel/.test(U.prompt), U);
+  check(`the wheel turns only while E is held: ${U.four} s, let go and kept (${U.kept} after 20 s), 8 s in all opens it, kept in the world's record; a Tonn laid 4 m off does nothing, one on the grate opens it`, U.four === 4 && U.letGo && U.kept === 4 && U.open && U.rec && !U.far && U.tonn, U);
+  check(`the water drains in 10 s (${U.half} m at 5 s) behind a grate still shut, then the grate rises and the chest, at the floor's tier, is yours`, U.stillShut && U.half > .3 && U.half < .5 && U.drained && U.risen && U.chest && U.tier, U); }
 if (K6) { const B = K6.bar;
   check(`the barricade: rock to the bash out of reach (${B.far}) or behind you (${B.behind}), two blows crack it and the third breaks it, kept; its chest at the floor's tier (${B.left[0]} in it, ${B.left[1]} left)`, B.shut && B.far === 0 && B.behind === 0 && B.two === 2 && B.twoShut && B.three && B.kept && B.tier && B.left[1] === B.left[0] - 1, B);
   check('Caor touched at the barricade burns it away', B.found && B.burn && B.notThing, B); }

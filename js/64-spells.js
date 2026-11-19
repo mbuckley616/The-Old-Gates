@@ -1259,6 +1259,7 @@ function laidShape(word,rider){
 // layWord: the named action. Lays word (with rider) at x,z (its ground found there), facing yaw for a bridge; o.overshoot ×1.5 a
 // pillar's height. Returns {ok} or {say}; nothing is paid here (the cast pays).
 function layWord(word,rider,x,z,o){o=o||{};
+  {const sl=typeof sluiceLaid==='function'&&Math.hypot(x-px,z-pz)<=laidReach()+1e-6?sluiceLaid(word,x,z):null;if(sl)return {ok:true,secret:sl};} /* S2417 — Tonn laid on a sluice's grate (68-dungeon-misc.js) */
   const kind=laidShape(word,rider);if(!kind)return {say:'That word lays nothing yet.'};
   if(Math.hypot(x-px,z-pz)>laidReach()+1e-6)return {say:'Too far to lay it.',why:'far'};
   const cap=o.cap!=null?o.cap:jumpY+1,y=laidSurf(x,z,cap),w=WORD_BY[word],F=w.forms.laid;
