@@ -3,7 +3,8 @@
 // 1.6 km in 11 draws, its stones hung over their pits with the scatter cleared under them, its two broken walls solid where they stand;
 // from 20h to 5h it wakes (the stones drift, the seams burn), by day it is dead stone; and it goes when you leave. Session 1634: the
 // same for Aurenne's Broken Orrery on its headland. Session 1666: the Gatelands' Drowned Ring in its lough.
-// Session 2385: the Weavers' ring of broken arches on a Gatelands headland.
+// Session 2385: the Weavers' ring of broken arches on a Gatelands headland. Session 2409: the Northlight Altar on a Markish fell.
+// Session 2410: the herbs laid before a wonder's stamp are set on its ground, or taken away from its solids and water.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -110,11 +111,14 @@ const lw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonder
   const p0 = W.piers.find(p => !p.fallen), [qx, qz] = wonderToWorld(st, p0.x, p0.z), mid = (W.walk.z0 + W.walk.z1) / 2, [wx, wz] = wonderToWorld(st, 0, mid), [ox, oz] = wonderToWorld(st, 4, mid);
   const glow = W.group.getObjectByName('script'), sigil = W.group.getObjectByName('sigil');
   return { tris: W.tris, draws: W.draws, meshes, size: W.size, standing: W.piers.filter(p => !p.fallen).length, bed: +meshH(st.x, st.z).toFixed(2), sol: S.sol.length, pier: solidAt(qx, qz), heartOpen: !solidAt(st.x, st.z),
-    deck: +activeTerrainH(wx, wz).toFixed(2), beside: +activeTerrainH(ox, oz).toFixed(2), walkY: W.walk.y, dead: glow.material !== glow.userData.on, sigilOff: !sigil.visible, inScene: W.group.parent === sc }; });
+    deck: +activeTerrainH(wx, wz).toFixed(2), beside: +activeTerrainH(ox, oz).toFixed(2), walkY: W.walk.y, dead: glow.material !== glow.userData.on, sigilOff: !sigil.visible, inScene: W.group.parent === sc,
+    herbs: ZONES.world.herbs.filter(h => Math.hypot(h.x - st.x, h.z - st.z) < 58).map(h => solidAt(h.x, h.z) ? 99 : +Math.abs(h.g.position.y - worldH(h.x, h.z)).toFixed(2)),
+    herbAt: ZONES.world.herbs.filter(h => Math.hypot(h.x - st.x, h.z - st.z) < 58).map(h => [h.id, h.type, +h.g.position.y.toFixed(2), +worldH(h.x, h.z).toFixed(2)]) }; });
 console.log(JSON.stringify(lw));
 check(`within 1.6 km it stands: ${lw.standing} piers ${lw.size && lw.size.high} m over the water and one fallen, ${lw.tris} triangles in ${lw.draws} draws`, !lw.none && lw.inScene && lw.standing === 7 && lw.draws === lw.meshes && lw.draws <= 11 && lw.tris < 20000, lw);
 check(`its bed lies ${lw.bed} m under the heart (a 9 m lough), the dais's top 2.4 m under the water`, lw.bed <= -8.5 && lw.size.under === 2.4, lw);
 check(`its ${lw.sol} solids: a standing pier is solid, the heart open`, lw.sol === 7 && lw.pier && lw.heartOpen, lw);
+check(`its ${lw.herbs.length} herbs stand on the ground, none hung over the sunk bed (worst ${Math.max(0, ...lw.herbs)} m off)`, lw.herbs.every(d => d < .3), lw.herbAt);
 check(`the boardwalk is a deck at ${lw.deck} m over the water, the lough 4 m beside it ${lw.beside} m`, Math.abs(lw.deck - lw.walkY) < .01 && lw.beside < 0, lw);
 check('at 13h it sleeps: the script is dead stone, the sigil only the dais', lw.dead && lw.sigilOff, lw);
 const ln = await page.evaluate(() => { const W = WONDERS.lough.W; forceTime(22); tickWonders(); W.tick(performance.now() / 1000, wonderAwake()); const glow = W.group.getObjectByName('script'), sigil = W.group.getObjectByName('sigil');
@@ -142,13 +146,50 @@ const rw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonder
   const at = d => { const [x, z] = wonderToWorld(st, 0, d); return +activeTerrainH(x, z).toFixed(2); };
   const b = W.bays.find(b => b.cond === 'cracked'), [jx, jz] = wonderToWorld(st, b.jambs[1].x, b.jambs[1].z), [mx, mz] = wonderToWorld(st, b.x, b.z);
   return { tris: W.tris, draws: W.draws, meshes, rim: +rim.toFixed(2), steps: [at(30), at(14), at(10), at(3)], plats: W.dais.steps.map(p => p.y), sol: S.sol.length, jamb: solidAt(jx, jz), bayOpen: !solidAt(mx, mz), heartOpen: !solidAt(st.x, st.z),
-    standing: W.bays.filter(b => b.cond === 'cracked').map(b => b.top), broken: W.bays.filter(b => b.cond === 'broken').length, inScene: W.group.parent === sc }; });
+    standing: W.bays.filter(b => b.cond === 'cracked').map(b => b.top), broken: W.bays.filter(b => b.cond === 'broken').length, inScene: W.group.parent === sc,
+    herbs: ZONES.world.herbs.filter(h => Math.hypot(h.x - st.x, h.z - st.z) < 128).map(h => solidAt(h.x, h.z) ? 99 : +Math.abs(h.g.position.y - worldH(h.x, h.z)).toFixed(2)) }; });
 console.log(JSON.stringify(rw));
 check(`within 1.6 km it stands: ${rw.standing && rw.standing.length} arches ${rw.standing && rw.standing.join(', ')} m high and ${rw.broken} broken, ${rw.tris} triangles in ${rw.draws} draws`, !rw.none && rw.inScene && rw.standing.length === 4 && rw.standing.every(h => h > 55) && rw.broken === 7 && rw.draws === rw.meshes && rw.draws <= 8 && rw.tris < 20000, rw);
 check(`the crown is level under the ring (the ground on its circle within ${rw.rim} m of the stamp)`, rw.rim < .5, rw);
 check(`you walk up the dais's three steps (${rw.steps.join(' → ')} m)`, rw.steps[0] < rw.plats[0] - .3 && rw.steps[1] === rw.plats[0] && rw.steps[2] === rw.plats[1] && rw.steps[3] === rw.plats[2], rw);
 check(`its ${rw.sol} solids: a standing jamb is solid, the bay between and the heart open`, rw.sol === 96 && rw.jamb && rw.bayOpen && rw.heartOpen, rw);
+check(`its ${rw.herbs.length} herbs stand on the levelled ground, none in a jamb (worst ${Math.max(0, ...rw.herbs)} m off)`, rw.herbs.every(d => d < .3), rw.herbs);
 const rd = await page.evaluate(() => { const S = WONDERS.ring; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:ring').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'ring').length }; });
 check('2.5 km off it is dropped, its solids and steps with it', rd.gone && rd.sol === 0 && rd.plats === 0, rd);
+// Session 2409: the Northlight Altar (OG-104; Michael's A on #1746, dead as built) on a high fell of the Mark. The place is the seed's,
+// over the snow line and clear of every site, door, road and the Fields; its gap opens on falling land within 45° of the north; the
+// prototype's eleven stones (two of 42 m by the gap, six standing, two fallen, one snapped), nothing lit; the stones solid, the gap open;
+// the dais's two steps walked, the altar solid; the aurora beyond the gap only by night; it goes when you leave.
+const ns = await page.evaluate(() => { const a = wonderNorthSite(); WONDERS.northlight.site = undefined; const t0 = performance.now(), b = wonderNorthSite(), ms = Math.round(performance.now() - t0);
+  if (!b) return { none: true }; const sites = [...CELLS.values()].flatMap(c => c.sites), near = sites.reduce((m, t) => Math.min(m, Math.hypot(t.x - b.x, t.z - b.z) - (t.pad || 0)), 1e9), f = wonderSkyfallSite();
+  return { ...b, ms, same: JSON.stringify(a) === JSON.stringify(b), nation: nationKeyOf(...cellOf(b.x, b.z)), near: Math.round(near), fields: Math.round(Math.hypot(f.x - b.x, f.z - b.z)) }; });
+console.log(JSON.stringify(ns));
+check(`the Northlight Altar stands on a Markish fell ${ns.over} m over the snow line, the same asked twice (${ns.ms} ms)`, !ns.none && ns.nation === 'mark' && ns.over >= 22 && ns.same, ns);
+check(`its ground falls ${ns.fall} m under the stones, it stands ${ns.near} m past the nearest pad and ${ns.fields} m from the Fields; beyond its gap (${(ns.ry * 180 / Math.PI).toFixed(0)}° off the north) the land falls ${ns.north} m`, ns.fall <= 24 && ns.near >= 330 && ns.fields >= 1200 && Math.abs(ns.ry) <= Math.PI / 4 + 1e-3 && ns.north > 0, ns);
+const nat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 0, 150); return { x, z }; }, ns);
+await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), nat);
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [nat.x, nat.z], { timeout: 60000 });
+await g.cells(); await g.hide();
+const nw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.northlight, W = S.W, st = S.site; if (!W) return { none: true };
+  let meshes = 0, lit = 0; W.group.traverse(o => { if (o.isMesh) { meshes++; if (o.material.emissive && o.material.emissive.getHex() !== 0) lit++; } });
+  const q0 = S.stamps[0], w2 = (x, z) => wonderToWorld(st, x, z); let rim = 0; for (let k = 0; k < 24; k++) rim = Math.max(rim, Math.abs(meshH(...w2(Math.sin(k * .26) * 64, Math.cos(k * .26) * 64)) - q0.y));
+  const at = (x, z) => +activeTerrainH(...w2(x, z)).toFixed(2), sd = W.stones.find(s => s.cond === 'stand' && !s.flank);
+  return { tris: W.tris, draws: W.draws, meshes, lit, rim: +rim.toFixed(2), steps: [at(0, 10), at(0, 7), at(0, 4.5)], plats: W.dais.steps.map(p => p.y), sol: S.sol.length,
+    stone: solidAt(...w2(sd.x, sd.z)), fallen: W.stones.filter(s => s.cond === 'fallen').every(s => solidAt(...w2(s.x * .75, s.z * .75))), gapOpen: !solidAt(...w2(0, -60)), altar: solidAt(st.x, st.z),
+    flank: W.stones.filter(s => s.flank).map(s => s.h), standing: W.stones.filter(s => s.cond === 'stand' && !s.flank).map(s => s.h), conds: W.stones.map(s => s.cond[0]).join(''),
+    sunk: W.stones.filter(s => s.cond !== 'fallen').every(s => s.low < -2.5), aurora: W.aurora.visible, inScene: W.group.parent === sc,
+    herbs: ZONES.world.herbs.filter(h => Math.hypot(h.x - st.x, h.z - st.z) < 96).map(h => solidAt(h.x, h.z) ? 99 : +Math.abs(h.g.position.y - worldH(h.x, h.z)).toFixed(2)),
+    herbAt: ZONES.world.herbs.filter(h => Math.hypot(h.x - st.x, h.z - st.z) < 96).map(h => [h.id, h.type, +h.g.position.y.toFixed(2), +worldH(h.x, h.z).toFixed(2), Math.round(Math.hypot(h.x - st.x, h.z - st.z)), !!h.inst]) }; });
+console.log(JSON.stringify(nw));
+check(`within 1.6 km it stands: two stones of ${nw.flank && nw.flank.join(' and ')} m by the gap, ${nw.standing && nw.standing.length} more of ${nw.standing && Math.min(...nw.standing)} to ${nw.standing && Math.max(...nw.standing)} m, two fallen and one snapped (${nw.conds}), every standing foot sunk; ${nw.tris} triangles in ${nw.draws} draws, nothing lit`, !nw.none && nw.inScene && nw.flank.every(h => h === 42) && nw.standing.length === 6 && nw.standing.every(h => h >= 30 && h <= 39) && nw.conds.split('f').length === 3 && nw.conds.split('s').length === 10 && nw.sunk && nw.draws === nw.meshes && nw.draws <= 7 && nw.tris < 8000 && nw.lit === 0, nw);
+check(`the crown is level under the stones (the ground on their circle within ${nw.rim} m of the stamp)`, nw.rim < .5, nw);
+check(`you walk up the dais's two steps (${nw.steps.join(' → ')} m) and the altar on it is solid`, nw.steps[0] < nw.plats[0] - .3 && nw.steps[1] === nw.plats[0] && nw.steps[2] === nw.plats[1] && nw.altar, nw);
+check(`its ${nw.sol} solids: a standing stone and both fallen ones are solid, the gap open; by day no aurora`, nw.sol === 13 && nw.stone && nw.fallen && nw.gapOpen && !nw.aurora, nw);
+check(`its ${nw.herbs.length} herbs stand on the cut terrace, none in a stone (worst ${Math.max(0, ...nw.herbs)} m off)`, nw.herbs.every(d => d < .3), nw.herbAt);
+const nn = await page.evaluate(() => { forceTime(23); WONDERS._t = 0; tickWonders(); const W = WONDERS.northlight.W, st = WONDERS.northlight.site, b = new THREE.Box3().setFromObject(W.aurora); const c = b.getCenter(new THREE.Vector3());
+  const dx = c.x - st.x, dz = c.z - st.z, gx = -Math.sin(st.ry), gz = -Math.cos(st.ry); return { aurora: W.aurora.visible, out: Math.round(dx * gx + dz * gz), lit: W.group.children.filter(m => m.isMesh && m.material.emissive && m.material.emissive.getHex() !== 0).length }; });
+check(`at 23h the aurora is up ${nn.out} m out beyond the gap, and still nothing of the ring's is lit`, nn.aurora && nn.out > 300 && nn.lit === 0, nn);
+const nd = await page.evaluate(() => { const S = WONDERS.northlight; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:northlight').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'northlight').length }; });
+check('2.5 km off it is dropped, its solids and steps with it', nd.gone && nd.sol === 0 && nd.plats === 0, nd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

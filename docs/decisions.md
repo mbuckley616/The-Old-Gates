@@ -49,6 +49,16 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Recommendation.** A. The landmark has a use, and the gates stay the Weavers' one structure.
 
+### The shortcut back fits no gate as written — drop it, a door through one wall, or a passage from the generator? (from the systems builder, 2026-11-19, #1774)
+**The question.** The spells-as-keys build sheet (session 3, table B) makes one sliding wall in a large or massive gate the shortcut back: an isolated corridor of up to 12 cells through rock from near the ring to near the entry. Built as written (Session 2410) it fits 0 of 200 gates, because since F5 a gate is great spaces packed one wall apart. A door through one wall, from a cell as deep as the ring to one at most half as deep, fits 7 of 200 and saves 90 to 340 m of walking back.
+
+**Options.**
+- **A.** No shortcut: that slot is drawn as any other mechanism. What the gates do now.
+- **B (recommended).** A sliding wall through one wall cell, opened from the deep side only; about 1 large or massive gate in 30 has one. One systems session.
+- **C.** F5's generator (`makeGate`) leaves a return passage in every large and massive gate for the shortcut to close. Common, the loop the page wanted; deep work on the generator.
+
+**Recommendation.** B. Until answered the shortcut is not built; the plain sliding wall, its tells and its chest are (Session 2409).
+
 ## Answered
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
