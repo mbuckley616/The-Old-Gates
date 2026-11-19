@@ -1507,7 +1507,7 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
   // Below the last row where it lies on the body (the shoulder, the arm, the hand), it comes in toward the legs, halfway
   // to the body's outline below it, along a smooth step; then folds are laid down whole columns, out and in, deepening
   // toward the hem, never in closer than the body allows; the hem rises on a fold's ridge and drops in its trough.
-  const worn = wornMask(D), H = buildHang(cols, R, PP, neck, clearAt, len, rnd, wornMask(D, { armRoom: cape ? 0 : CLOAK_ARM_ROOM, mantle: !cape }));
+  const worn = wornMask(D), H = buildHang(cols, R, PP, neck, clearAt, len, rnd, wornMask(D, { armRoom: cape ? 0 : CLOAK_ARM_ROOM, mantle: !cape, cape }));
   // a shoulder cape over loose hair (Session 2285, S2267's note): the cape is cleared of the body alone, and loose hair falls from the back
   // of the head over the shoulder blades further out than that, so 4% of Caoimhe's came out through her cape's back by up to 2.6 cm. Each
   // column now stands 1 cm over the hair's own outline (its furthest strand at each angle and height round the neck's axis) below 3 cm
@@ -1649,7 +1649,7 @@ function hairOverCloak(meshes, cover) {
   moved0 = Math.max(moved0, moved); push0 += push; after0 = after; }
   return { n: n0, under: under0, moved: moved0, push: +push0.toFixed(4), after: after0 };
 }
-function wornMask(D, o = {}) { const m = new Uint8Array(PACK.N), R0 = PACK.rest; m.off = new Float32Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1;
+function wornMask(D, o = {}) { const m = new Uint8Array(PACK.N), R0 = PACK.rest; m.off = new Float32Array(PACK.N); for (const v of PACK.G['body']) m[v] = 1; if (o.cape) m.cape = true;
   if (o.armRoom) { const r = armRoomV(o.armRoom); for (const v of PACK.G['body']) if (r[v]) m.off[v] = r[v]; }
   if (D.skirt) { const sk = skirtR(D); for (const v of sk) { m[v] = 2; m.off[v] = .025; } }
   // mail (Session 897): its body off the tights, standing as the tunic does and 9 mm more, and its skirt off the skirt shell, by its own push and 6 to 8 mm more
@@ -1717,8 +1717,18 @@ function buildHang(cols, R, PP, neck, clearAt, len, rnd, B) {
   // the folds: whole columns, a wave of about six columns with a wander, deepening from the shoulders to the hem
   const ph = rnd() * 6, P = 5.5 + rnd(), Amax = .03 + .025 * len; let deep = 0;
   const fold = cols.map((_, k) => { const e = Math.min(1, k / 2.5, (K - 1 - k) / 2.5), w = Math.sin(2 * Math.PI * k / P + ph + .9 * Math.sin(k * .37 + ph)); return e * Math.sign(w) * Math.abs(w) ** .7; });
-  for (let k = 0; k < K; k++) for (let r = 1; r < R; r++) { const q = cols[k][r], s = Math.max(0, Math.min(1, (yTop - .12 - q.y) / (yTop - .12 - yLo))), p = polar(q), A = Amax * s ** 1.1;
-    let d = A * fold[k]; if (d < 0) { const space = Math.max(0, p.r - floorAt(q)); d = -space * (1 - Math.exp(d / Math.max(space, 1e-4))); }
+  // a shoulder cape's folds rounded across the columns (Session 2424, S2399's owed note): a trough comes in only as far as the room under it,
+  // and a cape lies on the shoulders and arms with almost none, so its folds are ridges alone. Where the columns stand furthest apart (over
+  // the arm, 4.7 cm at the hem) a ridge was one or two columns going 4 cm out and back with nothing either side, a box, and the hem rose
+  // 1.5 cm on it and fell again: two steps over an elder's left elbow. The cape's fold depths are blurred 1-2-1 across the columns, twice,
+  // so a ridge rises and falls over four or five columns; a trough is still held to the room under it
+  const dd = cols.map(() => new Float32Array(R)), sp = cols.map(() => new Float32Array(R)), PR = cols.map(c => c.map(q => polar(q)));
+  const soft = (d, space) => d >= 0 ? d : -space * (1 - Math.exp(d / Math.max(space, 1e-4)));
+  for (let k = 0; k < K; k++) for (let r = 1; r < R; r++) { const q = cols[k][r], s = Math.max(0, Math.min(1, (yTop - .12 - q.y) / (yTop - .12 - yLo))), A = Amax * s ** 1.1;
+    sp[k][r] = Math.max(0, PR[k][r].r - floorAt(q)); dd[k][r] = soft(A * fold[k], sp[k][r]); }
+  if (B.cape) for (let r = 1; r < R; r++) { for (let it = 0; it < 2; it++) { const d0 = dd.map(d => d[r]); for (let k = 0; k < K; k++) dd[k][r] = (d0[Math.max(0, k - 1)] + 2 * d0[k] + d0[Math.min(K - 1, k + 1)]) / 4; }
+    for (let k = 0; k < K; k++) if (dd[k][r] < 0) dd[k][r] = Math.max(dd[k][r], -sp[k][r]); }
+  for (let k = 0; k < K; k++) for (let r = 1; r < R; r++) { const q = cols[k][r], s = Math.max(0, Math.min(1, (yTop - .12 - q.y) / (yTop - .12 - yLo))), p = PR[k][r], d = dd[k][r];
     setR(q, p.th, p.r + d); q.y += .45 * d * s ** 4; if (Math.abs(d) > deep) deep = Math.abs(d); }
   // nothing it hangs over comes through (Session 898): the folds' troughs and the hem's rise move points in and up after the
   // body's outline was read, and over a stiff mail skirt a few came in past it; any such point goes back out to 4 mm over it
