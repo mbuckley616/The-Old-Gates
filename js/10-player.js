@@ -1155,7 +1155,7 @@ const BOW_KINDS={
 function bowKindOf(w){return BOW_KINDS[w&&w.bowKind]||BOW_KINDS.bow;}
 function bowNow(){return bowKindOf(EQ.weapon);}
 function warBowDrawn(){return _bowDrawing&&!!bowNow().walk;}
-// S2401 — Michael's A on #1748: an arrow flies until it lands, up to 8 s (the butts' BUTT_FLIGHT), not 2.2 s; reach is the bow's,
+// S2402 — Michael's A on #1748: an arrow flies until it lands, up to 8 s (the butts' BUTT_FLIGHT), not 2.2 s; reach is the bow's,
 // the drop's and your aim's, and Long eye's half drop past 50 m now carries it farther. Damage, drop, wind and speed unchanged.
 const ARROW_LIFE = 8;                 // seconds before an arrow still in the air despawns
 const ARROW_HIT_RADIUS = 0.55;        // arrow-vs-enemy collision radius (matches spell orbs)
@@ -1277,7 +1277,7 @@ function tickArrowMotion(arrow, dt, isOW){
         break;
       }
       const gy = (currentFloor === 2 ? FLOOR2_Y : 0);
-      /* S2401 — an arrow now lives 8 s: one loosed high plants in the roof over it (dCeil, a gate's vault to 50 m), not through it */
+      /* S2402 — an arrow now lives 8 s: one loosed high plants in the roof over it (dCeil, a gate's vault to 50 m), not through it */
       const cy = gy + (typeof dCeil === 'function' ? dCeil(arrow.position.x, arrow.position.z) : FLOOR_HEIGHT) - .05;
       if(arrow.position.y >= cy){ arrow.position.y = cy; stuckThisFrame = true; break; }
       if(arrow.position.y <= gy){

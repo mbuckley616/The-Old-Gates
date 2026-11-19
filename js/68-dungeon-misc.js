@@ -981,7 +981,7 @@ function reloadActiveSlot(){
   });
   return true;
 }
-// S2402 — spells as keys, and secrets (Michael's B on #1678; docs/design/spells-as-keys-build.md, its session 1: the seals). A gate's
+// S2403 — spells as keys, and secrets (Michael's B on #1678; docs/design/spells-as-keys-build.md, its session 1: the seals). A gate's
 // secrets are laid on its own stream (seededRng('secret', seed)) after its braziers, webs and pools, so none of theirs moves. This
 // session lays the seals only, one a gate and two in a massive gate (the gate's own school first, then one other by seed); the
 // mechanisms of sessions 3 to 5 come after them on the same stream, so a seal's room and id never move. A seal takes a side room

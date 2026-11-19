@@ -307,3 +307,132 @@ export function scarredGate(o = {}) {
   for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['sand', 'script', 'seam'].includes(k); mesh.receiveShadow = true; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
   return { group, tris: Math.round(tris), draws, ground, R0, R1, CY, D, inner: NI, outer: NO, gone, slipped, thrown, hung, seats: seats.map(t => +(t / DEG).toFixed(1)), cleft: CLEFT, crater: CR, scar: SC, buttes, plinth, figure, wake: WAKE };
 }
+
+// The Hollow Below (Session 2401; OG-104's Mark panel, "a vast cavern of rings and a shaft of light with a viaduct"): the sheet paints a
+// cavern under the fells with great rings in its far wall, a column of daylight falling through a hole in its roof and a viaduct across the
+// dark. The panel's "unknown technology" is the generator's framing and is left out (canon §3.1: the Weavers left the gates and nothing else),
+// so it is drawn as one gate's mouth whose hillside is a cavern: OG-037's rings out of a hillside (V1), cut into the back wall of a
+// limestone hollow instead, each ring set deeper than the last, the slit door in the heart. A ruin as the others (#429 B): the script dead,
+// every loose stone down. A metre a unit, y 0 the viaduct's deck and the court, +z toward the way in, the rings at -z.
+//   - the cavern: 250 m across and 236 m long, its floor a lake 58 m under the deck (6 m deep) between two shelves of rock: the way in
+//     (z > 78) and the back shelf under the rings (z < -38); its roof a vault 120 m over the deck, its back wall a cliff at z -72;
+//   - the oculus: a hole 32 m across at the vault's crown, its shaft 60 m up to the fell along the light, so the noon sun falls through it
+//     onto the court before the rings; icicles round its rim, the rock frosted near it;
+//   - the rings: three, concentric on a centre 12 m over the court: 36 to 44 m (40 voussoirs), 25 to 33 m (30), 14 to 22 m (20), their
+//     faces at z -72, -86 and -100, joined by dressed reveals and steps, the back plate at -114 with the slit door (4.4 by 15 m); the
+//     script cut dead in a band on every stone's face. The outer ring has lost five stones from its upper left (25 to 70° left of the top)
+//     and they lie broken on the shelf below; three of the middle ring's stones there have slipped;
+//   - the court: 60 by 36 m of 4 m slabs before the rings, the ring sigil cut dead in its middle where the light lands; the floor into the
+//     rings paved at the court's level, step by step;
+//   - the viaduct: 116 m from the way in to the court, 7 m wide, five arches of 19.7 m on four piers standing 64 m from the lake's bed,
+//     a parapet of blocks broken in three places;
+//   - a 1.75 m post on the court in the light as the scale.
+// -> { group, tris, draws, ground(x, z), CY, rings: [{ ri, ro, zf, n, gone, slipped }], lost: [{ x, z, low, top }], oculus { x, z, y, r },
+//   sun (a unit vector toward the light), lands { x, z } (where the shaft's axis meets the court), court { x0, x1, z0, z1 }, viaduct { z0, z1,
+//   spans, S, pier, w, gaps }, water, bed, roof, back, door { w, h, z }, figure }
+export function hollowBelow(o = {}) {
+  const key = o.key || 'ruins:hollow', r = stream(key), group = new THREE.Group(), DEG = Math.PI / 180;
+  const WATER = -58, BED = -64, ZF = 78, ZB = -38, BACK = -72, CY = 12, ROOF = 120, AX = 125, AZ = 118, OC = 16;
+  const SUN = new THREE.Vector3(.12, 1, .18).normalize(), COURT = { x0: -30, x1: 30, z0: -72, z1: -36 };
+  const lands = { x: 0, z: -52 }, oc = { x: lands.x + SUN.x / SUN.y * ROOF, z: lands.z + SUN.z / SUN.y * ROOF, y: ROOF, r: OC };
+  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .2); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  const bb = g => { g.computeBoundingBox(); return g.boundingBox; };
+  // the floor: the two shelves at the deck's level, the lake's bed between, the shelves' edges falling as cliffs 8 m wide
+  const inCourt = (x, z) => x > COURT.x0 - 1 && x < COURT.x1 + 1 && z > COURT.z0 - 1 && z < COURT.z1 + 1;
+  const ground = (x, z) => { const ef = z - ZF + 5 * fbm(x / 30 + 3, 1.7, 3), eb = ZB - z + 5 * fbm(x / 30 - 5, 4.1, 3), s = Math.max(sstep(-8, 0, ef), sstep(-8, 0, eb));
+    const top = inCourt(x, z) ? -.4 : -.4 + .5 * fbm(x / 9, z / 9, 3) - .25, bed = BED + 2 * fbm(x / 40, z / 40, 3); return bed + (top - bed) * s; };
+  { const N = 120, g = new THREE.PlaneGeometry(300, 300, N, N); g.rotateX(-Math.PI / 2); g.translate(0, 0, -16); const P = g.attributes.position, col = [];
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), y = ground(x, z); P.setY(i, y); const wet = 1 - sstep(WATER - 2, WATER + 6, y), cl = sstep(-3, -12, y) * (1 - wet), v = .5 + .5 * fbm(x / 14, z / 14 + y / 9, 3);
+      col.push(...[.62, .62, .64].map((c, j) => (c * (.8 + .3 * v)) * (1 - .55 * wet) * (1 - .45 * cl) + [0, .02, .03][j] * wet)); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); worldUV(g, .12); B.set('floor', [g]); }
+  { const g = new THREE.PlaneGeometry(2 * AX + 20, 2 * AZ + 20); g.rotateX(-Math.PI / 2); g.translate(0, WATER, 0); put('water', g); }
+  // the vault: rings of the hollow from 75 m under the deck to the oculus, its centre drawn back toward the light's hole as it rises, the
+  // rock pushed in and out by noise, the back wall cut flat at z -72; a hole left where the rings are cut into it
+  const RINGS = [{ ri: 36, ro: 44, zf: BACK, n: 40 }, { ri: 25, ro: 33, zf: BACK - 14, n: 30 }, { ri: 14, ro: 22, zf: BACK - 28, n: 20 }], HOLE = 43, PLATE = BACK - 42;
+  { const NR = 52, NC = 112, Y0 = -75, P = [], C = [];
+    const q = t => t < .4 ? 1 : Math.cos((t - .4) / .6 * Math.PI / 2) ** .7, rad = (t, a) => { const k = q(t), n = .14 * k * (fbm(Math.cos(a) * 2.2 + 7, t * 6 + Math.sin(a) * 2.2, 4)), rx = OC + (AX - OC) * k, rz = OC + (AZ - OC) * k; return [rx * (1 + n), rz * (1 + n)]; };
+    const pt = (i, j) => { const t = i / NR, a = j / NC * Math.PI * 2, [rx, rz] = rad(t, a), cx = oc.x * sstep(.25, 1, t), cz = oc.z * sstep(.25, 1, t); let x = cx + Math.sin(a) * rx, z = cz + Math.cos(a) * rz;
+      const y = Y0 + t * (ROOF - Y0); if (z < BACK + 1.2 * fbm(x / 20, y / 20, 2)) z = BACK + 1.2 * fbm(x / 20, y / 20, 2); return [x, y, z]; };
+    const G = []; for (let i = 0; i <= NR; i++) { const row = []; for (let j = 0; j <= NC; j++) row.push(pt(i, j % NC)); G.push(row); }
+    const tint = (x, y, z) => { const fr = sstep(ROOF - 40, ROOF, y) * .6, wet = 1 - sstep(WATER, WATER + 14, y), v = .5 + .5 * fbm(x / 11 + y / 17, z / 11, 3), b = .55 + .35 * v; return [b * (1 - .6 * wet) + .35 * fr, b * (1 - .55 * wet) + .38 * fr, b * (1 - .5 * wet) + .45 * fr]; };
+    for (let i = 0; i < NR; i++) for (let j = 0; j < NC; j++) { const a = G[i][j], b = G[i][j + 1], c = G[i + 1][j], d = G[i + 1][j + 1];
+      for (const T of [[a, c, b], [b, c, d]]) { const m = [0, 1, 2].map(k => (T[0][k] + T[1][k] + T[2][k]) / 3); if (m[2] < BACK + 6 && Math.hypot(m[0], m[1] - CY) < HOLE) continue; for (const p of T) { P.push(...p); C.push(...tint(...p)); } } }
+    // the shaft: from the oculus up along the light 60 m to the fell, widening, its rock ragged
+    const NS = 6, top = G[NR]; for (let i = 0; i < NS; i++) for (let j = 0; j < NC; j++) { const lift = s => { const L = 60 * s / NS, w = 1 + .5 * (s / NS) ** 2; return k => { const p = top[k % NC]; const dx = (p[0] - oc.x) * w, dz = (p[2] - oc.z) * w, n = 1 + .1 * fbm(k / 9, s * .7 + 3, 2); return [oc.x + dx * n + SUN.x / SUN.y * L, ROOF + L, oc.z + dz * n + SUN.z / SUN.y * L]; }; };
+      const A = lift(i), Bv = lift(i + 1), a = A(j), b = A(j + 1), c = Bv(j), d = Bv(j + 1); for (const T of [[a, c, b], [b, c, d]]) for (const p of T) { P.push(...p); C.push(...tint(...p)); } }
+    // the rock over the funnel behind the back wall, so no daylight reaches the rings but through the oculus (never seen from inside)
+    { const lid = [[-70, CY + HOLE + 4, BACK - 70], [70, CY + HOLE + 4, BACK - 70], [70, CY + HOLE + 4, BACK + 2], [-70, CY + HOLE + 4, BACK + 2]], t = (a, b, c) => { for (const p of [a, b, c]) { P.push(...p); C.push(.3, .3, .3); } };
+      t(lid[0], lid[2], lid[1]); t(lid[0], lid[3], lid[2]); for (const s of [-1, 1]) { const x = s * 70, y0 = -40, y1 = CY + HOLE + 4; t([x, y0, BACK - 70], [x, y1, BACK - 70], [x, y1, BACK + 2]); t([x, y0, BACK - 70], [x, y1, BACK + 2], [x, y0, BACK + 2]); }
+      t([-70, -40, BACK - 70], [70, -40, BACK - 70], [70, CY + HOLE + 4, BACK - 70]); t([-70, -40, BACK - 70], [70, CY + HOLE + 4, BACK - 70], [-70, CY + HOLE + 4, BACK - 70]); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.computeVertexNormals(); worldUV(g, .06); B.set('cave', [g]);
+    // icicles round the oculus' rim, hanging into the light
+    const ri = stream(key + ':ice'); for (let k = 0; k < 36; k++) { const p = top[Math.floor(k / 36 * NC)], L = 1.5 + ri() * 5, w = .25 + ri() * .35, c = new THREE.ConeGeometry(w, L, 5); c.rotateX(Math.PI); c.translate(p[0] + (oc.x - p[0]) * .02, p[1] - L / 2 - .2, p[2] + (oc.z - p[2]) * .02); put('ice', c); } }
+  // the rings: voussoirs on the ring's centre (0, CY), from the top clockwise seen from the court; faces z zf + 2.5 to zf - 2 (the back in the wall)
+  const at = (t, rr) => [rr * Math.sin(t), CY + rr * Math.cos(t)];
+  const wedge = (ta, tb, ra, rb, z1, z0, gap = .08) => { const out = [], qd = [at(ta, ra), at(tb, ra), at(tb, rb), at(ta, rb)], c = qd.reduce((s, p) => [s[0] + p[0] / 4, s[1] + p[1] / 4], [0, 0]);
+    const k = 1 - gap / Math.max(...qd.map(p => Math.hypot(p[0] - c[0], p[1] - c[1]))); let p = qd.map(v => [c[0] + (v[0] - c[0]) * k, c[1] + (v[1] - c[1]) * k]); let ar = 0; for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; ar += p[i][0] * p[j][1] - p[j][0] * p[i][1]; } if (ar < 0) p = p.reverse();
+    const F = p.map(v => [v[0], v[1], z1]), Bk = p.map(v => [v[0], v[1], z0]), tri = (a, b, d) => out.push(...a, ...b, ...d);
+    tri(F[0], F[1], F[2]); tri(F[0], F[2], F[3]); tri(Bk[0], Bk[2], Bk[1]); tri(Bk[0], Bk[3], Bk[2]); for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; tri(F[i], Bk[i], Bk[j]); tri(F[i], Bk[j], F[j]); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return { g, c }; };
+  const band = (ta, tb, rm, z, v0) => { const n = 3, pos = [], uv = [], L = rm * (tb - ta); for (let i = 0; i <= n; i++) { const t = ta + (tb - ta) * i / n, [x0, y0] = at(t, rm - 1.2), [x1, y1] = at(t, rm + 1.2); pos.push(x0, y0, z, x1, y1, z); uv.push(0, (v0 + L * i / n) / 14.4, 1, (v0 + L * i / n) / 14.4); }
+    const idx = []; for (let i = 0; i < n; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); return g.toNonIndexed(); };
+  const lostAt = t => t > -70 * DEG && t < -25 * DEG, lost = [], rl = stream(key + ':lost');
+  RINGS.forEach((R, ki) => { R.gone = 0; R.slipped = 0; let v = 0;
+    for (let i = 0; i < R.n; i++) { const ta = (i / R.n + (ki % 2) * .5 / R.n) * Math.PI * 2 - Math.PI, tb = ta + Math.PI * 2 / R.n, tm = (ta + tb) / 2, zf = R.zf + 2.5 + (r() - .5) * .3;
+      if (CY + R.ri * Math.cos(tm) + 1 < -1.5) continue; /* wholly under the court's paving */
+      const { g, c } = wedge(ta, tb, R.ri, R.ro, zf, R.zf - 2), s = band(ta, tb, (R.ri + R.ro) / 2, zf + .03, v); v += (R.ri + R.ro) / 2 * (tb - ta);
+      if (ki === 0 && lostAt(tm)) { /* fallen: down the face onto the shelf below its seat, turned, bedded an eighth of its least depth in the rubble */
+        R.gone++; g.translate(-c[0], -c[1], -(zf + R.zf - 2) / 2); g.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rl() * Math.PI * 2, rl() * Math.PI * 2, rl() * Math.PI * 2)));
+        const x = c[0] * (.85 + rl() * .2) + (rl() - .5) * 6, z = BACK + 7 + rl() * 20, b0 = bb(g), dz = Math.min(b0.max.x - b0.min.x, b0.max.y - b0.min.y, b0.max.z - b0.min.z);
+        const yc = Math.min(...[[0, 0], [2, 2], [-2, 2], [2, -2], [-2, -2]].map(([u, w]) => ground(x + u, z + w))); g.translate(x, yc - b0.min.y - dz / 8, z); put('stone', g);
+        const P = g.attributes.position; let low = Infinity, top = -Infinity; for (let k = 0; k < P.count; k++) { const d = P.getY(k) - ground(P.getX(k), P.getZ(k)); low = Math.min(low, d); top = Math.max(top, d); }
+        lost.push({ t: +(tm / DEG).toFixed(1), x: +x.toFixed(1), z: +z.toFixed(1), low: +low.toFixed(2), top: +top.toFixed(2) }); continue; }
+      let M = null; if (ki === 1 && tm > -75 * DEG && tm < -20 * DEG && R.slipped < 3) { const out = .3 + r() * .5; M = new THREE.Matrix4().makeTranslation(c[0] + Math.sin(tm) * out, c[1] + Math.cos(tm) * out - .2, (r() - .5) * .6)
+        .multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler((r() - .5) * 2 * DEG, (r() - .5) * 2 * DEG, (r() - .5) * 4 * DEG))).multiply(new THREE.Matrix4().makeTranslation(-c[0], -c[1], 0)); R.slipped++; }
+      put('stone', M ? g.applyMatrix4(M) : g); put('script', M ? s.applyMatrix4(M) : s); } });
+  // the dressed stone between the rings: the steps and reveals of the funnel (a lathe about the rings' axis) and the back plate; each reveal
+  // 0.3 m behind its ring's soffit, so the two never share a surface
+  { const rv = k => RINGS[k].ri + .3, pr = [[HOLE + 2, BACK], [rv(0), BACK], [rv(0), RINGS[1].zf], [rv(1), RINGS[1].zf], [rv(1), RINGS[2].zf], [rv(2), RINGS[2].zf], [rv(2), PLATE], [.01, PLATE]].map(([a, b]) => new THREE.Vector2(a, b));
+    const g = new THREE.LatheGeometry(pr, 72); g.rotateX(Math.PI / 2); g.translate(0, CY, 0); put('dressed', g); }
+  // the floor into the rings at the court's level, step by step; the slit door in the back plate, framed
+  { const half = rr => Math.sqrt(rr * rr - CY * CY); for (const [z1, z0, rr] of [[BACK, RINGS[1].zf, RINGS[0].ri], [RINGS[1].zf, RINGS[2].zf, RINGS[1].ri], [RINGS[2].zf, PLATE, RINGS[2].ri]]) { const w = 2 * half(rr) + .2, g = new THREE.BoxGeometry(w, 1, z1 - z0); g.translate(0, -.5, (z0 + z1) / 2); put('dressed', g); } }
+  const door = { w: 4.4, h: 15, z: PLATE }; { const g = new THREE.PlaneGeometry(door.w, door.h); g.translate(0, door.h / 2, PLATE + .05); put('door', g);
+    for (const s of [-1, 1]) { const j = new THREE.BoxGeometry(1.2, door.h + 1.2, 1); j.translate(s * (door.w / 2 + .6), (door.h + 1.2) / 2, PLATE + .5); put('stone', j); } const l = new THREE.BoxGeometry(door.w + 2.4, 1.2, 1); l.translate(0, door.h + .6, PLATE + .5); put('stone', l); }
+  // the court: 4 m slabs, a few cracked and sunk; the ring sigil cut dead in its middle, where the light lands
+  { const rc = stream(key + ':court'); for (let x = COURT.x0 + 2; x < COURT.x1; x += 4) for (let z = COURT.z0 + 2; z < COURT.z1; z += 4) { const g = new THREE.BoxGeometry(3.94, .5, 3.94), sink = rc() < .08 ? .08 + rc() * .15 : 0;
+      g.translate(x, -.25 - sink, z); put('dressed', g); }
+    const s = new THREE.PlaneGeometry(14, 14); s.rotateX(-Math.PI / 2); s.translate(lands.x, .012, lands.z); put('sigil', s); }
+  // the viaduct: one wall of five arches (an extruded shape), its deck of slabs, the parapet in blocks broken in three places
+  const VZ0 = ZB, VZ1 = ZF + 2, SP = 5, PIER = 4.4, VW = 7, S = (VZ1 - VZ0 - (SP - 1) * PIER) / SP, gaps = [];
+  { const sh = new THREE.Shape(); sh.moveTo(VZ0 - 4, BED - 2); sh.lineTo(VZ1 + 4, BED - 2); sh.lineTo(VZ1 + 4, -.35); sh.lineTo(VZ0 - 4, -.35); sh.closePath();
+    for (let i = 0; i < SP; i++) { const a = VZ0 + i * (S + PIER), b = a + S, rr = S / 2, spring = -2.4 - rr, h = new THREE.Path(); h.moveTo(a, BED - 1); h.lineTo(b, BED - 1); h.lineTo(b, spring); h.absarc(a + rr, spring, rr, 0, Math.PI, false); h.lineTo(a, BED - 1); sh.holes.push(h); }
+    const g = new THREE.ExtrudeGeometry(sh, { depth: VW, bevelEnabled: false, curveSegments: 14 }); g.rotateY(-Math.PI / 2); g.translate(VW / 2, 0, 0); put('stone', g);
+    const d = new THREE.BoxGeometry(VW + .6, .35, VZ1 - VZ0 + 6); d.translate(0, -.175, (VZ0 + VZ1) / 2); put('dressed', d);
+    const rp = stream(key + ':parapet'), broken = [[-1, VZ0 + 30 + rp() * 10], [1, VZ0 + 62 + rp() * 10], [-1, VZ0 + 92 + rp() * 8]].map(([s, z]) => ({ s, z0: +z.toFixed(1), z1: +(z + 3 + rp() * 4).toFixed(1) }));
+    gaps.push(...broken); for (const s of [-1, 1]) for (let z = VZ0 + .6; z < VZ1 - .6; z += 1.2) { if (broken.some(q => q.s === s && z > q.z0 && z < q.z1)) continue; const hh = 1.1 - (broken.some(q => q.s === s && (Math.abs(z - q.z0) < 1.3 || Math.abs(z - q.z1) < 1.3)) ? .4 : 0), g2 = new THREE.BoxGeometry(.5, hh, 1.16);
+      g2.translate(s * (VW / 2 - .25), hh / 2, z); put('stone', g2); } }
+  const figure = (() => { const x = lands.x + 3, z = lands.z + 4, h = 1.75, g = new THREE.CylinderGeometry(.2, .24, h, 10); g.translate(x, h / 2, z); put('mark', g); return { x, y: 0, z, h }; })();
+  // the light's column: an open cylinder along the light from the court to the fell, drawn added, brighter at its top
+  { const L = (ROOF + 60) / SUN.y, g = new THREE.CylinderGeometry(OC * .82, OC * .78, L, 32, 6, true), P = g.attributes.position, col = [];
+    for (let i = 0; i < P.count; i++) { const t = P.getY(i) / L + .5, b = .25 + .75 * t; col.push(b, b * .98, b * .92); } g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.translate(0, L / 2, 0); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), SUN)); g.translate(lands.x, 0, lands.z); put('beam', g); }
+  // the script (cut dead) and the ring sigil
+  const cut = (w, h, draw, bg, fg) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, w, h); x.strokeStyle = fg; x.lineCap = 'round'; draw(x); const t = new THREE.CanvasTexture(c); t.anisotropy = 8; t.wrapT = THREE.RepeatWrapping; return t; };
+  const marks = x => { const rs = stream(key + ':script'); for (let k = 0; k < 12; k++) { const cy = 44 + k * 84, kind = Math.floor(rs() * 4); x.lineWidth = 7; x.beginPath();
+    if (kind === 0) x.arc(64, cy, 30, 0, 7); else if (kind === 1) { x.arc(64, cy, 30, 0, 7); x.moveTo(64, cy - 38); x.lineTo(64, cy + 38); } else if (kind === 2) { x.arc(64, cy, 30, Math.PI * .1, Math.PI * .9); x.moveTo(94, cy - 6); x.arc(64, cy - 6, 30, 0, -Math.PI, true); }
+    else { x.moveTo(64, cy - 36); x.lineTo(64, cy + 36); for (const d of [-20, 0, 20]) { x.moveTo(44, cy + d); x.lineTo(84, cy + d); } } x.stroke(); } };
+  const sigilT = cut(512, 512, x => { x.lineWidth = 16; x.beginPath(); x.arc(256, 256, 170, 0, 7); x.stroke(); x.lineWidth = 9; x.beginPath(); x.arc(256, 256, 96, 0, 7); x.stroke(); x.lineWidth = 10; x.beginPath(); x.moveTo(256, 30); x.lineTo(256, 482); x.moveTo(30, 256); x.lineTo(482, 256); x.stroke(); }, '#8a8680', '#3a3734');
+  const rockM = mat('rock', { ns: .9, color: 0xffffff, rough: .9 }); rockM.vertexColors = true; rockM.side = THREE.DoubleSide; rockM.shadowSide = THREE.DoubleSide;
+  const floorM = mat('rock', { ns: .8, color: 0xffffff, rough: .92 }); floorM.vertexColors = true;
+  const M = { cave: rockM, floor: floorM, water: new THREE.MeshStandardMaterial({ color: new THREE.Color(.03, .06, .07), roughness: .06, metalness: .2 }),
+    stone: mat('rock', { ns: .5, color: 0xb9b6ae, rough: .8 }), dressed: mat('slab', { ns: .7, color: 0xa8a49c, rough: .85 }),
+    script: new THREE.MeshStandardMaterial({ map: cut(128, 1024, marks, '#9c988f', '#34312c'), roughness: .85, polygonOffset: true, polygonOffsetFactor: -2, side: THREE.DoubleSide }),
+    sigil: new THREE.MeshStandardMaterial({ map: sigilT, roughness: .7, polygonOffset: true, polygonOffsetFactor: -2 }), ice: new THREE.MeshStandardMaterial({ color: new THREE.Color(.78, .88, .95), roughness: .15, metalness: .05 }),
+    door: new THREE.MeshBasicMaterial({ color: 0x030304 }), beam: new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(.16, .15, .13), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }),
+    mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
+  M.stone.side = THREE.DoubleSide; M.dressed.side = THREE.DoubleSide;
+  let tris = 0, draws = 0;
+  for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['floor', 'water', 'script', 'sigil', 'beam', 'door'].includes(k); mesh.receiveShadow = k !== 'beam'; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
+  return { group, tris: Math.round(tris), draws, ground, CY, rings: RINGS.map(q => ({ ...q })), lost, oculus: { ...oc, x: +oc.x.toFixed(2), z: +oc.z.toFixed(2) }, sun: SUN.toArray().map(v => +v.toFixed(4)), lands, court: COURT,
+    viaduct: { z0: VZ0, z1: VZ1, spans: SP, S: +S.toFixed(2), pier: PIER, w: VW, gaps }, water: WATER, bed: BED, roof: ROOF, back: BACK, hole: HOLE, door, figure };
+}

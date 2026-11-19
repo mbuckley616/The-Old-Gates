@@ -7,7 +7,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 await page.evaluate(() => { window._drive = (step, max) => {
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
-  let t = performance.now(), n = 0; prevT = t; /* S2401 — the first frame steps 1/60 s, not the loop's 0.05 s clamp */
+  let t = performance.now(), n = 0; prevT = t; /* S2402 — the first frame steps 1/60 s, not the loop's 0.05 s clamp */
   try { for (; n < max; n++) { if (step && step()) break; PHP = maxHP; dead = false; t += 1000 / 60; loop(t); } }
   finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; }
   return n; }; });
@@ -24,7 +24,7 @@ check(`the Bow's perks built: Steady (S1028, on the aim's sway; tests/bowsway), 
   JSON.stringify(nock.live) === '[true,true,true,true]', nock.live);
 
 // 2. Long eye: an arrow fired level from 40 m over open ground, through tickArrowMotion alone, at Bow 74 and 75. Its drop is read
-// at 2.2 s (the old life, S982's measure); since S2401 (#1748 A) it then flies on until it lands, up to ARROW_LIFE's 8 s.
+// at 2.2 s (the old life, S982's measure); since S2402 (#1748 A) it then flies on until it lands, up to ARROW_LIFE's 8 s.
 const eye = await page.evaluate(() => { const out = {};
   // a bearing with nothing solid for 160 m, and the highest ground under it
   let dir = null, top = 0;

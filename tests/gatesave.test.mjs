@@ -15,7 +15,7 @@ const before = await page.evaluate(() => { const start = { x: px, z: pz };
   const ch = CHESTS.concat(BARRELS).find(b => b.id && !b.opened && b.items && b.items.length >= 2 && b.floor === 1);
   openLoot(ch); const took = ch.items.shift(); if (typeof closeLoot === 'function') closeLoot();
   const door = DOORS.find(d => d.id && !d.open); if (door) { door.open = true; if (door.mesh && door.mesh.parent) door.mesh.parent.remove(door.mesh); }
-  const seal = GATE_SECRETS[0] ? GATE_SECRETS[0].id : null; if (seal) openSecret(seal); /* S2402 — a seal opened (#1678 B) */
+  const seal = GATE_SECRETS[0] ? GATE_SECRETS[0].id : null; if (seal) openSecret(seal); /* S2403 — a seal opened (#1678 B) */
   return { seal, roster: ENEMIES.map(e => e.id + ' ' + e.name + ' ' + e.maxHp).sort(), tier: dungeonTier(currentPortal, 1), foe: foe.id, foes: ENEMIES.filter(e => !e.dead).length, chest: ch.id, left: ch.items.map(i => i.name), took: took && took.name, door: door ? door.id : null, start, ids: ENEMIES.filter(e => e.id).length, all: ENEMIES.length };
 });
 console.log('before', JSON.stringify(before));
@@ -40,7 +40,7 @@ console.log('after', JSON.stringify(after));
 check(`the load puts you at the gate's entrance, on floor one, where walking in puts you (${after.fromStart} m off)`, after.floor === 1 && after.fromStart < 1, after);
 check(`the foe killed is dead, gone from the floor, and the rest still stand (${after.foes} of ${before.foes})`, after.foeDead && !after.foeShown && after.foes === before.foes, after);
 check(`the chest opened is open, without the ${before.took} taken from it`, after.opened && JSON.stringify(after.left) === JSON.stringify(before.left), { before: before.left, after: after.left });
-check(`a seal opened stays open, its mouth no longer rock (S2402: ${before.seal})`, before.seal && after.seal && after.seal.opened && !after.seal.solid, { seal: before.seal, after: after.seal });
+check(`a seal opened stays open, its mouth no longer rock (S2403: ${before.seal})`, before.seal && after.seal && after.seal.opened && !after.seal.solid, { seal: before.seal, after: after.seal });
 check('a locked door opened stays open', before.door == null || after.door === true, { door: before.door, after: after.door });
 // S1479 — the same gate loaded while its cell is not loaded (the critic, 26 Oct: a load from Aurenne met Frost Wraiths and 150-health
 // Phantoms here): the portal stood at the old zone's x, z, the world's empty corner, and read tier 3 and *hard*. It now stands where

@@ -1,4 +1,4 @@
-// Spells as keys, and secrets: the seals (Session 2402; Michael's B on #1678, docs/design/spells-as-keys-build.md, session 1). A gate's
+// Spells as keys, and secrets: the seals (Session 2403; Michael's B on #1678, docs/design/spells-as-keys-build.md, session 1). A gate's
 // seals are laid on its own stream after its braziers, webs and pools: one a gate, two in a massive gate, the gate's own school first,
 // each in a side room with one mouth and no web or pool, never where closing it cuts off anything you could reach. 40 gates of every
 // size built twice, pure; then a real gate with a shut seal walked into, its mouth rock until openSecret opens it for good.
