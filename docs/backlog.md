@@ -230,7 +230,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A late autosave re-points Continue**~~ — **fixed, Session 951** (`tests/latesave`: a write points Continue at itself only if nothing was loaded while it was in flight). (QA, 14 Oct 2026; for the systems builder): `ssWrite` (`js/70-saves.js`) sets the active key when the write lands, unconditionally, so a slow autosave that lands after you load another save from the menu points Continue back at the save you left. Seen as `coopsaves` FLAKY on auto/backlog (shard 12); QA makes the test wait for the writes once the freeze lifts.
 
 ## I. Found in play (the critic)
-- **`ashenburn` red on main: children play in the burned Ashenmoor** (QA, Session 2394, s1724 `c99205e`; red twice on the weekly run of 15 Nov too;
+- ~~**`ashenburn` red on main: children play in the burned Ashenmoor**~~ — done, Session 2397 (`kidsTownOk`: none in a dead, burned, abandoned, sick or besieged town; `ashenburn` green, `f4kids` +1) (QA, Session 2394, s1724 `c99205e`; red twice on the weekly run of 15 Nov too;
   for the bodies builder: `kidsTick`/`kidsFill`, `js/32-people.js`). *the ruin: nobody in the street, no lord…* reads `rigs: 2` inside the pad
   after Q6 burns the town, with no townsperson visible. Both are S2206's children at play (rigs with `play`, 10 m and 28 m from the centre).
   `kidsTick` takes the nearest village, town or city in reach by `site.kind` alone and never reads `S.dead`, and a game already filled for

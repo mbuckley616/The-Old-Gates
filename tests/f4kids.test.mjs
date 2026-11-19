@@ -36,6 +36,12 @@ const r = await page.evaluate(() => {
   out.bad = bad;
   px = S.site.x; pz = S.site.z + 3; forceTime(19.5); tickPeople(1 / 60, 9e5); out.dusk = KIDS.list.length;
   forceTime(11); tickPeople(1 / 60, 9.1e5); out.back = KIDS.list.length; px += 300; tickPeople(1 / 60, 9.2e5); out.away = KIDS.list.length; px -= 300;
+  // Session 2397: no children in a town that is dead, sick or besieged (ashenburn's ruin had two at play); the flags read live, the next frame
+  { const T = worldState.towns || (worldState.towns = {}), had = !!T[S.site.id], st = T[S.site.id] || (T[S.site.id] = { p: 50, flags: {}, builds: [] }), f0 = Object.assign({}, st.flags);
+    tickPeople(1 / 60, 9.3e5); out.before = KIDS.list.length; out.gone = {};
+    for (const fl of ['burned', 'abandoned', 'plague', 'besieged']) { st.flags[fl] = 1; tickPeople(1 / 60, 9.4e5); out.gone[fl] = KIDS.list.length; delete st.flags[fl]; tickPeople(1 / 60, 9.5e5); }
+    S.dead = true; tickPeople(1 / 60, 9.6e5); out.gone.dead = KIDS.list.length; S.dead = false; tickPeople(1 / 60, 9.7e5); out.after = KIDS.list.length;
+    st.flags = f0; if (!had) delete T[S.site.id]; }
   out.saved = JSON.stringify(worldState).includes('kid:'); return out;
 });
 console.log(JSON.stringify({ settled: built, ...r }));
@@ -45,5 +51,6 @@ check(`what a hand holds is in the builder's palm (${(r.held || []).map(h => h[0
 check('the same town on the same day is the same children at the same games in the same places', r.same, r);
 check(`every game's pose is finite at any phase (${r.bad} bad)`, r.bad === 0, r);
 check(`at 19:30 they are indoors (${r.dusk}); at 11h back (${r.back}); 300 m off, gone (${r.away}); nothing saved`, r.dusk === 0 && r.back === r.n && r.away === 0 && !r.saved, r);
+check(`none at play in a town burned, abandoned, sick, besieged or dead (${JSON.stringify(r.gone)}), and back the next frame it is well (${r.before} → ${r.after})`, r.gone && Object.values(r.gone).every(n => n === 0) && r.before === r.n && r.after === r.n, r);
 check(`no page error (${errs.length})`, errs.length === 0, errs.slice(0, 3));
 await g.close();
