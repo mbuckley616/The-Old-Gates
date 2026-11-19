@@ -59,6 +59,7 @@ function bodyAimed(c,reach){const m=c.body;reach=reach||3.0;m.updateMatrixWorld(
   const vis=c._plain.filter(x=>x.visible);if(vis.length){_ray.set(o,_laDir);_ray.camera=CAM;_ray.far=far;_ray.near=near;if(_ray.intersectObjects(vis,false).length)return true;}
   return false;}
 function lookingAt(c,reach){if(c.body&&c.body.parent)return bodyAimed(c,reach); /* S417 — the whole body, in place of the old spot */
+  if(c.standY!=null&&Math.abs(jumpY-c.standY)>1.2)return false; /* S2405 — a seal's chest on its ledge or gallery: from its height */
   const dx=c.x-px,dz=c.z-pz,dh=Math.hypot(dx,dz);if(dh>(reach||3.0))return false;if(c.mesh||c.g||c.group)return aimAt(c,(reach||3.0)+.6); // the mesh itself when there is one
   const floorY=(activeZoneId!=='world')?(currentFloor===2?FLOOR2_Y:0):((typeof WORLD!=='undefined')?WORLD.worldH(c.x,c.z):0);const cy=floorY+(c.y!=null?c.y:0.45);
   CAM.getWorldDirection(_laDir);_laTo.set(c.x-CAM.position.x,cy-CAM.position.y,c.z-CAM.position.z);const len=_laTo.length();if(len<.001)return true;_laTo.multiplyScalar(1/len);return _laTo.dot(_laDir)>0.96;}
@@ -1029,26 +1030,114 @@ function gateSecretRec(seed){const G=worldState.gateSecrets||(worldState.gateSec
 function gateSecretOpen(seed,n){const G=worldState.gateSecrets,R=G&&G[seed];return !!(R&&R.o&&R.o.indexOf(n)>=0);}
 let GATE_SECRETS=[];
 // in metres, after the scaling pass: placeholder props (the look builder's session 6 dresses them) and, for a shut seal, the mouth's solid
+// S2405 — session 2: each seal's key and its chest. The six keys (the sheet's table): Tine, two braziers 6 m apart at the stone leaf,
+// both lit by Caor within SECRET_TINE_S of the play clock (one alone goes cold again at the end of it); Uisce, the black water frozen
+// by Sioc touched, the chest on a ledge 1.5 m over it (a plain mantle), and a swimmer in the unfrozen water loses 5% of health a second;
+// Cloch, Cloch Ghéar laid within 1.8 m of the fallen block (it lifts and lodges: open); Scáth, the dark wall shows a doorway while Oíche
+// is worn and is walked through once to stay one; Solas, Solas-Gheal laid within 3 m of the crystal pillar for 3 s; Gaoth, the gallery
+// 3.8 m up, open once you stand on it (Séideán's updraft and the mantle, or Second step and Catch). A wrong word near a seal says so,
+// once. Each seal holds one chest a tier above its floor (dungeonTier + 1, at most 4: the open number's B, built until #1757 is
+// answered), rolled on its own key (<id>:chest, no day: it never refills); opened, what is left in it is the world's record's t[n].
 const SECRET_SEAL_COL={tine:0x6d6862,uisce:0x0b1418,gaoth:0x77736a,cloch:0x8a7a62,scath:0x2e2a33,solas:0xe8e2c8};
-function gateSecretsBuild(gen,portal){GATE_SECRETS=[];if(!gen||!gen.secrets||!gen.secrets.length||!portal)return GATE_SECRETS;
-  const Hc=DCELL/2;
+const SECRET_KEY={tine:'caor',uisce:'sioc',cloch:'cloch_ghear',scath:'suil_oiche',solas:'solas_gheal',gaoth:'sideen'};
+const SECRET_TINE_S=20,SECRET_COLD=.05,SECRET_LEDGE=1.5,SECRET_GALLERY=3.8,SECRET_SOLAS_R=3,SECRET_SOLAS_S=3,SECRET_CLOCH_R=1.8,SECRET_WRONG_R=3,SECRET_TIER_UP=1;
+const SECRET_SAY={tine:'The stone leaf grinds aside.',uisce:'The black water freezes over.',cloch:'The block lifts and lodges on the lintel.',
+  scath:'The dark wall stays a doorway.',solas:'The script on the crystal lights, and a niche turns open.',gaoth:'You stand in the gallery.'};
+let GATE_SECRETS_GEN=null,DPROP_Y=null; /* DPROP_Y: the feet a prop with a top is tested at (the ledge), set only for your own step */
+function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;if(!gen||!gen.secrets||!gen.secrets.length||!portal)return GATE_SECRETS;
+  const Hc=DCELL/2,G0=worldState.gateSecrets&&worldState.gateSecrets[portal.seed];
   for(const t of gen.secrets){const y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r),R=t.room,opened=gateSecretOpen(portal.seed,t.n);
     const mat=new THREE.MeshLambertMaterial({color:SECRET_SEAL_COL[t.school]||0x777777}),grp=new THREE.Group();grp.name='gateSecret';
-    const rec={id:t.id,n:t.n,seed:portal.seed,kind:t.kind,school:t.school,floor:t.floor,x:cx,y,z:cz,opened,group:grp,solid:null,shut:null};
+    const x0=dAt(R.x-.5),x1=dAt(R.x+R.w-.5),z0=dAt(R.y-.5),z1=dAt(R.y+R.h-.5),mx=(x0+x1)/2,mz=(z0+z1)/2;
+    const dir=t.dc||t.dr,far=t.dc?(t.dc>0?x1:x0):(t.dr>0?z1:z0),at=(d,lat)=>t.dc?[far-t.dc*d,lat==null?mz:lat]:[lat==null?mx:lat,far-t.dr*d];
+    const rec={id:t.id,n:t.n,seed:portal.seed,kind:t.kind,school:t.school,floor:t.floor,c:t.c,r:t.r,x:cx,y,z:cz,kx:cx,kz:cz,area:{x0,x1,z0,z1},
+      opened,group:grp,mat,solid:null,shut:null,chest:null,said:false};
+    let chestY=y,chestAt=at(1.0);
     if(SECRET_SEAL_SHUT[t.school]){const x=cx+t.dc*(Hc-.3),z=cz+t.dr*(Hc-.3),h=Math.min(FLOOR_HEIGHT,6);
-      const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),mat);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;
+      const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),mat);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;rec.kx=x;rec.kz=z;
       rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
-      if(!opened)DUNGEON_PROPS.push(rec.solid);else m.visible=false;}
-    else{const x0=dAt(R.x-.5),x1=dAt(R.x+R.w-.5),z0=dAt(R.y-.5),z1=dAt(R.y+R.h-.5),mx=(x0+x1)/2,mz=(z0+z1)/2;
-      if(t.school==='uisce'){const m=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0-.2,z1-z0-.2).rotateX(-Math.PI/2),mat);m.position.set(mx,y+.04,mz);grp.add(m);}
-      else if(t.school==='solas'){const m=new THREE.Mesh(new THREE.BoxGeometry(.6,2.2,.6),mat);m.position.set(cx+t.dc*2.5,y+1.1,cz+t.dr*2.5);grp.add(m);}
-      else if(t.school==='gaoth'){const far=t.dc?(t.dc>0?x1:x0):(t.dr>0?z1:z0),d=1.2,w=t.dc?z1-z0:x1-x0; /* the gallery along the far wall, 3.8 m up */
-        const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?d:w,.3,t.dc?w:d),mat);m.position.set(t.dc?far-t.dc*d/2:mx,y+3.8-.15,t.dc?mz:far-t.dr*d/2);grp.add(m);}}
-    dScene.add(grp);GATE_SECRETS.push(rec);}
+      if(!opened)DUNGEON_PROPS.push(rec.solid);else m.visible=false;
+      if(t.school==='tine'){const M=t.floor===2?gen.map2:gen.map,oc=t.c-t.dc,orr=t.r-t.dr,pc=t.dr?1:0,pr=t.dc?1:0,k=Hc-.55;rec.braziers=[];
+        const ok=(c,r)=>!!(M&&M[r]&&M[r][c]>0&&M[r][c]!==8&&M[r][c]!==9);
+        for(const s of [-1,1]){const c=oc+pc*s,r=orr+pr*s; /* the cells either side of the way to the mouth, against the wall; else that way's own corners */
+          const bx=ok(c,r)?dAt(c)+t.dc*k:dAt(oc)+pc*s*k+t.dc*k,bz=ok(c,r)?dAt(r)+t.dr*k:dAt(orr)+pr*s*k+t.dr*k;
+          const g2=gateBrazierProp();g2.position.set(bx,y,bz);dScene.add(g2);
+          const b={id:t.id+':b'+(s<0?0:1),kind:'brazier',floor:t.floor,x:bx,y,z:bz,lit:false,group:g2,light:null,seal:t.id,litAt:null};
+          DUNGEON_COLUMNS.push({x:bx,z:bz,r:.55,floor:t.floor,brazier:b.id});GATE_THINGS.push(b);rec.braziers.push(b);if(opened)gtBrazierShow(b,true);}}}
+    else if(t.school==='uisce'){const m=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0-.2,z1-z0-.2).rotateX(-Math.PI/2),mat);m.position.set(mx,y+.04,mz);grp.add(m);rec.water=m;
+      const W={id:t.id+':water',kind:'sealwater',floor:t.floor,x:mx,y,z:mz,area:{x0,x1,z0,z1},frozen:opened,seal:t.id,group:m};GATE_THINGS.push(W);rec.thing=W;
+      if(opened)mat.color.setHex(0x8fa8b6);
+      const d=1.2,top=y+SECRET_LEDGE,[lx,lz]=at(d/2),w=t.dc?z1-z0:x1-x0; /* the ledge along the far wall, 1.5 m over the water */
+      const L=new THREE.Mesh(new THREE.BoxGeometry(t.dc?d:w,SECRET_LEDGE,t.dc?w:d),new THREE.MeshLambertMaterial({color:0x5d5a55}));L.position.set(lx,y+SECRET_LEDGE/2,lz);grp.add(L);
+      const B=t.dc?{x0:lx-d/2,x1:lx+d/2,z0:z0,z1:z1}:{x0:x0,x1:x1,z0:lz-d/2,z1:lz+d/2};
+      FOOTHOLDS.push(Object.assign({y:top,gate:'ledge',secret:t.id},B));DUNGEON_PROPS.push(Object.assign({floor:t.floor,top,secret:t.id},B));
+      chestY=top;chestAt=at(.6);}
+    else if(t.school==='solas'){const m=new THREE.Mesh(new THREE.BoxGeometry(.6,2.2,.6),mat);rec.kx=cx+t.dc*2.5;rec.kz=cz+t.dr*2.5;m.position.set(rec.kx,y+1.1,rec.kz);grp.add(m);rec.pillar=m;
+      if(opened)mat.emissive=new THREE.Color(0x8a8460);chestAt=at(.6);}
+    else if(t.school==='gaoth'){const d=1.2,w=t.dc?z1-z0:x1-x0,[gx,gz]=at(d/2),top=y+SECRET_GALLERY; /* the gallery along the far wall, 3.8 m up */
+      const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?d:w,.3,t.dc?w:d),mat);m.position.set(gx,top-.15,gz);grp.add(m);rec.kx=gx;rec.kz=gz;
+      rec.gallery=t.dc?{x0:gx-d/2,x1:gx+d/2,z0:z0,z1:z1,y:top}:{x0:x0,x1:x1,z0:gz-d/2,z1:gz+d/2,y:top};
+      FOOTHOLDS.push(Object.assign({gate:'gallery',secret:t.id},rec.gallery));chestY=top;chestAt=at(.6);}
+    dScene.add(grp);GATE_SECRETS.push(rec);
+    try{rec.chest=secretChest(t,portal,rec,chestAt[0],chestAt[1],chestY,G0);}catch(e){console.warn('secretChest',e);}}
   return GATE_SECRETS;}
+// a seal's chest: what is left in it is the world's once opened (t[n]), else rolled on its own key a tier above the floor. Solas's
+// stands in its niche and is in the gate's chests only once the niche turns open.
+function secretChest(t,portal,rec,x,z,yy,G0){const was=G0&&G0.t&&Array.isArray(G0.t[t.n]),key=t.id+':chest';
+  const items=was?G0.t[t.n]:rollContainerLoot('chest',portal.diffScale,portal.theme,undefined,key,Math.min(4,dungeonTier(portal,t.floor)+SECRET_TIER_UP));
+  if(was)foundRestore(items);
+  const group=new THREE.Group(),lid=buildChestShell(group,.75,0x6e5a40).lid;group.scale.setScalar(DCELL);group.position.set(x,yy,z);group.name='secretChest';
+  group.rotation.y=t.dc?(t.dc<0?Math.PI/2:-Math.PI/2):(t.dr<0?0:Math.PI);dScene.add(group); /* its front to the room's mouth */
+  const ch={id:key,x,z,y:yy-rec.y,standY:yy,opened:was,lid,floor:t.floor,mesh:group,items,displayName:'Chest',secret:t.id};
+  if(was&&lid)lid.rotation.x=-Math.PI/3;
+  if(t.school==='solas'&&!rec.opened)group.visible=false;else CHESTS.push(ch);
+  return ch;}
 // openSecret: the named action. A secret of the gate you stand in opens for good: its number is kept in the world's record, a shut
-// mouth's rock goes. False if there is no such secret here, or it is open already.
+// mouth's rock goes, and its key's mark stays (the braziers lit, the water frozen, the script lit, the niche open).
 function openSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.opened)return false;rec.opened=true;
   const R=gateSecretRec(rec.seed);if(R.o.indexOf(rec.n)<0)R.o.push(rec.n);
   if(rec.solid){const i=DUNGEON_PROPS.indexOf(rec.solid);if(i>=0)DUNGEON_PROPS.splice(i,1);}if(rec.shut)rec.shut.visible=false;
+  for(const b of rec.braziers||[])if(!b.lit)gtBrazierShow(b,true);
+  if(rec.thing){rec.thing.frozen=true;rec.mat.color.setHex(0x8fa8b6);}
+  if(rec.pillar)rec.mat.emissive=new THREE.Color(0x8a8460);
+  if(rec.chest&&CHESTS.indexOf(rec.chest)<0){rec.chest.mesh.visible=true;CHESTS.push(rec.chest);}
   return true;}
+// takeSecret: the named action. A seal's chest opened: from now on its list is the world's record's, so what you take stays taken
+function takeSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id),ch=rec&&rec.chest;if(!ch||CHESTS.indexOf(ch)<0)return false;
+  const R=gateSecretRec(rec.seed);if(Array.isArray(R.t[rec.n]))ch.items=R.t[rec.n];else R.t[rec.n]=ch.items;openLoot(ch);return true;}
+function secretOpenSay(rec){if(openSecret(rec.id)){showMsg(SECRET_SAY[rec.school]||'Something opens.','#c8b880');return true;}return false;}
+// a brazier of a seal's pair gone cold again
+function gtBrazierCold(b){b.lit=false;b.litAt=null;const f=b.group.userData.fire;if(f)f.visible=false;
+  if(b.light){if(b.light.parent)b.light.parent.remove(b.light);const i=TORCHES.findIndex(q=>q.l===b.light);if(i>=0)TORCHES.splice(i,1);b.light=null;}}
+function inArea(A,x,z,pad){pad=pad||0;return x>A.x0-pad&&x<A.x1+pad&&z>A.z0-pad&&z<A.z1+pad;}
+// the seals' tick, in a gate: the pair's 20 s, the cold water, the dark wall seen and walked through, the light on the pillar, the gallery
+function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return;
+  for(const rec of GATE_SECRETS){if(rec.opened||rec.seed!==currentPortal.seed)continue;const here=currentFloor===rec.floor;
+    if(rec.school==='tine'){const B=rec.braziers||[];for(const b of B)if(b.lit&&b.litAt==null)b.litAt=playClockS;
+      if(B.length===2&&B[0].lit&&B[1].lit&&Math.abs(B[0].litAt-B[1].litAt)<=SECRET_TINE_S){secretOpenSay(rec);continue;}
+      for(const b of B)if(b.lit&&playClockS-b.litAt>SECRET_TINE_S)gtBrazierCold(b);}
+    else if(rec.school==='uisce'){
+      if(here&&inArea(rec.area,px,pz,-.3)&&jumpY<rec.y+.5&&!dead){const t0=rec.coldT!=null?rec.coldT:playClockS,dt=Math.max(0,Math.min(1,playClockS-t0));rec.coldT=playClockS;
+        rec.cold=(rec.cold||0)+dt*SECRET_COLD*maxHP;const dmg=Math.floor(rec.cold);
+        if(dmg>0){rec.cold-=dmg;PHP=Math.max(0,PHP-dmg);lvAct.damageTaken+=dmg;updateHUD();if(!rec.chill){rec.chill=true;showMsg('The black water is bitter cold.','#a8c8e8');}if(PHP<=0)playerDead();}}
+      else rec.coldT=null;}
+    else if(rec.school==='scath'){const see=here&&typeof oicheWorn==='function'&&oicheWorn();
+      if(see&&dCellOf(px)===rec.c&&dCellOf(pz)===rec.r){secretOpenSay(rec);continue;}
+      if(see!==!!rec.seen){rec.seen=see;const i=DUNGEON_PROPS.indexOf(rec.solid);
+        if(see){if(i>=0)DUNGEON_PROPS.splice(i,1);rec.mat.transparent=true;rec.mat.opacity=.3;}else{if(i<0)DUNGEON_PROPS.push(rec.solid);rec.mat.transparent=false;rec.mat.opacity=1;}
+        rec.mat.needsUpdate=true;}}
+    else if(rec.school==='solas'){const L=typeof laidLive==='function'?laidLive():null;
+      if(here&&L&&L.light&&Math.hypot(L.x-rec.kx,L.z-rec.kz)<=SECRET_SOLAS_R+1e-6){if(rec.lit0==null)rec.lit0=playClockS;else if(playClockS-rec.lit0>=SECRET_SOLAS_S-1e-6)secretOpenSay(rec);}
+      else rec.lit0=null;}
+    else if(rec.school==='gaoth'){const g=rec.gallery;if(here&&g&&inArea(g,px,pz)&&jumpY>=g.y-.05)secretOpenSay(rec);}}}
+// a word laid at x,z near a seal: Cloch Ghéar's pillar at the fallen block opens it; another word near a seal says once that the stone
+// does not answer (Solas-Gheal at the pillar and Séideán at the gallery are their keys, and work in the tick and the jump). The id opened, or null.
+function secretLaid(word,rider,x,z){const S=secretNear(x,z,SECRET_WRONG_R);if(!S)return null;
+  if(S.school==='cloch'&&word==='cloch_ghear'&&Math.hypot(S.kx-x,S.kz-z)<=SECRET_CLOCH_R+1e-6){secretOpenSay(S);return S.id;}
+  if(word===SECRET_KEY[S.school]||(S.school==='solas'&&rider==='solas_gheal'))return null;
+  secretWrong(S);return null;}
+// a touched word near a seal that is not its key: once
+function secretTouched(word){const reach=FORMS.touched.reach+HULL_YOU+1,S=secretNear(px,pz,reach);if(!S||word===SECRET_KEY[S.school])return null;secretWrong(S);return S.id;}
+function secretNear(x,z,r){if(activeZoneId!=='dungeon'||!currentPortal)return null;let best=null,bd=r;
+  for(const s of GATE_SECRETS){if(s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed)continue;const d=Math.hypot(s.kx-x,s.kz-z);if(d<=bd){bd=d;best=s;}}return best;}
+function secretWrong(S){if(S.said)return;S.said=true;showMsg('The stone does not answer that word.','#c8b880');}

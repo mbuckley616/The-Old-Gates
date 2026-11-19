@@ -444,6 +444,9 @@ function dashGroundY(){const dun=lid&&lid.startsWith('dyn_');
 // on it: clear of solids at that height and the head under the ceiling. Indoors and in dungeons only: outdoors the world's
 // solids have no tops yet (platforming's heights for solids, the deep-work session), so nothing there is a ledge.
 // The clock is the loop's (FALL.clock), so a dropped frame changes nothing.
+// S2405 — MANTLE_EPS: the fixed step tops a jump out a fraction of a millimetre under its rule's apex (an updraft's 2.2 m reaches
+// 2.19972), so a ledge a sheet sets at a sum to the edge (a Gaoth seal's gallery, 2.2 + 1.6 = 3.8 m) is reached by 5 mm of grace.
+const MANTLE_EPS=.005;
 const MANTLE={t0:null,x0:0,z0:0,y0:0,x1:0,z1:0,y1:0,key:''},MANTLE_HI=1.6,MANTLE_CATCH=2.2,MANTLE_DUR=.5,MANTLE_FALL_V=-.5,MANTLE_G=18; /* MANTLE_G is the loop's GRAVITY */
 function mantling(){return MANTLE.t0!=null;}
 // the highest top at x,z no higher than cap, as the loop's ground reads it
@@ -456,7 +459,7 @@ function mantleClear(x,z,y){const R=.3;
   if(isInterior()){if(intSolidAt(x,z,R,y))return false;const h=currentHouse;
     if(h&&h._roomW&&(x<R||x>h._roomW-R||z<R||z>(h._roomD||1e9)-R))return false;}
   else if(!(lid&&lid.startsWith('dyn_'))){if(currentZoneSolid(x,z))return false;} /* S1590 — outdoors, onto a laid top */
-  else for(const[a,b]of[[-R,-R],[R,-R],[-R,R],[R,R]])if(!dAirAt(x+a,z+b)&&dSolid(x+a,z+b))return false;
+  else{DPROP_Y=y;try{for(const[a,b]of[[-R,-R],[R,-R],[-R,R],[R,R]])if(!dAirAt(x+a,z+b)&&dSolid(x+a,z+b))return false;}finally{DPROP_Y=null;}} /* S2405 — a ledge's top is room to stand */
   if(laidBlocks(x,z,y))return false;
   if(mantleSurf(x,z,y+HEAD_H)>y+STEP_UP)return false; /* a foothold within your height over the ledge (headCeil reads only what is over the head) */
   if(isInterior()&&(INT_SOL||[]).some(s=>s.y0!=null&&s.y0>y+STEP_UP&&s.y0<y+HEAD_H&&x>s.x0-R&&x<s.x1+R&&z>s.z0-R&&z<s.z1+R))return false;
@@ -476,7 +479,7 @@ function mantleTick(K){
   const dun=lid&&lid.startsWith('dyn_');if(!dun&&!isInterior()&&!laidLive())return false; /* S1590 — outdoors, a laid top */
   if(encumbranceState()==='immobile')return false;
   const caught=perk('acrobatics',25);if(velY<MANTLE_FALL_V&&!caught)return false;
-  const cap=jumpY+(caught?MANTLE_CATCH:MANTLE_HI),v=Math.max(0,velY),apex=jumpY+v*v/(2*MANTLE_G);
+  const cap=jumpY+(caught?MANTLE_CATCH:MANTLE_HI)+MANTLE_EPS,v=Math.max(0,velY),apex=jumpY+v*v/(2*MANTLE_G);
   const fx=-Math.sin(yaw),fz=-Math.cos(yaw);let edge=null,top=0;
   for(let d=.05;d<=.46;d+=.05){const y=mantleSurf(px+fx*d,pz+fz*d,cap);if(y>apex+STEP_UP+.001){edge=d;top=y;break;}}
   if(edge==null)return false;
