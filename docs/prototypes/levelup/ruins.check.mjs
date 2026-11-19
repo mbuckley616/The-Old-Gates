@@ -1,3 +1,4 @@
+// Session 2401 adds the Hollow Below (ruins.js hollowBelow): a gate's three rings in a cavern's back wall, the light through the oculus, the viaduct.
 // Session 2398 adds the Scarred Gate (ruins.js scarredGate): a ring 80 m across on its edge, the outer course blown off, the cleft, the crater and scar.
 // Session 2395 adds the Northlight Altar (ruins.js northlightAltar): eleven monoliths, the north open, the altar, the tarn.
 // Session 2389 adds the Drowned Spires (ruins.js drownedSpires): six towers and five spans, the three deck levels against the tide.
@@ -91,6 +92,40 @@ const G = await page.evaluate(async () => { const K = await import('./ruins.js')
   check(`seven buttes ${Math.min(...G.buttes.map(b => b.h))} to ${Math.max(...G.buttes.map(b => b.h))} m high, ${Math.min(...G.buttes.map(b => Math.hypot(b.x, b.z))).toFixed(0)} to ${Math.max(...G.buttes.map(b => Math.hypot(b.x, b.z))).toFixed(0)} m out, none before the gate`,
     G.buttes.length === 7 && G.buttes.every(b => Math.hypot(b.x, b.z) >= 200 && !(b.z > 30 && Math.abs(b.x) < b.z * 1.8)), G.buttes);
   check(`the scale: the ring stands ${((G.CY + G.R1 - G.f) / G.figure.h).toFixed(0)} times the 1.75 m post on the upper step at its foot`, G.figure.h === 1.75 && Math.abs(G.figure.y - G.plinth.top) < .01 && (G.CY + G.R1 - G.f) / G.figure.h > 35, G.figure); }
+// the Hollow Below (Session 2401; OG-104, the Mark): a gate's three rings cut into the back wall of a cavern, lit through the vault's oculus
+const HB = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./ruins.js');
+  const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 9) h = (h * 31 + Math.round(a[i] * 1e3)) | 0; }); return h; };
+  const a = K.hollowBelow(), b = K.hollowBelow(); a.group.updateMatrixWorld(true); const ray = new THREE.Raycaster(), sun = new THREE.Vector3(...a.sun), solid = a.group.children.filter(m => !['beam', 'water', 'script', 'sigil'].includes(m.name));
+  const hit = (o, d, far = 2000) => { ray.set(new THREE.Vector3(...o), new THREE.Vector3(...d).normalize()); ray.far = far; const h = ray.intersectObjects(solid, false)[0]; return h ? { name: h.object.name, d: +h.distance.toFixed(1) } : null; };
+  // daylight: up the light from the court where it lands (and 4 m round it) to the sky, and from 30 m off it, from the rings' faces and the door, into rock
+  const lit = [[0, 0], [4, 0], [-4, 0], [0, 4], [0, -4]].map(([u, v]) => hit([a.lands.x + u, .3, a.lands.z + v], a.sun)), dark = [[a.lands.x + 30, .3, a.lands.z], [a.lands.x, .3, a.lands.z + 30], [-30, .3, a.lands.z]].map(p => hit(p, a.sun));
+  const rings = [[0, a.CY + 40, a.back + 2.6], [-28, a.CY + 28, a.back + 2.6], [0, a.CY + 30, a.rings[1].zf + 2.6], [0, 8, a.door.z + .3]].map(p => hit(p, a.sun));
+  // enclosed: from the way in and from the court, every way but down meets rock; into the rings from the court meets dressed stone or the door
+  const shut = []; for (const o of [[-10, 2, 92], [0, 2, -52], [0, -50, 20]]) for (let k = 0; k < 16; k++) { const t = k / 16 * Math.PI * 2; for (const e of [.15, .6, 1.2]) { const d = [Math.cos(t) * Math.cos(e), Math.sin(e), Math.sin(t) * Math.cos(e)], h = hit(o, d); if (!h) shut.push({ o, t: +t.toFixed(2), e }); } }
+  const into = [[0, 8], [10, 20], [-14, 30]].map(([x, y]) => hit([x, y, -60], [0, 0, -1]));
+  const g = a.ground;
+  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), names: a.group.children.map(m => m.name), rings: a.rings, lost: a.lost, oculus: a.oculus, lands: a.lands, court: a.court, viaduct: a.viaduct, water: a.water, bed: a.bed, roof: a.roof, back: a.back, CY: a.CY, door: a.door, figure: a.figure,
+    lit, dark, ringsSun: rings, shut, into, gCourt: +g(0, -52).toFixed(2), gIn: +g(0, 92).toFixed(2), gLake: Math.max(...[-20, 0, 20, 40, 60].map(z => +g(0, z).toFixed(2))), emissive: a.group.children.filter(m => m.material.emissive && m.material.emissive.getHex() !== 0).map(m => m.name) }; });
+{ const H = HB, R = H.rings, half = Math.sqrt(R[2].ri ** 2 - H.CY ** 2), fd = Math.hypot(H.figure.x - H.lands.x, H.figure.z - H.lands.z);
+  check(`the Hollow Below builds the same twice and in budget: ${H.tris.toLocaleString()} triangles in ${H.draws} draws`, H.same && H.tris < 80000 && H.draws <= 12, [H.tris, H.draws, H.same, H.names]);
+  check(`the rings: three on a centre ${H.CY} m over the court, ${R.map(q => `${2 * q.ro} m (${q.n} stones, face at z ${q.zf})`).join(', ')}; each set 14 m deeper than the last; the door ${H.door.w} by ${H.door.h} m in the back plate, the floor through the inner ring ${(2 * half).toFixed(1)} m wide`,
+    R.length === 3 && R.every((q, i) => q.ro - q.ri === 8 && (!i || q.zf === R[i - 1].zf - 14 && q.ro < R[i - 1].ri)) && half > H.door.w / 2 + 1.2 && H.CY + R[0].ro > 50, R);
+  check(`a ruin: the outer ring has lost ${R[0].gone} stones from its upper left, the middle ${R[1].slipped} slipped, the inner whole; nothing lit (${H.emissive.join(', ') || 'no emissive'})`,
+    R[0].gone === 5 && R[1].slipped === 3 && R[2].gone === 0 && R[2].slipped === 0 && H.emissive.length === 0 && !H.names.includes('seam'), R);
+  check(`every lost stone lies on the back shelf before the wall, bedded in it (lowest ${Math.max(...H.lost.map(t => t.low))} to ${Math.min(...H.lost.map(t => t.low))} m, tops ${Math.min(...H.lost.map(t => t.top))} to ${Math.max(...H.lost.map(t => t.top))} m over it)`,
+    H.lost.length === 5 && H.lost.every(t => t.z < -38 && t.z > H.back && t.low < 0 && t.low > -2 && t.top > 1.2 && t.x < 0), H.lost);
+  check(`the cavern: the court at ${H.gCourt} m, the way in at ${H.gIn} m, the lake's bed under the viaduct at most ${H.gLake} m, under water at ${H.water}; the vault ${H.roof} m over the deck`,
+    Math.abs(H.gCourt + .4) < .05 && H.gIn > -1.5 && H.gIn < 1 && H.gLake < H.water - 2 && H.roof >= 110, [H.gCourt, H.gIn, H.gLake]);
+  check(`the viaduct: ${H.viaduct.z1 - H.viaduct.z0} m from the court to the way in, ${H.viaduct.w} m wide, ${H.viaduct.spans} arches of ${H.viaduct.S} m on piers standing ${-H.bed} m from the bed; the parapet broken in ${H.viaduct.gaps.length} places`,
+    H.viaduct.z0 <= -38 && H.viaduct.z1 >= 78 && H.viaduct.spans === 5 && H.viaduct.S > 18 && H.viaduct.S < 22 && H.viaduct.gaps.length === 3, H.viaduct);
+  check(`the light: up the sun from where it lands on the court (and 4 m round it) every ray reaches the sky; from 30 m off it, from the rings' faces and the door every ray meets stone before the sky (${H.dark.concat(H.ringsSun).map(h => h ? h.name : 'sky').join(', ')})`,
+    H.lit.every(h => h === null) && H.dark.concat(H.ringsSun).every(h => h !== null) && H.ringsSun.slice(0, 2).every(h => h.name === 'cave'), { lit: H.lit, dark: H.dark, rings: H.ringsSun, oculus: H.oculus });
+  check(`enclosed: from the way in, the court and the lake, ${3 * 48 - H.shut.length} of ${3 * 48} rays round and up meet stone; into the rings from the court they meet ${H.into.map(h => h && h.name).join(', ')}`,
+    H.shut.length === 0 && H.into.every(h => h && ['stone', 'dressed', 'door'].includes(h.name)), { shut: H.shut.slice(0, 6), into: H.into });
+  check(`the scale: the outer ring stands ${((H.CY + R[0].ro) / H.figure.h).toFixed(0)} times the 1.75 m post, which stands in the light (${fd.toFixed(1)} m from its middle)`, H.figure.h === 1.75 && fd < 8 && (H.CY + R[0].ro) / H.figure.h > 30, H.figure); }
+for (const v of ['mouth', 'deck', 'court', 'lake', 'far', 'mouth&dusk']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+  await pg.goto(`http://localhost:${port}/places.html?still&w=320&h=200&place=hollow&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const s = await pg.evaluate(() => window.__stats.place); check(`places.html?place=hollow&view=${v} renders: ${s.tris.toLocaleString()} triangles in ${s.draws} draws, ${s.rings} rings, ${s.lost} stones lost, no page errors`, s.tris > 0 && s.rings === 3 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
 for (const v of ['front', 'cleft', 'foot', 'scar', 'far', 'front&wake', 'front&dusk']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/places.html?still&w=320&h=200&place=scarred&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
   const s = await pg.evaluate(() => window.__stats.place); check(`places.html?place=scarred&view=${v} renders: ${s.tris.toLocaleString()} triangles in ${s.draws} draws, ${s.gone} stones gone (${s.thrown} thrown, ${s.hung} hung), no page errors`, s.tris > 0 && s.gone > 0 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
