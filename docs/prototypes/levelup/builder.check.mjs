@@ -1090,6 +1090,24 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   { const S = r.Siadhal.shuttle || {}; check(`Siadhal's tin shuttle on its cord (Session 2307): ${S.under} m under the neck, ${S.out} m out from what he wears, nothing in front of it (${S.through}), its cord over the chest (${S.cordIn} of ${S.cordTested} under), on ${S.bone}`,
     S.through === 0 && S.out > 0 && S.out < .01 && S.cordIn === 0 && S.cordTested > 10 && /^spine/.test(S.bone || '') && S.tris < 2000, S); }
   check('the underworld\'s five: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the travellers (Session 2414, L2, OG-051; Michael's B on #1704, the sheet's faces): each from CAST builds at the sheet's stature, saves and
+// loads back the same; Tid's ram skull rides his pack frame (carried by the chest, nothing of him inside the pack); Elidan's reliquary hangs
+// from her robe's cord at the left hip, clear of her arm, nothing inside it; Zahra's astrolabe at her right hip
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const r = await page.evaluate(async () => { const K = await import('./people.js'), out = {};
+    for (const [n, m] of [['Zahra', 1.72], ['Tidwulf', 1.88], ['Elidan', 1.62], ['Cuimín', 1.6], ['Markos', 1.76]]) { const G = K.castGenome(n), p = K.makePerson(G), s1 = JSON.stringify(K.toSaved(G));
+      let skull = 0, skullOn = null; p.root.traverse(o => { if (o.isMesh && /^packSkull/.test(o.name)) { skull += o.geometry.index.count / 3; for (let q = o.parent; q; q = q.parent) if (q.isBone) { skullOn = q.name; break; } } });
+      out[n] = { off: +Math.abs(K.statureOf(G) - m).toFixed(4), people: G.people, skin: G.skin, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), skull, skullOn, pack: p.backpack, reliquary: p.reliquary, astrolabe: p.astrolabe }; }
+    return out; });
+  check(`the travellers build from CAST at their sheets' statures (${Object.entries(r).map(([n, v]) => `${n} ${v.off}`).join(', ')} m off), save and load back the same, Zahra's and Markos's skin the sheet's`,
+    Object.values(r).every(v => v.off < .01 && v.saved) && r['Cuimín'].people === 'oldblood' && Math.abs(r.Zahra.skin[0] - .3) < .001 && Math.abs(r.Markos.skin[0] - .6) < .001, r);
+  { const t = r.Tidwulf, P = t.pack || {}; check(`Tid's ram skull on his pack frame (Session 2414): ${t.skull} triangles on ${t.skullOn}; the pack ${P.kind}, nothing of him inside it (${P.inside}, arms ${P.armInside})`,
+    t.skull > 800 && t.skull < 2500 && /^spine/.test(t.skullOn || '') && P.kind === 'frame' && P.inside === 0 && P.armInside === 0, { skull: t.skull, on: t.skullOn, pack: P }); }
+  { const R = r.Elidan.reliquary || {}; check(`Elidan's reliquary on her cord at the left hip (Session 2414): turned ${R.turn} rad (left is ${(Math.PI / 2).toFixed(2)}), her arm clear (${R.armIn}), nothing inside it (${R.inside} of ${R.tested}), its back ${R.near} m off what it hangs over, ${R.tris} triangles`,
+    R.turn > 0 && R.turn < 1.6 && R.armIn === false && R.inside === 0 && R.tested > 0 && R.near >= .004 && R.tris < 800, R); }
+  { const A = r.Zahra.astrolabe || {}; check(`Zahra's astrolabe at her right hip: turned ${A.turn} rad, her arm clear (${A.armIn}), nothing inside it (${A.inside})`, A.turn < 0 && A.armIn === false && A.inside === 0, A); }
+  check('the travellers: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
   const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));

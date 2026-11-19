@@ -3143,6 +3143,20 @@ function creelGeom(P) { const NU = 28, NV = 10, pos = [], uv = [], idx = [];
   // the foot: a fan from its middle
   const c0 = pos.length / 3; pos.push(0, -P.H, P.Tb * .45); uv.push(.5, .5); for (let i = 0; i < NU; i++) idx.push(c0, i + 1, i);
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return { g, rim: (t) => sec(t, P.W, P.T) }; }
+// the skull's three pieces in its own frame (its top +y, its face +z): [geometry, material, name]
+function hornedSkullParts(col) {
+  const bone = new THREE.MeshStandardMaterial({ color: sRGB(...(Array.isArray(col) ? col : [.8, .74, .6])), roughness: .75 }), horn = new THREE.MeshStandardMaterial({ color: sRGB(.46, .4, .3), roughness: .6 });
+  const bones = [], horns = [], dark = [], V = THREE.Vector3;
+  const cran = new THREE.SphereGeometry(.065, 14, 10); cran.scale(1, .85, 1.05); bones.push(cran);
+  const face = new THREE.CylinderGeometry(.024, .05, .13, 10); face.scale(1, 1, .7); face.rotateX(Math.PI / 2 + 1.0); face.translate(0, -.07, .045); bones.push(face);
+  for (const sx of [-1, 1]) { const eye = new THREE.SphereGeometry(.012, 8, 6); eye.scale(1, .8, .45); eye.translate(sx * .038, -.014, .047); dark.push(eye);
+    const pts = []; for (let i = 0; i <= 36; i++) { const t = i / 36, th = Math.PI / 2 + t * Math.PI * 1.6, r = .085 * (1 - .4 * t);
+      pts.push(new V(sx * (.05 + .11 * Math.min(1, t * 1.4)), Math.sin(th) * r, .01 + Math.cos(th) * r * .7)); }
+    for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[i], p1 = pts[i + 1], d = p1.clone().sub(p0), L = d.length(), t = i / (pts.length - 1), r0 = (.022 - .016 * t) * (i % 3 ? 1 : 1.1), r1 = .022 - .016 * (i + 1) / (pts.length - 1);
+      const seg = new THREE.CylinderGeometry(r1, r0, L * 1.08, 8, 1, true); seg.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new V(0, 1, 0), d.normalize())); seg.translate(p0.x + (p1.x - p0.x) / 2, p0.y + (p1.y - p0.y) / 2, p0.z + (p1.z - p0.z) / 2); horns.push(seg); }
+    const tip = new THREE.SphereGeometry(.006, 6, 4); tip.translate(pts.at(-1).x, pts.at(-1).y, pts.at(-1).z); horns.push(tip); }
+  return [[mergeUV(bones), bone, 'packSkull'], [mergeUV(horns), horn, 'packSkullHorn'], [mergeUV(dark), new THREE.MeshStandardMaterial({ color: sRGB(.08, .06, .05), roughness: 1 }), 'packSkullEyes']];
+}
 function backpackParts(D, P, kind) {
   const V = THREE.Vector3, grp = new THREE.Group(), col = sRGB(...(Array.isArray(D.backpack) ? D.backpack : [.6, .45, .26])), add = (g, m, nm) => { const me = new THREE.Mesh(g, m); me.name = nm; me.castShadow = me.receiveShadow = true; me.userData.shield = true; grp.add(me); return me; };
   const rope = new THREE.MeshStandardMaterial({ color: sRGB(.55, .47, .34), roughness: .95 });
@@ -3167,6 +3181,10 @@ function backpackParts(D, P, kind) {
     add(withBase(bg), clothMat(col, 'leather', { rough: .8 }), 'packHide');
     const turns = []; for (const y of [-P.H + .06 + BH * .2, -P.H + .06 + BH * .55, -P.H + .06 + BH * .88]) { const pts = [], hw = BW / 2 + .006, z0 = .005, z1 = .045 + BT + .02; for (const [px, pz] of [[-hw, z0], [hw, z0], [hw + .004, (z0 + z1) / 2], [hw * .9, z1], [0, z1 + .012], [-hw * .9, z1], [-hw - .004, (z0 + z1) / 2]]) pts.push(new V(px, y, pz)); turns.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 40, .005, 5, true)); }
     add(mergeUV(turns), rope, 'packRope');
+    // a ram's horned skull lashed to the bundle's face (Session 2414, OG-051's Tid; `packSkull` is the bone): the cranium 13 cm across,
+    // the long face down and out, two ringed horns curling back from the crown round past the cheeks, 38 cm along the curl; ~1,600 tris
+    if (D.packSkull) { const sk = hornedSkullParts(D.packSkull), at = new THREE.Matrix4().makeRotationX(.25).setPosition(0, -P.H + .06 + BH * .7, .045 + BT + .03 + .06);
+      for (const [g, m, nm] of sk) { g.applyMatrix4(at); add(withBase(g), m, nm); } }
   } else {
     // the stripes as a woven blanket's, from each end inward: the madder ground, a cream, a dark, a cream, the ground, an ochre band at the middle
     const r = P.H / 2, cream = sRGB(.84, .78, .64), dark = sRGB(.16, .1, .08), ochre = sRGB(.72, .5, .18), mats = { g: clothMat(col, 'wool'), c: clothMat(cream, 'wool'), d: clothMat(dark, 'wool'), o: clothMat(ochre, 'wool') };
@@ -3320,12 +3338,30 @@ export function astrolabeParts(D) {
   return parts;
 }
 function buildAstrolabe(G, body, byName, meshes, root) {
-  const D = G.dress, K = ASTRO, R = K.R, R0 = PACK.rest, V = THREE.Vector3, hipB = byName['spine01'] || byName['spine02'], CLEAR = .005;
-  const B = beltReach(body, meshes, root, .02); if (!B) return null;
-  const { BP, edgeIds, cx, cz, yE } = B, yHang = yE - K.drop, yLow = yHang - K.hang - R - .01;
-  // the right arm, its skin and its sleeve; and the staff, spear or crossbow in that fist (rigid, carried by the wrist), asked as the arm
-  const inFist = m => { for (let p = m.parent; p; p = p.parent) if (/^wrist\.R$|^hand\.R$/.test(p.name)) return true; return false; };
-  const armOf = i => i >= 0 && R0[i * 3] < -.2 && R0[i * 3 + 1] < .6, clouds = wornClouds(body, meshes, root).filter(c => c.m.isSkinnedMesh || !inFist(c.m));
+  const K = ASTRO;
+  return hangFromBelt(G, body, byName, meshes, root, { K, R: K.R, low: K.R, T: K.T, ringZ: K.T / 2 + .0003, front: K.T + K.rim, side: 'R', name: 'astrolabe', parts: () => astrolabeParts(G.dress),
+    within: v => Math.hypot(v.x, v.y + K.hang) <= K.R || Math.abs(v.x) < .022 && v.y > -K.hang + K.R - .01 && v.y < -K.hang + K.R + .026 });
+}
+// a thing hung plumb from the belt's lower edge on a leather thong at one hip (Session 2141's astrolabe, made general in Session 2414 for
+// the reliquary): `side` 'R' or 'L', turned toward the front a step at a time until that arm and what its fist holds are clear. The
+// spec: `K.drop` (the thong's run under the belt) and `K.hang` (from the thong's end to the thing's middle), `R` its half width, `low` how
+// far it reaches under its middle, `T` its depth out from the hip, `ringZ` where the thong takes it, `front` its face, `within(v)` whether
+// a point in its own frame is inside its outline, `parts()` its meshes (x across, y up, z out, its back at z 0, the thong's end at the origin)
+// a robe's cord in place of the belt (Session 2414, Elidan's reliquary): the ring's lower half as the belt's lower edge, its middle and height
+function cordReach(root) {
+  const cord = root.children.find(m => m.name === 'cord'); if (!cord) return null;
+  const BP = cord.geometry.attributes.position.array, n = BP.length / 3; let cx = 0, cy = 0, cz = 0; for (let i = 0; i < n; i++) { cx += BP[i * 3]; cy += BP[i * 3 + 1]; cz += BP[i * 3 + 2]; } cx /= n; cy /= n; cz /= n;
+  const edgeIds = []; let yE = 0; for (let i = 0; i < n; i++) if (BP[i * 3 + 1] < cy - .003) { edgeIds.push(i); yE += BP[i * 3 + 1]; } if (!edgeIds.length) return null;
+  return { BP, edgeIds, cx, cz, yE: yE / edgeIds.length };
+}
+function hangFromBelt(G, body, byName, meshes, root, Sp) {
+  const D = G.dress, K = Sp.K, R = Sp.R, R0 = PACK.rest, V = THREE.Vector3, hipB = byName['spine01'] || byName['spine02'], CLEAR = .005, sg = Sp.side === 'L' ? 1 : -1;
+  const B = beltReach(body, meshes, root, .02) || cordReach(root); if (!B) return null;
+  const { BP, edgeIds, cx, cz, yE } = B, yHang = yE - K.drop, yLow = yHang - K.hang - Sp.low - .01;
+  // that side's arm, its skin and its sleeve; and the staff, spear or crossbow in that fist (rigid, carried by the wrist), asked as the arm
+  const fistRe = Sp.side === 'L' ? /^wrist\.L$|^hand\.L$/ : /^wrist\.R$|^hand\.R$/;
+  const inFist = m => { for (let p = m.parent; p; p = p.parent) if (fistRe.test(p.name)) return true; return false; };
+  const armOf = i => i >= 0 && sg * R0[i * 3] > .2 && R0[i * 3 + 1] < .6, clouds = wornClouds(body, meshes, root).filter(c => c.m.isSkinnedMesh || !inFist(c.m));
   const held = []; root.traverse(m => { if (m.isMesh && !m.isSkinnedMesh && inFist(m)) held.push(m); });
   const heldPts = held.map(m => { const o = new Float32Array(m.geometry.attributes.position.count * 3); rigidInto(m, o); return o; });
   const frame = ph => { const N = new V(Math.sin(ph), 0, Math.cos(ph)), S = new V(Math.cos(ph), 0, -Math.sin(ph)); return { N, S }; };
@@ -3334,32 +3370,60 @@ function buildAstrolabe(G, body, byName, meshes, root) {
   // the furthest point along N within the outline (the disc and the thong's run over it, from the belt's edge down), the arm apart;
   // and the arm's (and what its fist holds) within the instrument's own depth, from its back to a centimetre past its face
   const reach = (F, back = null) => { let other = -1, arm = -1; const look = (x, y, z, isArm) => { if (y > yE + .005 || y < yLow) return; const dx = x - cx, dz = z - cz, u = dx * F.S.x + dz * F.S.z, d = dx * F.N.x + dz * F.N.z;
-      if (Math.abs(u) > (y > yHang - .02 ? .02 : R + .008)) return; if (isArm) { if (back != null && d > back - .003 && d < back + K.T + .012) arm = Math.max(arm, d); } else other = Math.max(other, d); };
+      if (Math.abs(u) > (y > yHang - .02 ? .02 : R + .008)) return; if (isArm) { if (back != null && d > back - .003 && d < back + Sp.T + .012) arm = Math.max(arm, d); } else other = Math.max(other, d); };
     eachPoint(clouds, (x, y, z, i) => look(x, y, z, armOf(i))); for (const X of heldPts) for (let k = 0; k < X.length; k += 3) look(X[k], X[k + 1], X[k + 2], true); return { other, arm }; };
   let ph, F, back, rE, tries = 0, armIn = true;
-  for (const off of [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, -.1, -.2, -.3, -.4]) { ph = -Math.PI / 2 + off; F = frame(ph); rE = edgeR(ph); back = Math.max(reach(F).other, rE) + CLEAR; tries++; armIn = reach(F, back).arm > -1; if (!armIn) break; }
-  if (armIn) { ph = -Math.PI / 2; F = frame(ph); rE = edgeR(ph); back = Math.max(reach(F).other, rE) + CLEAR; }
-  const grp = new THREE.Group(); grp.name = 'astrolabe'; for (const m of astrolabeParts(D)) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; grp.add(m); }
+  for (const off of Sp.offs || [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, -.1, -.2, -.3, -.4]) { ph = sg * (Math.PI / 2 - off); F = frame(ph); rE = edgeR(ph); back = Math.max(reach(F).other, rE) + CLEAR; tries++; armIn = reach(F, back).arm > -1; if (!armIn) break; }
+  if (armIn) { ph = sg * Math.PI / 2; F = frame(ph); rE = edgeR(ph); back = Math.max(reach(F).other, rE) + CLEAR; }
+  const grp = new THREE.Group(); grp.name = Sp.name; for (const m of Sp.parts()) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; grp.add(m); }
   grp.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(F.S, new V(0, 1, 0), F.N)); grp.position.set(cx, yHang, cz).addScaledVector(F.N, back); root.add(grp); root.updateMatrixWorld(true);
   // the thong, 1.2 cm of the satchel's leather (lighter than the belt; the belt's without one): over the belt's top from behind it, down its face, and on to the ring's top
-  const TW0 = .012, at = (r, y) => new V(cx, y, cz).addScaledVector(F.N, r), ringTop = at(back + K.T / 2 + .0003, yHang), pts = [at(rE - .006, yE + .057), at(rE + .003, yE + .052)];
+  const TW0 = .012, at = (r, y) => new V(cx, y, cz).addScaledVector(F.N, r), ringTop = at(back + Sp.ringZ, yHang), pts = [at(rE - .006, yE + .057), at(rE + .003, yE + .052)];
   for (let k = 1; k <= 6; k++) pts.push(at(rE + .003, yE + .052 - .052 * k / 6));
   // below the belt it lies on what it hangs over: at each of ten steps down, 3 mm over the furthest point within its width, drawn taut
   // (no step under the line between its neighbours), and never inside the straight run to the ring
-  const NT = 10, far = []; for (let k = 1; k <= NT; k++) { const y = yE + (yHang - yE) * k / NT, lin = rE + .003 + (back + K.T / 2 - rE - .003) * k / NT; let f = -1;
+  const NT = 10, far = []; for (let k = 1; k <= NT; k++) { const y = yE + (yHang - yE) * k / NT, lin = rE + .003 + (back + Sp.ringZ - rE - .003) * k / NT; let f = -1;
     eachPoint(clouds, (x, yy, z, i) => { if (armOf(i) || Math.abs(yy - y) > .008) return; const dx = x - cx, dz = z - cz; if (Math.abs(dx * F.S.x + dz * F.S.z) > TW0) return; f = Math.max(f, dx * F.N.x + dz * F.N.z); }); far.push(Math.max(f + .003, lin)); }
-  far[NT - 1] = back + K.T / 2 + .0003; for (let q = 0; q < 4; q++) for (let k = 0; k < NT - 1; k++) far[k] = Math.max(far[k], ((k ? far[k - 1] : rE + .003) + far[k + 1]) / 2 - .001);
+  far[NT - 1] = back + Sp.ringZ; for (let q = 0; q < 4; q++) for (let k = 0; k < NT - 1; k++) far[k] = Math.max(far[k], ((k ? far[k - 1] : rE + .003) + far[k + 1]) / 2 - .001);
   for (let k = 1; k <= NT; k++) pts.push(at(far[k - 1], yE + (yHang - yE) * k / NT));
   const TW = TW0 / 2, pos = [], idx = []; for (let k = 0; k < pts.length; k++) { for (const sg of [-1, 1]) { const p = pts[k].clone().addScaledVector(F.S, sg * TW); pos.push(p.x, p.y, p.z); } if (k) { const o = (k - 1) * 2; idx.push(o, o + 2, o + 1, o + 1, o + 2, o + 3); } }
   const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); tg.setIndex(idx); tg.computeVertexNormals(); tg.setAttribute('aBase', tg.attributes.position);
-  const thong = new THREE.Mesh(tg, clothMat(sRGB(...(D.satchel || D.belt || [.3, .2, .13])), 'leather', { side: THREE.DoubleSide })); thong.name = 'astrolabeThong'; thong.castShadow = thong.receiveShadow = true; thong.userData.shield = true;
+  const thong = new THREE.Mesh(tg, clothMat(sRGB(...(D.satchel || D.belt || [.3, .2, .13])), 'leather', { side: THREE.DoubleSide })); thong.name = Sp.name + 'Thong'; thong.castShadow = thong.receiveShadow = true; thong.userData.shield = true;
   // the promise: no point of the person or what they wear inside the instrument (within its disc or throne, between its back and its
   // face's rim), and the nearest under its back
   const inv = grp.matrixWorld.clone().invert(), v = new V(); let inside = 0, near = 1, tested = 0;
-  eachPoint(clouds, (x, y, z) => { v.set(x, y, z).applyMatrix4(inv); const r = Math.hypot(v.x, v.y + K.hang), inThrone = Math.abs(v.x) < .022 && v.y > -K.hang + R - .01 && v.y < -K.hang + R + .026; if (r > R && !inThrone || v.z < -.05 || v.z > K.T + K.rim) return; tested++; if (v.z > -.0005) inside++; else near = Math.min(near, -v.z); });
+  eachPoint(clouds, (x, y, z) => { v.set(x, y, z).applyMatrix4(inv); if (!Sp.within(v) || v.z < -.05 || v.z > Sp.front) return; tested++; if (v.z > -.0005) inside++; else near = Math.min(near, -v.z); });
   root.add(thong); hipB.attach(grp); hipB.attach(thong);
   let tris = idx.length / 3; grp.traverse(m => { if (m.isMesh) tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; });
-  return { mesh: grp, stats: { turn: +ph.toFixed(2), tries, armIn, inside, tested, near: +near.toFixed(4), out: +(back - rE).toFixed(3), below: +(yE - (yHang - K.hang - R)).toFixed(3), across: 2 * R, tris, held: held.length } };
+  return { mesh: grp, stats: { turn: +ph.toFixed(2), tries, armIn, inside, tested, near: +near.toFixed(4), out: +(back - rE).toFixed(3), below: +(yE - (yHang - K.hang - Sp.low)).toFixed(3), across: 2 * R, tris, held: held.length } };
+}
+// ── the reliquary (Session 2414, L2; OG-051's Sister Elidan, "candles and a reliquary"; Michael's B on #1704, the sheet's faces) ──
+// A box of oak for what the gates give back, 13 cm long, 7 tall and 8 deep, under a gabled lid, gilt at its four corners, round its
+// foot and along the ridge, a red stone set in its face; hung from the belt at the left hip on a thong through a leather loop on the
+// ridge, its length along the hip (the lantern is in the right fist). Hung as the astrolabe is (`hangFromBelt`). `reliquary` is the oak
+const RELIQ = { W: .13, H: .07, T: .08, loop: .016 };
+RELIQ.hang = RELIQ.H / 2 + .032 + RELIQ.loop; RELIQ.drop = .06;
+export function reliquaryParts(D) {
+  const K = RELIQ, parts = [], oak = clothMat(sRGB(...(Array.isArray(D.reliquary) ? D.reliquary : [.3, .19, .1])), 'leather', { rough: .7 }), gilt = new THREE.MeshStandardMaterial({ color: sRGB(.74, .56, .2), metalness: .85, roughness: .32 });
+  const add = (gs, m, name) => { const o = new THREE.Mesh(mergeUV(gs), m); o.name = name; parts.push(o); return o; }, cy = -K.hang, cz = K.T / 2 + .002;
+  const wood = [], gold = [], box = new THREE.BoxGeometry(K.W, K.H, K.T); box.translate(0, cy, cz); wood.push(box);
+  // the lid: two slopes meeting 3 cm over the box's top, a little proud of it all round
+  for (const s of [-1, 1]) { const rf = new THREE.BoxGeometry(K.W + .006, .006, K.T * .62); rf.rotateX(s * .62); rf.translate(0, cy + K.H / 2 + .017, cz + s * K.T * .25); wood.push(rf); }
+  { const gab = new THREE.Shape(); gab.moveTo(-K.T / 2, 0); gab.lineTo(K.T / 2, 0); gab.lineTo(0, .03); gab.closePath(); const gg = new THREE.ExtrudeGeometry(gab, { depth: K.W - .002, bevelEnabled: false }); gg.rotateY(Math.PI / 2); gg.translate(-(K.W - .002) / 2, cy + K.H / 2, cz); wood.push(gg); }
+  const ridge = new THREE.CylinderGeometry(.004, .004, K.W + .01, 8); ridge.rotateZ(Math.PI / 2); ridge.translate(0, cy + K.H / 2 + .032, cz); gold.push(ridge);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const b = new THREE.BoxGeometry(.008, K.H + .004, .008); b.translate(sx * (K.W / 2 - .002), cy, cz + sz * (K.T / 2 - .002)); gold.push(b); }
+  const band = new THREE.BoxGeometry(K.W + .004, .008, K.T + .004); band.translate(0, cy - K.H / 2 + .006, cz); gold.push(band);
+  add(wood, oak, 'reliqBox'); add(gold, gilt, 'reliqGilt');
+  const stone = new THREE.SphereGeometry(.007, 10, 8); stone.scale(1, 1, .6); stone.translate(0, cy + .004, cz + K.T / 2 + .002);
+  add([stone], new THREE.MeshStandardMaterial({ color: sRGB(.5, .05, .06), metalness: .2, roughness: .2 }), 'reliqStone');
+  // the loop on the ridge, across the box's length, that the thong runs through; its top at the origin
+  const lp = new THREE.TorusGeometry(K.loop, .003, 6, 12, Math.PI); lp.rotateY(Math.PI / 2); lp.translate(0, cy + K.H / 2 + .032, cz); add([lp], clothMat(sRGB(...(D.belt || [.3, .2, .13])), 'leather'), 'reliqLoop');
+  return parts;
+}
+function buildReliquary(G, body, byName, meshes, root) {
+  const K = RELIQ, top = -K.hang + K.H / 2 + .036;
+  return hangFromBelt(G, body, byName, meshes, root, { K, R: K.W / 2 + .004, low: K.H / 2 + .002, T: K.T + .006, ringZ: K.T / 2 + .002, front: K.T + .008, side: 'L', name: 'reliquary', offs: [.6, .7, .8, .9, 1, 1.1, 1.2, .5, .4, .3, .2, .1, 0, -.1, -.2, -.3, -.4], parts: () => reliquaryParts(G.dress),
+    within: v => Math.abs(v.x) < K.W / 2 + .004 && v.y > -K.hang - K.H / 2 - .002 && v.y < top - .01 * Math.abs(v.z - K.T / 2) / (K.T / 2) });
 }
 // ── the seal and the scribe's gear (Session 2202, L2; OG-053's travelling scholar: "belt of instruments"; his things: "a wax seal";
 // canon Q6: he presses a Royal Mage Corps wax seal into your hand) ──
@@ -5151,6 +5215,8 @@ function* makePersonSteps(G, o = {}) {
   else if (basketGrip) basketStats = { ...buildBasket(G, body, byName, meshes, root, basketGrip).stats, wrist: basketWrist };
   // the astrolabe on the belt at the right hip (Session 2141), after what the right fist holds, so it hangs clear of the arm and of that
   let astroStats = null; if (D.astrolabe && D.belt) { const A = buildAstrolabe(G, body, byName, meshes, root); astroStats = A && A.stats; }
+  // the reliquary on the belt at the left hip (Session 2414), after what either fist holds
+  let reliqStats = null; if (D.reliquary && (D.belt || D.robe || D.cord)) { const A = buildReliquary(G, body, byName, meshes, root); reliqStats = A && A.stats; }
   // the seal, the penner and the inkhorn on the belt at the front-left (Session 2202), after the astrolabe
   let sKitStats = null; if ((D.penner || D.seal) && D.belt) { const S = buildScholarKit(G, body, byName, meshes, root); sKitStats = S && S.stats; }
   // the clay pipe in the teeth (Session 1816), after everything worn, so it is turned clear of all of it; not under a helm, a raised hood or a veil
@@ -5173,7 +5239,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, lenses: lensStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, lenses: lensStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, reliquary: reliqStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -5196,7 +5262,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'shuttle', 'guildStar'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14 };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'shuttle', 'guildStar', 'reliquary', 'packSkull'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14 };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -5449,14 +5515,41 @@ export const CAST = {
   Siadhal: { people: 'gatelander', g: 1, age: .4, muscle: .5, weight: .28, metres: 1.8, hairCol: [.22, .14, .08], hair: { style: 'short', len: .55 }, beard: .45,
     dress: { tunic: [.3, .26, .2], trousers: [.2, .17, .14], boots: [.18, .12, .08], belt: [.22, .14, .09], waistcoat: [.26, .16, .1], waistcoatLeather: true,
       cloak: [.34, .3, .24], cloakLen: .95, hood: 'up', brooch: [.62, .62, .6], staff: [.4, .3, .2], staffMake: 'hazel', sword: [.42, .43, .45], swordMake: 'falchion',
-      shuttle: [.62, .62, .6] } } };
+      shuttle: [.62, .62, .6] } },
+  // Session 2414 (L2, OG-051; Michael's B on #1704, "the sheet's faces"): the quest writer's five *Travellers*, who move from place to place by
+  // the game-week, as the concept artist's `travellers.js` drew them at B, each recognisable across a square without a pack. The ram's skull
+  // on Tid's pack frame and Elidan's reliquary, laid on after the build in the prototype, are pieces of the kit now (`packSkull`, `reliquary`).
+  // Zahra al-Mahdi, the navigator, on the quay of one of Aurenne's three largest ports: dark, long locs, gold hoops and the coin necklace; a
+  // navy coat open over cream, trimmed in cream; the brass astrolabe at her belt, the satchel with its roll of charts
+  Zahra: { people: 'aurennais', g: 0, age: .42, muscle: .5, weight: .35, metres: 1.72, hairCol: [.04, .03, .03], hair: { style: 'braids', len: .95 }, skin: [.3, .19, .12],
+    dress: { tunic: [.82, .77, .64], trousers: [.16, .14, .14], boots: [.2, .14, .1], belt: [.22, .14, .09], coat: [.06, .08, .2], coatLen: .82, coatTrim: [.82, .77, .64], coatOpen: true,
+      earrings: [.74, .56, .2], necklace: [.74, .56, .2], astrolabe: [.62, .46, .2], satchel: [.4, .26, .14], maps: [.82, .74, .56] } },
+  // Tidwulf, called Tid, the hunter, at the inn door of the Mark's town nearest a living lair: broad and scarred, braided and bearded; a
+  // fur-collared coat, leg wraps, the Mark's pack frame with a ram's horned skull lashed to its bundle (his wolf is the creature kit's)
+  Tidwulf: { people: 'markman', g: 1, age: .5, muscle: .85, weight: .55, metres: 1.88, hairCol: [.5, .36, .2], hair: { style: 'plait', len: .7 }, beard: .9, scar: 'R',
+    dress: { tunic: [.34, .28, .2], trousers: [.2, .18, .16], boots: [.16, .11, .08], belt: [.22, .14, .09], coat: [.24, .17, .11], coatLen: .7, coatFur: [.46, .4, .32],
+      legWraps: [.36, .32, .26], backpack: [.4, .32, .24], backpackKind: 'frame', packSkull: [.8, .74, .6] } },
+  // Sister Elidan, of the shrines, a week in the church of one Gatelands town in four: an older face; a cream robe under the long crimson
+  // scapular, a crimson cord; a lit lantern in her right fist and the reliquary at her left hip
+  Elidan: { people: 'gatelander', g: 0, age: .72, muscle: .35, weight: .5, metres: 1.62, hairCol: [.56, .52, .48], hair: { style: 'bun', len: .6 },
+    dress: { tunic: [.82, .77, .64], robe: [.82, .77, .64], tabard: [.46, .06, .07], tabardLen: .85, cord: [.46, .06, .07], boots: [.2, .15, .1], belt: [.22, .14, .09],
+      lantern: [.22, .22, .22], reliquary: [.3, .19, .1] } },
+  // Cuimín, the reader, one of the awake (§10a), at the door of the nearest gate with a warm stone: Old Blood, slight, the hair gone white
+  // with the Cold and the marks up to the face; dark grey layers, a grey shoulder wrap, a thin silver circlet
+  Cuimín: { people: 'oldblood', fixed: true, g: 1, age: .8, muscle: .3, weight: .22, metres: 1.6, hairCol: [.86, .86, .84], hair: { style: 'loose', len: .7 }, beard: .2, marks: .95,
+    dress: { tunic: [.3, .3, .32], trousers: [.2, .2, .22], boots: [.14, .11, .09], belt: [.16, .12, .1], shoulderWrap: [.42, .41, .4], circlet: [.74, .74, .72] } },
+  // Markos Serra, the patron, on the counting-house steps of Aurenne's capital: a dark beard; a wine velvet coat open over cream, trimmed
+  // in gold, gold at the ears, a gold cup in his fist
+  Markos: { people: 'aurennais', g: 1, age: .55, muscle: .4, weight: .62, metres: 1.76, hairCol: [.06, .04, .03], hair: { style: 'short', len: .5 }, beard: .9, skin: [.6, .43, .3],
+    dress: { tunic: [.82, .77, .64], trousers: [.1, .08, .08], boots: [.12, .08, .06], belt: [.12, .08, .06], coat: [.3, .04, .09], coatLen: .8, coatTrim: [.74, .56, .2], coatOpen: true,
+      tankard: [.74, .56, .2], earrings: [.74, .56, .2] } } };
 // a cast member's genome: their name's roll, then the sheet. `o.people` keeps a people the caller already knows (Corwin's), unless the
 // sheet's is `fixed` (Aldwyn's Old Blood, which the game's Gatelander driver does not know; Session 2103); `o.outfit` dresses them in one of
 // their sheet's other outfits in place of the first (Aldwyn's `travel`, Session 2113; `study`, Session 2135), the same face and body
 export function castGenome(name, o = {}) {
   const C = CAST[name]; if (!C) return null; const people = !C.fixed && o.people && PEOPLES[o.people] ? o.people : C.people;
   const G = rollGenome('cast:' + name, { people, g: C.g });
-  for (const k of ['age', 'muscle', 'weight', 'hairCol', 'beard']) if (C[k] != null) G[k] = Array.isArray(C[k]) ? C[k].slice() : C[k];
+  for (const k of ['age', 'muscle', 'weight', 'hairCol', 'beard', 'skin']) if (C[k] != null) G[k] = Array.isArray(C[k]) ? C[k].slice() : C[k];
   G.hair = { ...C.hair }; if (C.brow) G.brow = { ...C.brow }; if (C.face) G.face = { ...(G.face || {}), ...C.face }; G.pose = { ...(G.pose || {}), stoop: 0, ...(C.pose || {}) }; G.scar = C.scar || null; G.marks = people === 'oldblood' ? C.marks ?? G.marks : null;
   G.dress = { ...Object.fromEntries(GARMENTS.map(k => [k, null])), ...DRESS_FLAGS, skirt: C.g ? 'short' : 'long', ...JSON.parse(JSON.stringify(C.outfits?.[o.outfit] || C.dress)) };
   G.height = heightFor(G, C.metres); G.cast = name; return G;

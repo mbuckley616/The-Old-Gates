@@ -1,10 +1,11 @@
 // The travellers (the concept artist, 17 Nov 2026; backlog L2, OG-051): travellers.js's five stood in a line on a paved square in
 // the late afternoon, Tid's wolf sitting at his heel, the 1.8 m post among them. ?level=a|b|c (b, the sheet's faces, is the default),
 // &cam=wide (default) | close | face | scale | high or x,y,z,tx,ty,tz, &who=zahra|tid|elidan|cuimin|markos (close, face and scale),
-// &turn=1 shows their backs, &only=<key> builds one.
+// &turn=1 shows their backs, &only=<key> builds one. &cast=1 (the bodies builder, Session 2414) builds each from people.js's own CAST
+// (Michael's B on #1704), the kit's pieces alone, no travProps; the stats carry each one's skull, reliquary and astrolabe.
 import * as THREE from 'three';
 import { Q, W, H, STILL, STATS, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, treeKit, run, reseed } from './common.js';
-import { loadPack, makePerson, rollGenome, statureOf, heightFor, GARMENTS, DRESS_FLAGS } from './people.js';
+import { loadPack, makePerson, rollGenome, statureOf, heightFor, GARMENTS, DRESS_FLAGS, castGenome } from './people.js';
 import { shrineTextures } from './shrines.js';
 import { genome as beastGenome, build as buildBeast, pose as poseBeast } from './creatures.js';
 import { TRAVELLERS as POWERS, ORDER, travGenome, travProps } from './travellers.js';
@@ -36,9 +37,11 @@ cam.updateProjectionMatrix();
 const comp = makeComposer(R, scene, cam, { bloom: .2, bloomT: .9, sat: 1.06, vig: .26 });
 R.info.autoReset = !STILL;
 const P = { rollGenome, heightFor, GARMENTS, DRESS_FLAGS };
+const CASTED = Q.has('cast'), CAST_NAME = { zahra: 'Zahra', tid: 'Tidwulf', elidan: 'Elidan', cuimin: 'Cuimín', markos: 'Markos' };
 loadPack('mh/').then(() => { STATS.level = LEVEL; STATS.trav = [];
-  for (const k of (Q.get("only") ? [Q.get("only")] : ORDER)) { STATS.at = k; const t0 = performance.now(), G = travGenome(k, LEVEL, P), M = makePerson(G); scene.add(M.root);
-    M.root.position.x = X(k); M.root.position.z = 0; const propTris = travProps(M, G); let tris = 0;
+  for (const k of (Q.get("only") ? [Q.get("only")] : ORDER)) { STATS.at = k; const t0 = performance.now(), G = CASTED ? castGenome(CAST_NAME[k]) : travGenome(k, LEVEL, P), M = makePerson(G); scene.add(M.root);
+    M.root.position.x = X(k); M.root.position.z = 0; const propTris = CASTED ? 0 : travProps(M, G); let tris = 0;
+    if (CASTED) STATS[k] = { reliquary: M.reliquary || null, astrolabe: M.astrolabe || null, skull: (() => { let n = 0, o = null; M.root.traverse(m => { if (/^packSkull/.test(m.name)) { n += m.geometry.index.count / 3; o = m; } }); return n ? { tris: n, bone: o.parent?.parent?.name || o.parent?.name } : null; })() };
     M.root.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
     if (POWERS[k].wolf) { const C = buildBeast(beastGenome('wolf', 'trav:tid', { island: 'mark' })); C.gait = 'sit'; poseBeast(C, 0); C.root.position.set(X(k) + .78, 0, -.1); C.root.rotation.y = .25;
       let wt = 0; C.root.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; const g = o.geometry; wt += (g.index ? g.index.count : g.attributes.position.count) / 3; } }); scene.add(C.root); STATS.wolf = Math.round(wt); }
