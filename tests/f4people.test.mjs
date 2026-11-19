@@ -409,6 +409,16 @@ const cbib = await page.evaluate(() => { const root = buildNPCMesh({ role: 'vill
     let d = 9; for (const b of W) if (Math.abs(b.y - q.y) < .015) d = Math.min(d, Math.hypot(b.x - q.x, b.z - q.z)); if (d < 1) { s += d; c++; } }
   return { bib: true, gap: +(s / Math.max(1, c)).toFixed(4), n: c, out: P.cloak.through ? P.cloak.through.out : null, under: P.cloak.under }; });
 check(`over an apron's bib a cape lies close, not 4 cm out: Sorcha's under 3 cm off the bib at the breast (${cbib.gap}), nothing through, nothing under`, cbib.bib && cbib.n > 50 && cbib.gap < .03 && cbib.out === 0 && cbib.under === 0, cbib);
+// S2420 (S2407's owed note): under the brooch, where the shoulder line turns in to the throat, a front column's upper rows stood up to 9 mm
+// inside the line from the row above to the row below, a notch in the opening's edge. Read on Sorcha and Orla: no front point in the top
+// 10 cm more than 3 mm inside it
+const notch = await page.evaluate(() => ['Sorcha', 'Orla'].map(name => { const root = buildNPCMesh({ role: 'villager', name, people: 'gatelander' }, { key: 'cf0' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+  if (!r.hbG.dress.cape) return { name, cape: false }; const P = HB.makePerson(r.hbG, { hoodStats: false }); P.root.updateMatrixWorld(true); const n = new THREE.Vector3(), v = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(n);
+  const K = P.cloak.columns, R = P.cloak.rows, cl = P.root.getObjectByName('cloak'), pa = cl.geometry.attributes.position; let worst = 0, tested = 0;
+  for (let k = 0; k < K; k++) { const c = []; for (let i = 0; i < R; i++) { v.fromBufferAttribute(pa, k * R + i).applyMatrix4(cl.matrixWorld); c.push({ r: Math.hypot(v.x - n.x, v.z - n.z), th: Math.atan2(v.x - n.x, -(v.z - n.z)), dy: n.y - v.y }); }
+    for (let i = 1; i < R - 1; i++) { if (Math.abs(c[i].th) < 2.2 || c[i].dy > .1) continue; tested++; worst = Math.max(worst, (c[i - 1].r + c[i + 1].r) / 2 - c[i].r); } }
+  return { name, cape: true, worst: +worst.toFixed(4), tested, out: P.cloak.through ? P.cloak.through.out : null, under: P.cloak.under }; }));
+check(`no notch in a shoulder cape's opening under the brooch: no front point in its top 10 cm more than 3 mm inside its column (${notch.map(x => x.name + ' ' + x.worst).join(', ')}), nothing through, nothing under`, notch.every(x => x.cape && x.tested > 20 && x.worst < .003 && x.out === 0 && x.under === 0), notch);
 check('the Church\'s inquisitor wears the white tabard over mail with the red shuttle on it (nothing of the body through it) and a white hood, white far off', office.inquisitor.mail && office.inquisitor.tabard && office.inquisitor.sign > 100 && office.inquisitor.out === 0 && office.inquisitor.tested > 1000 && office.inquisitor.hood && office.inquisitor.far > .8, office.inquisitor);
 // S2260 (#1566 B, dressed by rank, nation by nation): the head of a town by its well (`_lord`) wears the concept artist's sheet for the
 // office, whatever the roll; a guard captain who is not the town's head is still a guard

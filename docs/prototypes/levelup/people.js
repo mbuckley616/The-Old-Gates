@@ -1252,6 +1252,13 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
         for (let it = 0; it < 2; it++) W = W.map(d => d.map((v, r) => r < 1 ? v : (2 * v + (r > 1 ? d[r - 1] : v) + (r < R - 1 ? d[r + 1] : v)) / 4));
         D = D.map((d, k) => d.map((v, r) => Math.max(v, W[k][r], need[k][r] - .008))); }
       cols.forEach((c, k) => { for (let r = 1; r < R; r++) if (D[k][r] > 1e-5) { const p = pols[k][r], rr = p.r + D[k][r]; c[r].x = neck.x + Math.sin(p.th) * rr; c[r].z = neck.z - Math.cos(p.th) * rr; overHair++; } }); } }
+  // the notch under the brooch (Session 2420, S2407's owed note): where the shoulder line turns in to the throat (the 2 or 3 columns either side
+  // of the opening, 2.3 to 2.6 rad from the back's middle) a column's second to ninth rows stood up to 9 mm inside the line from the row above
+  // to the row below, a dent in the opening's edge just under the brooch, on every shoulder cape and deepest over a bib. In a cape's top 12 cm
+  // at the front each row is drawn out toward that line, never in, so nothing comes nearer the body and no triangle is added
+  let unnotched = 0; if (cape) for (let it = 0; it < 4; it++) for (let k = 0; k < K; k++) { const c = cols[k], pr = c.map(q => Math.hypot(q.x - neck.x, q.z - neck.z));
+    for (let r = 1; r < R - 1; r++) { const q = c[r], w = capeFront(q) * Math.max(0, Math.min(1, (.12 - (neckY - q.y)) / .03)), want = (pr[r - 1] + pr[r + 1]) / 2 - pr[r];
+      if (w <= 0 || want <= 1e-4) continue; const th = Math.atan2(q.x - neck.x, -(q.z - neck.z)), rr = pr[r] + w * want; q.x = neck.x + Math.sin(th) * rr; q.z = neck.z - Math.cos(th) * rr; if (it === 0) unnotched++; } }
   // the sheet
   const pos = [], uv = [], idx = [];
   for (let k = 0; k < K; k++) for (let r = 0; r < R; r++) { const q = cols[k][r]; pos.push(q.x, q.y, q.z); uv.push(k / (K - 1), r / (R - 1)); }
@@ -1297,7 +1304,7 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
     b2.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n2); o2.position.copy(b2.position).addScaledVector(n2, br.userData.device ? .0036 : .005); out.push(b2, o2); }
   for (const m of out) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; }
   let minClear = 1, under = 0; for (const c of cols) for (const q of c) { const hit = heightOver(S, q); if (hit) { minClear = Math.min(minClear, hit.h); if (hit.h < .005) under++; } }
-  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3), cape, ...overHair ? { overHair } : {}, hemDrop: +(neck.y - cols.reduce((a, c) => a + c[R - 1].y, 0) / K).toFixed(3), hem: !!D.cloakHem, thrown, ...H.stats, through: armsThrough(cols, R, PP, neck, worn), point: pointStats } };
+  return { meshes: out, stats: { columns: K, rows: R, tris: idx.length / 3, minClear: +minClear.toFixed(4), under, brooch: +br.position.distanceTo(neck).toFixed(3), cape, ...unnotched ? { unnotched } : {}, ...overHair ? { overHair } : {}, hemDrop: +(neck.y - cols.reduce((a, c) => a + c[R - 1].y, 0) / K).toFixed(3), hem: !!D.cloakHem, thrown, ...H.stats, through: armsThrough(cols, R, PP, neck, worn), point: pointStats } };
 }
 
 // the body round the neck's axis: for each height (2 cm) and angle (4°) the furthest point of the posed body, so a
