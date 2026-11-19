@@ -901,13 +901,15 @@ function stepWord(x,z,ux,uz,len){const y0=jumpY,ow=isOverworldZone()&&!isInterio
 // S1605 — Éan worn (magic-build.md, "Movement against the step table"): a jump leaves the ground at 8.4 m/s, not the legs' 5.5–6.6, so
 // it tops out 1.96 m up and crosses 4.4 m at the 4.7 m/s air cap: the step table's 4.0–4.8 band. Its shape is the same at every tier;
 // the tier sets only its time (20/40/80 s). At Mastery it is Wingless, the canon's: no fall hurts while it is worn.
-let _eanTier=0;
+let _eanTier=0,_oicheUntil=0;
+function oicheWorn(){return _oicheUntil>performance.now();}
 function eanRise(){return fxOn('leap')?WORD_BY.ean.forms.worn.rise:0;}
 function eanWingless(){return fxOn('leap')&&_eanTier>=3;}
 const ELEMENTAL_PRICE=[[120,320,700],[120,320,700]]; // tier prices for the seven originals
 function applySpellBuff(sp,tier){
   const b=sp.buff;const dur=b.dur[Math.max(0,tier-1)]*_buffMult('spellDuration',1);SPELL_FX[b.key]=performance.now()+dur*1000;
   if(b.key==='leap')_eanTier=tier; /* S1605 — Éan's Wingless at Mastery */
+  if(b.key==='nighteye')_oicheUntil=SPELL_FX.nighteye; /* S2405 — Oíche worn, not the draught: a Scáth seal's key */
   if(b.key==='shield'){if(typeof _applyBuff==='function')_applyBuff({type:'warding',mult:tier>=3?.5:tier===2?.6:.7,duration:dur,label:'Shield',col:'#c0b090'});}
   if(b.key==='light'){if(!_spellLight){_spellLight=new THREE.PointLight(0xfff0c0,0,18);CAM.add(_spellLight);_spellLight.position.set(0,.4,-.6);}_spellLight.intensity=1.4+tier*.3;}
   showMsg(`${sp.ico} ${sp.nameEn} — ${Math.round(dur)}s`,'#c0e0ff');
@@ -920,6 +922,7 @@ function tickSpellFx(dt){
   if(LAID&&LAID.rideR)laidRiderTick(); /* S1604 — a rider on a laid thing */
   if(LAID&&LAID.snare&&!LAID.rooted)laidSnareTick(); /* S1612 — Fréamh laid */
   if(LAID&&LAID.fire)laidFireTick(); /* S1617 — Loscadh laid */
+  if(typeof gateSecretsTick==='function')gateSecretsTick(); /* S2405 — a gate's seals (68-dungeon-misc.js) */
   if(_spellLight&&!fxOn('light')&&_spellLight.intensity>0)_spellLight.intensity=Math.max(0,_spellLight.intensity-dt*2);
 }
 // spellbooks: read to learn
@@ -1252,7 +1255,7 @@ function wordCellDur(id,form){const c=WORD_BY[id]&&WORD_BY[id].forms[form];if(!c
 // the shape a laid entry makes, or null where it makes none yet (the sheet's session 4)
 function laidShape(word,rider){
   if(word==='cloch_ghear')return 'pillar';if(word==='sideen')return 'updraft';
-  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';if(word==='reo')return 'nova';if(word==='loscadh')return 'fire';if(word==='dorcha')return 'dark';return null;}
+  if(word==='sioc')return 'floe';if(word==='tonn'&&rider==='sioc')return 'bridge';if(word==='freamh')return 'snare';if(word==='reo')return 'nova';if(word==='loscadh')return 'fire';if(word==='dorcha')return 'dark';if(word==='solas_gheal')return 'light';return null;}
 // layWord: the named action. Lays word (with rider) at x,z (its ground found there), facing yaw for a bridge; o.overshoot ×1.5 a
 // pillar's height. Returns {ok} or {say}; nothing is paid here (the cast pays).
 function layWord(word,rider,x,z,o){o=o||{};
@@ -1262,9 +1265,10 @@ function layWord(word,rider,x,z,o){o=o||{};
   const ow=activeZoneId==='world'&&!isInterior()&&!(lid&&lid.startsWith('dyn_'));
   const wet=ow&&typeof worldH==='function'&&worldH(x,z)<(typeof SEA_Y!=='undefined'?SEA_Y-.35:-1e9)&&activeTerrainH(x,z)<SEA_Y; /* open water: no quay or deck over it */
   let L={kind,word,rider:rider||null,x,z,key:laidKey()};
+  const seal=typeof secretLaid==='function'?secretLaid(word,rider,x,z):null; /* S2405 — Cloch Ghéar at a seal's fallen block lifts it */
   if(kind==='pillar'||kind==='updraft'){
     const r=kind==='pillar'?F.across/2:F.updraft/2,throws=kind==='pillar'&&rider==='sideen',why=laidClear(x,z,r,y,{self:throws});
-    if(why)return {say:why==='body'?'There is no room to lay it there.':'Too near the wall to lay it.',why};
+    if(why)return seal?{ok:true,kind,seal}:{say:why==='body'?'There is no room to lay it there.':'Too near the wall to lay it.',why}; /* S2405 — the block lifted, the word is spent */
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'It will not stand in water.',why:'wet'};
     const h=kind==='pillar'?F.pillar*(o.overshoot?LAID_OVERSHOOT:1):0;
     Object.assign(L,{r,base:y,top:y+h,solid:kind==='pillar',dur:F.dur*(kind==='pillar'&&perk('cloch',75)?SCHOOL75.stoneMult:1)});} /* S1625 — Cloch 75 */
@@ -1279,6 +1283,8 @@ function layWord(word,rider,x,z,o){o=o||{};
     if(ow&&worldH(x,z)<SEA_Y-.35)return {say:'Fire will not take on water.',why:'wet'};
     const tier=wordTierOf(word)||1;
     Object.assign(L,{r:F.fire/2,base:y,top:y,solid:false,dur:F.dur,fire:Math.round(F.dps*TIER_MULT.magnitude[tier-1]),fireNext:playClockS+1});}
+  else if(kind==='light'){ /* S2405 — Solas-Gheal's: a light 8 m round on the ground, 60 s, never a solid (the key to a Solas seal) */
+    Object.assign(L,{r:.4,base:y,top:y,solid:false,dur:F.dur,light:F.light});}
   else if(kind==='dark'){ /* S1636 — Dorcha's: a dark 6 m across on the ground, never a solid; foes in it are blind (foeInDark) */
     Object.assign(L,{r:F.dark/2,base:y,top:y,solid:false,dur:F.dur,dark:true});}
   else if(kind==='floe'){
@@ -1358,6 +1364,8 @@ function laidMesh(L){if(typeof THREE==='undefined'||typeof scene==='undefined'||
   else if(L.kind==='fire'){geo=new THREE.CircleGeometry(L.r,24);geo.rotateX(-Math.PI/2);col=0xd2601e;op=.5;}
   else if(L.kind==='nova'){geo=new THREE.CircleGeometry(L.r,32);geo.rotateX(-Math.PI/2);col=0xdcecf4;op=.45;}
   else if(L.kind==='dark'){geo=new THREE.CircleGeometry(L.r,32);geo.rotateX(-Math.PI/2);col=0x140c1c;op=.7;}
+  else if(L.kind==='light'){const g=new THREE.Group(),b=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),new THREE.MeshBasicMaterial({color:0xfff2c8}));b.position.y=1.1;g.add(b); /* S2405 — Solas-Gheal laid */
+    const l=new THREE.PointLight(0xfff0c8,1.6,L.light);l.position.y=1.2;g.add(l);g.position.set(L.x,L.base,L.z);g.name='laid-light';scene.add(g);return g;}
   else{geo=new THREE.BoxGeometry(L.hw*2,L.top-L.base,L.hl*2);col=0xbcdcec;}
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col,transparent:op<1,opacity:op,depthWrite:op>=1,side:op<1?THREE.DoubleSide:THREE.FrontSide}));
   m.name='laid-'+L.kind;
@@ -1547,19 +1555,19 @@ function douseFire(f){const i=CAMPFIRES.indexOf(f);if(i<0)return false;if(typeof
 // your edge and in its 60° cone, on your floor; the nearest wins. S1717: Loscadh's touch fires a lair's dry brush (#973 A, S1708's fireBrush),
 // measured to its span as a web is; its touch deals nothing, so the brush comes first. Caor's touch is also a blow of 30, so a foe in reach takes it first and
 // the thing is touched only when none is; Sioc's does nothing to a foe, so the pool comes first, as Uisce's fire does. One use of the school.
-const TOUCH_THING={caor:['brazier','web'],sioc:['pool'],loscadh:['brush']};
+const TOUCH_THING={caor:['brazier','web'],sioc:['pool','sealwater'],loscadh:['brush']}; /* S2405 — a seal's black water (68-dungeon-misc.js) */
 function touchGateThing(word){const kinds=TOUCH_THING[word];if(!kinds||typeof GATE_THINGS==='undefined'||!(lid&&lid.startsWith('dyn_')))return null;
   const reach=FORMS.touched.reach+HULL_YOU,c=Math.cos(FORMS.touched.cone/2*Math.PI/180);let best=null,bd=1e9;
-  for(const t of GATE_THINGS){if(kinds.indexOf(t.kind)<0||t.floor!==currentFloor||(t.kind==='brazier'?t.lit:t.kind==='pool'?t.frozen:(t.burnt||t.burning)))continue;
+  for(const t of GATE_THINGS){if(kinds.indexOf(t.kind)<0||t.floor!==currentFloor||(t.kind==='brazier'?t.lit:t.kind==='pool'||t.kind==='sealwater'?t.frozen:(t.burnt||t.burning)))continue;
     let qx=t.x,qz=t.z,d;
-    if(t.kind==='web'||t.kind==='brush'){const s=t.solid;qx=Math.max(s.x0,Math.min(s.x1,px));qz=Math.max(s.z0,Math.min(s.z1,pz));d=Math.hypot(px-qx,pz-qz);}
+    if(t.kind==='web'||t.kind==='brush'||t.kind==='sealwater'){const s=t.area||t.solid;qx=Math.max(s.x0,Math.min(s.x1,px));qz=Math.max(s.z0,Math.min(s.z1,pz));d=Math.hypot(px-qx,pz-qz);}
     else d=Math.max(0,Math.hypot(t.x-px,t.z-pz)-(t.kind==='pool'?t.R:.55));
     if(d>reach+1e-9)continue;const dx=qx-px,dz=qz-pz,h=Math.hypot(dx,dz);
     if(h>1e-3&&(-dx*Math.sin(yaw)-dz*Math.cos(yaw))/h<c-1e-9)continue;if(d<bd){bd=d;best=t;}}
   return best;}
-const TOUCH_THING_SAY={brazier:'The brazier catches.',web:'The web burns away to its moorings.',pool:'The pool freezes over.',brush:'The brush catches and burns.'};
+const TOUCH_THING_SAY={sealwater:'The black water freezes over.',brazier:'The brazier catches.',web:'The web burns away to its moorings.',pool:'The pool freezes over.',brush:'The brush catches and burns.'};
 // touchThing: the named action. The touch of `word` acts on the gate's thing t (lightBrazier, burnWeb, freezePool are the build's)
-function touchThing(word,t){const ok=t.kind==='brazier'?lightBrazier(t):t.kind==='web'?burnWeb(t):t.kind==='pool'?freezePool(t):t.kind==='brush'?fireBrush(t):false;
+function touchThing(word,t){const ok=t.kind==='sealwater'?openSecret(t.seal):t.kind==='brazier'?lightBrazier(t):t.kind==='web'?burnWeb(t):t.kind==='pool'?freezePool(t):t.kind==='brush'?fireBrush(t):false;
   if(ok){const sc=WORD_BY[word]&&WORD_BY[word].school;if(sc&&SKILL_DEF[sc])skillUse(sc,1,'touch');}return ok;}
 // S1718 — Sioc touched on a lock (#976, Michael's A: the works stiffen for 30 s). For 30 s by the play clock a touched lock holds each pin
 // at the top twice as long, and a mistimed press drops the pin without snapping the pick (68-dungeon-misc.js reads lockStiff). Still a pick,
@@ -1586,7 +1594,8 @@ function touchLand(T){const F=WORD_BY[T.word].forms.touched,e=touchTarget(),dun=
   if(T.word==='siul_uisce'){const f=touchFire();if(f){douseFire(f);showMsg('The fire hisses out.','#a8c8e8');return {hit:null,doused:true};}}
   if(TOUCH_THING[T.word]&&(!e||!F.dmg)){const t=touchGateThing(T.word);if(t&&touchThing(T.word,t)){showMsg(TOUCH_THING_SAY[t.kind],T.word==='sioc'?'#a8c8e8':'#e8b888');return {hit:null,thing:t.kind,id:t.id};}}
   if(T.word==='sioc'){const L=touchLock();if(L&&stiffenLock(L.lock)){showMsg('Frost creeps into the lock\u2019s works.','#a8c8e8');return {hit:null,lock:lockKeyOf(L.lock)};}}
-  if(!e){showMsg('Nothing within reach.','#a8a8d4');return {hit:null};}
+  if(!e){const s=typeof secretTouched==='function'?secretTouched(T.word):null;if(s)return {hit:null,seal:s}; /* S2405 — a wrong word at a seal */
+    showMsg('Nothing within reach.','#a8a8d4');return {hit:null};}
   let dealt=0,info=null;
   if(F.dmg){info=applySpellDamage(e,T.sp,T.tier,{power:FORMS.touched.power});dealt=info.dmg;e.hp=Math.max(0,e.hp-dealt);
     if(e.hpFg&&e.maxHp){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}dmgNum(e,dealt,info);}

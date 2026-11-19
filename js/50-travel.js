@@ -3192,7 +3192,7 @@ function interact(){
   // chest — opens panel. Finds any chest on this floor in range whose items aren't exhausted OR hasn't been opened yet
   // (empty-on-spawn chests still show panel once so the "oh, empty" reveal happens).
   const ch=CHESTS.find(c=>c.floor===currentFloor&&lookingAt(c)&&(!c.opened||c.items.length>0)); // v80 — look-at
-  if(ch){ if(ch.coffer!=null){openCoffer(ch);return;} if(ch.delver!=null){lootDelver(ch);return;} if(ch.locked){tryLockpick(ch);return;} openLoot(ch); return; } /* S2370 — a gate's coffer opens to its read carving (68-dungeon-misc.js) */ // S150 — a locked chest is picked first
+  if(ch){ if(ch.secret!=null){takeSecret(ch.secret);return;} /* S2405 — a seal's chest (68-dungeon-misc.js) */ if(ch.coffer!=null){openCoffer(ch);return;} if(ch.delver!=null){lootDelver(ch);return;} if(ch.locked){tryLockpick(ch);return;} openLoot(ch); return; } /* S2370 — a gate's coffer opens to its read carving (68-dungeon-misc.js) */ // S150 — a locked chest is picked first
   // barrel — same pattern as chests. v61g7: radius 1.0 → 1.1 for the larger
   // v61g7 container meshes (0.5u footprint vs the old 0.3u).
   if(fortCotNear()){openSleepUI();return;} // v80 S9 — fort cots; S624 — the exit wins when it is nearer

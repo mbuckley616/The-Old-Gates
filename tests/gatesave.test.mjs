@@ -12,11 +12,13 @@ await page.waitForFunction(() => typeof dScene !== 'undefined' && dScene !== win
 await inGate(); await g.hide();
 const before = await page.evaluate(() => { const start = { x: px, z: pz };
   const foe = ENEMIES.find(e => !e.dead && e.id && e.floor === 1); foe.hp = 0; killE(foe, '');
-  const ch = CHESTS.concat(BARRELS).find(b => b.id && !b.opened && b.items && b.items.length >= 2 && b.floor === 1);
+  const ch = CHESTS.concat(BARRELS).find(b => b.id && !b.opened && b.items && b.items.length >= 2 && b.floor === 1 && b.secret == null);
   openLoot(ch); const took = ch.items.shift(); if (typeof closeLoot === 'function') closeLoot();
   const door = DOORS.find(d => d.id && !d.open); if (door) { door.open = true; if (door.mesh && door.mesh.parent) door.mesh.parent.remove(door.mesh); }
   const seal = GATE_SECRETS[0] ? GATE_SECRETS[0].id : null; if (seal) openSecret(seal); /* S2403 — a seal opened (#1678 B) */
-  return { seal, roster: ENEMIES.map(e => e.id + ' ' + e.name + ' ' + e.maxHp).sort(), tier: dungeonTier(currentPortal, 1), foe: foe.id, foes: ENEMIES.filter(e => !e.dead).length, chest: ch.id, left: ch.items.map(i => i.name), took: took && took.name, door: door ? door.id : null, start, ids: ENEMIES.filter(e => e.id).length, all: ENEMIES.length };
+  let sealLeft = null; const sc = seal && GATE_SECRETS[0].chest; /* S2405 — its chest half emptied */
+  if (sc && takeSecret(seal)) { if (sc.items.length) sc.items.shift(); sealLeft = sc.items.map(i => i.name); closeLoot(); }
+  return { seal, sealLeft, roster: ENEMIES.map(e => e.id + ' ' + e.name + ' ' + e.maxHp).sort(), tier: dungeonTier(currentPortal, 1), foe: foe.id, foes: ENEMIES.filter(e => !e.dead).length, chest: ch.id, left: ch.items.map(i => i.name), took: took && took.name, door: door ? door.id : null, start, ids: ENEMIES.filter(e => e.id).length, all: ENEMIES.length };
 });
 console.log('before', JSON.stringify(before));
 check(`every foe the gate placed has an id of seed, floor and index (${before.ids} of ${before.all})`, before.ids === before.all && /^42:1:\d+$/.test(before.foe), before);
@@ -32,7 +34,7 @@ await inGate(); await g.hide();
 const after = await page.evaluate(([B]) => {
   const foe = ENEMIES.find(e => e.id === B.foe), ch = CHESTS.concat(BARRELS).find(b => b.id === B.chest), door = B.door ? DOORS.find(d => d.id === B.door) : null;
   return { foeDead: !!(foe && foe.dead), foeShown: !!(foe && foe.mesh && foe.mesh.parent), foes: ENEMIES.filter(e => !e.dead).length,
-    seal: B.seal ? (() => { const q = GATE_SECRETS.find(q => q.id === B.seal); return q ? { opened: q.opened, solid: !!(q.solid && DUNGEON_PROPS.indexOf(q.solid) >= 0) } : null; })() : null,
+    seal: B.seal ? (() => { const q = GATE_SECRETS.find(q => q.id === B.seal); return q ? { opened: q.opened, solid: !!(q.solid && DUNGEON_PROPS.indexOf(q.solid) >= 0), left: q.chest ? q.chest.items.map(i => i.name) : null, chestOpen: !!(q.chest && q.chest.opened) } : null; })() : null,
     opened: !!(ch && ch.opened), left: ch ? ch.items.map(i => i.name) : null, door: door ? door.open : null,
     fromStart: +Math.hypot(px - B.start.x, pz - B.start.z).toFixed(1), floor: currentFloor };
 }, [before]);
@@ -41,6 +43,7 @@ check(`the load puts you at the gate's entrance, on floor one, where walking in 
 check(`the foe killed is dead, gone from the floor, and the rest still stand (${after.foes} of ${before.foes})`, after.foeDead && !after.foeShown && after.foes === before.foes, after);
 check(`the chest opened is open, without the ${before.took} taken from it`, after.opened && JSON.stringify(after.left) === JSON.stringify(before.left), { before: before.left, after: after.left });
 check(`a seal opened stays open, its mouth no longer rock (S2403: ${before.seal})`, before.seal && after.seal && after.seal.opened && !after.seal.solid, { seal: before.seal, after: after.seal });
+check(`the seal's chest keeps what was left in it (S2405: ${before.sealLeft ? before.sealLeft.length : 'none'} left)`, !before.sealLeft || (after.seal && after.seal.chestOpen && JSON.stringify(after.seal.left) === JSON.stringify(before.sealLeft)), { before: before.sealLeft, after: after.seal });
 check('a locked door opened stays open', before.door == null || after.door === true, { door: before.door, after: after.door });
 // S1479 — the same gate loaded while its cell is not loaded (the critic, 26 Oct: a load from Aurenne met Frost Wraiths and 150-health
 // Phantoms here): the portal stood at the old zone's x, z, the world's empty corner, and read tier 3 and *hard*. It now stands where
