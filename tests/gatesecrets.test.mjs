@@ -152,6 +152,10 @@ const K6 = pick ? await page.evaluate((id) => {
     _reset(r.kx - ux * 2, r.kz - uz * 2, 0, 0); o.lay = layWord('cloch_ghear', null, r.kx, r.kz).ok; o.clochOpen = r.opened && !r.shut.visible && CHESTS.includes(r.chest); laidEnd();
     o.cut = r.cutN; const live = () => { const v = new THREE.Vector3(); let n = 0; for (const m of dScene.children) { if (!m.isMesh || !m.userData || m.userData.dunShell !== 'floor' || !m.geometry.index) continue; m.updateMatrixWorld(true); const P = m.geometry.attributes.position, a = m.geometry.index.array;
       for (let k = 0; k < a.length; k += 3) { if (a[k] === a[k + 1] && a[k] === a[k + 2]) continue; let sx = 0, sz = 0; for (let q = 0; q < 3; q++) { v.fromBufferAttribute(P, a[k + q]).applyMatrix4(m.matrixWorld); sx += v.x / 3; sz += v.z / 3; } if (inArea(h, sx, sz, -.01)) n++; } } return n; }; o.left = live();
+    // S2425 — a foe's step (dSlide) toward the hole: across it while the slab is shut, stopped at its edge once it is open
+    const foeWalk = (r) => { let x = r.kx - ux * (H + 1), z = r.kz - uz * (H + 1), inHole = false; for (let i = 0; i < 70; i++) { [x, z] = dSlide(x, z, ux * .1, uz * .1); if (inArea(r.hole, x, z)) inHole = true; } return { inHole, gap: +(((ux ? x : z) - nearE0(r)) * (ux || uz)).toFixed(2) }; };
+    const nearE0 = (r) => ux ? (ux > 0 ? r.hole.x0 : r.hole.x1) : (uz > 0 ? r.hole.z0 : r.hole.z1);
+    r = one(); o.foeShut = foeWalk(r);
     r = one(); const fake = [{ x: r.kx + 10, z: r.kz, floor: 1, alert: false, dead: false }, { x: r.kx + 40, z: r.kz, floor: 1, alert: false, dead: false }]; ENEMIES.push(...fake);
     if (!BAG.some(b => b && b.tool === 'pick')) BAG.push({ ...PICK_ITEM }); _reset(r.kx - ux * .9, r.kz - uz * .9, 0, 0);
     o.near = stairSlabNear() === r; interact(); o.working = STAIR_PRY && STAIR_PRY.rec === r; o.alert = [fake[0].alert, fake[1].alert];
@@ -170,7 +174,8 @@ const K6 = pick ? await page.evaluate((id) => {
     const sx0 = px, sz0 = pz, sy0 = jumpY, ex = dAt(base.c) + ux * H - ux * .25, ez = dAt(base.r) + uz * H - uz * .25; jumpY = -3; o.wallBelow = dBlkP(ex, ez); jumpY = 0; o.openAbove = !dBlkP(ex, ez); jumpY = sy0;
     // up: back the way you came
     yaw = yawTo(px - ux, pz - uz); K.KeyW = true; _drive(() => jumpY > -.05 && (along() - nearE) * u < -.3, 400); K.KeyW = false;
-    o.up = +jumpY.toFixed(2); o.errs = 0; clear(); out.stair = o; }
+    o.up = +jumpY.toFixed(2); o.foeOpen = foeWalk(r); { const [ox, oz] = dSlide(r.kx, r.kz, -ux * .2, -uz * .2); o.foeOff = Math.hypot(ox - r.kx, oz - r.kz) > .19; }
+    o.errs = 0; clear(); out.stair = o; }
   // S2417 — the sluice at the same mouth: the grate and the water, the wheel held 8 s (let go, the turn is kept), or Tonn laid on the grate;
   // the water drains in 10 s and then the grate rises
   { const one = () => { clear(); gen.secrets = [Object.assign({}, base, { kind: 'sluice', school: null })]; gateSecretsBuild(gen, currentPortal); currentFloor = 1; return GATE_SECRETS[0]; };
@@ -220,6 +225,7 @@ if (K6) {
 if (K6) { const T = K6.stair;
   check(`the stair under the floor: the slab's step is hollow (${T.hollow}) and two cells off it is not; shut, the ground over it is the floor (${T.base0}) and its chest hidden; Cloch Ghéar laid on it lifts it, and the floor's cell is cut (${T.cut} triangles, ${T.left} left)`, T.hidden && T.hollow && T.notFar && T.base0 === 0 && T.lay && T.clochOpen && T.cut >= 2 && T.left === 0, T);
   check(`the pick: E sets to it, and a foe 10 m off comes and one 40 m off does not; ${T.ten} s of 20 and still shut; E stops it and the work is kept (${T.kept}); 20 s in all opens it (the floor's cell cut, ${T.leftPick} triangles left over it; ${T.steps} steps), kept, its chest at the floor's tier`, T.near && T.working && T.alert[0] && !T.alert[1] && Math.abs(T.ten - 10) < .01 && T.tenShut && T.stopped && T.kept === T.ten && T.open && T.leftPick === 0 && T.steps === 11 && T.rec && T.tier, T);
+  check(`a foe's step: across the slab while it is shut (${T.foeShut.inHole}), stopped ${T.foeOpen.gap} m short of the hole once it is open (${T.foeOpen.inHole}); one over it when it opens is not held there (${T.foeOff})`, T.foeShut.inHole && !T.foeOpen.inHole && T.foeOpen.gap <= -.25 && T.foeOpen.gap > -.6 && T.foeOff, { shut: T.foeShut, open: T.foeOpen, off: T.foeOff });
   check(`walked down the steps to the cellar (${T.down.y} m, ${T.down.past.toFixed(2)} m past the stair), the mouth a wall under the floor and open over it, and walked up again (${T.up} m)`, T.down.y <= -2.95 && T.down.past > 0 && T.wallBelow && T.openAbove && T.up > -.05, T); }
 if (K6) { const U = K6.sluice;
   check(`the sluice: a grate across the mouth, 0.8 m of water behind it, its chest seen and out of reach; the wheel aimed at (${U.prompt})`, U.shut && U.aimed && /turn the wheel/.test(U.prompt), U);

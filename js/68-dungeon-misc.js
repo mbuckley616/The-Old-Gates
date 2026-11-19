@@ -1312,6 +1312,13 @@ function stairCut(rec){if(rec.cutDone||!rec.hole)return false;const h=rec.hole,v
       sx/=3;sy/=3;sz/=3;if(Math.abs(sy-rec.level)>.3||sx<h.x0+.01||sx>h.x1-.01||sz<h.z0+.01||sz>h.z1-.01)continue;a[k+1]=a[k];a[k+2]=a[k];hit=true;n++;}
     if(hit)I.needsUpdate=true;}
   rec.cutDone=true;rec.cutN=n;return n>0;}
+// S2425 — S2416's owed note: a foe walked across an opened stair's hole at the floor's height, its feet on nothing (foes have no floors
+// under floors). The hole is a wall to a foe's step (dSlide, 56), as a chasm's air is, padded by a body's 0.3; a foe already standing over
+// it when it opens is not held there: it walks off. You still go down it (dSlideP and stairBase).
+const STAIR_FOE_PAD=.3;
+function stairHoleAt(x,z){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return false;
+  for(const s of GATE_SECRETS)if(s.kind==='stair'&&s.opened&&s.hole&&s.floor===currentFloor&&s.seed===currentPortal.seed&&inArea(s.hole,x,z,STAIR_FOE_PAD))return true;return false;}
+function stairHoleBlocks(x,z,nx,nz){return stairHoleAt(nx,nz)&&!stairHoleAt(x,z);}
 // the ground under you here (dPitBase, 56): the hole's cell opened, or anywhere in the cellar once you are under the floor
 function stairBase(x,z,b){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return b;
   for(const s of GATE_SECRETS){if(s.kind!=='stair'||!s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed)continue;
