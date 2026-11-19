@@ -1449,6 +1449,6 @@ and the gate identical in calls. Nothing is up 10%; nothing filed.
 Session 2408 (QA): s1745, 12 merges after s1733 (the Lamps on the Water, spells as keys' seals and keys, arrows that fly until they land,
 the capes' fronts and bibs). The three suites ran one after another alone, each green (`budget` 572 s, `budgetfield` 577 s, `budgetport`
 680 s, slower than s1733's 498–529 s in a different container). Every ceiling held, and no view moved more than 2 calls from s1733: the
-street 1–2 calls fewer at every level (one fewer body), the field identical in calls, Portclare's square +1 or +2 at each level (the
-lamps' port is not this one; the extra calls are bodies at Low, nothing named in Other), the inn's hall and the gate identical. Nothing is
+street 1–2 calls fewer at every level (one fewer body), the field identical in calls, Portclare's square +1 or +2 at each level, all in
+Bodies (33 → 34 at Low, 48 → 50 at Middle and High: a townsperson's piece more in view; Other unchanged), the inn's hall and the gate identical. Nothing is
 up 10%; nothing filed.
