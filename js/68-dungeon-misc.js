@@ -1045,7 +1045,7 @@ function gateSecrets(gen,seed,size,school){
 const SECRET_BAR_P=1/4,SECRET_BAR_BLOWS=3;
 const SECRET_N={tiny:1,small:1,medium:2,large:3,massive:4};
 const SECRET_MECH=['slide','stair','lift','sluice','turn','plates'],SECRET_ONCE={turn:1,plates:1};
-const SECRET_BUILT={seal:1,slide:1,stair:1,sluice:1}; /* the kinds laid so far: the lift, the turning chamber and the plates come in sessions 4 and 5 */
+const SECRET_BUILT={seal:1,slide:1,stair:1,sluice:1,lift:1}; /* the kinds laid so far: the turning chamber and the plates come in session 5 */
 // the world's record of a gate's secrets: o, the opened ones' numbers; t, what is left in each one's chest (session 2)
 function gateSecretRec(seed){const G=worldState.gateSecrets||(worldState.gateSecrets={});return G[seed]||(G[seed]={o:[],t:{}});}
 function gateSecretOpen(seed,n){const G=worldState.gateSecrets,R=G&&G[seed];return !!(R&&R.o&&R.o.indexOf(n)>=0);}
@@ -1065,7 +1065,7 @@ const SECRET_TINE_S=20,SECRET_COLD=.05,SECRET_LEDGE=1.5,SECRET_GALLERY=3.8,SECRE
 const SECRET_SAY={tine:'The stone leaf grinds aside.',uisce:'The black water freezes over.',cloch:'The block lifts and lodges on the lintel.',
   scath:'The dark wall stays a doorway.',solas:'The script on the crystal lights, and a niche turns open.',gaoth:'You stand in the gallery.'};
 let GATE_SECRETS_GEN=null,DPROP_Y=null; /* DPROP_Y: the feet a prop with a top is tested at (the ledge), set only for your own step */
-function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR_PRY=null;SLUICE_TURN=null;if(!gen||!gen.secrets||!(gen.secrets.length||gen.barricade)||!portal)return GATE_SECRETS;
+function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR_PRY=null;SLUICE_TURN=null;LIFT_HOLD=null;if(!gen||!gen.secrets||!(gen.secrets.length||gen.barricade)||!portal)return GATE_SECRETS;
   const Hc=DCELL/2,G0=worldState.gateSecrets&&worldState.gateSecrets[portal.seed];
   for(const t of gen.secrets){if(!SECRET_BUILT[t.kind])continue;const y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r),R=t.room,opened=gateSecretOpen(portal.seed,t.n);
     const mat=new THREE.MeshLambertMaterial({color:SECRET_SEAL_COL[t.school]||0x777777}),grp=new THREE.Group();grp.name='gateSecret';
@@ -1077,6 +1077,7 @@ function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR
     if(t.kind==='slide')slideBuild(t,rec,grp,y,cx,cz,opened);
     else if(t.kind==='stair'){stairBuild(t,rec,grp,y,opened);chestY=y-STAIR_DROP;} /* S2416 — the chest in the cellar, against the far wall */
     else if(t.kind==='sluice')sluiceBuild(t,rec,grp,y,cx,cz,opened); /* S2417 */
+    else if(t.kind==='lift')liftBuild(t,rec,grp,y,gen,opened); /* S2418 */
     else if(SECRET_SEAL_SHUT[t.school]){const x=cx+t.dc*(Hc-.3),z=cz+t.dr*(Hc-.3),h=Math.min(FLOOR_HEIGHT,6);
       const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),mat);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;rec.kx=x;rec.kz=z;
       rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
@@ -1103,7 +1104,7 @@ function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR
       rec.gallery=t.dc?{x0:gx-d/2,x1:gx+d/2,z0:z0,z1:z1,y:top}:{x0:x0,x1:x1,z0:gz-d/2,z1:gz+d/2,y:top};
       FOOTHOLDS.push(Object.assign({gate:'gallery',secret:t.id},rec.gallery));chestY=top;chestAt=at(.6);}
     dScene.add(grp);GATE_SECRETS.push(rec);
-    try{rec.chest=secretChest(t,portal,rec,chestAt[0],chestAt[1],chestY,G0);}catch(e){console.warn('secretChest',e);}}
+    if(t.kind!=='lift')try{rec.chest=secretChest(t,portal,rec,chestAt[0],chestAt[1],chestY,G0);}catch(e){console.warn('secretChest',e);}} /* S2418 — #1757's B: the lift is its own find, the second bridge */
   if(gen.barricade)try{barricadeBuild(gen.barricade,portal,G0);}catch(e){console.warn('barricadeBuild',e);}
   return GATE_SECRETS;}
 // a seal's chest: what is left in it is the world's once opened (t[n]), else rolled on its own key a tier above the floor. Solas's
@@ -1128,6 +1129,7 @@ function openSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.o
   if(rec.pillar)rec.mat.emissive=new THREE.Color(0x8a8460);
   if(rec.kind==='stair')stairOpen(rec); /* S2416 */
   if(rec.kind==='sluice')sluiceOpen(rec); /* S2417 */
+  if(rec.kind==='lift')liftOpen(rec); /* S2418 */
   if(rec.chest&&CHESTS.indexOf(rec.chest)<0){rec.chest.mesh.visible=true;CHESTS.push(rec.chest);}
   return true;}
 // takeSecret: the named action. A seal's chest opened: from now on its list is the world's record's, so what you take stays taken
@@ -1145,6 +1147,7 @@ function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!c
     if(rec.kind==='slide'){air=Math.max(air,slideTick(rec,here));continue;}
     if(rec.kind==='stair'){if(STAIR_PRY&&STAIR_PRY.rec===rec)stairPryTick(rec,here);continue;}
     if(rec.kind==='sluice'){sluiceTick(rec,here);continue;}
+    if(rec.kind==='lift'){liftTick(rec,here);continue;}
     if(rec.opened)continue;
     if(rec.school==='tine'){const B=rec.braziers||[];for(const b of B)if(b.lit&&b.litAt==null)b.litAt=playClockS;
       if(B.length===2&&B[0].lit&&B[1].lit&&Math.abs(B[0].litAt-B[1].litAt)<=SECRET_TINE_S){secretOpenSay(rec);continue;}
@@ -1382,3 +1385,62 @@ function sluiceTick(rec,here){const W=rec.wheel;
   if(rec.water.visible){rec.water.position.y=rec.y+SLUICE_DEPTH*Math.max(0,1-k)+.02;if(k>=1)rec.water.visible=false;}
   if(k>=1&&rec.grate.visible){const i=DUNGEON_PROPS.indexOf(rec.grateSolid);if(i>=0){DUNGEON_PROPS.splice(i,1);showMsg('The grate rises.','#c8b880');}
     const q=Math.min(1,(playClockS-rec.drainAt-SLUICE_DRAIN)/SLUICE_RISE);rec.grate.position.y=rec.y+rec.grateH*q;if(q>=1)rec.grate.visible=false;}}
+// S2418 — the counterweight lift (the sheet's session 4; its table B). Its side room is on a floor with a chasm. In the room, a chain
+// hangs from the dark into an iron pan on the floor (the tell); by the far wall a lever, and beside it a vane on a spindle. Out in the
+// chasm (the nearest on the floor), a second bridge hangs 8 m over the deck's line on four chains: a timber deck 2 m wide from landing to
+// landing, one cell of air beside the bridge's line (where the floating stones hang when its spans are gone). The lever held for 6 s of
+// the play clock (E held, as the sluice's wheel; let go and what is wound is kept), or Séideán sent into the vane (the bolt within 0.7 m
+// of it spins it 1 s), opens it: kept at once in the world's record, the bridge comes down in 4 s and stays down, a foothold over the
+// chasm's air at the deck's height. #1757's B: the lift is its own find, so it has no chest. Placeholders: the look builder's session 7.
+const LIFT_HOLD_S=6,LIFT_DOWN_S=4,LIFT_HANG=8,LIFT_VANE_R=.7,LIFT_SPIN_S=1,LIFT_W=2;
+let LIFT_HOLD=null;
+function liftBuild(t,rec,grp,y,gen,opened){const A=rec.area,mx=(A.x0+A.x1)/2,mz=(A.z0+A.z1)/2,far=t.dc?(t.dc>0?A.x1:A.x0):(t.dr>0?A.z1:A.z0);
+  const iron=new THREE.MeshLambertMaterial({color:0x3a3633}),wood=new THREE.MeshLambertMaterial({color:0x5a4330});
+  let top=y+6;try{const c=dCeil(mx,mz);if(c>0)top=y+c;}catch(e){}
+  // the tell: a chain from the dark into a pan on the floor, in the room's middle
+  const pan=new THREE.Mesh(new THREE.CylinderGeometry(.55,.45,.18,14),iron);pan.position.set(mx,y+.09,mz);grp.add(pan);
+  const chain=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,top-y,5),iron);chain.position.set(mx,(top+y)/2,mz);grp.add(chain);rec.chain=chain;
+  // the lever by the far wall, and the vane beside it
+  const lat=t.dc?[0,1]:[1,0],L=(t.dc?A.z1-A.z0:A.x1-A.x0)/2,at=(d,s)=>t.dc?[far-t.dc*d,mz+s]:[mx+s,far-t.dr*d];
+  const [lx,lz]=at(.45,-Math.min(1,L-.5)),base=new THREE.Mesh(new THREE.BoxGeometry(.3,.5,.3),iron);base.position.set(lx,y+.25,lz);grp.add(base);
+  const arm=new THREE.Group();arm.position.set(lx,y+.5,lz);grp.add(arm);const stick=new THREE.Mesh(new THREE.BoxGeometry(.06,.9,.06),wood);stick.position.y=.45;arm.add(stick);
+  arm.rotation.set(t.dc?0:-t.dr*.5,0,t.dc?t.dc*.5:0);rec.lever={x:lx,z:lz,y:y+.95,mesh:arm,wound:0};
+  const [vx,vz]=at(.45,Math.min(1,L-.5)),spindle=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.6,5),iron);spindle.position.set(vx,y+.8,vz);grp.add(spindle);
+  const vane=new THREE.Group();vane.position.set(vx,y+1.6,vz);grp.add(vane);
+  for(let k=0;k<4;k++){const b=new THREE.Mesh(new THREE.BoxGeometry(.5,.03,.16),iron);b.position.x=.25;const h=new THREE.Group();h.rotation.y=k*Math.PI/2;h.add(b);vane.add(h);}
+  rec.vane={x:vx,y:y+1.6,z:vz,mesh:vane};
+  // the bridge, over the nearest chasm on this floor: the deck's line moved two cells across (v = mid + 2), landing to landing
+  let best=null,bd=1e9;for(const sp of gen.spaces||[]){if(!sp||sp.type!=='chasm'||(sp.floor||1)!==t.floor)continue;const R=gateRect(sp),d=Math.hypot(dAt(R.x+R.w/2)-mx,dAt(R.y+R.h/2)-mz);if(d<bd){bd=d;best=sp;}}
+  if(!best)return;const sp=best,v=sp.A/2+2,[c0,r0]=gateCellAt(sp,3,v),[c1,r1]=gateCellAt(sp,sp.L-4,v);
+  const x0=Math.min(dAt(c0),dAt(c1))-DCELL/2,x1=Math.max(dAt(c0),dAt(c1))+DCELL/2,z0=Math.min(dAt(r0),dAt(r1))-DCELL/2,z1=Math.max(dAt(r0),dAt(r1))+DCELL/2;
+  const ax=sp.axis==='x',bx0=ax?x0:(x0+x1)/2-LIFT_W/2,bx1=ax?x1:(x0+x1)/2+LIFT_W/2,bz0=ax?(z0+z1)/2-LIFT_W/2:z0,bz1=ax?(z0+z1)/2+LIFT_W/2:z1;
+  const deck=new THREE.Group();deck.name='liftBridge';grp.add(deck);const dk=new THREE.Mesh(new THREE.BoxGeometry(bx1-bx0,.25,bz1-bz0),wood);dk.position.set((bx0+bx1)/2,-.125,(bz0+bz1)/2);deck.add(dk);
+  let vault=y+20;try{const c=dCeil((bx0+bx1)/2,(bz0+bz1)/2);if(c>0)vault=y+c;}catch(e){}rec.vault=vault;rec.chains=[];
+  for(const [qx,qz] of [[bx0+.15,bz0+.15],[bx1-.15,bz0+.15],[bx0+.15,bz1-.15],[bx1-.15,bz1-.15]]){const ch=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,1,5),iron);ch.userData.at=[qx,qz];grp.add(ch);rec.chains.push(ch);}
+  rec.bridge={deck,x0:bx0,x1:bx1,z0:bz0,z1:bz1,space:sp.id,hold:Object.assign({y,gate:'liftBridge',secret:t.id},{x0:bx0,x1:bx1,z0:bz0,z1:bz1})};
+  liftPlace(rec,opened?0:LIFT_HANG);if(opened)FOOTHOLDS.push(rec.bridge.hold);}
+// the bridge at h over the deck's height, and its chains from it to the vault
+function liftPlace(rec,h){const B=rec.bridge;if(!B)return;B.deck.position.y=rec.y+h;B.h=h;
+  for(const ch of rec.chains){const lo=rec.y+h,len=Math.max(.1,rec.vault-lo);ch.scale.y=len;ch.position.set(ch.userData.at[0],lo+len/2,ch.userData.at[1]);}}
+function liftOpen(rec){if(LIFT_HOLD&&LIFT_HOLD.rec===rec)LIFT_HOLD=null;rec.downAt=playClockS;}
+// the lever in reach and under the crosshair, its lift still up
+function liftLeverNear(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return null;
+  for(const s of GATE_SECRETS){if(s.kind!=='lift'||s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed||!s.lever)continue;
+    if(Math.hypot(px-s.lever.x,pz-s.lever.z)<TOUCH+.6&&aimAt({mesh:s.lever.mesh},TOUCH+.6))return s;}return null;}
+function liftGrip(s){if(!s||s.opened)return false;if(!LIFT_HOLD||LIFT_HOLD.rec!==s)LIFT_HOLD={rec:s,last:playClockS};return true;}
+// a Sent bolt in a gate (the loop's BALLS): Séideán's within 0.7 m of a vane spins it, and the lift is let go; true if it struck one
+function liftVaneHit(fb){const sp=fb&&fb.userData&&fb.userData.spell;if(!sp||sp.id!=='sideen'||!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return false;
+  for(const s of GATE_SECRETS){if(s.kind!=='lift'||s.floor!==currentFloor||s.seed!==currentPortal.seed||!s.vane)continue;const V=s.vane,p=fb.position;
+    if(Math.hypot(p.x-V.x,p.y-V.y,p.z-V.z)>LIFT_VANE_R)continue;
+    if(!s.opened&&s.spinAt==null){s.spinAt=playClockS;showMsg('The vane spins, and somewhere a counterweight drops.','#c8d8e8');}return true;}
+  return false;}
+function liftTick(rec,here){
+  if(rec.spinAt!=null&&!rec.opened){rec.vane.mesh.rotation.y+=.4;if(playClockS-rec.spinAt>=LIFT_SPIN_S-1e-6)openSecret(rec.id);return;}
+  if(!rec.opened){const T=LIFT_HOLD;if(!T||T.rec!==rec)return;const dt=Math.max(0,Math.min(1,playClockS-T.last));T.last=playClockS;
+    if(!here||dead||!K['KeyE']||Math.hypot(px-rec.lever.x,pz-rec.lever.z)>TOUCH+1.2){LIFT_HOLD=null;return;} /* let go: what is wound is kept */
+    rec.lever.wound+=dt;const k=Math.min(1,rec.lever.wound/LIFT_HOLD_S),m=rec.lever.mesh;if(rec.lever.r0==null)rec.lever.r0=[m.rotation.x,m.rotation.z];m.rotation.x=rec.lever.r0[0]*(1-2*k);m.rotation.z=rec.lever.r0[1]*(1-2*k);
+    if(rec.lever.wound>=LIFT_HOLD_S-1e-6&&openSecret(rec.id)){showMsg('The lever locks over, and somewhere a counterweight drops.','#c8b880');try{sfxNoise(1.5,0,0,.14,140);}catch(e){}}
+    return;}
+  if(rec.downAt==null||!rec.bridge||rec.bridge.h<=0)return;const k=Math.min(1,(playClockS-rec.downAt)/LIFT_DOWN_S);
+  if(rec.vane&&k<1)rec.vane.mesh.rotation.y+=.2;
+  liftPlace(rec,LIFT_HANG*(1-k*k));if(k>=1){if(FOOTHOLDS.indexOf(rec.bridge.hold)<0)FOOTHOLDS.push(rec.bridge.hold);try{sfxNoise(.6,0,0,.2,120);}catch(e){}}}

@@ -225,5 +225,43 @@ if (K6) { const U = K6.sluice;
 if (K6) { const B = K6.bar;
   check(`the barricade: rock to the bash out of reach (${B.far}) or behind you (${B.behind}), two blows crack it and the third breaks it, kept; its chest at the floor's tier (${B.left[0]} in it, ${B.left[1]} left)`, B.shut && B.far === 0 && B.behind === 0 && B.two === 2 && B.twoShut && B.three && B.kept && B.tier && B.left[1] === B.left[0] - 1, B);
   check('Caor touched at the barricade burns it away', B.found && B.burn && B.notThing, B); }
+// S2418 — the lift, in a real gate with a chasm (the medium gate at seed 428, steady, its lift on floor one): the lever held 6 s (let go,
+// what is wound is kept), the second bridge lowered in 4 s and walked onto over the chasm's air; then Séideán's bolt into the vane
+const liftP = await page.evaluate(() => { const p = PORTALS.find(q => q && q.seed === 428 && q.zone === 'world'); if (!p) return null; px = p.x; pz = p.z + 3; goToDungeon(p); return true; });
+if (liftP) {
+  await page.waitForFunction(() => String(lid).startsWith('dyn_') && currentPortal && currentPortal.seed === 428 && document.getElementById('fd').style.opacity === '0', null, { timeout: 120000, polling: 200 });
+  await g.hide();
+  const L = await page.evaluate(() => { const o = {}, yawTo = (x, z) => Math.atan2(-(x - px), -(z - pz)); let r = GATE_SECRETS.find(q => q.kind === 'lift'); o.found = !!r && !!r.bridge; if (!o.found) return o;
+    currentFloor = r.floor; const B = r.bridge, bx = (B.x0 + B.x1) / 2, bz = (B.z0 + B.z1) / 2, ground = (x, z) => footholdY(x, z, r.y, dPitBase(x, z, r.y));
+    o.hang = B.h; o.air = dAirAt(bx, bz); o.pitBefore = ground(bx, bz) < r.y - 20; o.noChest = !r.chest;
+    const Lv = r.lever, cx = (r.area.x0 + r.area.x1) / 2, cz = (r.area.z0 + r.area.z1) / 2, dl = Math.hypot(cx - Lv.x, cz - Lv.z) || 1; _reset(Lv.x + (cx - Lv.x) / dl * 1.1, Lv.z + (cz - Lv.z) / dl * 1.1, r.y, 0);
+    yaw = yawTo(Lv.x, Lv.z); _drive(i => i >= 1, 3); pitch = Math.atan2(Lv.y - CAM.position.y, Math.hypot(Lv.x - px, Lv.z - pz)); _drive(i => i >= 1, 3);
+    o.prompt = document.getElementById('ipr').textContent; o.aimed = liftLeverNear() === r;
+    interact(); K.KeyE = true; for (let i = 0; i < 6; i++) { playClockS += .5; gateSecretsTick(); } K.KeyE = false; playClockS += .5; gateSecretsTick(); o.three = +Lv.wound.toFixed(2); o.letGo = !LIFT_HOLD;
+    playClockS += 10; gateSecretsTick(); o.kept = +Lv.wound.toFixed(2);
+    interact(); K.KeyE = true; for (let i = 0; i < 7; i++) { playClockS += .5; gateSecretsTick(); } K.KeyE = false; o.open = r.opened; o.rec = worldState.gateSecrets[currentPortal.seed].o.includes(r.n);
+    playClockS += 2; gateSecretsTick(); o.mid = +B.h.toFixed(2); o.notYet = !FOOTHOLDS.includes(B.hold); playClockS += 2.1; gateSecretsTick(); o.down = B.h; o.hold = FOOTHOLDS.includes(B.hold); o.groundAfter = +(ground(bx, bz) - r.y).toFixed(2);
+    // walked onto it from its first end: 12 m along, over the chasm's air, the feet at the deck's height
+    const ax = (B.x1 - B.x0) > (B.z1 - B.z0), sx = ax ? (B.x0 + .2) : bx, sz = ax ? bz : (B.z0 + .2), end = ax ? [B.x0 - 1.5, bz] : [bx, B.z0 - 1.5];
+    const startEnd = ground(end[0], end[1]) === r.y ? 0 : 1; const fx = startEnd ? (ax ? B.x1 - .2 : bx) : sx, fz = startEnd ? (ax ? bz : B.z1 - .2) : sz, dir = startEnd ? -1 : 1;
+    _reset(fx, fz, r.y, 0); yaw = yawTo(px + (ax ? dir : 0), pz + (ax ? 0 : dir)); pitch = 0; K.KeyW = true; let minY = 9, over = 0;
+    _drive(() => { minY = Math.min(minY, jumpY); if (dAirAt(px, pz)) over++; return Math.hypot(px - fx, pz - fz) > 12; }, 600); K.KeyW = false;
+    o.walk = { far: +Math.hypot(px - fx, pz - fz).toFixed(1), minY: +(minY - r.y).toFixed(2), over };
+    // the vane, the lift rebuilt shut
+    for (const q of GATE_SECRETS) if (q.group.parent) q.group.parent.remove(q.group);
+    for (let i = FOOTHOLDS.length - 1; i >= 0; i--) if (FOOTHOLDS[i].secret) FOOTHOLDS.splice(i, 1);
+    for (let i = DUNGEON_PROPS.length - 1; i >= 0; i--) if (DUNGEON_PROPS[i].secret) DUNGEON_PROPS.splice(i, 1);
+    for (const q of GATE_SECRETS) if (q.chest) { const i = CHESTS.indexOf(q.chest); if (i >= 0) CHESTS.splice(i, 1); if (q.chest.mesh.parent) q.chest.mesh.parent.remove(q.chest.mesh); }
+    delete worldState.gateSecrets[currentPortal.seed]; gateSecretsBuild(GATE_SECRETS_GEN, currentPortal); r = GATE_SECRETS.find(q => q.kind === 'lift'); const V = r.vane;
+    const bolt = id => ({ userData: { spell: { id } }, position: new THREE.Vector3(V.x + .3, V.y + .1, V.z) });
+    o.caor = liftVaneHit(bolt('caor')); o.wide = liftVaneHit({ userData: { spell: { id: 'sideen' } }, position: new THREE.Vector3(V.x + 1.5, V.y, V.z) });
+    o.vane = liftVaneHit(bolt('sideen')); gateSecretsTick(); o.notAtOnce = !r.opened; playClockS += 1; gateSecretsTick(); o.vaneOpen = r.opened; playClockS += 4.1; gateSecretsTick(); o.vaneDown = r.bridge.h === 0;
+    return o; });
+  console.log('lift', JSON.stringify(L));
+  check(`the lift: in its room a chain into a pan, a lever and a vane, no chest; its bridge hangs ${L.hang} m over the chasm, whose air is a pit under it; the lever aimed at (${L.prompt})`, L.found && L.hang === 8 && L.air && L.pitBefore && L.noChest && L.aimed && /wind the lever/.test(L.prompt), L);
+  check(`the lever winds only while E is held: ${L.three} s, let go and kept (${L.kept}), 6 s in all lets the bridge down, kept in the world's record; ${L.mid} m up at 2 s, down at 4 and a floor over the air (${L.groundAfter})`, L.three === 3 && L.letGo && L.kept === 3 && L.open && L.rec && L.mid > 0 && L.mid < 8 && L.notYet && L.down === 0 && L.hold && L.groundAfter === 0, L);
+  check(`walked onto the bridge ${L.walk && L.walk.far} m from its end over the chasm's air (${L.walk && L.walk.over} frames), the feet never below the deck (${L.walk && L.walk.minY})`, L.walk && L.walk.far >= 12 && L.walk.over > 30 && L.walk.minY > -.05, L.walk);
+  check('Séideán sent into the vane lets the bridge down after 1 s spinning; another word, or a bolt 1.5 m off, does nothing', !L.caor && !L.wide && L.vane && L.notAtOnce && L.vaneOpen && L.vaneDown, L);
+}
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
