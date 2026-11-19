@@ -54,7 +54,7 @@ const S = await page.evaluate(async () => { const THREE = await import('three'),
   for (const dy of [1.7, 6]) for (let i = 0; i < way.length - 1; i++) { const [x0, z0] = way[i], [x1, z1] = way[i + 1], d = new THREE.Vector3(x1 - x0, 0, z1 - z0), L = d.length(); rc.set(new THREE.Vector3(x0, Dk + dy, z0), d.normalize()); rc.far = L;
     const h = rc.intersectObjects(kit, false)[0]; if (h) hits.push({ dy, leg: i, at: +h.distance.toFixed(1), m: h.object.name }); }
   const floors = T.map(t => { rc.set(new THREE.Vector3(t.x, Dk + 3, t.z), new THREE.Vector3(0, -1, 0)); rc.far = 20; const h = rc.intersectObjects(kit, false)[0]; return h ? +(h.point.y - Dk).toFixed(2) : null; });
-  // Session 2416: nothing of the kit's stands in the decks' clear way (between the parapets, 0.3 to 6 m over the deck, between the towers' faces)
+  // Session 2419: nothing of the kit's stands in the decks' clear way (between the parapets, 0.3 to 6 m over the deck, between the towers' faces)
   let inWay = 0; for (const m of kit) { const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); if (y < Dk + .3 || y > Dk + 6) continue;
     for (let j = 0; j < 5; j++) { const t = T[j], u = T[j + 1], L = Math.hypot(u.x - t.x, u.z - t.z), ux = (u.x - t.x) / L, uz = (u.z - t.z) / L, al = (x - t.x) * ux + (z - t.z) * uz, ac = (x - t.x) * uz - (z - t.z) * ux; if (Math.abs(ac) < 3.8 && al > 5.3 && al < L - 5.3) inWay++; } } } /* along each span's own line, between the towers' faces */
   const sill = +(a.ground(T[0].x, a.spit.z0 + .6) - Dk).toFixed(2); let steep = 0; for (let z = a.spit.z0 + .6; z < 120; z += 2) steep = Math.max(steep, Math.abs(a.ground(T[0].x, z + 2) - a.ground(T[0].x, z)) / 2);

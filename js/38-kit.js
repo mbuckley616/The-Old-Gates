@@ -96,7 +96,7 @@ const idr = id => { let n = (id * 2654435761) >>> 0; n ^= n >>> 15; return (n % 
   PAINTERS.lichen = () => texPair(512, (x, y) => { const rows = 5, row = Math.floor(y * rows), ry = y * rows - row, cols = 3, xx = x * cols + (row % 2) * .5, col = Math.floor(xx), rx = xx - col, r = idr(row * 17 + ((col % cols) + cols) % cols);
     const edge = Math.min(rx, 1 - rx, ry, 1 - ry), n = tfbm(x, y, 12, 5, 3), l = tfbm(x, y, 7, 4, 8), gap = edge < .03; const h = gap ? 0 : Math.min(1, edge * 9) * (.6 + .4 * n);
     let c = [.56 + .08 * r, .56 + .07 * r, .53 + .05 * r]; const lich = Math.max(0, l - .52) * 4; c = c.map((v, i) => mix(v, [.52, .58, .38][i], Math.min(1, lich))); if (gap) c = [.22, .22, .2]; return [h, ...c.map(v => v * (.85 + .3 * n))]; }, 2.2);
-  // Session 2416: common.js's 'slab', the halls' floor (great slabs of dark stone that take a polish where the wet lies), for the gate kit's floors
+  // Session 2419: common.js's 'slab', the halls' floor (great slabs of dark stone that take a polish where the wet lies), for the gate kit's floors
   PAINTERS.slab = () => texPair(512, (x, y) => { const rows = 2, row = Math.floor(y * rows), ry = y * rows - row, xx = x * 2 + (row % 2) * .5, col = Math.floor(xx), rx = xx - col, r = idr(row * 7 + ((col % 2) + 2) % 2 + 41);
     const edge = Math.min(rx, 1 - rx, ry, 1 - ry), n = tfbm(x, y, 8, 5, r * 3), vein = Math.pow(1 - Math.abs(tfbm(x, y, 5, 4, 17 + r) - .5) * 2, 9), gap = edge < .008;
     const h = gap ? 0 : .9 + .1 * n; const v = .14 + .05 * r + .05 * n + .08 * vein; return [h, ...(gap ? [.04, .04, .045] : [v * .95, v * .97, v * 1.04])]; }, 1.4);
@@ -7678,7 +7678,7 @@ const GK_BUILD = {
     for (const u of [-3.5, 3.5]) { const blk = bl.find(b => Math.abs(b.c.x - u) < 1.6 && b.lo > 4.9 && b.lo < 5.1) || bl[0]; blk.parts.push({ key: 'script', geo: gkScriptQuad(.7, 1.0, u, 5.62, T / 2 + .02, new THREE.Vector3(0, 0, 1), .5) }); }
     return { bl, axis: 'y', size: { w: L, h: H + .45, d: T } }; },
   // gatekit.js's pier (Session 1666, for the Drowned Ring): 4 m square and 18.6 m to its cap, script up all four faces, the ring sigil on one
-  // Session 2416 (gatekit.js, Session 2415): o.passage = { y, h, w } cuts a way through along z, the courses it crosses laid as two side
+  // Session 2419 (gatekit.js, Session 2415): o.passage = { y, h, w } cuts a way through along z, the courses it crosses laid as two side
   // stones and what lies under and over it (one block), no script on the ±z faces it opens, the ring sigil moved over its head
   pier(o = {}) { const bl = [], P = 4, H = 20, ch = 1.6, ps = o.passage; let k = 0, ringK = 6;
     const ringLo = kk => 1.0 + kk * ch + ch / 2 + .4 - 1.3;
@@ -7704,7 +7704,7 @@ const GK_BUILD = {
       bl.push(gkB([{ key: 'stone', geo: gkPrism(q, -T / 2 + .02, T / 2 - .02) }, { key: 'dress', geo: gkPrism([roll[i], roll[j], inner[j], inner[i]], T / 2 - .02, T / 2 + .28) }])); }
     const kb = bl[bl.length - 1 - Math.floor(n / step / 2)]; kb.parts.push({ key: 'script', geo: gkScriptQuad(.6, 1.6, kb.c.x, kb.c.y, T / 2 + .3, new THREE.Vector3(0, 0, 1), .6) });
     return { bl, axis: 'y', size: { w: S + 2 * J, h: ys + hh + 2, d: T + .3 }, jambs: { x: S / 2 + J / 2, w: J, d: T } }; },
-  // gatekit.js's bridge (Session 1818; Session 2416, for the Drowned Spires): a segmental ring of 13 m over a rise of 4.6 m under a deck
+  // gatekit.js's bridge (Session 1818; Session 2419, for the Drowned Spires): a segmental ring of 13 m over a rise of 4.6 m under a deck
   // 16 m long and 4 m wide at 6.2 (its walking face 6.45), parapets 1 m high, the spandrels bedded on the extrados
   bridge() { const bl = [], L = 16, Wd = 4, ys = 0, S = 13, hh = 4.6, RD = 1.2, dk = 6.2, top = dk - .25;
     const R = (S * S / 4 + hh * hh) / (2 * hh), cy = ys + hh - R, t0 = Math.atan2(ys - cy, S / 2), nv = 24, at = (t, r) => [Math.cos(t) * r, cy + Math.sin(t) * r];
@@ -7765,7 +7765,7 @@ function gkCondition(P, cond, key) {
 // the piece's parts by material key, each geometry non-indexed with position, normal and uv (for merging into a wonder), and its stats;
 // `standing` is the box of what still stands on its foot (the piece's frame), for the solids
 function gkParts(kind, o = {}) { const cond = ['whole', 'cracked', 'broken'].includes(o.cond) ? o.cond : 'whole', school = GK_SCHOOLS[o.school] ? o.school : 'cloch', key = o.key || `gatekit:${kind}`;
-  const P = GK_BUILD[kind](o); P.ruin = !!o.ruin; if (typeof o.ground === 'number') P.ground = o.ground; /* S2416: where a fallen stone rests, in the piece's frame */ const { parts, st } = gkCondition(P, cond, key), by = {}, standing = new THREE.Box3(), floorIn = new THREE.Box3();
+  const P = GK_BUILD[kind](o); P.ruin = !!o.ruin; if (typeof o.ground === 'number') P.ground = o.ground; /* S2419: where a fallen stone rests, in the piece's frame */ const { parts, st } = gkCondition(P, cond, key), by = {}, standing = new THREE.Box3(), floorIn = new THREE.Box3();
   for (const p of parts) { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
     if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); (by[p.key] ||= []).push(g);
     if (p.kind === 'in' && p.key === 'stone') { g.computeBoundingBox(); standing.union(g.boundingBox); }
@@ -8197,7 +8197,7 @@ function aurenneOrrery(hAt, o = {}) {
     const p = stones[0], q = stones[stones.length - 1];
     return { group, tris: Math.round(tris), draws, R, sink: SINK, stones, gap: { width: +(Math.hypot(p.x - q.x, p.z - q.z) - (p.w + q.w) / 2).toFixed(1) }, dais: { steps }, altar, sol, aurora: aurora.mesh, tick };
   }
-  // ── the Drowned Spires (Session 2416; backlog L "Ruins at the scale of cliffs", OG-104's Drowned Spires, the Gatelands; Michael's B on
+  // ── the Drowned Spires (Session 2419; backlog L "Ruins at the scale of cliffs", OG-104's Drowned Spires, the Gatelands; Michael's B on
   // #1737: always walked, the decks 2.5 m clear of high water) ──
   // ruins.js's drownedSpires (Sessions 2389 and 2415), copied for the world. The prototype's strand, its spit, its sea and its scale post
   // are the world's or left out: the chain strides off a Gatelands strand whose spit a line of stamps heaps up, and the sea is the world's.
@@ -8218,10 +8218,10 @@ function aurenneOrrery(hAt, o = {}) {
     const BASE = DECK - 6.45 * K, FOOT = BASE - 12, PASS = { w: 5, h: 9 }, towers = [], spans = [], sol = [], plats = [];
     const lay = (W, T) => { for (const k in W.by) for (const g of W.by[k]) { g.applyMatrix4(T); put(k, g); } };
     const m4 = (x, y, z, ry, k = K) => new THREE.Matrix4().makeTranslation(x, y, z).multiply(new THREE.Matrix4().makeRotationY(ry)).multiply(new THREE.Matrix4().makeScale(k, k, k));
-    const hOut = i => pts[Math.min(N - 1, i + 1)][2]; /* a tower turns to the mean of its two spans' headings (ruins.js, S2416) */
+    const hOut = i => pts[Math.min(N - 1, i + 1)][2]; /* a tower turns to the mean of its two spans' headings (ruins.js, S2419) */
     pts.forEach(([x, z, h], i) => { const hd = i === 0 ? hOut(0) : i === N - 1 ? h : (h + hOut(i)) / 2, ry = -hd, cond = conds[i], bed = hAt(x, z);
       const W0 = gkParts('pier', { cond: 'whole', school: 'cloch', key: `${key}:tower:${i}:lo`, ruin: true, passage: { y: (DECK - FOOT) / K, h: PASS.h / K, w: PASS.w / K } }), h0 = W0.size.h - .5, T0 = m4(x, FOOT, z, ry); lay(W0, T0);
-      const UP = FOOT + h0 * K, W = gkParts('pier', { cond, school: 'cloch', key: `${key}:tower:${i}`, ruin: true, ground: (bed - .4 - UP) / K }), T = m4(x, UP, z, cond === 'broken' ? ry + Math.PI / 2 : ry); /* a broken tower's upper pier turned a quarter, so its stones fall across the chain, not through the decks (ruins.js, S2416) */
+      const UP = FOOT + h0 * K, W = gkParts('pier', { cond, school: 'cloch', key: `${key}:tower:${i}`, ruin: true, ground: (bed - .4 - UP) / K }), T = m4(x, UP, z, cond === 'broken' ? ry + Math.PI / 2 : ry); /* a broken tower's upper pier turned a quarter, so its stones fall across the chain, not through the decks (ruins.js, S2419) */
       let top = -Infinity; for (const g of W.by.stone || []) { g.applyMatrix4(T); g.computeBoundingBox(); top = Math.max(top, g.boundingBox.max.y); put('stone', g); } for (const k in W.by) if (k !== 'stone') for (const g of W.by[k]) { g.applyMatrix4(T); put(k, g); }
       const lean = (W.st.lean || 0) * Math.PI / 180, M4 = T.clone().multiply(new THREE.Matrix4().makeRotationX(lean));
       if (cond === 'cracked') { const h1 = W.size.h; { const g = new THREE.BoxGeometry(5.6, .7, 5.6); g.translate(0, h1 + .35, 0); worldUV(g, .25); put('corbel', g.applyMatrix4(M4)); }

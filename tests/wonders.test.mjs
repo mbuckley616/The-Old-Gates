@@ -5,7 +5,7 @@
 // same for Aurenne's Broken Orrery on its headland. Session 1666: the Gatelands' Drowned Ring in its lough.
 // Session 2385: the Weavers' ring of broken arches on a Gatelands headland. Session 2409: the Northlight Altar on a Markish fell.
 // Session 2410: the herbs laid before a wonder's stamp are set on its ground, or taken away from its solids and water.
-// Session 2416: the Drowned Spires off a Gatelands strand, walked from the strand through every tower.
+// Session 2419: the Drowned Spires off a Gatelands strand, walked from the strand through every tower.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -192,7 +192,7 @@ const nn = await page.evaluate(() => { forceTime(23); WONDERS._t = 0; tickWonder
 check(`at 23h the aurora is up ${nn.out} m out beyond the gap, and still nothing of the ring's is lit`, nn.aurora && nn.out > 300 && nn.lit === 0, nn);
 const nd = await page.evaluate(() => { const S = WONDERS.northlight; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:northlight').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'northlight').length }; });
 check('2.5 km off it is dropped, its solids and steps with it', nd.gone && nd.sol === 0 && nd.plats === 0, nd);
-// Session 2416: the Drowned Spires (OG-104; Michael's B on #1737, always walked) off a Gatelands strand. The place is the seed's, clear of
+// Session 2419: the Drowned Spires (OG-104; Michael's B on #1737, always walked) off a Gatelands strand. The place is the seed's, clear of
 // every site, door, road and the two Gatelands wonders; the chain runs out into the sea with open water ahead; four towers stand with their
 // spires and two are broken, one span is broken; you walk from the strand up the spit and out along the decks through every tower's
 // passage, the broken span's gap is open water; a passage's sides, the parapets and the stone under the decks are solid to a swimmer; it

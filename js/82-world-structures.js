@@ -3693,7 +3693,7 @@
   function wonderNorthDrop(){const S=WONDERS.northlight;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:northlight')STATIC_SOL.splice(i,1);S.sol=[];
     const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='northlight')P.splice(i,1);S.plats=[];}
-  // The Drowned Spires (Session 2416; the kit's PKIT.wonders.spires, from ruins.js; OG-104's Drowned Spires, the Gatelands; Michael's B on
+  // The Drowned Spires (Session 2419; the kit's PKIT.wonders.spires, from ruins.js; OG-104's Drowned Spires, the Gatelands; Michael's B on
   // #1737, always walked), on the new look only. Its place is one strand of the Gatelands, the same for every load of a seed: on a 50 m grid
   // over the Gatelands' land cells (getCell, all of them; a beach of 1 in 14 holds the band 84 m wide), a point at the water's edge (SEA_Y -3 to +2) for the first tower, kept 330 m
   // clear of every site's pad and every door, 200 m of every road's line and 1.2 km of the Weavers' ring and the Drowned Ring; then of 32
