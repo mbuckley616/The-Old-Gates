@@ -419,6 +419,17 @@ const notch = await page.evaluate(() => ['Sorcha', 'Orla'].map(name => { const r
     for (let i = 1; i < R - 1; i++) { if (Math.abs(c[i].th) < 2.2 || c[i].dy > .1) continue; tested++; worst = Math.max(worst, (c[i - 1].r + c[i + 1].r) / 2 - c[i].r); } }
   return { name, cape: true, worst: +worst.toFixed(4), tested, out: P.cloak.through ? P.cloak.through.out : null, under: P.cloak.under }; }));
 check(`no notch in a shoulder cape's opening under the brooch: no front point in its top 10 cm more than 3 mm inside its column (${notch.map(x => x.name + ' ' + x.worst).join(', ')}), nothing through, nothing under`, notch.every(x => x.cape && x.tested > 20 && x.worst < .003 && x.out === 0 && x.under === 0), notch);
+// S2424 (S2399's owed note): a cape's troughs come in only as far as the room under them, and over the arm there is none, so a fold's
+// ridge stood 4 cm out alone over one or two columns and the hem rose on it and fell again, two steps over the elder's left elbow
+// (Ciaran, cf3: from the back round the left side, a hem point 2.9 cm off its neighbours' line and 1.05 cm above or below it). The
+// cape's folds are blurred across the columns now: 2.2 cm and 0.55 cm
+const elbow = await page.evaluate(() => { const root = buildNPCMesh({ role: 'villager', name: 'Ciaran', people: 'gatelander' }, { key: 'cf3' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+  const D = r.hbG.dress; if (!D.cape || !D.staff) return { cape: !!D.cape, staff: !!D.staff }; const P = HB.makePerson(r.hbG, { hoodStats: false }); P.root.updateMatrixWorld(true); const n = new THREE.Vector3(), v = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(n);
+  const K = P.cloak.columns, R = P.cloak.rows, cl = P.root.getObjectByName('cloak'), pa = cl.geometry.attributes.position, H = [];
+  for (let k = 0; k < K; k++) { v.fromBufferAttribute(pa, k * R + R - 1).applyMatrix4(cl.matrixWorld); H.push({ r: Math.hypot(v.x - n.x, v.z - n.z), y: v.y, th: Math.atan2(v.x - n.x, -(v.z - n.z)) }); }
+  let kr = 0, ky = 0, tested = 0; for (let k = 1; k < K - 1; k++) { if (H[k].th < .6 || H[k].th > 1.9) continue; tested++; kr = Math.max(kr, Math.abs(H[k].r - (H[k - 1].r + H[k + 1].r) / 2)); ky = Math.max(ky, Math.abs(H[k].y - (H[k - 1].y + H[k + 1].y) / 2)); }
+  return { cape: true, staff: true, tested, kr: +kr.toFixed(4), ky: +ky.toFixed(4), out: P.cloak.through.out, under: P.cloak.under, tris: P.cloak.tris }; });
+check(`a shoulder cape's hem over the left elbow is one curve, not two steps: the elder Ciaran's hem no point over 2.5 cm off its neighbours' line (${elbow.kr}) nor 8 mm above or below it (${elbow.ky}), nothing through, nothing under`, elbow.cape && elbow.staff && elbow.tested >= 8 && elbow.kr < .025 && elbow.ky < .008 && elbow.out === 0 && elbow.under === 0, elbow);
 check('the Church\'s inquisitor wears the white tabard over mail with the red shuttle on it (nothing of the body through it) and a white hood, white far off', office.inquisitor.mail && office.inquisitor.tabard && office.inquisitor.sign > 100 && office.inquisitor.out === 0 && office.inquisitor.tested > 1000 && office.inquisitor.hood && office.inquisitor.far > .8, office.inquisitor);
 // S2260 (#1566 B, dressed by rank, nation by nation): the head of a town by its well (`_lord`) wears the concept artist's sheet for the
 // office, whatever the roll; a guard captain who is not the town's head is still a guard
