@@ -1526,7 +1526,7 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
       const hairR = radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 1), tabR = HP.tab != null ? radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 2) : null;
       const wornR = HP.worn != null ? radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 3) : null;
       const pols = cols.map(c => c.map(q => ({ th: Math.atan2(q.x - neck.x, -(q.z - neck.z)), r: Math.hypot(q.x - neck.x, q.z - neck.z) })));
-      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r < 1 ? p.r : Math.max(p.r, c[r].y < neckY - .03 ? hairR(p.th, c[r].y) + .01 : 0, tabR ? tabR(p.th, c[r].y) + .01 : 0, wornR && capeFront(c[r]) > 0 ? wornR(p.th, c[r].y) + .01 : 0)), b = a.slice();
+      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r < 1 ? p.r : Math.max(p.r, c[r].y < neckY - .03 ? hairR(p.th, c[r].y) + .01 : 0, tabR ? tabR(p.th, c[r].y) + .01 : 0)), b = a.slice();
         for (let r = 1; r < R; r++) for (let d = -8; d <= 8; d++) { const j = r + d; if (j < 1 || j >= R) continue; const v = a[j] - .4 * .0105 * Math.abs(d); if (v > b[r]) b[r] = v; }
         return b.map((v, r) => Math.max(0, v - pol[r].r)); });
       // and across the columns: the hair's outline is read strand by strand, so neighbouring columns wanted different lifts and the cape's top
@@ -1536,6 +1536,19 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
       // and down each column the same way, four times: the outline is read in 2 cm bands, and the cape stood in steps a band apart
       for (let it = 0; it < 4; it++) D = D.map(d => { const M = d.map((v, r) => r < 1 ? v : Math.max(v, r > 1 ? d[r - 1] : 0, r < R - 1 ? d[r + 1] : 0));
         return M.map((v, r) => r < 1 ? v : (2 * v + (r > 1 ? M[r - 1] : v) + (r < R - 1 ? M[r + 1] : v)) / 4); });
+      // what is worn at the breast is lifted on its own (Session 2407): taken through the hair's maxima, a bib's outline (which leans out as
+      // it goes down the breast) was carried up each column from the rows under it, and a bib-wearer's cape stood 4 cm over the bib, not 1.
+      // Its lift is only blurred, never widened, then held a few mm under what each point needs (2 mm over the bib at the least)
+      if (wornR) { const need = cols.map((c, k) => pols[k].map((p, r) => r < 1 || !(capeFront(c[r]) > 0) ? 0 : Math.max(0, wornR(p.th, c[r].y) + .01 - p.r)));
+        let W = need.map(d => d.slice());
+        for (let it = 0; it < 2; it++) W = W.map((d, k) => d.map((v, r) => (2 * v + (k > 0 ? W[k - 1][r] : v) + (k < K - 1 ? W[k + 1][r] : v)) / 4));
+        for (let it = 0; it < 4; it++) W = W.map(d => d.map((v, r) => r < 1 ? v : (2 * v + (r > 1 ? d[r - 1] : v) + (r < R - 1 ? d[r + 1] : v)) / 4));
+        // the floor steps where the outline's 2 cm bands do (a rumple on the upper chest, a notch in the opening's edge): blurred once more
+        // across and twice down, then held no more than 8 mm under the need
+        W = W.map((d, k) => d.map((v, r) => Math.max(v, need[k][r] - .005)));
+        W = W.map((d, k) => d.map((v, r) => (2 * v + (k > 0 ? W[k - 1][r] : v) + (k < K - 1 ? W[k + 1][r] : v)) / 4));
+        for (let it = 0; it < 2; it++) W = W.map(d => d.map((v, r) => r < 1 ? v : (2 * v + (r > 1 ? d[r - 1] : v) + (r < R - 1 ? d[r + 1] : v)) / 4));
+        D = D.map((d, k) => d.map((v, r) => Math.max(v, W[k][r], need[k][r] - .008))); }
       cols.forEach((c, k) => { for (let r = 1; r < R; r++) if (D[k][r] > 1e-5) { const p = pols[k][r], rr = p.r + D[k][r]; c[r].x = neck.x + Math.sin(p.th) * rr; c[r].z = neck.z - Math.cos(p.th) * rr; overHair++; } }); } }
   // the sheet
   const pos = [], uv = [], idx = [];
