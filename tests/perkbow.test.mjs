@@ -7,7 +7,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 await page.evaluate(() => { window._drive = (step, max) => {
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
-  let t = performance.now(), n = 0;
+  let t = performance.now(), n = 0; prevT = t; /* S2402 — the first frame steps 1/60 s, not the loop's 0.05 s clamp */
   try { for (; n < max; n++) { if (step && step()) break; PHP = maxHP; dead = false; t += 1000 / 60; loop(t); } }
   finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; }
   return n; }; });
@@ -23,30 +23,34 @@ check(`Quick nock: a full draw takes ${nock.f49} frames at Bow 49 and ${nock.f50
 check(`the Bow's perks built: Steady (S1028, on the aim's sway; tests/bowsway), Quick nock, Long eye and Through (${nock.live.join(' ')})`,
   JSON.stringify(nock.live) === '[true,true,true,true]', nock.live);
 
-// 2. Long eye: an arrow fired level from high over open ground, through tickArrowMotion alone, at Bow 74 and 75
+// 2. Long eye: an arrow fired level from 40 m over open ground, through tickArrowMotion alone, at Bow 74 and 75. Its drop is read
+// at 2.2 s (the old life, S982's measure); since S2402 (#1748 A) it then flies on until it lands, up to ARROW_LIFE's 8 s.
 const eye = await page.evaluate(() => { const out = {};
-  // a bearing with nothing solid for 70 m, and the highest ground under it
+  // a bearing with nothing solid for 160 m, and the highest ground under it
   let dir = null, top = 0;
   for (let k = 0; k < 24 && !dir; k++) { const a = k * Math.PI / 12, dx = Math.sin(a), dz = Math.cos(a); let ok = true, h = -1e9;
-    for (let d = 0; d <= 70; d += .5) { const x = px + dx * d, z = pz + dz * d; if (currentZoneSolid(x, z)) { ok = false; break; } h = Math.max(h, activeTerrainH(x, z)); }
+    for (let d = 0; d <= 160; d += .5) { const x = px + dx * d, z = pz + dz * d; if (currentZoneSolid(x, z)) { ok = false; break; } h = Math.max(h, activeTerrainH(x, z)); }
     if (ok) { dir = { dx, dz }; top = h; } }
-  out.found = !!dir; if (!dir) return out;
+  out.found = !!dir; out.life = ARROW_LIFE; if (!dir) return out;
   const fly = (lv) => { const sk0 = JSON.stringify(SKILLS.bow); SKILLS.bow = { lv, p: 0 };
     const a = new THREE.Object3D(); a.position.set(px, top + 40, pz);
     a.userData = { vx: dir.dx * ARROW_SPEED, vy: 0, vz: dir.dz * ARROW_SPEED, life: ARROW_LIFE, isArrow: true, longEye: perk('bow', 75), x0: px, z0: pz };
-    const y0 = a.position.y; let at45 = null, s = 'flying';
-    for (let i = 0; i < 400 && s === 'flying'; i++) { s = tickArrowMotion(a, 1 / 60, true);
-      if (at45 === null && Math.hypot(a.position.x - px, a.position.z - pz) >= 45) at45 = +(y0 - a.position.y).toFixed(3); }
+    const y0 = a.position.y; let at45 = null, s = 'flying', at22 = null, i = 0;
+    for (; i < 600 && s === 'flying'; i++) { s = tickArrowMotion(a, 1 / 60, true);
+      if (at45 === null && Math.hypot(a.position.x - px, a.position.z - pz) >= 45) at45 = +(y0 - a.position.y).toFixed(3);
+      if (i === 131) at22 = { drop: +(y0 - a.position.y).toFixed(3), far: +Math.hypot(a.position.x - px, a.position.z - pz).toFixed(1), vy: +a.userData.vy.toFixed(3), s }; }
     SKILLS.bow = JSON.parse(sk0);
-    return { at45, drop: +(y0 - a.position.y).toFixed(3), far: +Math.hypot(a.position.x - px, a.position.z - pz).toFixed(1), vy: +a.userData.vy.toFixed(3), end: s }; };
+    return { at45, ...at22, land: +Math.hypot(a.position.x - px, a.position.z - pz).toFixed(1), t: +(i / 60).toFixed(2), end: s }; };
   out.f74 = fly(74); out.f75 = fly(75); return out; });
 console.log('eye', JSON.stringify(eye));
-check('found 70 m of open ground from the start', eye.found, eye);
+check('found 160 m of open ground from the start', eye.found, eye);
 check(`Long eye: to 45 m the arrow falls alike (${eye.f74.at45} at Bow 74, ${eye.f75.at45} at 75)`, eye.f74.at45 === eye.f75.at45 && eye.f74.at45 > 0, eye);
-{ const t = eye.f74.far / 28, t50 = 50 / 28; // the flight's time in seconds (ARROW_SPEED 28), and its time to 50 m
-  check(`past 50 m it falls at half the gravity: ${eye.f75.drop} m against ${eye.f74.drop} m by the end of its flight (${eye.f74.far} m)`,
-    eye.f74.end === 'expired' && eye.f75.end === 'expired' && eye.f75.drop < eye.f74.drop && eye.f75.vy > eye.f74.vy
+{ const t = eye.f74.far / 28, t50 = 50 / 28; // the time flown at 2.2 s in seconds (ARROW_SPEED 28), and its time to 50 m
+  check(`past 50 m it falls at half the gravity: ${eye.f75.drop} m against ${eye.f74.drop} m at 2.2 s of flight (${eye.f74.far} m)`,
+    eye.f74.s === 'flying' && eye.f75.s === 'flying' && eye.f75.drop < eye.f74.drop && eye.f75.vy > eye.f74.vy
     && Math.abs(-eye.f75.vy - 4 * (t50 + (t - t50) / 2)) < .2 && Math.abs(-eye.f74.vy - 4 * t) < .2, { eye, t, t50 }); }
+check(`#1748 A: an arrow flies until it lands (life ${eye.life} s): from 40 m up it plants at ${eye.f74.land} m after ${eye.f74.t} s, at Bow 75 at ${eye.f75.land} m after ${eye.f75.t} s`,
+  eye.life === 8 && eye.f74.end === 'stuck-geom' && eye.f75.end === 'stuck-geom' && eye.f74.t > 2.2 && eye.f75.land > eye.f74.land + 5, eye);
 
 // 3. Through: three Bandits in a line 4, 7 and 10 units ahead; one full-draw arrow at Bow 99 and at 100, and a weaker one at 100
 const shot = (lv, strength) => page.evaluate(([lv, strength]) => { forceTime(12);
