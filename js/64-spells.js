@@ -1555,19 +1555,19 @@ function douseFire(f){const i=CAMPFIRES.indexOf(f);if(i<0)return false;if(typeof
 // your edge and in its 60° cone, on your floor; the nearest wins. S1717: Loscadh's touch fires a lair's dry brush (#973 A, S1708's fireBrush),
 // measured to its span as a web is; its touch deals nothing, so the brush comes first. Caor's touch is also a blow of 30, so a foe in reach takes it first and
 // the thing is touched only when none is; Sioc's does nothing to a foe, so the pool comes first, as Uisce's fire does. One use of the school.
-const TOUCH_THING={caor:['brazier','web'],sioc:['pool','sealwater'],loscadh:['brush']}; /* S2405 — a seal's black water (68-dungeon-misc.js) */
+const TOUCH_THING={caor:['brazier','web','barricade'],sioc:['pool','sealwater'],loscadh:['brush']}; /* S2405 — a seal's black water (68-dungeon-misc.js) */
 function touchGateThing(word){const kinds=TOUCH_THING[word];if(!kinds||typeof GATE_THINGS==='undefined'||!(lid&&lid.startsWith('dyn_')))return null;
   const reach=FORMS.touched.reach+HULL_YOU,c=Math.cos(FORMS.touched.cone/2*Math.PI/180);let best=null,bd=1e9;
   for(const t of GATE_THINGS){if(kinds.indexOf(t.kind)<0||t.floor!==currentFloor||(t.kind==='brazier'?t.lit:t.kind==='pool'||t.kind==='sealwater'?t.frozen:(t.burnt||t.burning)))continue;
     let qx=t.x,qz=t.z,d;
-    if(t.kind==='web'||t.kind==='brush'||t.kind==='sealwater'){const s=t.area||t.solid;qx=Math.max(s.x0,Math.min(s.x1,px));qz=Math.max(s.z0,Math.min(s.z1,pz));d=Math.hypot(px-qx,pz-qz);}
+    if(t.kind==='web'||t.kind==='brush'||t.kind==='sealwater'||t.kind==='barricade'){const s=t.area||t.solid; /* S2411 — a barricade's planks, as a web */qx=Math.max(s.x0,Math.min(s.x1,px));qz=Math.max(s.z0,Math.min(s.z1,pz));d=Math.hypot(px-qx,pz-qz);}
     else d=Math.max(0,Math.hypot(t.x-px,t.z-pz)-(t.kind==='pool'?t.R:.55));
     if(d>reach+1e-9)continue;const dx=qx-px,dz=qz-pz,h=Math.hypot(dx,dz);
     if(h>1e-3&&(-dx*Math.sin(yaw)-dz*Math.cos(yaw))/h<c-1e-9)continue;if(d<bd){bd=d;best=t;}}
   return best;}
-const TOUCH_THING_SAY={sealwater:'The black water freezes over.',brazier:'The brazier catches.',web:'The web burns away to its moorings.',pool:'The pool freezes over.',brush:'The brush catches and burns.'};
+const TOUCH_THING_SAY={sealwater:'The black water freezes over.',brazier:'The brazier catches.',web:'The web burns away to its moorings.',pool:'The pool freezes over.',brush:'The brush catches and burns.',barricade:'The planks catch and burn away.'};
 // touchThing: the named action. The touch of `word` acts on the gate's thing t (lightBrazier, burnWeb, freezePool are the build's)
-function touchThing(word,t){const ok=t.kind==='sealwater'?openSecret(t.seal):t.kind==='brazier'?lightBrazier(t):t.kind==='web'?burnWeb(t):t.kind==='pool'?freezePool(t):t.kind==='brush'?fireBrush(t):false;
+function touchThing(word,t){const ok=t.kind==='barricade'?barricadeBreak(GATE_SECRETS.find(r=>r.id===t.seal),'fire'):t.kind==='sealwater'?openSecret(t.seal):t.kind==='brazier'?lightBrazier(t):t.kind==='web'?burnWeb(t):t.kind==='pool'?freezePool(t):t.kind==='brush'?fireBrush(t):false;
   if(ok){const sc=WORD_BY[word]&&WORD_BY[word].school;if(sc&&SKILL_DEF[sc])skillUse(sc,1,'touch');}return ok;}
 // S1718 — Sioc touched on a lock (#976, Michael's A: the works stiffen for 30 s). For 30 s by the play clock a touched lock holds each pin
 // at the top twice as long, and a mistimed press drops the pin without snapping the pick (68-dungeon-misc.js reads lockStiff). Still a pick,

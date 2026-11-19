@@ -1018,13 +1018,34 @@ function gateSecrets(gen,seed,size,school){
     const got=reach(fl,shut),B=base[fl];let cuts=false;for(let k=0;k<W*H&&!cuts;k++)if(B[k]&&!got[k]&&!shut.has(k))cuts=true;
     if(cuts)continue;
     const dc=mx<rm.x?1:mx>=rm.x+rm.w?-1:0,dr=dc?0:(my<rm.y?1:-1);
-    cand.push({floor:fl,c:mx,r:my,dc,dr,room:{x:rm.x,y:rm.y,w:rm.w,h:rm.h},path:shut});}
+    cand.push({floor:fl,c:mx,r:my,dc,dr,room:{x:rm.x,y:rm.y,w:rm.w,h:rm.h},path:shut,bare:M[my][mx]===1});}
   const own=SECRET_SCHOOLS.includes(school)?school:'cloch',others=SECRET_SCHOOLS.filter(s=>s!==own);
   const want=[own];if((SECRET_SEAL_N[size]||1)>1)want.push(others[Math.floor(r()*others.length)]);
   for(const sc of want){const pick=Math.floor(r()*Math.max(1,cand.length));if(!cand.length)break;const q=cand.splice(pick,1)[0];
     S.push({id:(seed|0)+':'+q.floor+':secret'+S.length,n:S.length,kind:'seal',school:sc,floor:q.floor,c:q.c,r:q.r,dc:q.dc,dr:q.dr,room:q.room,
       cells:[...q.path]});}
+  // S2409 — the mechanisms (the sheet's session 3 on): after the seals, on the same stream, up to the table's count by size (two in a
+  // medium gate, three in a large, four in a massive). Each slot draws its kind from those that can stand here (the lift where the gate
+  // has a chasm, the sluice where it has a flooded hall, the turning chamber and the plates once a gate), then a side room among the
+  // seals' leftovers, on a floor with that space for the lift and the sluice. Every kind is drawn now, so no later session moves a
+  // room or an id; only the kinds in SECRET_BUILT are laid (gateSecretsBuild), the rest hold their rooms until their session.
+  const hasSp=(fl,ty)=>(gen.spaces||[]).some(sp=>sp&&(sp.floor||1)===fl&&sp.type===ty),anySp=ty=>hasSp(1,ty)||hasSp(2,ty),used={};
+  for(let k=want.length;k<(SECRET_N[size]||1);k++){
+    const kinds=SECRET_MECH.filter(m=>!(used[m]&&SECRET_ONCE[m])&&(m!=='lift'||anySp('chasm'))&&(m!=='sluice'||anySp('flooded')));
+    const kind=kinds[Math.floor(r()*kinds.length)],fit=cand.filter(q=>kind==='lift'?hasSp(q.floor,'chasm'):kind==='sluice'?hasSp(q.floor,'flooded'):true);
+    const pick=Math.floor(r()*Math.max(1,fit.length));if(!fit.length)continue;const q=fit[pick];cand.splice(cand.indexOf(q),1);used[kind]=1;
+    S.push({id:(seed|0)+':'+q.floor+':secret'+S.length,n:S.length,kind,school:null,floor:q.floor,c:q.c,r:q.r,dc:q.dc,dr:q.dr,room:q.room,cells:[...q.path]});}
+  // S2411 — the barricade (the sheet's wordless stories): one gate in four, on its own stream (seededRng('barricade', seed)), so no secret
+  // moves. Planks across the bare mouth of a side room that holds no secret, web or pool, and whose closing cuts nothing off (the
+  // seals' own test, above). Which of the quest writer's six scenes stands behind it is drawn now (scene, 0 to 5) and drawn by its session.
+  gen.barricade=null;
+  {const rb=seededRng('barricade',seed|0);if(rb()<SECRET_BAR_P){const bc=cand.filter(q=>q.bare),q=bc[Math.floor(rb()*bc.length)],scene=Math.floor(rb()*6);
+    if(q)gen.barricade={id:(seed|0)+':'+q.floor+':barricade',n:'b',kind:'barricade',school:null,floor:q.floor,c:q.c,r:q.r,dc:q.dc,dr:q.dr,room:q.room,cells:[...q.path],scene};}}
   return S;}
+const SECRET_BAR_P=1/4,SECRET_BAR_BLOWS=3;
+const SECRET_N={tiny:1,small:1,medium:2,large:3,massive:4};
+const SECRET_MECH=['slide','stair','lift','sluice','turn','plates'],SECRET_ONCE={turn:1,plates:1};
+const SECRET_BUILT={seal:1,slide:1}; /* the kinds laid so far: the stair, the lift, the sluice, the turning chamber and the plates come in sessions 3 to 5 */
 // the world's record of a gate's secrets: o, the opened ones' numbers; t, what is left in each one's chest (session 2)
 function gateSecretRec(seed){const G=worldState.gateSecrets||(worldState.gateSecrets={});return G[seed]||(G[seed]={o:[],t:{}});}
 function gateSecretOpen(seed,n){const G=worldState.gateSecrets,R=G&&G[seed];return !!(R&&R.o&&R.o.indexOf(n)>=0);}
@@ -1044,16 +1065,17 @@ const SECRET_TINE_S=20,SECRET_COLD=.05,SECRET_LEDGE=1.5,SECRET_GALLERY=3.8,SECRE
 const SECRET_SAY={tine:'The stone leaf grinds aside.',uisce:'The black water freezes over.',cloch:'The block lifts and lodges on the lintel.',
   scath:'The dark wall stays a doorway.',solas:'The script on the crystal lights, and a niche turns open.',gaoth:'You stand in the gallery.'};
 let GATE_SECRETS_GEN=null,DPROP_Y=null; /* DPROP_Y: the feet a prop with a top is tested at (the ledge), set only for your own step */
-function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;if(!gen||!gen.secrets||!gen.secrets.length||!portal)return GATE_SECRETS;
+function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;if(!gen||!gen.secrets||!(gen.secrets.length||gen.barricade)||!portal)return GATE_SECRETS;
   const Hc=DCELL/2,G0=worldState.gateSecrets&&worldState.gateSecrets[portal.seed];
-  for(const t of gen.secrets){const y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r),R=t.room,opened=gateSecretOpen(portal.seed,t.n);
+  for(const t of gen.secrets){if(!SECRET_BUILT[t.kind])continue;const y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r),R=t.room,opened=gateSecretOpen(portal.seed,t.n);
     const mat=new THREE.MeshLambertMaterial({color:SECRET_SEAL_COL[t.school]||0x777777}),grp=new THREE.Group();grp.name='gateSecret';
     const x0=dAt(R.x-.5),x1=dAt(R.x+R.w-.5),z0=dAt(R.y-.5),z1=dAt(R.y+R.h-.5),mx=(x0+x1)/2,mz=(z0+z1)/2;
     const dir=t.dc||t.dr,far=t.dc?(t.dc>0?x1:x0):(t.dr>0?z1:z0),at=(d,lat)=>t.dc?[far-t.dc*d,lat==null?mz:lat]:[lat==null?mx:lat,far-t.dr*d];
     const rec={id:t.id,n:t.n,seed:portal.seed,kind:t.kind,school:t.school,floor:t.floor,c:t.c,r:t.r,x:cx,y,z:cz,kx:cx,kz:cz,area:{x0,x1,z0,z1},
       opened,group:grp,mat,solid:null,shut:null,chest:null,said:false};
     let chestY=y,chestAt=at(1.0);
-    if(SECRET_SEAL_SHUT[t.school]){const x=cx+t.dc*(Hc-.3),z=cz+t.dr*(Hc-.3),h=Math.min(FLOOR_HEIGHT,6);
+    if(t.kind==='slide')slideBuild(t,rec,grp,y,cx,cz,opened);
+    else if(SECRET_SEAL_SHUT[t.school]){const x=cx+t.dc*(Hc-.3),z=cz+t.dr*(Hc-.3),h=Math.min(FLOOR_HEIGHT,6);
       const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),mat);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;rec.kx=x;rec.kz=z;
       rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
       if(!opened)DUNGEON_PROPS.push(rec.solid);else m.visible=false;
@@ -1080,11 +1102,13 @@ function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;if(!g
       FOOTHOLDS.push(Object.assign({gate:'gallery',secret:t.id},rec.gallery));chestY=top;chestAt=at(.6);}
     dScene.add(grp);GATE_SECRETS.push(rec);
     try{rec.chest=secretChest(t,portal,rec,chestAt[0],chestAt[1],chestY,G0);}catch(e){console.warn('secretChest',e);}}
+  if(gen.barricade)try{barricadeBuild(gen.barricade,portal,G0);}catch(e){console.warn('barricadeBuild',e);}
   return GATE_SECRETS;}
 // a seal's chest: what is left in it is the world's once opened (t[n]), else rolled on its own key a tier above the floor. Solas's
 // stands in its niche and is in the gate's chests only once the niche turns open.
 function secretChest(t,portal,rec,x,z,yy,G0){const was=G0&&G0.t&&Array.isArray(G0.t[t.n]),key=t.id+':chest';
-  const items=was?G0.t[t.n]:rollContainerLoot('chest',portal.diffScale,portal.theme,undefined,key,Math.min(4,dungeonTier(portal,t.floor)+SECRET_TIER_UP));
+  const up=t.kind==='seal'?SECRET_TIER_UP:0; /* #1757's B: a seal's chest a tier above its floor, a mechanism's at the floor's own */
+  const items=was?G0.t[t.n]:rollContainerLoot('chest',portal.diffScale,portal.theme,undefined,key,Math.min(4,dungeonTier(portal,t.floor)+up));
   if(was)foundRestore(items);
   const group=new THREE.Group(),lid=buildChestShell(group,.75,0x6e5a40).lid;group.scale.setScalar(DCELL);group.position.set(x,yy,z);group.name='secretChest';
   group.rotation.y=t.dc?(t.dc<0?Math.PI/2:-Math.PI/2):(t.dr<0?0:Math.PI);dScene.add(group); /* its front to the room's mouth */
@@ -1096,7 +1120,7 @@ function secretChest(t,portal,rec,x,z,yy,G0){const was=G0&&G0.t&&Array.isArray(G
 // mouth's rock goes, and its key's mark stays (the braziers lit, the water frozen, the script lit, the niche open).
 function openSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.opened)return false;rec.opened=true;
   const R=gateSecretRec(rec.seed);if(R.o.indexOf(rec.n)<0)R.o.push(rec.n);
-  if(rec.solid){const i=DUNGEON_PROPS.indexOf(rec.solid);if(i>=0)DUNGEON_PROPS.splice(i,1);}if(rec.shut)rec.shut.visible=false;
+  if(rec.solid){const i=DUNGEON_PROPS.indexOf(rec.solid);if(i>=0)DUNGEON_PROPS.splice(i,1);}if(rec.shut){if(rec.kind==='slide')rec.slideAt=playClockS;else rec.shut.visible=false;} /* S2409 — a sliding wall slides */
   for(const b of rec.braziers||[])if(!b.lit)gtBrazierShow(b,true);
   if(rec.thing){rec.thing.frozen=true;rec.mat.color.setHex(0x8fa8b6);}
   if(rec.pillar)rec.mat.emissive=new THREE.Color(0x8a8460);
@@ -1111,8 +1135,11 @@ function gtBrazierCold(b){b.lit=false;b.litAt=null;const f=b.group.userData.fire
   if(b.light){if(b.light.parent)b.light.parent.remove(b.light);const i=TORCHES.findIndex(q=>q.l===b.light);if(i>=0)TORCHES.splice(i,1);b.light=null;}}
 function inArea(A,x,z,pad){pad=pad||0;return x>A.x0-pad&&x<A.x1+pad&&z>A.z0-pad&&z<A.z1+pad;}
 // the seals' tick, in a gate: the pair's 20 s, the cold water, the dark wall seen and walked through, the light on the pillar, the gallery
-function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return;
-  for(const rec of GATE_SECRETS){if(rec.opened||rec.seed!==currentPortal.seed)continue;const here=currentFloor===rec.floor;
+function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal){if(SLIDE_AIR.on)sndDraught(0);return;}
+  let air=0;
+  for(const rec of GATE_SECRETS){if(rec.seed!==currentPortal.seed)continue;const here=currentFloor===rec.floor;
+    if(rec.kind==='slide'){air=Math.max(air,slideTick(rec,here));continue;}
+    if(rec.opened)continue;
     if(rec.school==='tine'){const B=rec.braziers||[];for(const b of B)if(b.lit&&b.litAt==null)b.litAt=playClockS;
       if(B.length===2&&B[0].lit&&B[1].lit&&Math.abs(B[0].litAt-B[1].litAt)<=SECRET_TINE_S){secretOpenSay(rec);continue;}
       for(const b of B)if(b.lit&&playClockS-b.litAt>SECRET_TINE_S)gtBrazierCold(b);}
@@ -1129,7 +1156,8 @@ function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!c
     else if(rec.school==='solas'){const L=typeof laidLive==='function'?laidLive():null;
       if(here&&L&&L.light&&Math.hypot(L.x-rec.kx,L.z-rec.kz)<=SECRET_SOLAS_R+1e-6){if(rec.lit0==null)rec.lit0=playClockS;else if(playClockS-rec.lit0>=SECRET_SOLAS_S-1e-6)secretOpenSay(rec);}
       else rec.lit0=null;}
-    else if(rec.school==='gaoth'){const g=rec.gallery;if(here&&g&&inArea(g,px,pz)&&jumpY>=g.y-.05)secretOpenSay(rec);}}}
+    else if(rec.school==='gaoth'){const g=rec.gallery;if(here&&g&&inArea(g,px,pz)&&jumpY>=g.y-.05)secretOpenSay(rec);}}
+  if(air>0||SLIDE_AIR.on)sndDraught(air);}
 // a word laid at x,z near a seal: Cloch Ghéar's pillar at the fallen block opens it; another word near a seal says once that the stone
 // does not answer (Solas-Gheal at the pillar and Séideán at the gallery are their keys, and work in the tick and the jump). The id opened, or null.
 function secretLaid(word,rider,x,z){const S=secretNear(x,z,SECRET_WRONG_R);if(!S)return null;
@@ -1139,5 +1167,83 @@ function secretLaid(word,rider,x,z){const S=secretNear(x,z,SECRET_WRONG_R);if(!S
 // a touched word near a seal that is not its key: once
 function secretTouched(word){const reach=FORMS.touched.reach+HULL_YOU+1,S=secretNear(px,pz,reach);if(!S||word===SECRET_KEY[S.school])return null;secretWrong(S);return S.id;}
 function secretNear(x,z,r){if(activeZoneId!=='dungeon'||!currentPortal)return null;let best=null,bd=r;
-  for(const s of GATE_SECRETS){if(s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed)continue;const d=Math.hypot(s.kx-x,s.kz-z);if(d<=bd){bd=d;best=s;}}return best;}
+  for(const s of GATE_SECRETS){if(s.opened||s.kind!=='seal'||s.floor!==currentFloor||s.seed!==currentPortal.seed)continue;const d=Math.hypot(s.kx-x,s.kz-z);if(d<=bd){bd=d;best=s;}}return best;}
 function secretWrong(S){if(S.said)return;S.said=true;showMsg('The stone does not answer that word.','#c8b880');}
+// S2409 — the sliding wall (the sheet's session 3; its table B). A side room's one mouth closed by a slab of the gate's own wall, flush
+// with the wall it stands in, on the side you come from; one stone of it, at the height of a hand, 15% paler. Its tells: every flame
+// within SLIDE_LEAN_R (4 m) of the wall leans toward it while it is shut (the torches' embers and the braziers' fires), dust drifts
+// toward it, and within SLIDE_AIR_R (2 m) the air sounds in it (sndDraught, 72-audio.js). E on the pale stone (slideStoneNear, aimed
+// at within reach) opens it through openSecret: the slab slides into the rock beside it over SLIDE_S of the play clock, and the room is
+// open for good. It holds a chest at the floor's own tier (#1757's B, built until it is answered): a mechanism is its own find.
+const SLIDE_LEAN_R=4,SLIDE_AIR_R=2,SLIDE_LEAN=.35,SLIDE_PALE=.15,SLIDE_S=1.2,SLIDE_DUST=14;
+const SLIDE_AIR={on:false};
+function slideBuild(t,rec,grp,y,cx,cz,opened){const Hc=DCELL/2,x=cx+t.dc*(Hc+.25),z=cz+t.dr*(Hc+.25),h=Math.min(FLOOR_HEIGHT,6); /* just past the mouth's edge, its face flush with the wall line */
+  const sh=dScene.children.find(o=>o.userData&&o.userData.dunShell==='walls'),wm=sh&&sh.material&&!Array.isArray(sh.material)?sh.material:rec.mat;
+  const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),wm);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;rec.mat=wm;
+  const pm=wm.clone();pm.color=wm.color.clone().multiplyScalar(1+SLIDE_PALE);rec.paleMat=pm; /* the pale stone: the wall's own stone (its texture too), 15% lighter */
+  const sx=x-t.dc*.27,sz=z-t.dr*.27,st=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.06:.5,.36,t.dc?.5:.06),pm);st.position.set(sx-x,1.2-h/2,sz-z);m.add(st);
+  rec.stone={x:sx,z:sz,y:y+1.2,mesh:st};rec.kx=x;rec.kz=z;rec.slideDir=t.dc?[0,1]:[1,0];rec.slideH=h;rec.base=[x,z];
+  rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
+  if(!opened){DUNGEON_PROPS.push(rec.solid);
+    const N=SLIDE_DUST,pos=new Float32Array(N*3),g2=new THREE.BufferGeometry();g2.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    const dust=new THREE.Points(g2,new THREE.PointsMaterial({color:0xb8ad98,size:.035,transparent:true,opacity:.55,depthWrite:false}));dust.frustumCulled=false;
+    rec.dust={pts:dust,seed:[],y}; for(let i=0;i<N;i++)rec.dust.seed.push([((i*7919)%97)/97,((i*104729)%89)/89,((i*1299709)%83)/83]);grp.add(dust);}
+  else m.visible=false;}
+// S2411 — the barricade's build: four planks nailed across the room's mouth, flush with its wall line, solid until broken; a thing of
+// the gate's (GATE_THINGS, kind 'barricade') so Caor touched finds it as it finds a web; its chest, at the floor's own tier, against the
+// far wall. A record in GATE_SECRETS like a secret's, its number 'b' in the world's record (o holds 'b' once broken, t.b what is left).
+function barricadeBuild(t,portal,G0){const Hc=DCELL/2,y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r),R=t.room,opened=gateSecretOpen(portal.seed,t.n);
+  const x=cx+t.dc*(Hc+.12),z=cz+t.dr*(Hc+.12),grp=new THREE.Group();grp.name='gateBarricade';const mat=new THREE.MeshLambertMaterial({color:0x6b4f33});
+  const planks=new THREE.Group();grp.add(planks);
+  for(const [h,tilt] of [[.45,.06],[.95,-.09],[1.5,.04],[2.05,-.05]]){const p=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.08:DCELL+.3,.22,t.dc?DCELL+.3:.08),mat);
+    p.position.set(x,y+h,z);p.rotation.set(t.dc?tilt:0,0,t.dc?0:tilt);planks.add(p);}
+  const x0=dAt(R.x-.5),x1=dAt(R.x+R.w-.5),z0=dAt(R.y-.5),z1=dAt(R.y+R.h-.5),mx=(x0+x1)/2,mz=(z0+z1)/2,far=t.dc?(t.dc>0?x1:x0):(t.dr>0?z1:z0);
+  const rec={id:t.id,n:t.n,seed:portal.seed,kind:'barricade',school:null,floor:t.floor,c:t.c,r:t.r,x:cx,y,z:cz,kx:x,kz:z,opened,group:grp,mat,
+    solid:t.dc?{x0:x-.2,x1:x+.2,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.2,z1:z+.2,floor:t.floor,secret:t.id},shut:planks,chest:null,blows:0,scene:t.scene};
+  const T={id:t.id+":planks",kind:"barricade",floor:t.floor,x,y,z,solid:rec.solid,burnt:opened,seal:t.id,group:grp};rec.planks=T; /* not rec.thing: openSecret reads that as the black water */
+  if(!opened){DUNGEON_PROPS.push(rec.solid);GATE_THINGS.push(T);}else planks.visible=false;
+  dScene.add(grp);GATE_SECRETS.push(rec);
+  const at=t.dc?[far-t.dc*1.0,mz]:[mx,far-t.dr*1.0];rec.chest=secretChest(t,portal,rec,at[0],at[1],y,G0);return rec;}
+// a blow of doBash: the barricade in front of you within the bash's reach of its planks takes it; the third breaks it
+function barricadeBash(){if(activeZoneId!=='dungeon'||!currentPortal)return null;
+  for(const r of GATE_SECRETS){if(r.kind!=='barricade'||r.opened||r.floor!==currentFloor||r.seed!==currentPortal.seed)continue;const S=r.solid;
+    const qx=Math.max(S.x0,Math.min(S.x1,px)),qz=Math.max(S.z0,Math.min(S.z1,pz)),d=Math.hypot(px-qx,pz-qz);if(d>BASH_RANGE+HULL_YOU+1e-6)continue;
+    const h=d||1;if(d>1e-3&&(-(qx-px)*Math.sin(yaw)-(qz-pz)*Math.cos(yaw))/h<.5)continue;
+    r.blows++;if(r.blows>=SECRET_BAR_BLOWS)barricadeBreak(r,'bash');else showMsg('The planks crack.','#c8b880');return r;}
+  return null;}
+// barricadeBreak: the planks gone, by blows or by fire; open for good (openSecret keeps it in the world's record)
+function barricadeBreak(r,how){if(!r||r.opened||!openSecret(r.id))return false;if(r.planks){r.planks.burnt=true;const i=GATE_THINGS.indexOf(r.planks);if(i>=0)GATE_THINGS.splice(i,1);}
+  if(how!=='fire')showMsg('The barricade gives way.','#c8b880');return true;} /* fire's line is the touch's (TOUCH_THING_SAY) */
+// the pale stone in reach and under the crosshair, its wall still shut
+function slideStoneNear(){if(activeZoneId!=='dungeon'||!currentPortal)return null;
+  for(const s of GATE_SECRETS){if(s.kind!=='slide'||s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed||!s.stone)continue;
+    if(Math.hypot(px-s.stone.x,pz-s.stone.z)<TOUCH+.6&&aimAt({mesh:s.stone.mesh},TOUCH+.6))return s;}return null;}
+function slideStonePress(s){if(!s||!openSecret(s.id))return false;showMsg('The wall slides into the rock.','#c8b880');try{sfxNoise(SLIDE_S,0,0,.18,180);}catch(e){}return true;}
+// the flames that lean: a torch's ember or a lit brazier's fire within 4 m of the wall, on its floor. Gathered once, when first near.
+function slideFlames(rec){const out=[],y0=rec.y;
+  for(const T of TORCHES){const f=T.fl;if(!f||!f.isMesh)continue;const p=f.position;if(Math.abs(p.y-y0)>FLOOR_HEIGHT||Math.hypot(p.x-rec.kx,p.z-rec.kz)>SLIDE_LEAN_R)continue;
+    out.push({o:f,h:0,p0:p.clone(),s0:f.scale.clone()});}
+  for(const b of GATE_THINGS){if(b.kind!=='brazier'||b.floor!==rec.floor||!b.group||!b.group.userData.fire)continue;if(Math.hypot(b.x-rec.kx,b.z-rec.kz)>SLIDE_LEAN_R)continue;
+    const f=b.group.userData.fire;out.push({o:f,h:1.25,p0:f.position.clone(),s0:f.scale.clone(),b});}
+  return out;}
+// a flame's lean toward the wall (θ, with a little sway): tilted about the point h up its own origin, so the bowl stays put and the tips go over
+function slideLean(F,rec,th){const o=F.o,wp=o.parent?o.parent.localToWorld(F.p0.clone()):F.p0,dx=rec.kx-wp.x,dz=rec.kz-wp.z,d=Math.hypot(dx,dz)||1,ux=dx/d,uz=dz/d;
+  o.rotation.set(uz*th,0,-ux*th);
+  if(F.h>0){o.position.set(F.p0.x-ux*F.h*Math.sin(th),F.p0.y,F.p0.z-uz*F.h*Math.sin(th));}
+  else{o.scale.set(F.s0.x*(th?.8:1),F.s0.y*(th?1.7:1),F.s0.z*(th?.8:1));o.position.set(F.p0.x+ux*.03*(th?1:0),F.p0.y,F.p0.z+uz*.03*(th?1:0));}
+  F.th=th;}
+// the sliding wall's tick: the slab sliding once opened; while shut, the flames' lean and the dust; the draught's level for the sound
+function slideTick(rec,here){
+  if(rec.opened){if(rec.slideAt!=null&&rec.shut.visible){const k=Math.min(1,(playClockS-rec.slideAt)/SLIDE_S),L=DCELL*k;
+      rec.shut.position.x=rec.base[0]+rec.slideDir[0]*L;rec.shut.position.z=rec.base[1]+rec.slideDir[1]*L;rec.shut.position.y=rec.y+rec.slideH/2-.04*k;if(k>=1)rec.shut.visible=false;}
+    if(rec.flames){for(const F of rec.flames)slideLean(F,rec,0);rec.flames=null;}
+    if(rec.dust){rec.dust.pts.visible=false;}return 0;}
+  if(!here)return 0;const dW=Math.hypot(px-rec.kx,pz-rec.kz);
+  if(dW<SLIDE_LEAN_R+12){if(!rec.flames)rec.flames=slideFlames(rec);
+    const sway=Math.sin(playClockS*2.3+rec.n)*.06;for(const F of rec.flames){if(F.b&&!F.b.lit)continue;slideLean(F,rec,SLIDE_LEAN+sway);}
+    const D=rec.dust;if(D){const a=D.pts.geometry.attributes.position,tx=rec.slideDir[0],tz=rec.slideDir[1],ox=rec.kx,oz=rec.kz;
+      const inx=rec.slideDir[1],inz=rec.slideDir[0]; /* the wall's normal: across the slide */
+      const sgn=rec.stone?Math.sign((rec.stone.x-ox)*inx+(rec.stone.z-oz)*inz)||1:1;
+      for(let i=0;i<D.seed.length;i++){const q=D.seed[i],ph=(playClockS*.25+q[0])%1,lat=(q[1]-.5)*DCELL*.9,out=(1-ph)*1.1*sgn,hy=.15+q[2]*1.9+ph*.15;
+        a.setXYZ(i,ox+tx*lat+inx*out,D.y+hy,oz+tz*lat+inz*out);}a.needsUpdate=true;}}
+  return dW<SLIDE_AIR_R?1-dW/SLIDE_AIR_R*.6:0;}

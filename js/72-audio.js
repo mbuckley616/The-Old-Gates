@@ -77,6 +77,15 @@ function sfxNoise(dur,freq,freqEnd,gainPk,filterFreq){
   const g=AX.createGain();g.gain.setValueAtTime(gainPk,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
   src.connect(filt);filt.connect(g);g.connect(sfxGain);src.start(t);src.stop(t+dur);
 }
+// S2409 — the draught at a sliding wall (spells-as-keys-build.md, its table B): a thin, high breath of air, looped, at level 0 to 1
+// (68-dungeon-misc.js's gateSecretsTick sets it each frame from how near you stand: within 2 m). SLIDE_AIR.on says it is sounding.
+function sndDraught(level){if(typeof AX==='undefined'||!AX){SLIDE_AIR.on=false;return;}
+  if(!SLIDE_AIR.src){if(!(level>0))return;const buf=AX.createBuffer(1,AX.sampleRate*2,AX.sampleRate),d=buf.getChannelData(0);let l=0;
+    for(let i=0;i<d.length;i++){l=l*.9+(Math.random()*2-1)*.1;d[i]=l*3;}
+    const src=AX.createBufferSource();src.buffer=buf;src.loop=true;const f=AX.createBiquadFilter();f.type='bandpass';f.frequency.value=1150;f.Q.value=2.2;
+    const g=AX.createGain();g.gain.value=0;src.connect(f);f.connect(g);g.connect(sfxGain);src.start();SLIDE_AIR.src=src;SLIDE_AIR.g=g;SLIDE_AIR.f=f;}
+  const v=Math.max(0,Math.min(1,level||0));SLIDE_AIR.on=v>0;SLIDE_AIR.level=v;
+  SLIDE_AIR.g.gain.setTargetAtTime(v*.09,AX.currentTime,.15);SLIDE_AIR.f.frequency.setTargetAtTime(1000+v*300+Math.sin(AX.currentTime*1.7)*90,AX.currentTime,.3);}
 function sfxTone(freq,freqEnd,dur,gainPk,wave='sine',detune=0){
   if(!AX||volLevel===0)return;
   const t=AX.currentTime;
