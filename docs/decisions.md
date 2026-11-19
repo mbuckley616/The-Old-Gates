@@ -15,6 +15,19 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### The Scarred Gate — spent, or still waking? (from the look builder, 2026-11-19, #1754)
+**The question.** OG-104's Aurenne panel paints a Weaver ring "cracked and incomplete… signs of violent destruction". The look builder's prototype (Session 2398, `ruins.js` `scarredGate`) stands a ring 80 m across and 70 m tall in red desert; a blow from under its right foot has taken 17 of its 44 outer stones, opened a cleft through the inner course, and left a crater and a 220 m scar of black glass. Every ruin so far keeps its stones down and its script dead (#429 B), but this gate failed by catastrophe (canon Part I, §5).
+
+**Options.**
+- **A (recommended).** Spent, as built: the outer stones thrown across the sand, the script dead, nothing lit. It keeps the ruins' one rule. [front](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-scarred-front.jpg)
+- **B.** Still catastrophic: the gone stones hang over their seats, turned, a violet seam on each, the script burning violet; the only gate in the world that shows it. [wake](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-scarred-front-wake.jpg)
+- **C.** B only by night (20h–5h), as the wonders wake (#898 C); A by day.
+
+More: [far](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-scarred-far.jpg) · [scar](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-scarred-scar.jpg) · [dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-scarred-front-dusk.jpg) · [far, waking](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-scarred-far-wake.jpg)
+
+**Recommendation.** A.
+
+## Answered
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
 
@@ -26,6 +39,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 **Recommendation.** B: all of OG-122 without ever locking a carving behind a word, and the script costs what §3.1 says reading costs.
 
 **Page.** [docs/design/spells-as-keys.md](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/spells-as-keys.md)
+
+Michael: **B, A, plus mechanisms, hidden rooms and the script.** (2026-11-19, tapped on the control room)
 
 ### The Lamps on the Water — the flames alone, a glow on the water under each, or a real light each? (from the look builder, 2026-11-17, #1699)
 **The question.** Aurenne's Lamps on the Water (draft III §4, built by the systems builder in S2347) has a lampseller on the quay but no lamps on the water yet. The prototype (look builder, Session 2352; `docs/prototypes/levelup/lamps.html`) builds the draft's clay lamp on a board a hand across (320 triangles), a lamp every 20 s on the ebb, 2.4 m apart, out to the harbour mouth. How bright should the line read?
@@ -39,6 +54,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Pictures.** [A from the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-flame-quay.jpg) · [B from the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-pool-quay.jpg) · [C from the quay](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-light-quay.jpg) · [B close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-pool-near.jpg) · [B from the mouth by night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/lamps-pool-mouth.jpg)
 
+Michael: **B, A soft glow on the water under each lamp.** (2026-11-19, tapped on the control room)
+
 ### The travellers — as townsfolk, the sheet's faces, or on the road? (from the concept artist, 2026-11-17, #1704)
 **The question.** The five travellers of backlog L2 (OG-051; the quest writer's *Travellers*, 28 Oct, unapproved) move from place to place by the game-week: Zahra al-Mahdi, Tid and his wolf, Sister Elidan, Cuimín and Markos Serra. The player finds them in a different place each week. The prototype (concept artist, PR #1705; `docs/prototypes/levelup/travellers.html`) dresses them in people.js's garments plus a ram's skull on Tid's pack and Elidan's reliquary, 1.60 to 1.88 m. How far should a traveller show that they travel?
 
@@ -50,6 +67,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 **Recommendation.** B: recognisable across a square, nothing hidden.
 
 **Pictures.** [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-a.jpg) · [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-b.jpg) · [B from behind](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-b-back.jpg) · [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-c.jpg) · [the skull](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-skull.jpg) · [Elidan beside the post](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1117/docs/prototypes/levelup/travellers-scale.jpg)
+
+Michael: **B, The sheet's faces.** (2026-11-19, tapped on the control room)
 
 ### What a gate keeps — how often a lesser gate's altar holds a relic arc (from the systems designer, 2026-11-18, #1718)
 **The question.** Your C on #1092 puts a broken relic on each gate's altar. The build sheet makes it an arc of the school's armillary: three arcs make one, and every great gate's altar holds one. How often should a lesser gate's altar hold an arc? That sets how far you walk for a whole armillary.
@@ -63,6 +82,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Page.** [What a gate keeps — build sheet](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/what-a-gate-keeps-build.md)
 
+Michael: **B, One in three.** (2026-11-19, tapped on the control room)
+
 ### The Drowned Spires — a walk at the ebb, always walked, or a boat's place? (from the look builder, 2026-11-18, #1737)
 **The question.** The next Gatelands site after the Weavers' ring (OG-104: "half-sunk towers and bridges at low tide"): six Weaver towers 250 m out from a strand, each 10 m square and about 100 m tall, four with a 16 m spire and two broken, joined by 40 m bridge spans (one broken). The towers stand above the water at any level, so the question is the decks: how deep do the spires stand?
 
@@ -72,6 +93,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **C.** A boat's place: the decks under at every tide, only the towers and spires above the surface; reached by sea. [from the sand](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/spires-c.jpg)
 
 **Recommendation.** B. It needs no new system; if a tide is ever built, lowering the chain to A is one number (`o.deck`). Owed either way: a passage through each tower at deck height, then the spires in the game on a Gatelands shore.
+
+Michael: **B, Always walked.** (2026-11-19, tapped on the control room)
 
 ### The Northlight Altar — do its stones' script burn? (from the look builder, 2026-11-19, #1746)
 **The question.** OG-104's Markish site, the Northlight Altar, is prototyped (Session 2395, `ruins.js` `northlightAltar`, `places.html?place=northlight`): eleven single Weaver stones on a snowed fell, a ring 120 m across open to the north, the two by the gap 42 m, six more 30–38 m, two fallen and one snapped; an altar on a dais at the heart and the aurora beyond the gap. The sheet paints the stones glowing; the ring of arches kept its script dead (#429 B).
@@ -85,6 +108,8 @@ Also: [from the altar](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Recommendation.** A.
 
+Michael: **A, Dead, as built.** (2026-11-19, tapped on the control room)
+
 ### An arrow's flight — fly until it lands, a longer timer, or 2.2 s as now? (from the systems builder, 2026-11-19, #1748)
 **The question.** Every arrow vanishes in the air 2.2 s after it leaves the bow (`ARROW_LIFE`, `js/10-player.js`), so an arrow loosed high disappears mid-flight. The farthest shot is 61 m (hunting bow), 72 m (longbow), 79 m (war bow), all still in the air when they vanish, and Long eye (Bow 75, half the drop past 50 m) adds 0.1 m of reach. Most fights are well inside 61 m; the number matters for long shots, the sight of an arrow vanishing, and Long eye.
 
@@ -95,7 +120,8 @@ Also: [from the altar](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Recommendation.** A: reach is set by the bow, the drop and your aim, and Long eye does what it says. One number in one file; one systems session with `tests/perkbow` re-measured.
 
-## Answered
+Michael: **A, Fly until it lands, up to 8 s.** (2026-11-19, tapped on the control room)
+
 ### The festivals' contest grounds — the butts all year and the ring on its day, both only on their day, or not yet? (from the look builder, 2026-11-17, #1672)
 **The question.** Festivals B owes the look builder two contest grounds. Session 2317 built both as a prototype at the game's own sizes: Riverfair's butts (a straw boss 1.36 m across with a painted face, bales, a limed mark, pegs at 30/50/70 m; about 760 triangles) and the Strait Fair's ring (10 tarred stakes on a 5 m radius, two hemp ropes, the reeve's post and horn; 2,405 triangles). The look is drawn to the game's numbers; the open part is where they stand, and when.
 
