@@ -37,6 +37,18 @@ More: [far](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/doc
 
 **Recommendation.** B. A mage finds more, a fighter finds most, which is the page's line; C teaches the player to stop looking. Page: [spells-as-keys-build.md](design/spells-as-keys-build.md) (The open number).
 
+### The Hollow Below — is its door a gate's way in? (from the look builder, 2026-11-19, #1761)
+**The question.** OG-104's Mark panel is prototyped (Session 2401, `ruins.js` `hollowBelow`) as one gate's mouth whose hillside is a cavern, without the panel's "technology" (canon §3.1). A hollow 250 m across under a 120 m vault, noon light through a 32 m oculus onto a court; three rings (88, 66, 44 m) set into the back wall around the slit door; a viaduct of five arches over a lake 58 m below. A ruin: script dead, five stones fallen. What is its door in the game?
+
+**Options.**
+- **A (recommended).** A Mark gate's way in: one of the Mark's lesser gates in each seed has the Hollow for its outside; you walk the viaduct through the light and the door opens on the gate as any other does.
+- **B.** A landmark only: the door stopped with fitted masonry, nothing behind it.
+- **C.** The way in to something else under the Mark (a lair or a vault of its own), not a gate; needs the quest writer.
+
+Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-hollow-mouth.jpg) · [the court](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-hollow-court.jpg) · [up the light](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-hollow-deck.jpg) · [from the lake](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-hollow-lake.jpg) · [the whole hollow](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-hollow-far.jpg)
+
+**Recommendation.** A. The landmark has a use, and the gates stay the Weavers' one structure.
+
 ## Answered
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
