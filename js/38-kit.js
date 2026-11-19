@@ -96,6 +96,10 @@ const idr = id => { let n = (id * 2654435761) >>> 0; n ^= n >>> 15; return (n % 
   PAINTERS.lichen = () => texPair(512, (x, y) => { const rows = 5, row = Math.floor(y * rows), ry = y * rows - row, cols = 3, xx = x * cols + (row % 2) * .5, col = Math.floor(xx), rx = xx - col, r = idr(row * 17 + ((col % cols) + cols) % cols);
     const edge = Math.min(rx, 1 - rx, ry, 1 - ry), n = tfbm(x, y, 12, 5, 3), l = tfbm(x, y, 7, 4, 8), gap = edge < .03; const h = gap ? 0 : Math.min(1, edge * 9) * (.6 + .4 * n);
     let c = [.56 + .08 * r, .56 + .07 * r, .53 + .05 * r]; const lich = Math.max(0, l - .52) * 4; c = c.map((v, i) => mix(v, [.52, .58, .38][i], Math.min(1, lich))); if (gap) c = [.22, .22, .2]; return [h, ...c.map(v => v * (.85 + .3 * n))]; }, 2.2);
+  // Session 2416: common.js's 'slab', the halls' floor (great slabs of dark stone that take a polish where the wet lies), for the gate kit's floors
+  PAINTERS.slab = () => texPair(512, (x, y) => { const rows = 2, row = Math.floor(y * rows), ry = y * rows - row, xx = x * 2 + (row % 2) * .5, col = Math.floor(xx), rx = xx - col, r = idr(row * 7 + ((col % 2) + 2) % 2 + 41);
+    const edge = Math.min(rx, 1 - rx, ry, 1 - ry), n = tfbm(x, y, 8, 5, r * 3), vein = Math.pow(1 - Math.abs(tfbm(x, y, 5, 4, 17 + r) - .5) * 2, 9), gap = edge < .008;
+    const h = gap ? 0 : .9 + .1 * n; const v = .14 + .05 * r + .05 * n + .08 * vein; return [h, ...(gap ? [.04, .04, .045] : [v * .95, v * .97, v * 1.04])]; }, 1.4);
   const TEX = {};
   const tex = k => TEX[k] || (TEX[k] = PAINTERS[k]());
   function mat(k, o = {}) { const t = tex(k); return new THREE.MeshStandardMaterial({ map: t.map, normalMap: t.normalMap, normalScale: new THREE.Vector2(o.ns ?? 1, o.ns ?? 1), roughness: o.rough ?? .9, metalness: 0, color: o.color ?? 0xffffff }); }
@@ -7656,7 +7660,7 @@ function gkGlyphTex() { if (_gkGlyph) return _gkGlyph; const L = 2048, S = 64, c
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return (_gkGlyph = t); }
 function gkDead() { return _gkDead || (_gkDead = new THREE.MeshStandardMaterial({ color: new THREE.Color(.06, .055, .05), roughness: .9, map: gkGlyphTex() })); }
 function gkMats(school, cond) { const k = school + '|' + cond; if (_gkMats[k]) return _gkMats[k]; const S = GK_SCHOOLS[school] || GK_SCHOOLS.cloch, col = new THREE.Color(...S.stone), M = {};
-  M.stone = mat('ashlar', { ns: 1.0, color: col }); M.dress = mat('ashlar', { ns: .7, color: col.clone().multiplyScalar(.82) });
+  M.stone = mat('ashlar', { ns: 1.0, color: col }); M.dress = mat('ashlar', { ns: .7, color: col.clone().multiplyScalar(.82) }); M.floor = mat('slab', { ns: .8, color: col.clone().multiplyScalar(.75), rough: .5 });
   const glow = cond === 'broken' ? GK_VIOLET : S.glow, gk = cond === 'whole' ? 2.2 : cond === 'cracked' ? .9 : 1.1;
   M.script = new THREE.MeshStandardMaterial({ color: new THREE.Color(.05, .045, .04), emissive: new THREE.Color(...glow), emissiveIntensity: gk, emissiveMap: gkGlyphTex(), roughness: .6 }); M.dead = gkDead();
   M.ring = new THREE.MeshStandardMaterial({ color: new THREE.Color(.05, .045, .04), emissive: new THREE.Color(...glow), emissiveIntensity: gk, emissiveMap: gkRingTex(), roughness: .6 });
@@ -7674,11 +7678,20 @@ const GK_BUILD = {
     for (const u of [-3.5, 3.5]) { const blk = bl.find(b => Math.abs(b.c.x - u) < 1.6 && b.lo > 4.9 && b.lo < 5.1) || bl[0]; blk.parts.push({ key: 'script', geo: gkScriptQuad(.7, 1.0, u, 5.62, T / 2 + .02, new THREE.Vector3(0, 0, 1), .5) }); }
     return { bl, axis: 'y', size: { w: L, h: H + .45, d: T } }; },
   // gatekit.js's pier (Session 1666, for the Drowned Ring): 4 m square and 18.6 m to its cap, script up all four faces, the ring sigil on one
-  pier() { const bl = [], P = 4, H = 20, ch = 1.6; let k = 0;
+  // Session 2416 (gatekit.js, Session 2415): o.passage = { y, h, w } cuts a way through along z, the courses it crosses laid as two side
+  // stones and what lies under and over it (one block), no script on the ±z faces it opens, the ring sigil moved over its head
+  pier(o = {}) { const bl = [], P = 4, H = 20, ch = 1.6, ps = o.passage; let k = 0, ringK = 6;
+    const ringLo = kk => 1.0 + kk * ch + ch / 2 + .4 - 1.3;
+    if (ps && ringLo(6) < ps.y + ps.h + .3 && ringLo(6) + 2.6 > ps.y) { ringK = -1; for (let kk = 6; 1.0 + kk * ch < H - 1.2; kk++) if (ringLo(kk) >= ps.y + ps.h + .3) { ringK = kk; break; } }
     bl.push(gkB([{ key: 'dress', geo: gkStone(P + .8, 1.0, P + .8, 0, .5, 0) }]));
-    for (let y = 1.0; y < H - 1.2; y += ch, k++) { const parts = [{ key: 'stone', geo: gkStone(P, ch, P, 0, y + ch / 2, 0) }];
-      for (const [n, x, z] of [[[0, 0, 1], 0, P / 2 + .02], [[0, 0, -1], 0, -P / 2 - .02], [[1, 0, 0], P / 2 + .02, 0], [[-1, 0, 0], -P / 2 - .02, 0]]) parts.push({ key: 'script', geo: gkScriptQuad(.55, ch - .1, x, y + ch / 2, z, new THREE.Vector3(...n), .7) });
-      if (k === 6) parts.push({ key: 'ring', geo: gkScriptQuad(2.6, 2.6, 0, y + ch / 2 + .4, P / 2 + .04, new THREE.Vector3(0, 0, 1)) });
+    for (let y = 1.0; y < H - 1.2; y += ch, k++) { const cut = ps && y < ps.y + ps.h && y + ch > ps.y, parts = [];
+      if (!cut) parts.push({ key: 'stone', geo: gkStone(P, ch, P, 0, y + ch / 2, 0) });
+      else { const a = Math.max(y, ps.y), b = Math.min(y + ch, ps.y + ps.h), sw = (P - ps.w) / 2;
+        if (a > y + .01) parts.push({ key: 'stone', geo: gkStone(P, a - y, P, 0, (y + a) / 2, 0, .25, .015) });
+        for (const sx of [-1, 1]) parts.push({ key: 'stone', geo: gkStone(sw, b - a, P, sx * (ps.w / 2 + sw / 2), (a + b) / 2, 0, .25, .015) });
+        if (b < y + ch - .01) parts.push({ key: 'stone', geo: gkStone(P, y + ch - b, P, 0, (b + y + ch) / 2, 0, .25, .015) }); }
+      for (const [n, x, z] of [[[0, 0, 1], 0, P / 2 + .02], [[0, 0, -1], 0, -P / 2 - .02], [[1, 0, 0], P / 2 + .02, 0], [[-1, 0, 0], -P / 2 - .02, 0]]) if (!(cut && n[2])) parts.push({ key: 'script', geo: gkScriptQuad(.55, ch - .1, x, y + ch / 2, z, new THREE.Vector3(...n), .7) });
+      if (k === ringK) parts.push({ key: 'ring', geo: gkScriptQuad(2.6, 2.6, 0, y + ch / 2 + .4, P / 2 + .04, new THREE.Vector3(0, 0, 1)) });
       bl.push(gkB(parts)); }
     const top = 1.0 + k * ch; bl.push(gkB([{ key: 'dress', geo: gkStone(P + .9, .6, P + .9, 0, top + .3, 0) }])); bl.push(gkB([{ key: 'dress', geo: gkStone(P + .5, .5, P + .5, 0, top + .85, 0) }]));
     return { bl, axis: 'y', size: { w: P + .9, h: top + 1.1, d: P + .9 } }; },
@@ -7690,7 +7703,21 @@ const GK_BUILD = {
     for (let i = 0; i < n; i += step) { const j = Math.min(n, i + step), q = [inner[i], inner[j], outer[j], outer[i]];
       bl.push(gkB([{ key: 'stone', geo: gkPrism(q, -T / 2 + .02, T / 2 - .02) }, { key: 'dress', geo: gkPrism([roll[i], roll[j], inner[j], inner[i]], T / 2 - .02, T / 2 + .28) }])); }
     const kb = bl[bl.length - 1 - Math.floor(n / step / 2)]; kb.parts.push({ key: 'script', geo: gkScriptQuad(.6, 1.6, kb.c.x, kb.c.y, T / 2 + .3, new THREE.Vector3(0, 0, 1), .6) });
-    return { bl, axis: 'y', size: { w: S + 2 * J, h: ys + hh + 2, d: T + .3 }, jambs: { x: S / 2 + J / 2, w: J, d: T } }; } };
+    return { bl, axis: 'y', size: { w: S + 2 * J, h: ys + hh + 2, d: T + .3 }, jambs: { x: S / 2 + J / 2, w: J, d: T } }; },
+  // gatekit.js's bridge (Session 1818; Session 2416, for the Drowned Spires): a segmental ring of 13 m over a rise of 4.6 m under a deck
+  // 16 m long and 4 m wide at 6.2 (its walking face 6.45), parapets 1 m high, the spandrels bedded on the extrados
+  bridge() { const bl = [], L = 16, Wd = 4, ys = 0, S = 13, hh = 4.6, RD = 1.2, dk = 6.2, top = dk - .25;
+    const R = (S * S / 4 + hh * hh) / (2 * hh), cy = ys + hh - R, t0 = Math.atan2(ys - cy, S / 2), nv = 24, at = (t, r) => [Math.cos(t) * r, cy + Math.sin(t) * r];
+    for (let i = 0; i < nv; i++) { const a = Math.PI - t0 - (Math.PI - 2 * t0) * i / nv, b = Math.PI - t0 - (Math.PI - 2 * t0) * (i + 1) / nv;
+      bl.push(gkB([{ key: 'stone', geo: gkPrism([at(a, R), at(b, R), at(b, R + RD), at(a, R + RD)], -Wd / 2, Wd / 2) }])); }
+    const nd = 8; for (let k = 0; k < nd; k++) { const x = -L / 2 + (k + .5) * L / nd; bl.push(gkB([{ key: 'floor', geo: gkStone(L / nd, .5, Wd, x, dk, 0, .4, .02) }], { flat: true }));
+      for (const sz of [-1, 1]) bl.push(gkB([{ key: 'dress', geo: gkStone(L / nd, 1.0, .4, x, dk + .75, sz * (Wd / 2 - .2)) }], { flat: true })); }
+    const bed = x => Math.abs(x) > S / 2 ? ys : Math.max(ys, cy + Math.sqrt((R + RD) ** 2 - x * x));
+    for (let k = 0; k < nd; k++) { const x0 = -L / 2 + k * L / nd, x1 = x0 + L / nd, cuts = [x0, ...[-S / 2, S / 2].filter(c => c > x0 + .01 && c < x1 - .01), x1], parts = [];
+      for (let c = 0; c < cuts.length - 1; c++) { const a = cuts[c] + .015, b = cuts[c + 1] - .015, ya = bed(a), yb = bed(b);
+        if (top - Math.max(ya, yb) > .05) parts.push({ key: 'stone', geo: gkPrism([[a, ya], [b, yb], [b, top], [a, top]], -Wd / 2 + .1, Wd / 2 - .1) }); }
+      if (parts.length) bl.push(gkB(parts)); }
+    return { bl, axis: 'x', size: { w: L, h: dk + 1.25, d: Wd } }; } };
 // gatekit.js's two-centred arch curve (span S, springing ys, h the point's height over the springing, d inset) and its voussoir prism
 function gkArchCurve(S, ys, h, d, n = 24) { const a = Math.max(0, (h * h - S * S / 4) / S), r = S / 2 + a, rr = r - d, th1 = Math.atan2(Math.sqrt(Math.max(0, rr * rr - a * a)), -a), pts = [];
   for (let i = 0; i <= n; i++) { const t = Math.PI + (th1 - Math.PI) * i / n; pts.push([a + Math.cos(t) * rr, ys + Math.sin(t) * rr]); }
@@ -7738,11 +7765,12 @@ function gkCondition(P, cond, key) {
 // the piece's parts by material key, each geometry non-indexed with position, normal and uv (for merging into a wonder), and its stats;
 // `standing` is the box of what still stands on its foot (the piece's frame), for the solids
 function gkParts(kind, o = {}) { const cond = ['whole', 'cracked', 'broken'].includes(o.cond) ? o.cond : 'whole', school = GK_SCHOOLS[o.school] ? o.school : 'cloch', key = o.key || `gatekit:${kind}`;
-  const P = GK_BUILD[kind](o); P.ruin = !!o.ruin; const { parts, st } = gkCondition(P, cond, key), by = {}, standing = new THREE.Box3();
+  const P = GK_BUILD[kind](o); P.ruin = !!o.ruin; if (typeof o.ground === 'number') P.ground = o.ground; /* S2416: where a fallen stone rests, in the piece's frame */ const { parts, st } = gkCondition(P, cond, key), by = {}, standing = new THREE.Box3(), floorIn = new THREE.Box3();
   for (const p of parts) { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
     if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); (by[p.key] ||= []).push(g);
-    if (p.kind === 'in' && p.key === 'stone') { g.computeBoundingBox(); standing.union(g.boundingBox); } }
-  return { by, M: gkMats(school, cond), st, size: P.size, standing, cond, school, key }; }
+    if (p.kind === 'in' && p.key === 'stone') { g.computeBoundingBox(); standing.union(g.boundingBox); }
+    if (p.kind !== 'fallen' && p.key === 'floor') { g.computeBoundingBox(); floorIn.union(g.boundingBox); } }
+  return { by, M: gkMats(school, cond), st, size: P.size, standing, floorIn, cond, school, key }; }
 function gatePiece(kind, o = {}) { const R = gkParts(kind, o), G = new THREE.Group(); let tris = 0, calls = 0;
   for (const k in R.by) { const geo = mergeGeometries(R.by[k]), m = new THREE.Mesh(geo, R.M[k]); m.castShadow = o.shadow !== false && !['script', 'ring', 'seam', 'crack', 'dead'].includes(k); m.receiveShadow = true; m.userData.key = k; G.add(m); tris += geo.attributes.position.count / 3; calls++; }
   G.userData = { kind, cond: R.cond, school: R.school, key: R.key, tris: Math.round(tris), calls, ...R.st, size: R.size, standing: R.standing }; return G; }
@@ -8168,6 +8196,56 @@ function aurenneOrrery(hAt, o = {}) {
     tick(0, !!o.night);
     const p = stones[0], q = stones[stones.length - 1];
     return { group, tris: Math.round(tris), draws, R, sink: SINK, stones, gap: { width: +(Math.hypot(p.x - q.x, p.z - q.z) - (p.w + q.w) / 2).toFixed(1) }, dais: { steps }, altar, sol, aurora: aurora.mesh, tick };
+  }
+  // ── the Drowned Spires (Session 2416; backlog L "Ruins at the scale of cliffs", OG-104's Drowned Spires, the Gatelands; Michael's B on
+  // #1737: always walked, the decks 2.5 m clear of high water) ──
+  // ruins.js's drownedSpires (Sessions 2389 and 2415), copied for the world. The prototype's strand, its spit, its sea and its scale post
+  // are the world's or left out: the chain strides off a Gatelands strand whose spit a line of stamps heaps up, and the sea is the world's.
+  // Built over a height function it is handed, in the chain's frame: the first tower at (0, 0), the chain out along -z, bending 14° toward
+  // +x over its length (the prototype's line, moved 40 m inshore). The same keys ('ruins:spires:…') as the prototype, so the six towers'
+  // and five spans' conditions and fallen stones are its own: four towers stand with their spires, two are broken, one span is broken.
+  // Each tower is two of the gate kit's piers at 2.5 times (10 m square, about 100 m high), the lower whole with a passage 5 by 9 m at
+  // the decks; each span the kit's bridge at 2.5 (40 m between the faces, the deck 10 m wide). The stone the prototype's pale cloch as its
+  // page shows it (the game's output is linear). Nothing glows: the script is dead.
+  //   PKIT.wonders.spires(hAt, { sea }) -> { group, tris, draws, deck, towers: [{i, x, z, hd, ry, cond, foot, bed, top, lean}], spans: [{i, x, z, ry, cond, x0, x1}],
+  //     sol: [{x, z, w, d, ry, top?}] (turned boxes in the chain's frame; a top is walked over), plats: [{x, z, w, d, ry, y}], passage: {w, h}, tick() }
+  let _dsMats = null;
+  function drownedSpiresRuin(hAt, o = {}) {
+    const key = 'ruins:spires', K = 2.5, N = 6, D = 50, SEA = o.sea ?? 0, DECK = SEA + 4.5, group = new THREE.Group(), B = new Map(), put = (k, g) => (B.get(k) || B.set(k, []).get(k)).push(g);
+    group.name = 'wonder:spires';
+    const pts = []; { let x = 0, z = 0, h = 0; for (let i = 0; i < N; i++) { pts.push([x, z, h]); const hn = h + (14 / (N - 1)) * Math.PI / 180; x += Math.sin(hn) * D; z -= Math.cos(hn) * D; h = hn; } }
+    const conds = ['cracked', 'cracked', 'broken', 'cracked', 'cracked', 'broken'], spanConds = ['cracked', 'cracked', 'cracked', 'broken', 'cracked'];
+    const BASE = DECK - 6.45 * K, FOOT = BASE - 12, PASS = { w: 5, h: 9 }, towers = [], spans = [], sol = [], plats = [];
+    const lay = (W, T) => { for (const k in W.by) for (const g of W.by[k]) { g.applyMatrix4(T); put(k, g); } };
+    const m4 = (x, y, z, ry, k = K) => new THREE.Matrix4().makeTranslation(x, y, z).multiply(new THREE.Matrix4().makeRotationY(ry)).multiply(new THREE.Matrix4().makeScale(k, k, k));
+    const hOut = i => pts[Math.min(N - 1, i + 1)][2]; /* a tower turns to the mean of its two spans' headings (ruins.js, S2416) */
+    pts.forEach(([x, z, h], i) => { const hd = i === 0 ? hOut(0) : i === N - 1 ? h : (h + hOut(i)) / 2, ry = -hd, cond = conds[i], bed = hAt(x, z);
+      const W0 = gkParts('pier', { cond: 'whole', school: 'cloch', key: `${key}:tower:${i}:lo`, ruin: true, passage: { y: (DECK - FOOT) / K, h: PASS.h / K, w: PASS.w / K } }), h0 = W0.size.h - .5, T0 = m4(x, FOOT, z, ry); lay(W0, T0);
+      const UP = FOOT + h0 * K, W = gkParts('pier', { cond, school: 'cloch', key: `${key}:tower:${i}`, ruin: true, ground: (bed - .4 - UP) / K }), T = m4(x, UP, z, cond === 'broken' ? ry + Math.PI / 2 : ry); /* a broken tower's upper pier turned a quarter, so its stones fall across the chain, not through the decks (ruins.js, S2416) */
+      let top = -Infinity; for (const g of W.by.stone || []) { g.applyMatrix4(T); g.computeBoundingBox(); top = Math.max(top, g.boundingBox.max.y); put('stone', g); } for (const k in W.by) if (k !== 'stone') for (const g of W.by[k]) { g.applyMatrix4(T); put(k, g); }
+      const lean = (W.st.lean || 0) * Math.PI / 180, M4 = T.clone().multiply(new THREE.Matrix4().makeRotationX(lean));
+      if (cond === 'cracked') { const h1 = W.size.h; { const g = new THREE.BoxGeometry(5.6, .7, 5.6); g.translate(0, h1 + .35, 0); worldUV(g, .25); put('corbel', g.applyMatrix4(M4)); }
+        const c = new THREE.ConeGeometry(5.6 / Math.SQRT2 * .96, 16 / K, 4, 3); c.rotateY(Math.PI / 4); c.translate(0, h1 + .7 + 8 / K, 0); worldUV(c, .25); put('spire', c.applyMatrix4(M4)); top = Math.max(top, UP + (h1 + .7 + 16 / K) * K); }
+      const yb = Math.max(bed, SEA - 2.3), yt = SEA + 1.6; if (yt > yb + .2) { const g = new THREE.BoxGeometry(4.06, (yt - yb) / K, 4.06); g.translate(0, ((yt + yb) / 2 - FOOT) / K, 0); worldUV(g, .25); put('weed', g.applyMatrix4(T0)); }
+      // its solids: the passage's two sides whole, the stone under its floor walked over at the deck; its floor the deck
+      const ux = Math.cos(ry), uz = -Math.sin(ry), sd = (10 - PASS.w) / 2; for (const sx of [-1, 1]) sol.push({ x: x + ux * sx * (PASS.w / 2 + sd / 2), z: z + uz * sx * (PASS.w / 2 + sd / 2), w: sd, d: 10, ry });
+      sol.push({ x, z, w: PASS.w, d: 10, ry, top: DECK }); plats.push({ x, z, w: PASS.w, d: 10.2, ry, y: DECK, tower: i });
+      towers.push({ i, x: +x.toFixed(2), z: +z.toFixed(2), hd: +hd.toFixed(4), ry: +ry.toFixed(4), cond, foot: +FOOT.toFixed(2), bed: +bed.toFixed(2), top: +top.toFixed(2), lean: W.st.lean }); });
+    for (let i = 0; i < N - 1; i++) { const [xa, za] = pts[i], [xb, zb] = pts[i + 1], x = (xa + xb) / 2, z = (za + zb) / 2, hd = pts[i + 1][2], ry = Math.PI / 2 - hd, cond = spanConds[i];
+      const W = gkParts('bridge', { cond, school: 'cloch', key: `${key}:span:${i}`, ruin: true, ground: (hAt(x, z) - .4 - BASE) / K }); lay(W, m4(x, BASE, z, ry));
+      // what of the deck is still in place, along the span (the broken one keeps one end): walked at the deck between the parapets, solid under it, the parapets solid
+      const f = W.floorIn, x0 = Math.max(-8, f.min.x) * K, x1 = Math.min(8, f.max.x) * K, mx = (x0 + x1) / 2, L = x1 - x0, ux = Math.cos(ry), uz = -Math.sin(ry), cx = x + ux * mx, cz = z + uz * mx, vx = Math.sin(ry), vz = Math.cos(ry);
+      if (L > .5) { sol.push({ x: cx, z: cz, w: L, d: 10, ry, top: DECK }); plats.push({ x: cx, z: cz, w: L + .2, d: 8, ry, y: DECK, span: i });
+        for (const sz of [-1, 1]) sol.push({ x: cx + vx * sz * 4.5, z: cz + vz * sz * 4.5, w: L, d: 1, ry }); }
+      spans.push({ i, x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(4), cond, x0: +x0.toFixed(2), x1: +x1.toFixed(2), fallen: W.st.fallen }); }
+    if (!_dsMats) { const pale = new THREE.Color(.70, .66, .60).convertLinearToSRGB(), dead = new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .085, .08), roughness: .9 });
+      _dsMats = { stone: mat('ashlar', { ns: 1.0, color: pale }), dress: mat('ashlar', { ns: .7, color: pale.clone().multiplyScalar(.82) }), floor: mat('slab', { ns: .8, color: pale.clone().multiplyScalar(.75), rough: .5 }), dead, crack: new THREE.MeshStandardMaterial({ color: new THREE.Color(.012, .01, .01), roughness: 1 }),
+        corbel: mat('ashlar', { ns: .8, color: 0xb2ab9e, rough: .85 }), spire: mat('ashlar', { ns: .8, color: 0xa8a294, rough: .85 }), weed: mat('rock', { ns: 1.4, color: 0x3a3a22, rough: .7 }) }; }
+    let tris = 0, draws = 0;
+    for (const [k, gs] of B) { const clean = gs.map(g => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a); if (!x.attributes.normal) x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); return x; });
+      const g = mergeGeometries(clean); clean.forEach(x => x.dispose()); const m = new THREE.Mesh(g, _dsMats[k] || _dsMats.dead); m.name = 'spires:' + k; m.userData.key = k;
+      m.castShadow = !['dead', 'crack', 'weed'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
+    return { group, tris: Math.round(tris), draws, deck: DECK, sea: SEA, towers, spans, sol, plats, passage: { ...PASS }, k: K, gap: 16 * K, tick() {} };
   }
   // ── the Gatelands' monastic ruin (Session 1715, card F8; OG-121's Gatelands panel; the prototype is places.js's gatelandsAbbey, Session
   // 921, Michael's A on #345: the round tower's door out of reach, as drawn). Copied from the prototype; what differs: no ground of its own
@@ -11740,7 +11818,7 @@ function aurenneOrrery(hAt, o = {}) {
       const m = new THREE.Mesh(g, DQM[k]); m.name = 'quarter:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     return { group, tris: Math.round(tris), draws: group.children.length, bridge, theatre };
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, trader: markTrader, TRADER_TRADES, TOWN_TRADES, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

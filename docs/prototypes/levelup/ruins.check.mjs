@@ -54,8 +54,11 @@ const S = await page.evaluate(async () => { const THREE = await import('three'),
   for (const dy of [1.7, 6]) for (let i = 0; i < way.length - 1; i++) { const [x0, z0] = way[i], [x1, z1] = way[i + 1], d = new THREE.Vector3(x1 - x0, 0, z1 - z0), L = d.length(); rc.set(new THREE.Vector3(x0, Dk + dy, z0), d.normalize()); rc.far = L;
     const h = rc.intersectObjects(kit, false)[0]; if (h) hits.push({ dy, leg: i, at: +h.distance.toFixed(1), m: h.object.name }); }
   const floors = T.map(t => { rc.set(new THREE.Vector3(t.x, Dk + 3, t.z), new THREE.Vector3(0, -1, 0)); rc.far = 20; const h = rc.intersectObjects(kit, false)[0]; return h ? +(h.point.y - Dk).toFixed(2) : null; });
+  // Session 2416: nothing of the kit's stands in the decks' clear way (between the parapets, 0.3 to 6 m over the deck, between the towers' faces)
+  let inWay = 0; for (const m of kit) { const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); if (y < Dk + .3 || y > Dk + 6) continue;
+    for (let j = 0; j < 5; j++) { const t = T[j], u = T[j + 1], L = Math.hypot(u.x - t.x, u.z - t.z), ux = (u.x - t.x) / L, uz = (u.z - t.z) / L, al = (x - t.x) * ux + (z - t.z) * uz, ac = (x - t.x) * uz - (z - t.z) * ux; if (Math.abs(ac) < 3.8 && al > 5.3 && al < L - 5.3) inWay++; } } } /* along each span's own line, between the towers' faces */
   const sill = +(a.ground(T[0].x, a.spit.z0 + .6) - Dk).toFixed(2); let steep = 0; for (let z = a.spit.z0 + .6; z < 120; z += 2) steep = Math.max(steep, Math.abs(a.ground(T[0].x, z + 2) - a.ground(T[0].x, z)) / 2);
-  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), towers: a.towers, spans: a.spans, lv, gaps, gap: a.gap, low: +low.toFixed(1), figure: a.figure, hits, floors, sill, steep: +steep.toFixed(3), passage: a.passage }; });
+  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), towers: a.towers, spans: a.spans, lv, gaps, gap: a.gap, low: +low.toFixed(1), figure: a.figure, hits, floors, sill, steep: +steep.toFixed(3), passage: a.passage, inWay }; });
 { const st = S.towers.filter(t => t.cond === 'cracked'), br = S.towers.filter(t => t.cond === 'broken');
   check(`the spires build the same twice and in budget: ${S.tris.toLocaleString()} triangles in ${S.draws} draws`, S.same && S.tris < 120000 && S.draws <= 20, [S.tris, S.draws, S.same]);
   check(`six towers: ${st.length} standing to ${st.map(t => t.wet).join(', ')} m over the sea, ${br.length} broken to ${br.map(t => t.wet).join(', ')} m; every foot under the bed`, S.towers.length === 6 && st.length === 4 && br.length === 2 && st.every(t => t.wet > 70) && br.every(t => t.wet > 20 && t.wet < 60) && S.towers.every(t => t.foot < t.bed), S.towers);
@@ -63,6 +66,7 @@ const S = await page.evaluate(async () => { const THREE = await import('three'),
   check(`the levels against a 4 m tide: a's deck at ${S.lv.a} (clear at low water, under at high), b's at ${S.lv.b} (clear at high), c's at ${S.lv.c} (under at low)`, S.lv.a > -2 && S.lv.a < 2 && S.lv.b > 2 && S.lv.c < -2, S.lv);
   check(`what fell went into the sea: the lowest stone at ${S.low} m, under the low water`, S.low < -2, S.low);
   check(`a way through every tower at the decks (${S.passage.w} by ${S.passage.h} m): rays along the chain at 1.7 and 6 m over the decks hit nothing, ${S.hits.length} hits`, S.hits.length === 0, S.hits);
+  check(`no stone stands in the decks' clear way between the parapets (${S.inWay} points; a broken tower's stones fall across the chain)`, S.inWay === 0, S.inWay);
   check(`each tower's passage floor is the deck: ${S.floors.join(', ')} m off it`, S.floors.every(f => f !== null && Math.abs(f) < .05), S.floors);
   check(`the spit meets the first tower's sill (${S.sill} m off the deck) and is never steeper than 1 in 6 up the strand (${S.steep})`, Math.abs(S.sill) < .15 && S.steep < 1 / 6, [S.sill, S.steep]); }
 // the Northlight Altar (Session 2395; OG-104, the Mark): eleven monoliths on a circle 120 m across, the north open, an altar at the heart

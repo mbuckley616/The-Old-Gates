@@ -5,6 +5,7 @@
 // same for Aurenne's Broken Orrery on its headland. Session 1666: the Gatelands' Drowned Ring in its lough.
 // Session 2385: the Weavers' ring of broken arches on a Gatelands headland. Session 2409: the Northlight Altar on a Markish fell.
 // Session 2410: the herbs laid before a wonder's stamp are set on its ground, or taken away from its solids and water.
+// Session 2416: the Drowned Spires off a Gatelands strand, walked from the strand through every tower.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -191,5 +192,41 @@ const nn = await page.evaluate(() => { forceTime(23); WONDERS._t = 0; tickWonder
 check(`at 23h the aurora is up ${nn.out} m out beyond the gap, and still nothing of the ring's is lit`, nn.aurora && nn.out > 300 && nn.lit === 0, nn);
 const nd = await page.evaluate(() => { const S = WONDERS.northlight; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:northlight').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'northlight').length }; });
 check('2.5 km off it is dropped, its solids and steps with it', nd.gone && nd.sol === 0 && nd.plats === 0, nd);
+// Session 2416: the Drowned Spires (OG-104; Michael's B on #1737, always walked) off a Gatelands strand. The place is the seed's, clear of
+// every site, door, road and the two Gatelands wonders; the chain runs out into the sea with open water ahead; four towers stand with their
+// spires and two are broken, one span is broken; you walk from the strand up the spit and out along the decks through every tower's
+// passage, the broken span's gap is open water; a passage's sides, the parapets and the stone under the decks are solid to a swimmer; it
+// goes when you leave.
+const ps = await page.evaluate(() => { const a = wonderSpiresSite(); WONDERS.spires.site = undefined; const t0 = performance.now(), b = wonderSpiresSite(), ms = Math.round(performance.now() - t0);
+  if (!b) return { none: true }; const sites = [...CELLS.values()].flatMap(c => c.sites), near = sites.reduce((m, t) => Math.min(m, Math.hypot(t.x - b.x, t.z - b.z) - (t.pad || 0)), 1e9), r = wonderRingSite();
+  return { ...b, ms, same: JSON.stringify(a) === JSON.stringify(b), nation: nationKeyOf(...cellOf(b.x, b.z)), near: Math.round(near), ring: Math.round(Math.hypot(r.x - b.x, r.z - b.z)) }; });
+console.log(JSON.stringify(ps));
+check(`the Drowned Spires stride off a Gatelands strand (the first tower ${ps.y} m at the water's edge), the same asked twice (${ps.ms} ms)`, !ps.none && ps.nation === 'gatelands' && Math.abs(ps.y) <= 3 && ps.same, ps);
+check(`the last tower stands in ${-ps.last} m of water, open sea on ${ps.open} of 7 marks ahead, the spit ${ps.spit} m; ${ps.near} m past the nearest pad, ${ps.ring} m from the ring`, ps.last < -1 && ps.open >= 5 && ps.spit <= 150 && ps.near >= 330 && ps.ring >= 1200, ps);
+const pat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 30, 60); return { x, z }; }, ps);
+await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), pat);
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [pat.x, pat.z], { timeout: 60000 });
+await g.cells(); await g.hide();
+const pw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.spires, W = S.W, st = S.site; if (!W) return { none: true };
+  let meshes = 0, lit = 0; W.group.traverse(o => { if (o.isMesh) { meshes++; if (o.material.emissive && o.material.emissive.getHex() !== 0) lit++; } });
+  const P = (lx, lz) => wonderToWorld(st, lx, lz), y = (lx, lz) => +activeTerrainH(...P(lx, lz)).toFixed(2), so = (lx, lz, yy) => solidAt(...P(lx, lz), yy), T = W.towers, D = W.deck, gap = W.spans.find(s => s.cond === 'broken');
+  // the centre line from 40 m up the strand out through every tower, ten steps a leg: the height you walk at, and whether a step there is blocked
+  const walk = [], way = [[0, 40], ...T.map(t => [t.x, t.z])]; for (let i = 0; i < way.length - 1; i++) { const [x0, z0] = way[i], [x1, z1] = way[i + 1]; for (let k = 0; k < 10; k++) { const lx = x0 + (x1 - x0) * k / 10, lz = z0 + (z1 - z0) * k / 10, h = y(lx, lz);
+    const inGap = i - 1 === gap.i && k >= 5 + gap.x1 / 5 + 1 && k <= 8; /* the leg runs tower to tower, 50 m: the span from 5 to 45 m, the far tower's face at k 9 */ walk.push({ i, k, h, block: so(lx, lz, h), inGap }); } }
+  const deckOff = walk.filter(q => q.i > 0 && !q.inGap && (q.block || Math.abs(q.h - D) > .05)), strand = walk.filter(q => q.i === 0 && q.block), gapW = walk.filter(q => q.inGap);
+  const t2 = T[2], sx = 3.75 * Math.cos(t2.ry), sz = -3.75 * Math.sin(t2.ry), s1 = W.spans[1], vx = Math.sin(s1.ry), vz = Math.cos(s1.ry);
+  let inWay = 0; for (const m of W.group.children) { const Q = m.geometry.attributes.position; for (let n = 0; n < Q.count; n++) { const x = Q.getX(n), yy = Q.getY(n), z = Q.getZ(n); if (yy < D + .3 || yy > D + 6) continue;
+    for (let j = 0; j < 5; j++) { const t = T[j], u = T[j + 1], L = Math.hypot(u.x - t.x, u.z - t.z), ux = (u.x - t.x) / L, uz = (u.z - t.z) / L, al = (x - t.x) * ux + (z - t.z) * uz, ac = (x - t.x) * uz - (z - t.z) * ux; if (Math.abs(ac) < 3.8 && al > 5.3 && al < L - 5.3) inWay++; } } } /* along each span's own line, between the towers' faces */
+  return { inWay, tris: W.tris, draws: W.draws, meshes, lit, inScene: W.group.parent === sc, sol: S.sol.length, plats: S.plats.length, standing: T.filter(t => t.cond === 'cracked').map(t => Math.round(t.top - st.y)), broken: T.filter(t => t.cond === 'broken').map(t => Math.round(t.top - D)),
+    spans: W.spans.map(s => s.cond[0]).join(''), steps: walk.length, deckOff: deckOff.slice(0, 6), strand: strand.slice(0, 4), gapW: gapW.map(q => q.h), sill: y(0, 5.5), D,
+    side: so(t2.x + sx, t2.z + sz, D), swimTower: so(t2.x, t2.z, 0), swimSpan: so(s1.x, s1.z, 0), parapet: so(s1.x + vx * 4.5, s1.z + vz * 4.5, D) }; });
+console.log(JSON.stringify(pw));
+check(`within 1.6 km it stands: ${pw.standing && pw.standing.length} towers ${pw.standing && pw.standing.join(', ')} m high with their spires, two broken to ${pw.broken && pw.broken.join(' and ')} m over the decks, spans ${pw.spans}; ${pw.tris} triangles in ${pw.draws} draws, nothing lit`, !pw.none && pw.inScene && pw.standing.length === 4 && pw.standing.every(h => h > 90) && pw.broken.length === 2 && pw.spans === 'cccbc' && pw.draws === pw.meshes && pw.draws <= 8 && pw.tris < 12000 && pw.lit === 0, pw);
+check(`walked from the strand up the spit (the sill ${pw.sill} m) and out along the decks through all six towers at ${pw.D} m: ${pw.steps} steps, ${pw.deckOff && pw.deckOff.length} off the deck or blocked, ${pw.strand && pw.strand.length} blocked on the strand`, pw.deckOff.length === 0 && pw.strand.length === 0 && Math.abs(pw.sill - pw.D) < .3, pw);
+check(`no stone stands in the decks' clear way between the parapets (${pw.inWay} points)`, pw.inWay === 0, pw.inWay);
+check(`the broken span's gap is open water (${pw.gapW && pw.gapW.length} steps at ${pw.gapW && Math.max(...pw.gapW)} m)`, pw.gapW.length >= 2 && pw.gapW.every(h => h < pw.D - 3), pw.gapW);
+check(`its ${pw.sol} solids: a passage's side and a parapet block you on the deck; the stone under a tower and a deck blocks a swimmer`, pw.side && pw.parapet && pw.swimTower && pw.swimSpan, pw);
+const pd = await page.evaluate(() => { const S = WONDERS.spires; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:spires').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'spires').length }; });
+check('2.5 km off it is dropped, its solids and decks with it', pd.gone && pd.sol === 0 && pd.plats === 0, pd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
