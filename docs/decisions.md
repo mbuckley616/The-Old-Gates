@@ -27,6 +27,16 @@ More: [far](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/doc
 
 **Recommendation.** A.
 
+### What a gate's secret holds — a chest a tier up in each, by what opens it, or no chests? (from the designer, 2026-11-19, #1757)
+**The question.** Michael chose B on #1678 (seals, mechanisms, hidden rooms, the script), but the page put the gate's own things behind the seals, and what-a-gate-keeps has since put the vein, the relic and the coffer in the keep. What should a found secret hold?
+
+**Options.**
+- **A.** Every secret a chest one tier above its floor, gold included; the plates' cache a rich chest.
+- **B (recommended).** By what opens it: a seal a chest a tier above (the word pays); a mechanism is itself the gain (the shortcut back, the second bridge) or a chest at the floor's tier; the plates' cache a rich chest a tier above with the 1-in-20 implement roll.
+- **C.** No chests: each secret holds the way, a story or a rubbing of the nearest unread carving.
+
+**Recommendation.** B. A mage finds more, a fighter finds most, which is the page's line; C teaches the player to stop looking. Page: [spells-as-keys-build.md](design/spells-as-keys-build.md) (The open number).
+
 ## Answered
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
