@@ -3169,6 +3169,7 @@ function interact(){
     return;
   }
   {const ss=typeof slideStoneNear==='function'&&slideStoneNear();if(ss){slideStonePress(ss);return;}} /* S2409 — a sliding wall's pale stone (68-dungeon-misc.js) */
+  {const sl=typeof stairSlabNear==='function'&&hasPick()&&stairSlabNear();if(sl){stairPry(sl);return;}} /* S2416 — a hollow slab, with a pick (68-dungeon-misc.js) */
   if(typeof knotNear==='function'&&knotNear()){knotUse();return;} /* S1346 — a great gate's knot */
   if(typeof gateAltarNear==='function'){const a=gateAltarNear();if(a){takeArc(a.seed);return;}const gv=gateVeinNear();if(gv){gateMine(gv);return;}} /* S2371 — a keep's arc and its crystal (68-dungeon-misc.js) */
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */

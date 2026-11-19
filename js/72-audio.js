@@ -389,6 +389,10 @@ function sndBowEmpty(){
 function sndFootstep(sprint){
   sfxNoise(sprint?.055:.07,1,1,sprint?.18:.12,sprint?500:300);
 }
+// S2416 — a step on a hollow slab (a stair under the floor): lower, with a ring in it
+function sndHollowStep(sprint){
+  sfxNoise(sprint?.06:.08,1,1,sprint?.16:.11,200);sfxTone(150,96,.22,sprint?.08:.06,'sine');
+}
 // v80 S147 — snow underfoot: shorter, softer, lower than bare ground
 function sndSnowStep(sprint){
   sfxNoise(sprint?.045:.055,1,1,sprint?.10:.07,sprint?260:180);

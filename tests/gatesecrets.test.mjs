@@ -140,6 +140,34 @@ const K6 = pick ? await page.evaluate((id) => {
     const R = worldState.gateSecrets[currentPortal.seed]; o.kept = R.o.includes(r.n);
     o.tier = JSON.stringify(rollContainerLoot('chest', currentPortal.diffScale, currentPortal.theme, undefined, r.chest.id, Math.min(4, dungeonTier(currentPortal, 1))).map(i => i.name)) === JSON.stringify(r.chest.items.map(i => i.name));
     for (const T of [near, far]) { dScene.remove(T.fl); TORCHES.splice(TORCHES.indexOf(T), 1); } pitch = 0; out.slide = o; }
+  // S2416 — the stair under the floor in the same room: the hollow step on the slab, Cloch Ghéar laid on it, or 20 s of the pick (loud);
+  // then down the steps to the cellar 3 m under the room through the loop, the mouth a wall under the floor, and up again
+  { const one = () => { clear(); gen.secrets = [Object.assign({}, base, { kind: 'stair', school: null })]; gateSecretsBuild(gen, currentPortal); currentFloor = 1; return GATE_SECRETS[0]; };
+    let r = one(); const o = {}, ux = base.dc, uz = base.dr, H = DCELL / 2, h = r.hole;
+    o.hidden = !CHESTS.includes(r.chest) && r.shut.visible; _reset(r.kx, r.kz, 0, 0); o.hollow = stairHollowHere();
+    _reset(r.kx + uz * 2 * DCELL, r.kz + ux * 2 * DCELL, 0, 0); o.notFar = !stairHollowHere(); o.base0 = dPitBase(r.kx, r.kz, 0);
+    _reset(r.kx - ux * 2, r.kz - uz * 2, 0, 0); o.lay = layWord('cloch_ghear', null, r.kx, r.kz).ok; o.clochOpen = r.opened && !r.shut.visible && CHESTS.includes(r.chest); laidEnd();
+    o.cut = r.cutN; const live = () => { const v = new THREE.Vector3(); let n = 0; for (const m of dScene.children) { if (!m.isMesh || !m.userData || m.userData.dunShell !== 'floor' || !m.geometry.index) continue; m.updateMatrixWorld(true); const P = m.geometry.attributes.position, a = m.geometry.index.array;
+      for (let k = 0; k < a.length; k += 3) { if (a[k] === a[k + 1] && a[k] === a[k + 2]) continue; let sx = 0, sz = 0; for (let q = 0; q < 3; q++) { v.fromBufferAttribute(P, a[k + q]).applyMatrix4(m.matrixWorld); sx += v.x / 3; sz += v.z / 3; } if (inArea(h, sx, sz, -.01)) n++; } } return n; }; o.left = live();
+    r = one(); const fake = [{ x: r.kx + 10, z: r.kz, floor: 1, alert: false, dead: false }, { x: r.kx + 40, z: r.kz, floor: 1, alert: false, dead: false }]; ENEMIES.push(...fake);
+    if (!BAG.some(b => b && b.tool === 'pick')) BAG.push({ ...PICK_ITEM }); _reset(r.kx - ux * .9, r.kz - uz * .9, 0, 0);
+    o.near = stairSlabNear() === r; interact(); o.working = STAIR_PRY && STAIR_PRY.rec === r; o.alert = [fake[0].alert, fake[1].alert];
+    for (let i = 0; i < 20; i++) { playClockS += .5; gateSecretsTick(); } o.ten = +r.pry.toFixed(2); o.tenShut = !r.opened;
+    interact(); o.stopped = !STAIR_PRY; playClockS += 30; gateSecretsTick(); o.kept = +r.pry.toFixed(2);
+    interact(); for (let i = 0; i < 21; i++) { playClockS += .5; gateSecretsTick(); } o.open = r.opened && !r.shut.visible && CHESTS.includes(r.chest) && !STAIR_PRY;
+    ENEMIES.splice(ENEMIES.indexOf(fake[0]), 2); o.leftPick = live(); o.steps = FOOTHOLDS.filter(f => f.secret === r.id).length;
+    o.rec = worldState.gateSecrets[currentPortal.seed].o.includes(r.n);
+    o.tier = JSON.stringify(rollContainerLoot('chest', currentPortal.diffScale, currentPortal.theme, undefined, r.chest.id, Math.min(4, dungeonTier(currentPortal, 1))).map(i => i.name)) === JSON.stringify(r.chest.items.map(i => i.name));
+    // down: from the room short of the hole, walking on through it
+    const u = ux || uz, along = () => ux ? px : pz, farE = ux ? (ux > 0 ? h.x1 : h.x0) : (uz > 0 ? h.z1 : h.z0), nearE = ux ? (ux > 0 ? h.x0 : h.x1) : (uz > 0 ? h.z0 : h.z1);
+    _reset(r.kx - ux * (H + .5), r.kz - uz * (H + .5), 0, 0); yaw = yawTo(px + ux, pz + uz); K.KeyW = true;
+    _drive(() => jumpY < -2.95 && (along() - farE) * u > .4, 400); K.KeyW = false;
+    o.down = { y: +jumpY.toFixed(2), past: (along() - farE) * u };
+    // the mouth's edge: a wall under the floor, open over it
+    const sx0 = px, sz0 = pz, sy0 = jumpY, ex = dAt(base.c) + ux * H - ux * .25, ez = dAt(base.r) + uz * H - uz * .25; jumpY = -3; o.wallBelow = dBlkP(ex, ez); jumpY = 0; o.openAbove = !dBlkP(ex, ez); jumpY = sy0;
+    // up: back the way you came
+    yaw = yawTo(px - ux, pz - uz); K.KeyW = true; _drive(() => jumpY > -.05 && (along() - nearE) * u < -.3, 400); K.KeyW = false;
+    o.up = +jumpY.toFixed(2); o.errs = 0; clear(); out.stair = o; }
   // S2411 — the barricade at the same mouth: three blows of doBash, or Caor touched; its chest at the floor's tier, kept
   { const one = () => { clear(); for (let i = GATE_THINGS.length - 1; i >= 0; i--) if (GATE_THINGS[i].kind === 'barricade') GATE_THINGS.splice(i, 1);
       gen.secrets = []; gen.barricade = Object.assign({}, base, { kind: 'barricade', n: 'b', id: currentPortal.seed + ':1:barricade', school: null, scene: 0 }); gateSecretsBuild(gen, currentPortal); currentFloor = 1;
@@ -170,6 +198,10 @@ if (K6) {
   check(`the sliding wall: rock, one stone 15% paler (×${W.pale}), a flame 2.5 m off leans toward it (${W.lean}) and one 6 m off does not (${W.leanFar}), dust within ${W.dust} m of it, the air heard at 1 m (${W.air1}) and not at 3`, W.shut && W.paleOk && W.lean > .25 && W.leanFar === 0 && W.dust <= 1.2 && W.air1 > 0 && W.air3 === 0, W);
   check(`E on the pale stone, aimed at (${W.prompt}), opens it: it slides away in 1.2 s, kept in the world's record, the flames upright again, its chest at the floor's own tier`, W.aimed && W.offAim && /pale stone/.test(W.prompt) && W.open && W.sliding && W.gone && W.kept && W.leanAfter === 0 && W.tier, W);
 }
+if (K6) { const T = K6.stair;
+  check(`the stair under the floor: the slab's step is hollow (${T.hollow}) and two cells off it is not; shut, the ground over it is the floor (${T.base0}) and its chest hidden; Cloch Ghéar laid on it lifts it, and the floor's cell is cut (${T.cut} triangles, ${T.left} left)`, T.hidden && T.hollow && T.notFar && T.base0 === 0 && T.lay && T.clochOpen && T.cut >= 2 && T.left === 0, T);
+  check(`the pick: E sets to it, and a foe 10 m off comes and one 40 m off does not; ${T.ten} s of 20 and still shut; E stops it and the work is kept (${T.kept}); 20 s in all opens it (the floor's cell cut, ${T.leftPick} triangles left over it; ${T.steps} steps), kept, its chest at the floor's tier`, T.near && T.working && T.alert[0] && !T.alert[1] && Math.abs(T.ten - 10) < .01 && T.tenShut && T.stopped && T.kept === T.ten && T.open && T.leftPick === 0 && T.steps === 11 && T.rec && T.tier, T);
+  check(`walked down the steps to the cellar (${T.down.y} m, ${T.down.past.toFixed(2)} m past the stair), the mouth a wall under the floor and open over it, and walked up again (${T.up} m)`, T.down.y <= -2.95 && T.down.past > 0 && T.wallBelow && T.openAbove && T.up > -.05, T); }
 if (K6) { const B = K6.bar;
   check(`the barricade: rock to the bash out of reach (${B.far}) or behind you (${B.behind}), two blows crack it and the third breaks it, kept; its chest at the floor's tier (${B.left[0]} in it, ${B.left[1]} left)`, B.shut && B.far === 0 && B.behind === 0 && B.two === 2 && B.twoShut && B.three && B.kept && B.tier && B.left[1] === B.left[0] - 1, B);
   check('Caor touched at the barricade burns it away', B.found && B.burn && B.notThing, B); }

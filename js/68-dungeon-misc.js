@@ -1045,7 +1045,7 @@ function gateSecrets(gen,seed,size,school){
 const SECRET_BAR_P=1/4,SECRET_BAR_BLOWS=3;
 const SECRET_N={tiny:1,small:1,medium:2,large:3,massive:4};
 const SECRET_MECH=['slide','stair','lift','sluice','turn','plates'],SECRET_ONCE={turn:1,plates:1};
-const SECRET_BUILT={seal:1,slide:1}; /* the kinds laid so far: the stair, the lift, the sluice, the turning chamber and the plates come in sessions 3 to 5 */
+const SECRET_BUILT={seal:1,slide:1,stair:1}; /* the kinds laid so far: the lift, the sluice, the turning chamber and the plates come in sessions 4 and 5 */
 // the world's record of a gate's secrets: o, the opened ones' numbers; t, what is left in each one's chest (session 2)
 function gateSecretRec(seed){const G=worldState.gateSecrets||(worldState.gateSecrets={});return G[seed]||(G[seed]={o:[],t:{}});}
 function gateSecretOpen(seed,n){const G=worldState.gateSecrets,R=G&&G[seed];return !!(R&&R.o&&R.o.indexOf(n)>=0);}
@@ -1065,7 +1065,7 @@ const SECRET_TINE_S=20,SECRET_COLD=.05,SECRET_LEDGE=1.5,SECRET_GALLERY=3.8,SECRE
 const SECRET_SAY={tine:'The stone leaf grinds aside.',uisce:'The black water freezes over.',cloch:'The block lifts and lodges on the lintel.',
   scath:'The dark wall stays a doorway.',solas:'The script on the crystal lights, and a niche turns open.',gaoth:'You stand in the gallery.'};
 let GATE_SECRETS_GEN=null,DPROP_Y=null; /* DPROP_Y: the feet a prop with a top is tested at (the ledge), set only for your own step */
-function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;if(!gen||!gen.secrets||!(gen.secrets.length||gen.barricade)||!portal)return GATE_SECRETS;
+function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR_PRY=null;if(!gen||!gen.secrets||!(gen.secrets.length||gen.barricade)||!portal)return GATE_SECRETS;
   const Hc=DCELL/2,G0=worldState.gateSecrets&&worldState.gateSecrets[portal.seed];
   for(const t of gen.secrets){if(!SECRET_BUILT[t.kind])continue;const y=t.floor===2?FLOOR2_Y:0,cx=dAt(t.c),cz=dAt(t.r),R=t.room,opened=gateSecretOpen(portal.seed,t.n);
     const mat=new THREE.MeshLambertMaterial({color:SECRET_SEAL_COL[t.school]||0x777777}),grp=new THREE.Group();grp.name='gateSecret';
@@ -1075,6 +1075,7 @@ function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;if(!g
       opened,group:grp,mat,solid:null,shut:null,chest:null,said:false};
     let chestY=y,chestAt=at(1.0);
     if(t.kind==='slide')slideBuild(t,rec,grp,y,cx,cz,opened);
+    else if(t.kind==='stair'){stairBuild(t,rec,grp,y,opened);chestY=y-STAIR_DROP;} /* S2416 — the chest in the cellar, against the far wall */
     else if(SECRET_SEAL_SHUT[t.school]){const x=cx+t.dc*(Hc-.3),z=cz+t.dr*(Hc-.3),h=Math.min(FLOOR_HEIGHT,6);
       const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),mat);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;rec.kx=x;rec.kz=z;
       rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
@@ -1114,7 +1115,7 @@ function secretChest(t,portal,rec,x,z,yy,G0){const was=G0&&G0.t&&Array.isArray(G
   group.rotation.y=t.dc?(t.dc<0?Math.PI/2:-Math.PI/2):(t.dr<0?0:Math.PI);dScene.add(group); /* its front to the room's mouth */
   const ch={id:key,x,z,y:yy-rec.y,standY:yy,opened:was,lid,floor:t.floor,mesh:group,items,displayName:'Chest',secret:t.id};
   if(was&&lid)lid.rotation.x=-Math.PI/3;
-  if(t.school==='solas'&&!rec.opened)group.visible=false;else CHESTS.push(ch);
+  if((t.school==='solas'||t.kind==='stair')&&!rec.opened)group.visible=false;else CHESTS.push(ch); /* S2416 — the cellar's, too */
   return ch;}
 // openSecret: the named action. A secret of the gate you stand in opens for good: its number is kept in the world's record, a shut
 // mouth's rock goes, and its key's mark stays (the braziers lit, the water frozen, the script lit, the niche open).
@@ -1124,6 +1125,7 @@ function openSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.o
   for(const b of rec.braziers||[])if(!b.lit)gtBrazierShow(b,true);
   if(rec.thing){rec.thing.frozen=true;rec.mat.color.setHex(0x8fa8b6);}
   if(rec.pillar)rec.mat.emissive=new THREE.Color(0x8a8460);
+  if(rec.kind==='stair')stairOpen(rec); /* S2416 */
   if(rec.chest&&CHESTS.indexOf(rec.chest)<0){rec.chest.mesh.visible=true;CHESTS.push(rec.chest);}
   return true;}
 // takeSecret: the named action. A seal's chest opened: from now on its list is the world's record's, so what you take stays taken
@@ -1139,6 +1141,7 @@ function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!c
   let air=0;
   for(const rec of GATE_SECRETS){if(rec.seed!==currentPortal.seed)continue;const here=currentFloor===rec.floor;
     if(rec.kind==='slide'){air=Math.max(air,slideTick(rec,here));continue;}
+    if(rec.kind==='stair'){if(STAIR_PRY&&STAIR_PRY.rec===rec)stairPryTick(rec,here);continue;}
     if(rec.opened)continue;
     if(rec.school==='tine'){const B=rec.braziers||[];for(const b of B)if(b.lit&&b.litAt==null)b.litAt=playClockS;
       if(B.length===2&&B[0].lit&&B[1].lit&&Math.abs(B[0].litAt-B[1].litAt)<=SECRET_TINE_S){secretOpenSay(rec);continue;}
@@ -1160,7 +1163,8 @@ function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!c
   if(air>0||SLIDE_AIR.on)sndDraught(air);}
 // a word laid at x,z near a seal: Cloch Ghéar's pillar at the fallen block opens it; another word near a seal says once that the stone
 // does not answer (Solas-Gheal at the pillar and Séideán at the gallery are their keys, and work in the tick and the jump). The id opened, or null.
-function secretLaid(word,rider,x,z){const S=secretNear(x,z,SECRET_WRONG_R);if(!S)return null;
+function secretLaid(word,rider,x,z){{const st=stairLaid(word,x,z);if(st)return st;} /* S2416 — Cloch Ghéar on a hollow slab */
+  const S=secretNear(x,z,SECRET_WRONG_R);if(!S)return null;
   if(S.school==='cloch'&&word==='cloch_ghear'&&Math.hypot(S.kx-x,S.kz-z)<=SECRET_CLOCH_R+1e-6){secretOpenSay(S);return S.id;}
   if(word===SECRET_KEY[S.school]||(S.school==='solas'&&rider==='solas_gheal'))return null;
   secretWrong(S);return null;}
@@ -1247,3 +1251,82 @@ function slideTick(rec,here){
       for(let i=0;i<D.seed.length;i++){const q=D.seed[i],ph=(playClockS*.25+q[0])%1,lat=(q[1]-.5)*DCELL*.9,out=(1-ph)*1.1*sgn,hy=.15+q[2]*1.9+ph*.15;
         a.setXYZ(i,ox+tx*lat+inx*out,D.y+hy,oz+tz*lat+inz*out);}a.needsUpdate=true;}}
   return dW<SLIDE_AIR_R?1-dW/SLIDE_AIR_R*.6:0;}
+// S2416 — the stair under the floor (the sheet's session 3; its table B). Its side room stays a plain room; under it, 3 m down, a
+// cellar of the room's own footprint holds the chest. The slab lies on one cell of the room (the middle of its width, short of halfway
+// in from the mouth, so the stair's foot lands on the cellar's floor). Its tell: the footstep turns hollow on the slab and the eight
+// cells round it that are the room's (tickFootsteps, 78; sndHollowStep, 72). Opened by Cloch Ghéar laid within 1.8 m of the slab
+// (stairLaid, from layWord's secretLaid), or by 20 s of the pick (E with a pick in the bag; E again stops, and what is done is kept,
+// on the play clock): the pick is loud, and every foe on the floor within 30 m comes. Opened, the slab is gone, the floor's cell is cut
+// open (stairCut), and eleven steps of 0.25 m go down the cell to the cellar's floor. Under the floor the ground is the cellar's
+// (stairBase, read by dPitBase, 56), and the mouth's edge is a wall to you there (a prop with `under`, dPropHit). The chest is the
+// floor's own tier (#1757's B: a mechanism's find), hidden until the slab comes up. Placeholder props: the look builder's session 7.
+const STAIR_DROP=3,STAIR_STEPS=12,STAIR_PICK_S=20,STAIR_LOUD=30,STAIR_CLOCH_R=1.8,STAIR_STRIKE=.7,STAIR_ALERT=2;
+let STAIR_PRY=null;
+function stairBuild(t,rec,grp,y,opened){const R=t.room,H=DCELL/2,D=t.dc?R.w:R.h,Wd=t.dc?R.h:R.w,i=Math.floor((D-1)/2),j=Math.floor((Wd-1)/2);
+  const cellAt=(ii,jj)=>t.dc?[t.dc>0?R.x+ii:R.x+R.w-1-ii,R.y+jj]:[R.x+jj,t.dr>0?R.y+ii:R.y+R.h-1-ii];
+  const [hc,hr]=cellAt(i,j),hx=dAt(hc),hz=dAt(hr),A=rec.area,lo=y-STAIR_DROP;
+  rec.hole={c:hc,r:hr,x0:hx-H,x1:hx+H,z0:hz-H,z1:hz+H};rec.kx=hx;rec.kz=hz;rec.level=y;
+  // the slab: a stone of the floor a shade off its neighbours, lying flush on the cell (shut)
+  const slab=new THREE.Mesh(new THREE.BoxGeometry(DCELL*.82,.04,DCELL*.82),new THREE.MeshLambertMaterial({color:0x7d766b}));slab.position.set(hx,y+.02,hz);grp.add(slab);rec.shut=slab;
+  if(opened)slab.visible=false;
+  // the cellar: its floor, its roof (the room's floor seen from under, but for the hole), its four walls, all inward
+  const sh=dScene.children.find(o=>o.userData&&o.userData.dunShell==='walls'),wm0=sh&&sh.material&&!Array.isArray(sh.material)?sh.material:null;
+  const wm=wm0?wm0.clone():new THREE.MeshLambertMaterial({color:0x6a645c});wm.vertexColors=false;wm.side=THREE.DoubleSide;
+  const fm=new THREE.MeshLambertMaterial({color:0x5e5850,side:THREE.DoubleSide});
+  const quad=(w,h,m,uw,uh)=>{const g=new THREE.PlaneGeometry(w,h),u=g.attributes.uv;for(let k=0;k<u.count;k++)u.setXY(k,u.getX(k)*uw,u.getY(k)*uh);return new THREE.Mesh(g,m);};
+  const W=A.x1-A.x0,Dz=A.z1-A.z0,mx=(A.x0+A.x1)/2,mz=(A.z0+A.z1)/2,cel=new THREE.Group();cel.name='stairCellar';grp.add(cel);
+  {const f=quad(W,Dz,fm,1,1);f.rotation.x=-Math.PI/2;f.position.set(mx,lo,mz);cel.add(f);}
+  for(let r=R.y;r<R.y+R.h;r++)for(let c=R.x;c<R.x+R.w;c++){if(c===hc&&r===hr)continue;const q=quad(DCELL,DCELL,fm,1,1);q.rotation.x=Math.PI/2;q.position.set(dAt(c),y-.02,dAt(r));cel.add(q);}
+  for(const [x,z,w,ry] of [[mx,A.z0,W,0],[mx,A.z1,W,0],[A.x0,mz,Dz,Math.PI/2],[A.x1,mz,Dz,Math.PI/2]]){const q=quad(w,STAIR_DROP,wm,w/DCELL,STAIR_DROP/DCELL);q.rotation.y=ry;q.position.set(x,lo+STAIR_DROP/2,z);cel.add(q);}
+  // the stair: eleven steps down the hole's cell, away from the mouth, each a block from the cellar's floor to its tread
+  const sm=new THREE.MeshLambertMaterial({color:0x6f685e}),run=DCELL/STAIR_STEPS,ux=t.dc,uz=t.dr,n0=t.dc?hx-ux*H:hz-uz*H;rec.steps=[];
+  for(let k=0;k<STAIR_STEPS-1;k++){const top=y-(k+1)*STAIR_DROP/STAIR_STEPS,a=n0+(t.dc?ux:uz)*k*run,b=a+(t.dc?ux:uz)*run,lo2=Math.min(a,b),hi2=Math.max(a,b);
+    const h=top-lo,m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?run:DCELL*.9,h,t.dc?DCELL*.9:run),sm);m.position.set(t.dc?(lo2+hi2)/2:hx,lo+h/2,t.dc?hz:(lo2+hi2)/2);cel.add(m);
+    const B=t.dc?{x0:lo2,x1:hi2,z0:hz-H*.9,z1:hz+H*.9}:{x0:hx-H*.9,x1:hx+H*.9,z0:lo2,z1:hi2};rec.steps.push(Object.assign({y:top,gate:'stair',secret:t.id},B));}
+  // the chest's place: against the far wall, on the cellar's floor
+  const far=t.dc?(t.dc>0?A.x1:A.x0):(t.dr>0?A.z1:A.z0);rec.chestAt=t.dc?[far-t.dc*1.0,mz]:[mx,far-t.dr*1.0];
+  // the mouth's edge, a wall to you under the floor only (dPropHit reads `under` against your feet)
+  const ex=dAt(t.c)+t.dc*H,ez=dAt(t.r)+t.dr*H;
+  rec.under=t.dc?{x0:ex-.15,x1:ex+.15,z0:ez-H,z1:ez+H,floor:t.floor,under:y-1,secret:t.id}:{x0:ex-H,x1:ex+H,z0:ez-.15,z1:ez+.15,floor:t.floor,under:y-1,secret:t.id};
+  DUNGEON_PROPS.push(rec.under);
+  if(opened){for(const f of rec.steps)FOOTHOLDS.push(f);stairCut(rec);}}
+// the slab up: its steps are footholds, and the floor's cell is cut open (once the shell is in the scene)
+function stairOpen(rec){if(STAIR_PRY&&STAIR_PRY.rec===rec)STAIR_PRY=null;if(rec.steps)for(const f of rec.steps)if(FOOTHOLDS.indexOf(f)<0)FOOTHOLDS.push(f);stairCut(rec);}
+// the floor's triangles over the hole's cell, made empty: the shell is one mesh a floor, so its index loses them
+function stairCut(rec){if(rec.cutDone||!rec.hole)return false;const h=rec.hole,v=new THREE.Vector3();let n=0;
+  for(const o of dScene.children){if(!o.isMesh||!o.userData||o.userData.dunShell!=='floor'||!o.geometry||!o.geometry.index)continue;o.updateMatrixWorld(true);
+    const P=o.geometry.attributes.position,I=o.geometry.index,a=I.array;let hit=false;
+    for(let k=0;k<a.length;k+=3){if(a[k]===a[k+1]&&a[k]===a[k+2])continue;let sx=0,sy=0,sz=0;for(let q=0;q<3;q++){v.fromBufferAttribute(P,a[k+q]).applyMatrix4(o.matrixWorld);sx+=v.x;sy+=v.y;sz+=v.z;}
+      sx/=3;sy/=3;sz/=3;if(Math.abs(sy-rec.level)>.3||sx<h.x0+.01||sx>h.x1-.01||sz<h.z0+.01||sz>h.z1-.01)continue;a[k+1]=a[k];a[k+2]=a[k];hit=true;n++;}
+    if(hit)I.needsUpdate=true;}
+  rec.cutDone=true;rec.cutN=n;return n>0;}
+// the ground under you here (dPitBase, 56): the hole's cell opened, or anywhere in the cellar once you are under the floor
+function stairBase(x,z,b){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return b;
+  for(const s of GATE_SECRETS){if(s.kind!=='stair'||!s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed)continue;
+    if(inArea(s.hole,x,z)||(inArea(s.area,x,z)&&jumpY<s.level-1))return Math.min(b,s.level-STAIR_DROP);}
+  return b;}
+// a shut slab under you: the hollow step (the slab's cell and the eight round it, the room's only)
+function stairHollowHere(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return false;const c=dCellOf(px),r=dCellOf(pz);
+  for(const s of GATE_SECRETS){if(s.kind!=='stair'||s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed||!s.hole)continue;
+    if(Math.abs(c-s.hole.c)<=1&&Math.abs(r-s.hole.r)<=1&&inArea(s.area,px,pz)&&Math.abs(jumpY-s.level)<.3)return true;}return false;}
+// the shut slab in reach (for the pick)
+function stairSlabNear(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return null;
+  for(const s of GATE_SECRETS){if(s.kind!=='stair'||s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed||!s.hole)continue;
+    if(Math.hypot(px-s.kx,pz-s.kz)<TOUCH+.6&&Math.abs(jumpY-s.level)<.6)return s;}return null;}
+// Cloch Ghéar laid on a shut slab lifts it: the id, or null
+function stairLaid(word,x,z){if(word!=='cloch_ghear'||!GATE_SECRETS.length||activeZoneId!=='dungeon'||!currentPortal)return null;
+  for(const s of GATE_SECRETS){if(s.kind!=='stair'||s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed||!s.hole)continue;
+    if(Math.hypot(s.kx-x,s.kz-z)<=STAIR_CLOCH_R+1e-6&&openSecret(s.id)){showMsg('The pillar lifts the slab, and a stair goes down.','#c8b880');return s.id;}}
+  return null;}
+// E on the slab with a pick: set to it, or stop. Its progress (rec.pry, seconds of the play clock) is kept either way.
+function stairPry(s){if(STAIR_PRY&&STAIR_PRY.rec===s){STAIR_PRY=null;showMsg('You stop working the slab.','#c8b890');return;}
+  if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}
+  STAIR_PRY={rec:s,last:playClockS,strike:0,alert:0};s.pry=s.pry||0;showMsg('You set the pick under the slab.','#c8b890');stairLoud(s);}
+// the pick is loud: every foe on this floor within 30 m comes
+function stairLoud(s){let n=0;for(const e of ENEMIES||[]){if(!e||e.dead||(e.floor||1)!==s.floor)continue;if(Math.hypot(e.x-s.kx,e.z-s.kz)<=STAIR_LOUD){if(!e.alert)n++;e.alert=true;}}return n;}
+function stairPryTick(rec,here){const P=STAIR_PRY,dt=Math.max(0,Math.min(1,playClockS-P.last));P.last=playClockS;
+  if(rec.opened||!here||dead||!hasPick()||Math.hypot(px-rec.kx,pz-rec.kz)>TOUCH+1.2){STAIR_PRY=null;return;}
+  rec.pry=(rec.pry||0)+dt;P.strike+=dt;P.alert+=dt;
+  if(P.strike>=STAIR_STRIKE){P.strike-=STAIR_STRIKE;try{sfxNoise(.06,1,1,.2,1600);sfxTone(520,380,.08,.05,'triangle');}catch(e){}}
+  if(P.alert>=STAIR_ALERT){P.alert-=STAIR_ALERT;stairLoud(rec);}
+  if(rec.pry>=STAIR_PICK_S-1e-6&&openSecret(rec.id)){STAIR_PRY=null;showMsg('The slab comes up, and a stair goes down.','#c8b880');try{sfxNoise(.5,0,0,.2,200);}catch(e){}}}
