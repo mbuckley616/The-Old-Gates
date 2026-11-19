@@ -388,6 +388,17 @@ const fcape = await page.evaluate(() => { const root = buildNPCMesh({ role: 'For
   return { cloak: true, crossbow: true, fwd: +fwd.toFixed(3), inBox, out: P.cloak.through ? P.cloak.through.out : null, gap: +gap.toFixed(3) }; });
 // S2399: its back laid by length like every other cape's, past the open side: the widest gap between neighbouring columns over the back was 7.2 cm, now 3.9
 check('the forester\'s cape opens on the crossbow\'s side: under 0.32 m in front of his neck, under 60 of its points in the crossbow\'s box, none of him through it, its back columns under 5.5 cm apart', fcape.cloak && fcape.crossbow && fcape.fwd < .32 && fcape.inBox < 60 && fcape.out === 0 && fcape.gap < .055, fcape);
+// S2404 (S2393's owed note): a rolled cape's front stood 6.6 cm off the breast, the tunic's room, two flat boards over the chest; over the breast
+// it now lies at 2 cm of room, 1 cm over anything worn there (an apron's bib). Orla's mean gap at the breast was 6.5 cm, now 5.5
+const cfront = await page.evaluate(() => { const root = buildNPCMesh({ role: 'villager', name: 'Orla', people: 'gatelander' }, { key: 'cf0' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+  if (!r.hbG.dress.cape) return { cape: false }; const P = HB.makePerson(r.hbG, { hoodStats: false }); P.root.updateMatrixWorld(true); const v = new THREE.Vector3(), n = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(n);
+  let body = null; P.root.traverse(o => { if (o.isSkinnedMesh && o.name === '' && !body) body = o; }); const B = [], bp = body.geometry.attributes.position;
+  for (let i = 0; i < bp.count; i += 2) { v.fromBufferAttribute(bp, i); body.applyBoneTransform(i, v); v.applyMatrix4(body.matrixWorld); B.push(v.clone()); }
+  const cl = P.root.getObjectByName('cloak'), pa = cl.geometry.attributes.position; let s = 0, c = 0;
+  for (let i = 0; i < pa.count; i++) { const q = v.fromBufferAttribute(pa, i).applyMatrix4(cl.matrixWorld), dy = n.y - q.y; if (Math.abs(Math.atan2(q.x - n.x, -(q.z - n.z))) < 2.5 || dy < .05 || dy > .2) continue;
+    let d = 9; for (const b of B) if (Math.abs(b.y - q.y) < .015) d = Math.min(d, Math.hypot(b.x - q.x, b.z - q.z)); if (d < 1) { s += d; c++; } }
+  return { cape: true, gap: +(s / Math.max(1, c)).toFixed(4), n: c, out: P.cloak.through ? P.cloak.through.out : null, under: P.cloak.under }; });
+check(`a rolled cape's front lies on the breast, not out from it as a shelf: Orla's under 6 cm off the body at the breast (${cfront.gap}), nothing through, nothing under`, cfront.cape && cfront.n > 50 && cfront.gap < .06 && cfront.out === 0 && cfront.under === 0, cfront);
 check('the Church\'s inquisitor wears the white tabard over mail with the red shuttle on it (nothing of the body through it) and a white hood, white far off', office.inquisitor.mail && office.inquisitor.tabard && office.inquisitor.sign > 100 && office.inquisitor.out === 0 && office.inquisitor.tested > 1000 && office.inquisitor.hood && office.inquisitor.far > .8, office.inquisitor);
 // S2260 (#1566 B, dressed by rank, nation by nation): the head of a town by its well (`_lord`) wears the concept artist's sheet for the
 // office, whatever the roll; a guard captain who is not the town's head is still a guard
