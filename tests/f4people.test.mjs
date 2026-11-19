@@ -399,6 +399,16 @@ const cfront = await page.evaluate(() => { const root = buildNPCMesh({ role: 'vi
     let d = 9; for (const b of B) if (Math.abs(b.y - q.y) < .015) d = Math.min(d, Math.hypot(b.x - q.x, b.z - q.z)); if (d < 1) { s += d; c++; } }
   return { cape: true, gap: +(s / Math.max(1, c)).toFixed(4), n: c, out: P.cloak.through ? P.cloak.through.out : null, under: P.cloak.under }; });
 check(`a rolled cape's front lies on the breast, not out from it as a shelf: Orla's under 6 cm off the body at the breast (${cfront.gap}), nothing through, nothing under`, cfront.cape && cfront.n > 50 && cfront.gap < .06 && cfront.out === 0 && cfront.under === 0, cfront);
+// S2407 (S2404's owed note): over an apron's bib the cape stood 4 cm over the bib, the bib's outline carried up each column through the hair's
+// maxima; it is now only blurred. Sorcha's cape was 7.9 cm off the body at the breast and 4.1 over her bib, now 6.0 and 2.3
+const cbib = await page.evaluate(() => { const root = buildNPCMesh({ role: 'villager', name: 'Sorcha', people: 'gatelander' }, { key: 'cf0' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+  const D = r.hbG.dress; if (!D.cape || !D.bib) return { bib: false }; const P = HB.makePerson(r.hbG, { hoodStats: false }); P.root.updateMatrixWorld(true); const v = new THREE.Vector3(), n = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(n);
+  const W = [], bib = P.root.getObjectByName('bib'), bp = bib.geometry.attributes.position; for (let i = 0; i < bp.count; i++) { v.fromBufferAttribute(bp, i); bib.applyBoneTransform(i, v); v.applyMatrix4(bib.matrixWorld); W.push(v.clone()); }
+  const cl = P.root.getObjectByName('cloak'), pa = cl.geometry.attributes.position; let s = 0, c = 0;
+  for (let i = 0; i < pa.count; i++) { const q = v.fromBufferAttribute(pa, i).applyMatrix4(cl.matrixWorld), dy = n.y - q.y; if (Math.abs(Math.atan2(q.x - n.x, -(q.z - n.z))) < 2.5 || dy < .05 || dy > .2) continue;
+    let d = 9; for (const b of W) if (Math.abs(b.y - q.y) < .015) d = Math.min(d, Math.hypot(b.x - q.x, b.z - q.z)); if (d < 1) { s += d; c++; } }
+  return { bib: true, gap: +(s / Math.max(1, c)).toFixed(4), n: c, out: P.cloak.through ? P.cloak.through.out : null, under: P.cloak.under }; });
+check(`over an apron's bib a cape lies close, not 4 cm out: Sorcha's under 3 cm off the bib at the breast (${cbib.gap}), nothing through, nothing under`, cbib.bib && cbib.n > 50 && cbib.gap < .03 && cbib.out === 0 && cbib.under === 0, cbib);
 check('the Church\'s inquisitor wears the white tabard over mail with the red shuttle on it (nothing of the body through it) and a white hood, white far off', office.inquisitor.mail && office.inquisitor.tabard && office.inquisitor.sign > 100 && office.inquisitor.out === 0 && office.inquisitor.tested > 1000 && office.inquisitor.hood && office.inquisitor.far > .8, office.inquisitor);
 // S2260 (#1566 B, dressed by rank, nation by nation): the head of a town by its well (`_lord`) wears the concept artist's sheet for the
 // office, whatever the roll; a guard captain who is not the town's head is still a guard
