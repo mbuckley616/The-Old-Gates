@@ -1,3 +1,4 @@
+// Session 2395 adds the Northlight Altar (ruins.js northlightAltar): eleven monoliths, the north open, the altar, the tarn.
 // Session 2389 adds the Drowned Spires (ruins.js drownedSpires): six towers and five spans, the three deck levels against the tide.
 // node docs/prototypes/levelup/ruins.check.mjs (Session 1119): the Weavers' ring of broken arches on a coast (ruins.js, OG-104). It builds the
 // same twice and in budget; eleven arches of the gate kit at 3 times their size (#429 B) stand on a circle 170 m across, four standing 60 m to their points
@@ -49,6 +50,26 @@ const S = await page.evaluate(async () => { const THREE = await import('three'),
   check(`five spans of ${S.gap} m, each between two towers' faces (${S.gaps.join(', ')} m), one broken`, S.spans.length === 5 && S.gaps.every(g => Math.abs(g - S.gap) < .5) && S.spans.filter(s => s.cond === 'broken').length === 1, S.gaps);
   check(`the levels against a 4 m tide: a's deck at ${S.lv.a} (clear at low water, under at high), b's at ${S.lv.b} (clear at high), c's at ${S.lv.c} (under at low)`, S.lv.a > -2 && S.lv.a < 2 && S.lv.b > 2 && S.lv.c < -2, S.lv);
   check(`what fell went into the sea: the lowest stone at ${S.low} m, under the low water`, S.low < -2, S.low); }
+// the Northlight Altar (Session 2395; OG-104, the Mark): eleven monoliths on a circle 120 m across, the north open, an altar at the heart
+const L = await page.evaluate(async () => { const K = await import('./ruins.js');
+  const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 9) h = (h * 31 + Math.round(a[i] * 1e3)) | 0; }); return h; };
+  const a = K.northlightAltar(), b = K.northlightAltar();
+  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), R: a.R, stones: a.stones, gap: a.gap, altar: a.altar, heart: +a.ground(0, 0).toFixed(2), tarn: a.tarn, figure: a.figure, sink: a.sink,
+    ice: +(a.tarn.y - a.ground(a.tarn.x, a.tarn.z)).toFixed(2), names: a.group.children.map(m => m.name) }; });
+{ const by = c => L.stones.filter(s => s.cond === c), st = by('stand'), fa = by('fallen'), sn = by('snapped'), fl = st.filter(s => s.flank), radii = L.stones.map(s => +Math.hypot(s.x, s.z).toFixed(2));
+  const north = Math.min(...L.stones.map(s => Math.abs(Math.atan2(Math.sin(s.a - Math.PI), Math.cos(s.a - Math.PI))))) * 180 / Math.PI;
+  check(`the Northlight Altar builds the same twice and in budget: ${L.tris.toLocaleString()} triangles in ${L.draws} draws`, L.same && L.tris < 120000 && L.draws <= 12, [L.tris, L.draws, L.same]);
+  check(`eleven stones on the circle (${Math.min(...radii)} to ${Math.max(...radii)} m from the heart), none within ${north.toFixed(1)}° of north; ${st.length} standing to ${st.map(s => s.h).join(', ')} m, ${fa.length} fallen, ${sn.length} snapped to ${sn.map(s => s.h).join(', ')} m`,
+    L.stones.length === 11 && radii.every(d => Math.abs(d - L.R) < .01) && north > 25 && st.length === 8 && fa.length === 2 && sn.length === 1 && fl.length === 2 && fl.every(s => s.h > 41 && s.h < 43) && st.every(s => s.h > 29 && s.h < 43) && sn.every(s => s.h > 5 && s.h < 16), L.stones);
+  check(`nothing floats: the standing stones' feet ${L.sink} m under the snow (to ${Math.min(...st.map(s => s.low))} m with the lean), the fallen sunk to ${fa.map(s => s.low).join(', ')} m and lying ${fa.map(s => s.h).join(', ')} m high, the snapped stone's pieces to ${sn.map(s => s.low).join(', ')} m`,
+    st.every(s => s.low < -2.5 && s.low > -3.8) && fa.every(s => s.low < -.8 && s.low > -2 && s.h < 2.4) && sn.every(s => s.low < -2.5), L.stones.map(s => [s.cond, s.low, s.h]));
+  check(`the leaning stones lean ${Math.min(...st.map(s => Math.abs(s.lean)))} to ${Math.max(...st.map(s => Math.abs(s.lean)))}° (4 at most), the two by the gap upright`, st.every(s => Math.abs(s.lean) <= 4) && fl.every(s => s.lean === 0), st.map(s => s.lean));
+  check(`the gap to the north ${L.gap.width} m between its stones' faces; the altar ${L.altar.len} by ${L.altar.w} m on the dais, its top ${(L.altar.top - L.heart).toFixed(2)} m over the snow at the heart`, L.gap.width > 45 && L.altar.top - L.heart > 2.8 && L.altar.top - L.heart < 3.6, [L.gap, L.altar, L.heart]);
+  check(`the scale: the stones by the gap ${fl[0].h} m, ${(fl[0].h / L.figure.h).toFixed(1)} times the 1.75 m post at the foot of stone ${L.figure.stone}`, L.figure.h === 1.75 && fl[0].h / L.figure.h > 20 && L.stones.find(s => s.i === L.figure.stone).cond === 'stand', L.figure);
+  check(`the tarn lies outside the ring (${Math.hypot(L.tarn.x, L.tarn.z).toFixed(0)} m from the heart, ${2 * L.tarn.r} m across), its ice ${L.ice} m over its bed`, Math.hypot(L.tarn.x, L.tarn.z) - L.tarn.r > L.R + 40 && L.ice > .3, L.tarn); }
+for (const v of ['ring', 'heart', 'stone', 'fallen', 'far', 'ring&day', 'ring&lit']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+  await pg.goto(`http://localhost:${port}/places.html?still&w=320&h=200&place=northlight&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const s = await pg.evaluate(() => window.__stats.place); check(`places.html?place=northlight&view=${v} renders: ${s.tris.toLocaleString()} triangles in ${s.draws} draws, ${s.stones} stones, no page errors`, s.tris > 0 && s.stones === 11 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
 for (const v of ['shore', 'span', 'deck', 'sea', 'far', 'far&dusk', 'span&level=a&tide=low', 'span&level=c&tide=high']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/places.html?still&w=320&h=200&place=spires&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
   const s = await pg.evaluate(() => window.__stats.place); check(`places.html?place=spires&view=${v} renders: ${s.tris.toLocaleString()} triangles, ${s.towers} towers, no page errors`, s.tris > 0 && s.towers === 6 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
