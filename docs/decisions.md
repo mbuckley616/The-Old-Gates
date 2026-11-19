@@ -73,6 +73,28 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation.** B. It needs no new system; if a tide is ever built, lowering the chain to A is one number (`o.deck`). Owed either way: a passage through each tower at deck height, then the spires in the game on a Gatelands shore.
 
+### The Northlight Altar — do its stones' script burn? (from the look builder, 2026-11-19, #1746)
+**The question.** OG-104's Markish site, the Northlight Altar, is prototyped (Session 2395, `ruins.js` `northlightAltar`, `places.html?place=northlight`): eleven single Weaver stones on a snowed fell, a ring 120 m across open to the north, the two by the gap 42 m, six more 30–38 m, two fallen and one snapped; an altar on a dais at the heart and the aurora beyond the gap. The sheet paints the stones glowing; the ring of arches kept its script dead (#429 B).
+
+**Options.**
+- **A (recommended).** Dead, as built: the stones dark and polished, catching the aurora's green; nothing of theirs is lit. [the ring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-northlight-ring.jpg) · [at a stone](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-northlight-stone.jpg)
+- **B.** OG-104 as painted: the script on each standing stone's inner face burns pale blue in its grooves, all night. [the ring](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-northlight-ring-lit.jpg) · [at a stone](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-northlight-stone-lit.jpg)
+- **C.** Only under the aurora: dead by day and on clear nights, burning when the curtains are up. Needs the sky to tell the place.
+
+Also: [from the altar](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-northlight-heart.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-northlight-far.jpg) · [by day](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-northlight-ring-day.jpg)
+
+**Recommendation.** A.
+
+### An arrow's flight — fly until it lands, a longer timer, or 2.2 s as now? (from the systems builder, 2026-11-19, #1748)
+**The question.** Every arrow vanishes in the air 2.2 s after it leaves the bow (`ARROW_LIFE`, `js/10-player.js`), so an arrow loosed high disappears mid-flight. The farthest shot is 61 m (hunting bow), 72 m (longbow), 79 m (war bow), all still in the air when they vanish, and Long eye (Bow 75, half the drop past 50 m) adds 0.1 m of reach. Most fights are well inside 61 m; the number matters for long shots, the sight of an arrow vanishing, and Long eye.
+
+**Options.**
+- **A (recommended).** An arrow flies until it lands, up to 8 s (the butts' number): reach 185 / 232 / 259 m at a high arc, with Long eye 205 / 250 / 276 m. Damage, drop, wind and speed unchanged.
+- **B.** A longer timer, 3.5 s: reach about 90 / 105 / 115 m. Long eye starts to count; an arrow loosed high still vanishes, later.
+- **C.** As now, 2.2 s. Long eye wants a new rule of its own (a separate question).
+
+**Recommendation.** A: reach is set by the bow, the drop and your aim, and Long eye does what it says. One number in one file; one systems session with `tests/perkbow` re-measured.
+
 ## Answered
 ### The festivals' contest grounds — the butts all year and the ring on its day, both only on their day, or not yet? (from the look builder, 2026-11-17, #1672)
 **The question.** Festivals B owes the look builder two contest grounds. Session 2317 built both as a prototype at the game's own sizes: Riverfair's butts (a straw boss 1.36 m across with a painted face, bales, a limed mark, pegs at 30/50/70 m; about 760 triangles) and the Strait Fair's ring (10 tarred stakes on a 5 m radius, two hemp ropes, the reeve's post and horn; 2,405 triangles). The look is drawn to the game's numbers; the open part is where they stand, and when.
