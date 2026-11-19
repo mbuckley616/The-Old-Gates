@@ -1972,14 +1972,17 @@ function kidsFill(S,key){const C=KIDS,site=S.site;if(typeof scene==='undefined'|
       if(pair)K.mate=k?C.list[C.list.length-1]:null;C.list.push(K);});
     const L=C.list;if(pair){L[L.length-1].mate=L[L.length-2];L[L.length-2].mate=L[L.length-1];}}
   C.key=key;C.site=S;return C.list.length;}
+// S2397 — no children at play in a town that is dead (burned, abandoned: S.dead or its flags, read live), sick or besieged; read without creating the town's record
+function kidsTownOk(S){if(!S||!S.site||S.dead)return false;const T=typeof worldState!=='undefined'&&worldState.towns&&worldState.towns[S.site.id],f=T&&T.flags;
+  return !(f&&(f.burned!=null||f.abandoned!=null||f.plague!=null||f.besieged!=null));}
 function kidsTick(now,dt){const C=KIDS;if(!C.on||typeof WORLD==='undefined'||typeof SETTLE==='undefined'||typeof hbOn!=='function'||!hbOn())return;
   const out=typeof activeZoneId!=='undefined'&&activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior());
   const h=typeof gameHour==='function'?gameHour():12,day=h>=C.from&&h<C.to;
   if(!out&&day&&(!C.site||Math.hypot(px-C.site.site.x,pz-C.site.site.z)>C.far+10)){let best=null,bd=C.far;
-    for(const S of SETTLE.values()){const k=S.site&&S.site.kind;if(k!=='village'&&k!=='town'&&k!=='city')continue;const d=Math.hypot(px-S.site.x,pz-S.site.z);if(d<bd){bd=d;best=S;}}
+    for(const S of SETTLE.values()){const k=S.site&&S.site.kind;if(k!=='village'&&k!=='town'&&k!=='city'||!kidsTownOk(S))continue;const d=Math.hypot(px-S.site.x,pz-S.site.z);if(d<bd){bd=d;best=S;}}
     if(best){const key=`${best.site.id}:${typeof gameDayNow==='function'?gameDayNow():0}`;if(C.key!==key){kidsDrop();kidsFill(best,key);}}}
   if(!C.list.length)return;
-  if(out||!day||!C.site||Math.hypot(px-C.site.site.x,pz-C.site.site.z)>C.far+10||C.list.some(k=>k.g.parent!==scene)){kidsDrop();return;}
+  if(out||!day||!C.site||!kidsTownOk(C.site)||Math.hypot(px-C.site.site.x,pz-C.site.site.z)>C.far+10||C.list.some(k=>k.g.parent!==scene)){kidsDrop();return;}
   const t=now/1000,V=THREE.Vector3,up=new V(0,1,0);
   for(const K of C.list){const g=K.g,rig=K.rig,P=rig.play,U=K.U,fw=new V(Math.sin(g.rotation.y),0,Math.cos(g.rotation.y));
     if(K.G==='hoop'||K.G==='horse'){const R=K.G==='hoop'?3.2:2.2,w=(K.G==='hoop'?2.3:.75)/R*K.dir,a=K.a0+w*(t-K.T0);
