@@ -1958,3 +1958,52 @@ A playtest run, after 17 Nov's new-look review. Read Sessions 2330 to 2373. Five
 **Backlog notes.** None new. 17 Nov's note on the struck lines at the foot of L12 still stands.
 
 No proposal this run.
+
+## 2026-11-19 — The new look: OG-104's five ruins in their prototypes (the Weavers' ring, the Drowned Spires, the Northlight Altar, the Scarred Gate, the Hollow Below) and the ring in the game (build s1741, read to Session 2404)
+
+A new-look run, after 18 Nov's playtest. Read Sessions 2374 to 2404. I opened `places.html` for the five OG-104 sites the look builder has prototyped since 17 Nov: 14 views at 1280×720 on software GL. Every page drew in 3 to 4 s with no page errors. Then I booted the game and went to the Weavers' ring on its headland (S2385; seed 1, cell 7,7, at 18925, 16875, 12.7 m up). I stood 150 m and 60 m out on its axis at 13:00, and 150 m out at 22:00. The harness check, `node tests/run.mjs export`, is **green** this time: the autosave landed 62 s after the world's entry and the download at 75 s. S2377's wait for the autosave holds, where 18 Nov's fixed 20 s went red twice. The game ran 817 s for three stops with no page errors and no console errors. The frame counter read 0.1 to 0.2 fps on SwiftShader at the ring, which says nothing about a real GPU. The ring in the game is 9,534 triangles (the prototype's is 64,136).
+
+Everything is judged against OG-104 (the thumbnail in `docs/art/thumbs/`) and its catalogue note: "Everything is drawn huge: arches several storeys tall with people as specks."
+
+**The Hollow Below (S2401; `-hollow-mouth.jpg`, `-hollow-court.jpg`, `-hollow-deck.jpg`, `-hollow-far.jpg`).** This is the best of the five, and the closest to its panel. Looking up the light from the viaduct (`-hollow-deck`), the oculus is a ragged bright mouth with icicles round it. The beam falls in a clean column onto three rings, and the vault's size is felt. From the court (`-hollow-court`) the three rings recede to the slit door at 4.4 m. They read as one structure nested, and the fallen voussoirs at the left are each the size of a cottage.
+
+What is off:
+1. **From the way in, the first thing you see is a flat pale wall.** In the default view (`-hollow-mouth`), the back shelf's cliff fills the left 40% of the frame as one streaked, washed slab, and it hides the court and the light's landing. The devlog names this (a heightfield's face), but it is worse than "reads as one pale wall": it is the frame's subject. The panel's way in shows the viaduct leading to the light, and the cliff is dark under it. A carved cliff mesh is owed if the Hollow goes in. Until then, I would at least move the default eye so the viaduct, not the cliff, leads.
+2. **The sigil where the light lands is a bright square.** In `-hollow-far` the 14 m `PlaneGeometry` of the dead sigil takes the full sun and the bounce light and reads as a lit white tile. A second white square shows in the lake under it. It looks like a light panel, not a cut stone, and a round oculus would not throw a square. The beam's column is round. Only the sigil's plane is square.
+3. **The vault's rock texture repeats in horizontal bands** (`-hollow-deck`, the whole upper half). It reads as fabric or wood grain more than rock. The same texture on the gates' shells does not band like this, so it is probably the vault's UV stretch along its rings.
+4. The rings' script, here and on the other four sites, is the gate kit's seven glyphs (`gatekit.js` `glyphTex`, and in the game `38-kit.js`). At 10–20 m and 1280×720 they read as *Φ, θ, O, ≠, #*: Greek and Latin type more than an old script (`-hollow-court`, `-scarred-foot`, `-north-stone`). They are OG-037's shapes, so this is a note, not a fault. If Michael ever wants the script to read as "the original Irish-register inscriptions" (canon, Part II, Varek), a stem-and-stroke script would read as nobody's alphabet at every size.
+
+**The Scarred Gate (S2398; `-scarred-front.jpg`, `-scarred-scar.jpg`, `-scarred-foot.jpg`).** A 70 m Weaver ring on its edge in red sand, buttes behind. The ring's proportion is the gates' own (S2398 says so on purpose), and from 130 m it reads as a monument.
+
+What is off, against OG-104's panel:
+1. **It does not read as violently broken.** The panel's gate is "cracked and incomplete", half its rim gone. Here 17 of 44 outer voussoirs are gone, but from the front (`-scarred-front`) the inner course is whole all round. The eye sees a complete ring with a step in its outer course at the upper right, and a scatter of blocks. The 1.2 m cleft does not show at 130 m. The crater (44 m across, 4 m deep) and its tipped slabs are not visible from the front view at all.
+2. **The scar of black glass is not visible from the view built to show it** (`-scarred-scar`, 150 m out and 14 m up, looking back along it). What shows is a dark band of shadow on a dune. Nothing glassy and nothing black reads along 220 m. The devlog says "only as a trench at eye level". From the scar view it does not read as a trench either. A sheen material is the right next step, as S2398 proposes.
+3. **Nothing in the default views gives the scale.** The buttes (39–74 m) stand beside the 70 m ring and are as tall, so the ring reads as the size of a butte. That is right, but there is nothing human for the eye to measure either against. The scale post is only in `foot`. OG-104 always draws a speck of a person. One figure at the foot in the front view would carry the "drawn huge" note.
+
+**The Drowned Spires (S2389, B as Michael chose; `-spires-shore.jpg`, `-spires-deck.jpg`).** From the strand, six square towers stride into a haze, the decks 4.5 m over the water. The haze does good work: the far towers fade as the panel's do. The towers read as brick chimneys more than as the panel's slender spires. They are square in plan with a plain pyramid cap, and their coursing shows at 1–1.5 m. At 100 m tall they need fewer, larger courses, or none, to look cut from the Weavers' cliffs. On the deck (`-spires-deck`) the tower's face closes the walk, as S2389's needs-eyes says, and the passage is owed.
+
+**The Northlight Altar (S2395; `-north-ring.jpg`, `-north-stone.jpg`; Michael's A on #1746, dead).** It is the strongest silhouette of the five. Eleven black stones against a wide aurora read at once, and the 42 m pair by the gap does read "the size of cliffs" against the snow line. Up close (`-north-stone`) a stone is a tapered black box with a script strip. S2395 offers a chamfer at about 200 triangles a stone, and I would take it: the box edge is the one thing that reads as modern. The stones hold almost no aurora light on their faces. They are pure black against the sky, where A promised "dark polished stone catching the aurora's green".
+
+**The Weavers' ring of broken arches, in the prototype (`-ring-ring.jpg`) and in the game (`-game-ring-60.jpg`, `-game-ring-150.jpg`).** The prototype's arches are its best feature: pointed, ribbed, dark Weaver stone, with fallen blocks heaped at their feet.
+In the game at 60 m and 13:00 the ring reads well. One arch stands whole, the broken jambs lean, and the dais shows in the middle. Three deer grazing at its foot give exactly the scale OG-104 wants: specks against the stone.
+1. **From 150 m out on the ring's own axis, you are inside a tree** (`-game-ring-150`). This is S2385's needs-eyes, judged: the headland's wood runs to the stamp's edge, and the way you approach the ring from inland is through canopy. A wonder that cannot be seen until you are 60 m from it has lost its landmark. I would clear the scatter in a wider ring, or score the site against woods, as S2385 offers. This is a call for the look builder, not filed as a bug. 22:00 from the same spot is black leaves.
+
+**The capes (S2393, S2399, S2404).** Not looked at this run: I took no builder pictures. The before/after pictures in the bodies builder's posts (`capefront-2404-side-*.jpg`) show the shelf gone.
+
+**The builders' questions to me.**
+- S2397 (bodies builder): *a sick or besieged town keeps its children in while its grown folk walk; is that right?* Yes for plague and siege: a town keeps its children in before its adults, and adults still have work. For a besieged town the street should probably empty too, but that is the systems builder's, not the children's. Abandoned and burned with no one at all is right as built.
+- S2374 (from 18 Nov, the rider's slit at 4.5 m): not seen in play again; I did not meet a rider.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2385 (the ring in the game): judged, above. The wood hides it from 150 m. The step-ups I did not walk.
+- S2389, S2391, S2395, S2398, S2401 (the prototypes): judged above, from pictures only.
+- S2378, S2392, S2402 (the butts and an arrow's flight): not shot this run. My 18 Nov finding is struck in the backlog by S2378 and S2392. The next playtest should shoot the 50 m and 70 m ends again.
+- S2380 (the coffer before the arc): struck in the backlog; not walked this run.
+- S2386, S2387 (the guard's greeting and stand-in): struck; not walked this run.
+- S2375, S2376, S2379, S2403 (a keep dressed, the delver, a gate's seals): not walked. The seals (S2403) are the next playtest's.
+- S2377, S2388, S2394, S2400 (QA): `export` green, 62 s to the autosave, as above.
+- S2381–2384, S2390 (the sword at a walk, the guild head's cape, the mail through the tabard): not looked at.
+
+**Backlog notes.** None new.
+
+No proposal this run. No bug in today's game was found that is not already owned. The ring's trees are a look call, not a fault, so nothing goes to section I.
