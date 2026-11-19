@@ -1153,8 +1153,8 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
   // apart, so a man's 56 columns stood 14 to 0.4 rad over the spine (the seam down the back, its folds crowded into a pleat) and 12 cm
   // apart over the shoulder and arm (the side a few flat facets, the box). The line is sought in three times as many directions, put in
   // order round the neck, and K starts are laid along it at even steps of its own length, each cleared of the body as before
-  const room = cape ? null : (PACK.cloakRoom || (PACK.cloakRoom = armRoomV(CLOAK_ARM_ROOM))), ring0 = [], polarTh = q => Math.atan2(q.x - neck.x, -(q.z - neck.z));
-  for (let k = 0, KK = cape ? K : 3 * K; k < KK; k++) { const th = th0 + (k / (KK - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
+  const turned = cape && thrown, room = cape ? null : (PACK.cloakRoom || (PACK.cloakRoom = armRoomV(CLOAK_ARM_ROOM))), ring0 = [], polarTh = q => Math.atan2(q.x - neck.x, -(q.z - neck.z));
+  for (let k = 0, KK = turned ? K : 3 * K; k < KK; k++) { const th = th0 + (k / (KK - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
     const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
     const p = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006), w = polarTh(p) - th; ring0.push({ p, n: e.n.clone(), th: th + Math.atan2(Math.sin(w), Math.cos(w)), dth: th }); }
   // in order round the neck, each point's angle unwrapped against the direction that found it (a cape's ends reach past the throat), and
@@ -1166,11 +1166,15 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
   // 1.5 to 3 cm apart across the back where they are 6 cm over the shoulders, and those columns kept their crowding to the hem: a groove
   // down the spine and a step at the middle of the hem. Laid along the line with its zags smoothed out, the starts are even in the cloth;
   // each is cleared of the body as before
-  if (!cape) for (let it = 0; it < 6; it++) { const P0 = ringU.map(q => q.p.clone()); for (let i = 1; i < ringU.length - 1; i++) ringU[i].p = P0[i - 1].clone().add(P0[i + 1]).addScaledVector(P0[i], 2).multiplyScalar(.25); }
+  if (!turned) for (let it = 0; it < 6; it++) { const P0 = ringU.map(q => q.p.clone()); for (let i = 1; i < ringU.length - 1; i++) ringU[i].p = P0[i - 1].clone().add(P0[i + 1]).addScaledVector(P0[i], 2).multiplyScalar(.25); }
   const arc = [0]; for (let i = 1; i < ringU.length; i++) arc.push(arc[i - 1] + ringU[i].p.distanceTo(ringU[i - 1].p));
-  // a shoulder cape keeps its evenly turned starts: a short circle of cloth wrapped to the throat, whose ends the even line pulled across
-  // each other (its columns crossed and an arm came through)
-  if (cape) for (const q of ring0) { const dir = new THREE.Vector3(Math.sin(q.dth), 0, -Math.cos(q.dth)); tops.push({ start: q.p, dir, n: q.n });
+  // a shoulder cape too (Session 2393, S2383's owed note): it kept its evenly turned starts, and over the back the turned directions found the
+  // same few points by the spine, so a guild head's 56 columns stood 20 within 0.33 rad of the middle and 0.2 rad apart over the shoulders.
+  // The crowded ones made a pleat down the back and a stepped hem under it (2 to 6 cm between neighbours). Its starts are laid along the
+  // smoothed line now, as a cloak's; read on 27 caped townsfolk, no column crossed its neighbour (the reason it was held back, Session 1944).
+  // A cape opened from the side over a staff or a crossbow keeps its turned starts: laid by length, its front side came 99 points into the
+  // forester's crossbow (f4people's limit is 60)
+  if (turned) for (const q of ring0) { const dir = new THREE.Vector3(Math.sin(q.dth), 0, -Math.cos(q.dth)); tops.push({ start: q.p, dir, n: q.n });
     cols.push(drape(S, q.p, dir.clone().multiplyScalar(.5).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006)); }
   else for (let k = 0, j = 0; k < K; k++) { const s = arc[arc.length - 1] * k / (K - 1); while (j < ringU.length - 2 && arc[j + 1] < s) j++;
     const t = Math.max(0, Math.min(1, (s - arc[j]) / Math.max(1e-9, arc[j + 1] - arc[j]))), n = ringU[j].n.clone().lerp(ringU[j + 1].n, t).normalize(), start = ringU[j].p.clone().lerp(ringU[j + 1].p, t);
@@ -1241,7 +1245,7 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
   if (D.cloakFur && !burnousOn(D)) { const fl = hoodLine(ring, .03); for (let s = 0; s < 6; s++) { const m = new THREE.Mesh(turnOut(tubeGeom(fl, fl.map(() => .026 + s * .004), 8)), shellMat(sRGB(...D.cloakFur), s, 6, { sx: 260, sy: 70, solid: s === 0 })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.name = 'collar' + s; m.userData.axis = { line: fl, sides: 8 }; out.push(m); } }
   // the column at the middle of the back, and the rolled hood over the columns within 0.8 rad of it, by their angles: a cloak's columns are
   // set out by length since Session 1944, so they are no longer evenly turned (a cape's still are, and keep the old count)
-  else if (D.hood === 'down') { const thT = tops.map(t => polarTh(t.start)), kb = cape ? Math.round(-th0 / (th1 - th0) * (K - 1)) : thT.reduce((b, t, k) => Math.abs(t) < Math.abs(thT[b]) ? k : b, 0), kw0 = cape ? kb - Math.round(K * .2) : thT.findIndex(t => t > -.8), kw1 = cape ? kb + Math.round(K * .2) : thT.findLastIndex(t => t < .8) + 1, back = hoodLine(ring.slice(Math.max(0, cape ? kw0 : Math.min(kb - 3, kw0)), cape ? kw1 : Math.max(kb + 4, kw1)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25))), m = new THREE.Mesh(turnOut(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10)), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; m.userData.axis = { line: back, sides: 10 }; out.push(m);
+  else if (D.hood === 'down') { const thT = tops.map(t => polarTh(t.start)), kb = thT.reduce((b, t, k) => Math.abs(t) < Math.abs(thT[b]) ? k : b, 0), hw = cape ? 1.25 : .8, kw0 = thT.findIndex(t => t > -hw), kw1 = thT.findLastIndex(t => t < hw) + 1, back = hoodLine(ring.slice(Math.max(0, cape ? kw0 : Math.min(kb - 3, kw0)), cape ? kw1 : Math.max(kb + 4, kw1)).map(q => q.clone().lerp(new THREE.Vector3(neck.x, q.y + .025, neck.z), .25))), m = new THREE.Mesh(turnOut(tubeGeom(back, back.map((_, i) => .03 + .018 * Math.sin(Math.PI * i / (back.length - 1))), 10)), clothMat(sRGB(...D.cloak).multiplyScalar(.92), 'wool', { scale: 26, ...cloakPattern(D, [neck.x, neck.z], .2) })); m.geometry.setAttribute('aBase', m.geometry.attributes.position); m.geometry.setAttribute('aTart', m.geometry.attributes.position); m.name = 'hood'; m.userData.axis = { line: back, sides: 10 }; out.push(m);
     if (burnousOn(D)) { const B = buildBurnousPoint(cols, R, kb, neck, back[Math.floor(back.length / 2)].y, D); out.push(...B.meshes); pointStats = B.stats; } }
   // the brooch at the throat, where the two front columns meet. A shoulder cape worn back (Session 2364, D.capeOpen past half a radian: a
   // guild's head, so the breast's livery shows) has no front to meet: it is pinned at each shoulder, a brooch on either front corner
