@@ -8094,6 +8094,81 @@ function aurenneOrrery(hAt, o = {}) {
       m.castShadow = !['sigil', 'dead', 'crack'].includes(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; draws++; }
     return { group, tris: Math.round(tris), draws, R, k: K, span: 10 * K, rise: 18 * K, bays, gone, spill, dais: { r: steps[0].r, top: steps[2].y, steps }, jamb: { w: 2.2 * K, d: 2.4 * K, h: 9 * K }, tick() {} };
   }
+  // ── the Northlight Altar (Session 2409; backlog L "Ruins at the scale of cliffs", OG-104's Northlight Altar, the Mark; Michael's A on
+  // #1746: dead, as built, the stones dark and polished, nothing of theirs lit) ──
+  // ruins.js's northlightAltar (Session 2395), copied for the world. The prototype's fell, its frozen tarn and its scale post are the
+  // world's or left out: the ring stands on a Markish fell over the snow line whose crown a stamp levels. Built over a height function it
+  // is handed, in the ring's frame: the heart at (0, 0), the gap (the ring's open side) toward -z, which the world sets to the north. The
+  // same stream ('ruins:northlight') in the same order as the prototype, so the eleven stones' conditions, sizes and leans are its own:
+  // the two by the gap 42 m, six standing 30 to 38 m, two fallen whole toward the heart, one snapped. Each stone is one stone drawn whole,
+  // sunk 3 m, its face to the heart cut with a band of the script, dead. The script and the sigil are drawn on canvases in the colours the
+  // prototype's page shows (the game's output is linear: the page's bytes, encoded). The aurora is the Fields' (skyfallAurora) on its own
+  // stream, the three curtains 340 to 760 m out beyond the gap, seen from 20h to 5h as the wonders wake; nothing of the ring's is lit.
+  //   PKIT.wonders.northlight(hAt, o) -> { group, tris, draws, R, stones: [{i, a, x, z, ry, cond, flank, w, t, h, lean, low, top}],
+  //     gap: {width}, dais: {steps: [{s, y}]}, altar: {y, len, w, top}, sol: [{x, z, w, d, ry, h}] (boxes in the ring's frame), tick(sec, night) }
+  let _nlMats = null;
+  function northlightAltarRuin(hAt, o = {}) {
+    const key = 'ruins:northlight', r = stream(key), N = 12, R = 60, SINK = 3, group = new THREE.Group(), B = new Map(), sol = [];
+    group.name = 'wonder:northlight';
+    const put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a);
+      if (!['script', 'sigil'].includes(k) && x.attributes.uv) x.deleteAttribute('uv'); x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+    const mono = (w, t, L) => { const b = new THREE.BoxGeometry(w, L, t, 1, 6, 1); b.translate(0, L / 2, 0); const P = b.attributes.position; for (let i = 0; i < P.count; i++) P.setX(i, P.getX(i) * (1 - P.getY(i) / L / 6));
+      const c = new THREE.CylinderGeometry(.5, Math.SQRT1_2, 1, 4, 1); c.rotateY(Math.PI / 4); c.scale(w * 5 / 6, 2.6, t * .92); c.translate(0, L + 1.3, 0);
+      const bn = b.toNonIndexed(), cn = c.toNonIndexed(), g = mergeGeometries([bn, cn]); b.dispose(); c.dispose(); return g; };
+    const band = (w, L) => { const h = Math.min(L - 6, 22), g = new THREE.PlaneGeometry(1.8, h); g.translate(0, SINK + 2 + h / 2, 0); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * h / 14.4); return g; };
+    const sock = (g, M) => { g.applyMatrix4(M); return g; }, bb = g => { g.computeBoundingBox(); return g.boundingBox; };
+    // a box of the stone's frame (centre lx, lz, turned rz about y within it) into the ring's: the stone stands at (x, z) turned ry
+    const solid = (x, z, ry, lx, lz, w, d, rz, h) => { const c = Math.cos(ry), s = Math.sin(ry); sol.push({ x: +(x + lx * c + lz * s).toFixed(2), z: +(z - lx * s + lz * c).toFixed(2), w: +w.toFixed(2), d: +d.toFixed(2), ry: +(ry + rz).toFixed(4), h: +h.toFixed(2) }); };
+    const stones = [], conds = ['stand', 'stand', 'stand', 'stand', 'stand', 'stand', 'fallen', 'fallen', 'snapped'].sort(() => r() - .5); let ci = 0;
+    for (let i = 1; i < N; i++) { const a = Math.PI + i * 2 * Math.PI / N + (r() - .5) * .04, x = R * Math.sin(a), z = R * Math.cos(a), ry = a + Math.PI, y0 = hAt(x, z);
+      const flank = i === 1 || i === N - 1, cond = flank ? 'stand' : conds[ci++], w = 6 + r(), t = 2.8 + r() * .4, h = flank ? 39.4 : 27.4 + r() * 8, L = h + SINK;
+      const lean = cond === 'stand' && !flank ? (r() - .5) * 8 : 0, lax = r() < .5 ? 'x' : 'z', at = new THREE.Matrix4().makeTranslation(x, y0 - SINK, z).multiply(new THREE.Matrix4().makeRotationY(ry));
+      const parts = [];
+      if (cond === 'stand') { const M = at.clone().multiply(lax === 'x' ? new THREE.Matrix4().makeRotationX(lean * Math.PI / 180) : new THREE.Matrix4().makeRotationZ(lean * Math.PI / 180));
+        parts.push(put('mono', sock(mono(w, t, L), M))); const s = band(w, L); s.translate(0, 0, t / 2 + .03); put('script', sock(s, M)); solid(x, z, ry, 0, 0, w, t, 0, h); }
+      else if (cond === 'fallen') { /* fallen whole toward the heart, on its face (the script under it), its foot by its socket, nearly half its thickness in the snow */
+        const g = mono(w, t, L); g.rotateX(Math.PI / 2); g.rotateZ((r() - .5) * .06); const b0 = bb(g); g.translate(0, -b0.min.y - t * .45, -1.5 + (r() - .5)); const b1 = bb(g).clone();
+        const M = new THREE.Matrix4().makeTranslation(x, y0, z).multiply(new THREE.Matrix4().makeRotationY(ry)); parts.push(put('mono', sock(g, M)));
+        solid(x, z, ry, (b1.min.x + b1.max.x) / 2, (b1.min.z + b1.max.z) / 2, b1.max.x - b1.min.x, b1.max.z - b1.min.z, 0, b1.max.y); }
+      else { /* snapped: the stump stands, broken jagged; the top lies beside it toward the heart, turned a little */
+        const hs = 6 + r() * 8, Ls = hs + SINK, s = new THREE.BoxGeometry(w, Ls, t, 4, 1, 2); s.translate(0, Ls / 2, 0); const P = s.attributes.position;
+        for (let k = 0; k < P.count; k++) if (P.getY(k) > Ls - .01) P.setY(k, Ls - r() * 1.8); parts.push(put('mono', sock(s, at.clone()))); solid(x, z, ry, 0, 0, w, t, 0, hs);
+        const g = mono(w * (1 - hs / L / 6), t, L - Ls); g.rotateX(Math.PI / 2); const b0 = bb(g).clone(), rot = (r() - .5) * .6; g.rotateY(rot); const tx = w * .2, ty = -b0.min.y - t * .45, tz = -2 - (r() * 3); g.translate(tx, ty, tz);
+        parts.push(put('mono', sock(g, new THREE.Matrix4().makeTranslation(x, y0, z).multiply(new THREE.Matrix4().makeRotationY(ry)))));
+        const cx = (b0.min.x + b0.max.x) / 2, cz = (b0.min.z + b0.max.z) / 2, c = Math.cos(rot), sn = Math.sin(rot);
+        solid(x, z, ry, cx * c + cz * sn + tx, -cx * sn + cz * c + tz, b0.max.x - b0.min.x, b0.max.z - b0.min.z, rot, b0.max.y + ty); }
+      // the drift against the north side of anything standing
+      if (cond !== 'fallen') { const d = new THREE.SphereGeometry(1, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2); d.scale(w * .55 + 1.2, 1.4 + r() * .8, 4.5 + r() * 2); d.translate(x, y0 - .3, z - t / 2 - 1.8); put('drift', d); }
+      let low = Infinity, top = -Infinity; for (const p of parts) { const q = bb(p); low = Math.min(low, q.min.y); top = Math.max(top, q.max.y); }
+      stones.push({ i, a: +a.toFixed(3), x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(3), cond, flank, w: +w.toFixed(2), t: +t.toFixed(2), h: +(top - y0).toFixed(1), lean: +lean.toFixed(2), low: +(low - y0).toFixed(2), top: +top.toFixed(2) }); }
+    // the heart: two square steps of 0.8 m on the axis of the gap, the altar on two low blocks, the sigil cut dead in its top. The lower
+    // step's foot reaches the lowest ground under it, so it never stands on air where the stamp's crown is not quite level
+    const steps = [], altar = (() => { let y = hAt(0, 0) - .2, lo = y; for (const u of [-8, 0, 8]) for (const v of [-8, 0, 8]) lo = Math.min(lo, hAt(u, v) - .2);
+      for (const [k, s] of [[0, 16], [1, 11]]) { const foot = k ? y : lo, g = new THREE.BoxGeometry(s, y + .8 - foot, s); g.translate(0, (foot + y + .8) / 2, 0); put('step', g); y += .8; steps.push({ s, y: +y.toFixed(3) }); }
+      for (const z of [-2.8, 2.8]) { const g = new THREE.BoxGeometry(2.6, .6, 1.4); g.translate(0, y + .3, z); put('step', g); }
+      const len = 9, w = 3.4, h = 1.3, g = new THREE.BoxGeometry(w, h, len, 1, 1, 3); g.translate(0, y + .6 + h / 2, 0); put('mono', g);
+      const top = y + .6 + h, s = new THREE.PlaneGeometry(3, 3); s.rotateX(-Math.PI / 2); s.translate(0, top + .01, 0); put('sigil', s); return { y: +y.toFixed(2), len, w, top: +top.toFixed(2) }; })();
+    sol.push({ x: 0, z: 0, w: 3.4, d: 9, ry: 0, h: +(altar.top - hAt(0, 0)).toFixed(2), altar: true });
+    if (!_nlMats) {
+      // the page's canvas bytes, encoded (#2c2f34 and #0d0e10 on the page read as these with its sRGB output)
+      const cut = (w, h, draw, bg, fg) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, w, h); x.strokeStyle = fg; x.lineCap = 'round'; draw(x); const t = new THREE.CanvasTexture(c); t.anisotropy = 8; return t; };
+      const marks = x => { const rs = stream(key + ':script'); for (let k = 0; k < 12; k++) { const cy = 44 + k * 84, kind = Math.floor(rs() * 4); x.lineWidth = 7; x.beginPath();
+        if (kind === 0) x.arc(64, cy, 30, 0, 7); else if (kind === 1) { x.arc(64, cy, 30, 0, 7); x.moveTo(64, cy - 38); x.lineTo(64, cy + 38); } else if (kind === 2) { x.arc(64, cy, 30, Math.PI * .1, Math.PI * .9); x.moveTo(94, cy - 6); x.arc(64, cy - 6, 30, 0, -Math.PI, true); }
+        else { x.moveTo(64, cy - 36); x.lineTo(64, cy + 36); for (const d of [-20, 0, 20]) { x.moveTo(44, cy + d); x.lineTo(84, cy + d); } } x.stroke(); } };
+      const scriptT = cut(128, 1024, marks, '#74777d', '#404247'); scriptT.wrapT = THREE.RepeatWrapping;
+      const sigilT = cut(512, 512, x => { x.lineWidth = 16; x.beginPath(); x.arc(256, 256, 170, 0, 7); x.stroke(); x.lineWidth = 9; x.beginPath(); x.arc(256, 256, 96, 0, 7); x.stroke(); x.lineWidth = 10; x.beginPath(); x.moveTo(256, 30); x.lineTo(256, 482); x.moveTo(30, 256); x.lineTo(482, 256); x.stroke(); }, '#74777d', '#404247');
+      _nlMats = { drift: mat('plaster', { ns: .25, color: 0xf4f7fb, rough: .95 }), mono: mat('rock', { ns: .3, color: 0x6a7079, rough: .3 }),
+        script: new THREE.MeshStandardMaterial({ map: scriptT, roughness: .45, polygonOffset: true, polygonOffsetFactor: -2 }), step: mat('ashlar', { ns: .8, color: 0x8e8c88, rough: .85 }),
+        sigil: new THREE.MeshStandardMaterial({ map: sigilT, roughness: .5, polygonOffset: true, polygonOffsetFactor: -2 }) }; }
+    let tris = 0, draws = 0;
+    for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, _nlMats[k]); m.name = 'northlight:' + k; m.userData.key = k;
+      m.castShadow = !['sigil', 'script'].includes(k); m.receiveShadow = true; group.add(m); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
+    const aurora = skyfallAurora(stream(key + ':aurora'), hAt(0, 0)); group.add(aurora.mesh); tris += aurora.tris; draws++;
+    function tick(sec, night) { aurora.mesh.visible = !!night; aurora.mat.uniforms.t.value = sec; }
+    tick(0, !!o.night);
+    const p = stones[0], q = stones[stones.length - 1];
+    return { group, tris: Math.round(tris), draws, R, sink: SINK, stones, gap: { width: +(Math.hypot(p.x - q.x, p.z - q.z) - (p.w + q.w) / 2).toFixed(1) }, dais: { steps }, altar, sol, aurora: aurora.mesh, tick };
+  }
   // ── the Gatelands' monastic ruin (Session 1715, card F8; OG-121's Gatelands panel; the prototype is places.js's gatelandsAbbey, Session
   // 921, Michael's A on #345: the round tower's door out of reach, as drawn). Copied from the prototype; what differs: no ground of its own
   // (the world's terrain under the site's level pad is the green, and the scatter's trees stand outside it, so the prototype's four ash
@@ -11665,7 +11740,7 @@ function aurenneOrrery(hAt, o = {}) {
       const m = new THREE.Mesh(g, DQM[k]); m.name = 'quarter:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     return { group, tris: Math.round(tris), draws: group.children.length, bridge, theatre };
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, trader: markTrader, TRADER_TRADES, TOWN_TRADES, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

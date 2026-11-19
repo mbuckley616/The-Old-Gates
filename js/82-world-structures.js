@@ -3444,7 +3444,7 @@
   // Stones are cosmetic; the place is the seed's.
   // When it stands (within 1.6 km, in the open world) every stone has a stamp that only clears the scatter under it (noFlat: the
   // ground is not flattened), the walls' standing courses are solids, and from 20h to 5h the stones drift and the seams burn.
-  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
+  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
   function wonderSkyfallSite(){const S=WONDERS.skyfall;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
@@ -3629,9 +3629,63 @@
   function wonderRingDrop(){const S=WONDERS.ring;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:ring')STATIC_SOL.splice(i,1);S.sol=[];
     const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='ring')P.splice(i,1);S.plats=[];}
+  // The Northlight Altar (Session 2409; the kit's PKIT.wonders.northlight, from ruins.js; OG-104's Northlight Altar, the Mark; Michael's A
+  // on #1746, dead as built), on the new look only. Its place is one high fell of the Mark, the same for every load of a seed: on a 50 m
+  // grid over the Mark's land cells (getCell, all of them), a point 22 m over the snow line (the snow whole, as the Fields'), dry, kept
+  // 330 m clear of every site's pad and every door, 200 m of every road's line and 1.2 km of the Fields, whose ground under the stones (out to 66 m)
+  // falls no more than NL_FALL and is dry out to 110 m (the Mark's high ground is steep: on seed 1 none above the line falls less than 15 m). The ring's gap is its -z, toward the aurora: the north, or turned up to 45° off it
+  // where the fell lies more open (a cost of 5 m a 22.5° step). The score is the fell's height (to 40 m over the line) and how far the
+  // land beyond the gap falls away (150 to 450 m out, within 15° of its line), less its fall and the ground within 220 m that stands over it.
+  // One stamp levels the crown 72 m round (blend 24) halfway between its lowest and highest ground, cutting a terrace into the fell; every stone that stands, the stump, the two fallen and the
+  // snapped top are solids (turned boxes); the dais's two steps are platforms you walk up, the altar a solid on them.
+  const NL_FALL=24;
+  function wonderNorthSite(){const S=WONDERS.northlight;if(S.site!==undefined)return S.site;S.site=null;
+    if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
+    const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
+    const fields=wonderSkyfallSite();
+    const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
+    const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
+    const segD=(a,b,x,z)=>{const dx=b.x-a.x,dz=b.z-a.z,L=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L));return Math.hypot(a.x+dx*t-x,a.z+dz*t-z);};
+    const keep=[REGIONS.slice(),PEAKS.slice(),INLETS.slice()],mk=new Set(mark.map(c=>c.i+','+c.j)),ring=all.filter(c=>{for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(mk.has((c.i+di)+','+(c.j+dj)))return true;return false;});
+    REGIONS.length=0;PEAKS.length=0;INLETS.length=0;ring.forEach(c=>{c.regions.forEach(q=>REGIONS.push(q));c.peaks.forEach(q=>PEAKS.push(q));(c.inlets||[]).forEach(q=>INLETS.push(q));});
+    const wet=(x,z)=>{const y=rawH(x,z);return y<landH(x,z)-1.5||y<SEA_Y+2;};let best=null;
+    try{
+    for(const c of mark){const x0=c.i*SIZE-500,x1=(c.i+1)*SIZE+500,z0=c.j*SIZE-500,z1=(c.j+1)*SIZE+500,inB=(x,z)=>x>x0&&x<x1&&z>z0&&z<z1;
+      const cs=sites.filter(s=>inB(s.x,s.z)||(s.pad||0)>100),cd=doors.filter(d=>inB(d.x,d.z)),cr=roads.filter(([p,q])=>!(Math.max(p.x,q.x)<x0||Math.min(p.x,q.x)>x1||Math.max(p.z,q.z)<z0||Math.min(p.z,q.z)>z1));
+    for(let a=25;a<SIZE;a+=50)for(let b=25;b<SIZE;b+=50){const x=c.i*SIZE+a,z=c.j*SIZE+b,r0=rawH(x,z),over=r0-snowLineAt(x,z);if(over<22||wet(x,z))continue;
+      if(fields&&Math.hypot(fields.x-x,fields.z-z)<1200)continue;
+      if(cs.some(s=>Math.hypot(s.x-x,s.z-z)<330+(s.pad||0))||cd.some(d=>Math.hypot(d.x-x,d.z-z)<330)||cr.some(([p,q])=>segD(p,q,x,z)<200))continue;
+      let lo=1e9,hi=-1e9,ok=true;for(let k=0;k<16&&ok&&hi-lo<=NL_FALL;k++){const t=k*Math.PI/8;for(const rr of [30,50,66,110]){const X=x+Math.sin(t)*rr,Z=z+Math.cos(t)*rr;
+        if(wet(X,Z)){ok=false;break;}if(rr<=66){const y=rawH(X,Z);lo=Math.min(lo,y);hi=Math.max(hi,y);}}}
+      if(!ok||hi-lo>NL_FALL)continue;
+      let north=-1e9,dl=0;for(let q=-2;q<=2;q++){const dq=q*Math.PI/8;let m=1e9;for(let k=-1;k<=1&&m>north;k++){const t=Math.PI+dq+k*Math.PI/12;for(const d of [150,250,350,450])m=Math.min(m,r0-rawH(x+Math.sin(t)*d,z+Math.cos(t)*d));} /* the least the land beyond the gap falls, its gap turned up to 45° off the north (5 a step of 22.5°) */
+        m-=5*Math.abs(q);if(m>north){north=m;dl=dq;}}
+      let above=0;for(let k=0;k<16;k++){const t=k*Math.PI/8;for(const d of [130,175,220])above=Math.max(above,rawH(x+Math.sin(t)*d,z+Math.cos(t)*d)-r0);}
+      const score=Math.min(over,40)*.5+Math.max(-30,Math.min(40,north))-(hi-lo)-above*WONDER_ABOVE_K;if(best&&score<=best.score)continue;
+      best={x,z,ry:+dl.toFixed(4),mid:(lo+hi)/2,h:+r0.toFixed(1),over:+over.toFixed(1),fall:+(hi-lo).toFixed(1),north:+north.toFixed(1),above:+above.toFixed(1),score:+score.toFixed(1),cell:cellKey(c.i,c.j)};}}
+    if(best){best.y=+best.mid.toFixed(2);delete best.mid;}
+    }finally{REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}
+    return (S.site=best);}
+  function wonderNorthBuild(){const S=WONDERS.northlight,st=wonderNorthSite();if(!st||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.northlight)return null;
+    if(!S.stamps){S.stamps=[addStamp({id:'wonder_northlight',kind:'wonder',x:st.x,z:st.z,r:72,blend:24,y:st.y})];try{clearScatterUnder(S.stamps);}catch(e){console.warn('wonder scatter',e);}}
+    const hAt=(lx,lz)=>{const [x,z]=wonderToWorld(st,lx,lz);return meshH(x,z);};const W=PKIT.wonders.northlight(hAt,{night:wonderAwake()});
+    W.sig=wonderCellSig(st);W.group.position.set(st.x,0,st.z);W.group.rotation.y=st.ry;W.group.userData.noBake=true;W.group.updateMatrixWorld(true);sc.add(W.group);S.W=W;
+    const c=Math.cos(st.ry),s_=Math.sin(st.ry);
+    S.plats=W.dais.steps.map(p=>({x0:st.x-p.s/2*(Math.abs(c)+Math.abs(s_)),x1:st.x+p.s/2*(Math.abs(c)+Math.abs(s_)),z0:st.z-p.s/2*(Math.abs(c)+Math.abs(s_)),z1:st.z+p.s/2*(Math.abs(c)+Math.abs(s_)),y:p.y,wonder:'northlight',
+      inside:(wx,wz)=>{const dx=wx-st.x,dz=wz-st.z;return Math.abs(dx*c-dz*s_)<p.s/2&&Math.abs(dx*s_+dz*c)<p.s/2;}}));S.plats.forEach(p=>ZONES.world.platforms.push(p));
+    S.sol=W.sol.map(b=>{const [x,z]=wonderToWorld(st,b.x,b.z);return {cx:x,cz:z,rx:b.w/2,rz:b.d/2,c:Math.cos(st.ry+b.ry),s:Math.sin(st.ry+b.ry),h:b.h,cell:'wonder:northlight',wonder:true};});
+    S.sol.forEach(q=>STATIC_SOL.push(q));
+    // the herbs laid before the terrace was cut (the stamp moves the ground up to 12 m): each within its reach set on the ground as it is
+    // now, or taken away where a stone now stands (as dropHerbsOnPad takes a pad's)
+    const HL=(ZONES.world&&ZONES.world.herbs)||[];for(let i=HL.length-1;i>=0;i--){const h=HL[i];if(h.bed||Math.hypot(h.x-st.x,h.z-st.z)>=96)continue;
+      if(solidAt(h.x,h.z)){HL.splice(i,1);h.offPad=true;h.g.visible=false;if(h.gl)h.gl.intensity=0;}else h.g.position.y=worldH(h.x,h.z);if(h.inst)syncHerbInstance(h);}
+    return W;}
+  function wonderNorthDrop(){const S=WONDERS.northlight;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:northlight')STATIC_SOL.splice(i,1);S.sol=[];
+    const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='northlight')P.splice(i,1);S.plats=[];}
   // from WORLD.tick, every frame in the open world: each wonder built within 1.6 km (checked once a second), animated while it stands.
   // A wonder's site is searched only once you stand on its island's land (the Fields' takes 0.6 s on software GL)
-  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop}];
+  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop},{k:'northlight',nation:'mark',site:wonderNorthSite,build:wonderNorthBuild,drop:wonderNorthDrop}];
   function tickWonders(){if(typeof LAND==='undefined'||!LAND.on)return;const t=performance.now(),due=t-WONDERS._t>1000||WONDERS._t===0&&WONDER_KINDS.some(K=>!WONDERS[K.k].W);if(due)WONDERS._t=t;
     let nk=null;for(const K of WONDER_KINDS){const S=WONDERS[K.k];
       if(S.W&&S.W.group.parent!==sc)K.drop(); /* the world's scene was built again */

@@ -3,7 +3,7 @@
 // 1.6 km in 11 draws, its stones hung over their pits with the scatter cleared under them, its two broken walls solid where they stand;
 // from 20h to 5h it wakes (the stones drift, the seams burn), by day it is dead stone; and it goes when you leave. Session 1634: the
 // same for Aurenne's Broken Orrery on its headland. Session 1666: the Gatelands' Drowned Ring in its lough.
-// Session 2385: the Weavers' ring of broken arches on a Gatelands headland.
+// Session 2385: the Weavers' ring of broken arches on a Gatelands headland. Session 2409: the Northlight Altar on a Markish fell.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -150,5 +150,37 @@ check(`you walk up the dais's three steps (${rw.steps.join(' → ')} m)`, rw.ste
 check(`its ${rw.sol} solids: a standing jamb is solid, the bay between and the heart open`, rw.sol === 96 && rw.jamb && rw.bayOpen && rw.heartOpen, rw);
 const rd = await page.evaluate(() => { const S = WONDERS.ring; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:ring').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'ring').length }; });
 check('2.5 km off it is dropped, its solids and steps with it', rd.gone && rd.sol === 0 && rd.plats === 0, rd);
+// Session 2409: the Northlight Altar (OG-104; Michael's A on #1746, dead as built) on a high fell of the Mark. The place is the seed's,
+// over the snow line and clear of every site, door, road and the Fields; its gap opens on falling land within 45° of the north; the
+// prototype's eleven stones (two of 42 m by the gap, six standing, two fallen, one snapped), nothing lit; the stones solid, the gap open;
+// the dais's two steps walked, the altar solid; the aurora beyond the gap only by night; it goes when you leave.
+const ns = await page.evaluate(() => { const a = wonderNorthSite(); WONDERS.northlight.site = undefined; const t0 = performance.now(), b = wonderNorthSite(), ms = Math.round(performance.now() - t0);
+  if (!b) return { none: true }; const sites = [...CELLS.values()].flatMap(c => c.sites), near = sites.reduce((m, t) => Math.min(m, Math.hypot(t.x - b.x, t.z - b.z) - (t.pad || 0)), 1e9), f = wonderSkyfallSite();
+  return { ...b, ms, same: JSON.stringify(a) === JSON.stringify(b), nation: nationKeyOf(...cellOf(b.x, b.z)), near: Math.round(near), fields: Math.round(Math.hypot(f.x - b.x, f.z - b.z)) }; });
+console.log(JSON.stringify(ns));
+check(`the Northlight Altar stands on a Markish fell ${ns.over} m over the snow line, the same asked twice (${ns.ms} ms)`, !ns.none && ns.nation === 'mark' && ns.over >= 22 && ns.same, ns);
+check(`its ground falls ${ns.fall} m under the stones, it stands ${ns.near} m past the nearest pad and ${ns.fields} m from the Fields; beyond its gap (${(ns.ry * 180 / Math.PI).toFixed(0)}° off the north) the land falls ${ns.north} m`, ns.fall <= 24 && ns.near >= 330 && ns.fields >= 1200 && Math.abs(ns.ry) <= Math.PI / 4 + 1e-3 && ns.north > 0, ns);
+const nat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 0, 150); return { x, z }; }, ns);
+await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), nat);
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [nat.x, nat.z], { timeout: 60000 });
+await g.cells(); await g.hide();
+const nw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.northlight, W = S.W, st = S.site; if (!W) return { none: true };
+  let meshes = 0, lit = 0; W.group.traverse(o => { if (o.isMesh) { meshes++; if (o.material.emissive && o.material.emissive.getHex() !== 0) lit++; } });
+  const q0 = S.stamps[0], w2 = (x, z) => wonderToWorld(st, x, z); let rim = 0; for (let k = 0; k < 24; k++) rim = Math.max(rim, Math.abs(meshH(...w2(Math.sin(k * .26) * 64, Math.cos(k * .26) * 64)) - q0.y));
+  const at = (x, z) => +activeTerrainH(...w2(x, z)).toFixed(2), sd = W.stones.find(s => s.cond === 'stand' && !s.flank);
+  return { tris: W.tris, draws: W.draws, meshes, lit, rim: +rim.toFixed(2), steps: [at(0, 10), at(0, 7), at(0, 4.5)], plats: W.dais.steps.map(p => p.y), sol: S.sol.length,
+    stone: solidAt(...w2(sd.x, sd.z)), fallen: W.stones.filter(s => s.cond === 'fallen').every(s => solidAt(...w2(s.x * .75, s.z * .75))), gapOpen: !solidAt(...w2(0, -60)), altar: solidAt(st.x, st.z),
+    flank: W.stones.filter(s => s.flank).map(s => s.h), standing: W.stones.filter(s => s.cond === 'stand' && !s.flank).map(s => s.h), conds: W.stones.map(s => s.cond[0]).join(''),
+    sunk: W.stones.filter(s => s.cond !== 'fallen').every(s => s.low < -2.5), aurora: W.aurora.visible, inScene: W.group.parent === sc }; });
+console.log(JSON.stringify(nw));
+check(`within 1.6 km it stands: two stones of ${nw.flank && nw.flank.join(' and ')} m by the gap, ${nw.standing && nw.standing.length} more of ${nw.standing && Math.min(...nw.standing)} to ${nw.standing && Math.max(...nw.standing)} m, two fallen and one snapped (${nw.conds}), every standing foot sunk; ${nw.tris} triangles in ${nw.draws} draws, nothing lit`, !nw.none && nw.inScene && nw.flank.every(h => h === 42) && nw.standing.length === 6 && nw.standing.every(h => h >= 30 && h <= 39) && nw.conds.split('f').length === 3 && nw.conds.split('s').length === 10 && nw.sunk && nw.draws === nw.meshes && nw.draws <= 7 && nw.tris < 8000 && nw.lit === 0, nw);
+check(`the crown is level under the stones (the ground on their circle within ${nw.rim} m of the stamp)`, nw.rim < .5, nw);
+check(`you walk up the dais's two steps (${nw.steps.join(' → ')} m) and the altar on it is solid`, nw.steps[0] < nw.plats[0] - .3 && nw.steps[1] === nw.plats[0] && nw.steps[2] === nw.plats[1] && nw.altar, nw);
+check(`its ${nw.sol} solids: a standing stone and both fallen ones are solid, the gap open; by day no aurora`, nw.sol === 13 && nw.stone && nw.fallen && nw.gapOpen && !nw.aurora, nw);
+const nn = await page.evaluate(() => { forceTime(23); WONDERS._t = 0; tickWonders(); const W = WONDERS.northlight.W, st = WONDERS.northlight.site, b = new THREE.Box3().setFromObject(W.aurora); const c = b.getCenter(new THREE.Vector3());
+  const dx = c.x - st.x, dz = c.z - st.z, gx = -Math.sin(st.ry), gz = -Math.cos(st.ry); return { aurora: W.aurora.visible, out: Math.round(dx * gx + dz * gz), lit: W.group.children.filter(m => m.isMesh && m.material.emissive && m.material.emissive.getHex() !== 0).length }; });
+check(`at 23h the aurora is up ${nn.out} m out beyond the gap, and still nothing of the ring's is lit`, nn.aurora && nn.out > 300 && nn.lit === 0, nn);
+const nd = await page.evaluate(() => { const S = WONDERS.northlight; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:northlight').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'northlight').length }; });
+check('2.5 km off it is dropped, its solids and steps with it', nd.gone && nd.sol === 0 && nd.plats === 0, nd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
