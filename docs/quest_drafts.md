@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 50, 18 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 51, 19 Nov: no new calls on the page)
 
 ---
 
@@ -7245,3 +7245,153 @@ And if the player talks to him later that day:
 - **`83-world-generator.js`** (`makeDef`'s topics): **Who holds the arrow?** / **the ring?** / **the seal?** while `festChampionNow(site)` is non-null, answered from `FEST_YEAR.champ`, `{name}` and the year from its record, *still held* when its year is not this year and `festivalState` is `'thin'` or `'none'`.
 - **Saved state:** nothing new. `festChampions` and `firstSnow` are the world's and saved; the named year reads `st.freed` and favour, both saved. The once-a-day family line keeps no record (a greeting, as the feasts' are).
 - **Tests:** `tests/feasts` gains: a thin Greening greets with its line; a burned town on Riverfair's day greets with grief and an occupied one with war; a named Markish town's reeve says the garrison line after `liberate`; a townsperson's **Who holds the ring?** answers with the town's champion before you win and with *You.* after a won ring.
+
+## What a Gate Keeps — the armillaries' names, the Crown's and the Prior's words, and the delvers' eight journals
+
+*Unapproved. Drafted 19 Nov 2026.* Owed by the build sheet for Michael's C on #1092 (`docs/design/what-a-gate-keeps-build.md`): "A relic here is a working name: **an arc of a Maker's armillary** … Its true names and its words belong to the quest writer"; the delver's journal is "one of 8 from the quest writer, by seed, naming the gate's danger in his words; until written, *The pages are stuck together with damp.*"; and the sheet's UI line, "the six armillaries in the Journal's *Things not yet yours*". The systems builder has built the arcs, the join, the compass and the crystal (Sessions 2370–2376) and waits on these words for the Crown's and the Prior's roads (its posts of 18 Nov). Nothing here changes a rule of the sheet's; three places where it is silent are read the plain way and marked **Rule read**.
+
+**What the canon gives, and where it is silent.**
+- §1.1: the Gatelands' gates are "royal property", and their salvage is "a salvage economy of adventurers, rubbings and relics that the Crown licenses and taxes". The Crown's claimant speaks as the Gate-Blade's did (*The Makers' Things*, built S790), by proverb, and its rolls write in the Crown's Norman French (*la Lame du Seuil*).
+- §1.3: to the Compact a gate is "the Weaver's loom; to clear one is to unpick it", and "gate-grubbing" is sacrilege. The Church buys relics to burn (*The Aurennais Register*'s rumour 6, built). The Prior speaks formally and never swears. The French register is dropped for Aurenne (Michael, 12 Oct), so the Church gives the thing no rolls name at all: it enters it as *an instrument of the loom*, which is also its doctrine (§3.1: touching is permitted, understanding is not).
+- §1.2: the Mark's gates "belong to whoever holds them". No claimant; a counter pays 150 (the sheet).
+- §3.1: the Clearing. *The Root* (unapproved) has a room called the Count that shows "something was being counted, gate by gate". The armillary is the same instrument at a gate's scale. Nobody here says what it counted. The Old Blood hermit comes nearest, and stops.
+- §3.3 and §2: the Old Blood answer with the older name for the thing, and an Old Blood touch reads at Comprehension. One journal is an Old Blood delver's, and that is how he dies: of the Cold, not of the room.
+- §5 and Michael's 12 Oct note: a failing gate's foes have "extra limbs and broken anatomy, still glowing only at its seams"; a catastrophic gate's are "larger and unbound". The journals describe them, never name them.
+- §2.1: every slur is contradicted somewhere by a named person. One Aurennais delver went into a gate for the money and says so (*gate-grubbers*), and a Markman's two friends kept faith with him.
+- *Silent: who the delvers were.* The plainer thing: people with a licence and a lamp, no famous names, no chosen one, no hidden order. Each signs with a first name, as a man does who expects to be found by someone who knew him.
+- *Silent: what the armillary is called by each people.* The true names are the tools' pattern (*Eochair na Cloiche*, the Stone's key): *Cruinne*, a round (the Irish word for a sphere, and for the world), with the school's genitive. The common name is the game's own, *Tine's armillary*, as built.
+
+### 1. The six names
+
+| School | True name (the Old Blood's) | Gloss | The Crown's rolls |
+|---|---|---|---|
+| Tine | *Cruinne na Tine* | the Fire's round | *la Sphère du Feu* |
+| Uisce | *Cruinne an Uisce* | the Water's round | *la Sphère de l'Eau* |
+| Gaoth | *Cruinne na Gaoithe* | the Wind's round | *la Sphère du Vent* |
+| Cloch | *Cruinne na Cloiche* | the Stone's round | *la Sphère de la Pierre* |
+| Scáth | *Cruinne an Scátha* | the Shadow's round | *la Sphère de l'Ombre* |
+| Solas | *Cruinne an tSolais* | the Light's round | *la Sphère de la Lumière* |
+
+The item names stay as built: *Arc of Tine's armillary*, *Tine's armillary*, *Broken arc (Tine)*. Below, `{true}`, `{gloss}` and `{rolls}` are a school's row; `{School}` is `schoolName(school)`.
+
+### 2. The things' words (their descriptions in the bag)
+
+**An arc** (`arcItem`'s `desc`):
+- *A third of a ring of bronze, cut on its inner face with script too fine to follow. It is a piece of something that turned. The Old Blood call the whole of it {true}, {gloss}.*
+
+**An arc past the third** (the spare, plain salvage):
+- *A third of a ring of bronze, the same as one you have already joined. The rest of this one is somewhere else, or nowhere.*
+
+**The armillary** (`armillaryItem`'s `desc`):
+- *Three rings of bronze, nested, that turn on one another and come to rest, always, with the same mark uppermost. Carried in the open, the mark comes to rest toward a gate of its own. The Crown's rolls call it {rolls}. The Old Blood call it {true}, {gloss}.*
+
+**Joining** (as built: *You set the arcs together.* / *The three arcs close into one: {School}'s armillary.*). No change.
+
+### 3. The Crown — at Coeur de Vie (the Gate-Blade's claimant, the keep's steward; Gatelander)
+
+The topic, while an armillary is carried and not given: **{School}'s armillary.** (one topic for each carried). Its follows: **Give it to the Crown.** · **I'll keep it.** · **Not now.**
+
+- **ask** (the steward, Gatelander): "That's a whole one. The rolls have had {rolls} on them in pieces these sixty years, a third in this lord's hall and a third in that one's, and never yet the three in one hand. The Crown pays four hundred gold for it and enters a service to your name beside the gold, for the Crown remembers who brought it what it lacked. Or keep it. A thing that's whole wants using, and a thing that's used wants watching, so."
+- **Give it to the Crown.**, sworn to no other power: "Four hundred, and a service entered. It'll sit in a room at Coeur de Vie under a cloth, and men in better coats than mine will come and lift the cloth and put it back. That's how the Crown keeps a thing. Not well, but long."
+- **Give it to the Crown.**, sworn to another power (**Rule read**: the sheet gives "one service"; a service cannot go to someone sworn elsewhere, as the Gate-Blade's `gaveSworn`, so the gold is paid and the service is not): "Four hundred, then. The service I can't enter, with your name on another power's roll already. Two masters and the one oath is a cart with a horse at each end of it, and nobody gets to market."
+- **I'll keep it.**: "Keep it, then, by the Weaver. The rolls will say you have it. The rolls say a great deal, and the most of it comes true by the end."
+- **Not now.**: "It'll keep. The Crown waited sixty years for it in pieces. It can wait a while for it in one."
+- The log (on giving): *Gave {School}'s armillary to the Crown, for 400 gold.*
+
+### 4. The Church — the Prior at the Compact's seat (the Shuttle's claimant; Aurennais)
+
+The topic, while an armillary is carried and not given: **{School}'s armillary.** Its follows: **Give it to the Church.** · **I'll keep it.** · **Not now.**
+
+- **ask** (the Prior, Aurennais): "You have brought it whole, Master, which I confess I had not expected. The pieces generally come to us one at a time, carried by people who do not know what they carry, and we buy them to burn. The Church enters such things as instruments of the loom and does not name them further, on principle. I am authorised to enter one service to the Compact in your name in exchange for it. I am not authorised to pay, and I will spare us both the indignity of haggling over a fire."
+- **Give it to the Church.**, sworn to no other power: "Received, Master, and entered. It goes to the furnace under the cathedral tonight. Bronze does not burn, strictly; it runs. The Church has never found the distinction important, and I would not raise it with the furnaceman, who has heard it."
+- **Give it to the Church.**, sworn to another power (**Rule read**, as the Crown's): "Received, Master, and the Church is obliged. The service cannot be entered to someone sworn to another power; the clause is older than either of us. It goes to the furnace all the same. The Church does not burn things by contract."
+- **I'll keep it.**: "As you wish. I would enter only, for the record, that it turns toward its own when you carry it, and that a thing which leads you to the next gate is an invitation, and an invitation is half an act. The Church has said so before. I find I am saying it again, more slowly."
+- **Not now.**: "Of course. The offer stands, as offers do, until one party or the other is no longer in a position to accept it."
+- The log (on giving): *Gave {School}'s armillary to the Church, to be burned.*
+
+### 5. The Mark — a counter
+
+No claimant (the sheet). **Rule read**: an armillary sold at a Markish counter (a trader whose people is `markman`) takes one line in the shop's note, the way the sacrilege note shows in a Prior's town:
+- *Rings. Bronze. Hundred and fifty, aye. Don't care whose.*
+
+### 6. The hermit (Old Blood)
+
+A new entry in the hermit's folder (`MAKERS_HERMIT`), shown while you carry an arc or an armillary, after *The Weaver's?*:
+
+- **The rings?** → "Cruinne. A round. One to each of the six, and each in three pieces now. They kept the count in it. Do not ask me of what. I would have to read it to tell you, and I do not read."
+  - Follow, while you carry a whole one, **It points.** → "It turns toward its own. Let it, or put it in a fire. Nobody has asked it what it wants since they stopped."
+
+### 7. The Journal — *Things not yet yours*
+
+One line a school, from the first arc you find of it (`worldState.relicArcs`), in the order found:
+- 1 or 2 found: *{true}, {gloss}: {n} of 3 pieces. The rest lie on the altars of the Fire's gates.* (the school's English: the Fire's, the Water's, the Wind's, the Stone's, the Shadow's, the Light's)
+- joined and carried: *{true}, {gloss}: whole. The Crown would buy it at Coeur de Vie, and the Church would burn it.*
+- given to the Crown: struck from the list, and the log keeps its line.
+- given to the Church: struck from the list, and the log keeps its line.
+
+### 8. The delvers' eight journals
+
+One journal is chosen for each delver by `seededRng('delver-journal', seed)` from those whose **fits** the gate holds (its condition is `gateCondRoll(seed)`, its spaces `gen.spaces`, its altar's arc `GATE_KEEP_LIE.altar.arc`); a journal marked *any* fits every gate. The vault's delver, when the vaults are built, draws from the same eight. The book is named *A delver's journal* as built; each page below is one page of the reader. The signature ends the last page.
+
+**I. The box** (Gatelander; fits any)
+1. *First day. The licence paid at the lord's table, and a twentieth to the Crown on all I bring up, so. My father said a licence is a fence round a field you don't own. He paid it too.*
+2. *Down past the long hall and the things in it. I'll not write what they were. Writing a thing down is the half of asking it back.*
+3. *The end room. A box on the step, a fine one, with writing round the lid like a ring round the moon. It won't open for knife or bar. There'll be a stone somewhere in this place cut with the same writing; that's how these old ones were built, a lock here and its key in the next parish. I've not found it, and the lamp's low.*
+4. *Lamp's out. I'm sitting by the box. The step is warm. You'd near think it was glad of the company.* — *Cathal*
+
+**II. The friends** (Markman; fits any)
+1. *In at dawn. Three of us. Ulf, Red Osric, me.*
+2. *Lost Ulf in the first hall. He thought the things in here sleep. They don't.*
+3. *Osric went back for help. Said he would. He will.*
+4. *Box won't open. Leg's bad. Waiting. Osric's slow. Always was.* — *Beorn*
+
+**III. The survey** (Aurennais; fits a steady gate)
+1. *Entered at the third hour under the Prior's letter, to survey this gate for sealing. The letter is in my left breast pocket, should anyone require it. I am aware that no one will.*
+2. *The gate is sound. Every span holds and every floor is whole; I have measured the naves and find them true to a finger's width over fifty paces. The Church holds that a sound gate is the Weaver's work kept. I would add, for the record, that it is very well kept, and that what keeps it does not distinguish between a surveyor and a thief.*
+3. *The end chamber. A coffer, closed with script, which I am forbidden to read and therefore have not. An altar. I have entered both in the survey as found and not disturbed.*
+4. *I find I cannot go back the way I came, and I find I am not greatly surprised. The survey is complete but for its last line, which I leave to whoever finds it, with my apologies for the imposition.* — *Menas, clerk to the Prior*
+
+**IV. The holes in the floor** (Gatelander; fits a failing gate)
+1. *The floor's gone in places in the long hall, holes like a mouth with the teeth out. My grandmother would say a house with holes in the floor has a family that won't mend them. There's no family here.*
+2. *It's worse than when I came before. That's the thing nobody up top will believe. A place this old has no business getting older. And the walls are warm, warmer than a cellar has a right to be.*
+3. *Fell. Not far, but the ankle's gone. I can see the way out from here, so. Seeing a road and walking it are two roads.* — *Donnacha*
+
+**V. The seams** (Markman; fits a catastrophic gate)
+1. *Thing in the second hall. Wolf's head. Four arms. Two too many.*
+2. *Seams down its back, lit like a forge through a crack. Hit it there. Worked.*
+3. *Second one bigger. No seams. Didn't work.*
+4. *Floor's more hole than floor. Keep left. Keep left.* — *Hereward. Halfpenny, they call me.*
+
+**VI. The touch** (Old Blood; fits any)
+1. *The stone was warm from the road. I followed the warmth. It is what we do.*
+2. *I did not read the walls. I touched them, as is allowed. With us the touch reads for us. That was always the trouble.*
+3. *They kept the count here. An Comhaireamh. I will not ask of what.*
+4. *Cold now. Not the room.* — *Cúán*
+
+**VII. The arc on the altar** (Gatelander; fits a keep whose altar holds an arc)
+1. *There's a piece of bronze ring on the altar in the end room, a third of a ring, the way a quarter moon is a piece of the moon. Worth more than the rest of the place together, I'd say.*
+2. *I'll not take it. You don't take from a grave what the grave's still holding, my mother said, and she said it at enough wakes to know.*
+3. *Took it. Put it back. Took it. Put it back. The things in the hall don't mind either way, I notice. It's only me minds.* — *Eoin*
+
+**VIII. The gulf** (Aurennais; fits a failing or catastrophic gate with a chasm)
+1. *I record, against the day my family asks, that I came here for money and not for faith. My cousin at the Prior's table would wish me to say otherwise. I will not lie in a ledger.*
+2. *There is a gulf in the middle of this gate that the bridge does not entirely cross. Where it fails, stones hang in the air, each a stride from the next, and do not fall. I crossed on them. I note that they did not object, and that I did.*
+3. *The rope I brought for the gulf is at my camp, unused. A contract one does not need is still worth having signed.* — *Tarek*
+
+### Register and canon, checked
+- Gatelanders (the steward, Cathal, Donnacha, Eoin): proverbs and indirection (*a licence is a fence round a field you don't own*; *two masters and the one oath*; *you don't take from a grave what the grave's still holding*), no bare yes or no, the Weaver's oath once (*by the Weaver*).
+- Markmen (Beorn, Hereward, the counter): short sentences, *aye*, nicknames (*Red Osric*, *Halfpenny*), no honorific, no oath needed.
+- Aurennais (the Prior, Menas, Tarek): formal, *Master*, qualifiers (*I confess*, *strictly*, *I find*), contract and ledger metaphors (*for the record*, *a contract one does not need*, *a clause older than either of us*), never an oath.
+- Old Blood (the hermit, Cúán): sparing, exact, the older word (*Cruinne*, *An Comhaireamh*), no explanation.
+- Slurs: none spoken. *Gate-grubbers* is contradicted without being said: an Aurennais went in for money and wrote it down honestly, and another went in under the Church's own letter. *The unlettered* is contradicted by Beorn, who writes.
+- No chosen one: nobody here applies the three descriptions to anyone. The Clearing is never stated; *the count* is said and left.
+- The facts: a coffer shut until the gate's carving is touched (I: *a lock here and its key in the next parish*), a failing gate's gaps and a catastrophic one's doubled (IV, V), the floating stones over a gone span (VIII), the failing and catastrophic forms (V), one arc to an altar in a keep and three to an armillary (§2, VII), the Crown's 400 and a service, the Church's service and the fire, the Mark's 150, the compass within 2,600 m (*comes to rest toward a gate of its own*): all the sheet's, none changed.
+
+### What in the code would carry it
+- **`68-dungeon-misc.js`** (the systems builder's file; these are its words): `DELVER_JOURNALS`, eight records `{id, fits, pages}` with `fits` one of `'any'`, `'steady'`, `'failing'`, `'catastrophic'`, `'arc'`, `'chasm'` (failing or catastrophic and a `chasm` space); `gateDelverItems` picks one by `seededRng('delver-journal', portal.seed)` among those that fit and makes the book from `BOOKS` entries `delver_journal_1`…`_8` (the placeholder `delver_journal` stays for a save that holds one). `arcItem`, the spare and `armillaryItem` take §2's `desc`; a table `ARMILLARY_NAMES` by school gives `{true, gloss, rolls, of}` (*of*: the Fire's, …).
+- **`87-world-quests.js`**: `armillaryCrownTopics(site)` beside `crownBladeTopics` (the Crown's seat, any carried armillary not given), `armillaryChurchTopics(site)` beside `churchShuttleTopics` (the Compact's seat); both call the sheet's named action `yieldArmillary(school, to)`, which the systems builder writes (the gold, `giftServices`, the bag, `worldState.relicArcs.given[school]`, the log). The lines in `ARMILLARY_CROWN` and `ARMILLARY_CHURCH`, shaped as `CROWN_BLADE` and `CHURCH_SHUTTLE`. `MAKERS_HERMIT` gains *The rings?* and its follow. The castle's `_extraFn` in `83-world-generator.js` adds the two topic functions beside the blade's and the shuttle's.
+- **`66-hub.js`**: *Things not yet yours* reads `relicArcs` for §7's lines.
+- **`60-shop.js`**: the Markish counter's note in §5, beside `sacrilegeNote`.
+- **Saved state:** `worldState.relicArcs` (the character's, in `SS_CHAR_WS` and the S242 list, as built) gains `given: {school: 'crown' | 'church'}`. The journal's pick is by seed and keeps no record. Nothing else new.
+- **Tests:** `tests/gatekeep` gains: a delver's book has pages from one of the eight and a steady gate never holds IV, V or VIII; `relicarc` (the sheet's) gains: the Crown's topic at the seat with an armillary, *Give it to the Crown.* pays 400 and enters a service, the Prior's burns it and enters one, *I'll keep it.* keeps it, and the journal's line follows each.
+- **Who builds:** the quest writer, the words (the journals' table, the descriptions, the topics and the hermit's entry) once approved; the systems builder, `yieldArmillary` and the shop's note, as its sheet's session 6.
