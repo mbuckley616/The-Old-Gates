@@ -22,7 +22,8 @@ function dBlkF(x,z){return dBlk(x,z)||dIceHit(x,z);}
 // on this floor; dFoeIce sets a gate foe's baseY on it each tick (its floor's own height kept as _floorY). dBlkF stays for the slime's split.
 function dIceLift(x,z){for(let i=0;i<GATE_THINGS.length;i++){const t=GATE_THINGS[i];if(t.kind!=='pool'||!t.frozen||(t.floor&&t.floor!==currentFloor))continue;if((x-t.x)*(x-t.x)+(z-t.z)*(z-t.z)<t.R*t.R)return GT_POOL.ICE;}return 0;}
 function dFoeIce(e){if(!GATE_THINGS.length&&e._floorY==null)return;if(e._floorY==null)e._floorY=e.baseY||0;e.baseY=e._floorY+dIceLift(e.x,e.z);}
-function dSlide(x,z,dx,dz){if(!dBlk(x+dx,z+dz))return[x+dx,z+dz];if(!dBlk(x+dx,z))return[x+dx,z];if(!dBlk(x,z+dz))return[x,z+dz];return[x,z];}
+function dSlide(x,z,dx,dz){const B=(a,b)=>dBlk(a,b)||(typeof stairHoleBlocks==='function'&&stairHoleBlocks(x,z,a,b)); /* S2425 — an opened stair's hole is a wall to a foe (68) */
+  if(!B(x+dx,z+dz))return[x+dx,z+dz];if(!B(x+dx,z))return[x+dx,z];if(!B(x,z+dz))return[x,z+dz];return[x,z];}
 // S1327 (card F5, condition) — your own step in a gate: a chasm's open air (8) is no wall to you, as it is to a foe. Over it with no
 // stone under you the ground is the pit's floor, GATE_PIT down (dPitBase), so you fall, and 25 m kills (FALL_PER). Once you are
 // below the floor over the air, the pit's sides are walls: you cannot climb out through the rock.
