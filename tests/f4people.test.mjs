@@ -383,8 +383,11 @@ const fcape = await page.evaluate(() => { const root = buildNPCMesh({ role: 'For
   const P = HB.makePerson(r.hbG, { hoodStats: false }); P.root.updateMatrixWorld(true); const cl = P.root.getObjectByName('cloak'), cb = P.root.getObjectByName('crossbow'), n = new THREE.Vector3(), v = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(n);
   if (!cl || !cb) return { cloak: !!cl, crossbow: !!cb }; const bb = new THREE.Box3().setFromObject(cb), pa = cl.geometry.attributes.position; let fwd = -1, inBox = 0;
   for (let i = 0; i < pa.count; i++) { v.fromBufferAttribute(pa, i).applyMatrix4(cl.matrixWorld); fwd = Math.max(fwd, v.z - n.z); if (bb.containsPoint(v)) inBox++; }
-  return { cloak: true, crossbow: true, fwd: +fwd.toFixed(3), inBox, out: P.cloak.through ? P.cloak.through.out : null }; });
-check('the forester\'s cape opens on the crossbow\'s side: under 0.32 m in front of his neck, under 60 of its points in the crossbow\'s box, none of him through it', fcape.cloak && fcape.crossbow && fcape.fwd < .32 && fcape.inBox < 60 && fcape.out === 0, fcape);
+  const RR = pa.count / 56, st = []; for (let k = 0; k < 56; k++) st.push(new THREE.Vector3().fromBufferAttribute(pa, k * RR).applyMatrix4(cl.matrixWorld)); let gap = 0;
+  for (let k = 1; k < 56; k++) if (Math.abs(Math.atan2(st[k].x - n.x, -(st[k].z - n.z))) < 1.2) gap = Math.max(gap, st[k].distanceTo(st[k - 1]));
+  return { cloak: true, crossbow: true, fwd: +fwd.toFixed(3), inBox, out: P.cloak.through ? P.cloak.through.out : null, gap: +gap.toFixed(3) }; });
+// S2399: its back laid by length like every other cape's, past the open side: the widest gap between neighbouring columns over the back was 7.2 cm, now 3.9
+check('the forester\'s cape opens on the crossbow\'s side: under 0.32 m in front of his neck, under 60 of its points in the crossbow\'s box, none of him through it, its back columns under 5.5 cm apart', fcape.cloak && fcape.crossbow && fcape.fwd < .32 && fcape.inBox < 60 && fcape.out === 0 && fcape.gap < .055, fcape);
 check('the Church\'s inquisitor wears the white tabard over mail with the red shuttle on it (nothing of the body through it) and a white hood, white far off', office.inquisitor.mail && office.inquisitor.tabard && office.inquisitor.sign > 100 && office.inquisitor.out === 0 && office.inquisitor.tested > 1000 && office.inquisitor.hood && office.inquisitor.far > .8, office.inquisitor);
 // S2260 (#1566 B, dressed by rank, nation by nation): the head of a town by its well (`_lord`) wears the concept artist's sheet for the
 // office, whatever the roll; a guard captain who is not the town's head is still a guard
