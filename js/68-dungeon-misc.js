@@ -1169,7 +1169,7 @@ function secretWrong(S){if(S.said)return;S.said=true;showMsg('The stone does not
 // open for good. It holds a chest at the floor's own tier (#1757's B, built until it is answered): a mechanism is its own find.
 const SLIDE_LEAN_R=4,SLIDE_AIR_R=2,SLIDE_LEAN=.35,SLIDE_PALE=.15,SLIDE_S=1.2,SLIDE_DUST=14;
 const SLIDE_AIR={on:false};
-function slideBuild(t,rec,grp,y,cx,cz,opened){const Hc=DCELL/2,x=cx+t.dc*(Hc-.25),z=cz+t.dr*(Hc-.25),h=Math.min(FLOOR_HEIGHT,6);
+function slideBuild(t,rec,grp,y,cx,cz,opened){const Hc=DCELL/2,x=cx+t.dc*(Hc+.25),z=cz+t.dr*(Hc+.25),h=Math.min(FLOOR_HEIGHT,6); /* just past the mouth's edge, its face flush with the wall line */
   const sh=dScene.children.find(o=>o.userData&&o.userData.dunShell==='walls'),wm=sh&&sh.material&&!Array.isArray(sh.material)?sh.material:rec.mat;
   const m=new THREE.Mesh(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),wm);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;rec.mat=wm;
   const pm=wm.clone();pm.color=wm.color.clone().multiplyScalar(1+SLIDE_PALE);rec.paleMat=pm; /* the pale stone: the wall's own stone (its texture too), 15% lighter */
