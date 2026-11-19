@@ -1115,6 +1115,7 @@ function loop(now){
       // End-of-flight: life expired OR hit geometry. Caor Mastery detonates on wall or floor impact — solid contact of any kind.
       // Life expiry does NOT detonate — out-of-energy embers fizzle silently.
       {
+        if(typeof liftVaneHit==='function'&&liftVaneHit(fb)){dScene.remove(fb);BALLS.splice(i,1);continue;} /* S2418 — Séideán into a lift's vane (68-dungeon-misc.js) */
         const hitWall=dSolid(fb.position.x,fb.position.z);
         const groundY=currentFloor===2?FLOOR2_Y:0;
         const hitGround=fb.position.y<=groundY;
@@ -1581,6 +1582,9 @@ function loop(now){
     const iprEl=document.getElementById('ipr');
     /* S1671 — the prompt names what E does: interact()'s order, the knot first and the way out after a chest, a cot, the forge and a barrel */
     if(typeof slideStoneNear==='function'&&slideStoneNear()){iprEl.textContent="Press 'E' on the pale stone";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2409 — a sliding wall */
+    else if(typeof stairSlabNear==='function'&&hasPick()&&stairSlabNear()){iprEl.textContent=STAIR_PRY&&STAIR_PRY.rec===stairSlabNear()?"Working the slab · E to stop":"Press 'E' to prise up the slab with the pick";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2416 — a hollow slab */
+    else if(typeof sluiceWheelNear==='function'&&sluiceWheelNear()){iprEl.textContent=SLUICE_TURN&&SLUICE_TURN.rec===sluiceWheelNear()?'Turning the wheel':"Hold 'E' to turn the wheel";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2417 — a sluice */
+    else if(typeof liftLeverNear==='function'&&liftLeverNear()){iprEl.textContent=LIFT_HOLD&&LIFT_HOLD.rec===liftLeverNear()?'Winding the lever':"Hold 'E' to wind the lever";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2418 — a lift */
     else if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
     else if(typeof gateAltarNear==='function'&&(gateAltarNear()||gateVeinNear())){iprEl.textContent=gateAltarNear()?"Press 'E' to take the arc":(gateVeinLeft(gateVeinNear())>0?"Press 'E' to cut the crystal":'The crystal is all cut out');iprEl.style.opacity='1';iprEl.style.display='block';} /* S2371 */
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
