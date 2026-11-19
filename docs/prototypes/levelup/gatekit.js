@@ -67,8 +67,13 @@ function gkMats(school, cond) {
   M.script = em(glyphTex(), gk); M.ring = em(ringTex(), gk); M.dead = new THREE.MeshStandardMaterial({ color: new THREE.Color(.06, .055, .05), roughness: .9, map: glyphTex() });
   M.crack = new THREE.MeshStandardMaterial({ color: new THREE.Color(.012, .01, .01), roughness: 1 });
   M.seam = new THREE.MeshStandardMaterial({ color: new THREE.Color(.1, .04, .2), emissive: new THREE.Color(...VIOLET), emissiveIntensity: 1.1, roughness: .4 });
+  M.cut = cutMat(col, glyphTex()); M.cutRing = cutMat(col, ringTex());
   return (MATS[k] = M);
 }
+// Session 2425: the script and the sigil cut dead into the stone (a piece built with o.cut): only the glyphs' strokes are drawn, the stone
+// in shadow at the groove's floor, and the face shows through round them. The dead plate (near black, under every glyph's quad) read by
+// day as a black hole in the stone: a 6.5 m square on each of the Drowned Spires (S2419)
+export function cutMat(col, tex) { return new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(.2), alphaMap: tex, alphaTest: .3, roughness: .95, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }); }
 
 // ── geometry ──
 // a box of stone (centred at x, y, z) shrunk by a joint, its UVs from position so the ashlar keeps its size
@@ -243,7 +248,7 @@ function condition(P, cond, key) {
       st.moved++; }
     // the lean applies to all that still stands on the piece (and to the seats of what has left it)
     const ML = kind === 'fallen' ? M : M.clone().premultiply(L);
-    for (const p of b.parts) { const g = p.geo.clone().applyMatrix4(ML); out.push({ key: (p.key === 'script' || p.key === 'ring') && (kind === 'fallen' || P.ruin) ? 'dead' : p.key === 'script' && cond === 'cracked' && r() < .33 ? 'dead' : p.key, geo: g }); }
+    for (const p of b.parts) { const g = p.geo.clone().applyMatrix4(ML); const dead = (p.key === 'script' || p.key === 'ring') && (kind === 'fallen' || P.ruin) || p.key === 'script' && cond === 'cracked' && r() < .33; out.push({ key: !dead ? p.key : !P.cut ? 'dead' : p.key === 'ring' ? 'cutRing' : 'cut', geo: g }); }
     if (cond === 'cracked' && b.parts[0].key !== 'dress' && r() < .3) for (const g of crack(r, b)) { out.push({ key: 'crack', geo: g.applyMatrix4(ML) }); st.cracks++; }
     if (seat && !P.ruin) { // the seat it left: a thin violet plate on what it stood on, and one under the stone if it floats
       const bb = b.box, w = bb.max.x - bb.min.x - .08, d = bb.max.z - bb.min.z - .08, g = new THREE.BoxGeometry(Math.max(.05, w), .05, Math.max(.05, d)); g.translate(b.c.x, b.flat ? bb.min.y + .03 : bb.min.y + .03, b.c.z); out.push({ key: 'seam', geo: g.applyMatrix4(L) }); st.seams++;
@@ -253,11 +258,11 @@ function condition(P, cond, key) {
 
 export function gatePiece(kind, o = {}) {
   const cond = GK_CONDS.includes(o.cond) ? o.cond : 'whole', school = GK_SCHOOLS[o.school] ? o.school : 'cloch', key = o.key || `gatekit:${kind}`;
-  const P = BUILD[kind](o); P.ruin = !!o.ruin; if (typeof o.ground === 'number') P.ground = o.ground; /* Session 2389: where a fallen stone comes to rest, in the piece's frame (the drowned spires' bed, far under the piece's foot) */ const { parts, st } = condition(P, cond, key), M = gkMats(school, cond), by = {};
+  const P = BUILD[kind](o); P.ruin = !!o.ruin; P.cut = !!o.cut; /* Session 2425: dead script cut into the stone, not a dark plate */ if (typeof o.ground === 'number') P.ground = o.ground; /* Session 2389: where a fallen stone comes to rest, in the piece's frame (the drowned spires' bed, far under the piece's foot) */ const { parts, st } = condition(P, cond, key), M = gkMats(school, cond), by = {};
   for (const p of parts) { const g = p.geo.index ? p.geo.toNonIndexed() : p.geo; for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
     if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); (by[p.key] ||= []).push(g); }
   const G = new THREE.Group(); let tris = 0, calls = 0;
-  for (const k in by) { const geo = mergeGeometries(by[k]), m = new THREE.Mesh(geo, M[k]); m.castShadow = o.shadow !== false && !['script', 'ring', 'seam', 'crack', 'dead'].includes(k); m.receiveShadow = true; m.userData.key = k; G.add(m); tris += geo.attributes.position.count / 3; calls++; }
+  for (const k in by) { const geo = mergeGeometries(by[k]), m = new THREE.Mesh(geo, M[k]); m.castShadow = o.shadow !== false && !['script', 'ring', 'seam', 'crack', 'dead', 'cut', 'cutRing'].includes(k); m.receiveShadow = true; m.userData.key = k; G.add(m); tris += geo.attributes.position.count / 3; calls++; }
   G.userData = { kind, cond, school, key, tris: Math.round(tris), calls, blocks: P.bl.length, ...st, size: P.size };
   return G;
 }
