@@ -1482,3 +1482,74 @@
     col.needsUpdate=true;
   }
   function snowPaintRibbons(){for(let i=_ribbons.length-1;i>=0;i--){const g=_ribbons[i];if(!g.attributes||!g.attributes.color){_ribbons.splice(i,1);continue;}snowPaintRibbon(g);}}
+  // S2405 — the Lamps on the Water on the ebb (Michael's B on #1699: "a soft glow on the water under each lamp"; the prototype is
+  // docs/prototypes/levelup/lamps.js, S2352; *Festivals on the Calendar, III* §4; the lampseller and the ledger are the systems builder's,
+  // S2347, 87-world-quests.js). In a port keeping the Lamps, from the ledger at dusk (LAMPW_DUSK) to the seller's close (LAMPW_CLOSE), a lamp
+  // goes onto the water every LAMPL.every game minutes beside the quay, on the side away from the breakwater, and the ebb takes it out toward
+  // the harbour mouth (36 m past the quay's end, or the first land on the way), slowing as it goes so the line never passes the mouth: one for
+  // each hull at sea (seededRng('lampline', site and year), 10 to 16), then yours if you set one this year, then the hulls the ledger strikes
+  // (lampsStruck), which go last. Each lamp is the prototype's: a pine board a hand across, Aurenne's clay lamp and its flame, a glow on the
+  // water 1.4 m across under it and its reflection, a streak toward the eye that lengthens with the distance
+  // (×1 to ×4 long from 12 m to 48 m, as a glitter path does at a grazing angle; the game's moonlit water is brighter than the prototype's). Four instanced meshes for the whole line (body, flame, glow,
+  // streak), no lights. Placed by the clock, never the frame count; it floats on the sea shader's own waves (seaSurfAt), the board 2.5 cm
+  // proud and the glow 6 cm over the surface so the water's depth never cuts it. Cosmetic only.
+  const LAMPL={every:3,ebb:.8,wander:.6,pool:1.4,streak:2.6,side:11,out:36,max:24,near:320};
+  let LAMPLINE=null; /* {key, site, n, order, g, body, flame, pool, streak, ox, oz, dx, dz, L, lamps:[{w0,rot,ph}]} */
+  // the sea's height at (x,z) as the water mesh draws it: the vertex shader's four sines at the grid's corners, read on its own triangles
+  function seaSurfAt(x,z){if(typeof water==='undefined'||!water)return SEA_Y;const sh=water.material&&water.material.userData.shader,t=sh?sh.uniforms.uTime.value:0;
+    const P=water.geometry.parameters,sw=P.width/P.widthSegments,sd=P.height/P.heightSegments,u=(x-water.position.x+P.width/2)/sw,v=(z-water.position.z+P.height/2)/sd;
+    const ix=Math.floor(u),iy=Math.floor(v),fu=u-ix,fv=v-iy,X=i=>water.position.x-P.width/2+i*sw,Z=j=>water.position.z-P.height/2+j*sd;
+    const H=(i,j)=>{const a=X(i),b=Z(j);return Math.sin(a*.11+t*1.1)*.13+Math.sin(b*.08-t*.8)*.11+Math.sin((a+b)*.05+t*.5)*.08+Math.sin(a*.31-b*.23+t*1.9)*.04;};
+    const ha=H(ix,iy),hb=H(ix,iy+1),hc=H(ix+1,iy+1),hd=H(ix+1,iy);
+    return water.position.y+(fu+fv<=1?ha+fu*(hd-ha)+fv*(hb-ha):hc+(1-fu)*(hb-hc)+(1-fv)*(hd-hc));}
+  // where the line runs: from the first water 0.6 m deep beside the quay's start out toward the mouth, stopped by land
+  function lampLinePath(s){const sd=typeof shoreDir==='function'&&shoreDir(s);if(!sd)return null;const q=quayLine(s,sd,1.1),qx=sd.dz,qz=-sd.dx;
+    let x=q.startX+qx*LAMPL.side,z=q.startZ+qz*LAMPL.side,n=0;while(worldH(x,z)>SEA_Y-.6&&n<60){x+=sd.dx*2;z+=sd.dz*2;n++;}if(n>=60)return null;
+    const want=(q.endX-x)*sd.dx+(q.endZ-z)*sd.dz+LAMPL.out;let L=0;while(L<want&&worldH(x+sd.dx*(L+2),z+sd.dz*(L+2))<SEA_Y-.4)L+=2;
+    return L<20?null:{ox:x,oz:z,dx:sd.dx,dz:sd.dz,L};}
+  // who the lamps are for, in the order they go in: the hulls at sea, yours, then the struck
+  function lampLineOrder(s,year){const r=seededRng('lampline',s.id+':'+year),sea=10+Math.floor(r()*7),mine=typeof festActDone==='function'&&festActDone('lamps',s,year)?1:0,
+    struck=typeof lampsStruck==='function'?lampsStruck(s,year).length:0,o=[];for(let i=0;i<sea;i++)o.push('sea');if(mine)o.push('mine');for(let i=0;i<struck;i++)o.push('struck');
+    return o.slice(0,LAMPL.max);}
+  let _lampGlowTex=null;
+  function lampGlowTex(){if(_lampGlowTex)return _lampGlowTex;const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),gr=x.createRadialGradient(64,64,0,64,64,64);
+    gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.12,'rgba(255,255,255,.55)');gr.addColorStop(.4,'rgba(255,255,255,.14)');gr.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=gr;x.fillRect(0,0,128,128);
+    return _lampGlowTex=new THREE.CanvasTexture(c);}
+  function lampLineBuild(s,year,path){const g=new THREE.Group();g.position.set(path.ox,0,path.oz);g.userData.lampLine=true;
+    const bowl=new THREE.LatheGeometry([[.001,0],[.03,0],[.045,.008],[.05,.022],[.046,.036],[.03,.042],[.012,.044],[.01,.038],[.001,.036]].map(([a,b])=>new THREE.Vector2(a,b)),14);
+    const noz=new THREE.CylinderGeometry(.012,.016,.055,8);noz.rotateZ(Math.PI/2);
+    const bodyGeo=mergeParts([{geo:new THREE.BoxGeometry(.24,.03,.17),color:new THREE.Color(0x8c6b47),y:.005},{geo:bowl,color:new THREE.Color(0x995233),x:-.02,y:.02},{geo:noz,color:new THREE.Color(0x995233),x:.045,y:.042}]);
+    const fl=new THREE.ConeGeometry(.009,.035,8);fl.translate(0,.0175,0);
+    const flameGeo=mergeParts([{geo:fl,color:new THREE.Color(0xffc76b),x:.074,y:.05},{geo:new THREE.SphereGeometry(.006,6,4),color:new THREE.Color(0xfff2cc),x:.074,y:.056}]);
+    const poolGeo=new THREE.PlaneGeometry(LAMPL.pool,LAMPL.pool);poolGeo.rotateX(-Math.PI/2);
+    const stGeo=new THREE.PlaneGeometry(.28,LAMPL.streak);stGeo.rotateX(-Math.PI/2);
+    const glow=(c,o)=>new THREE.MeshBasicMaterial({map:lampGlowTex(),color:c,transparent:true,opacity:o,depthWrite:false,fog:false}); /* plain blending, not the prototype's additive: on the game's moonlit cyan water an added orange washes out white */
+    const mk=(geo,mat,ro)=>{const m=new THREE.InstancedMesh(geo,mat,LAMPL.max);m.count=0;m.frustumCulled=false;m.renderOrder=ro;m.castShadow=false;m.receiveShadow=false;g.add(m);return m;};
+    const order=lampLineOrder(s,year),r=seededRng('lampline:w',s.id+':'+year);
+    const L={key:s.id+':'+year,site:s,year,order,n:order.length,g,...path,
+      body:mk(bodyGeo,new THREE.MeshLambertMaterial({vertexColors:true}),0),flame:mk(flameGeo,new THREE.MeshBasicMaterial({vertexColors:true}),0),
+      pool:mk(poolGeo,glow(0xffa24a,.7),2),streak:mk(stGeo,glow(0xffb45a,.55),3),lamps:order.map(()=>({w0:(r()-.5)*.2,rot:r()*6.28,ph:r()*6.28}))};
+    sc.add(g);return L;}
+  function lampLineOut(){const L=LAMPLINE;if(!L)return;sc.remove(L.g);L.g.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});LAMPLINE=null;}
+  // where lamp i is at m game minutes past dusk: its distance out (s), its drift to the side (w); null before it goes in
+  function lampLineAt(L,i,m){const gone=(m-i*LAMPL.every)*LAMPL.ebb;if(gone<0)return null;const s=L.L*(1-Math.exp(-gone/L.L));
+    return {s,w:Math.sin(s*.35+i*1.7)*LAMPL.wander*Math.min(1,s/4)+L.lamps[i].w0};}
+  const _llM=new THREE.Matrix4(),_llQ=new THREE.Quaternion(),_llE=new THREE.Euler(),_llP=new THREE.Vector3(),_llS=new THREE.Vector3(1,1,1),_llS2=new THREE.Vector3();
+  function lampLineNear(){if(typeof SETTLE==='undefined')return null;let best=null,bd=LAMPL.near;for(const S of SETTLE.values()){const s=S.site;if(!s||s.kind!=='port')continue;
+    const d=Math.hypot(px-s.x,pz-s.z);if(d<bd){bd=d;best=s;}}return best;}
+  function tickLampLine(){const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())&&typeof lampsOn==='function';
+    const s=on?lampLineNear():null,mins=worldState.gameTimeMinutes;
+    const h=s&&isleAt(s.x,s.z)==='aurenne'&&lampsPort(s)&&mins>=LAMPW_DUSK*60?lampsOn(s):null;
+    if(!h){lampLineOut();return;}
+    const year=calDay(absMin()).year;
+    if(LAMPLINE&&(LAMPLINE.key!==s.id+':'+year||LAMPLINE.n!==lampLineOrder(s,year).length))lampLineOut();
+    if(!LAMPLINE){const path=lampLinePath(s);if(!path)return;LAMPLINE=lampLineBuild(s,year,path);}
+    const L=LAMPLINE,m=mins-LAMPW_DUSK*60,sx=L.dz,sz=-L.dx,ex=CAM.position.x,ez=CAM.position.z,t=performance.now()*.001;let k=0;
+    for(let i=0;i<L.n;i++){const a=lampLineAt(L,i,m);if(!a)break;const lx=L.dx*a.s+sx*a.w,lz=L.dz*a.s+sz*a.w,wx=L.ox+lx,wz=L.oz+lz,y=seaSurfAt(wx,wz),lp=L.lamps[i];
+      _llE.set(Math.sin(t*.9+lp.ph)*.04,lp.rot,Math.sin(t*.7+lp.ph*1.3)*.04);_llQ.setFromEuler(_llE);_llP.set(lx,y+.025,lz);_llM.compose(_llP,_llQ,_llS);
+      L.body.setMatrixAt(k,_llM);L.flame.setMatrixAt(k,_llM);
+      _llQ.identity();_llP.set(lx+Math.cos(lp.rot)*.07,y+.06,lz-Math.sin(lp.rot)*.07);_llM.compose(_llP,_llQ,_llS);L.pool.setMatrixAt(k,_llM);
+      let ddx=ex-wx,ddz=ez-wz;const dl=Math.hypot(ddx,ddz)||1;ddx/=dl;ddz/=dl;_llE.set(0,Math.atan2(ddx,ddz),0);_llQ.setFromEuler(_llE);
+      const sl=Math.min(4,Math.max(1,dl/12)),sw=Math.min(2.5,Math.max(1,dl/25));_llS2.set(sw,1,sl);
+      _llP.set(lx+ddx*LAMPL.streak*.45*sl,y+.065,lz+ddz*LAMPL.streak*.45*sl);_llM.compose(_llP,_llQ,_llS2);L.streak.setMatrixAt(k,_llM);k++;}
+    for(const M of [L.body,L.flame,L.pool,L.streak]){M.count=k;M.instanceMatrix.needsUpdate=true;}}
