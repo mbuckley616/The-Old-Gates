@@ -651,3 +651,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing; main is green on every PR.
 
 **Roadmap.** 338 of 438 stories done (337 of 433 on 17 Nov). The new look is 7 of 18; only F14 is left for deep work.
+
+## 19 Nov 2026
+
+**Waiting on you.** Three decisions: the Scarred Gate, spent or still waking (#1754, A recommended); what a gate's secret holds (#1757, B); the Hollow Below's door (#1761, A). No merge waits for you.
+
+**Landed on main since 18 Nov.** Your seven answers of last night written, and three already built: spells as keys begun, the seals laid and opened by their six words, each holding a chest (Systems 2403, 2405); an arrow flies until it lands, up to 8 s (Systems 2392, 2402); the Lamps on the Water on the ebb in Aurennais ports (Look 2406). Four more Weaver ruins prototyped: the Drowned Spires, the Northlight Altar, the Scarred Gate, the Hollow Below (Look 2389, 2395, 2398, 2401). Capes laid evenly across the back and close over a bib or the breast (Bodies 2393, 2399, 2404, 2407); the tabard's mail fixed front and back (Bodies 2384, 2390); no children at play in a burned or sick town (Bodies 2397). QA timed twelve suites and re-measured the budgets (QA 2394, 2400). The critic played the five ruins and the ring. Build s1745.
+
+**Under way.** No PR open. Next: the look builder's Drowned Spires in the game (#1737 B), spells as keys session 3 (the sliding wall, the hollow stair), the travellers' faces (#1704 B).
+
+**Blocked.** The inn's hall +15% draw calls from the clay oven (look builder). The weekly run of 15 Nov still owes four bodies suites.
+
+**Roadmap.** 343 of 441 stories done (338 of 438 on 18 Nov). The new look is 7 of 18.
