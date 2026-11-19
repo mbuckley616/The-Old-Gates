@@ -1,3 +1,4 @@
+// Session 2415: the spires' passage through each tower at the decks and the spit up to the first.
 // Session 2401 adds the Hollow Below (ruins.js hollowBelow): a gate's three rings in a cavern's back wall, the light through the oculus, the viaduct.
 // Session 2398 adds the Scarred Gate (ruins.js scarredGate): a ring 80 m across on its edge, the outer course blown off, the cleft, the crater and scar.
 // Session 2395 adds the Northlight Altar (ruins.js northlightAltar): eleven monoliths, the north open, the altar, the tarn.
@@ -45,13 +46,29 @@ const S = await page.evaluate(async () => { const THREE = await import('three'),
   // what of the stone stands above the water with nothing under it: the lowest point of each kit mesh's loose stone is under the mean sea
   const gaps = []; for (let i = 0; i < a.towers.length - 1; i++) { const p = a.towers[i], q = a.towers[i + 1]; gaps.push(+(Math.hypot(q.x - p.x, q.z - p.z) - 10).toFixed(2)); }
   let low = Infinity; for (const m of a.group.children) if (m.name.startsWith('kit:')) { const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) low = Math.min(low, P.getY(i)); }
-  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), towers: a.towers, spans: a.spans, lv, gaps, gap: a.gap, low: +low.toFixed(1), figure: a.figure }; });
+  // Session 2415: the way through. Rays along the chain's centre line at 1.7 and 6 m over the decks, from the spit's back over each tower
+  // to the next and 30 m out past the last, hit nothing of the kit's; one straight down in each tower's passage meets its floor at the deck;
+  // the spit meets the first tower's sill and climbs no steeper than 1 in 6 from the bank to it.
+  a.group.updateMatrixWorld(true); const kit = a.group.children.filter(m => m.name.startsWith('kit:')), rc = new THREE.Raycaster(), T = a.towers, Dk = a.deck;
+  const way = [[T[0].x, T[0].z + 30], ...T.map(t => [t.x, t.z]), [T[5].x + Math.sin(T[5].hd) * 30, T[5].z - Math.cos(T[5].hd) * 30]], hits = [];
+  for (const dy of [1.7, 6]) for (let i = 0; i < way.length - 1; i++) { const [x0, z0] = way[i], [x1, z1] = way[i + 1], d = new THREE.Vector3(x1 - x0, 0, z1 - z0), L = d.length(); rc.set(new THREE.Vector3(x0, Dk + dy, z0), d.normalize()); rc.far = L;
+    const h = rc.intersectObjects(kit, false)[0]; if (h) hits.push({ dy, leg: i, at: +h.distance.toFixed(1), m: h.object.name }); }
+  const floors = T.map(t => { rc.set(new THREE.Vector3(t.x, Dk + 3, t.z), new THREE.Vector3(0, -1, 0)); rc.far = 20; const h = rc.intersectObjects(kit, false)[0]; return h ? +(h.point.y - Dk).toFixed(2) : null; });
+  // Session 2419: nothing of the kit's stands in the decks' clear way (between the parapets, 0.3 to 6 m over the deck, between the towers' faces)
+  let inWay = 0; for (const m of kit) { const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); if (y < Dk + .3 || y > Dk + 6) continue;
+    for (let j = 0; j < 5; j++) { const t = T[j], u = T[j + 1], L = Math.hypot(u.x - t.x, u.z - t.z), ux = (u.x - t.x) / L, uz = (u.z - t.z) / L, al = (x - t.x) * ux + (z - t.z) * uz, ac = (x - t.x) * uz - (z - t.z) * ux; if (Math.abs(ac) < 3.8 && al > 5.3 && al < L - 5.3) inWay++; } } } /* along each span's own line, between the towers' faces */
+  const sill = +(a.ground(T[0].x, a.spit.z0 + .6) - Dk).toFixed(2); let steep = 0; for (let z = a.spit.z0 + .6; z < 120; z += 2) steep = Math.max(steep, Math.abs(a.ground(T[0].x, z + 2) - a.ground(T[0].x, z)) / 2);
+  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), towers: a.towers, spans: a.spans, lv, gaps, gap: a.gap, low: +low.toFixed(1), figure: a.figure, hits, floors, sill, steep: +steep.toFixed(3), passage: a.passage, inWay }; });
 { const st = S.towers.filter(t => t.cond === 'cracked'), br = S.towers.filter(t => t.cond === 'broken');
   check(`the spires build the same twice and in budget: ${S.tris.toLocaleString()} triangles in ${S.draws} draws`, S.same && S.tris < 120000 && S.draws <= 20, [S.tris, S.draws, S.same]);
   check(`six towers: ${st.length} standing to ${st.map(t => t.wet).join(', ')} m over the sea, ${br.length} broken to ${br.map(t => t.wet).join(', ')} m; every foot under the bed`, S.towers.length === 6 && st.length === 4 && br.length === 2 && st.every(t => t.wet > 70) && br.every(t => t.wet > 20 && t.wet < 60) && S.towers.every(t => t.foot < t.bed), S.towers);
   check(`five spans of ${S.gap} m, each between two towers' faces (${S.gaps.join(', ')} m), one broken`, S.spans.length === 5 && S.gaps.every(g => Math.abs(g - S.gap) < .5) && S.spans.filter(s => s.cond === 'broken').length === 1, S.gaps);
   check(`the levels against a 4 m tide: a's deck at ${S.lv.a} (clear at low water, under at high), b's at ${S.lv.b} (clear at high), c's at ${S.lv.c} (under at low)`, S.lv.a > -2 && S.lv.a < 2 && S.lv.b > 2 && S.lv.c < -2, S.lv);
-  check(`what fell went into the sea: the lowest stone at ${S.low} m, under the low water`, S.low < -2, S.low); }
+  check(`what fell went into the sea: the lowest stone at ${S.low} m, under the low water`, S.low < -2, S.low);
+  check(`a way through every tower at the decks (${S.passage.w} by ${S.passage.h} m): rays along the chain at 1.7 and 6 m over the decks hit nothing, ${S.hits.length} hits`, S.hits.length === 0, S.hits);
+  check(`no stone stands in the decks' clear way between the parapets (${S.inWay} points; a broken tower's stones fall across the chain)`, S.inWay === 0, S.inWay);
+  check(`each tower's passage floor is the deck: ${S.floors.join(', ')} m off it`, S.floors.every(f => f !== null && Math.abs(f) < .05), S.floors);
+  check(`the spit meets the first tower's sill (${S.sill} m off the deck) and is never steeper than 1 in 6 up the strand (${S.steep})`, Math.abs(S.sill) < .15 && S.steep < 1 / 6, [S.sill, S.steep]); }
 // the Northlight Altar (Session 2395; OG-104, the Mark): eleven monoliths on a circle 120 m across, the north open, an altar at the heart
 const L = await page.evaluate(async () => { const K = await import('./ruins.js');
   const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 9) h = (h * 31 + Math.round(a[i] * 1e3)) | 0; }); return h; };

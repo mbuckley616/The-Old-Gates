@@ -1,6 +1,7 @@
 // The Drowned Spires (Session 2389; OG-104, Gatelands): ruins.js's drownedSpires, six Weaver towers and their spans striding out from a strand.
 // ?place=spires&view=shore (default): on the sand at a person's eye 100 m west of the scale post, across the chain; view=span: on the sand (or afloat, when the
-// tide is over it) 45 m off the first span; view=deck: on the first span's deck, out along the decks; view=sea: from a boat's thwart beside the fourth tower; view=far: from over the sea, the chain and the strand.
+// tide is over it) 45 m off the first span; view=deck: on the first span's deck, out along the decks; view=sea: from a boat's thwart beside the fourth tower; view=far: from over the sea, the chain and the strand;
+// view=through (Session 2415): on the first span, through the second tower's passage; view=spit: on the strand, up the spit to the first tower.
 // &level=a|b|c (the decks' height: a walk at the ebb, always clear, always under; default b), &tide=low|mid|high, &dusk, &cam=x,y,z,tx,ty,tz.
 import * as THREE from 'three';
 import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, run, skyDome } from './common.js';
@@ -17,7 +18,9 @@ Object.assign(sun.shadow.camera, { left: -190, right: 190, top: 190, bottom: -19
 scene.add(new THREE.HemisphereLight(DUSK ? new THREE.Color(.42, .4, .5) : new THREE.Color(.6, .68, .78), new THREE.Color(.3, .32, .22), DUSK ? .7 : 1.1)); skyDome(scene, SUN);
 const T = A.towers, g = A.ground, last = T[T.length - 1];
 let eye, at;
-if (VIEW === 'deck') { const s = A.spans[0]; eye = [s.x + 2, Math.max(A.deck, A.sea) + 1.65, s.z + 6]; at = [last.x, A.deck + 10, last.z]; cam.fov = 62; }
+if (VIEW === 'through') { const t = T[1], a = T[0]; eye = [(a.x + t.x) / 2 + (t.x - a.x) * .2, A.deck + 1.65, (a.z + t.z) / 2 + (t.z - a.z) * .2]; at = [t.x + (t.x - a.x), A.deck + 3, t.z + (t.z - a.z)]; cam.fov = 62; } /* Session 2415: on the first span, through the second tower's passage */
+else if (VIEW === 'spit') { const t = T[0], x = -46, z = A.spit.z0 + 34; eye = [x, Math.max(g(x, z), A.sea) + 1.65, z]; at = [t.x + 6, A.deck + 4, t.z + 14]; cam.fov = 60; } /* Session 2415: on the strand, up the spit to the first tower's passage */
+else if (VIEW === 'deck') { const s = A.spans[0]; eye = [s.x + 2, Math.max(A.deck, A.sea) + 1.65, s.z + 6]; at = [last.x, A.deck + 10, last.z]; cam.fov = 62; }
 else if (VIEW === 'sea') { const t = T[3]; eye = [t.x - 34, A.sea + 1.2, t.z + 10]; at = [t.x + 5, A.sea + 18, t.z - 20]; cam.fov = 62; }
 else if (VIEW === 'span') { const s = A.spans[0], x = -42, z = -22; eye = [x, Math.max(g(x, z), A.sea) + 1.65, z]; at = [s.x + 6, Math.max(A.deck, A.sea) + 4, s.z - 10]; cam.fov = 60; }
 else if (VIEW === 'far') { eye = [-260, 60, -360]; at = [30, 30, -150]; cam.fov = 45; }

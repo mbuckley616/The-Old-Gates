@@ -84,13 +84,22 @@ export function weaverRing(o = {}) {
 //   - the strand: sand from the low water up to a turf bank, the bed falling 1 in 14 out to 16 m deep; a 1.75 m post on the sand by the
 //     first tower's foot (the scale, not a person).
 // What the spires were (a gate's outworks, a road to an isle shrine) is the canon's and the quest writer's.
+//   - Session 2415: a passage through each tower at the decks (gatekit's pier with `passage`), 5 m wide and 9 m high, its floor the decks'
+//     walking face, so the chain is walked from the strand through all six towers to the open sea; and a spit of sand heaped against the
+//     first tower's landward face to the decks' height, the way up from the strand (where the decks are under the sand, nothing).
 // -> { group, tris, draws, ground(x, z), sea (y of the water), deck (y of the decks' walking face), towers: [{ i, x, z, ry, cond, foot,
-//   top, wet (m of the shaft above the water), lean }], spans: [{ i, x, z, ry, cond, deck }], figure { x, y, z, h }, k }
+//   top, wet (m of the shaft above the water), lean, hd (the chain's heading through it) }], spans: [{ i, x, z, ry, cond, deck }], figure { x, y, z, h }, k,
+//   passage { w, h, y }, spit { z0 (its end at the first tower's face), w (half its back's width), side } }
 export function drownedSpires(o = {}) {
   const key = o.key || 'ruins:spires', r = stream(key), K = 2.5, N = 6, D = 50, LV = { a: -1, b: 4.5, c: -5.5 };
   const DECK = typeof o.deck === 'number' ? o.deck : LV[o.deck] ?? LV.b, SEA = { low: -2, mid: 0, high: 2 }[o.tide] ?? 0, group = new THREE.Group();
   // the strand: turf above +3 inland (+z), sand below it, the bed falling 1 in 14 seaward (-z) to 16 m deep; rolling a little
-  const ground = (x, z) => { const roll = fbm(x / 40, z / 40, 3) * 1.2, base = z > 0 ? Math.min(7, 1.2 + z * .06) : Math.max(-16, 1.2 + z / 14); return base + roll; };
+  const ground0 = (x, z) => { const roll = fbm(x / 40, z / 40, 3) * 1.2, base = z > 0 ? Math.min(7, 1.2 + z * .06) : Math.max(-16, 1.2 + z / 14); return base + roll; };
+  // Session 2415: the spit, sand the sea has heaped against the first tower's landward face (at z -35, the tower 10 m square at -40), 14 m
+  // wide on its back, at the decks' height up the strand until the bank meets it: the way onto the chain. Its sides fall 1 in 1.6, and
+  // it ends 0.3 m inside the tower's face. Where the decks are under the strand there is no spit.
+  const SPIT = { z0: -35.3, w: 7, side: 1.6 }, ground = (x, z) => { const g = ground0(x, z); if (DECK <= g || z < SPIT.z0 - 6) return g;
+    const top = DECK + .05 * fbm(x / 6, z / 6, 2), off = Math.max(0, Math.abs(x) - SPIT.w) / SPIT.side, end = Math.max(0, SPIT.z0 - z) / .9; return Math.max(g, top - off - end); };
   const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a); if (!x.attributes.normal) x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
   { const N2 = 180, g = new THREE.PlaneGeometry(900, 900, N2, N2); g.rotateX(-Math.PI / 2); g.translate(0, 0, -250); const P = g.attributes.position, col = [];
     for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), y = ground(x, z); P.setY(i, y); const t = Math.min(1, Math.max(0, (y - 2.6) / 1.2)), w = Math.min(1, Math.max(0, (2.4 - y) / 4.4)) * (y > -2.4 ? 1 : 0);
@@ -100,21 +109,26 @@ export function drownedSpires(o = {}) {
   // the line: from the strand's low-water mark out to sea, bending 14° over its length; tower i at (x_i, z_i), the chain's heading at it
   const z0 = -40, pts = []; { let x = 0, z = z0, h = 0; for (let i = 0; i < N; i++) { pts.push([x, z, h]); const hn = h + (14 / (N - 1)) * Math.PI / 180; x += Math.sin(hn) * D; z -= Math.cos(hn) * D; h = hn; } }
   const conds = ['cracked', 'cracked', 'broken', 'cracked', 'cracked', 'broken'], spanConds = ['cracked', 'cracked', 'cracked', 'broken', 'cracked'];
-  const BASE = DECK - 6.45 * K /* the bridge's springing: its deck's walking face 6.45 m over it in the kit */, FOOT = BASE - 12 /* every tower stands on a plinth sunk under the bed */;
+  const BASE = DECK - 6.45 * K /* the bridge's springing: its deck's walking face 6.45 m over it in the kit */, FOOT = BASE - 12 /* every tower stands on a plinth sunk under the bed */, PASS = { w: 5, h: 9 } /* Session 2415: the passage through each tower at the decks, 5 m wide and 9 m high, its floor the decks' face */;
   const piecesBy = new Map(), take = G => { G.updateMatrixWorld(true); G.traverse(m => { if (m.isMesh) (piecesBy.get(m.material) || piecesBy.set(m.material, []).get(m.material)).push(m); }); };
   const towers = [], spans = [], v = new THREE.Vector3();
-  pts.forEach(([x, z, h], i) => { const hd = i === 0 ? h : (h + pts[i - 1][2]) / 2, ry = -hd, cond = conds[i];
+  // Session 2419: a tower turns to the mean of its two spans' headings (pts[i][2] is the heading the line came in on before tower i; the
+  // span from tower i runs on pts[i + 1][2]); it was the mean of the two before, 1.5 steps (4.2°) off the line it stands on
+  const hOut = i => pts[Math.min(N - 1, i + 1)][2];
+  pts.forEach(([x, z, h], i) => { const hd = i === 0 ? hOut(0) : i === N - 1 ? h : (h + hOut(i)) / 2, ry = -hd, cond = conds[i];
     // the shaft: two of the kit's piers, one on the other; the lower whole (its foot in the bed, its head a string course), the upper in the tower's condition
-    const G0 = gatePiece('pier', { cond: 'whole', school: 'cloch', key: `${key}:tower:${i}:lo`, ruin: true }), h0 = G0.userData.size.h - .5; G0.scale.setScalar(K); G0.rotation.y = ry; G0.position.set(x, FOOT, z); take(G0);
-    const UP = FOOT + h0 * K, G = gatePiece('pier', { cond, school: 'cloch', key: `${key}:tower:${i}`, ruin: true, ground: (ground(x, z) - .4 - UP) / K /* what falls lies on the bed */ }), U = G.userData; G.scale.setScalar(K); G.rotation.y = ry; G.position.set(x, UP, z); take(G);
+    const G0 = gatePiece('pier', { cond: 'whole', school: 'cloch', key: `${key}:tower:${i}:lo`, ruin: true, passage: { y: (DECK - FOOT) / K, h: PASS.h / K, w: PASS.w / K } /* Session 2415: the way through at the decks */ }), h0 = G0.userData.size.h - .5; G0.scale.setScalar(K); G0.rotation.y = ry; G0.position.set(x, FOOT, z); take(G0);
+    // Session 2419: a broken tower's upper pier is turned a quarter, so its stones (gatekit throws them along the piece's z) fall across the
+    // chain into the sea; along it, the longest lay on the bed and stood up through the decks beside the tower
+    const UP = FOOT + h0 * K, ru = cond === 'broken' ? ry + Math.PI / 2 : ry, G = gatePiece('pier', { cond, school: 'cloch', key: `${key}:tower:${i}`, ruin: true, ground: (ground(x, z) - .4 - UP) / K /* what falls lies on the bed */ }), U = G.userData; G.scale.setScalar(K); G.rotation.y = ru; G.position.set(x, UP, z); take(G);
     let top = -Infinity; [G0, G].forEach(Gi => Gi.traverse(m => { if (!m.isMesh) return; const P = m.geometry.attributes.position; for (let j = 0; j < P.count; j += 3) { v.fromBufferAttribute(P, j).applyMatrix4(m.matrixWorld); top = Math.max(top, v.y); } }));
-    const lean = (U.lean || 0) * Math.PI / 180, M4 = new THREE.Matrix4().makeTranslation(x, UP, z).multiply(new THREE.Matrix4().makeRotationY(ry)).multiply(new THREE.Matrix4().makeScale(K, K, K)).multiply(new THREE.Matrix4().makeRotationX(lean));
+    const lean = (U.lean || 0) * Math.PI / 180, M4 = new THREE.Matrix4().makeTranslation(x, UP, z).multiply(new THREE.Matrix4().makeRotationY(ru)).multiply(new THREE.Matrix4().makeScale(K, K, K)).multiply(new THREE.Matrix4().makeRotationX(lean));
     // the spire (on a standing tower only): a corbel band and a cap of four faces, 16 m to its point, leaning with the shaft
     if (cond === 'cracked') { const h1 = U.size.h; { const g = new THREE.BoxGeometry(5.6, .7, 5.6); g.translate(0, h1 + .35, 0); put('stone', g.applyMatrix4(M4)); }
       const c = new THREE.ConeGeometry(5.6 / Math.SQRT2 * .96, 16 / K, 4, 3); c.rotateY(Math.PI / 4); c.translate(0, h1 + .7 + 8 / K, 0); put('spire', c.applyMatrix4(M4)); top = Math.max(top, UP + (h1 + .7 + 16 / K) * K); }
     // the weed: a collar of wrack between the tides on the shaft (the shaft 10 m square at 2.5), where the tower is in the water at all
     const yb = Math.max(ground(x, z), -2.3), yt = 1.6; if (yt > yb + .2) { const g = new THREE.BoxGeometry(4.06, (yt - yb) / K, 4.06); g.translate(0, ((yt + yb) / 2 - FOOT) / K, 0); put('weed', g.applyMatrix4(G0.matrixWorld)); /* on the lower, upright shaft */ }
-    towers.push({ i, x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(4), cond, foot: +FOOT.toFixed(2), bed: +ground(x, z).toFixed(2), top: +top.toFixed(2), wet: +(top - SEA).toFixed(1), lean: U.lean }); });
+    towers.push({ i, x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(4), cond, foot: +FOOT.toFixed(2), bed: +ground(x, z).toFixed(2), top: +top.toFixed(2), wet: +(top - SEA).toFixed(1), lean: U.lean, hd: +hd.toFixed(4) }); });
   for (let i = 0; i < N - 1; i++) { const [xa, za] = pts[i], [xb, zb] = pts[i + 1], x = (xa + xb) / 2, z = (za + zb) / 2, hd = pts[i + 1][2], ry = Math.PI / 2 - hd, cond = spanConds[i];
     const G = gatePiece('bridge', { cond, school: 'cloch', key: `${key}:span:${i}`, ruin: true, ground: (ground(x, z) - .4 - BASE) / K }); G.scale.setScalar(K); G.rotation.y = ry; G.position.set(x, BASE, z); take(G);
     spans.push({ i, x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(4), cond, deck: +DECK.toFixed(2), fallen: G.userData.fallen }); }
@@ -125,7 +139,7 @@ export function drownedSpires(o = {}) {
   let tris = 0, draws = 0;
   for (const [m, ms] of piecesBy) { const gs = ms.map(x => { const g = x.geometry.clone(); g.applyMatrix4(x.matrixWorld); return g; }), g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, m); mesh.castShadow = mesh.receiveShadow = true; mesh.name = 'kit:' + (ms[0].userData.key || ''); group.add(mesh); tris += g.attributes.position.count / 3; draws++; }
   for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['strand', 'sea'].includes(k); mesh.receiveShadow = k !== 'sea'; if (k === 'sea') mesh.renderOrder = 2; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
-  return { group, tris: Math.round(tris), draws, ground, sea: SEA, deck: DECK, towers, spans, figure, k: K, gap: 16 * K };
+  return { group, tris: Math.round(tris), draws, ground, sea: SEA, deck: DECK, towers, spans, figure, k: K, gap: 16 * K, passage: { ...PASS, y: DECK }, spit: { ...SPIT } };
 }
 
 // northlightAltar (Session 2395; OG-104's "Northlight Altar", the Mark: "a ring of glowing monoliths under an aurora"): a ring of single
