@@ -7,7 +7,8 @@ function tickFootsteps(dt,moving,sprinting){
   const interval=sprinting?.32:.48;
   if(_stepT>=interval){_stepT=0;
     const onSnow=(typeof WORLD!=='undefined'&&WORLD.footprint)?WORLD.footprint():false; // v80 S147
-    if(onSnow)sndSnowStep(sprinting);else sndFootstep(sprinting);}
+    if(typeof stairHollowHere==='function'&&stairHollowHere())sndHollowStep(sprinting); /* S2416 — a hollow slab (68-dungeon-misc.js) */
+    else if(onSnow)sndSnowStep(sprinting);else sndFootstep(sprinting);}
 }
 
 // ════════════════════════════════════════════════════════════════

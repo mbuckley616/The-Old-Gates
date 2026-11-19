@@ -7,6 +7,7 @@ function dPropHit(x, z){
   for(const p of DUNGEON_PROPS){
     if(p.floor && p.floor !== currentFloor) continue; // S599 — a prop belongs to its floor
     if(p.top!=null && DPROP_Y!=null && DPROP_Y>=p.top-STEP_UP) continue; /* S2405 — a seal's ledge: your feet over its top (68-dungeon-misc.js) */
+    if(p.under!=null && (DPROP_Y==null || DPROP_Y>=p.under)) continue; /* S2416 — a cellar's mouth: a wall to your feet under the floor only (68-dungeon-misc.js) */
     if(x >= p.x0 && x <= p.x1 && z >= p.z0 && z <= p.z1) return true;
   }
   return false;
@@ -33,7 +34,8 @@ function dGapOne(x,z){if(!dMap2)return false;const c=dCellOf(x),r=dCellOf(z);ret
 function dSolidP(x,z){if(dAirAt(x,z))return false;if(jumpY<dLevelY()-1&&dAirAt(px,pz))return true;return dSolid(x,z);}
 function dBlkP(x,z){const R=0.3;DPROP_Y=jumpY;try{return dSolidP(x-R,z-R)||dSolidP(x+R,z-R)||dSolidP(x-R,z+R)||dSolidP(x+R,z+R);}finally{DPROP_Y=null;}} /* S2405 — your feet, for a ledge's top */
 function dSlideP(x,z,dx,dz){if(!dBlkP(x+dx,z+dz))return[x+dx,z+dz];if(!dBlkP(x+dx,z))return[x+dx,z];if(!dBlkP(x,z+dz))return[x,z+dz];return[x,z];}
-function dPitBase(x,z,b){return dAirAt(x,z)?Math.min(b,dLevelY()-GATE_PIT):b;}
+function dPitBase(x,z,b){if(typeof stairBase==='function')b=stairBase(x,z,b); /* S2416 — a hollow stair's cellar (68-dungeon-misc.js) */
+  return dAirAt(x,z)?Math.min(b,dLevelY()-GATE_PIT):b;}
 function bfs(sx,sz,tx,tz){const sc=dCellOf(sx),sr=dCellOf(sz),tc=dCellOf(tx),tr=dCellOf(tz); /* S1283 — from metres to cells; the path is cells */if(sc===tc&&sr===tr)return[];const vis=new Set(),q=[[sc,sr,[]]];vis.add(sr*dC+sc);while(q.length){const[cc,cr,path]=q.shift();for(const[dc,dr]of[[0,1],[0,-1],[1,0],[-1,0]]){const nc=cc+dc,nr=cr+dr,key=nr*dC+nc;if(nr<0||nr>=dR||nc<0||nc>=dC||vis.has(key))continue;if(dSolid(nc*DCELL,nr*DCELL))continue;vis.add(key);const np=[...path,[nc,nr]];if(nc===tc&&nr===tr)return np;q.push([nc,nr,np]);}}return[];}
 
 // ── FLOOR TRANSITIONS ─────────────────────────────────────────
