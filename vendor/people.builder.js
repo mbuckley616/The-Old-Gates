@@ -1451,10 +1451,15 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
   // apart, so a man's 56 columns stood 14 to 0.4 rad over the spine (the seam down the back, its folds crowded into a pleat) and 12 cm
   // apart over the shoulder and arm (the side a few flat facets, the box). The line is sought in three times as many directions, put in
   // order round the neck, and K starts are laid along it at even steps of its own length, each cleared of the body as before
+  // A cape opened from the side over a staff or a crossbow (Session 2399, S2393's owed note): only its open side keeps the evenly turned
+  // starts, the columns from the opening round to behind the right shoulder (thC), which hang clear of the stock; from there the line is
+  // laid by length as every other cape's, so the back is no longer crowded
   const turned = cape && thrown, room = cape ? null : (PACK.cloakRoom || (PACK.cloakRoom = armRoomV(CLOAK_ARM_ROOM))), ring0 = [], polarTh = q => Math.atan2(q.x - neck.x, -(q.z - neck.z));
-  for (let k = 0, KK = turned ? K : 3 * K; k < KK; k++) { const th = th0 + (k / (KK - 1)) * (th1 - th0), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th));
-    const e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
-    const p = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006), w = polarTh(p) - th; ring0.push({ p, n: e.n.clone(), th: th + Math.atan2(Math.sin(w), Math.cos(w)), dth: th }); }
+  const thC = -Math.PI / 2 + .35, sideK = turned ? Math.max(1, Math.round((K - 1) * (thC - th0) / (th1 - th0))) : 0, thS = th0 + sideK / (K - 1) * (th1 - th0), sideQ = [];
+  const shoulderAt = th => { const dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th)), e = S.extreme(neck, dir.clone().add(new THREE.Vector3(0, -.42, 0)).normalize(), p => p.y > neckY - .16 && p.y < neckY + .03);
+    const p = e.p.clone().addScaledVector(e.n, clearAt(e.p) + .006), w = polarTh(p) - th; return { p, n: e.n.clone(), th: th + Math.atan2(Math.sin(w), Math.cos(w)), dth: th }; };
+  for (let k = 0; k < sideK; k++) sideQ.push(shoulderAt(th0 + k / (K - 1) * (th1 - th0)));
+  for (let k = 0, KK = 3 * K; k < KK; k++) ring0.push(shoulderAt(thS + (k / (KK - 1)) * (th1 - thS)));
   // in order round the neck, each point's angle unwrapped against the direction that found it (a cape's ends reach past the throat), and
   // none past the sweep's own ends (a staff's or a spear's side starts where it did, clear of the shaft)
   const thA = ring0[0].th, thB = ring0[ring0.length - 1].th, ringS = ring0.filter(q => q.th >= thA && q.th <= thB).sort((a, b) => a.th - b.th);
@@ -1464,17 +1469,17 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
   // 1.5 to 3 cm apart across the back where they are 6 cm over the shoulders, and those columns kept their crowding to the hem: a groove
   // down the spine and a step at the middle of the hem. Laid along the line with its zags smoothed out, the starts are even in the cloth;
   // each is cleared of the body as before
-  if (!turned) for (let it = 0; it < 6; it++) { const P0 = ringU.map(q => q.p.clone()); for (let i = 1; i < ringU.length - 1; i++) ringU[i].p = P0[i - 1].clone().add(P0[i + 1]).addScaledVector(P0[i], 2).multiplyScalar(.25); }
+  for (let it = 0; it < 6; it++) { const P0 = ringU.map(q => q.p.clone()); for (let i = 1; i < ringU.length - 1; i++) ringU[i].p = P0[i - 1].clone().add(P0[i + 1]).addScaledVector(P0[i], 2).multiplyScalar(.25); }
   const arc = [0]; for (let i = 1; i < ringU.length; i++) arc.push(arc[i - 1] + ringU[i].p.distanceTo(ringU[i - 1].p));
   // a shoulder cape too (Session 2393, S2383's owed note): it kept its evenly turned starts, and over the back the turned directions found the
   // same few points by the spine, so a guild head's 56 columns stood 20 within 0.33 rad of the middle and 0.2 rad apart over the shoulders.
   // The crowded ones made a pleat down the back and a stepped hem under it (2 to 6 cm between neighbours). Its starts are laid along the
   // smoothed line now, as a cloak's; read on 27 caped townsfolk, no column crossed its neighbour (the reason it was held back, Session 1944).
-  // A cape opened from the side over a staff or a crossbow keeps its turned starts: laid by length, its front side came 99 points into the
-  // forester's crossbow (f4people's limit is 60)
-  if (turned) for (const q of ring0) { const dir = new THREE.Vector3(Math.sin(q.dth), 0, -Math.cos(q.dth)); tops.push({ start: q.p, dir, n: q.n });
+  // A cape opened from the side over a staff or a crossbow kept its turned starts: laid by length, its front side came 99 points into the
+  // forester's crossbow (f4people's limit is 60). Since Session 2399 only the open side's columns (sideQ) keep them
+  for (const q of sideQ) { const dir = new THREE.Vector3(Math.sin(q.dth), 0, -Math.cos(q.dth)); tops.push({ start: q.p, dir, n: q.n });
     cols.push(drape(S, q.p, dir.clone().multiplyScalar(.5).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006)); }
-  else for (let k = 0, j = 0; k < K; k++) { const s = arc[arc.length - 1] * k / (K - 1); while (j < ringU.length - 2 && arc[j + 1] < s) j++;
+  for (let k = 0, j = 0, K2 = K - sideK; k < K2; k++) { const s = arc[arc.length - 1] * k / (K2 - 1); while (j < ringU.length - 2 && arc[j + 1] < s) j++;
     const t = Math.max(0, Math.min(1, (s - arc[j]) / Math.max(1e-9, arc[j + 1] - arc[j]))), n = ringU[j].n.clone().lerp(ringU[j + 1].n, t).normalize(), start = ringU[j].p.clone().lerp(ringU[j + 1].p, t);
     for (let it = 0; it < 3; it++) { const cl = clearAt(start) + .006, hit = heightOver(S, start); if (hit && hit.h < cl) start.addScaledVector(hit.e.n, cl - hit.h); }
     const th = polarTh(start), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th)); tops.push({ start, dir, n });
