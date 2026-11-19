@@ -205,3 +205,105 @@ export function northlightAltar(o = {}) {
   for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['fell', 'ice', 'sigil', 'script'].includes(k); mesh.receiveShadow = true; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
   return { group, tris: Math.round(tris), draws, ground, R, stones, gap: (() => { const p = stones[0], q = stones[stones.length - 1]; return { a: Math.PI, width: +(Math.hypot(p.x - q.x, p.z - q.z) - (p.w + q.w) / 2).toFixed(1) }; })(), altar, tarn: TARN, figure, sink: SINK };
 }
+
+// The Scarred Gate (Session 2398; OG-104's Aurenne panel, "a ruined gate, its surface cracked and incomplete; unlike the others, this one
+// shows signs of violent destruction"): a ring of the Weavers' stood on its edge in a red desert among buttes, as the sheet paints it. The
+// one site of the sixteen that is a gate in the canon's own terms (Part I: a gate's condition; §5: where the binding tore worst), so it is
+// drawn as a gate that failed by catastrophe and then went quiet; whether it still wakes is the DECISION's.
+//   - the ring: 80 m across its outer face and 56 m across its opening, 10 m deep, its heart 30 m over the sand, so it stands 70 m and its
+//     foot is buried 10 m; two courses of voussoirs (36 on the inner, 6 m; 44 on the outer, 6 m, broken joint), the script cut dead in a
+//     band round the soffit; it stands on a plinth of two steps in slabs, the sill 0.6 m over the upper step;
+//   - the blow: from under its right foot, in front. The outer course is gone over the crown and down the right (from 20° left of the top to
+//     95° right of it), and one stone in three from 95 to 150°; the inner course stands whole, but its stones there are slipped and turned,
+//     and at 48° right of the top a cleft runs through it, the stones beyond it dropped and opened 1.2 m at the face; the stone is burned
+//     dark toward the blast;
+//   - the land: a crater 44 m across and 4 m deep before the right foot, its rim thrown up, the plinth's slabs gone into it or tipped at its
+//     edge, and a scar 220 m long (24 m wide at the crater, 4 m deep) running from it to the south-east, black glass in red sand; the outer course's stones lie thrown across
+//     the sand out to 150 m, each sunk a third of its depth where it landed;
+//   - seven red buttes 25 to 80 m high, 200 to 450 m out, behind the gate and to its sides, none in the wide sector before it;
+//   - a 1.75 m post on the upper step at the ring's foot as the scale.
+// o.wake (the DECISION's B): the gone stones hang over their seats, lifted and turned, with a violet seam burning on each seat and the
+//   script burning violet, as gatekit's 'broken' draws a catastrophic gate inside; nothing is thrown on the sand then.
+// -> { group, tris, draws, ground(x, z), R0, R1, CY, D, inner, outer, gone, slipped, thrown: [{ x, z, low, top }], hung: [{ lift }], cleft { a, open, drop },
+//   crater { x, z, r, d }, scar { L, a }, buttes: [{ x, z, h, r }], plinth { top, slabs, lost, tipped }, figure, wake }
+export function scarredGate(o = {}) {
+  const key = o.key || 'ruins:scarred', r = stream(key), WAKE = !!o.wake, group = new THREE.Group();
+  const R0 = 28, RM = 34, R1 = 40, CY = 30, D = 10, DEG = Math.PI / 180, CR = { x: 22, z: 24, r: 22, d: 4 }, SC = { L: 220, a: .7 }, CLEFT = { a: 48, open: 1.2, drop: .9 };
+  const su = [Math.cos(SC.a), Math.sin(SC.a)];
+  const crater = (x, z) => { const t = Math.hypot(x - CR.x, z - CR.z) / CR.r; return (t < 1 ? -CR.d * (1 - t * t) : 0) + 1.4 * Math.exp(-(((t - 1.1) / .16) ** 2)); };
+  const scarAt = (x, z) => { const dx = x - CR.x, dz = z - CR.z, s = dx * su[0] + dz * su[1], l = Math.abs(-dx * su[1] + dz * su[0]); if (s < CR.r * .6 || s > SC.L) return { cut: 0, near: 0 };
+    const f = 1 - s / SC.L, w = 12 * (1 - .7 * s / SC.L) + 2 * fbm(s / 30, 3.3, 2); return { cut: (l < w ? -4 * f * (1 - (l / w) ** 2) : 0) + 1.1 * f * Math.exp(-(((l - w * 1.15) / (w * .25)) ** 2)), near: (1 - .4 * s / SC.L) * (1 - sstep(w * .9, w * 1.8, l)) }; };
+  const g0 = (x, z) => { const d = Math.hypot(x, z), out = sstep(70, 320, d); return .25 * fbm(x / 13, z / 13, 2) * sstep(30, 60, d) + out * (fbm(x / 120 + 4, z / 120, 4) * 12 + 1.6 * Math.sin(x / 23 + 2 * fbm(x / 60, z / 60, 2)));
+  };
+  const ground = (x, z) => g0(x, z) + crater(x, z) + scarAt(x, z).cut;
+  const scorch = (x, z) => Math.max(1 - sstep(CR.r * 1.05, CR.r * 1.7, Math.hypot(x - CR.x, z - CR.z)), scarAt(x, z).near) * (.9 + .1 * fbm(x / 7, z / 7, 2));
+  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .2); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  const bb = g => { g.computeBoundingBox(); return g.boundingBox; };
+  // the sand: a square 1,600 m across, its grid drawn in toward the gate (|u|^1.7: 2 m a cell at the crater, 13 m at the edge), red, burned to
+  // black glass in the crater and along the scar
+  { const N = 200, g = new THREE.PlaneGeometry(2, 2, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position, col = [], wp = u => 800 * Math.sign(u) * Math.abs(u) ** 1.7;
+    for (let i = 0; i < P.count; i++) { const x = wp(P.getX(i)), z = wp(P.getZ(i)); P.setX(i, x); P.setZ(i, z); P.setY(i, ground(x, z)); const v = fbm(x / 40 + 3, z / 40, 3), s = Math.min(1, scorch(x, z));
+      const c = [.80, .53, .35].map((q, j) => q * (1 - .25 * sstep(.45, .7, v)) + [0, -.04, -.03][j] * v); col.push(...c.map((q, j) => q * (1 - s) + [.09, .06, .055][j] * s)); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); worldUV(g, .08); B.set('sand', [g]); }
+  // a stone with its own colour: burned toward the blast (a point over the crater) on every vertex
+  const BL = new THREE.Vector3(CR.x, 6, CR.z - 4);
+  const tint = g => { const P = g.attributes.position, c = []; for (let i = 0; i < P.count; i++) { const s = 1 - sstep(16, 62, Math.hypot(P.getX(i) - BL.x, P.getY(i) - BL.y, P.getZ(i) - BL.z)); c.push(...[1, 1, 1].map((v, j) => v * (1 - .78 * s) + [.02, 0, 0][j] * s)); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); return g; };
+  // a voussoir between angles ta and tb (from the top, clockwise seen from the front, +z), radii ra to rb, its faces at z +zf and -zb
+  const at = (t, rr) => [rr * Math.sin(t), CY + rr * Math.cos(t)];
+  const wedge = (ta, tb, ra, rb, zf, zb, gap = .07) => { const out = [], q = [at(ta, ra), at(tb, ra), at(tb, rb), at(ta, rb)], c = q.reduce((s, p) => [s[0] + p[0] / 4, s[1] + p[1] / 4], [0, 0]);
+    const k = 1 - gap / Math.max(...q.map(p => Math.hypot(p[0] - c[0], p[1] - c[1]))); let p = q.map(v => [c[0] + (v[0] - c[0]) * k, c[1] + (v[1] - c[1]) * k]); let ar = 0; for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; ar += p[i][0] * p[j][1] - p[j][0] * p[i][1]; } if (ar < 0) p = p.reverse();
+    const F = p.map(v => [v[0], v[1], zf]), Bk = p.map(v => [v[0], v[1], -zb]), tri = (a, b, d) => out.push(...a, ...b, ...d);
+    tri(F[0], F[1], F[2]); tri(F[0], F[2], F[3]); tri(Bk[0], Bk[2], Bk[1]); tri(Bk[0], Bk[3], Bk[2]); for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; tri(F[i], Bk[i], Bk[j]); tri(F[i], Bk[j], F[j]); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return { g, c }; };
+  // the soffit's band of script on an inner stone, 3.2 m wide, v down the arc in 14.4 m repeats
+  let arcV = 0; const band = (ta, tb) => { const n = 3, pos = [], uv = [], L = R0 * (tb - ta); for (let i = 0; i <= n; i++) { const t = ta + (tb - ta) * i / n, [x, y] = at(t, R0 - .04); pos.push(x, y, 1.6, x, y, -1.6); uv.push(0, (arcV + L * i / n) / 14.4, 1, (arcV + L * i / n) / 14.4); }
+    arcV += L; const idx = []; for (let i = 0; i < n; i++) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); return g.toNonIndexed(); };
+  const inBlast = t => t > -20 * DEG && t < 95 * DEG, NI = 36, NO = 44, rl = stream(key + ':lost'); let slipped = 0, gone = 0; const thrown = [], hung = [], seats = [];
+  // the inner course: whole, but over the blast its stones slipped out and turned, and past the cleft dropped and opened
+  for (let i = 0; i < NI; i++) { const ta = (i / NI) * Math.PI * 2 - Math.PI, tb = ((i + 1) / NI) * Math.PI * 2 - Math.PI, tm = (ta + tb) / 2, { g, c } = wedge(ta, tb, R0, RM, D / 2 + r() * .3, D / 2 + (r() - .5) * .25);
+    const s = band(ta, tb), M = new THREE.Matrix4();
+    if (inBlast(tm)) { const out = .2 + r() * .6, rot = (r() - .5) * 5 * DEG, past = tm > CLEFT.a * DEG; const dx = Math.sin(tm) * out + (past ? CLEFT.open * Math.cos(tm) : 0), dy = Math.cos(tm) * out - (past ? CLEFT.drop : 0);
+      M.makeTranslation(c[0] + dx, c[1] + dy, (r() - .5) * .8).multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler((r() - .5) * 2 * DEG, (r() - .5) * 3 * DEG, rot))).multiply(new THREE.Matrix4().makeTranslation(-c[0], -c[1], 0)); slipped++; }
+    put('stone', tint(g.applyMatrix4(M))); put('script', s.applyMatrix4(M)); }
+  // the outer course: gone over the blast (thrown on the sand, or hung over its seat when the gate wakes), one in three gone from 95 to 150° right
+  for (let i = 0; i < NO; i++) { const sh = .5 / NO, ta = (i / NO + sh) * Math.PI * 2 - Math.PI, tb = ((i + 1) / NO + sh) * Math.PI * 2 - Math.PI, tm = (ta + tb) / 2, { g, c } = wedge(ta, tb, RM, R1, D / 2 + (r() - .5) * .4, D / 2 + r() * .3);
+    const lost = inBlast(tm) || (tm >= 95 * DEG && tm < 150 * DEG && rl() < .34);
+    if (!lost) { put('stone', tint(g)); continue; } gone++; seats.push(tm);
+    if (WAKE) { const lift = 3 + r() * 8, M = new THREE.Matrix4().makeTranslation(c[0] + Math.sin(tm) * lift, c[1] + Math.cos(tm) * lift, (r() - .5) * 4).multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler((r() - .5) * 30 * DEG, (r() - .5) * 30 * DEG, (r() - .5) * 40 * DEG))).multiply(new THREE.Matrix4().makeTranslation(-c[0], -c[1], 0));
+      put('stone', tint(g.applyMatrix4(M))); hung.push({ t: +(tm / DEG).toFixed(1), lift: +lift.toFixed(2) });
+      const sm = wedge(ta + .004, tb - .004, RM + .02, RM + .08, D / 2 - .2, D / 2 - .2, 0).g; put('seam', sm); continue; }
+    // thrown: outward on its own side and fore or aft, the nearer the more; laid on a random face and sunk a third of its depth where it lands
+    const far = tm < 95 * DEG ? 30 + 120 * r() ** 1.6 : 4 + 10 * r(), side = Math.sin(tm) >= 0 ? 1 : -1, x = Math.sin(tm) * (R1 + far * .7) + side * far * .3 * r(), z = (r() - .5) * 2 * (12 + far * .8);
+    g.translate(-c[0], -c[1], 0); g.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(r() * Math.PI * 2, r() * Math.PI * 2, r() * Math.PI * 2))); const b0 = bb(g), dz = Math.min(b0.max.x - b0.min.x, b0.max.y - b0.min.y, b0.max.z - b0.min.z);
+    const yc = Math.min(...[[0, 0], [2, 2], [-2, 2], [2, -2], [-2, -2]].map(([u, v]) => ground(x + u, z + v))); g.translate(x, yc - b0.min.y - dz / 3, z); put('stone', tint(g));
+    const P = g.attributes.position; let low = Infinity, top = -Infinity; for (let k = 0; k < P.count; k++) { const d = P.getY(k) - ground(P.getX(k), P.getZ(k)); low = Math.min(low, d); top = Math.max(top, d); }
+    thrown.push({ t: +(tm / DEG).toFixed(1), x: +x.toFixed(1), z: +z.toFixed(1), low: +low.toFixed(2), top: +top.toFixed(2) }); }
+  // the plinth: two steps of 4 m slabs (80 by 26 m, then 64 by 18), each 0.7 and 0.8 m; the crater has taken those over its deep part and tipped the rest at its edge
+  const plinth = { top: 1.4, slabs: 0, lost: 0, tipped: 0 };
+  for (const [W2, D2, y0, h] of [[80, 26, -.6, 1.2], [64, 18, .6, .8]]) for (let x = -W2 / 2 + 2; x < W2 / 2; x += 4) for (let z = -D2 / 2 + 2; z < D2 / 2; z += 4) { plinth.slabs++; const d = -crater(x, z) - scarAt(x, z).cut;
+    if (d > 1.1) { plinth.lost++; continue; } const g = new THREE.BoxGeometry(3.94, h, 3.94); let M = new THREE.Matrix4().makeTranslation(x, y0 + h / 2, z);
+    if (d > .15) { const ax = Math.atan2(CR.z - z, CR.x - x), tip = Math.min(14, d * 14) * DEG; M = new THREE.Matrix4().makeTranslation(x, y0 + h / 2 - d * .7, z).multiply(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(-Math.sin(ax), 0, Math.cos(ax)).normalize(), -tip)); plinth.tipped++; }
+    put('step', tint(g.applyMatrix4(M))); }
+  // the buttes: red sandstone in ledges, behind the gate and to its sides, never in front (the view's axis)
+  const buttes = []; { const rb = stream(key + ':buttes'); let tries = 0; while (buttes.length < 7 && tries++ < 200) { const a = rb() * Math.PI * 2, d = 200 + rb() * 250, x = Math.sin(a) * d, z = -Math.cos(a) * d;
+      if (z > 30 && Math.abs(x) < z * 1.8) continue; if (buttes.some(b => Math.hypot(b.x - x, b.z - z) < 110)) continue; const h = 25 + rb() * 55, rr = 18 + rb() * 27; buttes.push({ x: +x.toFixed(1), z: +z.toFixed(1), h: +h.toFixed(1), r: +rr.toFixed(1) });
+      const y0 = ground(x, z) - 8, g = new THREE.CylinderGeometry(rr * .82, rr * 1.15, h + 8, 18, 8); g.translate(0, (h + 8) / 2, 0); const P = g.attributes.position;
+      for (let k = 0; k < P.count; k++) { const px = P.getX(k), py = P.getY(k), pz = P.getZ(k), rad = Math.hypot(px, pz); if (rad < .01) continue; const ang = Math.atan2(pz, px), ledge = .1 * Math.floor(py / (h + 8) * 4 + .3 * fbm(ang, 2.1, 2)), f = 1 + .22 * (fbm(ang * 1.6 + x, py / 18, 3) - .5) - ledge * .6;
+        P.setX(k, px * f); P.setZ(k, pz * f); } g.translate(x, y0, z); put('butte', g); } }
+  const figure = (() => { const x = -10, z = 7, y = plinth.top, h = 1.75, g = new THREE.CylinderGeometry(.2, .24, h, 10); g.translate(x, y + h / 2, z); put('mark', g); return { x, y, z, h }; })();
+  // the script (cut dead; violet in its grooves when the gate wakes)
+  const cut = (w, h, draw, bg, fg) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, w, h); x.strokeStyle = fg; x.lineCap = 'round'; draw(x); const t = new THREE.CanvasTexture(c); t.anisotropy = 8; t.wrapT = THREE.RepeatWrapping; return t; };
+  const marks = x => { const rs = stream(key + ':script'); for (let k = 0; k < 12; k++) { const cy = 44 + k * 84, kind = Math.floor(rs() * 4); x.lineWidth = 7; x.beginPath();
+    if (kind === 0) x.arc(64, cy, 30, 0, 7); else if (kind === 1) { x.arc(64, cy, 30, 0, 7); x.moveTo(64, cy - 38); x.lineTo(64, cy + 38); } else if (kind === 2) { x.arc(64, cy, 30, Math.PI * .1, Math.PI * .9); x.moveTo(94, cy - 6); x.arc(64, cy - 6, 30, 0, -Math.PI, true); }
+    else { x.moveTo(64, cy - 36); x.lineTo(64, cy + 36); for (const d of [-20, 0, 20]) { x.moveTo(44, cy + d); x.lineTo(84, cy + d); } } x.stroke(); } };
+  const scriptT = cut(128, 1024, marks, '#c4a07c', '#2e2018'), glowT = WAKE ? cut(128, 1024, marks, '#000', '#fff') : null, VIOLET = new THREE.Color(.62, .3, 1);
+  const stoneM = mat('rock', { ns: .5, color: 0xe6c6a2, rough: .85 }); stoneM.vertexColors = true; const stepM = mat('slab', { ns: .8, color: 0xd8b48e, rough: .9 }); stepM.vertexColors = true;
+  const sandM = mat('plaster', { ns: .35, color: 0xffffff, rough: .95 }); sandM.vertexColors = true;
+  const M = { sand: sandM, stone: stoneM, step: stepM, butte: mat('rock', { ns: 1.1, color: 0xb0603e, rough: .95 }),
+    script: new THREE.MeshStandardMaterial({ map: scriptT, color: new THREE.Color(.62, .52, .44), roughness: .85, polygonOffset: true, polygonOffsetFactor: -2, side: THREE.DoubleSide, ...(glowT ? { emissive: VIOLET, emissiveMap: glowT, emissiveIntensity: 2.2 } : {}) }),
+    seam: new THREE.MeshBasicMaterial({ color: VIOLET.clone().multiplyScalar(2.4) }), mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
+  let tris = 0, draws = 0;
+  for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['sand', 'script', 'seam'].includes(k); mesh.receiveShadow = true; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
+  return { group, tris: Math.round(tris), draws, ground, R0, R1, CY, D, inner: NI, outer: NO, gone, slipped, thrown, hung, seats: seats.map(t => +(t / DEG).toFixed(1)), cleft: CLEFT, crater: CR, scar: SC, buttes, plinth, figure, wake: WAKE };
+}
