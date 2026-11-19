@@ -1122,16 +1122,23 @@ function buildBurnousPoint(cols, R, kb, neck, rollY, D) {
 // how far a full cloak is kept off the hands and lower forearms (Sessions 1944 and 1953): in the hang (wornMask's armRoom) and in the
 // drape's push-out and the spacing's clearing (armRoomV, by each surface point's own bone), since the drape places the cloth by the hand
 const CLOAK_ARM_ROOM = .03;
+// what a shoulder cape's front is not laid over (Session 2404): the hair and beard (loose hair has its own lift), and what is below the cape
+const CAPE_NOT_WORN = /^(scalp|hair|brows|beardBase|beard|moust|bun|tie|braid\d|brush|tail|lashes|eyes?|teeth|boots|trousers|legWraps|skirt|sandals)$/;
 // per vertex of the pack: m where the vertex's heaviest bone is the lower forearm, the wrist, a metacarpal or a finger, else 0
 function armRoomV(m) { const B = PACK.ix.bones, arm = PACK.armBones || (PACK.armBones = new Uint8Array(B.map(b => /^(lowerarm02|wrist|finger|metacarpal)/.test(b.name) ? 1 : 0))), r = new Float32Array(PACK.N);
   for (let v = 0; v < PACK.N; v++) { let b = 0, w = 0; for (let q = 0; q < 4; q++) if (PACK.skinWeight[v * 4 + q] > w) { w = PACK.skinWeight[v * 4 + q]; b = PACK.skinIndex[v * 4 + q]; } if (arm[b]) r[v] = m; } return r; }
-function buildCloak(G, body, byName, rnd, hairMeshes = null) {
+function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
   // a shoulder cape (Session 841; OG-059's short red capes on round brass pins, OG-048): cut to the elbows, wrapped round
   // to a narrow gap at the throat, and flared, so it falls over the arms as a circle of cloth rather than a back panel
   const len = D.cloakLen ?? .8, cape = !!D.cape, L = cape ? .24 + .14 * len : .4 + 1.0 * len, K = 56, open = cape ? Math.max(.14, Math.min(1.2, D.capeOpen ?? .14)) : .38, flare = cape ? 1.55 : 1.12 + .4 * len;
-  const clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .02 - q.y) / .03)); return .03 + k * ((D.mantle && q.y > neckY - .32 ? .095 : D.tabard ? (D.mail ? .06 : .05) : D.tunic ? .04 : .015) - .01); };
+  // over the breast a shoulder cape lies closer (Session 2404, S2393's owed note): a tunic's room (4 cm, for a cloak's sheet hung over a
+  // body that walks under it) held the cape's front 6.6 cm off the skin from the collar to under the breast, where the tunic stands 2 cm
+  // at most, so its two front panels read as a flat shelf. A cape rides the chest's own bone; from 1.9 rad round from the back's middle
+  // the tunic's room eases to 2 cm, so the front lies 4.6 cm off the skin, over the tunic
+  const capeFront = q => { if (!cape) return 0; const u = Math.max(0, Math.min(1, (Math.abs(Math.atan2(q.x - neck.x, -(q.z - neck.z))) - 1.9) / .6)); return u * u * (3 - 2 * u); };
+  const clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .02 - q.y) / .03)); return .03 + k * ((D.mantle && q.y > neckY - .32 ? .095 : D.tabard ? (D.mail ? .06 : .05) : D.tunic ? .04 - .02 * capeFront(q) : .015) - .01); };
   // the shoulder line: for each angle round the neck, the surface point furthest out and a little down from the neck
   // with a spear in the right fist (Session 909) a full cloak is thrown back off the right shoulder, as a Markman frees his
   // weapon arm: it opens from the throat round to just behind the shoulder, so the forearm held forward is out of it
@@ -1188,10 +1195,14 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
     cols.push(drape(S, start, dir.clone().multiplyScalar(.5).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006, { room })); }
   const R = Math.min(...cols.map(c => c.length));
   // hold neighbours to a spacing that widens toward the hem, then clear the body again
-  const sp0 = cols.slice(1).map((c, k) => c[0].distanceTo(cols[k][0]));
+  // a shoulder cape's flare fades over the breast (Session 2404, S2393's owed note): the whole sheet was held to spacings 1.55 times its
+  // starts' at the hem, so over the chest, where nothing under it is wider than the neck's line, the front pair of panels went out
+  // round a circle half as wide again as the shoulders and stood 9 to 18 cm off the body, two flat boards over the chest. The flare is
+  // what drops it over the arms as a circle, so it is kept to 1.9 rad from the back's middle and eased to a fifth of itself at the front
+  const sp0 = cols.slice(1).map((c, k) => c[0].distanceTo(cols[k][0])), flareK = sp0.map((s, k) => { if (!cape) return 1; const th = Math.abs(polarTh(cols[k][0].clone().add(cols[k + 1][0]).multiplyScalar(.5))), u = Math.max(0, Math.min(1, (th - 1.9) / .8)); return 1 - .8 * u * u * (3 - 2 * u); });
   for (let it = 0; it < 8; it++) {
-    for (let r = 1; r < R; r++) { const t = r / (R - 1), f = 1 + (flare - 1) * t;
-      for (let k = 0; k < K - 1; k++) { const a = cols[k][r], b = cols[k + 1][r], d = a.distanceTo(b), want = sp0[k] * f; if (d > want * 1.02 || d < want * .6) { const m = a.clone().sub(b).multiplyScalar((d - want) / d * .5); a.sub(m); b.add(m); } } }
+    for (let r = 1; r < R; r++) { const t = r / (R - 1);
+      for (let k = 0; k < K - 1; k++) { const a = cols[k][r], b = cols[k + 1][r], d = a.distanceTo(b), want = sp0[k] * (1 + (flare - 1) * t * flareK[k]); if (d > want * 1.02 || d < want * .6) { const m = a.clone().sub(b).multiplyScalar((d - want) / d * .5); a.sub(m); b.add(m); } } }
     for (const c of cols) for (let r = 1; r < R; r++) { const q = c[r], seg = q.clone().sub(c[r - 1]), l = seg.length(); if (l > .0105) q.copy(c[r - 1]).addScaledVector(seg, .0105 / l);
       const hit = heightOver(S, q), cl = clearAt(q) + .006 + (hit && room ? room[hit.e.v] : 0); if (hit && hit.h < cl) q.addScaledVector(hit.e.n, cl - hit.h); } }
   // the hang (Session 839, #274's A): each column is moved as one curve, in polar terms round the neck's vertical axis.
@@ -1208,12 +1219,16 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null) {
   // capeOpen 1) followed the body into that hollow and the panel's red came through it in a strip down the middle of the back. Its columns
   // stand 1 cm over the tabard's own outline the same way as over loose hair (the call passes the tabard with the hair, or alone), and from
   // the cape's first row down, where the hair's starts 3 cm under the neck: the tabard's straps came through at the neckline too
-  let overHair = 0; if (cape && hairMeshes) { const HP = []; for (const m of hairMeshes) if (m.name === 'hair') { const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
-    for (const m of hairMeshes) if (m.name === 'tabard') { HP.tab = HP.length / 3; const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
-    if (HP.length) { const nH = HP.length / 3, BH = new Uint8Array(nH).fill(1); BH.off = new Float32Array(nH); for (let i = 0; i < nH; i++) if (HP.tab != null && i >= HP.tab) BH[i] = 2;
+  // and over what is worn at the breast (Session 2404): the front lies closer than the tunic's room now (capeFront), so over an apron's
+  // bib, a waistcoat or a bodice it stands 1 cm over their own outline the same way, where the front's room is eased
+  let overHair = 0; if (cape && (hairMeshes || wornOver)) { const HP = []; for (const m of hairMeshes || []) if (m.name === 'hair') { const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
+    for (const m of hairMeshes || []) if (m.name === 'tabard') { HP.tab = HP.length / 3; const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
+    for (const m of wornOver || []) { if (HP.worn == null) HP.worn = HP.length / 3; const X = posedOf(m); for (let i = 0; i < X.length; i++) HP.push(X[i]); }
+    if (HP.length) { const nH = HP.length / 3, BH = new Uint8Array(nH).fill(1); BH.off = new Float32Array(nH); for (let i = 0; i < nH; i++) if (HP.worn != null && i >= HP.worn) BH[i] = 3; else if (HP.tab != null && i >= HP.tab) BH[i] = 2;
       const hairR = radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 1), tabR = HP.tab != null ? radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 2) : null;
+      const wornR = HP.worn != null ? radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 3) : null;
       const pols = cols.map(c => c.map(q => ({ th: Math.atan2(q.x - neck.x, -(q.z - neck.z)), r: Math.hypot(q.x - neck.x, q.z - neck.z) })));
-      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r < 1 ? p.r : Math.max(p.r, c[r].y < neckY - .03 ? hairR(p.th, c[r].y) + .01 : 0, tabR ? tabR(p.th, c[r].y) + .01 : 0)), b = a.slice();
+      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r < 1 ? p.r : Math.max(p.r, c[r].y < neckY - .03 ? hairR(p.th, c[r].y) + .01 : 0, tabR ? tabR(p.th, c[r].y) + .01 : 0, wornR && capeFront(c[r]) > 0 ? wornR(p.th, c[r].y) + .01 : 0)), b = a.slice();
         for (let r = 1; r < R; r++) for (let d = -8; d <= 8; d++) { const j = r + d; if (j < 1 || j >= R) continue; const v = a[j] - .4 * .0105 * Math.abs(d); if (v > b[r]) b[r] = v; }
         return b.map((v, r) => Math.max(0, v - pol[r].r)); });
       // and across the columns: the hair's outline is read strand by strand, so neighbouring columns wanted different lifts and the cape's top
@@ -5088,7 +5103,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let coatHoodSt = null; if (coat && D.coatHood === 'down') { root.updateMatrixWorld(true); const C = buildCoatHoodDown(G, body, byName, meshes); for (const m of C.meshes) root.add(m); coatHoodSt = C.stats; }
   yield;
-  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND, D.cape && (hairStats && hairStats.style === 'loose' || tabardMesh) ? [...(hairStats && hairStats.style === 'loose' ? meshes : []), ...(tabardMesh ? [tabardMesh] : [])] : null); for (const m of C.meshes) root.add(m); cloakStats = C.stats;
+  let cloakStats = null; if (D.cloak) { root.updateMatrixWorld(true); const C = buildCloak(G, body, byName, RND, D.cape && (hairStats && hairStats.style === 'loose' || tabardMesh) ? [...(hairStats && hairStats.style === 'loose' ? meshes : []), ...(tabardMesh ? [tabardMesh] : [])] : null, D.cape ? meshes.filter(m => m.isSkinnedMesh && m !== body && m !== tabardMesh && !CAPE_NOT_WORN.test(m.name)) : null); for (const m of C.meshes) root.add(m); cloakStats = C.stats;
     if (!D.cape && hairStats && /^(braid|braids|tail|shaved)$/.test(hairStats.style)) cloakStats.hairOver = hairOverCloak(meshes, C.meshes); }
   // the satchel (Session 2113), over everything worn, before the shield
   yield;
