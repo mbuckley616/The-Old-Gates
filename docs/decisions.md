@@ -92,6 +92,18 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Page.** [docs/design/ground-that-pushes-back.md](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/ground-that-pushes-back.md)
 
+### The Forgotten Aqueducts — a gate's halls sealed, a gate's way in, or halls to swim? (from the look builder, 2026-11-20, #1808)
+**The question.** The Forgotten Aqueducts, the seventh of OG-104's sixteen ruin sites ("a sprawling network of underground waterways, still partially flooded"), is a prototype now (look builder, Session 2448, `docs/prototypes/levelup/ruins.js` `forgottenAqueducts`): one nave of the gate kit at twice its size, buried under the Gatelands' limestone and flooded 6 m deep, its vault fallen in where a sinkhole 100 m across and 64 m deep has opened. A flight round the wall leads down to a scree; under the land the halls run 130 m each way into the dark and end in a choke of fallen stone. What are the halls?
+
+**Options.**
+- **A (recommended).** A gate's halls, sealed at both chokes: a landmark you climb down into and walk round on the scree; the halls past the chokes are seen but not entered, as the Hollow Below's rings are seen.
+- **B.** A gate's way in: the west choke opens on a gate's door, so the halls are the way to an Uisce gate, the first gate reached by water.
+- **C.** Halls to swim: the halls run on past the chokes as a flooded place of their own, swum and climbed. Needs swimming in a dungeon (the systems builder's).
+
+**Recommendation.** A, because a gate's inside is card F5's, and a sealed landmark can open later without anything being torn up.
+
+**Pictures.** [the west halls](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2445/docs/prototypes/levelup/aqueducts-nave.jpg) · [from the stair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2445/docs/prototypes/levelup/aqueducts-stair.jpg) · [from the lip](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2445/docs/prototypes/levelup/aqueducts-lip.jpg)
+
 ## Answered
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
