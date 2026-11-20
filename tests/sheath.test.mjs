@@ -56,10 +56,17 @@ const tp = await page.evaluate(() => { const out = {}; const eq0 = { ...EQ }; th
     // S2456: a blade worn is in a scabbard: every point of the blade between its mouth and the point inside the leather's section there
     const sc = R.scabbard; r.scab = !!(sc && c && c.getObjectByName('scabbard'));
     if (sc) { let n = 0, out_ = 0, worst = 0; const W = R.sheathW, inv = new THREE.Matrix4().copy(W.matrixWorld).invert(), M = new THREE.Matrix4(), v = new THREE.Vector3(), L = sc.R.length - 3;
-      W.traverse(m => { if (!m.isMesh) return; M.multiplyMatrices(inv, m.matrixWorld); const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(M); if (v.y < sc.mouth || v.y > sc.tip) continue; n++;
+      W.traverse(m => { if (!m.isMesh) return; M.multiplyMatrices(inv, m.matrixWorld); const p = m.geometry.attributes.position, ix = m.geometry.index, nT = ix ? ix.count : p.count, at = k => ix ? ix.getX(k) : k, A = new THREE.Vector3(), B = new THREE.Vector3();
+        /* S2459: along every triangle's edges, 5 mm apart, not its corners alone (the cutlass's long spine triangles stood out of a scabbard that held every corner) */
+        const S = []; for (let t = 0; t + 2 < nT; t += 3) for (let e = 0; e < 3; e++) { A.fromBufferAttribute(p, at(t + e)).applyMatrix4(M); B.fromBufferAttribute(p, at(t + (e + 1) % 3)).applyMatrix4(M); const n = Math.max(1, Math.floor(A.distanceTo(B) / .005)); for (let k = 0; k < n; k++) S.push(A.clone().lerp(B, k / n)); }
+        for (const q of S) { v.copy(q); if (v.y < sc.mouth || v.y > sc.tip) continue; n++;
         const f = (v.y - sc.mouth) / (sc.tip - sc.mouth) * L, i0 = Math.min(L - 1, Math.floor(f)), A = sc.R[i0], B = sc.R[i0 + 1], t = f - i0, ip = k => A[k] + (B[k] - A[k]) * t;
         const e = Math.max(Math.abs(v.x - ip('cx')) - ip('hw'), Math.abs(v.z - ip('cz')) - ip('ht')); if (e > .002) { out_++; worst = Math.max(worst, e); } } });
       r.blade = { n, out: out_, worst: +worst.toFixed(4), mouth: +sc.mouth.toFixed(3), tip: +sc.tip.toFixed(3), tris: sc.tris }; }
+    // S2459: a blade at the hip hangs in a frog: a loop round the scabbard under the locket, its strap up the belt's outside and over its top
+    const fr = c && c.getObjectByName('frog'); r.frog = null;
+    if (fr) { const F = tpSheathFit(R.rig.hb), L = fr.userData.frog.line, top = L[2], yt = F.yBt - F.p5.y, xo = (F.xBelt || F.side) - F.p5.x;
+      r.frog = { tris: fr.userData.frog.tris, below: +(yt - L[0][1]).toFixed(3), topOff: +(top[1] - yt).toFixed(3), out: +(top[0] - xo).toFixed(4), hooked: L[4][1] < top[1] && L[4][0] < xo }; }
     drawWeapon(); tpEnsure(); r.drawn = { held: !!TP.rig.weapon, worn: !!TP.rig.hbSheath, old: !!(c && c.parent) }; return r; };
   out.sword = wear('sword', false); out.claymore = wear('claymore', true); out.cutlass = wear('cutlass', false); out.mace = wear('mace', false);
   Object.assign(EQ, eq0); SHEATHED = false; thirdPerson = false; return out; });
@@ -70,6 +77,8 @@ if (tp.sword.hb) {
   check(`sheathing keeps the builder's body (carried over, ${tp.sword.ms} and ${tp.claymore.ms} ms)`, tp.sword.kept === 1 && tp.claymore.kept === 1, tp);
   check(`a sheathed blade is in a scabbard, the whole blade inside it (sword ${JSON.stringify(tp.sword.blade)}, claymore on the back, a curved cutlass); a mace through the belt has none`,
     ['sword', 'claymore', 'cutlass'].every(k => tp[k].scab && tp[k].blade && tp[k].blade.n > 20 && tp[k].blade.out === 0) && !tp.mace.scab && tp.mace.at === 'belt', tp);
+  check(`a blade at the hip hangs in a frog: its loop under the belt (sword ${JSON.stringify(tp.sword.frog)}), the strap's top over the belt's and outside it, hooked behind; none on the back or for a mace`,
+    ['sword', 'cutlass'].every(k => { const f = tp[k].frog; return f && f.tris > 50 && f.below > .02 && f.topOff > 0 && f.topOff < .012 && f.out > 0 && f.out < .006 && f.hooked; }) && !tp.claymore.frog && !tp.mace.frog, tp);
   check('drawn, it is in the fist again and the worn copy is gone', ['sword', 'claymore'].every(k => tp[k].drawn.held && !tp[k].drawn.worn && !tp[k].drawn.old), tp);
 } else console.log('  (the old look: no builder body, the sheathed weapon is not drawn)');
 check('no page errors', g.errs.length === 0, g.errs);

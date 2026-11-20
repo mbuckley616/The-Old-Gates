@@ -203,7 +203,7 @@ function tpBuild(lookIn,ppIn,reuse){
     // that was built for it: carried over from the body this one replaces (reuse, TP.rig) onto the new driver, not built again
     const key=JSON.stringify(rig.hbG),old=reuse&&reuse.rig&&reuse.rig.hb&&reuse.hbKey===key?reuse:null;R.hbKey=key;
     const t0=performance.now();
-    if(old){const H=old.rig.hb;if(old.hbHeld)for(const h of old.hbHeld)h.c.removeFromParent();old.hbHeld=null;if(old.hbSheath){old.hbSheath.removeFromParent();old.hbSheath=null;}old.rig.hb=null;old.rig.mesh.visible=true;
+    if(old){const H=old.rig.hb;if(old.hbHeld)for(const h of old.hbHeld)h.c.removeFromParent();old.hbHeld=null;if(old.hbSheath){tpSheathDrop(old.hbSheath);old.hbSheath=null;}old.rig.hb=null;old.rig.mesh.visible=true;
       rig.hb=H;H.L=-1;H.drv=rig.mesh.material;rig.root.add(H.root);TP_HB.kept=(TP_HB.kept||0)+1;}
     else{rig.hbLazy=true;try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
       if(rig.hb){TP_HB.ms+=performance.now()-t0;TP_HB.n++;}}
@@ -271,7 +271,10 @@ function tpSheathFit(H){const P=H.P,sk=P.skeleton,bind=b=>_tsM.copy(sk.boneInver
   const p5=bp(P.byName.spine05),p2=bp(P.byName.spine02),xL=P.byName['upperleg01.L']?bp(P.byName['upperleg01.L']).x+.13:.25,F={p5,p2,yB:p5.y+.05,side:.14,back:p2.z-.12};
   const belt=H.full.find(m=>m.isSkinnedMesh&&m.name==='belt');
   const each=(m,fn)=>{const pa=m.geometry.attributes.position,ix=m.geometry.index,n=ix?ix.count:pa.count;for(let i=0;i<n;i++){const j=ix?ix.getX(i):i;fn(pa.getX(j),pa.getY(j),pa.getZ(j));}};
-  if(belt){let lo=1e9,hi=-1e9;each(belt,(x,y,z)=>{if(Math.abs(z)<.12&&x>0){lo=Math.min(lo,y);hi=Math.max(hi,y);}});if(hi>lo)F.yB=(lo+hi)/2;}
+  if(belt){let lo=1e9,hi=-1e9;each(belt,(x,y,z)=>{if(Math.abs(z)<.12&&x>0){lo=Math.min(lo,y);hi=Math.max(hi,y);}});if(hi>lo)F.yB=(lo+hi)/2;
+    /* S2459: the belt's outside where the frog hangs (the side of the hip, not the buckle's front) and its top. The kit's belt is cut from
+       the shell's triangles, which overrun the 4.4 cm band its leather draws (11 cm of points at the hip), so the top is the band's, about yB */
+    const zf=p5.z+TP_SHEATH.hip.fwd;let xo=0;each(belt,(x,y,z)=>{if(Math.abs(z-zf)<.03&&Math.abs(y-F.yB)<.022)xo=Math.max(xo,x);});if(xo>0){F.xBelt=xo;F.yBt=F.yB+.022;}}
   let side=0,back=0;
   for(const m of H.full){if(m.isSkinnedMesh){if(/hair|brow/.test(m.name))continue;const cl=m.name==='cloak';
       each(m,(x,y,z)=>{if(!cl&&x<xL&&Math.abs(y-F.yB)<.05&&Math.abs(z-p5.z)<.1&&x>side)side=x; /* the bind's arms hang out past the hip: not the hip */if(Math.abs(x)<.12&&Math.abs(y-p2.y)<.16&&z<back)back=z;});continue;}
@@ -295,7 +298,37 @@ function tpSheath(R,it){const W=R.sheathW,H=R.rig.hb;if(!W||!H)return;const k=W.
   // the bone's own place at the bind: the piece's place is about it
   const sc=(at==='hip'||at==='back'&&/^(claymore|longsword)$/.test((W.userData.kit||'').split(':')[0]))?tpScabbard(W,it):null; /* S2456 — a blade worn goes in a scabbard */
   if(sc){const m=new THREE.Mesh(sc.geo,[WPN_MAT.matte,WPN_MAT.metal]);m.name='scabbard';c.add(m);const o=Math.max(0,sc.ht*s-th/2);if(at==='hip')pos.x+=o;else pos.z-=o;} /* the leather is thicker than the blade: out from the body by the difference */
-  c.position.copy(pos).sub(at==='back'?F.p2:F.p5);bone.add(c);c.traverse(o=>{if(o.isMesh)o.userData.tp=true;});R.hbSheath=c;R.sheathAt=at;R.scabbard=sc;}
+  c.position.copy(pos).sub(at==='back'?F.p2:F.p5);if(sc&&at==='hip'){const f=tpFrog(c,sc,F);if(f)c.add(f);}
+  bone.add(c);c.traverse(o=>{if(o.isMesh)o.userData.tp=true;});R.hbSheath=c;R.sheathAt=at;R.scabbard=sc;}
+// S2459 — the frog (S2456's owed note: the scabbard rode at the belt with nothing tying it on). A loop of leather round the scabbard just
+// under the locket, and a strap from the loop's flat against the hip up the outside of the belt, over its top and down behind it. Built
+// per body in the bone's bind metres (the belt's place is the body's), then carried into the sheathed group's frame; its own geometry,
+// disposed with the group (tpSheathDrop)
+const TP_FROG={h:.026,t:.003,gap:.0015,w:.024,below:.012,over:.006,behind:.022,col:0x34200f};
+function tpFrog(c,sc,F){if(F.yBt==null)return null;const K=TP_FROG;c.updateMatrix();const M=c.matrix,Mi=new THREE.Matrix4().copy(M).invert(),s=c.scale.x;
+  const R=sc.R,yf=sc.mouth+TP_SCAB_K.locket+K.below/s+K.h/s/2;let i=1;while(i<R.length-1&&R[i].y<yf)i++;const A=R[i-1],B=R[i],t=Math.min(1,Math.max(0,(yf-A.y)/((B.y-A.y)||1)));
+  const r={cx:A.cx+(B.cx-A.cx)*t,cz:A.cz+(B.cz-A.cz)*t,hw:A.hw+(B.hw-A.hw)*t,ht:A.ht+(B.ht-A.ht)*t};
+  const P=[],C=[],I=[],col=new THREE.Color(K.col),G=TP_SCAB_K.seg,quad=(a,b,c2,d)=>I.push(a,b,c2,a,c2,d),put=v=>{P.push(v.x,v.y,v.z);C.push(col.r,col.g,col.b);return P.length/3-1;};
+  // the loop: four rings (in and out, top and bottom) round the leather's lens, in the weapon's own units
+  const lens=(grow,y)=>{const o=[];for(let j=0;j<G;j++){const a=j/G*Math.PI*2,cs=Math.cos(a),sn=Math.sin(a),k=Math.pow(Math.abs(sn),.6)*Math.sign(sn);
+      o.push(put(new THREE.Vector3(r.cx+cs*(r.hw+grow),y,r.cz+k*(r.ht+grow))));}return o;};
+  const g0=K.gap/s,g1=(K.gap+K.t)/s,y0=yf-K.h/s/2,y1=yf+K.h/s/2,rg=[lens(g0,y0),lens(g1,y0),lens(g1,y1),lens(g0,y1)];
+  for(let q=0;q<4;q++){const a=rg[q],b=rg[(q+1)%4];for(let j=0;j<G;j++){const j1=(j+1)%G;quad(a[j],a[j1],b[j1],b[j]);}}
+  // which flat of the lens lies against the hip: the one whose outward side faces the body (−x in the bone's frame)
+  const inw=new THREE.Vector3(-1,0,0).transformDirection(Mi),side=inw.z<0?-1:1;
+  const p0=new THREE.Vector3(r.cx,yf,r.cz+side*(r.ht+g1)).applyMatrix4(M);
+  // the strap's line in the bone's frame: from the loop up the belt's outside, over its top, down behind it
+  const xo=(F.xBelt||F.side)-F.p5.x+K.t,yt=F.yBt-F.p5.y+K.over,z=p0.z,top=new THREE.Vector3(xo,yt,z);
+  const line=[p0,new THREE.Vector3(Math.max(p0.x,xo),Math.min(p0.y+.4*(yt-p0.y),yt-.004),z),top,new THREE.Vector3(xo-.016,yt+.002,z),new THREE.Vector3(xo-.02,yt-K.behind,z)];
+  if(p0.y>yt-.004)return null;
+  const Zb=new THREE.Vector3(0,0,1),sec=[];
+  for(let k=0;k<line.length;k++){const a=line[Math.max(0,k-1)],b=line[Math.min(line.length-1,k+1)],tg=b.clone().sub(a).normalize(),n=new THREE.Vector3().crossVectors(Zb,tg).normalize(); /* across the strap is z; its face looks out from the belt */
+    const q=[];for(const [u,v] of [[-1,-1],[1,-1],[1,1],[-1,1]])q.push(put(line[k].clone().addScaledVector(Zb,u*K.w/2).addScaledVector(n,v*K.t/2).applyMatrix4(Mi)));sec.push(q);}
+  for(let k=0;k<sec.length-1;k++)for(let e=0;e<4;e++){const e1=(e+1)%4;quad(sec[k][e],sec[k+1][e],sec[k+1][e1],sec[k][e1]);}
+  for(const [q,f] of [[sec[0],1],[sec[sec.length-1],0]])f?quad(q[0],q[3],q[2],q[1]):quad(q[0],q[1],q[2],q[3]);
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.computeVertexNormals();
+  const m=new THREE.Mesh(g,WPN_MAT.matte);m.name='frog';m.userData.own=true;m.userData.frog={yf,line:line.map(v=>v.toArray()),tris:I.length/3};return m;}
+function tpSheathDrop(c){if(!c)return;c.removeFromParent();c.traverse(o=>{if(o.isMesh&&o.userData.own)o.geometry.dispose();});}
 // S2456 — the scabbard (S2451's owed note: the blade hung bare at the hip). Measured from the blade itself in the weapon's own frame (the
 // grip about y 0, the blade up +y): the guard is whatever stands out past three quarters of the blade's width below a quarter of its length,
 // and the mouth sits just over it; from there to the point the scabbard follows the blade's own middle (a cutlass's or a nimcha's curve) at
@@ -305,7 +338,13 @@ function tpSheath(R,it){const W=R.sheathW,H=R.rig.hb;if(!W||!H)return;const k=W.
 const TP_SCAB=new Map(),TP_SCAB_K={wall:.007,flat:.006,minW:.011,minT:.009,past:.018,locket:.028,chape:.06,lip:.0025,seg:12};
 function tpScabbard(W,it){const kit=W.userData.kit||'',gc=tpHex(it&&it.matGuard,0xb08a48),key=kit+'|'+gc;if(TP_SCAB.has(key))return TP_SCAB.get(key);
   const K=TP_SCAB_K,par=W.parent;if(par)par.remove(W);W.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(W.matrixWorld).invert(),pts=[],v=new THREE.Vector3(),M=new THREE.Matrix4();
-  W.traverse(o=>{if(!o.isMesh||!o.geometry)return;M.multiplyMatrices(inv,o.matrixWorld);const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(M);pts.push([v.x,v.y,v.z]);}});
+  // S2459: the points along every edge of every triangle, 5 mm apart, not the corners alone: the cutlass's spine is a few long triangles,
+  // and the surface between their corners stood 4 mm proud of a scabbard sized from the corners (seen through the leather)
+  W.traverse(o=>{if(!o.isMesh||!o.geometry)return;M.multiplyMatrices(inv,o.matrixWorld);const p=o.geometry.attributes.position,ix=o.geometry.index,q=[];
+    for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(M);q.push([v.x,v.y,v.z]);pts.push(q[i]);}
+    const nT=ix?ix.count:p.count,at=k=>ix?ix.getX(k):k;
+    for(let t=0;t+2<nT;t+=3)for(let e=0;e<3;e++){const A=q[at(t+e)],B=q[at(t+(e+1)%3)],L=Math.hypot(B[0]-A[0],B[1]-A[1],B[2]-A[2]),n=Math.floor(L/.005);
+      for(let k=1;k<n;k++){const f=k/n;pts.push([A[0]+(B[0]-A[0])*f,A[1]+(B[1]-A[1])*f,A[2]+(B[2]-A[2])*f]);}}});
   if(par)par.add(W);if(!pts.length)return null;
   const tip=Math.max(...pts.map(p=>p[1])),mb={};for(const p of pts){if(p[1]<=.12||p[1]>=tip-.05)continue;const k=Math.round(p[1]*100),b=mb[k]||(mb[k]=[9,-9]);b[0]=Math.min(b[0],p[0]);b[1]=Math.max(b[1],p[0]);}
   let bw=0;for(const k in mb)bw=Math.max(bw,(mb[k][1]-mb[k][0])/2);if(!bw)bw=.025; /* the blade's half-width across each section, not from the axis: a cutlass curves off it */
@@ -360,7 +399,7 @@ function tpMotes(R,parent,col,box,shell){const n=TP_MOTE.n,P=new Float32Array(n*
 function tpMotesTick(R,t){if(!R||!R.motes)return;for(const m of R.motes){const {box,seed}=m.userData,a=m.geometry.attributes.position,h=box.max.y-box.min.y||.1;
   for(let i=0;i<seed.length;i++){const [x,z,ph,sp]=seed[i],f=(ph+t*TP_MOTE.rise*sp/h)%1;a.setXYZ(i,x+.012*Math.sin(t*1.3+i*2.1),box.min.y+f*h,z+.012*Math.cos(t*1.1+i*1.7));}
   a.needsUpdate=true;}}
-function tpDispose(R){if(!R)return;if(R.rig&&R.rig.hb){if(R.hbHeld)for(const h of R.hbHeld)h.c.removeFromParent();if(R.hbSheath)R.hbSheath.removeFromParent();hbDrop(R.rig);} /* F10: the held copies share the pieces' geometry, disposed once below */if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
+function tpDispose(R){if(!R)return;if(R.rig&&R.rig.hb){if(R.hbHeld)for(const h of R.hbHeld)h.c.removeFromParent();if(R.hbSheath)tpSheathDrop(R.hbSheath);hbDrop(R.rig);} /* F10: the held copies share the pieces' geometry, disposed once below */if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
 const _tpL=(a,b,k)=>a+(b-a)*k;
 // S1899 — your deflect's beat after a perfect parry (74-strikes.js sets _lastParryG on the play clock): w, the sword arm's; s, the shield's
 const TP_DEFLECT={rise:.06,hold:.18,out:.42,w:{aR:[-1.05,-.6,0],eR:-.45,wR:.35},s:{aL:[-1.15,-.3,0],eL:-.55,shY:.15,shZ:-.65}};
