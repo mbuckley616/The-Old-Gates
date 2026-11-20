@@ -2232,13 +2232,31 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const { NT, R, at: at0, phRim, thOf, under } = headDome(P, hv, c, rimY, hairPts, CL), TAU = Math.PI * 2;
   // the taller turban (Session 1017, L1; OG-044's and OG-093's men): the same dome, raised and swelled, and five more turns wound up it.
   // Above the brow line the dome is stretched up by 0.8, and from 2 cm over the edge it stands out from the centre, by 15 per cent at 8 cm; both only move the cloth outward, so the head and the hair stay under it, and the edge itself is not moved
-  const tb = !!D.turban && !sc, yS = by - .01, at = !tb ? at0 : (th, ph, off = 0) => { const p = at0(th, ph, off), h = Math.max(0, Math.min(1, (p.y - rimY(th) - .02) / .06)), s = 1 + .15 * h * h * (3 - 2 * h);
+  const tb = !!D.turban && !sc, yS = by - .01; let at = !tb ? at0 : (th, ph, off = 0) => { const p = at0(th, ph, off), h = Math.max(0, Math.min(1, (p.y - rimY(th) - .02) / .06)), s = 1 + .15 * h * h * (3 - 2 * h);
     p.x = c.x + (p.x - c.x) * s; p.z = c.z + (p.z - c.z) * s; if (p.y > yS) p.y = yS + (p.y - yS) * 1.8; return p; };
+  // a headscarf's slack (Session 2433, S1029's owed note: the crown was the fitted dome, so it read as a cap). Only outward, so nothing
+  // under it comes through: 3 mm of ease growing to the edge; fullness over the temples, between the fold and the ears, up to 1 cm;
+  // and the gather to the knot, six creases either side radiating from the nape (where the corners are knotted) up the back and
+  // forward over the temples, 1.3 cm deep nearest the knot and half that at the temples, fading out by the crown's top, gone at the knot
+  // itself and kept off the cloth the point comes out from under (within 0.32 rad of the back's middle, the lowest quarter)
+  const RIMS = new Map(), rimPh = th => { const k = Math.round(th * 1e4); let v = RIMS.get(k); if (v == null) { v = phRim(th); RIMS.set(k, v); } return v; }, ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const KN = (() => { const ph = phRim(Math.PI) - .1; return new THREE.Vector3(0, Math.cos(ph), -Math.sin(ph)); })(), KE1 = new THREE.Vector3(0, 1, 0).addScaledVector(KN, -KN.y).normalize(), KE2 = new THREE.Vector3().crossVectors(KN, KE1);
+  // each wearer ties hers her own way (Session 2434): the creases' count (5 to 7 either side), where they fall, how much they wander,
+  // their depth (1.1 to 1.5 cm) and the temples' fullness (0.8 to 1.2 cm), from a stream of the genome's own, so no other roll moves
+  const SR = sc ? seeded((G.seed ?? 'person') + '|scarf') : null, SK = SR ? { n: 10 + Math.floor(SR() * 5), ph: SR() * Math.PI * 2, wob: .3 + SR() * .6, deep: .011 + SR() * .004, tmp: .008 + SR() * .004 } : { n: 12, ph: 0, wob: .6, deep: .013, tmp: .01 };
+  const slackOf = (th, ph) => { const s = Math.min(1, ph / rimPh(th)), sp = Math.sin(ph), ux = sp * Math.sin(th), uy = Math.cos(ph), uz = sp * Math.cos(th), psi = Math.acos(Math.max(-1, Math.min(1, ux * KN.x + uy * KN.y + uz * KN.z))),
+      be = Math.atan2(ux * KE2.x + uy * KE2.y + uz * KE2.z, ux * KE1.x + uy * KE1.y + uz * KE1.z), cr = ((1 + Math.cos(SK.n * be + SK.ph + SK.wob * Math.sin(3 * be + SK.ph))) / 2) ** 3,
+      at_ = Math.abs(((th % TAU) + TAU + Math.PI) % TAU - Math.PI), flat = 1 - (1 - ss(.32, .55, Math.PI - at_)) * ss(.7, .85, s), env = ss(.12, .4, psi) * (1 - .45 * ss(.7, 1.3, psi)) * (1 - ss(1.3, 2, psi)) * flat,
+      temple = SK.tmp * Math.exp(-(((at_ - 1.45) / .55) ** 2)) * ss(.35, .85, s) * (1 - .4 * ss(.9, 1, s));
+    return { ease: .003 * ss(0, 1, s), temple: temple * (.55 + .45 * cr), gather: SK.deep * env * cr }; };
+  const slack = (th, ph) => { const o = slackOf(th, ph); return o.ease + o.temple + o.gather; };
+  if (sc) { const a1 = at; at = (th, ph, off = 0) => a1(th, ph, off + slack(th, ph)); }
   const topY = at(0, 0).y;
   const NP = 14, tubeV = [], pos = [], col = [], idx = [], prn = [], RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * TAU)), cloth = sRGB(...D.wrap), edge = sRGB(...(D.wrapBorder || D.wrap.map(v => v * (sc ? .97 : .82)))), PH_ = th => RIM[Math.round(((th / TAU) * NT % NT + NT) % NT)];
   // the crown, from the top to the edge (its seam, and the turns', at the back), a shade lighter than the turns so the rolls read against it
-  { const b0 = pos.length / 3, cc = cloth.clone().multiplyScalar(sc ? 1 : 1.06); for (let j = 0; j < NP; j++) for (let t = 0; t <= NT; t++) { const th = Math.PI + t / NT * TAU, p = at(th, PH_(th) * Math.max(.002, j / (NP - 1))); pos.push(p.x, p.y, p.z); col.push(cc.r, cc.g, cc.b); prn.push(1); }
-    for (let j = 0; j < NP - 1; j++) for (let t = 0; t < NT; t++) { const a = b0 + j * (NT + 1) + t, d = a + NT + 1; idx.push(a, d, a + 1, a + 1, d, d + 1); } }
+  // (a headscarf's on a finer grid, 128 round and 28 down, its edge at each column's own rim, so the creases have the points to show)
+  { const b0 = pos.length / 3, cc = cloth.clone().multiplyScalar(sc ? 1 : 1.06), NTc = sc ? 128 : NT, NPc = sc ? 28 : NP; for (let j = 0; j < NPc; j++) for (let t = 0; t <= NTc; t++) { const th = Math.PI + t / NTc * TAU, p = at(th, (sc ? rimPh(th) : PH_(th)) * Math.max(.002, j / (NPc - 1))); pos.push(p.x, p.y, p.z); col.push(cc.r, cc.g, cc.b); prn.push(1); }
+    for (let j = 0; j < NPc - 1; j++) for (let t = 0; t < NTc; t++) { const a = b0 + j * (NTc + 1) + t, d = a + NTc + 1; idx.push(a, d, a + 1, a + 1, d, d + 1); } }
   // the turns: [over the edge at the front, at the back, the roll's radius]; the polar angle where the dome is at that height, by halving
   // a turban's five more are thicker, and their heights are shares of the way from the edge to the top, so they cross higher at the front
   // a headscarf has one: its folded edge, thinner and lying on the head
@@ -2271,10 +2289,16 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   let gap = 1, hairOut = 0, browLow = 9, nape = 9, overBrow = 0; for (const i of hv) { if (!under(i)) continue; const d = V(i).sub(c), r = d.length(); gap = Math.min(gap, R(Math.atan2(d.x, d.z), Math.acos(d.y / r)) - r); }
   for (const p of hairPts) { const d = p.clone().sub(c), r = d.length(); if (p.y > rimY(thOf(p.x, p.z)) && r > R(Math.atan2(d.x, d.z), Math.acos(d.y / r)) - .002) hairOut++; }
   for (let i = 0; i < pos.length; i += 3) { const th = Math.atan2(pos[i] - c.x, pos[i + 2] - c.z); if (Math.abs(th) < .5) { browLow = Math.min(browLow, pos[i + 1]); if (pos[i + 1] < browTop + .005) overBrow++; } if (Math.abs(th) > 2.8) nape = Math.min(nape, pos[i + 1]); }
+  // the slack's numbers: its most over the temples (1.2 to 1.7 rad off the front, the lower half), and the gather's deepest crease and how many
+  // creases cross a ring 4 cm round the knot (the ridges counted where the depth rises through half its most)
+  const slackStats = () => { let temple = 0, gather = 0; for (let t = 0; t < 360; t++) { const th = t / 360 * TAU; for (let j = 1; j <= 20; j++) { const o = slackOf(th, rimPh(th) * j / 20); if (j > 10 && Math.abs(Math.abs(((th + Math.PI) % TAU) - Math.PI) - 1.45) < .25) temple = Math.max(temple, o.temple); gather = Math.max(gather, o.gather); } }
+    let creases = 0, prev = null; const r0 = .4; for (let k = 0; k <= 720; k++) { const be = -Math.PI + k / 720 * TAU, u = KN.clone().multiplyScalar(Math.cos(r0)).addScaledVector(KE1, Math.sin(r0) * Math.cos(be)).addScaledVector(KE2, Math.sin(r0) * Math.sin(be)), th = Math.atan2(u.x, u.z), ph = Math.acos(u.y);
+      if (ph > rimPh(th)) { prev = null; continue; } const v = slackOf(th, ph).gather > gather * .25; if (prev === false && v) creases++; prev = v; }
+    return { temple: +temple.toFixed(4), gather: +gather.toFixed(4), creases, n: SK.n }; };
   const ext = new THREE.Box3(); for (let i = 0; i < pos.length; i += 3) ext.expandByPoint(new THREE.Vector3(pos[i], pos[i + 1], pos[i + 2]));
   g.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z);
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 34, print: sc && D.scarfPrint ? sRGB(...D.scarfPrint) : null }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'wrap'; mesh.castShadow = true; mesh.receiveShadow = !sc; byName['head'].add(mesh);
-  return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), top: +(ext.max.y - by).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3), border: !!D.wrapBorder, turban: tb, cross, scarf: sc, front: +(rimY(0) - browTop).toFixed(4), outward: +outward.toFixed(3) } };
+  return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), top: +(ext.max.y - by).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3), border: !!D.wrapBorder, turban: tb, cross, scarf: sc, front: +(rimY(0) - browTop).toFixed(4), outward: +outward.toFixed(3), slack: sc ? slackStats() : null } };
 }
 // ── the veil (Session 1237, L1; OG-109's Aurenne travel column: the head-wrap's end drawn across the face against the road's dust and sun) ──
 // A band of cloth round the head under the wrap: across the face from just under the eyes (6 mm under the lower lid) to 2 cm under the

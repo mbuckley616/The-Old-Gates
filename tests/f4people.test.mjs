@@ -627,6 +627,12 @@ check('Bram holds his hammer: on the wrist, upright, nothing of him within 8 mm 
   hammer.on && hammer.wrist === 'wrist.R' && hammer.st.inside === 0 && hammer.st.handIn === 0 && hammer.st.headIn === 0 && hammer.st.thumbIn === 0 && hammer.st.lean < .1, hammer);
 // S1841 (L2, OG-069): Bram's sleeves rolled above the elbow: the roll on both arms, the tunic's sleeve cut under it, the forearm's skin drawn;
 // Corwin's sleeves down
+// S2433: a headscarf has slack (S1029's owed note: it was the fitted dome, a cap): fuller at the temples, creased to the knot, and still
+// nothing of the head or the hair through it, the point and its knot still clear
+const scarf = await page.evaluate(() => { const G0 = HB.rollGenome('sc:1', { g: 0, people: 'gatelander' }), P = HB.makePerson({ ...G0, hair: { style: 'bun', len: .8 }, dress: { ...G0.dress, cloak: null, hood: null, helm: null, wrap: [.3, .36, .22], scarfPrint: null, wrapBorder: null, scarf: true } }, { hoodStats: false });
+  const w = P.wrap, t = P.wrapTail; P.root.traverse(o => { if (o.geometry) o.geometry.dispose(); }); return { slack: w.slack, hairOut: w.hairOut, gap: w.gap, overBrow: w.overBrow, tris: w.tris, through: t && t.through, endGap: t && t.knot && t.knot.endGap }; });
+check(`a headscarf has slack, not a cap's fit: ${(scarf.slack?.temple * 1000).toFixed(1)} mm over the temples, creases to the knot ${(scarf.slack?.gather * 1000).toFixed(1)} mm deep; nothing of the head or hair through it, nor of the back through its point`,
+  scarf.slack && scarf.slack.temple > .005 && scarf.slack.gather > .009 && scarf.slack.creases >= 2 && scarf.hairOut === 0 && scarf.overBrow === 0 && scarf.gap > .006 && scarf.through === 0 && scarf.endGap >= .006, scarf);
 const rolled = await page.evaluate(() => { const one = n => { const P = HB.makePerson(HB.castGenome(n, {}), { hoodStats: false }), R0 = HB.PACK.rest, m = k => P.root.getObjectByName(k);
     const roll = m('roll'), tunic = m('tunic'), body = P.meshes ? P.meshes[0] : P.root.children.find(c => c.isSkinnedMesh);
     const ua = i => ((Math.abs(R0[i * 3]) - .1677) * .638 - (R0[i * 3 + 1] - .5246) * .7702 - (R0[i * 3 + 2] - .0146) * .0062) / .2276;
