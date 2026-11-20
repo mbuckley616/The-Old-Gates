@@ -133,6 +133,21 @@ const K6 = pick ? await page.evaluate((id) => {
     o.shut = dSolid(sx, sz); const wc = r.mat.color, pc = r.paleMat.color; o.pale = +(pc.r / wc.r).toFixed(4); o.paleOk = Math.abs(pc.r / wc.r - 1.15) < 1e-3 && Math.abs(pc.g / wc.g - 1.15) < 1e-3 && r.paleMat.map === r.mat.map;
     { const sh = dScene.children.find(q => q.userData && q.userData.dunShell === 'walls'), C = r.shut.geometry.attributes.color, SC = r.stone.mesh.geometry.attributes.color, SW = sh.geometry.attributes.color; let t = 0; for (let i = 0; i < SW.count; i++) t += SW.getX(i); /* S2445: the shell's material draws by vertex colour; a box without them drew black */
       o.tint = C ? +C.getX(0).toFixed(3) : 0; o.shellTint = +(t / SW.count).toFixed(3); o.tintOk = !!(C && SC && r.shut.material.vertexColors && C.getX(0) > .3 && Math.abs(C.getX(0) - t / SW.count) < .35); }
+    { /* S2458: the courses run on across the slab. The shell's vertices on the wall's plane within a turn (1.6 m) of either edge of the slab, against the slab's own uv
+         at the same place on its face (the turn's fraction, u along the wall and v up it); the old corner-laid uv beside it for the record */
+      const sh = dScene.children.find(q => q.userData && q.userData.dunShell === 'walls'), P = sh.geometry.attributes.position, U = sh.geometry.attributes.uv, q = sh.scale, so = sh.position;
+      const L = r.look, nX = !!base.dc, at = nX ? r.kx - base.dc * .25 : r.kz - base.dr * .25, mid0 = nX ? r.kz : r.kx, half = DCELL / 2, fr = w => { w = ((w % 1) + 1) % 1; return Math.min(w, 1 - w); };
+      const slabUV = (a, y) => [a / L.tex + L.ph[0], y / L.tex + L.ph[1]], du = [], dv = [], old = [];
+      for (let i = 0; i < P.count - 1; i++) { const vx = P.getX(i) * q.x + so.x, vy = P.getY(i) * q.y + so.y, vz = P.getZ(i) * q.z + so.z, n = nX ? vx : vz, a = nX ? vz : vx;
+        const wx = P.getX(i + 1) * q.x + so.x, wz = P.getZ(i + 1) * q.z + so.z, aj = nX ? wz : wx, nj = nX ? wx : wz;
+        if (Math.abs(n - at) > .35 || Math.abs(aj - a) < .1 || Math.abs(aj - a) < 3 * Math.abs(nj - n)) continue;
+        const e = Math.abs(a - mid0) - half; if (e < -.05 || e > 1.6 || vy < r.y - .05 || vy > r.y + r.slideH + .05) continue;
+        const [su, sv] = slabUV(a, vy); du.push(fr(U.getX(i) - su)); dv.push(fr(U.getY(i) - sv)); old.push(fr(U.getX(i) - (a - mid0) / L.tex)); }
+      const med = A => A.length ? +[...A].sort((x, y) => x - y)[A.length >> 1].toFixed(3) : 1;
+      const face = r.shut.geometry.attributes.uv, FP = r.shut.geometry.attributes.position, FN = r.shut.geometry.attributes.normal; let selfOk = true;
+      for (let i = 0; i < FP.count; i++) { if (Math.abs(nX ? FN.getX(i) : FN.getZ(i)) < .5) continue; const a = (nX ? FP.getZ(i) : FP.getX(i)) + mid0, y = FP.getY(i) + r.shut.position.y, [su, sv] = slabUV(a, y);
+        if (fr(face.getX(i) - su) > 1e-3 || fr(face.getY(i) - sv) > 1e-3) selfOk = false; }
+      o.courses = { n: du.length, phN: L.phN, ph: L.ph.map(x => +x.toFixed(3)), du: med(du), dv: med(dv), oldU: med(old), selfOk }; }
     const st = r.stone, ux = Math.sign(st.x - r.kx), uz = Math.sign(st.z - r.kz), mk = d => { const m = new THREE.Mesh(new THREE.SphereGeometry(.05, 5, 4), new THREE.MeshBasicMaterial()); m.position.set(r.kx + ux * d, 2, r.kz + uz * d); dScene.add(m);
       const T = { l: new THREE.PointLight(0xff8833, 0, 1), fl: m, ph: 0 }; TORCHES.push(T); return T; };
     const near = mk(2.5), far = mk(6); r.flames = null; _reset(st.x + ux * 1.0, st.z + uz * 1.0, 0, 0); o.air1 = +slideTick(r, true).toFixed(2);
@@ -222,6 +237,7 @@ if (K6) {
   check(`a seal's chest is rolled on its own key, a tier up; opened, what is left is the world's (${G.n0} in it, ${G.left} left)`, G.look && G.same && G.kept && G.left === G.n0 - 1, G);
   const W = K6.slide;
   check(`the sliding wall: rock in the shell's own colour (${W.tint} against the walls' ${W.shellTint}), one stone 15% paler (×${W.pale}), a flame 2.5 m off leans toward it (${W.lean}) and one 6 m off does not (${W.leanFar}), dust within ${W.dust} m of it, the air heard at 1 m (${W.air1}) and not at 3`, W.shut && W.paleOk && W.tintOk && W.lean > .25 && W.leanFar === 0 && W.dust <= 1.2 && W.air1 > 0 && W.air3 === 0, W);
+  check(`the slab's courses run on from the wall either side: ${W.courses.n} of the shell's points on its plane within 1.6 m of its edges, u off by ${W.courses.du} and v by ${W.courses.dv} of a turn (the slab's old corner-laid u ${W.courses.oldU})`, W.courses.n >= 8 && W.courses.selfOk && W.courses.du < .06 && W.courses.dv < .06, W.courses);
   check(`E on the pale stone, aimed at (${W.prompt}), opens it: it slides away in 1.2 s, kept in the world's record, the flames upright again, its chest at the floor's own tier`, W.aimed && W.offAim && /pale stone/.test(W.prompt) && W.open && W.sliding && W.gone && W.kept && W.leanAfter === 0 && W.tier, W);
 }
 if (K6) { const T = K6.stair;

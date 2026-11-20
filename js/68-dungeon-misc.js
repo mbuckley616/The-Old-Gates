@@ -1186,10 +1186,10 @@ const SLIDE_LEAN_R=4,SLIDE_AIR_R=2,SLIDE_LEAN=.35,SLIDE_PALE=.15,SLIDE_S=1.2,SLI
 const SLIDE_AIR={on:false};
 function slideBuild(t,rec,grp,y,cx,cz,opened){const Hc=DCELL/2,x=cx+t.dc*(Hc+.25),z=cz+t.dr*(Hc+.25),h=Math.min(FLOOR_HEIGHT,6); /* just past the mouth's edge, its face flush with the wall line */
   const sh=dScene.children.find(o=>o.userData&&o.userData.dunShell==='walls'),wm=sh&&sh.material&&!Array.isArray(sh.material)?sh.material:rec.mat;
-  const look=slideShellLook(sh,x,y,z,h);
-  const m=new THREE.Mesh(slideDress(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),look),wm);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;rec.mat=wm;rec.look=look;
+  const look=slideShellLook(sh,x,y,z,h,t.dc?{n:'x',at:x-t.dc*.25}:{n:'z',at:z-t.dr*.25});
+  const m=new THREE.Mesh(slideDress(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),look,[x,y+h/2,z]),wm);m.position.set(x,y+h/2,z);grp.add(m);rec.shut=m;rec.mat=wm;rec.look=look;
   const pm=wm.clone();pm.color=wm.color.clone().multiplyScalar(1+SLIDE_PALE);rec.paleMat=pm; /* the pale stone: the wall's own stone (its texture too), 15% lighter */
-  const sx=x-t.dc*.27,sz=z-t.dr*.27,st=new THREE.Mesh(slideDress(new THREE.BoxGeometry(t.dc?.06:.5,.36,t.dc?.5:.06),look),pm);st.position.set(sx-x,1.2-h/2,sz-z);m.add(st);
+  const sx=x-t.dc*.27,sz=z-t.dr*.27,st=new THREE.Mesh(slideDress(new THREE.BoxGeometry(t.dc?.06:.5,.36,t.dc?.5:.06),look,[sx,y+1.2,sz]),pm);st.position.set(sx-x,1.2-h/2,sz-z);m.add(st);
   rec.stone={x:sx,z:sz,y:y+1.2,mesh:st};rec.kx=x;rec.kz=z;rec.slideDir=t.dc?[0,1]:[1,0];rec.slideH=h;rec.base=[x,z];
   rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
   if(!opened){DUNGEON_PROPS.push(rec.solid);
@@ -1202,17 +1202,29 @@ function slideBuild(t,rec,grp,y,cx,cz,opened){const Hc=DCELL/2,x=cx+t.dc*(Hc+.25
 // colour of its vertices within SLIDE_LOOK_R of the slab's face, and the metres one turn of its texture spans (median of |dy|/|dv| over
 // its edges); slideDress gives a box that colour and texture coordinates at that density, so its stone matches the brick either side.
 const SLIDE_LOOK_R=2.5;
-function slideShellLook(sh,x,y,z,h){const out={k:[.8,.8,.8],tex:1.6};const g=sh&&sh.geometry;if(!g||!g.attributes.position)return out;
-  const P=g.attributes.position,C=g.attributes.color,U=g.attributes.uv,o=sh.position,q=sh.scale;let r=0,gg=0,b=0,n=0;const den=[];
-  for(let i=0;i<P.count;i++){const vx=P.getX(i)*q.x+o.x,vy=P.getY(i)*q.y+o.y,vz=P.getZ(i)*q.z+o.z; /* dunScaleWhole stretches the shell by its scale, not its vertices */
+// S2458 — and the courses run on across it. The shell lays its texture by place (u along the wall, v up it, one turn a 1.6 m), so the
+// slab, laid from its own corner, sat at its own phase against the brick either side: a seam at both edges. `pl` names the wall's plane
+// (its normal's axis and where it stands); the shell's vertices on that plane, on faces that run along it, give the phase of u and of v
+// (a circular mean, since the shell's warp moves a vertex and not its uv), and slideDress lays the slab's uv from its place plus that phase.
+function slideShellLook(sh,x,y,z,h,pl){const out={k:[.8,.8,.8],tex:1.6,ph:[0,0],phN:0};const g=sh&&sh.geometry;if(!g||!g.attributes.position)return out;
+  const P=g.attributes.position,C=g.attributes.color,U=g.attributes.uv,o=sh.position,q=sh.scale;let r=0,gg=0,b=0,n=0;const den=[],on=[];
+  const W=i=>[P.getX(i)*q.x+o.x,P.getY(i)*q.y+o.y,P.getZ(i)*q.z+o.z]; /* dunScaleWhole stretches the shell by its scale, not its vertices */
+  for(let i=0;i<P.count;i++){const [vx,vy,vz]=W(i);
     if(Math.abs(vx-x)>SLIDE_LOOK_R||Math.abs(vz-z)>SLIDE_LOOK_R||vy<y-.05||vy>y+h+.05)continue;
     if(C){r+=C.getX(i);gg+=C.getY(i);b+=C.getZ(i);n++;}
-    if(U&&i+1<P.count&&den.length<400){const dv=Math.abs(U.getY(i+1)-U.getY(i)),dy=Math.abs(P.getY(i+1)-P.getY(i))*q.y;if(dv>1e-4&&dy>1e-3)den.push(dy/dv);}}
-  if(n)out.k=[r/n,gg/n,b/n];if(den.length){den.sort((a,c)=>a-c);out.tex=den[den.length>>1];}return out;}
-function slideDress(geo,look){const P=geo.attributes.position,U=geo.attributes.uv,N=geo.attributes.normal,co=new Float32Array(P.count*3);
+    if(U&&i+1<P.count&&den.length<400){const dv=Math.abs(U.getY(i+1)-U.getY(i)),dy=Math.abs(P.getY(i+1)-P.getY(i))*q.y;if(dv>1e-4&&dy>1e-3)den.push(dy/dv);}
+    if(U&&pl&&i+1<P.count){const [wx,,wz]=W(i+1),nI=pl.n==='x'?vx:vz,nJ=pl.n==='x'?wx:wz,aI=pl.n==='x'?vz:vx,aJ=pl.n==='x'?wz:wx;
+      if(Math.abs(nI-pl.at)<.35&&Math.abs(aJ-aI)>.1&&Math.abs(aJ-aI)>3*Math.abs(nJ-nI))on.push([i,aI,vy]);}}
+  if(n)out.k=[r/n,gg/n,b/n];if(den.length){den.sort((a,c)=>a-c);out.tex=den[den.length>>1];}
+  if(on.length){const T=2*Math.PI;let su=0,cu=0,sv=0,cv=0;
+    for(const [i,a,vy] of on){const fu=U.getX(i)-a/out.tex,fv=U.getY(i)-vy/out.tex;su+=Math.sin(T*fu);cu+=Math.cos(T*fu);sv+=Math.sin(T*fv);cv+=Math.cos(T*fv);}
+    const fr=w=>((w/T)%1+1)%1;out.ph=[fr(Math.atan2(su,cu)),fr(Math.atan2(sv,cv))];out.phN=on.length;}
+  return out;}
+// at: the box's place in the dungeon (the mesh's position, or the pale stone's), so its uv are the shell's at the same place
+function slideDress(geo,look,at){const P=geo.attributes.position,U=geo.attributes.uv,N=geo.attributes.normal,co=new Float32Array(P.count*3),A=at||[0,0,0],ph=look.ph||[0,0];
   for(let i=0;i<P.count;i++){co[i*3]=look.k[0];co[i*3+1]=look.k[1];co[i*3+2]=look.k[2];
-    const nx=Math.abs(N.getX(i)),ny=Math.abs(N.getY(i)),X=P.getX(i),Y=P.getY(i),Z=P.getZ(i);
-    const a=nx>.5?Z:X,c=ny>.5?Z:Y;U.setXY(i,a/look.tex,c/look.tex);}
+    const nx=Math.abs(N.getX(i)),ny=Math.abs(N.getY(i)),X=P.getX(i)+A[0],Y=P.getY(i)+A[1],Z=P.getZ(i)+A[2];
+    const a=nx>.5?Z:X,c=ny>.5?Z:Y;U.setXY(i,a/look.tex+ph[0],c/look.tex+(ny>.5?0:ph[1]));}
   geo.setAttribute('color',new THREE.Float32BufferAttribute(co,3));U.needsUpdate=true;return geo;}
 // S2411 — the barricade's build: four planks nailed across the room's mouth, flush with its wall line, solid until broken; a thing of
 // the gate's (GATE_THINGS, kind 'barricade') so Caor touched finds it as it finds a web; its chest, at the floor's own tier, against the
