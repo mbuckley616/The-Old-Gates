@@ -17,6 +17,7 @@ const r = await page.evaluate(() => {
     const k = d.a < d.b ? d.a + '|' + d.b : d.b + '|' + d.a; R[k] = { a: d.a, b: d.b, opened: 0, broken: false };
     px = (a.x + b.x) / 2; pz = (a.z + b.z) / 2; tick(1); C = WORLD.caravans.get(k); if (C) { key = k; break; } delete R[k]; }
   if (!C) return { key: null };
+  const who = { role: C.npc.def.role, topics: (C.npc.def.topics || []).map(t => t.label) }; /* S2437 — the road's own merchant, not the festival's caravan-master */
   const pts = C.road.pts; const at = u => { const fi = u * (pts.length - 1), i0 = Math.min(pts.length - 2, Math.floor(fi)), f = fi - i0; return { x: pts[i0].x + (pts[i0 + 1].x - pts[i0].x) * f, z: pts[i0].z + (pts[i0 + 1].z - pts[i0].z) * f }; };
   const day0 = 40, F = .25;
   const alive = () => WORLD.caravans.get(key);
@@ -53,10 +54,11 @@ const r = await page.evaluate(() => {
   fresh(); R[key].threat = { day: day0 + 3, camp: 'Test Camp', f: F, won: false, started: false };
   setTime((day0 + 4) * 1440 + 1); tick(1);
   const slept = { broken: R[key].broken, by: R[key].by };
-  return { key, len: pts.length, attack, won, moving, lagAfter, nextDay, left, reopened, away, slept };
+  return { key, who, len: pts.length, attack, won, moving, lagAfter, nextDay, left, reopened, away, slept };
 });
 console.log(JSON.stringify(r));
 check('a trade route and its caravan were raised', !!r.key, r);
+check(`the caravan is the road's merchant (${r.who && r.who.role}), asked what he carries`, r.who && r.who.role === 'Merchant' && r.who.topics.includes('What are you carrying?'), r.who);
 check('at the hour, by the caravan: 3–4 alert bandits fall on it, the cart goes over, the merchant runs', r.attack && r.attack.started && r.attack.n >= 3 && r.attack.n <= 4 && r.attack.alert && Math.abs(r.attack.cartTilt) < .1 && r.attack.fled > 20 && !r.attack.broken, r.attack);
 check('killing them keeps the route; the cart is righted and the caravan is late', r.won && r.won.won && !r.won.broken && r.won.cartTilt > .99 && r.won.lag > 0, r.won);
 check('the caravan goes on and makes the time up', r.moving > 1 && r.lagAfter < r.won.lag, { moving: r.moving, lagAfter: r.lagAfter });

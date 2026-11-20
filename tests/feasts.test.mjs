@@ -443,7 +443,7 @@ const cv = await page.evaluate(() => {
   try { window.showMsg = m => msgs.push(m);
     at(0, 5); tickCaravan(); out.at5 = !!CARAVAN;
     at(0, 7); tickCaravan(); out.at7 = CARAVAN && [CARAVAN.npc.def ? CARAVAN.npc.def.role : null, CARAVAN.npc.def ? CARAVAN.npc.def.people : null];
-    const d = caravanDef(site, 28); out.labels = d.topics.map(t => t.label); out.name2 = caravanDef(site, 28).name === d.name;
+    const d = festCaravanDef(site, 28); out.labels = d.topics.map(t => t.label); out.name2 = festCaravanDef(site, 28).name === d.name;
     out.lord = feastGreeting(lord);
     gold = 1; out.poor = caravanPinch(site); out.poorDone = festActDone('caravan', site);
     gold = 10; out.pinch = caravanPinch(site); out.gold = gold; out.item = BAG.length > bag0 ? BAG[BAG.length - 1].name : null; out.log = msgs[msgs.length - 1];

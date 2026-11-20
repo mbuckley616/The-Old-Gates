@@ -3988,7 +3988,7 @@ const giver=`${lord.title} ${lord.name}`;
   // 83), the keeper slides with it, so the bursar is not left at its end. No table (the old look, a place not built yet): the spot as laid.
   function festKeeperAt(s,key,A){const S=typeof SETTLE!=='undefined'&&SETTLE.get(s.id),T=S&&S.stalls&&S.stalls.find(t=>t.key===key),sl=T&&T.slide||0;
     return [s.x+A[0]+(sl?Math.cos(T.ry)*sl:0),s.z+A[1]-(sl?Math.sin(T.ry)*sl:0)];}
-  function caravanDef(s,year){const r=seededRng('caravan',s.id+':'+year),bank=NAMES[PEOPLES.aurennais.names]||NAMES.irish,female=r()<.3,L=female&&bank.f&&bank.f.length?bank.f:bank.m;
+  function festCaravanDef(s,year){const r=seededRng('caravan',s.id+':'+year),bank=NAMES[PEOPLES.aurennais.names]||NAMES.irish,female=r()<.3,L=female&&bank.f&&bank.f.length?bank.f:bank.m;
     return {name:L[Math.floor(r()*L.length)],role:'Caravan-master',ico:'🐪',female,people:'aurennais',x:festKeeperAt(s,'caravan',CARAVAN_AT)[0],z:festKeeperAt(s,'caravan',CARAVAN_AT)[1],_siteId:s.id,_lantern:true,greeting:[CARAVAN_LINES.greet],
       get topics(){return [{label:'How was the road?',response:CARAVAN_LINES.road},{label:'Why the same day everywhere?',response:CARAVAN_LINES.why},
         ...(festActDone('caravan',s)?[]:[{label:'A pinch of saffron',fn:()=>caravanPinch(s)}]),{label:'Farewell.',bye:true}];}};}
@@ -3996,7 +3996,7 @@ const giver=`${lord.title} ${lord.name}`;
   function tickCaravan(){const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
     const h=s&&isleAt(s.x,s.z)==='aurenne'?caravanOn(s):null,yr=calDay(absMin()).year;
     if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(CARAVAN&&(CARAVAN.site.id!==s.id||CARAVAN.year!==yr))caravanOut();
-      if(!CARAVAN){const def=caravanDef(s,yr),n=spawnNPC(def,Math.atan2(-CARAVAN_AT[0],-CARAVAN_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);CARAVAN={npc:n,site:s,year:yr};}}
+      if(!CARAVAN){const def=festCaravanDef(s,yr),n=spawnNPC(def,Math.atan2(-CARAVAN_AT[0],-CARAVAN_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);CARAVAN={npc:n,site:s,year:yr};}}
     else if(CARAVAN)caravanOut();}
   // S2347 — the Lamps on the Water (*Festivals on the Calendar, III* §4, word for word; Michael's B on #1628). On the Lamps (Lean 4), in an
   // Aurennais town keeping it and not occupied, the lampseller stands from 17:00 to 22:00 at the quay's foot in a port (quayLine), else on
