@@ -44,5 +44,24 @@ check('a new weapon in hand is drawn', !r.swapped, r);
 check('a swing from the sheath draws as it swings, and is the draw cut', r.d25.wasDrawn && r.d25.dc && !r.d25drawn.dc, r);
 check(`Draw cut (Blade 25): the swing from the sheath drains ×2 posture (${r.d25.d} against ${r.d25drawn.d} drawn and ${r.d24.d} at Blade 24)`, r.d24.d > 0 && r.d24.d === r.d25drawn.d && Math.abs(r.d25.d / r.d25drawn.d - 2) < .01, r);
 check('Draw cut is live on the Skills tab', r.live);
+// Session 2451: in third person on the new look a sheathed weapon is worn, not held: a sword at the hip (on the builder's spine05), a
+// claymore across the back (spine02), the hand empty and the arms not in the fist-fighter's guard; the builder's body is carried over, not
+// built again; drawn, it is back in the fist and the worn copy is gone
+const tp = await page.evaluate(() => { const out = {}; const eq0 = { ...EQ }; thirdPerson = true; EQ.offhand = null;
+  const wear = (shape, two) => { EQ.weapon = { name: 'Test ' + shape, type: 'weapon', atk: [10, 11], wType: 'slash', weaponShape: shape, twoHand: two, weight: 3 };
+    SHEATHED = false; tpEnsure(); const kept = TP_HB.kept || 0, t0 = performance.now(); sheathWeapon(); tpEnsure(); const ms = performance.now() - t0, R = TP.rig, c = R.hbSheath;
+    let near = null; if (c && R.rig.hb) { R.root.updateMatrixWorld(true); const p = c.getWorldPosition(new THREE.Vector3()), b = c.parent.getWorldPosition(new THREE.Vector3()); near = +p.distanceTo(b).toFixed(3); }
+    let meshes = 0; if (c) c.traverse(o => { if (o.isMesh && o.visible) meshes++; });
+    const r = { hb: !!R.rig.hb, bone: c && c.parent && c.parent.name, at: R.sheathAt, meshes, near, held: !!R.weapon, unarmed: R.unarmed, kept: (TP_HB.kept || 0) - kept, ms: Math.round(ms) };
+    drawWeapon(); tpEnsure(); r.drawn = { held: !!TP.rig.weapon, worn: !!TP.rig.hbSheath, old: !!(c && c.parent) }; return r; };
+  out.sword = wear('sword', false); out.claymore = wear('claymore', true);
+  Object.assign(EQ, eq0); SHEATHED = false; thirdPerson = false; return out; });
+console.log(JSON.stringify(tp));
+if (tp.sword.hb) {
+  check(`third person: a sheathed sword is worn at the hip on the builder's spine05 (${tp.sword.near} m from it, ${tp.sword.meshes} meshes), the hand empty and the arms out of the guard`, tp.sword.bone === 'spine05' && tp.sword.at === 'hip' && tp.sword.meshes > 0 && tp.sword.near < .4 && !tp.sword.held && !tp.sword.unarmed, tp.sword);
+  check(`third person: a sheathed claymore is worn across the back on spine02 (${tp.claymore.near} m)`, tp.claymore.bone === 'spine02' && tp.claymore.at === 'back' && tp.claymore.meshes > 0 && tp.claymore.near < .6 && !tp.claymore.held, tp.claymore);
+  check(`sheathing keeps the builder's body (carried over, ${tp.sword.ms} and ${tp.claymore.ms} ms)`, tp.sword.kept === 1 && tp.claymore.kept === 1, tp);
+  check('drawn, it is in the fist again and the worn copy is gone', ['sword', 'claymore'].every(k => tp[k].drawn.held && !tp[k].drawn.worn && !tp[k].drawn.old), tp);
+} else console.log('  (the old look: no builder body, the sheathed weapon is not drawn)');
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
