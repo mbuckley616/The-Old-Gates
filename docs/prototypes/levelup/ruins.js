@@ -721,3 +721,159 @@ export function forgottenAqueducts(o = {}) {
   for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) worldUV(g, .25); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['bed', 'water', 'fall', 'foam'].includes(k); mesh.receiveShadow = !['fall', 'foam'].includes(k); if (k === 'water') mesh.renderOrder = 2; if (k === 'fall' || k === 'foam') mesh.renderOrder = 3; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
   return { group, tris: Math.round(tris), draws, ground, land: LAND, landAt: hy, water: WATER, floor: FLOOR, R, lip, inHole, nave: { x0: -X1, x1: X1, w: 2 * HALF, aisle: AISLE, out: OUT, bay: BAY, bays: NB, top: TOP, crown: CROWN }, arches, falls, stair: ST, scree: SCREE, stones: stones.length, figure };
 }
+
+// Stormwatch (Session 2454; OG-104's Gatelands panel, "a cliffside fortress of ancient age, offering sweeping views of the sea; its purpose
+// and original inhabitants remain a mystery"). The canon (§3.1) gives the Weavers the gates and nothing else, so this is not theirs: it is
+// the older people's, the Gatelands' predecessor culture that the canon already gives the Old Mound's earthwork (lore_canon.md, "oldest-feeling
+// fort form"), here in dry stone. Drawn after the promontory forts of the Atlantic edge (Dún Aonghasa on Inis Mór above all): three walls in
+// half-rings whose ends stop at a sheer sea cliff, so the fort's seaward half is gone into the sea, and a field of set stones before the middle
+// wall. Nothing is lit; no Weaver stone, no script. A metre a unit, the mean sea at y 0, the cliff's edge along z ≈ 0, the land to +z.
+//   - the cliff: 88 m of grey limestone in beds, sheer to the sea, its edge wavering 6 m either way; the land falls 3 m in 100 inland in
+//     low steps of the bedding, turf over it, the bare pavement showing through, and bare rock along the edge where the salt burns the turf;
+//   - the inner wall (the cashel): a half-ellipse 52 by 44 m about a heart on the edge, 4.2 m thick in three bands, the outer 5.4 m high and
+//     the two inside it 3.6 and 1.8 m, so its inner face is two terraces with flights of steps up them; the way in a passage 1.3 m wide on
+//     its north-east side under lintels at 2 m; inside it, the bare rock, and a platform of one bed of it by the edge;
+//   - the middle wall: 116 by 104 m, 3 m thick and 3.2 m high, its gap on the way in, two breaches thrown down outward;
+//   - the set stones: a band 14 m deep outside the middle wall on its west and north, slabs of the pavement set upright and leaning, 0.6 to
+//     1.8 m high, a hand apart to a stride apart; no path through them;
+//   - the outer wall: 236 by 200 m, 2.2 m thick, mostly down to its footing, standing to its height in stretches, its gap on the way in;
+//   - a 1.75 m post inside the passage's inner mouth as the scale.
+// What it was for, and who held it, is the canon's and the quest writer's (the DECISION).
+// -> { group, tris, draws, ground(x, z), edge(x), TOP, C: [x, z] (the heart), walls: { inner, middle, outer: { rx, rz, thick, h, bands, segs:
+//   [{ a, x, z, top, bottom, low }], ends: [[x, z]], gaps } }, passage { a, x, z, w, lintel, len }, flights, chev: [{ x, z, top, lean }],
+//   platform { x, z, top }, figure }
+export function stormwatch(o = {}) {
+  const key = o.key || 'ruins:stormwatch', r = stream(key), TOP = 88, BED = -16, XS = 760, ZL = 560, group = new THREE.Group();
+  const B = new Map(), SC = { wall: 1 / 4, tumble: .6, chev: .6, step: 1 / 4, lintel: .5, slab: .2, land: 1 / 6 };
+  const put = (k, g) => { if (g.userData.keep) { (B.get(k) || B.set(k, []).get(k)).push(g); return g; } const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a);
+    if (!x.userData.uvSet) { if (x.attributes.uv) x.deleteAttribute('uv'); x.computeVertexNormals(); worldUV(x, SC[k] ?? .25); } else x.computeVertexNormals(); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  // the edge: the cliff's line, z by x, wavering about 0
+  const edge = x => 7 * (fbm(x / 70 + 3.1, 1.7, 3) - .5) * 2 + 3 * (fbm(x / 18 + 9.3, 4.4, 2) - .5);
+  const C = [0, edge(0) - 3];
+  // the land: falling 3 m in 100 inland, stepped in low risers of the bedding (1.1 m every 34 m or so), a little roughness
+  const landY = (x, z) => { const d = Math.max(0, z - edge(x)), t = d / 34 + .5 * fbm(x / 90 + 1.3, z / 90, 2); return TOP - .03 * d - 1.1 * (Math.floor(t) + sstep(.86, 1, t - Math.floor(t))) + .3 * (fbm(x / 9, z / 9, 3) - .5); };
+  const ground = (x, z) => { const e = edge(x); if (z >= e) return landY(x, z); if (z > e - 4) return -2 + (TOP + 2) * (z - e + 4) / 4; return Math.max(BED, -2 - (e - 4 - z) * .8); };
+  // the x lines, close about the fort and wide toward the ends
+  const NX = 240, XL = Array.from({ length: NX + 1 }, (_, i) => { const t = i / NX * 2 - 1; return XS * Math.sign(t) * Math.abs(t) ** 1.55; });
+  // ── the land: rows from the edge inland, close at the edge; coloured turf, pavement and the salt-burned rim ──
+  { const NZ = 96, pos = [], col = [], idx = [], pv = [];
+    for (let i = 0; i <= NX; i++) for (let j = 0; j <= NZ; j++) { const x = XL[i], e = edge(x), d = ZL * (j / NZ) ** 1.9, z = e + d, y = landY(x, z);
+      const pave = .85 * sstep(.1, .2, fbm(x / 7 + 7, z / 7, 4)), rim = 1 - sstep(4, 16, d), dx = (x - C[0]) / 26, dz = (z - C[1]) / 22, inner = dx * dx + dz * dz < 1 ? .75 : 0;
+      const bare = Math.min(1, Math.max(pave, rim, inner)), n = .78 + .3 * fbm(x / 6, z / 6, 3) + .14 * fbm(x / 1.7 + 3, z / 1.7, 2), turf = [.25, .3, .16], rock = [.72, .72, .68];
+      pos.push(x, y, z); pv.push(bare); col.push(...[0, 1, 2].map(k => (turf[k] * (1 - bare) + rock[k] * bare) * n)); }
+    for (let i = 0; i < NX; i++) for (let j = 0; j < NZ; j++) { const a = i * (NZ + 1) + j, b = a + NZ + 1; idx.push(a, a + 1, b, b, a + 1, b + 1); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.setAttribute('pave', new THREE.Float32BufferAttribute(pv, 1));
+    g.computeVertexNormals(); worldUV(g, SC.land); g.userData.keep = true; put('land', g); }
+  // ── the cliff's face: from the edge down to under the sea, its beds stepping in and out a little; u along the edge, v up it ──
+  { const NJ = 30, pos = [], col = [], uv = [], s = .0625; let u = 0; const U = [0];
+    for (let i = 1; i <= NX; i++) U.push(U[i - 1] + Math.hypot(XL[i] - XL[i - 1], edge(XL[i]) - edge(XL[i - 1])));
+    const pt = (i, j) => { const x = XL[i], yt = landY(x, edge(x)), y = yt - (yt + 6) * j / NJ, bed = Math.floor(y / 7.3), z = j === 0 ? edge(x) : edge(x) - 2 * (1 - y / TOP) - 3.2 * (fbm(x / 26 + bed * 1.7, bed * .9, 2) - .5) - 9 * (fbm(x / 55 + 2, y / 45, 2) - .5) * sstep(0, 3, j) - .4 + 2.2 * Math.exp(-(((y - 2) / 2.5) ** 2)) * sstep(0, 3, j);
+      const wet = 1 - sstep(1.5, 4, y), lich = sstep(TOP - 14, TOP - 2, y) * .5, n = (.85 + .3 * fbm(x / 8, y / 8, 3)) * (.82 + .3 * fbm(bed * 3.1, 1.1, 1)), c = [.56, .56, .53].map((v, k) => (v * (1 - wet) + [.12, .12, .1][k] * wet) * n * (1 - lich * .25) + lich * [.06, .07, .02][k]);
+      return [x, j === 0 ? yt : y, z, c, U[i] * s, y * s]; };
+    for (let i = 0; i < NX; i++) for (let j = 0; j < NJ; j++) { const a = pt(i, j), b = pt(i + 1, j), c = pt(i + 1, j + 1), d = pt(i, j + 1);
+      for (const v of [a, b, c, a, c, d]) { pos.push(v[0], v[1], v[2]); col.push(...v[3]); uv.push(v[4], v[5]); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.userData.uvSet = true; put('cliff', g); }
+  // ── the sea, the bed under the cliff, the foam along its foot ──
+  { const g = new THREE.PlaneGeometry(9000, 9000); g.rotateX(-Math.PI / 2); g.translate(0, 0, -2500); B.set('sea', [g]); }
+  { const pos = []; for (let i = 0; i < NX; i++) { const p = k => { const x = XL[k], e = edge(x) - 4.4; return [[x, .06, e], [x, .06, e - 3 - 2.5 * fbm(x / 11, 2.2, 2)]]; }, [a, d] = p(i), [b, c] = p(i + 1); pos.push(...a, ...b, ...c, ...a, ...c, ...d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals(); B.set('foam', [g]); }
+  // boulders fallen from the face at its foot, half in the sea
+  const footStones = []; { const rf = stream(key + ':foot'); for (let k = 0; k < 90; k++) { const x = (rf() - .5) * 700, z = edge(x) - 4.5 - rf() * 9, s = 1.2 + rf() * 2.6, g = new THREE.IcosahedronGeometry(s, 0); g.scale(1, .55 + rf() * .3, .8 + rf() * .4); g.rotateY(rf() * 6.28); g.translate(x, -.6 + rf() * .8, z); put('tumble', g); footStones.push([x, z]); } }
+  // a prism of 8 corners (bottom 0-3, top 4-7, each ring in order round the outside), 12 triangles
+  const prism = P => { const out = [], q = (a, b, c, d) => out.push(...P[a], ...P[b], ...P[c], ...P[a], ...P[c], ...P[d]);
+    q(0, 1, 2, 3); q(4, 7, 6, 5); q(0, 4, 5, 1); q(1, 5, 6, 2); q(2, 6, 7, 3); q(3, 7, 4, 0); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return g; };
+  // the ellipse's point and its outward normal at bearing a (0 toward +x, π/2 inland toward +z), the radii grown by off
+  const ell = (rx, rz, a, off = 0) => { const nx = Math.cos(a) / rx, nz = Math.sin(a) / rz, l = Math.hypot(nx, nz); return [C[0] + rx * Math.cos(a) + nx / l * off, C[1] + rz * Math.sin(a) + nz / l * off]; };
+  const onLand = (x, z, m = .6) => z > edge(x) + m;
+  const AE = 1.08 /* the way in's bearing: north-east, inland */, tumbles = [];
+  // a fallen stone: lying, a third sunk
+  const tumble = (x, z, s = 1) => { const g = new THREE.IcosahedronGeometry(1, 0), sx = (.3 + r() * .4) * s, sy = (.18 + r() * .2) * s, sz = (.3 + r() * .35) * s; g.scale(sx, sy, sz); g.rotateY(r() * 6.28); g.rotateX((r() - .5) * .5);
+    const y = ground(x, z) + sy * .45; g.translate(x, y, z); tumbles.push([x, z]); put('tumble', g); };
+  // a wall: bands from the outside in ([thickness, height]), its segments ~1.6 m of arc; gap(a) -> null | 'pass' | 'gate' | 'breach'
+  const wall = (name, rx, rz, bands, o2) => { const thick = bands.reduce((s, b) => s + b[0], 0), segs = [], ends = [], A0 = -.55, A1 = Math.PI + .55, L = Math.PI * (rx + rz) / 2, n = Math.ceil(L * (A1 - A0) / Math.PI / 1.6);
+    const cuts = [A0]; for (let k = 1; k < n; k++) cuts.push(A0 + (A1 - A0) * k / n); cuts.push(A1); for (const c of o2.cuts || []) cuts.push(c); cuts.sort((p, q) => p - q);
+    let wasOn = false;
+    for (let k = 0; k < cuts.length - 1; k++) { const a0 = cuts[k], a1 = cuts[k + 1]; if (a1 - a0 < 1e-4) continue; const am = (a0 + a1) / 2, gap = o2.gap ? o2.gap(am) : null;
+      const outer0 = ell(rx, rz, a0, thick / 2), outer1 = ell(rx, rz, a1, thick / 2), inner0 = ell(rx, rz, a0, -thick / 2), inner1 = ell(rx, rz, a1, -thick / 2);
+      const on = [outer0, outer1, inner0, inner1].every(p => onLand(p[0], p[1]));
+      if (on !== wasOn && k > 0) ends.push(ell(rx, rz, a0)); wasOn = on; if (!on) continue;
+      if (gap === 'gate') continue;
+      const m = ell(rx, rz, am), gm = ground(m[0], m[1]); let off = thick / 2, lowAll = Infinity, topAll = -Infinity;
+      const hf = o2.height ? o2.height(am) : 1;
+      for (let b = 0; b < bands.length; b++) { const [t, h] = bands[b], o0 = off, o1 = off - t; off = o1;
+        const P = [ell(rx, rz, a0, o0), ell(rx, rz, a1, o0), ell(rx, rz, a1, o1), ell(rx, rz, a0, o1)], low = Math.min(...P.map(p => ground(p[0], p[1]))) - .45;
+        let top = gm + (gap === 'breach' ? .35 + .5 * r() : h * hf + (r() - .5) * .3); if (top < gm + .25) top = gm + .25 + .2 * r();
+        let bot = low; if (gap === 'pass') { if (top < gm + 2.3) continue; bot = gm + 2.1; }
+        const bat = b === 0 ? Math.min(.35, (top - gm) * .06) : 0; /* the outer face battered in */
+        const T = [ell(rx, rz, a0, o0 - bat), ell(rx, rz, a1, o0 - bat), ell(rx, rz, a1, o1), ell(rx, rz, a0, o1)];
+        put('wall', prism([...P.map(p => [p[0], bot, p[1]]), ...T.map(p => [p[0], top, p[1]])])); lowAll = Math.min(lowAll, low); topAll = Math.max(topAll, top - gm);
+        if (gap === 'pass') { const g = new THREE.BoxGeometry(PW + 1.2, .22, t + .3); const mid = ell(rx, rz, am, (o0 + o1) / 2); g.rotateY(-Math.atan2(Math.sin(am) / rz, Math.cos(am) / rx) + Math.PI / 2); g.translate(mid[0], gm + 2.0, mid[1]); put('lintel', g); } }
+      segs.push({ a: +am.toFixed(4), x: +m[0].toFixed(2), z: +m[1].toFixed(2), top: +topAll.toFixed(2), bottom: +(lowAll - gm).toFixed(2), gap });
+      if (gap === 'breach' && r() < .9) for (let q = 0; q < 6; q++) { const p = ell(rx, rz, am + (r() - .5) * 1.6 / rx, thick / 2 + 1 + r() * 7); if (onLand(p[0], p[1], 3)) tumble(p[0], p[1], 1.1); } }
+    return { name, rx, rz, thick, h: Math.max(...bands.map(b => b[1])), bands: bands.map(b => b.slice()), segs, ends: ends.map(p => p.map(v => +v.toFixed(2))) }; };
+  // ── the inner wall: three bands, a passage under lintels on the way in ──
+  const RXI = 26, RZI = 22, PW = 1.3, dA = PW / 2 / Math.hypot(RXI * Math.sin(AE), RZI * Math.cos(AE));
+  const inner = wall('inner', RXI, RZI, [[1.8, 5.4], [1.2, 3.6], [1.2, 1.8]], { cuts: [AE - dA, AE + dA], gap: a => Math.abs(a - AE) < dA ? 'pass' : null });
+  // the passage's floor: slabs; its lintels made above; the flights: two steps up each terrace at three bearings
+  const pin = ell(RXI, RZI, AE, -2.1 - .2), pout = ell(RXI, RZI, AE, 2.1 + .2), passage = { a: AE, x: +((pin[0] + pout[0]) / 2).toFixed(2), z: +((pin[1] + pout[1]) / 2).toFixed(2), w: PW, lintel: 2.0, len: 4.6, inner: pin.map(v => +v.toFixed(2)), outer: pout.map(v => +v.toFixed(2)) };
+  { const g = new THREE.BoxGeometry(PW + .2, .2, 4.8), m = ell(RXI, RZI, AE); g.rotateY(-Math.atan2(Math.sin(AE) / RZI, Math.cos(AE) / RXI) + Math.PI / 2); g.translate(m[0], ground(m[0], m[1]) + .02, m[1]); put('lintel', g); }
+  const flights = [];
+  for (const af of [AE + .62, 1.95, 2.55]) { const rot = -Math.atan2(Math.sin(af) / RZI, Math.cos(af) / RXI) + Math.PI / 2, gm = ground(...ell(RXI, RZI, af));
+    // up to the first terrace from the floor (in front of the innermost band), then onto the second (on the first terrace)
+    for (const [base, rise, face] of [[0, 1.8, -2.1], [1.8, 1.8, -.9]]) for (let s = 0; s < 4; s++) { const d = .3 * (4 - s), p = ell(RXI, RZI, af, face - d + .15), h = base + rise * (s + 1) / 4, g = new THREE.BoxGeometry(1.0, h + .3, .32); g.rotateY(rot); g.translate(p[0], gm + h / 2 - .15, p[1]); put('step', g); }
+    flights.push({ a: +af.toFixed(3) }); }
+  // ── the middle wall: its gate on the way in, two breaches ──
+  const RXM = 58, RZM = 52, rb = stream(key + ':breach'), BR = [1.75 + rb() * .3, .35 + rb() * .3];
+  const middle = wall('middle', RXM, RZM, [[3, 3.2]], { gap: a => Math.abs(a - AE) < 1.4 / 55 ? 'gate' : BR.some(b => Math.abs(a - b) < 4.5 / 55) ? 'breach' : null, height: a => .85 + .2 * fbm(a * 9, 2.2, 2) });
+  // ── the outer wall: down to its footing for most of its run ──
+  const RXO = 118, RZO = 100, outer = wall('outer', RXO, RZO, [[2.2, 2.2]], { gap: a => Math.abs(a - AE) < 1.6 / 108 ? 'gate' : null, height: a => Math.max(.18, sstep(.1, .25, fbm(a * 7 + 3, 5.5, 3))) });
+  // ── the set stones: a band 14 m deep outside the middle wall, west and north ──
+  const chev = [], rc = stream(key + ':chev');
+  for (let tries = 0; tries < 9000 && chev.length < 640; tries++) { const a = 1.45 + rc() * (Math.PI + .4 - 1.45), off = 3 + 1.5 + rc() * 14, p = ell(RXM, RZM, a, off);
+    if (!onLand(p[0], p[1], 3)) continue; if (chev.some(q => Math.hypot(q.x - p[0], q.z - p[1]) < .9 + rc() * 1.2)) continue;
+    const h = .6 + rc() * 1.2, w = .35 + rc() * .7, t = .12 + rc() * .16, g = new THREE.BoxGeometry(w, h + .35, t, 1, 1, 1), P = g.attributes.position, tip = (rc() - .5) * .3;
+    for (let v = 0; v < P.count; v++) if (P.getY(v) > 0) { P.setX(v, P.getX(v) * (.2 + rc() * .5) + tip); P.setZ(v, P.getZ(v) * (.5 + rc() * .4)); }
+    const lean = (rc() - .5) * .6, gy = ground(p[0], p[1]); g.rotateZ(lean); g.rotateY(rc() * Math.PI); g.translate(p[0], gy + (h + .35) / 2 - .35, p[1]); put('chev', g);
+    chev.push({ x: +p[0].toFixed(2), z: +p[1].toFixed(2), top: +(h * Math.cos(lean)).toFixed(2), lean: +lean.toFixed(3) }); }
+  // the outer wall's fallen stone: where it is down, a spill either side of its footing; where it stands, a few at its outer foot
+  for (const s of outer.segs) { const n = s.top < .7 ? 3 : r() < .3 ? 1 : 0; for (let q = 0; q < n; q++) { const side = s.top < .7 && r() < .4 ? -1 : 1, p = ell(RXO, RZO, s.a + (r() - .5) * 1.4 / RXO, side * (1.3 + r() * 2.6)); if (onLand(p[0], p[1], 3)) tumble(p[0], p[1], .9); } }
+  // ── the platform: one bed of the pavement standing proud by the edge inside the cashel ──
+  const platform = (() => { const x = C[0] - 6, z = edge(x) + 6.5, gy = ground(x, z), rp = stream(key + ':platform'), cs = [[-2.9, -1.8], [2.6, -2.1], [3.0, 1.7], [-2.4, 2.0]].map(([u, v]) => [x + u + (rp() - .5) * .6, z + v + (rp() - .5) * .5]), tp = cs.map(() => gy + .62 + rp() * .16);
+    put('slab', prism([...cs.map(c => [c[0], gy - .4, c[1]]), ...cs.map((c, k) => [c[0] + (rp() - .5) * .3, tp[k], c[1] + (rp() - .5) * .3])])); return { x, z: +z.toFixed(2), top: +Math.min(...tp).toFixed(2) }; })();
+  // the scale: a 1.75 m post just inside the passage's inner mouth
+  const figure = (() => { const p = ell(RXI, RZI, AE, -2.1 - 2.2), x = p[0] - .6, z = p[1], y = ground(x, z), h = 1.75, g = new THREE.CylinderGeometry(.2, .24, h, 10); g.translate(x, y + h / 2, z); put('mark', g); return { x: +x.toFixed(2), y: +y.toFixed(2), z: +z.toFixed(2), h }; })();
+  // two textures of its own, 512 px a tile, wrapping both ways. Dry stone (4 m a tile): courses of uneven height (0.2 to 0.45 m), stones
+  // 0.3 to 0.8 m long, each its own grey, pinned with spalls, lichen spotting the faces; the joints dark and open. Pavement (6 m a tile): clints
+  // between grikes that run one way, wavering, 0.8 to 1.6 m apart, cut across by joints at random; the clints' tops pale and pitted.
+  const canvasTex = (draw, bump) => { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d'); draw(x); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace; return t; };
+  const rt = stream(key + ':tex');
+  const grain = (x, n, a) => { for (let q = 0; q < n; q++) { const v = rt() < .5 ? 0 : 255; x.fillStyle = `rgba(${v},${v},${v},${a * rt()})`; x.fillRect(rt() * 512, rt() * 512, 1 + rt() * 3, 1 + rt() * 3); } };
+  const dryT = canvasTex(x => { x.fillStyle = '#3c3b38'; x.fillRect(0, 0, 512, 512); const rows = []; let y = 0; while (y < 512) { const h = 22 + rt() * 36; rows.push([y, Math.min(h, 512 - y)]); y += h; } if (rows.length > 1 && rows[rows.length - 1][1] < 20) { const l = rows.pop(); rows[rows.length - 1][1] += l[1]; }
+    for (const [y0, h] of rows) { let x0 = rt() * 60; const end = x0 + 512; while (x0 < end) { const w = 30 + rt() * 90, v = 124 + rt() * 66, warm = rt() * 6, g = .8 + rt() * 1.2, sh = h * (.82 + rt() * .18), dy = (h - sh) * rt();
+        const pts = []; for (let k = 0; k < 10; k++) { const an = k / 10 * Math.PI * 2, rr = .9 + rt() * .1; pts.push([Math.cos(an) * rr, Math.sin(an) * rr]); }
+        for (const ox of [0, -512]) for (const oy of [0, -512, 512]) { if (oy && y0 + h < 480 && y0 > 30) continue; const cx = x0 + ox + w / 2, cy = y0 + oy + dy + sh / 2, hw = w / 2 - g, hh = sh / 2 - g;
+          x.fillStyle = `rgb(${(v + warm) | 0},${v | 0},${(v - 4 - warm) | 0})`; x.beginPath(); pts.forEach(([px, py], k) => { const X = cx + Math.sign(px) * Math.abs(px) ** .18 * hw, Y = cy + Math.sign(py) * Math.abs(py) ** .18 * hh; k ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.closePath(); x.fill();
+          x.fillStyle = 'rgba(255,255,250,.07)'; x.fillRect(cx - hw * .8, cy - hh * .9, hw * 1.6, hh * .35);
+          for (let q = 0; q < 2; q++) if (rt() < .5) { x.fillStyle = rt() < .6 ? 'rgba(206,206,184,.28)' : 'rgba(128,134,84,.22)'; x.beginPath(); const lx = cx + (rt() - .5) * hw * 1.4, ly = cy + (rt() - .5) * hh * 1.2; for (let k = 0; k < 7; k++) x.arc(lx + (rt() - .5) * 10, ly + (rt() - .5) * 6, 2 + rt() * 4, 0, 7); x.fill(); } }
+        x0 += w; } }
+    grain(x, 9000, .12); });
+  const paveT = canvasTex(x => { x.fillStyle = '#9c9c96'; x.fillRect(0, 0, 512, 512); for (let q = 0; q < 700; q++) { const v = 128 + rt() * 56; x.fillStyle = `rgba(${v | 0},${v | 0},${(v * .97) | 0},.3)`; x.beginPath(); x.arc(rt() * 512, rt() * 512, 4 + rt() * 18, 0, 7); x.fill(); }
+    x.fillStyle = 'rgba(70,70,66,.35)'; for (let q = 0; q < 160; q++) { x.beginPath(); x.arc(rt() * 512, rt() * 512, 1 + rt() * 2, 0, 7); x.fill(); }
+    const lines = []; let y = 0; while (y < 512 - 50) { lines.push(y); y += 70 + rt() * 70; } x.strokeStyle = 'rgba(48,48,44,.85)'; x.lineCap = 'round';
+    for (const y0 of lines) for (const ox of [0, 512, -512]) { x.lineWidth = 2.5 + rt() * 2.5; x.beginPath(); for (let xx = 0; xx <= 512; xx += 16) { const yy = y0 + 9 * Math.sin(xx / 512 * Math.PI * 2 * 2 + y0) + (xx === 0 || xx === 512 ? 0 : (rt() - .5) * 4); xx ? x.lineTo(xx, yy + ox) : x.moveTo(xx, yy + ox); } x.stroke(); }
+    x.strokeStyle = 'rgba(56,56,52,.7)'; for (let k = 0; k < lines.length; k++) { const y0 = lines[k], y1 = k + 1 < lines.length ? lines[k + 1] : 512 + lines[0]; let xx = rt() * 80; while (xx < 512) { x.lineWidth = 1.5 + rt() * 1.5; const dx = (rt() - .5) * 30; for (const ox of [0, 512, -512]) for (const oy of [0, -512]) { x.beginPath(); x.moveTo(xx + ox, y0 + oy + 4); x.lineTo(xx + ox + dx, y1 + oy - 4); x.stroke(); } xx += 60 + rt() * 140; } }
+    grain(x, 7000, .1); });
+  // the land's pavement: the flagstone texture's clints and grikes drawn only where the vertex says bare rock (its 'pave'), the turf plain
+  const landM = new THREE.MeshStandardMaterial({ map: paveT, color: 0xffffff, roughness: .97, vertexColors: true });
+  landM.onBeforeCompile = sh => { sh.vertexShader = 'attribute float pave;\nvarying float vPave;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vPave = pave;');
+    sh.fragmentShader = 'varying float vPave;\n' + sh.fragmentShader.replace('#include <map_fragment>', '#ifdef USE_MAP\n  diffuseColor.rgb *= mix(vec3(1.0), texture2D(map, vMapUv).rgb * 1.6, vPave);\n#endif'); };
+  const cliffM = mat('searock', { ns: 1.1, color: 0xffffff, rough: .95 }); cliffM.vertexColors = true;
+  const M = { land: landM, cliff: cliffM, sea: new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .2, .25), roughness: .18, metalness: .1 }),
+    foam: new THREE.MeshBasicMaterial({ color: new THREE.Color(.82, .86, .86), transparent: true, opacity: .45, depthWrite: false }),
+    wall: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }), tumble: mat('searock', { ns: 1, color: 0xd6d4cc, rough: .95 }), chev: mat('searock', { ns: .7, color: 0xe2e0d8, rough: .95 }),
+    step: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }), lintel: mat('flag', { ns: 1, color: 0xd0cec6, rough: .9 }), slab: mat('searock', { ns: .8, color: 0xa8a69e, rough: .95 }),
+    mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
+  let tris = 0, draws = 0;
+  for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['sea', 'foam', 'land'].includes(k); mesh.receiveShadow = !['sea', 'foam'].includes(k); group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
+  return { group, tris: Math.round(tris), draws, ground, edge, TOP, C: C.map(v => +v.toFixed(2)), ell, walls: { inner, middle, outer }, passage, flights, chev, platform, figure, tumbles: tumbles.length };
+}

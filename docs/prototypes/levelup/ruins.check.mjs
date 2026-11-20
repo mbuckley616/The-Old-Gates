@@ -1,3 +1,4 @@
+// Session 2454 adds Stormwatch (ruins.js stormwatch): the older people's fort of three dry-stone walls on a sea cliff, not the Weavers'.
 // Session 2448 adds the Forgotten Aqueducts (ruins.js forgottenAqueducts): a gate's nave flooded under the land, open to the sky in a sinkhole.
 // Session 2441: the isles' rock laid round each isle and stack, so the beds run on across the facets.
 // Session 2440: the isles' rock bedded and jointed, not the kit's veined rock; the crowns' turf its own draw.
@@ -235,6 +236,48 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
     F.tone.uni && F.tone.ns > 20 && F.tone.nd > 200 && F.tone.shallow > 2 * F.tone.deep && F.tone.rep[0] === .5 && F.tone.rep[1] === .25, F.tone);
   check(`three falls into the water: ${F.falls.map(f => `${(f.top - f.bottom).toFixed(0)} m`).join(', ')}`, F.falls.length === 3 && F.falls.every(f => f.bottom === F.water && f.top - f.bottom > 35), F.falls);
   check(`the scale: the 1.75 m post stands on the scree ${(F.figure.y - F.water).toFixed(1)} m over the water; the arcade stands ${((F.nave.top - F.floor) / F.figure.h).toFixed(0)} times its height`, F.figure.h === 1.75 && F.figure.y - F.water > 1.5 && F.figure.y - F.water < 3 && (F.nave.top - F.floor) / F.figure.h > 20, F.figure); }
+// Stormwatch (Session 2454; OG-104, the Gatelands): the older people's fort of three dry-stone walls on a sea cliff
+{ const S = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./ruins.js');
+  const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 9) h = (h * 31 + Math.round(a[i] * 1e3)) | 0; }); return h; };
+  const a = K.stormwatch(), b = K.stormwatch(); a.group.updateMatrixWorld(true); const rc = new THREE.Raycaster(), solid = a.group.children.filter(m => !['sea', 'foam'].includes(m.name));
+  const cast = (o, d, far = 3000) => { rc.set(new THREE.Vector3(...o), new THREE.Vector3(...d).normalize()); rc.far = far; const h = rc.intersectObjects(solid, false)[0]; return h ? { n: h.object.name, d: +h.distance.toFixed(2), y: +h.point.y.toFixed(2) } : null; };
+  const W = a.walls, g = a.ground, e = a.edge, AE = a.passage.a;
+  // the cliff: at nine points along it, the top over 80 m and the sea's bed under 4.5 m out; from the sea 60 m out, a level ray meets the face
+  const xs = [-300, -200, -120, -50, 0, 50, 120, 200, 300], drop = xs.map(x => [+g(x, e(x) + .05).toFixed(1), +g(x, e(x) - 4.5).toFixed(1)]), face = xs.map(x => cast([x, 30, e(x) - 60], [0, 0, 1]));
+  // the walls' ends: each where the cliff took it, its line within 4 m of the edge
+  const ends = Object.values(W).map(w => w.ends.map(([x, z]) => +(z - e(x)).toFixed(2)));
+  // the inner wall's three bands from the top down: straight down at each band's middle, its top over the ground (at three bearings away from the passage)
+  const bands = [1.6, 2.0, 2.6].map(an => [1.2, -.3, -1.5].map(off => { const p = a.ell(26, 22, an, off), h = cast([p[0], 140, p[1]], [0, -1, 0]); return h && { n: h.n, h: +(h.y - g(...a.ell(26, 22, an))).toFixed(2) }; }));
+  // the passage: from 3 m outside its mouth, level at 1 m over its floor, three rays (its middle and 0.5 m either side) run on past its inner mouth; at 2.6 m the wall or a lintel
+  const P = a.passage, o = a.ell(26, 22, AE, 5.1), i = a.ell(26, 22, AE, -3.2), dir = [i[0] - o[0], 0, i[1] - o[1]], L = Math.hypot(dir[0], dir[2]), tg = [-dir[2] / L, dir[0] / L], fy = g(...a.ell(26, 22, AE));
+  const through = [-.5, 0, .5].map(s => cast([o[0] + tg[0] * s, fy + 1, o[1] + tg[1] * s], dir, L)), over = cast([o[0], fy + 2.6, o[1]], dir, L);
+  // the way in through the middle and outer walls' gaps: along the normal at the gap's middle, level at 1 m, nothing within the wall's thickness and 2 m
+  const gate = [['middle', 58, 52], ['outer', 118, 100]].map(([n, rx, rz]) => { const p = a.ell(rx, rz, AE, 4), q = a.ell(rx, rz, AE, -4); return cast([p[0], g(...a.ell(rx, rz, AE)) + 1, p[1]], [q[0] - p[0], 0, q[1] - p[1]], 8); });
+  const emissive = a.group.children.filter(m => m.material.emissive && m.material.emissive.getHex()).map(m => m.name);
+  const cs = a.chev.map(c => { const an = Math.atan2((c.z - a.C[1]) / 52, (c.x - a.C[0]) / 58), p = a.ell(58, 52, an); return { off: +Math.hypot(c.x - p[0], c.z - p[1]).toFixed(2), an: +an.toFixed(3), top: c.top, edge: +(c.z - e(c.x)).toFixed(2) }; });
+  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), names: a.group.children.map(m => m.name), drop, face, ends, bands, through, over, gate, emissive, cs, P, figure: a.figure, TOP: a.TOP, tumbles: a.tumbles, platform: a.platform,
+    walls: Object.fromEntries(Object.entries(W).map(([k, w]) => [k, { rx: w.rx, rz: w.rz, thick: w.thick, h: w.h, n: w.segs.length, bottoms: Math.max(...w.segs.filter(s => s.gap !== 'pass').map(s => s.bottom)), breach: w.segs.filter(s => s.gap === 'breach').length,
+      stand: +(w.segs.filter(s => s.top > 1.5).length / w.segs.length).toFixed(2), tops: w.segs.filter(s => !s.gap).map(s => s.top) }])) }; });
+  const W = S.walls;
+  check(`Stormwatch builds the same twice and in budget: ${S.tris.toLocaleString()} triangles in ${S.draws} draws`, S.same && S.tris < 110000 && S.draws <= 14, [S.tris, S.draws, S.same, S.names]);
+  check(`the cliff: at nine points its top ${Math.min(...S.drop.map(d => d[0]))} m or more over the sea and the bed ${Math.max(...S.drop.map(d => d[1]))} m or less 4.5 m out; from the sea a level ray meets its face (${S.face.map(h => h && h.n).join(', ')})`,
+    S.drop.every(d => d[0] > 80 && d[1] < 0) && S.face.every(h => h && h.n === 'cliff' && h.d < 75), { drop: S.drop, face: S.face });
+  check(`three walls in half-rings, each stopped by the cliff at both ends (${S.ends.map(x => x.join('/')).join(', ')} m from the edge): the seaward half is gone`, S.ends.length === 3 && S.ends.every(x => x.length === 2 && x.every(d => Math.abs(d) < 4)), S.ends);
+  check(`the inner wall in three bands from the outside in, their tops ${S.bands.map(b => b.map(x => x && x.h).join('/')).join(', ')} m over the ground (5.4, 3.6, 1.8: two terraces inside)`,
+    S.bands.every(b => b.every(x => x && x.n === 'wall') && Math.abs(b[0].h - 5.4) < .5 && Math.abs(b[1].h - 3.6) < .5 && Math.abs(b[2].h - 1.8) < .5), S.bands);
+  check(`the way in: a passage ${S.P.w} m wide through the inner wall's ${S.P.len} m; level at 1 m, three rays from outside run clear past its inner mouth (${S.through.map(h => h ? h.n + ' ' + h.d : 'clear').join(', ')}); at 2.6 m the ${S.over && S.over.n} at ${S.over && S.over.d} m`,
+    S.through.every(h => h === null) && S.over && ['wall', 'lintel'].includes(S.over.n), { through: S.through, over: S.over });
+  check(`the middle and outer walls' gaps on the way in: level at 1 m through each, ${S.gate.map(h => h ? h.n : 'clear').join(' and ')}`, S.gate.every(h => h === null), S.gate);
+  check(`no wall floats: every stretch's footing ${Math.max(...Object.values(W).map(w => w.bottoms))} m or more under the ground at its middle (${Object.values(W).map(w => w.n).join(', ')} stretches)`, Object.values(W).every(w => w.bottoms < -.3), Object.values(W).map(w => w.bottoms));
+  check(`a ruin: the middle wall's ${W.middle.breach} stretches breached and thrown down, the outer standing over 1.5 m in ${Math.round(W.outer.stand * 100)}% of its run, ${S.tumbles} stones fallen; no Weaver stone, nothing lit (${S.emissive.join(', ') || 'no emissive'})`,
+    W.middle.breach >= 4 && W.outer.stand > .1 && W.outer.stand < .6 && W.inner.stand > .9 && S.tumbles > 100 && S.emissive.length === 0 && !S.names.some(n => /script|sigil|arch/.test(n)), { middle: W.middle.breach, outer: W.outer.stand, inner: W.inner.stand });
+  const cs = S.cs;
+  check(`the set stones: ${cs.length} slabs ${Math.min(...cs.map(c => c.off)).toFixed(1)} to ${Math.max(...cs.map(c => c.off)).toFixed(1)} m out from the middle wall's line, ${Math.min(...cs.map(c => c.top)).toFixed(2)} to ${Math.max(...cs.map(c => c.top)).toFixed(2)} m high, none on the way in or within 3 m of the edge`,
+    cs.length > 300 && cs.every(c => c.off > 3 && c.off < 20 && c.top > .4 && c.top < 2 && c.edge > 3 && Math.abs(c.an - S.P.a) > .3), cs.filter(c => !(c.off > 3 && c.off < 20 && c.top > .4 && c.top < 2 && c.edge > 3)).slice(0, 6));
+  check(`the scale: the 1.75 m post inside the passage's mouth; the inner wall ${(5.4 / S.figure.h).toFixed(1)} times its height, the cliff ${(S.TOP / S.figure.h).toFixed(0)} times`, S.figure.h === 1.75 && Math.abs(S.figure.y - S.TOP) < 12, S.figure); }
+for (const v of ['fort', 'stones', 'gate', 'inside', 'edge', 'sea', 'far', 'fort&dusk']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+  await pg.goto(`http://localhost:${port}/places.html?still&w=320&h=200&place=stormwatch&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const s = await pg.evaluate(() => window.__stats.place); check(`places.html?place=stormwatch&view=${v} renders: ${s.tris.toLocaleString()} triangles in ${s.draws} draws, ${s.walls} walls, ${s.chev} set stones, no page errors`, s.tris > 0 && s.walls === 3 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
 for (const v of ['lip', 'stair', 'scree', 'nave', 'far', 'nave&dusk']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/places.html?still&w=320&h=200&place=aqueducts&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
   const s = await pg.evaluate(() => window.__stats.place); check(`places.html?place=aqueducts&view=${v} renders: ${s.tris.toLocaleString()} triangles in ${s.draws} draws, ${s.arches} arches (${s.broken} broken), ${s.falls} falls, no page errors`, s.tris > 0 && s.arches === 18 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
