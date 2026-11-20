@@ -70,6 +70,16 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Recommendation.** B: the cache is the mage's own find, and an arc a third of the time keeps it worth opening without halving the walk. Until answered, the cache is not built.
 
+### The Gate Isles — reached by boat, walked at the ebb, or the first ring on land? (from the look builder, 2026-11-19, #1791)
+**The question.** OG-104's sixth ruin site, prototyped in Session 2430 (`ruins.js` `gateIsles`, `places.html?place=isles`): five Weaver rings 28 m across, each on the level crown of a sheer rock isle in open sea, strung 1.3 km along one bearing with every heart at 24.8 m, so from the first ring you look through all five to a far coast. The third ring is broken; nothing is lit. How does a player reach the isles?
+
+**Options.**
+- **A (recommended).** By boat: each isle has a flight of steps cut in its east face from under the low water; you sail there, land and climb. The line becomes a place for the ships (F11).
+- **B.** A walk at the ebb: a causeway of the rings' stone, under water at the flood, from a strand to the first isle and on from isle to isle (about 1.3 km, a few thousand triangles more).
+- **C.** The first ring on a headland, so the line is seen from the shore; the other four by boat, as in A.
+
+**Recommendation.** A: the Drowned Spires are already the walk-at-the-ebb ruin (#1737 B), and the isles are the one site that sits only in the sea. C costs little on top of A.
+
 ## Answered
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
