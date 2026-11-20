@@ -663,3 +663,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** The inn's hall +15% draw calls from the clay oven (look builder). The weekly run of 15 Nov still owes four bodies suites.
 
 **Roadmap.** 343 of 441 stories done (338 of 438 on 18 Nov). The new look is 7 of 18.
+
+## 20 Nov 2026
+
+**Waiting on you.** Eight decisions: the Scarred Gate (#1754, A recommended); what a gate's secret holds (#1757, B); the Hollow Below (#1761, A); the shortcut back (#1774, B); the keep's cache (#1783, B); the Gate Isles (#1791, A); ground that pushes back (#1800, A); the Forgotten Aqueducts (#1808, A). No merge waits for you.
+
+**Landed on main since 19 Nov.** Spells as keys built on the systems side: the sliding wall, the barricade, the stair under the floor, the sluice, the lift, the plates and the script, the turning chamber (Systems 2409–2423); foes stop at an open stair (2426) and stay off the wonders (2432); riders burn again and road caravans are their own (2436–2437); each weapon's hit has its sound again (2443). The Northlight Altar and the Drowned Spires in the game, ships stop at the towers, the script cut in stone (Look 2409–2425); the Gate Isles and the Forgotten Aqueducts prototyped (Look 2430–2450). The travellers in the builder's cast (Bodies 2414); capes, the apron and the headscarf finished (Bodies 2420–2444); a sheathed weapon worn at the hip or back (Bodies 2451). QA re-measured the budgets four times. Build s1783.
+
+**Under way.** QA #1813 (`topnames`). Next: systems waits on #1774, #1783 and #1757; look the next OG-104 site; bodies a scabbard or L4's foes.
+
+**Blocked.** The inn's hall +15% draw calls from the clay oven (look builder). The weekly run of 15 Nov still owes four bodies suites.
+
+**Roadmap.** 344 of 445 stories done (343 of 441 on 19 Nov). The new look is 7 of 18.
