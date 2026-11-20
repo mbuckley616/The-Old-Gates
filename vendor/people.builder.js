@@ -5297,7 +5297,11 @@ function* makePersonSteps(G, o = {}) {
         push('coatHem' + s, fs, shellMat(sRGB(...D.coatFur), s, 7, { sx: 260, sy: 70, solid: s === 0, cut: [cHem, .17, 9, .006], hole: COAT_FUR.skirt(cHem) }), (x, y) => coatSkirtPush(x, y) + lay); } } }
   yield;
   if (D.apron) { const lea = !!D.apronLeather, am = clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [lea ? -.52 : -.42, .175, .155, .004] });
-    push('apron', PACK.R.apron, am, (x, y) => .03 + .012 * Math.max(0, Math.min(1, (.1 - y) / .4))); if (D.bib) push('bib', PACK.R.apronBib, clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [.1, .46, .105, .003] }), .04); }
+    // over the belt (Session 2427): the apron is tied over it (sashBeltOn), but its top stood at the belt's own depth, the two within a
+    // millimetre of each other at the hips, and the belt came through the apron's waist in a row of spikes either side of the bib. From 2 cm
+    // under the belt's band up, the apron stands 5 mm further out (over a mail belt, 1.3 cm), still under the bib's 4 cm
+    const aBelt = D.belt && !sashBeltOn(D) ? (mail ? .013 : .005) : 0;
+    push('apron', PACK.R.apron, am, (x, y) => .03 + .012 * Math.max(0, Math.min(1, (.1 - y) / .4)) + aBelt * Math.max(0, Math.min(1, (y - .11) / .02))); if (D.bib) push('bib', PACK.R.apronBib, clothMat(sRGB(...D.apron), lea ? 'leather' : 'wool', { side: THREE.DoubleSide, cut: [.1, .46, .105, .003] }), .04); }
   // a fur mantle over the shoulders: eleven shells
   // (Session 1203: its edges cut in the shader, MANTLE_CUT, and its shadow cut near the same lines)
   yield;
