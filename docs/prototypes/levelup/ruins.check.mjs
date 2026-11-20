@@ -1,4 +1,4 @@
-// Session 2464 makes the Vault's headwall a cliff of its own, in ledged beds, buttresses and gullies.
+// Session 2465 makes the Vault's headwall a cliff of its own, in ledged beds, buttresses and gullies.
 // Session 2461 adds the Frostborn Vault (ruins.js frostbornVault): a Weaver city in a gorge, the glacier out of its great portal, two viaducts.
 // Session 2455: Stormwatch's set stones split slabs with broken tops, one in seven fallen flat; the platform a bed of the pavement.
 // Session 2454 adds Stormwatch (ruins.js stormwatch): the older people's fort of three dry-stone walls on a sea cliff, not the Weavers'.
@@ -306,9 +306,9 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
     rim: [-90, 90].map(x => +a.ground(x, 0).toFixed(1)), bed: +a.ground(0, 200).toFixed(1), head: +a.ground(0, F0.z - F0.d - 80).toFixed(1), emissive: all.filter(m => m.material.emissive && m.material.emissive.getHex()).map(m => m.name) }; });
   check(`the Frostborn Vault builds the same twice and in budget: ${F.tris.toLocaleString()} triangles in ${F.draws} draws`, F.same && F.tris < 190000 && F.draws <= 14, [F.tris, F.draws, F.same, F.names]);
   { const r = F.cliffRays, bad = r.filter(p => p.n !== 'rock' || Math.abs(p.z - p.want) > 8), P = F.cliffProfile, dev = Math.max(...r.map(p => Math.abs(p.z - p.want)));
-    check(`the headwall a cliff of its own (S2464): ${r.length} level rays at 15 to 95% of its height, every 7 m along it (the face's 224 m left out), all meet the rock, never the land, at most ${dev.toFixed(1)} m off its drawn face (its columns 3 to 6 m apart, a buttress's flank between two) (${bad.length} not)`, r.length > 600 && bad.length === 0, bad.slice(0, 6));
+    check(`the headwall a cliff of its own (S2465): ${r.length} level rays at 15 to 95% of its height, every 7 m along it (the face's 224 m left out), all meet the rock, never the land, at most ${dev.toFixed(1)} m off its drawn face (its columns 3 to 6 m apart, a buttress's flank between two) (${bad.length} not)`, r.length > 600 && bad.length === 0, bad.slice(0, 6));
     check(`the headwall in beds: ${P.beds} beds, ${P.steps} ledges of over 1.5 m in ${P.cols} columns read up it, ${P.buttresses} buttresses and ${P.gullies} gullies`, P.beds >= 8 && P.steps >= P.cols * 3 && P.buttresses >= 8 && P.gullies >= 4, P); }
-  check(`the gorge: its rims ${F.rim.join(' and ')} m, its bed ${F.bed} m down, the headwall ${F.head} m over the rims 80 m behind the face (S2464: the cliff now leans back in its beds, so its top stands further in)`, F.rim.every(y => Math.abs(y) < 6) && F.bed < -70 && F.head > 100, { rim: F.rim, bed: F.bed, head: F.head });
+  check(`the gorge: its rims ${F.rim.join(' and ')} m, its bed ${F.bed} m down, the headwall ${F.head} m over the rims 80 m behind the face (S2465: the cliff now leans back in its beds, so its top stands further in)`, F.rim.every(y => Math.abs(y) < 6) && F.bed < -70 && F.head > 100, { rim: F.rim, bed: F.bed, head: F.head });
   { const bad = F.d1.filter(p => !['snow', 'deck'].includes(p.n) || p.y < 0 || p.y > 1.2);
     check(`the first viaduct (z ${F.V1.z}) whole: from abutment to abutment, ${F.d1.length} rays down at its middle and 3 m either side all land on its deck at 0 to 1.1 m (${bad.length} not)`, bad.length === 0, bad.slice(0, 6)); }
   { const gap = F.d2.filter(p => p.gap), bad = gap.filter(p => p.y > -8), rest = F.d2.filter(p => !p.gap && (p.x < F.V2.gap.a - 6 || p.x > F.V2.gap.b + 6)), off = rest.filter(p => !['snow', 'deck'].includes(p.n));

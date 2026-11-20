@@ -925,7 +925,7 @@ export function stormwatch(o = {}) {
 //     door the deck runs into; the hall at the broken viaduct's west end is roofless, its walls fallen toward the back;
 //   - towers on the rims behind the halls, 10 to 14 m square and 35 to 60 m high, one in three broken off;
 //   - a 1.75 m post on the first viaduct's deck at its middle as the scale.
-//   - (Session 2464) the headwall a cliff of its own, in beds with snowy ledges, buttresses and gullies, a cap of snow on its top.
+//   - (Session 2465) the headwall a cliff of its own, in beds with snowy ledges, buttresses and gullies, a cap of snow on its top.
 // -> { group, tris, draws, ground(x, z), iceY(x, z), surf(x, z), bed, head, cliff { beds, buttresses, gullies, zh(x), cl(x), front(x, h), back(x, h), base(x) }, viaducts: [{ z, w, x0, x1, S, pier, deck, broken, gap { a, b } }],
 //   fallen: [{ x, z, low, at }], face { z, d, x0, x1, top, portal { w, sill, apex }, side { w, apex } }, tongue { top, z0, z1 }, halls: [{ x, z, side, broken }],
 //   towers: [{ x, z, w, h, broken }], figure }
@@ -939,7 +939,7 @@ export function frostbornVault(o = {}) {
     /* a pad at the rims' level under each viaduct's abutments and its two halls, so the deck runs onto the rim and the halls stand level */
     const pad = (1 - sstep(VX + 62, VX + 74, Math.abs(x))) * Math.max(...[-40, -180].map(zc => 1 - sstep(HW / 2 + 4, HW / 2 + 14, Math.abs(z - zc)))); return rim0 * (1 - pad) - .4 * pad; };
   const gorgeY = (x, z) => { const ax = Math.abs(x) + 6 * fbm(z / 40 + 3, x / 90, 3); return BED * (1 - sstep(GB, GW, ax)) * (1 - sstep(HEAD + 4, HEAD - 12, z)); };
-  // Session 2464: the headwall a cliff of its own. Drawn by the land's 8 m grid it was 130 m of rock in two or three rows, which from afar
+  // Session 2465: the headwall a cliff of its own. Drawn by the land's 8 m grid it was 130 m of rock in two or three rows, which from afar
   // read as pleated curtains. Now it stands in beds 9 to 23 m high, each leaning back a little and set back 1 to 3.5 m at its top in a
   // ledge that holds the snow, the ledges pinching out along the wall; buttresses stand out 3 to 8 m from some way under the top (none
   // behind the face), gullies are cut back 3 to 6 m its whole height, and a cap of snow over its top runs back onto the land. Its front
