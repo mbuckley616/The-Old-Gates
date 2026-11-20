@@ -1943,11 +1943,14 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   // itself and kept off the cloth the point comes out from under (within 0.32 rad of the back's middle, the lowest quarter)
   const RIMS = new Map(), rimPh = th => { const k = Math.round(th * 1e4); let v = RIMS.get(k); if (v == null) { v = phRim(th); RIMS.set(k, v); } return v; }, ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
   const KN = (() => { const ph = phRim(Math.PI) - .1; return new THREE.Vector3(0, Math.cos(ph), -Math.sin(ph)); })(), KE1 = new THREE.Vector3(0, 1, 0).addScaledVector(KN, -KN.y).normalize(), KE2 = new THREE.Vector3().crossVectors(KN, KE1);
+  // each wearer ties hers her own way (Session 2434): the creases' count (5 to 7 either side), where they fall, how much they wander,
+  // their depth (1.1 to 1.5 cm) and the temples' fullness (0.8 to 1.2 cm), from a stream of the genome's own, so no other roll moves
+  const SR = sc ? seeded((G.seed ?? 'person') + '|scarf') : null, SK = SR ? { n: 10 + Math.floor(SR() * 5), ph: SR() * Math.PI * 2, wob: .3 + SR() * .6, deep: .011 + SR() * .004, tmp: .008 + SR() * .004 } : { n: 12, ph: 0, wob: .6, deep: .013, tmp: .01 };
   const slackOf = (th, ph) => { const s = Math.min(1, ph / rimPh(th)), sp = Math.sin(ph), ux = sp * Math.sin(th), uy = Math.cos(ph), uz = sp * Math.cos(th), psi = Math.acos(Math.max(-1, Math.min(1, ux * KN.x + uy * KN.y + uz * KN.z))),
-      be = Math.atan2(ux * KE2.x + uy * KE2.y + uz * KE2.z, ux * KE1.x + uy * KE1.y + uz * KE1.z), cr = ((1 + Math.cos(12 * be + .6 * Math.sin(3 * be))) / 2) ** 3,
+      be = Math.atan2(ux * KE2.x + uy * KE2.y + uz * KE2.z, ux * KE1.x + uy * KE1.y + uz * KE1.z), cr = ((1 + Math.cos(SK.n * be + SK.ph + SK.wob * Math.sin(3 * be + SK.ph))) / 2) ** 3,
       at_ = Math.abs(((th % TAU) + TAU + Math.PI) % TAU - Math.PI), flat = 1 - (1 - ss(.32, .55, Math.PI - at_)) * ss(.7, .85, s), env = ss(.12, .4, psi) * (1 - .45 * ss(.7, 1.3, psi)) * (1 - ss(1.3, 2, psi)) * flat,
-      temple = .01 * Math.exp(-(((at_ - 1.45) / .55) ** 2)) * ss(.35, .85, s) * (1 - .4 * ss(.9, 1, s));
-    return { ease: .003 * ss(0, 1, s), temple: temple * (.55 + .45 * cr), gather: .013 * env * cr }; };
+      temple = SK.tmp * Math.exp(-(((at_ - 1.45) / .55) ** 2)) * ss(.35, .85, s) * (1 - .4 * ss(.9, 1, s));
+    return { ease: .003 * ss(0, 1, s), temple: temple * (.55 + .45 * cr), gather: SK.deep * env * cr }; };
   const slack = (th, ph) => { const o = slackOf(th, ph); return o.ease + o.temple + o.gather; };
   if (sc) { const a1 = at; at = (th, ph, off = 0) => a1(th, ph, off + slack(th, ph)); }
   const topY = at(0, 0).y;
@@ -1993,7 +1996,7 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const slackStats = () => { let temple = 0, gather = 0; for (let t = 0; t < 360; t++) { const th = t / 360 * TAU; for (let j = 1; j <= 20; j++) { const o = slackOf(th, rimPh(th) * j / 20); if (j > 10 && Math.abs(Math.abs(((th + Math.PI) % TAU) - Math.PI) - 1.45) < .25) temple = Math.max(temple, o.temple); gather = Math.max(gather, o.gather); } }
     let creases = 0, prev = null; const r0 = .4; for (let k = 0; k <= 720; k++) { const be = -Math.PI + k / 720 * TAU, u = KN.clone().multiplyScalar(Math.cos(r0)).addScaledVector(KE1, Math.sin(r0) * Math.cos(be)).addScaledVector(KE2, Math.sin(r0) * Math.sin(be)), th = Math.atan2(u.x, u.z), ph = Math.acos(u.y);
       if (ph > rimPh(th)) { prev = null; continue; } const v = slackOf(th, ph).gather > gather * .25; if (prev === false && v) creases++; prev = v; }
-    return { temple: +temple.toFixed(4), gather: +gather.toFixed(4), creases }; };
+    return { temple: +temple.toFixed(4), gather: +gather.toFixed(4), creases, n: SK.n }; };
   const ext = new THREE.Box3(); for (let i = 0; i < pos.length; i += 3) ext.expandByPoint(new THREE.Vector3(pos[i], pos[i + 1], pos[i + 2]));
   g.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z);
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 34, print: sc && D.scarfPrint ? sRGB(...D.scarfPrint) : null }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'wrap'; mesh.castShadow = true; mesh.receiveShadow = !sc; byName['head'].add(mesh);
