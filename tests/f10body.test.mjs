@@ -76,6 +76,8 @@ const worn = await drive(() => { const mat = MATERIALS.find(m => m.name === 'Iro
   EQ.chest = { name: 'Iron Cuirass', slot: 'chest', material: 'Iron', tier: mat.tier }; EQ.weapon = { name: 'Steel Sword', slot: 'weapon', weaponShape: 'sword', weight: 3 };
   EQ.offhand = { name: 'Kite Shield', slot: 'offhand', shieldType: 'shield', matCol: 0x8a6030 }; EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' };
   EQ.head = { name: 'Steel Helm', slot: 'head', material: 'Steel', tier: 4 };
+  /* the sword drawn and kept so: five seconds at peace sheathe it, and since Session 2451 a sheathed sword is worn, not held */
+  drawWeapon(); _lastSwingG = playClockS;
   for (let i = 0; i < 4; i++) step(); const R = TP.rig, H = R.rig.hb, names = new Set(); if (TP.sig !== tpSig()) return { names: ['not rebuilt'], held: [], dress: [] }; H.root.traverse(o => { if (o.isMesh && o.visible) names.add(o.name.replace(/\d+$/, '')); });
   R.root.updateMatrixWorld(true); const by = H.P.byName, sd = HBODY.swap ? 'L' : 'R', fist = new THREE.Vector3(); [2, 3, 4, 5].forEach(f => fist.add(by[`finger${f}-2.${sd}`].getWorldPosition(new THREE.Vector3()))); fist.multiplyScalar(.25);
   const held = R.hbHeld.map(h => { const v = new THREE.Vector3(); h.c.getWorldPosition(v); let n = 0; h.c.traverse(o => { if (o.isMesh && o.visible) n++; }); return { kit: h.o.userData.kit || null, meshes: n, inBuilder: h.c.parent === H.root, gap: +v.distanceTo(fist).toFixed(3) }; });
