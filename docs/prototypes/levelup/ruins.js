@@ -21,7 +21,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, worldUV, fbm, sstep } from './common.js';
-import { gatePiece, stream } from './gatekit.js';
+import { gatePiece, stream, cutMat } from './gatekit.js';
 
 export function weaverRing(o = {}) {
   const key = o.key || 'ruins:ring', r = stream(key), K = o.k || 3, N = 12, R = o.R || 85, SEA = -30, CLIFF = -(R + 40), group = new THREE.Group();
@@ -451,4 +451,102 @@ export function hollowBelow(o = {}) {
   for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['floor', 'water', 'script', 'sigil', 'beam', 'door'].includes(k); mesh.receiveShadow = k !== 'beam'; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
   return { group, tris: Math.round(tris), draws, ground, CY, rings: RINGS.map(q => ({ ...q })), lost, oculus: { ...oc, x: +oc.x.toFixed(2), z: +oc.z.toFixed(2) }, sun: SUN.toArray().map(v => +v.toFixed(4)), lands, court: COURT,
     viaduct: { z0: VZ0, z1: VZ1, spans: SP, S: +S.toFixed(2), pier: PIER, w: VW, gaps }, water: WATER, bed: BED, roof: ROOF, back: BACK, hole: HOLE, door, figure };
+}
+
+// The Gate Isles (Session 2430; OG-104's panel for all the islands, "isle shrines aligned across the islands"): a line of five small rings
+// of the Weavers', each stood on its edge on the level crown of a rock isle in open sea, the isles strung 1.3 km along one bearing so that
+// the five rings' hearts lie on one level line and from the first you look through every ring to the far coast at the line's end. The
+// panel's "shrines" are drawn as the one thing the Weavers left (canon §3.1: the gates and nothing else): a ring of their stone, its door
+// never cut; what the line is sighted on is the canon's and the quest writer's. A ruin as the others (#429 B): the script cut dead (S2425's
+// cut), no stone lifted, every loose stone down. A metre a unit, the mean sea at y 0, the line along -z from the first isle at the origin.
+//   - the isles: five skerries of dark rock 36 to 52 m in radius, their crowns all levelled at 14 m over the mean sea (a terrace 24 m
+//     across, a thin turf on it), their cliffs ledged and falling to the water, a band of wrack between the tides (the range 4 m, the
+//     Gatelands' spring tide), the bed 14 m down between them; at z 0, -270, -580, -930 and -1330, each gap 40 m longer than the last;
+//   - the rings: each 28 m across its outer face and 18 m across its opening, 3 m deep: two courses of voussoirs (20 inner, 2.5 m; 24
+//     outer, 2.5 m, broken joint), the script cut dead in a band round the soffit; it stands on a plinth of two steps of 0.6 m, its foot
+//     sunk in the plinth and its sill 0.6 m over the upper step, so its heart stands 24.8 m over the mean sea on every isle;
+//   - their condition, from a stream keyed by the line: four stand (a stone in eight slipped a hand's breadth); the third isle's ring is
+//     broken, its outer course gone from 60° left of the top to 40° right and three inner stones from over the crown, the lost stones
+//     lying on the crown and its plinth, sunk a third of their depth; nothing is lit and nothing floats;
+//   - a landing at each isle on its east face (+x): a flight of steps cut in the rock from 3 m under the mean sea up to the crown, 4 m wide
+//     (the boat's way up, the DECISION's A);
+//   - the far coast: a ridge of another island 2.1 km out on the line, its shoulder 90 to 140 m high;
+//   - a 1.75 m post on the first isle's plinth by the ring's foot as the scale.
+// -> { group, tris, draws, ground(x, z), S (the crowns' height), P (the plinths' top), CY (the hearts' height), R0, RM, R1, D, isles: [{ i, z, R,
+//   cond, gone, slipped, lost: [{ x, z, low, top }], stair { x0, x1, y0, y1, w, n } }], coast { z }, figure }
+export function gateIsles(o = {}) {
+  const key = o.key || 'ruins:isles', r = stream(key), S = 14, P = S + 1.2, R0 = 9, RM = 11.5, R1 = 14, D = 3, CY = P + .6 + R0, DEG = Math.PI / 180, CR = 24, BED = -14, COAST = -2100, group = new THREE.Group();
+  const ZS = [0, -270, -580, -930, -1330], RS = [40, 48, 36, 52, 44], SW = 2, SX0 = CR - 1;
+  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); if (k !== 'script') { if (x.attributes.uv) x.deleteAttribute('uv'); x.computeVertexNormals(); worldUV(x, .25); } else x.computeVertexNormals(); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  const bb = g => { g.computeBoundingBox(); return g.boundingBox; };
+  // an isle's rock: its outline wavers with the bearing; level crown, then the cliff in ledges to the water, then a skirt of tumbled rock to the bed
+  const rim = (i, t) => RS[i] * (1 + .32 * (fbm(Math.cos(t) * 1.6 + i * 7.1, Math.sin(t) * 1.6 + i * 3.3, 3) - .5));
+  const stairY = (i, x) => { const L = rim(i, 0) + 6 - SX0; return S - (S + 3) * Math.min(1, Math.max(0, (x - SX0) / L)); };
+  const isleH = (i, x, z) => { const dx = x, dz = z - ZS[i], d = Math.hypot(dx, dz), t = Math.atan2(dz, dx), Rr = rim(i, t);
+    if (d < CR) return S - .3 + .25 * fbm(x / 7, z / 7, 2);
+    let y; if (d < Rr) { const u = (d - CR) / (Rr - CR), led = Math.floor(u * 4 + fbm(t * 2 + i, u * 3, 2) * .8) / 4; y = S - .3 - (S + .5) * (u ** 2.2 * .6 + led * .4) + 1.2 * (fbm(x / 9, z / 9, 3) - .5) * u; }
+    else y = .2 - (d - Rr) * 1.6 + 1.5 * (fbm(x / 6, z / 6, 2) - .5);
+    if (dx > SX0 - 1 && Math.abs(dz) < SW + 1.2) y = Math.min(y, stairY(i, dx) - .05 - Math.max(0, Math.abs(dz) - SW) * 3);
+    return Math.max(BED, Math.min(S - .05, y)); };
+  const ground = (x, z) => { let y = BED; for (let i = 0; i < ZS.length; i++) if (Math.abs(z - ZS[i]) < 130 && Math.abs(x) < 130) y = Math.max(y, isleH(i, x, z)); return y; };
+  // the isles' rock, each a polar grid (96 bearings by 40 rings out to its rim and 30 m beyond), coloured by height: turf on the crown, lichened rock, the wrack between the tides
+  const rockCol = (y, d) => { const w = sstep(-2.6, -1.6, y) * (1 - sstep(1.8, 2.6, y)), turf = d < CR - .5 ? 1 : 0, c = [.36, .35, .33]; return [0, 1, 2].map(j => turf ? [.33, .38, .2][j] : c[j] * (1 - w) + [.16, .15, .08][j] * w); };
+  for (let i = 0; i < ZS.length; i++) { const NA = 96, NR = 40, pos = [], col = [], Rmax = Math.max(...Array.from({ length: NA }, (_, a) => rim(i, a * 2 * Math.PI / NA))) + 30;
+    const pt = (a, k) => { const t = a * 2 * Math.PI / NA, d = k === 0 ? 0 : Rmax * (k / NR) ** 1.25, x = Math.cos(t) * d, z = ZS[i] + Math.sin(t) * d, y = isleH(i, x, z); return [x, y, z, d]; };
+    for (let a = 0; a < NA; a++) for (let k = 0; k < NR; k++) { const p = pt(a, k), q = pt(a + 1, k), s = pt(a + 1, k + 1), u = pt(a, k + 1);
+      for (const v of k === 0 ? [p, s, u] : [p, s, u, p, q, s]) { pos.push(v[0], v[1], v[2]); col.push(...rockCol(v[1], v[3])); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); put('rock', g); }
+  // the sea, and the far coast on the line: a ridge 3 km long, its shoulder 90 to 140 m, falling to the water before the line
+  { const g = new THREE.PlaneGeometry(9000, 9000); g.rotateX(-Math.PI / 2); g.translate(0, 0, -1500); B.set('sea', [g]); }
+  { const NX = 120, NZ = 16, pos = []; const pt = (i, j) => { const x = -1500 + 3000 * i / NX, z = COAST - 400 * j / NZ, sh = 90 + 50 * fbm(x / 400, 3.3, 3); const y = -8 + (sh + 8) * sstep(0, .8, j / NZ) + 22 * (fbm(x / 70, z / 70, 3) - .5) * (j / NZ); return [x, y, z]; };
+    for (let i = 0; i < NX; i++) for (let j = 0; j < NZ; j++) { const a = pt(i, j), b = pt(i + 1, j), c = pt(i + 1, j + 1), d = pt(i, j + 1); pos.push(...a, ...b, ...c, ...a, ...c, ...d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); put('coast', g); }
+  // a voussoir between bearings ta and tb (from the top, clockwise seen from +z), radii ra to rb, its faces at z +zf and -zb about the ring's plane
+  const at = (t, rr) => [rr * Math.sin(t), CY + rr * Math.cos(t)];
+  const wedge = (ta, tb, ra, rb, zf, zb, gap = .06) => { const out = [], q = [at(ta, ra), at(tb, ra), at(tb, rb), at(ta, rb)], c = q.reduce((s, p) => [s[0] + p[0] / 4, s[1] + p[1] / 4], [0, 0]);
+    const k = 1 - gap / Math.max(...q.map(p => Math.hypot(p[0] - c[0], p[1] - c[1]))); let p = q.map(v => [c[0] + (v[0] - c[0]) * k, c[1] + (v[1] - c[1]) * k]); let ar = 0; for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; ar += p[i][0] * p[j][1] - p[j][0] * p[i][1]; } if (ar < 0) p = p.reverse();
+    const F = p.map(v => [v[0], v[1], zf]), Bk = p.map(v => [v[0], v[1], -zb]), tri = (a, b, d) => out.push(...a, ...b, ...d);
+    tri(F[0], F[1], F[2]); tri(F[0], F[2], F[3]); tri(Bk[0], Bk[2], Bk[1]); tri(Bk[0], Bk[3], Bk[2]); for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; tri(F[i], Bk[i], Bk[j]); tri(F[i], Bk[j], F[j]); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return { g, c, low: Math.min(...q.map(v => v[1])), top: Math.max(...q.map(v => v[1])) }; };
+  // the soffit's band of script on an inner stone, 2.2 m wide, v down the arc in 14.4 m repeats
+  let arcV = 0; const band = (ta, tb) => { const n = 2, pos = [], uv = [], L = R0 * (tb - ta); for (let i = 0; i <= n; i++) { const t = ta + (tb - ta) * i / n, [x, y] = at(t, R0 - .03); pos.push(x, y, 1.1, x, y, -1.1); uv.push(0, (arcV + L * i / n) / 14.4, 1, (arcV + L * i / n) / 14.4); }
+    arcV += L; const idx = []; for (let i = 0; i < n; i++) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); return g.toNonIndexed(); };
+  const NI = 20, NO = 24, BROKEN = o.broken ?? 2, isles = [];
+  for (let i = 0; i < ZS.length; i++) { const zc = ZS[i], ri = stream(`${key}:${i}`), cond = i === BROKEN ? 'broken' : 'stand', lostPos = [], lost = []; let gone = 0, slipped = 0;
+    const T = new THREE.Matrix4().makeTranslation(0, 0, zc);
+    const goneO = t => cond === 'broken' && t > -60 * DEG && t < 40 * DEG, goneI = t => cond === 'broken' && t > -20 * DEG && t < 30 * DEG;
+    // a lost stone: laid on the crown either side of the plinth or on the plinth's lower step, turned, sunk a third of its least depth
+    const lay = (g, c) => { g.translate(-c[0], -c[1], 0); g.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(ri() * Math.PI * 2, ri() * Math.PI * 2, ri() * Math.PI * 2)));
+      let x, z, tries = 0; do { const side = ri() < .5 ? -1 : 1, a = (ri() - .5) * 1.6; x = side * (5 + ri() * 15) * Math.cos(a) + (ri() - .5) * 4; z = (ri() < .5 ? -1 : 1) * (7.5 + ri() * 10); } while ((Math.hypot(x, z) > CR - 3 || lostPos.some(p => Math.hypot(p[0] - x, p[1] - z) < 4.2)) && ++tries < 60);
+      lostPos.push([x, z]); const b0 = bb(g), dz = Math.min(b0.max.x - b0.min.x, b0.max.y - b0.min.y, b0.max.z - b0.min.z), y0 = S - .3; g.translate(x, y0 - b0.min.y - dz / 3, z + zc);
+      const b1 = bb(g); lost.push({ x: +x.toFixed(2), z: +(z + zc).toFixed(2), low: +(b1.min.y - y0).toFixed(2), top: +(b1.max.y - y0).toFixed(2) }); return g; };
+    for (let k = 0; k < NI; k++) { const ta = (k / NI) * Math.PI * 2 - Math.PI, tb = ((k + 1) / NI) * Math.PI * 2 - Math.PI, tm = (ta + tb) / 2, w = wedge(ta, tb, R0, RM, D / 2 + ri() * .15, D / 2 + ri() * .15);
+      if (w.top < P - .1) continue; /* wholly sunk in the plinth */
+      if (goneI(tm)) { put('stone', lay(w.g, w.c)); gone++; continue; }
+      const M = new THREE.Matrix4(); if (ri() < .125 && w.low > P) { const out = .06 + ri() * .1; M.makeTranslation(Math.sin(tm) * out, Math.cos(tm) * out, (ri() - .5) * .3); slipped++; }
+      put('stone', w.g.applyMatrix4(M).applyMatrix4(T)); put('script', band(ta, tb).applyMatrix4(M).applyMatrix4(T)); }
+    for (let k = 0; k < NO; k++) { const sh = .5 / NO, ta = (k / NO + sh) * Math.PI * 2 - Math.PI, tb = ((k + 1) / NO + sh) * Math.PI * 2 - Math.PI, tm = (ta + tb) / 2, w = wedge(ta, tb, RM, R1, D / 2 - .15 + (ri() - .5) * .2, D / 2 - .15 + ri() * .15);
+      if (w.top < P - .1) continue;
+      if (goneO(tm)) { put('stone', lay(w.g, w.c)); gone++; continue; }
+      put('stone', w.g.applyMatrix4(T)); }
+    // the plinth: two steps of slabs, 34 by 12 m and 30 by 8 m, 0.6 m each
+    for (const [W2, D2, y0] of [[34, 12, S - .3], [30, 8, S + .6]]) { for (let x = -W2 / 2 + 1; x < W2 / 2; x += 2) for (let z = -D2 / 2 + 1; z < D2 / 2; z += 2) { const g = new THREE.BoxGeometry(1.96, .9, 1.96); g.translate(x, y0 + .45 - (y0 > S ? .3 : 0), z + zc); put('step', g); } }
+    // the landing: steps cut from 3 m under the mean sea up to the crown's edge, east of the ring, 4 m wide; each a block down into the rock
+    const L = rim(i, 0) + 6 - SX0, n = Math.ceil((S + 3) / .24), run = L / n;
+    for (let k = 0; k < n; k++) { const x0 = SX0 + k * run, top = stairY(i, x0 + run / 2) + .04, low = Math.min(...[[x0, -SW], [x0 + run, -SW], [x0, SW], [x0 + run, SW]].map(([u, v]) => isleH(i, u, zc + v))) - .6, hh = Math.max(.6, top - low), g = new THREE.BoxGeometry(run + .02, hh, 2 * SW); g.translate(x0 + run / 2, top - hh / 2, zc); put('stair', g); }
+    isles.push({ i, z: zc, R: RS[i], cond, gone, slipped, lost, stair: { x0: SX0, x1: +(SX0 + L).toFixed(2), y0: -3, y1: S, w: 2 * SW, n } }); }
+  const figure = (() => { const x = -12.5, z = 3.4, y = P, h = 1.75, g = new THREE.CylinderGeometry(.2, .24, h, 10); g.translate(x, y + h / 2, z); put('mark', g); return { x, y, z, h }; })();
+  // the script, cut dead: only its strokes, at the stone's colour in shadow (gatekit's cutMat, Session 2425)
+  const glyphs = (() => { const c = document.createElement('canvas'); c.width = 128; c.height = 1024; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 128, 1024); x.strokeStyle = '#fff'; x.lineCap = 'round'; const rs = stream(key + ':script');
+    for (let k = 0; k < 12; k++) { const cy = 44 + k * 84, kind = Math.floor(rs() * 4); x.lineWidth = 9; x.beginPath();
+      if (kind === 0) x.arc(64, cy, 30, 0, 7); else if (kind === 1) { x.arc(64, cy, 30, 0, 7); x.moveTo(64, cy - 38); x.lineTo(64, cy + 38); } else if (kind === 2) { x.arc(64, cy, 30, Math.PI * .1, Math.PI * .9); x.moveTo(94, cy - 6); x.arc(64, cy - 6, 30, 0, -Math.PI, true); }
+      else { x.moveTo(64, cy - 36); x.lineTo(64, cy + 36); for (const d of [-20, 0, 20]) { x.moveTo(44, cy + d); x.lineTo(84, cy + d); } } x.stroke(); }
+    const t = new THREE.CanvasTexture(c); t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t; })();
+  const STONE = new THREE.Color(0xd6cebe), rockM = mat('rock', { ns: .6, color: 0xffffff, rough: .95 }); rockM.vertexColors = true;
+  const M = { rock: rockM, sea: new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .2, .25), roughness: .18, metalness: .1 }), coast: mat('rock', { ns: .8, color: 0x5c6152, rough: .95 }),
+    stone: mat('ashlar', { ns: .8, color: STONE.getHex(), rough: .85 }), script: Object.assign(cutMat(STONE, glyphs), { side: THREE.DoubleSide }), step: mat('ashlar', { ns: .7, color: 0xaaa397, rough: .9 }) /* the kit's slab is the gates' dark polished floor: under the sky the steps are the ring's stone */, stair: mat('rock', { ns: .9, color: 0x6d6a64, rough: .95 }),
+    mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
+  let tris = 0, draws = 0;
+  for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['sea', 'script', 'coast'].includes(k); mesh.receiveShadow = k !== 'sea'; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
+  return { group, tris: Math.round(tris), draws, ground, S, P, CY, R0, RM, R1, D, isles, coast: { z: COAST }, figure };
 }
