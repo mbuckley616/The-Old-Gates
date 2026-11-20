@@ -804,8 +804,8 @@ const BUFF_SPELLS=[
 BUFF_SPELLS.forEach(s=>{if(!SPELLS.find(x=>x.id===s.id))SPELLS.push(s);});
 // S1606 — Tintreach sent (magic-build.md's table: "bolt 24, leaps 5 m at half"): a bolt of 24 at Séideán's speed, the fastest the
 // build has (14 m/s), and on a hit it leaps to the nearest other foe within 5 m of the one struck for half the blow, once. The leap takes
-// no rider and starts no burn. Its Mastery has no canon entry (nameMa null), so it is the plain word at ×1.3 as the sheet says.
-SPELLS.push({id:'tintreach',school:'tine',role:'basic',nameIr:'Tintreach',nameEn:'Chain Lightning',nameMa:null,ico:'⚡',desc:'A bolt that leaps to a second foe.',
+// no rider and starts no burn. Its Mastery has no canon effect, so it is the plain word at ×1.3 as the sheet says.
+SPELLS.push({id:'tintreach',school:'tine',role:'basic',nameIr:'Tintreach',nameEn:'Chain Lightning',nameMa:'Speaking Thunder',ico:'⚡',desc:'A bolt that leaps to a second foe.',
   intReqs:[12,25,45],cost:36,speed:14,dmgBase:24,dmgLvl:3,col:0xb8d4ff,glowCol:0xd8e8ff,wild:['scatter','fizzle','backlash']});
 // the leap from struck foe e: the nearest other live foe within 5 m of it takes ×0.5 of the bolt's blow. Returns it, or null.
 function tintreachLeap(e,sp,tier){const L=WORD_BY.tintreach.forms.sent,dun=!!(lid&&lid.startsWith('dyn_'));let best=null,bd=L.leap+1e-9;
@@ -820,14 +820,14 @@ function tintreachLeap(e,sp,tier){const L=WORD_BY.tintreach.forms.sent,dun=!!(li
 // Comprehension, the tier's magnitude (1.2 s at Impression, 2.6 at Mastery: no canon entry, so ×1.3). A rooted foe turns and strikes but
 // takes no step (foeRooted, S1602's root). It flies at Cloch Ghéar's 8 m/s. A rider still rides it, on a blow of 0. `status` marks a
 // bolt that the two hit loops hand to statusBolt in place of the damage.
-SPELLS.push({id:'freamh',school:'cloch',role:'basic',nameIr:'Fréamh',nameEn:'Root',nameMa:null,ico:'🌿',desc:'Roots a foe where it stands.',
+SPELLS.push({id:'freamh',school:'cloch',role:'basic',nameIr:'Fréamh',nameEn:'Root',nameMa:'What Holds',ico:'🌿',desc:'Roots a foe where it stands.',
   intReqs:[10,22,40],cost:30,speed:8,dmgBase:0,dmgLvl:0,col:0x6a8a3a,glowCol:0x8aaa50,wild:['scatter','fizzle'],status:'root'});
 // S1627 — Dorcha sent (magic-build.md's table: "blinds 4 s"; Michael's A on #919: "it loses you until the 4 s end"): a bolt that deals
 // nothing and blinds the foe it strikes, 4 s at Comprehension, the tier's magnitude (2.4 s at Impression, 5.2 at Mastery: no canon entry,
 // so ×1.3). A blind foe is not alert and sees nothing, as under Shadowcap's veil, but for that foe alone (foeBlind). The bolt's strike
 // wakes it as any strike does, but not until the blind ends: then it turns on you again, unless you are past its forget range by then
 // (blindTick, from both foe ticks). Smól's 10 m/s.
-SPELLS.push({id:'dorcha',school:'scath',role:'basic',nameIr:'Dorcha',nameEn:'Blind',nameMa:null,ico:'🌘',desc:'Blinds a foe: it loses you.',
+SPELLS.push({id:'dorcha',school:'scath',role:'basic',nameIr:'Dorcha',nameEn:'Blind',nameMa:'The Hour Before',ico:'🌘',desc:'Blinds a foe: it loses you.',
   intReqs:[10,22,40],cost:28,speed:10,dmgBase:0,dmgLvl:0,col:0x2a1a3a,glowCol:0x553377,wild:['scatter','fizzle'],status:'blind'});
 // S1628 — Dul Thart worn (magic-build.md's table: "through foes 0.6 s"; Michael's B on #926: bodies, blows and arrows pass through):
 // cast from the book's Worn entry, at the press, it makes you intangible 0.6 s at every tier (PHASE_UNTIL, which rollUntouchable reads).
@@ -858,7 +858,7 @@ function statusBolt(e,sp,tier,rider){if(!e||e.dead||e.hp<=0)return null;const F=
 // school's power) and 20 from its posture, a break staggering it as a blow's does. The path is 1.6 m wide, Tonn's laid width (the bridge,
 // RIDERS.sioc.laid.bridge): the sheet gives the sent wave no width of its own. It strikes at once, not as a travelling crest. A rider rides
 // each foe it strikes. Its Mastery has no canon entry, so it is the plain word at ×1.3.
-SPELLS.push({id:'tonn',school:'uisce',role:'basic',nameIr:'Tonn',nameEn:'Force Wave',nameMa:null,ico:'〰️',desc:'A wave that throws down what stands in its line.',
+SPELLS.push({id:'tonn',school:'uisce',role:'basic',nameIr:'Tonn',nameEn:'Force Wave',nameMa:'The Shore’s Answer',ico:'〰️',desc:'A wave that throws down what stands in its line.',
   intReqs:[10,22,40],cost:32,speed:0,dmgBase:14,dmgLvl:2,col:0x5a9ad8,glowCol:0x8ac0f0,wild:['scatter','fizzle'],wave:true});
 // tonnWave: the named action. The wave from x,z along (ux,uz) on `floor` (a gate's). Returns {len, hit:[{foe,dealt,broke}]}.
 function tonnWave(sp,tier,rider,x,z,ux,uz,floor){const F=WORD_BY.tonn.forms.sent,hw=RIDERS.sioc.laid.bridge.wide/2,dun=!!(lid&&lid.startsWith('dyn_'));
@@ -884,7 +884,7 @@ function tonnWave(sp,tier,rider,x,z,ux,uz,floor){const F=WORD_BY.tonn.forms.sent
 // fall from there, as the fall rule counts it. Its length is the same at every tier and skill level (places are built to steps); only
 // Impression's wild roll moves it: fizzle, scatter (±20° of aim) or overshoot (×1.5, 18 m). A step of 1 m or more is a use of Scáth.
 // Its Mastery has no canon entry. The Scáth perks (18 m at 75, unseen 3 s after a step at 100) wait for the schools' perks.
-SPELLS.push({id:'dul_thart',school:'scath',role:'basic',nameIr:'Dul Thart',nameEn:'Phase',nameMa:null,ico:'👣',desc:'A step that passes beyond: you arrive where it lands.',
+SPELLS.push({id:'dul_thart',school:'scath',role:'basic',nameIr:'Dul Thart',nameEn:'Phase',nameMa:'The Space Between',ico:'👣',desc:'A step that passes beyond: you arrive where it lands.',
   intReqs:[14,28,48],cost:40,speed:0,dmgBase:0,dmgLvl:0,col:0x40305a,glowCol:0x7a60a8,wild:['fizzle','scatter','overshoot'],step:true});
 const STEP_OVERSHOOT=1.5,STEP_BODY=.3;
 // stepWord: the named action. Moves you from x,z along (ux,uz) up to len, level with your feet. Returns {len, x, z, wall}.
@@ -1032,9 +1032,9 @@ function checkPartialSpells(){
 const WORDS=[
   {id:'caor',school:'tine',nameIr:'Caor',nameEn:'Fireball',nameMa:'Living Ember',ico:'🔥',intReqs:[3,15,35],cost:30,
    forms:{sent:{bolt:20},touched:{dmg:30,say:'lights a brazier, burns a web'},held:{say:'flame'}}},
-  {id:'loscadh',school:'tine',nameIr:'Loscadh',nameEn:'Scorch',nameMa:null,ico:'🌋',intReqs:[10,22,40],cost:34,
+  {id:'loscadh',school:'tine',nameIr:'Loscadh',nameEn:'Scorch',nameMa:'The Clearing',ico:'🌋',intReqs:[10,22,40],cost:34,
    forms:{touched:{say:'fires dry brush'},laid:{fire:4,dps:6,dur:10}}},
-  {id:'tintreach',school:'tine',nameIr:'Tintreach',nameEn:'Chain Lightning',nameMa:null,ico:'⚡',intReqs:[12,25,45],cost:36,
+  {id:'tintreach',school:'tine',nameIr:'Tintreach',nameEn:'Chain Lightning',nameMa:'Speaking Thunder',ico:'⚡',intReqs:[12,25,45],cost:36,
    forms:{sent:{bolt:24,leap:5,leapMult:.5},touched:{dmg:36,stagger:true}}},
   {id:'sioc',school:'uisce',nameIr:'Sioc',nameEn:'Frost Bolt',nameMa:"Still-Winter's Touch",ico:'❄️',intReqs:[3,15,35],cost:20,
    forms:{sent:{bolt:12,slow:.3,slowDur:3},touched:{say:'freezes a pool, a lock’s works'},laid:{floe:3,dur:30,say:'a floe on water'},held:{say:'frost'}}},
@@ -1042,9 +1042,9 @@ const WORDS=[
    forms:{worn:{buff:'waterwalk',dur:[45,90,180]},touched:{say:'douses a fire'}}},
   {id:'anail',school:'uisce',nameIr:'Anáil',nameEn:'Water Breathing',nameMa:'Gills of the Deep',ico:'🫧',intReqs:[6,14,28],cost:20,
    forms:{worn:{buff:'waterbreath',dur:[60,120,240]}}},
-  {id:'tonn',school:'uisce',nameIr:'Tonn',nameEn:'Force Wave',nameMa:null,ico:'〰️',intReqs:[10,22,40],cost:32,
+  {id:'tonn',school:'uisce',nameIr:'Tonn',nameEn:'Force Wave',nameMa:'The Shore’s Answer',ico:'〰️',intReqs:[10,22,40],cost:32,
    forms:{sent:{wave:8,dmg:14,posture:20},laid:{wave:6.2,dur:2}}},
-  {id:'reo',school:'uisce',nameIr:'Reo',nameEn:'Frost Nova',nameMa:null,ico:'🧊',intReqs:[12,25,45],cost:34,
+  {id:'reo',school:'uisce',nameIr:'Reo',nameEn:'Frost Nova',nameMa:'Still Point',ico:'🧊',intReqs:[12,25,45],cost:34,
    forms:{touched:{hold:2},laid:{radius:4,hold:2}}},
   {id:'sideen',school:'gaoth',nameIr:'Séideán',nameEn:'Wind Shear',nameMa:'Breath-Between-Words',ico:'🌬️',intReqs:[3,15,35],cost:22,
    forms:{sent:{bolt:14,knock:1.5},laid:{updraft:1.5,dur:15},held:{say:'a gale'}}},
@@ -1054,21 +1054,21 @@ const WORDS=[
    forms:{worn:{buff:'haste',mult:1.5,dur:[30,60,120]}}},
   {id:'eitilt',school:'gaoth',nameIr:'Eitilt',nameEn:'Levitate',nameMa:'The Unbound Foot',ico:'🕊',intReqs:[12,20,34],cost:34,
    forms:{worn:{buff:'levitate',dur:[25,50,100]}}},
-  {id:'ean',school:'gaoth',nameIr:'Éan',nameEn:'Leap',nameMa:null,ico:'🦅',intReqs:[8,18,32],cost:26,
+  {id:'ean',school:'gaoth',nameIr:'Éan',nameEn:'Leap',nameMa:'Wingless',ico:'🦅',intReqs:[8,18,32],cost:26,
    forms:{worn:{rise:8.4,dur:[20,40,80]}}},
   {id:'cloch_ghear',school:'cloch',nameIr:'Cloch Ghéar',nameEn:'Stone Spike',nameMa:"Earth's-Teeth",ico:'🪨',intReqs:[3,15,35],cost:28,
    forms:{sent:{bolt:22},laid:{pillar:1.2,across:1,dur:20}}},
   {id:'sciath',school:'cloch',nameIr:'Sciath',nameEn:'Shield',nameMa:'Stone Skin',ico:'🛡',intReqs:[10,18,32],cost:28,
    forms:{worn:{buff:'shield',dur:[40,80,150]}}},
-  {id:'freamh',school:'cloch',nameIr:'Fréamh',nameEn:'Root',nameMa:null,ico:'🌿',intReqs:[10,22,40],cost:30,
+  {id:'freamh',school:'cloch',nameIr:'Fréamh',nameEn:'Root',nameMa:'What Holds',ico:'🌿',intReqs:[10,22,40],cost:30,
    forms:{sent:{root:2},laid:{radius:3,root:2,dur:10}}},
   {id:'smol',school:'scath',nameIr:'Smól',nameEn:'Shade Bolt',nameMa:'The Quiet-Sent-Out',ico:'🌑',intReqs:[3,15,35],cost:26,
    forms:{sent:{bolt:16,silent:true}}},
   {id:'suil_oiche',school:'scath',nameIr:'Oíche',nameEn:'Night Eye',nameMa:"The Owl's Gift",ico:'🦉',intReqs:[10,18,32],cost:18,
    forms:{worn:{buff:'nighteye',dur:[120,240,480]}}},
-  {id:'dorcha',school:'scath',nameIr:'Dorcha',nameEn:'Blind',nameMa:null,ico:'🌘',intReqs:[10,22,40],cost:28,
+  {id:'dorcha',school:'scath',nameIr:'Dorcha',nameEn:'Blind',nameMa:'The Hour Before',ico:'🌘',intReqs:[10,22,40],cost:28,
    forms:{sent:{blind:4},laid:{dark:6,dur:15}}},
-  {id:'dul_thart',school:'scath',nameIr:'Dul Thart',nameEn:'Phase',nameMa:null,ico:'👣',intReqs:[14,28,48],cost:40,
+  {id:'dul_thart',school:'scath',nameIr:'Dul Thart',nameEn:'Phase',nameMa:'The Space Between',ico:'👣',intReqs:[14,28,48],cost:40,
    forms:{sent:{step:12},worn:{phase:.6}}},
   {id:'solas_gheal',school:'solas',nameIr:'Solas-Gheal',nameEn:'Radiant Bolt',nameMa:"Morning's-First-Word",ico:'✨',intReqs:[3,15,35],cost:28,
    forms:{sent:{bolt:18},laid:{light:8,dur:60}}},

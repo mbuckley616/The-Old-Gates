@@ -2368,8 +2368,8 @@ const giver=`${lord.title} ${lord.name}`;
     def=makeDef(home,home.reg||'irish',r,'Villager',nm,{people:nat.people,x:p.x,z:p.z,bCol:0x3a4458,sCol:0x2a2420,topics:[{label:'What news?',fn:()=>riderTell(T,def.x,def.z,post,def.people)}]});
     def._siteId=home.id;def.roadfolk=T.id;def.post=post;def.rider=true;return def;}
   function riderBeast(T,isle){const rg=buildWolf(isle!=='mark'&&(pHash(T.id)&1)?'Grey Horse':'Horse',1.6);rg.hcKey='rider:'+T.id;if(ANIMAL_ISLES.includes(isle))rg.hcIsland=isle;return rg;}
-  // the halt: true while he stands (his place is then the clock's, the lag growing with the minutes he waits)
-  function riderTick(D,p){const T=D.T;if(T.kind!=='rider')return false;const now=worldState.gameTimeAbsMinutes||0,R=rfRec(T.id);
+  // the halt: true while he stands (his place is then the clock's, the lag growing with the minutes he waits) (roadRiderTick: S2436, it was riderTick, which replaced magic B's riderTick of 64-spells.js)
+  function roadRiderTick(D,p){const T=D.T;if(T.kind!=='rider')return false;const now=worldState.gameTimeAbsMinutes||0,R=rfRec(T.id);
     if(!D.halt){if(R&&R.hailed)return false;if(Math.hypot(px-p.x,pz-p.z)>=RIDER_HAIL)return false;
       D.halt={at:now,lag0:(R&&R.lag)||0};rfSet(T.id,{hailed:true,day:dayNow()});showMsg(`${D.npc.def.name}, ${D.npc.def.post}, reins in.`,'#e8d8a0');}
     const H=D.halt;if(now-H.at>=RIDER_WAIT||Math.hypot(px-D.npc.def.x,pz-D.npc.def.z)>RIDER_LET){rfSet(T.id,{lag:H.lag0+Math.min(RIDER_WAIT,now-H.at)});delete D.halt;return false;}
@@ -2511,7 +2511,7 @@ const giver=`${lord.title} ${lord.name}`;
     for(let {T,rd,p} of all){let D=ROADWALK.get(T.id);
       if(!D){D=buildTraveller(T,rd,p);ROADWALK.set(T.id,D);{const R=rfRec(T.id);if(R&&R.sprung&&!R.saved&&!R.lost){rfSet(T.id,{lost:true});dropTraveller(T.id);continue;}} /* a fight left unfinished by a load: his pack was taken */}
       if(roadAmbushTick(D,p,dt||0))continue;
-      if(riderTick(D,p)){const q=travellerAt(T,rd,worldState.gameTimeAbsMinutes||0);if(q)p=q;} /* S2275 — reined in: the clock, less the minutes he has stood, is where he stands */
+      if(roadRiderTick(D,p)){const q=travellerAt(T,rd,worldState.gameTimeAbsMinutes||0);if(q)p=q;} /* S2275 — reined in: the clock, less the minutes he has stood, is where he stands */
       const y=roadY(p.x,p.z);D.npc.g.position.set(p.x,y+(D.mount?RIDER_SEAT:0),p.z);D.npc.g.rotation.y=p.ang;D.npc.def.x=p.x;D.npc.def.z=p.z;D.npc.home={x:p.x,z:p.z};D.npc.dot.position.set(p.x,y+1.5,p.z);
       if(D.beast){const bk=D.mount?0:1.6,bx=p.x-Math.sin(p.ang)*bk,bz=p.z-Math.cos(p.ang)*bk;D.beast.position.set(bx,roadY(bx,bz),bz);D.beast.rotation.y=p.ang;}
       for(const F of D.follow){const q=F.trail?travellerAt(T,rd,(worldState.gameTimeAbsMinutes||0)-F.back/T.pace):null; /* S2273 — a bier's back bearer walks the road's own line, F.back behind on the clock, not straight behind through a bend */
@@ -3988,7 +3988,7 @@ const giver=`${lord.title} ${lord.name}`;
   // 83), the keeper slides with it, so the bursar is not left at its end. No table (the old look, a place not built yet): the spot as laid.
   function festKeeperAt(s,key,A){const S=typeof SETTLE!=='undefined'&&SETTLE.get(s.id),T=S&&S.stalls&&S.stalls.find(t=>t.key===key),sl=T&&T.slide||0;
     return [s.x+A[0]+(sl?Math.cos(T.ry)*sl:0),s.z+A[1]-(sl?Math.sin(T.ry)*sl:0)];}
-  function caravanDef(s,year){const r=seededRng('caravan',s.id+':'+year),bank=NAMES[PEOPLES.aurennais.names]||NAMES.irish,female=r()<.3,L=female&&bank.f&&bank.f.length?bank.f:bank.m;
+  function festCaravanDef(s,year){const r=seededRng('caravan',s.id+':'+year),bank=NAMES[PEOPLES.aurennais.names]||NAMES.irish,female=r()<.3,L=female&&bank.f&&bank.f.length?bank.f:bank.m;
     return {name:L[Math.floor(r()*L.length)],role:'Caravan-master',ico:'🐪',female,people:'aurennais',x:festKeeperAt(s,'caravan',CARAVAN_AT)[0],z:festKeeperAt(s,'caravan',CARAVAN_AT)[1],_siteId:s.id,_lantern:true,greeting:[CARAVAN_LINES.greet],
       get topics(){return [{label:'How was the road?',response:CARAVAN_LINES.road},{label:'Why the same day everywhere?',response:CARAVAN_LINES.why},
         ...(festActDone('caravan',s)?[]:[{label:'A pinch of saffron',fn:()=>caravanPinch(s)}]),{label:'Farewell.',bye:true}];}};}
@@ -3996,7 +3996,7 @@ const giver=`${lord.title} ${lord.name}`;
   function tickCaravan(){const on=activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior());const S=on?nearSite():null,s=S&&S.site;
     const h=s&&isleAt(s.x,s.z)==='aurenne'?caravanOn(s):null,yr=calDay(absMin()).year;
     if(h&&Math.hypot(px-s.x,pz-s.z)<LANTERN_NEAR){if(CARAVAN&&(CARAVAN.site.id!==s.id||CARAVAN.year!==yr))caravanOut();
-      if(!CARAVAN){const def=caravanDef(s,yr),n=spawnNPC(def,Math.atan2(-CARAVAN_AT[0],-CARAVAN_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);CARAVAN={npc:n,site:s,year:yr};}}
+      if(!CARAVAN){const def=festCaravanDef(s,yr),n=spawnNPC(def,Math.atan2(-CARAVAN_AT[0],-CARAVAN_AT[1]),true);n.sched={type:'lost'};n.g.position.set(def.x,worldH(def.x,def.z),def.z);CARAVAN={npc:n,site:s,year:yr};}}
     else if(CARAVAN)caravanOut();}
   // S2347 — the Lamps on the Water (*Festivals on the Calendar, III* §4, word for word; Michael's B on #1628). On the Lamps (Lean 4), in an
   // Aurennais town keeping it and not occupied, the lampseller stands from 17:00 to 22:00 at the quay's foot in a port (quayLine), else on
