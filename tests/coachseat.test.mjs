@@ -57,5 +57,15 @@ const inside = await page.evaluate(() => { forceTime(5); const C = WORLD.coachLi
 console.log(JSON.stringify(inside));
 check('out of the inn twenty minutes past its call: the coach is at the door', inside.out.u === .5 && inside.out.state === 'stop', inside);
 check('it waits to the hour and then goes, with the seat', inside.at50 === 'stop' && inside.at65 === 'run' && inside.seat === null, inside);
+// 6. the seat is the character's (SS_CHAR_WS): a save carries it in the character row and a load gives it back; a save with no
+// seat clears one held before the load (Session 2464: the load never read it, so a held seat was lost, or kept into another game)
+const saved = await page.evaluate(() => { forceTime(5); const C = WORLD.coachLines.get(_key); C.u = 0; C.state = 'wait'; C.stopped = false; C.holdTo = 0; C.riding = false;
+  _topic(/A seat on the next coach/).fn(); const want = JSON.stringify(worldState.coachSeat);
+  const rows = ssSplitPayload(JSON.parse(ssStringify(_buildSavePayload()))); const inC = !!(rows.c.wS && rows.c.wS.coachSeat), inW = !!(rows.w.wS && rows.w.wS.coachSeat);
+  worldState.coachSeat = null; _applyLoadData(JSON.parse(JSON.stringify(rows.c)), JSON.parse(JSON.stringify(rows.w))); const back = JSON.stringify(worldState.coachSeat);
+  const c2 = JSON.parse(JSON.stringify(rows.c)); delete c2.wS.coachSeat; _applyLoadData(c2, JSON.parse(JSON.stringify(rows.w)));
+  return { inC, inW, same: back === want, back, cleared: worldState.coachSeat == null }; });
+console.log(JSON.stringify(saved));
+check('a held seat is saved in the character row and comes back on a load; a save without one clears it', saved.inC && !saved.inW && saved.same && saved.cleared, saved);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
