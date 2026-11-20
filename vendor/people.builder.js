@@ -2255,8 +2255,11 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const NP = 14, tubeV = [], pos = [], col = [], idx = [], prn = [], RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * TAU)), cloth = sRGB(...D.wrap), edge = sRGB(...(D.wrapBorder || D.wrap.map(v => v * (sc ? .97 : .82)))), PH_ = th => RIM[Math.round(((th / TAU) * NT % NT + NT) % NT)];
   // the crown, from the top to the edge (its seam, and the turns', at the back), a shade lighter than the turns so the rolls read against it
   // (a headscarf's on a finer grid, 128 round and 28 down, its edge at each column's own rim, so the creases have the points to show)
-  { const b0 = pos.length / 3, cc = cloth.clone().multiplyScalar(sc ? 1 : 1.06), NTc = sc ? 128 : NT, NPc = sc ? 28 : NP; for (let j = 0; j < NPc; j++) for (let t = 0; t <= NTc; t++) { const th = Math.PI + t / NTc * TAU, p = at(th, (sc ? rimPh(th) : PH_(th)) * Math.max(.002, j / (NPc - 1))); pos.push(p.x, p.y, p.z); col.push(cc.r, cc.g, cc.b); prn.push(1); }
-    for (let j = 0; j < NPc - 1; j++) for (let t = 0; t < NTc; t++) { const a = b0 + j * (NTc + 1) + t, d = a + NTc + 1; idx.push(a, d, a + 1, a + 1, d, d + 1); } }
+  { const b0 = pos.length / 3, cc = cloth.clone().multiplyScalar(sc ? 1 : 1.06), NTc = sc ? 128 : NT, NPc = sc ? 28 : NP; const SL = []; for (let j = 0; j < NPc; j++) for (let t = 0; t <= NTc; t++) { const th = Math.PI + t / NTc * TAU, ph = (sc ? rimPh(th) : PH_(th)) * Math.max(.002, j / (NPc - 1)), p = at(th, ph); pos.push(p.x, p.y, p.z); col.push(cc.r, cc.g, cc.b); prn.push(1); SL.push(sc ? slack(th, ph) : 0); }
+    // a headscarf's quads are cut along the diagonal that runs with its creases (Session 2439, S2433's owed zigzag): of the two, the one whose
+    // ends stand out the same, so a ridge crossing the rows on the slant is drawn along its line and not stepped quad by quad
+    for (let j = 0; j < NPc - 1; j++) for (let t = 0; t < NTc; t++) { const a = b0 + j * (NTc + 1) + t, d = a + NTc + 1, o = a - b0;
+      if (sc && Math.abs(SL[o] - SL[o + NTc + 2]) < Math.abs(SL[o + 1] - SL[o + NTc + 1])) idx.push(a, d, d + 1, a, d + 1, a + 1); else idx.push(a, d, a + 1, a + 1, d, d + 1); } }
   // the turns: [over the edge at the front, at the back, the roll's radius]; the polar angle where the dome is at that height, by halving
   // a turban's five more are thicker, and their heights are shares of the way from the edge to the top, so they cross higher at the front
   // a headscarf has one: its folded edge, thinner and lying on the head
