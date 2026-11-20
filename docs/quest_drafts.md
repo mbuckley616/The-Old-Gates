@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 51, 19 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 52, 20 Nov: no new calls on the page)
 
 ---
 
@@ -7395,3 +7395,108 @@ One journal is chosen for each delver by `seededRng('delver-journal', seed)` fro
 - **Saved state:** `worldState.relicArcs` (the character's, in `SS_CHAR_WS` and the S242 list, as built) gains `given: {school: 'crown' | 'church'}`. The journal's pick is by seed and keeps no record. Nothing else new.
 - **Tests:** `tests/gatekeep` gains: a delver's book has pages from one of the eight and a steady gate never holds IV, V or VIII; `relicarc` (the sheet's) gains: the Crown's topic at the seat with an armillary, *Give it to the Crown.* pays 400 and enters a service, the Prior's burns it and enters one, *I'll keep it.* keeps it, and the journal's line follows each.
 - **Who builds:** the quest writer, the words (the journals' table, the descriptions, the topics and the hermit's entry) once approved; the systems builder, `yieldArmillary` and the shop's note, as its sheet's session 6.
+
+## The Schools on Cards — the six schools' lines, each word's sense and the makers' line, the joins that work, and the shape that will not hold
+
+*Unapproved. Drafted 20 Nov 2026.* Backlog L, *The schools on cards* (`64-spells.js`, the quest writer's words; OG-128): "each school's emblem, colour and words; the five forms as magic B has them; riders shown working (Sioc and Tonn laid as a wave that freezes into a bridge, Cloch and Gaoth a launching pillar, Tine and Gaoth held as a long flame); one spell at three tiers fizzling at Impression; uses outside a fight." Magic B is built (`WORDS`, `FORMS`, `RIDERS`, the composing page in `66-hub.js`), and so are the emblems (OG-094's, `implEmblem`: Tine a flame, Uisce a crescent moon, Cloch a mountain, Scáth an eye, Solas a sun, Gaoth a spiral) and the colours (`SCHOOL_DEF`). The uses outside a fight have their lines on main (`TOUCH_THING_SAY`, `SECRET_SAY`, run 52: clean). What the page lacks is words: a school is a name and a number, a word at Impression shows only *the English comes when Caor does*, and Mastery shows a name and nothing of what the makers meant by it. The magic sheet says it outright: "the words' texts are the quest writer's."
+
+This draft writes the cards in the canon's three registers (Part I, *the magic system*): the **sense** of each word, the plain meaning anyone who still has the old tongue would give; the **guild's line** for each school, the institutional register, correct and shallow; and the **makers' line**, shown only at Mastery, what the original culture understood the word to be. The canon's rule leads every makers' line: "the original culture didn't think of these as weapons." None says what the gates are for, and none names the player; a reader who has met the Clearing (§3.1) will hear it in three of them, which is all they are for. The eight true names the build lacks are the canon's own and are not drafted here: they went to the builders as Finding 55 today.
+
+Nobody speaks on these cards. The guild's lines are the academy's books (the Mages' Guild is cross-island and neutral, §8.4), so they are written in no people's voice: dry, exact, a little proud of itself. The makers' lines are the carving's, sparing, in the present, the older word for the thing.
+
+### 1. The six schools
+
+Shown on the composing page under each school's name (`mp-school`): the guild's line once any word of the school is held at Comprehension, the makers' line beneath it, in italics, once any word of the school is at Mastery. At Impression only the name and the emblem.
+
+| School | Emblem | The guild's line | The makers' line |
+|---|---|---|---|
+| **Tine** · Fire | a flame | The school of fire: heat, ignition and the burn. First in the academy's syllabus, and first in its register of accidents. | *Fire is a thing changing into what it will be. The makers asked it only to change slowly.* |
+| **Uisce** · Water | a crescent moon | The school of water and its cold: the tide, the frost and the breath held under. | *What the sea lends, it takes back twice a day.* |
+| **Cloch** · Stone | a mountain | The school of stone: the spike, the ward and the root. The slowest school to learn and the hardest to forget. | *Stone is what stays. The makers built with nothing else.* |
+| **Scáth** · Shadow | an eye | The school of shadow: concealment, the blinded eye and the step. Filed by the academy under defence, at its own insistence. | *A shadow is a shelter first. You stand in it, and it keeps you.* |
+| **Solas** · Light | a sun | The school of light: the lamp, the bolt, the cure, and the eye for the old stones. | *Light is how the makers saw what they were doing. Most of what it showed them, they did not write down.* |
+| **Gaoth** · Wind | a spiral | The school of wind: the gust, the leap and the lifted foot. The youngest of the six in the academy's books. | *Wind is the breath a word is said on. Every school is carried on this one.* |
+
+*Uisce's* line is scripture's own, said of An Mhuir (§4.1: "the sea owns them twice a day"). *Scáth's* is Part I's: "Scáth is shelter as much as shadow." *Gaoth's* "youngest" is the plainer reading of §9a, where Gaoth is the one school the old resist list does not name; the draft says no more than that.
+
+### 2. Each word: its sense, and the makers' line
+
+The sense is shown under the word's name on the page (`mp-meta`, which today reads *the English comes when {word} does*) from Impression, since a word you hold is a word you can say even when you do not understand it. At Comprehension the guild's English joins it as today. At Mastery the true name and the makers' line replace both. The senses are the canon's *Meaning* column where it has one, and the table *A Rubbing to Be Read* already uses (asked-in-passing-2, built in S1908), so the two agree.
+
+| Word | Sense (from Impression) | True name (Mastery) | The makers' line (Mastery) |
+|---|---|---|---|
+| Caor | a spark, a small burning thing | Living Ember | *Not a fire. The thing that starts one, and goes looking for what will take.* |
+| Loscadh | a burning of the land | The Clearing | *Burn off the old growth, and the field will hold again.* |
+| Tintreach | lightning; a flash of understanding | Speaking Thunder | *The flash comes first. What it showed you, you keep.* |
+| Sioc | frost, the stillness before freezing | Still-Winter's Touch | *The stillness before water knows it is ice.* |
+| Uisce | water | The Dry Path | *Water carries what it is asked to carry.* |
+| Anáil | breath | Gills of the Deep | *The sea lends you a breath, and keeps count.* |
+| Tonn | a wave | The Shore's Answer | *Every wave comes to a shore. This one is the shore.* |
+| Reo | held fast in ice | Still Point | *Held. Not hurt: kept where it is.* |
+| Séideán | a gust of breath | Breath-Between-Words | *The breath between two words, sent out on its own.* |
+| Cleite | a feather | Weightless Step | *A feather does not fall. It is let down.* |
+| Luas | speed | Wind at the Heel | *Not haste. The wind at your back, asked for.* |
+| Eitilt | flight | The Unbound Foot | *The ground lets go of you, for a while.* |
+| Éan | a bird | Wingless | *The bird's leap, and the bird's trust in the landing.* |
+| Cloch Ghéar | a sharp stone | Earth's-Teeth | *Stone coming up to meet what walks on it.* |
+| Sciath | a shield | Stone Skin | *Stand as a wall stands. Nothing in a wall fights.* |
+| Fréamh | a root | What Holds | *A root does not grip. It stays.* |
+| Smól | the last of an ember | The Quiet-Sent-Out | *The last of an ember, sent out, and nobody woken.* |
+| Oíche | night | The Owl's Gift | *Night was never dark to what lives in it.* |
+| Dorcha | the dark before morning | The Hour Before | *The hour when nothing is sure where it stands.* |
+| Dul Thart | going past | The Space Between | *Going past, as a thing goes past that was never quite there.* |
+| Solas Gheal | a bright light | Morning's-First-Word | *The first word said in the morning. All the day is seen by it.* |
+| Leigheas | a cure | Hand-of-the-Stream | *A cure is a stream put back in its bed.* |
+| Lampa | a lamp | Lantern of the Mind | *Light carried in, not made.* |
+| Súil | an eye | The Loom Seen | *An eye for the seams. Mind what looks back along them.* |
+
+Notes on four. *Loscadh*'s true name is the canon's (Finding 55); its makers' line is a farmer's, and is the whole of what the draft says about the other Clearing. *Dul Thart*'s line is §4.2's inconsistent player seen from the carving's side, never explained. *Súil*'s is §3.3's window: the Weaver's Eye is the one word a reader uses to look for the stones, so it is the one that warns. *Sioc*'s true name in the build (*Still-Winter's Touch*) is not the canon's (*Deep Frost*); the build's has been on main since the first sigils and is not wrong in register, so the draft keeps it and says so here rather than as a finding. Michael may want the canon's back; it is one string.
+
+### 3. The forms
+
+One line each, the guild's, shown under the form's name in the page's form row (`mp-form .fh`, as its title) and in the guild head's teaching line when a rank gives a form. The makers had no forms (the canon: the academies supply the grammar), so the forms have no makers' line, and the page says so once, under its *Form* heading, at the first word held at Mastery:
+
+> *The makers had no forms. A word said was the thing.*
+
+| Form | The guild's line |
+|---|---|
+| **Sent** | The word sent out from the hand, to strike what it meets. The first form, and the one every Novice is given. |
+| **Worn** | The word held on the body, for a time, by the one who said it. |
+| **Touched** | The word laid on a thing within arm's reach: a lock, a fire, a pool, a foe. Cheaper and fiercer than Sent, and the caster stands close for it. |
+| **Laid** | The word set on the ground where you look, to stand there a while. One at a time: a second unmakes the first. |
+| **Held** | The word kept going while the hand stays open. It costs while it runs, and you walk at half the pace. |
+
+### 4. Joins that work: the first time
+
+Three joins the card names. The first time a character makes each one go off (not writes it: casts it and it does what it is for), the narrator says one line, once for that character. Every later cast is silent, as now.
+
+| The join | When | The line |
+|---|---|---|
+| Tonn and Sioc, laid | the wave stands as the bridge | *The wave stops where it was going, and freezes there. It will bear you.* |
+| Cloch Ghéar and Séideán, laid | the pillar throws you | *The stone comes up as if it were thrown, and so do you.* |
+| Caor and Séideán, held | the held flame pushes a foe | *The wind takes the flame and runs it out long.* |
+
+The refusals stay as built: *The words won’t join.*, *A worn word takes no second word.*, *the word won’t take that shape*, *You cannot shape that word so.*
+
+### 5. The shape that will not hold: fizzling by school
+
+An Impression word that fizzles today says, for every word, *{ico} {word} fizzles — the shape will not hold.* The card asks for one word shown failing at Impression, and the school is where the failure looks different. The words after the dash stay; only the verb is the school's:
+
+| School | The line |
+|---|---|
+| Tine | *{ico} {word} gutters out — the shape will not hold.* |
+| Uisce | *{ico} {word} runs off your hands — the shape will not hold.* |
+| Cloch | *{ico} {word} crumbles before it is made — the shape will not hold.* |
+| Scáth | *{ico} {word} thins to nothing — the shape will not hold.* |
+| Solas | *{ico} {word} flickers and goes out — the shape will not hold.* |
+| Gaoth | *{ico} {word} slips off on its own breath — the shape will not hold.* |
+
+A word of no school, or a legacy spell with none, keeps *fizzles*. The other wild lines (*wavers in the casting…*, *bites back at you…*, *stings before it soothes…*, the two *overshoots*) are fine and stay.
+
+### What would carry it
+
+- **`64-spells.js`** (the systems builder's file; the quest writer builds the words only, with targeted edits): `SCHOOL_DEF` gains `guild` and `makers` (§1); a `WORD_TEXT` table beside `WORD_CELL_SAY`, `{id: {sense, makers}}` (§2); `FORMS[f].say` (§3); `FIZZLE_VERB` by school and one function, `fizzleSay(w)`, that the three fizzle lines in `castWord`, `layWord`'s caller and the held cast call instead of their literal (and `62-actions.js`'s legacy `castSpell` line, the same string). §4's three lines in a `JOIN_FIRST` table keyed `<word>+<rider>:<form>`, said from the three places that already know the join went off: `layWord` when the bridge is built, the pillar's throw, the held tick that lands a push.
+- **`66-hub.js`**, `renderHubMagic`: the school header reads `SCHOOL_DEF[sc].guild`/`makers` by the best tier held in that school; the title's `mp-meta` reads the sense (and the makers' line at Mastery); the form row's `title` reads `FORMS[f].say`; the *Form* heading's one line at the first Mastery.
+- **Saved state:** §4 needs one record, the joins this character has seen: `worldState.joinsSeen` (`{'tonn+sioc:laid': true, …}`), the character's, so it goes in `SS_CHAR_WS` and the S242 list in `_applyLoadData`. Nothing else new; nothing is rolled.
+- **Tests:** `tests/wordforms` gains: each school's header shows its guild line at Comprehension and its makers' line at Mastery; a word's sense shows at Impression; a fizzle of a Tine word says *gutters out*; the bridge's line is said once and not again after a save and a reload.
+- **Who builds:** all of it is words on machinery that exists, but for §4's one saved key and the three call sites, which are small enough for the quest writer's build once approved (grep first; the systems builder works in `64-spells.js` too).
