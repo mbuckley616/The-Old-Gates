@@ -12,7 +12,8 @@ manner. Why can't we just have basic tests?" Every suite boots the whole game on
 runner-minutes, run on main after each merge in 20 shards from the account's one pool of runners (shared with Airsoft),
 and the PRs queued 8 to 31 minutes behind each one. So:
 - **A pull request runs the smoke set and the suites it adds or edits** (`tests/lib/select.mjs`): `looknew`, `saves`,
-  `resolver`, `player`, `dungeon`, `autosave`, about eleven minutes of suites in two short shards. The selection by the
+  `resolver`, `player`, `dungeon`, `autosave` and `topnames` (a top-level name declared twice, 5 s, no browser; Session 2459),
+  about eleven minutes of suites in two short shards. The selection by the
   names a change reaches (19 Oct, `tests/lib/toplevel.cjs`) is gone. A shared kit beside the suites (`tests/budgetkit.mjs`)
   counts as an edit of every suite that imports it (Session 2255).
 - **A docs-only PR runs no suites** (parse only). Parse also checks the generated bundles (`three_bundle.py`,
