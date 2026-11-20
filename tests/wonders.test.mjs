@@ -243,5 +243,17 @@ console.log(JSON.stringify(sh));
 check(`a ship sailed full ahead (${sh.top} m/s) at the last tower stops ${sh.closest} m from its middle, her bow outside the stone, in ${-sh.bed} m of water`, sh.clearAtStart && sh.top > 2 && sh.closest >= 5 + sh.L / 2 && Math.abs(sh.speed) < .5 && !sh.bowIn && sh.bed < -1.4, sh);
 const pd = await page.evaluate(() => { const S = WONDERS.spires; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:spires').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'spires').length }; });
 check('2.5 km off it is dropped, its solids and decks with it', pd.gone && pd.sol === 0 && pd.plats === 0, pd);
+// Session 2431: no chunk foe on a wonder's ground (S2409: foes stood inside the Northlight Altar's ring). Every chunk whose centre lies
+// within a wonder's ground + 70 m is spawned afresh at 23h (the night's density), with the rule and without it: with it none spawns.
+const wf = await page.evaluate(() => { forceTime(23); const C = WORLD.CHUNK, out = {}, keep = wonderFoeClear;
+  const spawn = (cx, cz) => { const ch = { cx, cz, enemies: [], group: new THREE.Group() }; delete cleared[chunkKey(cx, cz)]; spawnChunkEncounters(ch); const n = ch.enemies.length; despawnChunkEncounters(ch); delete cleared[chunkKey(cx, cz)]; return n; };
+  for (const K of WONDER_KINDS) { const st = K.site(); if (!st) { out[K.k] = null; continue; } const G = wonderFoeGround(K.k, st); let on = 0, off = 0, n = 0;
+    for (let cz = Math.floor((G.z - G.r - 70) / C); cz <= Math.floor((G.z + G.r + 70) / C); cz++) for (let cx = Math.floor((G.x - G.r - 70) / C); cx <= Math.floor((G.x + G.r + 70) / C); cx++) {
+      if (Math.hypot(cx * C + C / 2 - G.x, cz * C + C / 2 - G.z) >= G.r + 70) continue; n++; on += spawn(cx, cz); wonderFoeClear = () => false; try { off += spawn(cx, cz); } finally { wonderFoeClear = keep; } }
+    out[K.k] = { chunks: n, on, off, inRule: wonderFoeClear(G.x, G.z), out: wonderFoeClear(G.x + G.r + 200, G.z) }; }
+  forceTime(13); return out; });
+console.log(JSON.stringify(wf));
+const wk = Object.entries(wf).filter(([, v]) => v), off = wk.reduce((m, [, v]) => m + v.off, 0);
+check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 6 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
