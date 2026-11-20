@@ -1537,7 +1537,7 @@ taken. That is the swing the ledger's last column exists for, and the place did 
 | The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 39 | 27k | 0 | 0 | 1 | 0 | 0 | 38 |  | 38, 20k |
 | a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 105 | 397k | 0 | 0 | 33 | 0 | 0 | 71 |  | 71, 352k |
 
-Session 2428 (QA): s1762, 9 merges after s1754 (three with game code at these spots' reach: the Drowned Spires' hulls and cut script,
+Session 2429 (QA): s1762, 9 merges after s1754 (three with game code at these spots' reach: the Drowned Spires' hulls and cut script,
 the plates, script and turning chamber, a foe kept off an opened stair's hole; two shoulder-cape fixes; the rest docs and concepts).
 `budget` 508 s, `budgetfield` 496 s, `budgetport` 558 s, each alone and green on one pass. The field, the inn's hall and the gate from its
 entrance are identical to s1754. The street at noon is identical but for High, 840 → 839 calls (one body draw). Portclare's square is +2 calls
