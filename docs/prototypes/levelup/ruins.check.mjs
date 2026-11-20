@@ -1,3 +1,5 @@
+// Session 2441: the isles' rock laid round each isle and stack, so the beds run on across the facets.
+// Session 2440: the isles' rock bedded and jointed, not the kit's veined rock; the crowns' turf its own draw.
 // Session 2435: the isles' stacks notched at the tide and broken on a slant.
 // Session 2431: the isles' cliffs sheer, and stacks off them.
 // Session 2430 adds the Gate Isles (ruins.js gateIsles): five rings on rock isles, their hearts on one line, the far coast through them.
@@ -161,9 +163,25 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
   const stacks = a.isles.flatMap(s => s.stacks.map(k => { const girth = y => { const ds = [0, 1, 2, 3, 4, 5].map(j => out([k.x, y, k.z], [Math.cos(j * 1.047), 0, Math.sin(j * 1.047)])); return ds.every(d => d) ? ds.reduce((p, q) => p + q, 0) / 6 : null; };
     const tops = [0, 1, 2, 3, 4, 5, 6, 7].map(j => { rc.set(new THREE.Vector3(k.x + Math.cos(j * .785) * k.r * .5, 80, k.z + Math.sin(j * .785) * k.r * .5), new THREE.Vector3(0, -1, 0)); rc.far = 200; const h = rc.intersectObject(rockD, false); return h[0] ? h[0].point.y : null; });
     return { i: s.i, w0: +(girth(.4) || 0).toFixed(2), w4: +(girth(4) || 0).toFixed(2), top: +(Math.max(...tops) - Math.min(...tops)).toFixed(2), hi: +Math.max(...tops).toFixed(2), h: k.h }; }));
-  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), line, met, crowns, sheer, down, stairEnds, stacks, isles: a.isles.map(s => ({ i: s.i, z: s.z, cond: s.cond, gone: s.gone, slipped: s.slipped, lost: s.lost })), S: a.S, P: a.P, CY: a.CY, R1: a.R1, R0: a.R0, figure: a.figure, coast: a.coast,
+  // Session 2440: the crowns are turf (straight down beside each plinth), and the rock's grain runs level and upright: of the strongest
+  // tenth of its texture's edges, the share within 15° of an axis (bedding and joints), against the kit's veined rock
+  const turfDown = a.isles.flatMap(s => [[-19, 6], [19, -6], [8, 19], [-8, -19]].map(([x, z]) => { const h = cast([x, 60, s.z + z], [0, -1, 0]); return h && h.n; }));
+  const C = await import('./common.js'), grain = t => { const cv = t.image, d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, N = cv.width, L = (x, y) => d[(((y + N) % N) * N + ((x + N) % N)) * 4 + 1], gs = [];
+    for (let y = 0; y < N; y += 2) for (let x = 0; x < N; x += 2) { const gx = L(x + 1, y) - L(x - 1, y), gy = L(x, y + 1) - L(x, y - 1); gs.push([Math.hypot(gx, gy), Math.atan2(gy, gx)]); }
+    gs.sort((p, q) => q[0] - p[0]); const top = gs.slice(0, gs.length / 10), ax = top.filter(([, t]) => { const m = Math.abs(((t % (Math.PI / 2)) + Math.PI / 2) % (Math.PI / 2)); return m < .262 || m > Math.PI / 2 - .262; }).length; return +(ax / top.length).toFixed(2); };
+  const rockMesh = a.group.children.find(m => m.name === 'rock'), texture = { sea: rockMesh.material.map === C.TEX.searock.map, turfMap: !!a.group.children.find(m => m.name === 'turf').material.map, axis: grain(C.TEX.searock.map), kit: grain(C.TEX.rock.map) };
+  // Session 2441: the beds run on across the facets: of the rock's points shared by faces that look sideways, the share whose faces all give
+  // it one texture coordinate, as laid and as worldUV (the face's major axis) would lay the same faces
+  const seamless = geo => { const P = geo.attributes.position, N = geo.attributes.normal, U = geo.attributes.uv, at = new Map();
+    for (let v = 0; v < P.count; v++) { if (N.getY(v) > .75) continue; const key = [P.getX(v), P.getY(v), P.getZ(v)].map(q => Math.round(q * 1e3)).join(), l = at.get(key) || at.set(key, []).get(key); l.push([U.getX(v), U.getY(v)]); }
+    let n = 0, ok = 0; for (const l of at.values()) { if (l.length < 2) continue; n++; if (l.every(q => Math.abs(q[0] - l[0][0]) < 1e-3 && Math.abs(q[1] - l[0][1]) < 1e-3)) ok++; } return +(ok / n).toFixed(3); };
+  const wu = rockMesh.geometry.clone(); C.worldUV(wu, .0625); const uvs = { laid: seamless(rockMesh.geometry), axis: seamless(wu) };
+  return { uvs, turfDown, texture, tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), line, met, crowns, sheer, down, stairEnds, stacks, isles: a.isles.map(s => ({ i: s.i, z: s.z, cond: s.cond, gone: s.gone, slipped: s.slipped, lost: s.lost })), S: a.S, P: a.P, CY: a.CY, R1: a.R1, R0: a.R0, figure: a.figure, coast: a.coast,
     emissive: a.group.children.filter(m => m.material.emissive && m.material.emissive.getHex()).map(m => m.name), names: a.group.children.map(m => m.name) }; });
   const br = I.isles.filter(s => s.cond === 'broken');
+  check(`the rock bedded, not marbled: ${(I.texture.axis * 100).toFixed(0)}% of its texture's strongest edges lie level or upright (the kit's veined rock ${(I.texture.kit * 100).toFixed(0)}%); the crowns are turf with no rock in it (${I.turfDown.filter(n => n === 'turf').length} of ${I.turfDown.length} rays)`,
+    I.texture.sea && !I.texture.turfMap && I.texture.axis > .6 && I.texture.axis > I.texture.kit + .2 && I.turfDown.every(n => n === 'turf'), { texture: I.texture, turf: I.turfDown });
+  check(`the beds run on across the cliff's facets: ${(I.uvs.laid * 100).toFixed(1)}% of the points the side faces share take one texture coordinate from all of them (by each face's major axis, ${(I.uvs.axis * 100).toFixed(1)}%)`, I.uvs.laid > .95 && I.uvs.laid > I.uvs.axis + .1, I.uvs);
   check(`the Gate Isles build the same twice and in budget: ${I.tris.toLocaleString()} triangles in ${I.draws} draws`, I.same && I.tris < 80000 && I.draws <= 10, [I.tris, I.draws, I.same]);
   check(`five isles along the line at z ${I.isles.map(s => s.z).join(', ')}, each crown level at ${I.S} m (${I.crowns.map(c => c.join('/')).join(', ')} m off it)`, I.isles.length === 5 && I.crowns.every(c => c.every(d => d < 0 && d > -.6)), I.crowns);
   check(`skerries, not domes: on 40 bearings the cliff falls from 3 m under the crown to 1 m over the sea within ${Math.max(...I.sheer.flat())} m (the widest; mean ${(I.sheer.flat().reduce((p, q) => p + q, 0) / 40).toFixed(1)})`, I.sheer.flat().every(d => d > 0 && d < 9), I.sheer);
