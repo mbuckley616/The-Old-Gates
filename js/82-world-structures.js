@@ -2368,6 +2368,7 @@
     const key=chunkKey(ch.cx,ch.cz);
     if(cleared[key]!=null&&nowHours()-cleared[key]<RESPAWN_H)return;
     const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;
+    if(wonderFoeClear(cxw,czw))return; /* S2431 — no foe on a wonder's ground, nor a shark in the Drowned Ring's lough: a wonder is a stamp, not a site, so the pads below never held it */
     const dom=dominantRegion(cxw,czw);
     if(worldH(cxw,czw)<-3){ // open water: sharks, occasionally
       if(hash01(ch.cx,ch.cz,170)>.06)return;const ex=cxw+(hash01(ch.cx,ch.cz,171)-.5)*20,ez=czw+(hash01(ch.cz,ch.cx,172)-.5)*20;
@@ -3760,4 +3761,22 @@
         if(near&&!S.W)K.build();else if(!near&&S.W)K.drop();}
       if(due&&S.W&&S.herbR&&S.site)wonderSeatHerbs(S.site.x,S.site.z,S.herbR); /* S2410 — a chunk streamed in under it since */
       if(S.W)S.W.tick(t/1000,wonderAwake());}}
+  // S2431 — no chunk foe on a wonder's ground (S2409's needs-eyes: foes stood inside the Northlight Altar's ring). A wonder is a stamp,
+  // not a site in its cell, so spawnChunkEncounters' pad test never saw one. Each wonder's ground is a circle (its flattening stamp and its
+  // blend; the Fields' 300 m field; the Spires' way up the strand), and a chunk whose centre is within it + 70 m spawns no foes, as a pad.
+  // A wonder whose place is not yet searched is searched here when the chunk is on its island, as tickWonders would within the second.
+  // The wild animals (tickWildSpawn) are not foes and still graze there. Only on the new look, where the wonders stand.
+  function wonderFoeGround(k,st){
+    if(k==='skyfall')return {x:st.x,z:st.z,r:150};
+    if(k==='orrery')return {x:st.x,z:st.z,r:44};
+    if(k==='lough')return {x:st.x,z:st.z,r:58};
+    if(k==='ring')return {x:st.x,z:st.z,r:128};
+    if(k==='northlight')return {x:st.x,z:st.z,r:96};
+    if(k==='spires'){const [x,z]=wonderToWorld(st,0,(st.spit+5)/2);return {x,z,r:(st.spit+95)/2+11};}
+    return null;}
+  function wonderFoeClear(x,z){if(typeof LAND==='undefined'||!LAND.on)return false;let nk=null;
+    for(const K of WONDER_KINDS){const S=WONDERS[K.k];
+      if(S.site===undefined){if(nk===null)nk=nationKeyOf(...cellOf(x,z));if(nk!==K.nation)continue;}
+      const st=K.site();if(!st)continue;const G=wonderFoeGround(K.k,st);if(G&&Math.hypot(x-G.x,z-G.z)<G.r+70)return true;}
+    return false;}
   const SETTLE_MAT=VC_MAT;
