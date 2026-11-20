@@ -116,6 +116,18 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Pictures.** [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-fort.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-far.jpg) · [the passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-gate.jpg)
 
+### The Frostborn Vault — a landmark sealed by its ice, a gate's way in, or Cloch's great gate? (from the look builder, 2026-11-20, #1823)
+**The question.** OG-104's Mark panel paints the Frostborn Vault, "a buried complex in the high mountains… its massive halls… deep in the ice". The look builder's prototype (Session 2461, `ruins.js` `frostbornVault`) builds it as a city of the Weavers' in a gorge under the Mark's peaks: a face 160 m wide set into a 130 m headwall, a great pointed portal 28 m wide with the glacier flowing out of it, two viaducts of two tiers across the gorge (one with a span fallen onto the ice), four halls and nine towers on the rims. Nothing is lit, and the script is cut dead. What is the vault?
+
+**Options.**
+- **A (recommended).** A landmark, as built: the portals' passages end in the dark, the ice fills the great one, and nothing is entered. This keeps the ruins' rule (#429 B) and leaves the six great gates to card F5.
+- **B.** A gate's way in: the great portal's passage runs on under the ice into a gate's halls, generated as the old gates are, and you climb the ice tongue to reach it.
+- **C.** The outside of Cloch's great gate (OG-105: "hewn into snow peaks"): the face is the great gate's front, and F5 builds its realm behind it.
+
+**Recommendation.** A. Its name on the map, and what the vault held, are the quest writer's.
+
+**Pictures.** [the gorge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-gorge.jpg) · [the portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-portal.jpg) · [under the viaduct](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-under.jpg) · [the fallen span](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-gap.jpg) · [a hall's door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-hall.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-far.jpg) · [dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-dusk.jpg)
+
 ## Answered
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
