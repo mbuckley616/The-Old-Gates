@@ -12,7 +12,7 @@ import fs from 'fs'; import path from 'path'; import { execFileSync } from 'chil
 
 const here = path.dirname(fileURLToPath(import.meta.url)), root = path.resolve(here, '..', '..');
 // the game boots on the new look, saves and autosaves, a swing lands, the player's body builds, a dungeon builds
-// Session 2459: and no top-level function or var is declared twice across js/ (topnames, S2452: 5 s, no browser; three systems
+// Session 2460: and no top-level function or var is declared twice across js/ (topnames, S2452: 5 s, no browser; three systems
 // were lost to a silent duplicate in two days before it, S2436-S2443)
 export const SMOKE = ['looknew', 'saves', 'resolver', 'player', 'dungeon', 'autosave', 'topnames'];
 // a pull request's few suites go in short shards so it reports in minutes; the weekly run's in long ones under the job's hour
