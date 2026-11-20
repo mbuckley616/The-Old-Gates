@@ -1038,7 +1038,6 @@ const giver=`${lord.title} ${lord.name}`;
     keep:{gatelander:"Haven't, or won't? No, don't answer that. I'll write it off, and I'll not be lending there again.",markman:"Then I'll go myself.",
       aurennais:"Then the note stands, Master, and I will put it in the hands of someone less sentimental.",oldblood:"Then they have not."}};
   function erPro(o){const f=!!o.fem;return Object.assign({},o,{she:f?'she':'he',he:f?'she':'he',her:f?'her':'him',him:f?'her':'him',his:f?'her':'his'});}
-  function erCap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
   function erPeople(def){return ER_SHARED[def.people]?def.people:'gatelander';}
   function erTag(def){return def.name+(def._twin?' '+def._twin:'');}
   function erPre(def,site){return 'er:'+site.id+':'+erTag(def)+':';}

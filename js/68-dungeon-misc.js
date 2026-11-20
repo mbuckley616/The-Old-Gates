@@ -268,17 +268,8 @@ function tickDungeonTraps(dt){if(!D_TRAPS.length||typeof dScene==='undefined'||s
 // ═══ v80 — DUNGEON FEEL: sounds, monster detail, exteriors, lockpicking ═══
 
 // ── sounds ──
-// doors: a creak of old wood on iron, then the latch
-function sndDoorOpen(){try{sfxTone(160,70,.55,.10,'sawtooth');sfxNoise(.35,0,0,.08,900);setTimeout(()=>{sfxTone(420,200,.06,.12,'square');sfxNoise(.05,0,0,.1,2600);},380);}catch(e){}}
-function sndDoorClose(){try{sfxNoise(.12,0,0,.14,700);sfxTone(90,50,.22,.16,'sine');setTimeout(()=>sfxTone(600,300,.05,.1,'square'),120);}catch(e){}}
-function sndDoorUnlock(){try{sfxTone(2400,1800,.05,.12,'square');setTimeout(()=>sfxTone(1500,900,.06,.12,'square'),90);setTimeout(()=>{sfxTone(120,60,.3,.14,'sine');sfxNoise(.2,0,0,.08,600);},220);}catch(e){}}
-// hits: by weapon class, and whether the thing resisted it
-function sndHitEnemy(wt,resisted){try{
-  if(wt==='blunt'){if(resisted){sfxTone(90,45,.28,.28,'sine');sfxNoise(.08,0,0,.12,300);}else{sfxNoise(.2,0,0,.3,380);sfxTone(140,55,.22,.26,'triangle');setTimeout(()=>sfxNoise(.1,0,0,.12,700),60);}}
-  else if(wt==='pierce'){if(resisted){sfxTone(3200,2400,.07,.16,'square');sfxNoise(.04,0,0,.08,4000);}else{sfxNoise(.06,0,0,.22,1400);sfxTone(320,120,.1,.16,'triangle');}}
-  else if(wt==='slash'||!wt){if(resisted){sfxTone(2100,1700,.16,.22,'square');sfxNoise(.12,0,0,.14,3500);}else{sfxNoise(.14,0,0,.26,2600);sfxTone(700,260,.09,.12,'triangle');}}
-  else{sfxNoise(.1,0,0,.2,1500);}
-}catch(e){}}
+// doors and hits: their sounds are 72-audio.js's alone (Session 2443). S112's versions here were declared earlier in the load,
+// so 72's of the same names won from the first push; the hits by weapon class moved there, the doors keep 72's.
 // monsters: a voice by kind — on detection, and now and then while they're close
 function _voiceOf(e){const n=(e.name||'').toLowerCase();if(/wolf|hound|boar|bear/.test(n))return 'growl';if(/skeleton|bone/.test(n))return 'rattle';if(/ghoul|zombie|wight|ghost|wraith|hag|spectre|shade/.test(n))return 'moan';if(/goblin|kobold/.test(n))return 'chitter';if(/ogre|troll|golem|giant|dragon/.test(n))return 'roar';if(/spider|scorpion|crawler|snake|rat/.test(n))return 'hiss';if(/bandit|highwayman|deserter|captain|cultist|archer|slinger|pirate/.test(n))return 'shout';return 'growl';}
 function sndMonster(e,kind){try{const v=_voiceOf(e);const d=Math.hypot(e.x-px,e.z-pz);const vol=Math.max(.06,Math.min(1,1-(d/18)))*(kind==='alert'?1:.55);
