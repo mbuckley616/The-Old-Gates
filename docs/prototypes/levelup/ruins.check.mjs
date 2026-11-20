@@ -1,3 +1,4 @@
+// Session 2431: the isles' cliffs sheer, and stacks off them.
 // Session 2430 adds the Gate Isles (ruins.js gateIsles): five rings on rock isles, their hearts on one line, the far coast through them.
 // Session 2415: the spires' passage through each tower at the decks and the spit up to the first.
 // Session 2401 adds the Hollow Below (ruins.js hollowBelow): a gate's three rings in a cavern's back wall, the light through the oculus, the viaduct.
@@ -150,13 +151,16 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
   // through the crown's stone (12.5 m over each heart), which rings the ray meets
   const crown = cast([0, a.CY + 12.5, 40], [0, 0, -1], true).filter(h => h.n === 'stone'), met = a.isles.filter(s => crown.some(h => Math.abs(h.z - s.z) < 3)).map(s => s.i);
   const crowns = a.isles.map(s => [0, 12, -12, 20].map(d => +(a.ground(d, s.z + (d ? 4 : 0)) - a.S).toFixed(2)));
+  // Session 2431: the cliff, how far out it takes on each of 8 bearings (clear of the landing) to fall from 3 m under the crown to 1 m over the sea
+  const sheer = a.isles.map(s => [1, 2, 3, 4, 5, 6, 7, 7.5].map(k => { const t = k * Math.PI / 4.4, at = d => a.ground(Math.cos(t) * d, s.z + Math.sin(t) * d); let d0 = null, d1 = null; for (let d = 20; d < 110; d += .25) { const y = at(d); if (d0 === null && y < a.S - 3) d0 = d; if (y < 1) { d1 = d; break; } } return +(d1 - d0).toFixed(2); }));
   const down = a.isles.map(s => [.15, .4, .65, .9].map(f => { const x = s.stair.x0 + (s.stair.x1 - s.stair.x0) * f; const h = cast([x, 60, s.z], [0, -1, 0]); return h && h.n; }));
   const stairEnds = a.isles.map(s => { const lo = cast([s.stair.x1 - .3, 60, s.z], [0, -1, 0]), hi = cast([s.stair.x0 + .3, 60, s.z], [0, -1, 0]); return [lo && lo.y, hi && hi.y]; });
-  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), line, met, crowns, down, stairEnds, isles: a.isles.map(s => ({ i: s.i, z: s.z, cond: s.cond, gone: s.gone, slipped: s.slipped, lost: s.lost })), S: a.S, P: a.P, CY: a.CY, R1: a.R1, R0: a.R0, figure: a.figure, coast: a.coast,
+  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), line, met, crowns, sheer, down, stairEnds, isles: a.isles.map(s => ({ i: s.i, z: s.z, cond: s.cond, gone: s.gone, slipped: s.slipped, lost: s.lost })), S: a.S, P: a.P, CY: a.CY, R1: a.R1, R0: a.R0, figure: a.figure, coast: a.coast,
     emissive: a.group.children.filter(m => m.material.emissive && m.material.emissive.getHex()).map(m => m.name), names: a.group.children.map(m => m.name) }; });
   const br = I.isles.filter(s => s.cond === 'broken');
   check(`the Gate Isles build the same twice and in budget: ${I.tris.toLocaleString()} triangles in ${I.draws} draws`, I.same && I.tris < 80000 && I.draws <= 10, [I.tris, I.draws, I.same]);
   check(`five isles along the line at z ${I.isles.map(s => s.z).join(', ')}, each crown level at ${I.S} m (${I.crowns.map(c => c.join('/')).join(', ')} m off it)`, I.isles.length === 5 && I.crowns.every(c => c.every(d => d < 0 && d > -.6)), I.crowns);
+  check(`skerries, not domes: on 40 bearings the cliff falls from 3 m under the crown to 1 m over the sea within ${Math.max(...I.sheer.flat())} m (the widest; mean ${(I.sheer.flat().reduce((p, q) => p + q, 0) / 40).toFixed(1)})`, I.sheer.flat().every(d => d > 0 && d < 9), I.sheer);
   check(`the hearts on one line: along it from behind the first ring, at the heart and 6 m off it, every ray first meets ${[...new Set(I.line.map(h => h ? h.n : 'nothing'))].join(', ')} at z ${Math.max(...I.line.map(h => h ? h.z : 0))}`, I.line.every(h => h && h.n === 'coast' && h.z < I.coast.z + 1), I.line);
   check(`through the crowns' stone 12.5 m over the line the ray meets rings ${I.met.map(i => i + 1).join(', ')}: the broken third's is gone`, I.met.join() === '0,1,3,4', I.met);
   check(`a ruin: one ring broken (${br.map(s => s.gone).join()} stones lost), four whole with ${I.isles.map(s => s.slipped).join(', ')} slipped; nothing lit (${I.emissive.join(', ') || 'no emissive'})`, br.length === 1 && br[0].i === 2 && br[0].gone === 9 && I.isles.filter(s => s.cond !== 'broken').every(s => s.gone === 0) && I.emissive.length === 0, I.isles.map(s => [s.cond, s.gone, s.slipped]));

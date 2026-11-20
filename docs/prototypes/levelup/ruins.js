@@ -484,17 +484,29 @@ export function gateIsles(o = {}) {
   const stairY = (i, x) => { const L = rim(i, 0) + 6 - SX0; return S - (S + 3) * Math.min(1, Math.max(0, (x - SX0) / L)); };
   const isleH = (i, x, z) => { const dx = x, dz = z - ZS[i], d = Math.hypot(dx, dz), t = Math.atan2(dz, dx), Rr = rim(i, t);
     if (d < CR) return S - .3 + .25 * fbm(x / 7, z / 7, 2);
-    let y; if (d < Rr) { const u = (d - CR) / (Rr - CR), led = Math.floor(u * 4 + fbm(t * 2 + i, u * 3, 2) * .8) / 4; y = S - .3 - (S + .5) * (u ** 2.2 * .6 + led * .4) + 1.2 * (fbm(x / 9, z / 9, 3) - .5) * u; }
-    else y = .2 - (d - Rr) * 1.6 + 1.5 * (fbm(x / 6, z / 6, 2) - .5);
+    // Session 2431: the crown's lip falls 1.8 m to the cliff's head 6 m short of the rim, the cliff drops near sheer over 8 m in strata to
+    // the wrack, and the skirt of tumbled rock runs on down to the bed (it was a dome: the crown rolled down to the sea over the whole radius)
+    let y; const c0 = Rr - 6, c1 = Rr + 2;
+    if (d < c0) y = S - .3 - 1.8 * ((d - CR) / (c0 - CR)) ** 1.5 + .5 * (fbm(x / 8, z / 8, 2) - .5) * (d - CR) / (c0 - CR);
+    else if (d < c1) { const s1 = (d - c0) / (c1 - c0), st = Math.floor(s1 * 5 + fbm(t * 4 + i * 3, 1.7, 2) * 1.2) / 5; y = S - 2.1 - (S - 1.6) * (sstep(0, 1, s1) * .55 + st * .45) + .9 * (fbm(t * 9 + i, s1 * 3, 2) - .5); }
+    else y = -.1 - (d - c1) * 1.4 + 1.5 * (fbm(x / 6, z / 6, 2) - .5);
     if (dx > SX0 - 1 && Math.abs(dz) < SW + 1.2) y = Math.min(y, stairY(i, dx) - .05 - Math.max(0, Math.abs(dz) - SW) * 3);
     return Math.max(BED, Math.min(S - .05, y)); };
   const ground = (x, z) => { let y = BED; for (let i = 0; i < ZS.length; i++) if (Math.abs(z - ZS[i]) < 130 && Math.abs(x) < 130) y = Math.max(y, isleH(i, x, z)); return y; };
   // the isles' rock, each a polar grid (96 bearings by 40 rings out to its rim and 30 m beyond), coloured by height: turf on the crown, lichened rock, the wrack between the tides
-  const rockCol = (y, d) => { const w = sstep(-2.6, -1.6, y) * (1 - sstep(1.8, 2.6, y)), turf = d < CR - .5 ? 1 : 0, c = [.36, .35, .33]; return [0, 1, 2].map(j => turf ? [.33, .38, .2][j] : c[j] * (1 - w) + [.16, .15, .08][j] * w); };
-  for (let i = 0; i < ZS.length; i++) { const NA = 96, NR = 40, pos = [], col = [], Rmax = Math.max(...Array.from({ length: NA }, (_, a) => rim(i, a * 2 * Math.PI / NA))) + 30;
-    const pt = (a, k) => { const t = a * 2 * Math.PI / NA, d = k === 0 ? 0 : Rmax * (k / NR) ** 1.25, x = Math.cos(t) * d, z = ZS[i] + Math.sin(t) * d, y = isleH(i, x, z); return [x, y, z, d]; };
+  const rockCol = (y, d) => { const w = sstep(-2.6, -1.6, y) * (1 - sstep(2, 2.6, y)), l = sstep(2.2, 2.8, y) * (1 - sstep(4.5, 6.5, y)), turf = d < CR - .5 ? 1 : 0, c = [.36, .35, .33]; return [0, 1, 2].map(j => turf ? [.33, .38, .2][j] : (c[j] * (1 - l) + [.52, .5, .38][j] * l) * (1 - w) + [.13, .12, .06][j] * w); }; /* the wrack between the tides, a band of pale lichen over it (Session 2431) */
+  for (let i = 0; i < ZS.length; i++) { const NA = 96, NR = 34, pos = [], col = [];
+    // the rings by the rim on each bearing (Session 2431): 6 over the crown, 6 to the cliff's head, 14 down its face, 8 over the skirt
+    const pt = (a, k) => { const t = a * 2 * Math.PI / NA, Rr = rim(i, t), d = k <= 6 ? CR * k / 6 : k <= 12 ? CR + (Rr - 6 - CR) * (k - 6) / 6 : k <= 26 ? Rr - 6 + 8 * (k - 12) / 14 : Rr + 2 + 26 * ((k - 26) / 8) ** 1.3, x = Math.cos(t) * d, z = ZS[i] + Math.sin(t) * d, y = isleH(i, x, z); return [x, y, z, d]; };
     for (let a = 0; a < NA; a++) for (let k = 0; k < NR; k++) { const p = pt(a, k), q = pt(a + 1, k), s = pt(a + 1, k + 1), u = pt(a, k + 1);
       for (const v of k === 0 ? [p, s, u] : [p, s, u, p, q, s]) { pos.push(v[0], v[1], v[2]); col.push(...rockCol(v[1], v[3])); } }
+    // two or three stacks off the cliff (Session 2431), away from the landing and 24 m clear of the line, standing from the bed to 10 to 24 m: rock in strata
+    { const rs = stream(`${key}:stacks:${i}`), n = 2 + (rs() < .5 ? 1 : 0); for (let k = 0, tries = 0; k < n && tries < 40; tries++) { const t = rs() * Math.PI * 2;
+        if (Math.cos(t) > .8) continue; const d = rim(i, t) + 9 + rs() * 12, sx = Math.cos(t) * d, sz = ZS[i] + Math.sin(t) * d, h = 10 + rs() * 14, rr = 4 + rs() * 4; if (Math.abs(sx) < 24) continue;
+        const c = new THREE.CylinderGeometry(rr * .75, rr * 1.25, h - BED, 9, 6); c.translate(0, (h + BED) / 2, 0); const Q = c.attributes.position;
+        for (let v = 0; v < Q.count; v++) { const px = Q.getX(v), py = Q.getY(v), pz = Q.getZ(v), rad = Math.hypot(px, pz); if (rad < .01) { Q.setX(v, sx); Q.setZ(v, sz); if (py > h - .1) Q.setY(v, h - .7); continue; } const an = Math.atan2(pz, px), f = 1 + .3 * (fbm(an * 1.3 + k * 5 + i, py / 5, 2) - .5) - .12 * (Math.floor(py / 2.6) % 2); Q.setX(v, px * f + sx); Q.setZ(v, pz * f + sz); if (py > h - .1) Q.setY(v, h - 1.5 * fbm(an * 2 + k, i + .5, 2)); }
+        const gs = c.toNonIndexed(), P2 = gs.attributes.position, cc = []; for (let v = 0; v < P2.count; v++) cc.push(...rockCol(P2.getY(v), 999)); gs.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3)); gs.deleteAttribute('uv'); gs.deleteAttribute('normal');
+        pos.push(...P2.array); col.push(...cc); k++; } }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); put('rock', g); }
   // the sea, and the far coast on the line: a ridge 3 km long, its shoulder 90 to 140 m, falling to the water before the line
   { const g = new THREE.PlaneGeometry(9000, 9000); g.rotateX(-Math.PI / 2); g.translate(0, 0, -1500); B.set('sea', [g]); }
