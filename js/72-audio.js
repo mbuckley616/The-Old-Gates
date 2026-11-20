@@ -298,10 +298,14 @@ function sndWhoosh(){
     }
   }catch(e){/* silent */}
 }
-function sndHitEnemy(){
-  sfxNoise(.07,1,1,0.5,2200);
-  sfxTone(320,160,.08,.12,'square');
-}
+// hits: by weapon class, and whether the thing resisted it (S112's, Session 2443: the plain hit that stood here, later in the
+// load, had replaced it since the first push, so every caller's type and resist were dropped)
+function sndHitEnemy(wt,resisted){try{
+  if(wt==='blunt'){if(resisted){sfxTone(90,45,.28,.28,'sine');sfxNoise(.08,0,0,.12,300);}else{sfxNoise(.2,0,0,.3,380);sfxTone(140,55,.22,.26,'triangle');setTimeout(()=>sfxNoise(.1,0,0,.12,700),60);}}
+  else if(wt==='pierce'){if(resisted){sfxTone(3200,2400,.07,.16,'square');sfxNoise(.04,0,0,.08,4000);}else{sfxNoise(.06,0,0,.22,1400);sfxTone(320,120,.1,.16,'triangle');}}
+  else if(wt==='slash'||!wt){if(resisted){sfxTone(2100,1700,.16,.22,'square');sfxNoise(.12,0,0,.14,3500);}else{sfxNoise(.14,0,0,.26,2600);sfxTone(700,260,.09,.12,'triangle');}}
+  else{sfxNoise(.1,0,0,.2,1500);}
+}catch(e){}}
 function sndPlayerHurt(){
   sfxTone(120,60,.25,.3,'sawtooth');
   sfxNoise(.18,1,1,0.4,300);

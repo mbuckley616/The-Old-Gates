@@ -187,5 +187,28 @@ const tune = await page.evaluate(() => {
 console.log(JSON.stringify(tune));
 check('an ordinary blow at each tier\'s level\'s kit lands at 15–18% of that level\'s health, tiers 1 to 4, in the dungeon and the open world: six blows to fall', tune.every(r => Math.abs(r.dShare - 1 / 6) <= 1 / 60 && Math.abs(r.wShare - 1 / 6) <= 1 / 60 && r.hitsToFall === 6), tune);
 
+// ── the hit's sound (Session 2443): S112's sounds by weapon class and resist, which a plain hit declared later had replaced since the
+// first push. The swing hands the sound its type and resist; each class, and each resisted, sounds its own.
+const snd = await page.evaluate(() => {
+  const keepZ = ZE, rnd = Math.random, oN = sfxNoise, oT = sfxTone, oH = sndHitEnemy; Math.random = () => .5;
+  const EQk = { ...EQ }; for (const k in EQ) EQ[k] = null;
+  let log = [], args = null;
+  sfxNoise = (...a) => log.push('n' + a.join(',')); sfxTone = (...a) => log.push('t' + a.join(','));
+  const print = (wt, res) => { log = []; oH(wt, res); return log.join(';'); };
+  const prints = {}; for (const wt of ['slash', 'pierce', 'blunt']) for (const r of [false, true]) prints[wt + (r ? '!' : '')] = print(wt, r);
+  sndHitEnemy = (wt, res) => { args = [wt, res]; log = []; oH(wt, res); };
+  const e = buildZoneEnemy(WORLD.scene, [], px + fwdX * 1.2, pz + fwdZ * 1.2, 'Bandit', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
+  e.x = px + fwdX * 1.2; e.z = pz + fwdZ * 1.2; e.locked = false; e.spd = 0; e.atkCd = 1e9; e.telegraphT = 0; e.hp = e.maxHp = 1000; e.floor = currentFloor; e.disguised = false;
+  e.combatYaw = Math.atan2(px - e.x, pz - e.z); if (typeof e.posture !== 'number') initPosture(e);
+  _exhaustedStrike = false; FINISHER_SAFE_UNTIL = 0; SWING = null; CHAIN.n = 0; _swingStartS = -1e9; ZE = [e];
+  let hits = 0; try { hits = resolvePlayerStrike(false).length; } finally { ZE = keepZ; WORLD.scene.remove(e.mesh); staggered = staggered.filter(s => s.e !== e); }
+  const swung = log.join(';');
+  sfxNoise = oN; sfxTone = oT; sndHitEnemy = oH; Math.random = rnd; for (const k in EQk) EQ[k] = EQk[k];
+  return { hits, args, swungIsBlunt: swung === prints[args && args[0] + (args[1] ? '!' : '')], distinct: new Set(Object.values(prints)).size, arity: oH.length, prints };
+});
+console.log(JSON.stringify(snd));
+check('a fist\'s blow on a Bandit hands the hit sound its type, blunt, and plays the blunt hit', snd.hits === 1 && snd.args && snd.args[0] === 'blunt' && snd.swungIsBlunt, snd);
+check('the hit sounds by weapon class: slash, pierce and blunt, each with its resisted ring, six sounds of their own', snd.arity === 2 && snd.distinct === 6, snd.prints);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
