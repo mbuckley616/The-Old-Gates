@@ -325,11 +325,16 @@ function clothMat(color, kind = 'wool', o = {}) {
   return m;
 }
 // the headscarf's print (Session 1029): a sprig of four round petals on a 2.4 cm grid, each row offset by half, read three ways off the
-// rest position as the weave is; where a pixel holds more than a sprig or so it gives way to its average, so it does not shimmer far off
+// rest position as the weave is; where a pixel holds more than a sprig or so it gives way to its average, so it does not shimmer far off.
+// Each pixel takes the way the cloth faces most, and the next way only where the two are within 0.05 of each other (Session 2444): the three
+// were blended by the eighth power of the normal, and a fifth of the crown showed its sprigs twice over, half-faded, where two ways met
 const SPRIGS = `float sprigAt(vec2 p){ p *= 42.; p.x += .5 * mod(floor(p.y), 2.); vec2 f = fract(p) - .5; float a = fwidth(p.x) * .8 + .015, m = 0.;
   for (int k = 0; k < 4; k++) { float t = float(k) * 1.5708 + .4; m = max(m, 1. - smoothstep(.1 - a, .1 + a, length(f - .19 * vec2(cos(t), sin(t))))); } return m; }
-float printAt(vec3 p, vec3 n){ vec3 w = abs(normalize(n)); w = pow(w, vec3(4.)); w = pow(w, vec3(2.)); w /= (w.x + w.y + w.z);
-  float m = sprigAt(p.zy) * w.x + sprigAt(p.xz) * w.y + sprigAt(p.xy) * w.z, k = clamp(length(fwidth(p.xy * 42.)) * 1.2 - .4, 0., 1.); return mix(m, .3, k); }`;
+float printAt(vec3 p, vec3 n){ vec3 a = abs(normalize(n)); float mx = sprigAt(p.zy), my = sprigAt(p.xz), mz = sprigAt(p.xy), w1, w2, m1, m2;
+  if (a.x >= a.y && a.x >= a.z) { w1 = a.x; m1 = mx; if (a.y > a.z) { w2 = a.y; m2 = my; } else { w2 = a.z; m2 = mz; } }
+  else if (a.y >= a.z) { w1 = a.y; m1 = my; if (a.x > a.z) { w2 = a.x; m2 = mx; } else { w2 = a.z; m2 = mz; } }
+  else { w1 = a.z; m1 = mz; if (a.x > a.y) { w2 = a.x; m2 = mx; } else { w2 = a.y; m2 = my; } }
+  float m = mix(m2, m1, .5 + .5 * smoothstep(0., .05, w1 - w2)), k = clamp(length(fwidth(p.xy * 42.)) * 1.2 - .4, 0., 1.); return mix(m, .3, k); }`;
 // the dot embroidery (Session 1043, OG-066's "scattered dot embroidery" on undyed linen; OG-067's "small scattered marks"): one cell in
 // 1.4 cm of the rest body, a knot of thread in some of them, set anywhere in its cell so they do not read as a grid, 1.1 to 1.9 mm round.
 // How many cells hold one rises and falls over 11 cm drifts of the cloth (from 3 in 100 to 45), so they lie scattered, not evenly
@@ -1952,6 +1957,7 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
       temple = SK.tmp * Math.exp(-(((at_ - 1.45) / .55) ** 2)) * ss(.35, .85, s) * (1 - .4 * ss(.9, 1, s));
     return { ease: .003 * ss(0, 1, s), temple: temple * (.55 + .45 * cr), gather: SK.deep * env * cr }; };
   const slack = (th, ph) => { const o = slackOf(th, ph); return o.ease + o.temple + o.gather; };
+  const atS = at;
   if (sc) { const a1 = at; at = (th, ph, off = 0) => a1(th, ph, off + slack(th, ph)); }
   const topY = at(0, 0).y;
   const NP = 14, tubeV = [], pos = [], col = [], idx = [], prn = [], RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * TAU)), cloth = sRGB(...D.wrap), edge = sRGB(...(D.wrapBorder || D.wrap.map(v => v * (sc ? .97 : .82)))), PH_ = th => RIM[Math.round(((th / TAU) * NT % NT + NT) % NT)];
@@ -1985,7 +1991,40 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
     for (let s2 = 0; s2 <= NQ; s2++) { const L = line[s2], n = L.clone().sub(c).normalize(); for (let q = 0; q <= SIDES; q++) { const o = (s2 * (SIDES + 1) + q) * 3, ox = a2[o] - L.x, oy = a2[o + 1] - L.y, oz = a2[o + 2] - L.z, dn = ox * n.x + oy * n.y + oz * n.z;
       a2[o] = L.x + (ox - n.x * dn) * 2.4 + n.x * dn * .45; a2[o + 1] = L.y + (oy - n.y * dn) * 2.4 + n.y * dn * .45; a2[o + 2] = L.z + (oz - n.z * dn) * 2.4 + n.z * dn * .45; } }
     const c2 = cloth.clone().multiplyScalar(.97 - .03 * cross); for (let i = 0; i < a2.length; i += 3) { pos.push(a2[i], a2[i + 1], a2[i + 2]); col.push(c2.r, c2.g, c2.b); prn.push(0); } for (const i of g2.index.array) idx.push(b0 + i); cross++; }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('aPrint', new THREE.Float32BufferAttribute(prn, 1)); g.setIndex(idx); g.computeVertexNormals();
+  // the print laid on the cloth, not thrown on it (Session 2444, S2433's owed note): the sprigs were read off the creased cloth's own place,
+  // so a crease's walls took them as a wall takes a lantern's pattern, spread thin down the slope, and the print lay flat over the gather.
+  // Each ring round the knot is measured twice, smooth and creased, out from the crown's middle line; where the creased ring has run
+  // further the print is read at the smooth dome's point that far along. A crease then holds the cloth's share of sprigs, crowded and
+  // foreshortened on its walls, and the print moves only where the cloth is gathered (none at the front), and only within a crease
+  let unfold = null; const PBASE = pos.slice();
+  if (sc && D.scarfPrint) { const NPS = 48, NBE = 256, PS = 2.2, MID = NBE / 2, W = NBE + 1, CA = new Float64Array((NPS + 1) * W), SA = new Float64Array((NPS + 1) * W);
+    const dirOf = (ps, be) => { const s = Math.sin(ps), cb = Math.cos(be), sb = Math.sin(be), x = KN.x * Math.cos(ps) + (KE1.x * cb + KE2.x * sb) * s, y = KN.y * Math.cos(ps) + (KE1.y * cb + KE2.y * sb) * s, z = KN.z * Math.cos(ps) + (KE1.z * cb + KE2.z * sb) * s;
+      return [Math.atan2(x, z), Math.acos(Math.max(-1, Math.min(1, y)))]; };
+    for (let i = 0; i <= NPS; i++) { const ps = i / NPS * PS, o = i * W, Pc = [], Ps = []; for (let k = 0; k <= NBE; k++) { const [th, ph] = dirOf(ps, (k / NBE * 2 - 1) * Math.PI); Pc.push(at(th, ph)); Ps.push(atS(th, ph)); }
+      for (let k = MID + 1; k <= NBE; k++) { CA[o + k] = CA[o + k - 1] + Pc[k].distanceTo(Pc[k - 1]); SA[o + k] = SA[o + k - 1] + Ps[k].distanceTo(Ps[k - 1]); }
+      for (let k = MID - 1; k >= 0; k--) { CA[o + k] = CA[o + k + 1] - Pc[k].distanceTo(Pc[k + 1]); SA[o + k] = SA[o + k + 1] - Ps[k].distanceTo(Ps[k + 1]); }
+      // less the excess's mean over one crease's span, so the print is moved within a crease and never drifts round the ring (the drift ran
+      // to 4 cm and sheared the print by half again near the edge behind the ears): over a crease's walls the print crowds, between them it eases
+      const hw = Math.round(NBE / SK.n / 2), EX = Array.from({ length: W }, (_, k) => CA[o + k] - SA[o + k]), MN = EX.map((_, k) => { let t = 0, m = 0; for (let q = k - hw; q <= k + hw; q++) { t += EX[Math.max(0, Math.min(NBE, q))]; m++; } return t / m; });
+      for (let k = 0; k <= NBE; k++) CA[o + k] -= MN[k] - MN[MID]; }
+    // the smooth ring's angle at which it has run the creased ring's length, on ring i
+    const onRing = (i, be) => { const o = i * W, fb = Math.max(0, Math.min(NBE - 1e-6, (be / Math.PI + 1) / 2 * NBE)), k0 = Math.floor(fb), cv = CA[o + k0] + (CA[o + k0 + 1] - CA[o + k0]) * (fb - k0);
+      if (cv <= SA[o]) return -Math.PI; if (cv >= SA[o + NBE]) return Math.PI; let lo = 0, hi = NBE; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (SA[o + m] <= cv) lo = m; else hi = m; }
+      const d = SA[o + hi] - SA[o + lo]; return ((lo + (d > 1e-9 ? (cv - SA[o + lo]) / d : 0)) / NBE * 2 - 1) * Math.PI; };
+    const moveAt = (th, ph) => { const sp = Math.sin(ph), ux = sp * Math.sin(th), uy = Math.cos(ph), uz = sp * Math.cos(th), ps = Math.acos(Math.max(-1, Math.min(1, ux * KN.x + uy * KN.y + uz * KN.z)));
+      if (ps >= PS) return null; const be = Math.atan2(ux * KE2.x + uy * KE2.y + uz * KE2.z, ux * KE1.x + uy * KE1.y + uz * KE1.z), fi = ps / PS * NPS, i0 = Math.min(NPS - 1, Math.floor(fi)), f = fi - i0;
+      const b2 = onRing(i0, be) * (1 - f) + onRing(i0 + 1, be) * f; if (Math.abs(b2 - be) < 1e-6) return null; const [t2, p2] = dirOf(ps, b2), [t1, p1] = dirOf(ps, be); return atS(t2, p2).sub(atS(t1, p1)); };
+    let most = 0, sum = 0, n = 0; const put = (k, m) => { if (!m) return; PBASE[k * 3] += m.x; PBASE[k * 3 + 1] += m.y; PBASE[k * 3 + 2] += m.z; const l = m.length(); most = Math.max(most, l); sum += l; n++; };
+    const NTc = 128; for (let j = 0; j < 28; j++) for (let t = 0; t <= NTc; t++) { const th = Math.PI + t / NTc * TAU; put(j * (NTc + 1) + t, moveAt(th, rimPh(th) * Math.max(.002, j / 27))); }
+    for (const [k, L] of tubeV) { const d = L.clone().sub(c); put(k, moveAt(Math.atan2(d.x, d.z), Math.acos(Math.max(-1, Math.min(1, d.y / d.length()))))); }
+    // where the gather is a third of its deepest or more: the cloth's own length round the rows, and the print's as the shader reads it, across
+    // the dome (each step less what runs out from the head's middle), read off the creased place (as it was) and off the laid one
+    let cl = 0, thrown = 0, laid = 0; const across = (A, a, b) => { const dx = A[b * 3] - A[a * 3], dy = A[b * 3 + 1] - A[a * 3 + 1], dz = A[b * 3 + 2] - A[a * 3 + 2], rx = pos[a * 3] - c.x, ry = pos[a * 3 + 1] - c.y, rz = pos[a * 3 + 2] - c.z, rl = Math.hypot(rx, ry, rz), dn = (dx * rx + dy * ry + dz * rz) / rl;
+      return Math.sqrt(Math.max(0, dx * dx + dy * dy + dz * dz - dn * dn)); };
+    for (let j = 4; j < 27; j++) for (let t = 0; t < NTc; t++) { const th = Math.PI + (t + .5) / NTc * TAU; if (slackOf(th, rimPh(th) * j / 27).gather < SK.deep * .33) continue;
+      const a = j * (NTc + 1) + t, b = a + 1; cl += Math.hypot(pos[b * 3] - pos[a * 3], pos[b * 3 + 1] - pos[a * 3 + 1], pos[b * 3 + 2] - pos[a * 3 + 2]); thrown += across(pos, a, b); laid += across(PBASE, a, b); }
+    unfold = { most: +most.toFixed(4), mean: +(n ? sum / n : 0).toFixed(4), moved: n, cloth: +cl.toFixed(4), thrown: +thrown.toFixed(4), laid: +laid.toFixed(4) }; }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('aBase', new THREE.Float32BufferAttribute(PBASE, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('aPrint', new THREE.Float32BufferAttribute(prn, 1)); g.setIndex(idx); g.computeVertexNormals();
   // the turns' normals point out of each roll (Session 1238): tubeGeom winds inward, and with the normals in, the shadow's lookup (moved along
   // the normal by normalBias) fell inside the roll, so the whole wrap read its own shadow and went grey, a white turban most of all
   let outward = 0; { const N = g.attributes.normal.array; for (const [k, L] of tubeV) if ((pos[k * 3] - L.x) * N[k * 3] + (pos[k * 3 + 1] - L.y) * N[k * 3 + 1] + (pos[k * 3 + 2] - L.z) * N[k * 3 + 2] > 0) outward++; outward = tubeV.length ? outward / tubeV.length : 1; }
@@ -2003,7 +2042,7 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const ext = new THREE.Box3(); for (let i = 0; i < pos.length; i += 3) ext.expandByPoint(new THREE.Vector3(pos[i], pos[i + 1], pos[i + 2]));
   g.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z);
   const m = clothMat(new THREE.Color(1, 1, 1), 'wool', { side: THREE.DoubleSide, scale: 34, print: sc && D.scarfPrint ? sRGB(...D.scarfPrint) : null }); m.vertexColors = true; const mesh = new THREE.Mesh(g, m); mesh.name = 'wrap'; mesh.castShadow = true; mesh.receiveShadow = !sc; byName['head'].add(mesh);
-  return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), top: +(ext.max.y - by).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3), border: !!D.wrapBorder, turban: tb, cross, scarf: sc, front: +(rimY(0) - browTop).toFixed(4), outward: +outward.toFixed(3), slack: sc ? slackStats() : null } };
+  return { mesh, stats: { gap: +gap.toFixed(4), hairOut, hairPts: hairPts.length, brow: +(browLow - browTop).toFixed(4), overBrow, napeDrop: +(by - nape).toFixed(3), turns: rolls.length, tris: idx.length / 3, width: +(ext.max.x - ext.min.x).toFixed(3), height: +(ext.max.y - ext.min.y).toFixed(3), top: +(ext.max.y - by).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3), border: !!D.wrapBorder, turban: tb, cross, scarf: sc, front: +(rimY(0) - browTop).toFixed(4), outward: +outward.toFixed(3), slack: sc ? slackStats() : null, unfold } };
 }
 // ── the veil (Session 1237, L1; OG-109's Aurenne travel column: the head-wrap's end drawn across the face against the road's dust and sun) ──
 // A band of cloth round the head under the wrap: across the face from just under the eyes (6 mm under the lower lid) to 2 cm under the
