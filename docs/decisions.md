@@ -80,6 +80,18 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Recommendation.** A: the Drowned Spires are already the walk-at-the-ebb ruin (#1737 B), and the isles are the one site that sits only in the sea. C costs little on top of A.
 
+### Ground that pushes back — weather underfoot, the land's slope too, or armour in every movement? (from the designer, 2026-11-20, #1800)
+**The question.** Backlog L11's *Moving through the world* (OG-131) is built except its last clause: "ground that pushes back: poor footing on ice, mud that slows, a rope bridge that may give, falling rocks". How far should the ground push back?
+
+**Options.**
+- **A (recommended).** Weather underfoot: off a road, snow slows the run ×0.9 (deep snow ×0.8), mud ×0.9 while it rains and for 2 game hours after; ice keeps your momentum (a stop slides 1.2 m, the roll goes 1.3× as far). Foes slowed the same. Hobnails at a smith (25 gold) grip the ice and cost you noise. Three systems sessions.
+- **B.** A, plus the land's shape: slopes past 40° you cannot walk up, scree that slides, rope bridges on platforming B's gorges with a rotten plank, falling rocks below cliffs in rain (a 1.2 s tell, 15% health). A's three, one deep-work, two systems, one look, one bodies.
+- **C.** B, plus plate slowing every movement (run ×0.93, jump 0.85, swim ×0.7).
+
+**Recommendation.** A: a choice at each edge (the road or the field, the nails or the quiet), read only from weather already saved, and no deep work; B's slope waits until F3's land shows steepness at a distance and the gorges exist. C makes heavy armour stiff, against combat B.
+
+**Page.** [docs/design/ground-that-pushes-back.md](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/ground-that-pushes-back.md)
+
 ## Answered
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
