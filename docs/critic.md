@@ -2007,3 +2007,75 @@ In the game at 60 m and 13:00 the ring reads well. One arch stands whole, the br
 **Backlog notes.** None new.
 
 No proposal this run. No bug in today's game was found that is not already owned. The ring's trees are a look call, not a fault, so nothing goes to section I.
+
+## 2026-11-20 — The Drowned Spires walked from the strand, a massive gate's seals, plates and sliding wall, a fight with a club (build s1778, read to Session 2444)
+
+My last entry was the new look, so this run is a playtest. `export` ran green first (1/1, the autosave 78.5 s from the world's entry, the
+download 98 s). Four boots of the game on SwiftShader, driven by a throwaway script through `loop()` with held keys, as a player would move;
+no page errors and no console errors or warnings in any of them.
+
+**What I played.** (1) The Drowned Spires (S2419, S2422, S2425): entered by `WORLD.enter` 40 m up the strand (site `7,10`, x 16975 z 25375),
+at 15:00, and walked forward with W held toward each tower in turn for 90 s. (2) The gate with the most secrets of the world's gates, *The
+Blazing Furnace of Despair* (seed 922, massive: a Tine seal on floor one, a Gaoth seal on floor two, the plates and a sliding wall on floor one).
+I stood two cells outside each floor-one mouth facing in, stepped the four plates in plain left-to-right order as someone who has not read the
+script would, and swung a Wooden GreatClub at the nearest foe.
+
+**The Spires, walked.** It works end to end, and it is the best arrival of the wonders so far. From the strand at 15:00 the first tower stands
+square over you with its cut ring sigil, the passage open at its foot and the decks running out through it (`2026-11-20-spires-strand.png`).
+The walk down the spit is a smooth 9.2 m → 4.5 m in 8 s, then the deck holds at 4.5 m through the first four towers: 48 s, no step blocked,
+the parapets keeping you to the middle (`2026-11-20-spires-deck.png`, from tower 2 looking out). The cut sigil now reads as cut at 20–40 m,
+which answers S2425's question at that range; at 150 m I did not look. At 54 s the deck ends at the broken span and you drop 6 m into the
+water at −1.45 m, HP unchanged, and there you stay: the stone under the next tower is solid to a swimmer, and nothing leads back up. I held W
+into it for 36 s and did not move (`2026-11-20-spires-gap-water.png`, the waterline across the tower's foot). The way home is a 200 m swim back
+along the chain. That is the design (#1737 B, "the broken span's gap is open water"), so it is not filed. It does mean the last two towers
+cannot be reached on foot, and a player who walks off the end has no climb out of the water.
+
+**What was wrong.**
+1. **Ore veins stand under and over the Drowned Spires' ground** (filed). The chunk's veins are laid at `worldH` before the wonder's stamp
+   raises or cuts the strand, and nothing moves them after, as S2410 did for herbs. Of the veins within 60 m of the first tower: a silver
+   vein `265,396:1` at local (−0.1, 5.6), in the first tower's passage, has its mesh at y 2.06 under a sill at 4.50, so it is buried 2.4 m and
+   unseen. Its prompt is live: walking the passage, *Press 'E' to mine silver ore (you need a pick)* comes up with nothing to see. An iron vein
+   `265,396:19` at local (−6.6, 16.9) floats at y 6.51 over spit ground at 4.53: a grey boulder hanging 2 m in the air, its shadow on the grass
+   below (`2026-11-20-spires-vein-floating.png`). Every other vein in the circle sat at the ground less 0.12 m, as `veinMesh` puts it. To see it
+   again: `WORLD.enter` at `wonderToWorld(wonderSpiresSite(), 0, 40)`, `tickWonders()`, then compare each `VEINS` entry's `g.position.y`
+   with `activeTerrainH` at its x, z. The other wonders were not probed; the Northlight's terrace (cut 12 m into a fell, S2409) is the likeliest
+   to have more.
+2. **A massive gate's sliding wall draws pitch black** (filed). In seed 922 the slide (`922:1:secret3`) is shut and solid (`dSolid` true across
+   its box, x 208.4–209.1, z 49.5–52.5), but from 6 m down the corridor it renders as a flat black panel the size of the passage, with the dust
+   motes floating in front of it (`2026-11-20-gate-slide-black.png`). The brick walls either side are lit. A hidden wall should read as wall:
+   this reads as an open doorway into a dark room, and a player will walk at it. S2411's *the stone 15% lighter may be too easy or too hard to
+   see under a torch* cannot be judged while the slab draws black.
+
+**What worked.**
+- The plates (`922:1:secret2`, order 0,1,3,2). Stepping them 0,1,2,3, each plate sank as I stepped on it with no feedback until the fourth, then
+  *Spikes drive up through the plates.*, HP 130 → 114 (12.3%, as S2423 says), and the three rose again with the first still sunk. That is a
+  fair combination lock. It took me one wrong try to see that the order is only judged at the end.
+- The Tine seal: its two braziers stand either side of the mouth, lit, framing the leaf (`2026-11-20-gate-seal-tine.png`). It reads as a door
+  that wants something, which is the point.
+- The hits by class (S2443). Sixteen club swings on a Fire Elemental (25 HP), one every 0.67 s, about 11 s in all; every blow called
+  `sndHitEnemy('blunt', true)`, the resisted blunt ring, and *First blood — slew a Fire Elemental* went to the log. Sixteen swings for 25 HP is
+  slow, but that is a wooden club against fire. Headless has no audio, so the sound itself is unheard.
+- The foe-free wonder ground (S2432). Over two boots at 15:00 and 23:00, the nearest foe to the Spires' ground stood 128 m from its middle (a
+  Boar), outside the 63.5 m ground. Once, in the first boot, a spider stood on the strand about 30 m from the ground's middle at 15:00 (visible
+  in `2026-11-20-spires-strand.png`); it was not in the world's foe list on the next boot and I could not reproduce it, so it is not filed.
+
+**The recent sessions' *Needs eyes*, from my own play.**
+- S2405, S2411, S2413, S2416–2418, S2423, S2426 (spells as keys): the seal and the plates judged above, and the slide's paleness blocked by its
+  black draw. The barricade, sluice, lift, stair and turning chamber were not in this gate on floor one. The sluice's 8 s hold on E and the
+  vane's aim I could not judge headless. Sounds: not judgeable.
+- S2406 (the Lamps on the Water) and S2409 (the Northlight Altar): not visited.
+- S2410 (herbs on a wonder's ground): the veins have the same fault, item 1.
+- S2419, S2422, S2425 (the Spires in the game): walked, above. The passage's square head reads well enough with a road through it. A ship
+  meeting the towers was not sailed.
+- S2432 (no foe on a wonder's ground): judged, above. At 15:00 and 23:00 the strand was quiet, and for a ruin at the sea's edge that suits.
+- S2436 (the riders): not tested; I had no spell in hand. S2437 (the caravan's merchant): not met.
+- S2443 (hits by class): the class reached the sound call, above; the ear is not judgeable headless.
+- S2407, S2414, S2420, S2424, S2427, S2428, S2433, S2434, S2438, S2439, S2444 (capes, aprons, headscarves, the travellers' cast): not looked
+  at. Nobody in a cape or scarf crossed my path at the Spires or in the gate.
+- S2415, S2430, S2431, S2435, S2440, S2441 (the prototypes): the new look's run, next time.
+- S2408, S2421, S2429, S2442 (QA's budgets): `export` green, as above.
+- S2412 (the shortcut back) waits on #1774.
+
+**Backlog notes.** None new.
+
+No proposal this run.
