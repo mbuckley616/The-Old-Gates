@@ -103,6 +103,15 @@ export function buildTextures() {
     const h = gap ? 0 : .9 + .1 * n; const v = .14 + .05 * r + .05 * n + .08 * vein; return [h, ...(gap ? [.04, .04, .045] : [v * .95, v * .97, v * 1.04])]; }, 1.4);
   TEX.rock = texPair(512, (x, y) => { const n = tfbm(x, y, 4, 6, 21), m = tfbm(x, y, 16, 4, 23), strata = Math.sin((y * 9 + n * 2.2) * Math.PI) * .5 + .5, crack = Math.pow(1 - Math.abs(tfbm(x, y, 6, 4, 29) - .5) * 2, 14);
     const h = n * .55 + strata * .25 + m * .2 - crack * .25; const v = .48 + .14 * n + .05 * strata - .07 * crack; return [h, v * 1.03, v * .98, v * .9]; }, 3.0);
+  // Session 2440: sea-cliff rock for the Gate Isles, laid with v up the face: beds of uneven thickness running level and wavering, their partings
+  // open in places and closed in others, a few upright joints that die out across a bed, a coarse grain and broad weathered tone; no veins
+  // (the kit's rock, at a cliff's tile, read as marble) and no courses (a first try read as brickwork)
+  TEX.searock = texPair(512, (x, y) => { const wy = (y + .05 * (tfbm(x, y, 2, 3, 61) - .5) + 1) % 1, BEDS = [0, .07, .19, .24, .38, .47, .55, .71, .78, .93, 1], bi = Math.max(0, BEDS.findIndex(e => e > wy) - 1), y0 = BEDS[bi], y1 = BEDS[bi + 1], ry = (wy - y0) / (y1 - y0);
+    const open = sstep(.45, .7, tfbm(x, y, 3, 3, 71 + bi)), bed = Math.min(ry, 1 - ry) * (y1 - y0) * 512 / 3;
+    const nj = [2, 1, 3, 1, 2, 2, 1, 3, 2, 1][bi], jx = x * nj + idr(bi * 13 + 7) + .18 * (tfbm(x, y, 3, 3, 63 + bi) - .5), rx = jx - Math.floor(jx), jo = sstep(.35, .6, tn(x, y, 4, 73 + bi)) * (ry > .15 && ry < .85 ? 1 : .4), joint = Math.min(rx, 1 - rx) / nj * 512 / 2.5;
+    const g = tfbm(x, y, 64, 3, 67), m = tfbm(x, y, 24, 3, 77), n = tfbm(x, y, 8, 5, 69), w = tfbm(x, y, 2, 3, 75), r = idr(bi * 31 + 5);
+    const gapB = open * Math.max(0, 1 - bed), gapJ = jo * Math.max(0, 1 - joint), gap = Math.max(gapB, gapJ);
+    const h = .5 + .22 * n + .14 * m + .2 * g + .08 * (ry - .5) - .45 * gap; const v = (.5 + .06 * (r - .5) + .1 * (n - .5) + .1 * (m - .5) + .14 * (g - .5) + .08 * (w - .5)) * (1 - .4 * gap); return [h, v * 1.02, v, v * .95]; }, 2.2);
   for (const k in TEX) { TEX[k].map.repeat.set(1, 1); }
 }
 export function mat(tex, o = {}) { return new THREE.MeshStandardMaterial({ map: TEX[tex].map, normalMap: TEX[tex].normalMap, normalScale: new THREE.Vector2(o.ns ?? 1, o.ns ?? 1), roughness: o.rough ?? .9, metalness: 0, color: o.color ?? 0xffffff }); }

@@ -19,7 +19,7 @@
 // -> { group, tris, draws, ground(x, z), R, bays: [{ i, a, x, z, cond, top, fallen, floating, lean, seams }], gone, spill: [[x, z]], dais { r, top }, cliff { z, sea },
 //   figure { x, y, z, h, bay }, k (the arches' scale), span (an opening's width), rise (its height to the point) }
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, worldUV, fbm, sstep } from './common.js';
 import { gatePiece, stream, cutMat } from './gatekit.js';
 
@@ -477,7 +477,8 @@ export function hollowBelow(o = {}) {
 export function gateIsles(o = {}) {
   const key = o.key || 'ruins:isles', r = stream(key), S = 14, P = S + 1.2, R0 = 9, RM = 11.5, R1 = 14, D = 3, CY = P + .6 + R0, DEG = Math.PI / 180, CR = 24, BED = -14, COAST = -2100, group = new THREE.Group();
   const ZS = [0, -270, -580, -930, -1330], RS = [40, 48, 36, 52, 44], SW = 2, SX0 = CR - 1;
-  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); if (k !== 'script') { if (x.attributes.uv) x.deleteAttribute('uv'); x.computeVertexNormals(); worldUV(x, .25); } else x.computeVertexNormals(); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); if (k === 'turf') { const m = mergeVertices(x, 1e-3); m.computeVertexNormals(); const f = m.toNonIndexed(); (B.get(k) || B.set(k, []).get(k)).push(f); return f; } /* Session 2440: the turf smooth, not faceted */
+    if (k !== 'script') { if (x.attributes.uv) x.deleteAttribute('uv'); x.computeVertexNormals(); worldUV(x, k === 'rock' || k === 'stair' ? .0625 : .25); } else x.computeVertexNormals(); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
   const bb = g => { g.computeBoundingBox(); return g.boundingBox; };
   // an isle's rock: its outline wavers with the bearing; level crown, then the cliff in ledges to the water, then a skirt of tumbled rock to the bed
   const rim = (i, t) => RS[i] * (1 + .32 * (fbm(Math.cos(t) * 1.6 + i * 7.1, Math.sin(t) * 1.6 + i * 3.3, 3) - .5));
@@ -494,13 +495,13 @@ export function gateIsles(o = {}) {
     return Math.max(BED, Math.min(S - .05, y)); };
   const ground = (x, z) => { let y = BED; for (let i = 0; i < ZS.length; i++) if (Math.abs(z - ZS[i]) < 130 && Math.abs(x) < 130) y = Math.max(y, isleH(i, x, z)); return y; };
   // the isles' rock, each a polar grid (96 bearings by 40 rings out to its rim and 30 m beyond), coloured by height: turf on the crown, lichened rock, the wrack between the tides
-  const rockCol = (y, d) => { const w = sstep(-2.6, -1.6, y) * (1 - sstep(2, 2.6, y)), l = sstep(2.2, 2.8, y) * (1 - sstep(4.5, 6.5, y)), turf = d < CR - .5 ? 1 : 0, c = [.36, .35, .33]; return [0, 1, 2].map(j => turf ? [.33, .38, .2][j] : (c[j] * (1 - l) + [.52, .5, .38][j] * l) * (1 - w) + [.13, .12, .06][j] * w); }; /* the wrack between the tides, a band of pale lichen over it (Session 2431) */
+  const rockCol = (y, d, x = 0, z = 0) => { const w = sstep(-2.6, -1.6, y) * (1 - sstep(2, 2.6, y)), l = sstep(2.2, 2.8, y) * (1 - sstep(4.5, 6.5, y)), turf = d < CR - .5 ? 1 : 0, c = [.36, .35, .33], tv = turf ? .82 + .3 * fbm(x / 5, z / 5, 3) : 1; return [0, 1, 2].map(j => turf ? [.33, .38, .2][j] * tv * (j === 0 ? 1 + .25 * (fbm(x / 11 + 4, z / 11, 2) - .5) : 1) : (c[j] * (1 - l) + [.52, .5, .38][j] * l) * (1 - w) + [.13, .12, .06][j] * w); }; /* the wrack between the tides, a band of pale lichen over it (Session 2431) */
   const STK = [];
-  for (let i = 0; i < ZS.length; i++) { const NA = 96, NR = 34, pos = [], col = [];
+  for (let i = 0; i < ZS.length; i++) { const NA = 96, NR = 34, pos = [], col = [], tpos = [], tcol = [];
     // the rings by the rim on each bearing (Session 2431): 6 over the crown, 6 to the cliff's head, 14 down its face, 8 over the skirt
     const pt = (a, k) => { const t = a * 2 * Math.PI / NA, Rr = rim(i, t), d = k <= 6 ? CR * k / 6 : k <= 12 ? CR + (Rr - 6 - CR) * (k - 6) / 6 : k <= 26 ? Rr - 6 + 8 * (k - 12) / 14 : Rr + 2 + 26 * ((k - 26) / 8) ** 1.3, x = Math.cos(t) * d, z = ZS[i] + Math.sin(t) * d, y = isleH(i, x, z); return [x, y, z, d]; };
     for (let a = 0; a < NA; a++) for (let k = 0; k < NR; k++) { const p = pt(a, k), q = pt(a + 1, k), s = pt(a + 1, k + 1), u = pt(a, k + 1);
-      for (const v of k === 0 ? [p, s, u] : [p, s, u, p, q, s]) { pos.push(v[0], v[1], v[2]); col.push(...rockCol(v[1], v[3])); } }
+      for (const v of k === 0 ? [p, s, u] : [p, s, u, p, q, s]) { const P0 = k < 6 ? tpos : pos, C0 = k < 6 ? tcol : col; P0.push(v[0], v[1], v[2]); C0.push(...rockCol(v[1], v[3], v[0], v[2])); } } /* Session 2440: the crown's turf its own draw, unmapped */
     // two or three stacks off the cliff (Session 2431), away from the landing and 24 m clear of the line, standing from the bed to 10 to 24 m: rock in strata.
     // Session 2435: worn by the sea, not cut: each is notched round the tide's band (a third narrower at the mean sea, a lip overhanging it at 4 m) and its
     // top broken off on a slant falling toward one side, ragged along the break, so none reads as a pillar sawn level
@@ -515,7 +516,8 @@ export function gateIsles(o = {}) {
         stacks.push({ x: +sx.toFixed(2), z: +sz.toFixed(2), r: +rr.toFixed(2), h: +h.toFixed(2), slope: +slope.toFixed(2) });
         const gs = c.toNonIndexed(), P2 = gs.attributes.position, cc = []; for (let v = 0; v < P2.count; v++) cc.push(...rockCol(P2.getY(v), 999)); gs.setAttribute('color', new THREE.Float32BufferAttribute(cc, 3)); gs.deleteAttribute('uv'); gs.deleteAttribute('normal');
         pos.push(...P2.array); col.push(...cc); k++; } }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); put('rock', g); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); put('rock', g);
+    const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(tpos, 3)); tg.setAttribute('color', new THREE.Float32BufferAttribute(tcol, 3)); put('turf', tg); }
   // the sea, and the far coast on the line: a ridge 3 km long, its shoulder 90 to 140 m, falling to the water before the line
   { const g = new THREE.PlaneGeometry(9000, 9000); g.rotateX(-Math.PI / 2); g.translate(0, 0, -1500); B.set('sea', [g]); }
   { const NX = 120, NZ = 16, pos = []; const pt = (i, j) => { const x = -1500 + 3000 * i / NX, z = COAST - 400 * j / NZ, sh = 90 + 50 * fbm(x / 400, 3.3, 3); const y = -8 + (sh + 8) * sstep(0, .8, j / NZ) + 22 * (fbm(x / 70, z / 70, 3) - .5) * (j / NZ); return [x, y, z]; };
@@ -562,9 +564,10 @@ export function gateIsles(o = {}) {
       if (kind === 0) x.arc(64, cy, 30, 0, 7); else if (kind === 1) { x.arc(64, cy, 30, 0, 7); x.moveTo(64, cy - 38); x.lineTo(64, cy + 38); } else if (kind === 2) { x.arc(64, cy, 30, Math.PI * .1, Math.PI * .9); x.moveTo(94, cy - 6); x.arc(64, cy - 6, 30, 0, -Math.PI, true); }
       else { x.moveTo(64, cy - 36); x.lineTo(64, cy + 36); for (const d of [-20, 0, 20]) { x.moveTo(44, cy + d); x.lineTo(84, cy + d); } } x.stroke(); }
     const t = new THREE.CanvasTexture(c); t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t; })();
-  const STONE = new THREE.Color(0xd6cebe), rockM = mat('rock', { ns: .6, color: 0xffffff, rough: .95 }); rockM.vertexColors = true;
-  const M = { rock: rockM, sea: new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .2, .25), roughness: .18, metalness: .1 }), coast: mat('rock', { ns: .8, color: 0x5c6152, rough: .95 }),
-    stone: mat('ashlar', { ns: .8, color: STONE.getHex(), rough: .85 }), script: Object.assign(cutMat(STONE, glyphs), { side: THREE.DoubleSide }), step: mat('ashlar', { ns: .7, color: 0xaaa397, rough: .9 }) /* the kit's slab is the gates' dark polished floor: under the sky the steps are the ring's stone */, stair: mat('rock', { ns: .9, color: 0x6d6a64, rough: .95 }),
+  const STONE = new THREE.Color(0xd6cebe), rockM = mat('searock', { ns: 1.2, color: 0xffffff, rough: .95 }); rockM.vertexColors = true; /* Session 2440: bedded and jointed, not the kit's veined rock (it read as marble at the landing) */
+  const turfM = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, vertexColors: true });
+  const M = { rock: rockM, turf: turfM, sea: new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .2, .25), roughness: .18, metalness: .1 }), coast: mat('rock', { ns: .8, color: 0x5c6152, rough: .95 }),
+    stone: mat('ashlar', { ns: .8, color: STONE.getHex(), rough: .85 }), script: Object.assign(cutMat(STONE, glyphs), { side: THREE.DoubleSide }), step: mat('ashlar', { ns: .7, color: 0xaaa397, rough: .9 }) /* the kit's slab is the gates' dark polished floor: under the sky the steps are the ring's stone */, stair: mat('searock', { ns: .9, color: 0x77746d, rough: .95 }),
     mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
   let tris = 0, draws = 0;
   for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['sea', 'script', 'coast'].includes(k); mesh.receiveShadow = k !== 'sea'; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
