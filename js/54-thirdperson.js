@@ -37,7 +37,7 @@ function tpHex(s,def){if(typeof s==='number')return s;if(typeof s==='string'&&s[
 function tpMatColor(it,def){if(!it)return def;if(it.matCol!=null)return it.matCol;const name=(it.name||'').toLowerCase();for(const k in ICO_MAT){if((it.material||'').toLowerCase()===k||name.startsWith(k+' ')||name.includes(' '+k+' '))return tpHex(ICO_MAT[k],def);}
   if(/leather|hide|hood|cap\b|boots|breeches|gloves/.test(name))return 0x6a4a2e;if(/tunic|robe|cloth|shirt|trousers/.test(name))return 0x6a5a44;if(/iron|rusty/.test(name))return 0x8a8f98;if(/steel|plate|chain|mail/.test(name))return 0xb8bcc4;return def;}
 function tpIsCloth(it){if(!it)return true;const n=(it.name||'').toLowerCase();return /tunic|robe|cloth|breeches|trousers|shirt|hood|cap\b|leather|hide|worn|tattered|boots|gloves/.test(n)&&!/cuirass|plate|mail|helm|greaves|gauntlet|sabaton/.test(n);}
-function tpSig(){const L=lookNow();const k=(L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','weapon','offhand','amulet','ammo','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|');let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}return k+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype+'#'+tpPackKind();}
+function tpSig(){const L=lookNow();const k=(L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','weapon','offhand','amulet','ammo','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|');let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}return k+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype+'#'+tpPackKind()+(tpSheathed()?'#sheathed':'');}
 // S2217 — the pack in the bag (Michael's B on #1504, the systems builder's packItem), drawn on your back by island: the Gatelands' wicker
 // creel, the Mark's birch pack frame with its hide bundle, Aurenne's striped saddle-roll (people.js's D.backpack, buildBackpack)
 const TP_PACK={gatelands:{kind:'creel',col:[.92,.74,.48]},mark:{kind:'frame',col:[.42,.3,.2]},aurenne:{kind:'roll',col:[.55,.16,.1]}};
@@ -154,7 +154,7 @@ function tpBuild(lookIn,ppIn,reuse){
   if(!lg)g.legs=new THREE.Color(TP_LINEN).multiplyScalar(.93);
   if(!ft){g.bareFeet=true;g.boot=g.skin.clone();}
   // S411 — Michael's D on #99: an empty hand is a folded fist; a torch, a tome, a shield's strap or a bow keeps the mitten
-  const w=EQ.weapon,oh=EQ.offhand,bowW=!!(w&&w.weaponShape==='bow');g.fists={R:!w,L:!oh&&!bowW};
+  const w0=EQ.weapon,shW=tpSheathed()?w0:null,w=shW?null:w0,oh=EQ.offhand,bowW=!!(w&&w.weaponShape==='bow');g.fists={R:!w,L:!oh&&!bowW};
   const rig=buildPerson(g,{noLod:true});PEOPLE_RIGS.delete(rig); // tpPose drives this one, not tickPeople
   const B=rig.B;for(const k in B){if(B[k].isBone)B[k].rotation.order='YXZ';}
   rig.mesh.castShadow=false;rig.mesh.userData.tp=true;
@@ -163,7 +163,7 @@ function tpBuild(lookIn,ppIn,reuse){
   // what the hands hold (the weapon kit itself is a later pass)
   // S1458 — a crossbow is carried in the right fist alone, by the wrist of its tiller, its prod down behind (people.js carries it
   // point down): two hands on it held it up before the face as a claymore, the prod over the head
-  R.twoH=!!(w&&w.twoHand&&w.weaponShape!=='bow'&&w.weaponShape!=='crossbow');R.bow=bowW;R.unarmed=!w&&!oh;R.spear=!!(w&&w.weaponShape==='spear');
+  R.twoH=!!(w&&w.twoHand&&w.weaponShape!=='bow'&&w.weaponShape!=='crossbow');R.bow=bowW;R.unarmed=!w0&&!oh; /* S2451 — a sheathed weapon is a walker's empty hand, not the fist-fighter's guard */R.spear=!!(w&&w.weaponShape==='spear');
   const grip=(hand,m)=>{m.position.set(0,-.04,.008);hand.add(m);return m;};
   if(w){const wm=tpWeapon(w);
     // S246: where the left hand goes on a two-handed grip: a hand's width from the right fist towards the pommel (the
@@ -172,6 +172,9 @@ function tpBuild(lookIn,ppIn,reuse){
     const wb=w.enchant&&w.enchant.col!=null?new THREE.Box3().setFromObject(wm):null;
     if(R.bow){wm.rotation.set(0,0,0);R.weaponL=grip(R.handL,wm);}else{wm.rotation.set(Math.PI/2,0,0);R.weapon=grip(R.handR,wm);}
     if(wb&&!wb.isEmpty())tpMotes(R,wm,w.enchant.col,wb);}
+  /* S2451 — a sheathed weapon is built as in the hand and kept on the driver's hips, hidden (disposed with the body); the builder's body
+     wears a copy at the hip or on the back (tpSheath). The hand is empty and the arms hang as a bare-handed walker's */
+  if(shW){const wm=tpWeapon(shW);wm.visible=false;R.hips.add(wm);R.sheathW=wm;}
   R.shield=null;R.torch=null;
   if(oh&&oh.shieldType==='shield'){const c=tpHex(oh.matCol,0x8a6030),rim=tpHex(oh.matGuard,0x4a3418);const big=/tower|kite/i.test(oh.name||''),round=/buckler|round/i.test(oh.name||'');const sg=new THREE.Group();
     // S227 — the kit's shields: planked and round with a rim and boss, the kite, or (S231) the tower shield; the face is
@@ -200,7 +203,7 @@ function tpBuild(lookIn,ppIn,reuse){
     // that was built for it: carried over from the body this one replaces (reuse, TP.rig) onto the new driver, not built again
     const key=JSON.stringify(rig.hbG),old=reuse&&reuse.rig&&reuse.rig.hb&&reuse.hbKey===key?reuse:null;R.hbKey=key;
     const t0=performance.now();
-    if(old){const H=old.rig.hb;if(old.hbHeld)for(const h of old.hbHeld)h.c.removeFromParent();old.hbHeld=null;old.rig.hb=null;old.rig.mesh.visible=true;
+    if(old){const H=old.rig.hb;if(old.hbHeld)for(const h of old.hbHeld)h.c.removeFromParent();old.hbHeld=null;if(old.hbSheath){old.hbSheath.removeFromParent();old.hbSheath=null;}old.rig.hb=null;old.rig.mesh.visible=true;
       rig.hb=H;H.L=-1;H.drv=rig.mesh.material;rig.root.add(H.root);TP_HB.kept=(TP_HB.kept||0)+1;}
     else{rig.hbLazy=true;try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
       if(rig.hb){TP_HB.ms+=performance.now()-t0;TP_HB.n++;}}
@@ -215,6 +218,7 @@ function tpBuild(lookIn,ppIn,reuse){
         const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';c.add(tpHBCopy(o,true));rig.hb.root.add(c);
         const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null,arm:[B['el'+sd],B['wr'+sd],by['lowerarm01.'+s],by['wrist.'+s]]});}
       // Michael's D on #99: an empty hand is a folded fist, and a hand that holds something closes on it; a tome is held open-handed
+      if(R.sheathW)tpSheath(R,shW);
       hbCloseFist(by,side('R'));hbThumb(by,side('R'));R.hbHook=R.bow?tpHBHookOf(by,side('R')):null;if(!R.tome){hbCloseFist(by,side('L'));hbThumb(by,side('L'));}else for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=by[`finger${f}-${j}.${side('L')}`];if(b)b.quaternion.identity();} /* a body carried over may have closed it */
       root.traverse(o=>{if(o.isMesh)o.userData.tp=true;});}}
   if(!R.trueK)tpTrue(R);
@@ -252,6 +256,44 @@ function tpHBHold(R){const H=R.rig.hb;if(!H||!R.hbHeld)return;R.root.updateMatri
     if(XS){tpXbowPlace(R);_tpHm2.multiplyMatrices(_tpHm,XS.mid); /* S1504 — set down to span, by way of the middle key */
       if(XS.w<.5)tpBlendM(h.c.matrix,h.c.matrix,_tpHm2,XS.w*2);else tpBlendM(h.c.matrix,_tpHm2,_txJ.multiplyMatrices(_tpHm,XS.free),XS.w*2-1);}
     h.c.matrixWorldNeedsUpdate=true;}}
+// S2451 — the weapon sheathed (74-strikes.js's H, or five seconds at peace) is worn, not held: a blade or a wand at the left hip, its grip
+// before the belt and the point down and back; an axe, a mace or a hatchet through the belt at the left hip, head up; anything longer
+// across the back, a blade's hilt over the right shoulder and a haft's head there. The copy rides the builder's own bone (spine05 for the
+// hip, spine02 for the back), whose bind turn is none, so its place is in the bind's metres: the belt's height and the hip's side from the
+// belt and the garments under it (inside the hip joint's 13 cm: the bind's arms hang beside it), the back's surface (a cloak, a pack) from what is worn there, measured once a build. A look only.
+const TP_SHEATH={hip:{dir:[.06,-.85,-.52],at:.06,out:0,fwd:.05},belt:{dir:[-.12,1,.18],up:.6,out:.03,fwd:.04},
+  back:{blade:[.5,-.86,0],haft:[-.5,.86,0],gap:.012}};
+function tpSheathed(){return typeof SHEATHED!=='undefined'&&SHEATHED&&!!EQ.weapon&&EQ.weapon===_sheathedItem;}
+function tpSheathAt(W,it){const k=(W.userData.kit||'').split(':')[0];if(k==='impl')return implementOf(it)==='wand'?'hip':'back';
+  return /^(dagger|sword|cutlass|longsword)$/.test(k)?'hip':/^(axe|mace|hatchet|flail)$/.test(k)?'belt':'back';}
+const _tsM=new THREE.Matrix4(),_tsV=new THREE.Vector3(),_tsB=new THREE.Box3();
+function tpSheathFit(H){const P=H.P,sk=P.skeleton,bind=b=>_tsM.copy(sk.boneInverses[sk.bones.indexOf(b)]).invert(),bp=b=>new THREE.Vector3().setFromMatrixPosition(bind(b));
+  const p5=bp(P.byName.spine05),p2=bp(P.byName.spine02),xL=P.byName['upperleg01.L']?bp(P.byName['upperleg01.L']).x+.13:.25,F={p5,p2,yB:p5.y+.05,side:.14,back:p2.z-.12};
+  const belt=H.full.find(m=>m.isSkinnedMesh&&m.name==='belt');
+  const each=(m,fn)=>{const pa=m.geometry.attributes.position,ix=m.geometry.index,n=ix?ix.count:pa.count;for(let i=0;i<n;i++){const j=ix?ix.getX(i):i;fn(pa.getX(j),pa.getY(j),pa.getZ(j));}};
+  if(belt){let lo=1e9,hi=-1e9;each(belt,(x,y,z)=>{if(Math.abs(z)<.12&&x>0){lo=Math.min(lo,y);hi=Math.max(hi,y);}});if(hi>lo)F.yB=(lo+hi)/2;}
+  let side=0,back=0;
+  for(const m of H.full){if(m.isSkinnedMesh){if(/hair|brow/.test(m.name))continue;const cl=m.name==='cloak';
+      each(m,(x,y,z)=>{if(!cl&&x<xL&&Math.abs(y-F.yB)<.05&&Math.abs(z-p5.z)<.1&&x>side)side=x; /* the bind's arms hang out past the hip: not the hip */if(Math.abs(x)<.12&&Math.abs(y-p2.y)<.16&&z<back)back=z;});continue;}
+    // a piece on a bone (the pack, its straps): its box in the bind's frame, by way of the bone it hangs from
+    let b=m,L=new THREE.Matrix4();while(b&&!b.isBone){b.updateMatrix();L.premultiply(b.matrix);b=b.parent;}
+    if(!b||b.name==='head'||!m.geometry)continue;if(!m.geometry.boundingBox)m.geometry.computeBoundingBox();
+    _tsB.copy(m.geometry.boundingBox).applyMatrix4(L.premultiply(bind(b)));
+    if(_tsB.min.x<.12&&_tsB.max.x>-.12&&_tsB.min.y<p2.y+.16&&_tsB.max.y>p2.y-.16&&_tsB.min.z<back)back=_tsB.min.z;}
+  if(side>0)F.side=side;if(back<0)F.back=back;return F;}
+function tpSheath(R,it){const W=R.sheathW,H=R.rig.hb;if(!W||!H)return;const k=W.children[0];if(k&&wpnIsTrue(W.userData.kit))wpnTrue(W.userData.kit,k,R.root);
+  const s=R.root.scale.x,at=tpSheathAt(W,it),T=TP_SHEATH,F=tpSheathFit(H),par=W.parent;if(par)par.remove(W);W.updateMatrixWorld(true);_tsB.setFromObject(W);if(par)par.add(W); /* its own frame's box */
+  const lo=_tsB.min.y*s,hi=_tsB.max.y*s,th=(_tsB.max.z-_tsB.min.z)*s,X=new THREE.Vector3(1,0,0),Z=new THREE.Vector3(0,0,1);
+  let d,xa,pos,bone;
+  if(at==='back'){const blade=/^(claymore|longsword)$/.test((W.userData.kit||'').split(':')[0]);d=new THREE.Vector3(...(blade?T.back.blade:T.back.haft)).normalize();
+    xa=new THREE.Vector3().crossVectors(Z,d).normalize();bone=H.P.byName.spine02;
+    pos=new THREE.Vector3(0,F.p2.y+.02,F.back-th/2-T.back.gap).addScaledVector(d,-(lo+hi)/2);}
+  else{const S=T[at];d=new THREE.Vector3(...S.dir).normalize();xa=new THREE.Vector3().crossVectors(d,X).normalize();bone=H.P.byName.spine05;
+    pos=new THREE.Vector3(F.side+S.out,F.yB,F.p5.z+S.fwd).addScaledVector(d,at==='hip'?-S.at:-S.up*hi);}
+  const za=new THREE.Vector3().crossVectors(xa,d),c=new THREE.Group();c.name='sheathed';c.add(tpHBCopy(W,true));c.children[0].visible=true;
+  c.quaternion.setFromRotationMatrix(_tsM.makeBasis(xa,d,za));c.scale.setScalar(s);
+  // the bone's own place at the bind: the piece's place is about it
+  c.position.copy(pos).sub(at==='back'?F.p2:F.p5);bone.add(c);c.traverse(o=>{if(o.isMesh)o.userData.tp=true;});R.hbSheath=c;R.sheathAt=at;}
 function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.mantle)tpHBMantle(R);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);}
 // S1270 — the bow's draw on the builder's fingers: the right hand, a fist while the bow is carried, opens into the archer's hook as the
 // string comes back (or is held at the ready): the first three fingers bent round the string at their last two joints and barely at the
@@ -282,7 +324,7 @@ function tpMotes(R,parent,col,box,shell){const n=TP_MOTE.n,P=new Float32Array(n*
 function tpMotesTick(R,t){if(!R||!R.motes)return;for(const m of R.motes){const {box,seed}=m.userData,a=m.geometry.attributes.position,h=box.max.y-box.min.y||.1;
   for(let i=0;i<seed.length;i++){const [x,z,ph,sp]=seed[i],f=(ph+t*TP_MOTE.rise*sp/h)%1;a.setXYZ(i,x+.012*Math.sin(t*1.3+i*2.1),box.min.y+f*h,z+.012*Math.cos(t*1.1+i*1.7));}
   a.needsUpdate=true;}}
-function tpDispose(R){if(!R)return;if(R.rig&&R.rig.hb){if(R.hbHeld)for(const h of R.hbHeld)h.c.removeFromParent();hbDrop(R.rig);} /* F10: the held copies share the pieces' geometry, disposed once below */if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
+function tpDispose(R){if(!R)return;if(R.rig&&R.rig.hb){if(R.hbHeld)for(const h of R.hbHeld)h.c.removeFromParent();if(R.hbSheath)R.hbSheath.removeFromParent();hbDrop(R.rig);} /* F10: the held copies share the pieces' geometry, disposed once below */if(R.root.parent)R.root.parent.remove(R.root);R.root.traverse(o=>{if(o.isMesh||o.isPoints){o.geometry.dispose();if(o.material!==PEOPLE_MAT)o.material.dispose();}});}
 const _tpL=(a,b,k)=>a+(b-a)*k;
 // S1899 — your deflect's beat after a perfect parry (74-strikes.js sets _lastParryG on the play clock): w, the sword arm's; s, the shield's
 const TP_DEFLECT={rise:.06,hold:.18,out:.42,w:{aR:[-1.05,-.6,0],eR:-.45,wR:.35},s:{aL:[-1.15,-.3,0],eL:-.55,shY:.15,shZ:-.65}};
