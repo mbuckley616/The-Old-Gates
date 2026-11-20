@@ -95,7 +95,8 @@ Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session
   (the stamp grid's cell size; `34-creatures.js` has the shape-kit `SG`), `tickNPCs`→`tickTownNPCs` (`50-travel.js` has the legacy
   zones' `tickNPCs`); the export `WORLD.DOORS` keeps its name. So: a new top-level name in any file must not reuse one of the
   world's. parsecheck's concatenation catches a `let`/`const`/`class`; a duplicate `function` is legal and the later file wins
-  silently, so grep `js/` before naming a new top-level function. The load-order rule holds inside the world too: a load-time
+  silently, so grep `js/` before naming a new top-level function (`node tests/topnames.test.mjs`, 2 s, no browser, lists every
+  top-level `function`/`var` name declared twice; Session 2452). The load-order rule holds inside the world too: a load-time
   statement in `80-world-terrain.js` cannot call a function declared in `87-world-quests.js` (`split_world.py` refused any cut
   where that happened; there were none). `js/world-manifest.json` records the cut and the renames; `scripts/split_world.py --check`
   on the pre-cut layout proves the rebuild byte-identical, and `join.py` rebuilds the one-file script through it.
