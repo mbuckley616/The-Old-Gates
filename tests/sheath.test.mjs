@@ -81,5 +81,36 @@ if (tp.sword.hb) {
     ['sword', 'cutlass'].every(k => { const f = tp[k].frog; return f && f.tris > 50 && f.below > .02 && f.topOff > 0 && f.topOff < .012 && f.out > 0 && f.out < .006 && f.hooked; }) && !tp.claymore.frog && !tp.mace.frog, tp);
   check('drawn, it is in the fist again and the worn copy is gone', ['sword', 'claymore'].every(k => tp[k].drawn.held && !tp[k].drawn.worn && !tp[k].drawn.old), tp);
 } else console.log('  (the old look: no builder body, the sheathed weapon is not drawn)');
+// S2462: a claymore on the back hangs from a baldric: a strap skinned to the body, over the right shoulder (between the neck and the joint),
+// across the chest to the left flank about the belt; the scabbard's axis lies in the strap's plane;
+// in the walk the strap keeps to the body (each point's distance to the body point nearest it at the bind moves under 2 cm); drawn, it is gone
+const bd = await page.evaluate(() => { const out = {}; const eq0 = { ...EQ }; thirdPerson = true; EQ.offhand = null;
+  EQ.weapon = { name: 'Test claymore', type: 'weapon', atk: [10, 11], wType: 'slash', weaponShape: 'claymore', twoHand: true, weight: 3 };
+  SHEATHED = false; tpEnsure(); sheathWeapon(); tpEnsure(); const R = TP.rig, H = R.rig.hb; if (!H) return { hb: false };
+  const c = R.hbSheath, b = c && c.userData.baldric; out.hb = true; out.has = !!(b && b.isSkinnedMesh && b.parent && b.name === 'baldric'); if (!out.has) return out;
+  const B = b.userData.baldric, sk = H.P.skeleton, bp = n => new THREE.Vector3().setFromMatrixPosition(new THREE.Matrix4().copy(sk.boneInverses[sk.bones.indexOf(H.P.byName[n])]).invert());
+  const pa = b.geometry.attributes.position, F = tpSheathFit(H); let top = null, low = null;
+  for (let i = 0; i < pa.count; i++) { const v = new THREE.Vector3().fromBufferAttribute(pa, i); if (!top || v.y > top.y) top = v; if (!low || v.y < low.y) low = v; }
+  const S = bp('shoulder01.R'), N = bp('neck01');
+  out.top = { y: +(top.y - S.y).toFixed(3), x: +top.x.toFixed(3), between: top.x < N.x && top.x > S.x - .02 }; out.low = { x: +low.x.toFixed(3), dyB: +(low.y - F.yB).toFixed(3) }; out.tris = B.tris;
+  // the scabbard's axis in the strap's plane, its leather on the strap
+  const n = new THREE.Vector3(...B.n), o = new THREE.Vector3(...B.o), q = c.quaternion, d = new THREE.Vector3(0, 1, 0).applyQuaternion(q), p0 = c.position.clone().add(F.p2);
+  out.plane = { d: +Math.abs(d.dot(n)).toFixed(4), off: +Math.abs(p0.clone().sub(o).dot(n)).toFixed(4) };
+  // the walk: every strap point against the nearest body point at the bind, posed
+  const body = H.full.filter(m => m.isSkinnedMesh && !/hair|brow|lash|cloak/.test(m.name) && m !== b), pairs = [], v = new THREE.Vector3(), w = new THREE.Vector3();
+  for (let i = 0; i < pa.count; i += 4) { v.fromBufferAttribute(pa, i); let best = null, bd = 1e9; for (const m of body) { const p = m.geometry.attributes.position; for (let j = 0; j < p.count; j++) { const dd = v.distanceToSquared(w.fromBufferAttribute(p, j)); if (dd < bd) { bd = dd; best = [m, j]; } } } pairs.push([i, best, Math.sqrt(bd)]); }
+  const drift = () => { R.root.updateMatrixWorld(true); let worst = 0; for (const [i, [m, j], d0] of pairs) { b.getVertexPosition(i, v); m.getVertexPosition(j, w); worst = Math.max(worst, Math.abs(v.distanceTo(w) - d0)); } return +worst.toFixed(4); };
+  let t = performance.now(); const step = (k, mv) => { for (let i = 0; i < k; i++) { if (mv) { px -= Math.sin(yaw) * .025; pz -= Math.cos(yaw) * .025; } t += 16.7; tpUpdate(1 / 60, { moving: mv, sprinting: false, camY: 0, now: t, roll: null }); } };
+  step(2, false); out.stand = drift(); let wk = 0; for (let k = 0; k < 4; k++) { step(9, true); wk = Math.max(wk, drift()); } out.walk = wk;
+  drawWeapon(); tpEnsure(); out.drawn = { gone: !b.parent, worn: !!TP.rig.hbSheath };
+  Object.assign(EQ, eq0); SHEATHED = false; thirdPerson = false; return out; });
+console.log(JSON.stringify(bd));
+if (bd.hb) {
+  check(`a claymore on the back hangs from a baldric skinned to the body (${bd.tris} tris): over the right shoulder between the neck and the joint (top ${JSON.stringify(bd.top)}), down to the left flank about the belt (${JSON.stringify(bd.low)})`,
+    bd.has && bd.tris > 500 && bd.top.between && bd.top.y > -.02 && bd.low.x > .08 && Math.abs(bd.low.dyB) < .15, bd);
+  check(`the scabbard lies in the strap's plane (axis ${bd.plane && bd.plane.d}, ${bd.plane && bd.plane.off} m off it)`, bd.plane && bd.plane.d < .01 && bd.plane.off < .01, bd);
+  check(`in the walk the strap keeps to the body: its points move from the body's nearest by ${bd.walk} m at worst (standing ${bd.stand})`, bd.walk < .02 && bd.stand < .02, bd);
+  check('drawn, the baldric is gone with the scabbard', bd.drawn.gone && !bd.drawn.worn, bd);
+}
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

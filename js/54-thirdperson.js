@@ -288,9 +288,13 @@ function tpSheath(R,it){const W=R.sheathW,H=R.rig.hb;if(!W||!H)return;const k=W.
   const s=R.root.scale.x,at=tpSheathAt(W,it),T=TP_SHEATH,F=tpSheathFit(H),par=W.parent;if(par)par.remove(W);W.updateMatrixWorld(true);_tsB.setFromObject(W);if(par)par.add(W); /* its own frame's box */
   const lo=_tsB.min.y*s,hi=_tsB.max.y*s,th=(_tsB.max.z-_tsB.min.z)*s,X=new THREE.Vector3(1,0,0),Z=new THREE.Vector3(0,0,1);
   let d,xa,pos,bone;
+  let bald=null;
   if(at==='back'){const blade=/^(claymore|longsword)$/.test((W.userData.kit||'').split(':')[0]);d=new THREE.Vector3(...(blade?T.back.blade:T.back.haft)).normalize();
-    xa=new THREE.Vector3().crossVectors(Z,d).normalize();bone=H.P.byName.spine02;
-    pos=new THREE.Vector3(0,F.p2.y+.02,F.back-th/2-T.back.gap).addScaledVector(d,-(lo+hi)/2);}
+    bone=H.P.byName.spine02;pos=new THREE.Vector3(0,F.p2.y+.02,F.back-th/2-T.back.gap);
+    /* S2462 — a blade on the back hangs from a baldric, and lies on the strap's back run: its axis in the strap's plane, its leather on the strap */
+    if(blade&&(bald=tpBaldric(H,F))){const B=bald.userData.baldric,e1=new THREE.Vector3(...B.e1),o=new THREE.Vector3(...B.o);d=e1.clone().negate();
+      pos.copy(o).addScaledVector(e1,(F.p2.y+.02-o.y)/e1.y);pos.z=Math.min(B.zBack,F.back)-th/2;}
+    xa=new THREE.Vector3().crossVectors(Z,d).normalize();pos.addScaledVector(d,-(lo+hi)/2);}
   else{const S=T[at];d=new THREE.Vector3(...S.dir).normalize();xa=new THREE.Vector3().crossVectors(d,X).normalize();bone=H.P.byName.spine05;
     pos=new THREE.Vector3(F.side+S.out,F.yB,F.p5.z+S.fwd).addScaledVector(d,at==='hip'?-S.at:-S.up*hi);}
   const za=new THREE.Vector3().crossVectors(xa,d),c=new THREE.Group();c.name='sheathed';c.add(tpHBCopy(W,true));c.children[0].visible=true;
@@ -298,6 +302,7 @@ function tpSheath(R,it){const W=R.sheathW,H=R.rig.hb;if(!W||!H)return;const k=W.
   // the bone's own place at the bind: the piece's place is about it
   const sc=(at==='hip'||at==='back'&&/^(claymore|longsword)$/.test((W.userData.kit||'').split(':')[0]))?tpScabbard(W,it):null; /* S2456 — a blade worn goes in a scabbard */
   if(sc){const m=new THREE.Mesh(sc.geo,[WPN_MAT.matte,WPN_MAT.metal]);m.name='scabbard';c.add(m);const o=Math.max(0,sc.ht*s-th/2);if(at==='hip')pos.x+=o;else pos.z-=o;} /* the leather is thicker than the blade: out from the body by the difference */
+  if(bald){if(sc)c.userData.baldric=bald;else{bald.removeFromParent();bald.geometry.dispose();}}
   c.position.copy(pos).sub(at==='back'?F.p2:F.p5);if(sc&&at==='hip'){const f=tpFrog(c,sc,F);if(f)c.add(f);}
   bone.add(c);c.traverse(o=>{if(o.isMesh)o.userData.tp=true;});R.hbSheath=c;R.sheathAt=at;R.scabbard=sc;}
 // S2459 — the frog (S2456's owed note: the scabbard rode at the belt with nothing tying it on). A loop of leather round the scabbard just
@@ -328,7 +333,54 @@ function tpFrog(c,sc,F){if(F.yBt==null)return null;const K=TP_FROG;c.updateMatri
   for(const [q,f] of [[sec[0],1],[sec[sec.length-1],0]])f?quad(q[0],q[3],q[2],q[1]):quad(q[0],q[1],q[2],q[3]);
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.computeVertexNormals();
   const m=new THREE.Mesh(g,WPN_MAT.matte);m.name='frog';m.userData.own=true;m.userData.frog={yf,line:line.map(v=>v.toArray()),tris:I.length/3};return m;}
-function tpSheathDrop(c){if(!c)return;c.removeFromParent();c.traverse(o=>{if(o.isMesh&&o.userData.own)o.geometry.dispose();});}
+function tpSheathDrop(c){if(!c)return;c.removeFromParent();c.traverse(o=>{if(o.isMesh&&o.userData.own)o.geometry.dispose();});
+  const b=c.userData.baldric;if(b){b.removeFromParent();b.geometry.dispose();c.userData.baldric=null;}}
+// S2462 — the baldric (S2459's owed note: the claymore on the back hung from nothing). A strap 4.5 cm wide and 4 mm thick over the right
+// shoulder (halfway from the neck to the joint), across the chest to the left flank 7 cm over the belt's middle, and round under the arm
+// and up the back; the scabbard lies on its back run (tpSheath sets the blade's axis in the strap's plane and its leather on the strap's
+// hindmost point). The strap is the section of the body by one plane, the line between those two points and the body's depth: in each of
+// 128 turns round the section's middle the outermost point of the body and what it wears (not the arms, the neck or the head, and nothing
+// under the belt's middle, where a tunic's skirt is not the body), padded 3 mm, smoothed. Skinned to the body's own bones by the six
+// nearest points of the body and garments (not the cloak, which rides the pelvis), so it bends with the chest and the shoulder; detached
+// with an identity bind, as hbAttach leaves every skinned piece; its own geometry, dropped with the sheathed group
+const TP_BALD={over:-.04,cut:-.08,w:.045,t:.004,gap:.003,N:128,col:0x3a2414,skip:/^(upperarm|lowerarm|wrist|hand|finger|thumb|metacarpal|neck|head|jaw|eye|tongue|teeth|special|levator|oris|orbicularis|temporalis|risorius)/i};
+function tpBaldric(H,F){const K=TP_BALD,P=H.P,sk=P.skeleton,names=sk.bones.map(b=>b.name),Z=new THREE.Vector3(0,0,1),yMin=F.yB+K.cut;
+  /* the plane: over the right shoulder halfway from the neck to the joint, and the left flank over the belt; it holds the body's depth */
+  const by=P.byName,bp=b=>new THREE.Vector3().setFromMatrixPosition(_tsM.copy(sk.boneInverses[sk.bones.indexOf(b)]).invert()),sh=by['shoulder01.R']||by['clavicle.R'],nk=by.neck01;if(!sh||!nk)return null;
+  const S=bp(sh),Nk=bp(nk),o=new THREE.Vector3((S.x+Nk.x)/2,S.y,F.p2.z);
+  const e1=o.clone().sub(new THREE.Vector3(F.side,F.yB+K.over,o.z)).normalize(),n=new THREE.Vector3().crossVectors(e1,Z).normalize();
+  const slab=K.w/2+.006,pts=[],src=[],v=new THREE.Vector3();
+  for(const m of H.full){if(!m.isSkinnedMesh||/hair|brow|lash/.test(m.name))continue;const g=m.geometry,pa=g.attributes.position,si=g.attributes.skinIndex,sw=g.attributes.skinWeight;if(!si||!sw)continue;
+    const cl=m.name==='cloak';
+    for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i);if(v.y<yMin)continue;v.sub(o);const h=v.dot(n);if(Math.abs(h)>slab)continue;
+      let bi=0,bw=-1;for(let k=0;k<4;k++){const w=sw.getComponent(i,k);if(w>bw){bw=w;bi=si.getComponent(i,k);}}if(K.skip.test(names[bi]||''))continue;
+      const a=v.dot(e1),b=v.z;pts.push(a,b);
+      if(!cl){const ix=[],ws=[];for(let k=0;k<4;k++){ix.push(si.getComponent(i,k));ws.push(sw.getComponent(i,k));}src.push({a,b,h,ix,ws});}}}
+  if(pts.length<60||src.length<20)return null;
+  let ca=0,cb=0;const np=pts.length/2;for(let i=0;i<np;i++){ca+=pts[i*2];cb+=pts[i*2+1];}ca/=np;cb/=np;
+  const N=K.N,r=new Float32Array(N).fill(-1);
+  for(let i=0;i<np;i++){const da=pts[i*2]-ca,db=pts[i*2+1]-cb,j=((Math.round(Math.atan2(db,da)/(Math.PI*2)*N)%N)+N)%N,rr=Math.hypot(da,db);if(rr>r[j])r[j]=rr;}
+  const W_=k=>((k%N)+N)%N,r0=Float32Array.from(r);for(let j=0;j<N;j++)if(r0[j]<0){let a=j,b=j;while(r0[W_(a-1)]<0&&j-a<N)a--;while(r0[W_(b+1)]<0&&b-j<N)b++;const ra=r0[W_(a-1)],rb=r0[W_(b+1)],t=(j-a+1)/(b-a+2);r[j]=ra+(rb-ra)*t;}
+  const mx=new Float32Array(N),sm=new Float32Array(N);for(let j=0;j<N;j++){let q=0;for(let k=-2;k<=2;k++)q=Math.max(q,r[(j+k+N)%N]);mx[j]=q;}
+  for(let j=0;j<N;j++){let q=0;for(let k=-2;k<=2;k++)q+=mx[(j+k+N)%N];sm[j]=Math.max(r[j],q/5)+K.gap+K.t/2;}
+  const ring=[];for(let j=0;j<N;j++){const th=j/N*Math.PI*2;ring.push([ca+Math.cos(th)*sm[j],cb+Math.sin(th)*sm[j]]);}
+  const Pp=[],C=[],I=[],SI=[],SW=[],col=new THREE.Color(K.col),q=new THREE.Vector3(),ou=new THREE.Vector3();
+  const skin=(a,b,h)=>{const best=[];for(const s of src){const dd=(s.a-a)**2+(s.b-b)**2+(s.h-h)**2;if(best.length<6||dd<best[best.length-1].dd){best.push({s,dd});best.sort((x,y)=>x.dd-y.dd);if(best.length>6)best.pop();}}
+    const acc=new Map();for(const {s,dd} of best){const f=1/(Math.sqrt(dd)+.004);for(let k=0;k<4;k++)if(s.ws[k]>0)acc.set(s.ix[k],(acc.get(s.ix[k])||0)+s.ws[k]*f);}
+    const top=[...acc].sort((x,y)=>y[1]-x[1]).slice(0,4),tot=top.reduce((u,x)=>u+x[1],0)||1;for(let k=0;k<4;k++){SI.push(top[k]?top[k][0]:0);SW.push(top[k]?top[k][1]/tot:0);}};
+  const sec=[];for(let j=0;j<N;j++){const [a,b]=ring[j],[a0,b0]=ring[(j+N-1)%N],[a1,b1]=ring[(j+1)%N],ta=a1-a0,tb=b1-b0,tl=Math.hypot(ta,tb)||1,oa=tb/tl,ob=-ta/tl;
+      /* outward: away from the section's middle */const sgn=(oa*(a-ca)+ob*(b-cb))<0?-1:1;const qs=[];
+      for(const [u,w] of [[-1,-1],[1,-1],[1,1],[-1,1]]){const A=a+sgn*oa*w*K.t/2,B=b+sgn*ob*w*K.t/2,hh=u*K.w/2;
+        q.copy(o).addScaledVector(e1,A).addScaledVector(Z,B).addScaledVector(n,hh);Pp.push(q.x,q.y,q.z);C.push(col.r,col.g,col.b);skin(A,B,hh);qs.push(Pp.length/3-1);}sec.push(qs);}
+  const quad=(a,b,c2,dd)=>I.push(a,b,c2,a,c2,dd);
+  for(let j=0;j<N;j++){const A=sec[j],B=sec[(j+1)%N];for(let e=0;e<4;e++){const e1_=(e+1)%4;quad(A[e],B[e],B[e1_],A[e1_]);}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(Pp,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));
+  g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(SI,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(SW,4));g.setIndex(I);g.computeVertexNormals();
+  const m=new THREE.SkinnedMesh(g,WPN_MAT.matte);m.name='baldric';m.castShadow=false;m.frustumCulled=false;m.userData.tp=true;m.userData.own=true;
+  /* the back run's outside, where the scabbard's leather lies: the strap's hindmost point over the back */
+  let zb=0;for(const [a,b] of ring)if(b<cb)zb=Math.min(zb,b-K.t/2);
+  m.userData.baldric={o:o.toArray(),e1:e1.toArray(),n:n.toArray(),ring,ca,cb,zBack:o.z+zb,tris:I.length/3,src:src.length};
+  P.root.add(m);m.bind(sk,new THREE.Matrix4());m.bindMode='detached';m.bindMatrixInverse.identity();return m;} /* as hbAttach leaves every skinned piece: detached, identity */
 // S2456 — the scabbard (S2451's owed note: the blade hung bare at the hip). Measured from the blade itself in the weapon's own frame (the
 // grip about y 0, the blade up +y): the guard is whatever stands out past three quarters of the blade's width below a quarter of its length,
 // and the mouth sits just over it; from there to the point the scabbard follows the blade's own middle (a cutlass's or a nimcha's curve) at
