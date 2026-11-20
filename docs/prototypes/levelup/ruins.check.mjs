@@ -245,6 +245,8 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
   const W = a.walls, g = a.ground, e = a.edge, AE = a.passage.a;
   // the cliff: at nine points along it, the top over 80 m and the sea's bed under 4.5 m out; from the sea 60 m out, a level ray meets the face
   const xs = [-300, -200, -120, -50, 0, 50, 120, 200, 300], drop = xs.map(x => [+g(x, e(x) + .05).toFixed(1), +g(x, e(x) - 4.5).toFixed(1)]), face = xs.map(x => cast([x, 30, e(x) - 60], [0, 0, 1]));
+  // Session 2457: the face in buttresses and gullies: level rays from the sea at 40 m up, every 5 m along 600 m of it, and how far out of the edge's line each meets the rock
+  const relief = Array.from({ length: 121 }, (_, k) => { const x = -300 + k * 5, h = cast([x, 40, e(x) - 60], [0, 0, 1]); return h ? +(60 - h.d).toFixed(2) : null; });
   // the walls' ends: each where the cliff took it, its line within 4 m of the edge
   const ends = Object.values(W).map(w => w.ends.map(([x, z]) => +(z - e(x)).toFixed(2)));
   // the inner wall's three bands from the top down: straight down at each band's middle, its top over the ground (at three bearings away from the passage)
@@ -256,13 +258,15 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
   const gate = [['middle', 58, 52], ['outer', 118, 100]].map(([n, rx, rz]) => { const p = a.ell(rx, rz, AE, 4), q = a.ell(rx, rz, AE, -4); return cast([p[0], g(...a.ell(rx, rz, AE)) + 1, p[1]], [q[0] - p[0], 0, q[1] - p[1]], 8); });
   const emissive = a.group.children.filter(m => m.material.emissive && m.material.emissive.getHex()).map(m => m.name);
   const cs = a.chev.map(c => { const an = Math.atan2((c.z - a.C[1]) / 52, (c.x - a.C[0]) / 58), p = a.ell(58, 52, an); return { off: +Math.hypot(c.x - p[0], c.z - p[1]).toFixed(2), an: +an.toFixed(3), top: c.top, fallen: c.fallen, edge: +(c.z - e(c.x)).toFixed(2) }; });
-  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), names: a.group.children.map(m => m.name), drop, face, ends, bands, through, over, gate, emissive, cs, P, figure: a.figure, TOP: a.TOP, tumbles: a.tumbles, platform: a.platform,
+  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), names: a.group.children.map(m => m.name), drop, face, relief, ends, bands, through, over, gate, emissive, cs, P, figure: a.figure, TOP: a.TOP, tumbles: a.tumbles, platform: a.platform,
     walls: Object.fromEntries(Object.entries(W).map(([k, w]) => [k, { rx: w.rx, rz: w.rz, thick: w.thick, h: w.h, n: w.segs.length, bottoms: Math.max(...w.segs.filter(s => s.gap !== 'pass').map(s => s.bottom)), breach: w.segs.filter(s => s.gap === 'breach').length,
       stand: +(w.segs.filter(s => s.top > 1.5).length / w.segs.length).toFixed(2), tops: w.segs.filter(s => !s.gap).map(s => s.top) }])) }; });
   const W = S.walls;
   check(`Stormwatch builds the same twice and in budget: ${S.tris.toLocaleString()} triangles in ${S.draws} draws`, S.same && S.tris < 110000 && S.draws <= 14, [S.tris, S.draws, S.same, S.names]);
   check(`the cliff: at nine points its top ${Math.min(...S.drop.map(d => d[0]))} m or more over the sea and the bed ${Math.max(...S.drop.map(d => d[1]))} m or less 4.5 m out; from the sea a level ray meets its face (${S.face.map(h => h && h.n).join(', ')})`,
     S.drop.every(d => d[0] > 80 && d[1] < 0) && S.face.every(h => h && h.n === 'cliff' && h.d < 75), { drop: S.drop, face: S.face });
+  { const rl = S.relief, steps = rl.slice(1).filter((v, k) => v !== null && rl[k] !== null && Math.abs(v - rl[k]) > 1.5).length;
+    check(`the face is not one plane: from the sea at 40 m up, along 600 m, it stands ${Math.min(...rl).toFixed(1)} to ${Math.max(...rl).toFixed(1)} m out of the edge's line, stepping more than 1.5 m between rays 5 m apart ${steps} times`, rl.every(v => v !== null) && Math.max(...rl) - Math.min(...rl) > 8 && steps >= 12, rl); }
   check(`three walls in half-rings, each stopped by the cliff at both ends (${S.ends.map(x => x.join('/')).join(', ')} m from the edge): the seaward half is gone`, S.ends.length === 3 && S.ends.every(x => x.length === 2 && x.every(d => Math.abs(d) < 4)), S.ends);
   check(`the inner wall in three bands from the outside in, their tops ${S.bands.map(b => b.map(x => x && x.h).join('/')).join(', ')} m over the ground (5.4, 3.6, 1.8: two terraces inside)`,
     S.bands.every(b => b.every(x => x && x.n === 'wall') && Math.abs(b[0].h - 5.4) < .5 && Math.abs(b[1].h - 3.6) < .5 && Math.abs(b[2].h - 1.8) < .5), S.bands);

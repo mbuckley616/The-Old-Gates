@@ -768,7 +768,13 @@ export function stormwatch(o = {}) {
   // ── the cliff's face: from the edge down to under the sea, its beds stepping in and out a little; u along the edge, v up it ──
   { const NJ = 30, pos = [], col = [], uv = [], s = .0625; let u = 0; const U = [0];
     for (let i = 1; i <= NX; i++) U.push(U[i - 1] + Math.hypot(XL[i] - XL[i - 1], edge(XL[i]) - edge(XL[i - 1])));
-    const pt = (i, j) => { const x = XL[i], yt = landY(x, edge(x)), y = yt - (yt + 6) * j / NJ, bed = Math.floor(y / 7.3), z = j === 0 ? edge(x) : edge(x) - 2 * (1 - y / TOP) - 3.2 * (fbm(x / 26 + bed * 1.7, bed * .9, 2) - .5) - 9 * (fbm(x / 55 + 2, y / 45, 2) - .5) * sstep(0, 3, j) - .4 + 2.2 * Math.exp(-(((y - 2) / 2.5) ** 2)) * sstep(0, 3, j);
+    // Session 2457: the face in buttresses and gullies, not one plane: along it, stretches of 22 to 60 m; a buttress stands out 3 to 8 m
+    // from a bed some way under the top down to the sea (its sides steep, a third of it left at the waves), a gully cut back 3 to 6 m, and
+    // plain face between; so from the sea the cliff is lit and shaded in tall facets
+    const RF = stream(key + ':face'), FACE = []; for (let u = 0; u < U[NX];) { const w = 22 + RF() * 38, k = RF(), top = TOP - 3 - RF() * 34; FACE.push({ c: u + w / 2, hw: w / 2, a: k < .55 ? -(3 + RF() * 5) : k < .8 ? 3 + RF() * 3 : 0, top, gully: k >= .55 && k < .8 }); u += w; }
+    const face = (u, y) => { let d = 0; for (const f of FACE) { const du = Math.abs(u - f.c); if (du > f.hw + 2 || !f.a) continue; const hw = f.gully ? Math.min(f.hw, 4 + f.hw * .2) : f.hw;
+      d += f.a * (1 - sstep(hw - 3, hw + 1, du)) * sstep(f.top, f.top - 6, y) * (f.gully ? 1 : .34 + .66 * sstep(-2, 24, y)); } return d; };
+    const pt = (i, j) => { const x = XL[i], yt = landY(x, edge(x)), y = yt - (yt + 6) * j / NJ, bed = Math.floor(y / 7.3), z = j === 0 ? edge(x) : edge(x) - 2 * (1 - y / TOP) - 3.2 * (fbm(x / 26 + bed * 1.7, bed * .9, 2) - .5) - 9 * (fbm(x / 55 + 2, y / 45, 2) - .5) * sstep(0, 3, j) - .4 + 2.2 * Math.exp(-(((y - 2) / 2.5) ** 2)) * sstep(0, 3, j) + face(U[i], y) * sstep(0, 3, j);
       const wet = 1 - sstep(1.5, 4, y), lich = sstep(TOP - 14, TOP - 2, y) * .5, n = (.85 + .3 * fbm(x / 8, y / 8, 3)) * (.82 + .3 * fbm(bed * 3.1, 1.1, 1)), c = [.56, .56, .53].map((v, k) => (v * (1 - wet) + [.12, .12, .1][k] * wet) * n * (1 - lich * .25) + lich * [.06, .07, .02][k]);
       return [x, j === 0 ? yt : y, z, c, U[i] * s, y * s]; };
     for (let i = 0; i < NX; i++) for (let j = 0; j < NJ; j++) { const a = pt(i, j), b = pt(i + 1, j), c = pt(i + 1, j + 1), d = pt(i, j + 1);
@@ -871,10 +877,22 @@ export function stormwatch(o = {}) {
     for (const y0 of lines) for (const ox of [0, 512, -512]) { x.lineWidth = 2.5 + rt() * 2.5; x.beginPath(); for (let xx = 0; xx <= 512; xx += 16) { const yy = y0 + 9 * Math.sin(xx / 512 * Math.PI * 2 * 2 + y0) + (xx === 0 || xx === 512 ? 0 : (rt() - .5) * 4); xx ? x.lineTo(xx, yy + ox) : x.moveTo(xx, yy + ox); } x.stroke(); }
     x.strokeStyle = 'rgba(56,56,52,.7)'; for (let k = 0; k < lines.length; k++) { const y0 = lines[k], y1 = k + 1 < lines.length ? lines[k + 1] : 512 + lines[0]; let xx = rt() * 80; while (xx < 512) { x.lineWidth = 1.5 + rt() * 1.5; const dx = (rt() - .5) * 30; for (const ox of [0, 512, -512]) for (const oy of [0, -512]) { x.beginPath(); x.moveTo(xx + ox, y0 + oy + 4); x.lineTo(xx + ox + dx, y1 + oy - 4); x.stroke(); } xx += 60 + rt() * 140; } }
     grain(x, 7000, .1); });
+  // Session 2457: the turf mapped, not flat: a grey canvas the vertex colour tints, of short blades in every value, tussocks (a dark
+  // ring under a lit top), patches of bleached grass, bare earth showing and a scatter of thrift (pink) and sea campion (white), 6 m a tile
+  const turfT = canvasTex(x => { x.fillStyle = '#a8a8a8'; x.fillRect(0, 0, 512, 512);
+    const blob = (cx, cy, rr, st) => { for (const ox of [0, 512, -512]) for (const oy of [0, 512, -512]) { x.fillStyle = st; x.beginPath(); x.arc(cx + ox, cy + oy, rr, 0, 7); x.fill(); } };
+    for (let q = 0; q < 90; q++) { const v = 150 + rt() * 50; blob(rt() * 512, rt() * 512, 14 + rt() * 40, `rgba(${(v * 1.06) | 0},${v | 0},${(v * .82) | 0},.22)`); }
+    for (let q = 0; q < 50; q++) { const v = 96 + rt() * 30; blob(rt() * 512, rt() * 512, 6 + rt() * 22, `rgba(${(v * 1.08) | 0},${(v * .98) | 0},${(v * .86) | 0},.28)`); }
+    for (let q = 0; q < 70; q++) { const cx = rt() * 512, cy = rt() * 512, rr = 5 + rt() * 9; blob(cx + 1, cy + 2, rr * (1 + rt() * .4), 'rgba(60,62,56,.16)'); blob(cx - 1, cy - 1, rr * .8, 'rgba(200,200,190,.18)'); }
+    x.lineCap = 'round'; for (let q = 0; q < 9000; q++) { const bx = rt() * 512, by = rt() * 512, l = 3 + rt() * 7, an = -Math.PI / 2 + (rt() - .5) * 1.4, v = 90 + rt() * 130; x.strokeStyle = `rgba(${v | 0},${(v * 1.02) | 0},${(v * .9) | 0},${.25 + rt() * .35})`; x.lineWidth = .8 + rt() * .9;
+      x.beginPath(); x.moveTo(bx, by); x.lineTo(bx + Math.cos(an) * l, by + Math.sin(an) * l); x.stroke(); }
+    for (let q = 0; q < 26; q++) { const cx = rt() * 512, cy = rt() * 512, pink = rt() < .6; for (let k = 0; k < 6 + rt() * 10; k++) blob(cx + (rt() - .5) * 14, cy + (rt() - .5) * 10, 1.2 + rt() * 1.4, pink ? 'rgba(236,150,186,.9)' : 'rgba(246,246,238,.9)'); }
+    grain(x, 6000, .1); });
+  const turfK = (() => { const d = turfT.image.getContext('2d').getImageData(0, 0, 512, 512).data; let m = 0; for (let i = 0; i < d.length; i += 4) m += ((d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11) / 255) ** 2.2; m /= d.length / 4; return 1 / (m * m); })();
   // the land's pavement: the flagstone texture's clints and grikes drawn only where the vertex says bare rock (its 'pave'), the turf plain
   const landM = new THREE.MeshStandardMaterial({ map: paveT, color: 0xffffff, roughness: .97, vertexColors: true });
-  landM.onBeforeCompile = sh => { sh.vertexShader = 'attribute float pave;\nvarying float vPave;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vPave = pave;');
-    sh.fragmentShader = 'varying float vPave;\n' + sh.fragmentShader.replace('#include <map_fragment>', '#ifdef USE_MAP\n  diffuseColor.rgb *= mix(vec3(1.0), texture2D(map, vMapUv).rgb * 1.6, vPave);\n#endif'); };
+  landM.onBeforeCompile = sh => { sh.uniforms.turfMap = { value: turfT }; sh.vertexShader = 'attribute float pave;\nvarying float vPave;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vPave = pave;');
+    sh.fragmentShader = 'varying float vPave;\nuniform sampler2D turfMap;\n' + sh.fragmentShader.replace('#include <map_fragment>', '#ifdef USE_MAP\n  vec3 tf = texture2D(turfMap, vMapUv).rgb * texture2D(turfMap, vMapUv * 0.27 + 0.31).rgb * ' + turfK.toFixed(3) + ';\n  diffuseColor.rgb *= mix(tf, texture2D(map, vMapUv).rgb * 1.6, vPave);\n#endif'); };
   const cliffM = mat('searock', { ns: 1.1, color: 0xffffff, rough: .95 }); cliffM.vertexColors = true;
   const M = { land: landM, cliff: cliffM, sea: new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .2, .25), roughness: .18, metalness: .1 }),
     foam: new THREE.MeshBasicMaterial({ color: new THREE.Color(.82, .86, .86), transparent: true, opacity: .45, depthWrite: false }),
