@@ -1,4 +1,4 @@
-// Session 2445 adds the Forgotten Aqueducts (ruins.js forgottenAqueducts): a gate's nave flooded under the land, open to the sky in a sinkhole.
+// Session 2448 adds the Forgotten Aqueducts (ruins.js forgottenAqueducts): a gate's nave flooded under the land, open to the sky in a sinkhole.
 // Session 2441: the isles' rock laid round each isle and stack, so the beds run on across the facets.
 // Session 2440: the isles' rock bedded and jointed, not the kit's veined rock; the crowns' turf its own draw.
 // Session 2435: the isles' stacks notched at the tide and broken on a slant.
@@ -195,7 +195,7 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
     L.length === 9 && L.every(t => t.low < 0 && t.low > -1.6 && t.top > .6 && Math.hypot(t.x, t.z - br[0].z) < 21.5), L);
   check(`a landing on every isle: straight down onto the flight, ${I.down.flat().filter(n => n === 'stair').length} of 20 rays meet its steps; it runs from ${Math.min(...I.stairEnds.map(e => e[0]))} m (the low water -2) to ${Math.min(...I.stairEnds.map(e => e[1]))}`, I.down.every(d => d.every(n => n === 'stair')) && I.stairEnds.every(e => e[0] < -2 && e[1] > I.S - .4), { down: I.down, ends: I.stairEnds });
   check(`the scale: each ring ${2 * I.R1} m across and its opening ${2 * I.R0} m, its heart ${I.CY.toFixed(1)} m over the mean sea; ${(2 * I.R1 / I.figure.h).toFixed(0)} times the 1.75 m post on the first plinth`, I.figure.h === 1.75 && Math.abs(I.figure.y - I.P) < .01 && 2 * I.R1 / I.figure.h > 15, I.figure); }
-// the Forgotten Aqueducts (Session 2445; OG-104, the Gatelands): a gate's nave under the limestone, flooded, its vault fallen into a sinkhole
+// the Forgotten Aqueducts (Session 2448; OG-104, the Gatelands): a gate's nave under the limestone, flooded, its vault fallen into a sinkhole
 { const F = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./ruins.js');
   const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 9) h = (h * 31 + Math.round(a[i] * 1e3)) | 0; }); return h; };
   const a = K.forgottenAqueducts(), b = K.forgottenAqueducts(); a.group.updateMatrixWorld(true); const rc = new THREE.Raycaster(), solid = a.group.children.filter(m => !['water', 'fall', 'foam'].includes(m.name));
@@ -210,7 +210,7 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
   const S = a.stair, tread = [], wall = []; for (let k = 0; k < 10; k++) { const t = (k + .5) / 10, an = S.a0 + (S.a1 - S.a0) * t, rr = a.lip(an) - 2.4, x = Math.sin(an) * rr, z = Math.cos(an) * rr, hit = cast([x, 20, z], [0, -1, 0]);
     tread.push(hit && { n: hit.n, y: hit.y }); const w = hit && cast([x, hit.y + .6, z], [Math.sin(an), 0, Math.cos(an)], 8); wall.push(w && { n: w.n, d: w.d }); }
   const emissive = a.group.children.filter(m => m.material.emissive && m.material.emissive.getHex()).map(m => m.name);
-  // Session 2446: the water coloured by its depth (the mean brightness of its points over 5.5 m or more against those over less than 1.5 m),
+  // Session 2449: the water coloured by its depth (the mean brightness of its points over 5.5 m or more against those over less than 1.5 m),
   // and the fallen blocks' stone one ashlar block a face
   const wm = a.group.children.find(m => m.name === 'water'), WP = wm.geometry.attributes.position, WC = wm.geometry.attributes.color, sh = [], dp = [];
   for (let i = 0; i < WP.count; i++) { const d = a.water - a.ground(WP.getX(i), WP.getZ(i)), L = WC.getX(i) + WC.getY(i) + WC.getZ(i); if (d >= 5.5) dp.push(L); else if (d < 1.5) sh.push(L); }

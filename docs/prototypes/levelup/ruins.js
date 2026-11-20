@@ -584,7 +584,7 @@ export function gateIsles(o = {}) {
   return { group, tris: Math.round(tris), draws, ground, S, P, CY, R0, RM, R1, D, isles, coast: { z: COAST }, figure };
 }
 
-// The Forgotten Aqueducts (Session 2445; OG-104's Gatelands panel, "a sprawling network of underground waterways, still partially
+// The Forgotten Aqueducts (Session 2448; OG-104's Gatelands panel, "a sprawling network of underground waterways, still partially
 // flooded"): the sheet paints halls of tall arches under the ground, water standing in them and falling from above, lit blue-green. The
 // canon (§3.1) gives the Weavers the gates and nothing else, so the halls are drawn as a gate's: one nave of the gate kit at twice its
 // size, buried under the Gatelands' limestone, its vault fallen in where the land has opened over it in a sinkhole, the nave and its aisles
@@ -647,7 +647,7 @@ export function forgottenAqueducts(o = {}) {
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); worldUV(g, .1); B.set('bed', [g]); }
   // the nave's floor: the kit's slabs at -70 the halls' length and width (under the bed's heightfield inside the hole)
   { const g = new THREE.BoxGeometry(2 * X1 + 4, 1, 2 * OUT); g.translate(0, FLOOR - .5, 0); put('slab', g); }
-  // the water (Session 2446): coloured by its depth over what is under it, pale green over the scree's toe and the shelf, dark over the
+  // the water (Session 2449): coloured by its depth over what is under it, pale green over the scree's toe and the shelf, dark over the
   // nave's 6 m; it was one colour, and the blue-green came from a light over it
   { const g = new THREE.PlaneGeometry(2 * X1 + 20, 2 * R + 30, 70, 30); g.rotateX(-Math.PI / 2); g.translate(0, WATER, 0); const P = g.attributes.position, col = [];
     for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), d = Math.max(0, WATER - ground(x, z)), t = sstep(.3, 6, d); col.push(.2 + (.035 - .2) * t, .34 + (.1 - .34) * t, .28 + (.105 - .28) * t); }
@@ -706,7 +706,7 @@ export function forgottenAqueducts(o = {}) {
   const landM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 }); landM.side = THREE.DoubleSide; landM.shadowSide = THREE.DoubleSide;
   const bedM = mat('rock', { ns: .7, color: 0xffffff, rough: .92 }); bedM.vertexColors = true;
   const col = new THREE.Color(...GK_SCHOOLS.uisce.stone);
-  // Session 2446: a fallen block is one stone: each face of its box takes one block of the ashlar (the texture is 2 blocks by 4 courses a
+  // Session 2449: a fallen block is one stone: each face of its box takes one block of the ashlar (the texture is 2 blocks by 4 courses a
   // tile; the course the box takes is offset by half a block, hence the quarter), so its joints run round its edges; it showed four courses
   // of small blocks on every face
   const oneStone = m => { for (const k of ['map', 'normalMap']) { const t = m[k].clone(); t.repeat.set(.5, .25); t.offset.set(.25, 0); t.needsUpdate = true; m[k] = t; } return m; };

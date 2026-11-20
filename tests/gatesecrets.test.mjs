@@ -131,6 +131,8 @@ const K6 = pick ? await page.evaluate((id) => {
   // S2409 — the sliding wall at the same mouth: rock, its pale stone, the flames' lean within 4 m, the draught within 2 m, the dust, E on the stone
   { clear(); gen.secrets = [Object.assign({}, base, { kind: 'slide', school: null })]; gateSecretsBuild(gen, currentPortal); currentFloor = 1; const r = GATE_SECRETS[0], o = {}, [sx, sz] = mid(r);
     o.shut = dSolid(sx, sz); const wc = r.mat.color, pc = r.paleMat.color; o.pale = +(pc.r / wc.r).toFixed(4); o.paleOk = Math.abs(pc.r / wc.r - 1.15) < 1e-3 && Math.abs(pc.g / wc.g - 1.15) < 1e-3 && r.paleMat.map === r.mat.map;
+    { const sh = dScene.children.find(q => q.userData && q.userData.dunShell === 'walls'), C = r.shut.geometry.attributes.color, SC = r.stone.mesh.geometry.attributes.color, SW = sh.geometry.attributes.color; let t = 0; for (let i = 0; i < SW.count; i++) t += SW.getX(i); /* S2445: the shell's material draws by vertex colour; a box without them drew black */
+      o.tint = C ? +C.getX(0).toFixed(3) : 0; o.shellTint = +(t / SW.count).toFixed(3); o.tintOk = !!(C && SC && r.shut.material.vertexColors && C.getX(0) > .3 && Math.abs(C.getX(0) - t / SW.count) < .35); }
     const st = r.stone, ux = Math.sign(st.x - r.kx), uz = Math.sign(st.z - r.kz), mk = d => { const m = new THREE.Mesh(new THREE.SphereGeometry(.05, 5, 4), new THREE.MeshBasicMaterial()); m.position.set(r.kx + ux * d, 2, r.kz + uz * d); dScene.add(m);
       const T = { l: new THREE.PointLight(0xff8833, 0, 1), fl: m, ph: 0 }; TORCHES.push(T); return T; };
     const near = mk(2.5), far = mk(6); r.flames = null; _reset(st.x + ux * 1.0, st.z + uz * 1.0, 0, 0); o.air1 = +slideTick(r, true).toFixed(2);
@@ -219,7 +221,7 @@ if (K6) {
   check(`Gaoth: the gallery at ${G.gallery} m is out of a plain jump's reach (${G.bare.top} m) and reached from Séideán's updraft (${G.up.top} m and the mantle)`, !G.bare.open && G.bare.y < 1 && G.up.lay && G.up.open && G.up.y === G.gallery, G);
   check(`a seal's chest is rolled on its own key, a tier up; opened, what is left is the world's (${G.n0} in it, ${G.left} left)`, G.look && G.same && G.kept && G.left === G.n0 - 1, G);
   const W = K6.slide;
-  check(`the sliding wall: rock, one stone 15% paler (×${W.pale}), a flame 2.5 m off leans toward it (${W.lean}) and one 6 m off does not (${W.leanFar}), dust within ${W.dust} m of it, the air heard at 1 m (${W.air1}) and not at 3`, W.shut && W.paleOk && W.lean > .25 && W.leanFar === 0 && W.dust <= 1.2 && W.air1 > 0 && W.air3 === 0, W);
+  check(`the sliding wall: rock in the shell's own colour (${W.tint} against the walls' ${W.shellTint}), one stone 15% paler (×${W.pale}), a flame 2.5 m off leans toward it (${W.lean}) and one 6 m off does not (${W.leanFar}), dust within ${W.dust} m of it, the air heard at 1 m (${W.air1}) and not at 3`, W.shut && W.paleOk && W.tintOk && W.lean > .25 && W.leanFar === 0 && W.dust <= 1.2 && W.air1 > 0 && W.air3 === 0, W);
   check(`E on the pale stone, aimed at (${W.prompt}), opens it: it slides away in 1.2 s, kept in the world's record, the flames upright again, its chest at the floor's own tier`, W.aimed && W.offAim && /pale stone/.test(W.prompt) && W.open && W.sliding && W.gone && W.kept && W.leanAfter === 0 && W.tier, W);
 }
 if (K6) { const T = K6.stair;

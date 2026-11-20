@@ -3507,7 +3507,7 @@
     for(let i=HL.length-1;i>=0;i--){const h=HL[i];if(Math.hypot(h.x-x,h.z-z)>=reach)continue;const y=worldH(h.x,h.z);
       if(h.bed?y>-1.2:solidAt(h.x,h.z)||y<SEA_Y+.2&&h.g.position.y>=SEA_Y+.2){HL.splice(i,1);h.offPad=true;h.g.visible=false;if(h.gl)h.gl.intensity=0;n++;}else h.g.position.y=y;if(h.inst)syncHerbInstance(h);}
     return n+wonderSeatVeins(x,z,reach);}
-  // Session 2447 (the critic, 20 Nov, s1778): the veins, as S2410 did the herbs. A chunk lays its veins at worldH before a wonder's stamp
+  // Session 2450 (the critic, 20 Nov, s1778): the veins, as S2410 did the herbs. A chunk lays its veins at worldH before a wonder's stamp
   // moves the ground, and nothing set them again: a silver vein lay 2.4 m under the first Drowned Spire's sill, its prompt still offered,
   // and an iron one hung 2 m over the spit. Each vein within reach is set on the ground as it is now (veinMesh's 0.12 m into it), or taken
   // away where a solid stands, where a deck or a passage's floor stands over it (the ground you walk there is not its ground), or where its

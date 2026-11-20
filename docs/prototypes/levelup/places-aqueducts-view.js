@@ -1,4 +1,4 @@
-// The Forgotten Aqueducts (Session 2445; OG-104, the Gatelands): ruins.js's forgottenAqueducts, a gate's nave buried under the limestone, its
+// The Forgotten Aqueducts (Session 2448; OG-104, the Gatelands): ruins.js's forgottenAqueducts, a gate's nave buried under the limestone, its
 // vault fallen in where the land has opened in a sinkhole, the halls flooded and running on under the land both ways.
 // ?place=aqueducts&view=lip (default): on the south lip by the stair's head, down into the hole and the halls going west; view=stair: halfway
 // down the flight, across to the nave's west mouth; view=scree: by the scale post at the water, along the nave west into the halls;
