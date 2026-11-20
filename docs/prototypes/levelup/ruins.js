@@ -925,26 +925,65 @@ export function stormwatch(o = {}) {
 //     door the deck runs into; the hall at the broken viaduct's west end is roofless, its walls fallen toward the back;
 //   - towers on the rims behind the halls, 10 to 14 m square and 35 to 60 m high, one in three broken off;
 //   - a 1.75 m post on the first viaduct's deck at its middle as the scale.
-// -> { group, tris, draws, ground(x, z), iceY(x, z), surf(x, z), bed, head, viaducts: [{ z, w, x0, x1, S, pier, deck, broken, gap { a, b } }],
+//   - (Session 2465) the headwall a cliff of its own, in beds with snowy ledges, buttresses and gullies, a cap of snow on its top.
+// -> { group, tris, draws, ground(x, z), iceY(x, z), surf(x, z), bed, head, cliff { beds, buttresses, gullies, zh(x), cl(x), front(x, h), back(x, h), base(x) }, viaducts: [{ z, w, x0, x1, S, pier, deck, broken, gap { a, b } }],
 //   fallen: [{ x, z, low, at }], face { z, d, x0, x1, top, portal { w, sill, apex }, side { w, apex } }, tongue { top, z0, z1 }, halls: [{ x, z, side, broken }],
 //   towers: [{ x, z, w, h, broken }], figure }
 export function frostbornVault(o = {}) {
   const key = o.key || 'ruins:frostborn', r = stream(key), group = new THREE.Group();
   const BED = -85, GW = 75, GB = 22, HEAD = -305, FZ = HEAD + 2, FD = 34, VW = 9, VX = 100, P = 7, S = (2 * GW - 4 * P) / 5, HL = 60, HW = 36, HH = 30, T = 3;
-  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); x.computeVertexNormals(); if (!x.attributes.uv || k === 'stone' || k === 'snow' || k === 'deck') worldUV(x, k === 'stone' ? .055 : .2); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); x.computeVertexNormals(); if (!x.attributes.uv || k === 'stone' || k === 'snow' || k === 'deck') worldUV(x, k === 'stone' ? .055 : k === 'rock' ? .07 : .2); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
   const bb = g => { g.computeBoundingBox(); return g.boundingBox; };
-  // the land: the gorge's section by |x|, closed at its head; the rims rising gently, the peaks beyond; the headwall behind the face
-  const ground = (x, z) => { const ax = Math.abs(x) + 6 * fbm(z / 40 + 3, x / 90, 3), open = 1 - sstep(HEAD + 4, HEAD - 12, z), t = sstep(GB, GW, ax);
-    const gorge = BED * (1 - t) * open, rim0 = 2.5 * fbm(x / 30, z / 30, 3) + Math.max(0, ax - GW - 60) * .05 + sstep(250, 650, ax) * 260 * (.6 + .4 * fbm(x / 200, z / 200, 3));
+  // the land: the gorge's section by |x|, closed at its head; the rims rising gently, the peaks beyond
+  const rimY = (x, z) => { const ax = Math.abs(x) + 6 * fbm(z / 40 + 3, x / 90, 3), rim0 = 2.5 * fbm(x / 30, z / 30, 3) + Math.max(0, ax - GW - 60) * .05 + sstep(250, 650, ax) * 260 * (.6 + .4 * fbm(x / 200, z / 200, 3));
     /* a pad at the rims' level under each viaduct's abutments and its two halls, so the deck runs onto the rim and the halls stand level */
-    const pad = (1 - sstep(VX + 62, VX + 74, Math.abs(x))) * Math.max(...[-40, -180].map(zc => 1 - sstep(HW / 2 + 4, HW / 2 + 14, Math.abs(z - zc)))), rim = rim0 * (1 - pad) - .4 * pad;
-    const zh = HEAD - 6 - (FD + 8) * (1 - sstep(84, 104, Math.abs(x))) + 14 * fbm(x / 45 + 7, 2.3, 3), cl = 130 + 40 * fbm(x / 70 + 1, 5.1, 3);
-    const head = sstep(zh, zh - 22, z + 6 * fbm(x / 12, z / 12 + 2, 2)) * cl + sstep(zh - 22, HEAD - 440, z) * 180 * (.6 + .5 * fbm(x / 150 + 9, z / 150, 3)); return gorge + rim + head; };
-  const iceTop = z => BED + 80 * sstep(150, HEAD + 5, z), iceY = (x, z) => iceTop(z) + 1.2 * fbm(x / 25 + 4, z / 25, 2), surf = (x, z) => Math.max(ground(x, z), Math.abs(x) < GW + 5 && z > HEAD - 5 ? iceY(x, z) : -Infinity);
+    const pad = (1 - sstep(VX + 62, VX + 74, Math.abs(x))) * Math.max(...[-40, -180].map(zc => 1 - sstep(HW / 2 + 4, HW / 2 + 14, Math.abs(z - zc)))); return rim0 * (1 - pad) - .4 * pad; };
+  const gorgeY = (x, z) => { const ax = Math.abs(x) + 6 * fbm(z / 40 + 3, x / 90, 3); return BED * (1 - sstep(GB, GW, ax)) * (1 - sstep(HEAD + 4, HEAD - 12, z)); };
+  // Session 2465: the headwall a cliff of its own. Drawn by the land's 8 m grid it was 130 m of rock in two or three rows, which from afar
+  // read as pleated curtains. Now it stands in beds 9 to 23 m high, each leaning back a little and set back 1 to 3.5 m at its top in a
+  // ledge that holds the snow, the ledges pinching out along the wall; buttresses stand out 3 to 8 m from some way under the top (none
+  // behind the face), gullies are cut back 3 to 6 m its whole height, and a cap of snow over its top runs back onto the land. Its front
+  // line zh(x) is S2461's, its height cl(x) too. The land is drawn 10 m behind the cliff at every height (and behind its neighbours 8 m
+  // either side), so the grid's coarse triangles never show through it; ground() reads the cliff's own face.
+  const zh = x => HEAD - 6 - (FD + 8) * (1 - sstep(84, 104, Math.abs(x))) + 14 * fbm(x / 45 + 7, 2.3, 3), cl = x => 130 + 40 * fbm(x / 70 + 1, 5.1, 3), base = x => rimY(x, zh(x));
+  const BEDS = []; { const rs = stream(key + ':beds'); for (let h = -12; h < 240;) { const t = 10 + rs() * 16; BEDS.push({ s: h, e: h + t, set: 3 + rs() * 5, k: rs() * 9, tint: .82 + rs() * .34 }); h += t + 1.2; } }
+  const LAT = []; { const rl = stream(key + ':buttress'); for (let x = -820; x < 820;) { const w = 22 + rl() * 38, k = rl(), c = x + w / 2;
+      LAT.push({ c, hw: w / 2, a: k < .45 ? -(6 + rl() * 10) * sstep(104, 130, Math.abs(c)) : k < .7 ? 5 + rl() * 7 : 0, top: cl(c) - 8 - rl() * 60, gully: k >= .45 && k < .7 }); x += w; } }
+  const back = (x, h) => { let d = .1 * (h + 12) + 3.2 * (fbm(x / 14 + 3, h / 11, 3) - .5);
+    for (const b of BEDS) { if (h < b.e - .01) break; d += b.set * (.3 + .8 * sstep(.3, .62, fbm(x / 30 + b.k, b.k * 1.3, 2))) * sstep(b.e, b.e + 1.2, h); }
+    for (const f of LAT) { if (!f.a) continue; const du = Math.abs(x - f.c), hw = f.gully ? Math.min(f.hw, 4 + f.hw * .2) : f.hw; if (du > hw + 1) continue; d += f.a * (1 - sstep(hw - 3, hw + 1, du)) * (f.gully ? 1 : sstep(f.top, f.top - 6, h)); } return d; };
+  const front = (x, h) => zh(x) - back(x, Math.min(h, cl(x)));
+  // each column's face as a table every half metre up (memoised by x), and the least of a column's and its neighbours' for the land
+  const HT = 420, COL = new Map(), col = x => { const k = Math.round(x * 100); let t = COL.get(k); if (!t) { t = new Float32Array(HT); for (let i = 0; i < HT; i++) t[i] = front(x, -12 + i / 2); COL.set(k, t); } return t; };
+  const NB = new Map(), nb = x => { const k = Math.round(x * 100); let t = NB.get(k); if (!t) { t = Float32Array.from(col(x)); for (const dx of [-8, -4, 4, 8]) { const u = col(x + dx); for (let i = 0; i < HT; i++) t[i] = Math.min(t[i], u[i]); } NB.set(k, t); } return t; };
+  // the height (over base) at which the cliff stands at z, m metres in front of it (null: z is in front of its foot; cl: behind its top)
+  const headH = (x, z, m, t) => { const c = cl(x), n = Math.min(HT - 1, Math.floor((c + 12) * 2)); if (t[0] - m - z < 0) return null; if (t[n] - m - z >= 0) return c;
+    let i = 0; while (i < n && t[i + 1] - m - z >= 0) i++; const a = t[i] - m - z, b = t[i + 1] - m - z; return -12 + (i + a / (a - b)) / 2; };
+  const CE = new Map(), capEnd = x => { const k = Math.round(x * 100); let v = CE.get(k); if (v === undefined) { v = Math.min(...[-8, -4, 0, 4, 8].map(dx => front(x + dx, 999))) - 14; CE.set(k, v); } return v; };
+  const farRise = (x, z) => sstep(capEnd(x), HEAD - 440, z) * 180 * (.6 + .5 * fbm(x / 150 + 9, z / 150, 3));
+  const landY = (x, z) => { const g = gorgeY(x, z) + rimY(x, z); if (z > zh(x) + 10) return g; const w = sstep(zh(x) + 10, zh(x), z), b = base(x), y0 = g * (1 - w) + b * w;
+    if (z <= capEnd(x)) return y0 + cl(x) - 1.5 + farRise(x, z); const h = headH(x, z, 10, nb(x)); return h === null ? y0 : Math.max(y0, Math.min(b + h, b + cl(x) - 1.5)); };
+  const ground = (x, z) => { if (z > zh(x) + 9) return gorgeY(x, z) + rimY(x, z); const b = base(x), c = cl(x), fc = front(x, 999);
+    if (z <= capEnd(x)) return landY(x, z); if (z <= fc) return b + c - 1.5 * sstep(fc - 8, capEnd(x), z); const h = headH(x, z, 0, col(x)); return h === null ? gorgeY(x, z) + rimY(x, z) : Math.max(gorgeY(x, z) + rimY(x, z), b + h); };
   { const N = 200, g = new THREE.PlaneGeometry(1600, 1600, N, N); g.rotateX(-Math.PI / 2); g.translate(0, 0, 200); const Pp = g.attributes.position, col = [], e = 1.5;
-    for (let i = 0; i < Pp.count; i++) { const x = Pp.getX(i), z = Pp.getZ(i), y = ground(x, z); Pp.setY(i, y); const sl = Math.hypot(ground(x + e, z) - ground(x - e, z), ground(x, z + e) - ground(x, z - e)) / (2 * e);
+    for (let i = 0; i < Pp.count; i++) { const x = Pp.getX(i), z = Pp.getZ(i), y = landY(x, z); Pp.setY(i, y); const sl = Math.hypot(landY(x + e, z) - landY(x - e, z), landY(x, z + e) - landY(x, z - e)) / (2 * e);
       const rock = sstep(.5, .85, sl + .3 * fbm(x / 18, z / 18, 3)), v = .8 + .25 * fbm(x / 9 + y / 20, z / 9, 3); col.push(...[.94, .96, .99].map((c, j) => c * (1 - rock) + [.1, .105, .115][j] * v * rock)); }
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); worldUV(g, .06); B.set('land', [g]); }
+  const iceTop = z => BED + 80 * sstep(150, HEAD + 5, z), iceY = (x, z) => iceTop(z) + 1.2 * fbm(x / 25 + 4, z / 25, 2), surf = (x, z) => Math.max(ground(x, z), Math.abs(x) < GW + 5 && z > HEAD - 5 ? iceY(x, z) : -Infinity);
+  // the cliff: columns along x (3 m in the middle, 6 m out toward the peaks), rows up the beds (each bed's face in rows of 3.5 m or less,
+  // its ledge in two), clamped at its top, then the cap's rows back to the land; flat triangles, snow where they face up
+  const cliff = { beds: BEDS.length, buttresses: LAT.filter(f => f.a < 0).length, gullies: LAT.filter(f => f.gully).length };
+  { const XS = []; for (let x = -800; x <= 800 + 1e-6;) { XS.push(x); x += Math.abs(x) < 260 ? 3 : 6; }
+    const HS = [-12]; for (const b of BEDS) { if (b.s > 175) break; const n = Math.ceil((b.e - b.s) / 3.5); for (let k = 1; k <= n; k++) HS.push(b.s + (b.e - b.s) * k / n); HS.push(b.e + .6, b.e + 1.2); }
+    const CAP = [.12, .3, .55, .8, 1], pt = (x, j) => { const b = base(x), c = cl(x); if (j < HS.length) { const h = Math.min(HS[j], c); return [x, b + h, front(x, h)]; }
+      const t = CAP[j - HS.length], f0 = front(x, c), f1 = capEnd(x); return [x, b + c - 1.5 * sstep(.6, 1, t), f0 + (f1 - f0) * t]; };
+    const NJ = HS.length + CAP.length, P = XS.map(x => Array.from({ length: NJ }, (_, j) => pt(x, j))), pos = [], col = [], va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3();
+    const bedAt = y => BEDS.find(b => y < b.e + 1.2) || BEDS[BEDS.length - 1];
+    const tri = (A, Bq, C) => { va.fromArray(Bq).sub(vc.fromArray(A)); vb.fromArray(C).sub(vc); va.cross(vb); const l = va.length(); if (l < 1e-6) return; const ny = va.y / l, mx = (A[0] + Bq[0] + C[0]) / 3, my = (A[1] + Bq[1] + C[1]) / 3, mz = (A[2] + Bq[2] + C[2]) / 3;
+      const snow = sstep(.4, .62, ny + .22 * (fbm(mx / 7, my / 7 + mz / 9, 2) - .5)), v = bedAt(my - base(mx)).tint * (.78 + .38 * fbm(mx / 5 + my / 13, mz / 6 + my / 5, 3)), c = [.94, .96, .99].map((s0, k) => s0 * snow + [.16, .165, .178][k] * v * (1 - snow));
+      pos.push(...A, ...Bq, ...C); for (let k = 0; k < 3; k++) col.push(...c); };
+    for (let i = 0; i < XS.length - 1; i++) for (let j = 0; j < NJ - 1; j++) { const a = P[i][j], b = P[i + 1][j], c = P[i + 1][j + 1], d = P[i][j + 1]; tri(a, c, d); tri(a, b, c); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); put('rock', g); }
   // the glacier: a grid over the gorge, buried where the rock stands over it; crevasses across the flow, bluer in their shade
   { const g = new THREE.PlaneGeometry(2 * GW + 10, 470, 64, 200); g.rotateX(-Math.PI / 2); g.translate(0, 0, HEAD - 5 + 235); const Pp = g.attributes.position, col = [];
     for (let i = 0; i < Pp.count; i++) { const x = Pp.getX(i), z = Pp.getZ(i), gy = ground(x, z); let y = iceY(x, z); const cr = sstep(.86, .97, Math.abs(Math.sin(z / 6.5 + 3 * fbm(x / 40, z / 40, 2)))) * (1 - sstep(GW * .55, GW * .9, Math.abs(x)));
@@ -1018,12 +1057,14 @@ export function frostbornVault(o = {}) {
   const sigT = new THREE.CanvasTexture(cv); sigT.anisotropy = 8;
   const landM = mat('plaster', { ns: .35, color: 0xffffff, rough: .95 }); landM.vertexColors = true;
   const iceM = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: .22, metalness: .04 });
-  const M = { land: landM, ice: iceM, ice2: new THREE.MeshStandardMaterial({ color: new THREE.Color(.7, .84, .94), roughness: .18, metalness: .04 }),
+  const rockM = mat('rock', { ns: 1.2, color: 0xffffff, rough: .95 }); rockM.vertexColors = true;
+  rockM.side = THREE.DoubleSide;
+  const M = { land: landM, rock: rockM, ice: iceM, ice2: new THREE.MeshStandardMaterial({ color: new THREE.Color(.7, .84, .94), roughness: .18, metalness: .04 }),
     stone: mat('ashlar', { ns: .8, color: 0xc2c7ce, rough: .85 }), deck: mat('slab', { ns: .7, color: 0xa9aeb5, rough: .85 }), snow: mat('plaster', { ns: .25, color: 0xf6f8fc, rough: .95 }),
     roof: mat('plaster', { ns: .3, color: 0xf0f3f8, rough: .95 }), dark: new THREE.MeshBasicMaterial({ color: 0x050607, side: THREE.BackSide }), win: new THREE.MeshBasicMaterial({ color: 0x08090b }),
     sigil: cutMat(new THREE.Color(0xc2c7ce), sigT), mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
   M.stone.side = THREE.DoubleSide;
   let tris = 0, draws = 0;
   for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['land', 'ice', 'sigil', 'dark', 'win'].includes(k); mesh.receiveShadow = true; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
-  return { group, tris: Math.round(tris), draws, ground, iceY, surf, bed: BED, head: HEAD, viaducts, fallen, face, tongue, halls, towers, figure };
+  return { group, tris: Math.round(tris), draws, ground, iceY, surf, bed: BED, head: HEAD, cliff: { ...cliff, zh, cl, front, back, base }, viaducts, fallen, face, tongue, halls, towers, figure };
 }
