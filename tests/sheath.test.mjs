@@ -53,14 +53,23 @@ const tp = await page.evaluate(() => { const out = {}; const eq0 = { ...EQ }; th
     let near = null; if (c && R.rig.hb) { R.root.updateMatrixWorld(true); const p = c.getWorldPosition(new THREE.Vector3()), b = c.parent.getWorldPosition(new THREE.Vector3()); near = +p.distanceTo(b).toFixed(3); }
     let meshes = 0; if (c) c.traverse(o => { if (o.isMesh && o.visible) meshes++; });
     const r = { hb: !!R.rig.hb, bone: c && c.parent && c.parent.name, at: R.sheathAt, meshes, near, held: !!R.weapon, unarmed: R.unarmed, kept: (TP_HB.kept || 0) - kept, ms: Math.round(ms) };
+    // S2456: a blade worn is in a scabbard: every point of the blade between its mouth and the point inside the leather's section there
+    const sc = R.scabbard; r.scab = !!(sc && c && c.getObjectByName('scabbard'));
+    if (sc) { let n = 0, out_ = 0, worst = 0; const W = R.sheathW, inv = new THREE.Matrix4().copy(W.matrixWorld).invert(), M = new THREE.Matrix4(), v = new THREE.Vector3(), L = sc.R.length - 3;
+      W.traverse(m => { if (!m.isMesh) return; M.multiplyMatrices(inv, m.matrixWorld); const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(M); if (v.y < sc.mouth || v.y > sc.tip) continue; n++;
+        const f = (v.y - sc.mouth) / (sc.tip - sc.mouth) * L, i0 = Math.min(L - 1, Math.floor(f)), A = sc.R[i0], B = sc.R[i0 + 1], t = f - i0, ip = k => A[k] + (B[k] - A[k]) * t;
+        const e = Math.max(Math.abs(v.x - ip('cx')) - ip('hw'), Math.abs(v.z - ip('cz')) - ip('ht')); if (e > .002) { out_++; worst = Math.max(worst, e); } } });
+      r.blade = { n, out: out_, worst: +worst.toFixed(4), mouth: +sc.mouth.toFixed(3), tip: +sc.tip.toFixed(3), tris: sc.tris }; }
     drawWeapon(); tpEnsure(); r.drawn = { held: !!TP.rig.weapon, worn: !!TP.rig.hbSheath, old: !!(c && c.parent) }; return r; };
-  out.sword = wear('sword', false); out.claymore = wear('claymore', true);
+  out.sword = wear('sword', false); out.claymore = wear('claymore', true); out.cutlass = wear('cutlass', false); out.mace = wear('mace', false);
   Object.assign(EQ, eq0); SHEATHED = false; thirdPerson = false; return out; });
 console.log(JSON.stringify(tp));
 if (tp.sword.hb) {
   check(`third person: a sheathed sword is worn at the hip on the builder's spine05 (${tp.sword.near} m from it, ${tp.sword.meshes} meshes), the hand empty and the arms out of the guard`, tp.sword.bone === 'spine05' && tp.sword.at === 'hip' && tp.sword.meshes > 0 && tp.sword.near < .4 && !tp.sword.held && !tp.sword.unarmed, tp.sword);
   check(`third person: a sheathed claymore is worn across the back on spine02 (${tp.claymore.near} m)`, tp.claymore.bone === 'spine02' && tp.claymore.at === 'back' && tp.claymore.meshes > 0 && tp.claymore.near < .6 && !tp.claymore.held, tp.claymore);
   check(`sheathing keeps the builder's body (carried over, ${tp.sword.ms} and ${tp.claymore.ms} ms)`, tp.sword.kept === 1 && tp.claymore.kept === 1, tp);
+  check(`a sheathed blade is in a scabbard, the whole blade inside it (sword ${JSON.stringify(tp.sword.blade)}, claymore on the back, a curved cutlass); a mace through the belt has none`,
+    ['sword', 'claymore', 'cutlass'].every(k => tp[k].scab && tp[k].blade && tp[k].blade.n > 20 && tp[k].blade.out === 0) && !tp.mace.scab && tp.mace.at === 'belt', tp);
   check('drawn, it is in the fist again and the worn copy is gone', ['sword', 'claymore'].every(k => tp[k].drawn.held && !tp[k].drawn.worn && !tp[k].drawn.old), tp);
 } else console.log('  (the old look: no builder body, the sheathed weapon is not drawn)');
 check('no page errors', g.errs.length === 0, g.errs);

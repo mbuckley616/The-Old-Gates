@@ -293,7 +293,43 @@ function tpSheath(R,it){const W=R.sheathW,H=R.rig.hb;if(!W||!H)return;const k=W.
   const za=new THREE.Vector3().crossVectors(xa,d),c=new THREE.Group();c.name='sheathed';c.add(tpHBCopy(W,true));c.children[0].visible=true;
   c.quaternion.setFromRotationMatrix(_tsM.makeBasis(xa,d,za));c.scale.setScalar(s);
   // the bone's own place at the bind: the piece's place is about it
-  c.position.copy(pos).sub(at==='back'?F.p2:F.p5);bone.add(c);c.traverse(o=>{if(o.isMesh)o.userData.tp=true;});R.hbSheath=c;R.sheathAt=at;}
+  const sc=(at==='hip'||at==='back'&&/^(claymore|longsword)$/.test((W.userData.kit||'').split(':')[0]))?tpScabbard(W,it):null; /* S2456 — a blade worn goes in a scabbard */
+  if(sc){const m=new THREE.Mesh(sc.geo,[WPN_MAT.matte,WPN_MAT.metal]);m.name='scabbard';c.add(m);const o=Math.max(0,sc.ht*s-th/2);if(at==='hip')pos.x+=o;else pos.z-=o;} /* the leather is thicker than the blade: out from the body by the difference */
+  c.position.copy(pos).sub(at==='back'?F.p2:F.p5);bone.add(c);c.traverse(o=>{if(o.isMesh)o.userData.tp=true;});R.hbSheath=c;R.sheathAt=at;R.scabbard=sc;}
+// S2456 — the scabbard (S2451's owed note: the blade hung bare at the hip). Measured from the blade itself in the weapon's own frame (the
+// grip about y 0, the blade up +y): the guard is whatever stands out past three quarters of the blade's width below a quarter of its length,
+// and the mouth sits just over it; from there to the point the scabbard follows the blade's own middle (a cutlass's or a nimcha's curve) at
+// its width and thickness, plus the leather (7 mm a side across, 6 mm on the flat), never widening toward the point, and closes past the
+// tip. A locket at the mouth and a chape over the last 6 cm in the guard's metal. One geometry, two groups (leather, metal), cached by kind
+// and metal: the sheathed copy shares it and nothing disposes it
+const TP_SCAB=new Map(),TP_SCAB_K={wall:.007,flat:.006,minW:.011,minT:.009,past:.018,locket:.028,chape:.06,lip:.0025,seg:12};
+function tpScabbard(W,it){const kit=W.userData.kit||'',gc=tpHex(it&&it.matGuard,0xb08a48),key=kit+'|'+gc;if(TP_SCAB.has(key))return TP_SCAB.get(key);
+  const K=TP_SCAB_K,par=W.parent;if(par)par.remove(W);W.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(W.matrixWorld).invert(),pts=[],v=new THREE.Vector3(),M=new THREE.Matrix4();
+  W.traverse(o=>{if(!o.isMesh||!o.geometry)return;M.multiplyMatrices(inv,o.matrixWorld);const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(M);pts.push([v.x,v.y,v.z]);}});
+  if(par)par.add(W);if(!pts.length)return null;
+  const tip=Math.max(...pts.map(p=>p[1])),mb={};for(const p of pts){if(p[1]<=.12||p[1]>=tip-.05)continue;const k=Math.round(p[1]*100),b=mb[k]||(mb[k]=[9,-9]);b[0]=Math.min(b[0],p[0]);b[1]=Math.max(b[1],p[0]);}
+  let bw=0;for(const k in mb)bw=Math.max(bw,(mb[k][1]-mb[k][0])/2);if(!bw)bw=.025; /* the blade's half-width across each section, not from the axis: a cutlass curves off it */
+  let mouth=-1;for(const p of pts)if(p[1]<tip*.25&&p[1]>-.02&&Math.abs(p[0])>bw*1.5)mouth=Math.max(mouth,p[1]);mouth=(mouth<0?.06:mouth)+.006;
+  // the blade's sections, a centimetre apart: its middle and half-widths on x and z, an empty one taken from its neighbours
+  const n=Math.max(4,Math.ceil((tip-mouth)/.01)),S=[];for(let i=0;i<=n;i++)S.push(null);
+  for(const p of pts){if(p[1]<mouth)continue;const i=Math.min(n,Math.round((p[1]-mouth)/(tip-mouth)*n)),s=S[i]||(S[i]=[9,-9,9,-9]);s[0]=Math.min(s[0],p[0]);s[1]=Math.max(s[1],p[0]);s[2]=Math.min(s[2],p[2]);s[3]=Math.max(s[3],p[2]);}
+  for(let i=0;i<=n;i++)if(!S[i]){let a=i-1,b=i+1;while(a>=0&&!S[a])a--;while(b<=n&&!S[b])b++;const A=a>=0?S[a]:null,B=b<=n?S[b]:null;S[i]=A&&B?A.map((x,j)=>x+(B[j]-x)*(i-a)/(b-a)):(A||B).slice();}
+  // the leather's half-width and half-thickness: the blade's plus the wall, the widest yet from the point back (a scabbard never swells toward the point)
+  const R=S.map(s=>({y:0,cx:(s[0]+s[1])/2,cz:(s[2]+s[3])/2,hw:Math.max(K.minW,(s[1]-s[0])/2+K.wall),ht:Math.max(K.minT,(s[3]-s[2])/2+K.flat)}));
+  R.forEach((r,i)=>r.y=mouth+(tip-mouth)*i/n);for(let i=n-1;i>=0;i--){R[i].hw=Math.max(R[i].hw,R[i+1].hw);R[i].ht=Math.max(R[i].ht,R[i+1].ht);}
+  const e=R[n];R.push({y:tip+K.past*.55,cx:e.cx,cz:e.cz,hw:e.hw*.8,ht:e.ht*.85},{y:tip+K.past,cx:e.cx,cz:e.cz,hw:e.hw*.35,ht:e.ht*.5});
+  const P=[],C=[],I=[],G=K.seg,lea=new THREE.Color(0x4a2e1a),met=new THREE.Color(gc),cA=new THREE.Color(),g=new THREE.BufferGeometry();
+  const ring=(r,grow,col)=>{const b=P.length/3;for(let j=0;j<G;j++){const a=j/G*Math.PI*2,c=Math.cos(a),s=Math.sin(a),k=Math.pow(Math.abs(s),.6)*Math.sign(s); /* a lens: full width, the flats eased */
+      P.push(r.cx+c*(r.hw+grow),r.y,r.cz+k*(r.ht+grow));C.push(col.r,col.g,col.b);}return b;};
+  const tube=(rs,grow,col,shade,cap)=>{const g0=I.length;let prev=-1;rs.forEach((r,i)=>{cA.copy(col).multiplyScalar(shade(i,rs.length));const b=ring(r,grow,cA);
+      if(prev>=0)for(let j=0;j<G;j++){const j1=(j+1)%G;I.push(prev+j,b+j,prev+j1,prev+j1,b+j,b+j1);}prev=b;});
+    if(cap){const r=rs[rs.length-1],c=P.length/3;P.push(r.cx,r.y,r.cz);C.push(cA.r,cA.g,cA.b);for(let j=0;j<G;j++)I.push(prev+j,c,prev+(j+1)%G);}return [g0,I.length-g0];};
+  const lea0=tube(R,0,lea,(i,N)=>.95+.06*Math.abs(Math.sin(i*1.7))-.08*i/N,true);
+  const lk=R.filter(r=>r.y<=mouth+K.locket),lk2=lk.length>1?lk:R.slice(0,2),ch=R.filter(r=>r.y>=tip-K.chape);
+  const m1=tube(lk2,K.lip,met,()=>1,false),m2=tube(ch.length>1?ch:R.slice(-2),K.lip,met,()=>1,true);
+  g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);
+  g.addGroup(lea0[0],lea0[1],0);g.addGroup(m1[0],m1[1],1);g.addGroup(m2[0],m2[1],1);g.computeVertexNormals();g.computeBoundingSphere();
+  const out={geo:g,mouth,tip,hw:R[0].hw,ht:R[0].ht,tris:I.length/3,R};TP_SCAB.set(key,out);return out;}
 function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.mantle)tpHBMantle(R);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);}
 // S1270 — the bow's draw on the builder's fingers: the right hand, a fist while the bow is carried, opens into the archer's hook as the
 // string comes back (or is held at the ready): the first three fingers bent round the string at their last two joints and barely at the
