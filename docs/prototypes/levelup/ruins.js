@@ -734,7 +734,8 @@ export function forgottenAqueducts(o = {}) {
 //     the two inside it 3.6 and 1.8 m, so its inner face is two terraces with flights of steps up them; the way in a passage 1.3 m wide on
 //     its north-east side under lintels at 2 m; inside it, the bare rock, and a platform of one bed of it by the edge;
 //   - the middle wall: 116 by 104 m, 3 m thick and 3.2 m high, its gap on the way in, two breaches thrown down outward;
-//   - the set stones: a band 14 m deep outside the middle wall on its west and north, slabs of the pavement set upright and leaning, 0.6 to
+//   - the set stones: a band 14 m deep outside the middle wall on its west and north, slabs split from the pavement (Session 2455: a broken top rising to a point;
+//     one in seven fallen flat) set upright and leaning, 0.6 to
 //     1.8 m high, a hand apart to a stride apart; no path through them;
 //   - the outer wall: 236 by 200 m, 2.2 m thick, mostly down to its footing, standing to its height in stretches, its gap on the way in;
 //   - a 1.75 m post inside the passage's inner mouth as the scale.
@@ -744,7 +745,7 @@ export function forgottenAqueducts(o = {}) {
 //   platform { x, z, top }, figure }
 export function stormwatch(o = {}) {
   const key = o.key || 'ruins:stormwatch', r = stream(key), TOP = 88, BED = -16, XS = 760, ZL = 560, group = new THREE.Group();
-  const B = new Map(), SC = { wall: 1 / 4, tumble: .6, chev: .6, step: 1 / 4, lintel: .5, slab: .2, land: 1 / 6 };
+  const B = new Map(), SC = { wall: 1 / 4, tumble: .6, chev: .6, step: 1 / 4, lintel: .5, slab: 1 / 6, land: 1 / 6 };
   const put = (k, g) => { if (g.userData.keep) { (B.get(k) || B.set(k, []).get(k)).push(g); return g; } const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a);
     if (!x.userData.uvSet) { if (x.attributes.uv) x.deleteAttribute('uv'); x.computeVertexNormals(); worldUV(x, SC[k] ?? .25); } else x.computeVertexNormals(); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
   // the edge: the cliff's line, z by x, wavering about 0
@@ -831,10 +832,17 @@ export function stormwatch(o = {}) {
   const chev = [], rc = stream(key + ':chev');
   for (let tries = 0; tries < 9000 && chev.length < 640; tries++) { const a = 1.45 + rc() * (Math.PI + .4 - 1.45), off = 3 + 1.5 + rc() * 14, p = ell(RXM, RZM, a, off);
     if (!onLand(p[0], p[1], 3)) continue; if (chev.some(q => Math.hypot(q.x - p[0], q.z - p[1]) < .9 + rc() * 1.2)) continue;
-    const h = .6 + rc() * 1.2, w = .35 + rc() * .7, t = .12 + rc() * .16, g = new THREE.BoxGeometry(w, h + .35, t, 1, 1, 1), P = g.attributes.position, tip = (rc() - .5) * .3;
-    for (let v = 0; v < P.count; v++) if (P.getY(v) > 0) { P.setX(v, P.getX(v) * (.2 + rc() * .5) + tip); P.setZ(v, P.getZ(v) * (.5 + rc() * .4)); }
-    const lean = (rc() - .5) * .6, gy = ground(p[0], p[1]); g.rotateZ(lean); g.rotateY(rc() * Math.PI); g.translate(p[0], gy + (h + .35) / 2 - .35, p[1]); put('chev', g);
-    chev.push({ x: +p[0].toFixed(2), z: +p[1].toFixed(2), top: +(h * Math.cos(lean)).toFixed(2), lean: +lean.toFixed(3) }); }
+    // Session 2455: each a slab split from the pavement, not a tapered post: its outline a base sunk 0.35 m, two ragged sides and a broken top
+    // rising to one point (a notch on one shoulder), cut 0.1 to 0.28 m thick; each its own grey; one in seven fallen flat on the turf
+    const h = .6 + rc() * 1.2, w = .45 + rc() * .9, t = .1 + rc() * .18, uA = (rc() - .5) * w * .5, jl = rc() * w * .25, jr = rc() * w * .25, hl = h * (.35 + rc() * .4), hr = h * (.35 + rc() * .4);
+    const sh = new THREE.Shape(); sh.moveTo(-w / 2, -.35); sh.lineTo(w / 2, -.35); sh.lineTo(w / 2 - jr * .4, hr * .5); sh.lineTo(w / 2 - jr, hr); sh.lineTo((uA + w / 2 - jr) / 2, (hr + h) / 2 - h * (.08 + rc() * .12)); sh.lineTo(uA, h);
+    sh.lineTo((uA - w / 2 + jl) / 2, (hl + h) / 2 + (rc() - .5) * .1); sh.lineTo(-w / 2 + jl, hl); sh.lineTo(-w / 2 + jl * .4, hl * .5); sh.closePath();
+    const g = new THREE.ExtrudeGeometry(sh, { depth: t, bevelEnabled: false }); g.translate(0, 0, -t / 2);
+    const fallen = rc() < 1 / 7, lean = fallen ? 0 : (rc() - .5) * .6, gy = ground(p[0], p[1]);
+    if (fallen) g.rotateX(-Math.PI / 2 + (rc() - .5) * .12); else g.rotateZ(lean);
+    g.rotateY(rc() * Math.PI); g.translate(p[0], gy, p[1]); g.computeBoundingBox(); if (fallen) { g.translate(0, gy - g.boundingBox.min.y - t * .4, 0); g.computeBoundingBox(); }
+    const tone = .82 + rc() * .24, n = g.attributes.position.count; g.setAttribute('color', new THREE.Float32BufferAttribute(Array.from({ length: n * 3 }, (_, k) => tone * [1, 1, .97][k % 3]), 3)); put('chev', g);
+    chev.push({ x: +p[0].toFixed(2), z: +p[1].toFixed(2), top: +(g.boundingBox.max.y - gy).toFixed(2), lean: +lean.toFixed(3), fallen }); }
   // the outer wall's fallen stone: where it is down, a spill either side of its footing; where it stands, a few at its outer foot
   for (const s of outer.segs) { const n = s.top < .7 ? 3 : r() < .3 ? 1 : 0; for (let q = 0; q < n; q++) { const side = s.top < .7 && r() < .4 ? -1 : 1, p = ell(RXO, RZO, s.a + (r() - .5) * 1.4 / RXO, side * (1.3 + r() * 2.6)); if (onLand(p[0], p[1], 3)) tumble(p[0], p[1], .9); } }
   // ── the platform: one bed of the pavement standing proud by the edge inside the cashel ──
@@ -870,8 +878,8 @@ export function stormwatch(o = {}) {
   const cliffM = mat('searock', { ns: 1.1, color: 0xffffff, rough: .95 }); cliffM.vertexColors = true;
   const M = { land: landM, cliff: cliffM, sea: new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .2, .25), roughness: .18, metalness: .1 }),
     foam: new THREE.MeshBasicMaterial({ color: new THREE.Color(.82, .86, .86), transparent: true, opacity: .45, depthWrite: false }),
-    wall: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }), tumble: mat('searock', { ns: 1, color: 0xd6d4cc, rough: .95 }), chev: mat('searock', { ns: .7, color: 0xe2e0d8, rough: .95 }),
-    step: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }), lintel: mat('flag', { ns: 1, color: 0xd0cec6, rough: .9 }), slab: mat('searock', { ns: .8, color: 0xa8a69e, rough: .95 }),
+    wall: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }), tumble: mat('searock', { ns: 1, color: 0xd6d4cc, rough: .95 }), chev: Object.assign(mat('searock', { ns: .7, color: 0xffffff, rough: .95 }), { vertexColors: true }),
+    step: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }), lintel: mat('flag', { ns: 1, color: 0xd0cec6, rough: .9 }), slab: new THREE.MeshStandardMaterial({ map: paveT, color: 0xdedcd4, roughness: .95 }) /* Session 2455: a bed of the pavement, its clints and grikes */,
     mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
   let tris = 0, draws = 0;
   for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['sea', 'foam', 'land'].includes(k); mesh.receiveShadow = !['sea', 'foam'].includes(k); group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
