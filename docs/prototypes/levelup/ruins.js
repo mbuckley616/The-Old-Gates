@@ -21,7 +21,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, worldUV, fbm, sstep } from './common.js';
-import { gatePiece, stream, cutMat } from './gatekit.js';
+import { gatePiece, stream, cutMat, GK_SCHOOLS } from './gatekit.js';
 
 export function weaverRing(o = {}) {
   const key = o.key || 'ruins:ring', r = stream(key), K = o.k || 3, N = 12, R = o.R || 85, SEA = -30, CLIFF = -(R + 40), group = new THREE.Group();
@@ -582,4 +582,142 @@ export function gateIsles(o = {}) {
   let tris = 0, draws = 0;
   for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['sea', 'script', 'coast'].includes(k); mesh.receiveShadow = k !== 'sea'; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
   return { group, tris: Math.round(tris), draws, ground, S, P, CY, R0, RM, R1, D, isles, coast: { z: COAST }, figure };
+}
+
+// The Forgotten Aqueducts (Session 2448; OG-104's Gatelands panel, "a sprawling network of underground waterways, still partially
+// flooded"): the sheet paints halls of tall arches under the ground, water standing in them and falling from above, lit blue-green. The
+// canon (§3.1) gives the Weavers the gates and nothing else, so the halls are drawn as a gate's: one nave of the gate kit at twice its
+// size, buried under the Gatelands' limestone, its vault fallen in where the land has opened over it in a sinkhole, the nave and its aisles
+// flooded to 6 m, so from the lip you look down 64 m onto a hall of arches in water that runs on under the land both ways into the dark.
+// What drowned it, and where its halls lead, are the canon's and the quest writer's (the DECISION). A ruin as the others (#429 B): the
+// script cut dead (S2425's cut), every loose stone down, nothing floats or burns. A metre a unit, the land at y 0, the nave along x.
+//   - the sinkhole: 100 m across at its lip (a ragged ring, r 46 to 54), its walls of grey limestone falling sheer to the water at -64 and on
+//     under it to a shelf at -66 beside the aisles; where the nave runs through it the walls are open below the vault, so the halls show;
+//   - the nave: 34 m between the arcades' faces, nine bays a side of the kit's arcade arch at twice its size (28.8 m a bay, the opening 20 m,
+//     the point 36 m over the floor), a spandrel wall behind them with the openings cut, a pointed barrel vault from -30 to its crown at
+//     -10 (10 m of rock over it), aisles 11 m wide behind the arcades under a flat stone roof, their outer walls of plain courses; the halls
+//     run 130 m each way from the sinkhole's heart and end in a choke of fallen stone. The floor is the kit's slabs at -70, 6 m under water;
+//   - its condition: inside the sinkhole the arcades are the kit's 'broken' (their upper stones fallen into the water), and the vault, the
+//     spandrels, the aisles' roofs and walls are gone, the vault's edge ragged where it broke; under the land the arches are 'cracked';
+//     the vault's fallen stone lies in the water and heaped as a scree under the south wall;
+//   - the water: still and clear over the slabs, 6 m deep in the halls; three falls: a stream off the land over the north lip (64 m), and
+//     two through cracks in the vault under the land, west and east (40 m each), into the nave;
+//   - the way down: a flight cut in the south wall, 3 m wide, from the lip down 38 m round a quarter of the hole to the scree's top, and the
+//     scree down to the water (the DECISION's A);
+//   - a 1.75 m post on the scree by the water as the scale.
+// -> { group, tris, draws, ground(x, z), land, water, floor, R (the lip's mean radius), lip(a), nave { x0, x1, w, aisle, bay, bays, top, crown },
+//   arches: [{ i, x, side, cond, fallen }], falls: [{ x, z, top, bottom }], stair { a0, a1, r, w, y0, y1, n }, scree { x, z, top }, stones, figure }
+export function forgottenAqueducts(o = {}) {
+  const key = o.key || 'ruins:aqueducts', r = stream(key), group = new THREE.Group(), DEG = Math.PI / 180;
+  const LAND = 0, WATER = -64, FLOOR = -70, SHELF = -66, K = 2, BAY = 14.4 * K, NB = 9, X1 = NB * BAY / 2, HALF = 17, ARC = 2.7 * K, AISLE = 11, OUT = HALF + ARC + 2 + AISLE;
+  const TOP = FLOOR + 20 * K /* the arcade's crown, -30 */, CROWN = -10, R = 50;
+  // the lip: the hole's radius on its bearing a (from +z toward +x), ragged by noise, 46 to 54 m
+  const lip = a => R + 8 * fbm(Math.cos(a) * 1.3 + 4, Math.sin(a) * 1.3 + 2, 3);
+  const inHole = (x, z, m = 0) => Math.hypot(x, z) < lip(Math.atan2(x, z)) - m;
+  const B = new Map(), put = (k, g, s = .25) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, s); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  // the scree: the vault's fallen stone and the wall's, heaped under the south wall from the stair's foot (-40) down into the water
+  const SCREE = { x: -30, z: 37, top: -40 };
+  const ground = (x, z) => { const inNave = Math.abs(z) < OUT, base = inNave ? FLOOR : SHELF + .8 * fbm(x / 12, z / 12, 2);
+    const d = Math.hypot(x - SCREE.x, z - SCREE.z), s = SCREE.top - .62 * d + 2.2 * fbm(x / 7 + 9, z / 7, 3); return Math.max(base, s); };
+  // the land: turf over limestone, rolling a little, a stream's bed running in from the north to the lip; a polar grid from the lip out
+  // to 320 m (its rings closer near the lip), so its inner edge is the wall's top row, point for point
+  const hy = (x, z) => LAND + 1.4 * fbm(x / 60 + 2, z / 60, 3) - 1.6 * Math.exp(-((x - 6) ** 2) / 30) * sstep(-40, -60, z);
+  const NC = 160; { const NR = 34, pos = [], col = [], ring = i => { const t = i / NR; return t * t * 270; };
+    const pt = (i, j) => { const a = j / NC * Math.PI * 2, rr = lip(a) + ring(i), x = Math.sin(a) * rr, z = Math.cos(a) * rr; return [x, hy(x, z), z]; };
+    const tint = (x, z, i) => { const rock = Math.min(1, sstep(.55, .9, fbm(x / 18, z / 18 + 5, 3) * .5 + .5) * .6 + (i === 0 ? .7 : i === 1 ? .3 : 0)), t = .5 + .5 * fbm(x / 9, z / 9, 2);
+      return [.28, .37, .17].map((c, k) => (c * (.8 + .35 * t)) * (1 - rock) + [.6, .59, .56][k] * rock); };
+    for (let i = 0; i < NR; i++) for (let j = 0; j < NC; j++) { const q = [[i, j], [i, j + 1], [i + 1, j], [i + 1, j + 1]].map(([u, v]) => [pt(u, v % NC), u]);
+      for (const T of [[q[0], q[2], q[1]], [q[1], q[2], q[3]]]) for (const [p, u] of T) { pos.push(...p); col.push(...tint(p[0], p[2], u)); } }
+    const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); lg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); lg.computeVertexNormals(); B.set('land', [lg]); }
+  // the sinkhole's wall: a ragged shell from the lip down to under the shelf, the rock pushed in and out; open below the vault where the halls run through it
+  const vaultY = z => { const half = HALF + ARC / 2, h = CROWN - TOP, rr = (half * half + h * h) / (2 * half), d = Math.abs(z) - (half - rr); return TOP + Math.sqrt(Math.max(0, rr * rr - d * d)); };
+  // the wall's radius on bearing a at height y (t its depth from the lip, 0 to 1): the lip's own at the top, then pushed in and out by the rock
+  const wallR = (a, y, t = (LAND - y) / (LAND - SHELF + 6)) => lip(a) * (1 + sstep(0, .06, t) * (.05 * fbm(Math.cos(a) * 3 + 1, y / 14, 3) + .02 * fbm(a * 9, y / 3, 2) - .03 * Math.sin(t * Math.PI)));
+  const section = z => Math.abs(z) < HALF + ARC / 2 ? vaultY(z) : Math.abs(z) < OUT + 2 ? TOP + 1.2 : -Infinity;
+  { const NR = 34, Y0 = SHELF - 6, P = [], C = [];
+    const pt = (i, j) => { const t = i / NR, a = j / NC * Math.PI * 2, lx = Math.sin(a) * lip(a), lz = Math.cos(a) * lip(a), y0 = hy(lx, lz), y = y0 + t * (Y0 - y0), rr = wallR(a, y, t); return [Math.sin(a) * rr, y, Math.cos(a) * rr]; };
+    const G = []; for (let i = 0; i <= NR; i++) { const row = []; for (let j = 0; j <= NC; j++) row.push(pt(i, j % NC)); G.push(row); }
+    const tint = (x, y, z) => { const wet = 1 - sstep(WATER - 1, WATER + 5, y), v = .5 + .5 * fbm(x / 8 + y / 13, z / 8, 3), streak = .5 + .5 * fbm(Math.atan2(x, z) * 14, 2, 2), b = .5 + .3 * v - .12 * streak; return [1.1 * b * (1 - .5 * wet), b * (1 - .42 * wet), .86 * b * (1 - .36 * wet)]; };
+    for (let i = 0; i < NR; i++) for (let j = 0; j < NC; j++) { const a = G[i][j], b = G[i][j + 1], c = G[i + 1][j], d = G[i + 1][j + 1];
+      for (const T of [[a, b, c], [b, d, c]]) { const m = [0, 1, 2].map(k => (T[0][k] + T[1][k] + T[2][k]) / 3); if (m[1] < section(m[2]) - 1.5 + 2 * fbm(m[2] / 8, m[0] / 8, 2)) continue; for (const p of T) { P.push(...p); C.push(...tint(...p)); } } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.computeVertexNormals(); worldUV(g, .0625); B.set('rock', [g]); }
+  // the bed: inside the hole, the shelf, the nave's floor and the scree (a heightfield; the halls beyond have the slabs alone)
+  { const N = 70, S = 116, g = new THREE.PlaneGeometry(S, S, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position, col = [];
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), y = ground(x, z) - (ground(x, z) <= FLOOR + .01 ? .3 : 0); P.setY(i, y); const v = .5 + .5 * fbm(x / 5, z / 5, 2), wet = 1 - sstep(WATER - 1, WATER + 3, y); col.push(...[.42, .41, .38].map((c, k) => c * (.75 + .3 * v) * (1 - .45 * wet) + [0, .02, .02][k] * wet)); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); worldUV(g, .1); B.set('bed', [g]); }
+  // the nave's floor: the kit's slabs at -70 the halls' length and width (under the bed's heightfield inside the hole)
+  { const g = new THREE.BoxGeometry(2 * X1 + 4, 1, 2 * OUT); g.translate(0, FLOOR - .5, 0); put('slab', g); }
+  // the water (Session 2449): coloured by its depth over what is under it, pale green over the scree's toe and the shelf, dark over the
+  // nave's 6 m; it was one colour, and the blue-green came from a light over it
+  { const g = new THREE.PlaneGeometry(2 * X1 + 20, 2 * R + 30, 70, 30); g.rotateX(-Math.PI / 2); g.translate(0, WATER, 0); const P = g.attributes.position, col = [];
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), d = Math.max(0, WATER - ground(x, z)), t = sstep(.3, 6, d); col.push(.2 + (.035 - .2) * t, .34 + (.1 - .34) * t, .28 + (.105 - .28) * t); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); put('water', g); }
+  // the arcades: the kit's arch at twice its size, nine bays a side, faced across the nave; broken inside the hole, cracked under the land
+  const piecesBy = new Map(), take = G => { G.updateMatrixWorld(true); G.traverse(m => { if (!m.isMesh) return; const k = m.userData.key; if (!piecesBy.has(k)) piecesBy.set(k, [m.material, []]); piecesBy.get(k)[1].push(m); }); };
+  const arches = []; for (const side of [-1, 1]) for (let i = 0; i < NB; i++) { const x = -X1 + (i + .5) * BAY, z = side * (HALF + ARC / 2), open = inHole(x, z, -6), cond = open ? 'broken' : 'cracked';
+    const G = gatePiece('arch', { cond, school: 'uisce', key: `${key}:arch:${side}:${i}`, ruin: true, cut: true, ground: 0 }); G.scale.setScalar(K); G.rotation.y = side < 0 ? 0 : Math.PI; G.position.set(x, FLOOR, z); take(G); arches.push({ i, x: +x.toFixed(1), side, cond, fallen: G.userData.fallen }); }
+  // what stands over the arcades under the land: the spandrel walls (an extruded wall with the bays' openings), the vault, the aisles'
+  // roofs and outer walls; each cut where it stood over the hole, its edge ragged
+  const keepOut = (g, m) => { const x = g.index ? g.toNonIndexed() : g, P = x.attributes.position, keep = []; for (let i = 0; i < P.count; i += 3) { const cx = (P.getX(i) + P.getX(i + 1) + P.getX(i + 2)) / 3, cz = (P.getZ(i) + P.getZ(i + 1) + P.getZ(i + 2)) / 3;
+      if (inHole(cx, cz, m + 3 * fbm(cx / 6, cz / 6, 2))) continue; for (let k = 0; k < 3; k++) keep.push(P.getX(i + k), P.getY(i + k), P.getZ(i + k)); } const o2 = new THREE.BufferGeometry(); o2.setAttribute('position', new THREE.Float32BufferAttribute(keep, 3)); return o2; };
+  const SPRING = FLOOR + 9 * K, RISE = 9 * K, HW = 5 * K, RR = (RISE * RISE + HW * HW) / (2 * HW);
+  for (const side of [-1, 1]) for (let i = 0; i < NB; i++) { const c = -X1 + (i + .5) * BAY, z0 = side < 0 ? -(HALF + ARC) - 2 : HALF + ARC, near = c - Math.sign(c) * BAY / 2;
+    if (inHole(near, z0 + 1, -2) || inHole(c, z0 + 1, -2)) continue;
+    const sh = new THREE.Shape(); sh.moveTo(c - BAY / 2, FLOOR); sh.lineTo(c + BAY / 2, FLOOR); sh.lineTo(c + BAY / 2, TOP); sh.lineTo(c - BAY / 2, TOP); sh.closePath();
+    const h = new THREE.Path(); h.moveTo(c - HW, FLOOR + .5); h.lineTo(c + HW, FLOOR + .5); h.lineTo(c + HW, SPRING);
+    h.absarc(c + HW - RR, SPRING, RR, 0, Math.asin(RISE / RR), false); h.absarc(c - HW + RR, SPRING, RR, Math.PI - Math.asin(RISE / RR), Math.PI, false); h.lineTo(c - HW, FLOOR + .5); sh.holes.push(h);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: 2, bevelEnabled: false, curveSegments: 10 }); g.translate(0, 0, z0); g.deleteAttribute('uv'); put('wall', g); }
+  { const N = 24, L = 2 * X1, NX = 90, half = HALF + ARC / 2, h = CROWN - TOP, rr = (half * half + h * h) / (2 * half), fm = Math.asin(h / rr), pos = [];
+    const at = t => { const s2 = t < .5 ? -1 : 1, f = t < .5 ? t * 2 * fm : (1 - t) * 2 * fm; return [s2 * (half - rr + rr * Math.cos(f)), TOP + rr * Math.sin(f)]; };
+    for (let i = 0; i < NX; i++) for (let j = 0; j < N; j++) { const x0 = -X1 + L * i / NX, x1 = -X1 + L * (i + 1) / NX, [z0, y0] = at(j / N), [z1, y1] = at((j + 1) / N);
+      pos.push(x0, y0, z0, x1, y0, z0, x0, y1, z1, x1, y0, z0, x1, y1, z1, x0, y1, z1); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); put('vault', keepOut(g, 1.5)); }
+  for (const side of [-1, 1]) { const roof = new THREE.BoxGeometry(2 * X1, 1.2, OUT - HALF - ARC, 60, 1, 3); roof.translate(0, TOP + .6, side * (HALF + ARC + (OUT - HALF - ARC) / 2)); put('wall', keepOut(roof, 1));
+    const wall = new THREE.BoxGeometry(2 * X1, TOP - FLOOR, 2, 60, 8, 1); wall.translate(0, (TOP + FLOOR) / 2, side * (OUT + 1)); put('wall', keepOut(wall, 1)); }
+  // the scale: a plain 1.75 m post on the scree, 2 m over the water
+  const FIG = (() => { let best = null; for (let d = 0; d < 40; d += .5) { const x = SCREE.x + d * .7, z = SCREE.z - d * .7, y = ground(x, z); if (y < WATER + 2.4) break; best = { x, z, y }; }
+    return { x: +best.x.toFixed(2), y: +best.y.toFixed(2), z: +best.z.toFixed(2), h: 1.75 }; })();
+  // the rock round the halls under the land (never seen but through a gap): a dark box from the floor to under the turf, its faces cut where the hole is
+  { const g = new THREE.BoxGeometry(2 * X1 + 6, LAND - .6 - FLOOR + 2, 2 * OUT + 6, 70, 14, 14); g.translate(0, (LAND - .6 + FLOOR - 2) / 2, 0); put('liner', keepOut(g, -1)); }
+  // the chokes at the halls' ends: a face of rock across the nave and heaps of the kit's blocks against it, under the water and over it
+  const stones = []; { const rs = stream(key + ':stones');
+    for (const s of [-1, 1]) { const g = new THREE.PlaneGeometry(2 * OUT + 4, CROWN - FLOOR + 4, 20, 20), P = g.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, 3 * fbm(P.getX(i) / 6, P.getY(i) / 6, 3)); g.rotateY(s < 0 ? Math.PI / 2 : -Math.PI / 2); g.translate(s * (X1 + 1), (CROWN + FLOOR) / 2, 0); put('choke', g);
+      for (let k = 0; k < 26; k++) { const w = 2 + rs() * 4, h = 1.5 + rs() * 2.5, d = 2 + rs() * 3, b = new THREE.BoxGeometry(w, h, d); b.rotateY(rs() * Math.PI); b.rotateZ((rs() - .5) * .8); b.translate(s * (X1 - 2 - rs() * 14), FLOOR + h / 2 + rs() * 10 * (1 - k / 26), (rs() - .5) * 2 * (OUT - 3)); put('stone', b, .08); } }
+    // the vault's fallen stone in the hole: blocks of 2 to 5 m in the nave's water and on the scree, each resting on what is under it, sunk a third of its height
+    for (let k = 0; k < 70; k++) { const a = rs() * Math.PI * 2, d = Math.sqrt(rs()) * 44, x = Math.sin(a) * d, z = Math.cos(a) * d * .8, w = 2 + rs() * 3.5, h = 1.4 + rs() * 2.2, dd = 2 + rs() * 3;
+      if (!inHole(x, z, 4) || Math.hypot(x - FIG.x, z - FIG.z) < 6) continue; const b = new THREE.BoxGeometry(w, h, dd); b.rotateX((rs() - .5) * .5); b.rotateY(rs() * Math.PI); b.rotateZ((rs() - .5) * .5);
+      const y = Math.min(...[[0, 0], [1.5, 1.5], [-1.5, 1.5], [1.5, -1.5], [-1.5, -1.5]].map(([u, v]) => ground(x + u, z + v))); b.computeBoundingBox(); b.translate(x, y - b.boundingBox.min.y - h / 3, z); put('stone', b, .08);
+      stones.push({ x: +x.toFixed(1), z: +z.toFixed(1), y: +y.toFixed(2), top: +(y + h * 2 / 3).toFixed(2) }); } }
+  // the way down: a flight cut in the south wall from the lip round to the scree's top; each step a block of the wall's rock, 3 m deep from the wall
+  const ST = { a0: 50 * DEG, a1: -37 * DEG, w: 3, y0: LAND - .2, y1: SCREE.top + .6, n: 96 };
+  for (let k = 0; k < ST.n; k++) { const t = (k + .5) / ST.n, a = ST.a0 + (ST.a1 - ST.a0) * t, y = ST.y0 + (ST.y1 - ST.y0) * k / ST.n, rw = Math.min(wallR(a, y), wallR(a, y - 1.2)), len = Math.abs(ST.a1 - ST.a0) / ST.n * rw + .06, back = 2;
+    const st = new THREE.BoxGeometry(ST.w + back, 1.2, len); st.translate(rw - ST.w + (ST.w + back) / 2, y - .6, 0); st.rotateY(a - Math.PI / 2); st.deleteAttribute('uv'); put('stair', st, .0625); }
+  // the falls: thin ribbons, brighter at their heads, drawn added; one off the north lip, two through the vault under the land
+  const falls = [{ x: 6, z: -lip(Math.PI) + 2.5, top: LAND - 1.2, bottom: WATER, w: 4 }, { x: -78, z: -6, top: CROWN - 3, bottom: WATER, w: 1.6 }, { x: 92, z: 8, top: CROWN - 4, bottom: WATER, w: 2.2 }];
+  const streaks = (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 256; const x = c.getContext('2d'), rs = stream(key + ':streaks'); x.fillStyle = '#000'; x.fillRect(0, 0, 64, 256);
+    for (let k = 0; k < 70; k++) { const u = rs() * 64, w = .6 + rs() * 2.4, b = 90 + rs() * 165; x.fillStyle = `rgb(${b},${b},${b})`; x.fillRect(u, rs() * 80 - 40, w, 200 + rs() * 120); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; })();
+  for (const f of falls) { const L = f.top - f.bottom, g = new THREE.PlaneGeometry(f.w, L, 4, 20), P = g.attributes.position, col = []; for (let i = 0; i < P.count; i++) { const t = P.getY(i) / L + .5; P.setX(i, P.getX(i) * (1 + (1 - t) * 1.4) + .4 * fbm(P.getY(i) / 4, f.x, 2)); const b = .35 + .65 * t; col.push(b, b, b); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); const U = g.attributes.uv; for (let i = 0; i < U.count; i++) U.setXY(i, U.getX(i) * f.w / 6, U.getY(i) * L / 24); g.translate(f.x, (f.top + f.bottom) / 2, f.z); put('fall', g);
+    const foam = new THREE.CircleGeometry(f.w * 1.8, 16); foam.rotateX(-Math.PI / 2); foam.translate(f.x, WATER + .05, f.z); put('foam', foam); }
+
+  const figure = FIG; { const g = new THREE.CylinderGeometry(.2, .24, FIG.h, 10); g.translate(FIG.x, FIG.y + FIG.h / 2, FIG.z); put('mark', g); }
+  const rockM = mat('searock', { ns: .9, color: 0xffffff, rough: .9 }); rockM.vertexColors = true; rockM.side = THREE.DoubleSide; rockM.shadowSide = THREE.DoubleSide;
+  const landM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 }); landM.side = THREE.DoubleSide; landM.shadowSide = THREE.DoubleSide;
+  const bedM = mat('rock', { ns: .7, color: 0xffffff, rough: .92 }); bedM.vertexColors = true;
+  const col = new THREE.Color(...GK_SCHOOLS.uisce.stone);
+  // Session 2449: a fallen block is one stone: each face of its box takes one block of the ashlar (the texture is 2 blocks by 4 courses a
+  // tile; the course the box takes is offset by half a block, hence the quarter), so its joints run round its edges; it showed four courses
+  // of small blocks on every face
+  const oneStone = m => { for (const k of ['map', 'normalMap']) { const t = m[k].clone(); t.repeat.set(.5, .25); t.offset.set(.25, 0); t.needsUpdate = true; m[k] = t; } return m; };
+  const M = { liner: new THREE.MeshStandardMaterial({ color: new THREE.Color(.05, .055, .055), roughness: 1, side: THREE.DoubleSide }), land: landM, rock: rockM, bed: bedM, slab: mat('slab', { ns: .7, color: col.clone().multiplyScalar(.75), rough: .5 }), wall: mat('ashlar', { ns: 1, color: col.clone().multiplyScalar(.92) }), vault: mat('ashlar', { ns: 1, color: col.clone().multiplyScalar(.85) }),
+    choke: rockM, stone: oneStone(mat('ashlar', { ns: 1, color: col.clone().multiplyScalar(.9) })), stair: mat('searock', { ns: .8, color: 0x9c9a95, rough: .9 }),
+    water: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .28, metalness: .1, transparent: true, opacity: .84 }),
+    fall: new THREE.MeshBasicMaterial({ map: streaks, vertexColors: true, color: new THREE.Color(.8, .86, .86), transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+    foam: new THREE.MeshBasicMaterial({ color: new THREE.Color(.5, .55, .55), transparent: true, opacity: .45, depthWrite: false }), mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
+  for (const k of ['wall', 'vault', 'stone', 'stair']) { M[k].side = THREE.DoubleSide; }
+  let tris = 0, draws = 0;
+  for (const [, [m, ms]] of piecesBy) { const gs = ms.map(x => { const g = x.geometry.clone(); g.applyMatrix4(x.matrixWorld); return g; }), g = mergeGeometries(gs, false); gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, m); mesh.receiveShadow = true; mesh.castShadow = !['dead', 'cut', 'cutRing', 'script', 'ring', 'crack'].includes(ms[0].userData.key); mesh.name = 'kit:' + ms[0].userData.key; group.add(mesh); tris += g.attributes.position.count / 3; draws++; }
+  for (const [k, gs] of B) { const g = gs.length > 1 ? mergeGeometries(gs, false) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); if (!g.attributes.normal) g.computeVertexNormals(); if (!g.attributes.uv) worldUV(g, .25); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.castShadow = !['bed', 'water', 'fall', 'foam'].includes(k); mesh.receiveShadow = !['fall', 'foam'].includes(k); if (k === 'water') mesh.renderOrder = 2; if (k === 'fall' || k === 'foam') mesh.renderOrder = 3; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
+  return { group, tris: Math.round(tris), draws, ground, land: LAND, landAt: hy, water: WATER, floor: FLOOR, R, lip, inHole, nave: { x0: -X1, x1: X1, w: 2 * HALF, aisle: AISLE, out: OUT, bay: BAY, bays: NB, top: TOP, crown: CROWN }, arches, falls, stair: ST, scree: SCREE, stones: stones.length, figure };
 }

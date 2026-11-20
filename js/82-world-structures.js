@@ -3506,6 +3506,16 @@
   function wonderSeatHerbs(x,z,reach){const HL=(ZONES.world&&ZONES.world.herbs)||[];let n=0;
     for(let i=HL.length-1;i>=0;i--){const h=HL[i];if(Math.hypot(h.x-x,h.z-z)>=reach)continue;const y=worldH(h.x,h.z);
       if(h.bed?y>-1.2:solidAt(h.x,h.z)||y<SEA_Y+.2&&h.g.position.y>=SEA_Y+.2){HL.splice(i,1);h.offPad=true;h.g.visible=false;if(h.gl)h.gl.intensity=0;n++;}else h.g.position.y=y;if(h.inst)syncHerbInstance(h);}
+    return n+wonderSeatVeins(x,z,reach);}
+  // Session 2450 (the critic, 20 Nov, s1778): the veins, as S2410 did the herbs. A chunk lays its veins at worldH before a wonder's stamp
+  // moves the ground, and nothing set them again: a silver vein lay 2.4 m under the first Drowned Spire's sill, its prompt still offered,
+  // and an iron one hung 2 m over the spit. Each vein within reach is set on the ground as it is now (veinMesh's 0.12 m into it), or taken
+  // away where a solid stands, where a deck or a passage's floor stands over it (the ground you walk there is not its ground), or where its
+  // dry ground has gone under the water. Taken away is out of the chunk's group, so veinLive is false and veinNear lets it go.
+  // Idempotent, run with the herbs' seat at the build and once a second.
+  function wonderSeatVeins(x,z,reach){if(typeof VEINS==='undefined')return 0;let n=0;
+    for(let i=VEINS.length-1;i>=0;i--){const v=VEINS[i];if(!v.g||Math.hypot(v.x-x,v.z-z)>=reach)continue;const y=worldH(v.x,v.z);
+      if(solidAt(v.x,v.z)||activeTerrainH(v.x,v.z)>y+.5||y<SEA_Y+.2){if(v.g.parent)v.g.parent.remove(v.g);VEINS.splice(i,1);v.offPad=true;n++;}else v.g.position.y=y-.12;}
     return n;}
   function wonderOrrerySite(){const S=WONDERS.orrery;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);

@@ -1,3 +1,4 @@
+// Session 2448 adds the Forgotten Aqueducts (ruins.js forgottenAqueducts): a gate's nave flooded under the land, open to the sky in a sinkhole.
 // Session 2441: the isles' rock laid round each isle and stack, so the beds run on across the facets.
 // Session 2440: the isles' rock bedded and jointed, not the kit's veined rock; the crowns' turf its own draw.
 // Session 2435: the isles' stacks notched at the tide and broken on a slant.
@@ -194,6 +195,49 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
     L.length === 9 && L.every(t => t.low < 0 && t.low > -1.6 && t.top > .6 && Math.hypot(t.x, t.z - br[0].z) < 21.5), L);
   check(`a landing on every isle: straight down onto the flight, ${I.down.flat().filter(n => n === 'stair').length} of 20 rays meet its steps; it runs from ${Math.min(...I.stairEnds.map(e => e[0]))} m (the low water -2) to ${Math.min(...I.stairEnds.map(e => e[1]))}`, I.down.every(d => d.every(n => n === 'stair')) && I.stairEnds.every(e => e[0] < -2 && e[1] > I.S - .4), { down: I.down, ends: I.stairEnds });
   check(`the scale: each ring ${2 * I.R1} m across and its opening ${2 * I.R0} m, its heart ${I.CY.toFixed(1)} m over the mean sea; ${(2 * I.R1 / I.figure.h).toFixed(0)} times the 1.75 m post on the first plinth`, I.figure.h === 1.75 && Math.abs(I.figure.y - I.P) < .01 && 2 * I.R1 / I.figure.h > 15, I.figure); }
+// the Forgotten Aqueducts (Session 2448; OG-104, the Gatelands): a gate's nave under the limestone, flooded, its vault fallen into a sinkhole
+{ const F = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./ruins.js');
+  const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; h = (h * 31 + m.geometry.attributes.position.count) | 0; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 9) h = (h * 31 + Math.round(a[i] * 1e3)) | 0; }); return h; };
+  const a = K.forgottenAqueducts(), b = K.forgottenAqueducts(); a.group.updateMatrixWorld(true); const rc = new THREE.Raycaster(), solid = a.group.children.filter(m => !['water', 'fall', 'foam'].includes(m.name));
+  const cast = (o, d, far = 3000) => { rc.set(new THREE.Vector3(...o), new THREE.Vector3(...d).normalize()); rc.far = far; const h = rc.intersectObjects(solid, false)[0]; return h ? { n: h.object.name, d: +h.distance.toFixed(1), y: +h.point.y.toFixed(2) } : null; };
+  const N = a.nave, lips = Array.from({ length: 64 }, (_, k) => +a.lip(k / 64 * Math.PI * 2).toFixed(1));
+  // the sky: straight up from the water in the hole (its heart and 20 m off it), and from the halls under the land (60 and 110 m out each way)
+  const open = [[0, 0], [20, 0], [-20, 0], [0, -20]].map(([x, z]) => cast([x, a.water + 1, z], [0, 1, 0])), under = [-110, -60, 60, 110].map(x => cast([x, a.water + 1, 0], [0, 1, 0]));
+  // enclosed: from the halls 100 m out each way, 48 rays round and up all meet stone or rock; along the nave each way the ray meets the choke past 100 m
+  const leak = []; let out = 0; for (const x of [-100, 100]) for (let k = 0; k < 16; k++) { const t = k / 16 * Math.PI * 2; for (const e of [.1, .5, 1.1]) { const d = [Math.cos(t) * Math.cos(e), Math.sin(e), Math.sin(t) * Math.cos(e)], h = cast([x, a.water + 2, 0], d), u = (a.land - a.water - 2) / d[1]; if (!h && !a.inHole(x + d[0] * u, d[2] * u)) leak.push([x, +t.toFixed(2), e]); else if (!h) out++; } }
+  const along = [-1, 1].map(s => cast([0, a.water + 3, -4], [s, 0, 0]));
+  // the stair: straight down onto each tenth of the flight, the tread; and from just over each tread out into the wall, rock within 4 m
+  const S = a.stair, tread = [], wall = []; for (let k = 0; k < 10; k++) { const t = (k + .5) / 10, an = S.a0 + (S.a1 - S.a0) * t, rr = a.lip(an) - 2.4, x = Math.sin(an) * rr, z = Math.cos(an) * rr, hit = cast([x, 20, z], [0, -1, 0]);
+    tread.push(hit && { n: hit.n, y: hit.y }); const w = hit && cast([x, hit.y + .6, z], [Math.sin(an), 0, Math.cos(an)], 8); wall.push(w && { n: w.n, d: w.d }); }
+  const emissive = a.group.children.filter(m => m.material.emissive && m.material.emissive.getHex()).map(m => m.name);
+  // Session 2449: the water coloured by its depth (the mean brightness of its points over 5.5 m or more against those over less than 1.5 m),
+  // and the fallen blocks' stone one ashlar block a face
+  const wm = a.group.children.find(m => m.name === 'water'), WP = wm.geometry.attributes.position, WC = wm.geometry.attributes.color, sh = [], dp = [];
+  for (let i = 0; i < WP.count; i++) { const d = a.water - a.ground(WP.getX(i), WP.getZ(i)), L = WC.getX(i) + WC.getY(i) + WC.getZ(i); if (d >= 5.5) dp.push(L); else if (d < 1.5) sh.push(L); }
+  const mean = l => +(l.reduce((p, q) => p + q, 0) / l.length / 3).toFixed(3), sm = a.group.children.find(m => m.name === 'stone').material.map;
+  const tone = { deep: mean(dp), shallow: mean(sh), nd: dp.length, ns: sh.length, uni: !!wm.material.vertexColors, rep: [sm.repeat.x, sm.repeat.y] };
+  return { tone, tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), names: a.group.children.map(m => m.name), lips, nave: N, arches: a.arches, falls: a.falls, stair: { ...S }, tread, wall, open, under, leak, out, along, figure: a.figure, water: a.water, floor: a.floor, land: a.land,
+    deep: [[20, 0], [0, -12], [12, -24], [-100, 0], [100, 0]].map(([x, z]) => +(a.water - a.ground(x, z)).toFixed(2)), emissive, stones: a.stones }; });
+  const br = F.arches.filter(q => q.cond === 'broken'), cr = F.arches.filter(q => q.cond === 'cracked');
+  check(`the Forgotten Aqueducts build the same twice and in budget: ${F.tris.toLocaleString()} triangles in ${F.draws} draws`, F.same && F.tris < 80000 && F.draws <= 18, [F.tris, F.draws, F.same, F.names]);
+  check(`the sinkhole: its lip ${Math.min(...F.lips)} to ${Math.max(...F.lips)} m from its heart on 64 bearings, the water ${F.land - F.water} m under the land; straight up from the water in it, the sky (${F.open.map(h => h ? h.n : 'sky').join(', ')})`,
+    Math.min(...F.lips) > 44 && Math.max(...F.lips) < 56 && F.land - F.water >= 60 && F.open.every(h => h === null), { lips: F.lips, open: F.open });
+  check(`the halls run on under the land: straight up from the water 60 and 110 m out each way, the vault (${F.under.map(h => h && `${h.n} ${h.y}`).join(', ')}); along the nave each way the choke at ${F.along.map(h => h && h.d).join(' and ')} m`,
+    F.under.every(h => h && h.n === 'vault' && h.y > F.nave.top && h.y <= F.nave.crown + .5) && F.along.every(h => h && ['choke', 'stone'].includes(h.n) && h.d > 100 && h.d < 140), { under: F.under, along: F.along });
+  check(`enclosed: from the halls 100 m out each way, ${96 - F.leak.length - F.out} of 96 rays round and up meet stone or rock and ${F.out} leave by the hole, none by any other way`, F.leak.length === 0, F.leak.slice(0, 8));
+  check(`the nave: ${F.nave.w} m between the arcades, ${F.nave.bays} bays of ${F.nave.bay} m a side (the kit's arch at twice its size, its crown at ${F.nave.top}), the vault's crown at ${F.nave.crown}; flooded ${Math.min(...F.deep)} m over the floor at ${F.floor} clear of the scree`,
+    F.arches.length === 18 && F.nave.bay === 28.8 && F.nave.top === -30 && F.nave.crown === -10 && F.deep.every(d => Math.abs(d - 6) < .01), F.deep);
+  check(`a ruin: the ${br.length} arches over the hole broken (${br.map(q => q.fallen).join(', ')} stones fallen into the water), the ${cr.length} under the land cracked; nothing lit (${F.emissive.join(', ') || 'no emissive'}); ${F.stones} of the vault's stones down in the hole`,
+    br.length >= 4 && br.every(q => q.fallen > 0 && Math.abs(q.x) < 50) && cr.every(q => q.fallen === 0) && br.length + cr.length === 18 && F.emissive.length === 0 && F.stones > 30, F.arches);
+  check(`the way down: ${F.stair.n} steps cut in the south wall from ${F.stair.y0} to ${F.stair.y1} m; straight down onto every tenth of it, its tread (${F.tread.map(t => t && t.y).join(', ')}), and the wall within ${Math.max(...F.wall.map(w => w ? w.d : 99))} m behind it`,
+    F.tread.every((t, i) => t && t.n === 'stair' && (!i || t.y < F.tread[i - 1].y)) && F.wall.every(w => w && w.n === 'rock' && w.d < 4), { tread: F.tread, wall: F.wall });
+  check(`the water by its depth: ${F.tone.shallow} bright where it is under 1.5 m deep, over the scree's toe (${F.tone.ns} points), ${F.tone.deep} over the nave's 6 m (${F.tone.nd}); a fallen block's face is one stone (the ashlar ${F.tone.rep.join(' by ')} a face)`,
+    F.tone.uni && F.tone.ns > 20 && F.tone.nd > 200 && F.tone.shallow > 2 * F.tone.deep && F.tone.rep[0] === .5 && F.tone.rep[1] === .25, F.tone);
+  check(`three falls into the water: ${F.falls.map(f => `${(f.top - f.bottom).toFixed(0)} m`).join(', ')}`, F.falls.length === 3 && F.falls.every(f => f.bottom === F.water && f.top - f.bottom > 35), F.falls);
+  check(`the scale: the 1.75 m post stands on the scree ${(F.figure.y - F.water).toFixed(1)} m over the water; the arcade stands ${((F.nave.top - F.floor) / F.figure.h).toFixed(0)} times its height`, F.figure.h === 1.75 && F.figure.y - F.water > 1.5 && F.figure.y - F.water < 3 && (F.nave.top - F.floor) / F.figure.h > 20, F.figure); }
+for (const v of ['lip', 'stair', 'scree', 'nave', 'far', 'nave&dusk']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
+  await pg.goto(`http://localhost:${port}/places.html?still&w=320&h=200&place=aqueducts&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const s = await pg.evaluate(() => window.__stats.place); check(`places.html?place=aqueducts&view=${v} renders: ${s.tris.toLocaleString()} triangles in ${s.draws} draws, ${s.arches} arches (${s.broken} broken), ${s.falls} falls, no page errors`, s.tris > 0 && s.arches === 18 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }
 for (const v of ['line', 'sight', 'boat', 'landing', 'broken', 'far', 'sight&dusk']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
   await pg.goto(`http://localhost:${port}/places.html?still&w=320&h=200&place=isles&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
   const s = await pg.evaluate(() => window.__stats.place); check(`places.html?place=isles&view=${v} renders: ${s.tris.toLocaleString()} triangles in ${s.draws} draws, ${s.isles} isles, ${s.lost} stones lost, no page errors`, s.tris > 0 && s.isles === 5 && e2.length === 0, e2.slice(0, 2)); await pg.close(); }

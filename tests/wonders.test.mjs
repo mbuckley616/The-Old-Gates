@@ -6,6 +6,7 @@
 // Session 2385: the Weavers' ring of broken arches on a Gatelands headland. Session 2409: the Northlight Altar on a Markish fell.
 // Session 2410: the herbs laid before a wonder's stamp are set on its ground, or taken away from its solids and water.
 // Session 2419: the Drowned Spires off a Gatelands strand, walked from the strand through every tower.
+// Session 2450: the veins laid before the Spires' stamp are set on its ground, or taken away from its solids, decks and water.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -229,6 +230,13 @@ check(`no stone stands in the decks' clear way between the parapets (${pw.inWay}
 check(`the dead script and sigil are cut into the stone, not dark plates: ${pw.cut && pw.cut.cut && pw.cut.cut.tris} script and ${pw.cut && pw.cut.cutRing && pw.cut.cutRing.tris} sigil triangles drawn as strokes, no dead plate`, pw.cut && !pw.cut.dead && pw.cut.cut && pw.cut.cut.alpha && !pw.cut.cut.shadow && pw.cut.cutRing && pw.cut.cutRing.alpha && pw.cut.cutRing.tris >= 8, pw.cut);
 check(`the broken span's gap is open water (${pw.gapW && pw.gapW.length} steps at ${pw.gapW && Math.max(...pw.gapW)} m)`, pw.gapW.length >= 2 && pw.gapW.every(h => h < pw.D - 3), pw.gapW);
 check(`its ${pw.sol} solids: a passage's side and a parapet block you on the deck; the stone under a tower and a deck blocks a swimmer`, pw.side && pw.parapet && pw.swimTower && pw.swimSpan, pw);
+// Session 2450 (the critic, 20 Nov): a vein the chunk laid before the stamp lay 2.4 m under the first tower's sill, its prompt still offered,
+// and another hung 2 m over the spit. Every live vein within the Spires' reach sits on the ground (0.12 m into it), and none under a deck.
+const pv = await page.evaluate(() => { const S = WONDERS.spires, st = S.site, R = S.herbR, near = v => Math.hypot(v.x - st.x, v.z - st.z) < R;
+  const live = VEINS.filter(v => veinLive(v) && near(v)).map(v => ({ id: v.id, off: +Math.abs(v.g.position.y - (worldH(v.x, v.z) - .12)).toFixed(2), over: +(activeTerrainH(v.x, v.z) - worldH(v.x, v.z)).toFixed(2), solid: solidAt(v.x, v.z) }));
+  const near0 = veinNear(), prompt = near0 && Math.hypot(near0.x - st.x, near0.z - st.z) < R ? near0.id : null;
+  return { live, R, prompt }; });
+check(`its ${pv.live.length} veins within ${pv.R} m sit on the ground, none in a solid or under a deck (worst ${Math.max(0, ...pv.live.map(v => v.off))} m off)`, pv.live.every(v => v.off < .05 && v.over < .5 && !v.solid), pv);
 // Session 2421: a hull meets the towers. Your ship is laid 70 m out to sea beyond the last tower, on the chain's line, and sailed full
 // ahead at it for 30 s of fixed ticks: she stops with her bow off the stone, in deep water (the stone stops her, not the shallows).
 const sh = await page.evaluate(() => { const S = WONDERS.spires, W = S.W, st = S.site, T = W.towers, a = T[4], b = T[5];
