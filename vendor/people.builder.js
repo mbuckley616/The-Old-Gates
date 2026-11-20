@@ -2255,8 +2255,11 @@ function buildWrap(P, G, heads, byName, hairPts = [], browTop = -9) {
   const NP = 14, tubeV = [], pos = [], col = [], idx = [], prn = [], RIM = Array.from({ length: NT + 1 }, (_, t) => phRim(t / NT * TAU)), cloth = sRGB(...D.wrap), edge = sRGB(...(D.wrapBorder || D.wrap.map(v => v * (sc ? .97 : .82)))), PH_ = th => RIM[Math.round(((th / TAU) * NT % NT + NT) % NT)];
   // the crown, from the top to the edge (its seam, and the turns', at the back), a shade lighter than the turns so the rolls read against it
   // (a headscarf's on a finer grid, 128 round and 28 down, its edge at each column's own rim, so the creases have the points to show)
-  { const b0 = pos.length / 3, cc = cloth.clone().multiplyScalar(sc ? 1 : 1.06), NTc = sc ? 128 : NT, NPc = sc ? 28 : NP; for (let j = 0; j < NPc; j++) for (let t = 0; t <= NTc; t++) { const th = Math.PI + t / NTc * TAU, p = at(th, (sc ? rimPh(th) : PH_(th)) * Math.max(.002, j / (NPc - 1))); pos.push(p.x, p.y, p.z); col.push(cc.r, cc.g, cc.b); prn.push(1); }
-    for (let j = 0; j < NPc - 1; j++) for (let t = 0; t < NTc; t++) { const a = b0 + j * (NTc + 1) + t, d = a + NTc + 1; idx.push(a, d, a + 1, a + 1, d, d + 1); } }
+  { const b0 = pos.length / 3, cc = cloth.clone().multiplyScalar(sc ? 1 : 1.06), NTc = sc ? 128 : NT, NPc = sc ? 28 : NP; const SL = []; for (let j = 0; j < NPc; j++) for (let t = 0; t <= NTc; t++) { const th = Math.PI + t / NTc * TAU, ph = (sc ? rimPh(th) : PH_(th)) * Math.max(.002, j / (NPc - 1)), p = at(th, ph); pos.push(p.x, p.y, p.z); col.push(cc.r, cc.g, cc.b); prn.push(1); SL.push(sc ? slack(th, ph) : 0); }
+    // a headscarf's quads are cut along the diagonal that runs with its creases (Session 2439, S2433's owed zigzag): of the two, the one whose
+    // ends stand out the same, so a ridge crossing the rows on the slant is drawn along its line and not stepped quad by quad
+    for (let j = 0; j < NPc - 1; j++) for (let t = 0; t < NTc; t++) { const a = b0 + j * (NTc + 1) + t, d = a + NTc + 1, o = a - b0;
+      if (sc && Math.abs(SL[o] - SL[o + NTc + 2]) < Math.abs(SL[o + 1] - SL[o + NTc + 1])) idx.push(a, d, d + 1, a, d + 1, a + 1); else idx.push(a, d, a + 1, a + 1, d, d + 1); } }
   // the turns: [over the edge at the front, at the back, the roll's radius]; the polar angle where the dome is at that height, by halving
   // a turban's five more are thicker, and their heights are shares of the way from the edge to the top, so they cross higher at the front
   // a headscarf has one: its folded edge, thinner and lying on the head
@@ -2357,7 +2360,7 @@ function buildVeil(P, G, heads, byName, meshes, hairPts = []) {
 // its length. Its last 2.5 cm takes the wrap's border colour, when there is one. Rigid, carried by the chest bone as the necklace is.
 // A headscarf's point (Session 1029, D.scarf) is laid the same way, down the middle of the back,
 // 9 cm wide under the knot narrowing to its corner 22 cm down (18 on a man), its two edges in the border's colour, printed as the scarf is. The other two
-// corners are knotted over it at the nape, a lump of cloth with two short ends 5.5 cm long lying on the point
+// corners are knotted over it at the nape, a square knot's bow with its two corners 4.5 to 6.5 cm long lying on the point (Session 2438)
 function buildWrapTail(G, body, byName, meshes, root) {
   const D = G.dress, man = (G.g ?? .5) > .5, pt = !!D.scarf, side = pt ? 0 : D.wrapTail === 'R' ? -1 : 1, chest = byName['spine03'] || byName['spine04'], wrap = root.getObjectByName('wrap'); if (!wrap) return null;
   root.updateMatrixWorld(true); const neck = new THREE.Vector3().setFromMatrixPosition(byName['neck01'].matrixWorld), PB = posedBody(body);
@@ -2392,15 +2395,31 @@ function buildWrapTail(G, body, byName, meshes, root) {
   for (let j = 0; j < NR; j++) for (let k = 0; k < NC; k++) { const a = j * (NC + 1) + k, d = a + NC + 1; idx.push(a, d, a + 1, a + 1, d, d + 1); }
   // a headscarf's knot, over the point where it leaves the scarf: the point's own radius at an angle and a height, read off its grid
   const Rp = (th, y) => { const f = Math.max(0, Math.min(1, (top - y) / L)), j = Math.round(f * NR), r0 = R[j * (NC + 1) + NC / 2], du = dth(th, th0) * r0 / wid(f); return R[j * (NC + 1) + Math.max(0, Math.min(NC, Math.round((du + .5) * NC)))]; };
+  // Session 2438 (S1029's owed note, "a smooth lump with flat ribbon ends"): the knot is a square knot's bow, two lobes where the
+  // corners loop round, a raised band across its middle where they cross, a groove either side of the band, and folds on the lobes
+  // running out from it; the two ends are the cloth's corners, each tapering to its point with a fold down its middle, splayed apart.
+  // Its asymmetry, its tilt, the folds' phase and the ends' lengths and splay come from the wearer's own stream (<seed>|knot), so no
+  // other roll moves. The knot's inner face is the old lump's, unchanged.
   let knot = null; if (pt) { const yK = yA - .002, r0 = Rp(th0, yK), n = new THREE.Vector3(Math.sin(th0), 0, Math.cos(th0)), t = new THREE.Vector3(Math.cos(th0), 0, -Math.sin(th0)), C = new THREE.Vector3(ax.x, yK, ax.z).addScaledVector(n, r0 + .011), kc = cloth.clone().multiplyScalar(.93);
-    const b0 = pos.length / 3, NA2 = 8, NB2 = 14; for (let a = 0; a <= NA2; a++) for (let b = 0; b <= NB2; b++) { const A = a / NA2 * Math.PI, B = b / NB2 * TAU, lump = 1 + .1 * Math.sin(3 * B + 1) * Math.sin(2 * A), sb = Math.sin(B);
-      const q = C.clone().addScaledVector(t, .023 * lump * Math.sin(A) * Math.cos(B)).add(new THREE.Vector3(0, .015 * lump * Math.cos(A), 0)).addScaledVector(n, (sb < 0 ? .007 : .011) * lump * Math.sin(A) * sb); pos.push(q.x, q.y, q.z); col.push(kc.r, kc.g, kc.b); prn.push(1); }
+    const KR = seeded((G.seed ?? 'person') + '|knot'), KN = { lr: .9 + KR() * .2, tilt: (KR() - .5) * .3, ph: KR() * TAU, len: [.045 + KR() * .02, .045 + KR() * .02], spl: [.018 + KR() * .02, .018 + KR() * .02] };
+    const gs = (x, m, w) => Math.exp(-(((x - m) / w) ** 2)), ct = Math.cos(KN.tilt), st = Math.sin(KN.tilt);
+    const b0 = pos.length / 3, NA2 = 18, NB2 = 48; for (let a = 0; a <= NA2; a++) for (let b = 0; b <= NB2; b++) { const A = a / NA2 * Math.PI, B = b / NB2 * TAU, sb = Math.sin(B), s = Math.sin(A) * Math.cos(B), as = Math.abs(s), lobe = s > 0 ? KN.lr : 2 - KN.lr;
+      // the outward face: lobes standing out, the band in the middle higher still, the grooves between; the lobes' folds run across them
+      const sd = s + .35 * Math.cos(A), ad = Math.abs(sd), band = Math.exp(-((sd / .16) ** 6)), phi = Math.atan2(Math.cos(A), as), far = Math.min(1, Math.max(0, (ad - .3) / .25)) * Math.sin(A),
+        dep = sb < 0 ? 1 : (.6 + .26 * gs(as, .6, .32) * lobe + .62 * band - .3 * gs(ad, .2, .06) + .2 * Math.sin(5 * phi + KN.ph + (s > 0 ? 0 : 2.1)) * far);
+      // the silhouette: the band pinched in its height, the lobes rounder; a little wider for the lobe that is bigger
+      const hy = 1 - .1 * band + .08 * gs(as, .65, .25) * lobe, wx = 1 + .06 * (lobe - 1) * Math.sign(s);
+      const lx = .024 * wx * s, ly = .015 * hy * Math.cos(A);
+      const q = C.clone().addScaledVector(t, lx * ct - ly * st).add(new THREE.Vector3(0, lx * st + ly * ct, 0)).addScaledVector(n, (sb < 0 ? .007 : .011) * dep * Math.sin(A) * sb), sh = 1 - (.2 * gs(ad, .2, .06) + .1 * Math.max(0, -Math.sin(5 * phi + KN.ph + (s > 0 ? 0 : 2.1))) * far) * (sb > 0);
+      pos.push(q.x, q.y, q.z); col.push(kc.r * sh, kc.g * sh, kc.b * sh); prn.push(1); }
     for (let a = 0; a < NA2; a++) for (let b = 0; b < NB2; b++) { const i0 = b0 + a * (NB2 + 1) + b, i1 = i0 + NB2 + 1; idx.push(i0, i0 + 1, i1, i0 + 1, i1 + 1, i1); }
-    // its two ends, from under the knot down and out over the point, 2.2 cm wide narrowing to 1.3, 6.5 mm over it (clear of its folds) and more near the knot
-    let endGap = 9; for (const s2 of [-1, 1]) { const e0 = pos.length / 3, NQ = 10; for (let q = 0; q <= NQ; q++) { const f = q / NQ, y = yK - .004 - .055 * f, th = th0 + s2 * (.012 + .026 * f) / r0, w = .022 - .009 * f, ec = D.wrapBorder && f > .82 ? edge : cloth.clone().multiplyScalar(.86);
-        for (let u = 0; u <= 2; u++) { const tu = th + (u / 2 - .5) * w / r0, rr = Rp(tu, y) + .0065 + .004 * (1 - f) + .0015 * (u === 1), base = Rp(tu, y); endGap = Math.min(endGap, rr - base); pos.push(ax.x + rr * Math.sin(tu), y, ax.z + rr * Math.cos(tu)); col.push(ec.r, ec.g, ec.b); prn.push(D.wrapBorder && f > .82 ? 0 : 1); } }
-      for (let q = 0; q < NQ; q++) for (let u = 0; u < 2; u++) { const a = e0 + q * 3 + u, d = a + 3; idx.push(a, d, a + 1, a + 1, d, d + 1); } }
-    knot = { y: +(yK - neck.y).toFixed(3), out: +(r0 + .011 - rA).toFixed(4), endGap: +endGap.toFixed(4), endLen: .055 }; }
+    // its two ends, the corners, from under the knot down and out over the point: 2.4 cm wide where they leave it, narrowing to their
+    // corner; a fold down each one's middle 2 mm high; 6.5 mm over the point (clear of its folds) and more near the knot, the tip lifting
+    let endGap = 9; const NQ = 14, NU = 4; for (const [e, s2] of [[0, -1], [1, 1]]) { const e0 = pos.length / 3, eL = KN.len[e]; for (let q = 0; q <= NQ; q++) { const f = q / NQ, y = yK - .004 - eL * f, th = th0 + s2 * (.012 + KN.spl[e] * f) / r0, w = .024 * (1 - f) ** .85 + .001, ec = D.wrapBorder && f > .82 ? edge : cloth.clone().multiplyScalar(.86);
+        for (let u = 0; u <= NU; u++) { const uu = u / NU - .5, tu = th + uu * w / r0, base = Rp(tu, y), rr = base + .0065 + .004 * (1 - f) + .002 * (1 - (2 * uu) ** 2) * (1 - f * .6) + .003 * f ** 3; endGap = Math.min(endGap, rr - base); const sh = 1 - .12 * Math.abs(2 * uu) * (u % NU ? 1 : .5);
+          pos.push(ax.x + rr * Math.sin(tu), y, ax.z + rr * Math.cos(tu)); col.push(ec.r * sh, ec.g * sh, ec.b * sh); prn.push(D.wrapBorder && f > .82 ? 0 : 1); } }
+      for (let q = 0; q < NQ; q++) for (let u = 0; u < NU; u++) { const a = e0 + q * (NU + 1) + u, d = a + NU + 1; idx.push(a, d, a + 1, a + 1, d, d + 1); } }
+    knot = { y: +(yK - neck.y).toFixed(3), out: +(r0 + .011 - rA).toFixed(4), endGap: +endGap.toFixed(4), endLen: KN.len.map(v => +v.toFixed(3)), tilt: +KN.tilt.toFixed(2), lobes: +KN.lr.toFixed(2) }; }
   // the numbers: points of what it lies over that come through it, within its width and length; how much of it lies on the body (6 to
   // 12 mm off what is under it); how far its top is from the wrap's lowest turn; and its width at the hem
   let through = 0, tested = 0; for (let i = 0; i < CPa.length; i += 3) { const x = CPa[i], y = CPa[i + 1], z = CPa[i + 2], f = (top - y) / L; if (f < 0 || f > 1) continue; const j = Math.round(f * NR), r0 = R[j * (NC + 1) + NC / 2], du = dth(thOf(x, z), th0) * r0 / wid(f);
