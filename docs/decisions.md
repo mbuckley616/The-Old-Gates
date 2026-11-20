@@ -104,6 +104,18 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Pictures.** [the west halls](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2445/docs/prototypes/levelup/aqueducts-nave.jpg) · [from the stair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2445/docs/prototypes/levelup/aqueducts-stair.jpg) · [from the lip](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2445/docs/prototypes/levelup/aqueducts-lip.jpg)
 
+### Stormwatch — an empty landmark, a bandits' hold, or a watchtower in the fort? (from the look builder, 2026-11-20, #1815)
+**The question.** Stormwatch Ruins, the eighth of OG-104's sixteen ruin sites ("a cliffside fortress of ancient age, offering sweeping views of the sea"), is a prototype now (look builder, Session 2454, `docs/prototypes/levelup/ruins.js` `stormwatch`). The canon gives the Weavers only the gates, so it is the older people's dry-stone promontory fort, after Dún Aonghasa: three half-ring walls stopping at an 88 m sea cliff, a cashel 52 by 44 m with two terraces inside, a lintelled passage 1.3 m wide, about 450 set stones before the middle wall. What is the fort, and is anyone in it?
+
+**Options.**
+- **A (recommended).** As built: empty, a landmark on the Gatelands' cliffs, walked for the view; what it was for stays a mystery until the quest writer gives it a beat.
+- **B.** Held by bandits (OG-121's "ruined forts taken by bandits"): a camp in the cashel and a way down a cleft to a sea cave; a place that is not a gate (card F8), with foes.
+- **C.** As the panel paints it: a tower raised in the cashel by a later people to watch the sea, itself a ruin, climbed for the view (a structure the canon does not have yet).
+
+**Recommendation.** A: a ruin with no Weaver stone and no story yet is the quest writer's to fill, and B can be laid over it later without tearing anything up.
+
+**Pictures.** [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-fort.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-far.jpg) · [the passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-gate.jpg)
+
 ## Answered
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
