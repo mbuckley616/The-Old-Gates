@@ -409,6 +409,18 @@ const cbib = await page.evaluate(() => { const root = buildNPCMesh({ role: 'vill
     let d = 9; for (const b of W) if (Math.abs(b.y - q.y) < .015) d = Math.min(d, Math.hypot(b.x - q.x, b.z - q.z)); if (d < 1) { s += d; c++; } }
   return { bib: true, gap: +(s / Math.max(1, c)).toFixed(4), n: c, out: P.cloak.through ? P.cloak.through.out : null, under: P.cloak.under }; });
 check(`over an apron's bib a cape lies close, not 4 cm out: Sorcha's under 3 cm off the bib at the breast (${cbib.gap}), nothing through, nothing under`, cbib.bib && cbib.n > 50 && cbib.gap < .03 && cbib.out === 0 && cbib.under === 0, cbib);
+// S2427 (S2407's owed note): over loose hair worn in front the cape stood 4 cm over the hair, the lock's lean carried up each column through
+// the hair's maxima; at the front it is now lifted with what is worn there. Sigrun's (cf1) was 9.1 cm off the body at the breast, now 7.1
+const chair = await page.evaluate(() => { const root = buildNPCMesh({ role: 'villager', name: 'Sigrun', people: 'gatelander' }, { key: 'cf1' }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+  const D = r.hbG.dress; if (!D.cape) return { cape: false }; const P = HB.makePerson(r.hbG, { hoodStats: false }); P.root.updateMatrixWorld(true); const v = new THREE.Vector3(), n = new THREE.Vector3(); P.byName['neck01'].getWorldPosition(n);
+  let hair = 0; P.root.traverse(o => { if (o.isMesh && o.name === 'hair') hair++; });
+  let body = null; P.root.traverse(o => { if (o.isSkinnedMesh && o.name === '' && !body) body = o; }); const B = [], bp = body.geometry.attributes.position;
+  for (let i = 0; i < bp.count; i += 2) { v.fromBufferAttribute(bp, i); body.applyBoneTransform(i, v); v.applyMatrix4(body.matrixWorld); B.push(v.clone()); }
+  const cl = P.root.getObjectByName('cloak'), pa = cl.geometry.attributes.position; let s = 0, c = 0;
+  for (let i = 0; i < pa.count; i++) { const q = v.fromBufferAttribute(pa, i).applyMatrix4(cl.matrixWorld), dy = n.y - q.y; if (Math.abs(Math.atan2(q.x - n.x, -(q.z - n.z))) < 2.5 || dy < .05 || dy > .2) continue;
+    let d = 9; for (const b of B) if (Math.abs(b.y - q.y) < .015) d = Math.min(d, Math.hypot(b.x - q.x, b.z - q.z)); if (d < 1) { s += d; c++; } }
+  return { cape: true, hair, gap: +(s / Math.max(1, c)).toFixed(4), n: c, out: P.cloak.through ? P.cloak.through.out : null, under: P.cloak.under }; });
+check(`a cape over loose hair worn in front lies on it, not 4 cm out: Sigrun's under 8 cm off the body at the breast (${chair.gap}), nothing through, nothing under`, chair.cape && chair.hair > 0 && chair.n > 50 && chair.gap < .08 && chair.out === 0 && chair.under === 0, chair);
 // S2420 (S2407's owed note): under the brooch, where the shoulder line turns in to the throat, a front column's upper rows stood up to 9 mm
 // inside the line from the row above to the row below, a notch in the opening's edge. Read on Sorcha and Orla: no front point in the top
 // 10 cm more than 3 mm inside it

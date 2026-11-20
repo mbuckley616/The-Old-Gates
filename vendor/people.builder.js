@@ -1526,7 +1526,7 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
       const hairR = radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 1), tabR = HP.tab != null ? radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 2) : null;
       const wornR = HP.worn != null ? radialMap(HP, neck.x, neck.z, neckY - L - .1, neckY + .05, BH, b => b === 3) : null;
       const pols = cols.map(c => c.map(q => ({ th: Math.atan2(q.x - neck.x, -(q.z - neck.z)), r: Math.hypot(q.x - neck.x, q.z - neck.z) })));
-      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r < 1 ? p.r : Math.max(p.r, c[r].y < neckY - .03 ? hairR(p.th, c[r].y) + .01 : 0, tabR ? tabR(p.th, c[r].y) + .01 : 0)), b = a.slice();
+      let D = cols.map((c, k) => { const pol = pols[k], a = pol.map((p, r) => r < 1 ? p.r : Math.max(p.r, c[r].y < neckY - .03 && !(capeFront(c[r]) > 0) ? hairR(p.th, c[r].y) + .01 : 0, tabR ? tabR(p.th, c[r].y) + .01 : 0)), b = a.slice();
         for (let r = 1; r < R; r++) for (let d = -8; d <= 8; d++) { const j = r + d; if (j < 1 || j >= R) continue; const v = a[j] - .4 * .0105 * Math.abs(d); if (v > b[r]) b[r] = v; }
         return b.map((v, r) => Math.max(0, v - pol[r].r)); });
       // and across the columns: the hair's outline is read strand by strand, so neighbouring columns wanted different lifts and the cape's top
@@ -1539,7 +1539,11 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
       // what is worn at the breast is lifted on its own (Session 2407): taken through the hair's maxima, a bib's outline (which leans out as
       // it goes down the breast) was carried up each column from the rows under it, and a bib-wearer's cape stood 4 cm over the bib, not 1.
       // Its lift is only blurred, never widened, then held a few mm under what each point needs (2 mm over the bib at the least)
-      if (wornR) { const need = cols.map((c, k) => pols[k].map((p, r) => r < 1 || !(capeFront(c[r]) > 0) ? 0 : Math.max(0, wornR(p.th, c[r].y) + .01 - p.r)));
+      // and loose hair worn in front (Session 2427, S2407's owed note): taken through the maxima, a lock that falls off the shoulder's front and
+      // leans out down the breast was carried up each column the same way, and a cape over it stood 4 cm over the hair, 9 cm off the breast.
+      // At the front (capeFront) the hair's outline is lifted with what is worn there; behind, it is widened as before
+      const hairF = (p, q) => q.y < neckY - .03 ? hairR(p.th, q.y) + .01 - p.r : 0;
+      if (wornR || (HP.tab ?? HP.worn ?? nH) > 0) { const need = cols.map((c, k) => pols[k].map((p, r) => r < 1 || !(capeFront(c[r]) > 0) ? 0 : Math.max(0, wornR ? wornR(p.th, c[r].y) + .01 - p.r : 0, hairF(p, c[r]))));
         let W = need.map(d => d.slice());
         for (let it = 0; it < 2; it++) W = W.map((d, k) => d.map((v, r) => (2 * v + (k > 0 ? W[k - 1][r] : v) + (k < K - 1 ? W[k + 1][r] : v)) / 4));
         for (let it = 0; it < 4; it++) W = W.map(d => d.map((v, r) => r < 1 ? v : (2 * v + (r > 1 ? d[r - 1] : v) + (r < R - 1 ? d[r + 1] : v)) / 4));
