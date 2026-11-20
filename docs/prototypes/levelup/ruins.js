@@ -647,7 +647,11 @@ export function forgottenAqueducts(o = {}) {
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals(); worldUV(g, .1); B.set('bed', [g]); }
   // the nave's floor: the kit's slabs at -70 the halls' length and width (under the bed's heightfield inside the hole)
   { const g = new THREE.BoxGeometry(2 * X1 + 4, 1, 2 * OUT); g.translate(0, FLOOR - .5, 0); put('slab', g); }
-  { const g = new THREE.PlaneGeometry(2 * X1 + 20, 2 * R + 30); g.rotateX(-Math.PI / 2); g.translate(0, WATER, 0); put('water', g); }
+  // the water (Session 2446): coloured by its depth over what is under it, pale green over the scree's toe and the shelf, dark over the
+  // nave's 6 m; it was one colour, and the blue-green came from a light over it
+  { const g = new THREE.PlaneGeometry(2 * X1 + 20, 2 * R + 30, 70, 30); g.rotateX(-Math.PI / 2); g.translate(0, WATER, 0); const P = g.attributes.position, col = [];
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), d = Math.max(0, WATER - ground(x, z)), t = sstep(.3, 6, d); col.push(.2 + (.035 - .2) * t, .34 + (.1 - .34) * t, .28 + (.105 - .28) * t); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); put('water', g); }
   // the arcades: the kit's arch at twice its size, nine bays a side, faced across the nave; broken inside the hole, cracked under the land
   const piecesBy = new Map(), take = G => { G.updateMatrixWorld(true); G.traverse(m => { if (!m.isMesh) return; const k = m.userData.key; if (!piecesBy.has(k)) piecesBy.set(k, [m.material, []]); piecesBy.get(k)[1].push(m); }); };
   const arches = []; for (const side of [-1, 1]) for (let i = 0; i < NB; i++) { const x = -X1 + (i + .5) * BAY, z = side * (HALF + ARC / 2), open = inHole(x, z, -6), cond = open ? 'broken' : 'cracked';
@@ -702,9 +706,13 @@ export function forgottenAqueducts(o = {}) {
   const landM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95 }); landM.side = THREE.DoubleSide; landM.shadowSide = THREE.DoubleSide;
   const bedM = mat('rock', { ns: .7, color: 0xffffff, rough: .92 }); bedM.vertexColors = true;
   const col = new THREE.Color(...GK_SCHOOLS.uisce.stone);
+  // Session 2446: a fallen block is one stone: each face of its box takes one block of the ashlar (the texture is 2 blocks by 4 courses a
+  // tile; the course the box takes is offset by half a block, hence the quarter), so its joints run round its edges; it showed four courses
+  // of small blocks on every face
+  const oneStone = m => { for (const k of ['map', 'normalMap']) { const t = m[k].clone(); t.repeat.set(.5, .25); t.offset.set(.25, 0); t.needsUpdate = true; m[k] = t; } return m; };
   const M = { liner: new THREE.MeshStandardMaterial({ color: new THREE.Color(.05, .055, .055), roughness: 1, side: THREE.DoubleSide }), land: landM, rock: rockM, bed: bedM, slab: mat('slab', { ns: .7, color: col.clone().multiplyScalar(.75), rough: .5 }), wall: mat('ashlar', { ns: 1, color: col.clone().multiplyScalar(.92) }), vault: mat('ashlar', { ns: 1, color: col.clone().multiplyScalar(.85) }),
-    choke: rockM, stone: mat('ashlar', { ns: 1, color: col.clone().multiplyScalar(.9) }), stair: mat('searock', { ns: .8, color: 0x9c9a95, rough: .9 }),
-    water: new THREE.MeshStandardMaterial({ color: new THREE.Color(.04, .11, .11), roughness: .2, metalness: .15, transparent: true, opacity: .84 }),
+    choke: rockM, stone: oneStone(mat('ashlar', { ns: 1, color: col.clone().multiplyScalar(.9) })), stair: mat('searock', { ns: .8, color: 0x9c9a95, rough: .9 }),
+    water: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .28, metalness: .1, transparent: true, opacity: .84 }),
     fall: new THREE.MeshBasicMaterial({ map: streaks, vertexColors: true, color: new THREE.Color(.8, .86, .86), transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
     foam: new THREE.MeshBasicMaterial({ color: new THREE.Color(.5, .55, .55), transparent: true, opacity: .45, depthWrite: false }), mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
   for (const k of ['wall', 'vault', 'stone', 'stair']) { M[k].side = THREE.DoubleSide; }

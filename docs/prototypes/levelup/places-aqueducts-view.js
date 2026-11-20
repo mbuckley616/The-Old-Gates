@@ -22,7 +22,7 @@ sun.position.copy(SUN).multiplyScalar(400); sun.target.position.set(0, -40, 0); 
 Object.assign(sun.shadow.camera, { left: -170, right: 170, top: 170, bottom: -170, near: 100, far: 800 }); scene.add(sun, sun.target);
 scene.add(new THREE.HemisphereLight(new THREE.Color(.5, .56, .62), new THREE.Color(.1, .12, .11), DUSK ? .3 : .45)); skyDome(scene, SUN);
 // the light off the water in the hole, cool and green, which is all that reaches the halls under the land
-{ const l = new THREE.PointLight(DUSK ? new THREE.Color(.3, .4, .45) : new THREE.Color(.45, .85, .8), DUSK ? 200 : 700, 200, 1.4); l.position.set(0, A.water + 14, 0); scene.add(l); }
+{ const l = new THREE.PointLight(DUSK ? new THREE.Color(.3, .4, .45) : new THREE.Color(.45, .85, .8), DUSK ? 120 : 350, 200, 1.4); l.position.set(0, A.water + 14, 0); scene.add(l); }
 const g = A.ground, E = 1.65, s0 = A.stair.a0, sm = (A.stair.a0 + A.stair.a1) / 2; let eye, at;
 if (VIEW === 'stair') { const rr = A.lip(sm) - 4, y = (A.stair.y0 + A.stair.y1) / 2; eye = [Math.sin(sm) * rr, y + E + 1.5, Math.cos(sm) * rr]; at = [-70, -56, -8]; cam.fov = 70; }
 else if (VIEW === 'scree') { eye = [A.figure.x + 9, A.figure.y + 6, A.figure.z + 7]; at = [-110, -50, -6]; cam.fov = 66; }

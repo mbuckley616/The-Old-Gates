@@ -210,7 +210,13 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
   const S = a.stair, tread = [], wall = []; for (let k = 0; k < 10; k++) { const t = (k + .5) / 10, an = S.a0 + (S.a1 - S.a0) * t, rr = a.lip(an) - 2.4, x = Math.sin(an) * rr, z = Math.cos(an) * rr, hit = cast([x, 20, z], [0, -1, 0]);
     tread.push(hit && { n: hit.n, y: hit.y }); const w = hit && cast([x, hit.y + .6, z], [Math.sin(an), 0, Math.cos(an)], 8); wall.push(w && { n: w.n, d: w.d }); }
   const emissive = a.group.children.filter(m => m.material.emissive && m.material.emissive.getHex()).map(m => m.name);
-  return { tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), names: a.group.children.map(m => m.name), lips, nave: N, arches: a.arches, falls: a.falls, stair: { ...S }, tread, wall, open, under, leak, out, along, figure: a.figure, water: a.water, floor: a.floor, land: a.land,
+  // Session 2446: the water coloured by its depth (the mean brightness of its points over 5.5 m or more against those over less than 1.5 m),
+  // and the fallen blocks' stone one ashlar block a face
+  const wm = a.group.children.find(m => m.name === 'water'), WP = wm.geometry.attributes.position, WC = wm.geometry.attributes.color, sh = [], dp = [];
+  for (let i = 0; i < WP.count; i++) { const d = a.water - a.ground(WP.getX(i), WP.getZ(i)), L = WC.getX(i) + WC.getY(i) + WC.getZ(i); if (d >= 5.5) dp.push(L); else if (d < 1.5) sh.push(L); }
+  const mean = l => +(l.reduce((p, q) => p + q, 0) / l.length / 3).toFixed(3), sm = a.group.children.find(m => m.name === 'stone').material.map;
+  const tone = { deep: mean(dp), shallow: mean(sh), nd: dp.length, ns: sh.length, uni: !!wm.material.vertexColors, rep: [sm.repeat.x, sm.repeat.y] };
+  return { tone, tris: a.tris, draws: a.draws, same: hash(a.group) === hash(b.group), names: a.group.children.map(m => m.name), lips, nave: N, arches: a.arches, falls: a.falls, stair: { ...S }, tread, wall, open, under, leak, out, along, figure: a.figure, water: a.water, floor: a.floor, land: a.land,
     deep: [[20, 0], [0, -12], [12, -24], [-100, 0], [100, 0]].map(([x, z]) => +(a.water - a.ground(x, z)).toFixed(2)), emissive, stones: a.stones }; });
   const br = F.arches.filter(q => q.cond === 'broken'), cr = F.arches.filter(q => q.cond === 'cracked');
   check(`the Forgotten Aqueducts build the same twice and in budget: ${F.tris.toLocaleString()} triangles in ${F.draws} draws`, F.same && F.tris < 80000 && F.draws <= 18, [F.tris, F.draws, F.same, F.names]);
@@ -225,6 +231,8 @@ const HB = await page.evaluate(async () => { const THREE = await import('three')
     br.length >= 4 && br.every(q => q.fallen > 0 && Math.abs(q.x) < 50) && cr.every(q => q.fallen === 0) && br.length + cr.length === 18 && F.emissive.length === 0 && F.stones > 30, F.arches);
   check(`the way down: ${F.stair.n} steps cut in the south wall from ${F.stair.y0} to ${F.stair.y1} m; straight down onto every tenth of it, its tread (${F.tread.map(t => t && t.y).join(', ')}), and the wall within ${Math.max(...F.wall.map(w => w ? w.d : 99))} m behind it`,
     F.tread.every((t, i) => t && t.n === 'stair' && (!i || t.y < F.tread[i - 1].y)) && F.wall.every(w => w && w.n === 'rock' && w.d < 4), { tread: F.tread, wall: F.wall });
+  check(`the water by its depth: ${F.tone.shallow} bright where it is under 1.5 m deep, over the scree's toe (${F.tone.ns} points), ${F.tone.deep} over the nave's 6 m (${F.tone.nd}); a fallen block's face is one stone (the ashlar ${F.tone.rep.join(' by ')} a face)`,
+    F.tone.uni && F.tone.ns > 20 && F.tone.nd > 200 && F.tone.shallow > 2 * F.tone.deep && F.tone.rep[0] === .5 && F.tone.rep[1] === .25, F.tone);
   check(`three falls into the water: ${F.falls.map(f => `${(f.top - f.bottom).toFixed(0)} m`).join(', ')}`, F.falls.length === 3 && F.falls.every(f => f.bottom === F.water && f.top - f.bottom > 35), F.falls);
   check(`the scale: the 1.75 m post stands on the scree ${(F.figure.y - F.water).toFixed(1)} m over the water; the arcade stands ${((F.nave.top - F.floor) / F.figure.h).toFixed(0)} times its height`, F.figure.h === 1.75 && F.figure.y - F.water > 1.5 && F.figure.y - F.water < 3 && (F.nave.top - F.floor) / F.figure.h > 20, F.figure); }
 for (const v of ['lip', 'stair', 'scree', 'nave', 'far', 'nave&dusk']) { const pg = await browser.newPage({ viewport: { width: 320, height: 200 } }), e2 = []; pg.on('pageerror', e => e2.push(String(e)));
