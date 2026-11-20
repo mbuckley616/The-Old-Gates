@@ -66,7 +66,7 @@ const tp = await page.evaluate(() => { const out = {}; const eq0 = { ...EQ }; th
     // S2459: a blade at the hip hangs in a frog: a loop round the scabbard under the locket, its strap up the belt's outside and over its top
     const fr = c && c.getObjectByName('frog'); r.frog = null;
     if (fr) { const F = tpSheathFit(R.rig.hb), L = fr.userData.frog.line, top = L[2], yt = F.yBt - F.p5.y, xo = (F.xBelt || F.side) - F.p5.x;
-      r.frog = { tris: fr.userData.frog.tris, below: +(yt - L[0][1]).toFixed(3), topOff: +(top[1] - yt).toFixed(3), out: +(top[0] - xo).toFixed(4), hooked: L[4][1] < top[1] && L[4][0] < xo }; }
+      r.frog = { col: new THREE.Color().fromBufferAttribute(fr.geometry.attributes.color, 0).getHex(), belt: F.leather, tris: fr.userData.frog.tris, below: +(yt - L[0][1]).toFixed(3), topOff: +(top[1] - yt).toFixed(3), out: +(top[0] - xo).toFixed(4), hooked: L[4][1] < top[1] && L[4][0] < xo }; }
     drawWeapon(); tpEnsure(); r.drawn = { held: !!TP.rig.weapon, worn: !!TP.rig.hbSheath, old: !!(c && c.parent) }; return r; };
   out.sword = wear('sword', false); out.claymore = wear('claymore', true); out.cutlass = wear('cutlass', false); out.mace = wear('mace', false);
   Object.assign(EQ, eq0); SHEATHED = false; thirdPerson = false; return out; });
@@ -92,6 +92,7 @@ const bd = await page.evaluate(() => { const out = {}; const eq0 = { ...EQ }; th
   const pa = b.geometry.attributes.position, F = tpSheathFit(H); let top = null, low = null;
   for (let i = 0; i < pa.count; i++) { const v = new THREE.Vector3().fromBufferAttribute(pa, i); if (!top || v.y > top.y) top = v; if (!low || v.y < low.y) low = v; }
   const S = bp('shoulder01.R'), N = bp('neck01');
+  out.leather = { strap: new THREE.Color().fromBufferAttribute(b.geometry.attributes.color, 0).getHex(), belt: F.leather };
   out.top = { y: +(top.y - S.y).toFixed(3), x: +top.x.toFixed(3), between: top.x < N.x && top.x > S.x - .02 }; out.low = { x: +low.x.toFixed(3), dyB: +(low.y - F.yB).toFixed(3) }; out.tris = B.tris;
   // the scabbard's axis in the strap's plane, its leather on the strap
   const n = new THREE.Vector3(...B.n), o = new THREE.Vector3(...B.o), q = c.quaternion, d = new THREE.Vector3(0, 1, 0).applyQuaternion(q), p0 = c.position.clone().add(F.p2);
@@ -111,6 +112,9 @@ if (bd.hb) {
   check(`the scabbard lies in the strap's plane (axis ${bd.plane && bd.plane.d}, ${bd.plane && bd.plane.off} m off it)`, bd.plane && bd.plane.d < .01 && bd.plane.off < .01, bd);
   check(`in the walk the strap keeps to the body: its points move from the body's nearest by ${bd.walk} m at worst (standing ${bd.stand})`, bd.walk < .02 && bd.stand < .02, bd);
   check('drawn, the baldric is gone with the scabbard', bd.drawn.gone && !bd.drawn.worn, bd);
+  // S2463: the frog and the baldric are cut from the wearer's own belt leather
+  check(`the frog and the baldric are the belt's leather (belt ${bd.leather.belt}, strap ${bd.leather.strap}, the sword's frog ${tp.sword.frog && tp.sword.frog.col})`,
+    bd.leather.belt != null && bd.leather.strap === bd.leather.belt && ['sword', 'cutlass'].every(k => tp[k].frog && tp[k].frog.col === tp[k].frog.belt), { bd: bd.leather, sword: tp.sword.frog });
 }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -271,6 +271,7 @@ function tpSheathFit(H){const P=H.P,sk=P.skeleton,bind=b=>_tsM.copy(sk.boneInver
   const p5=bp(P.byName.spine05),p2=bp(P.byName.spine02),xL=P.byName['upperleg01.L']?bp(P.byName['upperleg01.L']).x+.13:.25,F={p5,p2,yB:p5.y+.05,side:.14,back:p2.z-.12};
   const belt=H.full.find(m=>m.isSkinnedMesh&&m.name==='belt');
   const each=(m,fn)=>{const pa=m.geometry.attributes.position,ix=m.geometry.index,n=ix?ix.count:pa.count;for(let i=0;i<n;i++){const j=ix?ix.getX(i):i;fn(pa.getX(j),pa.getY(j),pa.getZ(j));}};
+  if(belt&&belt.material&&belt.material.color)F.leather=belt.material.color.getHex(); /* S2463 — the frog and the baldric are cut from the belt's own leather */
   if(belt){let lo=1e9,hi=-1e9;each(belt,(x,y,z)=>{if(Math.abs(z)<.12&&x>0){lo=Math.min(lo,y);hi=Math.max(hi,y);}});if(hi>lo)F.yB=(lo+hi)/2;
     /* S2459: the belt's outside where the frog hangs (the side of the hip, not the buckle's front) and its top. The kit's belt is cut from
        the shell's triangles, which overrun the 4.4 cm band its leather draws (11 cm of points at the hip), so the top is the band's, about yB */
@@ -313,7 +314,7 @@ const TP_FROG={h:.026,t:.003,gap:.0015,w:.024,below:.012,over:.006,behind:.022,c
 function tpFrog(c,sc,F){if(F.yBt==null)return null;const K=TP_FROG;c.updateMatrix();const M=c.matrix,Mi=new THREE.Matrix4().copy(M).invert(),s=c.scale.x;
   const R=sc.R,yf=sc.mouth+TP_SCAB_K.locket+K.below/s+K.h/s/2;let i=1;while(i<R.length-1&&R[i].y<yf)i++;const A=R[i-1],B=R[i],t=Math.min(1,Math.max(0,(yf-A.y)/((B.y-A.y)||1)));
   const r={cx:A.cx+(B.cx-A.cx)*t,cz:A.cz+(B.cz-A.cz)*t,hw:A.hw+(B.hw-A.hw)*t,ht:A.ht+(B.ht-A.ht)*t};
-  const P=[],C=[],I=[],col=new THREE.Color(K.col),G=TP_SCAB_K.seg,quad=(a,b,c2,d)=>I.push(a,b,c2,a,c2,d),put=v=>{P.push(v.x,v.y,v.z);C.push(col.r,col.g,col.b);return P.length/3-1;};
+  const P=[],C=[],I=[],col=new THREE.Color(F.leather!=null?F.leather:K.col),G=TP_SCAB_K.seg,quad=(a,b,c2,d)=>I.push(a,b,c2,a,c2,d),put=v=>{P.push(v.x,v.y,v.z);C.push(col.r,col.g,col.b);return P.length/3-1;};
   // the loop: four rings (in and out, top and bottom) round the leather's lens, in the weapon's own units
   const lens=(grow,y)=>{const o=[];for(let j=0;j<G;j++){const a=j/G*Math.PI*2,cs=Math.cos(a),sn=Math.sin(a),k=Math.pow(Math.abs(sn),.6)*Math.sign(sn);
       o.push(put(new THREE.Vector3(r.cx+cs*(r.hw+grow),y,r.cz+k*(r.ht+grow))));}return o;};
@@ -342,7 +343,8 @@ function tpSheathDrop(c){if(!c)return;c.removeFromParent();c.traverse(o=>{if(o.i
 // 128 turns round the section's middle the outermost point of the body and what it wears (not the arms, the neck or the head, and nothing
 // under the belt's middle, where a tunic's skirt is not the body), padded 3 mm, smoothed. Skinned to the body's own bones by the six
 // nearest points of the body and garments (not the cloak, which rides the pelvis), so it bends with the chest and the shoulder; detached
-// with an identity bind, as hbAttach leaves every skinned piece; its own geometry, dropped with the sheathed group
+// with an identity bind, as hbAttach leaves every skinned piece; its own geometry, dropped with the sheathed group. Its leather, and the
+// frog's, is the belt's own colour (F.leather, Session 2463); K.col only where no belt is worn
 const TP_BALD={over:-.04,cut:-.08,w:.045,t:.004,gap:.003,N:128,col:0x3a2414,skip:/^(upperarm|lowerarm|wrist|hand|finger|thumb|metacarpal|neck|head|jaw|eye|tongue|teeth|special|levator|oris|orbicularis|temporalis|risorius)/i};
 function tpBaldric(H,F){const K=TP_BALD,P=H.P,sk=P.skeleton,names=sk.bones.map(b=>b.name),Z=new THREE.Vector3(0,0,1),yMin=F.yB+K.cut;
   /* the plane: over the right shoulder halfway from the neck to the joint, and the left flank over the belt; it holds the body's depth */
@@ -364,7 +366,7 @@ function tpBaldric(H,F){const K=TP_BALD,P=H.P,sk=P.skeleton,names=sk.bones.map(b
   const mx=new Float32Array(N),sm=new Float32Array(N);for(let j=0;j<N;j++){let q=0;for(let k=-2;k<=2;k++)q=Math.max(q,r[(j+k+N)%N]);mx[j]=q;}
   for(let j=0;j<N;j++){let q=0;for(let k=-2;k<=2;k++)q+=mx[(j+k+N)%N];sm[j]=Math.max(r[j],q/5)+K.gap+K.t/2;}
   const ring=[];for(let j=0;j<N;j++){const th=j/N*Math.PI*2;ring.push([ca+Math.cos(th)*sm[j],cb+Math.sin(th)*sm[j]]);}
-  const Pp=[],C=[],I=[],SI=[],SW=[],col=new THREE.Color(K.col),q=new THREE.Vector3(),ou=new THREE.Vector3();
+  const Pp=[],C=[],I=[],SI=[],SW=[],col=new THREE.Color(F.leather!=null?F.leather:K.col),q=new THREE.Vector3(),ou=new THREE.Vector3();
   const skin=(a,b,h)=>{const best=[];for(const s of src){const dd=(s.a-a)**2+(s.b-b)**2+(s.h-h)**2;if(best.length<6||dd<best[best.length-1].dd){best.push({s,dd});best.sort((x,y)=>x.dd-y.dd);if(best.length>6)best.pop();}}
     const acc=new Map();for(const {s,dd} of best){const f=1/(Math.sqrt(dd)+.004);for(let k=0;k<4;k++)if(s.ws[k]>0)acc.set(s.ix[k],(acc.get(s.ix[k])||0)+s.ws[k]*f);}
     const top=[...acc].sort((x,y)=>y[1]-x[1]).slice(0,4),tot=top.reduce((u,x)=>u+x[1],0)||1;for(let k=0;k<4;k++){SI.push(top[k]?top[k][0]:0);SW.push(top[k]?top[k][1]/tot:0);}};
