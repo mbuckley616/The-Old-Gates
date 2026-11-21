@@ -49,6 +49,18 @@ Pictures (Session 2461/2465): [the gorge](https://raw.githubusercontent.com/mbuc
 
 **Recommendation: A.** Until answered, tiers 8–10 keep smith-only tempering; nothing else waits on it.
 
+### Rare materials' props — the fallen star's crater, the skywood pine and the script stone as drawn? (from the look builder, 2026-11-21, #1864)
+**The question.** Rare materials B (#1840 B) owes one look session of kit pieces. The systems builder built the fallen star, the skywood and the sigil stone on stand-ins (a dark disc with a dodecahedron, a 7 m cylinder under four cones, a plain box). The look builder's Session 2500 draws three in the prototype kit: the crater (6 m across, 0.8 m deep, singed rays, a three-lobed star-iron lump whose flecks glint at night; 6,588 triangles), the skywood pine (a 9 m wind-flagged summit pine, silver trunk, a stump when felled; about 10,000 triangles, one on each of 17 peaks) and the script stone (the game's 0.7 × 1.15 m slab, split and spalled, the school's script lit; 860 triangles). The oyster bed waits on #1861; the streak comes with whichever answer this gets.
+
+**Options.**
+- **A (recommended).** Bring all three into the game as drawn, in one session behind the new look, replacing the stand-ins; the pine moves to the game's leaf cards if its pads read too smooth there.
+- **B.** As A, but rework the crater first: less dark, the burn a ring and not a bowl of charcoal, so it reads at noon from the road.
+- **C.** Keep the stand-ins for now.
+
+**Recommendation: A.**
+
+Pictures (Session 2500): [crater](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-crater.jpg) · [the lump](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-crater-close.jpg) · [at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-crater-night.jpg) · [the pine](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-pine.jpg) · [felled](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-pine-felled.jpg) · [the stone, Tine](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-stone-tine.jpg) · [cut](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-stone-cut.jpg)
+
 ## Answered
 ### Rare materials and the top tiers — side-bonuses, the top three made, or those plus graded smithies? (from the systems designer, 2026-11-21, #1840)
 **The question.** Backlog L11's *Gathering* (OG-132) leaves two pieces unbuilt: tool tiers and the four rare materials (sigil stone, star iron, skywood, deep pearl). Today the forge stops at Obsidian (tier 7), Draconic, Demonic and Cosmic are loot only, and the Dragon Scale a lair drops only sells. What should the rare materials do? Page: `docs/design/rare-materials.md`.
