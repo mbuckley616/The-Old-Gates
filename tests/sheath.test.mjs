@@ -183,6 +183,9 @@ if (lh.hb) {
   // Session 2489: the left fist closed round the grip (S2485's note: placed, not turned): the knuckles' line along the blade, the curl's middle on the mark
   check(`third person, a claymore held: the left fist is turned round the grip, its knuckles' line ${lh.hold && lh.hold.kAng} rad off the blade (0.68 before)`,
     lh.hold && lh.hold.kAng != null && lh.hold.kAng < .25, lh.hold);
+  // Session 2499: the right fist turned the same way (S2489's note: its knuckles' line 0.42 rad off the blade, the driver's wrist carried across)
+  check(`third person, a claymore held: the right fist is turned round the grip too, its knuckles' line ${lh.hold && lh.hold.kAngR} rad off the blade (0.42 before)`,
+    lh.hold && lh.hold.kAngR != null && lh.hold.kAngR < .25, lh.hold);
   check(`third person, a claymore sheathed: the left hand leaves the grip (${s0.lw} at the start, ${s15.lw} by 0.15 s)`, s0.on && s0.lw === 1 && s15.lw === 0, lh);
 }
 // Session 2478: under a cloak a sword at the hip lifts the sheet (S2451's note: its hilt was lost inside the cloak and the scabbard's point
