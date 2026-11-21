@@ -37,6 +37,9 @@ check(`the Hollow (${c.tris} triangles in ${c.draws} draws): arrived on the pass
 check(`walked the passage, the shelf, the viaduct, the court and the rings to the plate with no wall in the way (${c.nb} blocked)`, c.nb === 0 && c.maxStep <= .4 && Math.hypot(c.end[0] - c.goal[0], c.end[1] - c.goal[1]) < .1, c);
 check('off the deck and over the lake are walls', c.deckSide && c.lake, c);
 check(`the slit door offers the gate (${c.door})`, /go through the door/.test(c.door || ''), c);
+const hud = await page.evaluate(() => { const T = currentHouse._hollow, Bd = T.bounds, s = [px, pz, jumpY], [tx, tz] = T.path[1];
+  px = tx - Bd.x0; pz = tz - Bd.z0; updateHUD(); const t = document.getElementById('ob').textContent; [px, pz, jumpY] = s; updateHUD(); return t; });
+check(`along the passage the HUD names the way out, not an empty home (${hud})`, /Back along the passage/.test(hud) && !/No one is in/.test(hud), hud);
 await page.evaluate(() => interact());
 const down = await page.waitForFunction(seed => activeZoneId === 'dungeon' && typeof currentPortal !== 'undefined' && currentPortal && currentPortal.seed === seed, H.seed, { timeout: 60000 }).then(() => true, () => false);
 const t = await page.evaluate(() => ({ th: SS_THRESHOLD && { x: SS_THRESHOLD.x, z: SS_THRESHOLD.z }, out: hollowSite().out }));
