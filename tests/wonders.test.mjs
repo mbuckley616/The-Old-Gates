@@ -312,12 +312,14 @@ const iw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonder
     return { i: I.i, cond: I.cond, gone: I.gone, start: walk[0].h, sill: y(0, z), top: Math.max(...walk.map(q => q.h)), rise: +rise.toFixed(2), blocked: walk.filter(q => q.blk).length,
       cliff: T.every(t => so(Math.cos(t) * (hd(t) + 2), z + Math.sin(t) * (hd(t) + 2), 13)), swim: T.every(t => so(Math.cos(t) * (hd(t) + 7.5), z + Math.sin(t) * (hd(t) + 7.5), 0)),
       stacks: I.stacks.every(q => so(q.x, q.z, 0)), feet: so(-7, z, W.P) && so(7, z, W.P), open: !so(0, z, y(0, z)), lost: I.lost.filter(q => q.top > .9).every(q => so(q.x, q.z, y(q.x, q.z))) }; });
-  return { tris: W.tris, draws: W.draws, meshes, lit, inScene: W.group.parent === sc, sol: S.sol.length, plats: S.plats.length, P: W.P, isles }; });
+  const cr = Math.cos(st.ry), sr = Math.sin(st.ry), onRock = (ZONES.world.herbs || []).filter(h => { const dx = h.x - st.ox, dz = h.z - st.oz, lx = dx * cr - dz * sr, lz = dx * sr + dz * cr; return W.isles.some(I => Math.hypot(lx, lz - I.z) < W.head(I.i, Math.atan2(lz - I.z, lx)) + 36); }).map(h => h.id);
+  return { tris: W.tris, draws: W.draws, meshes, lit, inScene: W.group.parent === sc, sol: S.sol.length, plats: S.plats.length, P: W.P, isles, onRock }; });
 console.log(JSON.stringify(iw));
 const II = iw.isles || [], up = II.filter(q => q.cond === 'stand');
 check(`within 1.6 km the five stand: rings ${II.map(q => q.cond[0]).join('')}, the third's ${II[2] && II[2].gone} stones down; ${iw.tris} triangles in ${iw.draws} draws, nothing lit`, !iw.none && iw.inScene && II.map(q => q.cond[0]).join('') === 'ssbss' && II[2].gone > 0 && iw.draws === iw.meshes && iw.draws <= 6 && iw.tris < 60000 && iw.lit === 0, iw);
 check(`on each standing isle you climb from the water (${up.map(q => q.start).join(', ')} m) up the landing, over the crown and the plinth to the sill at ${up.map(q => q.top).join(', ')} m, no rise over ${Math.max(...up.map(q => q.rise))} m, nothing in the way`, up.length === 4 && up.every(q => q.start < 0 && Math.abs(q.top - (iw.P + .6)) < .01 && q.sill === q.top && q.rise < 1.5 && q.blocked === 0), up);
 check(`its ${iw.sol} solids: every isle's cliff all round, to the walker on the lip and the swimmer at its foot; the stacks, the rings' feet and the lost stones; the opening is clear`, II.every(q => q.cliff && q.swim && q.stacks && q.feet && q.open && q.lost), II);
+check(`no herb is left on or in an isle's rock (${iw.onRock && iw.onRock.length}; a sea-bed herb stood on the first crown before)`, iw.onRock && iw.onRock.length === 0, iw.onRock);
 const ish = await page.evaluate(() => { const S = WONDERS.isles, st = S.site, O = { x: st.ox, z: st.oz, ry: st.ry }, I = S.W.isles[1], [ax, az] = wonderToWorld(O, 0, I.z), [bx, bz] = wonderToWorld(O, 160, I.z), L = Math.hypot(bx - ax, bz - az), ux = (ax - bx) / L, uz = (az - bz) / L;
   const keep = worldState.ship; worldState.ship = { cls: 'sloop', name: 'Test Helm', sails: 0, cargo: 0 }; WORLD.spawnShip(bx, bz, Math.atan2(-ux, -uz));
   const clearAtStart = !hullStoneAhead(SHIP.x, SHIP.z, SHIP.yaw, 1, SHIP.L, SHIP.W); SHIP.sailing = true; HELD_KEYS.KeyW = true;

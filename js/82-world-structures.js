@@ -3911,10 +3911,19 @@
     S.plats.forEach(p=>ZONES.world.platforms.push(p));
     S.sol=W.sol.map(b=>{const [x,z]=w2(b.x,b.z);return {cx:x,cz:z,rx:b.w/2,rz:b.d/2,c:Math.cos(st.ry+b.ry),s:Math.sin(st.ry+b.ry),h:60,cell:'wonder:isles',wonder:true};});
     S.sol.forEach(q=>STATIC_SOL.push(q));
+    S.reseat=()=>wonderIslesHerbs(st,W);S.reseat();
     return W;}
+  // S2487 — a herb laid by a chunk where an isle's rock now stands goes, as a herb in the Spires' stone does: a sea-bed herb stood on the
+  // first crown at 13.7 m (the chunk read the crown's platform as its ground). Anything within the rock's skirt (36 m past the cliff's
+  // head) is taken away; run at the build and once a second, as the chunks stream in under the line.
+  function wonderIslesHerbs(st,W){const HL=(ZONES.world&&ZONES.world.herbs)||[],c=Math.cos(st.ry),s_=Math.sin(st.ry);let n=0;
+    for(let i=HL.length-1;i>=0;i--){const h=HL[i];if(Math.hypot(h.x-st.x,h.z-st.z)>800)continue;const dx=h.x-st.ox,dz=h.z-st.oz,lx=dx*c-dz*s_,lz=dx*s_+dz*c;
+      if(!W.isles.some(I=>{const d=Math.hypot(lx,lz-I.z);return d<W.head(I.i,Math.atan2(lz-I.z,lx))+36;}))continue;
+      HL.splice(i,1);h.offPad=true;h.g.visible=false;if(h.gl)h.gl.intensity=0;if(h.inst)syncHerbInstance(h);n++;}
+    return n;}
   function wonderIslesDrop(){const S=WONDERS.isles;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:isles')STATIC_SOL.splice(i,1);S.sol=[];
-    const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='isles')P.splice(i,1);S.plats=[];}
+    const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='isles')P.splice(i,1);S.plats=[];S.reseat=null;}
   // from WORLD.tick, every frame in the open world: each wonder built within 1.6 km (checked once a second), animated while it stands.
   // A wonder's site is searched only once you stand on its island's land (the Fields' takes 0.6 s on software GL)
   const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop},{k:'northlight',nation:'mark',site:wonderNorthSite,build:wonderNorthBuild,drop:wonderNorthDrop},{k:'spires',nation:'gatelands',site:wonderSpiresSite,build:wonderSpiresBuild,drop:wonderSpiresDrop},{k:'scarred',nation:'aurenne',site:wonderScarredSite,build:wonderScarredBuild,drop:wonderScarredDrop},{k:'isles',nation:'gatelands',site:wonderIslesSite,build:wonderIslesBuild,drop:wonderIslesDrop}];
@@ -3926,6 +3935,7 @@
         if(near&&S.W&&S.W.sig!==wonderCellSig(st))K.drop(); /* a cell under it came or went: build it over the ground as it is now */
         if(near&&!S.W)K.build();else if(!near&&S.W)K.drop();}
       if(due&&S.W&&S.herbR&&S.site)wonderSeatHerbs(S.site.x,S.site.z,S.herbR); /* S2410 — a chunk streamed in under it since */
+      if(due&&S.W&&S.reseat)S.reseat(); /* S2487 — the isles' own: what a chunk laid under their rock */
       if(S.W)S.W.tick(t/1000,wonderAwake());}}
   // S2431 — no chunk foe on a wonder's ground (S2409's needs-eyes: foes stood inside the Northlight Altar's ring). A wonder is a stamp,
   // not a site in its cell, so spawnChunkEncounters' pad test never saw one. Each wonder's ground is a circle (its flattening stamp and its
