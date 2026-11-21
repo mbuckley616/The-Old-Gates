@@ -766,6 +766,8 @@ export function stormwatch(o = {}) {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(idx); g.setAttribute('pave', new THREE.Float32BufferAttribute(pv, 1));
     g.computeVertexNormals(); worldUV(g, SC.land); g.userData.keep = true; put('land', g); }
   // ── the cliff's face: from the edge down to under the sea, its beds stepping in and out a little; u along the edge, v up it ──
+  // Session 2496: its colour pale limestone and broad (24 by 18 m), so the texture's beds carry the detail; at 8 m on a grid of 3 m quads
+  // over a dark base it read from the sea as a few pixels stretched up the face (the critic, s1812)
   { const NJ = 30, pos = [], col = [], uv = [], s = .0625; let u = 0; const U = [0];
     for (let i = 1; i <= NX; i++) U.push(U[i - 1] + Math.hypot(XL[i] - XL[i - 1], edge(XL[i]) - edge(XL[i - 1])));
     // Session 2457: the face in buttresses and gullies, not one plane: along it, stretches of 22 to 60 m; a buttress stands out 3 to 8 m
@@ -775,11 +777,13 @@ export function stormwatch(o = {}) {
     const face = (u, y) => { let d = 0; for (const f of FACE) { const du = Math.abs(u - f.c); if (du > f.hw + 2 || !f.a) continue; const hw = f.gully ? Math.min(f.hw, 4 + f.hw * .2) : f.hw;
       d += f.a * (1 - sstep(hw - 3, hw + 1, du)) * sstep(f.top, f.top - 6, y) * (f.gully ? 1 : .34 + .66 * sstep(-2, 24, y)); } return d; };
     const pt = (i, j) => { const x = XL[i], yt = landY(x, edge(x)), y = yt - (yt + 6) * j / NJ, bed = Math.floor(y / 7.3), z = j === 0 ? edge(x) : edge(x) - 2 * (1 - y / TOP) - 3.2 * (fbm(x / 26 + bed * 1.7, bed * .9, 2) - .5) - 9 * (fbm(x / 55 + 2, y / 45, 2) - .5) * sstep(0, 3, j) - .4 + 2.2 * Math.exp(-(((y - 2) / 2.5) ** 2)) * sstep(0, 3, j) + face(U[i], y) * sstep(0, 3, j);
-      const wet = 1 - sstep(1.5, 4, y), lich = sstep(TOP - 14, TOP - 2, y) * .5, n = (.85 + .3 * fbm(x / 8, y / 8, 3)) * (.82 + .3 * fbm(bed * 3.1, 1.1, 1)), c = [.56, .56, .53].map((v, k) => (v * (1 - wet) + [.12, .12, .1][k] * wet) * n * (1 - lich * .25) + lich * [.06, .07, .02][k]);
+      const wet = 1 - sstep(1.5, 4, y), lich = sstep(TOP - 14, TOP - 2, y) * .5, n = (.9 + .2 * fbm(x / 24, y / 18, 3)) * (.88 + .2 * fbm(bed * 3.1, 1.1, 1)), c = [.8, .79, .74].map((v, k) => (v * (1 - wet) + [.12, .12, .1][k] * wet) * n * (1 - lich * .25) + lich * [.06, .07, .02][k]);
       return [x, j === 0 ? yt : y, z, c, U[i] * s, y * s]; };
-    for (let i = 0; i < NX; i++) for (let j = 0; j < NJ; j++) { const a = pt(i, j), b = pt(i + 1, j), c = pt(i + 1, j + 1), d = pt(i, j + 1);
-      for (const v of [a, b, c, a, c, d]) { pos.push(v[0], v[1], v[2]); col.push(...v[3]); uv.push(v[4], v[5]); } }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.userData.uvSet = true; put('cliff', g); }
+    // Session 2496: one shared point per grid point and its normals smoothed (put's flat normals shaded every 3 m quad its own way under a
+    // grazing sun: from the sea a checkerboard); the buttresses and gullies are shape, so they still light and shade in their facets
+    const idx = []; for (let i = 0; i <= NX; i++) for (let j = 0; j <= NJ; j++) { const v = pt(i, j); pos.push(v[0], v[1], v[2]); col.push(...v[3]); uv.push(v[4], v[5]); }
+    for (let i = 0; i < NX; i++) for (let j = 0; j < NJ; j++) { const a = i * (NJ + 1) + j, b = a + NJ + 1, c = b + 1, d = a + 1; idx.push(a, b, c, a, c, d); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); g.userData.uvSet = true; g.userData.keep = true; put('cliff', g); }
   // ── the sea, the bed under the cliff, the foam along its foot ──
   { const g = new THREE.PlaneGeometry(9000, 9000); g.rotateX(-Math.PI / 2); g.translate(0, 0, -2500); B.set('sea', [g]); }
   { const pos = []; for (let i = 0; i < NX; i++) { const p = k => { const x = XL[k], e = edge(x) - 4.4; return [[x, .06, e], [x, .06, e - 3 - 2.5 * fbm(x / 11, 2.2, 2)]]; }, [a, d] = p(i), [b, c] = p(i + 1); pos.push(...a, ...b, ...c, ...a, ...c, ...d); }
@@ -896,7 +900,7 @@ export function stormwatch(o = {}) {
   const cliffM = mat('searock', { ns: 1.1, color: 0xffffff, rough: .95 }); cliffM.vertexColors = true;
   const M = { land: landM, cliff: cliffM, sea: new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .2, .25), roughness: .18, metalness: .1 }),
     foam: new THREE.MeshBasicMaterial({ color: new THREE.Color(.82, .86, .86), transparent: true, opacity: .45, depthWrite: false }),
-    wall: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }), tumble: mat('searock', { ns: 1, color: 0xd6d4cc, rough: .95 }), chev: Object.assign(mat('searock', { ns: .7, color: 0xffffff, rough: .95 }), { vertexColors: true }),
+    wall: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }), tumble: mat('searock', { ns: 1, color: 0xd6d4cc, rough: .95 }), chev: Object.assign(mat('searock', { ns: .7, color: new THREE.Color(1.5, 1.48, 1.42), rough: .95 }), { vertexColors: true }) /* Session 2496: the pavement's limestone, not black teeth (the critic, s1812) */,
     step: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }), lintel: mat('flag', { ns: 1, color: 0xd0cec6, rough: .9 }), slab: new THREE.MeshStandardMaterial({ map: paveT, color: 0xdedcd4, roughness: .95 }) /* Session 2455: a bed of the pavement, its clints and grikes */,
     mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
   let tris = 0, draws = 0;
@@ -932,7 +936,8 @@ export function stormwatch(o = {}) {
 export function frostbornVault(o = {}) {
   const key = o.key || 'ruins:frostborn', r = stream(key), group = new THREE.Group();
   const BED = -85, GW = 75, GB = 22, HEAD = -305, FZ = HEAD + 2, FD = 34, VW = 9, VX = 100, P = 7, S = (2 * GW - 4 * P) / 5, HL = 60, HW = 36, HH = 30, T = 3;
-  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); x.computeVertexNormals(); if (!x.attributes.uv || k === 'stone' || k === 'snow' || k === 'deck') worldUV(x, k === 'stone' ? .055 : k === 'rock' ? .07 : .2); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); x.computeVertexNormals(); if (!x.attributes.uv || k === 'stone' || k === 'snow' || k === 'deck') worldUV(x, k === 'stone' ? .16 : k === 'rock' ? .07 : .2); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+  // Session 2497: the stone's courses at about 1.5 m (a tile of 6 m, was 18): at 4.5 m the 100 m face read as a 20 m gatehouse (the critic, s1812)
   const bb = g => { g.computeBoundingBox(); return g.boundingBox; };
   // the land: the gorge's section by |x|, closed at its head; the rims rising gently, the peaks beyond
   const rimY = (x, z) => { const ax = Math.abs(x) + 6 * fbm(z / 40 + 3, x / 90, 3), rim0 = 2.5 * fbm(x / 30, z / 30, 3) + Math.max(0, ax - GW - 60) * .05 + sstep(250, 650, ax) * 260 * (.6 + .4 * fbm(x / 200, z / 200, 3));

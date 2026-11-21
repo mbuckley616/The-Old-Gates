@@ -3312,9 +3312,13 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
     T.group.children.forEach(m=>{if(m.name==='hollow:beam')m.visible=dayK>.4;});
     sc_.add(new THREE.AmbientLight(0xbcc6d0,.3));
-    {const O=T.oculus,s=new THREE.SpotLight(0xfff2dc,(14*noon+2)*dayK,320,.2,.5,1),L=T.roof+40;s.position.set(rx(T.lands.x+T.sun[0]/T.sun[1]*L),ry(L),rz(T.lands.z+T.sun[2]/T.sun[1]*L));s.target.position.set(rx(T.lands.x),ry(0),rz(T.lands.z));s.userData.daylight=true;sc_.add(s,s.target);
-      const p=new THREE.PointLight(0xe8e0d0,(3*noon+.6)*dayK,140,1);p.position.set(rx(T.lands.x),ry(8),rz(T.lands.z+6));p.userData.daylight=true;sc_.add(p);}
-    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,3.2*dayK,40,1);l.position.set(rx(M.x),ry(M.y)+3,rz(M.z)-2);l.userData.daylight=true;sc_.add(l);}
+    /* S2496 — the court washed out to flat cream (the critic, s1812): on the legacy scale a point light falls off only linearly to its
+       distance, so 3.6 gave every stone within 140 m about 3.3 and the mouth's 3.2 the passage the same, and the spot's 0.2 rad cone from
+       165 m lit 40 m across, the whole court and the rings, where the oculus's beam is 13. Now the pool is the beam's (0.085 rad) and the
+       fill under it a grey the stone keeps its shading in, as the prototype's court. */
+    {const O=T.oculus,s=new THREE.SpotLight(0xfff2dc,(1.1*noon+.25)*dayK,320,.085,.35,1),L=T.roof+40;s.position.set(rx(T.lands.x+T.sun[0]/T.sun[1]*L),ry(L),rz(T.lands.z+T.sun[2]/T.sun[1]*L));s.target.position.set(rx(T.lands.x),ry(0),rz(T.lands.z));s.userData.daylight=true;sc_.add(s,s.target);
+      const p=new THREE.PointLight(0xe8e0d0,(.8*noon+.18)*dayK,140,1);p.position.set(rx(T.lands.x),ry(8),rz(T.lands.z+6));p.userData.daylight=true;sc_.add(p);}
+    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,1.7*dayK,40,1);l.position.set(rx(M.x),ry(M.y)+3,rz(M.z)-2);l.userData.daylight=true;sc_.add(l);}
     return sc_;
   }
   // S1773 (card F8, Michael's A on #1026) — a smugglers' sea cave (PKIT.places.cove, places.js's smugglersLair, #314 A) behind its mouth on
