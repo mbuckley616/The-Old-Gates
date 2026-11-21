@@ -153,13 +153,48 @@ if (D.laid) {
   check(`his camp is nearer the way in than he is (${D.campDoor} m against ${D.bodyDoor})`, D.camp && D.campDoor < D.bodyDoor, D);
   check(`looted: his things as rolled, ${D.gold} gold, his journal and his sword (salvage), the camp's bedroll`, D.same && D.opened && D.gold >= 8 && D.gold <= 20 && D.journal && D.sword && D.roll && D.rollHidden, D);
 } else check('this keep has no delver, as its seed says', !D.due, D);
+// S2469 — the cache (what-a-gate-keeps' session 7, Michael's B on #1783): every keep has one, sealed by its gate's school; one in three holds an arc
+const CG = await page.evaluate(() => { const T = carvingTable().bySeed, out = { n: 0, placed: 0, arcs: 0, own: 0, miss: [] };
+  for (const s of Object.keys(T)) { const e = WORLD.doorAnywhere(+s); if (!e || e.lairDoor || e.kind === 'fort_door') continue; const p = makePortalDef(e); p.zone = 'world'; p.sigil = true; p.theme = p.theme || e.theme; if (!gateCofferDue(p)) continue;
+    out.n++; const a = gateCacheArc(p); if (a) { out.arcs++; if (a === gateCacheSchool(p)) out.own++; }
+    if (out.n <= 40) { const W = WORLD_DUNGEONS.find(x => x.seed === p.seed) || {}, G = makeGate(p.size, p.seed, W.floors, W.cond); if (gateCachePlace(G, p.seed)) out.placed++; else out.miss.push(p.seed); } }
+  return out; });
+console.log('caches', JSON.stringify(CG));
+check(`every keep has its cache in a side wall of the ring chamber (${CG.placed} of ${Math.min(40, CG.n)} laid out)`, CG.placed === Math.min(40, CG.n) && CG.placed > 0, CG.miss);
+check(`one cache in three holds an arc, never of the gate's own school (${CG.arcs} of ${CG.n})`, CG.arcs / CG.n > .22 && CG.arcs / CG.n < .45 && CG.own === 0, CG);
+const KC = await page.evaluate((s) => { const L = GATE_KEEP_LIE || {}, rec = L.cache, out = { laid: !!rec };
+  if (!rec) return out; const sp = _lastGen.spaces[_lastGen.ring], P = rec.place, M = P.floor === 2 ? _lastGen.map2 : _lastGen.map; out.school = rec.school; out.want = gateCacheSchool(currentPortal);
+  out.wall = M[P.r][P.c] === 1 && !(M[P.r + P.oz] && M[P.r + P.oz][P.c + P.ox] > 0) && !!(GATE_SECRETS.indexOf(rec) >= 0); out.shut = !rec.opened && rec.shut.visible && !rec.inside.rub.visible;
+  const sm = showMsg; const said = []; showMsg = (t) => said.push(t); px = rec.kx - rec.place.ox * .5; pz = rec.kz - rec.place.oz * .5; out.near0 = !!gateCacheNear();
+  const wrong = rec.school === 'cloch' ? 'solas_gheal' : 'cloch_ghear'; secretLaid(wrong, null, rec.kx, rec.kz); out.wrong = said.slice(-1)[0] || ''; out.stillShut = !rec.opened;
+  // its school's key, as the seals' table gives it
+  const S = rec.school, t0 = playClockS;
+  if (S === 'tine') { for (const b of rec.braziers) { lightBrazier(b); gateSecretsTick(); playClockS += 5; } out.braziers = rec.braziers.length; out.gap = +Math.hypot(rec.braziers[0].x - rec.braziers[1].x, rec.braziers[0].z - rec.braziers[1].z).toFixed(1); }
+  else if (S === 'uisce') { touchThing('sioc', rec.thing); }
+  else if (S === 'cloch') { secretLaid('cloch_ghear', null, rec.kx - rec.place.ox * .8, rec.kz - rec.place.oz * .8); }
+  else if (S === 'scath') { gateSecretsTick(); out.before = !rec.opened; _oicheUntil = performance.now() + 60000; px = dAt(rec.c); pz = dAt(rec.r); gateSecretsTick(); _oicheUntil = 0; }
+  else if (S === 'solas') { const ll = laidLive; laidLive = () => ({ light: 8, x: rec.kx - rec.place.ox, z: rec.kz - rec.place.oz }); gateSecretsTick(); playClockS += 1.5; gateSecretsTick(); out.half = !rec.opened; playClockS += 1.6; gateSecretsTick(); laidLive = ll; }
+  else if (S === 'gaoth') { const G = rec.gallery; px = (G.x0 + G.x1) / 2; pz = (G.z0 + G.z1) / 2; const jy = jumpY; jumpY = G.y; gateSecretsTick(); out.galleryUp = +(G.y - rec.y).toFixed(2); }
+  out.opened = rec.opened && !rec.shut.visible && rec.inside.rub.visible && (!rec.arc || rec.inside.arc.visible) && gateSecretOpen(s, 'k'); out.say = said.slice(-1)[0] || '';
+  if (S === 'gaoth') jumpY = rec.gallery.y; else { px = rec.kx - rec.place.ox * .5; pz = rec.kz - rec.place.oz * .5; }
+  const yw = yaw; yaw = Math.atan2(-(rec.x - px), -(rec.z - pz)); out.near = !!gateCacheNear(); const n0 = BAG.length; worldState.relicArcs = { found: {} }; interact(); yaw = yw;
+  const rub = BAG.find((b, i) => i >= n0 && b.type === 'rubbing'), arc = BAG.find((b, i) => i >= n0 && b.arc);
+  out.rub = rub ? { seed: rub.seed, gate: rub.gate, self: rub.seed == s, read: !!(worldState.sigilsRead || {})[rub.seed] } : null; out.arc = rec.arc; out.arcGot = arc ? { school: arc.arc.school, n: arc.arc.n } : null;
+  out.empty = !gateCacheNear() && !rec.inside.rub.visible && (!rec.inside.arc || !rec.inside.arc.visible); out.kept = JSON.stringify(worldState.gateKeeps[s].cache);
+  out.again = (openCache(s) || [1]).length === 0; out.br = (rec.braziers || []).map(b => [b.lit, b.litAt, GATE_THINGS.indexOf(b) >= 0]); jumpY = 0; showMsg = sm; return out; }, seed);
+console.log('cache', JSON.stringify(KC));
+check(`the keep's cache is laid, sealed by its gate's school (${KC.school}), in a side wall`, KC.laid && KC.school === KC.want && KC.wall && KC.shut && !KC.near0, KC);
+check(`a wrong word at it: "${KC.wrong}"`, /does not answer/.test(KC.wrong) && KC.stillShut, KC);
+check(`its school's key opens it ("${KC.say}")`, KC.opened, KC);
+check(`E takes a rubbing of the nearest unread carving (${KC.rub && KC.rub.gate})${KC.arc ? ' and an arc of ' + KC.arc : ''}; then it is empty`, KC.near && KC.rub && !KC.rub.self && !KC.rub.read && (KC.arc ? KC.arcGot && KC.arcGot.school === KC.arc && KC.arcGot.n === 1 : !KC.arcGot) && KC.empty && KC.again, KC);
 // the gate built again, 30 days on: the coffer open, as you left it; the arc and the crystal do not come back
 await page.evaluate((s) => { window._prevDScene = dScene; const e = WORLD.doorAnywhere(s), p = makePortalDef(e); p.zone = 'world'; p.sigil = true; p.theme = p.theme || e.theme; goToDungeon(p); }, seed);
 await inGate();
-const B = await page.evaluate(() => { const c = CHESTS.find(x => x.coffer != null), L = GATE_KEEP_LIE || {}, D = L.delver; return c ? { opened: c.opened, items: c.items.map(i => i.name), lid: c.lid ? +c.lid.rotation.x.toFixed(2) : null, arc: !!(L.altar && L.altar.arc), left: L.vein ? gateVeinLeft(L.vein) : null, delver: D ? { body: D.body.items.length, camp: D.camp ? D.camp.items.length : 0, roll: D.camp ? D.camp.rollMesh.visible : false } : null } : null; });
+const B = await page.evaluate(() => { const c = CHESTS.find(x => x.coffer != null), L = GATE_KEEP_LIE || {}, D = L.delver; return c ? { opened: c.opened, items: c.items.map(i => i.name), lid: c.lid ? +c.lid.rotation.x.toFixed(2) : null, cache: L.cache ? { opened: L.cache.opened, face: L.cache.shut.visible, rub: L.cache.inside.rub.visible } : null, arc: !!(L.altar && L.altar.arc), left: L.vein ? gateVeinLeft(L.vein) : null, delver: D ? { body: D.body.items.length, camp: D.camp ? D.camp.items.length : 0, roll: D.camp ? D.camp.rollMesh.visible : false } : null } : null; });
 console.log('again', JSON.stringify(B));
 check('entered again, the coffer stands open with what you left in it', B && B.opened && JSON.stringify(B.items) === JSON.stringify(A.left) && B.lid < 0, B);
 check(`and 30 days on the altar is bare and the vein cut out (${B && B.left} left)`, B && !B.arc && B.left === 0, B);
+check('entered again, the cache stands open and empty', B && B.cache && B.cache.opened && !B.cache.face && !B.cache.rub, B && B.cache);
 if (D.laid) check('entered again, the delver and his camp are bare', B && B.delver && B.delver.body === 0 && B.delver.camp === 0 && !B.delver.roll, B && B.delver);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

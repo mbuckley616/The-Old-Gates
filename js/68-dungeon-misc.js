@@ -557,7 +557,7 @@ function gateKeepLay(portal,gen){GATE_KEEP_LIE=null;if(!gen||!gen.gate||gen.ring
   dScene.add(group);
   if(dress)try{const f=D_CEIL[fl],h=(f?f(x/DCELL,z/DCELL):FLOOR_HEIGHT)-.4,S=gkeepShaft(h,gateOrbSchool(portal));S.position.set(x,y,z);dScene.add(S);}catch(e){console.warn('gkeepShaft',e);}
   const ch={id:`${portal.seed}:${fl}:coffer`,x,z,y:.4,opened:was,lid,treasure:true,coffer:portal.seed,floor:fl,mesh:group,items,displayName:'The Coffer'};
-  if(was&&lid)lid.rotation.x=-Math.PI/3;CHESTS.push(ch);try{gateKeepThings(portal,gen,ch);}catch(e){console.warn('gateKeepThings',e);}try{gateDelverLay(portal,gen,ch);}catch(e){console.warn('gateDelverLay',e);}return ch;}
+  if(was&&lid)lid.rotation.x=-Math.PI/3;CHESTS.push(ch);try{gateKeepThings(portal,gen,ch);}catch(e){console.warn('gateKeepThings',e);}try{gateDelverLay(portal,gen,ch);}catch(e){console.warn('gateDelverLay',e);}try{gateCacheLay(portal,gen);}catch(e){console.warn('gateCacheLay',e);}return ch;}
 function gateCofferShut(ch){const S=worldState.sigilsRead;return !(S&&ch&&S[ch.coffer]!=null);}
 // the named action (co-op rules): the coffer opened, its list the world's from now on
 function openCoffer(ch){if(!ch||ch.coffer==null)return false;if(gateCofferShut(ch)){showMsg('The script round its lid is closed to you.','#c8b880');return false;}
@@ -691,6 +691,94 @@ function gateDelverLay(portal,gen,coffer){if(!gateDelverDue(portal))return null;
 function lootDelver(ch){if(!ch||ch.delver==null)return false;const K=gateKeepOf(ch.delver);
   if(!K.delver){const D=GATE_KEEP_LIE&&GATE_KEEP_LIE.delver;K.delver={body:D&&D.body?D.body.items:[],camp:D&&D.camp?D.camp.items:[]};}
   ch.items=K.delver[ch.part]||(K.delver[ch.part]=[]);openLoot(ch);return true;}
+// S2469 — what a gate keeps, session 7: the cache (what-a-gate-keeps-build.md, "The cache"; spells-as-keys-build.md: "this sheet's
+// seal of the gate's school, set in the keep's wall"; Michael's B on #1783). Every keep has one: a niche in a side wall of the ring
+// chamber, on the side away from the delver's, shut by a seal of the gate's own school and opened by that school's key from the
+// seals' table, at the niche's size: Tine, two braziers 6 m apart either side of it, both lit by Caor within 20 s; Uisce, a basin of
+// the black water before it, frozen by Sioc touched (and bitter cold to stand in until then); Cloch, Cloch Ghéar laid at its foot;
+// Scáth, a face a shade darker, walked up to with Oíche worn; Solas, Solas-Gheal laid within 3 m for 3 s; Gaoth, 3.8 m up over a
+// gallery, stood on (Séideán's updraft and the mantle, or Second step and Catch). It is a record in GATE_SECRETS like a seal's
+// (kind 'seal', keepCache: true; the plates' own .cache is their mesh), so the seals' tick, a laid word, a wrong word and openSecret all serve it; its number is 'k' in the
+// world's record (worldState.gateSecrets[seed].o), as the barricade's is 'b'. Inside: a rubbing of the nearest unread carving not yet
+// marked (chosen when taken, so it points onward from where you are in the story), and in one cache in three (seededRng('cache-arc',
+// seed), the altar's rate) an arc of another school, by seed, numbered when taken as the altar's is. openCache(seed) is the named
+// action that takes them; what is taken is the world's (worldState.gateKeeps[seed].cache: {rub, arc}). No chest: the sheet gives the
+// cache the rubbing and the arc. Plain stand-ins until the look builder dresses it.
+const GATE_CACHE={arcRate:1/3,w:1.4,h:1.1,y:1.0,brazier:3,basin:[2.0,1.2]};
+const CACHE_SAY={scath:'The dark stone gives way, and a niche stands open.',gaoth:'You stand at the niche, and its seal gives.'};
+function gateCacheSchool(portal){const s=gateOrbSchool(portal);return SECRET_SCHOOLS.includes(s)?s:'cloch';}
+// the arc's school, another than the gate's, or null (two caches in three)
+function gateCacheArc(portal){const r=seededRng('cache-arc',portal.seed);if(r()>=GATE_CACHE.arcRate)return null;const own=gateCacheSchool(portal),o=SECRET_SCHOOLS.filter(s=>s!==own);return o[Math.floor(r()*o.length)];}
+// where the niche goes, in cells, from the generator alone: the ring space's side wall, straight out from the dais's middle across the
+// axis from the way in, on the side away from the delver's (then the other). {c,r (the cell before it), ox,oz (out into the rock), ax,az, floor} or null
+function gateCachePlace(gen,seed){if(!gen||!gen.gate||gen.ring==null)return null;const sp=gen.spaces[gen.ring],d=sp&&sp.dais;if(!d)return null;
+  const fl=sp.floor||1,M=fl===2?gen.map2:gen.map,CS=fl===2?gen.cellSpace2:gen.cellSpace;
+  const inSp=(c,r)=>!!(M&&M[r]&&M[r][c]===1&&(!CS||CS[r][c]===sp.id)),rock=(c,r)=>!(M&&M[r]&&M[r][c]>0);
+  const c0=Math.round((d.x0+d.x1)/2),r0=Math.round((d.z0+d.z1)/2),t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl);
+  let ax=t?t.c-c0:0,az=t?t.r-r0:1;if(Math.abs(ax)>Math.abs(az)){ax=Math.sign(ax)||1;az=0;}else{az=Math.sign(az)||1;ax=0;}
+  const qx=-az,qz=ax,ds=seededRng('delver-side',seed)()<.5?1:-1;
+  for(const s of [-ds,ds]){const ox=qx*s,oz=qz*s;
+    for(const k of [0,-1,1,-2,2]){let c=c0+ax*k,r=r0+az*k,n=0;if(!inSp(c,r))continue; /* the dais's middle, then a cell or two either way along the axis */
+      while(inSp(c+ox,r+oz)&&n++<200){c+=ox;r+=oz;}
+      if(n<1||!rock(c+ox,r+oz))continue;if(c>=d.x0&&c<=d.x1&&r>=d.z0&&r<=d.z1)continue;
+      return {c,r,ox,oz,ax,az,floor:fl};}}
+  return null;}
+// the nearest unread carving not yet marked, from the gate's own place in the world (not this gate): the rubbing's item, or null
+function gateCacheRubbing(seed){const p=dungeonWorldPos[seed]||(typeof WORLD!=='undefined'&&WORLD.doorAnywhere&&WORLD.doorAnywhere(+seed));if(!p||typeof carvingsNear!=='function')return null;
+  const read=worldState.sigilsRead||{},rub=worldState.rubbings||{},c=carvingsNear(p.x,p.z,Infinity).find(c=>c.seed!=seed&&!read[c.seed]&&!rub[c.seed]);
+  return c?{name:`Rubbing: ${c.name}`,ico:'📜',type:'rubbing',seed:c.seed,gate:c.name,weight:.2,sellMult:.3,buyPrice:60,qty:1}:null;}
+function gateCacheLeft(rec){const C=(worldState.gateKeeps&&worldState.gateKeeps[rec.seed]&&worldState.gateKeeps[rec.seed].cache)||{};return {rub:!C.rub,arc:!!rec.arc&&!C.arc};}
+// what the open niche shows: the rolled rubbing and the arc, each until taken
+function gateCacheShow(rec){const L=gateCacheLeft(rec),I=rec.inside;if(!I)return;I.rub.visible=rec.opened&&L.rub;if(I.arc)I.arc.visible=rec.opened&&L.arc;}
+// laid by gateKeepLay, in metres, after the seals (GATE_SECRETS is built first)
+function gateCacheLay(portal,gen){const P=gateCachePlace(gen,portal.seed);if(!P)return null;
+  const school=gateCacheSchool(portal),fl=P.floor,y=fl===2?FLOOR2_Y:0,Hc=DCELL/2,id=`${portal.seed}:${fl}:cache`,opened=gateSecretOpen(portal.seed,'k');
+  const fx=dAt(P.c)+P.ox*(Hc-.12),fz=dAt(P.r)+P.oz*(Hc-.12),high=school==='gaoth',base=y+(high?SECRET_GALLERY+.3:GATE_CACHE.y),W=GATE_CACHE.w,H=GATE_CACHE.h;
+  const grp=new THREE.Group();grp.name='gateCache';grp.position.set(fx,base,fz);grp.rotation.y=Math.atan2(-P.ox,-P.oz); /* local +z into the room, x along the wall */
+  const stone=new THREE.MeshLambertMaterial({color:0x6a655d}),mat=new THREE.MeshLambertMaterial({color:SECRET_SEAL_COL[school]||0x777777});
+  const add=(geo,m,x,yy,z)=>{const o=new THREE.Mesh(geo,m);o.position.set(x,yy,z);grp.add(o);return o;};
+  add(new THREE.BoxGeometry(.18,H+.2,.24),stone,-W/2,H/2,0);add(new THREE.BoxGeometry(.18,H+.2,.24),stone,W/2,H/2,0);
+  add(new THREE.BoxGeometry(W+.36,.2,.28),stone,0,H+.1,0);add(new THREE.BoxGeometry(W+.36,.14,.34),stone,0,-.07,.02);
+  add(new THREE.BoxGeometry(W-.1,H-.05,.06),new THREE.MeshLambertMaterial({color:0x17130f}),0,H/2,-.1); /* the niche's dark back */
+  const face=add(new THREE.BoxGeometry(W-.12,H-.08,.1),mat,0,H/2,.02);face.name='gateCacheFace';
+  const arc=gateCacheArc(portal),inside={rub:null,arc:null};
+  {const rb=add(new THREE.CylinderGeometry(.05,.05,.42,8),new THREE.MeshLambertMaterial({color:0xd8ccae}),-.25,.06,-.02);rb.rotation.z=Math.PI/2;rb.name='gateCacheRubbing';inside.rub=rb;}
+  if(arc){let a;if(window.OG_LOOK==='new'&&typeof gkeepArc==='function'){a=gkeepArc(arc);a.scale.setScalar(.7);a.position.set(.25,.05,-.02);grp.add(a);}
+    else a=add(new THREE.TorusGeometry(.22,.03,6,16,Math.PI*.75),new THREE.MeshLambertMaterial({color:0xb08a3a,emissive:0x2a1c06}),.25,.2,-.02);a.name='gateCacheArc';inside.arc=a;}
+  dScene.add(grp);
+  const kx=fx-P.ox*.3,kz=fz-P.oz*.3,along=P.ox?{x:0,z:1}:{x:1,z:0};
+  const rec={id,n:'k',seed:portal.seed,kind:'seal',keepCache:true,school,floor:fl,c:P.c,r:P.r,x:fx,y,z:fz,kx,kz,area:{x0:kx-.3,x1:kx+.3,z0:kz-.3,z1:kz+.3},
+    opened,group:grp,mat,solid:null,shut:face,chest:null,said:false,arc,inside,place:P};
+  if(school==='tine'){rec.braziers=[];const M=fl===2?gen.map2:gen.map,CS=fl===2?gen.cellSpace2:gen.cellSpace,sp=gen.spaces[gen.ring];
+    const ok=(x,z)=>{const c=dCellOf(x),r=dCellOf(z);return !!(M&&M[r]&&M[r][c]===1&&(!CS||CS[r][c]===sp.id));};
+    for(const s of [-1,1]){let bx=null,bz=null;for(const d of [GATE_CACHE.brazier,1.2]){const x=fx-P.ox*.55+along.x*s*d,z=fz-P.oz*.55+along.z*s*d;if(ok(x,z)){bx=x;bz=z;break;}}
+      if(bx==null)continue;const g2=gateBrazierProp();g2.position.set(bx,y,bz);dScene.add(g2);
+      const b={id:id+':b'+(s<0?0:1),kind:'brazier',floor:fl,x:bx,y,z:bz,lit:false,group:g2,light:null,seal:id,litAt:null};
+      DUNGEON_COLUMNS.push({x:bx,z:bz,r:.55,floor:fl,brazier:b.id});GATE_THINGS.push(b);rec.braziers.push(b);if(opened)gtBrazierShow(b,true);}}
+  else if(school==='uisce'){const [bw,bd]=GATE_CACHE.basin,cx=fx-P.ox*bd/2,cz=fz-P.oz*bd/2,hx=P.ox?bd/2:bw/2,hz=P.ox?bw/2:bd/2;
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(hx*2,hz*2).rotateX(-Math.PI/2),mat);m.position.set(cx,y+.04,cz);dScene.add(m);rec.water=m;rec.extra=[m];
+    rec.area={x0:cx-hx,x1:cx+hx,z0:cz-hz,z1:cz+hz};const T={id:id+':water',kind:'sealwater',floor:fl,x:cx,y,z:cz,area:rec.area,frozen:opened,seal:id,group:m};GATE_THINGS.push(T);rec.thing=T;
+    if(opened)mat.color.setHex(0x8fa8b6);}
+  else if(school==='solas'){rec.pillar=face;if(opened)mat.emissive=new THREE.Color(0x8a8460);}
+  else if(high){const d=1.2,w=2.4,cx=fx-P.ox*d/2,cz=fz-P.oz*d/2,hx=P.ox?d/2:w/2,hz=P.ox?w/2:d/2,top=y+SECRET_GALLERY;
+    const m=new THREE.Mesh(new THREE.BoxGeometry(hx*2,.3,hz*2),new THREE.MeshLambertMaterial({color:SECRET_SEAL_COL.gaoth}));m.position.set(cx,top-.15,cz);dScene.add(m);rec.extra=[m];
+    rec.gallery={x0:cx-hx,x1:cx+hx,z0:cz-hz,z1:cz+hz,y:top};rec.kx=cx;rec.kz=cz;FOOTHOLDS.push(Object.assign({gate:'gallery',secret:id},rec.gallery));}
+  if(opened)face.visible=false;gateCacheShow(rec);GATE_SECRETS.push(rec);if(GATE_KEEP_LIE)GATE_KEEP_LIE.cache=rec;return rec;}
+// the open niche in reach, with something left in it (on its gallery, for Gaoth's)
+function gateCacheNear(){const rec=GATE_KEEP_LIE&&GATE_KEEP_LIE.cache;if(!rec||!rec.opened||activeZoneId!=='dungeon'||rec.floor!==currentFloor||!currentPortal||currentPortal.seed!==rec.seed)return null;
+  const L=gateCacheLeft(rec);if(!L.rub&&!L.arc)return null;if(rec.gallery&&!(inArea(rec.gallery,px,pz,.3)&&jumpY>=rec.gallery.y-.1))return null;
+  const o={x:rec.x,z:rec.z,mesh:rec.group};return Math.hypot(px-rec.x,pz-rec.z)<TOUCH+.8&&!gateKeepYields(o,TOUCH+.8)?rec:null;}
+// the named action (co-op rules): what the open cache holds, taken; the items taken, or null while it is shut
+function openCache(seed){const rec=GATE_SECRETS.find(s=>s.keepCache&&s.seed===seed);if(!rec||!rec.opened)return null;const K=gateKeepOf(seed),C=K.cache||(K.cache={}),got=[];
+  if(!C.rub){const it=gateCacheRubbing(seed);C.rub=1;if(it){bagAdd(it);got.push(it);}}
+  let heavy=false;if(rec.arc&&!C.arc){const R=relicArcsOf(),n=(R.found[rec.arc]||0)+1,it=arcItem(rec.arc,n);
+    if(!canCarry(it))heavy=true;else{R.found[rec.arc]=n;C.arc=1;if(typeof markSalvage==='function')markSalvage(it);bagAdd(it);got.push(it);}}
+  gateCacheShow(rec);
+  const r=got.find(i=>i.type==='rubbing'),a=got.find(i=>i.arc||i.arcSpare);
+  const bits=[];if(r)bits.push(`a rubbing of ${r.gate}`);if(a)bits.push(a.arc?`an arc of ${schoolName(a.arc.school)}'s armillary, ${a.arc.n} of ${GATE_ARC.per}`:`an arc of ${schoolName(a.arcSpare)}'s, and you have its armillary's three`);
+  if(bits.length)showMsg(`In the niche: ${bits.join(', and ')}.`,'#d8c890');else if(!heavy)showMsg('The niche is empty.','#c8b890');
+  if(heavy)showMsg('Too heavy to carry!','#cc8844');
+  if(typeof renderHubInv==='function')try{renderHubInv();}catch(e){}return got;}
 // S2372 — what a gate keeps, session 2 (what-a-gate-keeps-build.md), its parts that need no words: joining, the kept armillary's
 // compass, and the crystal set at the forge. Three arcs of one school in the bag (the first three found: it.arc.n 1 to 3) are set
 // together from the bag in 10 s, no skill (`joinArcs`, the named action): one armillary of the school, weight 3, 150 at a counter (the
@@ -1022,6 +1110,10 @@ function gateSecrets(gen,seed,size,school){
   // room or an id; only the kinds in SECRET_BUILT are laid (gateSecretsBuild), the rest hold their rooms until their session.
   const hasSp=(fl,ty)=>(gen.spaces||[]).some(sp=>sp&&(sp.floor||1)===fl&&sp.type===ty),anySp=ty=>hasSp(1,ty)||hasSp(2,ty),used={};
   for(let k=want.length;k<(SECRET_N[size]||1);k++){
+    const cut=(size==='large'||size==='massive')&&k===(SECRET_N[size]||1)-1?gateShortcut(gen,mapOf,open,starts,S):null; /* S2470 — the shortcut back (#1774 B), in the last slot */
+    if(cut){const M=mapOf(cut.floor);M[cut.w[1]][cut.w[0]]=1; /* the wall cell opened in the map, so the shell leaves its passage; the slabs close it */
+      S.push({id:(seed|0)+':'+cut.floor+':secret'+S.length,n:S.length,kind:'slide',shortcut:true,school:null,floor:cut.floor,c:cut.a[0],r:cut.a[1],dc:cut.dc,dr:cut.dr,
+        room:{x:cut.w[0],y:cut.w[1],w:1,h:1},cells:[cut.w[1]*W+cut.w[0]],save:cut.save});continue;}
     const kinds=SECRET_MECH.filter(m=>!(used[m]&&SECRET_ONCE[m])&&(m!=='lift'||anySp('chasm'))&&(m!=='sluice'||anySp('flooded')));
     const kind=kinds[Math.floor(r()*kinds.length)],fit=cand.filter(q=>kind==='lift'?hasSp(q.floor,'chasm'):kind==='sluice'?hasSp(q.floor,'flooded'):true);
     const pick=Math.floor(r()*Math.max(1,fit.length));if(!fit.length)continue;const q=fit[pick];cand.splice(cand.indexOf(q),1);used[kind]=1;
@@ -1033,6 +1125,28 @@ function gateSecrets(gen,seed,size,school){
   {const rb=seededRng('barricade',seed|0);if(rb()<SECRET_BAR_P){const bc=cand.filter(q=>q.bare),q=bc[Math.floor(rb()*bc.length)],scene=Math.floor(rb()*6);
     if(q)gen.barricade={id:(seed|0)+':'+q.floor+':barricade',n:'b',kind:'barricade',school:null,floor:q.floor,c:q.c,r:q.r,dc:q.dc,dr:q.dr,room:q.room,cells:[...q.path],scene};}}
   return S;}
+// S2470 — the shortcut back (spells-as-keys' table B; Michael's B on #1774: a sliding wall through one wall). In a large or massive gate
+// the last mechanism slot is the shortcut where one fits: a rock cell of the ring's floor with an open floor cell either side of it in
+// line, each in a space and in no secret's room, one (a, the deep side) at least as far from the entry by the walk (floor two's through the stair hall) as the nearest cell of the ring's space, the other (b)
+// at most half that. Of those, the one that saves the most walk (by a's depth less b's; then the first in the grid). Where none fits the
+// slot is drawn as any mechanism. The cell is opened in the map; slabs flush with both walls shut it, and only the deep side's has the
+// pale stone. A mechanism is its own find (#1757 B): no chest. {floor, a:[c,r], w:[c,r], b:[c,r], dc, dr (a to w), save (cells)} or null.
+function gateShortcut(gen,mapOf,open,starts,S){const sp=gen.spaces&&gen.spaces[gen.ring];if(!sp)return null;const fl=sp.floor||1,M=mapOf(fl),W=gen.W,H=gen.H,CS=fl===2?gen.cellSpace2:gen.cellSpace;
+  if(!M||!CS)return null;
+  const walk=(Mf,from,d0)=>{const D=new Int32Array(W*H).fill(-1),q=[];for(const [c,y] of from){const k=y*W+c;if(open(Mf,c,y)&&D[k]<0){D[k]=d0;q.push(k);}}
+    for(let i=0;i<q.length;i++){const c=q[i]%W,y=(q[i]-c)/W;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const nc=c+a,ny=y+b,k=ny*W+nc;if(!open(Mf,nc,ny)||D[k]>=0)continue;D[k]=D[q[i]]+1;q.push(k);}}return D;};
+  let d0=0;if(fl===2){const D1=walk(mapOf(1),starts(1),0),hid=gen.hall&&gen.hall.id;d0=1e9; /* floor two counted from the entry: the walk to the stair hall first */
+    for(let y=0;y<H;y++)for(let c=0;c<W;c++)if(gen.cellSpace[y][c]===hid&&D1[y*W+c]>=0)d0=Math.min(d0,D1[y*W+c]);if(d0>=1e9)return null;}
+  const D=walk(M,starts(fl),d0);
+  let ring=1e9;for(let y=0;y<H;y++)for(let c=0;c<W;c++)if(CS[y][c]===sp.id&&D[y*W+c]>=0)ring=Math.min(ring,D[y*W+c]);if(ring>=1e9)return null;
+  const taken=new Set();for(const t of S)if(t.floor===fl)for(const k of t.cells)taken.add(k);
+  const floorAt=(c,y)=>y>=0&&c>=0&&y<H&&c<W&&M[y][c]===1&&CS[y][c]>=0&&!taken.has(y*W+c); /* in a space, not a side room */
+  let best=null;
+  for(let y=1;y<H-1;y++)for(let c=1;c<W-1;c++){if(M[y][c]!==0)continue;
+    for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const ac=c-dc,ar=y-dr,bc=c+dc,br=y+dr;if(!floorAt(ac,ar)||!floorAt(bc,br))continue;
+      const da=D[ar*W+ac],db=D[br*W+bc];if(da<0||db<0||da<ring||db>ring/2)continue;
+      if(!best||da-db>best.save)best={floor:fl,a:[ac,ar],w:[c,y],b:[bc,br],dc,dr,save:da-db};}}
+  return best;}
 const SECRET_BAR_P=1/4,SECRET_BAR_BLOWS=3;
 const SECRET_N={tiny:1,small:1,medium:2,large:3,massive:4};
 const SECRET_MECH=['slide','stair','lift','sluice','turn','plates'],SECRET_ONCE={turn:1,plates:1};
@@ -1097,7 +1211,7 @@ function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR
       rec.gallery=t.dc?{x0:gx-d/2,x1:gx+d/2,z0:z0,z1:z1,y:top}:{x0:x0,x1:x1,z0:gz-d/2,z1:gz+d/2,y:top};
       FOOTHOLDS.push(Object.assign({gate:'gallery',secret:t.id},rec.gallery));chestY=top;chestAt=at(.6);}
     dScene.add(grp);GATE_SECRETS.push(rec);
-    if(t.kind!=='lift')try{rec.chest=secretChest(t,portal,rec,chestAt[0],chestAt[1],chestY,G0);}catch(e){console.warn('secretChest',e);}} /* S2418 — #1757's B: the lift is its own find, the second bridge */
+    if(t.kind!=='lift'&&!t.shortcut)try{rec.chest=secretChest(t,portal,rec,chestAt[0],chestAt[1],chestY,G0);}catch(e){console.warn('secretChest',e);}} /* S2418 — #1757's B: the lift is its own find, the second bridge */
   if(gen.barricade)try{barricadeBuild(gen.barricade,portal,G0);}catch(e){console.warn('barricadeBuild',e);}
   return GATE_SECRETS;}
 // a seal's chest: what is left in it is the world's once opened (t[n]), else rolled on its own key a tier above the floor. Solas's
@@ -1124,13 +1238,14 @@ function openSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.o
   if(rec.kind==='sluice')sluiceOpen(rec); /* S2417 */
   if(rec.kind==='lift')liftOpen(rec); /* S2418 */
   if(rec.kind==='plates'&&rec.cache){rec.cache.visible=false;const i=DUNGEON_PROPS.indexOf(rec.cacheSolid);if(i>=0)DUNGEON_PROPS.splice(i,1);} /* S2423 */
+  if(rec.keepCache)gateCacheShow(rec); /* S2469 — the keep's cache: its face gone, what it holds shown */
   if(rec.kind==='turn')turnOpen(rec); /* S2423 — its chest is shown once the drum has turned (turnTick) */
   else if(rec.chest&&CHESTS.indexOf(rec.chest)<0){rec.chest.mesh.visible=true;CHESTS.push(rec.chest);}
   return true;}
 // takeSecret: the named action. A seal's chest opened: from now on its list is the world's record's, so what you take stays taken
 function takeSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id),ch=rec&&rec.chest;if(!ch||CHESTS.indexOf(ch)<0)return false;
   const R=gateSecretRec(rec.seed);if(Array.isArray(R.t[rec.n]))ch.items=R.t[rec.n];else R.t[rec.n]=ch.items;openLoot(ch);return true;}
-function secretOpenSay(rec){if(openSecret(rec.id)){showMsg(SECRET_SAY[rec.school]||'Something opens.','#c8b880');return true;}return false;}
+function secretOpenSay(rec){if(openSecret(rec.id)){showMsg((rec.keepCache&&CACHE_SAY[rec.school])||SECRET_SAY[rec.school]||'Something opens.','#c8b880');return true;}return false;}
 // a brazier of a seal's pair gone cold again
 function gtBrazierCold(b){b.lit=false;b.litAt=null;const f=b.group.userData.fire;if(f)f.visible=false;
   if(b.light){if(b.light.parent)b.light.parent.remove(b.light);const i=TORCHES.findIndex(q=>q.l===b.light);if(i>=0)TORCHES.splice(i,1);b.light=null;}}
@@ -1156,8 +1271,8 @@ function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!c
       else rec.coldT=null;}
     else if(rec.school==='scath'){const see=here&&typeof oicheWorn==='function'&&oicheWorn();
       if(see&&dCellOf(px)===rec.c&&dCellOf(pz)===rec.r){secretOpenSay(rec);continue;}
-      if(see!==!!rec.seen){rec.seen=see;const i=DUNGEON_PROPS.indexOf(rec.solid);
-        if(see){if(i>=0)DUNGEON_PROPS.splice(i,1);rec.mat.transparent=true;rec.mat.opacity=.3;}else{if(i<0)DUNGEON_PROPS.push(rec.solid);rec.mat.transparent=false;rec.mat.opacity=1;}
+      if(see!==!!rec.seen){rec.seen=see;const i=rec.solid?DUNGEON_PROPS.indexOf(rec.solid):0; /* S2469 — the cache has no solid */
+        if(see){if(i>=0&&rec.solid)DUNGEON_PROPS.splice(i,1);rec.mat.transparent=true;rec.mat.opacity=.3;}else{if(i<0)DUNGEON_PROPS.push(rec.solid);rec.mat.transparent=false;rec.mat.opacity=1;}
         rec.mat.needsUpdate=true;}}
     else if(rec.school==='solas'){const L=typeof laidLive==='function'?laidLive():null;
       if(here&&L&&L.light&&Math.hypot(L.x-rec.kx,L.z-rec.kz)<=SECRET_SOLAS_R+1e-6){if(rec.lit0==null)rec.lit0=playClockS;else if(playClockS-rec.lit0>=SECRET_SOLAS_S-1e-6)secretOpenSay(rec);}
@@ -1192,6 +1307,10 @@ function slideBuild(t,rec,grp,y,cx,cz,opened){const Hc=DCELL/2,x=cx+t.dc*(Hc+.25
   const sx=x-t.dc*.27,sz=z-t.dr*.27,st=new THREE.Mesh(slideDress(new THREE.BoxGeometry(t.dc?.06:.5,.36,t.dc?.5:.06),look,[sx,y+1.2,sz]),pm);st.position.set(sx-x,1.2-h/2,sz-z);m.add(st);
   rec.stone={x:sx,z:sz,y:y+1.2,mesh:st};rec.kx=x;rec.kz=z;rec.slideDir=t.dc?[0,1]:[1,0];rec.slideH=h;rec.base=[x,z];
   rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
+  if(t.shortcut){const wx=cx+t.dc*DCELL,wz=cz+t.dr*DCELL,L=2*(Hc-.25),bx=x+t.dc*L,bz=z+t.dr*L; /* S2470 — the shortcut: the passage's whole cell solid while shut, and a plain slab flush with the far wall that slides with it */
+    rec.solid={x0:wx-Hc,x1:wx+Hc,z0:wz-Hc,z1:wz+Hc,floor:t.floor,secret:t.id};rec.shortcut=true;rec.sdc=t.dc;rec.sdr=t.dr;
+    const look2=slideShellLook(sh,bx,y,bz,h,t.dc?{n:'x',at:bx+t.dc*.25}:{n:'z',at:bz+t.dr*.25});
+    const back=new THREE.Mesh(slideDress(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),look2,[bx,y+h/2,bz]),wm);back.position.set(bx-x,0,bz-z);back.name='shortcutBack';m.add(back);rec.back=back;}
   if(!opened){DUNGEON_PROPS.push(rec.solid);
     const N=SLIDE_DUST,pos=new Float32Array(N*3),g2=new THREE.BufferGeometry();g2.setAttribute('position',new THREE.BufferAttribute(pos,3));
     const dust=new THREE.Points(g2,new THREE.PointsMaterial({color:0xb8ad98,size:.035,transparent:true,opacity:.55,depthWrite:false}));dust.frustumCulled=false;
@@ -1254,6 +1373,7 @@ function barricadeBreak(r,how){if(!r||r.opened||!openSecret(r.id))return false;i
 // the pale stone in reach and under the crosshair, its wall still shut
 function slideStoneNear(){if(activeZoneId!=='dungeon'||!currentPortal)return null;
   for(const s of GATE_SECRETS){if(s.kind!=='slide'||s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed||!s.stone)continue;
+    if(s.shortcut&&(px-s.stone.x)*s.sdc+(pz-s.stone.z)*s.sdr>0)continue; /* S2470 — the shortcut opens from the deep side only */
     if(Math.hypot(px-s.stone.x,pz-s.stone.z)<TOUCH+.6&&aimAt({mesh:s.stone.mesh},TOUCH+.6))return s;}return null;}
 function slideStonePress(s){if(!s||!openSecret(s.id))return false;showMsg('The wall slides into the rock.','#c8b880');try{sfxNoise(SLIDE_S,0,0,.18,180);}catch(e){}return true;}
 // the flames that lean: a torch's ember or a lit brazier's fire within 4 m of the wall, on its floor. Gathered once, when first near.

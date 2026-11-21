@@ -3174,6 +3174,7 @@ function interact(){
   {const lv=typeof liftLeverNear==='function'&&liftLeverNear();if(lv){liftGrip(lv);return;}} /* S2418 — a lift's lever, wound while E is held (68-dungeon-misc.js) */
   {const sl=typeof scriptLintelNear==='function'&&scriptLintelNear();if(sl){scriptE(sl);return;}} /* S2423 — the plates' lintel, its script read (68-dungeon-misc.js) */
   if(typeof knotNear==='function'&&knotNear()){knotUse();return;} /* S1346 — a great gate's knot */
+  {const gc=typeof gateCacheNear==='function'&&gateCacheNear();if(gc){openCache(gc.seed);return;}} /* S2469 — the keep's cache, opened (68-dungeon-misc.js) */
   if(typeof gateAltarNear==='function'){const a=gateAltarNear();if(a){takeArc(a.seed);return;}const gv=gateVeinNear();if(gv){gateMine(gv);return;}} /* S2371 — a keep's arc and its crystal (68-dungeon-misc.js) */
   if(typeof shuttleNear==='function'&&shuttleNear()){shuttleTake();return;} /* S797 — the Shuttle, in its gate's deepest room */
   if(typeof varekListNear==='function'&&varekListNear()){varekListTake();return;} /* S2174 — the worn paper in the crypt */
