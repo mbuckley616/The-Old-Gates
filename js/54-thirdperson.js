@@ -368,7 +368,7 @@ function tpDrawPhase(D,t){const T=TP_DRAW;if(D.way==='draw')return t<T.reach?{a:
 function tpDrawEnd(R){const D=R&&R.tpDraw;if(!D)return;R.tpDraw=null;
   if(D.way==='draw'){if(D.G!==R.hbSheath)tpSheathDrop(D.G);}
   else{if(D.h){D.h.c.removeFromParent();if(R.hbHeld){const i=R.hbHeld.indexOf(D.h);if(i>=0)R.hbHeld.splice(i,1);}}if(D.a)D.a.removeFromParent();if(D.G.children[0])D.G.children[0].visible=true;}}
-const _tdT=new THREE.Vector3(),_tdT2=new THREE.Vector3(),_tdV=new THREE.Vector3(),_tdV2=new THREE.Vector3(),_tdQ=new THREE.Quaternion(),_tdQ2=new THREE.Quaternion(),_tdQs=new THREE.Quaternion(),_tdQe=new THREE.Quaternion(),_tdM=new THREE.Matrix4();
+const _tdQw=new THREE.Quaternion(),_tdQk=new THREE.Quaternion(),_tdQi=new THREE.Quaternion(),_tdT=new THREE.Vector3(),_tdT2=new THREE.Vector3(),_tdV=new THREE.Vector3(),_tdV2=new THREE.Vector3(),_tdQ=new THREE.Quaternion(),_tdQ2=new THREE.Quaternion(),_tdQs=new THREE.Quaternion(),_tdQe=new THREE.Quaternion(),_tdM=new THREE.Matrix4();
 // the elbow's way (tpReach's shortest turn put the upper arm through the chest): the arm turned about the shoulder-to-wrist line until the
 // elbow points forward and out from the body (at the hip or the belt), or up and out (to a hilt over the shoulder)
 const _tpP={u:new THREE.Vector3(),e:new THREE.Vector3(),p:new THREE.Vector3(),f:new THREE.Vector3(),o:new THREE.Vector3(),s:new THREE.Vector3(),q:new THREE.Quaternion(),q2:new THREE.Quaternion()};
@@ -401,9 +401,15 @@ function tpDrawTick(R,stage){const D=R.tpDraw;if(!D)return;const t=fpDrawNow()-D
   /* through the belt the grip hangs low and back at the left hip: the hand takes the haft 12 cm up it and 16 cm before it, not through the belly */
   if(D.at==='belt'){k.getWorldQuaternion(_tdQ);R.root.getWorldQuaternion(_tdQ2);_tdT.addScaledVector(_tdV.set(0,1,0).applyQuaternion(_tdQ),.12).addScaledVector(_tdV.set(0,0,1).applyQuaternion(_tdQ2),.16);}
   _tdT2.copy(_tdT);tpDrawBend(R,_tdT,P.a);
-  for(let i=0;i<4;i++){tpReach(S,E,W,_tdT2);tpDrawPole(R,D.at,_tdT2);if(!fg.length)break;R.root.updateMatrixWorld(true);hbPose(R.rig);R.root.updateMatrixWorld(true);
+  /* S2478 — the hand turned to take the hilt (S2471's note: it arrived palm up): the wrist set so that the blade it holds would lie as the
+     worn blade lies, the grip's way in the fist (thumb to the guard: across the body, knuckles out; over the shoulder, palm forward); not a haft
+     through the belt, which is beyond the arm's reach (the turn put the fingers 12 cm off it, not 4) */
+  const q0w=_tdQw.copy(W.quaternion),hw=D.at==='belt'?null:D.way==='draw'?R.weapon:D.a,wt=hw&&hw.parent===W?_tdQk.copy(k.getWorldQuaternion(_tdQk)).multiply(_tdQi.copy(hw.quaternion).invert()):null;
+  const turn=()=>{if(!wt)return;W.parent.updateWorldMatrix(true,false);W.parent.getWorldQuaternion(_tdQi).invert();W.quaternion.copy(_tdQi.multiply(wt));W.updateMatrixWorld(true);};
+  for(let i=0;i<4;i++){tpReach(S,E,W,_tdT2);tpDrawPole(R,D.at,_tdT2);turn();if(!fg.length)break;R.root.updateMatrixWorld(true);hbPose(R.rig);R.root.updateMatrixWorld(true);
     _tdV.set(0,0,0);for(const b of fg)_tdV.add(_tdV2.setFromMatrixPosition(b.matrixWorld));_tdV.multiplyScalar(1/fg.length);D.err=+_tdV.distanceTo(_tdT).toFixed(3);_tdT2.addScaledVector(_tdV2.copy(_tdT).sub(_tdV),.6);}
-  _tdQ.copy(S.quaternion);_tdQ2.copy(E.quaternion);S.quaternion.copy(q0s).slerp(_tdQ,P.a);E.quaternion.copy(q0e).slerp(_tdQ2,P.a);R.root.updateMatrixWorld(true);}
+  _tdQ.copy(S.quaternion);_tdQ2.copy(E.quaternion);S.quaternion.copy(q0s).slerp(_tdQ,P.a);E.quaternion.copy(q0e).slerp(_tdQ2,P.a);
+  if(wt){_tdQk.copy(W.quaternion);W.quaternion.copy(q0w).slerp(_tdQk,P.a);D.turn=+(2*Math.acos(Math.min(1,Math.abs(q0w.dot(_tdQk))))).toFixed(3);}R.root.updateMatrixWorld(true);}
 // S2478 — the cloak over what is worn at the hip (S2451's note, standing since: under a cloak a hip weapon hung inside the sheet, its hilt
 // lost in it and the scabbard's point out through its back). The sheet and its hem are lifted over the worn group (the blade if sheathed,
 // the scabbard, the frog; a mace or an axe through the belt) in the bind's metres: about the hips' upright, each point of the sheet stands
