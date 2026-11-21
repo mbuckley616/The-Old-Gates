@@ -1768,7 +1768,8 @@ function spawnChunkVeins(ch){
     try{v.g=veinMesh(v);ch.group.add(v.g);}catch(e){}
     (ch.veins||(ch.veins=[])).push(v);VEINS.push(v);veinShow(v);}
   try{spawnChunkSpecs(ch);}catch(e){} /* S2160 — the rare specimens' patches in this chunk */
-  try{spawnChunkStars(ch);}catch(e){}} /* S2493 — a fallen star in this chunk */
+  try{spawnChunkStars(ch);}catch(e){} /* S2493 — a fallen star in this chunk */
+  try{spawnChunkSky(ch);}catch(e){}} /* S2496 — a skywood pine on a Mark peak in this chunk */
 // ── S2493 — rare materials B, session 3 (`docs/design/rare-materials.md`, Michael's B on #1840): the falling star ──
 // One star a game-week on each island (the nation's cells, `nationKeyOf`): its night (21:00 to 03:59, on one of the week's seven days)
 // and its place are seededRng('star', '<island>:<week>'), so a friend in a hosted world sees the same star. Its place is a land cell of the
@@ -1830,6 +1831,39 @@ const STAR_PLACES=['village','town','city','outpost','port'];
 function starPlace(s){const [ci,cj]=cellOf(s.x,s.z);let best=null,bd=1e9;
   for(let i=ci-2;i<=ci+2;i++)for(let j=cj-2;j<=cj+2;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);for(const st of (c&&c.sites)||[]){if(!st.name||!STAR_PLACES.includes(st.kind))continue;const d=Math.hypot(st.x-s.x,st.z-s.z);if(d<bd){bd=d;best=st;}}}
   return best?best.name:'';}
+// ── S2496 — rare materials B, session 4 (`docs/design/rare-materials.md`, Michael's B on #1840): skywood ──
+// One lone pine on each of the Mark's peaks (`spinePeaks` in a cell of the Mark), standing on the summit: the highest of the ground
+// round the peak (rings of 12 m to 72 m) that is not cliff, 60 m over the sea or more (one of the 18 is a low saddle, none), read from `rawH` alone, never from what has loaded. It is a tree record
+// in its chunk's `ch.trees` (`sky:<peak>`, species 'skywood'), so E, the prompt and the strikes are felling's; but only a steel hatchet
+// or better cuts it (no war axe), it falls for one Skywood Log, and it is back 30 game days after it fell: `worldState.skywood`
+// (the world's), peak id → the day felled, changed only by `fellTree`. A skywood log makes 2 Skywood Planks at the bench; a bow of
+// tiers 8–10 takes skywood planks in place of its planks. The pine is a plain stand-in (pale trunk, silver-blue tiers) until the
+// look builder's kit piece.
+const SKYWOOD={days:30,metal:4,logs:1,planks:2,rings:[12,24,36,48,60,72],cliff:1.2,minH:60};
+let _skyPines=null;
+function skyPines(){if(_skyPines)return _skyPines;const out=[];let P=[];try{P=spinePeaks();}catch(e){return [];}
+  for(const p of P){let k='gatelands';try{k=nationKeyOf(p.i,p.j)||k;}catch(e){}if(k!=='mark')continue;
+    let bx=p.x,bz=p.z,bh=-1e9;
+    for(const R of [0,...SKYWOOD.rings])for(let a=0;a<(R?12:1);a++){const x=p.x+R*Math.cos(a*Math.PI/6),z=p.z+R*Math.sin(a*Math.PI/6),h=rawH(x,z);if(h<=bh||h<SEA_Y+3)continue;
+      const d=3,sl=Math.hypot(rawH(x+d,z)-rawH(x-d,z),rawH(x,z+d)-rawH(x,z-d))/(2*d);if(sl>SKYWOOD.cliff)continue;bh=h;bx=x;bz=z;}
+    if(bh>=SEA_Y+SKYWOOD.minH)out.push({id:'sky:'+p.k,x:bx,z:bz,peak:p.k});} /* a peak whose summit is under 60 m is no peak above the trees: none there */
+  return _skyPines=out;}
+function skyId(id){return typeof id==='string'&&id.startsWith('sky:');}
+function skyDown(id){const d=(worldState.skywood||{})[id];return d!=null&&gameMinNow()/1440-d<SKYWOOD.days;}
+// why the tools in the bag will not fell it: '' when they will
+function skyWhy(){const m=toolMetal('hatchet');return m>=SKYWOOD.metal?'':m?'The skywood turns the iron. It wants a steel hatchet.':'The skywood wants a steel hatchet.';}
+let _skyMat=null;
+function skyMesh(t){const M=_skyMat||(_skyMat={bark:new THREE.MeshLambertMaterial({color:0x9a8c7c}),leaf:new THREE.MeshLambertMaterial({color:0x5c7a86})});
+  const g=new THREE.Group();g.name='skywood';g.position.set(t.x,t.h,t.z);
+  const tr=new THREE.Mesh(new THREE.CylinderGeometry(.16,.3,7,7),M.bark);tr.position.y=3.5;tr.castShadow=true;g.add(tr);
+  [[2.6,1.9,2.4],[4.2,1.5,2.1],[5.6,1.05,1.8],[6.8,.6,1.5]].forEach(([y,r,h])=>{const c=new THREE.Mesh(new THREE.ConeGeometry(r,h,8),M.leaf);c.position.y=y;c.castShadow=true;g.add(c);});
+  return g;}
+function spawnChunkSky(ch){if(!ch.trees)return;for(const s of skyPines()){if(Math.floor(s.x/CHUNK)!==ch.cx||Math.floor(s.z/CHUNK)!==ch.cz)continue;
+  if(ch.trees.some(t=>t.id===s.id))continue;
+  for(const t of ch.trees)if(!t.out&&Math.hypot(t.x-s.x,t.z-s.z)<4)try{treeTakeOut(ch,t);const o=t.out;if(o.stump&&o.stump.parent)o.stump.parent.remove(o.stump);const k=STUMPS.findIndex(q=>q.t===t);if(k>=0)STUMPS.splice(k,1);o.star=1;}catch(e){} /* it stands alone */
+  const t={id:s.id,x:s.x,z:s.z,h:worldH(s.x,s.z)-.04,sp:'skywood',r:.3,sky:true};
+  try{t.mesh=skyMesh(t);ch.group.add(t.mesh);}catch(e){}
+  ch.sol.push({cx:t.x,cz:t.z,rx:.35,rz:.35,tid:t.id});ch.trees.push(t);}}
 function veinLive(v){return !v.g||!!(v.g.parent&&v.g.parent.parent);}
 // the vein's record, brought back if 7 days have passed since it was worked out
 function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id];
@@ -1905,7 +1939,7 @@ function warAxeHeld(){const w=typeof EQ!=='undefined'&&EQ.weapon;return !!(w&&/a
 // the hatchet first; a war axe in hand at half pace; null: nothing to cut with
 function chopTool(){return hasHatchet()?'hatchet':warAxeHeld()?'axe':null;}
 function fellStrikes(){return Math.max(1,FELL_STRIKES-Math.floor(skillLv('woodcutting')/20));}
-function treeDown(id){const d=(worldState.felled||{})[id];return d!=null&&gameMinNow()/1440-d<FELL_DAYS;}
+function treeDown(id){if(skyId(id))return skyDown(id); /* S2496 */const d=(worldState.felled||{})[id];return d!=null&&gameMinNow()/1440-d<FELL_DAYS;}
 function fellable(t){return t&&t.r>0&&!FELL_NOT.includes(t.sp)&&!(typeof MUSH_KINDS!=='undefined'&&MUSH_KINDS.includes(t.sp));}
 // the stump: one short trunk, its cut face pale, shared by every stump and scaled to the trunk's collider
 let _stumpGeo=null,_stumpMat=null;
@@ -1915,7 +1949,7 @@ function stumpMesh(t){{let K=null;try{K=typeof stumpProp==='function'?stumpProp(
   const m=new THREE.Mesh(_stumpGeo,_stumpMat),rr=Math.max(.14,Math.min(.5,t.r*.55));m.scale.set(rr,.42,rr);
   m.position.set(t.x,t.h-.06,t.z);m.name='stump';m.castShadow=true;m.receiveShadow=true;m.userData.tree=t.id;return m;}
 // take a standing tree out of its chunk: its instance (the last takes the gap), its collider; a stump in its place
-function treeTakeOut(ch,t){if(t.out)return;const m=new THREE.Matrix4(),c=new THREE.Color();t.out={sol:[]};
+function treeTakeOut(ch,t){if(t.out)return;const m=new THREE.Matrix4(),c=new THREE.Color();t.out={sol:[]};if(t.mesh)t.mesh.visible=false; /* S2496 — the skywood's own mesh */
   for(const o of ch.group.children){const T=o.isInstancedMesh&&o.userData.tids;if(!T)continue;const j=T.indexOf(t.id);if(j<0||j>=o.count)continue;
     o.getMatrixAt(j,m);t.out.im=o;t.out.m=m.clone();if(o.instanceColor){o.getColorAt(j,c);t.out.c=c.clone();}
     const last=o.count-1;if(j<last){o.getMatrixAt(last,m);o.setMatrixAt(j,m);if(o.instanceColor){o.getColorAt(last,c);o.setColorAt(j,c);}}
@@ -1927,10 +1961,10 @@ function treeTakeOut(ch,t){if(t.out)return;const m=new THREE.Matrix4(),c=new THR
 function treePutBack(ch,t){const o=t.out;if(!o)return;
   if(o.im&&o.im.userData.tids&&o.im.count<o.im.instanceMatrix.count){const k=o.im.count;o.im.setMatrixAt(k,o.m);if(o.c&&o.im.instanceColor)o.im.setColorAt(k,o.c);
     o.im.userData.tids[k]=t.id;o.im.count=k+1;o.im.instanceMatrix.needsUpdate=true;if(o.im.instanceColor)o.im.instanceColor.needsUpdate=true;}
-  ch.sol.push(...o.sol);if(o.stump&&o.stump.parent)o.stump.parent.remove(o.stump);t.out=null;}
+  ch.sol.push(...o.sol);if(o.stump&&o.stump.parent)o.stump.parent.remove(o.stump);if(t.mesh)t.mesh.visible=true;t.out=null;}
 const STUMPS=[];
 // a chunk's trees that are down, taken out as it builds (called beside spawnChunkVeins)
-function spawnChunkStumps(ch){if(!ch.trees||!worldState.felled)return;for(const t of ch.trees)if(treeDown(t.id))treeTakeOut(ch,t);}
+function spawnChunkStumps(ch){if(!ch.trees||!(worldState.felled||worldState.skywood))return;for(const t of ch.trees)if(treeDown(t.id))treeTakeOut(ch,t);}
 // a stamp that arrives after the chunk (clearScatterUnder): its trees are gone for good, standing or felled
 function stumpsClearUnder(ch,hit){if(!ch.trees)return;const at=t=>hit.some(st=>Math.hypot(t.x-st.x,t.z-st.z)<st.r);
   for(const t of ch.trees)if(t.out&&at(t)){if(t.out.stump&&t.out.stump.parent)t.out.stump.parent.remove(t.out.stump);}
@@ -1943,7 +1977,7 @@ function treeNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&
     for(const t of ch.trees){if(t.out||!fellable(t))continue;const d=Math.hypot(px-t.x,pz-t.z)-t.r;if(d<TOUCH&&d<bd){bd=d;best={ch,t};}}}
   return best;}
 // the named action: the tree is down from today (the world's), and out of its chunk
-function fellTree(ch,t){(worldState.felled||(worldState.felled={}))[t.id]=Math.floor(gameMinNow()/1440);treeTakeOut(ch,t);}
+function fellTree(ch,t){(t.sky?(worldState.skywood||(worldState.skywood={})):(worldState.felled||(worldState.felled={})))[t.id]=Math.floor(gameMinNow()/1440);treeTakeOut(ch,t);} /* S2496 — a skywood pine's day is the skywood's */
 // the logs a tree gives, on its stream: keyed by the tree and the day it last fell (none: 'n'), so the same fall gives the same logs
 // S1561 — a great tree (Heartwood, Woodcutting 75; Michael's A on #860): one oak or pine in ten, by its id's stream. At 75 its
 // fall gives a heartwood log beside its logs; below 75 it falls as any tree. A chunk's scatter holds no new model for it.
@@ -1954,18 +1988,20 @@ function treeLogs(t){const prev=(worldState.felled||{})[t.id],r=seededRng('log',
   return 2+Math.floor(r*3)+(skillLv('woodcutting')>=100?1:0);}
 // one strike at a tree. Returns {n strikes so far, need, logs on the fall} or {why}
 function strikeTree(ch,t,n){
+  if(t.sky&&!t.out&&!treeDown(t.id)){const w=skyWhy();if(w)return {why:w};} /* S2496 — skywood: a steel hatchet, one log */
   if(!chopTool())return {why:'You need a hatchet.'};
   if(t.out||treeDown(t.id))return {why:'It is down already.'};
-  const it=survItem(t.sp==='pine'?'pine':'log');if(!canCarry(it))return {why:'Too heavy to carry!'};
+  const it=t.sky?benchItem('skylog',SKYWOOD.logs):survItem(t.sp==='pine'?'pine':'log');if(!canCarry(it))return {why:'Too heavy to carry!'};
   n++;const need=fellStrikes();
   if(n<need){skillUse('woodcutting',1);return {n,need};}
-  const k=treeLogs(t),hw=heartwoodHere(t);t.fall=yaw;fellTree(ch,t);it.qty=k;bagAdd(it);if(hw)bagAdd(benchItem('heartlog',1));skillUse('woodcutting',4);if(perk('woodcutting',25))layTrunk(ch,t,yaw);
-  if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onFell)WORLD.guild.onFell(it.log,k); /* S1563 — a timber Supply counts the fall */
+  const k=t.sky?SKYWOOD.logs:treeLogs(t),hw=heartwoodHere(t);t.fall=yaw;fellTree(ch,t);it.qty=k;bagAdd(it);if(hw)bagAdd(benchItem('heartlog',1));skillUse('woodcutting',4);if(perk('woodcutting',25))layTrunk(ch,t,yaw);
+  if(!t.sky&&typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onFell)WORLD.guild.onFell(it.log,k); /* S1563 — a timber Supply counts the fall */
   return {n,need,logs:k,item:it,heart:hw};}
 // working a tree: E starts it, E again, walking off, or the fall stops it
 let CHOP=null;
 function chopTree(ch,t){if(CHOP&&CHOP.t===t){CHOP=null;showMsg('You stop.','#c8b890');return;}
-  const tool=chopTool();if(!tool){showMsg('You need a hatchet.','#cc8844');return;}
+  const tool=chopTool();if(!tool){showMsg(t.sky?skyWhy():'You need a hatchet.','#cc8844');return;}
+  if(t.sky&&skyWhy()){showMsg(skyWhy(),'#cc8844');return;} /* S2496 */
   const step=tool==='axe'?FELL_STRIKE*2:toolStrike('hatchet');CHOP={ch,t,n:0,step,tm:step};showMsg((tool==='axe'?'You set to the tree with the axe. It is slow work.':'You set to the tree.')+(heartwoodHere(t)?' It is a great tree, with heartwood in it.':''),'#c8b890');}
 function tickFelling(dt){
   if(CHOP){const {ch,t}=CHOP;
@@ -2238,23 +2274,30 @@ const BENCH_ITEMS={
   spar:{name:'Spar',ico:'🪵',type:'misc',weight:3,buyPrice:7,sellMult:.3,spar:true},
   feathers:{name:'Feathers',ico:'🪶',type:'misc',weight:.01,qty:FLETCH_FEATHERS,bundle:FLETCH_FEATHERS,buyPrice:1,sellMult:.4,feather:true},
   heartlog:{name:'Heartwood Log',ico:'🪵',type:'misc',weight:3,buyPrice:20,sellMult:.3,heartwood:'log'}, /* S1561 — Heartwood (#860 A) */
-  heartspar:{name:'Heartwood Spar',ico:'🪵',type:'misc',weight:3,buyPrice:30,sellMult:.3,heartwood:'spar'}};
+  heartspar:{name:'Heartwood Spar',ico:'🪵',type:'misc',weight:3,buyPrice:30,sellMult:.3,heartwood:'spar'},
+  skylog:{name:'Skywood Log',ico:'🪵',type:'misc',weight:3,buyPrice:120,sellMult:.3,skywood:'log'}, /* S2496 — skywood (rare materials B) */
+  skyplank:{name:'Skywood Plank',ico:'🪵',type:'misc',weight:1.5,buyPrice:60,sellMult:.3,skywood:'plank'}};
 function benchItem(k,qty){return {...BENCH_ITEMS[k],qty:qty||1};}
 function hasJoinerKit(){return BAG.some(b=>b&&b.tool==='joiner');}
 function benchHere(){return hasJoinerKit()||cabinBench()||homeFitHere('bench');} /* S2137 — your house's workbench */
 function joinerKitFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...JOINER_ITEM}]:[];}
 function feathersFor(h){return h&&h.type==='misc'?[{...BENCH_ITEMS.feathers}]:[];}
 function plankCount(){return bagCount(b=>b.plank);}
-// the bow's metals: those an ingot is smelted of
-// S2494 — not Draconic and above: their bows take skywood (rare materials B, session 4), which is not in the world yet
-function benchMetals(){return INGOT_DEF.filter(d=>d.tier<=7).map(d=>d.tier);}
+// the bow's metals: those an ingot is smelted of. S2496 — Draconic and above too: their bows take skywood planks for planks
+function benchMetals(){return INGOT_DEF.map(d=>d.tier);}
+function skyPlankCount(){return bagCount(b=>b.skywood==='plank');}
+function bowSky(t){return t>=8;}
+// the planks a bow of this metal is made of, and how many you hold
+function bowWood(t){return bowSky(t)?skyPlankCount():plankCount();}
+function bowCan(id){const K=BOW_KINDS[id];return benchMetals().some(t=>ingotCount(t)>=1&&bowWood(t)>=K.planks);}
 const BENCH_RECIPES=[
   {id:'plank',name:'Planks',need:'1 Log',has:()=>bagCount(b=>b.log==='log')>=1},
   {id:'spar',name:'Spar',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},
   {id:'heartspar',name:'Heartwood Spar',need:'1 Heartwood Log',heart:true,has:()=>bagCount(b=>b.heartwood==='log')>=1}, /* S1561 */
-  {id:'bow',name:'Bow',need:'2 planks and an ingot',has:()=>plankCount()>=2&&benchMetals().some(t=>ingotCount(t)>=1)},
-  {id:'longbow',name:'Longbow',need:'3 planks and an ingot',bowyer:true,has:()=>perk('joinery',75)&&plankCount()>=3&&benchMetals().some(t=>ingotCount(t)>=1)},
-  {id:'warbow',name:'War Bow',need:'3 planks and an ingot',bowyer:true,has:()=>perk('joinery',75)&&plankCount()>=3&&benchMetals().some(t=>ingotCount(t)>=1)},
+  {id:'skyplank',name:'Skywood Planks',need:'1 Skywood Log',sky:true,has:()=>bagCount(b=>b.skywood==='log')>=1}, /* S2496 */
+  {id:'bow',name:'Bow',need:'2 planks and an ingot',has:()=>bowCan('bow')},
+  {id:'longbow',name:'Longbow',need:'3 planks and an ingot',bowyer:true,has:()=>perk('joinery',75)&&bowCan('longbow')},
+  {id:'warbow',name:'War Bow',need:'3 planks and an ingot',bowyer:true,has:()=>perk('joinery',75)&&bowCan('warbow')},
   {id:'shield',name:'Wooden Buckler',need:'3 planks',has:()=>plankCount()>=3},
   {id:'arrows',name:'Arrows',need:'1 log, 10 feathers and an ingot',has:()=>bagCount(b=>!!b.log)>=1&&bagCount(b=>b.feather)>=FLETCH_FEATHERS&&benchMetals().some(t=>ingotCount(t)>=1)},
   {id:'patch',name:'Patch the hull',need:'a plank and a pitch',ship:true,has:()=>!shipWorkWhy('patch')}, /* S1519 — shown only at your ship */
@@ -2284,7 +2327,7 @@ function shipBenchBuild(k){const why=shipBenchWhy(k);if(why)return {made:false,w
   skillUse('joinery',SHIP_BENCH_XP,'b'+(_benchN++));if(typeof advanceClock==='function')advanceClock(FORGE_MIN);
   const nm=shipBenchName(k);return {made:true,fit:k,said:`${nm[0].toUpperCase()+nm.slice(1)}, built and fitted. Her hold takes ${holdCap()} now.`};}
 // S1561 — the heartwood rows are shown to a hand with Heartwood (Woodcutting 75), or one who holds a heartwood log or spar
-function benchRows(){const hw=perk('woodcutting',75)||bagCount(b=>!!b.heartwood)>0;return BENCH_RECIPES.filter(r=>(!r.ship||shipWorkHere())&&(!r.heart||hw));}
+function benchRows(){const hw=perk('woodcutting',75)||bagCount(b=>!!b.heartwood)>0,sk=bagCount(b=>!!b.skywood)>0;return BENCH_RECIPES.filter(r=>(!r.ship||shipWorkHere())&&(!r.heart||hw)&&(!r.sky||sk));} /* S2496 — the skywood row to one who holds skywood */
 let _benchN=0;
 // a made bow or shield: never enchanted, `made`, a fifth back, the forge's half-hour
 function benchPiece(tier,T,arm){const it=makeItem(tier,T,null,arm);it.made=true;it.sellMult=MADE_SELL;return it;}
@@ -2298,15 +2341,18 @@ function benchMake(id,tier){
   if(id==='heartspar'){if(!bagCount(b=>b.heartwood==='log'))return {made:false,why:'You need a heartwood log.'};
     bagTake(b=>b.heartwood==='log',1);const it=benchItem('heartspar',1);bagAdd(it);skillUse('joinery',2,'b'+(_benchN++));
     return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n:1};}
+  if(id==='skyplank'){if(!bagCount(b=>b.skywood==='log'))return {made:false,why:'You need a skywood log.'}; /* S2496 */
+    bagTake(b=>b.skywood==='log',1);const it=benchItem('skyplank',SKYWOOD.planks);bagAdd(it);skillUse('joinery',2,'b'+(_benchN++));
+    return {made:true,item:BAG.find(b=>sameStack(b,it))||it,n:it.qty};}
   if(id==='bow'||R.bowyer){const t=tier||benchMetals().find(m=>ingotCount(m)>=1)||3;if(!benchMetals().includes(t))return {made:false,why:''};
     const K=BOW_KINDS[id];if(R.bowyer&&!perk('joinery',75))return {made:false,why:`A ${K.name.toLowerCase()} asks Bowyer (Joinery 75).`};
     const gate=SKILL_GATE[t]||0;if(skillLv('joinery')<gate)return {made:false,why:`${MATERIALS[t-1].name} asks Joinery ${gate} (you have ${skillLv('joinery')}).`};
-    if(plankCount()<K.planks)return {made:false,why:`You need ${K.planks} planks.`};
+    if(bowWood(t)<K.planks)return {made:false,why:`You need ${K.planks} ${bowSky(t)?'skywood ':''}planks.`}; /* S2496 — tiers 8–10 take skywood */
     if(ingotCount(t)<1)return {made:false,why:`You need ${MATERIALS[t-1].name.toLowerCase()==='iron'?'an':'a'} ${MATERIALS[t-1].name.toLowerCase()} ingot.`};
     const it=benchPiece(t,WEAPON_TYPES.find(T=>T.type==='Bow'),false);
     if(R.bowyer){it.bowKind=id;it.name=`${MATERIALS[t-1].name} ${K.name}`;it.weight=K.weight;it.buyPrice=Math.round(it.buyPrice*K.mult/BOW_KINDS.bow.mult);} /* S1549 */
     if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
-    bagTake(b=>b.plank,K.planks);bagTake(b=>b.ingot===t,1);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
+    bagTake(bowSky(t)?(b=>b.skywood==='plank'):(b=>b.plank),K.planks);bagTake(b=>b.ingot===t,1);bagAdd(it);skillUse('joinery',BENCH_PIECE,'b'+(_benchN++));
     if(typeof advanceClock==='function')advanceClock(FORGE_MIN);return {made:true,item:BAG[BAG.length-1],n:1};}
   if(id==='shield'){if(plankCount()<3)return {made:false,why:'You need 3 planks.'};
     const it=benchPiece(1,ARMOR_TYPES.find(T=>T.type==='Buckler'),true);if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
@@ -2404,11 +2450,12 @@ function benchDraw(){const ov=document.getElementById('benchui');if(!ov)return;
   if(R.id==='plank')t+=pad('1 Log'+have(bagCount(b=>b.log==='log')))+note('two planks, for a grip, a bow, a shield or a ship’s patch');
   else if(R.id==='spar')t+=pad('1 Pine Log'+have(bagCount(b=>b.log==='pine')))+note('for a ship’s splice');
   else if(R.id==='heartspar')t+=pad('1 Heartwood Log'+have(bagCount(b=>b.heartwood==='log')))+note('a mast’s spar: its splice mends the rig past field work'); /* S1561 */
+  else if(R.id==='skyplank')t+=pad('1 Skywood Log'+have(bagCount(b=>b.skywood==='log')))+note('two planks, for a Draconic, Demonic or Cosmic bow'); /* S2496 */
   else if(R.id==='heartsplice'){const b=shipBars(),why=shipWorkWhy('heartsplice');
     t+=pad('1 Heartwood Spar'+have(bagCount(x=>x.heartwood==='spar')))+pad('1 Pitch'+have(pitchCount()))+pad(`rig +${HEART_RIG}, ${patchSecs()} s of work`)+
       note(`rig ${b.rig} of ${b.rigMax}; heartwood mends it to full`)+(why?note(why):'');}
   else if(R.id==='bow'||R.bowyer){if(benchTier==null||!benchMetals().includes(benchTier))benchTier=benchMetals().find(m=>ingotCount(m)>=1)||3;const K=BOW_KINDS[R.id];
-    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[benchTier-1].name} ${K.name}</div>`+pad(`${K.planks} Planks`+have(plankCount()))+pad(`1 ingot and ${FORGE_MIN} minutes`)+
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[benchTier-1].name} ${K.name}</div>`+pad(`${K.planks} ${bowSky(benchTier)?'Skywood ':''}Planks`+have(bowWood(benchTier)))+pad(`1 ingot and ${FORGE_MIN} minutes`)+
       '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+benchMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=ingotCount(m)>=1&&skillLv('joinery')>=g;
         return `<button type="button" data-m="${m}" style="background:${m===benchTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===benchTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}${g?` · ${g}`:''}</button>`;}).join('')+'</div>'+
       ((SKILL_GATE[benchTier]||0)>skillLv('joinery')?note(`asks Joinery ${SKILL_GATE[benchTier]}`):'')+

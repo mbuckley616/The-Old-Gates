@@ -183,4 +183,50 @@ const cut = await page.evaluate(() => { let b = null;
 console.log(JSON.stringify(cut));
 check('a bank dug once shows its cut on the drawn ground, facing the water, in at most 3 draws and 1,000 triangles', !!cut.one && cut.one.inScene && cut.one.water && cut.one.draws <= 3 && cut.one.tris <= 1000 && cut.one.below > -.01, cut);
 check('dug out, the cut is wider and deeper; when the bank comes back it is gone', !!cut.three && cut.three.n === 3 && cut.three.w > cut.one.w && cut.three.d > cut.one.d && cut.three.draws <= 3 && cut.three.tris <= 1000 && cut.healed, cut);
+// Session 2496 — skywood (rare materials B, session 4): one lone pine on each Mark peak's summit, a tree record `sky:<peak>` in its chunk.
+// Only a steel hatchet or better fells it, for one Skywood Log; it is back in 30 game days (`worldState.skywood`, the world's). At the
+// bench a skywood log makes 2 Skywood Planks, and a bow of tiers 8–10 takes them in place of its planks.
+const skyList = await page.evaluate(() => skyPines().map(s => ({ id: s.id, x: s.x, z: s.z, mark: nationKeyOf(...cellOf(s.x, s.z)), h: rawH(s.x, s.z) })));
+const sp = skyList[0];
+if (sp) await page.evaluate(s => WORLD.enter(s.x + 1, s.z, 0, 'test'), sp);
+await g.spin(30);
+const sky = await page.evaluate(sp => { const o = {};
+  let ch = null, t = null; for (const c of chunks.values()) for (const u of c.trees || []) if (u.id === sp.id) { ch = c; t = u; }
+  if (!t) return { err: 'no pine' };
+  const tick = s => { for (let i = 0; i < Math.round(s * 60); i++) tickFelling(1 / 60); };
+  worldState.skywood = {}; CHOP = null; BAG.length = 0; SKILLS.woodcutting = { lv: 5, p: 0 }; px = t.x + t.r + .6; pz = t.z;
+  o.near = treeNear() && treeNear().t.id === t.id; o.shown = !!(t.mesh && t.mesh.visible && t.mesh.parent === ch.group); o.solid = ch.sol.some(q => q.tid === t.id);
+  o.alone = ch.trees.filter(u => u !== t && !u.out && Math.hypot(u.x - t.x, u.z - t.z) < 4).length;
+  o.noTool = strikeTree(ch, t, 0).why;
+  bagAdd({ ...HATCHET_ITEM }); o.iron = strikeTree(ch, t, 0).why;
+  const msgs = []; const sm = showMsg; showMsg = m => msgs.push(m); chopTree(ch, t); showMsg = sm; o.ironChop = { chop: !!CHOP, said: msgs[0] }; CHOP = null;
+  BAG.length = 0; bagAdd({ ...HATCHET_ITEM, name: 'Steel Hatchet', toolMetal: 4 });
+  const day0 = Math.floor(gameMinNow() / 1440), need = fellStrikes(); chopTree(ch, t); tick(.75 * need + .2);
+  const log = BAG.find(b => b.skywood === 'log');
+  o.fell = { need, down: !!t.out, logs: log ? log.qty : 0, name: log && log.name, plain: bagCount(b => !!b.log), rec: worldState.skywood[t.id], day0, felled: (worldState.felled || {})[t.id],
+    hidden: !t.mesh.visible, solids: ch.sol.filter(q => q.tid === t.id).length, stump: !!(t.out && t.out.stump && t.out.stump.parent) };
+  worldState.gameTimeAbsMinutes = (day0 + 29) * 1440 + 600; tick(.1); o.day29 = !!t.out;
+  worldState.gameTimeAbsMinutes = (day0 + 30) * 1440 + 10; tick(.1); o.day30 = { down: !!t.out, shown: t.mesh.visible, solid: ch.sol.some(q => q.tid === t.id) };
+  // the bench: planks, then the Draconic bow
+  BAG.length = 0; bagAdd({ ...JOINER_ITEM }); bagAdd(benchItem('skylog', 1)); bagAdd(benchItem('plank', 4)); SKILLS.joinery = { lv: 74, p: 0 };
+  o.row = benchRows().some(r => r.id === 'skyplank'); o.planks = benchMake('skyplank'); o.planksN = bagCount(b => b.skywood === 'plank');
+  o.metals = benchMetals().join();
+  bagAdd(ingotItem(8)); o.at74 = benchMake('bow', 8).why; SKILLS.joinery = { lv: 75, p: 0 };
+  const keep = BAG.filter(b => b.skywood === 'plank'); BAG.splice(BAG.indexOf(keep[0]), 1);
+  o.plainOnly = benchMake('bow', 8).why; bagAdd(benchItem('skyplank', 2));
+  const b = benchMake('bow', 8); o.bow = { made: b.made, name: b.item && b.item.name, tier: b.item && b.item.tier, sky: bagCount(q => q.skywood === 'plank'), plain: plankCount(), ingot: ingotCount(8) };
+  bagAdd(ingotItem(3)); const b3 = benchMake('bow', 3); o.iron3 = { made: b3.made, plain: plankCount() };
+  bagAdd(benchItem('skylog', 1)); const d = JSON.parse(ssStringify(_buildSavePayload())); BAG.length = 0; worldState.skywood = {}; _applyLoadData(d);
+  o.saved = { log: bagCount(q => q.skywood === 'log'), rec: (d.wS.skywood || {})[t.id], charKey: typeof SS_CHAR_WS !== 'undefined' && !!SS_CHAR_WS.skywood, back: (worldState.skywood || {})[t.id] };
+  return o; }, sp);
+console.log(JSON.stringify({ n: skyList.length, sp, sky }));
+check('a skywood pine on each Mark peak whose summit is 60 m up or more: 17 on this seed, every one in the Mark', skyList.length >= 10 && skyList.every(s => s.mark === 'mark' && s.h >= 60), skyList.length);
+check('the pine stands in its chunk alone, shown and solid, and E finds it', !sky.err && sky.near && sky.shown && sky.solid && sky.alone === 0, sky);
+check('no hatchet, or an iron one, will not fell it: it wants a steel hatchet', /steel hatchet/.test(sky.noTool || '') && /turns the iron/.test(sky.iron || '') && !sky.ironChop.chop && /turns the iron/.test(sky.ironChop.said || ''), [sky.noTool, sky.iron, sky.ironChop]);
+check('a steel hatchet fells it for one Skywood Log, no plain log; the day in worldState.skywood, not felled; its mesh hidden, its solid gone, a stump', sky.fell && sky.fell.down && sky.fell.logs === 1 && sky.fell.name === 'Skywood Log' && sky.fell.plain === 0 && sky.fell.rec === sky.fell.day0 && sky.fell.felled == null && sky.fell.hidden && sky.fell.solids === 0 && sky.fell.stump, sky.fell);
+check('down at day 29, back at day 30 (shown, solid)', sky.day29 && !sky.day30.down && sky.day30.shown && sky.day30.solid, [sky.day29, sky.day30]);
+check('the bench: a skywood log makes 2 Skywood Planks; the metals run 2–10', sky.row && sky.planks.made && sky.planksN === 2 && sky.metals === '2,3,4,5,6,7,8,9,10', [sky.planks, sky.planksN, sky.metals]);
+check('a Draconic bow asks Joinery 75 and 2 skywood planks (plain planks will not do); made, it spends the skywood and leaves the plain planks', /Joinery 75/.test(sky.at74 || '') && /2 skywood planks/.test(sky.plainOnly || '') && sky.bow.made && sky.bow.tier === 8 && /^Draconic Bow/.test(sky.bow.name || '') && sky.bow.sky === 0 && sky.bow.plain === 4 && sky.bow.ingot === 0, [sky.at74, sky.plainOnly, sky.bow]);
+check('an iron bow still takes plain planks', sky.iron3.made && sky.iron3.plain === 2, sky.iron3);
+check('the save keeps a skywood log, and the felled day in the world\'s row', sky.saved.log === 1 && sky.saved.rec != null && !sky.saved.charKey && sky.saved.back === sky.saved.rec, sky.saved);
 await g.close();
