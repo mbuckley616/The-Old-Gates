@@ -3288,6 +3288,35 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const p=new THREE.PointLight(0xb8d4e0,2.2*dayK+.2,30,1);p.position.set(rx(T.falls.x),ry(T.falls.foot)+3,rz(T.falls.z)+2);sc_.add(p);}
     return sc_;
   }
+  // S2473 (Michael's A on #1761, "a Mark gate's way in") — the Hollow Below (PKIT.places.hollow, ruins.js's hollowBelow, Session 2401) is a
+  // place of its own behind its mouth, built as the limestone cave is: moved into a room's frame (x from the cavern's west, z from the back
+  // plate, the floor 0.25 m under the lowest walked ground), its walk the place's half-metre cells (each standing run a foothold and a solid up
+  // to it, each run of cliff, lake or rock a solid to 60 m; the deck walled at its parapet, so nothing falls to the lake). The light is the
+  // day's alone: the noon sun down the oculus onto the court (a spot along the shaft, by the hour), the day in at the passage's mouth, a low
+  // ambient so the rock keeps its shape. No one is here. The slit door in the back plate is the gate's door (hollowDoorAt).
+  function kitHollow(house){return !!(house&&house.type==='hollow'&&typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.hollow);}
+  function buildKitHollow(house){
+    const T=PKIT.places.hollow({key:house.siteId}),Bd=T.bounds,FY=+(T.low-.25).toFixed(2),W=Bd.x1-Bd.x0,D=Bd.z1-Bd.z0;
+    const rx=x=>x-Bd.x0,rz=z=>z-Bd.z0,ry=y=>y-FY;
+    house._counterFront=null;house.intW=W;house.intD=D;house._roomH=+(T.chamber.h-FY+6).toFixed(2);house._exitD=.01;house._exitW=.01;house._exitX=-99;house._exitZ=-99;house._exitText=true;house._limeCave=T;house._hollow=T;house._caveFY=FY;
+    const A=T.arrive;house._arriveX=+rx(A[0]).toFixed(3);house._arriveZ=+rz(A[2]).toFixed(3);house._arriveYaw=A[3];
+    if(!window._pendingPos)window._pendingPos={x:house._arriveX,z:house._arriveZ,yaw:A[3],jumpY:ry(A[1])};
+    const sc_=new THREE.Scene();interiorScene=sc_;landRoomPost(sc_);sc_.background=new THREE.Color(0x05070a);sc_.fog=new THREE.Fog(0x05070a,120,420);
+    intNPCMesh=null;intNPCPos={x:-99,z:-99};intBedPos=null;intStashPos=null;
+    const SOL=[];INT_SOL=SOL;FOOTHOLDS=[];INT_BEDS=[];INT_DOORS=[];INT_DOORS.house=house.id;INT_CHAIR=null;INT_NPCS=[];HATCH.active=false;HATCH.roof=false;INT_LOOT=null;INT_BOX=null;INT_SHELF=null;
+    T.group.position.set(-Bd.x0,-FY,-Bd.z0);sc_.add(T.group);
+    for(const c of T.cells){const q={x0:rx(c.x0),x1:rx(c.x1),z0:rz(c.z0),z1:rz(c.z1)};
+      if(c.y==null){SOL.push({...q,y0:-5,y1:60});continue;}
+      const y=+ry(c.y).toFixed(2);SOL.push({...q,y0:-5,y1:y});FOOTHOLDS.push({...q,y});}
+    const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08,noon=Math.max(0,1-Math.abs(hr-12.5)/6.5);
+    T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
+    T.group.children.forEach(m=>{if(m.name==='hollow:beam')m.visible=dayK>.4;});
+    sc_.add(new THREE.AmbientLight(0xbcc6d0,.3));
+    {const O=T.oculus,s=new THREE.SpotLight(0xfff2dc,(14*noon+2)*dayK,320,.2,.5,1),L=T.roof+40;s.position.set(rx(T.lands.x+T.sun[0]/T.sun[1]*L),ry(L),rz(T.lands.z+T.sun[2]/T.sun[1]*L));s.target.position.set(rx(T.lands.x),ry(0),rz(T.lands.z));s.userData.daylight=true;sc_.add(s,s.target);
+      const p=new THREE.PointLight(0xe8e0d0,(3*noon+.6)*dayK,140,1);p.position.set(rx(T.lands.x),ry(8),rz(T.lands.z+6));p.userData.daylight=true;sc_.add(p);}
+    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,3.2*dayK,40,1);l.position.set(rx(M.x),ry(M.y)+3,rz(M.z)-2);l.userData.daylight=true;sc_.add(l);}
+    return sc_;
+  }
   // S1773 (card F8, Michael's A on #1026) — a smugglers' sea cave (PKIT.places.cove, places.js's smugglersLair, #314 A) behind its mouth on
   // the land over the shore (seaCove, 82), built as the limestone cave is: moved into a room's frame (the floor 0.25 m under the deck), its
   // walk the place's own half-metre cells at the deck's height, a foothold and a solid up to it where you stand, a solid to 60 m where it is
@@ -3441,7 +3470,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // the cave's one way, from either side: in the world, stood in the mouth's throat; inside, within the passage's first 3 m from its mouth
   // (S1773: the sea caves' too, c._cove beside c._cave)
   function limeCaveAt(){
-    if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave'&&h.type!=='mine'&&h.type!=='tunnel')||!h._limeCave)return null; /* S1790 — and the mine's adit */const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
+    if(isInterior()){const h=currentHouse;if(!h||(h.type!=='limecave'&&h.type!=='seacave'&&h.type!=='mine'&&h.type!=='tunnel'&&h.type!=='hollow')||!h._limeCave)return null; /* S2473 — and the Hollow's passage */ /* S1790 — and the mine's adit */const T=h._limeCave,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0;
       if(h.type==='tunnel')return z>-3&&Math.abs(x)<4?{up:true,end:0}:z<-T.L+3&&Math.abs(x)<4?{up:true,end:1}:null; /* S1828 — the tunnel's two portals */
       if(h.grotto&&T.waterStairs){const w=T.waterStairs.filter(t=>t.y>0&&t.y<.7);if(w.some(t=>x>t.x0-.3&&x<t.x1+.3&&z>t.z0-.3&&z<t.z1+.3))return {seaOut:true};} /* S1788 — the water stairs' foot: the sea way out */
       if(h.grotto&&T.arch&&typeof roomSwimming==='function'&&roomSwimming()&&z<T.arch.z+7&&Math.abs(x)<T.arch.w/2+2)return {seaOut:true}; /* S1805 (#1083 A) — swum to the arch from inside: the same way out */
@@ -4183,6 +4212,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     if(kitGuildHall(house))return buildKitGuildHall(house); /* S1703 — a town's guild hall inside, at its true size */
     if(kitHuntCabin(house))return buildKitHuntCabin(house); /* S2196 — the Mark's hunting cabin off the road, its room */
     if(kitLimeCave(house))return buildKitLimeCave(house); /* S1768 — a limestone cave behind its mouth */
+    if(kitHollow(house))return buildKitHollow(house); /* S2473 — the Hollow Below, a Mark gate's way in */
     if(kitSeaCave(house))return buildKitSeaCave(house); /* S1773 — a smugglers' sea cave behind its mouth */
     if(kitMine(house))return buildKitMine(house); /* S1790 — the Mark's silver mine behind its adit */
     if(kitTunnel(house))return buildKitTunnel(house); /* S1828 — Aurenne's trade tunnel between its portals */
