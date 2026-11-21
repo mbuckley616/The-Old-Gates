@@ -170,12 +170,16 @@ const lh = await page.evaluate(() => { const eq0 = { ...EQ }; thirdPerson = true
     return { on: true, lw: D.lw, lerr: D.lerr, seen: +lp.distanceTo(gp).toFixed(3), under: +(R.shR.getWorldPosition(V()).y - R.handL.getWorldPosition(V()).y).toFixed(3) }; };
   const out = { hb: true }; sheathWeapon(); tpEnsure(); out.sh = [at(100), at(100.05), at(100.15)];
   FP_DRAW.now = () => 200; drawWeapon(); tpEnsure(); out.dr = [at(200.1), at(200.2), at(200.4), at(200.5)];
+  FP_DRAW.now = () => 201; for (let i = 0; i < 20; i++) step(); out.hold = TP.rig.gMiss; out.holdOn = !TP.rig.tpDraw;
   Object.assign(EQ, eq0); SHEATHED = false; tpEnsure(); FP_DRAW.now = null; thirdPerson = false; return out; });
 console.log(JSON.stringify(lh));
 if (lh.hb) {
   const [d1, d2, d4, d5] = lh.dr, [s0, , s15] = lh.sh;
   check(`third person, a claymore drawn: the left hand stays below the shoulders while the right reaches (${d1.under} and ${d2.under} m under at 0.1 and 0.2 s; it was at the shoulder), takes the seen grip by 0.4 s (${d4.seen} m from it, its fingers to the grip's left mark) and keeps it (${d5.seen} m at 0.5 s; 0.28 in the hold after)`,
     d1.on && d1.lw === 0 && d2.lw === 0 && d1.under > .25 && d2.under > .25 && d4.lw === 1 && d4.seen < .35 && d5.lw === 1 && d5.seen < .3, lh);
+  // Session 2485: held, the builder's left fingers on the seen blade's left grip mark (S2484's note: 0.31 m under it, holding nothing; tpHBGripL)
+  check(`third person, a claymore held: the builder's left hand is on the seen grip (${lh.hold && lh.hold.after} m from the mark; ${lh.hold && lh.hold.before} m as the driver put it)`,
+    lh.holdOn && lh.hold && lh.hold.before > .2 && lh.hold.after < .03 && lh.hold.w === 1, lh.hold);
   check(`third person, a claymore sheathed: the left hand leaves the grip (${s0.lw} at the start, ${s15.lw} by 0.15 s)`, s0.on && s0.lw === 1 && s15.lw === 0, lh);
 }
 // Session 2478: under a cloak a sword at the hip lifts the sheet (S2451's note: its hilt was lost inside the cloak and the scabbard's point

@@ -425,7 +425,8 @@ function tpDrawLeft(R,D,P,k){const draw=D.way==='draw',gl=draw?R.gripL:D.gl,hw=d
   const w=draw?_tdS((J[0]-P.s)/(J[0]-J[1])):1-_tdS(P.s/J[2]);D.lw=+w.toFixed(3);if(w<=0)return;
   R.root.updateMatrixWorld(true);k.updateWorldMatrix(true,false);hw.localToWorld(X.a.copy(gl));k.localToWorld(X.b.copy(gl));X.T.copy(X.a).lerp(X.b,P.s);
   X.q0.copy(S.quaternion);X.e0.copy(E.quaternion);tpReach(S,E,W,X.T);X.q1.copy(S.quaternion);X.e1.copy(E.quaternion);
-  if(w<1){S.quaternion.copy(X.q0).slerp(X.q1,w);E.quaternion.copy(X.e0).slerp(X.e1,w);}R.root.updateMatrixWorld(true);D.lerr=+W.getWorldPosition(X.a).distanceTo(X.T).toFixed(3);}
+  if(w<1){S.quaternion.copy(X.q0).slerp(X.q1,w);E.quaternion.copy(X.e0).slerp(X.e1,w);}R.root.updateMatrixWorld(true);D.lerr=+W.getWorldPosition(X.a).distanceTo(X.T).toFixed(3);
+  R.gAim={gl,o:draw?R.weapon:null,h:draw?null:D.h,w,q0:X.q0.clone(),e0:X.e0.clone(),qa:S.quaternion.clone(),ea:E.quaternion.clone()};}
 // S2478 — the cloak over what is worn at the hip (S2451's note, standing since: under a cloak a hip weapon hung inside the sheet, its hilt
 // lost in it and the scabbard's point out through its back). The sheet and its hem are lifted over the worn group (the blade if sheathed,
 // the scabbard, the frog; a mace or an axe through the belt) in the bind's metres: about the hips' upright, each point of the sheet stands
@@ -538,7 +539,31 @@ function tpScabbard(W,it){const kit=W.userData.kit||'',gc=tpHex(it&&it.matGuard,
   g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);
   g.addGroup(lea0[0],lea0[1],0);g.addGroup(m1[0],m1[1],1);g.addGroup(m2[0],m2[1],1);g.computeVertexNormals();g.computeBoundingSphere();
   const out={geo:g,mouth,tip,hw:R[0].hw,ht:R[0].ht,tris:I.length/3,R};TP_SCAB.set(key,out);return out;}
-function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.mantle)tpHBMantle(R);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);if(R.tpDraw)tpDrawTick(R,'held');}
+function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.mantle)tpHBMantle(R);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);if(R.tpDraw)tpDrawTick(R,'held');if(R.gAim)tpHBGripL(R);}
+// S2485 — the builder's left hand on a two-hander's grip (S2484's note): tpGripL (and the draw's tpDrawLeft) aim the driver's left wrist at
+// the driver's blade, but the blade that is seen rides in the builder's right fingers (tpHBHold), 0.30 m from the driver's, and the builder's
+// arm, copied joint for joint and of its own length, puts its wrist 0.24 m from the driver's: the left fist hung 0.31 m under the grip,
+// holding nothing. Aiming the driver short does not converge (the builder's hand lands 0.25 m off whatever the driver's aim), so the
+// builder's own arm is reached after hbPose, as the bow hand's fingers are set (tpHBBowHand): twice, the elbow (lowerarm01) bent about its
+// own hinge until shoulder to fingers is shoulder to the seen blade's left grip mark, then the upper arm (upperarm01) swung to put the
+// fingers' middle on it; laid over the copied arm by the grip's weight. Only while nothing since has moved the driver's left arm (the climb,
+// the mantle, the rod, the net and the glass set it after the grip), and used once and cleared, so a pose that does not set it (the sheet's
+// portrait, the creator) is never pulled to a grip
+const _tgF={S:new THREE.Vector3(),F:new THREE.Vector3(),s:new THREE.Vector3(),e:new THREE.Vector3(),u:new THREE.Vector3(),v:new THREE.Vector3(),n:new THREE.Vector3(),q:new THREE.Quaternion(),q2:new THREE.Quaternion(),u0:new THREE.Quaternion(),l0:new THREE.Quaternion()};
+function tpHBTurnBone(b,q){const X=_tgF;b.getWorldQuaternion(X.q2);X.q2.premultiply(q);b.parent.getWorldQuaternion(X.q).invert();b.quaternion.copy(X.q.multiply(X.q2));b.updateMatrixWorld(true);}
+function tpHBGripL(R){const G=R.gAim,H=R.rig.hb;R.gAim=null;if(!G||!H||G.w<=0)return;const h=G.h||(G.o&&R.hbHeld&&R.hbHeld.find(x=>x.o===G.o));if(!h||!h.c.parent)return;
+  /* only an arm still as the grip left it: the climb, the mantle, the rod, the net and the glass set the left arm after it */
+  if(Math.abs(G.qa.dot(R.shL.quaternion))<.99999||Math.abs(G.ea.dot(R.elL.quaternion))<.99999)return;
+  const sd=HBODY.swap?'R':'L',by=H.P.byName,U=by['upperarm01.'+sd],L=by['lowerarm01.'+sd],fg=[2,3,4,5].map(f=>by[`finger${f}-2.${sd}`]).filter(Boolean);if(!U||!L||!fg.length)return;const X=_tgF;
+  const fing=()=>{X.F.set(0,0,0);for(const b of fg)X.F.add(X.v.setFromMatrixPosition(b.matrixWorld));return X.F.multiplyScalar(1/fg.length);};
+  R.root.updateMatrixWorld(true);h.c.updateMatrixWorld(true);X.S.copy(G.gl).applyMatrix4(h.c.matrixWorld);const miss0=fing().distanceTo(X.S);X.u0.copy(U.quaternion);X.l0.copy(L.quaternion);
+  for(let k=0;k<2;k++){X.s.setFromMatrixPosition(U.matrixWorld);X.e.setFromMatrixPosition(L.matrixWorld);fing();
+    const a=X.s.distanceTo(X.e),b=X.e.distanceTo(X.F),d=Math.max(Math.abs(a-b)+1e-3,Math.min(a+b-1e-3,X.s.distanceTo(X.S)));
+    X.u.subVectors(X.F,X.e);X.v.subVectors(X.s,X.e);X.n.crossVectors(X.v,X.u);
+    if(X.n.lengthSq()>1e-10){X.n.normalize();const want=Math.acos(Math.max(-1,Math.min(1,(a*a+b*b-d*d)/(2*a*b)))),now=X.u.angleTo(X.v);tpHBTurnBone(L,X.q.setFromAxisAngle(X.n,want-now));}
+    fing();X.u.subVectors(X.F,X.s);X.v.subVectors(X.S,X.s);if(X.u.lengthSq()<1e-10||X.v.lengthSq()<1e-10)break;tpHBTurnBone(U,X.q.setFromUnitVectors(X.u.normalize(),X.v.normalize()));}
+  if(G.w<1){X.q.copy(U.quaternion);U.quaternion.copy(X.u0).slerp(X.q,G.w);X.q.copy(L.quaternion);L.quaternion.copy(X.l0).slerp(X.q,G.w);U.updateMatrixWorld(true);}
+  R.gMiss={before:+miss0.toFixed(3),after:+fing().distanceTo(X.S).toFixed(3),w:G.w};}
 // S1270 — the bow's draw on the builder's fingers: the right hand, a fist while the bow is carried, opens into the archer's hook as the
 // string comes back (or is held at the ready): the first three fingers bent round the string at their last two joints and barely at the
 // knuckle, the little finger and the thumb left folded. The knuckles' line is hbCloseFist's, read once when the body is built; the hand
@@ -835,7 +860,7 @@ function tpPose(R,dt,st){
   if(R.weaponL){const bl=R.weaponL.userData.bowLen||1,tip=R.bow&&bl>1&&!drawing&&!blocking?TP_BOW_TIP*(bl-1):0;R.bowTip=(R.bowTip||0)+(tip-(R.bowTip||0))*ka;
     R.weaponL.rotation.x=-(R.shL.rotation.x+R.elL.rotation.x)+R.bowTip;}
   // S246: a two-handed weapon is held in both hands through every pose: the left wrist is put on the grip
-  if(R.gripL&&R.weapon&&TP.deadT<.01&&!TP.swim&&!(typeof castT!=='undefined'&&castT>0)&&!(R.tpDraw&&R.tpDraw.way==='draw'))tpGripL(R); /* S2484 — drawing, tpDrawLeft takes the left hand */
+  R.gAim=null;if(R.gripL&&R.weapon&&TP.deadT<.01&&!TP.swim&&!(typeof castT!=='undefined'&&castT>0)&&!(R.tpDraw&&R.tpDraw.way==='draw')){const q0=R.shL.quaternion.clone(),e0=R.elL.quaternion.clone();tpGripL(R);R.gAim={gl:R.gripL,o:R.weapon,w:1,q0,e0,qa:R.shL.quaternion.clone(),ea:R.elL.quaternion.clone()};} /* S2484 — drawing, tpDrawLeft takes the left hand; S2485 — the builder's hand set on the seen grip, tpHBGripL */
   // the head looks where you look
   tpSet(R.head,Math.max(-.6,Math.min(.5,-pitch*.6))-tx*.3,-ty*.6,0,kf);
   // S743 — Michael's A on #237: up a boarding net hand over hand, three reaches in the climb, the elbows bending as each hand
