@@ -1092,7 +1092,7 @@ function itemDesc(it){
   if(it.type==='equip'&&it.def!==undefined){
     const tierStr=it.material?` · Tier ${it.tier} ${it.material}`:'';
     const ench=it.enchant?` · ${it.enchant.name}`:'';
-    return`DEF +${it.def}`+tierStr+ench;
+    return`DEF +${it.def}`+tierStr+ench+(it.nails?' · Hobnailed':''); /* S2481 — the smith's nails (S2477) named on the card */
   }
   if(it.type==='equip'&&it.enchant)return it.enchant.name; // no def/block — enchant only (shouldn't happen with new defMults)
   // v64 — Ammo (arrows). Describe arrow contribution + type. Bundle qty is

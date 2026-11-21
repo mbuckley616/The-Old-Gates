@@ -165,5 +165,20 @@ console.log('prints', JSON.stringify(FPR));
 check('rain on the field: a mud print a step, dark earth, and the step sounds as bare ground (false); dry ground none', FPR.mudN === 4 && FPR.mud.every(v => v === false) && FPR.col === 0x3a2e22 && FPR.dryN === 0 && FPR.dry.every(v => v === false), FPR);
 check('a mud print outlasts a second with no snow cover; snow prints as before, and sound as snow', FPR.mudAfter1 === 4 && FPR.snowN === 4 && FPR.snow.every(v => v === true), FPR);
 
+// 9. the nails shown and heard (Session 2481): the boots' card, the bag's tooltip and the worn slot say Hobnailed; nailed indoors a step
+// plays the nailed step, outdoors the bare one, and bare boots indoors the bare one
+const NS = await page.evaluate(() => { const o = {}, L = lid, H = currentHouse, b = { name: 'Leather Boots', ico: '👢', type: 'equip', slot: 'feet', def: 1, weight: 1, nails: true };
+  o.desc = itemDesc(b); o.descBare = itemDesc(Object.assign({}, b, { nails: false }));
+  BAG.push(b); showBagTooltip(BAG.length - 1, { clientX: 10, clientY: 10 }); o.tip = document.getElementById('bag-tooltip').innerHTML.includes('Hobnailed'); BAG.pop();
+  const was = EQ.feet; EQ.feet = b; hoverEqSlot('feet'); o.slot = document.getElementById('eq-tooltip-stat').textContent;
+  const heard = []; const sN = sndNailStep, sF = sndFootstep; sndNailStep = () => heard.push('nail'); sndFootstep = () => heard.push('bare');
+  const step = () => { onGround = true; _stepT = 0; tickFootsteps(.5, true, false); };
+  _wx('clear', 0); lid = 'int_test'; currentHouse = { type: 'weapon', siteId: 'hearthwick', name: 'Smithy' }; step(); lid = L; currentHouse = H; step();
+  EQ.feet = Object.assign({}, b, { nails: false }); lid = 'int_test'; currentHouse = { type: 'weapon', siteId: 'hearthwick', name: 'Smithy' }; step(); lid = L; currentHouse = H;
+  sndNailStep = sN; sndFootstep = sF; EQ.feet = was; o.heard = heard; return o; });
+console.log('nails shown', JSON.stringify(NS));
+check('the boots say Hobnailed on their card, the bag\'s tooltip and the worn slot; bare boots do not', /Hobnailed/.test(NS.desc) && !/Hobnailed/.test(NS.descBare) && NS.tip && /Hobnailed/.test(NS.slot), NS);
+check('a step: nailed indoors the nailed step, nailed outdoors the bare one, bare boots indoors the bare one', NS.heard.join() === 'nail,bare,bare', NS);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
