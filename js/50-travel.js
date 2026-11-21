@@ -1672,10 +1672,11 @@ window.addEventListener('keydown',e=>{if(!cookOpen)return;const c=e.code;let hit
 // so a reload strikes the same ore at the same strike. `worldState.veins` (the world's): id → {n taken, s strikes, d day, e returns}.
 const VEIN_ORE_N=3,VEIN_DAYS=7,VEIN_STRIKE=.9,PICK_NAME='Pick';
 // S1495 — Seam (Mining 100): a vein holds 5
-function veinCap(){return perk('mining',100)?5:VEIN_ORE_N;}
+function veinCap(v){if(v&&v.star)return STAR.pieces;return perk('mining',100)?5:VEIN_ORE_N;} /* S2493 — a star holds 3, Seam or no */
 const ORE_DEF={copper:{name:'Copper Ore',col:0xc07040,price:3},tin:{name:'Tin Ore',col:0xb8b8a8,price:3},iron:{name:'Iron Ore',col:0x8a5a48,price:5},
   silver:{name:'Silver Ore',col:0xe0e4ec,price:8},mithril:{name:'Mithril Ore',col:0x4466cc,price:12},adamant:{name:'Adamant Ore',col:0x33aa33,price:18},
-  obsidian:{name:'Obsidian',col:0x221830,price:24}};
+  obsidian:{name:'Obsidian',col:0x221830,price:24},
+  star:{name:'Star Iron',col:0x9ab8d8,price:300}}; /* S2493 — a fallen star's, never a vein's (the falling star, below) */
 const VEIN_TABLE={1:[['copper',.375],['tin',.375],['iron',.25]],2:[['iron',2/3],['silver',1/3]],3:[['iron',2/3],['mithril',1/3]],4:[['mithril',1/3],['adamant',1/3],['obsidian',1/3]]};
 // S1533 — the Fighters' Guild's *Supply* (Michael's A on #814): the ore a hall's own country yields, by the vein table's tier —
 // copper or tin at 1, iron at 2, mithril in the highlands (3), and the wastes' three at 4
@@ -1703,8 +1704,10 @@ function hasPick(){return BAG.some(b=>b&&b.tool==='pick');}
 const TOOL_STRIKE={3:.9,4:.75,5:.6},TOOL_METALS=[4,5],TOOL_PRICE={4:2,5:3.5};
 function toolMetal(kind){let m=0;for(const b of BAG)if(b&&b.tool===kind)m=Math.max(m,b.toolMetal||3);return m;}
 function toolStrike(kind){return TOOL_STRIKE[toolMetal(kind)]||TOOL_STRIKE[3];}
-function pickReaches(v){return !(v&&v.tier>=4&&toolMetal('pick')<4);}
+function pickReaches(v){return !pickWhy(v);}
 const PICK_HARD='The rock turns the iron. It wants a steel pick.';
+// S2493 — why the pick in the bag will not cut this: a star wants mithril, the wastes' rock steel; '' when it will
+function pickWhy(v){const m=toolMetal('pick');if(v&&v.star)return m<STAR.metal?'The star iron turns the steel. It wants a mithril pick.':'';return v&&v.tier>=4&&m<4?PICK_HARD:'';}
 // the vein's tier: the place's danger tier, and 4 in the wastes (the open world's regions stop at 3)
 function veinTier(x,z){let t=typeof worldTierAt==='function'?worldTierAt(x,z):1;
   try{const r=dominantRegion(x,z).r;if(r&&(r.id==='wastes'||r.biome==='wastes'||r.biome==='wasteland'))t=4;}catch(e){}
@@ -1764,29 +1767,91 @@ function spawnChunkVeins(ch){
     const v={id,x:c.x,z:c.z,tier,ore:veinOre(id,tier),ph:hash01(ch.cx+c.i,ch.cz,304)*Math.PI*2,g:null};
     try{v.g=veinMesh(v);ch.group.add(v.g);}catch(e){}
     (ch.veins||(ch.veins=[])).push(v);VEINS.push(v);veinShow(v);}
-  try{spawnChunkSpecs(ch);}catch(e){}} /* S2160 — the rare specimens' patches in this chunk */
+  try{spawnChunkSpecs(ch);}catch(e){} /* S2160 — the rare specimens' patches in this chunk */
+  try{spawnChunkStars(ch);}catch(e){}} /* S2493 — a fallen star in this chunk */
+// ── S2493 — rare materials B, session 3 (`docs/design/rare-materials.md`, Michael's B on #1840): the falling star ──
+// One star a game-week on each island (the nation's cells, `nationKeyOf`): its night (21:00 to 03:59, on one of the week's seven days)
+// and its place are seededRng('star', '<island>:<week>'), so a friend in a hosted world sees the same star. Its place is a land cell of the
+// island, then the first of 12 tries in that cell on ground that takes it, read from the terrain and the cells alone (`rawH`, `getCell`),
+// never from what has loaded: over the sea by 3 m, a slope under about 25°, and 150 m from every site in its cell and the eight round it.
+// Fallen, it lies as a crater 6 m across with a dark lump (a stand-in until the look builder's kit piece; the streak over the sky is the
+// look builder's too), holding 3 pieces of Star Iron, struck as a vein (ORE_DEF.star, the vein's chance and Mining) but only with a
+// mithril pick, never returning. An island keeps two: the two latest to have fallen; the older goes when a third falls. Its record is
+// the vein's, worldState.veins['star:<island>:<week>'] (the world's). From the next morning (06:00) while it lies, anyone on its island has
+// the news: *A star came down past <the nearest named place>.* (`starRumour`, read by liveRumours, 87-world-quests.js).
+const STAR={days:7,pieces:3,metal:5,keep:2,clear:150,tries:12,from:21,hours:7,r:3,isles:['gatelands','mark','aurenne']};
+let _starCells=null,_starMemo={};
+function starCells(isle){if(!_starCells){_starCells={};for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){if(!isLandCell(i,j))continue;let k='gatelands';try{k=nationKeyOf(i,j)||k;}catch(e){}(_starCells[k]||(_starCells[k]=[])).push([i,j]);}}
+  return _starCells[isle]||[];}
+function starWeek(m){return Math.floor(m/(STAR.days*1440));}
+function starGround(x,z){try{const h=rawH(x,z);if(!(h>SEA_Y+3))return false;const d=4,sl=Math.hypot(rawH(x+d,z)-rawH(x-d,z),rawH(x,z+d)-rawH(x,z-d))/(2*d);if(sl>.47)return false;
+  const [ci,cj]=cellOf(x,z);for(let i=ci-1;i<=ci+1;i++)for(let j=cj-1;j<=cj+1;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);for(const st of (c&&c.sites)||[])if(Math.hypot(st.x-x,st.z-z)<STAR.clear)return false;}
+  return true;}catch(e){return false;}}
+// an island's star of a week: {id, isle, week, at (the game minute it falls), x, z}, or null where no try found its ground
+function starOf(isle,w){const key=isle+':'+w;if(key in _starMemo)return _starMemo[key];
+  const r=seededRng('star',key),cells=starCells(isle);let out=null;
+  const at=w*STAR.days*1440+Math.floor(r()*STAR.days)*1440+(STAR.from+Math.floor(r()*STAR.hours))*60+Math.floor(r()*60);
+  if(cells.length){const [ci,cj]=cells[Math.floor(r()*cells.length)%cells.length];
+    for(let t=0;t<STAR.tries&&!out;t++){const x=(ci+.1+.8*r())*SIZE,z=(cj+.1+.8*r())*SIZE;if(starGround(x,z))out={id:'star:'+key,isle,week:w,at,x,z};}}
+  return _starMemo[key]=out;}
+// the stars lying on an island now: the two latest to have fallen
+function starsLive(isle){const now=gameMinNow(),w=starWeek(now),out=[];for(let k=w;k>=0&&k>=w-4&&out.length<STAR.keep;k--){const s=starOf(isle,k);if(s&&s.at<=now)out.push(s);}return out;}
+function starsAllLive(){const out=[];for(const isle of STAR.isles)out.push(...starsLive(isle));return out;}
+let _starMat=null;
+function starMesh(v){const M=_starMat||(_starMat={scorch:new THREE.MeshLambertMaterial({color:0x2a2420,polygonOffset:true,polygonOffsetFactor:-2}),lump:new THREE.MeshLambertMaterial({color:0x2c3038,emissive:0x1c3050})});
+  const g=new THREE.Group();g.name='fallenStar';g.position.set(v.x,worldH(v.x,v.z),v.z);
+  const sc=new THREE.Mesh(new THREE.CircleGeometry(STAR.r,24).rotateX(-Math.PI/2),M.scorch);sc.position.y=.06;sc.receiveShadow=true;
+  const lump=new THREE.Mesh(new THREE.DodecahedronGeometry(.45,0),M.lump);lump.scale.set(1.2,.8,1);lump.position.y=.2;lump.castShadow=true;
+  g.add(sc,lump);g.userData.mesh=lump;return g;}
+const STARS_SHOWN=new Map();
+function starPut(ch,s){const v={id:s.id,x:s.x,z:s.z,tier:5,ore:'star',star:s,ph:0,g:null};try{v.g=starMesh(v);ch.group.add(v.g);}catch(e){}
+  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)starClearTrees(chunks.get(chunkKey(ch.cx+dx,ch.cz+dz)),s);
+  (ch.veins||(ch.veins=[])).push(v);VEINS.push(v);STARS_SHOWN.set(s.id,v);veinShow(v);return v;}
+function starTake(id){const v=STARS_SHOWN.get(id);if(!v)return;if(v.g&&v.g.parent)v.g.parent.remove(v.g);const i=VEINS.indexOf(v);if(i>=0)VEINS.splice(i,1);STARS_SHOWN.delete(id);}
+// the trees standing in the crater go, as felled trees do but with no stump and no record (the crater is the star's, while it lies)
+function starClearTrees(ch,s){if(!ch||!ch.trees)return;for(const t of ch.trees){if(t.out||Math.hypot(t.x-s.x,t.z-s.z)>STAR.r+1.5)continue;
+  try{treeTakeOut(ch,t);const o=t.out;if(o.stump&&o.stump.parent)o.stump.parent.remove(o.stump);const k=STUMPS.findIndex(q=>q.t===t);if(k>=0)STUMPS.splice(k,1);o.star=1;}catch(e){}}}
+function spawnChunkStars(ch){for(const s of starsAllLive()){
+  const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK,R=STAR.r+1.5;if(s.x>x0-R&&s.x<x0+CHUNK+R&&s.z>z0-R&&s.z<z0+CHUNK+R)starClearTrees(ch,s); /* its own chunk's trees, or a neighbour's at the edge */
+  if(Math.floor(s.x/CHUNK)!==ch.cx||Math.floor(s.z/CHUNK)!==ch.cz)continue;const o=STARS_SHOWN.get(s.id);if(o&&veinLive(o))continue;if(o)starTake(s.id);starPut(ch,s);}}
+// every few seconds of play: a star that has fallen in a chunk already built is put in it, and one an island no longer keeps is taken
+let _starT=0;
+function tickStars(dt){_starT-=dt;if(_starT>0)return;_starT=3;if(activeZoneId!=='world'||typeof chunks==='undefined')return;
+  const live=starsAllLive(),ids=new Set(live.map(s=>s.id));
+  for(const id of [...STARS_SHOWN.keys()])if(!ids.has(id)||!veinLive(STARS_SHOWN.get(id)))starTake(id);
+  for(const s of live){if(STARS_SHOWN.has(s.id))continue;const ch=chunks.get(chunkKey(Math.floor(s.x/CHUNK),Math.floor(s.z/CHUNK)));if(ch&&ch.group&&ch.group.parent)starPut(ch,s);}}
+// the morning's news on the star's island, while it lies with iron in it: '' or the line
+function starRumour(site){if(!site)return '';let isle='gatelands';try{const c=cellOf(site.x,site.z);isle=nationKeyOf(c[0],c[1])||isle;}catch(e){return '';}
+  const now=gameMinNow();for(const s of starsLive(isle)){const morning=Math.floor((s.at-360)/1440)*1440+1800;if(now<morning)continue;
+    if(veinLeft({id:s.id,star:s})<=0)continue;const place=starPlace(s);if(place)return `A star came down past ${place}.`;}
+  return '';}
+// the nearest settlement to it, two cells out: a village, a town, a city, an outpost or a port (not a ruin, a camp or a lair)
+const STAR_PLACES=['village','town','city','outpost','port'];
+function starPlace(s){const [ci,cj]=cellOf(s.x,s.z);let best=null,bd=1e9;
+  for(let i=ci-2;i<=ci+2;i++)for(let j=cj-2;j<=cj+2;j++){if(i<0||j<0||i>=GRID||j>=GRID)continue;const c=getCell(i,j);for(const st of (c&&c.sites)||[]){if(!st.name||!STAR_PLACES.includes(st.kind))continue;const d=Math.hypot(st.x-s.x,st.z-s.z);if(d<bd){bd=d;best=st;}}}
+  return best?best.name:'';}
 function veinLive(v){return !v.g||!!(v.g.parent&&v.g.parent.parent);}
 // the vein's record, brought back if 7 days have passed since it was worked out
 function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id];
-  if(r&&r.n>=veinCap()&&gameMinNow()/1440-r.d>=VEIN_DAYS){r={n:0,s:0,d:r.d,e:(r.e||0)+1};W[v.id]=r;}
+  if(r&&!v.star&&r.n>=veinCap(v)&&gameMinNow()/1440-r.d>=VEIN_DAYS){r={n:0,s:0,d:r.d,e:(r.e||0)+1};W[v.id]=r;}
   return r||{n:0,s:0,d:0,e:0};}
-function veinLeft(v){return Math.max(0,veinCap()-veinRec(v).n);}
-function veinShow(v){if(!v.g)return;const n=Math.min(3,veinLeft(v));v.g.userData.shown=n;v.g.userData.mesh.geometry=veinGeo(v.ore,n);}
+function veinLeft(v){return Math.max(0,veinCap(v)-veinRec(v).n);}
+function veinShow(v){if(!v.g)return;if(v.star){v.g.visible=veinLeft(v)>0;return;} /* S2493 — a star struck out is gone */const n=Math.min(3,veinLeft(v));v.g.userData.shown=n;v.g.userData.mesh.geometry=veinGeo(v.ore,n);}
 function veinNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
   for(let i=VEINS.length-1;i>=0;i--){const v=VEINS[i];if(!veinLive(v)){VEINS.splice(i,1);continue;}if(Math.hypot(px-v.x,pz-v.z)<TOUCH+.5)return v;}return null;}
 // one strike at a vein: the outcome is the vein's seeded stream at this strike. Returns {ore, left} or {why}
 function strikeVein(v){
   if(!hasPick())return {why:'You need a pick.'};
-  if(!pickReaches(v))return {why:PICK_HARD};
-  let r=veinRec(v);if(r.n>=veinCap())return {why:'The vein is worked out.'};
+  if(!pickReaches(v))return {why:pickWhy(v)};
+  let r=veinRec(v);if(r.n>=veinCap(v))return {why:v.star?'The star is all cut out.':'The vein is worked out.'};
   const it=oreItem(v.ore);if(!canCarry(it))return {why:'Too heavy to carry!'};
   const roll=seededRng('ore',v.id+':'+(r.e||0)+':'+r.s)();
   r={...r,s:r.s+1};const got=roll<.35+.005*skillLv('mining');
   /* S1495 — Mining 50: one ore in four comes double, on the strike's own second roll */
-  let two=false,lode=false;if(got){two=perk('mining',50)&&seededRng('ore2',v.id+':'+(r.e||0)+':'+(r.s-1))()<.25;if(two)it.qty=2;r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onOre)WORLD.guild.onOre(v.ore);
-    lode=perk('mining',75)&&lodestoneGround(v)&&seededRng('lode',v.id+':'+(r.e||0)+':'+(r.s-1))()<LODE_P;if(lode)bagAdd({...LODESTONE_ITEM});}else skillUse('mining',1); /* S1562 */
+  let two=false,lode=false;if(got){two=!v.star&&perk('mining',50)&&seededRng('ore2',v.id+':'+(r.e||0)+':'+(r.s-1))()<.25;if(two)it.qty=2;r.n++;r.d=Math.floor(gameMinNow()/1440);bagAdd(it);skillUse('mining',4);if(typeof WORLD!=='undefined'&&WORLD.guild&&WORLD.guild.onOre)WORLD.guild.onOre(v.ore);
+    lode=!v.star&&perk('mining',75)&&lodestoneGround(v)&&seededRng('lode',v.id+':'+(r.e||0)+':'+(r.s-1))()<LODE_P;if(lode)bagAdd({...LODESTONE_ITEM});}else skillUse('mining',1); /* S1562 */
   (worldState.veins||(worldState.veins={}))[v.id]=r;veinShow(v);
-  return {ore:got?(two?'2 '+it.name:it.name)+(lode?', and a lodestone':''):null,left:Math.max(0,veinCap()-r.n),lode};}
+  return {ore:got?(two?'2 '+it.name:it.name)+(lode?', and a lodestone':''):null,left:Math.max(0,veinCap(v)-r.n),lode};}
 // S1495 — Prospector (Mining 25): the veins within 40 m on the minimap (drawLocalMap's frame: north up, 58 m to the edge);
 // S1562 — 120 m with a lodestone carried, a vein past the edge drawn on the rim in its bearing
 function prospectorDots(ctx,size,radius){if(!perk('mining',25)||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return 0;
@@ -1799,17 +1864,18 @@ function prospectorDots(ctx,size,radius){if(!perk('mining',25)||activeZoneId!=='
 let MINE=null;
 function mineVein(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the vein.','#c8b890');return;}
   if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}
-  if(veinLeft(v)<=0){showMsg('The vein is worked out.','#cc8844');return;}
-  if(!pickReaches(v)){showMsg(PICK_HARD,'#cc8844');return;}
+  if(veinLeft(v)<=0){showMsg(v.star?'The star is all cut out.':'The vein is worked out.','#cc8844');return;}
+  if(!pickReaches(v)){showMsg(pickWhy(v),'#cc8844');return;}
   MINE={v,t:toolStrike('pick')};showMsg(`You set to the ${ORE_DEF[v.ore].name.toLowerCase()}.`,'#c8b890');}
 function tickMining(dt){if(typeof tickArcJoin==='function')tickArcJoin(dt); /* S2372 — three arcs set together (68-dungeon-misc.js) */
+  tickStars(dt); /* S2493 */
   if(!MINE)return;const v=MINE.v;
   if(v.gate!=null){tickGateMining(dt);return;} /* S2371 — a gate keep's crystal (68-dungeon-misc.js) */
   if(!veinLive(v)||activeZoneId!=='world'||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}
   MINE.t-=dt;if(MINE.t>0)return;MINE.t+=toolStrike('pick');
   const r=strikeVein(v);if(typeof uiNoise==='function')uiNoise(.06,.12,2400);
   if(r.why){showMsg(r.why,'#cc8844');MINE=null;return;}
-  if(r.ore){showMsg(`${r.ore}.`+(r.left?'':' The vein is worked out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
+  if(r.ore){showMsg(`${r.ore}.`+(r.left?'':v.star?' The star is all cut out.':' The vein is worked out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
   if(!r.left)MINE=null;}
 function tickGateMining(dt){const v=MINE.v;
   if(!v.g||v.g.parent!==dScene||activeZoneId!=='dungeon'||currentFloor!==v.floor||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}
@@ -1950,7 +2016,8 @@ const INGOT_DEF=[
   {tier:2,ore:[['copper',1],['tin',1]]},{tier:3,ore:[['iron',2]]},{tier:4,ore:[['iron',2]],charcoal:1},
   {tier:5,ore:[['mithril',2]]},{tier:6,ore:[['adamant',2]]},{tier:7,ore:[['obsidian',2]]},
   {tier:8,ore:[['obsidian',2]],rare:'scale',yield:2}, /* S2491 — Draconic: a dragon's scale and 2 obsidian make 2 ingots (rare materials B) */
-  {tier:9,ore:[['obsidian',2]],rare:'sigil',yield:2}]; /* S2492 — tier 9: a gate's sigil stone and 2 obsidian, gate salvage */
+  {tier:9,ore:[['obsidian',2]],rare:'sigil',yield:2}, /* S2492 — tier 9: a gate's sigil stone and 2 obsidian, gate salvage */
+  {tier:10,ore:[],rare:'star',ingot:6,yield:1}]; /* S2493 — Cosmic: a piece of star iron and an adamant ingot make one */
 // S2491 — a rare ingot (one with a scale, later a sigil stone or star iron) asks Smithing at its metal's gate to smelt, as the
 // design's table has it, so a scale is not spent by a hand that cannot work what it makes; the Smelter perk passes it by: the
 // rare piece is the limit, not the ore. A Dragon Scale is the lairs' drop (68-dungeon-misc.js); one saved before S2491 is known by name.
@@ -1959,14 +2026,15 @@ function scaleCount(){return bagCount(isDragonScale);}
 // S2492 — the rare pieces: what each is, its price in an ingot's, and its mark. A sigil stone is gate salvage (68-dungeon-misc.js), and
 // its ingots and every piece made of them carry the mark: sold in a Prior's town it is sacrilege, as the stone would be (86-world-crime.js)
 const RARE_DEF={scale:{name:'Dragon Scale',has:isDragonScale,price:400,why:'It wants a dragon’s scale.'},
-  sigil:{name:'Sigil Stone',has:b=>!!(b&&b.sigilStone),price:150,why:'It wants a sigil stone, cut in a failing gate.',salvage:true}};
+  sigil:{name:'Sigil Stone',has:b=>!!(b&&b.sigilStone),price:150,why:'It wants a sigil stone, cut in a failing gate.',salvage:true},
+  star:{name:'Star Iron',has:b=>!!(b&&b.ore==='star'),price:300,why:'It wants a piece of star iron.'}};
 function ingotRare(D){return !!(D&&D.rare&&RARE_DEF[D.rare]);}
 function rareCount(D){return ingotRare(D)?bagCount(RARE_DEF[D.rare].has):0;}
 function ingotSalvage(tier){const D=INGOT_DEF.find(d=>d.tier===tier);return !!(ingotRare(D)&&RARE_DEF[D.rare].salvage);}
 // the ore a piece of each metal is tempered with
 const TEMPER_ORES={2:['copper','tin'],3:['iron'],4:['iron'],5:['mithril'],6:['adamant'],7:['obsidian']};
 function ingotItem(tier,qty){const D=INGOT_DEF.find(d=>d.tier===tier),M=MATERIALS[tier-1];
-  const p=Math.round((D.ore.reduce((s,[k,n])=>s+ORE_DEF[k].price*n,0)+(D.charcoal?SURV_ITEMS.charcoal.buyPrice:0)+(ingotRare(D)?RARE_DEF[D.rare].price:0))/(D.yield||1));
+  const p=Math.round((D.ore.reduce((s,[k,n])=>s+ORE_DEF[k].price*n,0)+(D.charcoal?SURV_ITEMS.charcoal.buyPrice:0)+(ingotRare(D)?RARE_DEF[D.rare].price:0)+(D.ingot?ingotItem(D.ingot).buyPrice:0))/(D.yield||1));
   const it={name:`${M.name} Ingot`,ico:'🧱',type:'misc',weight:1,buyPrice:p,sellMult:.3,ingot:tier,qty:qty||1};if(ingotSalvage(tier))it.salvage=true;return it;}
 // what a piece costs in ingots, and the types the forge makes: the heavy line, the shield, every blade and haft but the bows'
 // (the bench's) and the wooden club
@@ -1998,13 +2066,14 @@ function forgeSmelt(tier){
   if(!forgeHere())return {made:false,why:'You need a forge.'};
   const D=INGOT_DEF.find(d=>d.tier===tier);if(!D)return {made:false,why:''};
   if(ingotRare(D)){const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
-    if(rareCount(D)<1)return {made:false,why:RARE_DEF[D.rare].why};}
+    if(rareCount(D)<1)return {made:false,why:RARE_DEF[D.rare].why};
+    if(D.ingot&&ingotCount(D.ingot)<1)return {made:false,why:`It wants ${MATERIALS[D.ingot-1].name.toLowerCase()==='adamant'?'an':'a'} ${MATERIALS[D.ingot-1].name.toLowerCase()} ingot to take it.`};}
   const two=ingotRare(D)?null:smelterTwo(D);
   if(!two)for(const [k,n] of D.ore)if(oreCount(k)<n)return {made:false,why:`You need ${n} ${ORE_DEF[k].name.toLowerCase()}.`};
   if(D.charcoal&&bagCount(b=>b.name===SURV_ITEMS.charcoal.name)<D.charcoal)return {made:false,why:'Steel needs a charcoal.'};
   const f=forgeFee();if(f)return {made:false,why:f};
   if(two)two.forEach(([k,n])=>bagTake(b=>b.ore===k,n));else for(const [k,n] of D.ore)bagTake(b=>b.ore===k,n);if(D.charcoal)bagTake(b=>b.name===SURV_ITEMS.charcoal.name,D.charcoal);
-  if(ingotRare(D))bagTake(RARE_DEF[D.rare].has,1);
+  if(ingotRare(D))bagTake(RARE_DEF[D.rare].has,1);if(D.ingot)bagTake(b=>b.ingot===D.ingot,1);
   const it=ingotItem(tier,two?2:(D.yield||1));bagAdd(it);skillUse('smithing',2,'f'+(_forgeN++));
   return {made:true,item:it};}
 // Smelter: 3 ore of the recipe make 2 ingots when you have them (bronze: 3 of copper and tin, one of each at least, the more
@@ -2054,7 +2123,7 @@ let forgeOpen=false,forgeSel={k:'s',tier:2},forgeTier=null,forgeSaid='';
 function forgePieces(){const out=[];for(const s in EQ){const it=EQ[s];if(temperable(it)&&!out.includes(it))out.push(it);}BAG.forEach(b=>{if(temperable(b))out.push(b);});return out;}
 function forgeMetals(){return INGOT_DEF.map(d=>d.tier);}
 function forgeCanSmelt(t){const D=INGOT_DEF.find(d=>d.tier===t);return D.ore.every(([k,n])=>oreCount(k)>=n)&&(!D.charcoal||bagCount(b=>b.name===SURV_ITEMS.charcoal.name)>=D.charcoal)&&
-  (!ingotRare(D)||rareCount(D)>=1&&skillLv('smithing')>=(SKILL_GATE[t]||0));}
+  (!ingotRare(D)||rareCount(D)>=1&&skillLv('smithing')>=(SKILL_GATE[t]||0))&&(!D.ingot||ingotCount(D.ingot)>=1);}
 // S2491 — a steel or mithril pick or hatchet: 2 ingots of the metal and a plank for the haft, Smithing at the metal's gate, 30
 // minutes, a Smithing use as a piece's. Made, so it sells back at a fifth. Returns {made, item, why}
 function toolItem(kind,metal){const B=kind==='pick'?PICK_ITEM:HATCHET_ITEM,M=MATERIALS[metal-1];
@@ -2108,7 +2177,7 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
   if(S.k==='s'){const D=INGOT_DEF.find(d=>d.tier===S.tier),M=MATERIALS[S.tier-1];
     t=`<div style="font-variant:small-caps;color:#7a1f10">${M.name} Ingot</div>`+D.ore.map(([k,n])=>pad(`${n} ${ORE_DEF[k].name} <i style="font-size:12px;color:#8a7050">(you have ${oreCount(k)})</i>`)).join('')+
       (D.charcoal?pad(`1 Charcoal <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.name===SURV_ITEMS.charcoal.name)})</i>`):'')+
-      (ingotRare(D)?pad(`1 ${RARE_DEF[D.rare].name} <i style="font-size:12px;color:#8a7050">(you have ${rareCount(D)})</i>`):'')+(ingotSalvage(S.tier)?note('gate salvage, and so is all made of it'):'')+
+      (ingotRare(D)?pad(`1 ${RARE_DEF[D.rare].name} <i style="font-size:12px;color:#8a7050">(you have ${rareCount(D)})</i>`):'')+(D.ingot?pad(`1 ${MATERIALS[D.ingot-1].name} Ingot <i style="font-size:12px;color:#8a7050">(you have ${ingotCount(D.ingot)})</i>`):'')+(ingotSalvage(S.tier)?note('gate salvage, and so is all made of it'):'')+
       (D.yield>1?note(`makes ${D.yield}`):'')+(ingotRare(D)&&(SKILL_GATE[S.tier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[S.tier]}`):'')+note(`you hold ${ingotCount(S.tier)}`);}
   else if(S.k==='o'){const [k,m]=FORGE_TOOLS[S.i],it=toolItem(k,m),g=SKILL_GATE[m]||0; /* S2491 */
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(`2 ${MATERIALS[m-1].name} Ingots <i style="font-size:12px;color:#8a7050">(you have ${ingotCount(m)})</i>`)+
