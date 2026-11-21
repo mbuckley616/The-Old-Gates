@@ -432,7 +432,8 @@ export function skywoodPine(o = {}, r = stream('skywood')) {
 const SCHOOL_GLOW = { tine: [1.0, .40, .12], uisce: [.30, .72, 1.0], cloch: [1.0, .66, .30], scath: [.70, .34, 1.0], solas: [1.0, .86, .52], gaoth: [.66, .92, 1.0] };
 export function scriptStone(o = {}, r = stream('sigilstone')) {
   const { put, finish } = kit(), M = mats(), school = SCHOOL_GLOW[o.school] ? o.school : 'cloch', G = SCHOOL_GLOW[school], cut = !!o.cut, SW = .7, SH = 1.15, ST = .2;
-  const sk = 'sscript:' + school; if (!M[sk]) { const t = scriptTex(stream('sigil-script:' + school), '#ffffff'); t.repeat.set(1, .5); M[sk] = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: new THREE.Color(...G), emissiveMap: t, emissiveIntensity: 1.9, roughness: .7, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  if (!M.sigilRock) M.sigilRock = mat('rock', { ns: 1.3, color: 0x3e3a35, rough: .6 }); /* one block of the gate's stone, no coursing */
+  const sk = 'sscript:' + school; if (!M[sk]) { const t = scriptTex(stream('sigil-script:' + school), '#ffffff'); t.repeat.set(1, .5); M[sk] = new THREE.MeshBasicMaterial({ color: new THREE.Color(...G).multiplyScalar(1.9), map: t, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }); /* light only, so the torch never shows the panel */
     M['crystal:' + school] = new THREE.MeshStandardMaterial({ color: new THREE.Color(...G).multiplyScalar(.5), emissive: new THREE.Color(...G), emissiveIntensity: .7, roughness: .15, metalness: .1, transparent: true, opacity: .85 }); }
   // the keep's wall behind: dressed blocks of the gate's stone, 4 m long, 3 m up, its face at z = 0; the stone's foot stands 8 cm off it
   for (let row = 0; row < 5; row++) for (let k = -2; k < 3; k++) { const w = .78 + r() * .1, x = k * .8 + (row % 2) * .4; if (Math.abs(x) > 2.1) continue; put(new THREE.BoxGeometry(w, .58, .6), 'gateStone', x, .3 + row * .6, -.3 - (r() * .02), 0, 0, (r() - .5) * .01, .4); }
@@ -445,7 +446,7 @@ export function scriptStone(o = {}, r = stream('sigilstone')) {
     for (let i = 0; i < P.count; i++) { let x = P.getX(i), y = P.getY(i) + h / 2 + y0, z = P.getZ(i); if (spall && x > SW / 2 - .18 && y > SH - .22 && (x - (SW / 2 - .18)) + (y - (SH - .22)) > .14) { const s = (x - (SW / 2 - .18)) + (y - (SH - .22)) - .14; x -= s * .5; y -= s * .5; z -= z > 0 ? s * .4 : 0; }
       P.setXYZ(i, x, y, z); } rough(g, r, .008, 9); return g; };
   const zc = ST / 2 + .08, below = SH * split;
-  put(part(0, below - .006, false), 'gateStone', 0, 0, zc, tilt, 0, 0, .5); put(part(below + .006, SH, true), 'gateStone', slip, -.004, zc + .01, tilt, .04, -.03, .5);
+  put(part(0, below - .006, false), 'sigilRock', 0, 0, zc, tilt, 0, 0, .5); put(part(below + .006, SH, true), 'sigilRock', slip, -.004, zc + .01, tilt, .04, -.03, .5);
   put(new THREE.BoxGeometry(SW + .02, .012, ST - .02).translate(0, below, 0), 'dark', 0, 0, zc, tilt, 0, 0); /* the split's shadowed line */
   const face = zc + ST / 2 + .003; let lit = 0;
   if (!cut) { /* the script, in two panels split by the crack, each lit; the upper dimmer, the light failing where the stone is broken */
@@ -453,7 +454,7 @@ export function scriptStone(o = {}, r = stream('sigilstone')) {
     pl(.08, below - .03, sk); pl(below + .03, SH - .12, sk, .014); }
   else { /* cut: the inscribed face hewn out to a socket 6 cm deep, its walls ragged, the script gone with it; chips at the foot */
     const g = rough(new THREE.BoxGeometry(SW - .16, SH - .26, .07, 4, 6, 1), r, .012, 7); g.translate(0, .13 + (SH - .26) / 2, 0); put(g, 'dark', 0, 0, face - .03, tilt, 0, 0);
-    for (let i = 0; i < 14; i++) { const s = .025 + r() * .05; put(rough(new THREE.IcosahedronGeometry(s, 0), r, s * .2, 9), 'gateStone', (r() - .5) * 1.1, s * .3, zc + .2 + r() * .55, r(), r() * 6, r()); } }
+    for (let i = 0; i < 14; i++) { const s = .025 + r() * .05; put(rough(new THREE.IcosahedronGeometry(s, 0), r, s * .2, 9), 'sigilRock', (r() - .5) * 1.1, s * .3, zc + .2 + r() * .55, r(), r() * 6, r()); } }
   const out = finish({ school, cut, size: [SW, SH, ST], face: +face.toFixed(3), split: +below.toFixed(3), lit, vein: [-1.4, 0, .25] });
   return out;
 }

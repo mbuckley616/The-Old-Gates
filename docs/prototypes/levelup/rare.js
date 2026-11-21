@@ -31,7 +31,7 @@ if (VIEW === 'pine') {
   const m = new THREE.Mesh(g, mat('rock', { ns: 1.2, rough: 1 })); m.material.vertexColors = true; m.receiveShadow = true; scene.add(m);
   const ty = hAt(0, 0); P = skywoodPine({ felled: Q.has('felled'), wind: .9 }, stream('sky:mark:3')); P.group.position.set(0, ty, 0); scene.add(P.group); post(2.6, ty + .1, -1.2);
   if (Q.has('far')) { const a = 1.0, d = 380; cam.fov = 22; cam.position.set(Math.sin(a) * d, hAt(Math.sin(a) * d, Math.cos(a) * d) + 1.65, Math.cos(a) * d); cam.lookAt(0, ty + 4, 0); scene.fog.density = .0009; }
-  else { const a = 1.25, d = 22; cam.position.set(Math.sin(a) * d, hAt(Math.sin(a) * d, Math.cos(a) * d) + 1.65, Math.cos(a) * d); cam.lookAt(0, ty + 4.2, 0); scene.fog.density = .0012; }
+  else { const a = 1.25, d = Q.has('felled') ? 6 : 22; cam.position.set(Math.sin(a) * d, hAt(Math.sin(a) * d, Math.cos(a) * d) + 1.65, Math.cos(a) * d); cam.lookAt(0, ty + (Q.has('felled') ? .4 : 4.2), 0); scene.fog.density = .0012; }
   shadowR = 14; sun.target.position.set(0, ty, 0);
   STATS.ground = { summit: +ty.toFixed(1), at100: +hAt(100, 0).toFixed(1) };
 } else if (VIEW === 'stone') {
