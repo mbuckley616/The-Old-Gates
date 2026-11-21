@@ -398,6 +398,10 @@ function sndHollowStep(sprint){
   sfxNoise(sprint?.06:.08,1,1,sprint?.16:.11,200);sfxTone(150,96,.22,sprint?.08:.06,'sine');
 }
 // v80 S147 — snow underfoot: shorter, softer, lower than bare ground
+// S2483 — nailed boots on stone and planks (indoors, in a gate; `hobnailNoisy`): the step, and iron's short tick in it
+function sndNailStep(sprint){
+  sfxNoise(sprint?.055:.07,1,1,sprint?.18:.12,sprint?500:300);sfxTone(2600,1900,.035,sprint?.05:.04,'square');
+}
 function sndSnowStep(sprint){
   sfxNoise(sprint?.045:.055,1,1,sprint?.10:.07,sprint?260:180);
 }

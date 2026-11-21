@@ -10,8 +10,10 @@
       m.visible=false;m.userData.t=0;m.renderOrder=2;sc.add(m);FP.pool.push(m);
     }
   }
-  function fpDrop(){
-    fpEnsure();const m=FP.pool[FP.i];FP.i=(FP.i+1)%FP.max;
+  // S2482 — mud takes prints as snow does (ground-that-pushes-back's row): dark wet earth, fading on its own clock, not the snow's cover
+  const FP_COL={snow:0x5f6b78,mud:0x3a2e22};
+  function fpDrop(kind){kind=kind||'snow';
+    fpEnsure();const m=FP.pool[FP.i];FP.i=(FP.i+1)%FP.max;m.userData.kind=kind;m.material.color.setHex(FP_COL[kind]||FP_COL.snow);
     const s=Math.sin(yaw),c=Math.cos(yaw);
     const ox=c*.19*FP.side,oz=-s*.19*FP.side;FP.side*=-1;
     m.position.set(px+ox,worldH(px+ox,pz+oz)+.035,pz+oz);m.rotation.y=yaw;
@@ -21,14 +23,16 @@
     if(!FP.pool.length)return;
     for(const m of FP.pool){if(!m.visible)continue;
       m.userData.t-=dt/26;                      // a print lasts under half a minute
-      const o=Math.max(0,m.userData.t)*.5*Math.min(1,WX.cover*2.2); // and goes with the snow it was made in
+      const o=Math.max(0,m.userData.t)*.5*(m.userData.kind==='mud'?1:Math.min(1,WX.cover*2.2)); // and goes with the snow it was made in
       m.material.opacity=o;if(o<=.01)m.visible=false;}
   }
-  function fpWalk(){ // called from the footstep beat
+  // called from the footstep beat; true on snow (the step's sound reads it). Mud prints too, and says false: it sounds as bare ground
+  function fpWalk(){
     if(activeZoneId!=='world'||lid!=='overworld')return false;
-    if(WX.cover<.18)return false;
-    const p=FP.last;if(p&&Math.hypot(px-p.x,pz-p.z)<.55)return true;
-    FP.last={x:px,z:pz};fpDrop();return true;
+    const snow=WX.cover>=.18,mud=!snow&&typeof footHere==='function'&&footHere().k==='mud';
+    if(!snow&&!mud)return false;
+    const p=FP.last;if(p&&Math.hypot(px-p.x,pz-p.z)<.55)return snow;
+    FP.last={x:px,z:pz};fpDrop(snow?'snow':'mud');return snow;
   }
   function snowRepaintStep(){
     if(!WX.coverQ||!WX.coverQ.length)return;
