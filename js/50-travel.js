@@ -1823,9 +1823,13 @@ function tickStars(dt){_starT-=dt;if(_starT>0)return;_starT=3;if(activeZoneId!==
   for(const s of live){if(STARS_SHOWN.has(s.id))continue;const ch=chunks.get(chunkKey(Math.floor(s.x/CHUNK),Math.floor(s.z/CHUNK)));if(ch&&ch.group&&ch.group.parent)starPut(ch,s);}}
 // the morning's news on the star's island, while it lies with iron in it: '' or the line
 function starRumour(site){if(!site)return '';let isle='gatelands';try{const c=cellOf(site.x,site.z);isle=nationKeyOf(c[0],c[1])||isle;}catch(e){return '';}
-  const now=gameMinNow();for(const s of starsLive(isle)){const morning=Math.floor((s.at-360)/1440)*1440+1800;if(now<morning)continue;
-    if(veinLeft({id:s.id,star:s})<=0)continue;const place=starPlace(s);if(place)return `A star came down past ${place}.`;}
+  const now=gameMinNow();for(const s of starsLive(isle)){if(!starKnown(s,now))continue;const place=starPlace(s);if(place)return `A star came down past ${place}.`;}
   return '';}
+// S2500 — the star is news from the morning after it fell (06:00), while it lies with iron in it
+function starNewsAt(s){return Math.floor((s.at-360)/1440)*1440+1800;}
+function starKnown(s,now){return !!s&&(now==null?gameMinNow():now)>=starNewsAt(s)&&veinLeft({id:s.id,star:s})>0;}
+// S2500 — the continent map marks the cell, not the spot (rare-materials.md): each star that is news, as {id, i, j, isle, place}
+function starsOnMap(){const now=gameMinNow(),out=[];for(const s of starsAllLive()){if(!starKnown(s,now))continue;const [i,j]=cellOf(s.x,s.z);out.push({id:s.id,i,j,isle:s.isle,place:starPlace(s)});}return out;}
 // the nearest settlement to it, two cells out: a village, a town, a city, an outpost or a port (not a ruin, a camp or a lair)
 const STAR_PLACES=['village','town','city','outpost','port'];
 function starPlace(s){const [ci,cj]=cellOf(s.x,s.z);let best=null,bd=1e9;
