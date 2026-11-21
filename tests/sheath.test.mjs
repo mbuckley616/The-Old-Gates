@@ -56,10 +56,10 @@ check('Draw cut is live on the Skills tab', r.live);
     D.sh.map(k).join() === 'GRF,GRF,-RF,-.F' && D.dr.map(k).join() === 'GRW,GRW,-.W' && k(D.sw) === '-.W', D); }
 // Session 2451: in third person on the new look a sheathed weapon is worn, not held: a sword at the hip (on the builder's spine05), a
 // claymore across the back (spine02), the hand empty and the arms not in the fist-fighter's guard; the builder's body is carried over, not
-// built again; drawn, it is back in the fist and the worn copy is gone
+// built again; drawn, it is back in the fist and the worn copy is gone (S2472: a blade's scabbard stays on, empty; a mace's nothing)
 const tp = await page.evaluate(() => { const out = {}; const eq0 = { ...EQ }; thirdPerson = true; EQ.offhand = null;
   const wear = (shape, two) => { EQ.weapon = { name: 'Test ' + shape, type: 'weapon', atk: [10, 11], wType: 'slash', weaponShape: shape, twoHand: two, weight: 3 };
-    SHEATHED = false; tpEnsure(); const kept = TP_HB.kept || 0, t0 = performance.now(); sheathWeapon(); tpEnsure(); const ms = performance.now() - t0, R = TP.rig, c = R.hbSheath;
+    SHEATHED = false; tpEnsure(); const kept = TP_HB.kept || 0, t0 = performance.now(); sheathWeapon(); tpEnsure(); const ms = performance.now() - t0, R = TP.rig, c = R.hbSheath; tpDrawEnd(R); /* S2471: the worn state, not the sheathe's 0.56 s */
     let near = null; if (c && R.rig.hb) { R.root.updateMatrixWorld(true); const p = c.getWorldPosition(new THREE.Vector3()), b = c.parent.getWorldPosition(new THREE.Vector3()); near = +p.distanceTo(b).toFixed(3); }
     let meshes = 0; if (c) c.traverse(o => { if (o.isMesh && o.visible) meshes++; });
     const r = { hb: !!R.rig.hb, bone: c && c.parent && c.parent.name, at: R.sheathAt, meshes, near, held: !!R.weapon, unarmed: R.unarmed, kept: (TP_HB.kept || 0) - kept, ms: Math.round(ms) };
@@ -77,7 +77,7 @@ const tp = await page.evaluate(() => { const out = {}; const eq0 = { ...EQ }; th
     const fr = c && c.getObjectByName('frog'); r.frog = null;
     if (fr) { const F = tpSheathFit(R.rig.hb), L = fr.userData.frog.line, top = L[2], yt = F.yBt - F.p5.y, xo = (F.xBelt || F.side) - F.p5.x;
       r.frog = { col: new THREE.Color().fromBufferAttribute(fr.geometry.attributes.color, 0).getHex(), belt: F.leather, tris: fr.userData.frog.tris, below: +(yt - L[0][1]).toFixed(3), topOff: +(top[1] - yt).toFixed(3), out: +(top[0] - xo).toFixed(4), hooked: L[4][1] < top[1] && L[4][0] < xo }; }
-    drawWeapon(); tpEnsure(); r.drawn = { held: !!TP.rig.weapon, worn: !!TP.rig.hbSheath, old: !!(c && c.parent) }; return r; };
+    drawWeapon(); tpEnsure(); tpDrawEnd(TP.rig); const S = TP.rig.hbSheath; r.drawn = { held: !!TP.rig.weapon, worn: !!S, scab: !!(S && S.getObjectByName('scabbard')), bladeShown: !!(S && S.children[0].visible), old: !!(c && c.parent) }; return r; };
   out.sword = wear('sword', false); out.claymore = wear('claymore', true); out.cutlass = wear('cutlass', false); out.mace = wear('mace', false);
   Object.assign(EQ, eq0); SHEATHED = false; thirdPerson = false; return out; });
 console.log(JSON.stringify(tp));
@@ -89,14 +89,14 @@ if (tp.sword.hb) {
     ['sword', 'claymore', 'cutlass'].every(k => tp[k].scab && tp[k].blade && tp[k].blade.n > 20 && tp[k].blade.out === 0) && !tp.mace.scab && tp.mace.at === 'belt', tp);
   check(`a blade at the hip hangs in a frog: its loop under the belt (sword ${JSON.stringify(tp.sword.frog)}), the strap's top over the belt's and outside it, hooked behind; none on the back or for a mace`,
     ['sword', 'cutlass'].every(k => { const f = tp[k].frog; return f && f.tris > 50 && f.below > .02 && f.topOff > 0 && f.topOff < .012 && f.out > 0 && f.out < .006 && f.hooked; }) && !tp.claymore.frog && !tp.mace.frog, tp);
-  check('drawn, it is in the fist again and the worn copy is gone', ['sword', 'claymore'].every(k => tp[k].drawn.held && !tp[k].drawn.worn && !tp[k].drawn.old), tp);
+  check('drawn, it is in the fist again and the sheathed copy is gone; a blade leaves its scabbard on, empty (S2472), a mace nothing', ['sword', 'claymore', 'cutlass'].every(k => tp[k].drawn.held && tp[k].drawn.worn && tp[k].drawn.scab && !tp[k].drawn.bladeShown && !tp[k].drawn.old) && tp.mace.drawn.held && !tp.mace.drawn.worn, tp);
 } else console.log('  (the old look: no builder body, the sheathed weapon is not drawn)');
 // S2462: a claymore on the back hangs from a baldric: a strap skinned to the body, over the right shoulder (between the neck and the joint),
 // across the chest to the left flank about the belt; the scabbard's axis lies in the strap's plane;
-// in the walk the strap keeps to the body (each point's distance to the body point nearest it at the bind moves under 2 cm); drawn, it is gone
+// in the walk the strap keeps to the body (each point's distance to the body point nearest it at the bind moves under 2 cm); drawn, it stays with the empty scabbard (S2472)
 const bd = await page.evaluate(() => { const out = {}; const eq0 = { ...EQ }; thirdPerson = true; EQ.offhand = null;
   EQ.weapon = { name: 'Test claymore', type: 'weapon', atk: [10, 11], wType: 'slash', weaponShape: 'claymore', twoHand: true, weight: 3 };
-  SHEATHED = false; tpEnsure(); sheathWeapon(); tpEnsure(); const R = TP.rig, H = R.rig.hb; if (!H) return { hb: false };
+  SHEATHED = false; tpEnsure(); sheathWeapon(); tpEnsure(); const R = TP.rig, H = R.rig.hb; if (!H) return { hb: false }; tpDrawEnd(R);
   const c = R.hbSheath, b = c && c.userData.baldric; out.hb = true; out.has = !!(b && b.isSkinnedMesh && b.parent && b.name === 'baldric'); if (!out.has) return out;
   const B = b.userData.baldric, sk = H.P.skeleton, bp = n => new THREE.Vector3().setFromMatrixPosition(new THREE.Matrix4().copy(sk.boneInverses[sk.bones.indexOf(H.P.byName[n])]).invert());
   const pa = b.geometry.attributes.position, F = tpSheathFit(H); let top = null, low = null;
@@ -113,7 +113,7 @@ const bd = await page.evaluate(() => { const out = {}; const eq0 = { ...EQ }; th
   const drift = () => { R.root.updateMatrixWorld(true); let worst = 0; for (const [i, [m, j], d0] of pairs) { b.getVertexPosition(i, v); m.getVertexPosition(j, w); worst = Math.max(worst, Math.abs(v.distanceTo(w) - d0)); } return +worst.toFixed(4); };
   let t = performance.now(); const step = (k, mv) => { for (let i = 0; i < k; i++) { if (mv) { px -= Math.sin(yaw) * .025; pz -= Math.cos(yaw) * .025; } t += 16.7; tpUpdate(1 / 60, { moving: mv, sprinting: false, camY: 0, now: t, roll: null }); } };
   step(2, false); out.stand = drift(); let wk = 0; for (let k = 0; k < 4; k++) { step(9, true); wk = Math.max(wk, drift()); } out.walk = wk;
-  drawWeapon(); tpEnsure(); out.drawn = { gone: !b.parent, worn: !!TP.rig.hbSheath };
+  drawWeapon(); tpEnsure(); tpDrawEnd(TP.rig); const S2 = TP.rig.hbSheath, b2 = S2 && S2.userData.baldric; out.drawn = { gone: !b.parent, worn: !!S2, bald: !!(b2 && b2.parent && b2 !== b), bladeShown: !!(S2 && S2.children[0].visible) };
   Object.assign(EQ, eq0); SHEATHED = false; thirdPerson = false; return out; });
 console.log(JSON.stringify(bd));
 if (bd.hb) {
@@ -121,10 +121,35 @@ if (bd.hb) {
     bd.has && bd.tris > 500 && bd.top.between && bd.top.y > -.02 && bd.low.x > .08 && Math.abs(bd.low.dyB) < .15, bd);
   check(`the scabbard lies in the strap's plane (axis ${bd.plane && bd.plane.d}, ${bd.plane && bd.plane.off} m off it)`, bd.plane && bd.plane.d < .01 && bd.plane.off < .01, bd);
   check(`in the walk the strap keeps to the body: its points move from the body's nearest by ${bd.walk} m at worst (standing ${bd.stand})`, bd.walk < .02 && bd.stand < .02, bd);
-  check('drawn, the baldric is gone with the scabbard', bd.drawn.gone && !bd.drawn.worn, bd);
+  check('drawn, the baldric stays on with the empty scabbard (S2472)', bd.drawn.gone && bd.drawn.worn && bd.drawn.bald && !bd.drawn.bladeShown, bd);
   // S2463: the frog and the baldric are cut from the wearer's own belt leather
   check(`the frog and the baldric are the belt's leather (belt ${bd.leather.belt}, strap ${bd.leather.strap}, the sword's frog ${tp.sword.frog && tp.sword.frog.col})`,
     bd.leather.belt != null && bd.leather.strap === bd.leather.belt && ['sword', 'cutlass'].every(k => tp[k].frog && tp[k].frog.col === tp[k].frog.belt), { bd: bd.leather, sword: tp.sword.frog });
 }
 check('no page errors', g.errs.length === 0, g.errs);
+// Session 2471: the third-person draw and sheathe are seen (S2466's owed note: the worn copy swapped to the fist in one frame). Drawing, the
+// worn group stays on the body with its blade hidden while the builder's grip goes to the hilt, and the blade is carried out from it to the
+// fist; sheathing, the blade rides from the fist to the scabbard by 0.3 s and is in it again; both are over by 0.56 s; a swing ends it
+const dw = await page.evaluate(() => { const eq0 = { ...EQ }; thirdPerson = true; EQ.offhand = null;
+  EQ.weapon = { name: 'Test sword', type: 'weapon', atk: [10, 11], wType: 'slash', weaponShape: 'sword', weight: 3 };
+  let t = performance.now(); const step = () => { t += 16.7; tpUpdate(1 / 60, { moving: false, sprinting: false, camY: 0, now: t, roll: null }); };
+  SHEATHED = false; FP_DRAW.now = () => 100; tpEnsure(); step(); if (!TP.rig.rig.hb) { thirdPerson = false; FP_DRAW.now = null; return { hb: false }; }
+  const at = (tt) => { FP_DRAW.now = () => tt; step(); const R = TP.rig, D = R.tpDraw, H = R.rig.hb; if (!D) return { on: false };
+    const k = D.G.children[0], hilt = k.getWorldPosition(new THREE.Vector3()), fg = [2, 3, 4, 5].map(f => H.P.byName[`finger${f}-2.${HBODY.swap ? 'L' : 'R'}`]), gp = new THREE.Vector3();
+    fg.forEach(b => gp.add(b.getWorldPosition(new THREE.Vector3()))); gp.multiplyScalar(1 / fg.length);
+    const h = D.h || R.hbHeld.find(x => x.o === R.weapon), cp = h ? h.c.getWorldPosition(new THREE.Vector3()) : null;
+    return { on: true, way: D.way, bladeShown: k.visible, carried: !!(h && h.c.parent), grip: +gp.distanceTo(hilt).toFixed(3), car: cp ? +cp.distanceTo(hilt).toFixed(3) : null, worn: !!D.G.parent }; };
+  const out = {}; sheathWeapon(); tpEnsure(); out.sh = [at(100), at(100.1), at(100.32), at(100.6)]; out.shEnd = { shown: TP.rig.hbSheath.children[0].visible, held: TP.rig.hbHeld.length };
+  FP_DRAW.now = () => 200; drawWeapon(); tpEnsure(); const G = TP.rig.tpDraw && TP.rig.tpDraw.G; out.dr = [at(200), at(200.2), at(200.4), at(200.6)]; out.drGone = !!G && G === TP.rig.hbSheath && !!G.parent && !G.children[0].visible;
+  FP_DRAW.now = () => 300; sheathWeapon(); tpEnsure(); drawWeapon(); tpEnsure(); SWING = { test: 1 }; out.sw = at(300.05); SWING = null;
+  Object.assign(EQ, eq0); SHEATHED = false; tpEnsure(); FP_DRAW.now = null; thirdPerson = false; return out; });
+console.log(JSON.stringify(dw));
+if (dw.hb !== false) {
+  const [s0, s1, s3, s6] = dw.sh, [d0, d2, d4, d6] = dw.dr;
+  check(`third person: the sheathe carries the blade from the fist (${s0.car} m from the scabbard) into the scabbard by 0.32 s (${s1.car} m at 0.1 s), shown there again; over by 0.56 s`,
+    s0.on && s0.way === 'sheathe' && s0.carried && !s0.bladeShown && s0.car > .2 && s1.car < s0.car && s3.on && !s3.carried && s3.bladeShown && !s6.on && dw.shEnd.shown && dw.shEnd.held === 0, dw);
+  check(`third person: the draw takes the grip to the hilt (${d2.grip} m at 0.2 s, ${d0.grip} at the start) with the worn group still on and the blade in it, then carries it out (${d4.car} m at 0.4 s); over by 0.56 s, the scabbard left on, empty`,
+    d0.on && d0.way === 'draw' && d0.worn && !d0.bladeShown && d0.car === 0 && d2.grip < .06 && d2.grip < d0.grip && d4.car > .05 && !d6.on && dw.drGone, dw);
+  check('third person: a swing ends the draw at once', !dw.sw.on, dw.sw);
+}
 await g.close();
