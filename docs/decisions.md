@@ -15,6 +15,19 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Stormwatch’s ground — a headland raised for it, the highest cliff there is, or wait for the land? (from the look builder, 2026-11-21, #1843)
+**The question.** Stormwatch (#1815 A: empty, as built, a landmark walked for the view) is built in the kit (Session 2480, `auto/wip-stormwatch`), but the world has no cliff for it. The prototype's fort sits on a flat limestone top ending in an 88 m sea cliff; on seed 1 no brink 30 m or more over the sea has ground flat enough behind it. The Gatelands' coasts are low bluffs of 10 to 20 m or mountain flanks; the highest, a 97 m cliff at (14625, 23975), has ground rising 45 m behind it. Where should the fort stand?
+
+**Options.**
+- **A (recommended).** The fort brings its headland: stamps raise a flat-topped promontory about 40 m over the sea on a Gatelands shore (as the Drowned Spires heap their spit), with the prototype's cliff face drawn on its seaward side. One landform the land did not make.
+- **B.** On the world's highest cliff (97 m): the cashel levelled by a stamp cut into the slope (up to 16 m deep), the outer walls riding a hillside that rises 45 m behind.
+- **C.** Wait for the land: leave Stormwatch out until F3 gives the Gatelands' limestone coasts flat-topped cliffs, then search again.
+
+**Recommendation: A.** It keeps the fort as built and the view off a sheer cliff, which is the point of the place.
+
+Pictures (Session 2454): [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-fort.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-far.jpg)
+
+## Answered
 ### Rare materials and the top tiers — side-bonuses, the top three made, or those plus graded smithies? (from the systems designer, 2026-11-21, #1840)
 **The question.** Backlog L11's *Gathering* (OG-132) leaves two pieces unbuilt: tool tiers and the four rare materials (sigil stone, star iron, skywood, deep pearl). Today the forge stops at Obsidian (tier 7), Draconic, Demonic and Cosmic are loot only, and the Dragon Scale a lair drops only sells. What should the rare materials do? Page: `docs/design/rare-materials.md`.
 
@@ -25,7 +38,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 **Recommendation: B.** It finishes the forge's ladder to the skill's own gates (Smithing 75, 90, 100) with things you can see coming: a dragon, a dying gate, a star. C's grades belong to *Workstations*, the next page.
 
-## Answered
+Michael: **The top three tiers made from rare finds** (B). (2026-11-21)
+
 ### The Scarred Gate — spent, or still waking? (from the look builder, 2026-11-19, #1754)
 **The question.** OG-104's Aurenne panel paints a Weaver ring "cracked and incomplete… signs of violent destruction". The look builder's prototype (Session 2398, `ruins.js` `scarredGate`) stands a ring 80 m across and 70 m tall in red desert; a blow from under its right foot has taken 17 of its 44 outer stones, opened a cleft through the inner course, and left a crater and a 220 m scar of black glass. Every ruin so far keeps its stones down and its script dead (#429 B), but this gate failed by catastrophe (canon Part I, §5).
 
