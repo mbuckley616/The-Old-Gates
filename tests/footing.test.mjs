@@ -133,7 +133,7 @@ const AUID = await page.evaluate(() => allSites().find(t => t.kind === 'town' &&
 const HN = await page.evaluate(([au]) => { const o = {}, L = lid, H = currentHouse; EQ.feet = { name: 'Leather Boots', ico: '👢', def: 0, weight: 1 }; gold = 100;
   lid = 'int_test'; currentHouse = { type: 'weapon', siteId: 'hearthwick', name: 'Smithy' };
   o.here = hobnailHere(); openForgePage(); o.row = /Hobnails/.test(document.getElementById('fg-list').innerHTML); forgeSel = { k: 'n' }; forgeDraw(); o.panel = document.getElementById('fg-right').textContent;
-  const m0 = gameMinNow(); forgeGo(false); o.said = document.getElementById('fg-said').textContent; o.mins = gameMinNow() - m0; o.gold = gold; o.nailed = bootsNailed(); o.rowDraw = /Draw the nails/.test(document.getElementById('fg-list').innerHTML);
+  const m0 = gameMinNow(); forgeGo(false); o.said = document.getElementById('fg-said').textContent; o.mins = Math.round(gameMinNow() - m0); o.gold = gold; o.nailed = bootsNailed(); o.rowDraw = /Draw the nails/.test(document.getElementById('fg-list').innerHTML);
   _pStep = true; _sneaking = false; o.walk = hearingRadius(); _sneaking = true; o.sneak = hearingRadius(); _sneaking = false;
   closeForgePage(); lid = L; currentHouse = H; o.outWalk = hearingRadius();
   _wx('snow', .95); o.deepRun = footRunMult(); o.deepRoll = footRollMult(); o.acc = iceAcc();
