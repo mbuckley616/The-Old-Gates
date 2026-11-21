@@ -175,6 +175,9 @@ function tpBuild(lookIn,ppIn,reuse){
   /* S2451 — a sheathed weapon is built as in the hand and kept on the driver's hips, hidden (disposed with the body); the builder's body
      wears a copy at the hip or on the back (tpSheath). The hand is empty and the arms hang as a bare-handed walker's */
   if(shW){const wm=tpWeapon(shW);wm.visible=false;R.hips.add(wm);R.sheathW=wm;}
+  /* S2472 — a blade in the hand leaves its scabbard on the body, empty: the same worn group (scabbard, frog, baldric), its blade hidden */
+  else if(w&&!bowW){const wm=tpWeapon(w);if(tpScabOn(wm)){wm.visible=false;R.hips.add(wm);R.sheathW=wm;R.scabOnly=true;}}
+  R.sheathed=!!shW;
   R.shield=null;R.torch=null;
   if(oh&&oh.shieldType==='shield'){const c=tpHex(oh.matCol,0x8a6030),rim=tpHex(oh.matGuard,0x4a3418);const big=/tower|kite/i.test(oh.name||''),round=/buckler|round/i.test(oh.name||'');const sg=new THREE.Group();
     // S227 — the kit's shields: planked and round with a rim and boss, the kite, or (S231) the tower shield; the face is
@@ -205,7 +208,7 @@ function tpBuild(lookIn,ppIn,reuse){
     const t0=performance.now();
     if(old){const H=old.rig.hb;tpDrawEnd(old);if(old.hbHeld)for(const h of old.hbHeld)h.c.removeFromParent();old.hbHeld=null;
       /* S2471 — a draw: the worn copy (scabbard, frog, baldric) stays on the carried-over body while the hand takes the blade from it (tpDrawTick) */
-      if(old.hbSheath&&old.sheathW&&!shW&&w&&old.wItem===w0&&tpDrawOn()){R.tpDraw={way:'draw',G:old.hbSheath,at:old.sheathAt,t0:fpDrawNow()};old.hbSheath=null;}
+      if(old.hbSheath&&old.sheathed&&!shW&&w&&old.wItem===w0&&tpDrawOn()){R.tpDraw={way:'draw',G:old.hbSheath,at:old.sheathAt,t0:fpDrawNow()};old.hbSheath=null;}
       if(old.hbSheath){tpSheathDrop(old.hbSheath);old.hbSheath=null;}old.rig.hb=null;old.rig.mesh.visible=true;
       rig.hb=H;H.L=-1;H.drv=rig.mesh.material;rig.root.add(H.root);TP_HB.kept=(TP_HB.kept||0)+1;}
     else{rig.hbLazy=true;try{hbAttach(rig);}catch(e){rig.hb=null;console.warn('F10: the player\'s body failed',e);}
@@ -221,9 +224,10 @@ function tpBuild(lookIn,ppIn,reuse){
         const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';c.add(tpHBCopy(o,true));rig.hb.root.add(c);
         const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null,arm:[B['el'+sd],B['wr'+sd],by['lowerarm01.'+s],by['wrist.'+s]]});}
       // Michael's D on #99: an empty hand is a folded fist, and a hand that holds something closes on it; a tome is held open-handed
-      if(R.sheathW)tpSheath(R,shW);
+      if(R.sheathW)tpSheath(R,shW||w);
+      if(R.scabOnly&&R.hbSheath){R.hbSheath.children[0].visible=false;if(R.tpDraw&&R.tpDraw.way==='draw'){tpSheathDrop(R.tpDraw.G);R.tpDraw.G=R.hbSheath;}} /* the draw's blade comes out of the scabbard that stays */
       /* S2471 — a sheathe: the blade rides in the fist (a carrier on an anchor where the hand held it) until the hand has put it in (tpDrawTick) */
-      if(old&&R.hbSheath&&!old.sheathW&&old.weapon&&old.wItem===shW&&tpDrawOn()){const a=new THREE.Group();a.position.set(0,-.04,.008);a.rotation.set(Math.PI/2,0,0);R.handR.add(a);
+      if(old&&R.hbSheath&&!old.sheathed&&old.weapon&&old.wItem===shW&&tpDrawOn()){const a=new THREE.Group();a.position.set(0,-.04,.008);a.rotation.set(Math.PI/2,0,0);R.handR.add(a);
         const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';const k=tpHBCopy(R.sheathW,true);k.visible=true;c.add(k);rig.hb.root.add(c);
         const h={o:a,c,f:[2,3,4,5].map(f=>by[`finger${f}-2.${side('R')}`]).filter(Boolean),arm:[B.elR,B.wrR,by['lowerarm01.'+side('R')],by['wrist.'+side('R')]],draw:true};R.hbHeld.push(h);
         R.tpDraw={way:'sheathe',G:R.hbSheath,at:R.sheathAt,t0:fpDrawNow(),h,a};}
@@ -272,6 +276,8 @@ function tpHBHold(R){const H=R.rig.hb;if(!H||!R.hbHeld)return;R.root.updateMatri
 // belt and the garments under it (inside the hip joint's 13 cm: the bind's arms hang beside it), the back's surface (a cloak, a pack) from what is worn there, measured once a build. A look only.
 const TP_SHEATH={hip:{dir:[.06,-.85,-.52],at:.06,out:0,fwd:.05},belt:{dir:[-.12,1,.18],up:.6,out:.03,fwd:.04},
   back:{blade:[.5,-.86,0],haft:[-.5,.86,0],gap:.012}};
+// S2472 — whether a weapon is worn in a scabbard when sheathed (tpSheath's own rule): a blade at the hip, a claymore or a longsword on the back
+function tpScabOn(W){const k=(W.userData.kit||'').split(':')[0];return /^(dagger|sword|cutlass|longsword|claymore)$/.test(k);}
 function tpSheathed(){return typeof SHEATHED!=='undefined'&&SHEATHED&&!!EQ.weapon&&EQ.weapon===_sheathedItem;}
 function tpSheathAt(W,it){const k=(W.userData.kit||'').split(':')[0];if(k==='impl')return implementOf(it)==='wand'?'hip':'back';
   return /^(dagger|sword|cutlass|longsword)$/.test(k)?'hip':/^(axe|mace|hatchet|flail)$/.test(k)?'belt':'back';}
@@ -359,7 +365,7 @@ const _tdS=x=>x<=0?0:x>=1?1:x*x*(3-2*x),_tdO=x=>x<=0?0:x>=1?1:1-Math.pow(1-x,3);
 function tpDrawPhase(D,t){const T=TP_DRAW;if(D.way==='draw')return t<T.reach?{a:_tdS(t/T.reach),s:1}:{a:1-_tdS((t-T.reach)/(T.dur-T.reach)),s:1-_tdO((t-T.reach)/(T.dur-T.reach))};
   return t<T.put?{a:_tdS(t/T.put),s:_tdS(t/T.put)}:{a:1-_tdS((t-T.put)/(T.dur-T.put)),s:1};}
 function tpDrawEnd(R){const D=R&&R.tpDraw;if(!D)return;R.tpDraw=null;
-  if(D.way==='draw')tpSheathDrop(D.G);
+  if(D.way==='draw'){if(D.G!==R.hbSheath)tpSheathDrop(D.G);}
   else{if(D.h){D.h.c.removeFromParent();if(R.hbHeld){const i=R.hbHeld.indexOf(D.h);if(i>=0)R.hbHeld.splice(i,1);}}if(D.a)D.a.removeFromParent();if(D.G.children[0])D.G.children[0].visible=true;}}
 const _tdT=new THREE.Vector3(),_tdT2=new THREE.Vector3(),_tdV=new THREE.Vector3(),_tdV2=new THREE.Vector3(),_tdQ=new THREE.Quaternion(),_tdQ2=new THREE.Quaternion(),_tdQs=new THREE.Quaternion(),_tdQe=new THREE.Quaternion(),_tdM=new THREE.Matrix4();
 // the elbow's way (tpReach's shortest turn put the upper arm through the chest): the arm turned about the shoulder-to-wrist line until the
