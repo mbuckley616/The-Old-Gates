@@ -8285,7 +8285,7 @@ function aurenneOrrery(hAt, o = {}) {
       const glyphs = new THREE.CanvasTexture(c); glyphs.wrapT = THREE.RepeatWrapping; glyphs.anisotropy = 8;
       const stone = mat('rock', { ns: .5, color: 0xe6c6a2, rough: .85 }), step = mat('slab', { ns: .8, color: 0xd8b48e, rough: .9 }); stone.vertexColors = true; step.vertexColors = true;
       _sgMats = { stone, step, script: Object.assign(gkCut(new THREE.Color(0xe6c6a2), glyphs), { side: THREE.DoubleSide }),
-        glass: new THREE.MeshStandardMaterial({ vertexColors: true, transparent: true, depthWrite: false, roughness: .22, metalness: .1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }) }; }
+        glass: new THREE.MeshStandardMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, roughness: .22, metalness: .1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }) }; }
     let tris = 0, draws = 0;
     // the kit's merge keeps position, normal and uv; the stone's and the steps' burn is a colour, so it is carried here too
     const merge = gs => { const g = mergeGeometries(gs); if (gs.every(x => x.attributes.color)) { const C = new Float32Array(g.attributes.position.count * 3); let q = 0; for (const x of gs) { C.set(x.attributes.color.array, q); q += x.attributes.color.array.length; } g.setAttribute('color', new THREE.BufferAttribute(C, 3)); } return g; };
