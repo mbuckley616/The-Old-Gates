@@ -823,7 +823,7 @@ function showBagTooltip(idx,ev){
   // For equippable items show comparison
   if(it.type==='equip'&&it.slot){
     const cur=EQ[it.slot];
-    if(it.nails)html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Hobnailed · ice grips, deep snow is only snow; louder on stone and planks</div>`; /* S2481 — the smith's nails (S2477), in its page's words */
+    if(it.nails)html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Hobnailed · ice grips, deep snow is only snow; louder on stone and planks</div>`; /* S2483 — the smith's nails (S2477), in its page's words */
     if(it.line==='light')html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Light armour · 3% harder to notice while sneaking</div>`; /* S564 */
     if(it.line==='robe')html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">Robe · +${3*(it.tier||1)} max mana${it.slot==='chest'?' · Cool 1':''}</div>`; /* S564; S1917 — a robe chest cools (climate B) */
     if(it.slot==='chest'&&!it.line&&(it.tier||0)>=3)html+=`<div class="bt-row" style="color:#c8b880;font-size:9px">${(it.tier||0)>=4?'Plate':'Mail'} · heavy in the sun</div>`; /* S1917 — climate B: a grade more in Aurenne's heat */
@@ -998,7 +998,7 @@ function hoverEqSlot(key){
   if(it.atk)lines.push('ATK '+it.atk[0]+'–'+it.atk[1]);
   if(it.def)lines.push('DEF +'+it.def);
   if(it.block)lines.push('Block '+Math.round(it.block*100)+'%');
-  if(it.nails)lines.push('Hobnailed'); /* S2481 */
+  if(it.nails)lines.push('Hobnailed'); /* S2483 */
   {const r=typeof implementRule==='function'?implementRule(it):'';if(r)lines.push(r);} /* S1863 — an implement's rule */
   statEl.textContent=lines.join('  ·  ')||'No combat stats';
   hintEl.textContent='Click to unequip';

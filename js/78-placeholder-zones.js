@@ -8,7 +8,7 @@ function tickFootsteps(dt,moving,sprinting){
   if(_stepT>=interval){_stepT=0;
     const onSnow=(typeof WORLD!=='undefined'&&WORLD.footprint)?WORLD.footprint():false; // v80 S147
     if(typeof stairHollowHere==='function'&&stairHollowHere())sndHollowStep(sprinting); /* S2416 — a hollow slab (68-dungeon-misc.js) */
-    else if(onSnow)sndSnowStep(sprinting);else if(typeof hobnailNoisy==='function'&&hobnailNoisy())sndNailStep(sprinting); /* S2481 — nailed, on stone and planks */
+    else if(onSnow)sndSnowStep(sprinting);else if(typeof hobnailNoisy==='function'&&hobnailNoisy())sndNailStep(sprinting); /* S2483 — nailed, on stone and planks */
     else sndFootstep(sprinting);}
 }
 

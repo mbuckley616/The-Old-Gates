@@ -10,7 +10,7 @@
       m.visible=false;m.userData.t=0;m.renderOrder=2;sc.add(m);FP.pool.push(m);
     }
   }
-  // S2480 — mud takes prints as snow does (ground-that-pushes-back's row): dark wet earth, fading on its own clock, not the snow's cover
+  // S2482 — mud takes prints as snow does (ground-that-pushes-back's row): dark wet earth, fading on its own clock, not the snow's cover
   const FP_COL={snow:0x5f6b78,mud:0x3a2e22};
   function fpDrop(kind){kind=kind||'snow';
     fpEnsure();const m=FP.pool[FP.i];FP.i=(FP.i+1)%FP.max;m.userData.kind=kind;m.material.color.setHex(FP_COL[kind]||FP_COL.snow);

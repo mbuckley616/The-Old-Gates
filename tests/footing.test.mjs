@@ -150,7 +150,7 @@ const SN = await slide({ iceAt: 0, stopAt: 120 });
 await page.evaluate(() => { delete EQ.feet.nails; });
 check('nailed, a stop on ice from the run slides 0.37 m (±0.05)', Math.abs(SN.slide - .367) < .05, SN);
 
-// 8. prints (Session 2480): mud takes them as snow does, dark earth, the step still sounding as bare ground; dry ground takes none;
+// 8. prints (Session 2482): mud takes them as snow does, dark earth, the step still sounding as bare ground; dry ground takes none;
 // a mud print fades on its own clock, not with the snow's cover
 await page.evaluate(([x, z]) => { px = x; pz = z; }, F); await g.cells();
 const FPR = await page.evaluate(() => { const o = {}, x0 = px, z0 = pz; for (const m of FP.pool) m.visible = false; FP.last = null;
@@ -165,7 +165,7 @@ console.log('prints', JSON.stringify(FPR));
 check('rain on the field: a mud print a step, dark earth, and the step sounds as bare ground (false); dry ground none', FPR.mudN === 4 && FPR.mud.every(v => v === false) && FPR.col === 0x3a2e22 && FPR.dryN === 0 && FPR.dry.every(v => v === false), FPR);
 check('a mud print outlasts a second with no snow cover; snow prints as before, and sound as snow', FPR.mudAfter1 === 4 && FPR.snowN === 4 && FPR.snow.every(v => v === true), FPR);
 
-// 9. the nails shown and heard (Session 2481): the boots' card, the bag's tooltip and the worn slot say Hobnailed; nailed indoors a step
+// 9. the nails shown and heard (Session 2483): the boots' card, the bag's tooltip and the worn slot say Hobnailed; nailed indoors a step
 // plays the nailed step, outdoors the bare one, and bare boots indoors the bare one
 const NS = await page.evaluate(() => { const o = {}, L = lid, H = currentHouse, b = { name: 'Leather Boots', ico: '👢', type: 'equip', slot: 'feet', def: 1, weight: 1, nails: true };
   o.desc = itemDesc(b); o.descBare = itemDesc(Object.assign({}, b, { nails: false }));
