@@ -129,6 +129,25 @@ const K = await page.evaluate((s) => { const L = GATE_KEEP_LIE || {}, A = L.alta
   const rows = ssSplitPayload(JSON.parse(ssStringify(_buildSavePayload()))); out.arcsChar = !!(rows.c.wS.relicArcs && rows.c.wS.relicArcs.found) && !(rows.w.wS && rows.w.wS.relicArcs);
   worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes || 0) + 30 * 1440; return out; }, seed);
 console.log('keep', JSON.stringify(K));
+// S2492 — the sigil stone: laid beside the vein in a failing or catastrophic gate's keep, none in a steady one; a steel pick cuts it, once
+const SG = await page.evaluate((s) => { const L = GATE_KEEP_LIE || {}, v = L.vein, cond = _lastGen.cond, out = { cond, laid: !!L.sigil, due: gateSigilDue(cond) };
+  const st = L.sigil || (v && { id: s + ':' + v.floor + ':sigil', gate: s, school: v.school, cap: 1, key: 'sigil', x: v.x, z: v.z, floor: v.floor, g: null });
+  if (!st) return out; if (L.sigil) { out.byVein = +Math.hypot(st.x - v.x, st.z - v.z).toFixed(2); out.mesh = !!(st.g && st.g.parent === dScene); }
+  const sm = showMsg; showMsg = () => {}; const S_ = skillsReady(), ml = S_.mining; S_.mining = { ...(ml || {}), lv: 100 }; const bag0 = BAG.slice(); BAG.length = 0;
+  if (worldState.gateKeeps[s]) delete worldState.gateKeeps[s].sigil;
+  out.none = gateSigilStrike(st).why; bagAdd({ ...PICK_ITEM }); out.iron = gateSigilStrike(st).why;
+  if (L.sigil) { px = st.x; pz = st.z; out.near = gateVeinNear() === st; out.word = gateVeinWord(st); }
+  bagAdd(toolItem('pick', 4)); let r = null; for (let k = 0; k < 20; k++) { r = gateSigilStrike(st); if (r.why || !r.left) break; }
+  const it = BAG.find(b => b.sigilStone); out.stone = it ? { school: it.sigilStone, want: v.school, salvage: !!it.salvage, w: it.weight, price: it.buyPrice, n: BAG.filter(b => b.sigilStone).length } : null;
+  out.after = gateSigilStrike(st).why; out.rec = JSON.stringify((worldState.gateKeeps[s] || {}).sigil); if (L.sigil) { out.hidden = st.g.children.every(m => !m.visible); out.word2 = gateVeinWord(st); }
+  const rows = ssSplitPayload(JSON.parse(ssStringify(_buildSavePayload()))); out.worldRow = !!(rows.w.wS.gateKeeps && rows.w.wS.gateKeeps[s] && rows.w.wS.gateKeeps[s].sigil);
+  out.saved = (rows.c.BAG || []).some(b => b && b.sigilStone === v.school && b.salvage);
+  BAG.length = 0; bag0.forEach(b => BAG.push(b)); S_.mining = ml; showMsg = sm; return out; }, seed);
+console.log('sigil', JSON.stringify(SG));
+check(`S2492: a ${SG.cond} gate's keep ${SG.laid ? 'has' : 'has no'} sigil stone beside its vein${SG.laid ? ` (${SG.byVein} m off)` : ''}: failing and catastrophic only`, SG.laid === SG.due && (!SG.laid || (SG.byVein > 1 && SG.byVein < 1.8 && SG.mesh && SG.near && /sigil stone/.test(SG.word))), SG);
+check('S2492: no pick, then an iron pick, are refused at the stone; a steel pick cuts one stone of the gate\'s school, salvage, weight 2, 150; then it is cut out, and never returns',
+  /need a pick/.test(SG.none) && /steel pick/.test(SG.iron) && SG.stone && SG.stone.school === SG.stone.want && SG.stone.salvage && SG.stone.w === 2 && SG.stone.price === 150 && SG.stone.n === 1 && /cut out/.test(SG.after || '') && (!SG.laid || (SG.hidden && /cut out/.test(SG.word2))), SG);
+check('S2492: the stone cut is the world row\'s record, and the stone in the bag keeps its school and its mark through a save', SG.worldRow && SG.saved, SG);
 check(`the keep has its altar before the coffer and its vein in the corner farthest from the way in (${K.veinFar} m against the coffer's ${K.coffFar})`, K.altar && K.vein && K.altarFore && K.inRoom && K.veinFar > K.coffFar, K);
 check(`its arc taken: the first of ${K.took && K.took.school}'s armillary, the gate's school, "${K.took && K.took.desc}", weight 1, 40, salvage`, K.arcShown && K.near && K.took && K.took.n === 1 && K.took.school === K.took.want && /^1 of 3 of /.test(K.took.desc) && K.took.w === 1 && K.took.price === 40 && K.took.salvage, K.took);
 check('taken once: gone from the altar, and the world remembers it', K.arcGone, K);

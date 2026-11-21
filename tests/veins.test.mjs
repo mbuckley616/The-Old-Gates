@@ -145,4 +145,38 @@ const S = r.supply;
 check('the Fighters\' Guild rolls Supply about one task in five', S.kinds.supply >= 55 && S.kinds.supply <= 105, S.kinds);
 check('Supply asks 3 + tier of the ore the hall\'s own country yields', S.ore && S.want.includes(S.ore) && S.need === 4 && /^Supply 4 /.test(S.short), S);
 check('dug ore counts: not yet with none, done when carried, the guild takes what it asked and leaves the rest', /^Not yet\. 0\/4\./.test(S.before) && S.carried >= 5 && S.stamped && /^Good work\. \d+ gold/.test(S.said) && S.paid > 0 && S.left === S.carried - 4 && !S.active, S);
+// S2493 — the falling star (rare materials B, session 3): one a game-week an island, its night and place by its seed; two lie at once;
+// 3 pieces of star iron to a mithril pick, never back; the island's news from the next morning
+const ST = await page.evaluate(() => {
+  const out = {}, t0 = worldState.gameTimeAbsMinutes, bag0 = BAG.slice(), sm = showMsg; showMsg = () => {};
+  const stars = []; for (const isle of STAR.isles) for (let w = 0; w < 6; w++) { const s = starOf(isle, w); if (s) stars.push(s); }
+  out.n = stars.length; out.isles = [...new Set(stars.map(s => s.isle))].sort().join();
+  out.night = stars.every(s => { const m = s.at - s.week * 10080, h = (m % 1440) / 60; return m >= 0 && m < 10080 + 240 && (h >= 21 || h < 4); });
+  out.ground = stars.every(s => starGround(s.x, s.z)); out.onIsle = stars.every(s => { const c = cellOf(s.x, s.z); return nationKeyOf(c[0], c[1]) === s.isle; });
+  const k = stars[0]; _starMemo = {}; const k2 = starOf(k.isle, k.week); out.same = k2 && k2.x === k.x && k2.z === k.z && k2.at === k.at;
+  const isle = k.isle, W = [0, 1, 2, 3].map(w => starOf(isle, w)).filter(Boolean);
+  worldState.gameTimeAbsMinutes = W[W.length - 1].at + 1; out.live = starsLive(isle).map(s => s.week); out.want = W.slice(-2).map(s => s.week).reverse();
+  worldState.gameTimeAbsMinutes = W[W.length - 1].at - 1; out.liveBefore = starsLive(isle).map(s => s.week);
+  // the strike: a synthetic star of the latest, struck where it lies
+  const L = W[W.length - 1]; worldState.gameTimeAbsMinutes = L.at + 1; delete (worldState.veins || {})[L.id];
+  const v = { id: L.id, x: L.x, z: L.z, tier: 5, ore: 'star', star: L, g: null }; BAG.length = 0; SKILLS.mining = { lv: 100, p: 0 };
+  bagAdd({ ...PICK_ITEM }); bagAdd(toolItem('pick', 4)); out.steel = strikeVein(v).why; bagAdd(toolItem('pick', 5)); out.strike = toolStrike('pick');
+  // the news: none before the morning, then on its island only, while it holds iron
+  const site = (() => { for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { if (nationKeyOf(i, j) !== isle) continue; const c = getCell(i, j); const st = (c.sites || []).find(q => q.name && q.kind !== 'lair'); if (st) return st; } return null; })();
+  const other = (() => { for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { if (!isLandCell(i, j) || nationKeyOf(i, j) === isle) continue; const c = getCell(i, j); const st = (c.sites || []).find(q => q.name && q.kind !== 'lair'); if (st) return st; } return null; })();
+  const others = []; for (const is of STAR.isles) for (let w = 0; w < 8; w++) { const o = starOf(is, w); if (o && o.id !== L.id && !(worldState.veins || {})[o.id]) { others.push(o.id); worldState.veins[o.id] = { n: 3, s: 3, d: 0, e: 0 }; } } /* only this star holds iron */
+  out.night0 = starRumour(site); const morning = Math.floor((L.at - 360) / 1440) * 1440 + 1800; worldState.gameTimeAbsMinutes = morning + 5;
+  out.news = starRumour(site); out.other = starRumour(other); out.place = starPlace(L);
+  let got = 0; for (let i = 0; i < 40 && veinLeft(v) > 0; i++) if (strikeVein(v).ore) got++;
+  out.got = got; out.iron = BAG.filter(b => b.ore === 'star').reduce((a, b) => a + (b.qty || 1), 0); out.item = (BAG.find(b => b.ore === 'star') || {}).name;
+  out.after = strikeVein(v).why; worldState.gameTimeAbsMinutes = L.at + 40 * 1440; out.back = veinLeft(v);
+  worldState.gameTimeAbsMinutes = morning + 5; out.newsOut = starRumour(site);
+  others.forEach(id => delete worldState.veins[id]); out.settled = STAR_PLACES.join();
+  BAG.length = 0; bag0.forEach(b => BAG.push(b)); worldState.gameTimeAbsMinutes = t0; showMsg = sm; return out;
+});
+console.log('star', JSON.stringify(ST));
+check(`S2493: a star a week on each island (${ST.n} of 18 over six weeks, on ${ST.isles}), at night, on its island, on ground that takes it; the same twice`, ST.n >= 15 && ST.isles === 'aurenne,gatelands,mark' && ST.night && ST.onIsle && ST.ground && ST.same, ST);
+check('S2493: an island keeps the two latest stars to have fallen; the week\'s star is not there before its hour', JSON.stringify(ST.live) === JSON.stringify(ST.want) && ST.live.length === 2 && !ST.liveBefore.includes(ST.live[0]), ST);
+check('S2493: a steel pick will not cut star iron; a mithril one does, every 0.6 s: 3 pieces of Star Iron, then none, and never back', /mithril pick/.test(ST.steel) && ST.strike === .6 && ST.got === 3 && ST.iron === 3 && ST.item === 'Star Iron' && /cut out/.test(ST.after || '') && ST.back === 0, ST);
+check(`S2493: the news from the next morning, on its island only, while it holds iron ("${ST.news}")`, ST.night0 === '' && ST.news === `A star came down past ${ST.place}.` && !!ST.place && !/^Ruins/.test(ST.place) && ST.other === '' && ST.newsOut === '', ST);
 await g.close();
