@@ -155,6 +155,33 @@ if (dw.hb !== false) {
   // Session 2478: the hand takes the hilt in its grip (S2471's note: it arrived palm up): at the hilt the wrist holds the blade's way as the worn blade lies
   check(`third person: at the hilt the hand is turned to take the grip, the blade's way in the fist within 0.5 rad of the worn blade's (about 1.7 before) (${d2.turn} at 0.2 s of the draw; ${s3.turn} at 0.32 s of the sheathe)`, d2.turn != null && d2.turn < .5 && s3.turn != null && s3.turn < .5, dw);
 }
+// Session 2484: the claymore's left hand on the draw (S2479's owed note: tpGripL kept the left wrist on the driver's blade, which the reach
+// carried up behind the right shoulder, so the left hand rose empty to the shoulder while the blade was still in its scabbard). While the right
+// hand reaches, the left stays below the shoulders; it takes the seen blade's grip as the blade comes down; sheathing,
+// it lets go by 0.15 s
+const lh = await page.evaluate(() => { const eq0 = { ...EQ }; thirdPerson = true; EQ.offhand = null;
+  EQ.weapon = { name: 'Test claymore', type: 'weapon', atk: [10, 11], wType: 'slash', weaponShape: 'claymore', twoHand: true, weight: 3 };
+  let t = performance.now(); const step = () => { t += 16.7; tpUpdate(1 / 60, { moving: false, sprinting: false, camY: 0, now: t, roll: null }); };
+  SHEATHED = false; FP_DRAW.now = () => 100; tpEnsure(); step(); if (!TP.rig.rig.hb) { thirdPerson = false; FP_DRAW.now = null; return { hb: false }; }
+  const gl = TP.rig.gripL.clone(), V = () => new THREE.Vector3();
+  const at = (tt) => { FP_DRAW.now = () => tt; step(); step(); const R = TP.rig, D = R.tpDraw, H = R.rig.hb; if (!D) return { on: false };
+    const fg = [2, 3, 4, 5].map(f => H.P.byName[`finger${f}-2.${HBODY.swap ? 'R' : 'L'}`]), lp = V(); fg.forEach(b => lp.add(b.getWorldPosition(V()))); lp.multiplyScalar(1 / fg.length);
+    const h = D.h || R.hbHeld.find(x => x.o === R.weapon); h.c.updateMatrixWorld(true); const gp = gl.clone().applyMatrix4(h.c.matrixWorld);
+    return { on: true, lw: D.lw, lerr: D.lerr, seen: +lp.distanceTo(gp).toFixed(3), under: +(R.shR.getWorldPosition(V()).y - R.handL.getWorldPosition(V()).y).toFixed(3) }; };
+  const out = { hb: true }; sheathWeapon(); tpEnsure(); out.sh = [at(100), at(100.05), at(100.15)];
+  FP_DRAW.now = () => 200; drawWeapon(); tpEnsure(); out.dr = [at(200.1), at(200.2), at(200.4), at(200.5)];
+  FP_DRAW.now = () => 201; for (let i = 0; i < 20; i++) step(); out.hold = TP.rig.gMiss; out.holdOn = !TP.rig.tpDraw;
+  Object.assign(EQ, eq0); SHEATHED = false; tpEnsure(); FP_DRAW.now = null; thirdPerson = false; return out; });
+console.log(JSON.stringify(lh));
+if (lh.hb) {
+  const [d1, d2, d4, d5] = lh.dr, [s0, , s15] = lh.sh;
+  check(`third person, a claymore drawn: the left hand stays below the shoulders while the right reaches (${d1.under} and ${d2.under} m under at 0.1 and 0.2 s; it was at the shoulder), takes the seen grip by 0.4 s (${d4.seen} m from it, its fingers to the grip's left mark) and keeps it (${d5.seen} m at 0.5 s; 0.28 in the hold after)`,
+    d1.on && d1.lw === 0 && d2.lw === 0 && d1.under > .25 && d2.under > .25 && d4.lw === 1 && d4.seen < .35 && d5.lw === 1 && d5.seen < .3, lh);
+  // Session 2485: held, the builder's left fingers on the seen blade's left grip mark (S2484's note: 0.31 m under it, holding nothing; tpHBGripL)
+  check(`third person, a claymore held: the builder's left hand is on the seen grip (${lh.hold && lh.hold.after} m from the mark; ${lh.hold && lh.hold.before} m as the driver put it)`,
+    lh.holdOn && lh.hold && lh.hold.before > .2 && lh.hold.after < .03 && lh.hold.w === 1, lh.hold);
+  check(`third person, a claymore sheathed: the left hand leaves the grip (${s0.lw} at the start, ${s15.lw} by 0.15 s)`, s0.on && s0.lw === 1 && s15.lw === 0, lh);
+}
 // Session 2478: under a cloak a sword at the hip lifts the sheet (S2451's note: its hilt was lost inside the cloak and the scabbard's point
 // stood out through its back). In the bind's metres every point of the worn group (blade, scabbard, frog) has the sheet at its bearing and
 // height (within 2.5 cm across and up) standing outside it; a mace drawn wears nothing at the hip and the sheet is back on its own points

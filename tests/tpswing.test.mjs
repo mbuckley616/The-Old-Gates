@@ -2,7 +2,8 @@
 // the power flag on a swing's first frame, before the viewmodel chose them later in that frame (and it clears them when
 // each swing ends), so every third-person swing was the flat cut at a normal swing's size. Driven through the game's own
 // loop, a frame at a time, so the order within a frame is the real one (the render itself is skipped: it is slow on
-// software GL and changes nothing measured here).
+// software GL and changes nothing measured here). Session 2486: the game starts with the weapon sheathed and sheathes it on its own after
+// 5 s with no swing (S1080), and since S2451 a sheathed weapon leaves the body's hand empty, so each run draws it first and keeps it drawn.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -11,7 +12,7 @@ const run = (lock, pow) => page.evaluate(([lock, pow]) => {
   thirdPerson = true; EQ.weapon = { name: 'Steel Sword', slot: 'weapon', weaponShape: 'sword', weight: 3 }; EQ.offhand = null;
   ANIM_PARAMS.swing.variantLock = lock;
   const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {};
-  let t = performance.now(); const step = () => { t += 1000 / 60; loop(t); };
+  let t = performance.now(); const step = () => { t += 1000 / 60; _lastSwingG = playClockS; loop(t); }; SHEATHED = false; if (typeof tpEnsure === 'function') tpEnsure();
   try {
     // settle: no swing, a few frames so the body stands
     swingT = 0; _pendingStrike = null; for (let i = 0; i < 4; i++) step();
@@ -45,7 +46,7 @@ check('after the swing the body lets go of it', chop.after === 0 && chop.cleared
 // once with the reach turned off (the grip point kept aside) for the before
 const both = await page.evaluate(() => {
   thirdPerson = true; EQ.weapon = { name: 'Claymore', slot: 'weapon', weaponShape: 'claymore', weight: 7, twoHand: true }; EQ.offhand = null;
-  const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {}; let t = performance.now(); const step = () => { t += 1000 / 60; loop(t); };
+  const raf = window.requestAnimationFrame, rr = REN.render; window.requestAnimationFrame = () => 0; REN.render = () => {}; let t = performance.now(); const step = () => { t += 1000 / 60; _lastSwingG = playClockS; loop(t); }; SHEATHED = false; if (typeof tpEnsure === 'function') tpEnsure();
   const out = {};
   try {
     swingT = 0; _pendingStrike = null; step(); const R = TP.rig, gp = R.gripL && R.gripL.clone();
