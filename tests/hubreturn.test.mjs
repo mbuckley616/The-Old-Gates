@@ -13,7 +13,11 @@ out.first = await tab();
 out.firstClose = await tab();
 await page.evaluate(() => G.focus());
 out.reopen0 = await tab();
-await page.click('.hub-tab:nth-child(1)'); await g.frames(2);
+// Session 2481: a click on the hub runs its handler on the page's thread, and the Inventory's and the Armor sub-tab's handlers draw the
+// portrait (the first compiles its programs). Playwright's click returns only when the page answers again: 30.0 s alone here at s1805,
+// over its 30 s default with one boot beside it (red twice). Every click here is given the compile's own bound, `slow`.
+const slow = { timeout: 400000 };
+await page.click('.hub-tab:nth-child(1)', slow); await g.frames(2);
 // Session 2336: the Inventory's first showing draws your body in the sheet's portrait, and its first draw compiles the body's programs
 // (`sheetFigDraw`, 66-hub.js). Headless SwiftShader compiles on the page's own thread, so the page answers nothing until that is done:
 // 108 s here at s1677 with two other boots beside it, and the armour sub-tab's click ran out of its 30 s on both tries of the weekly
@@ -21,11 +25,11 @@ await page.click('.hub-tab:nth-child(1)'); await g.frames(2);
 const figT0 = Date.now();
 out.fig = await page.waitForFunction(() => typeof SHEET_FIG === 'undefined' || (!SHEET_FIG.compiling && !SHEET_FIG.owed), null, { timeout: 400000, polling: 500 }).then(() => page.evaluate(() => typeof SHEET_FIG === 'undefined' ? null : { n: SHEET_FIG.n, err: SHEET_FIG.err })).catch(e => ({ timeout: String(e.message).slice(0, 80) }));
 out.fig.s = Math.round((Date.now() - figT0) / 1000);
-await page.click('.inv-subtab[data-sub="armor"]'); await g.frames(2);
+await page.click('.inv-subtab[data-sub="armor"]', slow); await g.frames(2);
 out.clicked = await state();
 out.closed = await tab();
 out.reopened = await tab();
-await page.click('.hub-tab:nth-child(5)'); await g.frames(2);
+await page.click('.hub-tab:nth-child(5)', slow); await g.frames(2);
 out.closed2 = await tab();
 out.reopened2 = await tab();
 await page.keyboard.press('Escape'); await g.frames(2);
