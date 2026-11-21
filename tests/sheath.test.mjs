@@ -34,6 +34,13 @@ const r = await page.evaluate(() => {
     const d = 1000 - e.posture; WORLD.scene.remove(e.mesh); ZE = keepZ; staggered = []; return { d: +d.toFixed(2), wasDrawn, dc }; };
   out.d24 = drain(24, true); out.d25drawn = drain(25, false); out.d25 = drain(25, true);
   out.live = PERK_LIVE.has('blade:25');
+  // S2466: the first-person draw and sheathe are seen, not swapped in a frame: the hand left goes as a ghost (0.2 s), the new comes up (done by 0.56 s); a swing ends it
+  { SWING = null; EQ.weapon = SWORD; drawWeapon(); FP_DRAW.now = () => 500; const ph = () => ({ ghost: !!FP_DRAW.ghost, run: FP_DRAW.t0 != null, fists: !!(vmSword && vmSword.userData.fists) });
+    const at = (t) => { FP_DRAW.now = () => t; vmDraw(); return ph(); };
+    sheathWeapon(); const sh = [ph(), at(500.1), at(500.25), at(500.6)];
+    FP_DRAW.now = () => 600; drawWeapon(); const dr = [ph(), at(600.1), at(600.6)];
+    FP_DRAW.now = () => 700; sheathWeapon(); drawWeapon(); SWING = { test: 1 }; at(700.05); const sw = ph(); SWING = null; FP_DRAW.now = null;
+    out.fpDraw = { sh, dr, sw }; }
   Math.random = rnd; Object.assign(SKILLS, sk0); Object.assign(EQ, eq0); SHEATHED = false; buildViewmodel(); buildShieldViewmodel(); return out; });
 console.log(JSON.stringify(r));
 check(`H sheathes: the hand is empty (${r.afterH.meshes} meshes, as the fists' ${r.fistMeshes}; the sword's ${r.swordMeshes}), the sword and the shield still equipped`, r.afterH.sheathed && r.afterH.meshes === r.fistMeshes && r.swordMeshes !== r.fistMeshes && r.afterH.weapon && r.afterH.offhand, r);
@@ -44,6 +51,9 @@ check('a new weapon in hand is drawn', !r.swapped, r);
 check('a swing from the sheath draws as it swings, and is the draw cut', r.d25.wasDrawn && r.d25.dc && !r.d25drawn.dc, r);
 check(`Draw cut (Blade 25): the swing from the sheath drains ×2 posture (${r.d25.d} against ${r.d25drawn.d} drawn and ${r.d24.d} at Blade 24)`, r.d24.d > 0 && r.d24.d === r.d25drawn.d && Math.abs(r.d25.d / r.d25drawn.d - 2) < .01, r);
 check('Draw cut is live on the Skills tab', r.live);
+{ const D = r.fpDraw, k = p => (p.ghost ? 'G' : '-') + (p.run ? 'R' : '.') + (p.fists ? 'F' : 'W');
+  check(`the first-person sheathe and draw are seen: the hand left goes as a ghost, the new one comes up, a swing ends it (${D.sh.map(k)} / ${D.dr.map(k)} / ${k(D.sw)})`,
+    D.sh.map(k).join() === 'GRF,GRF,-RF,-.F' && D.dr.map(k).join() === 'GRW,GRW,-.W' && k(D.sw) === '-.W', D); }
 // Session 2451: in third person on the new look a sheathed weapon is worn, not held: a sword at the hip (on the builder's spine05), a
 // claymore across the back (spine02), the hand empty and the arms not in the fist-fighter's guard; the builder's body is carried over, not
 // built again; drawn, it is back in the fist and the worn copy is gone
