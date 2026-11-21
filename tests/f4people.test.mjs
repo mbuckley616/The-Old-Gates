@@ -649,6 +649,12 @@ const trade = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r =
     return { k: r.g.hbKey, smith: /smith|armourer/.test(r.g.role), apron: has('apron'), bib: has('bib'), hammer: has('hammerHead'), leather: !!D.apronLeather, cloak: !!D.cloak, basket: !!D.basket, coat: !!D.coat }; }); });
 check(`Dunmore's smiths wear the leather apron and hold the hammer, its innkeepers the linen apron, nothing over it (${trade.filter(t => t.smith).length} smiths, ${trade.filter(t => !t.smith).length} innkeepers)`,
   trade.filter(t => t.smith).length >= 2 && trade.filter(t => !t.smith).length >= 2 && trade.every(t => t.apron && t.bib && !t.cloak && !t.basket && !t.coat && t.leather === t.smith && t.hammer === t.smith), trade);
+// S2504: and the rest of the old rig's trades the kit can draw: an apothecary's satchel, a merchant's two purses at the belt
+const trade2 = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.hbG && /^dunmore:/.test(r.g.hbKey || '') && /apothecary|merchant/.test(r.g.role || ''));
+  return rs.map(r => { const P = HB.makePerson(r.hbG, HB_LEAN), n = k => { let c = 0; P.root.traverse(o => { if (o.name === k) c++; }); return c; };
+    return { k: r.g.hbKey, ap: /apothecary/.test(r.g.role), satchel: n('satchelBag'), purses: n('purse') }; }); });
+check(`Dunmore's apothecaries carry the satchel and its merchants two purses at the belt (${trade2.filter(t => t.ap).length} and ${trade2.filter(t => !t.ap).length})`,
+  trade2.filter(t => t.ap).length >= 2 && trade2.filter(t => !t.ap).length >= 2 && trade2.every(t => t.ap ? t.satchel === 1 : t.purses === 2), trade2);
 await g.close();
 
 // a second boot: the same people, the same bodies
