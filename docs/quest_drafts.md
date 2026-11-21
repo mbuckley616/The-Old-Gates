@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 52, 20 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 53, 21 Nov: no new calls on the page)
 
 ---
 
@@ -7500,3 +7500,212 @@ A word of no school, or a legacy spell with none, keeps *fizzles*. The other wil
 - **Saved state:** §4 needs one record, the joins this character has seen: `worldState.joinsSeen` (`{'tonn+sioc:laid': true, …}`), the character's, so it goes in `SS_CHAR_WS` and the S242 list in `_applyLoadData`. Nothing else new; nothing is rolled.
 - **Tests:** `tests/wordforms` gains: each school's header shows its guild line at Comprehension and its makers' line at Mastery; a word's sense shows at Impression; a fizzle of a Tine word says *gutters out*; the bridge's line is said once and not again after a save and a reload.
 - **Who builds:** all of it is words on machinery that exists, but for §4's one saved key and the three call sites, which are small enough for the quest writer's build once approved (grep first; the systems builder works in `64-spells.js` too).
+
+---
+
+## Families and Feuds — a merchant house, a feud in the Mark, the Crown's house, the lines of the glen, and the fen
+
+*Unapproved. Drafted 21 Nov 2026.* Backlog L2, *Families and feuds* (OG-090): "House Velasco (Aurenne), the Ironmere clan and its feud (the Mark), the Caelmont house (Gatelands, in the Crown's crimson, not blue), the Sorrowvale lines (Old Blood, black-haired), the Redmarsh Syndicate." Five families, one to a people and one more for the fen, each seated in one place chosen once a seed, each with two named members, a few lines, and one thread on machinery the game already has. Nobody in them is one of the awake.
+
+### What the canon fixes, and where it is silent
+
+- *The Compact: merchant houses under the Church of the Weaver; Priors over the church's towns, Factors over the houses' ports* (§1.3). A great house of Aurenne is a house of the Compact, and its head is a Factor. *Pride: ledgers, learning, paper over oaths* (§1.3).
+- *The Captains' League: office by acclamation, disputes by duel; pride: an oath kept, a quarrel finished by noon* (§1.2). A feud in the Mark is a quarrel *not* finished by noon, and that is its shame. The Mark's claim is fought between 6:00 and noon and to a yield (*The Three Courts*, built: `claimHours`).
+- *A cold peace, one generation after a war the Crown won and the Mark remembers; the Hollowed Wastes was its field* (§1.4). The feud's duel was owed the morning a man went to that war.
+- *The Crown, hereditary; lords over towns; the gates' salvage licensed and taxed; the Crown's cities a Norman state laid over an Irish-register countryside* (§1.1). The Crown's nobility keep their Norman names (Michael, 12 Oct; *Rivals*' Alard de Drac). The crimson is the Crown's (§1.5), and the house wears it by right; no tartan (Michael's A on #445: a sett is a note on cloaks, never a house's).
+- *Pride: never leaving a wounded man* (§1.1).
+- *The Old Blood: strongest inland in the Gatelands' hills; the marks are pale lines under the skin; the coming-of-age rite marks the child's acceptance, not the lines* (§3.1). *Speech: sparing, exact, old words* (§2). *Markmen who won't sit with you* (§2.2, of an Old Blood player). *Reading is forbidden; touching is permitted* (§3.1).
+- *Every hull that passes is tithed* (§1.3); *the Compact's tithe-ships* (§1.4; built: `titheHail`, `titheAnswer`). The fen's trade is the tenth not paid.
+- **Names.** *House Velasco* has the Iberian ring the register does not use (Michael, 12 Oct: Roman, Greek, Egyptian and Arabic roots; *The Aurennais Register*: "the Roman and Greek roots run through the old families and the Church"). It is **the house Velleius**, an old Roman family name, near enough in sound that the sheet still reads. *Sorrowvale* is a Gatelander's word; the Old Blood say the older one, **Gleann an Bhróin**, and both are used, by who is speaking. *Syndicate* is a ledger's word, so it is the Compact's name for the fen people, entered against them; they call themselves **the Redmarsh**. *Ironmere* and *Caelmont* stand. No member takes the *Ald-* root (Part I, *Personal-name conventions*), and none reuses a named character's name.
+- *Silent:* family names in general (the generator has none; *The Aurennais Register*'s owed item). These five are authored, not rolled, and the draft adds no surname to anyone else. Also silent: what began the feud. The plainer thing: silver, and a line on a hill.
+
+### The five, and where they sit
+
+| | People | Seat (chosen once a seed, by `seededRng('family', key)`) | Members |
+|---|---|---|---|
+| **The house Velleius** | Aurennais | the largest port of Aurenne that is not the capital | **Marcia Velleia**, Factor of the port; **Kallias Velleius**, her brother, a Prior's clerk |
+| **The Ironmeres** and **the Stannards** | Markmen | the Markish town nearest a silver vein in the ranges; the two halls at its two ends | **Godgifu Ironmere** (*Old Gifu*); **Leofric Stannard** (*Half-Ear*); their grandchildren **Brand Ironmere** and **Wynn Stannard** |
+| **The house of Caelmont** | Gatelander (Crown-born) | a Gatelands city with a lord and a keep, not Coeur de Vie | **Lady Clémence de Caelmont**, its lord; **Amaury de Caelmont**, her son |
+| **The lines of Gleann an Bhróin** | Old Blood | the Gatelands village highest inland in the hills | **Muirgel**, the eldest; **Ciarnait**, a girl of thirteen |
+| **The Redmarsh** | Gatelander | the Gatelands fen nearest a river's mouth; a cove on its seaward side | **Muireann of the Redmarsh**, who keeps its boats |
+
+Faces for the bodies builder: Marcia tall, deep brown, grey at the temples, a white stole over blue with the house's seal ring; Kallias younger and slighter, ink on his fingers, the Church's shuttle at his throat. Gifu and Leofric old and broad, ash-white, Gifu with a stick she does not need, Leofric missing the top of his left ear. Brand and Wynn nineteen or twenty, in the yard's leathers. Clémence in the Crown's crimson with a gold collar of office; Amaury in crimson gone brown with mud, a torn cloak. Muirgel small, grey-pale, black hair gone white, the marks at both wrists and the backs of the hands; Ciarnait black-haired, the marks new at one wrist. Muireann red-haired, freckled, in a fen-man's oilskin, a pole over her shoulder.
+
+### 1. The house Velleius (Aurennais; formal, *Master*, qualifiers, contracts, never an oath)
+
+**Marcia Velleia**, Factor, at the port's counting house by day.
+
+**Greeting, first:** "Master. The house Velleius has a seat at this table, and you are welcome at its foot. That is not an insult; it is where the ledgers are."
+**Greeting, again:** "Master. The house remembers you, which it does not do for everyone."
+**Greeting, to an Aurennais player:** "One of our own, Master, and so held to a higher account. I mean it as a compliment, though I would not blame you for hearing otherwise."
+
+**Topics**
+- *Who are the Velleii?* — "A house of the Compact, Master, older than some of its saints. We have shipped salt and glass out of this port for eleven generations. The Church blesses our hulls and we pay for the blessing. It is the oldest contract in Aurenne, and neither party has ever defaulted."
+- *Who is your brother?* — "Kallias keeps a Prior's books. The house gives a son to the Church in every generation. It is a kind of insurance, Master, though I should not like the Prior to hear me call it that."
+- *What do you think of the Redmarsh?* — "We enter them in the ledger as the Redmarsh Syndicate, Master, which flatters them. They are a family of the fens who do not pay the tenth. I admire their consistency, and I have asked the tithe-ships to admire it at closer range."
+- *Have you work?* (her thread, below)
+
+**Kallias Velleius**, at the port's church by day.
+
+**Greeting, first:** "Master. If you have come about a blessing, the Prior is in. If you have come about the house, I am my sister's brother, and I keep no books but the Church's."
+**Topics**
+- *Is the Church fond of your house?* — "The Church is fond of whatever is entered correctly, Master. My sister enters correctly. I would describe it as a long engagement, provided that neither side ever sets a date."
+- *Do you like the work?* — "I like a column that balances, Master. The Church gives me a great many columns. Whether they balance is a question for the Weaver, and I have found it wise not to submit it."
+
+**Her thread: *A Clean Manifest*.** Offered once a game-month, while none is open: *Have you work?* — "A delivery, Master, on the house's terms. A crate of the house's glass to {town}, {dir}, by {date}, sealed. The seal is the contract: if it reaches the Factor there unbroken, the house pays forty and enters you as reliable. If it is broken, nobody pays anything and the house enters you as interesting, which is worse."
+- *I'll carry it.* — "Then we are agreed. Declare it to any tithe-ship that asks, Master. It is the house's glass and the house pays its tenth. We are not the Redmarsh."
+- *Not now.* — "Of course, Master. The glass is patient. The buyer, less so."
+- Delivered sealed: Marcia, at her counter afterwards: "Unbroken, and on time. Forty, Master, and a line in the house's book beside your name. It is a short line. Most people never get one."
+- Late, or the crate taken in a search: "The terms were the terms, Master. I will say that you are the first to lose a sealed crate to a tithe-ship on a declared run, and I should like to know how. Not today."
+
+### 2. The Ironmeres and the Stannards (Markmen; short sentences, *aye*, nicknames, oaths on iron and blood, no honorifics)
+
+Two halls at the two ends of one town. The silver above the town was found the same week by a man of each. They agreed to fight for it at noon. Eadric Ironmere was called to the war the night before and died in the Wastes. Nobody fought. That was thirty-one years ago.
+
+**Godgifu Ironmere, *Old Gifu***, at the Ironmere hall's door by day.
+
+**Greeting, first:** "Stranger. Ironmere hall. Don't go to the other end of town. Or do. Your feet."
+**Greeting, again:** "You. Sit, if you're sitting."
+**Greeting, once the feud is finished:** "Noon. Sit down. You've earned the bench."
+
+**Topics**
+- *What's the quarrel?* — "Silver. On the hill. My Eadric found it, Leofric found it. Same week. Set it for noon. Then the war came for Eadric. Never came back. So it was never fought."
+- *Why not fight it now?* — "Who'd carry it? Can't carry your own challenge. Not done. And no one in this town will. They're scared of us both. Rightly."
+- *What do you say of the Stannards?* — "Liars, the lot. Good smiths, mind. Leofric's the best hand with a hammer on the strait. Don't tell him."
+- *I'll carry the challenge.* (her thread, below)
+
+**Leofric Stannard, *Half-Ear***, at the Stannard hall's forge by day.
+
+**Greeting, first:** "Ironmere sent you? No? Then come in."
+**Greeting, again:** "Back. Mind the anvil."
+**Greeting, once the feud is finished:** "Noon. Aye. There's ale. It's yours."
+
+**Topics**
+- *Your ear?* — "Bear. I won. Mostly."
+- *What do you say of the Ironmeres?* — "Thieves. Thirty years. Gifu's the only one in this town can outdrink me. Don't tell her."
+- *Why not end it?* — "Iron and blood, I would. Somebody has to carry it. Not me. Not her. That's the law."
+
+**Brand Ironmere** and **Wynn Stannard**, in the town's yard by day, never at the same rack.
+
+- Brand, *greeting:* "Gran says don't talk to you. Gran says that about everyone."
+- Brand, *The feud?* — "Older than me. I'd fight it. They won't let me. Their quarrel, they say."
+- Wynn, *greeting:* "You're not from here. Good. Everyone from here is tired."
+- Wynn, *The feud?* — "My grandfather and his old wolf. They'll both die first. Then it's ours. I don't want it."
+
+**Her thread: *Finished by Noon*.** Gifu's *I'll carry the challenge.* — "You? Not kin. Not town. Aye. That's the law. Go to Half-Ear's door. Say it: the silver, at noon, at the yard. Say it plain." 
+- At Leofric's forge, *I carry a challenge from Ironmere hall.* — A long look. "Thirty-one years. Sent a stranger. Clever old wolf." He sets the hammer down. "Aye. Tomorrow. Noon. Tell her I'll bring my own stick."
+- Back at Gifu's door, *He'll come.* — "Course he will. Proud. Go to bed. Be at the yard."
+- **At the yard, the next day, between 11:00 and noon.** The two stand in the ring, an old woman and an old man, the town round the rope. The narrator, as the screen fades and returns:
+  - *They face each other across the ring. Neither moves.*
+  - *Leofric lowers his stick. "Yield."*
+  - *Gifu lowers hers. "Yield."*
+  - *The town is very quiet. Then somebody laughs, and then everybody does.*
+- Gifu, after: "Both yielded. Same breath. No winner. Silver's both halls'. Should've done it thirty years back. Didn't have a stranger." A pause. "Noon. That's you now. That's your name here."
+- Leofric, after: "She cheated. Yielded first. I saw. Iron and blood, I'm glad of it."
+- Missed (the player not at the yard by noon): Gifu, "He came. You didn't. He went home. We'll not try twice. Iron and blood, I'm too old to be made a fool by a stranger." (The thread closes; the feud stands.)
+
+What it changes: both halls' greetings take *Noon*; the town's rumour (below) changes; Brand and Wynn are seen at one rack. Nobody pays the player; Markmen would think it an insult.
+
+### 3. The house of Caelmont (Gatelander, Crown-born; proverbs, indirection, no bare yes or no, oaths on the Weaver)
+
+**Lady Clémence de Caelmont**, lord of the city, in her keep's hall by day, or on the plaza as a lord stands.
+
+**Greeting, first:** "A stranger in my hall. The Weaver keep you. Keep your boots off the crimson, the carpet's older than both of us."
+**Greeting, again:** "Yourself. A face seen twice is half a friend, my mother said, and the other half is up to you."
+**Greeting, once Amaury is home:** "The one who brought my son back. Sit. There's always a chair in this hall for that."
+
+**Topics**
+- *Who are the Caelmonts?* — "The Crown's, since there was a Crown. My people came over with the first king's horses and never went home. The crimson's the King's, and we wear it by his leave. It suits us better than him, but that's not a thing to say in the capital."
+- *What does your house do?* — "Holds this city for the Crown, and licenses the gates in this province. Every rubbing sold in my streets pays its share to the King, and a little to the keep for the trouble of counting. A gate's a fine thing to own, and a finer thing to tax."
+- *Where's your son?* (her thread, below)
+
+**Amaury de Caelmont**, wherever the thread finds him; then in the keep's hall.
+
+**Greeting, at home:** "You. I owe you a horse, or a sword, or a life, and the Weaver knows I'll never settle which."
+**Topics**
+- *Why the gates?* — "A Caelmont taxes the gates. He doesn't go in them. That's the whole of the reason, if you want it."
+- *Will you go again?* — "Would a dog leave off the rabbits? I'd not say I would. I'd not say I wouldn't."
+
+**Her thread: *The Crimson Gone Brown*.** *Where's your son?* — "Where a Caelmont shouldn't be, I'd wager. Amaury's been gone four days, and the stable says he took no horse, which means he went somewhere a horse won't go. There's only one sort of place round here like that. I'd not ask a stranger. I'm asking." (The town quests' *find*: the person lost at the nearest gate's door, as a *find* quest places one.)
+- *I'll find him.* — "The Weaver walk with you. Bring him back whole, if he'll come, and in pieces if he won't. I'll take him either way."
+- Found, at the door of the gate, sitting: Amaury, "Don't tell my mother. That's my first thought, and I've had four days to think of a better." *Your mother sent me.* — "Then she knows. Well. A road's shorter with two on it. I'll walk." (He follows as the *find*'s lost person does.)
+- Home: Clémence, "Look at the state of the crimson. Go and wash, and then come back and tell me nothing, the way your father did." To the player: "You didn't leave him. That's the whole of a Gatelander, they say, and they're not wrong. Sixty, and the hall's open to you." (60 gold, the town's favour +1, the *find*'s pay.)
+
+### 4. The lines of Gleann an Bhróin (Old Blood; sparing, exact, the older word for the thing)
+
+The Gatelanders call the glen *Sorrowvale*, and ask no more. **Muirgel**, the eldest, sits at the village's well by day.
+
+**Greeting, first, to a player of the three nations:** "Traveller."
+**Greeting, first, to an Old Blood player:** "Cousin."
+**Greeting, again:** "You came back."
+
+**Topics**
+- *What is this place?* — "Gleann an Bhróin. The glen of grief. Your people say Sorrowvale."
+- *Why grief?* — "It is old. Nobody here remembers whose."
+- *Who are the lines?* — "Families. Old ones. We marry out. The marks come back."
+- *What are the marks?* — "Lines under the skin. A child has them or does not."
+- *What is the rite?* — "We take the child in. That is all it is."
+- *Can I read the stones here?* — "Touch them. Do not read them." (She says nothing more on it, whatever is asked.)
+- *Who is the girl?* (her thread, below)
+
+**Ciarnait**, near the well.
+
+**Greeting:** "You're not from the glen. Everyone's from the glen."
+**Topics**
+- *Your wrist?* — "It came at harvest. Late. They say it's late." She covers it with her sleeve. "They're doing the rite anyway. Muirgel says late is still a mark."
+
+**Muirgel's thread: *Late Is Still a Mark*.** *Who is the girl?* — "Ciarnait. Her marks came late. Her father is at {port}, at the quay. He does not know. Tell him to come home for the rite. Before the new moon." (The town quests' *deliver*: word carried to a named person at a port; the date by `datedWork`.)
+- At the quay, to **her father** (a generated docker of the port, Old Blood, the *deliver*'s person; his name from the Old Blood bank): *Muirgel sends word: Ciarnait's marks came.* — "Came." He stands a while. "I will go home."
+- Back at the well: Muirgel, "He came. Good." Ciarnait, after the rite: "It didn't hurt. Nothing happened. Everyone just looked at me for a long time and then we ate."
+- Too late: Muirgel, "The moon turned. We did it without him. She looked for him the whole time."
+- **To an Old Blood player who shows the marks**, once the girl's rite is done, Muirgel, unasked: "You have them. Were you taken in?" *I don't know.* — She looks a long time. "Nobody here will say otherwise." (No effect; a line in the journal: *Muirgel of Gleann an Bhróin did not ask again.*) She never names what the player is, and nothing she says describes them.
+
+Pay: none. Muirgel gives the player, once, a loaf. The register's *bread* is the third ending's word, and nobody remarks on it.
+
+### 5. The Redmarsh (Gatelander; proverbs, indirection, no bare yes or no, oaths on the Weaver)
+
+**Muireann of the Redmarsh**, at the cove on the fen's seaward side, by night, with two flat boats drawn up.
+
+**Greeting, first:** "Lost, are you? Nobody comes to the Redmarsh lost. They come on purpose and say they're lost, and I've time for both kinds."
+**Greeting, again:** "Yourself. The fen's grown fond of you, the way a fen does. Slowly, and from the feet up."
+**Greeting, to an Aurennais player:** "A ledger at my cove. Well, the tide brings what it brings. You'll not be writing this down."
+
+**Topics**
+- *Who are the Redmarsh?* — "Fen people. My grandmother's grandmother cut reeds here, and the Crown's never found the road in, nor tried hard. We fish, we cut, and we carry. What we carry is our own business till somebody makes it theirs."
+- *The Compact calls you a syndicate.* — "Do they? That's a fine word. I'd have it on the boat if I could spell it. A family's what we are, and a family doesn't pay a tenth of itself to a stranger with a hymn."
+- *What of the Velleii?* — "Fine people. Pay their tenth like a cow gives milk, regular and without opinion. I'd not trade places with them for the whole of Aurenne, and I'd take half of it."
+- *Have you a cargo?* (her thread, below)
+
+**Her thread: *Past the Tenth*.** Offered when the player's ship lies off the cove: *Have you a cargo?* — "A few crates of salt bound for a cove in Aurenne, and a buyer on the beach there who'll not ask what's in them, which is a kindness, because it's salt. Carry it past the tithe-ships without a word to them, and there's sixty in it. Declare it and you've paid the Compact a tenth of my salt, and I'll have the rest of it back off you in disappointment."
+- *I'll carry it.* — "Good. If a tithe-ship hails you, a closed mouth catches no hooks. If she comes aboard, well, the sea gives and the sea takes, and the Compact's only the sea with a pen."
+- Delivered undeclared: at the cove, when the player next comes: "Sold on the beach and never written down. Sixty, and the fen's thanks, which is wet but sincere."
+- Declared to a tithe-ship: "You told them. I'll say no more about it, and I'll think it all the way home."
+- Searched and taken: "Taken. The Weaver spins and the Compact unspools. It happens to the best of us, and it's happened to me twice this year, so you're in good company."
+
+### Rumours (to `liveRumours`, by the town)
+
+- In the Velleii's port: *"The house Velleius has had a seat at the Factor's table since the table was a plank. Nobody remembers them losing a ship. Nobody remembers them making a friend, either."* (an Aurennais speaker's rumour; the town's own people say it)
+- In the feud's town, before: *"Two halls, one silver hill, and a duel thirty years late. Don't take a side. Don't even take the middle of the street."*
+- In the feud's town, after: *"Gifu Ironmere and Half-Ear Stannard yielded to each other at noon. The whole town saw. The stranger who carried it is called Noon now."*
+- In Caelmont's city: *"Lady Caelmont's son goes into the old gates. Everyone knows. Nobody tells her. She knows that too."*
+- In the glen's nearest towns: *"Up in Sorrowvale they keep to themselves. Ask them the way and they'll tell you the old name for it."*
+- Near the fen: *"Salt's cheap down the Redmarsh way, and never seems to have been anywhere first."*
+
+### What in the code would carry it
+
+- **`87-world-quests.js`**: a `FAMILIES` table beside the travellers' and the rivals', each member a `makeDef` with `authored:true`, `keepName:true`, the people and the role given, and keyed `fam:<family>:<member>` (an id by place and index: the seat's site id goes in the record, never a position). `familySeat(key)` picks the seat once from `seededRng('family', key)` over every cell's sites through `getCell` (never `SETTLE`, which holds only what has loaded, the S533 gotcha) and caches it in `worldState.families.seats`. Members stand where the topic says (the counting house and church are the port's buildings by kind; the halls are the town's two largest homes at its two ends; the well and the keep as found); a member at a building is a resident of it, as `INT_NPCS` places a keeper.
+- **The threads**, each a town-quest record on machinery that exists: *A Clean Manifest* a *deliver* (`kind:'deliver'`, id `fam:velleius:<month>`), its crate a `CARGO_GOODS.glass` aboard with a `sealed` flag, cleared by `titheAnswer`'s search; *The Crimson Gone Brown* a *find* (`kind:'find'`, id `fam:caelmont:find`), Amaury its lost person; *Late Is Still a Mark* a *deliver* of word (id `fam:glen:<seed>`, the date by `datedWork`); *Past the Tenth* salt aboard (`CARGO_GOODS.salt`) marked `fam:redmarsh`, read at `titheAnswer` (declared, searched) and at the cove sale.
+- **Finished by Noon**: a record `fam:feud` with stages `carried`, `set` (the day after, `setAt` in game minutes, read from the clock and never from a frame count, the co-op rule), `done` or `missed`. The scene is no bout: at 11:00–12:00 of the set day, the player within the yard's ring, `doFade` and the four narrator lines by `showMsg`, one every three seconds of the clock; nobody fights. Missed if noon passes with the player outside the yard.
+- **Saved state**: `worldState.families={seats:{…},feud:'carried'|'set'|'done'|'missed',setAt,velleius:{book:n},caelmont:'home'|null,glen:'done'|'late'|null,redmarsh:{runs:n}}`, the world's (the families are the world's, not the character's): added to `_applyLoadData`'s S242 list; not in `SS_CHAR_WS`. The name *Noon* is read from `families.feud==='done'`, so a new character in the same world is called *Noon* too, which is right: the town remembers the stranger, not the face.
+- **Greetings by the player's people** as `firstWords` reads them (the Aurennais, Old Blood and done-state lines above replace the first greeting where given).
+- **Journal titles:** *A Clean Manifest* · *Finished by Noon* · *The Crimson Gone Brown* · *Late Is Still a Mark* · *Past the Tenth*.
+- **Who builds:** the words, the table, the records and the rumours are the quest writer's once approved (`87-world-quests.js`, `22-dialogue.js`). The faces are the bodies builder's (the dress above). The yard's scene asks no new system. Nothing here needs a mesh but the people.
+
+### The register, checked
+
+- Marcia and Kallias: *Master*, terms, contracts, ledgers, insurance; no oath (Kallias names the Weaver as the Church's book-keeper, not swearing by him).
+- Gifu, Leofric, Brand, Wynn: sentences of two to eight words, *aye*, *iron and blood*, the nicknames *Old Gifu*, *Half-Ear*, *Noon*; no honorific, and nobody is paid for a duty, which is the Mark's contempt for hire.
+- Clémence, Amaury, Muireann: proverbs (*a face seen twice is half a friend*, *a road's shorter with two on it*, *a closed mouth catches no hooks*, *the sea gives and the sea takes*), no bare yes or no (Amaury's *I'd not say I would. I'd not say I wouldn't.*), *the Weaver keep you*. The Crown is the Gatelands' crown, and *the King* is said only in the Gatelands.
+- Muirgel and Ciarnait: no sentence of Muirgel's runs past eight words; *the glen of grief* is the older name answering the question; *Touch them. Do not read them.* is the Withdrawal's law, unexplained. Ciarnait is thirteen and talks like it.
+- Slurs: *syndicate* (the Compact's of the fen) and *ledger* (Muireann's of an Aurennais) are about work; each is answered by someone who says the opposite (Marcia's *I admire their consistency*, Muireann's *fine people*). Nothing about bodies; Leofric's ear is a bear's work, his own boast.
+- No prophecy, no description of the player, no remark on the player's returns. Muirgel's *You have them. Were you taken in?* asks about the marks the canon gives the Old Blood player, and stops there.
