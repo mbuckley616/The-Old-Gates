@@ -319,9 +319,9 @@ function loop(now){
   // (the modal commitment is intentional — Ctrl is a state, not modifier).
   const _sneakMoveMult = sneakMoveMult(); /* S976 — Soft step (Stealth 25) */
   tickPlayerPosture(dt,performance.now()/1000); // S281
-  const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*commitMoveMult()*(playerStaggered(performance.now()/1000)?0:1)*dt;
+  const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*commitMoveMult()*(typeof footRunMult==='function'?footRunMult():1)*(playerStaggered(performance.now()/1000)?0:1)*dt; /* S2474 — the ground underfoot (footingAt, 50-travel.js) */
   if(sprinting){
-    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(1-.3*skillT('athletics'))*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1)*(roadLegsNow()?0:1); /* S779 — the Gate-Blade drawn; S976 — Road legs (Athletics 75) */
+    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(1-.3*skillT('athletics'))*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1)*(roadLegsNow()?0:1)*(typeof footDrainMult==='function'?footDrainMult():1); /* S2474 — snow and mud */ /* S779 — the Gate-Blade drawn; S976 — Road legs (Athletics 75) */
     stamina=Math.max(0,stamina-dt*sprintDrain);
     if(stamina===0){staminaCD=perk('athletics',100)?0:2;lvAct.staminaDepleted++;} /* S976 — Tireless (Athletics 100): no pause after a sprint */
     lvAct.sprintDist+=spd;

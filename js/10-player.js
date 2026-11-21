@@ -315,7 +315,7 @@ function startRoll(nowS,keys){
   const heavy=rollLoad()/maxCarry()>ROLL_HEAVY_AT,sp=heavy?ROLL_HEAVY:ROLL_LIGHT;
   blocking=false;powerCharging=false;powerCharge=0;powerArmed=false;lungeT=0;if(typeof swingCancel==='function')swingCancel();
   stamina=Math.max(0,stamina-_stamCost(ROLL_STAM));if(stamina===0){staminaCD=2;lvAct.staminaDepleted++;}
-  ROLL={t0:nowS,dur:sp.dur,dist:sp.dist,i0:sp.i0,i1:sp.i1,dx:mx,dz:mz,done:0,heavy,fwd:(mx*fwdX+mz*fwdZ)>=-.01?1:-1};
+  ROLL={t0:nowS,dur:sp.dur,dist:sp.dist*(typeof footRollMult==='function'?footRollMult():1),i0:sp.i0,i1:sp.i1,dx:mx,dz:mz,done:0,heavy,fwd:(mx*fwdX+mz*fwdZ)>=-.01?1:-1};
   if(FALL.pend)fallSettle(true); // S429 — a roll within 0.2 s of landing halves the fall
   try{sndJump();}catch(err){}
   return true;

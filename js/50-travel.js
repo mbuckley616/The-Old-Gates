@@ -1418,6 +1418,46 @@ function climatePill(){const g=_clim.g,raw=_clim.raw||0,side=_clim.side;if(!side
   const cost=g>=2?(CLIMATE.cap2<1?`stamina regenerates at half and stops at ${Math.round(CLIMATE.cap2*100)}%`:'stamina regenerates at half'):'stamina regenerates at three quarters';
   return `<span class="buff-pill" title="${N[g]} (${_clim.why}) — ${cost}${_clim.by.length?'; '+(side==='cold'?'warmed':'cooled')+': '+_clim.by.join(', '):''}"><span class="bp-ico">${ico}</span><span class="bp-time">${N[g]}</span></span>`;}
 
+// ── S2474 — ground that pushes back, session 1 (Michael's A on #1800, docs/design/ground-that-pushes-back.md): weather underfoot.
+// footingAt(x,z) is the ground's kind where you or a foe stand, read only from what is saved or seeded: the road (roadInfo), a stamp's
+// core (a town's pad, a farm, a site), steep rock, shore and desert sand, the snow lying (WX.cover), the rain seen (worldState.wxSeen) and
+// the island. One kind, the worst; nothing below ×0.8. Off a road, on soil: snow from cover 0.5 (×0.9 the run, ×1.2 a sprint's drain),
+// deep snow over 0.8 (×0.8, ×1.4, the roll ×0.85); mud while it rains and 120 game minutes after (360 after a storm), ×0.9, or ×0.85
+// in heavy rain or a storm, the roll ×0.85; in Aurenne mud only after a storm. The north's 0.30 cover never slows. Ice is session 2's.
+const FOOT={snow:.5,deep:.8,rock:.74,shore:3.2,rainAfter:120,stormAfter:360,
+  kinds:{firm:{k:'firm',run:1,drain:1,roll:1,name:''},snow:{k:'snow',run:.9,drain:1.2,roll:1,name:'Snow'},deep:{k:'deep',run:.8,drain:1.4,roll:.85,name:'Deep snow'},
+    mud:{k:'mud',run:.9,drain:1.2,roll:.85,name:'Mud'},mudHeavy:{k:'mud',run:.85,drain:1.2,roll:.85,name:'Mud'}},
+  ico:{snow:'❄',deep:'❄',mud:'💧'},snowOwn:{'Snow Wolf':1,'Reindeer':1,'Frost Troll':1}};
+function footOutside(){return activeZoneId==='world'&&lid==='overworld'&&!(typeof isInterior==='function'&&isInterior())&&typeof WX!=='undefined'&&typeof worldH==='function';}
+// the mud's weather, the same everywhere on an island at one minute: 0 none, 1 mud, 2 heavy (heavy rain or a storm)
+function footMudNow(isle){const t=WX.type,W=worldState.wxSeen||{},now=gameMinNow(),storm=t==='storm'||(W.storm!=null&&now-W.storm<=FOOT.stormAfter);
+  if(isle==='aurenne')return storm?(t==='storm'?2:1):0;
+  if(t==='storm'||(t==='rain'&&(WX.heavy||0)>.5))return 2;
+  return (t==='rain'||storm||(W.rain!=null&&now-W.rain<=FOOT.rainAfter))?1:0;}
+function footingAt(x,z){const F=FOOT.kinds;if(!footOutside())return F.firm;
+  if(worldH(x,z)<FOOT.shore)return F.firm;
+  const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF)return F.firm;
+  if(stampAt(x,z))return F.firm;
+  if(slopeNormalY(x,z)<FOOT.rock)return F.firm;
+  const cv=WX.cover||0;if(cv>FOOT.deep)return F.deep;if(cv>=FOOT.snow)return F.snow;
+  if(CLIMATE.sand[specBiome(x,z)])return F.firm;
+  let isle='gatelands';try{const [i,j]=cellOf(x,z);isle=nationKeyOf(i,j);}catch(e){}
+  const m=footMudNow(isle);return m===2?F.mudHeavy:m===1?F.mud:F.firm;}
+// yours, read once a quarter second of the page's clock (the loop's run, the sprint's drain, the roll and the pill read it)
+const _foot={k:FOOT.kinds.firm,at:-1e9,x:0,z:0};
+function footHere(){const now=performance.now();if(now-_foot.at>250||Math.hypot(px-_foot.x,pz-_foot.z)>1){_foot.k=footingAt(px,pz);_foot.at=now;_foot.x=px;_foot.z=pz;}return _foot.k;}
+function footRunMult(){return Math.max(.8,footHere().run);}
+function footDrainMult(){return footHere().drain;}
+function footRollMult(){return footHere().roll;}
+// a foe's: the same ground at the same multiplier, kept on the foe half a second; the Mark's own (FOOT.snowOwn) ignore snow, not mud
+function foeFootMult(e){if(!e||!footOutside())return 1;const now=performance.now();
+  if(e._footAt==null||now-e._footAt>500){e._footAt=now;const f=footingAt(e.x,e.z);e._foot=(FOOT.snowOwn[e.name]&&(f.k==='snow'||f.k==='deep'))?1:Math.max(.8,f.run);}
+  return e._foot;}
+// the buff bar's chip beside the climate's: the ground's word, and what it costs
+function footPill(){if(!footOutside())return '';const f=footHere();if(f.k==='firm')return '';
+  const cost=`you run at ${Math.round(f.run*100)}%, and a sprint tires you ${Math.round((f.drain-1)*100)}% faster${f.roll<1?'; a roll goes '+Math.round(f.roll*100)+'% as far':''}. A road is firm.`;
+  return `<span class="buff-pill" title="${f.name} — ${cost}"><span class="bp-ico">${FOOT.ico[f.k]}</span><span class="bp-time">${f.name}</span></span>`;}
+
 // ── S2012 — Water B, session 1 (Michael's B on #1254, `docs/design/water.md`): no thirst; water is a draught you carry. A vessel
 // is a bag item with its uses and its kind (`vessel`, `wUses`, `wKind`), so it is the character's with no new key. E fills every
 // vessel in the bag at a town's well (clean; foul while the town has the plague), standing in a river or a lake 0.3 m deep or more
