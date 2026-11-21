@@ -675,3 +675,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** The inn's hall +15% draw calls from the clay oven (look builder). The weekly run of 15 Nov still owes four bodies suites.
 
 **Roadmap.** 344 of 445 stories done (343 of 441 on 19 Nov). The new look is 7 of 18.
+
+## 21 Nov 2026
+
+**Waiting on you.** One decision: Stormwatch’s ground (#1843, A recommended: raise a headland for it). No merge waits for you.
+
+**Landed on main since 20 Nov.** Your ten answers of last night and rare materials (#1840 B) written. Ground that pushes back built: snow, mud and ice underfoot, hobnails’ grip and noise, mud that takes prints (Systems 2475–2483); the keep’s cache and the shortcut back (2469–2470); a held coach seat survives a load (2464); a cave is nobody’s home (2487). The Scarred Gate on Aurenne’s dunes, the Hollow Below in the Mark, the Gate Isles off a Gatelands shore (Look 2468–2488); Stormwatch and the Frostborn Vault prototyped. Scabbards with frog and baldric, the draw and the sheathe in first and third person, both hands on a two-hander’s grip (Bodies 2456–2489). `topnames` joins the smoke set (QA 2460). Build s1817.
+
+**Under way.** No PR open. Next: look the Forgotten Aqueducts (#1808 A); bodies L4’s owed bodies (the dusk eagle); Stormwatch waits on #1843.
+
+**Blocked.** The inn’s hall +15% draw calls from the clay oven (look builder). The weekly run of 15 Nov still owes four bodies suites.
+
+**Roadmap.** 345 of 447 stories done (344 of 445 on 20 Nov). The new look is 7 of 18.
