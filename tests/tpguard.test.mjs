@@ -17,7 +17,10 @@ const run = (kit) => page.evaluate((kit) => {
   // performance.now() instead (S414) was behind the next real frame's own timestamp, which Chrome takes when it schedules
   // the frame, before this evaluate's several seconds: that frame's dt came out near -7 s, and the hurt and death timers
   // ran backwards into a pose that failed the torch's check on CI
-  const T0 = prevT; let t = T0; const step = () => { t += 1000 / 60; loop(t); };
+  const T0 = prevT; let t = T0; const step = () => { t += 1000 / 60; _lastSwingG = playClockS; loop(t); };
+  // Session 2502: a weapon is held drawn, as a fighter's is. Since S1080 the game sheathes it after 5 s with no swing
+  // (_lastSwingG starts at -1e9, so at once), and since S2451 a sheathed weapon leaves the hand empty: a fist, as tpswing met (S2486)
+  drawWeapon(); if (typeof tpEnsure === 'function') tpEnsure();
   const K = window._K, V = () => new THREE.Vector3();
   // in the body's own frame, from the head: the right and left hands, and the right shoulder
   const read = () => { const R = TP.rig; R.root.updateMatrixWorld(true); const L = o => R.root.worldToLocal(o.getWorldPosition(V()));

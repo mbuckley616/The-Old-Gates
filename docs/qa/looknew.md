@@ -291,7 +291,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `hullshape` | 4/14 | pass | red | 46 | 15 Nov weekly: red twice; filed in section I (producer), fixed since |
 | `huntvariant` | 7/14 | pass | pass | 43 |  |
 | `icecave` | w15/20 | — | pass | 203 |  |
-| `implements` | w12/20 | — | pass | 152 |  |
+| `implements` | w12/20 | — | pass | 152 | Red on main at s1826 since a bodies change between s1797 and S2485 (the orb's word 0.05–0.06 m from the left hand, < 0.05 asked): the suite read the hand frames after the spawn. The test's; it reads both hands at the spawn, Session 2502 (0 m, 2/2). |
 | `innrooms` | w3/20 | — | pass, 544 s beside another boot at s1805 | 591 | Failed then passed on the retry (a 60 s wait); section I, Session 2336. Shortened, Session 2369: one entry an inn, the nights asked inside. 10/10 at s1805 (S2481) |
 | `innvoice` | 7/14 | pass | pass | 75 |  |
 | `inspdungeons` | w17/20 | — | pass | 5 |  |
@@ -589,7 +589,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `townplots` | w11/20 | — | pass | | Cut at 150 min in the weekly run of 15 Nov; green here at s1617, Session 2271 |
 | `townroads` | 4/14 | pass | pass | 66 |  |
 | `tpfists` | w7/20 | — | pass | 104 |  |
-| `tpguard` | 5/14 | pass | pass | 45 |  |
+| `tpguard` | 5/14 | pass | pass | 45 | Red on main at s1826 (2 checks: the sword's hand a fist, the tris equal): the game auto-sheathes (S1080) and since S2451 a sheathed hand is empty. The test's; it draws first, Session 2502, 13/13. |
 | `tpshots` | 3/14 | pass | pass | 73 |  |
 | `tpswing` | 6/14 | pass | pass | 54 |  |
 | `tpweapons` | w13/20 | — | pass | 461 |  |

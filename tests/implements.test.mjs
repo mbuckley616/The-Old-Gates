@@ -236,13 +236,16 @@ check(`the tome is lifted before the chest in a cast (hand ${H.tomeRest.y} → $
 check('first person draws the orb and the tome in the off hand, raised, pushed out in a cast and lifted to read', H.fp === 'orb' && H.fpTome === 'tome' && H.fpRest.every(v => v === 0) && H.fpRaised[1] > .1 && H.fpCast[2] < -.15 && H.fpRead[1] > .1, H);
 // S1864 — the kept word leaves the orb in the left hand: in third person from the left hand's bone, in first person 0.3 m to the
 // left of your centre, where a cast of your own leaves the right
-await page.evaluate(() => { const push = Array.prototype.push; for (const A of [ZB, BALLS]) A.push = function (fb) { window._spawns = (window._spawns || []).concat([fb.position.clone()]); return push.apply(this, arguments); };
+await page.evaluate(() => { const push = Array.prototype.push; for (const A of [ZB, BALLS]) A.push = function (fb) {
+    // Session 2502: both hands are read at the spawn itself, not after the frames the wait lets run (the hand moves on in them)
+    let hands = null; if (thirdPerson && TP.rig) { TP.rig.root.updateMatrixWorld(true); hands = [TP.rig.handL, TP.rig.handR].map(h => h.getWorldPosition(new THREE.Vector3())); }
+    window._spawns = (window._spawns || []).concat([fb.position.clone()]); window._spawnHands = (window._spawnHands || []).concat([hands]); return push.apply(this, arguments); };
   window._where = { ow: isOverworldZone(), floor: currentFloor }; });
 const SH = [];
 for (const tp of [true, false]) {
   await page.evaluate((tp) => {
     for (const k2 in K) K[k2] = false; EQ.offhand = makeOrb(1, 'tine'); thirdPerson = tp; if (tp) { tpEnsure(); for (let i = 0; i < 20; i++) tpUpdate(1 / 60, { moving: false, sprinting: false, camY: CAM.position.y, now: performance.now(), roll: null }); }
-    castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; TOUCH_PEND = null; HELD = null; mana = 100; window._spawns = [];
+    castT = 0; _castFreeAt = 0; _castReleaseAt = 0; spCd = 0; TOUCH_PEND = null; HELD = null; mana = 100; window._spawns = []; window._spawnHands = [];
     bookSelect(bookAdd('caor'));
     ORB_KEPT = { word: 'caor', form: 'sent', rider: null, ready: 0, at: playClockS, key: laidKey() }; window._rel = orbRelease(); }, tp);
   await page.waitForFunction(() => window._spawns.length > 0, null, { timeout: 5000, polling: 20 }).catch(() => {});
@@ -250,8 +253,8 @@ for (const tp of [true, false]) {
     const p = window._spawns[0], out = { tp, rel: window._rel, n: window._spawns.length };
     if (!p) return out;
     out.lat = +((p.x - px) * rgtX + (p.z - pz) * rgtZ).toFixed(2);
-    if (tp && TP.rig) { TP.rig.root.updateMatrixWorld(true); const L = TP.rig.handL.getWorldPosition(new THREE.Vector3()), R = TP.rig.handR.getWorldPosition(new THREE.Vector3());
-      out.dL = +p.distanceTo(L).toFixed(2); out.dR = +p.distanceTo(R).toFixed(2); }
+    const hs = window._spawnHands[0];
+    if (tp && hs) { const [L, R] = hs; out.dL = +p.distanceTo(L).toFixed(2); out.dR = +p.distanceTo(R).toFixed(2); }
     castT = 0; return out; }, tp));
   await page.waitForFunction(() => !castRecovering(), null, { timeout: 15000, polling: 50 }).catch(() => {});
 }
