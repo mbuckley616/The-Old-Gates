@@ -40,7 +40,7 @@ for (const [size, seed] of [['large', 909], ['medium', 2055], ['large', 1078]]) 
   await enterDungeon(page, { theme: 'ruins', size, seed });
   R.push(Object.assign({ size, seed }, await page.evaluate(() => {
     const G = window._lastGen, B = GATE_THINGS.filter(t => t.kind === 'brazier'), W = GATE_THINGS.filter(t => t.kind === 'web');
-    const o = { laid: G.things.length, built: GATE_THINGS.length, br: B.length, webs: W.length, ids: GATE_THINGS.map(t => t.id + (t.lit ? '*' : '')).join(','), inScene: GATE_THINGS.every(t => t.group.parent === dScene) };
+    const o = { laid: G.things.length + (G.barricade ? 1 : 0) /* S2475 — the barricade (S2411) is laid beside the things and built with them */, built: GATE_THINGS.length, br: B.length, webs: W.length, ids: GATE_THINGS.map(t => t.id + (t.lit ? '*' : '')).join(','), inScene: GATE_THINGS.every(t => t.group.parent === dScene) };
     // a brazier: about 1,100 triangles in 2 draws, solid at its middle, and the cell's middle beside the wall open
     let tris = 0, draws = 0; B[0].group.traverse(q => { if (q.isMesh) { draws++; tris += q.geometry.index.count / 3; } }); o.tris = tris; o.draws = draws;
     o.solid = B.every(t => { currentFloor = t.floor; return dBlk(t.x, t.z); });

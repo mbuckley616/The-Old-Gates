@@ -1448,13 +1448,36 @@ const _foot={k:FOOT.kinds.firm,at:-1e9,x:0,z:0};
 function footHere(){const now=performance.now();if(now-_foot.at>250||Math.hypot(px-_foot.x,pz-_foot.z)>1){_foot.k=footingAt(px,pz);_foot.at=now;_foot.x=px;_foot.z=pz;}return _foot.k;}
 function footRunMult(){return Math.max(.8,footHere().run);}
 function footDrainMult(){return footHere().drain;}
-function footRollMult(){return footHere().roll;}
+function footRollMult(){return iceUnderfoot()?ICE.roll:footHere().roll;} /* S2475 — ice ×1.3 */
 // a foe's: the same ground at the same multiplier, kept on the foe half a second; the Mark's own (FOOT.snowOwn) ignore snow, not mud
 function foeFootMult(e){if(!e||!footOutside())return 1;const now=performance.now();
   if(e._footAt==null||now-e._footAt>500){e._footAt=now;const f=footingAt(e.x,e.z);e._foot=(FOOT.snowOwn[e.name]&&(f.k==='snow'||f.k==='deep'))?1:Math.max(.8,f.run);}
   return e._foot;}
+// S2475 — session 2: ice. Not slow, but it does not let go: on a frozen pool in a gate, Sioc's floe and bridge and an ice cave's lake your
+// speed eases toward what you ask at ICE.acc (6 m/s²), so a stop from the run slides 1.2 m and from a sprint 1.8; you carry onto it the
+// speed you came with, and out of a roll on it the roll's own. The roll on it goes ×1.3 as far. The page's clock: eased by the loop's dt.
+// Foes still treat a frozen pool as a wall (S1682), so ice is your ground alone; nothing knocks you back on a stagger today, so its ×1.5 waits.
+const ICE={acc:6,roll:1.3,vx:0,vz:0,on:false};
+function iceUnderfoot(){if(!onGround||!started)return false;
+  const L=typeof laidLive==='function'?laidLive():null;if(L&&(L.kind==='floe'||L.kind==='bridge')&&laidInside(L,px,pz)&&Math.abs(jumpY-L.top)<.2)return true;
+  if(lid&&lid.startsWith('dyn_'))return typeof dIceLift==='function'&&dIceLift(px,pz)>0;
+  if(typeof isInterior==='function'&&isInterior()){const h=currentHouse,T=h&&h.ice&&h._limeCave;if(!T||!T.lake||!T.bounds)return false;
+    const Lk=T.lake,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0,y=jumpY+(+(T.low-.25).toFixed(2));
+    return x>=Lk.x0&&x<=Lk.x1&&z>=Math.min(Lk.z0,Lk.z1)&&z<=Math.max(Lk.z0,Lk.z1)&&Math.abs(y-Lk.y)<.15;}
+  return false;}
+function iceAcc(){return ICE.acc;}
+// the loop's step: mx, mz the way you ask (0, 0 for none), spd this frame's distance at your speed. Off ice it only keeps the velocity
+// you are moving at and returns null; on ice it returns this frame's step, {dx, dz}
+function iceTick(mx,mz,spd,dt,roll){const len=Math.hypot(mx,mz);
+  if(roll){if(dt>0){ICE.vx=mx/dt;ICE.vz=mz/dt;}return null;}
+  const tx=len&&dt>0?mx/len*spd/dt:0,tz=len&&dt>0?mz/len*spd/dt:0;
+  if(!iceUnderfoot()){ICE.vx=tx;ICE.vz=tz;ICE.on=false;return null;}
+  ICE.on=true;const a=iceAcc()*dt,ex=tx-ICE.vx,ez=tz-ICE.vz,e=Math.hypot(ex,ez);
+  if(e<=a){ICE.vx=tx;ICE.vz=tz;}else{ICE.vx+=ex/e*a;ICE.vz+=ez/e*a;}
+  return {dx:ICE.vx*dt,dz:ICE.vz*dt};}
 // the buff bar's chip beside the climate's: the ground's word, and what it costs
-function footPill(){if(!footOutside())return '';const f=footHere();if(f.k==='firm')return '';
+function footPill(){if(ICE.on&&iceUnderfoot())return `<span class="buff-pill" title="Ice — it does not let go: you gain and lose speed slowly, and a roll goes ${Math.round(ICE.roll*100)}% as far."><span class="bp-ico">🧊</span><span class="bp-time">Ice</span></span>`; /* S2475 */
+  if(!footOutside())return '';const f=footHere();if(f.k==='firm')return '';
   const cost=`you run at ${Math.round(f.run*100)}%, and a sprint tires you ${Math.round((f.drain-1)*100)}% faster${f.roll<1?'; a roll goes '+Math.round(f.roll*100)+'% as far':''}. A road is firm.`;
   return `<span class="buff-pill" title="${f.name} — ${cost}"><span class="bp-ico">${FOOT.ico[f.k]}</span><span class="bp-time">${f.name}</span></span>`;}
 

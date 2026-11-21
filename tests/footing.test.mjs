@@ -2,7 +2,7 @@
 // footingAt(x, z): off a road, on soil, snow from cover 0.5 (the run ×0.9, a sprint's drain ×1.2), deep snow over 0.8 (×0.8, ×1.4, the
 // roll ×0.85), mud while it rains and 120 game minutes after (360 after a storm), ×0.9, ×0.85 in heavy rain or a storm; Aurenne's mud
 // only after a storm; the road, a stamp, rock and sand firm. A foe on the same ground goes at the same multiplier; the Mark's own
-// ignore snow. Your run, drain and roll are driven through the game's own loop at fixed steps, the draw held off.
+// ignore snow. Ice (Session 2475): a stop slides 1.2 m (1.8 from a sprint), the roll ×1.3. Your run, drain and roll are driven through the game's own loop at fixed steps, the draw held off.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -95,8 +95,37 @@ const CH = await page.evaluate(() => { const Z = ZONES.world.enemies; const e = 
   if (!e) return null; const keep = Z.slice(); Z.length = 0; Z.push(e); const o = { name: e.name };
   const leg = (type, cover) => { _wx(type, cover); e._footAt = null; e.x = px + 12; e.z = pz; e.alert = true; e.telegraphT = 0; e.atkCd = 5; e._windup = null; e.locked = false;
     const x0 = e.x; for (let i = 0; i < 30; i++) { WX.cover = cover; PHP = maxHP; tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); } return x0 - e.x; };
-  o.dry = leg('clear', 0); o.deep = leg('snow', .95); Z.length = 0; Z.push(...keep); _wx('clear', 0); return o; });
+  o.dry = leg('clear', 0); o.deep = leg('snow', .95); e.alert = false; e.angry = false; e.x = e.homeX = px + 400; e.z = e.homeZ = pz; Z.length = 0; Z.push(...keep); /* sent home, or it hunts the measures below */ _wx('clear', 0); return o; });
 check('a foe\'s chase over the same 30 steps: deep snow ×0.8 of dry', !!CH && CH.dry > .3 && near(CH.deep / CH.dry, .8), CH);
+
+// 6. ice (Session 2475): where it is, then the step through the loop with the ground held flat and the ice under you by hand
+const IU = await page.evaluate(() => { const o = {}; onGround = true; started = true; jumpY = activeTerrainH(px, pz); o.field = iceUnderfoot();
+  LAID = { kind: 'floe', word: 'sioc', x: px + 3, z: pz, r: 1.5, base: jumpY - .5, top: jumpY, solid: true, until: playClockS + 30, key: laidKey() };
+  const x0 = px; px = x0 + 3; o.onFloe = iceUnderfoot(); jumpY += 1; o.above = iceUnderfoot(); jumpY -= 1; px = x0 + 5; o.offFloe = iceUnderfoot(); px = x0;
+  LAID.kind = 'pillar'; px = x0 + 3; o.onPillar = iceUnderfoot(); px = x0; LAID = null;
+  const L = lid; lid = 'dyn_test'; GATE_THINGS.push({ kind: 'pool', frozen: true, x: px, z: pz, R: 2 }); o.pool = iceUnderfoot(); GATE_THINGS[GATE_THINGS.length - 1].frozen = false; o.water = iceUnderfoot();
+  GATE_THINGS.pop(); lid = L; o.rollMult = footRollMult(); return o; });
+check('ice is under you on a Sioc floe (not above it or off it, not on a pillar) and on a gate\'s frozen pool (not its water)', !IU.field && IU.onFloe && !IU.above && !IU.offFloe && !IU.onPillar && IU.pool && !IU.water, IU);
+const slide = (o) => page.evaluate((o) => { const _iu = iceUnderfoot; let a = null, b = null, v0 = 0, stopAt = null, prev = null, vEnter = 0;
+  const H0 = activeTerrainH(px, pz), _ath = activeTerrainH, _sol = currentZoneSolid; activeTerrainH = () => H0; currentZoneSolid = () => false; jumpY = H0;
+  for (const k in K) K[k] = false; ROLL = null; PPOST.stagUntil = 0; SKILLS.athletics = { lv: 5, p: 0 }; ATTRS.swiftness = 0; onGround = true; velY = 0; yaw = 0.7; pitch = 0; _wx('clear', 0);
+  const x0 = px, z0 = pz, out = {};
+  _drive(i => { PHP = maxHP; stamina = maxStamina; staminaCD = 0; SKILLS.athletics.p = 0; iceUnderfoot = i >= o.iceAt ? () => true : _iu; /* no skill rises mid-measure */
+    if (prev && i > 1) { const v = Math.hypot(px - prev[0], pz - prev[1]) * 60; if (i === o.iceAt + 1) vEnter = v; if (i === o.stopAt - 1) v0 = v; }
+    K['KeyW'] = i < o.stopAt; K['ShiftLeft'] = !!o.sprint && i < o.stopAt;
+    if (i === o.stopAt) a = [px, pz];
+    if (i > o.stopAt && prev && Math.hypot(px - prev[0], pz - prev[1]) < 1e-6) { b = [px, pz]; stopAt = i; return true; }
+    prev = [px, pz]; return false; }, 400);
+  iceUnderfoot = _iu; activeTerrainH = _ath; currentZoneSolid = _sol; for (const k in K) K[k] = false;
+  out.v0 = +v0.toFixed(3); out.vEnter = +vEnter.toFixed(3); out.slide = b ? +Math.hypot(b[0] - a[0], b[1] - a[1]).toFixed(3) : null; out.frames = stopAt - o.stopAt; out.pill = ICE.on;
+  px = x0; pz = z0; ICE.vx = ICE.vz = 0; ICE.on = false; return out; }, o);
+const S = { dry: await slide({ iceAt: 999, stopAt: 60 }), run: await slide({ iceAt: 0, stopAt: 120 }), sprint: await slide({ iceAt: 0, stopAt: 120, sprint: true }), enter: await slide({ iceAt: 60, stopAt: 61 }) };
+console.log('ice', JSON.stringify(S));
+check('a stop on dry ground is at once; on ice from the run it slides 1.2 m, from a sprint 1.8 m (±0.08)', S.dry.slide != null && S.dry.slide < .01 && Math.abs(S.run.slide - 1.2) < .08 && Math.abs(S.sprint.slide - 1.8) < .08, S);
+check('on ice the run builds to its full speed and you carry onto it the speed you came with', Math.abs(S.run.v0 - 3.83) < .05 && S.enter.vEnter > 3.6, S);
+const RI = await page.evaluate(() => { const _iu = iceUnderfoot; ROLL = null; stamina = maxStamina; staminaCD = 0; onGround = true; PPOST.stagUntil = 0;
+  iceUnderfoot = () => true; startRoll(performance.now() / 1000, { KeyW: true }); const d = ROLL ? ROLL.dist : null; ROLL = null; iceUnderfoot = _iu; return d; });
+check('the roll on ice goes ×1.3 as far: 3.38 m light', Math.abs(RI - 3.38) < .01, RI);
 
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
