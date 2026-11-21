@@ -27,6 +27,28 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 Pictures (Session 2454): [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-fort.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-far.jpg)
 
+### The Frostborn Vault’s ground — raise the mountain behind it, cut it to the fell there is, or wait for the land? (from the look builder, 2026-11-21, #1858)
+**The question.** The Frostborn Vault (#1823 A: a landmark, as built) is next for the game and meets Stormwatch's question (#1843). The prototype's gorge is 85 m deep under a headwall 130 to 170 m over its rims; across 1,132 Mark placings on seed 1 the ground behind the gorge's head rises at most 48 m. Nowhere does the land stand a 130 m headwall. Where should the vault go?
+
+**Options.**
+- **A.** The vault brings its mountain: stamps raise a massif about 150 m over the rims behind the head, falling back to the land over 400 to 600 m, with the kit's cliff drawn on it. Closest to the vault as chosen; the biggest landform any wonder has added.
+- **B (recommended).** Cut it into the fell there is: the gorge cut 85 m into the best placing (about (9525, 7275)), the headwall about 125 m from the floor, the face brought down with it; viaducts, halls, towers and glacier as built.
+- **C.** Wait for the land: leave the vault out until F3 gives the Mark mountains of 250 m and more.
+
+**Recommendation: B.** The land stays the world's own and the 85 m drop under the viaducts is unchanged. If #1843 is answered A, A here is the same rule at a larger size.
+
+Pictures (Session 2461/2465): [the gorge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-gorge.jpg) · [the headwall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-headwall.jpg) · [the portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-portal.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-far.jpg)
+
+### Deep pearls — the sea off Aurenne is 10 m at its deepest, not 15 (from the systems builder, 2026-11-21, #1861)
+**The question.** Rare materials B's last session puts the deep-pearl oyster beds off Aurenne below 15 m, but of 2,300 samples over Aurenne's 23 sea cells none lies below 10 m. A 10 m dive is about 8.5 s against 40 s of breath, so the page's dive at the edge of breath does not exist. Where should the beds lie?
+
+**Options.**
+- **A (recommended).** In the deepest water there is, 8 m or more off Aurenne; otherwise as the page has it (one oyster in six a pearl, a bed of 5 back in 14 days). The search is the test, not the breath.
+- **B.** Deepen the sea for them: trenches 15–20 m deep cut off Aurenne's coast (the look builder's terrain work first, a picture before it lands).
+- **C.** As A, and each oyster takes 4 s to prise open under water, so a bed of 5 is 20 s on the bed and two dives for most hands.
+
+**Recommendation: A.** Until answered, tiers 8–10 keep smith-only tempering; nothing else waits on it.
+
 ## Answered
 ### Rare materials and the top tiers — side-bonuses, the top three made, or those plus graded smithies? (from the systems designer, 2026-11-21, #1840)
 **The question.** Backlog L11's *Gathering* (OG-132) leaves two pieces unbuilt: tool tiers and the four rare materials (sigil stone, star iron, skywood, deep pearl). Today the forge stops at Obsidian (tier 7), Draconic, Demonic and Cosmic are loot only, and the Dragon Scale a lair drops only sells. What should the rare materials do? Page: `docs/design/rare-materials.md`.
