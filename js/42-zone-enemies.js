@@ -1429,7 +1429,7 @@ function tickZoneEnemies(dt,now,sc){
       e.walkT+=dt*.5;
       const wx=e.homeX+Math.sin(e.walkT*.4)*3,wz=e.homeZ+Math.cos(e.walkT*.4)*3;
       const dx2=wx-e.x,dz2=wz-e.z,wd=Math.hypot(dx2,dz2)||1;
-      const step=e.spd*.3*dt*foeFootMult(e); /* S2474 — the ground underfoot */
+      const step=e.spd*.3*dt*foeFootMult(e); /* S2475 — the ground underfoot */
       const nx=e.x+dx2/wd*step,nz=e.z+dz2/wd*step;
       if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}
       const ety=foeY(e);
@@ -1454,7 +1454,7 @@ function tickZoneEnemies(dt,now,sc){
       if(packN>0){if(e._flank==null)e._flank=(foeRand(e)<.5?-1:1)*(.5+foeRand(e)*.8);const base=Math.atan2(dz2,dx2);const r=Math.max(_stopDist+.3,Math.min(d-.2,2.6));const tx=T.x-Math.cos(base+e._flank)*r,tz=T.z-Math.sin(base+e._flank)*r;const fdx=tx-e.x,fdz=tz-e.z,fd=Math.hypot(fdx,fdz);if(fd>.4&&d>_stopDist+.6){dx2=fdx;dz2=fdz;d=fd;}}
     }
     if(!_archer&&d>_stopDist&&e._windup==null){ /* S634 — a boss winding up its heavy (85-world-sea.js) holds its ground, so a step clear stays clear at the faster chase */
-      const step=(e.alert&&!e.isBoss?chaseSpeed(e):e.spd)*foeFootMult(e)*dt; /* S2474 — snow and mud slow the chase as the flight */ // alert, they come at a run (S634: near your walk)
+      const step=(e.alert&&!e.isBoss?chaseSpeed(e):e.spd)*foeFootMult(e)*dt; /* S2475 — snow and mud slow the chase as the flight */ // alert, they come at a run (S634: near your walk)
       const nx=e.x+dx2/d*step,nz=e.z+dz2/d*step;
       if(!currentZoneSolid(nx,nz)){e.x=nx;e.z=nz;}else foeSlide(e,dx2/d,dz2/d,step);
     }

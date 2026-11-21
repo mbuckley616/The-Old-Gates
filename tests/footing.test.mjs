@@ -1,8 +1,8 @@
-// Ground that pushes back, session 1 (Session 2474; Michael's A on #1800, docs/design/ground-that-pushes-back.md): weather underfoot.
+// Ground that pushes back, session 1 (Session 2475; Michael's A on #1800, docs/design/ground-that-pushes-back.md): weather underfoot.
 // footingAt(x, z): off a road, on soil, snow from cover 0.5 (the run ×0.9, a sprint's drain ×1.2), deep snow over 0.8 (×0.8, ×1.4, the
 // roll ×0.85), mud while it rains and 120 game minutes after (360 after a storm), ×0.9, ×0.85 in heavy rain or a storm; Aurenne's mud
 // only after a storm; the road, a stamp, rock and sand firm. A foe on the same ground goes at the same multiplier; the Mark's own
-// ignore snow. Ice (Session 2475): a stop slides 1.2 m (1.8 from a sprint), the roll ×1.3. Hobnails (Session 2476) at a smith. Your run, drain and roll are driven through the game's own loop at fixed steps, the draw held off.
+// ignore snow. Ice (Session 2476): a stop slides 1.2 m (1.8 from a sprint), the roll ×1.3. Hobnails (Session 2477) at a smith. Your run, drain and roll are driven through the game's own loop at fixed steps, the draw held off.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -98,7 +98,7 @@ const CH = await page.evaluate(() => { const Z = ZONES.world.enemies; const e = 
   o.dry = leg('clear', 0); o.deep = leg('snow', .95); e.alert = false; e.angry = false; e.x = e.homeX = px + 400; e.z = e.homeZ = pz; Z.length = 0; Z.push(...keep); /* sent home, or it hunts the measures below */ _wx('clear', 0); return o; });
 check('a foe\'s chase over the same 30 steps: deep snow ×0.8 of dry', !!CH && CH.dry > .3 && near(CH.deep / CH.dry, .8), CH);
 
-// 6. ice (Session 2475): where it is, then the step through the loop with the ground held flat and the ice under you by hand
+// 6. ice (Session 2476): where it is, then the step through the loop with the ground held flat and the ice under you by hand
 const IU = await page.evaluate(() => { const o = {}; onGround = true; started = true; jumpY = activeTerrainH(px, pz); o.field = iceUnderfoot();
   LAID = { kind: 'floe', word: 'sioc', x: px + 3, z: pz, r: 1.5, base: jumpY - .5, top: jumpY, solid: true, until: playClockS + 30, key: laidKey() };
   const x0 = px; px = x0 + 3; o.onFloe = iceUnderfoot(); jumpY += 1; o.above = iceUnderfoot(); jumpY -= 1; px = x0 + 5; o.offFloe = iceUnderfoot(); px = x0;
@@ -127,7 +127,7 @@ const RI = await page.evaluate(() => { const _iu = iceUnderfoot; ROLL = null; st
   iceUnderfoot = () => true; startRoll(performance.now() / 1000, { KeyW: true }); const d = ROLL ? ROLL.dist : null; ROLL = null; iceUnderfoot = _iu; return d; });
 check('the roll on ice goes ×1.3 as far: 3.38 m light', Math.abs(RI - 3.38) < .01, RI);
 
-// 7. hobnails (Session 2476): at a smith of the Gatelands (Hearthwick's) for 25 gold and an hour, drawn for 5; none at Aurenne's smith;
+// 7. hobnails (Session 2477): at a smith of the Gatelands (Hearthwick's) for 25 gold and an hour, drawn for 5; none at Aurenne's smith;
 // nailed, the ice grips (20 m/s²), deep snow is only snow, and indoors a foe hears you at 4 m walking, 1.5 sneaking
 const AUID = await page.evaluate(() => allSites().find(t => t.kind === 'town' && nationKeyOf(...cellOf(t.x, t.z)) === 'aurenne').id);
 const HN = await page.evaluate(([au]) => { const o = {}, L = lid, H = currentHouse; EQ.feet = { name: 'Leather Boots', ico: '👢', def: 0, weight: 1 }; gold = 100;
