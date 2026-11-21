@@ -1959,6 +1959,7 @@ function genSettlement(site){
       if(e.pencil){ctx.globalAlpha=.42;ctx.filter='grayscale(1)';}drawIcon(ctx,e.kind,isc,true);if(e.pencil){ctx.filter='none';ctx.globalAlpha=1;}
       if(cellPx>=260||e.kind==='city'||e.pencil||MAP.hover===e.id){ctx.font=`${e.pencil?'italic ':''}${Math.round(11*isc)}px Georgia, serif`;ctx.fillStyle=e.pencil?'#5a5048':'#2a1c10';ctx.strokeStyle='rgba(240,228,200,.8)';ctx.lineWidth=3;ctx.strokeText(e.name,0,14*isc+4);ctx.fillText(e.name,0,14*isc+4);}
       ctx.restore();}
+    mapDrawStars(ctx,cellPx,isc); /* S2500 — a fallen star's cell (50-travel.js's starsOnMap) */
     // S496 — your notes pinned to the map (DECISION #132, part C)
     MAP._notes=[];(worldState.mapNotes||[]).forEach((n,i)=>{if(!n)return;const [sx,sy]=mapToScreen(n.x,n.z);if(sx<-20||sy<-20||sx>cw+20||sy>ch+20)return;MAP._notes.push({i,sx,sy});const on=MAP.hover==='note:'+i||MAP.sel==='note:'+i;
       ctx.save();ctx.translate(sx,sy);if(on){ctx.beginPath();ctx.arc(0,-7*isc,11*isc,0,Math.PI*2);ctx.fillStyle='rgba(255,230,160,.35)';ctx.fill();}
@@ -1974,6 +1975,15 @@ function genSettlement(site){
     const [fx,fy]=mapToScreen(0,0);ctx.strokeStyle='rgba(40,28,14,.8)';ctx.lineWidth=3;ctx.strokeRect(fx,fy,SIZE*GRID*s,SIZE*GRID*s);
     MAP.dirty=MAP.jobs.length>0;
   }
+  // S2500 — rare materials B (`docs/design/rare-materials.md`): the map marks a fallen star's cell, not the spot. From the morning's news
+  // while it holds iron: the cell ringed in a dashed silver line and a star at its middle, *A fallen star* under it once a cell is 60 px.
+  function mapDrawStars(ctx,cellPx,isc){if(MAP.filt.pois===false||typeof starsOnMap!=='function')return;let L=[];try{L=starsOnMap();}catch(e){return;}
+    for(const t of L){const [sx,sy]=mapToScreen(t.i*SIZE,t.j*SIZE),c=[sx+cellPx/2,sy+cellPx/2],k=Math.min(3,cellPx*.03);
+      ctx.save();ctx.strokeStyle='rgba(70,96,140,.85)';ctx.lineWidth=Math.max(1.5,Math.min(3,cellPx/160));ctx.setLineDash([7,4]);ctx.strokeRect(sx+k,sy+k,cellPx-2*k,cellPx-2*k);ctx.setLineDash([]);
+      ctx.fillStyle='rgba(150,175,215,.10)';ctx.fillRect(sx+k,sy+k,cellPx-2*k,cellPx-2*k);
+      const R=Math.max(6,Math.min(16,cellPx*.06))*Math.max(.8,isc*.8);ctx.translate(c[0],c[1]);ctx.beginPath();for(let n=0;n<10;n++){const a=-Math.PI/2+n*Math.PI/5,r=n%2?R*.42:R;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);}ctx.closePath();
+      ctx.fillStyle='#dfe8f6';ctx.strokeStyle='#2c3a58';ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
+      if(cellPx>=60)mapLabel(ctx,'A fallen star',0,R+15,Math.round(Math.max(11,Math.min(14,cellPx/30))),true);ctx.restore();}}
   // ── S704 — the compass's marks on the map (Michael's A on #220) ──
   // One list for the compass and the map: each of your quests and guild tasks with its name and line, a job done marked at
   // whoever gave it, then everything else the compass points at (directions, the story, factions, the war, rubbings, Act I's

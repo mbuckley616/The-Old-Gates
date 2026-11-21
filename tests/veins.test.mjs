@@ -165,12 +165,15 @@ const ST = await page.evaluate(() => {
   const site = (() => { for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { if (nationKeyOf(i, j) !== isle) continue; const c = getCell(i, j); const st = (c.sites || []).find(q => q.name && q.kind !== 'lair'); if (st) return st; } return null; })();
   const other = (() => { for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { if (!isLandCell(i, j) || nationKeyOf(i, j) === isle) continue; const c = getCell(i, j); const st = (c.sites || []).find(q => q.name && q.kind !== 'lair'); if (st) return st; } return null; })();
   const others = []; for (const is of STAR.isles) for (let w = 0; w < 8; w++) { const o = starOf(is, w); if (o && o.id !== L.id && !(worldState.veins || {})[o.id]) { others.push(o.id); worldState.veins[o.id] = { n: 3, s: 3, d: 0, e: 0 }; } } /* only this star holds iron */
-  out.night0 = starRumour(site); const morning = Math.floor((L.at - 360) / 1440) * 1440 + 1800; worldState.gameTimeAbsMinutes = morning + 5;
+  out.night0 = starRumour(site); out.map0 = starsOnMap().filter(t => t.id === L.id).length; const morning = Math.floor((L.at - 360) / 1440) * 1440 + 1800; worldState.gameTimeAbsMinutes = morning + 5;
   out.news = starRumour(site); out.other = starRumour(other); out.place = starPlace(L);
+  { const m = starsOnMap().filter(t => t.id === L.id), c = cellOf(L.x, L.z); out.map = m.length; out.mapCell = m.length ? m[0].i === c[0] && m[0].j === c[1] : false; out.mapPlace = m.length ? m[0].place : '';
+    const cv = document.createElement('canvas'); cv.width = cv.height = 400; let fills = 0; const x = cv.getContext('2d'), f0 = x.fill.bind(x); x.fill = (...q) => { fills++; return f0(...q); };
+    try { mapDrawStars(x, 200, 1); out.drawn = fills; } catch (e) { out.drawn = 'err ' + e.message; } }
   let got = 0; for (let i = 0; i < 40 && veinLeft(v) > 0; i++) if (strikeVein(v).ore) got++;
   out.got = got; out.iron = BAG.filter(b => b.ore === 'star').reduce((a, b) => a + (b.qty || 1), 0); out.item = (BAG.find(b => b.ore === 'star') || {}).name;
   out.after = strikeVein(v).why; worldState.gameTimeAbsMinutes = L.at + 40 * 1440; out.back = veinLeft(v);
-  worldState.gameTimeAbsMinutes = morning + 5; out.newsOut = starRumour(site);
+  worldState.gameTimeAbsMinutes = morning + 5; out.newsOut = starRumour(site); out.mapOut = starsOnMap().filter(t => t.id === L.id).length;
   others.forEach(id => delete worldState.veins[id]); out.settled = STAR_PLACES.join();
   BAG.length = 0; bag0.forEach(b => BAG.push(b)); worldState.gameTimeAbsMinutes = t0; showMsg = sm; return out;
 });
@@ -179,4 +182,5 @@ check(`S2493: a star a week on each island (${ST.n} of 18 over six weeks, on ${S
 check('S2493: an island keeps the two latest stars to have fallen; the week\'s star is not there before its hour', JSON.stringify(ST.live) === JSON.stringify(ST.want) && ST.live.length === 2 && !ST.liveBefore.includes(ST.live[0]), ST);
 check('S2493: a steel pick will not cut star iron; a mithril one does, every 0.6 s: 3 pieces of Star Iron, then none, and never back', /mithril pick/.test(ST.steel) && ST.strike === .6 && ST.got === 3 && ST.iron === 3 && ST.item === 'Star Iron' && /cut out/.test(ST.after || '') && ST.back === 0, ST);
 check(`S2493: the news from the next morning, on its island only, while it holds iron ("${ST.news}")`, ST.night0 === '' && ST.news === `A star came down past ${ST.place}.` && !!ST.place && !/^Ruins/.test(ST.place) && ST.other === '' && ST.newsOut === '', ST);
+check(`S2500: the map marks the star's cell from the morning's news while it holds iron, not before and not once cut out (drawn: ${ST.drawn} fills)`, ST.map0 === 0 && ST.map === 1 && ST.mapCell && ST.mapPlace === ST.place && ST.mapOut === 0 && ST.drawn >= 1, ST);
 await g.close();
