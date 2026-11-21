@@ -180,6 +180,9 @@ if (lh.hb) {
   // Session 2485: held, the builder's left fingers on the seen blade's left grip mark (S2484's note: 0.31 m under it, holding nothing; tpHBGripL)
   check(`third person, a claymore held: the builder's left hand is on the seen grip (${lh.hold && lh.hold.after} m from the mark; ${lh.hold && lh.hold.before} m as the driver put it)`,
     lh.holdOn && lh.hold && lh.hold.before > .2 && lh.hold.after < .03 && lh.hold.w === 1, lh.hold);
+  // Session 2489: the left fist closed round the grip (S2485's note: placed, not turned): the knuckles' line along the blade, the curl's middle on the mark
+  check(`third person, a claymore held: the left fist is turned round the grip, its knuckles' line ${lh.hold && lh.hold.kAng} rad off the blade (0.68 before)`,
+    lh.hold && lh.hold.kAng != null && lh.hold.kAng < .25, lh.hold);
   check(`third person, a claymore sheathed: the left hand leaves the grip (${s0.lw} at the start, ${s15.lw} by 0.15 s)`, s0.on && s0.lw === 1 && s15.lw === 0, lh);
 }
 // Session 2478: under a cloak a sword at the hip lifts the sheet (S2451's note: its hilt was lost inside the cloak and the scabbard's point
