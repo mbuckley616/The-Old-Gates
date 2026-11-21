@@ -2,7 +2,7 @@
 // footingAt(x, z): off a road, on soil, snow from cover 0.5 (the run ×0.9, a sprint's drain ×1.2), deep snow over 0.8 (×0.8, ×1.4, the
 // roll ×0.85), mud while it rains and 120 game minutes after (360 after a storm), ×0.9, ×0.85 in heavy rain or a storm; Aurenne's mud
 // only after a storm; the road, a stamp, rock and sand firm. A foe on the same ground goes at the same multiplier; the Mark's own
-// ignore snow. Ice (Session 2475): a stop slides 1.2 m (1.8 from a sprint), the roll ×1.3. Your run, drain and roll are driven through the game's own loop at fixed steps, the draw held off.
+// ignore snow. Ice (Session 2475): a stop slides 1.2 m (1.8 from a sprint), the roll ×1.3. Hobnails (Session 2476) at a smith. Your run, drain and roll are driven through the game's own loop at fixed steps, the draw held off.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -126,6 +126,29 @@ check('on ice the run builds to its full speed and you carry onto it the speed y
 const RI = await page.evaluate(() => { const _iu = iceUnderfoot; ROLL = null; stamina = maxStamina; staminaCD = 0; onGround = true; PPOST.stagUntil = 0;
   iceUnderfoot = () => true; startRoll(performance.now() / 1000, { KeyW: true }); const d = ROLL ? ROLL.dist : null; ROLL = null; iceUnderfoot = _iu; return d; });
 check('the roll on ice goes ×1.3 as far: 3.38 m light', Math.abs(RI - 3.38) < .01, RI);
+
+// 7. hobnails (Session 2476): at a smith of the Gatelands (Hearthwick's) for 25 gold and an hour, drawn for 5; none at Aurenne's smith;
+// nailed, the ice grips (20 m/s²), deep snow is only snow, and indoors a foe hears you at 4 m walking, 1.5 sneaking
+const AUID = await page.evaluate(() => allSites().find(t => t.kind === 'town' && nationKeyOf(...cellOf(t.x, t.z)) === 'aurenne').id);
+const HN = await page.evaluate(([au]) => { const o = {}, L = lid, H = currentHouse; EQ.feet = { name: 'Leather Boots', ico: '👢', def: 0, weight: 1 }; gold = 100;
+  lid = 'int_test'; currentHouse = { type: 'weapon', siteId: 'hearthwick', name: 'Smithy' };
+  o.here = hobnailHere(); openForgePage(); o.row = /Hobnails/.test(document.getElementById('fg-list').innerHTML); forgeSel = { k: 'n' }; forgeDraw(); o.panel = document.getElementById('fg-right').textContent;
+  const m0 = gameMinNow(); forgeGo(false); o.said = document.getElementById('fg-said').textContent; o.mins = gameMinNow() - m0; o.gold = gold; o.nailed = bootsNailed(); o.rowDraw = /Draw the nails/.test(document.getElementById('fg-list').innerHTML);
+  _pStep = true; _sneaking = false; o.walk = hearingRadius(); _sneaking = true; o.sneak = hearingRadius(); _sneaking = false;
+  closeForgePage(); lid = L; currentHouse = H; o.outWalk = hearingRadius();
+  _wx('snow', .95); o.deepRun = footRunMult(); o.deepRoll = footRollMult(); o.acc = iceAcc();
+  lid = 'int_test'; currentHouse = { type: 'weapon', siteId: 'hearthwick', name: 'Smithy' }; const r = hobnailGo(); o.drawn = r.done && !r.nailed && !bootsNailed(); o.gold2 = gold;
+  o.walkBare = hearingRadius(); currentHouse = { type: 'weapon', siteId: au, name: 'Smithy' }; o.aurenne = hobnailHere(); o.aurenneGo = hobnailGo().why;
+  lid = L; currentHouse = H; _pStep = false; _wx('clear', 0); o.accBare = iceAcc(); return o; }, [AUID]);
+console.log('hobnails', JSON.stringify(HN));
+check('a Gatelands smith nails your boots for 25 gold and an hour, on the forge page\'s own row; 5 gold draws them', HN.here && HN.row && HN.said === 'Your boots are nailed.' && HN.mins === 60 && HN.gold === 75 && HN.nailed && HN.rowDraw && HN.drawn && HN.gold2 === 70, HN);
+check('Aurenne\'s smith nails nothing', !HN.aurenne && /No smith/.test(HN.aurenneGo || ''), HN);
+check('nailed: the ice grips at 20 m/s² (6 bare); deep snow is only snow (×0.9, the roll whole)', HN.acc === 20 && HN.accBare === 6 && Math.abs(HN.deepRun - .9) < 1e-9 && HN.deepRoll === 1, HN);
+check('nailed, indoors a foe hears you walk at 4 m and sneak at 1.5; bare 3; outdoors on soil the nails are quiet', HN.walk === 4 && HN.sneak === 1.5 && HN.walkBare === 3 && HN.outWalk <= 3, HN);
+await page.evaluate(() => { EQ.feet.nails = true; });
+const SN = await slide({ iceAt: 0, stopAt: 120 });
+await page.evaluate(() => { delete EQ.feet.nails; });
+check('nailed, a stop on ice from the run slides 0.37 m (±0.05)', Math.abs(SN.slide - .367) < .05, SN);
 
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

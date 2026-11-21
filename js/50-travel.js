@@ -1445,7 +1445,7 @@ function footingAt(x,z){const F=FOOT.kinds;if(!footOutside())return F.firm;
   const m=footMudNow(isle);return m===2?F.mudHeavy:m===1?F.mud:F.firm;}
 // yours, read once a quarter second of the page's clock (the loop's run, the sprint's drain, the roll and the pill read it)
 const _foot={k:FOOT.kinds.firm,at:-1e9,x:0,z:0};
-function footHere(){const now=performance.now();if(now-_foot.at>250||Math.hypot(px-_foot.x,pz-_foot.z)>1){_foot.k=footingAt(px,pz);_foot.at=now;_foot.x=px;_foot.z=pz;}return _foot.k;}
+function footHere(){const now=performance.now();if(now-_foot.at>250||Math.hypot(px-_foot.x,pz-_foot.z)>1){_foot.k=footingAt(px,pz);if(_foot.k.k==='deep'&&typeof bootsNailed==='function'&&bootsNailed())_foot.k=FOOT.kinds.snow; /* S2476 — nailed, deep snow is only snow */_foot.at=now;_foot.x=px;_foot.z=pz;}return _foot.k;}
 function footRunMult(){return Math.max(.8,footHere().run);}
 function footDrainMult(){return footHere().drain;}
 function footRollMult(){return iceUnderfoot()?ICE.roll:footHere().roll;} /* S2475 — ice ×1.3 */
@@ -1465,7 +1465,22 @@ function iceUnderfoot(){if(!onGround||!started)return false;
     const Lk=T.lake,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0,y=jumpY+(+(T.low-.25).toFixed(2));
     return x>=Lk.x0&&x<=Lk.x1&&z>=Math.min(Lk.z0,Lk.z1)&&z<=Math.max(Lk.z0,Lk.z1)&&Math.abs(y-Lk.y)<.15;}
   return false;}
-function iceAcc(){return ICE.acc;}
+// S2476 — session 3: hobnails. Any boots taken to a smith in the Gatelands or the Mark come back nailed, 25 gold and an hour (the forge's
+// page, a row of its own); 5 gold draws them. Nailed (`nails` on the boots, so it rides in the character's row with EQ and BAG): ice
+// grips at 20 m/s² (a stop from the run slides 0.37 m), and deep snow is only snow. The price is noise: indoors and in gates, on stone
+// and planks, a foe hears you walk at 4 m, not 3, and sneak at 1.5, not 1 (hearingRadius, 10-player.js). Mud has no answer but the road.
+const HOBNAIL={price:25,draw:5,min:60,acc:20,walk:4,sneak:1.5,isles:{gatelands:1,mark:1}};
+function bootsNailed(){return !!(EQ.feet&&EQ.feet.nails);}
+function hobnailNoisy(){return bootsNailed()&&((typeof isInterior==='function'&&isInterior())||!!(lid&&lid.startsWith('dyn_')));}
+function hobnailHere(){if(!smithForge())return false;const h=currentHouse;let isle=null;
+  try{const t=h.siteId&&WORLD.siteAnywhere(h.siteId);if(t)isle=nationKeyOf(...cellOf(t.x,t.z));}catch(e){}
+  return !!HOBNAIL.isles[isle||(h.siteId?'':'gatelands')];}
+function hobnailGo(){if(!hobnailHere())return {done:false,why:'No smith here nails boots.'};const b=EQ.feet;
+  if(!b)return {done:false,why:'You have no boots on.'};
+  if(b.nails){if(gold<HOBNAIL.draw)return {done:false,why:`The smith asks ${HOBNAIL.draw} gold to draw them.`};gold-=HOBNAIL.draw;delete b.nails;_foot.at=-1e9;return {done:true,nailed:false};}
+  if(gold<HOBNAIL.price)return {done:false,why:`The smith asks ${HOBNAIL.price} gold.`};gold-=HOBNAIL.price;b.nails=true;_foot.at=-1e9;
+  if(typeof advanceClock==='function')advanceClock(HOBNAIL.min);return {done:true,nailed:true};}
+function iceAcc(){return bootsNailed()?HOBNAIL.acc:ICE.acc;}
 // the loop's step: mx, mz the way you ask (0, 0 for none), spd this frame's distance at your speed. Off ice it only keeps the velocity
 // you are moving at and returns null; on ice it returns this frame's step, {dx, dz}
 function iceTick(mx,mz,spd,dt,roll){const len=Math.hypot(mx,mz);
@@ -2039,9 +2054,10 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
   const mk=(f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>ingotCount(t)>=forgeIngots(f.T))&&plankCount()>=forgePlanks(f.T)&&leatherCount()>=forgeLeather(f.T),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'));h+=head('Make')+FORGE_TYPES.map((f,i)=>f.light?'':mk(f,i)).join('')+head('Make, light')+FORGE_TYPES.map((f,i)=>f.light?mk(f,i):'').join(''); /* S2132 — the light line's own row */
   if(P.length)h+=head('Temper')+P.map((it,i)=>row(S.k==='t'&&S.it===it,true,'t'+i,`${it.name}${it.tempers?` (${it.tempers})`:''}`)).join('');
   const CP=typeof crystalPieces==='function'?crystalPieces():[];if(CP.length)h+=head('Set a crystal')+CP.map((it,i)=>row(S.k==='c'&&S.it===it,bagCount(b=>b.gateCrystal===it.school)>0,'c'+i,it.name)).join(''); /* S2372 — a gate's crystal makes a bought implement found (68-dungeon-misc.js) */
+  if(typeof hobnailHere==='function'&&hobnailHere())h+=head('Boots')+row(S.k==='n',!!EQ.feet,'n0',bootsNailed()?'Draw the nails':'Hobnails'); /* S2476 */
   ov.querySelector('#fg-list').innerHTML=h;
   ov.querySelectorAll('#fg-list [data-k]').forEach(d=>d.onclick=()=>{const k=d.dataset.k,n=+k.slice(1);
-    forgeSel=k[0]==='s'?{k:'s',tier:n}:k[0]==='m'?{k:'m',type:FORGE_TYPES[n].T.type}:k[0]==='c'?{k:'c',it:CP[n]}:{k:'t',it:P[n]};forgeSaid='';forgeDraw();});
+    forgeSel=k[0]==='n'?{k:'n'}:k[0]==='s'?{k:'s',tier:n}:k[0]==='m'?{k:'m',type:FORGE_TYPES[n].T.type}:k[0]==='c'?{k:'c',it:CP[n]}:{k:'t',it:P[n]};forgeSaid='';forgeDraw();});
   const pad=s=>`<div style="padding-left:12px">${s}</div>`,note=s=>`<div style="padding-left:12px;color:#8a7050;font-style:italic">${s}</div>`;let t='';
   if(S.k==='s'){const D=INGOT_DEF.find(d=>d.tier===S.tier),M=MATERIALS[S.tier-1];
     t=`<div style="font-variant:small-caps;color:#7a1f10">${M.name} Ingot</div>`+D.ore.map(([k,n])=>pad(`${n} ${ORE_DEF[k].name} <i style="font-size:12px;color:#8a7050">(you have ${oreCount(k)})</i>`)).join('')+
@@ -2059,6 +2075,9 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
   else if(S.k==='c'){const it=S.it,sn=schoolName(it.school);
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(`1 gate crystal of ${sn} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.gateCrystal===it.school)})</i>`)+
       (skillLv('smithing')<CRYSTAL_SET.smithing?note(`asks Smithing ${CRYSTAL_SET.smithing}`):'')+note(`found: ${sn}’s words ${Math.round(IMPLEMENT.foundCut*100)}% cheaper, not ${Math.round(IMPLEMENT.cut*100)}%`);}
+  else if(S.k==='n'){const b=EQ.feet,on=bootsNailed(); /* S2476 — hobnails */
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${on?'Draw the nails':'Hobnails'}</div>`+pad(b?b.name:'No boots on')+pad(on?`${HOBNAIL.draw} gold`:`${HOBNAIL.price} gold, an hour`)+
+      note(on?'the quiet back, and the ice as it was':`ice grips, and deep snow is only snow; indoors and in gates a foe hears you walk at ${HOBNAIL.walk} m, not 3, and sneak at ${HOBNAIL.sneak}, not 1`);}
   const R=ov.querySelector('#fg-right');R.innerHTML=t;
   R.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{forgeTier=+b.dataset.m;forgeSaid='';forgeDraw();});
   const sm=R.querySelector('#fg-smith');if(sm)sm.onclick=()=>forgeGo(true);
@@ -2067,6 +2086,7 @@ function forgeGo(bySmith){const S=forgeSel;let r;
   if(S.k==='s'){r=forgeSmelt(S.tier);forgeSaid=r.made?`${r.item.name}.`:r.why||'';}
   else if(S.k==='m'){r=forgeMake(S.type,forgeTier||2);forgeSaid=r.made?`${r.item.name}.`:r.why||'';}
   else if(S.k==='c'){r=forgeSetCrystal(S.it);forgeSaid=r.done?`${S.it.name}: the crystal is set.`:r.why||'';if(r.done)forgeSel={k:'s',tier:2};}
+  else if(S.k==='n'){r=hobnailGo();forgeSaid=r.done?(r.nailed?'Your boots are nailed.':'The nails are drawn.'):r.why||'';} /* S2476 */
   else if(S.k==='t'){r=forgeTemper(S.it,bySmith);forgeSaid=r.done?`${S.it.name}, tempered ${S.it.tempers} of ${temperMax()}.`:r.why||'';if(r.done&&typeof updateHUD==='function')updateHUD();}
   if(r&&(r.made||r.done)&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');
   if(typeof renderHubInv==='function')renderHubInv();
