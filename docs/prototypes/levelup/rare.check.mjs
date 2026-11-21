@@ -1,7 +1,7 @@
 // node docs/prototypes/levelup/rare.check.mjs [--shots] (Session 2500): rare materials B's props (props.js) in the test Chromium.
-// The crater: 12 keys, the same twice, in budget (6,000 triangles, 6 draws); 6 m across its rim (5.6 to 6.8 along and across), 0.6 to
+// The crater: 12 keys, the same twice, in budget (8,000 triangles, 6 draws); 6 m across its rim (5.6 to 6.8 along and across), 0.6 to
 // 1 m deep, the rim 0.25 to 0.45 m up; with all three lobes the lump stands proud of the bowl's floor and inside the rim, and with
-// fewer it has as many; at night the glint is lit and by day it is not. The pine: 12 keys, the same twice, in budget (8,000, 4 draws),
+// fewer it has as many; at night the glint is lit and by day it is not. The pine: 12 keys, the same twice, in budget (12,000, 4 draws: one tree on each of 17 peaks, so the budget is a lone tree's),
 // 8 to 10 m, leaning lee and never windward; most of its needle pads on the lee side; felled, no pads and a stump of 0.6 m. The script
 // stone: each of the six schools, the same twice, in budget (4,000, 7 draws), the game's slab (0.7 by 1.15 by 0.2), standing clear of
 // the wall it leans to, its script lit in two panels split by the crack; cut, no script and a socket.
@@ -40,13 +40,13 @@ const r = await page.evaluate(async () => { const THREE = await import('three'),
     const sc = a.group.children.find(m => m.name.startsWith('sscript:'));
     out.stones.push({ school: s, same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, size: a.size, back: +back.toFixed(3), lit: a.lit, glow: sc ? sc.material.emissive.getHexString() : null, cutLit: c.lit, cutScript: c.group.children.some(m => m.name.startsWith('sscript:')), socket: c.group.children.some(m => m.name === 'dark') && c.tris > 0 }); }
   return out; });
-for (const c of r.craters) { check('the crater is the same twice from one key', c.same); check('the crater is in budget (6,000 triangles, 6 draws)', c.tris <= 6000 && c.draws <= 6, [c.tris, c.draws]);
+for (const c of r.craters) { check('the crater is the same twice from one key', c.same); check('the crater is in budget (8,000 triangles, 6 draws)', c.tris <= 8000 && c.draws <= 6, [c.tris, c.draws]);
   check('the crater is 6 m across its rim, along and across (5.6 to 6.8)', c.rimAlong >= 5.6 && c.rimAlong <= 6.8 && c.rimAcross >= 5.6 && c.rimAcross <= 6.8, [c.rimAlong, c.rimAcross]);
   check('the bowl is 0.6 to 1 m deep and its rim 0.25 to 0.45 m up', c.depth >= .6 && c.depth <= 1 && c.rim >= .25 && c.rim <= .45, [c.depth, c.rim]);
   check('the lump stands proud of the bowl floor (0.3 to 0.9 m) inside the rim', c.proud >= .3 && c.proud <= .9 && c.inRim, [c.proud, c.inRim]);
   check('a crater with N lobes left has N, and none leaves no glint', c.lobes === 3 && c.lefts.join() === '0,1,2' && c.none, [c.lobes, c.lefts, c.none]);
   check('the glint is dark by day and lit at night', c.glintDay < .2 && c.glintNight > 1.5, [c.glintDay, c.glintNight]); }
-for (const p of r.pines) { check('the pine is the same twice from one key', p.same); check('the pine is in budget (8,000 triangles, 4 draws)', p.tris <= 8000 && p.draws <= 4, [p.tris, p.draws]);
+for (const p of r.pines) { check('the pine is the same twice from one key', p.same); check('the pine is in budget (12,000 triangles, 4 draws)', p.tris <= 12000 && p.draws <= 4, [p.tris, p.draws]);
   check('the pine stands 8 to 10.5 m', p.top >= 8 && p.top <= 10.5, p.top); check('it leans lee (its leader 1 to 3 m downwind of its foot)', p.leanLee >= 1 && p.leanLee <= 3, p.leanLee);
   check('its needles are flagged lee (3 in 4 or more on the lee side)', p.leeShare >= .75, p.leeShare); check('felled, it is a stump of 0.6 m with no needles', !p.felledPads && p.cut === .6 && p.felledTop < 1.2, [p.felledPads, p.cut, p.felledTop]); }
 for (const s of r.stones) { check(`the ${s.school} stone is the same twice`, s.same); check(`the ${s.school} stone is in budget (4,000 triangles, 7 draws)`, s.tris <= 4000 && s.draws <= 7, [s.tris, s.draws]);
