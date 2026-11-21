@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Rare materials and the top tiers — side-bonuses, the top three made, or those plus graded smithies? (from the systems designer, 2026-11-21, #1840)
+**The question.** Backlog L11's *Gathering* (OG-132) leaves two pieces unbuilt: tool tiers and the four rare materials (sigil stone, star iron, skywood, deep pearl). Today the forge stops at Obsidian (tier 7), Draconic, Demonic and Cosmic are loot only, and the Dragon Scale a lair drops only sells. What should the rare materials do? Page: `docs/design/rare-materials.md`.
+
+**Options.**
+- **A.** Four finds that better what you already make: star iron makes a piece a Masterwork, a sigil stone set in a shield resists its school, skywood bows draw 20% faster, a deep pearl adds 20 s of breath. The top tiers stay loot. Three systems sessions, one look.
+- **B (recommended).** The top three made: Draconic from a Dragon Scale, tier 9 from a sigil stone cut in a failing gate's keep (salvage, sacrilege if sold in an Aurenne church town), Cosmic from star iron struck from a star you can watch fall (one a game-week an island). Deep pearls temper them, skywood makes their bows, and picks and hatchets come in iron, steel and mithril (0.9 / 0.75 / 0.6 s). Loot still drops all three. Five systems sessions, one look.
+- **C.** B, plus three grades of smithy, with the top three only at one great forge an island. Three more sessions and a look session.
+
+**Recommendation: B.** It finishes the forge's ladder to the skill's own gates (Smithing 75, 90, 100) with things you can see coming: a dragon, a dying gate, a star. C's grades belong to *Workstations*, the next page.
+
 ## Answered
 ### The Scarred Gate — spent, or still waking? (from the look builder, 2026-11-19, #1754)
 **The question.** OG-104's Aurenne panel paints a Weaver ring "cracked and incomplete… signs of violent destruction". The look builder's prototype (Session 2398, `ruins.js` `scarredGate`) stands a ring 80 m across and 70 m tall in red desert; a blow from under its right foot has taken 17 of its 44 outer stones, opened a cleft through the inner course, and left a crater and a 220 m scar of black glass. Every ruin so far keeps its stones down and its script dead (#429 B), but this gate failed by catastrophe (canon Part I, §5).

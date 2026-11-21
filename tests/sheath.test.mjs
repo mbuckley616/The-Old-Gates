@@ -138,7 +138,8 @@ const dw = await page.evaluate(() => { const eq0 = { ...EQ }; thirdPerson = true
     const k = D.G.children[0], hilt = k.getWorldPosition(new THREE.Vector3()), fg = [2, 3, 4, 5].map(f => H.P.byName[`finger${f}-2.${HBODY.swap ? 'L' : 'R'}`]), gp = new THREE.Vector3();
     fg.forEach(b => gp.add(b.getWorldPosition(new THREE.Vector3()))); gp.multiplyScalar(1 / fg.length);
     const h = D.h || R.hbHeld.find(x => x.o === R.weapon), cp = h ? h.c.getWorldPosition(new THREE.Vector3()) : null;
-    return { on: true, way: D.way, bladeShown: k.visible, carried: !!(h && h.c.parent), grip: +gp.distanceTo(hilt).toFixed(3), car: cp ? +cp.distanceTo(hilt).toFixed(3) : null, worn: !!D.G.parent }; };
+    const hw = D.way === 'draw' ? R.weapon : D.a, qh = hw ? R.handR.getWorldQuaternion(new THREE.Quaternion()).multiply(hw.quaternion) : null, qk = k.getWorldQuaternion(new THREE.Quaternion());
+    return { on: true, way: D.way, bladeShown: k.visible, turn: qh ? +(2 * Math.acos(Math.min(1, Math.abs(qh.dot(qk))))).toFixed(3) : null, carried: !!(h && h.c.parent), grip: +gp.distanceTo(hilt).toFixed(3), car: cp ? +cp.distanceTo(hilt).toFixed(3) : null, worn: !!D.G.parent }; };
   const out = {}; sheathWeapon(); tpEnsure(); out.sh = [at(100), at(100.1), at(100.32), at(100.6)]; out.shEnd = { shown: TP.rig.hbSheath.children[0].visible, held: TP.rig.hbHeld.length };
   FP_DRAW.now = () => 200; drawWeapon(); tpEnsure(); const G = TP.rig.tpDraw && TP.rig.tpDraw.G; out.dr = [at(200), at(200.2), at(200.4), at(200.6)]; out.drGone = !!G && G === TP.rig.hbSheath && !!G.parent && !G.children[0].visible;
   FP_DRAW.now = () => 300; sheathWeapon(); tpEnsure(); drawWeapon(); tpEnsure(); SWING = { test: 1 }; out.sw = at(300.05); SWING = null;
@@ -151,5 +152,33 @@ if (dw.hb !== false) {
   check(`third person: the draw takes the grip to the hilt (${d2.grip} m at 0.2 s, ${d0.grip} at the start) with the worn group still on and the blade in it, then carries it out (${d4.car} m at 0.4 s); over by 0.56 s, the scabbard left on, empty`,
     d0.on && d0.way === 'draw' && d0.worn && !d0.bladeShown && d0.car === 0 && d2.grip < .06 && d2.grip < d0.grip && d4.car > .05 && !d6.on && dw.drGone, dw);
   check('third person: a swing ends the draw at once', !dw.sw.on, dw.sw);
+  // Session 2478: the hand takes the hilt in its grip (S2471's note: it arrived palm up): at the hilt the wrist holds the blade's way as the worn blade lies
+  check(`third person: at the hilt the hand is turned to take the grip, the blade's way in the fist within 0.5 rad of the worn blade's (about 1.7 before) (${d2.turn} at 0.2 s of the draw; ${s3.turn} at 0.32 s of the sheathe)`, d2.turn != null && d2.turn < .5 && s3.turn != null && s3.turn < .5, dw);
+}
+// Session 2478: under a cloak a sword at the hip lifts the sheet (S2451's note: its hilt was lost inside the cloak and the scabbard's point
+// stood out through its back). In the bind's metres every point of the worn group (blade, scabbard, frog) has the sheet at its bearing and
+// height (within 2.5 cm across and up) standing outside it; a mace drawn wears nothing at the hip and the sheet is back on its own points
+const ct = await page.evaluate(() => { const eq0 = { ...EQ }; thirdPerson = true; EQ.offhand = null; EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' };
+  EQ.weapon = { name: 'Test sword', type: 'weapon', atk: [10, 11], wType: 'slash', weaponShape: 'sword', weight: 3 };
+  SHEATHED = false; tpEnsure(); sheathWeapon(); tpEnsure(); const R = TP.rig, H = R.rig.hb; if (!H) { thirdPerson = false; return { hb: false }; } tpDrawEnd(R);
+  const out = { hb: true, tent: R.cloakTent }, sk = H.P.skeleton, c = R.hbSheath, b = c.parent, bind = new THREE.Matrix4().copy(sk.boneInverses[sk.bones.indexOf(b)]).invert();
+  R.root.updateMatrixWorld(true); const toB = new THREE.Matrix4().multiplyMatrices(bind, new THREE.Matrix4().copy(b.matrixWorld).invert()), o = new THREE.Vector3().setFromMatrixPosition(bind), M = new THREE.Matrix4(), v = new THREE.Vector3();
+  const sheet = H.full.find(m => m.isSkinnedMesh && m.name === 'cloak'), A = sheet.geometry.attributes.position, S = [];
+  for (let j = 0; j < A.count; j++) { const x = A.getX(j) - o.x, z = A.getZ(j) - o.z; S.push([Math.atan2(x, z), A.getY(j), Math.hypot(x, z)]); }
+  let n = 0, cov = 0, inside = 0, worst = 0;
+  c.traverse(m => { if (!m.isMesh || !m.visible) return; M.multiplyMatrices(toB, m.matrixWorld); const p = m.geometry.attributes.position;
+    for (let j = 0; j < p.count; j += 3) { v.fromBufferAttribute(p, j).applyMatrix4(M); const x = v.x - o.x, z = v.z - o.z, r = Math.hypot(x, z), th = Math.atan2(x, z); n++;
+      let near = null; for (const q of S) { let d = q[0] - th; d -= 2 * Math.PI * Math.round(d / (2 * Math.PI)); if (Math.abs(d * r) < .025 && Math.abs(q[1] - v.y) < .025 && (!near || q[2] < near)) near = q[2]; }
+      if (near == null) continue; cov++; if (near < r) { inside++; worst = Math.max(worst, r - near); } } });
+  out.sword = { n, cov, inside, worst: +worst.toFixed(4) };
+  EQ.weapon = { name: 'Test mace', type: 'weapon', atk: [10, 11], wType: 'blunt', weaponShape: 'mace', weight: 3 }; SHEATHED = false; tpEnsure(); tpDrawEnd(TP.rig);
+  const H2 = TP.rig.rig.hb, sh2 = H2 && H2.full.find(m => m.isSkinnedMesh && m.name === 'cloak'), u = sh2 && sh2.geometry.userData;
+  out.mace = { worn: !!TP.rig.hbSheath, kept: H2 === H, back: !!(u && u.tent0 && !u.tent && sh2.geometry.attributes.position.array.every((x, i) => x === u.tent0[i])) };
+  Object.assign(EQ, eq0); SHEATHED = false; tpEnsure(); thirdPerson = false; return out; });
+console.log(JSON.stringify(ct));
+if (ct.hb) {
+  check(`under a cloak the sheathed sword lifts the sheet (${ct.tent && ct.tent.moved} points, ${ct.tent && ct.tent.most} m at most): every worn point with sheet at its bearing and height has the sheet outside it (${JSON.stringify(ct.sword)})`,
+    ct.tent && ct.tent.moved > 50 && ct.sword.cov > 100 && ct.sword.inside === 0, ct);
+  check('a mace drawn wears nothing at the hip, and the sheet of the body carried over is back on its own points', !ct.mace.worn && ct.mace.kept && ct.mace.back, ct.mace);
 }
 await g.close();
