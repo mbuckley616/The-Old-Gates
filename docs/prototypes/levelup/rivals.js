@@ -155,7 +155,7 @@ export function pennant(kind) {
   return g;
 }
 // the lion rampant in outline, 1 unit tall, facing the wearer's right (the viewer's left), as the Crown's heralds cut it
-function lionShape() {
+export function lionShape() {
   const P = [[.30, 0], [.40, .18], [.36, .30], [.44, .42], [.40, .55], [.30, .62], [.22, .72], [.12, .80], [.05, .92], [-.05, 1], [-.16, .97], [-.2, .9], [-.3, .92], [-.36, .84],
     [-.28, .8], [-.3, .72], [-.2, .7], [-.14, .76], [-.08, .7], [-.1, .6], [-.25, .66], [-.36, .6], [-.3, .54], [-.16, .52], [-.05, .45], [-.08, .3], [-.22, .2],
     [-.3, .06], [-.2, 0], [-.12, .1], [0, .2], [.08, .12], [.06, 0], [.18, .02], [.2, .14], [.24, .06]];
@@ -166,7 +166,7 @@ function lionShape() {
 }
 // the lion on the surcoat's breast: 'unpicked' (the gold thread taken out, the cloth under it less faded than the rest: a paler red shape
 // with the needle-holes' darker line round it) or 'gold' (the sheet's: gold thread, raised); 0.3 m tall, under the cape's edge, laid flat over the tabard's most forward point
-function lion(M, kind) {
+export function lion(M, kind) {
   const tab = M.root.getObjectByName('tabard'); if (!tab) return null; const pts = meshPts(M, tab), n = bonePos(M, 'neck01'), H = .3, y = n.y - .43 - H;
   let fz = -1e9; for (const p of pts) if (Math.abs(p.x) < H * .5 && p.y > y && p.y < y + H && p.z > fz) fz = p.z;
   const g = new THREE.Group(), [body, tail] = lionShape(), gold = kind === 'gold';
