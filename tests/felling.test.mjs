@@ -189,7 +189,8 @@ check('dug out, the cut is wider and deeper; when the bank comes back it is gone
 const skyList = await page.evaluate(() => skyPines().map(s => ({ id: s.id, x: s.x, z: s.z, mark: nationKeyOf(...cellOf(s.x, s.z)), h: rawH(s.x, s.z) })));
 const sp = skyList[0];
 if (sp) await page.evaluate(s => WORLD.enter(s.x + 1, s.z, 0, 'test'), sp);
-await g.spin(30);
+/* the pine's chunk streams in after the jump: on a slow runner 30 ticks were not enough (CI, PR #1860), so wait for it, up to 600 */
+for (let i = 0; i < 60; i++) { await g.spin(10); if (!sp || await page.evaluate(id => { for (const c of chunks.values()) for (const u of c.trees || []) if (u.id === id) return true; return false; }, sp.id)) break; }
 const sky = await page.evaluate(sp => { const o = {};
   let ch = null, t = null; for (const c of chunks.values()) for (const u of c.trees || []) if (u.id === sp.id) { ch = c; t = u; }
   if (!t) return { err: 'no pine' };
