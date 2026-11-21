@@ -8293,6 +8293,157 @@ function aurenneOrrery(hAt, o = {}) {
       m.castShadow = k === 'stone' || k === 'step'; m.receiveShadow = true; group.add(m); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
     return { group, tris: Math.round(tris), draws, R0, R1, CY, D, Y, inner: NI, outer: NO, gone, slipped, thrown, cleft: CLEFT, crater: CR, scar: SC, plinth, plats, level, sol, tick() {} };
   }
+  // ── the Hollow Below (Session 2473; Michael's A on #1761, "a Mark gate's way in"; the prototype is ruins.js's hollowBelow, Session 2401,
+  // OG-104's Mark panel without its "technology", canon §3.1): one gate's mouth whose hillside is a cavern. Copied as drawn, a metre a unit,
+  // y 0 the viaduct's deck and the court, +z toward the way in, the rings at -z: the cavern 250 m across under a vault 120 m over the deck,
+  // the oculus 32 m across and its shaft 60 m up along the light, the lake 58 m down, the three rings in the back wall (dead script, five
+  // stones of the outer fallen onto the shelf, three of the middle slipped), the court of 4 m slabs with the sigil cut where the light lands,
+  // the viaduct of five arches, the slit door in the back plate. What differs: the prototype's fbm is the kit's pfbm (the same Perlin at z
+  // .37, so the rock and the stones are the prototype's); its vertex colours are encoded for the game's linear output; the scale post is left
+  // out; the way-in shelf rises to the deck's height along the viaduct's line, so you step onto it; and the prototype had no way in from the
+  // fell, so a passage is driven from the shelf through the cavern's wall (a trumpet 48 m across where it opens on the shelf, 7 m across and
+  // 6 m high 8 m into the rock, 30 m long), ending in a disc of sky at its mouth as the limestone cave's does, another at the shaft's top. The
+  // walk is a grid of half-metre cells merged into rectangles, as the caves' are: the passage, the shelves while they are level, the deck
+  // inside its parapet, the court, the rings' floor stage by stage to the plate; null where it is cliff, lake, rock, a fallen stone or a jamb.
+  //   PKIT.places.hollow(o) -> { group, sky, tris, draws, ground(x, z), CY, rings, lost, oculus, sun, lands, court, viaduct, door, water, roof,
+  //   back, mouth { x, z, y, w, h }, passage { z0, zw, z1 }, bounds { x0, x1, z0, z1 }, low, cells, arrive [x, y, z, yaw], path [[x, z]...] }
+  function markHollowBelow(o = {}) {
+    const key = 'ruins:hollow', r = stream(key), group = new THREE.Group(), DEG = Math.PI / 180, fbm = pfbm;
+    const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }, enc = v => Math.pow(Math.max(0, v), 1 / 2.2);
+    const WATER = -58, BED = -64, ZF = 78, ZB = -38, BACK = -72, CY = 12, ROOF = 120, AX = 125, AZ = 118, OC = 16;
+    const SUN = new THREE.Vector3(.12, 1, .18).normalize(), COURT = { x0: -30, x1: 30, z0: -72, z1: -36 };
+    const lands = { x: 0, z: -52 }, oc = { x: lands.x + SUN.x / SUN.y * ROOF, z: lands.z + SUN.z / SUN.y * ROOF, y: ROOF, r: OC };
+    const VZ0 = ZB, VZ1 = ZF + 2, SP = 5, PIER = 4.4, VW = 7, S = (VZ1 - VZ0 - (SP - 1) * PIER) / SP;
+    const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a); x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .2); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+    const bb = g => { g.computeBoundingBox(); return g.boundingBox; };
+    // the vault's radius by height and angle (the prototype's), wanted first here to find where its wall stands on the passage's line
+    const NR = 52, NC = 112, Y0 = -75, q = t => t < .4 ? 1 : Math.cos((t - .4) / .6 * Math.PI / 2) ** .7;
+    const rad = (t, a) => { const k = q(t), n = .14 * k * (fbm(Math.cos(a) * 2.2 + 7, t * 6 + Math.sin(a) * 2.2, 4)), rx = OC + (AX - OC) * k, rz = OC + (AZ - OC) * k; return [rx * (1 + n), rz * (1 + n)]; };
+    let WZ = Infinity; for (let i = 0; i <= NR; i++) { const y = Y0 + i / NR * (ROOF - Y0); if (y < -2 || y > 18) continue; for (let j = -3; j <= 3; j++) WZ = Math.min(WZ, rad(i / NR, j / NC * Math.PI * 2)[1] * Math.cos(j / NC * Math.PI * 2)); }
+    WZ = +WZ.toFixed(2); const PZ0 = WZ - 14, PZ1 = WZ + 30;
+    // the passage's section: half-width and height over its floor, a trumpet on the shelf narrowing to the adit 8 m into the rock
+    const pW = z => z < WZ ? 6 + 18 * sstep(WZ, PZ0, z) : z < WZ + 8 ? 3.5 + 2.5 * sstep(WZ + 8, WZ, z) : 3.5, pH = z => z < WZ ? 9 + 17 * sstep(WZ, PZ0, z) : z < WZ + 8 ? 6 + 3 * sstep(WZ + 8, WZ, z) : 6;
+    const inCourt = (x, z) => x > COURT.x0 - 1 && x < COURT.x1 + 1 && z > COURT.z0 - 1 && z < COURT.z1 + 1;
+    const ground = (x, z) => { const ef = z - ZF + 5 * fbm(x / 30 + 3, 1.7, 3), eb = ZB - z + 5 * fbm(x / 30 - 5, 4.1, 3), s = Math.max(sstep(-8, 0, ef), sstep(-8, 0, eb));
+      let top = inCourt(x, z) ? -.4 : -.4 + .5 * fbm(x / 9, z / 9, 3) - .25; if (z > VZ1 - 4) { const k = (1 - sstep(4, 14, Math.abs(x))) * (1 - sstep(VZ1 + 3, VZ1 + 26, z)); top += k * (-.02 - top); }
+      const bed = BED + 2 * fbm(x / 40, z / 40, 3); return bed + (top - bed) * s; };
+    { const N = 120, g = new THREE.PlaneGeometry(300, 300, N, N); g.rotateX(-Math.PI / 2); g.translate(0, 0, -16); const P = g.attributes.position, col = [];
+      for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), y = ground(x, z); P.setY(i, y); const wet = 1 - sstep(WATER - 2, WATER + 6, y), cl = sstep(-3, -12, y) * (1 - wet), v = .5 + .5 * fbm(x / 14, z / 14 + y / 9, 3);
+        col.push(...[.62, .62, .64].map((c, j) => enc((c * (.8 + .3 * v)) * (1 - .55 * wet) * (1 - .45 * cl) + [0, .02, .03][j] * wet))); }
+      g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); const f = g.toNonIndexed(); f.computeVertexNormals(); worldUV(f, .12); B.set('floor', [f]); }
+    // the passage's floor, from the trumpet's lip to the mouth (the cavern's floor plane ends at z 134)
+    { const L = PZ1 - PZ0 + 2, nz = Math.ceil(L / 1.5), g = new THREE.PlaneGeometry(52, L, 26, nz); g.rotateX(-Math.PI / 2); g.translate(0, 0, PZ0 - 1 + L / 2); const P = g.attributes.position, col = [];
+      for (let i = 0; i < P.count; i++) { const x = P.getX(i) * pW(P.getZ(i)) / 24 * 1.08, z = P.getZ(i); P.setX(i, x); P.setY(i, ground(x, z) + .01); const v = .5 + .5 * fbm(x / 14, z / 14, 3); col.push(...[.62, .62, .64].map(c => enc(c * (.8 + .3 * v)))); }
+      g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); const f = g.toNonIndexed(); f.computeVertexNormals(); worldUV(f, .12); B.get('floor').push(f); }
+    { const g = new THREE.PlaneGeometry(2 * AX + 20, 2 * AZ + 20); g.rotateX(-Math.PI / 2); g.translate(0, WATER, 0); put('water', g); }
+    const RINGS = [{ ri: 36, ro: 44, zf: BACK, n: 40 }, { ri: 25, ro: 33, zf: BACK - 14, n: 30 }, { ri: 14, ro: 22, zf: BACK - 28, n: 20 }], HOLE = 43, PLATE = BACK - 42;
+    const tint = (x, y, z) => { const fr = sstep(ROOF - 40, ROOF, y) * .6, wet = 1 - sstep(WATER, WATER + 14, y), v = .5 + .5 * fbm(x / 11 + y / 17, z / 11, 3), b = .55 + .35 * v; return [b * (1 - .6 * wet) + .35 * fr, b * (1 - .55 * wet) + .38 * fr, b * (1 - .5 * wet) + .45 * fr].map(enc); };
+    const P = [], C = [];
+    { const pt = (i, j) => { const t = i / NR, a = j / NC * Math.PI * 2, [rx, rz] = rad(t, a), cx = oc.x * sstep(.25, 1, t), cz = oc.z * sstep(.25, 1, t); let x = cx + Math.sin(a) * rx, z = cz + Math.cos(a) * rz;
+        const y = Y0 + t * (ROOF - Y0); if (z < BACK + 1.2 * fbm(x / 20, y / 20, 2)) z = BACK + 1.2 * fbm(x / 20, y / 20, 2); return [x, y, z]; };
+      const G = []; for (let i = 0; i <= NR; i++) { const row = []; for (let j = 0; j <= NC; j++) row.push(pt(i, j % NC)); G.push(row); }
+      // the vault's rock is cut where the passage's trumpet goes through it: any triangle with a corner inside the trumpet's section at the wall
+      const inPass = p => p[2] > PZ0 && Math.abs(p[0]) < pW(WZ) * .9 && p[1] > -3 && p[1] < ground(p[0], p[2]) + pH(WZ) * .9;
+      for (let i = 0; i < NR; i++) for (let j = 0; j < NC; j++) { const a = G[i][j], b = G[i][j + 1], c = G[i + 1][j], d = G[i + 1][j + 1];
+        for (const T of [[a, c, b], [b, c, d]]) { const m = [0, 1, 2].map(k => (T[0][k] + T[1][k] + T[2][k]) / 3); if (m[2] < BACK + 6 && Math.hypot(m[0], m[1] - CY) < HOLE) continue; if (T.some(inPass)) continue; for (const p of T) { P.push(...p); C.push(...tint(...p)); } } }
+      const NS = 6, top = G[NR]; for (let i = 0; i < NS; i++) for (let j = 0; j < NC; j++) { const lift = s => { const L = 60 * s / NS, w = 1 + .5 * (s / NS) ** 2; return k => { const p = top[k % NC]; const dx = (p[0] - oc.x) * w, dz = (p[2] - oc.z) * w, n = 1 + .1 * fbm(k / 9, s * .7 + 3, 2); return [oc.x + dx * n + SUN.x / SUN.y * L, ROOF + L, oc.z + dz * n + SUN.z / SUN.y * L]; }; };
+        const A = lift(i), Bv = lift(i + 1), a = A(j), b = A(j + 1), c = Bv(j), d = Bv(j + 1); for (const T of [[a, c, b], [b, c, d]]) for (const p of T) { P.push(...p); C.push(...tint(...p)); } }
+      { const lid = [[-70, CY + HOLE + 4, BACK - 70], [70, CY + HOLE + 4, BACK - 70], [70, CY + HOLE + 4, BACK + 2], [-70, CY + HOLE + 4, BACK + 2]], g3 = enc(.3), t = (a, b, c) => { for (const p of [a, b, c]) { P.push(...p); C.push(g3, g3, g3); } };
+        t(lid[0], lid[2], lid[1]); t(lid[0], lid[3], lid[2]); for (const s of [-1, 1]) { const x = s * 70, y0 = -40, y1 = CY + HOLE + 4; t([x, y0, BACK - 70], [x, y1, BACK - 70], [x, y1, BACK + 2]); t([x, y0, BACK - 70], [x, y1, BACK + 2], [x, y0, BACK + 2]); }
+        t([-70, -40, BACK - 70], [70, -40, BACK - 70], [70, CY + HOLE + 4, BACK - 70]); t([-70, -40, BACK - 70], [70, CY + HOLE + 4, BACK - 70], [-70, CY + HOLE + 4, BACK - 70]); }
+      // the passage: a half-ellipse of rock over its floor, ring by ring from the trumpet's lip to the mouth, the rock ragged
+      { const NA = 24, rows = []; for (let z = PZ0; z <= PZ1 + .01; z += z < WZ + 8 ? 1 : 2) rows.push(z);
+        const ring = z => { const w = pW(z), h = pH(z), out = []; for (let k = 0; k <= NA; k++) { const a = k / NA * Math.PI, n = 1 + .12 * fbm(k / 5 + 11, z / 6, 3), x = -Math.cos(a) * w * n * 1.04, y = ground(x, z) - .6 + Math.sin(a) * h * n + (k === 0 || k === NA ? 0 : .6); out.push([x, y, z]); } return out; };
+        let prev = ring(rows[0]); for (let i = 1; i < rows.length; i++) { const cur = ring(rows[i]); for (let k = 0; k < NA; k++) { const a = prev[k], b = prev[k + 1], c = cur[k], d = cur[k + 1]; for (const T of [[a, b, c], [b, d, c]]) for (const p of T) { P.push(...p); C.push(...tint(...p)); } } prev = cur; } }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.computeVertexNormals(); worldUV(g, .06); B.set('cave', [g]);
+      const ri = stream(key + ':ice'); for (let k = 0; k < 36; k++) { const p = top[Math.floor(k / 36 * NC)], L = 1.5 + ri() * 5, w = .25 + ri() * .35, c = new THREE.ConeGeometry(w, L, 5); c.rotateX(Math.PI); c.translate(p[0] + (oc.x - p[0]) * .02, p[1] - L / 2 - .2, p[2] + (oc.z - p[2]) * .02); put('ice', c); } }
+    // the rings, as the prototype's (its stream, in its order)
+    const at = (t, rr) => [rr * Math.sin(t), CY + rr * Math.cos(t)];
+    const wedge = (ta, tb, ra, rb, z1, z0, gap = .08) => { const out = [], qd = [at(ta, ra), at(tb, ra), at(tb, rb), at(ta, rb)], c = qd.reduce((s, p) => [s[0] + p[0] / 4, s[1] + p[1] / 4], [0, 0]);
+      const k = 1 - gap / Math.max(...qd.map(p => Math.hypot(p[0] - c[0], p[1] - c[1]))); let p = qd.map(v => [c[0] + (v[0] - c[0]) * k, c[1] + (v[1] - c[1]) * k]); let ar = 0; for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; ar += p[i][0] * p[j][1] - p[j][0] * p[i][1]; } if (ar < 0) p = p.reverse();
+      const F = p.map(v => [v[0], v[1], z1]), Bk = p.map(v => [v[0], v[1], z0]), tri = (a, b, d) => out.push(...a, ...b, ...d);
+      tri(F[0], F[1], F[2]); tri(F[0], F[2], F[3]); tri(Bk[0], Bk[2], Bk[1]); tri(Bk[0], Bk[3], Bk[2]); for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; tri(F[i], Bk[i], Bk[j]); tri(F[i], Bk[j], F[j]); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return { g, c }; };
+    const band = (ta, tb, rm, z, v0) => { const n = 3, pos = [], uv = [], L = rm * (tb - ta); for (let i = 0; i <= n; i++) { const t = ta + (tb - ta) * i / n, [x0, y0] = at(t, rm - 1.2), [x1, y1] = at(t, rm + 1.2); pos.push(x0, y0, z, x1, y1, z); uv.push(0, (v0 + L * i / n) / 14.4, 1, (v0 + L * i / n) / 14.4); }
+      const idx = []; for (let i = 0; i < n; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); return g.toNonIndexed(); };
+    const lostAt = t => t > -70 * DEG && t < -25 * DEG, lost = [], rl = stream(key + ':lost');
+    RINGS.forEach((R, ki) => { R.gone = 0; R.slipped = 0; let v = 0;
+      for (let i = 0; i < R.n; i++) { const ta = (i / R.n + (ki % 2) * .5 / R.n) * Math.PI * 2 - Math.PI, tb = ta + Math.PI * 2 / R.n, tm = (ta + tb) / 2, zf = R.zf + 2.5 + (r() - .5) * .3;
+        if (CY + R.ri * Math.cos(tm) + 1 < -1.5) continue;
+        const { g, c } = wedge(ta, tb, R.ri, R.ro, zf, R.zf - 2), s = band(ta, tb, (R.ri + R.ro) / 2, zf + .03, v); v += (R.ri + R.ro) / 2 * (tb - ta);
+        if (ki === 0 && lostAt(tm)) { R.gone++; g.translate(-c[0], -c[1], -(zf + R.zf - 2) / 2); g.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rl() * Math.PI * 2, rl() * Math.PI * 2, rl() * Math.PI * 2)));
+          const x = c[0] * (.85 + rl() * .2) + (rl() - .5) * 6, z = BACK + 7 + rl() * 20, b0 = bb(g), dz = Math.min(b0.max.x - b0.min.x, b0.max.y - b0.min.y, b0.max.z - b0.min.z);
+          const yc = Math.min(...[[0, 0], [2, 2], [-2, 2], [2, -2], [-2, -2]].map(([u, w]) => ground(x + u, z + w))); g.translate(x, yc - b0.min.y - dz / 8, z); put('stone', g);
+          const Pg = g.attributes.position; let low = Infinity, top = -Infinity; for (let k = 0; k < Pg.count; k++) { const d = Pg.getY(k) - ground(Pg.getX(k), Pg.getZ(k)); low = Math.min(low, d); top = Math.max(top, d); }
+          const b1 = bb(g); lost.push({ t: +(tm / DEG).toFixed(1), x: +x.toFixed(1), z: +z.toFixed(1), low: +low.toFixed(2), top: +top.toFixed(2), box: { x0: b1.min.x, x1: b1.max.x, z0: b1.min.z, z1: b1.max.z } }); continue; }
+        let M = null; if (ki === 1 && tm > -75 * DEG && tm < -20 * DEG && R.slipped < 3) { const out = .3 + r() * .5; M = new THREE.Matrix4().makeTranslation(c[0] + Math.sin(tm) * out, c[1] + Math.cos(tm) * out - .2, (r() - .5) * .6)
+          .multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler((r() - .5) * 2 * DEG, (r() - .5) * 2 * DEG, (r() - .5) * 4 * DEG))).multiply(new THREE.Matrix4().makeTranslation(-c[0], -c[1], 0)); R.slipped++; }
+        put('stone', M ? g.applyMatrix4(M) : g); put('script', M ? s.applyMatrix4(M) : s); } });
+    { const rv = k => RINGS[k].ri + .3, pr = [[HOLE + 2, BACK], [rv(0), BACK], [rv(0), RINGS[1].zf], [rv(1), RINGS[1].zf], [rv(1), RINGS[2].zf], [rv(2), RINGS[2].zf], [rv(2), PLATE], [.01, PLATE]].map(([a, b]) => new THREE.Vector2(a, b));
+      const g = new THREE.LatheGeometry(pr, 72); g.rotateX(Math.PI / 2); g.translate(0, CY, 0); put('dressed', g); }
+    const half = rr => Math.sqrt(rr * rr - CY * CY), stages = [[BACK, RINGS[1].zf, RINGS[0].ri], [RINGS[1].zf, RINGS[2].zf, RINGS[1].ri], [RINGS[2].zf, PLATE, RINGS[2].ri]];
+    for (const [z1, z0, rr] of stages) { const w = 2 * half(rr) + .2, g = new THREE.BoxGeometry(w, 1, z1 - z0); g.translate(0, -.5, (z0 + z1) / 2); put('dressed', g); }
+    const door = { w: 4.4, h: 15, z: PLATE }; { const g = new THREE.PlaneGeometry(door.w, door.h); g.translate(0, door.h / 2, PLATE + .05); put('door', g);
+      for (const s of [-1, 1]) { const j = new THREE.BoxGeometry(1.2, door.h + 1.2, 1); j.translate(s * (door.w / 2 + .6), (door.h + 1.2) / 2, PLATE + .5); put('stone', j); } const l = new THREE.BoxGeometry(door.w + 2.4, 1.2, 1); l.translate(0, door.h + .6, PLATE + .5); put('stone', l); }
+    { const rc = stream(key + ':court'); for (let x = COURT.x0 + 2; x < COURT.x1; x += 4) for (let z = COURT.z0 + 2; z < COURT.z1; z += 4) { const g = new THREE.BoxGeometry(3.94, .5, 3.94), sink = rc() < .08 ? .08 + rc() * .15 : 0;
+        g.translate(x, -.25 - sink, z); put('dressed', g); }
+      const s = new THREE.PlaneGeometry(14, 14); s.rotateX(-Math.PI / 2); s.translate(lands.x, .012, lands.z); put('sigil', s); }
+    const gaps = [];
+    { const sh = new THREE.Shape(); sh.moveTo(VZ0 - 4, BED - 2); sh.lineTo(VZ1 + 4, BED - 2); sh.lineTo(VZ1 + 4, -.35); sh.lineTo(VZ0 - 4, -.35); sh.closePath();
+      for (let i = 0; i < SP; i++) { const a = VZ0 + i * (S + PIER), b = a + S, rr = S / 2, spring = -2.4 - rr, h = new THREE.Path(); h.moveTo(a, BED - 1); h.lineTo(b, BED - 1); h.lineTo(b, spring); h.absarc(a + rr, spring, rr, 0, Math.PI, false); h.lineTo(a, BED - 1); sh.holes.push(h); }
+      const g = new THREE.ExtrudeGeometry(sh, { depth: VW, bevelEnabled: false, curveSegments: 14 }); g.rotateY(-Math.PI / 2); g.translate(VW / 2, 0, 0); put('stone', g);
+      const d = new THREE.BoxGeometry(VW + .6, .35, VZ1 - VZ0 + 6); d.translate(0, -.175, (VZ0 + VZ1) / 2); put('dressed', d);
+      const rp = stream(key + ':parapet'), broken = [[-1, VZ0 + 30 + rp() * 10], [1, VZ0 + 62 + rp() * 10], [-1, VZ0 + 92 + rp() * 8]].map(([s, z]) => ({ s, z0: +z.toFixed(1), z1: +(z + 3 + rp() * 4).toFixed(1) }));
+      gaps.push(...broken); for (const s of [-1, 1]) for (let z = VZ0 + .6; z < VZ1 - .6; z += 1.2) { if (broken.some(q2 => q2.s === s && z > q2.z0 && z < q2.z1)) continue; const hh = 1.1 - (broken.some(q2 => q2.s === s && (Math.abs(z - q2.z0) < 1.3 || Math.abs(z - q2.z1) < 1.3)) ? .4 : 0), g2 = new THREE.BoxGeometry(.5, hh, 1.16);
+        g2.translate(s * (VW / 2 - .25), hh / 2, z); put('stone', g2); } }
+    { const L = (ROOF + 60) / SUN.y, g = new THREE.CylinderGeometry(OC * .82, OC * .78, L, 32, 6, true), Pb = g.attributes.position, col = [];
+      for (let i = 0; i < Pb.count; i++) { const t = Pb.getY(i) / L + .5, b = .25 + .75 * t; col.push(enc(b), enc(b * .98), enc(b * .92)); } g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      g.translate(0, L / 2, 0); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), SUN)); g.translate(lands.x, 0, lands.z); put('beam', g); }
+    const cut = (w, h, draw, bg, fg) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, w, h); x.strokeStyle = fg; x.lineCap = 'round'; draw(x); const t = new THREE.CanvasTexture(c); t.anisotropy = 8; t.wrapT = THREE.RepeatWrapping; return t; };
+    const marks = x => { const rs = stream(key + ':script'); for (let k = 0; k < 12; k++) { const cy = 44 + k * 84, kind = Math.floor(rs() * 4); x.lineWidth = 7; x.beginPath();
+      if (kind === 0) x.arc(64, cy, 30, 0, 7); else if (kind === 1) { x.arc(64, cy, 30, 0, 7); x.moveTo(64, cy - 38); x.lineTo(64, cy + 38); } else if (kind === 2) { x.arc(64, cy, 30, Math.PI * .1, Math.PI * .9); x.moveTo(94, cy - 6); x.arc(64, cy - 6, 30, 0, -Math.PI, true); }
+      else { x.moveTo(64, cy - 36); x.lineTo(64, cy + 36); for (const d of [-20, 0, 20]) { x.moveTo(44, cy + d); x.lineTo(84, cy + d); } } x.stroke(); } };
+    const sigilT = cut(512, 512, x => { x.lineWidth = 16; x.beginPath(); x.arc(256, 256, 170, 0, 7); x.stroke(); x.lineWidth = 9; x.beginPath(); x.arc(256, 256, 96, 0, 7); x.stroke(); x.lineWidth = 10; x.beginPath(); x.moveTo(256, 30); x.lineTo(256, 482); x.moveTo(30, 256); x.lineTo(482, 256); x.stroke(); }, '#8a8680', '#3a3734');
+    const sky = new THREE.MeshBasicMaterial({ color: 0xc4d0dc, fog: false });
+    const rockM = mat('rock', { ns: .9, color: 0xffffff, rough: .9 }); rockM.vertexColors = true; rockM.side = THREE.DoubleSide;
+    const floorM = mat('rock', { ns: .8, color: 0xffffff, rough: .92 }); floorM.vertexColors = true;
+    const M = { cave: rockM, floor: floorM, water: new THREE.MeshStandardMaterial({ color: new THREE.Color(enc(.03), enc(.06), enc(.07)), roughness: .06, metalness: .2 }),
+      stone: mat('rock', { ns: .5, color: 0xb9b6ae, rough: .8 }), dressed: mat('slab', { ns: .7, color: 0xa8a49c, rough: .85 }),
+      script: new THREE.MeshStandardMaterial({ map: cut(128, 1024, marks, '#9c988f', '#34312c'), roughness: .85, polygonOffset: true, polygonOffsetFactor: -2, side: THREE.DoubleSide }),
+      sigil: new THREE.MeshStandardMaterial({ map: sigilT, roughness: .7, polygonOffset: true, polygonOffsetFactor: -2 }), ice: new THREE.MeshStandardMaterial({ color: new THREE.Color(enc(.78), enc(.88), enc(.95)), roughness: .15, metalness: .05 }),
+      door: new THREE.MeshBasicMaterial({ color: 0x030304 }), beam: new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(.16, .15, .13), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }) };
+    M.stone.side = THREE.DoubleSide; M.dressed.side = THREE.DoubleSide;
+    const merge = gs => { const g = mergeGeometries(gs); if (gs.every(x => x.attributes.color)) { const Cc = new Float32Array(g.attributes.position.count * 3); let o2 = 0; for (const x of gs) { Cc.set(x.attributes.color.array, o2); o2 += x.attributes.color.array.length; } g.setAttribute('color', new THREE.BufferAttribute(Cc, 3)); } return g; };
+    let tris = 0;
+    for (const [k, gs] of B) { const g = gs.length > 1 ? merge(gs) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = 'hollow:' + k; mesh.castShadow = false; mesh.receiveShadow = false; group.add(mesh); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; }
+    // the two discs of day: at the passage's mouth, and over the shaft's top
+    { const m = new THREE.Mesh(new THREE.CircleGeometry(8, 24), sky); m.position.set(0, ground(0, PZ1) + 2.4, PZ1 + .3); m.rotation.y = Math.PI; m.name = 'hollow:mouthsky'; m.userData.daylight = true; group.add(m); }
+    { const m = new THREE.Mesh(new THREE.CircleGeometry(40, 32).rotateX(Math.PI / 2), sky); m.position.set(oc.x + SUN.x / SUN.y * 60, ROOF + 59, oc.z + SUN.z / SUN.y * 60); m.name = 'hollow:sky'; m.userData.daylight = true; group.add(m); }
+    group.name = 'hollow';
+    // the walk: half-metre cells over the cavern, x -130 to 130, z from the plate to the mouth
+    const G = .5, X0c = -130, NXc = 520, ZT = Math.ceil(PZ1 / G) * G, NZc = Math.ceil((ZT - PLATE + 1) / G);
+    const vault = (x, z) => { const a = Math.atan2(x, z), [rx, rz] = rad((1 - Y0) / (ROOF - Y0), a); return (x / rx) ** 2 + (z / rz) ** 2 < .97; };
+    const jamb = (x, z) => z < PLATE + 1.3 && Math.abs(x) > door.w / 2 - .2;
+    const cellAt = (x, z) => {
+      if (z > WZ - 2) return Math.abs(x) < pW(z) * .85 - .6 && z < PZ1 - .2 ? ground(x, z) : null;
+      if (z < BACK) { if (z < PLATE + .6) return null; const st = stages.find(([z1, z0]) => z <= z1 && z > z0); return st && Math.abs(x) < half(st[2]) - .5 && !jamb(x, z) ? 0 : null; }
+      if (Math.abs(x) < VW / 2 - .55 && z > VZ0 - 3 && z < VZ1 + 3) return 0;
+      if (lost.some(L => L.top > .4 && x > L.box.x0 + .3 && x < L.box.x1 - .3 && z > L.box.z0 + .3 && z < L.box.z1 - .3)) return null;
+      if (inCourt(x, z) && x > COURT.x0 && x < COURT.x1 && z < COURT.z1) return 0;
+      if (!vault(x, z)) return null; const y = ground(x, z); return y < -1.3 ? null : y; };
+    const cells = [], open = new Map();
+    for (let j = 0; j < NZc; j++) { const z = ZT - (j + .5) * G, runs = []; const cv = x => { const v = cellAt(x, z); return v == null ? null : Math.round(v / .05) * .05; }; let i0 = 0, v0 = cv(X0c + G / 2);
+      for (let i = 1; i <= NXc; i++) { const v = i < NXc ? cv(X0c + (i + .5) * G) : NaN; if (v !== v0) { runs.push([i0, i, v0]); i0 = i; v0 = v; } }
+      const next = new Map(); for (const [a, b, v] of runs) { const k = a + ',' + b + ',' + v, c = open.get(k); if (c) { c.z0 = ZT - (j + 1) * G; next.set(k, c); } else { const n = { x0: X0c + a * G, x1: X0c + b * G, z0: ZT - (j + 1) * G, z1: ZT - j * G, y: v }; cells.push(n); next.set(k, n); } }
+      open.clear(); for (const [k, c] of next) open.set(k, c); }
+    for (const c of cells) if (c.y != null) c.y = +c.y.toFixed(2);
+    const low = Math.min(...cells.filter(c => c.y != null).map(c => c.y)), AZz = +(PZ1 - 1.6).toFixed(2);
+    return { group, sky, tris: Math.round(tris), draws: group.children.length, ground, CY, rings: RINGS.map(q2 => ({ ...q2 })), lost, oculus: { ...oc }, sun: SUN.toArray(), lands, court: COURT,
+      viaduct: { z0: VZ0, z1: VZ1, spans: SP, S: +S.toFixed(2), pier: PIER, w: VW, gaps }, water: WATER, roof: ROOF, back: BACK, plate: PLATE, door, hole: HOLE,
+      mouth: { x: 0, z: PZ1, y: +ground(0, PZ1).toFixed(2), w: 7, h: 6 }, passage: { z0: PZ0, zw: WZ, z1: PZ1 }, chamber: { h: ROOF + 60 },
+      bounds: { x0: X0c, x1: X0c + NXc * G, z0: ZT - NZc * G, z1: ZT }, low, cells, arrive: [0, +ground(0, AZz).toFixed(2), AZz, 0],
+      path: [[0, AZz], [0, WZ - 4], [0, VZ1 + 2], [0, VZ0 + 1], [0, lands.z], [0, BACK - 2], [0, PLATE + 2]] };
+  }
   // ── the Drowned Spires (Session 2419; backlog L "Ruins at the scale of cliffs", OG-104's Drowned Spires, the Gatelands; Michael's B on
   // #1737: always walked, the decks 2.5 m clear of high water) ──
   // ruins.js's drownedSpires (Sessions 2389 and 2415), copied for the world. The prototype's strand, its spit, its sea and its scale post
@@ -11914,7 +12065,7 @@ function aurenneOrrery(hAt, o = {}) {
       const m = new THREE.Mesh(g, DQM[k]); m.name = 'quarter:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     return { group, tris: Math.round(tris), draws: group.children.length, bridge, theatre };
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, scarred: scarredGateRuin, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, scarred: scarredGateRuin, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, trader: markTrader, TRADER_TRADES, TOWN_TRADES, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
