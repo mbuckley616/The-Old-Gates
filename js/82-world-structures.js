@@ -3486,7 +3486,7 @@
   // Stones are cosmetic; the place is the seed's.
   // When it stands (within 1.6 km, in the open world) every stone has a stamp that only clears the scatter under it (noFlat: the
   // ground is not flattened), the walls' standing courses are solids, and from 20h to 5h the stones drift and the seams burn.
-  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},spires:{site:undefined,W:null,stamps:null,sol:[],plats:[]},scarred:{site:undefined,W:null,stamps:null,sol:[],plats:[]},isles:{site:undefined,W:null,sol:[],plats:[]},near:1600,_t:0};
+  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},spires:{site:undefined,W:null,stamps:null,sol:[],plats:[]},scarred:{site:undefined,W:null,stamps:null,sol:[],plats:[]},isles:{site:undefined,W:null,sol:[],plats:[]},aqueducts:{site:undefined,W:null,stamp:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
   function wonderSkyfallSite(){const S=WONDERS.skyfall;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
@@ -3924,9 +3924,82 @@
   function wonderIslesDrop(){const S=WONDERS.isles;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:isles')STATIC_SOL.splice(i,1);S.sol=[];
     const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='isles')P.splice(i,1);S.plats=[];S.reseat=null;}
+  // S2491 — the Forgotten Aqueducts (OG-104's Gatelands panel; Michael's A on #1808: a gate's halls, sealed at both chokes): the kit's
+  // PKIT.wonders.aqueducts, from ruins.js, cut into a Gatelands hill. Its place, the same for every load of a seed: on a 50 m grid over the
+  // Gatelands' land (the Spires' swap of REGIONS), a point and one of eight headings for the halls where the lip (16 bearings at 50 m) is
+  // 76 m or more over the sea at its lowest (the datum: the water 64 m down stays 12 m over the sea, the slabs 6), rising no more than 24 m
+  // round, and the ground over the halls (to 140 m along, 40 m across, past the hole) no lower than the datum less 6 (their vault's crown
+  // is 10 down); no river within 170 m; 330 m clear of every pad and door, 220 m of every road's line and 1.2 km of the other Gatelands
+  // wonders. It is scored on an even lip, a low head for the stair (50° round from +z in the frame) and deep ground over the halls.
+  // No Gatelands ground over 74 m is flat across 120 m on seed 1 (the high country is all hillside, 16 m or more of fall), so the lip
+  // follows the hill: the kit reads the ground as it was (aqGroundGrid) and the stair takes as many treads as its head's height needs.
+  // One stamp of the kit's shape (inside: the hole to 6 m past its wall, the halls 8 m round) sinks the terrain 75 m under the datum, and the
+  // far sheet's points round the hole with it (farR); the kit lays its own land over the sunk ground in the terrain's material and colours.
+  // The walk is one platform over the kit's land (its yAt: the land as it was, the flight, the scree and the shelf, the water waded) and
+  // its turned solids.
+  function wonderAqueductsSite(){const S=WONDERS.aqueducts;if(S.site!==undefined)return S.site;S.site=null;
+    if(typeof nationKeyOf!=='function'||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.aqueductsPlan)return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
+    const all=[...CELLS.values()],gl=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='gatelands');if(!gl.length)return null;
+    const others=[wonderRingSite(),wonderLoughSite(),wonderSpiresSite(),wonderIslesSite()].filter(Boolean);
+    const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
+    const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
+    const segD=(a,b,x,z)=>{const dx=b.x-a.x,dz=b.z-a.z,L=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L));return Math.hypot(a.x+dx*t-x,a.z+dz*t-z);};
+    const PL=PKIT.wonders.aqueductsPlan(),SA=50*Math.PI/180;
+    const keep=[REGIONS.slice(),PEAKS.slice(),INLETS.slice()],gk=new Set(gl.map(c=>c.i+','+c.j)),ring=all.filter(c=>{for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(gk.has((c.i+di)+','+(c.j+dj)))return true;return false;});
+    REGIONS.length=0;PEAKS.length=0;INLETS.length=0;ring.forEach(c=>{c.regions.forEach(q=>REGIONS.push(q));c.peaks.forEach(q=>PEAKS.push(q));(c.inlets||[]).forEach(q=>INLETS.push(q));});
+    const wet=(x,z)=>{const y=rawH(x,z);return y<landH(x,z)-1.5||y<SEA_Y+2;};let best=null;
+    try{for(const c of gl)for(let a=25;a<SIZE;a+=50)for(let b=25;b<SIZE;b+=50){const x=c.i*SIZE+a,z=c.j*SIZE+b;if(rawH(x,z)<70)continue;
+        const lipH=[];for(let k=0;k<16;k++){const t=k*Math.PI/8;lipH.push(rawH(x+Math.sin(t)*50,z+Math.cos(t)*50));}
+        const lo=Math.min(...lipH),hi=Math.max(...lipH);if(lo<SEA_Y+76||hi-lo>24)continue;
+        if(best&&-(hi-lo)<=best.score-8)continue; /* the hall's cover adds at most 4 and the stair takes off */
+        let dry=true;for(let k=0;k<16&&dry;k++){const t=k*Math.PI/8;for(const rr of [0,60,110,170])if(wet(x+Math.sin(t)*rr,z+Math.cos(t)*rr)){dry=false;break;}}if(!dry)continue;
+        for(let q=0;q<8;q++){const ry=q*Math.PI/8,cc=Math.cos(ry),ss=Math.sin(ry),W=(lx,lz)=>[x+lx*cc+lz*ss,z-lx*ss+lz*cc];
+          let cover=1e9;for(let lx=-140;lx<=140;lx+=10)for(const lz of [-40,-20,0,20,40]){if(Math.hypot(lx,lz)<60)continue;cover=Math.min(cover,rawH(...W(lx,lz))-lo);if(cover<-6)break;}
+          if(cover<-6)continue;const head=rawH(...W(Math.sin(SA)*50,Math.cos(SA)*50))-lo;
+          const score=-(hi-lo)-head*.5+Math.min(cover,8)*.5;if(best&&score<=best.score)continue;
+          if(others.some(w=>Math.hypot(w.x-x,w.z-z)<1200)||sites.some(s=>Math.hypot(s.x-x,s.z-z)<330+(s.pad||0))||doors.some(d=>Math.hypot(d.x-x,d.z-z)<330)||roads.some(([p,r])=>segD(p,r,x,z)<220))continue;
+          best={x,z,ry:+ry.toFixed(4),y:+lo.toFixed(2),fall:+(hi-lo).toFixed(1),head:+head.toFixed(1),cover:+cover.toFixed(1),score:+score.toFixed(2),cell:cellKey(c.i,c.j)};}}
+    }finally{REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}
+    return (S.site=best);}
+  // the drawn ground as it was before the hole (the stamp switched off), on a 2 m grid in the frame over the kit's box, from the datum
+  function aqGroundGrid(st,box){const G=2,NX=Math.ceil(box.x*2/G)+3,NZ=Math.ceil(box.z*2/G)+3,X0=-box.x-G,Z0=-box.z-G,H=new Float32Array(NX*NZ),S=WONDERS.aqueducts;
+    if(S.stamp)S.stamp.off=true;try{for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const [x,z]=wonderToWorld(st,X0+i*G,Z0+j*G);H[j*NX+i]=meshH(x,z)-st.y;}}finally{if(S.stamp)S.stamp.off=false;}
+    return (lx,lz)=>{const u=Math.max(0,Math.min(NX-1.001,(lx-X0)/G)),v=Math.max(0,Math.min(NZ-1.001,(lz-Z0)/G)),i=Math.floor(u),j=Math.floor(v),fu=u-i,fv=v-j,q=j*NX+i;
+      return H[q]*(1-fu)*(1-fv)+H[q+1]*fu*(1-fv)+H[q+NX]*(1-fu)*fv+H[q+NX+1]*fu*fv;};}
+  // the kit's land in the world's terrain material: groundColor at each point (its own slope), the rock of the lip as the prototype tints
+  // it, and the new look's mask (woods and fields, no pad)
+  function aqLandPaint(mesh,st){const g=mesh.geometry,P=g.attributes.position,C=g.attributes.color,N=g.attributes.normal,rock=g.userData.rock||[],c=new THREE.Color(),R=new THREE.Color(.6,.59,.56);
+    const mask=new Float32Array(P.count*3);
+    for(let i=0;i<P.count;i++){const [x,z]=wonderToWorld(st,P.getX(i),P.getZ(i)),h=P.getY(i)+st.y;groundColor(x,z,h,N.getY(i),c);c.lerp(R,(rock[i]||0)*.85);C.setXYZ(i,c.r,c.g,c.b);
+      if(typeof LAND!=='undefined'&&LAND.on){let field=0,wood=0;for(const e of regionWeights(x,z)){if(e.w<=0)continue;field+=e.w*(LAND_FIELD_BIOMES[e.r.biome]||0);wood+=e.w*(e.r.density||0)*(e.r.trees&&e.r.trees!=='dead'?1:.3);}
+        mask[i*3+1]=Math.min(1,wood*1.2)*(1-(rock[i]||0));mask[i*3+2]=Math.min(1,field)*(1-(rock[i]||0));}}
+    C.needsUpdate=true;g.setAttribute('aMask',new THREE.BufferAttribute(mask,3));mesh.material=terrainMat;mesh.receiveShadow=true;}
+  function wonderAqueductsBuild(){const S=WONDERS.aqueducts,st=wonderAqueductsSite();if(!st||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.aqueducts)return null;
+    const PL=PKIT.wonders.aqueductsPlan(),c=Math.cos(st.ry),s_=Math.sin(st.ry),toL=(wx,wz)=>{const dx=wx-st.x,dz=wz-st.z;return [dx*c-dz*s_,dx*s_+dz*c];};
+    const hAt=aqGroundGrid(st,PL.box);
+    if(!S.stamp){S.stamp=addStamp({id:'wonder_aqueducts',kind:'wonder',x:st.x,z:st.z,r:Math.hypot(PL.X1+9,PL.OUT+9),blend:.5,y:st.y-75,farR:true,inside:(x,z)=>PL.sunk(...toL(x,z))});S.stamps=[S.stamp];
+      try{clearScatterUnder(S.stamps);}catch(e){console.warn('wonder scatter',e);}farSinkUnder();}
+    const W=PKIT.wonders.aqueducts({hAt});
+    W.sig=wonderCellSig(st);W.group.position.set(st.x,st.y,st.z);W.group.rotation.y=st.ry;W.group.userData.noBake=true;W.group.updateMatrixWorld(true);
+    const land=W.group.getObjectByName('land');if(land)aqLandPaint(land,st);
+    sc.add(W.group);S.W=W;W.tick=()=>{};
+    const R=Math.hypot(PL.box.x,PL.box.z);
+    S.plats=[{x0:st.x-R,x1:st.x+R,z0:st.z-R,z1:st.z+R,y:st.y,wonder:'aqueducts',yAt:(wx,wz)=>{const y=W.yAt(...toL(wx,wz));return y==null?null:y+st.y;}}];S.plats.forEach(p=>ZONES.world.platforms.push(p));
+    S.sol=W.sol.map(b=>{const [x,z]=wonderToWorld(st,b.x,b.z),q={cx:x,cz:z,rx:b.w/2,rz:b.d/2,c:Math.cos(st.ry+b.ry),s:Math.sin(st.ry+b.ry),h:200,cell:'wonder:aqueducts',wonder:true};if(b.top!=null)q.top=b.top+st.y;return q;});
+    S.sol.forEach(q=>STATIC_SOL.push(q));
+    S.reseat=()=>wonderAqHerbs(st);S.reseat();
+    return W;}
+  // a herb or a vein a chunk laid on the sunk ground (under the kit's land, or in the hole) goes: where the ground walked is not the drawn
+  function wonderAqHerbs(st){const HL=(ZONES.world&&ZONES.world.herbs)||[];let n=0;
+    for(let i=HL.length-1;i>=0;i--){const h=HL[i];if(Math.hypot(h.x-st.x,h.z-st.z)>190)continue;if(activeTerrainH(h.x,h.z)<=worldH(h.x,h.z)+.5)continue;
+      HL.splice(i,1);h.offPad=true;h.g.visible=false;if(h.gl)h.gl.intensity=0;if(h.inst)syncHerbInstance(h);n++;}
+    return n+wonderSeatVeins(st.x,st.z,190);}
+  function wonderAqueductsDrop(){const S=WONDERS.aqueducts;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});S.W=null;}
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:aqueducts')STATIC_SOL.splice(i,1);S.sol=[];
+    const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='aqueducts')P.splice(i,1);S.plats=[];S.reseat=null;}
   // from WORLD.tick, every frame in the open world: each wonder built within 1.6 km (checked once a second), animated while it stands.
   // A wonder's site is searched only once you stand on its island's land (the Fields' takes 0.6 s on software GL)
-  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop},{k:'northlight',nation:'mark',site:wonderNorthSite,build:wonderNorthBuild,drop:wonderNorthDrop},{k:'spires',nation:'gatelands',site:wonderSpiresSite,build:wonderSpiresBuild,drop:wonderSpiresDrop},{k:'scarred',nation:'aurenne',site:wonderScarredSite,build:wonderScarredBuild,drop:wonderScarredDrop},{k:'isles',nation:'gatelands',site:wonderIslesSite,build:wonderIslesBuild,drop:wonderIslesDrop}];
+  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop},{k:'northlight',nation:'mark',site:wonderNorthSite,build:wonderNorthBuild,drop:wonderNorthDrop},{k:'spires',nation:'gatelands',site:wonderSpiresSite,build:wonderSpiresBuild,drop:wonderSpiresDrop},{k:'scarred',nation:'aurenne',site:wonderScarredSite,build:wonderScarredBuild,drop:wonderScarredDrop},{k:'isles',nation:'gatelands',site:wonderIslesSite,build:wonderIslesBuild,drop:wonderIslesDrop},{k:'aqueducts',nation:'gatelands',site:wonderAqueductsSite,build:wonderAqueductsBuild,drop:wonderAqueductsDrop}];
   function tickWonders(){if(typeof LAND==='undefined'||!LAND.on)return;const t=performance.now(),due=t-WONDERS._t>1000||WONDERS._t===0&&WONDER_KINDS.some(K=>!WONDERS[K.k].W);if(due)WONDERS._t=t;
     let nk=null;for(const K of WONDER_KINDS){const S=WONDERS[K.k];
       if(S.W&&S.W.group.parent!==sc)K.drop(); /* the world's scene was built again */
@@ -3949,7 +4022,8 @@
     if(k==='ring')return {x:st.x,z:st.z,r:128};
     if(k==='northlight')return {x:st.x,z:st.z,r:96};
     if(k==='scarred'){const [x,z]=wonderToWorld(st,60,60);return {x,z,r:170};}
-    if(k==='isles')return {x:st.x,z:st.z,r:200}; /* S2487 — the third isle's water at the line's middle (720 m, the whole line, reached the shore's chunks) */
+    if(k==='isles')return {x:st.x,z:st.z,r:200};
+    if(k==='aqueducts')return {x:st.x,z:st.z,r:170}; /* S2491 — the kit's land, the halls' length and the hole */ /* S2487 — the third isle's water at the line's middle (720 m, the whole line, reached the shore's chunks) */
     if(k==='spires'){const [x,z]=wonderToWorld(st,0,(st.spit+5)/2);return {x,z,r:(st.spit+95)/2+11};}
     return null;}
   function wonderFoeClear(x,z){if(typeof LAND==='undefined'||!LAND.on)return false;let nk=null;

@@ -54,7 +54,7 @@ function activeTerrainH(wx,wz){
   // so a goblin chasing the player onto the bridge will follow them up.
   const zr=ZONES[activeZoneId];
   if(zr&&zr.platforms){ // v80 — the highest platform under you wins (a dais's inner ring over its outer)
-    let best=null;for(let i=0;i<zr.platforms.length;i++){const p=zr.platforms[i];if(wx>=p.x0 && wx<=p.x1 && wz>=p.z0 && wz<=p.z1 && (!p.inside||p.inside(wx,wz))){if(best===null||p.y>best)best=p.y;}}
+    let best=null;for(let i=0;i<zr.platforms.length;i++){const p=zr.platforms[i];if(wx>=p.x0 && wx<=p.x1 && wz>=p.z0 && wz<=p.z1 && (!p.inside||p.inside(wx,wz))){const y=p.yAt?p.yAt(wx,wz):p.y; /* S2491 — a platform whose height is a function of the point (the Forgotten Aqueducts' bed, flight and land); null where it holds nothing */if(y!=null&&(best===null||y>best))best=y;}}
     if(best!==null)return best;
   }
   if(zr&&zr.getY)return zr.getY(wx,wz);

@@ -9,6 +9,7 @@
 // Session 2450: the veins laid before the Spires' stamp are set on its ground, or taken away from its solids, decks and water.
 // Session 2468: the Scarred Gate on Aurenne's dunes, walked up its plinth and through the ring.
 // Session 2487: the Gate Isles off a Gatelands shore, climbed from the water to each ring's sill; a ship stops off their rock.
+// Session 2491: the Forgotten Aqueducts cut into a Gatelands hill, walked down the flight to the scree; the hole sealed to the bed's walker.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -172,7 +173,9 @@ check(`the Northlight Altar stands on a Markish fell ${ns.over} m over the snow 
 check(`its ground falls ${ns.fall} m under the stones, it stands ${ns.near} m past the nearest pad and ${ns.fields} m from the Fields; beyond its gap (${(ns.ry * 180 / Math.PI).toFixed(0)}° off the north) the land falls ${ns.north} m`, ns.fall <= 24 && ns.near >= 330 && ns.fields >= 1200 && Math.abs(ns.ry) <= Math.PI / 4 + 1e-3 && ns.north > 0, ns);
 const nat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 0, 150); return { x, z }; }, ns);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), nat);
-await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [nat.x, nat.z], { timeout: 60000 });
+// S2491: the jump from the Gatelands' ring to the Mark crosses some 18 km and loads a new country's cells; on a CI runner it passed 60 s
+// twice in a row (#1851's first run, #1855's), 1.6 s here. Its wait is 180 s, as hubreturn's slow click got 400 (S2481).
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [nat.x, nat.z], { timeout: 180000 });
 await g.cells(); await g.hide();
 const nw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.northlight, W = S.W, st = S.site; if (!W) return { none: true };
   let meshes = 0, lit = 0; W.group.traverse(o => { if (o.isMesh) { meshes++; if (o.material.emissive && o.material.emissive.getHex() !== 0) lit++; } });
@@ -331,6 +334,53 @@ console.log(JSON.stringify(ish));
 check(`a ship sailed full ahead (${ish.top} m/s) at the second isle's landing stops ${ish.closest} m from its heart, off the rock (its foot about ${ish.foot} m out)`, ish.clearAtStart && ish.top > 2 && ish.closest >= ish.foot && Math.abs(ish.speed) < .5, ish);
 const idr_ = await page.evaluate(() => { const S = WONDERS.isles; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:isles').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'isles').length }; });
 check('2.5 km off it is dropped, its solids and steps with it', idr_.gone && idr_.sol === 0 && idr_.plats === 0, idr_);
+// Session 2491: the Forgotten Aqueducts (#1808 A) cut into a Gatelands hill: the terrain sunk under the hole and the halls, the kit's own
+// land over it, the flight walked from the lip to the scree, the hole sealed to the bed's walker but at the flight's foot.
+const aq = await page.evaluate(() => { const a = wonderAqueductsSite(); WONDERS.aqueducts.site = undefined; const t0 = performance.now(), b = wonderAqueductsSite(), ms = Math.round(performance.now() - t0);
+  if (!b) return { none: true }; const sites = [...CELLS.values()].flatMap(c => c.sites), near = sites.reduce((m, t) => Math.min(m, Math.hypot(t.x - b.x, t.z - b.z) - (t.pad || 0)), 1e9);
+  const ws = [wonderRingSite(), wonderLoughSite(), wonderSpiresSite(), wonderIslesSite()].filter(Boolean), wonder = Math.min(...ws.map(w => Math.hypot(w.x - b.x, w.z - b.z)));
+  return { ...b, ms, same: JSON.stringify(a) === JSON.stringify(b), nation: nationKeyOf(...cellOf(b.x, b.z)), near: Math.round(near), wonder: Math.round(wonder) }; });
+console.log(JSON.stringify(aq));
+check(`the Forgotten Aqueducts' hill is the Gatelands', its lip ${aq.y} m up at its lowest (rising ${aq.fall} m round), the same asked twice (${aq.ms} ms)`, !aq.none && aq.nation === 'gatelands' && aq.y >= 76 && aq.fall <= 24 && aq.same, aq);
+check(`it stands ${aq.near} m past the nearest pad and ${aq.wonder} m from the nearest Gatelands wonder`, aq.near >= 330 && aq.wonder >= 1200, aq);
+const aat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 0, 95); return { x, z }; }, aq);
+await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), aat);
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [aat.x, aat.z], { timeout: 60000 });
+await g.cells(); await g.hide();
+const aw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.aqueducts, W = S.W, st = S.site; if (!W) return { none: true };
+  let meshes = 0; W.group.traverse(o => { if (o.isMesh) meshes++; }); const L = (lx, lz) => wonderToWorld(st, lx, lz), T = (lx, lz) => activeTerrainH(...L(lx, lz)) - st.y;
+  // the ground: sunk under the hole and the halls; walked on the bed in the hole and on the land as it was beside it
+  S.stamp.off = true; const was = [[0, 75], [100, 0], [-150, 0], [0, -62]].map(([a, b]) => worldH(...L(a, b)) - st.y); S.stamp.off = false;
+  const land = [[0, 75], [100, 0], [-150, 0], [0, -62]].map(([a, b], i) => +(T(a, b) - was[i]).toFixed(3)), sunk = [[0, 0], [100, 0], [-60, 20]].map(([a, b]) => +(worldH(...L(a, b)) - st.y).toFixed(1));
+  // the far sheet: no far point in the hole or over the halls above the hall's floor
+  let farUp = 0; for (const o of sc.children) { const F = o.userData && o.userData.far; if (!F) continue; const P = o.geometry.attributes.position;
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i) + F.ox + 2400 / 2, z = P.getZ(i) + F.oz + 2400 / 2; if (S.stamp.inside(x, z) && P.getY(i) > st.y - 72) farUp++; } }
+  // the kit's land over the sunk ground: on a 6 m grid over its box, the sheet (cast down onto it) stands over the drawn terrain
+  const lm = W.group.getObjectByName('land'), rc = new THREE.Raycaster(), dn = new THREE.Vector3(0, -1, 0); let under = 0, cast = 0, worst = 9; const unders = [];
+  for (let lx = -156; lx <= 156; lx += 6) for (let lz = -57; lz <= 57; lz += 6) { if (Math.hypot(lx, lz) < W.lip(Math.atan2(lx, lz)) + 1) continue; const [x, z] = L(lx, lz); rc.set(new THREE.Vector3(x, st.y + 400, z), dn); const h = rc.intersectObject(lm)[0]; if (!h) continue; cast++;
+    const now = meshH(x, z); if (h.point.y - now >= .02) continue; S.stamp.off = true; const was = meshH(x, z); S.stamp.off = false; if (was - now < .05) continue; /* the world's own ground, untouched by the stamp, may show past the sheet's rim */
+    under++; worst = Math.min(worst, h.point.y - now); if (unders.length < 5) unders.push([lx, lz, +(h.point.y - now).toFixed(2)]); }
+  // the flight: tread by tread from the lip's ground to the scree, on its middle line, nothing in the way
+  const path = []; let rise = 0, blocked = 0; for (let k = 0; k < W.stair.n; k++) { const a = W.treadA(k), r = W.treadR(k) - 1.5, [x, z] = L(Math.sin(a) * r, Math.cos(a) * r), y = activeTerrainH(x, z); if (solidAt(x, z, y)) blocked++; if (path.length) rise = Math.max(rise, Math.abs(y - path[path.length - 1])); path.push(y); }
+  const a0 = W.stair.a0, l0 = W.lip(a0), headLand = T(Math.sin(a0) * (l0 + .5), Math.cos(a0) * (l0 + .5)), head = path[0] - st.y, foot = path[path.length - 1] - st.y;
+  const scree = T(-22, 28), wade = T(-20, -15);
+  // sealed: round the hole, a walker on the bed meets rock a metre inside the lip; one on the land crosses; under the flight the bed's
+  // walker is stopped and the flight's is not
+  let ring = 0, ringN = 0, crossN = 0; for (let k = 0; k < 72; k++) { const a = (k + .5) * Math.PI / 36; if (a < a0 + .06 || a > Math.PI * 2 + W.stair.a1 - .06) continue; ringN++; const l = W.lip(a), [x, z] = L(Math.sin(a) * (l - 1.2), Math.cos(a) * (l - 1.2)), [ox, oz] = L(Math.sin(a) * (l + 3), Math.cos(a) * (l + 3));
+    if (solidAt(x, z, st.y - 60)) ring++; if (!solidAt(ox, oz, activeTerrainH(ox, oz))) crossN++; }
+  const k = Math.floor(W.stair.n * .6), ua = W.treadA(k), ur = W.treadR(k) - 1.5, [ux, uz] = L(Math.sin(ua) * ur, Math.cos(ua) * ur), underBed = solidAt(ux, uz, st.y - 64), onTread = solidAt(ux, uz, activeTerrainH(ux, uz));
+  const herbs = (ZONES.world.herbs || []).filter(h => Math.hypot(h.x - st.x, h.z - st.z) < 190 && activeTerrainH(h.x, h.z) > worldH(h.x, h.z) + .5).length;
+  return { tris: W.tris, draws: W.draws, meshes, arches: W.arches.map(q => q.cond[0]).join(''), inScene: W.group.parent === sc, sol: S.sol.length, land, sunk, farUp, cast, under, unders, worst: +worst.toFixed(2),
+    n: W.stair.n, rise: +rise.toFixed(3), blocked, head: +head.toFixed(2), headLand: +headLand.toFixed(2), foot: +foot.toFixed(2), scree: +scree.toFixed(2), wade: +wade.toFixed(2), ring, ringN, crossN, underBed, onTread, herbs }; });
+console.log(JSON.stringify(aw));
+check(`within 1.6 km it stands: arches ${aw.arches} (broken over the hole), ${aw.tris} triangles in ${aw.draws} draws`, !aw.none && aw.inScene && aw.arches === 'cccbbbccccccbbbccc' && aw.draws === aw.meshes && aw.draws <= 18 && aw.tris < 90000, aw);
+check(`the terrain is sunk under the hole and the halls (${aw.sunk.join(', ')} m), and a walker beside it stands on the ground as it was (off by ${Math.max(...aw.land.map(Math.abs))} m); no far point stands in the hole or the halls (${aw.farUp})`, aw.sunk.every(y => y <= -74) && aw.land.every(d => Math.abs(d) < .2) && aw.farUp === 0, aw);
+check(`the kit's land covers the sunk ground: of ${aw.cast} points cast down onto it, ${aw.under} where the stamp moved the terrain stand under it`, aw.cast > 400 && aw.under === 0, aw);
+check(`the flight goes down ${aw.n} treads from ${aw.head} m (the land beside its head ${aw.headLand} m) to ${aw.foot} m on the scree, no rise over ${aw.rise} m, nothing in the way; the scree at ${aw.scree} m, the nave waded at ${aw.wade} m`, Math.abs(aw.head - aw.headLand) < 1 && Math.abs(aw.foot + 39.4) < .5 && aw.rise <= .42 && aw.blocked === 0 && aw.scree < -38 && aw.scree > -64 && Math.abs(aw.wade + 65.3) < .05, aw);
+check(`it is sealed: rock meets the bed's walker at ${aw.ring} of ${aw.ringN} bearings a metre inside the lip, and the land's walker crosses at ${aw.crossN}; under the flight the bed's walker is stopped and the flight's is not`, aw.ring === aw.ringN && aw.crossN === aw.ringN && aw.underBed && !aw.onTread, aw);
+check(`no herb or vein is left on the sunk ground (${aw.herbs})`, aw.herbs === 0, aw);
+const adr = await page.evaluate(() => { const S = WONDERS.aqueducts; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:aqueducts').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'aqueducts').length }; });
+check('2.5 km off it is dropped, its solids and its walk with it', adr.gone && adr.sol === 0 && adr.plats === 0, adr);
 // Session 2431: no chunk foe on a wonder's ground (S2409: foes stood inside the Northlight Altar's ring). Every chunk whose centre lies
 // within a wonder's ground + 70 m is spawned afresh at 23h (the night's density), with the rule and without it: with it none spawns.
 const wf = await page.evaluate(() => { forceTime(23); const C = WORLD.CHUNK, out = {}, keep = wonderFoeClear;
@@ -342,6 +392,6 @@ const wf = await page.evaluate(() => { forceTime(23); const C = WORLD.CHUNK, out
   forceTime(13); return out; });
 console.log(JSON.stringify(wf));
 const wk = Object.entries(wf).filter(([, v]) => v), off = wk.reduce((m, [, v]) => m + v.off, 0);
-check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 8 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
+check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 9 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

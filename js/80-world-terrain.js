@@ -208,7 +208,7 @@
   }
   function stampAt(x,z){ // stamp whose core radius contains the point, or null
     const arr=stampsNear(x,z);
-    for(let i=0;i<arr.length;i++){const s=arr[i];if(s.kind!=='graze'&&Math.hypot(x-s.x,z-s.z)<s.r)return s;}
+    for(let i=0;i<arr.length;i++){const s=arr[i];if(s.kind!=='graze'&&!s.off&&Math.hypot(x-s.x,z-s.z)<s.r&&(!s.inside||s.inside(x,z)))return s;}
     return null;
   }
   /* S2088 — a grazed stamp (kind 'graze', noFlat) is no stamp to the ground, the grass or anything that asks stampAt: it only thins the trees
@@ -220,7 +220,8 @@
     let h=rawH(x,z);
     const arr=stampsNear(x,z);
     for(let i=0;i<arr.length;i++){
-      const s=arr[i];if(s.noFlat)continue; /* S433 — a stamp that only clears the scatter (a river quay's bank) */
+      const s=arr[i];if(s.noFlat||s.off)continue; /* S433 — a stamp that only clears the scatter (a river quay's bank); S2491 — one switched off while the ground it covers is read as it was */
+      if(s.inside&&!s.inside(x,z))continue; /* S2491 — a stamp of a shape: within its r it holds only where inside() says (the Forgotten Aqueducts' hole and halls), sunk to its y outright */
       const dx=x-s.x,dz=z-s.z;
       const R=s.r+s.blend;
       if(dx>R||dx<-R||dz>R||dz<-R)continue;
@@ -688,14 +689,14 @@
   // Scatter skips a stamp's core, so take out what stands in one now (the mesh's last instance fills the gap), drop its
   // collider and tree point, and refresh the ground so the stamp's flattening shows. Nothing is rebuilt or respawned.
   function clearScatterUnder(stamps){let n=0;const m=new THREE.Matrix4(),v=new THREE.Vector3(),c=new THREE.Color();
-    for(const ch of chunks.values()){const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK;const hit=stamps.filter(st=>st.x+st.r>x0&&st.x-st.r<x0+CHUNK&&st.z+st.r>z0&&st.z-st.r<z0+CHUNK);if(!hit.length)continue;
+    for(const ch of chunks.values()){const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK;const hit=stamps.filter(st=>st.x+st.r>x0&&st.x-st.r<x0+CHUNK&&st.z+st.r>z0&&st.z-st.r<z0+CHUNK);if(!hit.length)continue;const inSt=(st,x,z)=>Math.hypot(x-st.x,z-st.z)<st.r&&(!st.inside||st.inside(x,z)); /* S2491 — a stamp of a shape clears only its shape */
       const gone=[];for(const o of ch.group.children){if(!o.isInstancedMesh||!o.userData.scatter)continue;let k=0;const T=o.userData.tids;
-        for(let i=0;i<o.count;){o.getMatrixAt(i,m);v.setFromMatrixPosition(m);if(!hit.some(st=>Math.hypot(v.x-st.x,v.z-st.z)<st.r)){i++;continue;}
+        for(let i=0;i<o.count;){o.getMatrixAt(i,m);v.setFromMatrixPosition(m);if(!hit.some(st=>inSt(st,v.x,v.z))){i++;continue;}
           gone.push(v.x,v.z);k++;const last=o.count-1;if(i<last){o.getMatrixAt(last,m);o.setMatrixAt(i,m);if(o.instanceColor){o.getColorAt(last,c);o.setColorAt(i,c);}}if(T){T[i]=T[last];T.length=last;}o.count=last;} // the last instance takes the gap (and its tree's id, S1511)
         if(k){o.instanceMatrix.needsUpdate=true;if(o.instanceColor)o.instanceColor.needsUpdate=true;n+=k;}}
       if(gone.length){const at=(x,z)=>{for(let i=0;i<gone.length;i+=2)if(Math.abs(gone[i]-x)<.05&&Math.abs(gone[i+1]-z)<.05)return true;return false;}; // float32 positions against the colliders' own
         for(let i=ch.sol.length-1;i>=0;i--)if(at(ch.sol[i].cx,ch.sol[i].cz))ch.sol.splice(i,1);
-        if(ch.treePts){const tp=[];for(let i=0;i<ch.treePts.length;i+=2)if(!hit.some(st=>Math.hypot(ch.treePts[i]-st.x,ch.treePts[i+1]-st.z)<st.r))tp.push(ch.treePts[i],ch.treePts[i+1]);ch.treePts=tp;}}
+        if(ch.treePts){const tp=[];for(let i=0;i<ch.treePts.length;i+=2)if(!hit.some(st=>inSt(st,ch.treePts[i],ch.treePts[i+1])))tp.push(ch.treePts[i],ch.treePts[i+1]);ch.treePts=tp;}}
       if(typeof stumpsClearUnder==='function')stumpsClearUnder(ch,hit); /* S1511 — no tree to fell, and no stump, in a stamp's core */
       refreshChunkTerrain(ch);}
     return n;}
@@ -775,6 +776,17 @@
   }
 
   // ── Far terrain (coarse, whole world, sits just under the near tiles) ─
+  /* S2491 — a place open to the sky under the land (a stamp of a shape with farR: the Forgotten Aqueducts' sinkhole and its halls) takes the
+     far ground down with it, as S2190's sinks do: a far point goes 3 m under the stamp's y when any ground within one far step of it is in
+     the stamp's shape, so no far triangle rises through the hole or the halls (the far sheet was the land 3 m down, a floor across the hole
+     and an orange slope through the halls past it). farSinkUnder() does it to the far sheets built before the stamp was added. -> points moved */
+  function farSinkHoles(geo,ox,oz,st){let n=0;const pa=geo.attributes.position;
+    for(const t of STAMPS){if(!t.farR||t.off||!t.inside)continue;const R=t.r+st*1.5,cx=t.x-ox-SIZE/2,cz=t.z-oz-SIZE/2;if(cx<-SIZE/2-R||cx>SIZE/2+R||cz<-SIZE/2-R||cz>SIZE/2+R)continue;
+      for(let i=0;i<pa.count;i++){const vx=pa.getX(i),vz=pa.getZ(i);if(Math.abs(vx-cx)>R||Math.abs(vz-cz)>R||pa.getY(i)<=t.y-3)continue;let hit=false;
+        for(let b=-4;b<=4&&!hit;b++)for(let a=-4;a<=4;a++)if(t.inside(vx+ox+SIZE/2+a*st/4,vz+oz+SIZE/2+b*st/4)){hit=true;break;}
+        if(hit){pa.setY(i,t.y-3);n++;}}}
+    return n;}
+  function farSinkUnder(){let n=0;if(!sc)return 0;for(const o of sc.children){const F=o.userData&&o.userData.far;if(!F)continue;const k=farSinkHoles(o.geometry,F.ox,F.oz,F.st);if(k){o.geometry.attributes.position.needsUpdate=true;o.geometry.computeVertexNormals();o.geometry.computeBoundingSphere();n+=k;}}return n;}
   function buildFar(){}
   function buildFarFor(cell){
     const n=Math.floor(SIZE/(cell.home?FAR_STEP:FAR_STEP*2));
@@ -803,9 +815,10 @@
     {const st=SIZE/n,lo=new Map();for(const t of STAMPS){if(!t.sink)continue;const fx=(t.x-cell.ox)/st,fz=(t.z-cell.oz)/st;if(fx<-1||fz<-1||fx>n+1||fz>n+1)continue;
         const i0=Math.floor(fx),j0=Math.floor(fz);for(let j=j0;j<=j0+1;j++)for(let i=i0;i<=i0+1;i++){if(i<0||j<0||i>n||j>n)continue;const q=j*(n+1)+i,y=t.y-3;if(!(lo.get(q)<=y))lo.set(q,y);}}
       if(lo.size)for(let i=0;i<pa.count;i++){const q=Math.round((pa.getZ(i)+SIZE/2)/st)*(n+1)+Math.round((pa.getX(i)+SIZE/2)/st),y=lo.get(q);if(y!==undefined&&y<pa.getY(i))pa.setY(i,y);}}
+    farSinkHoles(geo,cell.ox,cell.oz,SIZE/n);
     geo.setAttribute('color',new THREE.BufferAttribute(colArr,3));
     geo.computeVertexNormals();
-    const fm=new THREE.Mesh(geo,VC_MAT);
+    const fm=new THREE.Mesh(geo,VC_MAT);fm.userData.far={ox:cell.ox,oz:cell.oz,st:SIZE/n};
     fm.position.set(cell.ox+SIZE/2,0,cell.oz+SIZE/2);
     sc.add(fm);return fm;
   }
