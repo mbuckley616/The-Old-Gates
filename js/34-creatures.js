@@ -1562,6 +1562,15 @@ function hcSlimeRig(e){return hcDunRig(e,'Slime',{crawl:true,gait:'crawl',rate:[
 HC_KINDS['Fire Elemental (failing)']={plan:'failingfireelemental',fish:true};
 function hcElemKind(){return hcGateSchool()==='tine'&&hcFailing()?'Fire Elemental (failing)':'Fire Elemental';}
 function hcElemRig(e){return hcDunRig(e,'Fire Elemental',{tall:true,gait:'hover',rate:[2.5,4],die:HC_GUTTER,hcKind:hcElemKind(),emOwn:e.limbs.coreEm?e.limbs.coreEm.getHex():null});}
+// Session 2495 (L4, OG-018's Gaoth row: "a glowing jellyfish-like air spirit with trailing threads"): Gaoth's Gale Wisp (S2115, gaothWispBody in
+// 68-dungeon-misc.js: the coast's Shore Wisp's light on the Skeleton's numbers) wears the kit's `wisp` (Session 776: a pale blue bell, four oral
+// arms, fourteen lit threads) by the slime's path, the old light its far level. It hangs (HC_WISP_HANG): its bell's crown 2.1 m up, over a
+// man's head as the prototype draws it, its threads trailing to 0.3 m, so the drift's longest stroke and the hover's bob keep them off the
+// floor; its health bar lifted over the bell. The bell pulses on the kit's own drift, faster once it has seen you. A look only: its numbers,
+// its reach, its shove and its light are the systems builder's. The coast's Shore Wisp keeps its light (Michael's B on Session 214)
+HC_KINDS['Gale Wisp']={plan:'wisp',fish:true};
+const HC_WISP_HANG={top:2.1,low:.3,bar:2.25};
+function hcWispRig(e){return hcDunRig(e,'Gale Wisp',{hang:HC_WISP_HANG,gait:'drift',rate:[2,3.6],die:HC_GUTTER});}
 function hcFishAttach(rig,C){const tA=performance.now();
   if(!C)try{C=HC.build(hcGenome(rig));}catch(e){rig.hcFail=true;console.warn('F4: the kit could not build',rig.name,e);return;}
   const g=rig.e.mesh,W=new THREE.Group();W.name='kit';C.gait=rig.gait||'swim';HC.pose(C,0);C.root.updateMatrixWorld(true);
@@ -1571,7 +1580,8 @@ function hcFishAttach(rig,C){const tA=performance.now();
   rig.mesh.traverse(o=>{if(!o.isMesh)return;o.geometry.computeBoundingBox();ob.union(o.geometry.boundingBox.clone().applyMatrix4(_hcM.multiplyMatrices(inv,o.matrixWorld)));});
   let f=(ob.max.z-ob.min.z)/(kb.max.z-kb.min.z);const ky=C.byName.spine0.getWorldPosition(new THREE.Vector3()).y;
   if(rig.tall)f=ob.max.y/kb.max.y;
-  W.scale.setScalar(f);if(rig.tall)W.position.set(0,0,(ob.max.z+ob.min.z-(kb.max.z+kb.min.z)*f)/2);else if(rig.crawl)W.position.set(0,-kb.min.y*f,(ob.max.z+ob.min.z-(kb.max.z+kb.min.z)*f)/2);else W.position.set(0,rig.axis-ky*f,ob.max.z-kb.max.z*f);W.add(C.root);rig.root.add(W);HB_ATTACH_N++;
+  if(rig.hang)f=(rig.hang.top-rig.hang.low)/(kb.max.y-kb.min.y);
+  W.scale.setScalar(f);if(rig.hang){W.position.set(-(kb.max.x+kb.min.x)/2*f,rig.hang.low-kb.min.y*f,-(kb.max.z+kb.min.z)/2*f);const e=rig.e;for(const o of [e.limbs&&e.limbs.hpBg,e.hpBg,e.hpFg])if(o&&o.position)o.position.y=rig.hang.bar;}else if(rig.tall)W.position.set(0,0,(ob.max.z+ob.min.z-(kb.max.z+kb.min.z)*f)/2);else if(rig.crawl)W.position.set(0,-kb.min.y*f,(ob.max.z+ob.min.z-(kb.max.z+kb.min.z)*f)/2);else W.position.set(0,rig.axis-ky*f,ob.max.z-kb.max.z*f);W.add(C.root);rig.root.add(W);HB_ATTACH_N++;
   const meshes=C.meshes,bind=meshes[0].bindMatrix.clone();
   {const inv2=new THREE.Matrix4(),off=new THREE.Matrix4(),sk=C.skel;
     sk.update=function(){inv2.copy(C.rig.matrixWorld).invert();const bs=this.bones;
@@ -1637,7 +1647,7 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
   const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1591 — as the people's (hbTick): the world's queue only where the world runs it, or no kit body is built in a gate entered with town jobs queued */
   for(const rig of WOLF_RIGS){if(!rig.hc&&(rig.hcFail||!hcOk(rig)))continue;HC_RIGS.add(rig);}
   if(activeZoneId==='world')for(const e of ZONES.world.enemies)if(e.name==='Shark'&&!e.dead&&!e._hcRig&&e.mesh&&e.mesh._sharkTail)HC_RIGS.add(hcFishRig(e));
-  if(typeof dScene!=='undefined'&&dScene&&scene===dScene)for(const e of ENEMIES)if(e.limbs&&e.limbs.body&&(e.limbs.slime||e.limbs.flames)&&!e.dead&&!e._hcRig&&e.mesh)HC_RIGS.add(e.limbs.slime?hcSlimeRig(e):hcElemRig(e)); /* S1592 — the dungeon's slimes; S1593 — its fire elementals */
+  if(typeof dScene!=='undefined'&&dScene&&scene===dScene)for(const e of ENEMIES)if(e.limbs&&e.limbs.body&&(e.limbs.slime||e.limbs.flames||e.baseType==='Gale Wisp'&&e.buildFn==='wisp')&&!e.dead&&!e._hcRig&&e.mesh)HC_RIGS.add(e.limbs.slime?hcSlimeRig(e):e.limbs.flames?hcElemRig(e):hcWispRig(e)); /* S1592 — the dungeon's slimes; S1593 — its fire elementals */
   if(activeZoneId==='world'&&typeof WHALES!=='undefined')for(const w of WHALES)if(!w._hcRig&&w.m&&w.m.parent)HC_RIGS.add(hcWhaleRig(w));
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')LIFE.dolphins.forEach((d,k)=>{if(!d._hcRig&&d.m&&d.m.parent)HC_RIGS.add(hcDolphinRig(d,k));});
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')hcSchools(now,busy); /* S1599 — the shallows' schools */
