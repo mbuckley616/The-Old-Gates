@@ -3748,7 +3748,7 @@
     return (S.site=best);}
   function wonderScarredBuild(){const S=WONDERS.scarred,st=wonderScarredSite();if(!st||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.scarred)return null;
     if(!S.stamps){const [cx,cz]=wonderToWorld(st,22,24);S.stamps=[addStamp({id:'wonder_scarred',kind:'wonder',x:st.x,z:st.z,r:46,blend:30,y:st.y}),addStamp({id:'wonder_scarred_crater',kind:'wonder',x:cx,z:cz,r:7,blend:17,y:st.y-4})];
-      for(let s=14,k=0;s<=220;s+=12,k++){const w=12*(1-.7*s/220),[x,z]=wonderToWorld(st,22+s*Math.cos(.7),24+s*Math.sin(.7));S.stamps.push(addStamp({id:'wonder_scarred_s'+k,kind:'wonder',noFlat:true,x,z,r:w*1.25,blend:1,y:0}));}
+      for(let s=14,k=0;s<=220;s+=10,k++){const w=12*(1-.7*s/220),[x,z]=wonderToWorld(st,22+s*Math.cos(.7),24+s*Math.sin(.7));S.stamps.push(addStamp({id:'wonder_scarred_s'+k,kind:'wonder',noFlat:true,x,z,r:w*1.9,blend:1,y:0}));} /* the glass's whole band, to where it fades (1.8 of its half-width) */
       try{clearScatterUnder(S.stamps);}catch(e){console.warn('wonder scatter',e);}}
     const hAt=(lx,lz)=>{const [x,z]=wonderToWorld(st,lx,lz);return meshH(x,z);};const W=PKIT.wonders.scarred(hAt);
     W.sig=wonderCellSig(st);W.group.position.set(st.x,0,st.z);W.group.rotation.y=st.ry;W.group.userData.noBake=true;W.group.updateMatrixWorld(true);sc.add(W.group);S.W=W;
