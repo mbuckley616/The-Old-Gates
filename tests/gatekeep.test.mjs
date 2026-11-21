@@ -153,7 +153,7 @@ if (D.laid) {
   check(`his camp is nearer the way in than he is (${D.campDoor} m against ${D.bodyDoor})`, D.camp && D.campDoor < D.bodyDoor, D);
   check(`looted: his things as rolled, ${D.gold} gold, his journal and his sword (salvage), the camp's bedroll`, D.same && D.opened && D.gold >= 8 && D.gold <= 20 && D.journal && D.sword && D.roll && D.rollHidden, D);
 } else check('this keep has no delver, as its seed says', !D.due, D);
-// S2468 — the cache (what-a-gate-keeps' session 7, Michael's B on #1783): every keep has one, sealed by its gate's school; one in three holds an arc
+// S2469 — the cache (what-a-gate-keeps' session 7, Michael's B on #1783): every keep has one, sealed by its gate's school; one in three holds an arc
 const CG = await page.evaluate(() => { const T = carvingTable().bySeed, out = { n: 0, placed: 0, arcs: 0, own: 0, miss: [] };
   for (const s of Object.keys(T)) { const e = WORLD.doorAnywhere(+s); if (!e || e.lairDoor || e.kind === 'fort_door') continue; const p = makePortalDef(e); p.zone = 'world'; p.sigil = true; p.theme = p.theme || e.theme; if (!gateCofferDue(p)) continue;
     out.n++; const a = gateCacheArc(p); if (a) { out.arcs++; if (a === gateCacheSchool(p)) out.own++; }

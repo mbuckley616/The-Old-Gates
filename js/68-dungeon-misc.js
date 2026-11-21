@@ -691,7 +691,7 @@ function gateDelverLay(portal,gen,coffer){if(!gateDelverDue(portal))return null;
 function lootDelver(ch){if(!ch||ch.delver==null)return false;const K=gateKeepOf(ch.delver);
   if(!K.delver){const D=GATE_KEEP_LIE&&GATE_KEEP_LIE.delver;K.delver={body:D&&D.body?D.body.items:[],camp:D&&D.camp?D.camp.items:[]};}
   ch.items=K.delver[ch.part]||(K.delver[ch.part]=[]);openLoot(ch);return true;}
-// S2468 — what a gate keeps, session 7: the cache (what-a-gate-keeps-build.md, "The cache"; spells-as-keys-build.md: "this sheet's
+// S2469 — what a gate keeps, session 7: the cache (what-a-gate-keeps-build.md, "The cache"; spells-as-keys-build.md: "this sheet's
 // seal of the gate's school, set in the keep's wall"; Michael's B on #1783). Every keep has one: a niche in a side wall of the ring
 // chamber, on the side away from the delver's, shut by a seal of the gate's own school and opened by that school's key from the
 // seals' table, at the niche's size: Tine, two braziers 6 m apart either side of it, both lit by Caor within 20 s; Uisce, a basin of
@@ -1110,6 +1110,10 @@ function gateSecrets(gen,seed,size,school){
   // room or an id; only the kinds in SECRET_BUILT are laid (gateSecretsBuild), the rest hold their rooms until their session.
   const hasSp=(fl,ty)=>(gen.spaces||[]).some(sp=>sp&&(sp.floor||1)===fl&&sp.type===ty),anySp=ty=>hasSp(1,ty)||hasSp(2,ty),used={};
   for(let k=want.length;k<(SECRET_N[size]||1);k++){
+    const cut=(size==='large'||size==='massive')&&k===(SECRET_N[size]||1)-1?gateShortcut(gen,mapOf,open,starts,S):null; /* S2470 — the shortcut back (#1774 B), in the last slot */
+    if(cut){const M=mapOf(cut.floor);M[cut.w[1]][cut.w[0]]=1; /* the wall cell opened in the map, so the shell leaves its passage; the slabs close it */
+      S.push({id:(seed|0)+':'+cut.floor+':secret'+S.length,n:S.length,kind:'slide',shortcut:true,school:null,floor:cut.floor,c:cut.a[0],r:cut.a[1],dc:cut.dc,dr:cut.dr,
+        room:{x:cut.w[0],y:cut.w[1],w:1,h:1},cells:[cut.w[1]*W+cut.w[0]],save:cut.save});continue;}
     const kinds=SECRET_MECH.filter(m=>!(used[m]&&SECRET_ONCE[m])&&(m!=='lift'||anySp('chasm'))&&(m!=='sluice'||anySp('flooded')));
     const kind=kinds[Math.floor(r()*kinds.length)],fit=cand.filter(q=>kind==='lift'?hasSp(q.floor,'chasm'):kind==='sluice'?hasSp(q.floor,'flooded'):true);
     const pick=Math.floor(r()*Math.max(1,fit.length));if(!fit.length)continue;const q=fit[pick];cand.splice(cand.indexOf(q),1);used[kind]=1;
@@ -1121,6 +1125,28 @@ function gateSecrets(gen,seed,size,school){
   {const rb=seededRng('barricade',seed|0);if(rb()<SECRET_BAR_P){const bc=cand.filter(q=>q.bare),q=bc[Math.floor(rb()*bc.length)],scene=Math.floor(rb()*6);
     if(q)gen.barricade={id:(seed|0)+':'+q.floor+':barricade',n:'b',kind:'barricade',school:null,floor:q.floor,c:q.c,r:q.r,dc:q.dc,dr:q.dr,room:q.room,cells:[...q.path],scene};}}
   return S;}
+// S2470 — the shortcut back (spells-as-keys' table B; Michael's B on #1774: a sliding wall through one wall). In a large or massive gate
+// the last mechanism slot is the shortcut where one fits: a rock cell of the ring's floor with an open floor cell either side of it in
+// line, each in a space and in no secret's room, one (a, the deep side) at least as far from the entry by the walk (floor two's through the stair hall) as the nearest cell of the ring's space, the other (b)
+// at most half that. Of those, the one that saves the most walk (by a's depth less b's; then the first in the grid). Where none fits the
+// slot is drawn as any mechanism. The cell is opened in the map; slabs flush with both walls shut it, and only the deep side's has the
+// pale stone. A mechanism is its own find (#1757 B): no chest. {floor, a:[c,r], w:[c,r], b:[c,r], dc, dr (a to w), save (cells)} or null.
+function gateShortcut(gen,mapOf,open,starts,S){const sp=gen.spaces&&gen.spaces[gen.ring];if(!sp)return null;const fl=sp.floor||1,M=mapOf(fl),W=gen.W,H=gen.H,CS=fl===2?gen.cellSpace2:gen.cellSpace;
+  if(!M||!CS)return null;
+  const walk=(Mf,from,d0)=>{const D=new Int32Array(W*H).fill(-1),q=[];for(const [c,y] of from){const k=y*W+c;if(open(Mf,c,y)&&D[k]<0){D[k]=d0;q.push(k);}}
+    for(let i=0;i<q.length;i++){const c=q[i]%W,y=(q[i]-c)/W;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const nc=c+a,ny=y+b,k=ny*W+nc;if(!open(Mf,nc,ny)||D[k]>=0)continue;D[k]=D[q[i]]+1;q.push(k);}}return D;};
+  let d0=0;if(fl===2){const D1=walk(mapOf(1),starts(1),0),hid=gen.hall&&gen.hall.id;d0=1e9; /* floor two counted from the entry: the walk to the stair hall first */
+    for(let y=0;y<H;y++)for(let c=0;c<W;c++)if(gen.cellSpace[y][c]===hid&&D1[y*W+c]>=0)d0=Math.min(d0,D1[y*W+c]);if(d0>=1e9)return null;}
+  const D=walk(M,starts(fl),d0);
+  let ring=1e9;for(let y=0;y<H;y++)for(let c=0;c<W;c++)if(CS[y][c]===sp.id&&D[y*W+c]>=0)ring=Math.min(ring,D[y*W+c]);if(ring>=1e9)return null;
+  const taken=new Set();for(const t of S)if(t.floor===fl)for(const k of t.cells)taken.add(k);
+  const floorAt=(c,y)=>y>=0&&c>=0&&y<H&&c<W&&M[y][c]===1&&CS[y][c]>=0&&!taken.has(y*W+c); /* in a space, not a side room */
+  let best=null;
+  for(let y=1;y<H-1;y++)for(let c=1;c<W-1;c++){if(M[y][c]!==0)continue;
+    for(const [dc,dr] of [[1,0],[-1,0],[0,1],[0,-1]]){const ac=c-dc,ar=y-dr,bc=c+dc,br=y+dr;if(!floorAt(ac,ar)||!floorAt(bc,br))continue;
+      const da=D[ar*W+ac],db=D[br*W+bc];if(da<0||db<0||da<ring||db>ring/2)continue;
+      if(!best||da-db>best.save)best={floor:fl,a:[ac,ar],w:[c,y],b:[bc,br],dc,dr,save:da-db};}}
+  return best;}
 const SECRET_BAR_P=1/4,SECRET_BAR_BLOWS=3;
 const SECRET_N={tiny:1,small:1,medium:2,large:3,massive:4};
 const SECRET_MECH=['slide','stair','lift','sluice','turn','plates'],SECRET_ONCE={turn:1,plates:1};
@@ -1185,7 +1211,7 @@ function gateSecretsBuild(gen,portal){GATE_SECRETS=[];GATE_SECRETS_GEN=gen;STAIR
       rec.gallery=t.dc?{x0:gx-d/2,x1:gx+d/2,z0:z0,z1:z1,y:top}:{x0:x0,x1:x1,z0:gz-d/2,z1:gz+d/2,y:top};
       FOOTHOLDS.push(Object.assign({gate:'gallery',secret:t.id},rec.gallery));chestY=top;chestAt=at(.6);}
     dScene.add(grp);GATE_SECRETS.push(rec);
-    if(t.kind!=='lift')try{rec.chest=secretChest(t,portal,rec,chestAt[0],chestAt[1],chestY,G0);}catch(e){console.warn('secretChest',e);}} /* S2418 — #1757's B: the lift is its own find, the second bridge */
+    if(t.kind!=='lift'&&!t.shortcut)try{rec.chest=secretChest(t,portal,rec,chestAt[0],chestAt[1],chestY,G0);}catch(e){console.warn('secretChest',e);}} /* S2418 — #1757's B: the lift is its own find, the second bridge */
   if(gen.barricade)try{barricadeBuild(gen.barricade,portal,G0);}catch(e){console.warn('barricadeBuild',e);}
   return GATE_SECRETS;}
 // a seal's chest: what is left in it is the world's once opened (t[n]), else rolled on its own key a tier above the floor. Solas's
@@ -1212,7 +1238,7 @@ function openSecret(id){const rec=GATE_SECRETS.find(s=>s.id===id);if(!rec||rec.o
   if(rec.kind==='sluice')sluiceOpen(rec); /* S2417 */
   if(rec.kind==='lift')liftOpen(rec); /* S2418 */
   if(rec.kind==='plates'&&rec.cache){rec.cache.visible=false;const i=DUNGEON_PROPS.indexOf(rec.cacheSolid);if(i>=0)DUNGEON_PROPS.splice(i,1);} /* S2423 */
-  if(rec.keepCache)gateCacheShow(rec); /* S2468 — the keep's cache: its face gone, what it holds shown */
+  if(rec.keepCache)gateCacheShow(rec); /* S2469 — the keep's cache: its face gone, what it holds shown */
   if(rec.kind==='turn')turnOpen(rec); /* S2423 — its chest is shown once the drum has turned (turnTick) */
   else if(rec.chest&&CHESTS.indexOf(rec.chest)<0){rec.chest.mesh.visible=true;CHESTS.push(rec.chest);}
   return true;}
@@ -1245,7 +1271,7 @@ function gateSecretsTick(){if(!GATE_SECRETS.length||activeZoneId!=='dungeon'||!c
       else rec.coldT=null;}
     else if(rec.school==='scath'){const see=here&&typeof oicheWorn==='function'&&oicheWorn();
       if(see&&dCellOf(px)===rec.c&&dCellOf(pz)===rec.r){secretOpenSay(rec);continue;}
-      if(see!==!!rec.seen){rec.seen=see;const i=rec.solid?DUNGEON_PROPS.indexOf(rec.solid):0; /* S2468 — the cache has no solid */
+      if(see!==!!rec.seen){rec.seen=see;const i=rec.solid?DUNGEON_PROPS.indexOf(rec.solid):0; /* S2469 — the cache has no solid */
         if(see){if(i>=0&&rec.solid)DUNGEON_PROPS.splice(i,1);rec.mat.transparent=true;rec.mat.opacity=.3;}else{if(i<0)DUNGEON_PROPS.push(rec.solid);rec.mat.transparent=false;rec.mat.opacity=1;}
         rec.mat.needsUpdate=true;}}
     else if(rec.school==='solas'){const L=typeof laidLive==='function'?laidLive():null;
@@ -1281,6 +1307,10 @@ function slideBuild(t,rec,grp,y,cx,cz,opened){const Hc=DCELL/2,x=cx+t.dc*(Hc+.25
   const sx=x-t.dc*.27,sz=z-t.dr*.27,st=new THREE.Mesh(slideDress(new THREE.BoxGeometry(t.dc?.06:.5,.36,t.dc?.5:.06),look,[sx,y+1.2,sz]),pm);st.position.set(sx-x,1.2-h/2,sz-z);m.add(st);
   rec.stone={x:sx,z:sz,y:y+1.2,mesh:st};rec.kx=x;rec.kz=z;rec.slideDir=t.dc?[0,1]:[1,0];rec.slideH=h;rec.base=[x,z];
   rec.solid=t.dc?{x0:x-.3,x1:x+.3,z0:z-Hc,z1:z+Hc,floor:t.floor,secret:t.id}:{x0:x-Hc,x1:x+Hc,z0:z-.3,z1:z+.3,floor:t.floor,secret:t.id};
+  if(t.shortcut){const wx=cx+t.dc*DCELL,wz=cz+t.dr*DCELL,L=2*(Hc-.25),bx=x+t.dc*L,bz=z+t.dr*L; /* S2470 — the shortcut: the passage's whole cell solid while shut, and a plain slab flush with the far wall that slides with it */
+    rec.solid={x0:wx-Hc,x1:wx+Hc,z0:wz-Hc,z1:wz+Hc,floor:t.floor,secret:t.id};rec.shortcut=true;rec.sdc=t.dc;rec.sdr=t.dr;
+    const look2=slideShellLook(sh,bx,y,bz,h,t.dc?{n:'x',at:bx+t.dc*.25}:{n:'z',at:bz+t.dr*.25});
+    const back=new THREE.Mesh(slideDress(new THREE.BoxGeometry(t.dc?.5:DCELL,h,t.dc?DCELL:.5),look2,[bx,y+h/2,bz]),wm);back.position.set(bx-x,0,bz-z);back.name='shortcutBack';m.add(back);rec.back=back;}
   if(!opened){DUNGEON_PROPS.push(rec.solid);
     const N=SLIDE_DUST,pos=new Float32Array(N*3),g2=new THREE.BufferGeometry();g2.setAttribute('position',new THREE.BufferAttribute(pos,3));
     const dust=new THREE.Points(g2,new THREE.PointsMaterial({color:0xb8ad98,size:.035,transparent:true,opacity:.55,depthWrite:false}));dust.frustumCulled=false;
@@ -1343,6 +1373,7 @@ function barricadeBreak(r,how){if(!r||r.opened||!openSecret(r.id))return false;i
 // the pale stone in reach and under the crosshair, its wall still shut
 function slideStoneNear(){if(activeZoneId!=='dungeon'||!currentPortal)return null;
   for(const s of GATE_SECRETS){if(s.kind!=='slide'||s.opened||s.floor!==currentFloor||s.seed!==currentPortal.seed||!s.stone)continue;
+    if(s.shortcut&&(px-s.stone.x)*s.sdc+(pz-s.stone.z)*s.sdr>0)continue; /* S2470 — the shortcut opens from the deep side only */
     if(Math.hypot(px-s.stone.x,pz-s.stone.z)<TOUCH+.6&&aimAt({mesh:s.stone.mesh},TOUCH+.6))return s;}return null;}
 function slideStonePress(s){if(!s||!openSecret(s.id))return false;showMsg('The wall slides into the rock.','#c8b880');try{sfxNoise(SLIDE_S,0,0,.18,180);}catch(e){}return true;}
 // the flames that lean: a torch's ember or a lit brazier's fire within 4 m of the wall, on its floor. Gathered once, when first near.

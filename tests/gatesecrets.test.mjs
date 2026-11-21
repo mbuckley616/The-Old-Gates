@@ -290,5 +290,40 @@ if (liftP) {
   check(`walked onto the bridge ${L.walk && L.walk.far} m from its end over the chasm's air (${L.walk && L.walk.over} frames), the feet never below the deck (${L.walk && L.walk.minY})`, L.walk && L.walk.far >= 12 && L.walk.over > 30 && L.walk.minY > -.05, L.walk);
   check('Séideán sent into the vane lets the bridge down after 1 s spinning; another word, or a bolt 1.5 m off, does nothing', !L.caor && !L.wide && L.vane && L.notAtOnce && L.vaneOpen && L.vaneDown, L);
 }
+// S2470 — the shortcut back (Michael's B on #1774): in a large or massive gate the last mechanism slot is a sliding wall through one
+// wall cell, from a cell as deep as the ring to one at most half as deep, where one fits (7 of 200 when asked); opened from the deep side
+const CUT = await page.evaluate(() => { const out = { n: 0, fit: [], bad: [] };
+  for (let i = 0; i < 200; i++) { const size = i % 2 ? 'massive' : 'large', seed = 3000 + 7919 * i; out.n++;
+    const one = () => { const gen = makeGate(size, seed); gateThings(gen, seed); gateSecrets(gen, seed, size, SECRET_SCHOOLS[i % 6]); return gen; };
+    const a = one(), b = one(), sc = a.secrets.find(q => q.shortcut); if (!sc) continue;
+    const raw = makeGate(size, seed), M = sc.floor === 2 ? raw.map2 : raw.map, w = [sc.c + sc.dc, sc.r + sc.dr], bb = [sc.c + 2 * sc.dc, sc.r + 2 * sc.dr];
+    const ok = JSON.stringify(a.secrets) === JSON.stringify(b.secrets) && a.secrets.indexOf(sc) === a.secrets.length - 1 && sc.id === seed + ':' + sc.floor + ':secret' + sc.n
+      && M[w[1]][w[0]] === 0 && M[sc.r][sc.c] === 1 && M[bb[1]][bb[0]] === 1 && (sc.floor === 2 ? a.map2 : a.map)[w[1]][w[0]] === 1 && sc.save >= 30;
+    out.fit.push([seed, size[0], sc.save]); if (!ok) out.bad.push(seed); }
+  return out; });
+console.log('shortcuts', JSON.stringify(CUT));
+check(`the shortcut back fits ${CUT.fit.length} of ${CUT.n} large and massive gates, the last slot, through one wall cell of rock, saving ${Math.min(...CUT.fit.map(f => f[2]))} to ${Math.max(...CUT.fit.map(f => f[2]))} cells; the same twice`, CUT.fit.length >= 3 && CUT.fit.length <= 15 && !CUT.bad.length, CUT);
+const cutP = await page.evaluate(() => { const t = PORTALS.find(q => q && q.zone === 'world' && q.size === 'large' && !q.lair && !q.tutorial && q.seed != null); if (!t) return null;
+  const p = Object.assign({}, t, { seed: 82190, size: 'large' }); px = p.x; pz = p.z + 3; if (worldState.gateSecrets) delete worldState.gateSecrets[82190]; goToDungeon(p); return true; });
+if (cutP) {
+  await page.waitForFunction(() => String(lid).startsWith('dyn_') && currentPortal && currentPortal.seed === 82190 && document.getElementById('fd').style.opacity === '0', null, { timeout: 120000, polling: 200 });
+  await g.hide();
+  const C = await page.evaluate(() => { const o = { cell: DCELL }, r = GATE_SECRETS.find(q => q.shortcut); o.found = !!r; if (!r) return o; currentFloor = r.floor;
+    const yawFT = (fx, fz, tx, tz) => Math.atan2(-(tx - fx), -(tz - fz)), d = [r.sdc, r.sdr], ax = dAt(r.c), az = dAt(r.r), wx = ax + d[0] * DCELL, wz = az + d[1] * DCELL, bx = wx + d[0] * DCELL, bz = wz + d[1] * DCELL;
+    o.shut = DUNGEON_PROPS.includes(r.solid) && !r.chest && !!r.back && dMap[dCellOf(wz)][dCellOf(wx)] === 1;
+    const walk = (fx, fz, tx, tz) => { _reset(fx, fz, r.y, yawFT(fx, fz, tx, tz)); K.KeyW = true; _drive(() => Math.hypot(px - fx, pz - fz) > 2 * DCELL, 240); K.KeyW = false; return +Math.hypot(px - fx, pz - fz).toFixed(2); };
+    o.blockedA = walk(ax, az, wx, wz); o.blockedB = walk(bx, bz, wx, wz);
+    // from the shallow side, at the far slab, aimed at the wall: nothing offered; from the deep side, at the pale stone: offered
+    const st = r.stone, sbx = bx - d[0] * (DCELL / 2 - .9), sbz = bz - d[1] * (DCELL / 2 - .9); _reset(sbx, sbz, r.y, yawFT(sbx, sbz, wx, wz)); _drive(i => i >= 1, 3); o.fromB = !slideStoneNear();
+    _reset(st.x - d[0] * 1.0, st.z - d[1] * 1.0, r.y, yawFT(st.x - d[0], st.z - d[1], st.x, st.z)); _drive(i => i >= 1, 3); pitch = Math.atan2(st.y - CAM.position.y, 1.0); _drive(i => i >= 1, 3);
+    o.fromA = slideStoneNear() === r; interact(); for (let i = 0; i < 4; i++) { playClockS += .5; gateSecretsTick(); }
+    o.open = r.opened && !r.shut.visible && !DUNGEON_PROPS.includes(r.solid) && worldState.gateSecrets[82190].o.includes(r.n); pitch = 0;
+    o.through = walk(ax, az, bx, bz); return o; });
+  console.log('shortcut', JSON.stringify(C));
+  check('the shortcut is laid in seed 82190 (large): its wall cell open in the map but solid, a slab flush with each wall, no chest', C.found && C.shut, C);
+  check(`shut, it stops you from either side (${C.blockedA} m and ${C.blockedB} m walked)`, C.blockedA < C.cell && C.blockedB < C.cell, C);
+  check('from the shallow side it is plain wall; from the deep side the pale stone opens it, kept in the world\'s record', C.fromB && C.fromA && C.open, C);
+  check(`open, you walk through the wall from the deep side to the shallow (${C.through} m)`, C.through >= 2 * C.cell - .1, C);
+}
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

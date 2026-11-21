@@ -1588,7 +1588,7 @@ function loop(now){
     else if(typeof liftLeverNear==='function'&&liftLeverNear()){iprEl.textContent=LIFT_HOLD&&LIFT_HOLD.rec===liftLeverNear()?'Winding the lever':"Hold 'E' to wind the lever";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2418 — a lift */
     else if(typeof scriptLintelNear==='function'&&scriptLintelNear()){iprEl.textContent=scriptPrompt(scriptLintelNear());iprEl.style.opacity='1';iprEl.style.display='block';} /* S2423 — the plates' script */
     else if(typeof knotNear==='function'&&knotNear()){iprEl.textContent=knotPrompt();iprEl.style.opacity='1';iprEl.style.display='block';} /* S1346 */
-    else if(typeof gateCacheNear==='function'&&gateCacheNear()){iprEl.textContent="Press 'E' to take what the niche holds";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2468 */
+    else if(typeof gateCacheNear==='function'&&gateCacheNear()){iprEl.textContent="Press 'E' to take what the niche holds";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2469 */
     else if(typeof gateAltarNear==='function'&&(gateAltarNear()||gateVeinNear())){iprEl.textContent=gateAltarNear()?"Press 'E' to take the arc":(gateVeinLeft(gateVeinNear())>0?"Press 'E' to cut the crystal":'The crystal is all cut out');iprEl.style.opacity='1';iprEl.style.display='block';} /* S2371 */
     else if(typeof shuttleNear==='function'&&shuttleNear()){iprEl.textContent="Press 'E' to take up the shuttle";iprEl.style.opacity='1';iprEl.style.display='block';} /* S797 */
     else if(typeof varekListNear==='function'&&varekListNear()){iprEl.textContent="Press 'E' to take the worn paper";iprEl.style.opacity='1';iprEl.style.display='block';} /* S2174 */
