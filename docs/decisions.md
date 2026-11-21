@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### The Scarred Gate — spent, or still waking? (from the look builder, 2026-11-19, #1754)
 **The question.** OG-104's Aurenne panel paints a Weaver ring "cracked and incomplete… signs of violent destruction". The look builder's prototype (Session 2398, `ruins.js` `scarredGate`) stands a ring 80 m across and 70 m tall in red desert; a blow from under its right foot has taken 17 of its 44 outer stones, opened a cleft through the inner course, and left a crater and a 220 m scar of black glass. Every ruin so far keeps its stones down and its script dead (#429 B), but this gate failed by catastrophe (canon Part I, §5).
 
@@ -27,6 +28,8 @@ More: [far](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/doc
 
 **Recommendation.** A.
 
+Michael: **A, spent, as built.** (2026-11-20, tapped on the control room)
+
 ### What a gate's secret holds — a chest a tier up in each, by what opens it, or no chests? (from the designer, 2026-11-19, #1757)
 **The question.** Michael chose B on #1678 (seals, mechanisms, hidden rooms, the script), but the page put the gate's own things behind the seals, and what-a-gate-keeps has since put the vein, the relic and the coffer in the keep. What should a found secret hold?
 
@@ -36,6 +39,8 @@ More: [far](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/doc
 - **C.** No chests: each secret holds the way, a story or a rubbing of the nearest unread carving.
 
 **Recommendation.** B. A mage finds more, a fighter finds most, which is the page's line; C teaches the player to stop looking. Page: [spells-as-keys-build.md](design/spells-as-keys-build.md) (The open number).
+
+Michael: **B, by what opens it.** (2026-11-20, tapped on the control room)
 
 ### The Hollow Below — is its door a gate's way in? (from the look builder, 2026-11-19, #1761)
 **The question.** OG-104's Mark panel is prototyped (Session 2401, `ruins.js` `hollowBelow`) as one gate's mouth whose hillside is a cavern, without the panel's "technology" (canon §3.1). A hollow 250 m across under a 120 m vault, noon light through a 32 m oculus onto a court; three rings (88, 66, 44 m) set into the back wall around the slit door; a viaduct of five arches over a lake 58 m below. A ruin: script dead, five stones fallen. What is its door in the game?
@@ -49,6 +54,8 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Recommendation.** A. The landmark has a use, and the gates stay the Weavers' one structure.
 
+Michael: **A, a Mark gate's way in.** (2026-11-20, tapped on the control room)
+
 ### The shortcut back fits no gate as written — drop it, a door through one wall, or a passage from the generator? (from the systems builder, 2026-11-19, #1774)
 **The question.** The spells-as-keys build sheet (session 3, table B) makes one sliding wall in a large or massive gate the shortcut back: an isolated corridor of up to 12 cells through rock from near the ring to near the entry. Built as written (Session 2410) it fits 0 of 200 gates, because since F5 a gate is great spaces packed one wall apart. A door through one wall, from a cell as deep as the ring to one at most half as deep, fits 7 of 200 and saves 90 to 340 m of walking back.
 
@@ -58,6 +65,8 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 - **C.** F5's generator (`makeGate`) leaves a return passage in every large and massive gate for the shortcut to close. Common, the loop the page wanted; deep work on the generator.
 
 **Recommendation.** B. Until answered the shortcut is not built; the plain sliding wall, its tells and its chest are (Session 2409).
+
+Michael: **B, a sliding wall through one wall.** (2026-11-20, tapped on the control room)
 
 ### The keep's cache — how often it holds an arc of another school (from the systems builder, 2026-11-19, #1783)
 **The question.** What-a-gate-keeps' session 7 (`docs/design/what-a-gate-keeps-build.md`, "The cache") puts a cache in the keep's side wall, sealed with the gate's own school, holding a rubbing of the nearest unread carving and one arc of another school by seed. The sheet does not say how many keeps have one. If every cache holds an arc, a mage who holds the right words finds about three times the arcs #1718 B set: an armillary in about 12 gates, not 36. A fighter sees no change.
@@ -70,6 +79,8 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Recommendation.** B: the cache is the mage's own find, and an arc a third of the time keeps it worth opening without halving the walk. Until answered, the cache is not built.
 
+Michael: **B, every keep a cache; one in three holds an arc.** (2026-11-20, tapped on the control room)
+
 ### The Gate Isles — reached by boat, walked at the ebb, or the first ring on land? (from the look builder, 2026-11-19, #1791)
 **The question.** OG-104's sixth ruin site, prototyped in Session 2430 (`ruins.js` `gateIsles`, `places.html?place=isles`): five Weaver rings 28 m across, each on the level crown of a sheer rock isle in open sea, strung 1.3 km along one bearing with every heart at 24.8 m, so from the first ring you look through all five to a far coast. The third ring is broken; nothing is lit. How does a player reach the isles?
 
@@ -79,6 +90,8 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 - **C.** The first ring on a headland, so the line is seen from the shore; the other four by boat, as in A.
 
 **Recommendation.** A: the Drowned Spires are already the walk-at-the-ebb ruin (#1737 B), and the isles are the one site that sits only in the sea. C costs little on top of A.
+
+Michael: **A, by boat.** (2026-11-20, tapped on the control room)
 
 ### Ground that pushes back — weather underfoot, the land's slope too, or armour in every movement? (from the designer, 2026-11-20, #1800)
 **The question.** Backlog L11's *Moving through the world* (OG-131) is built except its last clause: "ground that pushes back: poor footing on ice, mud that slows, a rope bridge that may give, falling rocks". How far should the ground push back?
@@ -92,6 +105,8 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Page.** [docs/design/ground-that-pushes-back.md](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/ground-that-pushes-back.md)
 
+Michael: **A, weather underfoot.** (2026-11-20, tapped on the control room)
+
 ### The Forgotten Aqueducts — a gate's halls sealed, a gate's way in, or halls to swim? (from the look builder, 2026-11-20, #1808)
 **The question.** The Forgotten Aqueducts, the seventh of OG-104's sixteen ruin sites ("a sprawling network of underground waterways, still partially flooded"), is a prototype now (look builder, Session 2448, `docs/prototypes/levelup/ruins.js` `forgottenAqueducts`): one nave of the gate kit at twice its size, buried under the Gatelands' limestone and flooded 6 m deep, its vault fallen in where a sinkhole 100 m across and 64 m deep has opened. A flight round the wall leads down to a scree; under the land the halls run 130 m each way into the dark and end in a choke of fallen stone. What are the halls?
 
@@ -103,6 +118,8 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 **Recommendation.** A, because a gate's inside is card F5's, and a sealed landmark can open later without anything being torn up.
 
 **Pictures.** [the west halls](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2445/docs/prototypes/levelup/aqueducts-nave.jpg) · [from the stair](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2445/docs/prototypes/levelup/aqueducts-stair.jpg) · [from the lip](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2445/docs/prototypes/levelup/aqueducts-lip.jpg)
+
+Michael: **A, a gate's halls, sealed at both chokes.** (2026-11-20, tapped on the control room)
 
 ### Stormwatch — an empty landmark, a bandits' hold, or a watchtower in the fort? (from the look builder, 2026-11-20, #1815)
 **The question.** Stormwatch Ruins, the eighth of OG-104's sixteen ruin sites ("a cliffside fortress of ancient age, offering sweeping views of the sea"), is a prototype now (look builder, Session 2454, `docs/prototypes/levelup/ruins.js` `stormwatch`). The canon gives the Weavers only the gates, so it is the older people's dry-stone promontory fort, after Dún Aonghasa: three half-ring walls stopping at an 88 m sea cliff, a cashel 52 by 44 m with two terraces inside, a lintelled passage 1.3 m wide, about 450 set stones before the middle wall. What is the fort, and is anyone in it?
@@ -116,6 +133,8 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Pictures.** [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-fort.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-far.jpg) · [the passage](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-gate.jpg)
 
+Michael: **A, empty, as built: a landmark walked for the view.** (2026-11-20, tapped on the control room)
+
 ### The Frostborn Vault — a landmark sealed by its ice, a gate's way in, or Cloch's great gate? (from the look builder, 2026-11-20, #1823)
 **The question.** OG-104's Mark panel paints the Frostborn Vault, "a buried complex in the high mountains… its massive halls… deep in the ice". The look builder's prototype (Session 2461, `ruins.js` `frostbornVault`) builds it as a city of the Weavers' in a gorge under the Mark's peaks: a face 160 m wide set into a 130 m headwall, a great pointed portal 28 m wide with the glacier flowing out of it, two viaducts of two tiers across the gorge (one with a span fallen onto the ice), four halls and nine towers on the rims. Nothing is lit, and the script is cut dead. What is the vault?
 
@@ -128,7 +147,8 @@ Pictures: [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gat
 
 **Pictures.** [the gorge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-gorge.jpg) · [the portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-portal.jpg) · [under the viaduct](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-under.jpg) · [the fallen span](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-gap.jpg) · [a hall's door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-hall.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-far.jpg) · [dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-dusk.jpg)
 
-## Answered
+Michael: **A, a landmark, as built.** (2026-11-20, tapped on the control room)
+
 ### Spells as keys, and secrets — seals by school, plus mechanisms and the script, or the gate as a machine? (from the designer, 2026-11-17, #1678)
 **The question.** OG-122 asks for one key per school, mechanisms, hidden architecture, tells, wordless stories and a script that is never a free cipher; today a touched word lights a brazier or freezes a pool and nothing opens. How far should the gates' secrets go? In every option the way on never needs a word, and each secret has a tell and stays opened once found.
 
