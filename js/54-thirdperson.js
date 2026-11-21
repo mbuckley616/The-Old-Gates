@@ -230,7 +230,7 @@ function tpBuild(lookIn,ppIn,reuse){
       if(old&&R.hbSheath&&!old.sheathed&&old.weapon&&old.wItem===shW&&tpDrawOn()){const a=new THREE.Group();a.position.set(0,-.04,.008);a.rotation.set(Math.PI/2,0,0);R.handR.add(a);
         const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';const k=tpHBCopy(R.sheathW,true);k.visible=true;c.add(k);rig.hb.root.add(c);
         const h={o:a,c,f:[2,3,4,5].map(f=>by[`finger${f}-2.${side('R')}`]).filter(Boolean),arm:[B.elR,B.wrR,by['lowerarm01.'+side('R')],by['wrist.'+side('R')]],draw:true};R.hbHeld.push(h);
-        R.tpDraw={way:'sheathe',G:R.hbSheath,at:R.sheathAt,t0:fpDrawNow(),h,a};}
+        R.tpDraw={way:'sheathe',G:R.hbSheath,at:R.sheathAt,t0:fpDrawNow(),h,a,gl:old.gripL?old.gripL.clone():null};} /* S2484 — the left grip of a two-hander, which the left hand leaves */
       if(R.tpDraw)R.tpDraw.G.children[0].visible=false;
       tpCloakTent(R); /* S2478 — the cloak lifted over what is worn at the hip */
       hbCloseFist(by,side('R'));hbThumb(by,side('R'));R.hbHook=R.bow?tpHBHookOf(by,side('R')):null;if(!R.tome){hbCloseFist(by,side('L'));hbThumb(by,side('L'));}else for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=by[`finger${f}-${j}.${side('L')}`];if(b)b.quaternion.identity();} /* a body carried over may have closed it */
@@ -392,7 +392,9 @@ function tpDrawTick(R,stage){const D=R.tpDraw;if(!D)return;const t=fpDrawNow()-D
   const P=tpDrawPhase(D,t),k=D.G.children[0];D.G.updateWorldMatrix(true,true);D.last={t:+t.toFixed(3),a:+P.a.toFixed(3),s:+P.s.toFixed(3)};
   if(stage==='held'){const h=D.h||(D.way==='draw'?R.hbHeld&&R.hbHeld.find(x=>x.o===R.weapon):null);if(!h)return;
     R.root.updateMatrixWorld(true);_tdM.copy(R.rig.hb.root.matrixWorld).invert().multiply(k.matrixWorld);tpBlendM(h.c.matrix,h.c.matrix,_tdM,P.s);h.c.matrixWorldNeedsUpdate=true;return;}
-  // the reach: the wrist to the hilt (tpReach), blended over the pose by a
+  tpDrawArm(R,D,P,k);tpDrawLeft(R,D,P,k);}
+// the reach: the wrist to the hilt (tpReach), blended over the pose by a
+function tpDrawArm(R,D,P,k){
   const S=R.shR,E=R.elR,W=R.handR;if(!S||!E||!W||P.a<=0)return;R.root.updateMatrixWorld(true);
   /* the builder's arm is not the driver's (S1253): the driver's wrist is aimed so that the builder's grip, its fingers' middle, lands on the
      hilt, four times over, each time by 0.6 of the miss (as the mantle's hands are, tpHBMantle) */
@@ -410,6 +412,20 @@ function tpDrawTick(R,stage){const D=R.tpDraw;if(!D)return;const t=fpDrawNow()-D
     _tdV.set(0,0,0);for(const b of fg)_tdV.add(_tdV2.setFromMatrixPosition(b.matrixWorld));_tdV.multiplyScalar(1/fg.length);D.err=+_tdV.distanceTo(_tdT).toFixed(3);_tdT2.addScaledVector(_tdV2.copy(_tdT).sub(_tdV),.6);}
   _tdQ.copy(S.quaternion);_tdQ2.copy(E.quaternion);S.quaternion.copy(q0s).slerp(_tdQ,P.a);E.quaternion.copy(q0e).slerp(_tdQ2,P.a);
   if(wt){_tdQk.copy(W.quaternion);W.quaternion.copy(q0w).slerp(_tdQk,P.a);D.turn=+(2*Math.acos(Math.min(1,Math.abs(q0w.dot(_tdQk))))).toFixed(3);}R.root.updateMatrixWorld(true);}
+// S2484 — the left hand on a two-hander's grip through the draw and the sheathe (S2479's owed note: drawing a claymore, tpGripL kept the left
+// wrist on the driver's blade, which the reach carries up behind the right shoulder, so the left hand rose empty to the shoulder while the
+// blade came out of the scabbard; sheathing, it let go of the grip in one frame). Drawing, the left arm keeps the pose's (tpGripL waits) while
+// the right hand reaches and pulls, and joins the grip as the blade comes down past the shoulder: weighted in from the blade's place s 0.55 to
+// 0.1 (TP_DRAW.lj), aimed at the left grip of the blade where it is seen, between the scabbard and the fist by s; it ends on tpGripL's own
+// mark, so the hold after the draw takes over unchanged. Sheathing, it leaves the grip by s 0.45 as the blade rises to the back. A look only
+TP_DRAW.lj=[.55,.1,.45];
+const _tdL={q0:new THREE.Quaternion(),q1:new THREE.Quaternion(),e0:new THREE.Quaternion(),e1:new THREE.Quaternion(),a:new THREE.Vector3(),b:new THREE.Vector3(),T:new THREE.Vector3()};
+function tpDrawLeft(R,D,P,k){const draw=D.way==='draw',gl=draw?R.gripL:D.gl,hw=draw?R.weapon:D.a,S=R.shL,E=R.elL,W=R.handL;D.lw=0;
+  if(!gl||!hw||!hw.parent||!S||!E||!W||!k)return;const J=TP_DRAW.lj,X=_tdL;
+  const w=draw?_tdS((J[0]-P.s)/(J[0]-J[1])):1-_tdS(P.s/J[2]);D.lw=+w.toFixed(3);if(w<=0)return;
+  R.root.updateMatrixWorld(true);k.updateWorldMatrix(true,false);hw.localToWorld(X.a.copy(gl));k.localToWorld(X.b.copy(gl));X.T.copy(X.a).lerp(X.b,P.s);
+  X.q0.copy(S.quaternion);X.e0.copy(E.quaternion);tpReach(S,E,W,X.T);X.q1.copy(S.quaternion);X.e1.copy(E.quaternion);
+  if(w<1){S.quaternion.copy(X.q0).slerp(X.q1,w);E.quaternion.copy(X.e0).slerp(X.e1,w);}R.root.updateMatrixWorld(true);D.lerr=+W.getWorldPosition(X.a).distanceTo(X.T).toFixed(3);}
 // S2478 — the cloak over what is worn at the hip (S2451's note, standing since: under a cloak a hip weapon hung inside the sheet, its hilt
 // lost in it and the scabbard's point out through its back). The sheet and its hem are lifted over the worn group (the blade if sheathed,
 // the scabbard, the frog; a mace or an axe through the belt) in the bind's metres: about the hips' upright, each point of the sheet stands
@@ -819,7 +835,7 @@ function tpPose(R,dt,st){
   if(R.weaponL){const bl=R.weaponL.userData.bowLen||1,tip=R.bow&&bl>1&&!drawing&&!blocking?TP_BOW_TIP*(bl-1):0;R.bowTip=(R.bowTip||0)+(tip-(R.bowTip||0))*ka;
     R.weaponL.rotation.x=-(R.shL.rotation.x+R.elL.rotation.x)+R.bowTip;}
   // S246: a two-handed weapon is held in both hands through every pose: the left wrist is put on the grip
-  if(R.gripL&&R.weapon&&TP.deadT<.01&&!TP.swim&&!(typeof castT!=='undefined'&&castT>0))tpGripL(R);
+  if(R.gripL&&R.weapon&&TP.deadT<.01&&!TP.swim&&!(typeof castT!=='undefined'&&castT>0)&&!(R.tpDraw&&R.tpDraw.way==='draw'))tpGripL(R); /* S2484 — drawing, tpDrawLeft takes the left hand */
   // the head looks where you look
   tpSet(R.head,Math.max(-.6,Math.min(.5,-pitch*.6))-tx*.3,-ty*.6,0,kf);
   // S743 — Michael's A on #237: up a boarding net hand over hand, three reaches in the climb, the elbows bending as each hand
