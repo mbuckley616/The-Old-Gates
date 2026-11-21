@@ -21,7 +21,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `armourlines` | w19/20 | — | pass | 231 |  |
 | `armourlines-numbers` | 3/14 | pass | pass | 51 |  |
 | `articles` | 9/14 | pass | pass | 70 |  |
-| `ashenburn` | 3/14 | pass | red | 67 | 15 Nov weekly: red twice (2 rigs left near the ruin); green here at s1677 |
+| `ashenburn` | 3/14 | pass | pass | 235 | 15 Nov weekly: red twice (2 rigs left near the ruin), fixed S2397; 7/7 here at s1805 (S2481) |
 | `ashwort` | 6/14 | pass | pass | 46 |  |
 | `attrdmg` | w2/20 | — | pass | 151 |  |
 | `attrpromise` | w18/20 | — | pass | 220 |  |
@@ -71,7 +71,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `burglary` | 6/14 | pass | pass | 146 |  |
 | `butts` | PR | — | pass | | New since the weekly run of 15 Nov; green on its own pull request |
 | `buyprice` | w11/20 | — | pass | 216 |  |
-| `cairn` | w16/20 | — | pass | 412 | Red on the first try, the retry cut at 150 min; green here at s1677 |
+| `cairn` | w16/20 | — | pass | 179 | Red on the first try on 15 Nov, the retry cut at 150 min; green at s1677 and at s1805 (8/8, S2481) |
 | `calendar` | 1/14 | pass | pass | 85 |  |
 | `camps` | w11/20 | — | pass | 246 |  |
 | `campsack` | 3/14 | pass | pass | 50 |  |
@@ -190,10 +190,12 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `f4wolves` | w4/20 | — | pass | 635 |  |
 | `f4wraiths` | w19/20 | — | pass | 337 |  |
 | `factorpanel` | w3/20 | — | pass | 201 |  |
+| `fairring` | new | — | pass | 262 | New since 15 Nov; 12/12 at s1805 (S2481) |
 | `falls` | 9/14 | pass | red, then pass | 1707 | Its first try lost the page (*Target page … has been closed*) after five of eight drops, in the dungeon, in the half hour this container ran a third, stray run of the whole suite beside the two shards (six boots on four cores; the first try alone took ~1,490 s against CI's 219). The retry passed. Run alone after: see the line under the table. |
 | `faolchu` | w20/20 | — | pass | 169 |  |
 | `feasts` | w15/20 | — | pass | 179 |  |
 | `feastsquare` | 5/14 | pass | red | 67 | 15 Nov weekly: red twice; filed in section I (producer), fixed since |
+| `feaststalls` | new | — | pass | 393 | New since 15 Nov; 15/15 at s1805 (S2481) |
 | `featurenames` | 8/14 | pass | pass | 12 |  |
 | `feint` | w16/20 | — | pass | 156 |  |
 | `felling` | w1/20 | — | pass | 98 |  |
@@ -213,6 +215,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `foeseed` | w20/20 | — | pass | 211 |  |
 | `foewarm` | 5/14 | pass | **red** | 170 | Red twice (identical): *raising every foe kind compiles no shader and adds no program* read 2 compiles and one new program (41→42, 42→43) when every kind is raised and drawn; the prewarm itself ran (33 kinds, 17 programs). On 0.170 the prewarm (`prewarmFoes`, `js/42-zone-enemies.js`) leaves one foe program to be compiled on its first draw: the game's, filed in backlog I for the systems builder. **Fixed S988, S1267; red again on main since about S1364 (S1374 saw it at 819f6e4; weekly run 25 Oct; S1411 at ed26b39): 2 compiled, 1 program added, the creature kit's flat-shaded sword on the Goblin and the Skeleton, which the prewarm never builds; filed in I for the systems builder, S1411.** |
 | `foeweapons` | w11/20 | — | pass | 18 |  |
+| `footing` | new | — | pass | 431 | New, systems S2475–2477; 22/22 at s1805 (S2481) |
 | `forge` | w6/20 | — | pass | 95 |  |
 | `fortbarracks` | 10/14 | pass | pass | 101 |  |
 | `fortcot` | 4/14 | pass | pass | 122 |  |
@@ -233,10 +236,13 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `gateblade` | 1/14 | pass | pass | 54 |  |
 | `gatedraws` | w17/20 | — | pass | 309 |  |
 | `gateguards` | 5/14 | pass | pass | 159 |  |
+| `gatekeep` | new | — | pass | 115 | New, systems S2469; 46/46 at s1805 (S2481) |
 | `gatepath` | w11/20 | — | pass | 254 |  |
 | `gatepockets` | w12/20 | — | pass | 120 |  |
 | `gatesave` | w7/20 | — | pass | 241 |  |
 | `gateschool` | 2/14 | pass | pass | 54 |  |
+| `gatescript` | new | — | pass | 133 | New since 15 Nov; 12/12 at s1805 (S2481) |
+| `gatesecrets` | new | — | pass | 135 | New since 15 Nov; 39/39 at s1805 (S2481) |
 | `gatespaces` | w8/20 | — | pass | 140 |  |
 | `gatethings` | w5/20 | — | pass | 280 |  |
 | `ghoulface` | 1/14 | pass | pass | 20 |  |
@@ -267,6 +273,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `hitseed` | 6/14 | pass | pass | 50 |  |
 | `hoardmetal` | 2/14 | pass | pass | 49 |  |
 | `hoardspot` | 5/14 | pass | pass | 81 |  |
+| `hollow` | new | — | pass | | New, look S2473–2474; 10/10 at s1805 (S2481) |
 | `homefurn` | w9/20 | — | pass | 182 |  |
 | `homenames` | 8/14 | pass | pass | 119 |  |
 | `homesleep` | w18/20 | — | pass | 294 |  |
@@ -279,13 +286,13 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `houses` | 6/14 | pass | pass | 58 |  |
 | `hptail` | 2/14 | pass | pass | 65 |  |
 | `hubregen` | 2/14 | pass | pass | 42 |  |
-| `hubreturn` | 9/14 | pass | red | 124 | 15 Nov weekly: red twice (the armour sub-tab's click, 30 s). Red here at s1677: opening Inventory compiles the sheet portrait's programs and holds the page about 108 s on SwiftShader. Section I, Session 2336 |
+| `hubreturn` | 9/14 | pass | pass | 446 | 15 Nov weekly: red twice (the armour sub-tab's click, 30 s). The compile wait (S2336) came after the click that starts it: red twice here at s1805 with one boot beside it. Every click given the wait's 400 s bound (S2481): 2/2 beside another boot, 446 and 469 s |
 | `hullbakes` | 7/14 | pass | pass | 62 |  |
 | `hullshape` | 4/14 | pass | red | 46 | 15 Nov weekly: red twice; filed in section I (producer), fixed since |
 | `huntvariant` | 7/14 | pass | pass | 43 |  |
 | `icecave` | w15/20 | — | pass | 203 |  |
 | `implements` | w12/20 | — | pass | 152 |  |
-| `innrooms` | w3/20 | — | pass, 591 s alone (was 1,127 s with the ovens, S2368) | 591 | Failed then passed on the retry (a 60 s wait); section I, Session 2336. Shortened, Session 2369: one entry an inn, the nights asked inside |
+| `innrooms` | w3/20 | — | pass, 544 s beside another boot at s1805 | 591 | Failed then passed on the retry (a 60 s wait); section I, Session 2336. Shortened, Session 2369: one entry an inn, the nights asked inside. 10/10 at s1805 (S2481) |
 | `innvoice` | 7/14 | pass | pass | 75 |  |
 | `inspdungeons` | w17/20 | — | pass | 5 |  |
 | `inspector` | w19/20 | — | pass | 43 |  |
@@ -401,7 +408,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `oldsaves` | w3/20 | — | pass | 256 |  |
 | `overcast` | w4/20 | — | pass | 171 |  |
 | `packshape` | 3/14 | pass | pass | 64 |  |
-| `padspawn` | w16/20 | — | flaky | 489 | Failed then passed on the retry (0 chunk foes loaded); red here at s1677, section I, Session 2336 |
+| `padspawn` | w16/20 | — | pass | 489 | Failed then passed on the retry (0 chunk foes loaded); fixed S2336. 5/5 at s1805 twice, each beside another boot (S2481) |
 | `panelfocus` | 2/14 | pass | pass | 437 | Red at the 900 s cap on 15 Oct with two shards sharing four cores (four 8 s `locator.click` timeouts in its panel walk); run alone on 16 Oct (Session 971's run) it passed in 437 s, inside CI's old-look 270–546 s. Load, not the look: no owner. |
 | `parryclock` | 3/14 | pass | pass | 66 |  |
 | `parrydeath` | 5/14 | pass | pass | 43 |  |
@@ -475,7 +482,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `saveretry` | 6/14 | pass | pass | 56 |  |
 | `saves` | 2/14 | pass | pass | 76 |  |
 | `saveui` | 6/14 | pass | pass alone (red under load: the store's timer, section I) | 508 | 15 Nov weekly: red twice, each try killed at run.mjs's 900 s cap (772 s on 8 Nov). Shortened, Session 2350: at Low, 508 s alone, 13/13; 628 s beside a second boot, 9/13 (the store's 10 s timer behind a long frame, the systems builder's) |
-| `scaleratio` | 6/14 | pass | red | 355 | 15 Nov weekly: red twice. c3_5_s6 (the Mark) has 3 storeys to measure and the check asks for at least 4: its houses are the kit's halls now. Red here at s1677. Section I, Session 2336 |
+| `scaleratio` | 6/14 | pass | pass | 292 | 15 Nov weekly: red twice (the Mark's c3_5_s6 had 3 storeys), fixed by the look builder; 15/15 here at s1805 (S2481) |
 | `scalerooms` | w14/20 | — | pass | 183 |  |
 | `schoolroster` | 6/14 | pass | pass | 154 |  |
 | `scorpion` | 9/14 | pass | pass | 40 |  |
@@ -572,6 +579,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `tithe` | w14/20 | — | pass | 96 |  |
 | `told` | 10/14 | pass | pass | 113 |  |
 | `toldpages` | w19/20 | — | pass | 177 |  |
+| `topnames` | new | — | pass | 2 | No browser (S2452); in the smoke set since S2460; 3/3 at s1805 (S2481) |
 | `touchrange` | w1/20 | — | pass | 119 |  |
 | `towerhouse` | w2/20 | — | pass | 170 |  |
 | `townbarrels` | 9/14 | pass | pass | 104 |  |
@@ -655,3 +663,7 @@ in cut shards and never reported (`ashenburn`, `hubreturn`, `saveui`, `scalerati
 fix); 6 are newer than the run and passed on their own pull requests (584 + 12 + 4 + 3 + 1 + 8 + 13 + 6 = 631). The seven unreported were run again on main at s1677: section I, Session 2336.
 The 309 older rows keep their October results, with 15 Nov's written beside any that was not a first-try pass.
 
+**Every file again, 21 Nov (Session 2481).** The eight suites newer than the ledger (`fairring`, `feaststalls`, `footing`, `gatekeep`,
+`gatescript`, `gatesecrets`, `hollow`, `topnames`) and the six left red or owed after 15 Nov (`ashenburn`, `cairn`, `hubreturn`, `innrooms`,
+`padspawn`, `scaleratio`) were run on main at s1805 (1455d75), two at a time on four cores. All fourteen are green; `hubreturn` only after its
+clicks were given the compile's bound (S2481). The ledger now holds all 640 files. The rows still written red are 15 Nov's, fixed since by their owners; the weekly run of 22 Nov reads them again.
