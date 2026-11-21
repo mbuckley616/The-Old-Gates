@@ -83,7 +83,7 @@ for (const seed of gs) for (const deep of [false, true]) {
         const before = PHP, x0 = px; executeStrike(e, 10, performance.now() + 1e7); shove = { moved: +(px - x0).toFixed(3), took: before - PHP, dz: +(pz - spot[1]).toFixed(3) }; e.x = ex; e.z = ez; }
       PHP = hp0; }
     return { tier: ENEMIES[0] && ENEMIES[0].tier, names: [...new Set(ENEMIES.map(e => e.baseType || e.name))], n: w.length,
-      hp: w0 && w0.maxHp, res: w0 && w0.resist, fam: w0 && foeFamily(w0), hover: !!(w0 && w0.mesh._hover), glows: w0 ? w0.mesh.children.filter(c => c.material && c.material.blending === THREE.AdditiveBlending).length : 0,
+      hp: w0 && w0.maxHp, res: w0 && w0.resist, fam: w0 && foeFamily(w0), hover: !!(w0 && w0.mesh._hover), glows: w0 ? (() => { let n = 0; w0.mesh.traverse(c => { if (c.material && c.material.blending === THREE.AdditiveBlending) n++; }); return n; })() : 0, /* S2495 — near, the old light is the far level under the kit's wisp */
       shove }; });
 }
 await enterDungeon(page, { theme: 'undead', seed: 11, size: 'medium' });

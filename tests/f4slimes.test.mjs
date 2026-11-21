@@ -8,6 +8,7 @@
 // Session 1882: an elemental gate is Tine's, and its slimes wear the kit's magma slime (OG-018); a steady Uisce gate's keep the steady slime.
 // Session 1631: killed, the Fire Elemental gutters out, upright, sunk, its flames dark; f4-elemental-dead.jpg.
 // Session 1897: a failing Tine gate's Fire Elemental wears the kit's failing fire elemental (OG-073); f4-failingelemental.jpg.
+// Session 2495: Gaoth's Gale Wisp wears the kit's wisp, hung by its bell, its threads off the floor; f4-galewisp.jpg.
 // Session 1593: the Fire Elemental in the same gate wears the kit's `fireelemental`, fitted by its height; f4-elemental.jpg.
 import { boot, check, ROOT } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
@@ -244,5 +245,37 @@ check(`a steady Tine gate's Fire Elemental (seed ${sel && sel.seed}: ${sel && se
 check(`a failing Tine gate's Fire Elemental (seed ${fel && fel.seed}: ${fel && fel.cond}, ${fel && fel.school}) wears the kit's failing fire elemental: a stone frame inside, ${fel && fel.arms} arms against the steady one's ${sel && sel.arms} (${fel && fel.bones} bones, ${fel && fel.tris} tris against ${sel && sel.bones} and ${sel && sel.tris}), keyed by its foe id`,
   !!fel && fel.hc && fel.cond === 'failing' && fel.school === 'tine' && fel.kind === 'Fire Elemental (failing)' && fel.plan === 'failingfireelemental' && fel.frame && fel.got === fel.want && !!sel && fel.arms > sel.arms, { fel, sel });
 check(`it stands the old figure's height (${fel && fel.kit && fel.kit[1]} against ${fel && fel.old && fel.old[1]}), off the floor, and its flames lick`, !!fel && fel.kit && Math.abs(fel.kit[1] - fel.old[1]) < .12 * fel.old[1] && fel.kit[0] > -.02 && fel.mv > 1e-3, fel);
+// Session 2495 (L4, OG-018's Gaoth row): Gaoth's Gale Wisp (S2115) wears the kit's `wisp`, a jellyfish of the air, by the slime's path: keyed by
+// its foe id, hung with its crown 2.1 m up and its threads clear of the floor through the drift and the hover's bob, the bar over its bell, the
+// old light its far level. Picture: f4-galewisp.jpg (the old light left, the kit's right)
+const gseed = await page.evaluate(() => { for (let s = 11; s < 400; s++) if (!WORLD_DUNGEONS.some(e => e.seed === s) && gateSchool({ seed: s, theme: 'undead' }) === 'gaoth') return s; });
+await enterDungeon(page, { theme: 'undead', seed: gseed, size: 'medium' });
+const wi = await page.evaluate(() => { const S = ENEMIES.find(e => e.baseType === 'Gale Wisp' && e.floor === currentFloor && !e.dead); if (!S) return { none: true }; window._W = S;
+  const rig = () => [...HC_RIGS].find(r => r.e === S); let k = 0; HBODY.last = -1e9;
+  const at = () => { CAM.position.set(S.mesh.position.x - 3, S.mesh.position.y + 1.6, S.mesh.position.z); CAM.updateMatrixWorld(true); };
+  while (!(rig() && rig().hc) && k++ < 300) { at(); tickCreatures(1 / 60, 1.6e6 + k * (HBODY.gap + 1)); }
+  const R = rig(); window._RW = R; if (!R || !R.hc) return { k, rig: !!R, fail: R && R.hcFail };
+  const M4 = new THREE.Matrix4(), t = new THREE.Vector3(), v = new THREE.Vector3(), b = new THREE.Vector3();
+  const sk = (m, j) => { const p = m.geometry.attributes.position, si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, bm = m.skeleton.boneMatrices; b.fromBufferAttribute(p, j); v.set(0, 0, 0);
+    for (let q = 0; q < 4; q++) { const w = sw.getComponent(j, q); if (!w) continue; M4.fromArray(bm, si.getComponent(j, q) * 16); t.copy(b).applyMatrix4(M4).multiplyScalar(w); v.add(t); } return v.applyMatrix4(R.hc.C.rig.matrixWorld); };
+  let lo = 1e9, hi = -1e9, mv = 0, a0 = null; const floor = S.baseY || 0;
+  for (let i = 0; i < 150; i++) { at(); tickCreatures(1 / 60, 1.7e6 + i * 16.7); attackPose(S, true); S.mesh.updateMatrixWorld(true); R.hc.C.skel.update();
+    const bm = R.hc.C.skel.boneMatrices; if (!a0) a0 = Array.from(bm); else for (let j = 0; j < bm.length; j++) mv = Math.max(mv, Math.abs(bm[j] - a0[j]));
+    for (const m of R.hc.C.meshes) { const p = m.geometry.attributes.position; for (let j = 0; j < p.count; j += 5) { const y = sk(m, j).y - floor; lo = Math.min(lo, y); hi = Math.max(hi, y); } } }
+  const L0 = R.hc.L; hcLevel(R, 2); const far = { kit: R.hc.W.visible, old: R.mesh.visible, glows: R.mesh.children.filter(c => c.material && c.material.blending === THREE.AdditiveBlending).length }; hcLevel(R, L0);
+  return { k, plan: R.hc.C.g.plan, kind: hcKind(R), seed: R.hc.C.g.seed, want: HC.hashKey('galewisp:' + S.id), bones: R.hc.C.bones.length, tris: R.hc.C.stats.tris, f: +R.hc.f.toFixed(3),
+    lo: +lo.toFixed(3), hi: +hi.toFixed(3), bar: S.limbs.hpBg.position.y, mv: +mv.toFixed(3), far, school: hcGateSchool() }; });
+console.log('  gale wisp:', JSON.stringify(wi));
+check(`a Gaoth gate's Gale Wisp wears the kit's wisp (${wi.bones} bones, ${wi.tris} tris), keyed by its foe id`, wi.school === 'gaoth' && wi.plan === 'wisp' && wi.kind === 'Gale Wisp' && wi.seed === wi.want, wi);
+check(`it hangs with its crown at ${wi.hi} m under its bar (${wi.bar} m) and its threads off the floor (${wi.lo} m at the lowest, through the drift and the bob), its bell pulsing`, wi.hi > 1.9 && wi.hi < wi.bar && wi.lo > .1 && wi.lo < .5 && wi.mv > 1e-3, wi);
+check(`far off, it is the old light again (${wi.far && wi.far.glows} haloes)`, !!wi.far && !wi.far.kit && wi.far.old && wi.far.glows >= 8, wi.far);
+if (wi.plan) { const shotW = await page.evaluate(() => { const S = _W, R = _RW, m = S.mesh; R.hc.C.skel.update();
+  const x = m.position.x, y = S.baseY || 0, z = m.position.z, L = new THREE.PointLight(0xffb070, 1.2, 14); L.position.set(x + 2, y + 2.4, z + .8); dScene.add(L);
+  ENEMIES.forEach(e => { if (e.mesh && e !== S) e.mesh.visible = false; });
+  const twin = R.mesh.clone(); twin.visible = true; twin.position.set(x, m.position.y, z + 1.6); dScene.add(twin);
+  const cv = REN.domElement, cam = new THREE.PerspectiveCamera(50, cv.width / cv.height, .05, 60); cam.position.set(x + 4.2, y + 1.3, z + .8); cam.lookAt(x, y + 1.05, z + .8);
+  dScene.updateMatrixWorld(true); REN.render(dScene, cam); dScene.remove(L); dScene.remove(twin); ENEMIES.forEach(e => { if (e.mesh && !e.dead) e.mesh.visible = true; });
+  const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/jpeg', .85); });
+  fs.writeFileSync(path.join(OUT, 'f4-galewisp.jpg'), Buffer.from(shotW.split(',')[1], 'base64')); }
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
