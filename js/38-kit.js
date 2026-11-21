@@ -135,6 +135,8 @@ const idr = id => { let n = (id * 2654435761) >>> 0; n ^= n >>> 15; return (n % 
     const P = new Float32Array(n * 3), N = new Float32Array(n * 3), U = new Float32Array(n * 2); let o = 0;
     for (const g of list) { const c = g.attributes.position.count; P.set(g.attributes.position.array.subarray(0, c * 3), o * 3); N.set(g.attributes.normal.array.subarray(0, c * 3), o * 3); U.set(g.attributes.uv.array.subarray(0, c * 2), o * 2); o += c; }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); g.setAttribute('uv', new THREE.BufferAttribute(U, 2));
+    /* S2505 — a vertex colour is kept when every part carries one (the clay fittings' body) */
+    if (list.length && list.every(x => x.attributes.color)) { const C = new Float32Array(n * 3); o = 0; for (const x of list) { const c = x.attributes.position.count; C.set(x.attributes.color.array.subarray(0, c * 3), o * 3); o += c; } g.setAttribute('color', new THREE.BufferAttribute(C, 3)); }
     g.computeBoundingSphere(); g.computeBoundingBox(); return g;
   }
   // every mesh of a group baked into the group's frame and merged by material: one draw per material, the same picture
@@ -4982,7 +4984,8 @@ function parishStocks(o = {}) {
 // footing a course higher; Aurenne's terracotta on a limewashed plinth, a lime band at the oven's foot and round the kiln.
 // o.small: a smaller one for a full room (the oven 0.8 m wide, the kiln 0.8 m across without its pots).
 //   PKIT.props.clay(kind 'oven' | 'kiln', island, { small }) -> { group, tris, draws, kind, island, foot: { x0, x1, z0, z1 }, top } in the
-//   wall's frame, as the bench's: the wall at z = 0, the piece toward +z, centred on x, the floor at y = 0. One mesh a material, five in all.
+//   wall's frame, as the bench's: the wall at z = 0, the piece toward +z, centred on x, the floor at y = 0. Three meshes (S2505): the body in
+//   vertex colours, the stone plinth, the embers; two on Aurenne, whose plinth is limewashed cob.
 let CYM = null;
 function clayMats() {
   if (CYM) return CYM;
@@ -4992,13 +4995,23 @@ function clayMats() {
     aurenne: { cob: mat('plaster', { ns: 1.2, color: 0xc4805a, rough: .9 }), base: mat('plaster', { ns: .8, color: 0xf0e8da, rough: .9 }) },
     wood: mat('wood', { ns: .8, color: 0xb08a64, rough: .85 }), soot: std(0x17120f, .8, { side: THREE.DoubleSide, metalness: .2 }),
     ember: std(0x1a0a05, .9, { emissive: 0x7a2408, emissiveIntensity: 1, side: THREE.DoubleSide }), pot: mat('plaster', { ns: .6, color: 0xb86e48, rough: .8 }) };
-  CYM.pot.side = THREE.DoubleSide; return CYM;
+  CYM.pot.side = THREE.DoubleSide;
+  // S2505 — one draw for the cob, the wood, the soot and the pots (and Aurenne's limewashed plinth): the plaster's grain under each part's
+  // colour as a vertex colour, where five meshes a fitting were five draws (the inn's hall 34 → 39 calls at s1716, docs/qa/budget.md).
+  // The Gatelands' and the Mark's plinth keeps the stone's courses, its own draw; the embers keep their glow, theirs.
+  CYM.body = mat('plaster', { ns: 1.3, rough: .92 }); CYM.body.vertexColors = true; CYM.body.side = THREE.DoubleSide;
+  return CYM;
 }
 function clayFitting(kind, island, o = {}) {
   kind = kind === 'kiln' ? 'kiln' : 'oven'; island = island === 'mark' || island === 'aurenne' ? island : 'gatelands';
-  const C = clayMats(), I = C[island], M = { cob: I.cob, base: I.base, wood: C.wood, soot: C.soot, ember: C.ember, pot: C.pot }, B = new Map(), sm = !!o.small;
+  const C = clayMats(), I = C[island], M = { body: C.body, base: I.base, ember: C.ember }, B = new Map(), sm = !!o.small;
+  /* each part's colour, as its own material had it (a material's colour × the plaster's grain); the stone plinth alone keeps its material */
+  /* the wood's grain is darker than the plaster's (their maps' means 0.364/0.270/0.189 and 0.865/0.843/0.804), the soot had none: each scaled to its old mean */
+  const TINT = { cob: I.cob.color, wood: C.wood.color.clone().multiply(new THREE.Color(.421, .320, .235)), soot: C.soot.color.clone().multiply(new THREE.Color(1.156, 1.186, 1.244)), pot: C.pot.color, base: I.base.color }, stone = island !== 'aurenne';
   const put = (k, g, s = 1.5) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
-    worldUV(g, s); if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+    worldUV(g, s); const b = k === 'ember' ? 'ember' : k === 'base' && stone ? 'base' : 'body';
+    if (b === 'body') { const c = TINT[k], n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); }
+    if (!B.has(b)) B.set(b, []); B.get(b).push(g); return g; };
   const box = (k, w, h, d, x, y, z, rx = 0, ry = 0, rz = 0) => { const g = new THREE.BoxGeometry(w, h, d); if (rz) g.rotateZ(rz); if (rx) g.rotateX(rx); if (ry) g.rotateY(ry); g.translate(x, y, z); put(k, g); };
   // a mouth at the front: a thick lip of cob round a dark half-round opening len deep, the embers' glow at its back; its springing at y0
   const mouth = (r, len, y0, z) => { const g = new THREE.CylinderGeometry(r * 1.32, r * 1.32, len, 10, 1, true, -Math.PI / 2, Math.PI); g.rotateX(-Math.PI / 2); g.translate(0, y0, z); put('cob', g);
