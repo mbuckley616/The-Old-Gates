@@ -3445,7 +3445,7 @@
   // Stones are cosmetic; the place is the seed's.
   // When it stands (within 1.6 km, in the open world) every stone has a stamp that only clears the scatter under it (noFlat: the
   // ground is not flattened), the walls' standing courses are solids, and from 20h to 5h the stones drift and the seams burn.
-  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},spires:{site:undefined,W:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
+  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},spires:{site:undefined,W:null,stamps:null,sol:[],plats:[]},scarred:{site:undefined,W:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
   function wonderSkyfallSite(){const S=WONDERS.skyfall;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
@@ -3704,6 +3704,64 @@
   function wonderNorthDrop(){const S=WONDERS.northlight;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:northlight')STATIC_SOL.splice(i,1);S.sol=[];
     const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='northlight')P.splice(i,1);S.plats=[];}
+  // The Scarred Gate (Session 2468; the kit's PKIT.wonders.scarred, from ruins.js; OG-104's Scarred Gate, Aurenne; Michael's A on #1754,
+  // spent as built), on the new look only. Its place is one stretch of Aurenne's dry country, the same for every load of a seed: on a 100 m
+  // grid (the ring is 80 m across; 50 m took 1.4 s) over Aurenne's land cells (getCell, all of them), a point whose ground is the dunes, the wastes or the burned waste (dominantRegion,
+  // read with REGIONS holding Aurenne's cells and their neighbours, so a point's biome does not hang on what is loaded), 6 m or more over
+  // the sea and dry out to 240 m, kept 330 m clear of every site's pad and every door, 200 m of every road's line and 1.2 km of the Orrery,
+  // whose ground under the plinth and the ring (out to 48 m) falls no more than SG_FALL. Of eight headings the gate faces (+z) the one along
+  // which the scar's run (the crater and 220 m to its south-east, in the ring's frame) is dry and most even with the gate's foot. The score
+  // asks for even ground, an even scar and no ground within 220 m standing far over it. One stamp levels the plinth's ground 46 m round
+  // (blend 30), a second sinks the crater 4 m (r 7, blend 17), and a line of stamps that only clear (noFlat) keeps the scar's run bare of
+  // the scatter and the grass; the ring's foot either side of its opening and every thrown stone over 0.9 m are solids; the plinth's two
+  // steps (not over the crater) and the ring's sill are platforms.
+  const SG_FALL=6;
+  function wonderScarredSite(){const S=WONDERS.scarred;if(S.site!==undefined)return S.site;S.site=null;
+    if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
+    const all=[...CELLS.values()],au=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='aurenne');if(!au.length)return null;
+    const orr=wonderOrrerySite();
+    const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
+    const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
+    const segD=(a,b,x,z)=>{const dx=b.x-a.x,dz=b.z-a.z,L=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L));return Math.hypot(a.x+dx*t-x,a.z+dz*t-z);};
+    const keep=[REGIONS.slice(),PEAKS.slice(),INLETS.slice()],ak=new Set(au.map(c=>c.i+','+c.j)),ring=all.filter(c=>{for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(ak.has((c.i+di)+','+(c.j+dj)))return true;return false;});
+    REGIONS.length=0;PEAKS.length=0;INLETS.length=0;ring.forEach(c=>{c.regions.forEach(q=>REGIONS.push(q));c.peaks.forEach(q=>PEAKS.push(q));(c.inlets||[]).forEach(q=>INLETS.push(q));});
+    const wet=(x,z)=>{const y=rawH(x,z);return y<landH(x,z)-1.5||y<SEA_Y+2;},DRY={dunes:1,wastes:1,wasteland:1};let best=null;
+    try{
+    for(const c of au){const x0=c.i*SIZE-500,x1=(c.i+1)*SIZE+500,z0=c.j*SIZE-500,z1=(c.j+1)*SIZE+500,inB=(x,z)=>x>x0&&x<x1&&z>z0&&z<z1;
+      const cs=sites.filter(s=>inB(s.x,s.z)||(s.pad||0)>100),cd=doors.filter(d=>inB(d.x,d.z)),cr=roads.filter(([p,q])=>!(Math.max(p.x,q.x)<x0||Math.min(p.x,q.x)>x1||Math.max(p.z,q.z)<z0||Math.min(p.z,q.z)>z1));
+    for(let a=50;a<SIZE;a+=100)for(let b=50;b<SIZE;b+=100){const x=c.i*SIZE+a,z=c.j*SIZE+b,r0=rawH(x,z);if(r0<SEA_Y+6||wet(x,z))continue;
+      if(orr&&Math.hypot(orr.x-x,orr.z-z)<1200)continue;
+      if(cs.some(s=>Math.hypot(s.x-x,s.z-z)<330+(s.pad||0))||cd.some(d=>Math.hypot(d.x-x,d.z-z)<330)||cr.some(([p,q])=>segD(p,q,x,z)<200))continue;
+      const dr=dominantRegion(x,z);if(!dr||!dr.r||!DRY[dr.r.biome])continue;
+      let lo=1e9,hi=-1e9,ok=true;for(let k=0;k<16&&ok&&hi-lo<=SG_FALL;k++){const t=k*Math.PI/8;for(const rr of [20,34,48,120,240]){const X=x+Math.sin(t)*rr,Z=z+Math.cos(t)*rr;
+        if(wet(X,Z)){ok=false;break;}if(rr<=48){const y=rawH(X,Z);lo=Math.min(lo,y);hi=Math.max(hi,y);}}}
+      if(!ok||hi-lo>SG_FALL||best&&-(hi-lo)*2<=best.score)continue;const mid=(lo+hi)/2; /* the score can only fall from here */
+      // the scar's run for each of eight headings: the crater at (22, 24) and its line out 220 m along (cos 0.7, sin 0.7) in the ring's frame
+      let even=1e9,ry=0;for(let q=0;q<8;q++){const a0=q*Math.PI/4,cc=Math.cos(a0),ss=Math.sin(a0),W=(lx,lz)=>[x+lx*cc+lz*ss,z-lx*ss+lz*cc];let dev=0,dry=true;
+        for(let s=0;s<=220&&dry;s+=27.5){const [X,Z]=W(22+s*Math.cos(.7),24+s*Math.sin(.7));if(wet(X,Z)){dry=false;break;}dev=Math.max(dev,Math.abs(rawH(X,Z)-mid));}
+        if(dry&&dev<even){even=dev;ry=a0;}}
+      if(even>=1e9||best&&-(hi-lo)*2-even<=best.score)continue;
+      let above=0;for(let k=0;k<16;k++){const t=k*Math.PI/8;for(const d of [130,175,220])above=Math.max(above,rawH(x+Math.sin(t)*d,z+Math.cos(t)*d)-r0);}
+      const score=-(hi-lo)*2-even-Math.max(0,above-6)*WONDER_ABOVE_K;if(best&&score<=best.score)continue;
+      best={x,z,ry:+ry.toFixed(4),y:+mid.toFixed(2),h:+r0.toFixed(1),biome:dr.r.biome,fall:+(hi-lo).toFixed(1),even:+even.toFixed(1),above:+above.toFixed(1),score:+score.toFixed(1),cell:cellKey(c.i,c.j)};}}
+    }finally{REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}
+    return (S.site=best);}
+  function wonderScarredBuild(){const S=WONDERS.scarred,st=wonderScarredSite();if(!st||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.scarred)return null;
+    if(!S.stamps){const [cx,cz]=wonderToWorld(st,22,24);S.stamps=[addStamp({id:'wonder_scarred',kind:'wonder',x:st.x,z:st.z,r:46,blend:30,y:st.y}),addStamp({id:'wonder_scarred_crater',kind:'wonder',x:cx,z:cz,r:7,blend:17,y:st.y-4})];
+      for(let s=14,k=0;s<=220;s+=10,k++){const w=12*(1-.7*s/220),[x,z]=wonderToWorld(st,22+s*Math.cos(.7),24+s*Math.sin(.7));S.stamps.push(addStamp({id:'wonder_scarred_s'+k,kind:'wonder',noFlat:true,x,z,r:w*1.9,blend:1,y:0}));} /* the glass's whole band, to where it fades (1.8 of its half-width) */
+      try{clearScatterUnder(S.stamps);}catch(e){console.warn('wonder scatter',e);}}
+    const hAt=(lx,lz)=>{const [x,z]=wonderToWorld(st,lx,lz);return meshH(x,z);};const W=PKIT.wonders.scarred(hAt);
+    W.sig=wonderCellSig(st);W.group.position.set(st.x,0,st.z);W.group.rotation.y=st.ry;W.group.userData.noBake=true;W.group.updateMatrixWorld(true);sc.add(W.group);S.W=W;
+    const c=Math.cos(st.ry),s_=Math.sin(st.ry);
+    S.plats=W.plats.map(p=>{const R=Math.hypot(p.w,p.d)/2;return {x0:st.x-R,x1:st.x+R,z0:st.z-R,z1:st.z+R,y:p.y,wonder:'scarred',step:p.step,
+      inside:(wx,wz)=>{const dx=wx-st.x,dz=wz-st.z,lx=dx*c-dz*s_,lz=dx*s_+dz*c;return Math.abs(lx)<p.w/2&&Math.abs(lz)<p.d/2&&(p.step===2||W.level(lx,lz));}};});S.plats.forEach(p=>ZONES.world.platforms.push(p));
+    S.sol=W.sol.map(b=>{const [x,z]=wonderToWorld(st,b.x,b.z);return {cx:x,cz:z,rx:b.w/2,rz:b.d/2,c:Math.cos(st.ry+b.ry),s:Math.sin(st.ry+b.ry),h:b.h,cell:'wonder:scarred',wonder:true};});
+    S.sol.forEach(q=>STATIC_SOL.push(q));
+    S.herbR=220;wonderSeatHerbs(st.x,st.z,S.herbR);
+    return W;}
+  function wonderScarredDrop(){const S=WONDERS.scarred;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W=null;}
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:scarred')STATIC_SOL.splice(i,1);S.sol=[];
+    const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='scarred')P.splice(i,1);S.plats=[];}
   // The Drowned Spires (Session 2419; the kit's PKIT.wonders.spires, from ruins.js; OG-104's Drowned Spires, the Gatelands; Michael's B on
   // #1737, always walked), on the new look only. Its place is one strand of the Gatelands, the same for every load of a seed: on a 50 m grid
   // over the Gatelands' land cells (getCell, all of them; a beach of 1 in 14 holds the band 84 m wide), a point at the water's edge (SEA_Y -3 to +2) for the first tower, kept 330 m
@@ -3761,7 +3819,7 @@
     const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='spires')P.splice(i,1);S.plats=[];}
   // from WORLD.tick, every frame in the open world: each wonder built within 1.6 km (checked once a second), animated while it stands.
   // A wonder's site is searched only once you stand on its island's land (the Fields' takes 0.6 s on software GL)
-  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop},{k:'northlight',nation:'mark',site:wonderNorthSite,build:wonderNorthBuild,drop:wonderNorthDrop},{k:'spires',nation:'gatelands',site:wonderSpiresSite,build:wonderSpiresBuild,drop:wonderSpiresDrop}];
+  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop},{k:'northlight',nation:'mark',site:wonderNorthSite,build:wonderNorthBuild,drop:wonderNorthDrop},{k:'spires',nation:'gatelands',site:wonderSpiresSite,build:wonderSpiresBuild,drop:wonderSpiresDrop},{k:'scarred',nation:'aurenne',site:wonderScarredSite,build:wonderScarredBuild,drop:wonderScarredDrop}];
   function tickWonders(){if(typeof LAND==='undefined'||!LAND.on)return;const t=performance.now(),due=t-WONDERS._t>1000||WONDERS._t===0&&WONDER_KINDS.some(K=>!WONDERS[K.k].W);if(due)WONDERS._t=t;
     let nk=null;for(const K of WONDER_KINDS){const S=WONDERS[K.k];
       if(S.W&&S.W.group.parent!==sc)K.drop(); /* the world's scene was built again */
@@ -3782,6 +3840,7 @@
     if(k==='lough')return {x:st.x,z:st.z,r:58};
     if(k==='ring')return {x:st.x,z:st.z,r:128};
     if(k==='northlight')return {x:st.x,z:st.z,r:96};
+    if(k==='scarred'){const [x,z]=wonderToWorld(st,60,60);return {x,z,r:170};}
     if(k==='spires'){const [x,z]=wonderToWorld(st,0,(st.spit+5)/2);return {x,z,r:(st.spit+95)/2+11};}
     return null;}
   function wonderFoeClear(x,z){if(typeof LAND==='undefined'||!LAND.on)return false;let nk=null;

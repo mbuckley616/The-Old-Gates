@@ -7,6 +7,7 @@
 // Session 2410: the herbs laid before a wonder's stamp are set on its ground, or taken away from its solids and water.
 // Session 2419: the Drowned Spires off a Gatelands strand, walked from the strand through every tower.
 // Session 2450: the veins laid before the Spires' stamp are set on its ground, or taken away from its solids, decks and water.
+// Session 2468: the Scarred Gate on Aurenne's dunes, walked up its plinth and through the ring.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -251,6 +252,38 @@ console.log(JSON.stringify(sh));
 check(`a ship sailed full ahead (${sh.top} m/s) at the last tower stops ${sh.closest} m from its middle, her bow outside the stone, in ${-sh.bed} m of water`, sh.clearAtStart && sh.top > 2 && sh.closest >= 5 + sh.L / 2 && Math.abs(sh.speed) < .5 && !sh.bowIn && sh.bed < -1.4, sh);
 const pd = await page.evaluate(() => { const S = WONDERS.spires; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:spires').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'spires').length }; });
 check('2.5 km off it is dropped, its solids and decks with it', pd.gone && pd.sol === 0 && pd.plats === 0, pd);
+// Session 2468: the Scarred Gate (OG-104; Michael's A on #1754, spent as built) on Aurenne's dunes. The place is the seed's, on the dunes,
+// the wastes or the burned waste, clear of every site, door, road and the Orrery; the prototype's ring (17 outer stones gone and thrown, the
+// inner course slipped over the blast), nothing lit; the crater sunk before its right foot, the plinth's slabs gone or tipped there; you
+// walk up the plinth's two steps and through the ring over its sill, the foot either side solid; it goes when you leave.
+const gs = await page.evaluate(() => { const a = wonderScarredSite(); WONDERS.scarred.site = undefined; const t0 = performance.now(), b = wonderScarredSite(), ms = Math.round(performance.now() - t0);
+  if (!b) return { none: true }; const sites = [...CELLS.values()].flatMap(c => c.sites), near = sites.reduce((m, t) => Math.min(m, Math.hypot(t.x - b.x, t.z - b.z) - (t.pad || 0)), 1e9), o = wonderOrrerySite();
+  return { ...b, ms, same: JSON.stringify(a) === JSON.stringify(b), nation: nationKeyOf(...cellOf(b.x, b.z)), near: Math.round(near), orrery: Math.round(Math.hypot(o.x - b.x, o.z - b.z)) }; });
+console.log(JSON.stringify(gs));
+check(`the Scarred Gate stands on Aurenne's ${gs.biome}, ${gs.h} m up, the same asked twice (${gs.ms} ms)`, !gs.none && gs.nation === 'aurenne' && ['dunes', 'wastes', 'wasteland'].includes(gs.biome) && gs.same, gs);
+check(`its ground falls ${gs.fall} m under the plinth and the ring, the scar's run within ${gs.even} m of its foot; ${gs.near} m past the nearest pad, ${gs.orrery} m from the Orrery`, gs.fall <= 6 && gs.near >= 330 && gs.orrery >= 1200, gs);
+const gat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, -20, 120); return { x, z }; }, gs);
+await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), gat);
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [gat.x, gat.z], { timeout: 60000 });
+await g.cells(); await g.hide();
+const gw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.scarred, W = S.W, st = S.site; if (!W) return { none: true };
+  let meshes = 0, lit = 0; W.group.traverse(o => { if (o.isMesh) { meshes++; if (o.material.emissive && o.material.emissive.getHex() !== 0) lit++; } });
+  const w2 = (x, z) => wonderToWorld(st, x, z), at = (x, z) => +activeTerrainH(...w2(x, z)).toFixed(2), so = (x, z, y) => solidAt(...w2(x, z), y);
+  let rim = 0; for (let k = 0; k < 24; k++) { const t = k * .26; rim = Math.max(rim, Math.abs(meshH(...w2(Math.sin(t) * 40, Math.cos(t) * 8 - 12)) - st.y)); } /* behind the ring and under it: the crater is before its right foot */
+  const walk = [20, 14, 10, 6, 2, 0, -2, -6, -10, -14, -20].map(z => ({ z, y: at(0, z), block: so(0, z, at(0, z)) }));
+  const herbs = ZONES.world.herbs.filter(h => Math.hypot(h.x - st.x, h.z - st.z) < S.herbR).map(h => solidAt(h.x, h.z) ? 99 : +Math.abs(h.g.position.y - worldH(h.x, h.z)).toFixed(2));
+  return { tris: W.tris, draws: W.draws, meshes, lit, inScene: W.group.parent === sc, gone: W.gone, slipped: W.slipped, thrown: W.thrown.length, far: Math.round(Math.max(...W.thrown.map(t => Math.hypot(t.x, t.z)))), sunk: W.thrown.every(t => t.low < 0),
+    plinth: W.plinth, rim: +rim.toFixed(2), crater: +(st.y - meshH(...w2(22, 24))).toFixed(2), walk, plats: W.plats.map(p => p.y), sol: S.sol.length,
+    foot: so(-20, 0) && so(20, 0) && so(-34, 0), open: !so(0, 0), thrownSolid: W.sol.filter(b => b.thrown).every(b => so(b.x, b.z)), glass: (() => { const m = W.group.getObjectByName('scarred:glass'); return m ? { tris: m.geometry.attributes.position.count / 3, transparent: m.material.transparent } : null; })(), herbs }; });
+console.log(JSON.stringify(gw));
+check(`within 1.6 km it stands: ${gw.gone} of the outer course's 44 stones gone, thrown out to ${gw.far} m and each sunk where it fell; ${gw.slipped} of the inner course slipped; ${gw.tris} triangles in ${gw.draws} draws, nothing lit`, !gw.none && gw.inScene && gw.gone === 17 && gw.slipped >= 10 && gw.thrown === 17 && gw.sunk && gw.draws === gw.meshes && gw.draws <= 5 && gw.tris < 9000 && gw.lit === 0, gw);
+check(`the ground is level behind and under the ring (within ${gw.rim} m of the stamp), the crater sunk ${gw.crater} m before its right foot, ${gw.plinth.lost} of the plinth's ${gw.plinth.slabs} slabs gone into it and ${gw.plinth.tipped} tipped`, gw.rim < .5 && gw.crater > 3 && gw.plinth.lost > 0 && gw.plinth.tipped > 0, gw);
+const gwk = gw.walk;
+check(`walked straight through the ring from the plinth's foot (a thrown stone lies on the axis 30 m out): up its steps (${gwk.map(q => q.y).join(' → ')} m) and over its sill, nothing blocking`, gwk.every(q => !q.block) && gwk[0].y < gw.plats[0] - .3 && gwk.find(q => q.z === 10).y === gw.plats[0] && gwk.find(q => q.z === 6).y === gw.plats[1] && gwk.find(q => q.z === 0).y === gw.plats[2], gwk);
+check(`its ${gw.sol} solids: the ring's foot either side of the opening and every thrown stone over 0.9 m; the opening is clear; the black glass a skin of ${gw.glass && gw.glass.tris} triangles`, gw.foot && gw.open && gw.thrownSolid && gw.glass && gw.glass.transparent, gw);
+check(`its ${gw.herbs.length} herbs within reach sit on the ground, none in a stone (worst ${Math.max(0, ...gw.herbs)} m off)`, gw.herbs.every(d => d < .3), gw.herbs);
+const gd = await page.evaluate(() => { const S = WONDERS.scarred; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:scarred').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'scarred').length }; });
+check('2.5 km off it is dropped, its solids and steps with it', gd.gone && gd.sol === 0 && gd.plats === 0, gd);
 // Session 2431: no chunk foe on a wonder's ground (S2409: foes stood inside the Northlight Altar's ring). Every chunk whose centre lies
 // within a wonder's ground + 70 m is spawned afresh at 23h (the night's density), with the rule and without it: with it none spawns.
 const wf = await page.evaluate(() => { forceTime(23); const C = WORLD.CHUNK, out = {}, keep = wonderFoeClear;
@@ -262,6 +295,6 @@ const wf = await page.evaluate(() => { forceTime(23); const C = WORLD.CHUNK, out
   forceTime(13); return out; });
 console.log(JSON.stringify(wf));
 const wk = Object.entries(wf).filter(([, v]) => v), off = wk.reduce((m, [, v]) => m + v.off, 0);
-check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 6 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
+check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 7 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
