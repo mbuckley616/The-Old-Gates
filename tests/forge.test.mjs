@@ -68,6 +68,35 @@ const r = await page.evaluate(() => {
   const fb2 = BAG.find(b => b.quality === 'fine' && b.weaponType === 'Sword'); P.reload = fb2 && { name: fb2.name, atk: fb2.atk, kept: (worldState.masterworks || []).slice() };
   P.charKey = !!SS_CHAR_WS.masterworks;
   out.perks = P;
+  // ── S2491: rare materials B, session 1 — the Draconic ingot from a dragon's scale, and picks and hatchets in steel and mithril ──
+  const R = {}; lid = 'int_test'; currentHouse = { type: 'weapon', name: 'The Forge', keeper: 'Bram', tagline: '"Iron."' }; gold = 500; BAG.length = 0; worldState.masterworks = [];
+  const scale = () => ({ name: 'Dragon Scale', ico: '🔥', type: 'misc', buyPrice: 400, sellMult: .6, weight: .8, dragonScale: true, qty: 1 });
+  bagAdd(oreItem('obsidian', 6)); S(74); bagAdd(scale()); R.gate74 = forgeSmelt(8).why; R.kept74 = scaleCount() === 1 && oreCount('obsidian') === 6;
+  S(100); bagTake(isDragonScale, 1); R.noScale = forgeSmelt(8).why;
+  bagAdd({ name: 'Dragon Scale', ico: '🔥', type: 'misc', buyPrice: 400, sellMult: .6, weight: .8, qty: 2 }); /* a scale saved before S2491, known by name */
+  const d8 = forgeSmelt(8); R.smelt = { made: d8.made, name: d8.item && d8.item.name, n: ingotCount(8), obs: oreCount('obsidian'), scales: scaleCount(), price: d8.item && d8.item.buyPrice };
+  forgeSmelt(8); R.two = { n: ingotCount(8), obs: oreCount('obsidian'), scales: scaleCount() };
+  bagAdd(benchItem('plank', 2)); S(74); R.sword74 = forgeMake('Sword', 8).why; S(75); const ds = forgeMake('Sword', 8); R.sword = { made: ds.made, name: ds.item && ds.item.name, left: ingotCount(8) };
+  R.forgeMetals = forgeMetals().join(); R.benchMetals = benchMetals().join(); R.temper8 = forgeTemper(ds.item).why;
+  // the tools
+  BAG.length = 0; gold = 500; bagAdd(ds.item); bagAdd({ ...PICK_ITEM }); bagAdd({ ...HATCHET_ITEM }); R.iron = { pick: toolMetal('pick'), ps: toolStrike('pick'), hs: toolStrike('hatchet') };
+  const waste = { id: 'tooltier:w', ore: 'obsidian', tier: 4, g: null }, low = { id: 'tooltier:l', ore: 'iron', tier: 3, g: null };
+  worldState.veins = worldState.veins || {}; delete worldState.veins[waste.id]; delete worldState.veins[low.id]; SKILLS.mining = { lv: 100, p: 0 };
+  R.ironWaste = strikeVein(waste).why; R.ironLow = !strikeVein(low).why;
+  bagAdd(ingotItem(4, 4)); bagAdd(ingotItem(5, 2)); bagAdd(benchItem('plank', 1)); S(29); R.steel29 = forgeTool('pick', 4).why;
+  S(30); const tt0 = gameMinNow(); const sp = forgeTool('pick', 4); R.steel = { made: sp.made, name: sp.item && sp.item.name, metal: sp.item && sp.item.toolMetal, ingots: ingotCount(4), planks: plankCount(), mins: Math.round(gameMinNow() - tt0), sale: sp.item && sellPrice(sp.item), buy: sp.item && sp.item.buyPrice };
+  R.noPlank = forgeTool('hatchet', 4).why;
+  R.steelPick = { metal: toolMetal('pick'), ps: toolStrike('pick'), waste: strikeVein(waste).why || 'struck' };
+  bagAdd(benchItem('plank', 2)); S(44); R.mith44 = forgeTool('hatchet', 5).why; S(45); const mh = forgeTool('hatchet', 5); R.mith = { made: mh.made, name: mh.item && mh.item.name, hs: toolStrike('hatchet') };
+  /* S2491 — flags the save's item list did not carry: hobnails, a vessel's water, a gate's crystal, an arc, a pack's kind */
+  const fl = { skin: waterItem('skin', 3, 'raw'), cry: gateCrystalItem('tine'), arc: arcItem('tine', 2), pk: packItem('mark') }; for (const k in fl) bagAdd(fl[k]);
+  const feet0 = EQ.feet; EQ.feet = { ...makeItem(3, ARMOR_TYPES.find(t => t.slot === 'feet'), null, true), nails: 1 };
+  const d3 = JSON.parse(ssStringify(_buildSavePayload())); BAG.length = 0; _applyLoadData(d3); R.reload = { pick: toolMetal('pick'), hatchet: toolMetal('hatchet'), dr: BAG.some(b => b.weaponType === 'Sword' && b.tier === 8) };
+  R.flags = { nails: bootsNailed(), skin: BAG.some(b => b.vessel === 'skin' && b.wUses === 3 && b.wKind === 'raw'), cry: BAG.some(b => b.gateCrystal === 'tine'), arc: BAG.some(b => b.arc && b.arc.n === 2), pack: BAG.some(b => b.pack === fl.pk.pack) };
+  EQ.feet = feet0;
+  forgeSel = { k: 'o', i: 1 }; openForgePage(); const ovT = document.getElementById('forgeui'); R.page = !!ovT && /Tools/.test(ovT.textContent) && /Mithril Pick/.test(ovT.textContent) && /0\.6 s/.test(ovT.textContent);
+  forgeSel = { k: 's', tier: 8 }; forgeDraw(); R.page8 = /Draconic Ingot/.test(ovT.textContent) && /Dragon Scale/.test(ovT.textContent) && /makes 2/.test(ovT.textContent); closeForgePage(); forgeSel = { k: 's', tier: 2 };
+  out.rare = R;
   // ── the page (the load set where you stand; back into the smith's room) ──
   lid = 'int_test'; currentHouse = { type: 'weapon', name: 'The Forge', keeper: 'Bram', tagline: '"Iron."' };
   bagAdd(found); openShop(); const fb = document.getElementById('sh-forge'); out.tab = !!fb && fb.style.display !== 'none';
@@ -104,6 +133,15 @@ check('Fine work (50): a made sword is Fine, +10%; at 49 plain', P.plain === 'Ir
 check('Temper (75): four tempers', P.max74 === 3 && P.max75 === 4, P);
 check('Masterwork (100): the first iron piece is a Masterwork, +20%; the next is Fine', P.master.a === 'Masterwork Iron Dagger' && P.master.aAtk[1] === Math.round(P.master.base[1] * 1.2) && P.master.b === 'Fine Iron Dagger' && P.master.kept.join() === '3', P.master);
 check('the save keeps a Fine blade\'s step and the masterworks (the character\'s)', P.reload && P.reload.atk.join() === P.fine.atk.join() && P.reload.kept.join() === '3' && P.charKey, P.reload);
+const RR = r.rare;
+check('S2491: Draconic asks Smithing 75 to smelt; refused at 74, the scale and the obsidian kept; no scale, no ingot', /Smithing 75/.test(RR.gate74) && RR.kept74 && /scale/.test(RR.noScale), RR);
+check('S2491: a dragon\'s scale and 2 obsidian make 2 Draconic ingots (a scale saved by name counts); Smelter passes it by', RR.smelt.made && RR.smelt.name === 'Draconic Ingot' && RR.smelt.n === 2 && RR.smelt.obs === 4 && RR.smelt.scales === 1 && RR.two.n === 4 && RR.two.obs === 2 && RR.two.scales === 0, RR);
+check('S2491: a Draconic sword is made at Smithing 75, refused at 74; the forge\'s metals run to 8, the bench\'s to 7; no ore tempers it', /Smithing 75/.test(RR.sword74) && RR.sword.made && /Draconic Sword/.test(RR.sword.name) && RR.sword.left === 2 && RR.forgeMetals === '2,3,4,5,6,7,8' && RR.benchMetals === '2,3,4,5,6,7' && /no ore/.test(RR.temper8), RR);
+check('S2491: an iron pick and hatchet strike every 0.9 s; the iron pick turns on a wastes vein, not on a tier-3 one', RR.iron.pick === 3 && RR.iron.ps === .9 && RR.iron.hs === .9 && /steel pick/.test(RR.ironWaste) && RR.ironLow, RR);
+check('S2491: a steel pick: Smithing 30, 2 ingots and a plank, 30 minutes, made (a fifth back); strikes every 0.75 s and reaches the wastes', /Smithing 30/.test(RR.steel29) && RR.steel.made && RR.steel.name === 'Steel Pick' && RR.steel.metal === 4 && RR.steel.ingots === 2 && RR.steel.planks === 0 && RR.steel.mins === 30 && RR.steel.sale === Math.floor(RR.steel.buy * .2) && /plank/.test(RR.noPlank) && RR.steelPick.metal === 4 && RR.steelPick.ps === .75 && RR.steelPick.waste !== 'The rock turns the iron. It wants a steel pick.', RR);
+check('S2491: a mithril hatchet at Smithing 45 strikes every 0.6 s; the tools and the Draconic sword come back from a save', /Smithing 45/.test(RR.mith44) && RR.mith.made && RR.mith.name === 'Mithril Hatchet' && RR.mith.hs === .6 && RR.reload.pick === 4 && RR.reload.hatchet === 5 && RR.reload.dr, RR);
+check('S2491: the save keeps hobnails, a vessel\'s water, a gate crystal\'s school, an arc\'s number and a pack\'s kind (all lost on a reload before)', Object.values(RR.flags).every(Boolean), RR.flags);
+check('S2491: the forge\'s page lists the tools, with their strike, and the Draconic ingot\'s scale', RR.page && RR.page8, RR);
 check('the smith\'s shop has a Forge tab; it opens the forge\'s page', r.tab && r.page && r.closed, { tab: r.tab, page: r.page, closed: r.closed });
 // ── S1514: a fort armoury's smelter is a forge with no smith: no fee, no temper for gold, and only beside it ──
 let D = null;

@@ -1696,6 +1696,15 @@ function supplyWood(x,z){if(typeof getCell!=='function'||typeof cellOf!=='functi
 const PICK_ITEM={name:PICK_NAME,ico:'⛏',type:'misc',weight:4,buyPrice:40,sellMult:.4,tool:'pick'};
 function oreItem(k,qty){const o=ORE_DEF[k];return {name:o.name,ico:'🪨',type:'misc',weight:2,buyPrice:o.price,sellMult:.3,ore:k,qty:qty||1};}
 function hasPick(){return BAG.some(b=>b&&b.tool==='pick');}
+// S2491 — rare materials B, session 1 (`docs/design/rare-materials.md`, Michael's B on #1840): tool tiers. A pick or a hatchet is iron
+// (bought, as before), steel or mithril (made at the forge, `forgeTool`); the best one in the bag is the one you work with. A strike
+// takes 0.9, 0.75 or 0.6 s. An iron pick turns on the wastes' rock (a vein of the table's tier 4: mithril, adamant and obsidian
+// there); steel reaches it. Mithril is for star iron, later. Every tree takes any hatchet.
+const TOOL_STRIKE={3:.9,4:.75,5:.6},TOOL_METALS=[4,5],TOOL_PRICE={4:2,5:3.5};
+function toolMetal(kind){let m=0;for(const b of BAG)if(b&&b.tool===kind)m=Math.max(m,b.toolMetal||3);return m;}
+function toolStrike(kind){return TOOL_STRIKE[toolMetal(kind)]||TOOL_STRIKE[3];}
+function pickReaches(v){return !(v&&v.tier>=4&&toolMetal('pick')<4);}
+const PICK_HARD='The rock turns the iron. It wants a steel pick.';
 // the vein's tier: the place's danger tier, and 4 in the wastes (the open world's regions stop at 3)
 function veinTier(x,z){let t=typeof worldTierAt==='function'?worldTierAt(x,z):1;
   try{const r=dominantRegion(x,z).r;if(r&&(r.id==='wastes'||r.biome==='wastes'||r.biome==='wasteland'))t=4;}catch(e){}
@@ -1768,6 +1777,7 @@ function veinNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&
 // one strike at a vein: the outcome is the vein's seeded stream at this strike. Returns {ore, left} or {why}
 function strikeVein(v){
   if(!hasPick())return {why:'You need a pick.'};
+  if(!pickReaches(v))return {why:PICK_HARD};
   let r=veinRec(v);if(r.n>=veinCap())return {why:'The vein is worked out.'};
   const it=oreItem(v.ore);if(!canCarry(it))return {why:'Too heavy to carry!'};
   const roll=seededRng('ore',v.id+':'+(r.e||0)+':'+r.s)();
@@ -1790,19 +1800,20 @@ let MINE=null;
 function mineVein(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the vein.','#c8b890');return;}
   if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}
   if(veinLeft(v)<=0){showMsg('The vein is worked out.','#cc8844');return;}
-  MINE={v,t:VEIN_STRIKE};showMsg(`You set to the ${ORE_DEF[v.ore].name.toLowerCase()}.`,'#c8b890');}
+  if(!pickReaches(v)){showMsg(PICK_HARD,'#cc8844');return;}
+  MINE={v,t:toolStrike('pick')};showMsg(`You set to the ${ORE_DEF[v.ore].name.toLowerCase()}.`,'#c8b890');}
 function tickMining(dt){if(typeof tickArcJoin==='function')tickArcJoin(dt); /* S2372 — three arcs set together (68-dungeon-misc.js) */
   if(!MINE)return;const v=MINE.v;
   if(v.gate!=null){tickGateMining(dt);return;} /* S2371 — a gate keep's crystal (68-dungeon-misc.js) */
   if(!veinLive(v)||activeZoneId!=='world'||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}
-  MINE.t-=dt;if(MINE.t>0)return;MINE.t+=VEIN_STRIKE;
+  MINE.t-=dt;if(MINE.t>0)return;MINE.t+=toolStrike('pick');
   const r=strikeVein(v);if(typeof uiNoise==='function')uiNoise(.06,.12,2400);
   if(r.why){showMsg(r.why,'#cc8844');MINE=null;return;}
   if(r.ore){showMsg(`${r.ore}.`+(r.left?'':' The vein is worked out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
   if(!r.left)MINE=null;}
 function tickGateMining(dt){const v=MINE.v;
   if(!v.g||v.g.parent!==dScene||activeZoneId!=='dungeon'||currentFloor!==v.floor||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}
-  MINE.t-=dt;if(MINE.t>0)return;MINE.t+=VEIN_STRIKE;
+  MINE.t-=dt;if(MINE.t>0)return;MINE.t+=toolStrike('pick');
   const r=gateVeinStrike(v);if(typeof uiNoise==='function')uiNoise(.06,.12,2400);
   if(r.why){showMsg(r.why,'#cc8844');MINE=null;return;}
   if(r.got){showMsg(`${r.got}.`+(r.left?'':' The crystal is all cut out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
@@ -1889,7 +1900,7 @@ function strikeTree(ch,t,n){
 let CHOP=null;
 function chopTree(ch,t){if(CHOP&&CHOP.t===t){CHOP=null;showMsg('You stop.','#c8b890');return;}
   const tool=chopTool();if(!tool){showMsg('You need a hatchet.','#cc8844');return;}
-  const step=FELL_STRIKE*(tool==='axe'?2:1);CHOP={ch,t,n:0,step,tm:step};showMsg((tool==='axe'?'You set to the tree with the axe. It is slow work.':'You set to the tree.')+(heartwoodHere(t)?' It is a great tree, with heartwood in it.':''),'#c8b890');}
+  const step=tool==='axe'?FELL_STRIKE*2:toolStrike('hatchet');CHOP={ch,t,n:0,step,tm:step};showMsg((tool==='axe'?'You set to the tree with the axe. It is slow work.':'You set to the tree.')+(heartwoodHere(t)?' It is a great tree, with heartwood in it.':''),'#c8b890');}
 function tickFelling(dt){
   if(CHOP){const {ch,t}=CHOP;
     if(!chunkLive(ch)||t.out||activeZoneId!=='world'||Math.hypot(px-t.x,pz-t.z)-t.r>TOUCH+.8||(typeof dead!=='undefined'&&dead))CHOP=null;
@@ -1937,11 +1948,19 @@ function hatchetFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...HATCH
 const FORGE_FEE=5,FORGE_MIN=30,TEMPER_ORE=3,TEMPER_STEP=.08,MADE_SELL=.2;
 const INGOT_DEF=[
   {tier:2,ore:[['copper',1],['tin',1]]},{tier:3,ore:[['iron',2]]},{tier:4,ore:[['iron',2]],charcoal:1},
-  {tier:5,ore:[['mithril',2]]},{tier:6,ore:[['adamant',2]]},{tier:7,ore:[['obsidian',2]]}];
+  {tier:5,ore:[['mithril',2]]},{tier:6,ore:[['adamant',2]]},{tier:7,ore:[['obsidian',2]]},
+  {tier:8,ore:[['obsidian',2]],scale:1,yield:2}]; /* S2491 — Draconic: a dragon's scale and 2 obsidian make 2 ingots (rare materials B) */
+// S2491 — a rare ingot (one with a scale, later a sigil stone or star iron) asks Smithing at its metal's gate to smelt, as the
+// design's table has it, so a scale is not spent by a hand that cannot work what it makes; the Smelter perk passes it by: the
+// rare piece is the limit, not the ore. A Dragon Scale is the lairs' drop (68-dungeon-misc.js); one saved before S2491 is known by name.
+function isDragonScale(b){return !!(b&&(b.dragonScale||b.name==='Dragon Scale'));}
+function scaleCount(){return bagCount(isDragonScale);}
+const DRAGON_SCALE_PRICE=400;
+function ingotRare(D){return !!(D&&D.scale);}
 // the ore a piece of each metal is tempered with
 const TEMPER_ORES={2:['copper','tin'],3:['iron'],4:['iron'],5:['mithril'],6:['adamant'],7:['obsidian']};
 function ingotItem(tier,qty){const D=INGOT_DEF.find(d=>d.tier===tier),M=MATERIALS[tier-1];
-  const p=D.ore.reduce((s,[k,n])=>s+ORE_DEF[k].price*n,0)+(D.charcoal?SURV_ITEMS.charcoal.buyPrice:0);
+  const p=Math.round((D.ore.reduce((s,[k,n])=>s+ORE_DEF[k].price*n,0)+(D.charcoal?SURV_ITEMS.charcoal.buyPrice:0)+(D.scale?DRAGON_SCALE_PRICE*D.scale:0))/(D.yield||1));
   return {name:`${M.name} Ingot`,ico:'🧱',type:'misc',weight:1,buyPrice:p,sellMult:.3,ingot:tier,qty:qty||1};}
 // what a piece costs in ingots, and the types the forge makes: the heavy line, the shield, every blade and haft but the bows'
 // (the bench's) and the wooden club
@@ -1972,12 +1991,15 @@ let _forgeN=0;
 function forgeSmelt(tier){
   if(!forgeHere())return {made:false,why:'You need a forge.'};
   const D=INGOT_DEF.find(d=>d.tier===tier);if(!D)return {made:false,why:''};
-  const two=smelterTwo(D);
+  if(ingotRare(D)){const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
+    if(scaleCount()<D.scale)return {made:false,why:'It wants a dragon’s scale.'};}
+  const two=ingotRare(D)?null:smelterTwo(D);
   if(!two)for(const [k,n] of D.ore)if(oreCount(k)<n)return {made:false,why:`You need ${n} ${ORE_DEF[k].name.toLowerCase()}.`};
   if(D.charcoal&&bagCount(b=>b.name===SURV_ITEMS.charcoal.name)<D.charcoal)return {made:false,why:'Steel needs a charcoal.'};
   const f=forgeFee();if(f)return {made:false,why:f};
   if(two)two.forEach(([k,n])=>bagTake(b=>b.ore===k,n));else for(const [k,n] of D.ore)bagTake(b=>b.ore===k,n);if(D.charcoal)bagTake(b=>b.name===SURV_ITEMS.charcoal.name,D.charcoal);
-  const it=ingotItem(tier,two?2:1);bagAdd(it);skillUse('smithing',2,'f'+(_forgeN++));
+  if(D.scale)bagTake(isDragonScale,D.scale);
+  const it=ingotItem(tier,two?2:(D.yield||1));bagAdd(it);skillUse('smithing',2,'f'+(_forgeN++));
   return {made:true,item:it};}
 // Smelter: 3 ore of the recipe make 2 ingots when you have them (bronze: 3 of copper and tin, one of each at least, the more
 // plentiful taken twice); the charcoal is one a smelt either way. Returns the ore to take, or null for the plain 2 → 1
@@ -2025,7 +2047,24 @@ function forgeTemper(it,bySmith){
 let forgeOpen=false,forgeSel={k:'s',tier:2},forgeTier=null,forgeSaid='';
 function forgePieces(){const out=[];for(const s in EQ){const it=EQ[s];if(temperable(it)&&!out.includes(it))out.push(it);}BAG.forEach(b=>{if(temperable(b))out.push(b);});return out;}
 function forgeMetals(){return INGOT_DEF.map(d=>d.tier);}
-function forgeCanSmelt(t){const D=INGOT_DEF.find(d=>d.tier===t);return D.ore.every(([k,n])=>oreCount(k)>=n)&&(!D.charcoal||bagCount(b=>b.name===SURV_ITEMS.charcoal.name)>=D.charcoal);}
+function forgeCanSmelt(t){const D=INGOT_DEF.find(d=>d.tier===t);return D.ore.every(([k,n])=>oreCount(k)>=n)&&(!D.charcoal||bagCount(b=>b.name===SURV_ITEMS.charcoal.name)>=D.charcoal)&&
+  (!D.scale||scaleCount()>=D.scale&&skillLv('smithing')>=(SKILL_GATE[t]||0));}
+// S2491 — a steel or mithril pick or hatchet: 2 ingots of the metal and a plank for the haft, Smithing at the metal's gate, 30
+// minutes, a Smithing use as a piece's. Made, so it sells back at a fifth. Returns {made, item, why}
+function toolItem(kind,metal){const B=kind==='pick'?PICK_ITEM:HATCHET_ITEM,M=MATERIALS[metal-1];
+  return {...B,name:`${M.name} ${B.name}`,toolMetal:metal,buyPrice:Math.round(B.buyPrice*(TOOL_PRICE[metal]||1))};}
+function forgeTool(kind,metal){
+  if(!forgeHere())return {made:false,why:'You need a forge.'};
+  if(!TOOL_METALS.includes(metal)||(kind!=='pick'&&kind!=='hatchet'))return {made:false,why:''};
+  const gate=SKILL_GATE[metal]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[metal-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
+  if(ingotCount(metal)<2)return {made:false,why:`You need 2 ${MATERIALS[metal-1].name.toLowerCase()} ingots.`};
+  if(plankCount()<1)return {made:false,why:'It needs a plank for the haft.'};
+  const it=toolItem(kind,metal);it.made=true;it.sellMult=MADE_SELL;if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
+  const f=forgeFee();if(f)return {made:false,why:f};
+  bagTake(b=>b.ingot===metal,2);bagTake(b=>b.plank,1);bagAdd(it);skillUse('smithing',10+5*metal,'f'+(_forgeN++));
+  if(typeof advanceClock==='function')advanceClock(FORGE_MIN);
+  return {made:true,item:BAG[BAG.length-1]};}
+const FORGE_TOOLS=[['pick',4],['pick',5],['hatchet',4],['hatchet',5]];
 function openForgePage(){
   if(!forgeHere()){showMsg('You need a forge.','#cc8844');return;}
   if(typeof hubOpen!=='undefined'&&hubOpen&&typeof closeHub==='function')closeHub();
@@ -2052,16 +2091,23 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
   const head=t=>`<div style="font-variant:small-caps;color:#8a7050;margin-top:4px">${t}</div>`;const S=forgeSel,P=forgePieces();
   let h=head('Smelt')+INGOT_DEF.map(d=>row(S.k==='s'&&S.tier===d.tier,forgeCanSmelt(d.tier),'s'+d.tier,`${MATERIALS[d.tier-1].name} Ingot`)).join('');
   const mk=(f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>ingotCount(t)>=forgeIngots(f.T))&&plankCount()>=forgePlanks(f.T)&&leatherCount()>=forgeLeather(f.T),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'));h+=head('Make')+FORGE_TYPES.map((f,i)=>f.light?'':mk(f,i)).join('')+head('Make, light')+FORGE_TYPES.map((f,i)=>f.light?mk(f,i):'').join(''); /* S2132 — the light line's own row */
+  h+=head('Tools')+FORGE_TOOLS.map(([k,m],i)=>row(S.k==='o'&&S.i===i,ingotCount(m)>=2&&plankCount()>=1&&skillLv('smithing')>=(SKILL_GATE[m]||0),'o'+i,toolItem(k,m).name)).join(''); /* S2491 */
   if(P.length)h+=head('Temper')+P.map((it,i)=>row(S.k==='t'&&S.it===it,true,'t'+i,`${it.name}${it.tempers?` (${it.tempers})`:''}`)).join('');
   const CP=typeof crystalPieces==='function'?crystalPieces():[];if(CP.length)h+=head('Set a crystal')+CP.map((it,i)=>row(S.k==='c'&&S.it===it,bagCount(b=>b.gateCrystal===it.school)>0,'c'+i,it.name)).join(''); /* S2372 — a gate's crystal makes a bought implement found (68-dungeon-misc.js) */
   if(typeof hobnailHere==='function'&&hobnailHere())h+=head('Boots')+row(S.k==='n',!!EQ.feet,'n0',bootsNailed()?'Draw the nails':'Hobnails'); /* S2477 */
   ov.querySelector('#fg-list').innerHTML=h;
   ov.querySelectorAll('#fg-list [data-k]').forEach(d=>d.onclick=()=>{const k=d.dataset.k,n=+k.slice(1);
-    forgeSel=k[0]==='n'?{k:'n'}:k[0]==='s'?{k:'s',tier:n}:k[0]==='m'?{k:'m',type:FORGE_TYPES[n].T.type}:k[0]==='c'?{k:'c',it:CP[n]}:{k:'t',it:P[n]};forgeSaid='';forgeDraw();});
+    forgeSel=k[0]==='o'?{k:'o',i:n}:k[0]==='n'?{k:'n'}:k[0]==='s'?{k:'s',tier:n}:k[0]==='m'?{k:'m',type:FORGE_TYPES[n].T.type}:k[0]==='c'?{k:'c',it:CP[n]}:{k:'t',it:P[n]};forgeSaid='';forgeDraw();});
   const pad=s=>`<div style="padding-left:12px">${s}</div>`,note=s=>`<div style="padding-left:12px;color:#8a7050;font-style:italic">${s}</div>`;let t='';
   if(S.k==='s'){const D=INGOT_DEF.find(d=>d.tier===S.tier),M=MATERIALS[S.tier-1];
     t=`<div style="font-variant:small-caps;color:#7a1f10">${M.name} Ingot</div>`+D.ore.map(([k,n])=>pad(`${n} ${ORE_DEF[k].name} <i style="font-size:12px;color:#8a7050">(you have ${oreCount(k)})</i>`)).join('')+
-      (D.charcoal?pad(`1 Charcoal <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.name===SURV_ITEMS.charcoal.name)})</i>`):'')+note(`you hold ${ingotCount(S.tier)}`);}
+      (D.charcoal?pad(`1 Charcoal <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.name===SURV_ITEMS.charcoal.name)})</i>`):'')+
+      (D.scale?pad(`${D.scale} Dragon Scale <i style="font-size:12px;color:#8a7050">(you have ${scaleCount()})</i>`):'')+
+      (D.yield>1?note(`makes ${D.yield}`):'')+(ingotRare(D)&&(SKILL_GATE[S.tier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[S.tier]}`):'')+note(`you hold ${ingotCount(S.tier)}`);}
+  else if(S.k==='o'){const [k,m]=FORGE_TOOLS[S.i],it=toolItem(k,m),g=SKILL_GATE[m]||0; /* S2491 */
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(`2 ${MATERIALS[m-1].name} Ingots <i style="font-size:12px;color:#8a7050">(you have ${ingotCount(m)})</i>`)+
+      pad(`1 plank <i style="font-size:12px;color:#8a7050">(you have ${plankCount()})</i>, ${FORGE_MIN} minutes`)+pad(`a strike every ${TOOL_STRIKE[m]} s, not ${TOOL_STRIKE[3]}`)+
+      (k==='pick'?note('steel cuts the wastes’ rock, which turns iron'):'')+(g>skillLv('smithing')?note(`asks Smithing ${g}`):'');}
   else if(S.k==='m'){const F=FORGE_TYPES.find(f=>f.T.type===S.type),n=forgeIngots(F.T);
     if(forgeTier==null||!forgeMetals().includes(forgeTier))forgeTier=forgeMetals().find(m=>ingotCount(m)>=n)||2;
     t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[forgeTier-1].name} ${S.type.replace(/([a-z])([A-Z])/g,'$1 $2')}</div>`+pad(`${n} ingot${n>1?'s':''}${forgePlanks(F.T)?` and a plank <i style="font-size:12px;color:#8a7050">(you have ${plankCount()})</i>`:''}${forgeLeather(F.T)?` and ${forgeLeather(F.T)} leather <i style="font-size:12px;color:#8a7050">(you have ${leatherCount()})</i>`:''}, ${F.light?LIGHT_MIN:FORGE_MIN} minutes`)+
@@ -2086,6 +2132,7 @@ function forgeGo(bySmith){const S=forgeSel;let r;
   if(S.k==='s'){r=forgeSmelt(S.tier);forgeSaid=r.made?`${r.item.name}.`:r.why||'';}
   else if(S.k==='m'){r=forgeMake(S.type,forgeTier||2);forgeSaid=r.made?`${r.item.name}.`:r.why||'';}
   else if(S.k==='c'){r=forgeSetCrystal(S.it);forgeSaid=r.done?`${S.it.name}: the crystal is set.`:r.why||'';if(r.done)forgeSel={k:'s',tier:2};}
+  else if(S.k==='o'){const [k,m]=FORGE_TOOLS[S.i];r=forgeTool(k,m);forgeSaid=r.made?`${r.item.name}.`:r.why||'';} /* S2491 */
   else if(S.k==='n'){r=hobnailGo();forgeSaid=r.done?(r.nailed?'Your boots are nailed.':'The nails are drawn.'):r.why||'';} /* S2477 */
   else if(S.k==='t'){r=forgeTemper(S.it,bySmith);forgeSaid=r.done?`${S.it.name}, tempered ${S.it.tempers} of ${temperMax()}.`:r.why||'';if(r.done&&typeof updateHUD==='function')updateHUD();}
   if(r&&(r.made||r.done)&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');
@@ -2124,7 +2171,8 @@ function joinerKitFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...JOI
 function feathersFor(h){return h&&h.type==='misc'?[{...BENCH_ITEMS.feathers}]:[];}
 function plankCount(){return bagCount(b=>b.plank);}
 // the bow's metals: those an ingot is smelted of
-function benchMetals(){return INGOT_DEF.map(d=>d.tier);}
+// S2491 — not Draconic and above: their bows take skywood (rare materials B, session 4), which is not in the world yet
+function benchMetals(){return INGOT_DEF.filter(d=>d.tier<=7).map(d=>d.tier);}
 const BENCH_RECIPES=[
   {id:'plank',name:'Planks',need:'1 Log',has:()=>bagCount(b=>b.log==='log')>=1},
   {id:'spar',name:'Spar',need:'1 Pine Log',has:()=>bagCount(b=>b.log==='pine')>=1},

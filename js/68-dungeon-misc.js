@@ -632,7 +632,7 @@ function gateVeinStrike(v){if(!hasPick())return {why:'You need a pick.'};let r=g
   return {got:got?it.name:null,left:Math.max(0,v.cap-r.n)};}
 function gateMine(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the crystal.','#c8b890');return;}
   if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}if(gateVeinLeft(v)<=0){showMsg('The crystal is all cut out.','#cc8844');return;}
-  MINE={v,t:VEIN_STRIKE};showMsg('You set to the crystal.','#c8b890');}
+  MINE={v,t:toolStrike('pick')};showMsg('You set to the crystal.','#c8b890');}
 // S2376 — what a gate keeps, session 5's first half (what-a-gate-keeps-build.md): the delver. One lesser gate's keep in three
 // (seededRng('delver-has', seed)) holds a dead man against the dais, beside the coffer, and his cold camp a few steps in from the
 // door. The body, keyed <seed>:<floor>:delver and looted once, holds a purse of 8 to 20 gold (30 to 60 in a vault, when the vaults are
@@ -844,7 +844,7 @@ function lairFinish(portal){try{if(!portal||!portal.lair||!ENEMIES.length)return
   hr();const tier=dragon?5+Math.floor(hr()*2):3+Math.floor(hr()*2);const mt=(MATERIALS.find(q=>q.tier===tier)||MATERIALS[2]).name;
   items.push(hr()<.5?{name:`${mt} Sword`,ico:'⚔',type:'equip',slot:'weapon',atk:[8+tier*2,11+tier*2],weaponShape:'sword',wType:'slash',weight:2.5,tier,material:mt,buyPrice:60*tier,sellMult:.45}:{name:`${mt} Cuirass`,ico:'👕',type:'equip',slot:'chest',def:2+tier,weight:6,tier,material:mt,buyPrice:70*tier,sellMult:.45});
   {const it=items[1];if(it.slot==='weapon'){const m=MATERIALS.find(q=>q.tier===tier);if(m&&m.reqAttr){it.reqAttr=m.reqAttr;it.reqVal=m.reqVal;}}else Object.assign(it,armorReq(tier,armorTypeOf(it)));} /* S708 — the hoard's piece asks what its tier asks of any other (it was built bare: a Steel Sword with no requirement) */
-  if(dragon)items.push({name:'Dragon Scale',ico:'🔥',type:'misc',buyPrice:400,sellMult:.6,weight:.8,qty:1+Math.floor(hr()*2)});
+  if(dragon)items.push({name:'Dragon Scale',ico:'🔥',type:'misc',buyPrice:400,sellMult:.6,weight:.8,dragonScale:true,qty:1+Math.floor(hr()*2)});
   items.push({name:'Greater Potion',ico:'🧪',type:'potion',heal:60,buyPrice:45,sellMult:.4,qty:2});
   {const fr=seededRng('found-master',portal.seed);if(typeof foundImplement==='function'&&fr()<IMPLEMENT.foundMaster){const f=withLootRng(fr,()=>foundImplement(tier,null));if(f)items.splice(items.length-1,0,f);}} /* S1885 — #1169 A: one master in four keeps a found staff, wand or tome, on the lair's seed */
   const hs=lairHoardSpot(e);const hoard={x:hs.x,z:hs.z,floor:e.floor||1,items};M[portal.seed]={dead:false,hoard};lairHoardChest(portal,hoard,dragon);
