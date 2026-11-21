@@ -224,7 +224,7 @@ function tpBuild(lookIn,ppIn,reuse){
         const c=new THREE.Group();c.matrixAutoUpdate=false;c.name='held';c.add(tpHBCopy(o,true));rig.hb.root.add(c);
         const s=side(sd);R.hbHeld.push({o,c,f:grip?[2,3,4,5].map(f=>by[`finger${f}-2.${s}`]).filter(Boolean):null,arm:[B['el'+sd],B['wr'+sd],by['lowerarm01.'+s],by['wrist.'+s]]});}
       // Michael's D on #99: an empty hand is a folded fist, and a hand that holds something closes on it; a tome is held open-handed
-      if(R.sheathW)tpSheath(R,shW||w);
+      tpCloakUntent(rig.hb);if(R.sheathW)tpSheath(R,shW||w);
       if(R.scabOnly&&R.hbSheath){R.hbSheath.children[0].visible=false;if(R.tpDraw&&R.tpDraw.way==='draw'){tpSheathDrop(R.tpDraw.G);R.tpDraw.G=R.hbSheath;}} /* the draw's blade comes out of the scabbard that stays */
       /* S2471 — a sheathe: the blade rides in the fist (a carrier on an anchor where the hand held it) until the hand has put it in (tpDrawTick) */
       if(old&&R.hbSheath&&!old.sheathed&&old.weapon&&old.wItem===shW&&tpDrawOn()){const a=new THREE.Group();a.position.set(0,-.04,.008);a.rotation.set(Math.PI/2,0,0);R.handR.add(a);
@@ -232,6 +232,7 @@ function tpBuild(lookIn,ppIn,reuse){
         const h={o:a,c,f:[2,3,4,5].map(f=>by[`finger${f}-2.${side('R')}`]).filter(Boolean),arm:[B.elR,B.wrR,by['lowerarm01.'+side('R')],by['wrist.'+side('R')]],draw:true};R.hbHeld.push(h);
         R.tpDraw={way:'sheathe',G:R.hbSheath,at:R.sheathAt,t0:fpDrawNow(),h,a};}
       if(R.tpDraw)R.tpDraw.G.children[0].visible=false;
+      tpCloakTent(R); /* S2478 — the cloak lifted over what is worn at the hip */
       hbCloseFist(by,side('R'));hbThumb(by,side('R'));R.hbHook=R.bow?tpHBHookOf(by,side('R')):null;if(!R.tome){hbCloseFist(by,side('L'));hbThumb(by,side('L'));}else for(let f=1;f<=5;f++)for(let j=1;j<=3;j++){const b=by[`finger${f}-${j}.${side('L')}`];if(b)b.quaternion.identity();} /* a body carried over may have closed it */
       root.traverse(o=>{if(o.isMesh)o.userData.tp=true;});}}
   if(!R.trueK)tpTrue(R);
@@ -403,6 +404,31 @@ function tpDrawTick(R,stage){const D=R.tpDraw;if(!D)return;const t=fpDrawNow()-D
   for(let i=0;i<4;i++){tpReach(S,E,W,_tdT2);tpDrawPole(R,D.at,_tdT2);if(!fg.length)break;R.root.updateMatrixWorld(true);hbPose(R.rig);R.root.updateMatrixWorld(true);
     _tdV.set(0,0,0);for(const b of fg)_tdV.add(_tdV2.setFromMatrixPosition(b.matrixWorld));_tdV.multiplyScalar(1/fg.length);D.err=+_tdV.distanceTo(_tdT).toFixed(3);_tdT2.addScaledVector(_tdV2.copy(_tdT).sub(_tdV),.6);}
   _tdQ.copy(S.quaternion);_tdQ2.copy(E.quaternion);S.quaternion.copy(q0s).slerp(_tdQ,P.a);E.quaternion.copy(q0e).slerp(_tdQ2,P.a);R.root.updateMatrixWorld(true);}
+// S2478 — the cloak over what is worn at the hip (S2451's note, standing since: under a cloak a hip weapon hung inside the sheet, its hilt
+// lost in it and the scabbard's point out through its back). The sheet and its hem are lifted over the worn group (the blade if sheathed,
+// the scabbard, the frog; a mace or an axe through the belt) in the bind's metres: about the hips' upright, each point of the sheet stands
+// at least as far out as anything worn at its bearing and height, plus 1.5 cm, less 0.45 of its distance from it across and above, 0.3
+// below (the sheet falls from the chape), so it tents over the hilt and hangs from the point. A look only, the player's own body: the
+// sheet's points are kept (tent0) and put back before every build's sheath (tpSheathFit reads the cloak), a body carried over included
+const TP_TENT={gap:.015,up:.45,down:.3,bins:72,dy:.02,step:2};
+function tpCloakUntent(H){if(!H)return;for(const m of H.full){if(!m.isSkinnedMesh||!/^(cloak|cloakHem)$/.test(m.name))continue;const g=m.geometry,u=g.userData;if(!u.tent0)continue;
+  g.attributes.position.array.set(u.tent0);g.attributes.position.needsUpdate=true;if(u.tentN&&g.attributes.normal){g.attributes.normal.array.set(u.tentN);g.attributes.normal.needsUpdate=true;}u.tent=null;}}
+function tpCloakTent(R){const H=R.rig.hb,c=R.hbSheath;if(!H||!c||!c.parent||!(R.sheathAt==='hip'||R.sheathAt==='belt'))return null;
+  const sheets=H.full.filter(m=>m.isSkinnedMesh&&/^(cloak|cloakHem)$/.test(m.name));if(!sheets.length)return null;
+  const T=TP_TENT,sk=H.P.skeleton,b=c.parent,bi=sk.bones.indexOf(b);if(bi<0)return null;R.root.updateMatrixWorld(true);
+  const bind=new THREE.Matrix4().copy(sk.boneInverses[bi]).invert(),toB=new THREE.Matrix4().multiplyMatrices(bind,new THREE.Matrix4().copy(b.matrixWorld).invert()),M=new THREE.Matrix4(),v=new THREE.Vector3();
+  const o=new THREE.Vector3().setFromMatrixPosition(bind),bins=new Map(),tw=2*Math.PI;let n=0;
+  /* what will be worn once the draw or the sheathe is done: the blade only while sheathed */
+  c.children.forEach((k,i)=>{if(i===0&&!R.sheathed)return;k.traverse(m=>{if(!m.isMesh||!m.geometry)return;M.multiplyMatrices(toB,m.matrixWorld);const p=m.geometry.attributes.position;
+    for(let j=0;j<p.count;j+=T.step){v.fromBufferAttribute(p,j).applyMatrix4(M);const dx=v.x-o.x,dz=v.z-o.z,r=Math.hypot(dx,dz),th=Math.atan2(dx,dz);n++;
+      const key=Math.floor((th+Math.PI)/tw*T.bins)+'|'+Math.floor(v.y/T.dy),e=bins.get(key);if(!e||r>e.r)bins.set(key,{th,y:v.y,r});}});});
+  const B=[...bins.values()];let moved=0,most=0;
+  for(const m of sheets){const g=m.geometry,u=g.userData,pa=g.attributes.position,A=pa.array;if(!u.tent0){u.tent0=A.slice();if(g.attributes.normal)u.tentN=g.attributes.normal.array.slice();}
+    let any=false;for(let j=0;j<pa.count;j++){const x=A[j*3]-o.x,y=A[j*3+1],z=A[j*3+2]-o.z,r=Math.hypot(x,z);if(r<1e-4)continue;const th=Math.atan2(x,z);let need=0;
+      for(const e of B){let d=th-e.th;d-=tw*Math.round(d/tw);const dy=y-e.y,q=Math.hypot(d*e.r*T.up,dy*(dy<0?T.down:T.up)),w=e.r+T.gap-q;if(w>need)need=w;}
+      if(need>r){const k=need/r;A[j*3]=o.x+x*k;A[j*3+2]=o.z+z*k;moved++;most=Math.max(most,need-r);any=true;}}
+    if(any){pa.needsUpdate=true;if(g.attributes.normal)g.computeVertexNormals();g.computeBoundingSphere();u.tent={moved,most};}}
+  return R.cloakTent={pts:n,bins:B.length,moved,most:+most.toFixed(3)};}
 // S2462 — the baldric (S2459's owed note: the claymore on the back hung from nothing). A strap 4.5 cm wide and 4 mm thick over the right
 // shoulder (halfway from the neck to the joint), across the chest to the left flank 7 cm over the belt's middle, and round under the arm
 // and up the back; the scabbard lies on its back run (tpSheath sets the blade's axis in the strap's plane and its leather on the strap's

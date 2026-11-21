@@ -152,4 +152,30 @@ if (dw.hb !== false) {
     d0.on && d0.way === 'draw' && d0.worn && !d0.bladeShown && d0.car === 0 && d2.grip < .06 && d2.grip < d0.grip && d4.car > .05 && !d6.on && dw.drGone, dw);
   check('third person: a swing ends the draw at once', !dw.sw.on, dw.sw);
 }
+// Session 2478: under a cloak a sword at the hip lifts the sheet (S2451's note: its hilt was lost inside the cloak and the scabbard's point
+// stood out through its back). In the bind's metres every point of the worn group (blade, scabbard, frog) has the sheet at its bearing and
+// height (within 2.5 cm across and up) standing outside it; a mace drawn wears nothing at the hip and the sheet is back on its own points
+const ct = await page.evaluate(() => { const eq0 = { ...EQ }; thirdPerson = true; EQ.offhand = null; EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' };
+  EQ.weapon = { name: 'Test sword', type: 'weapon', atk: [10, 11], wType: 'slash', weaponShape: 'sword', weight: 3 };
+  SHEATHED = false; tpEnsure(); sheathWeapon(); tpEnsure(); const R = TP.rig, H = R.rig.hb; if (!H) { thirdPerson = false; return { hb: false }; } tpDrawEnd(R);
+  const out = { hb: true, tent: R.cloakTent }, sk = H.P.skeleton, c = R.hbSheath, b = c.parent, bind = new THREE.Matrix4().copy(sk.boneInverses[sk.bones.indexOf(b)]).invert();
+  R.root.updateMatrixWorld(true); const toB = new THREE.Matrix4().multiplyMatrices(bind, new THREE.Matrix4().copy(b.matrixWorld).invert()), o = new THREE.Vector3().setFromMatrixPosition(bind), M = new THREE.Matrix4(), v = new THREE.Vector3();
+  const sheet = H.full.find(m => m.isSkinnedMesh && m.name === 'cloak'), A = sheet.geometry.attributes.position, S = [];
+  for (let j = 0; j < A.count; j++) { const x = A.getX(j) - o.x, z = A.getZ(j) - o.z; S.push([Math.atan2(x, z), A.getY(j), Math.hypot(x, z)]); }
+  let n = 0, cov = 0, inside = 0, worst = 0;
+  c.traverse(m => { if (!m.isMesh || !m.visible) return; M.multiplyMatrices(toB, m.matrixWorld); const p = m.geometry.attributes.position;
+    for (let j = 0; j < p.count; j += 3) { v.fromBufferAttribute(p, j).applyMatrix4(M); const x = v.x - o.x, z = v.z - o.z, r = Math.hypot(x, z), th = Math.atan2(x, z); n++;
+      let near = null; for (const q of S) { let d = q[0] - th; d -= 2 * Math.PI * Math.round(d / (2 * Math.PI)); if (Math.abs(d * r) < .025 && Math.abs(q[1] - v.y) < .025 && (!near || q[2] < near)) near = q[2]; }
+      if (near == null) continue; cov++; if (near < r) { inside++; worst = Math.max(worst, r - near); } } });
+  out.sword = { n, cov, inside, worst: +worst.toFixed(4) };
+  EQ.weapon = { name: 'Test mace', type: 'weapon', atk: [10, 11], wType: 'blunt', weaponShape: 'mace', weight: 3 }; SHEATHED = false; tpEnsure(); tpDrawEnd(TP.rig);
+  const H2 = TP.rig.rig.hb, sh2 = H2 && H2.full.find(m => m.isSkinnedMesh && m.name === 'cloak'), u = sh2 && sh2.geometry.userData;
+  out.mace = { worn: !!TP.rig.hbSheath, kept: H2 === H, back: !!(u && u.tent0 && !u.tent && sh2.geometry.attributes.position.array.every((x, i) => x === u.tent0[i])) };
+  Object.assign(EQ, eq0); SHEATHED = false; tpEnsure(); thirdPerson = false; return out; });
+console.log(JSON.stringify(ct));
+if (ct.hb) {
+  check(`under a cloak the sheathed sword lifts the sheet (${ct.tent && ct.tent.moved} points, ${ct.tent && ct.tent.most} m at most): every worn point with sheet at its bearing and height has the sheet outside it (${JSON.stringify(ct.sword)})`,
+    ct.tent && ct.tent.moved > 50 && ct.sword.cov > 100 && ct.sword.inside === 0, ct);
+  check('a mace drawn wears nothing at the hip, and the sheet of the body carried over is back on its own points', !ct.mace.worn && ct.mace.kept && ct.mace.back, ct.mace);
+}
 await g.close();
