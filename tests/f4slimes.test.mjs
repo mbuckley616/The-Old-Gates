@@ -259,7 +259,7 @@ const wi = await page.evaluate(() => { const S = ENEMIES.find(e => e.baseType ==
   const sk = (m, j) => { const p = m.geometry.attributes.position, si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, bm = m.skeleton.boneMatrices; b.fromBufferAttribute(p, j); v.set(0, 0, 0);
     for (let q = 0; q < 4; q++) { const w = sw.getComponent(j, q); if (!w) continue; M4.fromArray(bm, si.getComponent(j, q) * 16); t.copy(b).applyMatrix4(M4).multiplyScalar(w); v.add(t); } return v.applyMatrix4(R.hc.C.rig.matrixWorld); };
   let lo = 1e9, hi = -1e9, mv = 0, a0 = null; const floor = S.baseY || 0;
-  for (let i = 0; i < 150; i++) { at(); tickCreatures(1 / 60, 1.7e6 + i * 16.7); attackPose(S, true); S.mesh.updateMatrixWorld(true); R.hc.C.skel.update();
+  for (let i = 0; i < 150; i++) { at(); tickCreatures(1 / 60, 1.7e6 + i * 16.7); S.mesh.position.y = S.baseY || 0; attackPose(S, true); /* the loop sets the height each frame (90-main.js), then the hover's bob */ S.mesh.updateMatrixWorld(true); R.hc.C.skel.update();
     const bm = R.hc.C.skel.boneMatrices; if (!a0) a0 = Array.from(bm); else for (let j = 0; j < bm.length; j++) mv = Math.max(mv, Math.abs(bm[j] - a0[j]));
     for (const m of R.hc.C.meshes) { const p = m.geometry.attributes.position; for (let j = 0; j < p.count; j += 5) { const y = sk(m, j).y - floor; lo = Math.min(lo, y); hi = Math.max(hi, y); } } }
   const L0 = R.hc.L; hcLevel(R, 2); const far = { kit: R.hc.W.visible, old: R.mesh.visible, glows: R.mesh.children.filter(c => c.material && c.material.blending === THREE.AdditiveBlending).length }; hcLevel(R, L0);
