@@ -173,7 +173,9 @@ check(`the Northlight Altar stands on a Markish fell ${ns.over} m over the snow 
 check(`its ground falls ${ns.fall} m under the stones, it stands ${ns.near} m past the nearest pad and ${ns.fields} m from the Fields; beyond its gap (${(ns.ry * 180 / Math.PI).toFixed(0)}° off the north) the land falls ${ns.north} m`, ns.fall <= 24 && ns.near >= 330 && ns.fields >= 1200 && Math.abs(ns.ry) <= Math.PI / 4 + 1e-3 && ns.north > 0, ns);
 const nat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 0, 150); return { x, z }; }, ns);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), nat);
-await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [nat.x, nat.z], { timeout: 60000 });
+// S2491: the jump from the Gatelands' ring to the Mark crosses some 18 km and loads a new country's cells; on a CI runner it passed 60 s
+// twice in a row (#1851's first run, #1855's), 1.6 s here. Its wait is 180 s, as hubreturn's slow click got 400 (S2481).
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [nat.x, nat.z], { timeout: 180000 });
 await g.cells(); await g.hide();
 const nw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.northlight, W = S.W, st = S.site; if (!W) return { none: true };
   let meshes = 0, lit = 0; W.group.traverse(o => { if (o.isMesh) { meshes++; if (o.material.emissive && o.material.emissive.getHex() !== 0) lit++; } });
