@@ -237,7 +237,7 @@ check('first person draws the orb and the tome in the off hand, raised, pushed o
 // S1864 — the kept word leaves the orb in the left hand: in third person from the left hand's bone, in first person 0.3 m to the
 // left of your centre, where a cast of your own leaves the right
 await page.evaluate(() => { const push = Array.prototype.push; for (const A of [ZB, BALLS]) A.push = function (fb) {
-    // Session 2500: both hands are read at the spawn itself, not after the frames the wait lets run (the hand moves on in them)
+    // Session 2502: both hands are read at the spawn itself, not after the frames the wait lets run (the hand moves on in them)
     let hands = null; if (thirdPerson && TP.rig) { TP.rig.root.updateMatrixWorld(true); hands = [TP.rig.handL, TP.rig.handR].map(h => h.getWorldPosition(new THREE.Vector3())); }
     window._spawns = (window._spawns || []).concat([fb.position.clone()]); window._spawnHands = (window._spawnHands || []).concat([hands]); return push.apply(this, arguments); };
   window._where = { ow: isOverworldZone(), floor: currentFloor }; });

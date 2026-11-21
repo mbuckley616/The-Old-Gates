@@ -18,7 +18,7 @@ const run = (kit) => page.evaluate((kit) => {
   // the frame, before this evaluate's several seconds: that frame's dt came out near -7 s, and the hurt and death timers
   // ran backwards into a pose that failed the torch's check on CI
   const T0 = prevT; let t = T0; const step = () => { t += 1000 / 60; _lastSwingG = playClockS; loop(t); };
-  // Session 2500: a weapon is held drawn, as a fighter's is. Since S1080 the game sheathes it after 5 s with no swing
+  // Session 2502: a weapon is held drawn, as a fighter's is. Since S1080 the game sheathes it after 5 s with no swing
   // (_lastSwingG starts at -1e9, so at once), and since S2451 a sheathed weapon leaves the hand empty: a fist, as tpswing met (S2486)
   drawWeapon(); if (typeof tpEnsure === 'function') tpEnsure();
   const K = window._K, V = () => new THREE.Vector3();
