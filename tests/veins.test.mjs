@@ -169,7 +169,7 @@ const ST = await page.evaluate(() => {
   out.news = starRumour(site); out.other = starRumour(other); out.place = starPlace(L);
   { const m = starsOnMap().filter(t => t.id === L.id), c = cellOf(L.x, L.z); out.map = m.length; out.mapCell = m.length ? m[0].i === c[0] && m[0].j === c[1] : false; out.mapPlace = m.length ? m[0].place : '';
     const cv = document.createElement('canvas'); cv.width = cv.height = 400; let fills = 0; const x = cv.getContext('2d'), f0 = x.fill.bind(x); x.fill = (...q) => { fills++; return f0(...q); };
-    try { mapDrawStars(x, 200, 1); out.drawn = fills; } catch (e) { out.drawn = 'err ' + e.message; } }
+    try { openHub('map'); mapDrawStars(x, 200, 1); out.drawn = fills; } catch (e) { out.drawn = 'err ' + e.message; } finally { try { closeHub(); } catch (e) {} } }
   let got = 0; for (let i = 0; i < 40 && veinLeft(v) > 0; i++) if (strikeVein(v).ore) got++;
   out.got = got; out.iron = BAG.filter(b => b.ore === 'star').reduce((a, b) => a + (b.qty || 1), 0); out.item = (BAG.find(b => b.ore === 'star') || {}).name;
   out.after = strikeVein(v).why; worldState.gameTimeAbsMinutes = L.at + 40 * 1440; out.back = veinLeft(v);
