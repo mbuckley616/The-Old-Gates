@@ -1816,7 +1816,7 @@ function tickGateMining(dt){const v=MINE.v;
   MINE.t-=dt;if(MINE.t>0)return;MINE.t+=toolStrike('pick');
   const r=gateVeinStrike(v);if(typeof uiNoise==='function')uiNoise(.06,.12,2400);
   if(r.why){showMsg(r.why,'#cc8844');MINE=null;return;}
-  if(r.got){showMsg(`${r.got}.`+(r.left?'':' The crystal is all cut out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
+  if(r.got){showMsg(`${r.got}.`+(r.left?'':v.key==='sigil'?' It comes free of the wall.':' The crystal is all cut out.'),'#d8c8a0');if(typeof renderHubInv==='function')renderHubInv();}
   if(!r.left)MINE=null;}
 function useOreThing(i){const it=BAG[i];if(!it)return;
   if(it.tool==='pick'){const gv=typeof gateVeinNear==='function'&&gateVeinNear();if(gv){gateMine(gv);return;}const v=veinNear();if(v)mineVein(v);else showMsg('Strike a vein with it.','#c8b890');return;}
@@ -1949,19 +1949,25 @@ const FORGE_FEE=5,FORGE_MIN=30,TEMPER_ORE=3,TEMPER_STEP=.08,MADE_SELL=.2;
 const INGOT_DEF=[
   {tier:2,ore:[['copper',1],['tin',1]]},{tier:3,ore:[['iron',2]]},{tier:4,ore:[['iron',2]],charcoal:1},
   {tier:5,ore:[['mithril',2]]},{tier:6,ore:[['adamant',2]]},{tier:7,ore:[['obsidian',2]]},
-  {tier:8,ore:[['obsidian',2]],scale:1,yield:2}]; /* S2491 — Draconic: a dragon's scale and 2 obsidian make 2 ingots (rare materials B) */
+  {tier:8,ore:[['obsidian',2]],rare:'scale',yield:2}, /* S2491 — Draconic: a dragon's scale and 2 obsidian make 2 ingots (rare materials B) */
+  {tier:9,ore:[['obsidian',2]],rare:'sigil',yield:2}]; /* S2492 — tier 9: a gate's sigil stone and 2 obsidian, gate salvage */
 // S2491 — a rare ingot (one with a scale, later a sigil stone or star iron) asks Smithing at its metal's gate to smelt, as the
 // design's table has it, so a scale is not spent by a hand that cannot work what it makes; the Smelter perk passes it by: the
 // rare piece is the limit, not the ore. A Dragon Scale is the lairs' drop (68-dungeon-misc.js); one saved before S2491 is known by name.
 function isDragonScale(b){return !!(b&&(b.dragonScale||b.name==='Dragon Scale'));}
 function scaleCount(){return bagCount(isDragonScale);}
-const DRAGON_SCALE_PRICE=400;
-function ingotRare(D){return !!(D&&D.scale);}
+// S2492 — the rare pieces: what each is, its price in an ingot's, and its mark. A sigil stone is gate salvage (68-dungeon-misc.js), and
+// its ingots and every piece made of them carry the mark: sold in a Prior's town it is sacrilege, as the stone would be (86-world-crime.js)
+const RARE_DEF={scale:{name:'Dragon Scale',has:isDragonScale,price:400,why:'It wants a dragon’s scale.'},
+  sigil:{name:'Sigil Stone',has:b=>!!(b&&b.sigilStone),price:150,why:'It wants a sigil stone, cut in a failing gate.',salvage:true}};
+function ingotRare(D){return !!(D&&D.rare&&RARE_DEF[D.rare]);}
+function rareCount(D){return ingotRare(D)?bagCount(RARE_DEF[D.rare].has):0;}
+function ingotSalvage(tier){const D=INGOT_DEF.find(d=>d.tier===tier);return !!(ingotRare(D)&&RARE_DEF[D.rare].salvage);}
 // the ore a piece of each metal is tempered with
 const TEMPER_ORES={2:['copper','tin'],3:['iron'],4:['iron'],5:['mithril'],6:['adamant'],7:['obsidian']};
 function ingotItem(tier,qty){const D=INGOT_DEF.find(d=>d.tier===tier),M=MATERIALS[tier-1];
-  const p=Math.round((D.ore.reduce((s,[k,n])=>s+ORE_DEF[k].price*n,0)+(D.charcoal?SURV_ITEMS.charcoal.buyPrice:0)+(D.scale?DRAGON_SCALE_PRICE*D.scale:0))/(D.yield||1));
-  return {name:`${M.name} Ingot`,ico:'🧱',type:'misc',weight:1,buyPrice:p,sellMult:.3,ingot:tier,qty:qty||1};}
+  const p=Math.round((D.ore.reduce((s,[k,n])=>s+ORE_DEF[k].price*n,0)+(D.charcoal?SURV_ITEMS.charcoal.buyPrice:0)+(ingotRare(D)?RARE_DEF[D.rare].price:0))/(D.yield||1));
+  const it={name:`${M.name} Ingot`,ico:'🧱',type:'misc',weight:1,buyPrice:p,sellMult:.3,ingot:tier,qty:qty||1};if(ingotSalvage(tier))it.salvage=true;return it;}
 // what a piece costs in ingots, and the types the forge makes: the heavy line, the shield, every blade and haft but the bows'
 // (the bench's) and the wooden club
 function forgePlanks(T){return T.slot==='weapon'?1:0;}
@@ -1992,13 +1998,13 @@ function forgeSmelt(tier){
   if(!forgeHere())return {made:false,why:'You need a forge.'};
   const D=INGOT_DEF.find(d=>d.tier===tier);if(!D)return {made:false,why:''};
   if(ingotRare(D)){const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
-    if(scaleCount()<D.scale)return {made:false,why:'It wants a dragon’s scale.'};}
+    if(rareCount(D)<1)return {made:false,why:RARE_DEF[D.rare].why};}
   const two=ingotRare(D)?null:smelterTwo(D);
   if(!two)for(const [k,n] of D.ore)if(oreCount(k)<n)return {made:false,why:`You need ${n} ${ORE_DEF[k].name.toLowerCase()}.`};
   if(D.charcoal&&bagCount(b=>b.name===SURV_ITEMS.charcoal.name)<D.charcoal)return {made:false,why:'Steel needs a charcoal.'};
   const f=forgeFee();if(f)return {made:false,why:f};
   if(two)two.forEach(([k,n])=>bagTake(b=>b.ore===k,n));else for(const [k,n] of D.ore)bagTake(b=>b.ore===k,n);if(D.charcoal)bagTake(b=>b.name===SURV_ITEMS.charcoal.name,D.charcoal);
-  if(D.scale)bagTake(isDragonScale,D.scale);
+  if(ingotRare(D))bagTake(RARE_DEF[D.rare].has,1);
   const it=ingotItem(tier,two?2:(D.yield||1));bagAdd(it);skillUse('smithing',2,'f'+(_forgeN++));
   return {made:true,item:it};}
 // Smelter: 3 ore of the recipe make 2 ingots when you have them (bronze: 3 of copper and tin, one of each at least, the more
@@ -2019,7 +2025,7 @@ function forgeMake(type,tier){
   const n=forgeIngots(F.T);if(ingotCount(tier)<n)return {made:false,why:`You need ${n} ${MATERIALS[tier-1].name.toLowerCase()} ingot${n>1?'s':''}.`};
   const pl=forgePlanks(F.T);if(plankCount()<pl)return {made:false,why:'It needs a plank for the grip.'};
   const lt=forgeLeather(F.T);if(leatherCount()<lt)return {made:false,why:`You need ${lt} leather.`}; /* S2132 */
-  const it=makeItem(tier,F.T,null,F.arm);it.made=true;it.sellMult=MADE_SELL;const q=forgeQuality(tier);forgeQualityApply(it,q);
+  const it=makeItem(tier,F.T,null,F.arm);it.made=true;it.sellMult=MADE_SELL;const q=forgeQuality(tier);forgeQualityApply(it,q);if(ingotSalvage(tier))it.salvage=true; /* S2492 */
   if(!canCarry(it))return {made:false,why:'Too heavy to carry!'};
   const f=forgeFee();if(f)return {made:false,why:f};
   bagTake(b=>b.ingot===tier,n);if(pl)bagTake(b=>b.plank,pl);if(lt)bagTake(b=>!!b.leather,lt);bagAdd(it);skillUse('smithing',10+5*tier,'f'+(_forgeN++));
@@ -2048,7 +2054,7 @@ let forgeOpen=false,forgeSel={k:'s',tier:2},forgeTier=null,forgeSaid='';
 function forgePieces(){const out=[];for(const s in EQ){const it=EQ[s];if(temperable(it)&&!out.includes(it))out.push(it);}BAG.forEach(b=>{if(temperable(b))out.push(b);});return out;}
 function forgeMetals(){return INGOT_DEF.map(d=>d.tier);}
 function forgeCanSmelt(t){const D=INGOT_DEF.find(d=>d.tier===t);return D.ore.every(([k,n])=>oreCount(k)>=n)&&(!D.charcoal||bagCount(b=>b.name===SURV_ITEMS.charcoal.name)>=D.charcoal)&&
-  (!D.scale||scaleCount()>=D.scale&&skillLv('smithing')>=(SKILL_GATE[t]||0));}
+  (!ingotRare(D)||rareCount(D)>=1&&skillLv('smithing')>=(SKILL_GATE[t]||0));}
 // S2491 — a steel or mithril pick or hatchet: 2 ingots of the metal and a plank for the haft, Smithing at the metal's gate, 30
 // minutes, a Smithing use as a piece's. Made, so it sells back at a fifth. Returns {made, item, why}
 function toolItem(kind,metal){const B=kind==='pick'?PICK_ITEM:HATCHET_ITEM,M=MATERIALS[metal-1];
@@ -2102,7 +2108,7 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
   if(S.k==='s'){const D=INGOT_DEF.find(d=>d.tier===S.tier),M=MATERIALS[S.tier-1];
     t=`<div style="font-variant:small-caps;color:#7a1f10">${M.name} Ingot</div>`+D.ore.map(([k,n])=>pad(`${n} ${ORE_DEF[k].name} <i style="font-size:12px;color:#8a7050">(you have ${oreCount(k)})</i>`)).join('')+
       (D.charcoal?pad(`1 Charcoal <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.name===SURV_ITEMS.charcoal.name)})</i>`):'')+
-      (D.scale?pad(`${D.scale} Dragon Scale <i style="font-size:12px;color:#8a7050">(you have ${scaleCount()})</i>`):'')+
+      (ingotRare(D)?pad(`1 ${RARE_DEF[D.rare].name} <i style="font-size:12px;color:#8a7050">(you have ${rareCount(D)})</i>`):'')+(ingotSalvage(S.tier)?note('gate salvage, and so is all made of it'):'')+
       (D.yield>1?note(`makes ${D.yield}`):'')+(ingotRare(D)&&(SKILL_GATE[S.tier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[S.tier]}`):'')+note(`you hold ${ingotCount(S.tier)}`);}
   else if(S.k==='o'){const [k,m]=FORGE_TOOLS[S.i],it=toolItem(k,m),g=SKILL_GATE[m]||0; /* S2491 */
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(`2 ${MATERIALS[m-1].name} Ingots <i style="font-size:12px;color:#8a7050">(you have ${ingotCount(m)})</i>`)+

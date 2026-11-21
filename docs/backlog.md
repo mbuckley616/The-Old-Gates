@@ -894,7 +894,8 @@ Michael marked all 96 images of the intake on the review page: 63 KEEP and 33 NO
   - **Rare materials B** (Michael's B on #1840, 21 Nov 2026; `docs/design/rare-materials.md`), five systems sessions and one look:
     ~~(1) tool tiers and the Draconic ingot~~ — done, Session 2491 (picks and hatchets in steel and mithril at the forge, 0.9 / 0.75 / 0.6 s,
     steel for the wastes' veins; a dragon's scale and 2 obsidian make 2 Draconic ingots at Smithing 75);
-    (2) sigil stones in failing gates' keeps, the salvage mark carried through the forge; (3) the falling star; (4) skywood and the top bows
+    ~~(2) sigil stones in failing gates' keeps, the salvage mark carried through the forge~~ — done, Session 2492 (one stone a failing or
+    catastrophic keep, cut once with a steel pick; tier 9 at Smithing 90, its ingots and pieces salvage; the slab is a stand-in); (3) the falling star; (4) skywood and the top bows
     (the bench stops at Obsidian until then); (5) deep pearls and the top tempers. The look's session: the crater, the streak, the script
     stone, the pine and the oyster bed as kit pieces.
 - **Workstations** (`14-items.js`' `MATERIALS` and `makeItem`, `60-shop.js`; OG-133): three grades of smithy and ore to ingot to masterwork; brewing in four steps (prepare, combine, heat and distil, bottle); a parchment recipe page with each herb's known effects and “study to discover” (survival B's experimenting); woodworking and tanning for bows, quivers, shields and packs; a travel alchemy kit; the ship's workshop below deck (L6). A native name for the top smithing tier, not “Dwarven”.

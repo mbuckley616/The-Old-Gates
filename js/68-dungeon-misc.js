@@ -584,10 +584,34 @@ function gateCrystalItem(school){return {name:`Gate crystal of ${schoolName(scho
 // the bag's line for an arc: "2 of 3 of Tine's armillary"
 function arcDesc(it){return it&&it.arc?`${it.arc.n} of ${GATE_ARC.per} of ${schoolName(it.arc.school)}'s armillary`:it&&it.arcSpare?'A spare: gate salvage':'';}
 function gateVeinCap(cond){return GATE_VEIN[cond]||GATE_VEIN.steady;}
-function gateVeinRec(seed){const K=worldState.gateKeeps&&worldState.gateKeeps[seed];return (K&&K.vein)||{n:0,s:0};}
-function gateVeinLeft(v){return Math.max(0,v.cap-gateVeinRec(v.gate).n);}
+function gateVeinRec(seed,key){const K=worldState.gateKeeps&&worldState.gateKeeps[seed];return (K&&K[key||'vein'])||{n:0,s:0};}
+function gateVeinLeft(v){return Math.max(0,v.cap-gateVeinRec(v.gate,v.key).n);}
+// S2492 — rare materials B, session 2 (`docs/design/rare-materials.md`, Michael's B on #1840): the sigil stone. In a failing or catastrophic
+// lesser gate's keep, one script stone stands against the wall beside the crystal vein (1.4 m along it, toward the room's middle). It is
+// struck as a vein is (the strike's chance and Mining's use), but only with a steel pick or better, and gives one stone, once: it never
+// returns (worldState.gateKeeps[seed].sigil {n,s}, the world's, beside the vein's record). The stone is gate salvage, always (it is cut from
+// a gate), weight 2, 150 at a counter. At the forge it is tier 9's rare piece (50-travel.js), and its mark goes into the ingots and the piece.
+// A plain stand-in slab, the school's script faint on its face, until the look builder's kit piece.
+const GATE_SIGIL={weight:2,price:150,metal:4,along:1.4};
+function gateSigilDue(cond){return cond==='failing'||cond==='catastrophic';}
+function sigilStoneItem(school){return {name:`Sigil stone of ${schoolName(school)}`,ico:'🪨',type:'misc',weight:GATE_SIGIL.weight,buyPrice:GATE_SIGIL.price,sellMult:.5,sigilStone:school,salvage:true};}
+function gateSigilLay(portal,gen,v,y,ox,oz){if(!v||!gateSigilDue(gen.cond))return null;
+  const x=v.x-ox*GATE_SIGIL.along,z=v.z+oz*.35,s={id:`${portal.seed}:${v.floor}:sigil`,gate:portal.seed,school:v.school,cap:1,key:'sigil',x,z,floor:v.floor,g:null};
+  const col=new THREE.Color((typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[v.school]&&SCHOOL_DEF[v.school].col)||'#9ad'),g=new THREE.Group();g.name='gateSigil';g.position.set(x,y,z);
+  const slab=new THREE.Mesh(new THREE.BoxGeometry(.7,1.15,.2),new THREE.MeshLambertMaterial({color:0x3a3632}));slab.position.y=.575;slab.rotation.x=-oz*.06;
+  const face=new THREE.Mesh(new THREE.PlaneGeometry(.5,.85),new THREE.MeshBasicMaterial({color:col.clone().multiplyScalar(.55),transparent:true,opacity:.55}));face.position.set(0,.6,-oz*.105);if(oz>0)face.rotation.y=Math.PI;
+  const k=new THREE.Group();k.add(slab,face);g.add(k);dScene.add(g);s.g=g;gateVeinShow(s);GATE_KEEP_LIE.sigil=s;return s;}
+function gateSigilStrike(v){if(!hasPick())return {why:'You need a pick.'};if(toolMetal('pick')<GATE_SIGIL.metal)return {why:'The stone turns the iron. It wants a steel pick.'};
+  let r=gateVeinRec(v.gate,'sigil');if(r.n>=v.cap)return {why:'The stone is cut out.'};
+  const it=sigilStoneItem(v.school);if(!canCarry(it))return {why:'Too heavy to carry!'};
+  const got=seededRng('sigil',v.id+':'+r.s)()<.35+.005*skillLv('mining');r={n:r.n+(got?1:0),s:r.s+1};gateKeepOf(v.gate).sigil=r;
+  if(got){bagAdd(it);skillUse('mining',4);}else skillUse('mining',1);gateVeinShow(v);
+  return {got:got?it.name:null,left:Math.max(0,v.cap-r.n)};}
+// what E says at the keep's vein or stone
+function gateVeinWord(v){if(!v)return '';const left=gateVeinLeft(v)>0;if(v.key==='sigil')return left?"Press 'E' to cut the sigil stone":'The stone is cut out';
+  return left?"Press 'E' to cut the crystal":'The crystal is all cut out';}
 // laid by gateKeepLay with the coffer, in metres
-function gateKeepThings(portal,gen,coffer){GATE_KEEP_LIE={altar:null,vein:null};const sp=gen.spaces[gen.ring],fl=sp.floor||1,y=fl===2?FLOOR2_Y:0,school=gateOrbSchool(portal);
+function gateKeepThings(portal,gen,coffer){GATE_KEEP_LIE={altar:null,vein:null,sigil:null};const sp=gen.spaces[gen.ring],fl=sp.floor||1,y=fl===2?FLOOR2_Y:0,school=gateOrbSchool(portal);
   if(!school)return GATE_KEEP_LIE;
   const t=(gen.thresholds||[]).find(t=>(t.a===gen.ring||t.b===gen.ring)&&(t.floor||1)===fl),tx=t?dAt(t.c):coffer.x,tz=t?dAt(t.r):coffer.z;
   {let dx=tx-coffer.x,dz=tz-coffer.z;const L=Math.hypot(dx,dz)||1;if(Math.abs(dx)>Math.abs(dz)){dx=Math.sign(dx);dz=0;}else{dz=Math.sign(dz||1);dx=0;} /* toward the way in, along the dais's axis */
@@ -605,18 +629,20 @@ function gateKeepThings(portal,gen,coffer){GATE_KEEP_LIE={altar:null,vein:null};
       const v={id:`${portal.seed}:${fl}:vein`,gate:portal.seed,school,cap,x,z,floor:fl,g:null};
       const g=new THREE.Group();g.name='gateVein';g.position.set(x,y,z);
       if(window.OG_LOOK==='new'&&typeof gkeepVein==='function'){const V=gkeepVein(school,v.id),ry=Math.atan2(-ox,-oz);V.rock.position.set(x,y,z);V.rock.rotation.y=ry;dScene.add(V.rock);
-        V.clusters.position.set(x,y,z);V.clusters.rotation.y=ry;dScene.add(V.clusters);v.g=V.clusters;v.rock=V.rock;gateVeinShow(v);GATE_KEEP_LIE.vein=v;return GATE_KEEP_LIE;} /* S2375 — the dressed vein faces the room */
+        V.clusters.position.set(x,y,z);V.clusters.rotation.y=ry;dScene.add(V.clusters);v.g=V.clusters;v.rock=V.rock;gateVeinShow(v);GATE_KEEP_LIE.vein=v;gateSigilLay(portal,gen,v,y,ox,oz);return GATE_KEEP_LIE;} /* S2375 — the dressed vein faces the room */
       const col=new THREE.Color((typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[school]&&SCHOOL_DEF[school].col)||'#9ad');
       const mat=new THREE.MeshLambertMaterial({color:col,emissive:col.clone().multiplyScalar(.35)}),rr=seededRng('gatevein',v.id);
       for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.16+rr()*.12,0),mat);m.scale.y=2+rr()*1.4;m.position.set((rr()-.5)*.6,.25+rr()*.2,(rr()-.5)*.6);m.rotation.set((rr()-.5)*.6,rr()*3,(rr()-.5)*.6);g.add(m);}
-      dScene.add(g);v.g=g;gateVeinShow(v);GATE_KEEP_LIE.vein=v;}}
+      dScene.add(g);v.g=g;gateVeinShow(v);GATE_KEEP_LIE.vein=v;gateSigilLay(portal,gen,v,y,ox,oz);}}
   return GATE_KEEP_LIE;}
 function gateVeinShow(v){if(!v||!v.g)return;const left=gateVeinLeft(v),n=v.g.children.length;v.g.children.forEach((m,i)=>{m.visible=i<Math.ceil(n*left/v.cap);});}
 /* S2380 — the critic's 18 Nov note: the altar stands 2.6 m before the coffer, so from between them E with the crosshair on the coffer's lock took the arc.
    The altar and the vein answer in reach as before, but give way to a chest the crosshair is on, unless the crosshair is on them too (interact()'s chest test, lookingAt) */
 function gateKeepYields(o,reach){const ch=CHESTS.find(c=>c.floor===currentFloor&&(!c.opened||c.items.length>0)&&lookingAt(c));return !!ch&&!lookingAt(o,reach);}
 function gateAltarNear(){const A=GATE_KEEP_LIE&&GATE_KEEP_LIE.altar;if(!A||!A.arc||activeZoneId!=='dungeon'||A.floor!==currentFloor)return null;return Math.hypot(px-A.x,pz-A.z)<TOUCH+.6&&!gateKeepYields(A,TOUCH+.6)?A:null;}
-function gateVeinNear(){const v=GATE_KEEP_LIE&&GATE_KEEP_LIE.vein;if(!v||activeZoneId!=='dungeon'||v.floor!==currentFloor)return null;return Math.hypot(px-v.x,pz-v.z)<TOUCH+.5&&!gateKeepYields(v,TOUCH+.5)?v:null;}
+function gateVeinNear(){if(!GATE_KEEP_LIE||activeZoneId!=='dungeon')return null;let best=null,bd=1e9; /* S2492 — the vein or the sigil stone beside it, the nearer */
+  for(const v of [GATE_KEEP_LIE.vein,GATE_KEEP_LIE.sigil]){if(!v||v.floor!==currentFloor)continue;const d=Math.hypot(px-v.x,pz-v.z);if(d<TOUCH+.5&&d<bd&&!gateKeepYields(v,TOUCH+.5)){best=v;bd=d;}}
+  return best;}
 // the named action (co-op rules): the altar's arc taken; returns the item, or null
 function takeArc(seed){const A=GATE_KEEP_LIE&&GATE_KEEP_LIE.altar;if(!A||A.seed!==seed||!A.arc)return null;
   const R=relicArcsOf(),n=(R.found[A.school]||0)+1,it=arcItem(A.school,n);if(!canCarry(it)){showMsg('Too heavy to carry!','#cc8844');return null;}
@@ -625,14 +651,15 @@ function takeArc(seed){const A=GATE_KEEP_LIE&&GATE_KEEP_LIE.altar;if(!A||A.seed!
   showMsg(n<=GATE_ARC.per?`An arc of ${schoolName(A.school)}'s armillary: ${n} of ${GATE_ARC.per}.`:`An arc of ${schoolName(A.school)}'s, and you have its armillary's three. This one is salvage.`,'#d8c890');
   if(typeof renderHubInv==='function')try{renderHubInv();}catch(e){}return it;}
 // one strike at the keep's vein, on its own stream (the world vein's rule: 0.35 + 0.005 a Mining level); returns {got, left} or {why}
-function gateVeinStrike(v){if(!hasPick())return {why:'You need a pick.'};let r=gateVeinRec(v.gate);if(r.n>=v.cap)return {why:'The crystal is all cut out.'};
+function gateVeinStrike(v){if(v&&v.key==='sigil')return gateSigilStrike(v);if(!hasPick())return {why:'You need a pick.'};let r=gateVeinRec(v.gate);if(r.n>=v.cap)return {why:'The crystal is all cut out.'};
   const it=gateCrystalItem(v.school);if(!canCarry(it))return {why:'Too heavy to carry!'};
   const got=seededRng('ore',v.id+':'+r.s)()<.35+.005*skillLv('mining');r={n:r.n+(got?1:0),s:r.s+1};gateKeepOf(v.gate).vein=r;
   if(got){bagAdd(it);skillUse('mining',4);}else skillUse('mining',1);gateVeinShow(v);
   return {got:got?it.name:null,left:Math.max(0,v.cap-r.n)};}
-function gateMine(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working the crystal.','#c8b890');return;}
-  if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}if(gateVeinLeft(v)<=0){showMsg('The crystal is all cut out.','#cc8844');return;}
-  MINE={v,t:toolStrike('pick')};showMsg('You set to the crystal.','#c8b890');}
+function gateMine(v){const st=v.key==='sigil';if(MINE&&MINE.v===v){MINE=null;showMsg(st?'You stop working the stone.':'You stop working the crystal.','#c8b890');return;}
+  if(!hasPick()){showMsg('You need a pick.','#cc8844');return;}if(gateVeinLeft(v)<=0){showMsg(st?'The stone is cut out.':'The crystal is all cut out.','#cc8844');return;}
+  if(st&&toolMetal('pick')<GATE_SIGIL.metal){showMsg('The stone turns the iron. It wants a steel pick.','#cc8844');return;} /* S2492 */
+  MINE={v,t:toolStrike('pick')};showMsg(st?'You set to the sigil stone.':'You set to the crystal.','#c8b890');}
 // S2376 — what a gate keeps, session 5's first half (what-a-gate-keeps-build.md): the delver. One lesser gate's keep in three
 // (seededRng('delver-has', seed)) holds a dead man against the dais, beside the coffer, and his cold camp a few steps in from the
 // door. The body, keyed <seed>:<floor>:delver and looted once, holds a purse of 8 to 20 gold (30 to 60 in a vault, when the vaults are
