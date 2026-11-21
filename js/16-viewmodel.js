@@ -275,6 +275,36 @@ const FP_AIR={dip:.07,drop:.04,back:.05,roll:.25};
 function vmAirDip(){if(!vmSword)return;const P=airPose(performance.now()/1000),ln=P.lean,tk=P.tuck*(1-ln);if(tk<=0&&ln<=0)return;
   const dy=-FP_AIR.dip*tk-FP_AIR.drop*ln,dz=FP_AIR.back*ln,fL=vmSword.userData.fistL;
   vmSword.position.y+=dy;vmSword.position.z+=dz;vmSword.rotation.z+=FP_AIR.roll*P.s*ln;if(fL){fL.position.y+=dy;fL.position.z+=dz;}}
+// S2466 — the draw and the sheathe in first person (the bodies' owed note since S2451: the view swapped in one frame). A look only: the
+// swing, the draw cut and the sheath's state are 74-strikes.js's and do not wait for it. When SHEATHED turns, buildViewmodel keeps what it
+// was showing (the weapon and its arm, or the fists) as a ghost, which goes down to where the weapon is worn over FP_DRAW.out; the new view
+// comes up from there over FP_DRAW.in, starting halfway through the ghost's going. Where it is worn is third person's own rule
+// (tpSheathAt): a blade or a wand from the left hip, crossing the body; an axe or a mace from the belt, head up; anything longer from over
+// the right shoulder, coming down. The fists come up from under the view. A swing begun in the draw ends it at once (the draw cut is the
+// swing). Offsets are [x, y, z, rx, ry, rz] from the pose the loop sets, at the far end of the way; read off the page's clock (FP_DRAW.now,
+// when a check sets it, in seconds).
+const FP_DRAW={out:.2,in:.36,now:null,t0:null,sh:null,from:null,to:null,ghost:null,gArm:null,gL:null,gP:null,gR:null,gLP:null};
+const FP_DRAW_AT={hip:[-.46,-.5,.12,-1.25,.5,.95],belt:[-.4,-.52,.1,-.7,.3,.6],back:[.12,.62,.38,1.15,-.2,-.55],fists:[0,-.5,.12,.6,0,0]};
+function fpDrawAt(){const k=vmSword&&vmSword.userData.kit,u=vmSword&&vmSword.userData;if(!vmSword||u.fists)return FP_DRAW_AT.fists;
+  let a='hip';try{if(k&&typeof tpSheathAt==='function')a=tpSheathAt(k,EQ.weapon);}catch(e){}return FP_DRAW_AT[a]||FP_DRAW_AT.hip;}
+function fpDrawNow(){return FP_DRAW.now?FP_DRAW.now():performance.now()/1000;}
+function fpDrawDrop(){const D=FP_DRAW;for(const o of [D.ghost,D.gArm,D.gL])if(o&&o.parent)o.parent.remove(o);D.ghost=D.gArm=D.gL=null;}
+function fpDrawSeen(){const D=FP_DRAW,sh=typeof SHEATHED!=='undefined'&&!!SHEATHED,was=D.sh;D.sh=sh;
+  if(was===null||was===sh||!started||!vmSword||typeof thirdPerson!=='undefined'&&thirdPerson){return;}
+  fpDrawDrop();D.to=fpDrawAt();D.ghost=vmSword;D.gL=vmSword.userData.fistL||null;D.gArm=vmArmR;D.gP=vmSword.position.clone();D.gR=vmSword.rotation.clone();
+  D.gLP=D.gL?D.gL.position.clone():null;vmSword=null;vmArmR=null;D.t0=fpDrawNow();D.from=null;}
+function vmDraw(){const D=FP_DRAW;if(D.t0==null)return;
+  if(typeof SWING!=='undefined'&&SWING||typeof thirdPerson!=='undefined'&&thirdPerson){fpDrawDrop();D.t0=null;return;}
+  const t=fpDrawNow()-D.t0,sm=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);},ez=x=>{x=Math.max(0,Math.min(1,x));return 1-Math.pow(1-x,3);};
+  if(D.ghost){const p=t/D.out;if(p>=1)fpDrawDrop();else{const w=sm(p),A=D.to,G=D.ghost;
+    G.position.set(D.gP.x+A[0]*w,D.gP.y+A[1]*w,D.gP.z+A[2]*w);G.rotation.set(D.gR.x+A[3]*w,D.gR.y+A[4]*w,D.gR.z+A[5]*w);
+    if(D.gL&&D.gLP)D.gL.position.set(D.gLP.x,D.gLP.y+A[1]*w,D.gLP.z+A[2]*w);G.updateMatrixWorld(true);_updateArmBridge(D.gArm);}}
+  if(!vmSword)return;if(!D.from)D.from=fpDrawAt();
+  const q=(t-D.out*.5)/D.in;if(q>=1&&!D.ghost){D.t0=null;return;}
+  const w=1-ez(q),A=D.from,fL=vmSword.userData.fistL;
+  vmSword.position.x+=A[0]*w;vmSword.position.y+=A[1]*w;vmSword.position.z+=A[2]*w;
+  vmSword.rotation.x+=A[3]*w;vmSword.rotation.y+=A[4]*w;vmSword.rotation.z+=A[5]*w;
+  if(fL){fL.position.y+=A[1]*w;fL.position.z+=A[2]*w;}}
 const FP_LEVEL={spear:1.15,crossbow:1.5,rod:.96}; /* S2224 — the rod held out at 35° over the water (54-thirdperson.js's rodTick turns it through the cast) */
 // S1476 — the crossbow's 2.0 s span drawn (XBOW, #745 2 A): the prod tipped up toward you and the bow drawn in (0–0.35 s), so the
 // string is in view as it is hauled back to the nut (0.35–1.45), the bolt laid in the groove (1.55), the bow let back down level
@@ -301,6 +331,7 @@ function fpSwordFit(k){const w=k.children[0];if(!w)return;const h=o=>{const b=ne
   if(!_fpSwordH)_fpSwordH=h(buildWeapon('sword'));const s=_fpSwordH/Math.max(.1,h(w));w.scale.multiplyScalar(s);}
 function buildViewmodel(){
   if(typeof workShown==='function'){const t=workShown();if(t&&EQ.weapon!==(t.bare?null:t))return workWield(buildViewmodel);} /* S2225 — the net's bare hands: the hand empty is already its own */ /* S1520 — the pick or the hatchet while you work (54-thirdperson.js) */
+  fpDrawSeen(); /* S2466 — a draw or a sheathe keeps the hand it leaves as the ghost that goes (vmDraw) */
   if(vmSword){if(vmSword.userData.fistL)VM_SCENE.remove(vmSword.userData.fistL);VM_SCENE.remove(vmSword);vmSword=null;}
   vmGlow=null;vmEnchantLight=null;
   // v70.2 — clear the weapon arm bridge; rebuilt at the end with the new hand.
