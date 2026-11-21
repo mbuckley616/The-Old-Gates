@@ -150,5 +150,20 @@ const SN = await slide({ iceAt: 0, stopAt: 120 });
 await page.evaluate(() => { delete EQ.feet.nails; });
 check('nailed, a stop on ice from the run slides 0.37 m (±0.05)', Math.abs(SN.slide - .367) < .05, SN);
 
+// 8. prints (Session 2480): mud takes them as snow does, dark earth, the step still sounding as bare ground; dry ground takes none;
+// a mud print fades on its own clock, not with the snow's cover
+await page.evaluate(([x, z]) => { px = x; pz = z; }, F); await g.cells();
+const FPR = await page.evaluate(() => { const o = {}, x0 = px, z0 = pz; for (const m of FP.pool) m.visible = false; FP.last = null;
+  const walk = n => { const r = []; for (let i = 0; i < n; i++) { px = x0 + i * .8; _foot.at = -1e9; r.push(fpWalk()); } px = x0; return r; };
+  const shown = k => FP.pool.filter(m => m.visible && m.userData.kind === k).length;
+  _wx('clear', 0); o.dry = walk(4); o.dryN = FP.pool.filter(m => m.visible).length;
+  _wx('rain', 0); FP.last = null; o.mud = walk(4); o.mudN = shown('mud'); const m = FP.pool.find(m => m.visible && m.userData.kind === 'mud');
+  o.col = m ? m.material.color.getHex() : null; tickFootprints(1); o.mudAfter1 = shown('mud');
+  for (const m of FP.pool) m.visible = false; FP.last = null; _wx('snow', .6); o.snow = walk(4); o.snowN = shown('snow');
+  for (const m of FP.pool) m.visible = false; FP.last = null; pz = z0; _wx('clear', 0); return o; });
+console.log('prints', JSON.stringify(FPR));
+check('rain on the field: a mud print a step, dark earth, and the step sounds as bare ground (false); dry ground none', FPR.mudN === 4 && FPR.mud.every(v => v === false) && FPR.col === 0x3a2e22 && FPR.dryN === 0 && FPR.dry.every(v => v === false), FPR);
+check('a mud print outlasts a second with no snow cover; snow prints as before, and sound as snow', FPR.mudAfter1 === 4 && FPR.snowN === 4 && FPR.snow.every(v => v === true), FPR);
+
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
