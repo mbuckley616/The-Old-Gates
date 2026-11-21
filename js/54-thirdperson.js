@@ -572,6 +572,15 @@ function tpHBFistTurn(by,sd,Wb,Ax){const X=_tgC,f2=by[`finger2-1.${sd}`],f5=by[`
   X.Lt.addScaledVector(Ax,-X.Lt.dot(Ax));if(X.l.lengthSq()<1e-10||X.Lt.lengthSq()<1e-10)return;X.l.normalize();X.Lt.normalize();
   X.m.crossVectors(X.k,X.l);X.M.crossVectors(Ax,X.Lt);X.B0.makeBasis(X.k,X.l,X.m);X.B1.makeBasis(Ax,X.Lt,X.M);X.B0.transpose();X.B1.multiply(X.B0);
   tpHBTurnBone(Wb,X.q.setFromRotationMatrix(X.B1));}
+const _tgR={c:new THREE.Vector3(),p0:new THREE.Vector3(),p1:new THREE.Vector3(),v:new THREE.Vector3(),w0:new THREE.Quaternion(),q:new THREE.Quaternion(),Mi:new THREE.Matrix4()};
+function tpHBGripR(R,G,h,by,Ax){const sd=HBODY.swap?'L':'R',Wb=by['wrist.'+sd],f2=by['finger2-1.'+sd],f5=by['finger5-1.'+sd],Y=_tgR;if(!Wb||!f2||!f5||!h.f||!h.f.length||!h.c.parent)return null;
+  const fm=o=>{o.set(0,0,0);for(const b of h.f)o.add(Y.v.setFromMatrixPosition(b.matrixWorld));return o.multiplyScalar(1/h.f.length);};
+  fm(Y.p0);Y.w0.copy(Wb.quaternion);tpHBFistTurn(by,sd,Wb,Ax);
+  if(G.w<1){Y.q.copy(Wb.quaternion);Wb.quaternion.copy(Y.w0).slerp(Y.q,G.w);Wb.updateMatrixWorld(true);}
+  fm(Y.p1);if(tpHBCurl(by,sd,Y.c)){Y.c.sub(Y.p1);Y.p1.add(Y.c.addScaledVector(Ax,-Y.c.dot(Ax)).multiplyScalar(G.w));}
+  h.c.parent.updateMatrixWorld(true);Y.Mi.copy(h.c.parent.matrixWorld).invert();Y.p0.applyMatrix4(Y.Mi);Y.p1.applyMatrix4(Y.Mi).sub(Y.p0);
+  const e=h.c.matrix.elements;e[12]+=Y.p1.x;e[13]+=Y.p1.y;e[14]+=Y.p1.z;h.c.matrixWorldNeedsUpdate=true;
+  return +Y.v.setFromMatrixPosition(f2.matrixWorld).sub(Y.p0.setFromMatrixPosition(f5.matrixWorld)).angleTo(Ax).toFixed(3);}
 function tpHBGripL(R){const G=R.gAim,H=R.rig.hb;R.gAim=null;if(!G||!H||G.w<=0)return;const h=G.h||(G.o&&R.hbHeld&&R.hbHeld.find(x=>x.o===G.o));if(!h||!h.c.parent)return;
   /* only an arm still as the grip left it: the climb, the mantle, the rod, the net and the glass set the left arm after it */
   if(Math.abs(G.qa.dot(R.shL.quaternion))<.99999||Math.abs(G.ea.dot(R.elL.quaternion))<.99999)return;
@@ -580,7 +589,12 @@ function tpHBGripL(R){const G=R.gAim,H=R.rig.hb;R.gAim=null;if(!G||!H||G.w<=0)re
   const aim=()=>tpHBCurl(by,sd,X.F)||fing();
   R.root.updateMatrixWorld(true);h.c.updateMatrixWorld(true);X.S.copy(G.gl).applyMatrix4(h.c.matrixWorld);const miss0=fing().distanceTo(X.S);X.u0.copy(U.quaternion);X.l0.copy(L.quaternion);
   /* the grip's axis, toward the blade (the left mark is on the pommel's side of the right hand) */
-  const Ax=_tgC.A.set(0,1,0).transformDirection(h.c.matrixWorld).multiplyScalar(G.gl.y>0?-1:1);if(Wb)_tgC.w0.copy(Wb.quaternion);
+  const Ax=_tgC.A.set(0,1,0).transformDirection(h.c.matrixWorld).multiplyScalar(G.gl.y>0?-1:1);
+  /* S2499 — the right fist turned the same way (S2489's note: its knuckles' line lay 0.42 rad off the blade, the driver's wrist carried
+     across): wrist.R set by the grip's weight, then the held copy moved with the fingers that place it and across to the curl's middle (as the
+     left's, tpHBCurl), so the grip runs through the fist and the left mark follows */
+  const kAngR=tpHBGripR(R,G,h,by,Ax);if(kAngR!=null){h.c.updateMatrixWorld(true);X.S.copy(G.gl).applyMatrix4(h.c.matrixWorld);}
+  if(Wb)_tgC.w0.copy(Wb.quaternion);
   for(let k=0;k<3;k++){if(Wb)tpHBFistTurn(by,sd,Wb,Ax);X.s.setFromMatrixPosition(U.matrixWorld);X.e.setFromMatrixPosition(L.matrixWorld);aim();
     const a=X.s.distanceTo(X.e),b=X.e.distanceTo(X.F),d=Math.max(Math.abs(a-b)+1e-3,Math.min(a+b-1e-3,X.s.distanceTo(X.S)));
     X.u.subVectors(X.F,X.e);X.v.subVectors(X.s,X.e);X.n.crossVectors(X.v,X.u);
@@ -589,7 +603,7 @@ function tpHBGripL(R){const G=R.gAim,H=R.rig.hb;R.gAim=null;if(!G||!H||G.w<=0)re
   let kAng=null;if(Wb){const f2=by['finger2-1.'+sd],f5=by['finger5-1.'+sd];if(f2&&f5)kAng=+X.v.setFromMatrixPosition(f2.matrixWorld).sub(X.u.setFromMatrixPosition(f5.matrixWorld)).angleTo(Ax).toFixed(3);}
   const after=+aim().distanceTo(X.S).toFixed(3);
   if(G.w<1){X.q.copy(U.quaternion);U.quaternion.copy(X.u0).slerp(X.q,G.w);X.q.copy(L.quaternion);L.quaternion.copy(X.l0).slerp(X.q,G.w);if(Wb){X.q.copy(Wb.quaternion);Wb.quaternion.copy(_tgC.w0).slerp(X.q,G.w);}U.updateMatrixWorld(true);}
-  R.gMiss={before:+miss0.toFixed(3),after,w:G.w,kAng};}
+  R.gMiss={before:+miss0.toFixed(3),after,w:G.w,kAng,kAngR};}
 // S1270 — the bow's draw on the builder's fingers: the right hand, a fist while the bow is carried, opens into the archer's hook as the
 // string comes back (or is held at the ready): the first three fingers bent round the string at their last two joints and barely at the
 // knuckle, the little finger and the thumb left folded. The knuckles' line is hbCloseFist's, read once when the body is built; the hand
