@@ -2079,3 +2079,83 @@ cannot be reached on foot, and a player who walks off the end has no climb out o
 **Backlog notes.** None new.
 
 No proposal this run.
+
+## 2026-11-21 — The new look: the Forgotten Aqueducts, Stormwatch, the Frostborn Vault and the Gate Isles in their prototypes; the Scarred Gate and the Hollow Below in the game (build s1812, read to Session 2483)
+
+My last entry was a playtest, so this run is the new look. I shot four of OG-104's sites in `places.html`, which no entry of mine had seen
+(S2430–2441, S2448–2449, S2454–2457, S2461–2465), 18 views at 1280×720 on SwiftShader. Every page built in 2 to 4 s with no page error.
+`places.html?still` shows no frame counter, so I have only the pages' own counts: the Aqueducts 65,815 tris in 18 draws, Stormwatch 92,470
+in 11, the Frostborn Vault 173,365 in 12 and the Gate Isles 58,342 in 9. Then I booted the game on the new look and stood at the two
+ruins that are in the world now: the Scarred Gate (S2468; seed 1 at 19150, 6550, on Aurenne's dunes) at 13:00, and the Hollow Below (S2473–2474;
+cell 2,2, 65 m up a Markish fell, the way into *The Black Crypt*) at 11:00. I went in at its mouth and stood on the path at the passage, the
+viaduct's end and the court. There were no page errors and no console errors. I judged them against OG-104's thumbnail (`docs/art/thumbs/OG-104.jpg`, 16 panels:
+"everything is drawn huge, arches several storeys tall with people as specks") and visual-foundation.md's measures.
+
+**What reads.**
+- **The Gate Isles from a boat** (`2026-11-21-isles-boat.jpg`). This is the closest of the four to its panel: a ring on a rock table, a stack
+  notched at the tide, and three more rings stepping off toward the far coast, each smaller. The line reads at once, without the post.
+  From the first plinth (`-isles-line.jpg`) the ring is a fine thing, 1.75 m post at its left foot for scale. Only the next ring's head shows
+  through it, low in the opening, so the line *through* the rings is the `sight` view's work, not the eye's.
+- **The Scarred Gate in the game** (`2026-11-21-game-scarred-far.png`, from 160 m). The broken crown and the thrown stones read from far off,
+  and the ring stands well against the sky. Close in, the script cut into the soffit reads as cut: dark strokes on lit stone. The black glass
+  of the scar did not show from either of my two spots on the axis. The dunes here are flat cream with green scrub, so the ground does
+  nothing to say "dunes". S2468 names this, and I agree a wider dry country would help.
+- **The Hollow's mouth on the fell** (`2026-11-21-game-hollow-outside.png`, 30 m off). A mossy limestone outcrop with a black throat on a snowy
+  slope reads as a way in. It is small for what is behind it, as S2474 says, but at 30 m nothing else on the fell competes with it.
+- **The Aqueducts' nave from the water** (`2026-11-21-aqueducts-nave.jpg`). The arcade running back toward the hole's light, a fall down
+  the left, and the halls going dark behind you. Of the four, this is the best frame in mood.
+
+**What is off.**
+1. **Stormwatch's cliff from the sea is a blown-up texture, not rock** (`2026-11-21-stormwatch-sea.jpg`). The 88 m face reads as tall
+   rectangles of blurred light and dark, a texture of a few pixels stretched up the cliff. S2457's buttresses and gullies show only as
+   faint vertical bands. The fort on top is three specks. That suits a promontory fort, but you cannot tell from the boat that there is
+   anything up there. The same vertical streaking is on the Hollow's back-shelf face (noted 19 Nov, item 1, and unchanged in
+   `-hollow-mouth`) and on the game's Hollow passage (item 4). It is one fault: a texture laid from above onto a vertical face. S2441 names
+   the same seam on the isles and points at triplanar mapping in the game's terrain shader.
+2. **Stormwatch's set stones are black teeth** (`2026-11-21-stormwatch-stones.jpg`). Since S2455 the slabs end in points. Among them, they
+   read as a field of near-black fins and shark's teeth, a shade or two darker than the grey walls behind them, though both are the same
+   limestone. Dún Aonghasa's stones are the pavement's own grey. Here they look like a different material. The height is right (0.6 to 1.8 m against the 1.65 m eye).
+3. **The Aqueducts: the lip in the foreground is a blank cream slab** (`2026-11-21-aqueducts-lip.jpg`, the bottom-left third of the frame).
+   In the default view the near ground at the lip has no texture or tone, so the first thing you see is a flat plane. The hole beyond is
+   good. The sinkhole's rim also shows a row of small triangular teeth against the sky, at the vault's broken edge (top of the frame and the
+   right side), which reads as a saw's edge, not broken stone. In the scree view the fallen vault blocks have bright edges and dark seams,
+   so they look like steel crates.
+4. **The Hollow in the game is overexposed indoors** (`2026-11-21-game-hollow-in-arrive.png`, `-in-mid.png`, `-in-court.png`). The passage
+   from the mouth is near-white limestone, streaked as in item 1, and reads as an ice tunnel. On the court and on the end of the viaduct the
+   floor draws as one flat cream plane, with no slabs and no sigil. The viaduct shows as a single dark stripe down the middle. The
+   prototype's court (`places-hollow-court`) has its 4 m slabs. In the game, the light that lands there washes them out. The rings and the
+   slit door read well behind it. The rings' script is still the gate kit's glyphs, and at 10 m they read as *ΦΘO≠#*, as on 19 Nov (item 4).
+5. **The Frostborn Vault's face is a brick wall** (`2026-11-21-frostborn-gorge.jpg`). OG-104's vault panel is a city stepping up a frozen gorge.
+   Here the gorge view is one flat face of even, rectangular courses, 160 m wide, with five lancets and three arches. The scale post is out
+   of frame and there is no other cue, so it reads as a 20 m gatehouse: the courses are the size a house's bricks look. The face is 100 m and
+   the portal 54 m to its point (visual-foundation's gates' sizes), but the eye cannot tell. The glacier's tongue out of the portal is a smooth
+   white half-cylinder. The headwall's beds (S2465) read as thin white lines a metre deep, as S2465 says, more like contour lines than ledges.
+   `view=headwall` is not one of the page's views: it fell back to `gorge`.
+
+**A bug in today's game.** In the Hollow, away from the mouth, the HUD's line says *No one is in · Back along the passage to the mouth*
+(`-in-mid.png`, top left). That is the house line. `updateHUD` (`js/62-actions.js`) leaves it off only for a byre or a barn (S1508), so every
+interior that is not a home gets it. S1030's below-deck line was the same fault. Filed in section I for the systems builder.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2448–2449 (Aqueducts): the streak of light on the water from the hole is there and hard-edged under bloom (`-aqueducts-nave`); fair, as
+  the devlog says. The scree's colour against the walls I judge above (item 3). I agree it should take the vault's stone.
+- S2454–2457 (Stormwatch): the face is dark and smeared from the sea (item 1). A paler limestone would not fix the smearing. The tussocks
+  read as soft spots up close in `-fort`, as said. #1843 (where it can stand) waits on Michael.
+- S2461, S2465 (Frostborn): the beds are thin lines, as said (item 5). The beds terracing up the peaks' flanks show in `-far`'s corners,
+  as said. #1823 waits.
+- S2430–2441 (Gate Isles): the change in how the texture lies where a cliff turns to its top shows at the crown's lip in `-isles-landing`,
+  as S2441 says. It is minor beside item 1.
+- S2468 (Scarred Gate in the game): judged above. I could not find the glass from where I stood, and the site does read as small dunes.
+- S2473–2474 (the Hollow in the game): the mouth is small, as said, but reads. Walking it end to end is the `hollow` suite's (10/10 per QA).
+  The room's light is item 4. Nothing on the map sets its door apart, as said.
+- S2445, S2458 (the sliding wall drawn as stone), S2450 (veins on a wonder's ground), S2469–2470 (the keep's cache, the shortcut back),
+  S2475–2477 and S2482–2483 (ground underfoot, hobnails, mud prints): systems work, for the next playtest. The sounds are not judgeable headless.
+- S2451–2479 (scabbards, frogs, the baldric, the draw): not looked at this run. The bodies builder's open questions (the frog at play
+  distance, the strap over a cloak, whether 0.56 s is slow) want a playtest's third-person eye.
+- S2452–2453, S2460, S2467, S2481 (QA): `export` ran green (below).
+
+**Harness.** `node tests/run.mjs export` 1/1 green (the autosave 50.1 s from the world's entry, the download 61.0 s).
+
+**Backlog notes.** None new.
+
+No proposal this run.
