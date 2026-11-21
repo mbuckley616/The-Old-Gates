@@ -1418,6 +1418,84 @@ function climatePill(){const g=_clim.g,raw=_clim.raw||0,side=_clim.side;if(!side
   const cost=g>=2?(CLIMATE.cap2<1?`stamina regenerates at half and stops at ${Math.round(CLIMATE.cap2*100)}%`:'stamina regenerates at half'):'stamina regenerates at three quarters';
   return `<span class="buff-pill" title="${N[g]} (${_clim.why}) — ${cost}${_clim.by.length?'; '+(side==='cold'?'warmed':'cooled')+': '+_clim.by.join(', '):''}"><span class="bp-ico">${ico}</span><span class="bp-time">${N[g]}</span></span>`;}
 
+// ── S2475 — ground that pushes back, session 1 (Michael's A on #1800, docs/design/ground-that-pushes-back.md): weather underfoot.
+// footingAt(x,z) is the ground's kind where you or a foe stand, read only from what is saved or seeded: the road (roadInfo), a stamp's
+// core (a town's pad, a farm, a site), steep rock, shore and desert sand, the snow lying (WX.cover), the rain seen (worldState.wxSeen) and
+// the island. One kind, the worst; nothing below ×0.8. Off a road, on soil: snow from cover 0.5 (×0.9 the run, ×1.2 a sprint's drain),
+// deep snow over 0.8 (×0.8, ×1.4, the roll ×0.85); mud while it rains and 120 game minutes after (360 after a storm), ×0.9, or ×0.85
+// in heavy rain or a storm, the roll ×0.85; in Aurenne mud only after a storm. The north's 0.30 cover never slows. Ice is session 2's.
+const FOOT={snow:.5,deep:.8,rock:.74,shore:3.2,rainAfter:120,stormAfter:360,
+  kinds:{firm:{k:'firm',run:1,drain:1,roll:1,name:''},snow:{k:'snow',run:.9,drain:1.2,roll:1,name:'Snow'},deep:{k:'deep',run:.8,drain:1.4,roll:.85,name:'Deep snow'},
+    mud:{k:'mud',run:.9,drain:1.2,roll:.85,name:'Mud'},mudHeavy:{k:'mud',run:.85,drain:1.2,roll:.85,name:'Mud'}},
+  ico:{snow:'❄',deep:'❄',mud:'💧'},snowOwn:{'Snow Wolf':1,'Reindeer':1,'Frost Troll':1}};
+function footOutside(){return activeZoneId==='world'&&lid==='overworld'&&!(typeof isInterior==='function'&&isInterior())&&typeof WX!=='undefined'&&typeof worldH==='function';}
+// the mud's weather, the same everywhere on an island at one minute: 0 none, 1 mud, 2 heavy (heavy rain or a storm)
+function footMudNow(isle){const t=WX.type,W=worldState.wxSeen||{},now=gameMinNow(),storm=t==='storm'||(W.storm!=null&&now-W.storm<=FOOT.stormAfter);
+  if(isle==='aurenne')return storm?(t==='storm'?2:1):0;
+  if(t==='storm'||(t==='rain'&&(WX.heavy||0)>.5))return 2;
+  return (t==='rain'||storm||(W.rain!=null&&now-W.rain<=FOOT.rainAfter))?1:0;}
+function footingAt(x,z){const F=FOOT.kinds;if(!footOutside())return F.firm;
+  if(worldH(x,z)<FOOT.shore)return F.firm;
+  const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF)return F.firm;
+  if(stampAt(x,z))return F.firm;
+  if(slopeNormalY(x,z)<FOOT.rock)return F.firm;
+  const cv=WX.cover||0;if(cv>FOOT.deep)return F.deep;if(cv>=FOOT.snow)return F.snow;
+  if(CLIMATE.sand[specBiome(x,z)])return F.firm;
+  let isle='gatelands';try{const [i,j]=cellOf(x,z);isle=nationKeyOf(i,j);}catch(e){}
+  const m=footMudNow(isle);return m===2?F.mudHeavy:m===1?F.mud:F.firm;}
+// yours, read once a quarter second of the page's clock (the loop's run, the sprint's drain, the roll and the pill read it)
+const _foot={k:FOOT.kinds.firm,at:-1e9,x:0,z:0};
+function footHere(){const now=performance.now();if(now-_foot.at>250||Math.hypot(px-_foot.x,pz-_foot.z)>1){_foot.k=footingAt(px,pz);if(_foot.k.k==='deep'&&typeof bootsNailed==='function'&&bootsNailed())_foot.k=FOOT.kinds.snow; /* S2477 — nailed, deep snow is only snow */_foot.at=now;_foot.x=px;_foot.z=pz;}return _foot.k;}
+function footRunMult(){return Math.max(.8,footHere().run);}
+function footDrainMult(){return footHere().drain;}
+function footRollMult(){return iceUnderfoot()?ICE.roll:footHere().roll;} /* S2476 — ice ×1.3 */
+// a foe's: the same ground at the same multiplier, kept on the foe half a second; the Mark's own (FOOT.snowOwn) ignore snow, not mud
+function foeFootMult(e){if(!e||!footOutside())return 1;const now=performance.now();
+  if(e._footAt==null||now-e._footAt>500){e._footAt=now;const f=footingAt(e.x,e.z);e._foot=(FOOT.snowOwn[e.name]&&(f.k==='snow'||f.k==='deep'))?1:Math.max(.8,f.run);}
+  return e._foot;}
+// S2476 — session 2: ice. Not slow, but it does not let go: on a frozen pool in a gate, Sioc's floe and bridge and an ice cave's lake your
+// speed eases toward what you ask at ICE.acc (6 m/s²), so a stop from the run slides 1.2 m and from a sprint 1.8; you carry onto it the
+// speed you came with, and out of a roll on it the roll's own. The roll on it goes ×1.3 as far. The page's clock: eased by the loop's dt.
+// Foes still treat a frozen pool as a wall (S1682), so ice is your ground alone; nothing knocks you back on a stagger today, so its ×1.5 waits.
+const ICE={acc:6,roll:1.3,vx:0,vz:0,on:false};
+function iceUnderfoot(){if(!onGround||!started)return false;
+  const L=typeof laidLive==='function'?laidLive():null;if(L&&(L.kind==='floe'||L.kind==='bridge')&&laidInside(L,px,pz)&&Math.abs(jumpY-L.top)<.2)return true;
+  if(lid&&lid.startsWith('dyn_'))return typeof dIceLift==='function'&&dIceLift(px,pz)>0;
+  if(typeof isInterior==='function'&&isInterior()){const h=currentHouse,T=h&&h.ice&&h._limeCave;if(!T||!T.lake||!T.bounds)return false;
+    const Lk=T.lake,Bd=T.bounds,x=px+Bd.x0,z=pz+Bd.z0,y=jumpY+(+(T.low-.25).toFixed(2));
+    return x>=Lk.x0&&x<=Lk.x1&&z>=Math.min(Lk.z0,Lk.z1)&&z<=Math.max(Lk.z0,Lk.z1)&&Math.abs(y-Lk.y)<.15;}
+  return false;}
+// S2477 — session 3: hobnails. Any boots taken to a smith in the Gatelands or the Mark come back nailed, 25 gold and an hour (the forge's
+// page, a row of its own); 5 gold draws them. Nailed (`nails` on the boots, so it rides in the character's row with EQ and BAG): ice
+// grips at 20 m/s² (a stop from the run slides 0.37 m), and deep snow is only snow. The price is noise: indoors and in gates, on stone
+// and planks, a foe hears you walk at 4 m, not 3, and sneak at 1.5, not 1 (hearingRadius, 10-player.js). Mud has no answer but the road.
+const HOBNAIL={price:25,draw:5,min:60,acc:20,walk:4,sneak:1.5,isles:{gatelands:1,mark:1}};
+function bootsNailed(){return !!(EQ.feet&&EQ.feet.nails);}
+function hobnailNoisy(){return bootsNailed()&&((typeof isInterior==='function'&&isInterior())||!!(lid&&lid.startsWith('dyn_')));}
+function hobnailHere(){if(!smithForge())return false;const h=currentHouse;let isle=null;
+  try{const t=h.siteId&&WORLD.siteAnywhere(h.siteId);if(t)isle=nationKeyOf(...cellOf(t.x,t.z));}catch(e){}
+  return !!HOBNAIL.isles[isle||(h.siteId?'':'gatelands')];}
+function hobnailGo(){if(!hobnailHere())return {done:false,why:'No smith here nails boots.'};const b=EQ.feet;
+  if(!b)return {done:false,why:'You have no boots on.'};
+  if(b.nails){if(gold<HOBNAIL.draw)return {done:false,why:`The smith asks ${HOBNAIL.draw} gold to draw them.`};gold-=HOBNAIL.draw;delete b.nails;_foot.at=-1e9;return {done:true,nailed:false};}
+  if(gold<HOBNAIL.price)return {done:false,why:`The smith asks ${HOBNAIL.price} gold.`};gold-=HOBNAIL.price;b.nails=true;_foot.at=-1e9;
+  if(typeof advanceClock==='function')advanceClock(HOBNAIL.min);return {done:true,nailed:true};}
+function iceAcc(){return bootsNailed()?HOBNAIL.acc:ICE.acc;}
+// the loop's step: mx, mz the way you ask (0, 0 for none), spd this frame's distance at your speed. Off ice it only keeps the velocity
+// you are moving at and returns null; on ice it returns this frame's step, {dx, dz}
+function iceTick(mx,mz,spd,dt,roll){const len=Math.hypot(mx,mz);
+  if(roll){if(dt>0){ICE.vx=mx/dt;ICE.vz=mz/dt;}return null;}
+  const tx=len&&dt>0?mx/len*spd/dt:0,tz=len&&dt>0?mz/len*spd/dt:0;
+  if(!iceUnderfoot()){ICE.vx=tx;ICE.vz=tz;ICE.on=false;return null;}
+  ICE.on=true;const a=iceAcc()*dt,ex=tx-ICE.vx,ez=tz-ICE.vz,e=Math.hypot(ex,ez);
+  if(e<=a){ICE.vx=tx;ICE.vz=tz;}else{ICE.vx+=ex/e*a;ICE.vz+=ez/e*a;}
+  return {dx:ICE.vx*dt,dz:ICE.vz*dt};}
+// the buff bar's chip beside the climate's: the ground's word, and what it costs
+function footPill(){if(ICE.on&&iceUnderfoot())return `<span class="buff-pill" title="Ice — it does not let go: you gain and lose speed slowly, and a roll goes ${Math.round(ICE.roll*100)}% as far."><span class="bp-ico">🧊</span><span class="bp-time">Ice</span></span>`; /* S2476 */
+  if(!footOutside())return '';const f=footHere();if(f.k==='firm')return '';
+  const cost=`you run at ${Math.round(f.run*100)}%, and a sprint tires you ${Math.round((f.drain-1)*100)}% faster${f.roll<1?'; a roll goes '+Math.round(f.roll*100)+'% as far':''}. A road is firm.`;
+  return `<span class="buff-pill" title="${f.name} — ${cost}"><span class="bp-ico">${FOOT.ico[f.k]}</span><span class="bp-time">${f.name}</span></span>`;}
+
 // ── S2012 — Water B, session 1 (Michael's B on #1254, `docs/design/water.md`): no thirst; water is a draught you carry. A vessel
 // is a bag item with its uses and its kind (`vessel`, `wUses`, `wKind`), so it is the character's with no new key. E fills every
 // vessel in the bag at a town's well (clean; foul while the town has the plague), standing in a river or a lake 0.3 m deep or more
@@ -1976,9 +2054,10 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
   const mk=(f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>ingotCount(t)>=forgeIngots(f.T))&&plankCount()>=forgePlanks(f.T)&&leatherCount()>=forgeLeather(f.T),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'));h+=head('Make')+FORGE_TYPES.map((f,i)=>f.light?'':mk(f,i)).join('')+head('Make, light')+FORGE_TYPES.map((f,i)=>f.light?mk(f,i):'').join(''); /* S2132 — the light line's own row */
   if(P.length)h+=head('Temper')+P.map((it,i)=>row(S.k==='t'&&S.it===it,true,'t'+i,`${it.name}${it.tempers?` (${it.tempers})`:''}`)).join('');
   const CP=typeof crystalPieces==='function'?crystalPieces():[];if(CP.length)h+=head('Set a crystal')+CP.map((it,i)=>row(S.k==='c'&&S.it===it,bagCount(b=>b.gateCrystal===it.school)>0,'c'+i,it.name)).join(''); /* S2372 — a gate's crystal makes a bought implement found (68-dungeon-misc.js) */
+  if(typeof hobnailHere==='function'&&hobnailHere())h+=head('Boots')+row(S.k==='n',!!EQ.feet,'n0',bootsNailed()?'Draw the nails':'Hobnails'); /* S2477 */
   ov.querySelector('#fg-list').innerHTML=h;
   ov.querySelectorAll('#fg-list [data-k]').forEach(d=>d.onclick=()=>{const k=d.dataset.k,n=+k.slice(1);
-    forgeSel=k[0]==='s'?{k:'s',tier:n}:k[0]==='m'?{k:'m',type:FORGE_TYPES[n].T.type}:k[0]==='c'?{k:'c',it:CP[n]}:{k:'t',it:P[n]};forgeSaid='';forgeDraw();});
+    forgeSel=k[0]==='n'?{k:'n'}:k[0]==='s'?{k:'s',tier:n}:k[0]==='m'?{k:'m',type:FORGE_TYPES[n].T.type}:k[0]==='c'?{k:'c',it:CP[n]}:{k:'t',it:P[n]};forgeSaid='';forgeDraw();});
   const pad=s=>`<div style="padding-left:12px">${s}</div>`,note=s=>`<div style="padding-left:12px;color:#8a7050;font-style:italic">${s}</div>`;let t='';
   if(S.k==='s'){const D=INGOT_DEF.find(d=>d.tier===S.tier),M=MATERIALS[S.tier-1];
     t=`<div style="font-variant:small-caps;color:#7a1f10">${M.name} Ingot</div>`+D.ore.map(([k,n])=>pad(`${n} ${ORE_DEF[k].name} <i style="font-size:12px;color:#8a7050">(you have ${oreCount(k)})</i>`)).join('')+
@@ -1996,6 +2075,9 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
   else if(S.k==='c'){const it=S.it,sn=schoolName(it.school);
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(`1 gate crystal of ${sn} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.gateCrystal===it.school)})</i>`)+
       (skillLv('smithing')<CRYSTAL_SET.smithing?note(`asks Smithing ${CRYSTAL_SET.smithing}`):'')+note(`found: ${sn}’s words ${Math.round(IMPLEMENT.foundCut*100)}% cheaper, not ${Math.round(IMPLEMENT.cut*100)}%`);}
+  else if(S.k==='n'){const b=EQ.feet,on=bootsNailed(); /* S2477 — hobnails */
+    t=`<div style="font-variant:small-caps;color:#7a1f10">${on?'Draw the nails':'Hobnails'}</div>`+pad(b?b.name:'No boots on')+pad(on?`${HOBNAIL.draw} gold`:`${HOBNAIL.price} gold, an hour`)+
+      note(on?'the quiet back, and the ice as it was':`ice grips, and deep snow is only snow; indoors and in gates a foe hears you walk at ${HOBNAIL.walk} m, not 3, and sneak at ${HOBNAIL.sneak}, not 1`);}
   const R=ov.querySelector('#fg-right');R.innerHTML=t;
   R.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{forgeTier=+b.dataset.m;forgeSaid='';forgeDraw();});
   const sm=R.querySelector('#fg-smith');if(sm)sm.onclick=()=>forgeGo(true);
@@ -2004,6 +2086,7 @@ function forgeGo(bySmith){const S=forgeSel;let r;
   if(S.k==='s'){r=forgeSmelt(S.tier);forgeSaid=r.made?`${r.item.name}.`:r.why||'';}
   else if(S.k==='m'){r=forgeMake(S.type,forgeTier||2);forgeSaid=r.made?`${r.item.name}.`:r.why||'';}
   else if(S.k==='c'){r=forgeSetCrystal(S.it);forgeSaid=r.done?`${S.it.name}: the crystal is set.`:r.why||'';if(r.done)forgeSel={k:'s',tier:2};}
+  else if(S.k==='n'){r=hobnailGo();forgeSaid=r.done?(r.nailed?'Your boots are nailed.':'The nails are drawn.'):r.why||'';} /* S2477 */
   else if(S.k==='t'){r=forgeTemper(S.it,bySmith);forgeSaid=r.done?`${S.it.name}, tempered ${S.it.tempers} of ${temperMax()}.`:r.why||'';if(r.done&&typeof updateHUD==='function')updateHUD();}
   if(r&&(r.made||r.done)&&typeof uiTone==='function')uiTone(660,880,.08,.08,'triangle');
   if(typeof renderHubInv==='function')renderHubInv();

@@ -319,9 +319,9 @@ function loop(now){
   // (the modal commitment is intentional — Ctrl is a state, not modifier).
   const _sneakMoveMult = sneakMoveMult(); /* S976 — Soft step (Stealth 25) */
   tickPlayerPosture(dt,performance.now()/1000); // S281
-  const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*commitMoveMult()*(playerStaggered(performance.now()/1000)?0:1)*dt;
+  const spd=basespd*swiftMult*sprintBuff*(sprinting?1.225:1)*_encSpeedMult*_devSpdMul*_powMoveMult*_sneakMoveMult*commitMoveMult()*(typeof footRunMult==='function'?footRunMult():1)*(playerStaggered(performance.now()/1000)?0:1)*dt; /* S2475 — the ground underfoot (footingAt, 50-travel.js) */
   if(sprinting){
-    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(1-.3*skillT('athletics'))*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1)*(roadLegsNow()?0:1); /* S779 — the Gate-Blade drawn; S976 — Road legs (Athletics 75) */
+    const sprintDrain=14*_buffMult('staminaCost',1)*_finesseSprint()*(1-.3*skillT('athletics'))*(typeof gateBladeDrawn==='function'&&gateBladeDrawn()?1.25:1)*(roadLegsNow()?0:1)*(typeof footDrainMult==='function'?footDrainMult():1); /* S2475 — snow and mud */ /* S779 — the Gate-Blade drawn; S976 — Road legs (Athletics 75) */
     stamina=Math.max(0,stamina-dt*sprintDrain);
     if(stamina===0){staminaCD=perk('athletics',100)?0:2;lvAct.staminaDepleted++;} /* S976 — Tireless (Athletics 100): no pause after a sprint */
     lvAct.sprintDist+=spd;
@@ -358,7 +358,7 @@ function loop(now){
   if(_roll){mdx=_roll.dx;mdz=_roll.dz;}
   const _dash=_roll?null:tickAirDash(performance.now()/1000); /* S1011 — Swallow's turn, the air dash (10-player.js) */
   if(_dash){mdx=_dash.dx;mdz=_dash.dz;}
-  const moving=!!(mdx||mdz);
+  let moving=!!(mdx||mdz);
   _pStep=moving; // S634 — a foe hears you walk (hearingRadius, 10-player.js)
   if(moving)athleticsStep(spd,sprinting); /* S941 — Athletics: ten metres sprinted or swum */
   stealthTick(dt);
@@ -371,7 +371,9 @@ function loop(now){
   // movement, so lunging into a wall stops at the wall rather than clipping.
   const _wHeldNow = !!(K['KeyW']||K['ArrowUp']);
   const _lungeBoostActive = lungeT > 0 && _wHeldNow && !_roll && !_dash;
-  if(moving){const len=Math.sqrt(mdx*mdx+mdz*mdz)||1,dx=(_roll||_dash)?mdx:mdx/len*spd,dz=(_roll||_dash)?mdz:mdz/len*spd;
+  let _iceStep=false; /* S2476 — ice: the step eases (iceTick, 50-travel.js); a roll or a dash on it hands on its own speed */
+  if(typeof iceTick==='function'){const _ir=iceTick(moving?mdx:0,moving?mdz:0,spd,dt,!!(_roll||_dash));if(_ir){mdx=_ir.dx;mdz=_ir.dz;moving=!!(mdx||mdz);_iceStep=true;}}
+  if(moving){const len=Math.sqrt(mdx*mdx+mdz*mdz)||1,dx=(_roll||_dash||_iceStep)?mdx:mdx/len*spd,dz=(_roll||_dash||_iceStep)?mdz:mdz/len*spd;
     // Extra forward displacement during lunge — added to the WASD-driven dx/dz.
     // Magnitude is (_lungeMult - 1) × spd so the total forward component
     // resolves to spd × _lungeMult (matching the design intent of "forward
