@@ -39,7 +39,7 @@
 //   light low) or 'sealed' (bound: whole, smaller, tighter, a whipping of pale thread round its middle). o.school dresses the light.
 // All -> { group, tris, draws, top, grip | ring | handle } (the grip's or the ring's place in the prop's own frame). One mesh per material.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mat, worldUV } from './common.js';
 import { stream } from './pieces.js';
 
@@ -336,4 +336,125 @@ export function greatKnot(o = {}, r = stream('knot')) {
     if (state === 'torn') { tube([K.clone().add(new THREE.Vector3(0, -.3, 0)), K.clone().add(new THREE.Vector3(.2, -3, .3)), K.clone().add(new THREE.Vector3(.1, -5.5, .2))], .04, tk, 24); tube([top, top.clone().add(new THREE.Vector3(.1, .9, 0)), top.clone().add(new THREE.Vector3(.4, .5, .3))], .04, tk, 12); }
     else tube([K.clone().add(new THREE.Vector3(0, -.3, 0)), K.clone().lerp(top, .5).add(new THREE.Vector3(0, 0, .8)), top], .04, tk, 64); }
   return finish({ knot: K.toArray().map(v => +v.toFixed(2)), ring: { top: +(Cy + RO).toFixed(2), centre: [0, +Cy.toFixed(2), Zr], RO, RI, depth: D }, threads, ends: ends.length, stone, state, place: high ? 'high' : 'low', school });
+}
+
+// ── Rare materials B's props (Session 2500; docs/design/rare-materials.md, Michael's B on #1840: "one look session gives the crater, the
+// streak, the script stone, the pine and the oyster bed as kit pieces"). The game's stand-ins are 50-travel.js's starMesh and skyMesh and
+// 68-dungeon-misc.js's gateSigilLay. The oyster bed waits on #1861 (where the beds lie); the streak is the sky's (89-world-land.js).
+// starCrater(o, r): a fallen star, "6 m across, scorched, with a dark lump that glints at night within 40 m" (3 pieces of star iron,
+//   struck with a mithril pick). y 0 is the ground it fell on; o.ground(x, z) (default flat) drapes the crater's own ground on the
+//   land, so in the game it is laid over worldH as a decal with depth. A bowl 0.8 m deep and 6 m across its rim, the rim thrown up 0.35 m
+//   and the ejecta falling away to 2.2 radii, the more of it downrange (o.from, the bearing the star came from, radians round y; the
+//   bowl is stretched 12% along it). The ground is one mesh of vertex colour: charcoal in the bowl, burnt umber on the rim, singed grass
+//   out to the ejecta's edge, the land's own green past it (o.grass). Overturned turfs on the rim (green side down, their roots up),
+//   clods and split stones thrown out. The lump: three lobes of star iron fused, half sunk in the bowl's floor, pitted (thumbprints),
+//   a black fusion crust; flecks of bright metal in the pits, the glint (material 'glint', its emissive the game's to raise at night
+//   within 40 m; o.night sets it here). o.left (0 to 3, default 3): lobes still there; 0 leaves the torn pit.
+// skywoodPine(o, r): skywood, "one lone pine on each of the Mark's peaks, above the tree line". A wind-shaped summit pine of 8 to 10 m
+//   on a crown of bare rock: a pale silver trunk twisting up and leaning lee (o.wind, the bearing the wind blows toward), its roots
+//   gripping the rock; its boughs flagged to the lee, silver-blue needle pads in flattened tiers, the windward side bare. Nothing else
+//   on a peak looks like it, so it reads from the valley. o.felled: the stump (its pale cut face and rings) and the roots; the 30 days'
+//   regrowth is the game's (the pine back whole).
+// scriptStone(o, r): a sigil stone, "one script stone beside the crystal vein" in a failing or catastrophic gate's keep. The game's
+//   slab (0.7 by 1.15 by 0.2 m) set upright against the keep's wall, of the gate's dark stone, its face cut with the school's script
+//   lit in the school's light (o.school), cracked as the gate is failing: a split across it, a corner spalled off, the script's light
+//   uneven along the split. A stub of the keep's wall behind it and the crystal vein beside (1.4 m along, as the game lays them).
+//   o.cut: the stone has been cut: the inscribed face hewn out to a ragged socket, its script dark, chips on the floor.
+export function starCrater(o = {}, r = stream('star')) {
+  const { put, finish } = kit(), M = mats(), R = 3, from = o.from ?? r() * Math.PI * 2, left = Math.max(0, Math.min(3, o.left ?? 3)), G = o.ground || (() => 0);
+  if (!M.iron8) { M.crust = mat('rock', { ns: 2.4, color: 0x4a4642, rough: .5 }); M.crust.metalness = .3; M.earth = mat('rock', { ns: 1.6, color: 0x7a6248, rough: 1 }); M.turf = mat('rock', { ns: 1.2, color: 0x5c6a34, rough: 1 }); M.iron8 = true; }
+  M.glint = new THREE.MeshStandardMaterial({ color: 0x9aa4b0, roughness: .15, metalness: 1, emissive: new THREE.Color(.62, .76, 1), emissiveIntensity: o.night ? 2.6 : .05 });
+  const fx = Math.sin(from), fz = Math.cos(from); /* the star came from (fx, fz): downrange is -(fx, fz) */
+  const prof = d => { const t = d / R; if (t < .86) return -.8 * (1 - (t / .86) ** 2) + .32 * (t / .86) ** 4; if (t < 1) return .32 + .03 * Math.sin((t - .86) / .14 * Math.PI / 2); return .35 * Math.exp(-(((t - 1) / .45) ** 2) * 1.3); };
+  // the ground: a disc of rings to 2.2 R, each vertex its height on the profile (in the bowl's own frame, stretched downrange) and its colour
+  const RINGS = 30, SEG = 64, RO = 2.2 * R, pos = [], col = [], idx = [], ph = [r() * 9, r() * 9, r() * 9], cA = new THREE.Color(.07, .06, .055), cB = new THREE.Color(.24, .15, .09), cC = new THREE.Color(.34, .3, .17), cD = new THREE.Color(o.grass ?? 0x6c7a3c), c = new THREE.Color();
+  for (let i = 0; i <= RINGS; i++) { const rad = RO * (i / RINGS) ** 1.25; for (let k = 0; k < (i ? SEG : 1); k++) { const a = k / SEG * Math.PI * 2, x = Math.sin(a) * rad, z = Math.cos(a) * rad;
+    const al = -(x * fx + z * fz), ac = x * fz - z * fx, d = Math.hypot(al / (al > 0 ? 1.12 : 1), ac), n = Math.sin(x * 1.7 + ph[0]) * Math.sin(z * 1.9 + ph[1]) * .5 + Math.sin(x * 4.1 + ph[2]) * Math.sin(z * 3.7 + ph[0]) * .25;
+    const fade = Math.max(0, 1 - Math.max(0, rad - RO * .82) / (RO * .18)), down = Math.max(0, al / (rad || 1)); /* the ejecta lies downrange */
+    let y = prof(d) * (d > R * 1.1 ? (.55 + .9 * down) : 1) + n * .07 * Math.min(1, d / R + .2); y *= fade; pos.push(x, G(x, z) + y, z);
+    const t = d / R, ray = .5 + .5 * Math.sin(Math.atan2(x, z) * 9 + ph[2] + 2 * Math.sin(Math.atan2(x, z) * 3)), burn = Math.max(0, 1 - Math.max(0, t - 1.05) / (.5 + (.6 + .9 * ray) * (.4 + down))) * (1 + .3 * n); c.copy(t < .8 ? cA : t < 1.1 ? cA.clone().lerp(cB, (t - .8) / .3) : cB.clone().lerp(cC, Math.min(1, (t - 1.1) / .5)));
+    c.lerp(cD, Math.min(1, Math.max(0, 1 - burn)) * (t > 1.1 ? 1 : 0)); col.push(c.r, c.g, c.b); } }
+  const at = (i, k) => i ? 1 + (i - 1) * SEG + (k % SEG) : 0; for (let k = 0; k < SEG; k++) idx.push(0, at(1, k), at(1, k + 1)); for (let i = 1; i < RINGS; i++) for (let k = 0; k < SEG; k++) idx.push(at(i, k), at(i + 1, k), at(i + 1, k + 1), at(i, k), at(i + 1, k + 1), at(i, k + 1));
+  const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); gg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); gg.setIndex(idx); gg.computeVertexNormals(); worldUV(gg, .5);
+  const hAt = (x, z) => { const al = -(x * fx + z * fz), ac = x * fz - z * fx, d = Math.hypot(al / (al > 0 ? 1.12 : 1), ac); return G(x, z) + prof(d); };
+  // overturned turfs on the rim, roots up; clods and split stones thrown out, the most of them downrange
+  for (let i = 0; i < 16; i++) { const a = from + Math.PI + (r() - .5) * (i < 11 ? 2.6 : 6.2), d = R * (1.0 + r() * .35), x = Math.sin(a) * d, z = Math.cos(a) * d, s = .35 + r() * .3;
+    const g = rough(new THREE.BoxGeometry(s, .12, s * .7, 2, 1, 2), r, .03, 5); put(g, 'earth', x, hAt(x, z) + .05, z, (r() - .5) * .8, a, (r() - .5) * .8); put(new THREE.BoxGeometry(s * .96, .04, s * .66), 'turf', x, hAt(x, z) - .005, z, (r() - .5) * .3, a, 0); }
+  for (let i = 0; i < 22; i++) { const a = from + Math.PI + (r() - .5) * (i < 15 ? 2.2 : 6.2), d = R * (1.1 + r() * 1.1), x = Math.sin(a) * d, z = Math.cos(a) * d, s = .05 + r() * .1;
+    put(rough(new THREE.IcosahedronGeometry(s, 0), r, s * .25, 6).scale(1, .6, 1), i % 4 ? 'earth' : 'rock', x, hAt(x, z) + s * .35, z, r(), r() * 6, r()); }
+  // the lump: three lobes of star iron fused, half sunk, the first two lobes the biggest; thumbprints from a fine noise, glints in the pits
+  const lumpC = [-fx * .3, 0, -fz * .3], ly = hAt(lumpC[0], lumpC[2]); let lobes = [];
+  const L = [[0, .0, 0, .55], [.42, -.05, .22, .42], [-.3, -.08, .36, .36]];
+  for (let i = 0; i < left; i++) { const [x, y, z, s] = L[i]; let g = new THREE.IcosahedronGeometry(s, 4); g.deleteAttribute('normal'); g.deleteAttribute('uv'); g = mergeVertices(g); g.scale(1.15, .78, 1); rough(g, r, s * .16, 2.4); rough(g, r, s * .09, 11); rough(g, r, s * .05, 23); /* the thumbprints: pits of a hand's breadth and a finger's */
+    const rx = lumpC[0] + x * Math.cos(from) - z * Math.sin(from), rz = lumpC[2] + x * Math.sin(from) + z * Math.cos(from); put(g, 'crust', rx, ly + y + s * .32, rz, r() * .4, from + r(), r() * .3); lobes.push([+rx.toFixed(2), +(ly + y + s * .32).toFixed(2), +rz.toFixed(2), s]);
+    for (let k = 0; k < 14; k++) { const u = r() * Math.PI * 2, v = .15 + r() * .75, p = [rx + Math.sin(u) * Math.sin(v * 1.6) * s * 1.02, ly + y + s * .32 + Math.cos(v * 1.6) * s * .7, rz + Math.cos(u) * Math.sin(v * 1.6) * s * 1.02];
+      put(new THREE.TetrahedronGeometry(.012 + r() * .014), 'glint', ...p, r() * 3, r() * 3, r() * 3); } }
+  if (left < 3) for (let i = 0; i < 6 + (3 - left) * 4; i++) { const a = r() * 6.3, d = r() * .9, x = lumpC[0] + Math.sin(a) * d, z = lumpC[2] + Math.cos(a) * d; put(rough(new THREE.IcosahedronGeometry(.05 + r() * .06, 0), r, .01, 8), 'crust', x, hAt(x, z) + .03, z, r(), r(), r()); } /* the struck lobes' chips */
+  const out = finish({ R, from: +from.toFixed(3), left, lump: [+lumpC[0].toFixed(2), +ly.toFixed(2), +lumpC[2].toFixed(2)], lobes, depth: +(-prof(0)).toFixed(2), rim: +prof(R).toFixed(2) });
+  const gm = new THREE.Mesh(gg, new THREE.MeshStandardMaterial({ map: M.rock.map, normalMap: M.rock.normalMap, vertexColors: true, roughness: 1 })); gm.name = 'ground'; gm.receiveShadow = true; out.group.add(gm);
+  out.tris += idx.length / 3; out.draws += 1; out.hAt = hAt; return out;
+}
+
+export function skywoodPine(o = {}, r = stream('skywood')) {
+  const { put, finish } = kit(), M = mats(), wind = o.wind ?? r() * Math.PI * 2, wx = Math.sin(wind), wz = Math.cos(wind), H = 8 + r() * 2;
+  if (!M.skyBark) { M.skyBark = mat('wood', { ns: 1.4, color: 0xc9c4bb, rough: .8 }); M.skyNeedle = mat('rock', { ns: .8, color: 0xa4c0cc, rough: .7 }); M.skyCut = mat('wood', { ns: .5, color: 0xe8dcc0, rough: .8 }); M.summit = mat('rock', { ns: 1.5, color: 0x8c8a84, rough: .95 }); }
+  // the summit's crown of bare rock: three rough boulders, the pine standing in the cleft between them
+  for (let i = 0; i < 4; i++) { const a = i * 1.7 + r(), d = .9 + r() * 1.1, s = .7 + r() * .7; put(rough(new THREE.IcosahedronGeometry(s, 2), r, s * .2, 2.2), 'summit', Math.sin(a) * d, s * .25 - .15, Math.cos(a) * d, r(), r() * 6, r()); }
+  // the trunk: a twisting curve leaning lee, its girth 0.42 m at the foot to 0.08 at the leader
+  const pts = []; for (let k = 0; k <= 8; k++) { const t = k / 8, lean = 1.4 * t * t + .5 * t, tw = Math.sin(t * 5 + r()) * .18; pts.push(new THREE.Vector3(wx * lean + wz * tw, t * H, wz * lean - wx * tw)); }
+  const curve = new THREE.CatmullRomCurve3(pts); if (!o.felled) { const g = new THREE.TubeGeometry(curve, 24, 1, 9); const P = g.attributes.position, c0 = new THREE.Vector3();
+    for (let i = 0; i < P.count; i++) { const seg = Math.floor(i / 10) / 24; curve.getPointAt(Math.min(1, seg), c0); const v = new THREE.Vector3().fromBufferAttribute(P, i).sub(c0), rad = .42 * (1 - seg) ** 1.2 + .06; v.multiplyScalar(rad); P.setXYZ(i, c0.x + v.x, c0.y + v.y, c0.z + v.z); }
+    g.computeVertexNormals(); put(g, 'skyBark', 0, 0, 0, 0, 0, 0, .8); }
+  // the roots: five, gripping over the rock and down into the cleft
+  for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2 + r() * .6, d = .9 + r() * .8, p = [new THREE.Vector3(0, .5, 0), new THREE.Vector3(Math.sin(a) * d * .45, .45 + r() * .2, Math.cos(a) * d * .45), new THREE.Vector3(Math.sin(a) * d, -.05, Math.cos(a) * d), new THREE.Vector3(Math.sin(a) * (d + .4), -.4, Math.cos(a) * (d + .4))];
+    put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(p), 8, .1 + r() * .05, 6), 'skyBark', 0, 0, 0, 0, 0, 0, .8); }
+  let pads = 0, cut = null;
+  if (!o.felled) {
+    // boughs: from 3 m up, flagged to the lee; each ends in a flattened pad of needles, the pads in tiers; the windward side is bare
+    const nB = 12 + Math.floor(r() * 4); for (let b = 0; b < nB; b++) { const t = .28 + .68 * b / nB + (r() - .5) * .04, base = curve.getPointAt(Math.min(.97, t)), lee = (r() - .5) * 2.2 * (1 - .3 * t), ang = wind + lee;
+      const len = (1 - t) * 3.0 + .6 + r() * .9, tip = base.clone().add(new THREE.Vector3(Math.sin(ang) * len, (r() - .2) * .7, Math.cos(ang) * len)), mid = base.clone().lerp(tip, .5); mid.y -= .35 + r() * .3; /* the bough droops, then lifts at its tip */
+      put(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(base, mid, tip), 6, .07 * (1.2 - t) + .025, 5), 'skyBark', 0, 0, 0, 0, 0, 0, .8);
+      const nP = 2 + Math.floor(r() * 3); for (let p = 0; p < nP; p++) { const u = .35 + .65 * (p + r() * .5) / nP, q = new THREE.QuadraticBezierCurve3(base, mid, tip).getPoint(Math.min(1, u)), s = (1.0 - t * .45) * (.5 + r() * .45);
+        const g = rough(new THREE.IcosahedronGeometry(s, 2), r, s * .32, 2.6); g.scale(1.35, .55 + r() * .2, .95);
+        put(g, 'skyNeedle', q.x + (r() - .5) * .3, q.y + .1 + r() * .15, q.z + (r() - .5) * .3, (r() - .5) * .35, ang + (r() - .5) * .6, (r() - .5) * .35); pads++; } }
+    const top = curve.getPointAt(1); { const g = rough(new THREE.IcosahedronGeometry(.7, 2), r, .12, 3); g.scale(.9, .7, .9); put(g, 'skyNeedle', top.x, top.y - .1, top.z); pads++; }
+  } else {
+    // felled: the trunk sawn and cut through at 0.6 m (the hatchet's notch on the lee side), its pale face and rings
+    const sH = .6; cut = sH; const g = new THREE.CylinderGeometry(.4, .47, sH, 12); put(g, 'skyBark', 0, sH / 2, 0); put(new THREE.CircleGeometry(.39, 16).rotateX(-Math.PI / 2), 'skyCut', 0, sH + .004, 0);
+    for (let k = 1; k < 4; k++) put(new THREE.TorusGeometry(.1 * k, .006, 3, 24).rotateX(Math.PI / 2), 'dark', 0, sH + .008, 0);
+    for (let i = 0; i < 8; i++) put(new THREE.BoxGeometry(.06 + r() * .06, .02, .03 + r() * .03), 'skyCut', wx * (.6 + r()) + (r() - .5), .03, wz * (.6 + r()) + (r() - .5), 0, r() * 6, 0); /* the chips */
+  }
+  // finish() reruns the kit's mesh per material: the trunk and roots are one mesh, the pads another
+  const out = finish({ H: +H.toFixed(2), wind: +wind.toFixed(3), pads, felled: !!o.felled, cut, lean: +Math.hypot(pts[8].x, pts[8].z).toFixed(2) });
+  return out;
+}
+
+const SCHOOL_GLOW = { tine: [1.0, .40, .12], uisce: [.30, .72, 1.0], cloch: [1.0, .66, .30], scath: [.70, .34, 1.0], solas: [1.0, .86, .52], gaoth: [.66, .92, 1.0] };
+export function scriptStone(o = {}, r = stream('sigilstone')) {
+  const { put, finish } = kit(), M = mats(), school = SCHOOL_GLOW[o.school] ? o.school : 'cloch', G = SCHOOL_GLOW[school], cut = !!o.cut, SW = .7, SH = 1.15, ST = .2;
+  if (!M.sigilRock) M.sigilRock = mat('rock', { ns: 1.3, color: 0x3e3a35, rough: .6 }); /* one block of the gate's stone, no coursing */
+  const sk = 'sscript:' + school; if (!M[sk]) { const t = scriptTex(stream('sigil-script:' + school), '#ffffff'); t.repeat.set(1, .5); M[sk] = new THREE.MeshBasicMaterial({ color: new THREE.Color(...G).multiplyScalar(1.9), map: t, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }); /* light only, so the torch never shows the panel */
+    M['crystal:' + school] = new THREE.MeshStandardMaterial({ color: new THREE.Color(...G).multiplyScalar(.5), emissive: new THREE.Color(...G), emissiveIntensity: .7, roughness: .15, metalness: .1, transparent: true, opacity: .85 }); }
+  // the keep's wall behind: dressed blocks of the gate's stone, 4 m long, 3 m up, its face at z = 0; the stone's foot stands 8 cm off it
+  for (let row = 0; row < 5; row++) for (let k = -2; k < 3; k++) { const w = .78 + r() * .1, x = k * .8 + (row % 2) * .4; if (Math.abs(x) > 2.1) continue; put(new THREE.BoxGeometry(w, .58, .6), 'gateStone', x, .3 + row * .6, -.3 - (r() * .02), 0, 0, (r() - .5) * .01, .4); }
+  put(new THREE.BoxGeometry(4.6, .2, 2.6), 'slab', 0, -.1, .9, 0, 0, 0, .4);
+  // the vein beside it, 1.4 m along the wall: a cluster of the school's crystal from the floor
+  for (let i = 0; i < 7; i++) { const h = .35 + r() * .55, g = new THREE.CylinderGeometry(0, .07 + r() * .05, h, 6); g.translate(0, h / 2, 0); put(g, 'crystal:' + school, -1.4 + (r() - .5) * .4, 0, .15 + r() * .2, (r() - .5) * .7, r() * 6, (r() - .5) * .7); }
+  // the stone: a slab leaning back 3.4° onto the wall, its arrises worn; split across a third of the way up, the top piece slipped 1.5 cm and
+  // turned; one upper corner spalled off. Built as two pieces (below and above the split), each a box with a few noisy vertices
+  const tilt = -.06, split = .38 + r() * .1, slip = .015, part = (y0, y1, spall) => { const h = y1 - y0, g = new THREE.BoxGeometry(SW, h, ST, 6, Math.max(2, Math.round(h * 10)), 2), P = g.attributes.position;
+    for (let i = 0; i < P.count; i++) { let x = P.getX(i), y = P.getY(i) + h / 2 + y0, z = P.getZ(i); if (spall && x > SW / 2 - .18 && y > SH - .22 && (x - (SW / 2 - .18)) + (y - (SH - .22)) > .14) { const s = (x - (SW / 2 - .18)) + (y - (SH - .22)) - .14; x -= s * .5; y -= s * .5; z -= z > 0 ? s * .4 : 0; }
+      P.setXYZ(i, x, y, z); } rough(g, r, .008, 9); return g; };
+  const zc = ST / 2 + .08, below = SH * split;
+  put(part(0, below - .006, false), 'sigilRock', 0, 0, zc, tilt, 0, 0, .5); put(part(below + .006, SH, true), 'sigilRock', slip, -.004, zc + .01, tilt, .04, -.03, .5);
+  put(new THREE.BoxGeometry(SW + .02, .012, ST - .02).translate(0, below, 0), 'dark', 0, 0, zc, tilt, 0, 0); /* the split's shadowed line */
+  const face = zc + ST / 2 + .003; let lit = 0;
+  if (!cut) { /* the script, in two panels split by the crack, each lit; the upper dimmer, the light failing where the stone is broken */
+    const pl = (y0, y1, key, dz = 0) => { const g = new THREE.PlaneGeometry(SW - .3, y1 - y0); g.translate(0, (y0 + y1) / 2, 0); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * (y1 - y0) / SH * 2 + y0 / SH * 2); put(g, key, dz ? slip : 0, 0, face + dz, tilt, dz ? .04 : 0, 0, null); lit++; };
+    pl(.08, below - .03, sk); pl(below + .03, SH - .12, sk, .014); }
+  else { /* cut: the inscribed face hewn out to a socket 6 cm deep, its walls ragged, the script gone with it; chips at the foot */
+    const g = rough(new THREE.BoxGeometry(SW - .16, SH - .26, .07, 4, 6, 1), r, .012, 7); g.translate(0, .13 + (SH - .26) / 2, 0); put(g, 'dark', 0, 0, face - .03, tilt, 0, 0);
+    for (let i = 0; i < 14; i++) { const s = .025 + r() * .05; put(rough(new THREE.IcosahedronGeometry(s, 0), r, s * .2, 9), 'sigilRock', (r() - .5) * 1.1, s * .3, zc + .2 + r() * .55, r(), r() * 6, r()); } }
+  const out = finish({ school, cut, size: [SW, SH, ST], face: +face.toFixed(3), split: +below.toFixed(3), lit, vein: [-1.4, 0, .25] });
+  return out;
 }
