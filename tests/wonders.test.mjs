@@ -8,6 +8,7 @@
 // Session 2419: the Drowned Spires off a Gatelands strand, walked from the strand through every tower.
 // Session 2450: the veins laid before the Spires' stamp are set on its ground, or taken away from its solids, decks and water.
 // Session 2468: the Scarred Gate on Aurenne's dunes, walked up its plinth and through the ring.
+// Session 2487: the Gate Isles off a Gatelands shore, climbed from the water to each ring's sill; a ship stops off their rock.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -284,6 +285,52 @@ check(`its ${gw.sol} solids: the ring's foot either side of the opening and ever
 check(`its ${gw.herbs.length} herbs within reach sit on the ground, none in a stone (worst ${Math.max(0, ...gw.herbs)} m off)`, gw.herbs.every(d => d < .3), gw.herbs);
 const gd = await page.evaluate(() => { const S = WONDERS.scarred; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:scarred').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'scarred').length }; });
 check('2.5 km off it is dropped, its solids and steps with it', gd.gone && gd.sol === 0 && gd.plats === 0, gd);
+// Session 2487: the Gate Isles (OG-104; Michael's A on #1791, reached by boat) off a Gatelands shore. The place is the seed's: the first isle
+// 250 to 600 m off a Gatelands shore, every isle in open water, clear of every pad and the other Gatelands wonders; the prototype's five
+// rings (the third broken), nothing lit; on every standing isle you climb from the water up the landing, over the crown and the plinth's
+// steps to the ring's sill; the cliff all round, the stacks and the ring's feet are solid, the opening is not; a ship sailed at an isle
+// stops off its rock; it goes when you leave.
+const is = await page.evaluate(() => { const a = wonderIslesSite(); WONDERS.isles.site = undefined; const t0 = performance.now(), b = wonderIslesSite(), ms = Math.round(performance.now() - t0);
+  if (!b) return { none: true }; const O = { x: b.ox, z: b.oz, ry: b.ry }, pts = [0, -270, -580, -930, -1330].map(l => wonderToWorld(O, 0, l)), sites = [...CELLS.values()].flatMap(c => c.sites);
+  const near = Math.min(...pts.map(([x, z]) => sites.reduce((m, t) => Math.min(m, Math.hypot(t.x - x, t.z - z) - (t.pad || 0)), 1e9))), ws = [wonderRingSite(), wonderLoughSite(), wonderSpiresSite()].filter(Boolean);
+  const wonder = Math.min(...pts.map(([x, z]) => Math.min(...ws.map(w => Math.hypot(w.x - x, w.z - z)))));
+  return { ...b, ms, same: JSON.stringify(a) === JSON.stringify(b), near: Math.round(near), wonder: Math.round(wonder) }; });
+console.log(JSON.stringify(is));
+check(`the Gate Isles run out from ${is.shore} m off a Gatelands shore in ${-is.y} m of water, a far coast ${is.far} m past the last, the same asked twice (${is.ms} ms)`, !is.none && is.shore >= 250 && is.shore <= 600 && is.y <= -8 && is.same, is);
+check(`every isle ${is.near} m past the nearest pad and ${is.wonder} m from the nearest Gatelands wonder`, is.near >= 400 && is.wonder >= 1200, is);
+const iat = await page.evaluate((s) => { const [x, z] = wonderToWorld({ x: s.ox, z: s.oz, ry: s.ry }, 30, 0); return { x, z }; }, is);
+await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), iat);
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [iat.x, iat.z], { timeout: 60000 });
+await g.cells(); await g.hide();
+const iw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.isles, W = S.W, st = S.site; if (!W) return { none: true };
+  let meshes = 0, lit = 0; W.group.traverse(o => { if (o.isMesh) { meshes++; if (o.material.emissive && o.material.emissive.getHex() !== 0) lit++; } });
+  const O = { x: st.ox, z: st.oz, ry: st.ry }, P = (lx, lz) => wonderToWorld(O, lx, lz), y = (lx, lz) => +(activeTerrainH(...P(lx, lz)) - SEA_Y).toFixed(2), so = (lx, lz, yy) => solidAt(...P(lx, lz), yy == null ? null : yy + SEA_Y);
+  const isles = W.isles.map(I => { const z = I.z, path = [];
+    for (let x = I.stair.x1 - 1; x >= 20; x -= 1) path.push([x, z]); for (let lz = z; lz <= z + 9; lz += 1) path.push([20, lz]); for (let x = 20; x >= 0; x -= 1) path.push([x, z + 9]); for (let lz = z + 9; lz >= z + 1; lz -= .5) path.push([0, lz]);
+    const walk = path.map(([a, b]) => { const h = y(a, b); return { h, blk: so(a, b, h) }; }); let rise = 0; for (let k = 1; k < walk.length; k++) rise = Math.max(rise, walk[k].h - walk[k - 1].h);
+    const T = [.5, 1.5, 2.5, 3.5, 4.5, 5.5], hd = t => W.head(I.i, t);
+    return { i: I.i, cond: I.cond, gone: I.gone, start: walk[0].h, sill: y(0, z), top: Math.max(...walk.map(q => q.h)), rise: +rise.toFixed(2), blocked: walk.filter(q => q.blk).length,
+      cliff: T.every(t => so(Math.cos(t) * (hd(t) + 2), z + Math.sin(t) * (hd(t) + 2), 13)), swim: T.every(t => so(Math.cos(t) * (hd(t) + 7.5), z + Math.sin(t) * (hd(t) + 7.5), 0)),
+      stacks: I.stacks.every(q => so(q.x, q.z, 0)), feet: so(-7, z, W.P) && so(7, z, W.P), open: !so(0, z, y(0, z)), lost: I.lost.filter(q => q.top > .9).every(q => so(q.x, q.z, y(q.x, q.z))) }; });
+  const cr = Math.cos(st.ry), sr = Math.sin(st.ry), onRock = (ZONES.world.herbs || []).filter(h => { const dx = h.x - st.ox, dz = h.z - st.oz, lx = dx * cr - dz * sr, lz = dx * sr + dz * cr; return W.isles.some(I => Math.hypot(lx, lz - I.z) < W.head(I.i, Math.atan2(lz - I.z, lx)) + 36); }).map(h => h.id);
+  return { tris: W.tris, draws: W.draws, meshes, lit, inScene: W.group.parent === sc, sol: S.sol.length, plats: S.plats.length, P: W.P, isles, onRock }; });
+console.log(JSON.stringify(iw));
+const II = iw.isles || [], up = II.filter(q => q.cond === 'stand');
+check(`within 1.6 km the five stand: rings ${II.map(q => q.cond[0]).join('')}, the third's ${II[2] && II[2].gone} stones down; ${iw.tris} triangles in ${iw.draws} draws, nothing lit`, !iw.none && iw.inScene && II.map(q => q.cond[0]).join('') === 'ssbss' && II[2].gone > 0 && iw.draws === iw.meshes && iw.draws <= 6 && iw.tris < 60000 && iw.lit === 0, iw);
+check(`on each standing isle you climb from the water (${up.map(q => q.start).join(', ')} m) up the landing, over the crown and the plinth to the sill at ${up.map(q => q.top).join(', ')} m, no rise over ${Math.max(...up.map(q => q.rise))} m, nothing in the way`, up.length === 4 && up.every(q => q.start < 0 && Math.abs(q.top - (iw.P + .6)) < .01 && q.sill === q.top && q.rise < 1.5 && q.blocked === 0), up);
+check(`its ${iw.sol} solids: every isle's cliff all round, to the walker on the lip and the swimmer at its foot; the stacks, the rings' feet and the lost stones; the opening is clear`, II.every(q => q.cliff && q.swim && q.stacks && q.feet && q.open && q.lost), II);
+check(`no herb is left on or in an isle's rock (${iw.onRock && iw.onRock.length}; a sea-bed herb stood on the first crown before)`, iw.onRock && iw.onRock.length === 0, iw.onRock);
+const ish = await page.evaluate(() => { const S = WONDERS.isles, st = S.site, O = { x: st.ox, z: st.oz, ry: st.ry }, I = S.W.isles[1], [ax, az] = wonderToWorld(O, 0, I.z), [bx, bz] = wonderToWorld(O, 160, I.z), L = Math.hypot(bx - ax, bz - az), ux = (ax - bx) / L, uz = (az - bz) / L;
+  const keep = worldState.ship; worldState.ship = { cls: 'sloop', name: 'Test Helm', sails: 0, cargo: 0 }; WORLD.spawnShip(bx, bz, Math.atan2(-ux, -uz));
+  const clearAtStart = !hullStoneAhead(SHIP.x, SHIP.z, SHIP.yaw, 1, SHIP.L, SHIP.W); SHIP.sailing = true; HELD_KEYS.KeyW = true;
+  let closest = 1e9, top = 0; for (let k = 0; k < 1800; k++) { tickShip(1 / 60); closest = Math.min(closest, Math.hypot(SHIP.x - ax, SHIP.z - az)); top = Math.max(top, Math.abs(SHIP.speed)); }
+  HELD_KEYS.KeyW = false; const fx = -Math.sin(SHIP.yaw), fz = -Math.cos(SHIP.yaw), bow = { x: SHIP.x + fx * (SHIP.L / 2 + 2), z: SHIP.z + fz * (SHIP.L / 2 + 2) };
+  const r = { clearAtStart, closest: +closest.toFixed(1), top: +top.toFixed(1), speed: +SHIP.speed.toFixed(2), foot: Math.round(S.W.head(1, 0) + 8), L: SHIP.L, bed: +(worldH(bow.x, bow.z) - SEA_Y).toFixed(1) };
+  SHIP.sailing = false; sc.remove(SHIP.mesh); SHIP.mesh = null; worldState.ship = keep; return r; });
+console.log(JSON.stringify(ish));
+check(`a ship sailed full ahead (${ish.top} m/s) at the second isle's landing stops ${ish.closest} m from its heart, off the rock (its foot about ${ish.foot} m out)`, ish.clearAtStart && ish.top > 2 && ish.closest >= ish.foot && Math.abs(ish.speed) < .5, ish);
+const idr_ = await page.evaluate(() => { const S = WONDERS.isles; px = S.site.x + 2500; pz = S.site.z; WONDERS._t = 0; tickWonders(); return { gone: !S.W, sol: STATIC_SOL.filter(q => q.cell === 'wonder:isles').length, plats: ZONES.world.platforms.filter(p => p.wonder === 'isles').length }; });
+check('2.5 km off it is dropped, its solids and steps with it', idr_.gone && idr_.sol === 0 && idr_.plats === 0, idr_);
 // Session 2431: no chunk foe on a wonder's ground (S2409: foes stood inside the Northlight Altar's ring). Every chunk whose centre lies
 // within a wonder's ground + 70 m is spawned afresh at 23h (the night's density), with the rule and without it: with it none spawns.
 const wf = await page.evaluate(() => { forceTime(23); const C = WORLD.CHUNK, out = {}, keep = wonderFoeClear;
@@ -295,6 +342,6 @@ const wf = await page.evaluate(() => { forceTime(23); const C = WORLD.CHUNK, out
   forceTime(13); return out; });
 console.log(JSON.stringify(wf));
 const wk = Object.entries(wf).filter(([, v]) => v), off = wk.reduce((m, [, v]) => m + v.off, 0);
-check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 7 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
+check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 8 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
