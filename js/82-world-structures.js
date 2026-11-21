@@ -160,7 +160,7 @@
     const c=L.cell,k=cellKey(c.i,c.j);let solStart=0;L.statics2=[];
     const track=fn=>{const before=sc.children.length;fn();for(let n=before;n<sc.children.length;n++)L.statics2.push(sc.children[n]);};
     return [
-      ()=>{solStart=STATIC_SOL.length;track(()=>{const pts=c.doors.filter(e=>dungeonWorldPos[e.seed]).map(e=>{const p=makePortalDef(e);const w=dungeonWorldPos[e.seed];p.x=w.x;p.z=w.z;p.zone='world';p.cell=k;p.sigil=!!(e.sigil||e.kind==='fort_door');p.theme=p.theme||e.theme;if(e.lair)p.lair=e.lair;return p;});
+      ()=>{solStart=STATIC_SOL.length;track(()=>{const pts=c.doors.filter(e=>dungeonWorldPos[e.seed]&&!(e.hollow&&hollowSite()&&hollowSite().seed===e.seed)).map(e=>{ /* S2474 — the Hollow's gate has no door of its own in the world */const p=makePortalDef(e);const w=dungeonWorldPos[e.seed];p.x=w.x;p.z=w.z;p.zone='world';p.cell=k;p.sigil=!!(e.sigil||e.kind==='fort_door');p.theme=p.theme||e.theme;if(e.lair)p.lair=e.lair;return p;});
         // caves get the engine's door rocks; forts get our keep (the exterior kit had stray shells and walk-through walls)
         spawnPortalMeshes(sc,pts.filter(p=>p.kind!=='fort_door'),STATIC_SOL,worldH);pts.filter(p=>p.kind==='fort_door').forEach(p=>buildFortKeep(p));pts.forEach(p=>{portals.push(p);L.portals.push(p);});});},
       ()=>{L.forts=[];c.doors.filter(e=>e.kind==='fort_door'&&dungeonWorldPos[e.seed]).forEach(e=>{const S=buildFortCompound(e,dungeonWorldPos[e.seed],k);L.forts.push(S);});},
@@ -187,7 +187,7 @@
     const L=LOADED.get(k);if(!L)return;const c=L.cell;
     // settlements in this cell go first
     c.sites.forEach(t=>{if(SETTLE.has(t.id))disposeSettlement(t.id);});
-    if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */
+    if(c._cave&&c._cave.house){const i=ZONES.world.houses.indexOf(c._cave.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1768 — the cave's record */if(c._cove&&c._cove.house){const i=ZONES.world.houses.indexOf(c._cove.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1773 — the sea cave's */if(c._grotto&&c._grotto.house){const i=ZONES.world.houses.indexOf(c._grotto.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1787 — the grotto's */if(c._mine&&c._mine.house){const i=ZONES.world.houses.indexOf(c._mine.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1790 — the mine's */if(c._hollow&&c._hollow.house){const i=ZONES.world.houses.indexOf(c._hollow.house);if(i>=0)ZONES.world.houses.splice(i,1);} /* S2474 — the Hollow's */
     if(c._aq&&c._aq.walks){aqWalkDrop(c._aq.id);c._aq.walks=null;} /* S1927 — the aqueduct's channel */
     bridgeWalkDrop(null,k); /* S2288 — the bridges' decks */
     if(c._wayside&&c._wayside.lamp){unregLight(c._wayside.lamp.light);c._wayside.lamp=null;} /* S2048 — the coach's lamp */
@@ -535,6 +535,46 @@
     for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
     C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
     C.house={id:`g_${C.id}`,type:'limecave',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:50,d:86,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,ice:!!C.ice};
+    if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
+    return M.group;}
+  // S2474 (Michael's A on #1761: "one of the Mark's lesser gates in each seed has the Hollow for its outside; you walk the viaduct through the
+  // light and the door opens on the gate") — the Hollow Below's mouth (PKIT.places.hollow, the room buildKitHollow, 83). One per seed: the
+  // Mark's land cells are taken in an order drawn from their own stream (hollow:cells), and the first whose bare land (read by place, as the
+  // caves' are) has a hillside under the fell is the one: the ground 12 m or more over the sea, a slope of 1 in 5 to 1 in 1.3, the land
+  // rising behind the mouth 4 m by 20 m in and 12 m by 50 m (the fell the cavern lies under), dry before it, 80 m off every pad, 70 m off the
+  // line of every road, 40 m off every lake's rim, 200 m off the cell's cave and mine. Its gate is the cell's lesser gate nearest the mouth
+  // (an unsealed cave door, not a lair's); that gate's door stands nowhere else (placeDoor puts it at the mouth, and no rocks are raised for it),
+  // so the Hollow is its only way in. -> {id, x, z, ry, name, cell, seed} or null, the same whatever has loaded.
+  let HOLLOW_SITE;
+  function hollowSite(){
+    if(HOLLOW_SITE!==undefined)return HOLLOW_SITE;HOLLOW_SITE=null;
+    if(window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.hollow)return null;
+    const L=[];for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){if(!isLandCell(i,j)||(i===HOME_I&&j===HOME_J)||nationKeyOf(i,j)!=='mark')continue;L.push([i,j]);}
+    const rs=PKIT.stream('hollow:cells');for(let n=L.length-1;n>0;n--){const m=Math.floor(rs()*(n+1));[L[n],L[m]]=[L[m],L[n]];}
+    const segD=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);};
+    for(const [i,j] of L){const c=getCell(i,j);if(!c||c.type==='sea'||c.home)continue;
+      const doors=c.doors.filter(e=>e.kind==='cave_door'&&!e.lairDoor&&!e.sigil&&e.zone==='gen');if(!doors.length)continue;
+      const k=cellKey(i,j),r=PKIT.stream('hollow:'+k),byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let jj=j-1;jj<=j+1;jj++)for(let ii=i-1;ii<=i+1;ii++){const n=getCell(ii,jj);if(n&&n.lakes)lakes.push(...n.lakes);}
+      const cave=limeCave(c),mine=mineAt(c);let found=null;
+      withPlace(c.ox+SIZE/2,c.oz+SIZE/2,()=>{for(let t=0;t<160&&!found;t++){const x=c.ox+260+r()*(SIZE-520),z=c.oz+260+r()*(SIZE-520);
+        if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+80)||(cave&&Math.hypot(cave.x-x,cave.z-z)<200)||(mine&&Math.hypot(mine.x-x,mine.z-z)<200))continue;
+        if(c.roadDefs.some(d=>byId[d.a]&&byId[d.b]&&segD(x,z,byId[d.a],byId[d.b])<70)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+40))continue;
+        const h=rawH(x,z);if(h<12)continue;const gx=(rawH(x+4,z)-rawH(x-4,z))/8,gz=(rawH(x,z+4)-rawH(x,z-4))/8,g=Math.hypot(gx,gz);if(g<.2||g>.77)continue;
+        const dx=-gx/g,dz=-gz/g;if(rawH(x+dx*6,z+dz*6)<3||rawH(x-dx*20,z-dz*20)<h+4||rawH(x-dx*50,z-dz*50)<h+12)continue;
+        found={x:+x.toFixed(2),z:+z.toFixed(2),ry:+Math.atan2(dx,dz).toFixed(4)};}});
+      if(!found)continue;
+      let e=doors[0],bd=1e18;for(const d of doors){const dd=Math.hypot(d.x-found.x,d.z-found.z);if(dd<bd){bd=dd;e=d;}}
+      HOLLOW_SITE={id:'hollow_'+e.seed,...found,name:'The Hollow Below',cell:k,seed:e.seed,gate:e.canonicalName||null};e.hollow=true;e.x=found.x;e.z=found.z;break;} /* the gate's own record moved to the mouth, so the maps and the quests find it there before its cell loads */
+    return HOLLOW_SITE;}
+  // its pad before the mouth and the clearing round the outcrop, as a limestone cave's (in the cell's first step)
+  function hollowStamps(c,k){const C=hollowSite();if(!C||C.cell!==k)return [];const s=Math.sin(C.ry),co=Math.cos(C.ry),y=landH(C.x,C.z);
+    return [addStamp({id:C.id+'_pad',kind:'door',x:C.x-s*2.4,z:C.z-co*2.4,r:4.6,blend:5,y,cell:k}),addStamp({id:C.id+'_clear',kind:'door',noFlat:true,x:C.x-s*4,z:C.z-co*4,r:12,blend:2,y,cell:k})];}
+  // the mouth (PKIT.places.cavemouth) on its pad, turned down the slope, its solids, and the Hollow's record in the world's houses (c._hollow)
+  function placeHollow(c,k){const C=hollowSite();if(!C||C.cell!==k)return null;const M=PKIT.places.cavemouth({key:C.id}),y=worldH(C.x,C.z),co=Math.cos(C.ry),s_=Math.sin(C.ry);
+    M.group.position.set(C.x,y,C.z);M.group.rotation.y=C.ry;M.group.name='hollow mouth';sc.add(M.group);
+    for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
+    C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:+(C.x+s_*2.2).toFixed(2),z:+(C.z+co*2.2).toFixed(2),yaw:C.ry+Math.PI};c._hollow=C;
+    C.house={id:`g_${C.id}`,type:'hollow',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'irish',w:50,d:86,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,gateSeed:C.seed};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
   // S1790 (card F8; Michael's A on #305: "the levels as built, lamps only while worked", and his A on #1026: "through a mouth, into a place
@@ -1631,6 +1671,7 @@
   }
   function placeDungeons(){}
   function placeDoor(e,cellK){
+    {const H=e.zone==='gen'&&e.kind==='cave_door'?hollowSite():null;if(H&&H.seed===e.seed){const co=Math.cos(H.ry),s_=Math.sin(H.ry);dungeonWorldPos[e.seed]={x:+(H.x+s_*2.2).toFixed(2),z:+(H.z+co*2.2+2.5).toFixed(2)};CELL_DOORS.push(e);return dungeonWorldPos[e.seed];}} /* S2474 — the Hollow's gate: its door is the Hollow's slit door, and you come up from it before the mouth (goToOW stands you 2.5 m short of a cave door's z) */
     const fortRoad={};ROAD_DEFS.forEach(d=>{if(d.fort)fortRoad[d.fort]=d;});
     {
       let wx,wz;
