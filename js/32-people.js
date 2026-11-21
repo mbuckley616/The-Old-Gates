@@ -2170,6 +2170,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   if(!cast)G.dress=hbRoadVeil(g,G); /* S2343 — an Aurennais on the road draws the wrap's end across the face */
   if(!cast&&!g.child){const O=hbOfficeDress(g,G);if(O)G.dress=O;} /* S2242 — the lord's forester and the Church's inquisitor */
   if(!cast&&g.guildHead)G.dress=hbGuildDress(g,G); /* S2329 (#1658 B) — a guild's head in its livery over their people's own */
+  if(!cast&&!g.child&&!g.guildHead&&!g.power){const T=hbTradeDress(g,G);if(T)G.dress=T;} /* S2503 — the smith's leather apron and hammer, the innkeeper's linen apron */
   HB_GENOMES.set(g.hbKey,G);return G;}
 /* S2353 (backlog L1: OG-048's Crown guards, OG-025's hold guards, OG-044's Compact guards) — a town's guard dressed by their people, in the
    kit's own guard dress (builder.check.mjs's pictures: builder-armour-crown, -shield-crown, builder-scales-guard, -scales-kit). Every guard
@@ -2354,6 +2355,24 @@ function hbDriverLook(g,G){const D=G.dress||{},H=G.hair||{};g.dress=hbLongSkirt(
      chest, arms and legs covered the cloth, so Dunmore's guard was a pale doll in steel until his body came, though hbTint gave the cloth
      the tabard's crimson (S2353). The builder dresses a guard by their people, not by tier: the driver is that dress's colours and the helm */
   if(g.guardTier&&g.eq&&g.eq.armour){const e=Object.assign({},g.eq);delete e.armour;g.eq=e;}}
+/* S2503 (backlog L1, the wardrobe matrix's workwear; the old rig's role dress, S153) — dressed by the trade. The old rig gives a smith or an
+   armourer a leather apron and the hammer, and an innkeeper or a cook a linen one, whatever the roll. The builder's body rolled what
+   anyone rolls, so on the new look every smith in reach of Dunmore stood at the forge in a cloak, three with a basket, none in an apron, and
+   the hammer the driver holds was never drawn (the builder draws its own only in an empty fist, under no long cloak: people.js hammerOn).
+   Now the trade dresses over the roll, as the kit's cast dresses Bram (CAST.Bram): a smith's leather apron with its bib, the sleeves
+   rolled, the hammer in the right fist; an innkeeper's or a cook's apron of undyed linen with its bib, the sleeves rolled. Each keeps
+   their own face, tunic, trousers and hair. What the work has no room for goes: the cloak and its hood, a cape, a coat, whatever the hands
+   held. A smith keeps out of the winter coat too (the forge is warm; hbSeasonDress reads the hammer). Not a guard, an office, a guild's
+   head, the cast, a child or a crew hand (CREW_BODY dresses hers) */
+const HB_TRADE_STRIP={cloak:null,cloakFur:null,cloakHem:null,hood:null,cape:null,mantle:null,coat:null,coatFur:null,coatHood:null,burnous:null,
+  spear:null,staff:null,crossbow:null,shield:null,sword:null,basket:null,basketCloth:null,lantern:null,book:null,tankard:null,chair:null,backpack:null};
+const HB_TRADE=[
+  {re:/smith|armourer/,dress:{apronLeather:true,bib:true,hammer:[.62,.5,.34],sleevesRolled:true,waistcoat:null,sash:null,shoulderWrap:null},
+    aprons:[[.36,.25,.16],[.3,.2,.13],[.24,.17,.11]]},
+  {re:/innkeeper|^cook$/,dress:{apronLeather:false,bib:true,sleevesRolled:true},aprons:[[.8,.76,.66],[.72,.68,.58],[.86,.83,.75]]}];
+function hbTradeDress(g,G){const role=String(g.role||'').toLowerCase();if(/^crew:/.test(g.hbKey||'')||GUARD_ROLE.test(role))return null;
+  const t=HB_TRADE.find(t=>t.re.test(role));if(!t)return null;const D=G.dress||{},n=(pHash((g.hbKey||'')+'|trade')>>>0)%t.aprons.length;
+  return Object.assign({},D,HB_TRADE_STRIP,t.dress,{apron:t.aprons[n]});}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
 // S1763 (L1, OG-109's winter column) — the winter dress: in winter (calDay's season) a share of each people, out of doors, wear the
 // kit's winter coat (S1147) over what they rolled: a Gatelander one in two (fur-trimmed on half), a Markman nearly all (fur-lined,
@@ -2380,7 +2399,7 @@ function hbFeastDress(g,G){const k=g.hbKey+'|feast';let F=HB_GENOMES.get(k);if(F
   HB_GENOMES.set(k,F);return F;}
 function hbSeasonDress(g,G){if(G&&hbFeast())G=hbFeastDress(g,G);if(!G||!hbWinter()||hbIndoors())return G;const fe=!!(G.dress&&G.dress.bands),k=g.hbKey+'|winter',kc=k+(fe?'|feast':'');let W=HB_GENOMES.get(kc);if(W)return W;W=G;
   const D=G.dress||{},people=HB.PEOPLES[g.people]?g.people:'gatelander',P=HB.PEOPLES[people],r=pRng(pHash(k)),pick=a=>a[Math.floor(r()*a.length)%a.length];
-  if(!D.mail&&!D.scales&&!D.tabard&&!D.chair&&r()<(HB_WINTER[people]||0)){
+  if(!D.mail&&!D.scales&&!D.tabard&&!D.chair&&!D.hammer&&r()<(HB_WINTER[people]||0)){
     if(people==='aurennais'){const R=pick(P.robes||[[[.88,.84,.74],[.36,.24,.15]]]);
       W={...G,dress:{...D,cloak:R[0],burnous:true,burnousStripe:R[1],cape:null,cloakFur:null,cloakHem:null,tartan:null,tartanLine:null,hood:!D.wrap&&r()<.3?'up':'down'}};}
     else if(!D.robe){const fur=people==='markman'||people==='gatelander'&&r()<.5;

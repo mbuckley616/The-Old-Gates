@@ -642,6 +642,13 @@ const rolled = await page.evaluate(() => { const one = n => { const P = HB.makeP
 check('Bram\'s sleeves are rolled above the elbow (S1841): the roll drawn, the tunic\'s sleeve holed under it, his forearms\' skin drawn; Corwin\'s sleeves down',
   rolled.bram.gene && rolled.bram.roll && rolled.bram.rollTris > 200 && rolled.bram.hole && rolled.bram.fore > 100 &&
   !rolled.corwin.gene && !rolled.corwin.roll && !rolled.corwin.hole && rolled.corwin.fore < 20, rolled);
+// S2503: dressed by the trade. Dunmore's smith and armourer in the leather apron and bib with the hammer in the fist, its innkeepers in a
+// linen one; no cloak, basket or coat over the work (the roll gave the smiths cloaks and baskets, and no apron)
+const trade = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.hbG && /^dunmore:/.test(r.g.hbKey || '') && /smith|armourer|innkeeper/.test(r.g.role || ''));
+  return rs.map(r => { const D = r.hbG.dress, P = HB.makePerson(r.hbG, HB_LEAN), has = k => !!P.root.getObjectByName(k);
+    return { k: r.g.hbKey, smith: /smith|armourer/.test(r.g.role), apron: has('apron'), bib: has('bib'), hammer: has('hammerHead'), leather: !!D.apronLeather, cloak: !!D.cloak, basket: !!D.basket, coat: !!D.coat }; }); });
+check(`Dunmore's smiths wear the leather apron and hold the hammer, its innkeepers the linen apron, nothing over it (${trade.filter(t => t.smith).length} smiths, ${trade.filter(t => !t.smith).length} innkeepers)`,
+  trade.filter(t => t.smith).length >= 2 && trade.filter(t => !t.smith).length >= 2 && trade.every(t => t.apron && t.bib && !t.cloak && !t.basket && !t.coat && t.leather === t.smith && t.hammer === t.smith), trade);
 await g.close();
 
 // a second boot: the same people, the same bodies
