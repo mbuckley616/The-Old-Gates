@@ -708,7 +708,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - **The weekly run of 22 Nov: twenty suites red on main, every shard finished** (producer, 22 Nov; run 45028889995 on main 18106a6, s1856,
   13:42–16:24 UTC). Each suite below failed on both tries with the same check. The owner comes from the code map, and the owner corrects it
   if it is wrong. Each item is one suite: strike it with the session that fixes it. Not bisected. The failing lines are in the shard's log.
-  - **`guardarmour`** (for the systems builder: a town's guards by prosperity). *Dunmore (prosperity 61) puts its guards in mail*: Cormac's and Fionn's guards and Maeve's watch have `fam: null`.
+  - ~~**`guardarmour`** (for the systems builder: a town's guards by prosperity). *Dunmore (prosperity 61) puts its guards in mail*: Cormac's and Fionn's guards and Maeve's watch have `fam: null`.~~ — done, Session 2534 (the rule holds, tier 3; since S2387 the stand-in sheds the old kit, so the check reads the genome's tier)
   - ~~**`theft`** (for the systems builder: `js/86-world-crime.js`). *An unseen theft costs nothing, but the town keeps count of the gold*; the other theft checks pass.~~ — done, Session 2531
   - **`keepercone`** (for the systems builder: the keepers' walk, `js/88-world-ticks.js`). *At an x bound the keeper turns back in x and keeps its z*: x `{sin -0.955, cos -0.296}`, z the reverse.
   - **`keeperwalk`** (for the systems builder). *The keepers of both towns were walked, counter shops among them (at least 10)*: 7 walked (2 counter shops, the 5 inns none), 85 standing.
