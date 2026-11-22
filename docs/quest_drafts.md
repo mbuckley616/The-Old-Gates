@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 53, 21 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 54, 22 Nov: no new calls on the page)
 
 ---
 
@@ -7709,3 +7709,158 @@ Pay: none. Muirgel gives the player, once, a loaf. The register's *bread* is the
 - Muirgel and Ciarnait: no sentence of Muirgel's runs past eight words; *the glen of grief* is the older name answering the question; *Touch them. Do not read them.* is the Withdrawal's law, unexplained. Ciarnait is thirteen and talks like it.
 - Slurs: *syndicate* (the Compact's of the fen) and *ledger* (Muireann's of an Aurennais) are about work; each is answered by someone who says the opposite (Marcia's *I admire their consistency*, Muireann's *fine people*). Nothing about bodies; Leofric's ear is a bear's work, his own boast.
 - No prophecy, no description of the player, no remark on the player's returns. Muirgel's *You have them. Were you taken in?* asks about the marks the canon gives the Old Blood player, and stops there.
+
+## The Strange and the Legendary, I — the pilgrim in the brass face, the Rooted One, the Veiled Merchant and the Painted Woman
+
+*Unapproved. Drafted 22 Nov 2026.* Backlog L2, *The strange and the legendary* (OG-054, OG-071, OG-079, OG-001's five figures): "Wanderers who turn up; several are candidates for the awake. No companions for the player (Michael's 12 A): the Gateborn Companion becomes a wanderer of its own, or is dropped." The item names twenty figures, too many for one run. This first run takes OG-054 (sheet E11, *the unexplained*) whole, and with it OG-071's Branwen, who is the same figure as OG-054's Rooted One drawn twice. The second run takes the rest of OG-071 (Tomcán, Nell and her beast, Elias, Orvin); the third OG-079's four not yet written (the Salt King, Sister Cairde, the Hollow Bard, the Wretched Abbot; Red Finn is *The Mark's Rings*') and OG-001's five figures (the Veiled, the Collector, the Mariner, the Herald, the Child). As in *Travellers* and *Rivals*, each person stands where the game already has a place for them, does one thing on machinery that exists, and leaves one thread the world remembers. Two **Rule reads** for the systems builder; no line depends on which way either goes.
+
+### What the canon fixes, and where it is silent
+
+- *Strange, not stock; locals treat the strange as ordinary; faces stay familiar* (§10a, §10). Nobody in this draft is surprised by anyone in it. A brass face on the road is a thing your aunt saw once, not a marvel.
+- *The awake look like villains from inside the world* (§10a). One of the four is awake: the Veiled Merchant, whose sheet says he "knows more about the player than they should". The awake are few on purpose (Varek first; *Travellers*' Cuimín and *Faith*'s Calix are the other two drafted), so the Merchant is awake in the smallest way: he keeps accounts, and the player's do not add up. He never says why.
+- *The inconsistent player* (§2.2, §4.2): an Old Blood player is described differently by everyone, and it is never explained. The Painted Woman (*different face, same eyes*) is the same thing seen from the other side, and is left exactly as unexplained. She is not the Guest and is never said to be; she is not a prophecy and nobody applies her to the player.
+- *No chosen-one prophecies; the three descriptions said once, in Act III* (§4.2). Nobody in this draft says or paraphrases *the one who returns*, *the one who walks the shortest road* or *the one who dies and does not*. The Merchant's line on the player's ledger (*days written twice*) is about the player's returns (§3.1's meta reading) and stops at the ledger.
+- *The Cold turns readers grey and cold* (§3.3); *the marks are pale lines under the skin* (§3.1). OG-071 draws Branwen green-grey and overgrown, and its note asks whether she is "a reader gone strange another way". The plainer reading: she is not green. She is grey with the Cold, from one word read long ago, and she has sat still under one tree so long that the moss and the ivy have taken her cloak and her hair. The green is the tree's, not hers.
+- *Names* (§2). *Branwen* is Welsh, in no register; she is Old Blood, and her name is **Bláthnat**, an older Irish form (*little flower*), with no byname. Gatelanders call her *the Rooted One*. The pilgrim is a Gatelander and is **Fiontán**; the name is in the Irish register, and the old one who remembered everything bore it, which the Gatelands would know and he would not mention. The Veiled Merchant gives no name (*a name is a signature, Master, and I sign nothing I have not read*). The Painted Woman has none.
+- *Silent:* constructs. OG-054 draws *the Clockwork Pilgrim*, a brass-faced construct; the canon has placed no made men, and the plainer thing is a man in a brass mask. Fiontán's face was burned at a Tine gate, and a smith in Aurenne made him the face he wears. Whether anything is under it is never asked by anyone polite, and he is never seen without it. If Michael wants a true construct, only the *Who are you?* and *Your face?* answers change.
+- *The Gateborn Companion* is **dropped**. §5 makes the gate-born antibodies that do not speak, do not bond and do not know what they are, and Michael's 12 A gives the player no companion. A frilled gate-born beast that walks calmly beside one person is either a companion or a contradiction of §5, and as a wanderer of its own it would be a foe that does not fight, which the gates do not make. Nothing of it is drafted. The bodies builder's kit keeps its plan, if it has one, for a gate's own beasts.
+
+### The four
+
+| | People | Where | What they do |
+|---|---|---|---|
+| **Fiontán**, the pilgrim in the brass face | Gatelander | on the road between the last two towns the player stood in, the next game-day, walking the way the player went | keeps a chronicle of the roads, a day behind; asks the player to tell him what he missed |
+| **Bláthnat**, the Rooted One | Old Blood | at the foot of the great tree by one Gatelands shrine, chosen once a seed; always there | tells when a rare specimen the player has seen shut will open |
+| **The Veiled Merchant** | Aurennais in speech; his people is never shown | one market square an island a game-week, from dusk to the small hours | sells back anything the player has sold anywhere, at a fifth over what was paid for it; keeps the player's accounts |
+| **The Painted Woman** | none; she is a picture | in the talk of one town in four, by the town | nothing; she is looked at, and looks |
+
+Faces for the bodies builder (the sheet's, with the canon's fixes): Fiontán tall and stooped, a wide straw hat (S2511's), patched pilgrim's robes in undyed wool and a madder sash, a staff, a pack with a ledger strapped to it, and a brass face, smooth, with two eye-holes and no mouth-slit; his hands are a Gatelander's and scarred. Bláthnat small and grey-pale, the Old Blood's black hair gone to moss at the ends, ivy over a grey cloak, the marks up both forearms to the elbow (the Cold's spread), a bird on her shoulder (a wren, the Gatelands' own bird; the sheet's bluebird is not of these islands), barefoot. The Merchant tall, in a long cream coat, a cream veil over a gold mask with no features but the eyes, gloved; a folding stall of dark wood with a striped awning and a brass lamp. The Painted Woman is never built.
+
+### 1. Fiontán, the pilgrim in the brass face (Gatelander; proverbs, indirection, no bare yes or no, oaths on the Weaver)
+
+He walks the road the player last walked, a game-day behind: on game-day *d*, if the player stood in town A and then town B on day *d*−1 (the last two settlements entered, in order), he is a road traveller on the road from A to B, walking towards B at the pilgrim's pace, from 8h to 18h. If the player has not crossed between two towns the day before, he is not on the roads that day. His voice comes through the mask a little flat; the lines do not mark it.
+
+**Greeting, first:** "Ah, there you are, and here's me only at the part of the road you left yesterday. Don't mind the face. It minds itself."
+**Greeting, again:** "Yourself. I'm a day behind you, as usual. The road tells me where you've been; it never tells me why."
+**Greeting, to a Markman player, first:** "A Mark walk, that, and a Mark pace. I'd know your track in the mud by it. Sit a minute, if a Markman sits."
+**Greeting, to an Aurennais player, first:** "You'll be wanting to know what I charge. Nothing, and that's dearer than it sounds."
+**Greeting, to an Old Blood player, first:** "I've been following someone's tracks for a week, and I'd have sworn they were three different people's. Well. They're yours."
+
+**Topics**
+- *Who are you?* — "Fiontán. A pilgrim, they call me, though I've no shrine at the end of it. I walk the roads and write down what happened on them. Somebody has to. The road forgets faster than a drunk."
+- *Your face?* — "Burned, at a gate in the hills, when I was young and quick and not quick enough. A smith in Aurenne made me this one. She said it would outlast me. I said that was the point of a face, and she charged me double for the wit."
+- *What do you write?* — "What's left on the road when the people have gone. A cart burned at a bend. A camp swept clean. A gate's door standing open that was shut a week ago. You'd be surprised how much of that is yours." With the player's tally from the day he is a day behind: "Yesterday it was {places} and {foes}. I've written it down. It's not my business what it was for." (Rule read: the tally, below.)
+- *Why a day behind?* — "Every road's walked twice: once by the one who does the thing, and once by the one who comes after and wonders. I'm the second sort. It's safer, and the stories are longer."
+- *Do you ever catch up?* — "I'd not say never. But a man who catches up has to start doing things himself, and I'm a poor hand at that."
+
+**His thread: *The Page I Missed*.** Offered once, at the second meeting, with *What do you write?*: "There's a page in this I can't fill. {Gate} was shut when I passed it last, and it's open now, and there's nobody to ask but the one whose tracks go in and come out again. Would you tell it to me? Plain or grand, as you like. I'll write it as told."
+- The gate is the last gate the player has cleared (the floor's boss dead, the gate's record in `worldState`); if none, he does not offer it.
+- *I'll tell you plainly.* — "Plainly, so. I went in, I came out, and I'm here. That's a good page. Most of the old books are pages like that, and they're the ones still read." (`told:'plain'`)
+- *I'll tell it grand.* — "Go on, then. … Twelve of them, was it? And the roof coming in? Weaver, but you've a mouth on you. I'll write every word. A grand page is a page people copy, and copied is kept." (`told:'grand'`)
+- *Leave it blank.* — "Blank it is. A blank page is honest, at least. I'll draw a line under it so they'll know someone was there." (`told:'blank'`)
+- Each telling is remembered on its gate. After three gates told (any way), at the next meeting he gives the player a copy of what he has: *The Road a Day Behind* (a book, below), with: "Here. I made a fair copy of your part. Don't read it near me; I'd sooner not watch a man read about himself. It's like watching him find a grey hair."
+- After the copy: *What do you write?* gains, at the end, "Your part's longer than anyone's. I've had to buy a second book. I'm not complaining. A pilgrim with a heavy pack is a pilgrim with a reason."
+
+**The book: *The Road a Day Behind*** (to `BOOKS`; its own key, `road_day_behind`; the text is fixed, and the player's three tellings fill its last three paragraphs, one of the three paragraph forms below for each, in the order told):
+
+> I walk a day behind a stranger. I never set out to. The roads of the Gatelands are narrow and there is mostly only one way a person can go, and this one went every way at once and I found myself always after them, at the bend where something had happened.
+>
+> I do not know their name, which is no matter. A chronicle of the roads is mostly a chronicle of people whose names did not last the week. I know their tracks. I know the doors they left open.
+>
+> What follows is what they told me of three of those doors, in their own words or near it. I have added nothing. I have taken nothing away but the swearing.
+>
+> *(for a plain telling)* At {gate} they went in, and they came out. That was all they would say, and I have learned that it is often all there is.
+>
+> *(for a grand telling)* At {gate} they fought a dozen of the gate's own in the dark, and the roof came in behind them, and they walked out through the dust with the light of the door on their face. I write it as told. I was not there. Neither, it seemed to me, was the dozen.
+>
+> *(for a blank)* At {gate} there is a line drawn under nothing. Somebody went in. Somebody came out. The rest is theirs to keep.
+
+**Rule read (systems):** *the tally.* The game keeps no day-by-day record of what the player did. The plain reading: Fiontán's *{places}* is the number of named places discovered on game-day *d*−1 and *{foes}* the number of foes killed in the open world that day, kept as two counts on the character for yesterday and today (`worldState.dayTally={day,places,foes,prev:{places,foes}}`, rolled over at midnight by the clock, the character's: in `SS_CHAR_WS`). The words: *{places}* as "one new place" / "{n} new places" / "no new places", *{foes}* as "one dead on the road" / "{n} dead on the road" / "nobody dead, which I was glad to write". Without the counts, the line is left out and *What do you write?* stands on its first sentence.
+
+### 2. Bláthnat, the Rooted One (Old Blood; sparing, exact, the older word for the thing)
+
+She sits at the foot of the oldest tree beside one Gatelands shrine, chosen once a seed (`seededRng('strange','rooted')` over the Gatelands' shrines whose cell's region is a wood: forest or autumn; the nearest to the island's middle if none), day and night. She does not stand. Nobody near calls her strange; the shrine's town calls her *the Rooted One*, and sends bread.
+
+**Greeting, first:** "Sit. The roots are dry on this side."
+**Greeting, again:** "You came back. The wren said."
+**Greeting, to an Old Blood player, first:** "Ah. Kin. Sit nearer. Do not read the shrine."
+**Greeting, to a Markman player, first:** "A tall one. Mind the low branch."
+
+**Topics**
+- *Who are you?* — "Bláthnat." (asked again) "That is all of it."
+- *The Rooted One?* — "Their word. I sat. The tree did the rest."
+- *How long have you been here?* — "Since the elm was a switch." (an Old Blood player:) "Since before your grandmother's grandmother was marked. Do not count. It is rude."
+- *Your arms.* (the marks to the elbow) — "I read one word. Once. Young." (asked again) "It was enough. It looked back. Touch them, child. Do not read them."
+- *The shrine?* — "*Teach na Cloiche.* The Stone's house. You call it {shrine name}. It was older when it had the older name."
+- *What do you eat?* — "Bread, from {town}. Rain. What the wren brings is the wren's."
+
+**Her service: *When it opens.*** To a player who has seen a rare specimen of the Gatelands shut and does not know when it opens (`specKnown().seen[k]` set and `.cond[k]` unset; the Gatelands' three: Whispercap, Moonfen Orchid, Bloodreed), the topic *I found a flower, shut.* She names the thing by its older name, and then its hour, and the field guide learns it (`learnSpecCond(k)`, the named action the guide already uses; it prints *It opens at dusk.* and its kin from then on).
+- Whispercap: "*Cogarán.* The little whisperer. It opens when the light goes red and the birds stop. Not before. Not for you."
+- Moonfen Orchid: "*Bláth na gealaí.* The moon's flower. A clear night. Only clear. A cloud and it sulks."
+- Bloodreed: "*Giolcach dhearg.* The red reed. In rain. A while after. It drinks first, then shows you."
+- With none to tell (none seen shut, or all three known): "You know what I know. Of those. Go and find a harder one."
+- For one of the other islands' specimens, seen shut (*I found a flower, shut.* is offered for them too): "Not of this island. I have not walked there. Ask someone with feet."
+
+**Her thread: *Bread for the Rooted One*.** Once, after she has told the player one hour: *Is there anything you need?* — "The bread is late. Three days. {Town} forgot, or someone is ill." 
+- *I'll see to it.* — "Go, then."
+- At {town}'s inn (the shrine's nearest settlement), its keeper answers *The Rooted One's bread?* by people (Gatelander, always, since the shrine is the Gatelands'): "Weaver keep us, has it been three days? My girl's had the fever and I've had my hands full. Here. Take it up to her, and say we didn't forget her, only ourselves." (a loaf, `bread`, with `rooted:true`; no charge)
+- Back to Bláthnat, with the loaf: "Good. Warm still." (a pause) "The orchid by the pool behind the shrine. It opens tonight. Clear sky." (On the next clear night the field guide knows the Moonfen Orchid's hour, if it did not already, and the nearest Moonfen Orchid stand to the shrine is pencilled on the map: `sightPlace`, *Pencilled a moon's flower on the map, where the Rooted One said.*) If the player knew all three hours already: "Good. Warm still. You know the flowers. Know this: the elm is older than the shrine. Nobody asks."
+- After: her greeting is "You came back. The wren said. The bread came."
+
+### 3. The Veiled Merchant (Aurennais in speech; formal, *Master*, qualifiers, contract metaphors, never an oath)
+
+His stall stands in one market square an island a game-week, rolled on his own stream (`seededRng('veiled', island+':'+week)`, over that island's towns and cities with a market), from 20h to 3h. By day the square holds nothing of him. He is one of the awake, in the smallest way the canon allows: he keeps the player's accounts, and they do not reconcile. He never says what he is, never names Varek, and never says anything about the world being made.
+
+**Greeting, first:** "Good evening, Master {name}. You need not introduce yourself. I have your account open already. Everything you have ever let go of is here, at very reasonable terms."
+**Greeting, again:** "Master {name}. Your account is current. More current, I think, than you are."
+**Greeting, to an Old Blood player:** "Good evening, Master {name}. I would describe you to my clerk, if I kept one, and I find I cannot. That is not a complaint. A ledger has no need of a face."
+**Greeting, after the Guest's chapel** (`vstate().chapel`): "Master {name}. You have been to the cellar in the capital. No, nobody told me. The entry wrote itself, as some of yours do. I would rather it had not."
+
+**Topics**
+- *Who are you?* — "A merchant, Master, which is to say a man with a ledger and an opinion of its contents. My name is a signature, and I sign nothing I have not read in full. I have not yet read you in full."
+- *How do you know my name?* — "It is at the top of the page, Master. Most people's names are. Yours is merely the only one written in a hand I do not recognise."
+- *What do you sell?* — "Whatever you have sold, Master. Anywhere, to anyone, at any time. A sword left with a smith in the Mark, a ring you were short of money for in a port. The stock is all yours, in a sense. I charge a fifth over what you were paid. You will agree that is a modest commission for carrying it this far."
+- *How did you come by it?* — "By keeping accounts, Master. A thing sold is a thing entered. A thing entered can be found. I do not pretend the method would satisfy the Factor's auditors."
+- *What does my account say?* — the line by the player's deaths (`vstate().deaths`): with none: "That you pay your debts and keep your receipts. A clean page, Master. I confess I find it slightly disappointing." With one or more: "That some of your days are written twice, Master. The same road, the same hour, a different outcome. I have checked the arithmetic. The arithmetic is correct. I do not know what to make of that, and I am a man who makes something of everything."
+- *Are you a sorcerer?* — "I am a book-keeper, Master, which the Prior considers worse. Sorcery is at least a recognised trade."
+
+**His service: *The account.*** The stall opens as a shop (the shop's buy panel) holding every item the player has sold to any shop in the game that is still in that shop's buy-back stock, each at its sold price × 1.2 (Rule read: *the account*, below). Buying one takes it out of the shop it was sold to. An empty account: "Your account is in credit, Master, and nothing outstanding. That is rarer than it should be. Good evening."
+
+**His thread: none to do.** He offers nothing to be done, because he wants nothing from the player but to watch the books. Once, at the fourth meeting, unasked, after the greeting: "May I ask you one thing, Master, off the ledger? … When you are not here, where are you? No. Forgive me. A merchant should never ask where the stock has been. It spoils the price." From then on his *Who are you?* ends: "I have still not read you in full. I have begun to suspect there is no full."
+
+**Rule read (systems):** *the account.* The plain reading: the union of every shop's buy-back list the game already keeps (`_boughtBack` entries, `60-shop.js`), read at the stall, at their stored sold price × 1.2, and a purchase removed from its shop's list by the same named action the shop's own buy-back uses. Nothing new is saved. If the buy-back lists are not kept for shops the player is not in, his stock is only the shop he was last in, and the line *Anywhere, to anyone, at any time* stands, being his boast.
+
+### 4. The Painted Woman (no speaker of her own; said by the town)
+
+She is in a picture in the town: over the inn's hearth, on a church's wall, on a ship's figurehead in the harbour, at the back of a crowd in the guild hall's mural. Nobody agrees what she looks like, and everybody agrees on her eyes. The player never sees her: she is talk. One town in four has her (`seededRng('painted', site.id)() < .25`), and she is said by a townsperson of the town's own people in *liveRumours*, at most once a day per town, like the other rumours.
+
+**By people:**
+- Gatelander (an inn): "There's a woman in the painting over the hearth at the {inn}. Fair-haired, my mother said. Dark, I'd have said. Everyone sees her different, and nobody minds. It's the eyes. She has the eyes of someone who's waiting for a door to open."
+- Gatelander (a church): "Look at the back of the crowd on the church wall, behind the saint with the lamp. There's a woman nobody painted. The painter swore on the Weaver he didn't, and he'd no reason to lie; he'd have charged for her."
+- Markman (a figurehead): "Ship in the harbour. {Ship}. Figurehead's a woman. Carver says he cut a man. Nobody's fussed. She brings them home."
+- Markman (the hall): "Hall's got a painting. Old fight. Woman at the back, watching. Not in the saga. Nobody knows her. Good eyes. Grey."
+- Aurennais (a counting-house): "In the Factor's hall there is a portrait of the house's founder, Master, and behind him, in the window, a woman. The house's register lists every sitter for two centuries. She is not on it. The house has been meaning to have her painted out. Nobody has yet found the nerve to sign the order."
+- Aurennais (a chapel): "The fresco in the chapel was restored last spring, and the restorer found a woman in it under the old varnish. A different woman, he insists, from the one he had been told was there. The same eyes, however. He was quite particular about the eyes."
+- Old Blood (said only in the Gatelands' hills and the Mark's high valleys, in a town where the site's people roll Old Blood): "The woman in the painting. We do not look at her long. She looks back."
+
+**To an Old Blood player** (instead of the line above, once per town): "There's a woman in the painting at the {inn}. She looks like you. No. She doesn't. I don't know why I said that."
+
+**After the Guest's chapel** (`vstate().chapel`), the Gatelander's inn line gains a last sentence: "Only lately she's looking at the door."
+
+### What in the code would carry it
+
+- **`87-world-quests.js`**: a `STRANGE` table beside the travellers', the rivals' and the families' (all unapproved; whichever lands first sets the shape), each person a `makeDef` with `authored:true`, `keepName:true`, keyed `strange:<who>` (one each in the world, so the key is the person, never a position). Greetings by the player's people as `firstWords` reads them.
+- **Fiontán**: a road traveller on the road folk's machinery (S2243–2275: `roadfolkHome`, `pilgrimDef`'s shape, the road's points), placed by the day's rule above and not by the road folk's roll; walking at the pilgrim's pace. His tellings: `worldState.strange.fiontan={met:n,told:{<gate seed>:'plain'|'grand'|'blank'},copy:true}`, the character's (it is what the player said), so in `SS_CHAR_WS` and in `_applyLoadData`'s S242 list. The book, `BOOKS.road_day_behind`, its three last paragraphs filled from `told` in order, opened by the book reader (`66-hub.js`).
+- **Bláthnat**: a `makeDef` seated (the sleeper's lying pose is wrong; the people's sitting pose, as at an inn's bench) at the shrine's tree; her shrine rolled once a seed, read through `getCell` and the cells' sites, never `SETTLE`. Her service calls `learnSpecCond(k)` (`50-travel.js`), already the character's through `herbsKnown`. Her thread: `worldState.strange.blathnat={bread:'asked'|'carried'|'done'}`, the character's; the loaf an item `{...bread,rooted:true}`; the pencilled stand by `sightPlace`.
+- **The Veiled Merchant**: a `makeDef` at a stall in the square, from 20h to 3h, the week's town rolled on `seededRng('veiled', island+':'+week)`; *The account* opens the shop panel over the union of the buy-back lists (Rule read). Reads `vstate()` for the deaths and the chapel, read only. `worldState.strange.veiled={met:n}`, the character's (who he has watched).
+- **The Painted Woman**: a function `paintedRumour(site)` pushed in `liveRumours` beside `starRumour`, rolled on `seededRng('painted', site.id)`; which of the people's lines from the site's people and the town's buildings (an inn, a church, a guild hall, a harbour with a ship in it; else the inn line). The figurehead's *{Ship}* is the nearest ship at the quay by name, or the line is skipped. No state.
+- **Journal titles:** *The Page I Missed* · *Bread for the Rooted One*. The Merchant and the Woman have none.
+- **Who builds:** the words, the table, the records, the rumours and the book are the quest writer's once approved (`87-world-quests.js`, `22-dialogue.js`, `BOOKS` in `14-items.js`). The faces are the bodies builder's (the dress above; the brass face and the stall are props). The tally is a Rule read for the systems builder. Nothing here needs a new system.
+
+### The register, checked
+
+- Fiontán: proverbs (*the road forgets faster than a drunk*, *every road's walked twice*, *a pilgrim with a heavy pack is a pilgrim with a reason*), no bare yes or no (*I'd not say never*; his answers to the three tellings each accept without a *yes*), *Weaver, but you've a mouth on you*, the painter's oath *on the Weaver*.
+- Bláthnat: no sentence over eight words but the shrine's, which is the older name answering the question (*Teach na Cloiche*, the Stone's house, §4.1's An Chloch); the flowers by older names first; *Touch them. Do not read them.*, the Withdrawal's law, said as *Travellers*' and *Families*' Old Blood say it. The Irish is plain modern spelling of old words: *cogarán* (a little whisperer, from *cogar*), *bláth na gealaí*, *giolcach dhearg*.
+- The Merchant: *Master* throughout, ledgers, accounts, terms, commission, auditors, the Factor and the Prior; never an oath. He never says he is awake and never says what the world is.
+- The Painted Woman's tellers: each in their people's voice (the Markman's six-word sentences and no honorific; the Aurennais's *Master*, register and order to sign; the Old Blood's eight words). Nobody is frightened. The Old Blood's *She looks back* is the same sentence Bláthnat says of the word she read, and is meant to be.
+- No prophecy, no description of the player beyond §2.2's licence (the townsperson who cannot say whether the woman looks like an Old Blood player), no line on what the player is.

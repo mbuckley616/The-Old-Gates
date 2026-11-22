@@ -3320,7 +3320,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       const y=+ry(c.y).toFixed(2);SOL.push({...q,y0:-5,y1:y});FOOTHOLDS.push({...q,y});}
     const hr=typeof gameHour==='function'?gameHour():12,dayK=hr>=7&&hr<18?1:hr>=5&&hr<20?.45:.08,noon=Math.max(0,1-Math.abs(hr-12.5)/6.5);
     T.sky.color.setHex(hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420);
-    T.group.children.forEach(m=>{if(m.name==='hollow:beam')m.visible=dayK>.4;});
+    /* S2510 — the beam was drawn whole whenever dayK > 0.4, so at 19h and 6h (dusk's 0.45) a full shaft stood over a court the sun's spot
+       lit at 0.11. It is now as strong as the spot, against noon's (1.35): 7h 0.31, 9h 0.65, 12h30 1, and gone outside the day. */
+    const beamK=dayK<1?0:(1.1*noon+.25)/1.35;
+    T.group.children.forEach(m=>{if(m.name==='hollow:beam'){m.visible=beamK>.02;if(m.visible){m.material=m.material.clone();m.material.color.multiplyScalar(beamK);}}});
     sc_.add(new THREE.AmbientLight(0xbcc6d0,.3));
     /* S2496 — the court washed out to flat cream (the critic, s1812): on the legacy scale a point light falls off only linearly to its
        distance, so 3.6 gave every stone within 140 m about 3.3 and the mouth's 3.2 the passage the same, and the spot's 0.2 rad cone from
@@ -3328,7 +3331,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
        fill under it a grey the stone keeps its shading in, as the prototype's court. */
     {const O=T.oculus,s=new THREE.SpotLight(0xfff2dc,(1.1*noon+.25)*dayK,320,.085,.35,1),L=T.roof+40;s.position.set(rx(T.lands.x+T.sun[0]/T.sun[1]*L),ry(L),rz(T.lands.z+T.sun[2]/T.sun[1]*L));s.target.position.set(rx(T.lands.x),ry(0),rz(T.lands.z));s.userData.daylight=true;sc_.add(s,s.target);
       const p=new THREE.PointLight(0xe8e0d0,(.8*noon+.18)*dayK,140,1);p.position.set(rx(T.lands.x),ry(8),rz(T.lands.z+6));p.userData.daylight=true;sc_.add(p);}
-    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,1.7*dayK,40,1);l.position.set(rx(M.x),ry(M.y)+3,rz(M.z)-2);l.userData.daylight=true;sc_.add(l);}
+    /* S2509 — the arrival's near walls were the brightest thing in view (S2496's note): the mouth's light hung 3 m over your head, 0.4 m
+       ahead, and lit the passage's first metres flat from the front. The day comes in at the mouth: the light stands outside it, at its
+       middle's height, so the near walls take it grazing from behind and the passage darkens as it goes in. */
+    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,1.25*dayK,32,1);l.position.set(rx(M.x),ry(M.y)+M.h*.5,rz(M.z)+3);l.userData.daylight=true;sc_.add(l);}
     return sc_;
   }
   // S1773 (card F8, Michael's A on #1026) — a smugglers' sea cave (PKIT.places.cove, places.js's smugglersLair, #314 A) behind its mouth on

@@ -655,6 +655,17 @@ const trade2 = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r 
     return { k: r.g.hbKey, ap: /apothecary/.test(r.g.role), satchel: n('satchelBag'), purses: n('purse') }; }); });
 check(`Dunmore's apothecaries carry the satchel and its merchants two purses at the belt (${trade2.filter(t => t.ap).length} and ${trade2.filter(t => !t.ap).length})`,
   trade2.filter(t => t.ap).length >= 2 && trade2.filter(t => !t.ap).length >= 2 && trade2.every(t => t.ap ? t.satchel === 1 : t.purses === 2), trade2);
+// S2507: a scholar, an adept and a novice wear the kit's spectacles (buildSpecs) with the book: two rims before the eyes, clear of the face
+const specs = await page.evaluate(() => ['scholar', 'adept', 'novice'].map((role, i) => { const g = { role, hbKey: 'specs:' + i, people: 'gatelander' }, G0 = HB.rollGenome('specs:' + i, { people: 'gatelander' }),
+  D = hbTradeDress(g, G0), P = HB.makePerson({ ...G0, dress: { ...D, helm: null } }, HB_LEAN), s = P.specs || {}; return { role, specs: !!D.specs, book: !!D.book, rims: ['specLRim', 'specRRim'].filter(k => P.root.getObjectByName(k)).length, on: P.root.getObjectByName('specs')?.parent?.name, inside: s.inside, gap: s.gap, tris: s.tris }; }));
+check(`a scholar, an adept and a novice wear spectacles with their book: both rims on the head bone, nothing of the face through the wire, the glass ${specs.map(s => s.gap).join(', ')} m before it`,
+  specs.every(s => s.specs && s.book && s.rims === 2 && s.on === 'head' && s.inside === 0 && s.gap > .004 && s.tris < 3000), specs);
+// S2511: a farmer and a fisher wear the kit's straw hat, a merchant its felt one with a band (buildHat), over a raised hood or a wrap they rolled
+const hats = await page.evaluate(() => [['farmer', 'straw'], ['fisher', 'straw'], ['merchant', 'felt']].map(([role, want], i) => { const g = { role, hbKey: 'hat:' + i, people: 'gatelander' }, G0 = HB.rollGenome('hat:' + i, { people: 'gatelander' }),
+  D = hbTradeDress(g, { ...G0, dress: { ...G0.dress, cloak: [.3, .3, .2], hood: 'up', wrap: [.5, .4, .3] } }), P = HB.makePerson({ ...G0, dress: { ...D, helm: null } }, HB_LEAN), s = P.hat || {};
+  return { role, want, kind: s.kind, on: P.root.getObjectByName('hat')?.parent?.name, out: s.out, brimHit: s.brimHit, tris: s.tris }; }));
+check(`a farmer and a fisher wear a straw hat and a merchant a felt one, on the head bone, nothing of the head through the crown`,
+  hats.every(s => s.kind === s.want && s.on === 'head' && s.out === 0 && s.brimHit === 0 && s.tris < 8000), hats);
 await g.close();
 
 // a second boot: the same people, the same bodies
