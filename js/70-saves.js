@@ -408,7 +408,6 @@ function _buildSavePayload(){
       if(currentHouse&&currentHouse.id)return {kind:'house',id:currentHouse.id,parent:currentHouse.parent&&currentHouse.parent.id||null,site:currentHouse.siteId||null,x:px,z:pz,yaw,jumpY,door:{x:currentHouse.exitX,z:currentHouse.exitZ,yaw:currentHouse.exitYaw||0}};
       if(activeZoneId==='dungeon'&&currentPortal){const p=(typeof WORLD!=='undefined')&&WORLD.dungeonPos[currentPortal.seed];return {kind:'dungeon',seed:currentPortal.seed,floor:currentFloor||1,x:px,z:pz,yaw,jumpY,gone:dunGone(),door:p?{x:p.x,z:p.z+3,yaw:0}:null};}
       if(activeZoneId==='world')return {kind:'world',x:px,z:pz,yaw};
-      if(typeof WORLD!=='undefined'&&WORLD.lastWorldPos)return Object.assign({kind:'world'},WORLD.lastWorldPos);
     }catch(e){}return null;})(),
     placeName:ssPlaceName(), /* S475 — the slot list's label: the town, near one, a house in one, or the gate */
   };
@@ -879,8 +878,11 @@ function _applyZoneFromSave(d){
     let r=(W&&W.kind==='world')?W:(W&&W.door)?W.door:(d.wret||null);
     // S455 — saved in a place the lakes were laid over (S452 moved 42 to the shore): the spot goes with the place, door and all
     if(r&&r.x!=null&&WORLD.movedPlaceAt){const m=_movedDoorPlace(W,r)||WORLD.movedPlaceAt(r.x,r.z);if(m){r=Object.assign({},r,{x:r.x+m.dx,z:r.z+m.dz});if(W&&W.kind!=='world'&&W.door)W.door=Object.assign({},W.door,{x:W.door.x+m.dx,z:W.door.z+m.dz});}}
-    // an old save made indoors carries interior coordinates as if they were the world's — never trust a position in the sea
-    if(!r||r.x==null||WORLD.worldH(r.x,r.z)<0.5){const lp=WORLD.lastWorldPos;r=(lp&&WORLD.worldH(lp.x,lp.z)>0.5)?lp:(WORLD.spawn||{x:px,z:pz,yaw:0});}
+    // an old save made indoors carries interior coordinates as if they were the world's: with no place saved beside it, a position in
+    // the water is not trusted, and you start on the road out of Ashenmoor. S2543 — a save that names its place (where) is trusted
+    // in the water too: you saved aboard or swimming. Before, both fell back on WORLD.lastWorldPos and WORLD.spawn, which no build
+    // ever defined, so the old save kept its room's coordinates (the map's corner, in the sea) and every save at sea lost its yaw.
+    if(!r||r.x==null||r.z==null||!isFinite(r.x)||!isFinite(r.z)||(!d.where&&WORLD.worldH(r.x,r.z)<0.5))r=WORLD.spawn;
     px=r.x;pz=r.z;if(r.yaw!=null)yaw=r.yaw;sz='world';
     if(W&&W.kind!=='world')window._reenter=W;
   }
