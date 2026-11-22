@@ -2054,12 +2054,20 @@ const giver=`${lord.title} ${lord.name}`;
   function patrolTick(t,S){const h=hourNow(),leg=patrolLeg(h);const gate=leg==='out'?(S.gate||(S.gate=patrolGate(t))):null;const plaza={x:t.x+8,z:t.z+8};const to=gate||plaza;
     const key=(leg&&gate?leg:'stand')+':'+dayNow()+':'+Math.floor(h);
     for(const e of S.enemies){if(!e._beat||e.dead)continue;if(e.alert){e._beatKey=null;continue;}if(e._beatKey===key)continue;e._beatKey=key;e.homeX=to.x;e.homeZ=to.z;
-      let way=[];try{const T=SETTLE.get(t.id);if(T)way=townRoute(T)({x:e.x,z:e.z},to);}catch(err){way=[];}e._beatWay=way.concat([{x:to.x,z:to.z}]);
+      const raw=!!e._beatHeld;e._beatHeld=false;let way=[];try{const T=SETTLE.get(t.id);if(T)way=townRoute(T)({x:e.x,z:e.z},to,raw);}catch(err){way=[];}e._beatWay=way.concat([{x:to.x,z:to.z}]);
       let L=0,q={x:e.x,z:e.z};for(const w of e._beatWay){L+=Math.hypot(w.x-q.x,w.z-q.z);q=w;}e._beatPace=Math.max(e.spd,Math.min(PATROL.pace,L/PATROL.legS));}}
   // called from tickZoneEnemies while the soldier is not alert: true while it is walking its way
+  // S2538 — a step into a solid turns off the heading, 30° to 150°, to the side it turned last until the straight step is free again
+  // (so he walks round a post or along a wall rather than turning back and forth); one held every way asks again for every cell of the way (townRoute's raw way, as the watch does since S247): the way
+  // pulled straight is checked by clearLine, which can pass a thin solid (a post, a trunk) that the step then meets, and asking again for
+  // the straight way gave the same line and held him there for good (CI, 22 Nov: soldier 2 on the plaza–gate line, 42 s of the hour).
   function patrolStep(e,dt){const W=e._beatWay;if(!W||!W.length)return false;const w=W[0];const dx=w.x-e.x,dz=w.z-e.z,d=Math.hypot(dx,dz);
     if(d<(W.length>1?1:3)){W.shift();return W.length>0;}
-    const step=Math.min(d,(e._beatPace||e.spd)*dt),nx=e.x+dx/d*step,nz=e.z+dz/d*step;if(currentZoneSolid(nx,nz)){e._beatKey=null;e._beatWay=null;return false;}
+    const step=Math.min(d,(e._beatPace||e.spd)*dt);let nx=e.x+dx/d*step,nz=e.z+dz/d*step;
+    if(currentZoneSolid(nx,nz)){let ok=false;const a0=Math.atan2(dx,dz),sd=e._beatSide||1;
+      for(const sg of [sd,-sd]){for(let k=1;k<=5&&!ok;k++){const a=a0+sg*k*Math.PI/6,tx=e.x+Math.sin(a)*step,tz=e.z+Math.cos(a)*step;if(!currentZoneSolid(tx,tz)){nx=tx;nz=tz;ok=true;e._beatSide=sg;}}if(ok)break;}
+      if(!ok){e._beatKey=null;e._beatWay=null;e._beatHeld=true;e._beatSide=0;return false;}}
+    else e._beatSide=0;
     e.x=nx;e.z=nz;e.walkT=(e.walkT||0)+dt;const y=typeof foeY==='function'?foeY(e):activeTerrainH(e.x,e.z);e.mesh.position.set(e.x,y,e.z);e.el.position.set(e.x,y+.8,e.z);e.combatYaw=Math.atan2(dx,dz);e.mesh.lookAt(e.x+dx/d,y,e.z+dz/d);return true;}
   function tickSieges(){if(activeZoneId!=='world')return;
     for(const t of SITES){if(!(t.kind in BASE_P))continue;const st=worldState.towns&&worldState.towns[t.id];if(!st)continue;const kind=st.flags.besieged!=null?'siege':st.flags.occupied!=null?'occupied':null;

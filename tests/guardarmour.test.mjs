@@ -28,11 +28,12 @@ check('the night watch is armoured too; a farmer, and a guard of no place, are n
 check('every other trait of the guard is unchanged by the rule', unit.same && unit.skipped && !!unit.mid.fam, unit.same);
 check('the armoured guard is 7,000–12,000 triangles, its distant copy under 6,500; still the people\'s bones', [unit.tris.poor, unit.tris.mid, unit.tris.captain].every(o => o.tris >= 7000 && o.tris <= 12000 && o.lo < 6500 && o.bones >= 16), unit.tris);
 
-// in a town: Dunmore's guards on their rigs
+// in a town: Dunmore's guards on their rigs. Since S2387 a guard who wears the builder's body drops the old kit from the driver (the
+// builder dresses a guard by their people), so on the new look the rule's outcome is the genome's tier (`guardTier`), read as the kit's family.
 await g.settle('dunmore');
 const town = await page.evaluate(() => { forceTime(12); const S = WORLD.settle.get('dunmore'); for (let i = 0; i < 20; i++) WORLD.tick(1 / 60, performance.now());
   const p = WORLD.prosperity(S.site); const rigs = [...PEOPLE_RIGS];
-  const G = WORLD.guardsOf(S).map(n => { const r = rigs.find(r => r.root === n.g); return { name: n.def.name, type: n.sched.type, fam: r && r.g.eq && r.g.eq.armour ? r.g.eq.armour.chest.fam : null, tris: r && r.tris }; });
+  const G = WORLD.guardsOf(S).map(n => { const r = rigs.find(r => r.root === n.g); return { name: n.def.name, type: n.sched.type, fam: r && r.g.eq && r.g.eq.armour ? r.g.eq.armour.chest.fam : r && r.g.guardTier ? AR_FAM[r.g.guardTier] : null, kit: !!(r && r.g.eq && r.g.eq.armour), tier: r && r.g.guardTier, tris: r && r.tris }; });
   return { p, G }; });
 const want = town.p < 40 ? 'lamellar' : 'mail';
 check(`Dunmore (prosperity ${town.p}) puts its guards in ${want}`, town.G.length >= 1 && town.G.every(x => x.fam === want), town);

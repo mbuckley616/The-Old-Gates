@@ -519,7 +519,7 @@ const standin = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r
   return { n: rs.length, armour: rs.filter(r => r.g.eq && r.g.eq.armour).length, helm: rs.filter(r => r.g.hat === 'helm').length,
     crimson: rs.filter(r => r.g.cloth.r > .5 && r.g.cloth.g < .1).length, keys: rs.slice(0, 4).map(r => r.g.hbKey) }; });
 check('Dunmore\'s guards\' stand-ins wear no armour kit over the tabard\'s crimson (a pale doll in steel until the body came)', standin.n > 0 && standin.armour === 0 && standin.helm === standin.n && standin.crimson === standin.n, standin);
-// S2540 (S395's rule, Michael's C on #87, lost on the new look by S2387): a guard's armour on the builder's body is the town's fortune again.
+// S2541 (S395's rule, Michael's C on #87, lost on the new look by S2387): a guard's armour on the builder's body is the town's fortune again.
 // Dunmore's guard at prosperity 30 wears the wood's lamellar (scales) with boards on the forearms, at 55 the people's own mail, a captain
 // steel plate with gauntlets, greaves and cuisses; the Crown's tabard over each with nothing through it, and far off the tunic's sleeves under scales and plate
 const tiers = await page.evaluate(() => { const st = WORLD.TS(WORLD.siteAnywhere('dunmore')), keep = st.p, out = {};

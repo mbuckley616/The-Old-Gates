@@ -50,7 +50,10 @@ console.log(`\n${ok.length} walking keepers (${rows.length - ok.length} standing
 for (const r of ok) console.log(`  ${r.town.padEnd(10)} ${String(r.type).padEnd(10)} in a solid ${(r.inSolid * 100).toFixed(0).padStart(3)}%  in the counter ${(r.inCounter * 100).toFixed(0).padStart(3)}%  before it ${(r.front * 100).toFixed(0).padStart(3)}%  farthest ${r.far}  ${r.name}`);
 console.log(JSON.stringify(rows));
 const shops = ok.filter(r => r.counter);
-check('the keepers of both towns were walked, counter shops among them (at least 10)', ok.length >= 10 && shops.length >= 6, ok.map(r => [r.name, r.counter]));
+// S2539: since F9 (S2272) the kit's merchant's house and the rooms after it stand their keeper at the counter (an amble of no size,
+// paused), so 85 of the two towns' 92 rooms have no walking keeper: 7 walk, the five inns, Lonán's Shipwright and Menas's Smithy (the two
+// counter shops). The floor was 10 and 6 counter shops; it is now every room's walker the towns still hold, and both counter shops.
+check('the keepers of both towns were walked, counter shops among them (at least 6, two at a counter)', ok.length >= 6 && shops.length >= 2, ok.map(r => [r.name, r.counter]));
 console.log('set down inside a solid:', ok.filter(r => r.start).map(r => `${r.name} (${r.k0.x}, ${r.k0.z})`).join('; ') || 'none');
 check('a keeper set down inside a solid is out of it after one step', ok.every(r => !r.first), ok.filter(r => r.first));
 check('no keeper stands inside the counter at any moment of ten minutes', shops.every(r => r.inCounter === 0), shops.map(r => [r.name, r.inCounter]));

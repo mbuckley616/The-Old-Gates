@@ -2168,7 +2168,7 @@ const HB_MAP=[['hips','root'],['spine','spine05'],['neck','neck01'],['head','hea
   ['thR','upperleg01.R'],['knR','lowerleg01.R'],['anR','foot.R']];
 function hbOn(){return HBODY.on&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&typeof MH_PACK!=='undefined';}
 // the builder's genome for a game genome: its people, sex and age from personGenome, the rest rolled inside the people's ranges
-function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G&&(G.guardTier||0)===(g.guardTier||0))return G;HB.loadPack(); /* S2540 — a guard's genome is made again when the town's fortune changes his tier */
+function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G&&(G.guardTier||0)===(g.guardTier||0))return G;HB.loadPack(); /* S2541 — a guard's genome is made again when the town's fortune changes his tier */
   const people=HB.PEOPLES[g.people]?g.people:'gatelander',cast=hbCastName(g);
   G=cast?HB.castGenome(cast,{people}):HB.rollGenome(g.hbKey,{people,g:g.female?0:1,child:!!g.child,old:g.age==='elder'});
   // a guard is known by his mail, helm and spear (the town's guards keep their old kit's role; the armour tiers are F10's)
@@ -2211,7 +2211,7 @@ function hbGuardDress(people,G,tier){const D=Object.assign({},G.dress||{},HB_GUA
   if(people==='markman')D.mantle=((G.dress||{}).mantle||HB_GUARD_FUR).slice(); /* S2359 — OG-025's hold guard in fur at the shoulders: their own mantle, or wolf grey */
   hbGuardTierDress(D,tier);G.guardTier=tier||0;
   return D;}
-/* S2540 (the systems builder's note of 22 Nov; S2387's owed change) — a guard's armour by the town's fortune again, on the builder's body.
+/* S2541 (the systems builder's note of 22 Nov; S2387's owed change) — a guard's armour by the town's fortune again, on the builder's body.
    S395 (Michael's C on #87) put a poor town's guards (prosperity under 40) in wooden lamellar, the rest in iron mail and a captain in steel
    plate; the builder's guard dress (S2353) was by people alone, so on the new look a town's fortune changed nothing a guard wore. The
    people's dress stays (the Crown's tabard, the hold's shield and fur, the Compact's blue), and the armour under it is the tier's, as the
@@ -2346,7 +2346,7 @@ function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   /* S1846 — a coat worn over it (the builder's coatOn: Corwin's open coat, the navigator's) is the outer colour, body and sleeves */
   if(D.coat&&!D.robe&&!D.mail&&!D.scales&&!D.tabard&&!D.chair){g.cloth=C(D.coat);g.sleeve=C(D.coat).multiplyScalar(.9);}
   /* S2242 — a tabard (the inquisitor's white) is the body's colour far off, over mail's sleeves */
-  if(D.tabard){g.cloth=C(D.tabard);if(D.mail&&!D.scales&&!D.plate)g.sleeve=C(D.mail);} /* S2540 — scales and plate stop short at the elbow, so the sleeves stay the tunic's */
+  if(D.tabard){g.cloth=C(D.tabard);if(D.mail&&!D.scales&&!D.plate)g.sleeve=C(D.mail);} /* S2541 — scales and plate stop short at the elbow, so the sleeves stay the tunic's */
   /* S2353 — mail with no tabard over it is the body's colour far off too: a hold guard grey, the Compact's bronze (whose scales stop short at the elbow, so the sleeves stay the tunic's) */
   else if(D.mail&&!D.robe&&!D.chair){g.cloth=C(D.mail);if(!D.scales&&!D.plate)g.sleeve=C(D.mail).multiplyScalar(.9);}
   const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);
