@@ -54,10 +54,14 @@ const gst = await page.evaluate(() => { const K = intNPCMesh; K.position.set(-99
 check('a guest facing you sees you; with their back turned, or 70° off, not', !gst.none && gst.facing === 'A traveller' && !gst.away && !gst.side, gst);
 console.log(JSON.stringify({ gst }));
 // the keeper's walk turns back from a bound: the x part of the heading at an x bound, the z part at a z bound (they were swapped)
-const bounce = await page.evaluate(() => { const K = intNPCMesh, am = K.userData.amble || (K.userData.amble = { wa: 0, wt: 9, minX: .8, maxX: 6, minZ: .6, maxZ: 4, speed: .25 }); am.paused = false;
+// The bounds are made up and always the suite's own (S2535: the kit's shops give a keeper who stands at the counter an amble of no size,
+// paused, which the suite used to keep, so both parts turned back at once), and the room's solids are set aside for the two steps:
+// the check is of the bounds' rule, not of the room. The keeper's own amble and place are put back after.
+const bounce = await page.evaluate(() => { const K = intNPCMesh, am0 = K.userData.amble, p0 = K.position.clone(), am = K.userData.amble = { wa: 0, wt: 9, minX: .8, maxX: 6, minZ: .6, maxZ: 4, speed: .25 }; am.paused = false;
+  const solid0 = window.intSolidAt; window.intSolidAt = () => false;
   K.position.set(am.maxX - .001, 0, (am.minZ + am.maxZ) / 2); am.wa = Math.PI / 2 - .3; am.wt = 9; intAmbleStep(K, 1 / 60); const x = { sin: +Math.sin(am.wa).toFixed(3), cos: +Math.cos(am.wa).toFixed(3) };
   K.position.set((am.minX + am.maxX) / 2, 0, am.maxZ - .001); am.wa = .3; am.wt = 9; intAmbleStep(K, 1 / 60); const z = { sin: +Math.sin(am.wa).toFixed(3), cos: +Math.cos(am.wa).toFixed(3) };
-  return { x, z }; });
+  window.intSolidAt = solid0; K.userData.amble = am0; K.position.copy(p0); return { x, z, kept: am0 ? [am0.minX, am0.maxX, am0.minZ, am0.maxZ] : null }; });
 check('at an x bound the keeper turns back in x and keeps its z; at a z bound, the other way', bounce.x.sin < 0 && bounce.x.cos > 0 && bounce.z.cos < 0 && bounce.z.sin > 0, bounce);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
