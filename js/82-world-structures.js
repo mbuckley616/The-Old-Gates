@@ -3248,7 +3248,7 @@
   // snapped, its stump the kit's (falling outward), its trunk the kit's laid on the ground from it, away from the star, the tree's own
   // height × 0.85 as layTrunk's. No record and no deck: the blast is the star's while it lies, and the chunk rebuilds the wood once it is
   // gone. -> the count blown down here.
-  const STAR_BLAST={all:8,r:12};
+  const STAR_BLAST={all:9,r:14};
   function starKitBlast(ch,s){if(!rareKitOn()||!ch||!ch.trees||!s)return 0;const from=seededRng('starfrom',s.id)()*Math.PI*2,fx=Math.sin(from),fz=Math.cos(from),r0=(typeof STAR!=='undefined'?STAR.r:3)+1.5;let n=0;
     for(const t of ch.trees){if(t.out)continue;const dx=t.x-s.x,dz=t.z-s.z,d=Math.hypot(dx,dz);if(d<=r0||d>STAR_BLAST.r)continue;
       const ox=dx/d,oz=dz/d,down=Math.max(0,-(ox*fx+oz*fz)),keep=d<=STAR_BLAST.all?1:(1-(d-STAR_BLAST.all)/(STAR_BLAST.r-STAR_BLAST.all))*(.45+.55*down);
