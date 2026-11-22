@@ -646,9 +646,15 @@ check('Bram\'s sleeves are rolled above the elbow (S1841): the roll drawn, the t
 // linen one; no cloak, basket or coat over the work (the roll gave the smiths cloaks and baskets, and no apron)
 const trade = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.hbG && /^dunmore:/.test(r.g.hbKey || '') && /smith|armourer|innkeeper/.test(r.g.role || ''));
   return rs.map(r => { const D = r.hbG.dress, P = HB.makePerson(r.hbG, HB_LEAN), has = k => !!P.root.getObjectByName(k);
-    return { k: r.g.hbKey, smith: /smith|armourer/.test(r.g.role), apron: has('apron'), bib: has('bib'), hammer: has('hammerHead'), leather: !!D.apronLeather, cloak: !!D.cloak, basket: !!D.basket, coat: !!D.coat }; }); });
+    return { k: r.g.hbKey, smith: /smith|armourer/.test(r.g.role), apron: has('apron'), bib: has('bib'), hammer: has('hammerHead'), leather: !!D.apronLeather, cloak: !!D.cloak, basket: !!D.basket, coat: !!D.coat,
+      dy: D.apron ? +(hbLum(D.apron) - hbLum(D.robe || D.tunic || [0, 0, 0])).toFixed(2) : null }; }); });
 check(`Dunmore's smiths wear the leather apron and hold the hammer, its innkeepers the linen apron, nothing over it (${trade.filter(t => t.smith).length} smiths, ${trade.filter(t => !t.smith).length} innkeepers)`,
   trade.filter(t => t.smith).length >= 2 && trade.filter(t => !t.smith).length >= 2 && trade.every(t => t.apron && t.bib && !t.cloak && !t.basket && !t.coat && t.leather === t.smith && t.hammer === t.smith), trade);
+// S2525 (critic 22 Nov: Ruairí's linen bib was lost on his tan tunic): the linen apron is bleached, and what it lies on is darker by 0.38
+const tan = await page.evaluate(() => { const T = hbTradeDress({ role: 'Innkeeper', people: 'gatelander', hbKey: 'probe:apron' }, { dress: { tunic: [.62, .58, .5], apron: null } });
+  return { tunic: T.tunic, dy: +(hbLum(T.apron) - hbLum(T.tunic)).toFixed(2) }; });
+check(`an innkeeper's linen apron stands off the tunic under it (Dunmore ${trade.filter(t => !t.smith).map(t => t.dy).join(', ')}; a tan tunic redyed, ${tan.dy}; at least 0.38)`,
+  trade.filter(t => !t.smith).every(t => t.dy >= .38) && tan.dy >= .38 && tan.tunic[0] !== .62, { trade, tan });
 // S2504: and the rest of the old rig's trades the kit can draw: an apothecary's satchel, a merchant's two purses at the belt
 const trade2 = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.hbG && /^dunmore:/.test(r.g.hbKey || '') && /apothecary|merchant/.test(r.g.role || ''));
   return rs.map(r => { const P = HB.makePerson(r.hbG, HB_LEAN), n = k => { let c = 0; P.root.traverse(o => { if (o.name === k) c++; }); return c; };

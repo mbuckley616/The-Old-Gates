@@ -2166,7 +2166,7 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
   // a guard is known by his mail, helm and spear (the town's guards keep their old kit's role; the armour tiers are F10's)
   if(GUARD_ROLE.test(g.role||''))G.dress=hbGuardDress(people,G);
   if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
-  if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C)G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);} /* S1779 — her crew's working dress */
+  if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C){G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);if(m[0]==='cook')hbApronShows(g,G.dress,pHash(g.hbKey+'|trade')>>>0);}} /* S1779 — her crew's working dress; S2525 the cook's apron set on a darker tunic */
   if(/^(ring|kid):/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
   if(g.carter||g.rider)G.dress=Object.assign({},G.dress,HB_BEARER_STRIP); /* S2282 — a handcart's pusher: nothing in the hands, no cloak for the arms to reach through */
   if(g.bearer)G.dress=hbBearerDress(G); /* S2273 — a bier's bearer: in mourning, nothing in the hands, no cloak for the arms to pass through */
@@ -2384,7 +2384,7 @@ const HB_TRADE_STRIP={cloak:null,cloakFur:null,cloakHem:null,hood:null,cape:null
 const HB_TRADE=[
   {re:/smith|armourer/,dress:{apronLeather:true,bib:true,hammer:[.62,.5,.34],sleevesRolled:true,waistcoat:null,sash:null,shoulderWrap:null},
     aprons:[[.36,.25,.16],[.3,.2,.13],[.24,.17,.11]]},
-  {re:/innkeeper|^cook$/,dress:{apronLeather:false,bib:true,sleevesRolled:true},aprons:[[.8,.76,.66],[.72,.68,.58],[.86,.83,.75]]},
+  {re:/innkeeper|^cook$/,dress:{apronLeather:false,bib:true,sleevesRolled:true},aprons:[[.94,.93,.89],[.92,.91,.86],[.95,.93,.87]],bleach:true},
   {re:/apothecary|herbalist/,strip:{},dress:{},satchels:[[.34,.22,.13],[.4,.28,.16],[.28,.2,.13]]},
   {re:/merchant|trader/,strip:{apron:null,bib:false,tabard:null},dress:{hatKind:'felt'},purses:[[.22,.14,.09],[.3,.2,.12],[.36,.12,.1]],
     hats:[[.3,.22,.16],[.2,.19,.18],[.34,.16,.12],[.26,.25,.2]],hatBands:[[.12,.09,.07],[.5,.12,.1],[.62,.5,.3]]},
@@ -2395,9 +2395,21 @@ const HB_TRADE=[
     dress:{},books:[[.32,.15,.09],[.2,.24,.36],[.36,.3,.2]],specs:[[.62,.5,.3],[.55,.56,.58],[.24,.2,.16]]}];
 function hbTradeDress(g,G){const role=String(g.role||'').toLowerCase();if(/^crew:/.test(g.hbKey||'')||GUARD_ROLE.test(role))return null;
   const t=HB_TRADE.find(t=>t.re.test(role));if(!t)return null;const D=G.dress||{},h=pHash((g.hbKey||'')+'|trade')>>>0,pick=A=>A[h%A.length];
-  const T=Object.assign({},D,t.strip||HB_TRADE_STRIP,t.dress);if(t.aprons)T.apron=pick(t.aprons);if(t.satchels)T.satchel=pick(t.satchels);
+  const T=Object.assign({},D,t.strip||HB_TRADE_STRIP,t.dress);if(t.aprons)T.apron=pick(t.aprons);if(t.bleach)hbApronShows(g,T,h);if(t.satchels)T.satchel=pick(t.satchels);
   if(t.purses){T.purses=pick(t.purses);if(!T.belt)T.belt=[.24,.17,.11];}if(t.books)T.book=pick(t.books);if(t.specs&&!T.lenses&&!T.eyepatch)T.specs=pick(t.specs);if(t.hafts)T.staff=t.hafts[(h>>>5)%t.hafts.length];
   if(t.hats){T.hat=pick(t.hats);T.hatBand=t.hatBands?t.hatBands[(h>>>3)%t.hatBands.length]:null;T.wrap=null;T.scarf=false;T.veil=null;if(T.hood==='up')T.hood='down';if(T.coatHood==='up')T.coatHood='down';T.cowl=null;}return T;}
+/* S2525 (critic 22 Nov, s1849: "Ruairí's linen apron does not show ... on his tan tunic the bib is the same tan and reads as a fold in the
+   shirt", as S2503 had feared for Eoin) — the innkeeper's and the cook's apron is bleached linen now (luminance 0.90-0.93, was 0.67-0.83,
+   the old rig's 0xd8d0b8), and it is set on something darker. A light tunic (an undyed one, the Aurennais' cream) is the same linen to
+   the eye under an inn's warm lamps, so where the cloth the apron lies on (the tunic, or a robe, under the bib; a woman's skirt under the
+   skirt of it) is within HB_APRON_DY of the apron's luminance, that cloth is dyed one of the wearer's people's darker wools instead (Y at
+   most 0.58, from the trade's own stream; a madder if the people has none). The face, the hair and everything else rolled stay */
+const HB_APRON_DY=.38,HB_APRON_DARK=[.45,.16,.12];
+function hbLum(c){return .2126*c[0]+.7152*c[1]+.0722*c[2];}
+function hbApronShows(g,T,h){const ya=hbLum(T.apron),P=(typeof HB!=='undefined'&&HB.PEOPLES&&HB.PEOPLES[g.people])||{},
+  dk=(P.wool||[]).filter(c=>hbLum(c)<=.58),dark=k=>dk.length?dk[((h>>>(7+k))>>>0)%dk.length]:HB_APRON_DARK,low=c=>Array.isArray(c)&&ya-hbLum(c)<HB_APRON_DY;
+  if(T.robe&&low(T.robe)){T.robe=dark(0);T.robeStripe=null;}else if(!T.robe&&low(T.tunic))T.tunic=dark(0);
+  if(low(T.skirtColor))T.skirtColor=dark(3);return T;}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
 // S1763 (L1, OG-109's winter column) — the winter dress: in winter (calDay's season) a share of each people, out of doors, wear the
 // kit's winter coat (S1147) over what they rolled: a Gatelander one in two (fur-trimmed on half), a Markman nearly all (fur-lined,
@@ -2439,7 +2451,7 @@ function hbSeasonDress(g,G){if(G&&hbFeast())G=hbFeastDress(g,G);if(!G||!hbWinter
 // knee; nothing carried. Their people are drawn from a stream keyed by the role and her name, so a hand looks the same on every visit.
 const CREW_BODY={
   carpenter:{role:"Ship's carpenter",at:['workbench','mast','sea chest'],dress:{apron:[.36,.25,.16],apronLeather:true,bib:true,coat:null}},
-  cook:{role:"Ship's cook",at:['water cask','barrel','mast','sea chest'],dress:{apron:[.8,.76,.66],apronLeather:false,bib:true,coat:null}},
+  cook:{role:"Ship's cook",at:['water cask','barrel','mast','sea chest'],dress:{apron:[.94,.93,.89],apronLeather:false,bib:true,coat:null}},
   navigator:{role:'Navigator',at:['chart table','alchemy table','chest','sea chest','mast'],dress:{coat:[.18,.22,.32],coatLen:.8,coatHood:null,coatFur:null,apron:null,bib:null}}};
 // S1941 — a merchantman's two hands (the systems builder's S1935, Michael's A on #1225) dressed for her deck. They were built on a bare
 // townsman's genome (personGenome, no key), so on the new look they stood on the 17-bone driver alone, the only people at sea with no
