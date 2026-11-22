@@ -25,7 +25,7 @@ for (const [k, kind] of KINDS.entries()) {
     const gearOf = o => { for (let q = o; q && q !== root; q = q.parent) if (/^(gear|weapon:)/.test(q.name || '')) return true; return false; };
     const boxOf = o => { if (o.isSkinnedMesh && o.computeBoundingBox) { o.computeBoundingBox(); return o.boundingBox.clone().applyMatrix4(o.matrixWorld); }
       if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); return o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld); };
-    /* S2542 — the ceiling is a height over the floor the master stands on, so it is its top over e.baseY that must clear it (and the
+    /* S2545 — the ceiling is a height over the floor the master stands on, so it is its top over e.baseY that must clear it (and the
        ceiling at its own spot, D_CEIL, where the cavern has one), not the box's extent: the Frost Troll's hide dips 0.15 m
        under the floor (the Cave Bear's fur 0.25), and read top to bottom it was 3.57 in a 3.6 m cavern while its head stood at 3.42 */
     let b = null, held = null, low = null; if (root) { b = new THREE.Box3(); const h = new THREE.Box3();
