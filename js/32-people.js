@@ -686,7 +686,12 @@ function personBakeQ(g,q){
   const gear=bone('gear',B.wrR,0,-.035,.006);
   if(g.gear){part(SK.torus(.028,.014,6,12),skin,gear).rotation.x=Math.PI/2;B.handR.scale.set(.72,.85,.7);}
   if(g.gear==='spear'){part(SK.cyl(.015,.017,1.55,8),C(0x5a3a22),gear,0,.225,0);part(SK.cone(.034,.16,10),steel,gear,0,1.08,0);}
-  if(g.gear==='hoe'){part(SK.cyl(.014,.016,.9,8),C(0x6a4a2a),gear,0,-.1,0);part(new THREE.BoxGeometry(.16,.06,.012),C(0x8a8a8a),gear,0,.33,.05).rotation.x=.9;}
+  // S2522 — on the new look the builder's hoe (S2517) is walked as a staff, its blade down on the ground 4-9 cm ahead of the haft's foot,
+  // so the far level's hoe is laid the same way: the haft from 3 cm off the ground at the walk's fist to 39 cm over the fist, a short
+  // neck and the blade leaning back to it; the old look keeps S153's hoe, blade up over the shoulder
+  if(g.gear==='hoe'&&hbOn()){part(SK.cyl(.014,.016,.9,8),C(0x6a4a2a),gear,0,-.13,0);part(new THREE.BoxGeometry(.018,.012,.04),C(0x55524e),gear,0,-.515,.022);
+    part(new THREE.BoxGeometry(.125,.075,.008),C(0x8a8a8a),gear,0,-.545,.05).rotation.x=-.49;}
+  else if(g.gear==='hoe'){part(SK.cyl(.014,.016,.9,8),C(0x6a4a2a),gear,0,-.1,0);part(new THREE.BoxGeometry(.16,.06,.012),C(0x8a8a8a),gear,0,.33,.05).rotation.x=.9;}
   if(g.gear==='stick'){part(SK.cyl(.013,.017,.56,8),C(0x4a3018),gear,0,-.24,0);part(SK.ball(.024,8,6),C(0x5a4028),gear,0,.03,0);}
   if(g.gear==='hammer'){part(SK.cyl(.014,.016,.36,8),C(0x4a3018),gear,0,.06,0);part(new THREE.BoxGeometry(.16,.07,.07),C(0x666666),gear,0,.24,0);}
   // S208 — a troll's maul: a long haft wrapped at the grip, a heavy iron head with bands at its faces

@@ -674,6 +674,16 @@ const hoes = await page.evaluate(() => [0, 1, 2].map(i => { const g = { role: 'f
   return { make: s.make, basket: !!P.root.getObjectByName('basket'), on: st?.parent?.name, blade: !!st?.getObjectByName('hoeBlade'), edgeH: s.hoe?.edgeH, near: s.hoe?.near, clear: s.hoe?.clear, fist: s.fist, walk: o.staff && o.gear === 'stick', old: !o0.staff && o0.gear === 'hoe' }; }));
 check(`a farmer holds a hoe in the right fist (the basket goes), its blade's edge on the ground and nothing worn within 5 mm of it, walked as a staff`,
   hoes.every(h => h.make === 'hoe' && !h.basket && h.on === 'wrist.R' && h.blade && h.edgeH < .003 && h.near === 0 && h.fist === 0 && h.walk && h.old), hoes);
+// S2522: past the middle level the driver's own hoe shows; on the new look its blade is at the haft's foot, ahead of it, as the builder's is
+const farHoe = await page.evaluate(() => { const gn = personGenome({ role: 'farmer', name: 'Far Hoe' }, { nation: 'gatelander', key: 'farhoe' }); gn.gear = 'hoe';
+  const rig = buildPerson(gn); scene.add(rig.root); rig.root.visible = false; let m = null; rig.root.traverse(o => { if (o.isSkinnedMesh && !m) m = o; });
+  const bi = m.skeleton.bones.indexOf(rig.B.gear), G = m.geometry, si = G.attributes.skinIndex, sw = G.attributes.skinWeight, P = G.attributes.position;
+  let lo = 1e9, hi = -1e9, bLo = 1e9, bHi = -1e9;
+  const inv = m.skeleton.boneInverses[bi], v = new THREE.Vector3();
+  for (let i = 0; i < P.count; i++) if (si.getX(i) === bi && sw.getX(i) > .99) { v.fromBufferAttribute(P, i).applyMatrix4(inv); const y = v.y; lo = Math.min(lo, y); hi = Math.max(hi, y); if (v.z > .045) { bLo = Math.min(bLo, y); bHi = Math.max(bHi, y); } }
+  scene.remove(rig.root); return { haft: +(hi - lo).toFixed(3), bladeOff: +(bLo - lo).toFixed(3), bladeH: +(bHi - bLo).toFixed(3), overBlade: +(hi - bHi).toFixed(3) }; });
+check(`the far level's hoe is laid blade down too: the blade within 1 cm of the haft's foot and ${farHoe.overBlade} of haft over it`,
+  farHoe.bladeOff < .01 && farHoe.bladeH < .1 && farHoe.overBlade > .7, farHoe);
 await g.close();
 
 // a second boot: the same people, the same bodies
