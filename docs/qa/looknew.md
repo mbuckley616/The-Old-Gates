@@ -265,6 +265,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `harbour` | 3/14 | pass | pass | 72 |  |
 | `hearthcast` | 3/14 | pass | pass | 64 |  |
 | `heavyblow` | w14/20 | — | pass | 135 |  |
+| `heldbreath` | new | — | pass | 360 | Session 2535, cut from `reader`: the seven real hours away and Varek's line, one reload. |
 | `helmhair` | 6/14 | pass | pass | 21 |  |
 | `herbhidden` | 4/14 | pass | pass | 37 |  |
 | `herbids` | 2/14 | pass | pass | 61 |  |
@@ -458,7 +459,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `ragdollsearch` | 5/14 | pass | **red** (main, run 2337, failed twice) | 110 | Two the game's, one the suite's (Session 1254): the builder's cloak stands where a fallen Bandit stood (bodies builder, `js/32-people.js`); a corpse's bones are cached before its body attaches (systems builder, `bodyAimed`); the suite killed the foe before its body was on (fixed on `auto/wip-ragdollsearch`, lands with the cloak's fix). Backlog I. |
 | `raisevarek` | 3/14 | pass | pass | 42 |  |
 | `reachtable` | w3/20 | — | pass | 178 |  |
-| `reader` | 8/14 | pass | pass | 257 |  |
+| `reader` | 8/14 | pass | pass | 257 | Session 2535: killed at run.mjs's 900 s on the weekly runs of 15 and 22 Nov (three reloads); cut to one reload, the seven hours away moved to `heldbreath`. 256 s alone here. |
 | `register` | 2/14 | pass | pass | 70 |  |
 | `renewal` | 7/14 | pass | red, then pass | 223 | Red twice in shard 7: it threw on `S.altar`, so the shrine was not built. It was also red alone in the old look. The cause was the harness: its own 60 s wait for the shrine, its cell's sixth site, which stood after 42 s with one boot. Fixed in Session 1006 (`g.settle` runs the job queue). The shrine then built in all 8 runs across both looks; 7 of 8 passed whole. One new-look run, six boots on four cores, hit the 900 s cap later, in its 40 real frames. |
 | `resolver` | 9/14 | pass | pass | 58 |  |

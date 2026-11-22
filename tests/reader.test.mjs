@@ -2,51 +2,51 @@
 // gap directly and *the map* through the harness. This drives both the way play does: a save, a page reload and
 // Continue with the real clock moved on (Date.now shifted through localStorage, which survives the reload), a long
 // stretch underground before saving, and a real fast travel from the map to a town whose roads you never walked.
+// Session 2532 (QA): one reload here, not three. Each Continue on software GL is about 80 s of shader compiles after the reload
+// and 26 s of the world's restore; three of them and the boot came to 572 s on one machine and passed 900 s on CI's runners,
+// where run.mjs kills a suite (the weekly runs of 15 and 22 Nov, 43717030831 and 45028889995, both tries). The seven hours away
+// and Varek's line moved to `heldbreath`; the continue at once is made from underground, which holds the old quick case (the day,
+// the Church's notes, no gap, nothing due) and the hours spent below. Each wait is for the thing waited on, not a fixed pause.
 import { boot, check } from './lib/game.mjs';
 const H = 3.6e6;
 const g = await boot(); const { page } = g;
 // every later page load reads its clock offset from localStorage
-await page.addInitScript(() => { const o = Date.now.bind(Date); Date.now = () => o() + (+localStorage.getItem('__off') || 0); });
+const offClock = () => { const o = Date.now.bind(Date); Date.now = () => o() + (+localStorage.getItem('__off') || 0); };
+await page.addInitScript(offClock);
 await g.intoWorld();
+// and on this page too: an init script reaches only the loads after it, and this page saves the first time
+await page.evaluate(offClock);
 await page.evaluate(() => { localStorage.setItem('__off', '0'); worldState.masteries = 1; delete worldState.varek;
   worldState.gameTimeAbsMinutes = 9 * 1440 + 600; (worldState.church || (worldState.church = { notes: [] })).notes.push({ kind: 'guard', site: 'dunmore', day: 9 }); });
 await g.spin(null, 60);
+// a save, a reload with the real clock at `off`, and Continue; done when the loaded game stands in the open world
 const cont = async (off) => {
-  await page.evaluate(() => saveToSlot(0)); await page.waitForTimeout(1200);
+  await page.evaluate(() => saveToSlot(0));
   await page.evaluate((o) => localStorage.setItem('__off', String(o)), off);
-  await page.reload(); await page.waitForTimeout(5000);
-  await page.evaluate(() => document.getElementById('cb').click()); await page.waitForTimeout(12000); await g.hide();
+  await page.reload();
+  await page.waitForFunction(() => { const b = document.getElementById('cb'); return b && b.style.display === 'block'; }, null, { polling: 250, timeout: 120000 });
+  await page.evaluate(() => document.getElementById('cb').click());
+  await page.waitForFunction(() => typeof started !== 'undefined' && started && activeZoneId === 'world', null, { polling: 500, timeout: 400000 });
+  await g.hide();
   return page.evaluate(() => { const v = WORLD.varek; return { started, zone: activeZoneId, gapH: +(v.gapH || 0).toFixed(2), due: WORLD.varekDue(), m: worldState.masteries }; });
 };
-// a quick return is no gap
-const quick = await cont(0);
-console.log('quick', JSON.stringify(quick));
-const kept = await page.evaluate(() => ({ day: Math.floor((worldState.gameTimeAbsMinutes || 0) / 1440), notes: ((worldState.church && worldState.church.notes) || []).length }));
-check('the day count and the Church’s notes come back from the save', kept.day === 9 && kept.notes === 1, kept);
-check('saved and continued at once: no gap, nothing due', quick.started && quick.gapH === 0 && quick.due === null && quick.m === 1, quick);
-// seven hours away
-const away = await cont(7 * H);
-console.log('away', JSON.stringify(away));
-check('continued seven real hours later: the held breath is due', away.gapH >= 6.9 && away.gapH < 7.2 && away.due === 'breath', away);
-// Varek at the Ashfeld with the breath's line
-const vk = await page.evaluate(() => { const f = WORLD.fieldFor('gatelands'); px = f.x; pz = f.z + 30;
-  for (let i = 0; i < 180; i++) WORLD.tick(1 / 60, performance.now());
-  const n = ZONES.world.npcs.find(n => n.def && n.def.name === 'Varek') || (typeof npcs !== 'undefined' && npcs.find(n => n.def && n.def.name === 'Varek'));
-  return n ? { d: +Math.hypot(n.g.position.x - f.x, n.g.position.z - f.z).toFixed(1), line: n.def.greeting[0].slice(0, 60), field: f.name } : null; });
-console.log('varek', JSON.stringify(vk));
-check('Varek stands at the Ashfeld with the held breath', vk && vk.d < 10 && /^Nine days passed/.test(vk.line), vk);
 // seven hours of play underground, then save and continue at once: that is not a gap between sessions
-await page.evaluate(() => { const v = WORLD.varek; v.done.breath = true; v.gapH = 0; });
 await page.evaluate(() => { const e = WORLD.doorAnywhere(801); const p = makePortalDef(e); const wp = WORLD.dungeonPos[801]; if (wp) { p.x = wp.x; p.z = wp.z; } p.zone = 'world'; goToDungeon(p); });
-await page.waitForTimeout(6000); await g.hide();
+await page.waitForFunction(() => activeZoneId === 'dungeon' && !!currentPortal && document.getElementById('fd').style.opacity === '0', null, { polling: 250, timeout: 120000 }).catch(() => {});
+await g.hide();
 const below = await page.evaluate(() => ({ zone: activeZoneId, dungeon: !!currentPortal }));
 await page.evaluate(() => localStorage.setItem('__off', String(14 * 3.6e6)));
 await g.frames(3); await page.waitForTimeout(1500); await g.frames(3);
 const deep = await cont(14 * H);
 console.log('below', JSON.stringify(below), 'deep', JSON.stringify(deep));
+const kept = await page.evaluate(() => ({ day: Math.floor((worldState.gameTimeAbsMinutes || 0) / 1440), notes: ((worldState.church && worldState.church.notes) || []).length }));
+check('the day count and the Church’s notes come back from the save', kept.day === 9 && kept.notes === 1, kept);
+check('saved and continued at once: no gap, nothing due', deep.started && deep.gapH === 0 && deep.due === null && deep.m === 1, deep);
 check('seven hours underground, saved and continued at once: no gap', below.zone !== 'world' && deep.started && deep.gapH === 0 && deep.due === null, { below, deep });
 // back out into the world
-await page.evaluate(() => goToZone('world', 13100, 25450, 0, 'x')); await page.waitForTimeout(9000); await g.hide();
+await page.evaluate(() => goToZone('world', 13100, 25450, 0, 'x'));
+await page.waitForFunction(() => activeZoneId === 'world' && document.getElementById('fd').style.opacity === '0' && Math.hypot(px - 13100, pz - 25450) < 50, null, { polling: 250, timeout: 120000 }).catch(() => {});
+await g.hide();
 // the map: fast travel to a town none of whose roads you walked
 const mp = await page.evaluate(() => { WORLD.devUnlockAll(); worldState.masteries = 2; worldState.roadsWalked = {}; const v = WORLD.varek; v.shortRoad = null;
   const pick = (id) => { const t = WORLD.siteAnywhere(id); return t && WORLD.ROAD_DEFS.some(r => r.a === id || r.b === id) ? t : null; };
