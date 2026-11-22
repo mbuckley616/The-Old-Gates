@@ -901,7 +901,9 @@ Michael marked all 96 images of the intake on the review page: 63 KEEP and 33 NO
     — done, Session 2493 (one a week an island, two kept, 3 star iron to a mithril pick, the island's news, Cosmic at Smithing 100; ~~the map's
     mark on its cell~~ — done, Session 2501 (`starsOnMap`, `mapDrawStars`: the cell ringed and starred from the morning's news while it holds iron); owed: the streak and the crater, the look's); ~~(4) skywood and the top bows~~
     — done, Session 2498 (a lone pine on 17 of the Mark's peaks, a steel hatchet for one log, back in 30 days; 2 skywood planks a log; the bench's
-    bows and arrows run to Cosmic, the top bows on skywood planks; the pine is a stand-in); (5) deep pearls and the top tempers. The look's session: the crater, the streak, the script
+    bows and arrows run to Cosmic, the top bows on skywood planks; the pine is a stand-in); ~~(5) deep pearls and the top tempers~~ — done,
+    Session 2520 (Michael's A on #1861: 685 beds of 5 oysters on Aurenne's open bed, 8 m down, one chunk in 40; one in six a pearl, opened
+    from down on the bed; a bed back 14 days after its last take; one pearl a temper of tiers 8–10; the shells are a stand-in). The look's session: the crater, the streak, the script
     stone, the pine and the oyster bed as kit pieces. **Three of the five prototyped, Session 2500** (look builder; `props.js` `starCrater`,
     `skywoodPine`, `scriptStone`, `rare.html`, `rare.check.mjs`, `rare-*.jpg`; asked as a DECISION): the oyster bed waits on #1861 and the streak
     on the sky's file (`89-world-land.js`).
