@@ -1387,6 +1387,13 @@
     const R=bodyRig(e);if(R){R.O.x+=dx;R.O.z+=dz;}else if(dr&&e.mesh)e.mesh.rotation.y+=dr;
     const c=bodyCorpse(e);if(c){c.x+=dx;c.z+=dz;for(const m of [c.gl,c.spark])if(m){m.position.x+=dx;m.position.z+=dz;}}}
   function bodyOnDeck(p,x,z){return x>=p.x0&&x<=p.x1&&z>=p.z0&&z<=p.z1&&(!p.inside||p.inside(x,z));}
+  // S2542 — a hand killed on a deck falls inside her rail (shipdead): the death's push (1.8 to 2.6 m/s) slid the ragdoll across a sloop's
+  // 4.4 m beam and over her side, where its hips fell to the sea (-0.13) while the body was still carried as one aboard. The deck she
+  // stands on (yours or a black sail's) bounds the fall: a point the step would take off it meets a wall, as at a solid, and goes back
+  // to where it began. Only for a ship's crew and boarders (e._ship); a body put over the side by a blow lies on the water as before.
+  function deckSolid(e){if(!e||!e._ship||activeZoneId!=='world')return null;let p=null;
+    for(const q of [SHIP.plat,...OTHER.map(o=>o.plat)])if(q&&q.inside&&bodyOnDeck(q,e.x,e.z)){p=q;break;}
+    return p?(x,z)=>solidAt(x,z)||!bodyOnDeck(p,x,z):null;}
   function seaFloor(R){if(R&&!R._sea){const g=R.ground;R.ground=(x,z)=>Math.max(g(x,z),SEA_Y-.25);R._sea=true;}}
   // the dead in `list` ride a deck whose pose went from (lx,lz,lyaw) to (x,z,yaw); one off the deck once still goes to the water
   function carryDead(list,plat,x,z,yaw,lx,lz,lyaw){const dr=yaw-lyaw,c=Math.cos(dr),s=Math.sin(dr);
