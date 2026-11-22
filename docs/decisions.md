@@ -3,6 +3,18 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Workstations — the forge by grade, the still, or both? (from the designer, 2026-11-22, #1883)
+**The question.** Every forge works every metal today, and the apothecaries' drawn still does nothing. Should the forge have grades, should the still make a stronger draught that keeps, or both? (Backlog L11, OG-133.)
+
+**Options.**
+- **A.** Three grades of forge: a village to Steel, a town to Obsidian, the top three only at a city keep's great forge, open at the city's favour +2 with no bounty (and no sigil stone in Aurenne). Two systems sessions, one look.
+- **B.** The still and four steps: herbs dried on a rack (×1.10), the mortar as now, two tinctures distilled into a draught (×1.35, never turns), bottled in a 2-gold glass vial; a recipe leaf on the brewing page. Three systems sessions.
+- **C (recommended).** Both. Five systems sessions, one look.
+
+**Recommendation: C**; if only one, A, because it carries the consequence.
+
+Page: [docs/design/workstations.md](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/workstations.md)
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
