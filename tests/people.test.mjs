@@ -27,13 +27,17 @@ check('the same name in the same place is the same person; the Old Blood wear th
 await page.evaluate(() => { forceTime(12); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now()); });
 const walk = await page.evaluate(() => { const rig = [...PEOPLE_RIGS].find(r => r.root.parent === WORLD.scene && r.root.visible && !r.g.gear); window._wr = rig; const root = rig.root;
   const fyaw = root.rotation.y, step = .012; const vL = new THREE.Vector3(), vR = new THREE.Vector3(); let prev = null, worstStill = 0, swingMoved = 0;
-  tickPeople(1 / 60, 1e5); const ph0 = rig.phase; // sync to where the town's own schedule has walked them
-  for (let i = 1; i <= 90; i++) { root.position.x += Math.sin(fyaw) * step; root.position.z += Math.cos(fyaw) * step; tickPeople(1 / 60, 1e5 + i * 16.7); root.updateMatrixWorld(true);
+  tickPeople(1 / 60, 1e5); const run0 = +(rig.w.run || 0).toFixed(3), latched = !!rig.run; // sync to where the town's own schedule has walked them
+  // S2512 — and walk 60 frames at the same pace first: the game's own frame can read the 120 ticks above as one fast step and latch the
+  // run, whose longer cycle is still blended in (rig.w.run) for the first frames of the walk; the phase is taken once the gait is a walk
+  for (let i = 1; i <= 60; i++) { root.position.x += Math.sin(fyaw) * step; root.position.z += Math.cos(fyaw) * step; tickPeople(1 / 60, 1e5 + i * 16.7); }
+  const wasRun = +(rig.w.run || 0).toFixed(3), ph0 = rig.phase;
+  for (let i = 1; i <= 90; i++) { root.position.x += Math.sin(fyaw) * step; root.position.z += Math.cos(fyaw) * step; tickPeople(1 / 60, 1e5 + (60 + i) * 16.7); root.updateMatrixWorld(true);
     rig.B.anL.getWorldPosition(vL); rig.B.anR.getWorldPosition(vR); const cur = [vL.clone(), vR.clone()];
     // the stiller foot is the one carrying the body; it should not move at all
     if (prev && i > 30) { const dL = cur[0].distanceTo(prev[0]), dR = cur[1].distanceTo(prev[1]); worstStill = Math.max(worstStill, Math.min(dL, dR)); swingMoved = Math.max(swingMoved, Math.max(dL, dR)); } prev = cur; }
   const s = root.scale.x; const expect = (90 * step) / (PW.cycle * s);
-  return { walk: rig.w.walk, phaseAdv: ((rig.phase - ph0 + 10) % 1).toFixed(3), expect: (expect % 1).toFixed(3), stillMm: +(worstStill * 1000).toFixed(2), swingMm: +(swingMoved * 1000).toFixed(1), scale: +s.toFixed(3) }; });
+  return { walk: rig.w.walk, run0, latched, wasRun, run: +(rig.w.run || 0).toFixed(3), phaseAdv: ((rig.phase - ph0 + 10) % 1).toFixed(3), expect: (expect % 1).toFixed(3), stillMm: +(worstStill * 1000).toFixed(2), swingMm: +(swingMoved * 1000).toFixed(1), scale: +s.toFixed(3) }; });
 check('walking: the stride tracks the ground, the standing foot holds still while the other swings', walk.walk > .9 && Math.abs(+walk.phaseAdv - +walk.expect) < .01 && walk.stillMm < 2 && walk.swingMm > 8, walk);
 const idle = await page.evaluate(() => { const rig = window._wr; for (let i = 0; i < 90; i++) tickPeople(1 / 60, 2e5 + i * 16.7); return { walk: rig.w.walk, idle: rig.w.idle }; });
 check('standing still, the walk fades out', idle.walk < .1 && idle.idle > .9, idle);
