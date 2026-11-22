@@ -2081,13 +2081,13 @@
   // at the helm with a ballista fitted, the left button is the ballista's, not the sword's: caught before the canvas's own handler
   if(typeof window!=='undefined'&&window.addEventListener)window.addEventListener('mousedown',e=>{
     if(e.button!==0||typeof SHIP==='undefined'||!SHIP.sailing||!(shipFitted('ballista')||shipGunned())||typeof started!=='undefined'&&!started)return;
-    if(typeof document!=='undefined'&&document.pointerLockElement==null)return;if(typeof _isMenuOpen==='function'&&_isMenuOpen())return;
+    if(typeof document!=='undefined'&&document.pointerLockElement==null)return;if(typeof isMenuOpenNow==='function'&&isMenuOpenNow())return;
     e.preventDefault();e.stopPropagation();const r=helmFire();if(r!==true)showMsg(r,'#c8b880');},true);
   /* S1822 — a galleon's side that can fire goes first; else the ballista; else the guns' reason */
   function helmFire(){if(shipGunned()&&!broadsideWhy())return fireBroadside();if(shipFitted('ballista'))return fireBallista();return broadsideWhy();}
   if(typeof window!=='undefined'&&window.addEventListener)window.addEventListener('mousedown',e=>{ /* S1821 — the right button: fire bolts or plain */
     if(e.button!==2||typeof SHIP==='undefined'||!SHIP.sailing||!(shipFitted('ballista')||shipGunned())||typeof started!=='undefined'&&!started)return;
-    if(typeof document!=='undefined'&&document.pointerLockElement==null)return;if(typeof _isMenuOpen==='function'&&_isMenuOpen())return;
+    if(typeof document!=='undefined'&&document.pointerLockElement==null)return;if(typeof isMenuOpenNow==='function'&&isMenuOpenNow())return;
     e.preventDefault();e.stopPropagation();if(shipGunned())gunsCycle();else ballistaFireMode(!BOLTS.fire);},true);
   function ballistaFireMode(on){BOLTS.fire=!!on;showMsg(on?'Fire bolts: each takes a pitch from your bag.':'Plain bolts.','#c8b880');shipBarsUI();return BOLTS.fire;}
   // S1822 — the galleon's broadside (B's sixth systems session; Michael's 7 A: guns on the top ships only). A galleon carries six guns a
