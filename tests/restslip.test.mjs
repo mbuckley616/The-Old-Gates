@@ -57,5 +57,13 @@ check('Enter waits the five hours, restores nothing and takes no level', wa.abs 
 await page.evaluate(() => openWaitMenu()); await key('Escape');
 const esc = await page.evaluate((a) => ({ open: sleepOpen, shown: document.getElementById('sleepui').style.display, moved: worldState.gameTimeAbsMinutes - a }), wa.abs);
 check('Esc leaves you as you were', !esc.open && esc.shown === 'none' && esc.moved < 15, esc);
+// S2516: not while someone is talking to you. The dialogue is a panel at the foot of the screen and the ⏳ stays clickable above it; the
+// guard read #dlg as shown 'flex', which the dialogue never sets ('block'), so time passed mid-conversation. A real click on the button.
+const talk = await page.evaluate(() => { luOpen = false; document.getElementById('lu').style.display = 'none'; /* the level taken above leaves its page up */ const npc = NPC_DEF[Object.keys(NPC_DEF)[0]]; openDialog(npc); const b = document.getElementById('wait-btn').getBoundingClientRect();
+  const x = b.x + b.width / 2, y = b.y + b.height / 2, top = document.elementFromPoint(x, y); return { npc: npc.name, open: dlgOpen, can: _canWait().ok, x, y, top: top && top.id }; });
+await page.mouse.click(talk.x, talk.y); await g.frames(2);
+const talk2 = await page.evaluate(() => { const r = { slip: sleepOpen, still: dlgOpen }; closeDialog(); r.after = _canWait().ok; return r; });
+check(`not while someone is talking to you: the ⏳ (on top: ${talk.top}) opens no slip with ${talk.npc} speaking; free again once the talk ends`,
+  talk.open && talk.top === 'wait-btn' && !talk.can && !talk2.slip && talk2.still && talk2.after, { talk, talk2 });
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
