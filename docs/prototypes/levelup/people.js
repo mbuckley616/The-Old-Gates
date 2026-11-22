@@ -2764,6 +2764,68 @@ function buildHelm(P, G, heads, byName, hairPts = []) {
   byName['head'].add(hm);
   return { mesh: hm, stats: { gap: +gap.toFixed(4), face, facePts: nf, hairOut, hairPts: hairPts.length, tris: (idx.length + edge.index.count) / 3, width: +(ext.max.x - ext.min.x).toFixed(3), depth: +(ext.max.z - ext.min.z).toFixed(3) } };
 }
+// the hat (Session 2511; the old rig's role dress, S153: a farmer's or a fisher's straw hat, a merchant's brimmed one). `hat` is its
+// colour and `hatKind` its make: 'straw', a plaited round crown and a 10 cm brim that droops; 'felt', a taller flat-topped crown and a
+// 6.5 cm brim rolled up at the sides. Fitted as the helm is (headDome over the head and the hair tucked short under it), but worn
+// higher: its band sits 6 mm over the brow in front and 4 cm lower behind, a plane tipped back, not the helm's rim to the nape. The crown
+// is a superellipse round the dome, in each direction as wide as the dome at its widest plus 4 mm and as tall as it must be for every
+// point of the dome to lie inside it, the top level. A band at the crown's foot (`hatBand`, or a dark cord on straw). On the head bone.
+// Not with a helm, a raised hood, a wrap or a tier's dress, nor an eyepatch (its cord crosses where the band sits)
+function hatOn(D) { return !!(D && D.hat && !D.helm && !hoodUpOn(D) && !D.wrap && !D.tier && !D.eyepatch); }
+function strawTex() {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 64; const x = c.getContext('2d'), rnd = seeded('straw');
+  x.fillStyle = 'rgb(205,205,205)'; x.fillRect(0, 0, 128, 64);
+  // four rows of plait, each a run of short strands laid slant one way over the other, a dark seam between the rows
+  for (let r = 0; r < 4; r++) { const y0 = r * 16; for (let i = -2; i < 34; i++) for (const s of [-1, 1]) { const v = 190 + Math.floor(rnd() * 65), x0 = i * 4 + (s > 0 ? 0 : 2);
+      x.strokeStyle = `rgb(${v},${v},${v})`; x.lineWidth = 2.2; x.beginPath(); x.moveTo(x0, y0 + (s > 0 ? 2 : 8)); x.lineTo(x0 + 5 * s * -1 + 5, y0 + (s > 0 ? 8 : 14)); x.stroke(); }
+    x.fillStyle = 'rgba(40,30,20,.55)'; x.fillRect(0, y0, 128, 1.4); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t;
+}
+function buildHat(P, G, heads, byName, hairPts = [], skinPts = null) {
+  const D = G.dress, straw = (D.hatKind || 'straw') !== 'felt', R0 = PACK.rest, hv = PACK.headV || (PACK.headV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3 + 1] > .6)), V = i => new THREE.Vector3(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
+  let by = 0, bn = 0; for (const i of hv) if (Math.abs(R0[i * 3]) < .05 && R0[i * 3 + 2] > .08 && R0[i * 3 + 1] > .785 && R0[i * 3 + 1] < .8) { by += P[i * 3 + 1]; bn++; } by /= bn;
+  const bb = new THREE.Box3(); for (const i of hv) if (R0[i * 3 + 1] > .755) bb.expandByPoint(V(i));
+  const c = bb.getCenter(new THREE.Vector3()), rimY = th => by + .006 - .02 * (1 - Math.cos(th)), NT = 72, thOf = (x, z) => Math.atan2(x - c.x, z - c.z);
+  // the head's and the hair's points over the band, by direction (each bin the furthest of them, spread to its neighbours and smoothed)
+  const N = straw ? 2.6 : 4.5, W = straw ? .1 : .065, CLR = .007, Y0 = [], RC = new Array(NT).fill(0), pts = [...hv.map(V), ...hairPts], kOf = th => Math.round((th / (Math.PI * 2) * NT % NT + NT) % NT) % NT;
+  for (let k = 0; k <= NT; k++) Y0.push(rimY(k / NT * Math.PI * 2));
+  const over = pts.filter(p => p.y > rimY(thOf(p.x, p.z)) - .003);
+  for (const p of over) { const k = kOf(thOf(p.x, p.z)); RC[k] = Math.max(RC[k], Math.hypot(p.x - c.x, p.z - c.z)); }
+  const sp = RC.map((_, k) => Math.max(...[-2, -1, 0, 1, 2].map(d => RC[(k + d + NT) % NT]))), rc = sp.map((_, k) => (sp[(k - 2 + NT) % NT] + sp[(k - 1 + NT) % NT] + sp[k] + sp[(k + 1) % NT] + sp[(k + 2) % NT]) / 5 + CLR); rc.push(rc[0]);
+  // the top: level, as high as it must be for every one of those points to lie inside the crown's superellipse with 7 mm to spare
+  let top = 0; for (const p of over) { const k = kOf(thOf(p.x, p.z)), rr = Math.hypot(p.x - c.x, p.z - c.z), q = Math.min(.995, (rr / rc[k]) ** N); top = Math.max(top, Y0[k] + (Math.max(0, p.y - Y0[k]) + CLR) / (1 - q) ** (1 / N)); }
+  top += straw ? .006 : .022;
+  const crownR = (k, y) => { const h = top - Y0[k], u = Math.max(0, Math.min(1, (y - Y0[k]) / h)); return rc[k] * (1 - u ** N) ** (1 / N); };
+  const ptAt = (th, r, y) => new THREE.Vector3(c.x + r * Math.sin(th), y, c.z + r * Math.cos(th));
+  const parts = [], mk = () => ({ pos: [], uv: [], idx: [] }), grid = (G2, rows, f) => { const b0 = G2.pos.length / 3; for (let j = 0; j < rows; j++) for (let k = 0; k <= NT; k++) { const [p, u, v] = f(k / NT * Math.PI * 2, j / (rows - 1), k); G2.pos.push(p.x, p.y, p.z); G2.uv.push(u, v); }
+    for (let j = 0; j < rows - 1; j++) for (let k = 0; k < NT; k++) { const a = b0 + j * (NT + 1) + k, d = a + NT + 1; G2.idx.push(a, d, a + 1, a + 1, d, d + 1); } };
+  // the crown, from its foot to the middle of its top (a felt crown's top dented 1.2 cm along a crease from front to back); the plait's rows run round it
+  const NP = 16, crown = mk(), dent = (th, s) => straw ? 0 : .012 * Math.max(0, 1 - s) ** 2 * Math.cos(th) ** 2;
+  grid(crown, NP, (th, t0, k) => { const t = 1 - t0, a = t * Math.PI / 2, h = top - Y0[k], r = rc[k] * Math.cos(a) ** (2 / N), y = Y0[k] + h * Math.sin(a) ** (2 / N) - (t > .5 ? dent(th, r / rc[k]) * (t - .5) * 2 : 0);
+    return [ptAt(th, r, y), k / NT * 40, (t * (h + rc[k])) / .009]; });
+  // the brim, its top and its underside 4 mm under it; a straw brim droops 2.4 cm at its edge, a felt one turns up 1.8 cm at the sides
+  const brimY = (th, s) => straw ? -.024 * s ** 1.6 : .018 * s * s * Math.sin(th) ** 2 - .006 * s * s * Math.cos(th) ** 2;
+  const brim = mk(), bAt = (th, s, k, dy) => ptAt(th, rc[k] + .001 + s * W, Y0[k] + brimY(th, s) + dy);
+  grid(brim, 6, (th, s, k) => [bAt(th, s, k, 0), k / NT * 40, s * W / .009]); grid(brim, 6, (th, s, k) => [bAt(th, 1 - s, k, -.004), k / NT * 40, (1 - s) * W / .009]);
+  // the band: 2.6 cm of ribbon (felt) or a 1 cm cord (straw), 1.5 mm proud of the crown
+  const band = mk(), BH = straw ? .01 : .026; grid(band, 4, (th, t, k) => { const y = Y0[k] + .002 + (1 - t) * BH; return [ptAt(th, crownR(k, y) + .0015, y), 0, 0]; });
+  const geo = G2 => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(G2.pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(G2.uv, 2)); g.setIndex(G2.idx); g.computeVertexNormals(); return g; };
+  const edge = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({ length: NT }, (_, k) => bAt(k / NT * Math.PI * 2, 1, k, -.002)), true), NT * 2, .0022, 6, true);
+  const tex = straw ? keptTex('straw', strawTex) : null, mat = new THREE.MeshStandardMaterial({ color: sRGB(...D.hat), map: tex, roughness: straw ? .85 : .95 });
+  const bandMat = new THREE.MeshStandardMaterial({ color: sRGB(...(D.hatBand || (straw ? [.3, .2, .12] : D.hat.map(v => v * .45)))), roughness: .7 });
+  const hm = new THREE.Group(); hm.name = 'hat'; let tris = 0;
+  for (const [g, m, name] of [[geo(crown), mat, 'hatCrown'], [geo(brim), mat, 'hatBrim'], [edge, mat, 'hatEdge'], [geo(band), bandMat, 'hatBand']]) {
+    tris += g.index.count / 3; g.translate(-heads['head'].x, -heads['head'].y, -heads['head'].z); const o = new THREE.Mesh(g, m); o.name = name; o.castShadow = o.receiveShadow = true; hm.add(o); }
+  // the numbers, before it moves to the head bone: the head's and the hair's points outside the crown over its foot (through it), the nearest
+  // of them to it, the skin within the brim's 4 mm or under it by less than 5 mm (an ear, the brow), and the brim's span
+  let out = 0, gap = 1, brimHit = 0;
+  const test = (p, skin) => { const th = thOf(p.x, p.z), k = kOf(th), rr = Math.hypot(p.x - c.x, p.z - c.z), y0 = Y0[k];
+    if (p.y >= y0) { if (p.y > top || rr > crownR(k, p.y)) out++; else gap = Math.min(gap, crownR(k, p.y) - rr); return; }
+    if (skin && rr > rc[k] && rr < rc[k] + W + .003) { const s = (rr - rc[k]) / W, yb = y0 + brimY(th, Math.min(1, s)); if (p.y > yb - .009) brimHit++; } };
+  for (const i of hv) test(V(i), true); for (const p of hairPts) test(p, false);
+  byName['head'].add(hm);
+  return { mesh: hm, stats: { kind: straw ? 'straw' : 'felt', out, gap: +gap.toFixed(4), brimHit, tris, crownW: +(rc[NT / 4] + rc[3 * NT / 4]).toFixed(3), crownL: +(rc[0] + rc[NT / 2]).toFixed(3), headW: +(bb.max.x - bb.min.x).toFixed(3), headL: +(bb.max.z - bb.min.z).toFixed(3), crown: +(top - Y0[0]).toFixed(3), span: +(2 * (Math.max(...rc) + W)).toFixed(3) } };
+}
 // a painted face made once for its colours and kept (Session 1304): a canvas of 512 painted pixel by pixel was ~120 ms a shield,
 // made again for every bearer and never let go. The same colours paint the same face (its stream is seeded), so a kept one is shared;
 // the 32 last made are kept (the builder page's pickers make a colour at a time)
@@ -4984,7 +5046,7 @@ function hoodUpOn(D) { return !!(D && (D.cloak && D.hood === 'up' || coatOn(D) &
 // a hood worn up with no coat and no hooded cloak (Session 1269, card F10: the game's light line's hood), D.cowl its colour
 function cowlOn(D) { return !!(D && D.cowl && !(D.cloak && D.hood) && !coatOn(D)); }
 // the circlet (Session 1206) is worn on a bare head: never under a helm, a raised hood, a head-wrap or a headscarf
-function circletOn(D) { return !!(D && D.circlet && !D.helm && !D.wrap && !hoodUpOn(D)); }
+function circletOn(D) { return !!(D && D.circlet && !D.helm && !hatOn(D) && !D.wrap && !hoodUpOn(D)); }
 function coatOn(D) { return !!(D && D.coat && !D.robe && !D.mail && !D.scales && !D.tabard && !D.chair); }
 // its hem, from the coat's length: .75 (the default) is mid-calf, rest y -.6; 0 is a jacket's skirt over the hips, 1 is to the ankle
 const coatHem = D => -.3 - .4 * (D.coatLen ?? .75);
@@ -5157,7 +5219,7 @@ function* makePersonSteps(G, o = {}) {
     // the short crop roots on its own region, over the ears and down the sideburns (Session 1576); hair tucked under a hood, a helm or a wrap keeps the old one
     // and so do shaved sides (Session 1582), whose stubble is the shell's own, out to that region's border
     // the styles combed back to a tie, a bun or a braid root on theirs, down over the ears and the temples (Session 1607)
-    const sty = !(hoodUpOn(D) || D.helm || D.wrap) && (G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose')), crop = sty === 'short' || sty === 'shaved', low = sty && !crop, roots = crop ? PACK.R.cropRoots : low ? PACK.R.tiedRoots : scalp, rootEdge = sty === 'shaved' ? PACK.shaveEdge : crop ? PACK.cropEdge : low ? PACK.tiedEdge : PACK.scalpEdge;
+    const sty = !(hoodUpOn(D) || D.helm || D.wrap || hatOn(D)) && (G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose')), crop = sty === 'short' || sty === 'shaved', low = sty && !crop, roots = crop ? PACK.R.cropRoots : low ? PACK.R.tiedRoots : scalp, rootEdge = sty === 'shaved' ? PACK.shaveEdge : crop ? PACK.cropEdge : low ? PACK.tiedEdge : PACK.scalpEdge;
     // (Session 1649, Michael's note on #272: loose hair roots on the tied styles' region too, down to the line over the ear and the temple in
     // front of it; on Session 804's region it left a bare band 3 cm deep from the temple back over the ear, where the hair falls from)
     const sm = push('scalp', sty === 'shaved' ? PACK.R.shaveRoots : roots, shellMat(sRGB(...G.hairCol).multiplyScalar(.55), 0, 3, { solid: true, hairline: true, edge: true, skin: sRGB(...G.skin), ...sty === 'shaved' ? { stub: .04 } : {}, ...low ? { temple: true } : {} }), (x, y, z, i) => { if (sty === 'shaved' && Math.abs(x) > .03) return .0015; const w = Math.max(0, Math.min(1, (z + .04) / .03)) * (1 - Math.max(0, Math.min(1, (z - .03) / .02))), k = 1 - w * (1 - Math.min(1, rootEdge[i] / .012)); return .0008 + .0017 * k * k * (3 - 2 * k); });
@@ -5165,9 +5227,9 @@ function* makePersonSteps(G, o = {}) {
     // and at the sides comes down onto the skin toward that border (0.8 mm, from 2.5), so its faded edge is not a ledge seen side-on by the ear
     sm.geometry.setAttribute('aEdge', new THREE.BufferAttribute(rootEdge, 1));
     const headB = ix.bones.findIndex(b => b.name === 'head'), bb = new THREE.Box3(); for (const v of scalp) bb.expandByPoint(new THREE.Vector3(P[v * 3], P[v * 3 + 1], P[v * 3 + 2])); const hc = bb.getCenter(new THREE.Vector3()), hr = bb.getSize(new THREE.Vector3()).multiplyScalar(.5).addScalar(.004); hc.y -= .02; hr.y += .02;
-    const tuck = hoodUpOn(D) || D.helm || D.wrap ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
+    const tuck = hoodUpOn(D) || D.helm || D.wrap || hatOn(D) ? { ...G, hair: { style: 'short', len: Math.min(G.hair?.len ?? .3, .3) } } : G;
     // under a hood the hair is tucked in: only the scalp's shell, which shows at the hairline
-    const H = buildHair(P, tuck, heads, roots, headB, RND, o.hairStats !== false); meshes.push(...H.meshes.filter(m => tuck === G || (D.helm || D.wrap) && !hoodUpOn(D) || m.name !== 'hair')); hairStats = H.stats;
+    const H = buildHair(P, tuck, heads, roots, headB, RND, o.hairStats !== false); meshes.push(...H.meshes.filter(m => tuck === G || (D.helm || D.wrap || hatOn(D)) && !hoodUpOn(D) || m.name !== 'hair')); hairStats = H.stats;
     // the plait over the shoulder (Session 1448), and every braid and tail down the back (Session 1449): what lies below the neck rides the chest, not
     // the head, so a turn of the head no longer swings it across the breast or the back. Its locks, ties, brush and a tail's strands pass from the head's
     // bone to the chest's (the necklace's) between 2 cm over the neck's base and 8 cm under it
@@ -5217,6 +5279,8 @@ function* makePersonSteps(G, o = {}) {
     const head = byName['head']; head.updateWorldMatrix(true, false); e.position.copy(c).sub(heads['head']); e.position.z -= r * .12; head.add(e); }
   yield;
   let helmStats = null; if (D.helm && !tierHelmOn(D)) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } helmStats = buildHelm(P, G, heads, byName, hp).stats; }
+  // the hat (Session 2511), over the same tucked hair
+  let hatStats = null; if (hatOn(D)) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } hatStats = buildHat(P, G, heads, byName, hp).stats; }
   // the eyepatch (Session 1079), on the face under whatever is on the head; its cord over the hair
   let patchStats = null; if (D.eyepatch) patchStats = buildEyepatch(P, G, heads, byName, meshes).stats;
   // hoop earrings (Session 995), when no raised hood covers the ears
@@ -5386,7 +5450,7 @@ function* makePersonSteps(G, o = {}) {
   let sKitStats = null; if ((D.penner || D.seal) && D.belt) { const S = buildScholarKit(G, body, byName, meshes, root); sKitStats = S && S.stats; }
   // the clay pipe in the teeth (Session 1816), after everything worn, so it is turned clear of all of it; not under a helm, a raised hood or a veil
   // the glass-grinder's lenses on the brow (Session 2307), after everything worn on the head
-  let lensStats = null; if (D.lenses && !D.helm && !hoodUpOn(D) && !veilOn(D) && !(D.tier && tierHelmOn(D))) lensStats = buildLenses(G, body, byName, meshes, root)?.stats ?? null;
+  let lensStats = null; if (D.lenses && !D.helm && !hatOn(D) && !hoodUpOn(D) && !veilOn(D) && !(D.tier && tierHelmOn(D))) lensStats = buildLenses(G, body, byName, meshes, root)?.stats ?? null;
   // a scholar's spectacles (Session 2507), after everything worn on the head; not with the lenses or an eyepatch
   let specStats = null; if (D.specs && !D.lenses && !D.eyepatch && !D.helm && !veilOn(D) && !(D.tier && tierHelmOn(D))) specStats = buildSpecs(G, body, byName, meshes, root)?.stats ?? null;
   // the Weaver's shuttle on its cord (Session 2307), over everything worn on the breast
@@ -5406,7 +5470,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, lenses: lensStats, specs: specStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, reliquary: reliqStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, hat: hatStats, lenses: lensStats, specs: specStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, reliquary: reliqStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -5429,7 +5493,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'specs', 'shuttle', 'guildStar', 'reliquary', 'packSkull'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14 };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'specs', 'hat', 'hatBand', 'shuttle', 'guildStar', 'reliquary', 'packSkull'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14, hatKind: 'straw' };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
