@@ -30,23 +30,28 @@ check('fallen, the camp’s soldiers are gone from the world’s foes: none is l
 check('and the garrison holds the plaza: five, a captain among them', occ.live === 5 && occ.captains === 1 && occ.fromTown < 15, occ);
 
 // S2069 — Under Another Flag §8: by day two of the garrison walk a beat to the town's first gate and back, a leg a game-hour; by night they stand
-const beat = (h, n) => page.evaluate(([h, n]) => { const t = WORLD.siteAnywhere('dunmore'); worldState.gameTimeMinutes = Math.floor(worldState.gameTimeMinutes / 1440) * 1440 + Math.round(h * 60);
+const beat = (h, n, post) => page.evaluate(([h, n, post]) => { const t = WORLD.siteAnywhere('dunmore'); worldState.gameTimeMinutes = Math.floor(worldState.gameTimeMinutes / 1440) * 1440 + Math.round(h * 60);
   const S = SETTLE.get('dunmore'); const gate = S._gates && S._gates[0]; const L = ZONES.world.enemies.filter(e => e._siege === 'dunmore' && !e.dead);
   L.forEach(e => { e.alert = false; }); px = t.x + 400; pz = t.z; let stuck = 0;
   const P = L.filter(e => e._beat), last = P.map(e => [e.x, e.z]);
+  // S2536: a post laid across soldier 2's straight line to the gate after his way is found (as a solid the way's line test passed, CI 22 Nov)
+  let box = null; if (post) { tickSieges(); const e2 = P.find(e => e._beat === 2); e2._beatWay = [{ x: gate.x, z: gate.z }]; const d = Math.hypot(gate.x - e2.x, gate.z - e2.z), ux = (gate.x - e2.x) / d, uz = (gate.z - e2.z) / d, a = -Math.atan2(uz, ux);
+    box = { cx: e2.x + ux * 25, cz: e2.z + uz * 25, rx: .15, rz: 1.5, c: Math.cos(a), s: Math.sin(a) }; STATIC_SOL.push(box); }
   for (let i = 0; i < n; i++) { tickSieges(); tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); if (i % 60 === 59) { P.forEach((e, k) => { if (Math.hypot(e.x - last[k][0], e.z - last[k][1]) < .05 && Math.hypot(e.x - e.homeX, e.z - e.homeZ) > 4) stuck++; last[k] = [e.x, e.z]; }); } }
+  if (box) STATIC_SOL.splice(STATIC_SOL.indexOf(box), 1);
   const plaza = { x: t.x + 8, z: t.z + 8 }; const r = e => Math.round(e * 10) / 10;
   return { gate: gate ? [r(gate.x - t.x), r(gate.z - t.z)] : null, gateFromPlaza: gate ? r(Math.hypot(gate.x - plaza.x, gate.z - plaza.z)) : null, stuck,
     beat: P.map(e => ({ k: e._beat, toGate: gate ? r(Math.hypot(e.x - gate.x, e.z - gate.z)) : null, toPlaza: r(Math.hypot(e.x - plaza.x, e.z - plaza.z)) })),
-    rest: L.filter(e => !e._beat).map(e => r(Math.hypot(e.x - plaza.x, e.z - plaza.z))) }; }, [h, n]);
+    post: box ? solidAt(box.cx, box.cz) === false : null, rest: L.filter(e => !e._beat).map(e => r(Math.hypot(e.x - plaza.x, e.z - plaza.z))) }; }, [h, n, !!post]);
 const out = await beat(10, 3600);
 console.log('10h, a game-hour on', JSON.stringify(out));
 check('10h: soldiers 1 and 2 walk the street to the first gate (within 5 m of it, never held 1 s by a wall), the other three stay on the plaza (its 5 m ring and 3 m wander)', out.gate && out.gateFromPlaza > 20 && out.beat.length === 2 && out.beat.every(b => b.toGate < 5) && out.stuck === 0 && out.rest.length === 3 && out.rest.every(d => d < 9), out);
 const back = await beat(11, 3600);
 console.log('11h', JSON.stringify(back));
 check('11h: the leg back, both on the plaza again', back.beat.every(b => b.toPlaza < 5) && back.stuck === 0, back);
-const late = await beat(12, 600); const night = await beat(21, 3600);
+const late = await beat(12, 3600, true); const night = await beat(21, 3600);
 console.log('12h, then 21h', JSON.stringify(late), JSON.stringify(night));
+check('12h: a post laid across the straight way to the gate, soldier 2 walks round it and reaches the gate, never held 1 s', late.beat.every(b => b.toGate < 5) && late.stuck === 0, late);
 check('21h: by night they stand with the rest, all five on the plaza', night.beat.every(b => b.toPlaza < 5) && night.rest.every(d => d < 9), night);
 
 // where the camp stood, nothing strikes a player for five seconds
