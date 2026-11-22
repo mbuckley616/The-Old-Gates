@@ -3812,7 +3812,12 @@ const STAFFS = {
   hazel: { top: -.2, knob: 1.75, carve: 0, shoe: null, ring: null, cap: null },
   ash: { top: -.17, knob: 1.55, carve: 0, shoe: [.42, .43, .45], ring: [.42, .43, .45], cap: null },
   olive: { top: -.22, knob: 1.6, carve: 0, shoe: [.62, .45, .22], ring: null, cap: [.62, .45, .22] },
-  carved: { top: .1, knob: 1.9, carve: .2, shoe: [.42, .43, .45], ring: null, cap: null } };
+  carved: { top: .1, knob: 1.9, carve: .2, shoe: [.42, .43, .45], ring: null, cap: null },
+  hoe: { top: -.3, knob: 1.06, carve: 0, bendK: .2, shoe: null, ring: null, cap: null, hoe: { eye: .11, sock: .075, rSock: .0175, w0: .115, w1: .155, ahead: .07, t0: .0045, t1: .0016, iron: [.32, .31, .3], edge: [.6, .6, .62] } } };
+// the farmer's hoe (Session 2517; the old rig's farmer, S153, held one in the driver): a sawn haft of ash (bent 2 mm, not a staff's 1 cm) in the staff's walking grip, its
+// top at the shoulder, ending 11 cm over the ground in an iron socket 7.5 cm long; under the socket a short gooseneck and the blade, a
+// plate 11.5 cm wide at the neck and 15.5 cm at the edge, 4.5 mm thick there and 1.6 mm at the edge (filed bright), its edge resting on
+// the ground 7 cm ahead of the haft's foot, as a farmer stands leaning on it. Asked for by name (staffMake 'hoe'); never by people
 // the walking grip (Session 1094): a staff is leant on, not held out as a spear is, so its forearm drops 38° forward and down from
 // the elbow (the spear's runs on almost level), the fist by the hip and the staff's foot a hand ahead of the toes; the wrist cocks
 // up to keep the knuckles plumb, as before
@@ -3822,7 +3827,7 @@ const staffSeed = s => { let h = 2166136261; for (const c of String(s)) h = Math
 // The knob is a bulb whose middle is a little over half way up it; a root's knob is lumpy, a turned one round
 function staffShape(K, LEN, yF, ph) {
   const RS = SPEAR_R, kn = RS * K.knob, KH = kn * 1.7;
-  const bend = y => { const u = y < yF ? (yF - y) / yF : (y - yF) / (LEN - yF), w = Math.max(0, Math.min(1, (Math.abs(y - yF) - .12) / .25)); return w * Math.sin(Math.PI * Math.min(1, u)) * .011; };
+  const bend = y => { const u = y < yF ? (yF - y) / yF : (y - yF) / (LEN - yF), w = Math.max(0, Math.min(1, (Math.abs(y - yF) - .12) / .25)); return w * Math.sin(Math.PI * Math.min(1, u)) * .011 * (K.bendK ?? 1); };
   const off = y => { const a = ph + (y > yF ? 0 : 2.1), b = bend(y); return new THREE.Vector3(b * Math.cos(a), 0, b * Math.sin(a)); };
   const r = (y, th) => { const t = LEN - y; let R = RS * (y < yF - .12 ? .9 + .1 * y / (yF - .12) : y > yF + .12 ? 1 + .08 * (y - yF - .12) / (LEN - yF - .12) : 1);
     if (t < KH) { const s = 1 - t / KH, bulb = kn * Math.sqrt(Math.max(0, 1 - ((s - .55) / .45) ** 2)) * (K.cap ? 1 : 1 + .1 * Math.sin(3 * th + 7 * s + ph) + .06 * Math.sin(5 * th - 4 * s)); R = s < .55 ? Math.max(R, bulb) : bulb; }
@@ -3849,25 +3854,58 @@ function buildStaff(G, body, byName, meshes, root, grip) {
   const wood = new THREE.MeshStandardMaterial({ color: sRGB(...D.staff), roughness: .62 }), metal = c => new THREE.MeshStandardMaterial({ color: sRGB(...c), metalness: .7, roughness: .35 });
   const st = new THREE.Group(); st.name = 'staff';
   // the wood in two runs of rings: 4 cm apart up the plain shaft, 3 mm apart over the carving and the knob; a turned knob is bronze
-  const lo = new THREE.Mesh(staffTube(S, 0, yC, Math.ceil(yC / .04), NS), wood), hi = new THREE.Mesh(staffTube(S, yC, K.cap ? yK : LEN, Math.ceil(((K.cap ? yK : LEN) - yC) / .003), NS), wood); lo.name = hi.name = 'staffWood'; st.add(lo, hi);
+  const H = K.hoe, yE = H ? H.eye / A.y + H.sock - .02 : 0;
+  const lo = new THREE.Mesh(staffTube(S, yE, yC, Math.ceil((yC - yE) / .04), NS), wood), hi = new THREE.Mesh(staffTube(S, yC, K.cap ? yK : LEN, Math.ceil(((K.cap ? yK : LEN) - yC) / .003), NS), wood); lo.name = hi.name = 'staffWood'; st.add(lo, hi);
   if (K.cap) { const m = new THREE.Mesh(staffTube(S, yK, LEN, 16, NS), metal(K.cap)); m.name = 'staffKnob'; st.add(m); }
   // the shoe on its foot and the ring under the knob, each on the centre line where it sits
   if (K.shoe) { const o = S.off(.03), m = new THREE.Mesh(new THREE.CylinderGeometry(SPEAR_R * .9 + .0012, SPEAR_R * .82, .06, 16), metal(K.shoe)); m.position.set(o.x, .03, o.z); st.add(m); }
   if (K.ring) { const y = yK - .009, o = S.off(y), R = S.r(y, 0) + .0014, m = new THREE.Mesh(new THREE.CylinderGeometry(R, R, .016, 16), metal(K.ring)); m.position.set(o.x, y, o.z); st.add(m); }
   st.traverse(m => { if (m.isMesh) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; } });
   st.position.copy(B); st.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), A); root.add(st); root.updateMatrixWorld(true);
+  const hoeSt = H ? hoeHead(H, st, A, B, floor) : null;
   // what comes near it: every cloud's points but the right hand's, by their distance to its bent centre line against its widest
   // radius at that height; and the fist's points inside it
   let clear = 1, fist = 0; const w = new THREE.Vector3(), rMax = y => { let m = 0; for (let j = 0; j < 16; j++) m = Math.max(m, S.r(y, j / 16 * Math.PI * 2)); return m; };
   eachPoint(wornClouds(body, meshes, root), (x, y, z, i) => { w.set(x, y, z).sub(B); const t = w.dot(A); if (t < 0 || t > LEN) return; const d = w.addScaledVector(A, -t).sub(S.off(t).applyQuaternion(st.quaternion)).length();
     if (d > .08) return; const R = rMax(t); if (i >= 0 && R0[i * 3] < -.39) { if (d < R - .001) fist++; return; } clear = Math.min(clear, d - R); });
+  // the hoe's blade (Session 2517): every worn point within 5 mm of it (its plate, in its own frame), the feet first
+  if (hoeSt) { const Bd = st.userData.hoeBlade, v = new THREE.Vector3(); let near = 0, best = 1; eachPoint(wornClouds(body, meshes, root), (x, y, z) => { v.set(x, y, z).applyMatrix4(Bd.inv); const u = -v.y / Bd.Lb;
+      if (u < -.1 || u > 1.1) return; const w = (Bd.H.w0 + (Bd.H.w1 - Bd.H.w0) * Math.max(0, Math.min(1, u))) / 2, dx = Math.max(0, Math.abs(v.x) - w), dy = Math.max(0, -u, u - 1) * Bd.Lb, dz = Math.max(0, Math.abs(v.z) - Bd.H.t0 / 2), d = Math.hypot(dx, dy, dz);
+      best = Math.min(best, d); if (d < .005) near++; });
+    hoeSt.near = near; hoeSt.clear = +best.toFixed(4); }
   byName['wrist.R'].attach(st);
   let tris = 0; st.traverse(m => { if (m.isMesh) tris += m.geometry.index.count / 3; });
   // its normals point out of it (away from the centre line at their height), so the key light falls on its outside
   let out = 0, nv = 0; for (const m of [lo, hi]) { const P = m.geometry.attributes.position, N = m.geometry.attributes.normal; for (let i = 0; i < P.count; i++) { const y = P.getY(i), o = S.off(y); if (y < .001) continue; nv++; if ((P.getX(i) - o.x) * N.getX(i) + (P.getZ(i) - o.z) * N.getZ(i) > 0) out++; } }
   let bendMax = 0, trueAt = 0; for (let y = 0; y <= LEN; y += .01) { const b = S.off(y).length(); bendMax = Math.max(bendMax, b); if (Math.abs(y - yF) < .1) trueAt = Math.max(trueAt, b); }
   return { mesh: st, stats: { make, len: +LEN.toFixed(3), top: +(B.y + LEN * A.y - crown).toFixed(3), foot: +(B.y - floor).toFixed(4), lean: +Math.acos(Math.min(1, A.y)).toFixed(3), fistAt: +(yF / LEN).toFixed(3), fistH: +((grip.C.y - floor) / (crown - floor)).toFixed(3), ahead: +(B.z - toe).toFixed(3), knob: +(2 * S.kn).toFixed(4),
-    bend: +bendMax.toFixed(4), trueAtFist: +trueAt.toFixed(4), carve: K.carve, outward: +(out / nv).toFixed(3), clear: +clear.toFixed(4), fist, gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, tris } };
+    bend: +bendMax.toFixed(4), trueAtFist: +trueAt.toFixed(4), carve: K.carve, hoe: hoeSt, outward: +(out / nv).toFixed(3), clear: +clear.toFixed(4), fist, gap: grip.gap, thumbIn: grip.thumbIn, thumbGap: grip.thumbGap, palm: grip.palm, gripPts: grip.n, curl: grip.curl, tris } };
+}
+// the hoe's iron (Session 2517), laid in the world's frame and carried by the staff's group: the socket round the haft's foot along its
+// axis, the gooseneck from the socket's mouth forward and down, and the blade from the neck to its edge on the ground, square across the
+// body (its width along x). Returns its measures: the edge's height over the ground, how far ahead of the haft's foot it rests, the
+// blade's widths and length, its slope from the plumb, the socket's mouth over the ground
+function hoeHead(H, st, A, B, floor) {
+  const iron = new THREE.MeshStandardMaterial({ color: sRGB(...H.iron), metalness: .6, roughness: .55 }), bright = new THREE.MeshStandardMaterial({ color: sRGB(...H.edge), metalness: .85, roughness: .3 });
+  const up = new THREE.Vector3(0, 1, 0), fw = new THREE.Vector3(0, 0, 1), parts = [], put = (g, m, name, at, dir) => { const o = new THREE.Mesh(g, m); o.name = name; o.position.copy(at); if (dir) o.quaternion.setFromUnitVectors(up, dir.clone().normalize()); parts.push(o); return o; };
+  const tE = H.eye / A.y, Q = B.clone().addScaledVector(A, tE), M = Q.clone().addScaledVector(A, H.sock / 2);
+  put(new THREE.CylinderGeometry(SPEAR_R + .0025, H.rSock, H.sock, 16), iron, 'hoeSocket', M, A);
+  // the neck: from the socket's mouth 2.2 cm forward and 2.2 cm down, a bar 1.5 by 1 cm
+  const T = Q.clone().addScaledVector(fw, .022).addScaledVector(up, -.022), nk = T.clone().sub(Q);
+  put(new THREE.CylinderGeometry(.0055, .0075, nk.length() + .012, 10), iron, 'hoeNeck', Q.clone().add(T).multiplyScalar(.5), nk).scale.set(1, 1, .7);
+  // the blade: from T to its edge's middle on the ground, ahead of the haft's foot by H.ahead, thinning to the edge
+  const E = new THREE.Vector3(Q.x, floor + .0015, B.z + H.ahead), run = E.clone().sub(T), Lb = run.length(), dn = run.clone().normalize(), side = new THREE.Vector3(1, 0, 0), nrm = dn.clone().cross(side).normalize();
+  const g = new THREE.BoxGeometry(1, 1, 1, 6, 6, 1), P = g.attributes.position;
+  for (let i = 0; i < P.count; i++) { const u = .5 - P.getY(i), w = H.w0 + (H.w1 - H.w0) * u, t = H.t0 + (H.t1 - H.t0) * u, sh = Math.max(0, 1 - u / .25);
+    // the shoulders rounded off where the neck meets it, the edge straight
+    P.setXYZ(i, P.getX(i) * w * (1 - .22 * sh * sh), -u * Lb, P.getZ(i) * t); }
+  g.computeVertexNormals();
+  const bl = put(g, iron, 'hoeBlade', T); bl.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(side, dn.clone().negate(), nrm));
+  // the edge filed bright: a strip 6 mm deep along the blade's foot
+  const eg = put(new THREE.BoxGeometry(H.w1 * .995, .006, H.t1 + .0006), bright, 'hoeEdge', E.clone().addScaledVector(dn, -.003)); eg.quaternion.copy(bl.quaternion);
+  let tris = 0; for (const m of parts) { m.castShadow = m.receiveShadow = true; m.userData.shield = true; st.attach(m); tris += m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3; }
+  bl.updateMatrixWorld(true); Object.defineProperty(st.userData, 'hoeBlade', { value: { inv: bl.matrixWorld.clone().invert(), H, Lb }, enumerable: false, configurable: true });
+  return { edgeH: +(E.y - floor).toFixed(4), ahead: +(E.z - B.z).toFixed(3), w: [H.w0, H.w1], len: +Lb.toFixed(3), slope: +Math.acos(Math.min(1, -dn.y)).toFixed(3), eyeH: +(Q.y - floor).toFixed(3), tris };
 }
 // the crossbow (Session 941; L7, OG-028, Michael's 6 A: the spear and the crossbow first), carried point down in the right fist by
 // the wrist of its tiller, the stock plumb through the fist as the spear's shaft is, the butt up by the forearm and the prod and its
