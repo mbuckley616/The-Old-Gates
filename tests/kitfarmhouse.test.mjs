@@ -42,7 +42,7 @@ await page.evaluate(() => forceTime(18.2)); await g.spin(null, 3600); const eve 
 check(`at evening the farmer goes in by the yard door (${eve.d} m from it, hidden), and the house has them in`, !eve.vis && eve.d < 1.5 && eve.inside, eve);
 // S1478 — from wherever in the yard evening finds them: the walk from one spot in ten (the look builder saw one run in five go in 4.1 m
 // off, where the straight line met the rick and npcStep gave up)
-// S2508 — the walks yield between batches of 60 ticks, and each yield let the game's loop draw a frame of the village (about 7 s on
+// S2512 — the walks yield between batches of 60 ticks, and each yield let the game's loop draw a frame of the village (about 7 s on
 // software GL): 22 walks ran past run.mjs's 900 s cap. The drawing is stubbed for the walks and put back after; the ticks are as before.
 await page.evaluate(() => { window._kfhRender = REN.render; REN.render = () => {}; });
 const ways = await page.evaluate(tid => new Promise(res => { const S = WORLD.settle.get(tid), m = S.residents.find(r => r.farm).n, Y = m.sched.yard, out = []; let i = 0;

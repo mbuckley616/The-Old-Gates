@@ -323,7 +323,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `kitcoachroom` | w1/20 | — | pass | 219 |  |
 | `kitcottage` | w16/20 | — | pass | 553 |  |
 | `kitfarm` | w12/20 | — | pass | 176 |  |
-| `kitfarmhouse` | w16/20 | — | pass | 706 |  |
+| `kitfarmhouse` | w16/20 | — | pass | 535 | Killed at run.mjs's 900 s cap at s1834, alone and beside another boot, and at s1831: its 22 yard walks yield between 60-tick batches, and each yield let the loop draw the village (about 7 s a frame on software GL; the ticks cost 6 ms). The test's: the drawing is stubbed for the walks, Session 2512, 40/40 in 535 s beside a second boot |
 | `kitforge` | w9/20 | — | pass | 133 |  |
 | `kitgods` | w19/20 | — | pass | 479 |  |
 | `kitguild` | w2/20 | — | pass | 427 |  |
@@ -414,7 +414,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `parrydeath` | 5/14 | pass | pass | 43 |  |
 | `pauseleaf` | w7/20 | — | pass | 416 |  |
 | `penance` | w13/20 | — | pass | 365 |  |
-| `people` | 2/14 | pass | pass | 188 |  |
+| `people` | 2/14 | pass | pass | 188 | Red 3/3 here at s1834 (and at s1831), not at every build: *walking: the stride tracks the ground* read a phase of 0.027–0.052 against 0.153. The test's: the game's frame read the suite's 120 world ticks as one fast step and latched the picked townsperson's run (`rig.w.run` 0.141), whose longer cycle was still blended in for the walk's first frames. It walks 60 frames at the same pace first, Session 2512; 2/2 side by side (0.153 against 0.153, the still foot 0.31 mm). The check is unchanged |
 | `peopleao` | w3/20 | — | pass | 202 |  |
 | `peoplewall` | w18/20 | — | pass | 560 |  |
 | `perf` | w18/20 | — | pass | 408 |  |
