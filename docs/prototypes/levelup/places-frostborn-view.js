@@ -23,7 +23,7 @@ const g = A.surf, E = 1.65, V1 = A.viaducts[0], V2 = A.viaducts[1];
 let eye, at;
 if (VIEW === 'under') { const x = 14, z = V1.z + 46; eye = [x, g(x, z) + E, z]; at = [-6, -12, V1.z]; cam.fov = 70; }
 else if (VIEW === 'gap') { const x = V2.gap.a - 6.2, z = V2.z + 2.5; eye = [x, .3 + E, z]; at = [V2.gap.b + 4, -24, V2.z - 34]; cam.fov = 70; }
-else if (VIEW === 'portal') { const x = -6, z = A.face.z + 84; eye = [x, g(x, z) + E, z]; at = [0, 18, A.face.z]; cam.fov = 64; } /* S2520: the face brought down to 36 m */
+else if (VIEW === 'portal') { const x = -6, z = A.face.z + 84; eye = [x, g(x, z) + E, z]; at = [0, 18, A.face.z]; cam.fov = 64; } /* S2521: the face brought down to 36 m */
 else if (VIEW === 'hall') { eye = [62, .3 + E, V1.z + 2.6]; at = [100, 9, V1.z - 1]; cam.fov = 64; }
 else if (VIEW === 'far') { eye = [170, 260, 520]; at = [0, -10, -160]; cam.fov = 48; }
 else { eye = [A.figure.x - 4, .3 + E, V1.z - V1.w / 2 + 1.4]; at = [0, 22, A.face.z]; cam.fov = 62; }
