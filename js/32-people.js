@@ -2168,11 +2168,11 @@ const HB_MAP=[['hips','root'],['spine','spine05'],['neck','neck01'],['head','hea
   ['thR','upperleg01.R'],['knR','lowerleg01.R'],['anR','foot.R']];
 function hbOn(){return HBODY.on&&window.OG_LOOK==='new'&&typeof HB!=='undefined'&&typeof MH_PACK!=='undefined';}
 // the builder's genome for a game genome: its people, sex and age from personGenome, the rest rolled inside the people's ranges
-function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G)return G;HB.loadPack();
+function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G&&(G.guardTier||0)===(g.guardTier||0))return G;HB.loadPack(); /* S2541 — a guard's genome is made again when the town's fortune changes his tier */
   const people=HB.PEOPLES[g.people]?g.people:'gatelander',cast=hbCastName(g);
   G=cast?HB.castGenome(cast,{people}):HB.rollGenome(g.hbKey,{people,g:g.female?0:1,child:!!g.child,old:g.age==='elder'});
   // a guard is known by his mail, helm and spear (the town's guards keep their old kit's role; the armour tiers are F10's)
-  if(GUARD_ROLE.test(g.role||''))G.dress=hbGuardDress(people,G);
+  if(GUARD_ROLE.test(g.role||''))G.dress=hbGuardDress(people,G,g.guardTier);
   if(/:hand:\d+:Deckhand$/.test(g.hbKey||''))G.dress=hbDeckDress(g.hbKey); /* S1941 — a merchantman's hand, dressed for her deck */
   if(/^crew:/.test(g.hbKey||'')){const m=/carpenter|cook|navigator/.exec(g.role||''),C=m&&CREW_BODY[m[0]];if(C){G.dress=Object.assign({},G.dress,CREW_STRIP,C.dress);if(m[0]==='cook')hbApronShows(g,G.dress,pHash(g.hbKey+'|trade')>>>0);}} /* S1779 — her crew's working dress; S2525 the cook's apron set on a darker tunic */
   if(/^(ring|kid):/.test(g.hbKey||''))G.dress=Object.assign({},G.dress,{cloak:null,hood:null,staff:null,spear:null,crossbow:null,shield:null,basket:null,lantern:null,sword:null,chair:null,book:null,tankard:null,hammer:null,pipe:null,satchel:null}); /* S2197 — a watcher on the ring's planks carries nothing and wears no cloak to pass through the bench */
@@ -2206,9 +2206,22 @@ const HB_GUARD={
    but the kit's fur mantle (S1203's cut) ends at the shoulder's point, over the mail and clear of both arms: a hold guard keeps the mantle
    they rolled (most Markmen roll one) and one who rolled none wears it in wolf grey */
 const HB_GUARD_FUR=[.4,.37,.33];
-function hbGuardDress(people,G){const D=Object.assign({},G.dress||{},HB_GUARD_STRIP,JSON.parse(JSON.stringify(HB_GUARD[people]||{})));
+function hbGuardDress(people,G,tier){const D=Object.assign({},G.dress||{},HB_GUARD_STRIP,JSON.parse(JSON.stringify(HB_GUARD[people]||{})));
   if(people==='aurennais'&&D.skirtColor)D.skirtColor=D.tunic.slice(); /* a woman of the Compact in its blue to the ankle, as builder-scales-woman */
   if(people==='markman')D.mantle=((G.dress||{}).mantle||HB_GUARD_FUR).slice(); /* S2359 — OG-025's hold guard in fur at the shoulders: their own mantle, or wolf grey */
+  hbGuardTierDress(D,tier);G.guardTier=tier||0;
+  return D;}
+/* S2541 (the systems builder's note of 22 Nov; S2387's owed change) — a guard's armour by the town's fortune again, on the builder's body.
+   S395 (Michael's C on #87) put a poor town's guards (prosperity under 40) in wooden lamellar, the rest in iron mail and a captain in steel
+   plate; the builder's guard dress (S2353) was by people alone, so on the new look a town's fortune changed nothing a guard wore. The
+   people's dress stays (the Crown's tabard, the hold's shield and fur, the Compact's blue), and the armour under it is the tier's, as the
+   player's own is (tpHBDress, S1260 and S1263): Wooden the builder's scales in the wood's own tone over the tunic's sleeves, boards on the
+   forearms and a boiled-leather helm; Iron the people's own (mail; the Compact's bronze scales); Steel a plate cuirass with gauntlets,
+   greaves and cuisses, and the kettle helm in steel, not the tier's shut helm, so a captain is still known by his face */
+const HB_GUARD_TIER={1:{c:()=>new THREE.Color(MATERIALS[0].blade).lerp(new THREE.Color(0xc89a62),.3),helm:[.36,.24,.14]},4:{c:()=>new THREE.Color(MATERIALS[3].blade)}};
+function hbGuardTierDress(D,tier){const T=HB_GUARD_TIER[tier];if(!T||typeof MATERIALS==='undefined')return D;const c=T.c(),m=[c.r,c.g,c.b];
+  if(tier===1){D.mail=m;D.scales=true;D.plate=null;D.helm=T.helm.slice();D.vambrace=m.slice();D.vambraceKind='scales';D.gloves=[.29,.19,.13];D.glovesKind='leather';}
+  else{D.mail=m;D.scales=null;D.plate='plate';D.helm=m.slice();D.vambrace=m.slice();D.vambraceKind='sheet';D.gloves=m.slice();D.glovesKind='sheet';D.greaves=m.slice();D.greavesKind='sheet';D.cuisses=true;}
   return D;}
 /* S2343 (backlog L1, OG-109's Aurenne travel column; the kit's veil, S1237, worn by no one until the road had people) — the veil on
    the road. One of the road's people (a merchant, a pilgrim or a mourner, the post rider, a family with its cart: def.roadfolk, keyed
@@ -2333,9 +2346,9 @@ function hbTint(g,G){const C=a=>new THREE.Color(a[0],a[1],a[2]),D=G.dress||{};
   /* S1846 — a coat worn over it (the builder's coatOn: Corwin's open coat, the navigator's) is the outer colour, body and sleeves */
   if(D.coat&&!D.robe&&!D.mail&&!D.scales&&!D.tabard&&!D.chair){g.cloth=C(D.coat);g.sleeve=C(D.coat).multiplyScalar(.9);}
   /* S2242 — a tabard (the inquisitor's white) is the body's colour far off, over mail's sleeves */
-  if(D.tabard){g.cloth=C(D.tabard);if(D.mail)g.sleeve=C(D.mail);}
+  if(D.tabard){g.cloth=C(D.tabard);if(D.mail&&!D.scales&&!D.plate)g.sleeve=C(D.mail);} /* S2541 — scales and plate stop short at the elbow, so the sleeves stay the tunic's */
   /* S2353 — mail with no tabard over it is the body's colour far off too: a hold guard grey, the Compact's bronze (whose scales stop short at the elbow, so the sleeves stay the tunic's) */
-  else if(D.mail&&!D.robe&&!D.chair){g.cloth=C(D.mail);if(!D.scales)g.sleeve=C(D.mail).multiplyScalar(.9);}
+  else if(D.mail&&!D.robe&&!D.chair){g.cloth=C(D.mail);if(!D.scales&&!D.plate)g.sleeve=C(D.mail).multiplyScalar(.9);}
   const leg=D.trousers||D.skirtColor;if(leg)g.legs=C(leg);if(D.boots)g.boot=C(D.boots);
   g.skirtCol=g.dress&&(D.skirtColor||D.robe)?C(D.robe||D.skirtColor):null;} /* S2349 — the long skirt in its own colour, not the tunic's */
 /* S2332 (section I, critic 17 Nov, s1674) — the stand-in wears the genome's head, beard, hair and apron. The driver is drawn until the builder's

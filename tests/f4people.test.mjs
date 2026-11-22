@@ -519,6 +519,18 @@ const standin = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r
   return { n: rs.length, armour: rs.filter(r => r.g.eq && r.g.eq.armour).length, helm: rs.filter(r => r.g.hat === 'helm').length,
     crimson: rs.filter(r => r.g.cloth.r > .5 && r.g.cloth.g < .1).length, keys: rs.slice(0, 4).map(r => r.g.hbKey) }; });
 check('Dunmore\'s guards\' stand-ins wear no armour kit over the tabard\'s crimson (a pale doll in steel until the body came)', standin.n > 0 && standin.armour === 0 && standin.helm === standin.n && standin.crimson === standin.n, standin);
+// S2541 (S395's rule, Michael's C on #87, lost on the new look by S2387): a guard's armour on the builder's body is the town's fortune again.
+// Dunmore's guard at prosperity 30 wears the wood's lamellar (scales) with boards on the forearms, at 55 the people's own mail, a captain
+// steel plate with gauntlets, greaves and cuisses; the Crown's tabard over each with nothing through it, and far off the tunic's sleeves under scales and plate
+const tiers = await page.evaluate(() => { const st = WORLD.TS(WORLD.siteAnywhere('dunmore')), keep = st.p, out = {};
+  for (const [k, role, p] of [['poor', 'Guard', 30], ['mid', 'Guard', 55], ['cap', 'captain', 55]]) { st.p = p; const gn = personGenome({ role, name: 'Testguard', people: 'gatelander' }, { nation: 'gatelands', key: 'dunmore' }); gn.hbKey = 'gtier:' + k;
+    const G = hbGenome(gn), D = G.dress, P = HB.makePerson(G, { hoodStats: false }), has = n => !!P.root.getObjectByName(n); hbTint(gn, G);
+    out[k] = { tier: gn.guardTier, scales: !!D.scales, plate: D.plate || null, wood: !!(D.mail && D.mail[0] > .55 && D.mail[0] < .7 && D.mail[2] < .35), steel: !!(D.mail && D.mail[2] > .85), vambrace: has('vambrace'), gloves: has('gloves'), greaves: has('greaves'), cuisses: has('cuisses'),
+      tabard: has('tabard'), tabOut: P.tabard ? P.tabard.out : null, sleeveMail: gn.sleeve.getHex() === new THREE.Color(D.mail[0], D.mail[1], D.mail[2]).getHex() }; }
+  st.p = keep; return out; });
+{ const T = tiers; check('a guard\'s armour follows the town\'s fortune on the builder\'s body: the wood\'s lamellar under 40, mail above it, a captain\'s steel plate with gauntlets and greaves; the tabard over each with nothing through it',
+    T.poor.tier === 1 && T.poor.scales && T.poor.wood && T.poor.vambrace && !T.poor.greaves && !T.poor.sleeveMail && T.mid.tier === 3 && !T.mid.scales && !T.mid.plate && !T.mid.vambrace && T.mid.sleeveMail
+    && T.cap.tier === 4 && T.cap.plate === 'plate' && T.cap.steel && T.cap.vambrace && T.cap.gloves && T.cap.greaves && T.cap.cuisses && !T.cap.sleeveMail && [T.poor, T.mid, T.cap].every(x => x.tabard && x.tabOut === 0), T); }
 // S2329 (#1658 B; OG-064): a guild's head wears the guild's livery over their people's own: the Guildmaster mail under the oxblood tabard
 // with the crossed swords and a sword of their people's make, the Archmage the deep blue robe with the star and a staff of their people's
 // wood (the driver holds it); a guild member is not dressed so, and nothing of the body comes through the tabard
