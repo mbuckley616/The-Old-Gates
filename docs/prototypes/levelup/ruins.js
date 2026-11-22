@@ -23,6 +23,20 @@ import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometr
 import { mat, worldUV, fbm, sstep } from './common.js';
 import { gatePiece, stream, cutMat, GK_SCHOOLS } from './gatekit.js';
 
+// S2513 — a soup of loose triangles (no index) takes three's normals each triangle its own, so rock built that way reads as large
+// flat facets (the Hollow's passage, S2508). Each corner here takes the area-weighted normals of every triangle that meets it (welded by
+// position to the centimetre) and turns less than acos(cosMax) from its own: 60 degrees by default, so rock reads round and its cut
+// edges stay sharp. Used by the Hollow's rock and the aqueducts' sinkhole and land.
+function creaseNormals(g, cosMax = .5) { const P = g.attributes.position.array, n = P.length / 9, F = new Float32Array(n * 3), M = new Map(), N = new Float32Array(P.length);
+for (let t = 0; t < n; t++) { const o = t * 9, ux = P[o + 3] - P[o], uy = P[o + 4] - P[o + 1], uz = P[o + 5] - P[o + 2], vx = P[o + 6] - P[o], vy = P[o + 7] - P[o + 1], vz = P[o + 8] - P[o + 2];
+  F[t * 3] = uy * vz - uz * vy; F[t * 3 + 1] = uz * vx - ux * vz; F[t * 3 + 2] = ux * vy - uy * vx;
+  for (let c = 0; c < 3; c++) { const k = Math.round(P[o + c * 3] * 100) + ',' + Math.round(P[o + c * 3 + 1] * 100) + ',' + Math.round(P[o + c * 3 + 2] * 100); let a = M.get(k); if (!a) M.set(k, a = []); a.push(t); } }
+const unit = t => { const L = Math.hypot(F[t * 3], F[t * 3 + 1], F[t * 3 + 2]) || 1; return [F[t * 3] / L, F[t * 3 + 1] / L, F[t * 3 + 2] / L]; };
+for (let t = 0; t < n; t++) { const u = unit(t); for (let c = 0; c < 3; c++) { const o = t * 9 + c * 3, k = Math.round(P[o] * 100) + ',' + Math.round(P[o + 1] * 100) + ',' + Math.round(P[o + 2] * 100); let x = 0, y = 0, z = 0;
+  for (const s of M.get(k)) { const w = unit(s); if (w[0] * u[0] + w[1] * u[1] + w[2] * u[2] < cosMax) continue; x += F[s * 3]; y += F[s * 3 + 1]; z += F[s * 3 + 2]; }
+  const L = Math.hypot(x, y, z) || 1; N[o] = x / L; N[o + 1] = y / L; N[o + 2] = z / L; } }
+g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); }
+
 export function weaverRing(o = {}) {
   const key = o.key || 'ruins:ring', r = stream(key), K = o.k || 3, N = 12, R = o.R || 85, SEA = -30, CLIFF = -(R + 40), group = new THREE.Group();
   // the headland: level within the ring (a crown of turf, ±0.15 m), rolling beyond it, falling at its seaward edge (-z) to the cliff
@@ -380,7 +394,7 @@ export function hollowBelow(o = {}) {
     { const lid = [[-70, CY + HOLE + 4, BACK - 70], [70, CY + HOLE + 4, BACK - 70], [70, CY + HOLE + 4, BACK + 2], [-70, CY + HOLE + 4, BACK + 2]], t = (a, b, c) => { for (const p of [a, b, c]) { P.push(...p); C.push(.3, .3, .3); } };
       t(lid[0], lid[2], lid[1]); t(lid[0], lid[3], lid[2]); for (const s of [-1, 1]) { const x = s * 70, y0 = -40, y1 = CY + HOLE + 4; t([x, y0, BACK - 70], [x, y1, BACK - 70], [x, y1, BACK + 2]); t([x, y0, BACK - 70], [x, y1, BACK + 2], [x, y0, BACK + 2]); }
       t([-70, -40, BACK - 70], [70, -40, BACK - 70], [70, CY + HOLE + 4, BACK - 70]); t([-70, -40, BACK - 70], [70, CY + HOLE + 4, BACK - 70], [-70, CY + HOLE + 4, BACK - 70]); }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.computeVertexNormals(); worldUV(g, .06); B.set('cave', [g]);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); creaseNormals(g, .5); worldUV(g, .06); B.set('cave', [g]);
     // icicles round the oculus' rim, hanging into the light
     const ri = stream(key + ':ice'); for (let k = 0; k < 36; k++) { const p = top[Math.floor(k / 36 * NC)], L = 1.5 + ri() * 5, w = .25 + ri() * .35, c = new THREE.ConeGeometry(w, L, 5); c.rotateX(Math.PI); c.translate(p[0] + (oc.x - p[0]) * .02, p[1] - L / 2 - .2, p[2] + (oc.z - p[2]) * .02); put('ice', c); } }
   // the rings: voussoirs on the ring's centre (0, CY), from the top clockwise seen from the court; faces z zf + 2.5 to zf - 2 (the back in the wall)
@@ -628,7 +642,7 @@ export function forgottenAqueducts(o = {}) {
       return [.28, .37, .17].map((c, k) => (c * (.8 + .35 * t)) * (1 - rock) + [.6, .59, .56][k] * rock); };
     for (let i = 0; i < NR; i++) for (let j = 0; j < NC; j++) { const q = [[i, j], [i, j + 1], [i + 1, j], [i + 1, j + 1]].map(([u, v]) => [pt(u, v % NC), u]);
       for (const T of [[q[0], q[2], q[1]], [q[1], q[2], q[3]]]) for (const [p, u] of T) { pos.push(...p); col.push(...tint(p[0], p[2], u)); } }
-    const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); lg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); lg.computeVertexNormals(); B.set('land', [lg]); }
+    const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); lg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); creaseNormals(lg); B.set('land', [lg]); }
   // the sinkhole's wall: a ragged shell from the lip down to under the shelf, the rock pushed in and out; open below the vault where the halls run through it
   const vaultY = z => { const half = HALF + ARC / 2, h = CROWN - TOP, rr = (half * half + h * h) / (2 * half), d = Math.abs(z) - (half - rr); return TOP + Math.sqrt(Math.max(0, rr * rr - d * d)); };
   // the wall's radius on bearing a at height y (t its depth from the lip, 0 to 1): the lip's own at the top, then pushed in and out by the rock
@@ -640,7 +654,7 @@ export function forgottenAqueducts(o = {}) {
     const tint = (x, y, z) => { const wet = 1 - sstep(WATER - 1, WATER + 5, y), v = .5 + .5 * fbm(x / 8 + y / 13, z / 8, 3), streak = .5 + .5 * fbm(Math.atan2(x, z) * 14, 2, 2), b = .5 + .3 * v - .12 * streak; return [1.1 * b * (1 - .5 * wet), b * (1 - .42 * wet), .86 * b * (1 - .36 * wet)]; };
     for (let i = 0; i < NR; i++) for (let j = 0; j < NC; j++) { const a = G[i][j], b = G[i][j + 1], c = G[i + 1][j], d = G[i + 1][j + 1];
       for (const T of [[a, b, c], [b, d, c]]) { const m = [0, 1, 2].map(k => (T[0][k] + T[1][k] + T[2][k]) / 3); if (m[1] < section(m[2]) - 1.5 + 2 * fbm(m[2] / 8, m[0] / 8, 2)) continue; for (const p of T) { P.push(...p); C.push(...tint(...p)); } } }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.computeVertexNormals(); worldUV(g, .0625); B.set('rock', [g]); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); creaseNormals(g); worldUV(g, .0625); B.set('rock', [g]); }
   // the bed: inside the hole, the shelf, the nave's floor and the scree (a heightfield; the halls beyond have the slabs alone)
   { const N = 70, S = 116, g = new THREE.PlaneGeometry(S, S, N, N); g.rotateX(-Math.PI / 2); const P = g.attributes.position, col = [];
     for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), y = ground(x, z) - (ground(x, z) <= FLOOR + .01 ? .3 : 0); P.setY(i, y); const v = .5 + .5 * fbm(x / 5, z / 5, 2), wet = 1 - sstep(WATER - 1, WATER + 3, y); col.push(...[.42, .41, .38].map((c, k) => c * (.75 + .3 * v) * (1 - .45 * wet) + [0, .02, .02][k] * wet)); }
