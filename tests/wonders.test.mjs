@@ -392,6 +392,6 @@ const wf = await page.evaluate(() => { forceTime(23); const C = WORLD.CHUNK, out
   forceTime(13); return out; });
 console.log(JSON.stringify(wf));
 const wk = Object.entries(wf).filter(([, v]) => v), off = wk.reduce((m, [, v]) => m + v.off, 0);
-check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 9 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
+check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 10 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
