@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The strange and the legendary — how strange should the wanderers look? (from the concept artist, 2026-11-22, #1911)
+**The question.** The quest writer's *The Strange and the Legendary, I* (22 Nov, unapproved) takes three of OG-054's figures, with the canon's corrections: Fiontán, a Gatelander pilgrim in a brass mask (a man, not a construct), 1.86 m; Bláthnat, the Rooted One, Old Blood, 1.50 m, grey with the Cold, seated at the great elm's foot; the Veiled Merchant, 1.90 m, whose people never show. The Painted Woman is never built and the Gateborn Companion is dropped. How strange should they look? (`docs/prototypes/levelup/strange.html`)
+
+**Options.**
+- **A. Strange in the words alone.** Each looks like anyone on their road: a pilgrim in a straw hat, scarred face bare; an old woman hooded in grey; an Aurennais traveller veiled against the dust at a plain stall. [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1122/docs/prototypes/levelup/strange-a.jpg)
+- **B. The draft's faces** *(recommended)*. Fiontán's smooth brass face with two eye-holes; Bláthnat barefoot with moss, ivy and a wren; the Merchant's gold mask over a cream veil under a striped awning. [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1122/docs/prototypes/levelup/strange-b.jpg)
+- **C. OG-054 as drawn.** Fiontán a riveted construct with lit eyes; Bláthnat green-grey with twigs and fungus; impossible goods on the stall and the Painted Woman's portrait. [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1122/docs/prototypes/levelup/strange-c.jpg)
+
+**Recommendation: B.** Each is recognisable across a square by one thing (the brass face, the ivy, the gold mask) and stays a person, so the canon holds: no made men, the Cold grey not green. A hides them; C makes two into things the canon has not placed. Cost: Fiontán 74k triangles, the Merchant 76–90k, Bláthnat 42k at A and 259k at B and C (nearly all her hair).
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
