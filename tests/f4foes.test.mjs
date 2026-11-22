@@ -69,10 +69,15 @@ const same = await page.evaluate(() => _F.filter(f => f.rig && f.rig.hb).every(f
 check('a foe\'s genome is the same rolled again from its id', same);
 
 // the game's weapon stays in the builder's fist
+// a body's arm, shoulder to elbow to wrist on the builder's own bones (S2532): the hands' reach scales with it, and the foes measured here
+// are whoever loaded first, so a length is checked against the arm it was measured on
+await page.evaluate(() => { window.hbArmLen = (rig, sd) => { const p = j => rig.hb.map.find(([k]) => k === j + sd)[1].getWorldPosition(new THREE.Vector3());
+  const s = p('sh'), e = p('el'), w = p('wr'); return s.distanceTo(e) + e.distanceTo(w); }; });
 const fist = await page.evaluate(() => _F.filter(f => f.rig && f.rig.hb && f.rig.weapon).map(f => { const rig = f.rig, v = new THREE.Vector3(), w = new THREE.Vector3();
   rig.root.updateMatrixWorld(true); rig.weapon.getWorldPosition(v); const b = rig.hb.map.find(([j]) => j === (rig.hb.held.find(h => h.o === rig.weapon).sd === 'L' ? 'wrL' : 'wrR'))[1]; b.getWorldPosition(w);
-  return [f.n, +v.distanceTo(w).toFixed(3), rig.weapon.parent === rig.hb.root]; }));
-check('each kit weapon is held in the builder\'s fist (the bow in the left), within 12 cm of its wrist, carried in the builder\'s group (the driver\'s is hidden)', fist.length >= 6 && fist.every(([, d, shown]) => d < .12 && shown), fist);
+  const d = v.distanceTo(w), sd = b === rig.hb.map.find(([k]) => k === 'wrL')[1] ? 'L' : 'R';
+  return [f.n, +d.toFixed(3), rig.weapon.parent === rig.hb.root, +hbArmLen(rig, sd).toFixed(3)]; }));
+check('each kit weapon is held in the builder\'s fist (the bow in the left), within 0.27 of its arm (14 cm on the longest) of its wrist, carried in the builder\'s group (the driver\'s is hidden)', fist.length >= 6 && fist.every(([, d, shown, arm]) => d < .27 * arm && shown), fist);
 
 // Session 2092 (Michael's B on #1278, the weapon's edge carries it): at the tell's height the builder's body keeps its own colours and
 // what the foe holds is lit, gold for a light blow and red for a heavy one: a blade's two edges, an axe's or a spear's head round its
@@ -107,7 +112,7 @@ const dfl = await page.evaluate(() => { const f = _F[0], e = f.e, rig = f.rig, B
   const hL = rig.hb.map.find(([j]) => j === 'wrL')[1].getWorldPosition(new THREE.Vector3()), feet = rig.root.parent.position.y, P0 = rig.root.parent.position;
   const off = (r, j) => Math.max(...r.map((v, i) => Math.abs(v - D[j][i])));
   window._DF = { e, rig };
-  const out = { stag, k: +k.toFixed(2), at: ['shR', 'shL', 'spine'].map((j, i) => +off(r1[i], j).toFixed(3)), rest: ['shR', 'shL', 'spine'].map((j, i) => +off(r0[i], j).toFixed(3)), hand: +h1.distanceTo(h0).toFixed(2), handDrop: +(h0.y - h1.y).toFixed(2), wpnY: +(h1.y - feet).toFixed(2), offY: +(hL.y - feet).toFixed(2), wpnOut: +Math.hypot(h1.x - P0.x, h1.z - P0.z).toFixed(2), offOut: +Math.hypot(hL.x - P0.x, hL.z - P0.z).toFixed(2) };
+  const out = { stag, k: +k.toFixed(2), at: ['shR', 'shL', 'spine'].map((j, i) => +off(r1[i], j).toFixed(3)), rest: ['shR', 'shL', 'spine'].map((j, i) => +off(r0[i], j).toFixed(3)), hand: +h1.distanceTo(h0).toFixed(2), handDrop: +(h0.y - h1.y).toFixed(2), wpnY: +(h1.y - feet).toFixed(2), offY: +(hL.y - feet).toFixed(2), arm: +hbArmLen(rig, 'R').toFixed(3), wpnOut: +Math.hypot(h1.x - P0.x, h1.z - P0.z).toFixed(2), offOut: +Math.hypot(hL.x - P0.x, hL.z - P0.z).toFixed(2) };
   e._ripAt = performance.now() / 1000 - .95; tick(); out.after = +foeDeflectK(e).toFixed(2); out.back = +Math.abs(B.shR.rotation.z - r0[0][2]).toFixed(3);
   out.env = [0, .05, .1, .3, .45, .675, .9].map(t => { e._ripAt = performance.now() / 1000 - t; return +foeDeflectK(e).toFixed(2); });
   e._ripAt = performance.now() / 1000 - .3; tick(); e.spd = sp; return out; });
@@ -116,8 +121,8 @@ const FOE_DL = await page.evaluate(() => ({ spineY: FOE_DEFLECT.j.spine[1] }));
 check(`parried perfectly, a ${'Bandit'}'s driver takes the deflect through the zone's tick: its weapon arm, shield arm and spine within ${Math.max(...dfl.at)} of the pose (from ${Math.min(...dfl.rest)} at rest), the builder's weapon hand thrown ${dfl.hand} m`,
   dfl.stag && dfl.k > .9 && dfl.at.every(v => v < .1) && dfl.rest.every(v => v > .3) && dfl.hand > .2, dfl);
 // Session 1928 (the critic, 6 Nov: "a shrug", the arms out level and mirrored): the two sides differ, the weapon hand flung at least
-// 25 cm further from the body's axis than the off hand, which is dropped in by the hip, and the trunk turned away from the blade
-check(`the deflect is not mirrored: the weapon hand ${dfl.wpnOut} m out from the body's axis, the off hand ${dfl.offOut} m (${dfl.wpnY} and ${dfl.offY} m up), the spine turned ${FOE_DL.spineY}`, dfl.wpnOut - dfl.offOut > .25 && FOE_DL.spineY < -.2, dfl);
+// 25 cm further from the body's axis than the off hand (S2532: 0.45 of the arm, which is 23 cm on a 0.52 m arm; the foe measured is whoever loaded first), which is dropped in by the hip, and the trunk turned away from the blade
+check(`the deflect is not mirrored: the weapon hand ${dfl.wpnOut} m out from the body's axis, the off hand ${dfl.offOut} m, at least 0.45 of the arm (${dfl.arm} m) apart (${dfl.wpnY} and ${dfl.offY} m up), the spine turned ${FOE_DL.spineY}`, dfl.wpnOut - dfl.offOut > .45 * dfl.arm && FOE_DL.spineY < -.2, dfl);
 check(`the deflect comes in by .1 s, holds to .45 and is gone by .9 (${dfl.env.join(', ')}); after it the arm is its own again`, dfl.env[0] === 0 && dfl.env[2] === 1 && dfl.env[4] === 1 && dfl.env[5] > 0 && dfl.env[5] < 1 && dfl.env[6] === 0 && dfl.after === 0 && dfl.back < .1, dfl);
 const shotD = await page.evaluate(() => { const { e } = _DF; parryFlashEnd(e); e._ripAt = performance.now() / 1000 - .3; ZE.includes(e) || 0; tickPeople(1 / 60, performance.now()); e.mesh.lookAt(px, e.mesh.position.y, pz); foeDeflect(e);
   const m = e.mesh.position, cv = REN.domElement, cam = new THREE.PerspectiveCamera(40, cv.width / cv.height, .05, 60), d = new THREE.Vector3(px - m.x, 0, pz - m.z).normalize(), s = new THREE.Vector3(-d.z, 0, d.x);
