@@ -20,7 +20,7 @@ const r = await page.evaluate(() => {
 });
 console.log(JSON.stringify(r).slice(0, 2000));
 check('the calendar\'s date line: day 1 is Hearthday, the 1st of Reaping; day 10 Beastday, the 10th; day 22 Hearthday, the 22nd', r.line0 === 'Hearthday, the 1st of Reaping' && r.line9 === 'Beastday, the 10th of Reaping' && r.line22 === 'Hearthday, the 22nd of Reaping', [r.line0, r.line9, r.line22]);
-/* S2530 — since Session 2313 the view also lists the next festival of the island you stand on (the Gatelands' Night of the Lanterns,
+/* S2531 — since Session 2313 the view also lists the next festival of the island you stand on (the Gatelands' Night of the Lanterns,
    Skyday the 26th of Leaffall): the two checks below read it after the feast, and are otherwise unchanged */
 check('the Journal has a Due view, and with nothing dated it lists only the next feast under today\'s date (Session 550: the Giving, Stoneday the 23rd), then the island\'s next festival (Session 2313: the Night of the Lanterns, in 44 days)', r.btn.includes('Due') && r.empty === 2 && /in 44 days\s+🏮 The Night of the Lanterns — at dusk, a lantern for each who went into a gate and did not come out\. Skyday, the 26th of Leaffall/.test(r.emptyTxt) && /Today is Beastday, the 10th of Reaping/.test(r.emptyTxt) && /in 13 days\s+🪨 The Giving — the year’s dead named at the old gate\. Stoneday, the 23rd of Reaping/.test(r.emptyTxt) && !/Nothing falls due\./.test(r.emptyTxt), r.emptyTxt);
 const at = r.D.map(e => e.at), texts = r.D.map(e => e.text).join(' | ');

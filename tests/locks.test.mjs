@@ -16,7 +16,7 @@ for (let k = 0; k < 24 && !(await page.evaluate(() => WORLD.DOORS.some(e => e &&
 await page.evaluate(() => { const d = WORLD.DOORS.find(e => e && e.seed != null) || [...WORLD.DOORS.values?.() || []][0];
   const p = makePortalDef(d); p.zone = 'world'; goToDungeon(p); });
 await page.waitForTimeout(12000); await g.hide();
-/* S2530 — a keep's coffer (S2370: it opens when the gate's sigil is read, never by a pick), a dead delver's body and camp (S2376) and a secret room's chest (S2403: behind a seal, laid open)
+/* S2531 — a keep's coffer (S2370: it opens when the gate's sigil is read, never by a pick), a dead delver's body and camp (S2376) and a secret room's chest (S2403: behind a seal, laid open)
    sit in CHESTS but are not S150's chests: the rule is read over the rest */
 const dun = await page.evaluate(() => { const CH = CHESTS.filter(c => !c.coffer && !c.delver && !c.secret); return { zone: activeZoneId, n: CH.length, locked: CH.filter(c => c.locked).length,
   treasure: CH.filter(c => c.treasure).length, treasureLocked: CH.filter(c => c.treasure && c.locked).length,

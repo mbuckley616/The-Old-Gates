@@ -29,6 +29,24 @@ async function dunmore(g) {
 
 const g = await boot({ look: 'new' }); const { page } = g;
 const b1 = await dunmore(g);
+// S2529: a farmer walking carries the hoe on the right shoulder, the blade behind and above it, and standing plants it again
+const carry = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'), X = t.x + 20, Z = t.z + 30;
+  let root = null, rig = null; for (let n = 0; n < 12 && !rig; n++) { root = buildNPCMesh({ name: 'Carry Hoe', role: 'farmer' }, { nation: 'gatelander', key: 'carryhoe' + n }); rig = [...PEOPLE_RIGS].find(r => r.root === root);
+    if (!hoeCarries(rig.hbG && rig.hbG.dress)) { PEOPLE_RIGS.delete(rig); HB_RIGS.delete(rig); rig = null; } } /* the first who rolled no long cloak without a cape */
+  if (!rig) return { none: true };
+  WORLD.scene.add(root); root.position.set(X, worldH(X, Z), Z); root.rotation.y = 0; root.visible = true;
+  const put = () => { CAM.position.set(root.position.x + 3, root.position.y + 1.65, root.position.z + 3); CAM.updateMatrixWorld(true); };
+  HBODY.last = -1e9; { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); } put(); let k = 0; while ((!rig.hb || rig.hb.cold) && !rig.hbFail && k++ < 800) tickPeople(1 / 60, 7e5 + k * (HBODY.gap + 1));
+  if (!rig.hb) return { noBody: true }; const D = rig.hbG.dress; let st = null, bl = null; rig.hb.root.traverse(o => { if (o.name === 'staff') st = o; if (o.name === 'hoeBlade') bl = o; });
+  const sh = rig.hb.map.find(m => m[0] === 'shR')[1], v = new THREE.Vector3(), rel = o => { o.getWorldPosition(v); return { y: v.y - sh.getWorldPosition(new THREE.Vector3()).y, z: v.z - root.position.z }; };
+  const r2 = x => +x.toFixed(2);
+  for (let i = 1; i <= 90; i++) { root.position.z += .7 / 60; root.position.y = worldH(root.position.x, root.position.z); put(); tickPeople(1 / 60, 8e5 + i * 16.7); }
+  root.updateMatrixWorld(true); const w = rel(bl), wk = r2(rig.w.walk || 0);
+  for (let i = 1; i <= 90; i++) { put(); tickPeople(1 / 60, 9e5 + i * 16.7); }
+  root.updateMatrixWorld(true); bl.getWorldPosition(v); const standH = v.y - worldH(v.x, v.z);
+  WORLD.scene.remove(root); return { carries: hoeCarries(D), walk: wk, bladeOverSh: r2(w.y), bladeBehind: r2(-w.z), standBladeH: r2(standH) }; });
+check(`a walking farmer carries the hoe on the shoulder, its blade ${carry.bladeOverSh} m over the shoulder and ${carry.bladeBehind} m behind; standing, it is planted again`,
+  carry.carries && carry.walk > .9 && carry.bladeOverSh > .15 && carry.bladeBehind > .4 && carry.standBladeH < .15, carry);
 console.log('  built:', JSON.stringify(b1));
 // S1284: a new body's programs are made before it is shown (hbWarm): the first frame that draws them compiles nothing
 // S1294: a body is built a few pieces a frame (people.js's makePersonIter), not in one frame
