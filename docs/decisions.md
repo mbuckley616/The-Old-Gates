@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Stormwatch’s ground — a headland raised for it, the highest cliff there is, or wait for the land? (from the look builder, 2026-11-21, #1843)
 **The question.** Stormwatch (#1815 A: empty, as built, a landmark walked for the view) is built in the kit (Session 2480, `auto/wip-stormwatch`), but the world has no cliff for it. The prototype's fort sits on a flat limestone top ending in an 88 m sea cliff; on seed 1 no brink 30 m or more over the sea has ground flat enough behind it. The Gatelands' coasts are low bluffs of 10 to 20 m or mountain flanks; the highest, a 97 m cliff at (14625, 23975), has ground rising 45 m behind it. Where should the fort stand?
 
@@ -26,6 +27,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 **Recommendation: A.** It keeps the fort as built and the view off a sheer cliff, which is the point of the place.
 
 Pictures (Session 2454): [the way in](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-fort.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2454/docs/prototypes/levelup/places-stormwatch-far.jpg)
+
+Michael: **Raise a headland for it** (A). (2026-11-22)
 
 ### The Frostborn Vault’s ground — raise the mountain behind it, cut it to the fell there is, or wait for the land? (from the look builder, 2026-11-21, #1858)
 **The question.** The Frostborn Vault (#1823 A: a landmark, as built) is next for the game and meets Stormwatch's question (#1843). The prototype's gorge is 85 m deep under a headwall 130 to 170 m over its rims; across 1,132 Mark placings on seed 1 the ground behind the gorge's head rises at most 48 m. Nowhere does the land stand a 130 m headwall. Where should the vault go?
@@ -39,6 +42,8 @@ Pictures (Session 2454): [the way in](https://raw.githubusercontent.com/mbuckley
 
 Pictures (Session 2461/2465): [the gorge](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-gorge.jpg) · [the headwall](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-headwall.jpg) · [the portal](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-portal.jpg) · [from above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/places-frostborn-far.jpg)
 
+Michael: **Cut it into the fell there is** (B). (2026-11-22)
+
 ### Deep pearls — the sea off Aurenne is 10 m at its deepest, not 15 (from the systems builder, 2026-11-21, #1861)
 **The question.** Rare materials B's last session puts the deep-pearl oyster beds off Aurenne below 15 m, but of 2,300 samples over Aurenne's 23 sea cells none lies below 10 m. A 10 m dive is about 8.5 s against 40 s of breath, so the page's dive at the edge of breath does not exist. Where should the beds lie?
 
@@ -48,6 +53,8 @@ Pictures (Session 2461/2465): [the gorge](https://raw.githubusercontent.com/mbuc
 - **C.** As A, and each oyster takes 4 s to prise open under water, so a bed of 5 is 20 s on the bed and two dives for most hands.
 
 **Recommendation: A.** Until answered, tiers 8–10 keep smith-only tempering; nothing else waits on it.
+
+Michael: **The deepest water there is, 8 m or more** (A). (2026-11-22)
 
 ### Rare materials' props — the fallen star's crater, the skywood pine and the script stone as drawn? (from the look builder, 2026-11-21, #1864)
 **The question.** Rare materials B (#1840 B) owes one look session of kit pieces. The systems builder built the fallen star, the skywood and the sigil stone on stand-ins (a dark disc with a dodecahedron, a 7 m cylinder under four cones, a plain box). The look builder's Session 2500 draws three in the prototype kit: the crater (6 m across, 0.8 m deep, singed rays, a three-lobed star-iron lump whose flecks glint at night; 6,588 triangles), the skywood pine (a 9 m wind-flagged summit pine, silver trunk, a stump when felled; about 10,000 triangles, one on each of 17 peaks) and the script stone (the game's 0.7 × 1.15 m slab, split and spalled, the school's script lit; 860 triangles). The oyster bed waits on #1861; the streak comes with whichever answer this gets.
@@ -61,7 +68,8 @@ Pictures (Session 2461/2465): [the gorge](https://raw.githubusercontent.com/mbuc
 
 Pictures (Session 2500): [crater](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-crater.jpg) · [the lump](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-crater-close.jpg) · [at night](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-crater-night.jpg) · [the pine](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-pine.jpg) · [felled](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-pine-felled.jpg) · [the stone, Tine](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-stone-tine.jpg) · [cut](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/rare-stone-cut.jpg)
 
-## Answered
+Michael: **Bring all three in as drawn** (A). (2026-11-22)
+
 ### Rare materials and the top tiers — side-bonuses, the top three made, or those plus graded smithies? (from the systems designer, 2026-11-21, #1840)
 **The question.** Backlog L11's *Gathering* (OG-132) leaves two pieces unbuilt: tool tiers and the four rare materials (sigil stone, star iron, skywood, deep pearl). Today the forge stops at Obsidian (tier 7), Draconic, Demonic and Cosmic are loot only, and the Dragon Scale a lair drops only sells. What should the rare materials do? Page: `docs/design/rare-materials.md`.
 
