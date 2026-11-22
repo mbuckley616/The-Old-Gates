@@ -3242,7 +3242,7 @@
   function starKitHoles(){if(typeof LAND_HOLES==='undefined'||typeof STARS_SHOWN==='undefined')return;let i=0;
     for(const v of STARS_SHOWN.values()){if(i>=6)break;const g=v.g;if(!g||!g.userData.kit||!veinLive(v))continue;LAND_HOLES.value[i++].set(v.x,v.z,g.userData.kit.R,1);}
     for(;i<6;i++)LAND_HOLES.value[i].w=0;}
-  // S2529 — the blast (the critic's note of 22 Nov: in woodland the crater stood in an unbroken wood, the trees 4.5 m from its middle).
+  // S2530 — the blast (the critic's note of 22 Nov: in woodland the crater stood in an unbroken wood, the trees 4.5 m from its middle).
   // Past the trees the crater takes (STAR.r + 1.5, 50-travel.js's starClearTrees), the wood is blown down outward from the star: every
   // tree to STAR_BLAST.all, and past it one in fewer to STAR_BLAST.r, most of them downrange (the side the star was going). Each is
   // snapped, its stump the kit's (falling outward), its trunk the kit's laid on the ground from it, away from the star, the tree's own

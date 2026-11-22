@@ -88,7 +88,7 @@ const roleStaff = await page.evaluate(() => { const out = [];
 check('every elder and hermit holds the builder\'s staff, not an empty fist', roleStaff.length >= 3 && roleStaff.every(o => o.staff && !o.basket) && roleStaff.filter(o => o.built).length >= 1 && roleStaff.filter(o => o.built).every(o => o.staffMesh && !o.basketMesh && o.walk), roleStaff);
 
 const staff = await page.evaluate(() => { thirdPerson = false;
-  const rig = [...HB_RIGS].find(r => r.root.parent === WORLD.scene && r.hbG && r.hbG.dress && r.hbG.dress.staff && !r.foe); if (!rig) return { none: true };
+  const rig = [...HB_RIGS].find(r => r.root.parent === WORLD.scene && r.hbG && r.hbG.dress && r.hbG.dress.staff && !hoeCarries(r.hbG.dress) && !r.foe); /* S2529: a farmer's hoe is carried on the shoulder, not planted */ if (!rig) return { none: true };
   const root = rig.root; root.visible = true; const put = () => { CAM.position.set(root.position.x + 3, worldH(root.position.x, root.position.z) + 1.65, root.position.z + 3); CAM.updateMatrixWorld(true); };
   put(); let k = 0; while ((!rig.hb || rig.hb.cold) && !rig.hbFail && k++ < 800) tickPeople(1 / 60, 4e5 + k * (HBODY.gap + 1));
   if (!rig.hb) return { name: rig.g.name, noBody: true }; let st = null; rig.hb.root.traverse(o => { if (o.name === 'staff') st = o; }); if (!st) return { name: rig.g.name, noStaff: true };

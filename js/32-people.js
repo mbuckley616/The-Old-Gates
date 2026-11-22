@@ -1287,12 +1287,20 @@ function pwWalk(ph,o){const p=pwZero();const S=PW.STRIDE,D=PW.DUTY,phL=ph%1,phR=
   if(lim)pwShamble(p,c,s,lim,bs);
   if(o.goblin){pwGoblin(p,.3*c);p.thL[2]+=.1;p.thR[2]-=.1;p.anL[2]-=.1;p.anR[2]+=.1;}
   if(o.wraith)pwWraith(p,ph*6.28); // the game never walks a wraith (tickPeople); the inspector's walk shows it reaching as it glides
-  if(o.holds){pwHold(p,-.08*c,o.gear);if(o.staff)pwStaffWalk(p,phL);}return p;}
+  if(o.holds){pwHold(p,-.08*c,o.gear);if(o.hoe)pwHoeCarry(p);else if(o.staff)pwStaffWalk(p,phL);}return p;}
 // S1977 (L1, OG-001/OG-065: the old who walk leaning on a staff; owed since Session 1130) — a staff in the right fist goes down with the
 // left foot and stays where it went down while that foot carries the body, then swings on with it, as a stick is used: the right
 // upper arm follows the left foot's way under the body (PW.STAFF.REACH, the shoulder to the staff's foot in figure units) and the trunk
 // leans forward onto it. The builder's body plants the foot exactly (hbStaffWalk); this is the swing that brings it near
 PW.STAFF={REACH:1.19,LEAN:.06};
+/* S2529 (S2517's and S2522's owed note: "a shouldered carry on the move would be truer to life") — on the new look a farmer walking
+   carries the hoe on the right shoulder: the upper arm a little forward, the elbow bent so the fist comes up in front of the chest, and
+   the hoe turned in it (hbHoeCarry for the builder's, pwHoeGear for the far driver's own) so the haft runs from the fist up over the
+   shoulder and the blade hangs behind. Standing, the hoe is planted as before; the pose's blend carries the arm between the two */
+PW.HOE={SH:-.1,ABD:-.04,EL:-1.05,UP:.06,IN:-.03,BACK:0,FOOT:.16};
+/* a long cloak with no cape holds the staff's arm under it (hbCloakArms), so that farmer plants the hoe as before */
+function hoeCarries(D){return !!(D&&D.staff&&D.staffMake==='hoe'&&!(D.cloak&&!D.cape));}
+function pwHoeCarry(p){p.shR=[PW.HOE.SH,0,PW.HOE.ABD];p.elR=[PW.HOE.EL,0,0];p.wrR=[0,0,0];}
 function pwStaffWalk(p,f){const S=PW.STRIDE,D=PW.DUTY;let z;if(f<D)z=S-2*S*(f/D);else{const u=(f-D)/(1-D);z=-S+2*S*u*u*(3-2*u);}
   p.shR[0]=-.12-Math.asin(pwClamp(z/PW.STAFF.REACH));p.spine[0]+=PW.STAFF.LEAN;}
 // S535 — a goblin (Michael, the inspector: "Looks a bit too friendly/humanoid", distort and contort it): crouched and hunched,
@@ -1335,7 +1343,7 @@ function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%
   p.elL=[-1.2-.3*Math.max(0,-Math.cos(a-.4)),0,0];p.elR=[-1.2-.3*Math.max(0,Math.cos(a-.4)),0,0];
   p.wrL=[-.1,0,.1];p.wrR=[-.1,0,-.1];
   if(o.goblin){p.spine[0]+=.25;p.neck[0]-=.25;p.thL[2]+=.08;p.thR[2]-=.08;}
-  if(o.holds)pwHold(p,-.15*c,o.gear);return p;}
+  if(o.holds){pwHold(p,-.15*c,o.gear);if(o.hoe)pwHoeCarry(p);}return p;}
 // the ground one stride cycle covers, for a mix of walk and run
 function pwCycle(w){const a=w.walk||0,b=w.run||0;return a+b>.001?(a*PW.cycle+b*PW.RUN.cycle)/(a+b):PW.cycle;}
 function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
@@ -1343,7 +1351,7 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
 // the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534); a farmer's hoe on the builder's body is walked as a staff (S2517)
-function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress,st=(g.gear==='stick'||g.gear==='hoe'&&!!rig.hbG)&&(!rig.hbG||!!(hd&&hd.staff));return {holds:rig.holds,gear:st?'stick':g.gear,staff:st,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,ride:rig.ride||null,play:rig.play||null,bear:rig.bear||0,push:rig.push||0};}
+function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress,st=(g.gear==='stick'||g.gear==='hoe'&&!!rig.hbG)&&(!rig.hbG||!!(hd&&hd.staff));return {holds:rig.holds,gear:st?'stick':g.gear,staff:st,hoe:g.gear==='hoe'&&hbOn()&&(!rig.hbG||hoeCarries(hd)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,ride:rig.ride||null,play:rig.play||null,bear:rig.bear||0,push:rig.push||0};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -1778,7 +1786,7 @@ function tickPeople(dt,now){
     if(rig.g.ghoul&&mode==='run')mode='walk'; // S534 — a ghoul never runs: a fast hobble on its limp
     if(rig.g.wraith){mode='idle';root.position.y=(.24+.05*Math.sin(now*.0021+rig.g.phase))*SCALE.ROOM_K;} // a wraith takes no steps: it glides, a little off the ground (S905, F2a: as high against its taller body as before)
     const t=now/1000*rig.g.tempo+rig.g.phase;
-    {const P=pwBlend(rig,mode,t,rig.phase,dt,pwOpts(rig));pwApply(rig,P);if(rig.g.wraith)rig.wraithArm=P.shR[0];}
+    {const o=pwOpts(rig),P=pwBlend(rig,mode,t,rig.phase,dt,o);pwApply(rig,P);if(rig.g.wraith)rig.wraithArm=P.shR[0];if(o.hoe&&rig.holds&&(!rig.hb||rig.hb.L>=2))pwHoeGear(rig);}
     if(rig.hb&&rig.hb.lean&&!rig.sleep&&!rig.limp)hbCloakLean(rig); // S2045 — under a long cloak the spine's lean is the pelvis's
     if((rig.B.cloak||rig.B.hairB)&&!rig.lod&&!rig.sleep)peopleSwing(rig,dt); // S267; a sleeper's hair and cloak lie still (S752)
     // a captain's shield guard (S175): while it is up the left arm holds the shield across the body, the elbow bent
@@ -2991,12 +2999,13 @@ function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!!(D.spear|
   if(!i.length)return null;const S=new Set(i);if(low)S.staff=new Set(i.filter(k=>/R$/.test(map[k][0])));return S;}
 function hbHoldF(rig){const H=rig.hb,w=rig.w;if(!H.hold||!w||rig.limp||rig.sleep)return 0;if(rig.tpHold)return HB_CLOAK_HOLD;const e=rig.e;
   if(e&&((e._wind||0)>0||(e._lunge!=null&&e._lunge>0)||(e.atkAnim||0)>0))return 0;return HB_CLOAK_HOLD*Math.min(1,(w.walk||0)+(w.run||0));}
-function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!rig.limp&&!rig.sleep?H.grip:null,hf=hbHoldF(rig);
+function hbPose(rig){const H=rig.hb,B=rig.B,map=H.map,grip=H.grip&&rig.holds&&!rig.limp&&!rig.sleep?H.grip:null,hf=hbHoldF(rig),hw=grip&&rig.hbG&&hoeCarries(rig.hbG.dress)?hoeW(rig.w):0;
   if(hf>0){hbRel(B[map[0][0]],rig.root,_hbqH);if(H.tw<1){_hbqA.set(0,_hbqH.y,0,_hbqH.w).normalize();_hbq3.copy(_hbqA).invert();_hbqH.multiply(_hbq3);_hbq3.identity().slerp(_hbqA,H.tw);_hbqH.multiply(_hbq3);}_hbqH.multiply(H.s0[0]);}
   for(let i=0;i<map.length;i++){const [j,b]=map[i];
-    if(grip&&(i===grip[0].i||grip[1]&&i===grip[1].i)){b.quaternion.copy(grip[0].i===i?grip[0].q:grip[1].q);continue;}
+    const gq=grip&&(i===grip[0].i||grip[1]&&i===grip[1].i)?(grip[0].i===i?grip[0].q:grip[1].q):null;
+    if(gq&&!(hw>0&&j==='elR')){b.quaternion.copy(gq);continue;} /* S2529 — the hoe's carry bends the elbow as the driver does */
     hbRel(B[j],rig.root,_hbq).multiply(H.s0[i]);if(hf>0&&H.hold.has(i)){const k=rig.tpHold?hf*(rig.tpHold[j.slice(-1)]||0):H.hold.staff&&H.hold.staff.has(i)?hf*HB_CLOAK_STAFF.k:H.hold.sword&&H.hold.sword.has(i)?hf*HB_SWORD_HOLD.k:hf;if(k>0)_hbq.copy(_hbqA.copy(_hbq).slerp(_hbqH,k));}_hbq.multiply(H.t0[i]);
-    if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);}
+    if(b.parent&&b.parent!==H.P.root){hbRel(b.parent,H.root,_hbq2).invert();b.quaternion.copy(_hbq2.multiply(_hbq));}else b.quaternion.copy(_hbq);if(gq)b.quaternion.copy(_hbq2.copy(gq).slerp(b.quaternion,hw));}
   const hp=B.hips.position,rb=map[0][1];_hbv.set(hp.x,hp.y-PW.HIPS,hp.z).applyMatrix3(H.A);_hbv.y*=H.kh;rb.position.copy(H.pos0).add(_hbv.applyMatrix3(H.Bi));
   if(grip&&rig.thrust>0){const wb=(map.find(m=>m[0]==='wrR')||[])[1],sp=wb&&foeSpearOf(rig,H.root,wb);if(sp)foeSpearAim(rig,wb,sp);}
   if(grip&&!rig.foe)hbStaffWalk(rig);if(H.P.hem&&H.L<2)hbHem(rig);}
@@ -3010,7 +3019,8 @@ const HB_STAFF={LIFT:.05,TURN:1,BEND:1},_hbsT=new THREE.Vector3(),_hbsA=new THRE
 function hbStaffWalk(rig){const H=rig.hb,w=rig.w;
   if(H.staffW===undefined){let st=null;H.root.traverse(o=>{if(o.name==='staff')st=o;});const ua=(H.map.find(m=>m[0]==='shR')||[])[1],la=(H.map.find(m=>m[0]==='elR')||[])[1];
     H.staffW=st&&ua&&la?{st,ua,la,P:null,from:null,on:false}:null;}
-  const S=H.staffW;if(!S||!w)return;const k=Math.max(0,Math.min(1,(w.walk||0)-(w.run||0)-(w.wave||0)));if(k<.02||rig.thrust>0){S.P=null;S.on=false;return;}
+  const S=H.staffW;if(!S||!w)return;if(rig.hbG&&hoeCarries(rig.hbG.dress)){hbHoeCarry(rig,S);return;}
+  const k=Math.max(0,Math.min(1,(w.walk||0)-(w.run||0)-(w.wave||0)));if(k<.02||rig.thrust>0){S.P=null;S.on=false;return;}
   H.root.updateMatrixWorld(true);S.st.getWorldPosition(_hbsT);
   const open=activeZoneId==='world'&&!hbIndoors()&&typeof worldH==='function',gy=(x,z)=>{rig.root.getWorldPosition(_hbsP);return open?_hbsP.y+worldH(x,z)-worldH(_hbsP.x,_hbsP.z):_hbsP.y;};
   const f=(rig.phase%1+1)%1,D=PW.DUTY,tg=_hbsB;
@@ -3025,6 +3035,38 @@ function hbStaffWalk(rig){const H=rig.hb,w=rig.w;
   S.st.getWorldPosition(_hbsT);_hbsA.subVectors(_hbsT,_hbsP);const t2=tg.clone().sub(_hbsP);
   if(_hbsA.lengthSq()>1e-8&&t2.lengthSq()>1e-8){_hbsQ.setFromUnitVectors(_hbsA.normalize(),t2.normalize());const ang=2*Math.acos(Math.min(1,Math.abs(_hbsQ.w)));
     if(ang>HB_STAFF.TURN)_hbsQ.slerp(_hbsR.identity(),1-HB_STAFF.TURN/ang).normalize();hbStaffTurn(S.ua,_hbsQ);}}
+// S2529 — the hoe on the shoulder (pwHoeCarry). O (the builder's staff group, or the driver's gear bone) is turned about the grip, the point
+// of the haft in the fist, from where the hold leaves it to where the haft runs from the grip over the shoulder (HOE.UP over the shoulder
+// joint, HOE.IN toward the neck) with the blade's face turned down, by the walk's weight (the walk and the run, not a wave). Its rest
+// (position, turn) is kept and put back first each frame, so nothing builds up. A = the haft's way to the blade in O's frame, F the blade's
+// face across it, G the grip
+const _hoeA=new THREE.Vector3(),_hoeB=new THREE.Vector3(),_hoeC=new THREE.Vector3(),_hoeD=new THREE.Vector3(),_hoeM=new THREE.Matrix4(),_hoeN=new THREE.Matrix4(),_hoeQ=new THREE.Quaternion(),_hoeR=new THREE.Quaternion(),_hoeP=new THREE.Quaternion();
+function hoeAim(rig,O,C,sh,k){if(!C.q0){C.q0=O.quaternion.clone();C.p0=O.position.clone();}O.quaternion.copy(C.q0);O.position.copy(C.p0);
+  if(k<.002){O.updateMatrixWorld(true);return 0;}O.updateMatrixWorld(true);
+  const Gw=_hoeA.copy(C.G).applyMatrix4(O.matrixWorld);O.getWorldQuaternion(_hoeQ);
+  rig.root.getWorldQuaternion(_hoeR);const fwd=_hoeB.set(0,0,1).applyQuaternion(_hoeR);fwd.y=0;fwd.normalize();
+  sh.getWorldPosition(_hoeC);const side=_hoeD.set(0,1,0).cross(fwd);const inw=Math.sign(side.dot(_hoeC)-side.dot(rig.root.getWorldPosition(new THREE.Vector3())))||1;
+  _hoeC.y+=PW.HOE.UP;_hoeC.addScaledVector(side,-inw*PW.HOE.IN).addScaledVector(fwd,-PW.HOE.BACK);
+  const d=_hoeC.sub(Gw).normalize(),ft=new THREE.Vector3(0,-1,0).addScaledVector(d,d.y).normalize();
+  const aw=C.A.clone().applyQuaternion(_hoeQ),fw=C.F.clone().applyQuaternion(_hoeQ);
+  _hoeM.makeBasis(d,ft,_hoeB.copy(d).cross(ft));_hoeN.makeBasis(aw,fw,aw.clone().cross(fw)).transpose();_hoeM.multiply(_hoeN);
+  _hoeP.setFromRotationMatrix(_hoeM).multiply(_hoeQ);_hoeP.copy(_hoeQ.clone().slerp(_hoeP,k));
+  O.parent.getWorldQuaternion(_hoeR);O.quaternion.copy(_hoeR.invert().multiply(_hoeP));
+  const s=O.scale,g0=C.G.clone().multiply(s).applyQuaternion(C.q0),g1=C.G.clone().multiply(s).applyQuaternion(O.quaternion);O.position.copy(C.p0).add(g0).sub(g1);
+  if(C.slide)O.position.add(C.A.clone().multiply(s).applyQuaternion(O.quaternion).multiplyScalar(C.slide*k)); /* the fist slid down the haft toward its foot */
+  O.updateMatrixWorld(true);return d.angleTo(_hoeB.set(0,1,0));}
+function hoeW(w){return w?Math.max(0,Math.min(1,(w.walk||0)+(w.run||0)-(w.wave||0))):0;}
+function hbHoeCarry(rig,S){const H=rig.hb,st=S.st;
+  if(!S.hoe){const ws={};st.traverse(o=>{if(o.isMesh&&!ws[o.name]){o.geometry.computeBoundingBox();ws[o.name]=o;}});
+    const inv=new THREE.Matrix4().copy(st.matrixWorld).invert(),cen=n=>{const o=ws[n];if(!o)return null;const b=o.geometry.boundingBox.getCenter(new THREE.Vector3());return b.applyMatrix4(o.matrixWorld).applyMatrix4(inv);};
+    const sock=cen('hoeSocket'),edge=cen('hoeEdge')||cen('hoeBlade');let top=null;st.traverse(o=>{if(o.isMesh&&o.name==='staffWood'){const c=new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()).applyMatrix4(inv);if(!top||c.distanceTo(sock)>top.distanceTo(sock))top=c;}});
+    const wb=(H.map.find(m=>m[0]==='wrR')||[])[1];if(!sock||!edge||!top||!wb){S.hoe={none:true};return;}
+    const A=sock.clone().sub(top).normalize(),hand=wb.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv),G=top.clone().addScaledVector(A,hand.clone().sub(top).dot(A));
+    const F=edge.clone().sub(sock);F.addScaledVector(A,-F.dot(A)).normalize();S.hoe={A,F,G,sh:S.ua,slide:Math.max(0,G.distanceTo(top)-PW.HOE.FOOT)};}
+  if(S.hoe.none)return;S.hoe.tilt=hoeAim(rig,st,S.hoe,S.hoe.sh,hoeW(rig.w));}
+// the far level: the driver's own hoe (S2522's, blade down) on its gear bone, its grip at the bone, the haft along its -y to the blade
+function pwHoeGear(rig){const B=rig.B;if(!B||!B.gear||!B.shR)return;if(!rig.hoeG)rig.hoeG={A:new THREE.Vector3(0,-1,0),F:new THREE.Vector3(0,0,1),G:new THREE.Vector3(0,0,0)};
+  hoeAim(rig,B.gear,rig.hoeG,B.shR,hoeW(rig.w));}
 // a bone turned by a rotation given in the world's frame, its children with it
 function hbStaffTurn(b,q){b.parent.getWorldQuaternion(_hbsR);b.getWorldQuaternion(_hbq3);b.quaternion.copy(_hbsR.invert().multiply(q.multiply(_hbq3)));b.updateMatrixWorld(true);}
 // Session 2092 (Michael's B on #1278, 8 Nov: "the weapon's edge carries it"): a foe on the builder's body no longer lights up whole in
