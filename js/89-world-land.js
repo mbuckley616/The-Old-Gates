@@ -35,8 +35,8 @@ function landMask(geo,ox,oz){
     const st=stampAt(x,z);const ri=roadInfo(x,z);const rd=ri?ri.d:99;
     let field=0,wood=0;const ws=regionWeights(x,z);
     for(const e of ws){if(e.w<=0)continue;field+=e.w*(LAND_FIELD_BIOMES[e.r.biome]||0);wood+=e.w*(e.r.density||0)*(e.r.trees&&e.r.trees!=='dead'?1:.3);}
-    const away=sstep(ROAD_BLEND,ROAD_BLEND+14,rd)*(st?0:1)*sstep(2.5,7,h);
-    m.setXYZ(i,st?1:0,Math.min(1,wood*1.2)*sstep(1.6,4,h),Math.min(1,field)*away);}
+    const away=sstep(ROAD_BLEND,ROAD_BLEND+14,rd)*(st&&!st.natural?0:1)*sstep(2.5,7,h);
+    m.setXYZ(i,st&&!st.natural?1:0,Math.min(1,wood*1.2)*sstep(1.6,4,h),Math.min(1,field)*away);}
   m.needsUpdate=true;
 }
 function landTerrainMat(){

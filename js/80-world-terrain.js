@@ -222,6 +222,7 @@
     for(let i=0;i<arr.length;i++){
       const s=arr[i];if(s.noFlat||s.off)continue; /* S433 — a stamp that only clears the scatter (a river quay's bank); S2491 — one switched off while the ground it covers is read as it was */
       if(s.inside&&!s.inside(x,z))continue; /* S2491 — a stamp of a shape: within its r it holds only where inside() says (the Forgotten Aqueducts' hole and halls), sunk to its y outright */
+      if(s.fn){h=s.fn(x,z,h);continue;} /* S2523 — a stamp of a height (the Frostborn Vault's gorge and cliff): within its shape the ground is fn of the ground as it was there; fn meets it at the shape's edge */
       const dx=x-s.x,dz=z-s.z;
       const R=s.r+s.blend;
       if(dx>R||dx<-R||dz>R||dz<-R)continue;
@@ -785,6 +786,12 @@
       for(let i=0;i<pa.count;i++){const vx=pa.getX(i),vz=pa.getZ(i);if(Math.abs(vx-cx)>R||Math.abs(vz-cz)>R||pa.getY(i)<=t.y-3)continue;let hit=false;
         for(let b=-4;b<=4&&!hit;b++)for(let a=-4;a<=4;a++)if(t.inside(vx+ox+SIZE/2+a*st/4,vz+oz+SIZE/2+b*st/4)){hit=true;break;}
         if(hit){pa.setY(i,t.y-3);n++;}}}
+    /* S2523 — a stamp of a height (farFn: the Frostborn Vault's gorge): a far point within one step of its shape goes 3 m under the least of
+       the ground round it (its own and eight points half a step off), so a far triangle spanning the gorge's wall never stands in front of it */
+    for(const t of STAMPS){if(!t.farFn||t.off||!t.fn)continue;const R=t.r+st,cx=t.x-ox-SIZE/2,cz=t.z-oz-SIZE/2;if(cx<-SIZE/2-R||cx>SIZE/2+R||cz<-SIZE/2-R||cz>SIZE/2+R)continue;
+      for(let i=0;i<pa.count;i++){const vx=pa.getX(i),vz=pa.getZ(i);if(Math.abs(vx-cx)>R||Math.abs(vz-cz)>R)continue;const wx=vx+ox+SIZE/2,wz=vz+oz+SIZE/2;let hit=false,lo=1e9;
+        for(let b=-1;b<=1;b++)for(let a=-1;a<=1;a++){const x=wx+a*st/2,z=wz+b*st/2;if(t.inside(x,z))hit=true;lo=Math.min(lo,worldH(x,z));}
+        if(hit&&lo-3<pa.getY(i)){pa.setY(i,lo-3);n++;}}}
     return n;}
   function farSinkUnder(){let n=0;if(!sc)return 0;for(const o of sc.children){const F=o.userData&&o.userData.far;if(!F)continue;const k=farSinkHoles(o.geometry,F.ox,F.oz,F.st);if(k){o.geometry.attributes.position.needsUpdate=true;o.geometry.computeVertexNormals();o.geometry.computeBoundingSphere();n+=k;}}return n;}
   function buildFar(){}
