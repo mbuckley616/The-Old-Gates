@@ -4,15 +4,21 @@
   // The dungeon's doors are grid cells with a mesh and an open flag; interiors cut doorways but hung
   // nothing in them. A leaf now hangs on the hinge side of every doorway a partition cuts: solid when
   // shut, swung clear when open, on the same E press and the same sounds as a cave door.
+  // [geometry, x, y, z, colour] parts as one non-indexed geometry with a colour per vertex (the parts are disposed)
+  function intDoorGeo(parts){const P=[],N=[],C=[],col=new THREE.Color();
+    for(const [geo,x,y,z,c] of parts){const q=geo.index?geo.toNonIndexed():geo;q.translate(x,y,z);col.setHex(c);const a=q.attributes.position.array,n=q.attributes.normal.array;
+      for(let i=0;i<a.length;i++){P.push(a[i]);N.push(n[i]);}for(let i=0;i<a.length/3;i++)C.push(col.r,col.g,col.b);if(q!==geo)q.dispose();geo.dispose();}
+    const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(P,3));G.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));
+    G.setAttribute('color',new THREE.Float32BufferAttribute(C,3));return G;}
   function intDoorAt(sc_,SOL,x,z,by,ang,beamC,dim){ /* S1161 — dim {w, h}: a doorway's own size in metres (the kit's taproom); without it the old unit's. S2534: dim.dir, which way it swings, where a hashed way would sweep the furniture */
     const w=dim&&dim.w||1.34,h=dim&&dim.h||1.46,dir=dim&&dim.dir||((Math.floor(Math.abs(x*7+z*13))%2)?1:-1); // which way it swings, steady per doorway
     const ux=Math.sin(ang),uz=Math.cos(ang);                          // along the wall
     const hx=x-ux*w/2,hz=z-uz*w/2;                                    // the hinge post
     const g=new THREE.Group();g.position.set(hx,by,hz);g.rotation.y=ang;sc_.add(g);
-    const leaf=new THREE.Mesh(new THREE.BoxGeometry(.07,h,w),new THREE.MeshLambertMaterial({color:beamC}));
-    leaf.position.set(0,h/2+.02,w/2);g.add(leaf);
-    for(const t of [-.34,.34]){const br=new THREE.Mesh(new THREE.BoxGeometry(.05,.1,w*.86),new THREE.MeshLambertMaterial({color:0x2a2622}));br.position.set(.05,h/2+t,w/2);g.add(br);} // iron bands
-    const kn=new THREE.Mesh(new THREE.SphereGeometry(.05,7,6),new THREE.MeshLambertMaterial({color:0x6a5a2a}));kn.position.set(.08,h/2,w*.86);g.add(kn);
+    /* S2546 — the leaf, its two iron bands and the knob as one mesh coloured by vertex (four draws a door were twelve of the tavern's
+       fifty upstairs, taverninn): the same boxes, sphere, places and colours */
+    g.add(new THREE.Mesh(intDoorGeo([[new THREE.BoxGeometry(.07,h,w),0,h/2+.02,w/2,beamC],[new THREE.BoxGeometry(.05,.1,w*.86),.05,h/2-.34,w/2,0x2a2622],
+      [new THREE.BoxGeometry(.05,.1,w*.86),.05,h/2+.34,w/2,0x2a2622],[new THREE.SphereGeometry(.05,7,6),.08,h/2,w*.86,0x6a5a2a]]),new THREE.MeshLambertMaterial({vertexColors:true})));
     const sol={x0:x-Math.abs(ux)*w/2-.07,x1:x+Math.abs(ux)*w/2+.07,z0:z-Math.abs(uz)*w/2-.07,z1:z+Math.abs(uz)*w/2+.07,y0:by,y1:by+h};
     SOL.push(sol);
     // S517 — its id, <house id>:door:<n> in the order the room hangs them (co-op rules); buildInteriorFor names the house
@@ -422,6 +428,9 @@
     {const T=h._aurHome||h._aurHomeOne,ps=T&&Array.isArray(T.paths)&&T.inner?(h._aurHome?T.paths.slice(0,1):T.paths):[];
       for(const P0 of ps){const P=Array.isArray(P0)?P0:(P0&&P0.pts)||[];for(let i=1;i<P.length;i++){const [a,b]=P[i-1],[c,d]=P[i],n=Math.max(1,Math.ceil(Math.hypot(c-a,d-b)/.3));
         for(let k=0;k<=n;k++)folk.push([a+(c-a)*k/n+T.inner.x1,b+(d-b)*k/n+T.inner.z1,.6]);}}}
+    /* S2546 — and off the tavern's stair and the 1.2 m at its foot (taverninn: the oven stood across the foot, 3 cm off the first riser, so
+       no one climbed to the rooms); its stair climbs from z1 to z0 in the room's frame from its inner corner */
+    {const T=h._tavern,S=T&&T.stair;if(S&&T.inner)for(let x=S.x0;x<=S.x1+.01;x+=.3)for(let z=S.z0;z<=S.z1+1.21;z+=.3)folk.push([x+T.inner.x1,z+T.inner.z1,.7]);}
     let P=null,sp=null;for(const small of [false,true]){P=PKIT.props.clay('oven',n,{small});const f=P.foot;sp=homeWallSpot(h,f.x1-f.x0,f.z1-f.z0,.8,bare,folk);if(sp)break;
       P.group.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
     if(!sp)return {laid:false};const cx=(P.foot.x0+P.foot.x1)/2;for(const c of P.group.children)c.position.x-=cx;
