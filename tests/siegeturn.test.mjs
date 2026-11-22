@@ -34,7 +34,7 @@ const beat = (h, n, post) => page.evaluate(([h, n, post]) => { const t = WORLD.s
   const S = SETTLE.get('dunmore'); const gate = S._gates && S._gates[0]; const L = ZONES.world.enemies.filter(e => e._siege === 'dunmore' && !e.dead);
   L.forEach(e => { e.alert = false; }); px = t.x + 400; pz = t.z; let stuck = 0;
   const P = L.filter(e => e._beat), last = P.map(e => [e.x, e.z]);
-  // S2536: a post laid across soldier 2's straight line to the gate after his way is found (as a solid the way's line test passed, CI 22 Nov)
+  // S2538: a post laid across soldier 2's straight line to the gate after his way is found (as a solid the way's line test passed, CI 22 Nov)
   let box = null; if (post) { tickSieges(); const e2 = P.find(e => e._beat === 2); e2._beatWay = [{ x: gate.x, z: gate.z }]; const d = Math.hypot(gate.x - e2.x, gate.z - e2.z), ux = (gate.x - e2.x) / d, uz = (gate.z - e2.z) / d, a = -Math.atan2(uz, ux);
     box = { cx: e2.x + ux * 25, cz: e2.z + uz * 25, rx: .15, rz: 1.5, c: Math.cos(a), s: Math.sin(a) }; STATIC_SOL.push(box); }
   for (let i = 0; i < n; i++) { tickSieges(); tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); if (i % 60 === 59) { P.forEach((e, k) => { if (Math.hypot(e.x - last[k][0], e.z - last[k][1]) < .05 && Math.hypot(e.x - e.homeX, e.z - e.homeZ) > 4) stuck++; last[k] = [e.x, e.z]; }); } }

@@ -2057,7 +2057,7 @@ const giver=`${lord.title} ${lord.name}`;
       const raw=!!e._beatHeld;e._beatHeld=false;let way=[];try{const T=SETTLE.get(t.id);if(T)way=townRoute(T)({x:e.x,z:e.z},to,raw);}catch(err){way=[];}e._beatWay=way.concat([{x:to.x,z:to.z}]);
       let L=0,q={x:e.x,z:e.z};for(const w of e._beatWay){L+=Math.hypot(w.x-q.x,w.z-q.z);q=w;}e._beatPace=Math.max(e.spd,Math.min(PATROL.pace,L/PATROL.legS));}}
   // called from tickZoneEnemies while the soldier is not alert: true while it is walking its way
-  // S2536 — a step into a solid turns off the heading, 30° to 150°, to the side it turned last until the straight step is free again
+  // S2538 — a step into a solid turns off the heading, 30° to 150°, to the side it turned last until the straight step is free again
   // (so he walks round a post or along a wall rather than turning back and forth); one held every way asks again for every cell of the way (townRoute's raw way, as the watch does since S247): the way
   // pulled straight is checked by clearLine, which can pass a thin solid (a post, a trunk) that the step then meets, and asking again for
   // the straight way gave the same line and held him there for good (CI, 22 Nov: soldier 2 on the plaza–gate line, 42 s of the hour).
