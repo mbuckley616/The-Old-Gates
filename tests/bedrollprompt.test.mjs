@@ -14,11 +14,14 @@ const r = await page.evaluate(async (b) => {
   const ob = document.getElementById('ob');
   const away = () => new Promise(res => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => res(ob.textContent)))));
   px = b.x + 6; pz = b.z + 6; const far = await away();
-  px = b.x + .4; pz = b.z; const near = await away();
-  return { far, near, lid, zone: activeZoneId };
+  px = b.x + .4; pz = b.z; const m0 = levelMarks; levelMarks = 0; const near = await away();
+  /* S2515: ready to advance, it says so: the guard asked levelFor, which no file declares, so the words never came */
+  levelMarks = marksNeeded(); const ready = await away(); levelMarks = m0;
+  return { far, near, ready, lid, zone: activeZoneId };
 }, bed);
 check('in the world, `lid` is overworld', pre.lid === 'overworld' && pre.zone === 'world', pre);
 check('standing on the bedroll the prompt reads *A bedroll — Press ‘E’ to rest*', /^A bedroll — Press 'E' to rest/.test(r.near), { bed, r });
+check('not ready to advance, it says no more; ready, it adds *and take your level* (S2515)', !/level/.test(r.near) && /^A bedroll — Press 'E' to rest and take your level$/.test(r.ready), r);
 check('six units off, it does not', !/bedroll/.test(r.far), r);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

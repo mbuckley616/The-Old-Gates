@@ -2936,7 +2936,8 @@ function _canWait(){
   const inCombat = ZE && ZE.some(e=>e && !e.dead && !e.locked && (!e.wild||e.angry) && Math.hypot(px-e.x,pz-e.z)<20); /* S1707 — a grazing deer is no foe */
   if(inCombat) return {ok:false, reason:'You cannot pass time while enemies are near.'};
   // Block while a UI modal is open (dialog, shop, inventory etc).
-  if(typeof dlg!=='undefined' && dlg && dlg.style && dlg.style.display==='flex') return {ok:false, reason:''};
+  /* S2515 — the dialogue shows #dlg as 'block', never 'flex', so this read nothing and the HUD's wait button passed time mid-conversation; read the dialogue's own flag */
+  if(typeof dlgOpen!=='undefined' && dlgOpen) return {ok:false, reason:''};
   return {ok:true};
 }
 
