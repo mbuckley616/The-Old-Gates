@@ -714,14 +714,14 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - **`keeperwalk`** (for the systems builder). *The keepers of both towns were walked, counter shops among them (at least 10)*: 7 walked (2 counter shops, the 5 inns none), 85 standing.
   - ~~**`locks`** (for the systems builder: dungeon chests). *Dungeon chests follow the rule*: 4 chests, 3 locked, 2 treasure both locked, 1 wrong.~~ — done, Session 2531
   - ~~**`chestpicks`** (for the systems builder). *Every chest follows Session 150's rule*: the Barrow of Woushdaey, 2 wrong. Probably the same cause as `locks`.~~ — done, Session 2531
-  - **`locksight`** (for the systems builder: `LP`, `js/68-dungeon-misc.js`). Crashes after 3 checks: `TypeError: Cannot read properties of undefined (reading 'exitX')`.
+  - ~~**`locksight`** (for the systems builder: `LP`, `js/68-dungeon-misc.js`). Crashes after 3 checks: `TypeError: Cannot read properties of undefined (reading 'exitX')`.~~ — fixed, Session 2536 (the indoor half takes Portclare's smith, which keeps a keeper's room; Dunmore's shops are F9's merchant's house)
   - ~~**`due`** (for the systems builder: the Journal's Due view, `js/66-hub.js`). *Lists only the next feast*: the Night of the Lanterns shows too, in 44 days; and *six dated things, soonest first*.~~ — done, Session 2531
   - **`siegeturn`** (for the systems builder: the war, `js/87-world-quests.js`). *10h: soldiers 1 and 2 walk the street to the first gate*: soldier 2 stays 55.9 m off, stuck 42.
-  - **`shopback`** (for the look builder: the kit shops). *There are kit shops with a keeper's room to judge (Portclare's five and Dunmore's)*: 2 found (Lonán's Shipwright, Menas's Smithy).
+  - ~~**`shopback`** (for the look builder: the kit shops). *There are kit shops with a keeper's room to judge (Portclare's five and Dunmore's)*: 2 found (Lonán's Shipwright, Menas's Smithy).~~ — fixed, Session 2536 (the suite's: 2 rooms keep a keeper's room since F9, Portclare's shipwright and smith; a new check that Dunmore's merchant's-house shops open on its room)
   - ~~**`intdoors`** (for the look builder: `intDoorAt`, `js/84-world-interiors.js`). *Every door swings its full quarter turn without touching…*: Cathal's Apothecary, Séamus's Barber, Fionnuala's Stores (w 0.81, gap 0.56, hit 0.15); and *every gap is within a tenth of its leaf*.~~ — fixed, Session 2534 (a real fault: in a 3-bay house the kit's top-floor door ran 0.28 m into the hall's partition; it is kept inside it, `updoor`, and hung to open into the back room, clear of the bed)
   - **`taverninn`** (for the look builder: the inn's rooms). *Each bed is reached on foot from the door, up 16 risers*: rooms 0 and 1 blocked at [1.17, 5.98]; and the room draws 51 meshes (50 or fewer).
-  - **`barber`** (for the look builder: the barber's room). *The room is one bake on the kit with no flames, 5–30k triangles*: no furniture, no triangles; two checks follow from it.
-  - **`barberfee`** (for the look builder). *It stands clear of the furniture*: `onFurn` true at x 0.72, z 6.425. Probably the same room as `barber`.
+  - ~~**`barber`** (for the look builder: the barber's room). *The room is one bake on the kit with no flames, 5–30k triangles*: no furniture, no triangles; two checks follow from it.~~ — fixed, Session 2536 (the suite's: the generated room is judged in the nearest barber not in a merchant's house, Dáire's Barbier)
+  - ~~**`barberfee`** (for the look builder). *It stands clear of the furniture*: `onFurn` true at x 0.72, z 6.425. Probably the same room as `barber`.~~ — fixed, Session 2536 (the suite's: the floors over a merchant's house counted as furniture over the box; furniture tops under 1.6 m only)
   - **`fishseed`** (for the look builder: a harbour's goods shop). *Fionnuala's Stores shows the rods' rack and the net*: flags, rods and net all null.
   - **`kitfarm`** (for the look builder: `loneFarms`). *Lays 7 farms alone over the Gatelands' 22 cells, the same answer twice*: 7, not the same twice.
   - **`lairmaster`** (for the look builder: the lair's cavern ceiling, `dCeil`). *It stands under the cavern's ceiling*: the ceiling reads null for four masters; the Ogre 3.45 against a ceiling of 3.27.
@@ -730,14 +730,14 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - **`reader`** (for QA). Killed at 1,800 s after the Varek check: `Target page, context or browser has been closed` at `g.hide`.
   - ~~**`f4foes`** FLAKY (for the bodies builder: *each kit weapon is held in the builder's fist*, *the deflect is not mirrored* on the first try)~~ — done, Session 2533 (read against the body's own arm) — and **`deathplace`** FLAKY (for QA: a 20 s `waitForFunction`).
 - ~~**s1849 — the fallen star's crater in a wood** (critic 22 Nov, low; for the look builder): one near-black disc with a hard edge, the trees standing unbroken 4.5 m from its middle~~ — done, Session 2530 (the kit's apron fades into the land along the burn's rays, the bowl's charcoal lifted; `starKitBlast` blows the wood down outward from the star, every tree to 9 m and fewer to 14 m, as the kit's stumps and trunks).
-- **`shopback` and `locksight` red on the weekly run of 22 Nov (45028889995): a Gatelands shop has no keeper's room since F9** (the systems
+- ~~**`shopback` and `locksight` red on the weekly run of 22 Nov (45028889995): a Gatelands shop has no keeper's room since F9** (the systems
   builder, Session 2531, for QA and the look builder; `js/83-world-generator.js`, `buildKitMerchant`). Session 2272 (card F9, #1574 A) builds
   Dunmore's armourer, apothecary and goods shops as the kit's merchant's house: no partition and no `_backRoom` (it returns before S1258's
   partition), with the strongbox at the end of the keeper's walk. The forge's kit room has none either. `shopback` finds 2 rooms to judge and
   wants 8; `locksight` looks for a Dunmore shop with `_backRoom`, finds none and throws (`undefined.exitX`, line 45). Each suite needs a
   room F9 still builds (perhaps a Mark or Aurenne shop: F9's merchant's house is the Gatelands', not checked) or the merchant's house's own layout. `theft` had the same
   cause and is fixed (Session 2531: the unseen case is a theft behind the keeper's back). `barberfee`'s *one bake on the kit* (`furn: 0`) is a
-  barber, one of F9's four trades: likely the same cause, not checked.
+  barber, one of F9's four trades: likely the same cause, not checked.~~ — done, Session 2536 (all three suites corrected to the rooms F9 builds; `barber` too)
 
 ## J. Design proposals wanted (Michael, 27 Sep 2026)
 Michael wants to hear proposals from the team before anything is built. Each proposal is a page in `docs/design/<topic>.md`: the problem in his words, 2–3 directions with a recommendation, what it displaces, cost in sessions. Nothing here is a spec until it carries a `Michael:` line in docs/decisions.md. His brief is `docs/design_brief.md`.

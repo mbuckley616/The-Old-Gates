@@ -32,7 +32,11 @@ for (const id of ['portclare', 'dunmore']) { await g.settle(id);
         amble: am ? [+am.minZ.toFixed(2), +am.maxZ.toFixed(2)] : null, fromDoor: +Math.hypot(ax - X.x, az - X.z).toFixed(2), hatch: h._hatch ? [+h._hatch.x.toFixed(2), +h._hatch.z.toFixed(2)] : null }); }
     return out; }, id)); }
 for (const r of rows) console.log(' ', JSON.stringify(r));
-check('there are kit shops with a keeper\'s room to judge (Portclare\'s five and Dunmore\'s)', rows.length >= 8, rows.length);
+// S2536: since F9 (S2272, #1574 A) a Gatelands armourer, apothecary and goods shop of 3 to 5 bays is the kit's merchant's house, with no
+// keeper's room (kitmerchant's); what keeps one near the start is Portclare's shipwright and its smith in a merchant's front (seed 1)
+check('there are kit shops with a keeper\'s room to judge (Portclare\'s shipwright and smith)', rows.length >= 2, rows.length);
+const f9 = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); return S.houses.filter(h => /armor|potion|misc/.test(h.type) && h.kit && h.kit.kind === 'merchant').map(h => ({ n: h.name, kit: kitMerchant(h) })); });
+check('Dunmore\'s armourer, apothecaries and goods shops in a merchant\'s house open on its room, not a keeper\'s room', f9.length >= 3 && f9.every(r => r.kit), f9);
 check('the street door opens on the shop: the arrival spot is south of the partition, on free floor, past the counter\'s front', rows.every(r => r.arrive > r.part + .5 && r.shut.start && r.arrive > r.counterFront), rows.filter(r => !(r.arrive > r.part + .5 && r.shut.start && r.arrive > r.counterFront)));
 check('the strongbox and the keeper\'s bed are behind the partition, at the north end', rows.every(r => r.box[1] < r.part - .3 && r.beds.length && r.beds.every(z => z < r.part)), rows.map(r => ({ n: r.name, part: r.part, box: r.box, beds: r.beds })));
 check('the box is over 7 m from where you come in (it was 2.2)', rows.every(r => r.fromDoor > 7), rows.map(r => r.fromDoor));

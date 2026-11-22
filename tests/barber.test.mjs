@@ -16,10 +16,12 @@ const big = census.filter(s => (s.kind === 'town' || s.kind === 'city') && !s.he
 check('every generated town and city has one barber', big.length > 0 && big.every(s => s.barbers === 1), big);
 check('no village, port or garrison has one', small.every(s => s.barbers === 0), small);
 // the shop: its name, its keeper, its sign
-const shop = await page.evaluate(() => { let h = null, S0 = null;
-  for (const S of WORLD.settle.values()) { h = S.houses.find(x => x.type === 'barber'); if (h) { S0 = S; break; } }
+// S2536: since F9 (S2272) a Gatelands barber in the kit's merchant's house opens on that room (its chair and keeper are kitmerchant's
+// checks), so the generated barber's room is judged in the nearest barber that still has it (Cœur-de-Vie's on seed 1)
+const shop = await page.evaluate(() => { let h = null, S0 = null; const gen = x => x.type === 'barber' && !kitMerchant(x);
+  for (const S of WORLD.settle.values()) { h = S.houses.find(gen); if (h) { S0 = S; break; } }
   if (!h) { const c = WORLD.SITES.filter(t => t.pad && ['city', 'town'].includes(t.kind)).sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
-    for (const t of c) { const S = WORLD.settlements.get(t.id) || WORLD.genSettlement(t); h = S && S.houses.find(x => x.type === 'barber'); if (h) { S0 = S; break; } } }
+    for (const t of c) { const S = WORLD.settlements.get(t.id) || WORLD.genSettlement(t); h = S && S.houses.find(gen); if (h) { S0 = S; break; } } }
   if (!h) return null; window._S = h;
   // the settlement's bake merges the sign into the town's batches (and the town may be built before the test can watch),
   // so the shop's sign is built again here, by the same call, from the shop's own door
