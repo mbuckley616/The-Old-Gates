@@ -666,6 +666,14 @@ const hats = await page.evaluate(() => [['farmer', 'straw'], ['fisher', 'straw']
   return { role, want, kind: s.kind, on: P.root.getObjectByName('hat')?.parent?.name, out: s.out, brimHit: s.brimHit, tris: s.tris }; }));
 check(`a farmer and a fisher wear a straw hat and a merchant a felt one, on the head bone, nothing of the head through the crown`,
   hats.every(s => s.kind === s.want && s.on === 'head' && s.out === 0 && s.brimHit === 0 && s.tris < 8000), hats);
+// S2517: a farmer holds the kit's hoe (a staff's make) in the right fist over the basket they rolled, its blade on the ground and clear of the feet,
+// and the driver walks it as a staff; the old look's driver (no builder genome) keeps its own hoe's arm
+const hoes = await page.evaluate(() => [0, 1, 2].map(i => { const g = { role: 'farmer', hbKey: 'hoe:' + i, people: ['gatelander', 'markman', 'aurennais'][i] }, G0 = HB.rollGenome('hoe:' + i, { people: g.people, g: i % 2 }),
+  D = hbTradeDress(g, { ...G0, dress: { ...G0.dress, basket: [.6, .45, .28], cloak: null } }), P = HB.makePerson({ ...G0, dress: D }, HB_LEAN), s = P.staff || {}, st = P.root.getObjectByName('staff');
+  const o = pwOpts({ g: { gear: 'hoe' }, hbG: { dress: D }, holds: true }), o0 = pwOpts({ g: { gear: 'hoe' }, holds: true });
+  return { make: s.make, basket: !!P.root.getObjectByName('basket'), on: st?.parent?.name, blade: !!st?.getObjectByName('hoeBlade'), edgeH: s.hoe?.edgeH, near: s.hoe?.near, clear: s.hoe?.clear, fist: s.fist, walk: o.staff && o.gear === 'stick', old: !o0.staff && o0.gear === 'hoe' }; }));
+check(`a farmer holds a hoe in the right fist (the basket goes), its blade's edge on the ground and nothing worn within 5 mm of it, walked as a staff`,
+  hoes.every(h => h.make === 'hoe' && !h.basket && h.on === 'wrist.R' && h.blade && h.edgeH < .003 && h.near === 0 && h.fist === 0 && h.walk && h.old), hoes);
 await g.close();
 
 // a second boot: the same people, the same bodies

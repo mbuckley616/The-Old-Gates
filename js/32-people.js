@@ -1337,8 +1337,8 @@ function pwWave(t,o){const p=pwIdle(t,o);const w=Math.sin(t*7.5);
   if(o.holds){p.shL=[-.25,0,2.35];p.elL=[0,.2,.55-.42*w];p.wrL=[0,0,-.25*w];p.neck=[0,.18,0];p.head=[.04,0,.08];p.spine=[p.spine[0],.06,-.03];}
   else{p.shR=[-.25,0,-2.35];p.elR=[0,-.2,-.55+.42*w];p.wrR=[0,0,.25*w];p.neck=[0,-.18,0];p.head=[.04,0,-.08];p.spine=[p.spine[0],-.06,.03];}
   return p;}
-// the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534)
-function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress;return {holds:rig.holds,gear:g.gear,staff:g.gear==='stick'&&(!rig.hbG||!!(hd&&hd.staff)),elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,ride:rig.ride||null,play:rig.play||null,bear:rig.bear||0,push:rig.push||0};}
+// the pose options a rig walks and stands with; a ghoul limps on the leg its seed picks (S534); a farmer's hoe on the builder's body is walked as a staff (S2517)
+function pwOpts(rig){const g=rig.g,hd=rig.hbG&&rig.hbG.dress,st=(g.gear==='stick'||g.gear==='hoe'&&!!rig.hbG)&&(!rig.hbG||!!(hd&&hd.staff));return {holds:rig.holds,gear:st?'stick':g.gear,staff:st,elder:g.age==='elder',limp:g.ghoul?((g.seed>>>0)%2?1:-1):0,goblin:!!g.goblin,wraith:!!g.wraith,stoop:rig.stoop||0,sit:rig.sit||null,ride:rig.ride||null,play:rig.play||null,bear:rig.bear||0,push:rig.push||0};}
 // blend toward the chosen motion over about a third of a second
 // S210 — a crouch on the haunches, leaning forward with the head up, the hands down by the feet: the gargoyle's statue pose
 function pwCrouch(t,o){const p=pwZero();const h=.2,z=.07;const [th,kn]=pwIK(z,-h);
@@ -2370,8 +2370,10 @@ function hbDriverLook(g,G){const D=G.dress||{},H=G.hair||{};g.dress=hbLongSkirt(
    loupe pushed up on the brow (Philo's tell, S2307), not the rig's spectacles; S2507 gave the kit spectacles (people.js buildSpecs: two
    wire rims before the eyes, a bridge, arms to the ears), so a scholar, an adept and a novice wear them, in brass, steel or horn. S2511 gave
    the kit hats (people.js buildHat): a farmer or a fisher wears the rig's straw hat, a merchant or a trader its brimmed one, in felt with a
-   band; a raised hood, a head-wrap or a scarf comes off for it (an eyepatch keeps the hat off). Not yet: the farmer's hoe, and the priest's
-   hood, whose dress is the Church's to say */
+   band; a raised hood, a head-wrap or a scarf comes off for it (an eyepatch keeps the hat off). S2517 gave the kit the hoe (people.js
+   STAFFS.hoe: a straight ash haft in the staff's walking grip, its iron blade resting on the ground ahead of the foot), so a farmer holds
+   one in the right fist (what the fist held goes) and the driver walks with it as with a staff (pwOpts). Not yet: the priest's hood,
+   whose dress is the Church's to say */
 const HB_TRADE_STRIP={cloak:null,cloakFur:null,cloakHem:null,hood:null,cape:null,mantle:null,coat:null,coatFur:null,coatHood:null,burnous:null,
   spear:null,staff:null,crossbow:null,shield:null,sword:null,basket:null,basketCloth:null,lantern:null,book:null,tankard:null,chair:null,backpack:null};
 const HB_TRADE=[
@@ -2381,13 +2383,15 @@ const HB_TRADE=[
   {re:/apothecary|herbalist/,strip:{},dress:{},satchels:[[.34,.22,.13],[.4,.28,.16],[.28,.2,.13]]},
   {re:/merchant|trader/,strip:{apron:null,bib:false,tabard:null},dress:{hatKind:'felt'},purses:[[.22,.14,.09],[.3,.2,.12],[.36,.12,.1]],
     hats:[[.3,.22,.16],[.2,.19,.18],[.34,.16,.12],[.26,.25,.2]],hatBands:[[.12,.09,.07],[.5,.12,.1],[.62,.5,.3]]},
-  {re:/farmer|fisher/,strip:{},dress:{hatKind:'straw'},hats:[[.86,.74,.48],[.78,.66,.42],[.9,.8,.56]]},
+  {re:/farmer/,strip:{spear:null,crossbow:null,basket:null,basketCloth:null,lantern:null,tankard:null,hammer:null,sword:null,book:null},dress:{hatKind:'straw',staffMake:'hoe'},
+    hats:[[.86,.74,.48],[.78,.66,.42],[.9,.8,.56]],hafts:[[.55,.42,.27],[.5,.38,.24],[.62,.5,.34]]},
+  {re:/fisher/,strip:{},dress:{hatKind:'straw'},hats:[[.86,.74,.48],[.78,.66,.42],[.9,.8,.56]]},
   {re:/scholar|adept|novice|evoker|^mage/,strip:{basket:null,basketCloth:null,lantern:null,spear:null,crossbow:null,staff:null,tankard:null,hammer:null},
     dress:{},books:[[.32,.15,.09],[.2,.24,.36],[.36,.3,.2]],specs:[[.62,.5,.3],[.55,.56,.58],[.24,.2,.16]]}];
 function hbTradeDress(g,G){const role=String(g.role||'').toLowerCase();if(/^crew:/.test(g.hbKey||'')||GUARD_ROLE.test(role))return null;
   const t=HB_TRADE.find(t=>t.re.test(role));if(!t)return null;const D=G.dress||{},h=pHash((g.hbKey||'')+'|trade')>>>0,pick=A=>A[h%A.length];
   const T=Object.assign({},D,t.strip||HB_TRADE_STRIP,t.dress);if(t.aprons)T.apron=pick(t.aprons);if(t.satchels)T.satchel=pick(t.satchels);
-  if(t.purses){T.purses=pick(t.purses);if(!T.belt)T.belt=[.24,.17,.11];}if(t.books)T.book=pick(t.books);if(t.specs&&!T.lenses&&!T.eyepatch)T.specs=pick(t.specs);
+  if(t.purses){T.purses=pick(t.purses);if(!T.belt)T.belt=[.24,.17,.11];}if(t.books)T.book=pick(t.books);if(t.specs&&!T.lenses&&!T.eyepatch)T.specs=pick(t.specs);if(t.hafts)T.staff=t.hafts[(h>>>5)%t.hafts.length];
   if(t.hats){T.hat=pick(t.hats);T.hatBand=t.hatBands?t.hatBands[(h>>>3)%t.hatBands.length]:null;T.wrap=null;T.scarf=false;T.veil=null;if(T.hood==='up')T.hood='down';if(T.coatHood==='up')T.coatHood='down';T.cowl=null;}return T;}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
 // S1763 (L1, OG-109's winter column) — the winter dress: in winter (calDay's season) a share of each people, out of doors, wear the
