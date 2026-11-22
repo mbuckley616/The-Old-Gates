@@ -469,6 +469,12 @@
     if(c._lone!==undefined)return c._lone;c._lone=[];
     if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.gl||!PKIT.gl.farmstead)return c._lone;
     if(nationOf(c.i,c.j).people!=='gatelander')return c._lone;
+    /* S2542 — laid under withPlace: the lot's rise is read by landH, whose hills are regionScalar's over REGIONS, the loaded cells' regions
+       only (S701), so the first answer hung on what had loaded (kitfarm: 3 cells changed on a recompute, Maeve's farm moved 55 m). The
+       cell's and its eight neighbours' own regions, the same from any boot */
+    return withPlace((c.i+.5)*SIZE,(c.j+.5)*SIZE,()=>loneFarmsLay(c));
+  }
+  function loneFarmsLay(c){
     const X=farmNear(c),near=X.near,k=cellKey(c.i,c.j);
     const own=X.roads.filter(R=>c.roadDefs.includes(R.def)&&R.def.via!=='spur'&&X.byId[R.def.a].kind!=='portal'&&X.byId[R.def.b].kind!=='portal');if(!own.length)return c._lone;
     X.pads=near.flatMap(n=>n.sites).filter(s=>s.pad>0);X.gates=farmGates(near);

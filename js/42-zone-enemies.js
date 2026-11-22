@@ -1848,7 +1848,7 @@ function killZoneEnemy(e,sc,tag=''){
   const terrainY = e.swim&&activeZoneId==='world'?SEA_Y-.15:typeof activeTerrainH==='function' ? groundH(e.x,e.z) : 0; /* S1759 — a struck trout floats up to the surface */
   // S419 — a people-bodied foe falls as a ragdoll on the ground (Michael's C on #102); the rest slump as before
   if(typeof parryFlashEnd==='function')parryFlashEnd(e); /* S564 — a foe killed while parried falls in its own colours */
-  if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,groundH,activeZoneId==='world'&&typeof WORLD!=='undefined'?WORLD.solidAt:null))){
+  if(!(typeof ragdollFoe==='function'&&ragdollFoe(e,tag,groundH,activeZoneId==='world'&&typeof WORLD!=='undefined'?(WORLD.deckSolid&&WORLD.deckSolid(e))||WORLD.solidAt:null))){
   e.mesh.rotation.z=Math.PI/2;
   e.mesh.position.set(e.x, terrainY+0.15, e.z);}
   e.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material=c.material.clone();c.material.color.multiplyScalar(.35);if(c.material.emissive&&c.material.emissive.getHex()===0xffaa00)c.material.emissive.setHex(0);}}); /* S626 — a guard-break flash still on at the kill: its timer clears the old material, not this clone */
