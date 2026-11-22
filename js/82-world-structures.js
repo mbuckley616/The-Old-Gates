@@ -3224,6 +3224,31 @@
     const ry=fy+Math.PI/2,co=Math.cos(ry),s_=Math.sin(ry),ground=(lx,lz)=>worldH(t.x+lx*co+lz*s_,t.z-lx*s_+lz*co)-y0;
     const K=PKIT.props.stump(stumpKind(t.sp),{r:R,seed:t.id,ground});K.group.position.set(t.x,y0,t.z);K.group.rotation.y=ry;
     K.group.name='stump';K.group.userData.tree=t.id;K.group.userData.kit={kind:stumpKind(t.sp),tris:K.tris,draws:K.draws,r:R,h:K.h};return K.group;}
+  // S2519 — rare materials' props on the new look (Michael's A on #1864, as drawn in Session 2500; PKIT.props.crater, .skypine, .sigilstone,
+  // 38-kit.js), in place of the systems builder's stand-ins (50-travel.js's starMesh and skyMesh, 68-dungeon-misc.js's gateSigilLay):
+  // -> a Group, or null on the old look, where the stand-ins stay.
+  function rareKitOn(){return window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&!!(PKIT.props&&PKIT.props.crater);}
+  // The fallen star: the crater's ground draped on the terrain's own triangles (meshH, so its edge neither floats nor sinks), lifted 2 cm,
+  // the bearing it came from by its id; `left` the lobes of star iron still in it (the vein's count), 0 the torn pit. The land under the
+  // bowl is cut away by LAND_HOLES (89-world-land.js) while it is shown. The glint's light is the clock's (starKitGlint).
+  function starKitMesh(v,left){if(!rareKitOn()||!v||!v.star)return null;const s=v.star,y0=meshH(s.x,s.z),from=seededRng('starfrom',s.id)()*Math.PI*2,c=new THREE.Color();
+    let gr=0,gg=0,gb=0;for(let k=0;k<8;k++){const a=k/8*Math.PI*2,x=s.x+Math.sin(a)*6.6,z=s.z+Math.cos(a)*6.6,h=worldH(x,z);groundColor(x,z,h,slopeNormalY(x,z),c);gr+=c.r/8;gg+=c.g/8;gb+=c.b/8;} /* the land's own colour round its edge */
+    const K=PKIT.props.crater({key:s.id,from,left,grass:c.setRGB(gr,gg,gb).getHex(),ground:(x,z)=>meshH(s.x+x,s.z+z)-y0+.02});
+    const g=K.group;g.name='fallenStar';g.position.set(s.x,y0,s.z);g.userData.kit={left,tris:K.tris,draws:K.draws,R:K.R,from:K.from,lobes:K.lobes};g.userData.glint=K.glint;g.userData.mesh=g;return g;}
+  // the crater rebuilt when a lobe is struck out (three times at most): its children swapped, the Group kept, so the vein's record holds it
+  function starKitShow(v){const g=v.g,left=Math.max(0,Math.min(3,veinLeft(v)));if(!g||!g.userData.kit||g.userData.kit.left===left)return;
+    const n=starKitMesh(v,left);if(!n)return;for(const c of [...g.children]){g.remove(c);c.geometry&&c.geometry.dispose();}for(const c of [...n.children])g.add(c);g.userData.kit=n.userData.kit;g.userData.glint=n.userData.glint;}
+  // the land's holes: one a crater shown in a chunk that is in the scene, its rim's radius
+  function starKitHoles(){if(typeof LAND_HOLES==='undefined'||typeof STARS_SHOWN==='undefined')return;let i=0;
+    for(const v of STARS_SHOWN.values()){if(i>=6)break;const g=v.g;if(!g||!g.userData.kit||!veinLive(v))continue;LAND_HOLES.value[i++].set(v.x,v.z,g.userData.kit.R,1);}
+    for(;i<6;i++)LAND_HOLES.value[i].w=0;}
+  // the flecks of bright metal catch the dark: lit from dusk to dawn (19h to 7h, full from 21h to 5h), within 40 m (faded from 30), read from the clock
+  function starKitGlint(){if(typeof STARS_SHOWN==='undefined')return;const h=typeof gameHour==='function'?gameHour():12,night=h>=21||h<5?1:h>=19?(h-19)/2:h<7?(7-h)/2:0;
+    for(const v of STARS_SHOWN.values()){const m=v.g&&v.g.userData.glint;if(!m)continue;const d=Math.hypot(px-v.x,pz-v.z),near=Math.max(0,Math.min(1,(40-d)/10));m.emissiveIntensity=.05+2.55*night*near;}}
+  // The skywood pine: leaning and flagged to the east, as the westerlies leave a summit tree (±23° by its peak); felled, the prototype's stump
+  // on the same crown of rock. Its root at the tree record's ground (t.h).
+  function skyKitMesh(t,felled){if(!rareKitOn()||!t)return null;const wind=Math.PI/2+(seededRng('skywind',t.id)()-.5)*.8,K=PKIT.props.skypine({key:t.id,wind,felled:!!felled});
+    const g=K.group;g.name=felled?'stump':'skywood';g.position.set(t.x,t.h!=null?t.h:worldH(t.x,t.z),t.z);g.userData.tree=t.id;g.userData.kit={tris:K.tris,draws:K.draws,H:K.H,wind:K.wind,pads:K.pads,felled:!!felled};return g;}
   // S2177 — the bank's cut where clay was dug (resources and crafting B's last look piece; Michael's B on #1420): PKIT.props.claycut, 38-kit.js,
   // drawn from the rules' clayCuts() (S2171: the first dig's stand, x and z, and n the clay taken). The cut faces the water: its open side
   // toward the mean of the fresh water found within 3 m of the stand (clayFresh, the rules' own test), else down the slope; its middle

@@ -597,6 +597,8 @@ function gateSigilDue(cond){return cond==='failing'||cond==='catastrophic';}
 function sigilStoneItem(school){return {name:`Sigil stone of ${schoolName(school)}`,ico:'🪨',type:'misc',weight:GATE_SIGIL.weight,buyPrice:GATE_SIGIL.price,sellMult:.5,sigilStone:school,salvage:true};}
 function gateSigilLay(portal,gen,v,y,ox,oz){if(!v||!gateSigilDue(gen.cond))return null;
   const x=v.x-ox*GATE_SIGIL.along,z=v.z+oz*.35,s={id:`${portal.seed}:${v.floor}:sigil`,gate:portal.seed,school:v.school,cap:1,key:'sigil',x,z,floor:v.floor,g:null};
+  {const k=typeof sigilKitMesh==='function'?sigilKitMesh(v.school,s.id,gateVeinLeft(s)<=0):null;if(k){const g=new THREE.Group();g.name='gateSigil';g.position.set(x,y,v.z+oz*.55);if(oz>0)k.rotation.y=Math.PI; /* S2519 — the kit's stone against the keep's wall (.55 past the vein), its face to the room */
+    g.add(k);dScene.add(g);s.g=g;s.kit=true;GATE_KEEP_LIE.sigil=s;return s;}}
   const col=new THREE.Color((typeof SCHOOL_DEF!=='undefined'&&SCHOOL_DEF[v.school]&&SCHOOL_DEF[v.school].col)||'#9ad'),g=new THREE.Group();g.name='gateSigil';g.position.set(x,y,z);
   const slab=new THREE.Mesh(new THREE.BoxGeometry(.7,1.15,.2),new THREE.MeshLambertMaterial({color:0x3a3632}));slab.position.y=.575;slab.rotation.x=-oz*.06;
   const face=new THREE.Mesh(new THREE.PlaneGeometry(.5,.85),new THREE.MeshBasicMaterial({color:col.clone().multiplyScalar(.55),transparent:true,opacity:.55}));face.position.set(0,.6,-oz*.105);if(oz>0)face.rotation.y=Math.PI;
@@ -635,7 +637,8 @@ function gateKeepThings(portal,gen,coffer){GATE_KEEP_LIE={altar:null,vein:null,s
       for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.OctahedronGeometry(.16+rr()*.12,0),mat);m.scale.y=2+rr()*1.4;m.position.set((rr()-.5)*.6,.25+rr()*.2,(rr()-.5)*.6);m.rotation.set((rr()-.5)*.6,rr()*3,(rr()-.5)*.6);g.add(m);}
       dScene.add(g);v.g=g;gateVeinShow(v);GATE_KEEP_LIE.vein=v;gateSigilLay(portal,gen,v,y,ox,oz);}}
   return GATE_KEEP_LIE;}
-function gateVeinShow(v){if(!v||!v.g)return;const left=gateVeinLeft(v),n=v.g.children.length;v.g.children.forEach((m,i)=>{m.visible=i<Math.ceil(n*left/v.cap);});}
+function gateVeinShow(v){if(!v||!v.g)return;if(v.kit){const k=v.g.children[0],cut=gateVeinLeft(v)<=0;if(k&&k.userData.kit&&k.userData.kit.cut!==cut){const n=sigilKitMesh(v.school,v.id,cut);if(n){n.rotation.y=k.rotation.y;v.g.remove(k);k.traverse(o=>o.geometry&&o.geometry.dispose());v.g.add(n);}}return;} /* S2519 — the kit's stone, hewn out once cut */
+  const left=gateVeinLeft(v),n=v.g.children.length;v.g.children.forEach((m,i)=>{m.visible=i<Math.ceil(n*left/v.cap);});}
 /* S2380 — the critic's 18 Nov note: the altar stands 2.6 m before the coffer, so from between them E with the crosshair on the coffer's lock took the arc.
    The altar and the vein answer in reach as before, but give way to a chest the crosshair is on, unless the crosshair is on them too (interact()'s chest test, lookingAt) */
 function gateKeepYields(o,reach){const ch=CHESTS.find(c=>c.floor===currentFloor&&(!c.opened||c.items.length>0)&&lookingAt(c));return !!ch&&!lookingAt(o,reach);}

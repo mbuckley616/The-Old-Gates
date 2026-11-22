@@ -14,6 +14,9 @@ const LAND={on:window.OG_LOOK==='new',mat:null,sky:null,skyMat:null,exposure:1,r
   // the land's albedo against the old look's (whose detail map averaged .72), how near the fields come, and the soil's darkening
   // under the near ground; a uniform, so a later quality level or the corruption level can move it without a recompile
   k:{value:new THREE.Vector4(.5,22,.8,0)}};
+// S2519 — holes in the land, where a prop brings its own ground below it (the fallen star's crater, 0.8 m deep): up to six discs in world x, z,
+// each (x, z, radius, on); the terrain's fragments inside one are not drawn. Set by `starKitHoles` (82-world-structures.js); all off by default.
+const LAND_HOLES={value:[0,1,2,3,4,5].map(()=>new THREE.Vector4(0,0,0,0))};
 const LAND_NOISE=`
 float lh12(vec2 p){ p = mod(p, 289.); p = fract(p * vec2(.1031, .1030)); p += dot(p, p.yx + 33.33); return fract((p.x + p.y) * p.x); }
 float lvn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
@@ -39,10 +42,10 @@ function landMask(geo,ox,oz){
 function landTerrainMat(){
   const m=new THREE.MeshLambertMaterial({vertexColors:true});
   m.onBeforeCompile=s=>{
-    s.uniforms.uLandK=LAND.k;
+    s.uniforms.uLandK=LAND.k;s.uniforms.uLandHoles=LAND_HOLES;
     s.vertexShader='attribute vec3 aMask;\nvarying vec3 vLW;\nvarying vec3 vLN;\nvarying vec3 vLMask;\n'+s.vertexShader.replace('#include <begin_vertex>',
       '#include <begin_vertex>\n vLW = (modelMatrix * vec4(position, 1.)).xyz; vLN = normalize(mat3(modelMatrix) * normal); vLMask = aMask;');
-    s.fragmentShader='uniform vec4 uLandK;\nvarying vec3 vLW;\nvarying vec3 vLN;\nvarying vec3 vLMask;\n'+LAND_NOISE+`
+    s.fragmentShader='uniform vec4 uLandK;\nuniform vec4 uLandHoles[6];\nvarying vec3 vLW;\nvarying vec3 vLN;\nvarying vec3 vLMask;\n'+LAND_NOISE+`
 vec3 landField(float r){ vec3 c = vec3(.40,.52,.20);
   if (r < .16) c = vec3(.66,.56,.24); else if (r < .27) c = vec3(.74,.64,.32); else if (r < .42) c = vec3(.46,.60,.20);
   else if (r < .56) c = vec3(.32,.48,.16); else if (r < .64) c = vec3(.56,.48,.28); else if (r < .80) c = vec3(.42,.58,.22); return c; }
@@ -81,7 +84,7 @@ vec3 landCol(vec3 base){
   c *= mix(uLandK.z, 1., smoothstep(4., 30., dist));
   // snow and the pale ground keep their brightness; the green and brown country takes the albedo cut
   return c * mix(uLandK.x, .82, smoothstep(.5, .78, lum)); }
-`+s.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb = landCol(vColor);');
+`+s.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\n for (int i = 0; i < 6; i++) { vec4 h = uLandHoles[i]; if (h.w > .5 && length(vLW.xz - h.xy) < h.z) discard; }').replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb = landCol(vColor);');
     LAND.terrainShader=s;};
   m.customProgramCacheKey=()=>'og-land-terrain';
   LAND.mat=m;return m;

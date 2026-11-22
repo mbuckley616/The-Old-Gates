@@ -12373,7 +12373,127 @@ function aurenneOrrery(hAt, o = {}) {
       const m = new THREE.Mesh(g, DQM[k]); m.name = 'quarter:' + k; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
     return { group, tris: Math.round(tris), draws: group.children.length, bridge, theatre };
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, isles: gateIslesRuin, aqueducts: aqueductsRuin, aqueductsPlan, scarred: scarredGateRuin, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  // S2519 — rare materials B's props in the game (Michael's A on #1864: "bring all three in as drawn"; drawn in docs/prototypes/levelup/
+  // props.js, Session 2500: starCrater, skywoodPine, scriptStone). Copied as drawn, with three differences: a colour given as linear floats
+  // in the prototype (the glint's light, the school's glow, the crater's edge where it meets the land) is turned to the game's sRGB, since the
+  // game runs with colour management off and a linear output, but the crater's burn keeps its linear value (the game's noon is brighter than
+  // the page's, and the burn turned to sRGB read mid-grey); the script stone is the stone alone (the game lays the keep's wall, its floor and
+  // the vein); and the crater's ground is draped on o.ground (the game cuts the land's hole, LAND_HOLES). Each prop is built in its
+  // own frame, y 0 the ground at its middle.
+  //   PKIT.props.crater({ from, left, ground, grass, key }) -> { group, tris, draws, R, from, left, lump, lobes, depth, rim, glint (its material) }
+  //   PKIT.props.skypine({ wind, felled, key }) -> { group, tris, draws, H, wind, pads, felled, cut, lean }
+  //   PKIT.props.sigilstone({ school, cut, key }) -> { group, tris, draws, school, cut, size, face, split, lit }
+  let RMS = null;
+  const lin2s = c => c.convertLinearToSRGB();
+  function rareMats() {
+    if (RMS) return RMS; const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: o.rough ?? .8, metalness: o.metal ?? 0 });
+    RMS = { rock: mat('rock', { ns: 1.4, color: 0xb4b2a6, rough: .95 }), dark: std(0x0d0b09, { rough: 1 }),
+      crust: Object.assign(mat('rock', { ns: 2.4, color: 0x4a4642, rough: .5 }), { metalness: .3 }), earth: mat('rock', { ns: 1.6, color: 0x7a6248, rough: 1 }), turf: mat('rock', { ns: 1.2, color: 0x5c6a34, rough: 1 }),
+      skyBark: mat('bark', { ns: 1.4, color: 0xc9c4bb, rough: .8 }) /* the kit's bark, not 'wood' (the game's is sawn planks) */, skyNeedle: mat('rock', { ns: .8, color: 0xa4c0cc, rough: .7 }), skyCut: mat('wood', { ns: .5, color: 0xe8dcc0, rough: .8 }), summit: mat('rock', { ns: 1.5, color: 0x8c8a84, rough: .95 }),
+      sigilRock: mat('rock', { ns: 1.3, color: 0x3e3a35, rough: .6 }) };
+    return RMS;
+  }
+  function rareRough(geo, r, amp, f = 1.6) { const P = geo.attributes.position, ph = [r() * 9, r() * 9, r() * 9], v = new THREE.Vector3();
+    for (let i = 0; i < P.count; i++) { v.fromBufferAttribute(P, i); const n = Math.sin(v.x * f + ph[0]) * Math.sin(v.y * f * 1.3 + ph[1]) * Math.sin(v.z * f + ph[2]) + .5 * Math.sin(v.x * f * 2.7 + ph[1]) * Math.sin(v.z * f * 2.3 + ph[0]);
+      const len = v.length() || 1; v.addScaledVector(v.clone().divideScalar(len), n * amp); P.setXYZ(i, v.x, v.y, v.z); }
+    geo.computeVertexNormals(); return geo; }
+  function rareKit(M) { const B = new Map();
+    const put = (geo, key, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, uv = .6) => { const g = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(g.attributes)) if (!['position', 'normal', ...(uv === null ? ['uv'] : [])].includes(k)) g.deleteAttribute(k);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz, 'YXZ')), new THREE.Vector3(1, 1, 1))); if (uv !== null) worldUV(g, uv);
+      if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+      if (!B.has(key)) B.set(key, []); B.get(key).push(g); };
+    const finish = extra => { const group = new THREE.Group(); let tris = 0; for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = k; m.castShadow = !/^(dark|glint|sscript)/.test(k); m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+      return { group, tris: Math.round(tris), draws: group.children.length, ...extra }; };
+    return { put, finish }; }
+  function starCrater(o = {}) {
+    const r = stream('star:' + (o.key ?? 1)), M = Object.assign({}, rareMats()), R = 3, from = o.from ?? r() * Math.PI * 2, left = Math.max(0, Math.min(3, o.left ?? 3)), G = o.ground || (() => 0);
+    M.glint = new THREE.MeshStandardMaterial({ color: 0x9aa4b0, roughness: .15, metalness: 1, emissive: lin2s(new THREE.Color(.62, .76, 1)), emissiveIntensity: .05 });
+    const { put, finish } = rareKit(M), fx = Math.sin(from), fz = Math.cos(from); /* the star came from (fx, fz): downrange is -(fx, fz) */
+    const prof = d => { const t = d / R; if (t < .86) return -.8 * (1 - (t / .86) ** 2) + .32 * (t / .86) ** 4; if (t < 1) return .32 + .03 * Math.sin((t - .86) / .14 * Math.PI / 2); return .35 * Math.exp(-(((t - 1) / .45) ** 2) * 1.3); };
+    // the ground: a disc of rings to 2.2 R, each vertex its height on the profile (stretched downrange) and its colour, in the prototype's linear light
+    const RINGS = 30, SEG = 64, RO = 2.2 * R, pos = [], col = [], idx = [], ph = [r() * 9, r() * 9, r() * 9], cA = new THREE.Color(.07, .06, .055), cB = new THREE.Color(.24, .15, .09), cC = new THREE.Color(.34, .3, .17), cD = new THREE.Color(o.grass ?? 0x6c7a3c).convertSRGBToLinear(), c = new THREE.Color();
+    for (let i = 0; i <= RINGS; i++) { const rad = RO * (i / RINGS) ** 1.25; for (let k = 0; k < (i ? SEG : 1); k++) { const a = k / SEG * Math.PI * 2, x = Math.sin(a) * rad, z = Math.cos(a) * rad;
+      const al = -(x * fx + z * fz), ac = x * fz - z * fx, d = Math.hypot(al / (al > 0 ? 1.12 : 1), ac), n = Math.sin(x * 1.7 + ph[0]) * Math.sin(z * 1.9 + ph[1]) * .5 + Math.sin(x * 4.1 + ph[2]) * Math.sin(z * 3.7 + ph[0]) * .25;
+      const fade = Math.max(0, 1 - Math.max(0, rad - RO * .82) / (RO * .18)), down = Math.max(0, al / (rad || 1));
+      let y = prof(d) * (d > R * 1.1 ? (.55 + .9 * down) : 1) + n * .07 * Math.min(1, d / R + .2); y *= fade; pos.push(x, G(x, z) + y, z);
+      const t = d / R, ray = .5 + .5 * Math.sin(Math.atan2(x, z) * 9 + ph[2] + 2 * Math.sin(Math.atan2(x, z) * 3)), burn = Math.max(0, 1 - Math.max(0, t - 1.05) / (.5 + (.6 + .9 * ray) * (.4 + down))) * (1 + .3 * n); c.copy(t < .8 ? cA : t < 1.1 ? cA.clone().lerp(cB, (t - .8) / .3) : cB.clone().lerp(cC, Math.min(1, (t - 1.1) / .5)));
+      const gw = Math.min(1, Math.max(0, 1 - burn)) * (t > 1.1 ? 1 : 0); c.lerp(cD, gw); c.lerp(c.clone().convertLinearToSRGB(), gw); col.push(c.r, c.g, c.b); } } /* the burn kept at its linear value, which under the game's brighter light reads as the page's charcoal and umber; the land's own colour at the edge in the game's sRGB, so it meets the terrain */
+    const at = (i, k) => i ? 1 + (i - 1) * SEG + (k % SEG) : 0; for (let k = 0; k < SEG; k++) idx.push(0, at(1, k), at(1, k + 1)); for (let i = 1; i < RINGS; i++) for (let k = 0; k < SEG; k++) idx.push(at(i, k), at(i + 1, k), at(i + 1, k + 1), at(i, k), at(i + 1, k + 1), at(i, k + 1));
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); gg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); gg.setIndex(idx); gg.computeVertexNormals(); worldUV(gg, .5); gg.computeBoundingSphere();
+    const hAt = (x, z) => { const al = -(x * fx + z * fz), ac = x * fz - z * fx, d = Math.hypot(al / (al > 0 ? 1.12 : 1), ac); return G(x, z) + prof(d); };
+    // overturned turfs on the rim, roots up; clods and split stones thrown out, the most of them downrange
+    for (let i = 0; i < 16; i++) { const a = from + Math.PI + (r() - .5) * (i < 11 ? 2.6 : 6.2), d = R * (1.0 + r() * .35), x = Math.sin(a) * d, z = Math.cos(a) * d, s = .35 + r() * .3;
+      const g = rareRough(new THREE.BoxGeometry(s, .12, s * .7, 2, 1, 2), r, .03, 5); put(g, 'earth', x, hAt(x, z) + .05, z, (r() - .5) * .8, a, (r() - .5) * .8); put(new THREE.BoxGeometry(s * .96, .04, s * .66), 'turf', x, hAt(x, z) - .005, z, (r() - .5) * .3, a, 0); }
+    for (let i = 0; i < 22; i++) { const a = from + Math.PI + (r() - .5) * (i < 15 ? 2.2 : 6.2), d = R * (1.1 + r() * 1.1), x = Math.sin(a) * d, z = Math.cos(a) * d, s = .05 + r() * .1;
+      put(rareRough(new THREE.IcosahedronGeometry(s, 0), r, s * .25, 6).scale(1, .6, 1), i % 4 ? 'earth' : 'rock', x, hAt(x, z) + s * .35, z, r(), r() * 6, r()); }
+    // the lump: three lobes of star iron fused, half sunk; thumbprints at three scales on welded vertices (so it shades smooth); glints in the pits
+    const lumpC = [-fx * .3, 0, -fz * .3], ly = hAt(lumpC[0], lumpC[2]), lobes = [], L = [[0, .0, 0, .55], [.42, -.05, .22, .42], [-.3, -.08, .36, .36]];
+    for (let i = 0; i < left; i++) { const [x, y, z, s] = L[i]; let g = new THREE.IcosahedronGeometry(s, 4); g.deleteAttribute('normal'); g.deleteAttribute('uv'); g = grWeld(g); g.scale(1.15, .78, 1); rareRough(g, r, s * .16, 2.4); rareRough(g, r, s * .09, 11); rareRough(g, r, s * .05, 23);
+      const rx = lumpC[0] + x * Math.cos(from) - z * Math.sin(from), rz = lumpC[2] + x * Math.sin(from) + z * Math.cos(from); put(g, 'crust', rx, ly + y + s * .32, rz, r() * .4, from + r(), r() * .3); lobes.push([+rx.toFixed(2), +(ly + y + s * .32).toFixed(2), +rz.toFixed(2), s]);
+      for (let k = 0; k < 14; k++) { const u = r() * Math.PI * 2, v = .15 + r() * .75, p = [rx + Math.sin(u) * Math.sin(v * 1.6) * s * 1.02, ly + y + s * .32 + Math.cos(v * 1.6) * s * .7, rz + Math.cos(u) * Math.sin(v * 1.6) * s * 1.02];
+        put(new THREE.TetrahedronGeometry(.012 + r() * .014), 'glint', ...p, r() * 3, r() * 3, r() * 3); } }
+    if (left < 3) for (let i = 0; i < 6 + (3 - left) * 4; i++) { const a = r() * 6.3, d = r() * .9, x = lumpC[0] + Math.sin(a) * d, z = lumpC[2] + Math.cos(a) * d; put(rareRough(new THREE.IcosahedronGeometry(.05 + r() * .06, 0), r, .01, 8), 'crust', x, hAt(x, z) + .03, z, r(), r(), r()); } /* the struck lobes' chips */
+    const out = finish({ R, from: +from.toFixed(3), left, lump: [+lumpC[0].toFixed(2), +ly.toFixed(2), +lumpC[2].toFixed(2)], lobes, depth: +(-prof(0)).toFixed(2), rim: +prof(R).toFixed(2), glint: M.glint });
+    if (!RMS.ground) RMS.ground = new THREE.MeshStandardMaterial({ map: RMS.rock.map, normalMap: RMS.rock.normalMap, vertexColors: true, roughness: 1, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
+    const gm = new THREE.Mesh(gg, RMS.ground); gm.name = 'ground'; gm.receiveShadow = true; out.group.add(gm);
+    out.tris += idx.length / 3; out.draws += 1; out.hAt = hAt; return out;
+  }
+  function skywoodPine(o = {}) {
+    const r = stream('skywood:' + (o.key ?? 1)), M = rareMats(), { put, finish } = rareKit(M), wind = o.wind ?? r() * Math.PI * 2, wx = Math.sin(wind), wz = Math.cos(wind), H = 8 + r() * 2;
+    // the summit's crown of bare rock: four rough boulders, the pine standing in the cleft between them
+    for (let i = 0; i < 4; i++) { const a = i * 1.7 + r(), d = .9 + r() * 1.1, s = .7 + r() * .7; put(rareRough(new THREE.IcosahedronGeometry(s, 2), r, s * .2, 2.2), 'summit', Math.sin(a) * d, s * .25 - .15, Math.cos(a) * d, r(), r() * 6, r()); }
+    // the trunk: a twisting curve leaning lee, its girth 0.42 m at the foot to 0.08 at the leader
+    const pts = []; for (let k = 0; k <= 8; k++) { const t = k / 8, lean = 1.4 * t * t + .5 * t, tw = Math.sin(t * 5 + r()) * .18; pts.push(new THREE.Vector3(wx * lean + wz * tw, t * H, wz * lean - wx * tw)); }
+    const curve = new THREE.CatmullRomCurve3(pts); if (!o.felled) { const g = new THREE.TubeGeometry(curve, 24, 1, 9); const P = g.attributes.position, c0 = new THREE.Vector3();
+      for (let i = 0; i < P.count; i++) { const seg = Math.floor(i / 10) / 24; curve.getPointAt(Math.min(1, seg), c0); const v = new THREE.Vector3().fromBufferAttribute(P, i).sub(c0), rad = .42 * (1 - seg) ** 1.2 + .06; v.multiplyScalar(rad); P.setXYZ(i, c0.x + v.x, c0.y + v.y, c0.z + v.z); }
+      g.computeVertexNormals(); put(g, 'skyBark', 0, 0, 0, 0, 0, 0, .8); }
+    // the roots: five, gripping over the rock and down into the cleft
+    for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2 + r() * .6, d = .9 + r() * .8, p = [new THREE.Vector3(0, .5, 0), new THREE.Vector3(Math.sin(a) * d * .45, .45 + r() * .2, Math.cos(a) * d * .45), new THREE.Vector3(Math.sin(a) * d, -.05, Math.cos(a) * d), new THREE.Vector3(Math.sin(a) * (d + .4), -.4, Math.cos(a) * (d + .4))];
+      put(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(p), 8, .1 + r() * .05, 6), 'skyBark', 0, 0, 0, 0, 0, 0, .8); }
+    let pads = 0, cut = null;
+    if (!o.felled) {
+      // boughs from 3 m up, flagged to the lee, each ending in flattened pads of needles in tiers; the windward side bare
+      const nB = 12 + Math.floor(r() * 4); for (let b = 0; b < nB; b++) { const t = .28 + .68 * b / nB + (r() - .5) * .04, base = curve.getPointAt(Math.min(.97, t)), lee = (r() - .5) * 2.2 * (1 - .3 * t), ang = wind + lee;
+        const len = (1 - t) * 3.0 + .6 + r() * .9, tip = base.clone().add(new THREE.Vector3(Math.sin(ang) * len, (r() - .2) * .7, Math.cos(ang) * len)), mid = base.clone().lerp(tip, .5); mid.y -= .35 + r() * .3;
+        put(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(base, mid, tip), 6, .07 * (1.2 - t) + .025, 5), 'skyBark', 0, 0, 0, 0, 0, 0, .8);
+        const nP = 2 + Math.floor(r() * 3); for (let p = 0; p < nP; p++) { const u = .35 + .65 * (p + r() * .5) / nP, q = new THREE.QuadraticBezierCurve3(base, mid, tip).getPoint(Math.min(1, u)), s = (1.0 - t * .45) * (.5 + r() * .45);
+          const g = rareRough(new THREE.IcosahedronGeometry(s, 2), r, s * .32, 2.6); g.scale(1.35, .55 + r() * .2, .95);
+          put(g, 'skyNeedle', q.x + (r() - .5) * .3, q.y + .1 + r() * .15, q.z + (r() - .5) * .3, (r() - .5) * .35, ang + (r() - .5) * .6, (r() - .5) * .35); pads++; } }
+      const top = curve.getPointAt(1); { const g = rareRough(new THREE.IcosahedronGeometry(.7, 2), r, .12, 3); g.scale(.9, .7, .9); put(g, 'skyNeedle', top.x, top.y - .1, top.z); pads++; }
+    } else {
+      // felled: cut through at 0.6 m, its pale face and rings, the chips
+      const sH = .6; cut = sH; put(new THREE.CylinderGeometry(.4, .47, sH, 12), 'skyBark', 0, sH / 2, 0); put(new THREE.CircleGeometry(.39, 16).rotateX(-Math.PI / 2), 'skyCut', 0, sH + .004, 0);
+      for (let k = 1; k < 4; k++) put(new THREE.TorusGeometry(.1 * k, .006, 3, 24).rotateX(Math.PI / 2), 'dark', 0, sH + .008, 0);
+      for (let i = 0; i < 8; i++) put(new THREE.BoxGeometry(.06 + r() * .06, .02, .03 + r() * .03), 'skyCut', wx * (.6 + r()) + (r() - .5), .03, wz * (.6 + r()) + (r() - .5), 0, r() * 6, 0);
+    }
+    return finish({ H: +H.toFixed(2), wind: +wind.toFixed(3), pads, felled: !!o.felled, cut, lean: +Math.hypot(pts[8].x, pts[8].z).toFixed(2) });
+  }
+  const RARE_GLOW = { tine: [1.0, .40, .12], uisce: [.30, .72, 1.0], cloch: [1.0, .66, .30], scath: [.70, .34, 1.0], solas: [1.0, .86, .52], gaoth: [.66, .92, 1.0] };
+  let RARE_SCRIPT = null;
+  function rareScriptTex() { if (RARE_SCRIPT) return RARE_SCRIPT; const r = stream('sigil-script'), c = document.createElement('canvas'); c.width = 64; c.height = 512; const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 64, 512);
+    x.strokeStyle = '#ffffff'; x.lineWidth = 4.5; x.lineCap = 'round'; for (let y = 10; y < 500; y += 22 + r() * 8) { x.beginPath(); const n = 2 + Math.floor(r() * 3);
+      for (let k = 0; k < n; k++) { const a = 14 + r() * 36, b = y + r() * 16; k ? x.lineTo(a, b) : x.moveTo(a, b); } x.stroke(); if (r() < .4) { x.beginPath(); x.arc(32, y + 8, 4 + r() * 4, 0, 6.3); x.stroke(); } }
+    const t = finishTex(c); t.repeat.set(1, .5); return (RARE_SCRIPT = t); }
+  function scriptStone(o = {}) {
+    const r = stream('sigilstone:' + (o.key ?? 1)), school = RARE_GLOW[o.school] ? o.school : 'cloch', G = RARE_GLOW[school], cut = !!o.cut, SW = .7, SH = 1.15, ST = .2, M = rareMats(), sk = 'sscript:' + school;
+    if (!M[sk]) M[sk] = new THREE.MeshBasicMaterial({ color: lin2s(new THREE.Color(...G).multiplyScalar(1.9)), map: rareScriptTex(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }); /* light only, so the torch never shows the panel */
+    const { put, finish } = rareKit(M);
+    // the slab leaning back 3.4° onto the wall (z 0), its foot 8 cm off it; split across, the top piece slipped 1.5 cm and turned; one upper corner spalled
+    const tilt = -.06, split = .38 + r() * .1, slip = .015, part = (y0, y1, spall) => { const h = y1 - y0, g = new THREE.BoxGeometry(SW, h, ST, 6, Math.max(2, Math.round(h * 10)), 2), P = g.attributes.position;
+      for (let i = 0; i < P.count; i++) { let x = P.getX(i), y = P.getY(i) + h / 2 + y0, z = P.getZ(i); if (spall && x > SW / 2 - .18 && y > SH - .22 && (x - (SW / 2 - .18)) + (y - (SH - .22)) > .14) { const s = (x - (SW / 2 - .18)) + (y - (SH - .22)) - .14; x -= s * .5; y -= s * .5; z -= z > 0 ? s * .4 : 0; }
+        P.setXYZ(i, x, y, z); } rareRough(g, r, .008, 9); return g; };
+    const zc = ST / 2 + .08, below = SH * split;
+    put(part(0, below - .006, false), 'sigilRock', 0, 0, zc, tilt, 0, 0, .5); put(part(below + .006, SH, true), 'sigilRock', slip, -.004, zc + .01, tilt, .04, -.03, .5);
+    put(new THREE.BoxGeometry(SW + .02, .012, ST - .02).translate(0, below, 0), 'dark', 0, 0, zc, tilt, 0, 0);
+    const face = zc + ST / 2 + .003; let lit = 0;
+    if (!cut) { const pl = (y0, y1, key, dz = 0) => { const g = new THREE.PlaneGeometry(SW - .3, y1 - y0); g.translate(0, (y0 + y1) / 2, 0); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * (y1 - y0) / SH * 2 + y0 / SH * 2); put(g, key, dz ? slip : 0, 0, face + dz, tilt, dz ? .04 : 0, 0, null); lit++; };
+      pl(.08, below - .03, sk); pl(below + .03, SH - .12, sk, .014); }
+    else { const g = rareRough(new THREE.BoxGeometry(SW - .16, SH - .26, .07, 4, 6, 1), r, .012, 7); g.translate(0, .13 + (SH - .26) / 2, 0); put(g, 'dark', 0, 0, face - .03, tilt, 0, 0);
+      for (let i = 0; i < 14; i++) { const s = .025 + r() * .05; put(rareRough(new THREE.IcosahedronGeometry(s, 0), r, s * .2, 9), 'sigilRock', (r() - .5) * 1.1, s * .3, zc + .2 + r() * .55, r(), r() * 6, r()); } }
+    return finish({ school, cut, size: [SW, SH, ST], face: +face.toFixed(3), split: +below.toFixed(3), lit });
+  }
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, isles: gateIslesRuin, aqueducts: aqueductsRuin, aqueductsPlan, scarred: scarredGateRuin, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden, crater: starCrater, skypine: skywoodPine, sigilstone: scriptStone }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, trader: markTrader, TRADER_TRADES, TOWN_TRADES, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

@@ -1800,7 +1800,8 @@ function starOf(isle,w){const key=isle+':'+w;if(key in _starMemo)return _starMem
 function starsLive(isle){const now=gameMinNow(),w=starWeek(now),out=[];for(let k=w;k>=0&&k>=w-4&&out.length<STAR.keep;k--){const s=starOf(isle,k);if(s&&s.at<=now)out.push(s);}return out;}
 function starsAllLive(){const out=[];for(const isle of STAR.isles)out.push(...starsLive(isle));return out;}
 let _starMat=null;
-function starMesh(v){const M=_starMat||(_starMat={scorch:new THREE.MeshLambertMaterial({color:0x2a2420,polygonOffset:true,polygonOffsetFactor:-2}),lump:new THREE.MeshLambertMaterial({color:0x2c3038,emissive:0x1c3050})});
+function starMesh(v){{const K=typeof starKitMesh==='function'?starKitMesh(v,veinLeft(v)):null;if(K)return K;} /* S2519 — the kit's crater on the new look (82-world-structures.js) */
+  const M=_starMat||(_starMat={scorch:new THREE.MeshLambertMaterial({color:0x2a2420,polygonOffset:true,polygonOffsetFactor:-2}),lump:new THREE.MeshLambertMaterial({color:0x2c3038,emissive:0x1c3050})});
   const g=new THREE.Group();g.name='fallenStar';g.position.set(v.x,worldH(v.x,v.z),v.z);
   const sc=new THREE.Mesh(new THREE.CircleGeometry(STAR.r,24).rotateX(-Math.PI/2),M.scorch);sc.position.y=.06;sc.receiveShadow=true;
   const lump=new THREE.Mesh(new THREE.DodecahedronGeometry(.45,0),M.lump);lump.scale.set(1.2,.8,1);lump.position.y=.2;lump.castShadow=true;
@@ -1818,7 +1819,8 @@ function spawnChunkStars(ch){for(const s of starsAllLive()){
   if(Math.floor(s.x/CHUNK)!==ch.cx||Math.floor(s.z/CHUNK)!==ch.cz)continue;const o=STARS_SHOWN.get(s.id);if(o&&veinLive(o))continue;if(o)starTake(s.id);starPut(ch,s);}}
 // every few seconds of play: a star that has fallen in a chunk already built is put in it, and one an island no longer keeps is taken
 let _starT=0;
-function tickStars(dt){_starT-=dt;if(_starT>0)return;_starT=3;if(activeZoneId!=='world'||typeof chunks==='undefined')return;
+function tickStars(dt){if(typeof starKitGlint==='function'){starKitGlint();starKitHoles();} /* S2519 — the glint by the clock, and the land cut under each crater shown */
+  _starT-=dt;if(_starT>0)return;_starT=3;if(activeZoneId!=='world'||typeof chunks==='undefined')return;
   const live=starsAllLive(),ids=new Set(live.map(s=>s.id));
   for(const id of [...STARS_SHOWN.keys()])if(!ids.has(id)||!veinLive(STARS_SHOWN.get(id)))starTake(id);
   for(const s of live){if(STARS_SHOWN.has(s.id))continue;const ch=chunks.get(chunkKey(Math.floor(s.x/CHUNK),Math.floor(s.z/CHUNK)));if(ch&&ch.group&&ch.group.parent)starPut(ch,s);}}
@@ -1858,7 +1860,8 @@ function skyDown(id){const d=(worldState.skywood||{})[id];return d!=null&&gameMi
 // why the tools in the bag will not fell it: '' when they will
 function skyWhy(){const m=toolMetal('hatchet');return m>=SKYWOOD.metal?'':m?'The skywood turns the iron. It wants a steel hatchet.':'The skywood wants a steel hatchet.';}
 let _skyMat=null;
-function skyMesh(t){const M=_skyMat||(_skyMat={bark:new THREE.MeshLambertMaterial({color:0x9a8c7c}),leaf:new THREE.MeshLambertMaterial({color:0x5c7a86})});
+function skyMesh(t){{const K=typeof skyKitMesh==='function'?skyKitMesh(t,false):null;if(K)return K;} /* S2519 — the kit's pine on the new look */
+  const M=_skyMat||(_skyMat={bark:new THREE.MeshLambertMaterial({color:0x9a8c7c}),leaf:new THREE.MeshLambertMaterial({color:0x5c7a86})});
   const g=new THREE.Group();g.name='skywood';g.position.set(t.x,t.h,t.z);
   const tr=new THREE.Mesh(new THREE.CylinderGeometry(.16,.3,7,7),M.bark);tr.position.y=3.5;tr.castShadow=true;g.add(tr);
   [[2.6,1.9,2.4],[4.2,1.5,2.1],[5.6,1.05,1.8],[6.8,.6,1.5]].forEach(([y,r,h])=>{const c=new THREE.Mesh(new THREE.ConeGeometry(r,h,8),M.leaf);c.position.y=y;c.castShadow=true;g.add(c);});
@@ -1926,7 +1929,7 @@ function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id
   if(r&&!v.star&&r.n>=veinCap(v)&&gameMinNow()/1440-r.d>=VEIN_DAYS){r={n:0,s:0,d:r.d,e:(r.e||0)+1};W[v.id]=r;}
   return r||{n:0,s:0,d:0,e:0};}
 function veinLeft(v){return Math.max(0,veinCap(v)-veinRec(v).n);}
-function veinShow(v){if(!v.g)return;if(v.star){v.g.visible=veinLeft(v)>0;return;} /* S2493 — a star struck out is gone */const n=Math.min(3,veinLeft(v));v.g.userData.shown=n;v.g.userData.mesh.geometry=veinGeo(v.ore,n);}
+function veinShow(v){if(!v.g)return;if(v.star){if(v.g.userData.kit){starKitShow(v);return;} /* S2519 — the kit's crater loses a lobe a piece; struck out, the torn pit lies while the island keeps it */v.g.visible=veinLeft(v)>0;return;} /* S2493 — a star struck out is gone */const n=Math.min(3,veinLeft(v));v.g.userData.shown=n;v.g.userData.mesh.geometry=veinGeo(v.ore,n);}
 function veinNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior()))return null;
   for(let i=VEINS.length-1;i>=0;i--){const v=VEINS[i];if(!veinLive(v)){VEINS.splice(i,1);continue;}if(Math.hypot(px-v.x,pz-v.z)<TOUCH+.5)return v;}return null;}
 // one strike at a vein: the outcome is the vein's seeded stream at this strike. Returns {ore, left} or {why}
@@ -1999,7 +2002,8 @@ function treeDown(id){if(skyId(id))return skyDown(id); /* S2496 */const d=(world
 function fellable(t){return t&&t.r>0&&!FELL_NOT.includes(t.sp)&&!(typeof MUSH_KINDS!=='undefined'&&MUSH_KINDS.includes(t.sp));}
 // the stump: one short trunk, its cut face pale, shared by every stump and scaled to the trunk's collider
 let _stumpGeo=null,_stumpMat=null;
-function stumpMesh(t){{let K=null;try{K=typeof stumpProp==='function'?stumpProp(t):null;}catch(e){K=null;}if(K)return K;} /* S2128 — the kit's stump on the new look */
+function stumpMesh(t){if(t&&t.sky){const K=typeof skyKitMesh==='function'?skyKitMesh(t,true):null;if(K)return K;} /* S2519 — the skywood's own stump on its crown of rock */
+  {let K=null;try{K=typeof stumpProp==='function'?stumpProp(t):null;}catch(e){K=null;}if(K)return K;} /* S2128 — the kit's stump on the new look */
   if(!_stumpGeo){_stumpGeo=new THREE.CylinderGeometry(.8,1,1,9);_stumpGeo.translate(0,.5,0);
     _stumpMat=[new THREE.MeshLambertMaterial({color:0x5a4030}),new THREE.MeshLambertMaterial({color:0xc8a878}),new THREE.MeshLambertMaterial({color:0x5a4030})];}
   const m=new THREE.Mesh(_stumpGeo,_stumpMat),rr=Math.max(.14,Math.min(.5,t.r*.55));m.scale.set(rr,.42,rr);

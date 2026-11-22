@@ -145,7 +145,7 @@ const SG = await page.evaluate((s) => { const L = GATE_KEEP_LIE || {}, v = L.vei
   if (L.sigil) { px = st.x; pz = st.z; out.near = gateVeinNear() === st; out.word = gateVeinWord(st); }
   bagAdd(toolItem('pick', 4)); let r = null; for (let k = 0; k < 20; k++) { r = gateSigilStrike(st); if (r.why || !r.left) break; }
   const it = BAG.find(b => b.sigilStone); out.stone = it ? { school: it.sigilStone, want: v.school, salvage: !!it.salvage, w: it.weight, price: it.buyPrice, n: BAG.filter(b => b.sigilStone).length } : null;
-  out.after = gateSigilStrike(st).why; out.rec = JSON.stringify((worldState.gateKeeps[s] || {}).sigil); if (L.sigil) { out.hidden = st.g.children.every(m => !m.visible); out.word2 = gateVeinWord(st); }
+  out.after = gateSigilStrike(st).why; out.rec = JSON.stringify((worldState.gateKeeps[s] || {}).sigil); if (L.sigil) { out.kit = !!st.kit; out.hidden = st.kit ? !!(st.g.children[0] && st.g.children[0].userData.kit && st.g.children[0].userData.kit.cut) : st.g.children.every(m => !m.visible); /* S2519 — the kit's stone stays, hewn out */ out.word2 = gateVeinWord(st); }
   const rows = ssSplitPayload(JSON.parse(ssStringify(_buildSavePayload()))); out.worldRow = !!(rows.w.wS.gateKeeps && rows.w.wS.gateKeeps[s] && rows.w.wS.gateKeeps[s].sigil);
   out.saved = (rows.c.BAG || []).some(b => b && b.sigilStone === v.school && b.salvage);
   BAG.length = 0; bag0.forEach(b => BAG.push(b)); S_.mining = ml; showMsg = sm; return out; }, seed);

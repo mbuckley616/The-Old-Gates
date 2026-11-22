@@ -954,7 +954,7 @@ export function frostbornVault(o = {}) {
   // Session 2497: the stone's courses at about 1.5 m (a tile of 6 m, was 18): at 4.5 m the 100 m face read as a 20 m gatehouse (the critic, s1812)
   const bb = g => { g.computeBoundingBox(); return g.boundingBox; };
   // the land: the gorge's section by |x|, closed at its head; the rims rising gently, the peaks beyond
-  const rimY = (x, z) => { const ax = Math.abs(x) + 6 * fbm(z / 40 + 3, x / 90, 3), rim0 = 2.5 * fbm(x / 30, z / 30, 3) + Math.max(0, ax - GW - 60) * .05 + sstep(250, 650, ax) * 260 * (.6 + .4 * fbm(x / 200, z / 200, 3));
+  const rimY = (x, z) => { const ax = Math.abs(x) + 6 * fbm(z / 40 + 3, x / 90, 3), rim0 = 2.5 * fbm(x / 30, z / 30, 3) + Math.max(0, ax - GW - 60) * .05 + sstep(250, 650, ax) * 45 * (.6 + .4 * fbm(x / 200, z / 200, 3)); /* S2521 (#1858 B): the fell there is, 45 m (was 260) */
     /* a pad at the rims' level under each viaduct's abutments and its two halls, so the deck runs onto the rim and the halls stand level */
     const pad = (1 - sstep(VX + 62, VX + 74, Math.abs(x))) * Math.max(...[-40, -180].map(zc => 1 - sstep(HW / 2 + 4, HW / 2 + 14, Math.abs(z - zc)))); return rim0 * (1 - pad) - .4 * pad; };
   const gorgeY = (x, z) => { const ax = Math.abs(x) + 6 * fbm(z / 40 + 3, x / 90, 3); return BED * (1 - sstep(GB, GW, ax)) * (1 - sstep(HEAD + 4, HEAD - 12, z)); };
@@ -964,10 +964,10 @@ export function frostbornVault(o = {}) {
   // behind the face), gullies are cut back 3 to 6 m its whole height, and a cap of snow over its top runs back onto the land. Its front
   // line zh(x) is S2461's, its height cl(x) too. The land is drawn 10 m behind the cliff at every height (and behind its neighbours 8 m
   // either side), so the grid's coarse triangles never show through it; ground() reads the cliff's own face.
-  const zh = x => HEAD - 6 - (FD + 8) * (1 - sstep(84, 104, Math.abs(x))) + 14 * fbm(x / 45 + 7, 2.3, 3), cl = x => 130 + 40 * fbm(x / 70 + 1, 5.1, 3), base = x => rimY(x, zh(x));
-  const BEDS = []; { const rs = stream(key + ':beds'); for (let h = -12; h < 240;) { const t = 10 + rs() * 16; BEDS.push({ s: h, e: h + t, set: 3 + rs() * 5, k: rs() * 9, tint: .82 + rs() * .34 }); h += t + 1.2; } }
+  const zh = x => HEAD - 6 - (FD + 8) * (1 - sstep(74, 94, Math.abs(x))) + 14 * fbm(x / 45 + 7, 2.3, 3), cl = x => 38 + 10 * fbm(x / 70 + 1, 5.1, 3), base = x => rimY(x, zh(x)); /* S2521: 38 to 48 m over the rims, about 125 m from the gorge's floor (was 130 to 170) */
+  const BEDS = []; { const rs = stream(key + ':beds'); for (let h = -12; h < 240;) { const t = 6 + rs() * 8; /* S2521: beds of 6 to 14 m on the lower wall (were 10 to 26) */ BEDS.push({ s: h, e: h + t, set: 3 + rs() * 5, k: rs() * 9, tint: .82 + rs() * .34 }); h += t + 1.2; } }
   const LAT = []; { const rl = stream(key + ':buttress'); for (let x = -820; x < 820;) { const w = 22 + rl() * 38, k = rl(), c = x + w / 2;
-      LAT.push({ c, hw: w / 2, a: k < .45 ? -(6 + rl() * 10) * sstep(104, 130, Math.abs(c)) : k < .7 ? 5 + rl() * 7 : 0, top: cl(c) - 8 - rl() * 60, gully: k >= .45 && k < .7 }); x += w; } }
+      LAT.push({ c, hw: w / 2, a: k < .45 ? -(6 + rl() * 10) * sstep(104, 130, Math.abs(c)) : k < .7 ? 5 + rl() * 7 : 0, top: cl(c) - 4 - rl() * 20, gully: k >= .45 && k < .7 }); x += w; } }
   const back = (x, h) => { let d = .1 * (h + 12) + 3.2 * (fbm(x / 14 + 3, h / 11, 3) - .5);
     for (const b of BEDS) { if (h < b.e - .01) break; d += b.set * (.3 + .8 * sstep(.3, .62, fbm(x / 30 + b.k, b.k * 1.3, 2))) * sstep(b.e, b.e + 1.2, h); }
     for (const f of LAT) { if (!f.a) continue; const du = Math.abs(x - f.c), hw = f.gully ? Math.min(f.hw, 4 + f.hw * .2) : f.hw; if (du > hw + 1) continue; d += f.a * (1 - sstep(hw - 3, hw + 1, du)) * (f.gully ? 1 : sstep(f.top, f.top - 6, h)); } return d; };
@@ -979,7 +979,7 @@ export function frostbornVault(o = {}) {
   const headH = (x, z, m, t) => { const c = cl(x), n = Math.min(HT - 1, Math.floor((c + 12) * 2)); if (t[0] - m - z < 0) return null; if (t[n] - m - z >= 0) return c;
     let i = 0; while (i < n && t[i + 1] - m - z >= 0) i++; const a = t[i] - m - z, b = t[i + 1] - m - z; return -12 + (i + a / (a - b)) / 2; };
   const CE = new Map(), capEnd = x => { const k = Math.round(x * 100); let v = CE.get(k); if (v === undefined) { v = Math.min(...[-8, -4, 0, 4, 8].map(dx => front(x + dx, 999))) - 14; CE.set(k, v); } return v; };
-  const farRise = (x, z) => sstep(capEnd(x), HEAD - 440, z) * 180 * (.6 + .5 * fbm(x / 150 + 9, z / 150, 3));
+  const farRise = (x, z) => sstep(capEnd(x), HEAD - 440, z) * 6 * (.6 + .5 * fbm(x / 150 + 9, z / 150, 3));
   const landY = (x, z) => { const g = gorgeY(x, z) + rimY(x, z); if (z > zh(x) + 10) return g; const w = sstep(zh(x) + 10, zh(x), z), b = base(x), y0 = g * (1 - w) + b * w;
     if (z <= capEnd(x)) return y0 + cl(x) - 1.5 + farRise(x, z); const h = headH(x, z, 10, nb(x)); return h === null ? y0 : Math.max(y0, Math.min(b + h, b + cl(x) - 1.5)); };
   const ground = (x, z) => { if (z > zh(x) + 9) return gorgeY(x, z) + rimY(x, z); const b = base(x), c = cl(x), fc = front(x, 999);
@@ -1012,17 +1012,21 @@ export function frostbornVault(o = {}) {
   const lancet = (p, x0, w, y0, ys) => { p.moveTo(x0, y0); p.lineTo(x0 + w, y0); p.lineTo(x0 + w, ys); p.absarc(x0, ys, w, 0, Math.PI / 3, false); p.absarc(x0 + w, ys, w, 2 * Math.PI / 3, Math.PI, false); p.lineTo(x0, y0); return p; };
   const ext = (sh, d) => new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: false, curveSegments: 10 });
   // the vault's face, its openings and the dark behind them, the ice's tongue out of the great portal, the sigil over it
-  const face = { z: FZ, d: FD, x0: -80, x1: 80, top: 100, portal: { w: 28, sill: 0, apex: +(30 + 28 * .866).toFixed(2) }, side: { w: 16, apex: +(22 + 16 * .866).toFixed(2) } };
-  { const sh = new THREE.Shape(); sh.moveTo(-80, BED - 6); sh.lineTo(80, BED - 6); sh.lineTo(80, 92); sh.lineTo(40, 100); sh.lineTo(-40, 100); sh.lineTo(-80, 92); sh.closePath();
-    sh.holes.push(lancet(new THREE.Path(), -14, 28, 0, 30)); for (const s of [-1, 1]) sh.holes.push(lancet(new THREE.Path(), s < 0 ? -46 : 30, 16, 0, 22)); for (let i = -2; i <= 2; i++) sh.holes.push(lancet(new THREE.Path(), i * 14 - 2.5, 5, 58, 70));
+  // S2521 (#1858 B, "cut it into the fell there is… the face brought down with it"): the headwall stands about 40 m over the rims, so the
+  // face comes down to 36 m over the ice's sill (was 100) and 140 m wide (was 160): the great portal 24 m wide to its point at 29.8 m with
+  // the tongue in it, the side portals 13 m, a pair of lancets over each side portal (the row of five over the great portal had no room),
+  // the sigil 5 m between the portal's point and the face's top. The glacier, the viaducts, the halls and the towers are as built.
+  const face = { z: FZ, d: FD, x0: -70, x1: 70, top: 36, portal: { w: 24, sill: 0, apex: +(9 + 24 * .866).toFixed(2) }, side: { w: 13, apex: +(5 + 13 * .866).toFixed(2) }, lancets: [-40.5, -32.9, 29.5, 37.1].map(x => ({ x, w: 3.4, y0: 19, ys: 24.5 })) };
+  { const sh = new THREE.Shape(); sh.moveTo(-70, BED - 6); sh.lineTo(70, BED - 6); sh.lineTo(70, 30); sh.lineTo(30, 36); sh.lineTo(-30, 36); sh.lineTo(-70, 30); sh.closePath();
+    sh.holes.push(lancet(new THREE.Path(), -12, 24, 0, 9)); for (const s of [-1, 1]) sh.holes.push(lancet(new THREE.Path(), s < 0 ? -41 : 28, 13, 0, 5)); for (const l of face.lancets) sh.holes.push(lancet(new THREE.Path(), l.x, l.w, l.y0, l.ys));
     const g = ext(sh, FD); g.translate(0, 0, FZ - FD); put('stone', g);
-    for (const [x0, w, top] of [[-14, 28, 60], [-46, 16, 40], [30, 16, 40]]) { const d = new THREE.BoxGeometry(w + 1, top + 2, 10); d.translate(x0 + w / 2, top / 2 - 1, FZ - FD - 4.9); put('dark', d); }
-    for (let i = -2; i <= 2; i++) { const d = new THREE.BoxGeometry(5.6, 15, 4); d.translate(i * 14, 65.5, FZ - FD - 1.9); put('dark', d); }
-    const s = new THREE.PlaneGeometry(16, 16); s.translate(0, 83, FZ + .04); put('sigil', s); }
+    for (const [x0, w, top] of [[-12, 24, 32], [-41, 13, 19], [28, 13, 19]]) { const d = new THREE.BoxGeometry(w + 1, top + 2, 10); d.translate(x0 + w / 2, top / 2 - 1, FZ - FD - 4.9); put('dark', d); }
+    for (const l of face.lancets) { const d = new THREE.BoxGeometry(l.w + .6, 10.5, 4); d.translate(l.x + l.w / 2, 23.5, FZ - FD - 1.9); put('dark', d); }
+    const s = new THREE.PlaneGeometry(5, 5); s.translate(0, 33, FZ + .04); put('sigil', s); }
   const tongue = { top: 22, z0: FZ - FD - 20, z1: FZ + 26 };
   { const g = new THREE.BoxGeometry(27.6, 34, tongue.z1 - tongue.z0, 14, 10, 30); g.translate(0, 22 - 17, (tongue.z0 + tongue.z1) / 2); const Pp = g.attributes.position;
     for (let i = 0; i < Pp.count; i++) { const x = Pp.getX(i), z = Pp.getZ(i); let y = Pp.getY(i); if (y > -11) { const lim = 22 - 7 * (x / 14) ** 2 - Math.max(0, z - FZ + 4) * (27 / 30); y = Math.min(y, lim); }
-      const sx = 1 - .08 * sstep(10, 13.8, Math.abs(x)) * (1 + fbm(y / 5, z / 5, 2)); Pp.setY(i, y + 1.6 * fbm(x / 7, z / 9 + y / 9, 3) - 1.2 * sstep(.88, .97, Math.abs(Math.sin(z / 4.2 + x / 30)))); Pp.setX(i, x * sx); }
+      const sx = 1 - .08 * sstep(10, 13.8, Math.abs(x)) * (1 + fbm(y / 5, z / 5, 2)); Pp.setY(i, y + 1.6 * fbm(x / 7, z / 9 + y / 9, 3) - 1.2 * sstep(.88, .97, Math.abs(Math.sin(z / 4.2 + x / 30)))); Pp.setX(i, x * sx * .857); } /* S2521: narrowed to the 24 m portal */
     put('ice2', g); }
   // the viaducts: one wall per piece (an extruded shape with both tiers' holes), the deck, its snow and the parapet
   const viaducts = [], fallen = [], ys1 = -48, ys2 = -14, u2 = (S - 3) / 2;
