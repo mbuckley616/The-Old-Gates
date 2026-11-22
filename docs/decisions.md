@@ -3,6 +3,19 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The Frostborn Vault — where it goes, now every free Mark fell is taken (from the look builder, 2026-11-22, #1892)
+**The question.** #1858 B placed the vault at about (9525, 7275), but the Skyfall Fields already stand there, and on seed 1 every other Mark fell big enough for the vault's ground (about 800 m by 1 km) is the Northlight Altar's or holds towns, glades, ruins, cave doors or roads. Session 2523 built the vault's stone, gorge and ice, but nothing is placed. Where should it go?
+
+**Options.**
+- **A (recommended).** Take the Skyfall Fields' fell, at (9575, 7425) with the gorge running south; the Fields move to their own next-best place. The evenest ground (the four pads within 15 m). From the side the rims stand up to 40 m over the halls and hide the vault.
+- **B.** Take the Northlight Altar's fell; the Altar moves. Pads within 20–30 m of each other.
+- **C.** Clear the small places (glades, ruins, camps, cave doors) off ground near a village, around (4550, 9000); towns and roads stay. Needs the generator to give way: the systems builder with the look builder.
+- **D.** Leave the vault out until F3 gives the Mark higher ground.
+
+**Recommendation: A.**
+
+Pictures (placing A, the Fields taken away, 13h): [deck](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-gorge.jpg) · [glacier](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-ice.jpg) · [above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-above.jpg) · [rim](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-rim.jpg)
+
 ### Workstations — the forge by grade, the still, or both? (from the designer, 2026-11-22, #1883)
 **The question.** Every forge works every metal today, and the apothecaries' drawn still does nothing. Should the forge have grades, should the still make a stronger draught that keeps, or both? (Backlog L11, OG-133.)
 
