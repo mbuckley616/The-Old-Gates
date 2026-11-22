@@ -102,10 +102,16 @@ check('the carving touched, it opens', A.sig && A.read && A.opened, A);
 check(`one piece taken (${A.took}): the coffer keeps the rest, ${A.left.length}`, A.inBag && A.left.length === A.items.length - 1, A);
 check("the coffer's list is the world row's, and a load gives it back", A.worldRow && JSON.stringify(A.loaded) === JSON.stringify(A.left), { worldRow: A.worldRow, loaded: A.loaded, left: A.left });
 // S2380 — the critic's 18 Nov note: between the altar and the coffer, the crosshair on the coffer's lock, E opens the coffer and leaves the arc
+// S2518 — FLAKY twice on 21 Nov (onLock false, then E took the arc), not reproduced here: the aim now comes after the game has drawn two
+// frames since the coffer was opened and the save loaded, as it always has before your E, and the reading logs what the ray met (`why`)
+await g.frames(2);
 const Y = await page.evaluate(() => { const L = GATE_KEEP_LIE || {}, A = L.altar, c = CHESTS.find(x => x.coffer != null); if (!A || !A.arc || !c) return { skip: true };
   const fy = c.floor === 2 ? FLOOR2_Y : 0, eye = fy + SCALE.EYE_STAND, ux = (A.x - c.x) / 2.6, uz = (A.z - c.z) / 2.6, was = thirdPerson; thirdPerson = false;
   const aim = (o, h) => { yaw = Math.atan2(-(o.x - px), -(o.z - pz)); pitch = Math.atan2(fy + h - eye, Math.hypot(o.x - px, o.z - pz)); CAM.position.set(px, eye, pz); CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); };
   px = c.x + ux * 1.3; pz = c.z + uz * 1.3; aim(c, .75); const out = { inReach: Math.hypot(px - A.x, pz - A.z) < TOUCH + .6, onLock: lookingAt(c), altar: !!gateAltarNear() };
+  if (!out.onLock) { const r = (v) => v.toArray().map(n => +n.toFixed(2)), d = CAM.getWorldDirection(new THREE.Vector3()), ms = []; c.mesh.traverse(o => { if (o.isMesh) ms.push(o); });
+    const rc = new THREE.Raycaster(CAM.position.clone(), d, 0, 20), h = rc.intersectObjects(ms, false)[0];
+    out.why = { cam: r(CAM.position), dir: r(d), meshes: ms.length, inScene: !!c.mesh.parent, at: ms.slice(0, 3).map(o => r(new THREE.Vector3().setFromMatrixPosition(o.matrixWorld))), hit: h ? +h.distance.toFixed(2) : null, standY: c.standY, jumpY, body: !!c.body, tp: thirdPerson, frame: REN.info.render.frame }; }
   const sm = showMsg; showMsg = () => {}; const n0 = BAG.length; interact(); out.opened = lootOpen && currentLootContainer === c; out.arcKept = !!A.arc && BAG.length === n0; if (lootOpen) closeLoot();
   aim(A, .4 + .75); out.faced = lookingAt(A, TOUCH + .6) && !!gateAltarNear(); showMsg = sm; thirdPerson = was; return out; });
 console.log('aim', JSON.stringify(Y));
