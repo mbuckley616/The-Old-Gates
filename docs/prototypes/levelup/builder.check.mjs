@@ -1080,7 +1080,13 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     for (const [n, m] of [['Philo', 1.74], ['Uallach', 1.56], ['Brógán', 1.78], ['Eadburh', 1.84], ['Siadhal', 1.8]]) { const G = K.castGenome(n), p = K.makePerson(G), s1 = JSON.stringify(K.toSaved(G));
       let purses = 0; p.root.traverse(o => { if (o.name === 'purse') purses++; });
       out[n] = { off: +Math.abs(K.statureOf(G) - m).toFixed(4), people: G.people, scar: G.scar, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), purses, charms: p.beltCharms, lenses: p.lenses, shuttle: p.shuttle }; }
+    // a scholar's spectacles (Session 2507) on six rolled faces, both sexes and every people
+    out.specs = [['sp1', { g: 1 }], ['sp2', { g: 0 }], ['sp3', { g: 1, people: 'markman' }], ['sp4', { g: 0, people: 'aurennais' }], ['sp5', { g: 1, people: 'oldblood' }], ['sp6', { g: 0, people: 'markman' }]].map(([seed, o]) => {
+      const G0 = K.rollGenome(seed, o), G = { ...G0, dress: { ...G0.dress, specs: [.62, .5, .3], helm: null } }, p = K.makePerson(G), s1 = JSON.stringify(K.toSaved(G));
+      return { ...p.specs, on: p.root.getObjectByName('specs')?.parent?.name, saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))) }; });
     return out; });
+  { const S = r.specs; delete r.specs; check(`a scholar's spectacles (Session 2507) on six faces: the glass ${S.map(s => s.gap).join('/')} m before the face, the wire ${Math.min(...S.map(s => s.near))} m at nearest off the skin (${S.reduce((a, s) => a + s.inside, 0)} points within it), on the head bone, saved and loaded back`,
+    S.every(s => s.on === 'head' && s.saved && s.inside === 0 && s.near > 0 && s.gap > .004 && s.gap < .012 && s.across > .03 && s.armLen.every(l => l > .1 && l < .22) && s.tris < 3000), S); }
   check(`the underworld's five build from CAST at their sheets' statures (${Object.entries(r).map(([n, v]) => `${n} ${v.off}`).join(', ')} m off), save and load back the same`,
     Object.values(r).every(v => v.off < .01 && v.saved) && r.Uallach.people === 'oldblood' && r.Philo.people === 'aurennais', r);
   { const e = r.Eadburh, c = e.charms || {}; check(`Eadburh Two-Purses: her left brow's scar and two purses on her belt (${c.pieces}), nothing through them (${c.pieceIn} of ${c.tested}), apart (${c.touch} touching), their tops ${c.top} m under the belt's edge, no cord under the tunic (${c.thongIn}); each hangs from its neck, its cord ${c.slant} rad off plumb, the bag swung out ${c.tilt} rad onto what it rests on (Session 2322)`,

@@ -2367,7 +2367,8 @@ function hbDriverLook(g,G){const D=G.dress||{},H=G.hair||{};g.dress=hbLongSkirt(
    roll and nothing taken but what is in the way: an apothecary's or a herbalist's leather satchel (the rig's satchel); a merchant's or a
    trader's two purses at the belt (the rig's bag; the purses hang only from a belt with no apron or tabard over it, so those go); a
    scholar's, an adept's or a novice's book in the right fist (what the fist held goes). The kit's lenses are a band of goggles with a
-   loupe pushed up on the brow (Philo's tell, S2307), not the rig's spectacles, so a scholar wears none. Not yet: the merchant's brimmed hat, the farmer's straw hat and hoe and the priest's hood, which the kit
+   loupe pushed up on the brow (Philo's tell, S2307), not the rig's spectacles; S2507 gave the kit spectacles (people.js buildSpecs: two
+   wire rims before the eyes, a bridge, arms to the ears), so a scholar, an adept and a novice wear them, in brass, steel or horn. Not yet: the merchant's brimmed hat, the farmer's straw hat and hoe and the priest's hood, which the kit
    has no piece for or whose dress is the Church's to say */
 const HB_TRADE_STRIP={cloak:null,cloakFur:null,cloakHem:null,hood:null,cape:null,mantle:null,coat:null,coatFur:null,coatHood:null,burnous:null,
   spear:null,staff:null,crossbow:null,shield:null,sword:null,basket:null,basketCloth:null,lantern:null,book:null,tankard:null,chair:null,backpack:null};
@@ -2378,11 +2379,11 @@ const HB_TRADE=[
   {re:/apothecary|herbalist/,strip:{},dress:{},satchels:[[.34,.22,.13],[.4,.28,.16],[.28,.2,.13]]},
   {re:/merchant|trader/,strip:{apron:null,bib:false,tabard:null},dress:{},purses:[[.22,.14,.09],[.3,.2,.12],[.36,.12,.1]]},
   {re:/scholar|adept|novice|evoker|^mage/,strip:{basket:null,basketCloth:null,lantern:null,spear:null,crossbow:null,staff:null,tankard:null,hammer:null},
-    dress:{},books:[[.32,.15,.09],[.2,.24,.36],[.36,.3,.2]]}];
+    dress:{},books:[[.32,.15,.09],[.2,.24,.36],[.36,.3,.2]],specs:[[.62,.5,.3],[.55,.56,.58],[.24,.2,.16]]}];
 function hbTradeDress(g,G){const role=String(g.role||'').toLowerCase();if(/^crew:/.test(g.hbKey||'')||GUARD_ROLE.test(role))return null;
   const t=HB_TRADE.find(t=>t.re.test(role));if(!t)return null;const D=G.dress||{},h=pHash((g.hbKey||'')+'|trade')>>>0,pick=A=>A[h%A.length];
   const T=Object.assign({},D,t.strip||HB_TRADE_STRIP,t.dress);if(t.aprons)T.apron=pick(t.aprons);if(t.satchels)T.satchel=pick(t.satchels);
-  if(t.purses){T.purses=pick(t.purses);if(!T.belt)T.belt=[.24,.17,.11];}if(t.books)T.book=pick(t.books);return T;}
+  if(t.purses){T.purses=pick(t.purses);if(!T.belt)T.belt=[.24,.17,.11];}if(t.books)T.book=pick(t.books);if(t.specs&&!T.lenses&&!T.eyepatch)T.specs=pick(t.specs);return T;}
 // called by buildNPCMesh before the bake: the key, the genome and the tint, once per cached genome
 // S1763 (L1, OG-109's winter column) — the winter dress: in winter (calDay's season) a share of each people, out of doors, wear the
 // kit's winter coat (S1147) over what they rolled: a Gatelander one in two (fur-trimmed on half), a Markman nearly all (fur-lined,
