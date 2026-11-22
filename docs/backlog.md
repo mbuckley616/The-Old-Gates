@@ -709,13 +709,13 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   13:42–16:24 UTC). Each suite below failed on both tries with the same check. The owner comes from the code map, and the owner corrects it
   if it is wrong. Each item is one suite: strike it with the session that fixes it. Not bisected. The failing lines are in the shard's log.
   - **`guardarmour`** (for the systems builder: a town's guards by prosperity). *Dunmore (prosperity 61) puts its guards in mail*: Cormac's and Fionn's guards and Maeve's watch have `fam: null`.
-  - **`theft`** (for the systems builder: `js/86-world-crime.js`). *An unseen theft costs nothing, but the town keeps count of the gold*; the other theft checks pass.
+  - ~~**`theft`** (for the systems builder: `js/86-world-crime.js`). *An unseen theft costs nothing, but the town keeps count of the gold*; the other theft checks pass.~~ — done, Session 2531
   - **`keepercone`** (for the systems builder: the keepers' walk, `js/88-world-ticks.js`). *At an x bound the keeper turns back in x and keeps its z*: x `{sin -0.955, cos -0.296}`, z the reverse.
   - **`keeperwalk`** (for the systems builder). *The keepers of both towns were walked, counter shops among them (at least 10)*: 7 walked (2 counter shops, the 5 inns none), 85 standing.
-  - **`locks`** (for the systems builder: dungeon chests). *Dungeon chests follow the rule*: 4 chests, 3 locked, 2 treasure both locked, 1 wrong.
-  - **`chestpicks`** (for the systems builder). *Every chest follows Session 150's rule*: the Barrow of Woushdaey, 2 wrong. Probably the same cause as `locks`.
+  - ~~**`locks`** (for the systems builder: dungeon chests). *Dungeon chests follow the rule*: 4 chests, 3 locked, 2 treasure both locked, 1 wrong.~~ — done, Session 2531
+  - ~~**`chestpicks`** (for the systems builder). *Every chest follows Session 150's rule*: the Barrow of Woushdaey, 2 wrong. Probably the same cause as `locks`.~~ — done, Session 2531
   - **`locksight`** (for the systems builder: `LP`, `js/68-dungeon-misc.js`). Crashes after 3 checks: `TypeError: Cannot read properties of undefined (reading 'exitX')`.
-  - **`due`** (for the systems builder: the Journal's Due view, `js/66-hub.js`). *Lists only the next feast*: the Night of the Lanterns shows too, in 44 days; and *six dated things, soonest first*.
+  - ~~**`due`** (for the systems builder: the Journal's Due view, `js/66-hub.js`). *Lists only the next feast*: the Night of the Lanterns shows too, in 44 days; and *six dated things, soonest first*.~~ — done, Session 2531
   - **`siegeturn`** (for the systems builder: the war, `js/87-world-quests.js`). *10h: soldiers 1 and 2 walk the street to the first gate*: soldier 2 stays 55.9 m off, stuck 42.
   - **`shopback`** (for the look builder: the kit shops). *There are kit shops with a keeper's room to judge (Portclare's five and Dunmore's)*: 2 found (Lonán's Shipwright, Menas's Smithy).
   - **`intdoors`** (for the look builder: `intDoorAt`, `js/84-world-interiors.js`). *Every door swings its full quarter turn without touching…*: Cathal's Apothecary, Séamus's Barber, Fionnuala's Stores (w 0.81, gap 0.56, hit 0.15); and *every gap is within a tenth of its leaf*.
@@ -729,6 +729,15 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   - **`mantle`** (for the bodies builder: the third-person pull, `js/54-thirdperson.js`). *The pull plants the builder's wrists on the ledge (within 0.129 m)*: the first frame reads exactly 0.129, 0.13 on the retry. A borderline tolerance.
   - **`reader`** (for QA). Killed at 1,800 s after the Varek check: `Target page, context or browser has been closed` at `g.hide`.
   - **`f4foes`** FLAKY (for the bodies builder: *each kit weapon is held in the builder's fist*, *the deflect is not mirrored* on the first try) and **`deathplace`** FLAKY (for QA: a 20 s `waitForFunction`).
+- ~~**s1849 — the fallen star's crater in a wood** (critic 22 Nov, low; for the look builder): one near-black disc with a hard edge, the trees standing unbroken 4.5 m from its middle~~ — done, Session 2530 (the kit's apron fades into the land along the burn's rays, the bowl's charcoal lifted; `starKitBlast` blows the wood down outward from the star, every tree to 9 m and fewer to 14 m, as the kit's stumps and trunks).
+- **`shopback` and `locksight` red on the weekly run of 22 Nov (45028889995): a Gatelands shop has no keeper's room since F9** (the systems
+  builder, Session 2531, for QA and the look builder; `js/83-world-generator.js`, `buildKitMerchant`). Session 2272 (card F9, #1574 A) builds
+  Dunmore's armourer, apothecary and goods shops as the kit's merchant's house: no partition and no `_backRoom` (it returns before S1258's
+  partition), with the strongbox at the end of the keeper's walk. The forge's kit room has none either. `shopback` finds 2 rooms to judge and
+  wants 8; `locksight` looks for a Dunmore shop with `_backRoom`, finds none and throws (`undefined.exitX`, line 45). Each suite needs a
+  room F9 still builds (perhaps a Mark or Aurenne shop: F9's merchant's house is the Gatelands', not checked) or the merchant's house's own layout. `theft` had the same
+  cause and is fixed (Session 2531: the unseen case is a theft behind the keeper's back). `barberfee`'s *one bake on the kit* (`furn: 0`) is a
+  barber, one of F9's four trades: likely the same cause, not checked.
 
 ## J. Design proposals wanted (Michael, 27 Sep 2026)
 Michael wants to hear proposals from the team before anything is built. Each proposal is a page in `docs/design/<topic>.md`: the problem in his words, 2–3 directions with a recommendation, what it displaces, cost in sessions. Nothing here is a spec until it carries a `Michael:` line in docs/decisions.md. His brief is `docs/design_brief.md`.

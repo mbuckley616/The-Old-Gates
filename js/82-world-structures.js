@@ -3242,6 +3242,24 @@
   function starKitHoles(){if(typeof LAND_HOLES==='undefined'||typeof STARS_SHOWN==='undefined')return;let i=0;
     for(const v of STARS_SHOWN.values()){if(i>=6)break;const g=v.g;if(!g||!g.userData.kit||!veinLive(v))continue;LAND_HOLES.value[i++].set(v.x,v.z,g.userData.kit.R,1);}
     for(;i<6;i++)LAND_HOLES.value[i].w=0;}
+  // S2530 — the blast (the critic's note of 22 Nov: in woodland the crater stood in an unbroken wood, the trees 4.5 m from its middle).
+  // Past the trees the crater takes (STAR.r + 1.5, 50-travel.js's starClearTrees), the wood is blown down outward from the star: every
+  // tree to STAR_BLAST.all, and past it one in fewer to STAR_BLAST.r, most of them downrange (the side the star was going). Each is
+  // snapped, its stump the kit's (falling outward), its trunk the kit's laid on the ground from it, away from the star, the tree's own
+  // height × 0.85 as layTrunk's. No record and no deck: the blast is the star's while it lies, and the chunk rebuilds the wood once it is
+  // gone. -> the count blown down here.
+  const STAR_BLAST={all:9,r:14};
+  function starKitBlast(ch,s){if(!rareKitOn()||!ch||!ch.trees||!s)return 0;const from=seededRng('starfrom',s.id)()*Math.PI*2,fx=Math.sin(from),fz=Math.cos(from),r0=(typeof STAR!=='undefined'?STAR.r:3)+1.5;let n=0;
+    for(const t of ch.trees){if(t.out)continue;const dx=t.x-s.x,dz=t.z-s.z,d=Math.hypot(dx,dz);if(d<=r0||d>STAR_BLAST.r)continue;
+      const ox=dx/d,oz=dz/d,down=Math.max(0,-(ox*fx+oz*fz)),keep=d<=STAR_BLAST.all?1:(1-(d-STAR_BLAST.all)/(STAR_BLAST.r-STAR_BLAST.all))*(.45+.55*down);
+      if(seededRng('starblast',s.id+'|'+t.id)()>keep)continue;
+      try{const yw=Math.atan2(-ox,-oz);t.fall=yw;treeTakeOut(ch,t);const o=t.out,H=treeHeight(t);
+        const k=STUMPS.findIndex(q=>q.t===t);if(k>=0)STUMPS.splice(k,1); /* the stump treeTakeOut laid (the kit's, falling by t.fall) stays; out of STUMPS, as no felling's */
+        const g=new THREE.Group();g.name='starBlast';
+        const L=Math.max(4,Math.min(18,H*.85)),R=Math.max(.25,.9*Math.max(.14,Math.min(.5,t.r*.55))),x0=t.x+ox*.3,z0=t.z+oz*.3,h0=worldH(x0,z0),h1=worldH(x0+ox*L,z0+oz*L);
+        const K=PKIT.props.trunk(L,R,t.id);K.group.position.set(x0,h0+R*.8,z0);K.group.rotation.set(-Math.atan2(h1-h0,L),Math.atan2(ox,oz),0,'YXZ');g.add(K.group);
+        ch.group.add(g);o.blast=g;o.star=1;n++;}catch(e){}}
+    return n;}
   // the flecks of bright metal catch the dark: lit from dusk to dawn (19h to 7h, full from 21h to 5h), within 40 m (faded from 30), read from the clock
   function starKitGlint(){if(typeof STARS_SHOWN==='undefined')return;const h=typeof gameHour==='function'?gameHour():12,night=h>=21||h<5?1:h>=19?(h-19)/2:h<7?(7-h)/2:0;
     for(const v of STARS_SHOWN.values()){const m=v.g&&v.g.userData.glint;if(!m)continue;const d=Math.hypot(px-v.x,pz-v.z),near=Math.max(0,Math.min(1,(40-d)/10));m.emissiveIntensity=.05+2.55*night*near;}}
