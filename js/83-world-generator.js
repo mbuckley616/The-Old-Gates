@@ -3328,7 +3328,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
        fill under it a grey the stone keeps its shading in, as the prototype's court. */
     {const O=T.oculus,s=new THREE.SpotLight(0xfff2dc,(1.1*noon+.25)*dayK,320,.085,.35,1),L=T.roof+40;s.position.set(rx(T.lands.x+T.sun[0]/T.sun[1]*L),ry(L),rz(T.lands.z+T.sun[2]/T.sun[1]*L));s.target.position.set(rx(T.lands.x),ry(0),rz(T.lands.z));s.userData.daylight=true;sc_.add(s,s.target);
       const p=new THREE.PointLight(0xe8e0d0,(.8*noon+.18)*dayK,140,1);p.position.set(rx(T.lands.x),ry(8),rz(T.lands.z+6));p.userData.daylight=true;sc_.add(p);}
-    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,1.7*dayK,40,1);l.position.set(rx(M.x),ry(M.y)+3,rz(M.z)-2);l.userData.daylight=true;sc_.add(l);}
+    /* S2508 — the arrival's near walls were the brightest thing in view (S2496's note): the mouth's light hung 3 m over your head, 0.4 m
+       ahead, and lit the passage's first metres flat from the front. The day comes in at the mouth: the light stands outside it, at its
+       middle's height, so the near walls take it grazing from behind and the passage darkens as it goes in. */
+    {const M=T.mouth,l=new THREE.PointLight(0xdfe6f0,1.25*dayK,32,1);l.position.set(rx(M.x),ry(M.y)+M.h*.5,rz(M.z)+3);l.userData.daylight=true;sc_.add(l);}
     return sc_;
   }
   // S1773 (card F8, Michael's A on #1026) — a smugglers' sea cave (PKIT.places.cove, places.js's smugglersLair, #314 A) behind its mouth on
