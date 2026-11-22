@@ -19,6 +19,10 @@ for (const id of ids) {
     if (stage && K_ && !WORLD.witnessOf(window._h)) { let done = false;
       for (const r_ of [1.6, 2.2, 2.8]) { for (let a = 0; a < 16 && !done; a++) { const x = px + Math.sin(a / 16 * 6.283) * r_, z = pz + Math.cos(a / 16 * 6.283) * r_;
           if (intSolidAt(x, z, .3, 0) || !intSightLine(x, z, px, pz, true)) continue; K_.position.x = x; K_.position.z = z; K_.rotation.y = Math.atan2(px - x, pz - z); done = !!WORLD.witnessOf(window._h); } if (done) break; } }
+    /* S2531 — since Session 2272 (card F9) a Gatelands shop is the kit's merchant's house: no keeper's room, the strongbox at the end of
+       the keeper's own walk, so a keeper turned to watch you always sees it. The unseen case is now a theft behind his back (indoors a
+       witness must face you, intFaces): he is turned away when he would see. The checks are unchanged */
+    if (!stage && K_ && WORLD.witnessOf(window._h)) K_.rotation.y += Math.PI;
     const seenHere = !!WORLD.witnessOf(window._h);
     const c0 = { ...((worldState.crime || {}).dunmore || {}) }; const gold0 = gold; const added = [], _ba = window.bagAdd; window.bagAdd = function (it) { added.push({ name: it.name, buyPrice: (it.buyPrice || 0) * (it.qty || 1) }); return _ba.apply(this, arguments); }; WORLD.boxInteract();
     for (let k = 0; k < 8 && LP.phase !== 'done'; k++) { lpPress(); LP.pushed = performance.now() - LP.rise - 5; lpPress(); }
