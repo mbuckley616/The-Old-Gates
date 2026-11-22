@@ -40,9 +40,11 @@ check('a Bandit 8 units off behind a house cannot be locked', world.behindHouse,
 check('a Bandit 8 units off down a clear street can', world.inTheOpen, world);
 
 // ── indoors (Session 314): a shop's back-room partition, with its door shut ──
-const shopId = await page.evaluate(() => { forceTime(13); const S = WORLD.settle.get('dunmore');
+// S2536: since F9 (S2272, #1574 A) Dunmore's shops are the kit's merchant's house, with no keeper's room; Portclare's smith keeps one
+await g.settle('portclare');
+const shopId = await page.evaluate(() => { forceTime(13); const S = WORLD.settle.get('portclare');
   for (const h of S.houses) { if (!/weapon|armor|potion|misc/.test(h.type) || !h.keeper) continue; WORLD.buildInteriorFor(h); if (h._backRoom) return h.id; } return null; });
-await page.evaluate((id) => { const h = WORLD.settle.get('dunmore').houses.find(x => x.id === id); px = h.exitX; pz = h.exitZ; goToInterior(h); }, shopId);
+await page.evaluate((id) => { const h = WORLD.settle.get('portclare').houses.find(x => x.id === id); px = h.exitX; pz = h.exitZ; goToInterior(h); }, shopId);
 await page.waitForTimeout(4000); await g.hide();
 const room = await page.evaluate(() => {
   const out = { inside: isInterior() }; const keep = ZE; lockRelease();

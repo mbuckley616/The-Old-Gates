@@ -2459,7 +2459,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const P=T.part,K=T.kdoor,kz=(K.z0+K.z1)/2,kw=K.z1-K.z0,dr=(x,z,fl,ang,w,h)=>intDoorAt(sc_,SOL,rx(x),rz(z),FL[fl],ang,0x4a3420,{w:w-.04,h:h-.04});
       dr(P.x,Z-1.7,0,0,.9,2.1);dr(P.x,kz,0,0,kw,2.1);
       for(const fl of [1,2]){dr(P.x+1.05,P.h,fl,Math.PI/2,.9,2.05);if(T.upOK)dr(P.x,kz,fl,0,kw,2.05);}
-      if(!T.upOK)dr(-X+3.025,P.z,2,Math.PI/2,.85,2.05);}
+      if(!T.upOK)intDoorAt(sc_,SOL,rx(T.updoor??-X+3.025),rz(P.z),FL[2],s>0?Math.PI*1.5:Math.PI/2,0x4a3420,{w:.81,h:2.01,dir:-s});} /* S2534: the kit's own place for it, inside the partition, hung on the partition's side and opening into the back room (the bed stands in the front room's swing) */
     // the curtained bed on the second floor is the resident's (the sleeper lies in it, head to -z)
     {const b=T.boxes.find(q=>q.tag==='bed'),B=fr(b,0,0),x=(B.x0+B.x1)/2,cz=(B.z0+B.z1)/2;INT_BEDS.push({x,z:cz+.2,y:FL[2],owner:'home',room:null,cz});intBedPos={x,z:cz+.2};}
     // the home's chest, in the bedroom against the front wall, on the pier between the door bay's window and the next (1.0 m), its lid
@@ -2538,7 +2538,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       dr(P.x,kz,0,0,kw,2.1);
       for(const fl of [0,1,2])dr(P.x+1.05,P.h,fl,Math.PI/2,.9,2.05);
       for(const fl of [1,2])if(T.upOK)dr(P.x,kz,fl,0,kw,2.05);
-      if(!T.upOK)dr(-X+3.025,P.z,2,Math.PI/2,.85,2.05);}
+      if(!T.upOK)intDoorAt(sc_,SOL,rx(T.updoor??-X+3.025),rz(P.z),FL[2],s>0?Math.PI*1.5:Math.PI/2,0x4a3420,{w:.81,h:2.01,dir:-s});} /* S2534: the kit's own place for it, inside the partition, hung on the partition's side and opening into the back room (the bed stands in the front room's swing) */
     // the shop's strongbox (S155) in the keeper's walk at the counter's window end, its lid to the walk
     {const bx=rx(S.chest.x),bz=rz(S.chest.z),bg=new THREE.Group(),shell=buildChestShell(bg,.45,0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=Math.PI;sc_.add(bg);
       SOL.push({x0:bx-.3,x1:bx+.3,z0:bz-.24,z1:bz+.24,y0:0,y1:.5});

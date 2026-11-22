@@ -2220,6 +2220,7 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
   const ri0 = (F1 - F0) / 16, zH = -Z + LD + (Math.ceil(2.06 / ri0 - 7 - 1e-9) - 1) * G /* where flight B's underside is 2.0 m over the hall */;
   const ka1 = Math.min(WZ[1] + 1.06, kz1 - .05), ka0 = Math.max(ka1 - .9, zH), kdc = (ka0 + ka1) / 2 /* the back room's door off the hall, in front of the well or under flight B's top */;
   const upOK = ka0 >= WZ[1] + .1 /* and upstairs the same door off the landing, if it stands in front of the well */, pdc = Z - 1.7 /* the parlour's door */;
+  const udc = Math.min(-X + 3.025, PX - pt - .485) /* (Session 2534) the top floor's door off the front room when upOK fails, kept 6 cm inside the partition (a 3-bay house's wall ends at -X + 3.175) */;
   const cut = (key, x0, x1, z0, z1, y0, y1, doors, tag, fl) => { /* a wall from a0 to a1 along z (x0..x1 thin) or along x (z0..z1 thin), doors [{a0, a1, h}] cut out */
     const alongZ = x1 - x0 < z1 - z0, A0 = alongZ ? z0 : x0, A1 = alongZ ? z1 : x1, cuts = [...doors].sort((a, b) => a.a0 - b.a0); let a = A0;
     const seg = (s0, s1, yy0, yy1, tg) => alongZ ? bx(key, x0, x1, yy0, yy1, s0, s1, tg, fl) : bx(key, s0, s1, yy0, yy1, z0, z1, tg, fl);
@@ -2227,7 +2228,7 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
     if (A1 > a) seg(a, A1, y0, y1, tag); };
   for (let fl = 0; fl < 3; fl++) { const y0 = floors[fl], y1 = CE[fl];
     cut('plaster', PX - pt, PX + pt, -Z, fl || MR ? PH + pt : Z, y0, y1, fl === 0 ? (MR ? [{ a0: ka0, a1: ka1, h: 2.1 }] : [{ a0: pdc - .45, a1: pdc + .45, h: 2.1 }, { a0: ka0, a1: ka1, h: 2.1 }]) : upOK ? [{ a0: ka0, a1: ka1, h: 2.05 }] : [], 'partition', fl);
-    cut('plaster', -X, PX - pt, PZ - pt, PZ + pt, y0, y1, fl === 1 ? [{ a0: -X + .95, a1: -X + 2.15, h: 2.3 }] : fl === 2 && !upOK ? [{ a0: -X + 2.6, a1: -X + 3.45, h: 2.05 }] : [], 'partition', fl);
+    cut('plaster', -X, PX - pt, PZ - pt, PZ + pt, y0, y1, fl === 1 ? [{ a0: -X + .95, a1: -X + 2.15, h: 2.3 }] : fl === 2 && !upOK ? [{ a0: udc - .425, a1: udc + .425, h: 2.05 }] : [], 'partition', fl);
     if (fl || MR) cut('plaster', PX + pt, X, PH - pt, PH + pt, y0, y1, [{ a0: PX + .6, a1: PX + 1.5, h: 2.05 }], 'partition', fl); } /* (Session 2240) a merchant's ground floor as the floors over it: the shop across the front */
   // the front door's leaf, hung open inside against the hall's west side; the back door's against the kitchen's back wall
   { const fx0 = MR ? fd.x + fd.w / 2 - .06 /* a shop door folds back against its east jamb, out of the shop */ : fd.x - fd.w / 2, bx0 = -bd.x - bd.w / 2; bx('paint', fx0, fx0 + .06, F0, F0 + fd.h - (MR ? .5 : fd.w / 2), Z - fd.w + .05, Z - .02, 'leaf', 0) /* Session 1396: the leaf to the fanlight's spring, 2.2 m */; bx('paint', bx0, bx0 + .06, F0, F0 + bd.h - .05, -Z + .02, -Z + bd.w - .02, 'leaf', 0); }
@@ -2403,11 +2404,11 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
     { fl: 1, pts: [top, hd, ...turn, [-X + 2.95, cF + .77], [-X + 1.55, cF + .77]] },
     { fl: 1, pts: upOK ? [top, [PX + .45, kdc], [PX - .35, kdc], [-X + 1.55, kz1 - .35], [-X + 1.55, fz0 + .6]] : [top, hd, ...turn, [-X + 2.95, zr], [-X + 1.55, zr], [-X + 1.55, kz1 - .3]] },
     { fl: 2, pts: [top, hd, ...turn, [-X + 2.75, fz0 + 1.4]] },
-    { fl: 2, pts: upOK ? [top, [PX + .45, kdc], [PX - .35, kdc], [bunkX + 1.25, kz1 - .45]] : [top, hd, ...turn, [-X + 3.025, fz0 + .8], [-X + 3.025, kz1 - .45], [bunkX + 1.25, kz1 - .45]] }];
+    { fl: 2, pts: upOK ? [top, [PX + .45, kdc], [PX - .35, kdc], [bunkX + 1.25, kz1 - .45]] : [top, hd, ...turn, [udc, fz0 + .8], [udc, kz1 - .45], [bunkX + 1.25, kz1 - .45]] }];
   const rooms = { hall: { x0: PX + pt, x1: X, z0: WZ[1], z1: MR ? PH - pt : Z, fl: 0 }, [MR ? 'shop' : 'parlour']: MR ? { x0: -X, x1: X, z0: fz0, z1: Z, fl: 0 } : { x0: -X, x1: PX - pt, z0: fz0, z1: Z, fl: 0 }, kitchen: { x0: -X, x1: PX - pt, z0: -Z, z1: kz1, fl: 0 },
     drawing: { x0: -X, x1: X, z0: fz0, z1: Z, fl: 1 }, dining: { x0: -X, x1: PX - pt, z0: -Z, z1: kz1, fl: 1 }, bedroom: { x0: -X, x1: X, z0: fz0, z1: Z, fl: 2 }, children: { x0: -X, x1: PX - pt, z0: -Z, z1: kz1, fl: 2 } };
   return { group: all, shell, room: group, tris: Math.round(tris), draws: group.children.length, shellTris: shell.userData.tris, shellCalls: shell.userData.calls, inner: { x0: -X, x1: X, z0: -Z, z1: Z }, floors, ceils: CE, eave: EAVE,
-    door: { x: fd.x, z: plan.d / 2, w: fd.w, h: fd.h }, back: { x: bdx, z: -plan.d / 2, w: bd.w, h: bd.h }, part: { x: PX, z: PZ, h: PH, t: pt }, mid: { front: cF, back: cB }, upOK, kdoor: { z0: ka0, z1: ka1 }, settee, steps, landings, well: { x0: W0, x1: X, z0: WZ[0], z1: WZ[1] }, rail, slabs, fires, rooms, range, paths, boxes, lamps, candles, windows, w: plan.w, d: plan.d, bays: plan.bays || 0, merchant: MR, shop: shopAt };
+    door: { x: fd.x, z: plan.d / 2, w: fd.w, h: fd.h }, back: { x: bdx, z: -plan.d / 2, w: bd.w, h: bd.h }, part: { x: PX, z: PZ, h: PH, t: pt }, mid: { front: cF, back: cB }, upOK, updoor: udc, kdoor: { z0: ka0, z1: ka1 }, settee, steps, landings, well: { x0: W0, x1: X, z0: WZ[0], z1: WZ[1] }, rail, slabs, fires, rooms, range, paths, boxes, lamps, candles, windows, w: plan.w, d: plan.d, bays: plan.bays || 0, merchant: MR, shop: shopAt };
 }
 
 // ── the town's coaching inn as a room (Session 1351, card F9; Michael's A on #411 put the inn in the street, his A on #642 on its plot;
