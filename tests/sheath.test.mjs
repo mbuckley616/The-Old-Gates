@@ -214,7 +214,7 @@ if (ct.hb) {
     ct.tent && ct.tent.moved > 50 && ct.sword.cov > 100 && ct.sword.inside === 0, ct);
   check('a mace drawn wears nothing at the hip, and the sheet of the body carried over is back on its own points', !ct.mace.worn && ct.mace.kept && ct.mace.back, ct.mace);
 }
-// Session 2514: the draw and the sheathe are heard. Three voices by how the thing is worn (a blade from its scabbard, a hafted weapon from
+// Session 2515: the draw and the sheathe are heard. Three voices by how the thing is worn (a blade from its scabbard, a hafted weapon from
 // the belt's frog, a staff or wand in wood), each sounding on the audio clock; H, the idle sheathe and a swing from the sheath all sound;
 // a new weapon taken in hand while sheathed does not (it is not drawn, it is changed)
 const au = await page.evaluate(() => { const out = { err: null }; const eq0 = { ...EQ };

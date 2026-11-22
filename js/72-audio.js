@@ -402,7 +402,7 @@ function sndHollowStep(sprint){
 function sndNailStep(sprint){
   sfxNoise(sprint?.055:.07,1,1,sprint?.18:.12,sprint?500:300);sfxTone(2600,1900,.035,sprint?.05:.04,'square');
 }
-/* S2514 — the draw and the sheathe heard (S2466's owed: "No sound comes with the draw"). Three voices by how the thing is worn
+/* S2515 — the draw and the sheathe heard (S2466's owed: "No sound comes with the draw"). Three voices by how the thing is worn
    (third person's rule, tpSheathAt): a blade from its scabbard is steel along leather, the length of the blade, and on the draw the
    ring of it clear; a hafted weapon from the belt's frog is leather and an iron clink; a staff, a wand or a spear's shaft is wood and
    leather. Scheduled on the audio clock (at), not timers. Cosmetic: nothing waits for it. */
