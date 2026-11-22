@@ -1423,6 +1423,11 @@ function gkeepVein(school,id){const M=gkeepMats(school),r=PKIT.stream('gkeep:vei
       const m=T(ax+(r()-.5)*.16,.15+r()*.15,.05+(r()-.5)*.2,(r()-.5)*.8,.12+r()*.4,-(ax*.55)+(r()-.5)*.3); /* up, and out from the corner */P.push([g,'crystal',m],[tip,'crystal',m]);}
     for(const mesh of gkeepBake(P,M,'crystal'+c))clusters.add(mesh);}
   return {rock,clusters};}
+// S2519 — the sigil stone (Michael's A on #1864, as drawn in Session 2500; PKIT.props.sigilstone, 38-kit.js): the gate's dark stone split and
+// spalled, its school's script lit in two panels, or hewn out to a ragged socket once cut. In its own frame the wall's face is z 0 and the
+// stone's face looks +z, its foot 8 cm off the wall. -> a Group, or null on the old look (the stand-in slab stays)
+function sigilKitMesh(school,id,cut){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.sigilstone)return null;
+  const K=PKIT.props.sigilstone({school,cut:!!cut,key:id}),g=K.group;g.name='gateSigilStone';g.userData.kit={cut:!!cut,tris:K.tris,draws:K.draws,lit:K.lit,face:K.face};return g;}
 // the eye in the roof and its light: two open cones from h (the roof over the dais's top) down to 0, the eye a bright disc under the roof
 function gkeepShaft(h,school){const M=gkeepMats(school),g=new THREE.Group();g.name='gateKeepShaft';
   const eye=new THREE.Mesh(new THREE.CircleGeometry(.75,32).rotateX(Math.PI/2),M.eye);eye.position.y=h-.05;g.add(eye);
