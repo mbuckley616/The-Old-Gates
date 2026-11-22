@@ -1769,7 +1769,8 @@ function spawnChunkVeins(ch){
     (ch.veins||(ch.veins=[])).push(v);VEINS.push(v);veinShow(v);}
   try{spawnChunkSpecs(ch);}catch(e){} /* S2160 — the rare specimens' patches in this chunk */
   try{spawnChunkStars(ch);}catch(e){} /* S2493 — a fallen star in this chunk */
-  try{spawnChunkSky(ch);}catch(e){}} /* S2496 — a skywood pine on a Mark peak in this chunk */
+  try{spawnChunkSky(ch);}catch(e){} /* S2496 — a skywood pine on a Mark peak in this chunk */
+  try{spawnChunkPearls(ch);}catch(e){}} /* S2520 — an oyster bed off Aurenne in this chunk */
 // ── S2493 — rare materials B, session 3 (`docs/design/rare-materials.md`, Michael's B on #1840): the falling star ──
 // One star a game-week on each island (the nation's cells, `nationKeyOf`): its night (21:00 to 03:59, on one of the week's seven days)
 // and its place are seededRng('star', '<island>:<week>'), so a friend in a hosted world sees the same star. Its place is a land cell of the
@@ -1868,6 +1869,57 @@ function spawnChunkSky(ch){if(!ch.trees)return;for(const s of skyPines()){if(Mat
   const t={id:s.id,x:s.x,z:s.z,h:worldH(s.x,s.z)-.04,sp:'skywood',r:.3,sky:true};
   try{t.mesh=skyMesh(t);ch.group.add(t.mesh);}catch(e){}
   ch.sol.push({cx:t.x,cz:t.z,rx:.35,rz:.35,tid:t.id});ch.trees.push(t);}}
+// ── S2520 — rare materials B, session 5 (`docs/design/rare-materials.md`, Michael's B on #1840 and his A on #1861): deep pearls ──
+// The oyster beds lie off Aurenne in the deepest water there is, 8 m or more (#1861 A): the open sea's bed, which `landH` lays at 8 m
+// flat once the land is gone. About one chunk in 40 of Aurenne's sea (the nation's cells, `nationKeyOf`) holds a bed, at the first of six
+// hashed spots where the bed is 8 m down there and 3 m round, read by `placeH` (the land keyed by place, as the wrecks' spots are), never
+// by what has loaded. A bed is 5 oysters within 2.4 m of its middle, each opened with E from down on the bed (your feet within 2.2 m of
+// it): one in six holds a Deep Pearl, on `seededRng('pearl', '<bed>:<return>:<oyster>')`. A bed is whole again 14 game days after its
+// last oyster was taken. Its record is `worldState.pearlBeds['<cx,cz>:pearl:0']` = {t: the oysters taken as bits, d: the day of the last,
+// e: how often it has come back} (the world's), changed only by `pearlTake`. A pearl is the temper of tiers 8–10 at the forge (one a
+// temper, at the metal's Smithing gate; `temperNeed`). The shells are a plain stand-in until the look builder's oyster bed.
+const PEARL={odds:1/40,depth:8,n:5,p:1/6,days:14,ring:2.4,reach:2.2,tries:6,price:150};
+function pearlBedSpot(cx,cz){if(hash01(cx,cz,410)>PEARL.odds)return null;
+  let nk='';try{nk=nationKeyOf(...cellOf(cx*CHUNK+CHUNK/2,cz*CHUNK+CHUNK/2));}catch(e){return null;}if(nk!=='aurenne')return null;
+  const deep=(x,z)=>placeH(x,z)<=SEA_Y-PEARL.depth+.05;
+  for(let k=0;k<PEARL.tries;k++){const x=cx*CHUNK+6+hash01(cx+k,cz,411)*(CHUNK-12),z=cz*CHUNK+6+hash01(cz,cx+k,412)*(CHUNK-12);
+    if([[0,0],[3,0],[-3,0],[0,3],[0,-3]].every(([u,v])=>deep(x+u,z+v)))return {id:cx+','+cz+':pearl:0',x,z};}
+  return null;}
+function isDeepPearl(b){return !!(b&&b.deepPearl);}
+function pearlItem(){return {name:'Deep Pearl',ico:'⚪',type:'misc',weight:.05,buyPrice:PEARL.price,sellMult:.6,deepPearl:true,qty:1};}
+// the bed's record, whole again once 14 days have passed since its last oyster was taken
+function pearlRec(id){const W=worldState.pearlBeds||(worldState.pearlBeds={});let r=W[id];
+  if(r&&r.t&&gameMinNow()/1440-r.d>=PEARL.days){r={t:0,d:r.d,e:(r.e||0)+1};W[id]=r;}
+  return r||{t:0,d:0,e:0};}
+function pearlTaken(id,i){return !!(pearlRec(id).t&(1<<i));}
+// open one oyster (the one change to a bed): {pearl} or {why}
+function pearlTake(bed,i){const r=pearlRec(bed.id);if(r.t&(1<<i))return {why:'Only the shell is left.'};
+  const pearl=seededRng('pearl',bed.id+':'+(r.e||0)+':'+i)()<PEARL.p,it=pearlItem();
+  if(pearl&&!canCarry(it))return {why:'Too heavy to carry!'};
+  (worldState.pearlBeds||(worldState.pearlBeds={}))[bed.id]={t:r.t|(1<<i),d:Math.floor(gameMinNow()/1440),e:r.e||0};
+  if(pearl)bagAdd(it);pearlShow(bed);return {pearl};}
+const PEARL_BEDS=[];let _pearlMat=null;
+function pearlMesh(bed){const M=_pearlMat||(_pearlMat=new THREE.MeshLambertMaterial({color:0x6e665a,emissive:0x141a1e}));
+  const g=new THREE.Group();g.name='pearlBed';g.userData.shells=[];
+  bed.oy.forEach(o=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.17,8,5),M);m.scale.set(1,.32,.78);m.position.set(o.x,o.y+.05,o.z);m.rotation.y=o.ry;g.add(m);g.userData.shells.push(m);});
+  return g;}
+function pearlShow(bed){const S=bed.g&&bed.g.userData.shells;if(!S)return;S.forEach((m,i)=>{m.visible=!pearlTaken(bed.id,i);});}
+function spawnChunkPearls(ch){const D=pearlBedSpot(ch.cx,ch.cz);if(!D)return;
+  const bed={id:D.id,x:D.x,z:D.z,oy:[],g:null};
+  for(let i=0;i<PEARL.n;i++){const a=hash01(ch.cx+i,ch.cz,413)*Math.PI*2,d=.5+hash01(ch.cz,ch.cx+i,414)*(PEARL.ring-.5),x=D.x+Math.cos(a)*d,z=D.z+Math.sin(a)*d;
+    bed.oy.push({x,z,y:worldH(x,z),ry:a});}
+  try{bed.g=pearlMesh(bed);ch.group.add(bed.g);}catch(e){}
+  for(let i=PEARL_BEDS.length-1;i>=0;i--)if(PEARL_BEDS[i].id===bed.id)PEARL_BEDS.splice(i,1);
+  PEARL_BEDS.push(bed);pearlShow(bed);}
+// the oyster you can open now: down on its bed and within touch, {bed, i} or null
+function pearlNear(){if(activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())||!PEARL_BEDS.length)return null;
+  for(let k=PEARL_BEDS.length-1;k>=0;k--){const b=PEARL_BEDS[k];if(b.g&&!(b.g.parent&&b.g.parent.parent)){PEARL_BEDS.splice(k,1);continue;}
+    if(Math.hypot(px-b.x,pz-b.z)>PEARL.ring+TOUCH)continue;let best=null,bd=TOUCH;
+    b.oy.forEach((o,i)=>{const d=Math.hypot(px-o.x,pz-o.z);if(d<bd&&jumpY<o.y+PEARL.reach&&!pearlTaken(b.id,i)){bd=d;best={bed:b,i};}});
+    if(best)return best;}
+  return null;}
+function pearlUse(n){const r=pearlTake(n.bed,n.i);if(r.why){showMsg(r.why,'#cc8844');return;}
+  showMsg(r.pearl?'A deep pearl.':'The oyster is empty.',r.pearl?'#d8e4f0':'#a0a8b0');}
 function veinLive(v){return !v.g||!!(v.g.parent&&v.g.parent.parent);}
 // the vein's record, brought back if 7 days have passed since it was worked out
 function veinRec(v){const W=worldState.veins||(worldState.veins={});let r=W[v.id];
@@ -2073,6 +2125,10 @@ function rareCount(D){return ingotRare(D)?bagCount(RARE_DEF[D.rare].has):0;}
 function ingotSalvage(tier){const D=INGOT_DEF.find(d=>d.tier===tier);return !!(ingotRare(D)&&RARE_DEF[D.rare].salvage);}
 // the ore a piece of each metal is tempered with
 const TEMPER_ORES={2:['copper','tin'],3:['iron'],4:['iron'],5:['mithril'],6:['adamant'],7:['obsidian']};
+// S2520 — what a temper takes: 3 of the metal's ore, or for tiers 8–10 a deep pearl (rare-materials.md B). {n, has, need, names} or null
+const TEMPER_PEARL=1;
+function temperNeed(it){if(it&&it.tier>=8)return {n:TEMPER_PEARL,has:isDeepPearl,need:'deep pearl',names:'Deep Pearl'};
+  const ores=it&&TEMPER_ORES[it.tier];return ores?{n:TEMPER_ORE,has:b=>ores.includes(b.ore),need:ores.map(k=>ORE_DEF[k].name.toLowerCase()).join(' or '),names:ores.map(k=>ORE_DEF[k].name).join(' or ')}:null;}
 function ingotItem(tier,qty){const D=INGOT_DEF.find(d=>d.tier===tier),M=MATERIALS[tier-1];
   const p=Math.round((D.ore.reduce((s,[k,n])=>s+ORE_DEF[k].price*n,0)+(D.charcoal?SURV_ITEMS.charcoal.buyPrice:0)+(ingotRare(D)?RARE_DEF[D.rare].price:0)+(D.ingot?ingotItem(D.ingot).buyPrice:0))/(D.yield||1));
   const it={name:`${M.name} Ingot`,ico:'🧱',type:'misc',weight:1,buyPrice:p,sellMult:.3,ingot:tier,qty:qty||1};if(ingotSalvage(tier))it.salvage=true;return it;}
@@ -2153,11 +2209,11 @@ function forgeTemper(it,bySmith){
   if(!temperable(it))return {done:false,why:it&&(it.tempers||0)>=temperMax()?'It will take no more tempering.':'That cannot be tempered.'};
   if(bySmith&&!smithForge())return {done:false,why:'No smith keeps this forge.'};
   if(bySmith){const c=20*it.tier;if(gold<c)return {done:false,why:`The smith asks ${c} gold.`};gold-=c;temperApply(it);return {done:true};}
-  const ores=TEMPER_ORES[it.tier];if(!ores)return {done:false,why:`There is no ore for ${MATERIALS[it.tier-1].name.toLowerCase()}: the smith can temper it.`};
+  const T=temperNeed(it);if(!T)return {done:false,why:`There is no ore for ${MATERIALS[it.tier-1].name.toLowerCase()}: the smith can temper it.`};
   const gate=SKILL_GATE[it.tier]||0;if(skillLv('smithing')<gate)return {done:false,why:`${MATERIALS[it.tier-1].name} asks Smithing ${gate}.`};
-  if(bagCount(b=>ores.includes(b.ore))<TEMPER_ORE)return {done:false,why:`You need ${TEMPER_ORE} ${ores.map(k=>ORE_DEF[k].name.toLowerCase()).join(' or ')}.`};
+  if(bagCount(T.has)<T.n)return {done:false,why:`You need ${T.n} ${T.need}.`};
   const f=forgeFee();if(f)return {done:false,why:f};
-  bagTake(b=>ores.includes(b.ore),TEMPER_ORE);temperApply(it);return {done:true};}
+  bagTake(T.has,T.n);temperApply(it);return {done:true};}
 // ── the forge's page (the fire's layout): smelt, make and temper on the left, the recipe and its gate on the right ──
 let forgeOpen=false,forgeSel={k:'s',tier:2},forgeTier=null,forgeSaid='';
 function forgePieces(){const out=[];for(const s in EQ){const it=EQ[s];if(temperable(it)&&!out.includes(it))out.push(it);}BAG.forEach(b=>{if(temperable(b))out.push(b);});return out;}
@@ -2229,9 +2285,9 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
       '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+forgeMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=ingotCount(m)>=n&&skillLv('smithing')>=g;
         return `<button type="button" data-m="${m}" style="background:${m===forgeTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===forgeTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}${g?` · ${g}`:''}</button>`;}).join('')+'</div>'+
       ((SKILL_GATE[forgeTier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[forgeTier]}`):'')+note('made, never enchanted; sold back at a fifth');}
-  else if(S.k==='t'){const it=S.it,ores=TEMPER_ORES[it.tier];
+  else if(S.k==='t'){const it=S.it,T=temperNeed(it);
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(it.atk?`Attack ${it.atk[0]}–${it.atk[1]}`:`Defence ${it.def}`)+pad(`Tempered ${it.tempers||0} of ${temperMax()}, +${Math.round(TEMPER_STEP*100)}% each`)+
-      (ores?pad(`${TEMPER_ORE} ${ores.map(k=>ORE_DEF[k].name).join(' or ')} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>ores.includes(b.ore))})</i>`):note('no ore of its metal'))+
+      (T?pad(`${T.n} ${T.names} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(T.has)})</i>`):note('no ore of its metal'))+
       (smithForge()?`<div style="padding-left:12px;margin-top:4px"><button type="button" id="fg-smith" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 8px">The smith tempers it · ${20*it.tier} gold</button></div>`:'');}
   else if(S.k==='c'){const it=S.it,sn=schoolName(it.school);
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(`1 gate crystal of ${sn} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.gateCrystal===it.school)})</i>`)+
@@ -3267,6 +3323,7 @@ function interact(){
     const nearHerb=activeHerbs().find(h=>!h.harvested&&!h._tolled&&Math.hypot(px-h.x,pz-h.z)<TOUCH);
     if(nearHerb){harvestHerb(nearHerb);return;}
     {const sp=specNear();if(sp){specUse(sp);return;}} /* S2160 — a rare specimen: picked open, looked at shut */
+    {const pn=pearlNear();if(pn){pearlUse(pn);return;}} /* S2520 — an oyster on its bed */
     {const v=veinNear();if(v){mineVein(v);return;}} /* S1491 — a vein, with a pick */
     {const n=treeNear();if(n&&(chopTool()||(CHOP&&CHOP.t===n.t))){chopTree(n.ch,n.t);return;}} /* S1511 — a tree, with a hatchet */
     if(hasShovel()&&(DIG||clayBankHere())&&digStart())return; /* S2138 — clay from a bank, with a shovel */

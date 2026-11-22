@@ -85,6 +85,9 @@ const r = await page.evaluate(() => {
   bagAdd(oreItem('star', 1)); S(99); R.gate99 = forgeSmelt(10).why; S(100); R.noAdamant = forgeSmelt(10).why; bagAdd(ingotItem(6, 1));
   const c10 = forgeSmelt(10); R.ten = { made: c10.made, n: ingotCount(10), star: oreCount('star'), adamant: ingotCount(6), price: c10.item && c10.item.buyPrice, name: c10.item && c10.item.name };
   R.forgeMetals = forgeMetals().join(); R.benchMetals = benchMetals().join(); R.temper8 = forgeTemper(ds.item).why;
+  /* S2520 — a deep pearl is the temper of tiers 8–10: one a temper, at the metal's gate */
+  { const a8 = ds.item.atk.slice(); bagAdd(pearlItem()); S(74); const g74 = forgeTemper(ds.item).why; S(100); const tp = forgeTemper(ds.item);
+    R.pearlTemper = { g74, done: tp.done, tempers: ds.item.tempers, pearls: bagCount(isDeepPearl), up: ds.item.atk[1] === Math.round(ds.item.baseAtk[1] * 1.08), a8 }; }
   // the tools
   BAG.length = 0; gold = 500; bagAdd(ds.item); bagAdd({ ...PICK_ITEM }); bagAdd({ ...HATCHET_ITEM }); R.iron = { pick: toolMetal('pick'), ps: toolStrike('pick'), hs: toolStrike('hatchet') };
   const waste = { id: 'tooltier:w', ore: 'obsidian', tier: 4, g: null }, low = { id: 'tooltier:l', ore: 'iron', tier: 3, g: null };
@@ -96,13 +99,14 @@ const r = await page.evaluate(() => {
   R.steelPick = { metal: toolMetal('pick'), ps: toolStrike('pick'), waste: strikeVein(waste).why || 'struck' };
   bagAdd(benchItem('plank', 2)); S(44); R.mith44 = forgeTool('hatchet', 5).why; S(45); const mh = forgeTool('hatchet', 5); R.mith = { made: mh.made, name: mh.item && mh.item.name, hs: toolStrike('hatchet') };
   /* S2494 — flags the save's item list did not carry: hobnails, a vessel's water, a gate's crystal, an arc, a pack's kind */
-  const fl = { skin: waterItem('skin', 3, 'raw'), cry: gateCrystalItem('tine'), arc: arcItem('tine', 2), pk: packItem('mark') }; for (const k in fl) bagAdd(fl[k]);
+  const fl = { skin: waterItem('skin', 3, 'raw'), cry: gateCrystalItem('tine'), arc: arcItem('tine', 2), pk: packItem('mark'), pl: pearlItem() }; for (const k in fl) bagAdd(fl[k]);
   const feet0 = EQ.feet; EQ.feet = { ...makeItem(3, ARMOR_TYPES.find(t => t.slot === 'feet'), null, true), nails: 1 };
   const d3 = JSON.parse(ssStringify(_buildSavePayload())); BAG.length = 0; _applyLoadData(d3); R.reload = { pick: toolMetal('pick'), hatchet: toolMetal('hatchet'), dr: BAG.some(b => b.weaponType === 'Sword' && b.tier === 8) };
-  R.flags = { nails: bootsNailed(), skin: BAG.some(b => b.vessel === 'skin' && b.wUses === 3 && b.wKind === 'raw'), cry: BAG.some(b => b.gateCrystal === 'tine'), arc: BAG.some(b => b.arc && b.arc.n === 2), pack: BAG.some(b => b.pack === fl.pk.pack) };
+  R.flags = { nails: bootsNailed(), skin: BAG.some(b => b.vessel === 'skin' && b.wUses === 3 && b.wKind === 'raw'), cry: BAG.some(b => b.gateCrystal === 'tine'), arc: BAG.some(b => b.arc && b.arc.n === 2), pack: BAG.some(b => b.pack === fl.pk.pack), pearl: BAG.some(b => b.deepPearl && b.name === 'Deep Pearl') };
   EQ.feet = feet0;
   forgeSel = { k: 'o', i: 1 }; openForgePage(); const ovT = document.getElementById('forgeui'); R.page = !!ovT && /Tools/.test(ovT.textContent) && /Mithril Pick/.test(ovT.textContent) && /0\.6 s/.test(ovT.textContent);
-  forgeSel = { k: 's', tier: 8 }; forgeDraw(); R.page8 = /Draconic Ingot/.test(ovT.textContent) && /Dragon Scale/.test(ovT.textContent) && /makes 2/.test(ovT.textContent); closeForgePage(); forgeSel = { k: 's', tier: 2 };
+  forgeSel = { k: 's', tier: 8 }; forgeDraw(); R.page8 = /Draconic Ingot/.test(ovT.textContent) && /Dragon Scale/.test(ovT.textContent) && /makes 2/.test(ovT.textContent);
+  forgeSel = { k: 't', it: ds.item }; forgeDraw(); R.pagePearl = /1 Deep Pearl/.test(ovT.querySelector('#fg-right').textContent) && !/no ore of its metal/.test(ovT.textContent); /* S2520 */ closeForgePage(); forgeSel = { k: 's', tier: 2 };
   out.rare = R;
   // ── the page (the load set where you stand; back into the smith's room) ──
   lid = 'int_test'; currentHouse = { type: 'weapon', name: 'The Forge', keeper: 'Bram', tagline: '"Iron."' };
@@ -143,7 +147,7 @@ check('the save keeps a Fine blade\'s step and the masterworks (the character\'s
 const RR = r.rare;
 check('S2494: Draconic asks Smithing 75 to smelt; refused at 74, the scale and the obsidian kept; no scale, no ingot', /Smithing 75/.test(RR.gate74) && RR.kept74 && /scale/.test(RR.noScale), RR);
 check('S2494: a dragon\'s scale and 2 obsidian make 2 Draconic ingots (a scale saved by name counts); Smelter passes it by', RR.smelt.made && RR.smelt.name === 'Draconic Ingot' && RR.smelt.n === 2 && RR.smelt.obs === 4 && RR.smelt.scales === 1 && RR.two.n === 4 && RR.two.obs === 2 && RR.two.scales === 0, RR);
-check('S2494: a Draconic sword is made at Smithing 75, refused at 74; the forge\'s metals run to 10, and the bench\'s too since S2496 (skywood); no ore tempers it', /Smithing 75/.test(RR.sword74) && RR.sword.made && /Draconic Sword/.test(RR.sword.name) && RR.sword.left === 2 && RR.forgeMetals === '2,3,4,5,6,7,8,9,10' && RR.benchMetals === '2,3,4,5,6,7,8,9,10' && /no ore/.test(RR.temper8), RR);
+check('S2494: a Draconic sword is made at Smithing 75, refused at 74; the forge\'s metals run to 10, and the bench\'s too since S2496 (skywood); no ore tempers it, a deep pearl does (S2520)', /Smithing 75/.test(RR.sword74) && RR.sword.made && /Draconic Sword/.test(RR.sword.name) && RR.sword.left === 2 && RR.forgeMetals === '2,3,4,5,6,7,8,9,10' && RR.benchMetals === '2,3,4,5,6,7,8,9,10' && /deep pearl/.test(RR.temper8), RR);
 check('S2492: tier 9 asks a sigil stone and Smithing 90; it makes 2 ingots, gate salvage, and a dagger of them is salvage too', /sigil stone/.test(RR.noSigil) && /Smithing 90/.test(RR.gate89) && RR.nine.made && RR.nine.n === 2 && RR.nine.salvage && RR.nine.stones === 0 && RR.nine.price === 99 && RR.nineDagger.made && RR.nineDagger.salvage, { noSigil: RR.noSigil, gate89: RR.gate89, nine: RR.nine, dagger: RR.nineDagger });
 check('S2493: Cosmic asks Smithing 100 and an adamant ingot beside the star iron; they make one ingot, 336', /Smithing 100/.test(RR.gate99) && /adamant ingot/.test(RR.noAdamant) && RR.ten.made && RR.ten.n === 1 && RR.ten.star === 0 && RR.ten.adamant === 0 && RR.ten.price === 336 && RR.ten.name === 'Cosmic Ingot', { gate99: RR.gate99, noAdamant: RR.noAdamant, ten: RR.ten });
 check('S2494: an iron pick and hatchet strike every 0.9 s; the iron pick turns on a wastes vein, not on a tier-3 one', RR.iron.pick === 3 && RR.iron.ps === .9 && RR.iron.hs === .9 && /steel pick/.test(RR.ironWaste) && RR.ironLow, RR);
@@ -151,7 +155,46 @@ check('S2494: a steel pick: Smithing 30, 2 ingots and a plank, 30 minutes, made 
 check('S2494: a mithril hatchet at Smithing 45 strikes every 0.6 s; the tools and the Draconic sword come back from a save', /Smithing 45/.test(RR.mith44) && RR.mith.made && RR.mith.name === 'Mithril Hatchet' && RR.mith.hs === .6 && RR.reload.pick === 4 && RR.reload.hatchet === 5 && RR.reload.dr, RR);
 check('S2494: the save keeps hobnails, a vessel\'s water, a gate crystal\'s school, an arc\'s number and a pack\'s kind (all lost on a reload before)', Object.values(RR.flags).every(Boolean), RR.flags);
 check('S2494: the forge\'s page lists the tools, with their strike, and the Draconic ingot\'s scale', RR.page && RR.page8, RR);
+check('S2520: a Draconic sword is tempered with a deep pearl, one a temper, at Smithing 75 (refused at 74); the pearl is spent, +8%; the page names it', /deep pearl/.test(RR.temper8) && RR.pagePearl && /Smithing 75/.test(RR.pearlTemper.g74) && RR.pearlTemper.done && RR.pearlTemper.tempers === 1 && RR.pearlTemper.pearls === 0 && RR.pearlTemper.up, { why: RR.temper8, ...RR.pearlTemper });
 check('the smith\'s shop has a Forge tab; it opens the forge\'s page', r.tab && r.page && r.closed, { tab: r.tab, page: r.page, closed: r.closed });
+// ── S2520: deep pearls (rare materials B, session 5; Michael's A on #1861): oyster beds off Aurenne 8 m down ──
+const PB = await page.evaluate(() => {
+  const beds = [], isles = {};
+  for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) {
+    if (isLandCell(i, j)) continue; let k = ''; try { k = nationKeyOf(i, j); } catch (e) {}
+    const c0 = Math.floor(i * SIZE / CHUNK), c1 = Math.floor((i + 1) * SIZE / CHUNK), d0 = Math.floor(j * SIZE / CHUNK), d1 = Math.floor((j + 1) * SIZE / CHUNK);
+    for (let cx = c0; cx < c1; cx++) for (let cz = d0; cz < d1; cz++) { const b = pearlBedSpot(cx, cz); if (b) { beds.push(b); isles[k] = (isles[k] || 0) + 1; } }
+  }
+  beds.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz));
+  return { n: beds.length, isles, deep: beds.every(b => placeH(b.x, b.z) <= SEA_Y - 7.95), ids: beds.every(b => /^-?\d+,-?\d+:pearl:0$/.test(b.id)), first: beds[0] };
+});
+let PR = null;
+if (PB.first) {
+  await page.evaluate(s => WORLD.enter(s.x + 3, s.z, 0, 'test'), PB.first);
+  PR = await page.evaluate(s => {
+    const cx = Math.floor(s.x / CHUNK), cz = Math.floor(s.z / CHUNK), key = chunkKey(cx, cz); if (chunks.has(key)) dropChunk(key); buildChunk(cx, cz);
+    const bed = PEARL_BEDS.find(q => q.id === s.id); if (!bed) return { none: true };
+    const out = { oy: bed.oy.length, onBed: bed.oy.every(o => Math.abs(o.y - worldH(o.x, o.z)) < .01 && o.y <= SEA_Y - 7.9), ring: bed.oy.every(o => Math.hypot(o.x - bed.x, o.z - bed.z) <= PEARL.ring + .01) };
+    BAG.length = 0; delete (worldState.pearlBeds || {})[bed.id]; const msgs = [];
+    const at = (i, up) => { const o = bed.oy[i]; px = o.x + .2; pz = o.z; jumpY = o.y + up; DIVE.depth = jumpY; };
+    at(0, 7.5); out.surface = pearlNear();
+    let want = 0; for (let i = 0; i < 5; i++) { at(i, 1); const n = pearlNear(); if (!n || n.bed !== bed) { out.miss = i; break; }
+      const e = (worldState.pearlBeds && worldState.pearlBeds[bed.id] || {}).e || 0; if (seededRng('pearl', bed.id + ':' + e + ':' + n.i)() < PEARL.p) want++;
+      interact(); msgs.push(MSGEL.textContent); }
+    const r = worldState.pearlBeds[bed.id]; out.rec = { ...r }; out.pearls = bagCount(isDeepPearl); out.want = want; out.msgs = msgs;
+    out.shells = bed.g.userData.shells.filter(m => m.visible).length; at(0, 1); out.after = pearlNear();
+    const d0 = Math.floor(gameMinNow() / 1440); r.d = d0 - 13; out.day13 = pearlTaken(bed.id, 0); r.d = d0 - 14; out.day14 = !pearlTaken(bed.id, 0) && worldState.pearlBeds[bed.id].e === 1;
+    pearlShow(bed); out.back = bed.g.userData.shells.filter(m => m.visible).length;
+    const sp = ssSplitPayload(JSON.parse(ssStringify(_buildSavePayload()))); out.worldRow = !!(sp.w.wS && sp.w.wS.pearlBeds && sp.w.wS.pearlBeds[bed.id]) && !(sp.c.wS && sp.c.wS.pearlBeds);
+    return out;
+  }, PB.first);
+}
+console.log(JSON.stringify({ PB, PR }));
+check('S2520: oyster beds lie off Aurenne only, every one 8 m down on the open bed, keyed <cx,cz>:pearl:0', PB.n > 100 && Object.keys(PB.isles).join() === 'aurenne' && PB.deep && PB.ids, PB);
+check('S2520: a bed is 5 oysters on the sea bed within 2.4 m of its middle; none can be opened from the surface', PR && PR.oy === 5 && PR.onBed && PR.ring && !PR.surface, PR);
+check('S2520: E down on the bed opens each oyster; the pearls are the seeded one in six; the shells go, and nothing more opens', PR && PR.miss == null && PR.rec.t === 31 && PR.pearls === PR.want && PR.msgs.length === 5 && PR.msgs.every(m => /deep pearl|oyster is empty/.test(m)) && PR.shells === 0 && !PR.after, PR);
+check('S2520: the bed is taken at 13 days and whole again at 14, its shells back; its record is the world row\'s', PR && PR.day13 && PR.day14 && PR.back === 5 && PR.worldRow, PR);
+check('S2520: the save keeps a deep pearl', RR.flags.pearl, RR.flags);
 // ── S1514: a fort armoury's smelter is a forge with no smith: no fee, no temper for gold, and only beside it ──
 let D = null;
 for (const [interior, seed] of [['fort_tee', 23], ['fort_linear', 31], ['fort_courtyard', 47], ['fort_tee', 59], ['fort_linear', 73], ['fort_courtyard', 91]]) {
