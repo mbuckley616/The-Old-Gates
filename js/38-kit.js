@@ -8377,7 +8377,19 @@ function aurenneOrrery(hAt, o = {}) {
       { const NA = 24, rows = []; for (let z = PZ0; z <= PZ1 + .01; z += z < WZ + 8 ? 1 : 2) rows.push(z);
         const ring = z => { const w = pW(z), h = pH(z), out = []; for (let k = 0; k <= NA; k++) { const a = k / NA * Math.PI, n = 1 + .12 * fbm(k / 5 + 11, z / 6, 3), x = -Math.cos(a) * w * n * 1.04, y = ground(x, z) - .6 + Math.sin(a) * h * n + (k === 0 || k === NA ? 0 : .6); out.push([x, y, z]); } return out; };
         let prev = ring(rows[0]); for (let i = 1; i < rows.length; i++) { const cur = ring(rows[i]); for (let k = 0; k < NA; k++) { const a = prev[k], b = prev[k + 1], c = cur[k], d = cur[k + 1]; for (const T of [[a, b, c], [b, d, c]]) for (const p of T) { P.push(...p); C.push(...tint(...p)); } } prev = cur; } }
-      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.computeVertexNormals(); worldUV(g, .06); B.set('cave', [g]);
+    // S2513 — the rock is a soup of loose triangles, and three's normals on one are each triangle's own: the passage's walls read as large flat
+    // facets. Each corner now takes the area-weighted normals of every triangle meeting it (welded by position to the centimetre) that turns
+    // less than 60 degrees from its own, so the rock reads round while the cut edges (the lid, the trumpet's lip) stay sharp.
+    const creaseNormals = (g, cosMax) => { const P = g.attributes.position.array, n = P.length / 9, F = new Float32Array(n * 3), M = new Map(), N = new Float32Array(P.length);
+      for (let t = 0; t < n; t++) { const o = t * 9, ux = P[o + 3] - P[o], uy = P[o + 4] - P[o + 1], uz = P[o + 5] - P[o + 2], vx = P[o + 6] - P[o], vy = P[o + 7] - P[o + 1], vz = P[o + 8] - P[o + 2];
+        F[t * 3] = uy * vz - uz * vy; F[t * 3 + 1] = uz * vx - ux * vz; F[t * 3 + 2] = ux * vy - uy * vx;
+        for (let c = 0; c < 3; c++) { const k = Math.round(P[o + c * 3] * 100) + ',' + Math.round(P[o + c * 3 + 1] * 100) + ',' + Math.round(P[o + c * 3 + 2] * 100); let a = M.get(k); if (!a) M.set(k, a = []); a.push(t); } }
+      const unit = t => { const L = Math.hypot(F[t * 3], F[t * 3 + 1], F[t * 3 + 2]) || 1; return [F[t * 3] / L, F[t * 3 + 1] / L, F[t * 3 + 2] / L]; };
+      for (let t = 0; t < n; t++) { const u = unit(t); for (let c = 0; c < 3; c++) { const o = t * 9 + c * 3, k = Math.round(P[o] * 100) + ',' + Math.round(P[o + 1] * 100) + ',' + Math.round(P[o + 2] * 100); let x = 0, y = 0, z = 0;
+        for (const s of M.get(k)) { const w = unit(s); if (w[0] * u[0] + w[1] * u[1] + w[2] * u[2] < cosMax) continue; x += F[s * 3]; y += F[s * 3 + 1]; z += F[s * 3 + 2]; }
+        const L = Math.hypot(x, y, z) || 1; N[o] = x / L; N[o + 1] = y / L; N[o + 2] = z / L; } }
+      g.setAttribute('normal', new THREE.BufferAttribute(N, 3)); };
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); creaseNormals(g, .5); worldUV(g, .06); B.set('cave', [g]);
       const ri = stream(key + ':ice'); for (let k = 0; k < 36; k++) { const p = top[Math.floor(k / 36 * NC)], L = 1.5 + ri() * 5, w = .25 + ri() * .35, c = new THREE.ConeGeometry(w, L, 5); c.rotateX(Math.PI); c.translate(p[0] + (oc.x - p[0]) * .02, p[1] - L / 2 - .2, p[2] + (oc.z - p[2]) * .02); put('ice', c); } }
     // the rings, as the prototype's (its stream, in its order)
     const at = (t, rr) => [rr * Math.sin(t), CY + rr * Math.cos(t)];
