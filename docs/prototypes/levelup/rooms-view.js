@@ -271,7 +271,7 @@ else if (TWN) { const Z = C.inner.z1, X = C.inner.x1, [F0, F1, F2] = C.floors, P
   else if (VIEW === 'drawing') { eye = [P.x + 1.05, F1 + 1.62, P.h + .35]; at = [-X, F1 + 1.2, C.mid.front + .4]; cam.fov = 80; }
   else if (VIEW === 'dining') { eye = C.upOK ? [P.x - .3, F1 + 1.62, kd + .1] : [-X + 2.9, F1 + 1.62, P.z - .3]; at = [-X, F1 + .9, C.mid.back - .9]; cam.fov = 78; }
   else if (VIEW === 'bedroom') { eye = [P.x + 1.05, F2 + 1.62, P.h + .35]; at = [-X, F2 + .9, C.mid.front + .6]; cam.fov = 80; }
-  else if (VIEW === 'children') { eye = C.upOK ? [P.x - .3, F2 + 1.55, kd + .1] : [-X + 3.025, F2 + 1.55, P.z - .3]; at = [-X, F2 + .7, -Z + 1.05]; cam.fov = 80; }
+  else if (VIEW === 'children') { eye = C.upOK ? [P.x - .3, F2 + 1.55, kd + .1] : [C.updoor ?? -X + 3.025, F2 + 1.55, P.z - .3]; at = [-X, F2 + .7, -Z + 1.05]; cam.fov = 80; }
   else if (VIEW === 'outside') { eye = [5, 1.7, C.d / 2 + 13]; at = [0, 4.3, 0]; cam.fov = 48; }
   else { eye = [C.door.x - .1, F0 + 1.62, Z - .2]; at = [P.x + .8, F0 + 1.2, -Z]; cam.fov = 76; } }
 else if (MKT) { const Z = C.inner.z1, X = C.inner.x1, F = C.floor + 1.62;
