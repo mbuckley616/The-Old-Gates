@@ -655,6 +655,11 @@ const trade2 = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r 
     return { k: r.g.hbKey, ap: /apothecary/.test(r.g.role), satchel: n('satchelBag'), purses: n('purse') }; }); });
 check(`Dunmore's apothecaries carry the satchel and its merchants two purses at the belt (${trade2.filter(t => t.ap).length} and ${trade2.filter(t => !t.ap).length})`,
   trade2.filter(t => t.ap).length >= 2 && trade2.filter(t => !t.ap).length >= 2 && trade2.every(t => t.ap ? t.satchel === 1 : t.purses === 2), trade2);
+// S2507: a scholar, an adept and a novice wear the kit's spectacles (buildSpecs) with the book: two rims before the eyes, clear of the face
+const specs = await page.evaluate(() => ['scholar', 'adept', 'novice'].map((role, i) => { const g = { role, hbKey: 'specs:' + i, people: 'gatelander' }, G0 = HB.rollGenome('specs:' + i, { people: 'gatelander' }),
+  D = hbTradeDress(g, G0), P = HB.makePerson({ ...G0, dress: { ...D, helm: null } }, HB_LEAN), s = P.specs || {}; return { role, specs: !!D.specs, book: !!D.book, rims: ['specLRim', 'specRRim'].filter(k => P.root.getObjectByName(k)).length, on: P.root.getObjectByName('specs')?.parent?.name, inside: s.inside, gap: s.gap, tris: s.tris }; }));
+check(`a scholar, an adept and a novice wear spectacles with their book: both rims on the head bone, nothing of the face through the wire, the glass ${specs.map(s => s.gap).join(', ')} m before it`,
+  specs.every(s => s.specs && s.book && s.rims === 2 && s.on === 'head' && s.inside === 0 && s.gap > .004 && s.tris < 3000), specs);
 await g.close();
 
 // a second boot: the same people, the same bodies

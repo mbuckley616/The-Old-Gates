@@ -4557,6 +4557,64 @@ function buildLenses(G, body, byName, meshes, root) {
   const band = [...R].map(r => r - .004);
   return { mesh: grp, stats: { y: +(yB - (eL.y + eR.y) / 2).toFixed(3), bandR: [+Math.min(...band).toFixed(3), +Math.max(...band).toFixed(3)], lenses: 3, near: +near.toFixed(4), inside, tris: Math.round(tris) } };
 }
+// ── a scholar's spectacles (Session 2507; the old rig's scholar wore them, S153, and the trade's dress owed them since S2504) ──
+// Two round wire rims 3.4 cm across, one before each eye, each set 7 mm out from the frontmost of the brow and the cheek round that eye,
+// so they sit on every face; a bridge arched over the nose, 3 mm clear of it; and straight arms from the rims' outer edges back to the
+// ears, angled out as far as the head is wide (the skin only: the hair lies over them, as hair does), then bent down 1.6 cm behind each
+// ear's root. `specs` is the wire's metal; carried by the head bone, as the lenses are. Not under a helm or a veil, nor with the lenses
+// or an eyepatch (both are worn on the eyes)
+function buildSpecs(G, body, byName, meshes, root) {
+  const D = G.dress, head = byName['head'], skinC = wornClouds(body, meshes, root, false).filter(c => c.m === body); root.updateMatrixWorld(true);
+  // the face's own frame (the head may be turned in the root's): x from the right eye to the left, y up, z out of the face; the eyes' middle at 0
+  const eye = n => root.worldToLocal(byName[n].getWorldPosition(new THREE.Vector3())), eL0 = eye('eye.L'), eR0 = eye('eye.R'), hc = root.worldToLocal(head.getWorldPosition(new THREE.Vector3()));
+  const O = eL0.clone().add(eR0).multiplyScalar(.5), X = eL0.clone().sub(eR0).normalize(), Y = new THREE.Vector3(0, 1, 0).addScaledVector(X, -X.y).normalize(), Z = new THREE.Vector3().crossVectors(X, Y);
+  if (Z.dot(O.clone().sub(hc)) < 0) { X.negate(); Z.negate(); }
+  const M = new THREE.Matrix4().makeBasis(X, Y, Z).setPosition(O), Mi = M.clone().invert(), T = new THREE.Vector3();
+  const pts = []; eachPoint(skinC, (x, y, z) => { if (Math.abs(x - O.x) + Math.abs(y - O.y) + Math.abs(z - O.z) > .4) return; T.set(x, y, z).applyMatrix4(Mi); pts.push(T.x, T.y, T.z); });
+  const each = f => { for (let i = 0; i < pts.length; i += 3) f(pts[i], pts[i + 1], pts[i + 2]); };
+  const eL = eL0.clone().applyMatrix4(Mi), eR = eR0.clone().applyMatrix4(Mi);
+  // the ears (the earrings' vertices of the pack's rest head: out past 7.3 cm, 0.68 to 0.75 up, 3 to 6.5 cm forward), posed; the rest's +x is the frame's +x or -x
+  const R0 = PACK.rest, BX = skinC[0].X, earV = (PACK.headV || (PACK.headV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3 + 1] > .6))).filter(i => Math.abs(R0[i * 3]) > .073 && R0[i * 3 + 1] > .68 && R0[i * 3 + 1] < .75 && R0[i * 3 + 2] > .03 && R0[i * 3 + 2] < .065);
+  const flip = (() => { const i = earV.find(i => R0[i * 3] > .073); if (i === undefined) return 1; T.set(BX[i * 3], BX[i * 3 + 1], BX[i * 3 + 2]).applyMatrix4(Mi); return T.x > 0 ? 1 : -1; })();
+  const r = .017, wire = .0011, wireMat = new THREE.MeshStandardMaterial({ color: sRGB(...D.specs), metalness: .9, roughness: .3 });
+  const glass = new THREE.MeshStandardMaterial({ color: sRGB(.78, .84, .84), metalness: .1, roughness: .04, transparent: true, opacity: .22, depthWrite: false });
+  const grp = new THREE.Group(); grp.name = 'specs'; let tris = 0; const add = (g, m, name) => { g.applyMatrix4(M); const o = new THREE.Mesh(g, m); o.name = name; o.castShadow = m === wireMat; o.receiveShadow = true; o.userData.shield = true; grp.add(o); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; return o; };
+  // the face before each eye: the frontmost skin within the rim and 4 mm round it
+  const front = (x, y, rr) => { let z = -9; each((px, py, pz) => { if (Math.hypot(px - x, py - y) < rr && pz > z) z = pz; }); return z; };
+  const zL = front(eL.x, eL.y, r + .004), zR = front(eR.x, eR.y, r + .004), zF = Math.max(zL, zR) + .007;
+  const lens = (e, name) => { const c = new THREE.Vector3(e.x, e.y - .001, zF); const t = new THREE.TorusGeometry(r, wire, 6, 40); t.translate(c.x, c.y, c.z); add(t, wireMat, name + 'Rim');
+    const gl = new THREE.CircleGeometry(r, 24); gl.translate(c.x, c.y, c.z); add(gl, glass, name + 'Glass'); return c; };
+  const cL = lens(eL, 'specL'), cR = lens(eR, 'specR'), probes = [];
+  const tube = (pts3, name) => { const cv = new THREE.CatmullRomCurve3(pts3), g = new THREE.TubeGeometry(cv, pts3.length * 6, wire, 6, false); for (const q of cv.getSpacedPoints(pts3.length * 12)) { q.piece = name; probes.push(q); } add(g, wireMat, name); return g; };
+  for (const c of [cL, cR]) for (let k = 0; k < 40; k++) { const q = new THREE.Vector3(c.x + r * Math.cos(k / 40 * Math.PI * 2), c.y + r * Math.sin(k / 40 * Math.PI * 2), c.z); q.piece = 'rim'; probes.push(q); }
+  // the bridge: from each rim's inner top, arched up and forward over the nose's top, 3 mm clear of it
+  const nose = front(0, .004, .006), iL = new THREE.Vector3(cL.x - r * .94, cL.y + r * .34, zF), iR = new THREE.Vector3(cR.x + r * .94, cR.y + r * .34, zF);
+  tube([iL, new THREE.Vector3(0, cL.y + r * .5, Math.max(zF, nose + .003 + wire)), iR], 'specBridge');
+  // the arms: the head's width at the arm's height by depth (the skin only), each from an end-piece at the temple, the straight line that clears the
+  // skin by 2.5 mm as far as the ear's root, then bent down behind it
+  const yA = .004, arms = [];
+  for (const [c, sg] of [[cL, 1], [cR, -1]]) { const xh = c.x * sg + r + wire, z0 = zF;
+    // the ear's root: the widest skin from the eyes' height to 3 cm under it, 4 cm or more behind the glass
+    let ez = 0, en = 0, ezMax = -9; for (const i of earV) { if (R0[i * 3] * sg * flip <= .073) continue; T.set(BX[i * 3], BX[i * 3 + 1], BX[i * 3 + 2]).applyMatrix4(Mi); ez += T.z; en++; ezMax = Math.max(ezMax, T.z); }
+    const zE = en ? (ez / en + ezMax) / 2 : z0 - .09, N = 24, w = new Float32Array(N + 1).fill(-9);
+    each((px, py, pz) => { if (Math.abs(py - yA) > .005 || pz > z0 || pz < zE - .006) return; const k = Math.round((z0 - pz) / (z0 - zE) * N); if (k >= 0 && k <= N && px * sg > w[k]) w[k] = px * sg; });
+    const kT = Math.round(N / 4), kE = Math.round(N * .85); let xT = xh; for (let k = 0; k <= kT; k++) if (w[k] > -9) xT = Math.max(xT, w[k] + .0025);
+    // the arm hugs the head: the line from the temple to the ear root's width, pushed out wherever the head is wider than it (2.5 mm off)
+    const zT = z0 - (z0 - zE) * kT / N, wAt = k => { let m = -9; for (let j = Math.max(0, k - 1); j <= Math.min(N, k + 1); j++) m = Math.max(m, w[j]); return m; };
+    const xE = Math.max(xT, wAt(kE) + .0035), s = (xE - xT) / (zT - zE), line = k => xT + (xE - xT) * (k - kT) / (kE - kT), mid = [];
+    for (const f of [1 / 3, 2 / 3]) { const k = Math.round(kT + (kE - kT) * f); mid.push(new THREE.Vector3(Math.max(line(k), wAt(k) + .0025) * sg, yA, z0 - (z0 - zE) * k / N)); }
+    const end = new THREE.Vector3(xE * sg, yA, zE), hinge = new THREE.Vector3(xh * sg, c.y + r * .3, z0), temple = new THREE.Vector3(xT * sg, yA, zT);
+    // from the temple back, each point pushed out to clear the skin in its own slice (the ear's root under the tail and the hook) by 2.5 mm
+    const back = [temple, ...mid, end, end.clone().add(new THREE.Vector3(0, -.009, -.006)), end.clone().add(new THREE.Vector3(-sg * .001, -.016, -.004))];
+    for (const q of back) { let m = -9; each((px, py, pz) => { if (Math.abs(py - q.y) < .005 && Math.abs(pz - q.z) < .005 && px * sg > m) m = px * sg; }); if (m + .0025 > q.x * sg) q.x = (m + .0025) * sg; }
+    tube([hinge, new THREE.Vector3((xh + .4 * (xT - xh)) * sg, yA + .001, z0 - .004), new THREE.Vector3(xT * sg, yA, z0 - (z0 - zT) * .6), ...back], sg > 0 ? 'specArmL' : 'specArmR');
+    arms.push({ hinge, end, s, out: +(xT - xh).toFixed(4) }); }
+  // the promise: no skin within the wire (rims, bridge, arms), and how near it comes
+  let near = 1, inside = 0, nearAt = ''; each((x, y, z) => { if (Math.abs(y) > .05) return; for (const p of probes) { const d = Math.hypot(x - p.x, y - p.y, z - p.z); if (d < near) { near = d; nearAt = p.piece + '@' + [p.x, p.y, p.z].map(v => v.toFixed(3)).join(','); } if (d < wire) inside++; } });
+  const gap = Math.min(zF - zL, zF - zR);
+  root.add(grp); root.updateMatrixWorld(true); head.attach(grp);
+  return { mesh: grp, stats: { gap: +gap.toFixed(4), across: +(2 * r).toFixed(3), near: +(near - wire).toFixed(4), nearAt, inside, splay: arms.map(a => +a.s.toFixed(3)), endPiece: arms.map(a => a.out), armLen: arms.map(a => +a.hinge.distanceTo(a.end).toFixed(3)), tris: Math.round(tris) } };
+}
 // ── the Weaver's shuttle on a cord (Session 2307; Siadhal's tell, L2, OG-006, Michael's B on #1611; the Church's sign is a shuttle where a
 // sheet draws a cross, canon §4.1) ──
 // A boat-pointed tin shuttle 6 cm long, its bobbin slot open, hung upright on the breast 17 cm under the neck's root on a cord round the
@@ -5329,6 +5387,8 @@ function* makePersonSteps(G, o = {}) {
   // the clay pipe in the teeth (Session 1816), after everything worn, so it is turned clear of all of it; not under a helm, a raised hood or a veil
   // the glass-grinder's lenses on the brow (Session 2307), after everything worn on the head
   let lensStats = null; if (D.lenses && !D.helm && !hoodUpOn(D) && !veilOn(D) && !(D.tier && tierHelmOn(D))) lensStats = buildLenses(G, body, byName, meshes, root)?.stats ?? null;
+  // a scholar's spectacles (Session 2507), after everything worn on the head; not with the lenses or an eyepatch
+  let specStats = null; if (D.specs && !D.lenses && !D.eyepatch && !D.helm && !veilOn(D) && !(D.tier && tierHelmOn(D))) specStats = buildSpecs(G, body, byName, meshes, root)?.stats ?? null;
   // the Weaver's shuttle on its cord (Session 2307), over everything worn on the breast
   let shuttleStats = null; if (D.shuttle && !D.tabard) shuttleStats = buildShuttle(G, body, byName, meshes, root)?.stats ?? null;
   // the Mages' Guild's star (Session 2329), over everything worn on the breast but a tabard
@@ -5346,7 +5406,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, lenses: lensStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, reliquary: reliqStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, lenses: lensStats, specs: specStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, reliquary: reliqStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -5369,7 +5429,7 @@ export function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'shuttle', 'guildStar', 'reliquary', 'packSkull'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14 };
+export const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'specs', 'shuttle', 'guildStar', 'reliquary', 'packSkull'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14 };
 export function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
