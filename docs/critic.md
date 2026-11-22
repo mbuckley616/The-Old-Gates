@@ -2159,3 +2159,69 @@ interior that is not a home gets it. S1030's below-deck line was the same fault.
 **Backlog notes.** None new.
 
 No proposal this run.
+
+## 2026-11-22 — Dunmore's trades in their work clothes, a fallen star cut out past Inisshane, The Bramble Hearth at dusk, a pearl bed off Qarara (build s1849, read to Session 2521)
+
+**What I did.** Four boots of the new look, one new character each, in through the crypt to the home province. Dunmore at 10h: into
+Lorcan's Forge to stand at his anvil. Dunmore at 19h on the morning after the latest Gatelands star fell: into The Bramble Hearth to
+talk to Ruairí (the room, the news, the ⏳ mid-talk), then the same talk out in the street. The star itself (`star:gatelands:5`, by
+Inisshane, x 7,576 z 22,698) at 07:00 the morning after: looked at from 7 m and 25 m, tried with no pick, the bought pick and a
+mithril one, cut out with E through the loop's own `tickMining`, and looked at again. The deep-pearl bed nearest Aurenne's first port
+(Qarara, 416 m off: `261,54:pearl:0`) from the surface at noon. A first pass at the trades in the street came to nothing: at 10h
+every shopkeeper is indoors (25 Dunmore rigs, every trade's hidden in the street), so the pictures were of walls and are not committed.
+Each frame took two to four minutes on this container, which is why there are seven pictures and not more.
+
+**What was wrong.**
+1. **Indoors the ⏳ says *You cannot pass time in a dungeon.*** In The Bramble Hearth at 19h, with Ruairí talking or not, and in
+   Ruairí's empty house at 10h, the HUD's ⏳ gives that line and passes no time. `_canWait` asks `lid!=='overworld'` before anything
+   else, and indoors `lid` is `'int_<house>'`. An inn's hall is the one place a player would most expect to wait for the evening.
+   Whether waiting indoors is meant to be refused I do not know; the line is wrong either way. Out in the street, the ⏳ with Ruairí's
+   talk open does nothing and says nothing, as S2516 meant, and opens the slip once the talk is closed. Filed for the systems builder.
+2. **The bought pick at the star: *The star iron turns the steel.*** The bought pick is iron (`toolMetal` 3). The prompt over the crater
+   says *Press 'E' to mine star iron* with any pick in the bag, and only E tells you it wants mithril. Low; filed for the systems builder.
+3. **The crater reads as a dark disc on the forest floor** (`2026-11-22-star-day.jpg`, 7 m, 07:00). This star came down in close
+   woodland. The scorch ends on a hard circle, and in the wood's shade the whole bowl, its lump and the outer ring are one near-black
+   patch with a few pale flecks; the torn turfs are the only things that read as objects. This is S2519's own doubt, answered: yes, it
+   reads as a disc. From 25 m (`-star-day-25m.jpg`) it is a dark smear between trunks, and nothing says *something fell here*: the trees
+   stand to within 4.5 m of the middle, unbroken and unbent. Cut out (`-star-cut.jpg`), the lump goes and the pit is otherwise the same.
+   The cutting itself is right: three strikes that land at Mining 20 and a mithril pick, *Star Iron.* each, then *The star is all cut out.*,
+   3 Star Iron in the bag, and the HUD's line *⛏ Mithril Pick · 🪨 Star Iron*. Not filed: it is the look builder's open knob.
+4. **Ruairí's linen apron does not show** (`-innkeeper-night.jpg`). On his tan tunic the bib is the same tan and reads as a fold in the
+   shirt; the rolled sleeves read better than the apron does. This is S2503's note about Eoin, seen on a second innkeeper. A whiter
+   linen, or a darker tunic under it, would do it. Not filed; it is a judgement.
+
+**What worked.**
+- **Lorcan at his forge** (`-smith.jpg`) is the best-dressed person I have seen in the game: the leather apron and bib to the shin,
+  sleeves rolled, the hammer up in his right fist, between the hearth and the anvil. He reads as a smith from the door.
+- **The star's news.** In Dunmore at 08:00 on the morning after, Ruairí's *Any news?* gave *A star came down past Inisshane.* on the
+  second of four asks. `starRumour` is empty before 06:00 and the map marks six live stars (two an island), as built.
+- **The Bramble Hearth's talk.** *There's 2 guests in tonight. A room is 11 gold — the east front room on the first floor, a bed, a bolt
+  on the door, and breakfast if you're up for it.* It reads as an innkeeper, and the hall has 8 beds laid.
+- **The pearl bed from the surface** (`-pearls-surface.jpg`, noon, the eye 0.2 m over the water, 8 m above the bed). The five shells
+  show as five pale ovals in the teal haze: faint, but they are the only shapes in the frame, so a swimmer looking down would find them.
+  That answers S2520's question for clear noon water; dusk and rain I did not look at. Two beds were loaded around me.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2519 (the props in the game): the crater's ring reads as a disc (item 3). The pine and the script stone I did not reach.
+- S2492–2494, S2498, S2500–2501, S2520 (rare materials' rules): the star cut, the prompt and the news judged above. The tool gate on the
+  wastes' veins, the sigil stone's place, skywood's prices, the map mark's look and the pearl's three numbers (1 in 40, one a temper,
+  150 gold) need a run of play, not a probe. The shells do show from the surface.
+- S2503–2504, S2507, S2511, S2517 (the trades' dress): the smith reads very well; the innkeeper's linen apron does not (item 4).
+  The purses, the spectacles at 2 m, the hats, the plait under them and the hoe I did not see: Dunmore has no farmer, fisher or scholar,
+  and its merchants were in their shops.
+- S2487, S2506 (the house line in a cave and below deck): not on a ship or in a cave this run. In houses the line was right (*No one
+  is in · Walk south to exit* in Ruairí's empty house, *Press E near the keeper to talk* in the forge).
+- S2515 (the draw's sound) and S2516 (the bedroll's level line): not judgeable headless (the first) and not tried (the second). The
+  ⏳ mid-talk is judged in item 1.
+- S2484–2485, S2489, S2499 (two-handed grips): not looked at. The overhead chop's wrists want a third-person playtest.
+- S2488, S2491, S2496–2497, S2509–2510, S2513–2514, S2521 (the Gate Isles, the Aqueducts, the Hollow's light and rock, Stormwatch and the
+  Frostborn Vault): for the next new-look review; the Hollow and the Aqueducts were in my last.
+- S2505 (the oven's draws): the inn's hall looked the same; 37 calls is QA's.
+- S2486, S2490, S2502, S2512, S2518 (QA, suites): nothing for a playtest.
+
+**Harness.** `node tests/run.mjs export` 1/1, flaky: it failed once and passed on the retry, with four other boots running beside it
+on four cores. I did not look into why; QA's flaky list is where it goes if CI sees it.
+
+**Backlog notes.** None new.
+
+No proposal this run.

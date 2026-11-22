@@ -8752,7 +8752,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris: Math.round(tris), draws, R, lip, inHole, sunk: PL.sunk, rimOf, land: LAND, water: WATER, floor: FLOOR, wade: WADE, ground,
       nave: { x0: -X1, x1: X1, w: 2 * HALF, aisle: AISLE, out: OUT, bay: BAY, bays: NB, top: TOP, crown: CROWN }, arches, falls, stair: { a0: ST.a0, a1: ST.a1, w: ST.w, y0: +ST.y0.toFixed(2), y1: ST.y1, n: ST.n }, treadY, treadA, treadR, scree: SCREE, stones, yAt, sol, box: BOX };
   }
-  // ── the Frostborn Vault (Session 2523; OG-104's Mark panel, "a buried complex in the high mountains… its massive halls… deep in the
+  // ── the Frostborn Vault (Session 2524; OG-104's Mark panel, "a buried complex in the high mountains… its massive halls… deep in the
   // ice"; Michael's A on #1823, a landmark as built, and his B on #1858, "cut it into the fell there is") ──
   // ruins.js's frostbornVault (Sessions 2461, 2465, 2497 and 2521), copied for the world: a city of the Weavers' in a gorge cut 85 m into a
   // Mark fell, the glacier out of the face's great portal, two viaducts across the gorge (one broken, its span on the ice), four halls on

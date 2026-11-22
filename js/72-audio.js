@@ -433,6 +433,15 @@ function sndSheathe(it){const v=drawVoice(it);DRAW_SND.n++;DRAW_SND.last={kind:'
   else if(v==='haft'){_sfxToneAt(0,1600,1450,.07,.04,'triangle');_sfxSweepAt(.05,.09,450,320,.12,2.5,.2);_sfxToneAt(.05,160,110,.08,.08);}
   else{_sfxSweepAt(0,.14,1200,700,.06,2.5,.3);_sfxToneAt(.12,300,220,.08,.08,'triangle');}
 }catch(e){}}
+// S2523 — a place found. `discover` (83) has called sndDiscover since the first push, and no file ever made it, so a discovery was silent.
+// A low open fifth (D4 and A4) struck together, then the octave over it as a bell, on the audio clock: under half the quest chime's peak.
+// One in any 1.5 s, so a load or a jump that finds three places at once rings once.
+const DISC_SND={n:0,rung:0,at:-1e9};
+function sndDiscover(){DISC_SND.n++;const now=performance.now();if(now-DISC_SND.at<1500)return;DISC_SND.at=now;DISC_SND.rung++;
+  if(!AX||volLevel===0)return;try{
+  _sfxToneAt(0,293.66,292.8,.55,.10,'triangle');_sfxToneAt(0,440,438.7,.5,.08,'triangle');
+  _sfxToneAt(.22,587.33,586,.9,.09,'triangle');_sfxToneAt(.22,1174.66,null,.7,.035,'sine');
+}catch(e){}}
 function sndSnowStep(sprint){
   sfxNoise(sprint?.045:.055,1,1,sprint?.10:.07,sprint?260:180);
 }

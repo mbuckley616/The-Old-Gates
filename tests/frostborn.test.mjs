@@ -1,7 +1,7 @@
-// frostborn (Session 2523; OG-104's Mark panel; Michael's A on #1823 and B on #1858, "cut it into the fell there is"): the Frostborn Vault
+// frostborn (Session 2524; OG-104's Mark panel; Michael's A on #1823 and B on #1858, "cut it into the fell there is"): the Frostborn Vault
 // in the game, the kit's PKIT.wonders.frostborn over a gorge stamped into the world's own ground (a stamp of a height, baseH's fn). On
 // seed 1 the search finds no Mark fell clear of the world for it (the two that hold it hold the Skyfall Fields and the Northlight Altar;
-// DECISION, Session 2523), so the suite measures one placing with wonderFrostAt (the Fields' fell, the Fields taken away) and builds it
+// DECISION, Session 2524), so the suite measures one placing with wonderFrostAt (the Fields' fell, the Fields taken away) and builds it
 // there: the ground cut and met, the far sheet under it, the decks, the ice and the solids, then dropped from 2.5 km.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();

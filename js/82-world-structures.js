@@ -4022,7 +4022,7 @@
   function wonderAqueductsDrop(){const S=WONDERS.aqueducts;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:aqueducts')STATIC_SOL.splice(i,1);S.sol=[];
     const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='aqueducts')P.splice(i,1);S.plats=[];S.reseat=null;}
-  // S2523 — the Frostborn Vault (OG-104's Mark panel; Michael's A on #1823, a landmark as built, and his B on #1858, "cut it into the fell
+  // S2524 — the Frostborn Vault (OG-104's Mark panel; Michael's A on #1823, a landmark as built, and his B on #1858, "cut it into the fell
   // there is"): the kit's PKIT.wonders.frostborn, from ruins.js, cut into a Mark fell. Its place, the same for every load of a seed: on a
   // 50 m grid over the Mark's land, 16 headings for the gorge (+z in the frame, down the fell), where the four halls' and the two abutments'
   // pads (x 112 and 145 either side, at both viaducts) lie within FB_SPREAD of each other (the datum their mean, 95 m or more over the sea,
@@ -4031,7 +4031,7 @@
   // dry at the head, the pads and the rims; and nothing of the world's in its ground (the kit's box, 800 m across and from 240 m behind the
   // head to dl + 110): no site within 120 m past its pad, no door within 60 m, no road within 50 m, no other Mark wonder within 300 m. It
   // is scored on even pads, the fell behind rising near the cliff's own 40 m, and a short run out. On seed 1 no placing passes: the two
-  // fells that hold it hold the Skyfall Fields and the Northlight Altar, and every other is a town's or a road's (DECISION, Session 2523);
+  // fells that hold it hold the Skyfall Fields and the Northlight Altar, and every other is a town's or a road's (DECISION, Session 2524);
   // wonderFrostAt(x, z, q) measures one placing without those tests. Its ground is one stamp of a height (baseH's fn; the kit's
   // frostbornLand from the fell's own ground there), so the gorge, its walls, the pads and the ground behind the cliff are the terrain's
   // own; the stamp is natural (no pad's trodden ground in the land's mask); the far sheet goes under it (farSinkHoles' farFn). The walk:
@@ -4139,7 +4139,7 @@
     if(k==='northlight')return {x:st.x,z:st.z,r:96};
     if(k==='scarred'){const [x,z]=wonderToWorld(st,60,60);return {x,z,r:170};}
     if(k==='isles')return {x:st.x,z:st.z,r:200};
-    if(k==='frostborn'){const L=wonderFrostLand(st),[x,z]=wonderToWorld(st,0,(L.box.z0+L.box.z1)/2);return {x,z,r:Math.hypot(L.box.x1*.8,(L.box.z1-L.box.z0)/2)};} /* S2523 — the gorge, the halls, the towers and the land behind the cliff */
+    if(k==='frostborn'){const L=wonderFrostLand(st),[x,z]=wonderToWorld(st,0,(L.box.z0+L.box.z1)/2);return {x,z,r:Math.hypot(L.box.x1*.8,(L.box.z1-L.box.z0)/2)};} /* S2524 — the gorge, the halls, the towers and the land behind the cliff */
     if(k==='aqueducts')return {x:st.x,z:st.z,r:170}; /* S2491 — the kit's land, the halls' length and the hole */ /* S2487 — the third isle's water at the line's middle (720 m, the whole line, reached the shore's chunks) */
     if(k==='spires'){const [x,z]=wonderToWorld(st,0,(st.spit+5)/2);return {x,z,r:(st.spit+95)/2+11};}
     return null;}
