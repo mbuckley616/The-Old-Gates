@@ -3511,7 +3511,7 @@
   // Stones are cosmetic; the place is the seed's.
   // When it stands (within 1.6 km, in the open world) every stone has a stamp that only clears the scatter under it (noFlat: the
   // ground is not flattened), the walls' standing courses are solids, and from 20h to 5h the stones drift and the seams burn.
-  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},spires:{site:undefined,W:null,stamps:null,sol:[],plats:[]},scarred:{site:undefined,W:null,stamps:null,sol:[],plats:[]},isles:{site:undefined,W:null,sol:[],plats:[]},aqueducts:{site:undefined,W:null,stamp:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
+  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},spires:{site:undefined,W:null,stamps:null,sol:[],plats:[]},scarred:{site:undefined,W:null,stamps:null,sol:[],plats:[]},isles:{site:undefined,W:null,sol:[],plats:[]},aqueducts:{site:undefined,W:null,stamp:null,stamps:null,sol:[],plats:[]},frostborn:{site:undefined,W:null,stamp:null,stamps:null,land:null,sol:[],plats:[]},near:1600,_t:0};
   function wonderSkyfallSite(){const S=WONDERS.skyfall;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
@@ -4022,9 +4022,100 @@
   function wonderAqueductsDrop(){const S=WONDERS.aqueducts;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:aqueducts')STATIC_SOL.splice(i,1);S.sol=[];
     const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='aqueducts')P.splice(i,1);S.plats=[];S.reseat=null;}
+  // S2524 — the Frostborn Vault (OG-104's Mark panel; Michael's A on #1823, a landmark as built, and his B on #1858, "cut it into the fell
+  // there is"): the kit's PKIT.wonders.frostborn, from ruins.js, cut into a Mark fell. Its place, the same for every load of a seed: on a
+  // 50 m grid over the Mark's land, 16 headings for the gorge (+z in the frame, down the fell), where the four halls' and the two abutments'
+  // pads (x 112 and 145 either side, at both viaducts) lie within FB_SPREAD of each other (the datum their mean, 95 m or more over the sea,
+  // so the floor 85 m down is dry), the rims beside the head stand 30 under to 45 over it, the fell 170 m behind the head no more than 30
+  // under it, and the fell's own ground down the gorge's line comes down to the floor within 1.3 km (dl: there the cut runs out; frostMeasure);
+  // dry at the head, the pads and the rims; and nothing of the world's in its ground (the kit's box, 800 m across and from 240 m behind the
+  // head to dl + 110): no site within 120 m past its pad, no door within 60 m, no road within 50 m, no other Mark wonder within 300 m. It
+  // is scored on even pads, the fell behind rising near the cliff's own 40 m, and a short run out. On seed 1 no placing passes: the two
+  // fells that hold it hold the Skyfall Fields and the Northlight Altar, and every other is a town's or a road's (DECISION, Session 2524);
+  // wonderFrostAt(x, z, q) measures one placing without those tests. Its ground is one stamp of a height (baseH's fn; the kit's
+  // frostbornLand from the fell's own ground there), so the gorge, its walls, the pads and the ground behind the cliff are the terrain's
+  // own; the stamp is natural (no pad's trodden ground in the land's mask); the far sheet goes under it (farSinkHoles' farFn). The walk:
+  // the decks are platforms held only by a walker already at the deck (aqWalk's rule), the glacier and its tongue one platform over the
+  // ice; the face, the cliff's foot, the piers, abutments, parapets, the broken viaduct's mullions over the ice, the halls' walls and the
+  // towers are turned solids.
+  const FB_SPREAD=44,FB_PADS=[[112,-40],[145,-40],[-112,-40],[-145,-40],[112,-180],[145,-180],[-112,-180],[-145,-180]];
+  // the Mark's cells and their neighbours' regions in REGIONS while fn runs (the search's rule: a point's ground does not hang on what is loaded)
+  function withMarkRegions(fn){const all=[...CELLS.values()],mk=new Set(all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark').map(c=>c.i+','+c.j));
+    const keep=[REGIONS.slice(),PEAKS.slice(),INLETS.slice()],ring=all.filter(c=>{for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(mk.has((c.i+di)+','+(c.j+dj)))return true;return false;});
+    REGIONS.length=0;PEAKS.length=0;INLETS.length=0;ring.forEach(c=>{c.regions.forEach(q=>REGIONS.push(q));c.peaks.forEach(q=>PEAKS.push(q));(c.inlets||[]).forEach(q=>INLETS.push(q));});
+    try{return fn();}finally{REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}}
+  // a placing's ground: the pads' spread and their mean (the datum), the fell behind the head, the rims beside it, where the cut runs out (null: none)
+  function frostMeasure(x,z,q,F,GW){const ry=q*Math.PI/8,cc=Math.cos(ry),ss=Math.sin(ry),H=(lx,lz)=>rawH(x+lx*cc+lz*ss,z-lx*ss+lz*cc);
+    let lo=1e9,hi=-1e9,sum=0;for(const [a,b] of FB_PADS){const y=H(a,b);lo=Math.min(lo,y);hi=Math.max(hi,y);sum+=y;if(hi-lo>FB_SPREAD)return null;}
+    const y0=sum/FB_PADS.length;if(y0<SEA_Y+95)return null;
+    let behind=1e9;for(const lx of [-60,0,60])behind=Math.min(behind,H(lx,-475)-y0);if(behind<-30)return null;
+    for(const lx of [-(GW+15),GW+15])for(const lz of [-280,-110,40]){const d=H(lx,lz)-y0;if(d<-30||d>45)return null;}
+    for(let lz=250;lz<=1300;lz+=25){const f=F(lz);if(H(0,lz)-y0<=f+2&&H(-60,lz)-y0<=f+30&&H(60,lz)-y0<=f+30)return {x,z,ry:+ry.toFixed(4),y:+y0.toFixed(2),spread:+(hi-lo).toFixed(1),behind:+behind.toFixed(1),dl:lz};}
+    return null;}
+  // the fell along the cliff's line, every 2 m (the kit's base), each the mean of the 40 m round it
+  function frostBase(st){const L=PKIT.wonders.frostbornLand({dl:st.dl}),XL=L.consts.XL,cc=Math.cos(st.ry),ss=Math.sin(st.ry);
+    const raw=Array.from({length:XL+1},(_,i)=>{const lx=-XL+i*2,lz=L.zh(lx);return rawH(st.x+lx*cc+lz*ss,st.z-lx*ss+lz*cc)-st.y;});
+    st.base=raw.map((_,i)=>{let a=0,n=0;for(let k=Math.max(0,i-10);k<=Math.min(raw.length-1,i+10);k++){a+=raw[k];n++;}return +(a/n).toFixed(2);});return st;} /* its mean over 40 m: the cliff's top an even line, not the fell's every swell */
+  // a placing as the search would measure it, without its tests of what else stands there (the suite's and a picture's)
+  function wonderFrostAt(x,z,q){landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);const L0=PKIT.wonders.frostbornLand();
+    return withMarkRegions(()=>{const m=frostMeasure(x,z,q,L0.F,L0.consts.GW);return m?frostBase(m):null;});}
+  function wonderFrostSite(){const S=WONDERS.frostborn;if(S.site!==undefined)return S.site;S.site=null;
+    if(typeof nationKeyOf!=='function'||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.frostbornLand)return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
+    const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
+    const others=[wonderSkyfallSite(),wonderNorthSite()].filter(Boolean);
+    const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
+    const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
+    const L0=PKIT.wonders.frostbornLand(),C=L0.consts,F=L0.F;
+    const wet=(x,z)=>{const y=rawH(x,z);return y<landH(x,z)-1.5||y<SEA_Y+2;};let best=null;
+    withMarkRegions(()=>{for(const c of mark){const x0=c.i*SIZE-1500,x1=(c.i+1)*SIZE+1500,z0=c.j*SIZE-1500,z1=(c.j+1)*SIZE+1500,inB=(x,z)=>x>x0&&x<x1&&z>z0&&z<z1;
+        const cs=sites.filter(s=>inB(s.x,s.z)||(s.pad||0)>100),cd=doors.filter(d=>inB(d.x,d.z)),cr=roads.filter(([p,q])=>!(Math.max(p.x,q.x)<x0||Math.min(p.x,q.x)>x1||Math.max(p.z,q.z)<z0||Math.min(p.z,q.z)>z1));
+      for(let a=25;a<SIZE;a+=50)for(let b=25;b<SIZE;b+=50){const x=c.i*SIZE+a,z=c.j*SIZE+b;if(rawH(x,z)<SEA_Y+80)continue;
+        for(let q=0;q<16;q++){const m=frostMeasure(x,z,q,F,C.GW);if(!m)continue;const {ry,dl}=m,cc=Math.cos(ry),ss=Math.sin(ry),W=(lx,lz)=>[x+lx*cc+lz*ss,z-lx*ss+lz*cc];
+          const score=-m.spread-Math.abs(Math.min(m.behind,70)-42)*.5-dl*.01;if(best&&score<=best.score)continue;
+          const toL=(X,Z)=>{const dx=X-x,dz=Z-z;return [dx*cc-dz*ss,dx*ss+dz*cc];},inBox=(X,Z,mg)=>{const [lx,lz]=toL(X,Z);return lx>-C.XL-mg&&lx<C.XL+mg&&lz>L0.box.z0-mg&&lz<dl+110+mg;};
+          if(others.some(w=>inBox(w.x,w.z,300)))continue; /* the other wonders' ground 300 m clear of the vault's */
+          let dry=true;for(const [lx,lz] of [...FB_PADS,[0,-300],[-90,-300],[90,-300],[0,-150],[0,0],[-90,100],[90,100],[0,-420]])if(wet(...W(lx,lz))){dry=false;break;}if(!dry)continue;
+          /* nothing of the world's in the vault's ground: no site within 120 m past its pad, no door within 60 m, no road within 50 m */
+          if(cs.some(t=>inBox(t.x,t.z,120+(t.pad||0)))||cd.some(d=>inBox(d.x,d.z,60))||cr.some(([p,r])=>{const n=Math.ceil(Math.hypot(r.x-p.x,r.z-p.z)/20);for(let k=0;k<=n;k++)if(inBox(p.x+(r.x-p.x)*k/n,p.z+(r.z-p.z)*k/n,50))return true;return false;}))continue;
+          best={...m,score:+score.toFixed(2),cell:cellKey(c.i,c.j)};}}}
+      if(best)frostBase(best);});
+    return (S.site=best);}
+  function wonderFrostLand(st){const S=WONDERS.frostborn;if(S.land&&S.land.st===st)return S.land;const L=PKIT.wonders.frostbornLand({dl:st.dl,base:st.base}),c=Math.cos(st.ry),s_=Math.sin(st.ry);
+    L.st=st;L.toL=(wx,wz)=>{const dx=wx-st.x,dz=wz-st.z;return [dx*c-dz*s_,dx*s_+dz*c];};return (S.land=L);}
+  function wonderFrostStamp(st){const S=WONDERS.frostborn;if(S.stamp)return S.stamp;const L=wonderFrostLand(st),B=L.box,[x,z]=wonderToWorld(st,0,(B.z0+B.z1)/2),r=Math.hypot(B.x1,(B.z1-B.z0)/2)+4;
+    S.stamp=addStamp({id:'wonder_frostborn',kind:'wonder',natural:true,x,z,r,blend:0,y:st.y,farFn:true,inside:(wx,wz)=>L.inside(...L.toL(wx,wz)),fn:(wx,wz,h)=>{const [lx,lz]=L.toL(wx,wz);return st.y+L.ground(lx,lz,h-st.y);}});S.stamps=[S.stamp];
+    try{clearScatterUnder(S.stamps);}catch(e){console.warn('wonder scatter',e);}try{refreshChunksNearWater(S.stamps);}catch(e){console.warn('wonder ground',e);}farSinkUnder();
+    return S.stamp;}
+  function wonderFrostBuild(){const S=WONDERS.frostborn,st=wonderFrostSite();if(!st||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.frostborn)return null;
+    const L=wonderFrostLand(st);wonderFrostStamp(st);
+    const hAt=(lx,lz)=>{const [x,z]=wonderToWorld(st,lx,lz);S.stamp.off=true;try{return worldH(x,z)-st.y;}finally{S.stamp.off=false;}};
+    const W=PKIT.wonders.frostborn({land:L,hAt});
+    W.sig=wonderCellSig(st);W.group.position.set(st.x,st.y,st.z);W.group.rotation.y=st.ry;W.group.userData.noBake=true;W.group.updateMatrixWorld(true);
+    sc.add(W.group);S.W=W;W.tick=()=>{};
+    const c=Math.cos(st.ry),s_=Math.sin(st.ry),box=(lx0,lx1,lz0,lz1)=>{const xs=[],zs=[];for(const lx of [lx0,lx1])for(const lz of [lz0,lz1]){const [x,z]=wonderToWorld(st,lx,lz);xs.push(x);zs.push(z);}return {x0:Math.min(...xs),x1:Math.max(...xs),z0:Math.min(...zs),z1:Math.max(...zs)};};
+    // the decks: held where the walker's feet are at the deck already, or the ground comes up to it (the abutments' pads)
+    S.plats=W.decks.map((d,i)=>{const y=st.y+d.y,hw=d.w/2+.6;return {...box(d.x0,d.x1,d.z-hw,d.z+hw),y,wonder:'frostborn',deck:i,
+      inside:(wx,wz)=>{const [lx,lz]=L.toL(wx,wz);if(lx<d.x0||lx>d.x1||Math.abs(lz-d.z)>hw)return false;if(wx===px&&wz===pz&&jumpY>=y-1)return true;return meshH(wx,wz)>=y-1;}};});
+    // the glacier and its tongue: the ice where it stands over the ground
+    S.plats.push({...box(-C_FB.GW-5,C_FB.GW+5,C_FB.HEAD-5,165),y:st.y,wonder:'frostborn',ice:true,yAt:(wx,wz)=>{const [lx,lz]=L.toL(wx,wz);if(Math.abs(lx)>C_FB.GW+5||lz<C_FB.HEAD-5||lz>165)return null;
+      const g=meshH(wx,wz)-st.y,y=W.surf(lx,lz);return y>g+.05?y+st.y:null;}});
+    S.plats.forEach(p=>ZONES.world.platforms.push(p));
+    S.sol=W.sol.map(b=>{const [x,z]=wonderToWorld(st,b.x,b.z),q={cx:x,cz:z,rx:b.w/2,rz:b.d/2,c:Math.cos(st.ry+b.ry),s:Math.sin(st.ry+b.ry),h:400,cell:'wonder:frostborn',wonder:true,part:b.part};if(b.top!=null)q.top=b.top+st.y;return q;});
+    S.sol.forEach(q=>STATIC_SOL.push(q));
+    S.reseat=()=>wonderFrostHerbs(st,L);S.reseat();
+    return W;}
+  const C_FB={GW:75,HEAD:-305}; /* the kit's frame, for the platforms' bounds */
+  // a herb or a vein a chunk laid before the gorge was cut goes onto the ground as it is now, or away where the ice, a deck or a solid is over it
+  function wonderFrostHerbs(st,L){const HL=(ZONES.world&&ZONES.world.herbs)||[];let n=0;
+    for(let i=HL.length-1;i>=0;i--){const h=HL[i];const [lx,lz]=L.toL(h.x,h.z);if(!L.inside(lx,lz))continue;const y=worldH(h.x,h.z);
+      if(activeTerrainH(h.x,h.z)>y+.5||solidAt(h.x,h.z)){HL.splice(i,1);h.offPad=true;h.g.visible=false;if(h.gl)h.gl.intensity=0;n++;}else h.g.position.y=y;if(h.inst)syncHerbInstance(h);}
+    const [cx,cz]=wonderToWorld(st,0,(L.box.z0+L.box.z1)/2);return n+wonderSeatVeins(cx,cz,Math.hypot(L.box.x1,(L.box.z1-L.box.z0)/2));}
+  function wonderFrostDrop(){const S=WONDERS.frostborn;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});S.W=null;}
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:frostborn')STATIC_SOL.splice(i,1);S.sol=[];
+    const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='frostborn')P.splice(i,1);S.plats=[];S.reseat=null;}
   // from WORLD.tick, every frame in the open world: each wonder built within 1.6 km (checked once a second), animated while it stands.
   // A wonder's site is searched only once you stand on its island's land (the Fields' takes 0.6 s on software GL)
-  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop},{k:'northlight',nation:'mark',site:wonderNorthSite,build:wonderNorthBuild,drop:wonderNorthDrop},{k:'spires',nation:'gatelands',site:wonderSpiresSite,build:wonderSpiresBuild,drop:wonderSpiresDrop},{k:'scarred',nation:'aurenne',site:wonderScarredSite,build:wonderScarredBuild,drop:wonderScarredDrop},{k:'isles',nation:'gatelands',site:wonderIslesSite,build:wonderIslesBuild,drop:wonderIslesDrop},{k:'aqueducts',nation:'gatelands',site:wonderAqueductsSite,build:wonderAqueductsBuild,drop:wonderAqueductsDrop}];
+  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop},{k:'northlight',nation:'mark',site:wonderNorthSite,build:wonderNorthBuild,drop:wonderNorthDrop},{k:'spires',nation:'gatelands',site:wonderSpiresSite,build:wonderSpiresBuild,drop:wonderSpiresDrop},{k:'scarred',nation:'aurenne',site:wonderScarredSite,build:wonderScarredBuild,drop:wonderScarredDrop},{k:'isles',nation:'gatelands',site:wonderIslesSite,build:wonderIslesBuild,drop:wonderIslesDrop},{k:'aqueducts',nation:'gatelands',site:wonderAqueductsSite,build:wonderAqueductsBuild,drop:wonderAqueductsDrop},{k:'frostborn',nation:'mark',site:wonderFrostSite,build:wonderFrostBuild,drop:wonderFrostDrop}];
   function tickWonders(){if(typeof LAND==='undefined'||!LAND.on)return;const t=performance.now(),due=t-WONDERS._t>1000||WONDERS._t===0&&WONDER_KINDS.some(K=>!WONDERS[K.k].W);if(due)WONDERS._t=t;
     let nk=null;for(const K of WONDER_KINDS){const S=WONDERS[K.k];
       if(S.W&&S.W.group.parent!==sc)K.drop(); /* the world's scene was built again */
@@ -4048,6 +4139,7 @@
     if(k==='northlight')return {x:st.x,z:st.z,r:96};
     if(k==='scarred'){const [x,z]=wonderToWorld(st,60,60);return {x,z,r:170};}
     if(k==='isles')return {x:st.x,z:st.z,r:200};
+    if(k==='frostborn'){const L=wonderFrostLand(st),[x,z]=wonderToWorld(st,0,(L.box.z0+L.box.z1)/2);return {x,z,r:Math.hypot(L.box.x1*.8,(L.box.z1-L.box.z0)/2)};} /* S2524 — the gorge, the halls, the towers and the land behind the cliff */
     if(k==='aqueducts')return {x:st.x,z:st.z,r:170}; /* S2491 — the kit's land, the halls' length and the hole */ /* S2487 — the third isle's water at the line's middle (720 m, the whole line, reached the shore's chunks) */
     if(k==='spires'){const [x,z]=wonderToWorld(st,0,(st.spit+5)/2);return {x,z,r:(st.spit+95)/2+11};}
     return null;}
