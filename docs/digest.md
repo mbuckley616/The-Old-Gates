@@ -687,3 +687,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** The inn’s hall +15% draw calls from the clay oven (look builder). The weekly run of 15 Nov still owes four bodies suites.
 
 **Roadmap.** 345 of 447 stories done (344 of 445 on 20 Nov). The new look is 7 of 18.
+
+## 22 Nov 2026
+
+**Waiting on you.** Two decisions: Workstations, the forge by grade, the still, or both (#1883, C recommended); the Frostborn Vault, where it goes (#1892, A recommended: take the Skyfall Fields’ fell). No merge waits for you.
+
+**Landed on main since 21 Nov.** Your four answers written (#1843 A, #1858 B, #1861 A, #1864 A). Rare materials’ systems side done: skywood and the top bows, deep pearls and the top tempers, a fallen star marked on the map (Systems 2498–2520); the save keeps a bedroll’s kind and a sword’s make; the draw, the sheathe and a found place heard; no waiting mid-conversation (2508–2523). The crater, the skywood pine and the script stone in the game; the Hollow and the aqueducts shaded round; the Frostborn Vault’s kit and ground built, not placed (Look 2500–2524). Dressed by the trade: aprons, satchels, spectacles, hats, the farmer’s hoe, the innkeeper’s apron bleached (Bodies 2499–2525). The Strange and the Legendary, I, drafted; families and feuds dressed; a playtest of Lorcan’s Forge and a fallen star. Build s1855.
+
+**Under way.** No PR open. Next: look Stormwatch’s headland; bodies L3’s common animals; systems the critic’s two lines; the vault waits on #1892.
+
+**Blocked.** The weekly run of 15 Nov still owes four bodies suites; today’s weekly run has not started yet.
+
+**Roadmap.** 347 of 452 stories done (345 of 447 on 21 Nov). The new look is 7 of 18.

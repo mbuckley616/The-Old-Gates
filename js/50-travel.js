@@ -1707,7 +1707,9 @@ function toolStrike(kind){return TOOL_STRIKE[toolMetal(kind)]||TOOL_STRIKE[3];}
 function pickReaches(v){return !pickWhy(v);}
 const PICK_HARD='The rock turns the iron. It wants a steel pick.';
 // S2493 — why the pick in the bag will not cut this: a star wants mithril, the wastes' rock steel; '' when it will
-function pickWhy(v){const m=toolMetal('pick');if(v&&v.star)return m<STAR.metal?'The star iron turns the steel. It wants a mithril pick.':'';return v&&v.tier>=4&&m<4?PICK_HARD:'';}
+/* S2527 — the star's line names the pick you carry (an iron pick read 'the steel'); pickNeed is the prompt's note over a vein your pick cannot cut */
+function pickWhy(v){const m=toolMetal('pick');if(v&&v.star)return m<STAR.metal?`The star iron turns ${(MATERIALS[m-1]||MATERIALS[2]).name.toLowerCase()}. It wants a mithril pick.`:'';return v&&v.tier>=4&&m<4?PICK_HARD:'';}
+function pickNeed(v){if(!pickWhy(v))return '';return v&&v.star?' (it wants a mithril pick)':' (it wants a steel pick)';}
 // the vein's tier: the place's danger tier, and 4 in the wastes (the open world's regions stop at 3)
 function veinTier(x,z){let t=typeof worldTierAt==='function'?worldTierAt(x,z):1;
   try{const r=dominantRegion(x,z).r;if(r&&(r.id==='wastes'||r.biome==='wastes'||r.biome==='wasteland'))t=4;}catch(e){}
@@ -2988,8 +2990,8 @@ function _markZoneSpawned(zoneId){
 // Wait button + modal. Universal time-pass affordance. Calls forceTime
 // with a fade. Disabled in combat / dungeons / open UI.
 function _canWait(){
-  // Block in dungeons.
-  if(lid !== 'overworld') return {ok:false, reason:'You cannot pass time in a dungeon.'};
+  // Block in dungeons. S2527 — a room (an inn, a house: lid 'int_<house>') is not one; the wait was refused there by this line alone, with the dungeon's words
+  if(lid !== 'overworld' && !(typeof isInterior==='function' && isInterior())) return {ok:false, reason:'You cannot pass time in a dungeon.'};
   // S1112 — on watch on the spire (the draft's §4 line); asked before the enemies, which stand on the roof with you
   if(typeof WORLD!=='undefined'&&WORLD.onWatch&&WORLD.onWatch()) return {ok:false, reason:'Not on watch.'};
   // Block during combat — any non-dead enemy aggroed within 20m.

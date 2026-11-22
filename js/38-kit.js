@@ -8328,6 +8328,194 @@ function aurenneOrrery(hAt, o = {}) {
       m.castShadow = k === 'stone' || k === 'step'; m.receiveShadow = true; group.add(m); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
     return { group, tris: Math.round(tris), draws, R0, R1, CY, D, Y, inner: NI, outer: NO, gone, slipped, thrown, cleft: CLEFT, crater: CR, scar: SC, plinth, plats, level, sol, tick() {} };
   }
+  // ── Stormwatch (Session 2480; backlog L "Ruins at the scale of cliffs", OG-104's Stormwatch Ruins, the Gatelands; Michael's A on #1815:
+  // empty, as built, a landmark walked for the view) ──
+  // ruins.js's stormwatch (Sessions 2454, 2455, 2457), copied for the world: the older people's dry-stone promontory fort, after Dún
+  // Aonghasa. The prototype's land, its sea, the foam, the boulders at the cliff's foot and its scale post are the world's or left out. Its
+  // cliff is drawn (Session 2526) where the world raises a shore for it (o.land, stormwatchLand above, and o.h0At, the shore's own ground):
+  // 40 m, not the prototype's 88, as Michael's A on #1843 has it; the brink is the land's edge(x) (without a land, o.edge, as Session 2480's). Built over a height function it is handed, in the fort's frame: +z inland, the sea at
+  // -z, the cashel's middle 3 m seaward of the brink at x 0. The same streams in the same order as the prototype ('ruins:stormwatch',
+  // ':breach', ':chev', ':platform', ':tex'), so the bands, the breaches, the set stones and the textures are its own; which segments stand
+  // follows the world's brink. The prototype's turf texture belonged to its land and is left out with it. Its 'searock' is the kit's rock.
+  // What is walked: the inner wall's two inner bands are terraces (platforms over solids whose tops the flights reach), its outer band
+  // solid; the passage open under its lintels; the middle and outer walls solid where they stand over 0.9 m, a low course a step to
+  // walk over (0.45 to 0.9 m), and lower than that nothing; the flights' treads and the pavement's bed are platforms; a set stone
+  // standing over 0.9 m is solid.
+  //   PKIT.wonders.stormwatch(hAt, { land, h0At }) -> { group, tris, draws, C, walls { inner, middle, outer }, passage, flights, chev, platform,
+  //     tumbles, sol: [{x, z, w, d, ry, h, top}], plats: [{x, z, w, d, ry, y}], face { top, foot, out, len, stretches }, capAt(x, z), tick() }
+  // Session 2526 (Michael's A on #1843, "raise a headland for it"): the ground Stormwatch brings. No Gatelands shore stands a flat top over a
+  // sheer cliff (Session 2480's search), so the fort's headland is the world's own ground raised: a stamp of a height (baseH's fn, as the
+  // Frostborn Vault's) lifts a shore to the prototype's land, its top 40 m over the sea at the brink (the datum, 0 here) and falling inland
+  // as the prototype's does (3 in 100, in low risers of the bedding), full for 170 m either side of the fort and 150 m inland, and coming
+  // back to the shore's own ground by 330 m and 320 m. The brink is the prototype's own wavering line (edge). The face is the kit's (below):
+  // the prototype's beds, buttresses and gullies (Session 2457), one shared point a grid point and smooth normals (Session 2497), drawn from
+  // the brink down under the sea and kept seaward of it. So that no terrain triangle stands in front of the rock, the ground inside the rock
+  // is sunk: from 45 m out to 6 m behind the brink it goes 8 m under the sea (its steep triangles all landward of the brink), and the kit's
+  // rim, a bed of the pavement's limestone (the prototype's salt-burned rim), lies over the brink's first 15 m at the land's height and is
+  // what you walk there (capAt). Out to sea the sunk floor comes back to the sea's own bed by 45 m. Everything is a function of the ground as it
+  // was (h0, from the datum), so past the shape the ground is the shore's own to the millimetre.
+  //   PKIT.wonders.stormwatchLand({ sea }) -> { edge, top, ground, inside, box, consts }
+  function stormwatchLand(o = {}) {
+    const fbm = pfbm, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const SL = o.sea ?? -40, FL = SL - 8, M = 6, CAPW = 15, XC = 170, XL = 330, ZC = 150, ZL = 320, FR = 20, FB = 45;
+    const edge = x => 7 * (fbm(x / 70 + 3.1, 1.7, 3) - .5) * 2 + 3 * (fbm(x / 18 + 9.3, 4.4, 2) - .5);
+    // the prototype's landY less its TOP: 0 at the brink, falling 3 in 100 inland in risers of 1.1 m, a little roughness
+    const landY = (x, z, e) => { const d = Math.max(0, z - e), t = d / 34 + .5 * fbm(x / 90 + 1.3, z / 90, 2); return -.03 * d - 1.1 * (Math.floor(t) + sstep(.86, 1, t - Math.floor(t))) + .3 * (fbm(x / 9, z / 9, 3) - .5); };
+    const wS = x => 1 - sstep(XC, XL, Math.abs(x)), wB = d => 1 - sstep(ZC, ZL, d);
+    // the land's top (the rim's and the walls' ground): the shore raised to the prototype's land, never lowered under its own
+    const top = (x, z, h0) => { const e = edge(x), d = Math.max(0, z - e); return h0 + Math.max(0, landY(x, z, e) - h0) * wS(x) * wB(d); };
+    // the terrain: the top, but sunk inside the rock and under the rim's front
+    const ground = (x, z, h0) => { const w = wS(x); if (w <= 0) return h0; const e = edge(x), d = z - e;
+      if (d >= CAPW) return top(x, z, h0);
+      if (d >= M) { const t = top(x, z, h0); return t - .6 * (1 - sstep(M + 5.8, CAPW, d)) * w; }
+      const b = d > -FR ? 1 : 1 - sstep(FR, FB, -d); return h0 + (Math.min(h0, FL) - h0) * b * w; };
+    const inside = (x, z) => Math.abs(x) < XL && z < ZL + 10 && z > edge(x) - FB - 2;
+    return { edge, top, ground, inside, landY, box: { x0: -XL, x1: XL, z0: -FB - 22, z1: ZL + 10 }, consts: { SL, FL, M, CAPW, XC, XL, ZC, ZL, FR, FB } };
+  }
+  let _swMats = null;
+  function stormwatchRuin(hAt, o = {}) {
+    const key = 'ruins:stormwatch', r = stream(key), group = new THREE.Group(), fbm = pfbm, enc = v => Math.pow(Math.max(0, v), 1 / 2.2);
+    const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    group.name = 'wonder:stormwatch';
+    const edge = o.land ? o.land.edge : o.edge || (() => 0), ground = hAt, sol = [], plats = [];
+    const B = new Map(), SC = { wall: 1 / 4, tumble: .6, chev: .6, step: 1 / 4, lintel: .5, slab: 1 / 6 };
+    const put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv', 'color'].includes(a)) x.deleteAttribute(a);
+      if (x.attributes.uv) x.deleteAttribute('uv'); x.computeVertexNormals(); worldUV(x, SC[k] ?? .25); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+    const C = [0, edge(0) - 3];
+    // a box of the walk (its middle x, z, along w, across d, turned ry) from four corners in order round it
+    const boxOf = P => { const cx = (P[0][0] + P[1][0] + P[2][0] + P[3][0]) / 4, cz = (P[0][1] + P[1][1] + P[2][1] + P[3][1]) / 4, ex = (P[1][0] - P[0][0] + P[2][0] - P[3][0]) / 2, ez = (P[1][1] - P[0][1] + P[2][1] - P[3][1]) / 2,
+      w = Math.hypot(ex, ez), d = (Math.hypot(P[3][0] - P[0][0], P[3][1] - P[0][1]) + Math.hypot(P[2][0] - P[1][0], P[2][1] - P[1][1])) / 2; return { x: +cx.toFixed(2), z: +cz.toFixed(2), w: +(w + .05).toFixed(2), d: +d.toFixed(2), ry: +Math.atan2(-ez, ex).toFixed(4) }; };
+    const prism = P => { const out = [], q = (a, b, c, d) => out.push(...P[a], ...P[b], ...P[c], ...P[a], ...P[c], ...P[d]);
+      q(0, 1, 2, 3); q(4, 7, 6, 5); q(0, 4, 5, 1); q(1, 5, 6, 2); q(2, 6, 7, 3); q(3, 7, 4, 0); const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); return g; };
+    const ell = (rx, rz, a, off = 0) => { const nx = Math.cos(a) / rx, nz = Math.sin(a) / rz, l = Math.hypot(nx, nz); return [C[0] + rx * Math.cos(a) + nx / l * off, C[1] + rz * Math.sin(a) + nz / l * off]; };
+    const onLand = (x, z, m = .6) => z > edge(x) + m;
+    const AE = 1.08, tumbles = [];
+    const tumble = (x, z, s = 1) => { const g = new THREE.IcosahedronGeometry(1, 0), sx = (.3 + r() * .4) * s, sy = (.18 + r() * .2) * s, sz = (.3 + r() * .35) * s; g.scale(sx, sy, sz); g.rotateY(r() * 6.28); g.rotateX((r() - .5) * .5);
+      const y = ground(x, z) + sy * .45; g.translate(x, y, z); tumbles.push([x, z]); put('tumble', g); };
+    // the walk of a wall's band: over 0.9 m a solid (its top kept where a terrace is walked), 0.45 to 0.9 m a step onto it, lower nothing
+    const walk = (P, top, gm, terrace) => { const h = top - gm, b = boxOf(P); if (terrace) { sol.push({ ...b, h: +h.toFixed(2), top: +top.toFixed(2) }); plats.push({ ...b, y: +top.toFixed(2) }); }
+      else if (h > .9) sol.push({ ...b, h: +h.toFixed(2) }); else if (h >= .45) plats.push({ ...b, y: +top.toFixed(2) }); };
+    const wall = (name, rx, rz, bands, o2) => { const thick = bands.reduce((s, b) => s + b[0], 0), segs = [], ends = [], A0 = -.55, A1 = Math.PI + .55, L = Math.PI * (rx + rz) / 2, n = Math.ceil(L * (A1 - A0) / Math.PI / 1.6);
+      const cuts = [A0]; for (let k = 1; k < n; k++) cuts.push(A0 + (A1 - A0) * k / n); cuts.push(A1); for (const c of o2.cuts || []) cuts.push(c); cuts.sort((p, q) => p - q);
+      let wasOn = false;
+      for (let k = 0; k < cuts.length - 1; k++) { const a0 = cuts[k], a1 = cuts[k + 1]; if (a1 - a0 < 1e-4) continue; const am = (a0 + a1) / 2, gap = o2.gap ? o2.gap(am) : null;
+        const outer0 = ell(rx, rz, a0, thick / 2), outer1 = ell(rx, rz, a1, thick / 2), inner0 = ell(rx, rz, a0, -thick / 2), inner1 = ell(rx, rz, a1, -thick / 2);
+        const on = [outer0, outer1, inner0, inner1].every(p => onLand(p[0], p[1]));
+        if (on !== wasOn && k > 0) ends.push(ell(rx, rz, a0)); wasOn = on; if (!on) continue;
+        if (gap === 'gate') continue;
+        const m = ell(rx, rz, am), gm = ground(m[0], m[1]); let off = thick / 2, lowAll = Infinity, topAll = -Infinity;
+        const hf = o2.height ? o2.height(am) : 1;
+        for (let b = 0; b < bands.length; b++) { const [t, h] = bands[b], o0 = off, o1 = off - t; off = o1;
+          const P = [ell(rx, rz, a0, o0), ell(rx, rz, a1, o0), ell(rx, rz, a1, o1), ell(rx, rz, a0, o1)], low = Math.min(...P.map(p => ground(p[0], p[1]))) - .45;
+          let top = gm + (gap === 'breach' ? .35 + .5 * r() : h * hf + (r() - .5) * .3); if (top < gm + .25) top = gm + .25 + .2 * r();
+          let bot = low; if (gap === 'pass') { if (top < gm + 2.3) continue; bot = gm + 2.1; }
+          const bat = b === 0 ? Math.min(.35, (top - gm) * .06) : 0;
+          const T = [ell(rx, rz, a0, o0 - bat), ell(rx, rz, a1, o0 - bat), ell(rx, rz, a1, o1), ell(rx, rz, a0, o1)];
+          put('wall', prism([...P.map(p => [p[0], bot, p[1]]), ...T.map(p => [p[0], top, p[1]])])); lowAll = Math.min(lowAll, low); topAll = Math.max(topAll, top - gm);
+          if (gap !== 'pass') walk(P, top, gm, o2.terrace && b > 0);
+          if (gap === 'pass') { const g = new THREE.BoxGeometry(PW + 1.2, .22, t + .3); const mid = ell(rx, rz, am, (o0 + o1) / 2); g.rotateY(-Math.atan2(Math.sin(am) / rz, Math.cos(am) / rx) + Math.PI / 2); g.translate(mid[0], gm + 2.0, mid[1]); put('lintel', g); } }
+        segs.push({ a: +am.toFixed(4), x: +m[0].toFixed(2), z: +m[1].toFixed(2), top: +topAll.toFixed(2), bottom: +(lowAll - gm).toFixed(2), gap });
+        if (gap === 'breach' && r() < .9) for (let q = 0; q < 6; q++) { const p = ell(rx, rz, am + (r() - .5) * 1.6 / rx, thick / 2 + 1 + r() * 7); if (onLand(p[0], p[1], 3)) tumble(p[0], p[1], 1.1); } }
+      return { name, rx, rz, thick, h: Math.max(...bands.map(b => b[1])), bands: bands.map(b => b.slice()), segs, ends: ends.map(p => p.map(v => +v.toFixed(2))) }; };
+    // the inner wall: three bands, a passage under lintels on the way in
+    const RXI = 26, RZI = 22, PW = 1.3, dA = PW / 2 / Math.hypot(RXI * Math.sin(AE), RZI * Math.cos(AE));
+    const inner = wall('inner', RXI, RZI, [[1.8, 5.4], [1.2, 3.6], [1.2, 1.8]], { terrace: true, cuts: [AE - dA, AE + dA], gap: a => Math.abs(a - AE) < dA ? 'pass' : null });
+    const pin = ell(RXI, RZI, AE, -2.1 - .2), pout = ell(RXI, RZI, AE, 2.1 + .2), passage = { a: AE, x: +((pin[0] + pout[0]) / 2).toFixed(2), z: +((pin[1] + pout[1]) / 2).toFixed(2), w: PW, lintel: 2.0, len: 4.6, inner: pin.map(v => +v.toFixed(2)), outer: pout.map(v => +v.toFixed(2)) };
+    { const g = new THREE.BoxGeometry(PW + .2, .2, 4.8), m = ell(RXI, RZI, AE); g.rotateY(-Math.atan2(Math.sin(AE) / RZI, Math.cos(AE) / RXI) + Math.PI / 2); g.translate(m[0], ground(m[0], m[1]) + .02, m[1]); put('lintel', g); }
+    const flights = [];
+    for (const af of [AE + .62, 1.95, 2.55]) { const rot = -Math.atan2(Math.sin(af) / RZI, Math.cos(af) / RXI) + Math.PI / 2, gm = ground(...ell(RXI, RZI, af)), treads = [];
+      for (const [base, rise, face] of [[0, 1.8, -2.1], [1.8, 1.8, -.9]]) for (let s = 0; s < 4; s++) { const d = .3 * (4 - s), p = ell(RXI, RZI, af, face - d + .15), h = base + rise * (s + 1) / 4, g = new THREE.BoxGeometry(1.0, h + .3, .32); g.rotateY(rot); g.translate(p[0], gm + h / 2 - .15, p[1]); put('step', g);
+        plats.push({ x: +p[0].toFixed(2), z: +p[1].toFixed(2), w: 1.0, d: .34, ry: +rot.toFixed(4), y: +(gm + h).toFixed(2), step: true }); treads.push([+p[0].toFixed(2), +p[1].toFixed(2), +(gm + h).toFixed(2)]); }
+      flights.push({ a: +af.toFixed(3), treads }); }
+    // the middle wall: its gate on the way in, two breaches
+    const RXM = 58, RZM = 52, rb = stream(key + ':breach'), BR = [1.75 + rb() * .3, .35 + rb() * .3];
+    const middle = wall('middle', RXM, RZM, [[3, 3.2]], { gap: a => Math.abs(a - AE) < 1.4 / 55 ? 'gate' : BR.some(b => Math.abs(a - b) < 4.5 / 55) ? 'breach' : null, height: a => .85 + .2 * fbm(a * 9, 2.2, 2) });
+    // the outer wall: down to its footing for most of its run
+    const RXO = 118, RZO = 100, outer = wall('outer', RXO, RZO, [[2.2, 2.2]], { gap: a => Math.abs(a - AE) < 1.6 / 108 ? 'gate' : null, height: a => Math.max(.18, sstep(.1, .25, fbm(a * 7 + 3, 5.5, 3))) });
+    // the set stones: a band 14 m deep outside the middle wall, west and north; each a slab split from the pavement (Session 2455)
+    const chev = [], rc = stream(key + ':chev');
+    for (let tries = 0; tries < 9000 && chev.length < 640; tries++) { const a = 1.45 + rc() * (Math.PI + .4 - 1.45), off = 3 + 1.5 + rc() * 14, p = ell(RXM, RZM, a, off);
+      if (!onLand(p[0], p[1], 3)) continue; if (chev.some(q => Math.hypot(q.x - p[0], q.z - p[1]) < .9 + rc() * 1.2)) continue;
+      const h = .6 + rc() * 1.2, w = .45 + rc() * .9, t = .1 + rc() * .18, uA = (rc() - .5) * w * .5, jl = rc() * w * .25, jr = rc() * w * .25, hl = h * (.35 + rc() * .4), hr = h * (.35 + rc() * .4);
+      const sh = new THREE.Shape(); sh.moveTo(-w / 2, -.35); sh.lineTo(w / 2, -.35); sh.lineTo(w / 2 - jr * .4, hr * .5); sh.lineTo(w / 2 - jr, hr); sh.lineTo((uA + w / 2 - jr) / 2, (hr + h) / 2 - h * (.08 + rc() * .12)); sh.lineTo(uA, h);
+      sh.lineTo((uA - w / 2 + jl) / 2, (hl + h) / 2 + (rc() - .5) * .1); sh.lineTo(-w / 2 + jl, hl); sh.lineTo(-w / 2 + jl * .4, hl * .5); sh.closePath();
+      const g = new THREE.ExtrudeGeometry(sh, { depth: t, bevelEnabled: false }); g.translate(0, 0, -t / 2);
+      const fallen = rc() < 1 / 7, lean = fallen ? 0 : (rc() - .5) * .6, gy = ground(p[0], p[1]);
+      if (fallen) g.rotateX(-Math.PI / 2 + (rc() - .5) * .12); else g.rotateZ(lean);
+      const ry = rc() * Math.PI; g.rotateY(ry); g.translate(p[0], gy, p[1]); g.computeBoundingBox(); if (fallen) { g.translate(0, gy - g.boundingBox.min.y - t * .4, 0); g.computeBoundingBox(); }
+      const tone = .82 + rc() * .24, n = g.attributes.position.count; g.setAttribute('color', new THREE.Float32BufferAttribute(Array.from({ length: n * 3 }, (_, k) => enc(tone * [1, 1, .97][k % 3])), 3)); put('chev', g);
+      const top = g.boundingBox.max.y - gy; if (!fallen && top > .9) sol.push({ x: +p[0].toFixed(2), z: +p[1].toFixed(2), w: +(w * .8).toFixed(2), d: +Math.max(.2, t).toFixed(2), ry: +ry.toFixed(4), h: +top.toFixed(2), chev: true });
+      chev.push({ x: +p[0].toFixed(2), z: +p[1].toFixed(2), top: +top.toFixed(2), lean: +lean.toFixed(3), fallen }); }
+    // the outer wall's fallen stone: where it is down, a spill either side of its footing; where it stands, a few at its outer foot
+    for (const s of outer.segs) { const n = s.top < .7 ? 3 : r() < .3 ? 1 : 0; for (let q = 0; q < n; q++) { const side = s.top < .7 && r() < .4 ? -1 : 1, p = ell(RXO, RZO, s.a + (r() - .5) * 1.4 / RXO, side * (1.3 + r() * 2.6)); if (onLand(p[0], p[1], 3)) tumble(p[0], p[1], .9); } }
+    // the platform: one bed of the pavement standing proud by the edge inside the cashel
+    const platform = (() => { const x = C[0] - 6, z = edge(x) + 6.5, gy = ground(x, z), rp = stream(key + ':platform'), cs = [[-2.9, -1.8], [2.6, -2.1], [3.0, 1.7], [-2.4, 2.0]].map(([u, v]) => [x + u + (rp() - .5) * .6, z + v + (rp() - .5) * .5]), tp = cs.map(() => gy + .62 + rp() * .16);
+      put('slab', prism([...cs.map(c => [c[0], gy - .4, c[1]]), ...cs.map((c, k) => [c[0] + (rp() - .5) * .3, tp[k], c[1] + (rp() - .5) * .3])])); const b = boxOf(cs), top = Math.min(...tp);
+      plats.push({ ...b, w: b.w - .5, d: b.d - .5, y: +top.toFixed(2) }); return { x, z: +z.toFixed(2), top: +top.toFixed(2) }; })();
+    // Session 2526: the cliff and the rim, where the world raised the land for it (o.land, o.h0At: the shore's own ground, from the datum).
+    // The face is the prototype's (Sessions 2457, 2497): u along the brink, v up it; its stretches of 22 to 60 m, a buttress 3 to 8 m out, a
+    // gully 3 to 6 m back; the beds stepping, the waves' notch, wet under 4 m, lichen at the top; one point a grid point, the normals smooth.
+    // Unlike the prototype's it is kept seaward of the brink (at least 0.3 m, about 5.5 m more below its lip), so the ground sunk behind it
+    // never shows through. The rim is the prototype's bare rim, a bed of the pavement 15 m deep over the brink, its back edge a short skirt.
+    let face = null, capAt = null;
+    if (o.land && o.h0At) { const L = o.land, K = L.consts, h0 = o.h0At, NXF = 220, NJ = 30, XS = K.XL, s16 = .0625;
+      const XF = Array.from({ length: NXF + 1 }, (_, i) => -XS + 2 * XS * i / NXF), U = [0];
+      for (let i = 1; i <= NXF; i++) U.push(U[i - 1] + Math.hypot(XF[i] - XF[i - 1], L.edge(XF[i]) - L.edge(XF[i - 1])));
+      const RF = stream(key + ':face'), FACE = []; for (let u = 0; u < U[NXF];) { const w = 22 + RF() * 38, k = RF(), tp = -3 - RF() * 34; FACE.push({ c: u + w / 2, hw: w / 2, a: k < .55 ? -(3 + RF() * 5) : k < .8 ? 3 + RF() * 3 : 0, top: tp, gully: k >= .55 && k < .8 }); u += w; }
+      const lat = (u, y) => { let d = 0; for (const f of FACE) { const du = Math.abs(u - f.c); if (du > f.hw + 2 || !f.a) continue; const hw = f.gully ? Math.min(f.hw, 4 + f.hw * .2) : f.hw;
+        d += f.a * (1 - sstep(hw - 3, hw + 1, du)) * sstep(f.top, f.top - 6, y) * (f.gully ? 1 : .34 + .66 * sstep(K.SL - 2, K.SL + 24, y)); } return d; };
+      const pos = [], col = [], uv = []; let hi = -1e9, lo = 1e9, out = 0;
+      for (let i = 0; i <= NXF; i++) { const x = XF[i], e = L.edge(x), yt = L.top(x, e, h0(x, e)), yb = Math.min(yt - .2, L.ground(x, e - 12, h0(x, e - 12)) - 1), TOPh = Math.max(1, yt - K.SL);
+        hi = Math.max(hi, yt); lo = Math.min(lo, yb);
+        for (let j = 0; j <= NJ; j++) { const y = yt - (yt - yb) * j / NJ, ys = y - K.SL, bed = Math.floor(ys / 7.3), k3 = sstep(0, 3, j);
+          let s = 2 * (1 - ys / TOPh) + 3.2 * (fbm(x / 26 + bed * 1.7, bed * .9, 2) - .5) + 9 * (fbm(x / 55 + 2, ys / 45, 2) - .5) * k3 + .4 - 2.2 * Math.exp(-(((ys - 2) / 2.5) ** 2)) * k3 - lat(U[i], y - K.SL - TOPh) * k3;
+          s = j === 0 ? .3 : Math.min(18, Math.max(.3, s + 5.5 * k3)); out = Math.max(out, s);
+          const wet = 1 - sstep(1.5, 4, ys), lich = sstep(TOPh - 14, TOPh - 2, ys) * .5, n = (.9 + .2 * fbm(x / 24, ys / 18, 3)) * (.88 + .2 * fbm(bed * 3.1, 1.1, 1));
+          pos.push(x, y, e - s); col.push(...[.8, .79, .74].map((v, q) => enc((v * (1 - wet) + [.12, .12, .1][q] * wet) * n * (1 - lich * .25) + lich * [.06, .07, .02][q]))); uv.push(U[i] * s16, ys * s16); } }
+      const idx = []; for (let i = 0; i < NXF; i++) for (let j = 0; j < NJ; j++) { const a = i * (NJ + 1) + j, b = a + NJ + 1; idx.push(a, b, b + 1, a, b + 1, a + 1); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+      (B.get('cliff') || B.set('cliff', []).get('cliff')).push(g);
+      // the rim: rows from its back (a skirt 0.8 m down) to the brink, 1 m along x and 3 m across; its height read back by the walk (capAt)
+      const NC = 5, CX = 2 * XS, CG = new Float32Array((CX + 1) * (K.CAPW + 1)), rp = [], ri = [];
+      for (let i = 0; i <= CX; i++) { const x = -XS + i, e = L.edge(x); for (let k = 0; k <= K.CAPW; k++) { const z = e + k; CG[i * (K.CAPW + 1) + k] = L.top(x, z, h0(x, z)) + .04; } }
+      capAt = (x, z) => { if (Math.abs(x) > XS) return null; const e = L.edge(x), d = z - e; if (d < -.3 || d > K.CAPW) return null; const f = x + XS, i = Math.min(CX - 1, Math.floor(f)), u = f - i, k = Math.max(0, Math.min(K.CAPW, d)), k0 = Math.min(K.CAPW - 1, Math.floor(k)), v = k - k0, R = K.CAPW + 1;
+        return (CG[i * R + k0] * (1 - u) + CG[(i + 1) * R + k0] * u) * (1 - v) + (CG[i * R + k0 + 1] * (1 - u) + CG[(i + 1) * R + k0 + 1] * u) * v; };
+      for (let i = 0; i <= CX; i++) { const x = -XS + i, e = L.edge(x), cy = k => CG[i * (K.CAPW + 1) + Math.min(K.CAPW, Math.round(k))];
+        rp.push(x, cy(K.CAPW) - .8, e + K.CAPW); for (let c = 0; c <= NC; c++) { const k = K.CAPW * (1 - c / NC); rp.push(x, cy(k), c === NC ? e - .3 : e + k); } }
+      const RW = NC + 2; for (let i = 0; i < CX; i++) for (let c = 0; c < RW - 1; c++) { const a = i * RW + c, b = a + RW; ri.push(a, b, b + 1, a, b + 1, a + 1); }
+      const cg = new THREE.BufferGeometry(); cg.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); cg.setIndex(ri); put('slab', cg);
+      face = { top: +hi.toFixed(2), foot: +lo.toFixed(2), out: +out.toFixed(2), len: +U[NXF].toFixed(1), stretches: FACE.length }; }
+    if (!_swMats) {
+      // the prototype's two canvases, 512 px a tile, wrapping (dry stone 4 m a tile, the pavement 6 m); their bytes as drawn, the game's output being linear
+      const canvasTex = draw => { const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d'); draw(x); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t; };
+      const rt = stream(key + ':tex');
+      const grain = (x, n, a) => { for (let q = 0; q < n; q++) { const v = rt() < .5 ? 0 : 255; x.fillStyle = `rgba(${v},${v},${v},${a * rt()})`; x.fillRect(rt() * 512, rt() * 512, 1 + rt() * 3, 1 + rt() * 3); } };
+      const dryT = canvasTex(x => { x.fillStyle = '#3c3b38'; x.fillRect(0, 0, 512, 512); const rows = []; let y = 0; while (y < 512) { const h = 22 + rt() * 36; rows.push([y, Math.min(h, 512 - y)]); y += h; } if (rows.length > 1 && rows[rows.length - 1][1] < 20) { const l = rows.pop(); rows[rows.length - 1][1] += l[1]; }
+        for (const [y0, h] of rows) { let x0 = rt() * 60; const end = x0 + 512; while (x0 < end) { const w = 30 + rt() * 90, v = 124 + rt() * 66, warm = rt() * 6, g = .8 + rt() * 1.2, sh = h * (.82 + rt() * .18), dy = (h - sh) * rt();
+            const pts = []; for (let k = 0; k < 10; k++) { const an = k / 10 * Math.PI * 2, rr = .9 + rt() * .1; pts.push([Math.cos(an) * rr, Math.sin(an) * rr]); }
+            for (const ox of [0, -512]) for (const oy of [0, -512, 512]) { if (oy && y0 + h < 480 && y0 > 30) continue; const cx = x0 + ox + w / 2, cy = y0 + oy + dy + sh / 2, hw = w / 2 - g, hh = sh / 2 - g;
+              x.fillStyle = `rgb(${(v + warm) | 0},${v | 0},${(v - 4 - warm) | 0})`; x.beginPath(); pts.forEach(([px, py], k) => { const X = cx + Math.sign(px) * Math.abs(px) ** .18 * hw, Y = cy + Math.sign(py) * Math.abs(py) ** .18 * hh; k ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.closePath(); x.fill();
+              x.fillStyle = 'rgba(255,255,250,.07)'; x.fillRect(cx - hw * .8, cy - hh * .9, hw * 1.6, hh * .35);
+              for (let q = 0; q < 2; q++) if (rt() < .5) { x.fillStyle = rt() < .6 ? 'rgba(206,206,184,.28)' : 'rgba(128,134,84,.22)'; x.beginPath(); const lx = cx + (rt() - .5) * hw * 1.4, ly = cy + (rt() - .5) * hh * 1.2; for (let k = 0; k < 7; k++) x.arc(lx + (rt() - .5) * 10, ly + (rt() - .5) * 6, 2 + rt() * 4, 0, 7); x.fill(); } }
+            x0 += w; } }
+        grain(x, 9000, .12); });
+      const paveT = canvasTex(x => { x.fillStyle = '#9c9c96'; x.fillRect(0, 0, 512, 512); for (let q = 0; q < 700; q++) { const v = 128 + rt() * 56; x.fillStyle = `rgba(${v | 0},${v | 0},${(v * .97) | 0},.3)`; x.beginPath(); x.arc(rt() * 512, rt() * 512, 4 + rt() * 18, 0, 7); x.fill(); }
+        x.fillStyle = 'rgba(70,70,66,.35)'; for (let q = 0; q < 160; q++) { x.beginPath(); x.arc(rt() * 512, rt() * 512, 1 + rt() * 2, 0, 7); x.fill(); }
+        const lines = []; let y = 0; while (y < 512 - 50) { lines.push(y); y += 70 + rt() * 70; } x.strokeStyle = 'rgba(48,48,44,.85)'; x.lineCap = 'round';
+        for (const y0 of lines) for (const ox of [0, 512, -512]) { x.lineWidth = 2.5 + rt() * 2.5; x.beginPath(); for (let xx = 0; xx <= 512; xx += 16) { const yy = y0 + 9 * Math.sin(xx / 512 * Math.PI * 2 * 2 + y0) + (xx === 0 || xx === 512 ? 0 : (rt() - .5) * 4); xx ? x.lineTo(xx, yy + ox) : x.moveTo(xx, yy + ox); } x.stroke(); }
+        x.strokeStyle = 'rgba(56,56,52,.7)'; for (let k = 0; k < lines.length; k++) { const y0 = lines[k], y1 = k + 1 < lines.length ? lines[k + 1] : 512 + lines[0]; let xx = rt() * 80; while (xx < 512) { x.lineWidth = 1.5 + rt() * 1.5; const dx = (rt() - .5) * 30; for (const ox of [0, 512, -512]) for (const oy of [0, -512]) { x.beginPath(); x.moveTo(xx + ox, y0 + oy + 4); x.lineTo(xx + ox + dx, y1 + oy - 4); x.stroke(); } xx += 60 + rt() * 140; } }
+        grain(x, 7000, .1); });
+      /* Session 2526: the set stones in the pavement's limestone at 1.5 (the prototype's Session 2497, after the critic's black teeth, s1812), encoded */
+      const chevM = mat('searock', { ns: .7, color: new THREE.Color(...[1.5, 1.48, 1.42].map(enc)), rough: .95 }); chevM.vertexColors = true;
+      const cliffM = mat('searock', { ns: 1.1, color: 0xffffff, rough: .95 }); cliffM.vertexColors = true;
+      _swMats = { wall: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }), step: new THREE.MeshStandardMaterial({ map: dryT, bumpMap: dryT, bumpScale: 2.5, roughness: .95 }),
+        tumble: mat('rock', { ns: 1, color: 0xd6d4cc, rough: .95 }), chev: chevM, cliff: cliffM, lintel: mat('flag', { ns: 1, color: 0xd0cec6, rough: .9 }), slab: new THREE.MeshStandardMaterial({ map: paveT, color: 0xdedcd4, roughness: .95 }) }; }
+    let tris = 0, draws = 0;
+    const merge = gs => { const g = mergeGeometries(gs); if (gs.every(x => x.attributes.color)) { const Cc = new Float32Array(g.attributes.position.count * 3); let q = 0; for (const x of gs) { Cc.set(x.attributes.color.array, q); q += x.attributes.color.array.length; } g.setAttribute('color', new THREE.BufferAttribute(Cc, 3)); } return g; };
+    for (const [k, gs] of B) { const g = gs.length > 1 ? merge(gs) : gs[0]; if (gs.length > 1) gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, _swMats[k]); m.name = 'stormwatch:' + k; m.userData.key = k;
+      m.castShadow = true; m.receiveShadow = true; group.add(m); tris += (g.index ? g.index.count : g.attributes.position.count) / 3; draws++; }
+    return { group, tris: Math.round(tris), draws, C: C.map(v => +v.toFixed(2)), ell, walls: { inner, middle, outer }, passage, flights, chev, platform, tumbles: tumbles.length, sol, plats, face, capAt, tick() {} };
+  }
   // ── the Hollow Below (Session 2473; Michael's A on #1761, "a Mark gate's way in"; the prototype is ruins.js's hollowBelow, Session 2401,
   // OG-104's Mark panel without its "technology", canon §3.1): one gate's mouth whose hillside is a cavern. Copied as drawn, a metre a unit,
   // y 0 the viaduct's deck and the court, +z toward the way in, the rings at -z: the cavern 250 m across under a vault 120 m over the deck,
@@ -12668,7 +12856,7 @@ function aurenneOrrery(hAt, o = {}) {
       for (let i = 0; i < 14; i++) { const s = .025 + r() * .05; put(rareRough(new THREE.IcosahedronGeometry(s, 0), r, s * .2, 9), 'sigilRock', (r() - .5) * 1.1, s * .3, zc + .2 + r() * .55, r(), r() * 6, r()); } }
     return finish({ school, cut, size: [SW, SH, ST], face: +face.toFixed(3), split: +below.toFixed(3), lit });
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, isles: gateIslesRuin, aqueducts: aqueductsRuin, aqueductsPlan, frostborn: frostbornRuin, frostbornLand, scarred: scarredGateRuin, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden, crater: starCrater, skypine: skywoodPine, sigilstone: scriptStone }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, isles: gateIslesRuin, aqueducts: aqueductsRuin, aqueductsPlan, frostborn: frostbornRuin, frostbornLand, scarred: scarredGateRuin, stormwatch: stormwatchRuin, stormwatchLand, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden, crater: starCrater, skypine: skywoodPine, sigilstone: scriptStone }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, trader: markTrader, TRADER_TRADES, TOWN_TRADES, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

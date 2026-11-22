@@ -3511,7 +3511,7 @@
   // Stones are cosmetic; the place is the seed's.
   // When it stands (within 1.6 km, in the open world) every stone has a stamp that only clears the scatter under it (noFlat: the
   // ground is not flattened), the walls' standing courses are solids, and from 20h to 5h the stones drift and the seams burn.
-  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},spires:{site:undefined,W:null,stamps:null,sol:[],plats:[]},scarred:{site:undefined,W:null,stamps:null,sol:[],plats:[]},isles:{site:undefined,W:null,sol:[],plats:[]},aqueducts:{site:undefined,W:null,stamp:null,stamps:null,sol:[],plats:[]},frostborn:{site:undefined,W:null,stamp:null,stamps:null,land:null,sol:[],plats:[]},near:1600,_t:0};
+  const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},spires:{site:undefined,W:null,stamps:null,sol:[],plats:[]},scarred:{site:undefined,W:null,stamps:null,sol:[],plats:[]},isles:{site:undefined,W:null,sol:[],plats:[]},aqueducts:{site:undefined,W:null,stamp:null,stamps:null,sol:[],plats:[]},frostborn:{site:undefined,W:null,stamp:null,stamps:null,land:null,sol:[],plats:[]},stormwatch:{site:undefined,W:null,stamp:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
   function wonderSkyfallSite(){const S=WONDERS.skyfall;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
@@ -4113,9 +4113,88 @@
   function wonderFrostDrop(){const S=WONDERS.frostborn;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});S.W=null;}
     for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:frostborn')STATIC_SOL.splice(i,1);S.sol=[];
     const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='frostborn')P.splice(i,1);S.plats=[];S.reseat=null;}
+  // Stormwatch (Sessions 2480 and 2526; the kit's PKIT.wonders.stormwatch, from ruins.js; OG-104's Stormwatch Ruins, the Gatelands; Michael's
+  // A on #1815, empty, as built: a landmark walked for the view; his A on #1843, "raise a headland for it"), on the new look only. No Gatelands
+  // shore has a flat top over a sheer cliff (Session 2480: on seed 1 none in any nation), so the fort brings its headland: one stamp of a height
+  // (the kit's stormwatchLand, from the shore's own ground) raises a low shore to the prototype's land, 40 m over the sea at the brink, and
+  // sinks the ground inside the kit's cliff. Its place is the same for every load of a seed: on a 50 m grid over the Gatelands' land cells
+  // (getCell, all of them, the Gatelands' regions in REGIONS while it looks), a brink point on a low shore (0 to 8 m under the sea to 14 m over
+  // it along 300 m of the brink line) facing open sea (under it 35 m out along that line and deeper at 70 m, and still at 150, 300, 500 and 800 m: not a channel) on one of sixteen headings
+  // (the fort's -z), its land behind dry, under 37 m and over the sea's 8 m down for 110 m in, and joined to the land (dry ground 130 m and
+  // 220 m in); nothing of the world's in the raised ground (the land's box, 660 m along the brink, 60 m out to 330 m in): no site within 120 m
+  // past its pad, no door within 80 m, no road within 60 m, no other Gatelands wonder within 1.2 km. It is scored on the shore's own height
+  // (less raised), even ground under the walls and a low brink. The walk: the kit's walls and terraces (oriented boxes) and its rim, which is
+  // one platform at the rim's height over the brink's first 15 m (capAt); past the rim's front you fall to the sea.
+  const SW_Y=40;
+  function withGatelandsRegions(fn){const all=[...CELLS.values()],gk=new Set(all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='gatelands').map(c=>c.i+','+c.j));
+    const keep=[REGIONS.slice(),PEAKS.slice(),INLETS.slice()],ring=all.filter(c=>{for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++)if(gk.has((c.i+di)+','+(c.j+dj)))return true;return false;});
+    REGIONS.length=0;PEAKS.length=0;INLETS.length=0;ring.forEach(c=>{c.regions.forEach(q=>REGIONS.push(q));c.peaks.forEach(q=>PEAKS.push(q));(c.inlets||[]).forEach(q=>INLETS.push(q));});
+    try{return fn();}finally{REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}}
+  // a placing's shore as the search reads it (null: it fails one of the ground's tests)
+  function stormMeasure(x,z,q,lat){const ry=q*Math.PI/8+Math.PI,c=Math.cos(ry),s_=Math.sin(ry),H=(lx,lz)=>rawH(x+lx*c+lz*s_,z-lx*s_+lz*c),HF=lat?(lx,lz)=>lat(x+lx*c+lz*s_,z-lx*s_+lz*c):H,Y=SEA_Y+SW_Y;
+    if(H(0,-35)>=SEA_Y-.5)return null;
+    for(const [lx,lz] of [[-150,-150],[0,-150],[150,-150],[-200,-300],[0,-300],[200,-300],[-300,-500],[0,-500],[300,-500],[0,-800]])if(HF(lx,lz)>=SEA_Y-1)return null; /* open sea before it, not a channel (on the search's 50 m lattice when it has one) */
+    for(const lx of [-150,-100,-50,0,50,100,150]){if(H(lx,-35)>=SEA_Y-.5||H(lx,-70)>=SEA_Y-1)return null;const b=H(lx,0);if(b<SEA_Y-8||b>SEA_Y+14)return null;}
+    for(const lx of [-250,-200,200,250])if(H(lx,-35)>=SEA_Y+3)return null;
+    for(const [lx,lz] of [[-100,130],[0,130],[100,130],[0,220]]){const X=x+lx*c+lz*s_,Z=z-lx*s_+lz*c,y=rawH(X,Z);if(y<SEA_Y+1||y<landH(X,Z)-1.5)return null;}
+    let lo=1e9,hi=-1e9,sum=0,n=0,blo=1e9,bhi=-1e9;
+    for(let lx=-150;lx<=150;lx+=50){blo=Math.min(blo,H(lx,0));bhi=Math.max(bhi,H(lx,0));for(let lz=20;lz<=110;lz+=45){const X=x+lx*c+lz*s_,Z=z-lx*s_+lz*c,y=rawH(X,Z);
+      if(y>Y-3||y<SEA_Y-8||(y>=SEA_Y&&y<landH(X,Z)-1.5))return null;lo=Math.min(lo,y);hi=Math.max(hi,y);sum+=y;n++;}}
+    const mean=sum/n;return {x,z,ry:+ry.toFixed(4),q,y:Y,mean:+mean.toFixed(1),spread:+(hi-lo).toFixed(1),brink:[+blo.toFixed(1),+bhi.toFixed(1)],score:+(mean*.5-(hi-lo)*.3-Math.abs((blo+bhi)/2-SEA_Y)*.3).toFixed(2)};}
+  // a placing as the search would measure it, without its tests of what else stands there (the suite's and a picture's)
+  function wonderStormAt(x,z,q){landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);return withGatelandsRegions(()=>stormMeasure(x,z,q));}
+  function wonderStormSite(){const S=WONDERS.stormwatch;if(S.site!==undefined)return S.site;S.site=null;
+    if(typeof nationKeyOf!=='function'||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.stormwatchLand)return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
+    const all=[...CELLS.values()],gl=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='gatelands');if(!gl.length)return null;
+    const others=[wonderRingSite(),wonderLoughSite(),wonderSpiresSite(),wonderIslesSite(),wonderAqueductsSite()].filter(Boolean);
+    const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
+    const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
+    const B=PKIT.wonders.stormwatchLand().box;let best=null;
+    /* the shore's heights on the search's own 50 m lattice, read once each: the open sea 150, 300 and 500 m out along a heading is read there first (the nearest point), and only a heading that passes is measured (3.8 M height reads and 22 s on software GL before) */
+    const LAT=new Map(),lat=(x,z)=>{const i=Math.round((x-25)/50),j=Math.round((z-25)/50),k=i*100003+j;let v=LAT.get(k);if(v===undefined){v=rawH(i*50+25,j*50+25);LAT.set(k,v);}return v;};
+    withGatelandsRegions(()=>{for(const c of gl){const x0=c.i*SIZE-900,x1=(c.i+1)*SIZE+900,z0=c.j*SIZE-900,z1=(c.j+1)*SIZE+900,inB=(x,z)=>x>x0&&x<x1&&z>z0&&z<z1;
+        const cs=sites.filter(s=>inB(s.x,s.z)||(s.pad||0)>100),cd=doors.filter(d=>inB(d.x,d.z)),cr=[];roads.forEach(([p,q])=>{if(Math.max(p.x,q.x)<x0||Math.min(p.x,q.x)>x1||Math.max(p.z,q.z)<z0||Math.min(p.z,q.z)>z1)return;const n=Math.ceil(Math.hypot(q.x-p.x,q.z-p.z)/20);for(let k=0;k<=n;k++)cr.push([p.x+(q.x-p.x)*k/n,p.z+(q.z-p.z)*k/n]);}); /* the roads read every 20 m, once a cell */
+      for(let a=25;a<SIZE;a+=50)for(let b=25;b<SIZE;b+=50){const x=c.i*SIZE+a,z=c.j*SIZE+b,r0=lat(x,z);if(r0<SEA_Y-8||r0>SEA_Y+14)continue;
+        if(others.some(o=>Math.hypot(o.x-x,o.z-z)<1200))continue;
+        for(let q=0;q<16;q++){const ry=q*Math.PI/8+Math.PI,sx=Math.sin(ry),cz=Math.cos(ry);if(lat(x-150*sx,z-150*cz)>=SEA_Y-1||lat(x-300*sx,z-300*cz)>=SEA_Y-1||lat(x-500*sx,z-500*cz)>=SEA_Y-1||lat(x+130*sx,z+130*cz)<SEA_Y+1)continue;
+          {let bad=false;for(const lx of [-150,150]){const y=lat(x+lx*cz,z-lx*sx);if(y<SEA_Y-14||y>SEA_Y+20){bad=true;break;}}if(bad)continue;} /* the brink's two ends, loosely, on the lattice */
+          const m=stormMeasure(x,z,q,lat);if(!m||best&&m.score<=best.score)continue;
+          const cc=Math.cos(m.ry),ss=Math.sin(m.ry),inBox=(X,Z,mg)=>{const dx=X-x,dz=Z-z,lx=dx*cc-dz*ss,lz=dx*ss+dz*cc;return lx>B.x0-mg&&lx<B.x1+mg&&lz>B.z0-mg&&lz<B.z1+mg;};
+          if(cs.some(t=>Math.abs(t.x-x)<700+(t.pad||0)&&Math.abs(t.z-z)<700+(t.pad||0)&&inBox(t.x,t.z,120+(t.pad||0)))||cd.some(d=>inBox(d.x,d.z,80))||cr.some(([X,Z])=>Math.abs(X-x)<520&&Math.abs(Z-z)<520&&inBox(X,Z,60)))continue;
+          best={...m,cell:cellKey(c.i,c.j)};}}}});
+    return (S.site=best);}
+  function wonderStormLand(st){const S=WONDERS.stormwatch;if(S.land&&S.land.st===st)return S.land;const L=PKIT.wonders.stormwatchLand({sea:SEA_Y-st.y}),c=Math.cos(st.ry),s_=Math.sin(st.ry);
+    L.st=st;L.toL=(wx,wz)=>{const dx=wx-st.x,dz=wz-st.z;return [dx*c-dz*s_,dx*s_+dz*c];};return (S.land=L);}
+  function wonderStormStamp(st){const S=WONDERS.stormwatch;if(S.stamp)return S.stamp;const L=wonderStormLand(st),B=L.box,[x,z]=wonderToWorld(st,0,(B.z0+B.z1)/2),r=Math.hypot(B.x1,(B.z1-B.z0)/2)+4;
+    S.stamp=addStamp({id:'wonder_stormwatch',kind:'wonder',natural:true,x,z,r,blend:0,y:st.y,farFn:true,inside:(wx,wz)=>L.inside(...L.toL(wx,wz)),fn:(wx,wz,h)=>{const [lx,lz]=L.toL(wx,wz);return st.y+L.ground(lx,lz,h-st.y);}});S.stamps=[S.stamp];
+    try{clearScatterUnder(S.stamps);}catch(e){console.warn('wonder scatter',e);}try{refreshChunksNearWater(S.stamps);}catch(e){console.warn('wonder ground',e);}farSinkUnder();
+    return S.stamp;}
+  function wonderStormBuild(){const S=WONDERS.stormwatch,st=wonderStormSite();if(!st||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.stormwatch)return null;
+    const L=wonderStormLand(st);wonderStormStamp(st);
+    const h0At=(lx,lz)=>{const [x,z]=wonderToWorld(st,lx,lz);S.stamp.off=true;try{return worldH(x,z)-st.y;}finally{S.stamp.off=false;}};
+    const W=PKIT.wonders.stormwatch((lx,lz)=>L.top(lx,lz,h0At(lx,lz)),{land:L,h0At});S.edge=L.edge;
+    W.sig=wonderCellSig(st);W.group.position.set(st.x,st.y,st.z);W.group.rotation.y=st.ry;W.group.userData.noBake=true;W.group.updateMatrixWorld(true);sc.add(W.group);S.W=W;
+    S.plats=W.plats.map(p=>{const [x,z]=wonderToWorld(st,p.x,p.z),c=Math.cos(st.ry+p.ry),s_=Math.sin(st.ry+p.ry),ex=(Math.abs(c)*p.w+Math.abs(s_)*p.d)/2,ez=(Math.abs(s_)*p.w+Math.abs(c)*p.d)/2;
+      return {x0:x-ex,x1:x+ex,z0:z-ez,z1:z+ez,y:p.y+st.y,wonder:'stormwatch',inside:(wx,wz)=>{const dx=wx-x,dz=wz-z;return Math.abs(dx*c-dz*s_)<p.w/2&&Math.abs(dx*s_+dz*c)<p.d/2;}};});
+    /* the rim: the land's height over the brink's first 15 m, where the ground under it is sunk */
+    {const xs=[],zs=[],K=L.consts;for(const lx of [-K.XL,K.XL])for(const lz of [L.box.z0,K.CAPW+20]){const [x,z]=wonderToWorld(st,lx,lz);xs.push(x);zs.push(z);}
+      S.plats.push({x0:Math.min(...xs),x1:Math.max(...xs),z0:Math.min(...zs),z1:Math.max(...zs),y:st.y,wonder:'stormwatch',rim:true,yAt:(wx,wz)=>{const y=W.capAt(...L.toL(wx,wz));return y==null?null:y+st.y;}});}
+    S.plats.forEach(p=>ZONES.world.platforms.push(p));
+    S.sol=W.sol.map(b=>{const [x,z]=wonderToWorld(st,b.x,b.z),q={cx:x,cz:z,rx:b.w/2,rz:b.d/2,c:Math.cos(st.ry+b.ry),s:Math.sin(st.ry+b.ry),h:b.h,cell:'wonder:stormwatch',wonder:true};if(b.top!=null)q.top=b.top+st.y;return q;});
+    S.sol.forEach(q=>STATIC_SOL.push(q));
+    S.reseat=()=>wonderStormHerbs(st,L);S.reseat();
+    return W;}
+  // a herb or a vein a chunk laid before the headland was raised goes onto the ground as it is now, or away where the rim, a wall or the sunk rock is
+  function wonderStormHerbs(st,L){const HL=(ZONES.world&&ZONES.world.herbs)||[];let n=0;
+    for(let i=HL.length-1;i>=0;i--){const h=HL[i];const [lx,lz]=L.toL(h.x,h.z);if(!L.inside(lx,lz))continue;const y=worldH(h.x,h.z);
+      if(lz<L.edge(lx)+L.consts.CAPW+1||activeTerrainH(h.x,h.z)>y+.5||solidAt(h.x,h.z)){HL.splice(i,1);h.offPad=true;h.g.visible=false;if(h.gl)h.gl.intensity=0;n++;}else h.g.position.y=y;if(h.inst)syncHerbInstance(h);}
+    const [cx,cz]=wonderToWorld(st,0,(L.box.z0+L.box.z1)/2);return n+wonderSeatVeins(cx,cz,Math.hypot(L.box.x1,(L.box.z1-L.box.z0)/2));}
+  function wonderStormDrop(){const S=WONDERS.stormwatch;if(S.W){if(S.W.group.parent)S.W.group.parent.remove(S.W.group);S.W.group.traverse(m=>{if(m.isMesh)m.geometry.dispose();});S.W=null;}
+    for(let i=STATIC_SOL.length-1;i>=0;i--)if(STATIC_SOL[i].cell==='wonder:stormwatch')STATIC_SOL.splice(i,1);S.sol=[];
+    const P=ZONES.world.platforms;for(let i=P.length-1;i>=0;i--)if(P[i].wonder==='stormwatch')P.splice(i,1);S.plats=[];S.reseat=null;}
   // from WORLD.tick, every frame in the open world: each wonder built within 1.6 km (checked once a second), animated while it stands.
   // A wonder's site is searched only once you stand on its island's land (the Fields' takes 0.6 s on software GL)
-  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop},{k:'northlight',nation:'mark',site:wonderNorthSite,build:wonderNorthBuild,drop:wonderNorthDrop},{k:'spires',nation:'gatelands',site:wonderSpiresSite,build:wonderSpiresBuild,drop:wonderSpiresDrop},{k:'scarred',nation:'aurenne',site:wonderScarredSite,build:wonderScarredBuild,drop:wonderScarredDrop},{k:'isles',nation:'gatelands',site:wonderIslesSite,build:wonderIslesBuild,drop:wonderIslesDrop},{k:'aqueducts',nation:'gatelands',site:wonderAqueductsSite,build:wonderAqueductsBuild,drop:wonderAqueductsDrop},{k:'frostborn',nation:'mark',site:wonderFrostSite,build:wonderFrostBuild,drop:wonderFrostDrop}];
+  const WONDER_KINDS=[{k:'skyfall',nation:'mark',site:wonderSkyfallSite,build:wonderSkyfallBuild,drop:wonderSkyfallDrop},{k:'orrery',nation:'aurenne',site:wonderOrrerySite,build:wonderOrreryBuild,drop:wonderOrreryDrop},{k:'lough',nation:'gatelands',site:wonderLoughSite,build:wonderLoughBuild,drop:wonderLoughDrop},{k:'ring',nation:'gatelands',site:wonderRingSite,build:wonderRingBuild,drop:wonderRingDrop},{k:'northlight',nation:'mark',site:wonderNorthSite,build:wonderNorthBuild,drop:wonderNorthDrop},{k:'spires',nation:'gatelands',site:wonderSpiresSite,build:wonderSpiresBuild,drop:wonderSpiresDrop},{k:'scarred',nation:'aurenne',site:wonderScarredSite,build:wonderScarredBuild,drop:wonderScarredDrop},{k:'isles',nation:'gatelands',site:wonderIslesSite,build:wonderIslesBuild,drop:wonderIslesDrop},{k:'aqueducts',nation:'gatelands',site:wonderAqueductsSite,build:wonderAqueductsBuild,drop:wonderAqueductsDrop},{k:'frostborn',nation:'mark',site:wonderFrostSite,build:wonderFrostBuild,drop:wonderFrostDrop},{k:'stormwatch',nation:'gatelands',site:wonderStormSite,build:wonderStormBuild,drop:wonderStormDrop}];
   function tickWonders(){if(typeof LAND==='undefined'||!LAND.on)return;const t=performance.now(),due=t-WONDERS._t>1000||WONDERS._t===0&&WONDER_KINDS.some(K=>!WONDERS[K.k].W);if(due)WONDERS._t=t;
     let nk=null;for(const K of WONDER_KINDS){const S=WONDERS[K.k];
       if(S.W&&S.W.group.parent!==sc)K.drop(); /* the world's scene was built again */
@@ -4141,6 +4220,7 @@
     if(k==='isles')return {x:st.x,z:st.z,r:200};
     if(k==='frostborn'){const L=wonderFrostLand(st),[x,z]=wonderToWorld(st,0,(L.box.z0+L.box.z1)/2);return {x,z,r:Math.hypot(L.box.x1*.8,(L.box.z1-L.box.z0)/2)};} /* S2524 — the gorge, the halls, the towers and the land behind the cliff */
     if(k==='aqueducts')return {x:st.x,z:st.z,r:170}; /* S2491 — the kit's land, the halls' length and the hole */ /* S2487 — the third isle's water at the line's middle (720 m, the whole line, reached the shore's chunks) */
+    if(k==='stormwatch'){const [x,z]=wonderToWorld(st,0,130);return {x,z,r:360};} /* S2526 — the raised land, the brink to 320 m in */
     if(k==='spires'){const [x,z]=wonderToWorld(st,0,(st.spit+5)/2);return {x,z,r:(st.spit+95)/2+11};}
     return null;}
   function wonderFoeClear(x,z){if(typeof LAND==='undefined'||!LAND.on)return false;let nk=null;
