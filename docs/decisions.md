@@ -3,31 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### The Frostborn Vault — where it goes, now every free Mark fell is taken (from the look builder, 2026-11-22, #1892)
-**The question.** #1858 B placed the vault at about (9525, 7275), but the Skyfall Fields already stand there, and on seed 1 every other Mark fell big enough for the vault's ground (about 800 m by 1 km) is the Northlight Altar's or holds towns, glades, ruins, cave doors or roads. Session 2523 built the vault's stone, gorge and ice, but nothing is placed. Where should it go?
-
-**Options.**
-- **A (recommended).** Take the Skyfall Fields' fell, at (9575, 7425) with the gorge running south; the Fields move to their own next-best place. The evenest ground (the four pads within 15 m). From the side the rims stand up to 40 m over the halls and hide the vault.
-- **B.** Take the Northlight Altar's fell; the Altar moves. Pads within 20–30 m of each other.
-- **C.** Clear the small places (glades, ruins, camps, cave doors) off ground near a village, around (4550, 9000); towns and roads stay. Needs the generator to give way: the systems builder with the look builder.
-- **D.** Leave the vault out until F3 gives the Mark higher ground.
-
-**Recommendation: A.**
-
-Pictures (placing A, the Fields taken away, 13h): [deck](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-gorge.jpg) · [glacier](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-ice.jpg) · [above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-above.jpg) · [rim](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-rim.jpg)
-
-### Workstations — the forge by grade, the still, or both? (from the designer, 2026-11-22, #1883)
-**The question.** Every forge works every metal today, and the apothecaries' drawn still does nothing. Should the forge have grades, should the still make a stronger draught that keeps, or both? (Backlog L11, OG-133.)
-
-**Options.**
-- **A.** Three grades of forge: a village to Steel, a town to Obsidian, the top three only at a city keep's great forge, open at the city's favour +2 with no bounty (and no sigil stone in Aurenne). Two systems sessions, one look.
-- **B.** The still and four steps: herbs dried on a rack (×1.10), the mortar as now, two tinctures distilled into a draught (×1.35, never turns), bottled in a 2-gold glass vial; a recipe leaf on the brewing page. Three systems sessions.
-- **C (recommended).** Both. Five systems sessions, one look.
-
-**Recommendation: C**; if only one, A, because it carries the consequence.
-
-Page: [docs/design/workstations.md](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/workstations.md)
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -41,6 +16,35 @@ Page: [docs/design/workstations.md](https://github.com/mbuckley616/The-Old-Gates
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### The Frostborn Vault — where it goes, now every free Mark fell is taken (from the look builder, 2026-11-22, #1892)
+**The question.** #1858 B placed the vault at about (9525, 7275), but the Skyfall Fields already stand there, and on seed 1 every other Mark fell big enough for the vault's ground (about 800 m by 1 km) is the Northlight Altar's or holds towns, glades, ruins, cave doors or roads. Session 2523 built the vault's stone, gorge and ice, but nothing is placed. Where should it go?
+
+**Options.**
+- **A (recommended).** Take the Skyfall Fields' fell, at (9575, 7425) with the gorge running south; the Fields move to their own next-best place. The evenest ground (the four pads within 15 m). From the side the rims stand up to 40 m over the halls and hide the vault.
+- **B.** Take the Northlight Altar's fell; the Altar moves. Pads within 20–30 m of each other.
+- **C.** Clear the small places (glades, ruins, camps, cave doors) off ground near a village, around (4550, 9000); towns and roads stay. Needs the generator to give way: the systems builder with the look builder.
+- **D.** Leave the vault out until F3 gives the Mark higher ground.
+
+**Recommendation: A.**
+
+Pictures (placing A, the Fields taken away, 13h): [deck](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-gorge.jpg) · [glacier](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-ice.jpg) · [above](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-above.jpg) · [rim](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/frostborn-2523-rim.jpg)
+
+Michael: **Take the Skyfall Fields' fell; the Fields move** (A). (2026-11-22)
+
+### Workstations — the forge by grade, the still, or both? (from the designer, 2026-11-22, #1883)
+**The question.** Every forge works every metal today, and the apothecaries' drawn still does nothing. Should the forge have grades, should the still make a stronger draught that keeps, or both? (Backlog L11, OG-133.)
+
+**Options.**
+- **A.** Three grades of forge: a village to Steel, a town to Obsidian, the top three only at a city keep's great forge, open at the city's favour +2 with no bounty (and no sigil stone in Aurenne). Two systems sessions, one look.
+- **B.** The still and four steps: herbs dried on a rack (×1.10), the mortar as now, two tinctures distilled into a draught (×1.35, never turns), bottled in a 2-gold glass vial; a recipe leaf on the brewing page. Three systems sessions.
+- **C (recommended).** Both. Five systems sessions, one look.
+
+**Recommendation: C**; if only one, A, because it carries the consequence.
+
+Page: [docs/design/workstations.md](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/workstations.md)
+
+Michael: **Both** (C). (2026-11-22)
+
 ### Stormwatch’s ground — a headland raised for it, the highest cliff there is, or wait for the land? (from the look builder, 2026-11-21, #1843)
 **The question.** Stormwatch (#1815 A: empty, as built, a landmark walked for the view) is built in the kit (Session 2480, `auto/wip-stormwatch`), but the world has no cliff for it. The prototype's fort sits on a flat limestone top ending in an 88 m sea cliff; on seed 1 no brink 30 m or more over the sea has ground flat enough behind it. The Gatelands' coasts are low bluffs of 10 to 20 m or mountain flanks; the highest, a 97 m cliff at (14625, 23975), has ground rising 45 m behind it. Where should the fort stand?
 
