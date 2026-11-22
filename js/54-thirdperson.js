@@ -988,12 +988,14 @@ function tpRestHeld(R){const S=R.rest,h=S&&R.hbHeld&&R.hbHeld.find(x=>x.o===R.we
   _trD.set(0,S.dn,0).applyQuaternion(_trQ).normalize();_tgQ.setFromUnitVectors(_trD,_tgA.set(0,-1,0));_trQ.premultiply(_tgQ);
   if(S.haft){const e=Math.abs(S.dn>0?S.hi:S.lo)*_trS.y;_trP.y=S.y0+.005+e;}
   _trW.compose(_trP,_trQ,_trS);c.matrix.copy(_trM.copy(par.matrixWorld).invert().multiply(_trW));c.matrixWorldNeedsUpdate=true;c.updateMatrixWorld(true);}
-// S1401 — the pull's holds on the builder's body: twice, the driver's wrists aimed short by how far the builder's miss, and copied again
+// S1401 — the pull's holds on the builder's body: up to eight times (S2532), the driver's wrists aimed short by how far the builder's miss, and copied again
 const _tmE=[new THREE.Vector3(),new THREE.Vector3()],_tmW=new THREE.Vector3();
 function tpHBMantle(R){const H=R.rig.hb,M=R.mantle;if(M.w<=0)return;const wb=[H.P.byName['wrist.L'],H.P.byName['wrist.R']];if(!wb[0]||!wb[1])return;
   _tmE[0].set(0,0,0);_tmE[1].set(0,0,0);
-  for(let k=0;k<2;k++){R.root.updateMatrixWorld(true);for(let i=0;i<2;i++){wb[i].getWorldPosition(_tmW);_tmE[i].add(_tmW.sub(M.T[i]));}
-    tpMantleArms(R,_tmE);hbPose(R.rig);}}
+  /* S2532 — up to eight passes, ended once both wrists are within a centimetre: two left the left wrist 9–13 cm off the ledge early in the
+     pull, where the driver's arm is straight and out of reach and each pass takes only part of the miss */
+  for(let k=0;k<8;k++){R.root.updateMatrixWorld(true);let mx=0;for(let i=0;i<2;i++){wb[i].getWorldPosition(_tmW);_tmW.sub(M.T[i]);mx=Math.max(mx,_tmW.length());_tmE[i].add(_tmW);}
+    if(mx<.01)break;tpMantleArms(R,_tmE);hbPose(R.rig);}}
 // S1401 — a two-bone reach for any arm, as tpGripL's for the left: the elbow bent until shoulder to wrist is shoulder to T, then the
 // shoulder turned to put the wrist on T; out of reach the arm points straight at it
 function tpReach(sh,el,wr,T){
