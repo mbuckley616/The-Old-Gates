@@ -402,6 +402,37 @@ function sndHollowStep(sprint){
 function sndNailStep(sprint){
   sfxNoise(sprint?.055:.07,1,1,sprint?.18:.12,sprint?500:300);sfxTone(2600,1900,.035,sprint?.05:.04,'square');
 }
+/* S2514 — the draw and the sheathe heard (S2466's owed: "No sound comes with the draw"). Three voices by how the thing is worn
+   (third person's rule, tpSheathAt): a blade from its scabbard is steel along leather, the length of the blade, and on the draw the
+   ring of it clear; a hafted weapon from the belt's frog is leather and an iron clink; a staff, a wand or a spear's shaft is wood and
+   leather. Scheduled on the audio clock (at), not timers. Cosmetic: nothing waits for it. */
+function drawVoice(it){if(!it)return null;const s=it.weaponShape||'',im=typeof implementOf==='function'?implementOf(it):null;
+  if(im||/^(staff|wand|spear)$/.test(s))return 'wood';if(/^(mace|flail|warhammer|greataxe|greatclub|axe|hatchet|maul)$/.test(s))return 'haft';return 'blade';}
+function drawBladeLen(it){const s=(it&&it.weaponShape)||'';return s==='dagger'?.14:/^(longsword|claymore)$/.test(s)?.34:.22;}
+function _sfxSweepAt(at,dur,f0,f1,gainPk,Q,rise){const t=AX.currentTime+at;
+  const buf=AX.createBuffer(1,Math.ceil(AX.sampleRate*dur),AX.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+  const src=AX.createBufferSource();src.buffer=buf;const f=AX.createBiquadFilter();f.type='bandpass';f.Q.value=Q;
+  f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(f1,t+dur);
+  const g=AX.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(gainPk,t+dur*(rise||.3));g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  src.connect(f);f.connect(g);g.connect(sfxGain);src.start(t);src.stop(t+dur);}
+function _sfxToneAt(at,freq,freqEnd,dur,gainPk,wave){const t=AX.currentTime+at,o=AX.createOscillator();o.type=wave||'sine';o.frequency.setValueAtTime(freq,t);
+  if(freqEnd)o.frequency.exponentialRampToValueAtTime(freqEnd,t+dur);const g=AX.createGain();g.gain.setValueAtTime(gainPk,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(sfxGain);o.start(t);o.stop(t+dur);}
+const DRAW_SND={n:0,last:null};
+function sndDraw(it){const v=drawVoice(it);DRAW_SND.n++;DRAW_SND.last={kind:'draw',voice:v};if(!v||!AX||volLevel===0)return;try{
+  if(v==='blade'){const L=drawBladeLen(it),p=.22/L;
+    _sfxSweepAt(0,L,1700*Math.sqrt(p),4200*Math.sqrt(p),.11,7,.5);
+    _sfxToneAt(L*.92,3100*Math.sqrt(p),3050*Math.sqrt(p),.55,.03);_sfxToneAt(L*.92,4650*Math.sqrt(p),null,.35,.018);_sfxSweepAt(L*.9,.03,5000,5000,.05,2,.2);}
+  else if(v==='haft'){_sfxSweepAt(0,.1,650,900,.09,3);_sfxToneAt(.07,1700,1480,.08,.05,'triangle');_sfxToneAt(.07,2900,null,.03,.02,'square');}
+  else{_sfxSweepAt(0,.16,800,1300,.07,2.5,.4);_sfxToneAt(.14,380,260,.08,.09,'triangle');}
+}catch(e){}}
+function sndSheathe(it){const v=drawVoice(it);DRAW_SND.n++;DRAW_SND.last={kind:'sheathe',voice:v};if(!v||!AX||volLevel===0)return;try{
+  if(v==='blade'){const L=drawBladeLen(it),p=.22/L;
+    _sfxSweepAt(0,L*.9,3600*Math.sqrt(p),1500*Math.sqrt(p),.09,6,.25);
+    _sfxSweepAt(L*.88,.05,1300,1000,.12,2,.15);_sfxToneAt(L*.88,420,300,.06,.06,'triangle');}
+  else if(v==='haft'){_sfxToneAt(0,1600,1450,.07,.04,'triangle');_sfxSweepAt(.05,.09,450,320,.12,2.5,.2);_sfxToneAt(.05,160,110,.08,.08);}
+  else{_sfxSweepAt(0,.14,1200,700,.06,2.5,.3);_sfxToneAt(.12,300,220,.08,.08,'triangle');}
+}catch(e){}}
 function sndSnowStep(sprint){
   sfxNoise(sprint?.045:.055,1,1,sprint?.10:.07,sprint?260:180);
 }

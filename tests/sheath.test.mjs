@@ -214,4 +214,32 @@ if (ct.hb) {
     ct.tent && ct.tent.moved > 50 && ct.sword.cov > 100 && ct.sword.inside === 0, ct);
   check('a mace drawn wears nothing at the hip, and the sheet of the body carried over is back on its own points', !ct.mace.worn && ct.mace.kept && ct.mace.back, ct.mace);
 }
+// Session 2514: the draw and the sheathe are heard. Three voices by how the thing is worn (a blade from its scabbard, a hafted weapon from
+// the belt's frog, a staff or wand in wood), each sounding on the audio clock; H, the idle sheathe and a swing from the sheath all sound;
+// a new weapon taken in hand while sheathed does not (it is not drawn, it is changed)
+const au = await page.evaluate(() => { const out = { err: null }; const eq0 = { ...EQ };
+  try { initAudio(); } catch (e) { out.err = 'init ' + e.message; }
+  out.ax = !!AX; out.vol = volLevel;
+  let nodes = 0; const cs = AX && AX.createBufferSource.bind(AX), co = AX && AX.createOscillator.bind(AX);
+  if (AX) { AX.createBufferSource = () => { nodes++; return cs(); }; AX.createOscillator = () => { nodes++; return co(); }; }
+  const W = (shape, extra) => ({ name: 'Test ' + shape, type: 'weapon', atk: [10, 11], wType: 'slash', weaponShape: shape, weight: 3, ...extra });
+  const hear = (fn) => { const n0 = DRAW_SND.n, k0 = nodes; try { fn(); } catch (e) { out.err = e.message; } return { calls: DRAW_SND.n - n0, nodes: nodes - k0, last: DRAW_SND.last }; };
+  const one = (it) => { SWING = null; EQ.weapon = it; SHEATHED = false; const sh = hear(() => toggleSheath()), dr = hear(() => toggleSheath());
+    return { sh: sh.calls + ':' + (sh.last && sh.last.kind + '/' + sh.last.voice), dr: dr.calls + ':' + (dr.last && dr.last.kind + '/' + dr.last.voice), nodes: [sh.nodes, dr.nodes] }; };
+  out.sword = one(W('sword')); out.dagger = one(W('dagger', { wType: 'pierce' })); out.claymore = one(W('claymore', { twoHand: true }));
+  out.mace = one(W('mace', { wType: 'blunt' })); out.staff = one(W('staff', { wType: 'blunt', implement: 'staff', twoHand: true }));
+  const keepZ = ZE; ZE = []; EQ.weapon = W('sword'); SHEATHED = false; SWING = null;
+  _lastSwingG = playClockS - 5.1; out.idle = hear(() => tickSheath()); out.idle.sheathed = SHEATHED;
+  out.swing = hear(() => { beginSwing(false); }); out.swing.drawn = !SHEATHED; swingCancel();
+  sheathWeapon(); out.swap = hear(() => { EQ.weapon = W('sword', { name: 'Other Sword' }); tickSheath(); }); out.swap.sheathed = SHEATHED;
+  ZE = keepZ; if (AX) { AX.createBufferSource = cs; AX.createOscillator = co; } Object.assign(EQ, eq0); SHEATHED = false; buildViewmodel(); return out; });
+console.log(JSON.stringify(au));
+check(`the draw and the sheathe are heard by how the thing is worn: sword ${au.sword.sh} ${au.sword.dr}, mace ${au.mace.sh} ${au.mace.dr}, staff ${au.staff.sh} ${au.staff.dr}`,
+  !au.err && au.sword.sh === '1:sheathe/blade' && au.sword.dr === '1:draw/blade' && au.dagger.dr === '1:draw/blade' && au.claymore.dr === '1:draw/blade'
+  && au.mace.sh === '1:sheathe/haft' && au.mace.dr === '1:draw/haft' && au.staff.sh === '1:sheathe/wood' && au.staff.dr === '1:draw/wood', au);
+check(`each sounds on the audio clock (nodes made: sword ${au.sword.nodes}, mace ${au.mace.nodes}, staff ${au.staff.nodes})`,
+  au.ax && au.vol > 0 && [au.sword, au.dagger, au.claymore, au.mace, au.staff].every(o => o.nodes[0] >= 2 && o.nodes[1] >= 2), au);
+check('the idle sheathe and a swing from the sheath sound; a new weapon taken in hand while sheathed does not',
+  au.idle.calls === 1 && au.idle.sheathed && au.idle.last.kind === 'sheathe' && au.swing.calls === 1 && au.swing.drawn && au.swing.last.kind === 'draw'
+  && au.swap.calls === 0 && !au.swap.sheathed, au);
 await g.close();

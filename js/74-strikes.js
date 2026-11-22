@@ -369,8 +369,8 @@ const SHEATH_IDLE_S=5,SHEATH_FOE_R=14,DRAW_CUT_POSTURE=2;
 let SHEATHED=false,_sheathedItem=null,_lastSwingG=-1e9;
 function sheathable(){return !!EQ.weapon&&weaponSkill(EQ.weapon)!=='bow';}
 function sheathView(){const w=EQ.weapon;if(SHEATHED)EQ.weapon=null;try{if(typeof buildViewmodel==='function')buildViewmodel();}finally{EQ.weapon=w;}}
-function sheathWeapon(){if(SHEATHED||SWING||!sheathable())return false;SHEATHED=true;_sheathedItem=EQ.weapon;sheathView();return true;}
-function drawWeapon(){if(!SHEATHED)return false;SHEATHED=false;_sheathedItem=null;if(EQ.weapon)sheathView();return true;}
+function sheathWeapon(){if(SHEATHED||SWING||!sheathable())return false;SHEATHED=true;_sheathedItem=EQ.weapon;sheathView();if(typeof sndSheathe==='function')sndSheathe(EQ.weapon);return true;} /* S2514 — heard as well as seen */
+function drawWeapon(){if(!SHEATHED)return false;SHEATHED=false;_sheathedItem=null;if(EQ.weapon){sheathView();if(typeof sndDraw==='function')sndDraw(EQ.weapon);}return true;}
 function toggleSheath(){if(SHEATHED){drawWeapon();showMsg(`You draw the ${EQ.weapon?EQ.weapon.name:'weapon'}.`,'#c8b880');}
   else if(sheathWeapon())showMsg(`You sheathe the ${EQ.weapon.name}.`,'#c8b880');}
 function tickSheath(){
