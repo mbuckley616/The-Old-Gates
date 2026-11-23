@@ -2160,6 +2160,19 @@ function smithForge(){return typeof isInterior==='function'&&isInterior()&&typeo
 // keeps it, so it asks no fee and nobody tempers for gold there
 function dunForgeNear(){if(activeZoneId!=='dungeon'||typeof D_FORGES==='undefined')return null;
   return D_FORGES.find(f=>f.floor===currentFloor&&Math.hypot(px-f.x,pz-f.z)<TOUCH)||null;}
+// S2551 — Workstations A, session 1 (Michael's C on #1883, `docs/design/workstations.md`): the forge by grade. A village's smith and
+// a fort armoury's smelter work to Steel (4); the smith of a town, a port, a garrison or a city to Obsidian (7); Draconic, tier 9 and
+// Cosmic (8–10) and their tempers only at a city keep's great forge (`greatForgeHere`, S2552). Smelting, making, a tool and a temper,
+// yours or the smith's, all refuse a metal above the grade, and the page greys those rows and names the forge that works them.
+const FORGE_GRADES={smith:{max:4,word:'a village forge'},town:{max:7,word:'a town’s forge'},great:{max:10,word:'the great forge in a city’s keep'}};
+const FORGE_TOWN_KINDS=['town','port','garrison','city'];
+function greatForgeHere(){return false;}
+function forgeGrade(){if(greatForgeHere())return 'great';
+  if(smithForge()&&FORGE_TOWN_KINDS.includes(currentHouse.siteKind))return 'town';return 'smith';}
+function forgeMax(){return FORGE_GRADES[forgeGrade()].max;}
+// null when this forge works the metal, else the line that says where to take it
+function forgeAbove(tier){if(!(tier>forgeMax()))return null;const need=tier<=FORGE_GRADES.town.max?'town':'great';
+  return `This forge works to ${MATERIALS[forgeMax()-1].name.toLowerCase()}. ${MATERIALS[tier-1].name} wants ${FORGE_GRADES[need].word}.`;}
 function forgeFee(){if(!smithForge())return null;if(gold<FORGE_FEE)return `The smith asks ${FORGE_FEE} gold for the forge.`;gold-=FORGE_FEE;return null;}
 function oreCount(k){return bagCount(b=>b.ore===k);}
 function ingotCount(t){return bagCount(b=>b.ingot===t);}
@@ -2168,6 +2181,7 @@ let _forgeN=0;
 function forgeSmelt(tier){
   if(!forgeHere())return {made:false,why:'You need a forge.'};
   const D=INGOT_DEF.find(d=>d.tier===tier);if(!D)return {made:false,why:''};
+  {const a=forgeAbove(tier);if(a)return {made:false,why:a};} /* S2551 */
   if(ingotRare(D)){const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
     if(rareCount(D)<1)return {made:false,why:RARE_DEF[D.rare].why};
     if(D.ingot&&ingotCount(D.ingot)<1)return {made:false,why:`It wants ${MATERIALS[D.ingot-1].name.toLowerCase()==='adamant'?'an':'a'} ${MATERIALS[D.ingot-1].name.toLowerCase()} ingot to take it.`};}
@@ -2193,6 +2207,7 @@ function forgeQualityApply(it,q){const Q=FORGE_QUALITY[q];if(!Q)return it;it.qua
 function forgeMake(type,tier){
   if(!forgeHere())return {made:false,why:'You need a forge.'};
   const F=FORGE_TYPES.find(f=>f.T.type===type);if(!F||!INGOT_DEF.some(d=>d.tier===tier))return {made:false,why:''};
+  {const a=forgeAbove(tier);if(a)return {made:false,why:a};} /* S2551 */
   const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
   const n=forgeIngots(F.T);if(ingotCount(tier)<n)return {made:false,why:`You need ${n} ${MATERIALS[tier-1].name.toLowerCase()} ingot${n>1?'s':''}.`};
   const pl=forgePlanks(F.T);if(plankCount()<pl)return {made:false,why:'It needs a plank for the grip.'};
@@ -2215,6 +2230,7 @@ function forgeTemper(it,bySmith){
   if(!forgeHere())return {done:false,why:'You need a forge.'};
   if(!temperable(it))return {done:false,why:it&&(it.tempers||0)>=temperMax()?'It will take no more tempering.':'That cannot be tempered.'};
   if(bySmith&&!smithForge())return {done:false,why:'No smith keeps this forge.'};
+  {const a=forgeAbove(it.tier);if(a)return {done:false,why:a};} /* S2551 — the smith tempers only what his forge could make, and so do you */
   if(bySmith){const c=20*it.tier;if(gold<c)return {done:false,why:`The smith asks ${c} gold.`};gold-=c;temperApply(it);return {done:true};}
   const T=temperNeed(it);if(!T)return {done:false,why:`There is no ore for ${MATERIALS[it.tier-1].name.toLowerCase()}: the smith can temper it.`};
   const gate=SKILL_GATE[it.tier]||0;if(skillLv('smithing')<gate)return {done:false,why:`${MATERIALS[it.tier-1].name} asks Smithing ${gate}.`};
@@ -2225,7 +2241,7 @@ function forgeTemper(it,bySmith){
 let forgeOpen=false,forgeSel={k:'s',tier:2},forgeTier=null,forgeSaid='';
 function forgePieces(){const out=[];for(const s in EQ){const it=EQ[s];if(temperable(it)&&!out.includes(it))out.push(it);}BAG.forEach(b=>{if(temperable(b))out.push(b);});return out;}
 function forgeMetals(){return INGOT_DEF.map(d=>d.tier);}
-function forgeCanSmelt(t){const D=INGOT_DEF.find(d=>d.tier===t);return D.ore.every(([k,n])=>oreCount(k)>=n)&&(!D.charcoal||bagCount(b=>b.name===SURV_ITEMS.charcoal.name)>=D.charcoal)&&
+function forgeCanSmelt(t){const D=INGOT_DEF.find(d=>d.tier===t);return t<=forgeMax()&&D.ore.every(([k,n])=>oreCount(k)>=n)&&(!D.charcoal||bagCount(b=>b.name===SURV_ITEMS.charcoal.name)>=D.charcoal)&&
   (!ingotRare(D)||rareCount(D)>=1&&skillLv('smithing')>=(SKILL_GATE[t]||0))&&(!D.ingot||ingotCount(D.ingot)>=1);}
 // S2494 — a steel or mithril pick or hatchet: 2 ingots of the metal and a plank for the haft, Smithing at the metal's gate, 30
 // minutes, a Smithing use as a piece's. Made, so it sells back at a fifth. Returns {made, item, why}
@@ -2234,6 +2250,7 @@ function toolItem(kind,metal){const B=kind==='pick'?PICK_ITEM:HATCHET_ITEM,M=MAT
 function forgeTool(kind,metal){
   if(!forgeHere())return {made:false,why:'You need a forge.'};
   if(!TOOL_METALS.includes(metal)||(kind!=='pick'&&kind!=='hatchet'))return {made:false,why:''};
+  {const a=forgeAbove(metal);if(a)return {made:false,why:a};} /* S2551 */
   const gate=SKILL_GATE[metal]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[metal-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
   if(ingotCount(metal)<2)return {made:false,why:`You need 2 ${MATERIALS[metal-1].name.toLowerCase()} ingots.`};
   if(plankCount()<1)return {made:false,why:'It needs a plank for the haft.'};
@@ -2264,13 +2281,13 @@ function openForgePage(){
 }
 function closeForgePage(){const ov=document.getElementById('forgeui');if(ov)ov.style.display='none';forgeOpen=false;if(typeof refocusView==='function')refocusView();}
 function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
-  ov.querySelector('#fg-skill').textContent=`Smithing ${skillLv('smithing')} · ${smithForge()?`${FORGE_FEE} gold a use · `:''}${gold} gold`;
+  ov.querySelector('#fg-skill').textContent=`${FORGE_GRADES[forgeGrade()].word[0].toUpperCase()+FORGE_GRADES[forgeGrade()].word.slice(1)}, to ${MATERIALS[forgeMax()-1].name.toLowerCase()} · Smithing ${skillLv('smithing')} · ${smithForge()?`${FORGE_FEE} gold a use · `:''}${gold} gold`;
   const row=(on,ok,key,label)=>`<div data-k="${key}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${!ok&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${label}</div>`;
   const head=t=>`<div style="font-variant:small-caps;color:#8a7050;margin-top:4px">${t}</div>`;const S=forgeSel,P=forgePieces();
   let h=head('Smelt')+INGOT_DEF.map(d=>row(S.k==='s'&&S.tier===d.tier,forgeCanSmelt(d.tier),'s'+d.tier,`${MATERIALS[d.tier-1].name} Ingot`)).join('');
-  const mk=(f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>ingotCount(t)>=forgeIngots(f.T))&&plankCount()>=forgePlanks(f.T)&&leatherCount()>=forgeLeather(f.T),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'));h+=head('Make')+FORGE_TYPES.map((f,i)=>f.light?'':mk(f,i)).join('')+head('Make, light')+FORGE_TYPES.map((f,i)=>f.light?mk(f,i):'').join(''); /* S2132 — the light line's own row */
-  h+=head('Tools')+FORGE_TOOLS.map(([k,m],i)=>row(S.k==='o'&&S.i===i,ingotCount(m)>=2&&plankCount()>=1&&skillLv('smithing')>=(SKILL_GATE[m]||0),'o'+i,toolItem(k,m).name)).join(''); /* S2494 */
-  if(P.length)h+=head('Temper')+P.map((it,i)=>row(S.k==='t'&&S.it===it,true,'t'+i,`${it.name}${it.tempers?` (${it.tempers})`:''}`)).join('');
+  const mk=(f,i)=>row(S.k==='m'&&S.type===f.T.type,forgeMetals().some(t=>t<=forgeMax()&&ingotCount(t)>=forgeIngots(f.T))&&plankCount()>=forgePlanks(f.T)&&leatherCount()>=forgeLeather(f.T),'m'+i,f.T.type.replace(/([a-z])([A-Z])/g,'$1 $2'));h+=head('Make')+FORGE_TYPES.map((f,i)=>f.light?'':mk(f,i)).join('')+head('Make, light')+FORGE_TYPES.map((f,i)=>f.light?mk(f,i):'').join(''); /* S2132 — the light line's own row */
+  h+=head('Tools')+FORGE_TOOLS.map(([k,m],i)=>row(S.k==='o'&&S.i===i,m<=forgeMax()&&ingotCount(m)>=2&&plankCount()>=1&&skillLv('smithing')>=(SKILL_GATE[m]||0),'o'+i,toolItem(k,m).name)).join(''); /* S2494 */
+  if(P.length)h+=head('Temper')+P.map((it,i)=>row(S.k==='t'&&S.it===it,it.tier<=forgeMax(),'t'+i,`${it.name}${it.tempers?` (${it.tempers})`:''}`)).join('');
   const CP=typeof crystalPieces==='function'?crystalPieces():[];if(CP.length)h+=head('Set a crystal')+CP.map((it,i)=>row(S.k==='c'&&S.it===it,bagCount(b=>b.gateCrystal===it.school)>0,'c'+i,it.name)).join(''); /* S2372 — a gate's crystal makes a bought implement found (68-dungeon-misc.js) */
   if(typeof hobnailHere==='function'&&hobnailHere())h+=head('Boots')+row(S.k==='n',!!EQ.feet,'n0',bootsNailed()?'Draw the nails':'Hobnails'); /* S2477 */
   ov.querySelector('#fg-list').innerHTML=h;
@@ -2281,21 +2298,21 @@ function forgeDraw(){const ov=document.getElementById('forgeui');if(!ov)return;
     t=`<div style="font-variant:small-caps;color:#7a1f10">${M.name} Ingot</div>`+D.ore.map(([k,n])=>pad(`${n} ${ORE_DEF[k].name} <i style="font-size:12px;color:#8a7050">(you have ${oreCount(k)})</i>`)).join('')+
       (D.charcoal?pad(`1 Charcoal <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.name===SURV_ITEMS.charcoal.name)})</i>`):'')+
       (ingotRare(D)?pad(`1 ${RARE_DEF[D.rare].name} <i style="font-size:12px;color:#8a7050">(you have ${rareCount(D)})</i>`):'')+(D.ingot?pad(`1 ${MATERIALS[D.ingot-1].name} Ingot <i style="font-size:12px;color:#8a7050">(you have ${ingotCount(D.ingot)})</i>`):'')+(ingotSalvage(S.tier)?note('gate salvage, and so is all made of it'):'')+
-      (D.yield>1?note(`makes ${D.yield}`):'')+(ingotRare(D)&&(SKILL_GATE[S.tier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[S.tier]}`):'')+note(`you hold ${ingotCount(S.tier)}`);}
+      (D.yield>1?note(`makes ${D.yield}`):'')+(forgeAbove(S.tier)?note(forgeAbove(S.tier)):'')+(ingotRare(D)&&(SKILL_GATE[S.tier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[S.tier]}`):'')+note(`you hold ${ingotCount(S.tier)}`);}
   else if(S.k==='o'){const [k,m]=FORGE_TOOLS[S.i],it=toolItem(k,m),g=SKILL_GATE[m]||0; /* S2494 */
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(`2 ${MATERIALS[m-1].name} Ingots <i style="font-size:12px;color:#8a7050">(you have ${ingotCount(m)})</i>`)+
       pad(`1 plank <i style="font-size:12px;color:#8a7050">(you have ${plankCount()})</i>, ${FORGE_MIN} minutes`)+pad(`a strike every ${TOOL_STRIKE[m]} s, not ${TOOL_STRIKE[3]}`)+
-      (k==='pick'?note('steel cuts the wastes’ rock, which turns iron'):'')+(g>skillLv('smithing')?note(`asks Smithing ${g}`):'');}
+      (k==='pick'?note('steel cuts the wastes’ rock, which turns iron'):'')+(forgeAbove(m)?note(forgeAbove(m)):'')+(g>skillLv('smithing')?note(`asks Smithing ${g}`):'');}
   else if(S.k==='m'){const F=FORGE_TYPES.find(f=>f.T.type===S.type),n=forgeIngots(F.T);
-    if(forgeTier==null||!forgeMetals().includes(forgeTier))forgeTier=forgeMetals().find(m=>ingotCount(m)>=n)||2;
+    if(forgeTier==null||!forgeMetals().includes(forgeTier))forgeTier=forgeMetals().find(m=>m<=forgeMax()&&ingotCount(m)>=n)||2;
     t=`<div style="font-variant:small-caps;color:#7a1f10">${MATERIALS[forgeTier-1].name} ${S.type.replace(/([a-z])([A-Z])/g,'$1 $2')}</div>`+pad(`${n} ingot${n>1?'s':''}${forgePlanks(F.T)?` and a plank <i style="font-size:12px;color:#8a7050">(you have ${plankCount()})</i>`:''}${forgeLeather(F.T)?` and ${forgeLeather(F.T)} leather <i style="font-size:12px;color:#8a7050">(you have ${leatherCount()})</i>`:''}, ${F.light?LIGHT_MIN:FORGE_MIN} minutes`)+
-      '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+forgeMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=ingotCount(m)>=n&&skillLv('smithing')>=g;
+      '<div style="padding-left:12px;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">'+forgeMetals().map(m=>{const g=SKILL_GATE[m]||0,ok=m<=forgeMax()&&ingotCount(m)>=n&&skillLv('smithing')>=g;
         return `<button type="button" data-m="${m}" style="background:${m===forgeTier?'rgba(122,31,16,.12)':'none'};border:1px solid ${m===forgeTier?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#3a2c18':'#a09070'};cursor:pointer;padding:1px 6px">${MATERIALS[m-1].name} ${ingotCount(m)}${g?` · ${g}`:''}</button>`;}).join('')+'</div>'+
-      ((SKILL_GATE[forgeTier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[forgeTier]}`):'')+note('made, never enchanted; sold back at a fifth');}
+      (forgeAbove(forgeTier)?note(forgeAbove(forgeTier)):'')+((SKILL_GATE[forgeTier]||0)>skillLv('smithing')?note(`asks Smithing ${SKILL_GATE[forgeTier]}`):'')+note('made, never enchanted; sold back at a fifth');}
   else if(S.k==='t'){const it=S.it,T=temperNeed(it);
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(it.atk?`Attack ${it.atk[0]}–${it.atk[1]}`:`Defence ${it.def}`)+pad(`Tempered ${it.tempers||0} of ${temperMax()}, +${Math.round(TEMPER_STEP*100)}% each`)+
-      (T?pad(`${T.n} ${T.names} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(T.has)})</i>`):note('no ore of its metal'))+
-      (smithForge()?`<div style="padding-left:12px;margin-top:4px"><button type="button" id="fg-smith" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 8px">The smith tempers it · ${20*it.tier} gold</button></div>`:'');}
+      (T?pad(`${T.n} ${T.names} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(T.has)})</i>`):note('no ore of its metal'))+(forgeAbove(it.tier)?note(forgeAbove(it.tier)):'')+
+      (smithForge()&&!forgeAbove(it.tier)?`<div style="padding-left:12px;margin-top:4px"><button type="button" id="fg-smith" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:1px 8px">The smith tempers it · ${20*it.tier} gold</button></div>`:'');}
   else if(S.k==='c'){const it=S.it,sn=schoolName(it.school);
     t=`<div style="font-variant:small-caps;color:#7a1f10">${it.name}</div>`+pad(`1 gate crystal of ${sn} <i style="font-size:12px;color:#8a7050">(you have ${bagCount(b=>b.gateCrystal===it.school)})</i>`)+
       (skillLv('smithing')<CRYSTAL_SET.smithing?note(`asks Smithing ${CRYSTAL_SET.smithing}`):'')+note(`found: ${sn}’s words ${Math.round(IMPLEMENT.foundCut*100)}% cheaper, not ${Math.round(IMPLEMENT.cut*100)}%`);}
