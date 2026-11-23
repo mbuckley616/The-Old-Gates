@@ -14,7 +14,7 @@ const res = await page.evaluate(() => { const S = WORLD.settle.get('dunmore');
     return out; } return null; });
 check('a townsperson answers', Array.isArray(res) && res.length > 2, res && res.length);
 check('every direction matches the bearing', res.every(r => r.skipped || r.dirOk), res.filter(r => !r.skipped && !r.dirOk));
-// S2571 — the wide compass (Michael's A on #198): 600 by 46 across 180°, the mark you were given directions to a roundel on it, and faced,
+// S2573 — the wide compass (Michael's A on #198): 600 by 46 across 180°, the mark you were given directions to a roundel on it, and faced,
 // the ribbon under it names it with its distance; turned away, it is pinned at the band's edge; two marks 2° apart are one roundel of 2
 const cmp = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const n = S.npcs.find(n => n.def && !n.def._lord && n.g);
   px = n.g.position.x + 1; pz = n.g.position.z + 1; const t = [...S.houses].sort((a, b) => Math.hypot(b.doorX - px, b.doorZ - pz) - Math.hypot(a.doorX - px, a.doorZ - pz))[0];

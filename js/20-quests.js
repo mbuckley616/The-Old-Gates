@@ -1290,7 +1290,7 @@ function _qmLabelCol(col){
   return 'rgba(255,220,100,0.75)'; // legacy fallback for any stray yellow marker
 }
 
-// S2571 — the wide compass (Michael's A on DECISION #198, 7 Oct; the concept artist's docs/prototypes/hud/). Under every option of #198
+// S2573 — the wide compass (Michael's A on DECISION #198, 7 Oct; the concept artist's docs/prototypes/hud/). Under every option of #198
 // the compass is a band 600 by 46 across 180° (3.33 px a degree; it was 200 by 38 across 135°), ticks every 15°, the eight winds lettered.
 // Each mark is a roundel, an ink glyph on a paper disc: a place's ringed in bronze, an objective's in its own colour (the red and green
 // rule above). Marks closer than 30 px join one roundel with a count, the objective and then the nearest on top; an objective past the
