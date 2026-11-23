@@ -267,6 +267,30 @@ console.log('  sea:', JSON.stringify(sea));
 for (const name in SEA6) { const s = sea[name], [L, gt] = SEA6[name];
   check(`the ${name} wears the kit's (${s.plan}, ${s.bones} bones, ${s.tris} triangles, ${s.len} m nose to tail, want ${L}; its nose ${s.nose} m off the stand-in's); it holds and goes by ${s.gait} (${s.hold}, ${s.swim}, the bones moving ${s.moved}); taken away, dropped`,
     s && !s.fail && s.plan === 'game:' + name && s.seed && s.tris < 12000 && Math.abs(s.len - L) < L * .12 && Math.abs(s.nose) < .03 && s.gait === gt && s.hold === 'hold' && s.swim === 'swim' && s.moved > .005 && !s.bad && s.dropped, s); }
+// Session 2585: the grey seal, amphibious: in the water on the trout's path (its axis on the group's origin, nose to nose), holding and swimming;
+// ashore, its lowest point on the group's origin, still at the kit's stand and galumphing by its hump as the group moves; back in the water,
+// its axis again. The same key the same body; taken away, dropped. Picture: docs/prototypes/f4/f4-seal.jpg
+const seal = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 4, z = pz + fz * 4;
+  const rig = buildAnimal('Grey Seal', 'f4seal:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z) + .8, z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+  const e = { name: 'Grey Seal', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false, ashore: false }; rig.e = e;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(9.975e5 + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+  const H = rig.hc; if (!H) { G.parent.remove(G); return { fail: !!rig.hcFail }; }
+  G.rotation.y = 0; const sk = H.C.skel, t0 = performance.now; let i0 = 0;
+  const box = () => { G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m)); return bx; };
+  const run = (n, sp) => { const p0 = rig.ph; for (let i = 0; i < n; i++) { G.position.z += sp / 60; i0++; performance.now = () => 9.978e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } }
+    sk.update(); return { m: Array.from(sk.boneMatrices), cyc: rig.ph - p0, g: rig.gaitNow, c: H.C.gait }; };
+  const diff = (a, b) => { let mv = 0, bad = 0; for (let i = 0; i < a.m.length; i++) { mv = Math.max(mv, Math.abs(a.m[i] - b.m[i])); if (!isFinite(b.m[i])) bad++; } return [+mv.toFixed(3), bad]; };
+  const wa = run(60, 0), wb = run(60, .8), wx = box(), sb = new THREE.Box3().setFromObject(rig.mesh), [wmv, wbad] = diff(wa, wb), wmid = (wx.max.y + wx.min.y) / 2 - G.position.y;
+  e.ashore = true; const da = run(60, 0), dx = box(), db = run(60, .5), [dmv, dbad] = diff(da, db), low = dx.min.y - G.position.y;
+  e.ashore = false; run(2, 0); const bx2 = box(), back = (bx2.max.y + bx2.min.y) / 2 - G.position.y;
+  const out = { plan: H.C.g.plan, seed: H.C.g.seed === HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(wx.max.z - wx.min.z).toFixed(3), nose: +(wx.max.z - sb.max.z).toFixed(3),
+    hold: wa.g, swim: wb.g, wmid: +wmid.toFixed(3), wmoved: wmv, rest: da.g, move: db.g, kit: db.c, low: +low.toFixed(3), humps: +db.cyc.toFixed(2), dmoved: dmv, back: +back.toFixed(3), bad: wbad + dbad };
+  G.parent.remove(G); hcTick(9.979e5); out.dropped = !rig.hc; return out; });
+console.log('  seal:', JSON.stringify(seal));
+check(`the Grey Seal wears the kit's (${seal.plan}, ${seal.bones} bones, ${seal.tris} triangles, ${seal.len} m nose to tail, its nose ${seal.nose} m off the stand-in's); in the water it ${seal.hold} and ${seal.swim}s (the bones moving ${seal.wmoved}), its middle ${seal.wmid} m off the group's; ashore its lowest point ${seal.low} m off the group's, at rest ${seal.rest}, moving ${seal.move} (${seal.humps} humps over 0.5 m, the bones moving ${seal.dmoved}); back in the water its middle ${seal.back} m off; taken away, dropped`,
+  !seal.fail && seal.plan === 'game:Grey Seal' && seal.seed && seal.tris < 12000 && Math.abs(seal.len - 2) < .24 && Math.abs(seal.nose) < .03 && seal.hold === 'hold' && seal.swim === 'swim' && seal.wmoved > .005
+    && Math.abs(seal.wmid) < .15 && Math.abs(seal.low) < .02 && seal.rest === 'stand' && seal.move === 'hump' && seal.kit === 'hump' && seal.humps > .5 && seal.dmoved > .005 && Math.abs(seal.back - seal.wmid) < .02 && !seal.bad && seal.dropped, seal);
 // Session 2579: the Lantern Jelly and the Drifter Squid hang upright and drift: each wears its kit plan fitted by height to its stand-in, centre
 // to centre; at rest it holds and still beats on the clock, moving it drifts, a little quicker; taken away, dropped. The giant octopus is in
 // the crawlers' loop below. Picture: docs/prototypes/f4/f4-soft.jpg
