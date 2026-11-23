@@ -751,6 +751,7 @@ function brewHerbs(keys,cat){
   item.brewKey=sh.fx.join('+')+'@'+s+'/'+day+(item.brew.blows?'/b'+item.brew.blows:'')+(item.brew.last?'/l'+item.brew.last:'');
   const n=perk('alchemy',100)?2:1;if(n>1)item.qty=n; /* S1499 — Double measure (Alchemy 100): two from one grinding */
   bagAdd(item);
+  brewNote(keys,cat,sh.fx,sh.poison);
   skillUse('alchemy',8+(newPair?25:0));
   return {made:true,item:BAG.find(b=>sameStack(b,item))||item,learnt,newPair,n,cat:cat||null,catNew};
 }
@@ -808,11 +809,25 @@ function sealFirePot(){const why=sealPotWhy();if(why)return why;bagTake(b=>b.nam
 // brew (the same effects) run into one Draught at ×1.35 of their mean, catalysts' riders kept, in a game hour and an Alchemy use of 10.
 // A draught never turns. Poisons are not distilled: a draught is drunk. The vial, your house's still and the stations as E points are
 // session 2, the recipe leaf session 3. Distilling rolls nothing.
-const DRIED_K=.10,DRAUGHT_K=1.35,STILL_FEE=5,STILL_MIN=60,DRAUGHT_W=.2;
+// S2560 — session 2. Bottle: a draught is run into a Glass Vial (2 gold, 0.1 kg; every apothecary, and a goods shop in Aurenne, the
+// canon's glass), taken as it is made; with no vial the still refuses. Your house's still is a seventh fitting (60 gold and 2 bronze
+// ingots), free. The drawn apothecaries (the Gatelands village's, Aurenne's, the Mark's healer's hall) keep their still at the kit's
+// *distil* station: there the still is within STILL_REACH of it, E on it opens the page, and the rest of the room is the counter's.
+// A room with no still drawn (a town's merchant's house, a generated room, the Mages' Guild) is at its still anywhere, as before.
+const DRIED_K=.10,DRAUGHT_K=1.35,STILL_FEE=5,STILL_MIN=60,DRAUGHT_W=.2,STILL_REACH=2;
+const VIAL_ITEM={name:'Glass Vial',ico:'🧴',type:'misc',weight:.1,buyPrice:2,sellMult:.4,vial:1};
+function vialFor(h){if(!h)return [];if(h.type==='potion'||h.type==='apothecary')return [{...VIAL_ITEM}];
+  if(h.type!=='misc')return [];try{const t=h.siteId&&typeof siteAnywhere==='function'&&siteAnywhere(h.siteId);if(t&&nationKeyOf(...cellOf(t.x,t.z))==='aurenne')return [{...VIAL_ITEM}];}catch(e){}return [];}
+function vialCount(){return bagCount(b=>!!b.vial);}
 let _stillN=0;
+// the drawn still's station in the room's frame (x, z), or null: the three kit rooms are laid with x + inner.x1, z + inner.z1
+function stillStation(h){h=h||(typeof currentHouse!=='undefined'?currentHouse:null);const T=h&&(h._apothecary||h._aurApothecary||h._markApothecary);
+  const S=T&&T.inner&&Array.isArray(T.stations)&&T.stations.find(q=>q.step==='distil');return S?{x:S.x+T.inner.x1,z:S.z+T.inner.z1}:null;}
+function stillNear(){if(typeof isInterior!=='function'||!isInterior())return false;const S=stillStation();return !!S&&Math.hypot(px-S.x,pz-S.z)<=STILL_REACH;}
 function stillHere(){if(typeof shipFitAtHand==='function'&&shipFitAtHand('still'))return 'ship';
   if(typeof isInterior!=='function'||!isInterior()||typeof currentHouse==='undefined'||!currentHouse)return null;const t=currentHouse.type;
-  if(t==='potion'||t==='apothecary')return 'shop';if(t==='guild_m'||currentHouse.guild==='mages'&&/^guild/.test(t))return 'guild';return null;}
+  if(homeFitHere('still'))return 'house';
+  if(t==='potion'||t==='apothecary')return !stillStation()||stillNear()?'shop':null;if(t==='guild_m'||currentHouse.guild==='mages'&&/^guild/.test(t))return 'guild';return null;}
 function stillFee(){const w=stillHere();if(w==='shop')return STILL_FEE;if(w==='guild')return typeof guildMember==='function'&&guildMember('mages')?0:STILL_FEE;return 0;}
 // the tinctures in the bag that will distil, by brew: [{fx, key, n, name}] with n the count of that brew's tinctures
 function stillGroups(){const m=new Map();BAG.forEach(b=>{if(!b||!b.brew||b.brew.poison||b.brew.draught)return;const k=b.brew.fx.slice().sort().join('+');
@@ -821,16 +836,47 @@ function stillGroups(){const m=new Map();BAG.forEach(b=>{if(!b||!b.brew||b.brew.
 function distilDraught(key){const w=stillHere();if(!w)return {made:false,why:'You need a still.'};
   const g=stillGroups().find(x=>x.key===key);if(!g)return {made:false,why:''};if(g.n<2)return {made:false,why:'It takes two tinctures of the one brew.'};
   const fee=stillFee();if(gold<fee)return {made:false,why:`The still is ${fee} gold.`};
+  if(vialCount()<1)return {made:false,why:'A draught is bottled in a glass vial.'};
   const of=b=>b&&b.brew&&!b.brew.poison&&!b.brew.draught&&b.brew.fx.slice().sort().join('+')===key;
   const pick=BAG.filter(of).sort((a,b)=>brewStrength(b)-brewStrength(a)),took=[];let need=2;
   for(const b of pick){if(b.qty==null)b.qty=1;while(need>0&&b.qty>0){took.push({s:brewStrength(b),last:b.brew.last});b.qty--;need--;}if(!need)break;}
   for(let i=BAG.length-1;i>=0;i--)if(BAG[i]&&BAG[i].brew&&(BAG[i].qty||0)<=0)BAG.splice(i,1);
-  gold-=fee;const s=+((took[0].s+took[1].s)/2*DRAUGHT_K).toFixed(3),day=gameDayNow(),last=Math.min(took[0].last||1,took[1].last||1);
+  gold-=fee;bagTake(b=>!!b.vial,1);const s=+((took[0].s+took[1].s)/2*DRAUGHT_K).toFixed(3),day=gameDayNow(),last=Math.min(took[0].last||1,took[1].last||1);
   const src=pick[0],price=Math.round((src.buyPrice||25)*2);
   const item={name:'Draught of '+g.name,ico:'⚗️',type:'potion',weight:DRAUGHT_W,sellMult:.4,buyPrice:price,brew:{fx:g.fx.slice(),s,day,poison:false,draught:1}};
   if(last>1)item.brew.last=last;item.brewKey='draught:'+g.fx.join('+')+'@'+s+(last>1?'/l'+last:'');
   bagAdd(item);skillUse('alchemy',10,'still'+(_stillN++));if(typeof advanceClock==='function')advanceClock(STILL_MIN);
   return {made:true,item:BAG.find(b=>sameStack(b,item))||item};}
+// ── S2559 — Workstations B, session 3: the recipe leaf (`docs/design/workstations.md`, B's *recipe page*; OG-133) ──
+// Every brew you make is written down by its herbs and its catalyst (`herbsKnown().brews`, the character's: herbsKnown is in SS_CHAR_WS
+// and the S242 list), with what it gave and how often. The brewing page's second leaf, *Recipes*, reads it: each recipe in ink with one
+// tap to choose it again (the herbs, and the specimen if you carry it), the pairs that gave nothing (herbsKnown().none), and every herb
+// you know of whose four effects you have not all found, marked *study to discover*. Brews made before this session were never written.
+function brewRecKey(keys,cat){return keys.slice().sort().join('+')+(cat?'#'+cat:'');}
+function brewNote(keys,cat,fx,poison){const K=herbsKnown(),B=K.brews||(K.brews={}),k=brewRecKey(keys,cat),r=B[k]||(B[k]={h:keys.slice().sort(),c:cat||null,fx:[],poison:false,n:0});
+  r.fx=fx.slice();r.poison=!!poison;r.n++;r.d=gameDayNow();return r;}
+function brewRecipes(){const B=herbsKnown().brews||{};return Object.keys(B).map(k=>Object.assign({key:k},B[k])).sort((a,b)=>(b.d||0)-(a.d||0)||b.n-a.n);}
+// why a recipe cannot be chosen now, or null
+function brewRecWhy(r){const miss=r.h.filter(k=>!BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));
+  if(miss.length)return 'You carry no '+miss.map(k=>(HERB_DEF[k]&&HERB_DEF[k].name)||k).join(' or ')+'.';if(r.h.length>brewMax())return 'Three herbs ask Alchemy 50.';return null;}
+// the named action: choose a written recipe on the mortar's leaf. The specimen rides with it only if you carry one
+function brewRecChoose(key){const r=(herbsKnown().brews||{})[key];if(!r)return {done:false,why:''};const why=brewRecWhy(r);if(why)return {done:false,why};
+  brewSel=r.h.slice();brewCat=r.c&&typeof specInBag==='function'&&specInBag(r.c)>=0?r.c:null;
+  return {done:true,cat:!!r.c&&!brewCat};}
+// the herbs you know of (herbsSeen) with effects still unfound: [{k, name, known}]
+function brewUnfound(){const S=herbsSeen();return Object.keys(S).filter(k=>HERB_FX[k]).map(k=>({k,name:(HERB_DEF[k]&&HERB_DEF[k].name)||k,known:HERB_FX[k].filter((f,i)=>herbFxKnown(k,i)).length,of:HERB_FX[k].length}))
+  .filter(q=>q.known<q.of).sort((a,b)=>a.name<b.name?-1:1);}
+let brewLeaf='mortar';
+function brewLeafDraw(ov){const R=brewRecipes(),K=herbsKnown(),nm=k=>(HERB_DEF[k]&&HERB_DEF[k].name)||k,el=ov.querySelector('#br-rec');
+  let s='<div style="font-variant:small-caps;color:#7a1f10">Made</div>';
+  s+=R.length?R.map(r=>{const why=brewRecWhy(r);return `<div style="padding-left:12px;margin:2px 0"><button type="button" data-r="${r.key}" style="background:none;border:1px solid ${why?'#a89060':'#7a1f10'};border-radius:3px;font:13px Georgia,serif;color:${why?'#a09070':'#7a1f10'};cursor:pointer;padding:1px 8px">Choose</button> ${r.h.map(nm).join(', ')}${r.c&&SPEC_DEF[r.c]?` <i>with the ${SPEC_DEF[r.c].name}</i>`:''} <span style="color:#8a7050;font-size:12px">×${r.n}</span>`+
+    `<div style="padding-left:14px;font-style:italic;color:${r.poison?'#8a2a20':'#3a2c18'}">${r.fx.map(f=>ALCH_FX[f].label).join(', ')}${r.poison?' — a poison':''}</div></div>`;}).join(''):'<div style="padding-left:12px;color:#8a7050;font-style:italic">nothing ground yet</div>';
+  const none=Object.keys(K.none||{});
+  s+='<div style="font-variant:small-caps;color:#7a1f10;margin-top:8px">Nothing between them</div>'+(none.length?'<div style="padding-left:12px;color:#8a7050">'+none.map(p=>p.split('|').map(nm).join(' and ')).join(' · ')+'</div>':'<div style="padding-left:12px;color:#8a7050;font-style:italic">no pair has failed you</div>');
+  const U=brewUnfound();
+  s+='<div style="font-variant:small-caps;color:#7a1f10;margin-top:8px">Study to discover</div>'+(U.length?'<div style="padding-left:12px">'+U.map(q=>`${q.name} <span style="color:#8a7050;font-size:12px">${q.known} of ${q.of}</span>`).join(' · ')+'</div>':'<div style="padding-left:12px;color:#8a7050;font-style:italic">every herb you know is known whole</div>');
+  el.innerHTML=s;
+  el.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const r=brewRecChoose(b.dataset.r);if(r.done){brewLeaf='mortar';brewSaid=r.cat?'Chosen, without its specimen: you carry none.':'Chosen.';}else brewSaid=r.why;brewDraw();});}
 // ── the brewing page (parchment, Michael's A on the interface): the herbs on the left, the chosen herbs' four rows right ──
 let brewOpen=false,brewSel=[],brewSaid='',brewCat=null;
 function openBrewPage(){
@@ -842,13 +888,16 @@ function openBrewPage(){
   if(!ov){ov=document.createElement('div');ov.id='brewui';
     ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
     ov.innerHTML='<div style="width:640px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:18px 24px 16px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The Mortar</span><span id="br-skill" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
-      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px"><div id="br-herbs" style="flex:1 1 200px;min-width:0;font-size:14px;line-height:1.7"></div><div id="br-right" style="flex:1.4 1 260px;min-width:0;font-size:14px;line-height:1.6"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The Mortar</span> <button type="button" id="br-leaf" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#7a1f10;cursor:pointer;padding:1px 8px;margin-left:8px">Recipes</button></span><span id="br-skill" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
+      '<div id="br-rec" style="display:none;margin-top:10px;font-size:14px;line-height:1.6"></div>'+
+      '<div id="br-cols" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px"><div id="br-herbs" style="flex:1 1 200px;min-width:0;font-size:14px;line-height:1.7"></div><div id="br-right" style="flex:1.4 1 260px;min-width:0;font-size:14px;line-height:1.6"></div></div>'+
       '<div id="br-said" style="min-height:20px;margin-top:8px;font-style:italic;color:#7a1f10;font-size:14px"></div>'+
       '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;border-top:1px solid #a89060;padding-top:8px"><button type="button" id="br-go" style="background:none;border:1px solid #7a1f10;border-radius:3px;font:18px Georgia,serif;color:#7a1f10;font-variant:small-caps;cursor:pointer;padding:2px 14px">Grind</button>'+
       '<span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="br-no" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px">Esc</button> as you were · Enter grinds</span></div></div>';
     document.body.appendChild(ov);
-    ov.querySelector('#br-go').onclick=()=>brewGo();ov.querySelector('#br-no').onclick=()=>closeBrewPage();}
+    ov.querySelector('#br-go').onclick=()=>brewGo();ov.querySelector('#br-no').onclick=()=>closeBrewPage();
+    ov.querySelector('#br-leaf').onclick=()=>{brewLeaf=brewLeaf==='mortar'?'recipes':'mortar';brewSaid='';brewDraw();};} /* S2559 — the recipe leaf */
+  brewLeaf='mortar';
   brewSel=brewSel.filter(k=>BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));brewSaid='';
   ov.style.display='flex';brewOpen=true;brewDraw();
 }
@@ -856,6 +905,9 @@ function closeBrewPage(){const ov=document.getElementById('brewui');if(ov)ov.sty
 function brewHerbList(){const m=new Map(),d=new Map();BAG.forEach(b=>{if(!b||b.type!=='herb')return;const k=herbKeyOf(b);if(!k)return;m.set(k,(m.get(k)||0)+(b.qty||1));if(herbDried(b))d.set(k,(d.get(k)||0)+(b.qty||1));});return [...m].map(([k,n])=>({k,n,dry:d.get(k)||0,name:(HERB_DEF[k]&&HERB_DEF[k].name)||k}));}
 function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;const K=herbsKnown();
   ov.querySelector('#br-skill').textContent=`Alchemy ${skillLv('alchemy')} · strength ×${alchStrength().toFixed(2)}${stillHere()?` · at a still${stillFee()?`, ${stillFee()} gold`:''}`:''}`;
+  {const rec=brewLeaf==='recipes',pot=ov.querySelector('#br-pot');ov.querySelector('#br-leaf').textContent=rec?'The mortar':'Recipes'; /* S2559 */
+    ov.querySelector('#br-rec').style.display=rec?'block':'none';ov.querySelector('#br-cols').style.display=rec?'none':'flex';if(pot)pot.style.display=rec?'none':'block';
+    if(rec){brewLeafDraw(ov);ov.querySelector('#br-said').textContent=brewSaid;return;}}
   const list=brewHerbList();
   ov.querySelector('#br-herbs').innerHTML=list.length?list.map(h=>{const on=brewSel.includes(h.k),nn=brewSel.some(o=>o!==h.k&&K.none[brewPairKey(o,h.k)]);
     return `<div data-k="${h.k}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${nn&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${h.name} <span style="color:#8a7050;font-size:12px">×${h.n}${h.dry?` · ${h.dry} dried`:''}</span>${nn&&!on?' <i style="font-size:12px">· nothing between</i>':''}</div>`;}).join(''):'<i>You carry no herbs.</i>';
@@ -877,7 +929,7 @@ function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;con
     fp.querySelector('#br-seal').onclick=()=>{const r=sealFirePot();brewSaid=r===true?`A fire pot, sealed. You carry ${firePotCount()}.`:r;if(r===true&&typeof uiTone==='function')uiTone(220,300,.1,.08,'sine');brewDraw();};
     if(stillHere()){const G=stillGroups(); /* S2554 — the still: two tinctures of one brew into a draught */
       fp.insertAdjacentHTML('beforeend',`<div style="margin-top:8px;font-variant:small-caps;color:#7a1f10">The still</div>`+(G.length?G.map((g,i)=>`<div style="padding-left:12px"><button type="button" data-d="${i}" style="background:none;border:1px solid ${g.n>=2?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${g.n>=2?'#7a1f10':'#a09070'};cursor:pointer;padding:1px 8px;margin:2px 0">Distil ${g.name}</button> <span style="color:#8a7050;font-size:13px">×${g.n}</span></div>`).join(''):'<div style="padding-left:12px;color:#8a7050;font-style:italic">no tinctures to run</div>')+
-        `<div style="padding-left:12px;color:#8a7050;font-style:italic;font-size:12px">two tinctures of one brew make a draught: ×${DRAUGHT_K} their strength, an hour; it never turns</div>`);
+        `<div style="padding-left:12px;color:#8a7050;font-style:italic;font-size:12px">two tinctures of one brew make a draught: ×${DRAUGHT_K} their strength, an hour, bottled in a glass vial (you carry ${vialCount()}); it never turns</div>`);
       fp.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const r=distilDraught(G[+b.dataset.d].key);brewSaid=r.made?`${r.item.name}.`:r.why;if(r.made){if(typeof uiTone==='function')uiTone(300,400,.1,.08,'sine');addLog('⚗️','Distilled '+r.item.name);}brewDraw();});}}
   ov.querySelector('#br-said').textContent=brewSaid;
 }
@@ -1225,7 +1277,7 @@ window.addEventListener('keydown',e=>{if(!cureOpen)return;if(e.code==='Escape'){
 // point, anywhere in the house is at them (the hold's rule, S1726), and E with nothing else in reach opens the house's page.
 const HOME_PLACES={cottage:3,townhouse:4,farmstead:6,longhouse:6,keep:6};
 const HOME_FITS={rack:{n:'tanner’s rack',a:'a tanner’s rack',gold:40,planks:4},dry:{n:'drying rack',a:'a drying rack',gold:30,planks:3},bench:{n:'workbench',a:'a workbench',gold:60,planks:6},
-  oven:{n:'clay oven',a:'a clay oven',clay:6},kiln:{n:'kiln',a:'a kiln',clay:10},garden:{n:'garden',a:'a garden',gold:50,shovel:true}}; /* S2140 — four beds, dug with a shovel */ /* S2139 — the oven and the kiln, laid of clay by hand */
+  oven:{n:'clay oven',a:'a clay oven',clay:6},kiln:{n:'kiln',a:'a kiln',clay:10},garden:{n:'garden',a:'a garden',gold:50,shovel:true},still:{n:'still',a:'a still',gold:60,bronze:2}}; /* S2560 — workstations B: the still, 60 gold and 2 bronze ingots */ /* S2140 — four beds, dug with a shovel */ /* S2139 — the oven and the kiln, laid of clay by hand */
 function homeMine(h){return !!h&&(h.type==='home'||h.type==='castle')&&(h.ownedByPlayer||(typeof ownedHouse==='function'&&ownedHouse(h.id)));}
 function homeSize(h){if(!h)return null;if(h.type==='castle')return 'keep';if(h.farm)return 'farmstead';const k=h.kit&&h.kit.kind;if(k==='markhall')return 'longhouse';
   if(k==='townhouse'||k==='merchant'||k==='marktown')return 'townhouse';return ['town','port','city'].includes(h.siteKind)?'townhouse':'cottage';}
@@ -1255,12 +1307,13 @@ function homeFitWhy(h,k,how){if(!homeMine(h))return 'This is not your house.';co
   if(r.stored.includes(k))return null;
   if(F.shovel&&!r.stored.includes(k)&&!hasShovel())return 'A garden is dug with a shovel.';
   if(F.clay){const n=bagCount(b=>!!b.clay);return n<F.clay?`It takes ${F.clay} clay (you have ${n}).`:null;} /* S2139 — laid by hand */
+  if(F.bronze){const n=bagCount(b=>b.ingot===2);if(n<F.bronze)return `It takes ${F.bronze} bronze ingots (you have ${n}).`;} /* S2560 — the still's copper */
   if(how==='planks'&&!F.planks)return 'It is not made of planks.';
   if(how==='planks'){if(!benchHere())return 'Planks are joined at a bench: a joiner’s kit is one.';if(plankCount()<F.planks)return `It takes ${F.planks} planks (you have ${plankCount()}).`;return null;}
   return gold<F.gold?`It costs ${F.gold} gold.`:null;}
 // the named actions: fit one (a stored one back for nothing), take one out. Each returns {done, why}
 function homeFit(h,k,how){const why=homeFitWhy(h,k,how);if(why)return {done:false,why};const r=homeFitRec(h),F=HOME_FITS[k],si=r.stored.indexOf(k);
-  if(si>=0)r.stored.splice(si,1);else if(F.clay)bagTake(b=>!!b.clay,F.clay);else if(how==='planks')bagTake(b=>b.plank,F.planks);else{gold-=F.gold;if(typeof updateHUD==='function')updateHUD();}
+  if(si>=0)r.stored.splice(si,1);else if(F.clay)bagTake(b=>!!b.clay,F.clay);else if(how==='planks')bagTake(b=>b.plank,F.planks);else{gold-=F.gold;if(F.bronze)bagTake(b=>b.ingot===2,F.bronze);if(typeof updateHUD==='function')updateHUD();}
   r.fit.push(k);if(typeof addLog==='function')addLog('🏠',`The house fitted with ${F.a}.`);if(typeof homeFitsDress==='function')homeFitsDress(h); /* S2143 — stood in the room or the yard (84) */return {done:true};}
 function homeUnfit(h,k){if(!homeMine(h))return {done:false,why:'This is not your house.'};const r=homeFitRec(h),i=r.fit.indexOf(k);if(i<0)return {done:false,why:''};
   if(k==='garden'&&gardenBeds(h).some(Boolean))return {done:false,why:'Gather what grows in it first.'}; /* S2140 */
@@ -1286,16 +1339,16 @@ function homeDraw(){const ov=document.getElementById('homeui');if(!ov)return;con
   const btn=(id,label,ok)=>`<button type="button" data-a="${id}" style="background:none;border:1px solid ${ok?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${ok?'#7a1f10':'#a09070'};cursor:pointer;padding:1px 8px;margin:2px 4px 2px 0">${label}</button>`;
   let s='<div style="font-variant:small-caps;color:#7a1f10">Fitted</div>';
   if(!r.fit.length)s+='<div style="padding-left:12px;color:#8a7050;font-style:italic">nothing yet</div>';
-  r.fit.forEach(k=>{s+=`<div style="padding-left:12px">${HOME_FITS[k].n[0].toUpperCase()+HOME_FITS[k].n.slice(1)} `+(k==='garden'?gardenRows(h,btn):k==='oven'?'<i style="font-size:12px;color:#8a7050">bakes at the hearth</i> ':k==='kiln'?Object.keys(KILN_WARES).map(w=>btn('kiln:'+w,`Fire ${KILN_WARES[w].a} · ${KILN_WARES[w].clay} clay`,!kilnWhy(h,w))).join(''):btn('use:'+k,k==='bench'?'Work':'See to it',true))+btn('out:'+k,'Take out',true)+'</div>';}); /* S2139 — the oven and the kiln */
+  r.fit.forEach(k=>{s+=`<div style="padding-left:12px">${HOME_FITS[k].n[0].toUpperCase()+HOME_FITS[k].n.slice(1)} `+(k==='garden'?gardenRows(h,btn):k==='oven'?'<i style="font-size:12px;color:#8a7050">bakes at the hearth</i> ':k==='kiln'?Object.keys(KILN_WARES).map(w=>btn('kiln:'+w,`Fire ${KILN_WARES[w].a} · ${KILN_WARES[w].clay} clay`,!kilnWhy(h,w))).join(''):btn('use:'+k,k==='bench'?'Work':k==='still'?'Distil':'See to it',true))+btn('out:'+k,'Take out',true)+'</div>';}); /* S2139 — the oven and the kiln */
   const rest=Object.keys(HOME_FITS).filter(k=>!r.fit.includes(k));
   if(rest.length){s+='<div style="font-variant:small-caps;color:#7a1f10;margin-top:6px">To fit</div>';
     rest.forEach(k=>{const F=HOME_FITS[k],name=F.n[0].toUpperCase()+F.n.slice(1);
       if(r.stored.includes(k)){s+=`<div style="padding-left:12px">${name} <i style="font-size:12px;color:#8a7050">stored</i> `+btn('fit:'+k+':gold','Fit it back',!homeFitWhy(h,k,'gold'))+'</div>';return;}
-      s+=`<div style="padding-left:12px">${name} `+(F.clay?btn('fit:'+k+':clay',`${F.clay} clay, by hand`,!homeFitWhy(h,k,'clay')):F.shovel?btn('fit:'+k+':gold',`${F.gold} gold, dug with a shovel`,!homeFitWhy(h,k,'gold')):btn('fit:'+k+':gold',`${F.gold} gold`,!homeFitWhy(h,k,'gold'))+btn('fit:'+k+':planks',`${F.planks} planks`,!homeFitWhy(h,k,'planks')))+'</div>';});}
+      s+=`<div style="padding-left:12px">${name} `+(F.clay?btn('fit:'+k+':clay',`${F.clay} clay, by hand`,!homeFitWhy(h,k,'clay')):F.shovel?btn('fit:'+k+':gold',`${F.gold} gold, dug with a shovel`,!homeFitWhy(h,k,'gold')):F.bronze?btn('fit:'+k+':gold',`${F.gold} gold and ${F.bronze} bronze ingots`,!homeFitWhy(h,k,'gold')):btn('fit:'+k+':gold',`${F.gold} gold`,!homeFitWhy(h,k,'gold'))+btn('fit:'+k+':planks',`${F.planks} planks`,!homeFitWhy(h,k,'planks')))+'</div>';});}
   s+=`<div style="color:#8a7050;font-style:italic;font-size:12px;margin-top:6px">one of each; a fitting taken out is kept here and goes back for nothing</div>`;
   const B=ov.querySelector('#hm-body');B.innerHTML=s;
   B.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const [a,k,how]=b.dataset.a.split(':');
-    if(a==='use'){closeHousePage();if(k==='bench')openBenchPage();else openCurePage();return;}
+    if(a==='use'){closeHousePage();if(k==='bench')openBenchPage();else if(k==='still')openBrewPage();else openCurePage();return;}
     if(a==='bed'){const [,bi,what]=b.dataset.a.split(':');const res=what==='take'?gardenTake(h,+bi):gardenPlant(h,+bi,what,b.dataset.v);homeSaid=res.done?(what==='take'?res.got+'.':'Planted. Ready in '+GARDEN_DAYS+' days.'):res.why;if(res.done&&typeof uiTone==='function')uiTone(520,700,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();homeDraw();return;} /* S2140 */
     if(a==='kiln'){const res=kilnFire(h,k);homeSaid=res.done?`${KILN_WARES[k].a[0].toUpperCase()+KILN_WARES[k].a.slice(1)}, fired.`:res.why;if(res.done&&typeof uiTone==='function')uiTone(440,660,.08,.08,'triangle');if(typeof renderHubInv==='function')renderHubInv();homeDraw();return;}
     const res=a==='fit'?homeFit(h,k,how):homeUnfit(h,k);homeSaid=res.done?(a==='fit'?`${HOME_FITS[k].a[0].toUpperCase()+HOME_FITS[k].a.slice(1)} stands in the house.`:`The ${HOME_FITS[k].n} is taken out and kept.`):res.why;
@@ -3547,6 +3600,7 @@ function interact(){
       openSleepUI();
       return;
     }
+    if(stillNear()&&!keeperAimed()){openBrewPage();return;} /* S2560 — a drawn apothecary's still: at it, E works it unless you look at the keeper */
     // Shopkeeper — open dialog first
     if(keeperInReach()){ // v80 S13 — same floor only; S798 — wherever the prompt shows, too
       if(typeof sleeperAsleep==='function'&&sleeperAsleep())wakeSleeper(intNPCMesh,true); /* S739 — E wakes a sleeper, who then talks */

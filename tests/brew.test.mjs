@@ -236,7 +236,8 @@ const DR = await page.evaluate(() => {
   lid = L; currentHouse = H; o.outdoors = distilDraught(stillGroups()[0] ? stillGroups()[0].key : '').why;
   lid = 'int_test'; currentHouse = { type: 'potion', id: 'g_tst_4', siteId: 'tst', name: 'Apothecary', keeper: '', tagline: '' };
   const G = stillGroups(); o.groups = G.map(x => x.name + '×' + x.n).join();
-  const g0 = gold, m0 = gameMinNow(), a0 = SKILLS.alchemy.p; const d = distilDraught(G[0].key);
+  o.noVial = distilDraught(G[0].key).why; bagAdd({ ...VIAL_ITEM }); o.vials = vialCount();
+  const g0 = gold, m0 = gameMinNow(), a0 = SKILLS.alchemy.p; const d = distilDraught(G[0].key); o.vialsAfter = vialCount();
   o.draught = { made: d.made, name: d.item && d.item.name, s: d.item && d.item.brew.s, want: +((o.freshS + o.dryS) / 2 * 1.35).toFixed(3), w: d.item && d.item.weight,
     fee: g0 - gold, mins: Math.round(gameMinNow() - m0), use: SKILLS.alchemy.p - a0, tinctures: BAG.filter(b => b.brew && !b.brew.draught).length };
   o.one = (() => { const h = (k, n) => bagAdd({ ...HERB_DEF[k].item, qty: n, _typeKey: k }); h('firemoss', 1); h('silverleaf', 1); brewHerbs(['firemoss', 'silverleaf']); return distilDraught(stillGroups()[0].key).why; })();
@@ -249,6 +250,17 @@ const DR = await page.evaluate(() => {
   currentHouse = { type: 'guild_m', guild: 'mages', id: 'g_tst_5', siteId: 'tst', name: 'Guild', keeper: '', tagline: '' }; const gm = worldState.guild; worldState.guild = {};
   o.guild = { here: stillHere(), fee: stillFee() }; worldState.guild = { mages: { joined: true } }; o.guild.member = stillFee(); worldState.guild = gm;
   currentHouse = { type: 'inn', id: 'g_tst_6', siteId: 'tst', name: 'Inn' }; o.inn = stillHere();
+  // S2560 — the vial where it is sold; your house's still; a drawn apothecary's still at its station
+  o.sold = { apo: vialFor({ type: 'potion' }).length, inn: vialFor({ type: 'inn' }).length };
+  { const find = nk => { for (let i = 0; i < 48; i++) for (let j = 0; j < 48; j++) { let k; try { k = nationKeyOf(i, j); } catch (e) { continue; } if (k !== nk) continue; const c = getCell(i, j), t = c && c.sites && c.sites.find(q => /^c-?\d+_-?\d+_s\d+$/.test(q.id)); if (t) return t; } return null; };
+    const au = find('aurenne'), ga = Object.values(SITE).find(t => t && nationKeyOf(...cellOf(t.x, t.z)) === 'gatelands');
+    o.sold.aur = au ? vialFor({ type: 'misc', siteId: au.id }).length : null; o.sold.gat = ga ? vialFor({ type: 'misc', siteId: ga.id }).length : null; }
+  const home = { type: 'home', id: 'g_tst_7', siteId: 'tst', name: 'House', ownedByPlayer: true, siteKind: 'village' }; currentHouse = home; const fs0 = worldState.fittings; worldState.fittings = {};
+  o.home = { before: stillHere(), why: homeFitWhy(home, 'still', 'gold') }; gold += 100; bagAdd(ingotItem(2, 2)); const hg = gold;
+  o.home.fit = homeFit(home, 'still', 'gold').done; o.home.cost = hg - gold; o.home.ingots = bagCount(b => b.ingot === 2); o.home.here = stillHere(); o.home.fee = stillFee();
+  worldState.fittings = fs0;
+  const P0 = [px, pz]; currentHouse = { type: 'potion', id: 'g_tst_8', siteId: 'tst', name: 'Apothecary', _apothecary: { inner: { x1: 3, z1: 2 }, stations: [{ step: 'distil', x: 1, z: -.5 }] } };
+  px = 4; pz = 1.5; o.drawn = { at: stillHere(), near: stillNear() }; px = .5; pz = 3.5; o.drawn.far = stillHere(); o.drawn.farNear = stillNear(); px = P0[0]; pz = P0[1];
   // a draught and a dried herb come back from a save
   herb('firemoss', 1); BAG.push(driedHerbItem('silverleaf'));
   const sv = JSON.parse(ssStringify(_buildSavePayload())); BAG.length = 0; _applyLoadData(sv);
@@ -262,5 +274,29 @@ check('S2554: no still outdoors; at an apothecary two tinctures of one brew make
 check('S2554: one tincture will not distil; a draught never turns, a tincture does; a poison is not distilled', /two tinctures/.test(DR.one) && !DR.turned && DR.keeps && DR.tinctureTurns && !DR.poison, DR);
 check('S2554: the page opens at a still with no mortar and offers Distil; the Mages\' Guild\'s still is 5 gold, free to a member; an inn has none', DR.page && DR.guild.here === 'guild' && DR.guild.fee === 5 && DR.guild.member === 0 && DR.inn === null, DR);
 check('S2554: a draught and a dried herb come back from a save', DR.reload.draught && DR.reload.w === .2 && DR.reload.dried, DR.reload);
+check('S2560: with no glass vial the still refuses; a draught takes one vial', /glass vial/.test(DR.noVial) && DR.vials === 1 && DR.vialsAfter === 0, DR);
+check('S2560: a vial is sold at an apothecary and an Aurenne goods shop, not a Gatelands one or an inn', DR.sold.apo === 1 && DR.sold.inn === 0 && DR.sold.aur === 1 && DR.sold.gat === 0, DR.sold);
+check('S2560: your house\'s still is a fitting of 60 gold and 2 bronze ingots, and is free', DR.home.before === null && /2 bronze ingots/.test(DR.home.why) && DR.home.fit && DR.home.cost === 60 && DR.home.ingots === 0 && DR.home.here === 'house' && DR.home.fee === 0, DR.home);
+check('S2560: a drawn apothecary\'s still is at its station (E there), not across the room', DR.drawn.at === 'shop' && DR.drawn.near && DR.drawn.far === null && !DR.drawn.farNear, DR.drawn);
+// ── S2559: the recipe leaf ──
+const RL = await page.evaluate(() => {
+  const o = {}, K = herbsKnown(), h = (k, n) => bagAdd({ ...HERB_DEF[k].item, qty: n, _typeKey: k }); BAG.length = 0; bagAdd({ ...MORTAR_ITEM }); K.brews = {}; K.none = {};
+  h('firemoss', 2); h('silverleaf', 2); o.a = brewHerbs(['firemoss', 'silverleaf']).made; o.b = brewHerbs(['silverleaf', 'firemoss']).made;
+  h('firemoss', 1); h('heartroot', 1); o.none = brewHerbs(['firemoss', 'heartroot']).made;
+  const R = brewRecipes(); o.rec = R.map(r => r.key + ':' + r.n + ':' + r.fx.join('+')).join();
+  openBrewPage(); const ov = document.getElementById('brewui'); ov.querySelector('#br-leaf').click(); const t = ov.querySelector('#br-rec').textContent;
+  o.leaf = { shown: ov.querySelector('#br-rec').style.display === 'block' && ov.querySelector('#br-cols').style.display === 'none', made: /Firemoss, Silverleaf/.test(t) && /×2/.test(t), none: /Firemoss and Heartroot/.test(t), study: /Study to discover/.test(t), label: ov.querySelector('#br-leaf').textContent };
+  BAG.splice(0, BAG.length, ...BAG.filter(b => !(b.type === 'herb'))); ov.querySelector('[data-r]').click(); o.refused = ov.querySelector('#br-said').textContent;
+  h('firemoss', 1); h('silverleaf', 1); brewSel = []; brewDraw(); ov.querySelector('[data-r]').click();
+  o.chosen = { sel: brewSel.slice().sort().join(), back: brewLeaf === 'mortar' && ov.querySelector('#br-cols').style.display === 'flex', said: ov.querySelector('#br-said').textContent };
+  closeBrewPage();
+  o.unfound = brewUnfound().every(q => q.known < q.of);
+  const sv = JSON.parse(ssStringify(_buildSavePayload())); K.brews = {}; _applyLoadData(sv); o.reload = Object.keys(herbsKnown().brews || {}).join();
+  return o; });
+console.log(JSON.stringify(RL));
+check('S2559: each brew is written by its herbs, whatever their order, with its effects and count; a failed pair is not', RL.a && RL.b && RL.none === false && RL.rec === 'firemoss+silverleaf:2:' + RL.rec.split(':')[2] && RL.rec.split(':')[2].length > 0, RL);
+check('S2559: the Recipes leaf shows the recipe (×2), the pair that gave nothing and the herbs to study', RL.leaf.shown && RL.leaf.made && RL.leaf.none && RL.leaf.study && RL.leaf.label === 'The mortar' && RL.unfound, RL.leaf);
+check('S2559: Choose is refused without the herbs, and with them chooses both and turns back to the mortar', /You carry no Firemoss or Silverleaf/.test(RL.refused) && RL.chosen.sel === 'firemoss,silverleaf' && RL.chosen.back && RL.chosen.said === 'Chosen.', RL);
+check('S2559: the recipes come back from a save', RL.reload === 'firemoss+silverleaf', RL.reload);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
