@@ -8406,8 +8406,8 @@ function aurenneOrrery(hAt, o = {}) {
   // Session 2526 (Michael's A on #1843, "raise a headland for it"): the ground Stormwatch brings. No Gatelands shore stands a flat top over a
   // sheer cliff (Session 2480's search), so the fort's headland is the world's own ground raised: a stamp of a height (baseH's fn, as the
   // Frostborn Vault's) lifts a shore to the prototype's land, its top 40 m over the sea at the brink (the datum, 0 here) and falling inland
-  // as the prototype's does (3 in 100, in low risers of the bedding), full for 170 m either side of the fort and 150 m inland, and coming
-  // back to the shore's own ground by 330 m and 320 m. The brink is the prototype's own wavering line (edge). The face is the kit's (below):
+  // as the prototype's does (3 in 100, in low risers of the bedding), full for 215 m either side of the fort and 150 m inland, and coming
+  // back to the shore's own ground by 290 m and 320 m (Session 2568: the ends were a 160 m ramp, 170 to 330, a whaleback from the sea). The brink is the prototype's own wavering line (edge). The face is the kit's (below):
   // the prototype's beds, buttresses and gullies (Session 2457), one shared point a grid point and smooth normals (Session 2497), drawn from
   // the brink down under the sea and kept seaward of it. So that no terrain triangle stands in front of the rock, the ground inside the rock
   // is sunk: from 45 m out to 6 m behind the brink it goes 8 m under the sea (its steep triangles all landward of the brink), and the kit's
@@ -8417,7 +8417,7 @@ function aurenneOrrery(hAt, o = {}) {
   //   PKIT.wonders.stormwatchLand({ sea }) -> { edge, top, ground, inside, box, consts }
   function stormwatchLand(o = {}) {
     const fbm = pfbm, sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-    const SL = o.sea ?? -40, FL = SL - 8, M = 6, CAPW = 15, XC = 170, XL = 330, ZC = 150, ZL = 320, FR = 20, FB = 45;
+    const SL = o.sea ?? -40, FL = SL - 8, M = 6, CAPW = 15, XC = 215, XL = 290, ZC = 150, ZL = 320, FR = 20, FB = 45;
     const edge = x => 7 * (fbm(x / 70 + 3.1, 1.7, 3) - .5) * 2 + 3 * (fbm(x / 18 + 9.3, 4.4, 2) - .5);
     // the prototype's landY less its TOP: 0 at the brink, falling 3 in 100 inland in risers of 1.1 m, a little roughness
     const landY = (x, z, e) => { const d = Math.max(0, z - e), t = d / 34 + .5 * fbm(x / 90 + 1.3, z / 90, 2); return -.03 * d - 1.1 * (Math.floor(t) + sstep(.86, 1, t - Math.floor(t))) + .3 * (fbm(x / 9, z / 9, 3) - .5); };
@@ -8430,7 +8430,7 @@ function aurenneOrrery(hAt, o = {}) {
       if (d >= M) { const t = top(x, z, h0); return t - .6 * (1 - sstep(M + 5.8, CAPW, d)) * w; }
       const b = d > -FR ? 1 : 1 - sstep(FR, FB, -d); return h0 + (Math.min(h0, FL) - h0) * b * w; };
     const inside = (x, z) => Math.abs(x) < XL && z < ZL + 10 && z > edge(x) - FB - 2;
-    return { edge, top, ground, inside, landY, box: { x0: -XL, x1: XL, z0: -FB - 22, z1: ZL + 10 }, consts: { SL, FL, M, CAPW, XC, XL, ZC, ZL, FR, FB } };
+    return { edge, top, ground, inside, landY, box: { x0: -330, x1: 330, z0: -FB - 22, z1: ZL + 10 } /* the search's box, 330 m either way as it was before Session 2568 shortened the ends, so the site stays */, consts: { SL, FL, M, CAPW, XC, XL, ZC, ZL, FR, FB } };
   }
   let _swMats = null;
   function stormwatchRuin(hAt, o = {}) {
@@ -8561,9 +8561,12 @@ function aurenneOrrery(hAt, o = {}) {
         grain(x, 9000, .12); });
       const paveT = canvasTex(x => { x.fillStyle = '#9c9c96'; x.fillRect(0, 0, 512, 512); for (let q = 0; q < 700; q++) { const v = 128 + rt() * 56; x.fillStyle = `rgba(${v | 0},${v | 0},${(v * .97) | 0},.3)`; x.beginPath(); x.arc(rt() * 512, rt() * 512, 4 + rt() * 18, 0, 7); x.fill(); }
         x.fillStyle = 'rgba(70,70,66,.35)'; for (let q = 0; q < 160; q++) { x.beginPath(); x.arc(rt() * 512, rt() * 512, 1 + rt() * 2, 0, 7); x.fill(); }
-        const lines = []; let y = 0; while (y < 512 - 50) { lines.push(y); y += 70 + rt() * 70; } x.strokeStyle = 'rgba(48,48,44,.85)'; x.lineCap = 'round';
-        for (const y0 of lines) for (const ox of [0, 512, -512]) { x.lineWidth = 2.5 + rt() * 2.5; x.beginPath(); for (let xx = 0; xx <= 512; xx += 16) { const yy = y0 + 9 * Math.sin(xx / 512 * Math.PI * 2 * 2 + y0) + (xx === 0 || xx === 512 ? 0 : (rt() - .5) * 4); xx ? x.lineTo(xx, yy + ox) : x.moveTo(xx, yy + ox); } x.stroke(); }
-        x.strokeStyle = 'rgba(56,56,52,.7)'; for (let k = 0; k < lines.length; k++) { const y0 = lines[k], y1 = k + 1 < lines.length ? lines[k + 1] : 512 + lines[0]; let xx = rt() * 80; while (xx < 512) { x.lineWidth = 1.5 + rt() * 1.5; const dx = (rt() - .5) * 30; for (const ox of [0, 512, -512]) for (const oy of [0, -512]) { x.beginPath(); x.moveTo(xx + ox, y0 + oy + 4); x.lineTo(xx + ox + dx, y1 + oy - 4); x.stroke(); } xx += 60 + rt() * 140; } }
+        const lines = []; let y = 0; while (y < 512 - 50) { lines.push(y); y += 70 + rt() * 70; } x.lineCap = 'round';
+        /* Session 2568 (the critic's inked joints, s1889): each grike drawn once as a path, then a pale worn arris on its lit side, a soft
+           grey core 1.2 to 2.6 px under it (was 2.5 to 5 px at .85 near-black), so at 2 m a joint is a shadowed crack, not a pen line */
+        for (const y0 of lines) { const P = []; for (let xx = 0; xx <= 512; xx += 16) P.push([xx, y0 + 9 * Math.sin(xx / 512 * Math.PI * 2 * 2 + y0) + (xx === 0 || xx === 512 ? 0 : (rt() - .5) * 4)]); const lw = 1.2 + rt() * 1.4;
+          for (const [dy, st, w] of [[1.6, 'rgba(236,234,224,.35)', lw + 1.2], [0, 'rgba(92,90,84,.62)', lw]]) for (const ox of [0, 512, -512]) { x.strokeStyle = st; x.lineWidth = w; x.beginPath(); P.forEach(([xx, yy], k) => k ? x.lineTo(xx, yy + ox + dy) : x.moveTo(xx, yy + ox + dy)); x.stroke(); } }
+        x.strokeStyle = 'rgba(100,98,92,.5)'; for (let k = 0; k < lines.length; k++) { const y0 = lines[k], y1 = k + 1 < lines.length ? lines[k + 1] : 512 + lines[0]; let xx = rt() * 80; while (xx < 512) { x.lineWidth = .9 + rt() * 1.1; const dx = (rt() - .5) * 30; for (const ox of [0, 512, -512]) for (const oy of [0, -512]) { x.beginPath(); x.moveTo(xx + ox, y0 + oy + 4); x.lineTo(xx + ox + dx, y1 + oy - 4); x.stroke(); } xx += 60 + rt() * 140; } }
         grain(x, 7000, .1); });
       /* Session 2526: the set stones in the pavement's limestone at 1.5 (the prototype's Session 2497, after the critic's black teeth, s1812), encoded */
       const chevM = mat('searock', { ns: .7, color: new THREE.Color(...[1.5, 1.48, 1.42].map(enc)), rough: .95 }); chevM.vertexColors = true;

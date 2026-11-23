@@ -353,13 +353,20 @@ const PLANT_BUILD={
         const w=.09*(1-k/seg)+.015;for(const sd of[-1,1])P.add(plantLeaf(w,.03,.006,.01),[nx,ny,nz],[-(ang*.4)+.05,a+sd*1.35,0],0,plantShade(col,.9+k*.02));
         x=nx;y=ny;z=nz;ang-=.19;}
       P.add(SK.cyl(.004,.006,.05,4),[0,.02,0],0,0,stem);}},
-  // bramble: long canes arching over and back to the ground, a leaf here and there (picked, the canes stay bare)
-  bramble(P,R,col,stem){for(let i=0;i<6;i++){const a=R()*6.283,r=i?.08+R()*.1:0,sz=.1+R()*.05;P.take=i>1;P.add(SK.bumpy(SK.ball(1,7,5),.22,8,R()*6),[Math.sin(a)*r,.08,Math.cos(a)*r],0,[sz,sz*.7,sz],plantMix(0x3a4a22,col,.3+R()*.3));}
-    for(let c=0;c<9;c++){const a=R()*6.283,L=.5+R()*.3,seg=10;let x=0,y=0,z=0;
-      for(let k=0;k<seg;k++){const t=(k+1)/seg,ny=Math.sin(t*Math.PI)*(.26+R()*.04),nx=Math.sin(a)*L*t,nz=Math.cos(a)*L*t;
-        const dx=nx-x,dy=ny-y,dz=nz-z,d=Math.hypot(dx,dy,dz);const g=SK.cyl(.007,.008,d,4,1,true);g.translate(0,d/2,0);
+  // bramble: a low thicket, not a hub. Canes rise from four crowns spread over the patch, arch at different heights and
+  // lengths, wander as they go so they cross one another, and bow their tips back into the ground; leaves hang off both sides
+  // of the whole cane, a few bronzed, over low leafy masses spread off-centre, so no body shows and no eight legs (S2567: the
+  // critic's giant spider, s1889). Picked, the outer leaves go: the masses and the leaves by each crown stay.
+  bramble(P,R,col,stem){const crowns=[];for(let i=0;i<4;i++){const a=i*1.57+R()*1.2,r=.05+R()*.14;crowns.push([Math.sin(a)*r,Math.cos(a)*r]);}
+    const leafA=0x2e4a1c,leafB=0x4a6026,leaf=()=>R()<.15?plantMix(leafB,col,.5):plantMix(leafA,leafB,R());
+    for(let i=0;i<7;i++){const a=i*.9+R()*.8,r=i?.12+R()*.22:.06,sz=.1+R()*.07;P.take=i>4;P.add(SK.bumpy(SK.ball(1,7,5),.28,8,R()*6),[Math.sin(a)*r,sz*.35,Math.cos(a)*r],[0,R()*6,0],[sz*1.35,sz*.8,sz],plantMix(leafA,leafB,.2+R()*.5));}
+    for(let c=0;c<11;c++){const cr=crowns[c%4],a0=R()*6.283,L=.4+R()*.38,H=.12+R()*.16,seg=7,turn=(R()-.5)*1.4;let x=cr[0],y=.03,z=cr[1],a=a0;
+      for(let k=0;k<seg;k++){const t=(k+1)/seg;a=a0+turn*t;const step=L/seg,ny=Math.max(0,Math.sin(Math.min(1,t*1.1)*Math.PI)*H+.03*(1-t)-(t>.9?.02:0)),nx=x+Math.sin(a)*step,nz=z+Math.cos(a)*step;
+        const dx=nx-x,dy=ny-y,dz=nz-z,d=Math.hypot(dx,dy,dz);const g=SK.cyl(.006,.008,d,3,1,true);g.translate(0,d/2,0);
         P.take=false;P.add(g,[x,y,z],[Math.atan2(Math.hypot(dx,dz),dy),Math.atan2(dx,dz),0],0,stem);
-        if(k<seg-2)for(const sd of[1,-1]){P.take=true;P.add(plantLeaf(.08,.06,.008,.02),[nx,ny,nz],[-.1,a+sd*(1+R()*.5),0],0,plantMix(0x4a5a22,col,.35+R()*.3));}x=nx;y=ny;z=nz;}}P.take=false;},
+        if(k<seg-1){const ly=Math.max(.04,ny);P.take=k>1;
+          for(const sd of[1,-1])P.add(plantLeaf(.12+R()*.05,.1,.01,.04),[nx,ly,nz],[.15+R()*.35,a+sd*(.9+R()*.7),(R()-.5)*.6],0,leaf());}
+        x=nx;y=ny;z=nz;}}P.take=false;},
   // a grey-green moor shrub: a low mound of small twiggy clumps (picked, three are left on the twigs)
   shrub(P,R,col,stem,key){for(let i=0;i<4;i++){const a=R()*6.283;P.add(plantStalk(.2,.012,.008,4),[0,0,0],[.5,a,0],0,stem);}
     for(let i=0;i<9;i++){const a=R()*6.283,r=i?.08+R()*.14:0,s=.1+R()*.06;P.take=i>=3;P.add(SK.bumpy(SK.ball(1,8,6),.22,8,R()*6),[Math.sin(a)*r,.2+R()*.12-r*.4,Math.cos(a)*r],0,[s,s*.8,s],plantMix(col,0x9aa888,R()*.4));}P.take=false;
