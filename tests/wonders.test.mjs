@@ -20,8 +20,10 @@ console.log(JSON.stringify(s));
 check(`the Skyfall Fields' place is in the Mark, over the snow line (${s.snow.toFixed(1)} m), the same asked twice`, s.nation === 'mark' && s.snow > 22 && s.same, s);
 check(`its field falls ${s.fall} m over 300 by 130 m, and it stands ${s.near} m past the nearest site's pad`, s.fall <= 30 && s.near >= 260, s);
 const at = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 6, -170); return { x, z }; }, s);
+// Session 2561: each jump waits up to 180 s for its fade to lift there, as the Spires' always did (FLAKY on auto/look-2526, 45034030499:
+// the first jump, at 60 s, while the first world frames still compile on CI). The condition is unchanged.
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), at);
-await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [at.x, at.z], { timeout: 60000 });
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [at.x, at.z], { timeout: 180000 });
 await g.cells(); await g.hide();
 const r = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.skyfall, W = S.W; if (!W) return { none: true };
   let meshes = 0; W.group.traverse(o => { if (o.isMesh) meshes++; });
@@ -67,7 +69,7 @@ check(`its ground falls ${o.fall} m round it, and it stands ${o.near} m past the
 check(`nothing within 100 m stands more than 3 m over it (${o.above} m): a headland, not a brow under a hill`, o.above <= 3, o);
 const oat = await page.evaluate((o) => { const [x, z] = wonderToWorld(o, 4, 60); return { x, z }; }, o);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), oat);
-await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [oat.x, oat.z], { timeout: 60000 });
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [oat.x, oat.z], { timeout: 180000 });
 await g.cells(); await g.hide();
 const q = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.orrery, W = S.W, st = S.site; if (!W) return { none: true };
   let meshes = 0; W.group.traverse(o => { if (o.isMesh) meshes++; });
@@ -109,7 +111,7 @@ check(`the Drowned Ring's lough is ${l.name}, a routed lake of the Gatelands abo
 check(`it stands ${l.near} m past the nearest site's pad, its boardwalk ${l.shore} m from the heart to the shore`, l.near >= 150 && l.shore <= 320, l);
 const lat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 0, s.shore + 10); return { x, z }; }, l);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), lat);
-await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [lat.x, lat.z], { timeout: 60000 });
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [lat.x, lat.z], { timeout: 180000 });
 await g.cells(); await g.hide();
 const lw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.lough, W = S.W, st = S.site; if (!W) return { none: true };
   let meshes = 0; W.group.traverse(o => { if (o.isMesh) meshes++; });
@@ -143,7 +145,7 @@ check(`the Weavers' ring stands on a Gatelands headland ${rs.h} m over the sea, 
 check(`its crown falls ${rs.fall} m before the stamp, it stands ${rs.near} m past the nearest site's pad, nothing within 220 m more than 3 m over it (${rs.above})`, rs.fall <= 14 && rs.near >= 330 && rs.above <= 3, rs);
 const rat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 0, 150); return { x, z }; }, rs);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), rat);
-await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [rat.x, rat.z], { timeout: 60000 });
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [rat.x, rat.z], { timeout: 180000 });
 await g.cells(); await g.hide();
 const rw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.ring, W = S.W, st = S.site; if (!W) return { none: true };
   let meshes = 0; W.group.traverse(o => { if (o.isMesh) meshes++; });
@@ -211,7 +213,7 @@ check(`the Drowned Spires stride off a Gatelands strand (the first tower ${ps.y}
 check(`the last tower stands in ${-ps.last} m of water, open sea on ${ps.open} of 7 marks ahead, the spit ${ps.spit} m; ${ps.near} m past the nearest pad, ${ps.ring} m from the ring`, ps.last < -1 && ps.open >= 5 && ps.spit <= 150 && ps.near >= 330 && ps.ring >= 1200, ps);
 const pat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 30, 60); return { x, z }; }, ps);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), pat);
-await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [pat.x, pat.z], { timeout: 60000 });
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [pat.x, pat.z], { timeout: 180000 });
 await g.cells(); await g.hide();
 const pw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.spires, W = S.W, st = S.site; if (!W) return { none: true };
   let meshes = 0, lit = 0; W.group.traverse(o => { if (o.isMesh) { meshes++; if (o.material.emissive && o.material.emissive.getHex() !== 0) lit++; } });
@@ -268,7 +270,7 @@ check(`the Scarred Gate stands on Aurenne's ${gs.biome}, ${gs.h} m up, the same 
 check(`its ground falls ${gs.fall} m under the plinth and the ring, the scar's run within ${gs.even} m of its foot; ${gs.near} m past the nearest pad, ${gs.orrery} m from the Orrery`, gs.fall <= 6 && gs.near >= 330 && gs.orrery >= 1200, gs);
 const gat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, -20, 120); return { x, z }; }, gs);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), gat);
-await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [gat.x, gat.z], { timeout: 60000 });
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [gat.x, gat.z], { timeout: 180000 });
 await g.cells(); await g.hide();
 const gw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.scarred, W = S.W, st = S.site; if (!W) return { none: true };
   let meshes = 0, lit = 0; W.group.traverse(o => { if (o.isMesh) { meshes++; if (o.material.emissive && o.material.emissive.getHex() !== 0) lit++; } });
@@ -303,7 +305,7 @@ check(`the Gate Isles run out from ${is.shore} m off a Gatelands shore in ${-is.
 check(`every isle ${is.near} m past the nearest pad and ${is.wonder} m from the nearest Gatelands wonder`, is.near >= 400 && is.wonder >= 1200, is);
 const iat = await page.evaluate((s) => { const [x, z] = wonderToWorld({ x: s.ox, z: s.oz, ry: s.ry }, 30, 0); return { x, z }; }, is);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), iat);
-await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [iat.x, iat.z], { timeout: 60000 });
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [iat.x, iat.z], { timeout: 180000 });
 await g.cells(); await g.hide();
 const iw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.isles, W = S.W, st = S.site; if (!W) return { none: true };
   let meshes = 0, lit = 0; W.group.traverse(o => { if (o.isMesh) { meshes++; if (o.material.emissive && o.material.emissive.getHex() !== 0) lit++; } });
@@ -345,7 +347,7 @@ check(`the Forgotten Aqueducts' hill is the Gatelands', its lip ${aq.y} m up at 
 check(`it stands ${aq.near} m past the nearest pad and ${aq.wonder} m from the nearest Gatelands wonder`, aq.near >= 330 && aq.wonder >= 1200, aq);
 const aat = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 0, 95); return { x, z }; }, aq);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), aat);
-await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [aat.x, aat.z], { timeout: 60000 });
+await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [aat.x, aat.z], { timeout: 180000 });
 await g.cells(); await g.hide();
 const aw = await page.evaluate(() => { forceTime(13); WONDERS._t = 0; tickWonders(); const S = WONDERS.aqueducts, W = S.W, st = S.site; if (!W) return { none: true };
   let meshes = 0; W.group.traverse(o => { if (o.isMesh) meshes++; }); const L = (lx, lz) => wonderToWorld(st, lx, lz), T = (lx, lz) => activeTerrainH(...L(lx, lz)) - st.y;
