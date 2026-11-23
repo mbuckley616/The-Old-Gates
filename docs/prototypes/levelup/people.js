@@ -4139,6 +4139,10 @@ function buildLantern(G, body, byName, meshes, root, grip) {
 // brooch's work, heraldTex, 7 cm across), as the sheet's journal has the wheel on its cover. Built in its own frame: x along the spine,
 // y up, the fore-edge at 0, the spine's middle at K.top. The arm is lifted clear of everything worn, as for the lantern
 const BOOK = { L: .23, H: .17, T: .03, board: .004, proud: .003, dev: .035 };
+// what moves with the book is not tested against it (Session 2570): the right hand (rest x under -.39) and the wrist above it, to -.37.
+// A woman's wrist (a Gatelander priest's, clergy.js) lay 2 mm inside the cover's slab, every lift took it along, and the arm was swung
+// out to the loop's 0.6 rad limit for points no lift could clear: the book held out at arm's length, 18 points still inside
+const BOOK_WRIST = -.37;
 BOOK.top = BOOK.H - BOOK.T / 2;
 function bookParts(D) {
   const K = BOOK, parts = [], leather = new THREE.MeshStandardMaterial({ color: sRGB(...D.book), roughness: .72, side: THREE.DoubleSide });
@@ -4164,7 +4168,7 @@ function buildBook(G, body, byName, meshes, root, grip) {
   // what is within a centimetre of the book (its box, the device's gilt on the covers included), the right hand apart
   const hx = K.L / 2, hz = K.T / 2 + .0012;
   const test = () => { const inv = bk.matrixWorld.clone().invert(), v = new THREE.Vector3(); let n = 0, clear = 1, tested = 0;
-    eachPoint(clouds, (x, y, z, i) => { if (i >= 0 && R0[i * 3] < -.39) return; v.set(x, y, z).applyMatrix4(inv); if (v.y < -.02 || v.y > K.H + .02 || Math.abs(v.x) > hx + .02) return; tested++;
+    eachPoint(clouds, (x, y, z, i) => { if (i >= 0 && R0[i * 3] < BOOK_WRIST) return; v.set(x, y, z).applyMatrix4(inv); if (v.y < -.02 || v.y > K.H + .02 || Math.abs(v.x) > hx + .02) return; tested++;
       const d = Math.abs(v.z) - hz; if (d < .01 && Math.abs(v.x) < hx + .01 && v.y > -.01 && v.y < K.H + .01) n++; clear = Math.min(clear, d); });
     return { n, clear, tested }; };
   let lift = 0, T; place(); for (;;) { T = test(); if (!T.n || lift >= .6) break; lift += .03; arm.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -.03)); place(); again(); }
