@@ -5,7 +5,11 @@
 // 8 to 10 m, leaning lee and never windward; most of its needle pads on the lee side; felled, no pads and a stump of 0.6 m. The script
 // stone: each of the six schools, the same twice, in budget (4,000, 7 draws), the game's slab (0.7 by 1.15 by 0.2), standing clear of
 // the wall it leans to, its script lit in two panels split by the crack; cut, no script and a socket.
-// --shots writes rare-crater, -crater-close, -crater-night, -crater-left1, -pine, -pine-far, -pine-felled, -stone, -stone-tine,
+// The oyster bed (Session 2586): 12 keys, the same twice, in budget (10,000 triangles, 10 draws); the bank 2 cm proud over 4.2 to 5.4 m and paler
+// than the sand; five oysters of 0.24 to 0.30 m within the game's ring (2.4 m), each on the bank or its stone (not under it, not over it by
+// more than 0.4 m); the places the game passes are kept; opened (taken bits), as many open as bits and the dark lip only then.
+// --shots writes rare-oyster, -oyster-close, -oyster-above,
+// rare-crater, -crater-close, -crater-night, -crater-left1, -pine, -pine-far, -pine-felled, -stone, -stone-tine,
 // -stone-uisce and -stone-cut.
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
@@ -16,12 +20,12 @@ const port = srv.address().port, launch = { args: ['--use-gl=angle', '--use-angl
 if (!fs.existsSync(chromium.executablePath()) && fs.existsSync('/opt/pw-browsers/chromium')) launch.executablePath = '/opt/pw-browsers/chromium';
 const browser = await chromium.launch(launch); let fails = 0;
 const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name + (info !== undefined ? '  ' + JSON.stringify(info) : '')); if (!ok) fails++; };
-for (const v of ['crater', 'pine', 'stone']) { const page = await browser.newPage({ viewport: { width: 320, height: 180 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
+for (const v of ['crater', 'pine', 'stone', 'oyster']) { const page = await browser.newPage({ viewport: { width: 320, height: 180 } }), errs = []; page.on('pageerror', e => errs.push(String(e)));
   await page.goto(`http://localhost:${port}/rare.html?still&w=320&h=180&view=${v}`);
   await Promise.race([page.waitForFunction(() => window.__done, null, { timeout: 300000 }), new Promise(res => page.on('pageerror', res))]);
   check(`the ${v} page renders with no page errors`, errs.length === 0, errs.slice(0, 2)); await page.close(); }
 const page = await browser.newPage({ viewport: { width: 320, height: 180 } }); await page.goto(`http://localhost:${port}/rare.html?still&w=320&h=180&view=stone`); await page.waitForFunction(() => window.__done, null, { timeout: 300000 });
-const r = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./props.js'), S = await import('./pieces.js'), out = { craters: [], pines: [], stones: [] };
+const r = await page.evaluate(async () => { const THREE = await import('three'), K = await import('./props.js'), S = await import('./pieces.js'), out = { craters: [], pines: [], stones: [], beds: [] };
   const hash = g => { let h = 0; g.traverse(m => { if (!m.isMesh) return; const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 7) h = (h * 31 + Math.round(a[i] * 1e4)) | 0; }); return h; };
   for (let i = 0; i < 12; i++) { const a = K.starCrater({}, S.stream('star:' + i)), b = K.starCrater({}, S.stream('star:' + i)), fx = Math.sin(a.from), fz = Math.cos(a.from);
     let along = 0, across = 0; for (let d = 2; d < 5; d += .02) { if (a.hAt(-fx * d, -fz * d) > a.hAt(-fx * (d - .02), -fz * (d - .02))) along = d; } let al2 = 0; for (let d = 2; d < 5; d += .02) { if (a.hAt(fx * d, fz * d) > a.hAt(fx * (d - .02), fz * (d - .02))) al2 = d; }
@@ -39,7 +43,19 @@ const r = await page.evaluate(async () => { const THREE = await import('three'),
     a.group.updateMatrixWorld(true); const stone = a.group.children.find(m => m.name === 'sigilRock'); let back = 9; { const Q = stone.geometry.attributes.position; for (let k = 0; k < Q.count; k++) if (Q.getX(k) > -.36 && Q.getX(k) < .36 && Q.getY(k) > .02 && Q.getY(k) < 1.2 && Q.getZ(k) > 0.01) back = Math.min(back, Q.getZ(k)); }
     const sc = a.group.children.find(m => m.name.startsWith('sscript:'));
     out.stones.push({ school: s, same: hash(a.group) === hash(b.group), tris: a.tris, draws: a.draws, size: a.size, back: +back.toFixed(3), lit: a.lit, glow: sc ? sc.material.color.getHexString() : null, cutLit: c.lit, cutScript: c.group.children.some(m => m.name.startsWith('sscript:')), socket: c.group.children.some(m => m.name === 'dark') && c.tris > 0 }); }
+  for (let i = 0; i < 12; i++) { const a = K.oysterBed({}, S.stream('pearl:' + i)), b = K.oysterBed({}, S.stream('pearl:' + i)), t = K.oysterBed({ taken: 0b10110 }, S.stream('pearl:' + i));
+    const oy = [[1.2, .3, 0], [-.6, 1.8, 1], [-1.9, -.4, 2], [.2, -2.3, 3], [1.5, -1.1, 4]].map(([x, z, ry]) => ({ x, z, ry })), g = K.oysterBed({ oy }, S.stream('pearl:' + i));
+    const bank = a.group.children.find(m => m.name === 'bank'), C = bank.geometry.attributes.color, Pb = bank.geometry.attributes.position; let lin = 0, nin = 0, wid = 0;
+    for (let k = 0; k < Pb.count; k++) { const d = Math.hypot(Pb.getX(k), Pb.getZ(k)); if (d < a.R * .6) { lin += C.getX(k) + C.getY(k) + C.getZ(k); nin++; } if (Pb.getY(k) > .024) wid = Math.max(wid, d); }
+    const sand = new THREE.Color(0xd2c29a), on = a.oysters.every(q => q.y >= a.hAt(q.x, q.z) - .02 && q.y - a.hAt(q.x, q.z) < .4);
+    out.beds.push({ same: hash(a.group) === hash(b.group), tris: Math.max(a.tris, t.tris), draws: Math.max(a.draws, t.draws), across: +(2 * wid).toFixed(2), pale: +(lin / nin / 3).toFixed(3), sand: +((sand.r + sand.g + sand.b) / 3).toFixed(3),
+      n: a.oysters.length, sizes: a.oysters.map(q => q.s), ring: Math.max(...a.oysters.map(q => Math.hypot(q.x, q.z))), on, kept: g.oysters.every((q, j) => Math.hypot(q.x - oy[j].x, q.z - oy[j].z) < .4),
+      open: t.open, lipShut: a.group.children.some(m => m.name === 'oyLip'), lipOpen: t.group.children.some(m => m.name === 'oyLip') }); }
   return out; });
+for (const b of r.beds) { check('the oyster bed is the same twice from one key', b.same); check('the bed is in budget (10,000 triangles, 10 draws)', b.tris <= 10000 && b.draws <= 10, [b.tris, b.draws]);
+  check('its bank stands 2 cm proud over 4.2 to 5.4 m and paler than the sand', b.across >= 4.2 && b.across <= 5.4 && b.pale > b.sand, [b.across, b.pale, b.sand]);
+  check('five oysters of 0.24 to 0.30 m within the game\'s ring of 2.4 m, each on the bank or its stone', b.n === 5 && b.sizes.every(s => s >= .24 && s <= .3) && b.ring <= 2.4 + .3 && b.on, [b.n, b.sizes, +b.ring.toFixed(2), b.on]);
+  check('the places the game passes are kept', b.kept); check('opened as the bits say (3 of 5), the dark lip only when open', b.open === 3 && !b.lipShut && b.lipOpen, [b.open, b.lipShut, b.lipOpen]); }
 for (const c of r.craters) { check('the crater is the same twice from one key', c.same); check('the crater is in budget (8,000 triangles, 6 draws)', c.tris <= 8000 && c.draws <= 6, [c.tris, c.draws]);
   check('the crater is 6 m across its rim, along and across (5.6 to 6.8)', c.rimAlong >= 5.6 && c.rimAlong <= 6.8 && c.rimAcross >= 5.6 && c.rimAcross <= 6.8, [c.rimAlong, c.rimAcross]);
   check('the bowl is 0.6 to 1 m deep and its rim 0.25 to 0.45 m up', c.depth >= .6 && c.depth <= 1 && c.rim >= .25 && c.rim <= .45, [c.depth, c.rim]);
@@ -54,6 +70,6 @@ for (const s of r.stones) { check(`the ${s.school} stone is the same twice`, s.s
   check(`the ${s.school} stone's script is lit in two panels; cut, it has none and a socket`, s.lit === 2 && !!s.glow && s.cutLit === 0 && !s.cutScript && s.socket, [s.lit, s.glow, s.cutLit, s.cutScript]); }
 const glows = new Set(r.stones.map(s => s.glow)); check('each school lights its script in its own colour', glows.size === 6, [...glows]);
 await page.close();
-if (process.argv.includes('--shots')) for (const q of ['view=crater', 'view=crater&close', 'view=crater&night', 'view=crater&close&left=1', 'view=pine', 'view=pine&far', 'view=pine&felled', 'view=stone', 'view=stone&school=tine', 'view=stone&school=uisce&close', 'view=stone&cut']) {
-  const name = 'rare-' + q.replace('view=', '').replace(/&school=/, '-').replace(/&left=/, '-left').replace(/&/g, '-'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=rare.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
+if (process.argv.includes('--shots')) for (const q of ['view=oyster', 'view=oyster&close&taken=1', 'view=oyster&above&taken=5', 'view=crater', 'view=crater&close', 'view=crater&night', 'view=crater&close&left=1', 'view=pine', 'view=pine&far', 'view=pine&felled', 'view=stone', 'view=stone&school=tine', 'view=stone&school=uisce&close', 'view=stone&cut']) {
+  const name = 'rare-' + q.replace(/&taken=\d+/, '').replace('view=', '').replace(/&school=/, '-').replace(/&left=/, '-left').replace(/&/g, '-'); console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=rare.html', '--name=' + name, '--q=' + q]).toString().split('{')[0]); }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

@@ -2,11 +2,13 @@
 // ?view=crater (default): the fallen star the morning after, from 11 m downrange at a standing eye; &close: the lump from where you
 // stand to strike it; &night: under the moon, the glint lit as the game would within 40 m; &left=N (0 to 3): lobes still in it.
 // ?view=pine: the skywood pine on its Mark summit, from 30 m down the slope; &far: from the valley 600 m off, on the skyline;
-// &felled: the stump. ?view=stone: the script stone in a failing gate's keep, by torchlight, beside the crystal vein; &school=tine|uisce|
+// &felled: the stump. ?view=oyster (Session 2586): the pearl oysters' bed 8 m down off Aurenne, in clear water, from 1.5 m over the sand
+// and 3.5 m off; &close: at one oyster from where you open it; &above: from a boat 8 m over it; &taken=N: the oysters opened, as bits.
+// ?view=stone: the script stone in a failing gate's keep, by torchlight, beside the crystal vein; &school=tine|uisce|
 // cloch|scath|solas|gaoth (default cloch); &cut: hewn out. &cam=x,y,z,tx,ty,tz puts the camera anywhere.
 import * as THREE from 'three';
 import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, mat, worldUV, skyDome, clouds, run, fbm } from './common.js';
-import { starCrater, skywoodPine, scriptStone } from './props.js';
+import { starCrater, skywoodPine, scriptStone, oysterBed } from './props.js';
 import { stream } from './pieces.js';
 
 const R = makeRenderer(.85), scene = new THREE.Scene(), VIEW = Q.get('view') || 'crater', NIGHT = Q.has('night');
@@ -34,6 +36,25 @@ if (VIEW === 'pine') {
   else { const a = 1.25, d = Q.has('felled') ? 6 : 22; cam.position.set(Math.sin(a) * d, hAt(Math.sin(a) * d, Math.cos(a) * d) + 1.65, Math.cos(a) * d); cam.lookAt(0, ty + (Q.has('felled') ? .4 : 4.2), 0); scene.fog.density = .0012; }
   shadowR = 14; sun.target.position.set(0, ty, 0);
   STATS.ground = { summit: +ty.toFixed(1), at100: +hAt(100, 0).toFixed(1) };
+} else if (VIEW === 'oyster') {
+  // Aurenne's clear water (undersea-view's 'clear', about 40 m), the sand 8 m down, the surface a bright ceiling, the light in shafts
+  const D = 8, WC = [.08, .34, .40], ABOVE = Q.has('above'); bloom = .2;
+  if (ABOVE) { skyDome(scene, SUN); scene.fog.density = .002; } else { scene.background = new THREE.Color(...WC); scene.fog = new THREE.FogExp2(new THREE.Color(...WC), .03); sun.color.setRGB(.85, 1, 1); sun.intensity = 3.0; hemi.color.setRGB(...WC.map(v => v * 4)); hemi.groundColor.setRGB(.1, .1, .08); hemi.intensity = 1.2; }
+  { const g = new THREE.PlaneGeometry(300, 300, 60, 60); g.rotateX(-Math.PI / 2); const Pp = g.attributes.position; for (let i = 0; i < Pp.count; i++) { const x = Pp.getX(i), z = Pp.getZ(i); Pp.setY(i, Math.sin(x * .9 + z * .35) * .03 + fbm(x / 14, z / 14) * .3 * Math.min(1, Math.max(0, Math.hypot(x, z) - 3.8) / 6)); }
+    g.computeVertexNormals(); worldUV(g, .25); const m = new THREE.Mesh(g, mat('plaster', { ns: 1.6, color: 0xd2c29a, rough: 1 })); m.receiveShadow = true; m.position.y = -.01; scene.add(m); }
+  const tk = Q.has('taken') ? +Q.get('taken') : 0; P = oysterBed({ taken: tk }, stream('pearl:aurenne:3')); scene.add(P.group);
+  { const g = new THREE.PlaneGeometry(400, 400); g.rotateX(-Math.PI / 2); const m = ABOVE ? new THREE.MeshStandardMaterial({ color: new THREE.Color(...WC), transparent: true, opacity: .45, roughness: .08, metalness: .1, depthWrite: false }) : new THREE.MeshBasicMaterial({ color: new THREE.Color(...WC.map(v => Math.min(1, v * 5.5))), side: THREE.BackSide });
+    const s = new THREE.Mesh(g, m); s.position.y = D; s.renderOrder = 2; scene.add(s); }
+  if (!ABOVE) { const c = document.createElement('canvas'); c.width = 64; c.height = 256; const x = c.getContext('2d'), gr = x.createLinearGradient(0, 0, 64, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.5, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 64, 256);
+    x.globalCompositeOperation = 'destination-in'; const gv = x.createLinearGradient(0, 0, 0, 256); gv.addColorStop(0, 'rgba(0,0,0,1)'); gv.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = gv; x.fillRect(0, 0, 64, 256);
+    const sm = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), color: new THREE.Color(.85, 1, 1), transparent: true, opacity: .14, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    for (let k = 0; k < 18; k++) { const g = new THREE.PlaneGeometry(.5 + (k % 3) * .4, 9); g.translate(0, -4.5, 0); const m = new THREE.Mesh(g, sm); m.position.set(-9 + (k * 7.3) % 18, D, -9 + (k * 11.7) % 18); m.rotation.set(-.25, k * .7, .2); scene.add(m); } }
+  const o0 = P.oysters[0];
+  if (Q.has('close')) { const a = Math.atan2(o0.x, o0.z), d = Math.hypot(o0.x, o0.z) + .75; cam.fov = 55; cam.position.set(Math.sin(a) * d, o0.y + .55, Math.cos(a) * d); cam.lookAt(o0.x, o0.y, o0.z); }
+  else if (ABOVE) { cam.fov = 60; cam.position.set(2.5, D + 1.4, 4.5); cam.lookAt(0, 0, 0); }
+  else { cam.fov = 55; cam.position.set(1.6, 1.35, 2.6); cam.lookAt(-.1, .1, -.3); post(-2.2, P.hAt(-2.2, -.6), -.6); }
+  shadowR = 6; sun.target.position.set(0, 0, 0);
+  STATS.prop2 = { oysters: P.oysters };
 } else if (VIEW === 'stone') {
   P = scriptStone({ school: Q.get('school') || 'cloch', cut: Q.has('cut') }, stream('sigilstone:' + (Q.get('school') || 'cloch'))); scene.add(P.group);
   sun.intensity = 0; hemi.intensity = .1; scene.fog.color.setRGB(.03, .028, .026); scene.fog.density = .03; bloom = .45;
@@ -55,5 +76,5 @@ if (VIEW === 'pine') {
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); }
 cam.updateProjectionMatrix();
 sun.position.copy(SUN).multiplyScalar(60).add(sun.target.position); Object.assign(sun.shadow.camera, { left: -shadowR, right: shadowR, top: shadowR, bottom: -shadowR, near: .5, far: 200 }); sun.shadow.camera.updateProjectionMatrix();
-STATS.prop = { view: VIEW, tris: P.tris, draws: P.draws, top: P.top, depth: P.depth, rim: P.rim, left: P.left, lobes: P.lobes, H: P.H, pads: P.pads, felled: P.felled, lean: P.lean, school: P.school, cut: P.cut, split: P.split, lit: P.lit };
+STATS.prop = { view: VIEW, tris: P.tris, draws: P.draws, top: P.top, depth: P.depth, rim: P.rim, left: P.left, lobes: P.lobes, H: P.H, pads: P.pads, felled: P.felled, lean: P.lean, school: P.school, cut: P.cut, split: P.split, lit: P.lit, open: P.open };
 run(makeComposer(R, scene, cam, { bloom, sat: 1.0, vig: .3 }), cam);
