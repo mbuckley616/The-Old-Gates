@@ -2218,9 +2218,11 @@ function hbGuardDress(people,G,tier){const D=Object.assign({},G.dress||{},HB_GUA
    player's own is (tpHBDress, S1260 and S1263): Wooden the builder's scales in the wood's own tone over the tunic's sleeves, boards on the
    forearms and a boiled-leather helm; Iron the people's own (mail; the Compact's bronze scales); Steel a plate cuirass with gauntlets,
    greaves and cuisses, and the kettle helm in steel, not the tier's shut helm, so a captain is still known by his face */
+/* S2547 — the Wooden boards and the boiled-leather helm matte, with no metal (people.js's scales 'wood' and helmKind 'leather'): in the
+   bronze's shader they read as polished copper */
 const HB_GUARD_TIER={1:{c:()=>new THREE.Color(MATERIALS[0].blade).lerp(new THREE.Color(0xc89a62),.3),helm:[.36,.24,.14]},4:{c:()=>new THREE.Color(MATERIALS[3].blade)}};
 function hbGuardTierDress(D,tier){const T=HB_GUARD_TIER[tier];if(!T||typeof MATERIALS==='undefined')return D;const c=T.c(),m=[c.r,c.g,c.b];
-  if(tier===1){D.mail=m;D.scales=true;D.plate=null;D.helm=T.helm.slice();D.vambrace=m.slice();D.vambraceKind='scales';D.gloves=[.29,.19,.13];D.glovesKind='leather';}
+  if(tier===1){D.mail=m;D.scales='wood';D.plate=null;D.helm=T.helm.slice();D.helmKind='leather';D.vambrace=m.slice();D.vambraceKind='wood';D.gloves=[.29,.19,.13];D.glovesKind='leather';}
   else{D.mail=m;D.scales=null;D.plate='plate';D.helm=m.slice();D.vambrace=m.slice();D.vambraceKind='sheet';D.gloves=m.slice();D.glovesKind='sheet';D.greaves=m.slice();D.greavesKind='sheet';D.cuisses=true;}
   return D;}
 /* S2343 (backlog L1, OG-109's Aurenne travel column; the kit's veil, S1237, worn by no one until the road had people) — the veil on
