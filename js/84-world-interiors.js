@@ -376,7 +376,7 @@
   // (goToInterior) and after a fitting goes in or out (homeFit, homeUnfit). New look only.
   // S2147 — the clay oven and the kiln (PKIT.props.clay, 38-kit.js, by the house's island) stand by a wall as the bench does, after it, each
   // clear of the fittings already laid; the kiln, the larger, last. A room with no free wall for one keeps the fallback for it.
-  // S2561 — the still (PKIT.props.still: a furnace, the copper pot and helm, the worm tub and its jug; the systems builder's S2560), laid as
+  // S2565 — the still (PKIT.props.still: a furnace, the copper pot and helm, the worm tub and its jug; the systems builder's S2560), laid as
   // the clay fittings are and last, the largest of them; its fire door glows by the embers' own colour (no light: a light more recompiles the
   // room's programs). Its spot is where you stand to distil.
   const HOMEFIT_LAY={bench:homeBenchLay,oven:h=>homeClayLay(h,'oven'),kiln:h=>homeClayLay(h,'kiln'),still:h=>homeClayLay(h,'still')};

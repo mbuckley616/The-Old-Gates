@@ -5076,7 +5076,7 @@ function clayFitting(kind, island, o = {}) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = kind + ':' + k; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, kind, island, foot, top };
 }
-// ── your house's still (Session 2561; workstations B, Michael's C on #1883: the still a seventh fitting, the systems builder's S2560).
+// ── your house's still (Session 2565; workstations B, Michael's C on #1883: the still a seventh fitting, the systems builder's S2560).
 // The apothecary's still (apothecaryRoom, S2272) drawn free of its room, at a house's size: a furnace of the island's stone, cob-plastered,
 // its fire door toward the room glowing, carrying the copper pot; on the pot the helm, and from the helm the arm falls to the worm tub at
 // its right (the coil in the water, the hoops); the worm's end comes out low on the tub's front over a jug. The furnace's flue climbs the

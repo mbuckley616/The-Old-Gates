@@ -10,6 +10,9 @@ await page.evaluate(() => { forceTime(12); for (let i = 0; i < 120; i++) WORLD.t
 fs.mkdirSync('tests/out', { recursive: true });
 
 // Drive one townsperson along its facing at a given pace for n frames, measuring the feet in world space.
+// S2561: a foot is measured at its ball (PW.RUN.BALL ahead of the ankle, on the sole), the point that stays on the ground when a runner's
+// heel rises to push off; with the foot flat it is as still as the ankle.
+await page.evaluate(() => { window.ball = (an, v) => v.copy(an.localToWorld(new THREE.Vector3(0, -PW.FOOT, PW.RUN.BALL))); });
 // The stiller foot is the one carrying the body; "flight" counts frames where both are off the ground.
 const drive = (pace, n) => page.evaluate(([pace, n]) => {
   const rig = window._gr || (window._gr = [...PEOPLE_RIGS].find(r => r.root.parent === WORLD.scene && r.root.visible && !r.g.gear)); const root = rig.root;
@@ -19,7 +22,7 @@ const drive = (pace, n) => page.evaluate(([pace, n]) => {
   let ground = null, prevPh = 0; const pairs = [];
   for (let i = 1; i <= n; i++) {
     root.position.x += Math.sin(fyaw) * step; root.position.z += Math.cos(fyaw) * step; tickPeople(1 / 60, t0 + i * 16.7); root.updateMatrixWorld(true);
-    rig.B.anL.getWorldPosition(vL); rig.B.anR.getWorldPosition(vR); const cur = [vL.clone(), vR.clone()];
+    ball(rig.B.anL, vL); ball(rig.B.anR, vR); const cur = [vL.clone(), vR.clone()];
     if (i > n - 60) {
       if (ground == null) ground = []; ground.push(Math.min(vL.y, vR.y));
       if (prev) { const dL = cur[0].distanceTo(prev[0]), dR = cur[1].distanceTo(prev[1]); swing = Math.max(swing, Math.max(dL, dR)); pairs.push([rig.phase, prevPh, cur, prev]); }
@@ -47,16 +50,20 @@ const mid = await drive(1.25 * run.scale, 90), back = await drive(.9, 120);
 check('between the thresholds a runner keeps running; slowing to a walk\'s pace walks again', mid.run && !back.run && back.w.walk > .9, { mid: mid.run, back: { run: back.run, w: back.w } });
 
 // the stance is reachable through the whole run: IK never clamps, so the planted foot really is on the ground
-const reach = await page.evaluate(() => { const R = PW.RUN; let worst = 0;
-  for (let k = 0; k < 400; k++) { const ph = k / 400; const p = pwRun(ph, {}); if (ph % 1 < R.DUTY) { const z = R.STRIDE - 2 * R.STRIDE * (ph / R.DUTY), y = p.hipsY - PW.HIPJ - PW.FOOT; worst = Math.max(worst, Math.hypot(z, y) / (PW.L1 + PW.L2)); } }
-  return { worstReach: +worst.toFixed(3) }; });
+// S2561: the stance runs from RUN.FRONT ahead of the hip to RUN.BACK behind it, the heel rising about the ball where the leg needs it
+// (pwHeel), so the chord is read from what pwRun hands the IK (p.reach) rather than recomputed; and the run no longer crouches
+const reach = await page.evaluate(() => { const R = PW.RUN; let worst = 0, low = 9, heel = 0;
+  for (let k = 0; k < 400; k++) { const ph = k / 400; const p = pwRun(ph, {}); worst = Math.max(worst, p.reach); low = Math.min(low, p.hipsY); heel = Math.max(heel, p.heelL || 0); }
+  const stand = pwIdle(0, {}).hipsY;
+  return { worstReach: +worst.toFixed(3), lowHips: +(low / stand).toFixed(3), heel: +heel.toFixed(2), heelMax: R.HEEL }; });
 check('the standing leg is never stretched past its length', reach.worstReach < 1, reach);
+check(`running, the pelvis never sinks under 85% of its standing height (the lowest ${reach.lowHips}; S162's run sat at 74%), the heel up at most ${reach.heel} rad to push off`, reach.lowHips > .85 && reach.heel <= reach.heelMax + 1e-6, reach);
 
 // the player at their own walking speed (3.83 a second) now runs, feet planted, at a human cadence
 const pl = await page.evaluate(() => { thirdPerson = true; const st = m => ({ moving: m, sprinting: false, camY: 1.6, now: performance.now() });
   EQ.weapon = null; EQ.offhand = null; tpUpdate(1 / 60, st(false)); const R = TP.rig; const vL = new THREE.Vector3(), vR = new THREE.Vector3(); let prev = null, still = 0, pph = 0; const rows = []; const step = 3.83 / 60;
   for (let i = 1; i <= 120; i++) { px += Math.sin(yaw) * -step; pz += Math.cos(yaw) * -step; tpUpdate(1 / 60, st(true)); R.root.updateMatrixWorld(true);
-    R.ankleL.getWorldPosition(vL); R.ankleR.getWorldPosition(vR); const cur = [vL.clone(), vR.clone()];
+    ball(R.ankleL, vL); ball(R.ankleR, vR); const cur = [vL.clone(), vR.clone()];
     if (prev && i > 60) rows.push([cur, prev, TP.gph, pph]); prev = cur; pph = TP.gph; }
   const gmin = Math.min(...rows.map(([c]) => Math.min(c[0].y, c[1].y)));
   const D = PW.RUN.DUTY, down = (ph, f) => ((ph + f * .5) % 1) < D;

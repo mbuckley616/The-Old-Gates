@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The sea that pushes back — tidal races and reefs, those plus a serpent, or a sea that moves with the gates? (from the designer, 2026-11-23, #1925)
+**The question.** Backlog L11's *At sea* (OG-135) asks for currents, reefs and a sea serpent. Today nothing moves the water, the only hazard is running aground on a bed under 1.4 m, and open water between the islands is empty unless a black sail is in it. How far should the sea push back? (`docs/design/the-sea-that-pushes-back.md`)
+
+**Options.**
+- **A. Tidal races and reefs.** Straits under 700 m wide run with the tide at up to 2.5 m/s, slack at 00, 06, 12 and 18 h (the canon's Inis Rua strait). Reefs off one headland in six, seen by their breakers and drawn on the navigator's shoal map. Three systems sessions.
+- **B. A, plus the serpent** *(recommended)*. An Uisce gate's antibody in open water, rising on about one crossing in six; a 2.5 s tell before each 15-hull strike, dodged by crossing its line at over 6 m/s. It swims at 9 m/s (a cutter outruns it, a sloop cannot) and will not cross water under 4 m. Ten ballista bolts kill it; driven off it leaves a scale, killed its skull is a figurehead. Seven sessions (six systems, one bodies) and a quest-writer run.
+- **C. B, plus a sea that moves with the gates.** Each torn Uisce gate makes the serpent rise more often, and a race off one becomes a whirlpool. Waits on the great gates being in the world. Ten sessions.
+
+**Recommendation: B.** The races and reefs give the sea places, and the serpent gives them a use: the yard's choice of hull starts to matter at sea, and the best answer is a route, not a better weapon.
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 

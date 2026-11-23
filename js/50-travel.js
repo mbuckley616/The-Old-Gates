@@ -2078,7 +2078,7 @@ function tickGateMining(dt){const v=MINE.v;
   if(!r.left)MINE=null;}
 function useOreThing(i){const it=BAG[i];if(!it)return;
   if(it.tool==='pick'){const gv=typeof gateVeinNear==='function'&&gateVeinNear();if(gv){gateMine(gv);return;}const v=veinNear();if(v)mineVein(v);else showMsg('Strike a vein with it.','#c8b890');return;}
-  if(it.ore||it.ingot){if(forgeHere())openForgePage();else showMsg(greatForgeKeep()&&greatForgeLeave()||(it.ore?'Smelt it at a forge.':'Work it at a forge.'),'#c8b890');}} /* S1494 — at a smith's, the forge's page */
+  if(it.ore||it.ingot){if(forgeHere())openForgePage();else showMsg(greatForgeKeep()&&forgeNone()||(it.ore?'Smelt it at a forge.':'Work it at a forge.'),'#c8b890');}} /* S1494 — at a smith's, the forge's page */
 // the smith's and the goods shop's pick
 function minersPickFor(h){return h&&(h.type==='weapon'||h.type==='misc')?[{...PICK_ITEM}]:[];}
 // ── S1511 — Survival B, session 4: felling (deep work; `docs/design/survival-build.md`) ──
@@ -2266,20 +2266,27 @@ const FORGE_TOWN_KINDS=['town','port','garrison','city'];
 // corner, the keep's hall is the forge). It asks the city's favour of +2 or better and no unpaid bounty there, 25 gold a use, and its
 // forge-master tempers for gold as a smith does. In a Prior's town (Aurenne's, with a church) he will not work gate salvage: tier 9,
 // the sigil stone's metal, is smelted in the Gatelands or the Mark. The steward's *The great forge.* opens it (lordTopics, 87).
-const GREAT_FORGE={fee:25,favor:2};
+const GREAT_FORGE={fee:25,favor:2,reach:2.5};
+// S2562 — the forge reached at its corner (owed since S2557): where the keep's hall draws the great forge (`house._greatForge`, the
+// spot before the hearth between the two anvils, in the room's metres), it works within GREAT_FORGE.reach of that spot, E on it opens
+// the page, and the rest of the hall is the lord's. A keep with no corner drawn is at its forge anywhere in the hall, as before.
+function greatForgeSpot(){const h=typeof currentHouse!=='undefined'?currentHouse:null;const S=h&&h._greatForge;return S&&isFinite(S.x)&&isFinite(S.z)?S:null;}
+function greatForgeNear(){if(!greatForgeKeep())return false;const S=greatForgeSpot();return !!S&&Math.abs(jumpY)<1.2&&Math.hypot(px-S.x,pz-S.z)<=GREAT_FORGE.reach;}
+function greatForgeAtHand(){return greatForgeKeep()&&(!greatForgeSpot()||greatForgeNear());}
 function greatForgeKeep(){return typeof isInterior==='function'&&isInterior()&&typeof currentHouse!=='undefined'&&!!currentHouse&&currentHouse.type==='castle'&&currentHouse.siteKind==='city';}
 // null when the forge is open to you, else why not
 function greatForgeLeave(){const id=currentHouse&&currentHouse.siteId;if(!id)return null;
   if(typeof bountyAt==='function'&&bountyAt(id)>0)return 'The great forge is shut to you while the city holds a bounty on you.';
   const f=typeof favor==='function'?favor(id):0;if(f<GREAT_FORGE.favor)return `The great forge is the lord’s, open to the city’s friends: its favour of ${GREAT_FORGE.favor} or better (yours is ${f}).`;
   return null;}
-function greatForgeHere(){return greatForgeKeep()&&!greatForgeLeave();}
+function greatForgeHere(){return greatForgeAtHand()&&!greatForgeLeave();}
 // the Prior's law at the great forge: null, or the refusal of a salvage metal
 function forgeSalvageBar(tier){if(!ingotSalvage(tier)||!greatForgeHere())return null;const t=typeof counterSite==='function'?counterSite():null;
   return t&&typeof priorsTown==='function'&&priorsTown(t)?'The forge-master will not work gate salvage: the Prior’s law calls it sacrilege.':null;}
 function forgeKept(){return smithForge()||greatForgeHere();}
 // the refusal when no forge is open here: in a city's keep, why its forge is shut
-function forgeNone(){return greatForgeKeep()&&greatForgeLeave()||'You need a forge.';}
+function forgeNone(){return greatForgeKeep()&&(greatForgeLeave()||(!greatForgeAtHand()?GREAT_FORGE_WHERE:null))||'You need a forge.';}
+const GREAT_FORGE_WHERE='The great forge stands in the corner of the hall, by the door.';
 function forgeGrade(){if(greatForgeHere())return 'great';
   if(smithForge()&&FORGE_TOWN_KINDS.includes(currentHouse.siteKind))return 'town';return 'smith';}
 function forgeMax(){return FORGE_GRADES[forgeGrade()].max;}
@@ -3600,6 +3607,7 @@ function interact(){
       openSleepUI();
       return;
     }
+    if(greatForgeNear()&&!personAimedIn()){openForgePage();return;} /* S2562 — the keep's great forge, at its corner */
     if(stillNear()&&!keeperAimed()){openBrewPage();return;} /* S2560 — a drawn apothecary's still: at it, E works it unless you look at the keeper */
     // Shopkeeper — open dialog first
     if(keeperInReach()){ // v80 S13 — same floor only; S798 — wherever the prompt shows, too

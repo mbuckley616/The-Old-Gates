@@ -64,7 +64,7 @@ check(fit.placed ? `a workbench fitted stands in Your House (${fit.L} m, its fro
   fit.placed ? fit.others === 0 && fit.inRoom && fit.at && !fit.far && (!fit.rack || fit.rackWall.split('/')[0] === fit.rackWall.split('/')[1]) : !fit.sp && fit.far, fit);
 // S2147 (the look builder): a clay oven and a kiln fitted (PKIT.props.clay) stand by a wall too, each clear of the room's solids and of the
 // bench, worked from its front; a room with no wall free for one keeps the rules' fallback for it
-// S2561: the still (PKIT.props.still) with them, laid last
+// S2565: the still (PKIT.props.still) with them, laid last
 const clay = await page.evaluate(() => { const h = currentHouse, r = homeFitRec(h); for (const k of ['oven', 'kiln', 'still']) if (!r.fit.includes(k)) r.fit.push(k); homeFitsDress(h); const o = {};
   for (const k of ['oven', 'kiln', 'still']) { const G = interiorScene.children.find(x => x.userData.homeFit === k), mine = INT_SOL.find(s => s.homeFit === k), sp = h._fits[k];
     const hit = mine ? INT_SOL.filter(s => s !== mine && s.y0 < 1.6 && s.y1 > .05 && s.x0 < mine.x1 - 1e-6 && s.x1 > mine.x0 + 1e-6 && s.z0 < mine.z1 - 1e-6 && s.z1 > mine.z0 + 1e-6).length : -1;
