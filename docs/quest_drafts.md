@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 54, 22 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 55, 23 Nov: no new calls on the page)
 
 ---
 
@@ -7864,3 +7864,191 @@ She is in a picture in the town: over the inn's hearth, on a church's wall, on a
 - The Merchant: *Master* throughout, ledgers, accounts, terms, commission, auditors, the Factor and the Prior; never an oath. He never says he is awake and never says what the world is.
 - The Painted Woman's tellers: each in their people's voice (the Markman's six-word sentences and no honorific; the Aurennais's *Master*, register and order to sign; the Old Blood's eight words). Nobody is frightened. The Old Blood's *She looks back* is the same sentence Bláthnat says of the word she read, and is meant to be.
 - No prophecy, no description of the player beyond §2.2's licence (the townsperson who cannot say whether the woman looks like an Old Blood player), no line on what the player is.
+
+## The Strange and the Legendary, II — the fool and his raven, the beastkeeper and her dammer, the collector of forgotten things, and the ferryman
+
+*Unapproved. Drafted 23 Nov 2026.* Backlog L2, *The strange and the legendary*, the second run: the rest of OG-071 (sheet E4, *five unusual souls*): Tomcán, Nell and her tusked beast, Elias and Orvin. Branwen was the first run's Bláthnat. The third run takes OG-079's four and OG-001's five. As in the first run, each person stands where the game already has a place, does one thing on machinery that exists, and leaves one thread the world remembers. Three **Rule reads** go to the systems builder; no line depends on which way any of them goes. This draft does not wait on DECISION #1911 (*how strange the strange look*). Only the faces below would change with its answer.
+
+### What the canon fixes, and where it is silent
+
+- *Strange, not stock; locals treat the strange as ordinary* (§10a, §10). A fool with a raven, a woman with a six-legged river beast, a man in goggles buying journals nobody wants: the towns have seen all of it before, and say so dryly.
+- *No chosen-one prophecies* (§4.2). The sheet calls Tomcán *fool and oracle*. The plainer thing is a fool with no oracle in him: he tells nobody's future, and says so. The sheet's *speaks to your shadow* stays as his habit, with everyone's shadow, not only the player's. He is not one of the awake. One line, after the Guest's chapel, is left unexplained, and it is a fool's line.
+- *The player is the monster, never said* (§10a). Two people here come close and stop: Tomcán's plays tell the last thing you killed from its own side, as a joke the town laughs at, and Nell has a she-wolf in with an arrow in her and is *not asking whose*. Neither one says what it means.
+- *The Clearing; the world forgets in order to keep running* (§3.1). Elias collects what is forgotten, and he does not know why the world forgets. His one line on the dead (*nobody holds up the dead*) is an Aurennais merchant's complaint about a one-sided contract. It never names the Clearing.
+- *Some ordinary animals have six legs and nobody remarks on it* (§14). Nell's beast is one: a **dammer**, a river beast of the Mark's black moor that fells alder and dams the becks, tusked for the bark, six-legged, as big as a cart, gentle. The sheet's *walrus-beaver* is the look. Nobody in this draft mentions the legs.
+- *Names* (§2). **Tomcán** stays: a Gatelands diminutive of *Tomás*, a fool's name, the sort a town gives and the man keeps. **Nell** stays, in the Mark's Anglo register; the Mark calls her *Nell Dammer*. Her beast is **Stump**. **Elias** stays and is Aurennais, of the Greek root; his house name is **Nikandros**, and he is drawn olive-brown, not pale (the note's recolour, §1.3). **Orvin** is renamed **Ordwin** (Old English *Ordwine*; the sheet's Orvin is Norse, which is in no register), called **Ord**. Markmen use nicknames. The fool's raven is **Fiach Dubh** (Irish, *the black raven*), and he calls it *the Dean*. Ord's heron is **Stilts**.
+- *Silent:* fools and ferrymen. The canon places neither. The game has bridges that fall (S2283) and the road folk (S2243). Ord ferries where a bridge is down, and Tomcán sits where a traveller would not.
+
+### The four
+
+| | People | Where | What they do |
+|---|---|---|---|
+| **Tomcán**, the fool | Gatelander | at the mouth of a gate, once a game-week: the first gate the player comes near that week | plays the last thing you killed from its own side, and passes the hat |
+| **Nell Dammer** and Stump | Markman | on the river bank at one Markish town with a river, chosen once a seed | binds your wounds for something for Stump; her beast is about to be moved on |
+| **Elias Nikandros**, the collector | Aurennais | at a warehouse door on one port's quay, a game-fortnight at a time, across all three islands | buys the delvers' journals no shop will take, and writes their gates in a register |
+| **Ordwin**, called Ord, the ferryman | Markman | at one Markish bridge, chosen once a seed, with a punt | says a verse for the weather; when the bridge is down, rows you over |
+
+Faces for the bodies builder (the sheet's, with the canon's fixes): Tomcán wiry and middling, freckled, red hair under a patchwork hood with three bells, a patchwork coat in madder, woad and undyed wool, a raven on the left shoulder, a painted wooden mask (a smiling face) at his belt, a battered hat in his hand for the coins. Nell broad and weathered, ash-blond curls tied back, a fleece jerkin, bare forearms scarred by teeth and claws, a satchel of salves; Stump the creature kit's when it has one (a dammer: a beaver's body the size of a cart, six short legs, a walrus's face and two downturned tusks, a flat tail, wet brown fur). Until then he stays in the river, and Nell says so. Elias lean, olive-brown, close-cut dark hair going grey, brass goggles pushed up on his brow, a long coat hung with keys, buttons, a child's whistle and a broken compass, a pack piled high with bundles, and a brass armillary sphere in his hand. Ord tall, old and weathered, grey-eyed, a broad felt hat, a short clay pipe, a lantern on a pole at the punt's bow, a grey heron standing in the shallows by it.
+
+### 1. Tomcán, the fool (Gatelander; proverbs, indirection, no bare yes or no, oaths on the Weaver)
+
+Once a game-week (from the week's first dawn), he sits on the step at the mouth of the first open-world gate the player comes within 60 m of that week, from then until the player has gone in and come out again, or the day ends. Rule read: *where he sits*, below. He speaks to the player's shadow, not to the player. The lines mark it only where he says so.
+
+**Greeting, first:** "Good day to you. No, not you. Your shadow. You're the one standing in front of it, so I suppose you'll have to do the listening."
+**Greeting, again:** "There's my friend. And there's yours, behind you. Fiach Dubh, say good day." (the raven says nothing) "He's a Dean, he doesn't greet below the rank of bishop."
+**Greeting, to a Markman player, first:** "A Markman's shadow. Long as a mast, and twice as sober."
+**Greeting, to an Aurennais player, first:** "An Aurennais shadow, and very well dressed. I'd charge it, only it'd ask for a receipt."
+**Greeting, to an Old Blood player, first:** "Now there's a shadow that can't decide what shape it is. I like it. It's got the makings of a fool."
+**Greeting, after the Guest's chapel** (`vstate().chapel`): "Your shadow's gone quiet. It used to chatter on, the way they do. Whatever you showed it, don't show mine."
+
+**Topics**
+- *Who are you?* — "Tomcán. A fool, by trade and by nature, which is the best way to come by a trade. I go where I'm not wanted and sit there until I am."
+- *Why talk to my shadow?* — "A shadow listens. A person waits for their turn to talk. I talk to everyone's. Most of them have better manners than the folk they're stuck to."
+- *Can you tell my fortune?* — "A fool who tells fortunes is a fool who'll be paid once. Your fortune's in front of you, which is the one place I can't see it from here."
+- *The raven?* — "Fiach Dubh. The Dean, I call him, for the way he looks at the collection. He came for a crust and stayed for the conversation. That's more than most deans do."
+- *Why sit at a gate?* — "Where else would a fool sit? Every brave soul in the Gatelands walks past this step on the way to something they'll sing about. Not one of them stops to hear the other side of it. So I tell it."
+
+**His service: *The other side of it.*** The topic *Play me something.* He puts the mask on and gives the last thing the player killed (Rule read: *the last kill*) a short play, in the fool's verse, from its own side, and holds out the hat. The plays, by the foe's kind:
+- A wolf (any wolf): "Here's the wolf, and here's her den, / and here's her pups, and where's she then? / She went out for a bite to eat. / The bite came back on two good feet."
+- A bear: "Old Bear slept the winter through, / and woke to a blade, and who are you? / He'd only come out for a stretch and a scratch. / Weaver, but some days you meet your match."
+- A spider: "She spun from dusk to the cock's first crow / a web as wide as the miller's row. / One step, one swipe, and the work was gone. / She'd spin it again. That's spiders. On and on."
+- A goblin or a kobold (an occupied gate's): "In a hole in a gate lived a goblin and kin, / with a pot and a fire and a door to keep in. / The door came off. The fire went out. / And that's what the songs about heroes are about."
+- A skeleton, a wraith or a phantom: "Here lies one who was laid to rest, / and rose again, as the dead do best. / Somebody laid them down for good. / They'd thank you, I'd say. I'd say they would."
+- A bandit or any person: "Here's a lad who robbed the road / for a coin, a cloak, a cartload owed. / The road robbed back; it's a thing roads do. / He'd a mother, mind. So, I'm told, do you."
+- Anything else: "Here's a thing that stood in your way. / It doesn't now. Hurray, hurray. / The bells on my hat go ring-a-ding. / The thing would say something. It can't say a thing."
+- Nothing killed yet: "Nothing's died for you yet? Then I've no play for you. Come back when something has. By the look of you, it won't be a long wait."
+
+Then the hat: *Toss him a coin.* (1 gold) — "A coin for the fool, and the fool says thank you, and the wolf says nothing, being a wolf." (or the play's own kind: *the bear*, *the spider*, *the goblin*, *the dead*, *the lad*, *the thing*) · *Keep your coin.* — "Fair enough. A play you didn't pay for is a play you didn't hear. That's the law, or it should be."
+
+**His thread: *The Fool's Face*.** After the player has paid for three plays (in any weeks), at the next meeting, unasked, after the greeting: "Three plays paid for. That's more than the Crown's ever paid me, and they've had a deal more of my opinions. Here." He gives the mask (*Tomcán's Mask*, a misc item, weight .5, no price: `sellMult:0`). "Take the face. Put it on when you want to know what the other side looks like. I've another. A fool always has another face. That's the job."
+- To an Old Blood player, instead of the last two sentences: "Put it on and nobody'll know you. Mind, they don't know you now. Every one of them'd tell me a different face. This one, at least, holds still."
+- After the mask: *Who are you?* ends, "And you've my old face in your pack, so mind it. It's seen more gates than you have."
+
+**The town's word on him** (one line in `liveRumours`, said by a Gatelander townsperson in a town within 2 km of the gate he sits at this week, once a day): "Tomcán's out at {gate}, on the step. You'll know him by the bells, and by the raven, and by him talking to your shadow. He talks to mine. Mine's never answered him, which I take for manners."
+- Said by a Markman: "Fool's out at {gate}. Bells, a raven. Talks to your shadow. Harmless. Funny, even."
+- Said by an Aurennais: "The fool Tomcán is reported at {gate}, Master, in conversation with the shadows of passers-by. I am told the shadows give a better account of themselves than their owners."
+
+**Rule read (systems):** *where he sits.* The plain reading is a road traveller's `makeDef` stood on the gate portal's step (the portal's world position, set 3 m out along its facing), keyed `strange:tomcan`, placed when the week's first gate comes within 60 m (`worldState.strange.tomcan={week,gate}`, the world's: it is where a person is) and dropped when the player leaves the gate's floor 1 for the open world or the day turns. If a portal's step is no place for a person, he stands at the nearest inn to that gate instead, and the rumour says *at the inn at {town}*.
+**Rule read (systems):** *the last kill.* `killE` already counts kills (`worldState.stats.kills`). The plain reading is one more field beside it, `worldState.stats.lastKill`, the foe's base kind (`wolf`, `bear`, `spider`, `goblin`, `undead`, `person`, `other`), written by the same named action that counts the kill. The character's: `stats` is in `SS_CHAR_WS` already.
+
+### 2. Nell Dammer and Stump (Markman; short sentences, *aye*, nicknames, oaths on iron and blood, no honorifics)
+
+She keeps a camp on the bank of the river at one Markish town that has a river in its pad or within 200 m of it, chosen once a seed (`seededRng('strange','nell')` over the Mark's towns and villages with a river; the one nearest the island's middle if none). She is there day and night; Stump comes up at dusk and dawn and spends the rest of the day in the river.
+
+**Greeting, first:** "Mind the bank. It's soft. Stump's been at it." (if Stump is in the water:) "He's under. He'll come up when he's hungry. He's always hungry."
+**Greeting, again:** "You. Good. Hurt anywhere?"
+**Greeting, to a Gatelander player, first:** "Turf-cutter. Fine. Your lot don't scream at him. Sit."
+**Greeting, to an Aurennais player, first:** "Ledger-man. He won't bite. Won't sign anything either."
+**Greeting, to an Old Blood player, first:** "Stump likes you. He doesn't like anyone. Huh."
+
+**Topics**
+- *Who are you?* — "Nell. Nell Dammer, they call me, on account of him. I mend beasts. And folk, when they hold still."
+- *What is he?* — "A dammer. Black-moor river beast. Fells alder, eats the bark, dams the beck. Built like a cart. Soft as butter." (asked again) "Stump. Because that's all he leaves of a tree."
+- *Is he dangerous?* — "To alders. Not to you. People see the tusks and run. Running's the one thing that frightens him."
+- *Where did you find him?* — "Weir-net. A pup, half-drowned, tangled. Somebody'd cut the net to free him and left it there. I took him home. He's eaten me out of it twice since."
+- *What do you mend?* — "What comes. Wolves. Hounds. A Reeve once, in the leg. He bit worse than the wolves." With the player's bow skill 15 or more (`skillLv('bow')>=15`): "Had a she-wolf in last week. Arrow in her haunch. Good fletching. Not asking whose."
+
+**Her service: *Bind my wounds.*** She heals the player to full. Her price is a raw meat for Stump (any item `foodOf(b)==='meat'`, not cooked) or 10 gold if the player has none.
+- With meat: "Hold still. … There. That's for him." (she tosses the meat into the river) "Iron keep you."
+- With gold: "Ten. Stump can't eat coin, but the butcher can sell me something he can. Hold still. … There."
+- Unhurt: "Nothing to bind. Come back bleeding. You will."
+- Neither meat nor ten gold: "No meat, no coin. Fine. Hold still anyway. … Bring him something next time."
+
+**Her thread: *Stump Stays*.** At the second meeting, *What's wrong?* is offered (unasked, after the greeting: "Reeve wants us gone. By the moon."):
+- *What's wrong?* — "Stump took the weir out. Net and half the posts. He was after the alders on the far side. Reeve says another weir and he's done with us. By the new moon, he says. Fourteen days."
+- *I'll talk to the Reeve.* — "You can try. He listens to coin. Or to friends of the town. You're neither, maybe."
+- At the town's Reeve (the lord's topics, while the thread is open), *Nell's beast.*: "That thing. Took my weir. Net and posts. She moves on by the moon, or I move her. And it."
+  - *I'll pay for the weir.* (40 gold) — "Forty for a weir. Fair. It stays. If it takes another, it goes, and you pay for that one too."
+  - *Let them stay, on my word.* (only with the town's favour 3 or more) — "Your word. Aye. You've earned that much here. Once."
+  - With neither: "Words cost nothing. Weirs cost forty."
+- Back to Nell, after: "Reeve says Stump stays. Says you saw to it. Blood and iron, I owe you." Then she gives the player **a dammer's tusk** (a misc item, weight 1, `buyPrice` 60, `sellMult` .8): "He sheds one a year. Bone-carvers pay well. Take it. He won't miss it. He's got another."
+- After: *Bind my wounds.* costs nothing ("You don't pay. Hold still."), and her greeting is "You. Stump's been good. Mostly."
+- Not seen to by the moon: the next time the player comes to the town she is gone, and a townsperson says once: "Nell Dammer moved on. Reeve's orders. Took the beast to {town}, I heard." She is then at the next town on her stream (`seededRng('strange','nell:'+moves)`), with the thread closed, and greets: "Reeve moved us. Stump didn't mind. I did."
+
+**The town's word on her** (in `liveRumours` at her town): Markman: "Nell's beast was up on the bank again. Big as a hay cart. Ate a whole alder. Kids love him." Gatelander, in a port's crowd: "There's a woman on the river with a beast the size of a barn, and the town's not one bit bothered. They're a hard people, the Mark, but they're fond of a thing that works."
+
+### 3. Elias Nikandros, the collector of forgotten things (Aurennais; formal, *Master*, qualifiers, contract metaphors, never an oath)
+
+He stands at a warehouse door on one port's quay for a game-fortnight at a time, from 8h to 20h, the port rolled on his own stream (`seededRng('elias', fortnight)` over every port of the three islands). The rumour (below) says where he is, so the player can find him.
+
+**Greeting, first:** "Good morning, Master. You have the look of someone who carries things they cannot sell. Forgive me. It is my trade to notice."
+**Greeting, again:** "Master. Have you brought me anything nobody wanted?"
+**Greeting, to a Markman player, first:** "Good morning, Master. I am told the Mark keeps nothing it cannot use. I find that a great pity, and an excellent market."
+**Greeting, to a Gatelander player, first:** "Good morning, Master. The Gatelands dig things up for a living. I merely pick up what the diggers drop."
+**Greeting, to an Old Blood player, first:** "Good morning, Master. I would ask your name for my register, but I suspect it would read differently tomorrow, and the register is very particular."
+
+**Topics**
+- *Who are you?* — "Elias Nikandros, Master, of a house that once traded in grain and now trades, through me, in nothing very much. I collect what has been forgotten. It is a small trade, but the stock is inexhaustible."
+- *What do you collect?* — "Things that have outlived anyone who remembers them. A key to a house that is gone. A whistle a child dropped forty years ago. A journal a delver kept in a gate and did not carry out. Things outlast the memory of their owners by a wide margin, Master. Someone ought to hold the receipt."
+- *The goggles?* — "For the small print. Forgotten things are mostly small print."
+- *The sphere?* — "A copy, Master, of an instrument I have never seen whole. The gates are said to keep them in pieces. I keep mine in one piece, which I concede is cheating." (to a player carrying an arc or an armillary, `bagCount(b=>b.arc||b.armillary)`:) "You carry a piece of the real one, I think. No, I will not ask to see it. A copy that has seen the original is never content again."
+- *Why?* — "Because nobody else will, Master, and a thing unremembered is a debt unpaid. The Church tells us the dead hold up the world. Very likely they do. But nobody holds up the dead, and the arrangement has always struck me as rather one-sided."
+
+**His service: *The journals.*** He buys any *A delver's journal* the player carries (the gates' delvers, `68-dungeon-misc.js`; no shop takes one, `sellMult:0`) at 15 gold each, through the topic *I have a delver's journal.* (offered while one is in the bag).
+- Buying: "{gate}. I know of it. The register has no one from there yet. Fifteen gold, Master, and the entry is made in your presence. … There. A delver, of {gate}. The name is not given. The register will say so; it is better than saying nothing."
+- When the journal's gate is already in his register: "{gate} again. A second delver. The gate does not discourage them, it seems. Fifteen gold, Master, and a second line."
+- With none: *I have a delver's journal.* is not offered. *What do you collect?* stands.
+
+**His thread: *The Register of the Forgotten*.** After the third journal, unasked, at the next meeting: "Master, the register has reached a length at which I would be glad of a second reader. It is not for sale. It is lent. Return it when you have finished, or never: it is used to both." He gives the player the book *A Register of the Forgotten* (`BOOKS`, its own key, `forgotten_register`). Its text is fixed, and one line follows it for each journal sold, in the order sold:
+
+> This register is kept by Elias Nikandros of the house Nikandros, factor of nothing, at whatever quay will have him.
+>
+> It records things that have outlived the memory of their owners, and, where it can, the owners. It is not a history. A history decides what mattered. This register only declines to forget.
+>
+> *(one line for each journal, in order)* {gate}: a delver. The name not given. A journal, which the register holds. Remembered here.
+>
+> *(after the last line)* The entries above were brought by one traveller, {name}, who is entered here as the register's creditor.
+>
+> *(instead, for an Old Blood player)* The entries above were brought by one traveller, whose own name the register has been unable to settle. It is entered, all the same, as a creditor.
+
+After the book, his greeting is "Master. My creditor. The register sends its regards."
+
+**The town's word on him** (in `liveRumours`, said in every port of the island he is on this fortnight, at most once a day): Aurennais: "The collector Nikandros has taken a door on the quay at {port}, Master. He buys what nobody else will take. My cousin sold him a key to a house that burned in her grandmother's time, and he paid her for it, and wrote the house down." Markman: "Collector's at {port}. Goggles. Buys junk. Pays coin. Odd. Honest." Gatelander: "There's a man at {port} buying up the things nobody wants. He gave my brother two silver for a door-key. Weaver knows what door. My brother doesn't."
+
+### 4. Ordwin, called Ord, the ferryman (Markman; short sentences, *aye*, nicknames, oaths on iron and blood, no honorifics)
+
+He keeps a punt at one Markish bridge, chosen once a seed (`seededRng('strange','ord')` over the Mark's bridge sites; the bridge nearest Caer Slige if the roll finds none), and stands at the bank by its foot with his heron, from 6h to 22h. While the bridge stands he fishes. While it is down (`bridgeDown`, S2283) he rows people over.
+
+**Greeting, first:** "Ord. That's Stilts. She doesn't talk. I do. Verses, mostly. Can't help it."
+**Greeting, again:** "Back. Aye. Want a verse? You'll get one."
+**Greeting, to a Gatelander player, first:** "Turf-cutter. You'll want a proverb. I don't do proverbs. I do verse. Shorter."
+**Greeting, to an Aurennais player, first:** "Tithe-man. Don't tithe my punt. She's all I've got. Her and the bird."
+
+**Topics**
+- *Who are you?* — "Ordwin. Ord. Ferryman, when the bridge is down. Poet, when it isn't. Bridge is up most of the time. So, poet."
+- *A verse.* — one verse by the weather now (`WX`'s kind):
+  - Clear: "Sun on the water. / Iron gone gold for an hour. / It won't last. Gold doesn't."
+  - Rain: "Rain on the river. / The sky drinks twice: / once from the sea, / once from my hat."
+  - Fog: "Fog. / The far bank's a rumour. / I row by the heron. / She's never wrong. Never right either."
+  - Snow: "Snow on the oar. / White road, black water. / Cross quick, or stay."
+  - A storm: "No crossing. / The river's in a temper. / Blood and iron, so am I."
+- *Why verses?* — "My father said a man should leave something. He left a punt. I'm leaving verses. Lighter."
+- *The heron?* — "Stilts. Came for the fish. Stayed for the fish. Honest bird."
+- *Do you write them down?* — "No. Verse written down is a dead fish. Said is a live one. Slippery. Better."
+
+**His service: *Row me over.*** While the bridge is down and not yet mended, *Row me over.* (2 gold): "Two. In you get. Sit in the middle. Stilts, stay." Then the crossing (Rule read: *the crossing*), and on the far bank: "Here. Mind the step." With less than 2 gold: "Two. You've not got two. Swim, then. It's cold. Good verse in that, mind." While the bridge stands, the topic is not offered.
+
+**When the bridge is mended** (by the player, `mendBridge`, either way), the first time the player speaks to him after: "Bridge is up. You did that? Aye. Good work. Bad for trade. Here's one for you. Short. / *Planks on the water. / A road where the river was. / Ord sits and fishes.*"
+
+**His thread: *A Verse for the Hall*.** At the third meeting, unasked, after the greeting: "Do me a thing. Reeve at {town} keeps the hall. Tell him this. Word for word. He'll know. / *Iron for the bridge-back. / Blood under the arch. / The river took the rest.*" (The verse is the journal's line on the thread, so the player has it.)
+- At {town}'s Reeve (the lord's topics, while the thread is open), *A verse from Ord.*: "Ord's. Hm. Say it." (the verse) "Hm. That's his brother. Went off the old bridge in the flood, forty winters back. Ord never says it plain. Never will. Here. Ten. Tell him it's a good one. Tell him the hall's heard it."
+- Back to Ord: "Heard it, did he? Aye. … Keep the coin. Verse paid for is a verse finished. I'd rather it wasn't." After, his greeting is: "Back. Stilts missed you. She won't say so."
+
+### What in the code would carry it
+
+- **`87-world-quests.js`**: the `STRANGE` table from the first run, four rows more; each a `makeDef` with `authored:true`, `keepName:true`, keyed `strange:<who>` (`tomcan`, `nell`, `elias`, `ord`: one each in the world, so the key is the person). Greetings by the player's people as `firstWords` reads them.
+- **Tomcán**: placed by the Rule read; `worldState.strange.tomcan={week,gate}` is the world's (where a person is), and `worldState.strange.tomcanPlays=n,mask:true` the character's (what the player paid), so in `SS_CHAR_WS`. The mask is a plain item. The plays read `worldState.stats.lastKill` (the Rule read). The rumour is a function `tomcanRumour(site)` pushed in `liveRumours` beside `starRumour`.
+- **Nell**: her town is rolled once a seed through `getCell` and the cells' sites (never `SETTLE`). Her service heals through the same named action an inn's bed uses for hit points. Raw meat is read by `foodOf`, taken with `bagTake`. Her thread: `worldState.strange.nell={met,weir:'asked'|'paid'|'word'|'moved',due,moves}` is the world's (where she and the weir are), and the lord's topic *Nell's beast.* sits in `lordTopics` at her town while `weir==='asked'`. The tusk is a plain item. Stump waits on the bodies builder's creature kit; until then he is *under*.
+- **Elias**: a `makeDef` at a quay warehouse's door (the ports' quay points, `84-world-interiors.js`'s ports), his port rolled on `seededRng('elias', fortnight)`. *I have a delver's journal.* takes one `delver_journal` book (`bagTake`) and pays 15. His register: `worldState.strange.elias={met,journals:[<gate seed>,…]}`, the character's (what the player brought). The book `BOOKS.forgotten_register`, its lines filled from `journals` by the gate's name, opened by the book reader (`66-hub.js`).
+- **Ord**: a `makeDef` at the bank by his bridge's foot (the bridge site's own end points, `site.bridge`). *Row me over.* is offered while `bridgeDown(site)` returns a fall with `mending==null`. His thread is `worldState.strange.ord={met,verse:'asked'|'told'|'done',mended:true}`, the character's. The Reeve's topic *A verse from Ord.* sits in `lordTopics` at the town `bridgeLordSite(b)` names.
+- **Rule read (systems):** *the crossing.* The plain reading: a fade (`doFade`), then the player set on the far bank at the bridge's other end (the end point of `site.bridge` away from the player, 3 m back from the water), the clock advanced ten minutes, no swimming. If that is more than a fade and a move, Ord's line *In you get* stands and the crossing waits.
+- **Journal titles:** *The Fool's Face* · *Stump Stays* · *The Register of the Forgotten* · *A Verse for the Hall*.
+- **Who builds:** the words, the table, the records, the rumours and the book are the quest writer's once approved (`87-world-quests.js`, `22-dialogue.js`, `BOOKS`). The faces are the bodies builder's (the dress above; Stump a creature for the kit: a dammer). The three Rule reads are the systems builder's. Nothing here needs a new system.
+
+### The register, checked
+
+- Tomcán: proverbs turned a fool's way (*a fool always has another face; that's the job*, *a play you didn't pay for is a play you didn't hear*), no bare yes or no (*Can you tell my fortune?* is answered without a *no*), *Weaver, but some days you meet your match*, *Weaver knows what door* (the Gatelander townsperson). His plays are funny first. The sting is in the last line, and nobody in the game remarks on it.
+- Nell and Ord: sentences of eight words or fewer but where a list runs on, *aye*, nicknames (*Nell Dammer*, *Ord*, *Stilts*, *Stump*, *turf-cutter*, *ledger-man*, *tithe-man*), *Iron keep you*, *Blood and iron*, no *Master* and no title but *Reeve*, the office. The slurs are each answered in the same breath (*your lot don't scream at him*).
+- Elias: *Master* throughout, receipts, debts, registers, creditors and contracts, the house and its factor; never an oath. His line on the dead complains of a contract, and stops there.
+- The Reeves: Markish, short, a price named and kept.
+- No prophecy (Tomcán declines one), no description of the player beyond §2.2's licence (Elias's register *unable to settle* an Old Blood player's name, in his greeting and in the book's last line, which is the same unexplained thing), no line on what the player is.

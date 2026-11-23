@@ -6,7 +6,9 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
-| main | `84d863eb` | run 54: Sessions 2471–2511 as merged (build s1838), about 70 new player-readable lines: rare materials B's (*Star Iron*, *Obsidian*, *Skywood Log*, *Skywood Plank*, *Sigil stone of {School}*, *Dragon Scale*, *The rock turns the iron. It wants a steel pick.*, *The star iron turns the steel. It wants a mithril pick.*, *The skywood wants a steel hatchet.*, *The star is all cut out.*, *The stone is cut out.*, *You set to the sigil stone.*, *It wants a sigil stone, cut in a failing gate.*, *It needs a plank for the haft.*); the fallen star's news (*A star came down past {place}.*, in `liveRumours` beside the warm stone's, plain enough in every people's mouth) and the map's *A fallen star*; the ground underfoot (*Snow*, *Deep snow*, *Mud*, the ice's pill) and the hobnails (*Hobnails*, *Hobnailed*, *Draw the nails*, *No smith here nails boots.*, *Your boots are nailed.*, *The nails are drawn.*, *The smith asks {n} gold to draw them.*); the Hollow's place name (*The Hollow Below*) and its ways out (*Back along the passage to the mouth*, *Up the stair to the hatch, or west to the pit*, *E at the ladder to go on deck*); the animals' *Reindeer* and *Frost Troll*. The narrator's plain voice throughout; *Mithril* is the materials table's own tier. Clean |
+| main | `12b04fd5` | run 55: Sessions 2512–2556 as merged (build s1879), about 60 new player-readable lines: the still and the drying rack (*Still*, *Draught of {brew}*, *Dried {herb}*, *It takes two tinctures of the one brew.*, *The still is {n} gold.*, *Hung, with a salt. Ready in {h} hours.*, *It wants a salt.*, *Hang a herb*); the deep pearls (*Press 'E' to open the oyster*, *A deep pearl.*, *The oyster is empty.*, *Only the shell is left.*, *Deep Pearl*); the forge by grade (*This forge works to {metal}. {Metal} wants a town’s forge.*, *No smith keeps this forge.*, *The smith asks {n} gold for the forge.*); the bedroll's prompt; *You cannot pass time in a dungeon.* The narrator's plain voice throughout. One finding (56): the lord answers *The great forge.* in the narrator's words and a stat line |
+| (open PRs) | — | run 55: none open from an auto/* branch |
+| main (run 54) | `84d863eb` | run 54: Sessions 2471–2511 as merged (build s1838), about 70 new player-readable lines: rare materials B's (*Star Iron*, *Obsidian*, *Skywood Log*, *Skywood Plank*, *Sigil stone of {School}*, *Dragon Scale*, *The rock turns the iron. It wants a steel pick.*, *The star iron turns the steel. It wants a mithril pick.*, *The skywood wants a steel hatchet.*, *The star is all cut out.*, *The stone is cut out.*, *You set to the sigil stone.*, *It wants a sigil stone, cut in a failing gate.*, *It needs a plank for the haft.*); the fallen star's news (*A star came down past {place}.*, in `liveRumours` beside the warm stone's, plain enough in every people's mouth) and the map's *A fallen star*; the ground underfoot (*Snow*, *Deep snow*, *Mud*, the ice's pill) and the hobnails (*Hobnails*, *Hobnailed*, *Draw the nails*, *No smith here nails boots.*, *Your boots are nailed.*, *The nails are drawn.*, *The smith asks {n} gold to draw them.*); the Hollow's place name (*The Hollow Below*) and its ways out (*Back along the passage to the mouth*, *Up the stair to the hatch, or west to the pit*, *E at the ladder to go on deck*); the animals' *Reindeer* and *Frost Troll*. The narrator's plain voice throughout; *Mithril* is the materials table's own tier. Clean |
 | (open PRs) | — | run 54: none open from an auto/* branch |
 | main (run 53) | `c8337528` | run 53: Sessions 2435–2470 as merged (build s1801), about 15 new player-readable lines: Finding 55 applied as written (every Mastery name in `WORDS` and `SPELLS` the canon's); the keep's cache (S2469: *Press 'E' to take what the niche holds*, *In the niche: {things}.*, *The niche is empty.*, *The dark stone gives way, and a niche stands open.*, *You stand at the niche, and its seal gives.*, *Rubbing: {gate}*); the shortcut back (S2470) and the Scarred Gate (S2468), no line; the coach seat's reload, the draw and the sheathe, no line. The narrator's plain voice; clean |
 | auto/bodies-2471 | `72278f82` | run 53: open PR #1835 (the draw and the sheathe in `54-thirdperson.js`: no line a player reads) |
@@ -59,6 +61,33 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 ---
+
+## Run 55 — 23 Nov 2026
+
+About 60 player-readable strings read on main from `84d863eb` to `12b04fd5` (Sessions 2512–2556, build s1879); no PR open from another lane. The still, the drying rack, the pearls and the forge's grades are the narrator's, plain and in register. One finding (56): when a city's lord refuses you the great forge, the lord speaks a line that belongs to the narrator.
+
+**Michael's calls:** none newer than 16 Oct on the drafts page.
+
+**Built:** nothing. Every approved draft is built except *The Seventh Niche*'s niche, which waits on §1a's approval. No `FREEZE:` issue is open.
+
+**Drafted:** *The Strange and the Legendary, II* (backlog L2, OG-071's four), unapproved.
+
+### Finding 56 — main — the lord refuses the great forge in the narrator's words
+
+**Where.** `87-world-quests.js`, `lordTopics`, the topic *The great forge.* (S2553): `const why=greatForgeLeave();if(why)return why;`. `greatForgeLeave` (`50-travel.js`) returns *The great forge is shut to you while the city holds a bounty on you.* or *The great forge is the lord’s, open to the city’s friends: its favour of {n} or better (yours is {f}).*, and the forge-master's salvage refusal (`greatForgePrior`, the Prior's law) reaches the same page.
+
+**Why.** Those are the narrator's lines, and `showMsg` (`forgeNone`, the ingot's *use*) should go on using them. Here the lord says them in the dialogue box, speaking of himself as *the lord* and reading out a favour score. §2: a Gatelander lord does not refuse with a bare *no*, a Markman lord uses no forms, an Aurennais lord refuses as one ends a contract.
+
+**Replacement.** Keep `greatForgeLeave` as it is for `showMsg`. In the topic's `fn`, when `why` is set, return the lord's line, chosen by `_lp` (the town's people, as `lordTopics` reads it already) and by the reason (a bounty: `bountyAt(id)>0`; else too little favour). Exactly:
+```
+gatelander, bounty:  "Nobody warms their hands at a hearth they’ve wronged. Settle with the city, and then we’ll talk of forges."
+gatelander, favour:  "The forge is for the city’s friends, and a friend is made slower than a sword. Do the city some good first, and ask me again."
+markman,    bounty:  "There’s a price on you in this city. Pay it. Then ask me about my forge."
+markman,    favour:  "My forge is for the city’s friends. You’re not one. Yet."
+aurennais,  bounty:  "Forgive me, but the city holds a claim against you, and the forge is not lent while a claim stands open. Settle it with the magistrates, and we may speak again."
+aurennais,  favour:  "The forge is extended to the city’s friends, and that standing is earned, not bought. When your account with the city stands in better credit, I shall open it to you gladly."
+```
+Old Blood is never a lord's people; any other value reads as *gatelander*. The favour number stays where it is, on the narrator's line, when the player tries the forge.
 
 ## Run 53 — 21 Nov 2026
 
