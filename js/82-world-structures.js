@@ -3536,7 +3536,7 @@
   // When it stands (within 1.6 km, in the open world) every stone has a stamp that only clears the scatter under it (noFlat: the
   // ground is not flattened), the walls' standing courses are solids, and from 20h to 5h the stones drift and the seams burn.
   const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},spires:{site:undefined,W:null,stamps:null,sol:[],plats:[]},scarred:{site:undefined,W:null,stamps:null,sol:[],plats:[]},isles:{site:undefined,W:null,sol:[],plats:[]},aqueducts:{site:undefined,W:null,stamp:null,stamps:null,sol:[],plats:[]},frostborn:{site:undefined,W:null,stamp:null,stamps:null,land:null,sol:[],plats:[]},stormwatch:{site:undefined,W:null,stamp:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
-  // S2571 — Michael's A on #1892: the Frostborn Vault takes the Fields' fell and the Fields move. skyfallFell() is the search as it was
+  // S2574 — Michael's A on #1892: the Frostborn Vault takes the Fields' fell and the Fields move. skyfallFell() is the search as it was
   // (the fell the Fields would take alone, cached): the Northlight Altar keeps 1.2 km off it as before, so the Altar stands where it stood.
   // The vault's search leaves the Fields out; then the Fields' own search (wonderSkyfallSite) keeps the field's middle 450 m clear of the
   // vault's ground (its box, as the vault keeps the others 300 m clear, plus half the field) and 1.2 km off the Altar, as the Altar was of them.
@@ -3769,7 +3769,7 @@
   function wonderNorthSite(){const S=WONDERS.northlight;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
-    const fields=skyfallFell(); /* S2571: the fell the Fields would take alone (the vault's now), so the Altar stands where it stood */
+    const fields=skyfallFell(); /* S2574: the fell the Fields would take alone (the vault's now), so the Altar stands where it stood */
     const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
     const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
     const segD=(a,b,x,z)=>{const dx=b.x-a.x,dz=b.z-a.z,L=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L));return Math.hypot(a.x+dx*t-x,a.z+dz*t-z);};
@@ -4099,7 +4099,7 @@
   function wonderFrostSite(){const S=WONDERS.frostborn;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function'||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.frostbornLand)return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
-    const others=[wonderNorthSite()].filter(Boolean); /* S2571: not the Fields (#1892 A: the vault takes their fell; they keep clear of it) */
+    const others=[wonderNorthSite()].filter(Boolean); /* S2574: not the Fields (#1892 A: the vault takes their fell; they keep clear of it) */
     const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
     const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
     const L0=PKIT.wonders.frostbornLand(),C=L0.consts,F=L0.F;
@@ -4112,7 +4112,7 @@
           const toL=(X,Z)=>{const dx=X-x,dz=Z-z;return [dx*cc-dz*ss,dx*ss+dz*cc];},inBox=(X,Z,mg)=>{const [lx,lz]=toL(X,Z);return lx>-C.XL-mg&&lx<C.XL+mg&&lz>L0.box.z0-mg&&lz<dl+110+mg;};
           if(others.some(w=>inBox(w.x,w.z,300)))continue; /* the other wonders' ground 300 m clear of the vault's */
           let dry=true;for(const [lx,lz] of [...FB_PADS,[0,-300],[-90,-300],[90,-300],[0,-150],[0,0],[-90,100],[90,100],[0,-420]])if(wet(...W(lx,lz))){dry=false;break;}if(!dry)continue;
-          /* nothing of the world's in the vault's ground (S2571: the ground it changes, its shape, not its box; on seed 1 the box's margins held a
+          /* nothing of the world's in the vault's ground (S2574: the ground it changes, its shape, not its box; on seed 1 the box's margins held a
              village and an outpost past its corners and a fort's door 140 m off the gorge, whose ground it leaves to the millimetre): no site's pad
              within 40 m of the shape, no door within 40 m, and no road where the cut moves the ground 2 m (a road may cross the gorge's tail where
              it runs out), nor in the cliff's ground at all */

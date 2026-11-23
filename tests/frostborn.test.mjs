@@ -3,7 +3,7 @@
 // seed 1 the search finds no Mark fell clear of the world for it (the two that hold it hold the Skyfall Fields and the Northlight Altar;
 // DECISION, Session 2524), so the suite measures one placing with wonderFrostAt (the Fields' fell, the Fields taken away) and builds it
 // there: the ground cut and met, the far sheet under it, the decks, the ice and the solids, then dropped from 2.5 km.
-// Session 2571 (Michael's A on #1892: the vault takes the Fields' fell, the Fields move): the search finds that placing itself, at (9575, 7425)
+// Session 2574 (Michael's A on #1892: the vault takes the Fields' fell, the Fields move): the search finds that placing itself, at (9575, 7425)
 // with the gorge south; the road over the gorge's tail is not cut (the cut runs out short of it), and the suite builds the search's placing.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
