@@ -2543,6 +2543,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const bx=rx(S.chest.x),bz=rz(S.chest.z),bg=new THREE.Group(),shell=buildChestShell(bg,.45,0x4a3018);bg.position.set(bx,0,bz);bg.rotation.y=Math.PI;sc_.add(bg);
       SOL.push({x0:bx-.3,x1:bx+.3,z0:bz-.24,z1:bz+.24,y0:0,y1:.5});
       INT_BOX={x:bx,z:bz,lid:shell.lid,g:bg,id:house.id,kind:'shop',type:house.type,house,open:false};}
+    // (Session 2550) a goods shop's rod, and at a harbour its net and glass (#1504 B, S2237's flags, as buildInteriorFor sets them): the
+    // kit keeps their places on the shop's cross wall and the counter (S.goods), moved into the room's frame; goodsKitDress hangs them
+    if(house.type==='misc'&&S.goods){const st=house.siteId&&typeof SITE!=='undefined'?SITE[house.siteId]:null,port=!!st&&st.kind==='port',G=S.goods,wz=+rz(G.wall).toFixed(3),m=new THREE.Object3D();
+      m.userData.goodsKit={rods:true,net:port,glass:port,at:{rods:{x:+rx(G.rods).toFixed(3),z:wz,ry:0},net:{x:+rx(G.net).toFixed(3),z:wz,ry:0},glass:{x:+rx(G.glass.x).toFixed(3),z:+rz(G.glass.z).toFixed(3),y:+ry(G.glass.y).toFixed(3),ry:Math.PI/2}}};sc_.add(m);}
     // the day beyond every window and the open shop and back doors, by the hour, as the townhouse's
     {const hr=typeof gameHour==='function'?gameHour():12,day=hr>=7&&hr<18?0xc4d0dc:hr>=5&&hr<20?0x8a7a7a:0x0e1420,M=new THREE.MeshBasicMaterial({color:day}),hd=T.d/2+.08;
       const P=[],out=(x,y,z,w,h,a)=>{const g=new THREE.PlaneGeometry(w+.1,h+.1).toNonIndexed();g.rotateY(a);g.translate(rx(x),ry(y+h/2),rz(z));P.push(g.attributes.position.array);g.dispose();};

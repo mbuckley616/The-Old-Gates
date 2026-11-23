@@ -105,13 +105,17 @@ const kit = await page.evaluate(() => { const h = currentHouse; if (!isInterior(
   let room = null, G = null; interiorScene.traverse(o => { if (o.userData && o.userData.goodsKit) room = o; if (o.userData && o.userData.goodsKitPieces) G = o; });
   const W = h._roomW, D = h._roomD, k = G && G.userData.kit, rack = INT_SOL.find(s => s.goodsKit === 'rods');
   const hits = rack ? INT_SOL.filter(s => s !== rack && s.y1 > .05 && s.y0 < 1.5 && s.x0 < rack.x1 - .01 && s.x1 > rack.x0 + .01 && s.z0 < rack.z1 - .01 && s.z1 > rack.z0 + .01).length : -1;
-  const side = q => q && Math.min(q.x, W - q.x) < .15 && q.z > .3 && q.z < D - .3;
+  // S2550: since F9 a Gatelands goods shop is the kit's merchant's house, whose shop keeps them on its cross wall (the wall's solid behind
+  // each piece's whole width) and the glass on the counter's top; a generated room keeps them on its side walls
+  const merch = !!h._merchant, onWall = (q, w) => q && INT_SOL.some(s => !s.goodsKit && s.y1 > 2 && Math.abs(s.z1 - q.z) < .08 && s.x0 <= q.x - w / 2 + .02 && s.x1 >= q.x + w / 2 - .02);
+  const side = (q, w) => merch ? onWall(q, w) : q && Math.min(q.x, W - q.x) < .15 && q.z > .3 && q.z < D - .3;
   const out = { in: true, h: h.name, flags: room && room.userData.goodsKit, draws: G ? G.children.filter(m => m.isMesh).length : 0, tris: k && k.tris, rods: k && k.rods, net: k && k.net, hits,
-    sides: !!k && side(k.rods) && side(k.net), apart: !!k && !!k.rods && !!k.net && Math.hypot(k.rods.x - k.net.x, k.rods.z - k.net.z) > 1.2 };
+    merch, glass: k && k.glass, onCounter: !merch || (!!k && !!k.glass && INT_SOL.some(s => s.y1 > .85 && s.y1 < 1.05 && k.glass.x > s.x0 && k.glass.x < s.x1 && k.glass.z > s.z0 && k.glass.z < s.z1)) /* over the counter's solid */,
+    sides: !!k && side(k.rods, .74 * 1.444) && side(k.net, 1.1 * 1.444), apart: !!k && !!k.rods && !!k.net && Math.hypot(k.rods.x - k.net.x, k.rods.z - k.net.z) > 1.2 };
   exitInterior(); return out; });
 console.log('kit', JSON.stringify(kit));
-check(`a harbour's goods shop (${kit && kit.h}) shows the rods' rack and the net on its side walls and the glass on its counter (${kit && kit.tris} triangles, ${kit && kit.draws} draw)`,
-  !!kit && kit.in && kit.flags && kit.flags.rods && kit.flags.net && kit.flags.glass && kit.draws === 1 && kit.tris < 4000 && kit.sides && kit.apart && kit.hits === 0, kit);
+check(`a harbour's goods shop (${kit && kit.h}${kit && kit.merch ? ', the merchant\'s house' : ''}) shows the rods' rack and the net on ${kit && kit.merch ? 'the shop\'s cross wall' : 'its side walls'} and the glass on its counter (${kit && kit.tris} triangles, ${kit && kit.draws} draw)`,
+  !!kit && kit.in && kit.flags && kit.flags.rods && kit.flags.net && kit.flags.glass && kit.draws === 1 && kit.tris < 4000 && kit.sides && kit.apart && kit.hits === 0 && kit.onCounter, kit);
 stop();
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
