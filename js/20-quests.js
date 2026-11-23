@@ -1290,166 +1290,83 @@ function _qmLabelCol(col){
   return 'rgba(255,220,100,0.75)'; // legacy fallback for any stray yellow marker
 }
 
+// S2571 — the wide compass (Michael's A on DECISION #198, 7 Oct; the concept artist's docs/prototypes/hud/). Under every option of #198
+// the compass is a band 600 by 46 across 180° (3.33 px a degree; it was 200 by 38 across 135°), ticks every 15°, the eight winds lettered.
+// Each mark is a roundel, an ink glyph on a paper disc: a place's ringed in bronze, an objective's in its own colour (the red and green
+// rule above). Marks closer than 30 px join one roundel with a count, the objective and then the nearest on top; an objective past the
+// band's edge is pinned there with a chevron (a place is not). The one label is a paper ribbon under the band naming the marks the heading
+// is on (within 12°), with the distance in steps. compassLayout is the rule, pure; drawCompass draws it and the ribbon.
+// Still owed under #198 A: the band's place at the bottom centre with the ledger above the vitals (today's line there would sit on it).
+const CMP={W:600,H:46,SPAN:Math.PI,JOIN:30,ON:12*Math.PI/180,FAR:500};
+let COMPASS_LAST=null;
 const compassEl=document.getElementById('compass');
 const compassCtx=compassEl?compassEl.getContext('2d'):null;
+const compassLbl=document.getElementById('compass-lbl');
+function _cmpWrap(a){while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a;}
+// marks: [{delta (rad, + to the right), d, q (an objective), ...}] -> groups [{x, edge, list (the top first)}], the ribbon's marks
+function compassLayout(marks,W){W=W||CMP.W;const k=W/CMP.SPAN,lim=CMP.SPAN/2-6*Math.PI/180,ms=[];
+  for(const m of marks){if(!Number.isFinite(m.delta))continue;const edge=Math.abs(m.delta)>lim;if(edge&&!m.q)continue;ms.push(Object.assign({},m,{edge,x:edge?(m.delta<0?16:W-16):W/2+m.delta*k}));}
+  ms.sort((a,b)=>a.x-b.x);const groups=[];
+  for(const m of ms){const g=groups[groups.length-1];if(g&&g.edge===m.edge&&Math.abs(m.x-g.x)<CMP.JOIN){g.list.push(m);g.x=(g.x*(g.list.length-1)+m.x)/g.list.length;}else groups.push({x:m.x,edge:m.edge,list:[m]});}
+  for(const g of groups)g.list.sort((a,b)=>(b.q?1:0)-(a.q?1:0)||(a.d||0)-(b.d||0));
+  const on=[];for(const g of groups){if(g.edge||Math.abs(g.x-W/2)>CMP.ON*k)continue;on.push(...g.list);}
+  return {groups,on};}
+function _cmpSteps(d){d=Math.round(d||0);return d<3?'here':d>=1000?(d/1000).toFixed(1)+' km':d+' steps';}
+let _cmpLblKey='';
+// the objective's colour darkened to an ink that reads on the paper: red, green, the told-you yellow, the sigil's blue
+function _cmpInk(col){return col===QM_COL_INZONE?'#2e6a2a':col==='#f6d860'?'#7a5a10':col==='#a0c8ff'?'#2a4a7a':'#7a1f10';}
+function _cmpRibbon(on){if(!compassLbl)return;const rows=on.slice(0,3).map(m=>({g:m.glyph||'✦',t:m.found===false?'':(m.label||''),d:_cmpSteps(m.d),c:m.q?_cmpInk(m.col):'#5a4128'}));
+  const key=JSON.stringify(rows);if(key===_cmpLblKey)return;_cmpLblKey=key;
+  if(!rows.length){compassLbl.style.display='none';compassLbl.innerHTML='';return;}
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  compassLbl.innerHTML=rows.map(r=>`<div class="cl-r"><span class="cl-g" style="color:${r.c}">${esc(r.g)}</span>${r.t?`<b>${esc(r.t.charAt(0).toUpperCase()+r.t.slice(1))}</b>`:'<i>not yet found</i>'}<span class="cl-d">${r.d}</span></div>`).join('');
+  compassLbl.style.display='block';}
+function _cmpMarks(){const out=[];const playerYaw=((-yaw)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  const add=(x,z,o)=>{if(!Number.isFinite(x)||!Number.isFinite(z))return;const dx=x-px,dz=z-pz;out.push(Object.assign(o,{delta:_cmpWrap(Math.atan2(dx,-dz)-playerYaw),d:Math.hypot(dx,dz)}));};
+  if(!isInterior()){
+    try{if(typeof WORLD!=='undefined'&&WORLD.compassPlaces)for(const p of WORLD.compassPlaces())add(p.x,p.z,{glyph:p.glyph,label:p.label,found:!!p.found,q:false});}catch(e){}
+    for(const m of getActiveQuestMarkers())add(m.x,m.z,{glyph:m.glyph,label:m.label,col:m.col,q:true});
+  } else {
+    // indoors (v61ao/aq/ar): the keeper you came for, in the room's own coordinates, or else the way out in red when an objective waits outside
+    const A=getActiveQuestMarkers(),inM=A.find(m=>m.indoor);
+    if(inM)add(inM.x,inM.z,{label:inM.label,col:inM.col||QM_COL_INZONE,q:true});
+    else if(A.length&&currentHouse)add(intDoorX(currentHouse),currentHouse._roomD||9,{label:'Exit',col:QM_COL_CROSS,q:true,glyph:'⇲'});
+  }
+  return out;}
 function drawCompass(){
   if(!compassCtx||!started)return;
-  const W=200,H=38;
-  compassCtx.clearRect(0,0,W,H);
-  // Background pill
-  compassCtx.fillStyle='rgba(0,0,0,.62)';
-  compassCtx.beginPath();
-  if(compassCtx.roundRect){compassCtx.roundRect(0,0,W,H,8);}
-  else{compassCtx.rect(0,0,W,H);}
-  compassCtx.fill();
-
-  // Cardinal directions — map yaw to a scroll position
-  // yaw=0 → facing -Z (North), yaw=π → facing +Z (South)
-  // We show a 120° window of the compass
-  const dirs=[
-    {label:'N',angle:0},{label:'NE',angle:Math.PI/4},{label:'E',angle:Math.PI/2},
-    {label:'SE',angle:3*Math.PI/4},{label:'S',angle:Math.PI},{label:'SW',angle:5*Math.PI/4},
-    {label:'W',angle:3*Math.PI/2},{label:'NW',angle:7*Math.PI/4},
-  ];
-  const playerYaw=((-yaw)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);// normalize 0–2π, 0=N
-  const FOV=Math.PI*0.75;// visible arc = 135°
-  compassCtx.font='bold 10px sans-serif';compassCtx.textAlign='center';
-  dirs.forEach(d=>{
-    let delta=d.angle-playerYaw;
-    while(delta>Math.PI)delta-=Math.PI*2;
-    while(delta<-Math.PI)delta+=Math.PI*2;
-    if(Math.abs(delta)>FOV/2)return;
-    const x=W/2+delta/FOV*W;
-    const isCardinal=d.label.length===1;
-    compassCtx.fillStyle=isCardinal?'#ffd700':'#888';
-    compassCtx.font=`bold ${isCardinal?11:9}px sans-serif`;
-    compassCtx.fillText(d.label,x,isCardinal?14:16);
-  });
-  // Center tick
-  compassCtx.fillStyle='#c8a84a';
-  compassCtx.fillRect(W/2-1,2,2,6);
-
-  // Quest markers — only meaningful in overworld/zone contexts, not interiors
-  // (interior px/pz are room-local coords, not world coords)
-  if(!isInterior()){
-  // v80 — places within 200 steps: a glyph on the compass, blurred until discovered, with the steps left
-  try{if(typeof WORLD!=='undefined'&&WORLD.compassPlaces){const W=compassEl.width,H=compassEl.height;for(const p of WORLD.compassPlaces()){const ang=Math.atan2(p.x-px,-(p.z-pz));let delta=ang-(-yaw);while(delta>Math.PI)delta-=Math.PI*2;while(delta<-Math.PI)delta+=Math.PI*2;if(Math.abs(delta)>Math.PI*.5)continue;const x=W/2+delta/(Math.PI*.5)*(W/2-8);
-    compassCtx.save();compassCtx.textAlign='center';if(!p.found){compassCtx.filter='blur(1.2px)';compassCtx.globalAlpha=.55;}compassCtx.font='11px sans-serif';compassCtx.fillStyle=p.found?'#e8dcc0':'#a89878';compassCtx.fillText(p.glyph,x,22);compassCtx.filter='none';compassCtx.globalAlpha=p.found?.9:.5;compassCtx.font='bold 6px sans-serif';compassCtx.fillStyle='#e8dcc0';compassCtx.fillText(Math.round(p.d)+'',x,29);compassCtx.restore();}}}catch(e){}
-  const activeMarkers=getActiveQuestMarkers();
-  activeMarkers.forEach(m=>{
-    const dx=m.x-px,dz=m.z-pz;
-    // Bearing from North (-Z axis), clockwise positive — matches cardinal convention
-    // atan2(dx, -dz): target north of player → dz<0 → -dz>0 → angle≈0 ✓
-    //                 target east of player  → dx>0 → angle≈π/2 ✓
-    const markerAngle=(Math.atan2(dx,-dz)+Math.PI*2)%(Math.PI*2);
-    let delta=markerAngle-playerYaw;
-    while(delta>Math.PI)delta-=Math.PI*2;
-    while(delta<-Math.PI)delta+=Math.PI*2;
-    const onscreen=Math.abs(delta)<=FOV/2;
-    compassCtx.fillStyle=m.col||'#ffdd44';
-    compassCtx.textAlign='center';
-    if(onscreen){
-      const x=W/2+delta/FOV*W;
-      if(m.glyph){compassCtx.font='bold 12px sans-serif';compassCtx.fillText(m.glyph,x,33);compassCtx.fillRect(x-4,35,8,2);} // v80 S138 — the place's glyph, underlined in the marker's colour
-      else{compassCtx.font='bold 13px sans-serif';
-      compassCtx.fillText('▾',x,32);}
-      // Label — truncate long names
-      if(m.label){
-        const lbl=m.label.length>14?m.label.slice(0,13)+'…':m.label;
-        compassCtx.font='7px sans-serif';
-        compassCtx.fillStyle=_qmLabelCol(m.col);
-        compassCtx.fillText(lbl,x,H-2);
-        const _dm=Math.round(Math.hypot(m.x-px,m.z-pz));if(_dm>2){compassCtx.font='bold 7px sans-serif';compassCtx.fillStyle='#e8dcc0';compassCtx.fillText(_dm>=1000?(_dm/1000).toFixed(1)+'km':_dm+' steps',x,H-10);} // v80 — steps
-      }
-    } else {
-      compassCtx.font='bold 13px sans-serif';
-      compassCtx.fillText(delta>0?'▸':'◂',delta>0?W-8:8,32);
-    }
-  });
-  } else {
-  // v61ao/aq: interior compass branch.
-  //
-  // Two modes:
-  //
-  //   (a) An active marker resolves to the current interior's keeper
-  //       (marker.indoor === true). The keeper is in the same room as the
-  //       player — paint a green chevron pointing at intNPCPos using the
-  //       same room-local coords the player is moving through. This is the
-  //       indoor counterpart to the outdoor green NPC chevron, and it
-  //       pairs with the dedicated indoor cone in tickQuestWaypoints.
-  //
-  //   (b) No indoor marker, but there ARE active outdoor markers. Paint a
-  //       single red "Exit" arrow pointing at the room's +Z door so the
-  //       player knows there's still something to chase outside. Red is
-  //       used because the door is a level-transition (interior →
-  //       overworld) and red is the palette's "you must transition to
-  //       reach your goal" signal everywhere else.
-  //
-  // We don't try to mix modes — if (a) fires, the player has reached their
-  // turn-in target; the exit-arrow would be redundant noise. They can leave
-  // when they're ready and the outdoor compass will reorient.
-  //
-  // The bearing in both modes is computed from current player room-local
-  // (px, pz) to the target's room-local position. For the door, that's
-  // (_roomW/2, _roomD); for an indoor NPC, that's intNPCPos. Everything
-  // here uses the same coordinate space — the world-coord vs room-coord
-  // mismatch that broke outdoor markers indoors doesn't apply.
-  const activeMarkers=getActiveQuestMarkers();
-  const indoorMarker=activeMarkers.find(m=>m.indoor);
-  if(indoorMarker){
-    const dx=indoorMarker.x-px, dz=indoorMarker.z-pz;
-    const markerAngle=(Math.atan2(dx,-dz)+Math.PI*2)%(Math.PI*2);
-    let delta=markerAngle-playerYaw;
-    while(delta>Math.PI)delta-=Math.PI*2;
-    while(delta<-Math.PI)delta+=Math.PI*2;
-    const onscreen=Math.abs(delta)<=FOV/2;
-    compassCtx.fillStyle=indoorMarker.col||QM_COL_INZONE;
-    compassCtx.textAlign='center';
-    if(onscreen){
-      const x=W/2+delta/FOV*W;
-      compassCtx.font='bold 13px sans-serif';
-      compassCtx.fillText('▾',x,32);
-      if(indoorMarker.label){
-        const lbl=indoorMarker.label.length>14?indoorMarker.label.slice(0,13)+'…':indoorMarker.label;
-        compassCtx.font='7px sans-serif';
-        compassCtx.fillStyle=_qmLabelCol(indoorMarker.col);
-        compassCtx.fillText(lbl,x,H-2);
-      }
-    } else {
-      compassCtx.font='bold 13px sans-serif';
-      compassCtx.fillText(delta>0?'▸':'◂',delta>0?W-8:8,32);
-    }
-  } else if(activeMarkers.length>0 && currentHouse){
-    // v61ar: Exit arrow uses the cross-zone red palette, not its prior
-    // light-blue. The door is a level-transition affordance — passing
-    // through it loads the outdoor scene — and that's exactly what red
-    // signals everywhere else (zone gates, dungeon portals, dungeon
-    // staircases). Keeping it blue split the palette without earning the
-    // distinction; making it red makes the rule "red = you must transition
-    // to reach your goal" hold uniformly.
-    const doorX=intDoorX(currentHouse);
-    const doorZ=(currentHouse._roomD||9);
-    const dx=doorX-px, dz=doorZ-pz;
-    const markerAngle=(Math.atan2(dx,-dz)+Math.PI*2)%(Math.PI*2);
-    let delta=markerAngle-playerYaw;
-    while(delta>Math.PI)delta-=Math.PI*2;
-    while(delta<-Math.PI)delta+=Math.PI*2;
-    const onscreen=Math.abs(delta)<=FOV/2;
-    compassCtx.fillStyle=QM_COL_CROSS;
-    compassCtx.textAlign='center';
-    if(onscreen){
-      const x=W/2+delta/FOV*W;
-      compassCtx.font='bold 13px sans-serif';
-      compassCtx.fillText('▾',x,32);
-      compassCtx.font='7px sans-serif';
-      compassCtx.fillStyle=QM_LABEL_CROSS;
-      compassCtx.fillText('Exit',x,H-2);
-    } else {
-      compassCtx.font='bold 13px sans-serif';
-      compassCtx.fillText(delta>0?'▸':'◂',delta>0?W-8:8,32);
-    }
-  }
-  } // end if/else isInterior
+  const W=CMP.W,H=CMP.H,dpr=Math.min(2,window.devicePixelRatio||1);
+  if(compassEl.width!==Math.round(W*dpr)){compassEl.width=Math.round(W*dpr);compassEl.height=Math.round(H*dpr);}
+  const c=compassCtx;c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+  const rr=(x,y,w,h,r)=>{c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);else c.rect(x,y,w,h);};
+  // the band: dark leather in a bronze rim
+  let gr=c.createLinearGradient(0,0,0,H);gr.addColorStop(0,'rgba(37,31,21,.94)');gr.addColorStop(1,'rgba(13,10,7,.94)');
+  rr(1,1,W-2,H-2,8);c.fillStyle=gr;c.fill();c.lineWidth=2;c.strokeStyle='#a07a38';c.stroke();rr(3,3,W-6,H-6,6);c.lineWidth=1;c.strokeStyle='#5a4018';c.stroke();
+  gr=c.createLinearGradient(12,0,W-12,0);gr.addColorStop(0,'rgba(160,122,56,0)');gr.addColorStop(.15,'rgba(160,122,56,.45)');gr.addColorStop(.85,'rgba(160,122,56,.45)');gr.addColorStop(1,'rgba(160,122,56,0)');
+  c.fillStyle=gr;c.fillRect(12,24,W-24,1);
+  // the winds and the ticks every 15°
+  const playerYaw=((-yaw)%(Math.PI*2)+Math.PI*2)%(Math.PI*2),k=W/CMP.SPAN,NAMES={0:'N',45:'NE',90:'E',135:'SE',180:'S',225:'SW',270:'W',315:'NW'};
+  c.textAlign='center';c.textBaseline='top';
+  for(let a=0;a<360;a+=15){const r=_cmpWrap(a*Math.PI/180-playerYaw);if(Math.abs(r)>CMP.SPAN/2-4*Math.PI/180)continue;const x=W/2+r*k;
+    if(NAMES[a]!=null){const big=a%90===0;c.font=big?'19px Georgia,serif':'14px Georgia,serif';c.fillStyle=big?'#e8b050':'#d8c290';c.fillText(NAMES[a],x,big?2:4);}
+    else{c.fillStyle=a%45?'#5a4a32':'#8a7450';c.fillRect(x-.5,5,1,a%45?4:7);}}
+  // the heading's pointer
+  c.fillStyle='#d8b46a';c.beginPath();c.moveTo(W/2-6,1);c.lineTo(W/2+6,1);c.lineTo(W/2,8);c.closePath();c.fill();
+  // the marks
+  const L=compassLayout(_cmpMarks(),W);c.textBaseline='middle';
+  for(const g of L.groups){const t=g.list[0],x=g.x,y=34,far=t.d>CMP.FAR,s=far?.86:1,R=11*s;
+    c.save();c.globalAlpha=t.found===false?.55:far?.82:1;
+    const pg=c.createRadialGradient(x,y-R*.25,1,x,y,R);pg.addColorStop(0,'#f2e4bc');pg.addColorStop(1,'#d4b97e');
+    c.beginPath();c.arc(x,y,R,0,Math.PI*2);c.fillStyle=pg;c.fill();c.lineWidth=t.q?2:1.5;c.strokeStyle=t.q?(t.col||'#7a1f10'):'#a07a38';c.stroke();
+    c.beginPath();c.arc(x,y,R+(t.q?1.5:1.3),0,Math.PI*2);c.lineWidth=1;c.strokeStyle='#0a0806';c.stroke();
+    if(t.found===false)c.filter='blur(1px)';c.font=`${Math.round(14*s)}px Georgia,serif`;c.fillStyle=t.q?'#7a1f10':'#2e1c0c';c.fillText(t.glyph||(t.q?'✦':'✧'),x,y+1);c.filter='none';
+    if(g.list.length>1){const bx=x+R*.85,by=y-R*.8;c.beginPath();c.arc(bx,by,7,0,Math.PI*2);c.fillStyle='#7a1f10';c.fill();c.lineWidth=1;c.strokeStyle='#0a0806';c.stroke();
+      c.font='10px Georgia,serif';c.fillStyle='#f6e6c0';c.fillText(String(g.list.length),bx,by+.5);}
+    if(g.edge){c.font='14px Georgia,serif';c.fillStyle='#d8b46a';c.fillText(x<W/2?'‹':'›',x<W/2?x+R+6:x-R-6,y);}
+    c.restore();}
+  c.textBaseline='alphabetic';
+  _cmpRibbon(L.on);
+  COMPASS_LAST={groups:L.groups.map(g=>({x:Math.round(g.x),edge:g.edge,n:g.list.length,top:g.list[0].label||'',q:!!g.list[0].q})),on:L.on.map(m=>m.label||''),ribbon:compassLbl&&compassLbl.style.display!=='none'?compassLbl.textContent:''};
 }
 
 // v61e7 — Day/Night Session B: sundial HUD glyph.
