@@ -243,7 +243,9 @@ check(`the Riverjaw Salmon wears the kit's (${salmon.plan}, ${salmon.bones} bone
   !salmon.fail && salmon.plan === 'game:Riverjaw Salmon' && salmon.seed === salmon.want && salmon.tris < 10000 && salmon.len > .75 && salmon.len < .9 && Math.abs(salmon.nose) < .02 && salmon.hold === 'hold' && salmon.swim === 'swim' && salmon.moved > .005 && salmon.dropped, salmon);
 // Session 2575: the sea's six fish on the trout's path (L3, OG-016): each wears its kit plan at its stand-in's length, nose to nose; it holds and
 // swims by its group (the eels by the kit's slither); the same key the same body; taken away, dropped. Picture: docs/prototypes/f4/f4-seafish.jpg
-const SEA6 = { 'Coastal Tuna': [1.2, 'swim'], 'Skyskimmer': [.35, 'swim'], 'Abyssal Angler': [1, 'swim'], 'Stonefish': [.38, 'swim'], 'Reef Moray': [1.4, 'slither'], 'Blackcurrent Eel': [2, 'slither'] };
+const SEA6 = { 'Coastal Tuna': [1.2, 'swim'], 'Skyskimmer': [.35, 'swim'], 'Abyssal Angler': [1, 'swim'], 'Stonefish': [.38, 'swim'], 'Reef Moray': [1.4, 'slither'], 'Blackcurrent Eel': [2, 'slither'],
+  // Session 2576: the two rays, waved about their x axis by the kit, on a flat stand-in
+  'Starweed Ray': [1, 'swim'], 'Sailfin Ray': [3.4, 'swim'] };
 const sea = await page.evaluate((SEA6) => { const out = {}; let n = 0;
   for (const name in SEA6) { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 4, z = pz + fz * 4;
     const rig = buildAnimal(name, 'f4sea:' + name), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z) + .8, z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
