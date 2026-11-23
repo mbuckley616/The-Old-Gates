@@ -2294,9 +2294,9 @@ over a storm sea) and against my own 21 Nov pictures of the prototype.
 - S2523, S2527, S2531, S2543, S2552–2555, S2558–2559 (systems), S2528, S2533, S2535–2540, S2545, S2548–2550, S2563–2564 (QA and suites):
   nothing for a review of the look.
 
-**Harness.** `node tests/run.mjs export` was started first and was still running when this was written, with three other boots beside it
-on four cores; its result is in the PR's line below if it finished. Each of my own boots logged *Hearthwick not seen after 75–102 s* in
-`intoWorld` and then went on to the world, so the harness ran.
+**Harness.** `node tests/run.mjs export` 1/1, flaky again: it failed once and passed on the retry, with three other boots beside it on four
+cores, as on 22 Nov. Each of my own boots logged *Hearthwick not seen after 75–102 s* in `intoWorld` and went on to the world. Two runs
+flaky in a row under load is QA's to judge.
 
 **Backlog notes.** None new.
 
