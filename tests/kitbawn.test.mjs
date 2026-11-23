@@ -56,5 +56,20 @@ console.log(`  (the ground across each plot: ${N.map(o => `${o.id} ${o.ground} m
     cam.position.set(X, WORLD.worldH(X, Z) + 34, Z); cam.lookAt(P.x, WORLD.worldH(P.x, P.z) + 2, P.z); CAM.position.copy(cam.position); WORLD.tick(1 / 60, performance.now()); sc.updateMatrixWorld(true); REN.render(sc, cam);
     const o = document.createElement('canvas'); o.width = cv.width; o.height = cv.height; o.getContext('2d').drawImage(cv, 0, 0); return o.toDataURL('image/png'); }, N[0].id);
   fs.writeFileSync(new URL('../docs/prototypes/kit-bawn-ingame.png', import.meta.url), Buffer.from(url.split(',')[1], 'base64')); console.log(`  (picture: docs/prototypes/kit-bawn-ingame.png, ${N[0].id})`); }
+// S2557 (workstations A, Michael's C on #1883) — the great forge in the corner of a city keep's hall: a wide hearth, two anvils, the
+// lord's banner, one bake; its solids clear of the hall's, the cellar's hatch (if the keep has one) clear of them, and none in a town's keep
+{ const F = await page.evaluate(ids => ids.map(id => { const h = WORLD.settle.get(id).houses.find(x => x.type === 'castle'), out = { id };
+    const read = (H) => { WORLD.buildInteriorFor(H); let gf = null; interiorScene.traverse(o => { if (o.userData && o.userData.greatForge) gf = o; }); return gf; };
+    const gf = read(h), D = h.intD, K = SCALE.ROOM_K; out.tris = gf && gf.userData.tris; out.draws = gf && gf.children.filter(c => c.visible).length; out.spot = !!h._greatForge;
+    const mine = INT_SOL.filter(s => s.x1 < 6 * K && s.z0 > D - 6 * K && s.y1 < 3 && s.x1 - s.x0 < 6); out.solids = mine.length;
+    const meet = (a, b, m) => a.x0 - m < b.x1 && b.x0 - m < a.x1 && a.z0 - m < b.z1 && b.z0 - m < a.z1;
+    out.clash = mine.filter(a => INT_SOL.some(b => !mine.includes(b) && meet(a, b, 0))).length;
+    out.hatch = HATCH.active && !HATCH.roof ? [+HATCH.x.toFixed(2), +HATCH.z.toFixed(2)] : null;
+    out.hatchClear = !out.hatch || !mine.some(a => meet(a, { x0: HATCH.x, x1: HATCH.x, z0: HATCH.z, z1: HATCH.z }, .9));
+    out.town = !!read({ ...h, siteKind: 'town' }); return out; }), N.map(o => o.id));
+  console.log('  ' + JSON.stringify(F));
+  check(`a city keep's hall has the great forge's corner, one bake (${F.map(o => `${o.id} ${o.tris} triangles in ${o.draws} draws`).join('; ')})`, F.every(o => o.tris > 8000 && o.tris < 16000 && o.draws === 2 && o.spot), F);
+  check(`its ${F[0] && F[0].solids} solids stand clear of the hall's, and the cellar's hatch a step clear of them (${F.map(o => o.hatch ? o.hatch.join(', ') : 'no hatch').join('; ')})`, F.every(o => o.solids === 7 && o.clash === 0 && o.hatchClear), F);
+  check("a town's keep has no great forge", F.every(o => !o.town), F); }
 check('no errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -813,6 +813,58 @@ function furnBuild(THREE, SK) {
     for (let i = 0; i < 6; i++) { const x = W / 2 - 3.3 + i * 1.32, q = Parts(); q(SK.cyl(.1, .09, .012, 14), 0xd8ccb0, 0, .465, .45); q(SK.cyl(.1, .09, .012, 14), 0xd8ccb0, .2, .465, -.45); tankard(q, .3, .46, .5, 0x8a8478); if (i % 2) candle(q, 0, .46, 0); p.put(q, x, tz, 0); }
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) p(turned(.43, .03), WOOD[n] ? WOOD[n].dark : WOOD.gatelands.dark, W / 2 + sx * 1.3, 0, tz + sz * .7);
     return p; }
+  // S2557 — the great forge (workstations A, Michael's C on #1883: "the great forge as a corner of each nation's keep (a wide hearth,
+  // a second anvil, the lord's colours)"): the south-west corner of a city keep's hall, by the door, out of the way of the dais and the
+  // table. greatForgeAt is where buildInteriorFor puts the solids and the light, from the same numbers (the hall's columns at W/2 ± 5)
+  function greatForgeAt(W, D) { const hx = 2.55, cx = W / 2 - 5;
+    return { hearth: [hx, D - .8, 1.6, .78], bellows: [hx - 2.17, D - .8, .25, .5], anvils: [[1.25, D - 3.05, .35], [Math.min(3.0, cx - 1.1), D - 3.0, -.45]], tub: [.45, D - 2.0], coal: [.4, D - 2.9, .3],
+      rack: [.1, D - 4.6], banner: [.08, D - 2.5], fire: [hx, .9, D - 1.0], spot: [hx, D - 2.4] }; }
+  // a wide hearth against the wall at +z (its back): a coursed stone bed 3.1 by 1.55, an iron fireback, a long coal bed and its flames,
+  // a stone hood on iron brackets and its breast to the ceiling, and a great double bellows at the west end
+  function wideHearth(ceil, n, seed) { const r = rng(seed || 91), p = Parts(), W = WOOD[n] || WOOD.gatelands, bw = 3.1, bd = 1.55, bh = .74;
+    const stone = () => jit(STONE, r, .12).multiplyScalar(.85);
+    p(SK.rbox(bw - .1, bh - .02, bd - .1, .03, 1), 0x4a4440, 0, bh / 2, 0);
+    let y = 0; while (y < bh - .02) { const h = Math.min(bh - y, .13 + r() * .05);
+      for (const [ax, len, off] of [['x', bw, -bd / 2], ['z', bd - .1, bw / 2], ['z', bd - .1, -bw / 2]]) { let t = -len / 2 - r() * .1;
+        while (t < len / 2 - .03) { const a = Math.max(t, -len / 2), L = Math.min(len / 2 - a, .22 + r() * .22); if (L > .04) { const c = a + L / 2, o = off - Math.sign(off) * .05;
+            if (ax === 'x') p(SK.rbox(L - .012, h - .012, .11, .02, 1), stone(), c, y + h / 2, o); else p(SK.rbox(.11, h - .012, L - .012, .02, 1), stone(), o, y + h / 2, c); } t = a + L; } }
+      y += h; }
+    p(SK.rbox(bw + .08, .07, bd + .06, .02, 1), jit(0x6e6860, r, .05), 0, bh + .035, 0);
+    p(SK.rbox(2.1, .08, .8, .02, 1), IRON, 0, bh + .1, -.05);
+    p(SK.rbox(2.3, .9, .05, .02, 1), 0x2a2624, 0, bh + .5, bd / 2 - .06);
+    p(SK.ball(.34, 14, 5, 0, Math.PI * 2, 0, Math.PI / 2), 0x1a1210, 0, bh + .12, -.05, 0, 0, 0, 2.9, .34, 1.05);
+    p.flame(SK.ball(.3, 14, 5, 0, Math.PI * 2, 0, Math.PI / 2), 0xff5a18, 0, bh + .13, -.05, 0, 0, 0, 2.8, .32, 1.0);
+    for (const [fx, fz, fh, c] of [[-.7, -.05, .16, 0xffa030], [-.25, .05, .12, 0xff7a20], [.2, -.12, .18, 0xff8a28], [.62, 0, .13, 0xffb040], [.95, -.1, .1, 0xff7a20], [-1.0, .02, .1, 0xff8a28]])
+      p.flame(SK.cone(.055, fh, 6), c, fx, bh + .16 + fh / 2, fz);
+    const hy = bh + .7, hh = .62, top = Math.max(hy + hh + .4, ceil);
+    p(new THREE.CylinderGeometry(.42, 1.0, hh, 4, 1).rotateY(Math.PI / 4).scale(1.75, 1, 1.0), jit(0x3a3432, r, .05), 0, hy + hh / 2, .1);
+    for (const s of [-1, 1]) { p(SK.rbox(.07, .7, .07, .02, 1), IRON, s * 1.35, bh + .38, -.55); p(SK.rbox(.07, .07, .62, .02, 1), IRON, s * 1.35, bh + .72, -.27); }
+    p(SK.rbox(1.5, top - hy - hh, .78, .03, 1), jit(0x5a4a42, r, .06), 0, (hy + hh + top) / 2, bd / 2 - .39);
+    p(SK.rbox(1.62, .1, .86, .02, 1), jit(0x6e6860, r, .05), 0, hy + hh + .05, bd / 2 - .43);
+    const bx = -bw / 2 - .62, by = .6;
+    for (const s of [-1, 1]) p(SK.cyl(.026, .03, by, 6), jit(W.dark, r, .04), bx, by / 2, s * .28);
+    p(SK.rbox(.16, .05, .7, .01, 1), W.dark, bx, by, 0);
+    p(SK.ball(.3, 12, 6), 0x4a3020, bx, by + .13, 0, 0, 0, 0, .8, .32, 1.6);
+    for (const dy of [.03, .22]) p(SK.rbox(.46, .03, .95, .03, 1), jit(W.wood, r), bx, by + dy, -.02);
+    p(SK.cyl(.032, .02, .42, 8), IRON, bx, by + .12, -.62, Math.PI / 2, 0, 0);
+    p(SK.cyl(.014, .014, .9, 6), W.dark, bx, by + .5, .3, -.5, 0, 0);
+    for (const [tx, ang] of [[.95, .1], [1.15, -.08]]) { p(SK.cyl(.01, .01, .55, 5), IRON, tx, bh + .35, -bd / 2 - .02, ang, 0, 0); }
+    return p; }
+  // a coal bin: the kit's crate heaped with coal
+  function coalBin(n, seed) { const r = rng(seed || 93), p = Parts(); p.put(crate(.56, n, seed), 0, 0, 0);
+    p(SK.ball(.26, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2), 0x16120e, 0, .52, 0, 0, 0, 0, 1, .55, 1);
+    for (let k = 0; k < 7; k++) p(SK.rbox(.07, .05, .06, .02, 1), jit(0x1c1814, r, .08), (r() - .5) * .32, .6 + r() * .06, (r() - .5) * .32, r(), r(), r());
+    return p; }
+  // the corner: the hearth's back to the south wall, two anvils before it, the tub, the coal bin, a rack of the kit's weapons on the
+  // west wall and the lord's banner over the anvils (col, the colour the keep flies outside)
+  function greatForge(W, D, H, n, seed, col) { const p = Parts(), s = seed || 1, A = greatForgeAt(W, D);
+    p.put(wideHearth(H, n, s + 1), A.hearth[0], A.hearth[1], 0);
+    A.anvils.forEach((a, i) => p.put(anvil(n, s + 2 + i), a[0], a[1], a[2]));
+    p.put(tub(n, s + 4), A.tub[0], A.tub[1], 0);
+    p.put(coalBin(n, s + 5), A.coal[0], A.coal[1], A.coal[2]);
+    p.put(rack(n, s + 6, ['longsword', 'greataxe', 'warhammer']), A.rack[0], A.rack[1], Math.PI / 2);
+    p.put(banner(col || 0x7a2020, s + 7), A.banner[0], A.banner[1], Math.PI / 2, H * .6 + 1.2);
+    return p; }
   // ── S292: the guild halls (Michael's A on #46) ──
   // a notice board: a framed board of planks with pinned notes, the wall at −z; w × h, centred
   function noticeBoard(w, h, n, seed) { const r = rng(seed || 89), p = Parts(), W = WOOD[n] || WOOD.gatelands;
@@ -1004,7 +1056,7 @@ function furnBuild(THREE, SK) {
   const WIN_LEAD = { inn: 1, barber: 1, weapon: 1, armor: 1, potion: 1, misc: 1, shipwright: 1, guild_f: 1, guild_m: 1, chapel: 1, church: 1, castle: 1 };
   function winKind(type, tall) { return tall && (type === 'church' || type === 'castle') ? 'C' : WIN_LEAD[type] ? 'A' : 'B'; }
   function windowFrame(kind, w, h, n, seed) { return kind === 'C' ? winArch(w, h, seed) : kind === 'A' ? winLead(w, h, n, seed) : winShutter(w, h, n, seed); }
-  return { winLead, winShutter, winArch, winKind, windowFrame, Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, homeAt, inn, innAt, armouryAt, barberAt, churchAt, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, barberChair, washstand, barberMirror, barberBench, basinSign, dyerCorner, rodRack, hungNet, counterGlass, barber, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
+  return { winLead, winShutter, winArch, winKind, windowFrame, Parts, table, bench, chair, stool, bed, chest, shelf, rug, hearth, counter, cask, dresser, candle, tankard, bake, merge, flicker, home, homeAt, inn, innAt, armouryAt, barberAt, churchAt, WOOD, MAT, forge, anvil, tub, rack, grindstone, smithy, crate, armourStand, wallShield, armourBench, herbBundle, still, scales, sack, armoury, apothecary, goods, barberChair, washstand, barberMirror, barberBench, basinSign, dyerCorner, rodRack, hungNet, counterGlass, barber, pew, altar, dais, pulpit, column, banner, throne, brazier, runner, church, hall, greatForgeAt, greatForge, wideHearth, noticeBoard, desk, bookcase, guildF, guildM, ladder, wineRack, fallen, cellar, cabin, chapel };
 }
 
 let _FURN = null;
