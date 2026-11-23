@@ -5,6 +5,12 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await page.evaluate(() => { try { localStorage.removeItem('og.settings'); } catch (e) {} });
+// Session 2561: the suite runs at Low, as `saveui` and `export` do (S2350, S2377). At Middle a world frame holds the page's thread
+// 8–11 s on SwiftShader: the weekly run of 22 Nov lost its first try to a 30 s page.focus behind those frames, and here the suite
+// reached run.mjs's 900 s cap at the challenge. Low is what the game's first-run probe sets on a machine this slow. No check reads
+// the quality, and As they were puts it back to the default as before.
+await page.evaluate(() => { SETTINGS.quality = 0; SETTINGS.qualityProbed = true; settingsSave(); qualityApply(); });
+const T0 = Date.now();
 await g.intoWorld(); await g.settle('dunmore');
 await page.evaluate(() => { _questPopupOpen = false; document.getElementById('g').focus(); });
 // Session 1596: a pointer lock held in headless Chromium on software GL, at seconds a frame, takes the browser and the page from
@@ -13,12 +19,16 @@ await page.evaluate(() => { _questPopupOpen = false; document.getElementById('g'
 // to ask for the pointer back.
 await page.evaluate(() => { window._lockAsks = 0; CV.requestPointerLock = () => { _lockAsks++; return Promise.resolve(); }; });
 await g.frames(2);
+// Session 2561: the canvas is focused from inside the page. page.focus waits at most 30 s for the page to answer, and on CI a frame
+// of Dunmore's builder queue can hold it longer (the weekly run of 22 Nov, 45028889995: *page.focus: Timeout 30000ms exceeded*);
+// an evaluate waits for the page however long its frame takes.
+const focusG = () => page.evaluate(() => document.getElementById('g').focus());
 const key = async (k, n = 1) => { for (let i = 0; i < n; i++) await page.keyboard.press(k); await g.frames(1); };
 const sheet = () => page.evaluate(() => { const P = document.querySelector('#pause-paper'); return { view: pauseLeaf.view, set: pauseLeaf.set,
   rows: [...P.querySelectorAll('[data-srow]')].map(r => r.querySelector('span').textContent), text: P.textContent, S: { ...SETTINGS }, stored: localStorage.getItem('og.settings') }; });
 
 // open it: Esc, then ↓ three times to Settings, E
-await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
+await focusG(); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
 const a = await sheet();
 console.log(JSON.stringify(a.rows));
 const hasRule = await page.evaluate(() => typeof setChallenge === 'function');
@@ -53,7 +63,7 @@ let fov = 0; for (let k = 0; k < 60 && Math.abs(fov - 90) >= .6; k++) { await g.
 check('in play at rest the camera\'s field of view is 90', Math.abs(fov - 90) < .6, fov);
 
 // the mouse: look 2×, inverted; a locked pointer's 100-pixel move turns you twice as far, and up is down
-await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
+await focusG(); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
 await key('ArrowDown', 7); await key('ArrowRight', 20); await key('ArrowDown'); await key('KeyE');
 const m = await page.evaluate(() => { const S = { ...SETTINGS }; closePauseLeaf(false);
   Object.defineProperty(document, 'pointerLockElement', { get: () => CV, configurable: true }); LOCK.t = null;
@@ -63,7 +73,7 @@ check('look speed 2× and inverted: 100 pixels across turn you .8 (was .4), 50 d
 
 // the renderer (Session 822; the new look the default since 18 Oct 2026): ← asks for the old look, r128, kept in this browser as
 // og.renderer='old'; in play it waits for the next load (the page does not reload under you), and the row says so; → puts it back
-await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
+await focusG(); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
 await key('ArrowDown', 9); await key('ArrowLeft');
 const rd = await page.evaluate(() => ({ stored: localStorage.getItem('og.renderer'), look: OG_LOOK, rev: THREE.REVISION, view: pauseLeaf.view, text: document.querySelector('#pause-paper').textContent }));
 await key('ArrowRight');
@@ -75,7 +85,7 @@ await key('Escape'); await key('Escape');
 // the challenge, when the rule is there (stood in for: the systems builder's names and tables)
 const c = await page.evaluate(() => { if (typeof setChallenge === 'function') { delete worldState.challenge; return true; } window.CHALLENGE_STEPS = ['Novice', 'Apprentice', 'Adept', 'Expert', 'Master']; window.setChallenge = n => { worldState.challenge = n; return CHALLENGE_STEPS[n]; };
   window.challengeStep = () => (Number.isInteger(worldState.challenge) ? worldState.challenge : 2); delete worldState.challenge; return true; });
-await page.focus('#g'); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
+await focusG(); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
 await key('ArrowUp'); await key('ArrowRight');
 const ch = await sheet();
 console.log(ch.text.slice(ch.text.indexOf('How hard')));
@@ -91,6 +101,7 @@ check('after a reload the settings are still yours (80, 50, +10, 90°, 2×, inve
 const w = await page.evaluate(() => { settingsBack(); return { S: { ...SETTINGS }, filter: CV.style.filter, stored: JSON.parse(localStorage.getItem('og.settings')) }; });
 check('As they were puts every setting back as it was, and keeps that', w.S.master === 100 && w.S.music === 100 && w.S.bright === 0 && w.S.fov === 75 && w.S.look === 1 && !w.S.invert && w.filter === '' && w.stored.look === 1, w);
 
+console.log(`  settingsheet: ${Math.round((Date.now() - T0) / 1000)} s from the boot's end, quality at the start 0`);
 check('no page errors', g.errs.length === 0, g.errs);
 await page.evaluate(() => { try { localStorage.removeItem('og.settings'); } catch (e) {} });
 await g.close();
