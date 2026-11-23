@@ -30,7 +30,7 @@ check('faced, the mark is a roundel at the band\'s middle and the ribbon names i
   && cmp.faced.ribbon.includes('The far door') && cmp.faced.ribbon.includes(cmp.d + ' steps'), { fw, ribbon: cmp.faced.ribbon, d: cmp.d });
 check('turned 135° away, it is pinned at the edge and the ribbon says nothing of it', aw && aw.edge && !cmp.away.ribbon.includes('far door'), { aw, ribbon: cmp.away.ribbon });
 check('two marks 2° apart are one roundel with the objective on top; a place past the edge is not drawn', JSON.stringify(cmp.join) === JSON.stringify([[2, 'a', 303]]) && cmp.on.join() === 'a,b', cmp);
-// S2577 — the rest of #198 A: the band sits at the bottom centre, the ribbon above it; the bottom centre's lines are the ledger's paper slips
+// S2578 — the rest of #198 A: the band sits at the bottom centre, the ribbon above it; the bottom centre's lines are the ledger's paper slips
 // above the vitals' place, four at most, the newest at the foot, a repeat renewing its slip, each gone after 6 s
 const led = await page.evaluate(async () => { const r = e => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
   const out = { band: r(compassEl), H: innerHeight, W: innerWidth };

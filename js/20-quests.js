@@ -8,7 +8,7 @@ TX.grass.repeat.set(14,14);
 const MAT={wall:new THREE.MeshLambertMaterial({map:TX.wall}),floor:new THREE.MeshLambertMaterial({map:TX.floor}),ceil:new THREE.MeshLambertMaterial({color:0x111016}),grass:new THREE.MeshLambertMaterial({map:TX.grass}),wood:new THREE.MeshLambertMaterial({color:0x7a5020}),thatch:new THREE.MeshLambertMaterial({color:0xaa8830}),stone:new THREE.MeshLambertMaterial({color:0x666870}),door:new THREE.MeshLambertMaterial({color:0x6a4018})};
 
 const MSGEL=document.getElementById('msg');
-// S2577 — the ledger (Michael's A on #198): every line the bottom centre used to show is a paper slip above the vitals' place, up to
+// S2578 — the ledger (Michael's A on #198): every line the bottom centre used to show is a paper slip above the vitals' place, up to
 // four, the newest at the foot and the older ones paler, each gone after LEDGER_MS. The caller's colour was for a dark pill; on paper
 // it is the slip's left rule, taken toward the ink so a pale gold still reads. The same line again while its slip stands renews that
 // slip at the foot rather than stacking a copy. #msg keeps the latest line (unseen) for whatever reads it. Cosmetic: the page's clock.
