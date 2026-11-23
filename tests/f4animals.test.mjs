@@ -245,7 +245,9 @@ check(`the Riverjaw Salmon wears the kit's (${salmon.plan}, ${salmon.bones} bone
 // swims by its group (the eels by the kit's slither); the same key the same body; taken away, dropped. Picture: docs/prototypes/f4/f4-seafish.jpg
 const SEA6 = { 'Coastal Tuna': [1.2, 'swim'], 'Skyskimmer': [.35, 'swim'], 'Abyssal Angler': [1, 'swim'], 'Stonefish': [.38, 'swim'], 'Reef Moray': [1.4, 'slither'], 'Blackcurrent Eel': [2, 'slither'],
   // Session 2576: the two rays, waved about their x axis by the kit, on a flat stand-in
-  'Starweed Ray': [1, 'swim'], 'Sailfin Ray': [3.4, 'swim'] };
+  'Starweed Ray': [1, 'swim'], 'Sailfin Ray': [3.4, 'swim'],
+  // Session 2580: the sea turtle, its flippers stroking by the kit's swim
+  'Sea Turtle': [1.1, 'swim'] };
 const sea = await page.evaluate((SEA6) => { const out = {}; let n = 0;
   for (const name in SEA6) { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 4, z = pz + fz * 4;
     const rig = buildAnimal(name, 'f4sea:' + name), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z) + .8, z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
@@ -346,7 +348,8 @@ check(`the Lantern Beetle wears the kit's (${beetle.plan}, ${beetle.bones} bones
 // Session 1906: OG-040's two tortoises, the Mossback and the Sailshell, at the kit's own size (the walk)
 // Session 1907: OG-040's two on six legs, the Shatterhorn (the walk) and the Mineprowler (the trot), at the kit's own size
 // Session 2579: the giant octopus on the sea floor, its eight arms (no legs) rippling by the kit's crawl
-for (const [nm, move, L, sp, legs] of [['Stonecrawler', 'trot', .3, .5, 4], ['Marsh Frog', 'hop', .12, .4, 4], ['Frostspine Lizard', 'trot', .5, .6, 4], ['Icecrab', 'walk', .8, .3, 8], ['Saltspine Monitor', 'trot', 1.8, 1.2, 4], ['Spined Gekko', 'trot', .3, .5, 4], ['Amber Shellcrab', 'walk', .4, .3, 8], ['Bellthroat', 'hop', .37, .8, 4], ['Mossback', 'walk', 2.3, .8, 4], ['Sailshell', 'walk', 2, .8, 4], ['Shatterhorn', 'walk', 6.6, 2.4, 6], ['Mineprowler', 'trot', 2.5, 1.2, 6], ['Giant Octopus', 'crawl', 2.4, .8, 0]]) {
+// Session 2580: the Tidecrab, sideways on its eight legs at the kit's walk
+for (const [nm, move, L, sp, legs] of [['Stonecrawler', 'trot', .3, .5, 4], ['Marsh Frog', 'hop', .12, .4, 4], ['Frostspine Lizard', 'trot', .5, .6, 4], ['Icecrab', 'walk', .8, .3, 8], ['Saltspine Monitor', 'trot', 1.8, 1.2, 4], ['Spined Gekko', 'trot', .3, .5, 4], ['Amber Shellcrab', 'walk', .4, .3, 8], ['Bellthroat', 'hop', .37, .8, 4], ['Mossback', 'walk', 2.3, .8, 4], ['Sailshell', 'walk', 2, .8, 4], ['Shatterhorn', 'walk', 6.6, 2.4, 6], ['Mineprowler', 'trot', 2.5, 1.2, 6], ['Giant Octopus', 'crawl', 2.4, .8, 0], ['Tidecrab', 'walk', .6, .3, 8]]) {
   const r = await page.evaluate(([nm, sp, T]) => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 2, z = pz + fz * 2;
     const rig = buildAnimal(nm, 'f4crawl:' + nm), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
     const e = { name: nm, x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
@@ -358,7 +361,7 @@ for (const [nm, move, L, sp, legs] of [['Stonecrawler', 'trot', .3, .5, 4], ['Ma
         performance.now = () => T + 5e3 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow }; };
     const a = run(60, 0), b = run(60, sp); let mv = 0; for (let i = 0; i < a.m.length; i++) mv = Math.max(mv, Math.abs(a.m[i] - b.m[i]));
     const out = { plan: H.C.g.plan, seed: H.C.g.seed, want: HC.hashKey(rig.hcKey), legs: H.C.B.legs.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), low: +(bx.min.y - G.position.y).toFixed(3),
-      rest: a.g, move: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(4) }; G.parent.remove(G); hcTick(T + 9e3); out.dropped = !rig.hc; return out; }, [nm, sp, 1.001e6 + ['Stonecrawler', 'Marsh Frog', 'Frostspine Lizard', 'Icecrab', 'Saltspine Monitor', 'Spined Gekko', 'Amber Shellcrab', 'Bellthroat', 'Mossback', 'Sailshell', 'Shatterhorn', 'Mineprowler', 'Giant Octopus'].indexOf(nm) * 2e4]);
+      rest: a.g, move: b.g, cyc: +(b.ph - a.ph).toFixed(2), moved: +mv.toFixed(4) }; G.parent.remove(G); hcTick(T + 9e3); out.dropped = !rig.hc; return out; }, [nm, sp, 1.001e6 + ['Stonecrawler', 'Marsh Frog', 'Frostspine Lizard', 'Icecrab', 'Saltspine Monitor', 'Spined Gekko', 'Amber Shellcrab', 'Bellthroat', 'Mossback', 'Sailshell', 'Shatterhorn', 'Mineprowler', 'Giant Octopus', 'Tidecrab'].indexOf(nm) * 2e4]);
   console.log('  ' + nm + ':', JSON.stringify(r));
   check(`the ${nm} wears the kit's (${r.plan}, ${r.legs} legs, ${r.tris} triangles), ${r.len} m long, its lowest ${r.low} m off its ground at rest; at rest ${r.rest}, moving ${r.move} (${r.cyc} cycles over ${sp} m, the bones moving ${r.moved}); taken away, dropped`,
     !r.fail && r.plan === 'game:' + nm && r.seed === r.want && r.legs === legs && r.tris < 9000 && r.len > L * .8 && r.len < L * 1.15 && Math.abs(r.low) < .01 && r.rest === 'stand' && r.move === move && r.cyc > .3 && r.moved > 1e-3 && r.dropped, r);
