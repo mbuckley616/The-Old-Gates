@@ -278,5 +278,25 @@ check('S2557: with no glass vial the still refuses; a draught takes one vial', /
 check('S2557: a vial is sold at an apothecary and an Aurenne goods shop, not a Gatelands one or an inn', DR.sold.apo === 1 && DR.sold.inn === 0 && DR.sold.aur === 1 && DR.sold.gat === 0, DR.sold);
 check('S2557: your house\'s still is a fitting of 60 gold and 2 bronze ingots, and is free', DR.home.before === null && /2 bronze ingots/.test(DR.home.why) && DR.home.fit && DR.home.cost === 60 && DR.home.ingots === 0 && DR.home.here === 'house' && DR.home.fee === 0, DR.home);
 check('S2557: a drawn apothecary\'s still is at its station (E there), not across the room', DR.drawn.at === 'shop' && DR.drawn.near && DR.drawn.far === null && !DR.drawn.farNear, DR.drawn);
+// ── S2559: the recipe leaf ──
+const RL = await page.evaluate(() => {
+  const o = {}, K = herbsKnown(), h = (k, n) => bagAdd({ ...HERB_DEF[k].item, qty: n, _typeKey: k }); BAG.length = 0; bagAdd({ ...MORTAR_ITEM }); K.brews = {}; K.none = {};
+  h('firemoss', 2); h('silverleaf', 2); o.a = brewHerbs(['firemoss', 'silverleaf']).made; o.b = brewHerbs(['silverleaf', 'firemoss']).made;
+  h('firemoss', 1); h('heartroot', 1); o.none = brewHerbs(['firemoss', 'heartroot']).made;
+  const R = brewRecipes(); o.rec = R.map(r => r.key + ':' + r.n + ':' + r.fx.join('+')).join();
+  openBrewPage(); const ov = document.getElementById('brewui'); ov.querySelector('#br-leaf').click(); const t = ov.querySelector('#br-rec').textContent;
+  o.leaf = { shown: ov.querySelector('#br-rec').style.display === 'block' && ov.querySelector('#br-cols').style.display === 'none', made: /Firemoss, Silverleaf/.test(t) && /×2/.test(t), none: /Firemoss and Heartroot/.test(t), study: /Study to discover/.test(t), label: ov.querySelector('#br-leaf').textContent };
+  BAG.splice(0, BAG.length, ...BAG.filter(b => !(b.type === 'herb'))); ov.querySelector('[data-r]').click(); o.refused = ov.querySelector('#br-said').textContent;
+  h('firemoss', 1); h('silverleaf', 1); brewSel = []; brewDraw(); ov.querySelector('[data-r]').click();
+  o.chosen = { sel: brewSel.slice().sort().join(), back: brewLeaf === 'mortar' && ov.querySelector('#br-cols').style.display === 'flex', said: ov.querySelector('#br-said').textContent };
+  closeBrewPage();
+  o.unfound = brewUnfound().every(q => q.known < q.of);
+  const sv = JSON.parse(ssStringify(_buildSavePayload())); K.brews = {}; _applyLoadData(sv); o.reload = Object.keys(herbsKnown().brews || {}).join();
+  return o; });
+console.log(JSON.stringify(RL));
+check('S2559: each brew is written by its herbs, whatever their order, with its effects and count; a failed pair is not', RL.a && RL.b && RL.none === false && RL.rec === 'firemoss+silverleaf:2:' + RL.rec.split(':')[2] && RL.rec.split(':')[2].length > 0, RL);
+check('S2559: the Recipes leaf shows the recipe (×2), the pair that gave nothing and the herbs to study', RL.leaf.shown && RL.leaf.made && RL.leaf.none && RL.leaf.study && RL.leaf.label === 'The mortar' && RL.unfound, RL.leaf);
+check('S2559: Choose is refused without the herbs, and with them chooses both and turns back to the mortar', /You carry no Firemoss or Silverleaf/.test(RL.refused) && RL.chosen.sel === 'firemoss,silverleaf' && RL.chosen.back && RL.chosen.said === 'Chosen.', RL);
+check('S2559: the recipes come back from a save', RL.reload === 'firemoss+silverleaf', RL.reload);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

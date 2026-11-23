@@ -751,6 +751,7 @@ function brewHerbs(keys,cat){
   item.brewKey=sh.fx.join('+')+'@'+s+'/'+day+(item.brew.blows?'/b'+item.brew.blows:'')+(item.brew.last?'/l'+item.brew.last:'');
   const n=perk('alchemy',100)?2:1;if(n>1)item.qty=n; /* S1499 — Double measure (Alchemy 100): two from one grinding */
   bagAdd(item);
+  brewNote(keys,cat,sh.fx,sh.poison);
   skillUse('alchemy',8+(newPair?25:0));
   return {made:true,item:BAG.find(b=>sameStack(b,item))||item,learnt,newPair,n,cat:cat||null,catNew};
 }
@@ -846,6 +847,36 @@ function distilDraught(key){const w=stillHere();if(!w)return {made:false,why:'Yo
   if(last>1)item.brew.last=last;item.brewKey='draught:'+g.fx.join('+')+'@'+s+(last>1?'/l'+last:'');
   bagAdd(item);skillUse('alchemy',10,'still'+(_stillN++));if(typeof advanceClock==='function')advanceClock(STILL_MIN);
   return {made:true,item:BAG.find(b=>sameStack(b,item))||item};}
+// ── S2559 — Workstations B, session 3: the recipe leaf (`docs/design/workstations.md`, B's *recipe page*; OG-133) ──
+// Every brew you make is written down by its herbs and its catalyst (`herbsKnown().brews`, the character's: herbsKnown is in SS_CHAR_WS
+// and the S242 list), with what it gave and how often. The brewing page's second leaf, *Recipes*, reads it: each recipe in ink with one
+// tap to choose it again (the herbs, and the specimen if you carry it), the pairs that gave nothing (herbsKnown().none), and every herb
+// you know of whose four effects you have not all found, marked *study to discover*. Brews made before this session were never written.
+function brewRecKey(keys,cat){return keys.slice().sort().join('+')+(cat?'#'+cat:'');}
+function brewNote(keys,cat,fx,poison){const K=herbsKnown(),B=K.brews||(K.brews={}),k=brewRecKey(keys,cat),r=B[k]||(B[k]={h:keys.slice().sort(),c:cat||null,fx:[],poison:false,n:0});
+  r.fx=fx.slice();r.poison=!!poison;r.n++;r.d=gameDayNow();return r;}
+function brewRecipes(){const B=herbsKnown().brews||{};return Object.keys(B).map(k=>Object.assign({key:k},B[k])).sort((a,b)=>(b.d||0)-(a.d||0)||b.n-a.n);}
+// why a recipe cannot be chosen now, or null
+function brewRecWhy(r){const miss=r.h.filter(k=>!BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));
+  if(miss.length)return 'You carry no '+miss.map(k=>(HERB_DEF[k]&&HERB_DEF[k].name)||k).join(' or ')+'.';if(r.h.length>brewMax())return 'Three herbs ask Alchemy 50.';return null;}
+// the named action: choose a written recipe on the mortar's leaf. The specimen rides with it only if you carry one
+function brewRecChoose(key){const r=(herbsKnown().brews||{})[key];if(!r)return {done:false,why:''};const why=brewRecWhy(r);if(why)return {done:false,why};
+  brewSel=r.h.slice();brewCat=r.c&&typeof specInBag==='function'&&specInBag(r.c)>=0?r.c:null;
+  return {done:true,cat:!!r.c&&!brewCat};}
+// the herbs you know of (herbsSeen) with effects still unfound: [{k, name, known}]
+function brewUnfound(){const S=herbsSeen();return Object.keys(S).filter(k=>HERB_FX[k]).map(k=>({k,name:(HERB_DEF[k]&&HERB_DEF[k].name)||k,known:HERB_FX[k].filter((f,i)=>herbFxKnown(k,i)).length,of:HERB_FX[k].length}))
+  .filter(q=>q.known<q.of).sort((a,b)=>a.name<b.name?-1:1);}
+let brewLeaf='mortar';
+function brewLeafDraw(ov){const R=brewRecipes(),K=herbsKnown(),nm=k=>(HERB_DEF[k]&&HERB_DEF[k].name)||k,el=ov.querySelector('#br-rec');
+  let s='<div style="font-variant:small-caps;color:#7a1f10">Made</div>';
+  s+=R.length?R.map(r=>{const why=brewRecWhy(r);return `<div style="padding-left:12px;margin:2px 0"><button type="button" data-r="${r.key}" style="background:none;border:1px solid ${why?'#a89060':'#7a1f10'};border-radius:3px;font:13px Georgia,serif;color:${why?'#a09070':'#7a1f10'};cursor:pointer;padding:1px 8px">Choose</button> ${r.h.map(nm).join(', ')}${r.c&&SPEC_DEF[r.c]?` <i>with the ${SPEC_DEF[r.c].name}</i>`:''} <span style="color:#8a7050;font-size:12px">×${r.n}</span>`+
+    `<div style="padding-left:14px;font-style:italic;color:${r.poison?'#8a2a20':'#3a2c18'}">${r.fx.map(f=>ALCH_FX[f].label).join(', ')}${r.poison?' — a poison':''}</div></div>`;}).join(''):'<div style="padding-left:12px;color:#8a7050;font-style:italic">nothing ground yet</div>';
+  const none=Object.keys(K.none||{});
+  s+='<div style="font-variant:small-caps;color:#7a1f10;margin-top:8px">Nothing between them</div>'+(none.length?'<div style="padding-left:12px;color:#8a7050">'+none.map(p=>p.split('|').map(nm).join(' and ')).join(' · ')+'</div>':'<div style="padding-left:12px;color:#8a7050;font-style:italic">no pair has failed you</div>');
+  const U=brewUnfound();
+  s+='<div style="font-variant:small-caps;color:#7a1f10;margin-top:8px">Study to discover</div>'+(U.length?'<div style="padding-left:12px">'+U.map(q=>`${q.name} <span style="color:#8a7050;font-size:12px">${q.known} of ${q.of}</span>`).join(' · ')+'</div>':'<div style="padding-left:12px;color:#8a7050;font-style:italic">every herb you know is known whole</div>');
+  el.innerHTML=s;
+  el.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const r=brewRecChoose(b.dataset.r);if(r.done){brewLeaf='mortar';brewSaid=r.cat?'Chosen, without its specimen: you carry none.':'Chosen.';}else brewSaid=r.why;brewDraw();});}
 // ── the brewing page (parchment, Michael's A on the interface): the herbs on the left, the chosen herbs' four rows right ──
 let brewOpen=false,brewSel=[],brewSaid='',brewCat=null;
 function openBrewPage(){
@@ -857,13 +888,16 @@ function openBrewPage(){
   if(!ov){ov=document.createElement('div');ov.id='brewui';
     ov.style.cssText='position:fixed;inset:0;z-index:8500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35)';
     ov.innerHTML='<div style="width:640px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;padding:18px 24px 16px;background:#e9dcc2;color:#3a2c18;border:6px double #8a7040;border-radius:6px;font-family:Georgia,serif;box-shadow:0 10px 40px #000a">'+
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The Mortar</span><span id="br-skill" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
-      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px"><div id="br-herbs" style="flex:1 1 200px;min-width:0;font-size:14px;line-height:1.7"></div><div id="br-right" style="flex:1.4 1 260px;min-width:0;font-size:14px;line-height:1.6"></div></div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #a89060;padding-bottom:6px"><span><span style="font-size:22px;color:#7a1f10;letter-spacing:.06em;font-variant:small-caps">The Mortar</span> <button type="button" id="br-leaf" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#7a1f10;cursor:pointer;padding:1px 8px;margin-left:8px">Recipes</button></span><span id="br-skill" style="font-style:italic;font-size:13px;color:#8a7050"></span></div>'+
+      '<div id="br-rec" style="display:none;margin-top:10px;font-size:14px;line-height:1.6"></div>'+
+      '<div id="br-cols" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px"><div id="br-herbs" style="flex:1 1 200px;min-width:0;font-size:14px;line-height:1.7"></div><div id="br-right" style="flex:1.4 1 260px;min-width:0;font-size:14px;line-height:1.6"></div></div>'+
       '<div id="br-said" style="min-height:20px;margin-top:8px;font-style:italic;color:#7a1f10;font-size:14px"></div>'+
       '<div style="display:flex;align-items:center;gap:12px;margin-top:8px;border-top:1px solid #a89060;padding-top:8px"><button type="button" id="br-go" style="background:none;border:1px solid #7a1f10;border-radius:3px;font:18px Georgia,serif;color:#7a1f10;font-variant:small-caps;cursor:pointer;padding:2px 14px">Grind</button>'+
       '<span style="flex:1"></span><span style="font-size:12px;font-style:italic;color:#8a7050"><button type="button" id="br-no" style="background:none;border:1px solid #a89060;border-radius:3px;font:13px Georgia,serif;color:#3a2c18;cursor:pointer;padding:2px 7px">Esc</button> as you were · Enter grinds</span></div></div>';
     document.body.appendChild(ov);
-    ov.querySelector('#br-go').onclick=()=>brewGo();ov.querySelector('#br-no').onclick=()=>closeBrewPage();}
+    ov.querySelector('#br-go').onclick=()=>brewGo();ov.querySelector('#br-no').onclick=()=>closeBrewPage();
+    ov.querySelector('#br-leaf').onclick=()=>{brewLeaf=brewLeaf==='mortar'?'recipes':'mortar';brewSaid='';brewDraw();};} /* S2559 — the recipe leaf */
+  brewLeaf='mortar';
   brewSel=brewSel.filter(k=>BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));brewSaid='';
   ov.style.display='flex';brewOpen=true;brewDraw();
 }
@@ -871,6 +905,9 @@ function closeBrewPage(){const ov=document.getElementById('brewui');if(ov)ov.sty
 function brewHerbList(){const m=new Map(),d=new Map();BAG.forEach(b=>{if(!b||b.type!=='herb')return;const k=herbKeyOf(b);if(!k)return;m.set(k,(m.get(k)||0)+(b.qty||1));if(herbDried(b))d.set(k,(d.get(k)||0)+(b.qty||1));});return [...m].map(([k,n])=>({k,n,dry:d.get(k)||0,name:(HERB_DEF[k]&&HERB_DEF[k].name)||k}));}
 function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;const K=herbsKnown();
   ov.querySelector('#br-skill').textContent=`Alchemy ${skillLv('alchemy')} · strength ×${alchStrength().toFixed(2)}${stillHere()?` · at a still${stillFee()?`, ${stillFee()} gold`:''}`:''}`;
+  {const rec=brewLeaf==='recipes',pot=ov.querySelector('#br-pot');ov.querySelector('#br-leaf').textContent=rec?'The mortar':'Recipes'; /* S2559 */
+    ov.querySelector('#br-rec').style.display=rec?'block':'none';ov.querySelector('#br-cols').style.display=rec?'none':'flex';if(pot)pot.style.display=rec?'none':'block';
+    if(rec){brewLeafDraw(ov);ov.querySelector('#br-said').textContent=brewSaid;return;}}
   const list=brewHerbList();
   ov.querySelector('#br-herbs').innerHTML=list.length?list.map(h=>{const on=brewSel.includes(h.k),nn=brewSel.some(o=>o!==h.k&&K.none[brewPairKey(o,h.k)]);
     return `<div data-k="${h.k}" style="cursor:pointer;padding:0 6px;border-radius:2px;${on?'background:rgba(122,31,16,.12);color:#7a1f10':''}${nn&&!on?';color:#a09070':''}">${on?'◆':'◇'} ${h.name} <span style="color:#8a7050;font-size:12px">×${h.n}${h.dry?` · ${h.dry} dried`:''}</span>${nn&&!on?' <i style="font-size:12px">· nothing between</i>':''}</div>`;}).join(''):'<i>You carry no herbs.</i>';
