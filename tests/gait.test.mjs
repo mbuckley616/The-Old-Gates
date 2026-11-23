@@ -14,8 +14,14 @@ fs.mkdirSync('tests/out', { recursive: true });
 // heel rises to push off; with the foot flat it is as still as the ankle.
 await page.evaluate(() => { window.ball = (an, v) => v.copy(an.localToWorld(new THREE.Vector3(0, -PW.FOOT, PW.RUN.BALL))); });
 // The stiller foot is the one carrying the body; "flight" counts frames where both are off the ground.
+// S2571: a walker whose builder body is already attached (rig.hb). Dunmore's builds still drain after g.settle, one body a tick, and the
+// first drive picked a walker on the driver alone: its body attached mid-drive (rig.hb.L -1 to 2) and the next frame the driver's ankle
+// jumped 1.8 mm, read as the planted foot's slip (2.0-2.05 mm against 2; the walk's own is 0.01-1.0 mm a frame). So the suite waits for
+// the game's loop to build one (below) and drives that walker; the old pick only if none has built in 300 s (logged as built: false).
 const drive = (pace, n) => page.evaluate(([pace, n]) => {
-  const rig = window._gr || (window._gr = [...PEOPLE_RIGS].find(r => r.root.parent === WORLD.scene && r.root.visible && !r.g.gear)); const root = rig.root;
+  const ok = r => r.root.parent === WORLD.scene && r.root.visible && !r.g.gear;
+  const rig = window._gr || (window._gr = [...PEOPLE_RIGS].find(r => ok(r) && r.hb) || [...PEOPLE_RIGS].find(ok)); const root = rig.root;
+  if (!window._grLog) window._grLog = { name: rig.g.name, built: !!rig.hb };
   const fyaw = root.rotation.y, s = root.scale.x, step = pace / 60; const vL = new THREE.Vector3(), vR = new THREE.Vector3(), hp = new THREE.Vector3(), hd = new THREE.Vector3();
   let prev = null, still = 0, swing = 0, flight = 0, lean = 0, t0 = 1e5 + (window._gt || 0); window._gt = (window._gt || 0) + n * 17;
   tickPeople(1 / 60, t0); root.updateMatrixWorld(true); const ph0 = rig.phase, cyc0 = pwCycle(rig.w);
@@ -39,7 +45,11 @@ const drive = (pace, n) => page.evaluate(([pace, n]) => {
     flightPct: fl, leanMm: +(lean * 1000).toFixed(0), cyc: +pwCycle(rig.w).toFixed(3), stepsPerSec: +(2 * pace / (pwCycle(rig.w) * s)).toFixed(2), scale: +s.toFixed(3) };
 }, [pace, n]);
 
+const t0w = Date.now();
+await page.waitForFunction(() => [...PEOPLE_RIGS].some(r => r.root.parent === WORLD.scene && r.root.visible && !r.g.gear && r.hb), null, { timeout: 300000, polling: 1000 }).catch(() => {});
+console.log('  a built walker after', Math.round((Date.now() - t0w) / 1000), 's');
 const stroll = await drive(.7, 120), guard = await drive(.95, 120);
+console.log('  walker', JSON.stringify(await page.evaluate(() => window._grLog)));
 check('a stroll and a guard\'s pace stay a walk, feet planted', !stroll.run && !guard.run && stroll.w.walk > .9 && guard.w.walk > .9 && stroll.flightPct === 0 && guard.flightPct === 0 && stroll.stillMm < 2 && guard.stillMm < 2, { stroll, guard });
 const run = await drive(2.4, 150);
 check('at a run\'s pace the gait runs: the standing foot still holds, the other flies, a flight between steps', run.run && run.w.run > .95 && run.stillMm < 2 && run.swingMm > 30 && run.flightPct >= 20, run);
