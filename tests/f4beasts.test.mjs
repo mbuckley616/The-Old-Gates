@@ -66,12 +66,16 @@ const trot = await page.evaluate(() => { const f = _W[1], e = f.e, rig = f.rig, 
   rig.root.parent.updateMatrixWorld(true); rig.hc.C.skel.update();
   // against the ground the driver was set on (e.mesh's own height): on CI's runner that sat ~0.6 m off worldH at this spot (S1251)
   const toes = ['leg0L_3', 'leg0R_3', 'leg1L_3', 'leg1R_3'].map(n => +(by[n].getWorldPosition(new THREE.Vector3()).y - e.mesh.position.y).toFixed(3));
+  // Session 2556: the hide's lowest point standing, against the same ground (the kit's soles: the paw's flesh lifted off its bones by its radius)
+  const hide = rig.hc.C.meshes[0], hp = hide.geometry.attributes.position, hv = new THREE.Vector3(); let sole = 1e9; /* the kit's meshes bind 'detached' with identity bind matrices: the bones' matrices are the world's already */
+  for (let i = 0; i < hp.count; i++) { hv.fromBufferAttribute(hp, i); hide.applyBoneTransform(i, hv); sole = Math.min(sole, hv.y - e.mesh.position.y); }
   for (let i = 0; i < 40; i++) { e.x += dx * .05; e.z += dz * .05; e.mesh.position.set(e.x, WORLD.worldH(e.x, e.z), e.z); tickCreatures(1 / 60, 4e5 + i * 16.7); rig.hc.C.skel.update();
     if (i > 20) { rig.root.parent.updateMatrixWorld(true); for (const [d, k] of [['pfL', 'leg0L_2'], ['phR', 'leg1R_2']]) { const p = rig.B[d].getWorldPosition(new THREE.Vector3()), q = by[k].getWorldPosition(new THREE.Vector3()); worst = Math.max(worst, p.distanceTo(q)); dy = Math.max(dy, Math.abs(p.y - q.y)); }
       for (const L of rig.hc.ik || []) bend = Math.max(bend, Math.abs(L.end.getWorldPosition(new THREE.Vector3()).y - rig.B[L.d].getWorldPosition(new THREE.Vector3()).y - L.oy)); } }
   const b = mats(); let moved = 0; for (let i = 0; i < a.length; i++) moved = Math.max(moved, Math.abs(a[i] - b[i]));
-  return { moved: +moved.toFixed(3), worst: +worst.toFixed(3), dy: +dy.toFixed(3), bend: +bend.toFixed(3), ik: !!rig.hc.ik, toes, hip: +wolfHipY(rig.k).toFixed(2), scale: +rig.root.scale.x.toFixed(2), w: Object.fromEntries(Object.entries(rig.w).map(([k, v]) => [k, +v.toFixed(2)])) }; });
+  return { sole: +sole.toFixed(3), moved: +moved.toFixed(3), worst: +worst.toFixed(3), dy: +dy.toFixed(3), bend: +bend.toFixed(3), ik: !!rig.hc.ik, toes, hip: +wolfHipY(rig.k).toFixed(2), scale: +rig.root.scale.x.toFixed(2), w: Object.fromEntries(Object.entries(rig.w).map(([k, v]) => [k, +v.toFixed(2)])) }; });
 check(`the bear standing puts its four toes on the ground (${trot.toes.join(', ')} m)`, trot.toes.every(y => Math.abs(y) < .05), trot.toes);
+check(`the bear standing stands on its soles: its hide's lowest point ${trot.sole} m from the ground, not through it by its paw's thickness (10 cm before Session 2556)`, trot.sole > -.035 && trot.sole < .05, trot.sole);
 // the kit's bear carries its shoulders about 0.19 m ahead of the wolf rig's, so its fore paw lands that far forward of the driver's
 // Session 1557: the bear's legs are bent onto the driver's paws (hcLegIK, as the horse's): its toes hold the driver's paw's height and
 // its own rest offset, so its paw joint above them rides with the heel's lift (0.081 m off the driver's paw, 0.057 without the bend)
