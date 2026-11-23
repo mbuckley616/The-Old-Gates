@@ -9,7 +9,7 @@ function _enterGame(){
   document.getElementById('vol-btn').style.display='block';
   document.getElementById('save-btn').style.display='block';
   document.getElementById('dp').style.display='grid';
-  document.getElementById('acts').style.display='flex';
+  document.getElementById('hudnote').style.display='block'; /* S2583 — the notes that stood under the bars; the cast and inventory buttons are the vitals plate's roundels now */
   document.getElementById('fbtn').style.display='block';
   G.setAttribute('tabindex','0');G.focus();
   G.addEventListener('keydown',e2=>{

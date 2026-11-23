@@ -45,5 +45,18 @@ check('six lines leave four slips, the repeated one renewed at the foot in its o
   && led.ops[3] === 1 && led.ops[0] < led.ops[3] && led.rule === 'rgb(158, 60, 60)' && led.msg === 'Line 3', led);
 check('the ledger stands above the vitals\' place, left, above the band', led.box[0] === 18 && led.box[3] === led.H - 134 && led.box[3] < led.band[1], { box: led.box, band: led.band });
 check('every slip is gone after 6 s', led.after === 0, led.after);
+// S2583 — the last of #198 A: the vitals plate at the bottom left, under the ledger and clear of the band; each bar's value beside its
+// maximum, the marks as a thin bar under the level; the weapon's roundel is the inventory button and the spell's the cast button
+const vp = await page.evaluate(() => { const [hud, ibtn, fbtn] = ['hud', 'ibtn', 'fbtn'].map(i => document.getElementById(i)); const r = e => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
+  PHP = Math.round(effMaxHP() / 2); levelMarks = marksNeeded() / 4; updateHUD(); const out = { plate: r(hud), led: r(document.getElementById('ledger')), band: r(compassEl), H: innerHeight };
+  out.hp = document.querySelector('#hud .br .v').textContent; out.want = Math.floor(PHP) + ' / ' + Math.floor(effMaxHP()); out.xp = parseFloat(document.getElementById('xpf').style.width);
+  const w = EQ.weapon; EQ.weapon = null; updateHUD(); out.bare = ibtn.textContent; EQ.weapon = { name: 'Test Blade', ico: '🗡️' }; updateHUD(); out.blade = [ibtn.textContent, ibtn.title]; EQ.weapon = w; updateHUD();
+  out.inPlate = [ibtn, fbtn].every(b => hud.contains(b)); ibtn.click(); out.inv = invOpen; closeInv?.(); updateSpellButton(); out.fb = [fbtn.textContent, fbtn.title];
+  out.note = getComputedStyle(document.getElementById('hudnote')).display; return out; });
+check('the vitals plate is at the bottom left, under the ledger and left of the band', vp.plate[0] === 18 && vp.plate[3] === vp.H - 20 && vp.plate[1] < vp.H - 100
+  && vp.plate[1] > vp.led[3] && vp.plate[2] < vp.band[0], vp);
+check('a bar reads its value over its maximum, and the marks fill a quarter of the level\'s bar', vp.hp === vp.want && Math.abs(vp.xp - 25) < 0.2, { hp: vp.hp, want: vp.want, xp: vp.xp });
+check('the weapon\'s roundel shows the weapon in hand, a fist when bare, and opens the inventory; the spell\'s names the spell in its title', vp.inPlate
+  && vp.bare === '✊' && vp.blade[0] === '🗡️' && /^Test Blade/.test(vp.blade[1]) && vp.inv && /\(F\)$/.test(vp.fb[1]) && vp.note === 'block', vp);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
