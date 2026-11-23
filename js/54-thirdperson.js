@@ -994,7 +994,7 @@ function tpHBMantle(R){const H=R.rig.hb,M=R.mantle;if(M.w<=0)return;const wb=[H.
   _tmE[0].set(0,0,0);_tmE[1].set(0,0,0);
   /* S2532 — up to eight passes, ended once both wrists are within a centimetre: two left the left wrist 9–13 cm off the ledge early in the
      pull, where the driver's arm is straight and out of reach and each pass takes only part of the miss */
-  /* S2548 — and each arm keeps its best aim: the aim adds each pass's whole miss, and where the arm is in reach that can overshoot and
+  /* S2551 — and each arm keeps its best aim: the aim adds each pass's whole miss, and where the arm is in reach that can overshoot and
      swing (the spyglass's right wrist 5 cm off at the third pass, then 16 to 26 cm by the eighth). An arm whose miss has failed to shrink
      twice running is held at its best aim while the other goes on; the passes end when both are held or within a centimetre */
   const best=[1e9,1e9],worse=[0,0];
