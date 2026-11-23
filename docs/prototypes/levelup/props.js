@@ -458,3 +458,87 @@ export function scriptStone(o = {}, r = stream('sigilstone')) {
   const out = finish({ school, cut, size: [SW, SH, ST], face: +face.toFixed(3), split: +below.toFixed(3), lit, vein: [-1.4, 0, .25] });
   return out;
 }
+
+// oysterBed(o, r) (Session 2586; rare materials B's last kit piece, Michael's A on #1861): a bed of deep pearl oysters on Aurenne's open
+// sea floor, 8 m down. y 0 is the sand at the bed's middle (o.ground(x, z) lays it on other ground). The game's bed: five oysters within
+// 2.4 m of its middle (`PEARL.ring`), each opened where it lies. What is drawn:
+//   - the bank: a low mound of shell grit and dead valves, 0.22 m high and 4.8 m across where it stands 2 cm proud, its pale grit fading
+//     into the sand by 7 m, so a swimmer at the surface
+//     8 m over it sees a pale patch on the darker floor before the oysters themselves;
+//   - three or four flat rubble stones half in the grit, where most of the oysters hang;
+//   - the oysters: pearl oysters of 0.22 to 0.28 m, two rounded valves on a straight hinge with small ears, brown-green outside with
+//     pale rays and frilled growth edges, standing hinge-down at 30 to 60° as they grow, a few fouled with weed;
+//   - opened (o.taken, a bit per oyster as the game keeps them): the upper valve thrown back on its hinge, the inside silver nacre in a
+//     dark lip, the shell empty;
+//   - round the bank: tufts of ribbon weed and two or three small sea fans, so the bed reads as a living place and not a heap.
+// o.oy: [{ x, z, ry }] in the bed's frame, the oysters' places (the game passes its own); default five from the stream, as the game lays
+// them (an angle, and 0.5 to 2.4 m out). -> { group, tris, draws, top, R, oysters: [{ x, y, z, s, open }], hAt(x, z) }
+// a pearl oyster's outside: u round the valve, v out from the umbo; olive-brown with pale rays from the umbo and darker growth bands, the
+// edge's last band the palest (k 1: a paler shell, more ray than ground)
+function shellTex(r, k) { const c = document.createElement('canvas'); c.width = 128; c.height = 64; const x = c.getContext('2d'), im = x.createImageData(128, 64), rays = Array.from({ length: 11 }, () => r());
+  for (let j = 0; j < 64; j++) for (let i = 0; i < 128; i++) { const u = i / 128, v = j / 64, ray = rays.reduce((m, p) => Math.max(m, Math.max(0, 1 - Math.abs(((u - p + 1.5) % 1) - .5) * 60)), 0) * (.4 + .6 * v);
+    const band = .5 + .5 * Math.sin(v * 46 + Math.sin(u * 37) * .6), n = Math.sin(i * 1.7 + j * .9) * Math.sin(i * .37 - j * 2.1) * .5 + .5;
+    let L = .26 + .07 * band + .05 * n + (k ? .1 : 0), rr = L * 1.05, gg = L * 1.0, bb = L * .72; const pale = Math.min(1, ray * .8 + (v > .86 ? .35 : 0)); rr += (.74 - rr) * pale; gg += (.7 - gg) * pale; bb += (.56 - bb) * pale;
+    const o = (j * 128 + i) * 4; im.data[o] = rr * 255; im.data[o + 1] = gg * 255; im.data[o + 2] = bb * 255; im.data[o + 3] = 255; }
+  x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; return t; }
+export function oysterBed(o = {}, r = stream('oysters')) {
+  const { put, finish } = kit(), M = mats(), G = o.ground || (() => 0), taken = o.taken | 0, R = 2.8;
+  if (!M.oyShell) { M.oyShell = new THREE.MeshStandardMaterial({ map: shellTex(stream('oyshell'), 0), roughness: .8 }); M.oyRay = new THREE.MeshStandardMaterial({ map: shellTex(stream('oyray'), 1), roughness: .8 });
+    M.nacre = new THREE.MeshStandardMaterial({ color: 0xe4e6ea, roughness: .18, metalness: .35, emissive: new THREE.Color(.05, .07, .09), side: THREE.DoubleSide });
+    M.oyLip = new THREE.MeshStandardMaterial({ color: 0x1c1a20, roughness: .25, metalness: .3, side: THREE.DoubleSide });
+    M.grit = mat('plaster', { ns: 2.2, color: 0xc4bcaa, rough: 1 }); M.seaweed = new THREE.MeshStandardMaterial({ color: 0x5a6a2a, roughness: .7, side: THREE.DoubleSide });
+    M.fan = new THREE.MeshStandardMaterial({ color: 0x9a4a46, roughness: .8 }); M.bankRock = mat('plaster', { ns: 2.4, color: 0x8c887c, rough: .95 }); }
+  const mound = d => { const t = d / R; return t < 1 ? .22 * (1 - t * t) ** 1.5 : 0; };
+  const ph = [r() * 9, r() * 9, r() * 9], bump = (x, z) => Math.sin(x * 2.1 + ph[0]) * Math.sin(z * 1.8 + ph[1]) * .025 + Math.sin(x * 5.3 + ph[2]) * Math.sin(z * 4.7 + ph[0]) * .012;
+  const hAt = (x, z) => { const d = Math.hypot(x, z); return G(x, z) + mound(d) + bump(x, z) * Math.max(0, 1 - d / (R * 1.3)); };
+  // the bank: rings to 1.3 R, the grit's colour from pale shell to the sand's, broken by darker flecks
+  const RINGS = 16, SEG = 48, RO = R * 1.3, pos = [], col = [], idx = [], cS = new THREE.Color(.86, .84, .78), cD = new THREE.Color(.58, .55, .48), cF = new THREE.Color(o.sand ?? 0xd2c29a), c = new THREE.Color();
+  for (let i = 0; i <= RINGS; i++) { const rad = RO * (i / RINGS) ** 1.1; for (let k = 0; k < (i ? SEG : 1); k++) { const a = k / SEG * Math.PI * 2 + i * .07, x = Math.sin(a) * rad, z = Math.cos(a) * rad;
+    pos.push(x, hAt(x, z) + .004, z); const fl = Math.sin(x * 9 + ph[1]) * Math.sin(z * 8 + ph[2]), t = rad / R;
+    c.copy(cS).lerp(cD, Math.max(0, fl) * .55); c.lerp(cF, Math.min(1, Math.max(0, (t - .75) / .5))); col.push(c.r, c.g, c.b); } }
+  const at = (i, k) => i ? 1 + (i - 1) * SEG + (k % SEG) : 0; for (let k = 0; k < SEG; k++) idx.push(0, at(1, k), at(1, k + 1)); for (let i = 1; i < RINGS; i++) for (let k = 0; k < SEG; k++) idx.push(at(i, k), at(i + 1, k), at(i + 1, k + 1), at(i, k), at(i + 1, k + 1), at(i, k + 1));
+  const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); gg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); gg.setIndex(idx); gg.computeVertexNormals(); worldUV(gg, .7);
+  // one valve: a rounded outline about its middle, the hinge cut straight at z 0 with an ear either side; domed (h), with growth steps
+  // and a frilled edge. inner: the nacre's face, a little inside the outer (o lip: only its rim ring, the dark lip)
+  const valve = (s, h, inner, part, seed, lo) => { const RG = lo ? 3 : 8, SG = lo ? 10 : 20, P = [], I = [], UV = [], cz = s * .5;
+    for (let i = 0; i <= RG; i++) { const t = i / RG; for (let k = 0; k <= SG; k++) { const th = k / SG * Math.PI * 2;
+      const frill = t > .8 && !lo ? (1 + .07 * ((k * 3 + seed) % 2 ? 1 : -.4) * ((t - .8) / .2)) : 1, rr = s * .5 * (1 + .06 * Math.cos(4 * th + seed)) * frill * (inner ? .95 : 1);
+      let x = Math.sin(th) * rr * t, z = cz + Math.cos(th) * rr * t * .96; if (z < 0) { z = 0; x *= 1 + .1 * t; } /* the hinge line and its ears */
+      let y = h * Math.pow(Math.max(0, 1 - t * t), .6) + (t > .3 && !inner && !lo ? .004 * ((t * 7) % 1) : 0); if (inner) y = Math.max(0, y - h * .3 - .003);
+      P.push(x, y, z); UV.push(k / SG, t); } }
+    for (let i = 0; i < RG; i++) { if (part === 'lip' && i < RG - 1) continue; if (part === 'core' && i >= RG - 1) continue;
+      for (let k = 0; k < SG; k++) { const a = i * (SG + 1) + k, b = a + SG + 1; inner ? I.push(a, a + 1, b, a + 1, b + 1, b) : I.push(a, b, a + 1, a + 1, b, b + 1); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2)); g.setIndex(I); g.computeVertexNormals(); return g; };
+  const oy = o.oy || Array.from({ length: 5 }, (_, n) => { const a = (n + r() * .6) / 5 * Math.PI * 2, d = .5 + r() * 1.9; return { x: Math.cos(a) * d, z: Math.sin(a) * d, ry: a }; });
+  // the rubble stones: one under each of the first oysters it is near, half sunk in the grit
+  const stones = []; for (let i = 0; i < 4; i++) { const p = i < oy.length ? oy[i] : { x: (r() - .5) * 3, z: (r() - .5) * 3 }, s = .14 + r() * .1, x = p.x + (r() - .5) * .2, z = p.z + (r() - .5) * .2;
+    const g = rough(new THREE.IcosahedronGeometry(s, 1), r, s * .2, 3); g.scale(1.4, .4, 1.1); put(g, 'bankRock', x, hAt(x, z) + s * .05, z, (r() - .5) * .2, r() * 6, (r() - .5) * .2, .5); stones.push({ x, z, s, top: hAt(x, z) + s * .4 }); }
+  const oysters = [];
+  oy.forEach((p, n) => { const s = .24 + r() * .06, h = s * .13, open = !!(taken & (1 << n)), seed = Math.floor(r() * 7), lean = 1.0 + r() * .35, spin = p.ry + r() * 1.2;
+    const st = stones.find(q => Math.hypot(q.x - p.x, q.z - p.z) < q.s * 1.4), base = st ? Math.max(hAt(p.x, p.z), st.top - .04) : hAt(p.x, p.z);
+    // the oyster's frame: its hinge on the bed (or the stone), the valves standing up from it at lean, turned by spin
+    const F = new THREE.Matrix4().compose(new THREE.Vector3(p.x, base - .01, p.z), new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2 + lean, spin, 0, 'YXZ')), new THREE.Vector3(1, 1, 1));
+    const lay = (g, key, flipY, openA) => { if (flipY) g.scale(1, -1, 1), g.index && g.setIndex(Array.from(g.index.array).reverse()); if (openA) g.rotateX(-openA); g.applyMatrix4(F); g.computeVertexNormals(); put(g, key, 0, 0, 0, 0, 0, 0, null); };
+    lay(valve(s, h * .7, false, 'all', seed), 'oyShell', true); /* the lower (left) valve, flatter, grown on */
+    const oa = open ? 1.75 + r() * .3 : 0; lay(valve(s, h, false, 'all', seed), (n + seed) % 3 ? 'oyShell' : 'oyRay', false, oa);
+    if (open) { lay(valve(s, h, true, 'core', seed), 'nacre', false, oa); lay(valve(s, h, true, 'lip', seed), 'oyLip', false, oa);
+      lay(valve(s, h * .7, true, 'core', seed), 'nacre', true); lay(valve(s, h * .7, true, 'lip', seed), 'oyLip', true); }
+    if (!open && (n + seed) % 2) { for (let k = 0; k < 3; k++) { const w = .02 + r() * .015, l = .08 + r() * .08, g = new THREE.PlaneGeometry(w, l, 1, 3); g.translate(0, l / 2, 0); const P = g.attributes.position; for (let v = 0; v < P.count; v++) P.setZ(v, P.getZ(v) + (P.getY(v) / l) ** 2 * .03); g.rotateY(r() * 6); g.translate((r() - .5) * s * .4, h * .9, s * (.3 + r() * .3)); g.applyMatrix4(F); put(g, 'seaweed', 0, 0, 0, 0, 0, 0, .4); } }
+    const c0 = new THREE.Vector3(0, h * .5, s * .5).applyMatrix4(F); oysters.push({ x: +c0.x.toFixed(3), y: +c0.y.toFixed(3), z: +c0.z.toFixed(3), s: +s.toFixed(3), open, base: +base.toFixed(3) }); });
+  // dead valves strewn on the bank: small cups, some nacre up
+  for (let i = 0; i < 26; i++) { const a = r() * 6.3, d = Math.sqrt(r()) * R * 1.05, x = Math.sin(a) * d, z = Math.cos(a) * d, s = .07 + r() * .1, up = r() < .35;
+    const g = valve(s, s * .12, false, 'all', i, true); g.translate(0, 0, -s * .5); if (up) { g.scale(1, -1, 1); g.setIndex(Array.from(g.index.array).reverse()); g.translate(0, s * .1, 0); } g.computeVertexNormals();
+    put(g, up ? 'nacre' : (i % 3 ? 'grit' : 'oyRay'), x, hAt(x, z) + .005, z, (r() - .5) * .3, r() * 6, (r() - .5) * .3, up || i % 3 ? .4 : null); }
+  // round the bank: tufts of ribbon weed, and two or three sea fans standing across the current
+  for (let t = 0; t < 7; t++) { const a = t / 7 * Math.PI * 2 + r() * .6, d = R * (.85 + r() * .4), x0 = Math.sin(a) * d, z0 = Math.cos(a) * d;
+    for (let k = 0; k < 7; k++) { const l = .35 + r() * .45, w = .025 + r() * .015, g = new THREE.PlaneGeometry(w, l, 1, 5); g.translate(0, l / 2, 0); const P = g.attributes.position, bend = .1 + r() * .25;
+      for (let v = 0; v < P.count; v++) { const u = P.getY(v) / l; P.setZ(v, P.getZ(v) + u * u * bend * l); } const x = x0 + (r() - .5) * .3, z = z0 + (r() - .5) * .3; put(g, 'seaweed', x, hAt(x, z) - .02, z, 0, r() * 6.3, 0, .4); } }
+  const nFan = 2 + Math.floor(r() * 2); for (let f = 0; f < nFan; f++) { const a = r() * 6.3, d = R * (.75 + r() * .4), x = Math.sin(a) * d, z = Math.cos(a) * d, H = .5 + r() * .3, ry = r() * 6.3;
+    /* a sea fan: a stem forking three times in one plane, its twigs the thinner, the whole fan's face across the current */
+    const br = (x0, y0, ang, len, rad, lv) => { const x1 = x0 + Math.sin(ang) * len, y1 = y0 + Math.cos(ang) * len, g = new THREE.CylinderGeometry(rad * .7, rad, len, 4, 1); g.translate(0, len / 2, 0); g.rotateZ(-ang); g.translate(x0, y0, 0);
+      g.rotateY(ry); put(g, 'fan', x, hAt(x, z) - .01, z, 0, 0, 0, .4); if (lv < 3) for (const s of [-1, 1]) br(x1, y1, ang + s * (.35 + r() * .3), len * (.68 + r() * .1), rad * .7, lv + 1); };
+    br(0, 0, (r() - .5) * .2, H * .32, .018, 0); }
+  const out = finish({ R, oysters, open: oysters.filter(q => q.open).length });
+  const gm = new THREE.Mesh(gg, new THREE.MeshStandardMaterial({ map: M.grit.map, normalMap: M.grit.normalMap, vertexColors: true, roughness: 1 })); gm.name = 'bank'; gm.receiveShadow = true; out.group.add(gm);
+  out.tris += idx.length / 3; out.draws += 1; out.hAt = hAt; return out;
+}
