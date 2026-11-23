@@ -809,7 +809,7 @@ function sealFirePot(){const why=sealPotWhy();if(why)return why;bagTake(b=>b.nam
 // brew (the same effects) run into one Draught at ×1.35 of their mean, catalysts' riders kept, in a game hour and an Alchemy use of 10.
 // A draught never turns. Poisons are not distilled: a draught is drunk. The vial, your house's still and the stations as E points are
 // session 2, the recipe leaf session 3. Distilling rolls nothing.
-// S2557 — session 2. Bottle: a draught is run into a Glass Vial (2 gold, 0.1 kg; every apothecary, and a goods shop in Aurenne, the
+// S2560 — session 2. Bottle: a draught is run into a Glass Vial (2 gold, 0.1 kg; every apothecary, and a goods shop in Aurenne, the
 // canon's glass), taken as it is made; with no vial the still refuses. Your house's still is a seventh fitting (60 gold and 2 bronze
 // ingots), free. The drawn apothecaries (the Gatelands village's, Aurenne's, the Mark's healer's hall) keep their still at the kit's
 // *distil* station: there the still is within STILL_REACH of it, E on it opens the page, and the rest of the room is the counter's.
@@ -1277,7 +1277,7 @@ window.addEventListener('keydown',e=>{if(!cureOpen)return;if(e.code==='Escape'){
 // point, anywhere in the house is at them (the hold's rule, S1726), and E with nothing else in reach opens the house's page.
 const HOME_PLACES={cottage:3,townhouse:4,farmstead:6,longhouse:6,keep:6};
 const HOME_FITS={rack:{n:'tanner’s rack',a:'a tanner’s rack',gold:40,planks:4},dry:{n:'drying rack',a:'a drying rack',gold:30,planks:3},bench:{n:'workbench',a:'a workbench',gold:60,planks:6},
-  oven:{n:'clay oven',a:'a clay oven',clay:6},kiln:{n:'kiln',a:'a kiln',clay:10},garden:{n:'garden',a:'a garden',gold:50,shovel:true},still:{n:'still',a:'a still',gold:60,bronze:2}}; /* S2557 — workstations B: the still, 60 gold and 2 bronze ingots */ /* S2140 — four beds, dug with a shovel */ /* S2139 — the oven and the kiln, laid of clay by hand */
+  oven:{n:'clay oven',a:'a clay oven',clay:6},kiln:{n:'kiln',a:'a kiln',clay:10},garden:{n:'garden',a:'a garden',gold:50,shovel:true},still:{n:'still',a:'a still',gold:60,bronze:2}}; /* S2560 — workstations B: the still, 60 gold and 2 bronze ingots */ /* S2140 — four beds, dug with a shovel */ /* S2139 — the oven and the kiln, laid of clay by hand */
 function homeMine(h){return !!h&&(h.type==='home'||h.type==='castle')&&(h.ownedByPlayer||(typeof ownedHouse==='function'&&ownedHouse(h.id)));}
 function homeSize(h){if(!h)return null;if(h.type==='castle')return 'keep';if(h.farm)return 'farmstead';const k=h.kit&&h.kit.kind;if(k==='markhall')return 'longhouse';
   if(k==='townhouse'||k==='merchant'||k==='marktown')return 'townhouse';return ['town','port','city'].includes(h.siteKind)?'townhouse':'cottage';}
@@ -1307,7 +1307,7 @@ function homeFitWhy(h,k,how){if(!homeMine(h))return 'This is not your house.';co
   if(r.stored.includes(k))return null;
   if(F.shovel&&!r.stored.includes(k)&&!hasShovel())return 'A garden is dug with a shovel.';
   if(F.clay){const n=bagCount(b=>!!b.clay);return n<F.clay?`It takes ${F.clay} clay (you have ${n}).`:null;} /* S2139 — laid by hand */
-  if(F.bronze){const n=bagCount(b=>b.ingot===2);if(n<F.bronze)return `It takes ${F.bronze} bronze ingots (you have ${n}).`;} /* S2557 — the still's copper */
+  if(F.bronze){const n=bagCount(b=>b.ingot===2);if(n<F.bronze)return `It takes ${F.bronze} bronze ingots (you have ${n}).`;} /* S2560 — the still's copper */
   if(how==='planks'&&!F.planks)return 'It is not made of planks.';
   if(how==='planks'){if(!benchHere())return 'Planks are joined at a bench: a joiner’s kit is one.';if(plankCount()<F.planks)return `It takes ${F.planks} planks (you have ${plankCount()}).`;return null;}
   return gold<F.gold?`It costs ${F.gold} gold.`:null;}
@@ -3600,7 +3600,7 @@ function interact(){
       openSleepUI();
       return;
     }
-    if(stillNear()&&!keeperAimed()){openBrewPage();return;} /* S2557 — a drawn apothecary's still: at it, E works it unless you look at the keeper */
+    if(stillNear()&&!keeperAimed()){openBrewPage();return;} /* S2560 — a drawn apothecary's still: at it, E works it unless you look at the keeper */
     // Shopkeeper — open dialog first
     if(keeperInReach()){ // v80 S13 — same floor only; S798 — wherever the prompt shows, too
       if(typeof sleeperAsleep==='function'&&sleeperAsleep())wakeSleeper(intNPCMesh,true); /* S739 — E wakes a sleeper, who then talks */

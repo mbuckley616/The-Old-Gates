@@ -250,7 +250,7 @@ const DR = await page.evaluate(() => {
   currentHouse = { type: 'guild_m', guild: 'mages', id: 'g_tst_5', siteId: 'tst', name: 'Guild', keeper: '', tagline: '' }; const gm = worldState.guild; worldState.guild = {};
   o.guild = { here: stillHere(), fee: stillFee() }; worldState.guild = { mages: { joined: true } }; o.guild.member = stillFee(); worldState.guild = gm;
   currentHouse = { type: 'inn', id: 'g_tst_6', siteId: 'tst', name: 'Inn' }; o.inn = stillHere();
-  // S2557 — the vial where it is sold; your house's still; a drawn apothecary's still at its station
+  // S2560 — the vial where it is sold; your house's still; a drawn apothecary's still at its station
   o.sold = { apo: vialFor({ type: 'potion' }).length, inn: vialFor({ type: 'inn' }).length };
   { const find = nk => { for (let i = 0; i < 48; i++) for (let j = 0; j < 48; j++) { let k; try { k = nationKeyOf(i, j); } catch (e) { continue; } if (k !== nk) continue; const c = getCell(i, j), t = c && c.sites && c.sites.find(q => /^c-?\d+_-?\d+_s\d+$/.test(q.id)); if (t) return t; } return null; };
     const au = find('aurenne'), ga = Object.values(SITE).find(t => t && nationKeyOf(...cellOf(t.x, t.z)) === 'gatelands');
@@ -274,10 +274,10 @@ check('S2554: no still outdoors; at an apothecary two tinctures of one brew make
 check('S2554: one tincture will not distil; a draught never turns, a tincture does; a poison is not distilled', /two tinctures/.test(DR.one) && !DR.turned && DR.keeps && DR.tinctureTurns && !DR.poison, DR);
 check('S2554: the page opens at a still with no mortar and offers Distil; the Mages\' Guild\'s still is 5 gold, free to a member; an inn has none', DR.page && DR.guild.here === 'guild' && DR.guild.fee === 5 && DR.guild.member === 0 && DR.inn === null, DR);
 check('S2554: a draught and a dried herb come back from a save', DR.reload.draught && DR.reload.w === .2 && DR.reload.dried, DR.reload);
-check('S2557: with no glass vial the still refuses; a draught takes one vial', /glass vial/.test(DR.noVial) && DR.vials === 1 && DR.vialsAfter === 0, DR);
-check('S2557: a vial is sold at an apothecary and an Aurenne goods shop, not a Gatelands one or an inn', DR.sold.apo === 1 && DR.sold.inn === 0 && DR.sold.aur === 1 && DR.sold.gat === 0, DR.sold);
-check('S2557: your house\'s still is a fitting of 60 gold and 2 bronze ingots, and is free', DR.home.before === null && /2 bronze ingots/.test(DR.home.why) && DR.home.fit && DR.home.cost === 60 && DR.home.ingots === 0 && DR.home.here === 'house' && DR.home.fee === 0, DR.home);
-check('S2557: a drawn apothecary\'s still is at its station (E there), not across the room', DR.drawn.at === 'shop' && DR.drawn.near && DR.drawn.far === null && !DR.drawn.farNear, DR.drawn);
+check('S2560: with no glass vial the still refuses; a draught takes one vial', /glass vial/.test(DR.noVial) && DR.vials === 1 && DR.vialsAfter === 0, DR);
+check('S2560: a vial is sold at an apothecary and an Aurenne goods shop, not a Gatelands one or an inn', DR.sold.apo === 1 && DR.sold.inn === 0 && DR.sold.aur === 1 && DR.sold.gat === 0, DR.sold);
+check('S2560: your house\'s still is a fitting of 60 gold and 2 bronze ingots, and is free', DR.home.before === null && /2 bronze ingots/.test(DR.home.why) && DR.home.fit && DR.home.cost === 60 && DR.home.ingots === 0 && DR.home.here === 'house' && DR.home.fee === 0, DR.home);
+check('S2560: a drawn apothecary\'s still is at its station (E there), not across the room', DR.drawn.at === 'shop' && DR.drawn.near && DR.drawn.far === null && !DR.drawn.farNear, DR.drawn);
 // ── S2559: the recipe leaf ──
 const RL = await page.evaluate(() => {
   const o = {}, K = herbsKnown(), h = (k, n) => bagAdd({ ...HERB_DEF[k].item, qty: n, _typeKey: k }); BAG.length = 0; bagAdd({ ...MORTAR_ITEM }); K.brews = {}; K.none = {};
