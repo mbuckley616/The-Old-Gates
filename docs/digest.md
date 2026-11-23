@@ -699,3 +699,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** The weekly run of 15 Nov still owes four bodies suites; today’s weekly run has not started yet.
 
 **Roadmap.** 347 of 452 stories done (345 of 447 on 21 Nov). The new look is 7 of 18.
+
+## 23 Nov 2026
+
+**Waiting on you.** Two decisions: the sea that pushes back (#1925, B recommended: races and reefs plus the serpent); the clergy's dress (#1936, B recommended: by island). No merge waits for you.
+
+**Landed on main since 22 Nov.** Your two answers written (#1883 C, #1911 C). Workstations done: forges by grade, the great forge in a city keep worked at its corner and refused in the lord's own words, the still with dried herbs, vial and recipe leaf; the great forge follows a city's prosperity (Systems 2552–2568). Stormwatch on its headland, the crater blowing down its wood, your house's still as a piece, Briarweed a bramble at last (Look 2526–2569). Guards armoured by their town's fortune, the hoe on the shoulder, the run out of its crouch (Bodies 2529–2566). The weekly run's reds worked through by QA and the builders; a playtest, the sea proposal and quest drafts. Build s1893.
+
+**Under way.** Bodies 2570 (#1937, the clergy prototype) lands on green. Next: look F6 in the kit and the Frostborn Vault's placing; systems waits on #1925.
+
+**Blocked.** The 22 Nov weekly run's 20 reds: most fixed by their lanes (Sessions 2533–2555); what is left stays in backlog I.
+
+**Roadmap.** 351 of 454 stories done (347 of 452 on 22 Nov): Workstations done. The new look is 7 of 18.

@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The clergy's dress — one habit everywhere, by island, or by island with the office shown? (from the bodies builder, 2026-11-23, #1936)
+**The question.** Backlog L1, the wardrobe matrix's clergy column (owed since Session 2504). Every church has a keeper whose role is `Priest`, and on the new look they wear their people's everyday clothes: nothing marks the calling. The prototype (`docs/prototypes/levelup/clergy.html?level=a|b|c`, Session 2570) dresses a man and a woman of each people as their town's priest three ways, all from pieces the kit already has.
+
+**Options.**
+- **A. One habit everywhere** (OG-110's clergy row): a brown wool robe, the cowl, a rope cord and a book, on all three islands. [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies-2570/docs/prototypes/levelup/clergy-2570-a.jpg)
+- **B. By island, as the canon has the faiths** *(recommended)*. The Gatelands' temples of the six: an undyed habit under a moss-green scapular, cord, cowl and book (Sister Elidan's cut). Aurenne's Church of the Weaver: a white robe and scapular with the red shuttle, a gold cord, a white head-cloth on a woman. The Mark, which scorns priests: no priest; its shrine-keeper wears the Mark's own wool and carries the lamp that is always lit. [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies-2570/docs/prototypes/levelup/clergy-2570-b.jpg)
+- **C. B with the office shown.** The Gatelander's green cape on a bronze brooch, the Aurennais robe bordered in gold under a blue sash, the Markish keeper in woven bands and a fur-collared cloak. [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies-2570/docs/prototypes/levelup/clergy-2570-c.jpg)
+
+**Recommendation: B.** It keeps the three faiths apart, and the Church's shuttle then reads as Aurenne's at a distance. C fits a high priest or a Prior, if a town's clergy is ever given a rank. The green scapular is the same for all six gods (a colour per god waits on the canon, #410). Once answered: one bodies session, a `Priest` row in `hbTradeDress`.
+
 ### The sea that pushes back — tidal races and reefs, those plus a serpent, or a sea that moves with the gates? (from the designer, 2026-11-23, #1925)
 **The question.** Backlog L11's *At sea* (OG-135) asks for currents, reefs and a sea serpent. Today nothing moves the water, the only hazard is running aground on a bed under 1.4 m, and open water between the islands is empty unless a black sail is in it. How far should the sea push back? (`docs/design/the-sea-that-pushes-back.md`)
 
