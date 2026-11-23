@@ -1329,7 +1329,16 @@ PW.RUN={STRIDE:.25*PW.LEGK,DUTY:.33,HIPS:PW.FOOT+PW.HIPJ+.288*PW.LEGK,BOB:.018*P
 // pivoting on the ball of the foot. So the stance runs from FRONT ahead of the hip to BACK behind it, the heel rises about the ball (BALL
 // ahead of the ankle) only as far as the leg needs to reach (pwHeel), and the pelvis rides at HIPS, with a deeper bob at the stance's middle.
 // STRIDE is kept as half the stance's length for whatever reads it; the cycle (ground a stride covers) is the stance over the duty.
-Object.assign(PW.RUN,{FRONT:.157*PW.LEGK,BACK:.243*PW.LEGK,DUTY:.3,HIPS:PW.FOOT+PW.HIPJ+.354*PW.LEGK,BOB:.025*PW.LEGK,BALL:.11,HEEL:.75});
+Object.assign(PW.RUN,{FRONT:.157*PW.LEGK,BACK:.243*PW.LEGK,DUTY:.3,HIPS:PW.FOOT+PW.HIPJ+.354*PW.LEGK,BOB:.025*PW.LEGK,BALL:.11,HEEL:.75,SWP:.65});
+// S2566 — and out of its crouch. S2561's pelvis still sank to 0.551 at the stance's middle, the knee bent 64° there (a runner's is about 40–45°),
+// and the swing brought the thigh 59° forward with the knee folded 120°: the bent-kneed run S2561's pictures showed. The bob is now the
+// body's own over the standing leg: it sinks BOB from the touch-down to the stance's middle and rises back by the push-off (a half sine
+// over the stance), then flies over a half sine BOB*flight/duty high, so its rate carries on through both joins. Touch-down is at HIPS,
+// not above it, so the pelvis rides higher (HIPS .605) with the landing still flat. The foot lands nearer under the hip (FRONT .16),
+// pushes off a little nearer (BACK .32), and is down a little less of the stride (DUTY .26), which keeps the cycle (1.85, was 1.87).
+// The swing lifts the ankle less (LIFT .15, was .21) and earlier, behind the hip (SWP .45: the heel leads, the knee does not climb).
+// At the stance's middle the knee is 46°, at touch-down 21°; through the swing the thigh comes 40° forward and the knee folds 88°.
+Object.assign(PW.RUN,{FRONT:.16,BACK:.32,DUTY:.26,HIPS:.605,BOB:.015,LIFT:.15,SWP:.45});
 PW.RUN.STRIDE=(PW.RUN.FRONT+PW.RUN.BACK)/2;
 // S880 (F2a) — people grew 1.44 times (07-scale.js) and the world's speeds did not, so the pace at which one breaks into a run is
 // kept in metres a second: the thresholds are divided by the growth (1.4 and 1.15 of the old root scale, about 1.25 and 1.0 m/s)
@@ -1341,12 +1350,12 @@ function pwHeel(z,y){const L=(PW.L1+PW.L2)*.995,B=PW.RUN.BALL,F=PW.FOOT,at=h=>{c
   if(Math.hypot(z,y)<=L)return [0,z,y];let lo=0,hi=PW.RUN.HEEL;const r0=at(hi);if(Math.hypot(r0[0],r0[1])>L)return [hi,r0[0],r0[1]];
   for(let i=0;i<14;i++){const m=(lo+hi)/2,r=at(m);if(Math.hypot(r[0],r[1])>L)lo=m;else hi=m;}const r=at(hi);return [hi,r[0],r[1]];}
 function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
-  p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2))-(o.goblin?.06*PW.LEGK:0);
+  /* S2566 — the stance's sink and the flight's rise, see PW.RUN */const q=phL%.5,Fl=.5-D;p.hipsY=R.HIPS+(q<D?-R.BOB*Math.sin(Math.PI*q/D):R.BOB*Fl/D*Math.sin(Math.PI*(q-D)/Fl))-(o.goblin?.06*PW.LEGK:0);
   const c=Math.cos(a),s=Math.sin(a);
   p.hips=[0,-.09*c,.02*s];
   const Fr=R.FRONT,Bk=R.BACK;p.reach=0;
   const foot=(f,sd)=>{let z,lift=0,toe=0;
-    if(f<D){z=Fr-(Fr+Bk)*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-Bk+(Fr+Bk)*e;lift=R.LIFT*Math.sin(Math.PI*Math.pow(u,.65));toe=.45*Math.sin(Math.PI*Math.min(1,u*1.3));}
+    if(f<D){z=Fr-(Fr+Bk)*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-Bk+(Fr+Bk)*e;lift=R.LIFT*Math.sin(Math.PI*Math.pow(u,R.SWP));toe=.45*Math.sin(Math.PI*Math.min(1,u*1.3));}
     const x0=sd*.085,hl=pwHeel(z+x0*Math.sin(p.hips[1]),PW.FOOT+lift-(p.hipsY-PW.HIPJ)-x0*Math.sin(p.hips[2]));
     p.reach=Math.max(p.reach,Math.hypot(hl[1],hl[2])/(PW.L1+PW.L2));if(f<D)p[sd>0?'heelL':'heelR']=hl[0];
     const r=pwIK(hl[1],hl[2]);return [r[0],r[1],-(r[0]+r[1])+Math.max(toe,hl[0])];};
