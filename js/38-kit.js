@@ -8524,16 +8524,30 @@ function aurenneOrrery(hAt, o = {}) {
       const RF = stream(key + ':face'), FACE = []; for (let u = 0; u < U[NXF];) { const w = 22 + RF() * 38, k = RF(), tp = -3 - RF() * 34; FACE.push({ c: u + w / 2, hw: w / 2, a: k < .55 ? -(3 + RF() * 5) : k < .8 ? 3 + RF() * 3 : 0, top: tp, gully: k >= .55 && k < .8 }); u += w; }
       const lat = (u, y) => { let d = 0; for (const f of FACE) { const du = Math.abs(u - f.c); if (du > f.hw + 2 || !f.a) continue; const hw = f.gully ? Math.min(f.hw, 4 + f.hw * .2) : f.hw;
         d += f.a * (1 - sstep(hw - 3, hw + 1, du)) * sstep(f.top, f.top - 6, y) * (f.gully ? 1 : .34 + .66 * sstep(K.SL - 2, K.SL + 24, y)); } return d; };
-      const pos = [], col = [], uv = []; let hi = -1e9, lo = 1e9, out = 0;
-      for (let i = 0; i <= NXF; i++) { const x = XF[i], e = L.edge(x), yt = L.top(x, e, h0(x, e)), yb = Math.min(yt - .2, L.ground(x, e - 12, h0(x, e - 12)) - 1), TOPh = Math.max(1, yt - K.SL);
+      /* Session 2577 (the critic's pale smears, s1889): the rows were 30 even steps from the top to the foot, about 1.6 m apart, so a bed's
+         step out of the one above (the bed term, up to 1.6 m) was smoothed over a row into a tilted facet that took the noon sun, a soft
+         pale smear 1.6 m high whose strength rose and fell with the step along the brink. The rows now follow the beds: each bed (7.3 m)
+         its own strip of five rows, and between two beds a ledge strip 0.3 m high that carries the step, its own vertices, so its normals
+         are its own: a bed standing out of the one above shows a thin lit ledge, one standing back a shadowed overhang; the beds' tones
+         change at the line. The face's broad swell (9 m over 55 along and 45 up) is read at the bed's middle, so it too steps at the
+         ledges and a bed stands near plumb: it had tilted whole beds up to the sun, the larger blotches. A row above the top or under the foot is laid on it. 39 strips' rows against 30 (220 columns). */
+      const BH = 7.3, LT = .3, strips = [];
+      for (let b = 5; b >= -2; b--) { const t = b === 5 ? 1e9 : (b + 1) * BH - LT / 2, f = b === -2 ? -1e9 : b * BH + LT / 2;
+        strips.push(Array.from({ length: 5 }, (_, q) => [t, f, q / 4, b])); if (b > -2) strips.push([[b * BH + LT / 2, b * BH + LT / 2, 0, b], [b * BH - LT / 2, b * BH - LT / 2, 0, b - 1]]); }
+      let hi = -1e9, lo = 1e9, out = 0; const SP = strips.map(() => ({ pos: [], col: [], uv: [] }));
+      for (let i = 0; i <= NXF; i++) { const x = XF[i], e = L.edge(x), yt = L.top(x, e, h0(x, e)), yb = Math.min(yt - .2, L.ground(x, e - 12, h0(x, e - 12)) - 1), TOPh = Math.max(1, yt - K.SL), RH = (yt - yb) / 30;
         hi = Math.max(hi, yt); lo = Math.min(lo, yb);
-        for (let j = 0; j <= NJ; j++) { const y = yt - (yt - yb) * j / NJ, ys = y - K.SL, bed = Math.floor(ys / 7.3), k3 = sstep(0, 3, j);
-          let s = 2 * (1 - ys / TOPh) + 3.2 * (fbm(x / 26 + bed * 1.7, bed * .9, 2) - .5) + 9 * (fbm(x / 55 + 2, ys / 45, 2) - .5) * k3 + .4 - 2.2 * Math.exp(-(((ys - 2) / 2.5) ** 2)) * k3 - lat(U[i], y - K.SL - TOPh) * k3;
-          s = j === 0 ? .3 : Math.min(18, Math.max(.3, s + 5.5 * k3)); out = Math.max(out, s);
+        strips.forEach((rows, si) => { const P = SP[si]; for (const [t, f, q, bed] of rows) { const y0 = Math.min(yt, Math.max(yb, K.SL + t)), y1 = Math.min(yt, Math.max(yb, K.SL + f)), y = y0 + (y1 - y0) * q, ys = y - K.SL, k3 = sstep(0, 3, (yt - y) / RH);
+          let s = 2 * (1 - ys / TOPh) + 3.2 * (fbm(x / 26 + bed * 1.7, bed * .9, 2) - .5) + 9 * (fbm(x / 55 + 2, (bed + .5) * BH / 45, 2) - .5) * k3 + .4 - 2.2 * Math.exp(-(((ys - 2) / 2.5) ** 2)) * k3 - lat(U[i], y - K.SL - TOPh) * k3;
+          s = y >= yt - 1e-4 ? .3 : Math.min(18, Math.max(.3, s + 5.5 * k3)); out = Math.max(out, s);
           const wet = 1 - sstep(1.5, 4, ys), lich = sstep(TOPh - 14, TOPh - 2, ys) * .5, n = (.9 + .2 * fbm(x / 24, ys / 18, 3)) * (.88 + .2 * fbm(bed * 3.1, 1.1, 1));
-          pos.push(x, y, e - s); col.push(...[.8, .79, .74].map((v, q) => enc((v * (1 - wet) + [.12, .12, .1][q] * wet) * n * (1 - lich * .25) + lich * [.06, .07, .02][q]))); uv.push(U[i] * s16, ys * s16); } }
-      const idx = []; for (let i = 0; i < NXF; i++) for (let j = 0; j < NJ; j++) { const a = i * (NJ + 1) + j, b = a + NJ + 1; idx.push(a, b, b + 1, a, b + 1, a + 1); }
-      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+          P.pos.push(x, y, e - s); P.col.push(...[.8, .79, .74].map((v, c) => enc((v * (1 - wet) + [.12, .12, .1][c] * wet) * n * (1 - lich * .25) + lich * [.06, .07, .02][c]))); P.uv.push(U[i] * s16, ys * s16); } }); }
+      /* each strip's normals its own, then the strips joined into one indexed geometry (the kit's merge keeps no index) */
+      const FA = { position: [], normal: [], color: [], uv: [] }, FI = []; let base = 0;
+      strips.forEach((rows, si) => { const P = SP[si], NR = rows.length, idx = []; for (let i = 0; i < NXF; i++) for (let j = 0; j < NR - 1; j++) { const a = i * NR + j, b = a + NR; idx.push(a, b, b + 1, a, b + 1, a + 1); }
+        const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P.pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+        FA.position.push(...P.pos); FA.normal.push(...g.attributes.normal.array); FA.color.push(...P.col); FA.uv.push(...P.uv); for (const q of idx) FI.push(q + base); base += P.pos.length / 3; g.dispose(); });
+      const g = new THREE.BufferGeometry(); for (const [k, n] of [['position', 3], ['normal', 3], ['color', 3], ['uv', 2]]) g.setAttribute(k, new THREE.Float32BufferAttribute(FA[k], n)); g.setIndex(FI);
       (B.get('cliff') || B.set('cliff', []).get('cliff')).push(g);
       // the rim: rows from its back (a skirt 0.8 m down) to the brink, 1 m along x and 3 m across; its height read back by the walk (capAt)
       const NC = 5, CX = 2 * XS, CG = new Float32Array((CX + 1) * (K.CAPW + 1)), rp = [], ri = [];
@@ -8541,8 +8555,13 @@ function aurenneOrrery(hAt, o = {}) {
       capAt = (x, z) => { if (Math.abs(x) > XS) return null; const e = L.edge(x), d = z - e; if (d < -.3 || d > K.CAPW) return null; const f = x + XS, i = Math.min(CX - 1, Math.floor(f)), u = f - i, k = Math.max(0, Math.min(K.CAPW, d)), k0 = Math.min(K.CAPW - 1, Math.floor(k)), v = k - k0, R = K.CAPW + 1;
         return (CG[i * R + k0] * (1 - u) + CG[(i + 1) * R + k0] * u) * (1 - v) + (CG[i * R + k0 + 1] * (1 - u) + CG[(i + 1) * R + k0 + 1] * u) * v; };
       for (let i = 0; i <= CX; i++) { const x = -XS + i, e = L.edge(x), cy = k => CG[i * (K.CAPW + 1) + Math.min(K.CAPW, Math.round(k))];
-        rp.push(x, cy(K.CAPW) - .8, e + K.CAPW); for (let c = 0; c <= NC; c++) { const k = K.CAPW * (1 - c / NC); rp.push(x, cy(k), c === NC ? e - .3 : e + k); } }
-      const RW = NC + 2; for (let i = 0; i < CX; i++) for (let c = 0; c < RW - 1; c++) { const a = i * RW + c, b = a + RW; ri.push(a, b, b + 1, a, b + 1, a + 1); }
+        rp.push(x, cy(K.CAPW) - .8, e + K.CAPW); for (let c = 0; c <= NC; c++) { const k = K.CAPW * (1 - c / NC); rp.push(x, cy(k), c === NC ? e + .35 : e + k); }
+        /* Session 2577 (the critic's "no lip", s1889): the bed ran flat to the brink and met the face's top row there. Now the top bed ends
+           in a lip: its edge rounded off over 0.35 m, its front a 0.45 to 0.8 m thickness of the bed standing 0.3 to 1.0 m out over the
+           face, its underside back into the rock; where a block has gone (a third of the brink) it stands only 0.3 m out */
+        const c0 = cy(0), ov = .3 + .7 * sstep(.38, .55, fbm(x / 23 + 5.1, 2.3, 2)), th = .45 + .35 * fbm(x / 11 + 1.7, 7.9, 2);
+        rp.push(x, c0 - .06, e - ov * .7, x, c0 - .2, e - ov, x, c0 - th, e - ov, x, c0 - th - .2, e - .2); }
+      const RW = NC + 6; for (let i = 0; i < CX; i++) for (let c = 0; c < RW - 1; c++) { const a = i * RW + c, b = a + RW; ri.push(a, b, b + 1, a, b + 1, a + 1); }
       const cg = new THREE.BufferGeometry(); cg.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); cg.setIndex(ri); put('slab', cg);
       face = { top: +hi.toFixed(2), foot: +lo.toFixed(2), out: +out.toFixed(2), len: +U[NXF].toFixed(1), stretches: FACE.length }; }
     if (!_swMats) {
