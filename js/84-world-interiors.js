@@ -376,7 +376,10 @@
   // (goToInterior) and after a fitting goes in or out (homeFit, homeUnfit). New look only.
   // S2147 — the clay oven and the kiln (PKIT.props.clay, 38-kit.js, by the house's island) stand by a wall as the bench does, after it, each
   // clear of the fittings already laid; the kiln, the larger, last. A room with no free wall for one keeps the fallback for it.
-  const HOMEFIT_LAY={bench:homeBenchLay,oven:h=>homeClayLay(h,'oven'),kiln:h=>homeClayLay(h,'kiln')};
+  // S2565 — the still (PKIT.props.still: a furnace, the copper pot and helm, the worm tub and its jug; the systems builder's S2560), laid as
+  // the clay fittings are and last, the largest of them; its fire door glows by the embers' own colour (no light: a light more recompiles the
+  // room's programs). Its spot is where you stand to distil.
+  const HOMEFIT_LAY={bench:homeBenchLay,oven:h=>homeClayLay(h,'oven'),kiln:h=>homeClayLay(h,'kiln'),still:h=>homeClayLay(h,'still')};
   function homeFitsDress(h){if(window.OG_LOOK!=='new'||!h||typeof homeMine!=='function'||!homeMine(h))return;
     try{homeYardRacks(h);}catch(e){console.warn('home racks',e);}
     if(typeof isInterior!=='function'||!isInterior()||currentHouse!==h||!interiorScene)return;
@@ -490,12 +493,13 @@
     B.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(B.group);
     const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:B.top,homeFit:'bench'});FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:B.top,homeFit:'bench'});
     h._fits.bench={x:+sp.front[0].toFixed(3),z:+sp.front[1].toFixed(3)};}
-  function homeClayLay(h,kind){if(typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.clay)return;let isle='gatelands';try{isle=nationAt(h.doorX,h.doorZ)||'gatelands';}catch(e){}
-    let P=null,sp=null;for(const small of [false,true]){P=PKIT.props.clay(kind,isle,{small});const f=P.foot;sp=homeWallSpot(h,f.x1-f.x0,f.z1-f.z0,.8,homeWallWhole);if(sp)break; /* a full room takes the small one */
+  function homeClayLay(h,kind){if(typeof PKIT==='undefined'||!PKIT.props||!PKIT.props[kind==='still'?'still':'clay'])return;let isle='gatelands';try{isle=nationAt(h.doorX,h.doorZ)||'gatelands';}catch(e){}
+    let P=null,sp=null;for(const small of [false,true]){P=kind==='still'?PKIT.props.still(isle,{small}):PKIT.props.clay(kind,isle,{small});const f=P.foot;sp=homeWallSpot(h,f.x1-f.x0,f.z1-f.z0,.8,homeWallWhole);if(sp)break; /* a full room takes the small one */
       P.group.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
     if(!sp)return;const cx=(P.foot.x0+P.foot.x1)/2;
     for(const c of P.group.children)c.position.x-=cx; /* the spot is the foot's middle; the kiln's pots stand off its own */
     P.group.position.set(sp.x,0,sp.z);P.group.rotation.y=sp.ry;P.group.userData.homeFit=kind;P.group.userData.kit={tris:P.tris,draws:P.draws,island:isle,small:P.foot.x1-P.foot.x0<(kind==='oven'?.9:1)};
+    if(kind==='still')P.group.userData.kit.small=P.foot.x1-P.foot.x0<1.1; /* the still's: 1.28 m, the small 1.04 */
     P.group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(P.group);
     const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:P.top,homeFit:kind});FOOTHOLDS.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y:P.top,homeFit:kind});
     h._fits[kind]={x:+sp.front[0].toFixed(3),z:+sp.front[1].toFixed(3)};}
