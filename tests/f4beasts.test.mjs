@@ -67,8 +67,8 @@ const trot = await page.evaluate(() => { const f = _W[1], e = f.e, rig = f.rig, 
   // against the ground the driver was set on (e.mesh's own height): on CI's runner that sat ~0.6 m off worldH at this spot (S1251)
   const toes = ['leg0L_3', 'leg0R_3', 'leg1L_3', 'leg1R_3'].map(n => +(by[n].getWorldPosition(new THREE.Vector3()).y - e.mesh.position.y).toFixed(3));
   // Session 2556: the hide's lowest point standing, against the same ground (the kit's soles: the paw's flesh lifted off its bones by its radius)
-  const hide = rig.hc.C.meshes[0], hp = hide.geometry.attributes.position, hv = new THREE.Vector3(); let sole = 1e9; hide.updateMatrixWorld(true);
-  for (let i = 0; i < hp.count; i++) { hv.fromBufferAttribute(hp, i); hide.applyBoneTransform(i, hv); hv.applyMatrix4(hide.matrixWorld); sole = Math.min(sole, hv.y - e.mesh.position.y); }
+  const hide = rig.hc.C.meshes[0], hp = hide.geometry.attributes.position, hv = new THREE.Vector3(); let sole = 1e9; /* the kit's meshes bind 'detached' with identity bind matrices: the bones' matrices are the world's already */
+  for (let i = 0; i < hp.count; i++) { hv.fromBufferAttribute(hp, i); hide.applyBoneTransform(i, hv); sole = Math.min(sole, hv.y - e.mesh.position.y); }
   for (let i = 0; i < 40; i++) { e.x += dx * .05; e.z += dz * .05; e.mesh.position.set(e.x, WORLD.worldH(e.x, e.z), e.z); tickCreatures(1 / 60, 4e5 + i * 16.7); rig.hc.C.skel.update();
     if (i > 20) { rig.root.parent.updateMatrixWorld(true); for (const [d, k] of [['pfL', 'leg0L_2'], ['phR', 'leg1R_2']]) { const p = rig.B[d].getWorldPosition(new THREE.Vector3()), q = by[k].getWorldPosition(new THREE.Vector3()); worst = Math.max(worst, p.distanceTo(q)); dy = Math.max(dy, Math.abs(p.y - q.y)); }
       for (const L of rig.hc.ik || []) bend = Math.max(bend, Math.abs(L.end.getWorldPosition(new THREE.Vector3()).y - rig.B[L.d].getWorldPosition(new THREE.Vector3()).y - L.oy)); } }
