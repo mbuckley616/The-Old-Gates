@@ -3,16 +3,29 @@
 // seed 1 the search finds no Mark fell clear of the world for it (the two that hold it hold the Skyfall Fields and the Northlight Altar;
 // DECISION, Session 2524), so the suite measures one placing with wonderFrostAt (the Fields' fell, the Fields taken away) and builds it
 // there: the ground cut and met, the far sheet under it, the decks, the ice and the solids, then dropped from 2.5 km.
+// Session 2574 (Michael's A on #1892: the vault takes the Fields' fell, the Fields move): the search finds that placing itself, at (9575, 7425)
+// with the gorge south; the road over the gorge's tail is not cut (the cut runs out short of it), and the suite builds the search's placing.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
 const s0 = await page.evaluate(() => { const t0 = performance.now(), a = wonderFrostSite(), ms = Math.round(performance.now() - t0); WONDERS.frostborn.site = undefined; const b = wonderFrostSite();
   return { ms, same: JSON.stringify(a) === JSON.stringify(b), found: !!a }; });
 console.log(JSON.stringify(s0));
-check(`the search over the Mark's fells answers the same twice (${s0.ms} ms; a placing ${s0.found ? 'found' : 'not found on this seed'})`, s0.same, s0);
-const st = await page.evaluate(() => { const F = WONDERS.skyfall; if (F.W) wonderSkyfallDrop(); F.site = null; const s = wonderFrostAt(9575, 7425, 0); WONDERS.frostborn.site = s; if (!s) return null; const { base, ...r } = s; r.nb = base.length; return r; });
+check(`the search over the Mark's fells answers the same twice (${s0.ms} ms), and finds a placing`, s0.same && s0.found, s0);
+const st = await page.evaluate(() => { const s = wonderFrostSite(); if (!s) return null; const { base, ...r } = s; r.nb = base.length; return r; });
 console.log(JSON.stringify(st));
-check(`one placing measured: pads within ${st && st.spread} m, the datum ${st && st.y} m up, the cut run out ${st && st.dl} m down the gorge, the cliff's foot read every 2 m`, !!st && st.spread <= 44 && st.y >= 95 && st.dl >= 250 && st.nb === 401, st);
+check(`the placing is the Fields' old fell (${st && st.x}, ${st && st.z}): pads within ${st && st.spread} m, the datum ${st && st.y} m up, the cut run out ${st && st.dl} m down the gorge, the cliff's foot read every 2 m`,
+  !!st && Math.hypot(st.x - 9575, st.z - 7425) < 120 && st.spread <= 44 && st.y >= 95 && st.dl >= 250 && st.nb === 401, st);
+/* no road's ground is moved more than 2 m by the cut, and the Fields stand clear of the vault's ground */
+const rd0 = await page.evaluate(() => { const s = WONDERS.frostborn.site, L = PKIT.wonders.frostbornLand({ dl: s.dl, base: s.base }), cc = Math.cos(s.ry), ss = Math.sin(s.ry), toL = (X, Z) => { const dx = X - s.x, dz = Z - s.z; return [dx * cc - dz * ss, dx * ss + dz * cc]; };
+  const all = [...CELLS.values()], sites = all.flatMap(c => c.sites), byId = {}; sites.forEach(t => { byId[t.id] = t; });
+  let worst = 0, n = 0; for (const d of all.flatMap(c => c.roadDefs || [])) { const p = byId[d.a], r = byId[d.b]; if (!p || !r) continue; const k1 = Math.ceil(Math.hypot(r.x - p.x, r.z - p.z) / 10);
+    for (let k = 0; k <= k1; k++) { const X = p.x + (r.x - p.x) * k / k1, Z = p.z + (r.z - p.z) * k / k1, [lx, lz] = toL(X, Z); if (!L.inside(lx, lz)) continue; n++; const h0 = rawH(X, Z) - s.y; worst = Math.max(worst, Math.abs(L.ground(lx, lz, h0) - h0)); } }
+  const f = wonderSkyfallSite(), [flx, flz] = f ? toL(f.x, f.z) : [0, 0];
+  return { worst: +worst.toFixed(2), n, fields: f && { x: f.x, z: f.z, nation: nationKeyOf(...cellOf(f.x, f.z)), inShape: L.inside(flx, flz), d: Math.round(Math.hypot(f.x - s.x, f.z - s.z)) } }; });
+console.log(JSON.stringify(rd0));
+check(`no road's ground is moved 2 m by the cut (${rd0.n} road points in its shape, worst ${rd0.worst} m)`, rd0.worst <= 2, rd0);
+check(`the Skyfall Fields have moved to another Mark place, ${rd0.fields && rd0.fields.d} m from the vault`, !!rd0.fields && rd0.fields.nation === 'mark' && !rd0.fields.inShape && rd0.fields.d > 1000, rd0);
 const at = await page.evaluate(s => { const [x, z] = wonderToWorld(s, 0, -40); return { x, z }; }, st);
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), at);
 await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [at.x, at.z], { timeout: 90000 });

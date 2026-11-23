@@ -3536,7 +3536,19 @@
   // When it stands (within 1.6 km, in the open world) every stone has a stamp that only clears the scatter under it (noFlat: the
   // ground is not flattened), the walls' standing courses are solids, and from 20h to 5h the stones drift and the seams burn.
   const WONDERS={skyfall:{site:undefined,W:null,stamps:null,sol:[]},orrery:{site:undefined,W:null,stamps:null,sol:[],plats:[]},lough:{site:undefined,W:null,stamps:null,sol:[],plats:[]},ring:{site:undefined,W:null,stamps:null,sol:[],plats:[]},northlight:{site:undefined,W:null,stamps:null,sol:[],plats:[]},spires:{site:undefined,W:null,stamps:null,sol:[],plats:[]},scarred:{site:undefined,W:null,stamps:null,sol:[],plats:[]},isles:{site:undefined,W:null,sol:[],plats:[]},aqueducts:{site:undefined,W:null,stamp:null,stamps:null,sol:[],plats:[]},frostborn:{site:undefined,W:null,stamp:null,stamps:null,land:null,sol:[],plats:[]},stormwatch:{site:undefined,W:null,stamp:null,stamps:null,sol:[],plats:[]},near:1600,_t:0};
+  // S2574 — Michael's A on #1892: the Frostborn Vault takes the Fields' fell and the Fields move. skyfallFell() is the search as it was
+  // (the fell the Fields would take alone, cached): the Northlight Altar keeps 1.2 km off it as before, so the Altar stands where it stood.
+  // The vault's search leaves the Fields out; then the Fields' own search (wonderSkyfallSite) keeps the field's middle 450 m clear of the
+  // vault's ground (its box, as the vault keeps the others 300 m clear, plus half the field) and 1.2 km off the Altar, as the Altar was of them.
+  function skyfallFell(){const S=WONDERS.skyfall;if(S.fell===undefined)S.fell=skyfallSearch(null);return S.fell;}
   function wonderSkyfallSite(){const S=WONDERS.skyfall;if(S.site!==undefined)return S.site;S.site=null;
+    const fb=typeof wonderFrostSite==='function'?wonderFrostSite():null,nl=typeof wonderNorthSite==='function'?wonderNorthSite():null;
+    let fbIn=null;if(fb&&typeof PKIT!=="undefined"&&PKIT.wonders&&PKIT.wonders.frostbornLand){const L0=PKIT.wonders.frostbornLand(),XL=L0.consts.XL,z0=L0.box.z0,cc=Math.cos(fb.ry),ss=Math.sin(fb.ry);
+      fbIn=(X,Z,mg)=>{const dx=X-fb.x,dz=Z-fb.z,lx=dx*cc-dz*ss,lz=dx*ss+dz*cc;return lx>-XL-mg&&lx<XL+mg&&lz>z0-mg&&lz<fb.dl+110+mg;};}
+    const avoid=(x,z)=>(fbIn&&fbIn(x,z,450))||(nl&&Math.hypot(nl.x-x,nl.z-z)<1200);
+    let st=null;for(let mf=30;mf<=50&&!st;mf+=5)st=skyfallSearch(avoid,mf); /* the 30 m field's fall first; on seed 1 only the vault's fell meets it, so the next best falls more (the stones hang over it, nothing is levelled) */
+    return (S.site=st);}
+  function skyfallSearch(avoid,maxFall=30){
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
     const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=mark.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
@@ -3549,14 +3561,15 @@
     const wet=(x,z)=>rawH(x,z)<landH(x,z)-1.5||rawH(x,z)<SEA_Y+2;let best=null;
     try{
     for(const c of mark)for(let a=50;a<SIZE;a+=100)for(let b=50;b<SIZE;b+=100){const x=c.i*SIZE+a,z=c.j*SIZE+b,h=rawH(x,z);if(h<snowLineAt(x,z)+22||wet(x,z))continue; /* the snow lies whole 20 m over the line (groundColor) */
+      if(avoid&&avoid(x,z))continue;
       if(sites.some(s=>Math.hypot(s.x-x,s.z-z)<260+(s.pad||0))||doors.some(d=>Math.hypot(d.x-x,d.z-z)<250)||roads.some(([p,q])=>segD(p,q,x,z)<180))continue;
       for(let k=0;k<4;k++){const t=k*Math.PI/4,ux=Math.sin(t),uz=Math.cos(t),vx=uz,vz=-ux;let lo=1e9,hi=-1e9,ok=true;
         for(let s_=-150;s_<=150&&ok;s_+=50)for(const q of [-65,0,65]){const X=x+ux*s_+vx*q,Z=z+uz*s_+vz*q;if(wet(X,Z)){ok=false;break;}const y=rawH(X,Z);lo=Math.min(lo,y);hi=Math.max(hi,y);}
-        if(!ok||hi-lo>30)continue;
+        if(!ok||hi-lo>maxFall)continue;
         let side=1e9;for(const sd of [-1,1])for(let s_=-100;s_<=100;s_+=50)side=Math.min(side,rawH(x+ux*s_+vx*160*sd,z+uz*s_+vz*160*sd)-rawH(x+ux*s_,z+uz*s_));
         const score=-(hi-lo)+.3*Math.max(-20,Math.min(30,side));if(!best||score>best.score)best={x,z,ry:t,h:+h.toFixed(1),fall:+(hi-lo).toFixed(1),side:+side.toFixed(1),score:+score.toFixed(1),cell:cellKey(c.i,c.j)};}}
     }finally{REGIONS.length=0;PEAKS.length=0;INLETS.length=0;keep[0].forEach(q=>REGIONS.push(q));keep[1].forEach(q=>PEAKS.push(q));keep[2].forEach(q=>INLETS.push(q));}
-    return (S.site=best);}
+    return best;}
   // which of the nine cells round the site stand loaded: the ground under the field is the loaded cells' (regions, peaks), so the
   // stones are hung again whenever this changes
   function wonderCellSig(st){const [ci,cj]=cellOf(st.x,st.z);let sg='';for(let j=cj-1;j<=cj+1;j++)for(let i=ci-1;i<=ci+1;i++){const L=LOADED.get(cellKey(i,j));sg+=L&&!L.pending?'1':'0';}return sg;}
@@ -3756,7 +3769,7 @@
   function wonderNorthSite(){const S=WONDERS.northlight;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function')return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
-    const fields=wonderSkyfallSite();
+    const fields=skyfallFell(); /* S2574: the fell the Fields would take alone (the vault's now), so the Altar stands where it stood */
     const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
     const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
     const segD=(a,b,x,z)=>{const dx=b.x-a.x,dz=b.z-a.z,L=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/L));return Math.hypot(a.x+dx*t-x,a.z+dz*t-z);};
@@ -4086,7 +4099,7 @@
   function wonderFrostSite(){const S=WONDERS.frostborn;if(S.site!==undefined)return S.site;S.site=null;
     if(typeof nationKeyOf!=='function'||typeof PKIT==='undefined'||!PKIT.wonders||!PKIT.wonders.frostbornLand)return null;landmassOf(0,0);for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++)getCell(i,j);
     const all=[...CELLS.values()],mark=all.filter(c=>c.type!=='sea'&&nationKeyOf(c.i,c.j)==='mark');if(!mark.length)return null;
-    const others=[wonderSkyfallSite(),wonderNorthSite()].filter(Boolean);
+    const others=[wonderNorthSite()].filter(Boolean); /* S2574: not the Fields (#1892 A: the vault takes their fell; they keep clear of it) */
     const sites=all.flatMap(c=>c.sites),byId={};sites.forEach(t=>{byId[t.id]=t;});const doors=all.flatMap(c=>c.doors||[]).filter(d=>d.x!=null);
     const roads=all.flatMap(c=>c.roadDefs||[]).map(d=>[byId[d.a],byId[d.b]]).filter(([a,b])=>a&&b);
     const L0=PKIT.wonders.frostbornLand(),C=L0.consts,F=L0.F;
@@ -4099,8 +4112,20 @@
           const toL=(X,Z)=>{const dx=X-x,dz=Z-z;return [dx*cc-dz*ss,dx*ss+dz*cc];},inBox=(X,Z,mg)=>{const [lx,lz]=toL(X,Z);return lx>-C.XL-mg&&lx<C.XL+mg&&lz>L0.box.z0-mg&&lz<dl+110+mg;};
           if(others.some(w=>inBox(w.x,w.z,300)))continue; /* the other wonders' ground 300 m clear of the vault's */
           let dry=true;for(const [lx,lz] of [...FB_PADS,[0,-300],[-90,-300],[90,-300],[0,-150],[0,0],[-90,100],[90,100],[0,-420]])if(wet(...W(lx,lz))){dry=false;break;}if(!dry)continue;
-          /* nothing of the world's in the vault's ground: no site within 120 m past its pad, no door within 60 m, no road within 50 m */
-          if(cs.some(t=>inBox(t.x,t.z,120+(t.pad||0)))||cd.some(d=>inBox(d.x,d.z,60))||cr.some(([p,r])=>{const n=Math.ceil(Math.hypot(r.x-p.x,r.z-p.z)/20);for(let k=0;k<=n;k++)if(inBox(p.x+(r.x-p.x)*k/n,p.z+(r.z-p.z)*k/n,50))return true;return false;}))continue;
+          /* nothing of the world's in the vault's ground (S2574: the ground it changes, its shape, not its box; on seed 1 the box's margins held a
+             village and an outpost past its corners and a fort's door 140 m off the gorge, whose ground it leaves to the millimetre): no site's pad
+             within 40 m of the shape, no door within 40 m, and no road where the cut moves the ground 2 m (a road may cross the gorge's tail where
+             it runs out), nor in the cliff's ground at all */
+          const near=cs.filter(t=>t.kind!=='portal'&&inBox(t.x,t.z,40+(t.pad||0))),nd=cd.filter(d=>inBox(d.x,d.z,40)),nr=cr.filter(([p,r])=>{const n=Math.ceil(Math.hypot(r.x-p.x,r.z-p.z)/20);for(let k=0;k<=n;k++)if(inBox(p.x+(r.x-p.x)*k/n,p.z+(r.z-p.z)*k/n,0))return true;return false;});
+          if(near.length||nd.length||nr.length){const Lc=PKIT.wonders.frostbornLand({dl}),inS=(X,Z,mg)=>{const [lx,lz]=toL(X,Z);if(Lc.inside(lx,lz))return true;if(!mg)return false;
+              for(let k=0;k<8;k++){const a=k*Math.PI/4;if(Lc.inside(lx+Math.sin(a)*mg,lz+Math.cos(a)*mg))return true;}return false;};
+            if(near.some(t=>inS(t.x,t.z,40+(t.pad||0)))||nd.some(d=>inS(d.x,d.z,40)))continue;
+            /* a road over the cut: the least lz where it moves the road's ground 2 m (-1: in the cliff's ground), or null */
+            const cut=La=>{let lo=null;for(const [p,r] of nr){const n=Math.ceil(Math.hypot(r.x-p.x,r.z-p.z)/20);for(let k=0;k<=n;k++){const X=p.x+(r.x-p.x)*k/n,Z=p.z+(r.z-p.z)*k/n,[lx,lz]=toL(X,Z);if(!La.inside(lx,lz))continue;
+                if(lz<=La.zh(lx)+12)return -1;const h0=rawH(X,Z)-m.y;if(Math.abs(La.ground(lx,lz,h0)-h0)>2)lo=lo==null?lz:Math.min(lo,lz);}}return lo;};
+            /* where a road crosses the gorge's tail (seed 1: the Fields' fell, 430 m down), the cut runs out short of it: its 100 m blend back to the
+               fell ends 10 m before the road, so the floor climbs to the road (a way down into the gorge) and does not cut a trench through it */
+            const c0=cut(Lc);if(c0!=null){if(c0<0)continue;const d2=Math.floor((c0-110)/25)*25;if(d2<250||d2>=dl||cut(PKIT.wonders.frostbornLand({dl:d2}))!=null)continue;m.dl=d2;m.road=true;}}
           best={...m,score:+score.toFixed(2),cell:cellKey(c.i,c.j)};}}}
       if(best)frostBase(best);});
     return (S.site=best);}

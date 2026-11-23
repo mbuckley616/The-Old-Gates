@@ -18,7 +18,9 @@ const s = await page.evaluate(() => { const a = wonderSkyfallSite(); WONDERS.sky
   const [i, j] = cellOf(b.x, b.z); return { ...b, ms, same: JSON.stringify(a) === JSON.stringify(b), nation: nationKeyOf(i, j), snow: b.h - snowLineAt(b.x, b.z), near: Math.round(near) }; });
 console.log(JSON.stringify(s));
 check(`the Skyfall Fields' place is in the Mark, over the snow line (${s.snow.toFixed(1)} m), the same asked twice`, s.nation === 'mark' && s.snow > 22 && s.same, s);
-check(`its field falls ${s.fall} m over 300 by 130 m, and it stands ${s.near} m past the nearest site's pad`, s.fall <= 30 && s.near >= 260, s);
+// Session 2574: the Fields moved off their fell to the Frostborn Vault (#1892 A); their next-best place falls more (the rule loosens 5 m at a time to 50 m
+// when nothing passes at 30; on seed 1 39 m), and it keeps clear of the vault and 1.2 km off the Northlight Altar.
+check(`its field falls ${s.fall} m over 300 by 130 m, and it stands ${s.near} m past the nearest site's pad`, s.fall <= 50 && s.near >= 260, s);
 const at = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 6, -170); return { x, z }; }, s);
 // Session 2564: each jump waits up to 180 s for its fade to lift there, as the Spires' always did (FLAKY on auto/look-2526, 45034030499:
 // the first jump, at 60 s, while the first world frames still compile on CI). The condition is unchanged.
@@ -393,7 +395,8 @@ const wf = await page.evaluate(() => { forceTime(23); const C = WORLD.CHUNK, out
     out[K.k] = { chunks: n, on, off, inRule: wonderFoeClear(G.x, G.z), out: wonderFoeClear(G.x + G.r + 200, G.z) }; }
   forceTime(13); return out; });
 console.log(JSON.stringify(wf));
+// S2574: eleven stand on seed 1, the Frostborn Vault on the Fields' old fell (#1892 A).
 const wk = Object.entries(wf).filter(([, v]) => v), off = wk.reduce((m, [, v]) => m + v.off, 0);
-check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 10 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
+check(`no chunk foe spawns on any of the ${wk.length} wonders' ground (${wk.map(([k, v]) => `${k} ${v.on} of ${v.chunks} chunks`).join(', ')}; ${off} without the rule)`, wk.length === 11 && wk.every(([, v]) => v.on === 0 && v.inRule && !v.out && v.chunks > 0), wf);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
