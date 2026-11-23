@@ -20,7 +20,7 @@ console.log(JSON.stringify(s));
 check(`the Skyfall Fields' place is in the Mark, over the snow line (${s.snow.toFixed(1)} m), the same asked twice`, s.nation === 'mark' && s.snow > 22 && s.same, s);
 check(`its field falls ${s.fall} m over 300 by 130 m, and it stands ${s.near} m past the nearest site's pad`, s.fall <= 30 && s.near >= 260, s);
 const at = await page.evaluate((s) => { const [x, z] = wonderToWorld(s, 6, -170); return { x, z }; }, s);
-// Session 2561: each jump waits up to 180 s for its fade to lift there, as the Spires' always did (FLAKY on auto/look-2526, 45034030499:
+// Session 2564: each jump waits up to 180 s for its fade to lift there, as the Spires' always did (FLAKY on auto/look-2526, 45034030499:
 // the first jump, at 60 s, while the first world frames still compile on CI). The condition is unchanged.
 await page.evaluate(({ x, z }) => goToZone('world', x, z, 0, 'x'), at);
 await page.waitForFunction(([x, z]) => document.getElementById('fd').style.opacity === '0' && activeZoneId === 'world' && Math.hypot(px - x, pz - z) < 50, [at.x, at.z], { timeout: 180000 });

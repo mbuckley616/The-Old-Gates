@@ -5,7 +5,7 @@
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await page.evaluate(() => { try { localStorage.removeItem('og.settings'); } catch (e) {} });
-// Session 2561: the suite runs at Low, as `saveui` and `export` do (S2350, S2377). At Middle a world frame holds the page's thread
+// Session 2563: the suite runs at Low, as `saveui` and `export` do (S2350, S2377). At Middle a world frame holds the page's thread
 // 8–11 s on SwiftShader: the weekly run of 22 Nov lost its first try to a 30 s page.focus behind those frames, and here the suite
 // reached run.mjs's 900 s cap at the challenge. Low is what the game's first-run probe sets on a machine this slow. No check reads
 // the quality, and As they were puts it back to the default as before.
@@ -19,7 +19,7 @@ await page.evaluate(() => { _questPopupOpen = false; document.getElementById('g'
 // to ask for the pointer back.
 await page.evaluate(() => { window._lockAsks = 0; CV.requestPointerLock = () => { _lockAsks++; return Promise.resolve(); }; });
 await g.frames(2);
-// Session 2561: the canvas is focused from inside the page. page.focus waits at most 30 s for the page to answer, and on CI a frame
+// Session 2563: the canvas is focused from inside the page. page.focus waits at most 30 s for the page to answer, and on CI a frame
 // of Dunmore's builder queue can hold it longer (the weekly run of 22 Nov, 45028889995: *page.focus: Timeout 30000ms exceeded*);
 // an evaluate waits for the page however long its frame takes.
 const focusG = () => page.evaluate(() => document.getElementById('g').focus());
