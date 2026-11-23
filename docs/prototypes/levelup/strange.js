@@ -312,3 +312,6 @@ export function portrait() {
   for (const [w, h, x, y] of [[.72, .05, 0, .43], [.72, .05, 0, -.43], [.05, .9, .335, 0], [.05, .9, -.335, 0]]) { const f = box(w, h, .035, gilt); f.position.set(x, 1.27 + y * Math.cos(.08), .065 - y * Math.sin(.08)); f.rotation.x = -.08; g.add(f); }
   let n = 0; g.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; n += tris(o.geometry); } }); g.userData.tris = Math.round(n); return g;
 }
+
+// the helpers, for the second run's kit (strange2.js, 23 Nov 2026)
+export { stuck, patch, patchTex, skinMatrix, boneMatrix, bodyOf, meshNamed, ready, kOf, bindPos, landmarks, M_, lin, canvasTex, rng, mergeGeos, ivyTex, ivyLeaf };
