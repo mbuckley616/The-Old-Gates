@@ -58,6 +58,13 @@ const reach = await page.evaluate(() => { const R = PW.RUN; let worst = 0, low =
   return { worstReach: +worst.toFixed(3), lowHips: +(low / stand).toFixed(3), heel: +heel.toFixed(2), heelMax: R.HEEL }; });
 check('the standing leg is never stretched past its length', reach.worstReach < 1, reach);
 check(`running, the pelvis never sinks under 85% of its standing height (the lowest ${reach.lowHips}; S162's run sat at 74%), the heel up at most ${reach.heel} rad to push off`, reach.lowHips > .85 && reach.heel <= reach.heelMax + 1e-6, reach);
+// S2566: a jog, not a crouch or a sprinter's high knee: the standing knee bends at most 50° (it was 64°), and through the swing the thigh
+// comes at most 45° forward (59°) and the knee folds at most 100° (120°); the landing is on a flat foot with the knee a little bent
+const legs = await page.evaluate(() => { const D = PW.RUN.DUTY; let st = 0, th = 0, sw = 0; const p0 = pwRun(0, {});
+  for (let k = 0; k < 400; k++) { const ph = k / 400, p = pwRun(ph, {}); if (ph < D) st = Math.max(st, p.knL[0]); else { th = Math.max(th, -p.thL[0]); sw = Math.max(sw, p.knL[0]); } }
+  const d = x => Math.round(x * 180 / Math.PI); return { stanceKnee: d(st), swingThigh: d(th), swingKnee: d(sw), landKnee: d(p0.knL[0]), landHeel: d(p0.heelL || 0) }; });
+check(`running, the standing knee bends at most 50° (${legs.stanceKnee}°), the swing's thigh comes at most 45° forward (${legs.swingThigh}°) and its knee folds at most 100° (${legs.swingKnee}°)`,
+  legs.stanceKnee <= 50 && legs.swingThigh <= 45 && legs.swingKnee <= 100 && legs.landKnee >= 10 && legs.landHeel <= 5, legs);
 
 // the player at their own walking speed (3.83 a second) now runs, feet planted, at a human cadence
 const pl = await page.evaluate(() => { thirdPerson = true; const st = m => ({ moving: m, sprinting: false, camY: 1.6, now: performance.now() });
