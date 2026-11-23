@@ -177,6 +177,9 @@ P.tail = (B, o) => {
 };
 // legs, in pairs. A leg is its preset's joints in a frame of its own: x outward, y up as a fraction of the root's height,
 // z forward; `fan` turns the frame toward the front (an insect's legs splay), `reach` stretches it sideways and fore-and-aft.
+// the sole's lift as a share of the foot's radius (Session 2556): grown flesh its whole radius; a bare body draws its bones thinner
+// than the capsule (half), and dressed stone's blocks a little short of it
+const SOLE = { k: 1, bare: .5, blocks: .8, taper: .35 };
 const LEG = {
   // ik: the two segments the solver bends; before them, segments are yawed toward the foot (yaw) or held; after them, held
   canidFore: { j: [[0, 1, 0], [0, .6, -.13], [0, .24, -.04], [0, .07, .02], [0, 0, .08]], ik: 0, r: [.11, .065, .045, .04] },
@@ -202,11 +205,16 @@ P.legs = (B, o) => {
     const J = pre.j.map(([x, y, z]) => V(root.x, y * hR, root.z).addScaledVector(u, x * hR * reach).addScaledVector(f, z * hR * reach));
     const tag = 'leg' + pair + (side > 0 ? 'L' : 'R'), names = B.chain(tag + '_', sp.bone, J);
     const rr = o.r || pre.r.map(v => v * hR);
-    for (let k = 0; k < J.length - 1; k++) B.meat(names[k], J[k], J[k + 1], along(rr, k / (J.length - 1)), along(rr, (k + 1) / (J.length - 1)), { group: tag, tone: k >= J.length - 2 && pre.tips ? pre.tips : (pre.bare ? 'skin' : o.tone) });
-    if (o.claws) { const tip = J[J.length - 1], d = J[J.length - 1].clone().sub(J[J.length - 2]).normalize(); d.y = Math.min(d.y, -.3); d.normalize();
+    // the sole (Session 2556): the joints are laid with the leg's tip at y 0 and the flesh centred on them, so a foot stood in the ground
+    // by its own radius (a troll's 14 cm, a bear's 11, a horse's 6). The flesh, and the claws and thorns on it, are lifted off the bones by
+    // the tip's radius, all of it at the tip and tapering to nothing a third of the way up the leg (`SOLE.taper`: the shin a sitter lays on
+    // the ground keeps its place); the bones, the gait's targets and the game's feet stay
+    const bare = B.plan.bare, rTip = along(rr, 1) * B.g.sliders.bulk * (bare ? (bare.blocks ? SOLE.blocks : SOLE.bare) : SOLE.k), up = p => p.clone().add(V(0, rTip * Math.max(0, Math.min(1, 1 - p.y / (SOLE.taper * hR))), 0)), Jf = J.map(up);
+    for (let k = 0; k < J.length - 1; k++) B.meat(names[k], Jf[k], Jf[k + 1], along(rr, k / (J.length - 1)), along(rr, (k + 1) / (J.length - 1)), { group: tag, tone: k >= J.length - 2 && pre.tips ? pre.tips : (pre.bare ? 'skin' : o.tone) });
+    if (o.claws) { const tip = Jf[J.length - 1], d = J[J.length - 1].clone().sub(J[J.length - 2]).normalize(); d.y = Math.min(d.y, -.3); d.normalize();
       for (let c = -1; c <= 1; c++) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len, B.tone('dark'), tip.clone().add(V(c * o.claws.r * 2.2, o.claws.r * .8, 0)), d.clone().add(V(c * .15, 0, 0)).normalize(), o.claws.hook));
       // a hind toe (Session 960, the griffin's talons): a fourth claw from the back of the foot, pointing back and down
-      if (o.claws.back) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len * o.claws.back, B.tone('dark'), J[J.length - 2].clone().lerp(tip, .3).add(V(0, o.claws.r * .5, 0)), V(0, -.45, -1).normalize(), o.claws.hook)); }
+      if (o.claws.back) B.bit(names[J.length - 1], claw(o.claws.r, o.claws.len * o.claws.back, B.tone('dark'), Jf[J.length - 2].clone().lerp(tip, .3).add(V(0, o.claws.r * .5, 0)), V(0, -.45, -1).normalize(), o.claws.hook)); }
     // thorns (Session 929, OG-041's spider): short dark spines up every segment past the hip, on its upper and outer faces, raked
     // toward the foot. One merged mesh a segment, rigid on its bone; `per` is thorns a metre of leg
     if (o.thorns) { const r2 = rng(B.g.seed + 31 + B.legs.length), th = o.thorns;
@@ -215,7 +223,7 @@ P.legs = (B, o) => {
         const n = Math.max(1, Math.round(Ls * th.per));
         for (let i = 0; i < n; i++) { const t = (i + .5 + (r2() - .5) * .5) / n, rad = along(rr, (k + t) / (J.length - 1)) * B.g.sliders.bulk, o2 = out.clone().applyAxisAngle(d, (r2() - .5) * 1.6);
           const len = th.len * (.7 + .6 * r2()) * (1 - .35 * (k - 1) / Math.max(1, J.length - 3)), g = new THREE.ConeGeometry(th.r, len, 5); g.translate(0, len / 2, 0);
-          g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, o2.clone().addScaledVector(d, th.rake ?? .7).normalize())); const p = a.clone().addScaledVector(d, Ls * t).addScaledVector(o2, rad * .85); g.translate(p.x, p.y, p.z); gs.push(g.toNonIndexed()); }
+          g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(UP, o2.clone().addScaledVector(d, th.rake ?? .7).normalize())); const p = up(a.clone().addScaledVector(d, Ls * t)).addScaledVector(o2, rad * .85); g.translate(p.x, p.y, p.z); gs.push(g.toNonIndexed()); }
         const m = new THREE.Mesh(mergeGeometries(gs), stdMat(B.tone(th.tone || 'dark'), { rough: .45 })); m.name = 'thorns'; B.bit(names[k], m); B.thorns = (B.thorns || 0) + n; } }
     B.legs.push({ names, J, side, at: o.at, pre, hR, ik: pre.ik, yaw: !!pre.yaw, fan, wobble: o.wobble || 0 });
   }
