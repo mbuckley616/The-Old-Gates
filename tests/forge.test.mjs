@@ -7,7 +7,7 @@ import { boot, check } from './lib/game.mjs';
 import { enterDungeon } from './lib/dungeonshot.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
-const r = await page.evaluate(() => {
+const r = await page.evaluate(async () => {
   const out = {};
   BAG.length = 0; gold = 500;
   const S = lv => { SKILLS.smithing = { lv, p: 0 }; };
@@ -84,8 +84,36 @@ const r = await page.evaluate(() => {
   G.townMith = forgeSmelt(5).made; bagAdd(oreItem('obsidian', 2)); G.townObs = forgeSmelt(7).made; G.townSword = forgeMake('Sword', 5).made; bagAdd(oreItem('mithril', 3)); G.townTemper = forgeTemper(mp).done;
   bagAdd(oreItem('obsidian', 2)); bagAdd({ name: 'Dragon Scale', ico: '🔥', type: 'misc', buyPrice: 400, sellMult: .6, weight: .8, dragonScale: true, qty: 1 }); G.townDrac = forgeSmelt(8).why; G.townScale = scaleCount() === 1;
   out.grade = G;
+  // ── S2552: the great forge in a city's keep: favour +2 and no bounty there, 25 gold a use, the forge-master's temper; no salvage in a Prior's town ──
+  const nat = t => nationKeyOf(...cellOf(t.x, t.z)), ALL = allSites();
+  const gl = ALL.find(t => t.kind === 'city' && nat(t) !== 'aurenne') || ALL.find(t => t.kind === 'city'), au = ALL.find(t => t.kind === 'city' && nat(t) === 'aurenne');
+  const GF = { gl: gl && gl.id, au: au && au.id }; worldState.favor = worldState.favor || {}; worldState.crime = worldState.crime || {};
+  const keep = (t, kind) => { currentHouse = { type: 'castle', name: 'The Keep', keeper: '', tagline: '', siteKind: kind || 'city', siteId: t.id }; };
+  if (gl) {
+    BAG.length = 0; gold = 500; S(100); keep(gl, 'town'); worldState.favor[gl.id] = 5; GF.townKeep = forgeHere() || greatForgeKeep();
+    keep(gl); worldState.favor[gl.id] = 1; delete worldState.crime[gl.id];
+    GF.f1 = { keep: greatForgeKeep(), here: forgeHere(), why: greatForgeLeave() }; openForgePage(); GF.f1.open = forgeOpen; GF.f1.msg = MSGEL.textContent; closeForgePage();
+    bagAdd(oreItem('iron', 2)); GF.f1.smelt = forgeSmelt(3).why;
+    const top = lordTopics(gl).find(t => t.label === 'The great forge.'); GF.topic = !!top && top.avail(); GF.topic1 = top && top.fn();
+    worldState.favor[gl.id] = 2; worldState.crime[gl.id] = { bounty: 30 }; GF.bounty = { here: forgeHere(), why: greatForgeLeave(), topic: top && top.fn() };
+    delete worldState.crime[gl.id]; const g1 = gold;
+    GF.f2 = { here: forgeHere(), grade: forgeGrade(), max: forgeMax(), smelt: forgeSmelt(3).made, fee: g1 - gold };
+    const sw = makeItem(8, WEAPON_TYPES.find(T => T.type === 'Sword')); const g2 = gold; const ts = forgeTemper(sw, true); GF.temper = { done: ts.done, paid: g2 - gold, tempers: sw.tempers };
+    GF.topic2 = top && top.fn(); await new Promise(r => setTimeout(r, 250)); const ovK = document.getElementById('forgeui');
+    GF.topicPage = forgeOpen; GF.head = ovK && ovK.querySelector('#fg-skill').textContent; closeForgePage();
+    worldState.favor[gl.id] = 0; BAG.length = 0;
+  }
+  if (au) {
+    const pt0 = priorsTown; priorsTown = t => nat(t) === 'aurenne'; /* a city in Aurenne keeps a church; the suite does not build it */
+    keep(au); worldState.favor[au.id] = 3; BAG.length = 0; gold = 500; S(100); bagAdd(oreItem('obsidian', 2)); bagAdd(sigilStoneItem('cloch'));
+    GF.au = { here: forgeHere(), smelt9: forgeSmelt(9).why, kept: bagCount(b => b.sigilStone) === 1 && oreCount('obsidian') === 2 && gold === 500 };
+    bagAdd(ingotItem(9, 2)); bagAdd(benchItem('plank', 1)); GF.au.make9 = forgeMake('Dagger', 9).why;
+    bagAdd({ name: 'Dragon Scale', ico: '🔥', type: 'misc', buyPrice: 400, sellMult: .6, weight: .8, dragonScale: true, qty: 1 }); GF.au.drac = forgeSmelt(8).made;
+    priorsTown = pt0; worldState.favor[au.id] = 0; BAG.length = 0;
+  }
+  out.great = GF;
   // ── S2494: rare materials B, session 1 — the Draconic ingot from a dragon's scale, and picks and hatchets in steel and mithril ──
-  const R = {}; lid = 'int_test'; currentHouse = { type: 'weapon', name: 'The Forge', keeper: 'Bram', tagline: '"Iron."', siteKind: 'city' }; const gf0 = greatForgeHere; greatForgeHere = () => true; /* S2551 — tiers 8–10 at the great forge */ gold = 500; BAG.length = 0; worldState.masterworks = [];
+  const R = {}; lid = 'int_test'; currentHouse = { type: 'castle', name: 'The Keep', keeper: '', tagline: '', siteKind: 'city', siteId: gl.id }; worldState.favor[gl.id] = 2; /* S2552 — tiers 8–10 at a city keep's great forge */ gold = 500; BAG.length = 0; worldState.masterworks = [];
   const scale = () => ({ name: 'Dragon Scale', ico: '🔥', type: 'misc', buyPrice: 400, sellMult: .6, weight: .8, dragonScale: true, qty: 1 });
   bagAdd(oreItem('obsidian', 6)); S(74); bagAdd(scale()); R.gate74 = forgeSmelt(8).why; R.kept74 = scaleCount() === 1 && oreCount('obsidian') === 6;
   S(100); bagTake(isDragonScale, 1); R.noScale = forgeSmelt(8).why;
@@ -123,7 +151,7 @@ const r = await page.evaluate(() => {
   forgeSel = { k: 'o', i: 1 }; openForgePage(); const ovT = document.getElementById('forgeui'); R.page = !!ovT && /Tools/.test(ovT.textContent) && /Mithril Pick/.test(ovT.textContent) && /0\.6 s/.test(ovT.textContent);
   forgeSel = { k: 's', tier: 8 }; forgeDraw(); R.page8 = /Draconic Ingot/.test(ovT.textContent) && /Dragon Scale/.test(ovT.textContent) && /makes 2/.test(ovT.textContent);
   forgeSel = { k: 't', it: ds.item }; forgeDraw(); R.pagePearl = /1 Deep Pearl/.test(ovT.querySelector('#fg-right').textContent) && !/no ore of its metal/.test(ovT.textContent); /* S2520 */ closeForgePage(); forgeSel = { k: 's', tier: 2 };
-  out.rare = R; greatForgeHere = gf0;
+  out.rare = R; worldState.favor[gl.id] = 0;
   // ── the page (the load set where you stand; back into the smith's room) ──
   lid = 'int_test'; currentHouse = { type: 'weapon', name: 'The Forge', keeper: 'Bram', tagline: '"Iron."' };
   bagAdd(found); openShop(); const fb = document.getElementById('sh-forge'); out.tab = !!fb && fb.style.display !== 'none';
@@ -166,6 +194,13 @@ check('S2551: at a village forge steel smelts; mithril is refused and names a to
 check('S2551: a village forge makes no mithril sword or hatchet and tempers no mithril piece, yours or the smith\'s, nothing taken', /town’s forge/.test(GG.vilMake) && /town’s forge/.test(GG.vilTool) && GG.vilIngots && /town’s forge/.test(GG.vilTemper) && /town’s forge/.test(GG.vilSmith) && GG.vilT, GG);
 check('S2551: the page names the grade and says where mithril is worked; no smith\'s temper button above the grade', /^A village forge, to steel/.test(GG.head) && /Mithril wants a town’s forge/.test(GG.note) && !GG.smithBtn, { head: GG.head, note: GG.note, btn: GG.smithBtn });
 check('S2551: a town\'s forge smelts mithril and obsidian, makes and tempers mithril; Draconic is refused for the great forge, the scale kept', GG.townMith && GG.townObs && GG.townSword && GG.townTemper && /Draconic wants the great forge in a city’s keep/.test(GG.townDrac) && GG.townScale, GG);
+const GK = r.great;
+check('S2552: a Gatelands or Mark city and an Aurenne one were found', GK.gl && GK.au, GK);
+check('S2552: a town\'s keep has no forge; a city\'s keep at favour 1 is shut, says why, and opens no page', !GK.townKeep && GK.f1.keep && !GK.f1.here && /favour of 2 or better \(yours is 1\)/.test(GK.f1.why) && !GK.f1.open && /favour of 2/.test(GK.f1.msg) && /favour of 2/.test(GK.f1.smelt), GK);
+check('S2552: the steward offers *The great forge.* in the keep and gives the same refusal; a bounty there shuts it at any favour', GK.topic && /favour of 2/.test(GK.topic1) && !GK.bounty.here && /bounty/.test(GK.bounty.why) && /bounty/.test(GK.bounty.topic), GK);
+check('S2552: at favour 2 the great forge works to cosmic, 25 gold a use; the forge-master tempers a Draconic sword for 160', GK.f2.here && GK.f2.grade === 'great' && GK.f2.max === 10 && GK.f2.smelt && GK.f2.fee === 25 && GK.temper.done && GK.temper.paid === 160 && GK.temper.tempers === 1, GK);
+check('S2552: the steward\'s topic opens the forge\'s page, its head *The great forge, to cosmic · … 25 gold a use*', GK.topic2 === '' && GK.topicPage && /^The great forge, to cosmic/.test(GK.head) && /25 gold a use/.test(GK.head), GK);
+check('S2552: in a Prior\'s city the forge-master will not smelt or work tier 9 (gate salvage), nothing taken; Draconic he smelts', GK.au && GK.au.here && /Prior’s law/.test(GK.au.smelt9) && GK.au.kept && /Prior’s law/.test(GK.au.make9) && GK.au.drac, GK.au);
 const RR = r.rare;
 check('S2494: Draconic asks Smithing 75 to smelt; refused at 74, the scale and the obsidian kept; no scale, no ingot', /Smithing 75/.test(RR.gate74) && RR.kept74 && /scale/.test(RR.noScale), RR);
 check('S2494: a dragon\'s scale and 2 obsidian make 2 Draconic ingots (a scale saved by name counts); Smelter passes it by', RR.smelt.made && RR.smelt.name === 'Draconic Ingot' && RR.smelt.n === 2 && RR.smelt.obs === 4 && RR.smelt.scales === 1 && RR.two.n === 4 && RR.two.obs === 2 && RR.two.scales === 0, RR);
