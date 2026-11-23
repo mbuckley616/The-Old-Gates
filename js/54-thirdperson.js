@@ -95,15 +95,15 @@ function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign(
   if(o.robe)D.robe=hbRGB(o.chestCol);
   if(AR&&AR.chest){const P=AR.chest;if(P.line==='light')D.tunic=hbRGB(armourLineLeather(P.tier));else if(P.line==='robe')D.robe=hbRGB(LINE_ROBE[P.tier]);else{D.mail=hbRGB(P.fam==='lamellar'?new THREE.Color(P.metal).lerp(new THREE.Color(0xc89a62),.3).getHex():P.metal);
     // S1260 — the heavy line's chest by its family (AR_FAM): Wooden's lamellar as the builder's scales in the wood's own tone, Bronze's
-    // muscle cuirass and the plate of Steel up as its sheet metal (people.js's D.plate), Iron's mail as it was
-    if(P.fam==='lamellar')D.scales=true;else if(P.fam==='muscle'||P.fam==='plate')D.plate=P.fam;}}
+    // muscle cuirass and the plate of Steel up as its sheet metal (people.js's D.plate), Iron's mail as it was (S2547: the wood's boards matte, D.scales 'wood')
+    if(P.fam==='lamellar')D.scales='wood';else if(P.fam==='muscle'||P.fam==='plate')D.plate=P.fam;}}
   // S1256 — the heavy line's helm is the builder's helm of its tier (helms.js; Michael's C of 18 Oct: from Steel up the face shut),
   // fitted to the player's own head; Iron's is the kit's kettle helm, in the tier's metal
   if(AR&&AR.head&&!AR.head.line){D.helm=hbRGB(AR.head.metal);D.tier=AR.head.tier;}else if(o.hd&&!AR&&!tpIsCloth(o.hd))D.helm=hbRGB(o.helmCol);
   // S1263 — gauntlets and greaves by family, as the old kit drew them (people.js's vambrace, gloves, greaves and cuisses): Wooden's boards
   // (the scales in the wood's tone) over leather gloves, Bronze's sheet over leather, Iron's mail, Steel up plate with a knee cop, the
   // cuisses up the thigh with mail and plate; the light line's bracers and gloves in its leather; gloves of no metal in their own colour
-  const fam=P=>P.fam==='lamellar'?'scales':P.fam==='mail'?'mail':'sheet',col=P=>hbRGB(P.fam==='lamellar'?new THREE.Color(P.metal).lerp(new THREE.Color(0xc89a62),.3).getHex():P.metal);
+  const fam=P=>P.fam==='lamellar'?'wood':P.fam==='mail'?'mail':'sheet',col=P=>hbRGB(P.fam==='lamellar'?new THREE.Color(P.metal).lerp(new THREE.Color(0xc89a62),.3).getHex():P.metal);
   const Hn=AR&&AR.hands,Lg=AR&&AR.legs;
   if(Hn&&Hn.line==='light'){D.vambrace=D.gloves=hbRGB(armourLineLeather(Hn.tier));D.vambraceKind='leather';}
   else if(Hn&&!Hn.line){D.vambrace=col(Hn);D.vambraceKind=fam(Hn);if(Hn.fam==='mail'||Hn.fam==='plate'){D.gloves=hbRGB(Hn.metal);D.glovesKind=Hn.fam==='mail'?'mail':'sheet';}else D.gloves=hbRGB(0x4a3020);}
