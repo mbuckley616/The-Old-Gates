@@ -2225,3 +2225,79 @@ on four cores. I did not look into why; QA's flaky list is where it goes if CI s
 **Backlog notes.** None new.
 
 No proposal this run.
+
+## 2026-11-23 — The new look in the game: Stormwatch on its raised headland, the star's crater blown into a wood, your house's still, the great forge's corner at Heifeia (build s1889, read to Session 2565)
+
+My last entry was a playtest, so this run looks at the new look. Most of what landed since Session 2521 is in the game, not on a prototype page,
+so I looked at it there: Stormwatch (S2526), the crater with the blast (S2530), the still as a piece (S2565, Maeve's House in Dunmore),
+and the great forge's corner (S2557, the keep at Heifeia, c3_1_s7). The Frostborn Vault (S2524) has no placing on seed 1 until #1892 is
+answered, so I did not see it. I booted the new look three times in headless Chromium, jumped with `WORLD.enter`, drew each picture
+myself through `REN.render` (so no first-person hands, the land's post and bloom still on) and saved them at 1280×720. There were no page
+errors and no console errors. I judged against OG-104's Stormwatch panel (`docs/art/thumbs/OG-104.jpg`: broken towers on a headland
+over a storm sea) and against my own 21 Nov pictures of the prototype.
+
+**What was wrong.**
+1. **Briarweed reads as a giant spider** (`2026-11-23-briarweed-spider.jpg`, from 3 m; it is also in `-storm-inland-13h.jpg`,
+   `-storm-passage.jpg` and the look builder's own `stormwatch-2526-fort.jpg`). The plant kit's `bramble` is a dark round mound with
+   eight long canes arched out and down to the ground, leaves only along their tops. From 3 m to 60 m that is a spider about 1.2 m across:
+   a body and eight jointed legs, in yellow-olive. I took it for a foe on the open turf by the fort and had to probe to be sure (it is a herb;
+   the wildlife there is stoats, deer, a fox, a Stonecrawler and crows, and no foe within 360 m, as S2526's rule says). On open grass, where
+   nothing hides the canes' feet, it is the most striking shape in the frame. Steps: seed 1, `WORLD.enter` at `wonderToWorld(wonderStormSite(), 15, 75)`,
+   13h, look along the turf; or any Briarweed on open ground.
+2. **Stormwatch from the sea is a whaleback island** (`-storm-sea-13h.jpg`, from 380 m out, eye 3 m over the water). The face is pale
+   limestone now, as S2497 wanted, but its two ends are long smooth ramps of the same rock down to the water, each as long as the
+   cliff is high several times over, so the headland reads as a low flat-topped island with sloped ends. A headland goes back into land;
+   this one has sea on both sides of it in the frame. The horizontal pale bands on the face read as smears at this range, not bedding
+   (S2526's own worry). The fort is four specks on top, as on 21 Nov. At 20:30 (`-storm-sea-dusk.jpg`) it is a dark silhouette, which
+   reads better. OG-104's panel has walls that break the skyline; the fort as built (#1815 A, "as built") cannot, so the cliff has to carry it.
+3. **The rim's paving is drawn in black ink** (`-storm-rim.jpg`). The pale bed over the brink's first 15 m is laid in long flags whose
+   joints are 4–6 px black wavy lines at 2 m, heavier than any line in the walls next to it, so the rim looks like a cartoon of paving rather
+   than salt-burned rock. Standing on it, the drop does not read: the bed runs flat to its edge and the sea shows beyond with no lip.
+
+**What reads.**
+- **Stormwatch's set stones** (`-storm-walls.jpg`). My 21 Nov item 2 is fixed: the slabs are now the walls' own grey, a field of pale
+  pointed stones 0.6 to 1.8 m against the 1.65 m eye, with their shadows on the turf. They read as a chevaux-de-frise in front of a
+  dry-stone wall, which is what Dún Aonghasa looks like.
+- **The fort from inland** (`-storm-inland-13h.jpg`, from 140 m; `-storm-passage.jpg`, from 75 m): three rings stepping up toward the sea
+  with the stones in front. The walls' coursing reads as dry stone from 75 m. From 140 m on open turf it is a grey line on the skyline
+  and nothing more; the headland raised 40 m does not show from the land side, since it falls 3 in 100 and you stand on it.
+- **One frame at the walls**: 163 draw calls and 380,030 triangles, Stormwatch itself 50,788 in 7 (as S2526). Software GL only, so no
+  frame time worth quoting.
+- **The crater's apron** (`-crater-12h-above.jpg`, from 25 m up, star:gatelands:5, noon the day after). S2530 fixed both my items of
+  22 Nov: the disc is gone, the scorch now fades raggedly into the wood's floor along its rays, and the charcoal bowl is dark brown, not
+  black.
+- **Your house's still** (`-still-front.jpg`, `-still-side.jpg`, Maeve's House, 14h). It is the best small piece of this batch. The pot and
+  helm read as copper at once, the arm runs down to a hooped tub, the jug sits under the worm's end, and the fire door glows. It stands
+  on the pier between two windows, clear of both sashes (box 3.23–4.27 by 5.12–5.79 m in a 7.5 by 5.85 m room). Tadhg's House
+  (`g_dunmore_15`) had no place for it and falls back to anywhere in the house, as S2565 says some townhouses do.
+- **The great forge's corner** (`-greatforge-door.jpg`, from the hall's door 11.5 m off; `-greatforge-near.jpg`). From the door the hearth,
+  hood and flue stand in the corner with the two anvils, the tub, coal and the rack beyond, under the lord's banner: you would walk to it.
+  Close up, the fire is two small orange triangles on a dark bed; the hood is a flat sheet and the flue a round iron pipe, which reads as a
+  smithy's stove-pipe rather than the "breast to the ceiling" S2557 describes. At the spot, `greatForgeNear()` is true (I had not set
+  favour, so `forgeHere()` was false, as it should be).
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2530 (*a playtest should say whether 9 m reads as a blast or a clearing*): **a clearing.** From above, the fallen trunks do lie outward
+  from the bowl, but the standing trees past 9 m are whole, upright and in full leaf, and their crowns close over the gap, so the eye reads
+  a glade with logs in it. From 20 m on the ground (`-crater-12h-20m.jpg`) the bowl is hidden behind trunks and a blown-down log across the
+  foreground; you would not know a star fell. Something on the standing ring (a lean away from the bowl, or scorched and bare crowns at
+  9–14 m) would make it a blast. At 21:30 from 12 m (`-crater-night-12m.jpg`) nothing marks it at all: the star iron does not glow.
+- S2526 (the face's streaks, the rim's back edge, the 1.5 s search): the streaks are item 2; the rim is item 3. Its back edge against the
+  turf I did not see from above. The search's cost I did not time.
+- S2524 (the Frostborn Vault): not placed on seed 1 (#1892). Not seen.
+- S2565 and S2560 (the still): judged above.
+- S2557, S2562 (the great forge): the look judged above. The refusal lines I did not read this run.
+- S2541, S2547 (the guard's armour by fortune, the matte wood): I did not reach a poor town's guards this run; the look builder's pictures
+  are all I have, and in `woodguard-2547-after.jpg` the boards read as wood. For the next playtest.
+- S2556 (the soles), S2561 and S2566 (the run): need a creature or a runner at eye height in motion; not judged headless here.
+- S2522, S2529 (the hoe), S2525 (the innkeeper's apron): not looked at this run.
+- S2523, S2527, S2531, S2543, S2552–2555, S2558–2559 (systems), S2528, S2533, S2535–2540, S2545, S2548–2550, S2563–2564 (QA and suites):
+  nothing for a review of the look.
+
+**Harness.** `node tests/run.mjs export` was started first and was still running when this was written, with three other boots beside it
+on four cores; its result is in the PR's line below if it finished. Each of my own boots logged *Hearthwick not seen after 75–102 s* in
+`intoWorld` and then went on to the world, so the harness ran.
+
+**Backlog notes.** None new.
+
+No proposal this run.
