@@ -252,6 +252,29 @@ check('S2520: a bed is 5 oysters on the sea bed within 2.4 m of its middle; none
 check('S2520: E down on the bed opens each oyster; the pearls are the seeded one in six; the shells go, and nothing more opens', PR && PR.miss == null && PR.rec.t === 31 && PR.pearls === PR.want && PR.msgs.length === 5 && PR.msgs.every(m => /deep pearl|oyster is empty/.test(m)) && PR.shells === 0 && !PR.after, PR);
 check('S2520: the bed is taken at 13 days and whole again at 14, its shells back; its record is the world row\'s', PR && PR.day13 && PR.day14 && PR.back === 5 && PR.worldRow, PR);
 check('S2520: the save keeps a deep pearl', RR.flags.pearl, RR.flags);
+// ── S2562: the great forge is worked at its corner of a real city keep's hall (house._greatForge, S2557), not anywhere in the hall ──
+const KH = await page.evaluate(() => {
+  let c = null, h = null, tried = []; for (const t of allSites().filter(t => t.kind === 'city' && t.pad > 0)) { if (!WORLD.settle.get(t.id)) genSettlement(t);
+    h = (WORLD.settle.get(t.id).houses || []).find(x => x.type === 'castle' && x.siteId === t.id); tried.push(t.id); if (h) { c = t; break; } }
+  if (!h) return { none: tried };
+  forceTime(12); px = h.exitX; pz = h.exitZ; window._GK = { h, c }; goToInterior(h); return { id: c.id }; });
+if (KH.id) { for (let k = 0; k < 240 && !(await page.evaluate(() => isInterior() && currentHouse === window._GK.h)); k++) await page.waitForTimeout(250); await g.frames(3); }
+const KC = !KH.id ? KH : await page.evaluate(() => { const { h, c } = window._GK;
+  worldState.favor = worldState.favor || {}; worldState.favor[h.siteId] = 2; worldState.crime = worldState.crime || {}; delete worldState.crime[h.siteId];
+  const S = greatForgeSpot(), out = { id: c.id, keep: greatForgeKeep(), spot: S && [+S.x.toFixed(2), +S.z.toFixed(2)], reach: GREAT_FORGE.reach, door: [+px.toFixed(2), +pz.toFixed(2)] };
+  out.doorHere = forgeHere(); out.doorNear = greatForgeNear(); out.doorWhy = forgeNone(); out.dDoor = S && +Math.hypot(px - S.x, pz - S.z).toFixed(2);
+  openForgePage(); out.doorPage = forgeOpen; out.doorMsg = MSGEL.textContent; closeForgePage();
+  const top = lordTopics(c).find(t => t.label === 'The great forge.'); out.topic = top && top.avail() && top.fn();
+  if (S) { px = S.x; pz = S.z; jumpY = 0; out.at = { here: forgeHere(), near: greatForgeNear(), grade: forgeGrade() };
+    px = S.x + GREAT_FORGE.reach - .1; out.edge = greatForgeNear(); px = S.x;
+    interact(); out.ePage = forgeOpen; closeForgePage();
+    worldState.favor[h.siteId] = 1; out.shut = { near: greatForgeNear(), here: forgeHere() }; interact(); out.shut.page = forgeOpen; out.shut.msg = MSGEL.textContent; closeForgePage(); worldState.favor[h.siteId] = 2; }
+  try { exitInterior(); } catch (e) { out.exitErr = String(e); }
+  return out; });
+console.log(JSON.stringify(KC));
+check('S2562: a city keep\'s hall records the great forge\'s spot; at the door, ' + (KC && KC.dDoor) + ' m from it, there is no forge and the page does not open, the narrator saying where it stands', KC && KC.keep && KC.spot && KC.dDoor > KC.reach && !KC.doorHere && !KC.doorNear && !KC.doorPage && /corner of the hall/.test(KC.doorWhy) && /corner of the hall/.test(KC.doorMsg), KC);
+check('S2562: the steward\'s *The great forge.* from the hall gives the same line, no page', KC && KC.topic === '' && !KC.doorPage, KC);
+check('S2562: at the spot (and ' + (KC && KC.reach) + ' m from it) you are at the great forge; E there opens its page; at favour 1 E there opens nothing and says why', KC && KC.at && KC.at.here && KC.at.near && KC.at.grade === 'great' && KC.edge && KC.ePage && KC.shut.near && !KC.shut.here && !KC.shut.page && /favour of 2/.test(KC.shut.msg), KC);
 // ── S1514: a fort armoury's smelter is a forge with no smith: no fee, no temper for gold, and only beside it ──
 let D = null;
 for (const [interior, seed] of [['fort_tee', 23], ['fort_linear', 31], ['fort_courtyard', 47], ['fort_tee', 59], ['fort_linear', 73], ['fort_courtyard', 91]]) {
