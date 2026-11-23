@@ -5076,6 +5076,61 @@ function clayFitting(kind, island, o = {}) {
   for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = kind + ':' + k; group.add(m); tris += g.attributes.position.count / 3; }
   return { group, tris: Math.round(tris), draws: group.children.length, kind, island, foot, top };
 }
+// ── your house's still (Session 2561; workstations B, Michael's C on #1883: the still a seventh fitting, the systems builder's S2560).
+// The apothecary's still (apothecaryRoom, S2272) drawn free of its room, at a house's size: a furnace of the island's stone, cob-plastered,
+// its fire door toward the room glowing, carrying the copper pot; on the pot the helm, and from the helm the arm falls to the worm tub at
+// its right (the coil in the water, the hoops); the worm's end comes out low on the tub's front over a jug. The furnace's flue climbs the
+// wall behind it to 1.9 m and stops in a sooted mouth, as the oven's does (a house's chimney is the hearth's; this one is a stub).
+// In the clay fittings' frame and materials (clayMats: the body in vertex colours, the stone plinth, the embers), with one more: the
+// copper, the apothecary's. Four draws on the Gatelands and the Mark, three on Aurenne, whose furnace is limewashed cob.
+// o.small: for a full room, the furnace 0.56 m wide and the tub 0.2 round (0.94 m in all against 1.12).
+//   PKIT.props.still(island, { small }) -> { group, tris, draws, kind: 'still', island, foot: { x0, x1, z0, z1 }, top, fire: [x, y, z] }
+let STILL_CU = null;
+function stillFitting(island, o = {}) {
+  island = island === 'mark' || island === 'aurenne' ? island : 'gatelands';
+  const C = clayMats(), I = C[island], sm = !!o.small, stone = island !== 'aurenne';
+  if (!STILL_CU) STILL_CU = new THREE.MeshStandardMaterial({ color: 0xb4683a, roughness: .32, metalness: .85 });
+  const M = { body: C.body, base: I.base, ember: C.ember, copper: STILL_CU }, B = new Map();
+  const TINT = { cob: I.cob.color, wood: new THREE.Color(0x5e4228), soot: C.soot.color.clone().multiply(new THREE.Color(1.156, 1.186, 1.244)),
+    pot: C.pot.color, water: new THREE.Color(0x1c2a2c), iron: new THREE.Color(0x2a2724), base: I.base.color };
+  const put = (k, g, s = 1.5) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    worldUV(g, s); const b = k === 'ember' ? 'ember' : k === 'copper' ? 'copper' : k === 'base' && stone ? 'base' : 'body';
+    if (b === 'body') { const c = TINT[k], n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); }
+    if (!B.has(b)) B.set(b, []); B.get(b).push(g); return g; };
+  const box = (k, x0, x1, y0, y1, z0, z1) => { const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); put(k, g); };
+  const at = (k, g, x, y, z) => { g.translate(x, y, z); put(k, g); };
+  const pipe = (k, a, b, rad, seg = 8) => { const A = new THREE.Vector3(...a), D = new THREE.Vector3(...b).sub(A), g = new THREE.CylinderGeometry(rad, rad, D.length(), seg, 1, true);
+    g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), D.clone().normalize())); g.translate(A.x + D.x / 2, A.y + D.y / 2, A.z + D.z / 2); put(k, g); };
+  // the furnace: a stone footing, the cob body, a sooted top slab; its fire door at the front, framed in iron, the embers behind it
+  const W = sm ? .56 : .7, D = sm ? .54 : .62, H = .72, z0 = .02, z1 = z0 + D, zc = (z0 + z1) / 2, x0 = -W / 2, x1 = W / 2;
+  box('base', x0 - .02, x1 + .02, 0, .14, z0, z1 + .02); box('cob', x0, x1, .14, H - .05, z0, z1); box('soot', x0 + .01, x1 - .01, H - .05, H, z0 + .01, z1 - .01);
+  box('soot', -.13, .13, .14, .38, z1, z1 + .01); box('ember', -.1, .1, .16, .33, z1 + .005, z1 + .012);
+  for (const s of [-1, 1]) box('iron', s * .14 - .015, s * .14 + .015, .12, .4, z1, z1 + .025); box('iron', -.155, .155, .38, .41, z1, z1 + .025);
+  if (island === 'aurenne') box('base', x0 - .01, x1 + .01, .14, .2, z0, z1 + .01);
+  // the flue up the wall behind, to its sooted mouth
+  box('cob', -.13, .13, H, 1.9, z0, z0 + .24); box('soot', -.09, .09, 1.9, 1.902, z0 + .03, z0 + .2);
+  // the copper pot on the furnace, its neck and the helm over it, the helm's knop
+  const R = sm ? .2 : .24, pot = [0, H + R * .78, zc + .04];
+  at('copper', new THREE.SphereGeometry(R, 18, 12, 0, Math.PI * 2, 0, Math.PI * .78), ...pot);
+  { const g = new THREE.SphereGeometry(R, 18, 4, 0, Math.PI * 2, Math.PI * .78, Math.PI * .22); at('copper', g, ...pot); }
+  at('copper', new THREE.CylinderGeometry(R * .33, R * .42, .1, 12, 1, true), pot[0], pot[1] + R * .95, pot[2]);
+  const helm = [pot[0], pot[1] + R + .1, pot[2]]; { const g = new THREE.SphereGeometry(R * .46, 14, 8); g.scale(1, .8, 1); at('copper', g, ...helm); } at('copper', new THREE.ConeGeometry(.035, .07, 10), helm[0], helm[1] + R * .37 + .03, helm[2]);
+  // the worm tub at the right: staves, two iron hoops, the water and the coil's top turn in it
+  const tr = sm ? .2 : .25, th = sm ? .62 : .7, tub = { x: x1 + .04 + tr, z: zc };
+  at('wood', new THREE.CylinderGeometry(tr, tr * .9, th, 16, 1, true), tub.x, th / 2, tub.z);
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, rr = tr * .95 + .004; const g = new THREE.BoxGeometry(.008, th - .04, .006); g.rotateY(-a); at('soot', g, tub.x + Math.cos(a) * rr, th / 2, tub.z + Math.sin(a) * rr); } /* the staves' joints */ at('wood', new THREE.CylinderGeometry(tr * .9, tr * .9, .03, 16), tub.x, .02, tub.z);
+  { const g = new THREE.CircleGeometry(tr - .02, 16); g.rotateX(-Math.PI / 2); at('water', g, tub.x, th - .06, tub.z); }
+  for (const y of [.12, th - .1]) { const g = new THREE.TorusGeometry(tr + .005, .012, 4, 18); g.rotateX(Math.PI / 2); at('iron', g, tub.x, y, tub.z); }
+  { const g = new THREE.TorusGeometry(tr * .62, .02, 6, 18); g.rotateX(Math.PI / 2); at('copper', g, tub.x, th - .04, tub.z); }
+  // the arm from the helm down to the tub's rim, and the worm's end out of the tub's front over the jug
+  pipe('copper', [helm[0] + R * .4, helm[1], helm[2]], [tub.x - tr * .45, th + .03, tub.z], .022, 10);
+  const out = [tub.x, .3, tub.z + tr + .12]; pipe('copper', [tub.x, .32, tub.z + tr - .03], out, .014, 8); pipe('copper', out, [out[0], out[1] - .06, out[2]], .012, 6);
+  { const p = [[0, 0], [.06, 0], [.08, .06], [.075, .14], [.045, .2], [.05, .23]].map(([a, b]) => new THREE.Vector2(a, b)); const g = new THREE.LatheGeometry(p, 10); at('pot', g, out[0], 0, out[2]);
+    const hdl = new THREE.TorusGeometry(.04, .01, 4, 8, Math.PI); hdl.rotateZ(-Math.PI / 2); at('pot', hdl, out[0] + .075, .14, out[2]); }
+  const group = new THREE.Group(); group.name = 'still'; let tris = 0;
+  for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[k]); m.name = 'still:' + k; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, kind: 'still', island, foot: { x0: x0 - .02, x1: tub.x + tr + .02, z0: 0, z1: Math.max(z1 + .03, out[2] + .09) }, top: H, fire: [0, .26, z1 + .05] };
+}
 // ── the Mark's training yard (Session 1657; arenas-build.md session 2, Michael's B on #914: "a staff rack, a 5 m rope ring"): the
 // yard behind a Markish Fighters' Guild hall where the spar (sparStart) and the evening brawl (brawlStart) are fought. A ring of
 // trodden earth 5.7 m round, fourteen ash stakes 1 m high at 5 m with one rope at 0.9 m sagging 9 cm a span (the bout's rope: over
@@ -12862,7 +12917,7 @@ function aurenneOrrery(hAt, o = {}) {
       for (let i = 0; i < 14; i++) { const s = .025 + r() * .05; put(rareRough(new THREE.IcosahedronGeometry(s, 0), r, s * .2, 9), 'sigilRock', (r() - .5) * 1.1, s * .3, zc + .2 + r() * .55, r(), r() * 6, r()); } }
     return finish({ school, cut, size: [SW, SH, ST], face: +face.toFixed(3), split: +below.toFixed(3), lit });
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, isles: gateIslesRuin, aqueducts: aqueductsRuin, aqueductsPlan, frostborn: frostbornRuin, frostbornLand, scarred: scarredGateRuin, stormwatch: stormwatchRuin, stormwatchLand, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, garden: houseGarden, crater: starCrater, skypine: skywoodPine, sigilstone: scriptStone }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, isles: gateIslesRuin, aqueducts: aqueductsRuin, aqueductsPlan, frostborn: frostbornRuin, frostbornLand, scarred: scarredGateRuin, stormwatch: stormwatchRuin, stormwatchLand, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, still: stillFitting, garden: houseGarden, crater: starCrater, skypine: skywoodPine, sigilstone: scriptStone }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, trader: markTrader, TRADER_TRADES, TOWN_TRADES, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
