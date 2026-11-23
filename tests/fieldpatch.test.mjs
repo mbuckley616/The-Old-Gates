@@ -65,7 +65,7 @@ const r = await page.evaluate(() => {
     worldState.ship.hold = { iron: 3 }; worldState.ship.fit = ['still']; out.heavy = shipBenchWhy('bunks'); out.heavyLeft = plankCount(); worldState.ship.hold = {};
     openBenchPage(); out.fitRows = [...document.querySelectorAll('#bn-list [data-k]')].filter(d => /^fit_/.test(d.dataset.k)).length; closeBenchPage();
     const base = () => skillMult('alchemy') * (1 + .01 * attrEff('intelligence'));
-    worldState.ship.fit = ['still']; out.still = +(alchStrength() / base()).toFixed(3); out.stillFire = atFire();
+    worldState.ship.fit = ['still']; out.still = +(alchStrength() / base()).toFixed(3); out.stillHere = stillHere(); out.stillFire = atFire();
     worldState.ship.fit = ['galley']; out.stillOff = +(alchStrength() / base()).toFixed(3); out.galley = atFire(); bagAdd(survItem('fish', 1)); out.cook = cookAt('fish').made;
     currentHouse._fits = { galley: { x: px + 3, z: pz } }; out.galleyFar = atFire(); currentHouse._fits.galley = { x: px + 1.5, z: pz }; out.galleyNear = atFire();
     // the arms rack: weapons only, three, kept through a save; drawn for empty hands when boarders land
@@ -103,7 +103,7 @@ check('the chart table asks Joinery 50; at 50 an arms rack is 4 planks and an ir
 check('a sloop\'s two places full: the bench refuses and keeps the planks', /rooms are full/.test(r.full) && r.fullLeft === 8, [r.full, r.fullLeft]);
 check('one the yard keeps for her, or a hold too full for its weight: refused', /yard keeps/.test(r.stored) && /clear the hold/.test(r.heavy) && r.heavyLeft === 8, [r.stored, r.heavy]);
 check('the bench\'s page shows her seven fittings at her side (the ballista, Session 1820)', r.fitRows === 7, r.fitRows);
-check('her still in her hold: brewing ×1.10; it is no fire', r.still === 1.1 && r.stillFire === false && r.stillOff === 1, [r.still, r.stillOff]);
+check('her still in her hold is a still (S2554: it distils draughts, no longer ×1.10 on the mortar); it is no fire', r.still === 1 && r.stillHere === 'ship' && r.stillFire === false && r.stillOff === 1, [r.still, r.stillHere, r.stillOff]);
 check('her galley in her hold is a fire: a fish cooks; once it has a spot, within 2 m of it; out of her hold, no fire', r.galley && r.cook && !r.galleyFar && r.galleyNear && !r.galleyOut, r);
 check('the arms rack: none fitted, refused; weapons only; three, the fourth refused', /no arms rack/.test(r.rackNone) && /weapons only/.test(r.rackPlank) && r.rackPuts.slice(0, 3).every(x => x === true) && /full/.test(r.rackPuts[3]) && r.rackNames.join() === 'Rack A,Rack B,Rack C', r);
 check('in her hold the sea chest\'s panel turns to the rack: its three, the bag\'s one weapon; not out of her hold', r.rackPanel.title === 'The Arms Rack' && r.rackPanel.rows === 3 && r.rackPanel.bag === 1 && r.rackPanel.btn === '' && r.rackAway === false, r.rackPanel);
