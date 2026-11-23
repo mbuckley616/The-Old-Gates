@@ -3,6 +3,36 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The sea's creatures — by habitat on the land animals' rules, all peaceful, or wait for the reefs? (from the systems builder, 2026-11-23, #1954)
+**The question.** The bodies builder has put fifteen of the sea's creatures into the game (Sessions 2575–2585), but nothing rolls any of them, so the sea is still empty. Whether any of them bites, and what a fish you take is worth, is a rule of play. How should they enter the sea?
+
+**Options.**
+- **A. By habitat, on the land animals' rules** *(recommended)* (#984 A, #1014 A, #1050 A). Within about 150 m, each sea chunk rolls one group by its id, depth and bed: shallows (rays, turtle, tidecrab, the lantern jelly by night), reef rock (moray, stonefish, octopus), open water (tuna schools, drifter squid, skyskimmer), the deepest water (angler, eel), seals hauled out on coast rock or sand. The moray, the stonefish (when trodden on) and the octopus answer back as the Gatefen Boar does. Fish are taken by hand while swimming, 1.2 weight and 18 gold (the tuna 3 and 30). Not saved. Two systems sessions.
+- **B. As A, all peaceful.** Nothing answers back; the reef is safe to swim.
+- **C. Wait for #1925** (the sea that pushes back) and lay them with its reefs and races.
+
+**Recommendation: A.** It uses only rules Michael has already chosen for the land and the rivers, and gives the swim a reason before #1925's reefs exist; when those land, the reef kinds move onto them. The gate eel and the Gate Leviathan are not in this.
+
+### The pearl oysters' bed — bring it in as drawn, a bare bank, or keep the stand-in? (from the look builder, 2026-11-23, #1952)
+**The question.** Rare materials B's last kit piece: the deep pearl oysters' bed, 8 m down off Aurenne. Since Session 2520 the game draws five grey squashed spheres as a stand-in. Session 2586 draws the bed in the kit (`props.js` `oysterBed`): a pale shell bank 4.8 m across, flat rubble, five olive-brown pearl oysters of 0.24–0.30 m, an opened one left open and empty until the bed comes back; 7,600–9,100 triangles in 8–9 draws.
+
+**Options.**
+- **A. Bring it in as drawn** *(recommended)*, in one session: the bank, the rubble, the oysters, the weed and the fans, an opened shell left open until the bed comes back (14 days).
+- **B. As A, without the weed and fans**: 1,500 triangles and two draws fewer.
+- **C. Keep the stand-in for now.**
+
+**Recommendation: A.** Pictures: [the bed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2586/docs/prototypes/levelup/rare-oyster.jpg) · [one opened](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2586/docs/prototypes/levelup/rare-oyster-close.jpg) · [from the surface](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2586/docs/prototypes/levelup/rare-oyster-above.jpg)
+
+### The strange and the legendary, II — how much of Stump, Nell's dammer, should show? (from the concept artist, 2026-11-23, #1950)
+**The question.** The quest writer's *The Strange and the Legendary, II* (unapproved) takes the rest of OG-071; Michael's C on #1911 carries over, so Tomcán, Nell, Ord and Elias are dressed as OG-071 draws them. One thing is open: Stump, Nell's dammer, a cart-sized river beast with a walrus's face, two downturned tusks and six short legs. How much of him should show? (`docs/prototypes/levelup/strange2.html`)
+
+**Options.**
+- **A. In the river, unseen.** Rings and a wake where he went under, the dam of gnawed alder on the bank. The draft as written; nothing to build. [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1123/docs/prototypes/levelup/strange2-a.jpg)
+- **B. Half out at the bank** *(recommended)*. His face, his 40 cm tusks and his back above the water; posed once, no walk. [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1123/docs/prototypes/levelup/strange2-b.jpg)
+- **C. On the bank, whole, as OG-071 draws him.** 4.0 m long, 1.4 m at the back, six legs, a flat tail; needs a six-legged walk. [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1123/docs/prototypes/levelup/strange2-c.jpg)
+
+**Recommendation: B.** The tusks and the face read across the river at a glance, he stays where the draft puts him, and the creature kit needs only a standing pose. Stump is 233k triangles; a frame of the bank is 1.61M in 671 calls at B and C, 1.14M in 616 at A.
+
 ### The clergy's dress — one habit everywhere, by island, or by island with the office shown? (from the bodies builder, 2026-11-23, #1936)
 **The question.** Backlog L1, the wardrobe matrix's clergy column (owed since Session 2504). Every church has a keeper whose role is `Priest`, and on the new look they wear their people's everyday clothes: nothing marks the calling. The prototype (`docs/prototypes/levelup/clergy.html?level=a|b|c`, Session 2570) dresses a man and a woman of each people as their town's priest three ways, all from pieces the kit already has.
 
