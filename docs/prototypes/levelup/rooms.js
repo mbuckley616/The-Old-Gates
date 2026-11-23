@@ -2339,7 +2339,7 @@ export function gatelandsTownhouse(o = {}, r = stream('townhouse')) {
       else if (MR === 'barber') { put(new THREE.CylinderGeometry(.13, .08, .07, 16), 'delft', (wx0 + wx1) / 2, y + .065, zc); }
       else stock('x', zc, wx0, wx1, y + .03); }
     // the customers' side: by trade, against the cross wall east of the counter's end (room left to pass behind it) and in the east corner
-    // (Session 2550) a goods shop sells the rod, and a harbour's the net and the glass (#1504 B): the cross wall keeps their places, the
+    // (Session 2555) a goods shop sells the rod, and a harbour's the net and the glass (#1504 B): the cross wall keeps their places, the
     // net from the shelves' end (1.59 m in the game's kit unit), the rods' rack beside it (1.07 m), the drawers after both; the game hangs
     // them (goodsKitDress) and lays the glass shut on the counter's front edge, along it, short of the scales
     const GD = MR === 'misc' && -X + 3.09 <= XW - .03 ? { wall: fz0, net: -X + 1.195, rods: -X + 2.555, glass: { x: CX1 - .1, z: (CZ0 + CZ1) / 2 - .2, y: F0 + CH } } : null;

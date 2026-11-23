@@ -105,7 +105,7 @@ const kit = await page.evaluate(() => { const h = currentHouse; if (!isInterior(
   let room = null, G = null; interiorScene.traverse(o => { if (o.userData && o.userData.goodsKit) room = o; if (o.userData && o.userData.goodsKitPieces) G = o; });
   const W = h._roomW, D = h._roomD, k = G && G.userData.kit, rack = INT_SOL.find(s => s.goodsKit === 'rods');
   const hits = rack ? INT_SOL.filter(s => s !== rack && s.y1 > .05 && s.y0 < 1.5 && s.x0 < rack.x1 - .01 && s.x1 > rack.x0 + .01 && s.z0 < rack.z1 - .01 && s.z1 > rack.z0 + .01).length : -1;
-  // S2550: since F9 a Gatelands goods shop is the kit's merchant's house, whose shop keeps them on its cross wall (the wall's solid behind
+  // S2555: since F9 a Gatelands goods shop is the kit's merchant's house, whose shop keeps them on its cross wall (the wall's solid behind
   // each piece's whole width) and the glass on the counter's top; a generated room keeps them on its side walls
   const merch = !!h._merchant, onWall = (q, w) => q && INT_SOL.some(s => !s.goodsKit && s.y1 > 2 && Math.abs(s.z1 - q.z) < .08 && s.x0 <= q.x - w / 2 + .02 && s.x1 >= q.x + w / 2 - .02);
   const side = (q, w) => merch ? onWall(q, w) : q && Math.min(q.x, W - q.x) < .15 && q.z > .3 && q.z < D - .3;

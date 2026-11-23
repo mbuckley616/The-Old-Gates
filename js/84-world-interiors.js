@@ -396,12 +396,12 @@
     const RK=(typeof SCALE!=='undefined'&&SCALE.ROOM_K)||1.444,K=furnKit(),P=K.Parts(),out={};let n='gatelands';try{n=nationAt(h.doorX,h.doorZ)||n;}catch(e){}
     const seed=String(h.id||'').split('').reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7)%100000;
     const tall=ys=>(x,z,nx,nz,ax,az,w)=>Math.abs(nx)>.5&&goodsWallFlat(x,z,nx,nz,ax,az,w,ys); /* the side walls only: the back wall holds the shelves and crates, the front the street door */
-    const at=flags.at,fixed=(q,w,d)=>({x:q.x,z:q.z,ry:q.ry,box:{x0:q.x-w/2,x1:q.x+w/2,z0:q.z,z1:q.z+d}}); /* S2550 — the kit's merchant's house keeps their places (S.goods); the wall at -z behind them */
+    const at=flags.at,fixed=(q,w,d)=>({x:q.x,z:q.z,ry:q.ry,box:{x0:q.x-w/2,x1:q.x+w/2,z0:q.z,z1:q.z+d}}); /* S2555 — the kit's merchant's house keeps their places (S.goods); the wall at -z behind them */
     if(flags.rods){const sp=at&&at.rods?fixed(at.rods,GOODS_RACK.w*RK,GOODS_RACK.d*RK):homeWallSpot(h,GOODS_RACK.w*RK,GOODS_RACK.d*RK,.5,tall([.5,1.0,1.5,2.1]));
       if(sp){P.put(K.rodRack(n,seed+21),sp.x/RK,sp.z/RK,sp.ry);const b=sp.box;INT_SOL.push({x0:b.x0,x1:b.x1,z0:b.z0,z1:b.z1,y0:-.5,y1:1.6,goodsKit:'rods'});out.rods={x:sp.x,z:sp.z,ry:sp.ry};}}
     if(flags.net){const sp=at&&at.net?fixed(at.net,GOODS_NET.w*RK,GOODS_NET.d*RK):homeWallSpot(h,GOODS_NET.w*RK,GOODS_NET.d*RK,.3,tall([1.0,1.5,2.1]));
       if(sp){P.put(K.hungNet(seed+23),sp.x/RK,sp.z/RK,sp.ry);out.net={x:sp.x,z:sp.z,ry:sp.ry};}}
-    if(flags.glass&&at&&at.glass){const q=at.glass;P.put(K.counterGlass(n,seed+25),q.x/RK,q.z/RK,q.ry,q.y/RK);out.glass={x:q.x,z:q.z};} /* S2550 — on the merchant's counter (the generated room bakes it into its own) */
+    if(flags.glass&&at&&at.glass){const q=at.glass;P.put(K.counterGlass(n,seed+25),q.x/RK,q.z/RK,q.ry,q.y/RK);out.glass={x:q.x,z:q.z};} /* S2555 — on the merchant's counter (the generated room bakes it into its own) */
     if(!out.rods&&!out.net)return out;
     const G=K.bake(P);G.scale.setScalar(RK);G.userData.goodsKitPieces=true;G.userData.kit={tris:G.userData.tris,...out};
     G.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;}});interiorScene.add(G);return out;}
