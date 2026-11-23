@@ -85,8 +85,12 @@ check(`the Lanternfox's glow by the clock: ${lamp.noon} at noon, ${lamp.dusk} at
 // a tenth smaller; over a field of keys about half are hinds
 const hind = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 12, z = pz + fz * 12;
   const rig = buildAnimal('Deer', 'f4animals:5'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); WORLD.scene.add(G);
+  // Session 2575: the world's queue is drained first, as the line's is: a kit body is never built while JOBS holds work (hcTick's busy, S1591),
+  // and the loop's frames since the line had queued five jobs that tickCreatures never runs, so the hind was never built (red on main at s1898)
+  { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); }
+  const j0 = JOBS.length, job0 = HC_BODY.job && HC_BODY.job.rig.name, cam0 = +Math.hypot(CAM.position.x - x, CAM.position.z - z).toFixed(1);
   let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 200) tickCreatures(1 / 60, 3e5 + k * (HBODY.gap + 1));
-  const H = rig.hc; if (!H) { G.parent.remove(G); return { none: true, fail: !!rig.hcFail }; } G.updateMatrixWorld(true);
+  const H = rig.hc; if (!H) { G.parent.remove(G); return { none: true, fail: !!rig.hcFail, j0, j: JOBS.length, job0, job: HC_BODY.job && HC_BODY.job.rig.name, cam0, inSet: HC_RIGS.has(rig), ok: hcOk(rig) }; } G.updateMatrixWorld(true);
   const a = H.C.byName.spine0.getWorldPosition(new THREE.Vector3()), b = rig.B.hips.getWorldPosition(new THREE.Vector3());
   const head = P => P.parts.find(p => p[0] === 'head')[1];
   let n = 0, hinds = 0; for (let cx = 0; cx < 20; cx++) for (let cz = 0; cz < 20; cz++) { const r = buildAnimal('Deer', cx + ',' + cz + ':0'); WOLF_RIGS.delete(r); n++; if (r.hcKind === 'Hind') hinds++; }
@@ -237,6 +241,28 @@ const salmon = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math
 console.log('  salmon:', JSON.stringify(salmon));
 check(`the Riverjaw Salmon wears the kit's (${salmon.plan}, ${salmon.bones} bones, ${salmon.tris} triangles, ${salmon.len} m nose to tail, its nose ${salmon.nose} m off the stand-in's); it holds and swims by its group (${salmon.hold}, ${salmon.swim} at ${salmon.cyc} beats a second, the bones moving ${salmon.moved}); taken away, dropped`,
   !salmon.fail && salmon.plan === 'game:Riverjaw Salmon' && salmon.seed === salmon.want && salmon.tris < 10000 && salmon.len > .75 && salmon.len < .9 && Math.abs(salmon.nose) < .02 && salmon.hold === 'hold' && salmon.swim === 'swim' && salmon.moved > .005 && salmon.dropped, salmon);
+// Session 2575: the sea's six fish on the trout's path (L3, OG-016): each wears its kit plan at its stand-in's length, nose to nose; it holds and
+// swims by its group (the eels by the kit's slither); the same key the same body; taken away, dropped. Picture: docs/prototypes/f4/f4-seafish.jpg
+const SEA6 = { 'Coastal Tuna': [1.2, 'swim'], 'Skyskimmer': [.35, 'swim'], 'Abyssal Angler': [1, 'swim'], 'Stonefish': [.38, 'swim'], 'Reef Moray': [1.4, 'slither'], 'Blackcurrent Eel': [2, 'slither'] };
+const sea = await page.evaluate((SEA6) => { const out = {}; let n = 0;
+  for (const name in SEA6) { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 4, z = pz + fz * 4;
+    const rig = buildAnimal(name, 'f4sea:' + name), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z) + .8, z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
+    const e = { name, x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+    CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+    const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(9.92e5 + (n++) * 1e4 + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+    const H = rig.hc; if (!H) { G.parent.remove(G); out[name] = { fail: !!rig.hcFail }; continue; }
+    G.rotation.y = 0; G.updateMatrixWorld(true); const bx = new THREE.Box3(); for (const m of H.C.meshes) bx.union(new THREE.Box3().setFromObject(m)); const sb = new THREE.Box3().setFromObject(rig.mesh);
+    const sk = H.C.skel, t0 = performance.now; let i0 = 0; const run = (m, sp) => { for (let i = 0; i < m; i++) { G.position.z += sp / 60; i0++;
+        performance.now = () => 9.95e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow, c: H.C.gait }; };
+    const a = run(60, 0), b = run(60, .8); let mv = 0, bad = 0; for (let i = 0; i < a.m.length; i++) { mv = Math.max(mv, Math.abs(a.m[i] - b.m[i])); if (!isFinite(b.m[i])) bad++; }
+    out[name] = { plan: H.C.g.plan, seed: H.C.g.seed === HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), nose: +(bx.max.z - sb.max.z).toFixed(3),
+      gait: b.c, hold: a.g, swim: b.g, moved: +mv.toFixed(3), bad };
+    G.parent.remove(G); hcTick(9.99e5 + n * 1e4); out[name].dropped = !rig.hc; }
+  return out; }, SEA6);
+console.log('  sea:', JSON.stringify(sea));
+for (const name in SEA6) { const s = sea[name], [L, gt] = SEA6[name];
+  check(`the ${name} wears the kit's (${s.plan}, ${s.bones} bones, ${s.tris} triangles, ${s.len} m nose to tail, want ${L}; its nose ${s.nose} m off the stand-in's); it holds and goes by ${s.gait} (${s.hold}, ${s.swim}, the bones moving ${s.moved}); taken away, dropped`,
+    s && !s.fail && s.plan === 'game:' + name && s.seed && s.tris < 12000 && Math.abs(s.len - L) < L * .12 && Math.abs(s.nose) < .03 && s.gait === gt && s.hold === 'hold' && s.swim === 'swim' && s.moved > .005 && !s.bad && s.dropped, s); }
 // Session 1728: the Mire Snake on the trout's path on land: its belly on the ground, its length the stand-in's, slithering as its group moves
 const snake = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 3, z = pz + fz * 3;
   const rig = buildAnimal('Mire Snake', 'f4snake:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z), z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
