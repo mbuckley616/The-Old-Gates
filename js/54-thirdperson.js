@@ -989,13 +989,19 @@ function tpRestHeld(R){const S=R.rest,h=S&&R.hbHeld&&R.hbHeld.find(x=>x.o===R.we
   if(S.haft){const e=Math.abs(S.dn>0?S.hi:S.lo)*_trS.y;_trP.y=S.y0+.005+e;}
   _trW.compose(_trP,_trQ,_trS);c.matrix.copy(_trM.copy(par.matrixWorld).invert().multiply(_trW));c.matrixWorldNeedsUpdate=true;c.updateMatrixWorld(true);}
 // S1401 — the pull's holds on the builder's body: up to eight times (S2532), the driver's wrists aimed short by how far the builder's miss, and copied again
-const _tmE=[new THREE.Vector3(),new THREE.Vector3()],_tmW=new THREE.Vector3();
+const _tmE=[new THREE.Vector3(),new THREE.Vector3()],_tmW=new THREE.Vector3(),_tmB=[0,1,2,3].map(()=>new THREE.Vector3());
 function tpHBMantle(R){const H=R.rig.hb,M=R.mantle;if(M.w<=0)return;const wb=[H.P.byName['wrist.L'],H.P.byName['wrist.R']];if(!wb[0]||!wb[1])return;
   _tmE[0].set(0,0,0);_tmE[1].set(0,0,0);
   /* S2532 — up to eight passes, ended once both wrists are within a centimetre: two left the left wrist 9–13 cm off the ledge early in the
      pull, where the driver's arm is straight and out of reach and each pass takes only part of the miss */
-  for(let k=0;k<8;k++){R.root.updateMatrixWorld(true);let mx=0;for(let i=0;i<2;i++){wb[i].getWorldPosition(_tmW);_tmW.sub(M.T[i]);mx=Math.max(mx,_tmW.length());_tmE[i].add(_tmW);}
-    if(mx<.01)break;tpMantleArms(R,_tmE);hbPose(R.rig);}}
+  /* S2548 — and the best aim is kept: the aim adds each pass's whole miss, and where the arm is in reach that can overshoot and swing
+     (the spyglass's right wrist 5 cm off at the third pass, then 16 to 26 cm by the eighth); the passes end once the miss stops shrinking */
+  let best=1e9,worse=0;
+  for(let k=0;k<8;k++){R.root.updateMatrixWorld(true);let mx=0;for(let i=0;i<2;i++){wb[i].getWorldPosition(_tmW);_tmW.sub(M.T[i]);mx=Math.max(mx,_tmW.length());_tmB[i+2].copy(_tmW);}
+    if(mx<best){best=mx;worse=0;_tmB[0].copy(_tmE[0]);_tmB[1].copy(_tmE[1]);}else if(++worse>1)break;
+    if(mx<.01)break;_tmE[0].add(_tmB[2]);_tmE[1].add(_tmB[3]);tpMantleArms(R,_tmE);hbPose(R.rig);}
+  R.root.updateMatrixWorld(true);let mx=0;for(let i=0;i<2;i++){wb[i].getWorldPosition(_tmW);mx=Math.max(mx,_tmW.sub(M.T[i]).length());}
+  if(mx>best+1e-4){_tmE[0].copy(_tmB[0]);_tmE[1].copy(_tmB[1]);tpMantleArms(R,_tmE);hbPose(R.rig);}}
 // S1401 — a two-bone reach for any arm, as tpGripL's for the left: the elbow bent until shoulder to wrist is shoulder to T, then the
 // shoulder turned to put the wrist on T; out of reach the arm points straight at it
 function tpReach(sh,el,wr,T){
