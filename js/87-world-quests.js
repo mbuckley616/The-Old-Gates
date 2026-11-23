@@ -325,7 +325,11 @@ const giver=`${lord.title} ${lord.name}`;
             ...(typeof licenceTopics==='function'?licenceTopics(site):[]),
             ...bridgeMendTopics(site), /* S2283 — a bridge down near the town: mended for gold, or by your own planks */ /* S2235 — the lord's licence to hunt his chase (#1540 B) */
             ...(site.kind==='city'?[{label:'The great forge.',avail:()=>typeof greatForgeKeep==='function'&&greatForgeKeep(),fn:()=>{ /* S2553 — the keep's great forge (workstations A, #1883 C; 50-travel.js) */
-              const why=greatForgeLeave();if(why)return why;setTimeout(()=>{try{closeDialog();}catch(e){}openForgePage();},60);return '';}}]:[]),
+              const why=greatForgeLeave();if(why){const fid=currentHouse&&currentHouse.siteId,bty=typeof bountyAt==='function'&&bountyAt(fid)>0; /* S2558 — the lord's own refusal, by people and reason (quest review, Finding 56); the narrator's line stays for showMsg */
+                const L={gatelander:bty?'Nobody warms their hands at a hearth they’ve wronged. Settle with the city, and then we’ll talk of forges.':'The forge is for the city’s friends, and a friend is made slower than a sword. Do the city some good first, and ask me again.',
+                  markman:bty?'There’s a price on you in this city. Pay it. Then ask me about my forge.':'My forge is for the city’s friends. You’re not one. Yet.',
+                  aurennais:bty?'Forgive me, but the city holds a claim against you, and the forge is not lent while a claim stands open. Settle it with the magistrates, and we may speak again.':'The forge is extended to the city’s friends, and that standing is earned, not bought. When your account with the city stands in better credit, I shall open it to you gladly.'};
+                return L[_lp]||L.gatelander;}setTimeout(()=>{try{closeDialog();}catch(e){}openForgePage();},60);return '';}}]:[]),
             {label:'How fares the town?',get response(){return `${site.name} is ${stateSaid(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];
   }
