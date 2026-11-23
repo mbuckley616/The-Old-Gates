@@ -17,7 +17,12 @@ out.afterTutorial = await die();
 await enterDungeon(page, { theme: 'ruins', seed: 11, interior: 'fort_linear', size: 'medium', name: 'The Old Garrison' });
 out.inDungeon = await die();
 await page.evaluate(() => goToOW());
-await page.waitForFunction(() => activeZoneId === 'world', null, { timeout: 20000 }); await page.waitForTimeout(1500);
+// S2549 — the way out is `doFade`'s 440 ms timer and then `WORLD.enter`'s restore in its callback, and on software GL under load a
+// frame holds the thread 8–11 s, so the 20 s bound ran out (FLAKY on the weekly run of 22 Nov). Wait for the callback's end, the fade
+// lifted (`fd`'s opacity set to 0 straight after it), not a fixed pause.
+const t0 = Date.now();
+await page.waitForFunction(() => activeZoneId === 'world' && document.getElementById('fd').style.opacity === '0', null, { timeout: 180000, polling: 250 });
+console.log('out', JSON.stringify({ ms: Date.now() - t0 }));
 out.outside = await die();
 console.log(JSON.stringify(out));
 check('in the open world after the tutorial: *Fell in the open country.*', out.afterTutorial.text === 'Fell in the open country.' && out.afterTutorial.zone === 'world', out.afterTutorial);
