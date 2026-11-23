@@ -45,7 +45,7 @@ check('six lines leave four slips, the repeated one renewed at the foot in its o
   && led.ops[3] === 1 && led.ops[0] < led.ops[3] && led.rule === 'rgb(158, 60, 60)' && led.msg === 'Line 3', led);
 check('the ledger stands above the vitals\' place, left, above the band', led.box[0] === 18 && led.box[3] === led.H - 134 && led.box[3] < led.band[1], { box: led.box, band: led.band });
 check('every slip is gone after 6 s', led.after === 0, led.after);
-// S2583 — the last of #198 A: the vitals plate at the bottom left, under the ledger and clear of the band; each bar's value beside its
+// S2584 — the last of #198 A: the vitals plate at the bottom left, under the ledger and clear of the band; each bar's value beside its
 // maximum, the marks as a thin bar under the level; the weapon's roundel is the inventory button and the spell's the cast button
 const vp = await page.evaluate(() => { const [hud, ibtn, fbtn] = ['hud', 'ibtn', 'fbtn'].map(i => document.getElementById(i)); const r = e => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
   PHP = Math.round(effMaxHP() / 2); levelMarks = marksNeeded() / 4; updateHUD(); const out = { plate: r(hud), led: r(document.getElementById('ledger')), band: r(compassEl), H: innerHeight };

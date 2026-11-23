@@ -571,7 +571,7 @@ function startCastAnim(sp, animType){
 function updateSpellButton(){
   const btn=document.getElementById('fbtn');
   if(!btn)return;
-  /* S2583 — the button is the vitals plate's spell roundel: the glyph on it, the name in its title */
+  /* S2584 — the button is the vitals plate's spell roundel: the glyph on it, the name in its title */
   const show=(g,t,on)=>{btn.textContent=g;btn.title=t;btn.style.opacity=on?'1':'.55';btn.style.fontStyle='normal';};
   const nKnown=Object.keys(knownWords).length;
   if(!nKnown||!activeSpellId){show('◯','No magic (F)',false);return;}
@@ -866,7 +866,7 @@ function hpTailStep(frac,now){
 }
 /* S1407 — a home's line names its resident, and says so while they sleep (the critic's s896): *keeper* is a shop's word */
 function homeTalkLine(){const h=currentHouse;if(!h||h.type!=='home'||!h.keeper)return 'Press E near the keeper to talk';return (typeof sleeperAsleep==='function'&&sleeperAsleep())?h.keeper+' is asleep · Press E to wake':'Press E near '+h.keeper+' to talk';}
-/* S2583 — the vitals plate (#198 A): each bar's maximum beside its value, the marks as a thin bar under the level, and the weapon's
+/* S2584 — the vitals plate (#198 A): each bar's maximum beside its value, the marks as a thin bar under the level, and the weapon's
    roundel showing what is in the hand (the spell's is updateSpellButton's). Written only when a value changes */
 function hudPlate(emHP,emMana,emSt){
   const set=(id,v)=>{const e=document.getElementById(id);if(e&&e._v!==v){e._v=v;e.textContent=v;}};
