@@ -2451,6 +2451,9 @@ const GAITS = {
   swim: { duty: 1, bl: .8, swim: 1, phase: () => 0 },
   crawl: { duty: 1, bl: .18, ripple: 1, phase: () => 0 },
   drift: { duty: 1, bl: .25, bell: 1, phase: () => 0 },
+  // Session 2585: a seal's galumph on land, on its belly: the swim's wave turned into the vertical plane, a short hump (`strideBL` of its
+  // length a cycle), the chest lifting off the ground and the fore-flippers pressing down at each hump's start
+  hump: { duty: 1, bl: .3, strideBL: .25, hump: 1, phase: () => 0 },
   // Session 775: a bird in the air, its wings beating, its legs tucked up under it
   soar: { duty: 1, bl: 2.4, flap: 1, aloft: 1, phase: () => 0 },
   // Session 2118: a raptor's dive (the dusk eagle's, #1424 C): the stoop, the wings half closed and swept back along the body, still, the
@@ -2476,7 +2479,7 @@ const strideBody = (C, G) => 1.6 * Math.pow(Math.max(G.fr, .05), .3) * C.legH * 
 const sweepOf = (C, G) => Math.min(strideBody(C, G) * G.duty, G.pulse ? .9 * C.legH : 1e9);
 // Session 1729: a slither's stride is its wave's length, not a legged gait's (by the legs' height it was 0.07 m a cycle on a 1 m snake, nine
 // waves a second at a walk): the wave runs waveLen bones a cycle down the spine and tail, so the body goes that share of its length a cycle
-function strideOf(C, gait = C.gait) { const G = GAITS[gait]; if (G.wave) return C.len * (C.plan.waveLen ?? 8) / Math.max(1, C.B.spineNames.length + (C.B.chains.tail || []).length); return G.bl ? .7 * C.len : strideBody(C, G) * C.S; }
+function strideOf(C, gait = C.gait) { const G = GAITS[gait]; if (G.wave) return C.len * (C.plan.waveLen ?? 8) / Math.max(1, C.B.spineNames.length + (C.B.chains.tail || []).length); return G.bl ? (G.strideBL ?? .7) * C.len : strideBody(C, G) * C.S; }
 // the distance the body has covered by a phase, in world metres: even for most gaits; a pulse covers the stance's sweep, then flies
 function travel(C, phase) { const G = GAITS[C.gait], k = Math.floor(phase), f = phase - k, L = strideOf(C);
   if (!G.pulse) return phase * L; const sw = sweepOf(C, G) * C.S; return k * L + (f < G.duty ? sw * f / G.duty : sw + (L - sw) * (f - G.duty) / (1 - G.duty)); }
@@ -2541,9 +2544,10 @@ function pose(C, phase) {
   if (G.wave) { const all = [...spn.slice().reverse(), ...(B.chains.tail || [])]; all.forEach((nm, k) => { C.byName[nm].rotation.y += (C.plan.waveAmp ?? .35) * Math.sin(tau * (ph * 1 - k / (C.plan.waveLen ?? 8))) * (k ? 1 : .3); }); }
   sp.scale.set(1, 1, 1);
   // a fish's wave (Session 774): from head to tail, growing toward the tail; a whale's runs in the vertical plane
-  if (G.swim) { const all = [...spn.slice().reverse(), ...(B.chains.tail || [])], N = all.length, ax = C.plan.swimAxis === 'x' ? 'x' : 'y', A = C.plan.waveAmp ?? .22;
+  if (G.swim || G.hump) { const all = [...spn.slice().reverse(), ...(B.chains.tail || [])], N = all.length, ax = G.hump || C.plan.swimAxis === 'x' ? 'x' : 'y', A = G.hump ? .3 : C.plan.waveAmp ?? .22;
+    if (G.hump) sp.position.y += .035 * C.len / C.S * Math.max(0, Math.sin(tau * ph));
     all.forEach((nm, k) => { const u = k / (N - 1); C.byName[nm].rotation[ax] += A * (.08 + Math.pow(u, 1.6)) * Math.sin(tau * (ph - u * (C.plan.waveLen ?? .9))) / (k < spn.length ? 2 : 1); }); }
-  for (const F of B.fins) { const b = C.byName[F.name]; if (F.kind === 'pec') b.rotation.set(0, 0, (F.side || 1) * .22 * Math.sin(tau * ph * (G.swim ? 1 : .4))); else if (F.kind === 'wing') b.rotation.set(0, 0, (F.side || 1) * (G.flap ? .1 + .8 * Math.sin(tau * ph * 2) : .28 + .04 * Math.sin(tau * ph))); else if (F.kind === 'caudal') b.rotation[C.plan.swimAxis === 'x' ? 'x' : 'y'] = .25 * Math.sin(tau * (ph - 1.05)); }
+  for (const F of B.fins) { const b = C.byName[F.name]; if (F.kind === 'pec') b.rotation.set(0, 0, (F.side || 1) * (G.hump ? .35 : .22) * Math.sin(tau * ph * (G.swim || G.hump ? 1 : .4))); else if (F.kind === 'wing') b.rotation.set(0, 0, (F.side || 1) * (G.flap ? .1 + .8 * Math.sin(tau * ph * 2) : .28 + .04 * Math.sin(tau * ph))); else if (F.kind === 'caudal') b.rotation[C.plan.swimAxis === 'x' ? 'x' : 'y'] = .25 * Math.sin(tau * (ph - 1.05)); }
   // radial arms: an octopus's ripple round the ring, a jellyfish's bell that beats and threads that trail it
   for (const Rr of B.radials) { const axis = V(-Math.sin(Rr.a), 0, Math.cos(Rr.a)), np = Rr.names.length;
     for (let j = 0; j < np - 1; j++) { const b = C.byName[Rr.names[j]]; let ang;
@@ -3397,7 +3401,7 @@ Object.assign(PLANS, {
       ['radial', { c: [0, 1.3, 0], parent: 'head', n: 2, ring: .04, len: 1.6, seg: 7, down: 86, r: [.009, .004], thread: 1, rot: .25, tag: 'ten' }],
       ['fins', { list: [{ at: .05, off: [.9, 0], out: [1, 0, 0], back: [0, -1, 0], len: .32, h: .2, pair: 1, role: 'pec' }] }]
     ] },
-  seal: { name: 'Grey seal', src: 'OG-084 (marine life: seals), OG-016', gaits: ['swim', 'stand'], bl: .5, water: 2.2, rough: .3, mottle: 1.5, wag: 0, pant: .03, finOpacity: 1,
+  seal: { name: 'Grey seal', src: 'OG-084 (marine life: seals), OG-016', gaits: ['swim', 'hump', 'stand'], bl: .5, water: 2.2, rough: .3, mottle: 1.5, wag: 0, pant: .03, finOpacity: 1,
     palette: { coat: [.44, .42, .4], saddle: [.28, .27, .26], belly: [.72, .7, .64], dark: [.04, .04, .04], fin: [.3, .28, .26] },
     pattern: { kind: 'patches', size: .06, cut: .32, tone: 'saddle' },
     parts: [
