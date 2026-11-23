@@ -571,20 +571,15 @@ function startCastAnim(sp, animType){
 function updateSpellButton(){
   const btn=document.getElementById('fbtn');
   if(!btn)return;
+  /* S2584 — the button is the vitals plate's spell roundel: the glyph on it, the name in its title */
+  const show=(g,t,on)=>{btn.textContent=g;btn.title=t;btn.style.opacity=on?'1':'.55';btn.style.fontStyle='normal';};
   const nKnown=Object.keys(knownWords).length;
-  if(!nKnown||!activeSpellId){
-    btn.textContent='◯ No magic (F)';
-    btn.style.opacity='.55';
-    btn.style.fontStyle='italic';
-    return;
-  }
-  {const lb=spellBook[bookSync()],lw=lb&&lb.form==='laid'&&WORD_BY[lb.word];if(lw){btn.textContent=`${lw.ico} ${lw.nameIr}${lb.rider&&WORD_BY[lb.rider]?' and '+WORD_BY[lb.rider].nameIr:''}, laid (F)`;btn.style.opacity='1';btn.style.fontStyle='normal';return;}} /* S1590 */
+  if(!nKnown||!activeSpellId){show('◯','No magic (F)',false);return;}
+  {const lb=spellBook[bookSync()],lw=lb&&lb.form==='laid'&&WORD_BY[lb.word];if(lw){show(lw.ico,`${lw.nameIr}${lb.rider&&WORD_BY[lb.rider]?' and '+WORD_BY[lb.rider].nameIr:''}, laid (F)`,true);return;}} /* S1590 */
   const sp=SPELLS.find(s=>s.id===activeSpellId);
-  if(!sp){btn.textContent='◯ No magic (F)';return;}
+  if(!sp){show('◯','No magic (F)',false);return;}
   const tier=effTier(sp.id);
-  btn.textContent=`${sp.ico} ${spellDisplayName(sp,tier)} (F)`;
-  btn.style.opacity='1';
-  btn.style.fontStyle='normal';
+  show(sp.ico,`${spellDisplayName(sp,tier)} (F)`,true);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -871,13 +866,21 @@ function hpTailStep(frac,now){
 }
 /* S1407 — a home's line names its resident, and says so while they sleep (the critic's s896): *keeper* is a shop's word */
 function homeTalkLine(){const h=currentHouse;if(!h||h.type!=='home'||!h.keeper)return 'Press E near the keeper to talk';return (typeof sleeperAsleep==='function'&&sleeperAsleep())?h.keeper+' is asleep · Press E to wake':'Press E near '+h.keeper+' to talk';}
+/* S2584 — the vitals plate (#198 A): each bar's maximum beside its value, the marks as a thin bar under the level, and the weapon's
+   roundel showing what is in the hand (the spell's is updateSpellButton's). Written only when a value changes */
+function hudPlate(emHP,emMana,emSt){
+  const set=(id,v)=>{const e=document.getElementById(id);if(e&&e._v!==v){e._v=v;e.textContent=v;}};
+  set('hvm',Math.floor(emHP));set('mvm',Math.floor(emMana));set('svm',Math.floor(emSt));
+  const xf=document.getElementById('xpf');if(xf){const w=Math.max(0,Math.min(100,levelMarks/Math.max(1e-6,marksNeeded())*100)).toFixed(1)+'%';if(xf._w!==w){xf._w=w;xf.style.width=w;}}
+  const ib=document.getElementById('ibtn');if(ib){const w=EQ.weapon,g=w&&w.ico||'✊',t=(w?w.name:'Bare hands')+' · Inventory (I)';if(ib._g!==g){ib._g=g;ib.textContent=g;}if(ib.title!==t)ib.title=t;}
+}
 function updateHUD(){
   const emHP=effMaxHP(),emMana=effMaxMana(),emSt=effMaxStamina();
   document.getElementById('hb').style.width=(PHP/emHP*100)+'%';document.getElementById('hv').textContent=Math.floor(PHP);
   {const tl=document.getElementById('hbt');if(tl)tl.style.width=(hpTailStep(PHP/emHP,performance.now())*100)+'%';}
   document.getElementById('mb').style.width=(mana/emMana*100)+'%';document.getElementById('mv').textContent=Math.floor(mana);
   document.getElementById('stb').style.width=(stamina/(emSt/(typeof climateStamCap==='function'?climateStamCap():1))*100)+'%'; /* S1917 — under Bitter's ceiling the bar keeps the whole maximum, the lost part hatched */
-  document.getElementById('stb').style.background=staminaCD>0?'#a03030':'#40a040';{const sb=document.getElementById('stb').parentElement,cp=typeof climateStamCap==='function'?climateStamCap():1;if(sb){const want=cp<1?`repeating-linear-gradient(45deg,transparent 0 3px,${(typeof _clim!=='undefined'&&_clim.side==='hot')?'rgba(255,150,60,.45)':'rgba(170,210,255,.45)'} 3px 5px) ${cp*100}% 0/${(1-cp)*100}% 100% no-repeat,#1a1410`:'';if(sb._climBg!==want){sb._climBg=want;sb.style.background=want;}}}document.getElementById('sv').textContent=Math.floor(stamina);document.getElementById('lv').textContent=level;document.getElementById('xv').textContent=+levelMarks.toFixed(2);document.getElementById('xn').textContent=marksNeeded(); /* S952 — the level's marks */document.getElementById('bh').textContent=BAG.length?BAG.slice(-2).map(b=>b.ico+' '+b.name).join(' · '):'';
+  document.getElementById('stb').style.background=staminaCD>0?'#a03030':'#40a040';{const sb=document.getElementById('stb').parentElement,cp=typeof climateStamCap==='function'?climateStamCap():1;if(sb){const want=cp<1?`repeating-linear-gradient(45deg,transparent 0 3px,${(typeof _clim!=='undefined'&&_clim.side==='hot')?'rgba(255,150,60,.45)':'rgba(170,210,255,.45)'} 3px 5px) ${cp*100}% 0/${(1-cp)*100}% 100% no-repeat,#1a1410`:'';if(sb._climBg!==want){sb._climBg=want;sb.style.background=want;}}}document.getElementById('sv').textContent=Math.floor(stamina);document.getElementById('lv').textContent=level;document.getElementById('xv').textContent=+levelMarks.toFixed(2);document.getElementById('xn').textContent=marksNeeded(); /* S952 — the level's marks */hudPlate(emHP,emMana,emSt);document.getElementById('bh').textContent=BAG.length?BAG.slice(-2).map(b=>b.ico+' '+b.name).join(' · '):'';
   // Active buffs line
   const buffEl=document.getElementById('buff-bar');
   if(buffEl){
