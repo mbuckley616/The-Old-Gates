@@ -30,5 +30,20 @@ check('faced, the mark is a roundel at the band\'s middle and the ribbon names i
   && cmp.faced.ribbon.includes('The far door') && cmp.faced.ribbon.includes(cmp.d + ' steps'), { fw, ribbon: cmp.faced.ribbon, d: cmp.d });
 check('turned 135° away, it is pinned at the edge and the ribbon says nothing of it', aw && aw.edge && !cmp.away.ribbon.includes('far door'), { aw, ribbon: cmp.away.ribbon });
 check('two marks 2° apart are one roundel with the objective on top; a place past the edge is not drawn', JSON.stringify(cmp.join) === JSON.stringify([[2, 'a', 303]]) && cmp.on.join() === 'a,b', cmp);
+// S2577 — the rest of #198 A: the band sits at the bottom centre, the ribbon above it; the bottom centre's lines are the ledger's paper slips
+// above the vitals' place, four at most, the newest at the foot, a repeat renewing its slip, each gone after 6 s
+const led = await page.evaluate(async () => { const r = e => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
+  const out = { band: r(compassEl), H: innerHeight, W: innerWidth };
+  for (let i = 1; i <= 5; i++) showMsg('Line ' + i, '#e8d8a0');
+  showMsg('Line 3', '#ff6060');
+  const S = () => [...document.querySelectorAll('#ledger .ldg')].filter(e => !e.classList.contains('gone'));
+  out.lines = S().map(e => e.textContent); out.ops = S().map(e => +e.style.opacity); out.rule = S().at(-1).style.borderLeftColor;
+  out.box = r(document.getElementById('ledger')); out.msg = document.getElementById('msg').textContent;
+  await new Promise(f => setTimeout(f, 6600)); out.after = S().length; return out; });
+check('the band is at the bottom centre, over the controls line', Math.abs((led.band[0] + led.band[2]) / 2 - led.W / 2) <= 1 && led.band[3] === led.H - 28, led.band);
+check('six lines leave four slips, the repeated one renewed at the foot in its own colour, the older paler', JSON.stringify(led.lines) === JSON.stringify(['Line 2', 'Line 4', 'Line 5', 'Line 3'])
+  && led.ops[3] === 1 && led.ops[0] < led.ops[3] && led.rule === 'rgb(158, 60, 60)' && led.msg === 'Line 3', led);
+check('the ledger stands above the vitals\' place, left, above the band', led.box[0] === 18 && led.box[3] === led.H - 134 && led.box[3] < led.band[1], { box: led.box, band: led.band });
+check('every slip is gone after 6 s', led.after === 0, led.after);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

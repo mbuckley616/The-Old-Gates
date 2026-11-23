@@ -137,7 +137,12 @@
   box-shadow:inset 0 0 8px rgba(255,220,160,.6)}
 .bossHpTick{position:absolute;top:0;bottom:0;width:1px;
   background:rgba(0,0,0,.55);pointer-events:none}
-#msg{position:absolute;bottom:54px;left:50%;transform:translateX(-50%);font-size:13px;background:rgba(0,0,0,.82);padding:5px 14px;border-radius:14px;pointer-events:none;opacity:0;transition:opacity .4s;white-space:nowrap;z-index:210;color:#d4b896}
+/* S2577 — the ledger (#198 A): what the bottom centre said, up to four paper slips above the vitals' place, newest at the foot,
+   each gone after 6 s. #msg is kept, unseen, holding the latest line (showMsg still writes it; the suites read it). */
+#msg{display:none}
+#ledger{position:absolute;left:18px;bottom:134px;width:430px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;pointer-events:none;z-index:210}
+#ledger .ldg{padding:5px 16px 5px 10px;max-width:430px;box-sizing:border-box;font:15px/1.3 Georgia,serif;color:#2e1c0c;background:linear-gradient(#ecdcb2,#d8bf88);border-left:4px solid #7a1f10;border-radius:3px;box-shadow:0 0 0 1px #8a7040,0 2px 5px rgba(0,0,0,.55);transition:opacity .4s}
+#ledger .ldg.gone{opacity:0!important}
 #dmgnums{position:fixed;inset:0;pointer-events:none;z-index:205;overflow:hidden}
 /* S761 — damage numbers at the foe's head (#198 A, docs/prototypes/hud/ on auto/concept): placed and faded by tickDmgNums */
 .dn{position:absolute;transform:translate(-50%,-100%);text-align:center;white-space:nowrap;font:500 30px/1 Georgia,'Times New Roman',serif;font-variant-numeric:lining-nums tabular-nums;color:#f6ecd4;-webkit-text-stroke:5px #1a0f06;paint-order:stroke fill;text-shadow:0 2px 6px rgba(0,0,0,.6);letter-spacing:.02em}
@@ -153,7 +158,7 @@
    Indicator sits bottom-left, near the action button column but not over it. */
 #sneakVignette{position:absolute;inset:0;pointer-events:none;border-radius:8px;box-shadow:inset 0 0 0 rgba(0,0,0,0);transition:box-shadow .35s ease;z-index:5}
 #sneakVignette.on{box-shadow:inset 0 0 140px rgba(0,0,0,.55)}
-#sneakInd{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:#aaccaa;font-size:11px;font-weight:600;letter-spacing:.15em;background:rgba(0,0,0,.65);padding:4px 14px;border-radius:10px;border:1px solid rgba(170,204,170,.4);pointer-events:none;display:none;text-transform:uppercase}
+#sneakInd{position:absolute;top:14px;left:50%;transform:translateX(-50%);color:#aaccaa;font-size:11px;font-weight:600;letter-spacing:.15em;background:rgba(0,0,0,.65);padding:4px 14px;border-radius:10px;border:1px solid rgba(170,204,170,.4);pointer-events:none;display:none;text-transform:uppercase}
 #acts{position:absolute;bottom:54px;left:10px;display:none;flex-direction:column;gap:6px;z-index:10}
 #acts button{border-radius:7px;font-size:12px;padding:7px 13px;cursor:pointer;border:1px solid}
 #fbtn{background:rgba(10,20,55,.85);border-color:#4a7ad4;color:#8ac8ff}
@@ -395,16 +400,17 @@
 .qobj-check{width:10px;text-align:center;flex-shrink:0}
 .qlog-reward{font-size:9px;color:#4a6020;margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.05)}
 /* ── COMPASS ─────────────────────────────────────────────── */
-#compass{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:600px;height:46px;pointer-events:none;display:none}
+/* S2577 — #198 A: the band at the bottom centre, over the controls line; the ribbon above it */
+#compass{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);width:600px;height:46px;pointer-events:none;display:none}
 /* S2573 — the ribbon under the wide compass (#198 A): the marks the heading is on, with their distance */
-#compass-lbl{position:absolute;top:62px;left:50%;transform:translateX(-50%);display:none;pointer-events:none;padding:4px 18px 5px;white-space:nowrap;background:linear-gradient(#ecdcb2,#d8bf88);color:#2e1c0c;border-radius:3px;box-shadow:0 0 0 1px #8a7040,0 2px 6px rgba(0,0,0,.55);font:14px/1.35 Georgia,serif}
+#compass-lbl{position:absolute;bottom:84px;left:50%;transform:translateX(-50%);display:none;pointer-events:none;padding:4px 18px 5px;white-space:nowrap;background:linear-gradient(#ecdcb2,#d8bf88);color:#2e1c0c;border-radius:3px;box-shadow:0 0 0 1px #8a7040,0 2px 6px rgba(0,0,0,.55);font:14px/1.35 Georgia,serif}
 #compass-lbl .cl-r{display:flex;gap:8px;align-items:center}
 #compass-lbl .cl-g{font-size:14px}
 #compass-lbl b{font-weight:600;color:#7a1f10}
 #compass-lbl i{color:#5a4128}
 #compass-lbl .cl-d{margin-left:auto;padding-left:14px;color:#5a4128;font-size:13px}
-#sundial{position:absolute;top:17px;left:50%;margin-left:308px;pointer-events:none;display:none}
-#wait-btn{position:absolute;top:15px;left:50%;margin-left:348px;width:36px;height:36px;font-size:18px;background:rgba(20,16,10,.78);color:#d4b896;border:1px solid #4a3828;border-radius:50%;cursor:pointer;display:none;line-height:32px;padding:0}
+#sundial{position:absolute;bottom:35px;left:50%;margin-left:308px;pointer-events:none;display:none}
+#wait-btn{position:absolute;bottom:33px;left:50%;margin-left:348px;width:36px;height:36px;font-size:18px;background:rgba(20,16,10,.78);color:#d4b896;border:1px solid #4a3828;border-radius:50%;cursor:pointer;display:none;line-height:32px;padding:0}
 #wait-btn:hover{background:rgba(40,32,20,.92);border-color:#7a5848}
 #wait-modal{display:none;position:absolute;inset:0;background:rgba(0,0,0,.62);align-items:center;justify-content:center;z-index:120}
 #wait-panel{background:#1a1410;border:2px solid #4a3828;padding:24px 28px;border-radius:6px;min-width:280px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.6)}
@@ -889,6 +895,7 @@
   <button id="save-btn" title="Save Game" style="display:none;position:absolute;top:10px;right:154px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);color:#c8b880;font-size:11px;width:36px;height:28px;border-radius:5px;cursor:pointer;z-index:10;pointer-events:all;padding:0">💾</button>
   <canvas id="mm" width="104" height="104"></canvas>
   <div id="msg"></div>
+  <div id="ledger"></div>
   <div id="dmgnums"></div>
   <div id="acts">
     <button id="fbtn" onclick="castSpell()">✦ Fireball (F)</button>
