@@ -8,8 +8,26 @@ TX.grass.repeat.set(14,14);
 const MAT={wall:new THREE.MeshLambertMaterial({map:TX.wall}),floor:new THREE.MeshLambertMaterial({map:TX.floor}),ceil:new THREE.MeshLambertMaterial({color:0x111016}),grass:new THREE.MeshLambertMaterial({map:TX.grass}),wood:new THREE.MeshLambertMaterial({color:0x7a5020}),thatch:new THREE.MeshLambertMaterial({color:0xaa8830}),stone:new THREE.MeshLambertMaterial({color:0x666870}),door:new THREE.MeshLambertMaterial({color:0x6a4018})};
 
 const MSGEL=document.getElementById('msg');
-function showMsg(t,c='#d4b896'){MSGEL.textContent=t;MSGEL.style.color=c;MSGEL.style.opacity='1';clearTimeout(MSGEL._t);MSGEL._t=setTimeout(()=>MSGEL.style.opacity='0',2800);}
-function showMsgLong(t,c='#d4b896'){MSGEL.textContent=t;MSGEL.style.color=c;MSGEL.style.opacity='1';clearTimeout(MSGEL._t);MSGEL._t=setTimeout(()=>MSGEL.style.opacity='0',5500);}
+// S2578 — the ledger (Michael's A on #198): every line the bottom centre used to show is a paper slip above the vitals' place, up to
+// four, the newest at the foot and the older ones paler, each gone after LEDGER_MS. The caller's colour was for a dark pill; on paper
+// it is the slip's left rule, taken toward the ink so a pale gold still reads. The same line again while its slip stands renews that
+// slip at the foot rather than stacking a copy. #msg keeps the latest line (unseen) for whatever reads it. Cosmetic: the page's clock.
+const LEDGER=document.getElementById('ledger'),LEDGER_N=4,LEDGER_MS=6000;
+function ledgerInk(c){const m=/^#([0-9a-f]{6})$/i.exec(c||'');if(!m)return '#7a1f10';const n=parseInt(m[1],16);
+  return `rgb(${Math.round((n>>16&255)*.62)},${Math.round((n>>8&255)*.62)},${Math.round((n&255)*.62)})`;}
+function ledgerShade(){if(!LEDGER)return;const L=[...LEDGER.children].filter(e=>!e.classList.contains('gone'));
+  L.forEach((e,i)=>{e.style.opacity=String([1,.85,.7,.55][L.length-1-i]||.55);});}
+function ledgerArm(el,ms){clearTimeout(el._x);el._x=setTimeout(()=>{el.classList.add('gone');ledgerShade();setTimeout(()=>{el.remove();ledgerShade();},420);},ms);}
+function ledgerLine(t,c,ms=LEDGER_MS){if(!LEDGER)return;t=String(t==null?'':t);if(!t.trim())return;
+  const same=[...LEDGER.children].find(e=>e._line===t&&!e.classList.contains('gone'));
+  const el=same||document.createElement('div');
+  if(!same){el.className='ldg';el.textContent=t;el._line=t;}
+  el.style.borderLeftColor=ledgerInk(c);LEDGER.appendChild(el);ledgerArm(el,ms);
+  const live=[...LEDGER.children].filter(e=>!e.classList.contains('gone'));
+  for(let i=0;i<live.length-LEDGER_N;i++){clearTimeout(live[i]._x);live[i].remove();}
+  ledgerShade();}
+function showMsg(t,c='#d4b896'){MSGEL.textContent=t;MSGEL.style.color=c;ledgerLine(t,c);}
+function showMsgLong(t,c='#d4b896'){MSGEL.textContent=t;MSGEL.style.color=c;ledgerLine(t,c);}
 function doFade(cb){const el=document.getElementById('fd');el.style.transition='opacity .4s';el.style.opacity='1';setTimeout(()=>{cb();el.style.opacity='0';},440);}
 
 // v61ae: defensive UI cleanup called on every zone/interior/dungeon transition.
