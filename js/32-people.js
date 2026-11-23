@@ -1323,17 +1323,33 @@ function pwShamble(p,c,s,lim,bs){p.spine=[.3+.06*bs,.05*c,-lim*(.05+.1*bs)];p.ne
 // through, the trunk leans in, and the arms pump bent. Past PW.RUN.on figure-heights a second (a person is about a
 // unit tall) the gait blends from the walk into this; back under PW.RUN.off.
 PW.RUN={STRIDE:.25*PW.LEGK,DUTY:.33,HIPS:PW.FOOT+PW.HIPJ+.288*PW.LEGK,BOB:.018*PW.LEGK,LIFT:.15*PW.LEGK,on:1.4,off:1.15};
+// S2561 — the run stood up. Its stance was ±STRIDE about the hip, a sprinter's ±0.64 leg lengths, and the pelvis sat low enough (HIPS .493,
+// 74% of the leg's reach; the walk's is 98%) for the foot to be reached at both ends: the builder's bodies ran 23 cm lower than they stood,
+// knees near 90° through the stance. A runner lands nearer under the hip than he pushes off behind it, and pushes off with the heel up,
+// pivoting on the ball of the foot. So the stance runs from FRONT ahead of the hip to BACK behind it, the heel rises about the ball (BALL
+// ahead of the ankle) only as far as the leg needs to reach (pwHeel), and the pelvis rides at HIPS, with a deeper bob at the stance's middle.
+// STRIDE is kept as half the stance's length for whatever reads it; the cycle (ground a stride covers) is the stance over the duty.
+Object.assign(PW.RUN,{FRONT:.157*PW.LEGK,BACK:.243*PW.LEGK,DUTY:.3,HIPS:PW.FOOT+PW.HIPJ+.354*PW.LEGK,BOB:.025*PW.LEGK,BALL:.11,HEEL:.75});
+PW.RUN.STRIDE=(PW.RUN.FRONT+PW.RUN.BACK)/2;
 // S880 (F2a) — people grew 1.44 times (07-scale.js) and the world's speeds did not, so the pace at which one breaks into a run is
 // kept in metres a second: the thresholds are divided by the growth (1.4 and 1.15 of the old root scale, about 1.25 and 1.0 m/s)
 PW.RUN.on/=SCALE.PEOPLE.gatelander.m/SCALE.PERSON_MODEL;PW.RUN.off/=SCALE.PEOPLE.gatelander.m/SCALE.PERSON_MODEL;
 PW.RUN.cycle=2*PW.RUN.STRIDE/PW.RUN.DUTY;
+// the heel's rise about the ball (radians, foot toe-down) that brings the ankle within the leg's reach of the hip joint: the ankle at
+// (z, y) from the hip joint with the foot flat; none when it is already in reach. Returns [heel, z', y'], the ankle where the heel puts it.
+function pwHeel(z,y){const L=(PW.L1+PW.L2)*.995,B=PW.RUN.BALL,F=PW.FOOT,at=h=>{const c=Math.cos(h),s=Math.sin(h);return [z+B*(1-c)+F*s,y+B*s+F*(c-1)];};
+  if(Math.hypot(z,y)<=L)return [0,z,y];let lo=0,hi=PW.RUN.HEEL;const r0=at(hi);if(Math.hypot(r0[0],r0[1])>L)return [hi,r0[0],r0[1]];
+  for(let i=0;i<14;i++){const m=(lo+hi)/2,r=at(m);if(Math.hypot(r[0],r[1])>L)lo=m;else hi=m;}const r=at(hi);return [hi,r[0],r[1]];}
 function pwRun(ph,o){const p=pwZero();const R=PW.RUN,S=R.STRIDE,D=R.DUTY,phL=ph%1,phR=(phL+.5)%1,a=Math.PI*2*phL;
   p.hipsY=R.HIPS-R.BOB*Math.cos(Math.PI*4*(phL-D/2))-(o.goblin?.06*PW.LEGK:0);
   const c=Math.cos(a),s=Math.sin(a);
   p.hips=[0,-.09*c,.02*s];
+  const Fr=R.FRONT,Bk=R.BACK;p.reach=0;
   const foot=(f,sd)=>{let z,lift=0,toe=0;
-    if(f<D){z=S-2*S*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-S+2*S*e;lift=R.LIFT*Math.sin(Math.PI*Math.pow(u,.65));toe=.45*Math.sin(Math.PI*Math.min(1,u*1.3));}
-    const x0=sd*.085;const r=pwIK(z+x0*Math.sin(p.hips[1]),PW.FOOT+lift-(p.hipsY-PW.HIPJ)-x0*Math.sin(p.hips[2]));return [r[0],r[1],-(r[0]+r[1])+toe];};
+    if(f<D){z=Fr-(Fr+Bk)*(f/D);}else{const u=(f-D)/(1-D),e=u*u*(3-2*u);z=-Bk+(Fr+Bk)*e;lift=R.LIFT*Math.sin(Math.PI*Math.pow(u,.65));toe=.45*Math.sin(Math.PI*Math.min(1,u*1.3));}
+    const x0=sd*.085,hl=pwHeel(z+x0*Math.sin(p.hips[1]),PW.FOOT+lift-(p.hipsY-PW.HIPJ)-x0*Math.sin(p.hips[2]));
+    p.reach=Math.max(p.reach,Math.hypot(hl[1],hl[2])/(PW.L1+PW.L2));if(f<D)p[sd>0?'heelL':'heelR']=hl[0];
+    const r=pwIK(hl[1],hl[2]);return [r[0],r[1],-(r[0]+r[1])+Math.max(toe,hl[0])];};
   const L=foot(phL,1),Rr=foot(phR,-1);
   p.sway=.008*s;const Lz=p.hipsY-PW.HIPJ-PW.FOOT,lat=-(p.sway+Lz*Math.sin(p.hips[2]))/Lz;
   // the thighs turn back against the pelvis's twist (their Euler order is YXZ), so a planted foot is not dragged sideways
