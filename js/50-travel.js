@@ -539,10 +539,10 @@ function herbIsleHere(){try{if(activeZoneId==='world'&&!(typeof isInterior==='fu
 // the herbs whose second effect is their hidden one's kin, so 15 eats teach it as well; the sea's three have no hidden of their own
 const HERB_KIN=new Set(['firemoss','silverleaf','muirfhear','thornberry','shadowcap','deepmoss','caordubh','kelp','sealily','pearlweed']);
 // a herb in the bag by its HERB_DEF key: the pick's _typeKey, which a reload drops, else its name
-function herbKeyOf(it){if(!it)return null;if(it._typeKey&&HERB_FX[it._typeKey])return it._typeKey;const nm=herbDried(it)?String(it.name).slice(6):it.name; /* S2553 — a dried herb is its herb */
+function herbKeyOf(it){if(!it)return null;if(it._typeKey&&HERB_FX[it._typeKey])return it._typeKey;const nm=herbDried(it)?String(it.name).slice(6):it.name; /* S2554 — a dried herb is its herb */
   if(typeof HERB_DEF!=='undefined')for(const k in HERB_DEF)if(HERB_DEF[k].name===nm)return k;
   const k=String(nm||'').toLowerCase().replace(/[^a-z]/g,'');return HERB_FX[k]?k:null;}
-// S2553 — workstations B (#1883 C): a herb dried on a drying rack, known by its name, so a reload keeps it
+// S2554 — workstations B (#1883 C): a herb dried on a drying rack, known by its name, so a reload keeps it
 function herbDried(it){return !!(it&&it.type==='herb'&&/^Dried /.test(String(it.name||'')));}
 function driedHerbItem(k){const D=HERB_DEF[k];return {...D.item,name:'Dried '+D.item.name,_typeKey:k,qty:1};}
 function herbsKnown(){return worldState.herbsKnown||(worldState.herbsKnown={fx:{},none:{}});}
@@ -714,9 +714,9 @@ function herbTellCount(){return perk('alchemy',25)?5:HIDDEN_UNLOCK_COUNT;}
 function herbFxKnown(k,i){const n=HERB_CONSUME_COUNTS[k]||0;if(i===0&&n>0)return true;if(i===1&&HERB_KIN.has(k)&&n>=herbTellCount())return true;const f=herbsKnown().fx[k];return !!(f&&f[i]);}
 function learnHerbFx(k,i){const K=herbsKnown();const f=K.fx[k]||(K.fx[k]=[0,0,0,0]);const was=herbFxKnown(k,i);f[i]=1;return !was;}
 function brewPairKey(a,b){return [a,b].sort().join('|');}
-function alchStrength(){return skillMult('alchemy')*(1+.01*attrEff('intelligence'));} /* S2553 — the ship's still is a still now (stillHere), not S1733's ×1.10 on the mortar */
+function alchStrength(){return skillMult('alchemy')*(1+.01*attrEff('intelligence'));} /* S2554 — the ship's still is a still now (stillHere), not S1733's ×1.10 on the mortar */
 function gameDayNow(){return Math.floor((worldState.gameTimeAbsMinutes||0)/1440);}
-function brewTurned(it){return !!(it&&it.brew&&!it.brew.draught&&gameDayNow()-it.brew.day>=TINCTURE_TURN_DAYS&&!perk('alchemy',75));} /* S2553 — a draught never turns */
+function brewTurned(it){return !!(it&&it.brew&&!it.brew.draught&&gameDayNow()-it.brew.day>=TINCTURE_TURN_DAYS&&!perk('alchemy',75));} /* S2554 — a draught never turns */
 function brewStrength(it){return it.brew.s*(brewTurned(it)?.5:1);}
 function brewMax(){return perk('alchemy',50)?3:2;}
 // what these herbs would make: every effect at least two of them carry; a harmful one makes it a poison of the harmful alone
@@ -731,7 +731,7 @@ function brewHerbs(keys,cat){
   if(cat&&(!SPEC_DEF[cat]||specInBag(cat)<0))return {made:false,why:'You do not have that specimen.'}; /* S2159 — one catalyst a grinding */
   const C=cat?SPEC_CAT_OF[cat]:null;
   if(keys.length<2||keys.length>brewMax())return {made:false,why:brewMax()===3?'Two or three herbs.':'Two herbs.'};
-  const idx=keys.map(k=>{const d=BAG.findIndex(b=>b&&herbDried(b)&&herbKeyOf(b)===k);return d>=0?d:BAG.findIndex(b=>b&&b.type==='herb'&&herbKeyOf(b)===k);}); /* S2553 — a dried one first */
+  const idx=keys.map(k=>{const d=BAG.findIndex(b=>b&&herbDried(b)&&herbKeyOf(b)===k);return d>=0?d:BAG.findIndex(b=>b&&b.type==='herb'&&herbKeyOf(b)===k);}); /* S2554 — a dried one first */
   if(idx.some(i=>i<0))return {made:false,why:'You do not have those herbs.'};
   const sh=brewShared(keys),K=herbsKnown(),dryK=1+DRIED_K*(idx.filter(i=>i>=0&&herbDried(BAG[i])).length/keys.length);
   if(C==='clean'&&sh.poison){const rest=sh.all.filter(f=>!ALCH_FX[f].harm);if(!rest.length)return {made:false,kept:true,why:'Nothing is left but harm. The herbs are kept.'};sh.fx=rest;sh.poison=false;}
@@ -744,7 +744,7 @@ function brewHerbs(keys,cat){
   const learnt=[];keys.forEach(k=>HERB_FX[k].forEach((f,i)=>{if(((bound?i===0:sh.all.includes(f))||C==='revealing')&&learnHerbFx(k,i))learnt.push(k+':'+f);}));
   idx.sort((a,b)=>b-a).forEach(i=>{const b=BAG[i];b.qty=(b.qty||1)-1;if(b.qty<=0)BAG.splice(i,1);});
   let catNew=false;if(cat){bagTake(b=>b.type==='herb'&&b.spec===cat,1);catNew=learnSpecimen(cat);} /* experiment: grinding with it teaches it */
-  const s=+(alchStrength()*dryK*(C==='steeping'?SPEC_STEEP:C==='steeping2'?SPEC_STEEP2:1)).toFixed(3),day=gameDayNow(); /* S2553 — dried herbs ×1.10 */
+  const s=+(alchStrength()*dryK*(C==='steeping'?SPEC_STEEP:C==='steeping2'?SPEC_STEEP2:1)).toFixed(3),day=gameDayNow(); /* S2554 — dried herbs ×1.10 */
   const item={name:brewName(sh.fx,sh.poison),ico:sh.poison?'☠️':'🧪',type:'potion',weight:.5,sellMult:.4,
     buyPrice:Math.max(...sh.fx.map(f=>ALCH_FX[f].price||25)),brew:{fx:sh.fx,s,day,poison:sh.poison}};
   if(C==='venom'&&sh.poison)item.brew.blows=SPEC_VENOM_BLOWS;if(C==='lasting'&&!sh.poison)item.brew.last=SPEC_LAST;
@@ -801,7 +801,7 @@ function sealPotWhy(){if(skillLv('alchemy')<FIRE_POT_ALCH)return `Sealing a fire
 function sealFirePot(){const why=sealPotWhy();if(why)return why;bagTake(b=>b.name===CLAY_POT_ITEM.name,1);bagTake(b=>b.name===SURV_ITEMS.pitch.name,1);
   bagAdd({...FIRE_POT_ITEM});skillUse('alchemy',8);addLog('🏺','Sealed a fire pot');return true;}
 
-// ── S2553 — Workstations B, session 1 (Michael's C on #1883, `docs/design/workstations.md`): dried herbs and the draught ──
+// ── S2554 — Workstations B, session 1 (Michael's C on #1883, `docs/design/workstations.md`): dried herbs and the draught ──
 // Prepare: a herb hung on a drying rack (a smith's, a harbour's goods shop's, your house's: A's racks, no salt) comes down Dried in the
 // rack's 6 hours, 4 to a rack; a dried herb grinds at ×1.10 (in part, a third or a half, when only some of the grinding is dried).
 // Heat and distil: at a still, an apothecary's (5 gold), the Mages' Guild's (free to its members) or your ship's, two tinctures of one
@@ -834,7 +834,7 @@ function distilDraught(key){const w=stillHere();if(!w)return {made:false,why:'Yo
 // ── the brewing page (parchment, Michael's A on the interface): the herbs on the left, the chosen herbs' four rows right ──
 let brewOpen=false,brewSel=[],brewSaid='',brewCat=null;
 function openBrewPage(){
-  if(!hasMortar()&&!stillHere()){showMsg('You need a mortar and pestle.','#cc8844');return;} /* S2553 — or a still */
+  if(!hasMortar()&&!stillHere()){showMsg('You need a mortar and pestle.','#cc8844');return;} /* S2554 — or a still */
   if(typeof hubOpen!=='undefined'&&hubOpen&&typeof closeHub==='function')closeHub();
   if(typeof shopOpen!=='undefined'&&shopOpen&&typeof closeShop==='function')closeShop();
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
@@ -875,7 +875,7 @@ function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;con
     const why=sealPotWhy(); /* S1837 — the fire pot, under the herbs */
     fp.innerHTML=`<button type="button" id="br-seal" style="background:none;border:1px solid ${why?'#a89060':'#7a1f10'};border-radius:3px;font:14px Georgia,serif;color:${why?'#a09070':'#7a1f10'};cursor:pointer;padding:1px 8px">Seal a fire pot</button> <span style="color:#8a7050;font-size:13px">a clay pot ×${clayPotCount()} and a pitch ×${pitchCount()} · Alchemy ${FIRE_POT_ALCH}</span>`;
     fp.querySelector('#br-seal').onclick=()=>{const r=sealFirePot();brewSaid=r===true?`A fire pot, sealed. You carry ${firePotCount()}.`:r;if(r===true&&typeof uiTone==='function')uiTone(220,300,.1,.08,'sine');brewDraw();};
-    if(stillHere()){const G=stillGroups(); /* S2553 — the still: two tinctures of one brew into a draught */
+    if(stillHere()){const G=stillGroups(); /* S2554 — the still: two tinctures of one brew into a draught */
       fp.insertAdjacentHTML('beforeend',`<div style="margin-top:8px;font-variant:small-caps;color:#7a1f10">The still</div>`+(G.length?G.map((g,i)=>`<div style="padding-left:12px"><button type="button" data-d="${i}" style="background:none;border:1px solid ${g.n>=2?'#7a1f10':'#a89060'};border-radius:3px;font:13px Georgia,serif;color:${g.n>=2?'#7a1f10':'#a09070'};cursor:pointer;padding:1px 8px;margin:2px 0">Distil ${g.name}</button> <span style="color:#8a7050;font-size:13px">×${g.n}</span></div>`).join(''):'<div style="padding-left:12px;color:#8a7050;font-style:italic">no tinctures to run</div>')+
         `<div style="padding-left:12px;color:#8a7050;font-style:italic;font-size:12px">two tinctures of one brew make a draught: ×${DRAUGHT_K} their strength, an hour; it never turns</div>`);
       fp.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const r=distilDraught(G[+b.dataset.d].key);brewSaid=r.made?`${r.item.name}.`:r.why;if(r.made){if(typeof uiTone==='function')uiTone(300,400,.1,.08,'sine');addLog('⚗️','Distilled '+r.item.name);}brewDraw();});}}
@@ -1158,7 +1158,7 @@ function saltFor(h){const it=survItem('salt',houseIsle(h)==='aurenne'?2:1);retur
 const RACK_MIN=360,RACK_HOLD=4,JERKY_TURN_DAYS=30,JERKY_X=.5;
 const RACK_KIND={rack:{name:'Tanner’s rack',takes:['hide']},dry:{name:'Drying rack',takes:['meat','fish','herb']}};
 const RACK_HANG={hide:{need:b=>!!b.hide,say:'a hide'},meat:{need:b=>foodOf(b)==='meat',say:'raw meat'},fish:{need:b=>foodOf(b)==='fish',say:'a fish'},
-  herb:{need:b=>!!b&&b.type==='herb'&&!herbDried(b)&&!b.spec&&!!herbKeyOf(b),say:'a herb',noSalt:true}}; /* S2553 — a herb dries with no salt */
+  herb:{need:b=>!!b&&b.type==='herb'&&!herbDried(b)&&!b.spec&&!!herbKeyOf(b),say:'a herb',noSalt:true}}; /* S2554 — a herb dries with no salt */
 function jerkyItem(food,day){const fish=food==='fish';
   return {name:fish?'Dried Fish':'Jerky',ico:fish?'🐟':'🥓',type:'potion',weight:.3,buyPrice:10,sellMult:.3,meal:{kind:FOOD_MEAL[food].kind,s:1,x:JERKY_X,made:day,jerky:1},brewKey:'jerky@'+food+'@d'+day};}
 // the racks a house keeps: both at a smith's and at a Mark hall's yard (S2142), the drying rack at a harbour's goods shop. Returns [{kind, key}]
@@ -1173,7 +1173,7 @@ function cureReady(e){return gameMinNow()-e.at>=RACK_MIN;}
 // the named actions: hang one thing with its salt; take everything done. Each returns {done, why}
 function cureHang(r,what,hk){const K=RACK_KIND[r.kind],H=RACK_HANG[what];if(!K||!H||!K.takes.includes(what))return {done:false,why:''};
   const L=cureList(r.key);if(L.length>=RACK_HOLD)return {done:false,why:`The rack holds ${RACK_HOLD}.`};
-  const need=hk?b=>H.need(b)&&herbKeyOf(b)===hk:H.need; /* S2553 — a herb by its kind */
+  const need=hk?b=>H.need(b)&&herbKeyOf(b)===hk:H.need; /* S2554 — a herb by its kind */
   if(!bagCount(need))return {done:false,why:`You have no ${hk&&HERB_DEF[hk]?HERB_DEF[hk].name:H.say.replace(/^an? /,'')}.`};
   if(!H.noSalt&&!bagCount(b=>!!b.salt))return {done:false,why:'It wants a salt.'};
   const hb=what==='herb'?herbKeyOf(BAG.find(need)):null;
@@ -2203,13 +2203,13 @@ function smithForge(){return typeof isInterior==='function'&&isInterior()&&typeo
 // keeps it, so it asks no fee and nobody tempers for gold there
 function dunForgeNear(){if(activeZoneId!=='dungeon'||typeof D_FORGES==='undefined')return null;
   return D_FORGES.find(f=>f.floor===currentFloor&&Math.hypot(px-f.x,pz-f.z)<TOUCH)||null;}
-// S2551 — Workstations A, session 1 (Michael's C on #1883, `docs/design/workstations.md`): the forge by grade. A village's smith and
+// S2552 — Workstations A, session 1 (Michael's C on #1883, `docs/design/workstations.md`): the forge by grade. A village's smith and
 // a fort armoury's smelter work to Steel (4); the smith of a town, a port, a garrison or a city to Obsidian (7); Draconic, tier 9 and
-// Cosmic (8–10) and their tempers only at a city keep's great forge (`greatForgeHere`, S2552). Smelting, making, a tool and a temper,
+// Cosmic (8–10) and their tempers only at a city keep's great forge (`greatForgeHere`, S2553). Smelting, making, a tool and a temper,
 // yours or the smith's, all refuse a metal above the grade, and the page greys those rows and names the forge that works them.
 const FORGE_GRADES={smith:{max:4,word:'a village forge',head:'A village forge'},town:{max:7,word:'a town’s forge',head:'A town’s forge'},great:{max:10,word:'the great forge in a city’s keep',head:'The great forge'}};
 const FORGE_TOWN_KINDS=['town','port','garrison','city'];
-// S2552 — Workstations A, session 2: the great forge is a city keep's (the `castle` lot of a city; until the look builder draws its
+// S2553 — Workstations A, session 2: the great forge is a city keep's (the `castle` lot of a city; until the look builder draws its
 // corner, the keep's hall is the forge). It asks the city's favour of +2 or better and no unpaid bounty there, 25 gold a use, and its
 // forge-master tempers for gold as a smith does. In a Prior's town (Aurenne's, with a church) he will not work gate salvage: tier 9,
 // the sigil stone's metal, is smelted in the Gatelands or the Mark. The steward's *The great forge.* opens it (lordTopics, 87).
@@ -2242,7 +2242,7 @@ let _forgeN=0;
 function forgeSmelt(tier){
   if(!forgeHere())return {made:false,why:forgeNone()};
   const D=INGOT_DEF.find(d=>d.tier===tier);if(!D)return {made:false,why:''};
-  {const a=forgeAbove(tier)||forgeSalvageBar(tier);if(a)return {made:false,why:a};} /* S2551, S2552 */
+  {const a=forgeAbove(tier)||forgeSalvageBar(tier);if(a)return {made:false,why:a};} /* S2552, S2553 */
   if(ingotRare(D)){const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
     if(rareCount(D)<1)return {made:false,why:RARE_DEF[D.rare].why};
     if(D.ingot&&ingotCount(D.ingot)<1)return {made:false,why:`It wants ${MATERIALS[D.ingot-1].name.toLowerCase()==='adamant'?'an':'a'} ${MATERIALS[D.ingot-1].name.toLowerCase()} ingot to take it.`};}
@@ -2268,7 +2268,7 @@ function forgeQualityApply(it,q){const Q=FORGE_QUALITY[q];if(!Q)return it;it.qua
 function forgeMake(type,tier){
   if(!forgeHere())return {made:false,why:forgeNone()};
   const F=FORGE_TYPES.find(f=>f.T.type===type);if(!F||!INGOT_DEF.some(d=>d.tier===tier))return {made:false,why:''};
-  {const a=forgeAbove(tier)||forgeSalvageBar(tier);if(a)return {made:false,why:a};} /* S2551, S2552 */
+  {const a=forgeAbove(tier)||forgeSalvageBar(tier);if(a)return {made:false,why:a};} /* S2552, S2553 */
   const gate=SKILL_GATE[tier]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[tier-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
   const n=forgeIngots(F.T);if(ingotCount(tier)<n)return {made:false,why:`You need ${n} ${MATERIALS[tier-1].name.toLowerCase()} ingot${n>1?'s':''}.`};
   const pl=forgePlanks(F.T);if(plankCount()<pl)return {made:false,why:'It needs a plank for the grip.'};
@@ -2291,7 +2291,7 @@ function forgeTemper(it,bySmith){
   if(!forgeHere())return {done:false,why:forgeNone()};
   if(!temperable(it))return {done:false,why:it&&(it.tempers||0)>=temperMax()?'It will take no more tempering.':'That cannot be tempered.'};
   if(bySmith&&!forgeKept())return {done:false,why:'No smith keeps this forge.'};
-  {const a=forgeAbove(it.tier)||forgeSalvageBar(it.tier);if(a)return {done:false,why:a};} /* S2551 — the smith tempers only what his forge could make, and so do you */
+  {const a=forgeAbove(it.tier)||forgeSalvageBar(it.tier);if(a)return {done:false,why:a};} /* S2552 — the smith tempers only what his forge could make, and so do you */
   if(bySmith){const c=20*it.tier;if(gold<c)return {done:false,why:`The ${greatForgeHere()?'forge-master':'smith'} asks ${c} gold.`};gold-=c;temperApply(it);return {done:true};}
   const T=temperNeed(it);if(!T)return {done:false,why:`There is no ore for ${MATERIALS[it.tier-1].name.toLowerCase()}: the smith can temper it.`};
   const gate=SKILL_GATE[it.tier]||0;if(skillLv('smithing')<gate)return {done:false,why:`${MATERIALS[it.tier-1].name} asks Smithing ${gate}.`};
@@ -2311,7 +2311,7 @@ function toolItem(kind,metal){const B=kind==='pick'?PICK_ITEM:HATCHET_ITEM,M=MAT
 function forgeTool(kind,metal){
   if(!forgeHere())return {made:false,why:forgeNone()};
   if(!TOOL_METALS.includes(metal)||(kind!=='pick'&&kind!=='hatchet'))return {made:false,why:''};
-  {const a=forgeAbove(metal);if(a)return {made:false,why:a};} /* S2551 */
+  {const a=forgeAbove(metal);if(a)return {made:false,why:a};} /* S2552 */
   const gate=SKILL_GATE[metal]||0;if(skillLv('smithing')<gate)return {made:false,why:`${MATERIALS[metal-1].name} asks Smithing ${gate} (you have ${skillLv('smithing')}).`};
   if(ingotCount(metal)<2)return {made:false,why:`You need 2 ${MATERIALS[metal-1].name.toLowerCase()} ingots.`};
   if(plankCount()<1)return {made:false,why:'It needs a plank for the haft.'};
@@ -2322,7 +2322,7 @@ function forgeTool(kind,metal){
   return {made:true,item:BAG[BAG.length-1]};}
 const FORGE_TOOLS=[['pick',4],['pick',5],['hatchet',4],['hatchet',5]];
 function openForgePage(){
-  if(!forgeHere()){showMsg(forgeNone(),'#cc8844');return;} /* S2552 — in a city's keep, why its forge is shut */
+  if(!forgeHere()){showMsg(forgeNone(),'#cc8844');return;} /* S2553 — in a city's keep, why its forge is shut */
   if(typeof hubOpen!=='undefined'&&hubOpen&&typeof closeHub==='function')closeHub();
   if(typeof shopOpen!=='undefined'&&shopOpen&&typeof closeShop==='function')closeShop();
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();

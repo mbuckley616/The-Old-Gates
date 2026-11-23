@@ -324,7 +324,7 @@ const giver=`${lord.title} ${lord.name}`;
             erHedgeLordTopic(site), /* S2021 — the hedge's deed, in Aurenne */
             ...(typeof licenceTopics==='function'?licenceTopics(site):[]),
             ...bridgeMendTopics(site), /* S2283 — a bridge down near the town: mended for gold, or by your own planks */ /* S2235 — the lord's licence to hunt his chase (#1540 B) */
-            ...(site.kind==='city'?[{label:'The great forge.',avail:()=>typeof greatForgeKeep==='function'&&greatForgeKeep(),fn:()=>{ /* S2552 — the keep's great forge (workstations A, #1883 C; 50-travel.js) */
+            ...(site.kind==='city'?[{label:'The great forge.',avail:()=>typeof greatForgeKeep==='function'&&greatForgeKeep(),fn:()=>{ /* S2553 — the keep's great forge (workstations A, #1883 C; 50-travel.js) */
               const why=greatForgeLeave();if(why)return why;setTimeout(()=>{try{closeDialog();}catch(e){}openForgePage();},60);return '';}}]:[]),
             {label:'How fares the town?',get response(){return `${site.name} is ${stateSaid(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
             ];

@@ -13,7 +13,7 @@ function openShop(){
   {let fb=document.getElementById('sh-forge');const on=typeof forgeHere==='function'&&forgeHere(); /* S1494 — a smith's room: the forge */
     if(on&&!fb){fb=document.createElement('button');fb.id='sh-forge';fb.className='sh-tab';fb.textContent='Forge';fb.onclick=()=>openForgePage();document.getElementById('sh-tabs').appendChild(fb);}
     if(fb)fb.style.display=on?'':'none';}
-  {let sb=document.getElementById('sh-still');const on=typeof stillHere==='function'&&!!stillHere(); /* S2553 — an apothecary's or the Mages' Guild's still */
+  {let sb=document.getElementById('sh-still');const on=typeof stillHere==='function'&&!!stillHere(); /* S2554 — an apothecary's or the Mages' Guild's still */
     if(on&&!sb){sb=document.createElement('button');sb.id='sh-still';sb.className='sh-tab';sb.textContent='Still';sb.onclick=()=>openBrewPage();document.getElementById('sh-tabs').appendChild(sb);}
     if(sb)sb.style.display=on?'':'none';}
   {let rb=document.getElementById('sh-rack');const on=typeof curesHere==='function'&&curesHere().length>0; /* S2131 — the tanner's and the drying rack */

@@ -216,7 +216,7 @@ check(`S2165: Steeping (Skyshard) ×${ct.steep2}; Binding (Saltcrystal): ${ct.lo
 check(`observed: the third open Miragebloom picked teaches it (${ct.obs}); study: refused with no table, an hour at the apothecary's (${ct.study.mins} min), one spent: "${ct.study.said}"`,
   ct.obs.join() === 'false,false,true' && ct.obsKnown && /table/.test(ct.studyOut || '') && ct.study.done && ct.study.mins === 60 && ct.study.spent && ct.study.known, ct);
 check(`the page offers the Ironleaf under the herbs, chosen and ground: "${ct.said}"`, /Ironleaf/.test(ct.row || '') && ct.sel === 'ironleaf' && /Swiftness/.test(ct.said) && ct.spent, ct);
-// ── S2553: workstations B, session 1 (#1883 C): herbs dried on a drying rack, and two tinctures distilled into a draught at a still ──
+// ── S2554: workstations B, session 1 (#1883 C): herbs dried on a drying rack, and two tinctures distilled into a draught at a still ──
 const DR = await page.evaluate(() => {
   const o = {}, L = lid, H = currentHouse; BAG.length = 0; worldState.racks = {}; gold = 100; SKILLS.alchemy = { lv: 50, p: 0 }; ATTRS.intelligence = 0;
   const herb = (k, n) => bagAdd({ ...HERB_DEF[k].item, qty: n, _typeKey: k }); bagAdd({ ...MORTAR_ITEM });
@@ -255,12 +255,12 @@ const DR = await page.evaluate(() => {
   const db = BAG.find(b => /^Draught of/.test(b.name)); o.reload = { draught: !!(db && db.brew.draught), w: db && db.weight, dried: BAG.some(b => herbDried(b) && herbKeyOf(b) === 'silverleaf') };
   lid = L; currentHouse = H; return o; });
 console.log(JSON.stringify(DR));
-check('S2553: a herb hangs on a drying rack with no salt, by its kind; the rack\'s page offers it', DR.rack && DR.hang && DR.noSalt && DR.hung === 'herb:firemoss,herb:silverleaf' && DR.left === 1 && DR.btn && /no salt/.test(DR.line), DR);
-check('S2553: after 6 hours it comes down Dried, known as its herb (and by its name after a reload)', /Nothing on it is ready/.test(DR.early) && DR.took === 'Dried Firemoss,Dried Silverleaf' && DR.dried === 'Dried Firemoss:firemoss,Dried Silverleaf:silverleaf' && DR.reloadKey === 'firemoss', DR);
-check('S2553: dried herbs grind at ×1.10 and are taken first', Math.abs(DR.dryS / DR.freshS - 1.1) < .002 && DR.dryGone, { fresh: DR.freshS, dried: DR.dryS });
-check('S2553: no still outdoors; at an apothecary two tinctures of one brew make a draught: ×1.35 their mean, 5 gold, an hour, Alchemy +10, 0.2 kg', /still/.test(DR.outdoors) && DR.draught.made && /^Draught of /.test(DR.draught.name) && DR.draught.s === DR.draught.want && DR.draught.fee === 5 && DR.draught.mins === 60 && DR.draught.use === 10 && DR.draught.w === .2 && DR.draught.tinctures === 0, DR.draught);
-check('S2553: one tincture will not distil; a draught never turns, a tincture does; a poison is not distilled', /two tinctures/.test(DR.one) && !DR.turned && DR.keeps && DR.tinctureTurns && !DR.poison, DR);
-check('S2553: the page opens at a still with no mortar and offers Distil; the Mages\' Guild\'s still is 5 gold, free to a member; an inn has none', DR.page && DR.guild.here === 'guild' && DR.guild.fee === 5 && DR.guild.member === 0 && DR.inn === null, DR);
-check('S2553: a draught and a dried herb come back from a save', DR.reload.draught && DR.reload.w === .2 && DR.reload.dried, DR.reload);
+check('S2554: a herb hangs on a drying rack with no salt, by its kind; the rack\'s page offers it', DR.rack && DR.hang && DR.noSalt && DR.hung === 'herb:firemoss,herb:silverleaf' && DR.left === 1 && DR.btn && /no salt/.test(DR.line), DR);
+check('S2554: after 6 hours it comes down Dried, known as its herb (and by its name after a reload)', /Nothing on it is ready/.test(DR.early) && DR.took === 'Dried Firemoss,Dried Silverleaf' && DR.dried === 'Dried Firemoss:firemoss,Dried Silverleaf:silverleaf' && DR.reloadKey === 'firemoss', DR);
+check('S2554: dried herbs grind at ×1.10 and are taken first', Math.abs(DR.dryS / DR.freshS - 1.1) < .002 && DR.dryGone, { fresh: DR.freshS, dried: DR.dryS });
+check('S2554: no still outdoors; at an apothecary two tinctures of one brew make a draught: ×1.35 their mean, 5 gold, an hour, Alchemy +10, 0.2 kg', /still/.test(DR.outdoors) && DR.draught.made && /^Draught of /.test(DR.draught.name) && DR.draught.s === DR.draught.want && DR.draught.fee === 5 && DR.draught.mins === 60 && DR.draught.use === 10 && DR.draught.w === .2 && DR.draught.tinctures === 0, DR.draught);
+check('S2554: one tincture will not distil; a draught never turns, a tincture does; a poison is not distilled', /two tinctures/.test(DR.one) && !DR.turned && DR.keeps && DR.tinctureTurns && !DR.poison, DR);
+check('S2554: the page opens at a still with no mortar and offers Distil; the Mages\' Guild\'s still is 5 gold, free to a member; an inn has none', DR.page && DR.guild.here === 'guild' && DR.guild.fee === 5 && DR.guild.member === 0 && DR.inn === null, DR);
+check('S2554: a draught and a dried herb come back from a save', DR.reload.draught && DR.reload.w === .2 && DR.reload.dried, DR.reload);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

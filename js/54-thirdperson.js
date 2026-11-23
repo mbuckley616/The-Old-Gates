@@ -95,15 +95,15 @@ function tpHBDress(G0,o){const G=JSON.parse(JSON.stringify(G0)),D=Object.assign(
   if(o.robe)D.robe=hbRGB(o.chestCol);
   if(AR&&AR.chest){const P=AR.chest;if(P.line==='light')D.tunic=hbRGB(armourLineLeather(P.tier));else if(P.line==='robe')D.robe=hbRGB(LINE_ROBE[P.tier]);else{D.mail=hbRGB(P.fam==='lamellar'?new THREE.Color(P.metal).lerp(new THREE.Color(0xc89a62),.3).getHex():P.metal);
     // S1260 — the heavy line's chest by its family (AR_FAM): Wooden's lamellar as the builder's scales in the wood's own tone, Bronze's
-    // muscle cuirass and the plate of Steel up as its sheet metal (people.js's D.plate), Iron's mail as it was
-    if(P.fam==='lamellar')D.scales=true;else if(P.fam==='muscle'||P.fam==='plate')D.plate=P.fam;}}
+    // muscle cuirass and the plate of Steel up as its sheet metal (people.js's D.plate), Iron's mail as it was (S2547: the wood's boards matte, D.scales 'wood')
+    if(P.fam==='lamellar')D.scales='wood';else if(P.fam==='muscle'||P.fam==='plate')D.plate=P.fam;}}
   // S1256 — the heavy line's helm is the builder's helm of its tier (helms.js; Michael's C of 18 Oct: from Steel up the face shut),
   // fitted to the player's own head; Iron's is the kit's kettle helm, in the tier's metal
   if(AR&&AR.head&&!AR.head.line){D.helm=hbRGB(AR.head.metal);D.tier=AR.head.tier;}else if(o.hd&&!AR&&!tpIsCloth(o.hd))D.helm=hbRGB(o.helmCol);
   // S1263 — gauntlets and greaves by family, as the old kit drew them (people.js's vambrace, gloves, greaves and cuisses): Wooden's boards
   // (the scales in the wood's tone) over leather gloves, Bronze's sheet over leather, Iron's mail, Steel up plate with a knee cop, the
   // cuisses up the thigh with mail and plate; the light line's bracers and gloves in its leather; gloves of no metal in their own colour
-  const fam=P=>P.fam==='lamellar'?'scales':P.fam==='mail'?'mail':'sheet',col=P=>hbRGB(P.fam==='lamellar'?new THREE.Color(P.metal).lerp(new THREE.Color(0xc89a62),.3).getHex():P.metal);
+  const fam=P=>P.fam==='lamellar'?'wood':P.fam==='mail'?'mail':'sheet',col=P=>hbRGB(P.fam==='lamellar'?new THREE.Color(P.metal).lerp(new THREE.Color(0xc89a62),.3).getHex():P.metal);
   const Hn=AR&&AR.hands,Lg=AR&&AR.legs;
   if(Hn&&Hn.line==='light'){D.vambrace=D.gloves=hbRGB(armourLineLeather(Hn.tier));D.vambraceKind='leather';}
   else if(Hn&&!Hn.line){D.vambrace=col(Hn);D.vambraceKind=fam(Hn);if(Hn.fam==='mail'||Hn.fam==='plate'){D.gloves=hbRGB(Hn.metal);D.glovesKind=Hn.fam==='mail'?'mail':'sheet';}else D.gloves=hbRGB(0x4a3020);}
@@ -989,13 +989,24 @@ function tpRestHeld(R){const S=R.rest,h=S&&R.hbHeld&&R.hbHeld.find(x=>x.o===R.we
   if(S.haft){const e=Math.abs(S.dn>0?S.hi:S.lo)*_trS.y;_trP.y=S.y0+.005+e;}
   _trW.compose(_trP,_trQ,_trS);c.matrix.copy(_trM.copy(par.matrixWorld).invert().multiply(_trW));c.matrixWorldNeedsUpdate=true;c.updateMatrixWorld(true);}
 // S1401 — the pull's holds on the builder's body: up to eight times (S2532), the driver's wrists aimed short by how far the builder's miss, and copied again
-const _tmE=[new THREE.Vector3(),new THREE.Vector3()],_tmW=new THREE.Vector3();
+const _tmE=[new THREE.Vector3(),new THREE.Vector3()],_tmW=new THREE.Vector3(),_tmB=[new THREE.Vector3(),new THREE.Vector3()];
 function tpHBMantle(R){const H=R.rig.hb,M=R.mantle;if(M.w<=0)return;const wb=[H.P.byName['wrist.L'],H.P.byName['wrist.R']];if(!wb[0]||!wb[1])return;
   _tmE[0].set(0,0,0);_tmE[1].set(0,0,0);
   /* S2532 — up to eight passes, ended once both wrists are within a centimetre: two left the left wrist 9–13 cm off the ledge early in the
      pull, where the driver's arm is straight and out of reach and each pass takes only part of the miss */
-  for(let k=0;k<8;k++){R.root.updateMatrixWorld(true);let mx=0;for(let i=0;i<2;i++){wb[i].getWorldPosition(_tmW);_tmW.sub(M.T[i]);mx=Math.max(mx,_tmW.length());_tmE[i].add(_tmW);}
-    if(mx<.01)break;tpMantleArms(R,_tmE);hbPose(R.rig);}}
+  /* S2551 — and each arm keeps its best aim: the aim adds each pass's whole miss, and where the arm is in reach that can overshoot and
+     swing (the spyglass's right wrist 5 cm off at the third pass, then 16 to 26 cm by the eighth). An arm whose miss has failed to shrink
+     twice running is held at its best aim while the other goes on; the passes end when both are held or within a centimetre */
+  const best=[1e9,1e9],worse=[0,0];
+  for(let k=0;k<=8;k++){R.root.updateMatrixWorld(true);let mx=0,live=0;
+    for(let i=0;i<2;i++){wb[i].getWorldPosition(_tmW);_tmW.sub(M.T[i]);const d=_tmW.length();mx=Math.max(mx,d);
+      if(d<best[i]){best[i]=d;worse[i]=0;_tmB[i].copy(_tmE[i]);}else worse[i]++;
+      if(worse[i]>1)_tmE[i].copy(_tmB[i]);else if(d>=.01){_tmE[i].add(_tmW);live++;}}
+    if(k===8||!live&&mx<=Math.max(best[0],best[1])+1e-4)break;
+    tpMantleArms(R,_tmE);hbPose(R.rig);}
+  /* the last pass's pose may be the worse for an arm: pose both at their best aims */
+  R.root.updateMatrixWorld(true);let bad=false;for(let i=0;i<2;i++){wb[i].getWorldPosition(_tmW);if(_tmW.sub(M.T[i]).length()>best[i]+1e-4)bad=true;}
+  if(bad){_tmE[0].copy(_tmB[0]);_tmE[1].copy(_tmB[1]);tpMantleArms(R,_tmE);hbPose(R.rig);}}
 // S1401 — a two-bone reach for any arm, as tpGripL's for the left: the elbow bent until shoulder to wrist is shoulder to T, then the
 // shoulder turned to put the wrist on T; out of reach the arm points straight at it
 function tpReach(sh,el,wr,T){
