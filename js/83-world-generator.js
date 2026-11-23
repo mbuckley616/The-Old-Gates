@@ -965,7 +965,7 @@ function genSettlement(site){
         signY=y;
       } else if(type==='castle'){
         // seat of power: heraldic banners flanking the gate and a carved plaque above it
-        const y=worldH(doorX,doorZ);const col=pick(r,[0x7a2020,0x203a6a,0x6a5a20,0x2a4a2a]);
+        const y=worldH(doorX,doorZ);const col=pick(r,[0x7a2020,0x203a6a,0x6a5a20,0x2a4a2a]);house.lordCol=col; /* S2557 — the great forge's banner flies it inside */
         [-1,1].forEach(sd=>{const bx=doorX+lot.tx*.35-lot.tz*sd*2.6,bz=doorZ+lot.tz*.35+lot.tx*sd*2.6;
           const pole=new THREE.Mesh(new THREE.BoxGeometry(.08,.08,1.2),new THREE.MeshLambertMaterial({color:0x2a2622}));pole.position.set(bx+lot.tx*.5,y+5.6,bz+lot.tz*.5);pole.rotation.y=lot.ry;group.add(pole);
           const cloth=new THREE.Mesh(new THREE.PlaneGeometry(1.0,3.2),new THREE.MeshLambertMaterial({color:col,side:THREE.DoubleSide}));cloth.position.set(bx+lot.tx*1.0,y+4.0,bz+lot.tz*1.0);cloth.rotation.y=lot.ry;group.add(cloth);
@@ -2269,7 +2269,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     (INT_BEDS||[]).forEach(r=>S(r,['x','z','y','cz']));
     (INT_DOORS||[]).forEach(r=>{S(r,['x','z','y','w','h']);S(r.sol,BOX);S(r.box,BOX);});
     (INT_NPCS||[]).forEach(r=>S(r.box,BOX));
-    for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,INT_SHELF,house._hatch,house._bench,...(house._casks||[])])S(r,['x','z','y']);
+    for(const r of [intBedPos,intStashPos,INT_CHAIR,INT_LOOT,INT_BOX,INT_SHELF,house._hatch,house._bench,house._greatForge,...(house._casks||[])])S(r,['x','z','y']);
     if(HATCH.active||HATCH.x!=null)S(HATCH,['x','z','y']);
     house.intW*=k;house.intD*=k;
   }
@@ -4441,6 +4441,12 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       // S291 — the keep's hall on the kit (#46 A): a stone dais with a runner and a carved throne, a long runner down the hall,
       // columns with banners, two braziers, the long table with benches, plates, tankards and candles; one bake
       {const K=furnKit(),room=K.bake(K.hall(W,D,H,FN,FSEED));room.userData.furn=true;sc_.add(room);furnSwap(room);}
+      house._greatForge=null; /* S2557 — read again by the cellar's hatch below: by the great forge it opens on the east side, the mirror of its old place under the second anvil */
+      if(house.siteKind==='city'){const K=furnKit(),A=K.greatForgeAt(W,D),col=house.lordCol||[0x7a2020,0x203a6a,0x6a5a20,0x2a4a2a][FSEED%4]; /* S2557 — the great forge's corner (workstations A, #1883 C): a wide hearth, a second anvil, the lord's colours */
+        const gf=K.bake(K.greatForge(W,D,H,FN,FSEED+300,col));gf.userData.furn=true;gf.userData.greatForge=true;sc_.add(gf);furnSwap(gf);
+        solid(A.hearth[0],A.hearth[1],A.hearth[2],A.hearth[3],1.3);solid(A.bellows[0],A.bellows[1],A.bellows[2],A.bellows[3],1.1);
+        A.anvils.forEach(a=>solid(a[0],a[1],.3,.3,1.0));solid(A.tub[0],A.tub[1],.32,.32,.7);solid(A.coal[0],A.coal[1],.3,.3,.9);solid(A.rack[0]+.1,A.rack[1],.12,.45,1.5);
+        light(A.fire[0],A.fire[1]/F,A.fire[2],0xff6a20,1.8,9);house._greatForge={x:A.spot[0],z:A.spot[1],y:0,col};}
       solid(W/2,1.6,.5,.4,1.0);
       for(let z=6;z<D-3;z+=4)[W/2-5,W/2+5].forEach(x=>solid(x,z,.5,.5,H/F));
       [W/2-3,W/2+3].forEach(x=>{light(x,1.4,5.2,0xff6a20,1.3,8);solid(x,5.2,.3,.3,1.1);});
@@ -4599,7 +4605,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
           house._coaching=true;}
       }
     }catch(e){console.warn('interior variety',e);}
-    if(hasCellar(house)){const hx=type==='inn'?(galleryEast(house)?.9:W-.9):type==='home'?W*.5:BZ?(house._backEast?W-2.15:2.15):Math.min(W-1.6,3.2),hz=type==='inn'?D-.8:type==='home'?D*.72:BZ?1.8:D-2.6; /* S896 — by the door, off the stair and the tables, in the rooms of true size; S1258 — a shop's in the keeper's room, between the crates, the table and the door's swing, where the rug was */boxRaw(hx,.06,hz,1.1,.08,1.1,0x3a2612);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.3,.12,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
+    if(hasCellar(house)){const hx=type==='inn'?(galleryEast(house)?.9:W-.9):type==='home'?W*.5:BZ?(house._backEast?W-2.15:2.15):house._greatForge?Math.max(1.6,W-3.2):Math.min(W-1.6,3.2),hz=type==='inn'?D-.8:type==='home'?D*.72:BZ?1.8:D-2.6; /* S896 — by the door, off the stair and the tables, in the rooms of true size; S1258 — a shop's in the keeper's room, between the crates, the table and the door's swing, where the rug was */boxRaw(hx,.06,hz,1.1,.08,1.1,0x3a2612);const ring=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,5,10),new THREE.MeshLambertMaterial({color:0x2a2622}));ring.position.set(hx+.3,.12,hz);ring.rotation.x=Math.PI/2;sc_.add(ring);house._hatch={x:hx,z:hz};HATCH.x=hx;HATCH.z=hz;HATCH.y=0;HATCH.active=true;}
     // v80 S155 — a shop's strongbox in the back room (or behind the counter), a home's small chest: locked, and worth something
     if(BOX_KINDS.includes(type)||type==='home'){const home=type==='home';let bx=home?W-.45:(house._backRoom?(house._backEast?.45:W-.45):W-.6),bz=home?D-.6:(house._backRoom?BZ-.85:D*.55),bry=home||house._backRoom&&!house._backEast?-Math.PI*.5:house._backRoom?Math.PI*.5:Math.PI; /* S896 — a home's in the south-east corner, the room's width from the bed (a sleeper hears 2 m); S1258 — a shop's in the keeper's room against the side wall away from its door (out of the doorway's line from the shop), past the bed's foot and a step in from the partition */
       // S590 — the barber stands still at his chair facing into the room (+z), so his box goes where the 6-unit indoor witness and his
