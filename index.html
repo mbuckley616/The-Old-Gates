@@ -395,9 +395,16 @@
 .qobj-check{width:10px;text-align:center;flex-shrink:0}
 .qlog-reward{font-size:9px;color:#4a6020;margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.05)}
 /* ── COMPASS ─────────────────────────────────────────────── */
-#compass{position:absolute;top:10px;left:50%;transform:translateX(-50%);pointer-events:none;display:none}
-#sundial{position:absolute;top:13px;left:50%;margin-left:108px;pointer-events:none;display:none}
-#wait-btn{position:absolute;top:11px;left:50%;margin-left:148px;width:36px;height:36px;font-size:18px;background:rgba(20,16,10,.78);color:#d4b896;border:1px solid #4a3828;border-radius:50%;cursor:pointer;display:none;line-height:32px;padding:0}
+#compass{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:600px;height:46px;pointer-events:none;display:none}
+/* S2573 — the ribbon under the wide compass (#198 A): the marks the heading is on, with their distance */
+#compass-lbl{position:absolute;top:62px;left:50%;transform:translateX(-50%);display:none;pointer-events:none;padding:4px 18px 5px;white-space:nowrap;background:linear-gradient(#ecdcb2,#d8bf88);color:#2e1c0c;border-radius:3px;box-shadow:0 0 0 1px #8a7040,0 2px 6px rgba(0,0,0,.55);font:14px/1.35 Georgia,serif}
+#compass-lbl .cl-r{display:flex;gap:8px;align-items:center}
+#compass-lbl .cl-g{font-size:14px}
+#compass-lbl b{font-weight:600;color:#7a1f10}
+#compass-lbl i{color:#5a4128}
+#compass-lbl .cl-d{margin-left:auto;padding-left:14px;color:#5a4128;font-size:13px}
+#sundial{position:absolute;top:17px;left:50%;margin-left:308px;pointer-events:none;display:none}
+#wait-btn{position:absolute;top:15px;left:50%;margin-left:348px;width:36px;height:36px;font-size:18px;background:rgba(20,16,10,.78);color:#d4b896;border:1px solid #4a3828;border-radius:50%;cursor:pointer;display:none;line-height:32px;padding:0}
 #wait-btn:hover{background:rgba(40,32,20,.92);border-color:#7a5848}
 #wait-modal{display:none;position:absolute;inset:0;background:rgba(0,0,0,.62);align-items:center;justify-content:center;z-index:120}
 #wait-panel{background:#1a1410;border:2px solid #4a3828;padding:24px 28px;border-radius:6px;min-width:280px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.6)}
@@ -1215,7 +1222,8 @@
     </div>
   </div>
   <!-- COMPASS -->
-  <canvas id="compass" width="200" height="38"></canvas>
+  <canvas id="compass" width="600" height="46"></canvas>
+  <div id="compass-lbl"></div>
   <canvas id="sundial" width="32" height="32"></canvas>
   <button id="wait-btn" onclick="openWaitMenu()" title="Pass time">⏳</button>
   <!-- v68 — STACKABLE BUY/SELL QUANTITY PROMPT -->
