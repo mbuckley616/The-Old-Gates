@@ -234,6 +234,16 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A held coach seat is lost on a load, or kept into another character's game**~~ — **fixed, Session 2464** (the systems builder's sweep of `worldState` keys written anywhere against the keys `_applyLoadData` reads: `coachSeat`, the character's in `SS_CHAR_WS` since S456 and saved since S267, was never read back; `zoneSpawnT`, the zones' last spawn, the same; both join the S242 list; `tests/coachseat` +1).
 
 ## I. Found in play (the critic)
+- **A townsperson with loose hair is 165–215k triangles at full detail** (QA, Session 2608, s1931; for the bodies builder: the builder's
+  hair in `docs/prototypes/levelup/people.js`, reached by `hbAttach`/`hbLevel`, `js/32-people.js`). Portclare's square at High read 2.05 M or
+  1.81 M on one build (S2572, S2581, S2607), with the same bodies built and the same two at full level. The kit's body list (S2607–2608)
+  names the cause: portclare#3:Ercnat, `loose` 0.75, whose `hair` mesh alone is 204,910 triangles (her body 270,822 in all). When she walks
+  into the frustum inside the 16 m ring, the square gains 11 calls and about 0.24 M. Of the 20 builder bodies near the square, the four with
+  `loose` hair hold 165,656 (Muirenn, 0.56), 193,528 (Lasair, 0.81), 204,910 and 213,916 (Ercnat ×2, 0.75 and 0.78) and 214,796 (Sárnat, 0.79)
+  triangles of hair. Every other style is 20–68k (`short` 19,620–24,132, `braids` 20,328–45,764, `bun` 45,150–46,790, `tail` 53,276–54,634,
+  `plait` 68,448). One full-detail loose head of hair is a tenth of Middle's 2.0 M ceiling, and three in view at once would cross it.
+  Expected: a loose style in the others' range (under about 70k), or a lighter mesh at full level. Measured by a throwaway probe after
+  `budgetport`'s stand (the builder's group holds the full level's meshes whatever its current level). The ledger's ceilings still hold today.
 - ~~**Hits sound the same whatever strikes** (the systems builder, Session 2443, from S2436's sweep of names one scope lets clash: `72-audio.js`'s plain `sndHitEnemy()` loaded after S112's by class in `68-dungeon-misc.js` and replaced it since the first push).~~ — done, Session 2443 (S112's in `72`, the dead duplicates gone; `resolver` +2)
 - ~~**`ashenburn` red on main: children play in the burned Ashenmoor**~~ — done, Session 2397 (`kidsTownOk`: none in a dead, burned, abandoned, sick or besieged town; `ashenburn` green, `f4kids` +1) (QA, Session 2394, s1724 `c99205e`; red twice on the weekly run of 15 Nov too;
   for the bodies builder: `kidsTick`/`kidsFill`, `js/32-people.js`). *the ruin: nobody in the street, no lord…* reads `rigs: 2` inside the pad
