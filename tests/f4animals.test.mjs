@@ -283,9 +283,14 @@ const seal = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
   const diff = (a, b) => { let mv = 0, bad = 0; for (let i = 0; i < a.m.length; i++) { mv = Math.max(mv, Math.abs(a.m[i] - b.m[i])); if (!isFinite(b.m[i])) bad++; } return [+mv.toFixed(3), bad]; };
   const wa = run(60, 0), wb = run(60, .8), wx = box(), sb = new THREE.Box3().setFromObject(rig.mesh), [wmv, wbad] = diff(wa, wb), wmid = (wx.max.y + wx.min.y) / 2 - G.position.y;
   e.ashore = true; const da = run(60, 0), dx = box(), db = run(60, .5), [dmv, dbad] = diff(da, db), low = dx.min.y - G.position.y;
+  /* S2600: the galumph in two halves: the chest up while the hips stay down, then the hips drawn up while the chest stays down */
+  const spn = H.C.B.spineNames, hy = n => { const v = new THREE.Vector3(); H.C.byName[n].getWorldPosition(v); return v.y - G.position.y; }, hs = [];
+  for (let i = 0; i < 90; i++) { run(1, .5); hs.push([hy(spn[0]), hy(spn[spn.length - 1])]); }
+  const h0 = Math.min(...hs.map(q => q[0])), c0 = Math.min(...hs.map(q => q[1])), atC = hs.reduce((a, q) => q[1] > a[1] ? q : a), atH = hs.reduce((a, q) => q[0] > a[0] ? q : a), Lh = wx.max.z - wx.min.z;
+  const gal = { chestUp: +((atC[1] - c0) / Lh).toFixed(3), hipsThen: +((atC[0] - h0) / Lh).toFixed(3), hipsUp: +((atH[0] - h0) / Lh).toFixed(3), chestThen: +((atH[1] - c0) / Lh).toFixed(3) };
   e.ashore = false; run(2, 0); const bx2 = box(), back = (bx2.max.y + bx2.min.y) / 2 - G.position.y;
   const out = { plan: H.C.g.plan, seed: H.C.g.seed === HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(wx.max.z - wx.min.z).toFixed(3), nose: +(wx.max.z - sb.max.z).toFixed(3),
-    hold: wa.g, swim: wb.g, wmid: +wmid.toFixed(3), wmoved: wmv, rest: da.g, move: db.g, kit: db.c, low: +low.toFixed(3), humps: +db.cyc.toFixed(2), dmoved: dmv, back: +back.toFixed(3), bad: wbad + dbad };
+    hold: wa.g, swim: wb.g, wmid: +wmid.toFixed(3), wmoved: wmv, rest: da.g, move: db.g, kit: db.c, low: +low.toFixed(3), humps: +db.cyc.toFixed(2), dmoved: dmv, gal, back: +back.toFixed(3), bad: wbad + dbad };
   /* S2588: far off (the kit's far level, no near pose) the fit still follows its side of the water */
   CAM.position.set(G.position.x + 300, CAM.position.y, G.position.z); CAM.updateMatrixWorld(true); e.ashore = true; hcTick(9.9785e5); hcTick(9.9786e5);
   out.farL = H.L; out.farDry = rig.dry === true && Math.abs(H.W.position.y - H.yDry) < 1e-6 && rig.mesh.position.y > 0;
@@ -296,6 +301,8 @@ console.log('  seal:', JSON.stringify(seal));
 check(`the Grey Seal wears the kit's (${seal.plan}, ${seal.bones} bones, ${seal.tris} triangles, ${seal.len} m nose to tail, its nose ${seal.nose} m off the stand-in's); in the water it ${seal.hold} and ${seal.swim}s (the bones moving ${seal.wmoved}), its middle ${seal.wmid} m off the group's; ashore its lowest point ${seal.low} m off the group's, at rest ${seal.rest}, moving ${seal.move} (${seal.humps} humps over 0.5 m, the bones moving ${seal.dmoved}); back in the water its middle ${seal.back} m off; taken away, dropped`,
   !seal.fail && seal.plan === 'game:Grey Seal' && seal.seed && seal.tris < 12000 && Math.abs(seal.len - 2) < .24 && Math.abs(seal.nose) < .03 && seal.hold === 'hold' && seal.swim === 'swim' && seal.wmoved > .005
     && Math.abs(seal.wmid) < .15 && Math.abs(seal.low) < .02 && seal.rest === 'stand' && seal.move === 'hump' && seal.kit === 'hump' && seal.humps > .5 && seal.dmoved > .005 && Math.abs(seal.back - seal.wmid) < .02 && !seal.bad && seal.dropped, seal);
+check(`ashore the Grey Seal galumphs in two halves: its chest rises ${seal.gal && seal.gal.chestUp} of its length while its hips rise ${seal.gal && seal.gal.hipsThen}, then its hips ${seal.gal && seal.gal.hipsUp} while its chest rises ${seal.gal && seal.gal.chestThen}`,
+  !!seal.gal && seal.gal.chestUp > .05 && seal.gal.hipsThen < .01 && seal.gal.hipsUp > .025 && seal.gal.chestThen < .01, seal.gal);
 check(`far off (level ${seal.farL}) the Grey Seal's fit still follows its side of the water: ashore ${seal.farDry}, back in ${seal.farWet}`, seal.farL === 2 && seal.farDry && seal.farWet, seal);
 // Session 2598: the sea turtle's fore-flippers seen from above. Their downstroke went to about 60° below level, so mid-stroke they folded under
 // the shell's rim (S2580's note). Through a swim cycle each tip stays out past the shell's edge and drops no more than 38° below its root (S2598's fix: 0.168 m out and 32.4°, from 0.126 and 43.7)
