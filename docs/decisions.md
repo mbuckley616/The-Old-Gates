@@ -3,6 +3,17 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### A lesser gate's outside — OG-037's rings at what size? (from the look builder, 2026-11-24, #1991)
+**The question.** Michael answered on 12 Oct that a gate's outside is concentric rings, with a broken circle for a failing gate (OG-037); it was never built, and every lesser gate is still Session 578's 4 m turf mound with a plank door in front of F5's 26 m nave. Session 2616's prototype (`gatemouth.js`) draws the rings at three sizes, each in three conditions, with its hill and a camp at the foot. At what size? ([medium](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m.jpg), [large](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-l.jpg), [small](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-s.jpg), [failing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-failing.jpg), [catastrophic](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-catastrophic.jpg), [at the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-door.jpg), [at dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-dusk.jpg).)
+
+**Options.**
+- **A. Medium** *(recommended)*: rings 26 m across, a slit of 2.4 by 5.5 m, on a hill raised about 20 m. Not built to a person's size, yet a hundred of them sit in the land as hills, and the great gates (100 m) stay a size apart. One look session on the new look, the condition from the gate's own roll.
+- **B. Large**: rings 50 m across, a slit of 3.6 by 11 m, on a 38 m hill; each gate a landmark seen from far off, the great gates only twice its size.
+- **C. Small**: rings 13 m across and today's door (1.5 by 2.8 m), on an 11 m hill; the least change to the ground.
+- **D. Keep the turf mound.**
+
+**Recommendation: A.** Big enough that the Weavers did not build for people, small enough to stay hills, and a size apart from the great gates.
+
 ### The Gatelands' works (OG-046) — which come into the world, and where? (from the look builder, 2026-11-24, #1983)
 **The question.** Seven works are finished prototypes in `places.js` (Sessions 949–1234): the windmill, the lighthouse, a toll bridge of three 5.6 m arches, the Mark's rope ferry, a shipyard, a quarry with its draw kiln, and a canal lock. None is in the world, and #1292 A covers only off-road places and road camps, not a town's or a road's works. Which come into the world, and where? ([the seven as drawn](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2609/docs/prototypes/levelup/places-works-sheet.jpg); seed 1's Gatelands hold 115 villages, 35 ports, 22 towns, 9 road bridges.)
 
