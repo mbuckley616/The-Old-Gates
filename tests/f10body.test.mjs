@@ -206,6 +206,24 @@ console.log('  glass:', JSON.stringify(glass));
 check('the spyglass raised is in your right fist at its true size, its eye cup at the eye (within 1 cm) and its barrel along the view, the right wrist by the eye and the left under the barrel; the camera at the eye and the body hidden; lowered, put away with the camera back out; in first person the view model hidden while it is up',
   glass.up && glass.up.kit === 'glass' && glass.up.cup < .01 && glass.up.axis > .999 && Math.abs(glass.up.size - 1) < .01 && glass.up.wrR < .16 && glass.up.wrL > .3 && glass.up.wrL < .55 && glass.up.cam < .05 && glass.up.hidden
   && glass.down.kind === null && Math.abs(glass.down.cam - glass.camOut) < .3 && glass.down.shown && glass.fp.vm === false && glass.fp.kind === 'glass' && glass.fpDown.vm === true && glass.fpDown.kind === null, glass);
+// the raise between (Session 2593): frame by frame on the wall clock, the glass rides in the right fist the whole way up (its distance
+// from the wrist holds within 4 cm of the carry's), the right wrist only closes on the eye (no frame takes it more than 1 cm back out),
+// and held up it stays put (within 5 mm over ten frames). Before, each frame's reach began on the last one's, and the passes overshot:
+// the wrist swung 23 cm out and back mid-raise, the left 0.10 to 0.92 m off the barrel, and held up the glass sat 11 to 18 cm off the fist
+const raise = await drive(() => { const out = { f: [] }; BAG.length = 0; BAG.push({ ...GLASS_ITEM }); EQ.weapon = null; pitch = .1;
+  try { thirdPerson = true; for (let i = 0; i < 3; i++) step(); glassRaise(); step();
+    const m = () => { const R = TP.rig, H = R.rig.hb, h = R.hbHeld && R.hbHeld.find(x => x.o === R.weapon), piece = h && h.c.children[0].children[0]; if (!piece) return null;
+      piece.updateMatrixWorld(true); const c = new THREE.Vector3().setFromMatrixPosition(piece.matrixWorld), w = new THREE.Vector3().setFromMatrixPosition(H.P.byName['wrist.R'].matrixWorld);
+      return { u: +GLASS_FX.u.toFixed(3), eye: +w.distanceTo(GLASS_FX.eye).toFixed(3), fist: +c.distanceTo(w).toFixed(3) }; };
+    for (let i = 1; i <= 36; i++) { GLASS_FX.t0 = performance.now() - i / 36 * GLASS_MS; GLASS_FX.until = 0; step(); out.f.push(m()); }
+    out.held = []; for (let i = 0; i < 10; i++) { GLASS_FX.t0 = performance.now() - 2 * GLASS_MS; step(); out.held.push(m()); }
+  } finally { glassDown(); GLASS_FX.until = performance.now() - 1; pitch = 0; BAG.length = 0; } for (let i = 0; i < 3; i++) step(); return out; });
+{ const f = raise.f.filter(Boolean), fi = f.map(x => x.fist), back = Math.max(0, ...f.slice(1).map((x, i) => x.eye - f[i].eye)), h = raise.held.filter(Boolean), he = h.map(x => x.eye), hf = h.map(x => x.fist);
+  const r = { frames: f.length, fist: [Math.min(...fi), Math.max(...fi)], back: +back.toFixed(3), from: f[0] && f[0].eye, to: f[f.length - 1] && f[f.length - 1].eye,
+    held: [Math.min(...he), Math.max(...he)], heldFist: [Math.min(...hf), Math.max(...hf)] };
+  console.log('  raise:', JSON.stringify(r));
+  check('raising the spyglass, it rides in the right fist the whole way (within 4 cm of its carry), the right wrist only closes on the eye (no frame back out by more than 1 cm), and held up the hands stay put (within 5 mm over ten frames)',
+    f.length === 36 && h.length === 10 && r.fist[1] - r.fist[0] < .04 && back < .01 && r.from > .5 && r.to < .16 && r.held[1] - r.held[0] < .005 && r.heldFist[1] - r.heldFist[0] < .005, r); }
 const sword = worn.held.find(h => h.kit === 'sword'), shield = worn.held.find(h => h.kit === 'kite');
 check('a copy of the sword is carried in the builder\'s group with its grip in the right fist (within 2 cm), the shield with it', sword && sword.inBuilder && sword.meshes > 0 && sword.gap < .02 && shield && shield.inBuilder && shield.meshes > 0, worn.held);
 
