@@ -3240,7 +3240,7 @@
   function starKitMesh(v,left){if(!rareKitOn()||!v||!v.star)return null;const s=v.star,y0=meshH(s.x,s.z),from=seededRng('starfrom',s.id)()*Math.PI*2,c=new THREE.Color();
     let gr=0,gg=0,gb=0;for(let k=0;k<8;k++){const a=k/8*Math.PI*2,x=s.x+Math.sin(a)*6.6,z=s.z+Math.cos(a)*6.6,h=worldH(x,z);groundColor(x,z,h,slopeNormalY(x,z),c);gr+=c.r/8;gg+=c.g/8;gb+=c.b/8;} /* the land's own colour round its edge */
     const K=PKIT.props.crater({key:s.id,from,left,grass:c.setRGB(gr,gg,gb).getHex(),ground:(x,z)=>meshH(s.x+x,s.z+z)-y0+.02});
-    const g=K.group;g.name='fallenStar';g.position.set(s.x,y0,s.z);g.userData.kit={left,tris:K.tris,draws:K.draws,R:K.R,from:K.from,lobes:K.lobes};g.userData.glint=K.glint;g.userData.mesh=g;return g;}
+    const g=K.group;g.name='fallenStar';g.position.set(s.x,y0,s.z);g.userData.kit={left,tris:K.tris,draws:K.draws,R:K.R,from:K.from,lobes:K.lobes,lump:K.lump};g.userData.glint=K.glint;g.userData.mesh=g;return g;}
   // the crater rebuilt when a lobe is struck out (three times at most): its children swapped, the Group kept, so the vein's record holds it
   function starKitShow(v){const g=v.g,left=Math.max(0,Math.min(3,veinLeft(v)));if(!g||!g.userData.kit||g.userData.kit.left===left)return;
     const n=starKitMesh(v,left);if(!n)return;for(const c of [...g.children]){g.remove(c);c.geometry&&c.geometry.dispose();}for(const c of [...n.children])g.add(c);g.userData.kit=n.userData.kit;g.userData.glint=n.userData.glint;}
@@ -3285,7 +3285,18 @@
     return n;}
   // the flecks of bright metal catch the dark: lit from dusk to dawn (19h to 7h, full from 21h to 5h), within 40 m (faded from 30), read from the clock
   function starKitGlint(){if(typeof STARS_SHOWN==='undefined')return;const h=typeof gameHour==='function'?gameHour():12,night=h>=21||h<5?1:h>=19?(h-19)/2:h<7?(7-h)/2:0;
-    for(const v of STARS_SHOWN.values()){const m=v.g&&v.g.userData.glint;if(!m)continue;const d=Math.hypot(px-v.x,pz-v.z),near=Math.max(0,Math.min(1,(40-d)/10));m.emissiveIntensity=.05+2.55*night*near;}}
+    const seen=new Set();
+    for(const v of STARS_SHOWN.values()){const m=v.g&&v.g.userData.glint;if(!m)continue;const d=Math.hypot(px-v.x,pz-v.z),near=Math.max(0,Math.min(1,(40-d)/10));m.emissiveIntensity=.05+2.55*night*near;
+      const k=v.g.userData.kit;if(!k||!k.left||!k.lump||!veinLive(v))continue;const id=v.star?v.star.id:v.id;seen.add(id);
+      let L=STAR_GLOW.get(id);if(!L){L=regLight(STAR_GLOW_C,0,STAR_GLOW_R,'starglow');STAR_GLOW.set(id,L);}
+      L.position.set(v.g.position.x+k.lump[0],v.g.position.y+k.lump[1]+STAR_GLOW_Y,v.g.position.z+k.lump[2]);L.intensity=STAR_GLOW_I*night*near*k.left/3;}
+    for(const [id,L] of STAR_GLOW)if(!seen.has(id)){unregLight(L);STAR_GLOW.delete(id);}}
+  // S2601 — the star iron's cold light at night, the prototype's (rare.js's &night: a pale blue point over the lump, "seen from the 40 m it
+  // reaches"), which Michael's A on #1864 brought in "as drawn" and the game left out (the critic, s1889: nothing marks it at 21:30). One
+  // source in the world's light pool (regLight) a crater shown with iron still in it, faded in by the glint's own night and 40 m, a third
+  // dimmer for each lobe struck out. The prototype's 0.9 m and 5 m lit only the bowl, which the rim and the grass hide past 8 m; at 1.4 m
+  // and 9 m it reaches the rim and the blow-down's fallen trunks, which can be seen from outside the bowl.
+  const STAR_GLOW=new Map(),STAR_GLOW_C=0x9ab8ff,STAR_GLOW_R=9,STAR_GLOW_I=1.6,STAR_GLOW_Y=1.4;
   // The skywood pine: leaning and flagged to the east, as the westerlies leave a summit tree (±23° by its peak); felled, the prototype's stump
   // on the same crown of rock. Its root at the tree record's ground (t.h).
   function skyKitMesh(t,felled){if(!rareKitOn()||!t)return null;const wind=Math.PI/2+(seededRng('skywind',t.id)()-.5)*.8,K=PKIT.props.skypine({key:t.id,wind,felled:!!felled});
