@@ -717,6 +717,13 @@ body:has(#dlg[style*="block"]) #ledger .ldg{max-width:100%}
 .dlg-choice.dlg-quest{border-color:rgba(220,180,60,.45);color:#f0d060}
 .dlg-choice-num{color:#5a4820;margin-right:6px;font-size:10px}
 #dlg-hint{color:#3a2c14;font-size:9px;text-align:right;margin-top:6px}
+/* S2602 — eleven choices (an innkeeper, a mayor) need about 463 px and the panel held 52vh, 372 at 720 tall: the tenth was cut mid-row and the
+   farewell lay below the fold with no sign of it. The panel now grows to 520 when the window has room, keeping 120 px clear above it, and
+   where the list still does not fit (600 tall) a cue stands at the fold until the foot is scrolled to (dlgFoldCue, js/22-dialogue.js) */
+#dlg{max-height:max(52vh,min(calc(100vh - 174px),520px))}
+#dlg-more{display:none;position:sticky;bottom:-12px;margin:4px -16px -12px;padding:14px 0 6px;text-align:center;color:#c8a84a;font-size:11px;letter-spacing:.06em;
+  background:linear-gradient(rgba(14,12,6,0),#0e0c06 55%);pointer-events:none}
+#dlg.dlg-more #dlg-more{display:block}
 /* Character creator (v61at). Modal overlay shown on Start New Adventure
    before the world spawns. Three sections: name input, archetype tile picker,
    per-attribute +/- grid for refining the archetype's preset.
@@ -1067,6 +1074,7 @@ body:has(#dlg[style*="block"]) #ledger .ldg{max-width:100%}
     <div id="dlg-text"></div>
     <div id="dlg-choices"></div>
     <div id="dlg-hint">1–9, 0 to choose · Esc to close</div>
+    <div id="dlg-more">▾ more below</div>
   </div>
   <!-- BAG ITEM TOOLTIP -->
   <div id="bag-tooltip"></div>

@@ -522,7 +522,7 @@ function openDialog(npc){
       };
       const _opening = "You are the one Aldwyn signed for. Sit, if you want. Stand if you prefer. I will not keep you long.\n\nI have read the rubbing. I have read the Mark — Aldwyn's transcription of what he is willing to commit to paper, which is not all of it. I have read his commission, which I countersigned in the small hours of yesterday because he came to me in the small hours of yesterday. He does not do that often.\n\nThere is a question I do not yet have an answer to. There is a man who has been doing this work for two centuries, and whatever he is doing matters more than anything else this office has dealt with in my lifetime. I cannot send a regiment after him. I cannot send a herald. I have sent a young scholar who would not have come back, and I have sent two soldiers who did not come back. I am, at present, sending you.\n\nAldwyn frames this as a scholarly matter. It is a scholarly matter. It is also other things.";
       renderDialogNode(_opening, [_branchA, _branchB]);
-      document.getElementById('dlg').style.display='block';
+      document.getElementById('dlg').style.display='block';dlgFoldCue();
       lvAct.npcTalks++;
       if(typeof sndTabSwitch==='function') sndTabSwitch();
       return;
@@ -554,7 +554,7 @@ function openDialog(npc){
     let allTopics=[...questTopics,...baseTopics];
     if(woken)allTopics=[...allTopics.filter(t=>!t.markMet),...allTopics.filter(t=>t.markMet)]; /* S770 — woken at night, the introduction is not first */
     renderDialogNode(greet, allTopics);
-    document.getElementById('dlg').style.display='block';
+    document.getElementById('dlg').style.display='block';dlgFoldCue();
     lvAct.npcTalks++;
     if(typeof sndTabSwitch==='function') sndTabSwitch();
   }catch(err){
@@ -980,6 +980,16 @@ function renderDialogNode(text, choices){
     btn.onclick=()=>pickDialogChoice(i);
     el.appendChild(btn);
   });
+  const dlgEl=document.getElementById('dlg');
+  if(dlgEl){dlgEl.scrollTop=0;dlgEl.onscroll=dlgFoldCue;}
+  dlgFoldCue();
+}
+
+// S2602 — the cue at the fold: shown while the panel's foot lies below it, gone once scrolled to (the panel is drawn by now, so it measures)
+function dlgFoldCue(){
+  const d=document.getElementById('dlg');if(!d)return;
+  const cue=document.getElementById('dlg-more'),ch=cue&&d.classList.contains('dlg-more')?cue.offsetHeight:0;
+  d.classList.toggle('dlg-more',d.scrollHeight-ch-d.scrollTop-d.clientHeight>2);
 }
 
 function pickDialogChoice(i){
