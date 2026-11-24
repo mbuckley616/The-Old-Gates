@@ -65,7 +65,7 @@ await page.mouse.click(talk.x, talk.y); await g.frames(2);
 const talk2 = await page.evaluate(() => { const r = { slip: sleepOpen, still: dlgOpen }; closeDialog(); r.after = _canWait().ok; return r; });
 check(`not while someone is talking to you: the ⏳ (on top: ${talk.top}) opens no slip with ${talk.npc} speaking; free again once the talk ends`,
   talk.open && talk.top === 'wait-btn' && !talk.can && !talk2.slip && talk2.still && talk2.after, { talk, talk2 });
-// S2591 — at 1,024 wide the ⏳ sits under the movement pad's empty third row, which took the top of every tap; the pad's box lets taps
+// S2592 — at 1,024 wide the ⏳ sits under the movement pad's empty third row, which took the top of every tap; the pad's box lets taps
 // through and only its four buttons take them
 const vw = page.viewportSize(); await page.setViewportSize({ width: 1024, height: 720 });
 const pad = await page.evaluate(() => { const r = e => e.getBoundingClientRect(), b = r(document.getElementById('wait-btn')); let n = 0, on = 0;

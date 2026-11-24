@@ -32,8 +32,15 @@ check('the HUD\'s prompt is cleared at death', atDeath.ipr === 'none' && !/Press
 check('E while dead reaches no interaction', keys.KeyE.interact === 0, keys);
 check('F while dead casts nothing and spends no mana', keys.KeyF.manaSpent === 0 && keys.KeyF.cd <= 0, keys);
 check('I and Tab while dead open no book', !keys.KeyI.hub && !keys.Tab.hub, keys);
-await page.click('#died-load');
-await page.waitForFunction(() => !dead && document.getElementById('died').style.display === 'none', null, { timeout: 15000 });
+// S2590 — Playwright's click waits for the button to hold still over consecutive animation frames, and a frame here is 2–4 s of
+// software GL (the scene, not the script: 0.35 s of JS in 20 s), so the wait ran past its 30 s. What the player needs is that the
+// button is shown and nothing covers it: that is checked, and then it is clicked as the mouse would, without the frame wait. The
+// mouse event itself waits for a frame to land (22 s here), so the click and the load each wait up to 120 s for what they wait for.
+const atBtn = await page.evaluate(() => { const b = document.getElementById('died-load'); const r = b.getBoundingClientRect();
+  const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return { w: r.width, h: r.height, top: top && top.id }; });
+check('the death screen\'s Load last save is shown and nothing covers it', atBtn.w > 0 && atBtn.h > 0 && atBtn.top === 'died-load', atBtn);
+await page.click('#died-load', { force: true, timeout: 120000 });
+await page.waitForFunction(() => !dead && document.getElementById('died').style.display === 'none', null, { timeout: 120000, polling: 250 }); /* S2590 — the load ends in 12 s here (a frame is 2–4 s); 15 s was a fixed pause in disguise */
 await page.waitForTimeout(1500); await g.frames(4);
 await page.evaluate(() => { knownWords = { caor: 1 }; activeSpellId = 'caor'; mana = maxMana; spCd = 0; });
 const m0 = await page.evaluate(() => mana);
