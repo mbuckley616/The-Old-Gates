@@ -285,9 +285,11 @@ const seal = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
   e.ashore = true; const da = run(60, 0), dx = box(), db = run(60, .5), [dmv, dbad] = diff(da, db), low = dx.min.y - G.position.y;
   /* S2600: the galumph in two halves: the chest up while the hips stay down, then the hips drawn up while the chest stays down */
   const spn = H.C.B.spineNames, hy = n => { const v = new THREE.Vector3(); H.C.byName[n].getWorldPosition(v); return v.y - G.position.y; }, hs = [];
-  for (let i = 0; i < 90; i++) { run(1, .5); hs.push([hy(spn[0]), hy(spn[spn.length - 1])]); }
+  /* S2606: and the surge: the chest's own advance (world z) in the first half, on the push, against the second, on the planted chest */
+  const hz = n => { const v = new THREE.Vector3(); H.C.byName[n].getWorldPosition(v); return v.z; }; let zp = hz(spn[spn.length - 1]), adv1 = 0, adv2 = 0, n1 = 0, n2 = 0;
+  for (let i = 0; i < 90; i++) { run(1, .5); hs.push([hy(spn[0]), hy(spn[spn.length - 1])]); const zc = hz(spn[spn.length - 1]), A = H.C.humpAt || {}; if (A.f > 0) { adv1 += Math.abs(zc - zp); n1++; } else if (A.h > 0) { adv2 += Math.abs(zc - zp); n2++; } zp = zc; }
   const h0 = Math.min(...hs.map(q => q[0])), c0 = Math.min(...hs.map(q => q[1])), atC = hs.reduce((a, q) => q[1] > a[1] ? q : a), atH = hs.reduce((a, q) => q[0] > a[0] ? q : a), Lh = wx.max.z - wx.min.z;
-  const gal = { chestUp: +((atC[1] - c0) / Lh).toFixed(3), hipsThen: +((atC[0] - h0) / Lh).toFixed(3), hipsUp: +((atH[0] - h0) / Lh).toFixed(3), chestThen: +((atH[1] - c0) / Lh).toFixed(3) };
+  const gal = { chestUp: +((atC[1] - c0) / Lh).toFixed(3), hipsThen: +((atC[0] - h0) / Lh).toFixed(3), hipsUp: +((atH[0] - h0) / Lh).toFixed(3), chestThen: +((atH[1] - c0) / Lh).toFixed(3), push: +(adv1 / Math.max(1, n1) * 60).toFixed(3), draw: +(adv2 / Math.max(1, n2) * 60).toFixed(3) };
   e.ashore = false; run(2, 0); const bx2 = box(), back = (bx2.max.y + bx2.min.y) / 2 - G.position.y;
   const out = { plan: H.C.g.plan, seed: H.C.g.seed === HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(wx.max.z - wx.min.z).toFixed(3), nose: +(wx.max.z - sb.max.z).toFixed(3),
     hold: wa.g, swim: wb.g, wmid: +wmid.toFixed(3), wmoved: wmv, rest: da.g, move: db.g, kit: db.c, low: +low.toFixed(3), humps: +db.cyc.toFixed(2), dmoved: dmv, gal, back: +back.toFixed(3), bad: wbad + dbad };
@@ -303,6 +305,8 @@ check(`the Grey Seal wears the kit's (${seal.plan}, ${seal.bones} bones, ${seal.
     && Math.abs(seal.wmid) < .15 && Math.abs(seal.low) < .02 && seal.rest === 'stand' && seal.move === 'hump' && seal.kit === 'hump' && seal.humps > .5 && seal.dmoved > .005 && Math.abs(seal.back - seal.wmid) < .02 && !seal.bad && seal.dropped, seal);
 check(`ashore the Grey Seal galumphs in two halves: its chest rises ${seal.gal && seal.gal.chestUp} of its length while its hips rise ${seal.gal && seal.gal.hipsThen}, then its hips ${seal.gal && seal.gal.hipsUp} while its chest rises ${seal.gal && seal.gal.chestThen}`,
   !!seal.gal && seal.gal.chestUp > .05 && seal.gal.hipsThen < .01 && seal.gal.hipsUp > .025 && seal.gal.chestThen < .01, seal.gal);
+check(`ashore the Grey Seal surges on the push and nearly stops on the draw: at 0.5 m/s its chest goes forward at ${seal.gal && seal.gal.push} m/s while it rises, ${seal.gal && seal.gal.draw} m/s while its hips are drawn up`,
+  !!seal.gal && seal.gal.push > .6 && seal.gal.draw < .3 * seal.gal.push, seal.gal);
 check(`far off (level ${seal.farL}) the Grey Seal's fit still follows its side of the water: ashore ${seal.farDry}, back in ${seal.farWet}`, seal.farL === 2 && seal.farDry && seal.farWet, seal);
 // Session 2598: the sea turtle's fore-flippers seen from above. Their downstroke went to about 60° below level, so mid-stroke they folded under
 // the shell's rim (S2580's note). Through a swim cycle each tip stays out past the shell's edge and drops no more than 38° below its root (S2598's fix: 0.168 m out and 32.4°, from 0.126 and 43.7)
