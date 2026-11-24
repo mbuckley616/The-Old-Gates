@@ -3,6 +3,17 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The Gatelands' works (OG-046) — which come into the world, and where? (from the look builder, 2026-11-24, #1983)
+**The question.** Seven works are finished prototypes in `places.js` (Sessions 949–1234): the windmill, the lighthouse, a toll bridge of three 5.6 m arches, the Mark's rope ferry, a shipyard, a quarry with its draw kiln, and a canal lock. None is in the world, and #1292 A covers only off-road places and road camps, not a town's or a road's works. Which come into the world, and where? ([the seven as drawn](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2609/docs/prototypes/levelup/places-works-sheet.jpg); seed 1's Gatelands hold 115 villages, 35 ports, 22 towns, 9 road bridges.)
+
+**Options.**
+- **A. By what each serves, one kind a session, the windmill and the lighthouse first** *(recommended)*: a windmill on a rise 150–400 m out of one village in two, among its fields; a lighthouse on the nearest point of shore to each port within a kilometre; the shipyard beside a port's quay, one port in three; the quarry and kiln as an off-road place under #1292 A's rule, in hill ground; the toll bridge in place of the road's own bridge where a Gatelands road crosses a river between two towns. The canal and the ferry wait: the world cannot cut a lock, and the ferry is the Mark's.
+- **B. As A, the windmill and the lighthouse only**; the rest wait.
+- **C. All of them under #1292 A's rule**: by the land, unmarked until found, one cell in three.
+- **D. Leave them in the prototype.**
+
+**Recommendation: A.** Each work stands where it does its job, so a village reads as a village from the road and a port from the sea; the two that cannot be placed honestly wait.
+
 ### A town's day — the street by the hour, a market day with prices by place, or those plus a black market and events? (from the designer, 2026-11-24, #1971)
 **The question.** Today every shop opens 8 to 18 and every town keeps the same day, and a counter's price depends only on the town's prosperity. How far should a town's day go: the street by the hour, a weekly market day with prices by place, or those plus a black market and passing events? (Backlog L12, OG-143; [the proposal](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/a-towns-day.md).)
 
