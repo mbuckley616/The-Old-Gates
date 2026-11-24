@@ -287,14 +287,19 @@ const seal = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
   const spn = H.C.B.spineNames, hy = n => { const v = new THREE.Vector3(); H.C.byName[n].getWorldPosition(v); return v.y - G.position.y; }, hs = [];
   /* S2606: and the surge: the chest's own advance (world z) in the first half, on the push, against the second, on the planted chest */
   const hz = n => { const v = new THREE.Vector3(); H.C.byName[n].getWorldPosition(v); return v.z; }; let zp = hz(spn[spn.length - 1]), adv1 = 0, adv2 = 0, n1 = 0, n2 = 0;
-  for (let i = 0; i < 90; i++) { run(1, .5); hs.push([hy(spn[0]), hy(spn[spn.length - 1])]); const zc = hz(spn[spn.length - 1]), A = H.C.humpAt || {}; if (A.f > 0) { adv1 += Math.abs(zc - zp); n1++; } else if (A.h > 0) { adv2 += Math.abs(zc - zp); n2++; } zp = zc; }
+  /* S2618: and the fore-flippers plant: through each push the tip's world spread along the way and its height over the ground at rest */
+  const pec = H.C.B.fins.filter(F => F.kind === 'pec'), tipW = F => F.tip ? F.tip.clone().applyMatrix4(H.C.byName[F.name].matrixWorld) : H.C.byName[F.name].getWorldPosition(new THREE.Vector3()); let fl = { slide: 0, up: 0 }, zr = null;
+  for (let i = 0; i < 90; i++) { run(1, .5); hs.push([hy(spn[0]), hy(spn[spn.length - 1])]); const zc = hz(spn[spn.length - 1]), A = H.C.humpAt || {}; if (A.f > 0) { adv1 += Math.abs(zc - zp); n1++; } else if (A.h > 0) { adv2 += Math.abs(zc - zp); n2++; } zp = zc;
+    G.updateMatrixWorld(true); if (A.f > 0) { const ts = pec.map(tipW); if (!zr) zr = ts.map(t => [t.z, t.z]); ts.forEach((t, j) => { zr[j][0] = Math.min(zr[j][0], t.z); zr[j][1] = Math.max(zr[j][1], t.z); fl.up = Math.max(fl.up, t.y - G.position.y - low); }); } else if (zr) { fl.slide = Math.max(fl.slide, ...zr.map(r => r[1] - r[0])); zr = null; } }
   const h0 = Math.min(...hs.map(q => q[0])), c0 = Math.min(...hs.map(q => q[1])), atC = hs.reduce((a, q) => q[1] > a[1] ? q : a), atH = hs.reduce((a, q) => q[0] > a[0] ? q : a), Lh = wx.max.z - wx.min.z;
-  const gal = { chestUp: +((atC[1] - c0) / Lh).toFixed(3), hipsThen: +((atC[0] - h0) / Lh).toFixed(3), hipsUp: +((atH[0] - h0) / Lh).toFixed(3), chestThen: +((atH[1] - c0) / Lh).toFixed(3), push: +(adv1 / Math.max(1, n1) * 60).toFixed(3), draw: +(adv2 / Math.max(1, n2) * 60).toFixed(3) };
+  const gal = { chestUp: +((atC[1] - c0) / Lh).toFixed(3), hipsThen: +((atC[0] - h0) / Lh).toFixed(3), hipsUp: +((atH[0] - h0) / Lh).toFixed(3), chestThen: +((atH[1] - c0) / Lh).toFixed(3), push: +(adv1 / Math.max(1, n1) * 60).toFixed(3), draw: +(adv2 / Math.max(1, n2) * 60).toFixed(3) , fins: pec.length, slide: +fl.slide.toFixed(3), finUp: +fl.up.toFixed(3) };
   /* S2614: stopping mid-hump (the chest up) and setting off again fade between the stand and the hump: no frame's bones jump more than a moving frame's */
   while (((rig.ph % 1) + 1) % 1 < .2 || ((rig.ph % 1) + 1) % 1 > .3) run(1, .5);
   const cap = r => { G.updateMatrixWorld(true); sk.update(); r.m = Array.from(sk.boneMatrices); r.m = r.m.map((v, i) => i % 16 > 11 ? v - (i % 16 === 12 ? G.position.x : i % 16 === 14 ? G.position.z : 0) : v); return r; };
   const step = (n, sp) => { let mx = 0, a = cap(run(0, 0)), gs = new Set(); for (let i = 0; i < n; i++) { const b = cap(run(1, sp)); mx = Math.max(mx, diff(a, b)[0]); gs.add(b.g); a = b; } return [mx, [...gs].join('/')]; };
-  const [mvStep] = step(20, .5), [stopStep, stopG] = step(90, 0), [goStep, goG] = step(60, .5);
+  /* S2618: the moving frame is read over a whole hump (60 frames, 1.1 cycles), the fore-flippers' swing in it, then back to the chest up */
+  const [mvStep] = step(60, .5); while (((rig.ph % 1) + 1) % 1 < .2 || ((rig.ph % 1) + 1) % 1 > .3) run(1, .5);
+  const [stopStep, stopG] = step(90, 0), [goStep, goG] = step(60, .5);
   gal.mvStep = mvStep; gal.stopStep = stopStep; gal.goStep = goStep; gal.stopG = stopG; gal.goG = goG;
   e.ashore = false; run(2, 0); const bx2 = box(), back = (bx2.max.y + bx2.min.y) / 2 - G.position.y;
   const out = { plan: H.C.g.plan, seed: H.C.g.seed === HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(wx.max.z - wx.min.z).toFixed(3), nose: +(wx.max.z - sb.max.z).toFixed(3),
@@ -313,6 +318,8 @@ check(`ashore the Grey Seal galumphs in two halves: its chest rises ${seal.gal &
   !!seal.gal && seal.gal.chestUp > .05 && seal.gal.hipsThen < .01 && seal.gal.hipsUp > .025 && seal.gal.chestThen < .01, seal.gal);
 check(`ashore the Grey Seal surges on the push and nearly stops on the draw: at 0.5 m/s its chest goes forward at ${seal.gal && seal.gal.push} m/s while it rises, ${seal.gal && seal.gal.draw} m/s while its hips are drawn up`,
   !!seal.gal && seal.gal.push > .6 && seal.gal.draw < .3 * seal.gal.push, seal.gal);
+check(`ashore the Grey Seal's ${seal.gal && seal.gal.fins} fore-flippers plant through the push: each tip moves ${seal.gal && seal.gal.slide} m along the way and stands at most ${seal.gal && seal.gal.finUp} m over the ground`,
+  !!seal.gal && seal.gal.fins === 2 && seal.gal.slide < .12 && seal.gal.finUp < .08, seal.gal);
 check(`the Grey Seal stopping mid-hump and setting off again (${seal.gal && seal.gal.stopG}, then ${seal.gal && seal.gal.goG}) moves its bones at most ${seal.gal && seal.gal.stopStep} and ${seal.gal && seal.gal.goStep} in a frame, against ${seal.gal && seal.gal.mvStep} moving at 0.5 m/s`,
   !!seal.gal && seal.gal.stopG.includes('stand') && seal.gal.goG.includes('hump') && seal.gal.stopStep <= 1.5 * seal.gal.mvStep && seal.gal.goStep <= 1.5 * seal.gal.mvStep, seal.gal);
 check(`far off (level ${seal.farL}) the Grey Seal's fit still follows its side of the water: ashore ${seal.farDry}, back in ${seal.farWet}`, seal.farL === 2 && seal.farDry && seal.farWet, seal);

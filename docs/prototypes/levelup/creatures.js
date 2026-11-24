@@ -336,7 +336,7 @@ P.fins = (B, o) => { for (const f of o.list) for (const side of f.pair ? [1, -1]
   const onTail = f.on === 'tail', sp = onTail ? null : B.spineAt(f.at), parent = onTail ? B.tailBone : sp.bone;
   const R = onTail ? 0 : sp.r, base = onTail ? B.tailEnd.clone() : sp.p.clone().add(V(side * R * B.spineS[0] * (f.off?.[0] ?? .9), R * B.spineS[1] * (f.off?.[1] ?? 0), f.dz || 0));
   const back = V(...(f.back || [0, 0, -1])).normalize(), out = V((f.out?.[0] ?? 0) * (side || 1), f.out?.[1] ?? 1, f.out?.[2] ?? 0).normalize();
-  const name = 'fin' + B.fins.length; B.bone(name, parent, base); B.fins.push({ name, kind: f.role || 'fin', side, out });
+  const name = 'fin' + B.fins.length; B.bone(name, parent, base); B.fins.push({ name, kind: f.role || 'fin', side, out, tip: back.clone().multiplyScalar(.3 * f.len).addScaledVector(out, f.h), len: f.len });
   const pts = [base.clone()], bones = [B.by[name].i]; for (const [u, v] of FIN[f.kind || 'tri']) { pts.push(base.clone().addScaledVector(back, u * f.len).addScaledVector(out, v * f.h)); bones.push(B.by[name].i); }
   const tris = []; for (let k = 1; k < pts.length - 1; k++) tris.push(0, k, k + 1); B.sheets.push({ pts, tris, bones, tone: f.tone || 'fin' }); } };
 // radial arms (Session 774): n chains from a ring round a centre, each sinking at `down` degrees and bending by `curl` a
@@ -1120,7 +1120,7 @@ export function pose(C, phase) {
   // together, then sank the chest 11 cm into the ground). First half: the fore-flippers press, the chest rises and reaches, the hips
   // stay down. Second half: the chest is down, the hips are drawn up and forward under an arched back, the hind flippers held clear
   if (G.hump) humpPose(C, ph);
-  for (const F of B.fins) { const b = C.byName[F.name]; if (F.kind === 'pec') b.rotation.set(0, 0, (F.side || 1) * (G.hump ? .35 : .22) * Math.sin(tau * ph * (G.swim || G.hump ? 1 : .4))); else if (F.kind === 'wing') b.rotation.set(0, 0, (F.side || 1) * (G.flap ? .1 + .8 * Math.sin(tau * ph * 2) : .28 + .04 * Math.sin(tau * ph))); else if (F.kind === 'caudal') b.rotation[C.plan.swimAxis === 'x' ? 'x' : 'y'] = .25 * Math.sin(tau * (ph - 1.05)); }
+  for (const F of B.fins) { const b = C.byName[F.name]; if (F.kind === 'pec' && G.hump) humpFlipper(C, F, ph); else if (F.kind === 'pec') b.rotation.set(0, 0, (F.side || 1) * (G.hump ? .35 : .22) * Math.sin(tau * ph * (G.swim || G.hump ? 1 : .4))); else if (F.kind === 'wing') b.rotation.set(0, 0, (F.side || 1) * (G.flap ? .1 + .8 * Math.sin(tau * ph * 2) : .28 + .04 * Math.sin(tau * ph))); else if (F.kind === 'caudal') b.rotation[C.plan.swimAxis === 'x' ? 'x' : 'y'] = .25 * Math.sin(tau * (ph - 1.05)); }
   // radial arms: an octopus's ripple round the ring, a jellyfish's bell that beats and threads that trail it
   for (const Rr of B.radials) { const axis = V(-Math.sin(Rr.a), 0, Math.cos(Rr.a)), np = Rr.names.length;
     for (let j = 0; j < np - 1; j++) { const b = C.byName[Rr.names[j]]; let ang;
@@ -1321,6 +1321,25 @@ function humpPose(C, ph) {
   const chest = phi[m - 1], neck = C.B.chains.neck; if (neck && neck.length) C.byName[neck[0]].rotation.x -= HUMP.neck * chest;
   const tail = C.B.chains.tail; if (tail && tail.length) C.byName[tail[0]].rotation.x += HUMP.tail - phi[0] * .5;
   C.humpAt = { f, h, chest, hips: dy, surge: humpSurge(ph) };
+}
+// Session 2618: and the fore-flippers plant. They had beaten up and down with the swim's stroke, so on the push each rose with the
+// chest, 18.5 cm clear of the ground at its top, and slid forward with the body 0.38 m: nothing pushed the seal up. Now each flipper's
+// tip is set on a spot on the ground for the push, the spot the body's surge carries the shoulder over (`FLIP.ahead` of a stride ahead of
+// where the tip rests mid-push), and the flipper turned to point at it as the chest rises and reaches; on the draw, while the chest is
+// down, it is swung from the spot it left to the next a stride on, turned between the two aims (a slerp, eased in and out, so it sweeps
+// at an even turn and does not whip past straight down), its tip lifted `FLIP.lift` of the flipper's length at the middle. The flipper is
+// turned whole on its bone (from its rest direction to the spot's): where the spot is past its reach it points there and falls short,
+// and where it is within reach the tip is set on the ground along the same bearing, so it never sinks in. The seal's fore-flipper is
+// 0.24 m (it was 0.18, which could not reach the ground under a chest risen 15 cm)
+export const FLIP = { ahead: 0, out: .2, lift: .8 };
+function humpFlipper(C, F, ph) {
+  const b = C.byName[F.name], s = strideOf(C) / (C.S || 1), r = C.B.by[F.name].p, t0 = r.clone().add(F.tip), L = F.tip.length(), ease = u => (1 - Math.cos(Math.PI * u)) / 2;
+  const A = t0.z + (humpSurge(.25) + .25 + FLIP.ahead) * s, u = ph < .5 ? 0 : (ph - .5) * 2, y = t0.y + FLIP.lift * F.len * Math.sin(Math.PI * u);
+  b.quaternion.identity(); const base = rigPos(C, b, V()), q = rigQuat(C, b.parent, new THREE.Quaternion()).invert(), rest = F.tip.clone().normalize();
+  const aim = z => { const D = V(r.x + FLIP.out * F.tip.x, y, z).sub(base), hz = Math.hypot(D.x, D.z);
+    if (D.y < 0 && hz * hz + D.y * D.y < L * L) { const k = Math.sqrt(L * L - D.y * D.y) / Math.max(hz, 1e-6); D.x *= k; D.z *= k; }
+    return new THREE.Quaternion().setFromUnitVectors(rest, D.normalize().applyQuaternion(q)); };
+  if (!u) b.quaternion.copy(aim(A - s * ph)); else b.quaternion.copy(aim(A - s * ph)).slerp(aim(A + s - s * ph), ease(u));
 }
 export function footAt(C, i, T, fold = 0) { return solveLeg(C, C.B.legs[i], T, fold); }
 
@@ -2011,7 +2030,7 @@ Object.assign(PLANS, {
       ['head', { len: .22, r: .09, pitch: 4, muzzle: { len: .9, r: .05, nose: 1, taper: .8 }, jaw: { len: .8, r: .03, drop: .5 }, eyes: [{ f: .5, up: .4, out: .6, r: .016, color: [.04, .03, .03] }] }],
       ['tail', { len: .3, n: 2, r: [.1, .05], droop: 0 }],
       ['fins', { list: [
-        { at: .85, off: [.85, -.6], out: [1, -.6, 0], back: [0, -.2, -1], len: .2, h: .18, pair: 1, role: 'pec' },
+        { at: .85, off: [.85, -.6], out: [1, -.6, 0], back: [0, -.2, -1], len: .2, h: .24, pair: 1, role: 'pec' },
         { on: 'tail', kind: 'fork', out: [1, 0, 0], len: .22, h: .22, role: 'caudal' }] }]
     ] }
 });
