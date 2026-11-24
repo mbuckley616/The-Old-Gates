@@ -1299,7 +1299,13 @@ function solveLeg(C, L, T, fold) {
 // `hip` of the spine's length and bends it into an arch: pitched up by `arch` at the hips, turning down evenly to the chest, the turn
 // at the chest found so the chest's end comes back to the ground it left. The neck takes back most of the chest's pitch, so the head
 // stays level-ish; the tail is held up off the ground
-export const HUMP = { lift: .17, hip: .075, arch: .2, neck: .75, tail: .22 };
+// Session 2606: and the surge. The body no longer glides at an even speed through both halves: it covers `surge` of its stride in the
+// first half, thrown forward on the fore-flippers' push, and the rest in the second, nearly still on its planted chest while it draws
+// its hips up. Each half eases in and out (a half-cosine), so the speed is zero where the halves meet. The mover (the kit's travel, the
+// game's group) still goes evenly: the root is set ahead of or behind it, about the cycle's mean, by at most 0.17 of a stride
+export const HUMP = { lift: .17, hip: .075, arch: .2, neck: .75, tail: .22, surge: .85 };
+export function humpSurge(ph, c = HUMP.surge) { const ease = u => (1 - Math.cos(Math.PI * u)) / 2, T = ph < .5 ? c * ease(ph * 2) : c + (1 - c) * ease(ph * 2 - 1);
+  return T - ph - (2 * c - 1) / 4; }
 function humpPose(C, ph) {
   const tau = Math.PI * 2, spn = C.B.spineNames, m = spn.length - 1, f = Math.max(0, Math.sin(tau * ph)), h = Math.max(0, -Math.sin(tau * ph));
   let S = 0; const L = []; for (let k = 1; k <= m; k++) { const l = C.byName[spn[k]].position.length(); L.push(l); S += l; }
@@ -1310,11 +1316,11 @@ function humpPose(C, ph) {
   const b = h > 0 ? (lo + hi) / 2 : 0;
   for (let k = 0; k < m; k++) phi.push(h > 0 ? -a + (a + b) * (m > 1 ? k / (m - 1) : 1) : 0);
   for (let k = 0; k < m; k++) phi[k] -= HUMP.lift * f;
-  C.byName[spn[0]].position.y += dy;
+  C.byName[spn[0]].position.y += dy; C.byName[spn[0]].position.z += humpSurge(ph) * strideOf(C) / (C.S || 1);
   for (let k = 0; k < m; k++) C.byName[spn[k]].rotation.x += phi[k] - (k ? phi[k - 1] : 0);
   const chest = phi[m - 1], neck = C.B.chains.neck; if (neck && neck.length) C.byName[neck[0]].rotation.x -= HUMP.neck * chest;
   const tail = C.B.chains.tail; if (tail && tail.length) C.byName[tail[0]].rotation.x += HUMP.tail - phi[0] * .5;
-  C.humpAt = { f, h, chest, hips: dy };
+  C.humpAt = { f, h, chest, hips: dy, surge: humpSurge(ph) };
 }
 export function footAt(C, i, T, fold = 0) { return solveLeg(C, C.B.legs[i], T, fold); }
 
