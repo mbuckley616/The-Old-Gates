@@ -76,6 +76,15 @@ for (const w of [1280, 1040, 960, 800]) { await page.setViewportSize({ width: w,
 await page.setViewportSize(vwN);
 check('a ribbon of three names stands clear of the ledger\'s slip and the vitals plate at 1,280, 1,040, 960 and 800 wide', [1280, 1040, 960, 800].every(w => { const o = rib[w];
   const apart = (a, b) => a[2] <= b[0] || b[2] <= a[0] || a[3] <= b[1] || b[3] <= a[1]; return (o.lbl[0] >= o.slip[2] + 12 || o.lbl[1] >= o.slip[3]) && apart(o.lbl, o.plate); }), rib);
+// S2602 — the controls line was 896 px at every width: at 800 it ran from -48 to 848 and the build tag left the window. It now stays 12 px
+// inside each edge, its type 11 px down to 9, the tag at its right end; below ~760 only the controls' text is cut
+const cb = {};
+for (const [w, h] of [[1280, 720], [900, 720], [800, 600], [640, 480]]) { await page.setViewportSize({ width: w, height: h });
+  cb[w] = await page.evaluate(() => { const e = document.getElementById('cbar'), b = e.getBoundingClientRect(), t = e.querySelector('span').getBoundingClientRect();
+    return { line: [Math.round(b.left), Math.round(b.right)], tag: [Math.round(t.left), Math.round(t.right)], fs: parseFloat(getComputedStyle(e).fontSize), tagText: e.querySelector('span').textContent, W: innerWidth }; }); }
+await page.setViewportSize(vwN);
+check('the controls line and its build tag stay inside the window at 1,280, 900, 800 and 640 wide, the type never under 9 px', Object.values(cb).every(o =>
+  o.line[0] >= 12 && o.line[1] <= o.W - 12 && o.tag[0] >= o.line[0] && o.tag[1] <= o.line[1] && /^build s\d+$/.test(o.tagText) && o.fs >= 9 && o.fs <= 11) && cb[1280].fs === 11, cb);
 check('a bar reads its value over its maximum, and the marks fill a quarter of the level\'s bar', vp.hp === vp.want && Math.abs(vp.xp - 25) < 0.2, { hp: vp.hp, want: vp.want, xp: vp.xp });
 check('the weapon\'s roundel shows the weapon in hand, a fist when bare, and opens the inventory; the spell\'s names the spell in its title', vp.inPlate
   && vp.bare === '✊' && vp.blade[0] === '🗡️' && /^Test Blade/.test(vp.blade[1]) && vp.inv && /\(F\)$/.test(vp.fb[1]) && vp.note === 'block', vp);
@@ -87,5 +96,40 @@ const dl = await page.evaluate(() => { const r = e => { const b = e.getBoundingC
   return { d, s, after: r(document.querySelector('#ledger .ldg:last-child')) }; });
 check('in a dialogue a long slip wraps left of the panel, clear of it; after, it is one line again', dl.d[2] > dl.d[0] && dl.s[2] <= dl.d[0] - 12 && dl.s[3] - dl.s[1] > 40
   && dl.after[2] > dl.d[0] && dl.after[3] - dl.after[1] < 35, dl);
+// S2603 — eleven choices were cut mid-row at 720 tall (the panel held 52vh, 372 of the 461 px they need) and the farewell lay below the fold
+// with no sign: the panel now grows to 520 where there is room, and where the list still does not fit a cue stands at the fold until scrolled to
+const d11 = {};
+for (const [w, h] of [[1280, 720], [1024, 640], [800, 600]]) { await page.setViewportSize({ width: w, height: h });
+  d11[h] = await page.evaluate(() => { luOpen = false; document.getElementById('lu').style.display = 'none'; openDialog(NPC_DEF[Object.keys(NPC_DEF)[0]]);
+    renderDialogNode('There\'s 2 guests in tonight. A room is 11 gold — the east front room on the first floor, a bed, a bolt on the door, and breakfast.',
+      Array.from({ length: 11 }, (_, i) => ({ label: i === 10 ? 'Go with the Weaver.' : 'A question of the house, the ' + (i + 1) + 'th', response: 'x', bye: i === 10 })));
+    const d = document.getElementById('dlg'); dlgFoldCue(); const cue = () => getComputedStyle(document.getElementById('dlg-more')).display;
+    const last = () => d.querySelector('#dlg-choices').lastElementChild.getBoundingClientRect().bottom <= d.getBoundingClientRect().bottom;
+    const o = { fits: d.scrollHeight <= d.clientHeight, top: Math.round(d.getBoundingClientRect().top), lastSeen: last(), cue: cue() };
+    d.scrollTop = 1e4; d.dispatchEvent(new Event('scroll')); o.scrolledSeen = last(); o.cueAfter = cue(); closeDialog(); return o; }); }
+await page.setViewportSize(vwN);
+check('eleven choices fit whole at 720 and 640 tall, the panel 120 px or more below the top; at 600 a cue stands at the fold until the farewell is scrolled to',
+  [720, 640].every(h => d11[h].fits && d11[h].lastSeen && d11[h].cue === 'none' && d11[h].top >= 120)
+  && !d11[600].fits && !d11[600].lastSeen && d11[600].cue === 'block' && d11[600].scrolledSeen && d11[600].cueAfter === 'none', d11);
+// S2604 — in a shop four slips stood over the stock list's rows 10–13 for 6 s after each sale: while the shop is open the ledger stands in its
+// header between its name and the ✕, the newest slip alone on one line, and the older ones are seen again when it closes
+const sh = {};
+for (const [w, h] of [[1280, 720], [800, 600]]) { await page.setViewportSize({ width: w, height: h });
+  sh[w] = await page.evaluate(() => { const r = e => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
+    const shop = document.getElementById('shop'); document.getElementById('sh-title').textContent = 'Fionnuala\'s Stores and Chandlery'; shop.style.display = 'flex';
+    for (const l of ['Bought Bronze Dagger for 13🪙', 'Bought Iron Sword for 34🪙', 'Sold Iron Sword for 16🪙', 'Sold a Fine Steel Longsword of the Northern Marches for 120🪙']) showMsg(l, '#e8d8a0');
+    const seen = () => [...document.querySelectorAll('#ledger .ldg')].filter(e => !e.classList.contains('gone') && getComputedStyle(e).display !== 'none');
+    const t = document.createRange(); t.selectNodeContents(document.getElementById('sh-title'));
+    const o = { slips: seen().map(r), text: seen().map(e => e.textContent), cols: r(document.querySelector('.sh-cols')), close: r(document.getElementById('sclose')), titleEnd: Math.round(t.getBoundingClientRect().right) };
+    shop.style.display = 'none'; o.after = seen().length; return o; }); }
+await page.setViewportSize(vwN);
+check('in a shop one slip, the newest, stands on one line in the header, clear of the stock list, the shop\'s name and the ✕; four again after it closes',
+  Object.values(sh).every(o => o.slips.length === 1 && /Longsword/.test(o.text[0]) && o.slips[0][3] <= o.cols[1] - 12 && o.slips[0][3] - o.slips[0][1] < 35
+    && o.slips[0][2] <= o.close[0] - 12 && o.slips[0][0] >= o.titleEnd + 40 && o.after === 4), sh);
+// S2605 — indoors the spell's roundel was display:none and the bars slid left by its width: it keeps its place, dimmed, taking no click
+const fbk = await page.evaluate(() => { const fb = document.getElementById('fbtn'), vb = document.querySelector('#hud .vb'), was = fb.style.display;
+  const L = () => Math.round(vb.getBoundingClientRect().left); const out = { shown: L() }; fb.style.display = 'none';
+  const cs = getComputedStyle(fb); out.hidden = L(); out.op = +cs.opacity; out.pe = cs.pointerEvents; fb.style.display = was || 'block'; out.back = L(); return out; });
+check('indoors the spell\'s roundel keeps its place, dimmed and taking no click, so the bars do not move', fbk.shown === fbk.hidden && fbk.back === fbk.shown && fbk.op < 0.5 && fbk.pe === 'none', fbk);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
