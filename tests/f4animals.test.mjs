@@ -297,8 +297,8 @@ check(`the Grey Seal wears the kit's (${seal.plan}, ${seal.bones} bones, ${seal.
   !seal.fail && seal.plan === 'game:Grey Seal' && seal.seed && seal.tris < 12000 && Math.abs(seal.len - 2) < .24 && Math.abs(seal.nose) < .03 && seal.hold === 'hold' && seal.swim === 'swim' && seal.wmoved > .005
     && Math.abs(seal.wmid) < .15 && Math.abs(seal.low) < .02 && seal.rest === 'stand' && seal.move === 'hump' && seal.kit === 'hump' && seal.humps > .5 && seal.dmoved > .005 && Math.abs(seal.back - seal.wmid) < .02 && !seal.bad && seal.dropped, seal);
 check(`far off (level ${seal.farL}) the Grey Seal's fit still follows its side of the water: ashore ${seal.farDry}, back in ${seal.farWet}`, seal.farL === 2 && seal.farDry && seal.farWet, seal);
-// Session 2596: the sea turtle's fore-flippers seen from above. Their downstroke went to about 60° below level, so mid-stroke they folded under
-// the shell's rim (S2580's note). Through a swim cycle each tip stays out past the shell's edge and drops no more than 38° below its root (S2596's fix: 0.168 m out and 32.4°, from 0.126 and 43.7)
+// Session 2598: the sea turtle's fore-flippers seen from above. Their downstroke went to about 60° below level, so mid-stroke they folded under
+// the shell's rim (S2580's note). Through a swim cycle each tip stays out past the shell's edge and drops no more than 38° below its root (S2598's fix: 0.168 m out and 32.4°, from 0.126 and 43.7)
 const turtle = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 4, z = pz + fz * 4;
   const rig = buildAnimal('Sea Turtle', 'f4turtle:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z) + .8, z); G.rotation.y = 0; WORLD.scene.add(G);
   const e = { name: 'Sea Turtle', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;

@@ -3515,7 +3515,7 @@ SEA.push('abyssalangler', 'stonefish', 'crimsonleviathan');
 // ── Session 861: the turtles of OG-016 and OG-084 (backlog L3). A sea turtle is the tortoise's low body under a flatter
 // shell, with flippers for legs: the front pair long and beating together, the rear pair short and steering. The maw turtle
 // is the same turtle at an island's size, with a reef growing on its back.
-// Session 2596: the fore-flippers' downstroke went to about 60° below level (stroke .6 from a rest already tilted down), so seen from
+// Session 2598: the fore-flippers' downstroke went to about 60° below level (stroke .6 from a rest already tilted down), so seen from
 // above, mid-stroke, they folded under the shell's rim; now the rest is level and the stroke .48, so the beat runs from about 20° up to
 // 40° down. The shell is 1.15 long and set .06 back, so it covers the rump to the tail as a carapace does (the hide showed behind it) ──
 const seaTurtle = o => [
