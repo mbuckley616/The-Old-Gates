@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 55, 23 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 56, 24 Nov: no new calls on the page)
 
 ---
 
@@ -8052,3 +8052,217 @@ He keeps a punt at one Markish bridge, chosen once a seed (`seededRng('strange',
 - Elias: *Master* throughout, receipts, debts, registers, creditors and contracts, the house and its factor; never an oath. His line on the dead complains of a contract, and stops there.
 - The Reeves: Markish, short, a price named and kept.
 - No prophecy (Tomcán declines one), no description of the player beyond §2.2's licence (Elias's register *unable to settle* an Old Blood player's name, in his greeting and in the book's last line, which is the same unexplained thing), no line on what the player is.
+
+## The Strange and the Legendary, III — the Salt King, the Gatewalker, the Hollow Bard and the Wretched Abbot
+
+*Unapproved. Drafted 24 Nov 2026.* Backlog L2, *The strange and the legendary*, the third run: OG-079 (sheet H1, *five legendary figures*). Red Finn, the fifth, is already drafted in *The Mark's Rings* and is not drafted again. OG-001's five mysterious figures split: **the Veiled** is the first run's Veiled Merchant (the sheet's black face-veil and pale eyes are his), and **the Collector** is the second run's Elias Nikandros (the sheet's wide brim goes to him: he wears it on the quay, the goggles under it). The other three (**the Mariner, the Herald and the Child**) are the fourth run, which closes the item. The method is the same as runs I and II. Each person stands where the game already has a place, does one thing on machinery that exists, and leaves one thread the world remembers. Two **Rule reads** go to the systems builder. No line depends on which way either one goes.
+
+### What the canon fixes, and where it is silent
+
+- *Strange, not stock; locals treat the strange as ordinary* (§10a, §10). A smuggler the villages love, a nun who walks gates, a masked bard and a penitent in chains. The towns know all four by name and speak of them dryly.
+- *The awake look like villains* (§10a). The sheet makes two of these candidates. **The Wretched Abbot** looks the part, gaunt in thorns and chains, and he is the nearest of the four to the truth. **Sister Cairenn** looks like a ghost, and she has read herself most of the way toward the Cold (§3.3). Neither one is confirmed. Each says one thing near the Clearing (§3.1) and stops.
+- *The Mark has no king and scorns the word* (§1.2). So the Salt King is no Markman. He is a Gatelander, and the title is the Gatelands villages' joke, kept fondly. The Mark calls him *Salty*. The Compact's warrants call him *the person styled the Salt King*.
+- *Piracy is the Mark's undeclared war; the Compact's tithe-ships are its prey* (§1.4). The Salt King is no free captain, and he flies no mark (*Ports and Their Trades*). He does not rob the tithe. He goes round it at night. So no standing moves when you carry for him.
+- *The Compact seals gates rather than clear them; sealing drowns the world in its own residue; a backlogged gate brings plague* (§3.1, §8.2, §12a). The Abbot's order did exactly this. The plague in the game comes up out of the nearest lair (`tickPlagueDay`, *They say it came up out of {lair}*). The Abbot reads that place as the sealed gate's leak, in the Church's own words, and the canon does not contradict him.
+- *Bodies* (§2). The sheet draws Sister Cairde as fair, labels her Aurennais and gives her an Irish name. The canon's plainer reading: she is **Old Blood, raised in the Gatelands**. She is short, grey-pale and black-haired, the marks under her skin to the throat, and the sheet's fairness is her pallor. The Abbot is Aurennais, olive-brown and shaven. The Salt King is a Gatelander with long dark hair, which the Gatelands' row allows.
+- *Names* (§2). **Cairde** is Irish for *friends* and no one's name. She becomes **Cairenn**, an old form, as Old Blood names are: *Sister Cairenn*, called *the Gatewalker*. The Salt King answers to **Fergal Ó Sáile**, *of the brine*, a name he took and does not pretend is his. The Abbot is **Ammonius**, of the Egyptian and Greek root, once abbot of **the Order of the Seal**. The Bard has no name, and that is his story.
+- *No chosen-one prophecies* (§4.2). The Bard sings the player's own deeds back to them and calls none of it fate.
+- *Silent:* bards, abbots and smugglers. The canon places none of them. The game has quays at night, inns with hearths, gate mouths, plague towns and their wells, the villages' prosperity and the Elders over them, and the lairs. Each of the four stands at one of these.
+
+### The four
+
+| | People | Where | What they do |
+|---|---|---|---|
+| **Fergal Ó Sáile**, the Salt King | Gatelander | on one quay a game-fortnight at a time, 22h to 4h, any port of the Gatelands or the Mark | tells you where the black sails are; asks you to carry salt to the hungriest village on the island |
+| **Sister Cairenn**, the Gatewalker | Old Blood, raised in the Gatelands | at a gate's mouth at dusk, a different gate each game-week, never Tomcán's | names a gate by its older words; counts the gates you have seen |
+| **the Hollow Bard** | Gatelander | at the hearth of one inn a game-week at a time, on any island | trades a story of his for a story of yours, and makes your stories a ballad |
+| **Ammonius**, the Wretched Abbot | Aurennais | at the well of a town under plague, on any island; when none is, at the well of Aurenne's poorest town | names what the sickness came out of; asks you to end it |
+
+Faces for the bodies builder (the sheet's, with the canon's fixes): Fergal is a tall Gatelander for his people, his long dark hair tied back with a cord, a sea coat in faded red with blue facings, three gold chains on his chest, rings, and a ship's lantern in his hand. Cairenn is short, grey-pale and black-haired, with the pale branching marks up her neck to the jaw. She wears a hooded cream habit spattered with red candle wax (wax, not blood: the towns get it wrong), a satchel of red candles, one lit in her hand, and goes barefoot. The Hollow Bard wears a gold half-mask over the upper face and a feathered hat, a dark doublet worn at the elbows, and a lute on a strap; the lower face is unremarkable and clean-shaven. Ammonius is gaunt, olive-brown and shaven, with a circlet of thorn and once-white vestments edged in tarnished gold. Iron chains hang from his waist to his ankles, and his feet are bound in rags.
+
+### 1. Fergal Ó Sáile, the Salt King (Gatelander; proverbs, indirection, no bare yes or no, oaths on the Weaver)
+
+He stands on the quay of one port, from 22h to 4h, a game-fortnight at a time. The port is rolled on `seededRng('saltking', fortnight)` over the ports of the Gatelands and the Mark, never Aurenne's ("the Compact has a paper with my name on it, and a paper's a patient thing"). His ship is not at the quay. It lies off, unlit.
+
+**Greeting, first:** "Good evening to you. You've the look of someone who's heard of me, and the manners not to say so on a lit quay."
+**Greeting, again:** "Yourself again. The night's young, and so, by the Weaver, am I, if you squint."
+**Greeting, to a Markman player, first:** "A Markman. Your lot call me Salty. I've been called worse by better, and I've been fed by your lot oftener than either."
+**Greeting, to an Aurennais player, first:** "Well. If you're from the tithe-house, I'm a fisherman, and if you're not, I'm a fisherman who's glad to meet you."
+**Greeting, to an Old Blood player, first:** "Now there's a face the lamplight can't make up its mind about. Stand out of it, so. I like a guest the dark agrees with."
+
+**Topics**
+- *Who are you?* — "Fergal. Ó Sáile, I go by, which is a name I took off the sea when the sea wasn't using it. The villages call me the Salt King. A king of salt is a king of nothing much, and that's the only kind worth being."
+- *Why the Salt King?* — "A village with no salt has no meat by spring. A village with no meat by spring has no children by summer. I bring salt. They gave me a crown for it, out of their mouths. It's the one tax I don't mind."
+- *The tithe?* — "The Compact tithes every hull that passes the light. I pass in the dark. You can't tithe what you can't see, and what the eye doesn't see, the ledger doesn't grieve over."
+- *Are you a free captain?* — "I'd not say so, and they'd say it louder. I fly no mark. A mark's a promise to someone, and I've promises enough on shore."
+- *The chains?* — "Gold. Every village I feed, I take a link off. When the chains are gone I'll have fed them all, or I'll have run out of chain. One or the other. The Weaver knows which, and isn't telling."
+
+**His service: *What's on the water?*** He tells what sails are about. It reads `OTHER`, the ships at sea, on the same test `liveRumours` uses for black sails, at 2,500 m.
+- A black-sailed ship within 2,500 m: "There's a black sail lying {dir} of here, two hours' row or less. She's not after you. She's not after me either, which is the more surprising. Keep the shore on your right hand till morning."
+- None: "Quiet water. The sort that makes a man nervous, if he's the nervous sort. I'm not. I'm only careful, which is nerves that have been to sea."
+
+**His thread: *Salt for {village}*.** At the second meeting, unasked, after the greeting: "You've a strong back and an honest face, and one of the two'll get you hanged. Would you carry a thing for me?"
+- *What thing?* — "A sack of salt. No more than that, and no less. There's a village on this island that's further from the sea than its stomach would like. {village}. Give it to {elder}. Say it's from the quay. They'll know the quay."
+  - The village is the lowest-prosperity village on his port's island (`TS(t).p`, the villages only). A village under plague, sacked or besieged comes first, the nearest of those to the port. The pick is read once, when he asks.
+- *I'll carry it.* — He gives **a sack of salt** (misc, weight 4, `sellMult:0`, `saltKing:1`). "There's my king's ransom. It's heavier than it looks, as kingdoms are. Mind the patrols. They've no quarrel with salt. They've a quarrel with salt that hasn't paid."
+- *Not tonight.* — "Tomorrow's another night, and there's always salt. It's the one thing the sea never runs short of."
+- At {village}'s Elder (the lord's topics while the sack is in the bag), *Salt from the quay.*:
+  - Gatelander Elder: "From the quay, is it. We'd a hard winter and a harder spring, and the sea's a long walk for short legs. Tell him the children ate meat on a feast day that wasn't one. He'll know what it means. Weaver keep him dry."
+  - Markish Reeve (a Markish village's): "Salty's. Aye. Thank him. We'll eat this winter. Tell him that. Iron keep him."
+  - Then the village's favour rises by one (`addFavor`), and the sack is taken (`bagTake`).
+- Back to Fergal, at his next meeting: "They ate, did they? Then that's one more link." He twists a link off a chain and gives it: **a link of the Salt King's chain** (misc, weight .05, `buyPrice` 25, `sellMult` .8). "Sell it if you're hungry. That's what it's for. If you're not hungry, keep it till you meet someone who is."
+- After, his greeting is: "My carrier. There's always another village, and there's always another sack, and the Weaver knows there's always another night."
+
+**The town's word on him** (in `liveRumours`, in every town of the island his port is on this fortnight, at most once a day):
+- Gatelander: "The Salt King's in at {port}, they say. Nights only. My grandmother's village would have starved the year of the long frost only for him. She kept a candle in the window for him till she died, and he never once came by it."
+- Markman: "Salty's at {port}. Nights. Fed half the high valleys one winter. Never took a coin for it. Odd man. Good man."
+- Aurennais: "I am told the person styled the Salt King has been seen at {port}, Master. The Compact holds a warrant. The villages hold a different view. I find I am not asked to choose."
+- In a town besieged (`st.flags.besieged`, one more line beside `warRumours`): Gatelander: "Somebody came in under the walls last night with salt and flour, and was gone before the lamps were out. There's only the one man it could be." Markman: "Salt came in over the wall last night. Flour too. Salty. Had to be."
+
+### 2. Sister Cairenn, the Gatewalker (Old Blood; sparing, exact, old words, the older name for the thing)
+
+Each game-week she stands at the mouth of one open-world gate, from 18h to 22h, with a candle lit on the step. The gate is rolled on `seededRng('cairenn', week)` over the gates of the island the player is on, and it is never the gate Tomcán sits at that week. Rule read: *where she stands*, below. She has been in more gates than anyone living, she says, and says how many.
+
+**Greeting, first:** "You came to the door. Most come to the door. Fewer come back to it."
+**Greeting, again:** "You. The candle is for them. Not for you. Stand at the side of it."
+**Greeting, to a Gatelander player, first:** "Tírfolk. You will want a proverb. I have none. I have the count."
+**Greeting, to a Markman player, first:** "A Markman. You will not sit with me. That is wise. Stand, then."
+**Greeting, to an Aurennais player, first:** "Your Church buys our rubbings to burn. It should burn the candles too. They know more."
+**Greeting, to an Old Blood player, first:** "You read them too. Not yet as far as I have. Do not hurry."
+- To an Old Blood player with three or more Mastery touches (`vstate().masteries>=3`), every greeting after the first: "The lines are past your wrist. Mine reached my throat at the hundredth door. Count yours."
+**Greeting, after the Guest's chapel** (`vstate().chapel`): "You have stood where it looks out. It is on you. Stand further off from the candle."
+
+**Topics**
+- *Who are you?* — "Cairenn. A Sister of the six, once. Now I walk the doors. Two hundred and eleven. This one is the two hundred and twelfth." (the count rises by one for each week the player has met her)
+- *The doors?* — "You call them gates. The old word is anchor. They hold. That is all a door is for."
+- *The candle?* — "One at each mouth. For whoever is still inside." (asked again) "There are fewer every time. I do not know where they go. I do not light the candle for that."
+- *The red on your habit?* — "Wax. The towns say blood. Towns like blood. Wax is harder to come by."
+- *Why walk them?* — "Someone should know them all. The Sisters asked me that. I gave them the count. They stopped asking."
+
+**Her service: *What is this door?*** At her gate she names it in the older words: its school's own word (Tine, Uisce, Cloch, Scáth, Solas or Gaoth, from the gate's kind as `gateCarving` reads it), the word carved over it (`WORD_BY[gateCarving(seed)].nameIr`), and whether a warm stone is inside (the gate is a sigil door).
+- With a warm stone: "{School}. The word over it is {word}. There is a warm stone inside. Do not read it all at once."
+- Without: "{School}. The word over it is {word}. Nothing warm inside. Only the old work."
+- At a great gate (if her roll ever falls on one): "Do not ask me this one's name. I have been inside. That is all I will give it."
+
+**Her thread: *The Count*.** When the player has discovered twelve gates or more (`worldState.wdisc` keys beginning `door_`), at the next meeting, unasked, after the greeting: "How many doors? … Twelve. You have begun." She takes a red candle from the satchel and gives it, unlit: **Cairenn's Candle** (misc, weight .2, `sellMult:0`). "Light it at the next one. Not for them. For you. So that someone has."
+- To an Old Blood player, after the gift: "When you stop feeling the stones warm, stop reading them. I did not. Look at me."
+- After the candle, *Who are you?* ends: "You have one of my candles. Mind it. I have not so many left as I had."
+
+**The town's word on her** (in `liveRumours`, in the towns within 2 km of the gate she stands at this week, once a day):
+- Gatelander: "The Gatewalker's at {gate} this week, with her candle. Sister Cairenn. She's been in every gate on the island, they say, and the other two islands besides. Her habit's red to the knee. I'd not ask with what."
+- Markman: "The candle woman's at {gate}. Cold-eyes. Harmless. Don't sit with her."
+- Aurennais: "A Sister of the Gatelands' temples, Master, stands at {gate} with a candle each evening this week. The Church does not recognise the order, nor, I gather, does the order recognise her. She seems not to mind either."
+
+**Rule read (systems):** *where she stands.* The plain reading is the same machinery as Tomcán's (run II): a `makeDef` stood on the gate portal's step, 3 m out along its facing, keyed `strange:cairenn`, placed from 18h to 22h on the week's gate (`worldState.strange.cairenn={week,gate}`, the world's). Her count is her own (211 plus the weeks met, from `worldState.strange.cairennMet`, the character's). If a portal's step is no place for a person, she stands at the nearest shrine to that gate instead, and the rumour says *at the shrine by {gate}*.
+
+### 3. The Hollow Bard (Gatelander; proverbs, indirection, no bare yes or no, oaths on the Weaver)
+
+He sits at the hearth of one inn a game-week at a time, from 18h to 2h, the inn rolled on `seededRng('bard', week)` over every inn on the three islands. The rumour says where. Rule read: *the hearth*, below.
+
+**Greeting, first:** "Sit, sit. You've a story on you. I can smell it, like rain on a coat. Don't tell it yet. Let me tell you one first, and then we'll see what yours is worth."
+**Greeting, again:** "Ah. My creditor, or my debtor. I never can keep the two straight. Sit."
+**Greeting, to a Markman player, first:** "A Markman. Your stories are short and end with somebody dead. I've a weakness for them. The good ones are the short ones."
+**Greeting, to an Aurennais player, first:** "From Aurenne. You'll want terms. Here they are: a story for a story, and no story told twice. You may write that down."
+**Greeting, to an Old Blood player, first:** "Sit where the fire can see you. … No, it can't make you out either. Never mind. A story doesn't need a face."
+
+**Topics**
+- *Who are you?* — "The Hollow Bard, they call me, on account of there being nothing in me but other people's stories. I had one of my own once. I traded it. A fair price, I'm told. I don't remember the terms."
+- *The mask?* — "So you'll look at the story and not at the teller. There's not a great deal of the teller to look at."
+- *Your name?* — "It was in the story I traded. If you meet a man who has it, tell him it was a good name, and it's his now, and I'd not want it back. Mostly."
+- *Why trade stories?* — "Because a story told once and never again goes out of the world, and somebody ought to catch it before it does. You'd be surprised how many go. You'd be surprised who's listening for them."
+
+**His service: *A story for a story.*** The player tells one of their own, chosen from what they have done, and each is told once (`worldState.strange.bard.told`, the character's):
+- *The {beast} at {lair}.* (a lair whose beast the player killed, `worldState.lairs`; one per lair)
+- *A wreck I swam down to.* (`stats.wrecks>=1`)
+- *The locks I've opened.* (`stats.picked>=10`)
+- *A warm stone that spoke back.* (`vstate().masteries>=1`)
+- *The bridge at {bridge}.* (a bridge the player mended, `mendBridge`)
+- *The great gate at {gate}.* (a great gate the player has torn or sealed)
+
+He listens. "Hm. Hm. That's a good one. I'll not ask if it's true. True's for ledgers." Then he gives his story back. It is the nearest place to the inn that the player has not yet been to: the nearest Maker's thing not yet taken (`artifactPlaces`, `!artifactState(id)`), else the nearest lair whose beast lives, else the nearest peak (`c.peaks`). It is told as a tale with the place named:
+- A Maker's thing: "Here's mine. Out by {place} there's a thing the old makers left, and it's waiting, the way their things wait, which is patiently and with no regard for anyone's convenience. Many's the one went looking. None of them was you. Go on, so."
+- A lair: "Here's mine. There's a beast at {lair} that's never been in a story, because nobody who met it came back to tell one. It'd be a fine thing to be the first. Or the last. A story's a story."
+- A peak: "Here's mine, and it's a short one. Nobody's been to the top of {peak}. That's the whole story. It's waiting for an ending."
+- With no story of the player's to tell: "You've nothing on you yet but road dust. Come back with mud on your boots and blood on your sleeve, and we'll trade."
+
+**His thread: *The Ballad of {name}*.** After three stories traded, at the next meeting, unasked: "Three of yours I've had, and three of mine you've had, and the books balance, which is a thing that never happens to a bard. So here's a thing I don't do. I've made yours into a song. It's no use to me. A story about someone else is a coat that won't fit." He gives the book **The Ballad of {name}** (`BOOKS`, its own key `bard_ballad`). Its first line is fixed, then one couplet for each story told, in the order told, then the last:
+
+> Here is the ballad of {name}, as the Hollow Bard had it of {name}'s own telling, at the hearth of {inn}.
+>
+> *(the beast)* They went up to {lair}, where the {beast} kept its bed, / and the {beast} came down to them, and the {beast} is dead.
+>
+> *(the wreck)* They swam down to a wreck where the green light lies, / and came up with their hands full and the salt in their eyes.
+>
+> *(the locks)* No lock on the islands but it opened to their hand; / there's a deal of honest people sleeping worse across the land.
+>
+> *(the warm stone)* They laid a hand on the warm stone, and the stone spoke back, / and the colour left their face a while, and the colour came back.
+> *(instead, for an Old Blood player)* … and the colour left their face a while, and the colour stayed away.
+>
+> *(the bridge)* The river took the bridge at {bridge}, and the river was wrong; / they set it up again, and the carts went over with a song.
+>
+> *(a great gate torn)* They went into {gate}, where the old ring turns, / and came out stronger for it, and behind them something burns.
+> *(a great gate sealed)* They went into {gate}, where the old ring turns, / and came out, and they shut it, and the ring stood still.
+>
+> *(the last)* And that is all of {name} that was told to me, and all I'll tell; / for the rest of it, ask {name}. They'll know it well.
+> *(instead, for an Old Blood player)* And that is all of {name}, whose face I set in this song three times, / and three times it was another face, and none of them would rhyme.
+
+After the ballad, his greeting is "There's the one with the song. Sing it yourself sometime. It's better in your mouth than mine, being yours." The stories go on trading.
+
+**The town's word on him** (in `liveRumours`, in the towns of the island his inn is on this week, once a day):
+- Gatelander: "The Hollow Bard's at the hearth in {inn} this week. Bring him a story. He'll give you one back that's worth the walk, and he'll not ask is yours true, which is more than the priest does."
+- Markman: "Masked man at {inn}. Sings. Trades stories. Mine was short. He liked it."
+- Aurennais: "A bard in a gold mask is engaged at {inn}, Master, on terms of his own: a story for a story, none told twice. I gave him the one about my uncle's insolvency. He said it was the saddest thing he had heard all year, which I have chosen to take as a compliment."
+
+**Rule read (systems):** *the hearth.* The plain reading is a `makeDef` in the inn's room beside its hearth (the room's `INT_NPCS`, as the innkeeper stands), keyed `strange:bard`, placed from 18h to 2h while the week's inn is that inn (`worldState.strange.bard.week/inn`, the world's; `told`, `stories` and `ballad` the character's). If an inn's room has no free spot by the hearth, he stands by the door outside under the sign, and the rumour says *outside {inn}*.
+
+### 4. Ammonius, the Wretched Abbot (Aurennais; formal, *Master*, qualifiers, contract metaphors, never an oath)
+
+He goes where the sickness goes. While any town on the three islands is under plague (`st.flags.plague`), he stands at its well, or at its square if it has no well, from 6h to 20h. The town nearest the player comes first. When no town is under plague, he stands at the well of the poorest town in Aurenne (`TS(t).p`, the lowest). The Church's word for him is in its register: *wretched*. He does not dispute it.
+
+**Greeting, first:** "Good day, Master. You need not stand so far off. The sickness is not mine, though I will concede that I have the look of a man who brought it."
+**Greeting, again:** "Master. You came back to a well with me at it. That is either courage or a poor sense of smell."
+**Greeting, to a Gatelander player, first:** "Good day, Master. The Gatelands clear their gates and sell what they find. My Church calls that sacrilege. I called it so myself, for thirty years, in writing. I should like the writing back."
+**Greeting, to a Markman player, first:** "Good day, Master. Your people scorn priests. On the evidence of my career I can find no fault in the position."
+**Greeting, to an Old Blood player, first:** "Good day, Master. Forgive me if I do not look directly at you. It is not discourtesy. I have found that it is easier on us both."
+
+**Topics**
+- *Who are you?* — "Ammonius, Master. I was abbot of the Order of the Seal, under the Church of the Weaver, for nineteen years. The Order no longer exists, by my own petition. The Church has entered me in its register as wretched. I have read the entry. I find I cannot dispute it."
+- *The Order of the Seal?* — "We sealed the gates the Church judged should not be unpicked. Stone, and iron, and the Prior's word over the door. We sealed them very well, Master. That was the difficulty."
+- *What did you break?* — "A village on the salt coast, below a gate we sealed in my eleventh year. Its name has been struck from the Church's registers, so I will not say it, as I am bound. The dead there stopped being buried. They went on dying, you understand. They simply had nowhere left to go."
+- *The chains?* — "They were the Order's. Each brother wore a link for each gate he had sealed. When the Order was dissolved I asked to keep the whole of it, so that no brother need carry his share. It was the one petition the Church granted me gladly."
+- *The thorns?* — "A matter between myself and the Weaver, Master, in which I am the defaulting party."
+- *Is the Church wrong?* (once he has met the player three times) — "The Church holds that the dead hold up the world. I believed it. I believe it still, on most days. But a sealed gate does not keep the dead, Master. It keeps them waiting. And I have stood at too many wells to think that waiting is the same as rest."
+
+**His service: *Where did it come from?*** At a plague town: "The townsfolk say it came up out of {lair}, {dir} of here. The townsfolk are correct. Something there should have gone out of the world some time ago and has not. End it, Master, and the sickness will lift. I would do it myself. I have tried. The chains make me slow." (`st.plagueFrom`, the town's own record; the lair's place from `SITES`.)
+- At the poorest Aurennais town, no plague anywhere: "No sickness anywhere this week, Master, that I have heard of. So I stand where it will come first. The poor take everything first. It is the one account on which they are never in arrears."
+
+**His thread: *What the Seal Kept*.** At a plague town, at the first meeting there, after the service, he offers it: "If you would do this, Master, I would count it a debt, and I am a careful debtor. I have nothing left but careful."
+- *I'll end it.* — "Then I shall wait here. I am very good at waiting. It is the Order's whole art."
+- When the plague at that town lifts because the player killed what was in the lair (`worldState.lairs[id]` set by the player, and the plague cleared on that day by `tickPlagueDay`), at the next meeting anywhere: "{town} is well, Master. I heard at the last well but one. Here. It is the only thing of the Order's that the Church did not ask for back." He gives **the Abbot's Seal** (misc, a brass seal-ring, weight .1, `sellMult:0`). "It closed some forty doors. I should like it to open something, once, before I am done. I leave the choice of door to you."
+- After the seal, his greeting is "Master. My creditor. The account stands in your favour, and will, I fear, for some time."
+- If the sickness passes by itself (twenty days, `tickPlagueDay`), he says nothing of it and stands at the next plague's well. The thread stays open.
+
+**The town's word on him** (in `liveRumours`, at the town where he stands and in the towns within 2 km of it, once a day):
+- Aurennais: "The Wretched Abbot is at our well, Master. The Church does not permit us to speak to him, and so, naturally, everyone does. He has been very kind to the sick. I mention it because the Church's notice did not."
+- Gatelander: "There's a priest at the well in chains and thorns, a sight to curdle milk. He sat up three nights with the Ó Néills' youngest. Weaver forgive me, I crossed the road the first day I saw him."
+- Markman: "Chained priest at the well. Wretched, they call him. Fetched water for the whole lane. Doesn't preach. Good."
+- A Church brother or the Prior, in Aurenne's towns, if asked *The Wretched Abbot?* (the priests' topics, while Ammonius is on Aurenne): "The former abbot Ammonius is not a subject on which the Church gives instruction, Master. It is, I may say, a subject on which the Church has given instruction."
+
+### What in the code would carry it
+
+- **`87-world-quests.js`**: the `STRANGE` table from runs I and II, four rows more. Each is a `makeDef` with `authored:true` and `keepName:true`, keyed `strange:<who>` (`saltking`, `cairenn`, `bard`, `abbot`: one each in the world, so the key is the person). Greetings go by the player's people, as `firstWords` reads them.
+- **Fergal**: placed on a port's quay point (`84-world-interiors.js`'s ports), as Elias is, on `seededRng('saltking', fortnight)`, from 22h to 4h. *What's on the water?* reads `OTHER` as `liveRumours` does. The thread: `worldState.strange.salt={met,village,state:'asked'|'carried'|'done'}` is the character's (what the player carried), so it goes in `SS_CHAR_WS`. The village id is picked once, from `SITES` and `TS`. The Elder's topic *Salt from the quay.* sits in `lordTopics` at that village while the sack is in the bag. The sack and the link are plain items. The besieged line is pushed beside `warRumours`.
+- **Cairenn**: placed by her Rule read. *What is this door?* reads `gateCarving(seed)`, `WORD_BY` and the cell's sigil doors (as `nearestSigilDoorFrom` does). The count reads `worldState.wdisc`. `worldState.strange.cairenn={week,gate}` is the world's. `cairennMet` and `candle:true` are the character's. The candle is a plain item.
+- **The Bard**: placed by his Rule read. The stories read `worldState.lairs`, `worldState.stats.wrecks` and `.picked`, `vstate().masteries`, the mended bridges, and the great gates' state. His tales read `artifactPlaces` with `artifactState`, then the lairs, then `c.peaks`. The ballad is `BOOKS.bard_ballad`, its couplets filled from `worldState.strange.bard.told` (the character's: `[{k:'lair',id}, …]`, ids by place) and opened by the book reader (`66-hub.js`).
+- **Ammonius**: placed at a plague town's well (the town's `well` point, else its square), the town nearest the player among those with `flags.plague`, else the lowest-`p` town of Aurenne. *Where did it come from?* reads `st.plagueFrom`. His thread: `worldState.strange.abbot={met,asked:<town id>,seal:true}` is the character's. The lift is read where `tickPlagueDay` clears the flag: if the lair beside it is dead and the player killed it, the thread's town is marked well (`healed:<town id>`). The priests' topic *The Wretched Abbot?* sits in the Church's topics on Aurenne.
+- **Journal titles:** *Salt for {village}* · *The Count* · *The Ballad of {name}* · *What the Seal Kept*.
+- **Who builds:** the words, the table, the records, the rumours and the book are the quest writer's once approved (`87-world-quests.js`, `22-dialogue.js`, `BOOKS`). The faces are the bodies builder's (the dress above, all from the kit's pieces: a coat, chains, a habit, a mask, vestments, chains at the waist). The two Rule reads are the systems builder's. Nothing here needs a new system.
+
+### The register, checked
+
+- Fergal: proverbs turned (*what the eye doesn't see, the ledger doesn't grieve over*, *a king of salt is a king of nothing much*), no bare yes or no (*Are you a free captain?* is answered with *I'd not say so, and they'd say it louder*), oaths on the Weaver. His Elder answers in the Gatelands' *Weaver keep him dry*. The Markish Reeve's line is short, with *aye* and *Iron keep him*.
+- Cairenn: sentences of a few words, exact counts (211, 212, the hundredth door, twelve), and the older name for the thing (*the old word is anchor*, *doors*). She never makes a proverb, swears no oath and offers no comfort. Her line on the dead (*fewer every time; I do not know where they go*) is as near as she comes to §3.1, and she stops there.
+- The Bard: a Gatelander's indirection (*I'll not ask if it's true. True's for ledgers*). *Your name?* is answered without a *no*. The ballad is plain ballad metre. It names no fate and no description of the player but the Old Blood's three faces, which is §2.2's licence.
+- Ammonius: *Master* throughout, entries, registers, petitions, accounts, debtors and creditors. He never swears an oath (*a matter between myself and the Weaver, in which I am the defaulting party* is a contract, not an oath). His line on the dead (*it keeps them waiting*) is the Church's own belief turned over once, and it never names the Clearing. The Church brother's refusal is the Compact's dry turn.
+- The slurs: Cairenn's *cold-eyes* comes from the Markish townsman, and the same rumour calls her harmless. Fergal's *tithe-house* is said to an Aurennais as a joke at his own expense. Each is about work and gods, never bodies.
+- No prophecy, no chosen one, no line on what the player is.
