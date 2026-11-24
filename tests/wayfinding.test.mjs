@@ -126,5 +126,10 @@ await page.setViewportSize(vwN);
 check('in a shop one slip, the newest, stands on one line in the header, clear of the stock list, the shop\'s name and the ✕; four again after it closes',
   Object.values(sh).every(o => o.slips.length === 1 && /Longsword/.test(o.text[0]) && o.slips[0][3] <= o.cols[1] - 12 && o.slips[0][3] - o.slips[0][1] < 35
     && o.slips[0][2] <= o.close[0] - 12 && o.slips[0][0] >= o.titleEnd + 40 && o.after === 4), sh);
+// S2604 — indoors the spell's roundel was display:none and the bars slid left by its width: it keeps its place, dimmed, taking no click
+const fbk = await page.evaluate(() => { const fb = document.getElementById('fbtn'), vb = document.querySelector('#hud .vb'), was = fb.style.display;
+  const L = () => Math.round(vb.getBoundingClientRect().left); const out = { shown: L() }; fb.style.display = 'none';
+  const cs = getComputedStyle(fb); out.hidden = L(); out.op = +cs.opacity; out.pe = cs.pointerEvents; fb.style.display = was || 'block'; out.back = L(); return out; });
+check('indoors the spell\'s roundel keeps its place, dimmed and taking no click, so the bars do not move', fbk.shown === fbk.hidden && fbk.back === fbk.shown && fbk.op < 0.5 && fbk.pe === 'none', fbk);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -112,6 +112,9 @@
 #hud .vp{display:flex;gap:8px;align-items:center}
 #hud .rd{width:48px;height:48px;flex:none;border-radius:50%;padding:0;font:24px/46px Georgia,serif;text-align:center;color:#e6cf9a;cursor:pointer;pointer-events:all;overflow:hidden;white-space:nowrap;background:radial-gradient(circle at 50% 38%,#3a3122,#16120c 70%);border:1px solid #6a4e22;box-shadow:inset 0 0 0 2px rgba(216,180,106,.45),0 0 0 2px #1a140c,0 0 0 3px rgba(216,180,106,.3)}
 #hud .rd:hover{color:#fff2c8}
+/* S2604 — indoors the code hides the spell's roundel (display:none inline, read by hearthcast), and the bars slid left by its 56 px and back on
+   leaving (the critic, s1927): it keeps its place, dimmed and taking no click, so the plate never moves */
+#hud #fbtn[style*="none"]{display:block!important;opacity:.3!important;filter:grayscale(1);pointer-events:none}
 #hud .vb{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-left:4px}
 #hud .br{position:relative;display:grid;grid-template-columns:13px 1fr 58px;gap:6px;align-items:center}
 #hud .br .v{font-size:12px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
