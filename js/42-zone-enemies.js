@@ -806,6 +806,17 @@ const WILD_ANSWER_KINDS={'Gatefen Boar':{walk:.7,run:6},'Icecrab':{walk:.2,run:1
 for(const k in WILD_ANSWER_KINDS)WILD_ISLE_KINDS[k]=Object.assign({answer:true},WILD_ANSWER_KINDS[k]);
 // S1797 — the two river fish (#1050 A) swim as the trout does, on its path and its rules (wildTroutChunk rolls which)
 for(const k of ['River Pike','Riverjaw Salmon']){WILD_PACE[k]=WILD_PACE.Trout;ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Trout,{col:SWIMMER[k].col});}
+// S2620 — the sea's creatures (Michael's A on #1954; their bodies the bodies builder's, Sessions 2575 to 2585): peaceful swimmers on the
+// trout's path and rules (#1014 A, #1050 A), placed by wildSeaChunk (88-world-ticks.js) by the water's depth. Each holds at its own depth
+// (SEA_KINDS: `under` metres under the surface, or `bed` metres over the sea floor, followed as it swims), darts 10 m when it sees or hears
+// you, and is taken by hand while you swim or dive beside it, or struck by the spear or an arrow at its height. Pace in metres a second.
+// The reef rock's three that answer back (the moray, the stonefish, the octopus) and the seals hauled out are the decision's second session
+const SEA_KINDS={'Starweed Ray':{walk:.4,run:4,bed:.25},'Sea Turtle':{walk:.3,run:2.5,under:1.5},'Tidecrab':{walk:.2,run:1.5,bed:0},
+  'Lantern Jelly':{walk:.05,run:.4,under:1.2},'Coastal Tuna':{walk:.6,run:8,under:2},'Drifter Squid':{walk:.3,run:5,under:3},
+  'Skyskimmer':{walk:.5,run:9,under:.4},'Abyssal Angler':{walk:.2,run:3,bed:.5},'Blackcurrent Eel':{walk:.3,run:4,bed:.4},'Sailfin Ray':{walk:.5,run:5,bed:.6}};
+for(const k in SEA_KINDS){if(!SWIMMER[k])continue;const S=SEA_KINDS[k];WILD_PACE[k]={walk:S.walk,run:S.run,swim:true};ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Trout,{col:SWIMMER[k].col});}
+function seaHoldY(e,x,z){const S=SEA_KINDS[e.baseName];if(!S||activeZoneId!=='world'||typeof worldH!=='function')return SEA_Y-WILD_SWIM.under;const bed=worldH(x,z);
+  return Math.max(bed+Math.min(.2,S.bed!=null?S.bed:.2),Math.min(SEA_Y-.3,S.bed!=null?bed+S.bed:SEA_Y-S.under));}
 // S1784 — the watcher's three sheep (the farm's Sheep, OG-023's livestock body): peaceful on the wild path, no meat (not in MEAT_BODIES)
 WILD_PACE.Sheep={walk:.5,run:5};
 ZONE_FOE_DEF.Sheep={minLevel:1,col:WOLF_KINDS.Sheep.coat,eyeCol:0x0a0a0c,hp:1,maxHp:1,spd:1.0,dmg:0,atk:9,xpVal:0,scale:1,shape:'wolf',def:0,resist:{},wild:true};
@@ -875,7 +886,7 @@ function wildSwimStep(e,W,P,T,dt){
     for(const off of [0,.6,-.6,1.2,-1.2,2,-2]){const y=W.yaw+off;nx=e.x+Math.sin(y)*st;nz=e.z+Math.cos(y)*st;if(wildWet(nx,nz)){yaw=y;ok=true;break;}}
     if(!ok){if(W.mode==='flee')W.left=0;else{W.mode='graze';W.t=1+e.rng()*2;}}
     else{W.yaw=yaw;e.x=nx;e.z=nz;if(W.mode==='flee')W.left-=st;let dy=yaw-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*(W.mode==='flee'?14:4));}}
-  if(e.mesh){e.mesh.position.set(e.x,SEA_Y-WILD_SWIM.under,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}}
+  if(e.mesh){e.mesh.position.set(e.x,SEA_KINDS[e.baseName]?seaHoldY(e,e.x,e.z):SEA_Y-WILD_SWIM.under,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}} /* S2620 — a sea creature at its own depth */
 // S1711 — a bird startled takes off: it climbs at 3 m/s to its own cruise of 8 to 14 m, flies 60 m from you, then glides down at 2 m/s and
 // lands on the first open ground (wildOpen) past that, flying on up to 150 m if there is none. Over 1.5 m up it is aloft: out of a blade's
 // reach (strikeCandidate, the bash), and an arrow must pass within 0.6 m of its height to strike it (wildArrowMisses)

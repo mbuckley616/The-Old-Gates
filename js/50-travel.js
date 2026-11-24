@@ -1188,7 +1188,7 @@ function useFireThing(i){const it=BAG[i];if(!it)return;
 // S1707 — and off the hunted (Michael's A on #984): a deer 2 to 4, a hare 1; the fox, the badger and the otter give none
 const MEAT_BODIES=/(^|\s)(Wolf|Bear|Boar|Deer|Hare|Elderstag|Elk|Duneskimmer|Icehorn|Ram|Crownstag|Frostmane|Shatterhorn)$/;
 const MEAT_N={Deer:[2,4],Hare:[1,1],Elderstag:[2,4],Elk:[2,4],Crownstag:[2,4],Frostmane:[2,4],Shatterhorn:[2,4]}; /* S1911 — the Shatterhorn a grazer, a deer's; the tortoises and the Mineprowler none */ /* S1870 — the two strange grazers a deer's; the Lanternfox, the Thornrunner and the Stonejaw none, as the fox and the badger */ /* S1769 — the islands' grazers: the stag and the elk a deer's, the gazelle, the goat and the rams the default 1 to 3 */
-function bodyMeat(e,items,key){if(e&&e.swim&&(e.baseName==='Trout'||RIVER_FISH[e.baseName])){items.push(riverFishItem(e.baseName));return items;}if(!e||e.corrupt||!MEAT_BODIES.test(e.name||''))return items; /* S1933 — a gate's corrupted animal is the gate's, no meat on it */
+function bodyMeat(e,items,key){if(e&&e.swim&&(e.baseName==='Trout'||RIVER_FISH[e.baseName]||SEA_FISH[e.baseName])){items.push(riverFishItem(e.baseName));return items;}if(!e||e.corrupt||!MEAT_BODIES.test(e.name||''))return items; /* S1933 — a gate's corrupted animal is the gate's, no meat on it */
   const N=MEAT_N[(e.name||'').split(' ').pop()]||[1,3];
   const r=key!=null?seededRng('meat',key):lootRand;items.push(survItem('meat',N[0]+Math.floor(r()*(N[1]-N[0]+1))));return items;}
 // S1759 — a trout (#1014 A): one, a fish like the sea's (0.6 weight, 9 gold), taken by hand or off its body when struck
@@ -1450,7 +1450,11 @@ const ROD_ITEM={name:'Fishing Rod',ico:'🎣',type:'misc',weight:1,buyPrice:15,s
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish',food:'fish'};} /* S2028 — food, which the save keeps */
 // S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
 const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};
-function riverFishItem(name){const f=RIVER_FISH[name];if(!f)return troutItem();return {name,ico:'🐟',type:'misc',weight:f.weight,sellMult:.7,buyPrice:f.gold,qty:1,_typeKey:'fish',food:'fish'};}
+/* S2620 — the sea's creatures taken by hand or struck (#1954 A): 1.2 weight and 18 gold, the tuna 3 and 30 */
+const SEA_FISH={'Starweed Ray':{weight:1.2,gold:18},'Sea Turtle':{weight:1.2,gold:18,ico:'🐢'},'Tidecrab':{weight:1.2,gold:18,ico:'🦀'},'Lantern Jelly':{weight:1.2,gold:18},
+  'Coastal Tuna':{weight:3,gold:30},'Drifter Squid':{weight:1.2,gold:18,ico:'🦑'},'Skyskimmer':{weight:1.2,gold:18},'Abyssal Angler':{weight:1.2,gold:18},
+  'Blackcurrent Eel':{weight:1.2,gold:18},'Sailfin Ray':{weight:1.2,gold:18}};
+function riverFishItem(name){const f=RIVER_FISH[name]||SEA_FISH[name];if(!f)return troutItem();return {name,ico:f.ico||'🐟',type:'misc',weight:f.weight,sellMult:.7,buyPrice:f.gold,qty:1,_typeKey:'fish',food:'fish'};}
 // the goods shop and the inn: the tinderbox and produce; fish in a port
 function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce},waterItem('skin')]; /* S2012 — a waterskin at every goods shop and inn */
   if(h.type==='misc')out.push({...SURV_ITEMS.messkit}); /* S2028 — the mess kit at every goods shop */
