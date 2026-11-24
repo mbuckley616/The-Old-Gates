@@ -356,9 +356,16 @@
   const SEA_SHALLOW=5,SEA_TABLE={
     shallows:[{name:'Starweed Ray',w:3,n:[1,2]},{name:'Sea Turtle',w:1,n:[1,1]},{name:'Tidecrab',w:3,n:[1,3]},{name:'Lantern Jelly',w:2,n:[2,5],night:true}],
     open:[{name:'Coastal Tuna',w:3,n:[3,6]},{name:'Drifter Squid',w:2,n:[1,2]},{name:'Skyskimmer',w:2,n:[3,6]}],
-    deep:[{name:'Abyssal Angler',w:2,n:[1,1]},{name:'Blackcurrent Eel',w:2,n:[1,1]},{name:'Sailfin Ray',w:1,n:[1,1]}]};
-  function seaHabitat(x,z){const d=SEA_Y-worldH(x,z);if(!(d>WILD_SWIM.wet))return null;if(d<SEA_SHALLOW)return 'shallows';
-    let sea=false;try{const [i,j]=cellOf(x,z),c=getCell(i,j);sea=!!(c&&c.type==='sea');}catch(err){}return sea?'deep':'open';}
+    deep:[{name:'Abyssal Angler',w:2,n:[1,1]},{name:'Blackcurrent Eel',w:2,n:[1,1]},{name:'Sailfin Ray',w:1,n:[1,1]}],
+    reef:[{name:'Reef Moray',w:3,n:[1,1]},{name:'Stonefish',w:2,n:[1,2]},{name:'Giant Octopus',w:1,n:[1,1]}]}; /* S2621 — the reef rock's three (SEA_ANSWER) */
+  // S2621 — the reef rock: the world has no bed of its own kind yet (#1925's reefs will be), and the sea floor is flat but for the shelf off the
+  // coast (79 of 100 points under 0.1 m of relief over 3 m). So rock is that shelf where it is rough: a bed above the open floor's 8 m whose
+  // height changes by more than SEA_ROCK over 3 m, about one point in six of the shallows and open water, none of the cells all sea
+  const SEA_ROCK=.3;
+  function seaRock(x,z,d){if(!(d<7.5))return false;const h=-d;let v=0;for(const [a,c] of [[3,0],[-3,0],[0,3],[0,-3]])v=Math.max(v,Math.abs(worldH(x+a,z+c)-h));return v>SEA_ROCK;}
+  function seaHabitat(x,z){const d=SEA_Y-worldH(x,z);if(!(d>WILD_SWIM.wet))return null;
+    let sea=false;try{const [i,j]=cellOf(x,z),c=getCell(i,j);sea=!!(c&&c.type==='sea');}catch(err){}if(sea)return 'deep';
+    if(seaRock(x,z,d))return 'reef';return d<SEA_SHALLOW?'shallows':'open';}
   function wildSeaChunk(ch,key){const r=seededRng('sea',key);if(r()>WILD_P)return 0;
     let ax=0,az=0,hab=null;for(let k=0;k<12&&!hab;k++){ax=ch.cx*CHUNK+6+r()*(CHUNK-12);az=ch.cz*CHUNK+6+r()*(CHUNK-12);hab=seaHabitat(ax,az);}
     if(!hab)return 0;if(wildRiverNear(ax,az,0)||wildLakeNear(ax,az))return 0; /* a river's mouth or a lake is the trout's */

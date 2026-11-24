@@ -1453,7 +1453,8 @@ const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.
 /* S2620 — the sea's creatures taken by hand or struck (#1954 A): 1.2 weight and 18 gold, the tuna 3 and 30 */
 const SEA_FISH={'Starweed Ray':{weight:1.2,gold:18},'Sea Turtle':{weight:1.2,gold:18,ico:'🐢'},'Tidecrab':{weight:1.2,gold:18,ico:'🦀'},'Lantern Jelly':{weight:1.2,gold:18},
   'Coastal Tuna':{weight:3,gold:30},'Drifter Squid':{weight:1.2,gold:18,ico:'🦑'},'Skyskimmer':{weight:1.2,gold:18},'Abyssal Angler':{weight:1.2,gold:18},
-  'Blackcurrent Eel':{weight:1.2,gold:18},'Sailfin Ray':{weight:1.2,gold:18}};
+  'Blackcurrent Eel':{weight:1.2,gold:18},'Sailfin Ray':{weight:1.2,gold:18},
+  'Reef Moray':{weight:1.2,gold:18},'Stonefish':{weight:1.2,gold:18},'Giant Octopus':{weight:1.2,gold:18,ico:'🐙'}}; /* S2621 — the reef's three */
 function riverFishItem(name){const f=RIVER_FISH[name]||SEA_FISH[name];if(!f)return troutItem();return {name,ico:f.ico||'🐟',type:'misc',weight:f.weight,sellMult:.7,buyPrice:f.gold,qty:1,_typeKey:'fish',food:'fish'};}
 // the goods shop and the inn: the tinderbox and produce; fish in a port
 function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce},waterItem('skin')]; /* S2012 — a waterskin at every goods shop and inn */

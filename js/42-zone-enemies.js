@@ -813,8 +813,33 @@ for(const k of ['River Pike','Riverjaw Salmon']){WILD_PACE[k]=WILD_PACE.Trout;ZO
 // The reef rock's three that answer back (the moray, the stonefish, the octopus) and the seals hauled out are the decision's second session
 const SEA_KINDS={'Starweed Ray':{walk:.4,run:4,bed:.25},'Sea Turtle':{walk:.3,run:2.5,under:1.5},'Tidecrab':{walk:.2,run:1.5,bed:0},
   'Lantern Jelly':{walk:.05,run:.4,under:1.2},'Coastal Tuna':{walk:.6,run:8,under:2},'Drifter Squid':{walk:.3,run:5,under:3},
-  'Skyskimmer':{walk:.5,run:9,under:.4},'Abyssal Angler':{walk:.2,run:3,bed:.5},'Blackcurrent Eel':{walk:.3,run:4,bed:.4},'Sailfin Ray':{walk:.5,run:5,bed:.6}};
-for(const k in SEA_KINDS){if(!SWIMMER[k])continue;const S=SEA_KINDS[k];WILD_PACE[k]={walk:S.walk,run:S.run,swim:true};ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Trout,{col:SWIMMER[k].col});}
+  'Skyskimmer':{walk:.5,run:9,under:.4},'Abyssal Angler':{walk:.2,run:3,bed:.5},'Blackcurrent Eel':{walk:.3,run:4,bed:.4},'Sailfin Ray':{walk:.5,run:5,bed:.6},
+  /* S2621 — the reef rock's three that answer back (SEA_ANSWER) */
+  'Reef Moray':{walk:.3,run:4,bed:.3,answer:true},'Stonefish':{walk:0,run:0,bed:0,answer:true,near:1,still:true},'Giant Octopus':{walk:.2,run:2,bed:0,answer:true}};
+// S2621 — the reef's three answer back (#1954 A, on #1050 A's rule): the Reef Moray and the Giant Octopus when struck or when you come within
+// 4 m of them, the Stonefish only when struck or trodden on (within 1 m: you are over it). Each takes the hostile Boar's row (16 health, its
+// blow 5) at tier 1, as the land's do. Under the water it never leaves the water: it swims at you at its run (the stonefish stays where it
+// lies), rising or sinking toward your body at 2 m/s between the bed and the surface. Within its reach of you it winds up for 0.6 s (the
+// combat page's 150 ms floor, four times over) and bites through executeStrike, so a guard, a parry and a roll answer it as they answer
+// any blow; then 1.3 s before the next. 25 m off it gives up, as on land, and holds again where it is. Only the spear and arrows reach it
+const SEA_ANSWER={near:4,reach:1.5,wind:.6,gap:1.3,rise:2,body:.3}; /* body: the swimmer's middle over jumpY, the feet's line */
+function seaTargetY(T){return T&&typeof T.y==='number'?T.y:(typeof jumpY==='number'?jumpY:SEA_Y-1.45);}
+function seaAnswerStep(e,W,P,T,dt){const S=SEA_KINDS[e.baseName]||{},A=SEA_ANSWER,ty=seaTargetY(T)+A.body,y0=e.mesh?e.mesh.position.y:seaHoldY(e,e.x,e.z);
+  const flat=Math.hypot(T.x-e.x,T.z-e.z),d3=Math.hypot(flat,ty-y0);
+  if(!e.angry){if(!(e.alert||(flat<(S.near||A.near)&&d3<(S.near||A.near)+.6)))return false;
+    e.angry=true;e.alert=true;e._agg=true;e._quit=Math.max(WILD_ANSWER.quit,flat+A.near);e._wind=0;e.atkCd=0;if(typeof e.posture!=='number'&&typeof initPosture==='function')initPosture(e);}
+  const stag=typeof isStaggered==='function'&&isStaggered(e);let y=y0;
+  if(!S.still&&!stag&&d3>A.reach*.8&&P.run>0){const st=P.run*dt,yw=Math.atan2(T.x-e.x,T.z-e.z),nx=e.x+Math.sin(yw)*Math.min(st,flat),nz=e.z+Math.cos(yw)*Math.min(st,flat);
+    if(wildWet(nx,nz)){e.x=nx;e.z=nz;}let dy=yw-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*8);}
+  if(!S.still&&typeof worldH==='function'){const bed=worldH(e.x,e.z),lo=bed+Math.min(.2,S.bed!=null?S.bed:.2),hi=SEA_Y-.3,want=Math.max(lo,Math.min(hi,ty));y=y0+Math.max(-A.rise*dt,Math.min(A.rise*dt,want-y0));y=Math.max(lo,Math.min(hi,y));}
+  if(e.mesh){e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}
+  e.atkCd=Math.max(0,(e.atkCd||0)-dt);const near=Math.hypot(flat,ty-y)<=A.reach;
+  if(stag){e._wind=0;return true;}
+  if(near&&e.atkCd<=0){e._wind=(e._wind||0)+dt;if(e._wind>=A.wind){e._wind=0;e.atkCd=A.gap;const now=performance.now();if(typeof executeStrike==='function'&&typeof foeBlow==='function')executeStrike(e,foeBlow(e),now);e._bites=(e._bites||0)+1;}}
+  else if(!near)e._wind=0;
+  return true;}
+for(const k in SEA_KINDS){if(!SWIMMER[k])continue;const S=SEA_KINDS[k];WILD_PACE[k]={walk:S.walk,run:S.run,swim:true};ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Trout,{col:SWIMMER[k].col});
+  if(S.answer){const B=ZONE_FOE_DEF.Boar;Object.assign(ZONE_FOE_DEF[k],{hp:B.hp,maxHp:B.maxHp,dmg:B.dmg,atk:B.atk,spd:B.spd,xpVal:B.xpVal,def:B.def,answer:true});}} /* S2621 — the reef's three on the Boar's row at tier 1 (SEA_ANSWER) */
 function seaHoldY(e,x,z){const S=SEA_KINDS[e.baseName];if(!S||activeZoneId!=='world'||typeof worldH!=='function')return SEA_Y-WILD_SWIM.under;const bed=worldH(x,z);
   return Math.max(bed+Math.min(.2,S.bed!=null?S.bed:.2),Math.min(SEA_Y-.3,S.bed!=null?bed+S.bed:SEA_Y-S.under));}
 // S1784 — the watcher's three sheep (the farm's Sheep, OG-023's livestock body): peaceful on the wild path, no meat (not in MEAT_BODIES)
@@ -910,7 +935,8 @@ function tickWildOne(e,dt){if(!(dt>0))return;
   const P=WILD_PACE[e.baseName]||WILD_PACE.Deer,W=e._w||(e._w={mode:'graze',t:2+e.rng()*6});
   const T=targetOf(e),dist=Math.hypot(T.x-e.x,T.z-e.z);
   if(e.baseName==='Bellthroat')bellthroatCall(e,W,dist,dt);
-  if(e.answer&&(e.alert||dist<WILD_ANSWER.near)){e.angry=true;e.alert=true;e._agg=true;e._quit=Math.max(WILD_ANSWER.quit,dist+WILD_ANSWER.near);W.mode='graze';W.t=0;return;} /* S1796 — struck, or come too near: it turns on you (an arrow from past 25 m: it comes for you, and gives up 4 m past where you shot from) */
+  if(e.answer&&!e.swim&&(e.alert||dist<WILD_ANSWER.near)){e.angry=true;e.alert=true;e._agg=true;e._quit=Math.max(WILD_ANSWER.quit,dist+WILD_ANSWER.near);W.mode='graze';W.t=0;return;} /* S1796 — struck, or come too near: it turns on you (an arrow from past 25 m: it comes for you, and gives up 4 m past where you shot from) */
+  if(e.answer&&e.swim&&P.swim&&seaAnswerStep(e,W,P,T,dt))return; /* S2621 — a reef creature that answers back, in the water */
   if(e.alert){e.alert=false;wildFlee(e,T);} /* a blow that did not kill, or a pack's cry */
   else if(W.mode!=='flee'&&W.mode!=='fly'&&!_hasBuff('vanish')&&(e.tame?dist<FARM_TAME.near:canSeePlayer(e,dist,20)))wildFlee(e,T);
   if(W.mode==='fly'){wildFlyStep(e,W,P,T,dt);return;}
@@ -1209,7 +1235,7 @@ function tickZoneEnemies(dt,now,sc){
     if(e.dead||e.locked)return;
     if(e._duelHold)return; /* S373 — Rowe holds: talking, or on one knee */
     if(e.wild&&e.angry){const T=targetOf(e);if(Math.hypot(T.x-e.x,T.z-e.z)>(e._quit||WILD_ANSWER.quit)){e.angry=false;e.alert=false;e._agg=false;e.homeX=e.x;e.homeZ=e.z;}} /* S1796 — 25 m off, it gives up */
-    if(e.wild&&!e.angry){tickWildOne(e,dt);return;} /* S1707 — a peaceful animal grazes, wanders and runs; it never fights (S1796 — unless it answers back) */
+    if(e.wild&&(!e.angry||e.swim)){tickWildOne(e,dt);return;} /* S2621 — a sea creature fights in the water, on its own step */ /* S1707 — a peaceful animal grazes, wanders and runs; it never fights (S1796 — unless it answers back) */
     // v61gj — Defensive lazy init for pre-ship saves (enemies in ZONES[id].enemies
     // that predate v61gj). Idempotent — no-op if already stamped. Then regen tick.
     if(typeof e.posture!=='number') initPosture(e);

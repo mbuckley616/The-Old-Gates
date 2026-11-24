@@ -317,4 +317,26 @@ console.log('  sea:', JSON.stringify(SEA));
     && !T['shallows:Lantern Jelly'] && N['shallows:Lantern Jelly'] > 0 && SEA.same === true, SEA);
   check(`each 1.2 weight and 18 gold, the tuna 3 and 30; dived beside a tuna (${SEA.tunaY} m), E takes it by hand (+${SEA.got})`,
     Object.entries(I).every(([k, v]) => k === 'Coastal Tuna' ? v.join() === '3,30' : v.join() === '1.2,18') && SEA.swim && SEA.prompt && SEA.took && SEA.got === 1 && SEA.gone && SEA.tuna && SEA.tuna.join() === '3,30', SEA); }
+// S2621 — the reef's three answer back (#1954 A on #1050 A): the moray, met within 4 m in the water, comes at you in the water and bites
+// through the blow's resolver after its wind-up, and 25 m off gives up; the stonefish lies still until you are over it; each has the Boar's 16
+const REEF = await page.evaluate(() => { const out = {}; const R = seededRng('s2621', 'reef'); let at = null;
+  for (let k = 0; k < 40000 && !at; k++) { const x = 13000 + R() * 12000, z = 13000 + R() * 12000; if (seaHabitat(x, z) === 'reef' && SEA_Y - worldH(x, z) > 3) at = [x, z]; }
+  if (!at) return { none: true };
+  const mk = (name, x, z) => { const e = keyFoe(buildZoneEnemy(sc, STATIC_SOL, x, z, name, null, { tier: 1, key: 's2621:' + name }), 'wild:s2621:' + name);
+    e._wildKey = 's2621:' + name; e.homeX = x; e.homeZ = z; e.mesh.position.y = seaHoldY(e, x, z); ZONES.world.enemies.push(e); return e; };
+  const bx = px, bz = pz, by = jumpY, hp0 = PHP, sw = isSwimming; isSwimming = () => true;
+  const run = (e, secs) => { for (const o of ZE) o._duelHold = o !== e; for (let i = 0; i < secs * 60; i++) tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); for (const o of ZE) o._duelHold = false; };
+  const m = mk('Reef Moray', at[0], at[1]); out.m = { hp: m.hp, dmg: m.dmg, answer: !!m.answer, swim: !!m.swim };
+  px = at[0] + 3.2; pz = at[1]; jumpY = Math.min(SWIM_Y, Math.max(worldH(px, pz) + .9, m.mesh.position.y - .3)); /* dived to its depth */ PHP = maxHP; blocking = false; run(m, .2); out.m.angry = !!m.angry;
+  const x0 = m.x; run(m, 4); out.m.came = +(m.x - x0).toFixed(2); out.m.wet = wildWet(m.x, m.z); out.m.bites = m._bites || 0; out.m.lost = hp0 > 0 ? +(maxHP - PHP).toFixed(1) : null;
+  out.m.yOk = m.mesh.position.y >= worldH(m.x, m.z) - .01 && m.mesh.position.y <= SEA_Y - .29;
+  px = m.x + 30; run(m, .2); out.m.quit = !m.angry;
+  const s = mk('Stonefish', at[0], at[1]); s._w = { mode: 'graze', t: 99 }; px = at[0] + 2; pz = at[1]; jumpY = worldH(at[0], at[1]) + .9; run(s, .5); out.s = { far: !s.angry };
+  px = at[0] + .5; run(s, 3); out.s.over = !!s.angry; out.s.moved = +Math.hypot(s.x - at[0], s.z - at[1]).toFixed(2); out.s.bites = s._bites || 0; out.s.hp = s.hp;
+  for (const e of [m, s]) { e.dead = true; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); const i = ZONES.world.enemies.indexOf(e); if (i >= 0) ZONES.world.enemies.splice(i, 1); }
+  isSwimming = sw; px = bx; pz = bz; jumpY = by; PHP = maxHP; return out; });
+console.log('  reef:', JSON.stringify(REEF));
+check(`the reef answers back: the moray (${REEF.m && REEF.m.hp} health) met 3.2 m off at its depth turns, comes ${REEF.m && REEF.m.came} m through the water and bites ${REEF.m && REEF.m.bites} times (${REEF.m && REEF.m.lost} lost); 30 m off it gives up; the stonefish lies still until you are over it, then bites (${REEF.s && REEF.s.bites})`,
+  !REEF.none && REEF.m.hp === 16 && REEF.m.dmg === 5 && REEF.m.answer && REEF.m.swim && REEF.m.angry && REEF.m.came > 1 && REEF.m.wet && REEF.m.bites >= 2 && REEF.m.lost > 0 && REEF.m.yOk && REEF.m.quit
+  && REEF.s.far && REEF.s.over && REEF.s.moved < .01 && REEF.s.bites >= 1, REEF);
 await g.close();
