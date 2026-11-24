@@ -297,7 +297,9 @@ const seal = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
   while (((rig.ph % 1) + 1) % 1 < .2 || ((rig.ph % 1) + 1) % 1 > .3) run(1, .5);
   const cap = r => { G.updateMatrixWorld(true); sk.update(); r.m = Array.from(sk.boneMatrices); r.m = r.m.map((v, i) => i % 16 > 11 ? v - (i % 16 === 12 ? G.position.x : i % 16 === 14 ? G.position.z : 0) : v); return r; };
   const step = (n, sp) => { let mx = 0, a = cap(run(0, 0)), gs = new Set(); for (let i = 0; i < n; i++) { const b = cap(run(1, sp)); mx = Math.max(mx, diff(a, b)[0]); gs.add(b.g); a = b; } return [mx, [...gs].join('/')]; };
-  const [mvStep] = step(20, .5), [stopStep, stopG] = step(90, 0), [goStep, goG] = step(60, .5);
+  /* S2618: the moving frame is read over a whole hump (60 frames, 1.1 cycles), the fore-flippers' swing in it, then back to the chest up */
+  const [mvStep] = step(60, .5); while (((rig.ph % 1) + 1) % 1 < .2 || ((rig.ph % 1) + 1) % 1 > .3) run(1, .5);
+  const [stopStep, stopG] = step(90, 0), [goStep, goG] = step(60, .5);
   gal.mvStep = mvStep; gal.stopStep = stopStep; gal.goStep = goStep; gal.stopG = stopG; gal.goG = goG;
   e.ashore = false; run(2, 0); const bx2 = box(), back = (bx2.max.y + bx2.min.y) / 2 - G.position.y;
   const out = { plan: H.C.g.plan, seed: H.C.g.seed === HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(wx.max.z - wx.min.z).toFixed(3), nose: +(wx.max.z - sb.max.z).toFixed(3),
