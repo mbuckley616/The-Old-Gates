@@ -3244,6 +3244,18 @@
   // the crater rebuilt when a lobe is struck out (three times at most): its children swapped, the Group kept, so the vein's record holds it
   function starKitShow(v){const g=v.g,left=Math.max(0,Math.min(3,veinLeft(v)));if(!g||!g.userData.kit||g.userData.kit.left===left)return;
     const n=starKitMesh(v,left);if(!n)return;for(const c of [...g.children]){g.remove(c);c.geometry&&c.geometry.dispose();}for(const c of [...n.children])g.add(c);g.userData.kit=n.userData.kit;g.userData.glint=n.userData.glint;}
+  // S2619 — the deep pearl oysters' bed on the new look (Michael's A on #1952, as drawn in Session 2586; PKIT.props.oysters, 38-kit.js), in
+  // place of 50-travel.js's five grey stand-ins: the bank draped on the terrain's own triangles (meshH) 2 cm up, the oysters where the game
+  // lays them (bed.oy), an oyster opened left open (the bed's record, pearlRec), the bank fading to the sea floor's colour 4 m out as the
+  // land's shader shows it under the water.
+  // -> a Group, or null on the old look. Rebuilt by pearlKitShow when an oyster is opened or the bed comes back.
+  function pearlKitMesh(bed,taken){if(!rareKitOn()||!PKIT.props.oysters||!bed)return null;const y0=meshH(bed.x,bed.z),c=new THREE.Color();
+    let gr=0,gg=0,gb=0;for(let k=0;k<8;k++){const a=k/8*Math.PI*2,x=bed.x+Math.sin(a)*4,z=bed.z+Math.cos(a)*4,h=worldH(x,z);groundColor(x,z,h,slopeNormalY(x,z),c);gr+=c.r/8;gg+=c.g/8;gb+=c.b/8;}
+    c.setRGB(gr,gg,gb).lerp(new THREE.Color(.16,.34,.36),.7).multiplyScalar(.5); /* as the land's shader shows a bed under 5 m of water: into teal, and its albedo cut (89-world-land.js, landCol) */
+    const K=PKIT.props.oysters({key:bed.id,taken:taken|0,sand:c.getHex(),oy:bed.oy.map(o=>({x:o.x-bed.x,z:o.z-bed.z,ry:o.ry})),ground:(x,z)=>meshH(bed.x+x,bed.z+z)-y0+.02});
+    const g=K.group;g.name='pearlBed';g.position.set(bed.x,y0,bed.z);g.userData.kit={taken:taken|0,open:K.open,tris:K.tris,draws:K.draws,R:K.R,oysters:K.oysters};return g;}
+  function pearlKitShow(bed,taken){const g=bed&&bed.g;if(!g||!g.userData.kit||g.userData.kit.taken===(taken|0))return;
+    const n=pearlKitMesh(bed,taken);if(!n)return;for(const c of [...g.children]){g.remove(c);c.geometry&&c.geometry.dispose();}for(const c of [...n.children])g.add(c);g.userData.kit=n.userData.kit;}
   // the land's holes: one a crater shown in a chunk that is in the scene, its rim's radius
   function starKitHoles(){if(typeof LAND_HOLES==='undefined'||typeof STARS_SHOWN==='undefined')return;let i=0;
     for(const v of STARS_SHOWN.values()){if(i>=6)break;const g=v.g;if(!g||!g.userData.kit||!veinLive(v))continue;LAND_HOLES.value[i++].set(v.x,v.z,g.userData.kit.R,1);}
