@@ -416,9 +416,11 @@ body:has(#dlg[style*="block"]) #ledger .ldg{max-width:100%}
 .qlog-reward{font-size:9px;color:#4a6020;margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.05)}
 /* ── COMPASS ─────────────────────────────────────────────── */
 /* S2578 — #198 A: the band at the bottom centre, over the controls line; the ribbon above it */
-#compass{position:absolute;bottom:28px;left:min(max(50%,640px),calc(100% - 400px));transform:translateX(-50%);width:600px;height:46px;pointer-events:none;display:none}
+/* S2594 — under 1,040 px wide the band keeps its right end where S2587 put it (the sundial and the ⏳ beside it) and gives up width on the
+   left, so it stops 16 px right of the vitals plate (340) and no longer draws over its values; still 180°, drawn at its own width */
+#compass{position:absolute;bottom:28px;left:calc(min(max(50%,640px),calc(100% - 400px)) + 300px);transform:translateX(-100%);width:min(600px,calc(100% - 440px));height:46px;pointer-events:none;display:none}
 /* S2573 — the ribbon under the wide compass (#198 A): the marks the heading is on, with their distance */
-#compass-lbl{position:absolute;bottom:84px;left:min(max(50%,640px),calc(100% - 400px));transform:translateX(-50%);display:none;pointer-events:none;padding:4px 18px 5px;white-space:nowrap;background:linear-gradient(#ecdcb2,#d8bf88);color:#2e1c0c;border-radius:3px;box-shadow:0 0 0 1px #8a7040,0 2px 6px rgba(0,0,0,.55);font:14px/1.35 Georgia,serif}
+#compass-lbl{position:absolute;bottom:84px;left:calc(min(max(50%,640px),calc(100% - 400px)) + 300px - min(300px,calc(50% - 220px)));transform:translateX(-50%);display:none;pointer-events:none;padding:4px 18px 5px;white-space:nowrap;background:linear-gradient(#ecdcb2,#d8bf88);color:#2e1c0c;border-radius:3px;box-shadow:0 0 0 1px #8a7040,0 2px 6px rgba(0,0,0,.55);font:14px/1.35 Georgia,serif}
 #compass-lbl .cl-r{display:flex;gap:8px;align-items:center}
 #compass-lbl .cl-g{font-size:14px}
 #compass-lbl b{font-weight:600;color:#7a1f10}
