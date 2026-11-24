@@ -183,4 +183,24 @@ check('S2493: an island keeps the two latest stars to have fallen; the week\'s s
 check('S2493: a steel pick will not cut star iron; a mithril one does, every 0.6 s: 3 pieces of Star Iron, then none, and never back', /mithril pick/.test(ST.steel) && ST.strike === .6 && ST.got === 3 && ST.iron === 3 && ST.item === 'Star Iron' && /cut out/.test(ST.after || '') && ST.back === 0, ST);
 check(`S2493: the news from the next morning, on its island only, while it holds iron ("${ST.news}")`, ST.night0 === '' && ST.news === `A star came down past ${ST.place}.` && !!ST.place && !/^Ruins/.test(ST.place) && ST.other === '' && ST.newsOut === '', ST);
 check(`S2500: the map marks the star's cell from the morning's news while it holds iron, not before and not once cut out (drawn: ${ST.drawn} fills)`, ST.map0 === 0 && ST.map === 1 && ST.mapCell && ST.mapPlace === ST.place && ST.mapOut === 0 && ST.drawn >= 1, ST);
+// S2611 — the streak across the sky (rare-materials.md: "outdoors on that island at that hour ... 1.5 s; the look builder's one quad"):
+// up for the clock's [at, at + 1.5), its end on the bearing to the star, on its own island and outdoors only (89-world-land.js landStreak)
+const SK = await page.evaluate(() => {
+  const out = {}, t0 = worldState.gameTimeAbsMinutes, m0 = worldState.gameTimeMinutes, lid0 = lid, c = cellOf(px, pz), isle = nationKeyOf(c[0], c[1]);
+  let s = null; for (let w = 1; w < 8 && !s; w++) s = starOf(isle, w);
+  const other = STAR.isles.filter(i => i !== isle).map(i => starOf(i, 2)).find(Boolean);
+  const at = m => { worldState.gameTimeAbsMinutes = m; worldState.gameTimeMinutes = m % 1440; landAtmosphere(); return !!(_streak && _streak.visible); };
+  out.before = at(s.at - .5); out.start = at(s.at + .01); out.mid = at(s.at + .75); out.alpha = _streak.material.uniforms.uA.value;
+  const P = _streak.geometry.attributes.position, mid = (a, b) => [(P.getX(a) + P.getX(b)) / 2, (P.getZ(a) + P.getZ(b)) / 2];
+  const bear = Math.atan2(s.x - px, s.z - pz), off = ([x, z]) => { let d = Math.atan2(x, z) - bear; d = Math.atan2(Math.sin(d), Math.cos(d)); return Math.abs(d) * 180 / Math.PI; };
+  out.headOff = off(mid(2, 3)); out.tailOff = off(mid(0, 1));
+  const E = landStreakPt(s, 1, new THREE.Vector3(px, LAND.sky.position.y, pz), new THREE.Vector3()); out.endOff = off([E.x, E.z]);
+  out.after = at(s.at + 1.51); out.other = at(other.at + .75);
+  lid = 'int_test'; out.indoors = at(s.at + .75); lid = lid0;
+  out.tris = _streak.geometry.index.count / 3; out.onDome = _streak.parent === LAND.sky;
+  worldState.gameTimeAbsMinutes = t0; worldState.gameTimeMinutes = m0; landAtmosphere(); out.left = _streak.visible; return out;
+});
+console.log('streak', JSON.stringify(SK));
+check('S2611: the falling star\'s streak is one quad on the sky, up only for the clock\'s 1.5 s from the star\'s minute, its end on the bearing to the star and its head nearer it than its tail', SK.tris === 2 && SK.onDome && !SK.before && SK.start && SK.mid && SK.alpha > .5 && !SK.after && SK.endOff < .5 && SK.headOff < SK.tailOff && !SK.left, SK);
+check('S2611: the streak shows on the star\'s own island only, and not indoors', !SK.other && !SK.indoors, SK);
 await g.close();

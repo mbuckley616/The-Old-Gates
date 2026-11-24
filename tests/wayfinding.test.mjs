@@ -131,7 +131,7 @@ const fbk = await page.evaluate(() => { const fb = document.getElementById('fbtn
   const L = () => Math.round(vb.getBoundingClientRect().left); const out = { shown: L() }; fb.style.display = 'none';
   const cs = getComputedStyle(fb); out.hidden = L(); out.op = +cs.opacity; out.pe = cs.pointerEvents; fb.style.display = was || 'block'; out.back = L(); return out; });
 check('indoors the spell\'s roundel keeps its place, dimmed and taking no click, so the bars do not move', fbk.shown === fbk.hidden && fbk.back === fbk.shown && fbk.op < 0.5 && fbk.pe === 'none', fbk);
-// S2611 — a weapon's glyph by its shape (the critic, 24 Nov: a Wooden GreatClub showed ⚔️ on the plate); a saved club with the old
+// S2612 — a weapon's glyph by its shape (the critic, 24 Nov: a Wooden GreatClub showed ⚔️ on the plate); a saved club with the old
 // glyph shows the club; and the lord's "How fares the town?" ends on its full stop when no second clause follows
 const wg = await page.evaluate(() => { const by = {}; const glyph = h => (h.match(/<span style="[^"]*">([^<]*)<\/span><\/span>$/) || [])[1];
   for (const T of WEAPON_TYPES) { const it = makeItem(2, T, null, false); EQ.weapon = it; updateHUD(); by[T.type] = [it.ico, document.getElementById('ibtn').textContent, glyph(iconHTML(it))]; }

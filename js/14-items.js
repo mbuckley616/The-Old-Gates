@@ -689,7 +689,7 @@ function isleHere(){try{
   if(typeof activeZoneId!=='undefined'&&activeZoneId==='dungeon'){const P=typeof currentPortal!=='undefined'?currentPortal:null;return P&&P.x!=null?isleAt(P.x,P.z):'gatelands';}
   if(typeof activeZoneId!=='undefined'&&activeZoneId==='world'&&typeof px==='number')return isleAt(px,pz);}catch(e){}
   return 'gatelands';}
-/* S2611 — a weapon's glyph by its shape, one table for the bag, the sheet and the plate's roundel (the critic, 24 Nov: a new
+/* S2612 — a weapon's glyph by its shape, one table for the bag, the sheet and the plate's roundel (the critic, 24 Nov: a new
    character's Wooden GreatClub showed crossed swords). The blades keep ⚔️; a club takes the creator's 🏏 */
 const WEAPON_GLYPH={dagger:'🗡',sword:'⚔️',longsword:'⚔️',scimitar:'⚔️',claymore:'⚔️',mace:'🔨',warhammer:'🔨',greatclub:'🏏',
   greataxe:'🪓',axe:'🪓',flail:'⛓',spear:'🔱',bow:'🏹',crossbow:'🏹',staff:'🪄'};

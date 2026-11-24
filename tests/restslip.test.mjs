@@ -67,7 +67,7 @@ check(`not while someone is talking to you: the ⏳ (on top: ${talk.top}) opens 
   talk.open && talk.top === 'wait-btn' && !talk.can && !talk2.slip && talk2.still && talk2.after, { talk, talk2 });
 // S2592 — at 1,024 wide the ⏳ sits under the movement pad's empty third row, which took the top of every tap; the pad's box lets taps
 // through and only its four buttons take them
-// S2612 — the pad is drawn only where a coarse pointer is: hidden with a mouse alone, shown once the page has a touch screen (CDP's touch
+// S2613 — the pad is drawn only where a coarse pointer is: hidden with a mouse alone, shown once the page has a touch screen (CDP's touch
 // emulation flips (any-pointer: coarse) live); the S2592 check below is taken with the touch screen on
 const padShown = () => page.evaluate(() => { const d = document.getElementById('dp'), r = d.getBoundingClientRect(); return [getComputedStyle(d).display, r.width > 0 && r.height > 0]; });
 const mouseOnly = await padShown(); const cdp = await page.context().newCDPSession(page); await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 }); await g.frames(1);
