@@ -1,4 +1,4 @@
-// The budget suites' kit (Session 1297, QA): `budget` (Dunmore's street), `budgetfield` (the field west of it, S2360) and `budgetport` (Portclare's square, an inn's hall, a
+// The budget suites' kit (Session 1297, QA): `budget` (Dunmore's street), `budgetfield` (the field west of it, S2360), `budgetport` (Portclare's square) and `budgetindoor` (an inn's hall, a
 // gate's floor) share it. Not a suite itself (no .test.mjs). budgetKit(g) returns what a suite measures with, and budgetEnd(g, rows,
 // views) checks the ceilings over the views the suite holds, prints the ledger's table and, with BUDGET_LEDGER=1, appends it to
 // docs/qa/budget.md with the build tag.
@@ -89,7 +89,8 @@ return { count, measure, stand, setLevel, bodies };
 export async function budgetEnd(g, rows, views) {
   const tag = (await g.page.evaluate(() => (document.getElementById('cbar').textContent.match(/build (s\d+)/) || [])[1])) || '?';
   const outdoor = rows.filter(r => CEIL[r.level]);
-  for (const [name] of LEVELS) { const mine = outdoor.filter(r => r.level === name), c = CEIL[name];
+  // S2614 — a suite of the ledger's indoor spots alone (`budgetindoor`) holds no view to the ceilings: views 0 checks nothing here
+  if (views) for (const [name] of LEVELS) { const mine = outdoor.filter(r => r.level === name), c = CEIL[name];
     const over = mine.filter(r => r.calls > c.calls).map(r => [r.label, r.calls]), overT = mine.filter(r => r.tris > c.tris).map(r => [r.label, r.tris]);
     check(`at ${name}, every view (${views}) under ${c.calls} draw calls`, mine.length === views && over.length === 0, { over, calls: mine.map(r => r.calls) });
     check(`at ${name}, every view (${views}) under ${c.tris / 1e6} M triangles`, mine.length === views && overT.length === 0, { over: overT, tris: mine.map(r => r.tris) }); }
