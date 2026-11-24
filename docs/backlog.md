@@ -234,7 +234,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A held coach seat is lost on a load, or kept into another character's game**~~ — **fixed, Session 2464** (the systems builder's sweep of `worldState` keys written anywhere against the keys `_applyLoadData` reads: `coachSeat`, the character's in `SS_CHAR_WS` since S456 and saved since S267, was never read back; `zoneSpawnT`, the zones' last spawn, the same; both join the S242 list; `tests/coachseat` +1).
 
 ## I. Found in play (the critic)
-- **A townsperson with loose hair is 165–215k triangles at full detail** (QA, Session 2608, s1931; for the bodies builder: the builder's
+- ~~**A townsperson with loose hair is 165–215k triangles at full detail**~~ — done, Session 2610 (`hbHairFit`: no hair mesh over 70k card triangles at any level; Niamh 220k → 57k, Caoimhe 194k → 66k, Maeve 211k → 54k at High, every other style whole; `f4people` +1) (QA, Session 2608, s1931; for the bodies builder: the builder's
   hair in `docs/prototypes/levelup/people.js`, reached by `hbAttach`/`hbLevel`, `js/32-people.js`). Portclare's square at High read 2.05 M or
   1.81 M on one build (S2572, S2581, S2607), with the same bodies built and the same two at full level. The kit's body list (S2607–2608)
   names the cause: portclare#3:Ercnat, `loose` 0.75, whose `hair` mesh alone is 204,910 triangles (her body 270,822 in all). When she walks

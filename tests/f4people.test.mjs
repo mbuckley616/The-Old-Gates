@@ -302,7 +302,8 @@ const midHair = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => 
 check(`a head of long hair keeps its hair in the middle level (${midHair.hairVerts} points of ribbon from ${midHair.cards} card triangles), and a bed's fit reads none of it`,
   midHair.none || (midHair.hairVerts > 1500 && midHair.hairVerts < 16000 && midHair.inHair === 0 && midHair.pts === midHair.used), midHair);
 // S2182 — a near body's hair cards are drawn through every 3rd strand point at Middle (S2253: every 6th at Low), every point at High; the same strands
-const hairQ = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb && !r.foe && !r.hbLazy && r.hb.full.some(m => m.name === 'hair' && m.geometry.index));
+const hairQ = await page.evaluate(() => { const whole = m => ((m.geometry.userData.hairIx && m.geometry.userData.hairIx[1]) || m.geometry.index).count / 3;
+  const rig = [...HB_RIGS].find(r => r.hb && !r.foe && !r.hbLazy && r.hb.full.some(m => m.name === 'hair' && m.geometry.index && whole(m) <= HB_HAIR_CAP));
   if (!rig) return null; const m = rig.hb.full.find(o => o.name === 'hair'), g = m.geometry, tris = () => g.index.count / 3, used = () => new Set(g.index.array).size;
   const q0 = SETTINGS.quality, at = q => { SETTINGS.quality = q; hbLevel(rig, 1); hbLevel(rig, 0); return { tris: tris(), pts: used() }; };
   const hi = at(2), mid = at(1), lo = at(0); SETTINGS.quality = q0; hbLevel(rig, 1);
@@ -310,6 +311,16 @@ const hairQ = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.h
 console.log('  hair by quality:', JSON.stringify(hairQ));
 check(`a near body's hair is drawn through every 3rd strand point at Middle (${hairQ && hairQ.mid.tris} of ${hairQ && hairQ.hi.tris} triangles), every 6th at Low (${hairQ && hairQ.lo.tris}) and whole at High`,
   hairQ && hairQ.hi.pts === hairQ.pos && hairQ.mid.tris < hairQ.hi.tris * .4 && hairQ.mid.tris > hairQ.hi.tris * .25 && hairQ.lo.tris < hairQ.mid.tris * .75 && hairQ.lo.tris > hairQ.hi.tris * .12, hairQ);
+// S2610 — at High no head of hair is over HB_HAIR_CAP (70k) card triangles: a loose head (165–215k whole) takes every 3rd or 4th point, the rest are whole
+const hairCap = await page.evaluate(() => { const q0 = SETTINGS.quality; SETTINGS.quality = 2; const out = [];
+  for (const r of HB_RIGS) { if (!r.hb || r.foe || r.hbLazy) continue; const m = r.hb.full.find(o => o.name === 'hair' && o.geometry.index); if (!m) continue;
+    const L = r.hb.L; r.hb.hairK = null; hbLevel(r, 1); hbLevel(r, 0); const g = m.geometry, whole = ((g.userData.hairIx && g.userData.hairIx[1]) || g.index).count / 3;
+    out.push({ key: r.g.hbKey, style: r.g.hair && r.g.hair.style, whole, tris: g.index.count / 3 }); hbLevel(r, L); }
+  SETTINGS.quality = q0; for (const r of HB_RIGS) if (r.hb) r.hb.hairK = null; return out; });
+const capped = hairCap.filter(h => h.whole > 70000);
+console.log('  hair at High:', JSON.stringify(hairCap.map(h => [h.key, h.style, h.whole, h.tris])));
+check(`at High no head of hair is over 70k card triangles (${hairCap.length} heads, the most ${Math.max(0, ...hairCap.map(h => h.tris))}); ${capped.length} over it whole are thinned to ${capped.map(h => h.tris).join(', ')}, the rest whole`,
+  hairCap.length > 0 && hairCap.every(h => h.tris <= 70000 && (h.whole > 70000 ? h.tris > 35000 : h.tris === h.whole)), hairCap);
 // far away every body is the cheap level
 const far = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); CAM.position.set(t.x, worldH(t.x, t.z + 70) + 1.65, t.z + 70); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 5e5);
   const rs = [...HB_RIGS].filter(r => r.hb && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) > HBODY.mid + 1);

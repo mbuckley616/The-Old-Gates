@@ -3182,14 +3182,19 @@ function hbGlow(rig){const H=rig.hb,m=rig.mesh.material;let em=m&&m.emissive?m.e
 // Niamh's hair 220k to 75k. The player's own body is always whole.
 // S2253 — every 6th (54 mm chords) at Low: a loose head still read 67–75k at every 3rd, and one or two townsfolk inside Low's 10 m put
 // Dunmore's street over Low's 1.2 M (backlog I, QA S2249). Low's ring is 10 m, where a 54 mm chord on a curl is a few pixels.
-const HB_HAIR_STEP=[6,3,1],HB_HAIR_CARDS=/^(hair|tail|brush)$/;
+// S2610 — and never more than HB_HAIR_CAP card triangles a mesh: the step rises past the level's until it fits. A loose head to the
+// shoulders or below is 165–215k triangles whole (2,200 strands at a point every 9 mm), three times any other style (20–68k), and at High
+// one in Portclare's square was a tenth of Middle's ceiling (backlog I, QA S2608). It takes every 3rd or 4th point at High now, the
+// 27–36 mm chords S2182 judged no different at 1.5 m; every other style, under the cap, is drawn whole as before.
+const HB_HAIR_STEP=[6,3,1],HB_HAIR_CARDS=/^(hair|tail|brush)$/,HB_HAIR_CAP=70000;
+function hbHairFit(g,k){let a=hbHairIndex(g,k);while(a.count/3>HB_HAIR_CAP&&k<8)a=hbHairIndex(g,++k);return a;}
 function hbHairIndex(g,k){const ix=g.userData.hairIx||(g.userData.hairIx={});if(ix[k])return ix[k];const a0=ix[1]||(ix[1]=g.index),A=a0.array,out=[];
   const emit=rows=>{for(let i=0;i+1<rows.length;i++){const a=rows[i],b=rows[i+1];out.push(a,a+1,b,a+1,b+1,b);}};
   let rows=null,prev=-9,n=0;const flush=()=>{if(!rows)return;const keep=[];for(let i=0;i<rows.length;i+=k)keep.push(rows[i]);if(keep[keep.length-1]!==rows[rows.length-1])keep.push(rows[rows.length-1]);emit(keep);};
   for(let q=0;q<A.length;q+=6){const a=A[q];if(a!==prev+2){flush();rows=[a];}rows.push(a+2);prev=a;n++;}flush();
   return ix[k]=new THREE.BufferAttribute(new (A.constructor)(out),1);}
 function hbHairQ(rig){const H=rig.hb;if(rig.hbLazy)return;const q=SETTINGS&&SETTINGS.quality,k=window.OG_LOOK==='new'?HB_HAIR_STEP[Math.max(0,Math.min(2,(q==null?1:q)|0))]:1;
-  if(H.hairK===k)return;H.hairK=k;for(const m of H.full)if(HB_HAIR_CARDS.test(m.name)&&m.geometry.index){const g=m.geometry,a=hbHairIndex(g,k);if(g.index!==a)g.setIndex(a);}}
+  if(H.hairK===k)return;H.hairK=k;for(const m of H.full)if(HB_HAIR_CARDS.test(m.name)&&m.geometry.index){const g=m.geometry,a=hbHairFit(g,k);if(g.index!==a)g.setIndex(a);}}
 function hbLevel(rig,L){const H=rig.hb;if(L===0)hbHairQ(rig);if(H.L===L)return;H.L=L;if(L===2&&H.tellK)hbTell(rig,0);if(H.eyeGlow&&rig.eyeGlow)rig.eyeGlow.visible=L===2;if(L===2)hbGive(rig);if(L===1)hbMid(rig);H.root.visible=L<2;rig.mesh.visible=L===2;for(const m of H.full)m.visible=L===0;if(H.mid)H.mid.visible=L===1;}
 // the middle level, baked now if the body was attached without it (rig.hbLazy); null if the bake fails
 function hbMid(rig){const H=rig.hb;if(!H)return null;if(H.mid||H.midFail)return H.mid;const t=performance.now();
