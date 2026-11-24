@@ -290,6 +290,12 @@ const seal = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
   for (let i = 0; i < 90; i++) { run(1, .5); hs.push([hy(spn[0]), hy(spn[spn.length - 1])]); const zc = hz(spn[spn.length - 1]), A = H.C.humpAt || {}; if (A.f > 0) { adv1 += Math.abs(zc - zp); n1++; } else if (A.h > 0) { adv2 += Math.abs(zc - zp); n2++; } zp = zc; }
   const h0 = Math.min(...hs.map(q => q[0])), c0 = Math.min(...hs.map(q => q[1])), atC = hs.reduce((a, q) => q[1] > a[1] ? q : a), atH = hs.reduce((a, q) => q[0] > a[0] ? q : a), Lh = wx.max.z - wx.min.z;
   const gal = { chestUp: +((atC[1] - c0) / Lh).toFixed(3), hipsThen: +((atC[0] - h0) / Lh).toFixed(3), hipsUp: +((atH[0] - h0) / Lh).toFixed(3), chestThen: +((atH[1] - c0) / Lh).toFixed(3), push: +(adv1 / Math.max(1, n1) * 60).toFixed(3), draw: +(adv2 / Math.max(1, n2) * 60).toFixed(3) };
+  /* S2614: stopping mid-hump (the chest up) and setting off again fade between the stand and the hump: no frame's bones jump more than a moving frame's */
+  while (((rig.ph % 1) + 1) % 1 < .2 || ((rig.ph % 1) + 1) % 1 > .3) run(1, .5);
+  const cap = r => { G.updateMatrixWorld(true); sk.update(); r.m = Array.from(sk.boneMatrices); r.m = r.m.map((v, i) => i % 16 > 11 ? v - (i % 16 === 12 ? G.position.x : i % 16 === 14 ? G.position.z : 0) : v); return r; };
+  const step = (n, sp) => { let mx = 0, a = cap(run(0, 0)), gs = new Set(); for (let i = 0; i < n; i++) { const b = cap(run(1, sp)); mx = Math.max(mx, diff(a, b)[0]); gs.add(b.g); a = b; } return [mx, [...gs].join('/')]; };
+  const [mvStep] = step(20, .5), [stopStep, stopG] = step(90, 0), [goStep, goG] = step(60, .5);
+  gal.mvStep = mvStep; gal.stopStep = stopStep; gal.goStep = goStep; gal.stopG = stopG; gal.goG = goG;
   e.ashore = false; run(2, 0); const bx2 = box(), back = (bx2.max.y + bx2.min.y) / 2 - G.position.y;
   const out = { plan: H.C.g.plan, seed: H.C.g.seed === HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(wx.max.z - wx.min.z).toFixed(3), nose: +(wx.max.z - sb.max.z).toFixed(3),
     hold: wa.g, swim: wb.g, wmid: +wmid.toFixed(3), wmoved: wmv, rest: da.g, move: db.g, kit: db.c, low: +low.toFixed(3), humps: +db.cyc.toFixed(2), dmoved: dmv, gal, back: +back.toFixed(3), bad: wbad + dbad };
@@ -307,6 +313,8 @@ check(`ashore the Grey Seal galumphs in two halves: its chest rises ${seal.gal &
   !!seal.gal && seal.gal.chestUp > .05 && seal.gal.hipsThen < .01 && seal.gal.hipsUp > .025 && seal.gal.chestThen < .01, seal.gal);
 check(`ashore the Grey Seal surges on the push and nearly stops on the draw: at 0.5 m/s its chest goes forward at ${seal.gal && seal.gal.push} m/s while it rises, ${seal.gal && seal.gal.draw} m/s while its hips are drawn up`,
   !!seal.gal && seal.gal.push > .6 && seal.gal.draw < .3 * seal.gal.push, seal.gal);
+check(`the Grey Seal stopping mid-hump and setting off again (${seal.gal && seal.gal.stopG}, then ${seal.gal && seal.gal.goG}) moves its bones at most ${seal.gal && seal.gal.stopStep} and ${seal.gal && seal.gal.goStep} in a frame, against ${seal.gal && seal.gal.mvStep} moving at 0.5 m/s`,
+  !!seal.gal && seal.gal.stopG.includes('stand') && seal.gal.goG.includes('hump') && seal.gal.stopStep <= 1.5 * seal.gal.mvStep && seal.gal.goStep <= 1.5 * seal.gal.mvStep, seal.gal);
 check(`far off (level ${seal.farL}) the Grey Seal's fit still follows its side of the water: ashore ${seal.farDry}, back in ${seal.farWet}`, seal.farL === 2 && seal.farDry && seal.farWet, seal);
 // Session 2598: the sea turtle's fore-flippers seen from above. Their downstroke went to about 60° below level, so mid-stroke they folded under
 // the shell's rim (S2580's note). Through a swim cycle each tip stays out past the shell's edge and drops no more than 38° below its root (S2598's fix: 0.168 m out and 32.4°, from 0.126 and 43.7)
