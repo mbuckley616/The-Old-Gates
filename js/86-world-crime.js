@@ -2343,7 +2343,7 @@
   // S1759 — a trout in a river or a lake (#1014 A): swimming, within reach of one that has not darted off, E takes it by hand, as the sea's
   // catch (the same reach; Uisce's toll and face hold for it as for the sea's fish in the Gatelands' waters)
   function nearTrout(){if(!isSwimming())return null;if(typeof gateToll==='function'&&gateToll('uisce')&&uisceWaters())return null;let best=null,bd=1.4;
-    for(const e of ZONES.world.enemies){if(!e.swim||e.dead||!e.mesh||e.seal)continue; /* S2622 — a seal is not taken by hand */const d=Math.hypot(px-e.x,pz-e.z);if(d<bd&&Math.abs(jumpY-e.mesh.position.y)<1.6){bd=d;best=e;}}return best;}
+    for(const e of ZONES.world.enemies){if(!e.swim||e.dead||!e.mesh||e.seal)continue; /* S2624 — a seal is not taken by hand */const d=Math.hypot(px-e.x,pz-e.z);if(d<bd&&Math.abs(jumpY-e.mesh.position.y)<1.6){bd=d;best=e;}}return best;}
   function takeTrout(e){const item=riverFishItem(e.baseName); /* S1797 — the trout, the pike or the salmon */
     if(typeof canCarry==='function'&&!canCarry(item)){showMsg('Too heavy to carry!','#cc8844');return true;}
     e.dead=true;if(e.mesh&&e.mesh.parent)e.mesh.parent.remove(e.mesh);if(e.el&&e.el.parent)e.el.parent.remove(e.el);

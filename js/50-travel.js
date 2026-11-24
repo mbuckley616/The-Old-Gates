@@ -1450,11 +1450,11 @@ const ROD_ITEM={name:'Fishing Rod',ico:'🎣',type:'misc',weight:1,buyPrice:15,s
 function troutItem(){return {name:'Trout',ico:'🐟',type:'misc',weight:.6,sellMult:.7,buyPrice:9,qty:1,_typeKey:'fish',food:'fish'};} /* S2028 — food, which the save keeps */
 // S1797 — the River Pike and the Riverjaw Salmon (Michael's A on #1050): taken as the trout is, 1.2 weight and 18 gold each
 const RIVER_FISH={'River Pike':{weight:1.2,gold:18},'Riverjaw Salmon':{weight:1.2,gold:18}};
-/* S2620 — the sea's creatures taken by hand or struck (#1954 A): 1.2 weight and 18 gold, the tuna 3 and 30 */
+/* S2622 — the sea's creatures taken by hand or struck (#1954 A): 1.2 weight and 18 gold, the tuna 3 and 30 */
 const SEA_FISH={'Starweed Ray':{weight:1.2,gold:18},'Sea Turtle':{weight:1.2,gold:18,ico:'🐢'},'Tidecrab':{weight:1.2,gold:18,ico:'🦀'},'Lantern Jelly':{weight:1.2,gold:18},
   'Coastal Tuna':{weight:3,gold:30},'Drifter Squid':{weight:1.2,gold:18,ico:'🦑'},'Skyskimmer':{weight:1.2,gold:18},'Abyssal Angler':{weight:1.2,gold:18},
   'Blackcurrent Eel':{weight:1.2,gold:18},'Sailfin Ray':{weight:1.2,gold:18},
-  'Reef Moray':{weight:1.2,gold:18},'Stonefish':{weight:1.2,gold:18},'Giant Octopus':{weight:1.2,gold:18,ico:'🐙'}}; /* S2621 — the reef's three */
+  'Reef Moray':{weight:1.2,gold:18},'Stonefish':{weight:1.2,gold:18},'Giant Octopus':{weight:1.2,gold:18,ico:'🐙'}}; /* S2623 — the reef's three */
 function riverFishItem(name){const f=RIVER_FISH[name]||SEA_FISH[name];if(!f)return troutItem();return {name,ico:f.ico||'🐟',type:'misc',weight:f.weight,sellMult:.7,buyPrice:f.gold,qty:1,_typeKey:'fish',food:'fish'};}
 // the goods shop and the inn: the tinderbox and produce; fish in a port
 function survivalFor(h){if(!h||!(h.type==='misc'||h.type==='inn'))return [];const out=[{...SURV_ITEMS.tinderbox},{...SURV_ITEMS.produce},waterItem('skin')]; /* S2012 — a waterskin at every goods shop and inn */

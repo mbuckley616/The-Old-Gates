@@ -346,7 +346,7 @@
       const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,fishKind(id,ex,ez),null,{tier:1,key:id}),'wild:'+id);
       e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;e.mesh.position.y=SEA_Y-WILD_SWIM.under;
       ZONES.world.enemies.push(e);ch.wild.push(e);}}
-  // S2620 — the sea's creatures (Michael's A on #1954, on #984 A's and #1014 A's rules): a chunk of the sea within 150 m rolls, once, by its
+  // S2622 — the sea's creatures (Michael's A on #1954, on #984 A's and #1014 A's rules): a chunk of the sea within 150 m rolls, once, by its
   // id, one group or none (one in four, WILD_P), by the depth of the water at its spot: the shallows under 5 m (the Starweed Ray, the sea
   // turtle, the tidecrab on the bed, the Lantern Jelly by night), open water 5 m and deeper (the Coastal Tuna in schools, the Drifter Squid,
   // the Skyskimmer), and the deepest water, a chunk of a cell that is all sea (the Abyssal Angler and the Blackcurrent Eel on the bed, the
@@ -357,8 +357,8 @@
     shallows:[{name:'Starweed Ray',w:3,n:[1,2]},{name:'Sea Turtle',w:1,n:[1,1]},{name:'Tidecrab',w:3,n:[1,3]},{name:'Lantern Jelly',w:2,n:[2,5],night:true}],
     open:[{name:'Coastal Tuna',w:3,n:[3,6]},{name:'Drifter Squid',w:2,n:[1,2]},{name:'Skyskimmer',w:2,n:[3,6]}],
     deep:[{name:'Abyssal Angler',w:2,n:[1,1]},{name:'Blackcurrent Eel',w:2,n:[1,1]},{name:'Sailfin Ray',w:1,n:[1,1]}],
-    reef:[{name:'Reef Moray',w:3,n:[1,1]},{name:'Stonefish',w:2,n:[1,2]},{name:'Giant Octopus',w:1,n:[1,1]}]}; /* S2621 — the reef rock's three (SEA_ANSWER) */
-  // S2621 — the reef rock: the world has no bed of its own kind yet (#1925's reefs will be), and the sea floor is flat but for the shelf off the
+    reef:[{name:'Reef Moray',w:3,n:[1,1]},{name:'Stonefish',w:2,n:[1,2]},{name:'Giant Octopus',w:1,n:[1,1]}]}; /* S2623 — the reef rock's three (SEA_ANSWER) */
+  // S2623 — the reef rock: the world has no bed of its own kind yet (#1925's reefs will be), and the sea floor is flat but for the shelf off the
   // coast (79 of 100 points under 0.1 m of relief over 3 m). So rock is that shelf where it is rough: a bed above the open floor's 8 m whose
   // height changes by more than SEA_ROCK over 3 m, about one point in five of the shallows and open water, none of the cells all sea
   const SEA_ROCK=.3;
@@ -381,7 +381,7 @@
       e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;e.mesh.position.y=seaHoldY(e,ex,ez);
       ZONES.world.enemies.push(e);ch.wild.push(e);n++;}
     return n;}
-  // S2622 — the grey seals hauled out (#1954 A: "seals hauled out on coast rock or sand"): a chunk with a shore rolls, on its own stream
+  // S2624 — the grey seals hauled out (#1954 A: "seals hauled out on coast rock or sand"): a chunk with a shore rolls, on its own stream
   // (`seal`, keyed by the chunk), one in four (WILD_P), two to five seals on the shore within 30 m of the sea: ground 0.2 to 1.6 m over the
   // water, not steep, off a pad, a site's stamp and a road; the sea beside them deep enough to swim, and not a lake's or a river's. Each is
   // keyed `cx,cz:g<i>` and lies ashore (e.ashore) until it is startled (sealShoreStep, 42-zone-enemies.js)
