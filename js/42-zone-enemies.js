@@ -806,6 +806,55 @@ const WILD_ANSWER_KINDS={'Gatefen Boar':{walk:.7,run:6},'Icecrab':{walk:.2,run:1
 for(const k in WILD_ANSWER_KINDS)WILD_ISLE_KINDS[k]=Object.assign({answer:true},WILD_ANSWER_KINDS[k]);
 // S1797 — the two river fish (#1050 A) swim as the trout does, on its path and its rules (wildTroutChunk rolls which)
 for(const k of ['River Pike','Riverjaw Salmon']){WILD_PACE[k]=WILD_PACE.Trout;ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Trout,{col:SWIMMER[k].col});}
+// S2622 — the sea's creatures (Michael's A on #1954; their bodies the bodies builder's, Sessions 2575 to 2585): peaceful swimmers on the
+// trout's path and rules (#1014 A, #1050 A), placed by wildSeaChunk (88-world-ticks.js) by the water's depth. Each holds at its own depth
+// (SEA_KINDS: `under` metres under the surface, or `bed` metres over the sea floor, followed as it swims), darts 10 m when it sees or hears
+// you, and is taken by hand while you swim or dive beside it, or struck by the spear or an arrow at its height. Pace in metres a second.
+// The reef rock's three that answer back (the moray, the stonefish, the octopus) and the seals hauled out are the decision's second session
+const SEA_KINDS={'Starweed Ray':{walk:.4,run:4,bed:.25},'Sea Turtle':{walk:.3,run:2.5,under:1.5},'Tidecrab':{walk:.2,run:1.5,bed:0},
+  'Lantern Jelly':{walk:.05,run:.4,under:1.2},'Coastal Tuna':{walk:.6,run:8,under:2},'Drifter Squid':{walk:.3,run:5,under:3},
+  'Skyskimmer':{walk:.5,run:9,under:.4},'Abyssal Angler':{walk:.2,run:3,bed:.5},'Blackcurrent Eel':{walk:.3,run:4,bed:.4},'Sailfin Ray':{walk:.5,run:5,bed:.6},
+  'Grey Seal':{walk:.3,run:6,under:1}, /* S2624 — in the water; ashore, SEAL */
+  /* S2623 — the reef rock's three that answer back (SEA_ANSWER) */
+  'Reef Moray':{walk:.3,run:4,bed:.3,answer:true},'Stonefish':{walk:0,run:0,bed:0,answer:true,near:1,still:true},'Giant Octopus':{walk:.2,run:2,bed:0,answer:true}};
+// S2623 — the reef's three answer back (#1954 A, on #1050 A's rule): the Reef Moray and the Giant Octopus when struck or when you come within
+// 4 m of them, the Stonefish only when struck or trodden on (within 1 m: you are over it). Each takes the hostile Boar's row (16 health, its
+// blow 5) at tier 1, as the land's do. Under the water it never leaves the water: it swims at you at its run (the stonefish stays where it
+// lies), rising or sinking toward your body at 2 m/s between the bed and the surface. Within its reach of you it winds up for 0.6 s (the
+// combat page's 150 ms floor, four times over) and bites through executeStrike, so a guard, a parry and a roll answer it as they answer
+// any blow; then 1.3 s before the next. 25 m off it gives up, as on land, and holds again where it is. Only the spear and arrows reach it
+const SEA_ANSWER={near:4,reach:1.5,wind:.6,gap:1.3,rise:2,body:.3}; /* body: the swimmer's middle over jumpY, the feet's line */
+// S2624 — the grey seal hauled out (#1954 A; placed by wildSealChunk, 88-world-ticks.js; its body S2585's `amph`, `hcAshore` reading e.ashore):
+// ashore it lies where it is, and the kit's hump carries it. Seen or heard, or struck, it makes for the water it hauled out beside (e._sea)
+// at SEAL.run, and once the water is deep enough to swim it is a swimmer, darting off from you as the trout does and holding a metre under.
+// Peaceful on the land animals' rules: one blow; no catch and no meat (it is not taken by hand, nor in MEAT_BODIES). Ashore a blade reaches
+// it; in the water only the spear and arrows do, as every swimmer
+const SEAL={run:2.5,n:[2,5],shore:[.2,1.6],reach:[6,12,20,30],spread:6}; /* reach: the rings searched for the sea beside a seal; the coast's shelf is gentle */
+function sealShoreStep(e,W,P,T,dt){
+  if(W.mode==='flee'&&e._sea){const dx=e._sea.x-e.x,dz=e._sea.z-e.z,d=Math.hypot(dx,dz),st=Math.min(d,SEAL.run*dt);
+    if(d>.01){e.x+=dx/d*st;e.z+=dz/d*st;let dy=Math.atan2(dx,dz)-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*6);}
+    if(wildWet(e.x,e.z)){e.ashore=false;W.left=Math.max(W.left||0,WILD_SWIM.dart);W.yaw=Math.atan2(e.x-T.x,e.z-T.z);}
+    else if(d<=.01){e._sea=null;W.mode='graze';W.t=5;}}
+  if(e.mesh){const g=typeof worldH==='function'?worldH(e.x,e.z):0;e.mesh.position.set(e.x,e.ashore?Math.max(g,SEA_Y-1.2):seaHoldY(e,e.x,e.z),e.z);e.mesh.rotation.set(0,e.combatYaw,0);}}
+function seaTargetY(T){return T&&typeof T.y==='number'?T.y:(typeof jumpY==='number'?jumpY:SEA_Y-1.45);}
+function seaAnswerStep(e,W,P,T,dt){const S=SEA_KINDS[e.baseName]||{},A=SEA_ANSWER,ty=seaTargetY(T)+A.body,y0=e.mesh?e.mesh.position.y:seaHoldY(e,e.x,e.z);
+  const flat=Math.hypot(T.x-e.x,T.z-e.z),d3=Math.hypot(flat,ty-y0);
+  if(!e.angry){if(!(e.alert||(flat<(S.near||A.near)&&d3<(S.near||A.near)+.6)))return false;
+    e.angry=true;e.alert=true;e._agg=true;e._quit=Math.max(WILD_ANSWER.quit,flat+A.near);e._wind=0;e.atkCd=0;if(typeof e.posture!=='number'&&typeof initPosture==='function')initPosture(e);}
+  const stag=typeof isStaggered==='function'&&isStaggered(e);let y=y0;
+  if(!S.still&&!stag&&d3>A.reach*.8&&P.run>0){const st=P.run*dt,yw=Math.atan2(T.x-e.x,T.z-e.z),nx=e.x+Math.sin(yw)*Math.min(st,flat),nz=e.z+Math.cos(yw)*Math.min(st,flat);
+    if(wildWet(nx,nz)){e.x=nx;e.z=nz;}let dy=yw-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*8);}
+  if(!S.still&&typeof worldH==='function'){const bed=worldH(e.x,e.z),lo=bed+Math.min(.2,S.bed!=null?S.bed:.2),hi=SEA_Y-.3,want=Math.max(lo,Math.min(hi,ty));y=y0+Math.max(-A.rise*dt,Math.min(A.rise*dt,want-y0));y=Math.max(lo,Math.min(hi,y));}
+  if(e.mesh){e.mesh.position.set(e.x,y,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}
+  e.atkCd=Math.max(0,(e.atkCd||0)-dt);const near=Math.hypot(flat,ty-y)<=A.reach;
+  if(stag){e._wind=0;return true;}
+  if(near&&e.atkCd<=0){e._wind=(e._wind||0)+dt;if(e._wind>=A.wind){e._wind=0;e.atkCd=A.gap;const now=performance.now();if(typeof executeStrike==='function'&&typeof foeBlow==='function')executeStrike(e,foeBlow(e),now);e._bites=(e._bites||0)+1;}}
+  else if(!near)e._wind=0;
+  return true;}
+for(const k in SEA_KINDS){if(!SWIMMER[k])continue;const S=SEA_KINDS[k];WILD_PACE[k]={walk:S.walk,run:S.run,swim:true};ZONE_FOE_DEF[k]=Object.assign({},ZONE_FOE_DEF.Trout,{col:SWIMMER[k].col});
+  if(S.answer){const B=ZONE_FOE_DEF.Boar;Object.assign(ZONE_FOE_DEF[k],{hp:B.hp,maxHp:B.maxHp,dmg:B.dmg,atk:B.atk,spd:B.spd,xpVal:B.xpVal,def:B.def,answer:true});}} /* S2623 — the reef's three on the Boar's row at tier 1 (SEA_ANSWER) */
+function seaHoldY(e,x,z){const S=SEA_KINDS[e.baseName];if(!S||activeZoneId!=='world'||typeof worldH!=='function')return SEA_Y-WILD_SWIM.under;const bed=worldH(x,z);
+  return Math.max(bed+Math.min(.2,S.bed!=null?S.bed:.2),Math.min(SEA_Y-.3,S.bed!=null?bed+S.bed:SEA_Y-S.under));}
 // S1784 — the watcher's three sheep (the farm's Sheep, OG-023's livestock body): peaceful on the wild path, no meat (not in MEAT_BODIES)
 WILD_PACE.Sheep={walk:.5,run:5};
 ZONE_FOE_DEF.Sheep={minLevel:1,col:WOLF_KINDS.Sheep.coat,eyeCol:0x0a0a0c,hp:1,maxHp:1,spd:1.0,dmg:0,atk:9,xpVal:0,scale:1,shape:'wolf',def:0,resist:{},wild:true};
@@ -875,7 +924,7 @@ function wildSwimStep(e,W,P,T,dt){
     for(const off of [0,.6,-.6,1.2,-1.2,2,-2]){const y=W.yaw+off;nx=e.x+Math.sin(y)*st;nz=e.z+Math.cos(y)*st;if(wildWet(nx,nz)){yaw=y;ok=true;break;}}
     if(!ok){if(W.mode==='flee')W.left=0;else{W.mode='graze';W.t=1+e.rng()*2;}}
     else{W.yaw=yaw;e.x=nx;e.z=nz;if(W.mode==='flee')W.left-=st;let dy=yaw-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*(W.mode==='flee'?14:4));}}
-  if(e.mesh){e.mesh.position.set(e.x,SEA_Y-WILD_SWIM.under,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}}
+  if(e.mesh){e.mesh.position.set(e.x,SEA_KINDS[e.baseName]?seaHoldY(e,e.x,e.z):SEA_Y-WILD_SWIM.under,e.z);e.mesh.rotation.set(0,e.combatYaw,0);}} /* S2622 — a sea creature at its own depth */
 // S1711 — a bird startled takes off: it climbs at 3 m/s to its own cruise of 8 to 14 m, flies 60 m from you, then glides down at 2 m/s and
 // lands on the first open ground (wildOpen) past that, flying on up to 150 m if there is none. Over 1.5 m up it is aloft: out of a blade's
 // reach (strikeCandidate, the bash), and an arrow must pass within 0.6 m of its height to strike it (wildArrowMisses)
@@ -899,10 +948,12 @@ function tickWildOne(e,dt){if(!(dt>0))return;
   const P=WILD_PACE[e.baseName]||WILD_PACE.Deer,W=e._w||(e._w={mode:'graze',t:2+e.rng()*6});
   const T=targetOf(e),dist=Math.hypot(T.x-e.x,T.z-e.z);
   if(e.baseName==='Bellthroat')bellthroatCall(e,W,dist,dt);
-  if(e.answer&&(e.alert||dist<WILD_ANSWER.near)){e.angry=true;e.alert=true;e._agg=true;e._quit=Math.max(WILD_ANSWER.quit,dist+WILD_ANSWER.near);W.mode='graze';W.t=0;return;} /* S1796 — struck, or come too near: it turns on you (an arrow from past 25 m: it comes for you, and gives up 4 m past where you shot from) */
+  if(e.answer&&!e.swim&&(e.alert||dist<WILD_ANSWER.near)){e.angry=true;e.alert=true;e._agg=true;e._quit=Math.max(WILD_ANSWER.quit,dist+WILD_ANSWER.near);W.mode='graze';W.t=0;return;} /* S1796 — struck, or come too near: it turns on you (an arrow from past 25 m: it comes for you, and gives up 4 m past where you shot from) */
+  if(e.answer&&e.swim&&P.swim&&seaAnswerStep(e,W,P,T,dt))return; /* S2623 — a reef creature that answers back, in the water */
   if(e.alert){e.alert=false;wildFlee(e,T);} /* a blow that did not kill, or a pack's cry */
   else if(W.mode!=='flee'&&W.mode!=='fly'&&!_hasBuff('vanish')&&(e.tame?dist<FARM_TAME.near:canSeePlayer(e,dist,20)))wildFlee(e,T);
   if(W.mode==='fly'){wildFlyStep(e,W,P,T,dt);return;}
+  if(e.seal&&e.ashore){sealShoreStep(e,W,P,T,dt);return;} /* S2624 — a seal hauled out */
   if(P.swim){wildSwimStep(e,W,P,T,dt);return;} /* S1759 — a trout */
   let sp=0;
   if(W.mode==='flee'){sp=P.run;
@@ -1198,7 +1249,7 @@ function tickZoneEnemies(dt,now,sc){
     if(e.dead||e.locked)return;
     if(e._duelHold)return; /* S373 — Rowe holds: talking, or on one knee */
     if(e.wild&&e.angry){const T=targetOf(e);if(Math.hypot(T.x-e.x,T.z-e.z)>(e._quit||WILD_ANSWER.quit)){e.angry=false;e.alert=false;e._agg=false;e.homeX=e.x;e.homeZ=e.z;}} /* S1796 — 25 m off, it gives up */
-    if(e.wild&&!e.angry){tickWildOne(e,dt);return;} /* S1707 — a peaceful animal grazes, wanders and runs; it never fights (S1796 — unless it answers back) */
+    if(e.wild&&(!e.angry||e.swim)){tickWildOne(e,dt);return;} /* S2623 — a sea creature fights in the water, on its own step */ /* S1707 — a peaceful animal grazes, wanders and runs; it never fights (S1796 — unless it answers back) */
     // v61gj — Defensive lazy init for pre-ship saves (enemies in ZONES[id].enemies
     // that predate v61gj). Idempotent — no-op if already stamped. Then regen tick.
     if(typeof e.posture!=='number') initPosture(e);

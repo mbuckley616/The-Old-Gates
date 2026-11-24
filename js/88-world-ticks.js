@@ -346,6 +346,61 @@
       const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,fishKind(id,ex,ez),null,{tier:1,key:id}),'wild:'+id);
       e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;e.mesh.position.y=SEA_Y-WILD_SWIM.under;
       ZONES.world.enemies.push(e);ch.wild.push(e);}}
+  // S2622 — the sea's creatures (Michael's A on #1954, on #984 A's and #1014 A's rules): a chunk of the sea within 150 m rolls, once, by its
+  // id, one group or none (one in four, WILD_P), by the depth of the water at its spot: the shallows under 5 m (the Starweed Ray, the sea
+  // turtle, the tidecrab on the bed, the Lantern Jelly by night), open water 5 m and deeper (the Coastal Tuna in schools, the Drifter Squid,
+  // the Skyskimmer), and the deepest water, a chunk of a cell that is all sea (the Abyssal Angler and the Blackcurrent Eel on the bed, the
+  // Sailfin Ray, the great ray of the deep channels). Each is keyed `cx,cz:s<i>` and holds at its kind's depth (SEA_KINDS, seaHoldY, 42-zone-enemies.js). Rolled by a chunk whose middle is under water deep enough to swim; one
+  // whose middle is less than 3 m down rolls the land's group as well, on its own stream.
+  // Not in the Gatelands' waters under Uisce's toll, as the trout. Not saved: one taken stays gone for the day, as the land's
+  const SEA_SHALLOW=5,SEA_TABLE={
+    shallows:[{name:'Starweed Ray',w:3,n:[1,2]},{name:'Sea Turtle',w:1,n:[1,1]},{name:'Tidecrab',w:3,n:[1,3]},{name:'Lantern Jelly',w:2,n:[2,5],night:true}],
+    open:[{name:'Coastal Tuna',w:3,n:[3,6]},{name:'Drifter Squid',w:2,n:[1,2]},{name:'Skyskimmer',w:2,n:[3,6]}],
+    deep:[{name:'Abyssal Angler',w:2,n:[1,1]},{name:'Blackcurrent Eel',w:2,n:[1,1]},{name:'Sailfin Ray',w:1,n:[1,1]}],
+    reef:[{name:'Reef Moray',w:3,n:[1,1]},{name:'Stonefish',w:2,n:[1,2]},{name:'Giant Octopus',w:1,n:[1,1]}]}; /* S2623 — the reef rock's three (SEA_ANSWER) */
+  // S2623 — the reef rock: the world has no bed of its own kind yet (#1925's reefs will be), and the sea floor is flat but for the shelf off the
+  // coast (79 of 100 points under 0.1 m of relief over 3 m). So rock is that shelf where it is rough: a bed above the open floor's 8 m whose
+  // height changes by more than SEA_ROCK over 3 m, about one point in five of the shallows and open water, none of the cells all sea
+  const SEA_ROCK=.3;
+  function seaRock(x,z,d){if(!(d<7.5))return false;const h=-d;let v=0;for(const [a,c] of [[3,0],[-3,0],[0,3],[0,-3]])v=Math.max(v,Math.abs(worldH(x+a,z+c)-h));return v>SEA_ROCK;}
+  function seaHabitat(x,z){const d=SEA_Y-worldH(x,z);if(!(d>WILD_SWIM.wet))return null;
+    let sea=false;try{const [i,j]=cellOf(x,z),c=getCell(i,j);sea=!!(c&&c.type==='sea');}catch(err){}if(sea)return 'deep';
+    if(seaRock(x,z,d))return 'reef';return d<SEA_SHALLOW?'shallows':'open';}
+  function wildSeaChunk(ch,key){const r=seededRng('sea',key);if(r()>WILD_P)return 0;
+    let ax=0,az=0,hab=null;for(let k=0;k<12&&!hab;k++){ax=ch.cx*CHUNK+6+r()*(CHUNK-12);az=ch.cz*CHUNK+6+r()*(CHUNK-12);hab=seaHabitat(ax,az);}
+    if(!hab)return 0;if(wildRiverNear(ax,az,0)||wildLakeNear(ax,az))return 0; /* a river's mouth or a lake is the trout's */
+    if(typeof gateToll==='function'&&gateToll('uisce')&&(()=>{try{const [i,j]=cellOf(ax,az);return nationKeyOf(i,j)==='gatelands';}catch(err){return false;}})())return 0;
+    const night=isNight(),table=SEA_TABLE[hab].filter(g=>(!g.night||night)&&ZONE_FOE_DEF[g.name]);if(!table.length)return 0;
+    let tw=0;for(const g of table)tw+=g.w;let pk=r()*tw,grp=table[0];for(const g of table){pk-=g.w;if(pk<=0){grp=g;break;}}
+    const count=grp.n[0]+Math.floor(r()*(grp.n[1]-grp.n[0]+1));let n=0;
+    for(let i=0;i<count;i++){const id=key+':s'+i;if(WILD_TAKEN.get(id)===lootDay())continue;
+      const pr=seededRng('wildspot',id);let ex=ax,ez=az,good=i===0;
+      for(let k=0;k<8&&!good;k++){ex=ax+(pr()-.5)*10;ez=az+(pr()-.5)*10;good=seaHabitat(ex,ez)===hab;}
+      if(!good)continue;
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,grp.name,null,{tier:1,key:id}),'wild:'+id);
+      e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;e.mesh.position.y=seaHoldY(e,ex,ez);
+      ZONES.world.enemies.push(e);ch.wild.push(e);n++;}
+    return n;}
+  // S2624 — the grey seals hauled out (#1954 A: "seals hauled out on coast rock or sand"): a chunk with a shore rolls, on its own stream
+  // (`seal`, keyed by the chunk), one in four (WILD_P), two to five seals on the shore within 30 m of the sea: ground 0.2 to 1.6 m over the
+  // water, not steep, off a pad, a site's stamp and a road; the sea beside them deep enough to swim, and not a lake's or a river's. Each is
+  // keyed `cx,cz:g<i>` and lies ashore (e.ashore) until it is startled (sealShoreStep, 42-zone-enemies.js)
+  function sealShore(x,z){const h=worldH(x,z);if(!(h>=SEAL.shore[0]&&h<=SEAL.shore[1])||slopeNormalY(x,z)<.75)return false;const st=stampAt(x,z);if(st&&st.kind==='site')return false;
+    const ri=roadInfo(x,z);return !(ri&&ri.d<8);}
+  function sealSea(x,z){for(const r of SEAL.reach)for(let a=0;a<8;a++){const wx=x+Math.sin(a*Math.PI/4)*r,wz=z+Math.cos(a*Math.PI/4)*r;
+      if(wildWet(wx,wz)&&!wildRiverNear(wx,wz,0)&&!wildLakeNear(wx,wz))return {x:wx,z:wz};}return null;}
+  function wildSealChunk(ch,key){const r=seededRng('seal',key);if(r()>WILD_P)return 0;
+    let ax=0,az=0,sea=null;for(let k=0;k<16&&!sea;k++){ax=ch.cx*CHUNK+4+r()*(CHUNK-8);az=ch.cz*CHUNK+4+r()*(CHUNK-8);if(sealShore(ax,az))sea=sealSea(ax,az);}
+    if(!sea||wildPadNear(ax,az,20))return 0;
+    const count=SEAL.n[0]+Math.floor(r()*(SEAL.n[1]-SEAL.n[0]+1));let n=0;
+    for(let i=0;i<count;i++){const id=key+':g'+i;if(WILD_TAKEN.get(id)===lootDay())continue;
+      const pr=seededRng('wildspot',id);let ex=ax,ez=az,w=sea;
+      for(let k=0;k<8&&i>0;k++){const x=ax+(pr()-.5)*2*SEAL.spread,z=az+(pr()-.5)*2*SEAL.spread;if(!sealShore(x,z))continue;const s2=sealSea(x,z);if(!s2)continue;ex=x;ez=z;w=s2;break;}
+      if(i>0&&ex===ax&&ez===az)continue;
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Grey Seal',null,{tier:1,key:id}),'wild:'+id);
+      e.seal=true;e.ashore=true;e._sea=w;e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=Math.atan2(w.x-ex,w.z-ez)+Math.PI+(pr()-.5)*1.2;e.mesh.position.y=worldH(ex,ez);
+      ZONES.world.enemies.push(e);ch.wild.push(e);n++;}
+    return n;}
   // S1784 — the watcher (backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit"): the concept artist's grey
   // wolf on a rise off a Gatelands road, turned to the passer-by, three sheep grazing round it. One Gatelands cell in three keeps one, by its
   // own stream (`watcher:<cell>`), as the Weaver door and the carving are kept: 22 to 30 m off the line of one of the cell's roads (the
@@ -431,7 +486,8 @@
           if(!free(x,z))continue;if(farmStockMake(ch,key,id,G.name,x,z,yaw))n++;break;}}}
     return n;}
   function wildSpawnChunk(ch){const key=chunkKey(ch.cx,ch.cz);ch.wild=[];WILD_CH.add(ch);
-    const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;wildTroutChunk(ch,key);try{wildFarmChunk(ch,key);}catch(err){console.warn('farmstock',err);}if(worldH(cxw,czw)<-3)return;
+    const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;wildTroutChunk(ch,key);try{wildFarmChunk(ch,key);}catch(err){console.warn('farmstock',err);}try{wildSealChunk(ch,key);}catch(err){console.warn('seals',err);}
+    if(worldH(cxw,czw)<SEA_Y-WILD_SWIM.wet)try{wildSeaChunk(ch,key);}catch(err){console.warn('seawild',err);}if(worldH(cxw,czw)<-3)return;
     if(wildWatcherChunk(ch,key))return; /* S1784 — the watcher's chunk holds it and its sheep, no other group */
     const r=seededRng('wild',key);if(r()>(wildRainy()?WILD_HOUR.wetP:WILD_P))return;
     if(wildPadNear(cxw,czw,40))return;

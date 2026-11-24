@@ -33,6 +33,8 @@ check(`groups stand in the country by their biome (${walk.groups} groups: ${JSON
 const rules = await page.evaluate(() => { const W = () => ZONES.world.enemies.filter(e => e.wild && !e.dead);
   const bad = W().filter(e => { const ri = roadInfo(e.x, e.z); return (ri && ri.d < 7.9) || wildPadNear(e.x, e.z, 0); }).map(e => e.name + ' ' + e.id);
   const sig = () => W().map(e => e.id + '|' + e.name + '|' + e.x.toFixed(2) + ',' + e.z.toFixed(2)).sort().join();
+  /* S2624 — both signatures from fresh rolls in this one call: the page's own loop runs between evaluates, and a seal the walk startled had humped on */
+  for (const ch of [...WILD_CH]) wildDrop(ch); _wildT = 0; tickWildSpawn(.1);
   const before = sig(), n = W().length; for (const ch of [...WILD_CH]) wildDrop(ch); const gone = W().length; _wildT = 0; tickWildSpawn(.1);
   return { n, bad, gone, same: before === sig(), noFoe: W().every(e => !e.alert && e.hp === (e.answer ? 16 : 1) && e.limbs.wolf) /* S1796 — the three that answer back have the Boar's 16 */ }; });
 check(`none on a road or a pad (${rules.n} animals), the same group again by its chunk's id, each a one-blow animal on its own body (one that answers back, 16)`, rules.n > 0 && !rules.bad.length && rules.gone === 0 && rules.same && rules.noFoe, rules);
@@ -109,7 +111,7 @@ const trout = await page.evaluate(() => { forceTime(12); for (const ch of [...WI
   if (!best) return { none: true };
   const rv = best.rv, n = rvNearest(rv, best.x, best.z); px = best.x + n.tz * (n.w + 6); pz = best.z - n.tx * (n.w + 6);
   stream(px, pz, true); { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 20000) runJobs(); } _wildT = 0; tickWildSpawn(.1);
-  const T = ZONES.world.enemies.filter(e => e.swim && !e.dead), per = {}; for (const e of T) per[e._chunk] = (per[e._chunk] || 0) + 1;
+  const T = ZONES.world.enemies.filter(e => e.swim && !e.dead && !SEA_KINDS[e.baseName] /* S2622 — the sea's are their own check */), per = {}; for (const e of T) per[e._chunk] = (per[e._chunk] || 0) + 1;
   const src = landH(rv.pts[0][0], rv.pts[0][1]), end = landH(rv.pts[rv.pts.length - 1][0], rv.pts[rv.pts.length - 1][1]);
   const out = { n: T.length, per: Object.values(per), wet: T.every(e => wildWet(e.x, e.z) && (wildRiverNear(e.x, e.z, 0) || wildLakeNear(e.x, e.z))), y: [...new Set(T.map(e => e.mesh.position.y))],
     fish: T.every(e => e.limbs.wolf && e.limbs.wolf.fish), falls: +(src - end).toFixed(1) };
@@ -126,7 +128,7 @@ const trout = await page.evaluate(() => { forceTime(12); for (const ch of [...WI
   const has = () => BAG.filter(b => b && ['Trout', 'River Pike', 'Riverjaw Salmon'].includes(b.name) /* S1797 — in the Gatelands' deep water it may be a pike */).reduce((a, b) => a + (b.qty || 1), 0), b0 = has();
   out.prompt = fishPrompt(); out.took = catchFish(); out.got = has() - b0; out.gone = !ZONES.world.enemies.includes(e) && WILD_TAKEN.get(e._wildKey) === lootDay();
   for (const o of ZE) o._duelHold = false;
-  const f = ZONES.world.enemies.find(o => o.swim && !o.dead); if (!f) return out; const w0 = EQ.weapon;
+  const f = ZONES.world.enemies.find(o => o.swim && !o.dead && !SEA_KINDS[o.baseName]); if (!f) return out; const w0 = EQ.weapon;
   EQ.weapon = { weaponShape: 'sword', atk: [5, 6] }; out.sword = strikeCandidate(f); EQ.weapon = { weaponShape: 'spear', atk: [5, 6] }; out.spear = strikeCandidate(f); EQ.weapon = w0;
   out.over = wildArrowMisses(f, f.mesh.position.y + 1); out.at = wildArrowMisses(f, f.mesh.position.y + .2); const c0 = ZONE_CORPSES.length; killZoneEnemy(f, WORLD.scene);
   const c = ZONE_CORPSES.length > c0 ? ZONE_CORPSES[ZONE_CORPSES.length - 1] : null; out.body = c ? c.items.map(i => i.name + '×' + (i.qty || 1) + ' ' + i.weight + ' ' + i.buyPrice + 'g') : null; out.floats = +f.mesh.position.y.toFixed(2);
@@ -281,4 +283,92 @@ const NBC = await page.evaluate(() => { const e = buildZoneEnemy(sc, STATIC_SOL,
 console.log('  bellthroat:', JSON.stringify(NBC));
 check(`the Bellthroat's call: ${NBC.dusk} calls in a minute at dusk from 30 m (k ${NBC.ks[0]}), ${NBC.noon} at noon, ${NBC.far} from 200 m, ${NBC.night} at night`,
   NBC.ok && NBC.played === true && NBC.dusk >= 3 && NBC.dusk <= 8 && NBC.noon === 0 && NBC.far === 0 && NBC.night === 0 && NBC.ks.length === NBC.dusk && NBC.ks.every(k => k === 0.8), NBC);
+// S2622 — the sea's creatures (#1954 A): a sea chunk rolls one group in four by its id, by the water's depth: the shallows under 5 m the
+// Starweed Ray, the turtle, the tidecrab and the jelly by night; open water the tuna, the squid and the skyskimmer; a cell all sea the angler,
+// the eel and the Sailfin Ray. Each holds between the bed and the surface at its kind's depth; the same chunk rolls the same group; taken off
+// the body or by hand while swimming, 1.2 weight and 18 gold, the tuna 3 and 30
+const SEA = await page.evaluate(() => { const out = { t: {}, night: {}, bad: [], items: {}, chunks: 0, groups: 0, same: null };
+  const R = seededRng('s2622', 'sea'), keys = [];
+  let coast = 0; /* S2623 — half of them on the coast's shelf (a middle under 6 m), where the shallows and the reef are */
+  for (let k = 0; k < 60000 && keys.length < 400; k++) { const cx = Math.floor((13000 + R() * 12000) / CHUNK), cz = Math.floor((13000 + R() * 12000) / CHUNK), h = WORLD.worldH(cx * CHUNK + 32, cz * CHUNK + 32);
+    if (!(h < SEA_Y - WILD_SWIM.wet)) continue; const shelf = h > -6; if (!shelf && keys.length - coast >= 200) continue; if (shelf) coast++; keys.push([cx, cz]); }
+  const drop = ch => { for (const e of ch.wild) { e.dead = true; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); const ix = ZONES.world.enemies.indexOf(e); if (ix >= 0) ZONES.world.enemies.splice(ix, 1); } };
+  const HAB = {}; for (const h in SEA_TABLE) for (const gr of SEA_TABLE[h]) HAB[gr.name] = h;
+  for (const h of [12, 23]) { forceTime(h); const T = h === 12 ? out.t : out.night;
+    for (const [cx, cz] of keys) { const key = cx + ',' + cz, ch = { cx, cz, wild: [] }; if (h === 12) out.chunks++; wildSeaChunk(ch, key); if (h === 12 && ch.wild.length) out.groups++;
+      for (const e of ch.wild) { const hab = seaHabitat(e.x, e.z), n = hab + ':' + e.baseName; T[n] = (T[n] || 0) + 1; if (HAB[e.baseName] !== hab) out.bad.push(n);
+        if (!e.limbs.wolf || !e.limbs.wolf.fish) out.bad.push('body ' + e.baseName);
+        const y = e.mesh.position.y, bed = worldH(e.x, e.z); if (!(y >= bed - .01 && y <= SEA_Y - .29)) out.bad.push('y ' + e.baseName + ' ' + y.toFixed(2) + ' ' + bed.toFixed(2));
+        if (!out.items[e.baseName]) { const it = bodyMeat(e, [], null)[0]; out.items[e.baseName] = it && [it.weight, it.buyPrice]; } }
+      if (h === 12 && ch.wild.length && out.same === null) { const sig = c => c.wild.map(e => e.id + '|' + e.baseName + '|' + e.x.toFixed(2) + ',' + e.z.toFixed(2)).join(); const a = sig(ch); drop(ch);
+        const c2 = { cx, cz, wild: [] }; wildSeaChunk(c2, key); out.same = a === sig(c2); drop(c2); }
+      drop(ch); } }
+  forceTime(12);
+  /* one tuna by hand: dived beside it, E takes it */
+  const [cx, cz] = keys.find(([x, z]) => seaHabitat(x * CHUNK + 32, z * CHUNK + 32) !== 'shallows') || keys[0], tx = cx * CHUNK + 32, tz = cz * CHUNK + 32;
+  const e = keyFoe(buildZoneEnemy(sc, STATIC_SOL, tx, tz, 'Coastal Tuna', null, { tier: 1, key: 's2622:tuna' }), 'wild:s2622:tuna'); e._wildKey = 's2622:tuna'; e.homeX = tx; e.homeZ = tz;
+  e.mesh.position.y = seaHoldY(e, tx, tz); ZONES.world.enemies.push(e); out.tunaY = +e.mesh.position.y.toFixed(2);
+  const bx = px, bz = pz, by = jumpY; px = tx + 1; pz = tz; jumpY = SWIM_Y;
+  const has = () => BAG.filter(b => b && b.name === 'Coastal Tuna').reduce((a, b) => a + (b.qty || 1), 0), b0 = has();
+  out.swim = WORLD.isSwimming(); out.prompt = !!fishPrompt(); out.took = catchFish(); out.got = has() - b0; out.gone = !ZONES.world.enemies.includes(e) && WILD_TAKEN.get(e._wildKey) === lootDay();
+  const it = BAG.find(b => b && b.name === 'Coastal Tuna'); out.tuna = it && [it.weight, it.buyPrice]; if (it) { if ((it.qty || 1) > 1) it.qty--; else BAG.splice(BAG.indexOf(it), 1); }
+  px = bx; pz = bz; jumpY = by; return out; });
+console.log('  sea:', JSON.stringify(SEA));
+{ const T = SEA.t, N = SEA.night, I = SEA.items, sum = (o, h) => Object.keys(o).filter(k => k.startsWith(h + ':')).reduce((a, k) => a + o[k], 0);
+  check(`the sea's creatures: ${SEA.groups} groups in ${SEA.chunks} sea chunks, ${sum(T, 'shallows')} in the shallows, ${sum(T, 'open')} in open water, ${sum(T, 'deep')} in the deepest, ${sum(T, 'reef')} on the reef rock; each in its habitat, at its depth, on its body; the jelly only by night (${N['shallows:Lantern Jelly'] || 0}); the same group again by the chunk's id`,
+    SEA.groups > SEA.chunks * .18 && SEA.groups < SEA.chunks * .32 && !SEA.bad.length && sum(T, 'shallows') > 0 && sum(T, 'open') > 0 && sum(T, 'deep') > 0 && sum(T, 'reef') > 0
+    && !T['shallows:Lantern Jelly'] && N['shallows:Lantern Jelly'] > 0 && SEA.same === true, SEA);
+  check(`each 1.2 weight and 18 gold, the tuna 3 and 30; dived beside a tuna (${SEA.tunaY} m), E takes it by hand (+${SEA.got})`,
+    Object.entries(I).every(([k, v]) => k === 'Coastal Tuna' ? v.join() === '3,30' : v.join() === '1.2,18') && SEA.swim && SEA.prompt && SEA.took && SEA.got === 1 && SEA.gone && SEA.tuna && SEA.tuna.join() === '3,30', SEA); }
+// S2623 — the reef's three answer back (#1954 A on #1050 A): the moray, met within 4 m in the water, comes at you in the water and bites
+// through the blow's resolver after its wind-up, and 25 m off gives up; the stonefish lies still until you are over it; each has the Boar's 16
+const REEF = await page.evaluate(() => { const out = {}; const R = seededRng('s2623', 'reef'); let at = null;
+  for (let k = 0; k < 40000 && !at; k++) { const x = 13000 + R() * 12000, z = 13000 + R() * 12000; if (seaHabitat(x, z) === 'reef' && SEA_Y - worldH(x, z) > 3) at = [x, z]; }
+  if (!at) return { none: true };
+  const mk = (name, x, z) => { const e = keyFoe(buildZoneEnemy(sc, STATIC_SOL, x, z, name, null, { tier: 1, key: 's2623:' + name }), 'wild:s2623:' + name);
+    e._wildKey = 's2623:' + name; e.homeX = x; e.homeZ = z; e.mesh.position.y = seaHoldY(e, x, z); ZONES.world.enemies.push(e); return e; };
+  const bx = px, bz = pz, by = jumpY, hp0 = PHP, sw = isSwimming; isSwimming = () => true;
+  const run = (e, secs) => { for (const o of ZE) o._duelHold = o !== e; for (let i = 0; i < secs * 60; i++) tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); for (const o of ZE) o._duelHold = false; };
+  const m = mk('Reef Moray', at[0], at[1]); out.m = { hp: m.hp, dmg: m.dmg, answer: !!m.answer, swim: !!m.swim };
+  px = at[0] + 3.2; pz = at[1]; jumpY = Math.min(SWIM_Y, Math.max(worldH(px, pz) + .9, m.mesh.position.y - .3)); /* dived to its depth */ PHP = maxHP; blocking = false; run(m, .2); out.m.angry = !!m.angry;
+  const x0 = m.x; run(m, 4); out.m.came = +(m.x - x0).toFixed(2); out.m.wet = wildWet(m.x, m.z); out.m.bites = m._bites || 0; out.m.lost = hp0 > 0 ? +(maxHP - PHP).toFixed(1) : null;
+  out.m.yOk = m.mesh.position.y >= worldH(m.x, m.z) - .01 && m.mesh.position.y <= SEA_Y - .29;
+  px = m.x + 30; run(m, .2); out.m.quit = !m.angry;
+  const s = mk('Stonefish', at[0], at[1]); s._w = { mode: 'graze', t: 99 }; px = at[0] + 2; pz = at[1]; jumpY = worldH(at[0], at[1]) + .9; run(s, .5); out.s = { far: !s.angry };
+  px = at[0] + .5; run(s, 3); out.s.over = !!s.angry; out.s.moved = +Math.hypot(s.x - at[0], s.z - at[1]).toFixed(2); out.s.bites = s._bites || 0; out.s.hp = s.hp;
+  for (const e of [m, s]) { e.dead = true; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); const i = ZONES.world.enemies.indexOf(e); if (i >= 0) ZONES.world.enemies.splice(i, 1); }
+  isSwimming = sw; px = bx; pz = bz; jumpY = by; PHP = maxHP; return out; });
+console.log('  reef:', JSON.stringify(REEF));
+check(`the reef answers back: the moray (${REEF.m && REEF.m.hp} health) met 3.2 m off at its depth turns, comes ${REEF.m && REEF.m.came} m through the water and bites ${REEF.m && REEF.m.bites} times (${REEF.m && REEF.m.lost} lost); 30 m off it gives up; the stonefish lies still until you are over it, then bites (${REEF.s && REEF.s.bites})`,
+  !REEF.none && REEF.m.hp === 16 && REEF.m.dmg === 5 && REEF.m.answer && REEF.m.swim && REEF.m.angry && REEF.m.came > 1 && REEF.m.wet && REEF.m.bites >= 2 && REEF.m.lost > 0 && REEF.m.yOk && REEF.m.quit
+  && REEF.s.far && REEF.s.over && REEF.s.moved < .01 && REEF.s.bites >= 1, REEF);
+// S2624 — the grey seals hauled out (#1954 A): a shore chunk rolls two to five, by its id, on ground 0.2 to 1.6 m over the sea with water deep
+// enough to swim within 30 m; startled, one humps to the water, then darts 10 m off and holds a metre under. Ashore a blade reaches it, in the
+// water only the spear; it is not taken by hand and gives no meat
+const SEAL_R = await page.evaluate(() => { const out = { groups: 0, n: [], bad: [] }; const R = seededRng('s2624', 'seal'); let one = null, tried = 0;
+  const drop = ch => { for (const e of ch.wild) { e.dead = true; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); const ix = ZONES.world.enemies.indexOf(e); if (ix >= 0) ZONES.world.enemies.splice(ix, 1); } };
+  for (let k = 0; k < 40000 && tried < 300; k++) { const cx = Math.floor((13000 + R() * 12000) / CHUNK), cz = Math.floor((13000 + R() * 12000) / CHUNK), h = WORLD.worldH(cx * CHUNK + 32, cz * CHUNK + 32);
+    if (!(h > -5 && h < 4)) continue; tried++; const key = cx + ',' + cz, ch = { cx, cz, wild: [] }; wildSealChunk(ch, key);
+    if (ch.wild.length) { out.groups++; out.n.push(ch.wild.length);
+      for (const e of ch.wild) { const hh = worldH(e.x, e.z); if (!(hh >= .2 && hh <= 1.6) || !e.ashore || !e.seal || !e._sea || !wildWet(e._sea.x, e._sea.z)) out.bad.push(e.id); }
+      if (!one) { const sig = c => c.wild.map(e => e.id + '|' + e.x.toFixed(2)).join(); const a = sig(ch); drop(ch); const c2 = { cx, cz, wild: [] }; wildSealChunk(c2, key); out.same = a === sig(c2); one = c2; continue; } }
+    drop(ch); }
+  out.tried = tried; if (!one) return out;
+  const e = one.wild[0]; for (const o of one.wild.slice(1)) { o.dead = true; if (o.mesh.parent) o.mesh.parent.remove(o.mesh); const ix = ZONES.world.enemies.indexOf(o); if (ix >= 0) ZONES.world.enemies.splice(ix, 1); }
+  const w0 = EQ.weapon; EQ.weapon = { weaponShape: 'sword', atk: [5, 6] }; out.swordAshore = strikeCandidate(e);
+  out.meat = bodyMeat(e, [], null).length; out.ashoreY = +(e.mesh.position.y - worldH(e.x, e.z)).toFixed(2);
+  const bx = px, bz = pz; px = e.x + Math.sin(e.combatYaw) * 10; pz = e.z + Math.cos(e.combatYaw) * 10; e.alert = true; let secs = 0;
+  for (const o of ZE) o._duelHold = o !== e;
+  for (let i = 0; i < 60 * 30 && e.ashore; i++) { tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); secs += 1 / 60; }
+  out.toSea = +secs.toFixed(1); out.inWater = !e.ashore; const x1 = e.x, z1 = e.z;
+  for (let i = 0; i < 60 * 4; i++) tickZoneEnemies(1 / 60, performance.now(), WORLD.scene);
+  for (const o of ZE) o._duelHold = false;
+  out.swam = +Math.hypot(e.x - x1, e.z - z1).toFixed(1); out.wet = wildWet(e.x, e.z); out.y = +(e.mesh.position.y).toFixed(2);
+  out.swordWater = strikeCandidate(e); EQ.weapon = w0;
+  const sw = isSwimming; isSwimming = () => true; px = e.x + .8; pz = e.z; jumpY = SWIM_Y; out.byHand = !!nearTrout(); isSwimming = sw;
+  px = bx; pz = bz; e.dead = true; if (e.mesh.parent) e.mesh.parent.remove(e.mesh); return out; });
+console.log('  seals:', JSON.stringify(SEAL_R));
+check(`the seals: ${SEAL_R.groups} groups of ${JSON.stringify(SEAL_R.n)} in ${SEAL_R.tried} coastal chunks, each hauled out on the shore beside the sea; the same again by the chunk's id; startled, one reaches the water in ${SEAL_R.toSea} s and swims ${SEAL_R.swam} m off a metre under`,
+  SEAL_R.groups >= 2 && SEAL_R.n.every(k => k >= 2 && k <= 5) && !SEAL_R.bad.length && SEAL_R.same && SEAL_R.inWater && SEAL_R.toSea < 15 && Math.abs(SEAL_R.swam - 10) < .8 && SEAL_R.wet && SEAL_R.y === -1
+  && SEAL_R.swordAshore && !SEAL_R.swordWater && !SEAL_R.byHand && SEAL_R.meat === 0 && SEAL_R.ashoreY === 0, SEAL_R);
 await g.close();
