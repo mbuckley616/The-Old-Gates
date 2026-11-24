@@ -2301,3 +2301,62 @@ flaky in a row under load is QA's to judge.
 **Backlog notes.** None new.
 
 No proposal this run.
+
+## 2026-11-24 — A day's trade in Dunmore under the new HUD: the mayor, Lorcan's Forge, the street at 1,024 and 800 wide, The Grey Heron and The Bramble Hearth at 22:30 (build s1927, read to Session 2600)
+
+My last entry looked at the new look, so this run plays. Most of what landed since Session 2565 is #198 A's HUD (the compass band
+S2573, the ledger S2578, the vitals plate S2584, and five narrow-window fixes S2587–S2597), so I played a plain day in Dunmore with
+it on screen: boot, the crypt, the world, Dunmore at 10:00; a talk with the mayor, Niamh, through her topics; Lorcan's Forge at 13:00,
+three bought and two sold by clicking the rows as a player does; back out and the street at 1,280 × 720, 1,024 × 640 and 800 × 600;
+the street at 22:30; The Bramble Hearth's keeper, Ruairí, and his room. Two boots of the new look in headless Chromium (frames 2–4 s
+each), no page errors and no console errors beyond the GL driver's ReadPixels stall warning. The harness: `node tests/run.mjs export`
+ran to exit 0 (its summary line was lost to my pipe; both play scripts booted the same harness and ran clean).
+
+**What was wrong.**
+1. **In a shop the ledger covers the bottom of the stock list** (`2026-11-24-shop-ledger.jpg`). Lorcan's Forge, 13:00, 1,280 × 720:
+   buy the Wooden Sword, the Bronze Dagger and the Iron Sword, then sell the sword and the dagger back. The ledger keeps four slips
+   (the first purchase drops off) and they stand from y 450 to 586 over the stock column, covering its rows 10 to 13: the Joiner's Kit
+   and the two bought-back pieces (*Iron Sword 16*, *Bronze Dagger 6*). Those are the rows a player reaches for after a sale made by
+   mistake, and they are hidden for 6 s after each sale. Clicks pass through (the ledger takes no pointer), so it is a reading fault,
+   not a lock. S2592 measured this and left it as a HUD call; from play, it wants answering. The arithmetic is right: 300 gold, paid
+   5 + 13 + 34, got 16 + 6, left with 270, and every slip names what the row said.
+2. **Under about 900 px wide the controls line runs off both edges, and the build tag with it** (`2026-11-24-street-800.jpg`). `#cbar`
+   is centred and 896 px wide whatever the window: at 800 it runs from x −48 to 848, so *WASD/drag* is cut at the left and *build s1927*
+   (792–848) is outside the window. At 1,024 the tag sits at 904–960, grey on the grass under the right hand, and has to be looked for.
+   The tag is how Michael says he confirms which build he is running. Not new with #198, but the five narrow-window fixes moved every
+   other bottom element inside the window and left this one.
+3. **A dialogue of eleven choices opens cut mid-row at 720 tall** (`2026-11-24-inn-talk.jpg`). Ruairí at The Bramble Hearth, 20:00
+   and 22:30: the panel is `max-height: 52vh` (372 px) and the list needs 441, so *10. News …* is sliced through and *11. Go with the
+   Weaver.* (the farewell) is below the fold, with no scrollbar drawn and nothing to say there is more. At 900 tall it fits. The mayor's
+   list is eleven too. The hint under the panel reads *1–9, 0 to choose*, so the eleventh has no key either; Esc still closes.
+4. Small: the mayor's *How fares the town?* answers *Dunmore is prosperous.* and stops (a trailing space in the text, so a second
+   clause is missing). A new character's Wooden GreatClub shows ⚔️ on the plate's roundel, crossed swords for a club; S2584 already
+   says the icons are emoji, so this is one more reason for the prototype's ink glyphs.
+
+**What worked.**
+- The plate reads at a glance at every width I tried: 18–324 across, *130 / 130*, *100 / 100*, *115 / 115*, *Level 1*, *0 / 10.5 marks*.
+  The band clears it at 340 at 1,280, 1,024 and 800, and the ⏳ ends inside the window at 784 on an 800-wide screen. The band's
+  night shot carries the inn's marker clamped at the left end with its ‹, which says *behind you* without words.
+- Talking: the ledger narrows to 18–244 while the panel (256–736) is open, so nothing lies over the talk, as S2591 meant.
+- The street at 10:00 is the best Dunmore has looked in my runs: the Heron's sign, the general goods' shop front, the lamps, the
+  mayor in black beside a man in blue (`2026-11-24-street-10h.jpg`). At 22:30 three windows of the house opposite are lit and the rest
+  dark, which reads as a town gone to bed.
+- The inn: *There's 2 guests in tonight. A room is 11 gold — the east front room on the first floor, a bed, a bolt on the door, and
+  breakfast*, with a plain yes or no. That is the canon's register.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2573, S2578, S2584, S2587, S2591, S2594, S2597 (the HUD): judged headless, above. The band at 800 (360 px for 180°) still reads:
+  SW, W and NW stand apart. I could not judge the objectives' green ring: nothing I did set an objective near.
+- S2584: the emoji on bronze, yes, they read as stickers on a wooden plate beside the drawn bars; and the spell roundel goes
+  (`display: none`) indoors, so inside the inn the bars slide left by the roundel's width and back again on leaving. Small, but the
+  plate is the one thing on screen that should not move.
+- S2592 (the movement pad on a mouse screen): it is drawn at all three widths, four grey arrows at the right that do nothing for a
+  keyboard player. I would show it only on `(pointer: coarse)`.
+- Not judged this run: the run's jog (S2566, third person), Briarweed (S2567), Stormwatch's face and lip (S2569, S2577), the Frostborn
+  Vault (S2574), the sea's creatures (S2575–S2600: nothing spawns them yet), the 3-bay bed's 0.75 m (S2583), the spyglass raise
+  (S2593), the scorched wood (S2599). Next run is the new look's turn and should take Stormwatch and the crater again.
+- One thing for the bodies builder to look at, not filed: in full sun at 10:00 the first-person hands draw nearly pure white, like
+  plaster gloves (`2026-11-24-street-10h.jpg`); at 1,024 in the shade they are grey-pink and at night dark. It may be a pale genome
+  and the bloom together; one boot is not enough to say.
+
+**Backlog notes.** None new.
