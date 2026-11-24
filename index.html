@@ -179,6 +179,8 @@ body:has(#dlg[style*="block"]) #ledger .ldg{max-width:100%}
 #dp{position:absolute;bottom:54px;right:10px;display:none;grid-template-columns:repeat(3,40px);grid-template-rows:repeat(3,40px);gap:3px;z-index:10}
 #dp button{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#c0a870;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;touch-action:none}
 #dp button:active{background:rgba(255,200,100,.22)}
+/* S2591 — the pad's box (its third row is empty) let no tap through: at 1,024 it took the top of the wait button. Only its buttons take one */
+#dp{pointer-events:none}#dp button{pointer-events:auto}
 #cbar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:#504838;font-size:11px;pointer-events:none;white-space:nowrap;display:none}
 #ip{display:none;position:absolute;inset:0;background:rgba(5,3,1,.95);z-index:40;padding:16px;border-radius:8px}
 #ip h2{color:#c8a84a;font-size:15px;font-weight:500;margin-bottom:10px;border-bottom:1px solid rgba(200,168,74,.2);padding-bottom:7px}
