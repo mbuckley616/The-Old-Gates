@@ -192,6 +192,8 @@ body:has(#shop[style*="flex"]) #ledger .ldg:last-child{display:block;white-space
 #dp button:active{background:rgba(255,200,100,.22)}
 /* S2592 — the pad's box (its third row is empty) let no tap through: at 1,024 it took the top of the wait button. Only its buttons take one */
 #dp{pointer-events:none}#dp button{pointer-events:auto}
+/* S2612 — the pad is for a screen with a finger on it (the critic, 24 Nov): with no coarse pointer of any kind it is not drawn, whatever _enterGame set */
+@media not (any-pointer: coarse){#dp{display:none!important}}
 #cbar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:#504838;font-size:11px;pointer-events:none;white-space:nowrap;display:none}
 /* S2602 — the line was 896 px whatever the window, so under ~900 it ran off both edges and the build tag left the window (the critic, s1927).
    It now stays 12 px inside each edge: its type shrinks with the width from 11 px to 9 (81.5 em is the whole line), the build tag stands
