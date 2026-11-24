@@ -65,7 +65,8 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `bronzehelm` | 7/14 | pass | pass | 28 |  |
 | `budget` | w8/20 | — | pass | 450 | Killed at the 900 s cap alone at s1692 with four views; the field split off to `budgetfield`, Session 2360 |
 | `budgetfield` | PR | — | pass | 420 | New, Session 2360 (the field west of Dunmore, from `budget`) |
-| `budgetport` | w9/20 | — | pass | 421 |  |
+| `budgetindoor` | PR | — | pass | 178 | New, Session 2615 (the inn's hall and the gate, from `budgetport`) |
+| `budgetport` | w9/20 | — | pass | 400 | Session 2615: Portclare alone (666 s on CI with the indoor spots, killed at the 900 s cap once) |
 | `buffstack` | 9/14 | pass | pass | 42 |  |
 | `buildsite` | 8/14 | pass | pass | 102 |  |
 | `burglary` | 6/14 | pass | pass | 146 |  |
