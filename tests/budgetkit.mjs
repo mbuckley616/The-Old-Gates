@@ -89,7 +89,7 @@ return { count, measure, stand, setLevel, bodies };
 export async function budgetEnd(g, rows, views) {
   const tag = (await g.page.evaluate(() => (document.getElementById('cbar').textContent.match(/build (s\d+)/) || [])[1])) || '?';
   const outdoor = rows.filter(r => CEIL[r.level]);
-  // S2614 — a suite of the ledger's indoor spots alone (`budgetindoor`) holds no view to the ceilings: views 0 checks nothing here
+  // S2615 — a suite of the ledger's indoor spots alone (`budgetindoor`) holds no view to the ceilings: views 0 checks nothing here
   if (views) for (const [name] of LEVELS) { const mine = outdoor.filter(r => r.level === name), c = CEIL[name];
     const over = mine.filter(r => r.calls > c.calls).map(r => [r.label, r.calls]), overT = mine.filter(r => r.tris > c.tris).map(r => [r.label, r.tris]);
     check(`at ${name}, every view (${views}) under ${c.calls} draw calls`, mine.length === views && over.length === 0, { over, calls: mine.map(r => r.calls) });

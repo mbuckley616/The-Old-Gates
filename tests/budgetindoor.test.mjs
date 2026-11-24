@@ -1,4 +1,4 @@
-// The budgets indoors, for the ledger only (Session 2614, QA; split from `budgetport`, Session 1297, which ran 666 s with these two
+// The budgets indoors, for the ledger only (Session 2615, QA; split from `budgetport`, Session 1297, which ran 666 s with these two
 // and was killed at run.mjs's 900 s cap on CI, 45412620274). Two spots at Middle, the level a real machine plays at: Dunmore's inn,
 // the hall from its door at 20h, and a medium gate (ruins, seed 11) from its entrance. The ceilings are the world's (`budget`,
 // `budgetfield`, `budgetport`): nothing here is held to them, the rows go to docs/qa/budget.md with the others.
@@ -17,7 +17,7 @@ const inside = !!inn && await page.evaluate(() => isInterior());
 if (inside) { await g.frames(4); rows.push(await measure(`${inn} (Dunmore's inn), the hall from the door, 20h`, 'Middle (indoors)'));
   // S1916 — polled on a timer, not on the page's frames (waitForFunction's default): the exit clears currentHouse 0.44 s after it is
   // called, but the first world frames after the inn are long on software GL, so a frame-polled wait timed out at 60 s, twice, at s1287.
-  // S2614 — and no frames of the world are waited for after it (the old two took 235 s on CI once): the gate's door is taken at once,
+  // S2615 — and no frames of the world are waited for after it (the old two took 235 s on CI once): the gate's door is taken at once,
   // and enterDungeon waits, in real time, for the gate's own scene and for the camera to stand on its floor.
   const tx = Date.now(); await page.evaluate(() => exitInterior()); await page.waitForFunction(() => currentHouse == null, null, { timeout: 60000, polling: 250 });
   console.log(`  out of the inn in ${Date.now() - tx} ms`); await g.hide(); }
