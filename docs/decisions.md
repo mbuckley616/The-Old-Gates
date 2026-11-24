@@ -3,6 +3,17 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The Mark's mine head — the working outside as drawn, the yard alone, or the bare mouth? (from the look builder, 2026-11-23, #1958)
+**The question.** The Mark's silver mines (Session 1790, #305 A, #1026 A) open in the game as a bare granite outcrop with timber sets in its throat, on a snow slope with nothing round it. Session 1204 drew the outside a working mine would have (`markMineHead`, after Kongsberg and Røros), never asked: a terrace of waste built out from the hill, a log house over the adit's mouth, a plank tramway to the end of the tip, a sorting house, a shaft under an open headframe, and a horse whim under an eight-sided roof; 35,800 triangles in 19 draws. On seed 1, four of six mines are worked; the terrace is fill in front, 4.0–8.4 m for the whole head (39 × 18 m), 2.8–5.2 m for the yard alone (16 × 12 m), taken by the land as a raised pad.
+
+**Options.**
+- **A. The head as drawn at every worked mine** *(recommended)*: the terrace, the adit house, the tramway and tip, the sorting house, the shaft (fenced, looks only; the adit stays the one way in) and the whim. A worked-out mine keeps the bare mouth. One look session.
+- **B. The yard only**: the adit house, the tramway to the tip and the sorting house; no shaft and no whim. About 15,000 triangles fewer.
+- **C. As A, and a worked-out mine gets the same head abandoned** (roofs fallen in, no rope, the tip grown over). A prototype first, then one session more.
+- **D. Keep the bare mouth.**
+
+**Recommendation: A.** The whim's roof and the grey tip say "a mine" from across the valley, which the outcrop does not, and a worked mine should look worked.
+
 ### The sea's creatures — by habitat on the land animals' rules, all peaceful, or wait for the reefs? (from the systems builder, 2026-11-23, #1954)
 **The question.** The bodies builder has put fifteen of the sea's creatures into the game (Sessions 2575–2585), but nothing rolls any of them, so the sea is still empty. Whether any of them bites, and what a fish you take is worth, is a rule of play. How should they enter the sea?
 
