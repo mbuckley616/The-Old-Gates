@@ -1713,6 +1713,7 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
   for(const rig of HC_RIGS){const g=rig.root.parent;
     if(!g||!g.parent||rig.nest&&!hcTop(g).isScene){hcDrop(rig);HC_RIGS.delete(rig);continue;}
     if(rig.nest?hcTop(g)!==scene||!hcShown(g):g.parent!==scene||!g.visible)continue;
+    if(rig.amph)hcAmph(rig); /* S2588 — an amphibian's fit follows its side of the water at every level, not only while the near pose runs */
     const gp=hcAt(rig,g),d=Math.hypot(CAM.position.x-gp.x,CAM.position.z-gp.z)/(rig.reach||1); /* S1536 — a whale's levels by its size */
     if(!rig.hc){if(!busy&&!HC_BODY.job&&!rig.hcFail&&!(rig.fish&&rig.e.dead)&&d<bd){bd=d;best=rig;}continue;} /* S1529 — a shark killed before its body was built keeps the old one */
     const L=rig.hc.L,a=HC_BODY.near+(L>0?-1:1),b=HC_BODY.mid+(L>1?-1:1);hcLevel(rig,d<a?0:d<b||hcSits(rig)?1:2);hcThin(rig,d>HC_BODY.furAll+(rig.hc.thin?-.5:.5));

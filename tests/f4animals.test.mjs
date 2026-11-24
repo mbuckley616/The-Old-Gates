@@ -286,11 +286,17 @@ const seal = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
   e.ashore = false; run(2, 0); const bx2 = box(), back = (bx2.max.y + bx2.min.y) / 2 - G.position.y;
   const out = { plan: H.C.g.plan, seed: H.C.g.seed === HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(wx.max.z - wx.min.z).toFixed(3), nose: +(wx.max.z - sb.max.z).toFixed(3),
     hold: wa.g, swim: wb.g, wmid: +wmid.toFixed(3), wmoved: wmv, rest: da.g, move: db.g, kit: db.c, low: +low.toFixed(3), humps: +db.cyc.toFixed(2), dmoved: dmv, back: +back.toFixed(3), bad: wbad + dbad };
+  /* S2588: far off (the kit's far level, no near pose) the fit still follows its side of the water */
+  CAM.position.set(G.position.x + 300, CAM.position.y, G.position.z); CAM.updateMatrixWorld(true); e.ashore = true; hcTick(9.9785e5); hcTick(9.9786e5);
+  out.farL = H.L; out.farDry = rig.dry === true && Math.abs(H.W.position.y - H.yDry) < 1e-6 && rig.mesh.position.y > 0;
+  e.ashore = false; hcTick(9.9787e5); out.farWet = rig.dry === false && Math.abs(H.W.position.y - H.yWet) < 1e-6 && rig.mesh.position.y === 0;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
   G.parent.remove(G); hcTick(9.979e5); out.dropped = !rig.hc; return out; });
 console.log('  seal:', JSON.stringify(seal));
 check(`the Grey Seal wears the kit's (${seal.plan}, ${seal.bones} bones, ${seal.tris} triangles, ${seal.len} m nose to tail, its nose ${seal.nose} m off the stand-in's); in the water it ${seal.hold} and ${seal.swim}s (the bones moving ${seal.wmoved}), its middle ${seal.wmid} m off the group's; ashore its lowest point ${seal.low} m off the group's, at rest ${seal.rest}, moving ${seal.move} (${seal.humps} humps over 0.5 m, the bones moving ${seal.dmoved}); back in the water its middle ${seal.back} m off; taken away, dropped`,
   !seal.fail && seal.plan === 'game:Grey Seal' && seal.seed && seal.tris < 12000 && Math.abs(seal.len - 2) < .24 && Math.abs(seal.nose) < .03 && seal.hold === 'hold' && seal.swim === 'swim' && seal.wmoved > .005
     && Math.abs(seal.wmid) < .15 && Math.abs(seal.low) < .02 && seal.rest === 'stand' && seal.move === 'hump' && seal.kit === 'hump' && seal.humps > .5 && seal.dmoved > .005 && Math.abs(seal.back - seal.wmid) < .02 && !seal.bad && seal.dropped, seal);
+check(`far off (level ${seal.farL}) the Grey Seal's fit still follows its side of the water: ashore ${seal.farDry}, back in ${seal.farWet}`, seal.farL === 2 && seal.farDry && seal.farWet, seal);
 // Session 2579: the Lantern Jelly and the Drifter Squid hang upright and drift: each wears its kit plan fitted by height to its stand-in, centre
 // to centre; at rest it holds and still beats on the clock, moving it drifts, a little quicker; taken away, dropped. The giant octopus is in
 // the crawlers' loop below. Picture: docs/prototypes/f4/f4-soft.jpg
