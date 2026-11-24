@@ -3254,7 +3254,7 @@
   // snapped, its stump the kit's (falling outward), its trunk the kit's laid on the ground from it, away from the star, the tree's own
   // height × 0.85 as layTrunk's. No record and no deck: the blast is the star's while it lies, and the chunk rebuilds the wood once it is
   // gone. -> the count blown down here.
-  const STAR_BLAST={all:9,r:14};
+  const STAR_BLAST={all:9,r:14,scorch:24};
   function starKitBlast(ch,s){if(!rareKitOn()||!ch||!ch.trees||!s)return 0;const from=seededRng('starfrom',s.id)()*Math.PI*2,fx=Math.sin(from),fz=Math.cos(from),r0=(typeof STAR!=='undefined'?STAR.r:3)+1.5;let n=0;
     for(const t of ch.trees){if(t.out)continue;const dx=t.x-s.x,dz=t.z-s.z,d=Math.hypot(dx,dz);if(d<=r0||d>STAR_BLAST.r)continue;
       const ox=dx/d,oz=dz/d,down=Math.max(0,-(ox*fx+oz*fz)),keep=d<=STAR_BLAST.all?1:(1-(d-STAR_BLAST.all)/(STAR_BLAST.r-STAR_BLAST.all))*(.45+.55*down);
@@ -3265,6 +3265,23 @@
         const L=Math.max(4,Math.min(18,H*.85)),R=Math.max(.25,.9*Math.max(.14,Math.min(.5,t.r*.55))),x0=t.x+ox*.3,z0=t.z+oz*.3,h0=worldH(x0,z0),h1=worldH(x0+ox*L,z0+oz*L);
         const K=PKIT.props.trunk(L,R,t.id);K.group.position.set(x0,h0+R*.8,z0);K.group.rotation.set(-Math.atan2(h1-h0,L),Math.atan2(ox,oz),0,'YXZ');g.add(K.group);
         ch.group.add(g);o.blast=g;o.star=1;n++;}catch(e){}}
+    starKitScorch(ch,s,fx,fz);
+    return n;}
+  // S2599 — the ring left standing (the critic's 23 Nov: past 9 m the wood stood whole, upright and green, so the bowl read as a glade with
+  // logs in it). Every tree still up out to STAR_BLAST.scorch leans away from the star and its crown is scorched toward the burn's brown:
+  // at 9 m up to 16° and 0.92 of the way to SCORCH_C, both falling in a line to nothing at 24 m, by 0.8 uprange and 1.1 downrange (the
+  // blow-down's own bearing), each tree ±20 % by its id. Its own instance's matrix and colour, once (t.scorch holds the star's id); the
+  // chunk built again after the star is gone stands as before.
+  const SCORCH_C=new THREE.Color(.6,.3,.15); /* a multiplier on the leaf card's green: a crown killed by heat goes rust-brown, as a burnt conifer's needles do */
+  function starKitScorch(ch,s,fx,fz){const m=new THREE.Matrix4(),L=new THREE.Matrix4(),p=new THREE.Vector3(),ax=new THREE.Vector3(),c=new THREE.Color(),R0=STAR_BLAST.all,R1=STAR_BLAST.scorch;let n=0;
+    const near=new Map();for(const t of ch.trees)if(!t.out&&t.scorch!==s.id&&Math.hypot(t.x-s.x,t.z-s.z)<=R1)near.set(t.id,t);if(!near.size)return 0;
+    for(const o of ch.group.children){const T=o.isInstancedMesh&&o.userData.tids;if(!T)continue;let dirty=0;
+      for(let j=0;j<o.count;j++){const t=near.get(T[j]);if(!t||t.scorch===s.id)continue;const dx=t.x-s.x,dz=t.z-s.z,d=Math.hypot(dx,dz);if(d<1)continue;
+        const ox=dx/d,oz=dz/d,down=Math.max(0,-(ox*fx+oz*fz)),f=Math.min(1,(R1-Math.max(R0,d))/(R1-R0)*(.8+.3*down)),jit=.8+.4*seededRng('starscorch',s.id+'|'+t.id)();
+        o.getMatrixAt(j,m);p.setFromMatrixPosition(m);L.makeRotationAxis(ax.set(oz,0,-ox),.28*f*jit);m.setPosition(0,0,0).premultiply(L).setPosition(p);o.setMatrixAt(j,m);
+        if(o.instanceColor){o.getColorAt(j,c);c.lerp(SCORCH_C,Math.min(.92,.95*f*jit));o.setColorAt(j,c);}
+        t.scorch=s.id;dirty=1;n++;}
+      if(dirty){o.instanceMatrix.needsUpdate=true;if(o.instanceColor)o.instanceColor.needsUpdate=true;}}
     return n;}
   // the flecks of bright metal catch the dark: lit from dusk to dawn (19h to 7h, full from 21h to 5h), within 40 m (faded from 30), read from the clock
   function starKitGlint(){if(typeof STARS_SHOWN==='undefined')return;const h=typeof gameHour==='function'?gameHour():12,night=h>=21||h<5?1:h>=19?(h-19)/2:h<7?(7-h)/2:0;

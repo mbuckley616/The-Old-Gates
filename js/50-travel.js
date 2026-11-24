@@ -1914,7 +1914,7 @@ function starClearTrees(ch,s){if(!ch||!ch.trees)return;for(const t of ch.trees){
   try{treeTakeOut(ch,t);const o=t.out;if(o.stump&&o.stump.parent)o.stump.parent.remove(o.stump);const k=STUMPS.findIndex(q=>q.t===t);if(k>=0)STUMPS.splice(k,1);o.star=1;}catch(e){}}
   if(typeof starKitBlast==='function')starKitBlast(ch,s);} /* S2530 — on the new look the wood past it blown down (82-world-structures.js) */
 function spawnChunkStars(ch){for(const s of starsAllLive()){
-  const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK,R=typeof STAR_BLAST!=='undefined'&&window.OG_LOOK==='new'?STAR_BLAST.r:STAR.r+1.5;if(s.x>x0-R&&s.x<x0+CHUNK+R&&s.z>z0-R&&s.z<z0+CHUNK+R)starClearTrees(ch,s); /* its own chunk's trees, or a neighbour's at the edge */
+  const x0=ch.cx*CHUNK,z0=ch.cz*CHUNK,R=typeof STAR_BLAST!=='undefined'&&window.OG_LOOK==='new'?(STAR_BLAST.scorch||STAR_BLAST.r):STAR.r+1.5;if(s.x>x0-R&&s.x<x0+CHUNK+R&&s.z>z0-R&&s.z<z0+CHUNK+R)starClearTrees(ch,s); /* its own chunk's trees, or a neighbour's at the edge */
   if(Math.floor(s.x/CHUNK)!==ch.cx||Math.floor(s.z/CHUNK)!==ch.cz)continue;const o=STARS_SHOWN.get(s.id);if(o&&veinLive(o))continue;if(o)starTake(s.id);starPut(ch,s);}}
 // every few seconds of play: a star that has fallen in a chunk already built is put in it, and one an island no longer keeps is taken
 let _starT=0;
