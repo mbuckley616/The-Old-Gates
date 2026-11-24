@@ -33,6 +33,8 @@ check(`groups stand in the country by their biome (${walk.groups} groups: ${JSON
 const rules = await page.evaluate(() => { const W = () => ZONES.world.enemies.filter(e => e.wild && !e.dead);
   const bad = W().filter(e => { const ri = roadInfo(e.x, e.z); return (ri && ri.d < 7.9) || wildPadNear(e.x, e.z, 0); }).map(e => e.name + ' ' + e.id);
   const sig = () => W().map(e => e.id + '|' + e.name + '|' + e.x.toFixed(2) + ',' + e.z.toFixed(2)).sort().join();
+  /* S2622 — both signatures from fresh rolls in this one call: the page's own loop runs between evaluates, and a seal the walk startled had humped on */
+  for (const ch of [...WILD_CH]) wildDrop(ch); _wildT = 0; tickWildSpawn(.1);
   const before = sig(), n = W().length; for (const ch of [...WILD_CH]) wildDrop(ch); const gone = W().length; _wildT = 0; tickWildSpawn(.1);
   return { n, bad, gone, same: before === sig(), noFoe: W().every(e => !e.alert && e.hp === (e.answer ? 16 : 1) && e.limbs.wolf) /* S1796 — the three that answer back have the Boar's 16 */ }; });
 check(`none on a road or a pad (${rules.n} animals), the same group again by its chunk's id, each a one-blow animal on its own body (one that answers back, 16)`, rules.n > 0 && !rules.bad.length && rules.gone === 0 && rules.same && rules.noFoe, rules);
