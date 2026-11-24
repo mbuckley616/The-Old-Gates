@@ -1979,7 +1979,7 @@ function spawnChunkSky(ch){if(!ch.trees)return;for(const s of skyPines()){if(Mat
 // it): one in six holds a Deep Pearl, on `seededRng('pearl', '<bed>:<return>:<oyster>')`. A bed is whole again 14 game days after its
 // last oyster was taken. Its record is `worldState.pearlBeds['<cx,cz>:pearl:0']` = {t: the oysters taken as bits, d: the day of the last,
 // e: how often it has come back} (the world's), changed only by `pearlTake`. A pearl is the temper of tiers 8–10 at the forge (one a
-// temper, at the metal's Smithing gate; `temperNeed`). The shells are a plain stand-in until the look builder's oyster bed.
+// temper, at the metal's Smithing gate; `temperNeed`). The shells are a plain stand-in on the old look; on the new the kit's bed (S2619).
 const PEARL={odds:1/40,depth:8,n:5,p:1/6,days:14,ring:2.4,reach:2.2,tries:6,price:150};
 function pearlBedSpot(cx,cz){if(hash01(cx,cz,410)>PEARL.odds)return null;
   let nk='';try{nk=nationKeyOf(...cellOf(cx*CHUNK+CHUNK/2,cz*CHUNK+CHUNK/2));}catch(e){return null;}if(nk!=='aurenne')return null;
@@ -2001,11 +2001,11 @@ function pearlTake(bed,i){const r=pearlRec(bed.id);if(r.t&(1<<i))return {why:'On
   (worldState.pearlBeds||(worldState.pearlBeds={}))[bed.id]={t:r.t|(1<<i),d:Math.floor(gameMinNow()/1440),e:r.e||0};
   if(pearl)bagAdd(it);pearlShow(bed);return {pearl};}
 const PEARL_BEDS=[];let _pearlMat=null;
-function pearlMesh(bed){const M=_pearlMat||(_pearlMat=new THREE.MeshLambertMaterial({color:0x6e665a,emissive:0x141a1e}));
+function pearlMesh(bed){{const K=typeof pearlKitMesh==='function'?pearlKitMesh(bed,pearlRec(bed.id).t):null;if(K)return K;} /* S2619 — the kit's bed on the new look (82-world-structures.js) */const M=_pearlMat||(_pearlMat=new THREE.MeshLambertMaterial({color:0x6e665a,emissive:0x141a1e}));
   const g=new THREE.Group();g.name='pearlBed';g.userData.shells=[];
   bed.oy.forEach(o=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.17,8,5),M);m.scale.set(1,.32,.78);m.position.set(o.x,o.y+.05,o.z);m.rotation.y=o.ry;g.add(m);g.userData.shells.push(m);});
   return g;}
-function pearlShow(bed){const S=bed.g&&bed.g.userData.shells;if(!S)return;S.forEach((m,i)=>{m.visible=!pearlTaken(bed.id,i);});}
+function pearlShow(bed){if(bed.g&&bed.g.userData.kit){pearlKitShow(bed,pearlRec(bed.id).t);return;} /* S2619 — the kit's bed: an opened oyster drawn open */const S=bed.g&&bed.g.userData.shells;if(!S)return;S.forEach((m,i)=>{m.visible=!pearlTaken(bed.id,i);});}
 function spawnChunkPearls(ch){const D=pearlBedSpot(ch.cx,ch.cz);if(!D)return;
   const bed={id:D.id,x:D.x,z:D.z,oy:[],g:null};
   for(let i=0;i<PEARL.n;i++){const a=hash01(ch.cx+i,ch.cz,413)*Math.PI*2,d=.5+hash01(ch.cz,ch.cx+i,414)*(PEARL.ring-.5),x=D.x+Math.cos(a)*d,z=D.z+Math.sin(a)*d;
@@ -2061,6 +2061,7 @@ function mineVein(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working th
   MINE={v,t:toolStrike('pick')};showMsg(`You set to the ${ORE_DEF[v.ore].name.toLowerCase()}.`,'#c8b890');}
 function tickMining(dt){if(typeof tickArcJoin==='function')tickArcJoin(dt); /* S2372 — three arcs set together (68-dungeon-misc.js) */
   tickStars(dt); /* S2493 */
+  if(typeof tickMills==='function')tickMills(dt); /* S2621 — the mills' sails (82-world-structures.js) */
   if(!MINE)return;const v=MINE.v;
   if(v.gate!=null){tickGateMining(dt);return;} /* S2371 — a gate keep's crystal (68-dungeon-misc.js) */
   if(!veinLive(v)||activeZoneId!=='world'||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}

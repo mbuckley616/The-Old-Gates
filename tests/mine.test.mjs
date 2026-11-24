@@ -62,4 +62,18 @@ const back = await page.evaluate(() => { const T = currentHouse._limeCave, Bd = 
 const outside = await page.waitForFunction(() => !isInterior(), null, { timeout: 30000 }).then(() => true, () => false); await page.waitForTimeout(1500);
 const o = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._mine && c._mine.id === id)._mine; return { d: +Math.hypot(px - C.out.x, pz - C.out.z).toFixed(2), dy: +(jumpY - activeTerrainH(px, pz)).toFixed(2), solid: solidAt(px, pz) }; }, k.near.id);
 check(`out at the mouth, on the ground (${o.d} m from the spot)`, /go out of the mine/.test(back) && outside && o.d < .5 && Math.abs(o.dy) < .3 && !o.solid, o);
+// Session 2620 (Michael's A on #1958: "the head as drawn at every worked mine"): a worked mine's head before its mouth (PKIT.places.minehead,
+// placeMineHead, 82), the terrace a stamp of a height; a worked-out one keeps the bare mouth
+const wk = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => c.type !== 'sea' && !c.home && nationOf(c.i, c.j).people === 'markman'); const C = G.map(c => mineAt(c)).filter(m => m && m.worked);
+  C.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); return C[0]; });
+await page.evaluate(C => WORLD.enter(C.x + Math.sin(C.ry) * 30, C.z + Math.cos(C.ry) * 30, 0, 'test'), wk);
+for (let n = 0; n < 8; n++) { await g.cells(); const ok = await page.evaluate(id => { const c = [...CELLS.values()].find(c => c._mine && c._mine.id === id); return !!(c && c._mine.house); }, wk.id); if (ok) break; await page.waitForTimeout(1000); }
+const hd = await page.evaluate(id => { const C = [...CELLS.values()].find(c => c._mine && c._mine.id === id)._mine, H = mineHeadFrame(C), at = (u, v) => solidAt(...H.toW(u, v));
+  const mo = sc.children.find(o => o.name === 'mine mouth' && Math.hypot(o.position.x - C.x, o.position.z - C.z) < .1), head = mo && mo.children.find(o => o.name === 'mine head');
+  const lv = [[-20, -9], [-15, 7], [0, 0], [17, -9], [17, 7], [-8, 12.5]].map(([u, v]) => +(worldH(...H.toW(u, v)) - C.y).toFixed(2));
+  const out = [];  for (const c of CELLS.values()) { const m = c._mine; if (m && !m.worked && m.house) { const o2 = sc.children.find(o => o.name === 'mine mouth' && Math.hypot(o.position.x - m.x, o.position.z - m.z) < .1); out.push(!!(o2 && o2.children.some(q => q.name === 'mine head'))); } }
+  return { id, kit: C.headKit, head: !!head, lv, open: { door: at(-8, -7.4), yard: at(0, 4), track: at(-8, 9) }, solid: { cart: at(-8, 3.2), shaft: at(-4, 0), ore: at(-17, -1), post: at(...(() => { const a = Math.PI / 8; return [9.45 + 7.2 * Math.sin(a), -1 + 7.2 * Math.cos(a)]; })()), wall: at(-5.8, -7.4) }, outHeads: out }; }, wk.id);
+console.log(JSON.stringify(hd));
+check(`S2620: the worked ${hd.id} has its head (${hd.kit && hd.kit.tris} triangles in ${hd.kit && hd.kit.draws} draws), its terrace level with the mouth and the tip's tongue too`, hd.head && hd.kit && hd.kit.draws <= 16 && hd.kit.tris < 20000 && hd.lv.every(v => Math.abs(v) < .05), hd);
+check('S2620: through the adit house\'s doors, across the yard and down the tramway is open; its walls, the cart, the fenced shaft, the sorting house and the whim\'s posts are solid; no worked-out mine loaded has a head', hd.open && Object.values(hd.open).every(v => !v) && Object.values(hd.solid).every(v => v) && hd.outHeads.every(v => !v), hd);
 await g.close();
