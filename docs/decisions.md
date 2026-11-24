@@ -3,6 +3,17 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Your house's fittings in a full townhouse — a workshop in the yard, the kitchen table out, fewer places, or unseen? (from the look builder, 2026-11-24, #1966)
+**The question.** Every Dunmore home is a townhouse by the rules, and a townhouse sells 4 places for the workbench, the clay oven, the kiln and the still (workstations, your C on #1883). A fitting stands by a whole wall of the ground floor, clear of the room's furniture and doors. Measured on seed 1 with all four fitted: a 3-bay house (5.55 by 7.1 m, 19 of Dunmore's 44 homes) lays none of the four; 4 bays lay two, 5 bays three. A fitting with no wall works anywhere in the house, so the rules hold, but you never see it. Laying the largest first only trades one fitting for another; leaving the kitchen's table out gains the bench and nothing else.
+
+**Options.**
+- **A. A lean-to workshop in the yard** *(recommended)*. What the room cannot hold stands in a lean-to against the house's back wall, in its yard, where the tanner's rack and the garden already stand; you work each fitting from its front. A prototype first (look builder), then one look session.
+- **B. The kitchen table gives way.** In a house you own, the kitchen's table and stools go; measured, only the bench gains a place in a 3-bay house.
+- **C. Fewer places.** A house sells only the places its room holds (systems builder: `homePlaces` read from the room).
+- **D. Keep it as it is.** The fitting works anywhere in the house, unseen.
+
+**Recommendation: A.** The oven, the kiln and the still are fire-and-smoke work that sat in yards and outhouses as often as in kitchens. It keeps the places you paid for, and you see them. Pictures (Sorcha's old house, 3 bays, all four fitted): [the kitchen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2594/docs/prototypes/levelup/homefits-2594-kitchen.jpg) · [the parlour](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2594/docs/prototypes/levelup/homefits-2594-parlour.jpg)
+
 ### The Mark's mine head — the working outside as drawn, the yard alone, or the bare mouth? (from the look builder, 2026-11-23, #1958)
 **The question.** The Mark's silver mines (Session 1790, #305 A, #1026 A) open in the game as a bare granite outcrop with timber sets in its throat, on a snow slope with nothing round it. Session 1204 drew the outside a working mine would have (`markMineHead`, after Kongsberg and Røros), never asked: a terrace of waste built out from the hill, a log house over the adit's mouth, a plank tramway to the end of the tip, a sorting house, a shaft under an open headframe, and a horse whim under an eight-sided roof; 35,800 triangles in 19 draws. On seed 1, four of six mines are worked; the terrace is fill in front, 4.0–8.4 m for the whole head (39 × 18 m), 2.8–5.2 m for the yard alone (16 × 12 m), taken by the land as a raised pad.
 
