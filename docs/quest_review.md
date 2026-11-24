@@ -6,6 +6,8 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
+| main | `0955a985` | run 56: Sessions 2557–2592 as merged (build s1915), about 40 new player-readable lines: Finding 56 applied word for word (S2558, the lord's six refusals of the great forge by people and reason, the narrator's line kept for `showMsg`); the still and the vial (*Glass Vial*, *A draught is bottled in a glass vial.*, *Press 'E' to work the still*, *It takes {n} bronze ingots (you have {n}).*); the recipe leaf (*The mortar*, *Recipes*, *Made*, *Nothing between them*, *Study to discover*, *Chosen, without its specimen: you carry none.*, *Three herbs ask Alchemy 50.*, *no pair has failed you*); the great forge's corner (*Press 'E' to work the forge*, *The great forge stands in the corner of the hall, by the door.*); the vitals plate's tooltips (*Bare hands · Inventory (I)*, *No magic (F)*); the compass's *Exit*. The narrator's plain voice throughout; clean |
+| auto/bodies-2593 | `24bce157` | run 56: open PR #1963 (the spyglass raise in `54-thirdperson.js`: no line a player reads) |
 | main | `12b04fd5` | run 55: Sessions 2512–2556 as merged (build s1879), about 60 new player-readable lines: the still and the drying rack (*Still*, *Draught of {brew}*, *Dried {herb}*, *It takes two tinctures of the one brew.*, *The still is {n} gold.*, *Hung, with a salt. Ready in {h} hours.*, *It wants a salt.*, *Hang a herb*); the deep pearls (*Press 'E' to open the oyster*, *A deep pearl.*, *The oyster is empty.*, *Only the shell is left.*, *Deep Pearl*); the forge by grade (*This forge works to {metal}. {Metal} wants a town’s forge.*, *No smith keeps this forge.*, *The smith asks {n} gold for the forge.*); the bedroll's prompt; *You cannot pass time in a dungeon.* The narrator's plain voice throughout. One finding (56): the lord answers *The great forge.* in the narrator's words and a stat line |
 | (open PRs) | — | run 55: none open from an auto/* branch |
 | main (run 54) | `84d863eb` | run 54: Sessions 2471–2511 as merged (build s1838), about 70 new player-readable lines: rare materials B's (*Star Iron*, *Obsidian*, *Skywood Log*, *Skywood Plank*, *Sigil stone of {School}*, *Dragon Scale*, *The rock turns the iron. It wants a steel pick.*, *The star iron turns the steel. It wants a mithril pick.*, *The skywood wants a steel hatchet.*, *The star is all cut out.*, *The stone is cut out.*, *You set to the sigil stone.*, *It wants a sigil stone, cut in a failing gate.*, *It needs a plank for the haft.*); the fallen star's news (*A star came down past {place}.*, in `liveRumours` beside the warm stone's, plain enough in every people's mouth) and the map's *A fallen star*; the ground underfoot (*Snow*, *Deep snow*, *Mud*, the ice's pill) and the hobnails (*Hobnails*, *Hobnailed*, *Draw the nails*, *No smith here nails boots.*, *Your boots are nailed.*, *The nails are drawn.*, *The smith asks {n} gold to draw them.*); the Hollow's place name (*The Hollow Below*) and its ways out (*Back along the passage to the mouth*, *Up the stair to the hatch, or west to the pit*, *E at the ladder to go on deck*); the animals' *Reindeer* and *Frost Troll*. The narrator's plain voice throughout; *Mithril* is the materials table's own tier. Clean |
@@ -61,6 +63,16 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 ---
+
+## Run 56 — 24 Nov 2026
+
+About 40 player-readable strings read on main from `12b04fd5` to `0955a985` (Sessions 2557–2592, build s1915), and the one open PR from another lane (#1963, bodies: no line a player reads). Clean. Finding 56 is on main exactly as written (S2558): at the great forge each people's lord refuses in their own words, and the favour number stays on the narrator's line.
+
+**Michael's calls:** none newer than 16 Oct on the drafts page.
+
+**Built:** nothing. Every approved draft is built except *The Seventh Niche*'s niche, which waits on §1a's approval. No `FREEZE:` issue is open.
+
+**Drafted:** *The Strange and the Legendary, III* (backlog L2, OG-079), unapproved: Fergal Ó Sáile the Salt King, Sister Cairenn the Gatewalker, the Hollow Bard and Ammonius the Wretched Abbot. OG-001's Veiled and Collector are folded into runs I and II. The Mariner, the Herald and the Child are owed to run IV.
 
 ## Run 55 — 23 Nov 2026
 
