@@ -1326,18 +1326,20 @@ function humpPose(C, ph) {
 // chest, 18.5 cm clear of the ground at its top, and slid forward with the body 0.38 m: nothing pushed the seal up. Now each flipper's
 // tip is set on a spot on the ground for the push, the spot the body's surge carries the shoulder over (`FLIP.ahead` of a stride ahead of
 // where the tip rests mid-push), and the flipper turned to point at it as the chest rises and reaches; on the draw, while the chest is
-// down, the tip is lifted `FLIP.lift` of the flipper's length and swung on to the next spot a stride on, eased in and out. The flipper is
+// down, it is swung from the spot it left to the next a stride on, turned between the two aims (a slerp, eased in and out, so it sweeps
+// at an even turn and does not whip past straight down), its tip lifted `FLIP.lift` of the flipper's length at the middle. The flipper is
 // turned whole on its bone (from its rest direction to the spot's): where the spot is past its reach it points there and falls short,
 // and where it is within reach the tip is set on the ground along the same bearing, so it never sinks in. The seal's fore-flipper is
 // 0.24 m (it was 0.18, which could not reach the ground under a chest risen 15 cm)
-export const FLIP = { ahead: 0, out: .2, lift: .35 };
+export const FLIP = { ahead: 0, out: .2, lift: .8 };
 function humpFlipper(C, F, ph) {
-  const b = C.byName[F.name], s = strideOf(C) / (C.S || 1), r = C.B.by[F.name].p, t0 = r.clone().add(F.tip), ease = u => (1 - Math.cos(Math.PI * u)) / 2;
-  const A = t0.z + (humpSurge(.25) + .25 + FLIP.ahead) * s, u = ph < .5 ? 0 : (ph - .5) * 2, T = V(r.x + FLIP.out * F.tip.x, t0.y + FLIP.lift * F.len * Math.sin(Math.PI * u), A + s * ease(u) - s * ph);
-  b.quaternion.identity(); const base = rigPos(C, b, V()), q = rigQuat(C, b.parent, new THREE.Quaternion()).invert();
-  const D = T.sub(base), L = F.tip.length(), hz = Math.hypot(D.x, D.z);
-  if (D.y < 0 && hz * hz + D.y * D.y < L * L) { const k = Math.sqrt(L * L - D.y * D.y) / Math.max(hz, 1e-6); D.x *= k; D.z *= k; }
-  b.quaternion.setFromUnitVectors(F.tip.clone().normalize(), D.normalize().applyQuaternion(q));
+  const b = C.byName[F.name], s = strideOf(C) / (C.S || 1), r = C.B.by[F.name].p, t0 = r.clone().add(F.tip), L = F.tip.length(), ease = u => (1 - Math.cos(Math.PI * u)) / 2;
+  const A = t0.z + (humpSurge(.25) + .25 + FLIP.ahead) * s, u = ph < .5 ? 0 : (ph - .5) * 2, y = t0.y + FLIP.lift * F.len * Math.sin(Math.PI * u);
+  b.quaternion.identity(); const base = rigPos(C, b, V()), q = rigQuat(C, b.parent, new THREE.Quaternion()).invert(), rest = F.tip.clone().normalize();
+  const aim = z => { const D = V(r.x + FLIP.out * F.tip.x, y, z).sub(base), hz = Math.hypot(D.x, D.z);
+    if (D.y < 0 && hz * hz + D.y * D.y < L * L) { const k = Math.sqrt(L * L - D.y * D.y) / Math.max(hz, 1e-6); D.x *= k; D.z *= k; }
+    return new THREE.Quaternion().setFromUnitVectors(rest, D.normalize().applyQuaternion(q)); };
+  if (!u) b.quaternion.copy(aim(A - s * ph)); else b.quaternion.copy(aim(A - s * ph)).slerp(aim(A + s - s * ph), ease(u));
 }
 export function footAt(C, i, T, fold = 0) { return solveLeg(C, C.B.legs[i], T, fold); }
 
