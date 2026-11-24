@@ -67,12 +67,18 @@ check(`not while someone is talking to you: the ⏳ (on top: ${talk.top}) opens 
   talk.open && talk.top === 'wait-btn' && !talk.can && !talk2.slip && talk2.still && talk2.after, { talk, talk2 });
 // S2592 — at 1,024 wide the ⏳ sits under the movement pad's empty third row, which took the top of every tap; the pad's box lets taps
 // through and only its four buttons take them
+// S2613 — the pad is drawn only where a coarse pointer is: hidden with a mouse alone, shown once the page has a touch screen (CDP's touch
+// emulation flips (any-pointer: coarse) live); the S2592 check below is taken with the touch screen on
+const padShown = () => page.evaluate(() => { const d = document.getElementById('dp'), r = d.getBoundingClientRect(); return [getComputedStyle(d).display, r.width > 0 && r.height > 0]; });
+const mouseOnly = await padShown(); const cdp = await page.context().newCDPSession(page); await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 }); await g.frames(1);
+const touchOn = await padShown();
+check('the movement pad is not drawn on a mouse screen, and is on a touch screen', mouseOnly[0] === 'none' && !mouseOnly[1] && touchOn[0] === 'grid' && touchOn[1], { mouseOnly, touchOn });
 const vw = page.viewportSize(); await page.setViewportSize({ width: 1024, height: 720 });
 const pad = await page.evaluate(() => { const r = e => e.getBoundingClientRect(), b = r(document.getElementById('wait-btn')); let n = 0, on = 0;
   for (let y = b.top + 2; y < b.bottom - 1; y += 3) for (let x = b.left + 9; x < b.right - 8; x += 3) { n++; const t = document.elementFromPoint(x, y); if (t && t.id === 'wait-btn') on++; }
   const keys = [...document.querySelectorAll('#dp button')].map(e => { const k = r(e), t = document.elementFromPoint(k.left + k.width / 2, k.top + k.height / 2); return t === e; });
   return { n, on, keys, dp: [r(document.getElementById('dp')).top, r(document.getElementById('dp')).bottom], wait: [b.top, b.bottom] }; });
-await page.setViewportSize(vw);
+await page.setViewportSize(vw); await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: false });
 check(`at 1,024 wide every point of the ⏳ takes the tap (${pad.on} of ${pad.n}), under the pad's box; each of the pad's 4 buttons still takes its own`,
   pad.n > 50 && pad.on === pad.n && pad.wait[0] < pad.dp[1] && pad.keys.length === 4 && pad.keys.every(Boolean), pad);
 check('no page errors', g.errs.length === 0, g.errs);

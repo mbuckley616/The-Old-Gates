@@ -131,5 +131,15 @@ const fbk = await page.evaluate(() => { const fb = document.getElementById('fbtn
   const L = () => Math.round(vb.getBoundingClientRect().left); const out = { shown: L() }; fb.style.display = 'none';
   const cs = getComputedStyle(fb); out.hidden = L(); out.op = +cs.opacity; out.pe = cs.pointerEvents; fb.style.display = was || 'block'; out.back = L(); return out; });
 check('indoors the spell\'s roundel keeps its place, dimmed and taking no click, so the bars do not move', fbk.shown === fbk.hidden && fbk.back === fbk.shown && fbk.op < 0.5 && fbk.pe === 'none', fbk);
+// S2612 — a weapon's glyph by its shape (the critic, 24 Nov: a Wooden GreatClub showed ⚔️ on the plate); a saved club with the old
+// glyph shows the club; and the lord's "How fares the town?" ends on its full stop when no second clause follows
+const wg = await page.evaluate(() => { const by = {}; const glyph = h => (h.match(/<span style="[^"]*">([^<]*)<\/span><\/span>$/) || [])[1];
+  for (const T of WEAPON_TYPES) { const it = makeItem(2, T, null, false); EQ.weapon = it; updateHUD(); by[T.type] = [it.ico, document.getElementById('ibtn').textContent, glyph(iconHTML(it))]; }
+  EQ.weapon = { name: 'Wooden GreatClub', ico: '⚔️', type: 'equip', slot: 'weapon', weaponShape: 'greatclub', atk: [8, 13] }; updateHUD(); const old = document.getElementById('ibtn').textContent;
+  EQ.weapon = null; updateHUD(); const S = WORLD.settle.get('dunmore'); const lord = [...S.npcs].find(n => n.def && n.def._lord); let fares = null;
+  try { const t = lord.def.topics.find(x => x.label === 'How fares the town?'); fares = t && t.response; } catch (e) { fares = 'ERR ' + e.message; } return { by, old, fares }; });
+check('each weapon shows its own glyph on the plate and in the bag: a club 🏏, a hammer 🔨, an axe 🪓, a spear 🔱, a blade ⚔️; a saved club too; the lord\'s answer ends on its stop',
+  wg.by.GreatClub && wg.by.GreatClub.every(x => x === '🏏') && wg.by.WarHammer[1] === '🔨' && wg.by.GreatAxe[1] === '🪓' && wg.by.Claymore[1] === '⚔️'
+  && Object.values(wg.by).every(a => a[0] === a[1] && a[1] === a[2]) && wg.old === '🏏' && typeof wg.fares === 'string' && /\.$/.test(wg.fares) && !/\s$/.test(wg.fares), wg);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

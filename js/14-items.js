@@ -689,6 +689,11 @@ function isleHere(){try{
   if(typeof activeZoneId!=='undefined'&&activeZoneId==='dungeon'){const P=typeof currentPortal!=='undefined'?currentPortal:null;return P&&P.x!=null?isleAt(P.x,P.z):'gatelands';}
   if(typeof activeZoneId!=='undefined'&&activeZoneId==='world'&&typeof px==='number')return isleAt(px,pz);}catch(e){}
   return 'gatelands';}
+/* S2612 — a weapon's glyph by its shape, one table for the bag, the sheet and the plate's roundel (the critic, 24 Nov: a new
+   character's Wooden GreatClub showed crossed swords). The blades keep ⚔️; a club takes the creator's 🏏 */
+const WEAPON_GLYPH={dagger:'🗡',sword:'⚔️',longsword:'⚔️',scimitar:'⚔️',claymore:'⚔️',mace:'🔨',warhammer:'🔨',greatclub:'🏏',
+  greataxe:'🪓',axe:'🪓',flail:'⛓',spear:'🔱',bow:'🏹',crossbow:'🏹',staff:'🪄'};
+function weaponGlyph(it){if(!it)return '✊';if(implementOf(it)&&it.ico)return it.ico;return WEAPON_GLYPH[it.weaponShape]||it.ico||'⚔️';}
 function makeItem(matTier, typeObj, enchant, isArmor){
   const mat=MATERIALS[matTier-1]||MATERIALS[0];
   const t=matTier;
@@ -699,7 +704,7 @@ function makeItem(matTier, typeObj, enchant, isArmor){
     const lo=Math.round(TIER_BASE_ATK[t]*typeObj.atkMult[0]);
     const hi=Math.round(TIER_BASE_ATK[t]*typeObj.atkMult[1]);
     item.name=`${mat.name} ${typeObj.type}`;
-    item.ico=typeObj.shape==='dagger'?'🗡':typeObj.shape==='mace'?'🔨':typeObj.shape==='flail'?'⛓':(typeObj.shape==='bow'||typeObj.shape==='crossbow')?'🏹':'⚔️';
+    item.ico=WEAPON_GLYPH[typeObj.shape]||'⚔️';
     item.atk=[lo,hi];
     item.weight=typeObj.weight;
     item.weaponType=typeObj.type;
