@@ -575,11 +575,21 @@ function hcAshore(rig){const e=rig.e,g=e&&e.mesh;if(e&&typeof e.ashore==='boolea
 function hcAmph(rig){const dry=hcAshore(rig);if(dry===rig.dry&&rig.amphHc===rig.hc)return;rig.dry=dry;rig.amphHc=rig.hc;
   const bb=rig.mesh.geometry.boundingBox||(rig.mesh.geometry.computeBoundingBox(),rig.mesh.geometry.boundingBox);rig.mesh.position.y=dry?-bb.min.y:0;
   const H=rig.hc;if(H&&H.yDry!=null){H.W.position.y=H.y0=dry?H.yDry:H.yWet;}}
+// Session 2614: the seal's hump and its stand meet by a blend, not in one frame. Stopping (or setting off) mid-hump jumped the whole body:
+// the chest's lift, the hips' rise, the arch and S2606's surge offset (up to 8 cm of the root). `rig.humpW` eases to its target over
+// `HUMP_FADE` seconds; while it is between 0 and 1 the stand is posed at the frozen phase, kept, the hump posed, and every bone set between
+// the two. A seal at rest holds the stand and one in motion the hump, as before
+const HUMP_FADE=.35,HUMP_Q=new THREE.Quaternion();
+function hcHumpBlend(rig,to,dt){const C=rig.hc.C;let w=rig.humpW==null?to:rig.humpW;w+=Math.sign(to-w)*Math.min(Math.abs(to-w),dt/HUMP_FADE);rig.humpW=w;
+  if(w<=0||w>=1){C.gait=w>=1?'hump':'stand';HC.pose(C,rig.ph);return;}
+  C.gait='stand';HC.pose(C,rig.ph);const S=rig.humpS||(rig.humpS=C.bones.map(()=>({p:new THREE.Vector3(),q:new THREE.Quaternion(),s:new THREE.Vector3()})));
+  C.bones.forEach((b,i)=>{S[i].p.copy(b.position);S[i].q.copy(b.quaternion);S[i].s.copy(b.scale);});
+  C.gait='hump';HC.pose(C,rig.ph);C.bones.forEach((b,i)=>{b.position.lerpVectors(S[i].p,b.position,w);HUMP_Q.copy(b.quaternion);b.quaternion.copy(S[i].q).slerp(HUMP_Q,w);b.scale.lerpVectors(S[i].s,b.scale,w);});}
 // the trout's pose, near: the phase by the water its group covers (3D: a fish climbs and dives), or slowly on the clock holding still
 function hcSwimPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)return;const now=performance.now()/1000,dt=rig.t?Math.min(.1,now-rig.t):0;rig.t=now;
   const p=g.position;let d=rig.lx==null?0:Math.hypot(p.x-rig.lx,p.y-rig.ly,p.z-rig.lz);rig.lx=p.x;rig.ly=p.y;rig.lz=p.z;if(d>2)d=0;
   rig.v=dt>0?rig.v+(d/dt-rig.v)*Math.min(1,dt*6):rig.v;
-  if(rig.amph){hcAmph(rig);if(rig.dry){const gait=rig.v>.02?'hump':'stand';if(H.C.gait!==gait)H.C.gait=gait;rig.ph+=d/Math.max(1e-3,HC.strideOf(H.C)*H.f);HC.pose(H.C,rig.ph);rig.gaitNow=gait;return;}if(H.C.gait!=='swim')H.C.gait='swim';}
+  if(rig.amph){hcAmph(rig);if(rig.dry){const gait=rig.v>.02?'hump':'stand';rig.ph+=d/Math.max(1e-3,HC.strideOf(H.C,'hump')*H.f);hcHumpBlend(rig,gait==='hump'?1:0,dt);rig.gaitNow=gait;return;}rig.humpW=0;if(H.C.gait!=='swim')H.C.gait='swim';}
   if(rig.land){const gait=rig.v>.02?SWIMMER[rig.name].move||'slither':'stand';if(H.C.gait!==gait)H.C.gait=gait;rig.ph+=d/Math.max(1e-3,HC.strideOf(H.C)*H.f);HC.pose(H.C,rig.ph);rig.gaitNow=gait;
     if(H.C.sac){const c=e._calls||0;if(rig.calls===undefined)rig.calls=c;else if(c!==rig.calls){rig.calls=c;rig.callT=now;}const k=rig.callT!=null?hcBellSac(now-rig.callT):0;if(k>0){const q=H.C.sac.scale,f=Math.max(1,Math.min(1+k,BELL_SAC.max/Math.max(q.z,1e-3)));q.set(q.x*f,q.y*f,q.z*f);}rig.sacK=k;}
     return;}
