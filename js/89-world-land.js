@@ -159,7 +159,63 @@ function landAtmosphere(){
     C.uLo.value.setRGB(.78,.82,.92).lerp(_lC.grey,cloud*.5).multiplyScalar(.2+.8*lit).lerp(_lC.mid,.25).lerp(_lC.warm,low*.3);
     C.uOp.value=.85+.15*cloud;LAND.clouds.rotation.y=(worldState.gameTimeAbsMinutes||0)*.00012;}
   if(LAND.waterSky){LAND.waterSky.value.copy(_lC.mid).lerp(_lC.hor,.5);LAND.waterSun.value.copy(U.uSun.value);LAND.waterGlint.value=Math.max(0,el)*(1-cloud)*(1-t);}
+  LAND.cloud=cloud;landStreak(); /* S2611 — the falling star's streak, by the clock */
 }
+// ── S2611 — the falling star's streak (rare materials B, Michael's B on #1840, `docs/design/rare-materials.md`: "outdoors on that island
+// at that hour, you see a streak across the sky toward it (1.5 s; the look builder's one quad)"). The star's minute is 50-travel.js's
+// starOf(isle, week).at; the clock runs a game minute a real second, so the streak is up while the clock reads [at, at + 1.5), read
+// from worldState.gameTimeAbsMinutes and never counted in frames (a dropped frame never moves it, a wait or a sleep across it skips it).
+// Its path is the crater's own: it comes in from the bearing 82-world-structures.js's starKitMesh lays the crater from
+// (seededRng('starfrom', id)), 6.5 km out and 5.2 km up, down to 0.9 km over the spot, where it burns out. Seen from where you stand,
+// each point of that line is a direction, held between 6° and 62° up so the end stays over the near hills, and drawn on the dome
+// at 2.5 km: one quad from the tail to the head, 38 % of the path long, 16 m wide at the head (0.37°, under 7 m it broke into dashes on a 720 px frame) and 4 at the tail,
+// cold white over the bloom's threshold, fading in over the first 0.12 s, flaring and gone in the last 0.3. Behind the clouds (drawn
+// before them), dimmed by cloud as the sun's glow is. Outdoors only (the open world, not a room), and only on the star's own island
+// (nationKeyOf of the cell you stand in). 2 triangles, 1 draw while it shows, none otherwise.
+const STREAK={dur:1.5,R:2500,len:.38,wHead:16,wTail:4,endUp:900,from:6500,up:5200,lo:6*Math.PI/180,hi:62*Math.PI/180,
+  col:new THREE.Color(1.7,1.85,2.2)};
+let _streak=null;
+function landStreakMesh(){if(_streak)return _streak;
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(12),3));
+  geo.setAttribute('aT',new THREE.BufferAttribute(new Float32Array([0,-1,0,1,1,-1,1,1]),2));
+  geo.setIndex([0,2,1,1,2,3]);
+  const mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,fog:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,
+    uniforms:{uC:{value:STREAK.col},uA:{value:0}},
+    vertexShader:'attribute vec2 aT; varying vec2 vT;\nvoid main(){ vT = aT; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
+    fragmentShader:`uniform vec3 uC; uniform float uA; varying vec2 vT;
+void main(){ float a = uA * pow(vT.x, 1.6) * (1. - vT.y * vT.y);
+  gl_FragColor = vec4(uC * (.55 + .45 * vT.x), a);
+  #include <tonemapping_fragment>
+}`});
+  const m=new THREE.Mesh(geo,mat);m.name='starStreak';m.frustumCulled=false;m.renderOrder=-4.5;m.visible=false;
+  return _streak=m;}
+// the star whose streak is up at game minute `now`, or null (this week's or last's: a star of day 6 after midnight falls in the next week)
+function landStreakStar(now){if(typeof starOf!=='function'||typeof STAR==='undefined')return null;const w=starWeek(now);
+  for(const isle of STAR.isles)for(const k of [w,w-1]){if(k<0)continue;const s=starOf(isle,k);if(s&&now>=s.at&&now<s.at+STREAK.dur)return s;}
+  return null;}
+// a point of the streak's path (k 0 the entry, 1 the end over the spot) as a direction from the eye, held in the band, out to R
+function landStreakPt(s,k,eye,out){const F=seededRng('starfrom',s.id)()*Math.PI*2,g=rawH(s.x,s.z);
+  const x=s.x+Math.sin(F)*STREAK.from*(1-k)-eye.x,z=s.z+Math.cos(F)*STREAK.from*(1-k)-eye.z,y=g+STREAK.endUp+STREAK.up*(1-k)-eye.y;
+  const az=Math.atan2(x,z),el=Math.max(STREAK.lo,Math.min(STREAK.hi,Math.atan2(y,Math.hypot(x,z))));
+  return out.set(Math.sin(az)*Math.cos(el),Math.sin(el),Math.cos(az)*Math.cos(el)).multiplyScalar(STREAK.R);}
+const _sk={eye:new THREE.Vector3(),a:new THREE.Vector3(),b:new THREE.Vector3(),d:new THREE.Vector3(),w:new THREE.Vector3()};
+function landStreak(){if(!LAND.on||!LAND.sky)return;
+  let s=null;const now=gameMinNow();
+  if(activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())){s=landStreakStar(now);
+    if(s){try{const c=cellOf(px,pz);if(nationKeyOf(c[0],c[1])!==s.isle)s=null;}catch(e){s=null;}}}
+  const m=_streak||(s?landStreakMesh():null);if(!m)return;
+  if(m.parent!==LAND.sky)LAND.sky.add(m);
+  if(!s){m.visible=false;m.userData.star=null;return;}
+  const u=(now-s.at)/STREAK.dur,head=.2+.8*u,tail=Math.max(0,head-STREAK.len);
+  _sk.eye.set(px,LAND.sky.position.y,pz);
+  const A=landStreakPt(s,tail,_sk.eye,_sk.a),B=landStreakPt(s,head,_sk.eye,_sk.b);
+  _sk.d.subVectors(B,A);const P=m.geometry.attributes.position;
+  for(const [i,p,w] of [[0,A,STREAK.wTail],[2,B,STREAK.wHead]]){_sk.w.crossVectors(_sk.d,p).normalize().multiplyScalar(w/2);
+    P.setXYZ(i,p.x-_sk.w.x,p.y-_sk.w.y,p.z-_sk.w.z);P.setXYZ(i+1,p.x+_sk.w.x,p.y+_sk.w.y,p.z+_sk.w.z);}
+  P.needsUpdate=true;
+  m.material.uniforms.uA.value=sstep(0,.08,u)*(1-sstep(.8,1,u))*(1+.8*sstep(.55,.8,u))*(1-.85*(LAND.cloud||0));
+  m.visible=true;m.userData.star=s.id;m.userData.u=u;}
 // ── the post: ACES and the grade, on the open world's frame only ─────────────────────────────────────────────────
 // No render targets: the grade rides in three's own ACES function, so it costs no pass and no draw call. The world scene
 // turns tone mapping on for its own render and off after it, so gates and the hands keep theirs; rooms take the neutral
