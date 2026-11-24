@@ -297,6 +297,24 @@ check(`the Grey Seal wears the kit's (${seal.plan}, ${seal.bones} bones, ${seal.
   !seal.fail && seal.plan === 'game:Grey Seal' && seal.seed && seal.tris < 12000 && Math.abs(seal.len - 2) < .24 && Math.abs(seal.nose) < .03 && seal.hold === 'hold' && seal.swim === 'swim' && seal.wmoved > .005
     && Math.abs(seal.wmid) < .15 && Math.abs(seal.low) < .02 && seal.rest === 'stand' && seal.move === 'hump' && seal.kit === 'hump' && seal.humps > .5 && seal.dmoved > .005 && Math.abs(seal.back - seal.wmid) < .02 && !seal.bad && seal.dropped, seal);
 check(`far off (level ${seal.farL}) the Grey Seal's fit still follows its side of the water: ashore ${seal.farDry}, back in ${seal.farWet}`, seal.farL === 2 && seal.farDry && seal.farWet, seal);
+// Session 2596: the sea turtle's fore-flippers seen from above. Their downstroke went to about 60° below level, so mid-stroke they folded under
+// the shell's rim (S2580's note). Through a swim cycle each tip stays out past the shell's edge and drops no more than 45° below its root
+const turtle = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 4, z = pz + fz * 4;
+  const rig = buildAnimal('Sea Turtle', 'f4turtle:0'), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z) + .8, z); G.rotation.y = 0; WORLD.scene.add(G);
+  const e = { name: 'Sea Turtle', x, z, mesh: G, limbs: { wolf: rig, torso: rig.mesh }, dead: false }; rig.e = e;
+  CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
+  const ZE = ZONES.world.enemies; ZE.push(e); let k = 0; HBODY.last = -1e9; while (!rig.hc && !rig.hcFail && k++ < 300) hcTick(9.9795e5 + k * (HBODY.gap + 1)); ZE.splice(ZE.indexOf(e), 1);
+  const H = rig.hc; if (!H) { G.parent.remove(G); return { fail: !!rig.hcFail }; }
+  const t0 = performance.now, by = H.C.byName, v = n => by[n].getWorldPosition(new THREE.Vector3()); let i0 = 0, rim = 0, out = 1e9, drop = -90, lift = -90;
+  G.updateMatrixWorld(true); const c = new THREE.Box3().setFromObject(rig.mesh).getCenter(new THREE.Vector3());
+  H.C.rig.traverse(o => { if (o.isMesh && !o.isSkinnedMesh) { const b = new THREE.Box3().setFromObject(o); if (b.max.z - b.min.z > .5) rim = Math.max(rim, b.max.x - c.x, c.x - b.min.x); } });
+  for (let i = 0; i < 120; i++) { G.position.z += .8 / 60; i0++; performance.now = () => 9.98e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; }
+    G.updateMatrixWorld(true); for (const s of ['L', 'R']) { const r = v('arm0' + s + '_0'), t = v('arm0' + s + '_3'), lat = Math.abs(t.x - G.position.x), a = Math.atan2(t.y - r.y, Math.abs(t.x - r.x)) * 180 / Math.PI;
+      out = Math.min(out, lat - rim); drop = Math.max(drop, -a); lift = Math.max(lift, a); } }
+  G.parent.remove(G); hcTick(9.99e5); return { rim: +rim.toFixed(3), out: +out.toFixed(3), drop: +drop.toFixed(1), lift: +lift.toFixed(1) }; });
+console.log('  turtle:', JSON.stringify(turtle));
+check(`the Sea Turtle's fore-flippers show from above through the stroke: each tip at least ${turtle.out} m past the shell's rim (${turtle.rim} m out), the beat from ${turtle.lift}° up to ${turtle.drop}° down (45 at most)`,
+  !turtle.fail && turtle.rim > .3 && turtle.out > .15 && turtle.drop <= 45 && turtle.lift > 5, turtle);
 // Session 2579: the Lantern Jelly and the Drifter Squid hang upright and drift: each wears its kit plan fitted by height to its stand-in, centre
 // to centre; at rest it holds and still beats on the clock, moving it drifts, a little quicker; taken away, dropped. The giant octopus is in
 // the crawlers' loop below. Picture: docs/prototypes/f4/f4-soft.jpg

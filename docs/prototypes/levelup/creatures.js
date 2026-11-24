@@ -2084,15 +2084,18 @@ Object.assign(PLANS, {
 SEA.push('abyssalangler', 'stonefish', 'crimsonleviathan');
 // ── Session 861: the turtles of OG-016 and OG-084 (backlog L3). A sea turtle is the tortoise's low body under a flatter
 // shell, with flippers for legs: the front pair long and beating together, the rear pair short and steering. The maw turtle
-// is the same turtle at an island's size, with a reef growing on its back ──
+// is the same turtle at an island's size, with a reef growing on its back.
+// Session 2596: the fore-flippers' downstroke went to about 60° below level (stroke .6 from a rest already tilted down), so seen from
+// above, mid-stroke, they folded under the shell's rim; now the rest is level and the stroke .48, so the beat runs from about 20° up to
+// 40° down. The shell is 1.15 long and set .06 back, so it covers the rump to the tail as a carapace does (the hide showed behind it) ──
 const seaTurtle = o => [
   ['spine', { hip: [.35, -.45], chest: [.37, .4], n: 3, r: [.18, .2, .16], s: [2, .6], rump: .06, front: .06 }],
   ['neck', { len: .2, n: 2, rise: 4, r: [.09, .07], fwd: .02 }],
   ['head', { len: .21, r: .085, pitch: 6, muzzle: { len: 1, r: .062, taper: .72 }, jaw: { len: .85, r: .045, drop: .45 }, eyes: [{ f: .42, up: .35, out: .8, r: .017, color: [.06, .05, .04] }] }],
   ['tail', { len: .12, n: 2, r: [.05, .015], droop: 8 }],
-  ['arms', { at: .92, out: .26, up: -.05, dz: .1, len: .64, r: [.06, .085, .05], s: [1, .3, 1], dir: [1, -.12, -.12], dir2: [.7, -.06, -.7], swing: 0, stroke: .6, tone: 'coat' }],
+  ['arms', { at: .92, out: .26, up: -.05, dz: .1, len: .64, r: [.06, .085, .05], s: [1, .3, 1], dir: [1, 0, -.12], dir2: [.7, -.06, -.7], swing: 0, stroke: .48, tone: 'coat' }],
   ['arms', { at: .06, out: .24, up: -.05, len: .3, r: [.05, .07, .045], s: [1, .3, 1], dir: [.7, -.1, -.7], dir2: [.35, -.02, -.94], swing: 0, stroke: .18, phase: Math.PI, tone: 'coat' }],
-  ['shell', { at: .5, lift: -.01, len: 1.05, w: .92, h: .26, scute: .2, rough: .45, ...o }]];
+  ['shell', { at: .5, lift: -.01, dz: -.06, len: 1.15, w: .92, h: .26, scute: .2, rough: .45, ...o }]];
 Object.assign(PLANS, {
   seaturtle: { name: 'Sea turtle', src: 'OG-084 (marine life: turtles), OG-016 (the coastal reefs)', gaits: ['swim', 'stand'], bl: .45, waveAmp: .015, cell: .016, water: 1.4, rough: .45, mottle: 1.4, wag: .02, pant: .02, neckNod: .02,
     palette: { coat: [.44, .44, .32], saddle: [.3, .3, .2], belly: [.84, .78, .58], dark: [.05, .05, .04], shell: [.44, .32, .16], seam: [.2, .13, .06] },
