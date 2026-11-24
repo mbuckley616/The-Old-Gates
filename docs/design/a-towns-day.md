@@ -12,7 +12,7 @@ And `v2-scope.md` §4 still lists the calendar's market days as owed under *Jour
 
 ## Today
 
-A town keeps one clock for everyone. `HRS` in `82-world-structures.js` sets it: every shop opens at 8 and shuts at 18, the evening runs from 18 to 21, and night lasts until 7. `scheduleFor(n,h)` gives each person a plan for the hour. A keeper is behind the counter from 8 to 18, at the inn in the evening and at home at night. A resident wanders the square by day and drinks at the inn in the evening. A villager goes in at 20. The guards walk the gate and the plaza by day and the lantern beat after 19, and the constable hands over to the night watch at 19 and 6:30, though nobody sees the handover. `npcInsideNow` and `shopClosedNow` answer whether a door is locked. A feast or festival (`feastNow`) keeps everyone in the square until night.
+A town keeps one clock for everyone. `HRS` in `82-world-structures.js` sets it: every shop opens at 8 and shuts at 18, the evening runs from 18 to 21, and night lasts until 7. `scheduleFor(n,h)` gives each person a plan for the hour. A keeper is behind the counter from 8 to 18, at the inn in the evening and at home at night. A resident wanders the square by day and drinks at the inn in the evening. A villager goes in at 20. The guards walk the gate and the plaza by day and the lantern beat after 19, and the constable hands over to the night watch at 19 and 6:30, though nobody sees the handover. `npcInsideNow` and `shopClosedNow` answer whether a door is locked.
 
 Prices are set by place in only two ways. `priceMul(site)` moves every counter from ×1.15 at prosperity 10 down to ×0.83 at 100, times the faction's rate. The harbour factor's cargo is priced by nation (`CARGO_HOME` 0.6, `CARGO_ABROAD` 1.4, `cargoAsk`). Goods stolen from a town (`stolenAt`) sell at any counter in it at the full price. They are only taken from you when a guard halts you. The one fence, at Aurenne's cove (S2257), buys smuggled cargo and nothing else. The road's people (#1587 B) already bring the passing traffic: pack trains, pilgrims, riders with news and families fleeing. Sieges, sacks, plague and rebuilding already run on the prosperity model.
 
@@ -64,13 +64,13 @@ All of this is read from the calendar (`calDay`) and the town's prosperity. Noth
 
 **What it touches.** A's pieces, plus: `marketOn(site)` beside `feastOn` and `festivalHere` in `60-shop.js`; `shopCost` and `counterSellPrice` read the day and the item's home; `feastNow` fills the square on market day from 7 to 15 at the feast's reach (`feastR`); the stall counter is a shop of its own (the road merchant's `roadMul` path, S2268). The journal's calendar marks each island's market day. Then the look work: on the new look the Gatelands' market house is there already (S1904), and the stalls for each island are one look session.
 
-**What it conflicts with.** Festivals (#1628 B) have the square on their three days, and a festival on a market day wins. The cargo trade stays the larger earner on purpose.
+**Conflicts.** A festival (#1628 B) on a market day wins the square. The cargo trade stays the larger earner on purpose.
 
 **Cost.** A's two sessions, three more systems sessions (the day and the stalls; prices by home; the foreign stall and the road), and one look session. Six in all.
 
 ### C. B, plus the black market and passing events
 
-**The black market.** A counter in a town recognises goods stolen from that town (`stolenAt` is that site). The keeper refuses them. At favour 0 or below, the keeper also tells the watch, which books 1 crime point. Every city and port gets a fence in the inn's back room from 21 to 3. The fence buys stolen goods at 60% of the counter price and sells picks and one fine item a week. Today a theft pays out at the door of the shop it came from, so this gives theft its cost and its carry. Two systems sessions and a quest-writer run for the fence's lines.
+**The black market.** A counter in a town recognises goods stolen from that town (`stolenAt` is that site). The keeper refuses them. At favour 0 or below, the keeper also tells the watch, which books 1 crime point. Every city and port gets a fence in the inn's back room from 21 to 3. The fence buys stolen goods at 60% of the counter price and sells picks and one fine item a week. Two systems sessions and a quest-writer run for the fence's lines.
 
 **Passing events.** One event every 8 weeks for each town, seeded by `<site>:event:<week>`:
 - **A noble's visit.** For 2 days the guards are doubled and prices rise ×1.1. A petition at the keep raises the lord's favour by 1.
@@ -92,6 +92,5 @@ Nothing blocks A. B's stalls on the new look need card F6's pieces for each isla
 ## Not asked
 
 - **Prices that move with what you sell at a counter.** The cargo board already has its push and heal (`cargoPress`). Doing the same at every counter would make selling loot into a chore.
-- **Shops closing on a holy day.** Guestday is *le Jour Clos* in Aurenne, but a day of shut doors is a day of waiting in a 24-minute day. The quest writer can give it a line instead.
 - **Companions, hirelings and recruits.** The backlog's note rules them out.
 - **Growth and decline.** The prosperity model runs it (§12a).
