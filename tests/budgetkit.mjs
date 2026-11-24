@@ -44,6 +44,9 @@ const count = () => g.page.evaluate(() => {
   const others = Object.entries(otherBy).sort((a, b) => b[1] - a[1]).slice(0, 5);
   // S2607 — the bodies in the eye's frustum one by one (their top-level group, its distance from the eye, calls, triangles, the meshes
   // drawn), the eight heaviest, for the log only: Portclare at High swung by ten body calls and 0.24 M at the same count by level (S2606).
+  const who = new Map(); if (typeof HB_RIGS !== 'undefined' && typeof HB_GENOMES !== 'undefined') { const keyOf = new Map(); for (const [k, G] of HB_GENOMES) keyOf.set(G, k);
+    for (const rig of HB_RIGS) { const t = rig.foe ? rig.root.parent : rig.root, G = rig.hbG; if (t) who.set(t, { key: (G && keyOf.get(G)) || null, hair: G && G.hair ? `${G.hair.style} ${G.hair.len}` : null, L: rig.hb ? rig.hb.L : null }); } }
+  for (const [t, b] of bodyBy) Object.assign(b, who.get(t) || {});
   const bodyList = [...bodyBy.values()].sort((a, b) => b.tris - a.tris).slice(0, 8).map(b => ({ ...b, parts: b.parts.slice(0, 12) }));
   // S2249 — the whole frame drawn once more with every body hidden (shadow and bloom as the game has them): what is left is the place's
   // own cost. Whether a townsperson walks inside the full level's ring when the count is taken swung a town spot's triangles by ±12%
