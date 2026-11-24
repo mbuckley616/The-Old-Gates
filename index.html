@@ -184,6 +184,11 @@ body:has(#dlg[style*="block"]) #ledger .ldg{max-width:100%}
 /* S2592 — the pad's box (its third row is empty) let no tap through: at 1,024 it took the top of the wait button. Only its buttons take one */
 #dp{pointer-events:none}#dp button{pointer-events:auto}
 #cbar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:#504838;font-size:11px;pointer-events:none;white-space:nowrap;display:none}
+/* S2601 — the line was 896 px whatever the window, so under ~900 it ran off both edges and the build tag left the window (the critic, s1927).
+   It now stays 12 px inside each edge: its type shrinks with the width from 11 px to 9 (81.5 em is the whole line), the build tag stands
+   at its right end out of the flow and at .8 (it was .45, and had to be looked for at 1,024), and only below ~760 the controls' text ends in an ellipsis before the tag; the tag is always seen */
+#cbar{font-size:clamp(9px,calc((100vw - 24px) / 81.5),11px);max-width:calc(100% - 24px);box-sizing:border-box;padding-right:6.4em;overflow:hidden;text-overflow:ellipsis}
+#cbar span{position:absolute;right:0;top:0;opacity:.8!important}
 #ip{display:none;position:absolute;inset:0;background:rgba(5,3,1,.95);z-index:40;padding:16px;border-radius:8px}
 #ip h2{color:#c8a84a;font-size:15px;font-weight:500;margin-bottom:10px;border-bottom:1px solid rgba(200,168,74,.2);padding-bottom:7px}
 #ic{position:absolute;top:12px;right:14px;background:transparent;border:none;color:#666;font-size:20px;cursor:pointer}

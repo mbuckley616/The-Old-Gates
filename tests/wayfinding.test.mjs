@@ -76,6 +76,15 @@ for (const w of [1280, 1040, 960, 800]) { await page.setViewportSize({ width: w,
 await page.setViewportSize(vwN);
 check('a ribbon of three names stands clear of the ledger\'s slip and the vitals plate at 1,280, 1,040, 960 and 800 wide', [1280, 1040, 960, 800].every(w => { const o = rib[w];
   const apart = (a, b) => a[2] <= b[0] || b[2] <= a[0] || a[3] <= b[1] || b[3] <= a[1]; return (o.lbl[0] >= o.slip[2] + 12 || o.lbl[1] >= o.slip[3]) && apart(o.lbl, o.plate); }), rib);
+// S2601 — the controls line was 896 px at every width: at 800 it ran from -48 to 848 and the build tag left the window. It now stays 12 px
+// inside each edge, its type 11 px down to 9, the tag at its right end; below ~760 only the controls' text is cut
+const cb = {};
+for (const [w, h] of [[1280, 720], [900, 720], [800, 600], [640, 480]]) { await page.setViewportSize({ width: w, height: h });
+  cb[w] = await page.evaluate(() => { const e = document.getElementById('cbar'), b = e.getBoundingClientRect(), t = e.querySelector('span').getBoundingClientRect();
+    return { line: [Math.round(b.left), Math.round(b.right)], tag: [Math.round(t.left), Math.round(t.right)], fs: parseFloat(getComputedStyle(e).fontSize), tagText: e.querySelector('span').textContent, W: innerWidth }; }); }
+await page.setViewportSize(vwN);
+check('the controls line and its build tag stay inside the window at 1,280, 900, 800 and 640 wide, the type never under 9 px', Object.values(cb).every(o =>
+  o.line[0] >= 12 && o.line[1] <= o.W - 12 && o.tag[0] >= o.line[0] && o.tag[1] <= o.line[1] && /^build s\d+$/.test(o.tagText) && o.fs >= 9 && o.fs <= 11) && cb[1280].fs === 11, cb);
 check('a bar reads its value over its maximum, and the marks fill a quarter of the level\'s bar', vp.hp === vp.want && Math.abs(vp.xp - 25) < 0.2, { hp: vp.hp, want: vp.want, xp: vp.xp });
 check('the weapon\'s roundel shows the weapon in hand, a fist when bare, and opens the inventory; the spell\'s names the spell in its title', vp.inPlate
   && vp.bare === '✊' && vp.blade[0] === '🗡️' && /^Test Blade/.test(vp.blade[1]) && vp.inv && /\(F\)$/.test(vp.fb[1]) && vp.note === 'block', vp);
