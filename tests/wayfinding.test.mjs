@@ -76,7 +76,7 @@ for (const w of [1280, 1040, 960, 800]) { await page.setViewportSize({ width: w,
 await page.setViewportSize(vwN);
 check('a ribbon of three names stands clear of the ledger\'s slip and the vitals plate at 1,280, 1,040, 960 and 800 wide', [1280, 1040, 960, 800].every(w => { const o = rib[w];
   const apart = (a, b) => a[2] <= b[0] || b[2] <= a[0] || a[3] <= b[1] || b[3] <= a[1]; return (o.lbl[0] >= o.slip[2] + 12 || o.lbl[1] >= o.slip[3]) && apart(o.lbl, o.plate); }), rib);
-// S2601 — the controls line was 896 px at every width: at 800 it ran from -48 to 848 and the build tag left the window. It now stays 12 px
+// S2602 — the controls line was 896 px at every width: at 800 it ran from -48 to 848 and the build tag left the window. It now stays 12 px
 // inside each edge, its type 11 px down to 9, the tag at its right end; below ~760 only the controls' text is cut
 const cb = {};
 for (const [w, h] of [[1280, 720], [900, 720], [800, 600], [640, 480]]) { await page.setViewportSize({ width: w, height: h });
@@ -96,7 +96,7 @@ const dl = await page.evaluate(() => { const r = e => { const b = e.getBoundingC
   return { d, s, after: r(document.querySelector('#ledger .ldg:last-child')) }; });
 check('in a dialogue a long slip wraps left of the panel, clear of it; after, it is one line again', dl.d[2] > dl.d[0] && dl.s[2] <= dl.d[0] - 12 && dl.s[3] - dl.s[1] > 40
   && dl.after[2] > dl.d[0] && dl.after[3] - dl.after[1] < 35, dl);
-// S2602 — eleven choices were cut mid-row at 720 tall (the panel held 52vh, 372 of the 461 px they need) and the farewell lay below the fold
+// S2603 — eleven choices were cut mid-row at 720 tall (the panel held 52vh, 372 of the 461 px they need) and the farewell lay below the fold
 // with no sign: the panel now grows to 520 where there is room, and where the list still does not fit a cue stands at the fold until scrolled to
 const d11 = {};
 for (const [w, h] of [[1280, 720], [1024, 640], [800, 600]]) { await page.setViewportSize({ width: w, height: h });
@@ -111,7 +111,7 @@ await page.setViewportSize(vwN);
 check('eleven choices fit whole at 720 and 640 tall, the panel 120 px or more below the top; at 600 a cue stands at the fold until the farewell is scrolled to',
   [720, 640].every(h => d11[h].fits && d11[h].lastSeen && d11[h].cue === 'none' && d11[h].top >= 120)
   && !d11[600].fits && !d11[600].lastSeen && d11[600].cue === 'block' && d11[600].scrolledSeen && d11[600].cueAfter === 'none', d11);
-// S2603 — in a shop four slips stood over the stock list's rows 10–13 for 6 s after each sale: while the shop is open the ledger stands in its
+// S2604 — in a shop four slips stood over the stock list's rows 10–13 for 6 s after each sale: while the shop is open the ledger stands in its
 // header between its name and the ✕, the newest slip alone on one line, and the older ones are seen again when it closes
 const sh = {};
 for (const [w, h] of [[1280, 720], [800, 600]]) { await page.setViewportSize({ width: w, height: h });
@@ -126,7 +126,7 @@ await page.setViewportSize(vwN);
 check('in a shop one slip, the newest, stands on one line in the header, clear of the stock list, the shop\'s name and the ✕; four again after it closes',
   Object.values(sh).every(o => o.slips.length === 1 && /Longsword/.test(o.text[0]) && o.slips[0][3] <= o.cols[1] - 12 && o.slips[0][3] - o.slips[0][1] < 35
     && o.slips[0][2] <= o.close[0] - 12 && o.slips[0][0] >= o.titleEnd + 40 && o.after === 4), sh);
-// S2604 — indoors the spell's roundel was display:none and the bars slid left by its width: it keeps its place, dimmed, taking no click
+// S2605 — indoors the spell's roundel was display:none and the bars slid left by its width: it keeps its place, dimmed, taking no click
 const fbk = await page.evaluate(() => { const fb = document.getElementById('fbtn'), vb = document.querySelector('#hud .vb'), was = fb.style.display;
   const L = () => Math.round(vb.getBoundingClientRect().left); const out = { shown: L() }; fb.style.display = 'none';
   const cs = getComputedStyle(fb); out.hidden = L(); out.op = +cs.opacity; out.pe = cs.pointerEvents; fb.style.display = was || 'block'; out.back = L(); return out; });

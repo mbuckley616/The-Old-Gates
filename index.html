@@ -112,7 +112,7 @@
 #hud .vp{display:flex;gap:8px;align-items:center}
 #hud .rd{width:48px;height:48px;flex:none;border-radius:50%;padding:0;font:24px/46px Georgia,serif;text-align:center;color:#e6cf9a;cursor:pointer;pointer-events:all;overflow:hidden;white-space:nowrap;background:radial-gradient(circle at 50% 38%,#3a3122,#16120c 70%);border:1px solid #6a4e22;box-shadow:inset 0 0 0 2px rgba(216,180,106,.45),0 0 0 2px #1a140c,0 0 0 3px rgba(216,180,106,.3)}
 #hud .rd:hover{color:#fff2c8}
-/* S2604 — indoors the code hides the spell's roundel (display:none inline, read by hearthcast), and the bars slid left by its 56 px and back on
+/* S2605 — indoors the code hides the spell's roundel (display:none inline, read by hearthcast), and the bars slid left by its 56 px and back on
    leaving (the critic, s1927): it keeps its place, dimmed and taking no click, so the plate never moves */
 #hud #fbtn[style*="none"]{display:block!important;opacity:.3!important;filter:grayscale(1);pointer-events:none}
 #hud .vb{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding-left:4px}
@@ -165,7 +165,7 @@
 /* S2591 — in a dialogue the ledger stands left of the panel (#dlg at 20%), its slips wrapped, so a line that comes mid-talk no longer covers the talk */
 body:has(#dlg[style*="block"]) #ledger{width:calc(20% - 30px)}
 body:has(#dlg[style*="block"]) #ledger .ldg{max-width:100%}
-/* S2603 — the shop fills the window and four slips stood over its stock list's rows 10–13 for 6 s after each sale (the critic, s1927). While it
+/* S2604 — the shop fills the window and four slips stood over its stock list's rows 10–13 for 6 s after each sale (the critic, s1927). While it
    is open the ledger stands in the shop's header, between its name and the ✕, and shows the newest slip only, on one line; the older ones are
    still kept and are seen again if the shop closes inside their 6 s */
 body:has(#shop[style*="flex"]) #ledger{left:auto;right:52px;top:16px;bottom:auto;width:min(430px,calc(50% - 60px));align-items:flex-end}
@@ -193,7 +193,7 @@ body:has(#shop[style*="flex"]) #ledger .ldg:last-child{display:block;white-space
 /* S2592 — the pad's box (its third row is empty) let no tap through: at 1,024 it took the top of the wait button. Only its buttons take one */
 #dp{pointer-events:none}#dp button{pointer-events:auto}
 #cbar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:#504838;font-size:11px;pointer-events:none;white-space:nowrap;display:none}
-/* S2601 — the line was 896 px whatever the window, so under ~900 it ran off both edges and the build tag left the window (the critic, s1927).
+/* S2602 — the line was 896 px whatever the window, so under ~900 it ran off both edges and the build tag left the window (the critic, s1927).
    It now stays 12 px inside each edge: its type shrinks with the width from 11 px to 9 (81.5 em is the whole line), the build tag stands
    at its right end out of the flow and at .8 (it was .45, and had to be looked for at 1,024), and only below ~760 the controls' text ends in an ellipsis before the tag; the tag is always seen */
 #cbar{font-size:clamp(9px,calc((100vw - 24px) / 81.5),11px);max-width:calc(100% - 24px);box-sizing:border-box;padding-right:6.4em;overflow:hidden;text-overflow:ellipsis}
@@ -726,7 +726,7 @@ body:has(#shop[style*="flex"]) #ledger .ldg:last-child{display:block;white-space
 .dlg-choice.dlg-quest{border-color:rgba(220,180,60,.45);color:#f0d060}
 .dlg-choice-num{color:#5a4820;margin-right:6px;font-size:10px}
 #dlg-hint{color:#3a2c14;font-size:9px;text-align:right;margin-top:6px}
-/* S2602 — eleven choices (an innkeeper, a mayor) need about 463 px and the panel held 52vh, 372 at 720 tall: the tenth was cut mid-row and the
+/* S2603 — eleven choices (an innkeeper, a mayor) need about 463 px and the panel held 52vh, 372 at 720 tall: the tenth was cut mid-row and the
    farewell lay below the fold with no sign of it. The panel now grows to 520 when the window has room, keeping 120 px clear above it, and
    where the list still does not fit (600 tall) a cue stands at the fold until the foot is scrolled to (dlgFoldCue, js/22-dialogue.js) */
 #dlg{max-height:max(52vh,min(calc(100vh - 174px),520px))}

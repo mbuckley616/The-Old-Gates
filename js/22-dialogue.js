@@ -985,7 +985,7 @@ function renderDialogNode(text, choices){
   dlgFoldCue();
 }
 
-// S2602 — the cue at the fold: shown while the panel's foot lies below it, gone once scrolled to (the panel is drawn by now, so it measures)
+// S2603 — the cue at the fold: shown while the panel's foot lies below it, gone once scrolled to (the panel is drawn by now, so it measures)
 function dlgFoldCue(){
   const d=document.getElementById('dlg');if(!d)return;
   const cue=document.getElementById('dlg-more'),ch=cue&&d.classList.contains('dlg-more')?cue.offsetHeight:0;
