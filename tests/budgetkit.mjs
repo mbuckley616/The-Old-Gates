@@ -30,22 +30,31 @@ const count = () => g.page.evaluate(() => {
       if (p.isSkinnedMesh || p.name === 'builder' || p.name === 'mid' || (p.isBone || p.type === 'Bone')) return 'bodies';
       if (!k && roots.has(p)) k = roots.get(p); }
     return k || (isInterior() ? 'room' : activeZoneId === 'dungeon' ? 'gate' : 'other'); };
-  const by = { bodies: 0, houses: 0, land: 0, other: 0 }, otherBy = {};
+  const by = { bodies: 0, houses: 0, land: 0, other: 0 }, otherBy = {}, bodyBy = new Map();
   // in a gate, walk the scene while dRender has the unseen spaces hidden: it hides them, calls REN.render, and shows them again
   const walk = f => { if (!gate) return f(); const R0 = REN.render; REN.render = function () { f(); }; try { dRender(scene, CAM); } finally { REN.render = R0; } };
   walk(() => scene.traverseVisible(o => { if (!(o.isMesh || o.isLine || o.isPoints || o.isSprite)) return; if (o.layers && !o.layers.test(CAM.layers)) return;
     if (o.frustumCulled !== false && !(o.isSprite ? fr.containsPoint(o.getWorldPosition(new THREE.Vector3())) : (o.geometry && (o.geometry.boundingSphere || o.geometry.computeBoundingSphere(), o.geometry.boundingSphere) && fr.intersectsObject(o)))) return;
     if (o.isInstancedMesh && o.count === 0) return;
     const m = o.material, n = Array.isArray(m) ? Math.max(1, (o.geometry.groups || []).length) : 1, kd = kindOf(o); by[kd] = (by[kd] || 0) + n;
+    if (kd === 'bodies') { const t = top(o), gm = o.geometry, tr = gm ? Math.round((gm.index ? gm.index.count : (gm.attributes.position ? gm.attributes.position.count : 0)) / 3) * (o.isInstancedMesh ? o.count : 1) : 0;
+      let b = bodyBy.get(t); if (!b) { const w = t.getWorldPosition(new THREE.Vector3()); bodyBy.set(t, b = { name: t.name || t.type, d: Math.round(w.distanceTo(CAM.position) * 10) / 10, calls: 0, tris: 0, parts: [] }); }
+      b.calls += n; b.tris += tr; b.parts.push((o.name || o.type) + ':' + tr); }
     if (kd === 'other') { const t = top(o), nm = t.name || (t.isMesh ? (t.material && t.material.name) || t.type : t.type); otherBy[nm] = (otherBy[nm] || 0) + n; } }));
   const others = Object.entries(otherBy).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  // S2607 — the bodies in the eye's frustum one by one (their top-level group, its distance from the eye, calls, triangles, the meshes
+  // drawn), the eight heaviest, for the log only: Portclare at High swung by ten body calls and 0.24 M at the same count by level (S2606).
+  const who = new Map(); if (typeof HB_RIGS !== 'undefined' && typeof HB_GENOMES !== 'undefined') { const keyOf = new Map(); for (const [k, G] of HB_GENOMES) keyOf.set(G, k);
+    for (const rig of HB_RIGS) { const t = rig.foe ? rig.root.parent : rig.root, G = rig.hbG; if (t) who.set(t, { key: (G && keyOf.get(G)) || null, hair: G && G.hair ? `${G.hair.style} ${G.hair.len}` : null, L: rig.hb ? rig.hb.L : null }); } }
+  for (const [t, b] of bodyBy) Object.assign(b, who.get(t) || {});
+  const bodyList = [...bodyBy.values()].sort((a, b) => b.tris - a.tris).slice(0, 8).map(b => ({ ...b, parts: b.parts.slice(0, 12) }));
   // S2249 — the whole frame drawn once more with every body hidden (shadow and bloom as the game has them): what is left is the place's
   // own cost. Whether a townsperson walks inside the full level's ring when the count is taken swung a town spot's triangles by ±12%
   // between builds that changed nothing (S2231, S2239); the place's own count does not swing with them. The ceilings read the whole frame.
   const hid = []; scene.traverse(o => { if (o.visible && (o.isMesh || o.isLine || o.isPoints) && kindOf(o) === 'bodies') hid.push(o); });
   let place; try { for (const o of hid) o.visible = false; place = one(true, bl); } finally { for (const o of hid) o.visible = true; sm.autoUpdate = au; Q.bloom = bl; }
   return { calls: all.calls, tris: all.tris, shadow: all.calls - eye.calls, post: eye.calls - bare.calls, eye: bare.calls, by, others, shadowTris: all.tris - eye.tris,
-    placeCalls: place.calls, placeTris: place.tris, bodyTris: all.tris - place.tris };
+    placeCalls: place.calls, placeTris: place.tris, bodyTris: all.tris - place.tris, bodyList };
 });
 // S2110 — the builder's bodies in reach, built before a count. hbTick makes one step of a body a drawn frame and keeps 250 ms of the
 // page's clock between bodies (HBODY.gap); on software GL a frame at Portclare takes about 7 s, so after 8 min of frames 8 of 25 in
