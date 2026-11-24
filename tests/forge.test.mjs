@@ -233,15 +233,17 @@ if (PB.first) {
     const bed = PEARL_BEDS.find(q => q.id === s.id); if (!bed) return { none: true };
     const out = { oy: bed.oy.length, onBed: bed.oy.every(o => Math.abs(o.y - worldH(o.x, o.z)) < .01 && o.y <= SEA_Y - 7.9), ring: bed.oy.every(o => Math.hypot(o.x - bed.x, o.z - bed.z) <= PEARL.ring + .01) };
     BAG.length = 0; delete (worldState.pearlBeds || {})[bed.id]; const msgs = [];
+    const K0 = bed.g.userData.kit, PR0 = K0 ? { look: window.OG_LOOK, tris: K0.tris, draws: K0.draws, open: K0.open, kids: bed.g.children.length, name: bed.g.name, y: +(bed.g.position.y - meshH(bed.x, bed.z)).toFixed(3), onBed: K0.oysters.every(q => Math.abs(q.base) < .3) } : { look: window.OG_LOOK };
     const at = (i, up) => { const o = bed.oy[i]; px = o.x + .2; pz = o.z; jumpY = o.y + up; DIVE.depth = jumpY; };
     at(0, 7.5); out.surface = pearlNear();
     let want = 0; for (let i = 0; i < 5; i++) { at(i, 1); const n = pearlNear(); if (!n || n.bed !== bed) { out.miss = i; break; }
       const e = (worldState.pearlBeds && worldState.pearlBeds[bed.id] || {}).e || 0; if (seededRng('pearl', bed.id + ':' + e + ':' + n.i)() < PEARL.p) want++;
       interact(); msgs.push(MSGEL.textContent); }
     const r = worldState.pearlBeds[bed.id]; out.rec = { ...r }; out.pearls = bagCount(isDeepPearl); out.want = want; out.msgs = msgs;
-    out.shells = bed.g.userData.shells.filter(m => m.visible).length; at(0, 1); out.after = pearlNear();
+    const shut = () => { const K = bed.g.userData.kit; return K ? K.oysters.filter(q => !q.open).length : bed.g.userData.shells.filter(m => m.visible).length; }; /* S2619: the kit's bed draws an opened oyster open */
+    out.kit0 = PR0; out.shells = shut(); { const K = bed.g.userData.kit; out.kitOpen = K && { open: K.open, tris: K.tris, draws: K.draws, kids: bed.g.children.length }; } at(0, 1); out.after = pearlNear();
     const d0 = Math.floor(gameMinNow() / 1440); r.d = d0 - 13; out.day13 = pearlTaken(bed.id, 0); r.d = d0 - 14; out.day14 = !pearlTaken(bed.id, 0) && worldState.pearlBeds[bed.id].e === 1;
-    pearlShow(bed); out.back = bed.g.userData.shells.filter(m => m.visible).length;
+    pearlShow(bed); out.back = shut();
     const sp = ssSplitPayload(JSON.parse(ssStringify(_buildSavePayload()))); out.worldRow = !!(sp.w.wS && sp.w.wS.pearlBeds && sp.w.wS.pearlBeds[bed.id]) && !(sp.c.wS && sp.c.wS.pearlBeds);
     return out;
   }, PB.first);
@@ -250,6 +252,7 @@ console.log(JSON.stringify({ PB, PR }));
 check('S2520: oyster beds lie off Aurenne only, every one 8 m down on the open bed, keyed <cx,cz>:pearl:0', PB.n > 100 && Object.keys(PB.isles).join() === 'aurenne' && PB.deep && PB.ids, PB);
 check('S2520: a bed is 5 oysters on the sea bed within 2.4 m of its middle; none can be opened from the surface', PR && PR.oy === 5 && PR.onBed && PR.ring && !PR.surface, PR);
 check('S2520: E down on the bed opens each oyster; the pearls are the seeded one in six; the shells go, and nothing more opens', PR && PR.miss == null && PR.rec.t === 31 && PR.pearls === PR.want && PR.msgs.length === 5 && PR.msgs.every(m => /deep pearl|oyster is empty/.test(m)) && PR.shells === 0 && !PR.after, PR);
+check('S2619: on the new look the bed is the kit\'s (#1952 A): the bank, rubble, oysters, weed and fans in at most 10 draws and 12,000 triangles, all five shut; opened, all five drawn open', PR && PR.kit0 && PR.kit0.look === 'new' && PR.kit0.draws >= 7 && PR.kit0.draws <= 10 && PR.kit0.tris > 5000 && PR.kit0.tris < 12000 && PR.kit0.open === 0 && PR.kit0.onBed && PR.kitOpen && PR.kitOpen.open === 5 && PR.kitOpen.draws <= 10, PR && { kit0: PR.kit0, kitOpen: PR.kitOpen });
 check('S2520: the bed is taken at 13 days and whole again at 14, its shells back; its record is the world row\'s', PR && PR.day13 && PR.day14 && PR.back === 5 && PR.worldRow, PR);
 check('S2520: the save keeps a deep pearl', RR.flags.pearl, RR.flags);
 // ── S2562: the great forge is worked at its corner of a real city keep's hall (house._greatForge, S2557), not anywhere in the hall ──

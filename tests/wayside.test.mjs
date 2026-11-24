@@ -552,5 +552,20 @@ const far = await page.evaluate(() => { const all = []; for (const L of LOADED.v
 console.log(JSON.stringify(far));
 check(`the places by a road and off it drawn within 450 m only: ${far.filter(f => f.vis).length} shown (${far.filter(f => f.vis).map(f => f.d).join(', ')} m), ${far.filter(f => !f.vis).length} hidden (${far.filter(f => !f.vis).map(f => f.d).join(', ')} m)`, far.length > 1 && far.some(f => !f.vis) && far.every(f => f.vis === (f.d < 450)), far);
 if (process.env.SHOT) { const S = process.env.SHOT_OF === 'erratic' ? k.er : process.env.SHOT_OF === 'unfinished' ? uf : process.env.SHOT_OF === 'merchants' ? mc : k.burn; await page.evaluate(D => { REN.setSize(960, 540, false); forceTime(10); px = D.x - Math.sin(D.ry) * 24 + Math.cos(D.ry) * 7; pz = D.z - Math.cos(D.ry) * 24 - Math.sin(D.ry) * 7; }, S); await g.spin('clear', 60); await page.screenshot({ path: process.env.SHOT }); }
+// Session 2621 (Michael's A on #1983, the works by what each serves, the windmill first): the Gatelands' tower mill on a rise 150 to 400 m
+// out of one village in two, in open country (millsAt, 82; PKIT.places.mill): the same when asked again, on its knoll, solid at its tower and
+// open on its path, its sails clear of the ground and turning, its fields kept open round it
+const ml = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => c.type !== 'sea' && !c.home && nationKeyOf(c.i, c.j) === 'gatelands'); let vil = 0; G.forEach(c => vil += c.sites.filter(t => t.kind === 'village').length);
+  const M = G.flatMap(c => millsAt(c)), again = G.flatMap(c => { const k = c._mills; delete c._mills; const r = millsAt(c); c._mills = k; return r; });
+  const same = M.length === again.length && M.every((m, i) => m.x === again[i].x && m.z === again[i].z && m.ry === again[i].ry);
+  const ring = M.every(m => { const c = G.find(c => c.sites.some(t => t.id === m.site)), t = c && c.sites.find(t => t.id === m.site), d = t ? Math.hypot(t.x - m.x, t.z - m.z) : 0; return d >= 149 && d <= 401; });
+  M.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); const m0 = M[0]; return { vil, n: M.length, same, ring, near: m0 && { id: m0.id, x: m0.x, z: m0.z, y: m0.y } }; });
+if (ml.near) { await page.evaluate(m => WORLD.enter(m.x + 25, m.z + 25, 0, 'test'), ml.near); for (let n = 0; n < 8; n++) { await g.cells(); if (await page.evaluate(id => MILLS.some(m => m.id === id), ml.near.id)) break; await page.waitForTimeout(1000); } await g.spin(30); }
+const mm = !ml.near ? null : await page.evaluate(id => { const m = MILLS.find(m => m.id === id); if (!m) return { none: true }; const co = Math.cos(m.ry), s = Math.sin(m.ry), W = (u, v) => [m.x + u * co + v * s, m.z - u * s + v * co];
+  let trees = 0; for (const ch of chunks.values()) for (const t of (ch.trees || [])) if (!t.out && Math.hypot(t.x - m.x, t.z - m.z) < 16) trees++;
+  const r0 = m.spin.rotation.z; return { kit: m.kit, ground: +(worldH(m.x, m.z) - m.y).toFixed(2), tower: solidAt(...W(2.2, 0)), path: solidAt(...W(0, 6)), trees, turned: r0 !== 0 && Math.abs(r0) < 1e4 }; }, ml.near.id);
+console.log(JSON.stringify({ ml, mm }));
+check(`S2621: ${ml.n} of ${ml.vil} Gatelands villages keep a mill, each 150 to 400 m out, the same when asked again`, ml.n > 5 && ml.n < ml.vil * .55 && ml.same && ml.ring, ml);
+check(`S2621: the nearest mill (${mm && mm.kit && mm.kit.tris} triangles in ${mm && mm.kit && mm.kit.draws} draws) on its knoll, its tower solid and its path open, its sails ${mm && mm.kit && mm.kit.tipLow} m over the ground at their lowest and turning, no tree within 16 m`, mm && !mm.none && mm.kit.draws <= 14 && mm.kit.tris < 6000 && Math.abs(mm.ground) < .05 && mm.tower && !mm.path && mm.kit.tipLow > 2 && mm.turned && mm.trees === 0, mm);
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 5));
 await g.close();

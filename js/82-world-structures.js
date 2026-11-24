@@ -609,16 +609,72 @@
   // its pad and the clearing round its outcrop, as the cave's, and a clearing of the scatter 8 m out before it (the cell's first step, so the chunks are built with them)
   function mineStamps(c,k){const C=mineAt(c);if(!C)return [];const s=Math.sin(C.ry),co=Math.cos(C.ry),y=landH(C.x,C.z);
     return [addStamp({id:C.id+'_pad',kind:'door',x:C.x-s*2.4,z:C.z-co*2.4,r:4.6,blend:5,y,cell:k}),addStamp({id:C.id+'_clear',kind:'door',noFlat:true,x:C.x-s*4,z:C.z-co*4,r:10,blend:2,y,cell:k}),
-    addStamp({id:C.id+'_way',kind:'door',noFlat:true,x:C.x+s*8,z:C.z+co*8,r:7,blend:2,y,cell:k})];} /* and the approach, where the tramway ran out to the tip: no tree in front of the adit */
+    addStamp({id:C.id+'_way',kind:'door',noFlat:true,x:C.x+s*8,z:C.z+co*8,r:7,blend:2,y,cell:k}),...mineHeadStamps(C,y,k)];} /* and the approach, where the tramway ran out to the tip: no tree in front of the adit */
+  // S2620 (Michael's A on #1958: "the head as drawn at every worked mine") — a worked mine's head (PKIT.places.minehead, places.js's
+  // markMineHead): its frame's origin 8 m east and 10 m out of the adit's mouth (the head's adit at (-8, -10)), +z down the slope, y the pad's.
+  // The terrace (39 by 18 m) and the tip's tongue are a stamp of a height: level at the mouth's pad, cut back into the hill at 50° and built
+  // out in front at 35° until each meets the land (PKIT.mineheadShape), within 14 m of the terrace; its ground the trodden ground of a pad.
+  // -> [stamp] for a worked mine, [] for one worked out (the bare mouth) or on the old look
+  function mineHeadFrame(C){const s=Math.sin(C.ry),co=Math.cos(C.ry),ox=C.x+8*co+10*s,oz=C.z-8*s+10*co;
+    return {ox,oz,s,co,toL:(wx,wz)=>{const dx=wx-ox,dz=wz-oz;return [dx*co-dz*s,dx*s+dz*co];},toW:(lx,lz)=>[ox+lx*co+lz*s,oz-lx*s+lz*co]};}
+  function mineHeadStamps(C,y,k){if(!C.worked||!PKIT.places.minehead||!PKIT.places.mineheadShape)return [];const H=mineHeadFrame(C),Sh=PKIT.places.mineheadShape,[cx,cz]=H.toW(-1.5,1.5);
+    const dTer=(lx,lz)=>{const rd=q=>Math.hypot(Math.max(q[0]-lx,0,lx-q[1]),Math.max(q[2]-lz,0,lz-q[3]));return Math.min(rd([-21,18,-10,8]),rd([-10.5,-5.5,8,13]));};
+    C.head={ox:H.ox,oz:H.oz,y};
+    return [addStamp({id:C.id+'_head',kind:'door',x:cx,z:cz,r:36,blend:0,y,cell:k,inside:(wx,wz)=>dTer(...H.toL(wx,wz))<14,fn:(wx,wz,h)=>{const [lx,lz]=H.toL(wx,wz);return y+Sh(lx,lz,h-y);}})];}
   // the adit's mouth (PKIT.places.cavemouth, rock 'mark', its timber sets and tramway) stood on its pad, turned down the slope; its solids;
   // and the mine's record in the world's houses (type 'mine', byAim), taken out when the cell unloads
   function placeMine(c,k){const C=mineAt(c);if(!C)return null;const M=PKIT.places.cavemouth({key:C.id,rock:'mark',snow:C.snow,adit:true}),y=worldH(C.x,C.z),co=Math.cos(C.ry),s_=Math.sin(C.ry);
     M.group.position.set(C.x,y,C.z);M.group.rotation.y=C.ry;M.group.name='mine mouth';sc.add(M.group);
     for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
     C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
+    if(C.worked)try{placeMineHead(C,M.group,y);}catch(e){console.warn('minehead',e);} /* S2620 — a worked mine's head before its mouth */
     C.house={id:`g_${C.id}`,type:'mine',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'mark',w:13,d:35,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,worked:C.worked};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
+  // S2620 — the head built in its frame, a child of the mouth's group (so it goes with the cell), laid on the land as the stamp left it;
+  // its solids (the adit house's side walls, the sorting house, the cart, the fenced shaft, the whim's posts and drum) in STATIC_SOL
+  function placeMineHead(C,mouth,y){if(!PKIT.places.minehead)return null;const H=mineHeadFrame(C),y0=C.head?C.head.y:y;
+    const K=PKIT.places.minehead({key:C.id,snow:C.snow,ground:(lx,lz)=>worldH(...H.toW(lx,lz))-y0});
+    K.group.name='mine head';K.group.position.set(8,y0-y,10);mouth.add(K.group);
+    for(const b of K.sol){const [wx,wz]=H.toW(b.x,b.z);STATIC_SOL.push({cx:wx,cz:wz,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h});}
+    C.headKit={tris:K.tris,draws:K.draws,sol:K.sol.length,ox:+H.ox.toFixed(2),oz:+H.oz.toFixed(2)};return K;}
+  // S2621 (Michael's A on #1983: "by what each serves, the windmill and the lighthouse first"; OG-046's "farms and windmills") — the
+  // Gatelands' tower mill (PKIT.places.mill, places.js's gatelandsMill) on a rise 150 to 400 m out of one village in two, among its fields.
+  // Read by place (withPlace over the village), each by its own stream (mill:<site>): up to 48 spots on that ring, inside the village's own
+  // cell (20 m off its edge), in open country (the land's field weight .6 or more and its wood .3 or less, as landMask reads them), the ground 3 m or more over the sea and within 1.2 m of the spot's 7 m round, 40 m off every pad, 60 m off
+  // every door, 30 m off the line of every road and 30 m off every lake's rim; the highest wins. Its front door turns toward the village,
+  // its sails into the west wind. -> [{ id, x, z, y, ry, wind, site }] kept on the cell (c._mills); none on the old look
+  const MILL_FIELD=.6,MILL_WOOD=.3;
+  function millsAt(c){
+    if(c._mills!==undefined)return c._mills;c._mills=[];
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.mill)return c._mills;
+    if(nationKeyOf(c.i,c.j)!=='gatelands')return c._mills;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const segD=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);};
+    for(const t of c.sites){if(t.kind!=='village')continue;const r=PKIT.stream('mill:'+t.id);if(r()>=.5)continue;let best=null;
+      withPlace(t.x,t.z,()=>{for(let n=0;n<48;n++){const a=r()*Math.PI*2,d=150+r()*250,x=t.x+Math.sin(a)*d,z=t.z+Math.cos(a)*d;
+        if(x<c.ox+20||x>c.ox+SIZE-20||z<c.oz+20||z>c.oz+SIZE-20)continue;
+        if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+40)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<60))continue;
+        if(c.roadDefs.some(q=>byId[q.a]&&byId[q.b]&&segD(x,z,byId[q.a],byId[q.b])<30)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+30))continue;
+        {let field=0,wood=0;for(const e of regionWeights(x,z)){if(e.w<=0)continue;field+=e.w*(LAND_FIELD_BIOMES[e.r.biome]||0);wood+=e.w*(e.r.density||0)*(e.r.trees&&e.r.trees!=='dead'?1:.3);}if(field<MILL_FIELD||wood>MILL_WOOD)continue;} /* among the fields (the land's own mask: 89-world-land.js), not in a wood */
+        const h=rawH(x,z);if(h<3)continue;let ok=true;for(let k=0;k<8&&ok;k++){const b=k/8*Math.PI*2;if(Math.abs(rawH(x+Math.sin(b)*7,z+Math.cos(b)*7)-h)>1.2)ok=false;}if(!ok)continue;
+        if(!best||h>best.y)best={x:+x.toFixed(2),z:+z.toFixed(2),y:+h.toFixed(2)};}});
+      if(!best)continue;const ry=Math.atan2(t.x-best.x,t.z-best.z);
+      c._mills.push({id:`mill_${t.id}`,...best,ry:+ry.toFixed(4),wind:+(-Math.PI/2-ry+(r()-.5)*.5).toFixed(4),site:t.id});}
+    return c._mills;}
+  // each mill's knoll: level 7 m round its tower, easing into the land over 8, a clearing of 16 m, and its fields 45 m round kept open (the cell's first step, so the chunks are built with it)
+  function millStamps(c,k){return millsAt(c).flatMap(m=>[addStamp({id:m.id+'_pad',kind:'door',x:m.x,z:m.z,r:7,blend:8,y:m.y,cell:k}),addStamp({id:m.id+'_clear',kind:'door',noFlat:true,x:m.x,z:m.z,r:16,blend:2,y:m.y,cell:k}),addStamp({id:m.id+'_fields',kind:'graze',noFlat:true,x:m.x,z:m.z,r:45,blend:0,y:m.y,cell:k})]);} /* no tree where the sails sweep, and its fields kept open round it (a pasture's one tree in twelve, S2088), so it reads from the road */
+  // the mills built on their knolls; the tower solid (two boxes, square and turned 45°, its round); the sails turned by tickMills
+  const MILLS=[];
+  function placeMills(c,k){const out=[];for(const m of millsAt(c)){const y=worldH(m.x,m.z),co=Math.cos(m.ry),s_=Math.sin(m.ry);
+      const K=PKIT.places.mill({key:m.id,wind:m.wind,working:true,ground:(lx,lz)=>worldH(m.x+lx*co+lz*s_,m.z-lx*s_+lz*co)-y});
+      K.group.position.set(m.x,y,m.z);K.group.rotation.y=m.ry;K.group.name='mill';sc.add(K.group);
+      for(const a of [0,Math.PI/4])STATIC_SOL.push({cx:m.x,cz:m.z,rx:2.85,rz:2.85,c:Math.cos(m.ry+a),s:Math.sin(m.ry+a),h:9.6});
+      m.kit={tris:K.tris,draws:K.draws,tipLow:K.tipLow,hub:K.hub};m.group=K.group;m.spin=K.spin;
+      for(let i=MILLS.length-1;i>=0;i--)if(MILLS[i].id===m.id)MILLS.splice(i,1);MILLS.push(m);out.push(K.group);}
+    return out;}
+  // the sails turn, about a turn every eight seconds, while the mill is in the scene
+  function tickMills(dt){for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);}}
   // S1828 (card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road") — Aurenne's trade tunnels
   // (PKIT.au.tunnel, places.js's aurenneTunnel): the road's short way under a hill, a bore of 56 m with a portal each side of the ridge
   // beside one of the cell's roads. Every Aurenne cell whose land holds one keeps one. Read by place (withPlace over the cell's middle, the
@@ -3244,6 +3300,18 @@
   // the crater rebuilt when a lobe is struck out (three times at most): its children swapped, the Group kept, so the vein's record holds it
   function starKitShow(v){const g=v.g,left=Math.max(0,Math.min(3,veinLeft(v)));if(!g||!g.userData.kit||g.userData.kit.left===left)return;
     const n=starKitMesh(v,left);if(!n)return;for(const c of [...g.children]){g.remove(c);c.geometry&&c.geometry.dispose();}for(const c of [...n.children])g.add(c);g.userData.kit=n.userData.kit;g.userData.glint=n.userData.glint;}
+  // S2619 — the deep pearl oysters' bed on the new look (Michael's A on #1952, as drawn in Session 2586; PKIT.props.oysters, 38-kit.js), in
+  // place of 50-travel.js's five grey stand-ins: the bank draped on the terrain's own triangles (meshH) 2 cm up, the oysters where the game
+  // lays them (bed.oy), an oyster opened left open (the bed's record, pearlRec), the bank fading to the sea floor's colour 4 m out as the
+  // land's shader shows it under the water.
+  // -> a Group, or null on the old look. Rebuilt by pearlKitShow when an oyster is opened or the bed comes back.
+  function pearlKitMesh(bed,taken){if(!rareKitOn()||!PKIT.props.oysters||!bed)return null;const y0=meshH(bed.x,bed.z),c=new THREE.Color();
+    let gr=0,gg=0,gb=0;for(let k=0;k<8;k++){const a=k/8*Math.PI*2,x=bed.x+Math.sin(a)*4,z=bed.z+Math.cos(a)*4,h=worldH(x,z);groundColor(x,z,h,slopeNormalY(x,z),c);gr+=c.r/8;gg+=c.g/8;gb+=c.b/8;}
+    c.setRGB(gr,gg,gb).lerp(new THREE.Color(.16,.34,.36),.7).multiplyScalar(.5); /* as the land's shader shows a bed under 5 m of water: into teal, and its albedo cut (89-world-land.js, landCol) */
+    const K=PKIT.props.oysters({key:bed.id,taken:taken|0,sand:c.getHex(),oy:bed.oy.map(o=>({x:o.x-bed.x,z:o.z-bed.z,ry:o.ry})),ground:(x,z)=>meshH(bed.x+x,bed.z+z)-y0+.02});
+    const g=K.group;g.name='pearlBed';g.position.set(bed.x,y0,bed.z);g.userData.kit={taken:taken|0,open:K.open,tris:K.tris,draws:K.draws,R:K.R,oysters:K.oysters};return g;}
+  function pearlKitShow(bed,taken){const g=bed&&bed.g;if(!g||!g.userData.kit||g.userData.kit.taken===(taken|0))return;
+    const n=pearlKitMesh(bed,taken);if(!n)return;for(const c of [...g.children]){g.remove(c);c.geometry&&c.geometry.dispose();}for(const c of [...n.children])g.add(c);g.userData.kit=n.userData.kit;}
   // the land's holes: one a crater shown in a chunk that is in the scene, its rim's radius
   function starKitHoles(){if(typeof LAND_HOLES==='undefined'||typeof STARS_SHOWN==='undefined')return;let i=0;
     for(const v of STARS_SHOWN.values()){if(i>=6)break;const g=v.g;if(!g||!g.userData.kit||!veinLive(v))continue;LAND_HOLES.value[i++].set(v.x,v.z,g.userData.kit.R,1);}
