@@ -64,6 +64,18 @@ for (const w of [1280, 960, 900]) { await page.setViewportSize({ width: w, heigh
 await page.setViewportSize(vwN);
 check('under 1,040 wide the band stops 16 px right of the vitals plate and keeps its right end and the ⏳; at 1,280 it is 600 as before',
   nar[1280].band[1] - nar[1280].band[0] === 600 && [960, 900].every(w => { const n = nar[w]; return n.band[0] === n.plate[1] + 16 && n.band[1] === w - 100 && n.cw === n.band[1] - n.band[0] && n.wait[1] === w - 16; }), nar);
+// S2597 — the ribbon's middle slides left with the band under 1,040, and three names stood over the ledger's foot slip (92 px at 800):
+// the ledger narrows with the ribbon's middle, so a slip of two lines and a ribbon of three long names stand apart at every width
+const rib = {};
+for (const w of [1280, 1040, 960, 800]) { await page.setViewportSize({ width: w, height: 720 });
+  rib[w] = await page.evaluate(() => { const r = e => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
+    showMsg('You have found the Barrow of Woushdaey, and the road beyond it runs on to the coast.', '#e8d8a0');
+    _cmpLblKey = ''; _cmpRibbon(['the Barrow of Woushdaey', 'Fionnuala\'s Stores and Chandlery', 'the Shrine of the Guest'].map((l, i) => ({ glyph: '⌂', label: l, d: 1234 + i, q: i === 0, col: '#ff4040' })));
+    const o = { lbl: r(compassLbl), slip: r(document.querySelector('#ledger .ldg:last-child')), plate: r(document.getElementById('hud')) };
+    _cmpLblKey = ''; _cmpRibbon([]); return o; }); }
+await page.setViewportSize(vwN);
+check('a ribbon of three names stands clear of the ledger\'s slip and the vitals plate at 1,280, 1,040, 960 and 800 wide', [1280, 1040, 960, 800].every(w => { const o = rib[w];
+  const apart = (a, b) => a[2] <= b[0] || b[2] <= a[0] || a[3] <= b[1] || b[3] <= a[1]; return (o.lbl[0] >= o.slip[2] + 12 || o.lbl[1] >= o.slip[3]) && apart(o.lbl, o.plate); }), rib);
 check('a bar reads its value over its maximum, and the marks fill a quarter of the level\'s bar', vp.hp === vp.want && Math.abs(vp.xp - 25) < 0.2, { hp: vp.hp, want: vp.want, xp: vp.xp });
 check('the weapon\'s roundel shows the weapon in hand, a fist when bare, and opens the inventory; the spell\'s names the spell in its title', vp.inPlate
   && vp.bare === '✊' && vp.blade[0] === '🗡️' && /^Test Blade/.test(vp.blade[1]) && vp.inv && /\(F\)$/.test(vp.fb[1]) && vp.note === 'block', vp);
