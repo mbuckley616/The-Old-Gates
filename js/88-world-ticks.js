@@ -382,12 +382,12 @@
       ZONES.world.enemies.push(e);ch.wild.push(e);n++;}
     return n;}
   // S2622 — the grey seals hauled out (#1954 A: "seals hauled out on coast rock or sand"): a chunk with a shore rolls, on its own stream
-  // (`seal`, keyed by the chunk), one in four (WILD_P), two to five seals on the shore within 12 m of the sea: ground 0.2 to 1.6 m over the
+  // (`seal`, keyed by the chunk), one in four (WILD_P), two to five seals on the shore within 30 m of the sea: ground 0.2 to 1.6 m over the
   // water, not steep, off a pad, a site's stamp and a road; the sea beside them deep enough to swim, and not a lake's or a river's. Each is
   // keyed `cx,cz:g<i>` and lies ashore (e.ashore) until it is startled (sealShoreStep, 42-zone-enemies.js)
   function sealShore(x,z){const h=worldH(x,z);if(!(h>=SEAL.shore[0]&&h<=SEAL.shore[1])||slopeNormalY(x,z)<.75)return false;const st=stampAt(x,z);if(st&&st.kind==='site')return false;
     const ri=roadInfo(x,z);return !(ri&&ri.d<8);}
-  function sealSea(x,z){for(const r of [4,8,SEAL.reach])for(let a=0;a<8;a++){const wx=x+Math.sin(a*Math.PI/4)*r,wz=z+Math.cos(a*Math.PI/4)*r;
+  function sealSea(x,z){for(const r of SEAL.reach)for(let a=0;a<8;a++){const wx=x+Math.sin(a*Math.PI/4)*r,wz=z+Math.cos(a*Math.PI/4)*r;
       if(wildWet(wx,wz)&&!wildRiverNear(wx,wz,0)&&!wildLakeNear(wx,wz))return {x:wx,z:wz};}return null;}
   function wildSealChunk(ch,key){const r=seededRng('seal',key);if(r()>WILD_P)return 0;
     let ax=0,az=0,sea=null;for(let k=0;k<16&&!sea;k++){ax=ch.cx*CHUNK+4+r()*(CHUNK-8);az=ch.cz*CHUNK+4+r()*(CHUNK-8);if(sealShore(ax,az))sea=sealSea(ax,az);}

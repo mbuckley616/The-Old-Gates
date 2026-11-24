@@ -340,4 +340,33 @@ console.log('  reef:', JSON.stringify(REEF));
 check(`the reef answers back: the moray (${REEF.m && REEF.m.hp} health) met 3.2 m off at its depth turns, comes ${REEF.m && REEF.m.came} m through the water and bites ${REEF.m && REEF.m.bites} times (${REEF.m && REEF.m.lost} lost); 30 m off it gives up; the stonefish lies still until you are over it, then bites (${REEF.s && REEF.s.bites})`,
   !REEF.none && REEF.m.hp === 16 && REEF.m.dmg === 5 && REEF.m.answer && REEF.m.swim && REEF.m.angry && REEF.m.came > 1 && REEF.m.wet && REEF.m.bites >= 2 && REEF.m.lost > 0 && REEF.m.yOk && REEF.m.quit
   && REEF.s.far && REEF.s.over && REEF.s.moved < .01 && REEF.s.bites >= 1, REEF);
+// S2622 — the grey seals hauled out (#1954 A): a shore chunk rolls two to five, by its id, on ground 0.2 to 1.6 m over the sea with water deep
+// enough to swim within 30 m; startled, one humps to the water, then darts 10 m off and holds a metre under. Ashore a blade reaches it, in the
+// water only the spear; it is not taken by hand and gives no meat
+const SEAL_R = await page.evaluate(() => { const out = { groups: 0, n: [], bad: [] }; const R = seededRng('s2622', 'seal'); let one = null, tried = 0;
+  const drop = ch => { for (const e of ch.wild) { e.dead = true; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); const ix = ZONES.world.enemies.indexOf(e); if (ix >= 0) ZONES.world.enemies.splice(ix, 1); } };
+  for (let k = 0; k < 40000 && tried < 300; k++) { const cx = Math.floor((13000 + R() * 12000) / CHUNK), cz = Math.floor((13000 + R() * 12000) / CHUNK), h = WORLD.worldH(cx * CHUNK + 32, cz * CHUNK + 32);
+    if (!(h > -5 && h < 4)) continue; tried++; const key = cx + ',' + cz, ch = { cx, cz, wild: [] }; wildSealChunk(ch, key);
+    if (ch.wild.length) { out.groups++; out.n.push(ch.wild.length);
+      for (const e of ch.wild) { const hh = worldH(e.x, e.z); if (!(hh >= .2 && hh <= 1.6) || !e.ashore || !e.seal || !e._sea || !wildWet(e._sea.x, e._sea.z)) out.bad.push(e.id); }
+      if (!one) { const sig = c => c.wild.map(e => e.id + '|' + e.x.toFixed(2)).join(); const a = sig(ch); drop(ch); const c2 = { cx, cz, wild: [] }; wildSealChunk(c2, key); out.same = a === sig(c2); one = c2; continue; } }
+    drop(ch); }
+  out.tried = tried; if (!one) return out;
+  const e = one.wild[0]; for (const o of one.wild.slice(1)) { o.dead = true; if (o.mesh.parent) o.mesh.parent.remove(o.mesh); const ix = ZONES.world.enemies.indexOf(o); if (ix >= 0) ZONES.world.enemies.splice(ix, 1); }
+  const w0 = EQ.weapon; EQ.weapon = { weaponShape: 'sword', atk: [5, 6] }; out.swordAshore = strikeCandidate(e);
+  out.meat = bodyMeat(e, [], null).length; out.ashoreY = +(e.mesh.position.y - worldH(e.x, e.z)).toFixed(2);
+  const bx = px, bz = pz; px = e.x + Math.sin(e.combatYaw) * 10; pz = e.z + Math.cos(e.combatYaw) * 10; e.alert = true; let secs = 0;
+  for (const o of ZE) o._duelHold = o !== e;
+  for (let i = 0; i < 60 * 30 && e.ashore; i++) { tickZoneEnemies(1 / 60, performance.now(), WORLD.scene); secs += 1 / 60; }
+  out.toSea = +secs.toFixed(1); out.inWater = !e.ashore; const x1 = e.x, z1 = e.z;
+  for (let i = 0; i < 60 * 4; i++) tickZoneEnemies(1 / 60, performance.now(), WORLD.scene);
+  for (const o of ZE) o._duelHold = false;
+  out.swam = +Math.hypot(e.x - x1, e.z - z1).toFixed(1); out.wet = wildWet(e.x, e.z); out.y = +(e.mesh.position.y).toFixed(2);
+  out.swordWater = strikeCandidate(e); EQ.weapon = w0;
+  const sw = isSwimming; isSwimming = () => true; px = e.x + .8; pz = e.z; jumpY = SWIM_Y; out.byHand = !!nearTrout(); isSwimming = sw;
+  px = bx; pz = bz; e.dead = true; if (e.mesh.parent) e.mesh.parent.remove(e.mesh); return out; });
+console.log('  seals:', JSON.stringify(SEAL_R));
+check(`the seals: ${SEAL_R.groups} groups of ${JSON.stringify(SEAL_R.n)} in ${SEAL_R.tried} coastal chunks, each hauled out on the shore beside the sea; the same again by the chunk's id; startled, one reaches the water in ${SEAL_R.toSea} s and swims ${SEAL_R.swam} m off a metre under`,
+  SEAL_R.groups >= 2 && SEAL_R.n.every(k => k >= 2 && k <= 5) && !SEAL_R.bad.length && SEAL_R.same && SEAL_R.inWater && SEAL_R.toSea < 15 && Math.abs(SEAL_R.swam - 10) < .8 && SEAL_R.wet && SEAL_R.y === -1
+  && SEAL_R.swordAshore && !SEAL_R.swordWater && !SEAL_R.byHand && SEAL_R.meat === 0 && SEAL_R.ashoreY === 0, SEAL_R);
 await g.close();

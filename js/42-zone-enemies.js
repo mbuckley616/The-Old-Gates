@@ -829,7 +829,7 @@ const SEA_ANSWER={near:4,reach:1.5,wind:.6,gap:1.3,rise:2,body:.3}; /* body: the
 // at SEAL.run, and once the water is deep enough to swim it is a swimmer, darting off from you as the trout does and holding a metre under.
 // Peaceful on the land animals' rules: one blow; no catch and no meat (it is not taken by hand, nor in MEAT_BODIES). Ashore a blade reaches
 // it; in the water only the spear and arrows do, as every swimmer
-const SEAL={run:2.5,n:[2,5],shore:[.2,1.6],reach:12,spread:6};
+const SEAL={run:2.5,n:[2,5],shore:[.2,1.6],reach:[6,12,20,30],spread:6}; /* reach: the rings searched for the sea beside a seal; the coast's shelf is gentle */
 function sealShoreStep(e,W,P,T,dt){
   if(W.mode==='flee'&&e._sea){const dx=e._sea.x-e.x,dz=e._sea.z-e.z,d=Math.hypot(dx,dz),st=Math.min(d,SEAL.run*dt);
     if(d>.01){e.x+=dx/d*st;e.z+=dz/d*st;let dy=Math.atan2(dx,dz)-e.combatYaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));e.combatYaw+=dy*Math.min(1,dt*6);}
