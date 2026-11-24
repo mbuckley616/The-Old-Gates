@@ -330,7 +330,7 @@ const giver=`${lord.title} ${lord.name}`;
                   markman:bty?'There’s a price on you in this city. Pay it. Then ask me about my forge.':'My forge is for the city’s friends. You’re not one. Yet.',
                   aurennais:bty?'Forgive me, but the city holds a claim against you, and the forge is not lent while a claim stands open. Settle it with the magistrates, and we may speak again.':'The forge is extended to the city’s friends, and that standing is earned, not bought. When your account with the city stands in better credit, I shall open it to you gladly.'};
                 return L[_lp]||L.gatelander;}setTimeout(()=>{try{closeDialog();}catch(e){}openForgePage();},60);return '';}}]:[]),
-            {label:'How fares the town?',get response(){return `${site.name} is ${stateSaid(site)}. ${favor(site)>=3?'And it counts you a friend.':favor(site)<=-2?'And it has not forgotten you.':''}`;}},
+            {label:'How fares the town?',get response(){return `${site.name} is ${stateSaid(site)}.${favor(site)>=3?' And it counts you a friend.':favor(site)<=-2?' And it has not forgotten you.':''}`;}},
             ];
   }
   // ── hooks ──

@@ -872,7 +872,7 @@ function hudPlate(emHP,emMana,emSt){
   const set=(id,v)=>{const e=document.getElementById(id);if(e&&e._v!==v){e._v=v;e.textContent=v;}};
   set('hvm',Math.floor(emHP));set('mvm',Math.floor(emMana));set('svm',Math.floor(emSt));
   const xf=document.getElementById('xpf');if(xf){const w=Math.max(0,Math.min(100,levelMarks/Math.max(1e-6,marksNeeded())*100)).toFixed(1)+'%';if(xf._w!==w){xf._w=w;xf.style.width=w;}}
-  const ib=document.getElementById('ibtn');if(ib){const w=EQ.weapon,g=w&&w.ico||'✊',t=(w?w.name:'Bare hands')+' · Inventory (I)';if(ib._g!==g){ib._g=g;ib.textContent=g;}if(ib.title!==t)ib.title=t;}
+  const ib=document.getElementById('ibtn');if(ib){const w=EQ.weapon,g=w?weaponGlyph(w):'✊',t=(w?w.name:'Bare hands')+' · Inventory (I)';if(ib._g!==g){ib._g=g;ib.textContent=g;}if(ib.title!==t)ib.title=t;}
 }
 function updateHUD(){
   const emHP=effMaxHP(),emMana=effMaxMana(),emSt=effMaxStamina();
