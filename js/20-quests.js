@@ -1353,8 +1353,8 @@ function _cmpMarks(){const out=[];const playerYaw=((-yaw)%(Math.PI*2)+Math.PI*2)
   return out;}
 function drawCompass(){
   if(!compassCtx||!started)return;
-  const W=CMP.W,H=CMP.H,dpr=Math.min(2,window.devicePixelRatio||1);
-  if(compassEl.width!==Math.round(W*dpr)){compassEl.width=Math.round(W*dpr);compassEl.height=Math.round(H*dpr);}
+  const W=Math.round(compassEl.clientWidth)||CMP.W,H=CMP.H,dpr=Math.min(2,window.devicePixelRatio||1); /* S2594: narrower under 1,040 px */
+  if(compassEl.width!==Math.round(W*dpr)||compassEl.height!==Math.round(H*dpr)){compassEl.width=Math.round(W*dpr);compassEl.height=Math.round(H*dpr);}
   const c=compassCtx;c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
   const rr=(x,y,w,h,r)=>{c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);else c.rect(x,y,w,h);};
   // the band: dark leather in a bronze rim

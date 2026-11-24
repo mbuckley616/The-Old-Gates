@@ -55,6 +55,15 @@ const vp = await page.evaluate(() => { const [hud, ibtn, fbtn] = ['hud', 'ibtn',
   out.note = getComputedStyle(document.getElementById('hudnote')).display; return out; });
 check('the vitals plate is at the bottom left, under the ledger and left of the band', vp.plate[0] === 18 && vp.plate[3] === vp.H - 20 && vp.plate[1] < vp.H - 100
   && vp.plate[1] > vp.led[3] && vp.plate[2] < vp.band[0], vp);
+// S2594 — under 1,040 wide the band gave its left end to the plate (64 px over it at 960, S2587): it now stops 16 px right of the plate,
+// its right end and the ⏳ where they were, the canvas drawn at the band's own width with the heading at its middle
+const vwN = page.viewportSize(); const nar = {};
+for (const w of [1280, 960, 900]) { await page.setViewportSize({ width: w, height: 720 });
+  nar[w] = await page.evaluate(() => { const r = e => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.right)]; };
+    drawCompass(); return { band: r(compassEl), cw: compassEl.width / Math.min(2, devicePixelRatio || 1), plate: r(document.getElementById('hud')), wait: r(document.getElementById('wait-btn')), W: innerWidth }; }); }
+await page.setViewportSize(vwN);
+check('under 1,040 wide the band stops 16 px right of the vitals plate and keeps its right end and the ⏳; at 1,280 it is 600 as before',
+  nar[1280].band[1] - nar[1280].band[0] === 600 && [960, 900].every(w => { const n = nar[w]; return n.band[0] === n.plate[1] + 16 && n.band[1] === w - 100 && n.cw === n.band[1] - n.band[0] && n.wait[1] === w - 16; }), nar);
 check('a bar reads its value over its maximum, and the marks fill a quarter of the level\'s bar', vp.hp === vp.want && Math.abs(vp.xp - 25) < 0.2, { hp: vp.hp, want: vp.want, xp: vp.xp });
 check('the weapon\'s roundel shows the weapon in hand, a fist when bare, and opens the inventory; the spell\'s names the spell in its title', vp.inPlate
   && vp.bare === '✊' && vp.blade[0] === '🗡️' && /^Test Blade/.test(vp.blade[1]) && vp.inv && /\(F\)$/.test(vp.fb[1]) && vp.note === 'block', vp);
