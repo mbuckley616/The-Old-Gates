@@ -638,6 +638,43 @@
     K.group.name='mine head';K.group.position.set(8,y0-y,10);mouth.add(K.group);
     for(const b of K.sol){const [wx,wz]=H.toW(b.x,b.z);STATIC_SOL.push({cx:wx,cz:wz,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h});}
     C.headKit={tris:K.tris,draws:K.draws,sol:K.sol.length,ox:+H.ox.toFixed(2),oz:+H.oz.toFixed(2)};return K;}
+  // S2621 (Michael's A on #1983: "by what each serves, the windmill and the lighthouse first"; OG-046's "farms and windmills") — the
+  // Gatelands' tower mill (PKIT.places.mill, places.js's gatelandsMill) on a rise 150 to 400 m out of one village in two, among its fields.
+  // Read by place (withPlace over the village), each by its own stream (mill:<site>): up to 48 spots on that ring, inside the village's own
+  // cell (20 m off its edge), in open country (the land's field weight .6 or more and its wood .3 or less, as landMask reads them), the ground 3 m or more over the sea and within 1.2 m of the spot's 7 m round, 40 m off every pad, 60 m off
+  // every door, 30 m off the line of every road and 30 m off every lake's rim; the highest wins. Its front door turns toward the village,
+  // its sails into the west wind. -> [{ id, x, z, y, ry, wind, site }] kept on the cell (c._mills); none on the old look
+  const MILL_FIELD=.6,MILL_WOOD=.3;
+  function millsAt(c){
+    if(c._mills!==undefined)return c._mills;c._mills=[];
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.mill)return c._mills;
+    if(nationKeyOf(c.i,c.j)!=='gatelands')return c._mills;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const segD=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);};
+    for(const t of c.sites){if(t.kind!=='village')continue;const r=PKIT.stream('mill:'+t.id);if(r()>=.5)continue;let best=null;
+      withPlace(t.x,t.z,()=>{for(let n=0;n<48;n++){const a=r()*Math.PI*2,d=150+r()*250,x=t.x+Math.sin(a)*d,z=t.z+Math.cos(a)*d;
+        if(x<c.ox+20||x>c.ox+SIZE-20||z<c.oz+20||z>c.oz+SIZE-20)continue;
+        if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+40)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<60))continue;
+        if(c.roadDefs.some(q=>byId[q.a]&&byId[q.b]&&segD(x,z,byId[q.a],byId[q.b])<30)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+30))continue;
+        {let field=0,wood=0;for(const e of regionWeights(x,z)){if(e.w<=0)continue;field+=e.w*(LAND_FIELD_BIOMES[e.r.biome]||0);wood+=e.w*(e.r.density||0)*(e.r.trees&&e.r.trees!=='dead'?1:.3);}if(field<MILL_FIELD||wood>MILL_WOOD)continue;} /* among the fields (the land's own mask: 89-world-land.js), not in a wood */
+        const h=rawH(x,z);if(h<3)continue;let ok=true;for(let k=0;k<8&&ok;k++){const b=k/8*Math.PI*2;if(Math.abs(rawH(x+Math.sin(b)*7,z+Math.cos(b)*7)-h)>1.2)ok=false;}if(!ok)continue;
+        if(!best||h>best.y)best={x:+x.toFixed(2),z:+z.toFixed(2),y:+h.toFixed(2)};}});
+      if(!best)continue;const ry=Math.atan2(t.x-best.x,t.z-best.z);
+      c._mills.push({id:`mill_${t.id}`,...best,ry:+ry.toFixed(4),wind:+(-Math.PI/2-ry+(r()-.5)*.5).toFixed(4),site:t.id});}
+    return c._mills;}
+  // each mill's knoll: level 7 m round its tower, easing into the land over 8, a clearing of 16 m, and its fields 45 m round kept open (the cell's first step, so the chunks are built with it)
+  function millStamps(c,k){return millsAt(c).flatMap(m=>[addStamp({id:m.id+'_pad',kind:'door',x:m.x,z:m.z,r:7,blend:8,y:m.y,cell:k}),addStamp({id:m.id+'_clear',kind:'door',noFlat:true,x:m.x,z:m.z,r:16,blend:2,y:m.y,cell:k}),addStamp({id:m.id+'_fields',kind:'graze',noFlat:true,x:m.x,z:m.z,r:45,blend:0,y:m.y,cell:k})]);} /* no tree where the sails sweep, and its fields kept open round it (a pasture's one tree in twelve, S2088), so it reads from the road */
+  // the mills built on their knolls; the tower solid (two boxes, square and turned 45°, its round); the sails turned by tickMills
+  const MILLS=[];
+  function placeMills(c,k){const out=[];for(const m of millsAt(c)){const y=worldH(m.x,m.z),co=Math.cos(m.ry),s_=Math.sin(m.ry);
+      const K=PKIT.places.mill({key:m.id,wind:m.wind,working:true,ground:(lx,lz)=>worldH(m.x+lx*co+lz*s_,m.z-lx*s_+lz*co)-y});
+      K.group.position.set(m.x,y,m.z);K.group.rotation.y=m.ry;K.group.name='mill';sc.add(K.group);
+      for(const a of [0,Math.PI/4])STATIC_SOL.push({cx:m.x,cz:m.z,rx:2.85,rz:2.85,c:Math.cos(m.ry+a),s:Math.sin(m.ry+a),h:9.6});
+      m.kit={tris:K.tris,draws:K.draws,tipLow:K.tipLow,hub:K.hub};m.group=K.group;m.spin=K.spin;
+      for(let i=MILLS.length-1;i>=0;i--)if(MILLS[i].id===m.id)MILLS.splice(i,1);MILLS.push(m);out.push(K.group);}
+    return out;}
+  // the sails turn, about a turn every eight seconds, while the mill is in the scene
+  function tickMills(dt){for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);}}
   // S1828 (card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road") — Aurenne's trade tunnels
   // (PKIT.au.tunnel, places.js's aurenneTunnel): the road's short way under a hill, a bore of 56 m with a portal each side of the ridge
   // beside one of the cell's roads. Every Aurenne cell whose land holds one keeps one. Read by place (withPlace over the cell's middle, the

@@ -2061,6 +2061,7 @@ function mineVein(v){if(MINE&&MINE.v===v){MINE=null;showMsg('You stop working th
   MINE={v,t:toolStrike('pick')};showMsg(`You set to the ${ORE_DEF[v.ore].name.toLowerCase()}.`,'#c8b890');}
 function tickMining(dt){if(typeof tickArcJoin==='function')tickArcJoin(dt); /* S2372 — three arcs set together (68-dungeon-misc.js) */
   tickStars(dt); /* S2493 */
+  if(typeof tickMills==='function')tickMills(dt); /* S2621 — the mills' sails (82-world-structures.js) */
   if(!MINE)return;const v=MINE.v;
   if(v.gate!=null){tickGateMining(dt);return;} /* S2371 — a gate keep's crystal (68-dungeon-misc.js) */
   if(!veinLive(v)||activeZoneId!=='world'||Math.hypot(px-v.x,pz-v.z)>TOUCH+1.2||(typeof dead!=='undefined'&&dead)){MINE=null;return;}
