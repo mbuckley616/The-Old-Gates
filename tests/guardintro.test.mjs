@@ -96,7 +96,7 @@ check(`10% a week, capped at double: ${au_a.wk.join(' → ')}`, au_a.wk[0] === 9
 const au_y = await page.evaluate(([A]) => { const S = WORLD.settle.get(A); const L = fineRec(S); L.bounty = 250; BAG.push({ name: 'A brass cup', type: 'misc', buyPrice: 10, qty: 1, stolen: true });
   offerYield(S, L); const lbl = [...document.querySelectorAll('#dlg-choices > button')].map(b => b.textContent.trim()); try { closeDialog(); } catch (e) {}
   const t0 = worldState.gameTimeAbsMinutes, h0 = worldState.gameTimeMinutes; toPrison(S, L); return { lbl, t0, h0 }; }, auIds);
-await page.waitForTimeout(3000);
+await page.waitForFunction(t0 => worldState.gameTimeAbsMinutes - t0 > 60, au_y.t0, { timeout: 120000, polling: 250 }).catch(() => {}); /* S2617 — the clock moves in doFade's callback, which waits on the page's frames: wait for it, not 3 s */
 const au_p = await page.evaluate(([A, t0]) => ({ d: (worldState.gameTimeAbsMinutes - t0) / 60, h: worldState.gameTimeMinutes / 60, led: fineRecAt(A).bounty, cup: BAG.some(b => b.name === 'A brass cup'), nat: nationRecord('aurenne') }), [auIds[0], au_y.t0]);
 console.log(JSON.stringify(au_y), JSON.stringify(au_p));
 check(`the yield offers *${au_y.lbl.find(x => /Prison/.test(x))}*; taken, ${au_p.d.toFixed(1)} h pass to 7:00, the ledger is clear and the stolen cup taken`, au_y.lbl.some(x => /Prison \(3 nights\)\./.test(x)) && !au_y.lbl.some(x => /cells/.test(x)) && Math.abs(au_p.d - (20 + 48)) < 0.1 && Math.abs(au_p.h - 7) < .1 && au_p.led === 0 && !au_p.cup && !au_p.nat, au_p);
