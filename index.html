@@ -162,6 +162,12 @@
 /* S2591 — in a dialogue the ledger stands left of the panel (#dlg at 20%), its slips wrapped, so a line that comes mid-talk no longer covers the talk */
 body:has(#dlg[style*="block"]) #ledger{width:calc(20% - 30px)}
 body:has(#dlg[style*="block"]) #ledger .ldg{max-width:100%}
+/* S2603 — the shop fills the window and four slips stood over its stock list's rows 10–13 for 6 s after each sale (the critic, s1927). While it
+   is open the ledger stands in the shop's header, between its name and the ✕, and shows the newest slip only, on one line; the older ones are
+   still kept and are seen again if the shop closes inside their 6 s */
+body:has(#shop[style*="flex"]) #ledger{left:auto;right:52px;top:16px;bottom:auto;width:min(430px,calc(50% - 60px));align-items:flex-end}
+body:has(#shop[style*="flex"]) #ledger .ldg{display:none}
+body:has(#shop[style*="flex"]) #ledger .ldg:last-child{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #dmgnums{position:fixed;inset:0;pointer-events:none;z-index:205;overflow:hidden}
 /* S761 — damage numbers at the foe's head (#198 A, docs/prototypes/hud/ on auto/concept): placed and faded by tickDmgNums */
 .dn{position:absolute;transform:translate(-50%,-100%);text-align:center;white-space:nowrap;font:500 30px/1 Georgia,'Times New Roman',serif;font-variant-numeric:lining-nums tabular-nums;color:#f6ecd4;-webkit-text-stroke:5px #1a0f06;paint-order:stroke fill;text-shadow:0 2px 6px rgba(0,0,0,.6);letter-spacing:.02em}

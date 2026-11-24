@@ -111,5 +111,20 @@ await page.setViewportSize(vwN);
 check('eleven choices fit whole at 720 and 640 tall, the panel 120 px or more below the top; at 600 a cue stands at the fold until the farewell is scrolled to',
   [720, 640].every(h => d11[h].fits && d11[h].lastSeen && d11[h].cue === 'none' && d11[h].top >= 120)
   && !d11[600].fits && !d11[600].lastSeen && d11[600].cue === 'block' && d11[600].scrolledSeen && d11[600].cueAfter === 'none', d11);
+// S2603 — in a shop four slips stood over the stock list's rows 10–13 for 6 s after each sale: while the shop is open the ledger stands in its
+// header between its name and the ✕, the newest slip alone on one line, and the older ones are seen again when it closes
+const sh = {};
+for (const [w, h] of [[1280, 720], [800, 600]]) { await page.setViewportSize({ width: w, height: h });
+  sh[w] = await page.evaluate(() => { const r = e => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
+    const shop = document.getElementById('shop'); document.getElementById('sh-title').textContent = 'Fionnuala\'s Stores and Chandlery'; shop.style.display = 'flex';
+    for (const l of ['Bought Bronze Dagger for 13🪙', 'Bought Iron Sword for 34🪙', 'Sold Iron Sword for 16🪙', 'Sold a Fine Steel Longsword of the Northern Marches for 120🪙']) showMsg(l, '#e8d8a0');
+    const seen = () => [...document.querySelectorAll('#ledger .ldg')].filter(e => !e.classList.contains('gone') && getComputedStyle(e).display !== 'none');
+    const t = document.createRange(); t.selectNodeContents(document.getElementById('sh-title'));
+    const o = { slips: seen().map(r), text: seen().map(e => e.textContent), cols: r(document.querySelector('.sh-cols')), close: r(document.getElementById('sclose')), titleEnd: Math.round(t.getBoundingClientRect().right) };
+    shop.style.display = 'none'; o.after = seen().length; return o; }); }
+await page.setViewportSize(vwN);
+check('in a shop one slip, the newest, stands on one line in the header, clear of the stock list, the shop\'s name and the ✕; four again after it closes',
+  Object.values(sh).every(o => o.slips.length === 1 && /Longsword/.test(o.text[0]) && o.slips[0][3] <= o.cols[1] - 12 && o.slips[0][3] - o.slips[0][1] < 35
+    && o.slips[0][2] <= o.close[0] - 12 && o.slips[0][0] >= o.titleEnd + 40 && o.after === 4), sh);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
