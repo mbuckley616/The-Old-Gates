@@ -711,3 +711,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** The 22 Nov weekly run's 20 reds: most fixed by their lanes (Sessions 2533–2555); what is left stays in backlog I.
 
 **Roadmap.** 351 of 454 stories done (347 of 452 on 22 Nov): Workstations done. The new look is 7 of 18.
+
+## 24 Nov 2026
+
+**Waiting on you.** Eight decisions: the sea that pushes back (#1925, B); the clergy's dress (#1936, B); Stump (#1950, B); the pearl oysters' bed (#1952, A); the sea's creatures (#1954, A); the Mark's mine head (#1958, A); your house's fittings in a full townhouse (#1966, A); a town's day (#1971, B). No merge waits for you.
+
+**Landed on main since 23 Nov.** #198 A's HUD finished: the wide compass band, the ledger of slips, the vitals plate at the bottom left, then the critic's three faults (shop slips over the stock, the controls line off a narrow window, an eleven-choice dialogue cut) fixed (Systems 2573–2605). The Frostborn Vault placed on the Fields' fell; Stormwatch's face in beds with a lip; the star iron's cold light and its scorched, leaning wood; the oyster bed and the mine head drawn and asked (Look 2574–2601). The sea line in the game: six sea fish, two rays, jelly, squid, octopus, turtle, tidecrab, the grey seal with a galumph ashore; the spyglass held steady (Bodies 2575–2606). QA's deadkeys fix and the shard rebalance; a playtest; quest drafts III; the town's day proposal; Stump's concept. Build s1931.
+
+**Under way.** No PR open. Every builder's next item waits on one of the eight answers above; systems on #1954, bodies on #1936 and #1950, look on #1952, #1958 and #1966.
+
+**Blocked.** Nothing beyond those answers. The 22 Nov weekly run's leftovers stay in backlog I.
+
+**Roadmap.** 352 of 455 stories done (351 of 454 on 23 Nov): the critic's 24 Nov HUD faults done. The new look is 7 of 18.
