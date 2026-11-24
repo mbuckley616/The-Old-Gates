@@ -3,109 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### A lesser gate's outside — OG-037's rings at what size? (from the look builder, 2026-11-24, #1991)
-**The question.** Michael answered on 12 Oct that a gate's outside is concentric rings, with a broken circle for a failing gate (OG-037); it was never built, and every lesser gate is still Session 578's 4 m turf mound with a plank door in front of F5's 26 m nave. Session 2616's prototype (`gatemouth.js`) draws the rings at three sizes, each in three conditions, with its hill and a camp at the foot. At what size? ([medium](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m.jpg), [large](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-l.jpg), [small](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-s.jpg), [failing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-failing.jpg), [catastrophic](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-catastrophic.jpg), [at the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-door.jpg), [at dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-dusk.jpg).)
-
-**Options.**
-- **A. Medium** *(recommended)*: rings 26 m across, a slit of 2.4 by 5.5 m, on a hill raised about 20 m. Not built to a person's size, yet a hundred of them sit in the land as hills, and the great gates (100 m) stay a size apart. One look session on the new look, the condition from the gate's own roll.
-- **B. Large**: rings 50 m across, a slit of 3.6 by 11 m, on a 38 m hill; each gate a landmark seen from far off, the great gates only twice its size.
-- **C. Small**: rings 13 m across and today's door (1.5 by 2.8 m), on an 11 m hill; the least change to the ground.
-- **D. Keep the turf mound.**
-
-**Recommendation: A.** Big enough that the Weavers did not build for people, small enough to stay hills, and a size apart from the great gates.
-
-### The Gatelands' works (OG-046) — which come into the world, and where? (from the look builder, 2026-11-24, #1983)
-**The question.** Seven works are finished prototypes in `places.js` (Sessions 949–1234): the windmill, the lighthouse, a toll bridge of three 5.6 m arches, the Mark's rope ferry, a shipyard, a quarry with its draw kiln, and a canal lock. None is in the world, and #1292 A covers only off-road places and road camps, not a town's or a road's works. Which come into the world, and where? ([the seven as drawn](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2609/docs/prototypes/levelup/places-works-sheet.jpg); seed 1's Gatelands hold 115 villages, 35 ports, 22 towns, 9 road bridges.)
-
-**Options.**
-- **A. By what each serves, one kind a session, the windmill and the lighthouse first** *(recommended)*: a windmill on a rise 150–400 m out of one village in two, among its fields; a lighthouse on the nearest point of shore to each port within a kilometre; the shipyard beside a port's quay, one port in three; the quarry and kiln as an off-road place under #1292 A's rule, in hill ground; the toll bridge in place of the road's own bridge where a Gatelands road crosses a river between two towns. The canal and the ferry wait: the world cannot cut a lock, and the ferry is the Mark's.
-- **B. As A, the windmill and the lighthouse only**; the rest wait.
-- **C. All of them under #1292 A's rule**: by the land, unmarked until found, one cell in three.
-- **D. Leave them in the prototype.**
-
-**Recommendation: A.** Each work stands where it does its job, so a village reads as a village from the road and a port from the sea; the two that cannot be placed honestly wait.
-
-### A town's day — the street by the hour, a market day with prices by place, or those plus a black market and events? (from the designer, 2026-11-24, #1971)
-**The question.** Today every shop opens 8 to 18 and every town keeps the same day, and a counter's price depends only on the town's prosperity. How far should a town's day go: the street by the hour, a weekly market day with prices by place, or those plus a black market and passing events? (Backlog L12, OG-143; [the proposal](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/a-towns-day.md).)
-
-**Options.**
-- **A. The street by the hour**: shop hours by trade (the forge 7–17, the goods shop 9–19), the watch's handover at the gate at 6:30 and 19:00, the inn full from 17, and a knock at a keeper's door out of hours at favour 2 for ×1.25. Two systems sessions.
-- **B. A, plus market day and prices by place** *(recommended)*: one market day a week an island (7 to 15; 4 + prosperity ÷ 25 stalls; ×0.9 to buy and +10% to sell that day), each island's own goods ×0.85 at home and ×1.2 abroad, a foreign stall in each port, and one more traveller on each road the day before. Five systems sessions, one look.
-- **C. B, plus the black market and passing events**: counters refuse goods stolen from their own town; a fence in each city and port's inn, 21–3, at 60%; one passing event every 8 weeks for each town (a noble's visit, a raid from a failing gate, rebuilding after a sack). About twelve systems sessions, one bodies session.
-
-**Recommendation: B.** It turns the calendar you chose into a week the player can see, and it makes where and when you sell a decision. It builds on the clock, prosperity, the cargo rule and the road's people, with no new meters or save keys. C's halves belong with law in three registers and the gates unsettling the world.
-### Your house's fittings in a full townhouse — a workshop in the yard, the kitchen table out, fewer places, or unseen? (from the look builder, 2026-11-24, #1966)
-**The question.** Every Dunmore home is a townhouse by the rules, and a townhouse sells 4 places for the workbench, the clay oven, the kiln and the still (workstations, your C on #1883). A fitting stands by a whole wall of the ground floor, clear of the room's furniture and doors. Measured on seed 1 with all four fitted: a 3-bay house (5.55 by 7.1 m, 19 of Dunmore's 44 homes) lays none of the four; 4 bays lay two, 5 bays three. A fitting with no wall works anywhere in the house, so the rules hold, but you never see it. Laying the largest first only trades one fitting for another; leaving the kitchen's table out gains the bench and nothing else.
-
-**Options.**
-- **A. A lean-to workshop in the yard** *(recommended)*. What the room cannot hold stands in a lean-to against the house's back wall, in its yard, where the tanner's rack and the garden already stand; you work each fitting from its front. A prototype first (look builder), then one look session.
-- **B. The kitchen table gives way.** In a house you own, the kitchen's table and stools go; measured, only the bench gains a place in a 3-bay house.
-- **C. Fewer places.** A house sells only the places its room holds (systems builder: `homePlaces` read from the room).
-- **D. Keep it as it is.** The fitting works anywhere in the house, unseen.
-
-**Recommendation: A.** The oven, the kiln and the still are fire-and-smoke work that sat in yards and outhouses as often as in kitchens. It keeps the places you paid for, and you see them. Pictures (Sorcha's old house, 3 bays, all four fitted): [the kitchen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2594/docs/prototypes/levelup/homefits-2594-kitchen.jpg) · [the parlour](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2594/docs/prototypes/levelup/homefits-2594-parlour.jpg)
-
-### The Mark's mine head — the working outside as drawn, the yard alone, or the bare mouth? (from the look builder, 2026-11-23, #1958)
-**The question.** The Mark's silver mines (Session 1790, #305 A, #1026 A) open in the game as a bare granite outcrop with timber sets in its throat, on a snow slope with nothing round it. Session 1204 drew the outside a working mine would have (`markMineHead`, after Kongsberg and Røros), never asked: a terrace of waste built out from the hill, a log house over the adit's mouth, a plank tramway to the end of the tip, a sorting house, a shaft under an open headframe, and a horse whim under an eight-sided roof; 35,800 triangles in 19 draws. On seed 1, four of six mines are worked; the terrace is fill in front, 4.0–8.4 m for the whole head (39 × 18 m), 2.8–5.2 m for the yard alone (16 × 12 m), taken by the land as a raised pad.
-
-**Options.**
-- **A. The head as drawn at every worked mine** *(recommended)*: the terrace, the adit house, the tramway and tip, the sorting house, the shaft (fenced, looks only; the adit stays the one way in) and the whim. A worked-out mine keeps the bare mouth. One look session.
-- **B. The yard only**: the adit house, the tramway to the tip and the sorting house; no shaft and no whim. About 15,000 triangles fewer.
-- **C. As A, and a worked-out mine gets the same head abandoned** (roofs fallen in, no rope, the tip grown over). A prototype first, then one session more.
-- **D. Keep the bare mouth.**
-
-**Recommendation: A.** The whim's roof and the grey tip say "a mine" from across the valley, which the outcrop does not, and a worked mine should look worked.
-
-### The sea's creatures — by habitat on the land animals' rules, all peaceful, or wait for the reefs? (from the systems builder, 2026-11-23, #1954)
-**The question.** The bodies builder has put fifteen of the sea's creatures into the game (Sessions 2575–2585), but nothing rolls any of them, so the sea is still empty. Whether any of them bites, and what a fish you take is worth, is a rule of play. How should they enter the sea?
-
-**Options.**
-- **A. By habitat, on the land animals' rules** *(recommended)* (#984 A, #1014 A, #1050 A). Within about 150 m, each sea chunk rolls one group by its id, depth and bed: shallows (rays, turtle, tidecrab, the lantern jelly by night), reef rock (moray, stonefish, octopus), open water (tuna schools, drifter squid, skyskimmer), the deepest water (angler, eel), seals hauled out on coast rock or sand. The moray, the stonefish (when trodden on) and the octopus answer back as the Gatefen Boar does. Fish are taken by hand while swimming, 1.2 weight and 18 gold (the tuna 3 and 30). Not saved. Two systems sessions.
-- **B. As A, all peaceful.** Nothing answers back; the reef is safe to swim.
-- **C. Wait for #1925** (the sea that pushes back) and lay them with its reefs and races.
-
-**Recommendation: A.** It uses only rules Michael has already chosen for the land and the rivers, and gives the swim a reason before #1925's reefs exist; when those land, the reef kinds move onto them. The gate eel and the Gate Leviathan are not in this.
-
-### The pearl oysters' bed — bring it in as drawn, a bare bank, or keep the stand-in? (from the look builder, 2026-11-23, #1952)
-**The question.** Rare materials B's last kit piece: the deep pearl oysters' bed, 8 m down off Aurenne. Since Session 2520 the game draws five grey squashed spheres as a stand-in. Session 2586 draws the bed in the kit (`props.js` `oysterBed`): a pale shell bank 4.8 m across, flat rubble, five olive-brown pearl oysters of 0.24–0.30 m, an opened one left open and empty until the bed comes back; 7,600–9,100 triangles in 8–9 draws.
-
-**Options.**
-- **A. Bring it in as drawn** *(recommended)*, in one session: the bank, the rubble, the oysters, the weed and the fans, an opened shell left open until the bed comes back (14 days).
-- **B. As A, without the weed and fans**: 1,500 triangles and two draws fewer.
-- **C. Keep the stand-in for now.**
-
-**Recommendation: A.** Pictures: [the bed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2586/docs/prototypes/levelup/rare-oyster.jpg) · [one opened](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2586/docs/prototypes/levelup/rare-oyster-close.jpg) · [from the surface](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2586/docs/prototypes/levelup/rare-oyster-above.jpg)
-
-### The strange and the legendary, II — how much of Stump, Nell's dammer, should show? (from the concept artist, 2026-11-23, #1950)
-**The question.** The quest writer's *The Strange and the Legendary, II* (unapproved) takes the rest of OG-071; Michael's C on #1911 carries over, so Tomcán, Nell, Ord and Elias are dressed as OG-071 draws them. One thing is open: Stump, Nell's dammer, a cart-sized river beast with a walrus's face, two downturned tusks and six short legs. How much of him should show? (`docs/prototypes/levelup/strange2.html`)
-
-**Options.**
-- **A. In the river, unseen.** Rings and a wake where he went under, the dam of gnawed alder on the bank. The draft as written; nothing to build. [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1123/docs/prototypes/levelup/strange2-a.jpg)
-- **B. Half out at the bank** *(recommended)*. His face, his 40 cm tusks and his back above the water; posed once, no walk. [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1123/docs/prototypes/levelup/strange2-b.jpg)
-- **C. On the bank, whole, as OG-071 draws him.** 4.0 m long, 1.4 m at the back, six legs, a flat tail; needs a six-legged walk. [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1123/docs/prototypes/levelup/strange2-c.jpg)
-
-**Recommendation: B.** The tusks and the face read across the river at a glance, he stays where the draft puts him, and the creature kit needs only a standing pose. Stump is 233k triangles; a frame of the bank is 1.61M in 671 calls at B and C, 1.14M in 616 at A.
-
-### The clergy's dress — one habit everywhere, by island, or by island with the office shown? (from the bodies builder, 2026-11-23, #1936)
-**The question.** Backlog L1, the wardrobe matrix's clergy column (owed since Session 2504). Every church has a keeper whose role is `Priest`, and on the new look they wear their people's everyday clothes: nothing marks the calling. The prototype (`docs/prototypes/levelup/clergy.html?level=a|b|c`, Session 2570) dresses a man and a woman of each people as their town's priest three ways, all from pieces the kit already has.
-
-**Options.**
-- **A. One habit everywhere** (OG-110's clergy row): a brown wool robe, the cowl, a rope cord and a book, on all three islands. [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies-2570/docs/prototypes/levelup/clergy-2570-a.jpg)
-- **B. By island, as the canon has the faiths** *(recommended)*. The Gatelands' temples of the six: an undyed habit under a moss-green scapular, cord, cowl and book (Sister Elidan's cut). Aurenne's Church of the Weaver: a white robe and scapular with the red shuttle, a gold cord, a white head-cloth on a woman. The Mark, which scorns priests: no priest; its shrine-keeper wears the Mark's own wool and carries the lamp that is always lit. [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies-2570/docs/prototypes/levelup/clergy-2570-b.jpg)
-- **C. B with the office shown.** The Gatelander's green cape on a bronze brooch, the Aurennais robe bordered in gold under a blue sash, the Markish keeper in woven bands and a fur-collared cloak. [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies-2570/docs/prototypes/levelup/clergy-2570-c.jpg)
-
-**Recommendation: B.** It keeps the three faiths apart, and the Church's shuttle then reads as Aurenne's at a distance. C fits a high priest or a Prior, if a town's clergy is ever given a rank. The green scapular is the same for all six gods (a colour per god waits on the canon, #410). Once answered: one bodies session, a `Priest` row in `hbTradeDress`.
-
-### The sea that pushes back — tidal races and reefs, those plus a serpent, or a sea that moves with the gates? (from the designer, 2026-11-23, #1925)
-**The question.** Backlog L11's *At sea* (OG-135) asks for currents, reefs and a sea serpent. Today nothing moves the water, the only hazard is running aground on a bed under 1.4 m, and open water between the islands is empty unless a black sail is in it. How far should the sea push back? (`docs/design/the-sea-that-pushes-back.md`)
-
-**Options.**
-- **A. Tidal races and reefs.** Straits under 700 m wide run with the tide at up to 2.5 m/s, slack at 00, 06, 12 and 18 h (the canon's Inis Rua strait). Reefs off one headland in six, seen by their breakers and drawn on the navigator's shoal map. Three systems sessions.
-- **B. A, plus the serpent** *(recommended)*. An Uisce gate's antibody in open water, rising on about one crossing in six; a 2.5 s tell before each 15-hull strike, dodged by crossing its line at over 6 m/s. It swims at 9 m/s (a cutter outruns it, a sloop cannot) and will not cross water under 4 m. Ten ballista bolts kill it; driven off it leaves a scale, killed its skull is a figurehead. Seven sessions (six systems, one bodies) and a quest-writer run.
-- **C. B, plus a sea that moves with the gates.** Each torn Uisce gate makes the serpent rise more often, and a race off one becomes a whirlpool. Waits on the great gates being in the world. Ten sessions.
-
-**Recommendation: B.** The races and reefs give the sea places, and the serpent gives them a use: the yard's choice of hull starts to matter at sea, and the best answer is a route, not a better weapon.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -119,6 +16,130 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### A lesser gate's outside — OG-037's rings at what size? (from the look builder, 2026-11-24, #1991)
+**The question.** Michael answered on 12 Oct that a gate's outside is concentric rings, with a broken circle for a failing gate (OG-037); it was never built, and every lesser gate is still Session 578's 4 m turf mound with a plank door in front of F5's 26 m nave. Session 2616's prototype (`gatemouth.js`) draws the rings at three sizes, each in three conditions, with its hill and a camp at the foot. At what size? ([medium](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m.jpg), [large](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-l.jpg), [small](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-s.jpg), [failing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-failing.jpg), [catastrophic](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-catastrophic.jpg), [at the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-door.jpg), [at dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-dusk.jpg).)
+
+**Options.**
+- **A. Medium** *(recommended)*: rings 26 m across, a slit of 2.4 by 5.5 m, on a hill raised about 20 m. Not built to a person's size, yet a hundred of them sit in the land as hills, and the great gates (100 m) stay a size apart. One look session on the new look, the condition from the gate's own roll.
+- **B. Large**: rings 50 m across, a slit of 3.6 by 11 m, on a 38 m hill; each gate a landmark seen from far off, the great gates only twice its size.
+- **C. Small**: rings 13 m across and today's door (1.5 by 2.8 m), on an 11 m hill; the least change to the ground.
+- **D. Keep the turf mound.**
+
+**Recommendation: A.** Big enough that the Weavers did not build for people, small enough to stay hills, and a size apart from the great gates.
+
+Michael: **Medium: rings 26 m across** (A). (2026-11-24)
+
+### The Gatelands' works (OG-046) — which come into the world, and where? (from the look builder, 2026-11-24, #1983)
+**The question.** Seven works are finished prototypes in `places.js` (Sessions 949–1234): the windmill, the lighthouse, a toll bridge of three 5.6 m arches, the Mark's rope ferry, a shipyard, a quarry with its draw kiln, and a canal lock. None is in the world, and #1292 A covers only off-road places and road camps, not a town's or a road's works. Which come into the world, and where? ([the seven as drawn](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2609/docs/prototypes/levelup/places-works-sheet.jpg); seed 1's Gatelands hold 115 villages, 35 ports, 22 towns, 9 road bridges.)
+
+**Options.**
+- **A. By what each serves, one kind a session, the windmill and the lighthouse first** *(recommended)*: a windmill on a rise 150–400 m out of one village in two, among its fields; a lighthouse on the nearest point of shore to each port within a kilometre; the shipyard beside a port's quay, one port in three; the quarry and kiln as an off-road place under #1292 A's rule, in hill ground; the toll bridge in place of the road's own bridge where a Gatelands road crosses a river between two towns. The canal and the ferry wait: the world cannot cut a lock, and the ferry is the Mark's.
+- **B. As A, the windmill and the lighthouse only**; the rest wait.
+- **C. All of them under #1292 A's rule**: by the land, unmarked until found, one cell in three.
+- **D. Leave them in the prototype.**
+
+**Recommendation: A.** Each work stands where it does its job, so a village reads as a village from the road and a port from the sea; the two that cannot be placed honestly wait.
+
+Michael: **By what each serves, windmill and lighthouse first** (A). (2026-11-24)
+
+### A town's day — the street by the hour, a market day with prices by place, or those plus a black market and events? (from the designer, 2026-11-24, #1971)
+**The question.** Today every shop opens 8 to 18 and every town keeps the same day, and a counter's price depends only on the town's prosperity. How far should a town's day go: the street by the hour, a weekly market day with prices by place, or those plus a black market and passing events? (Backlog L12, OG-143; [the proposal](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/a-towns-day.md).)
+
+**Options.**
+- **A. The street by the hour**: shop hours by trade (the forge 7–17, the goods shop 9–19), the watch's handover at the gate at 6:30 and 19:00, the inn full from 17, and a knock at a keeper's door out of hours at favour 2 for ×1.25. Two systems sessions.
+- **B. A, plus market day and prices by place** *(recommended)*: one market day a week an island (7 to 15; 4 + prosperity ÷ 25 stalls; ×0.9 to buy and +10% to sell that day), each island's own goods ×0.85 at home and ×1.2 abroad, a foreign stall in each port, and one more traveller on each road the day before. Five systems sessions, one look.
+- **C. B, plus the black market and passing events**: counters refuse goods stolen from their own town; a fence in each city and port's inn, 21–3, at 60%; one passing event every 8 weeks for each town (a noble's visit, a raid from a failing gate, rebuilding after a sack). About twelve systems sessions, one bodies session.
+
+**Recommendation: B.** It turns the calendar you chose into a week the player can see, and it makes where and when you sell a decision. It builds on the clock, prosperity, the cargo rule and the road's people, with no new meters or save keys. C's halves belong with law in three registers and the gates unsettling the world.
+
+Michael: **A, plus market day and prices by place** (B). (2026-11-24)
+
+### Your house's fittings in a full townhouse — a workshop in the yard, the kitchen table out, fewer places, or unseen? (from the look builder, 2026-11-24, #1966)
+**The question.** Every Dunmore home is a townhouse by the rules, and a townhouse sells 4 places for the workbench, the clay oven, the kiln and the still (workstations, your C on #1883). A fitting stands by a whole wall of the ground floor, clear of the room's furniture and doors. Measured on seed 1 with all four fitted: a 3-bay house (5.55 by 7.1 m, 19 of Dunmore's 44 homes) lays none of the four; 4 bays lay two, 5 bays three. A fitting with no wall works anywhere in the house, so the rules hold, but you never see it. Laying the largest first only trades one fitting for another; leaving the kitchen's table out gains the bench and nothing else.
+
+**Options.**
+- **A. A lean-to workshop in the yard** *(recommended)*. What the room cannot hold stands in a lean-to against the house's back wall, in its yard, where the tanner's rack and the garden already stand; you work each fitting from its front. A prototype first (look builder), then one look session.
+- **B. The kitchen table gives way.** In a house you own, the kitchen's table and stools go; measured, only the bench gains a place in a 3-bay house.
+- **C. Fewer places.** A house sells only the places its room holds (systems builder: `homePlaces` read from the room).
+- **D. Keep it as it is.** The fitting works anywhere in the house, unseen.
+
+**Recommendation: A.** The oven, the kiln and the still are fire-and-smoke work that sat in yards and outhouses as often as in kitchens. It keeps the places you paid for, and you see them. Pictures (Sorcha's old house, 3 bays, all four fitted): [the kitchen](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2594/docs/prototypes/levelup/homefits-2594-kitchen.jpg) · [the parlour](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2594/docs/prototypes/levelup/homefits-2594-parlour.jpg)
+
+Michael: **A lean-to workshop in the yard** (A). (2026-11-24)
+
+### The Mark's mine head — the working outside as drawn, the yard alone, or the bare mouth? (from the look builder, 2026-11-23, #1958)
+**The question.** The Mark's silver mines (Session 1790, #305 A, #1026 A) open in the game as a bare granite outcrop with timber sets in its throat, on a snow slope with nothing round it. Session 1204 drew the outside a working mine would have (`markMineHead`, after Kongsberg and Røros), never asked: a terrace of waste built out from the hill, a log house over the adit's mouth, a plank tramway to the end of the tip, a sorting house, a shaft under an open headframe, and a horse whim under an eight-sided roof; 35,800 triangles in 19 draws. On seed 1, four of six mines are worked; the terrace is fill in front, 4.0–8.4 m for the whole head (39 × 18 m), 2.8–5.2 m for the yard alone (16 × 12 m), taken by the land as a raised pad.
+
+**Options.**
+- **A. The head as drawn at every worked mine** *(recommended)*: the terrace, the adit house, the tramway and tip, the sorting house, the shaft (fenced, looks only; the adit stays the one way in) and the whim. A worked-out mine keeps the bare mouth. One look session.
+- **B. The yard only**: the adit house, the tramway to the tip and the sorting house; no shaft and no whim. About 15,000 triangles fewer.
+- **C. As A, and a worked-out mine gets the same head abandoned** (roofs fallen in, no rope, the tip grown over). A prototype first, then one session more.
+- **D. Keep the bare mouth.**
+
+**Recommendation: A.** The whim's roof and the grey tip say "a mine" from across the valley, which the outcrop does not, and a worked mine should look worked.
+
+Michael: **The head as drawn at every worked mine** (A). (2026-11-24)
+
+### The sea's creatures — by habitat on the land animals' rules, all peaceful, or wait for the reefs? (from the systems builder, 2026-11-23, #1954)
+**The question.** The bodies builder has put fifteen of the sea's creatures into the game (Sessions 2575–2585), but nothing rolls any of them, so the sea is still empty. Whether any of them bites, and what a fish you take is worth, is a rule of play. How should they enter the sea?
+
+**Options.**
+- **A. By habitat, on the land animals' rules** *(recommended)* (#984 A, #1014 A, #1050 A). Within about 150 m, each sea chunk rolls one group by its id, depth and bed: shallows (rays, turtle, tidecrab, the lantern jelly by night), reef rock (moray, stonefish, octopus), open water (tuna schools, drifter squid, skyskimmer), the deepest water (angler, eel), seals hauled out on coast rock or sand. The moray, the stonefish (when trodden on) and the octopus answer back as the Gatefen Boar does. Fish are taken by hand while swimming, 1.2 weight and 18 gold (the tuna 3 and 30). Not saved. Two systems sessions.
+- **B. As A, all peaceful.** Nothing answers back; the reef is safe to swim.
+- **C. Wait for #1925** (the sea that pushes back) and lay them with its reefs and races.
+
+**Recommendation: A.** It uses only rules Michael has already chosen for the land and the rivers, and gives the swim a reason before #1925's reefs exist; when those land, the reef kinds move onto them. The gate eel and the Gate Leviathan are not in this.
+
+Michael: **By habitat, on the land animals’ rules** (A). (2026-11-24)
+
+### The pearl oysters' bed — bring it in as drawn, a bare bank, or keep the stand-in? (from the look builder, 2026-11-23, #1952)
+**The question.** Rare materials B's last kit piece: the deep pearl oysters' bed, 8 m down off Aurenne. Since Session 2520 the game draws five grey squashed spheres as a stand-in. Session 2586 draws the bed in the kit (`props.js` `oysterBed`): a pale shell bank 4.8 m across, flat rubble, five olive-brown pearl oysters of 0.24–0.30 m, an opened one left open and empty until the bed comes back; 7,600–9,100 triangles in 8–9 draws.
+
+**Options.**
+- **A. Bring it in as drawn** *(recommended)*, in one session: the bank, the rubble, the oysters, the weed and the fans, an opened shell left open until the bed comes back (14 days).
+- **B. As A, without the weed and fans**: 1,500 triangles and two draws fewer.
+- **C. Keep the stand-in for now.**
+
+**Recommendation: A.** Pictures: [the bed](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2586/docs/prototypes/levelup/rare-oyster.jpg) · [one opened](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2586/docs/prototypes/levelup/rare-oyster-close.jpg) · [from the surface](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2586/docs/prototypes/levelup/rare-oyster-above.jpg)
+
+Michael: **Bring it in as drawn** (A). (2026-11-24)
+
+### The strange and the legendary, II — how much of Stump, Nell's dammer, should show? (from the concept artist, 2026-11-23, #1950)
+**The question.** The quest writer's *The Strange and the Legendary, II* (unapproved) takes the rest of OG-071; Michael's C on #1911 carries over, so Tomcán, Nell, Ord and Elias are dressed as OG-071 draws them. One thing is open: Stump, Nell's dammer, a cart-sized river beast with a walrus's face, two downturned tusks and six short legs. How much of him should show? (`docs/prototypes/levelup/strange2.html`)
+
+**Options.**
+- **A. In the river, unseen.** Rings and a wake where he went under, the dam of gnawed alder on the bank. The draft as written; nothing to build. [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1123/docs/prototypes/levelup/strange2-a.jpg)
+- **B. Half out at the bank** *(recommended)*. His face, his 40 cm tusks and his back above the water; posed once, no walk. [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1123/docs/prototypes/levelup/strange2-b.jpg)
+- **C. On the bank, whole, as OG-071 draws him.** 4.0 m long, 1.4 m at the back, six legs, a flat tail; needs a six-legged walk. [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1123/docs/prototypes/levelup/strange2-c.jpg)
+
+**Recommendation: B.** The tusks and the face read across the river at a glance, he stays where the draft puts him, and the creature kit needs only a standing pose. Stump is 233k triangles; a frame of the bank is 1.61M in 671 calls at B and C, 1.14M in 616 at A.
+
+Michael: **Half out at the bank** (B). (2026-11-24)
+
+### The clergy's dress — one habit everywhere, by island, or by island with the office shown? (from the bodies builder, 2026-11-23, #1936)
+**The question.** Backlog L1, the wardrobe matrix's clergy column (owed since Session 2504). Every church has a keeper whose role is `Priest`, and on the new look they wear their people's everyday clothes: nothing marks the calling. The prototype (`docs/prototypes/levelup/clergy.html?level=a|b|c`, Session 2570) dresses a man and a woman of each people as their town's priest three ways, all from pieces the kit already has.
+
+**Options.**
+- **A. One habit everywhere** (OG-110's clergy row): a brown wool robe, the cowl, a rope cord and a book, on all three islands. [A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies-2570/docs/prototypes/levelup/clergy-2570-a.jpg)
+- **B. By island, as the canon has the faiths** *(recommended)*. The Gatelands' temples of the six: an undyed habit under a moss-green scapular, cord, cowl and book (Sister Elidan's cut). Aurenne's Church of the Weaver: a white robe and scapular with the red shuttle, a gold cord, a white head-cloth on a woman. The Mark, which scorns priests: no priest; its shrine-keeper wears the Mark's own wool and carries the lamp that is always lit. [B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies-2570/docs/prototypes/levelup/clergy-2570-b.jpg)
+- **C. B with the office shown.** The Gatelander's green cape on a bronze brooch, the Aurennais robe bordered in gold under a blue sash, the Markish keeper in woven bands and a fur-collared cloak. [C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/bodies-2570/docs/prototypes/levelup/clergy-2570-c.jpg)
+
+**Recommendation: B.** It keeps the three faiths apart, and the Church's shuttle then reads as Aurenne's at a distance. C fits a high priest or a Prior, if a town's clergy is ever given a rank. The green scapular is the same for all six gods (a colour per god waits on the canon, #410). Once answered: one bodies session, a `Priest` row in `hbTradeDress`.
+
+Michael: **By island, as the canon has the faiths** (B). (2026-11-24)
+
+### The sea that pushes back — tidal races and reefs, those plus a serpent, or a sea that moves with the gates? (from the designer, 2026-11-23, #1925)
+**The question.** Backlog L11's *At sea* (OG-135) asks for currents, reefs and a sea serpent. Today nothing moves the water, the only hazard is running aground on a bed under 1.4 m, and open water between the islands is empty unless a black sail is in it. How far should the sea push back? (`docs/design/the-sea-that-pushes-back.md`)
+
+**Options.**
+- **A. Tidal races and reefs.** Straits under 700 m wide run with the tide at up to 2.5 m/s, slack at 00, 06, 12 and 18 h (the canon's Inis Rua strait). Reefs off one headland in six, seen by their breakers and drawn on the navigator's shoal map. Three systems sessions.
+- **B. A, plus the serpent** *(recommended)*. An Uisce gate's antibody in open water, rising on about one crossing in six; a 2.5 s tell before each 15-hull strike, dodged by crossing its line at over 6 m/s. It swims at 9 m/s (a cutter outruns it, a sloop cannot) and will not cross water under 4 m. Ten ballista bolts kill it; driven off it leaves a scale, killed its skull is a figurehead. Seven sessions (six systems, one bodies) and a quest-writer run.
+- **C. B, plus a sea that moves with the gates.** Each torn Uisce gate makes the serpent rise more often, and a race off one becomes a whirlpool. Waits on the great gates being in the world. Ten sessions.
+
+**Recommendation: B.** The races and reefs give the sea places, and the serpent gives them a use: the yard's choice of hull starts to matter at sea, and the best answer is a route, not a better weapon.
+
+Michael: **A, plus the sea serpent** (B). (2026-11-24)
+
 ### The strange and the legendary — how strange should the wanderers look? (from the concept artist, 2026-11-22, #1911)
 **The question.** The quest writer's *The Strange and the Legendary, I* (22 Nov, unapproved) takes three of OG-054's figures, with the canon's corrections: Fiontán, a Gatelander pilgrim in a brass mask (a man, not a construct), 1.86 m; Bláthnat, the Rooted One, Old Blood, 1.50 m, grey with the Cold, seated at the great elm's foot; the Veiled Merchant, 1.90 m, whose people never show. The Painted Woman is never built and the Gateborn Companion is dropped. How strange should they look? (`docs/prototypes/levelup/strange.html`)
 
