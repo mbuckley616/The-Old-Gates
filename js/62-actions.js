@@ -32,7 +32,7 @@ function doBash(){
   const list = isOverworldZone() ? ZE : ENEMIES;
   let landed = false, anyGuard = false;
   for(const e of list){
-    if(!e || e.dead || e.locked || e.aloft || e.swim) continue; /* S1711 — nor a bird in the air; S1759 — nor a trout under the water */
+    if(!e || e.dead || e.locked || e.aloft || (e.swim&&!e.ashore)) continue; /* S2622 — a seal hauled out can be shoved */ /* S1711 — nor a bird in the air; S1759 — nor a trout under the water */
     if(!isOverworldZone() && (e.floor !== currentFloor || e.disguised)) continue;
     const ex = e.x - px, ez = e.z - pz;
     const dist = Math.hypot(ex, ez);

@@ -360,7 +360,7 @@
     reef:[{name:'Reef Moray',w:3,n:[1,1]},{name:'Stonefish',w:2,n:[1,2]},{name:'Giant Octopus',w:1,n:[1,1]}]}; /* S2621 — the reef rock's three (SEA_ANSWER) */
   // S2621 — the reef rock: the world has no bed of its own kind yet (#1925's reefs will be), and the sea floor is flat but for the shelf off the
   // coast (79 of 100 points under 0.1 m of relief over 3 m). So rock is that shelf where it is rough: a bed above the open floor's 8 m whose
-  // height changes by more than SEA_ROCK over 3 m, about one point in six of the shallows and open water, none of the cells all sea
+  // height changes by more than SEA_ROCK over 3 m, about one point in five of the shallows and open water, none of the cells all sea
   const SEA_ROCK=.3;
   function seaRock(x,z,d){if(!(d<7.5))return false;const h=-d;let v=0;for(const [a,c] of [[3,0],[-3,0],[0,3],[0,-3]])v=Math.max(v,Math.abs(worldH(x+a,z+c)-h));return v>SEA_ROCK;}
   function seaHabitat(x,z){const d=SEA_Y-worldH(x,z);if(!(d>WILD_SWIM.wet))return null;
@@ -379,6 +379,26 @@
       if(!good)continue;
       const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,grp.name,null,{tier:1,key:id}),'wild:'+id);
       e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=pr()*Math.PI*2;e.mesh.position.y=seaHoldY(e,ex,ez);
+      ZONES.world.enemies.push(e);ch.wild.push(e);n++;}
+    return n;}
+  // S2622 — the grey seals hauled out (#1954 A: "seals hauled out on coast rock or sand"): a chunk with a shore rolls, on its own stream
+  // (`seal`, keyed by the chunk), one in four (WILD_P), two to five seals on the shore within 12 m of the sea: ground 0.2 to 1.6 m over the
+  // water, not steep, off a pad, a site's stamp and a road; the sea beside them deep enough to swim, and not a lake's or a river's. Each is
+  // keyed `cx,cz:g<i>` and lies ashore (e.ashore) until it is startled (sealShoreStep, 42-zone-enemies.js)
+  function sealShore(x,z){const h=worldH(x,z);if(!(h>=SEAL.shore[0]&&h<=SEAL.shore[1])||slopeNormalY(x,z)<.75)return false;const st=stampAt(x,z);if(st&&st.kind==='site')return false;
+    const ri=roadInfo(x,z);return !(ri&&ri.d<8);}
+  function sealSea(x,z){for(const r of [4,8,SEAL.reach])for(let a=0;a<8;a++){const wx=x+Math.sin(a*Math.PI/4)*r,wz=z+Math.cos(a*Math.PI/4)*r;
+      if(wildWet(wx,wz)&&!wildRiverNear(wx,wz,0)&&!wildLakeNear(wx,wz))return {x:wx,z:wz};}return null;}
+  function wildSealChunk(ch,key){const r=seededRng('seal',key);if(r()>WILD_P)return 0;
+    let ax=0,az=0,sea=null;for(let k=0;k<16&&!sea;k++){ax=ch.cx*CHUNK+4+r()*(CHUNK-8);az=ch.cz*CHUNK+4+r()*(CHUNK-8);if(sealShore(ax,az))sea=sealSea(ax,az);}
+    if(!sea||wildPadNear(ax,az,20))return 0;
+    const count=SEAL.n[0]+Math.floor(r()*(SEAL.n[1]-SEAL.n[0]+1));let n=0;
+    for(let i=0;i<count;i++){const id=key+':g'+i;if(WILD_TAKEN.get(id)===lootDay())continue;
+      const pr=seededRng('wildspot',id);let ex=ax,ez=az,w=sea;
+      for(let k=0;k<8&&i>0;k++){const x=ax+(pr()-.5)*2*SEAL.spread,z=az+(pr()-.5)*2*SEAL.spread;if(!sealShore(x,z))continue;const s2=sealSea(x,z);if(!s2)continue;ex=x;ez=z;w=s2;break;}
+      if(i>0&&ex===ax&&ez===az)continue;
+      const e=keyFoe(buildZoneEnemy(sc,STATIC_SOL,ex,ez,'Grey Seal',null,{tier:1,key:id}),'wild:'+id);
+      e.seal=true;e.ashore=true;e._sea=w;e._wildKey=id;e._chunk=key;e.homeX=ex;e.homeZ=ez;e.combatYaw=Math.atan2(w.x-ex,w.z-ez)+Math.PI+(pr()-.5)*1.2;e.mesh.position.y=worldH(ex,ez);
       ZONES.world.enemies.push(e);ch.wild.push(e);n++;}
     return n;}
   // S1784 — the watcher (backlog L5, OG-096; Michael's B on #1005, "one impossible element each, nothing lit"): the concept artist's grey
@@ -466,7 +486,7 @@
           if(!free(x,z))continue;if(farmStockMake(ch,key,id,G.name,x,z,yaw))n++;break;}}}
     return n;}
   function wildSpawnChunk(ch){const key=chunkKey(ch.cx,ch.cz);ch.wild=[];WILD_CH.add(ch);
-    const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;wildTroutChunk(ch,key);try{wildFarmChunk(ch,key);}catch(err){console.warn('farmstock',err);}
+    const cxw=ch.cx*CHUNK+CHUNK/2,czw=ch.cz*CHUNK+CHUNK/2;wildTroutChunk(ch,key);try{wildFarmChunk(ch,key);}catch(err){console.warn('farmstock',err);}try{wildSealChunk(ch,key);}catch(err){console.warn('seals',err);}
     if(worldH(cxw,czw)<SEA_Y-WILD_SWIM.wet)try{wildSeaChunk(ch,key);}catch(err){console.warn('seawild',err);}if(worldH(cxw,czw)<-3)return;
     if(wildWatcherChunk(ch,key))return; /* S1784 — the watcher's chunk holds it and its sheep, no other group */
     const r=seededRng('wild',key);if(r()>(wildRainy()?WILD_HOUR.wetP:WILD_P))return;

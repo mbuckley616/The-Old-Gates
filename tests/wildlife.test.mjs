@@ -287,8 +287,9 @@ check(`the Bellthroat's call: ${NBC.dusk} calls in a minute at dusk from 30 m (k
 // the body or by hand while swimming, 1.2 weight and 18 gold, the tuna 3 and 30
 const SEA = await page.evaluate(() => { const out = { t: {}, night: {}, bad: [], items: {}, chunks: 0, groups: 0, same: null };
   const R = seededRng('s2620', 'sea'), keys = [];
-  for (let k = 0; k < 20000 && keys.length < 400; k++) { const cx = Math.floor((13000 + R() * 12000) / CHUNK), cz = Math.floor((13000 + R() * 12000) / CHUNK);
-    if (WORLD.worldH(cx * CHUNK + 32, cz * CHUNK + 32) < SEA_Y - WILD_SWIM.wet) keys.push([cx, cz]); }
+  let coast = 0; /* S2621 — half of them on the coast's shelf (a middle under 6 m), where the shallows and the reef are */
+  for (let k = 0; k < 60000 && keys.length < 400; k++) { const cx = Math.floor((13000 + R() * 12000) / CHUNK), cz = Math.floor((13000 + R() * 12000) / CHUNK), h = WORLD.worldH(cx * CHUNK + 32, cz * CHUNK + 32);
+    if (!(h < SEA_Y - WILD_SWIM.wet)) continue; const shelf = h > -6; if (!shelf && keys.length - coast >= 200) continue; if (shelf) coast++; keys.push([cx, cz]); }
   const drop = ch => { for (const e of ch.wild) { e.dead = true; if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); const ix = ZONES.world.enemies.indexOf(e); if (ix >= 0) ZONES.world.enemies.splice(ix, 1); } };
   const HAB = {}; for (const h in SEA_TABLE) for (const gr of SEA_TABLE[h]) HAB[gr.name] = h;
   for (const h of [12, 23]) { forceTime(h); const T = h === 12 ? out.t : out.night;
@@ -312,8 +313,8 @@ const SEA = await page.evaluate(() => { const out = { t: {}, night: {}, bad: [],
   px = bx; pz = bz; jumpY = by; return out; });
 console.log('  sea:', JSON.stringify(SEA));
 { const T = SEA.t, N = SEA.night, I = SEA.items, sum = (o, h) => Object.keys(o).filter(k => k.startsWith(h + ':')).reduce((a, k) => a + o[k], 0);
-  check(`the sea's creatures: ${SEA.groups} groups in ${SEA.chunks} sea chunks, ${sum(T, 'shallows')} in the shallows, ${sum(T, 'open')} in open water, ${sum(T, 'deep')} in the deepest; each in its habitat, at its depth, on its body; the jelly only by night (${sum(N, 'shallows:Lantern Jelly')}); the same group again by the chunk's id`,
-    SEA.groups > SEA.chunks * .18 && SEA.groups < SEA.chunks * .32 && !SEA.bad.length && sum(T, 'shallows') > 0 && sum(T, 'open') > 0 && sum(T, 'deep') > 0
+  check(`the sea's creatures: ${SEA.groups} groups in ${SEA.chunks} sea chunks, ${sum(T, 'shallows')} in the shallows, ${sum(T, 'open')} in open water, ${sum(T, 'deep')} in the deepest, ${sum(T, 'reef')} on the reef rock; each in its habitat, at its depth, on its body; the jelly only by night (${sum(N, 'shallows:Lantern Jelly')}); the same group again by the chunk's id`,
+    SEA.groups > SEA.chunks * .18 && SEA.groups < SEA.chunks * .32 && !SEA.bad.length && sum(T, 'shallows') > 0 && sum(T, 'open') > 0 && sum(T, 'deep') > 0 && sum(T, 'reef') > 0
     && !T['shallows:Lantern Jelly'] && N['shallows:Lantern Jelly'] > 0 && SEA.same === true, SEA);
   check(`each 1.2 weight and 18 gold, the tuna 3 and 30; dived beside a tuna (${SEA.tunaY} m), E takes it by hand (+${SEA.got})`,
     Object.entries(I).every(([k, v]) => k === 'Coastal Tuna' ? v.join() === '3,30' : v.join() === '1.2,18') && SEA.swim && SEA.prompt && SEA.took && SEA.got === 1 && SEA.gone && SEA.tuna && SEA.tuna.join() === '3,30', SEA); }
