@@ -58,5 +58,13 @@ check('the vitals plate is at the bottom left, under the ledger and left of the 
 check('a bar reads its value over its maximum, and the marks fill a quarter of the level\'s bar', vp.hp === vp.want && Math.abs(vp.xp - 25) < 0.2, { hp: vp.hp, want: vp.want, xp: vp.xp });
 check('the weapon\'s roundel shows the weapon in hand, a fist when bare, and opens the inventory; the spell\'s names the spell in its title', vp.inPlate
   && vp.bare === '✊' && vp.blade[0] === '🗡️' && /^Test Blade/.test(vp.blade[1]) && vp.inv && /\(F\)$/.test(vp.fb[1]) && vp.note === 'block', vp);
+// S2590 — a line that comes mid-talk stands left of the dialogue panel, wrapped, and the ledger is its full width again after
+const dl = await page.evaluate(() => { const r = e => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)]; };
+  luOpen = false; document.getElementById('lu').style.display = 'none'; openDialog(NPC_DEF[Object.keys(NPC_DEF)[0]]);
+  showMsg('You paid 30 gold for the room at the inn, and the keeper nods.', '#e8d8a0');
+  const d = r(document.getElementById('dlg')), s = r(document.querySelector('#ledger .ldg:last-child')); closeDialog();
+  return { d, s, after: r(document.querySelector('#ledger .ldg:last-child')) }; });
+check('in a dialogue a long slip wraps left of the panel, clear of it; after, it is one line again', dl.d[2] > dl.d[0] && dl.s[2] <= dl.d[0] - 12 && dl.s[3] - dl.s[1] > 40
+  && dl.after[2] > dl.d[0] && dl.after[3] - dl.after[1] < 35, dl);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
