@@ -65,5 +65,15 @@ await page.mouse.click(talk.x, talk.y); await g.frames(2);
 const talk2 = await page.evaluate(() => { const r = { slip: sleepOpen, still: dlgOpen }; closeDialog(); r.after = _canWait().ok; return r; });
 check(`not while someone is talking to you: the ⏳ (on top: ${talk.top}) opens no slip with ${talk.npc} speaking; free again once the talk ends`,
   talk.open && talk.top === 'wait-btn' && !talk.can && !talk2.slip && talk2.still && talk2.after, { talk, talk2 });
+// S2592 — at 1,024 wide the ⏳ sits under the movement pad's empty third row, which took the top of every tap; the pad's box lets taps
+// through and only its four buttons take them
+const vw = page.viewportSize(); await page.setViewportSize({ width: 1024, height: 720 });
+const pad = await page.evaluate(() => { const r = e => e.getBoundingClientRect(), b = r(document.getElementById('wait-btn')); let n = 0, on = 0;
+  for (let y = b.top + 2; y < b.bottom - 1; y += 3) for (let x = b.left + 9; x < b.right - 8; x += 3) { n++; const t = document.elementFromPoint(x, y); if (t && t.id === 'wait-btn') on++; }
+  const keys = [...document.querySelectorAll('#dp button')].map(e => { const k = r(e), t = document.elementFromPoint(k.left + k.width / 2, k.top + k.height / 2); return t === e; });
+  return { n, on, keys, dp: [r(document.getElementById('dp')).top, r(document.getElementById('dp')).bottom], wait: [b.top, b.bottom] }; });
+await page.setViewportSize(vw);
+check(`at 1,024 wide every point of the ⏳ takes the tap (${pad.on} of ${pad.n}), under the pad's box; each of the pad's 4 buttons still takes its own`,
+  pad.n > 50 && pad.on === pad.n && pad.wait[0] < pad.dp[1] && pad.keys.length === 4 && pad.keys.every(Boolean), pad);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
