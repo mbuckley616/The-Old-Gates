@@ -1114,9 +1114,12 @@ export function pose(C, phase) {
   if (G.wave) { const all = [...spn.slice().reverse(), ...(B.chains.tail || [])]; all.forEach((nm, k) => { C.byName[nm].rotation.y += (C.plan.waveAmp ?? .35) * Math.sin(tau * (ph * 1 - k / (C.plan.waveLen ?? 8))) * (k ? 1 : .3); }); }
   sp.scale.set(1, 1, 1);
   // a fish's wave (Session 774): from head to tail, growing toward the tail; a whale's runs in the vertical plane
-  if (G.swim || G.hump) { const all = [...spn.slice().reverse(), ...(B.chains.tail || [])], N = all.length, ax = G.hump || C.plan.swimAxis === 'x' ? 'x' : 'y', A = G.hump ? .3 : C.plan.waveAmp ?? .22;
-    if (G.hump) sp.position.y += .035 * C.len / C.S * Math.max(0, Math.sin(tau * ph));
+  if (G.swim) { const all = [...spn.slice().reverse(), ...(B.chains.tail || [])], N = all.length, ax = C.plan.swimAxis === 'x' ? 'x' : 'y', A = C.plan.waveAmp ?? .22;
     all.forEach((nm, k) => { const u = k / (N - 1); C.byName[nm].rotation[ax] += A * (.08 + Math.pow(u, 1.6)) * Math.sin(tau * (ph - u * (C.plan.waveLen ?? .9))) / (k < spn.length ? 2 : 1); }); }
+  // Session 2600: the galumph in two halves, not the swim's wave stood on end (which lifted the whole body at once, hips and chest
+  // together, then sank the chest 11 cm into the ground). First half: the fore-flippers press, the chest rises and reaches, the hips
+  // stay down. Second half: the chest is down, the hips are drawn up and forward under an arched back, the hind flippers held clear
+  if (G.hump) humpPose(C, ph);
   for (const F of B.fins) { const b = C.byName[F.name]; if (F.kind === 'pec') b.rotation.set(0, 0, (F.side || 1) * (G.hump ? .35 : .22) * Math.sin(tau * ph * (G.swim || G.hump ? 1 : .4))); else if (F.kind === 'wing') b.rotation.set(0, 0, (F.side || 1) * (G.flap ? .1 + .8 * Math.sin(tau * ph * 2) : .28 + .04 * Math.sin(tau * ph))); else if (F.kind === 'caudal') b.rotation[C.plan.swimAxis === 'x' ? 'x' : 'y'] = .25 * Math.sin(tau * (ph - 1.05)); }
   // radial arms: an octopus's ripple round the ring, a jellyfish's bell that beats and threads that trail it
   for (const Rr of B.radials) { const axis = V(-Math.sin(Rr.a), 0, Math.cos(Rr.a)), np = Rr.names.length;
@@ -1291,6 +1294,28 @@ function solveLeg(C, L, T, fold) {
 
 // a foot put where another rig says (Session 1319, the game's spiders, whose own gait plants their feet): T in the rig's frame, the
 // matrices current; the same solve as the gait's (the coxa yawed toward the foot, the knee bent up), the distance it fell short returned
+// Session 2600: the seal's galumph (HUMP's numbers). The spine runs from the hips (spine0, the root) to the chest; a segment's pitch is
+// the sum of its bones' turns, + nose down. The chest's lift is the root pitched up about the hips. The hips' draw raises the root by
+// `hip` of the spine's length and bends it into an arch: pitched up by `arch` at the hips, turning down evenly to the chest, the turn
+// at the chest found so the chest's end comes back to the ground it left. The neck takes back most of the chest's pitch, so the head
+// stays level-ish; the tail is held up off the ground
+export const HUMP = { lift: .17, hip: .075, arch: .2, neck: .75, tail: .22 };
+function humpPose(C, ph) {
+  const tau = Math.PI * 2, spn = C.B.spineNames, m = spn.length - 1, f = Math.max(0, Math.sin(tau * ph)), h = Math.max(0, -Math.sin(tau * ph));
+  let S = 0; const L = []; for (let k = 1; k <= m; k++) { const l = C.byName[spn[k]].position.length(); L.push(l); S += l; }
+  const a = HUMP.arch * h, dy = HUMP.hip * S * h, phi = [];
+  // the chest's turn b so that the segments' drop sums to the hips' rise: solved by bisection on the true sines (a few steps)
+  const drop = b => L.reduce((t, l, k) => t + l * Math.sin(-a + (a + b) * (m > 1 ? k / (m - 1) : 1)), 0);
+  let lo = -1, hi = 1; for (let i = 0; i < 30; i++) { const b = (lo + hi) / 2; if (drop(b) < dy) lo = b; else hi = b; }
+  const b = h > 0 ? (lo + hi) / 2 : 0;
+  for (let k = 0; k < m; k++) phi.push(h > 0 ? -a + (a + b) * (m > 1 ? k / (m - 1) : 1) : 0);
+  for (let k = 0; k < m; k++) phi[k] -= HUMP.lift * f;
+  C.byName[spn[0]].position.y += dy;
+  for (let k = 0; k < m; k++) C.byName[spn[k]].rotation.x += phi[k] - (k ? phi[k - 1] : 0);
+  const chest = phi[m - 1], neck = C.B.chains.neck; if (neck && neck.length) C.byName[neck[0]].rotation.x -= HUMP.neck * chest;
+  const tail = C.B.chains.tail; if (tail && tail.length) C.byName[tail[0]].rotation.x += HUMP.tail - phi[0] * .5;
+  C.humpAt = { f, h, chest, hips: dy };
+}
 export function footAt(C, i, T, fold = 0) { return solveLeg(C, C.B.legs[i], T, fold); }
 
 // ── the plans. Each is its source in the concept art, a palette, the gaits it has, and its parts ──
