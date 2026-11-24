@@ -3,6 +3,15 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### A town's day — the street by the hour, a market day with prices by place, or those plus a black market and events? (from the designer, 2026-11-24, #1971)
+**The question.** Today every shop opens 8 to 18 and every town keeps the same day, and a counter's price depends only on the town's prosperity. How far should a town's day go: the street by the hour, a weekly market day with prices by place, or those plus a black market and passing events? (Backlog L12, OG-143; [the proposal](https://github.com/mbuckley616/The-Old-Gates/blob/main/docs/design/a-towns-day.md).)
+
+**Options.**
+- **A. The street by the hour**: shop hours by trade (the forge 7–17, the goods shop 9–19), the watch's handover at the gate at 6:30 and 19:00, the inn full from 17, and a knock at a keeper's door out of hours at favour 2 for ×1.25. Two systems sessions.
+- **B. A, plus market day and prices by place** *(recommended)*: one market day a week an island (7 to 15; 4 + prosperity ÷ 25 stalls; ×0.9 to buy and +10% to sell that day), each island's own goods ×0.85 at home and ×1.2 abroad, a foreign stall in each port, and one more traveller on each road the day before. Five systems sessions, one look.
+- **C. B, plus the black market and passing events**: counters refuse goods stolen from their own town; a fence in each city and port's inn, 21–3, at 60%; one passing event every 8 weeks for each town (a noble's visit, a raid from a failing gate, rebuilding after a sack). About twelve systems sessions, one bodies session.
+
+**Recommendation: B.** It turns the calendar you chose into a week the player can see, and it makes where and when you sell a decision. It builds on the clock, prosperity, the cargo rule and the road's people, with no new meters or save keys. C's halves belong with law in three registers and the gates unsettling the world.
 ### Your house's fittings in a full townhouse — a workshop in the yard, the kitchen table out, fewer places, or unseen? (from the look builder, 2026-11-24, #1966)
 **The question.** Every Dunmore home is a townhouse by the rules, and a townhouse sells 4 places for the workbench, the clay oven, the kiln and the still (workstations, your C on #1883). A fitting stands by a whole wall of the ground floor, clear of the room's furniture and doors. Measured on seed 1 with all four fitted: a 3-bay house (5.55 by 7.1 m, 19 of Dunmore's 44 homes) lays none of the four; 4 bays lay two, 5 bays three. A fitting with no wall works anywhere in the house, so the rules hold, but you never see it. Laying the largest first only trades one fitting for another; leaving the kitchen's table out gains the bench and nothing else.
 
