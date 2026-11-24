@@ -609,16 +609,35 @@
   // its pad and the clearing round its outcrop, as the cave's, and a clearing of the scatter 8 m out before it (the cell's first step, so the chunks are built with them)
   function mineStamps(c,k){const C=mineAt(c);if(!C)return [];const s=Math.sin(C.ry),co=Math.cos(C.ry),y=landH(C.x,C.z);
     return [addStamp({id:C.id+'_pad',kind:'door',x:C.x-s*2.4,z:C.z-co*2.4,r:4.6,blend:5,y,cell:k}),addStamp({id:C.id+'_clear',kind:'door',noFlat:true,x:C.x-s*4,z:C.z-co*4,r:10,blend:2,y,cell:k}),
-    addStamp({id:C.id+'_way',kind:'door',noFlat:true,x:C.x+s*8,z:C.z+co*8,r:7,blend:2,y,cell:k})];} /* and the approach, where the tramway ran out to the tip: no tree in front of the adit */
+    addStamp({id:C.id+'_way',kind:'door',noFlat:true,x:C.x+s*8,z:C.z+co*8,r:7,blend:2,y,cell:k}),...mineHeadStamps(C,y,k)];} /* and the approach, where the tramway ran out to the tip: no tree in front of the adit */
+  // S2620 (Michael's A on #1958: "the head as drawn at every worked mine") — a worked mine's head (PKIT.places.minehead, places.js's
+  // markMineHead): its frame's origin 8 m east and 10 m out of the adit's mouth (the head's adit at (-8, -10)), +z down the slope, y the pad's.
+  // The terrace (39 by 18 m) and the tip's tongue are a stamp of a height: level at the mouth's pad, cut back into the hill at 50° and built
+  // out in front at 35° until each meets the land (PKIT.mineheadShape), within 14 m of the terrace; its ground the trodden ground of a pad.
+  // -> [stamp] for a worked mine, [] for one worked out (the bare mouth) or on the old look
+  function mineHeadFrame(C){const s=Math.sin(C.ry),co=Math.cos(C.ry),ox=C.x+8*co+10*s,oz=C.z-8*s+10*co;
+    return {ox,oz,s,co,toL:(wx,wz)=>{const dx=wx-ox,dz=wz-oz;return [dx*co-dz*s,dx*s+dz*co];},toW:(lx,lz)=>[ox+lx*co+lz*s,oz-lx*s+lz*co]};}
+  function mineHeadStamps(C,y,k){if(!C.worked||!PKIT.places.minehead||!PKIT.places.mineheadShape)return [];const H=mineHeadFrame(C),Sh=PKIT.places.mineheadShape,[cx,cz]=H.toW(-1.5,1.5);
+    const dTer=(lx,lz)=>{const rd=q=>Math.hypot(Math.max(q[0]-lx,0,lx-q[1]),Math.max(q[2]-lz,0,lz-q[3]));return Math.min(rd([-21,18,-10,8]),rd([-10.5,-5.5,8,13]));};
+    C.head={ox:H.ox,oz:H.oz,y};
+    return [addStamp({id:C.id+'_head',kind:'door',x:cx,z:cz,r:36,blend:0,y,cell:k,inside:(wx,wz)=>dTer(...H.toL(wx,wz))<14,fn:(wx,wz,h)=>{const [lx,lz]=H.toL(wx,wz);return y+Sh(lx,lz,h-y);}})];}
   // the adit's mouth (PKIT.places.cavemouth, rock 'mark', its timber sets and tramway) stood on its pad, turned down the slope; its solids;
   // and the mine's record in the world's houses (type 'mine', byAim), taken out when the cell unloads
   function placeMine(c,k){const C=mineAt(c);if(!C)return null;const M=PKIT.places.cavemouth({key:C.id,rock:'mark',snow:C.snow,adit:true}),y=worldH(C.x,C.z),co=Math.cos(C.ry),s_=Math.sin(C.ry);
     M.group.position.set(C.x,y,C.z);M.group.rotation.y=C.ry;M.group.name='mine mouth';sc.add(M.group);
     for(const b of M.sol)STATIC_SOL.push({cx:C.x+b.x*co+b.z*s_,cz:C.z-b.x*s_+b.z*co,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h,cave:true});
     C.y=y;C.tris=M.tris;C.draws=M.draws;C.mouth=M.mouth;C.out={x:C.x+s_*2.2,z:C.z+co*2.2,yaw:C.ry+Math.PI};
+    if(C.worked)try{placeMineHead(C,M.group,y);}catch(e){console.warn('minehead',e);} /* S2620 — a worked mine's head before its mouth */
     C.house={id:`g_${C.id}`,type:'mine',byAim:true,siteId:C.id,name:C.name,keeper:'',reg:c.reg,style:'mark',w:13,d:35,two:false,doorX:C.x,doorZ:C.z,doorFace:'S',exitX:C.out.x,exitZ:C.out.z,exitYaw:C.out.yaw,worked:C.worked};
     if(ZONES.world&&ZONES.world.houses&&!ZONES.world.houses.some(h=>h.id===C.house.id))ZONES.world.houses.push(C.house);
     return M.group;}
+  // S2620 — the head built in its frame, a child of the mouth's group (so it goes with the cell), laid on the land as the stamp left it;
+  // its solids (the adit house's side walls, the sorting house, the cart, the fenced shaft, the whim's posts and drum) in STATIC_SOL
+  function placeMineHead(C,mouth,y){if(!PKIT.places.minehead)return null;const H=mineHeadFrame(C),y0=C.head?C.head.y:y;
+    const K=PKIT.places.minehead({key:C.id,snow:C.snow,ground:(lx,lz)=>worldH(...H.toW(lx,lz))-y0});
+    K.group.name='mine head';K.group.position.set(8,y0-y,10);mouth.add(K.group);
+    for(const b of K.sol){const [wx,wz]=H.toW(b.x,b.z);STATIC_SOL.push({cx:wx,cz:wz,rx:b.w/2,rz:b.d/2,c:Math.cos(C.ry+b.ry),s:Math.sin(C.ry+b.ry),h:b.h});}
+    C.headKit={tris:K.tris,draws:K.draws,sol:K.sol.length,ox:+H.ox.toFixed(2),oz:+H.oz.toFixed(2)};return K;}
   // S1828 (card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road") — Aurenne's trade tunnels
   // (PKIT.au.tunnel, places.js's aurenneTunnel): the road's short way under a hill, a bore of 56 m with a portal each side of the ridge
   // beside one of the cell's roads. Every Aurenne cell whose land holds one keeps one. Read by place (withPlace over the cell's middle, the
