@@ -110,5 +110,25 @@ const stalls = await page.evaluate(() => { const set = (d, h) => { worldState.ga
 console.log(JSON.stringify(stalls));
 check('market day: Dunmore keeps 4 + prosperity ÷ 25 stalls on its square, each a keeper with a counter of 4 to 7 rows by town and week, at the market\'s price; gone after', stalls.n === stalls.want && stalls.n >= 4 && stalls.onSquare && stalls.npcs && stalls.house.rows >= 4 && stalls.same && stalls.weeks >= 3 && stalls.rowsOk && Math.abs(stalls.b1 / stalls.b0 - .9) < .02 && stalls.after === 0 && stalls.late === 0, stalls);
 check('market day fills the square from 7: a resident who works at eight on another day is on the square at eight on Stoneday', stalls.res8[0] === 'sq' && stalls.res8[1] !== 'sq', stalls.res8);
+// S2650: the knock (Michael's A on #2009). E at a shut shop knocks first: from 21 until the trade opens the keeper is home, and with the
+// town's favour at 2 or more comes down and sells at the door at ×1.25; below 2, *Come back at <its hour>*; between its close and 21 nobody
+// answers (the keeper is at the inn). For a few seconds after, E picks the lock.
+const knock = await page.evaluate(() => { const set = (d, h) => { worldState.gameTimeAbsMinutes = 1440 * d + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const S = WORLD.settle.get('dunmore'), h = S.houses.find(x => ['misc', 'potion', 'weapon', 'armor'].includes(x.type) && x.keeper); const o = { type: h.type };
+  const msgs = [], m0 = showMsg; showMsg = (t) => msgs.push(t); const F = worldState.favor || (worldState.favor = {}), f0 = F.dunmore; px = h.doorX; pz = h.doorZ + .3;
+  const it = { buyPrice: 100, type: 'misc' };
+  try {
+    set(2, 23); F.dunmore = 0; KNOCK.id = null; o.lk = WORLD.doorLockNow(h); o.p0 = knockPrompt(h, o.lk);
+    o.k1 = knockDoor(h); o.say1 = msgs.at(-1); o.p1 = knockPrompt(h, o.lk); o.k2 = knockDoor(h); o.shop1 = shopOpen;
+    KNOCK.id = null; set(2, 19.5); o.k3 = knockDoor(h); o.say3 = msgs.at(-1); o.shop3 = shopOpen;
+    KNOCK.id = null; set(2, 23); F.dunmore = 2; o.k4 = knockDoor(h); o.say4 = msgs.at(-1); o.shop4 = shopOpen && currentHouse === h;
+    o.at = shopCost(it); closeShop(); o.after = shopCost(Object.assign({}, it)); o.p5 = knockPrompt(h, WORLD.doorLockNow(h)); o.k5 = knockDoor(h);
+    set(2, 12); o.dayLock = WORLD.doorLockNow(h); o.dayKnock = knockDoor(h);
+  } finally { showMsg = m0; F.dunmore = f0; KNOCK.id = null; if (shopOpen) closeShop(); }
+  return o; });
+console.log(JSON.stringify(knock));
+const opensWord = ['midnight','one','two','three','four','five','six','seven','eight','nine','ten'][knock.lk && knock.lk.opens];
+check('the knock: E at a shut shop knocks; at favour 0 the keeper says *Come back at* its hour, and E again picks', knock.lk && knock.lk.kind === 'shop' && /E to knock/.test(knock.p0) && knock.k1 === true && knock.say1.includes(`Come back at ${opensWord}.`) && /E again to pick the lock/.test(knock.p1) && knock.k2 === false && !knock.shop1, knock);
+check('the knock: in the evening nobody answers; at favour 2 the keeper comes down and sells at ×1.25 at the door, and the price is the plain one after', knock.k3 && /Nobody answers/.test(knock.say3) && !knock.shop3 && knock.k4 && /comes down/.test(knock.say4) && knock.shop4 && Math.abs(knock.at / knock.after - 1.25) < .02 && /E again/.test(knock.p5) && knock.k5 === false && !knock.dayLock && knock.dayKnock === false, knock);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
