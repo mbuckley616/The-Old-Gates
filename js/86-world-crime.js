@@ -433,10 +433,10 @@
   const bpick=a=>a[Math.floor(Math.random()*a.length)];
   function absMin(){return worldState.gameTimeAbsMinutes||0;}
   function houseSite(house){return (house&&house.siteId&&SITE[house.siteId])||null;}
-  // a shop is locked while it is shut (its trade's hours, shopHours, S2629); a home from night to dawn, unless it is yours
+  // a shop is locked while it is shut (its trade's hours, shopHours, S2630); a home from night to dawn, unless it is yours
   function doorLockNow(house){if(!house||house.ownedByPlayer||ownedHouse(house.id))return null;const h=hourNow();
     if(house.type==='home')return (h>=HRS.night||h<HRS.dawn)?{kind:'home',opens:HRS.dawn}:null;
-    return shopClosedNow(house)?{kind:'shop',opens:shopHours(house.type)[0]}:null;} /* S2629 — its trade's opening */
+    return shopClosedNow(house)?{kind:'shop',opens:shopHours(house.type)[0]}:null;} /* S2630 — its trade's opening */
   function doorPicked(house){const P=worldState.picked;const t=P&&P[house.id];return t!=null&&absMin()-t<12*60;} // a picked door stays open for the night
   function lockPins(house){const st=houseSite(house);const p=st?prosperity(st):50;return house.type==='home'?2:(p>=60?4:3);} // a rich town buys better locks
   // ── S156: witnesses and favour (the crime system, part 2 of 4) ──

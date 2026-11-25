@@ -34,7 +34,7 @@ const hand = async (hour) => {
 const noon = await hand(12), dusk = await hand(19.3);
 console.log(JSON.stringify({ noon, dusk }));
 check('the draught is handed over at noon to a townsperson in the street', noon.done && noon.took === noon.who, noon);
-// S2629: the goods shop keeps open to 19 (#1971 B), so dusk with every shop shut is 19.3, not 18.3
+// S2630: the goods shop keeps open to 19 (#1971 B), so dusk with every shop shut is 19.3, not 18.3
 check('and at dusk, with every shop shut', dusk.done && rows.find(r => r.hour === 19.3).shopsOpen === 0, dusk);
 check('from 7 to 20 someone who keeps a house is out in the street', rows.filter(r => r.hour >= 7 && r.hour <= 20).every(r => r.homes + r.shops > 0), rows.map(r => [r.hour, r.homes, r.shops]));
 // the harbourmaster: the other townsperson on the keeper's schedule, with no shop to be inside

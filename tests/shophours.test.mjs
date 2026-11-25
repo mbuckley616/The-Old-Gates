@@ -1,4 +1,4 @@
-// Shop hours in the open world (Session 151): a shop is closed out of its hours; its door says so. Since S2629 the hours are its trade's.
+// Shop hours in the open world (Session 151): a shop is closed out of its hours; its door says so. Since S2630 the hours are its trade's.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld(); await g.settle('dunmore');
@@ -24,7 +24,7 @@ const day = await tryDoor(shop, 12);
 check('the same shop at noon lets you in', !day.closed && day.inside && /enter/.test(day.prompt), day);
 const inn = await tryDoor('inn', 23);
 check('the inn at night still lets you in', inn.inside, inn);
-// S2629 (#1971 B, a town's day): each shop keeps its trade's hours: the forge ('weapon') and the shipwright 7–17, the apothecary 9–17,
+// S2630 (#1971 B, a town's day): each shop keeps its trade's hours: the forge ('weapon') and the shipwright 7–17, the apothecary 9–17,
 // the armourer 9–18, the goods shop 9–19, the barber 10–18. Read straight from the rule at each hour, and one door tried at dusk.
 const HRS_WANT = { weapon: [7, 17], shipwright: [7, 17], potion: [9, 17], armor: [9, 18], misc: [9, 19], barber: [10, 18] };
 const table = await page.evaluate((W) => { const S = WORLD.settle.get('dunmore'); const out = {};

@@ -668,13 +668,25 @@
   const MILLS=[];
   function placeMills(c,k){const out=[];for(const m of millsAt(c)){const y=worldH(m.x,m.z),co=Math.cos(m.ry),s_=Math.sin(m.ry);
       const K=PKIT.places.mill({key:m.id,wind:m.wind,working:true,ground:(lx,lz)=>worldH(m.x+lx*co+lz*s_,m.z-lx*s_+lz*co)-y});
-      K.group.position.set(m.x,y,m.z);K.group.rotation.y=m.ry;K.group.name='mill';sc.add(K.group);
+      const F=millFar(K),LD=new THREE.LOD(),reach=K.sail?K.sail.len+5:14;K.group.name='mill near';LD.name='mill';LD.position.set(m.x,y,m.z);LD.rotation.y=m.ry;LD.addLevel(K.group,0);LD.addLevel(F.group,MILL_LOD+reach/2,.05);sc.add(LD); /* S2629 — near as drawn, its far copy in two draws past MILL_LOD */
       for(const a of [0,Math.PI/4])STATIC_SOL.push({cx:m.x,cz:m.z,rx:2.85,rz:2.85,c:Math.cos(m.ry+a),s:Math.sin(m.ry+a),h:9.6});
-      m.kit={tris:K.tris,draws:K.draws,tipLow:K.tipLow,hub:K.hub};m.group=K.group;m.spin=K.spin;
+      m.kit={tris:K.tris,draws:K.draws,tipLow:K.tipLow,hub:K.hub,farTris:F.tris,farDraws:F.draws};m.group=LD;m.spin=K.spin;m.spinFar=F.spin;
       for(let i=MILLS.length-1;i>=0;i--)if(MILLS[i].id===m.id)MILLS.splice(i,1);MILLS.push(m);out.push(K.group);}
     return out;}
   // the sails turn, about a turn every eight seconds, while the mill is in the scene
-  function tickMills(dt){for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);}}
+  function tickMills(dt){for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);if(m.spinFar)m.spinFar.rotation.z=m.spin.rotation.z;}}
+  // S2629 (QA's S2628, section I: six mills in view put Dunmore's street at 743 calls at Low, 78 of them the mills') — a mill's far copy:
+  // the kit's own meshes baked into two vertex-coloured meshes on VC_MAT, the tower, cap and yard in one and the sails in the other, on an
+  // axle and spin of their own so they still turn. The same triangles, 2 draws in place of 13, shadows kept. -> { group, spin, tris, draws }
+  const MILL_LOD=70,MILL_FAR_SAIL={}; /* the sails' cloth is one plane: their far copy is drawn both sides;  HOUSE_LOD.near, as the aqueduct's: the far copy from 70 m past half the mill's reach */
+  function millFar(K){const G=new THREE.Group(),body=[],sails=[],tint=m=>(m&&m.color?m.color.clone():new THREE.Color(0x999999)).multiplyScalar(m&&m.map?.85:1);G.name='mill far';
+    K.group.updateMatrixWorld(true);const inv=K.group.matrixWorld.clone().invert(),sInv=K.spin.matrixWorld.clone().invert();
+    K.group.traverse(o=>{if(!o.isMesh)return;let inS=false;for(let p=o;p;p=p.parent)if(p===K.spin){inS=true;break;}
+      const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry;(inS?sails:body).push([g,(inS?sInv:inv).clone().multiply(o.matrixWorld),tint(o.material),g!==o.geometry]);});
+    const mk=(L,mat)=>{const me=new THREE.Mesh(mergeGeos(L),mat);L.forEach(([g,,,tmp])=>{if(tmp)g.dispose();});me.castShadow=true;me.receiveShadow=true;return me;};
+    const b=mk(body,VC_MAT);b.name='mill far body';G.add(b);const ax=K.spin.parent,axle=new THREE.Group(),spin=new THREE.Group();axle.position.copy(ax.position);axle.quaternion.copy(ax.quaternion);
+    axle.add(spin);G.add(axle);const sm=mk(sails,MILL_FAR_SAIL.m||(MILL_FAR_SAIL.m=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide})));sm.name='mill far sails';sm.castShadow=true;spin.add(sm);
+    const tris=Math.round((b.geometry.attributes.position.count+sm.geometry.attributes.position.count)/3);return {group:G,spin,tris,draws:2};}
   // S1828 (card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road") — Aurenne's trade tunnels
   // (PKIT.au.tunnel, places.js's aurenneTunnel): the road's short way under a hill, a bore of 56 m with a portal each side of the ridge
   // beside one of the cell's roads. Every Aurenne cell whose land holds one keeps one. Read by place (withPlace over the cell's middle, the
@@ -2030,7 +2042,7 @@
   // the plaza by day, drink in the evening, sleep at night; villagers roam
   // by day; guards patrol gate ↔ plaza around the clock.
   const HRS={shopOpen:8,shopClose:18,eve:18,night:21,dawn:7};
-  // S2629 (Michael's B on #1971, a town's day; docs/design/a-towns-day.md, A's table) — a shop keeps its trade's hours, not the one 8–18:
+  // S2630 (Michael's B on #1971, a town's day; docs/design/a-towns-day.md, A's table) — a shop keeps its trade's hours, not the one 8–18:
   // the forge (the 'weapon' shop is the smithy) and the shipwright 7–17, the apothecary 9–17, the armourer 9–18, the goods shop 9–19, the
   // barber 10–18 (its close the page leaves where it was); the inn takes the residents from 17 (HRS.inn, was the evening's 18). Any other
   // type keeps 8–18. Read from the clock; nothing saved.
@@ -2047,7 +2059,7 @@
     if(t==='guild_f'||t==='guild_m')return true;
     if(t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='huntcabin'||t==='market'||t==='academy')return false; /* S1963 — nor the academy's library; S1480 — and a farm's byre (S1475, and its barn): nobody keeps them; S1905, nor the room over a market house */
     if(t==='home'){if(house.shuttered)return false;if(house.ownedByPlayer||ownedHouse(house.id))return false;return h>=(house.farm&&!feastNow(house.siteId)?HRS.eve:HRS.night)||h<HRS.dawn;} /* S1471 — a farmer is in from the evening (#762 A) */
-    {const H=shopHours(t);return h>=H[0]&&h<H[1];} // shops, by their trade (S2629)
+    {const H=shopHours(t);return h>=H[0]&&h<H[1];} // shops, by their trade (S2630)
   }
   function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='huntcabin'||t==='market'||t==='academy')return false;return !npcInsideNow(house);} /* S1480 — a byre (S1475, a barn) is never locked */
   // S2313 — and a festival fills the squares of its island’s towns that keep it (festivalHere, 60-shop.js)
@@ -2064,7 +2076,7 @@
         if(h>=H[0]&&h<H[1])return {hide:true};
         // S273 — the sea tutorial sends you to buy a ship: until you have one, the shipwright waits at his door out of hours (S236's rule)
         if(sc_.shop==='shipwright'&&!worldState.ship&&TUT().sea&&TUT().sea.step==='ship')return {go:sc_.door,idle:true};
-        if(h>=H[1]&&h<HRS.night)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true}; /* S2629 — from their own close to the inn */
+        if(h>=H[1]&&h<HRS.night)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true}; /* S2630 — from their own close to the inn */
         if(night)return {hide:true};
         return {go:sc_.door,idle:true};} // dawn: at the door before opening
       case 'innkeeper': return {hide:true};
@@ -2073,7 +2085,7 @@
       // its middle (a resident's reach is the whole pad, 50–90), from morning until night, where on any other day the evening takes them home or to the inn
       case 'resident':
         if(night)return {hide:true};
-        if(h>=HRS.inn&&!fst)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true}; /* S2629 — the inn from 17 */
+        if(h>=HRS.inn&&!fst)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true}; /* S2630 — the inn from 17 */
         return {wander:sc_.plaza,r:feastR(sc_.padR||14,fst)};
       // S1471 (Michael's A on #762) — a farmer keeps the yard by day, from the yard door to the spots of it (farmYard), and goes in by
       // that door at evening; on a feast day the square, as a resident, from the front door. No yard read: a resident's day.
