@@ -723,3 +723,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing beyond those answers. The 22 Nov weekly run's leftovers stay in backlog I.
 
 **Roadmap.** 352 of 455 stories done (351 of 454 on 23 Nov): the critic's 24 Nov HUD faults done. The new look is 7 of 18.
+
+## 25 Nov 2026
+
+**Waiting on you.** Four decisions: a town's night, 21 or 23 (#2008, B); knocking at a shut shop (#2009, A); the sea serpent's speed (#2012, B); one tidal race on the default seed (#2016, A). No merge waits for you.
+
+**Landed on main since 24 Nov.** Sessions 2607–2644, built from your 24 Nov answers. A town's day: shops keep their trade's hours, the street by the hour, the guard's handover; market day by island and prices by home (×0.85 at home, ×1.2 abroad). The sea's creatures by habitat, the tidal races and the reefs. OG-037's ring gates in the world, the home province's 20 authored gates among them; the oyster bed, the Mark's mine head, the Gatelands' windmills and a lighthouse by 30 of 34 ports. The clergy dressed by island, the gate eel and the sea serpent, Stump in the creature kit, keepers of their own people. Loose hair under 70k triangles; the windmills' far copy keeps Dunmore under budget. A playtest, quest drafts, the sea's build sheet. Build s1967.
+
+**Under way.** No PR open. Systems: market day's square and stalls. Look: the critic's ring-gate notes, then the yard lean-to. Bodies: the serpent's girth once #2012 is answered.
+
+**Blocked.** Nothing beyond the four answers. The 22 Nov weekly run's leftovers stay in backlog I.
+
+**Roadmap.** 357 of 465 stories done (352 of 455 yesterday). The new look is 7 of 18.
