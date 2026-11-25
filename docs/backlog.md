@@ -234,6 +234,15 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A held coach seat is lost on a load, or kept into another character's game**~~ — **fixed, Session 2464** (the systems builder's sweep of `worldState` keys written anywhere against the keys `_applyLoadData` reads: `coachSeat`, the character's in `SS_CHAR_WS` since S456 and saved since S267, was never read back; `zoneSpawnT`, the zones' last spawn, the same; both join the S242 list; `tests/coachseat` +1).
 
 ## I. Found in play (the critic)
+- **`budget` red on main since s1947: the Gatelands' windmills put Dunmore's street over Low's 700 draw calls** (QA, Session 2627, s1947
+  `028ec1d`; for the look builder: `placeMills`/`tickMills`, `js/82-world-structures.js`, and `gatelandsMill`, `js/38-kit.js`). S2621 (#1998,
+  s1946) adds the tower mill at 22 villages; each is 13 draws and 3,668 triangles, built whole and drawn at every distance a loaded cell
+  reaches, with no far level and no merge. From Dunmore's street six are in view: the ledger's `mill` column reads 78 calls at every level.
+  *at Low, every view (2) under 700 draw calls* reads 743 at midnight (665 at s1930) and 689 at noon (611), 1 call under. Middle reads 929
+  (ceiling 1,000), High 996 (1,300). Portclare's square has five: 430 calls at Low (367 at s1938), 625 Middle, 680 High (+10%), 18k triangles.
+  The field west of Dunmore, the inn and the gate are unchanged. Expected: a mill far off costs one or two draws (the kit's `mergeByMaterial`
+  past some tens of metres, or a far level), so the street is back near 665. The check is unchanged. `budget` is not in the smoke set and
+  S2621 did not edit it, so #1998 never ran it; it would go red on the 29 Nov weekly run.
 - ~~**s1927 — a new character's Wooden GreatClub shows ⚔️ on the plate; the lord's *How fares the town?* ends on a space** (the critic, 24 Nov, note 4, not filed)~~ — done, Session 2612 (`WEAPON_GLYPH`/`weaponGlyph`, one glyph by shape for the item, the bag and the plate, a saved club too; the stray space goes with the clause, no words added; `wayfinding` +1)
 - ~~**s1927 — the movement pad is drawn on a mouse screen** (the critic, 24 Nov, judging S2592's *Needs eyes*: *four grey arrows that do nothing for a keyboard player*)~~ — done, Session 2613 (`#dp` hidden unless `(any-pointer: coarse)`; `restslip` +1)
 - ~~**A townsperson with loose hair is 165–215k triangles at full detail**~~ — done, Session 2610 (`hbHairFit`: no hair mesh over 70k card triangles at any level; Niamh 220k → 57k, Caoimhe 194k → 66k, Maeve 211k → 54k at High, every other style whole; `f4people` +1) (QA, Session 2608, s1931; for the bodies builder: the builder's
