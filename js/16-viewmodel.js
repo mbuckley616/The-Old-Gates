@@ -1005,13 +1005,20 @@ const VM_LIT={sc:null,amb:new THREE.Color(),sky:new THREE.Color(),gnd:new THREE.
   up:new THREE.Vector3(0,1,0),sd:new THREE.Vector3(1,2,1).normalize(),pd:new THREE.Vector3(0,1,0)};
 const _vlQ=new THREE.Quaternion(),_vlP=new THREE.Vector3(),_vlT=new THREE.Vector3(),_vlE=new THREE.Vector3(),_vlS=new THREE.Vector3(),_vlD=new THREE.Vector3();
 const _vlA=new THREE.Color(),_vlK=new THREE.Color(),_vlG=new THREE.Color(),_vlU=new THREE.Color(),_vlC=new THREE.Color(),_vlL=new THREE.Vector3();
+// S2659 — the hands take the tone curve of the place they are drawn over. The world's frame is tone-mapped (landPost: ACES at
+// LAND.exposure, P10b's grade in the same chunk) and a room's too (landRoomPost: Neutral), but the view model was drawn after them
+// linear, under the same lights, so skin clipped to white in every daylit frame (the critic's street at 10h, s1927). vmLight names
+// the scene; its own before/after hooks are run around the view model's draw, so the hands get exactly the frame's curve and grade.
+const VM_POST={src:null};
+VM_SCENE.onBeforeRender=function(r,s,c,g,m,gr){const o=VM_POST.src;if(o&&o.userData.landPost&&o.onBeforeRender)o.onBeforeRender(r,s,c,g,m,gr);};
+VM_SCENE.onAfterRender=function(r,s,c,g,m,gr){const o=VM_POST.src;if(o&&o.userData.landPost&&o.onAfterRender)o.onAfterRender(r,s,c,g,m,gr);};
 // S1872 — a spotlight reaches the eye only inside its cone, by three's own fall-off (smoothstep from the cone's edge to the penumbra's
 // inner edge): a kit room's day spots (kitDaylight, up to 6 each) were summed as if they shone every way, and burned the hands white
 // at the door, where the spot stands behind you (backlog I, the critic's s1254). c is the cosine between the spot's axis and the eye.
 const VM_PT_MAX=1.5;
 function vmSpotCone(o,c){const a=Math.cos(o.angle),b=Math.cos(o.angle*(1-(o.penumbra||0)));if(c<=a)return 0;if(c>=b||b<=a)return 1;const t=(c-a)/(b-a);return t*t*(3-2*t);}
 function vmLight(sc,dt){
-  if(!sc||!VM_AMB)return;
+  if(!sc||!VM_AMB)return;VM_POST.src=sc;
   _vlA.setRGB(0,0,0);_vlK.setRGB(0,0,0);_vlG.setRGB(0,0,0);_vlU.setRGB(0,0,0);_vlC.setRGB(0,0,0);_vlS.set(0,0,0);_vlD.set(0,0,0);
   CAM.getWorldPosition(_vlE);CAM.getWorldQuaternion(_vlQ).invert();
   for(const o of sc.children){if(!o.isLight||!o.visible||!(o.intensity>0))continue;const i=o.intensity;

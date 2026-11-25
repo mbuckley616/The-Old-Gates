@@ -82,5 +82,10 @@ const spot = await page.evaluate(() => { const E = CAM.getWorldPosition(new THRE
   const mk = (dx, ty) => { const sc = new THREE.Scene(), s = new THREE.SpotLight(0xd4dcea, 6, 9, 1.15, 1, 1); s.position.set(E.x + dx, E.y, E.z); s.target.position.set(E.x + dx + ty, E.y - 1.6, E.z); sc.add(s, s.target); sc.add(new THREE.AmbientLight(0x404050, .2)); vmLight(sc, 0); return +pt().toFixed(3); };
   const away = mk(-.7, -3), at = mk(-1, 3); vmLight(scene, 9); return { away, at }; });
 check(`a day spot behind you shining away does not light the hands (${spot.away}); one shining on them from 1 m lights them no more than 1.5 (${spot.at})`, spot.away < .05 && spot.at > .5 && spot.at <= 1.5 + 1e-6, spot);
+// S2659 — the hands are drawn through the frame's own tone curve: the world's ACES and grade (landPost), so skin no longer clips to
+// white over a daylit street (the critic's s1927); the renderer is put back after the hands' draw
+const post = await page.evaluate(() => { vmLight(scene, 9); const t0 = REN.toneMapping; VM_SCENE.onBeforeRender(REN); const t = REN.toneMapping, ex = REN.toneMappingExposure;
+  VM_SCENE.onAfterRender(REN); return { world: !!scene.userData.landPost, aces: t === THREE.ACESFilmicToneMapping, ex, ok: ex === LAND.exposure, back: REN.toneMapping === t0 }; });
+check('the hands take the world frame\'s tone curve (ACES at the land\'s exposure) and the renderer is put back after them', post.world && post.aces && post.ok && post.back, post);
 check('no page errors, and the hands never fell back (no F10 or F4 warning)', g.errs.length === 0 && !g.logs.some(l => /F10:|F4:/.test(l)), { errs: g.errs, logs: g.logs.filter(l => /F10:|F4:/.test(l)) });
 await g.close();
