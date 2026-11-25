@@ -13321,7 +13321,7 @@ function aurenneOrrery(hAt, o = {}) {
     const { R0, CY, STEP, ZF0, FZ, PLATE, holeR, HW } = H, key = (o.key || 'gate:mouth') + ':' + SZ, r = stream(key), DEG = Math.PI / 180, group = new THREE.Group();
     const ground = o.ground || ((x, z) => H.shape(x, z, 0)), W0 = R0 * .19, PROUD = STEP * .45;
     const RINGS = [0, 1, 2, 3].map(k => { const ro = R0 * (1 - k * .18), ri = ro - W0 * (1 - k * .14); return { k, ro: +ro.toFixed(2), ri: +ri.toFixed(2), zf: +(ZF0 - k * STEP).toFixed(2), n: [36, 30, 24, 18][k] }; });
-    const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a); if (!x.attributes.normal) x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+    const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a) && !(a === 'color' && k === 'seam')) x.deleteAttribute(a); if (!x.attributes.normal) x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
     const bb = g => { g.computeBoundingBox(); return g.boundingBox; }, sol = [];
     // the headwall: the hill's cut front in rough rock, a hole for the outer ring, its top the hill's line at the face
     { const topAt = x => H.dome(x, FZ + .5) + .3, sh = new THREE.Shape(), N = 40; sh.moveTo(-HW, -1);
