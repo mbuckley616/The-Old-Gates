@@ -91,7 +91,7 @@ const home = await page.evaluate(() => { const set = (d, h) => { worldState.game
   window.isInterior = ii; currentHouse = ch0; return o; });
 console.log(JSON.stringify(home));
 check('by home: at Dunmore a Gatelands-made piece is ×0.85 to buy and to sell, the Mark\'s and Aurenne\'s ×1.2; Icebloom is the Mark\'s, Firemoss the Gatelands\', a sea herb and armour no one\'s; market day stacks', Math.abs(home.gl[0] / home.plain[0] - .85) < .02 && Math.abs(home.gl[1] / home.plain[1] - .85) < .03 && Math.abs(home.mk[0] / home.plain[0] - 1.2) < .02 && Math.abs(home.au[1] / home.plain[1] - 1.2) < .03 && home.homes.join() === 'gatelands,mark,mark,gatelands,,' && Math.abs(home.glMarket / home.plain[0] - .765) < .02, home);
-// S2646: market day's stalls (#1971 B). On Stoneday 7–15 Dunmore keeps 4 + prosperity ÷ 25 stalls, each a keeper on the square with a
+// S2647: market day's stalls (#1971 B). On Stoneday 7–15 Dunmore keeps 4 + prosperity ÷ 25 stalls, each a keeper on the square with a
 // counter of 4 to 7 rows of food, remedies or odds and ends, seeded by the town and the week; the market's prices hold at a stall; its
 // residents keep the square from 7; the next day the stalls are gone.
 const stalls = await page.evaluate(() => { const set = (d, h) => { worldState.gameTimeAbsMinutes = 1440 * d + h * 60; worldState.gameTimeMinutes = h * 60; };

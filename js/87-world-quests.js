@@ -2516,7 +2516,7 @@ const giver=`${lord.title} ${lord.name}`;
       if(talking){e.alert=false;e.atkCd=Math.max(e.atkCd||0,.6);continue;}
       e.alert=true;if(!CR.yielded&&PHP<maxHP*.3){CR.yielded=true;offerYield(roadLawS(site),f);}}}
   function dropTraveller(id){const D=ROADWALK.get(id);if(!D)return;for(const N of [D.npc,...(D.follow||[]).map(f=>f.npc)]){if(!N)continue;sc.remove(N.g);sc.remove(N.dot);const k=npcs.indexOf(N);if(k>=0)npcs.splice(k,1);}if(D.beast)sc.remove(D.beast);if(D.bier){sc.remove(D.bier);D.bier.traverse(o=>{if(o.geometry)o.geometry.dispose();});}if(D.cart){sc.remove(D.cart);D.cart.traverse(o=>{if(o.geometry)o.geometry.dispose();});}if(D.reins)D.reins.geometry.dispose();ROADWALK.delete(id);}
-  // S2646 — market day's stalls (#1971 B, docs/design/a-towns-day.md: "Stalls, 4 + prosperity ÷ 25, rounded down"; "the stall counter is a
+  // S2647 — market day's stalls (#1971 B, docs/design/a-towns-day.md: "Stalls, 4 + prosperity ÷ 25, rounded down"; "the stall counter is a
   // shop of its own, the road merchant's path"). On market day (marketOn, 60-shop.js), 7 to 15, a town within MSTALL_NEAR of you keeps
   // 4 + prosperity ÷ 25 stalls on its square, each with its keeper standing behind it: the square's stalls first (S._stallAt), then spots
   // on the plaza's ring between 10 and 14 m out, seeded by the town, for the look's stalls to stand on. Each stall sells one table of a
@@ -2550,7 +2550,7 @@ const giver=`${lord.title} ${lord.name}`;
     for(const id of [...MSTALLS.keys()])if(!keep.has(id))dropMarketStall(id);
     for(const o of want){const id=o.site.id+':'+o.i+':'+marketWeek();if(MSTALLS.has(id))continue;
       const n=spawnNPC(marketStallDef(o.site,o.i,o.spot),o.spot.ang,true);n.sched={type:'lost'};n._settle=SETTLE.get(o.site.id)||n._settle;MSTALLS.set(id,{npc:n,site:o.site.id,i:o.i,spot:o.spot});}}
-  function tickRoadfolk(dt){try{roadGuardTick();}catch(e){} /* S2302 */try{tickMarketStalls();}catch(e){console.warn('market stalls',e);} /* S2646 */if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
+  function tickRoadfolk(dt){try{roadGuardTick();}catch(e){} /* S2302 */try{tickMarketStalls();}catch(e){console.warn('market stalls',e);} /* S2647 */if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
     if(Math.random()<.002)rfPrune();
     {const d=dayNow();if(d!==_almsDay){_almsDay=d;familyPay();}} /* S2276 — favour owed for alms, paid once the town is whole */
     const all=roadfolkNow().filter(o=>ROADFOLK_DRAW[o.T.kind]).map(o=>(o.dist=Math.hypot(o.p.x-px,o.p.z-pz),o)).filter(o=>o.dist<ROADFOLK_NEAR).sort((x,y)=>x.dist-y.dist||(x.T.id<y.T.id?-1:1)).slice(0,ROADFOLK_DRAWN);
