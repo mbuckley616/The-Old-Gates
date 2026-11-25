@@ -13194,7 +13194,149 @@ function aurenneOrrery(hAt, o = {}) {
     const gm = new THREE.Mesh(gg, M.bank); gm.name = 'bank'; gm.receiveShadow = true; out.group.add(gm);
     out.tris += idx.length / 3; out.draws += 1; out.hAt = hAt; return out;
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, minehead: markMineHead, mill: gatelandsMill, mineheadShape: mineHeadShape, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, isles: gateIslesRuin, aqueducts: aqueductsRuin, aqueductsPlan, frostborn: frostbornRuin, frostbornLand, scarred: scarredGateRuin, stormwatch: stormwatchRuin, stormwatchLand, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, still: stillFitting, garden: houseGarden, crater: starCrater, skypine: skywoodPine, sigilstone: scriptStone, oysters: oysterBed }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  // Session 2632 (Michael's A on #1991: "Medium: rings 26 m across"; OG-037's V1 and V3, his answer of 12 Oct: "the gate's outside is
+  // concentric rings, a broken circle for a failing gate") — a lesser gate's outside: docs/prototypes/levelup/gatemouth.js (Session 2616)
+  // at its size 'm', drawn without its land: the world's own ground is the hill, by the stamp the world lays from shape() (js/82, ringGate).
+  // A metre a unit, y 0 the court at the door, the face toward +z, as the prototype. The rings, four courses of voussoirs (36/30/24/18) on one
+  // centre CY over the court, each STEP deeper and a fifth less across, their lower arcs under the court; the reveals between them a lathe;
+  // the back plate with the slit door between two pillars of amber script under the ring sigil; the headwall of rough rock round the outer
+  // ring; a court of slabs; the camp at the foot. 'failing' drops the outer ring's upper right quarter (its stones fallen on the court) and
+  // slips three of the second, the script dead on two stones in five; 'catastrophic' opens the outer two rings, their stones hung off their
+  // seats with violet in the empty seats, the script dead and the slit lit violet. Differences from the prototype: no land mesh; the noise
+  // is the kit's own value noise (common.js's fbm is not in the game); the glyph and sigil canvases and every material are made once and
+  // shared by every gate; the camp and the fallen stones stand on o.ground(x, z) (the world's ground, relative to the court).
+  //   PKIT.places.gatemouth({ size, cond, key, camp, ground }) -> { group, tris, draws, R0, CY, STEP, rings, plate, face, holeR, HW, door,
+  //   floors [{ z0, z1, half }], lost, hung, counts, camp, hill { h, a, c, z }, sol [{ x, z, w, d, h }] }
+  //   PKIT.places.gatemouthShape(size) -> { shape(x, z, b) the hill's height over the court where the land would be b, foot(x, z) in [0, 1]
+  //   the hill's own weight (0 past its foot), R0, CY, FZ, PLATE, holeR, HW, HA, HC, HZ, STEP, cut z (the step from the hill to the court) }
+  const GM_SIZES = { s: { R0: 6.5, door: { w: 1.5, h: 2.8 } }, m: { R0: 13, door: { w: 2.4, h: 5.5 } }, l: { R0: 25, door: { w: 3.6, h: 11 } } };
+  const gmHash = (i, j) => { let h = Math.imul(i, 374761393) + Math.imul(j, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  const gmVn = (x, z) => { const i = Math.floor(x), j = Math.floor(z), u = x - i, v = z - j, a = u * u * (3 - 2 * u), b = v * v * (3 - 2 * v); return (gmHash(i, j) * (1 - a) + gmHash(i + 1, j) * a) * (1 - b) + (gmHash(i, j + 1) * (1 - a) + gmHash(i + 1, j + 1) * a) * b; };
+  /* in about [-.5, .5], as the prototype's ImprovedNoise fbm */
+  const gmFbm = (x, z, o2 = 3) => { let s = 0, m = 1, t = 0, f = 1; for (let k = 0; k < o2; k++) { s += m * (gmVn(x * f + k * 17.3, z * f + k * 5.1) - .5); t += m; m *= .5; f *= 2.03; } return s / t; };
+  const gmSs = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  function gateMouthShape(size) {
+    const SZ = GM_SIZES[size] ? size : 'm', { R0 } = GM_SIZES[SZ], CY = R0 * .34, STEP = R0 * .3, ZF0 = R0 * .12, HW = R0 * 1.28;
+    const PLATE = ZF0 - 3 * STEP - STEP, FZ = ZF0 - STEP * .55, holeR = R0 * .99 - .15, HH = CY + R0 * 1.75, HA = R0 * 3.0, HC = R0 * 2.6, HZ = -R0 * 1.1, CUT = FZ - 1.5; /* the prototype's FZ - .8, a metre further in: the world's laid ground is cut every metre, and its step stays inside the headwall */
+    const dome = (x, z) => { const d = Math.hypot(x / HA, (z - HZ) / HC); return HH * (1 - gmSs(0, 1, d) ** 1.3) + R0 * .1 * gmFbm(x / (R0 * 1.1) + 3, z / (R0 * 1.1)); };
+    const notch = (x, z) => { const ax = Math.abs(x), side = gmSs(HW + R0 * .35, HW - R0 * .05, ax), front = ax < HW ? (z > CUT ? 1 : 0) : gmSs(FZ - R0 * .3, FZ + R0 * .1, z); return side * front; };
+    /* the hill's weight: whole to three quarters of its foot, none past it; the court's: the notch and the camp before it kept level, easing out over 12 m */
+    const foot = (x, z) => 1 - gmSs(.75, 1, Math.hypot(x / HA, (z - HZ) / HC));
+    const court = (x, z) => { const ax = Math.abs(x + (x < 0 ? R0 * .25 : 0)); return gmSs(12, 0, Math.max(0, ax - (HW + R0 * .35))) * gmSs(12, 0, Math.max(0, z - (ZF0 + R0 * 1.55))) * gmSs(FZ - R0 * .6, FZ - R0 * .3, z); };
+    const shape = (x, z, b) => { const bb = b * (1 - court(x, z)), cut = notch(x, z), hill = Math.max(0, dome(x, z)) * (1 - cut) - .2 * gmSs(HW, HW - R0 * .2, Math.abs(x)) * cut, w = foot(x, z);
+      return bb + (Math.max(bb, hill) - bb) * w; };
+    return { shape, foot, court, dome, notch, R0, CY, STEP, ZF0, FZ, PLATE, holeR, HW, HH, HA, HC, HZ, cut: CUT };
+  }
+  let GM_MATS = null;
+  function gateMouthMats() {
+    if (GM_MATS) return GM_MATS;
+    const cut = (w, h, draw, bg, fg) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, w, h); x.strokeStyle = fg; x.fillStyle = fg; x.lineCap = 'round'; draw(x); const t = new THREE.CanvasTexture(c); t.anisotropy = 8; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+    const marks = x => { const rg = stream('gatemouth:glyphs'); for (let k = 0; k < 12; k++) { const cy = 44 + k * 84, kind = Math.floor(rg() * 5); x.lineWidth = 8; x.beginPath();
+      if (kind === 0) x.arc(64, cy, 28, 0, 7); else if (kind === 1) { x.arc(64, cy, 28, 0, 7); x.moveTo(64, cy - 38); x.lineTo(64, cy + 38); } else if (kind === 2) { x.arc(64, cy, 28, Math.PI * .1, Math.PI * .9); x.moveTo(92, cy - 6); x.arc(64, cy - 6, 28, 0, -Math.PI, true); }
+      else if (kind === 3) { x.moveTo(40, cy); x.lineTo(64, cy - 30); x.lineTo(88, cy); x.lineTo(64, cy + 30); x.closePath(); } else { x.moveTo(64, cy - 36); x.lineTo(64, cy + 36); for (const d of [-20, 0, 20]) { x.moveTo(44, cy + d); x.lineTo(84, cy + d); } } x.stroke(); } };
+    const ringSigil = x => { x.lineWidth = 18; x.beginPath(); x.arc(256, 256, 170, 0, 7); x.stroke(); x.lineWidth = 10; x.beginPath(); x.arc(256, 256, 96, 0, 7); x.stroke(); x.lineWidth = 11; x.beginPath(); x.moveTo(256, 24); x.lineTo(256, 488); x.moveTo(24, 256); x.lineTo(488, 256); x.stroke(); x.beginPath(); x.arc(256, 256, 20, 0, 7); x.fill(); };
+    const glyphA = cut(128, 1024, marks, '#000', '#fff'), glyphCut = cut(128, 1024, marks, '#4e4b45', '#1a1816'), sigA = cut(512, 512, ringSigil, '#000', '#fff'), sigCut = cut(512, 512, ringSigil, '#8c8880', '#2c2a26');
+    const AMBER = new THREE.Color(1.0, .56, .18), VIOLET = new THREE.Color(.62, .3, 1);
+    const glow = (t, c, k) => new THREE.MeshBasicMaterial({ map: t, color: c.clone().multiplyScalar(k), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, side: THREE.DoubleSide });
+    const deadM = new THREE.MeshStandardMaterial({ map: glyphCut, roughness: .9, transparent: true, opacity: .5, polygonOffset: true, polygonOffsetFactor: -2, side: THREE.DoubleSide, depthWrite: false });
+    const stoneM = mat('rock', { ns: .6, color: 0xb4b0a6, rough: .85 }), dressedM = mat('slab', { ns: .7, color: 0xa29e95, rough: .88 }); stoneM.side = THREE.DoubleSide; dressedM.side = THREE.DoubleSide;
+    GM_MATS = { rock: mat('rock', { ns: 1, color: 0x8f8d84, rough: .95 }), stone: stoneM, dressed: dressedM,
+      lit: glow(glyphA, AMBER, 2.2), dim: glow(glyphA, AMBER, .9), dead: deadM, litD: glow(glyphA, AMBER, 2.4), dimD: glow(glyphA, AMBER, .9), deadD: deadM,
+      sigil: glow(sigA, AMBER, 2.4), sigilDim: glow(sigA, AMBER, .8), sigilDead: new THREE.MeshStandardMaterial({ map: sigCut, roughness: .9, transparent: true, opacity: .6, polygonOffset: true, polygonOffsetFactor: -2, depthWrite: false }),
+      seam: new THREE.MeshBasicMaterial({ color: VIOLET.clone().multiplyScalar(2.2) }), door: new THREE.MeshBasicMaterial({ color: 0x030304 }), rift: new THREE.MeshBasicMaterial({ color: VIOLET.clone().multiplyScalar(.55) }),
+      canvas: mat('plaster', { ns: .4, color: 0xc9b99a, rough: .95 }), wood: mat('wood', { ns: .6, color: 0x8a7a66, rough: .9 }), ember: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, .55, .15) }),
+      pennant: new THREE.MeshStandardMaterial({ color: 0x8a2a22, roughness: .9, side: THREE.DoubleSide }) };
+    GM_MATS.canvas.side = THREE.DoubleSide; return GM_MATS;
+  }
+  const GM_GLOW = ['lit', 'dim', 'dead', 'litD', 'dimD', 'deadD', 'sigil', 'sigilDim', 'sigilDead', 'seam', 'door', 'rift', 'ember'];
+  function lesserGateMouth(o = {}) {
+    const H = gateMouthShape(o.size), SZ = GM_SIZES[o.size] ? o.size : 'm', { door: D0 } = GM_SIZES[SZ], cond = ['steady', 'failing', 'catastrophic'].includes(o.cond) ? o.cond : 'steady';
+    const { R0, CY, STEP, ZF0, FZ, PLATE, holeR, HW } = H, key = (o.key || 'gate:mouth') + ':' + SZ, r = stream(key), DEG = Math.PI / 180, group = new THREE.Group();
+    const ground = o.ground || ((x, z) => H.shape(x, z, 0)), W0 = R0 * .19, PROUD = STEP * .45;
+    const RINGS = [0, 1, 2, 3].map(k => { const ro = R0 * (1 - k * .18), ri = ro - W0 * (1 - k * .14); return { k, ro: +ro.toFixed(2), ri: +ri.toFixed(2), zf: +(ZF0 - k * STEP).toFixed(2), n: [36, 30, 24, 18][k] }; });
+    const B = new Map(), put = (k, g) => { const x = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(x.attributes)) if (!['position', 'normal', 'uv'].includes(a)) x.deleteAttribute(a); if (!x.attributes.normal) x.computeVertexNormals(); if (!x.attributes.uv) worldUV(x, .25); (B.get(k) || B.set(k, []).get(k)).push(x); return x; };
+    const bb = g => { g.computeBoundingBox(); return g.boundingBox; }, sol = [];
+    // the headwall: the hill's cut front in rough rock, a hole for the outer ring, its top the hill's line at the face
+    { const topAt = x => H.dome(x, FZ + .5) + .3, sh = new THREE.Shape(), N = 40; sh.moveTo(-HW, -1);
+      for (let k = 0; k <= N; k++) { const x = -HW + 2 * HW * k / N; sh.lineTo(x, topAt(x)); } sh.lineTo(HW, -1); sh.lineTo(-HW, -1);
+      const hole = new THREE.Path(); hole.absarc(0, CY, holeR, 0, Math.PI * 2, true); sh.holes.push(hole);
+      const g = new THREE.ExtrudeGeometry(sh, { depth: R0 * .5, bevelEnabled: false, curveSegments: 48 }); g.translate(0, 0, FZ - R0 * .5);
+      const P = g.attributes.position; for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); if (z > FZ - .01 && Math.hypot(x, y - CY) > holeR + .4) P.setZ(i, z + R0 * .05 * (gmFbm(x / 3, y / 3) + .5)); }
+      g.deleteAttribute('normal'); g.computeVertexNormals(); worldUV(g, .12); put('rock', g);
+      /* its solids: the wall either side of the outer ring's opening at the court (the hole is 2 * holeR wide at CY; at the court it is narrower) */
+      const halfAt0 = Math.sqrt(Math.max(0, holeR * holeR - CY * CY)), w = HW - halfAt0; for (const s of [-1, 1]) sol.push({ x: s * (halfAt0 + w / 2), z: FZ - R0 * .25, w, d: R0 * .5, h: topAt(s * HW) }); }
+    // the rings: voussoirs about (0, CY), from the top clockwise seen from the front; each from its face back to the next ring's face
+    const at = (t, rr) => [rr * Math.sin(t), CY + rr * Math.cos(t)];
+    const wedge = (ta, tb, ra, rb, z1, z0, gap = .05) => { const out = [], qd = [at(ta, ra), at(tb, ra), at(tb, rb), at(ta, rb)], c = qd.reduce((s, p) => [s[0] + p[0] / 4, s[1] + p[1] / 4], [0, 0]);
+      const k = 1 - gap / Math.max(...qd.map(p => Math.hypot(p[0] - c[0], p[1] - c[1]))); let p = qd.map(v => [c[0] + (v[0] - c[0]) * k, c[1] + (v[1] - c[1]) * k]); let ar = 0; for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; ar += p[i][0] * p[j][1] - p[j][0] * p[i][1]; } if (ar < 0) p = p.reverse();
+      const F = p.map(v => [v[0], v[1], z1]), Bk = p.map(v => [v[0], v[1], z0]), tri = (a, b, d) => out.push(...a, ...b, ...d);
+      tri(F[0], F[1], F[2]); tri(F[0], F[2], F[3]); tri(Bk[0], Bk[2], Bk[1]); tri(Bk[0], Bk[3], Bk[2]); for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; tri(F[i], Bk[i], Bk[j]); tri(F[i], Bk[j], F[j]); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); g.computeVertexNormals(); return { g, c }; };
+    const BW = W0 * .3, band = (ta, tb, rm, z, v0) => { const n = 3, pos = [], uv = [], L = rm * (tb - ta); for (let i = 0; i <= n; i++) { const t = ta + (tb - ta) * i / n, [x0, y0] = at(t, rm - BW), [x1, y1] = at(t, rm + BW); pos.push(x0, y0, z, x1, y1, z); uv.push(0, (v0 + L * i / n) / (BW * 12), 1, (v0 + L * i / n) / (BW * 12)); }
+      const idx = []; for (let i = 0; i < n; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); const x = g.toNonIndexed(); x.computeVertexNormals(); return x; };
+    const LOSS = cond === 'failing' ? { 0: [18, 88] } : cond === 'catastrophic' ? { 0: [-35, 100], 1: [-5, 70] } : {};
+    const lostAt = (k, t) => { const a = LOSS[k]; return a && t / DEG > a[0] && t / DEG < a[1]; };
+    const lost = [], hung = [], rl = stream(key + ':lost'), rs = stream(key + ':script'), counts = { stones: 0, lit: 0, dim: 0, dead: 0, slipped: 0 };
+    RINGS.forEach(R => { R.gone = 0; let v = 0; const z0 = R.k < 3 ? RINGS[R.k + 1].zf + .02 : PLATE + .02;
+      for (let i = 0; i < R.n; i++) { const ta = (i / R.n + (R.k % 2) * .5 / R.n) * Math.PI * 2 - Math.PI, tb = ta + Math.PI * 2 / R.n, tm = (ta + tb) / 2, zf = R.zf + (r() - .5) * .04 * R0 / 6.5;
+        if (CY + R.ro * Math.cos(tm) < -.6 && CY + R.ri * Math.cos(tm) < -.6) continue;
+        counts.stones++; const { g, c } = wedge(ta, tb, R.ri, R.ro, zf + PROUD, z0), s = band(ta, tb, (R.ri + R.ro) / 2, zf + PROUD + .03, v); v += (R.ri + R.ro) / 2 * (tb - ta);
+        if (lostAt(R.k, tm)) { R.gone++; const dz = (zf + PROUD + z0) / 2;
+          if (cond === 'catastrophic') {
+            const lift = R0 * (.03 + rl() * .1), fw = R0 * (.02 + rl() * .1), M = new THREE.Matrix4().makeTranslation(c[0] + Math.sin(tm) * lift, c[1] + Math.cos(tm) * lift, dz + PROUD / 2 + fw)
+              .multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler((rl() - .5) * .45, (rl() - .5) * .45, (rl() - .5) * .6))).multiply(new THREE.Matrix4().makeTranslation(-c[0], -c[1], -dz));
+            put('stone', g.applyMatrix4(M)); put('dead', s.applyMatrix4(M)); counts.dead++;
+            put('seam', wedge(ta + .01, tb - .01, R.ri - .02, R.ri + .06, zf + PROUD - .1, z0 + .1, 0).g);
+            hung.push({ ring: R.k, t: +(tm / DEG).toFixed(1), lift: +lift.toFixed(2) }); continue; }
+          g.translate(-c[0], -c[1], -dz); g.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rl() * Math.PI * 2, rl() * Math.PI * 2, rl() * Math.PI * 2)));
+          const x = c[0] * (.75 + rl() * .35) + (rl() - .5) * R0 * .3, z = ZF0 + R0 * (.25 + rl() * .7), b0 = bb(g), dd = Math.min(b0.max.x - b0.min.x, b0.max.y - b0.min.y, b0.max.z - b0.min.z);
+          const yc = Math.min(...[[0, 0], [1, 1], [-1, 1], [1, -1], [-1, -1]].map(([u, w]) => ground(x + u * dd, z + w * dd))); g.translate(x, yc - b0.min.y - dd / 6, z); put('stone', g);
+          const b1 = bb(g); sol.push({ x: (b1.min.x + b1.max.x) / 2, z: (b1.min.z + b1.max.z) / 2, w: b1.max.x - b1.min.x, d: b1.max.z - b1.min.z, h: b1.max.y, fallen: true });
+          lost.push({ ring: R.k, t: +(tm / DEG).toFixed(1), x: +x.toFixed(1), z: +z.toFixed(1) }); continue; }
+        let M = null; if (cond !== 'steady' && R.k === 1 && R.slipped !== 3 && tm / DEG > 95 && tm / DEG < 150) { R.slipped = (R.slipped || 0) + 1; counts.slipped++; const out = R0 * (.03 + r() * .05);
+          M = new THREE.Matrix4().makeTranslation(c[0] + Math.sin(tm) * out, c[1] + Math.cos(tm) * out - .05 * R0 / 6.5, (r() - .5) * .1 * R0 / 6.5).multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(0, 0, (r() - .5) * 5 * DEG))).multiply(new THREE.Matrix4().makeTranslation(-c[0], -c[1], 0)); }
+        put('stone', M ? g.applyMatrix4(M) : g);
+        const u = rs(), k = cond === 'steady' ? 'lit' : cond === 'failing' ? (u < .4 ? 'dead' : 'dim') : 'dead'; counts[k]++; put(k, M ? s.applyMatrix4(M) : s); } });
+    // the reveals between the rings and the back plate (a lathe about the rings' axis), the floor through them at the court's level
+    const rv = k => RINGS[k].ri + .3, half = rr => Math.sqrt(Math.max(0, rr * rr - CY * CY)), floors = [];
+    { const pr = [[holeR + .05, FZ], [rv(0), FZ], [rv(0), RINGS[1].zf], [rv(1), RINGS[1].zf], [rv(1), RINGS[2].zf], [rv(2), RINGS[2].zf], [rv(2), RINGS[3].zf], [rv(3), RINGS[3].zf], [rv(3), PLATE], [.01, PLATE]].map(([a, b]) => new THREE.Vector2(a, b));
+      const g = new THREE.LatheGeometry(pr, 72); g.rotateX(Math.PI / 2); g.translate(0, CY, 0); g.computeVertexNormals(); put('dressed', g); }
+    { const zs = [ZF0 + .4, RINGS[1].zf, RINGS[2].zf, RINGS[3].zf, PLATE]; for (let k = 0; k < 4; k++) { const w = 2 * half(rv(k)) + .2, g = new THREE.BoxGeometry(w, .6, zs[k] - zs[k + 1]); g.translate(0, -.3, (zs[k] + zs[k + 1]) / 2); put('dressed', g);
+      const hf = half(rv(k)) - .35; floors.push({ z0: +zs[k + 1].toFixed(2), z1: +zs[k].toFixed(2), half: +hf.toFixed(2) });
+      /* the reveal's walls either side of the walk, and the ring's own stones where they meet the court */
+      for (const s of [-1, 1]) sol.push({ x: s * (hf + 1.5), z: (zs[k] + zs[k + 1]) / 2, w: 3, d: zs[k] - zs[k + 1], h: CY * 2 }); }
+      sol.push({ x: 0, z: PLATE - .5, w: 2 * half(rv(3)) + 2, d: 1, h: CY * 2 }); }
+    // the spine: the slit door in the back plate between two pillars of script, a lintel, the ring sigil over it
+    const door = { w: D0.w, h: D0.h, z: +PLATE.toFixed(2) }, PW = Math.max(.7, door.w * .42), PH = Math.min(door.h * 1.3, CY + RINGS[3].ri - .4);
+    { const g = new THREE.PlaneGeometry(door.w, door.h); g.translate(0, door.h / 2, PLATE + .03); put(cond === 'catastrophic' ? 'rift' : 'door', g);
+      for (const s of [-1, 1]) { const x = s * (door.w / 2 + PW / 2), j = new THREE.BoxGeometry(PW, PH, PW * .7); j.translate(x, PH / 2, PLATE + PW * .35); put('stone', j); sol.push({ x, z: PLATE + PW * .35, w: PW, d: PW * .7, h: PH });
+        const st = new THREE.PlaneGeometry(PW * .5, PH * .92); st.translate(x, PH / 2, PLATE + PW * .7 + .02); const uv = st.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * PH / (PW * .5) / 6); put(cond === 'steady' ? 'litD' : cond === 'failing' ? (s < 0 ? 'dimD' : 'deadD') : 'deadD', st); }
+      const LH = Math.min(PW * .8, R0 * .1), l = new THREE.BoxGeometry(door.w + 2 * PW + .2, LH, PW * .8); l.translate(0, Math.min(door.h, PH - LH) + LH / 2, PLATE + PW * .4); put('stone', l);
+      const sr = Math.min(RINGS[3].ri * .55, (CY + RINGS[3].ri - door.h - LH) * .48), sg = new THREE.PlaneGeometry(2 * sr, 2 * sr); sg.translate(0, door.h + LH + (CY + RINGS[3].ri - door.h - LH) * .5, PLATE + .05); door.sigil = +sr.toFixed(2);
+      if (sr > .3) put(cond === 'steady' ? 'sigil' : cond === 'failing' ? 'sigilDim' : 'sigilDead', sg); }
+    // the court: slabs before the rings, a few sunk
+    { const rc = stream(key + ':court'), SL = Math.max(1.2, R0 * .16), X0 = -R0 * .95, X1 = R0 * .95, Z0 = ZF0 + .4, Z1 = ZF0 + R0 * .85;
+      for (let x = X0 + SL / 2; x < X1; x += SL) for (let z = Z0 + SL / 2; z < Z1; z += SL) { if (rc() < .12 && z > Z0 + SL * 2) continue; const sink = rc() < .1 ? .04 + rc() * .08 : 0, g = new THREE.BoxGeometry(SL - .04, .3, SL - .04);
+        g.translate(x, Math.max(ground(x, z), 0) - .14 - sink, z); put('dressed', g); } }
+    // the camp at the foot (OG-037): two ridge tents, a fire ring, crates, a pole and pennant; off the court to the left of the way in
+    const camp = { x: -R0 * .95 - 4, z: ZF0 + R0 * .9 + 5 };
+    if (o.camp !== false) { const cx = camp.x, cz = camp.z, G = ground;
+      const tent = (x, z, ry, L, Wd, Ht) => { const sh = new THREE.Shape(); sh.moveTo(-Wd / 2, 0); sh.lineTo(0, Ht); sh.lineTo(Wd / 2, 0); sh.lineTo(-Wd / 2, 0); const g = new THREE.ExtrudeGeometry(sh, { depth: L, bevelEnabled: false }); g.translate(0, 0, -L / 2); g.rotateY(ry); g.translate(x, G(x, z) - .05, z); worldUV(g, .5); put('canvas', g);
+        sol.push({ x, z, w: Math.max(L, Wd) * .8, d: Math.max(L, Wd) * .8, h: G(x, z) + Ht });
+        for (const e of [-1, 1]) { const p = new THREE.CylinderGeometry(.04, .04, Ht + .25, 5); p.translate(0, (Ht + .25) / 2, e * L / 2); p.rotateY(ry); p.translate(x, G(x, z) - .05, z); put('wood', p); } };
+      tent(cx - 1.5, cz, .5, 2.6, 2.0, 1.45); tent(cx + 2.4, cz - 1.2, -.35, 2.2, 1.8, 1.3);
+      const fx = cx + .7, fz = cz + 2.6; for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2, s = new THREE.DodecahedronGeometry(.16, 0); s.translate(fx + Math.cos(a) * .45, G(fx, fz) + .06, fz + Math.sin(a) * .45); put('rock', s); }
+      { const e = new THREE.CylinderGeometry(.3, .34, .08, 9); e.translate(fx, G(fx, fz) + .04, fz); put('ember', e); for (let k = 0; k < 3; k++) { const l = new THREE.CylinderGeometry(.05, .05, .7, 5); l.rotateZ(Math.PI / 2); l.rotateY(k * 1.1); l.translate(fx, G(fx, fz) + .12, fz); put('wood', l); } }
+      for (const [x, z, s] of [[cx + 3.6, cz + 1.2, .55], [cx + 4.1, cz + 1.9, .45], [cx + 3.7, cz + 1.6, .4]]) { const b = new THREE.BoxGeometry(s, s * .8, s * .7); b.rotateY(x); b.translate(x, G(x, z) + s * .4 + (s === .4 ? .44 : 0), z); worldUV(b, 2); put('wood', b); }
+      { const px = cx - 3.4, pz = cz + 1.6, p = new THREE.CylinderGeometry(.05, .06, 3.4, 6); p.translate(px, G(px, pz) + 1.7, pz); put('wood', p); const f = new THREE.PlaneGeometry(.9, .45); f.translate(px + .47, G(px, pz) + 3.1, pz); put('pennant', f); } }
+    const M = gateMouthMats(); let tris = 0, draws = 0; const byMat = {};
+    for (const [k, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const mesh = new THREE.Mesh(g, M[k]); mesh.name = k; mesh.userData.glow = GM_GLOW.includes(k);
+      mesh.castShadow = !GM_GLOW.includes(k); mesh.receiveShadow = !['lit', 'dim', 'litD', 'dimD', 'sigil', 'sigilDim', 'seam', 'ember'].includes(k);
+      group.add(mesh); const n = Math.round(g.attributes.position.count / 3); byMat[k] = n; tris += n; draws++; }
+    return { group, tris, draws, byMat, size: SZ, cond, R0, CY, STEP, rings: RINGS.map(q => ({ ...q })), plate: +PLATE.toFixed(2), face: +FZ.toFixed(2), holeR: +holeR.toFixed(2), HW: +HW.toFixed(2), door, floors, lost, hung, counts,
+      hill: { h: +H.HH.toFixed(1), a: +H.HA.toFixed(1), c: +H.HC.toFixed(1), z: +H.HZ.toFixed(1) }, camp: o.camp !== false ? camp : null, sol, across: +(2 * RINGS[0].ro).toFixed(1) };
+  }
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { gatemouth: lesserGateMouth, gatemouthShape: gateMouthShape, abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, minehead: markMineHead, mill: gatelandsMill, mineheadShape: mineHeadShape, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, isles: gateIslesRuin, aqueducts: aqueductsRuin, aqueductsPlan, frostborn: frostbornRuin, frostbornLand, scarred: scarredGateRuin, stormwatch: stormwatchRuin, stormwatchLand, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, still: stillFitting, garden: houseGarden, crater: starCrater, skypine: skywoodPine, sigilstone: scriptStone, oysters: oysterBed }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, trader: markTrader, TRADER_TRADES, TOWN_TRADES, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };
