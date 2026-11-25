@@ -2030,6 +2030,13 @@
   // the plaza by day, drink in the evening, sleep at night; villagers roam
   // by day; guards patrol gate ↔ plaza around the clock.
   const HRS={shopOpen:8,shopClose:18,eve:18,night:21,dawn:7};
+  // S2629 (Michael's B on #1971, a town's day; docs/design/a-towns-day.md, A's table) — a shop keeps its trade's hours, not the one 8–18:
+  // the forge (the 'weapon' shop is the smithy) and the shipwright 7–17, the apothecary 9–17, the armourer 9–18, the goods shop 9–19, the
+  // barber 10–18 (its close the page leaves where it was); the inn takes the residents from 17 (HRS.inn, was the evening's 18). Any other
+  // type keeps 8–18. Read from the clock; nothing saved.
+  const SHOP_HRS={weapon:[7,17],forge:[7,17],shipwright:[7,17],potion:[9,17],apothecary:[9,17],armor:[9,18],armoury:[9,18],misc:[9,19],goods:[9,19],barber:[10,18]};
+  HRS.inn=17;
+  function shopHours(t){return SHOP_HRS[t]||[HRS.shopOpen,HRS.shopClose];}
   function hourNow(){return (typeof gameHour==='function')?gameHour():12;}
   function npcInsideNow(house){
     const h=hourNow(),t=house.type;
@@ -2040,7 +2047,7 @@
     if(t==='guild_f'||t==='guild_m')return true;
     if(t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='huntcabin'||t==='market'||t==='academy')return false; /* S1963 — nor the academy's library; S1480 — and a farm's byre (S1475, and its barn): nobody keeps them; S1905, nor the room over a market house */
     if(t==='home'){if(house.shuttered)return false;if(house.ownedByPlayer||ownedHouse(house.id))return false;return h>=(house.farm&&!feastNow(house.siteId)?HRS.eve:HRS.night)||h<HRS.dawn;} /* S1471 — a farmer is in from the evening (#762 A) */
-    return h>=HRS.shopOpen&&h<HRS.shopClose; // shops
+    {const H=shopHours(t);return h>=H[0]&&h<H[1];} // shops, by their trade (S2629)
   }
   function shopClosedNow(house){const t=house.type;if(t==='home'||t==='inn'||t==='church'||t==='castle'||t==='guild_f'||t==='guild_m'||t==='cabin'||t==='cellar'||t==='tower'||t==='chapel'||t==='byre'||t==='barn'||t==='huntcabin'||t==='market'||t==='academy')return false;return !npcInsideNow(house);} /* S1480 — a byre (S1475, a barn) is never locked */
   // S2313 — and a festival fills the squares of its island’s towns that keep it (festivalHere, 60-shop.js)
@@ -2053,20 +2060,20 @@
     const sc_=n.sched;if(!sc_)return {idle:true};
     const eve=h>=HRS.eve&&h<HRS.night,night=h>=HRS.night||h<HRS.dawn,day=!eve&&!night,fst=feastNow(n.def&&n.def._siteId||n._settle&&n._settle.site&&n._settle.site.id); /* the person's own town first: a resident's _settle can name the town built before theirs (S2205 found Hearthwick’s on Ashenmoor) */
     switch(sc_.type){
-      case 'keeper':
-        if(h>=HRS.shopOpen&&h<HRS.shopClose)return {hide:true};
+      case 'keeper': {const H=shopHours(sc_.shop);
+        if(h>=H[0]&&h<H[1])return {hide:true};
         // S273 — the sea tutorial sends you to buy a ship: until you have one, the shipwright waits at his door out of hours (S236's rule)
         if(sc_.shop==='shipwright'&&!worldState.ship&&TUT().sea&&TUT().sea.step==='ship')return {go:sc_.door,idle:true};
-        if(eve)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true};
+        if(h>=H[1]&&h<HRS.night)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true}; /* S2629 — from their own close to the inn */
         if(night)return {hide:true};
-        return {go:sc_.door,idle:true}; // dawn: at the door before opening
+        return {go:sc_.door,idle:true};} // dawn: at the door before opening
       case 'innkeeper': return {hide:true};
       case 'harbour': return night?{hide:true}:{go:sc_.door,idle:true}; // v80 S235 — at his post on the quay from 7 to 21
       // S554 — a feast day fills the square (DECISION #132's rule): residents and villagers keep to it, within 18 of
       // its middle (a resident's reach is the whole pad, 50–90), from morning until night, where on any other day the evening takes them home or to the inn
       case 'resident':
         if(night)return {hide:true};
-        if(eve&&!fst)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true};
+        if(h>=HRS.inn&&!fst)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true}; /* S2629 — the inn from 17 */
         return {wander:sc_.plaza,r:feastR(sc_.padR||14,fst)};
       // S1471 (Michael's A on #762) — a farmer keeps the yard by day, from the yard door to the spots of it (farmYard), and goes in by
       // that door at evening; on a feast day the square, as a resident, from the front door. No yard read: a resident's day.
