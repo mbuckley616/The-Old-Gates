@@ -58,7 +58,7 @@ check(`the gate's door stands at the slit (${r.doorAt.join(', ')} in the kit's f
 // in by the gate's door and out again: you come up on its floor before the slit, looking out of the rings, not on the hill over them
 await page.evaluate(s => { const e = CELL_DOORS.find(d => d.seed === s), p = makePortalDef(e), w = dungeonWorldPos[s]; p.x = w.x; p.z = w.z; p.zone = 'world'; p.sigil = false; px = p.x; pz = p.z; goToDungeon(p); }, S0.seed);
 for (let k = 0; k < 120 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(500);
-// Session 2656 (Michael, 25 Nov: "Any dungeon exit should be a mirror ... to the corresponding entrance door"): inside, the way out is the gate's door
+// Session 2658 (Michael, 25 Nov: "Any dungeon exit should be a mirror ... to the corresponding entrance door"): inside, the way out is the gate's door
 // seen from within: the slit between its two pillars of script, lit by the gate's own condition, the lintel and the sigil; no block door, no
 // green disc, no green light; standing in the entrance cell against its wall
 const ex = await page.evaluate(s => { const X = DUN_EXIT, G = RING_GATES.get(s); let green = 0, disc = 0; dScene.traverse(o => { if (o.isPointLight && o.color.getHex() === 0x88ff44) green++; if (o.isMesh && o.geometry.type === 'CircleGeometry' && o.material.color && o.material.color.getHex() === 0xc8e88a) disc++; });

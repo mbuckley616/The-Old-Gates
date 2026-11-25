@@ -1932,7 +1932,7 @@ function buildDungeon(portal){
         if(!(v===3&&floorIdx===(FLOOR2_Y>0?1:2))&&!(shellOn&&cmat===MAT.ceil&&v!==3)&&!(gen.hallAt&&gen.hallAt(c,r))){ // v80 — no ceiling over the stairwell in the lower floor
         const ce=new THREE.Mesh(new THREE.PlaneGeometry(1,1),cmat);
         ce.rotation.x=Math.PI/2;ce.position.set(c,baseY+FLOOR_HEIGHT,r);dScene.add(ce);}
-        /* S2656 — the way out (v 2, floor one) is built in metres after the scale, by dunExitBuild: no more block door, green disc or light */
+        /* S2658 — the way out (v 2, floor one) is built in metres after the scale, by dunExitBuild: no more block door, green disc or light */
         if(v===3&&floorIdx===1&&c===gen.stairC&&r===gen.stairR){if(gen.hall)buildStairHall(gen.hall);else if(gen.flights){gen.flights.forEach(buildFlight);if(gen.yard)buildYard();}else buildStairwell(c,r,stairMat);} // v80 S8 — climbable spiral; S599 — or the hall's straight flight
         if(false){ // v61 pit-and-teleport stair, superseded
           // ── SPIRAL STAIRCASE ─────────────────────────────────
@@ -4005,7 +4005,7 @@ function buildDungeon(portal){
   // scaling pass carries it with the rest
   try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){}try{cloakDenLay(portal,window._lairBoss);}catch(e){}
   dunScaleWhole(dunCellFor(portal),thWallMat);
-  try{dunExitBuild(portal);}catch(e){DUN_EXIT=null;console.warn('dunExitBuild',e);} /* S2656 — the way out, its world door seen from inside, in metres */
+  try{dunExitBuild(portal);}catch(e){DUN_EXIT=null;console.warn('dunExitBuild',e);} /* S2658 — the way out, its world door seen from inside, in metres */
   try{gateFallBuild(gen);}catch(e){console.warn('gateFallBuild',e);} /* S1376 — Cloch's fallen blocks, in metres */
   try{gateThingsBuild(gen,portal);}catch(e){GATE_THINGS=[];console.warn('gateThingsBuild',e);} /* S1675 — the braziers and webs, in metres */
   try{gateSecretsBuild(gen,portal);}catch(e){GATE_SECRETS=[];console.warn('gateSecretsBuild',e);} /* S2403 — the seals' placeholders and shut mouths, in metres */
@@ -4017,7 +4017,7 @@ function buildDungeon(portal){
   /* S1293 — a gate's spaces bring materials no room had (the water's, the pit's): compiled now, behind the fade, not when first seen */
   if(gen.gate&&typeof REN!=='undefined'&&REN.compile)try{REN.compile(dScene,CAM);}catch(e){}
 }
-// Session 2656 (Michael, 25 Nov 2026, control room: "Dungeon Exit Doors look really shitty and unpolished. They still have that legacy door
+// Session 2658 (Michael, 25 Nov 2026, control room: "Dungeon Exit Doors look really shitty and unpolished. They still have that legacy door
 // mesh attached to them, and that glowing portal circle on the floor. Any dungeon exit should be a mirror (or as close as possible) to the
 // corresponding entrance door in the overworld.") — the way out on floor one, built in metres after the scale against the wall the entrance
 // cell backs onto (the cell itself, dEntranceX/Z, and E there are as before). A ring gate's (portal.ringGate, or its cell's door's ring, set when the world built its rings: the
