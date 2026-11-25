@@ -1,4 +1,4 @@
-// The sea serpent (Session 2650; the sea that pushes back, session 4: Michael's B on #1925 and B on #2012, 11 m/s;
+// The sea serpent (Session 2651; the sea that pushes back, session 4: Michael's B on #1925 and B on #2012, 11 m/s;
 // `docs/design/the-sea-that-pushes-back-build.md`). The roll is 1 in 250 per chunk-hour key, ×2 in a storm's sea, ×0.5 with its skull;
 // it never rises by a black sail or within 20 game hours of its last rise. Risen, it swims at 11 m/s and never over a bed shallower than
 // 4 m; within 25 m it tells for 2.5 s and strikes a 9 m circle where she would be 1.0 s into the tell: 15 hull on a still ship, nothing on

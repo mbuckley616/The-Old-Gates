@@ -3451,7 +3451,7 @@ function interact(){
         if(nearZH){
           // S155 — a shop after hours or a home at night is locked: pick it (S142's lock), or come back
           if(typeof spireDoorHeld==='function'&&spireDoorHeld(nearZH)){openDialog(SPIRE_FOLK.sgt.def);return;} /* S1390 — the night sergeant's door: you ask him */
-          if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.doorLockNow(nearZH)&&!WORLD.doorPicked(nearZH)){if(typeof knockDoor==='function'&&knockDoor(nearZH))return; /* S2649 — E knocks first (#2009 A) */tryLockpick(WORLD.doorLockFor(nearZH));return;}
+          if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.doorLockNow(nearZH)&&!WORLD.doorPicked(nearZH)){if(typeof knockDoor==='function'&&knockDoor(nearZH))return; /* S2650 — E knocks first (#2009 A) */tryLockpick(WORLD.doorLockFor(nearZH));return;}
           goToInterior(nearZH);return;
         }
       }

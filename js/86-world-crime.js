@@ -438,7 +438,7 @@
     if(house.type==='home')return (h>=HRS.night||h<HRS.dawn)?{kind:'home',opens:HRS.dawn}:null;
     return shopClosedNow(house)?{kind:'shop',opens:shopHours(house.type)[0]}:null;} /* S2630 — its trade's opening */
   function doorPicked(house){const P=worldState.picked;const t=P&&P[house.id];return t!=null&&absMin()-t<12*60;} // a picked door stays open for the night
-  // S2649 — the knock (Michael's A on #2009; docs/design/a-towns-day.md, "Out of hours"). E at a shut shop knocks before it picks: the keeper
+  // S2650 — the knock (Michael's A on #2009; docs/design/a-towns-day.md, "Out of hours"). E at a shut shop knocks before it picks: the keeper
   // is home from the night (HRS.night, 21; Michael's B on #2008) until the trade's opening, and keeps the inn between the shop's close and
   // 21, when nobody answers. At home, with the town's favour at 2 or more (KNOCK_FAVOR) they come down and sell at the door at ×1.25
   // (KNOCK_MUL, shopCost, 60-shop.js); below it the answer is *Come back at nine*, the trade's own hour. For KNOCK_WIN seconds after the knock
@@ -1874,7 +1874,7 @@
   // and drifts a ship, never into her speed over the water: SHIP.speed and the log stay the hull's; held off a shoal by her own probe
   function raceDriftShip(dt){const r=raceSet(SHIP.x,SHIP.z);if(!r||r.m<.01)return;const nx=SHIP.x+r.x*dt,nz=SHIP.z+r.z*dt,fx=-Math.sin(SHIP.yaw),fz=-Math.cos(SHIP.yaw),h=SHIP.L/2+2;
     if(worldH(nx+fx*h,nz+fz*h)>SEA_Y-1.4||worldH(nx-fx*h,nz-fz*h)>SEA_Y-1.4)return;SHIP.x=nx;SHIP.z=nz;SHIP.drift=r;}
-  // ═══ S2650 — the sea serpent (the sea that pushes back, session 4; Michael's B on #1925 and B on #2012, 11 m/s) ═══
+  // ═══ S2651 — the sea serpent (the sea that pushes back, session 4; Michael's B on #1925 and B on #2012, 11 m/s) ═══
   // The roll: once for each open-water chunk she enters under sail, from seededRng('serpent', '<cx,cz>:<day>:<hour>'), 1 in 250; ×2 at
   // seaState 3, ×3 within 1,500 m of an Uisce gate on a coast cell, ×0.5 with its skull at her bow. Never within 300 m of a port, while
   // a black sail is within PIRATE_REACH (140 m), while a fight to board is on, or within 20 game hours of its last rise. It rises 60 to

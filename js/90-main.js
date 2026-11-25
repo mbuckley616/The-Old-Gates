@@ -992,7 +992,7 @@ function loop(now){
       } else if(typeof spireDoorHeld==='function'&&spireDoorHeld(nearHouse)){
         iprOW.textContent="Press 'E' to talk"; /* S1390 — the night sergeant's door: E turns you to him */
       } else if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.doorLockNow(nearHouse)&&!WORLD.doorPicked(nearHouse)){
-        const lk=WORLD.doorLockNow(nearHouse);iprOW.textContent=(typeof knockPrompt==='function'&&knockPrompt(nearHouse,lk))/* S2649 — the knock */||(lk.kind==='home'?`${nearHouse.name} — locked for the night · E to pick the lock`:`${nearHouse.name} — locked till ${lk.opens} · E to pick the lock`); // S155
+        const lk=WORLD.doorLockNow(nearHouse);iprOW.textContent=(typeof knockPrompt==='function'&&knockPrompt(nearHouse,lk))/* S2650 — the knock */||(lk.kind==='home'?`${nearHouse.name} — locked for the night · E to pick the lock`:`${nearHouse.name} — locked till ${lk.opens} · E to pick the lock`); // S155
       } else {
         iprOW.textContent=`Press 'E' to enter ${nearHouse.name}`;
       }

@@ -22,7 +22,7 @@ function openShop(){
 }
 function closeShop(){
   shopOpen=false;
-  if(typeof knockShut==='function')knockShut(); // S2649 — the door's trade shut: E again picks the lock for a few seconds
+  if(typeof knockShut==='function')knockShut(); // S2650 — the door's trade shut: E again picks the lock for a few seconds
   if(!isInterior())currentHouse=null; // v80 — outdoor merchants set currentHouse only for the shop's lifetime
   closeQtyModal(); // v68 — dismiss any open quantity prompt
   document.getElementById('shop').style.display='none';
@@ -1174,7 +1174,7 @@ function armorLinesFor(h){const ln=h&&(h.type==='armor'?'light':(h.type==='misc'
 function capeCounter(){if(typeof cloakOn!=='function'||!cloakOn('cape'))return false;try{const h=typeof currentHouse!=='undefined'&&currentHouse;const t=h&&h.siteId&&siteAnywhere(h.siteId);return !!(t&&nationKeyOf(...cellOf(t.x,t.z))==='aurenne');}catch(e){return false;}}
 // S552 — the fur-lined cloak: stamina +10% in falling snow, or at night above the snowline, in the open world
 function furWarm(){if(!(typeof cloakOn==='function'&&cloakOn('fur'))&&!(typeof _hasBuff==='function'&&_hasBuff('resistCold'))||activeZoneId!=='world')return false; /* S1483 — a tincture's Resist Cold warms as the fur cloak does */try{if(typeof isInterior==='function'&&isInterior())return false;if(WX.type==='snow')return true;return isNight()&&worldH(px,pz)>snowLineAt(px,pz);}catch(e){return false;}}
-function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*homeMul(it)*(marketHere()?MARKET.buy:1)*(typeof knockMulNow==='function'?knockMulNow():1)*(1-barterPct())));} /* S2649 — a knock's ×1.25 at the door; S2642 — market day ×0.9; S2643 — by home */
+function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*homeMul(it)*(marketHere()?MARKET.buy:1)*(typeof knockMulNow==='function'?knockMulNow():1)*(1-barterPct())));} /* S2650 — a knock's ×1.25 at the door; S2642 — market day ×0.9; S2643 — by home */
 function counterSellPrice(it){const sp=sellPrice(it);return sp<=0?0:Math.max(1,Math.round(sp*homeMul(it)*(marketHere()?MARKET.sell:1)*(1+barterPct())));} /* S2642 — market day +10%; S2643 — by home */
 function buyItem(it){
   const _cost=shopCost(it); // v80 O — prosperity sets the price

@@ -110,7 +110,7 @@ const stalls = await page.evaluate(() => { const set = (d, h) => { worldState.ga
 console.log(JSON.stringify(stalls));
 check('market day: Dunmore keeps 4 + prosperity ÷ 25 stalls on its square, each a keeper with a counter of 4 to 7 rows by town and week, at the market\'s price; gone after', stalls.n === stalls.want && stalls.n >= 4 && stalls.onSquare && stalls.npcs && stalls.house.rows >= 4 && stalls.same && stalls.weeks >= 3 && stalls.rowsOk && Math.abs(stalls.b1 / stalls.b0 - .9) < .02 && stalls.after === 0 && stalls.late === 0, stalls);
 check('market day fills the square from 7: a resident who works at eight on another day is on the square at eight on Stoneday', stalls.res8[0] === 'sq' && stalls.res8[1] !== 'sq', stalls.res8);
-// S2649: the knock (Michael's A on #2009). E at a shut shop knocks first: from 21 until the trade opens the keeper is home, and with the
+// S2650: the knock (Michael's A on #2009). E at a shut shop knocks first: from 21 until the trade opens the keeper is home, and with the
 // town's favour at 2 or more comes down and sells at the door at ×1.25; below 2, *Come back at <its hour>*; between its close and 21 nobody
 // answers (the keeper is at the inn). For a few seconds after, E picks the lock.
 const knock = await page.evaluate(() => { const set = (d, h) => { worldState.gameTimeAbsMinutes = 1440 * d + h * 60; worldState.gameTimeMinutes = h * 60; };
