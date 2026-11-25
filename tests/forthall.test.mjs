@@ -45,7 +45,7 @@ const built = await page.evaluate(() => { const f = FOOTHOLDS.find(f => f.kind =
     cols: DUNGEON_COLUMNS.filter(c => inHole(c.x, c.z, .3)).length, props: DUNGEON_PROPS.filter(p => !p.flightRail && inHole((p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2, .2)).length, colsAll: DUNGEON_COLUMNS.length,
     hiTable: DUNGEON_PROPS.find(p => p.floor === 1 && !p.flightRail && p.z1 < f.z0 - 3 && Math.abs((p.x0 + p.x1) / 2 - (f.x0 + f.x1) / 2) < .5) || null }; });
 console.log(JSON.stringify(built));
-// S2661 — the way out is the keep's door from inside (dunExitBuild's 'keep'): the leaves shut under the arch, the keystone under the roof,
+// S2665 — the way out is the keep's door from inside (dunExitBuild's 'keep'): the leaves shut under the arch, the keystone under the roof,
 // on the entrance cell's wall, baked to two draws
 const ex = await page.evaluate(() => { const X = DUN_EXIT; if (!X) return { none: true }; const b = new THREE.Box3().setFromObject(X.group);
   return { kind: X.kind, w: X.w, h: X.h, parts: X.group.userData.parts, draws: X.group.children.length, top: +b.max.y.toFixed(2), H: FLOOR_HEIGHT,

@@ -4024,8 +4024,8 @@ function buildDungeon(portal){
 // world's lesser gates on the new look) is its door seen from inside: the slit between two pillars of script, lit as the gate's condition lights them outside (steady lit,
 // failing one pillar dim and one dead, catastrophic both dead), the lintel over them and the ring sigil above, the slit showing the day or
 // the night outside; sized to the cell (the world's 2.4 m slit and 1 m pillars do not fit a 3 m cell) and under the ceiling. Every other
-// kind a plain dressed doorway with the same light in it, until its own mirror is built. S2660: an old gate's (the turf mound's door,
-// buildOldGateFront: a lair, the Root, the old zones' cave doors) is its two oak leaves from behind, shut, in its marked frame (kind 'oldgate'). S2661: a fort's
+// kind a plain dressed doorway with the same light in it, until its own mirror is built. S2664: an old gate's (the turf mound's door,
+// buildOldGateFront: a lair, the Root, the old zones' cave doors) is its two oak leaves from behind, shut, in its marked frame (kind 'oldgate'). S2665: a fort's
 // (buildFortKeep's arched door) its two leaves shut under the arch of voussoirs, the drawbar lifted and stood by the jamb (kind 'keep'). No light is added (a gate lights 8 at a time). -> DUN_EXIT { kind, x, z, nx, nz, w, h, cond }
 let DUN_EXIT=null;
 function dunExitBuild(portal){
@@ -4034,15 +4034,15 @@ function dunExitBuild(portal){
   for(const [dc,dr] of [[0,-1],[0,1],[-1,0],[1,0]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=dR||nc<0||nc>=dC||!(dMap[nr][nc]>0)){f=[dc,dr];break;}}
   if(!f)return null;
   const K=DCELL,H=FLOOR_HEIGHT,cd=portal&&portal.seed!=null&&typeof CELL_DOORS!=='undefined'?CELL_DOORS.find(e=>e.seed===portal.seed):null,ring=!!(portal&&portal.kind!=='fort_door'&&!(typeof portal.interior==='string'&&portal.interior.startsWith('fort_'))&&(portal.ringGate||portal.ring||portal.hollow||(cd&&cd.ring&&portal.zone==='world'))),kit=typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.gatemouthMats;
-  const old=!ring&&(portal&&(portal.kind||'cave_door')==='cave_door')&&!portal.tutorial&&!portal.hollow&&!(cd&&cd.hollow)&&!(typeof portal.interior==='string'&&portal.interior.startsWith('fort_')); /* S2660 — the turf mound's old gate: lairs, the Root, the old zones' doors */
-  const keep=!ring&&!!portal&&(portal.kind==='fort_door'||(typeof portal.interior==='string'&&portal.interior.startsWith('fort_'))); /* S2661 — a fort's keep door */
-  const M=kit?PKIT.places.gatemouthMats():null,pc=cd&&cd.cond||portal.cond,cond=ring?(portal.hollow?'catastrophic':GATE_CONDS.includes(pc)?pc:gateCondRoll(portal.seed)):null; /* S2662 — the Hollow's slit door is in a plate of dead script */ /* the world's own (placeRingGates): the door's cond, else the seed's roll */
+  const old=!ring&&(portal&&(portal.kind||'cave_door')==='cave_door')&&!portal.tutorial&&!portal.hollow&&!(cd&&cd.hollow)&&!(typeof portal.interior==='string'&&portal.interior.startsWith('fort_')); /* S2664 — the turf mound's old gate: lairs, the Root, the old zones' doors */
+  const keep=!ring&&!!portal&&(portal.kind==='fort_door'||(typeof portal.interior==='string'&&portal.interior.startsWith('fort_'))); /* S2665 — a fort's keep door */
+  const M=kit?PKIT.places.gatemouthMats():null,pc=cd&&cd.cond||portal.cond,cond=ring?(portal.hollow?'catastrophic':GATE_CONDS.includes(pc)?pc:gateCondRoll(portal.seed)):null; /* S2666 — the Hollow's slit door is in a plate of dead script */ /* the world's own (placeRingGates): the door's cond, else the seed's roll */
   const hr=typeof gameHour==='function'?gameHour():12,day=hr>=6.5&&hr<19.5,dusk=!day&&(hr>=5.5&&hr<20.5);
   const light=new THREE.MeshBasicMaterial({color:day?new THREE.Color(.64,.68,.7):dusk?new THREE.Color(.32,.26,.24):new THREE.Color(.05,.07,.11),fog:false,toneMapped:false}); /* the day outside, never the gate's murk */
   const stone=M?M.dressed:new THREE.MeshLambertMaterial({color:0x8a867e}),g=new THREE.Group();g.name='dungeon exit';
   const box=(m,w,h,d,x,y,z)=>{const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);q.position.set(x,y,z);g.add(q);return q;};
   const plane=(m,w,h,x,y,z)=>{const q=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);q.position.set(x,y,z);g.add(q);return q;};
-  /* S2660 — the old gate's and the keep's many pieces baked to the world's draws (mergeGeos): stone and wood by vertex colour, the marks, the day */
+  /* S2664 — the old gate's and the keep's many pieces baked to the world's draws (mergeGeos): stone and wood by vertex colour, the marks, the day */
   const bake=glow=>{g.userData.parts=g.children.length;if(typeof mergeGeos!=='function')return;const sl=[],gl=[],dead=[];g.updateMatrixWorld(true);
     g.children.slice().forEach(o=>{if(!o.isMesh||o.material===light)return;const q=o.geometry.index?o.geometry.toNonIndexed():o.geometry;(glow&&o.material===glow?gl:sl).push([q,o.matrixWorld.clone(),o.material.color]);dead.push(o);});
     dead.forEach(o=>{g.remove(o);o.geometry.dispose();});g.add(new THREE.Mesh(mergeGeos(sl),new THREE.MeshLambertMaterial({vertexColors:true})));if(gl.length)g.add(new THREE.Mesh(mergeGeos(gl),new THREE.MeshBasicMaterial({vertexColors:true})));};
@@ -4057,7 +4057,7 @@ function dunExitBuild(portal){
     const room=H-(h+LH)-.1,sr=Math.min(.9,room*.42);
     if(M&&sr>.3)plane(M[cond==='steady'?'sigil':cond==='failing'?'sigilDim':'sigilDead'],2*sr,2*sr,0,h+LH+room/2,.05);
   }else if(old){
-    /* S2660 — an old gate's door (buildOldGateFront, 24-forts.js) from its back: the two oak leaves shut, their ledges, braces and rings,
+    /* S2664 — an old gate's door (buildOldGateFront, 24-forts.js) from its back: the two oak leaves shut, their ledges, braces and rings,
        a crack of the day at the seam and under them; dressed jambs with the binding marks in the theme's colour, the lintel with its ring,
        the capstone where the roof leaves room. The world's colours; baked to three draws (stone and wood, the marks, the day) */
     const C=c=>new THREE.MeshLambertMaterial({color:c}),st=C(0x8a8478),dk=C(0x5e5a52),pale=C(0x9a9488),oak=C(0x3a2a18),oakDk=C(0x2c2014),iron=C(0x2a2826);
@@ -4077,7 +4077,7 @@ function dunExitBuild(portal){
     box(st,w,.08,.6,0,.04,.3);box(glow,w,.02,.06,0,.085,.56);
     bake(glow);
   }else if(keep){
-    /* S2661 — a fort's keep door (buildFortKeep, 82-world-structures.js) from inside: its two leaves shut under the round arch, five planks
+    /* S2665 — a fort's keep door (buildFortKeep, 82-world-structures.js) from inside: its two leaves shut under the round arch, five planks
        each cut to it, ledges and a brace on this side, the rings at the meeting; the drawbar lifted out of its irons and stood against the
        jamb; the jambs in long and short stones and the ring of voussoirs with its keystone, in the keep's pale dressing; a crack of the day
        at the seam and under the leaves. The world's arch is 2.4 m wide springing at 3 m: here as wide as the cell leaves the jambs, and
