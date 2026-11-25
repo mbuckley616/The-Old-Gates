@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Notification cards: the ledger alone, a card at the top, or OG-136's card with a picture? (from the concept artist, 2026-11-25, #2047)
+**The question.** Since Session 2578 the game says everything in the ledger, up to four paper slips above the vitals, so the five moments a player waits for (a level, a quest's step, a place found, a skill rising, a word learned) look exactly like *gold paid*. Should those five get a card of their own?
+
+**Options.**
+- **A.** The ledger alone: as built, each moment one slip among the rest, gone in 6 s. Nothing to build. [lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-lane-a.jpg) · [fight](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-hall-a.jpg)
+- **B (recommended).** A paper card at the top centre (600 × 130 px at 1080p, clear of the minimap), a wax seal in the kind's colour, the kind, the name and one line; one at a time for 4 s; the ledger keeps the small lines. About one systems session. [lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-lane-b.jpg) · [all five](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-cards-b.jpg) · [fight](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-hall-b.jpg)
+- **C.** OG-136 as drawn: a larger card (678 × 200 px) with a picture beside the words (the place from above and behind you, a laurel, the quest's mark, the skill's ring, the word's sigil); 5 s. The place's picture costs a second render, and a dungeon from above comes out near black. [lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-lane-c.jpg) · [all five](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-cards-c.jpg) · [fight](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-hall-c.jpg)
+
+Page: `docs/prototypes/levelup/notify.html`; approach in `docs/concepts.md`.
+
 ## Answered
 ### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
 **The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.
