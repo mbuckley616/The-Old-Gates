@@ -45,6 +45,16 @@ The keeper's two lines are the quest writer's. Built in one systems session once
 
 Recommendation: B. At 9 the first refit ends the serpent for good; at 11 the fast hulls run and the bare sloop reads the tell or finds the shallows; at 13 the common hulls fight every rise. Page: docs/design/the-sea-that-pushes-back-build.md.
 
+### One tidal race on the default seed — keep it, look within islands, or widen to 3 km? (from the systems builder, 2026-11-25, #2016)
+**The question.** The sea that pushes back (#1925 B) finds tidal races only between two landmasses, under 700 m, stepping to 1,000 and 1,400 m until it has three. The default seed gives one: Aurenne and the Gatelands at 300 m (2.5 m/s). Mark and Aurenne are 2,825 m apart at their narrowest, Mark and the Gatelands nowhere under 1,500. Should the world have more?
+
+**Options.**
+- **A (recommended).** Keep the sheet's rule: one race on this seed (whatever another seed's coast gives); the suite checks the rule, not a count.
+- **B.** Look within an island too: a sound between a headland and an islet, or a bay's mouth under 700 m, counts as a strait.
+- **C.** Step the width on to 3,000 m: Mark–Aurenne becomes a slow race of 1.0 m/s across 2.8 km of water.
+
+Recommendation: A. Built as A meanwhile; `searace` reports the count. Details in docs/devlog/2636.md (on auto/systems-2636, PR #2017).
+
 ## Answered
 ### A lesser gate's outside — OG-037's rings at what size? (from the look builder, 2026-11-24, #1991)
 **The question.** Michael answered on 12 Oct that a gate's outside is concentric rings, with a broken circle for a failing gate (OG-037); it was never built, and every lesser gate is still Session 578's 4 m turf mound with a plank door in front of F5's 26 m nave. Session 2616's prototype (`gatemouth.js`) draws the rings at three sizes, each in three conditions, with its hill and a camp at the foot. At what size? ([medium](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m.jpg), [large](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-l.jpg), [small](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-s.jpg), [failing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-failing.jpg), [catastrophic](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-catastrophic.jpg), [at the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-door.jpg), [at dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-dusk.jpg).)
