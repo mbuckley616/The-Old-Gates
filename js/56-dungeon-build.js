@@ -4033,10 +4033,10 @@ function dunExitBuild(portal){
   const c=dEntranceX,r=dEntranceZ;let f=null;
   for(const [dc,dr] of [[0,-1],[0,1],[-1,0],[1,0]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=dR||nc<0||nc>=dC||!(dMap[nr][nc]>0)){f=[dc,dr];break;}}
   if(!f)return null;
-  const K=DCELL,H=FLOOR_HEIGHT,cd=portal&&portal.seed!=null&&typeof CELL_DOORS!=='undefined'?CELL_DOORS.find(e=>e.seed===portal.seed):null,ring=!!(portal&&portal.kind!=='fort_door'&&!(typeof portal.interior==='string'&&portal.interior.startsWith('fort_'))&&(portal.ringGate||portal.ring||(cd&&cd.ring&&portal.zone==='world'))),kit=typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.gatemouthMats;
+  const K=DCELL,H=FLOOR_HEIGHT,cd=portal&&portal.seed!=null&&typeof CELL_DOORS!=='undefined'?CELL_DOORS.find(e=>e.seed===portal.seed):null,ring=!!(portal&&portal.kind!=='fort_door'&&!(typeof portal.interior==='string'&&portal.interior.startsWith('fort_'))&&(portal.ringGate||portal.ring||portal.hollow||(cd&&cd.ring&&portal.zone==='world'))),kit=typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.gatemouthMats;
   const old=!ring&&(portal&&(portal.kind||'cave_door')==='cave_door')&&!portal.tutorial&&!portal.hollow&&!(cd&&cd.hollow)&&!(typeof portal.interior==='string'&&portal.interior.startsWith('fort_')); /* S2660 — the turf mound's old gate: lairs, the Root, the old zones' doors */
   const keep=!ring&&!!portal&&(portal.kind==='fort_door'||(typeof portal.interior==='string'&&portal.interior.startsWith('fort_'))); /* S2661 — a fort's keep door */
-  const M=kit?PKIT.places.gatemouthMats():null,pc=cd&&cd.cond||portal.cond,cond=ring?(GATE_CONDS.includes(pc)?pc:gateCondRoll(portal.seed)):null; /* the world's own (placeRingGates): the door's cond, else the seed's roll */
+  const M=kit?PKIT.places.gatemouthMats():null,pc=cd&&cd.cond||portal.cond,cond=ring?(portal.hollow?'catastrophic':GATE_CONDS.includes(pc)?pc:gateCondRoll(portal.seed)):null; /* S2662 — the Hollow's slit door is in a plate of dead script */ /* the world's own (placeRingGates): the door's cond, else the seed's roll */
   const hr=typeof gameHour==='function'?gameHour():12,day=hr>=6.5&&hr<19.5,dusk=!day&&(hr>=5.5&&hr<20.5);
   const light=new THREE.MeshBasicMaterial({color:day?new THREE.Color(.64,.68,.7):dusk?new THREE.Color(.32,.26,.24):new THREE.Color(.05,.07,.11),fog:false,toneMapped:false}); /* the day outside, never the gate's murk */
   const stone=M?M.dressed:new THREE.MeshLambertMaterial({color:0x8a867e}),g=new THREE.Group();g.name='dungeon exit';
