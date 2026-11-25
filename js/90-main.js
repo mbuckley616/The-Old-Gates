@@ -112,7 +112,7 @@ function loop(now){
   const _encState = encumbranceState();
   const _stRegenMult = (_encState==='burdened' || _encState==='overloaded' || _encState==='immobile') ? 0.8 : 1.0;
   if(staminaCD>0){staminaCD=Math.max(0,staminaCD-dt);}
-  else if(stamina<_emSt){stamina=Math.min(_emSt,stamina+dt*(3+(level-1)*0.4+ATTRS.resolve*0.3+_ab.stRegen)*_stRegenMult*(furWarm()?1.1:1)*(typeof climateRegenMult==='function'?climateRegenMult():1)*(typeof waterRegenMult==='function'?waterRegenMult():1)*(typeof restRegenMult==='function'?restRegenMult():1));} /* S1917 — climate B */ /* S2085 — Well rested ×1.1 */ /* S2012 — Watered ×1.1 */
+  else if(stamina<_emSt){stamina=Math.min(_emSt,stamina+dt*(stRegenBase()+_ab.stRegen)*stRegenPose()*_stRegenMult*(furWarm()?1.1:1)*(typeof climateRegenMult==='function'?climateRegenMult():1)*(typeof waterRegenMult==='function'?waterRegenMult():1)*(typeof restRegenMult==='function'?restRegenMult():1));} /* S1917 — climate B */ /* S2085 — Well rested ×1.1 */ /* S2012 — Watered ×1.1 */
   mana=Math.min(_emMana,mana+dt*(0.8+(level-1)*0.15+attrEff('intelligence')*0.2+_ab.mpRegen)*fedManaMult()); /* S1486 — Clear, +10% */
   // HP regen from armor enchants
   if(PHP<_emHP&&_ab.hpRegen>0){PHP=Math.min(_emHP,PHP+dt*_ab.hpRegen);}
@@ -327,19 +327,9 @@ function loop(now){
     lvAct.sprintDist+=spd;
   }
   _sprintNow=!!sprinting; /* S976 — Light foot reads it */
-  // Blocking stamina drain (in dungeons and outdoor zones, not shops)
-  if(blocking&&!isInterior()){
-    const hasShield=EQ.offhand&&EQ.offhand.shieldType==='shield';
-    // v61au: Resolve reduces block stamina cost. Each point of Resolve cuts
-    // (since S1047, 1%; it was 5%) off the per-second drain, clamped to a 50% floor (so a maxed-Resolve
-    // character still pays half cost, never gets free blocking). Addresses
-    // the playtest concern that blocking was rarely worth doing — at Resolve
-    // 5 a shield-block now drains ~10.3/s instead of 13.75/s, letting a
-    // Sentinel hold guard for 4-5 seconds against a multi-enemy press.
-    const _blockMult = resolveBlockMult(); // S1047 — 1% a point, the sheet's ≤1% rule
-    stamina=Math.max(0,stamina-dt*(hasShield?13.75:8.75)*_blockMult);
-    if(stamina===0){blocking=false;staminaCD=2;lvAct.staminaDepleted++;}
-  }
+  // Session 2658 (Michael's playtest, 25 Nov 2026: "Stamina drain on blocking is too aggressive"): holding block no longer drains
+  // stamina a second (it was 13.75 with a shield, 8.75 without, against 3 back); the guard instead slows recovery to a quarter
+  // (stRegenPose), and each blow taken on the guard still costs stamina, less with Resolve (resolveBlockMult, 74-strikes.js).
   // Can't block in overworld or shops
   if(isInterior())blocking=false; // no combat in shops
   // FOV shift for sprint. v62.7: LUNGE_FOV (92) overrides while lungeT > 0
@@ -360,6 +350,8 @@ function loop(now){
   if(_dash){mdx=_dash.dx;mdz=_dash.dz;}
   let moving=!!(mdx||mdz);
   _pStep=moving; // S634 — a foe hears you walk (hearingRadius, 10-player.js)
+  /* S2658 — standing still: the play time since you last moved, rolled, swung, sprinted or left the ground (stRegenPose) */
+  _stillS=(moving||sprinting||SWING||ROLL||!onGround)?0:_stillS+dt;
   if(moving)athleticsStep(spd,sprinting); /* S941 — Athletics: ten metres sprinted or swum */
   stealthTick(dt);
   // v62.7 — Forward lunge boost. If lungeT > 0 AND W is currently held, add an
@@ -407,7 +399,7 @@ function loop(now){
   const floorBaseY0=(inDungeon&&DUNGEON_STAIRWELL)?Math.min(0,FLOOR2_Y):((inDungeon&&currentFloor===2)?FLOOR2_Y:0); // v80 — with a stairwell the base is the lower floor; the upper floor is a foothold with the shaft as its hole
   let floorBaseY=(inDungeon||isInterior())?laidGround(px,pz,jumpY,footholdY(px,pz,jumpY,inDungeon?dPitBase(px,pz,floorBaseY0):floorBaseY0)):floorBaseY0; /* S1590 — a laid top */ /* S1327 — over a chasm's air the ground is its pit's floor */ // v80 — footholds (stairs, galleries)
   if(isInterior()&&typeof roomFloorTick==='function'){const _rw=roomFloorTick(dt,floorBaseY);if(_rw!=null)floorBaseY=_rw;} /* S1805 (#1083 A) — a room's water: the bed, the swimmer's line or the diver's depth; S1807, a ladder's climb (88-world-ticks.js) */
-  if(typeof tickSheath==='function')tickSheath(); /* S1080 — the sheath: on its own after 5 s at peace */
+  if(typeof tickSheath==='function')tickSheath(); /* S1080 — the sheath (S2658: only H sheathes it now) */
   if(!mantleTick(K)) /* S1385 — the mantle (10-player.js): while it pulls you up, nothing else moves your flight */
   airStepTick(K); /* S1009 — Second step, the double jump (10-player.js); before the ground's jump, so a landing always resets it first */
   if(onGround&&K['Space']){
@@ -968,7 +960,7 @@ function loop(now){
     const iprOW=document.getElementById('ipr');
     if(nearPortal&&typeof erNamePrompt==='function'&&erNamePrompt(nearPortal)){iprOW.textContent=erNamePrompt(nearPortal);iprOW.style.opacity='1';iprOW.style.display='block';} /* S1600 — a name owed at this door (Asked in Passing, errand 4) */
     else if(nearPortal&&typeof greatDoorPrompt==='function'&&greatDoorPrompt(nearPortal)){iprOW.textContent=greatDoorPrompt(nearPortal);iprOW.style.opacity='1';iprOW.style.display='block';} /* S1354 — a great gate's way back */
-    else if(nearPortal){const ds=nearPortal.diffScale||DIFF_SCALE.normal;iprOW.innerHTML=`Press 'E' to enter <b>${nearPortal.name}</b> &nbsp;<span style="color:${ds.col};font-size:10px">[${ds.label} · ${nearPortal.theme} · ${nearPortal.size}]</span>`;iprOW.style.opacity='1';iprOW.style.display='block';}
+    else if(nearPortal){const ds=nearPortal.diffScale||DIFF_SCALE.normal;iprOW.innerHTML=`Press 'E' to enter <b>${nearPortal.name}</b>`; /* S2658 — no [difficulty · theme · size] on the door (Michael's playtest: they break immersion) */iprOW.style.opacity='1';iprOW.style.display='block';}
     else if(nearGate){
       // v61d7: tide-guarded gates show a different prompt when blocked.
       // v61d9: commission-guarded gates likewise.
@@ -1451,7 +1443,7 @@ function loop(now){
       e._close=false;
       // S622 — the path is cells: in your cell it is empty, and a foe that stopped there 0.9–1.4 off never swung. It now comes
       // straight at you in your cell, and plans again a quarter-second after you step into another cell, not up to 1.2 s later.
-      if(wantsToChase){const _cs=dungeonChaseSpeed(e),_sr=Math.max(.6,bodyR(e,.5)+.25); /* S635 — near your walk (#190 A); it stops at its disc and yours, which at the old pace it never reached along its path */const _tk=dCellOf(T.x)+','+dCellOf(T.z);if(e.pathT<=0||(e._pathTo!==_tk&&e.pathT<.95)){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;e._pathTo=_tk;}if(e.path&&e.path.length){const tc=dAt(e.path[0][0]),tr=dAt(e.path[0][1]),dx=tc-e.x,dz2=tr-e.z, /* S1283 — the path is cells, the foe metres */d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=_cs*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);if(Math.hypot(nx-T.x,nz-T.z)>=_sr||Math.hypot(nx-T.x,nz-T.z)>dist){e.x=nx;e.z=nz;}}}
+      if(wantsToChase){const _cs=dungeonChaseSpeed(e),_sr=Math.max(.6,bodyR(e,.5)+.25,foeHoldDist(e,true,.6)); /* S2658 — it holds where its tell starts (foeHoldDist, 74-strikes.js) */ /* S635 — near your walk (#190 A); it stops at its disc and yours, which at the old pace it never reached along its path */const _tk=dCellOf(T.x)+','+dCellOf(T.z);if(e.pathT<=0||(e._pathTo!==_tk&&e.pathT<.95)){e.path=bfs(e.x,e.z,T.x,T.z);e.pathT=1.2;e._pathTo=_tk;}if(e.path&&e.path.length){const tc=dAt(e.path[0][0]),tr=dAt(e.path[0][1]),dx=tc-e.x,dz2=tr-e.z, /* S1283 — the path is cells, the foe metres */d=Math.hypot(dx,dz2);if(d<.1)e.path.shift();else{const step=_cs*dt;const[nx,nz]=dSlide(e.x,e.z,dx/d*step,dz2/d*step);if(Math.hypot(nx-T.x,nz-T.z)>=_sr||Math.hypot(nx-T.x,nz-T.z)>dist){e.x=nx;e.z=nz;}}}
         else if(dist>_sr&&dCellOf(e.x)===dCellOf(T.x)&&dCellOf(e.z)===dCellOf(T.z)){const step=Math.min(_cs*dt,dist-_sr);const[nx,nz]=dSlide(e.x,e.z,(T.x-e.x)/dist*step,(T.z-e.z)/dist*step);e.x=nx;e.z=nz;e._close=true;}}
       // Attack lunge animation
       let lungeFwd=0;
@@ -1658,7 +1650,7 @@ function loop(now){
         if(c.age>60){c.looted=true;c.gl.intensity=0;c.spark.visible=false;}
       }
     });
-    atmT+=dt;if(atmT>20){atmT=0;if(Math.random()>.5)showMsg(['Bones crunch underfoot...','You sense eyes watching.','A distant growl echoes.','Something moves in the dark.'][Math.floor(Math.random()*4)],'#706050');}
+    /* S2658 — the flashed dungeon lines ('A distant growl echoes.' and three more, one every 40 s or so) are gone: Michael's playtest, 25 Nov 2026 */
   }
     // Block vignette flash
     if(blockFlashT>0){

@@ -215,6 +215,11 @@ function foeReach(e,inDun){
   const eng=r.engage+(hum?Math.max(0,blow-WEAPON_ATTACKS.Sword.reach):0); /* S1462 — the spear's 0.8 past the sword */
   return {engage:reachTo(e,eng+L),blow:reachTo(e,blow),deg:hum?foeWeaponArc(e,r.arc):r.arc,lunge:L,stand:reachTo(e,eng)};
 }
+// Session 2658 (Michael's playtest, 25 Nov 2026: foes "almost on top of the player" in first person): a chasing foe holds at its
+// stand, where its tell starts (1.8 m centre to centre for a humanoid with a sword, more with a spear), less 0.15 m so the tell
+// still starts, and steps no nearer; it used to close to 1.0 m in the world and 0.6 m in a dungeon, inside its own reach. A foe
+// with no stand on the sheet keeps the old floor.
+function foeHoldDist(e,inDun,floor){const f=foeReach(e,inDun);return f.stand?Math.max(floor,f.stand-.15):floor;}
 // ── Armour as a share (decision #181 B, held for this table): every blow on you is × 50 / (50 + armour), so 50 armour
 // halves it and nothing reaches 1 by armour alone. It replaces the flat half a point a point that put the cliff between
 // 20 and 40 armour (S610). Retuned so an ordinary blow of your level's tier, at a heavy kit of your level, lands near
@@ -360,8 +365,9 @@ function resolvePlayerStrike(_isPow){
 const COMMIT={move:.35,turnDeg:90,chainIdle:.4,chainDmg:1.3,chainPosture:1.5,drinkS:.8,drinkMove:.5};
 let SWING=null,CHAIN={n:0,endG:-1e9},DRINK=null;
 // S1080 — the sheath (Michael's A on #399, with his note: "a 'sheath' button where you can sheath your equipped weapon. Torches or
-// shields in your off hand stay equipped and in hand"). H sheathes the weapon in hand, or draws it. A drawn weapon is sheathed on
-// its own after SHEATH_IDLE_S with no swing and no alert foe within SHEATH_FOE_R (the lock-on's 14 m). Sheathed, the first-person
+// shields in your off hand stay equipped and in hand"). H sheathes the weapon in hand, or draws it. Until Session 2658 a drawn
+// weapon was also sheathed on its own after SHEATH_IDLE_S at peace; Michael's playtest (25 Nov 2026) read that as the weapon
+// "disappearing" on entering a dungeon or after a roll, so now only H puts it away. Sheathed, the first-person
 // view is the empty hand's (buildViewmodel with the weapon held aside for the call); the off hand's shield or torch is built on its
 // own and stays. A swing begun sheathed draws as it swings: that swing is the draw cut, and with Draw cut (Blade 25) it drains ×2
 // posture. A bow is not sheathed (its draw is the aim). Changing the weapon in hand draws the new one.
@@ -374,10 +380,7 @@ function drawWeapon(){if(!SHEATHED)return false;SHEATHED=false;_sheathedItem=nul
 function toggleSheath(){if(SHEATHED){drawWeapon();showMsg(`You draw the ${EQ.weapon?EQ.weapon.name:'weapon'}.`,'#c8b880');}
   else if(sheathWeapon())showMsg(`You sheathe the ${EQ.weapon.name}.`,'#c8b880');}
 function tickSheath(){
-  if(SHEATHED&&EQ.weapon!==_sheathedItem){SHEATHED=false;_sheathedItem=null;sheathView();return;}
-  if(SHEATHED||SWING||!sheathable()||playClockS-_lastSwingG<SHEATH_IDLE_S)return;
-  for(const f of strikeFoes()||[])if(f&&f.alert&&!f.dead&&f.hp>0&&Math.hypot(f.x-px,f.z-pz)<SHEATH_FOE_R)return;
-  sheathWeapon();
+  if(SHEATHED&&EQ.weapon!==_sheathedItem){SHEATHED=false;_sheathedItem=null;sheathView();}
 }
 // a swing begins: its times from the weapon's row (a power blow keeps powerDur), scaled by what a buff does to its pace
 function beginSwing(isPow,resolveFn){

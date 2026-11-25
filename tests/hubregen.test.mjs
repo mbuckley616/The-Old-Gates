@@ -5,7 +5,7 @@ const g = await boot(); const { page } = g;
 await g.intoWorld();
 const r = await page.evaluate(() => {
   const rd = () => ({ mp: document.getElementById('vr-mp').textContent, st: document.getElementById('vr-st').textContent });
-  const base = (0.8 + (level - 1) * 0.15), sbase = 3 + (level - 1) * 0.4;
+  const base = (0.8 + (level - 1) * 0.15), sbase = 6 + (level - 1) * 0.4; /* S2658: base 6 (was 3) */
   ATTRS.intelligence = 10; ATTRS.resolve = 0; renderHubAttrs(); const int10 = rd();
   ATTRS.intelligence = 0; ATTRS.resolve = 10; renderHubAttrs(); const res10 = rd();
   ATTRS.intelligence = 0; ATTRS.resolve = 0; renderHubAttrs();

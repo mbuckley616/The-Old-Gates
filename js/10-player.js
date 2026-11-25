@@ -114,6 +114,14 @@ const seenEnemyTypes=new Set(); // for first-kill log entries
 
 // ── BLOCKING STATE ───────────────────────────────────────────
 let blocking=false;      // is right-click held
+// Session 2658 (Michael's playtest, 25 Nov 2026: "almost always completely out of stamina at the beginning of the game"; "if the
+// player is motionless, their stamina recovery should be much faster"): stamina comes back at 6 a second at level 1 (was 3), plus
+// 0.4 a level and 0.3 a Resolve point as before; ×2 once you have stood still for 0.75 s; ×0.25 while your guard is up, which
+// replaces the old drain for holding block. The main loop (90-main.js) applies it and counts _stillS; the hub's row shows the base.
+const ST_REGEN={base:6,still:2,stillS:.75,guard:.25};
+let _stillS=0;
+function stRegenBase(){return ST_REGEN.base+(level-1)*0.4+(ATTRS.resolve||0)*0.3;}
+function stRegenPose(){return blocking?ST_REGEN.guard:(_stillS>=ST_REGEN.stillS?ST_REGEN.still:1);}
 let blockT=0;            // how long we've been blocking this press
 let lastHitT=-99;        // game time when last hit landed (for late-block window)
 // ── POWER ATTACK STATE (v62) ─────────────────────────────────
