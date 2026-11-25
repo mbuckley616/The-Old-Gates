@@ -833,7 +833,31 @@ function tickCreatures(dt,now){
 // keeper. The new look only (the kit's bodies): the old look's driver has no camel of its own
 const CSTR={back:3.6,gap:3.3,step:6};
 let CSTRING=null; /* {key, groups:[]} */
-function caravanStringOut(){if(!CSTRING)return;for(const g of CSTRING.groups)if(g.parent)g.parent.remove(g);CSTRING=null;}
+function caravanStringOut(){if(!CSTRING)return;for(const g of CSTRING.groups)if(g.parent)g.parent.remove(g);if(CSTRING.rope&&CSTRING.rope.parent)CSTRING.rope.parent.remove(CSTRING.rope);CSTRING=null;}
+// Session 2652 — the string tied nose to tail (owed by S2648): a lead rope from each camel's halter ring (the kit's packcamel wears a halter
+// since this session, P.bridle's `halter`, its ring under the chin; reinsBit finds it) to the root of the tail of the camel it follows; the
+// first in the line, the one led, has none. One mesh for the string's ropes (1 draw), a tube of CROPE.sides round CROPE.n segments each,
+// sagging by CROPE.sag of its span, laid again every frame from the posed bones while both bodies are the kit's and within its middle
+// level; a rope whose ends are not both drawn is folded to a point. In the first camel's frame, so no world coordinate reaches the GPU
+const CROPE={n:16,sides:5,r:.011,sag:.14,up:.12,col:0x6e5a3e};
+let CROPE_MAT=null;
+function caravanRopeMesh(k){const n=CROPE.n,s=CROPE.sides,V=k*(n+1)*s,g=new THREE.BufferGeometry(),I=[];
+  g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(V*3),3));g.setAttribute('normal',new THREE.BufferAttribute(new Float32Array(V*3),3));
+  for(let r=0;r<k;r++)for(let i=0;i<n;i++)for(let j=0;j<s;j++){const a=(r*(n+1)+i)*s,j1=(j+1)%s;I.push(a+j,a+j1,a+s+j,a+j1,a+s+j1,a+s+j);}g.setIndex(I);
+  const M=CROPE_MAT||(CROPE_MAT=new THREE.MeshStandardMaterial({color:CROPE.col,roughness:.95,metalness:0}));
+  const m=new THREE.Mesh(g,M);m.name='caravanRopes';m.castShadow=true;m.frustumCulled=false;m.userData.ends=[];return m;}
+const _CR={a:new THREE.Vector3(),b:new THREE.Vector3(),c:new THREE.Vector3(),p:new THREE.Vector3(),t:new THREE.Vector3(),u:new THREE.Vector3(),v:new THREE.Vector3(),o:new THREE.Vector3()};
+function caravanRopeTick(){const S=CSTRING,m=S&&S.rope;if(!m)return;const G=S.groups,P=m.geometry.attributes.position,N=m.geometry.attributes.normal,n=CROPE.n,s=CROPE.sides,X=_CR,o=m.position;
+  m.userData.ends.length=0;
+  for(let r=0;r<G.length-1;r++){const f=G[r].children[0]&&G[r].children[0].userData.rig,l=G[r+1].children[0]&&G[r+1].children[0].userData.rig,b0=r*(n+1)*s;
+    const lt=l&&l.hc&&l.hc.C&&l.hc.C.byName&&l.hc.C.byName.tail0,ok=f&&f.hc&&f.hc.L<2&&l.hc&&l.hc.L<2&&lt&&reinsBit(f,X.a,X.c);
+    if(!ok){for(let i=0;i<(n+1)*s;i++){P.setXYZ(b0+i,0,0,0);N.setXYZ(b0+i,0,1,0);}m.userData.ends.push(null);continue;}
+    lt.getWorldPosition(X.b);X.b.y+=CROPE.up;const span=X.a.distanceTo(X.b);m.userData.ends.push([X.a.clone(),X.b.clone()]);
+    X.t.subVectors(X.b,X.a).normalize();X.u.set(0,1,0).cross(X.t);if(X.u.lengthSq()<1e-6)X.u.set(1,0,0);X.u.normalize();X.v.crossVectors(X.t,X.u);
+    for(let i=0;i<=n;i++){const q=i/n;X.p.lerpVectors(X.a,X.b,q);X.p.y-=CROPE.sag*span*4*q*(1-q);X.p.sub(o);
+      for(let j=0;j<s;j++){const th=j/s*Math.PI*2,cx=Math.cos(th),sy=Math.sin(th);X.o.copy(X.u).multiplyScalar(cx).addScaledVector(X.v,sy);
+        const k=b0+i*s+j;P.setXYZ(k,X.p.x+X.o.x*CROPE.r,X.p.y+X.o.y*CROPE.r,X.p.z+X.o.z*CROPE.r);N.setXYZ(k,X.o.x,X.o.y,X.o.z);}}}
+  P.needsUpdate=true;N.needsUpdate=true;}
 function caravanStringSpots(C){const n0=C.npc&&C.npc.g;if(!n0)return [];const s=C.site,kx=n0.position.x,kz=n0.position.z;
   let dx=kx-s.x,dz=kz-s.z;const dl=Math.hypot(dx,dz)||1;dx/=dl;dz/=dl;const key=s.id+':'+C.year,n=2+animalHash('caravanstring:'+key)%3,out=[];
   const solid=(x,z)=>typeof solidAt==='function'&&!!solidAt(x,z);
@@ -843,10 +867,10 @@ function caravanStringSpots(C){const n0=C.npc&&C.npc.g;if(!n0)return [];const s=
   return out;}
 function caravanStringTick(){const C=typeof CARAVAN!=='undefined'?CARAVAN:null;
   if(!C||!C.npc||!hcOn()||typeof scene==='undefined'){caravanStringOut();return;}
-  const key=C.site.id+':'+C.year;if(CSTRING&&CSTRING.key!==key)caravanStringOut();if(CSTRING)return;
+  const key=C.site.id+':'+C.year;if(CSTRING&&CSTRING.key!==key)caravanStringOut();if(CSTRING){caravanRopeTick();return;}
   const groups=[];caravanStringSpots(C).forEach((P,i)=>{const rg=buildAnimal('Pack Camel','caravan:'+key+':'+i,'aurenne');if(!rg)return;const g=new THREE.Group();g.add(rg.root);
     g.position.set(P.x,typeof worldH==='function'?worldH(P.x,P.z):0,P.z);g.rotation.y=P.ry;g.userData.caravanString=i;scene.add(g);groups.push(g);});
-  CSTRING={key,groups};}
+  CSTRING={key,groups,rope:null};if(groups.length>1){const m=caravanRopeMesh(groups.length-1);m.position.copy(groups[0].position);scene.add(m);CSTRING.rope=m;}}
 
 // ── The spider on the shape kit (backlog H.4, Session 169): the second family, built the way the wolf is ──
 // A cephalothorax and a hairy abdomen, eight legs of three bones each (a hip that swings the leg round, a femur that
@@ -1751,6 +1775,10 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
   if(activeZoneId==='world'&&typeof WHALES!=='undefined')for(const w of WHALES)if(!w._hcRig&&w.m&&w.m.parent)HC_RIGS.add(hcWhaleRig(w));
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')LIFE.dolphins.forEach((d,k)=>{if(!d._hcRig&&d.m&&d.m.parent)HC_RIGS.add(hcDolphinRig(d,k));});
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')hcSchools(now,busy); /* S1599 — the shallows' schools */
+  /* S2653 — the sea serpent (S2651's SERP.g, 86-world-crime.js) is no foe, so its rig was never handed the kit's body: the stand-in lay
+     flat and unposed. Its group stands in for the foe's mesh, so it is built as the sea's fish are and slithers by its group's way */
+  if(activeZoneId==='world'&&typeof SERP!=='undefined'&&SERP.g){const c=SERP.g.children.find(o=>o.userData&&o.userData.rig),r=c&&c.userData.rig;
+    if(r&&!r._hcIn){r._hcIn=true;r.e={name:r.name,mesh:SERP.g,dead:false,serpent:true};HC_RIGS.add(r);}}
   if(typeof dScene!=='undefined'&&dScene&&scene===dScene)for(const e of ENEMIES){const r=e.limbs&&e.limbs.bird;if(r&&!r._hcIn&&r.e&&!e.dead&&e.mesh&&e.mesh.parent){r._hcIn=true;HC_RIGS.add(r);}} /* S2118 — a gate's dusk eagle */
   if(activeZoneId==='world')for(const e of ZONES.world.enemies){const r=e.limbs&&e.limbs.wolf;if(r&&(r.bird||r.swimmer)&&!r._hcIn&&r.e&&e.mesh&&e.mesh.parent){r._hcIn=true;HC_RIGS.add(r);}} /* S1710 — the raven and the crow; S1712 — the trout */
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')for(const gl of LIFE.gulls)if(gl.g.parent)for(const m of [...gl.g.children])if(m.isMesh&&!m.userData.hcGull){m.userData.hcGull=true;HC_RIGS.add(hcGullRig(m));} /* S1595 — the ports' gulls */

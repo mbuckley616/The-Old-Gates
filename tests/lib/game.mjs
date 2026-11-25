@@ -41,7 +41,7 @@ export function localBuild(src = DEFAULT_SRC) {
 
 const PREINSTALLED = '/opt/pw-browsers/chromium';
 
-// Session 2653: the last BROWSER_TAIL (40) lines of Playwright's `pw:browser` log, for every browser this process launched (each
+// Session 2654: the last BROWSER_TAIL (40) lines of Playwright's `pw:browser` log, for every browser this process launched (each
 // line starts `[pid=N]`). Launch's `logger` option never sees that channel, so the `debug` instance Playwright logs through is
 // switched on for it and its output kept here; any other channel a DEBUG= asked for still goes to stderr as before. If the
 // bundle's layout changes the tail is simply empty.
@@ -75,7 +75,7 @@ export async function boot(opts = {}) {
     // Cloud containers ship their own Chromium; use it when Playwright's download was blocked.
     launch.executablePath = PREINSTALLED;
   }
-  // Session 2653: a lost browser names its cause. `budget`, `budgetfield` and `f4people` lost theirs mid-suite under parallel
+  // Session 2654: a lost browser names its cause. `budget`, `budgetfield` and `f4people` lost theirs mid-suite under parallel
   // boots (S2632, S2635, S2646: "Target page, context or browser has been closed"), and nothing said whether the renderer crashed,
   // the kernel killed it or Chromium exited. Playwright's `pw:browser` debug channel carries Chromium's stderr and its exit line
   // (`<process did exit: exitCode=…, signal=…>`); `browserTail` keeps its last lines in memory (not on stderr), and they are printed

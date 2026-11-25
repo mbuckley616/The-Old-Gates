@@ -1861,6 +1861,13 @@ P.bridle = (B, o) => { (B.after ||= []).push(geo => { const H = B.headFrame; if 
   line([[bf, -88], [bf - .02, 0], [bf, 88]], 10);                   // the browband
   line([[nf, 0], [nf, 180], [nf, 360]], 18, true);                  // the noseband round the face
   const ring = [], ri = o.ringR ?? .028;
+  // a halter (Session 2652, the Caravan's string): no bit and no browband's rings; each cheekpiece ends on the noseband, and one iron ring
+  // hangs under the chin from the noseband's lowest point, where the lead rope is tied (both `rings` are that ring)
+  if (o.halter) { for (const sd of [1, -1]) line([[cf, 95 * sd], [nf, 100 * sd]], 10);
+    const q = surf(nf, Math.PI), c = q.p.clone().addScaledVector(q.n, ri * 1.1); ring.push(c, c.clone());
+    const t = new THREE.Mesh(new THREE.TorusGeometry(ri, ri * .16, 6, 16), IM); t.position.copy(c); t.quaternion.setFromUnitVectors(V(0, 0, 1), H.dir); t.name = 'bit'; B.bit('head', t);
+    const g = mergeGeometries(gs); g.computeVertexNormals(); const m = new THREE.Mesh(g, M); m.material.side = THREE.DoubleSide; m.name = 'bridle'; B.bit('head', m);
+    B.bridle = { rings: ring, tris: g.index.count / 3 + 6 * 16 * 2, w: W, halter: true }; return; }
   for (const sd of [1, -1]) { line([[cf, 95 * sd], [nf, 100 * sd], [rf - .03, side * sd]], 10);   // a cheekpiece to its ring
     const q = surf(rf, side * sd * DEG), c = q.p.clone().addScaledVector(q.n, ri * .4); ring.push(c);
     const t = new THREE.Mesh(new THREE.TorusGeometry(ri, ri * .16, 6, 16), IM); t.position.copy(c); t.quaternion.setFromUnitVectors(V(0, 0, 1), X); t.name = 'bit'; B.bit('head', t); }
@@ -3665,9 +3672,10 @@ Object.assign(PLANS, {
 PLANS.ridinghorse = re(PLANS.horse, { name: 'Riding horse', src: 'OG-046 (beasts of burden: the horse, saddled and bridled for a rider)', coatAs: 'horse', palette: { ...PLANS.horse.palette, blanket: [.36, .17, .13], leather: [.235, .14, .08] },
   parts: [...PLANS.horse.parts, ['saddle', { at: .36, len: .6 }], ['bridle', {}]] });
 // the pack camel (Session 2648, the Caravan's string: *Festivals on the Calendar, III* §3, "pack-beasts and bales"): the camel under
-// two saffron bales either side of its hump, on the mule's packs as sacks, hung from a wooden frame arched over the hump, no bedroll
+// two saffron bales either side of its hump, on the mule's packs as sacks, hung from a wooden frame arched over the hump, no bedroll;
+// a halter with its lead's ring under the chin (Session 2652: the string is tied nose to tail)
 PLANS.packcamel = re(PLANS.camel, { name: 'Pack camel', src: 'OG-046 (beasts of burden: the camel with its bales, the caravans)', coatAs: 'camel', scale: PLANS.camel.scale, speedK: PLANS.camel.speedK,
-  palette: { ...PLANS.camel.palette, ...GEAR, pack: [.7, .62, .48] }, parts: [...PLANS.camel.parts, ['packs', { at: .5, len: .8, w: .32, h: .62, roll: false, sack: true, fit: 1.02, hang: .25, frame: { up: .64 } }]] });
+  palette: { ...PLANS.camel.palette, ...GEAR, pack: [.7, .62, .48] }, parts: [...PLANS.camel.parts, ['packs', { at: .5, len: .8, w: .32, h: .62, roll: false, sack: true, fit: 1.02, hang: .25, frame: { up: .64 } }], ['bridle', { halter: true }]] });
 const HARNESSED = ['packmule', 'draughthorse', 'yokedox', 'ridinghorse', 'packcamel'];
 
 // ── Session 919: the corrupted (OG-088's second row; backlog L4, "corrupted animals by school"). A gate's antibodies wear
