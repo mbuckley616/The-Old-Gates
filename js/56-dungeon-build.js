@@ -4024,8 +4024,8 @@ function buildDungeon(portal){
 // world's lesser gates on the new look) is its door seen from inside: the slit between two pillars of script, lit as the gate's condition lights them outside (steady lit,
 // failing one pillar dim and one dead, catastrophic both dead), the lintel over them and the ring sigil above, the slit showing the day or
 // the night outside; sized to the cell (the world's 2.4 m slit and 1 m pillars do not fit a 3 m cell) and under the ceiling. Every other
-// kind (a lair's cave mouth, a fort, the crypt, the old zones' doors) a plain dressed doorway with the same light in it, until its own
-// mirror is built. No light is added (a gate lights 8 at a time). -> DUN_EXIT { kind, x, z, nx, nz, w, h, cond }
+// kind a plain dressed doorway with the same light in it, until its own mirror is built. S2660: an old gate's (the turf mound's door,
+// buildOldGateFront: a lair, the Root, the old zones' cave doors) is its two oak leaves from behind, shut, in its marked frame (kind 'oldgate'). No light is added (a gate lights 8 at a time). -> DUN_EXIT { kind, x, z, nx, nz, w, h, cond }
 let DUN_EXIT=null;
 function dunExitBuild(portal){
   DUN_EXIT=null;if(dEntranceX==null||!dMap||!dMap.length)return null;
@@ -4033,6 +4033,7 @@ function dunExitBuild(portal){
   for(const [dc,dr] of [[0,-1],[0,1],[-1,0],[1,0]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=dR||nc<0||nc>=dC||!(dMap[nr][nc]>0)){f=[dc,dr];break;}}
   if(!f)return null;
   const K=DCELL,H=FLOOR_HEIGHT,cd=portal&&portal.seed!=null&&typeof CELL_DOORS!=='undefined'?CELL_DOORS.find(e=>e.seed===portal.seed):null,ring=!!(portal&&(portal.ringGate||portal.ring||(cd&&cd.ring&&portal.zone==='world'))),kit=typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.gatemouthMats;
+  const old=!ring&&(portal&&(portal.kind||'cave_door')==='cave_door')&&!portal.tutorial&&!portal.hollow&&!(cd&&cd.hollow)&&!(typeof portal.interior==='string'&&portal.interior.startsWith('fort_')); /* S2660 — the turf mound's old gate: lairs, the Root, the old zones' doors */
   const M=kit?PKIT.places.gatemouthMats():null,pc=cd&&cd.cond||portal.cond,cond=ring?(GATE_CONDS.includes(pc)?pc:gateCondRoll(portal.seed)):null; /* the world's own (placeRingGates): the door's cond, else the seed's roll */
   const hr=typeof gameHour==='function'?gameHour():12,day=hr>=6.5&&hr<19.5,dusk=!day&&(hr>=5.5&&hr<20.5);
   const light=new THREE.MeshBasicMaterial({color:day?new THREE.Color(.64,.68,.7):dusk?new THREE.Color(.32,.26,.24):new THREE.Color(.05,.07,.11),fog:false,toneMapped:false}); /* the day outside, never the gate's murk */
@@ -4049,6 +4050,31 @@ function dunExitBuild(portal){
     box(stone,w+2*PW,LH,PD+.1,0,h+LH/2,(PD+.1)/2);
     const room=H-(h+LH)-.1,sr=Math.min(.9,room*.42);
     if(M&&sr>.3)plane(M[cond==='steady'?'sigil':cond==='failing'?'sigilDim':'sigilDead'],2*sr,2*sr,0,h+LH+room/2,.05);
+  }else if(old){
+    /* S2660 — an old gate's door (buildOldGateFront, 24-forts.js) from its back: the two oak leaves shut, their ledges, braces and rings,
+       a crack of the day at the seam and under them; dressed jambs with the binding marks in the theme's colour, the lintel with its ring,
+       the capstone where the roof leaves room. The world's colours; baked to three draws (stone and wood, the marks, the day) */
+    const C=c=>new THREE.MeshLambertMaterial({color:c}),st=C(0x8a8478),dk=C(0x5e5a52),pale=C(0x9a9488),oak=C(0x3a2a18),oakDk=C(0x2c2014),iron=C(0x2a2826);
+    const glow=new THREE.MeshBasicMaterial({color:(typeof THEME_GLOW!=='undefined'&&THEME_GLOW[portal.theme])||0xffd060});
+    w=1.5;h=+Math.min(2.66,H-.9).toFixed(2);const J=+Math.min(.62,(K-.1-w)/2).toFixed(2),D=.8,LH=.55,seam=.03,lw=(w-seam)/2,DZ=.12;
+    plane(light,w,h+.04,0,(h+.04)/2,.02); /* the day behind the leaves: it shows only at the seam and under them */
+    for(const s of [-1,1]){const cx=s*(seam/2+lw/2);
+      for(let i=0;i<4;i++)box(i%2?oakDk:oak,lw/4-.004,h-.06,.09,cx+(i-1.5)*lw/4,.06+(h-.06)/2,DZ);
+      for(const y of [.45,1.35,2.25].filter(y=>y<h-.2))box(oakDk,lw-.06,.1,.04,cx,y,DZ+.065);
+      {const a=Math.atan2(.9,lw-.16),L=Math.hypot(.9,lw-.16),q=box(oakDk,L,.09,.035,cx,.9,DZ+.06);q.rotation.z=s*a;} /* the brace between the lower ledges */
+      const rg=new THREE.Mesh(new THREE.TorusGeometry(.09,.016,5,12),iron);rg.position.set(s*(seam/2+.12),1.1,DZ+.09);g.add(rg);
+      const x=s*(w/2+J/2);box(st,J,h+.06,D,x,(h+.06)/2,D/2);box(pale,J+.08,.16,D+.08,x,.05,D/2);
+      for(let i=0;i<6;i++)box(glow,i%2?.22:.12,.05,.02,x,.5+i*.34,D+.01);box(glow,.05,1.9,.02,x,1.35,D+.01);}
+    box(st,w+2*J+.1,LH,D+.08,0,h+.06+LH/2,(D+.08)/2);
+    {const rg=new THREE.Mesh(new THREE.TorusGeometry(.2,.035,6,20),glow);rg.position.set(0,h+.06+LH/2,D+.09);g.add(rg);}
+    if(h+.06+LH+.32<H-.02)box(dk,w+2*J-.6,.32,D,0,h+.06+LH+.16,D/2);
+    box(st,w,.08,.6,0,.04,.3);box(glow,w,.02,.06,0,.085,.56);
+    const parts=g.children.length;
+    if(typeof mergeGeos==='function'){const sl=[],gl=[],dead=[];g.updateMatrixWorld(true);
+      g.children.slice().forEach(o=>{if(!o.isMesh||o.material===light)return;const q=o.geometry.index?o.geometry.toNonIndexed():o.geometry;(o.material===glow?gl:sl).push([q,o.matrixWorld.clone(),o.material.color]);dead.push(o);});
+      dead.forEach(o=>{g.remove(o);o.geometry.dispose();});
+      g.add(new THREE.Mesh(mergeGeos(sl),new THREE.MeshLambertMaterial({vertexColors:true})),new THREE.Mesh(mergeGeos(gl),new THREE.MeshBasicMaterial({vertexColors:true})));}
+    g.userData.parts=parts;
   }else{
     w=+Math.min(1.4,K*.5).toFixed(2);h=+Math.min(2.5,H-.6).toFixed(2);const J=.4,D=.3;
     plane(light,w,h,0,h/2,D*.6);for(const s of [-1,1])box(stone,J,h,D,s*(w/2+J/2),h/2,D/2);box(stone,w+2*J+.1,.35,D+.05,0,h+.175,(D+.05)/2);
@@ -4056,7 +4082,7 @@ function dunExitBuild(portal){
   }
   g.traverse(o=>{if(o.isMesh)o.receiveShadow=true;});
   const x=dAt(c)+f[0]*K/2,z=dAt(r)+f[1]*K/2;g.position.set(x,0,z);g.rotation.y=Math.atan2(-f[0],-f[1]);dScene.add(g);
-  DUN_EXIT={kind:ring?'ring':'door',x:+x.toFixed(2),z:+z.toFixed(2),nx:-f[0],nz:-f[1],w,h,cond,group:g};return DUN_EXIT;
+  DUN_EXIT={kind:ring?'ring':old?'oldgate':'door',x:+x.toFixed(2),z:+z.toFixed(2),nx:-f[0],nz:-f[1],w,h,cond,group:g};return DUN_EXIT;
 }
 // S1302 (card F5, the sheet's "Light and draws") — in a gate only your space and the spaces joined to it are drawn, as a town's
 // houses are by houseLod. Every open cell belongs to a zone: a space's own cells are its zone, and a side room, its corridor, a chapel
