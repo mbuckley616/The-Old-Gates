@@ -1837,6 +1837,21 @@
       const fs=sd>=50?1:.6+.4*sd/50,h=gameHour(),v=r.peak*fa*fs*Math.sin(Math.PI*(h%6)/6)*(isTideOut()?1:-1);
       if(!best||Math.abs(v)>best.m)best={x:r.ax*v,z:r.az*v,m:Math.abs(v),race:r};}
     return best;}
+  // S2663 — the navigator's set arrows (the sheet's session 6; the page: "the minimap's arrows for the set, with the navigator aboard"):
+  // with him at his station at sea, the minimap draws the race's set on a 13 px grid wherever it runs at 0.25 m/s or more, each arrow
+  // pointing the way the water goes, 4 px long at nothing and 10 at the peak (2.5 m/s). At slack there are none. Sampled four times a
+  // second at most (performance.now: what is drawn only, never an outcome); the list is kept for the suites.
+  const RACE_ARROW={t:-1e9,list:[],px:null,pz:null},RACE_ARROW_MIN=.25,RACE_ARROW_GAP=13;
+  function raceArrows(ctx,size){if(!navAboard()||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())){RACE_ARROW.list=[];return 0;}
+    const R=navMapR(),s=size/(R*2),now=performance.now(),A=RACE_ARROW;
+    if(now-A.t>250||((A.px!==px||A.pz!==pz)&&now-A.t>100)){A.t=now;A.px=px;A.pz=pz;A.list=[];const L=seaRaces();
+      if(L.some(r=>Math.hypot(r.x-px,r.z-pz)<R*1.5+r.w*2))for(let y=RACE_ARROW_GAP/2;y<size;y+=RACE_ARROW_GAP)for(let x=RACE_ARROW_GAP/2;x<size;x+=RACE_ARROW_GAP){
+        const wx=px+(x-size/2)/s,wz=pz+(y-size/2)/s,r=raceSet(wx,wz);if(!r||r.m<RACE_ARROW_MIN)continue;A.list.push({x,y,dx:r.x/r.m,dy:r.z/r.m,m:r.m});}}
+    if(ctx){ctx.save();ctx.strokeStyle='#d8e6ee';ctx.fillStyle='#d8e6ee';ctx.lineWidth=1.2;
+      for(const a of A.list){const l=4+6*Math.min(1,a.m/2.5),hx=a.x+a.dx*l/2,hy=a.y+a.dy*l/2;ctx.beginPath();ctx.moveTo(a.x-a.dx*l/2,a.y-a.dy*l/2);ctx.lineTo(hx,hy);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(hx-a.dx*3-a.dy*2,hy-a.dy*3+a.dx*2);ctx.lineTo(hx-a.dx*3+a.dy*2,hy-a.dy*3-a.dx*2);ctx.closePath();ctx.fill();}
+      ctx.restore();}
+    return A.list.length;}
   // ═══ S2637 — the reefs (the sea that pushes back, session 2): one coastal chunk in six that is a headland keeps a reef off its point ═══
   // A chunk of a coast cell is coastal when its 3×3 samples hold both land and swimming water (placeH, the land keyed by place, as wreckSpot
   // reads it, so the answer never hangs on what has loaded). From its sea samples' middle eight rays of 300 m: land on one to three of them
