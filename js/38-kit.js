@@ -13224,7 +13224,8 @@ function aurenneOrrery(hAt, o = {}) {
     const foot = (x, z) => 1 - gmSs(.75, 1, Math.hypot(x / HA, (z - HZ) / HC));
     const court = (x, z) => { const ax = Math.abs(x + (x < 0 ? R0 * .25 : 0)); return gmSs(12, 0, Math.max(0, ax - (HW + R0 * .35))) * gmSs(12, 0, Math.max(0, z - (ZF0 + R0 * 1.55))) * gmSs(FZ - R0 * .6, FZ - R0 * .3, z); };
     const shape = (x, z, b) => { const bb = b * (1 - court(x, z)), cut = notch(x, z), hill = Math.max(0, dome(x, z)) * (1 - cut) - .2 * gmSs(HW, HW - R0 * .2, Math.abs(x)) * cut, w = foot(x, z);
-      return bb + (Math.max(bb, hill) - bb) * w; };
+      /* in the notch the lower of the two: the court's ground 0.2 m under its slabs and the rings' floor (the higher put it at 0, the floor's own top, and the two fought) */
+      const top = Math.max(bb, hill) * (1 - cut) + Math.min(bb, hill) * cut; return bb + (top - bb) * w; };
     return { shape, foot, court, dome, notch, R0, CY, STEP, ZF0, FZ, PLATE, holeR, HW, HH, HA, HC, HZ, cut: CUT };
   }
   let GM_MATS = null;
