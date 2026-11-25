@@ -18,8 +18,8 @@ a bed shallower than 1.4 m, or a `wonder` solid by `hullStoneAhead`, stops her, 
 `shipWear`. The navigator draws beds under `SHOAL_D` (2 m). `isTideOut()` (`50-travel.js`) is a boolean in 6-hour blocks.
 
 Three facts from the code change the page's arithmetic:
-- **The clock runs one game minute a real second** (`gameTimeMinutes += dt`). A tide's six hours are six real minutes. The races turn
-  four times in a 24-minute day, so a player who wants slack water waits a few minutes at most, and never needs to sleep for it. The
+- **The clock runs one game minute a real second** (`gameTimeMinutes += dt`). A tide's six hours are six real minutes. Slack water is never
+  more than three minutes off. The
   page's "never twice within 20 game minutes" was 20 real seconds; it is corrected below to 20 game hours.
 - **Bare speeds are the floor, not the ship.** `SHIP_CLASSES` gives the sloop 7.5, the cog 8.5, the galleon 9.5, the caravel 11 and
   the cutter 12; each sail tier adds 12% of bare (`SAIL_TIERS`, four tiers, 2,500 gold in all), so full sails make 11.1, 12.6, 14.1,
@@ -36,16 +36,15 @@ A ballista bolt is `BALLISTA.hull` 10 to a ship's hull, every 6 s, in ±30° of 
 
 | Number | Value | Why |
 |---|---|---|
-| Where | a strait between two landmasses (`landMasses()`) whose narrowest water is under 700 m | the page's width. Corryvreckan is about 1 km across and runs 4 m/s; ours is gentler and narrower |
-| How found | once per seed, after `routeWorld`: for each pair of masses with cells within two of each other, sea samples on a 100 m grid over the cells between them, eight rays each to 400 m; a sample with land within the ray pairs on opposite sides is in the gap. The narrowest line is the race's throat | cheap (only the cells between two masses), deterministic, and it reads `worldH`, so a headland's own shape decides it, not the 2,400 m cell |
+| Where | a strait between two landmasses (`landMasses()`) whose narrowest water is under 700 m | the page's width.. Corryvreckan, 1 km across, runs 4 m/s |
+| How found | once per seed, after `routeWorld`: for each pair of masses with cells within two of each other, sea samples on a 100 m grid over the cells between them, eight rays each to 400 m; a sample with land within the ray pairs on opposite sides is in the gap. The narrowest line is the race's throat | cheap, and the coast's own shape decides it, not the 2,400 m cell |
 | If a seed finds few | under three races, the width steps to 1,000 m, then 1,400 m, until it has three | every world gets some; the suite reports the count |
-| Its shape | a band along the channel's axis, 2 × the throat's width long, centred on it; full set in the middle half, falling linearly to 0 at the ends and to 60% within 50 m of either shore | water runs fastest mid-channel at the throat; the taper makes the edge a choice of line, not a wall |
-| Peak set | 2.5 m/s at a throat of 300 m or less, falling linearly to 1.5 at 700 m (1.0 at 1,400) | the page's 2.5 is a third of a bare sloop; a wide strait running as hard as a narrow one reads wrong |
+| Its shape | a band along the channel's axis, 2 × the throat's width long, centred on it; full set in the middle half, falling linearly to 0 at the ends and to 60% within 50 m of either shore | the taper makes the edge a line to choose, not a wall |
+| Peak set | 2.5 m/s at a throat of 300 m or less, falling linearly to 1.5 at 700 m (1.0 at 1,400) | a third of a bare sloop; a wide strait runs slower |
 | By the hour | set × sin(π × (h mod 6) / 6), flooding one way in `isTideOut`'s blocks and ebbing the other: slack at 00, 06, 12, 18, strongest at 03, 09, 15, 21 | the page's clock, on the tide the ferry already reads |
-| On a ship | the set added to her drift each tick, never to her speed over the water: `SHIP.speed` and the log dial stay the water's | the log dial is truthful about the hull; the chart shows the ground made good |
+| On a ship | the set added to her drift each tick, never to her speed over the water: `SHIP.speed` and the log dial stay the water's | the log dial stays the hull's truth |
 | The race's sea | `seaState` +1 inside a race at over 1.5 m/s (still capped at 3) | the canon's strait "too rough for the boat at high tide", on the wear there is |
 | A swimmer | carried at the full set | `swimSpeed` is 1.7 to 4.2: an unskilled swimmer crosses only near slack, an Athletics 100 swimmer across the set |
-| Saved | nothing: seed and clock | |
 
 ### The reefs
 
@@ -57,7 +56,6 @@ A ballista bolt is `BALLISTA.hull` 10 to a ship's hull, every 6 s, in ±30° of 
 | Held fast | on a reef she cannot sail ahead; S held 3 s at half astern backs her off | the page's; a reef costs time as well as hull |
 | A swimmer | stands on a rock's head | a rest in a crossing |
 | Seen | breakers when `seaState` ≥ 1 and the reef's paler water by day: drawn to 120 m in clear or overcast, 40 m at night or in rain, not at all in fog | night and fog are the danger; at 7.5 m/s 40 m is five seconds |
-| Charted | the navigator's shoal map draws every reef already (heads under `SHOAL_D`) | the navigator is how you learn the sea without hitting it |
 | Wrecks | `wreckSpot` reads the reef first: a reef's chunk holds a wreck one time in three | the tell a diver learns |
 
 ### The serpent
@@ -87,12 +85,11 @@ A ballista bolt is `BALLISTA.hull` 10 to a ship's hull, every 6 s, in ±30° of 
   `wreckSpot`, the serpent's tick beside `tickOtherShips` with its body from `SWIMMER['Sea Serpent']`, `shipBallistaTick` laying on its head.
 - **`86-world-crime.js`**: `seaState`'s +1, `SHIP_HEADS.serpent`, the shoal map's set arrows (with the navigator aboard).
 - **The swim tick** (`90-main.js`' movement while `WORLD.isSwimming()`): the drift on `px/pz`.
-- **`50-travel.js`**: the scale's entry in the herb table.
 - **`worldState`**: no new key. The skull rides `worldState.ship.heads` (the world's, as now); the scale and the skull in the bag and
   `herbsKnown` (the character's); two counts, `stats.serpentsDriven` and `stats.serpentsSlain`, in `stats` (the character's,
   already in `SS_CHAR_WS`). Nothing goes on the S242 list.
 - **Named actions**: the strike goes through `shipWear`, hits on its head through `damageFoe`; the roll is a seeded stream.
-- **UI**: the log lines (*Something rises off the quarter.*, *The serpent goes down and does not come up.*), and the navigator's arrows.
+- **UI**: two log lines and the navigator's arrows; the scale in `50-travel.js`' herb table.
 - **The quest writer**: three lines of quay talk about the serpent and one about the race, in the dialog pools (`83-world-generator.js`).
 
 ## The suites
@@ -119,7 +116,7 @@ Three, each booting the world once.
 | 6 | systems | driven off and slain, the scale, the skull, the counts; the navigator's set arrows | `serpent` +, `searace` + |
 | 7 | quest writer | the quay's four lines and the two log lines | none |
 
-Sessions 1 and 2 can run in either order; 4 waits on neither (it needs only `openWater`). A look builder's check that no race crosses
+Sessions 1, 2 and 4 need nothing of each other. A look builder's check that no race crosses
 the Gate Isles' or the Drowned Spires' landings rides session 3: it moves the landing, not the race.
 
 ## The open number: the serpent's speed
