@@ -18,7 +18,7 @@ const r = await page.evaluate(() => {
   const b0 = buy(0), b10 = buy(10), b40 = buy(60);
   // sell a copy of the same piece: its row and the gold it pays, at Charisma 0 and 10
   shopTab = 'all';
-  const sell = (cha) => { ATTRS.charisma = cha; const s = { ...it, qty: 1 }; delete s._boughtBack; BAG.push(s); renderShop();
+  const sell = (cha) => { ATTRS.charisma = cha; const s = { ...it, qty: 1, buyPrice: it.buyPrice * 5 }; /* S2643 — a dearer copy: at 16 raw the home's ×0.85 rounded Charisma 10's 5% away */ delete s._boughtBack; BAG.push(s); renderShop();
     const raw = sellPrice(s); const g0 = gold; const rows = [...document.querySelectorAll('#sh-bag .sh-row')];
     rows[rows.length - 1].onclick(); if (document.getElementById('qty-modal').style.display === 'flex') qtyPick(1);
     return { raw, got: gold - g0, inBag: BAG.includes(s) }; };
