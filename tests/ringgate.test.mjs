@@ -32,7 +32,7 @@ const r = await page.evaluate(s => { const G = RING_GATES.get(s), S = rgShape(),
   const LD = G.group, lv = d => { const cam = CAM.clone(); const [x, z] = W(0, d); cam.position.set(x, G.y + 2, z); cam.updateMatrixWorld(true); LD.update(cam); return LD.getCurrentLevel(); };
   RG_SHOW_T = 0; ringGateShow(); out.lod = { at30: lv(30), at200: lv(200), farMeshes: LD.levels[1].object.isMesh ? 1 : 0, shown: LD.visible, chunks: G.chunks.filter(k => chunks.has(k)).length };
   // the gate's exit (goToOW stands you 2.5 m short of a cave door's z): on the floor before the slit, not in a wall
-  const P = dungeonWorldPos[s]; jumpY = G.y; out.exit = { y: +(groundY(P.x, P.z - 2.5) - G.y).toFixed(2), solid: solidAt(P.x, P.z - 2.5, .3), lz: +G.toL(P.x, P.z - 2.5)[1].toFixed(2) };
+  const P = dungeonWorldPos[s], [dlx, dlz] = G.toL(P.x, P.z); out.doorAt = [+dlx.toFixed(2), +dlz.toFixed(2)];
   K.group.traverse(o => { if (o.isMesh) o.geometry.dispose(); }); return out; }, S0.seed);
 console.log(JSON.stringify(r));
 check(`the gate ${r.seed} is ${r.cond}, its own roll; ${r.kit.tris} triangles in ${r.kit.draws} draws near, ${r.far.tris} in ${r.far.draws} far; its laid ground ${r.laid.tris} triangles over ${r.laid.sunk} sunk points`, r.cond === r.roll && r.kit.tris < 6000 && r.kit.draws <= 14 && r.far.draws === 1 && r.laid.sunk > 20, r);
@@ -42,6 +42,15 @@ check(`from above, the hill over the rings (${r.over.join(', ')}) stands over th
 check(`the world's grid is sunk under it (${r.sunk} m) and laid again as the hill (${r.lifted} m)`, Math.abs(r.sunk + 1.5) < .01 && r.lifted > r.crown, r);
 check(`the walk from the court to the slit, the slit's width, is open (${r.blocked.length} blocked), the headwall, the reveals and the back plate are walls`, r.blocked.length === 0 && Object.values(r.walls).every(Boolean), r);
 check(`the kit as drawn at 30 m (level ${r.lod.at30}), one mesh at 200 m (level ${r.lod.at200}), drawn while its chunks stand (${r.lod.chunks})`, r.lod.at30 === 0 && r.lod.at200 === 1 && r.lod.farMeshes === 1 && r.lod.shown && r.lod.chunks > 0, r);
-check(`out of the gate you stand on the floor before the slit (${r.exit.y} m, ${r.exit.lz} m in the kit's frame, between the rings), clear`, Math.abs(r.exit.y) < .05 && !r.exit.solid && r.exit.lz < r.face && r.exit.lz > r.plate, r);
+check(`the gate's door stands at the slit (${r.doorAt.join(', ')} in the kit's frame)`, Math.abs(r.doorAt[0]) < .01 && Math.abs(r.doorAt[1] - r.plate) < .01, r);
+// in by the gate's door and out again: you come up on its floor before the slit, looking out of the rings, not on the hill over them
+await page.evaluate(s => { const e = CELL_DOORS.find(d => d.seed === s), p = makePortalDef(e), w = dungeonWorldPos[s]; p.x = w.x; p.z = w.z; p.zone = 'world'; p.sigil = false; px = p.x; pz = p.z; goToDungeon(p); }, S0.seed);
+for (let k = 0; k < 120 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(500);
+await page.evaluate(() => goToOW());
+for (let k = 0; k < 120 && !(await page.evaluate(() => activeZoneId === 'world')); k++) await page.waitForTimeout(500);
+const x = await page.evaluate(s => { const G = RING_GATES.get(s), [lx, lz] = G.toL(px, pz), f = [Math.sin(G.ry), Math.cos(G.ry)], look = [-Math.sin(yaw), -Math.cos(yaw)];
+  return { zone: activeZoneId, lx: +lx.toFixed(2), lz: +lz.toFixed(2), y: +(jumpY - G.y).toFixed(2), ground: +(groundY(px, pz) - G.y).toFixed(2), out: +(f[0] * look[0] + f[1] * look[1]).toFixed(3), solid: solidAt(px, pz, .3), plate: G.plate, face: G.face, ry: +G.ry.toFixed(3) }; }, S0.seed);
+console.log(JSON.stringify(x));
+check(`in by the door and out again: on the floor (${x.y} m) ${(x.lz - x.plate).toFixed(1)} m before the slit, clear, looking out of the rings (${x.out}); the gate faces ${x.ry}`, x.zone === 'world' && Math.abs(x.y) < .05 && Math.abs(x.ground) < .05 && Math.abs(x.lx) < .05 && x.lz > x.plate + 2 && x.lz < x.face && !x.solid && x.out > .99, x);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

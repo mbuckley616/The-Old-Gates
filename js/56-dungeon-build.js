@@ -4327,20 +4327,24 @@ function goToOW(){
     lid='overworld';currentHouse=null;
     activeZoneId=returnZone;
     // Spawn near the portal entrance — use src coords for all zones
-    const spawnX=src?src.x:15;
+    let spawnX=src?src.x:15;
     // S702 — an old gate in the world faces -z with its mound behind it (S578): come up in front of it, not inside the mound (z+2 held you fast)
-    const spawnZ=src?(src.zone==='world'&&(src.kind||'cave_door')==='cave_door'?src.z-2.5:src.z+2):20;
+    let spawnZ=src?(src.zone==='world'&&(src.kind||'cave_door')==='cave_door'?src.z-2.5:src.z+2):20;
+    /* S2632 — a ring gate (RING_GATES, 82) faces down its slope: you come up on its floor 2.5 m before the slit, looking out, under the hill */
+    const RGX=src&&src.zone==='world'&&typeof RING_GATES!=='undefined'?RING_GATES.get(src.seed):null,RGE=RGX&&RGX.exit;
     // v61: data-driven zone restore (same pattern as exitInterior). Hearthwick
     // and Bealach-South have no dungeons today so this branch is defensive,
     // but if a future settlement/wilderness zone gains a portal, the dungeon
     // exit will route home correctly without an if-chain edit.
     const zb=(typeof ZONE_BUILDERS!=='undefined')?ZONE_BUILDERS[returnZone]:null;
+    if(RGE){spawnX=RGE.x;spawnZ=RGE.z;}
     if(zb){
       scene=zb.sceneGet()||owScene;
       ZE=(ZONES[returnZone]&&ZONES[returnZone].enemies)||[];
       ZB=[];
       px=spawnX;pz=spawnZ;
       yaw=(returnZone==='overworld')?Math.PI:Math.atan2(0,1);
+      if(RGE)yaw=RGE.yaw;
       showZoneName(zb.displayName||'—');
       // v61c2 — Faolchú spawn check on dungeon-exit overworld return.
       // Same idempotent pattern as the goToZone hook: no-op unless
@@ -4357,6 +4361,7 @@ function goToOW(){
     document.getElementById('fbtn').style.display='block';
     pitch=0;velY=0;
     // Set jumpY to terrain height so player doesn't clip through ground
+    if(RGE)jumpY=RGX.y; /* the ground there is the floor while you stand under the rings' crown (its OFFROAD patch reads jumpY) */
     jumpY=isOverworldZone()?activeTerrainH(px,pz):0;
     onGround=true;
     sndReturnOW();

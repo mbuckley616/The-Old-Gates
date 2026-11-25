@@ -1825,18 +1825,24 @@
   const RING_GATES=new Map(),RG_LOD=90,RG_SINK=1.5;let RG_SHAPE=null;
   function ringGateOk(e){return !!e&&e.zone==='gen'&&e.kind==='cave_door'&&!e.lairDoor&&!e.root&&!e.hollow&&!e.wet&&window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&!!PKIT.places&&!!PKIT.places.gatemouth;}
   function rgShape(){return RG_SHAPE||(RG_SHAPE=PKIT.places.gatemouthShape('m'));}
-  /* the kit's frame for a gate whose door stands at (x, z): its origin the court at the face's line, PLATE in front of the door; +z the kit's front, -z the world's */
-  function ringGateFrame(x,z){const S=rgShape(),ox=x,oz=z+S.PLATE;return {ox,oz,toL:(wx,wz)=>[ox-wx,oz-wz],toW:(lx,lz)=>[ox-lx,oz-lz]};}
+  /* the gate faces down its slope (the bare land 24 m either side of the door, read by place, as the mines' adits are); on level ground (under
+     1 in 30) it faces -z, as the mound did. -> ry, the kit's +z (its front) in the world: (sin ry, cos ry) */
+  function ringGateFacing(x,z){return withPlace(x,z,()=>{const gx=(rawH(x+24,z)-rawH(x-24,z))/48,gz=(rawH(x,z+24)-rawH(x,z-24))/48;return Math.hypot(gx,gz)<1/30?Math.PI:Math.atan2(-gx,-gz);});}
+  /* the kit's frame for a gate whose door stands at (x, z), facing ry: its origin the court at the face's line, PLATE in front of the door */
+  function ringGateFrame(x,z,ry){const S=rgShape(),co=Math.cos(ry),s_=Math.sin(ry),ox=x-S.PLATE*s_,oz=z-S.PLATE*co;
+    return {ox,oz,ry,co,s:s_,toL:(wx,wz)=>{const dx=wx-ox,dz=wz-oz;return [dx*co-dz*s_,dx*s_+dz*co];},toW:(lx,lz)=>[ox+lx*co+lz*s_,oz-lx*s_+lz*co]};}
   /* a road within the hill's reach of a door at (x, z): the first of 49 points over its foot and court that a road's bed reaches, with the way out from it */
-  function ringGateRoad(x,z){const F=ringGateFrame(x,z);for(let lz=-46;lz<=32;lz+=13)for(let lx=-36;lx<=36;lx+=12){const [wx,wz]=F.toW(lx,lz),ri=roadInfo(wx,wz);if(!ri)continue;
+  function ringGateRoad(x,z){const F=ringGateFrame(x,z,ringGateFacing(x,z));for(let lz=-46;lz<=32;lz+=13)for(let lx=-36;lx<=36;lx+=12){const [wx,wz]=F.toW(lx,lz),ri=roadInfo(wx,wz);if(!ri)continue;
       const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,L=Math.hypot(vx,vz)||1;let nx=-vz/L,nz=vx/L;if((x-wx)*nx+(z-wz)*nz<0){nx=-nx;nz=-nz;}return {nx,nz};}return null;}
   // the hill's stamp, from the door's spot: kind 'door' (so the doors keep 22 m past its reach) and natural (no trodden ground in the land's mask)
-  function ringGateStamp(e,x,z,cellK){const S=rgShape(),F=ringGateFrame(x,z),[cx,cz]=F.toW(0,-7),[yx,yz]=F.toW(0,4),y=landH(yx,yz),g=CHUNK/SEGS,SX=S.R0+5;
-    const G={seed:e.seed,x,z,...F,y,lift:false,sink:{x0:F.ox-SX,x1:F.ox+SX,z0:F.oz-(S.FZ+2),z1:F.oz-(S.PLATE-5)}};
+  function ringGateStamp(e,x,z,cellK){const S=rgShape(),F=ringGateFrame(x,z,ringGateFacing(x,z)),[cx,cz]=F.toW(0,-7),[yx,yz]=F.toW(0,4),y=landH(yx,yz),g=CHUNK/SEGS,SX=S.R0+5;
+    const SZ0=S.PLATE-5,SZ1=S.FZ+2,cs=[[-SX,SZ0],[SX,SZ0],[-SX,SZ1],[SX,SZ1]].map(([u,v])=>F.toW(u,v));
+    const G={seed:e.seed,x,z,...F,y,lift:false,sink:{x0:Math.min(...cs.map(q=>q[0])),x1:Math.max(...cs.map(q=>q[0])),z0:Math.min(...cs.map(q=>q[1])),z1:Math.max(...cs.map(q=>q[1])),
+      at:(wx,wz)=>{const [lx,lz]=F.toL(wx,wz);return Math.abs(lx)<=SX&&lz>=SZ0&&lz<=SZ1;}}};
     const lat=v=>Math.abs(v-Math.round(v/g)*g)<1e-3,K=G.sink;
     G.stamp=addStamp({id:'door_'+e.seed,kind:'door',ring:true,natural:true,x:cx,z:cz,r:44,blend:0,y,cell:cellK,
       inside:(wx,wz)=>{const [lx,lz]=F.toL(wx,wz);return S.foot(lx,lz)>0||S.court(lx,lz)>0;},
-      fn:(wx,wz,h)=>{if(!G.lift&&wx>=K.x0&&wx<=K.x1&&wz>=K.z0&&wz<=K.z1&&lat(wx)&&lat(wz))return y-RG_SINK;const [lx,lz]=F.toL(wx,wz);return y+S.shape(lx,lz,h-y);}});
+      fn:(wx,wz,h)=>{if(!G.lift&&wx>=K.x0&&wx<=K.x1&&wz>=K.z0&&wz<=K.z1&&lat(wx)&&lat(wz)&&K.at(wx,wz))return y-RG_SINK;const [lx,lz]=F.toL(wx,wz);return y+S.shape(lx,lz,h-y);}});
     /* the far sheet (32 m a step, 3 m under the near ground) would cross the rings: every far point within a step of the rings' box goes under the court (farSinkHoles' farR) */
     {const bx=S.R0+1,b0=S.PLATE-1,b1=S.FZ+1,[hx,hz]=F.toW(0,(b0+b1)/2);G.farHole=addStamp({id:'door_'+e.seed+'_far',kind:'farhole',noFlat:true,natural:true,farR:true,x:hx,z:hz,r:Math.hypot(bx,(b1-b0)/2)+1,blend:0,y,cell:cellK,
       inside:(wx,wz)=>{const [lx,lz]=F.toL(wx,wz);return Math.abs(lx)<=bx&&lz>=b0&&lz<=b1;}});}
@@ -1846,10 +1852,10 @@
   // the ground laid again over the sunk grid points (S2065's laid-back ground, for a hill): every square a sunk point touches drawn from the
   // ground without the sink, cut every metre, its normals and colours by point, the triangles that cross the hill's step in front of the rings'
   // opening left out; and the ring of squares round those again as the world's own (each point's height, colour, mask and normal as buildChunk
-  // has them, the sink lifted), drawn over it a hair forward so the world's squares whose normals saw the pit do not show. In the frame of the
+  // has them, the sink lifted), laid 3 cm over them so the world's squares whose normals saw the pit do not show (a depth offset instead drew the court's ground over the rings' floor at a grazing eye). In the frame of the
   // gate's court (x, z off ox, oz; y off the court). -> { geo, rect: {x0, x1, z0, z1} in the kit's frame, tris, squares }
   function ringGateLaid(G){const S=rgShape(),g=CHUNK/SEGS,N=4,K=G.sink,vk=(x,z)=>x+','+z;
-    const sunk=new Set();for(let x=Math.ceil(K.x0/g)*g;x<=K.x1;x+=g)for(let z=Math.ceil(K.z0/g)*g;z<=K.z1;z+=g)sunk.add(vk(x,z));
+    const sunk=new Set();for(let x=Math.ceil(K.x0/g)*g;x<=K.x1;x+=g)for(let z=Math.ceil(K.z0/g)*g;z<=K.z1;z+=g)if(K.at(x,z))sunk.add(vk(x,z));
     const inner=new Set(),outer=new Set();for(const k of sunk){const [x,z]=k.split(',').map(Number);for(const [dx,dz] of [[-g,-g],[0,-g],[-g,0],[0,0]])inner.add(vk(x+dx,z+dz));}
     for(const k of inner){const [x,z]=k.split(',').map(Number);for(let dz=-g;dz<=g;dz+=g)for(let dx=-g;dx<=g;dx+=g){const q=vk(x+dx,z+dz);if(!inner.has(q))outer.add(q);}}
     const HL=new Map(),hl=(x,z)=>{const k=x.toFixed(3)+','+z.toFixed(3);let v=HL.get(k);if(v===undefined){v=ringGateLifted(G,x,z);HL.set(k,v);}return v;};
@@ -1866,21 +1872,21 @@
         if(edge){const [A,Bq,Cq,wa,wb,wc]=(u+w<1||(u+w===1&&u<1))?[c4[0],c4[1],c4[2],1-u-w,u,w]:[c4[3],c4[2],c4[1],u+w-1,1-u,1-w];
           h=A.h*wa+Bq.h*wb+Cq.h*wc;c3=[0,1,2].map(q=>A.c[q]*wa+Bq.c[q]*wb+Cq.c[q]*wc);n3=[0,1,2].map(q=>A.n[q]*wa+Bq.n[q]*wb+Cq.n[q]*wc);}
         else{h=hl(x,z);const e=g/N,hx=(hl(x+e,z)-hl(x-e,z))/(2*e),hz=(hl(x,z+e)-hl(x,z-e))/(2*e),L=Math.hypot(hx,1,hz);n3=[-hx/L,1/L,-hz/L];groundColor(x,z,h,n3[1],cc);c3=[cc.r,cc.g,cc.b];}
-        const nl=Math.hypot(...n3);pos.push(x-G.ox,h-G.y,z-G.oz);wpos.push(x,h,z);col.push(...c3);nor.push(n3[0]/nl,n3[1]/nl,n3[2]/nl);
+        const nl=Math.hypot(...n3);if(!isIn)h+=.03; /* the world's own squares again, 3 cm over them */pos.push(x-G.ox,h-G.y,z-G.oz);wpos.push(x,h,z);col.push(...c3);nor.push(n3[0]/nl,n3[1]/nl,n3[2]/nl);
         const [lx,lz]=G.toL(x,z);x0b=Math.min(x0b,lx);x1b=Math.max(x1b,lx);z0b=Math.min(z0b,lz);z1b=Math.max(z1b,lz);}
       for(let j=0;j<n;j++)for(let i=0;i<n;i++){const a=base+j*(n+1)+i,b=a+1,c=a+n+1,d=c+1;
-        if(isIn){const ls=[a,b,c,d].map(q=>G.toL(wpos[q*3],wpos[q*3+2])),mx=Math.abs((ls[0][0]+ls[3][0])/2),lzs=ls.map(p=>p[1]);
+        if(isIn){const ls=[a,b,c,d].map(q=>G.toL(wpos[q*3],wpos[q*3+2])),mx=Math.abs((ls[0][0]+ls[1][0]+ls[2][0]+ls[3][0])/4),lzs=ls.map(p=>p[1]);
           if(mx<S.holeR+1.5&&Math.min(...lzs)<S.cut&&Math.max(...lzs)>=S.cut-1e-6)continue;} /* the step in front of the rings' opening: left open */
         idx.push(a,c,b,c,d,b);}}
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
     if(LAND.on){const t=new THREE.BufferGeometry();t.setAttribute('position',new THREE.Float32BufferAttribute(wpos,3));landMask(t,-CHUNK/2,-CHUNK/2);geo.setAttribute('aMask',t.attributes.aMask);}
     geo.setIndex(idx);geo.computeBoundingSphere();return {geo,rect:{x0:x0b,x1:x1b,z0:z0b,z1:z1b},tris:idx.length/3,squares:{inner:inner.size,outer:outer.size,sunk:sunk.size}};}
-  /* the laid ground's material: the terrain's own, a hair forward (it is drawn over the world's ground where the two meet) */
+  /* the far copy's material: the terrain's own, a hair forward (from 90 m the 3 cm the laid ground stands over the world's is under the depth's grain) */
   let RG_MAT=null;function ringGateMat(){if(RG_MAT&&RG_MAT.src===terrainMat)return RG_MAT.m;const m=terrainMat.clone();m.onBeforeCompile=terrainMat.onBeforeCompile;if(terrainMat.customProgramCacheKey)m.customProgramCacheKey=terrainMat.customProgramCacheKey;
     m.polygonOffset=true;m.polygonOffsetFactor=-.25;m.polygonOffsetUnits=-4; /* by the depth's units more than the slope's: a full slope's pull at a grazing eye drew the court's ground over the rings' floor */RG_MAT={src:terrainMat,m};return m;}
   // the gate's far copy: the laid ground and the kit's stone (not its script, its sigil or its door's dark) in one mesh of the terrain's material
   function ringGateFar(K,LB){const list=[],tint=m=>(m&&m.color?m.color.clone():new THREE.Color(.6,.6,.6)).multiplyScalar(m&&m.map?.85:1);K.group.updateMatrixWorld(true);
-    const M0=new THREE.Matrix4().makeRotationY(Math.PI);K.group.traverse(o=>{if(!o.isMesh||o.userData.glow)return;list.push([o.geometry,M0.clone().multiply(o.matrixWorld),tint(o.material)]);});
+    const M0=new THREE.Matrix4().makeRotationY(K.group.rotation.y);K.group.rotation.y=0;K.group.updateMatrixWorld(true);K.group.traverse(o=>{if(!o.isMesh||o.userData.glow)return;list.push([o.geometry,M0.clone().multiply(o.matrixWorld),tint(o.material)]);});
     let n=LB.geo.attributes.position.count;for(const [g] of list)n+=g.index?g.index.count:g.attributes.position.count;
     const P=new Float32Array(n*3),Nn=new Float32Array(n*3),C=new Float32Array(n*3),Mk=new Float32Array(n*3),I=[];let o=0;
     {const g=LB.geo,c=g.attributes.position.count;P.set(g.attributes.position.array,0);Nn.set(g.attributes.normal.array,0);C.set(g.attributes.color.array,0);if(g.attributes.aMask)Mk.set(g.attributes.aMask.array,0);for(const q of g.index.array)I.push(q);o=c;}
@@ -1896,13 +1902,14 @@
   function placeRingGates(c,k){const out=[];if(!RING_GATES.size)return out;const S=rgShape();if(c.doors.some(e=>e.ring))try{farSinkUnder();}catch(err){console.warn('ring gate far',err);} /* the far sheets built before the rings' holes */
     for(const e of c.doors){if(!e.ring||!dungeonWorldPos[e.seed])continue;const G=RING_GATES.get(e.seed);if(!G)continue;
       const cond=(typeof GATE_CONDS!=='undefined'&&GATE_CONDS.includes(e.cond))?e.cond:gateCondRoll(e.seed),gl=(lx,lz)=>ringGateLifted(G,...G.toW(lx,lz))-G.y;
-      const K=PKIT.places.gatemouth({key:'gate:'+e.seed,cond,ground:gl}),LB=ringGateLaid(G),F=ringGateFar(K,LB);
-      K.group.rotation.y=Math.PI;K.group.name='ring gate near';const lm=new THREE.Mesh(LB.geo,ringGateMat());lm.name='ring gate ground';lm.receiveShadow=true;
+      const K=PKIT.places.gatemouth({key:'gate:'+e.seed,cond,ground:gl}),LB=ringGateLaid(G);K.group.rotation.y=G.ry;const F=ringGateFar(K,LB);
+      K.group.rotation.y=G.ry;K.group.name='ring gate near';const lm=new THREE.Mesh(LB.geo,terrainMat);lm.name='ring gate ground';lm.receiveShadow=true;
       const near=new THREE.Group();near.add(K.group,lm);const LD=new THREE.LOD();LD.name='ringGate';LD.position.set(G.ox,G.y,G.oz);LD.addLevel(near,0);LD.addLevel(F.mesh,RG_LOD,.05);sc.add(LD);
-      for(const b of K.sol){const [wx,wz]=G.toW(b.x,b.z);STATIC_SOL.push({cx:wx,cz:wz,rx:b.w/2,rz:b.d/2,top:G.y+b.h,ringGate:e.seed});}
+      for(const b of K.sol){const [wx,wz]=G.toW(b.x,b.z);STATIC_SOL.push({cx:wx,cz:wz,rx:b.w/2,rz:b.d/2,c:G.co,s:G.s,top:G.y+b.h,ringGate:e.seed});}
+      {const [ex,ez]=G.toW(0,S.PLATE+2.5);G.exit={x:ex,z:ez,yaw:G.ry+Math.PI};} /* where the gate's exit stands you (goToOW): on the floor 2.5 m before the slit, looking out */
       const floors=K.floors,inTube=(lx,lz)=>{for(const f of floors)if(lz>=f.z0&&lz<=f.z1&&Math.abs(lx)<f.half+.3)return true;return false;},crown=G.y+S.CY+4;
       const courtX=S.R0*.95,cz0=S.ZF0+.4,cz1=S.ZF0+S.R0*.85;
-      offroadPatchDrop('gate_'+e.seed);const R=LB.rect;OFFROAD_PATCHES.push({id:'gate_'+e.seed,x:G.ox,z:G.oz,y:G.y,co:-1,s:0,x0:R.x0,x1:R.x1,z0:R.z0,z1:R.z1,R2:(Math.hypot(Math.max(-R.x0,R.x1),Math.max(-R.z0,R.z1))+1)**2,
+      offroadPatchDrop('gate_'+e.seed);const R=LB.rect;OFFROAD_PATCHES.push({id:'gate_'+e.seed,x:G.ox,z:G.oz,y:G.y,co:G.co,s:G.s,x0:R.x0,x1:R.x1,z0:R.z0,z1:R.z1,R2:(Math.hypot(Math.max(-R.x0,R.x1),Math.max(-R.z0,R.z1))+1)**2,
         ground:(lx,lz)=>{if(inTube(lx,lz)&&jumpY<crown)return 0;const h=gl(lx,lz);return Math.abs(lx)<courtX&&lz>cz0&&lz<cz1?Math.max(h,.01):h;}});
       Object.assign(G,{cond,group:LD,kit:{tris:K.tris,draws:K.draws,counts:K.counts,lost:K.lost.length,hung:K.hung.length,sol:K.sol.length},laid:{tris:LB.tris,...LB.squares},far:{tris:F.tris,draws:F.draws},door:K.door,floors,plate:K.plate,face:K.face});
       out.push(LD);}
