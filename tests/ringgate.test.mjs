@@ -3,17 +3,19 @@
 // (PKIT.places.gatemouth, Session 2616's prototype) in a hill the world's ground is stamped into (ringGateStamp, 82), its face laid again
 // where the ground's 4 m grid cannot make it (ringGateLaid). The suite counts them, stands at the nearest, and reads its size against a
 // person, its ground (the court, the floor between the rings, the hill over them), its solids against its walls, its level of detail, and
-// where the gate's exit stands you.
+// where the gate's exit stands you. Session 2641: the home province's authored gates are ring gates too.
 import { boot, check } from './lib/game.mjs';
 const g = await boot({ look: 'new' }); const { page } = g; await g.intoWorld();
 await page.evaluate(() => REN.setSize(320, 180, false));
-const a = await page.evaluate(() => { const doors = CELL_DOORS.filter(e => e.zone === 'gen' && e.kind === 'cave_door' && dungeonWorldPos[e.seed]), plain = doors.filter(e => !e.lairDoor && !e.root && !e.hollow && !e.wet);
+const a = await page.evaluate(() => { const home = CELL_DOORS.filter(e => ZONE_ANCHOR[e.zone] && (e.kind || 'cave_door') === 'cave_door' && dungeonWorldPos[e.seed]), doors = CELL_DOORS.filter(e => e.zone === 'gen' && e.kind === 'cave_door' && dungeonWorldPos[e.seed]), plain = doors.filter(e => !e.lairDoor && !e.root && !e.hollow && !e.wet);
   const L = [...RING_GATES.values()].filter(G => G.group && G.group.parent); L.sort((p, q) => Math.hypot(p.x - px, p.z - pz) - Math.hypot(q.x - px, q.z - pz));
   const mounds = []; sc.traverse(o => { if (o.name === 'oldGate') mounds.push(o); });
   const moundAtRing = mounds.filter(o => [...RING_GATES.values()].some(G => Math.hypot(o.position.x - G.x, o.position.z - G.z) < 2)).length;
-  return { doors: doors.length, plain: plain.length, rings: plain.filter(e => e.ring && RING_GATES.has(e.seed)).length, lairs: doors.filter(e => e.lairDoor && e.ring).length, built: L.length, moundAtRing, near: L[0] && { seed: L[0].seed, x: L[0].x, z: L[0].z } }; });
+  return { doors: doors.length, plain: plain.length, rings: plain.filter(e => e.ring && RING_GATES.has(e.seed)).length, lairs: doors.filter(e => e.lairDoor && e.ring).length, built: L.length, moundAtRing, home: home.length, homeRings: home.filter(e => e.ring && RING_GATES.has(e.seed)).length, crypt: !!(home.find(e => e.seed === 137) || {}).ring, near: L[0] && { seed: L[0].seed, x: L[0].x, z: L[0].z } }; });
 console.log(JSON.stringify(a));
 check(`every plain lesser gate placed so far is a ring gate (${a.rings} of ${a.plain}; ${a.built} built), no lair's cavern is one, and no old mound stands at any`, a.plain > 0 && a.rings === a.plain && a.lairs === 0 && a.built > 0 && a.moundAtRing === 0, a);
+// S2641: the home province's authored gates (WORLD_DUNGEONS, placed by their old zones' anchors, the Crypt of Embers among them) are ring gates too
+check(`the home province's authored gates are ring gates (${a.homeRings} of ${a.home}), the Crypt of Embers among them`, a.home >= 7 && a.homeRings === a.home && a.crypt, a);
 const S0 = a.near; await page.evaluate(G => { px = G.x; pz = G.z - 40; }, S0);
 for (let n = 0; n < 8; n++) { await g.cells(); if (await page.evaluate(s => { const G = RING_GATES.get(s); return !!(G && G.group && G.group.parent); }, S0.seed)) break; await page.waitForTimeout(1000); }
 await page.evaluate(() => WORLD.setRadius(RADIUS)); /* the chunks round you built now, as the game's frames would (CI read none streamed yet) */
