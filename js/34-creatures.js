@@ -1775,6 +1775,10 @@ function hcTick(now){let best=null,bd=HC_BODY.build;
   if(activeZoneId==='world'&&typeof WHALES!=='undefined')for(const w of WHALES)if(!w._hcRig&&w.m&&w.m.parent)HC_RIGS.add(hcWhaleRig(w));
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')LIFE.dolphins.forEach((d,k)=>{if(!d._hcRig&&d.m&&d.m.parent)HC_RIGS.add(hcDolphinRig(d,k));});
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')hcSchools(now,busy); /* S1599 — the shallows' schools */
+  /* S2653 — the sea serpent (S2651's SERP.g, 86-world-crime.js) is no foe, so its rig was never handed the kit's body: the stand-in lay
+     flat and unposed. Its group stands in for the foe's mesh, so it is built as the sea's fish are and slithers by its group's way */
+  if(activeZoneId==='world'&&typeof SERP!=='undefined'&&SERP.g){const c=SERP.g.children.find(o=>o.userData&&o.userData.rig),r=c&&c.userData.rig;
+    if(r&&!r._hcIn){r._hcIn=true;r.e={name:r.name,mesh:SERP.g,dead:false,serpent:true};HC_RIGS.add(r);}}
   if(typeof dScene!=='undefined'&&dScene&&scene===dScene)for(const e of ENEMIES){const r=e.limbs&&e.limbs.bird;if(r&&!r._hcIn&&r.e&&!e.dead&&e.mesh&&e.mesh.parent){r._hcIn=true;HC_RIGS.add(r);}} /* S2118 — a gate's dusk eagle */
   if(activeZoneId==='world')for(const e of ZONES.world.enemies){const r=e.limbs&&e.limbs.wolf;if(r&&(r.bird||r.swimmer)&&!r._hcIn&&r.e&&e.mesh&&e.mesh.parent){r._hcIn=true;HC_RIGS.add(r);}} /* S1710 — the raven and the crow; S1712 — the trout */
   if(activeZoneId==='world'&&typeof LIFE!=='undefined')for(const gl of LIFE.gulls)if(gl.g.parent)for(const m of [...gl.g.children])if(m.isMesh&&!m.userData.hcGull){m.userData.hcGull=true;HC_RIGS.add(hcGullRig(m));} /* S1595 — the ports' gulls */
