@@ -668,13 +668,25 @@
   const MILLS=[];
   function placeMills(c,k){const out=[];for(const m of millsAt(c)){const y=worldH(m.x,m.z),co=Math.cos(m.ry),s_=Math.sin(m.ry);
       const K=PKIT.places.mill({key:m.id,wind:m.wind,working:true,ground:(lx,lz)=>worldH(m.x+lx*co+lz*s_,m.z-lx*s_+lz*co)-y});
-      K.group.position.set(m.x,y,m.z);K.group.rotation.y=m.ry;K.group.name='mill';sc.add(K.group);
+      const F=millFar(K),LD=new THREE.LOD(),reach=K.sail?K.sail.len+5:14;K.group.name='mill near';LD.name='mill';LD.position.set(m.x,y,m.z);LD.rotation.y=m.ry;LD.addLevel(K.group,0);LD.addLevel(F.group,MILL_LOD+reach/2,.05);sc.add(LD); /* S2629 — near as drawn, its far copy in two draws past MILL_LOD */
       for(const a of [0,Math.PI/4])STATIC_SOL.push({cx:m.x,cz:m.z,rx:2.85,rz:2.85,c:Math.cos(m.ry+a),s:Math.sin(m.ry+a),h:9.6});
-      m.kit={tris:K.tris,draws:K.draws,tipLow:K.tipLow,hub:K.hub};m.group=K.group;m.spin=K.spin;
+      m.kit={tris:K.tris,draws:K.draws,tipLow:K.tipLow,hub:K.hub,farTris:F.tris,farDraws:F.draws};m.group=LD;m.spin=K.spin;m.spinFar=F.spin;
       for(let i=MILLS.length-1;i>=0;i--)if(MILLS[i].id===m.id)MILLS.splice(i,1);MILLS.push(m);out.push(K.group);}
     return out;}
   // the sails turn, about a turn every eight seconds, while the mill is in the scene
-  function tickMills(dt){for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);}}
+  function tickMills(dt){for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);if(m.spinFar)m.spinFar.rotation.z=m.spin.rotation.z;}}
+  // S2629 (QA's S2628, section I: six mills in view put Dunmore's street at 743 calls at Low, 78 of them the mills') — a mill's far copy:
+  // the kit's own meshes baked into two vertex-coloured meshes on VC_MAT, the tower, cap and yard in one and the sails in the other, on an
+  // axle and spin of their own so they still turn. The same triangles, 2 draws in place of 13, shadows kept. -> { group, spin, tris, draws }
+  const MILL_LOD=70,MILL_FAR_SAIL={}; /* the sails' cloth is one plane: their far copy is drawn both sides;  HOUSE_LOD.near, as the aqueduct's: the far copy from 70 m past half the mill's reach */
+  function millFar(K){const G=new THREE.Group(),body=[],sails=[],tint=m=>(m&&m.color?m.color.clone():new THREE.Color(0x999999)).multiplyScalar(m&&m.map?.85:1);G.name='mill far';
+    K.group.updateMatrixWorld(true);const inv=K.group.matrixWorld.clone().invert(),sInv=K.spin.matrixWorld.clone().invert();
+    K.group.traverse(o=>{if(!o.isMesh)return;let inS=false;for(let p=o;p;p=p.parent)if(p===K.spin){inS=true;break;}
+      const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry;(inS?sails:body).push([g,(inS?sInv:inv).clone().multiply(o.matrixWorld),tint(o.material),g!==o.geometry]);});
+    const mk=(L,mat)=>{const me=new THREE.Mesh(mergeGeos(L),mat);L.forEach(([g,,,tmp])=>{if(tmp)g.dispose();});me.castShadow=true;me.receiveShadow=true;return me;};
+    const b=mk(body,VC_MAT);b.name='mill far body';G.add(b);const ax=K.spin.parent,axle=new THREE.Group(),spin=new THREE.Group();axle.position.copy(ax.position);axle.quaternion.copy(ax.quaternion);
+    axle.add(spin);G.add(axle);const sm=mk(sails,MILL_FAR_SAIL.m||(MILL_FAR_SAIL.m=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide})));sm.name='mill far sails';sm.castShadow=true;spin.add(sm);
+    const tris=Math.round((b.geometry.attributes.position.count+sm.geometry.attributes.position.count)/3);return {group:G,spin,tris,draws:2};}
   // S1828 (card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road") — Aurenne's trade tunnels
   // (PKIT.au.tunnel, places.js's aurenneTunnel): the road's short way under a hill, a bore of 56 m with a portal each side of the ridge
   // beside one of the cell's roads. Every Aurenne cell whose land holds one keeps one. Read by place (withPlace over the cell's middle, the
