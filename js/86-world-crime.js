@@ -1550,7 +1550,7 @@
   // speed in rain or storm; the wreck's maiden, a pirate within 300 m holds off 10 s before closing; the beast's skull, merchantmen
   // give way and keep 30 m off; the gate stone, storm wear ×0.8 (the Drowned Bell's ×0.5 the better, never both); the Weaver's
   // shuttle points the navigator's line at the nearest wreck not yet opened (S1743, shuttleHint; nothing without him)
-  const SHIP_HEADS={sea:{n:'the Sea’s Hull'},maiden:{n:'the Wreck’s Maiden'},skull:{n:'the Beast’s Skull'},stone:{n:'the Gate Stone'},shuttle:{n:'the Weaver’s Shuttle'}};
+  const SHIP_HEADS={sea:{n:'the Sea’s Hull'},maiden:{n:'the Wreck’s Maiden'},skull:{n:'the Beast’s Skull'},stone:{n:'the Gate Stone'},shuttle:{n:'the Weaver’s Shuttle'},serpent:{n:'the Serpent’s Skull'}}; /* S2657 — the sixth found: the serpent's roll ×0.5 (serpentOdds) */
   const HEAD_CARVE={gatelands:'harp',mark:'dragon prow',aurenne:'sun'};
   const HEAD_YARD_PRICE=150,HEAD_SEA_K=1.05,HEAD_MAIDEN_R=300,HEAD_MAIDEN_S=10,HEAD_SKULL_R=30,HEAD_STONE_K=.8;
   function headName(k,st){st=st||worldState.ship||{};return k==='yard'?`the ${HEAD_CARVE[st.yardHead]||'harp'}`:SHIP_HEADS[k]?SHIP_HEADS[k].n:k;}
@@ -1887,6 +1887,12 @@
   const SERP_ODDS=1/250,SERP_V=11,SERP_PORT=300,SERP_BLACK=140,SERP_REST=20*60,SERP_UP=60,SERP_DOWN=90,SERP_AGAIN=600,SERP_DEEP=4,
     SERP_NEAR=25,SERP_GAP=10,SERP_TELL=2.5,SERP_LEAD=1.0,SERP_R=9,SERP_HIT=15,SERP_UISCE=1500,SERP_KEEP=12;
   const SERP={on:null,last:-1e9,chunk:null,ports:null,g:null,hump:null};
+  // S2656 — session 5: the coil, its health, the ballista, arrows and spells at its head. If it reaches her beam (14 m of her middle; it
+  // holds 12 off) while she makes under 3 m/s, it coils her: held 6 s, speed 0, 3 rig a second; any one hit of 30 or more to its head
+  // breaks it, and it may not coil again for 10 s (the tell's gap). Its 60 s up end a coil: it lets her go and dives. It has 400 health, struck only at its head while up (a sphere of
+  // 3.5 m, 10 m ahead of its middle): a ballista bolt 40, a fire bolt 60, an arrow or a spell its own damage, Tine ×1.5, Uisce ×0.5.
+  const SERP_HP=400,SERP_BEAM=14,SERP_SLOW=3,SERP_COIL_S=6,SERP_COIL_RIG=3,SERP_BREAK=30,SERP_HEAD=10,SERP_HEAD_R=3.5,SERP_BOLT=40,SERP_FIRE_K=1.5,
+    SERP_RESIST={tine:1.5,uisce:.5};
   function serpDeep(x,z){return worldH(x,z)<SEA_Y-SERP_DEEP;}
   function serpUisceNear(x,z){const [ci,cj]=cellOf(x,z);for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const c=getCell(ci+di,cj+dj);if(!c||!c.doors||maskAt(ci+di,cj+dj)!=='coast')continue;
       for(const e of c.doors){if(e.kind!=='cave_door'||e.x==null||Math.hypot(e.x-x,e.z-z)>SERP_UISCE)continue;let sc_=null;try{sc_=gateSchool(e);}catch(err){}if(sc_==='uisce')return true;}}return false;}
@@ -1908,7 +1914,7 @@
   function serpRiseAt(r,x,z){for(let k=0;k<12;k++){const a=r()*Math.PI*2,d=60+r()*30,qx=x+Math.cos(a)*d,qz=z+Math.sin(a)*d;if(serpDeep(qx,qz))return {x:qx,z:qz};}return null;}
   // the named action: it rises (first or second time)
   function serpentRise(r,second){const at=serpRiseAt(r||Math.random,SHIP.x,SHIP.z);if(!at)return false;
-    const O=SERP.on||(SERP.on={rises:0});Object.assign(O,{x:at.x,z:at.z,yaw:Math.atan2(SHIP.x-at.x,SHIP.z-at.z),phase:'up',t:0,tell:null,cd:0,strikes:O.strikes||0});O.rises++;
+    const O=SERP.on||(SERP.on={rises:0,hp:SERP_HP,maxHp:SERP_HP,resist:SERP_RESIST,def:0,alert:true,serpent:true,name:'Sea Serpent'});O.coil=null;Object.assign(O,{x:at.x,z:at.z,yaw:Math.atan2(SHIP.x-at.x,SHIP.z-at.z),phase:'up',t:0,tell:null,cd:0,strikes:O.strikes||0});O.rises++;
     if(!second)SERP.last=absMin();serpMesh();showMsg(second?'The serpent rises again.':'A sea serpent rises.','#e8a070');return true;}
   // asked as she enters a chunk under sail: the roll, and the rise if it comes up
   function serpentChunk(cx,cz){if(SERP.on)return false;const x=SHIP.x,z=SHIP.z;if(serpentBar(x,z))return false;
@@ -1926,15 +1932,48 @@
     if(O.phase==='down'){if(O.t<SERP_DOWN)return;
       if(O.rises<2&&openWater(SHIP.x,SHIP.z)&&Math.hypot(SHIP.x-O.dx,SHIP.z-O.dz)<SERP_AGAIN&&serpentRise(null,true))return;
       serpDrop();showMsg('The serpent is gone.','#c8b880');return;}
+    if(O.coil){const C=O.coil;C.t+=dt;SHIP.speed=0;C.acc+=SERP_COIL_RIG*dt;const n=Math.floor(C.acc+1e-9);if(n>0){C.acc-=n;C.rig+=n;shipWear(0,n);}
+      if(C.t>=SERP_COIL_S-1e-9||O.t>=SERP_UP){O.coil=null;O.coilCd=SERP_GAP;showMsg('The serpent lets her go.','#c8b880');}
+      if(O.coil||O.t<SERP_UP){serpDraw(O);return;}}
+    if(O.coilCd>0)O.coilCd-=dt;
     const T=targetOf(O),tx=T&&T.x!=null?T.x:SHIP.x,tz=T&&T.z!=null?T.z:SHIP.z;
     serpStep(O,tx,tz,dt);
+    if(!O.tell&&!(O.coilCd>0)&&Math.abs(SHIP.sailing?SHIP.speed:0)<SERP_SLOW&&Math.hypot(SHIP.x-O.x,SHIP.z-O.z)<=SERP_BEAM){
+      O.coil={t:0,acc:0,rig:0};O.coils=(O.coils||0)+1;SHIP.speed=0;showMsg('The serpent coils about her.','#ff8060');serpDraw(O);return;}
     if(O.tell){O.tell.t+=dt;if(O.tell.t>=SERP_TELL){const P=O.tell;O.tell=null;
         if(Math.hypot(SHIP.x-P.x,SHIP.z-P.z)<SERP_R){const w=shipWear(SERP_HIT,0);O.strikes++;showMsg(`The serpent strikes her. Hull −${w?w.hull:SERP_HIT}.`,'#ff8060');}}}
     else{O.cd-=dt;if(O.cd<=0&&Math.hypot(SHIP.x-O.x,SHIP.z-O.z)<=SERP_NEAR){const v=SHIP.sailing?SHIP.speed:0;
         O.tell={t:0,x:SHIP.x-Math.sin(SHIP.yaw)*v*SERP_LEAD,z:SHIP.z-Math.cos(SHIP.yaw)*v*SERP_LEAD};O.cd=SERP_GAP;O.tells=(O.tells||0)+1;}}
     if(O.t>=SERP_UP&&!O.tell){O.phase='down';O.t=0;O.dx=O.x;O.dz=O.z;}
-    const g=SERP.g;if(g){g.visible=O.phase==='up';g.position.set(O.x,SEA_Y-.4,O.z);g.rotation.set(0,O.yaw,0);}
+    serpDraw(O);}
+  function serpDraw(O){const g=SERP.g;if(g){g.visible=O.phase==='up';g.position.set(O.x,SEA_Y-.4,O.z);g.rotation.set(0,O.yaw,0);}
     const hm=SERP.hump;if(hm){hm.visible=!!O.tell;if(O.tell){const k=Math.min(1,O.tell.t/SERP_TELL);hm.position.set(O.tell.x,SEA_Y-3.6+k*3.6*.35,O.tell.z);hm.scale.set(SERP_R/4,.35+k*.4,SERP_R/4);}}}
+  // whether it holds her now (tickShip reads it as a reef's hold: no way on, no turn)
+  function serpentHolds(){const O=SERP.on;if(!O||!O.coil)return false;SHIP.speed=0;SHIP.turn=0;return true;}
+  // its head: 10 m ahead of its middle along its course, while it is up (null while down)
+  function serpHead(){const O=SERP.on;if(!O||O.phase!=='up')return null;return {x:O.x+Math.sin(O.yaw)*SERP_HEAD,z:O.z+Math.cos(O.yaw)*SERP_HEAD,y:SEA_Y+1};}
+  // the ballista's mark: its head, followed while the bolt flies
+  const SERP_MARK={serpent:true,get x(){const h=serpHead();return h?h.x:(SERP.on?SERP.on.x:0);},get z(){const h=serpHead();return h?h.z:(SERP.on?SERP.on.z:0);}};
+  function serpBears(b){const h=serpHead();if(!h)return null;const dx=h.x-b.x,dz=h.z-b.z,c=Math.hypot(dx,dz),d=Math.max(0,c-SERP_HEAD_R);
+    if(d>BALLISTA.range||(c>.01&&(dx*b.fx+dz*b.fz)/c<Math.cos(BALLISTA.arc)))return null;return d;}
+  // the named action: a hit to its head of n (already its kind's damage); one of 30 or more breaks the coil
+  function serpentHit(n,how){const O=SERP.on;if(!O||O.phase!=='up'||!(O.hp>0))return null;n=Math.max(0,Math.round(n||0));O.hp=Math.max(0,O.hp-n);O.hits=(O.hits||0)+1;
+    let broke=false;if(O.coil&&n>=SERP_BREAK){O.coil=null;O.coilCd=SERP_GAP;broke=true;}
+    showMsg(`${how||'You strike'} the serpent's head: −${n}.${broke?' Its coil breaks.':''}`,'#e8c890');
+    if(O.hp<=0)serpentSlain();return {dmg:n,hp:O.hp,broke};}
+  // S2657 — the named action: slain (session 6). Three Serpent Scales and the Serpent's Skull, its figurehead (once: a second kill
+  // gives the scales), straight into the bag as the beast's skull is; stats.serpentsSlain counts it. It sinks and is gone.
+  const SERP_SLAIN_SCALES=3;
+  function serpentSlain(){if(!SERP.on)return false;serpDrop();const it=serpentScaleItem();it.qty=SERP_SLAIN_SCALES;bagAdd(it);
+    const st=worldState.stats||(worldState.stats={});st.serpentsSlain=(st.serpentsSlain||0)+1;
+    showMsg(`The serpent is slain. ${SERP_SLAIN_SCALES} Serpent Scales.`,'#e8d8a0');grantHead('serpent');
+    if(typeof renderHubInv==='function')renderHubInv();return true;}
+  // an arrow or a spell in flight (tickZoneBalls): true when it struck the head and is spent
+  function serpentTakes(fb){const h=serpHead(),u=fb&&fb.userData;if(!h||!u||u.fromBoss)return false;const p=fb.position;
+    if(Math.hypot(p.x-h.x,p.z-h.z)>SERP_HEAD_R||p.y<SEA_Y-1||p.y>SEA_Y+5)return false;const O=SERP.on;
+    if(u.isArrow){const wt=u.wType||'pierce',k=O.resist&&typeof O.resist[wt]==='number'?O.resist[wt]:1;
+      if(typeof skillUse==='function')skillUse('bow',1,'serpent');serpentHit(challengeDealt(Math.max(1,Math.floor(arrowRawFor(u,O)*k))),'Your arrow strikes');return true;}
+    const sp=u.spell;if(!sp)return false;if(sp.status)return true;serpentHit(applySpellDamage(O,sp,u.tier||1).dmg,'Your spell strikes');return true;}
   // under sail in a rough sea she loses 1 hull and 1 rig a minute; in a storm with W held 1 hull every 6 s and 1 rig every 4 s,
   // half that with no key held while she still makes way, nothing hove to (under half a knot)
   function tickSeaWear(dt,fwd){
@@ -2121,6 +2160,7 @@
   function ballistaBears(){if(!SHIP.mesh||!SHIP.sailing||!shipFitted('ballista'))return null;const b=ballistaBow();let best=null,bd=1e9,mer=null,md=1e9; /* S1827 — a merchantman bears only when no foe does */
     for(const o of OTHER){if(o.dead||o.founder!=null||o.struck||!o.mesh)continue;const foe=ballistaFoe(o);if(!foe&&!merchantOf(o))continue;const dx=o.x-b.x,dz=o.z-b.z,c=Math.hypot(dx,dz);
       const d=Math.max(0,c-(o.W||4)/2);if(d>BALLISTA.range||d>=(foe?bd:md))continue;if(c>.01&&(dx*b.fx+dz*b.fz)/c<Math.cos(BALLISTA.arc))continue;if(foe){bd=d;best=o;}else{md=d;mer=o;}}
+    const sd=serpBears(b);if(sd!=null&&sd<bd)return SERP_MARK; /* S2656 — the serpent's head, if it is nearer than any black sail */
     return best||mer;}
   // the living hand of hers under the crosshair, or null
   function ballistaHand(o){if(!o||!o.crew)return null;CAM.getWorldDirection(_laDir);const O=CAM.position;let best=null,bd=1e9;
@@ -2146,6 +2186,7 @@
     for(let i=BOLTS.fly.length-1;i>=0;i--){const f=BOLTS.fly[i],o=f.o,u=Math.min(1,(now-f.t0)/Math.max(.05,f.dur));
       const T=f.hand&&!f.hand.dead?f.hand:o;if(f.mesh){f.mesh.position.set(f.x0+(T.x-f.x0)*u,DECK_Y+1.2+Math.sin(u*Math.PI)*1.5,f.z0+(T.z-f.z0)*u);f.mesh.lookAt(T.x,DECK_Y+1.2,T.z);}
       if(u<1)continue;if(f.mesh){sc.remove(f.mesh);f.mesh=null;}BOLTS.fly.splice(i,1);
+      if(o.serpent){if(typeof skillUse==='function')skillUse('bow',1,'ballista:serpent');serpentHit(SERP_BOLT*(f.fire?SERP_FIRE_K:1),f.fire?'Your fire bolt strikes':'Your bolt strikes');continue;} /* S2656 */
       if(o.dead||o.founder!=null||!OTHER.includes(o))continue;
       if(f.hand&&!f.hand.dead&&f.hand.hp>0){const e=f.hand,n=ballistaHandDmg(e),who=shipNoun(o); /* S1838 — the heavy arrow at a hand */
         if(typeof skillUse==='function')skillUse('bow',1,e);e.hp=Math.max(0,e.hp-n);e.alert=true;if(e.hpFg){e.hpFg.scale.x=e.hp/e.maxHp;e.hpFg.position.x=(e.hp/e.maxHp-1)*.275;}
