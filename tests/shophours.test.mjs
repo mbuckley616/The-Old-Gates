@@ -36,7 +36,7 @@ console.log(JSON.stringify(table));
 check('every trade in Dunmore opens and shuts at its own hour, and its locked door names that opening', Object.keys(table).length >= 4 && Object.entries(table).every(([t, r]) => r.from === HRS_WANT[t][0] && r.to === HRS_WANT[t][1] && r.n === (HRS_WANT[t][1] - HRS_WANT[t][0]) * 2 && r.opens === HRS_WANT[t][0]), table);
 const sched = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const k = t => S.npcs.find(n => n.sched && n.sched.type === 'keeper' && n.sched.shop === t);
   const say = (n, h) => { if (!n) return null; const p = scheduleFor(n, h); return p.hide ? 'hide' : p.go ? 'go' : p.wander ? 'wander' : 'idle'; };
-  const f = k('weapon'), m = k('misc'), r = S.npcs.find(n => n.sched && n.sched.type === 'resident' && dayShare(n) >= .6); /* S2632: one who goes in at 17 */
+  const f = k('weapon'), m = k('misc'), r = S.npcs.find(n => n.sched && n.sched.type === 'resident' && dayShare(n) >= .6) || (() => { const res = S.residents.find(x => !x.farm && dayShare({ def: x.def, _settle: S }) >= .6); return res && { def: res.def, _settle: S, home: { x: res.def.x, z: res.def.z }, sched: { type: 'resident', door: res.door, plaza: { x: S.site.x, z: S.site.z }, padR: Math.max(10, S.site.pad - 22), inn: S.innDoor || null } }; })(); /* S2632: one who goes in at 17; S2643: residents spawn only within 70 m, two a tick, so on a slow runner none may be up yet: one is made from the town's list as the street spawns it */
   return { forge7: say(f, 7.5), goods7: say(m, 7.5), forge175: say(f, 17.5), goods175: say(m, 17.5), goods195: say(m, 19.5), res165: say(r, 16.5), res175: say(r, 17.5) }; });
 console.log(JSON.stringify(sched));
 check("at half past seven the smith is at work and the goods shop's keeper at the door; at half past five the smith goes to the inn and the goods keeper is still in", sched.forge7 === 'hide' && sched.goods7 === 'go' && sched.forge175 === 'go' && sched.goods175 === 'hide' && sched.goods195 === 'go', sched);
@@ -64,5 +64,32 @@ const hand = await page.evaluate(() => { const out = {};
 console.log(JSON.stringify(hand));
 const H = Object.values(hand);
 check('at the handover the night man and the day man both make for the gate, and part 2 minutes past the hour', H.length >= 2 && H.some(x => x.day === 'guard') && H.some(x => x.day === 'constable') && H.every(x => x.w.join() === 'beat,gate,gate,hide,hide,gate,gate,beat' && x.d.join() === (x.day === 'constable' ? 'hide,gate,gate,patrol,patrol,gate,gate,hide' : 'beat,gate,gate,patrol,patrol,gate,gate,beat')), hand);
+// S2642: market day (#1971 B). The Gatelands' is Stoneday (days 1, 8, 15 …), 7 to 15, in a town, port or city and not a village or a town
+// under plague; that day a counter in the town sells at ×0.9 and pays +10%, and the road's merchant keeps his own price.
+const mkt = await page.evaluate(() => { const set = (d, h) => { worldState.gameTimeAbsMinutes = 1440 * d + h * 60; worldState.gameTimeMinutes = h * 60; }; const o = {};
+  o.on = [[1, 6.9], [1, 7], [1, 14.9], [1, 15], [8, 10], [2, 10], [3, 10]].map(([d, h]) => { set(d, h); return marketOn('dunmore'); });
+  const vil = SITES.find(t => t.kind === 'village' && isleAt(t.x, t.z) === 'gatelands'); set(1, 10); o.village = !!vil && marketOn(vil.id);
+  const t = siteAnywhere('dunmore'); TS(t).flags.plague = 1; o.plague = marketOn('dunmore'); delete TS(t).flags.plague;
+  o.days = ['gatelands', 'mark', 'aurenne'].map(n => CAL.days[marketDayOf(n)].name);
+  const it = { buyPrice: 100, type: 'misc' }, sell = { buyPrice: 100, type: 'equip', sellMult: .4 }, ch0 = currentHouse, ii = window.isInterior;
+  currentHouse = { siteId: 'dunmore' }; window.isInterior = () => true;
+  set(2, 10); o.b0 = shopCost(it); o.s0 = counterSellPrice(sell); set(1, 10); o.b1 = shopCost(it); o.s1 = counterSellPrice(sell);
+  currentHouse.roadMul = 1.1; o.road1 = shopCost(it); set(2, 10); o.road0 = shopCost(it);
+  window.isInterior = ii; currentHouse = ch0; set(1, 16); o.next = nextMarket(); set(1, 8); o.today = nextMarket(); return o; });
+console.log(JSON.stringify(mkt));
+check('market day: the Gatelands\' on Stoneday from 7 to 15 (the Mark\'s Beastday, Aurenne\'s Seaday), in a town and not a village or under plague', mkt.on.join() === 'false,true,true,false,true,false,false' && !mkt.village && !mkt.plague && mkt.days.join() === 'Stoneday,Beastday,Seaday', mkt);
+check('that day a Dunmore counter sells at ×0.9 and pays +10%; the road\'s merchant keeps his price; the next market is a week on, or today\'s at 7', Math.abs(mkt.b1 / mkt.b0 - .9) < .02 && Math.abs(mkt.s1 / mkt.s0 - 1.1) < .03 && mkt.road1 === mkt.road0 && mkt.next.at === 8 * 1440 + 420 && mkt.today.at === 1440 + 420, mkt);
+// S2643: prices by home (#1971 B). A Gatelands-made sword costs ×0.85 at Dunmore's counter and the Mark's Norse sword ×1.2 there, and the counter
+// pays the same; an island herb has its island's home, a sea herb and armour none.
+const home = await page.evaluate(() => { const set = (d, h) => { worldState.gameTimeAbsMinutes = 1440 * d + h * 60; worldState.gameTimeMinutes = h * 60; }; set(2, 10);
+  const ch0 = currentHouse, ii = window.isInterior; currentHouse = { siteId: 'dunmore' }; window.isInterior = () => true;
+  const base = { buyPrice: 100, type: 'equip', sellMult: .4 }, gl = Object.assign({}, base, { make: 'gatelands' }), mk = Object.assign({}, base, { make: 'mark' }), au = Object.assign({}, base, { make: 'aurenne' });
+  const ice = HERB_DEF.icebloom.item, sea = Object.values(HERB_DEF).find(d => d.zone === 'sea'), fm = HERB_DEF.firemoss.item;
+  const o = { plain: [shopCost(base), counterSellPrice(base)], gl: [shopCost(gl), counterSellPrice(gl)], mk: [shopCost(mk), counterSellPrice(mk)], au: [shopCost(au), counterSellPrice(au)],
+    homes: [itemHome(gl), itemHome(mk), itemHome(ice), itemHome(fm), sea ? itemHome(sea.item) : 'none', itemHome({ type: 'equip', slot: 'chest', fam: 'mail' })] };
+  set(1, 10); o.glMarket = shopCost(gl);
+  window.isInterior = ii; currentHouse = ch0; return o; });
+console.log(JSON.stringify(home));
+check('by home: at Dunmore a Gatelands-made piece is ×0.85 to buy and to sell, the Mark\'s and Aurenne\'s ×1.2; Icebloom is the Mark\'s, Firemoss the Gatelands\', a sea herb and armour no one\'s; market day stacks', Math.abs(home.gl[0] / home.plain[0] - .85) < .02 && Math.abs(home.gl[1] / home.plain[1] - .85) < .03 && Math.abs(home.mk[0] / home.plain[0] - 1.2) < .02 && Math.abs(home.au[1] / home.plain[1] - 1.2) < .03 && home.homes.join() === 'gatelands,mark,mark,gatelands,,' && Math.abs(home.glMarket / home.plain[0] - .765) < .02, home);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

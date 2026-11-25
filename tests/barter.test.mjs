@@ -14,11 +14,11 @@ const r = await page.evaluate(() => {
   const rowOf = (sel, name) => [...document.querySelectorAll(sel + ' .sh-row')].find(r => r.textContent.includes(name));
   const buy = (cha) => { ATTRS.charisma = cha; renderShop(); const row = rowOf('#sh-stock', it.name); const g0 = gold; row.onclick();
     if (document.getElementById('qty-modal').style.display === 'flex') qtyPick(1); return { cost: shopCost(it), paid: g0 - gold, row: row.textContent.replace(/\s+/g, ' ').trim() }; };
-  const mul = shopMul();
+  const mul = shopMul(), home = homeMul(it); /* S2643 — prices by home (#1971 B): the counter's own make is ×0.85 at home */
   const b0 = buy(0), b10 = buy(10), b40 = buy(60);
   // sell a copy of the same piece: its row and the gold it pays, at Charisma 0 and 10
   shopTab = 'all';
-  const sell = (cha) => { ATTRS.charisma = cha; const s = { ...it, qty: 1 }; delete s._boughtBack; BAG.push(s); renderShop();
+  const sell = (cha) => { ATTRS.charisma = cha; const s = { ...it, qty: 1, buyPrice: it.buyPrice * 5 }; /* S2643 — a dearer copy: at 16 raw the home's ×0.85 rounded Charisma 10's 5% away */ delete s._boughtBack; BAG.push(s); renderShop();
     const raw = sellPrice(s); const g0 = gold; const rows = [...document.querySelectorAll('#sh-bag .sh-row')];
     rows[rows.length - 1].onclick(); if (document.getElementById('qty-modal').style.display === 'flex') qtyPick(1);
     return { raw, got: gold - g0, inBag: BAG.includes(s) }; };
@@ -26,13 +26,13 @@ const r = await page.evaluate(() => {
   const backs = (merchantStock[_merchantKey()] || []).filter(x => x._boughtBack && x.name === it.name).map(x => x.buyPrice);
   ATTRS.charisma = 60; const backCost = backs.map(b => shopCost({ buyPrice: b, _boughtBack: true }));
   closeShop(); ATTRS.charisma = 0;
-  return { name: it.name, base: it.buyPrice, mul, b0, b10, b40, s0, s10, s40, backs, backCost };
+  return { name: it.name, base: it.buyPrice, mul, home, b0, b10, b40, s0, s10, s40, backs, backCost };
 });
-const want = (p) => Math.max(1, Math.round(r.base * r.mul * (1 - p)));
+const want = (p) => Math.max(1, Math.round(r.base * r.mul * r.home * (1 - p)));
 check('Charisma 0 pays the town’s price', r.b0.paid === r.b0.cost && r.b0.cost === want(0), r.b0);
 check('Charisma 10 pays 5% less, and the row shows what is charged', r.b10.paid === want(.05) && r.b10.paid < r.b0.paid && r.b10.row.includes(String(r.b10.paid)), { b10: r.b10, want: want(.1) });
 check('Charisma 60 is capped at a quarter off', r.b40.paid === want(.25), { b40: r.b40, want: want(.25) });
-check('selling: Charisma 10 is paid 5% more, 60 a quarter more', r.s0.got === r.s0.raw && r.s10.got === Math.round(r.s10.raw * 1.05) && r.s40.got === Math.round(r.s40.raw * 1.25) && r.s10.got > r.s0.got, { s0: r.s0, s10: r.s10, s40: r.s40 });
+check('selling: Charisma 10 is paid 5% more, 60 a quarter more', r.s0.got === Math.max(1, Math.round(r.s0.raw * r.home)) && r.s10.got === Math.round(r.s10.raw * r.home * 1.05) && r.s40.got === Math.round(r.s40.raw * r.home * 1.25) && r.s10.got > r.s0.got, { s0: r.s0, s10: r.s10, s40: r.s40, home: r.home });
 const hub = await page.evaluate(() => { SKILLS.speech = { lv: 0, p: 0 }; const rd = () => { const t = document.getElementById('derived-grid').textContent; const m = /Barter Bonus\s*\+(\d+)%/.exec(t); return m && +m[1]; };
   ATTRS.intelligence = 10; ATTRS.charisma = 0; renderHubAttrs(); const i10 = rd(); ATTRS.intelligence = 0; ATTRS.charisma = 7; renderHubAttrs(); const c7 = rd();
   ATTRS.charisma = 60; renderHubAttrs(); const c40 = rd(); ATTRS.charisma = 0; renderHubAttrs(); return { i10, c7, c40 }; });
