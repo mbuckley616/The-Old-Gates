@@ -181,23 +181,8 @@ export function wProps(M, G, o = {}) {
 // ── the dammer, a body plan for creatures.js: a beaver's body the size of a cart (2.7 m nose to rump, 1.25 m at the back), six short
 // legs (the middle pair under the barrel, a fore's make), a walrus's face (a broad bristled muzzle, small eyes, round ears) and two tusks
 // 40 cm long turned down, a flat tail 0.9 m like a paddle, wet brown fur
-export function dammerPlan() {
-  if (PLANS.dammer) return PLANS.dammer;
-  return PLANS.dammer = { name: 'Dammer', src: 'OG-071 (Nell’s tusked beast; canon §14, six legs)', gaits: ['walk', 'stand'], wag: .02, fold: .5, speedK: .35, rough: .45, spread: .02,
-    palette: { coat: [.4, .28, .17], saddle: [.3, .2, .12], belly: [.48, .37, .25], dark: [.05, .04, .03], horn: [.88, .83, .7], skin: [.28, .2, .16] },
-    fur: { len: .02, layers: 7, sx: 140, sy: 50, droop: .6 },
-    parts: [
-      ['spine', { hip: [.86, -.95], chest: [.9, .62], n: 5, r: [.44, .5, .44], s: [1.12, .9], rump: .3, rumpDrop: .08, front: .18, arch: .06 }],
-      ['neck', { len: .3, n: 2, rise: 16, r: [.38, .3], fwd: .04 }],
-      ['head', { len: .52, r: .25, pitch: 6, s: [1.3, .92, 1], muzzle: { len: 1, r: .2, nose: 1, taper: .9, drop: .04 }, jaw: { len: .62, r: .11, drop: .42 },
-        eyes: [{ f: .34, up: .62, out: .62, r: .028, color: [.03, .02, .02] }], ears: { kind: 'round', size: .045, f: .1, up: .75, out: .85 },
-        horns: { len: .4, r: .035, f: .9, up: -.45, out: .32, turn: .12, rise: -1.9, spread: .04, back: .15, out0: .1, tone: 'horn' } }],
-      ['tail', { len: .9, n: 4, r: [.2, .17], droop: 4, s: [2.4, .3] }],
-      ['legs', { at: 1, kind: 'plantFore', out: .34, drop: .16, r: [.19, .15, .13, .13], claws: { r: .014, len: .06 } }],
-      ['legs', { at: .5, kind: 'plantFore', out: .4, drop: .14, r: [.19, .15, .13, .13], claws: { r: .014, len: .06 } }],
-      ['legs', { at: 0, kind: 'plantHind', out: .36, drop: .1, r: [.23, .17, .14, .14], claws: { r: .014, len: .06 } }]
-    ] };
-}
+// Session 2627 (#1950 B): the dammer's plan now lives in the creature kit (creatures.js PLANS.dammer); this page reads it there
+export function dammerPlan() { return PLANS.dammer; }
 
 // ── set pieces ──
 // a gate's mouth in a hillside (OG-037's V1, small): a turf mound, two rings of dressed stone round a dark slit door 1.2 × 2.3 m, amber

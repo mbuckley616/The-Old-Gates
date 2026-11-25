@@ -2700,4 +2700,24 @@ Object.assign(PLANS, {
       ['arms', { at: 1, out: .11, up: .01, dz: .02, len: .5, r: [.042, .03, .021], dir: [.45, .62, .64], dir2: [-.28, -.52, .81], hook: { r: .013, len: .075, hook: .5, down: 1.6 }, swing: .04 }]
     ] }
 });
+// ── Session 2627 (#1950 B, "half out at the bank"; the concept artist's Session for OG-071, strange2.js): the dammer, Nell's Stump, a river
+// beast of the Mark's black moor that fells alder and dams the becks. A cart-sized body on six short plantigrade legs (canon §14), a walrus's
+// face with two downturned tusks 0.4 m long, small round ears, a flat beaver's tail, a short brown coat. The plan as the concept page drew it,
+// moved into the kit so the game can build it; posed once, at the stand, as Michael chose ──
+Object.assign(PLANS, {
+  dammer: { name: 'Dammer', src: 'OG-071 (Nell’s tusked beast; canon §14, six legs)', gaits: ['walk', 'stand'], wag: .02, fold: .5, speedK: .35, rough: .45, spread: .02,
+    palette: { coat: [.4, .28, .17], saddle: [.3, .2, .12], belly: [.48, .37, .25], dark: [.05, .04, .03], horn: [.88, .83, .7], skin: [.28, .2, .16] },
+    fur: { len: .02, layers: 7, sx: 140, sy: 50, droop: .6 },
+    parts: [
+      ['spine', { hip: [.86, -.95], chest: [.9, .62], n: 5, r: [.44, .5, .44], s: [1.12, .9], rump: .3, rumpDrop: .08, front: .18, arch: .06 }],
+      ['neck', { len: .3, n: 2, rise: 16, r: [.38, .3], fwd: .04 }],
+      ['head', { len: .52, r: .25, pitch: 6, s: [1.3, .92, 1], muzzle: { len: 1, r: .2, nose: 1, taper: .9, drop: .04 }, jaw: { len: .62, r: .11, drop: .42 },
+        eyes: [{ f: .34, up: .62, out: .62, r: .028, color: [.03, .02, .02] }], ears: { kind: 'round', size: .045, f: .1, up: .75, out: .85 },
+        horns: { len: .4, r: .035, f: .9, up: -.45, out: .32, turn: .12, rise: -1.9, spread: .04, back: .15, out0: .1, tone: 'horn' } }],
+      ['tail', { len: .9, n: 4, r: [.2, .17], droop: 4, s: [2.4, .3] }],
+      ['legs', { at: 1, kind: 'plantFore', out: .34, drop: .16, r: [.19, .15, .13, .13], claws: { r: .014, len: .06 } }],
+      ['legs', { at: .5, kind: 'plantFore', out: .4, drop: .14, r: [.19, .15, .13, .13], claws: { r: .014, len: .06 } }],
+      ['legs', { at: 0, kind: 'plantHind', out: .36, drop: .1, r: [.23, .17, .14, .14], claws: { r: .014, len: .06 } }]
+    ] }
+});
 export const CRAWLERS = ['bogcrawler'];

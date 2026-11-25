@@ -2425,8 +2425,8 @@ function hbDriverLook(g,G){const D=G.dress||{},H=G.hair||{};g.dress=hbLongSkirt(
    the kit hats (people.js buildHat): a farmer or a fisher wears the rig's straw hat, a merchant or a trader its brimmed one, in felt with a
    band; a raised hood, a head-wrap or a scarf comes off for it (an eyepatch keeps the hat off). S2517 gave the kit the hoe (people.js
    STAFFS.hoe: a straight ash haft in the staff's walking grip, its iron blade resting on the ground ahead of the foot), so a farmer holds
-   one in the right fist (what the fist held goes) and the driver walks with it as with a staff (pwOpts). Not yet: the priest's hood,
-   whose dress is the Church's to say */
+   one in the right fist (what the fist held goes) and the driver walks with it as with a staff (pwOpts). The priest's dress: S2625 (hbPriestDress);
+   before it, the Church's to say */
 const HB_TRADE_STRIP={cloak:null,cloakFur:null,cloakHem:null,hood:null,cape:null,mantle:null,coat:null,coatFur:null,coatHood:null,burnous:null,
   spear:null,staff:null,crossbow:null,shield:null,sword:null,basket:null,basketCloth:null,lantern:null,book:null,tankard:null,chair:null,backpack:null};
 const HB_TRADE=[
@@ -2442,10 +2442,26 @@ const HB_TRADE=[
   {re:/scholar|adept|novice|evoker|^mage/,strip:{basket:null,basketCloth:null,lantern:null,spear:null,crossbow:null,staff:null,tankard:null,hammer:null},
     dress:{},books:[[.32,.15,.09],[.2,.24,.36],[.36,.3,.2]],specs:[[.62,.5,.3],[.55,.56,.58],[.24,.2,.16]]}];
 function hbTradeDress(g,G){const role=String(g.role||'').toLowerCase();if(/^crew:/.test(g.hbKey||'')||GUARD_ROLE.test(role))return null;
+  if(/^priest$/.test(role))return hbPriestDress(g,G);
   const t=HB_TRADE.find(t=>t.re.test(role));if(!t)return null;const D=G.dress||{},h=pHash((g.hbKey||'')+'|trade')>>>0,pick=A=>A[h%A.length];
   const T=Object.assign({},D,t.strip||HB_TRADE_STRIP,t.dress);if(t.aprons)T.apron=pick(t.aprons);if(t.bleach)hbApronShows(g,T,h);if(t.satchels)T.satchel=pick(t.satchels);
   if(t.purses){T.purses=pick(t.purses);if(!T.belt)T.belt=[.24,.17,.11];}if(t.books)T.book=pick(t.books);if(t.specs&&!T.lenses&&!T.eyepatch)T.specs=pick(t.specs);if(t.hafts)T.staff=t.hafts[(h>>>5)%t.hafts.length];
   if(t.hats){T.hat=pick(t.hats);T.hatBand=t.hatBands?t.hatBands[(h>>>3)%t.hatBands.length]:null;T.wrap=null;T.scarf=false;T.veil=null;if(T.hood==='up')T.hood='down';if(T.coatHood==='up')T.coatHood='down';T.cowl=null;}return T;}
+/* S2625 (#1936 B, "By island, as the canon has the faiths"; L1, the wardrobe matrix's clergy column) — a church's keeper (role `Priest`)
+   dressed by the church's island (g.nation, the cell's), as docs/prototypes/levelup/clergy.js draws it at level b. The Gatelands keep the
+   six gods' temples: a habit of undyed wool to the ground under a moss-green scapular, a rope cord, the cowl, a book in the right fist
+   (Sister Elidan's cut in the temples' own colour). Aurenne's Church of the Weaver: a white robe and scapular with the red shuttle on the
+   breast, a gold cord, sandals, a woman's white head-cloth, the book. The Mark scorns priests: its church's keeper wears what their people
+   rolled and carries the shrine's lamp that is always lit (OG-113), the hands and the cloak cleared as any trade's. The face, the hair and
+   the stature are the people's own roll; only the cloth changes. A robe takes no winter coat and no feast bands (their own rules) */
+const HB_PRIEST={
+  gatelands:{tunic:[.6,.56,.48],robe:[.6,.56,.48],tabard:[.17,.25,.16],tabardLen:.85,cord:[.55,.48,.36],cowl:[.6,.56,.48],boots:[.22,.14,.09],book:[.3,.17,.1]},
+  aurenne:{tunic:[.86,.85,.8],robe:[.86,.85,.8],tabard:[.86,.85,.8],tabardLen:.85,tabardSign:'shuttle',tabardSignCol:[.62,.1,.08],cord:[.74,.56,.2],
+    sandals:[.4,.28,.18],book:[.3,.17,.1]}};
+function hbPriestDress(g,G){const nk=HB_PRIEST[g.nation]?g.nation:g.nation==='mark'?'mark':'gatelands';
+  if(nk==='mark')return Object.assign({},G.dress||{},HB_TRADE_STRIP,{lantern:[.22,.22,.22]});
+  const D=Object.assign(Object.fromEntries((HB.GARMENTS||[]).map(k=>[k,null])),HB.DRESS_FLAGS,{skirt:'long'},JSON.parse(JSON.stringify(HB_PRIEST[nk])));
+  if(nk==='aurenne'&&g.female)D.wrap=[.86,.85,.8];return D;}
 /* S2525 (critic 22 Nov, s1849: "Ruairí's linen apron does not show ... on his tan tunic the bib is the same tan and reads as a fold in the
    shirt", as S2503 had feared for Eoin) — the innkeeper's and the cook's apron is bleached linen now (luminance 0.90-0.93, was 0.67-0.83,
    the old rig's 0xd8d0b8), and it is set on something darker. A light tunic (an undyed one, the Aurennais' cream) is the same linen to

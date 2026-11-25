@@ -699,6 +699,23 @@ const tan = await page.evaluate(() => { const T = hbTradeDress({ role: 'Innkeepe
   return { tunic: T.tunic, dy: +(hbLum(T.apron) - hbLum(T.tunic)).toFixed(2) }; });
 check(`an innkeeper's linen apron stands off the tunic under it (Dunmore ${trade.filter(t => !t.smith).map(t => t.dy).join(', ')}; a tan tunic redyed, ${tan.dy}; at least 0.38)`,
   trade.filter(t => !t.smith).every(t => t.dy >= .38) && tan.dy >= .38 && tan.tunic[0] !== .62, { trade, tan });
+// S2625 (#1936 B): a church's keeper dressed by the church's island. The Gatelands' priest in the undyed habit under the green scapular,
+// the cord, the cowl and the book; Aurenne's in the Church's white with the red shuttle, the gold cord, the book (a woman the head-cloth);
+// the Mark's keeper in their own wool with the shrine's lamp, no robe and no book
+const priests = await page.evaluate(() => { const forget = () => { for (const m of [HB_GENOMES, PEOPLE_GENOMES]) for (const k of [...m.keys()]) if (/ptest_/.test(k)) m.delete(k); };
+  const one = (def, nation, key) => { const root = buildNPCMesh(def, { nation, key }), r = [...HB_RIGS].find(x => x.root === root); HB_RIGS.delete(r); PEOPLE_RIGS.delete && PEOPLE_RIGS.delete(r);
+    const D = r.hbG.dress, P = HB.makePerson(r.hbG, HB_LEAN), has = k => !!P.root.getObjectByName(k);
+    return { nation, people: r.hbG.people, robe: D.robe && D.robe.join(), tabard: D.tabard && D.tabard.join(), sign: D.tabardSign || null, cowl: has('hoodUp'), cord: has('cord'), book: has('bookBlock'),
+      lantern: has('lanternHorn'), wrap: has('wrap'), skirt: has('skirt'), cloak: !!D.cloak }; };
+  forget(); const out = [one({ name: 'Fiachra', role: 'Priest', people: 'gatelander', female: false }, 'gatelands', 'ptest_gl'),
+    one({ name: 'Brigid', role: 'Priest', people: 'oldblood', female: true }, 'gatelands', 'ptest_gl2'),
+    one({ name: 'Alain', role: 'Priest', people: 'aurennais', female: false }, 'aurenne', 'ptest_au'),
+    one({ name: 'Amélie', role: 'Priest', people: 'aurennais', female: true }, 'aurenne', 'ptest_au2'),
+    one({ name: 'Hrafn', role: 'Priest', people: 'markman', female: false }, 'mark', 'ptest_mk')]; forget(); return out; });
+{ const [gl, gl2, au, au2, mk] = priests, habit = p => p.robe === '0.6,0.56,0.48' && p.tabard === '0.17,0.25,0.16' && p.cowl && p.cord && p.book && p.skirt && !p.cloak;
+  check(`a church's keeper is dressed by the island: the Gatelands' habit and green scapular (a Gatelander and an Old Blood woman), Aurenne's white and the shuttle, the Mark's lamp`,
+    habit(gl) && habit(gl2) && au.robe === '0.86,0.85,0.8' && au.sign === 'shuttle' && au.cord && au.book && !au.cowl && !au.wrap && au2.sign === 'shuttle' && au2.wrap &&
+    !mk.robe && !mk.book && mk.lantern && !mk.cloak, priests); }
 // S2504: and the rest of the old rig's trades the kit can draw: an apothecary's satchel, a merchant's two purses at the belt
 const trade2 = await page.evaluate(() => { const rs = [...PEOPLE_RIGS].filter(r => r.hbG && /^dunmore:/.test(r.g.hbKey || '') && /apothecary|merchant/.test(r.g.role || ''));
   return rs.map(r => { const P = HB.makePerson(r.hbG, HB_LEAN), n = k => { let c = 0; P.root.traverse(o => { if (o.name === k) c++; }); return c; };
