@@ -449,6 +449,26 @@ function festivalHere(siteId,at){if(!siteId||typeof siteAnywhere!=='function'||t
     else if(!f&&sn===c.n)f=FESTIVALS.find(q=>q.snow&&q.nation===_festIsle.get(siteId))||null;}
   if(!f)return null;
   const state=festivalState(s,at);return state==='none'?null:{f,state};}
+// S2641 — market day (#1971 B, docs/design/a-towns-day.md): one weekday an island, 7 to 15, in every town, port and city (a
+// village keeps none, nor a town burned, sacked, plagued, abandoned, besieged or occupied). That day every counter in the town
+// sells at ×0.9 and pays +10%. Read from the calendar and the town's flags alone; nothing saved.
+const MARKET={day:{gatelands:'cloch',mark:'beithigh',aurenne:'muir'},from:7,to:15,buy:.9,sell:1.1,kinds:['town','port','city']};
+function marketDayOf(nation){const g=MARKET.day[nation||'gatelands']||MARKET.day.gatelands;return CAL.days.findIndex(d=>d.god===g);}
+function marketOn(siteId,at){try{if(!siteId||typeof siteAnywhere!=='function')return false;const s=siteAnywhere(siteId);if(!s||s.x==null||!MARKET.kinds.includes(s.kind))return false;
+  const now=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0),c=calDay(now),h=(((now%1440)+1440)%1440)/60;
+  if(c.weekday!==marketDayOf(festIsleOf(siteId))||h<MARKET.from||h>=MARKET.to)return false;
+  if(typeof TS==='function'&&typeof FEST_GONE!=='undefined'){const F=TS(s).flags||{};if(FEST_GONE.some(k=>F[k]!=null))return false;}
+  return true;}catch(e){return false;}}
+// the town whose counter you stand at: indoors the house's, outdoors the nearest town's within its pad and 40 m; the road's merchant none
+function counterSiteId(){try{if(typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.roadMul)return null;
+  if(typeof isInterior==='function'&&isInterior())return (typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.siteId)||null;
+  if(activeZoneId!=='world'||typeof SITES==='undefined')return null;let best=null,bd=1e9;
+  for(const t of SITES){if(!MARKET.kinds.includes(t.kind))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}
+  return best?best.id:null;}catch(e){return null;}}
+function marketHere(){const id=counterSiteId();return !!id&&marketOn(id);}
+// the next market day of an island, from now (today's while its hours last), as {at} at 7:00
+function nextMarket(at,nation){const now=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0),d0=Math.floor(Math.max(0,now)/1440),wd=marketDayOf(nation);
+  for(let d=d0;d<d0+CAL.days.length+1;d++){if(calDay(d*1440).weekday!==wd)continue;if(d===d0&&now-d*1440>=MARKET.to*60)continue;return {at:d*1440+MARKET.from*60};}return null;}
 function calOrd(d){return d+((d%10===1&&d%100!==11)?'st':(d%10===2&&d%100!==12)?'nd':(d%10===3&&d%100!==13)?'rd':'th');}
 // S498 — the calendar's own date, *Seaday, the 4th of Reaping* (the Due view, a map note, the hour you wake on the rest slip)
 function calDateLine(at){const c=calDay(at);return `${c.day.name}, the ${calOrd(c.dom)} of ${CAL.monthNames[c.month]}`;}
@@ -1141,8 +1161,8 @@ function armorLinesFor(h){const ln=h&&(h.type==='armor'?'light':(h.type==='misc'
 function capeCounter(){if(typeof cloakOn!=='function'||!cloakOn('cape'))return false;try{const h=typeof currentHouse!=='undefined'&&currentHouse;const t=h&&h.siteId&&siteAnywhere(h.siteId);return !!(t&&nationKeyOf(...cellOf(t.x,t.z))==='aurenne');}catch(e){return false;}}
 // S552 — the fur-lined cloak: stamina +10% in falling snow, or at night above the snowline, in the open world
 function furWarm(){if(!(typeof cloakOn==='function'&&cloakOn('fur'))&&!(typeof _hasBuff==='function'&&_hasBuff('resistCold'))||activeZoneId!=='world')return false; /* S1483 — a tincture's Resist Cold warms as the fur cloak does */try{if(typeof isInterior==='function'&&isInterior())return false;if(WX.type==='snow')return true;return isNight()&&worldH(px,pz)>snowLineAt(px,pz);}catch(e){return false;}}
-function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*(1-barterPct())));}
-function counterSellPrice(it){const sp=sellPrice(it);return sp<=0?0:Math.max(1,Math.round(sp*(1+barterPct())));}
+function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*(marketHere()?MARKET.buy:1)*(1-barterPct())));} /* S2641 — market day ×0.9 */
+function counterSellPrice(it){const sp=sellPrice(it);return sp<=0?0:Math.max(1,Math.round(sp*(marketHere()?MARKET.sell:1)*(1+barterPct())));} /* S2641 — market day +10% */
 function buyItem(it){
   const _cost=shopCost(it); // v80 O — prosperity sets the price
   if(gold<_cost){showMsg('Not enough gold!','#cc4444');return;}

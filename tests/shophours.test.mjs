@@ -64,5 +64,20 @@ const hand = await page.evaluate(() => { const out = {};
 console.log(JSON.stringify(hand));
 const H = Object.values(hand);
 check('at the handover the night man and the day man both make for the gate, and part 2 minutes past the hour', H.length >= 2 && H.some(x => x.day === 'guard') && H.some(x => x.day === 'constable') && H.every(x => x.w.join() === 'beat,gate,gate,hide,hide,gate,gate,beat' && x.d.join() === (x.day === 'constable' ? 'hide,gate,gate,patrol,patrol,gate,gate,hide' : 'beat,gate,gate,patrol,patrol,gate,gate,beat')), hand);
+// S2641: market day (#1971 B). The Gatelands' is Stoneday (days 1, 8, 15 …), 7 to 15, in a town, port or city and not a village or a town
+// under plague; that day a counter in the town sells at ×0.9 and pays +10%, and the road's merchant keeps his own price.
+const mkt = await page.evaluate(() => { const set = (d, h) => { worldState.gameTimeAbsMinutes = 1440 * d + h * 60; worldState.gameTimeMinutes = h * 60; }; const o = {};
+  o.on = [[1, 6.9], [1, 7], [1, 14.9], [1, 15], [8, 10], [2, 10], [3, 10]].map(([d, h]) => { set(d, h); return marketOn('dunmore'); });
+  const vil = SITES.find(t => t.kind === 'village' && isleAt(t.x, t.z) === 'gatelands'); set(1, 10); o.village = !!vil && marketOn(vil.id);
+  const t = siteAnywhere('dunmore'); TS(t).flags.plague = 1; o.plague = marketOn('dunmore'); delete TS(t).flags.plague;
+  o.days = ['gatelands', 'mark', 'aurenne'].map(n => CAL.days[marketDayOf(n)].name);
+  const it = { buyPrice: 100, type: 'misc' }, sell = { buyPrice: 100, type: 'equip', sellMult: .4 }, ch0 = currentHouse, ii = window.isInterior;
+  currentHouse = { siteId: 'dunmore' }; window.isInterior = () => true;
+  set(2, 10); o.b0 = shopCost(it); o.s0 = counterSellPrice(sell); set(1, 10); o.b1 = shopCost(it); o.s1 = counterSellPrice(sell);
+  currentHouse.roadMul = 1.1; o.road1 = shopCost(it); set(2, 10); o.road0 = shopCost(it);
+  window.isInterior = ii; currentHouse = ch0; set(1, 16); o.next = nextMarket(); set(1, 8); o.today = nextMarket(); return o; });
+console.log(JSON.stringify(mkt));
+check('market day: the Gatelands\' on Stoneday from 7 to 15 (the Mark\'s Beastday, Aurenne\'s Seaday), in a town and not a village or under plague', mkt.on.join() === 'false,true,true,false,true,false,false' && !mkt.village && !mkt.plague && mkt.days.join() === 'Stoneday,Beastday,Seaday', mkt);
+check('that day a Dunmore counter sells at ×0.9 and pays +10%; the road\'s merchant keeps his price; the next market is a week on, or today\'s at 7', Math.abs(mkt.b1 / mkt.b0 - .9) < .02 && Math.abs(mkt.s1 / mkt.s0 - 1.1) < .03 && mkt.road1 === mkt.road0 && mkt.next.at === 8 * 1440 + 420 && mkt.today.at === 1440 + 420, mkt);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
