@@ -1897,14 +1897,26 @@
   function ringGateRoad(x,z){const F=ringGateFrame(x,z,ringGateFacing(x,z));for(let lz=-46;lz<=32;lz+=13)for(let lx=-36;lx<=36;lx+=12){const [wx,wz]=F.toW(lx,lz),ri=roadInfo(wx,wz);if(!ri)continue;
       const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,L=Math.hypot(vx,vz)||1;let nx=-vz/L,nz=vx/L;if((x-wx)*nx+(z-wz)*nz<0){nx=-nx;nz=-nz;}return {nx,nz};}return null;}
   // the hill's stamp, from the door's spot: kind 'door' (so the doors keep 22 m past its reach) and natural (no trodden ground in the land's mask)
+  /* Session 2649 (s1963, the critic: Carrigbeg's Silence faced down its hill and the walk up saw only the court's bank) — a flight down the bank on
+     the axis, where the land falls 2 m or more in the 12 m the court eases out over: from the court's front edge (z0) a plane falls at s, the
+     gentlest of 0.35 to 0.9 that meets the bank again (the plane over it, then under it) by 35 m, inside the stamp's 44 m reach, so no gate's
+     place moves. -> null, or { z0, z1 (where the plane meets the bank), s, r (the rise), t (the going), n (treads), half, band, blend } */
+  function ringGateStairPlan(F,y,S){const z0=S.ZF0+S.R0*1.55,ZM=35,r=.18,v=lz=>{const [wx,wz]=F.toW(0,lz);return S.shape(0,lz,landH(wx,wz)-y);};
+    if(v(z0+12)>-2)return null;const V=[];for(let z=z0;z<=ZM+1e-6;z+=.5)V.push([z,v(z)]);
+    for(let s=.35;s<=.9+1e-6;s+=.05){let over=false,z1=null;for(const [z,vv] of V){if(-s*(z-z0)-r>=vv)over=true;else if(over){z1=z;break;}}
+      if(z1===null)continue;const t=r/s,n=Math.floor((z1-z0)/t);if(n<4)continue;return {z0,z1,s:+s.toFixed(2),r,t,n,half:1.7,band:6,blend:5};}
+    return null;}
+  /* the ground over the flight: the plane across a 12 m band, eased into the bank over 5 m either side and over the last 2 m before it meets it */
+  function ringGateStairAt(T,lx,lz,v){if(lz<T.z0||lz>T.z1)return v;const ax=Math.abs(lx);if(ax>=T.band+T.blend)return v;
+    const q=Math.min(1,Math.max(0,(ax-T.band)/T.blend)),e=Math.min(1,Math.max(0,(T.z1-lz)/2)),w=(1-q*q*(3-2*q))*e*e*(3-2*e);return v+(-T.s*(lz-T.z0)-T.r-v)*w;}
   function ringGateStamp(e,x,z,cellK){const S=rgShape(),F=ringGateFrame(x,z,ringGateFacing(x,z)),[cx,cz]=F.toW(0,-7),[yx,yz]=F.toW(0,4),y=landH(yx,yz),g=CHUNK/SEGS,SX=S.R0+5;
-    const SZ0=S.PLATE-5,SZ1=S.FZ+2,cs=[[-SX,SZ0],[SX,SZ0],[-SX,SZ1],[SX,SZ1]].map(([u,v])=>F.toW(u,v));
-    const G={seed:e.seed,x,z,...F,y,lift:false,sink:{x0:Math.min(...cs.map(q=>q[0])),x1:Math.max(...cs.map(q=>q[0])),z0:Math.min(...cs.map(q=>q[1])),z1:Math.max(...cs.map(q=>q[1])),
+    const SZ0=S.PLATE-5,SZ1=S.FZ+2,cs=[[-SX,SZ0],[SX,SZ0],[-SX,SZ1],[SX,SZ1]].map(([u,v])=>F.toW(u,v)),ST=ringGateStairPlan(F,y,S);
+    const G={seed:e.seed,x,z,...F,y,lift:false,stair:ST,sink:{x0:Math.min(...cs.map(q=>q[0])),x1:Math.max(...cs.map(q=>q[0])),z0:Math.min(...cs.map(q=>q[1])),z1:Math.max(...cs.map(q=>q[1])),
       at:(wx,wz)=>{const [lx,lz]=F.toL(wx,wz);return Math.abs(lx)<=SX&&lz>=SZ0&&lz<=SZ1;}}};
     const lat=v=>Math.abs(v-Math.round(v/g)*g)<1e-3,K=G.sink;
     G.stamp=addStamp({id:'door_'+e.seed,kind:'door',ring:true,natural:true,x:cx,z:cz,r:44,blend:0,y,cell:cellK,
-      inside:(wx,wz)=>{const [lx,lz]=F.toL(wx,wz);return S.foot(lx,lz)>0||S.court(lx,lz)>0;},
-      fn:(wx,wz,h)=>{if(!G.lift&&wx>=K.x0&&wx<=K.x1&&wz>=K.z0&&wz<=K.z1&&lat(wx)&&lat(wz)&&K.at(wx,wz))return y-RG_SINK;const [lx,lz]=F.toL(wx,wz);return y+S.shape(lx,lz,h-y);}});
+      inside:(wx,wz)=>{const [lx,lz]=F.toL(wx,wz);return S.foot(lx,lz)>0||S.court(lx,lz)>0||!!ST&&lz>=ST.z0&&lz<=ST.z1&&Math.abs(lx)<ST.band+ST.blend;},
+      fn:(wx,wz,h)=>{if(!G.lift&&wx>=K.x0&&wx<=K.x1&&wz>=K.z0&&wz<=K.z1&&lat(wx)&&lat(wz)&&K.at(wx,wz))return y-RG_SINK;const [lx,lz]=F.toL(wx,wz),v=S.shape(lx,lz,h-y);return y+(ST?ringGateStairAt(ST,lx,lz,v):v);}});
     /* the far sheet (32 m a step, 3 m under the near ground) would cross the rings: every far point within a step of the rings' box goes under the court (farSinkHoles' farR) */
     {const bx=S.R0+1,b0=S.PLATE-1,b1=S.FZ+1,[hx,hz]=F.toW(0,(b0+b1)/2);G.farHole=addStamp({id:'door_'+e.seed+'_far',kind:'farhole',noFlat:true,natural:true,farR:true,x:hx,z:hz,r:Math.hypot(bx,(b1-b0)/2)+1,blend:0,y,cell:cellK,
       inside:(wx,wz)=>{const [lx,lz]=F.toL(wx,wz);return Math.abs(lx)<=bx&&lz>=b0&&lz<=b1;}});}
@@ -1964,7 +1976,7 @@
   function placeRingGates(c,k){const out=[];if(!RING_GATES.size)return out;const S=rgShape();if(c.doors.some(e=>e.ring))try{farSinkUnder();}catch(err){console.warn('ring gate far',err);} /* the far sheets built before the rings' holes */
     for(const e of c.doors){if(!e.ring||!dungeonWorldPos[e.seed])continue;const G=RING_GATES.get(e.seed);if(!G)continue;
       const cond=(typeof GATE_CONDS!=='undefined'&&GATE_CONDS.includes(e.cond))?e.cond:gateCondRoll(e.seed),gl=(lx,lz)=>ringGateLifted(G,...G.toW(lx,lz))-G.y;
-      const K=PKIT.places.gatemouth({key:'gate:'+e.seed,cond,ground:gl}),LB=ringGateLaid(G);K.group.rotation.y=G.ry;const F=ringGateFar(K,LB);
+      const K=PKIT.places.gatemouth({key:'gate:'+e.seed,cond,ground:gl,stair:G.stair}),LB=ringGateLaid(G);K.group.rotation.y=G.ry;const F=ringGateFar(K,LB);
       K.group.rotation.y=G.ry;K.group.name='ring gate near';const lm=new THREE.Mesh(LB.geo,terrainMat);lm.name='ring gate ground';lm.receiveShadow=true;
       const near=new THREE.Group();near.add(K.group,lm);const LD=new THREE.LOD();LD.name='ringGate';LD.position.set(G.ox,G.y,G.oz);LD.addLevel(near,0);LD.addLevel(F.mesh,RG_LOD,.05);sc.add(LD);
       for(const b of K.sol){const [wx,wz]=G.toW(b.x,b.z);STATIC_SOL.push({cx:wx,cz:wz,rx:b.w/2,rz:b.d/2,c:G.co,s:G.s,top:G.y+b.h,ringGate:e.seed});}
@@ -1973,7 +1985,9 @@
       const courtX=S.R0*.95,cz0=S.ZF0+.4,cz1=S.ZF0+S.R0*.85;
       offroadPatchDrop('gate_'+e.seed);const R=LB.rect;OFFROAD_PATCHES.push({id:'gate_'+e.seed,x:G.ox,z:G.oz,y:G.y,co:G.co,s:G.s,x0:R.x0,x1:R.x1,z0:R.z0,z1:R.z1,R2:(Math.hypot(Math.max(-R.x0,R.x1),Math.max(-R.z0,R.z1))+1)**2,
         ground:(lx,lz)=>{if(inTube(lx,lz)&&jumpY<crown)return 0;const h=gl(lx,lz);return Math.abs(lx)<courtX&&lz>cz0&&lz<cz1?Math.max(h,.01):h;}});
-      Object.assign(G,{cond,group:LD,kit:{tris:K.tris,draws:K.draws,counts:K.counts,lost:K.lost.length,hung:K.hung.length,sol:K.sol.length},laid:{tris:LB.tris,...LB.squares},far:{tris:F.tris,draws:F.draws},door:K.door,floors,plate:K.plate,face:K.face});
+      offroadPatchDrop('gatestair_'+e.seed);if(K.stair){const T=G.stair,z1=T.z0+T.n*T.t; /* the flight walked half a rise over the plane its nosings lie on: the treads stand 0 to a rise over it */
+        OFFROAD_PATCHES.push({id:'gatestair_'+e.seed,x:G.ox,z:G.oz,y:G.y,co:G.co,s:G.s,x0:-T.half,x1:T.half,z0:T.z0,z1,R2:(Math.hypot(T.half,z1)+1)**2,ground:(lx,lz)=>Math.max(-T.s*(lz-T.z0)-T.r*.5,gl(lx,lz))});}
+      Object.assign(G,{cond,group:LD,kit:{tris:K.tris,draws:K.draws,counts:K.counts,lost:K.lost.length,hung:K.hung.length,sol:K.sol.length},laid:{tris:LB.tris,...LB.squares},flight:K.stair,far:{tris:F.tris,draws:F.draws},door:K.door,floors,plate:K.plate,face:K.face});
       out.push(LD);}
     return out;}
   // a ring gate is drawn while a chunk under its sunk points stands: the laid ground covers the world's pit there, and past the chunks' reach
