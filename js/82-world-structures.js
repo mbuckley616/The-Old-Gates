@@ -674,7 +674,7 @@
       for(let i=MILLS.length-1;i>=0;i--)if(MILLS[i].id===m.id)MILLS.splice(i,1);MILLS.push(m);out.push(K.group);}
     return out;}
   // the sails turn, about a turn every eight seconds, while the mill is in the scene
-  function tickMills(dt){ringGateShow(); /* S2633 — and the ring gates drawn only where their chunks stand */for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);if(m.spinFar)m.spinFar.rotation.z=m.spin.rotation.z;}}
+  function tickMills(dt){ringGateShow(); /* S2633 — and the ring gates drawn only where their chunks stand */tickLighthouses(); /* S2635 — and the lighthouses' lamps by the clock */for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);if(m.spinFar)m.spinFar.rotation.z=m.spin.rotation.z;}}
   // S2629 (QA's S2628, section I: six mills in view put Dunmore's street at 743 calls at Low, 78 of them the mills') — a mill's far copy:
   // the kit's own meshes baked into two vertex-coloured meshes on VC_MAT, the tower, cap and yard in one and the sails in the other, on an
   // axle and spin of their own so they still turn. The same triangles, 2 draws in place of 13, shadows kept. -> { group, spin, tris, draws }
@@ -687,6 +687,66 @@
     const b=mk(body,VC_MAT);b.name='mill far body';G.add(b);const ax=K.spin.parent,axle=new THREE.Group(),spin=new THREE.Group();axle.position.copy(ax.position);axle.quaternion.copy(ax.quaternion);
     axle.add(spin);G.add(axle);const sm=mk(sails,MILL_FAR_SAIL.m||(MILL_FAR_SAIL.m=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide})));sm.name='mill far sails';sm.castShadow=true;spin.add(sm);
     const tris=Math.round((b.geometry.attributes.position.count+sm.geometry.attributes.position.count)/3);return {group:G,spin,tris,draws:2};}
+  // S2635 (Michael's A on #1983: "by what each serves, the windmill and the lighthouse first"; the question's A: "a lighthouse on the
+  // nearest point of shore to each port within a kilometre"; OG-046, OG-058) — the Gatelands' lighthouse (PKIT.places.lighthouse,
+  // places.js's gatelandsLighthouse) on the shore by each Gatelands port. Read by place (withPlace over the port), by its own stream
+  // (lighthouse:<site>, which turns the bearings): rings from 70 m past its pad out to 1,000 m, 10 m apart, 64 bearings each, inside its cell (20 m off the edge), where the land stands 3 to
+  // 40 m over the sea and within 1.5 m of the spot's 6 m round, the sea (the bare land under 0) on at least 4 of 16 bearings 32 m out and
+  // the land under the yard (16 m back from the sea) over 1.5 m; 60 m off every pad, 60 m off every door, 25 m off the line of every road,
+  // 30 m off every lake's rim and 50 m off every mill. The first found, the nearest ring to the port, wins. Its lantern faces the sea (the kit's +z down the
+  // middle of the sea's bearings), its cottage landward; the headland level at the higher of the tower's ground and the yard's, so it stands on a rise and never in a dip. -> [{ id, x, z, y, ry, site, sea }] kept on the cell (c._lights); none on the old look
+  function lighthousesAt(c){
+    if(c._lights!==undefined)return c._lights;c._lights=[];
+    if(c.type==='sea'||c.home||window.OG_LOOK!=='new'||window.OG_KIT_TOWNS===false||typeof PKIT==='undefined'||!PKIT.places||!PKIT.places.lighthouse)return c._lights;
+    if(nationKeyOf(c.i,c.j)!=='gatelands')return c._lights;
+    const byId={};for(const t of c.sites)byId[t.id]=t;const lakes=[];for(let j=c.j-1;j<=c.j+1;j++)for(let i=c.i-1;i<=c.i+1;i++){const n=getCell(i,j);if(n&&n.lakes)lakes.push(...n.lakes);}
+    const segD=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-dx*t,z-a.z-dz*t);};
+    const mills=millsAt(c);
+    for(const t of c.sites){if(t.kind!=='port')continue;const a0=PKIT.stream('lighthouse:'+t.id)()*Math.PI*2/64;let best=null;
+      withPlace(t.x,t.z,()=>{for(let d=(t.pad||0)+70;d<=1000&&!best;d+=10)for(let n=0;n<64&&!best;n++){const a=a0+n/64*Math.PI*2,x=t.x+Math.sin(a)*d,z=t.z+Math.cos(a)*d;
+        if(x<c.ox+20||x>c.ox+SIZE-20||z<c.oz+20||z>c.oz+SIZE-20)continue;
+        if(c.sites.some(s=>Math.hypot(s.x-x,s.z-z)<(s.pad||0)+60)||c.doors.some(e=>Math.hypot(e.x-x,e.z-z)<60)||mills.some(m=>Math.hypot(m.x-x,m.z-z)<50))continue;
+        if(c.roadDefs.some(q=>byId[q.a]&&byId[q.b]&&segD(x,z,byId[q.a],byId[q.b])<25)||lakes.some(l=>Math.hypot(l.x-x,l.z-z)<(l.r||60)+30))continue;
+        const h=rawH(x,z);if(h<3||h>40)continue;let ok=true;for(let k=0;k<8&&ok;k++){const b=k/8*Math.PI*2;if(Math.abs(rawH(x+Math.sin(b)*6,z+Math.cos(b)*6)-h)>1.5)ok=false;}if(!ok)continue;
+        let sx=0,sz=0,ns=0;for(let k=0;k<16;k++){const b=k/16*Math.PI*2;if(rawH(x+Math.sin(b)*32,z+Math.cos(b)*32)<0){sx+=Math.sin(b);sz+=Math.cos(b);ns++;}}
+        if(ns<4||Math.hypot(sx,sz)<.5)continue;const g=Math.hypot(sx,sz),fx=sx/g,fz=sz/g;
+        if(rawH(x-fx*16,z-fz*16)<1.5||rawH(x-fx*20-fz*6,z-fz*20+fx*6)<1.5||rawH(x-fx*20+fz*6,z-fz*20-fx*6)<1.5)continue;
+        const hy=Math.max(h,rawH(x-fx*9.5,z-fz*9.5));best={x:+x.toFixed(2),z:+z.toFixed(2),y:+hy.toFixed(2),ry:+Math.atan2(fx,fz).toFixed(4),d,sea:ns};}});
+      if(!best)continue;const {d,...L}=best;c._lights.push({id:`light_${t.id}`,...L,site:t.id,far:+d.toFixed(1)});}
+    return c._lights;}
+  // a lighthouse's frame: local (lx, lz), +z to the sea, to the world and back
+  function lightFrame(L){const s=Math.sin(L.ry),co=Math.cos(L.ry);return {toW:(lx,lz)=>[L.x+lx*co+lz*s,L.z-lx*s+lz*co]};}
+  // its headland: the tower's pad level 5 m round, easing over 6; the yard's level 11 m round its middle (10 m landward), easing over 6; a
+  // clearing of 24 m over the whole and open turf to 45 m (the cell's first step, so the chunks are built with them)
+  function lighthouseStamps(c,k){return lighthousesAt(c).flatMap(L=>{const F=lightFrame(L),[yx,yz]=F.toW(-1,-9.5),[cx,cz]=F.toW(0,-8);
+    return [addStamp({id:L.id+'_pad',kind:'door',x:L.x,z:L.z,r:5,blend:6,y:L.y,cell:k}),addStamp({id:L.id+'_yard',kind:'door',x:yx,z:yz,r:11,blend:6,y:L.y,cell:k}),
+      addStamp({id:L.id+'_clear',kind:'door',noFlat:true,x:cx,z:cz,r:24,blend:2,y:L.y,cell:k}),addStamp({id:L.id+'_turf',kind:'graze',noFlat:true,x:cx,z:cz,r:45,blend:0,y:L.y,cell:k})];});} /* and its headland kept open turf 45 m round (a pasture's one tree in twelve, as the mill's fields), so the tower reads from the sea and the shore */
+  // the lighthouses built on their headlands in a THREE.LOD (near as drawn, far one baked mesh and the lamp from LIGHT_LOD); the tower solid
+  // (two boxes, square and turned 45°, its round), the cottage's and the yard wall's; the lamp lit from dusk to dawn by tickLighthouses
+  const LIGHTS=[],LIGHT_LOD=70;
+  function placeLighthouses(c,k){const out=[];for(const L of lighthousesAt(c)){const y=worldH(L.x,L.z),F=lightFrame(L),co=Math.cos(L.ry),s_=Math.sin(L.ry);
+      const K=PKIT.places.lighthouse({key:L.id,ground:(lx,lz)=>worldH(...F.toW(lx,lz))-y}),Fa=lightFar(K),LD=new THREE.LOD();
+      K.group.name='lighthouse near';LD.name='lighthouse';LD.position.set(L.x,y,L.z);LD.rotation.y=L.ry;LD.addLevel(K.group,0);LD.addLevel(Fa.group,LIGHT_LOD+12,.05);sc.add(LD);
+      for(const a of [0,Math.PI/4])STATIC_SOL.push({cx:L.x,cz:L.z,rx:K.tower.r0,rz:K.tower.r0,c:Math.cos(L.ry+a),s:Math.sin(L.ry+a),h:K.tower.h});
+      for(const b of K.sol){const [wx,wz]=F.toW(b.x,b.z);STATIC_SOL.push({cx:wx,cz:wz,rx:b.w/2,rz:b.d/2,c:Math.cos(L.ry+b.ry),s:Math.sin(L.ry+b.ry),h:b.h});}
+      L.y=y;L.kit={tris:K.tris,draws:K.draws,top:K.top,focal:K.focal,door:K.door,cottage:K.cottage,sol:K.sol.length+2,farTris:Fa.tris,farDraws:Fa.draws};L.group=LD;
+      for(let i=LIGHTS.length-1;i>=0;i--)if(LIGHTS[i].id===L.id)LIGHTS.splice(i,1);LIGHTS.push(L);out.push(LD);}
+    return out;}
+  // the far copy: every mesh but the glazing and the lens baked into one vertex-coloured mesh on VC_MAT (each coloured by its material, ×0.85
+  // where it carries a texture), and the lamp kept on its own material, three times its size, so the light still shows far out by night
+  function lightFar(K){const G=new THREE.Group(),body=[],tint=m=>(m&&m.color?m.color.clone():new THREE.Color(0x999999)).multiplyScalar(m&&m.map?.85:1);G.name='lighthouse far';let lamp=null;
+    K.group.updateMatrixWorld(true);const inv=K.group.matrixWorld.clone().invert();
+    K.group.traverse(o=>{if(!o.isMesh)return;if(o.name==='glass'||o.name==='lens')return;if(o.name==='lamp'&&o.parent===K.group){lamp=o;return;}const mt=Array.isArray(o.material)?o.material[0]:o.material;
+      const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry;body.push([g,inv.clone().multiply(o.matrixWorld),tint(mt),g!==o.geometry]);});
+    const b=new THREE.Mesh(mergeGeos(body),VC_MAT);body.forEach(([g,,,tmp])=>{if(tmp)g.dispose();});b.castShadow=true;b.receiveShadow=true;b.name='lighthouse far body';G.add(b);
+    let tris=Math.round(b.geometry.attributes.position.count/3),draws=1;
+    if(lamp){const l=new THREE.Mesh(lamp.geometry,lamp.material);l.name='lighthouse far lamp';const f=K.focal;l.scale.setScalar(3);l.position.set(-f[0]*2,-f[1]*2,-f[2]*2); /* the lamp's geometry is baked at the focal point: scaled about it */
+      G.add(l);tris+=Math.round(lamp.geometry.attributes.position.count/3);draws++;}
+    return {group:G,tris,draws};}
+  // the lamps burn from dusk to dawn (lit at 19h, out at 7h), read from the clock; one shared material, so one switch for every lighthouse
+  let LIGHT_ON=null;
+  function tickLighthouses(){if(!LIGHTS.length||!PKIT.places.lighthouseLit)return;for(let i=LIGHTS.length-1;i>=0;i--)if(!LIGHTS[i].group.parent)LIGHTS.splice(i,1);
+    const h=typeof gameHour==='function'?gameHour():12,on=h>=19||h<7;if(on!==LIGHT_ON){LIGHT_ON=on;PKIT.places.lighthouseLit(on);}}
   // S1828 (card F8; Michael's A on #335, "a road", and his A on #1096, "inland, under a ridge beside a road") — Aurenne's trade tunnels
   // (PKIT.au.tunnel, places.js's aurenneTunnel): the road's short way under a hill, a bore of 56 m with a portal each side of the ridge
   // beside one of the cell's roads. Every Aurenne cell whose land holds one keeps one. Read by place (withPlace over the cell's middle, the

@@ -570,5 +570,24 @@ console.log(JSON.stringify({ ml, mm }));
 check(`S2621: ${ml.n} of ${ml.vil} Gatelands villages keep a mill, each 150 to 400 m out, the same when asked again`, ml.n > 5 && ml.n < ml.vil * .55 && ml.same && ml.ring, ml);
 check(`S2621: the nearest mill (${mm && mm.kit && mm.kit.tris} triangles in ${mm && mm.kit && mm.kit.draws} draws) on its knoll, its tower solid and its path open, its sails ${mm && mm.kit && mm.kit.tipLow} m over the ground at their lowest and turning, no tree within 16 m`, mm && !mm.none && mm.kit.draws <= 14 && mm.kit.tris < 6000 && Math.abs(mm.ground) < .05 && mm.tower && !mm.path && mm.kit.tipLow > 2 && mm.turned && mm.trees === 0, mm);
 check(`S2629: the mill's far copy (${mm && mm.kit && mm.kit.farTris} triangles in ${mm && mm.kit && mm.kit.farDraws} draws) shown past ${mm && mm.lod && mm.lod.levels && mm.lod.levels[1]} m, the drawn mill near, its sails turned with the near ones`, mm && mm.kit && mm.kit.farDraws === 2 && Math.abs(mm.kit.farTris - mm.kit.tris) <= 2 && mm.lod.levels && mm.lod.levels.length === 2 && mm.lod.sw && mm.lod.sw.far && mm.lod.sw.near && mm.lod.spun, mm && { kit: mm.kit, lod: mm.lod });
+// Session 2635 (Michael's A on #1983, the lighthouse second): the Gatelands' lighthouse on the nearest high shore within a kilometre of each
+// port (lighthousesAt, 82; PKIT.places.lighthouse): the same when asked again, on its level headland facing the sea, its tower and cottage
+// solid and the path between them open, its far copy past LIGHT_LOD, its lamp lit at night and out by day
+const lh = await page.evaluate(() => { const G = [...CELLS.values()].filter(c => c.type !== 'sea' && !c.home && nationKeyOf(c.i, c.j) === 'gatelands'); let ports = 0; G.forEach(c => ports += c.sites.filter(t => t.kind === 'port').length);
+  const M = G.flatMap(c => lighthousesAt(c)), again = G.flatMap(c => { const k = c._lights; delete c._lights; const r = lighthousesAt(c); c._lights = k; return r; });
+  const same = M.length === again.length && M.every((m, i) => m.x === again[i].x && m.z === again[i].z && m.ry === again[i].ry);
+  const ring = M.every(m => m.far <= 1000 && m.sea >= 4);
+  M.sort((a, b) => Math.hypot(a.x - px, a.z - pz) - Math.hypot(b.x - px, b.z - pz)); const m0 = M[0]; return { ports, n: M.length, same, ring, near: m0 && { id: m0.id, x: m0.x, z: m0.z, ry: m0.ry } }; });
+if (lh.near) { await page.evaluate(m => WORLD.enter(m.x - Math.sin(m.ry) * 30, m.z - Math.cos(m.ry) * 30, 0, 'test'), lh.near); for (let n = 0; n < 8; n++) { await g.cells(); if (await page.evaluate(id => LIGHTS.some(m => m.id === id), lh.near.id)) break; await page.waitForTimeout(1000); } await g.spin(null, 30); }
+const lm = !lh.near ? null : await page.evaluate(id => { const m = LIGHTS.find(m => m.id === id); if (!m) return { none: true }; const co = Math.cos(m.ry), s = Math.sin(m.ry), W = (u, v) => [m.x + u * co + v * s, m.z - u * s + v * co];
+  const L = m.group, C = CAM.clone(), w = new THREE.Vector3(); L.getWorldPosition(w); C.position.set(w.x + 300, w.y + 10, w.z); C.updateMatrixWorld(); L.update(C); const far = L.levels[1].object.visible && !L.levels[0].object.visible;
+  C.position.set(w.x + 20, w.y + 2, w.z); C.updateMatrixWorld(); L.update(C); const near = L.levels[0].object.visible && !L.levels[1].object.visible;
+  const lamp = () => { let e = null; L.levels[0].object.traverse(o => { if (o.name === 'lamp') e = o.material.emissiveIntensity; }); return e; };
+  forceTime(23); tickLighthouses(); const night = lamp(); forceTime(12); tickLighthouses(); const day = lamp();
+  return { kit: m.kit, levels: L.levels.map(l => +l.distance.toFixed(1)), far, near, night, day, ground: +(worldH(m.x, m.z) - m.y).toFixed(2), yard: +(worldH(...W(-1, -9.5)) - m.y).toFixed(2),
+    tower: solidAt(...W(2.5, 0)), cottage: solidAt(...W(-2.5, -15)), path: solidAt(...W(-.5, -7)), sea: +worldH(...W(0, 32)).toFixed(2) }; }, lh.near.id);
+console.log(JSON.stringify({ lh, lm }));
+check(`S2635: ${lh.n} of ${lh.ports} Gatelands ports keep a lighthouse within a kilometre, over the sea, the same when asked again`, lh.n > 5 && lh.n <= lh.ports && lh.same && lh.ring, lh);
+check(`S2635: the nearest lighthouse (${lm && lm.kit && lm.kit.tris} triangles in ${lm && lm.kit && lm.kit.draws} draws; far ${lm && lm.kit && lm.kit.farTris} in ${lm && lm.kit && lm.kit.farDraws}) level on its headland, the sea before it, its tower and cottage solid and the path open, its lamp lit at night only`, lm && !lm.none && lm.kit.draws <= 30 && lm.kit.tris < 30000 && lm.kit.farDraws <= 2 && Math.abs(lm.ground) < .05 && Math.abs(lm.yard) < .3 && lm.sea < 1 && lm.tower && lm.cottage && !lm.path && lm.far && lm.near && lm.night > 1 && lm.day === 0, lm);
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 5));
 await g.close();

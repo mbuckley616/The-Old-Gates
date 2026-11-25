@@ -606,6 +606,7 @@
            try{const cs=weaverDoorStamps(c,k);if(cs.length)L.stamps.push(...cs);}catch(e){console.warn('weaver door',e);} /* S1782 — a Weaver door's clearing */
            try{const cs=tunnelStamps(c,k);if(cs.length){L.stamps.push(...cs);refreshChunksNearWater(cs);}}catch(e){console.warn('tunnel',e);} /* S1828 — a trade tunnel's two portals */
            try{const cs=millStamps(c,k);if(cs.length){L.stamps.push(...cs);refreshChunksNearWater(cs);}}catch(e){console.warn('mill',e);} /* S2621 — a village's mill on its knoll */
+           try{const cs=lighthouseStamps(c,k);if(cs.length){L.stamps.push(...cs);refreshChunksNearWater(cs);}}catch(e){console.warn('lighthouse',e);} /* S2635 — a port's lighthouse on its headland */
            try{const cs=waysideStamps(c,k);if(cs.length){L.stamps.push(...cs);refreshChunksNearWater(cs);}}catch(e){console.warn('wayside',e);} /* S2007 — a place by the road's pad and clearings */
            try{const cs=offroadStamps(c,k);if(cs.length){L.stamps.push(...cs);refreshChunksNearWater(cs);}}catch(e){console.warn('offroad',e);} /* S2038 — a place off the road's stance and clearing */
            try{const cs=buttsLaneStamps(c,k);if(cs.length){L.stamps.push(...cs);refreshChunksNearWater(cs);}}catch(e){console.warn('butts lane',e);} /* S2331 — Riverfair's butts' lane cleared (#1672 A) */
@@ -629,6 +630,7 @@
       ()=>track(()=>buildImpostorsFor(c)),
       ()=>{try{track(()=>placeTunnel(c,k));}catch(e){console.warn('tunnel',e);}}, /* S1828 — a trade tunnel's portals (after the statics, so its solids are the cell's too) */
       ()=>{try{track(()=>placeMills(c,k));}catch(e){console.warn('mill',e);}}, /* S2621 — the villages' mills */
+      ()=>{try{track(()=>placeLighthouses(c,k));}catch(e){console.warn('lighthouse',e);}}, /* S2635 — the ports' lighthouses */
       ()=>track(()=>buildFarFor(c)),
       ()=>{for(let n=solStart;n<STATIC_SOL.length;n++)if(STATIC_SOL[n].cell==null)STATIC_SOL[n].cell=k; /* S2288 — a solid that names its cell keeps it (a bridge redrawn while another cell loads) */L.pending=false;if(c.home)homeLoaded();},
     ];
