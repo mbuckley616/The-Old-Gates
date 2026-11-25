@@ -64,7 +64,7 @@ const hand = await page.evaluate(() => { const out = {};
 console.log(JSON.stringify(hand));
 const H = Object.values(hand);
 check('at the handover the night man and the day man both make for the gate, and part 2 minutes past the hour', H.length >= 2 && H.some(x => x.day === 'guard') && H.some(x => x.day === 'constable') && H.every(x => x.w.join() === 'beat,gate,gate,hide,hide,gate,gate,beat' && x.d.join() === (x.day === 'constable' ? 'hide,gate,gate,patrol,patrol,gate,gate,hide' : 'beat,gate,gate,patrol,patrol,gate,gate,beat')), hand);
-// S2641: market day (#1971 B). The Gatelands' is Stoneday (days 1, 8, 15 …), 7 to 15, in a town, port or city and not a village or a town
+// S2642: market day (#1971 B). The Gatelands' is Stoneday (days 1, 8, 15 …), 7 to 15, in a town, port or city and not a village or a town
 // under plague; that day a counter in the town sells at ×0.9 and pays +10%, and the road's merchant keeps his own price.
 const mkt = await page.evaluate(() => { const set = (d, h) => { worldState.gameTimeAbsMinutes = 1440 * d + h * 60; worldState.gameTimeMinutes = h * 60; }; const o = {};
   o.on = [[1, 6.9], [1, 7], [1, 14.9], [1, 15], [8, 10], [2, 10], [3, 10]].map(([d, h]) => { set(d, h); return marketOn('dunmore'); });
@@ -79,5 +79,17 @@ const mkt = await page.evaluate(() => { const set = (d, h) => { worldState.gameT
 console.log(JSON.stringify(mkt));
 check('market day: the Gatelands\' on Stoneday from 7 to 15 (the Mark\'s Beastday, Aurenne\'s Seaday), in a town and not a village or under plague', mkt.on.join() === 'false,true,true,false,true,false,false' && !mkt.village && !mkt.plague && mkt.days.join() === 'Stoneday,Beastday,Seaday', mkt);
 check('that day a Dunmore counter sells at ×0.9 and pays +10%; the road\'s merchant keeps his price; the next market is a week on, or today\'s at 7', Math.abs(mkt.b1 / mkt.b0 - .9) < .02 && Math.abs(mkt.s1 / mkt.s0 - 1.1) < .03 && mkt.road1 === mkt.road0 && mkt.next.at === 8 * 1440 + 420 && mkt.today.at === 1440 + 420, mkt);
+// S2643: prices by home (#1971 B). A Gatelands-made sword costs ×0.85 at Dunmore's counter and the Mark's Norse sword ×1.2 there, and the counter
+// pays the same; an island herb has its island's home, a sea herb and armour none.
+const home = await page.evaluate(() => { const set = (d, h) => { worldState.gameTimeAbsMinutes = 1440 * d + h * 60; worldState.gameTimeMinutes = h * 60; }; set(2, 10);
+  const ch0 = currentHouse, ii = window.isInterior; currentHouse = { siteId: 'dunmore' }; window.isInterior = () => true;
+  const base = { buyPrice: 100, type: 'equip', sellMult: .4 }, gl = Object.assign({}, base, { make: 'gatelands' }), mk = Object.assign({}, base, { make: 'mark' }), au = Object.assign({}, base, { make: 'aurenne' });
+  const ice = HERB_DEF.icebloom.item, sea = Object.values(HERB_DEF).find(d => d.zone === 'sea'), fm = HERB_DEF.firemoss.item;
+  const o = { plain: [shopCost(base), counterSellPrice(base)], gl: [shopCost(gl), counterSellPrice(gl)], mk: [shopCost(mk), counterSellPrice(mk)], au: [shopCost(au), counterSellPrice(au)],
+    homes: [itemHome(gl), itemHome(mk), itemHome(ice), itemHome(fm), sea ? itemHome(sea.item) : 'none', itemHome({ type: 'equip', slot: 'chest', fam: 'mail' })] };
+  set(1, 10); o.glMarket = shopCost(gl);
+  window.isInterior = ii; currentHouse = ch0; return o; });
+console.log(JSON.stringify(home));
+check('by home: at Dunmore a Gatelands-made piece is ×0.85 to buy and to sell, the Mark\'s and Aurenne\'s ×1.2; Icebloom is the Mark\'s, Firemoss the Gatelands\', a sea herb and armour no one\'s; market day stacks', Math.abs(home.gl[0] / home.plain[0] - .85) < .02 && Math.abs(home.gl[1] / home.plain[1] - .85) < .03 && Math.abs(home.mk[0] / home.plain[0] - 1.2) < .02 && Math.abs(home.au[1] / home.plain[1] - 1.2) < .03 && home.homes.join() === 'gatelands,mark,mark,gatelands,,' && Math.abs(home.glMarket / home.plain[0] - .765) < .02, home);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

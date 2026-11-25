@@ -449,7 +449,7 @@ function festivalHere(siteId,at){if(!siteId||typeof siteAnywhere!=='function'||t
     else if(!f&&sn===c.n)f=FESTIVALS.find(q=>q.snow&&q.nation===_festIsle.get(siteId))||null;}
   if(!f)return null;
   const state=festivalState(s,at);return state==='none'?null:{f,state};}
-// S2641 — market day (#1971 B, docs/design/a-towns-day.md): one weekday an island, 7 to 15, in every town, port and city (a
+// S2642 — market day (#1971 B, docs/design/a-towns-day.md): one weekday an island, 7 to 15, in every town, port and city (a
 // village keeps none, nor a town burned, sacked, plagued, abandoned, besieged or occupied). That day every counter in the town
 // sells at ×0.9 and pays +10%. Read from the calendar and the town's flags alone; nothing saved.
 const MARKET={day:{gatelands:'cloch',mark:'beithigh',aurenne:'muir'},from:7,to:15,buy:.9,sell:1.1,kinds:['town','port','city']};
@@ -466,6 +466,18 @@ function counterSiteId(){try{if(typeof currentHouse!=='undefined'&&currentHouse&
   for(const t of SITES){if(!MARKET.kinds.includes(t.kind))continue;const d=Math.hypot(px-t.x,pz-t.z);if(d<t.pad+40&&d<bd){bd=d;best=t;}}
   return best?best.id:null;}catch(e){return null;}}
 function marketHere(){const id=counterSiteId();return !!id&&marketOn(id);}
+// S2643 — prices by home (#1971 B): what an island makes costs ×0.85 at a counter on that island and ×1.2 on another, and a counter
+// pays the same. The cargo rule (0.6 / 1.4) at a quarter of its strength. The home is the one table there is (#1425): a made weapon's
+// or an implement's make, and a herb's island (herbIsland: the island herbs their own, the land herbs the Gatelands' but the Mark's
+// five; the sea's none). Armour, cloaks, food and the rest keep no home and no factor.
+const HOME_PRICE={here:.85,abroad:1.2};let _herbByName=null;
+function itemHome(it){if(!it)return null;if(it.make&&SWORD_MAKES[it.make])return it.make;
+  if(it.type==='herb'&&typeof HERB_DEF!=='undefined'&&typeof herbIsland==='function'){if(!_herbByName){_herbByName=new Map();for(const k in HERB_DEF){const d=HERB_DEF[k];if(d&&d.item&&d.item.name&&!_herbByName.has(d.item.name))_herbByName.set(d.item.name,k);}}
+    const k=_herbByName.get(it.name);return k?herbIsland(k):null;}
+  return null;}
+// the town whose prices a counter keeps: counterSiteId's, or the road's merchant's home town
+function priceSiteId(){if(typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.roadMul)return currentHouse.siteId||null;return counterSiteId();}
+function homeMul(it){const h=itemHome(it);if(!h)return 1;const id=priceSiteId();const n=id&&festIsleOf(id);return n?(n===h?HOME_PRICE.here:HOME_PRICE.abroad):1;}
 // the next market day of an island, from now (today's while its hours last), as {at} at 7:00
 function nextMarket(at,nation){const now=at!=null?at:((worldState&&worldState.gameTimeAbsMinutes)||0),d0=Math.floor(Math.max(0,now)/1440),wd=marketDayOf(nation);
   for(let d=d0;d<d0+CAL.days.length+1;d++){if(calDay(d*1440).weekday!==wd)continue;if(d===d0&&now-d*1440>=MARKET.to*60)continue;return {at:d*1440+MARKET.from*60};}return null;}
@@ -1161,8 +1173,8 @@ function armorLinesFor(h){const ln=h&&(h.type==='armor'?'light':(h.type==='misc'
 function capeCounter(){if(typeof cloakOn!=='function'||!cloakOn('cape'))return false;try{const h=typeof currentHouse!=='undefined'&&currentHouse;const t=h&&h.siteId&&siteAnywhere(h.siteId);return !!(t&&nationKeyOf(...cellOf(t.x,t.z))==='aurenne');}catch(e){return false;}}
 // S552 — the fur-lined cloak: stamina +10% in falling snow, or at night above the snowline, in the open world
 function furWarm(){if(!(typeof cloakOn==='function'&&cloakOn('fur'))&&!(typeof _hasBuff==='function'&&_hasBuff('resistCold'))||activeZoneId!=='world')return false; /* S1483 — a tincture's Resist Cold warms as the fur cloak does */try{if(typeof isInterior==='function'&&isInterior())return false;if(WX.type==='snow')return true;return isNight()&&worldH(px,pz)>snowLineAt(px,pz);}catch(e){return false;}}
-function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*(marketHere()?MARKET.buy:1)*(1-barterPct())));} /* S2641 — market day ×0.9 */
-function counterSellPrice(it){const sp=sellPrice(it);return sp<=0?0:Math.max(1,Math.round(sp*(marketHere()?MARKET.sell:1)*(1+barterPct())));} /* S2641 — market day +10% */
+function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*homeMul(it)*(marketHere()?MARKET.buy:1)*(1-barterPct())));} /* S2642 — market day ×0.9; S2643 — by home */
+function counterSellPrice(it){const sp=sellPrice(it);return sp<=0?0:Math.max(1,Math.round(sp*homeMul(it)*(marketHere()?MARKET.sell:1)*(1+barterPct())));} /* S2642 — market day +10%; S2643 — by home */
 function buyItem(it){
   const _cost=shopCost(it); // v80 O — prosperity sets the price
   if(gold<_cost){showMsg('Not enough gold!','#cc4444');return;}

@@ -4614,7 +4614,7 @@ const giver=`${lord.title} ${lord.name}`;
     const GG=worldState.guild;if(GG)for(const g in GG){const t=GG[g]&&GG[g].active;if(t&&t.due&&t.doneAt==null&&!taskDone(t))out.push({at:t.due-1,icon:'📜',text:`${t.short} — for the ${GUILD_DEF[g].name}: ${Math.round((t.gold||0)*1.25)} gold if it is done by then; after it, the task is taken back.`});}
     const nf=typeof nextFeast==='function'?nextFeast(now):null;if(nf)out.push({at:nf.at,icon:nf.f.ico,text:`${nf.f.name} — ${nf.f.due}`,feast:nf.f.key}); /* S550 — the next feast (today's, on the day) */
     {const nv=nextFestival(now,isleAt(px,pz));if(nv)out.push({at:nv.at,icon:nv.f.ico,text:`${nv.f.name} — ${nv.f.due}`,festival:nv.f.key});} /* S2313 — the next festival of the island you stand on */
-    {const nm=nextMarket(now,isleAt(px,pz));if(nm)out.push({at:nm.at,icon:'⚖',text:'Market day in the towns here, 7 to 15: a tenth off what you buy at a counter, a tenth more for what you sell.',market:true});} /* S2641 — the island's market day (#1971 B) */
+    {const nm=nextMarket(now,isleAt(px,pz));if(nm)out.push({at:nm.at,icon:'⚖',text:'Market day in the towns here, 7 to 15: a tenth off what you buy at a counter, a tenth more for what you sell.',market:true});} /* S2642 — the island's market day (#1971 B) */
     qActive().forEach(q=>{if(q.due&&!q.done)out.push({at:q.due-1,icon:'📜',text:`${q.title} — for ${q.giver}: ${Math.round((q.reward||0)*1.25)} gold if it is done by then; after it, the work is taken back.`});});
     return out.filter(e=>isFinite(e.at)).sort((a,b)=>a.at-b.at);
   }
