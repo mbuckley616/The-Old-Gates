@@ -542,7 +542,8 @@ function gatelandsLot(street, i, s = {}) {
   const ok = Object.keys(PAINTS).filter(p => !(GL_CLASH[colour] || []).includes(p)), paint = ok[Math.floor(r() * ok.length)];
   // s.bays (Session 1064, from pieces.js's Session 1063): the plan laid out on that many bays (bayPlan), s.d its depth; without them, as drawn
   const opts = kind === 'cottage' ? { hip: r() < .33, paint: Object.keys(PAINTS)[Math.floor(r() * 6)] } : kind === 'farmhouse' ? { paint } : kind === 'warehouse' ? { fin: FIN.stone() }
-    : kind === 'merchant' ? { color: colour, paint, trade: s.trade } : { color: colour, paint, doorX: i % 2 ? 1.95 : -1.95 };
+    : kind === 'merchant' ? { color: colour, paint, trade: s.trade } : kind === 'forge' ? { paint, open: false } /* Session 2655 (Michael, 25 Nov): the street's forge hangs its cart doors shut; the room inside (forgeRoom) keeps them open */
+    : { color: colour, paint, doorX: i % 2 ? 1.95 : -1.95 };
   const plan = kind === 'apothecary' ? PLANS.cottage({ hip: false, paint: 'green' }) /* Session 1876: the prototype's apothecary, the cottage as drawn, painted green */
     : s.bays && BAYS[kind] ? bayPlan(kind, s.bays, { ...opts, d: s.d }) : PLANS[kind](opts);
   plan.r = stream(`${street}:windows:${i}`);

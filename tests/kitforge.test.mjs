@@ -70,5 +70,10 @@ const rk = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), h 
 console.log('racks', JSON.stringify(rk));
 check(`the smith's two racks stand in his yard, the Gatelands' (${rk && rk.kinds}), clear of the town's solids and ${rk && rk.doors} m from the nearest door`, !!rk && rk.kinds === 'tan:gatelands,dry:gatelands' && rk.clear && rk.doors >= 2.5, rk);
 check('a hide hung there is drawn on it, leather when it is ready; at it E opens the smith\'s two racks', !!rk && rk.slots === 'leather,salted,,' && /tanner/.test(rk.pr || '') && rk.hold === 'rack,dry', rk);
+// Session 2655 (Michael, 25 Nov: "Doors to Bram's forge appear wide open, with an empty space inside"): the street's forge hangs its cart
+// doors shut across the opening; the room inside keeps its own leaves open
+const shut = await page.evaluate(() => { const h = WORLD.settle.get('dunmore').houses.find(h => h.type === 'weapon' && h.kit && h.kit.kind === 'forge'); if (!h) return null;
+  const L = PKIT.gl.lot('dunmore', h._lot.n, { kind: 'forge' }), cart = L.plan.open.front.find(o => o.kind === 'cart'); return { street: cart && cart.open, x: cart && cart.x, door: h.kit.door }; });
+check(`the street's forge hangs its cart doors shut (open ${shut && shut.street}), the house's door in that bay (${shut && shut.door} m)`, !!shut && shut.street === false && Math.abs(shut.door - shut.x) < .75, shut);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
