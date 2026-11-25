@@ -346,6 +346,19 @@ for (const [name, near] of [['f4-whole.jpg', 16], ['f4-baked.jpg', 0]]) {
 await page.evaluate(() => { HBODY.near = 16; });
 await shoot('f4-crowd60.jpg', () => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 60; yaw = 0; pitch = -.03; });
 }
+// S2634 (S2625's note): a keeper built indoors takes their own people from the street's def, not a Gatelander's body by default. Dunmore's
+// Old Blood householder at home by night, built with no genome cached from the street
+const home = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), hr = gameHour(); forceTime(22);
+  const kept = S.houses.filter(h => h.keeper), h = kept.find(x => x.type === 'home' && keeperPeople(x) === 'oldblood');
+  if (!h) { forceTime(hr); return { none: true, unset: kept.filter(x => !keeperPeople(x)).length }; }
+  for (const k of [...PEOPLE_GENOMES.keys()]) if (k.startsWith(h.keeper + '|')) PEOPLE_GENOMES.delete(k);
+  window._kH = h; window._kHr = hr; px = h.exitX; pz = h.exitZ; goToInterior(h); return { keeper: h.keeper, unset: kept.filter(x => !keeperPeople(x)).length, of: kept.length }; });
+for (let k = 0; k < 40 && !home.none && !(await page.evaluate(() => isInterior() && currentHouse === _kH)); k++) await page.waitForTimeout(250);
+if (!home.none) Object.assign(home, await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.root.parent === scene && r.g.name === _kH.keeper);
+  const out = { inside: isInterior(), people: rs.map(r => r.g.people) }; exitInterior(); forceTime(_kHr); return out; }));
+for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
+check(`a keeper built indoors is of their own people: ${home.keeper || 'no Old Blood householder'} at home is Old Blood (every one of Dunmore's ${home.of} keepers has a people)`,
+  !home.none && home.inside && home.people.length === 1 && home.people[0] === 'oldblood' && home.unset === 0, home);
 const inn = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'inn') || S.houses[0]; px = h.exitX; pz = h.exitZ; goToInterior(h); return h.type; });
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 await page.evaluate(() => { HBODY.last = -1e9; }); // the ticks above ran on made-up clocks; the room runs on the page's own
