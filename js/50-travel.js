@@ -483,6 +483,8 @@ const HERB_FX={
   duilleogghorm:['restoreMana','regenMana','waterBreathing','fortifyBow'],
   kelp:['restoreStamina','waterBreathing','slow','fortifyMelee'],sealily:['restoreMana','nightEye','regenMana','drainStamina'],
   pearlweed:['restoreHealth','waterBreathing','resistCold','fortifyBow'],
+  /* S2657 — the Serpent Scale (the sea that pushes back, session 6): the sea's, the cold deep's, a hide's and a poison's; never eaten (no effect), all four found by brewing */
+  serpentscale:['waterBreathing','resistCold','fortifyBlock','slow'],
   /* S1886 — the plants that mark a gate (#1164 B): each carries Night Eye or Featherfall, what a gate's dark and broken floors ask */
   lichenbloom:['restoreStamina','nightEye','fortifyBlock','resistCold'],gatelotus:['regenHealth','featherfall','waterBreathing','swiftness'],
   gateresin:['regenHealth','nightEye','featherfall','fortifyMelee'],
@@ -543,6 +545,10 @@ function herbKeyOf(it){if(!it)return null;if(it._typeKey&&HERB_FX[it._typeKey])r
   if(typeof HERB_DEF!=='undefined')for(const k in HERB_DEF)if(HERB_DEF[k].name===nm)return k;
   const k=String(nm||'').toLowerCase().replace(/[^a-z]/g,'');return HERB_FX[k]?k:null;}
 // S2554 — workstations B (#1883 C): a herb dried on a drying rack, known by its name, so a reload keeps it
+// S2657 — a brewing ingredient's name by its key: a plant's, or one that grows nowhere (the Serpent Scale)
+const HERB_ELSE={serpentscale:{name:'Serpent Scale',ico:'🐍',weight:.5,buyPrice:120,desc:'A scale off the sea serpent, as broad as a hand. It goes in a brew.'}};
+function herbNameOf(k){return (HERB_DEF[k]&&HERB_DEF[k].name)||(HERB_ELSE[k]&&HERB_ELSE[k].name)||k;}
+function serpentScaleItem(){const D=HERB_ELSE.serpentscale;return {name:D.name,ico:D.ico,type:'herb',weight:D.weight,buyPrice:D.buyPrice,sellMult:.8,desc:D.desc,_typeKey:'serpentscale',qty:1};}
 function herbDried(it){return !!(it&&it.type==='herb'&&/^Dried /.test(String(it.name||'')));}
 function driedHerbItem(k){const D=HERB_DEF[k];return {...D.item,name:'Dried '+D.item.name,_typeKey:k,qty:1};}
 function herbsKnown(){return worldState.herbsKnown||(worldState.herbsKnown={fx:{},none:{}});}
@@ -858,16 +864,17 @@ function brewNote(keys,cat,fx,poison){const K=herbsKnown(),B=K.brews||(K.brews={
 function brewRecipes(){const B=herbsKnown().brews||{};return Object.keys(B).map(k=>Object.assign({key:k},B[k])).sort((a,b)=>(b.d||0)-(a.d||0)||b.n-a.n);}
 // why a recipe cannot be chosen now, or null
 function brewRecWhy(r){const miss=r.h.filter(k=>!BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k));
-  if(miss.length)return 'You carry no '+miss.map(k=>(HERB_DEF[k]&&HERB_DEF[k].name)||k).join(' or ')+'.';if(r.h.length>brewMax())return 'Three herbs ask Alchemy 50.';return null;}
+  if(miss.length)return 'You carry no '+miss.map(k=>herbNameOf(k)).join(' or ')+'.';if(r.h.length>brewMax())return 'Three herbs ask Alchemy 50.';return null;}
 // the named action: choose a written recipe on the mortar's leaf. The specimen rides with it only if you carry one
 function brewRecChoose(key){const r=(herbsKnown().brews||{})[key];if(!r)return {done:false,why:''};const why=brewRecWhy(r);if(why)return {done:false,why};
   brewSel=r.h.slice();brewCat=r.c&&typeof specInBag==='function'&&specInBag(r.c)>=0?r.c:null;
   return {done:true,cat:!!r.c&&!brewCat};}
 // the herbs you know of (herbsSeen) with effects still unfound: [{k, name, known}]
-function brewUnfound(){const S=herbsSeen();return Object.keys(S).filter(k=>HERB_FX[k]).map(k=>({k,name:(HERB_DEF[k]&&HERB_DEF[k].name)||k,known:HERB_FX[k].filter((f,i)=>herbFxKnown(k,i)).length,of:HERB_FX[k].length}))
+function brewUnfound(){const S=Object.assign({},herbsSeen());for(const k in HERB_ELSE)if((herbsKnown().fx||{})[k]||BAG.some(b=>b&&b.type==='herb'&&herbKeyOf(b)===k))S[k]=1; /* S2657 — and an ingredient that grows nowhere, once in hand */
+  return Object.keys(S).filter(k=>HERB_FX[k]).map(k=>({k,name:herbNameOf(k),known:HERB_FX[k].filter((f,i)=>herbFxKnown(k,i)).length,of:HERB_FX[k].length}))
   .filter(q=>q.known<q.of).sort((a,b)=>a.name<b.name?-1:1);}
 let brewLeaf='mortar';
-function brewLeafDraw(ov){const R=brewRecipes(),K=herbsKnown(),nm=k=>(HERB_DEF[k]&&HERB_DEF[k].name)||k,el=ov.querySelector('#br-rec');
+function brewLeafDraw(ov){const R=brewRecipes(),K=herbsKnown(),nm=k=>herbNameOf(k),el=ov.querySelector('#br-rec');
   let s='<div style="font-variant:small-caps;color:#7a1f10">Made</div>';
   s+=R.length?R.map(r=>{const why=brewRecWhy(r);return `<div style="padding-left:12px;margin:2px 0"><button type="button" data-r="${r.key}" style="background:none;border:1px solid ${why?'#a89060':'#7a1f10'};border-radius:3px;font:13px Georgia,serif;color:${why?'#a09070':'#7a1f10'};cursor:pointer;padding:1px 8px">Choose</button> ${r.h.map(nm).join(', ')}${r.c&&SPEC_DEF[r.c]?` <i>with the ${SPEC_DEF[r.c].name}</i>`:''} <span style="color:#8a7050;font-size:12px">×${r.n}</span>`+
     `<div style="padding-left:14px;font-style:italic;color:${r.poison?'#8a2a20':'#3a2c18'}">${r.fx.map(f=>ALCH_FX[f].label).join(', ')}${r.poison?' — a poison':''}</div></div>`;}).join(''):'<div style="padding-left:12px;color:#8a7050;font-style:italic">nothing ground yet</div>';
@@ -902,7 +909,7 @@ function openBrewPage(){
   ov.style.display='flex';brewOpen=true;brewDraw();
 }
 function closeBrewPage(){const ov=document.getElementById('brewui');if(ov)ov.style.display='none';brewOpen=false;if(typeof refocusView==='function')refocusView();}
-function brewHerbList(){const m=new Map(),d=new Map();BAG.forEach(b=>{if(!b||b.type!=='herb')return;const k=herbKeyOf(b);if(!k)return;m.set(k,(m.get(k)||0)+(b.qty||1));if(herbDried(b))d.set(k,(d.get(k)||0)+(b.qty||1));});return [...m].map(([k,n])=>({k,n,dry:d.get(k)||0,name:(HERB_DEF[k]&&HERB_DEF[k].name)||k}));}
+function brewHerbList(){const m=new Map(),d=new Map();BAG.forEach(b=>{if(!b||b.type!=='herb')return;const k=herbKeyOf(b);if(!k)return;m.set(k,(m.get(k)||0)+(b.qty||1));if(herbDried(b))d.set(k,(d.get(k)||0)+(b.qty||1));});return [...m].map(([k,n])=>({k,n,dry:d.get(k)||0,name:herbNameOf(k)}));}
 function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;const K=herbsKnown();
   ov.querySelector('#br-skill').textContent=`Alchemy ${skillLv('alchemy')} · strength ×${alchStrength().toFixed(2)}${stillHere()?` · at a still${stillFee()?`, ${stillFee()} gold`:''}`:''}`;
   {const rec=brewLeaf==='recipes',pot=ov.querySelector('#br-pot');ov.querySelector('#br-leaf').textContent=rec?'The mortar':'Recipes'; /* S2559 */
@@ -918,7 +925,7 @@ function brewDraw(){const ov=document.getElementById('brewui');if(!ov)return;con
         (brewCat&&at&&!specCatKnown(brewCat)?`<button type="button" id="br-study" style="margin:4px 6px;background:none;border:1px solid #7a1f10;border-radius:3px;font:13px Georgia,serif;color:#7a1f10;cursor:pointer;padding:1px 8px">Study it at ${at} (an hour)</button>`:''));
       ov.querySelectorAll('#br-herbs [data-c]').forEach(d=>d.onclick=()=>{brewCat=brewCat===d.dataset.c?null:d.dataset.c;brewSaid='';brewDraw();});
       const sb=ov.querySelector('#br-study');if(sb)sb.onclick=()=>{const r=studySpecimen(brewCat);brewSaid=r.done?r.said:r.why;if(r.done)addLog('✿',r.said);brewDraw();};}}
-  let r='';brewSel.forEach(k=>{r+=`<div style="font-variant:small-caps;color:#7a1f10;margin-top:4px">${(HERB_DEF[k]&&HERB_DEF[k].name)||k}</div>`;
+  let r='';brewSel.forEach(k=>{r+=`<div style="font-variant:small-caps;color:#7a1f10;margin-top:4px">${herbNameOf(k)}</div>`;
     HERB_FX[k].forEach((f,i)=>{const kn=herbFxKnown(k,i);r+=`<div style="padding-left:12px">${kn?ALCH_FX[f].label+(ALCH_FX[f].harm?' <i style="font-size:12px;color:#8a2a20">(harmful)</i>':''):'<span style="color:#a09070">— unknown —</span>'}</div>`;});});
   if(brewSel.length>=2){const kn=new Set();brewSel.forEach(k=>HERB_FX[k].forEach((f,i)=>{if(herbFxKnown(k,i)&&brewSel.filter(o=>o!==k).some(o=>HERB_FX[o].some((g,j)=>g===f&&herbFxKnown(o,j))))kn.add(f);}));
     r+=`<div style="margin-top:8px;border-top:1px dotted #a89060;padding-top:4px;font-style:italic">${kn.size?'Known to share: '+[...kn].map(f=>ALCH_FX[f].label).join(', '):'Nothing known between them.'}</div>`;}

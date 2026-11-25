@@ -836,7 +836,7 @@
     if(typeof serpentTick==='function')serpentTick(dt); /* S2651 — the sea serpent (86-world-crime.js) */
     if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
     if(SHIP.sailing){
-      if(reefHeld(dt)){tickSeaWear(dt,0);px=SHIP.helm.x;pz=SHIP.helm.z;jumpY=SHIP.helm.y;onGround=true;velY=0;shipUpdatePlacement();return;} /* S2637 — held fast on a reef */
+      if(reefHeld(dt)||(typeof serpentHolds==='function'&&serpentHolds())){tickSeaWear(dt,0);px=SHIP.helm.x;pz=SHIP.helm.z;jumpY=SHIP.helm.y;onGround=true;velY=0;shipUpdatePlacement();return;} /* S2637 — held fast on a reef */
       const fwd=(HELD_KEYS.KeyW?1:0)-(HELD_KEYS.KeyS?.5:0),turn=(HELD_KEYS.KeyA?1:0)-(HELD_KEYS.KeyD?1:0);SHIP.turn=turn;
       const target=fwd*shipSpeedNow();SHIP.speed+=(target-SHIP.speed)*Math.min(1,dt*.8);
       SHIP.yaw+=turn*dt*.55*Math.min(1,Math.abs(SHIP.speed)/3+.3);

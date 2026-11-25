@@ -1693,6 +1693,7 @@ function tickZoneBalls(dt,sc){
     // side enemy-orb path. Runs BEFORE the player-spell-vs-enemy block
     // so a boss orb can't accidentally damage the boss itself if its
     // path crossed the boss's body center.
+    if(!fb.userData.fromBoss&&typeof serpentTakes==='function'&&serpentTakes(fb)){if(fb.parent)fb.parent.remove(fb);ZB.splice(i,1);continue;} /* S2656 — the sea serpent's head */
     if(fb.userData.fromBoss){
       // Player collision sphere — ~0.7u radius, similar to the enemy
       // collision used by player projectiles. Y is checked loosely since
