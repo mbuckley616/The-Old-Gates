@@ -1492,7 +1492,7 @@ function tickZoneEnemies(dt,now,sc){
     // Chase player
     let dx2=T.x-e.x,dz2=T.z-e.z,d=Math.hypot(dx2,dz2)||1;
     const _fr = foeReach(e); /* S1041 — F2b: where its tell starts and how far its blow reaches, hull to hull (foeReach, 74-strikes.js); it still closes to 1.0, inside your shove */
-    const _stopDist = e.isBoss ? Math.max(1.5, (e.bossDef.biteRange||2.0)-1.0) : foeHoldDist(e,false,1.0); /* S2658 — it holds where its tell starts, not at 1.0 */
+    const _stopDist = e.isBoss ? Math.max(1.5, (e.bossDef.biteRange||2.0)-1.0) : foeHoldDist(e,false,1.0); /* S2659 — it holds where its tell starts, not at 1.0 */
     const _archer=/Archer|Slinger/.test(e.name||'');
     if(_archer){ // v80 S135 — archers keep 6–13u, back off when you close, and shoot
       e.arrowCd=(e.arrowCd||0)-dt;

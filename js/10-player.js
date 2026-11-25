@@ -114,7 +114,7 @@ const seenEnemyTypes=new Set(); // for first-kill log entries
 
 // ── BLOCKING STATE ───────────────────────────────────────────
 let blocking=false;      // is right-click held
-// Session 2658 (Michael's playtest, 25 Nov 2026: "almost always completely out of stamina at the beginning of the game"; "if the
+// Session 2659 (Michael's playtest, 25 Nov 2026: "almost always completely out of stamina at the beginning of the game"; "if the
 // player is motionless, their stamina recovery should be much faster"): stamina comes back at 6 a second at level 1 (was 3), plus
 // 0.4 a level and 0.3 a Resolve point as before; ×2 once you have stood still for 0.75 s; ×0.25 while your guard is up, which
 // replaces the old drain for holding block. The main loop (90-main.js) applies it and counts _stillS; the hub's row shows the base.

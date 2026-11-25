@@ -1,6 +1,6 @@
 // The sheath and Draw cut (Blade 25; Session 1080, Michael's A on DECISION #399 and his note: "a 'sheath' button where you can
 // sheath your equipped weapon. Torches or shields in your off hand stay equipped and in hand"). H sheathes and draws (since
-// Session 2658 only H: the sheathe on its own after 5 s at peace is gone, Michael's playtest of 25 Nov); sheathed, the first-person hand is empty and
+// Session 2659 only H: the sheathe on its own after 5 s at peace is gone, Michael's playtest of 25 Nov); sheathed, the first-person hand is empty and
 // the shield stays; a swing from the sheath draws as it swings, and with Draw cut it drains ×2 posture.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -16,7 +16,7 @@ const r = await page.evaluate(() => {
   // H: sheathe, then draw
   toggleSheath(); out.afterH = { sheathed: SHEATHED, meshes: meshes(), weapon: EQ.weapon === SWORD, offhand: EQ.offhand === SHIELD };
   toggleSheath(); out.afterH2 = { sheathed: SHEATHED, meshes: meshes() };
-  // S2658: never on its own: no foe about, 5.1 s and 60 s after the last swing, the weapon stays drawn (Michael's playtest, 25 Nov)
+  // S2659: never on its own: no foe about, 5.1 s and 60 s after the last swing, the weapon stays drawn (Michael's playtest, 25 Nov)
   ZE = []; _lastSwingG = playClockS - 5.1; tickSheath(); out.at51 = SHEATHED; _lastSwingG = playClockS - 60; tickSheath(); out.at60 = SHEATHED; drawWeapon();
   const mk = (d) => { const e = buildZoneEnemy(WORLD.scene, [], px + fwdX * d, pz + fwdZ * d, 'Bandit', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
     e.locked = false; e.alert = true; e.spd = 0; e.atkCd = 1e9; e.rng = null; e.hp = e.maxHp = 1000; e.def = 0; e.resist = {};
@@ -226,7 +226,7 @@ const au = await page.evaluate(() => { const out = { err: null }; const eq0 = { 
   out.mace = one(W('mace', { wType: 'blunt' })); out.staff = one(W('staff', { wType: 'blunt', implement: 'staff', twoHand: true }));
   const keepZ = ZE; ZE = []; EQ.weapon = W('sword'); SHEATHED = false; SWING = null;
   _lastSwingG = playClockS - 5.1; out.idle = hear(() => tickSheath()); out.idle.sheathed = SHEATHED;
-  sheathWeapon(); out.swing = hear(() => { beginSwing(false); }); /* S2658: sheathed by H now, not by the idle */ out.swing.drawn = !SHEATHED; swingCancel();
+  sheathWeapon(); out.swing = hear(() => { beginSwing(false); }); /* S2659: sheathed by H now, not by the idle */ out.swing.drawn = !SHEATHED; swingCancel();
   sheathWeapon(); out.swap = hear(() => { EQ.weapon = W('sword', { name: 'Other Sword' }); tickSheath(); }); out.swap.sheathed = SHEATHED;
   ZE = keepZ; if (AX) { AX.createBufferSource = cs; AX.createOscillator = co; } Object.assign(EQ, eq0); SHEATHED = false; buildViewmodel(); return out; });
 console.log(JSON.stringify(au));

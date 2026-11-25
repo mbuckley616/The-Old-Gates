@@ -24,7 +24,7 @@ check('every passage from every port is labelled with what the ferry charges', f
 check('the Compact\'s ports are among them, their tithe in the label', ferry.aurN > 0 && ferry.aurSample.every(r => r.label === r.asked), ferry.aurSample);
 check('at rank 2 with the nation\'s faction, the passages read 0g, as they cost', ferry.freeLabels.length > 0 && ferry.freeLabels.every(l => /\(0g, /.test(l)), ferry.freeLabels);
 
-// a crate on your back with its icon (the inventory shows it; S2658 took the bag's last two off the HUD), and a crate from a save made before it had an icon
+// a crate on your back with its icon (the inventory shows it; S2659 took the bag's last two off the HUD), and a crate from a save made before it had an icon
 const crate = await page.evaluate(() => { const lbl = (b) => b ? b.ico + ' ' + b.name : ''; BAG.push(WORLD.cargoItem('wool')); const hud = lbl(BAG[BAG.length - 1]);
   const d = JSON.parse(ssStringify(_buildSavePayload())); const old = (d.bag || d.BAG || []).find(it => it && it.type === 'cargo'); if (old) delete old.ico;
   _applyLoadData(d); const it = BAG.find(x => x.type === 'cargo'); const after = lbl(it);

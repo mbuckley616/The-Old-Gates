@@ -11,7 +11,7 @@ await page.evaluate(() => { window._raf = window.requestAnimationFrame; window._
   window._t = performance.now(); window._step = (n) => { for (let i = 0; i < n; i++) { _t += 1000 / 60; loop(_t); } }; });
 const sprint = async (fin) => {
   await page.evaluate((fin) => { window._keepF = ATTRS.finesse; ATTRS.finesse = fin; SKILLS.athletics = { lv: 5, p: 0 }; /* S941: Athletics untrained, so the sprint costs today's 14 */ px = 13100; pz = 25450; jumpY = 0; yaw = 0; ACTIVE_BUFFS.length = 0; staminaCD = 0; stamina = 50; }, fin);
-  // S2658: stamina comes back twice as fast standing still, so the regeneration beside the sprint is measured walking (W held)
+  // S2659: stamina comes back twice as fast standing still, so the regeneration beside the sprint is measured walking (W held)
   await page.keyboard.down('w');
   await page.evaluate(() => { _step(5); window._r0 = stamina; _step(60); window._regen = stamina - _r0; stamina = 60; });
   await page.keyboard.down('Shift');

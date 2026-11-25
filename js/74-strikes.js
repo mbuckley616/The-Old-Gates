@@ -215,7 +215,7 @@ function foeReach(e,inDun){
   const eng=r.engage+(hum?Math.max(0,blow-WEAPON_ATTACKS.Sword.reach):0); /* S1462 — the spear's 0.8 past the sword */
   return {engage:reachTo(e,eng+L),blow:reachTo(e,blow),deg:hum?foeWeaponArc(e,r.arc):r.arc,lunge:L,stand:reachTo(e,eng)};
 }
-// Session 2658 (Michael's playtest, 25 Nov 2026: foes "almost on top of the player" in first person): a chasing foe holds at its
+// Session 2659 (Michael's playtest, 25 Nov 2026: foes "almost on top of the player" in first person): a chasing foe holds at its
 // stand, where its tell starts (1.8 m centre to centre for a humanoid with a sword, more with a spear), less 0.15 m so the tell
 // still starts, and steps no nearer; it used to close to 1.0 m in the world and 0.6 m in a dungeon, inside its own reach. A foe
 // with no stand on the sheet keeps the old floor.
@@ -365,7 +365,7 @@ function resolvePlayerStrike(_isPow){
 const COMMIT={move:.35,turnDeg:90,chainIdle:.4,chainDmg:1.3,chainPosture:1.5,drinkS:.8,drinkMove:.5};
 let SWING=null,CHAIN={n:0,endG:-1e9},DRINK=null;
 // S1080 — the sheath (Michael's A on #399, with his note: "a 'sheath' button where you can sheath your equipped weapon. Torches or
-// shields in your off hand stay equipped and in hand"). H sheathes the weapon in hand, or draws it. Until Session 2658 a drawn
+// shields in your off hand stay equipped and in hand"). H sheathes the weapon in hand, or draws it. Until Session 2659 a drawn
 // weapon was also sheathed on its own after SHEATH_IDLE_S at peace; Michael's playtest (25 Nov 2026) read that as the weapon
 // "disappearing" on entering a dungeon or after a roll, so now only H puts it away. Sheathed, the first-person
 // view is the empty hand's (buildViewmodel with the weapon held aside for the call); the off hand's shield or torch is built on its
