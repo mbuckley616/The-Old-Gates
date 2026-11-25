@@ -1555,7 +1555,7 @@
   let MAIDEN_WRECKS=null,SEA_WRECKS=null;
   // S1743 — every wreck spawnWreck would lay at sea, the same walk the maiden's was (one pass, kept for the session): {key, x, z, bed}
   function seaWrecks(){if(SEA_WRECKS)return SEA_WRECKS;const L=[],N=Math.ceil(GRID*SIZE/CHUNK);
-    for(let cz=0;cz<N;cz++)for(let cx=0;cx<N;cx++){if(hash01(cx,cz,150)>.06)continue;const t=maskAt(Math.floor(cx*CHUNK/SIZE),Math.floor(cz*CHUNK/SIZE));if(t==='land')continue;
+    for(let cz=0;cz<N;cz++)for(let cx=0;cx<N;cx++){if(hash01(cx,cz,150)>.06&&!(hash01(cx,cz,210)<REEF_ODDS&&hash01(cx,cz,218)<1/3))continue; /* S2637 — or a reef's wreck */const t=maskAt(Math.floor(cx*CHUNK/SIZE),Math.floor(cz*CHUNK/SIZE));if(t==='land')continue;
       const w=wreckSpot(cx,cz);if(w)L.push({key:chunkKey(cx,cz),x:w.x,z:w.z,bed:w.bed});}  /* S1766 — the spot by placeH, the one spawnWreck lays (85-world-sea.js) */
     return SEA_WRECKS=L;}
   function maidenWrecks(){if(MAIDEN_WRECKS)return MAIDEN_WRECKS;const best={};
@@ -1814,6 +1814,37 @@
       const fs=sd>=50?1:.6+.4*sd/50,h=gameHour(),v=r.peak*fa*fs*Math.sin(Math.PI*(h%6)/6)*(isTideOut()?1:-1);
       if(!best||Math.abs(v)>best.m)best={x:r.ax*v,z:r.az*v,m:Math.abs(v),race:r};}
     return best;}
+  // ═══ S2637 — the reefs (the sea that pushes back, session 2): one coastal chunk in six that is a headland keeps a reef off its point ═══
+  // A chunk of a coast cell is coastal when its 3×3 samples hold both land and swimming water (placeH, the land keyed by place, as wreckSpot
+  // reads it, so the answer never hangs on what has loaded). From its sea samples' middle eight rays of 300 m: land on one to three of them
+  // makes it a headland. The reef lies seaward of the land the rays met, 60 to 400 m off: 3 to 7 rocks over 20 to 40 m, each 1.5 to 3 m
+  // across, its head 0.6 to 1.2 m under the surface, where the bed is deeper than the head. All of it by hash01 keyed on the chunk.
+  const REEF_ODDS=1/6,REEF_TILE=256,REEF_REACH=460,REEF_CH=new Map(),REEF_TILES=new Map();
+  function reefOfChunk(cx,cz){const key=cx+','+cz;if(REEF_CH.has(key))return REEF_CH.get(key);let R=null;
+    if(hash01(cx,cz,210)<REEF_ODDS&&maskAt(Math.floor(cx*CHUNK/SIZE),Math.floor(cz*CHUNK/SIZE))==='coast'){
+      let land=0,sx=0,sz=0,ns=0;for(let a=0;a<3;a++)for(let b=0;b<3;b++){const x=cx*CHUNK+8+a*24,z=cz*CHUNK+8+b*24,h=placeH(x,z);if(h>SEA_Y)land++;else if(h<SEA_Y-1.4){sx+=x;sz+=z;ns++;}}
+      if(land&&ns){sx/=ns;sz/=ns;let hits=0,dx=0,dz=0;
+        for(let k=0;k<8;k++){const ux=Math.cos(k*Math.PI/4),uz=Math.sin(k*Math.PI/4);for(let d=25;d<=300;d+=25)if(placeH(sx+ux*d,sz+uz*d)>SEA_Y){hits++;dx+=ux;dz+=uz;break;}}
+        const l=Math.hypot(dx,dz);
+        if(hits>=1&&hits<=3&&l>.01){const ox=-dx/l,oz=-dz/l,off=60+hash01(cx,cz,211)*340,x=sx+ox*off,z=sz+oz*off,span=20+hash01(cx,cz,212)*20,n=3+Math.floor(hash01(cx,cz,213)*5),rocks=[];
+          for(let k=0;k<n;k++){const a=hash01(cx+k,cz,214)*Math.PI*2,r=Math.sqrt(hash01(cz,cx+k,215))*span/2,rx=x+Math.cos(a)*r,rz=z+Math.sin(a)*r;
+            const head=SEA_Y-.6-hash01(cx+k,cz+k,216)*.6,bed=placeH(rx,rz);if(bed<head-.3)rocks.push({x:rx,z:rz,r:.75+hash01(cz+k,cx,217)*.75,head,bed});}
+          if(rocks.length)R={key:'reef:'+key,cx,cz,x,z,rocks};}}}
+    REEF_CH.set(key,R);return R;}
+  // the rocks that reach into a 256 m tile, gathered once from every chunk whose reef could lie there
+  function reefTile(tx,tz){const key=tx+','+tz;let L=REEF_TILES.get(key);if(L)return L;L=[];
+    const x0=tx*REEF_TILE-REEF_REACH,x1=(tx+1)*REEF_TILE+REEF_REACH,z0=tz*REEF_TILE-REEF_REACH,z1=(tz+1)*REEF_TILE+REEF_REACH;
+    for(let cz=Math.floor(z0/CHUNK);cz<=Math.floor(z1/CHUNK);cz++)for(let cx=Math.floor(x0/CHUNK);cx<=Math.floor(x1/CHUNK);cx++){const R=reefOfChunk(cx,cz);if(!R)continue;
+      for(const k of R.rocks)if(k.x+k.r>tx*REEF_TILE-4&&k.x-k.r<(tx+1)*REEF_TILE+4&&k.z+k.r>tz*REEF_TILE-4&&k.z-k.r<(tz+1)*REEF_TILE+4)L.push(Object.assign({reef:R.key},k));}
+    REEF_TILES.set(key,L);if(REEF_TILES.size>64)REEF_TILES.delete(REEF_TILES.keys().next().value);return L;}
+  // the rock under x,z (within R of its edge), or null; only the world's open water asks
+  function reefRockAt(x,z,R){R=R||0;const L=reefTile(Math.floor(x/REEF_TILE),Math.floor(z/REEF_TILE));for(const k of L)if(Math.hypot(x-k.x,z-k.z)<k.r+R)return k;return null;}
+  // every reef within d of x,z (the suites and the map's walk)
+  function reefsNear(x,z,d){const out=[];for(let cz=Math.floor((z-d)/CHUNK);cz<=Math.floor((z+d)/CHUNK);cz++)for(let cx=Math.floor((x-d)/CHUNK);cx<=Math.floor((x+d)/CHUNK);cx++){const R=reefOfChunk(cx,cz);if(R)out.push(R);}return out;}
+  // held fast: struck on a reef she cannot sail ahead or turn; S held 3 s (her half astern) backs her off. Called by the sailing tick
+  // before she moves; true while she is held
+  function reefHeld(dt){const H=SHIP.reefFast;if(!H)return false;if(HELD_KEYS.KeyS)H.t+=dt;if(H.t<3){SHIP.speed=0;SHIP.turn=0;return true;}
+    SHIP.reefFast=null;showMsg('She comes off the reef.','#c8b880');return false;}
   // the set carries a swimmer whole (the swim speed is 1.7 to 4.2: an unskilled swimmer crosses near slack); never onto the land
   function tickRaceSwim(dt){if(!isSwimming())return;const r=raceSet(px,pz);if(!r||r.m<.01)return;const nx=px+r.x*dt,nz=pz+r.z*dt;
     if(worldH(nx,nz)<SEA_Y-SWIM_DEPTH&&!solidAt(nx,nz)){px=nx;pz=nz;}}

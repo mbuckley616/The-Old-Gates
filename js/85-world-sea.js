@@ -315,7 +315,7 @@
   // S2421 — a hull meets a ruin's stone standing in the sea (the Drowned Spires' towers and the stone under their decks): the wonders'
   // solids (STATIC_SOL, wonder:true) read at the bow and at both shoulders, a quarter of her length forward of the middle, on the side she
   // moves to (dir 1 ahead, -1 astern). The bow's probe is the shallows' own (L/2+2 out); a shoulder's 0.5 m off her side.
-  function hullStoneAt(x,z,R){for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(s.wonder&&solBoxHit(s,x,z,R))return true;}return false;}
+  function hullStoneAt(x,z,R){for(let i=0;i<STATIC_SOL.length;i++){const s=STATIC_SOL[i];if(s.wonder&&solBoxHit(s,x,z,R))return true;}if(worldH(x,z)<SEA_Y&&reefRockAt(x,z,R))return 'reef'; /* S2637 — a reef rock is a hull stone (86-world-crime.js) */return false;}
   function hullStoneAhead(x,z,yaw,dir,L,W){const fx=-Math.sin(yaw)*dir,fz=-Math.cos(yaw)*dir,rx=-fz,rz=fx,b=L/2+2,q=L/4,w=W/2+.5;
     return hullStoneAt(x+fx*b,z+fz*b,.5)||hullStoneAt(x+fx*q+rx*w,z+fz*q+rz*w,.5)||hullStoneAt(x+fx*q-rx*w,z+fz*q-rz*w,.5);}
   function shipPropSolid(x,z,R){R=R==null?.3:R;
@@ -835,6 +835,7 @@
     shipBallistaTick(); /* S2250 — her ballista, fitted or taken out at the yard, and laid on what bears */shipGunsTick(); /* S2256 — her guns run out on a side that bears */
     if(worldState.ship&&(SHIP.sailing||onDeck())){SHIP._seaT=(SHIP._seaT||0)-dt;if(SHIP._seaT<=0){SHIP._seaT=1;SHIP.sea=seaState();}}else SHIP._seaT=0;
     if(SHIP.sailing){
+      if(reefHeld(dt)){tickSeaWear(dt,0);px=SHIP.helm.x;pz=SHIP.helm.z;jumpY=SHIP.helm.y;onGround=true;velY=0;shipUpdatePlacement();return;} /* S2637 — held fast on a reef */
       const fwd=(HELD_KEYS.KeyW?1:0)-(HELD_KEYS.KeyS?.5:0),turn=(HELD_KEYS.KeyA?1:0)-(HELD_KEYS.KeyD?1:0);SHIP.turn=turn;
       const target=fwd*shipSpeedNow();SHIP.speed+=(target-SHIP.speed)*Math.min(1,dt*.8);
       SHIP.yaw+=turn*dt*.55*Math.min(1,Math.abs(SHIP.speed)/3+.3);
@@ -842,7 +843,8 @@
       // keep the bow in water
       const probe=Math.sign(SHIP.speed)||1;const bx=SHIP.x+fx*probe*(SHIP.L/2+2),bz=SHIP.z+fz*probe*(SHIP.L/2+2);
       const WMAX=SIZE*GRID;
-      if(worldH(bx,bz)>SEA_Y-1.4||bx<20||bz<20||bx>WMAX-20||bz>WMAX-20||hullStoneAhead(SHIP.x,SHIP.z,SHIP.yaw,probe,SHIP.L,SHIP.W)){const v=Math.abs(SHIP.speed);const w=v>2&&shipBars().hull>0?shipWear((v-2)*4,0):null;if(w&&w.hull)showMsg(`Aground — she strikes the shallows. Hull −${w.hull}.`,'#ff8060');else if(v>.5)showMsg('Aground — shallows ahead.','#c8b880');SHIP.speed=0;}
+      const stone=hullStoneAhead(SHIP.x,SHIP.z,SHIP.yaw,probe,SHIP.L,SHIP.W);
+      if(worldH(bx,bz)>SEA_Y-1.4||bx<20||bz<20||bx>WMAX-20||bz>WMAX-20||stone){const v=Math.abs(SHIP.speed);if(stone==='reef'&&probe>0&&!SHIP.reefFast)SHIP.reefFast={t:0}; /* S2637 — held fast */const w=v>2&&shipBars().hull>0?shipWear((v-2)*4,0):null;if(w&&w.hull)showMsg(`Aground — she strikes the shallows. Hull −${w.hull}.`,'#ff8060');else if(v>.5)showMsg('Aground — shallows ahead.','#c8b880');SHIP.speed=0;}
       SHIP.x+=fx*SHIP.speed*dt;SHIP.z+=fz*SHIP.speed*dt;
       raceDriftShip(dt); /* S2636 — a tidal race's set, added to her drift, never to her speed (86-world-crime.js) */
       tickSeaWear(dt,fwd);
@@ -857,10 +859,10 @@
   // swimmer's feet hang 1.45 under the surface, so the eye (SCALE.EYE_SWIM 1.65) rides 0.20 over it. They were 0.40 and 0.35,
   // knee-deep. Water walking still holds you up wherever the water is over 0.35 deep (WALK_WATER), as it did.
   const SWIM_DEPTH=1.40,SWIM_Y=SEA_Y-1.45,WALK_WATER=SEA_Y-.35;
-  function groundY(x,z){if(OFFROAD_PATCHES.length){const o=offroadGroundAt(x,z);if(o!==null)return o;} /* S2044 — a place off the road that brings its own ground (the peat camp) */const h=worldH(x,z);if(h<WALK_WATER&&typeof fxOn==='function'&&fxOn('waterwalk'))return SEA_Y+.06;return h<SWIM_Y?SWIM_Y:h;}
+  function groundY(x,z){if(OFFROAD_PATCHES.length){const o=offroadGroundAt(x,z);if(o!==null)return o;} /* S2044 — a place off the road that brings its own ground (the peat camp) */const h=worldH(x,z);if(h<WALK_WATER&&typeof fxOn==='function'&&fxOn('waterwalk'))return SEA_Y+.06;if(h<SWIM_Y+.3){const rk=reefRockAt(x,z,0);if(rk)return rk.head;} /* S2637 — a reef rock's head is footing */return h<SWIM_Y?SWIM_Y:h;}
   // S1808 — never in a room: indoors activeZoneId stays 'world' and px, pz are the room's, so worldH there read the sea off the map's corner
   // and a room's floor under −1.15 m (the mine's sump, 16 m down) counted as swimming. A room's own water is roomSwimming (88).
-  function isSwimming(){if(typeof fxOn==='function'&&fxOn('waterwalk'))return false;return activeZoneId==='world'&&!isInterior()&&!SHIP.sailing&&worldH(px,pz)<SEA_Y-SWIM_DEPTH&&jumpY<SWIM_Y+.3&&!onAnyPlatform();}
+  function isSwimming(){if(typeof fxOn==='function'&&fxOn('waterwalk'))return false;return activeZoneId==='world'&&!isInterior()&&!SHIP.sailing&&worldH(px,pz)<SEA_Y-SWIM_DEPTH&&jumpY<SWIM_Y+.3&&!onAnyPlatform()&&!reefRockAt(px,pz,0);}
   function onAnyPlatform(){for(const p of ZONES.world.platforms){if(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-p.y)<1.2)return true;}return false;}
 
   // ═══ UNDER THE WATER (Session D) ═════════════════════════════════════
@@ -950,6 +952,9 @@
   // the sea chose another spot between two boots). One function for the wreck laid and for seaWrecks' walk (86-world-crime.js), so the
   // maiden's three and the navigator's pointer name the wrecks that are laid. {x,z,bed} or null.
   function wreckSpot(cx,cz){
+    { /* S2637 — a reef's chunk holds a wreck one time in three, on the bed beside its rocks (the tell a diver learns) */
+      const R=hash01(cx,cz,210)<REEF_ODDS?reefOfChunk(cx,cz):null;
+      if(R&&hash01(cx,cz,218)<1/3)for(let k=0;k<9;k++){const a=hash01(cx+k,cz,219)*Math.PI*2,d=14+hash01(cz,cx+k,219)*22,tx=R.x+Math.cos(a)*d,tz=R.z+Math.sin(a)*d,b=placeH(tx,tz);if(b<-2.5&&b>-8)return {x:tx,z:tz,bed:b,reef:R.key};}}
     if(hash01(cx,cz,150)>.06)return null; // ~1 in 16 candidate chunks
     for(let k=0;k<9;k++){const tx=cx*CHUNK+8+hash01(cx+k,cz,151)*(CHUNK-16),tz=cz*CHUNK+8+hash01(cz,cx+k,152)*(CHUNK-16),b=placeH(tx,tz);if(b<-2.5&&b>-8)return {x:tx,z:tz,bed:b};}
     return null;}
