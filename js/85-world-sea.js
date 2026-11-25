@@ -844,6 +844,7 @@
       const WMAX=SIZE*GRID;
       if(worldH(bx,bz)>SEA_Y-1.4||bx<20||bz<20||bx>WMAX-20||bz>WMAX-20||hullStoneAhead(SHIP.x,SHIP.z,SHIP.yaw,probe,SHIP.L,SHIP.W)){const v=Math.abs(SHIP.speed);const w=v>2&&shipBars().hull>0?shipWear((v-2)*4,0):null;if(w&&w.hull)showMsg(`Aground — she strikes the shallows. Hull −${w.hull}.`,'#ff8060');else if(v>.5)showMsg('Aground — shallows ahead.','#c8b880');SHIP.speed=0;}
       SHIP.x+=fx*SHIP.speed*dt;SHIP.z+=fz*SHIP.speed*dt;
+      raceDriftShip(dt); /* S2636 — a tidal race's set, added to her drift, never to her speed (86-world-crime.js) */
       tickSeaWear(dt,fwd);
       // the player stands at the wheel
       px=SHIP.helm.x;pz=SHIP.helm.z;jumpY=SHIP.helm.y;onGround=true;velY=0;
