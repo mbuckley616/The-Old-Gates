@@ -1223,7 +1223,7 @@ function buildNPCMesh(def,opts){
   if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
   let gb=g,G=g.hbKey&&hbOn()?HB_GENOMES.get(g.hbKey):null;
   if(G){const W=hbSeasonDress(g,G);if(W!==G&&W.dress.coat&&!(G.dress||{}).coat){gb=Object.assign({},g,{cloth:new THREE.Color(...W.dress.coat)});gb.sleeve=gb.cloth.clone().multiplyScalar(.9);}if(W!==G&&!G.cast)hbDriverHead(gb=gb===g?Object.assign({},g):gb,W.dress||{});G=W;} /* S2332 — a winter coat's hood up on the stand-in too */ /* S1763 — the distant copy in the coat's colour */
-  const rig=buildPerson(gb);if(G){rig.hbG=G;HB_RIGS.add(rig);rig.mesh.visible=false;rig.hbHid=true;} /* S2659 — not seen until hbTick has looked: no frame of the old body near (hbTick) */
+  const rig=buildPerson(gb);if(G){rig.hbG=G;HB_RIGS.add(rig);rig.mesh.visible=false;rig.hbHid=true;} /* S2661 — not seen until hbTick has looked: no frame of the old body near (hbTick) */
   return rig.root;
 }
 // ── poses: joint -> [x,y,z] rotations, plus the height of the hips ──
@@ -2941,7 +2941,7 @@ function hbEyes(rig,shut){const H=rig.hb;if(!H.eyes){H.eyes=[];H.P.byName.head.t
   if(shut&&!H.lid)H.lid=new THREE.MeshStandardMaterial({color:new THREE.Color(rig.g.skin).multiplyScalar(.9),roughness:.86});
   for(const e of H.eyes)e.o.material=shut?H.lid:e.m;}
 // people.js's closeFist: the four fingers' joints bent 1.15, 1.35 and .95 rad about the knuckles' line in the metacarpal's frame.
-// S2659 (Michael, 25 Nov: "the bare hands look horribly mangled … standard balled fists, primed for punching. Fingers balled into a fist,
+// S2660 (Michael, 25 Nov: "the bare hands look horribly mangled … standard balled fists, primed for punching. Fingers balled into a fist,
 // thumb laid on top of the balled fingers"): each finger now bends about its own axis, the knuckles' line made square to that finger's
 // own run (one shared axis bent the splayed little and index fingers across their neighbours), and further, 1.45, 1.6 and 1.15 rad,
 // so the tips tuck into the palm and the middle bones make the fist's flat front
@@ -2954,7 +2954,7 @@ function hbCloseFist(by,sd){const n=k=>by[k];if(!n(`finger2-1.${sd}`)||!n(`finge
   for(let f=2;f<=5;f++){const b2=n(`finger${f}-2.${sd}`),a=h.clone();
     if(b2&&b2.position.lengthSq()>1e-12){const d=b2.position.clone().normalize();a.addScaledVector(d,-a.dot(d));if(a.lengthSq()>1e-6)a.normalize();else a.copy(h);}
     for(let j=1;j<=3;j++){const b=n(`finger${f}-${j}.${sd}`);if(b)b.quaternion.setFromAxisAngle(a,sg*HB_FIST[j-1]);}}}
-// F10, part two — the thumb laid across the folded fingers (the player's fist, both views). S2659: the thumb bends at its own two joints
+// F10, part two — the thumb laid across the folded fingers (the player's fist, both views). S2660: the thumb bends at its own two joints
 // (.55 and .45 rad, toward the palm) and is then turned at its root so its tip, a third of its last bone past the last joint, lies on
 // the front of the index and middle fingers' middle bones, 1 cm out from them; before, it stayed straight and its line was aimed at a
 // point 1.5 cm out, so the thumb stood up off the fist like a hitch-hiker's in first person
@@ -3351,13 +3351,13 @@ function hbTick(now){let best=null,bd=HBODY.build;
     if(!root.parent||!top.parent){hbDrop(rig);HB_RIGS.delete(rig);continue;}
     if(top.parent!==scene||!top.visible||!root.visible)continue;
     const d=Math.hypot(CAM.position.x-top.position.x,CAM.position.z-top.position.z);
-    // S2659 (Michael, 25 Nov: "the cartoony-looking version of him still before his new mesh loaded"): a townsperson waiting for the
+    // S2661 (Michael, 25 Nov: "the cartoony-looking version of him still before his new mesh loaded"): a townsperson waiting for the
     // builder's body is not drawn at all nearer than HBODY.near; the driver shows only past it (the far level's own look) or if the build
     // failed. A foe keeps its driver until then: one coming at you is never invisible
     if(!rig.hb){if(!rig.hbFoe){const hide=!rig.hbFail&&d<HBODY.near;if(hide!==!!rig.hbHid){rig.hbHid=hide;rig.mesh.visible=!hide;}}
       if(!busy&&!HBODY.job&&!rig.hbFail&&d<bd){bd=d;best=rig;}continue;}
     const L=rig.hb.L,a=HBODY.near+(L>0?-1:1),b=HBODY.mid+(L>1?-1:1);hbLevel(rig,rig.hb.cold?2:d<a?0:d<b?1:2);
-    if(!rig.hbFoe&&rig.hb.L===2)rig.mesh.visible=!(rig.hb.cold&&d<HBODY.near); /* S2659 — nor while its shaders warm (cold, drawn as the far level) */
+    if(!rig.hbFoe&&rig.hb.L===2)rig.mesh.visible=!(rig.hb.cold&&d<HBODY.near); /* S2661 — nor while its shaders warm (cold, drawn as the far level) */
     if(rig.hb.L<2){hbPose(rig);if(rig.hb.glow)hbGlow(rig);if(rig.hb.held.length)hbHold(rig);if(rig.ride&&!rig.hb.rideSkirt&&rig.w&&rig.w.ride>.99)hbRideSkirt(rig);}} /* S2300 — a rider's skirt seated on the saddle, once */
   if(best&&best.hbFoe&&!best.hbG){try{best.hbG=hbFoeGenome(best);}catch(e){best.hbFail=true;console.warn('F4: no genome for the foe',best.hbFoe,e);best=null;}}
   if(best&&HB.makePersonIter){try{HBODY.job={rig:best,it:HB.makePersonIter(best.hbG,HB_LEAN),ms:0,steps:0};}catch(e){best.hbFail=true;console.warn('F4: makePerson failed for',best.g.hbKey,e);}best=null;}

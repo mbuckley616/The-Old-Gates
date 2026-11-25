@@ -29,7 +29,7 @@ async function dunmore(g) {
 
 const g = await boot({ look: 'new' }); const { page } = g;
 const b1 = await dunmore(g);
-// S2529 is below. S2659 (Michael, 25 Nov: the old cartoon body showed before the new one): a townsperson waiting for the builder's body is
+// S2529 is below. S2661 (Michael, 25 Nov: the old cartoon body showed before the new one): a townsperson waiting for the builder's body is
 // not drawn nearer than HBODY.near (from the frame it is made), its old driver shows past it (the far level), and the body comes after
 const wait = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'), X = t.x - 18, Z = t.z + 26;
   const root = buildNPCMesh({ name: 'Wait Body', role: 'farmer' }, { nation: 'gatelander', key: 'waitbody' }), rig = [...PEOPLE_RIGS].find(r => r.root === root);

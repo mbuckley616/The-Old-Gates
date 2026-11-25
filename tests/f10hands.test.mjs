@@ -21,7 +21,7 @@ const r = await page.evaluate(() => { thirdPerson = false; forceTime(11); const 
   const ws = new THREE.Vector3(); R.root.getWorldScale(ws);
   // the thumb laid across the folded fingers: its last joint near the index finger's second joint (a hand's knuckles-to-wrist apart, straight)
   out.thumb = { tip: +at('finger1-3.' + sd).distanceTo(at('finger2-2.' + sd)).toFixed(4), hand: +kc.distanceTo(at('wrist.' + sd)).toFixed(4) };
-  // S2659 — balled (Michael, 25 Nov): each finger's middle bone runs back toward the wrist (the tip tucked in the palm), and the fingers keep
+  // S2660 — balled (Michael, 25 Nov): each finger's middle bone runs back toward the wrist (the tip tucked in the palm), and the fingers keep
   // their order across the knuckles (none crosses its neighbour)
   const mcd = at('wrist.' + sd).sub(kc).normalize(), across = at('finger2-1.' + sd).sub(at('finger5-1.' + sd)).normalize();
   out.ball = [2, 3, 4, 5].map(f => +at(`finger${f}-3.${sd}`).sub(at(`finger${f}-2.${sd}`)).normalize().dot(mcd).toFixed(2));
