@@ -16,6 +16,7 @@ console.log(JSON.stringify(a));
 check(`every plain lesser gate placed so far is a ring gate (${a.rings} of ${a.plain}; ${a.built} built), no lair's cavern is one, and no old mound stands at any`, a.plain > 0 && a.rings === a.plain && a.lairs === 0 && a.built > 0 && a.moundAtRing === 0, a);
 const S0 = a.near; await page.evaluate(G => { px = G.x; pz = G.z - 40; }, S0);
 for (let n = 0; n < 8; n++) { await g.cells(); if (await page.evaluate(s => { const G = RING_GATES.get(s); return !!(G && G.group && G.group.parent); }, S0.seed)) break; await page.waitForTimeout(1000); }
+await page.evaluate(() => WORLD.setRadius(RADIUS)); /* the chunks round you built now, as the game's frames would (CI read none streamed yet) */
 const r = await page.evaluate(s => { const G = RING_GATES.get(s), S = rgShape(), W = (lx, lz) => G.toW(lx, lz), K = PKIT.places.gatemouth({ key: 'gate:' + s, cond: G.cond, ground: () => 0 });
   const gy = (lx, lz, y) => { jumpY = y == null ? G.y : y; return +(groundY(...W(lx, lz)) - G.y).toFixed(2); }, sol = (lx, lz) => { jumpY = G.y; return solidAt(...W(lx, lz), .3); };
   const out = { seed: s, face: G.face, plate: G.plate, cond: G.cond, roll: gateCondRoll(s), kit: G.kit, far: G.far, laid: G.laid, across: K.across, door: G.door };
