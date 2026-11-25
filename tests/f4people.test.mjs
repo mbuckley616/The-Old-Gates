@@ -346,27 +346,23 @@ for (const [name, near] of [['f4-whole.jpg', 16], ['f4-baked.jpg', 0]]) {
 await page.evaluate(() => { HBODY.near = 16; });
 await shoot('f4-crowd60.jpg', () => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 60; yaw = 0; pitch = -.03; });
 }
-// S2634 (S2625's note): a keeper built indoors takes their own people from the street's def, not a Gatelander's body by default. Dunmore's
-// Old Blood householder at home by night, built with no genome cached from the street
-const home = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), hr = gameHour(); forceTime(22);
-  const kept = S.houses.filter(h => h.keeper), h = kept.find(x => x.type === 'home' && keeperPeople(x) === 'oldblood');
-  if (!h) { forceTime(hr); return { none: true, unset: kept.filter(x => !keeperPeople(x)).length }; }
-  for (const k of [...PEOPLE_GENOMES.keys()]) if (k.startsWith(h.keeper + '|')) PEOPLE_GENOMES.delete(k);
-  window._kH = h; window._kHr = hr; px = h.exitX; pz = h.exitZ; goToInterior(h); return { keeper: h.keeper, unset: kept.filter(x => !keeperPeople(x)).length, of: kept.length }; });
-for (let k = 0; k < 40 && !home.none && !(await page.evaluate(() => isInterior() && currentHouse === _kH)); k++) await page.waitForTimeout(250);
-if (!home.none) Object.assign(home, await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.root.parent === scene && r.g.name === _kH.keeper);
-  const out = { inside: isInterior(), people: rs.map(r => r.g.people) }; exitInterior(); forceTime(_kHr); return out; }));
-for (let k = 0; k < 40 && (await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
-check(`a keeper built indoors is of their own people: ${home.keeper || 'no Old Blood householder'} at home is Old Blood (every one of Dunmore's ${home.of} keepers has a people)`,
-  !home.none && home.inside && home.people.length === 1 && home.people[0] === 'oldblood' && home.unset === 0, home);
-const inn = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'inn') || S.houses[0]; px = h.exitX; pz = h.exitZ; goToInterior(h); return h.type; });
+// S2634 (S2625's note): a keeper built indoors takes their own people from the street's def (`keeperPeople`), not a Gatelander's
+// body by default. On the inn's visit below (no trip of its own: the suite stands near run.mjs's 900 s on CI), the keeper's genome is
+// forgotten and the house told the keeper is Old Blood, so the body built in the room must be Old Blood; both are put back after
+const kept = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), k = S.houses.filter(h => h.keeper); return { of: k.length, unset: k.filter(h => !keeperPeople(h)).length }; });
+const inn = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(x => x.type === 'inn') || S.houses[0];
+  window._kInn = { h, was: h.people }; h.people = 'oldblood'; for (const m of [PEOPLE_GENOMES, HB_GENOMES]) for (const k of [...m.keys()]) if (k.startsWith(h.keeper + '|') || k === h.siteId + ':' + h.keeper) m.delete(k);
+  px = h.exitX; pz = h.exitZ; goToInterior(h); return h.type; });
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 await page.evaluate(() => { HBODY.last = -1e9; }); // the ticks above ran on made-up clocks; the room runs on the page's own
 for (let k = 0; k < 12; k++) { await g.frames(1); await page.evaluate(() => tickPeople(1 / 60, performance.now())); }
 const room = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.root.parent === scene);
-  return { inside: isInterior(), people: rs.length, built: rs.filter(r => r.hb).length }; });
+  const K = _kInn.h, kr = rs.filter(r => r.g.name === K.keeper), out = { inside: isInterior(), people: rs.length, built: rs.filter(r => r.hb).length, keeper: K.keeper, kPeople: kr.map(r => r.g.people), kBody: kr.map(r => r.hbG && r.hbG.people) };
+  K.people = _kInn.was; for (const m of [PEOPLE_GENOMES, HB_GENOMES]) for (const k of [...m.keys()]) if (k.startsWith(K.keeper + '|') || k === K.siteId + ':' + K.keeper) m.delete(k); return out; });
 if (PICS) await page.screenshot({ path: path.join(OUT, 'f4-inn.jpg'), timeout: SHOT_MS });
 check('in the inn\'s common room the keeper and the drinkers wear the builder\'s bodies too', room.inside && room.people >= 1 && room.built === room.people, { inn, ...room });
+check(`a keeper built indoors is of the people the house names (${room.keeper}, told Old Blood, is ${room.kPeople.join(', ') || 'not in the room'}), and every one of Dunmore's ${kept.of} keepers has a people`,
+  room.kPeople.length === 1 && room.kPeople[0] === 'oldblood' && room.kBody[0] === 'oldblood' && kept.unset === 0, { ...room, ...kept });
 check('no page errors', g.errs.length === 0, g.errs.slice(0, 3));
 // S1792 (L2, OG-069): the cast (last on this boot: the cloak walk above is sensitive to what ran before it, S1770). Bram, Edna and Corwin at Ashenmoor (and Corwin authored at a harbour) wear the builder's CAST genome, not a
 // roll of their key, and the driver follows it (Edna's town roll had made her a young man of 1.85); an Edna of another town is her own woman
