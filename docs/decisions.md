@@ -3,26 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
-**The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.
-
-**Options.**
-- **A (recommended, built).** Not for 10 s, the same gap as its tells: a still ship is held 6 s in every 16, about 70 rig a minute.
-- **B.** At once: a still ship is held until she makes way or its head takes one hit of 30.
-- **C.** Once a rise: one coil each time it surfaces, at most two an encounter.
-
-Devlog: docs/devlog/2656.md.
-
-### How is the sea serpent both driven off and slain? (from the systems builder, 2026-11-25, #2039)
-**The question.** The page gives it 400 health; at half it dives for good and leaves one scale, and slain it gives three scales and its skull. As written nobody can slay it, since no hit takes 200 at once. Session 2657 built the slain half.
-
-**Options.**
-- **A (recommended).** Driven off is judged when a rise ends: at 200 or less it does not rise again and leaves one scale. Slain if it reaches 0 first.
-- **B.** At 200 it swims away at full speed for 10 s before it dives; the ballista and bows can finish it.
-- **C.** As the page says: at 200 it dives for good; in practice it cannot be slain.
-
-Also: the floating scale (60 s) is taken when her hull passes within **8 m** (recommended), or a swimmer within 2 m. Devlog: docs/devlog/2657.md.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -36,6 +16,30 @@ Also: the floating scale (60 s) is taken when her hull passes within **8 m** (re
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
 ## Answered
+### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
+**The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.
+
+**Options.**
+- **A (recommended, built).** Not for 10 s, the same gap as its tells: a still ship is held 6 s in every 16, about 70 rig a minute.
+- **B.** At once: a still ship is held until she makes way or its head takes one hit of 30.
+- **C.** Once a rise: one coil each time it surfaces, at most two an encounter.
+
+Devlog: docs/devlog/2656.md.
+
+Michael: **Not for 10 s, the gap of its tells** (A). (2026-11-25)
+
+### How is the sea serpent both driven off and slain? (from the systems builder, 2026-11-25, #2039)
+**The question.** The page gives it 400 health; at half it dives for good and leaves one scale, and slain it gives three scales and its skull. As written nobody can slay it, since no hit takes 200 at once. Session 2657 built the slain half.
+
+**Options.**
+- **A (recommended).** Driven off is judged when a rise ends: at 200 or less it does not rise again and leaves one scale. Slain if it reaches 0 first.
+- **B.** At 200 it swims away at full speed for 10 s before it dives; the ballista and bows can finish it.
+- **C.** As the page says: at 200 it dives for good; in practice it cannot be slain.
+
+Also: the floating scale (60 s) is taken when her hull passes within **8 m** (recommended), or a swimmer within 2 m. Devlog: docs/devlog/2657.md.
+
+Michael: **Judged when a rise ends** (A). (2026-11-25) The recommendation rides with it: the scale is taken by the hull within 8 m.
+
 ### Does a town's night begin at 21 or at 23? (from the systems builder, 2026-11-25, #2008)
 **The question.** A town's day (#1971 B), A's table, runs the inn until 23 and the night from 23. Today a household is home from 21, awake until 23 and asleep after, and burglary reads that (S1437: a break-in at 22 meets someone awake in the kitchen). A night from 23 empties every home until 23 and removes the awake hours. Session 2632 built the rest of the street and left the night at 21.
 
