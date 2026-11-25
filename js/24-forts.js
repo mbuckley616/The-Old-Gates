@@ -1607,6 +1607,7 @@ function spawnPortalMeshes(sc,portals,sol,getY){
     }
 
     // ── cave_door: an old gate (S578, Michael's A on DECISION #169) ──
+    if(p.ringGate)return; /* S2633 — a ring gate's outside is built with its cell (placeRingGates, 82); the portal is still listed */
     buildOldGateFront(sc,p,ty,sol,getY);
   });
 }
