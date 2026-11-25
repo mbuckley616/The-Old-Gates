@@ -963,7 +963,7 @@
         const keep=ZE;ZE=[e];INT_FOE_Y=e._fy||0;try{tickZoneEnemies(dt,performance.now(),interiorScene);e._fy=footholdY(e.x,e.z,e._fy||0,0);}finally{ZE=keep;INT_FOE_Y=null;}return;} /* S1439 — on his own floor */
       if(s.phase==='coming'&&s.t>=Math.max(GUARD_IN,s.walk)){ // he comes in by the door
         const W=currentHouse._roomW||currentHouse.intW||10,D=currentHouse._roomD||currentHouse.intD||10;
-        const g=buildNPCMesh({role:'guard',name:(n.def&&n.def.name)||'Guard',_twin:n.def&&n.def._twin,bCol:(n.def&&n.def.bCol)||0x6a2a2a,sCol:(n.def&&n.def.sCol)||0xd4a878},{nation:nationAt(currentHouse.doorX,currentHouse.doorZ),key:currentHouse.siteId||''});
+        const g=buildNPCMesh({role:'guard',name:(n.def&&n.def.name)||'Guard',people:n.def&&n.def.people /* S2638 — his own people indoors, as in the street */,_twin:n.def&&n.def._twin,bCol:(n.def&&n.def.bCol)||0x6a2a2a,sCol:(n.def&&n.def.sCol)||0xd4a878},{nation:nationAt(currentHouse.doorX,currentHouse.doorZ),key:currentHouse.siteId||''});
         g.position.set(currentHouse._exitX!=null?currentHouse._exitX:W/2,0,D-1.0);g.rotation.y=Math.PI;if(interiorScene)interiorScene.add(g);s.mesh=g;s.phase='inside';
         showMsg(`${(n.def&&n.def.name)||'A guard'} comes in.`,'#e88a8a');return;}
       if(s.phase==='inside'&&s.mesh){const g=s.mesh,T=targetOf(n),gy=g.position.y,ty=T.y!=null?T.y:jumpY,dx=T.x-g.position.x,dz=T.z-g.position.z,d=Math.hypot(dx,dz),same=Math.abs(ty-gy)<1.2;g.rotation.y=Math.atan2(dx,dz);
