@@ -234,7 +234,7 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
 - ~~**A held coach seat is lost on a load, or kept into another character's game**~~ — **fixed, Session 2464** (the systems builder's sweep of `worldState` keys written anywhere against the keys `_applyLoadData` reads: `coachSeat`, the character's in `SS_CHAR_WS` since S456 and saved since S267, was never read back; `zoneSpawnT`, the zones' last spawn, the same; both join the S242 list; `tests/coachseat` +1).
 
 ## I. Found in play (the critic)
-- **`budget` red on main since s1947: the Gatelands' windmills put Dunmore's street over Low's 700 draw calls** (QA, Session 2628, s1947
+- ~~**`budget` red on main since s1947: the Gatelands' windmills put Dunmore's street over Low's 700 draw calls**~~ — done, Session 2629 (`millFar`: the far copy in 2 draws past 76.8 m; the street 677/623 at Low, the `mill` column 78 → 12) (QA, Session 2628, s1947
   `028ec1d`; for the look builder: `placeMills`/`tickMills`, `js/82-world-structures.js`, and `gatelandsMill`, `js/38-kit.js`). S2621 (#1998,
   s1946) adds the tower mill at 22 villages; each is 13 draws and 3,668 triangles, built whole and drawn at every distance a loaded cell
   reaches, with no far level and no merge. From Dunmore's street six are in view: the ledger's `mill` column reads 78 calls at every level.
