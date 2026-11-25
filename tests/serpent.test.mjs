@@ -43,7 +43,7 @@ const res = await page.evaluate(async (at) => { const o = {}; const S = WORLD.sh
   // up 60 s, then down 90 with her near: a second rise; then down again and gone
   S.speed = 0; let g = 0; while (SERP.on && SERP.on.phase === 'up' && g < 60 * 70) { step(1); g++; } o.upFor = (O.t, g); o.down = SERP.on && SERP.on.phase === 'down'; o.hidden = !SERP.g.visible;
   step(90 * 60 + 2); o.rises = SERP.on && SERP.on.rises; o.up2 = SERP.on && SERP.on.phase === 'up';
-  step(61 * 60); step(91 * 60); o.gone = !SERP.on;
+  step(64 * 60); step(91 * 60); o.gone = !SERP.on; /* S2656 — 60 s up, a tell in flight may hold the dive 2.5 s */
   return o; }, spot);
 console.log('  serpent:', JSON.stringify(res));
 check(`it may rise in open water far from a port, at 1 in 250 (×3 here by an Uisce gate: ${res.uisce}); a storm doubles it; a black sail within 140 m bars it`, res.bar0 === null && Math.abs(res.odds - (res.uisce ? 3 : 1) / 250) < 1e-9 && Math.abs(res.storm - 2 * res.odds) < 1e-9 && res.barBlack === 'black sail', res);
@@ -64,5 +64,42 @@ const shoal = await page.evaluate(() => { const ports = allPorts();
       return { ok, minD: +minD.toFixed(1), from: [Math.round(x), Math.round(z)] }; } }
   return null; });
 check('led at the shallows it never crosses the 4 m line', shoal && shoal.ok, shoal);
+// S2656 — session 5: the coil, its health, the ballista, arrows and spells at its head
+const fight = await page.evaluate((at) => { const o = {}; const S = WORLD.ship; WORLD.spawnShip(at.x, at.z, at.yaw); S.x = at.x; S.z = at.z; S.yaw = at.yaw; S.sailing = true; S.speed = 0;
+  worldState.ship.hull = 100; worldState.ship.rig = 100; px = S.x; pz = S.z; for (const c in HELD_KEYS) HELD_KEYS[c] = false;
+  const step = (n, v) => { for (let i = 0; i < n; i++) { S.speed = v || 0; px = S.x; pz = S.z; serpentTick(1 / 60); } };
+  // the coil: alongside her at 2 m/s, no tell in hand
+  serpDrop(); SERP.last = -1e9; serpentRise(null, false); const O = SERP.on; o.hp0 = O.hp;
+  O.x = S.x + Math.cos(S.yaw) * 13; O.z = S.z - Math.sin(S.yaw) * 13; O.cd = 99; const r0 = shipBars().rig;
+  step(1, 2); o.coiled = !!O.coil; o.held = serpentHolds() && S.speed === 0; let t = 1; while (O.coil && t < 600) { step(1, 2); t++; }
+  o.coilS = +(t / 60).toFixed(2); o.coilRig = r0 - shipBars().rig; o.cdAfter = +O.coilCd.toFixed(2); step(60, 2); o.noRecoil = !O.coil;
+  // a hit of 29 leaves the coil; one of 30 breaks it
+  O.coilCd = 0; step(1, 0); o.coiled2 = !!O.coil; serpentHit(29, 'Test'); o.after29 = !!O.coil; serpentHit(30, 'Test'); o.after30 = !!O.coil; o.hpHits = O.hp;
+  // the ballista lays on its head ahead of her bow; a bolt is 40, a fire bolt 60
+  O.hp = 400; O.coilCd = 99; O.cd = 99; const fx = -Math.sin(S.yaw), fz = -Math.cos(S.yaw); O.x = S.x + fx * 45; O.z = S.z + fz * 45; O.yaw = Math.atan2(-fx, -fz); O.phase = 'up';
+  gold = 2000; if (!shipFitted('ballista')) fitShip('ballista'); worldState.ship.hold.bolts = 20; BOLTS.t = -1e9; ballistaFireMode(false);
+  const hd = serpHead(); o.headD = +Math.hypot(hd.x - S.x, hd.z - S.z).toFixed(1); o.bears = ballistaBears() === SERP_MARK;
+  const land = () => { for (const f of BOLTS.fly) f.t0 -= 30; tickBolts(0); };
+  o.fire1 = fireBallista(); land(); o.hpBolt = O.hp;
+  BOLTS.t = -1e9; ballistaFireMode(true); bagAdd(Object.assign({}, SURV_ITEMS.pitch, { qty: 2 })); o.fire2 = fireBallista(); land(); o.hpFire = O.hp; ballistaFireMode(false);
+  const ox = O.x, oz = O.z; O.x = S.x - fz * 45; O.z = S.z + fx * 45; o.bearsAside = ballistaBears() === SERP_MARK; O.x = ox; O.z = oz;
+  O.phase = 'down'; o.bearsDown = ballistaBears() === SERP_MARK; o.downHit = serpentHit(40, 'Test'); O.phase = 'up';
+  // an arrow at its head: its own damage; one that flies wide strikes nothing
+  const h = serpHead(), fb = (dx, u) => ({ position: { x: h.x + dx, y: SEA_Y + 1, z: h.z }, userData: u });
+  const hp1 = O.hp; o.arrow = serpentTakes(fb(0, { isArrow: true, arrowDmg: 25, wType: 'pierce' })); o.arrowDmg = hp1 - O.hp; o.arrowWide = serpentTakes(fb(6, { isArrow: true, arrowDmg: 25 }));
+  // spells: Tine ×1.5 and Uisce ×0.5 against the same roll on a foe of no resist
+  const one = sch => SPELLS.find(s => s.school === sch && !s.status && !s.heal && spellMag(s, 1) > 0);
+  O.rng = () => 0; const plain = { resist: {}, def: 0, rng: () => 0 };
+  for (const sch of ['tine', 'uisce', 'gaoth']) { const sp = one(sch); if (!sp) { o[sch] = null; continue; } const base = applySpellDamage(plain, sp, 1).dmg, b = O.hp;
+    serpentTakes(fb(0, { spell: sp, tier: 1 })); o[sch] = { id: sp.id, base, dealt: b - O.hp }; } delete O.rng;
+  serpDrop(); return o; }, spot);
+console.log('  fight:', JSON.stringify(fight));
+check(`it coils her alongside at 2 m/s: held at no way for ${fight.coilS} s (6), ${fight.coilRig} rig (18), and not again within 10 s`, fight.coiled && fight.held && Math.abs(fight.coilS - 6) < .05 && fight.coilRig === 18 && fight.cdAfter === 10 && fight.noRecoil, fight);
+check('a hit of 29 to its head leaves the coil; one of 30 breaks it', fight.coiled2 && fight.after29 && !fight.after30, fight);
+check(`it has 400 health; the ballista lays on its head ${fight.headD} m off her bow: a bolt takes 40, a fire bolt 60`, fight.hp0 === 400 && fight.bears && fight.fire1 === true && fight.hpBolt === 360 && fight.fire2 === true && fight.hpFire === 300, fight);
+check('the ballista does not bear on its head out of her arc, nor on it while it is down, and a hit while down does nothing', !fight.bearsAside && !fight.bearsDown && fight.downHit === null, fight);
+check('an arrow at its head deals its own damage; one 6 m wide strikes nothing', fight.arrow && fight.arrowDmg === 25 && !fight.arrowWide, fight);
+const near = (a, b) => Math.abs(a - b) <= 1;
+check('a spell at its head deals its own damage: Tine ×1.5, Uisce ×0.5, Gaoth ×1', fight.tine && fight.uisce && fight.gaoth && near(fight.tine.dealt, fight.tine.base * 1.5) && near(fight.uisce.dealt, fight.uisce.base * .5) && fight.gaoth.dealt === fight.gaoth.base, fight);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
