@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 56, 24 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 57, 25 Nov: no new calls on the page)
 
 ---
 
@@ -8266,3 +8266,191 @@ He goes where the sickness goes. While any town on the three islands is under pl
 - Ammonius: *Master* throughout, entries, registers, petitions, accounts, debtors and creditors. He never swears an oath (*a matter between myself and the Weaver, in which I am the defaulting party* is a contract, not an oath). His line on the dead (*it keeps them waiting*) is the Church's own belief turned over once, and it never names the Clearing. The Church brother's refusal is the Compact's dry turn.
 - The slurs: Cairenn's *cold-eyes* comes from the Markish townsman, and the same rumour calls her harmless. Fergal's *tithe-house* is said to an Aurennais as a joke at his own expense. Each is about work and gods, never bodies.
 - No prophecy, no chosen one, no line on what the player is.
+
+---
+
+## The Strange and the Legendary, IV — the old man on the quay, the Herald in the gold mask, and the child who feels the stones
+
+*Unapproved. Drafted 25 Nov 2026.* Backlog L2, *The strange and the legendary*, the fourth and last run: OG-001's last three mysterious figures, as the catalogue gives them: **the Mariner** (old, grey-bearded, a knit cap), **the Herald** (a gold sun-rayed mask) and **the Child** (a pale girl who stares). Runs I to III wrote the other seventeen, and OG-001's Veiled and Collector were folded into runs I and II. With this run every figure the item names has a draft. The method is the same as runs I to III. Each person stands where the game already has a place, does one thing on machinery that exists, and leaves one thread the world remembers. Two **Rule reads** go to the systems builder. No line depends on which way either one goes.
+
+### What the canon fixes, and where it is silent
+
+- *Every "royal" string means the Crown of the Gatelands; the Royal Herald is Aldwyn* (§1.1, Part I's Ironhaven). OG-001 draws Aldwyn and the masked Herald on one sheet, so they are two people. The masked figure is **the Herald** and nothing more. The towns call her *the Gold Herald*, so no one mistakes her for the Crown's. Aldwyn says plainly that she is not of his office (§2 below).
+- *The awake look like villains* (§10a). Of the three, the Herald is the candidate. She cries in a town's square what has been done in the world, and the only one who has done any of it is the player. She never names the player, never says who sent her, and never cries anything that has not happened yet. *No chosen-one prophecies* (§4.2): she says so herself.
+- *Every rubbing-seller and hermit who points the player at a gate is one of them* (§3.3). *A child either shows the marks or does not*; *Old Blood is a spectrum, strongest inland in the Gatelands' hills* (§3.1). So the Child is a Gatelander's daughter in a hill village. Her mother is a Gatelander, and the Old Blood came out in her anyway. The pale lines are just starting at her wrist. She feels the warm stones, as the Old Blood do. She stares because she is feeling them, not because she sees anything in the player.
+- *The Withdrawal forbade the reading of sigils; touching is permitted, understanding is not* (§3.1). The Child's elder has forbidden her the stones. Her thread asks the player whether to tell her what one said. The canon does not say what that does to a child. The plainer thing: she learns the word, and her mother notices.
+- *The root lies in deep water off Aurenne's far side* (§8.3). *Every beat ends with a direction* (§10). The Mariner sailed there once and turned back. He says what he saw and no more: deep water that was warm, and a lead that found no bottom. That is a direction. It is not a revelation.
+- *The sea owns them twice a day* is An Mhuir's scripture (§4.1), the Gatelands'. *The Mark scorns priests* (§1.2). So a Markman quotes the scripture as somebody else's and answers it in his own words.
+- *Bodies* (§2). The Mariner is a Markman, tall and stooped, his beard grey to the chest. The sheet's knit cap is his wife's work. The Herald's people is never said, as Corwin's is not (Michael's 11 C). She speaks in formal sentences, so the towns guess Aurennais, and the Aurennais say she is none of theirs. The Child is a Gatelander's daughter, black-haired, freckled and grey-pale.
+- *Names* (§2). The Mariner is **Godric**, an Anglo name not in the generator's pool, called **Knot**. The Child is **Ailbhe** (*AL-va*), an Irish name, and her mother is **Gráinne**. The Herald has no name: "A herald is sent. A name would be in the way."
+- *Silent:* old sailors, criers and children who feel stones. The game has quays, wrecks and the sea's creatures by depth (S2622–2624), town squares at noon, the warm stones read, lairs, roads, mended bridges and the great gates' states, the hill villages and the warm stones with their rubbings. Each of the three stands at one of these.
+
+### The three
+
+| | People | Where | What they do |
+|---|---|---|---|
+| **Godric, called Knot**, the Mariner | Markman | on one quay a game-fortnight at a time, 8h to 18h, any port of the three islands | tells you what lives in the water off the quay; asks you to swim down to his old ship |
+| **the Herald** | never said | in the square of the town you are in, at noon, at most once a game-week, when something new has been done | cries what has been done; at the seventh cry, gives you the roll |
+| **Ailbhe**, the Child | Gatelander, the Old Blood showing | at the edge of one hill village of the Gatelands, by day, chosen once a seed | points you at the nearest warm stone; asks what it said |
+
+Faces for the bodies builder (the sheet's, with the canon's fixes). Godric is tall, stooped and broad gone thin, with a grey beard to the chest, a grey knit cap rolled at the brim, an oilskin over a fisherman's gansey, and a net across his knees that he is mending. The Herald is of middle height in a long white tabard with a gold border. Her face is covered whole by a gold mask with rays standing out round it like a sun's, the Solas emblem's shape (OG-094), with two eye-holes and a mouth-slit. Her hands are gloved, and she carries a staff with a short white pennant. She has no trumpet; she claps the staff on the stones. Ailbhe is about nine (the genome's youngest, eleven, will do). She is small, black-haired and grey-pale with freckles, in a madder dress and a shawl, barefoot, her sleeves pulled down over her wrists. Gráinne is a Gatelander townswoman, with no new piece.
+
+### 1. Godric, called Knot, the Mariner (Markman; short sentences, *aye*, nicknames, oaths on iron and blood, no honorifics)
+
+He sits on the quay of one port, from 8h to 18h, a game-fortnight at a time, mending a net. The port is rolled on `seededRng('mariner', fortnight)` over the ports of all three islands. When it falls on Fergal's port for the same fortnight he keeps the day and Fergal keeps the night, and neither one mentions the other.
+
+**Greeting, first:** "Mind the net. Took me a week. Sit if you're sitting."
+**Greeting, again:** "You. Still dry, I see. Won't last."
+**Greeting, to a Gatelander player, first:** "Turf-cutter on a quay. You'll want to know does the sea own you. Twice a day. Your book says. Sit."
+**Greeting, to an Aurennais player, first:** "Compact. Your ships come back. Ours did too, mostly. Sit."
+**Greeting, to an Old Blood player, first:** "Cold-eyes. Sit downwind. Not for me. The gulls don't like you. Never have, your lot."
+
+**Topics**
+- *Who are you?* — "Godric. Knot, they call me. Tied every knot on a ship, and a few that weren't on any ship. Fifty years at sea. Twelve on this quay. Quay doesn't move. Suits me now."
+- *The cap?* — "My wife knitted it. She's gone. The cap's not. Wool's the last thing to go."
+- *The sea?* — "Gatelanders say it owns them twice a day. Markmen say once. Once is enough."
+- *The far side?* (from the second meeting) — "Went round Aurenne once. The far side. Water went black. Then it went warm. Deep water's never warm. We put the lead down a hundred fathom and it found nothing. The compass sat like a dead man. We turned her round. Nobody spoke till we saw land. Aye. That's the tale. Don't go."
+  - asked again: "I said don't. You'll go. They all go where you tell 'em not to. That's what telling's for."
+
+**His service: *What's down there?*** He looks over the quay's edge and says what lives in the water there. It reads `seaHabitat` at the water nearest his spot, the same test the sea's creatures roll on (S2622–2624):
+- Shallows: "Shallows. Rays on the sand. Crabs under the rays. A turtle, if the sea likes you. Jellies at night. Don't put your foot on a jelly. Aye, they sting."
+- Open water: "Open water. Tuna run in it, in schools. Squid. The skimmers that jump the bow. Good fishing. Bad swimming."
+- Reef rock: "Rock down there. The moray lives in the rock. The stonefish is the rock. Tread where you can see. The octopus will have your knife off you if you let it."
+- The deep: "No bottom you'd want. The angler's down there with its lamp. The black eel. Sailfin over the both of them. Not for swimming. Not for anything."
+- If the quay's water is too shallow to swim: "Mud and weed. Nothing down there but last year's fish heads, and the crabs eating them."
+
+**His thread: *The Grey Kittiwake*.** At the second meeting, unasked, after the greeting: "You swim? You've the shoulders. I've a thing to ask. Not a big thing."
+- *Ask it.* — "My old ship. The *Grey Kittiwake*. Went down under me thirty winters back, {dir} of here. I came up. Six didn't. The sea kept them. Better than a gate, some say. I don't say. Go down and look at her. Not for what's in her. Tell me how she's sitting."
+  - The wreck is the nearest of `seaWrecks()` to the port, within 3 km, chosen once when he asks and kept by its key. If none is within 3 km, he does not ask, and his greeting stays the same.
+- *Not today.* — "She's not going anywhere. Neither am I."
+- When the player has been down to that wreck (`worldState.stats.wrecks[key]`, which `wreckVisit` writes), at the next meeting: "You've been down. I can see it on you. Well?"
+  - *She's sitting up straight.* — "Is she. Is she, now. Good. Good lass." (a pause) "You're a liar or you're kind. Either's a gift. Iron keep you."
+  - *She's on her side, and broken.* — "Aye. She would be. Thirty winters." (a pause) "Thanks for the truth. Most bring me the other. Iron keep you."
+  - Either way, he gives **Knot's Soundings** (a book, `BOOKS.knot_soundings`, weight .3, `sellMult:0`): "Here. My soundings. Every sea I've had the lead in. Last page is the far side. You'll go anyway. Go knowing the numbers."
+- After the book, his greeting is: "The diver. Sit. Mind the net."
+
+**Knot's Soundings** (the book's text, five short pages):
+> *Soundings taken by Godric Knot, master's mate, then master, of the* Grey Kittiwake *and others. In fathoms. Written up on the quay, from memory, which is better than it was and worse than the lead.*
+>
+> *The strait, mid-channel: forty. Rock and shell. The current sets east at the turn. Never anchor in it.*
+>
+> *Off the Gatelands' south head: twelve, then eight, then three, and a rock where there was no rock the year before. The Gatelanders say the sea moves its furniture. It does.*
+>
+> *Aurenne's warm coast, a mile off the light: twenty. Sand, weed, rays. Tithed twice in one day, by two different Factors, both with the proper paper.*
+>
+> *The far side of Aurenne. Sixty. Eighty. A hundred, and no bottom. The water warm to the elbow. The compass still. No birds. We put about. I have written this page four times, and every time the numbers are the same, and every time I do not like them.*
+
+**The town's word on him** (in `liveRumours`, in the towns of his port's island this fortnight, at most once a day):
+- Markman: "Old Knot's on the quay at {port}. Mending nets nobody uses. Ask him about the far side. Then don't. He'll tell you not to go. Good advice. Nobody takes it."
+- Gatelander: "There's an old Markman on the quay at {port} with a net on his knees and the sea in his face. He went somewhere once he won't go back to. A man who's been everywhere and won't go back one place, I'd listen to him."
+- Aurennais: "An old Markish sailor is to be found on the quay at {port}, Master. He claims to have sounded the waters beyond our far coast. The Compact keeps no chart of them, I am told, on the principle that nothing there wants charting. He does not dispute the principle. He only says the water was warm."
+
+### 2. The Herald (her people never said; formal, *Master* and *Masters*, no oath)
+
+She comes into the square of the town the player is in, at noon, and claps her staff three times on the stones. The townsfolk turn. She cries one thing that has been done since her last cry, and then she goes out of the square the way she came. She comes at most once a game-week, and only when something new has been done: a warm stone read, a lair's beast killed, a road cleared, a bridge mended, or a great gate torn or sealed. Rule read: *where she comes from, and where she goes*, below.
+
+**Her cry** (a log line and the narrator's `showMsg` for the square, then her dialog stays open for a minute; one cry each time, the newest deed first):
+- A warm stone read (`worldState.sigilsRead[seed]`): "Hear it, Masters. The stone in the old gate at {gate} has been read. The word on it is known. It is not cried. Only that it is known."
+- A lair's beast killed (`worldState.lairs[id]`): "Hear it, Masters. The {beast} of {lair} is dead. It was there before your grandmothers. It is not there now."
+- A road cleared (`worldState.roadsCleared[id]`): "Hear it, Masters. The road from {a} to {b} is clear of the men who held it. Go by it. They will not."
+- A bridge mended (`worldState.bridges[id]`): "Hear it, Masters. {bridge} stands again. The river is not consulted."
+- A great gate torn (`worldState.greatGates[id]`): "Hear it, Masters. {School}'s great door at {gate} is opened. What it held is let go. Mark the sky."
+- A great gate sealed: "Hear it, Masters. {School}'s great door at {gate} is shut. What it held is held. Mark the sky. It will not change."
+- A great gate undone (torn then sealed, or the other way round): "Hear it, Masters. {School}'s great door at {gate} is not as it was the last time it was cried. It is cried again."
+
+**Greeting** (spoken to the player, in the minute after the cry):
+- First: "Master. You stood for the crying. Most go back to their bread."
+- Again: "Master. There was a thing to cry, and I have cried it. You are here again. That is not my concern. I note it."
+- To an Old Blood player, first: "Master. I am told to cry what is done, and not what is seen. That is as well. I could not cry what I see when I look at you. It does not hold still."
+- After the Guest's chapel (`vstate().chapel`): "Master. You have been in a room with no face in it. I do not cry that. I am not sent to cry that."
+
+**Topics**
+- *Who are you?* — "The Herald, Master. I cry what is done, in the squares, at noon."
+- *Whose herald?* — "I am sent. By whom, I am not told. A herald is not told. A herald is sent."
+- *Your name?* — "A herald is sent. A name would be in the way."
+- *The Royal Herald?* — "The Crown's herald keeps an office in a city and writes letters. He has done so a long time. I have never written a letter. We are not in the same line of work, Master, whatever the word says."
+- *What will be done?* — "That is not crying, Master. That is prophecy. There is none. I cry what is done, and only after it is done, and that is the whole of the office."
+- *Who did it?* (asked after any cry) — "It is not part of the crying. The crying is what was done. Who did it may stand in the square and listen, if they like. They usually do."
+- *The mask?* — "So that the square looks at the news, Master, and not at the crier. The rays were there when it was given to me. I did not ask for the rays."
+
+**Her thread: *What Is Done*.** At her seventh cry, after the greeting, unasked: "Seven cries, Master, and you have stood for every one of them, in seven squares. I have no instruction on the point. I have a roll. Every cry is on it. It is yours. You may read it, or not. It does not change for being read."
+- She gives **the Herald's Roll** (a book, `BOOKS.herald_roll`, weight .2, `sellMult:0`). Its first line is fixed, then one line for each cry, in the order cried, each the cry as it was said with the town and the game-day before it, then the last:
+> *The roll of what is done, as cried in the squares at noon.*
+>
+> *Day {n}, at {town}.* The {beast} of {lair} is dead. It was there before your grandmothers. It is not there now.
+>
+> *(one line for each cry)*
+>
+> *Here the roll stops, for now. More is done every day. It is not all cried. This is what was.*
+- The roll grows with each later cry: the book reads its lines from the record each time it is opened.
+- After the roll, her greeting is: "Master. You have the roll. I have added to it. You need not thank me. It is the office."
+
+**The town's word on her** (in `liveRumours`, in the towns of the island she last cried on, for three days after a cry, once a day):
+- Gatelander: "The Gold Herald was in the square at {town} at noon, mask and staff, and cried that {deed}. Not the Crown's man. Nobody's, as far as anyone knows. If the news is true it was done by somebody. If it's done by somebody, they were standing there. Weaver, I'd like to know who."
+- Markman: "Gold mask cried at {town}. Said {deed}. True, too. Somebody did it. Wasn't her. Good work, whoever."
+- Aurennais: "A herald in a gold mask cried in the square at {town}, Master, that {deed}. No house of the Compact engaged her. I have made enquiries. The Church has made enquiries. Our enquiries have met in the middle, and found nothing there."
+- `{deed}` is the cry's body in the third person and without *Hear it*, for example *the Boar of Carn Liath is dead*.
+
+**Aldwyn's word** (one more topic in `aldwynTopics`, from the first cry the player has stood for, *The Gold Herald?*): "Ah. Not of this office, I assure you. This office cries nothing. It writes, and it is read, on occasion, by the right people, slowly. I have had letters about her from three lords and a Prior. None of them has seen her face. I have not either. I find I have no wish to. There is a great deal I have no wish to see. It has served me for a hundred and fifty years."
+
+**Rule read (systems):** *where she comes from, and where she goes.* The plain reading: when the player is in a town's pad at 12h, and a deed is recorded that she has not cried (`worldState.strange.herald.cried`, keyed by the deed: `stone:<seed>`, `lair:<site id>`, `road:<id>`, `bridge:<id>`, `great:<id>:<state>`), and seven game-days have passed since her last cry, she is placed at the pad's edge on the side away from the player. She walks to the middle of the square (the town's `square` point), cries, stands a minute, and walks out the far side, and is removed when the player cannot see her. She is keyed `strange:herald`. The record is the world's: what has been cried in the world. The roll's lines read it. Her cry is never rolled. It is always the newest deed not yet cried.
+
+### 3. Ailbhe, the Child (Gatelander, the Old Blood showing; a child's plain sentences, never a bare yes or no, going toward the Old Blood's exactness)
+
+She stands at the edge of one hill village of the Gatelands, by day, looking out over the fields at nothing anyone else can see. The village is chosen once a seed by `anchoredPlaces()`: among the Gatelands' inland villages, the one whose nearest unread warm stone (`nearestSigilDoorFrom`) is nearest. When the player comes within ten metres she turns and stares at them. She stares at everyone who passes, the village says. It's no harm.
+
+**Greeting, first:** "You came from that way. It's warm that way."
+**Greeting, again:** "You again. I knew it was you before you came round the wall."
+**Greeting, to an Old Blood player, first:** (she pulls her sleeve back over her wrist) "You're like me. Mam says not to say. I didn't say."
+**Greeting, once the player has read a sigil at Mastery** (`vstate().masteries>=1`): "You've had your hand on a warm one. It's on you. Like flour."
+
+**Topics**
+- *Who are you?* — "Ailbhe. That's my house, the one with the blue door. Mam's Gráinne. She's inside."
+- *What are you looking at?* — "The warm. There's a warm stone out there." (she points) "Mam says there isn't. Mam can't feel it. Nobody can, only me."
+- *Your wrist?* — "It's lines. They're coming up. The elder says I'm to have the rite in the spring. He says it's an honour." (a pause) "He doesn't look like it's an honour."
+- *Why do you stare?* — "I don't stare. I feel. Staring's only what it looks like from outside."
+
+**Her service: *Where's the warm?*** She points at the nearest warm stone not yet read or bought as a rubbing (`nearestSigilDoorFrom(village)`), and the compass takes the bearing for a minute, as the Weaver's Eye does.
+- A stone within 2.6 km: "That way. {dir}. Past {landmark}. It's the one at {gate}. It's very warm. It's been warm all week."
+- None: "Nothing's warm now. They've all gone cool. You've been at them, haven't you." (not a question)
+
+**Her thread: *What the Stone Said*.** Once the player has read the stone she pointed them at (`worldState.sigilsRead[seed]`), at the next meeting, unasked, she comes off the wall: "You went. You put your hand on it. What did it say?"
+- *Tell her the word.* — The player says it (`sigilsRead[seed]`, the word itself, in the tongue it was read in). She says it back, right the first time, in the deep register. "{word}." (a pause) "I knew that. I didn't know I knew it." Then she runs inside.
+  - At the next meeting she gives a rubbing she has made herself on her slate, of the next warm stone from the village (the item `rubbingTopics` sells, for the next `nearestSigilDoorFrom` after this one): "I drew the next one. I didn't go. I didn't have to. I could feel the shape of it." (an ordinary rubbing, `type:'rubbing'`, named *Rubbing: {gate}*, which stars the gate on the map as every rubbing does)
+  - After this, Gráinne's greeting (the mother, at the blue door): "She's saying words at the hearth I never taught her. Old words. The elder went white when he heard them. Weaver forgive whoever taught her, for I don't know that I will."
+  - Ailbhe's greeting after: "I've three words now. I'll not tell you them. You'd only have to forget."
+- *It said nothing.* — "It did. They always do." (she looks at the player a long time) "You don't want me to know. The elder says the same. He says it kind, too." She goes back to the wall.
+  - At the next meeting Gráinne comes out with a dish: "Whatever you said to her, she's sleeping, which she wasn't. There's stew. Don't argue with me on my own step." (**Hot Stew**, the inn's dish, once)
+  - Ailbhe's greeting after: "It's still warm out there. I'm not going. I said I wouldn't." (a pause) "I didn't say I wouldn't feel it."
+- The choice is kept, and the thread ends. She goes on pointing the way to warm stones either way.
+
+**Gráinne** (Gatelander; proverbs, indirection, no bare yes or no), at the blue door, by day:
+- *Your daughter?* (before the thread is done) — "Ailbhe. She's my own, and her father's, and there's not a drop of the old blood in either of us that anyone ever saw. It skips, they say. It skipped us both and landed on her, like rain on the one field. She's a good girl. She stares. The neighbours say it's no harm, and they say it a bit too often."
+- *The rite?* — "In the spring, the elder says. He'll draw nothing on her. The lines draw themselves. The rite is only us saying we'll have her as she is. As if there was another way to have her."
+
+**The town's word on her** (in `liveRumours`, in the towns within 3 km of the village, once a day):
+- Gatelander: "There's a child at {village} that stares, Gráinne's girl. Pale as a candle. She'll point you to the old gates if you ask her, and she's never once been wrong, which is the part that keeps the neighbours talking."
+- Markman: "Cold-eyes child at {village}. Stares. Points at gates. Right every time. Leave her be."
+- Aurennais: "A child at {village}, Master, is said to point out the old gates without having seen them. The Church would wish to be informed of such a child. I mention this only so that you know why nobody in {village} will tell you which house is hers."
+
+**Rule read (systems):** *the stone she points at.* The plain reading: the thread's stone is the one she pointed at the first time the player asked *Where's the warm?* (kept as `worldState.strange.child.seed`). A stone read before the player asked her does not count. If the player buys a rubbing of it instead of reading it, she points at the next, and the thread waits for that one.
+
+### What in the code would carry it
+
+- **`87-world-quests.js`**: the `STRANGE` table from runs I to III, three rows more. Each is a `makeDef` with `authored:true` and `keepName:true`, keyed `strange:<who>` (`mariner`, `herald`, `child`, and `strange:grainne` for the mother; one each in the world, so the key is the person). Greetings go by the player's people, as `firstWords` reads them.
+- **Godric**: placed on a port's quay point (`84-world-interiors.js`'s ports), as Elias and Fergal are, on `seededRng('mariner', fortnight)`, 8h to 18h. *What's down there?* calls `seaHabitat` (`88-world-ticks.js`) at the nearest wet point off the quay; null gives the mud line. The thread: `worldState.strange.knot={met,wreck:<seaWrecks key>,state:'asked'|'seen'|'done',told:'up'|'side'}` is the character's (what the player did and said), so it goes in `SS_CHAR_WS`. The dive is read from `worldState.stats.wrecks[key]`. The book is `BOOKS.knot_soundings`, a plain text.
+- **The Herald**: placed by her Rule read. The deeds are read from records that exist: `worldState.sigilsRead`, `worldState.lairs`, `worldState.roadsCleared`, `worldState.bridges`, `worldState.greatGates`. The names come from `SITES`, `dungeonName` and the great gates' table. `worldState.strange.herald={cried:{<deed key>:{day,town}},order:[…],last:<day>,stood:n,roll:true}` is the world's (what was cried in the world), except `stood` and `roll`, which are the character's. The roll is `BOOKS.herald_roll`, its lines built from `order` when it is opened (`66-hub.js`). Aldwyn's topic goes in `aldwynTopics`.
+- **Ailbhe and Gráinne**: Ailbhe's village is in `anchoredPlaces()` (`child`). She is a child's genome (the builder's youngest age), Gráinne a townswoman's, both at fixed points by the village's edge and its blue door. *Where's the warm?* calls `nearestSigilDoorFrom(village)` and turns the compass as the Weaver's Eye does. The thread: `worldState.strange.child={seed,state:'pointed'|'asked'|'told'|'kept',gift:true}` is the character's. The rubbing is the item `rubbingTopics` sells; the stew is the inn's *Hot Stew*.
+- **Saved**: `strange` is the runs' one key. Its character parts go in `SS_CHAR_WS` and `_applyLoadData`'s list as runs I to III set out. Nothing here is rolled outside a seeded stream: the port and the village by seed and fortnight, and the Herald's cry not at all.
+- **Journal titles:** *The Grey Kittiwake* · *What Is Done* · *What the Stone Said*.
+- **Who builds:** the words, the rows, the records, the rumours and the two books are the quest writer's once approved (`87-world-quests.js`, `22-dialogue.js`, `BOOKS`). The faces are the bodies builder's: a net across the knees, a sun mask with rays, a staff with a pennant, a child's genome with the marks begun. The two Rule reads are the systems builder's. Nothing here needs a new system.
+- **A test worth having**: the Herald cries a killed lair at noon, and the cry is recorded and not cried twice. A saved and loaded game keeps it. Godric's wreck is chosen, visited and paid with the book. Ailbhe points at a stone, and after it is read the thread's two answers each give their gift.
+
+### The register, checked
+
+- Godric: sentences of a few words, *aye*, *Iron keep you*, a nickname for himself (*Knot*) and for the peoples (*turf-cutter*, *Compact*, *cold-eyes*), no honorific. The Gatelands' scripture is quoted as theirs and answered (*Once is enough*). The far side is told as a sailor's tale, with numbers and no meaning.
+- The Herald: *Masters* to the square, *Master* to the player. No oath, and no word of where she is from. Her cries are the narrator's facts in a crier's formula, and every one is something that has already happened. *What will be done?* is answered by refusing prophecy outright.
+- Ailbhe: a child's plain words with no bare yes or no (*I didn't say*, *It did. They always do*). The Old Blood's exactness comes into her as the thread goes on (*I've three words now*). Gráinne speaks in the Gatelands' turns (*like rain on the one field*, *Don't argue with me on my own step*) and swears on the Weaver.
+- Aldwyn keeps his scholar's register and his hundred and fifty years. He hints at what he hides (§14: he is Old Blood) without saying it.
+- The slurs: *turf-cutter* and *cold-eyes* come from Godric, who in the same breath tells the Old Blood player it is the gulls, not him, and asks every one of them to sit. The Markish rumour's *cold-eyes child* says *leave her be*. Each is about work, land and gods, never bodies.
+- No prophecy, no chosen one, no line on what the player is. The Herald comes nearest (*Who did it may stand in the square and listen*), and she stops at what was done.
