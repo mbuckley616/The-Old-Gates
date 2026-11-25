@@ -16,6 +16,15 @@ console.log(JSON.stringify(a));
 check(`every plain lesser gate placed so far is a ring gate (${a.rings} of ${a.plain}; ${a.built} built), no lair's cavern is one, and no old mound stands at any`, a.plain > 0 && a.rings === a.plain && a.lairs === 0 && a.built > 0 && a.moundAtRing === 0, a);
 // S2641: the home province's authored gates (WORLD_DUNGEONS, placed by their old zones' anchors, the Crypt of Embers among them) are ring gates too
 check(`the home province's authored gates are ring gates (${a.homeRings} of ${a.home}), the Crypt of Embers among them`, a.home >= 7 && a.homeRings === a.home && a.crypt, a);
+// S2649 (s1963, the critic: a gate facing down its hill showed the walk up a bare bank): where the land falls 2 m or more past the court, a flight
+// runs down the bank on the axis inside the hill's reach. Every gate stamped so far: the flights' slopes and ends, the ground along each falling
+// with no step over its own rise from the court to the foot (past the 2 m it eases into the land over, the land is the world's own, and may rise again)
+const st = await page.evaluate(() => { const out = { gates: 0, flights: 0, bad: [], worst: 0, s: [] }; for (const G of RING_GATES.values()) { out.gates++; const T = G.stair; if (!T) continue; out.flights++; out.s.push(T.s);
+    if (T.z1 > 35 || T.s > .9 || T.n < 4) out.bad.push([G.seed, 'plan', T]);
+    let prev = null; for (let z = T.z0 - 2; z <= T.z1 + 3; z += .25) { const [x, zz] = G.toW(0, z), h = worldH(x, zz) - G.y; if (prev !== null) { const d = h - prev; out.worst = Math.max(out.worst, Math.abs(d)); if ((z <= T.z1 - 2 && d > .05) || Math.abs(d) > T.s * .25 + .25) out.bad.push([G.seed, +z.toFixed(2), +d.toFixed(2)]); } prev = h; } }
+  return out; });
+console.log(JSON.stringify(st));
+check(`a gate on a slope has its flight down the bank (${st.flights} of ${st.gates}, slopes ${st.s.join(', ')}), the ground along each falling without a step (worst ${st.worst.toFixed(2)} m in 0.25)`, st.bad.length === 0, st);
 const S0 = a.near; await page.evaluate(G => { px = G.x; pz = G.z - 40; }, S0);
 for (let n = 0; n < 8; n++) { await g.cells(); if (await page.evaluate(s => { const G = RING_GATES.get(s); return !!(G && G.group && G.group.parent); }, S0.seed)) break; await page.waitForTimeout(1000); }
 await page.evaluate(() => WORLD.setRadius(RADIUS)); /* the chunks round you built now, as the game's frames would (CI read none streamed yet) */
