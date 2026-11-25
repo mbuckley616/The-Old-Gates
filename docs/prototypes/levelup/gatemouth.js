@@ -140,7 +140,7 @@ export function gateMouth(o = {}) {
   const M = { land: landM, rock: mat('rock', { ns: 1, color: 0x8f8d84, rough: .95 }), stone: stoneM, dressed: dressedM,
     lit: glow(glyphA, AMBER, 2.2), dim: glow(glyphA, AMBER, .9), dead: deadM, litD: glow(glyphA, AMBER, 2.4), dimD: glow(glyphA, AMBER, .9), deadD: deadM,
     sigil: glow(sigA, AMBER, 2.4), sigilDim: glow(sigA, AMBER, .8), sigilDead: new THREE.MeshStandardMaterial({ map: sigCut, roughness: .9, transparent: true, opacity: .6, polygonOffset: true, polygonOffsetFactor: -2, depthWrite: false }),
-    seam: new THREE.MeshBasicMaterial({ color: VIOLET.clone().multiplyScalar(2.2) }), door: new THREE.MeshBasicMaterial({ color: 0x030304 }), rift: new THREE.MeshBasicMaterial({ color: VIOLET.clone().multiplyScalar(.55) }),
+    seam: new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .08, .11), roughness: .7, emissive: VIOLET.clone(), emissiveIntensity: .5 }) /* the empty seat: violet light in dark stone at the slit's own level, not a flat colour 2.2 times over white (s1963, the critic) */, door: new THREE.MeshBasicMaterial({ color: 0x030304 }), rift: new THREE.MeshBasicMaterial({ color: VIOLET.clone().multiplyScalar(.55) }),
     canvas: mat('plaster', { ns: .4, color: 0xc9b99a, rough: .95 }), wood: mat('wood', { ns: .6, color: 0x8a7a66, rough: .9 }), ember: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, .55, .15) }),
     pennant: new THREE.MeshStandardMaterial({ color: 0x8a2a22, roughness: .9, side: THREE.DoubleSide }), mark: new THREE.MeshStandardMaterial({ color: new THREE.Color(.5, .5, .52), roughness: .8 }) };
   M.canvas.side = THREE.DoubleSide;
