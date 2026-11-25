@@ -247,7 +247,9 @@ const SEA6 = { 'Coastal Tuna': [1.2, 'swim'], 'Skyskimmer': [.35, 'swim'], 'Abys
   // Session 2576: the two rays, waved about their x axis by the kit, on a flat stand-in
   'Starweed Ray': [1, 'swim'], 'Sailfin Ray': [3.4, 'swim'],
   // Session 2580: the sea turtle, its flippers stroking by the kit's swim
-  'Sea Turtle': [1.1, 'swim'] };
+  'Sea Turtle': [1.1, 'swim'],
+  // Session 2626 (#1925 B): the gate eel, and the sea serpent, the gate eel grown to a galleon's 22 m, by the eels' slither
+  'Gate Eel': [3.8, 'slither'], 'Sea Serpent': [22, 'slither'] };
 const sea = await page.evaluate((SEA6) => { const out = {}; let n = 0;
   for (const name in SEA6) { const fx = -Math.sin(yaw), fz = -Math.cos(yaw), x = px + fx * 4, z = pz + fz * 4;
     const rig = buildAnimal(name, 'f4sea:' + name), G = new THREE.Group(); G.add(rig.root); G.position.set(x, WORLD.worldH(x, z) + .8, z); G.rotation.y = yaw + Math.PI / 2; WORLD.scene.add(G);
