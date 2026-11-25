@@ -433,10 +433,10 @@
   const bpick=a=>a[Math.floor(Math.random()*a.length)];
   function absMin(){return worldState.gameTimeAbsMinutes||0;}
   function houseSite(house){return (house&&house.siteId&&SITE[house.siteId])||null;}
-  // a shop is locked while it is shut (18–8); a home from night to dawn, unless it is yours
+  // a shop is locked while it is shut (its trade's hours, shopHours, S2630); a home from night to dawn, unless it is yours
   function doorLockNow(house){if(!house||house.ownedByPlayer||ownedHouse(house.id))return null;const h=hourNow();
     if(house.type==='home')return (h>=HRS.night||h<HRS.dawn)?{kind:'home',opens:HRS.dawn}:null;
-    return shopClosedNow(house)?{kind:'shop',opens:HRS.shopOpen}:null;}
+    return shopClosedNow(house)?{kind:'shop',opens:shopHours(house.type)[0]}:null;} /* S2630 — its trade's opening */
   function doorPicked(house){const P=worldState.picked;const t=P&&P[house.id];return t!=null&&absMin()-t<12*60;} // a picked door stays open for the night
   function lockPins(house){const st=houseSite(house);const p=st?prosperity(st):50;return house.type==='home'?2:(p>=60?4:3);} // a rich town buys better locks
   // ── S156: witnesses and favour (the crime system, part 2 of 4) ──
@@ -604,7 +604,7 @@
      nobody finds it. Kept as worldState.crime[site].unfound[house] = {at, name}, so the save carries it with the rest of the town's record. */
   function pickUnseen(house){if(!house||house.type==='home'||!house.siteId||perk('locks',100))return false;
     const C=worldState.crime||(worldState.crime={});const c=C[house.siteId]||(C[house.siteId]={bounty:0,debt:0,last:0});
-    const gtm=worldState.gameTimeMinutes||0,op=HRS.shopOpen*60,to=gtm<op?op-gtm:1440-gtm+op;
+    const gtm=worldState.gameTimeMinutes||0,op=shopHours(house.type)[0]*60,to=gtm<op?op-gtm:1440-gtm+op;
     (c.unfound||(c.unfound={}))[house.id]={at:absMin()+to,name:house.name||'A shop'};return true;}
   function tickPicksFound(){const C=worldState.crime;if(!C)return;const m=absMin();
     for(const id in C){if(!(C[id].bounty>0)&&C[id].lockFine)delete C[id].lockFine; /* S1795 — paid or waived: no lock fine stands */const U=C[id].unfound;if(!U)continue;for(const hid in U){const u=U[hid];if(m<u.at)continue;delete U[hid];findPick(id,u);}}}

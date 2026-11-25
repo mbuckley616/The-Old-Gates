@@ -10,7 +10,8 @@ await page.waitForTimeout(1500); await g.frames();
 const prompt = await page.evaluate(() => document.getElementById('ipr').textContent);
 await page.keyboard.press('e'); await page.waitForTimeout(1500);
 const noPick = await page.evaluate(() => ({ inside: currentHouse === window._h, lockOpen, zone: activeZoneId }));
-check('at night a shop and a home are locked; the door says so; without a pick you stay out', shop.lock && shop.lock.kind === 'shop' && shop.home && shop.home.kind === 'home' && /locked till 8/.test(prompt) && /pick/.test(prompt) && !noPick.inside && !noPick.lockOpen, { shop, prompt, noPick });
+/* S2630 (#1971 B): a shop opens at its trade's hour, the forge 7, the armourer, apothecary and goods shop 9; the door names it */
+check('at night a shop and a home are locked; the door says so; without a pick you stay out', shop.lock && shop.lock.kind === 'shop' && shop.home && shop.home.kind === 'home' && shop.lock.opens === ({ weapon: 7, armor: 9, potion: 9, misc: 9 })[shop.type] && prompt.includes('locked till ' + shop.lock.opens) && /pick/.test(prompt) && !noPick.inside && !noPick.lockOpen, { shop, prompt, noPick });
 
 // with picks: the lock opens as a shop door; set every pin and you are inside
 const picked = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); BAG.push({ name: 'Lockpick', ico: '🗝', type: 'misc', qty: 6 });

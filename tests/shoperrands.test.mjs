@@ -13,7 +13,7 @@ const at = (hour) => page.evaluate((hour) => { forceTime(hour); for (let i = 0; 
   out.shopsOpen = S.houses.filter(h => shopT(h) && h.keeper).filter(h => !WORLD.shopClosedNow(h)).length;
   return out; }, hour);
 const rows = [];
-for (const h of [6, 7.5, 12, 17.5, 18.3, 20, 23]) { const r = await at(h); rows.push(r); console.log(JSON.stringify(r)); }
+for (const h of [6, 7.5, 12, 17.5, 19.3, 20, 23]) { const r = await at(h); rows.push(r); console.log(JSON.stringify(r)); }
 const hand = async (hour) => {
   const who = await page.evaluate((hour) => { forceTime(hour); for (let i = 0; i < 600; i++) WORLD.tick(1 / 60, performance.now());
     const S = WORLD.settle.get('dunmore'); const keepers = new Set(S.houses.filter(h => h.keeper).map(h => h.keeper));
@@ -31,10 +31,11 @@ const hand = async (hour) => {
   await page.keyboard.press('e'); await g.frames(2);
   return page.evaluate(([hour, who]) => { const G = WORLD.guild.state(); const t = G.guild_m.active; const r = { hour, who: who.name, sched: who.type, done: !!t.done, took: t.who, msg: (document.getElementById('msg') || {}).textContent };
     G.guild_m.active = null; try { closeDialog(); } catch (e) {} return r; }, [hour, who]); };
-const noon = await hand(12), dusk = await hand(18.3);
+const noon = await hand(12), dusk = await hand(19.3);
 console.log(JSON.stringify({ noon, dusk }));
 check('the draught is handed over at noon to a townsperson in the street', noon.done && noon.took === noon.who, noon);
-check('and at dusk, with every shop shut', dusk.done && rows.find(r => r.hour === 18.3).shopsOpen === 0, dusk);
+// S2630: the goods shop keeps open to 19 (#1971 B), so dusk with every shop shut is 19.3, not 18.3
+check('and at dusk, with every shop shut', dusk.done && rows.find(r => r.hour === 19.3).shopsOpen === 0, dusk);
 check('from 7 to 20 someone who keeps a house is out in the street', rows.filter(r => r.hour >= 7 && r.hour <= 20).every(r => r.homes + r.shops > 0), rows.map(r => [r.hour, r.homes, r.shops]));
 // the harbourmaster: the other townsperson on the keeper's schedule, with no shop to be inside
 const port = await page.evaluate(() => { const P = WORLD.allPorts(); const s = WORLD.siteAnywhere('dunmore'); P.sort((a, b) => Math.hypot(a.x - s.x, a.z - s.z) - Math.hypot(b.x - s.x, b.z - s.z)); return P[0].id; });
