@@ -58,6 +58,15 @@ check(`the gate's door stands at the slit (${r.doorAt.join(', ')} in the kit's f
 // in by the gate's door and out again: you come up on its floor before the slit, looking out of the rings, not on the hill over them
 await page.evaluate(s => { const e = CELL_DOORS.find(d => d.seed === s), p = makePortalDef(e), w = dungeonWorldPos[s]; p.x = w.x; p.z = w.z; p.zone = 'world'; p.sigil = false; px = p.x; pz = p.z; goToDungeon(p); }, S0.seed);
 for (let k = 0; k < 120 && !(await page.evaluate(() => activeZoneId === 'dungeon' && scene === dScene)); k++) await page.waitForTimeout(500);
+// Session 2656 (Michael, 25 Nov: "Any dungeon exit should be a mirror ... to the corresponding entrance door"): inside, the way out is the gate's door
+// seen from within: the slit between its two pillars of script, lit by the gate's own condition, the lintel and the sigil; no block door, no
+// green disc, no green light; standing in the entrance cell against its wall
+const ex = await page.evaluate(s => { const X = DUN_EXIT, G = RING_GATES.get(s); let green = 0, disc = 0; dScene.traverse(o => { if (o.isPointLight && o.color.getHex() === 0x88ff44) green++; if (o.isMesh && o.geometry.type === 'CircleGeometry' && o.material.color && o.material.color.getHex() === 0xc8e88a) disc++; });
+  if (!X) return { none: true, green, disc }; const wx = dAt(dEntranceX), wz = dAt(dEntranceZ), n = X.group.children.length;
+  return { kind: X.kind, cond: X.cond, gcond: G && G.cond, w: X.w, h: X.h, n, green, disc, off: +Math.hypot(X.x - wx, X.z - wz).toFixed(2), half: DCELL / 2, H: FLOOR_HEIGHT }; }, S0.seed);
+console.log('exit', JSON.stringify(ex));
+check(`inside, the way out is the gate's door: ${ex.kind}, a slit ${ex.w} by ${ex.h} m in ${ex.n} pieces, lit ${ex.cond} as outside (${ex.gcond}), on the entrance cell's wall (${ex.off} m of ${ex.half}); no green light or disc (${ex.green}, ${ex.disc})`,
+  !ex.none && ex.kind === 'ring' && ex.cond === ex.gcond && ex.n >= 6 && ex.h < ex.H && Math.abs(ex.off - ex.half) < .01 && ex.green === 0 && ex.disc === 0, ex);
 await page.evaluate(() => goToOW());
 for (let k = 0; k < 120 && !(await page.evaluate(() => activeZoneId === 'world')); k++) await page.waitForTimeout(500);
 const x = await page.evaluate(s => { const G = RING_GATES.get(s), [lx, lz] = G.toL(px, pz), f = [Math.sin(G.ry), Math.cos(G.ry)], look = [-Math.sin(yaw), -Math.cos(yaw)];

@@ -1932,20 +1932,7 @@ function buildDungeon(portal){
         if(!(v===3&&floorIdx===(FLOOR2_Y>0?1:2))&&!(shellOn&&cmat===MAT.ceil&&v!==3)&&!(gen.hallAt&&gen.hallAt(c,r))){ // v80 — no ceiling over the stairwell in the lower floor
         const ce=new THREE.Mesh(new THREE.PlaneGeometry(1,1),cmat);
         ce.rotation.x=Math.PI/2;ce.position.set(c,baseY+FLOOR_HEIGHT,r);dScene.add(ce);}
-        if(v===2&&floorIdx===1){
-          let doorFaceX=0,doorFaceZ=0,doorYaw=0;
-          for(const[dc,dr,ry] of [[0,-1,0],[0,1,Math.PI],[-1,0,Math.PI/2],[1,0,-Math.PI/2]]){
-            const nr=r+dr,nc=c+dc;
-            if(nr<0||nr>=dR||nc<0||nc>=dC||map[nr][nc]===0){doorFaceX=dc;doorFaceZ=dr;doorYaw=ry;break;}
-          }
-          const eDoor=new THREE.Group();
-          const eDb=new THREE.Mesh(new THREE.BoxGeometry(.85,2.8,.1),MAT.door);eDoor.add(eDb);
-          for(let i=0;i<3;i++){const bar=new THREE.Mesh(new THREE.BoxGeometry(.04,2.6,.05),new THREE.MeshLambertMaterial({color:0x888888}));bar.position.set(-.28+i*.28,0,.07);eDoor.add(bar);}
-          eDoor.position.set(c+doorFaceX*.45,baseY+1.4,r+doorFaceZ*.45);eDoor.rotation.y=doorYaw;dScene.add(eDoor);
-          const eD=new THREE.Mesh(new THREE.CircleGeometry(.45,10),new THREE.MeshBasicMaterial({color:0xc8e88a,transparent:true,opacity:.3,side:THREE.DoubleSide}));
-          eD.rotation.x=-Math.PI/2;eD.position.set(c,baseY+.02,r);dScene.add(eD);
-          const eGl=new THREE.PointLight(0x88ff44,1.2,5);eGl.position.set(c,baseY+.8,r);dScene.add(eGl);
-        }
+        /* S2656 — the way out (v 2, floor one) is built in metres after the scale, by dunExitBuild: no more block door, green disc or light */
         if(v===3&&floorIdx===1&&c===gen.stairC&&r===gen.stairR){if(gen.hall)buildStairHall(gen.hall);else if(gen.flights){gen.flights.forEach(buildFlight);if(gen.yard)buildYard();}else buildStairwell(c,r,stairMat);} // v80 S8 — climbable spiral; S599 — or the hall's straight flight
         if(false){ // v61 pit-and-teleport stair, superseded
           // ── SPIRAL STAIRCASE ─────────────────────────────────
@@ -4018,6 +4005,7 @@ function buildDungeon(portal){
   // scaling pass carries it with the rest
   try{lairFinish(portal);}catch(e){}try{shuttleLay(portal);}catch(e){}try{cloakDenLay(portal,window._lairBoss);}catch(e){}
   dunScaleWhole(dunCellFor(portal),thWallMat);
+  try{dunExitBuild(portal);}catch(e){DUN_EXIT=null;console.warn('dunExitBuild',e);} /* S2656 — the way out, its world door seen from inside, in metres */
   try{gateFallBuild(gen);}catch(e){console.warn('gateFallBuild',e);} /* S1376 — Cloch's fallen blocks, in metres */
   try{gateThingsBuild(gen,portal);}catch(e){GATE_THINGS=[];console.warn('gateThingsBuild',e);} /* S1675 — the braziers and webs, in metres */
   try{gateSecretsBuild(gen,portal);}catch(e){GATE_SECRETS=[];console.warn('gateSecretsBuild',e);} /* S2403 — the seals' placeholders and shut mouths, in metres */
@@ -4028,6 +4016,47 @@ function buildDungeon(portal){
   DZONE=gen.gate?dZoneBuild(gen):null;if(gen.gate){dScene.userData.lightPool=8;try{_sweepScenePool(dScene);}catch(e){}}
   /* S1293 — a gate's spaces bring materials no room had (the water's, the pit's): compiled now, behind the fade, not when first seen */
   if(gen.gate&&typeof REN!=='undefined'&&REN.compile)try{REN.compile(dScene,CAM);}catch(e){}
+}
+// Session 2656 (Michael, 25 Nov 2026, control room: "Dungeon Exit Doors look really shitty and unpolished. They still have that legacy door
+// mesh attached to them, and that glowing portal circle on the floor. Any dungeon exit should be a mirror (or as close as possible) to the
+// corresponding entrance door in the overworld.") — the way out on floor one, built in metres after the scale against the wall the entrance
+// cell backs onto (the cell itself, dEntranceX/Z, and E there are as before). A ring gate's (portal.ringGate, or its cell's door's ring, set when the world built its rings: the
+// world's lesser gates on the new look) is its door seen from inside: the slit between two pillars of script, lit as the gate's condition lights them outside (steady lit,
+// failing one pillar dim and one dead, catastrophic both dead), the lintel over them and the ring sigil above, the slit showing the day or
+// the night outside; sized to the cell (the world's 2.4 m slit and 1 m pillars do not fit a 3 m cell) and under the ceiling. Every other
+// kind (a lair's cave mouth, a fort, the crypt, the old zones' doors) a plain dressed doorway with the same light in it, until its own
+// mirror is built. No light is added (a gate lights 8 at a time). -> DUN_EXIT { kind, x, z, nx, nz, w, h, cond }
+let DUN_EXIT=null;
+function dunExitBuild(portal){
+  DUN_EXIT=null;if(dEntranceX==null||!dMap||!dMap.length)return null;
+  const c=dEntranceX,r=dEntranceZ;let f=null;
+  for(const [dc,dr] of [[0,-1],[0,1],[-1,0],[1,0]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=dR||nc<0||nc>=dC||!(dMap[nr][nc]>0)){f=[dc,dr];break;}}
+  if(!f)return null;
+  const K=DCELL,H=FLOOR_HEIGHT,cd=portal&&portal.seed!=null&&typeof CELL_DOORS!=='undefined'?CELL_DOORS.find(e=>e.seed===portal.seed):null,ring=!!(portal&&(portal.ringGate||portal.ring||(cd&&cd.ring&&portal.zone==='world'))),kit=typeof PKIT!=='undefined'&&PKIT.places&&PKIT.places.gatemouthMats;
+  const M=kit?PKIT.places.gatemouthMats():null,pc=cd&&cd.cond||portal.cond,cond=ring?(GATE_CONDS.includes(pc)?pc:gateCondRoll(portal.seed)):null; /* the world's own (placeRingGates): the door's cond, else the seed's roll */
+  const hr=typeof gameHour==='function'?gameHour():12,day=hr>=6.5&&hr<19.5,dusk=!day&&(hr>=5.5&&hr<20.5);
+  const light=new THREE.MeshBasicMaterial({color:day?new THREE.Color(.64,.68,.7):dusk?new THREE.Color(.32,.26,.24):new THREE.Color(.05,.07,.11),fog:false,toneMapped:false}); /* the day outside, never the gate's murk */
+  const stone=M?M.dressed:new THREE.MeshLambertMaterial({color:0x8a867e}),g=new THREE.Group();g.name='dungeon exit';
+  const box=(m,w,h,d,x,y,z)=>{const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);q.position.set(x,y,z);g.add(q);return q;};
+  const plane=(m,w,h,x,y,z)=>{const q=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);q.position.set(x,y,z);g.add(q);return q;};
+  let w,h;
+  if(ring){
+    w=+Math.min(2.4,K*.5).toFixed(2);h=+Math.min(5.5,H*.72).toFixed(2);const PW=(K-.1-w)/2,PD=.45,LH=Math.min(.55,H*.1);
+    plane(light,w,h,0,h/2,PD*.6); /* set in between the pillars, clear of the wall's rough face */
+    for(const s of [-1,1]){const x=s*(w/2+PW/2);box(stone,PW,h,PD,x,h/2,PD/2);
+      if(M){const st=new THREE.PlaneGeometry(PW*.5,h*.92),uv=st.attributes.uv;for(let i=0;i<uv.count;i++)uv.setY(i,uv.getY(i)*h/(PW*.5)/6);
+        const q=new THREE.Mesh(st,M[cond==='steady'?'litD':cond==='failing'?(s<0?'dimD':'deadD'):'deadD']);q.position.set(x,h/2,PD+.02);g.add(q);}}
+    box(stone,w+2*PW,LH,PD+.1,0,h+LH/2,(PD+.1)/2);
+    const room=H-(h+LH)-.1,sr=Math.min(.9,room*.42);
+    if(M&&sr>.3)plane(M[cond==='steady'?'sigil':cond==='failing'?'sigilDim':'sigilDead'],2*sr,2*sr,0,h+LH+room/2,.05);
+  }else{
+    w=+Math.min(1.4,K*.5).toFixed(2);h=+Math.min(2.5,H-.6).toFixed(2);const J=.4,D=.3;
+    plane(light,w,h,0,h/2,D*.6);for(const s of [-1,1])box(stone,J,h,D,s*(w/2+J/2),h/2,D/2);box(stone,w+2*J+.1,.35,D+.05,0,h+.175,(D+.05)/2);
+    box(stone,w+.2,.08,.25,0,.04,.12);
+  }
+  g.traverse(o=>{if(o.isMesh)o.receiveShadow=true;});
+  const x=dAt(c)+f[0]*K/2,z=dAt(r)+f[1]*K/2;g.position.set(x,0,z);g.rotation.y=Math.atan2(-f[0],-f[1]);dScene.add(g);
+  DUN_EXIT={kind:ring?'ring':'door',x:+x.toFixed(2),z:+z.toFixed(2),nx:-f[0],nz:-f[1],w,h,cond,group:g};return DUN_EXIT;
 }
 // S1302 (card F5, the sheet's "Light and draws") — in a gate only your space and the spaces joined to it are drawn, as a town's
 // houses are by houseLod. Every open cell belongs to a zone: a space's own cells are its zone, and a side room, its corridor, a chapel
