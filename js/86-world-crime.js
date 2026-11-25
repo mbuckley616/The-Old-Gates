@@ -438,6 +438,29 @@
     if(house.type==='home')return (h>=HRS.night||h<HRS.dawn)?{kind:'home',opens:HRS.dawn}:null;
     return shopClosedNow(house)?{kind:'shop',opens:shopHours(house.type)[0]}:null;} /* S2630 — its trade's opening */
   function doorPicked(house){const P=worldState.picked;const t=P&&P[house.id];return t!=null&&absMin()-t<12*60;} // a picked door stays open for the night
+  // S2649 — the knock (Michael's A on #2009; docs/design/a-towns-day.md, "Out of hours"). E at a shut shop knocks before it picks: the keeper
+  // is home from the night (HRS.night, 21; Michael's B on #2008) until the trade's opening, and keeps the inn between the shop's close and
+  // 21, when nobody answers. At home, with the town's favour at 2 or more (KNOCK_FAVOR) they come down and sell at the door at ×1.25
+  // (KNOCK_MUL, shopCost, 60-shop.js); below it the answer is *Come back at nine*, the trade's own hour. For KNOCK_WIN seconds after the knock
+  // (or after the door's trade is shut) the prompt reads *E again to pick the lock*, and E picks it. A rule of the hour and the town's
+  // favour, no roll; nothing is saved.
+  const KNOCK_FAVOR=2,KNOCK_MUL=1.25,KNOCK_WIN=8,KNOCK={id:null,t:-1e9,trade:null};
+  const HOUR_WORDS=['midnight','one','two','three','four','five','six','seven','eight','nine','ten','eleven','noon'];
+  function knockHomeNow(house){const h=hourNow();return h>=HRS.night||h<shopHours(house.type)[0];}
+  function knockArmed(house){return !!house&&KNOCK.id===house.id&&performance.now()-KNOCK.t<KNOCK_WIN*1000;}
+  // E at a locked door: true when this press was the knock (the lock waits for the next), false when E should pick
+  function knockDoor(house){const lk=doorLockNow(house);if(!lk||lk.kind!=='shop'||!house.keeper||doorPicked(house))return false;
+    if(knockArmed(house))return false;
+    KNOCK.id=house.id;KNOCK.t=performance.now();KNOCK.trade=null;try{sfxTone(180,90,.06,.12,'triangle');}catch(e){}
+    const who=house.keeper,site=houseSite(house);
+    if(!knockHomeNow(house)){showMsg(`You knock at ${house.name}. Nobody answers.`,'#c8b880');return true;}
+    if(!site||favor(site)<KNOCK_FAVOR){showMsg(`${who}: “Come back at ${HOUR_WORDS[lk.opens]||lk.opens}.”`,'#e8d8a8');return true;}
+    if(typeof refusesTrade==='function'&&refusesTrade(house)){showMsg(`${who}: “I know what you did. Take your custom elsewhere.”`,'#e8a880');return true;}
+    KNOCK.trade=house.id;showMsg(`${who} comes down to the door.`,'#e8d8a8');currentHouse=house;if(typeof openShop==='function')openShop();return true;}
+  // the door's trade: the price's ×1.25 while the counter opened by a knock is open, out of doors
+  function knockMulNow(){const h=typeof currentHouse!=='undefined'&&currentHouse;return h&&KNOCK.trade===h.id&&!(typeof isInterior==='function'&&isInterior())?KNOCK_MUL:1;}
+  function knockShut(){if(KNOCK.trade){KNOCK.t=performance.now();KNOCK.trade=null;}}
+  function knockPrompt(house,lk){if(lk.kind!=='shop'||!house.keeper)return null;return knockArmed(house)?`${house.name} — E again to pick the lock`:`${house.name} — locked till ${lk.opens} · E to knock, again to pick`;}
   function lockPins(house){const st=houseSite(house);const p=st?prosperity(st):50;return house.type==='home'?2:(p>=60?4:3);} // a rich town buys better locks
   // ── S156: witnesses and favour (the crime system, part 2 of 4) ──
   // Anyone awake within sight sees it: a townsperson or guard within twelve units with a clear line, six indoors;
