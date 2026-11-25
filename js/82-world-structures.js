@@ -674,7 +674,7 @@
       for(let i=MILLS.length-1;i>=0;i--)if(MILLS[i].id===m.id)MILLS.splice(i,1);MILLS.push(m);out.push(K.group);}
     return out;}
   // the sails turn, about a turn every eight seconds, while the mill is in the scene
-  function tickMills(dt){ringGateShow(); /* S2633 — and the ring gates drawn only where their chunks stand */tickLighthouses(); /* S2635 — and the lighthouses' lamps by the clock */for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);if(m.spinFar)m.spinFar.rotation.z=m.spin.rotation.z;}}
+  function tickMills(dt){ringGateShow(); /* S2633 — and the ring gates drawn only where their chunks stand */tickLighthouses(); /* S2639 — and the lighthouses' lamps by the clock */for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);if(m.spinFar)m.spinFar.rotation.z=m.spin.rotation.z;}}
   // S2629 (QA's S2628, section I: six mills in view put Dunmore's street at 743 calls at Low, 78 of them the mills') — a mill's far copy:
   // the kit's own meshes baked into two vertex-coloured meshes on VC_MAT, the tower, cap and yard in one and the sails in the other, on an
   // axle and spin of their own so they still turn. The same triangles, 2 draws in place of 13, shadows kept. -> { group, spin, tris, draws }
@@ -687,7 +687,7 @@
     const b=mk(body,VC_MAT);b.name='mill far body';G.add(b);const ax=K.spin.parent,axle=new THREE.Group(),spin=new THREE.Group();axle.position.copy(ax.position);axle.quaternion.copy(ax.quaternion);
     axle.add(spin);G.add(axle);const sm=mk(sails,MILL_FAR_SAIL.m||(MILL_FAR_SAIL.m=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide})));sm.name='mill far sails';sm.castShadow=true;spin.add(sm);
     const tris=Math.round((b.geometry.attributes.position.count+sm.geometry.attributes.position.count)/3);return {group:G,spin,tris,draws:2};}
-  // S2635 (Michael's A on #1983: "by what each serves, the windmill and the lighthouse first"; the question's A: "a lighthouse on the
+  // S2639 (Michael's A on #1983: "by what each serves, the windmill and the lighthouse first"; the question's A: "a lighthouse on the
   // nearest point of shore to each port within a kilometre"; OG-046, OG-058) — the Gatelands' lighthouse (PKIT.places.lighthouse,
   // places.js's gatelandsLighthouse) on the shore by each Gatelands port. Read by place (withPlace over the port), by its own stream
   // (lighthouse:<site>, which turns the bearings): rings from 70 m past its pad out to 1,000 m, 10 m apart, 64 bearings each, inside its cell (20 m off the edge), where the land stands 3 to

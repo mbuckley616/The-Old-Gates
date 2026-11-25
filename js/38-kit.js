@@ -12174,7 +12174,7 @@ function aurenneOrrery(hAt, o = {}) {
     let draws = 0; group.traverse(x => { if (x.isMesh) draws++; });
     return { group, spin, tris: Math.round(tris), draws, tower: { r0, r1, h }, hub: hub.toArray().map(v => +v.toFixed(3)), doors, tail: [+wheel.x.toFixed(2), +wheel.z.toFixed(2)], sail: { len: SL, from: S0, width: SW }, tipLow: +tipLow.toFixed(2), working, wind };
   }
-  // S2635 — the Gatelands' lighthouse in the game (Michael's A on #1983: "by what each serves, windmill and lighthouse first"; places.js's
+  // S2639 — the Gatelands' lighthouse in the game (Michael's A on #1983: "by what each serves, windmill and lighthouse first"; places.js's
   // gatelandsLighthouse, Session 967; OG-046, OG-058). Copied as drawn, at true size, the sea to +z, y 0 the ground at the tower: the squat
   // limewashed tower battered from 7.6 m to 6.6 m at the gallery 20 m up, its tarred plinth and two bands, the red door landward on its
   // step and the stair's windows; the gallery on 24 corbels with its railing; the lantern of twelve sides on its pedestal, its red

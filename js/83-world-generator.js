@@ -981,7 +981,7 @@ function genSettlement(site){
       if(type==='guild_f'||type==='guild_m'){house.guild=type;house.dlg=null;}
       const def=(type==='guild_f'||type==='guild_m')?guildDef(type,site,keeper,{x:kx,z:kz,bCol:house.bCol,sCol:house.sCol}):makeDef(site,reg,r,role,keeper,{nameKey:lot.n,authored:!!heroH,people:heroH?'gatelander':undefined,x:kx,z:kz,bCol:house.bCol,sCol:house.sCol,topics:type==='shipwright'?[{label:'Browse ships',quest:true,panel:()=>openYardPanel(site)},{label:`What do you sell?`,response:'Hulls. Sound ones. And rope, if you ask nicely.'}]:house.tagline?[{label:`What do you sell?`,response:house.tagline}]:[]}); /* S592 — no topic while the tagline is blank; the barber's has one since Session 735 (the quest writer's Finding 26) */
       def._houseId=house.id; // v80 S138 — who keeps what, by identity (names collide)
-      house.keeper=def.name;house._twin=def._twin;if(!heroH&&/'s /.test(house.name||''))house.name=house.name.replace(/^[^']+'s /,def.name+"'s ");
+      house.keeper=def.name;house._twin=def._twin;house.people=def.people;if(!heroH&&/'s /.test(house.name||''))house.name=house.name.replace(/^[^']+'s /,def.name+"'s ");
       if(signY!==null){const so=lot.kit&&lot.kit.kind==='forge'?-1.75:0;buildTradeSign(group,type,house.name,doorX+lot.tz*so,doorZ-lot.tx*so,lot.tx,lot.tz,lot.ry,signY+.3);} /* S1855 — a forge's board on the wall between its window and the open cart door, not in the doorway */ /* S881 (F2a) — the board's foot at 1.87, over a 1.78 m head (1.57 before) */
       if(type==='shipwright'){const base=def._extra.slice();Object.defineProperty(def,'_extra',{get(){const buy=base[0],rest=base.slice(1);return worldState.ship?[buy,...upgradeTopics(site),...rest]:[buy,...rest];}});}
       if(house.guild||type==='shipwright'||type==='inn'||type==='barber')house.dlg=def; // steward / shipwright / innkeeper talk inside (the innkeeper lets the rooms)
@@ -2279,6 +2279,10 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   // (scaleRoom's k is 1, as the tower's); the kit's frame (centre on the ground, front +z, floor at F0) moves to the room's (0 to W,
   // the door at W/2 on z = D, the floor at 0). A coaching inn keeps the old room (its board and its travellers are laid out there).
   // S1276 — a village inn on two bays (7.4 m, its door in the west bay) is the same taproom in the narrower house: one table, two rooms.
+  // S2634 — the keeper's own people indoors (S2625's note: the vigil priest was rolled with none, so a Gatelander wherever the church
+  // stood). Every keeper built inside a house had no `people`, so whoever had not been built in the street first (the shops' keepers in
+  // their hours, the priest) took a Gatelander's body under their island's dress. The def made in the street holds it (`makeDef`).
+  function keeperPeople(house){if(!house)return undefined;if(house.people)return house.people;const d=house.dlg;return d&&d.people&&d.name===house.keeper?d.people:undefined;}
   function kitTaproom(house){return !!(house&&house.type==='inn'&&house.kit&&house.kit.inn&&(house.kit.bays===3||house.kit.bays===2)&&!house.coachInn&&window.OG_LOOK==='new'&&typeof PKIT!=='undefined'&&PKIT.gl&&PKIT.gl.inn);}
   // S1405 — the kit rooms' light by the hour (the critic, 25 Oct: the cottage and the taproom were orange floor to thatch at noon and at
   // night alike, an amber ambient of .45 under a fire of 1.5 in a 4.2 m room). The room's air is a low neutral ambient and the day's
@@ -2346,7 +2350,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       for(const f of HF.lights){const l=new THREE.PointLight(new THREE.Color(...f.col),f.k*KA.lamp,f.r);l.position.set(...f.p);l.userData.hallFix=f.type;sc_.add(l);}}
     // the innkeeper behind the bar, between it and the rack of kegs, facing the room
     const npc={x:rx((T.bar.x0+T.bar.x1)/2),z:rz(T.bar.z0-.2)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:rx(T.bar.x0+.3),maxX:rx(T.bar.x1-.3),speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -2411,7 +2415,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       hf.visible=!cold;const holder=new THREE.Group();holder.userData.hearthFire=hf;holder.userData.hearthLight=hl;if(cold)holder.userData.coldHouse=house;sc_.add(holder);furnSwap(holder);}
     // the resident, in the kitchen where the way from the door turns to the fire, facing into the room
     const np=T.path[T.one?1:2],npc={x:rx(np[0]),z:rz(np[1])};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};
       if(homeAsleepNow(house))laySleeper(intNPCMesh);}
@@ -2495,7 +2499,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // the resident, in the kitchen where the way from the hall turns to the back door, facing into the kitchen (its middle; S1437: she
     // faced the hall through the partition 0.35 m off, and the paused sway then turned her to +z, the kitchen's front wall 0.8 m off)
     const np=T.paths[0].pts[4],npc={x:rx(np[0]),z:rz(np[1])},KR=T.rooms.kitchen,nry=Math.atan2(rx((KR.x0+KR.x1)/2)-npc.x,rz((KR.z0+KR.z1)/2)-npc.z);
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=nry;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};
       if(homeAsleepNow(house))laySleeper(intNPCMesh);}
@@ -2573,7 +2577,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // that is nearer the box), half turned (0.45 rad) from the window toward the shop: the box, every spot it opens from, the shop door and
     // the counter's front are all within 60° of his face (a witness, S368); a spot behind him in his own walk is not one the box opens from
     const kz=Math.max(S.counter.z0+.15,S.chest.z-1.6),npc={x:rx(S.keeper.x),z:rz(kz)},nry=s*.45;
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=nry;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -2651,7 +2655,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       hf.visible=!cold;const holder=new THREE.Group();holder.userData.hearthFire=hf;holder.userData.hearthLight=fls[1];holder.userData.hearthLights=fls;if(cold)holder.userData.coldHouse=house;sc_.add(holder);furnSwap(holder);}
     // the resident, in the kitchen where the way from the hall turns to the hearth, between the table and the fire, facing the fire
     const np=T.paths[0].pts[4],npc={x:rx(np[0]),z:rz(np[1])},nry=Math.atan2(rx(T.hearth.x)-npc.x,rz(T.hearth.z)-npc.z);
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=nry;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};
       if(homeAsleepNow(house))laySleeper(intNPCMesh);}
@@ -2784,7 +2788,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const l=new THREE.PointLight(0xffaa44,1.2*KA.lamp,8);l.position.set(rx(T.lantern[0]),ry(T.lantern[1]-.15),rz(T.lantern[2]));sc_.add(l);}
     // the smith at the anvil, on its door side, facing the door's half of the room
     const npc={x:rx(T.anvil.x+.62),z:rz(T.anvil.z-.1)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=Math.PI/2;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -2840,7 +2844,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const l=new THREE.PointLight(0xff8a40,.6*KA.fire,3);l.position.set(rx(T.glow[0]),ry(T.glow[1]),rz(T.glow[2]));sc_.add(l);}
     // the apothecary behind the counter, facing across it to the door's side
     const npc={x:rx(T.counter.x1+.35),z:rz(.2)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=-Math.PI/2;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -2887,7 +2891,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const l=new THREE.PointLight(0xe8eef8,.1+.9*dayK,7);l.position.set(rx(dr.x),2.2,D-.6);l.userData.daylight=true;sc_.add(l);}
     // the smith behind the anvil, between it and the hearth, facing the door across it
     const npc={x:rx(T.anvil.x),z:rz(T.anvil.z-.6)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -2937,7 +2941,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // the apothecary behind the counter's left end, before the wall of jars and beside the mortar, out of the walk behind the counter;
     // facing the door across it
     const npc={x:rx(-2.25),z:rz(T.counter.z0-.45)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -3104,7 +3108,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const b=T.braziers[1];L(rx(b[0]),ry(b[1]+.5),rz(b[2]-.4),0xff6a20,1.0*KA.fire,5);}
     // the resident, in the hall across the back where the way from the door ends, facing the court
     const npc={x:rx(0),z:rz(-4.9)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};
       if(homeAsleepNow(house))laySleeper(intNPCMesh);}
@@ -3166,7 +3170,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const l=L(X,FL[2]+4,Z,0xe8eef8,.15+1.4*dayK,16);l.userData.daylight=true;}
     // the dyer, in the shop behind the counter beside the stool, facing the door's side
     const npc={x:rx(U(X-.82)),z:rz(.6)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=ds*Math.PI/2;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};
       if(homeAsleepNow(house))laySleeper(intNPCMesh);}
@@ -3219,7 +3223,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const l=L(X,FL[1]+4,Z,0xe8eef8,.15+1.4*dayK,16);l.userData.daylight=true;}
     // the resident at the cooking bench, facing it (+x)
     const kt=T.kitchen,npc={x:rx(kt.x0-.45),z:rz(Math.min(kt.z0+1.15,(kt.z0+kt.z1)/2))};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=Math.PI/2;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};
       if(homeAsleepNow(house))laySleeper(intNPCMesh);}
@@ -3589,7 +3593,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       for(const f of HF.lights){const l=new THREE.PointLight(new THREE.Color(...f.col),f.k*KA.lamp,f.r);l.position.set(...f.p);l.userData.hallFix=f.type;sc_.add(l);}}
     // the keeper behind the counter, between it and the kegs, facing the hall
     const C=T.counter,npc={x:rx((C.x0+C.x1)/2),z:rz(C.z0-.35)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:rx(C.x0+.3),maxX:rx(C.x1-.3),speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -3631,7 +3635,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,8);l.position.set(rx(T.lamp[0]),ry(T.lamp[1]-.1),rz(T.lamp[2]));sc_.add(l);}
     // the smith behind the anvil, between it and the forge, facing the door across it
     const npc={x:rx(T.anvil.x),z:rz(T.anvil.z-.6)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -3679,7 +3683,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const l=new THREE.PointLight(0xffaa44,1.0*KA.lamp,8);l.position.set(rx(T.lamp[0]),ry(T.lamp[1]-.1),rz(T.lamp[2]));sc_.add(l);}
     // the healer behind the trade board, facing the door across it
     const npc={x:rx(T.board.x1-.8),z:rz(T.board.z0-.45)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -3730,7 +3734,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // walk's door end, the counter's front and the door are all before him (a witness, S368)
     const kx=rx(T.keeper.x),kz=rz(Math.max(C.z0+.3,Math.min(T.front[1]-.3,T.chest.z-1.3))),bxz=[INT_BOX.x-kx,INT_BOX.z-kz],fr=[rx(T.front[0])-kx,rz(T.front[1])-kz];
     const nry=+Math.atan2(bxz[0]/Math.hypot(...bxz)+fr[0]/Math.hypot(...fr),bxz[1]/Math.hypot(...bxz)+fr[1]/Math.hypot(...fr)).toFixed(4);
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Merchant',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=nry;g.position.set(kx,0,kz);sc_.add(g);intNPCMesh=g;intNPCPos={x:kx,z:kz};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:kz,maxZ:kz,minX:kx,maxX:kx,speed:.25,paused:true,ry:nry};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -3793,7 +3797,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       hf.visible=!cold;const holder=new THREE.Group();holder.userData.hearthFire=hf;holder.userData.hearthLight=hl;if(cold)holder.userData.coldHouse=house;sc_.add(holder);furnSwap(holder);}
     // the resident, by the fire where the walk passes it (before the peis, in a hall with a chimney), facing it
     const p=T.chimney?[T.peis.x1+.55,T.fire[2]]:T.path[2],npc={x:rx(p[0]),z:rz(p[1])},nry=Math.atan2(rx(F[0])-npc.x,rz(F[2])-npc.z);
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Resident',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=nry;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};
       if(abed)laySleeper(intNPCMesh);}
@@ -3886,7 +3890,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // (a shop's keeper in his walk, facing between the strongbox and where you stand to buy: both before him, a witness, S368)
     const hp=T.paths[1].pts[T.paths[1].pts.length-1],npc=SH?{x:rx(SH.keeper.x),z:rz(SH.keeper.z)}:{x:rx(hp[0]),z:rz(hp[1])};let nry=Math.atan2(rx(F[0])-npc.x,rz(F[2])-npc.z);
     if(SH){const a=[rx(SH.chest.x)-npc.x,rz(SH.chest.z)-npc.z],b=[rx(SH.front[0])-npc.x,rz(SH.front[1])-npc.z],la=Math.hypot(...a)||1,lb=Math.hypot(...b)||1;nry=+Math.atan2(a[0]/la+b[0]/lb,a[1]/la+b[1]/lb).toFixed(4);}
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:SH?'Merchant':'Resident',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:SH?'Merchant':'Resident',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=nry;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true,ry:nry};
       if(abed&&!SH)laySleeper(intNPCMesh);}
@@ -3968,7 +3972,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
       for(const f of HF.lights){const l=new THREE.PointLight(new THREE.Color(...f.col),f.k*KA.lamp,f.r);l.position.set(...f.p);l.userData.hallFix=f.type;sc_.add(l);}}
     // the keeper behind the counter, between it and the shelves, facing the room
     const C=T.counter,npc={x:rx((C.x0+C.x1)/2),z:rz(C.z0-.3)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:rx(C.x0+.3),maxX:rx(C.x1-.3),speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -4029,7 +4033,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     L(W/2,FL[1]+1.7,rz((-Z+T.corridor.z0)/2),0xffb070,.5,7);
     // the innkeeper behind the bar, between it and the rack of kegs, facing the room
     const npc={x:rx((T.bar.x0+T.bar.x1)/2),z:rz(T.bar.z0-.2)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Innkeeper',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:rx(T.bar.x0+.3),maxX:rx(T.bar.x1-.3),speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -4072,7 +4076,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     {const A=T.altar;L(rx((A.x0+A.x1)/2),ry(A.y+.9),rz(A.z1+.4),0xffb060,.9,6);}L(X,ry(F0+1.9),Z,0xffb060,.8,5);
     // the priest between the sanctuary's step and the bier's candlesticks, facing the door
     const npc={x:rx(0),z:rz(T.sanctuary.z1+.34+.65)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Priest',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:'Priest',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -4198,7 +4202,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     guildMembers(sc_,house,F_,reg,[[rx(-3.9),rz(T.table.z0-1.15)],[rx(T.pell.x+.9),rz(T.pell.z+.7)],[rx(-5.4),rz(T.gallery.z1+.75)]],{x0:rx(-X+1),x1:rx(T.part.x0-.6),z0:rz(T.gallery.z1+.4),z1:D-1});
     // the steward behind the desk, beside the stool, facing the great door
     const npc={x:rx(T.desk.x1-.3),z:rz(T.desk.z0-.32)};
-    if(npcInsideNow(house)){const g=buildNPCMesh({role:F_?'guard':'scholar',name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    if(npcInsideNow(house)){const g=buildNPCMesh({role:F_?'guard':'scholar',name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
       g.rotation.y=0;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
       intNPCMesh.userData.amble={wa:0,wt:1,minZ:npc.z,maxZ:npc.z,minX:npc.x,maxX:npc.x,speed:.25,paused:true};}
     else{intNPCMesh=null;intNPCPos={x:-99,z:-99};}
@@ -4209,7 +4213,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const memberRoles=F_?['Blade','Warden','Recruit']:['Adept','Novice','Evoker'];
     const names=NAMES[reg]||NAMES.irish;
     for(let k=0;k<3;k++){const nm=pick(Math.random,Math.random()<.5?names.m:names.f);const def={name:nm,role:memberRoles[k]+' of the '+(F_?'Fighters':'Mages'),ico:F_?'⚔':'✨',greeting:F_?["Steward's at the desk.","New? Don't touch the racks.","Come to spar sometime."]:["Mind the cauldron.","Have you read the board?","The Archmage sees everyone eventually."],topics:[{label:'What is it like here?',response:F_?'Beds, bread, and the odd broken nose. Better than the road.':'Quiet, mostly. Until something on a shelf goes off.'},{label:'Any advice?',response:F_?'Take the small jobs first. Beasts don\'t care about your rank.':'Never carry a relic in your bare hands longer than you must.'},{label:'Farewell.',bye:true}]};
-      const g=buildNPCMesh({role:F_?'guard':'scholar',name:nm,bCol:F_?0x5a2020:0x203a6a,sCol:0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});const [x,z]=spots[k];g.position.set(x,0,z);g.rotation.y=Math.random()*Math.PI*2;sc_.add(g);
+      const g=buildNPCMesh({role:F_?'guard':'scholar',name:nm,people:keeperPeople(house),bCol:F_?0x5a2020:0x203a6a,sCol:0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});const [x,z]=spots[k];g.position.set(x,0,z);g.rotation.y=Math.random()*Math.PI*2;sc_.add(g);
       INT_NPCS.push({g,def,wa:0,wt:1,walk:false,box});}
   }
   function buildInteriorFor(house){
@@ -4631,7 +4635,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     // (the same person you see in the street is the one behind the counter).
     if(npcInsideNow(house)){
     const roleName=type==='church'?'Priest':type==='home'?'Resident':type==='inn'?'Innkeeper':type==='castle'?'Steward':type==='guild_f'?'guard':type==='guild_m'?'scholar':'Merchant';
-    const g=buildNPCMesh({role:roleName,name:house.keeper,_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
+    const g=buildNPCMesh({role:roleName,name:house.keeper,people:keeperPeople(house),_twin:house._twin,bCol:house.bCol||0x5a4030,sCol:house.sCol||0xd4a878},{nation:nationAt(house.doorX,house.doorZ),key:house.siteId||''});
     g.rotation.y=type==='church'?0:Math.PI;g.position.set(npc.x,0,npc.z);sc_.add(g);intNPCMesh=g;intNPCPos={x:npc.x,z:npc.z};
     intNPCMesh.userData.amble={wa:Math.random()*Math.PI*2,wt:1+Math.random()*3,minZ:(npc.minZ!=null?npc.minZ:.6)*KS,maxZ:npc.maxZ,minX:.8*KS,maxX:W-.8*KS,speed:.25,paused:npc.paused};
     if(homeAsleepNow(house))laySleeper(intNPCMesh); /* S739 — asleep in bed, 23h to 5h (#240 A) */
@@ -4674,7 +4678,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     const shoals=typeof navAboard==='function'&&navAboard(); /* S1780 — the navigator at her chart table draws the shoals, a bed under 2 m (#979 B's sheet) */
     for(let z=pz-radius;z<pz+radius;z+=cell)for(let x=px-radius;x<px+radius;x+=cell){
       const h=worldH(x+cell/2,z+cell/2);const dom=dominantRegion(x,z).r;
-      let col;if(h<0)col=shoals&&h>-SHOAL_D?SHOAL_COL:'#3a5a78';else{const b=BIOME_PROFILES[dom.biome]||BIOME_PROFILES.plains;const c=new THREE.Color(b.groundBase);const k=.75+Math.min(.6,Math.max(0,h)/40)*.5;
+      let col;if(h<0)col=shoals&&(h>-SHOAL_D||reefRockAt(x+cell/2,z+cell/2,cell*.71))?SHOAL_COL:'#3a5a78'; /* S2637 — a reef's rocks are shoal water */else{const b=BIOME_PROFILES[dom.biome]||BIOME_PROFILES.plains;const c=new THREE.Color(b.groundBase);const k=.75+Math.min(.6,Math.max(0,h)/40)*.5;
         if(WX.cover>.02)c.lerp(_snowMapC,Math.min(.9,WX.cover*.85)); // v80 S146 — snow lying, on the local map too
         col=`rgb(${(c.r*255*k)|0},${(c.g*255*k)|0},${(c.b*255*k)|0})`;}
       const [sx,sz]=toS(x,z);ctx.fillStyle=col;ctx.fillRect(sx,sz,cell*s+1,cell*s+1);

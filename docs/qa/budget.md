@@ -1893,3 +1893,40 @@ at every level (one in Land, one in Other: 364 / 557 / 603 → 366 / 560 / 606),
 | the field west of Dunmore, dawn | Low | 536 | 513k | 0 | 0 | 61 (0 full) | 201 | 232 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 475, 450k |
 | the field west of Dunmore, dawn | Middle | 706 | 982k | 146 | 6 | 61 (0 full) | 201 | 250 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 642, 910k |
 | the field west of Dunmore, dawn | High | 760 | 1.51 M | 191 | 6 | 61 (0 full) | 201 | 259 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 690, 1.43 M |
+
+### s1955 — 2026-11-25 07:06 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 374 | 702k | 0 | 0 | 33 (0 full) | 65 | 191 | 85 | Mesh 31, oldGate 14, mill 10, cave mouth 8, sea cave mouth 8 | 341, 638k |
+| Portclare square, noon | Middle | 568 | 1.47 M | 157 | 6 | 48 (1 full) | 65 | 207 | 85 | Mesh 31, oldGate 14, mill 10, cave mouth 8, sea cave mouth 8 | 512, 1.33 M |
+| Portclare square, noon | High | 614 | 1.83 M | 192 | 6 | 48 (2 full) | 65 | 218 | 85 | Mesh 31, oldGate 14, mill 10, cave mouth 8, sea cave mouth 8 | 555, 1.65 M |
+
+### s1955 — 2026-11-25 07:08 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 623 | 1.12 M | 0 | 0 | 125 (0 full) | 145 | 250 | 103 | Mesh 46, oldGate 20, mill 12, sea cave mouth 8, cave mouth 7 | 498, 939k |
+| Dunmore street, noon | Middle | 797 | 1.86 M | 157 | 6 | 125 (0 full) | 145 | 261 | 103 | Mesh 46, oldGate 20, mill 12, sea cave mouth 8, cave mouth 7 | 646, 1.62 M |
+| Dunmore street, noon | High | 852 | 2.33 M | 194 | 6 | 125 (0 full) | 145 | 279 | 103 | Mesh 46, oldGate 20, mill 12, sea cave mouth 8, cave mouth 7 | 700, 2.08 M |
+| Dunmore street, midnight | Low | 677 | 1.08 M | 0 | 0 | 122 (0 full) | 201 | 250 | 104 | Mesh 46, oldGate 20, mill 12, sea cave mouth 8, cave mouth 7 | 555, 940k |
+| Dunmore street, midnight | Middle | 863 | 1.79 M | 169 | 6 | 122 (0 full) | 201 | 261 | 104 | Mesh 46, oldGate 20, mill 12, sea cave mouth 8, cave mouth 7 | 738, 1.64 M |
+| Dunmore street, midnight | High | 930 | 2.32 M | 218 | 6 | 122 (0 full) | 201 | 279 | 104 | Mesh 46, oldGate 20, mill 12, sea cave mouth 8, cave mouth 7 | 798, 2.15 M |
+
+### s1955 — 2026-11-25 07:11 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 34 | 27k | 0 | 0 | 1 (0 full) | 0 | 0 | 33 |  | 33, 21k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 105 | 397k | 0 | 0 | 33 (0 full) | 0 | 0 | 71 |  | 71, 352k |
+
+### s1955 — 2026-11-25 07:18 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| the field west of Dunmore, noon | Low | 451 | 528k | 0 | 0 | 56 (0 full) | 122 | 232 | 41 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 395, 449k |
+| the field west of Dunmore, noon | Middle | 562 | 929k | 87 | 6 | 56 (0 full) | 122 | 250 | 41 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 505, 847k |
+| the field west of Dunmore, noon | High | 608 | 1.40 M | 124 | 6 | 56 (0 full) | 122 | 259 | 41 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 551, 1.32 M |
+| the field west of Dunmore, dawn | Low | 537 | 516k | 0 | 0 | 62 (0 full) | 201 | 232 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 475, 450k |
+| the field west of Dunmore, dawn | Middle | 707 | 985k | 146 | 6 | 62 (0 full) | 201 | 250 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 642, 910k |
+| the field west of Dunmore, dawn | High | 761 | 1.52 M | 191 | 6 | 62 (0 full) | 201 | 259 | 42 | Mesh 28, oldGate 4, cave mouth 4, quaywall 2, Group 2 | 690, 1.43 M |
