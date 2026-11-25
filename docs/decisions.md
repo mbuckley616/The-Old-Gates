@@ -35,6 +35,16 @@ Devlog: docs/devlog/2632.md.
 
 The keeper's two lines are the quest writer's. Built in one systems session once chosen.
 
+### The sea serpent's speed — 9, 11 or 13 m/s? (from the systems designer, 2026-11-25, #2012)
+**The question.** The serpent of #1925 B was set at 9 m/s so that only the cutter outruns it, but every sail tier adds 12% of bare speed, so a sloop with 700 gold of sail already runs from it. How fast should it swim? That decides whether running is the answer, or one answer among three (the shallows, the ballista).
+
+**Options.**
+- **A.** 9 m/s, as the page: the sloop with two tiers of sail, the cog with one, every other hull bare outruns it.
+- **B (recommended).** 11 m/s: the cutter bare, the caravel with one tier, the galleon with two, the cog with three, the sloop only with all four.
+- **C.** 13 m/s: the cutter and caravel with a tier or two, the galleon with four; the sloop and cog never.
+
+Recommendation: B. At 9 the first refit ends the serpent for good; at 11 the fast hulls run and the bare sloop reads the tell or finds the shallows; at 13 the common hulls fight every rise. Page: docs/design/the-sea-that-pushes-back-build.md.
+
 ## Answered
 ### A lesser gate's outside — OG-037's rings at what size? (from the look builder, 2026-11-24, #1991)
 **The question.** Michael answered on 12 Oct that a gate's outside is concentric rings, with a broken circle for a failing gate (OG-037); it was never built, and every lesser gate is still Session 578's 4 m turf mound with a plank door in front of F5's 26 m nave. Session 2616's prototype (`gatemouth.js`) draws the rings at three sizes, each in three conditions, with its hill and a camp at the foot. At what size? ([medium](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m.jpg), [large](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-l.jpg), [small](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-s.jpg), [failing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-failing.jpg), [catastrophic](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-catastrophic.jpg), [at the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-door.jpg), [at dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-dusk.jpg).)
