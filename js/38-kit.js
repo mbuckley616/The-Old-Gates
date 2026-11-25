@@ -13194,7 +13194,7 @@ function aurenneOrrery(hAt, o = {}) {
     const gm = new THREE.Mesh(gg, M.bank); gm.name = 'bank'; gm.receiveShadow = true; out.group.add(gm);
     out.tris += idx.length / 3; out.draws += 1; out.hAt = hAt; return out;
   }
-  // Session 2632 (Michael's A on #1991: "Medium: rings 26 m across"; OG-037's V1 and V3, his answer of 12 Oct: "the gate's outside is
+  // Session 2633 (Michael's A on #1991: "Medium: rings 26 m across"; OG-037's V1 and V3, his answer of 12 Oct: "the gate's outside is
   // concentric rings, a broken circle for a failing gate") — a lesser gate's outside: docs/prototypes/levelup/gatemouth.js (Session 2616)
   // at its size 'm', drawn without its land: the world's own ground is the hill, by the stamp the world lays from shape() (js/82, ringGate).
   // A metre a unit, y 0 the court at the door, the face toward +z, as the prototype. The rings, four courses of voussoirs (36/30/24/18) on one

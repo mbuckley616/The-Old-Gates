@@ -674,7 +674,7 @@
       for(let i=MILLS.length-1;i>=0;i--)if(MILLS[i].id===m.id)MILLS.splice(i,1);MILLS.push(m);out.push(K.group);}
     return out;}
   // the sails turn, about a turn every eight seconds, while the mill is in the scene
-  function tickMills(dt){ringGateShow(); /* S2632 — and the ring gates drawn only where their chunks stand */for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);if(m.spinFar)m.spinFar.rotation.z=m.spin.rotation.z;}}
+  function tickMills(dt){ringGateShow(); /* S2633 — and the ring gates drawn only where their chunks stand */for(let i=MILLS.length-1;i>=0;i--){const m=MILLS[i];if(!m.group.parent){MILLS.splice(i,1);continue;}m.spin.rotation.z-=.78*Math.min(dt,.1);if(m.spinFar)m.spinFar.rotation.z=m.spin.rotation.z;}}
   // S2629 (QA's S2628, section I: six mills in view put Dunmore's street at 743 calls at Low, 78 of them the mills') — a mill's far copy:
   // the kit's own meshes baked into two vertex-coloured meshes on VC_MAT, the tower, cap and yard in one and the sails in the other, on an
   // axle and spin of their own so they still turn. The same triangles, 2 draws in place of 13, shadows kept. -> { group, spin, tris, draws }
@@ -1766,7 +1766,7 @@
         for(const t of SITES){if(t.pad<=0)continue;const dd=Math.hypot(wx-t.x,wz-t.z);const min=t.pad+120;if(dd<min){const dx=wx-t.x,dz=wz-t.z,L=Math.hypot(dx,dz)||1;wx=t.x+dx/L*min;wz=t.z+dz/L*min;}}
         {const q=homeFortClear(wx,wz,d,road,SITES.filter(t=>t.pad>0));wx=q.x;wz=q.z;} /* S2274 — off every road's line */
       } else if(e.zone==='gen'){
-        wx=e.x;wz=e.z;const RG=ringGateOk(e); /* S2632 — a ring gate keeps its hill off the roads and other doors */
+        wx=e.x;wz=e.z;const RG=ringGateOk(e); /* S2633 — a ring gate keeps its hill off the roads and other doors */
         for(let k=0;k<10;k++){if(RG){const q=ringGateRoad(wx,wz);if(q){wx+=q.nx*14;wz+=q.nz*14;continue;}}const ri=roadInfo(wx,wz);const st=e.lairDoor?(stampsNear(wx,wz).find(o=>o.id!=='site_'+e.lairSite&&o.kind!=='graze'&&Math.hypot(wx-o.x,wz-o.z)<o.r)||null):stampAt(wx,wz); /* S702 — a lair's own pad does not push its cavern door out */
           if(ri&&ri.d<=16){const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,L=Math.hypot(vx,vz)||1;const side=(hash01(e.seed,1,77)<.5?-1:1);wx+=(-vz/L)*side*(18-ri.d+4);wz+=(vx/L)*side*(18-ri.d+4);continue;}
           if(st&&st.kind!=='door'){const dx=wx-st.x,dz=wz-st.z,L=Math.hypot(dx,dz)||1;wx=st.x+dx/L*(st.r+(RG?50:14));wz=st.z+dz/L*(st.r+(RG?50:14));continue;}
@@ -1806,12 +1806,12 @@
       }
       dungeonWorldPos[e.seed]={x:wx,z:wz};CELL_DOORS.push(e);
       const isFort=e.kind==='fort_door';
-      e.ring=e.zone==='gen'&&ringGateOk(e);if(e.ring){ringGateStamp(e,wx,wz,cellK);return dungeonWorldPos[e.seed];} /* S2632 — the rings' hill in place of the door's pad */
+      e.ring=e.zone==='gen'&&ringGateOk(e);if(e.ring){ringGateStamp(e,wx,wz,cellK);return dungeonWorldPos[e.seed];} /* S2633 — the rings' hill in place of the door's pad */
       addStamp({id:'door_'+e.seed,kind:'door',x:wx,z:wz,r:isFort?46:7,blend:isFort?34:12,cell:cellK});
       return dungeonWorldPos[e.seed];
     }
   }
-  // S2632 (Michael's A on #1991: "Medium: rings 26 m across"; OG-037, his answer of 12 Oct) — a lesser gate's outside on the new look:
+  // S2633 (Michael's A on #1991: "Medium: rings 26 m across"; OG-037, his answer of 12 Oct) — a lesser gate's outside on the new look:
   // PKIT.places.gatemouth (Session 2616's prototype, gatemouth.js, at its size 'm') in place of S578's turf mound, at every plain lesser gate
   // (a cave door of the world's own cells, not a lair's cavern, the Root or the Hollow's). Its door is the slit in the back plate, where the
   // gate's door has always stood (dungeonWorldPos): the rings face -z as the mound did, so you still come up 2.5 m before the door, now on the
@@ -2151,6 +2151,8 @@
   // 8–18, out to the inn in the evening, home at night; residents wander
   // the plaza by day, drink in the evening, sleep at night; villagers roam
   // by day; guards patrol gate ↔ plaza around the clock.
+  /* S2632 — the night stays at 21: A's table puts it at 23, but the burglary's household is home and awake 21–23 (SLEEP_H, S1437) and an
+     empty home until 23 would end that; asked as a decision */
   const HRS={shopOpen:8,shopClose:18,eve:18,night:21,dawn:7};
   // S2630 (Michael's B on #1971, a town's day; docs/design/a-towns-day.md, A's table) — a shop keeps its trade's hours, not the one 8–18:
   // the forge (the 'weapon' shop is the smithy) and the shipwright 7–17, the apothecary 9–17, the armourer 9–18, the goods shop 9–19, the
@@ -2159,6 +2161,26 @@
   const SHOP_HRS={weapon:[7,17],forge:[7,17],shipwright:[7,17],potion:[9,17],apothecary:[9,17],armor:[9,18],armoury:[9,18],misc:[9,19],goods:[9,19],barber:[10,18]};
   HRS.inn=17;
   function shopHours(t){return SHOP_HRS[t]||[HRS.shopOpen,HRS.shopClose];}
+  // S2632 (#1971 B, A's second session) — the street by the hour. A resident's share (0–1, fixed by name and town) says which part of the
+  // day's crowd they are: 7–9 everyone at a work spot (the market house, the quay, the farm's yard; the square where a town has none),
+  // 9–13 the square holds 60% (a share under .6; the rest stay at work), 13–17 all of it, 17–21 a fifth (under .2) and the rest at the inn.
+  // The watch's handover is seen at the gate: both men set out an hour and a quarter before (5:15 and 17:45; a game minute is a real second, and Dunmore's
+  // watch ends its beat 80 m off, 70 s away), at a brisk 1.2 m/s, by the streets, and stand together at the gate until 2 game minutes past 6:30 and 19:00. The day man is
+  // the constable, or in a walled town with a night watch the first gate guard.
+  const SQ_SHARE={am:.6,eve:.2},HANDOVER=[6.5,19],HAND_MIN=2/60,HAND_EARLY=1.25,HAND_SPD=1.2;
+  /* a resident's share is their rank in the town's list of residents by a hash of the name (so 60% is 60% of the town, not of a roll); anyone else, the hash */
+  function dayShare(n){if(n._share!=null)return n._share;const d=n.def||{},S=n._settle,key=x=>pHash((x.name||'')+'|'+((S&&S.site&&S.site.id)||d._siteId||'')+'|share');
+    if(S&&S.residents&&S.residents.length){if(!S._shares){S._shares=new Map();const L=S.residents.map(r=>r.def).sort((a,b)=>key(a)-key(b)||(a.name<b.name?-1:1));L.forEach((x,i)=>S._shares.set(x,(i+.5)/L.length));}
+      if(S._shares.has(d))return n._share=S._shares.get(d);}
+    return n._share=(key(d)%1000)/1000;}
+  function workSpots(S){if(!S)return [];const k=(S.npcs||[]).length+'|'+(S.houses||[]).length;if(S._work&&S._workK===k)return S._work;const W=[];
+    for(const x of S.houses||[])if(x.type==='market'&&x.exitX!=null)W.push({x:x.exitX,z:x.exitZ,kind:'market'});
+    for(const m of S.npcs||[])if(m.sched&&m.sched.type==='harbour'&&m.sched.door)W.push({x:m.sched.door.x,z:m.sched.door.z,kind:'quay'});
+    try{const Y=farmYard(S);if(Y&&Y.door)W.push({x:Y.door.x,z:Y.door.z,kind:'yard'});}catch(e){}
+    S._work=W;S._workK=k;return W;}
+  function workSpotOf(n){const W=workSpots(n._settle);if(!W.length)return null;return W[Math.floor(dayShare(n)*997)%W.length];}
+  function handoverGate(S){const G=guardsOf(S),gd=G.find(m=>m.sched.type==='guard'),w=G.find(m=>m.sched.type==='watch');return gd?gd.sched.a:w?w.sched.a:null;}
+  function inHandover(h,early){for(const H of HANDOVER)if(h>=H-early&&h<H+HAND_MIN)return true;return false;}
   function hourNow(){return (typeof gameHour==='function')?gameHour():12;}
   function npcInsideNow(house){
     const h=hourNow(),t=house.type;
@@ -2193,10 +2215,12 @@
       case 'harbour': return night?{hide:true}:{go:sc_.door,idle:true}; // v80 S235 — at his post on the quay from 7 to 21
       // S554 — a feast day fills the square (DECISION #132's rule): residents and villagers keep to it, within 18 of
       // its middle (a resident's reach is the whole pad, 50–90), from morning until night, where on any other day the evening takes them home or to the inn
-      case 'resident':
+      case 'resident': {
         if(night)return {hide:true};
-        if(h>=HRS.inn&&!fst)return sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true}; /* S2630 — the inn from 17 */
-        return {wander:sc_.plaza,r:feastR(sc_.padR||14,fst)};
+        const u=dayShare(n),sq={wander:sc_.plaza,r:feastR(sc_.padR||14,fst)};if(fst)return sq;
+        if(h>=HRS.inn)return u<SQ_SHARE.eve?sq:sc_.inn?{go:sc_.inn,thenHide:true}:{go:sc_.door,idle:true}; /* S2630 — the inn from 17; S2632 — a fifth keep the square until 21 */
+        if(h<9||h<13&&u>=SQ_SHARE.am){const w=workSpotOf(n);if(w)return {wander:w,r:w.kind==='market'?7:4,from:sc_.door,work:w.kind};} /* S2632 — the morning's work */
+        return sq;}
       // S1471 (Michael's A on #762) — a farmer keeps the yard by day, from the yard door to the spots of it (farmYard), and goes in by
       // that door at evening; on a feast day the square, as a resident, from the front door. No yard read: a resident's day.
       case 'farmer': {const Y=sc_.yard;
@@ -2206,10 +2230,14 @@
         return {pts:Y.pts,from:Y.door};}
       case 'villager':
         if(night||eve&&h>=20&&!fst)return {hide:true};
+        if(h<9&&!fst&&!n.def._lord){const w=workSpotOf(n);if(w)return {wander:w,r:4,work:w.kind};} /* S2632 — 7–9 at the yard or the quay, then the square */
         return {wander:sc_.plaza,r:feastR(sc_.padR||14,fst)};
-      case 'guard': {const B=(h>=19||h<6.5)&&beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};} // v80 S166 — the lantern beat after dark
-      case 'constable': return (h>=19||h<6.5)?{hide:true}:{patrol:[sc_.a,sc_.b]}; // S268 — the day constable, the watchman's other half
-      case 'watch': {if(!(h>=19||h<6.5))return {hide:true};const B=beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};}
+      case 'guard': {if(inHandover(h,HAND_EARLY)&&guardsOf(n._settle).some(m=>m.sched.type==='watch')){const G=handoverGate(n._settle);if(G===sc_.a)return {go:G,idle:true,route:true,handover:true};} /* S2632 — the gate guard meets the night man */
+        const B=(h>=19||h<6.5)&&beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};} // v80 S166 — the lantern beat after dark
+      case 'constable': {if(inHandover(h,HAND_EARLY)){const G=handoverGate(n._settle);if(G)return {go:G,idle:true,route:true,handover:true};} /* S2632 — out at 6:15 to the gate; at 18:45 to it */
+        return (h>=19||h<6.5)?{hide:true}:{patrol:[sc_.a,sc_.b]};} // S268 — the day constable, the watchman's other half
+      case 'watch': {if(inHandover(h,HAND_EARLY)){const G=handoverGate(n._settle);if(G)return {go:G,idle:true,route:true,handover:true};} /* S2632 — from 6:00 to the gate; out at 18:45 */
+        if(!(h>=19+HAND_MIN||h<6.5))return {hide:true};const B=beatOf(n._settle);return B?{beat:B}:{patrol:[sc_.a,sc_.b]};}
       case 'lost': return {idle:true};
       default: return {idle:true};
     }
@@ -2359,7 +2387,7 @@
       if(!n.g.visible){n.g.visible=true;n._retreated=false;const H=plan.from||n.home;n.g.position.set(H.x,worldH(H.x,H.z),H.z);n._tgt=null;}
       n._retreated=false;
       if(n._scared&&now<n._scared){const a=Math.atan2(n.g.position.x-px,n.g.position.z-pz);npcStep(n,n.g.position.x+Math.sin(a)*6,n.g.position.z+Math.cos(a)*6,1.3,dt);n.g.position.y=worldH(n.g.position.x,n.g.position.z);n.dot.position.set(n.g.position.x,n.g.position.y+1.52,n.g.position.z);continue;} // S157 — struck: runs
-      const spd=n.sched&&n.sched.type==='guard'?.95:.7;
+      const spd=plan.handover?HAND_SPD:n.sched&&n.sched.type==='guard'?.95:.7; /* S2632 — brisk to the handover */
       let moving=false;
       if(n._chase){const T=targetOf(n),fd=Math.hypot(T.x-n.g.position.x,T.z-n.g.position.z); // S239 — sent after you: he runs you down by the streets
         if(fd>1.4){trailStep(n,CHASE_SPD,dt,.6);moving=true;}
@@ -2378,7 +2406,7 @@
           else{let arrived=npcStep(n,t.x,t.z,spd,dt); // blocked for good (npcStep gives up) is not arriving: once more cell by cell, then on to the next point
             if(arrived&&Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z)>=.8&&n._bwTry!==t){n._bwTry=t;n._bwp=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},t,true);arrived=!n._bwp.length;}
             if(arrived)next();moving=!arrived;}}}
-      else if(plan.go&&n.sched.bawn){const t=plan.go; /* S1143 — a steward in a bawn goes by the streets, out through its gate (straight, the wall stops him and he gives up there) */
+      else if(plan.go&&(n.sched.bawn||plan.route)){const t=plan.go; /* S1143 — a steward in a bawn goes by the streets, out through its gate (straight, the wall stops him and he gives up there) */
         if(n._gwT!==t||(n._gwArr===t&&Math.hypot(t.x-n.g.position.x,t.z-n.g.position.z)>2)){n._gwT=t;n._gwArr=null;n._gwp=townRoute(n._settle)({x:n.g.position.x,z:n.g.position.z},t);} /* again when he is far from a place he reached (the next day) */
         if(n._gwp&&n._gwp.length){const w=n._gwp[0];npcStep(n,w.x,w.z,spd,dt,.2);if(Math.hypot(w.x-n.g.position.x,w.z-n.g.position.z)<.3)n._gwp.shift();moving=true;}
         else{const arrived=npcStep(n,t.x,t.z,spd,dt);if(arrived){n._gwArr=t;if(plan.thenHide)n._arrivedHide=true;}moving=!arrived;}}

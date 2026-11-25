@@ -8,7 +8,7 @@ await g.spin(null, 600); /* the residents come out within 70 units, two a tick *
 
 const s = await page.evaluate(() => {
   const S = WORLD.settle.get('dunmore'); const at = (d, h) => { worldState.gameTimeAbsMinutes = d * 1440 + h * 60; worldState.gameTimeMinutes = h * 60; };
-  const res = S.npcs.find(n => n.sched && n.sched.type === 'resident'), vil = S.npcs.find(n => n.sched && n.sched.type === 'villager');
+  const res = S.npcs.find(n => n.sched && n.sched.type === 'resident' && dayShare(n) >= .2 && dayShare(n) < .6), /* S2632: watch one of the 60% in the square by noon, not of the fifth who keep it in the evening */ vil = S.npcs.find(n => n.sched && n.sched.type === 'villager');
   const sch = (n, d, h) => { at(d, h); const o = scheduleFor(n, h); return o.wander ? `wander ${o.r}` : o.hide ? 'hide' : o.go ? (o.thenHide ? 'go then hide' : 'go') : 'idle'; };
   return { res: !!res, vil: !!vil, padR: vil && vil.sched.padR, resPadR: res && res.sched.padR,
     resNoon: [sch(res, 21, 12), sch(res, 22, 12)], resEve: [sch(res, 21, 19), sch(res, 22, 19)], resNight: [sch(res, 21, 22), sch(res, 22, 22)],

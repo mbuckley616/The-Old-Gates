@@ -1,4 +1,4 @@
-// ringgate (Session 2632; Michael's A on #1991, "Medium: rings 26 m across"; OG-037, his answer of 12 Oct, "the gate's outside is
+// ringgate (Session 2633; Michael's A on #1991, "Medium: rings 26 m across"; OG-037, his answer of 12 Oct, "the gate's outside is
 // concentric rings, a broken circle for a failing gate"): on the new look every plain lesser gate's outside is the kit's gatemouth
 // (PKIT.places.gatemouth, Session 2616's prototype) in a hill the world's ground is stamped into (ringGateStamp, 82), its face laid again
 // where the ground's 4 m grid cannot make it (ringGateLaid). The suite counts them, stands at the nearest, and reads its size against a

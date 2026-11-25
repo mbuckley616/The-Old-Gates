@@ -36,12 +36,33 @@ console.log(JSON.stringify(table));
 check('every trade in Dunmore opens and shuts at its own hour, and its locked door names that opening', Object.keys(table).length >= 4 && Object.entries(table).every(([t, r]) => r.from === HRS_WANT[t][0] && r.to === HRS_WANT[t][1] && r.n === (HRS_WANT[t][1] - HRS_WANT[t][0]) * 2 && r.opens === HRS_WANT[t][0]), table);
 const sched = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const k = t => S.npcs.find(n => n.sched && n.sched.type === 'keeper' && n.sched.shop === t);
   const say = (n, h) => { if (!n) return null; const p = scheduleFor(n, h); return p.hide ? 'hide' : p.go ? 'go' : p.wander ? 'wander' : 'idle'; };
-  const f = k('weapon'), m = k('misc'), r = S.npcs.find(n => n.sched && n.sched.type === 'resident');
+  const f = k('weapon'), m = k('misc'), r = S.npcs.find(n => n.sched && n.sched.type === 'resident' && dayShare(n) >= .6); /* S2632: one who goes in at 17 */
   return { forge7: say(f, 7.5), goods7: say(m, 7.5), forge175: say(f, 17.5), goods175: say(m, 17.5), goods195: say(m, 19.5), res165: say(r, 16.5), res175: say(r, 17.5) }; });
 console.log(JSON.stringify(sched));
 check("at half past seven the smith is at work and the goods shop's keeper at the door; at half past five the smith goes to the inn and the goods keeper is still in", sched.forge7 === 'hide' && sched.goods7 === 'go' && sched.forge175 === 'go' && sched.goods175 === 'hide' && sched.goods195 === 'go', sched);
 check('a resident keeps the square until five and goes in to the inn after', sched.res165 === 'wander' && sched.res175 === 'go', sched);
+// S2632 (#1971 B, A's second session): the street by the hour, read from the rule for every resident of Dunmore (built or not): 7–9 at a
+// work spot (Dunmore's is its market house), the square at 60% of them 9–13, all 13–17 and a fifth 17–21, the rest at the inn, and night from 21 (the page's 23 is asked: the burglary's household is home 21–23).
+const street = await page.evaluate(() => { const S = WORLD.settle.get('dunmore');
+  const fake = S.residents.map(res => ({ def: res.def, _settle: S, sched: { type: 'resident', door: res.door, plaza: { x: S.site.x, z: S.site.z }, padR: 20, inn: S.innDoor } }));
+  const at = h => { const o = { sq: 0, work: 0, inn: 0, hide: 0 }; for (const n of fake) { const p = scheduleFor(n, h); if (p.hide) o.hide++; else if (p.work) o.work++; else if (p.wander) o.sq++; else if (p.go) o.inn++; } return o; };
+  return { N: fake.length, spots: workSpots(S).map(w => w.kind), h8: at(8), h10: at(10), h14: at(14), h19: at(19), h205: at(20.5), h215: at(21.5) }; });
+console.log(JSON.stringify(street));
+const pc = (o, k) => o[k] / street.N;
+check('at eight every resident is at a work spot (Dunmore: the market house)', street.N >= 20 && street.spots.includes('market') && street.h8.work === street.N, street);
+check('the square holds 60% at ten, all at two in the afternoon, a fifth in the evening; the rest of the evening at the inn', Math.abs(pc(street.h10, 'sq') - .6) < .03 && street.h10.work + street.h10.sq === street.N && street.h14.sq === street.N && Math.abs(pc(street.h19, 'sq') - .2) < .03 && street.h19.sq + street.h19.inn === street.N && street.h205.inn === street.h19.inn, street);
+check('the night begins at 21: everyone is in', street.h215.hide === street.N, street.h215);
 const dusk = await tryDoor('misc', 18.5), apo = await tryDoor('potion', 18.5);
 check('at half past six the goods shop lets you in and the apothecary is locked till 9', dusk.inside && !dusk.closed && apo.closed && !apo.inside && /locked till 9/.test(apo.prompt), { dusk, apo });
+// S2632: the watch's handover, seen at the gate. Dunmore (walled, rich) hands from its night watch to the first gate guard; Hearthwick
+// (unwalled) from its watch to the constable. Both set out at 5:15 and 17:45, meet at the gate, and the night man goes in 2 minutes past 6:30.
+const hand = await page.evaluate(() => { const out = {};
+  for (const [t, S] of WORLD.settle) { const G = handoverGate(S), M = guardsOf(S), w = M.find(n => n.sched.type === 'watch'), d = M.find(n => n.sched.type === 'constable') || M.find(n => n.sched.type === 'guard' && n.sched.a === G);
+    if (!G || !w || !d) continue; const say = (n, h) => { const p = scheduleFor(n, h); return p.handover && p.go === G ? 'gate' : p.hide ? 'hide' : p.beat || p.patrol && n.sched.type !== 'constable' && !(n.sched.type === 'guard' && h > 6.5 && h < 19) ? 'beat' : p.patrol ? 'patrol' : '?'; }; /* the night man's duty is his beat, or his patrol where a town has no shops to beat past (beatOf) */
+    out[t] = { day: d.sched.type, w: [5.1, 5.3, 6.51, 6.6, 17.7, 17.8, 19.01, 19.1].map(h => say(w, h)), d: [5.1, 5.3, 6.51, 6.6, 17.7, 17.8, 19.01, 19.1].map(h => say(d, h)) }; }
+  return out; });
+console.log(JSON.stringify(hand));
+const H = Object.values(hand);
+check('at the handover the night man and the day man both make for the gate, and part 2 minutes past the hour', H.length >= 2 && H.some(x => x.day === 'guard') && H.some(x => x.day === 'constable') && H.every(x => x.w.join() === 'beat,gate,gate,hide,hide,gate,gate,beat' && x.d.join() === (x.day === 'constable' ? 'hide,gate,gate,patrol,patrol,gate,gate,hide' : 'beat,gate,gate,patrol,patrol,gate,gate,beat')), hand);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

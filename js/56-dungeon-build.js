@@ -4330,7 +4330,7 @@ function goToOW(){
     let spawnX=src?src.x:15;
     // S702 — an old gate in the world faces -z with its mound behind it (S578): come up in front of it, not inside the mound (z+2 held you fast)
     let spawnZ=src?(src.zone==='world'&&(src.kind||'cave_door')==='cave_door'?src.z-2.5:src.z+2):20;
-    /* S2632 — a ring gate (RING_GATES, 82) faces down its slope: you come up on its floor 2.5 m before the slit, looking out, under the hill */
+    /* S2633 — a ring gate (RING_GATES, 82) faces down its slope: you come up on its floor 2.5 m before the slit, looking out, under the hill */
     const RGX=src&&src.zone==='world'&&typeof RING_GATES!=='undefined'?RING_GATES.get(src.seed):null,RGE=RGX&&RGX.exit;
     // v61: data-driven zone restore (same pattern as exitInterior). Hearthwick
     // and Bealach-South have no dungeons today so this branch is defensive,
