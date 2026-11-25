@@ -517,14 +517,27 @@ P.straps = (B, o) => { (B.after ||= []).push(geo => {
 
 // packs (Session 867): what a beast of burden carries. Two panniers hang either side of the spine at `at`, over a canvas
 // blanket, joined by a strap across the back, with a bedroll lashed on top. All rigid on the spine bone, clear of the fur.
-P.packs = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) * .8, R = sp.r * B.spineS[0] + fl, Ry = sp.r * B.spineS[1] + fl, L = o.len, W = o.w ?? L * .38, H = o.h ?? L * .7;
+P.packs = (B, o) => { const sp = B.spineAt(o.at), fl = (B.plan.fur?.len || 0) * .8, R = sp.r * B.spineS[0] * (o.fit ?? 1) + fl, Ry = sp.r * B.spineS[1] + fl, L = o.len, W = o.w ?? L * .38, H = o.h ?? L * .7;
   const box = (w, h, d, c, p, rough = .8) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d, 2, 2, 2), stdMat(c, { rough })); m.position.copy(p); B.bit(sp.bone, m); return m; };
-  const blanket = new THREE.CylinderGeometry(1, 1, L * 1.15, 24, 1, true, Math.PI / 2 - 1.25, 2.5); blanket.rotateZ(Math.PI / 2); blanket.rotateY(Math.PI / 2); blanket.scale(R * 1.04, Ry * 1.04, 1);
-  const bm = new THREE.Mesh(blanket, stdMat(B.tone('blanket'), { rough: .9 })); bm.material.side = THREE.DoubleSide; bm.position.copy(sp.p); B.bit(sp.bone, bm);
-  for (const sd of [1, -1]) { const p = sp.p.clone().add(V(sd * (R * 1.06 + W / 2), -Ry * .3 - H * .5, 0)); box(W, H, L, B.tone('pack'), p);
-    box(W * 1.04, H * .16, L * 1.02, B.tone('leather'), p.clone().add(V(0, H * .5, 0)), .6);
-    box(W * .1, Ry * .9 + H * .2, L * .12, B.tone('leather'), sp.p.clone().add(V(sd * R * .98, -Ry * .35, 0)), .6); }
-  box(R * 2.1, Ry * .08, L * .12, B.tone('leather'), sp.p.clone().add(V(0, Ry * 1.05, 0)), .6);
+  // Session 2648: `sack` lays each pannier as a stuffed bale (a sphere pushed out toward its box, settled flat beneath and slumped on top),
+  // `fit` widens the hang past a broad back (a camel's hump), `hang` sets the bales' tops (in the back's height under the spine; the mule's
+  // −.3), and `frame` replaces the blanket and the strap with two wooden arches over the back, `frame.up` above the spine, the bales on them
+  const sack = (w, h, d, c, p) => { const g = new THREE.SphereGeometry(1, 18, 12), a = g.attributes.position;
+    for (let i = 0; i < a.count; i++) { let x = a.getX(i), y = a.getY(i), z = a.getZ(i); const sq = v => Math.sign(v) * Math.pow(Math.abs(v), .45); x = sq(x); y = sq(y); z = sq(z);
+      if (y > 0) { y *= 1 - .18 * (1 - Math.abs(z)); x *= 1 + .05 * y; } a.setXYZ(i, x * w / 2, y * h / 2, z * d / 2); }
+    g.computeVertexNormals(); const m = new THREE.Mesh(g, stdMat(c, { rough: .95 })); m.position.copy(p); B.bit(sp.bone, m); return m; };
+  const top = Ry * (o.hang ?? -.3);
+  if (!o.frame) { const blanket = new THREE.CylinderGeometry(1, 1, L * 1.15, 24, 1, true, Math.PI / 2 - 1.25, 2.5); blanket.rotateZ(Math.PI / 2); blanket.rotateY(Math.PI / 2); blanket.scale(R * 1.04, Ry * 1.04, 1);
+    const bm = new THREE.Mesh(blanket, stdMat(B.tone('blanket'), { rough: .9 })); bm.material.side = THREE.DoubleSide; bm.position.copy(sp.p); B.bit(sp.bone, bm); }
+  for (const sd of [1, -1]) { const p = sp.p.clone().add(V(sd * (R * 1.06 + W / 2), top - H * .5, 0));
+    if (o.sack) { sack(W, H, L, B.tone('pack'), p); for (const dz of [-.28, .28]) box(W * 1.02, H * .98, L * .06, B.tone('leather'), p.clone().add(V(0, 0, dz * L)), .6); }
+    else { box(W, H, L, B.tone('pack'), p); box(W * 1.04, H * .16, L * 1.02, B.tone('leather'), p.clone().add(V(0, H * .5, 0)), .6); }
+    if (!o.frame) box(W * .1, Ry * .9 + H * .2, L * .12, B.tone('leather'), sp.p.clone().add(V(sd * R * .98, -Ry * .35, 0)), .6); }
+  if (o.frame) { const up = o.frame.up, rr = o.frame.r ?? .022;
+    for (const dz of [-.44, .44]) { const c = new THREE.EllipseCurve(0, top, R * 1.08, up - top, 0, Math.PI), pts = c.getPoints(14).map(q => V(q.x, q.y, 0));
+      const g = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, rr, 6, false), m = new THREE.Mesh(g, stdMat(B.tone('wood'), { rough: .7 })); m.position.copy(sp.p).add(V(0, 0, dz * L)); B.bit(sp.bone, m); }
+    for (const sd of [1, -1]) box(rr * 2.2, rr * 2.2, L * .9, B.tone('wood'), sp.p.clone().add(V(sd * R * 1.08, top, 0)), .7); }
+  else box(R * 2.1, Ry * .08, L * .12, B.tone('leather'), sp.p.clone().add(V(0, Ry * 1.05, 0)), .6);
   if (o.roll !== false) { const g = new THREE.CylinderGeometry(L * .16, L * .16, R * 2.2, 14); g.rotateZ(Math.PI / 2); const m = new THREE.Mesh(g, stdMat(B.tone('roll'), { rough: .9 })); m.position.copy(sp.p).add(V(0, Ry * 1.05 + L * .16, -L * .2)); B.bit(sp.bone, m); } };
 // harness (Session 867): a draught horse's padded collar round the base of its neck, or an ox's wooden yoke over its
 // neck with a bow under it. Rigid on the first neck bone, so the head moves free of it.
@@ -2221,7 +2234,11 @@ Object.assign(PLANS, {
 // bridled, in the game's RIDE_TACK colours (a dark madder blanket, brown leather)
 PLANS.ridinghorse = re(PLANS.horse, { name: 'Riding horse', src: 'OG-046 (beasts of burden: the horse, saddled and bridled for a rider)', coatAs: 'horse', palette: { ...PLANS.horse.palette, blanket: [.36, .17, .13], leather: [.235, .14, .08] },
   parts: [...PLANS.horse.parts, ['saddle', { at: .36, len: .6 }], ['bridle', {}]] });
-export const HARNESSED = ['packmule', 'draughthorse', 'yokedox', 'ridinghorse'];
+// the pack camel (Session 2648, the Caravan's string: *Festivals on the Calendar, III* §3, "pack-beasts and bales"): the camel under
+// two saffron bales either side of its hump, on the mule's packs as sacks, hung from a wooden frame arched over the hump, no bedroll
+PLANS.packcamel = re(PLANS.camel, { name: 'Pack camel', src: 'OG-046 (beasts of burden: the camel with its bales, the caravans)', coatAs: 'camel', scale: PLANS.camel.scale, speedK: PLANS.camel.speedK,
+  palette: { ...PLANS.camel.palette, ...GEAR, pack: [.7, .62, .48] }, parts: [...PLANS.camel.parts, ['packs', { at: .5, len: .8, w: .32, h: .62, roll: false, sack: true, fit: 1.02, hang: .25, frame: { up: .64 } }]] });
+export const HARNESSED = ['packmule', 'draughthorse', 'yokedox', 'ridinghorse', 'packcamel'];
 
 // ── Session 919: the corrupted (OG-088's second row; backlog L4, "corrupted animals by school"). A gate's antibodies wear
 // the animals of its country, and each is a change of shape, never a recolour: the gate's work shows in what grows out of it.

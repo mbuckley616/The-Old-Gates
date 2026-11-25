@@ -1,7 +1,8 @@
 // The Commencement's table and the Caravan's scale on the new look (Session 2351; Michael's B on #1628, *Festivals on the Calendar, III*;
 // PKIT.props.bursar and .saffron in 38-kit.js, genSettlement's S.stalls in 83). Every Aurennais place builds both hidden, each 0.75 m in
 // front of its keeper's spot (BURSAR_AT, CARAVAN_AT) toward the square's middle; the bursar's shows from 9:00 to noon on Shearing 6,
-// the caravan's from 6:00 to 18:00 on its day, with their keepers, and neither on an ordinary day. A picture of each.
+// the caravan's from 6:00 to 18:00 on its day, with their keepers, and neither on an ordinary day. A picture of each. Session 2648: the
+// caravan's string, 2 to 4 pack camels behind its keeper (caravanStringTick, 34-creatures.js), gone with the keeper.
 import { boot, check } from './lib/game.mjs';
 import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -40,7 +41,14 @@ const d = await page.evaluate(id => { const site = siteAnywhere(id), S = WORLD.s
     at(nb, 10); tickBursar(); if (BURSAR) { const T = S.stalls[0], n = BURSAR.npc.g.position, c = Math.cos(T.ry), s = Math.sin(T.ry), dx = n.x - T.x, dz = n.z - T.z;
       o.bk = { lz: +(dx * s + dz * c).toFixed(2), lx: +(dx * c - dz * s).toFixed(2), slide: T.slide }; bursarOut(); }
     at(nc, 12); tickCaravan(); if (CARAVAN) { const T = S.stalls[1], n = CARAVAN.npc.g.position, c = Math.cos(T.ry), s = Math.sin(T.ry), dx = n.x - T.x, dz = n.z - T.z;
-      o.ck = { lz: +(dx * s + dz * c).toFixed(2), lx: +(dx * c - dz * s).toFixed(2), slide: T.slide }; caravanOut(); }
+      o.ck = { lz: +(dx * s + dz * c).toFixed(2), lx: +(dx * c - dz * s).toFixed(2), slide: T.slide };
+      /* S2648 — the Caravan's string: 2 to 4 pack camels behind the keeper, nose to tail, out with the keeper */
+      caravanStringTick(); const G = (CSTRING && CSTRING.groups) || [], km = Math.hypot(n.x - site.x, n.z - site.z);
+      o.cs = { n: G.length, back: G.map(g => +(Math.hypot(g.position.x - site.x, g.position.z - site.z) - km).toFixed(2)), solid: G.filter(g => solidAt(g.position.x, g.position.z)).length,
+        kind: G.every(g => g.parent === scene && g.children[0].userData.rig && g.children[0].userData.rig.name === 'Pack Camel'),
+        gap: G.slice(1).map((g, i) => +Math.hypot(g.position.x - G[i].position.x, g.position.z - G[i].position.z).toFixed(2)),
+        along: G.slice(1).map((g, i) => { const dx = g.position.x - G[i].position.x, dz = g.position.z - G[i].position.z, L = Math.hypot(dx, dz) || 1; return +Math.abs((dx * Math.sin(g.rotation.y) + dz * Math.cos(g.rotation.y)) / L).toFixed(3); }) };
+      caravanOut(); caravanStringTick(); o.cs.after = CSTRING; }
   } finally { Object.assign(st, keep); worldState.festivals = {}; }
   return o; }, id);
 console.log(JSON.stringify(d));
@@ -50,6 +58,9 @@ check(`on the Caravan the scale is down at 5:30 (${!d.cDawn[1]}), up at noon (${
   !d.cDawn[1] && d.cNoon[1] && !d.cDusk[1] && !d.occupied[1] && !d.cNoon[0], d);
 check(`the bursar stands behind the table (${JSON.stringify(d.bk)}) and the caravan-master behind the scale (${JSON.stringify(d.ck)}), 0.75 m back, behind its middle however far it was slid (S2358: the keeper slides with it)`,
   d.bk && d.ck && Math.abs(d.bk.lz + .75) < .05 && Math.abs(d.bk.lx) < .05 && Math.abs(d.ck.lz + .75) < .05 && Math.abs(d.ck.lx) < .05, d);
+
+check(`the Caravan's string: ${d.cs && d.cs.n} pack camels (2 to 4), ${JSON.stringify(d.cs && d.cs.back)} m further from the middle than the keeper, ${d.cs && d.cs.solid} on a solid, ${JSON.stringify(d.cs && d.cs.gap)} m apart and facing along the line (${JSON.stringify(d.cs && d.cs.along)}); gone with the keeper (${d.cs && d.cs.after === null})`,
+  d.cs && d.cs.n >= 2 && d.cs.n <= 4 && d.cs.kind && d.cs.back.every(b => b > 1.5 && b < 8) && d.cs.solid === 0 && d.cs.gap.every(x => x > 2.8) && d.cs.along.every(a => a > .95) && d.cs.after === null, d.cs);
 
 // a picture of each on its morning, from the subscriber's side
 for (const [k, h, file] of [['commencement', 10, 'kit-bursar-table.png'], ['caravan', 10, 'kit-caravan-scale.png']]) {
