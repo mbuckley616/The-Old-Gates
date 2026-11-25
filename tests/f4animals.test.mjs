@@ -321,7 +321,7 @@ check(`ashore the Grey Seal galumphs in two halves: its chest rises ${seal.gal &
 check(`ashore the Grey Seal surges on the push and nearly stops on the draw: at 0.5 m/s its chest goes forward at ${seal.gal && seal.gal.push} m/s while it rises, ${seal.gal && seal.gal.draw} m/s while its hips are drawn up`,
   !!seal.gal && seal.gal.push > .6 && seal.gal.draw < .3 * seal.gal.push, seal.gal);
 check(`ashore the Grey Seal's ${seal.gal && seal.gal.fins} fore-flippers plant through the push: each tip moves ${seal.gal && seal.gal.slide} m along the way and stands at most ${seal.gal && seal.gal.finUp} m over the ground`,
-  !!seal.gal && seal.gal.fins === 2 && seal.gal.slide < .12 && seal.gal.finUp < .08, seal.gal);
+  !!seal.gal && seal.gal.fins === 2 && seal.gal.slide < .05 && seal.gal.finUp < .02, seal.gal);
 check(`the Grey Seal stopping mid-hump and setting off again (${seal.gal && seal.gal.stopG}, then ${seal.gal && seal.gal.goG}) moves its bones at most ${seal.gal && seal.gal.stopStep} and ${seal.gal && seal.gal.goStep} in a frame, against ${seal.gal && seal.gal.mvStep} moving at 0.5 m/s`,
   !!seal.gal && seal.gal.stopG.includes('stand') && seal.gal.goG.includes('hump') && seal.gal.stopStep <= 1.5 * seal.gal.mvStep && seal.gal.goStep <= 1.5 * seal.gal.mvStep, seal.gal);
 check(`far off (level ${seal.farL}) the Grey Seal's fit still follows its side of the water: ashore ${seal.farDry}, back in ${seal.farWet}`, seal.farL === 2 && seal.farDry && seal.farWet, seal);
