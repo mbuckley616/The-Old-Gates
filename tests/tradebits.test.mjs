@@ -24,13 +24,13 @@ check('every passage from every port is labelled with what the ferry charges', f
 check('the Compact\'s ports are among them, their tithe in the label', ferry.aurN > 0 && ferry.aurSample.every(r => r.label === r.asked), ferry.aurSample);
 check('at rank 2 with the nation\'s faction, the passages read 0g, as they cost', ferry.freeLabels.length > 0 && ferry.freeLabels.every(l => /\(0g, /.test(l)), ferry.freeLabels);
 
-// a crate on your back in the HUD, and a crate from a save made before it had an icon
-const crate = await page.evaluate(() => { BAG.push(WORLD.cargoItem('wool')); updateHUD(); const hud = document.getElementById('bh').textContent;
+// a crate on your back with its icon (the inventory shows it; S2659 took the bag's last two off the HUD), and a crate from a save made before it had an icon
+const crate = await page.evaluate(() => { const lbl = (b) => b ? b.ico + ' ' + b.name : ''; BAG.push(WORLD.cargoItem('wool')); const hud = lbl(BAG[BAG.length - 1]);
   const d = JSON.parse(ssStringify(_buildSavePayload())); const old = (d.bag || d.BAG || []).find(it => it && it.type === 'cargo'); if (old) delete old.ico;
-  _applyLoadData(d); updateHUD(); const after = document.getElementById('bh').textContent; const it = BAG.find(x => x.type === 'cargo');
+  _applyLoadData(d); const it = BAG.find(x => x.type === 'cargo'); const after = lbl(it);
   return { hud, oldHadNoIco: !!old, after, ico: it && it.ico }; });
 console.log(JSON.stringify(crate));
-check('a crate on your back reads with its icon in the HUD, not *undefined*', /📦 Bale of Wool/.test(crate.hud) && !/undefined/.test(crate.hud), crate);
+check('a crate on your back reads with its icon, not *undefined*', /📦 Bale of Wool/.test(crate.hud) && !/undefined/.test(crate.hud), crate);
 check('a crate loaded from a save made before it had an icon gets one', crate.oldHadNoIco && crate.ico === '📦' && !/undefined/.test(crate.after), crate);
 
 // the dialogue's hint
