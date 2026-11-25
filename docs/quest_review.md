@@ -6,6 +6,8 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
+| main | `f6428797` | run 57: Sessions 2593–2631 as merged (build s1952), about 20 new player-readable lines: the sea's creatures' names (*Starweed Ray*, *Sea Turtle*, *Tidecrab*, *Lantern Jelly*, *Coastal Tuna*, *Drifter Squid*, *Skyskimmer*, *Abyssal Angler*, *Blackcurrent Eel*, *Sailfin Ray*, *Reef Moray*, *Stonefish*, *Giant Octopus*, *Grey Seal*; *Gate Eel* and *Sea Serpent* named but not yet rolled), the dialog's fold cue *▾ more below*, the lord's *How fares the town?* with its stray space gone (no word changed), the shops' hours by trade (no new line: *locked till* reads the trade's opening), the weapon glyphs and the plate's tooltip. Plain names and the narrator's UI; clean |
+| (open PRs) | — | run 57: none open from an auto/* branch |
 | main | `0955a985` | run 56: Sessions 2557–2592 as merged (build s1915), about 40 new player-readable lines: Finding 56 applied word for word (S2558, the lord's six refusals of the great forge by people and reason, the narrator's line kept for `showMsg`); the still and the vial (*Glass Vial*, *A draught is bottled in a glass vial.*, *Press 'E' to work the still*, *It takes {n} bronze ingots (you have {n}).*); the recipe leaf (*The mortar*, *Recipes*, *Made*, *Nothing between them*, *Study to discover*, *Chosen, without its specimen: you carry none.*, *Three herbs ask Alchemy 50.*, *no pair has failed you*); the great forge's corner (*Press 'E' to work the forge*, *The great forge stands in the corner of the hall, by the door.*); the vitals plate's tooltips (*Bare hands · Inventory (I)*, *No magic (F)*); the compass's *Exit*. The narrator's plain voice throughout; clean |
 | auto/bodies-2593 | `24bce157` | run 56: open PR #1963 (the spyglass raise in `54-thirdperson.js`: no line a player reads) |
 | main | `12b04fd5` | run 55: Sessions 2512–2556 as merged (build s1879), about 60 new player-readable lines: the still and the drying rack (*Still*, *Draught of {brew}*, *Dried {herb}*, *It takes two tinctures of the one brew.*, *The still is {n} gold.*, *Hung, with a salt. Ready in {h} hours.*, *It wants a salt.*, *Hang a herb*); the deep pearls (*Press 'E' to open the oyster*, *A deep pearl.*, *The oyster is empty.*, *Only the shell is left.*, *Deep Pearl*); the forge by grade (*This forge works to {metal}. {Metal} wants a town’s forge.*, *No smith keeps this forge.*, *The smith asks {n} gold for the forge.*); the bedroll's prompt; *You cannot pass time in a dungeon.* The narrator's plain voice throughout. One finding (56): the lord answers *The great forge.* in the narrator's words and a stat line |
@@ -63,6 +65,16 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 ---
+
+## Run 57 — 25 Nov 2026
+
+About 20 player-readable strings read on main from `0955a985` to `f6428797` (Sessions 2593–2631, build s1952); no PR open from another lane. The sea's sixteen creature names are plain names, of the sort a fisher on any island would use, and none clashes with the canon (the backlog's *gate eel* is the canon's own word). *▾ more below* is UI. S2611's change to the lord's *How fares the town?* takes out a stray space and changes no word. Clean.
+
+**Michael's calls:** none newer than 16 Oct on the drafts page.
+
+**Built:** nothing. No approved draft is waiting to be built. No `FREEZE:` issue is open.
+
+**Drafted:** *The Strange and the Legendary, IV* (backlog L2, OG-001), unapproved: Godric called Knot, the Mariner, a Markman on a quay who says what lives in the water there and sends you down to his old ship; the Herald in the gold sun mask, who cries in the square at noon what has been done and gives the roll at the seventh cry (not the Crown's, and Aldwyn says so); and Ailbhe, the Child, a Gatelander's daughter in whom the Old Blood has come out, who points the way to warm stones and asks what one said. This closes the item.
 
 ## Run 56 — 24 Nov 2026
 
