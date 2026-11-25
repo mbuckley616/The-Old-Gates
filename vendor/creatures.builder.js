@@ -2733,7 +2733,8 @@ function solveLeg(C, L, T, fold) {
 // first half, thrown forward on the fore-flippers' push, and the rest in the second, nearly still on its planted chest while it draws
 // its hips up. Each half eases in and out (a half-cosine), so the speed is zero where the halves meet. The mover (the kit's travel, the
 // game's group) still goes evenly: the root is set ahead of or behind it, about the cycle's mean, by at most 0.17 of a stride
-const HUMP = { lift: .17, hip: .075, arch: .2, neck: .75, tail: .22, surge: .85 };
+// Session 2640: the chest's lift .17 → .14 (15.6 cm → about 12.8), so the flipper reaches the ground at the push's top, as S2618 owed
+const HUMP = { lift: .14, hip: .075, arch: .2, neck: .75, tail: .22, surge: .85 };
 function humpSurge(ph, c = HUMP.surge) { const ease = u => (1 - Math.cos(Math.PI * u)) / 2, T = ph < .5 ? c * ease(ph * 2) : c + (1 - c) * ease(ph * 2 - 1);
   return T - ph - (2 * c - 1) / 4; }
 function humpPose(C, ph) {
@@ -2761,7 +2762,10 @@ function humpPose(C, ph) {
 // turned whole on its bone (from its rest direction to the spot's): where the spot is past its reach it points there and falls short,
 // and where it is within reach the tip is set on the ground along the same bearing, so it never sinks in. The seal's fore-flipper is
 // 0.24 m (it was 0.18, which could not reach the ground under a chest risen 15 cm)
-const FLIP = { ahead: 0, out: .2, lift: .8 };
+// Session 2640: and the spot is set `ahead` .15 of a stride further on. At 0 the body's surge carried the shoulder past it, so late in the
+// push the spot fell behind the flipper's reach and the tip lifted off and slid: 4.3 cm up and 7.2 cm along at the kit's walk. With the
+// lower lift it stands 0.5 cm up and slides 2.5 cm
+const FLIP = { ahead: .15, out: .2, lift: .8 };
 function humpFlipper(C, F, ph) {
   const b = C.byName[F.name], s = strideOf(C) / (C.S || 1), r = C.B.by[F.name].p, t0 = r.clone().add(F.tip), L = F.tip.length(), ease = u => (1 - Math.cos(Math.PI * u)) / 2;
   const A = t0.z + (humpSurge(.25) + .25 + FLIP.ahead) * s, u = ph < .5 ? 0 : (ph - .5) * 2, y = t0.y + FLIP.lift * F.len * Math.sin(Math.PI * u);
