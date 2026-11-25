@@ -2940,19 +2940,36 @@ function hbSkinPts(rig){const H=rig.hb,mid=hbMid(rig);if(!mid)return new Float32
 function hbEyes(rig,shut){const H=rig.hb;if(!H.eyes){H.eyes=[];H.P.byName.head.traverse(o=>{if(o.isMesh&&o.parent===H.P.byName.head&&o.geometry.type==='SphereGeometry')H.eyes.push({o,m:o.material});});}
   if(shut&&!H.lid)H.lid=new THREE.MeshStandardMaterial({color:new THREE.Color(rig.g.skin).multiplyScalar(.9),roughness:.86});
   for(const e of H.eyes)e.o.material=shut?H.lid:e.m;}
-// people.js's closeFist: the four fingers' joints bent 1.15, 1.35 and .95 rad about the knuckles' line in the metacarpal's frame
+// people.js's closeFist: the four fingers' joints bent 1.15, 1.35 and .95 rad about the knuckles' line in the metacarpal's frame.
+// S2659 (Michael, 25 Nov: "the bare hands look horribly mangled … standard balled fists, primed for punching. Fingers balled into a fist,
+// thumb laid on top of the balled fingers"): each finger now bends about its own axis, the knuckles' line made square to that finger's
+// own run (one shared axis bent the splayed little and index fingers across their neighbours), and further, 1.45, 1.6 and 1.15 rad,
+// so the tips tuck into the palm and the middle bones make the fist's flat front
+const HB_FIST=[1.45,1.6,1.15];
 function hbCloseFist(by,sd){const n=k=>by[k];if(!n(`finger2-1.${sd}`)||!n(`finger5-1.${sd}`)||!n(`metacarpal2.${sd}`))return;
-  const at=k=>new THREE.Vector3().setFromMatrixPosition(n(k).matrixWorld);by.root.parent.updateMatrixWorld(true);
+  const at=k=>new THREE.Vector3().setFromMatrixPosition(n(k).matrixWorld);
+  for(let f=2;f<=5;f++)for(let j=1;j<=3;j++){const b=n(`finger${f}-${j}.${sd}`);if(b)b.quaternion.identity();}
+  by.root.parent.updateMatrixWorld(true);
   const h=at(`finger2-1.${sd}`).sub(at(`finger5-1.${sd}`)).normalize().applyQuaternion(n(`metacarpal2.${sd}`).getWorldQuaternion(new THREE.Quaternion()).invert()),sg=sd==='R'?1:-1;
-  for(let f=2;f<=5;f++)for(let j=1;j<=3;j++){const b=n(`finger${f}-${j}.${sd}`);if(b)b.quaternion.setFromAxisAngle(h,sg*[1.15,1.35,.95][j-1]);}}
-// F10, part two — the thumb laid across the folded fingers (the player's fist, both views): its first bone turned at the root of the thumb
-// so the thumb's line (root to last joint) runs to a point 1.5 cm out from the second joints of the first two fingers (its own joints
-// left as they are); closeFist leaves the thumb straight, which first person shows at arm's length
-function hbThumb(by,sd){const t1=by[`finger1-1.${sd}`],t3=by[`finger1-3.${sd}`],a=by[`finger2-2.${sd}`],b=by[`finger3-2.${sd}`],mc=by[`metacarpal3.${sd}`];if(!t1||!t3||!a||!b||!mc)return;
-  const W=k=>new THREE.Vector3().setFromMatrixPosition(k.matrixWorld);by.root.parent.updateMatrixWorld(true);
-  const T=W(a).add(W(b)).multiplyScalar(.5),c=W(mc),p1=W(t1),d=T.clone().sub(c),sc=p1.distanceTo(W(by[`finger2-1.${sd}`]))||1;T.addScaledVector(d.normalize(),.3*sc);
-  const from=W(t3).sub(p1).normalize(),to=T.sub(p1).normalize(),q=new THREE.Quaternion().setFromUnitVectors(from,to),pq=new THREE.Quaternion();
-  t1.getWorldQuaternion(pq);q.multiply(pq);t1.parent.getWorldQuaternion(pq);t1.quaternion.copy(q.premultiply(pq.invert()));}
+  for(let f=2;f<=5;f++){const b2=n(`finger${f}-2.${sd}`),a=h.clone();
+    if(b2&&b2.position.lengthSq()>1e-12){const d=b2.position.clone().normalize();a.addScaledVector(d,-a.dot(d));if(a.lengthSq()>1e-6)a.normalize();else a.copy(h);}
+    for(let j=1;j<=3;j++){const b=n(`finger${f}-${j}.${sd}`);if(b)b.quaternion.setFromAxisAngle(a,sg*HB_FIST[j-1]);}}}
+// F10, part two — the thumb laid across the folded fingers (the player's fist, both views). S2659: the thumb bends at its own two joints
+// (.55 and .45 rad, toward the palm) and is then turned at its root so its tip, a third of its last bone past the last joint, lies on
+// the front of the index and middle fingers' middle bones, 1 cm out from them; before, it stayed straight and its line was aimed at a
+// point 1.5 cm out, so the thumb stood up off the fist like a hitch-hiker's in first person
+function hbThumb(by,sd){const t1=by[`finger1-1.${sd}`],t2=by[`finger1-2.${sd}`],t3=by[`finger1-3.${sd}`],a=by[`finger2-2.${sd}`],b=by[`finger3-2.${sd}`],a3=by[`finger2-3.${sd}`],b3=by[`finger3-3.${sd}`],mc=by[`metacarpal3.${sd}`];if(!t1||!t2||!t3||!a||!b||!mc)return;
+  const W=k=>new THREE.Vector3().setFromMatrixPosition(k.matrixWorld),up=()=>by.root.parent.updateMatrixWorld(true);
+  t1.quaternion.identity();t2.quaternion.identity();t3.quaternion.identity();up();
+  // the thumb's bend toward the palm: about the axis square to its run and to the line from its root to the palm's middle
+  const p1=W(t1),run=W(t3).sub(W(t2)).normalize(),toP=W(mc).sub(p1),ax=new THREE.Vector3().crossVectors(run,toP).normalize(),pq=new THREE.Quaternion();
+  if(ax.lengthSq()>.5)for(const [bn,ang] of [[t2,.55],[t3,.45]]){bn.parent.getWorldQuaternion(pq);const l=ax.clone().applyQuaternion(pq.invert());bn.quaternion.setFromAxisAngle(l,ang);up();}
+  const tip=()=>{const q3=W(t3),q2=W(t2);return q3.clone().add(q3.clone().sub(q2).multiplyScalar(.7));};
+  // where it lies: the middle of the two middle bones, 1 cm out from the palm's middle (scaled by the hand)
+  const mid=W(a).add(W(b)).multiplyScalar(.5);if(a3&&b3)mid.lerp(W(a3).add(W(b3)).multiplyScalar(.5),.5);
+  const sc=p1.distanceTo(W(by[`finger2-1.${sd}`]))||1,T=mid.clone().addScaledVector(mid.clone().sub(W(mc)).normalize(),.12*sc);
+  for(let it=0;it<2;it++){const P1=W(t1),from=tip().sub(P1).normalize(),to=T.clone().sub(P1).normalize(),q=new THREE.Quaternion().setFromUnitVectors(from,to);
+    t1.getWorldQuaternion(pq);q.multiply(pq);t1.parent.getWorldQuaternion(pq);t1.quaternion.copy(q.premultiply(pq.invert()));up();}}
 // what the driver holds, in the builder's group: its bone's turn and scale as before, and a weapon's grip at the middle of the builder's
 // curled fingers' second joints; given back to its bone (hbGive) when the driver's own body shows again, or the builder's is dropped
 const _hbm=new THREE.Matrix4(),_hbm2=new THREE.Matrix4();

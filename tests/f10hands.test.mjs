@@ -21,6 +21,11 @@ const r = await page.evaluate(() => { thirdPerson = false; forceTime(11); const 
   const ws = new THREE.Vector3(); R.root.getWorldScale(ws);
   // the thumb laid across the folded fingers: its last joint near the index finger's second joint (a hand's knuckles-to-wrist apart, straight)
   out.thumb = { tip: +at('finger1-3.' + sd).distanceTo(at('finger2-2.' + sd)).toFixed(4), hand: +kc.distanceTo(at('wrist.' + sd)).toFixed(4) };
+  // S2659 — balled (Michael, 25 Nov): each finger's middle bone runs back toward the wrist (the tip tucked in the palm), and the fingers keep
+  // their order across the knuckles (none crosses its neighbour)
+  const mcd = at('wrist.' + sd).sub(kc).normalize(), across = at('finger2-1.' + sd).sub(at('finger5-1.' + sd)).normalize();
+  out.ball = [2, 3, 4, 5].map(f => +at(`finger${f}-3.${sd}`).sub(at(`finger${f}-2.${sd}`)).normalize().dot(mcd).toFixed(2));
+  const xs = [2, 3, 4, 5].map(f => at(`finger${f}-2.${sd}`).dot(across)); out.order = xs.every((x, i) => !i || x < xs[i - 1]);
   out.size = { fp: +(2 * f.userData.wrist.z).toFixed(4), tp: +kc.distanceTo(at('wrist.' + sd)).toFixed(4), st: +(R.rig.hb.st).toFixed(3), lenFP: +f.userData.wrist.length().toFixed(4) };
   // the gauntlets and a sleeve
   EQ.hands = { name: 'Iron Gauntlets', slot: 'hands', matCol: 0x9aa4b0, matGuard: 0x606870 }; buildViewmodel(); out.gaunt = { hb: !!vmSword.userData.hb, col: meanCol(vmSword) };
@@ -52,6 +57,7 @@ check('a red tunic is the forearm\'s sleeve (and the arm\'s), built from the dre
 check('every grip is the builder\'s hand with the haft through it: sword and kite, dagger and torch, the bow', Object.values(r.held.grips).every(a => a.length && a.every(h => h.hb && h.around)), r.held.grips);
 check('changing what is held builds no new body: first person cuts the hands from the one it has, third person carries it over', r.held.built === 0 && r.held.kept === 1 && r.held.hb && r.held.onNew, r.held);
 check('the thumb lies across the folded fingers, its last joint within 4 cm of the index finger\'s second joint', r.thumb.tip < .04, r.thumb);
+check('a balled fist: every finger\'s middle bone turned back toward the wrist, the four in order across the knuckles', r.ball.every(d => d > .3) && r.order, { ball: r.ball, order: r.order });
 check('sheathing shows the builder\'s fists and builds no body', r.sheath.fists && r.sheath.hb && r.sheath.built === 0, r.sheath);
 check('a hand\'s cut costs under 60 ms', r.cost.bakeMs < 60, r.cost);
 if (process.env.F10_SHOTS) {
