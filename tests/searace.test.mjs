@@ -44,4 +44,18 @@ const swim2 = swim.after;
 const carried = Math.hypot(swim2.x - swim.x, swim2.z - swim.z);
 check(`a swimmer with no key held is carried ${swim.set ? swim.set.m.toFixed(2) : '?'} m in a second (${carried.toFixed(2)} m)`,
   swim.swimming && swim.set && Math.abs(carried - swim.set.m) <= swim.set.m * .02, { swim, swim2, carried });
+// S2663 — the navigator's set arrows on the minimap: with him at his station at sea, arrows where the set runs, the way the water goes; none at slack or without him
+const arrows = await page.evaluate(() => { const r = window._r || WORLD.races[0], o = {}; const st = worldState.ship;
+  if (!st) return null; st.fit = Array.from(new Set([...(st.fit || []), 'bunks', 'chart'])); st.crew = ['navigator']; st.sunk = false;
+  WORLD.spawnShip(r.x, r.z, 0); SHIP.x = r.x; SHIP.z = r.z; SHIP.sailing = true; px = r.x; pz = r.z;
+  const at = h => { forceTime(h); RACE_ARROW.t = -1e9; const n = raceArrows(null, 104); const mid = RACE_ARROW.list.reduce((b, a) => (!b || Math.hypot(a.x - 52, a.y - 52) < Math.hypot(b.x - 52, b.y - 52)) ? a : b, null); return { n, mid }; };
+  o.nav = navAboard(); const a3 = at(3), set = WORLD.raceSet(r.x, r.z); o.n3 = a3.n; o.dot = a3.mid && set ? +(a3.mid.dx * set.x / set.m + a3.mid.dy * set.z / set.m).toFixed(3) : null;
+  const a9 = at(9); o.n9 = a9.n; o.dot9 = a9.mid && set ? +(a9.mid.dx * set.x / set.m + a9.mid.dy * set.z / set.m).toFixed(3) : null;
+  o.n6 = at(6).n; forceTime(3); st.crew = []; o.navOff = navAboard(); o.nNone = at(3).n;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 104; st.crew = ['navigator']; forceTime(3); RACE_ARROW.t = -1e9; o.drawn = raceArrows(cv.getContext('2d'), 104);
+  return o; });
+console.log('  arrows:', JSON.stringify(arrows));
+check(`with the navigator at his station the minimap draws the set (${arrows && arrows.n3} arrows at 03:00), the middle one the way the water runs, and the other way at 09:00`,
+  arrows && arrows.nav && arrows.n3 > 0 && arrows.dot > .99 && arrows.n9 > 0 && arrows.dot9 < -.99 && arrows.drawn === arrows.n3, arrows);
+check('no arrows at slack (06:00), nor without the navigator', arrows && arrows.n6 === 0 && !arrows.navOff && arrows.nNone === 0, arrows);
 await g.close(); process.exit(process.exitCode || 0);

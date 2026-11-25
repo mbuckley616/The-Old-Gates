@@ -121,5 +121,34 @@ check('slain again: three more scales, no second skull', slain.scales2 === 6 && 
 check('the Serpent’s Skull fits at her bow and halves the roll', slain.fit === true && slain.head === 'serpent' && slain.half === .5 && slain.name === 'the Serpent’s Skull', slain);
 check('the scale: weight 0.5, 120 gold, known by its name after a reload, never eaten, all four effects unknown until brewed', slain.key === 'serpentscale' && slain.weight === .5 && slain.price === 120 && slain.notEaten && slain.unfound, slain);
 check('brewed with kelp it gives up Water Breathing and Slow', slain.brewed && slain.learnt.join() === 'serpentscale:slow,serpentscale:waterBreathing', slain);
+// S2662 — session 6, driven off (Michael's A on #2039): judged when a rise ends; at 200 or less it does not rise again and leaves one scale
+// floating 60 s, taken by her hull within 8 m or a swimmer within 2 m; ten bolts slay it, five drive it off
+const driven = await page.evaluate((at) => { const o = {}; const S = WORLD.ship; WORLD.spawnShip(at.x, at.z, at.yaw); S.x = at.x; S.z = at.z; S.yaw = at.yaw; S.sailing = true; S.speed = 0;
+  px = S.x; pz = S.z; BAG.length = 0; worldState.stats = worldState.stats || {}; const d0 = worldState.stats.serpentsDriven || 0, s0 = worldState.stats.serpentsSlain || 0;
+  const scales = () => BAG.filter(b => b && b.name === 'Serpent Scale').reduce((a, b) => a + (b.qty || 1), 0);
+  const far = () => { S.x = at.x + 2000; S.z = at.z; };
+  const rise = (hp) => { serpDrop(); serpScaleDrop(); S.x = at.x; S.z = at.z; SERP.last = -1e9; serpentRise(null, false); const O = SERP.on; O.hp = hp; O.cd = 99; O.coilCd = 99; O.t = SERP_UP - 1 / 60; O.tell = null; return O; };
+  const step = (n) => { for (let i = 0; i < n; i++) serpentTick(1 / 60); };
+  // five bolts: 200; the rise ends, it is driven off; the scale floats where it went down for 60 s, then is gone
+  let O = rise(400); O.coilCd = 99; for (let i = 0; i < 5; i++) serpentHit(SERP_BOLT, 'Test'); o.hp5 = O.hp; const ox = O.x, oz = O.z; far(); step(1);
+  o.drivenGone = !SERP.on && !SERP.g; o.float = !!SERP.fl && Math.hypot(SERP.fl.x - ox, SERP.fl.z - oz) < .5; o.count = (worldState.stats.serpentsDriven || 0) - d0;
+  step(60 * 59); o.at59 = !!SERP.fl; step(60 * 2); o.at61 = !!SERP.fl; step(60 * 120); o.noRise = !SERP.on; o.bag0 = scales();
+  // at 201 it dives as before and may rise again
+  O = rise(201); far(); step(1); o.dive201 = !!SERP.on && SERP.on.phase === 'down' && !SERP.fl;
+  // at 200 on the second rise: driven off; her hull 7.9 m off takes it, 8.5 m does not
+  O = rise(200); far(); step(1); const F = SERP.fl; S.x = F.x + 8.5; S.z = F.z; step(1); o.at85 = !!SERP.fl && scales() === 0; S.x = F.x + 7.9; step(1); o.at79 = !SERP.fl && scales() === 1;
+  // a swimmer within 2 m takes it; at 2.5 m not
+  BAG.length = 0; O = rise(150); far(); step(1); const G = SERP.fl; const sw = isSwimming; window.isSwimming = () => true; S.sailing = false;
+  px = G.x + 2.5; pz = G.z; step(1); o.sw25 = !!SERP.fl; px = G.x + 1.9; step(1); o.sw19 = !SERP.fl && scales() === 1; window.isSwimming = sw; S.sailing = true;
+  // ten bolts slay it before the rise ends
+  BAG.length = 0; O = rise(400); O.t = 0; for (let i = 0; i < 10; i++) serpentHit(SERP_BOLT, 'Test'); o.slain10 = !SERP.on && !SERP.fl && scales() === 3 && (worldState.stats.serpentsSlain || 0) - s0 === 1;
+  o.counted = (worldState.stats.serpentsDriven || 0) - d0; serpDrop(); serpScaleDrop(); BAG.length = 0; return o; }, spot);
+console.log('  driven:', JSON.stringify(driven));
+check('five bolts leave it at 200; when the rise ends it is driven off, gone, one scale floating where it went down, counted once', driven.hp5 === 200 && driven.drivenGone && driven.float && driven.count === 1, driven);
+check('the scale floats 60 s and is then lost; the serpent does not rise again', driven.at59 && !driven.at61 && driven.noRise && driven.bag0 === 0, driven);
+check('at 201 when the rise ends it dives as before, no scale', driven.dive201, driven);
+check('her hull takes the scale within 8 m (7.9), not at 8.5', driven.at85 && driven.at79, driven);
+check('a swimmer takes it within 2 m (1.9), not at 2.5', driven.sw25 && driven.sw19, driven);
+check('ten bolts slay it in one rise: three scales, none floating; three drives counted', driven.slain10 && driven.counted === 3, driven);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
