@@ -1874,6 +1874,67 @@
   // and drifts a ship, never into her speed over the water: SHIP.speed and the log stay the hull's; held off a shoal by her own probe
   function raceDriftShip(dt){const r=raceSet(SHIP.x,SHIP.z);if(!r||r.m<.01)return;const nx=SHIP.x+r.x*dt,nz=SHIP.z+r.z*dt,fx=-Math.sin(SHIP.yaw),fz=-Math.cos(SHIP.yaw),h=SHIP.L/2+2;
     if(worldH(nx+fx*h,nz+fz*h)>SEA_Y-1.4||worldH(nx-fx*h,nz-fz*h)>SEA_Y-1.4)return;SHIP.x=nx;SHIP.z=nz;SHIP.drift=r;}
+  // ═══ S2650 — the sea serpent (the sea that pushes back, session 4; Michael's B on #1925 and B on #2012, 11 m/s) ═══
+  // The roll: once for each open-water chunk she enters under sail, from seededRng('serpent', '<cx,cz>:<day>:<hour>'), 1 in 250; ×2 at
+  // seaState 3, ×3 within 1,500 m of an Uisce gate on a coast cell, ×0.5 with its skull at her bow. Never within 300 m of a port, while
+  // a black sail is within PIRATE_REACH (140 m), while a fight to board is on, or within 20 game hours of its last rise. It rises 60 to
+  // 90 m off her in water deeper than 4 m, is up 60 s and down 90 s; if she is still in open water within 600 m of where it dove it rises
+  // once more, and after the second dive it is gone. It swims at 11 m/s and never over a bed shallower than 4 m: at that line it turns
+  // along it, so the shallows and the reefs are shelter. Within 25 m of her it tells every 10 s: the water humps for 2.5 s, and the
+  // strike lands in a 9 m circle round where her middle would be 1.0 s into the tell on her course, 15 hull through shipWear. A ship
+  // holding her course over 6 m/s is clear; a hard turn or a stop inside the tell clears it too. Its target is targetOf's (her, solo).
+  // Nothing is saved (the build sheet: no new key); the rest is kept for the session.
+  const SERP_ODDS=1/250,SERP_V=11,SERP_PORT=300,SERP_BLACK=140,SERP_REST=20*60,SERP_UP=60,SERP_DOWN=90,SERP_AGAIN=600,SERP_DEEP=4,
+    SERP_NEAR=25,SERP_GAP=10,SERP_TELL=2.5,SERP_LEAD=1.0,SERP_R=9,SERP_HIT=15,SERP_UISCE=1500,SERP_KEEP=12;
+  const SERP={on:null,last:-1e9,chunk:null,ports:null,g:null,hump:null};
+  function serpDeep(x,z){return worldH(x,z)<SEA_Y-SERP_DEEP;}
+  function serpUisceNear(x,z){const [ci,cj]=cellOf(x,z);for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const c=getCell(ci+di,cj+dj);if(!c||!c.doors||maskAt(ci+di,cj+dj)!=='coast')continue;
+      for(const e of c.doors){if(e.kind!=='cave_door'||e.x==null||Math.hypot(e.x-x,e.z-z)>SERP_UISCE)continue;let sc_=null;try{sc_=gateSchool(e);}catch(err){}if(sc_==='uisce')return true;}}return false;}
+  // the chance at x,z now: the base by the sea, the gate and her head
+  function serpentOdds(x,z){let p=SERP_ODDS;if(seaState(x,z)>=3)p*=2;if(serpUisceNear(x,z))p*=3;if(shipHead()==='serpent')p*=.5;return p;}
+  function serpentRolls(cx,cz,day,hour,p){return seededRng('serpent',`${cx},${cz}:${day}:${hour}`)()<p;}
+  // why it may not rise here and now (null when it may): the page's five bars
+  function serpentBar(x,z){if(!openWater(x,z))return 'shallow';if(absMin()-SERP.last<SERP_REST)return 'rest';
+    if(!SERP.ports)SERP.ports=allPorts();if(SERP.ports.some(t=>Math.hypot(t.x-x,t.z-z)<SERP_PORT))return 'port';
+    if(typeof OTHER!=='undefined'&&OTHER.some(o=>o.kind==='pirate'&&!o.dead&&Math.hypot(o.x-x,o.z-z)<SERP_BLACK))return 'black sail';
+    if(HOOKS.o||(typeof BOARDERS!=='undefined'&&BOARDERS.some(e=>!e.dead)))return 'boarding';return null;}
+  function serpMesh(){if(SERP.g)return SERP.g;const g=new THREE.Group();g.name='seaSerpent';
+    try{const rg=typeof buildAnimal==='function'&&buildAnimal('Sea Serpent','serpent');if(rg)g.add(rg.root);}catch(e){}
+    if(!g.children.length){const m=new THREE.Mesh(new THREE.CylinderGeometry(.9,.5,22,8),new THREE.MeshLambertMaterial({color:0x292e33}));m.rotation.x=Math.PI/2;g.add(m);}
+    const hm=new THREE.Mesh(new THREE.SphereGeometry(4,14,6),new THREE.MeshLambertMaterial({color:0x2c4a5e}));hm.visible=false;hm.name='serpentHump';
+    sc.add(g);sc.add(hm);SERP.g=g;SERP.hump=hm;return g;}
+  function serpDrop(){for(const m of [SERP.g,SERP.hump])if(m&&m.parent)m.parent.remove(m);SERP.g=null;SERP.hump=null;SERP.on=null;}
+  // a place to rise 60 to 90 m off her, in deep water, from the roll's own stream
+  function serpRiseAt(r,x,z){for(let k=0;k<12;k++){const a=r()*Math.PI*2,d=60+r()*30,qx=x+Math.cos(a)*d,qz=z+Math.sin(a)*d;if(serpDeep(qx,qz))return {x:qx,z:qz};}return null;}
+  // the named action: it rises (first or second time)
+  function serpentRise(r,second){const at=serpRiseAt(r||Math.random,SHIP.x,SHIP.z);if(!at)return false;
+    const O=SERP.on||(SERP.on={rises:0});Object.assign(O,{x:at.x,z:at.z,yaw:Math.atan2(SHIP.x-at.x,SHIP.z-at.z),phase:'up',t:0,tell:null,cd:0,strikes:O.strikes||0});O.rises++;
+    if(!second)SERP.last=absMin();serpMesh();showMsg(second?'The serpent rises again.':'A sea serpent rises.','#e8a070');return true;}
+  // asked as she enters a chunk under sail: the roll, and the rise if it comes up
+  function serpentChunk(cx,cz){if(SERP.on)return false;const x=SHIP.x,z=SHIP.z;if(serpentBar(x,z))return false;
+    if(!serpentRolls(cx,cz,dayNow(),Math.floor(gameHour()),serpentOdds(x,z)))return false;
+    return serpentRise(seededRng('serpentrise',`${cx},${cz}:${dayNow()}`),false);}
+  // a step toward its mark at its speed, never onto a bed shallower than 4 m: there it turns along the line, the nearest heading that stays deep
+  function serpStep(O,tx,tz,dt){const d=Math.hypot(tx-O.x,tz-O.z);if(d<=SERP_KEEP)return;const st=Math.min(SERP_V*dt,d-SERP_KEEP),want=Math.atan2(tx-O.x,tz-O.z);
+    for(let k=0;k<=12;k++){for(const sg of k?[1,-1]:[1]){const yw=want+sg*k*Math.PI/12,nx=O.x+Math.sin(yw)*st,nz=O.z+Math.cos(yw)*st;
+      if(serpDeep(nx,nz)){O.x=nx;O.z=nz;O.yaw=yw;return;}}}}
+  // each tick at sea (tickShip): the roll on a new chunk, then the rise, the chase, the tells and the dives
+  function serpentTick(dt){
+    if(activeZoneId!=='world'||!worldState.ship||(typeof isInterior==='function'&&isInterior())){if(SERP.on||SERP.g)serpDrop();return;}
+    const cx=Math.floor(SHIP.x/CHUNK),cz=Math.floor(SHIP.z/CHUNK),ck=cx+','+cz;if(ck!==SERP.chunk){SERP.chunk=ck;if(SHIP.sailing)serpentChunk(cx,cz);}
+    const O=SERP.on;if(!O)return;O.t+=dt;
+    if(O.phase==='down'){if(O.t<SERP_DOWN)return;
+      if(O.rises<2&&openWater(SHIP.x,SHIP.z)&&Math.hypot(SHIP.x-O.dx,SHIP.z-O.dz)<SERP_AGAIN&&serpentRise(null,true))return;
+      serpDrop();showMsg('The serpent is gone.','#c8b880');return;}
+    const T=targetOf(O),tx=T&&T.x!=null?T.x:SHIP.x,tz=T&&T.z!=null?T.z:SHIP.z;
+    serpStep(O,tx,tz,dt);
+    if(O.tell){O.tell.t+=dt;if(O.tell.t>=SERP_TELL){const P=O.tell;O.tell=null;
+        if(Math.hypot(SHIP.x-P.x,SHIP.z-P.z)<SERP_R){const w=shipWear(SERP_HIT,0);O.strikes++;showMsg(`The serpent strikes her. Hull −${w?w.hull:SERP_HIT}.`,'#ff8060');}}}
+    else{O.cd-=dt;if(O.cd<=0&&Math.hypot(SHIP.x-O.x,SHIP.z-O.z)<=SERP_NEAR){const v=SHIP.sailing?SHIP.speed:0;
+        O.tell={t:0,x:SHIP.x-Math.sin(SHIP.yaw)*v*SERP_LEAD,z:SHIP.z-Math.cos(SHIP.yaw)*v*SERP_LEAD};O.cd=SERP_GAP;O.tells=(O.tells||0)+1;}}
+    if(O.t>=SERP_UP&&!O.tell){O.phase='down';O.t=0;O.dx=O.x;O.dz=O.z;}
+    const g=SERP.g;if(g){g.visible=O.phase==='up';g.position.set(O.x,SEA_Y-.4,O.z);g.rotation.set(0,O.yaw,0);}
+    const hm=SERP.hump;if(hm){hm.visible=!!O.tell;if(O.tell){const k=Math.min(1,O.tell.t/SERP_TELL);hm.position.set(O.tell.x,SEA_Y-3.6+k*3.6*.35,O.tell.z);hm.scale.set(SERP_R/4,.35+k*.4,SERP_R/4);}}}
   // under sail in a rough sea she loses 1 hull and 1 rig a minute; in a storm with W held 1 hull every 6 s and 1 rig every 4 s,
   // half that with no key held while she still makes way, nothing hove to (under half a knot)
   function tickSeaWear(dt,fwd){
