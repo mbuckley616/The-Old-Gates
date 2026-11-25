@@ -261,14 +261,14 @@ const sea = await page.evaluate((SEA6) => { const out = {}; let n = 0;
     const sk = H.C.skel, t0 = performance.now; let i0 = 0; const run = (m, sp) => { for (let i = 0; i < m; i++) { G.position.z += sp / 60; i0++;
         performance.now = () => 9.95e5 + i0 * 1000 / 60; try { hcSwimPose(rig); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), ph: rig.ph, g: rig.gaitNow, c: H.C.gait }; };
     const a = run(60, 0), b = run(60, .8); let mv = 0, bad = 0; for (let i = 0; i < a.m.length; i++) { mv = Math.max(mv, Math.abs(a.m[i] - b.m[i])); if (!isFinite(b.m[i])) bad++; }
-    out[name] = { plan: H.C.g.plan, seed: H.C.g.seed === HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), nose: +(bx.max.z - sb.max.z).toFixed(3),
+    out[name] = { plan: H.C.g.plan, seed: H.C.g.seed === HC.hashKey(rig.hcKey), bones: H.C.bones.length, tris: H.C.stats.tris, len: +(bx.max.z - bx.min.z).toFixed(3), nose: +(bx.max.z - sb.max.z).toFixed(3), stand: +(sb.max.z - sb.min.z).toFixed(3),
       gait: b.c, hold: a.g, swim: b.g, moved: +mv.toFixed(3), bad };
     G.parent.remove(G); hcTick(9.99e5 + n * 1e4); out[name].dropped = !rig.hc; }
   return out; }, SEA6);
 console.log('  sea:', JSON.stringify(sea));
 for (const name in SEA6) { const s = sea[name], [L, gt] = SEA6[name];
-  check(`the ${name} wears the kit's (${s.plan}, ${s.bones} bones, ${s.tris} triangles, ${s.len} m nose to tail, want ${L}; its nose ${s.nose} m off the stand-in's); it holds and goes by ${s.gait} (${s.hold}, ${s.swim}, the bones moving ${s.moved}); taken away, dropped`,
-    s && !s.fail && s.plan === 'game:' + name && s.seed && s.tris < 12000 && Math.abs(s.len - L) < L * .12 && Math.abs(s.nose) < .03 && s.gait === gt && s.hold === 'hold' && s.swim === 'swim' && s.moved > .005 && !s.bad && s.dropped, s); }
+  check(`the ${name} wears the kit's (${s.plan}, ${s.bones} bones, ${s.tris} triangles, ${s.len} m nose to tail, want ${L}, the stand-in ${s.stand} (Session 2631: it was 8% short); its nose ${s.nose} m off the stand-in's); it holds and goes by ${s.gait} (${s.hold}, ${s.swim}, the bones moving ${s.moved}); taken away, dropped`,
+    s && !s.fail && s.plan === 'game:' + name && s.seed && s.tris < 12000 && Math.abs(s.len - L) < L * .03 && Math.abs(s.stand - L) < L * .01 && Math.abs(s.nose) < .03 && s.gait === gt && s.hold === 'hold' && s.swim === 'swim' && s.moved > .005 && !s.bad && s.dropped, s); }
 // Session 2585: the grey seal, amphibious: in the water on the trout's path (its axis on the group's origin, nose to nose), holding and swimming;
 // ashore, its lowest point on the group's origin, still at the kit's stand and galumphing by its hump as the group moves; back in the water,
 // its axis again. The same key the same body; taken away, dropped. Picture: docs/prototypes/f4/f4-seal.jpg

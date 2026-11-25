@@ -562,7 +562,10 @@ function fishStandIn(len,col,thin,wide){const k=len/.4,t=thin||1,w=wide||t,parts
   put(new THREE.BoxGeometry(.004*k,.03*k,.05*k),0,.05,.02,1,1,1);
   let n=0;for(const g of parts)n+=g.attributes.position.count;const P=new Float32Array(n*3),N=new Float32Array(n*3);let o=0;
   for(const g of parts){P.set(g.attributes.position.array,o*3);N.set(g.attributes.normal.array,o*3);o+=g.attributes.position.count;g.dispose();}
-  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(N,3));geo.computeBoundingSphere();
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(P,3));geo.setAttribute('normal',new THREE.BufferAttribute(N,3));
+  // S2631 — the parts span 0.92 of `len` nose to tail-fan (a trout 0.368 of 0.40, the sea serpent 20.2 of 22), and the kit's body is fitted
+  // to this stand-in, so every swimmer came out 8% short: the whole is scaled about its origin to `len`, its proportions kept
+  geo.computeBoundingBox();{const bb=geo.boundingBox,L0=bb.max.z-bb.min.z;if(L0>1e-6)geo.scale(len/L0,len/L0,len/L0);}geo.computeBoundingSphere();
   const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));m.castShadow=false;m.name='fish';return m;}
 // a drifter's stand-in: a bell (or a squid's long mantle, `mantle` of its height) at the top, over a cone of trailing arms, `len` tall about the origin
 function driftStandIn(len,col,bell,mantle){const parts=[],r=bell*len,mh=(mantle||0)*len,top=len/2;
