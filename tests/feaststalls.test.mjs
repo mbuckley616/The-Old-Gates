@@ -2,7 +2,8 @@
 // PKIT.props.bursar and .saffron in 38-kit.js, genSettlement's S.stalls in 83). Every Aurennais place builds both hidden, each 0.75 m in
 // front of its keeper's spot (BURSAR_AT, CARAVAN_AT) toward the square's middle; the bursar's shows from 9:00 to noon on Shearing 6,
 // the caravan's from 6:00 to 18:00 on its day, with their keepers, and neither on an ordinary day. A picture of each. Session 2648: the
-// caravan's string, 2 to 4 pack camels behind its keeper (caravanStringTick, 34-creatures.js), gone with the keeper.
+// caravan's string, 2 to 4 pack camels behind its keeper (caravanStringTick, 34-creatures.js), gone with the keeper. Session 2652: tied
+// nose to tail, a lead rope from each camel's halter to the tail of the one ahead.
 import { boot, check } from './lib/game.mjs';
 import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -48,6 +49,14 @@ const d = await page.evaluate(id => { const site = siteAnywhere(id), S = WORLD.s
         kind: G.every(g => g.parent === scene && g.children[0].userData.rig && g.children[0].userData.rig.name === 'Pack Camel'),
         gap: G.slice(1).map((g, i) => +Math.hypot(g.position.x - G[i].position.x, g.position.z - G[i].position.z).toFixed(2)),
         along: G.slice(1).map((g, i) => { const dx = g.position.x - G[i].position.x, dz = g.position.z - G[i].position.z, L = Math.hypot(dx, dz) || 1; return +Math.abs((dx * Math.sin(g.rotation.y) + dz * Math.cos(g.rotation.y)) / L).toFixed(3); }) };
+      /* S2652 — the lead ropes: folded while the bodies are the drivers', then each from a camel's halter ring to the tail of the one ahead */
+      const R = CSTRING && CSTRING.rope, RP = R && R.geometry.attributes.position; o.cs.folded = !!R && [...RP.array].every(v => v === 0);
+      for (const gr of G) { const rig = gr.children[0].userData.rig; if (!rig.hc) hcAttach(rig, HC.build(hcGenome(rig))); hcLevel(rig, 0); hcPose(rig); }
+      caravanStringTick(); const ring = new THREE.Vector3(), tail = new THREE.Vector3(); let low = 1e9;
+      if (R) for (let i = 0; i < RP.count; i++) low = Math.min(low, RP.getY(i) + R.position.y - worldH(RP.getX(i) + R.position.x, RP.getZ(i) + R.position.z));
+      o.rope = { n: R ? R.userData.ends.length : 0, draws: R ? 1 : 0, tris: R ? R.geometry.index.count / 3 : 0, low: +low.toFixed(2), ends: (R ? R.userData.ends : []).map((e, i) => {
+        const f = G[i].children[0].userData.rig, l = G[i + 1].children[0].userData.rig; if (!e || !reinsBit(f, ring, new THREE.Vector3())) return null;
+        l.hc.C.byName.tail0.getWorldPosition(tail); return { ring: +e[0].distanceTo(ring).toFixed(3), tail: +e[1].distanceTo(tail).toFixed(2), span: +e[0].distanceTo(e[1]).toFixed(2), up: +(e[0].y - worldH(e[0].x, e[0].z)).toFixed(2) }; }) };
       caravanOut(); caravanStringTick(); o.cs.after = CSTRING; }
   } finally { Object.assign(st, keep); worldState.festivals = {}; }
   return o; }, id);
@@ -61,6 +70,8 @@ check(`the bursar stands behind the table (${JSON.stringify(d.bk)}) and the cara
 
 check(`the Caravan's string: ${d.cs && d.cs.n} pack camels (2 to 4), ${JSON.stringify(d.cs && d.cs.back)} m further from the middle than the keeper, ${d.cs && d.cs.solid} on a solid, ${JSON.stringify(d.cs && d.cs.gap)} m apart and facing along the line (${JSON.stringify(d.cs && d.cs.along)}); gone with the keeper (${d.cs && d.cs.after === null})`,
   d.cs && d.cs.n >= 2 && d.cs.n <= 4 && d.cs.kind && d.cs.back.every(b => b > 1.5 && b < 8) && d.cs.solid === 0 && d.cs.gap.every(x => x > 2.8) && d.cs.along.every(a => a > .95) && d.cs.after === null, d.cs);
+check(`the string's lead ropes (S2652): ${d.rope && d.rope.n} for ${d.cs && d.cs.n} camels in ${d.rope && d.rope.draws} draw (${d.rope && d.rope.tris} triangles), folded until the kit's bodies are built (${d.cs && d.cs.folded}); each from the halter's ring to the tail of the camel ahead (${JSON.stringify(d.rope && d.rope.ends)}), its lowest point ${d.rope && d.rope.low} m off the ground`,
+  d.rope && d.cs.folded && d.rope.n === d.cs.n - 1 && d.rope.draws === 1 && d.rope.ends.every(e => e && e.ring < .001 && e.tail < .2 && e.span > .8 && e.span < 2.6 && e.up > 1.2 && e.up < 2.2) && d.rope.low > .9, d.rope);
 
 // a picture of each on its morning, from the subscriber's side
 for (const [k, h, file] of [['commencement', 10, 'kit-bursar-table.png'], ['caravan', 10, 'kit-caravan-scale.png']]) {
