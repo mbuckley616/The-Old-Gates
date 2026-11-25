@@ -13310,7 +13310,7 @@ function aurenneOrrery(hAt, o = {}) {
     GM_MATS = { rock: mat('rock', { ns: 1, color: 0x8f8d84, rough: .95 }), stone: stoneM, dressed: dressedM,
       lit: glow(glyphA, AMBER, 2.2), dim: glow(glyphA, AMBER, .9), dead: deadM, litD: glow(glyphA, AMBER, 2.4), dimD: glow(glyphA, AMBER, .9), deadD: deadM,
       sigil: glow(sigA, AMBER, 2.4), sigilDim: glow(sigA, AMBER, .8), sigilDead: new THREE.MeshStandardMaterial({ map: sigCut, roughness: .9, transparent: true, opacity: .6, polygonOffset: true, polygonOffsetFactor: -2, depthWrite: false }),
-      seam: new THREE.MeshStandardMaterial({ color: new THREE.Color(.09, .08, .11), roughness: .7, emissive: VIOLET.clone(), emissiveIntensity: .5 }) /* the empty seat: violet light in dark stone at the slit's own level, not a flat colour 2.2 times over white (s1963, the critic) */, door: new THREE.MeshBasicMaterial({ color: 0x030304 }), rift: new THREE.MeshBasicMaterial({ color: VIOLET.clone().multiplyScalar(.55) }),
+      seam: new THREE.MeshBasicMaterial({ color: VIOLET.clone().multiplyScalar(.7), vertexColors: true }) /* the empty seat: the slit's violet, dark at the soffit's front and full where the stone sat deepest, light out of the crack, not a flat colour 2.2 times over white (s1963, the critic) */, door: new THREE.MeshBasicMaterial({ color: 0x030304 }), rift: new THREE.MeshBasicMaterial({ color: VIOLET.clone().multiplyScalar(.55) }),
       canvas: mat('plaster', { ns: .4, color: 0xc9b99a, rough: .95 }), wood: mat('wood', { ns: .6, color: 0x8a7a66, rough: .9 }), ember: new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, .55, .15) }),
       pennant: new THREE.MeshStandardMaterial({ color: 0x8a2a22, roughness: .9, side: THREE.DoubleSide }) };
     GM_MATS.canvas.side = THREE.DoubleSide; return GM_MATS;
@@ -13353,7 +13353,7 @@ function aurenneOrrery(hAt, o = {}) {
             const lift = R0 * (.03 + rl() * .1), fw = R0 * (.02 + rl() * .1), M = new THREE.Matrix4().makeTranslation(c[0] + Math.sin(tm) * lift, c[1] + Math.cos(tm) * lift, dz + PROUD / 2 + fw)
               .multiply(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler((rl() - .5) * .45, (rl() - .5) * .45, (rl() - .5) * .6))).multiply(new THREE.Matrix4().makeTranslation(-c[0], -c[1], -dz));
             put('stone', g.applyMatrix4(M)); put('dead', s.applyMatrix4(M)); counts.dead++;
-            put('seam', wedge(ta + .01, tb - .01, R.ri - .02, R.ri + .06, zf + PROUD - .1, z0 + .1, 0).g);
+            { const zA = zf + PROUD - .1, zB = z0 + .1, sg = wedge(ta + .01, tb - .01, R.ri - .02, R.ri + .06, zA, zB, 0).g, p = sg.attributes.position, cl = []; for (let q = 0; q < p.count; q++) { const t = Math.min(1, Math.max(0, (zA - p.getZ(q)) / (zA - zB || 1))), v = .12 + .88 * t * t; cl.push(v, v, v); } sg.setAttribute('color', new THREE.Float32BufferAttribute(cl, 3)); put('seam', sg); }
             hung.push({ ring: R.k, t: +(tm / DEG).toFixed(1), lift: +lift.toFixed(2) }); continue; }
           g.translate(-c[0], -c[1], -dz); g.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rl() * Math.PI * 2, rl() * Math.PI * 2, rl() * Math.PI * 2)));
           const x = c[0] * (.75 + rl() * .35) + (rl() - .5) * R0 * .3, z = ZF0 + R0 * (.25 + rl() * .7), b0 = bb(g), dd = Math.min(b0.max.x - b0.min.x, b0.max.y - b0.min.y, b0.max.z - b0.min.z);
