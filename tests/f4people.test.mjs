@@ -29,6 +29,20 @@ async function dunmore(g) {
 
 const g = await boot({ look: 'new' }); const { page } = g;
 const b1 = await dunmore(g);
+// S2529 is below. S2659 (Michael, 25 Nov: the old cartoon body showed before the new one): a townsperson waiting for the builder's body is
+// not drawn nearer than HBODY.near (from the frame it is made), its old driver shows past it (the far level), and the body comes after
+const wait = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'), X = t.x - 18, Z = t.z + 26;
+  const root = buildNPCMesh({ name: 'Wait Body', role: 'farmer' }, { nation: 'gatelander', key: 'waitbody' }), rig = [...PEOPLE_RIGS].find(r => r.root === root);
+  const o = { made: rig.mesh.visible }; WORLD.scene.add(root); root.position.set(X, worldH(X, Z), Z); root.visible = true;
+  CAM.position.set(X + 4, root.position.y + 1.65, Z); CAM.updateMatrixWorld(true); HBODY.last = 1e12; /* held back: nothing is built */
+  tickPeople(1 / 60, 2e6); o.near = { shown: rig.mesh.visible, hb: !!rig.hb };
+  CAM.position.set(X + 60, root.position.y + 1.65, Z); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 2e6 + 20); o.far = rig.mesh.visible;
+  CAM.position.set(X + 4, root.position.y + 1.65, Z); CAM.updateMatrixWorld(true); HBODY.last = -1e9;
+  let k = 0, coldSeen = false; while ((!rig.hb || rig.hb.cold) && !rig.hbFail && k++ < 800) { tickPeople(1 / 60, 3e6 + k * (HBODY.gap + 1)); if (rig.hb && rig.hb.cold && rig.mesh.visible) coldSeen = true; }
+  tickPeople(1 / 60, 3e6 + (k + 1) * (HBODY.gap + 1)); o.coldShown = coldSeen;
+  o.built = { hb: !!rig.hb, k, driver: rig.mesh.visible, body: !!rig.hb && rig.hb.root.visible };
+  WORLD.scene.remove(root); return o; });
+check('a townsperson waiting for the builder\'s body is not drawn nearer than 16 m (no frame of the old body, nor while the body\'s shaders warm), its driver shows past it, and the builder\'s body comes', !wait.made && !wait.near.shown && !wait.near.hb && wait.far && !wait.coldShown && wait.built.hb && !wait.built.driver && wait.built.body, wait);
 // S2529: a farmer walking carries the hoe on the right shoulder, the blade behind and above it, and standing plants it again
 const carry = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'), X = t.x + 20, Z = t.z + 30;
   let root = null, rig = null; for (let n = 0; n < 12 && !rig; n++) { root = buildNPCMesh({ name: 'Carry Hoe', role: 'farmer' }, { nation: 'gatelander', key: 'carryhoe' + n }); rig = [...PEOPLE_RIGS].find(r => r.root === root);

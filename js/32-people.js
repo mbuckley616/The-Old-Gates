@@ -1223,7 +1223,7 @@ function buildNPCMesh(def,opts){
   if(hbOn()&&!opts.noBuilder)hbPrep(g,(opts.key||'')+':'+(def.name||def.role||'?')); /* S1195 (F4) — the builder's genome, keyed by place and name */
   let gb=g,G=g.hbKey&&hbOn()?HB_GENOMES.get(g.hbKey):null;
   if(G){const W=hbSeasonDress(g,G);if(W!==G&&W.dress.coat&&!(G.dress||{}).coat){gb=Object.assign({},g,{cloth:new THREE.Color(...W.dress.coat)});gb.sleeve=gb.cloth.clone().multiplyScalar(.9);}if(W!==G&&!G.cast)hbDriverHead(gb=gb===g?Object.assign({},g):gb,W.dress||{});G=W;} /* S2332 — a winter coat's hood up on the stand-in too */ /* S1763 — the distant copy in the coat's colour */
-  const rig=buildPerson(gb);if(G){rig.hbG=G;HB_RIGS.add(rig);}
+  const rig=buildPerson(gb);if(G){rig.hbG=G;HB_RIGS.add(rig);rig.mesh.visible=false;rig.hbHid=true;} /* S2659 — not seen until hbTick has looked: no frame of the old body near (hbTick) */
   return rig.root;
 }
 // ── poses: joint -> [x,y,z] rotations, plus the height of the hips ──
@@ -3351,11 +3351,16 @@ function hbTick(now){let best=null,bd=HBODY.build;
     if(!root.parent||!top.parent){hbDrop(rig);HB_RIGS.delete(rig);continue;}
     if(top.parent!==scene||!top.visible||!root.visible)continue;
     const d=Math.hypot(CAM.position.x-top.position.x,CAM.position.z-top.position.z);
-    if(!rig.hb){if(!busy&&!HBODY.job&&!rig.hbFail&&d<bd){bd=d;best=rig;}continue;}
+    // S2659 (Michael, 25 Nov: "the cartoony-looking version of him still before his new mesh loaded"): a townsperson waiting for the
+    // builder's body is not drawn at all nearer than HBODY.near; the driver shows only past it (the far level's own look) or if the build
+    // failed. A foe keeps its driver until then: one coming at you is never invisible
+    if(!rig.hb){if(!rig.hbFoe){const hide=!rig.hbFail&&d<HBODY.near;if(hide!==!!rig.hbHid){rig.hbHid=hide;rig.mesh.visible=!hide;}}
+      if(!busy&&!HBODY.job&&!rig.hbFail&&d<bd){bd=d;best=rig;}continue;}
     const L=rig.hb.L,a=HBODY.near+(L>0?-1:1),b=HBODY.mid+(L>1?-1:1);hbLevel(rig,rig.hb.cold?2:d<a?0:d<b?1:2);
+    if(!rig.hbFoe&&rig.hb.L===2)rig.mesh.visible=!(rig.hb.cold&&d<HBODY.near); /* S2659 — nor while its shaders warm (cold, drawn as the far level) */
     if(rig.hb.L<2){hbPose(rig);if(rig.hb.glow)hbGlow(rig);if(rig.hb.held.length)hbHold(rig);if(rig.ride&&!rig.hb.rideSkirt&&rig.w&&rig.w.ride>.99)hbRideSkirt(rig);}} /* S2300 — a rider's skirt seated on the saddle, once */
   if(best&&best.hbFoe&&!best.hbG){try{best.hbG=hbFoeGenome(best);}catch(e){best.hbFail=true;console.warn('F4: no genome for the foe',best.hbFoe,e);best=null;}}
   if(best&&HB.makePersonIter){try{HBODY.job={rig:best,it:HB.makePersonIter(best.hbG,HB_LEAN),ms:0,steps:0};}catch(e){best.hbFail=true;console.warn('F4: makePerson failed for',best.g.hbKey,e);}best=null;}
   const step=!best&&HBODY.job&&!busy;if(step)best=hbBuildStep(now);
-  if(best){hbAttach(best,best.hbP);best.hbP=null;HBODY.last=now;if(best.hb){const t=best.foe?best.root.parent:best.root,d=Math.hypot(CAM.position.x-t.position.x,CAM.position.z-t.position.z);hbWarm(best);hbLevel(best,best.hb.cold?2:d<HBODY.near?0:d<HBODY.mid?1:2);if(best.hb.L<2)hbPose(best);}}
+  if(best){hbAttach(best,best.hbP);best.hbP=null;best.hbHid=false;if(!best.hb)best.mesh.visible=true;HBODY.last=now;if(best.hb){const t=best.foe?best.root.parent:best.root,d=Math.hypot(CAM.position.x-t.position.x,CAM.position.z-t.position.z);hbWarm(best);hbLevel(best,best.hb.cold?2:d<HBODY.near?0:d<HBODY.mid?1:2);if(!best.hbFoe&&best.hb.L===2)best.mesh.visible=!(best.hb.cold&&d<HBODY.near);if(best.hb.L<2)hbPose(best);}}
   else if(!step)hbWarmStep();}
