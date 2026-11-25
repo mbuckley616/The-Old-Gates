@@ -91,5 +91,24 @@ const home = await page.evaluate(() => { const set = (d, h) => { worldState.game
   window.isInterior = ii; currentHouse = ch0; return o; });
 console.log(JSON.stringify(home));
 check('by home: at Dunmore a Gatelands-made piece is ×0.85 to buy and to sell, the Mark\'s and Aurenne\'s ×1.2; Icebloom is the Mark\'s, Firemoss the Gatelands\', a sea herb and armour no one\'s; market day stacks', Math.abs(home.gl[0] / home.plain[0] - .85) < .02 && Math.abs(home.gl[1] / home.plain[1] - .85) < .03 && Math.abs(home.mk[0] / home.plain[0] - 1.2) < .02 && Math.abs(home.au[1] / home.plain[1] - 1.2) < .03 && home.homes.join() === 'gatelands,mark,mark,gatelands,,' && Math.abs(home.glMarket / home.plain[0] - .765) < .02, home);
+// S2647: market day's stalls (#1971 B). On Stoneday 7–15 Dunmore keeps 4 + prosperity ÷ 25 stalls, each a keeper on the square with a
+// counter of 4 to 7 rows of food, remedies or odds and ends, seeded by the town and the week; the market's prices hold at a stall; its
+// residents keep the square from 7; the next day the stalls are gone.
+const stalls = await page.evaluate(() => { const set = (d, h) => { worldState.gameTimeAbsMinutes = 1440 * d + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const S = WORLD.settle.get('dunmore'), t = S.site; px = t.x + 3; pz = t.z + 3; const o = {};
+  const tick = () => { _mstallT = 0; tickMarketStalls(); return [...MSTALLS.values()].filter(D => D.site === 'dunmore'); };
+  set(1, 10); const L = tick(); o.n = L.length; o.want = 4 + Math.floor(prosperity(t) / 25); o.onSquare = L.every(D => Math.hypot(D.npc.g.position.x - t.x, D.npc.g.position.z - t.z) < 16);
+  o.npcs = L.every(D => npcs.includes(D.npc) && D.npc.def.topics.some(c => c.trade));
+  const ch0 = currentHouse; L[0].npc.def.topics.find(c => c.trade).fn(); const H = currentHouse; o.house = { name: H.name, keeper: H.keeper, rows: H.pack.length };
+  o.same = JSON.stringify(marketStallPack(t, 0, 5).rows.map(r => r.name)) === JSON.stringify(marketStallPack(t, 0, 5).rows.map(r => r.name));
+  o.weeks = new Set([0, 1, 2, 3, 4, 5].map(w => marketStallPack(t, 0, w).trade + marketStallPack(t, 0, w).rows.map(r => r.name).join())).size;
+  o.rowsOk = L.every((D, i) => { const P = marketStallPack(t, i, marketWeek()); return P.rows.length >= 4 && P.rows.length <= 7 && MSTALL_TRADES.includes(P.trade); });
+  const it = { buyPrice: 100, type: 'misc' }; o.b1 = shopCost(it); set(2, 10); o.b0 = shopCost(it); currentHouse = ch0;
+  const res = S.residents[0], fake = { def: res.def, _settle: S, sched: { type: 'resident', door: res.door, plaza: { x: t.x, z: t.z }, padR: 20, inn: S.innDoor } };
+  set(1, 8); const a = scheduleFor(fake, 8); set(2, 8); const b = scheduleFor(fake, 8); o.res8 = [a.work || (a.wander ? 'sq' : '?'), b.work || (b.wander ? 'sq' : '?')];
+  set(2, 10); o.after = tick().length; set(1, 15.5); o.late = tick().length; return o; });
+console.log(JSON.stringify(stalls));
+check('market day: Dunmore keeps 4 + prosperity ÷ 25 stalls on its square, each a keeper with a counter of 4 to 7 rows by town and week, at the market\'s price; gone after', stalls.n === stalls.want && stalls.n >= 4 && stalls.onSquare && stalls.npcs && stalls.house.rows >= 4 && stalls.same && stalls.weeks >= 3 && stalls.rowsOk && Math.abs(stalls.b1 / stalls.b0 - .9) < .02 && stalls.after === 0 && stalls.late === 0, stalls);
+check('market day fills the square from 7: a resident who works at eight on another day is on the square at eight on Stoneday', stalls.res8[0] === 'sq' && stalls.res8[1] !== 'sq', stalls.res8);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
