@@ -17,6 +17,8 @@ import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+import util from 'util';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(here, '..', '..');
@@ -39,6 +41,32 @@ export function localBuild(src = DEFAULT_SRC) {
 
 const PREINSTALLED = '/opt/pw-browsers/chromium';
 
+// Session 2654: the last BROWSER_TAIL (40) lines of Playwright's `pw:browser` log, for every browser this process launched (each
+// line starts `[pid=N]`). Launch's `logger` option never sees that channel, so the `debug` instance Playwright logs through is
+// switched on for it and its output kept here; any other channel a DEBUG= asked for still goes to stderr as before. If the
+// bundle's layout changes the tail is simply empty.
+const TAIL = [], TAIL_WATCH = [];
+let tailHooked = false;
+function browserTail() {
+  if (!tailHooked) {
+    tailHooked = true;
+    try {
+      const { debug } = createRequire(import.meta.url)('playwright-core/lib/utilsBundle');
+      const was = debug.log, max = +process.env.BROWSER_TAIL || 40, echo = debug.enabled('pw:browser');
+      // the page's own console lines (INFO:CONSOLE) are left out: boot's `logs` has them, and WebGL's stall notes would fill the tail
+      debug.log = (...a) => { const s = util.format(...a);
+        if (!s.includes('pw:browser')) return was ? was(...a) : process.stderr.write(s + '\n');
+        if (echo) process.stderr.write(s + '\n');
+        if (/INFO:CONSOLE|GL Driver Message|dbus|Floss manager/.test(s)) return;
+        const line = s.replace(/\u001b\[[0-9;]*m/g, '').slice(0, 300);
+        TAIL.push(line); if (TAIL.length > max) TAIL.shift();
+        for (const f of TAIL_WATCH) f(line); };
+      if (!debug.enabled('pw:browser')) debug.enable([process.env.DEBUG, 'pw:browser'].filter(Boolean).join(','));
+    } catch (e) {}
+  }
+  return TAIL;
+}
+
 export async function boot(opts = {}) {
   const file = localBuild(opts.src);
   const launch = { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] };
@@ -47,9 +75,30 @@ export async function boot(opts = {}) {
     // Cloud containers ship their own Chromium; use it when Playwright's download was blocked.
     launch.executablePath = PREINSTALLED;
   }
+  // Session 2654: a lost browser names its cause. `budget`, `budgetfield` and `f4people` lost theirs mid-suite under parallel
+  // boots (S2632, S2635, S2646: "Target page, context or browser has been closed"), and nothing said whether the renderer crashed,
+  // the kernel killed it or Chromium exited. Playwright's `pw:browser` debug channel carries Chromium's stderr and its exit line
+  // (`<process did exit: exitCode=…, signal=…>`); `browserTail` keeps its last lines in memory (not on stderr), and they are printed
+  // when the page crashes or the browser goes away before the suite closes it. Nothing is printed on a clean run.
+  const tail = browserTail();
+  const t0boot = Date.now();
+  let closing = false;
+  let pid = '';
+  const dump = (what) => {
+    const mine = tail.filter(l => !pid || l.includes(`[pid=${pid}]`) || l.includes(`pid=${pid}`));
+    console.log(`  lost: ${what} at ${Math.round((Date.now() - t0boot) / 1000)} s; the browser's last ${mine.length} log lines (pid ${pid || '?'}):`);
+    for (const l of mine) console.log('    | ' + l);
+    // Chromium's exit line (its exit code and the signal that ended it) is logged just after `disconnected` fires
+    if (!dumped) { dumped = true; TAIL_WATCH.push(l => { if (pid && l.includes(`[pid=${pid}]`) && /process did exit/.test(l)) console.log('    | ' + l); }); }
+  };
+  let dumped = false;
   const browser = await chromium.launch(launch);
+  for (let i = tail.length - 1; i >= 0; i--) { const m = /<launched> pid=(\d+)/.exec(tail[i]); if (m) { pid = m[1]; break; } }
+  browser.on('disconnected', () => { if (!closing) dump('the browser disconnected'); });
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, acceptDownloads: true, deviceScaleFactor: opts.dpr || 1 });
   const page = await ctx.newPage();
+  page.on('crash', () => dump('the page crashed (the renderer died)'));
+  page.on('close', () => { if (!closing) console.log(`  lost: the page closed at ${Math.round((Date.now() - t0boot) / 1000)} s`); });
   // a reload of the 2.7 MB page on a busy CI runner can take longer than Playwright's 30 s default (Session 274: reader, placesave)
   page.setDefaultNavigationTimeout(180000);
   // Session 808: a screenshot waits for the next frame the page paints, and on a CI runner one frame of the town can take over
@@ -168,7 +217,7 @@ export async function boot(opts = {}) {
   // wait for n real frames of the game's own loop: HUD text (the door prompt) is only written there, and on a slow
   // runner a fixed pause can pass without one (Session 156)
   g.frames = (n = 2) => page.evaluate(n => new Promise(r => { let k = 0; const f = () => (++k >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); }), n);
-  g.close = () => browser.close();
+  g.close = () => { closing = true; return browser.close(); };
   return g;
 }
 
