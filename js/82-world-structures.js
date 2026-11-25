@@ -1839,7 +1839,9 @@
         wx=an.x()+(e.x-an.local)*an.scale;wz=an.z()+(e.z-an.local)*an.scale;
         // Keep cave doors off the road bed (push straight away from the
         // road) and out of site pads (push away from the pad centre).
+        const RG=ringGateOk(e); /* S2641 — an authored home gate is a ring gate too: its hill kept off the roads, the pads and other doors as a generated one's */
         for(let k=0;k<10;k++){
+          if(RG){const q=ringGateRoad(wx,wz);if(q){wx+=q.nx*14;wz+=q.nz*14;continue;}}
           const ri=roadInfo(wx,wz);const st=stampAt(wx,wz);
           if(ri&&ri.d<=16){
             const sg=ri.seg,vx=sg.bx-sg.ax,vz=sg.bz-sg.az,L=Math.hypot(vx,vz)||1;
@@ -1848,14 +1850,14 @@
           }
           if(st&&st.kind!=='door'){
             const dx=wx-st.x,dz=wz-st.z,L=Math.hypot(dx,dz)||1;
-            wx=st.x+dx/L*(st.r+14);wz=st.z+dz/L*(st.r+14);continue;
+            wx=st.x+dx/L*(st.r+(RG?50:14));wz=st.z+dz/L*(st.r+(RG?50:14));continue;
           }
           // Minimum spacing from any other door / fort.
           // v80 S134 — never inside a settlement's pad
-          {let ps=null,pd=1e9;for(const t of SITES){if(!t.pad)continue;const d=Math.hypot(wx-t.x,wz-t.z);if(d<t.pad+18&&d<pd){pd=d;ps=t;}}if(ps){const dx=wx-ps.x,dz=wz-ps.z,L=Math.hypot(dx,dz)||1e-3;const ang=L<1?hash01(e.seed,k,79)*Math.PI*2:Math.atan2(dz,dx);wx=ps.x+Math.cos(ang)*(ps.pad+20);wz=ps.z+Math.sin(ang)*(ps.pad+20);continue;}}
+          {let ps=null,pd=1e9;for(const t of SITES){if(!t.pad)continue;const d=Math.hypot(wx-t.x,wz-t.z);if(d<t.pad+(RG?48:18)&&d<pd){pd=d;ps=t;}}if(ps){const dx=wx-ps.x,dz=wz-ps.z,L=Math.hypot(dx,dz)||1e-3;const ang=L<1?hash01(e.seed,k,79)*Math.PI*2:Math.atan2(dz,dx);wx=ps.x+Math.cos(ang)*(ps.pad+(RG?50:20));wz=ps.z+Math.sin(ang)*(ps.pad+(RG?50:20));continue;}}
           let near=null,nd=1e9;
           for(const o of STAMPS){if(o.kind!=='door')continue;const d=Math.hypot(wx-o.x,wz-o.z);if(d<nd){nd=d;near=o;}}
-          const minD=near&&near.r>10?near.r+22:30;
+          const minD=Math.max(near&&near.r>10?near.r+22:30,RG?60:0);
           if(near&&nd<minD){
             const dx=wx-near.x,dz=wz-near.z,L=Math.hypot(dx,dz)||1e-3;
             const ang=L<1?hash01(e.seed,k,78)*Math.PI*2:Math.atan2(dz,dx);
@@ -1866,7 +1868,7 @@
       }
       dungeonWorldPos[e.seed]={x:wx,z:wz};CELL_DOORS.push(e);
       const isFort=e.kind==='fort_door';
-      e.ring=e.zone==='gen'&&ringGateOk(e);if(e.ring){ringGateStamp(e,wx,wz,cellK);return dungeonWorldPos[e.seed];} /* S2633 — the rings' hill in place of the door's pad */
+      e.ring=ringGateOk(e);if(e.ring){ringGateStamp(e,wx,wz,cellK);return dungeonWorldPos[e.seed];} /* S2633 — the rings' hill in place of the door's pad */
       addStamp({id:'door_'+e.seed,kind:'door',x:wx,z:wz,r:isFort?46:7,blend:isFort?34:12,cell:cellK});
       return dungeonWorldPos[e.seed];
     }
@@ -1883,7 +1885,7 @@
   // (gateCondRoll), so the outside agrees with the halls behind it. Near, the kit as drawn with the laid ground; from RG_LOD m one mesh, the
   // laid ground and the stone in the terrain's material. -> RING_GATES, by seed: { seed, ox, oz, y, toL, toW, sink, stamp, lift, ... }
   const RING_GATES=new Map(),RG_LOD=90,RG_SINK=1.5;let RG_SHAPE=null;
-  function ringGateOk(e){return !!e&&e.zone==='gen'&&e.kind==='cave_door'&&!e.lairDoor&&!e.root&&!e.hollow&&!e.wet&&window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&!!PKIT.places&&!!PKIT.places.gatemouth;}
+  function ringGateOk(e){return !!e&&(e.zone==='gen'||!!ZONE_ANCHOR[e.zone])&&(e.kind||'cave_door')==='cave_door'&&!e.tutorial&&!e.lairDoor&&!e.root&&!e.hollow&&!e.wet&&window.OG_LOOK==='new'&&window.OG_KIT_TOWNS!==false&&typeof PKIT!=='undefined'&&!!PKIT.places&&!!PKIT.places.gatemouth;}
   function rgShape(){return RG_SHAPE||(RG_SHAPE=PKIT.places.gatemouthShape('m'));}
   /* the gate faces down its slope (the bare land 24 m either side of the door, read by place, as the mines' adits are); on level ground (under
      1 in 30) it faces -z, as the mound did. -> ry, the kit's +z (its front) in the world: (sin ry, cos ry) */

@@ -1,7 +1,8 @@
 // The old gate's mound is solid wherever its turf stands (Session 630; the critic, 7 Oct 2026, build s476). At the Crypt of
 // Embers the solid behind the door was one box, .6 of the mound's depth, so walking in from behind you stopped at 8.8 with
 // your head inside the turf, which runs past 11. Now the mound is solid in slices that follow its dome: wherever the turf
-// stands more than .3 high you cannot stand, and a step past its foot is open ground.
+// stands more than .3 high you cannot stand, and a step past its foot is open ground. Session 2641: the crypt is a ring gate on the new
+// look; the mound is read where it is still built (spawnPortalMeshes), and the crypt as its rings.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
 await g.intoWorld();
@@ -22,25 +23,21 @@ const built = await page.evaluate(() => { const out = [];
     out.push({ seed, turf, open, ringN, far, foot: +maxZ.toFixed(2), slices: mound.length }); WORLD.scene.remove(grp); }
   return out; });
 for (const b of built) console.log('  built', JSON.stringify(b));
-// the Crypt of Embers in the world: walk in from 16 behind its door along the door's line until the world's solid stops you,
-// then read the turf's height under you by a ray down onto the gate
+// the Crypt of Embers in the world. Session 2641: on the new look it is a ring gate (OG-037, #1991 A), no longer a mound; its hill is the
+// world's own ground and its solids the kit's walls (the ringgate suite reads them at the nearest gate): here, that no mound stands at it,
+// that its back plate and the headwall either side are walls, and that the walk from the court to the slit is open
 // the crypt's door is placed when its cell loads; a slow runner may not have loaded it yet (CI, 8 Oct)
 await page.waitForFunction(() => WORLD.dungeonPos[137], null, { timeout: 120000, polling: 500 }).catch(() => {});
 const crypt = await page.evaluate(async () => { const w = WORLD.dungeonPos[137]; px = w.x; pz = w.z + 20;
   for (let i = 0; i < 400; i++) { WORLD.tick(1 / 60, performance.now()); if (i % 40 === 39) await new Promise(r => setTimeout(r, 50)); }
-  let G = null, d = 1e9; WORLD.scene.traverse(o => { if (o.name === 'oldGate') { const k = Math.hypot(o.position.x - w.x, o.position.z - w.z); if (k < d) { d = k; G = o; } } });
-  if (!G) return { found: false }; G.updateMatrixWorld(true); const gx = G.position.x, gz = G.position.z, rc = new THREE.Raycaster();
-  const turfUnder = (x, z) => { rc.set(new THREE.Vector3(x, G.position.y + 20, z), new THREE.Vector3(0, -1, 0)); const h = rc.intersectObjects(G.children, true)[0]; return h ? h.point.y - WORLD.worldH(x, z) : 0; };
-  let stop = null; for (let b = 16; b >= 0; b -= .05) if (solidAt(gx, gz + b)) { stop = +(b + .05).toFixed(2); break; }
-  let back = 0; for (let b = 16; b >= 0; b -= .1) if (turfUnder(gx, gz + b) > .05) { back = +b.toFixed(1); break; }
-  // and from either side at the mound's middle
-  const side = []; for (const s of [-1, 1]) { let st = null; for (let a = 14; a >= 0; a -= .05) if (solidAt(gx + s * a, gz + 4.5)) { st = a + .05; break; } side.push({ stop: +st.toFixed(2), turf: +turfUnder(gx + s * st, gz + 4.5).toFixed(2) }); }
-  return { found: true, d: +d.toFixed(1), stop, turfAtStop: +turfUnder(gx, gz + stop).toFixed(2), back, side, threshold: !solidAt(gx, gz - .7), apron: !solidAt(gx, gz - 2) }; });
+  let mound = 0; WORLD.scene.traverse(o => { if (o.name === 'oldGate' && Math.hypot(o.position.x - w.x, o.position.z - w.z) < 4) mound++; });
+  const G = RING_GATES.get(137); if (!G || !G.group || !G.group.parent) return { found: false, mound }; const S = rgShape(), sol = (lx, lz) => { jumpY = G.y; return solidAt(...G.toW(lx, lz), .3); };
+  const hfront = Math.sqrt(S.holeR ** 2 - S.CY ** 2), open = []; for (let z = 20; z >= G.plate + .7; z -= .5) if (sol(0, z)) open.push(z);
+  return { found: true, mound, cond: G.cond, plate: sol(0, G.plate - .6), headL: sol(-(hfront + 2), S.FZ - 2), headR: sol(hfront + 2, S.FZ - 2), blocked: open }; });
 console.log('  crypt', JSON.stringify(crypt));
 check('every turf vertex of the mound standing .45 or more is out of the player\'s reach, at five seeds', built.every(b => b.turf > 100 && b.open === 0), built);
 check('a metre past the mound\'s foot, behind and round it, is open ground (no wall in the air)', built.every(b => b.ringN > 10 && b.far === 0), built.map(b => b.far));
-check('at the Crypt of Embers, walking in from behind, you stop where the turf under you stands .35 or less', crypt.found && crypt.stop > 0 && crypt.turfAtStop <= .35, crypt);
-check('and from either side the same', crypt.found && crypt.side.every(s => s.turf <= .35), crypt.side);
-check('the threshold and the apron in front of the door are still open', crypt.threshold && crypt.apron, crypt);
+check('the Crypt of Embers is a ring gate in the world, with no mound at its door', crypt.found && crypt.mound === 0, crypt);
+check('its back plate and the headwall either side are walls, and the walk from its court to the slit is open', crypt.found && crypt.plate && crypt.headL && crypt.headR && crypt.blocked.length === 0, crypt);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
