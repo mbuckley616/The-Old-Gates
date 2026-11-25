@@ -2360,3 +2360,82 @@ ran to exit 0 (its summary line was lost to my pipe; both play scripts booted th
   and the bloom together; one boot is not enough to say.
 
 **Backlog notes.** None new.
+
+## 2026-11-25 — The new look in the game: three ring gates (steady, failing, catastrophic) by day, dusk and night, Hook Head's lighthouse from the sea and the land, a Gatelands windmill (build s1963, read to Session 2640)
+
+My last entry was a playtest, so this run looks at the new look. What landed since Session 2600 that a picture can judge is in the game,
+not on a prototype page: the lesser gates' rings (S2616's `gatemouth.html`, brought in by S2633 at Michael's *Medium: rings 26 m across*),
+the lighthouse by each port (S2639) and the windmills (S2621, S2629). I booted the new look twice in headless Chromium (two boots side by
+side on four cores), jumped with `WORLD.enter`, drew each picture through `REN.render` from a camera of my own (no hands, the land's post
+on) at 1280×720, and saved them as `docs/critic/2026-11-25-*.jpg`. No page errors and no console errors in either boot. I judged the gate
+against OG-037 (`docs/art/thumbs/OG-037.jpg`: rings out of a hillside, a dark slit, amber script, *the player small against it*) and
+against S2616's own `gatemouth-m.jpg`; the lighthouse against S2639's prototype and OG-046/OG-077's lighthouse.
+
+I took the nearest gate of each condition to the start: Carrigbeg's Silence (seed 818845, catastrophic, 1.7 km), seed 690235 (failing,
+1.8 km) and seed 650811 (steady, 1.9 km). Each from 90 m and 40 m out on the ground, from the court, from 55 m to the side and from 35 m up.
+
+**What was wrong.**
+1. **The catastrophic gate's empty seats are flat pink card** (`-gate-catastrophic-court.jpg`, 14h). Nineteen bright pastel-pink
+   trapezoids, unshaded, are the strongest thing in the frame; they read as a paper fan behind the rings, not as violet light in stone.
+   S2633 named this (*pink and flat by day, the prototype's own `seam`, a basic material at 2.2*). From the court it is worse than its
+   note suggests, because the seats fill the upper right of the view. The slit's deep violet
+   reads right; the seats want that colour, dimmed by day. At night (`-gate-catastrophic-night.jpg`) the pink glow over the crest
+   is the one good thing in the frame. Steps: seed 1, Carrigbeg's Silence, stand on the court at 14h.
+2. **On a slope the court is a shelf, and the gate is hidden from the way up** (`-gate-catastrophic-mid.jpg`, `-high.jpg`). Carrigbeg's
+   Silence faces down a hillside; 40 m out along its axis the ground is 13 m below the court, and 90 m out 26 m below. From there you
+   see a bank of bare earth with the top of the rings and a sliver of pink over it, nothing else: no slit, no script, no camp. From above,
+   the court's dark slabs jut out of the slope like a balcony. The rings face down their slope as S2633 meant, so the walk up is the
+   approach a player makes, and it shows the gate's least. S2633's own note (*a bank of about 1 in 1 for its last 5 m*) is this; I did
+   not test whether the bank can be climbed.
+3. **On level ground the hill does not show behind the rings** (`-gate-steady-mid.jpg`, `-gate-failing-mid.jpg`, from 40 m). The
+   prototype's picture is a green dome standing well over the rings. In the game, from the ground, the rings and the headwall fill the
+   whole shape: the turf over them shows only as a thin arc along the crown, with a dark band under it, so the gate reads as a stone
+   half-dome set on a field, a hangar's end, rather than rings *emerging from the hillside and disappearing underground*. The hill is there
+   (from 35 m up, `-gate-steady-high.jpg`, it is a mound in the wood), but its flanks beside the face are the dark grey of steep rock and
+   blend with the headwall. Not filed: this is taste, and the fix (a broader, greener shoulder either side) is the look builder's call.
+
+**What reads.**
+- **The script.** From the court of the steady gate (`-gate-steady-court.jpg`) the four rings step back to the slit with every band of
+  glyphs lit amber, and it is the best thing the gates have had: OG-037's *amber light, not magic*. The slit at 2.4 by 5.5 m under the
+  ring sigil is a passage, not a door. Two wolves were standing on the court at 14h, which made a good scale bar.
+- **The failing gate** (`-gate-failing-mid.jpg`, `-court.jpg`): the lost quarter of the outer ring and its stones fallen on the court
+  read at once as V3's broken circle; half the script dark. Of the three, this is the one I would show first.
+- **The camp** reads as a camp from 40 m: two tents, the pennant, the crates. From the court it is out of view.
+- **From 90 m** all three are hidden by wood (`-far.jpg`): you find a gate when you are on it, which the canon wants of a lesser gate.
+  The 26 m size is right for that: a person is a fifteenth of the rings' height, small against it as OG-037 asks, without a hundred
+  mountains.
+- **The lighthouse** (`-light-land.jpg`, `-light-foot.jpg`, 13h, the Gatelands port 2.4 km west of the start; ground 6.9 m over the
+  sea). Hook Head's tower with its two black bands, the gallery, the green cap and the whitewashed, thatched keeper's cottage beside it.
+  The door is a person's height against a tower of about 20 m, the cottage's eaves under the first band. From 300 m at sea
+  (`-light-sea.jpg`) it stands between the port's two rows as the one vertical on the shore, and you would steer by it.
+- **The windmill** (`-mill-near.jpg`, 10h, 1.9 km from the start): a white tower, thatched cap, four lattice sails and the tail pole to
+  its wheel on the ground, on a rise of open grass. It reads as a tower mill from 25 m and the sails turned.
+- **Cost.** At the gate's court 539 to 649 draw calls and 1.0 to 1.2 M triangles in my frames; at the lighthouse 430 to 475 and 0.75 to
+  0.83 M from the land. The quality level was the boot's own; software GL, so no frame time worth quoting.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2639 (*whether the light should reach further*): **it does not reach the sea.** At 22h from 300 m out (`-light-night-sea.jpg`) the
+  lantern is not there at all: the tower is a pale stroke and nothing on it is lit. From 45 m on land (`-light-night-land.jpg`) the lens
+  is the small warm spot S2639 describes. A lighthouse is seen from the sea at night or not at all, so this wants the beam or a glow
+  sprite S2639 left out; that is its own question. Also at night the tower's white and the cottage's limewash stay bright while the land
+  round them is black, as if floodlit. The shadowed dip behind the cottage I did not see from my angles.
+- S2633 (the headwall's top band, the court's bank, the pop at 300 m, the pink seats): the band and the bank are items 3 and 2; the seats
+  item 1. The pop at 300 m needs a walk in, not a still.
+- S2616 (the headwall's square shoulders): in the game the world's ground meets them; from the side (`-gate-steady-side.jpg`) the
+  headwall's edge stands as a dark wedge in the turf, not square.
+- S2621 (sails in any weather, a lawn from the road): the sails turned at 10h in fair weather; I did not see a calm or night. From 120 m
+  in the wood west of it the mill was hidden; the pasture reads only once you are in it.
+- S2629 (the far copy's pop at 77 m): not seen; no walk in.
+- S2601 (the star iron's cold light), S2611 (the falling star's streak), S2619 (the oyster bed), S2620 (the mine head), S2626, S2631
+  (the eel and serpent), S2606, S2614, S2618, S2640 (the seal's gait), S2622–S2624, S2636, S2637 (the sea's creatures, races and reefs):
+  not looked at this run. The seal and the races need motion; the serpent needs a ship beside it.
+- S2602–S2605, S2612, S2613 (the HUD): not this run; they follow on from my 24 Nov items.
+- S2625, S2634, S2638 (bodies by people indoors), S2630, S2632 (a town's day): for the next playtest. S2632's 44 people at the market
+  house's door at 7 is the first thing I would look at.
+- S2607, S2608, S2610, S2615, S2617, S2628, S2635 (QA and the budget), S2609 (asked): nothing for a review of the look.
+
+**Harness.** `node tests/run.mjs export` 1/1, clean, alone on the machine. Two boots side by side took over ten minutes each.
+
+**Backlog notes.** None new.
+
+No proposal this run.
