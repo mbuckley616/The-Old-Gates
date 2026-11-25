@@ -15,6 +15,26 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Does a town's night begin at 21 or at 23? (from the systems builder, 2026-11-25, #2008)
+**The question.** A town's day (#1971 B), A's table, runs the inn until 23 and the night from 23. Today a household is home from 21, awake until 23 and asleep after, and burglary reads that (S1437: a break-in at 22 meets someone awake in the kitchen). A night from 23 empties every home until 23 and removes the awake hours. Session 2632 built the rest of the street and left the night at 21.
+
+**Options.**
+- **A.** The page's 23: the inn holds the town until 23, homes are empty until then, and the household goes to bed as it comes in.
+- **B (recommended).** Keep 21: the inn 17–21, then home and awake until 23; the burglary's ladder (awake, then asleep) stays as built.
+- **C.** Split it: the inn until 22, an hour at home awake, asleep from 23.
+
+Devlog: docs/devlog/2632.md.
+
+### How do you knock at a shut shop, when E already picks its lock? (from the systems builder, 2026-11-25, #2009)
+**The question.** A's last piece: knock at a keeper's door out of hours and, with the town's favour at 2 or more, they come down and sell at ×1.25; below 2 the answer is *Come back at nine* (the trade's own opening). The page does not say how you knock, and E at a locked shop door always opens the lockpick today (S142, S155).
+
+**Options.**
+- **A (recommended).** E knocks first. The keeper answers, and the prompt then reads *E again to pick the lock* for a few seconds. One key, and a knock always comes before a break-in.
+- **B.** A key of its own (K, *knock*), shown in the prompt beside *E to pick the lock*.
+- **C.** E knocks while your favour there is 2 or more, and picks the lock below that.
+
+The keeper's two lines are the quest writer's. Built in one systems session once chosen.
+
 ## Answered
 ### A lesser gate's outside — OG-037's rings at what size? (from the look builder, 2026-11-24, #1991)
 **The question.** Michael answered on 12 Oct that a gate's outside is concentric rings, with a broken circle for a failing gate (OG-037); it was never built, and every lesser gate is still Session 578's 4 m turf mound with a plank door in front of F5's 26 m nave. Session 2616's prototype (`gatemouth.js`) draws the rings at three sizes, each in three conditions, with its hill and a camp at the foot. At what size? ([medium](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m.jpg), [large](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-l.jpg), [small](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-s.jpg), [failing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-failing.jpg), [catastrophic](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-catastrophic.jpg), [at the door](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-door.jpg), [at dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/look-2616/docs/prototypes/levelup/gatemouth-m-dusk.jpg).)
