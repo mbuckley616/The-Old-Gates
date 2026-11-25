@@ -101,5 +101,25 @@ check('the ballista does not bear on its head out of her arc, nor on it while it
 check('an arrow at its head deals its own damage; one 6 m wide strikes nothing', fight.arrow && fight.arrowDmg === 25 && !fight.arrowWide, fight);
 const near = (a, b) => Math.abs(a - b) <= 1;
 check('a spell at its head deals its own damage: Tine ×1.5, Uisce ×0.5, Gaoth ×1', fight.tine && fight.uisce && fight.gaoth && near(fight.tine.dealt, fight.tine.base * 1.5) && near(fight.uisce.dealt, fight.uisce.base * .5) && fight.gaoth.dealt === fight.gaoth.base, fight);
+// S2657 — session 6, slain: three scales and the skull (once), the count; the skull at her bow halves the roll; the scale is brewed, not eaten
+const slain = await page.evaluate((at) => { const o = {}; const S = WORLD.ship; WORLD.spawnShip(at.x, at.z, at.yaw); S.x = at.x; S.z = at.z; S.sailing = true; px = S.x; pz = S.z;
+  BAG.length = 0; worldState.stats = worldState.stats || {}; const n0 = worldState.stats.serpentsSlain || 0; if (worldState.ship.heads) worldState.ship.heads = worldState.ship.heads.filter(k => k !== 'serpent');
+  const scales = () => BAG.filter(b => b && b.name === 'Serpent Scale').reduce((a, b) => a + (b.qty || 1), 0), skulls = () => BAG.filter(b => b && b.figurehead === 'serpent').length;
+  serpDrop(); SERP.last = -1e9; serpentRise(null, false); SERP.on.hp = 40; o.hit = serpentHit(40, 'Test'); o.gone = !SERP.on && !SERP.g;
+  o.scales = scales(); o.skulls = skulls(); o.count = (worldState.stats.serpentsSlain || 0) - n0;
+  serpentRise(null, true); SERP.on.hp = 60; serpentHit(60, 'Test'); o.scales2 = scales(); o.skulls2 = skulls(); o.count2 = (worldState.stats.serpentsSlain || 0) - n0;
+  worldState.ship.head = null; const p0 = serpentOdds(S.x, S.z); o.fit = fitHead('serpent'); o.head = shipHead(); o.half = +(serpentOdds(S.x, S.z) / p0).toFixed(3); o.name = headName('serpent'); worldState.ship.head = null;
+  const sc = BAG.find(b => b && b.name === 'Serpent Scale'); o.key = herbKeyOf({ name: 'Serpent Scale', type: 'herb' }); o.weight = sc.weight; o.price = sc.buyPrice;
+  const q0 = sc.qty; useHerb(BAG.indexOf(sc)); o.notEaten = sc.qty === q0;
+  worldState.herbsKnown = { fx: {}, none: {} }; o.unfound = brewUnfound().some(u => u.k === 'serpentscale' && u.name === 'Serpent Scale' && u.known === 0);
+  bagAdd({ ...MORTAR_ITEM }); bagAdd({ ...HERB_DEF.kelp.item, qty: 2, _typeKey: 'kelp' }); const r = brewHerbs(['serpentscale', 'kelp']);
+  o.brewed = r.made; o.learnt = r.learnt.filter(x => x.startsWith('serpentscale:')).sort(); o.potion = r.item && r.item.name;
+  BAG.length = 0; return o; }, spot);
+console.log('  slain:', JSON.stringify(slain));
+check('slain at 0: it is gone, three Serpent Scales and the Serpent’s Skull in the bag, one counted', slain.hit && slain.gone && slain.scales === 3 && slain.skulls === 1 && slain.count === 1, slain);
+check('slain again: three more scales, no second skull', slain.scales2 === 6 && slain.skulls2 === 1 && slain.count2 === 2, slain);
+check('the Serpent’s Skull fits at her bow and halves the roll', slain.fit === true && slain.head === 'serpent' && slain.half === .5 && slain.name === 'the Serpent’s Skull', slain);
+check('the scale: weight 0.5, 120 gold, known by its name after a reload, never eaten, all four effects unknown until brewed', slain.key === 'serpentscale' && slain.weight === .5 && slain.price === 120 && slain.notEaten && slain.unfound, slain);
+check('brewed with kelp it gives up Water Breathing and Slow', slain.brewed && slain.learnt.join() === 'serpentscale:slow,serpentscale:waterBreathing', slain);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

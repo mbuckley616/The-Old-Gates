@@ -1550,7 +1550,7 @@
   // speed in rain or storm; the wreck's maiden, a pirate within 300 m holds off 10 s before closing; the beast's skull, merchantmen
   // give way and keep 30 m off; the gate stone, storm wear ×0.8 (the Drowned Bell's ×0.5 the better, never both); the Weaver's
   // shuttle points the navigator's line at the nearest wreck not yet opened (S1743, shuttleHint; nothing without him)
-  const SHIP_HEADS={sea:{n:'the Sea’s Hull'},maiden:{n:'the Wreck’s Maiden'},skull:{n:'the Beast’s Skull'},stone:{n:'the Gate Stone'},shuttle:{n:'the Weaver’s Shuttle'}};
+  const SHIP_HEADS={sea:{n:'the Sea’s Hull'},maiden:{n:'the Wreck’s Maiden'},skull:{n:'the Beast’s Skull'},stone:{n:'the Gate Stone'},shuttle:{n:'the Weaver’s Shuttle'},serpent:{n:'the Serpent’s Skull'}}; /* S2657 — the sixth found: the serpent's roll ×0.5 (serpentOdds) */
   const HEAD_CARVE={gatelands:'harp',mark:'dragon prow',aurenne:'sun'};
   const HEAD_YARD_PRICE=150,HEAD_SEA_K=1.05,HEAD_MAIDEN_R=300,HEAD_MAIDEN_S=10,HEAD_SKULL_R=30,HEAD_STONE_K=.8;
   function headName(k,st){st=st||worldState.ship||{};return k==='yard'?`the ${HEAD_CARVE[st.yardHead]||'harp'}`:SHIP_HEADS[k]?SHIP_HEADS[k].n:k;}
@@ -1960,7 +1960,14 @@
   function serpentHit(n,how){const O=SERP.on;if(!O||O.phase!=='up'||!(O.hp>0))return null;n=Math.max(0,Math.round(n||0));O.hp=Math.max(0,O.hp-n);O.hits=(O.hits||0)+1;
     let broke=false;if(O.coil&&n>=SERP_BREAK){O.coil=null;O.coilCd=SERP_GAP;broke=true;}
     showMsg(`${how||'You strike'} the serpent's head: −${n}.${broke?' Its coil breaks.':''}`,'#e8c890');
-    if(O.hp<=0){serpDrop();showMsg('The serpent is gone.','#c8b880');}return {dmg:n,hp:O.hp,broke};}
+    if(O.hp<=0)serpentSlain();return {dmg:n,hp:O.hp,broke};}
+  // S2657 — the named action: slain (session 6). Three Serpent Scales and the Serpent's Skull, its figurehead (once: a second kill
+  // gives the scales), straight into the bag as the beast's skull is; stats.serpentsSlain counts it. It sinks and is gone.
+  const SERP_SLAIN_SCALES=3;
+  function serpentSlain(){if(!SERP.on)return false;serpDrop();const it=serpentScaleItem();it.qty=SERP_SLAIN_SCALES;bagAdd(it);
+    const st=worldState.stats||(worldState.stats={});st.serpentsSlain=(st.serpentsSlain||0)+1;
+    showMsg(`The serpent is slain. ${SERP_SLAIN_SCALES} Serpent Scales.`,'#e8d8a0');grantHead('serpent');
+    if(typeof renderHubInv==='function')renderHubInv();return true;}
   // an arrow or a spell in flight (tickZoneBalls): true when it struck the head and is spent
   function serpentTakes(fb){const h=serpHead(),u=fb&&fb.userData;if(!h||!u||u.fromBoss)return false;const p=fb.position;
     if(Math.hypot(p.x-h.x,p.z-h.z)>SERP_HEAD_R||p.y<SEA_Y-1||p.y>SEA_Y+5)return false;const O=SERP.on;
