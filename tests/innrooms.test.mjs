@@ -55,8 +55,11 @@ const key = await page.evaluate(() => { worldState.lairs = new Proxy({}, { get: 
   return null; });
 if (key) sels.push({ key });
 
+/* S2707 — the town is settled again only when the inn is in another town, or the one you left is no longer built: a settle of a
+   standing town still costs its two fixed waits and a poll on a busy page, about 20 s an inn here (528 s alone, 900 s cap on CI) */
+let lastTown = null;
 for (const sel of sels) {
-  if (sel.town) await g.settle(sel.town); else await page.evaluate((k) => { const h = ZONES.world.houses.find(x => x.coachInn === k); px = h.exitX; pz = h.exitZ + 3; }, sel.key);
+  if (sel.town) { if (sel.town !== lastTown || !(await page.evaluate((t) => !!WORLD.settle.get(t), sel.town))) await g.settle(sel.town); lastTown = sel.town; } else await page.evaluate((k) => { const h = ZONES.world.houses.find(x => x.coachInn === k); px = h.exitX; pz = h.exitZ + 3; }, sel.key);
   await enter(sel); const L = await layout();
   /* Session 2368: the inn's clay oven (kitchenOvenDress, 84), where ovenHere lets you bake: by a wall, on no solid, and not behind the bar */
   ovens.push(await page.evaluate(() => { const o = interiorScene.children.find(c => c.userData && c.userData.kitchenOven), b = INT_SOL.find(s => s.kitchenOven);
