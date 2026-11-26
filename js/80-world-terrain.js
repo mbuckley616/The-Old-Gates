@@ -162,6 +162,84 @@
     return best;
   }
   function ridged(x,z,scale,seed){const v=fbm(x,z,scale,seed,3);return 1-Math.abs(v*2-1);}
+  // ═══ S2682 — THE LAND'S RELIEF (deep work, 25 Nov 2026: "not as far along with realizing the concept art") ═══════════════════
+  // The land between the places was a mown lawn: hills of ±5 to 16 m on a 110 m wave, so from the eye the country lay flat to the
+  // horizon with nothing standing against the sky (the critic's storm-inland-13h). P10b (OG-147) draws green valleys under ridges,
+  // the Mark's snow peaks, coastal cliffs and rock breaking through the turf. This adds, by nation, four landforms on top of landH's:
+  //   - uplands: broad patches of high country (a 1.5 km field), between them the lowlands;
+  //   - hills and ridges on the uplands: a ridged field on a 520 m wave, its crests sharpened, 40 to 80 m;
+  //   - escarpments: a tableland's scarp where a broad field crosses a level (Benbulbin's kind), 20 to 30 m faces of rock;
+  //   - coastal cliffs: stretches of shore where the land stands 30 to 45 m to the brink and drops to the sea in a short band;
+  // and the ranges' crests (ridgeAt) broken into crags, the Mark's highest.
+  // All of it is held down near what people built and where the water runs: RELIEF's calm field, one grid a cell (32 m), is 0 on and
+  // round every site's pad, every door, every road's line (roadCurve: a road's line from its def and its ends alone), every routed
+  // river and lake (and the home province's authored ones), rising to 1 over the next 110 to 190 m. So the towns, the roads and the
+  // gates keep the ground they had, the rivers run in broad valleys, and the high country rises between them. The routing reads the
+  // land without it (RV.routing): the rivers, lakes and their numbers are exactly what they were, and the valleys are cut round them.
+  // The calm field reads the cells (getCell, which reads no height) and the routing alone, so the relief is a pure function of the
+  // seed and the place, the same whatever has loaded. The amplitudes are per nation, blended between the cells' centres, so no
+  // border shows a step.
+  const RELIEF={on:true,S:32,grid:[],K:null,
+    NAT:{gatelands:{hill:46,scarp:24,cliff:30,up:.5,peak:1},mark:{hill:78,scarp:26,cliff:34,up:.44,peak:1.45},aurenne:{hill:38,scarp:22,cliff:44,up:.52,peak:1.1}},
+    HOME:.8, SEA:.45}; /* the home province a shade gentler (the authored start); a sea cell's islets under half */
+  const RK_N=['hill','scarp','cliff','up','peak'];
+  // every cell's amplitudes (nation, and the home and sea factors), once: RELIEF.K[n][i+j*GRID]
+  function reliefCells(){if(RELIEF.K)return RELIEF.K;const K=RK_N.map(()=>new Float32Array(GRID*GRID));
+    for(let j=0;j<GRID;j++)for(let i=0;i<GRID;i++){const t=maskAt(i,j);let nat='gatelands';try{nat=nationKeyOf(i,j)||'gatelands';}catch(e){}
+      const N=RELIEF.NAT[nat]||RELIEF.NAT.gatelands,f=(i===HOME_I&&j===HOME_J)?RELIEF.HOME:(t==='sea')?RELIEF.SEA:1;
+      K[0][i+j*GRID]=N.hill*f;K[1][i+j*GRID]=N.scarp*f;K[2][i+j*GRID]=N.cliff*f;K[3][i+j*GRID]=N.up;K[4][i+j*GRID]=N.peak;}
+    return RELIEF.K=K;}
+  // one amplitude at a point, blended from the four cells' centres round it (as landField blends the mask)
+  function reliefK(x,z,n){const K=reliefCells()[n],u=x/SIZE-.5,v=z/SIZE-.5,i0=Math.floor(u),j0=Math.floor(v),fu=u-i0,fv=v-j0,G1=GRID-1;
+    const a=Math.max(0,Math.min(G1,i0)),b=Math.max(0,Math.min(G1,i0+1)),c=Math.max(0,Math.min(G1,j0))*GRID,d=Math.max(0,Math.min(G1,j0+1))*GRID;
+    return (K[a+c]*(1-fu)+K[b+c]*fu)*(1-fv)+(K[a+d]*(1-fu)+K[b+d]*fu)*fv;}
+  // the calm field of cell (i,j): 1 where the land may rise, 0 on what people built and where the water runs; built once a cell
+  // (after the routing) from the 3×3 cells' sites, doors and roads, and the routed rivers and lakes that reach it
+  function calmGrid(i,j){const id=i+j*GRID;let G=RELIEF.grid[id];if(G)return G;
+    const S=RELIEF.S,N=Math.round(SIZE/S)+1,ox=i*SIZE,oz=j*SIZE,a=new Float32Array(N*N).fill(1);G={N,ox,oz,a};RELIEF.grid[id]=G;
+    const put=(x,z,r0,r1)=>{if(x<ox-r1||z<oz-r1||x>ox+SIZE+r1||z>oz+SIZE+r1)return;
+      const g0=Math.max(0,Math.floor((x-r1-ox)/S)),g1=Math.min(N-1,Math.ceil((x+r1-ox)/S)),h0=Math.max(0,Math.floor((z-r1-oz)/S)),h1=Math.min(N-1,Math.ceil((z+r1-oz)/S));
+      for(let b=h0;b<=h1;b++)for(let q=g0;q<=g1;q++){const d=Math.hypot(ox+q*S-x,oz+b*S-z);if(d>=r1)continue;const v=d<=r0?0:sstep(r0,r1,d),n=b*N+q;if(v<a[n])a[n]=v;}};
+    const seg=(x0,z0,x1,z1,r0,r1)=>{if(Math.max(x0,x1)<ox-r1||Math.max(z0,z1)<oz-r1||Math.min(x0,x1)>ox+SIZE+r1||Math.min(z0,z1)>oz+SIZE+r1)return;
+      const L=Math.hypot(x1-x0,z1-z0),n=Math.max(1,Math.ceil(L/(S*.5)));for(let k=0;k<=n;k++){const t=k/n;put(x0+(x1-x0)*t,z0+(z1-z0)*t,r0,r1);}};
+    const near=[];for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const ii=i+di,jj=j+dj;if(ii<0||jj<0||ii>=GRID||jj>=GRID)continue;const c=getCell(ii,jj);if(c)near.push(c);}
+    const byId={};for(const c of near)for(const t of c.sites)byId[t.id]=t;
+    const M=150; /* the reach of a place's calm: the land meets its own height 150 m past the pad */
+    for(const c of near){
+      // the cell's sites, by pad (a portal or a bridge has none: the road's line covers it)
+      for(const t of c.sites){if(!(t.pad>0))continue;put(t.x,t.z,t.pad+28,t.pad+28+M);}
+      // its doors: a fort's compound reaches 80 m, a cave's mouth or a gate's ring a few
+      for(const e of c.doors){let p=null;try{p=typeof fixedDoorSpot==='function'?fixedDoorSpot(e):null;}catch(err){p=null;}if(!p&&e.zone==='gen')p={x:e.x,z:e.z};if(!p)continue;
+        const r0=e.kind==='fort_door'?95:40;put(p.x,p.z,r0,r0+M*.8);}
+      // its roads, by their lines alone
+      for(const d of c.roadDefs){const A=byId[d.a],B=byId[d.b];if(!A||!B||typeof roadCurve!=='function')continue;let P=null;try{P=roadCurve(d,A,B);}catch(err){P=null;}if(!P)continue;
+        for(let k=1;k<P.length;k++)seg(P[k-1].x,P[k-1].z,P[k].x,P[k].z,18,18+M*.75);}
+      // the home province's authored rivers, lake and inlet
+      if(c.home){for(const rv of c.rivers||[])for(let k=1;k<rv.pts.length;k++)seg(rv.pts[k-1][0],rv.pts[k-1][1],rv.pts[k][0],rv.pts[k][1],(rv.w||5)+30,(rv.w||5)+30+M);
+        for(const lk of c.lakes||[])put(lk.x,lk.z,lk.r+(lk.blend||0)+20,lk.r+(lk.blend||0)+20+M);
+        for(const inl of c.inlets||[])for(let k=1;k<inl.pts.length;k++)seg(inl.pts[k-1][0],inl.pts[k-1][1],inl.pts[k][0],inl.pts[k][1],inl.w+inl.blend,inl.w+inl.blend+M);}
+    }
+    // the routed rivers in broad valleys (a great river's wider), and the routed lakes in their basins
+    for(const rv of RV.reaches||[]){const P=rv.pts,W=rv.ws;for(let k=1;k<P.length;k++){const w=Math.max(W[k-1],W[k]);seg(P[k-1][0],P[k-1][1],P[k][0],P[k][1],w+26,w+26+M+w*2);}}
+    for(const lk of RV.lakes||[])put(lk.x,lk.z,lk.r+40,lk.r+40+M+40);
+    return G;}
+  function calmAt(x,z){const i=Math.floor(x/SIZE),j=Math.floor(z/SIZE);if(i<0||j<0||i>=GRID||j>=GRID)return 0;const G=calmGrid(i,j),S=RELIEF.S,N=G.N;
+    const u=Math.max(0,Math.min(N-1.001,(x-G.ox)/S)),v=Math.max(0,Math.min(N-1.001,(z-G.oz)/S)),q=Math.floor(u),b=Math.floor(v),fu=u-q,fv=v-b,A=G.a,n=b*N+q;
+    return (A[n]*(1-fu)+A[n+1]*fu)*(1-fv)+(A[n+N]*(1-fu)+A[n+N+1]*fu)*fv;}
+  // whether the relief is drawn now: not while the rivers are routed (they keep the land they always had), and the routing done first
+  function reliefLive(){if(!RELIEF.on||RV.routing)return false;if(!RV.ready)routeWorld();return RV.ready;}
+  // the relief at a point, before the sea: uplands, hills and ridges, escarpments. -> metres to add
+  function reliefAt(x,z){
+    if(!reliefLive())return 0;const calm=calmAt(x,z);if(calm<=.001)return 0;
+    const upK=reliefK(x,z,3),up=sstep(upK-.13,upK+.17,fbm(x,z,1500,SEED+90,2));                // the high country and the lowlands
+    let h=0;
+    if(up>0){const rr=ridged(x,z,520,SEED+91);                                                  // ridges on the uplands, crests sharpened
+      h+=(Math.pow(rr,2.4)*.8+fbm(x,z,240,SEED+92,2)*.35)*reliefK(x,z,0)*up;}
+    const sk=sstep(.47,.6,fbm(x,z,2100,SEED+94,2));                                             // the scarp country
+    if(sk>0){const s=fbm(x,z,760,SEED+93,3);h+=(sstep(.525,.542,s)+sstep(.592,.606,s)*.75)*reliefK(x,z,1)*sk;} // two steps: a tableland and its upper shelf
+    return h*calm;}
+  // the coast's cliffs: 0..1 where a stretch of shore stands high to the brink (the cliff country, held down by the calm field)
+  function cliffAt(x,z){if(!reliefLive())return 0;const k=sstep(.5,.64,fbm(x,z,1300,SEED+95,2));if(k<=0)return 0;return k*calmAt(x,z);}
   // Land without water carving — what pads and road beds are measured from.
   function landH(x,z){
     const amp=RV.routing?0:regionScalar(x,z,'amp'); /* S433 — the routing reads the bare land: no cell's regions, whatever is loaded, so the rivers are the same from any boot */
@@ -170,15 +248,19 @@
     const rg=(ridged(x,z,60,SEED+7)-.5)*amp*.55;         // ridgelines
     const det=(_smoothNoise(x,z,SEED+3,24)-.5)*1.4+(_smoothNoise(x,z,SEED+4,8)-.5)*.4;
     let h=cont+hills+rg+det;
+    h+=reliefAt(x,z); /* S2682 — the uplands, ridges and escarpments between the places */
     const bf=basinAt(x,z);if(bf<1)h*=bf; // S432 — the horseshoe's basin floor and the valley out through its gap
     const mt=ridgeAt(x,z);
-    if(mt>0)h+=mt*mt*(70+fbm(x,z,70,SEED+5,3)*60);
+    if(mt>0){const live=reliefLive(),pk=live?reliefK(x,z,4):1;h+=mt*mt*(70+fbm(x,z,70,SEED+5,3)*60)*pk;
+      if(live&&mt>.35)h+=sstep(.35,.9,mt)*Math.pow(ridged(x,z,150,SEED+96),2)*42*pk;} /* S2682 — a range's crest broken into crags and summits, the Mark's highest */
     for(const p of PEAKS){
       const d=Math.hypot(x-p.x,z-p.z);if(d>=p.r)continue;
       const t=1-d/p.r;const prof=Math.pow(t,1.35);
       h+=p.h*prof*(.7+.6*ridged(x,z,45,SEED+8))+p.h*.08*t;
     }
-    const sea=seaAt(x,z);
+    let sea=seaAt(x,z);
+    /* S2682 — a cliff coast: the land stands its height to the brink, then the sea takes it in a short band (sea .3 to .55, not 0 to 1) */
+    if(sea<.6){const ck=cliffAt(x,z);if(ck>0){h+=ck*reliefK(x,z,2)*(1-sstep(.3,.55,sea))*(.75+.5*fbm(x,z,90,SEED+97,2));sea+=(sstep(.3,.55,sea)-sea)*Math.min(1,ck*1.6);}}
     if(sea>0)h=h*(1-sea)+(-8)*sea;
     if(sea<.02&&h<1.6)h=1.6-.6*(1-Math.exp((h-1.6)/1.5));
     return h;
@@ -812,8 +894,8 @@
       // mesh by tree density so the treeline pop-in is less abrupt.
       const dens=regionScalar(x,z,'density');
       // S521 — the autumn wood's canopy russet from afar, as its trees are near
-      if(h>1.6&&h<30){if(dominantRegion(x,z).r.biome==='autumn')_tmpC2.setRGB(.5,.26,.1);else _tmpC2.setRGB(.22,.36,.18);c.lerp(_tmpC2,Math.min(.75,dens*.9));}
-      c.multiplyScalar(.72); // match the near tiles, whose detail texture averages ~0.72
+      if(!LAND.on){if(h>1.6&&h<30){if(dominantRegion(x,z).r.biome==='autumn')_tmpC2.setRGB(.5,.26,.1);else _tmpC2.setRGB(.22,.36,.18);c.lerp(_tmpC2,Math.min(.75,dens*.9));}
+        c.multiplyScalar(.72);} // match the near tiles, whose detail texture averages ~0.72 (S2682: the new look's far land is the near land's material, which paints the woods and takes its own albedo)
       colArr[i*3]=c.r;colArr[i*3+1]=c.g;colArr[i*3+2]=c.b;
     }
     /* S2190 — a place cut into the world's ground (the cove, the falls, the ice mouth) sinks its 4 m points under its floor (offroadStamps).
@@ -825,7 +907,12 @@
     farSinkHoles(geo,cell.ox,cell.oz,SIZE/n);
     geo.setAttribute('color',new THREE.BufferAttribute(colArr,3));
     geo.computeVertexNormals();
-    const fm=new THREE.Mesh(geo,VC_MAT);fm.userData.far={ox:cell.ox,oz:cell.oz,st:SIZE/n};
+    /* S2682 — on the new look the far land is drawn by the near land's material (landTerrainMat: the sward's patches, the fields and
+       hedgerows, rock on the scarps and crags, the woods read from afar), its mask laid as a chunk's is, so the ridges on the skyline
+       are the same country as the ground at your feet and not a flat lit sheet. Drawn after the near tiles (renderOrder 1), so the
+       part under them fails the depth test before its shader runs; its own copy of the material (LAND.farMat) sinks under the loaded ring */
+    const landFar=LAND.on&&terrainMat===LAND.mat&&LAND.mat&&(LAND.farMat||landTerrainMat(true));if(landFar)landMask(geo,cell.ox+SIZE/2-CHUNK/2,cell.oz+SIZE/2-CHUNK/2);
+    const fm=new THREE.Mesh(geo,landFar||VC_MAT);fm.userData.far={ox:cell.ox,oz:cell.oz,st:SIZE/n};if(landFar)fm.renderOrder=1;
     fm.position.set(cell.ox+SIZE/2,0,cell.oz+SIZE/2);
     sc.add(fm);return fm;
   }

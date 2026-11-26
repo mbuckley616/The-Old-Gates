@@ -1,0 +1,66 @@
+{
+ "gatevalley": {
+  "x": 16550,
+  "z": 20350,
+  "yaw": 1.833,
+  "h": 5.2,
+  "cell": [
+   6,
+   8
+  ],
+  "nat": "gatelands",
+  "dom": "forest",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 313744
+ },
+ "markupland": {
+  "x": 6106,
+  "z": 8900,
+  "yaw": 4.451,
+  "h": 4,
+  "cell": [
+   2,
+   3
+  ],
+  "nat": "mark",
+  "dom": "tundra",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 28652
+ },
+ "markvale": {
+  "x": 4600,
+  "z": 6050,
+  "yaw": 3.142,
+  "h": 83.8,
+  "cell": [
+   1,
+   2
+  ],
+  "nat": "mark",
+  "dom": "moor",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 45749
+ },
+ "aurinland": {
+  "x": 20350,
+  "z": 7000,
+  "yaw": 0.262,
+  "h": 2.3,
+  "cell": [
+   8,
+   2
+  ],
+  "nat": "aurenne",
+  "dom": "dunes",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 52236
+ }
+}

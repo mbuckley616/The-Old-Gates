@@ -1,0 +1,82 @@
+{
+ "gatebasin": {
+  "x": 15348,
+  "z": 22300,
+  "yaw": 0,
+  "h": 3.7,
+  "cell": [
+   6,
+   9
+  ],
+  "nat": "gatelands",
+  "dom": "coast",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 146879
+ },
+ "gatevalley": {
+  "x": 16550,
+  "z": 20350,
+  "yaw": 1.833,
+  "h": 59.9,
+  "cell": [
+   6,
+   8
+  ],
+  "nat": "gatelands",
+  "dom": "forest",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 97869
+ },
+ "gatenorth": {
+  "x": 15212.5,
+  "z": 17545.4,
+  "yaw": 1.134,
+  "h": 75.2,
+  "cell": [
+   6,
+   7
+  ],
+  "nat": "gatelands",
+  "dom": "autumn",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 35350
+ },
+ "markvale": {
+  "x": 4600,
+  "z": 6050,
+  "yaw": 3.142,
+  "h": 243.5,
+  "cell": [
+   1,
+   2
+  ],
+  "nat": "mark",
+  "dom": "moor",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 24081
+ },
+ "aurcoast": {
+  "x": 25510,
+  "z": 8400,
+  "yaw": -2.071,
+  "h": 44.8,
+  "cell": [
+   10,
+   3
+  ],
+  "nat": "aurenne",
+  "dom": "wasteland",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 28894
+ }
+}

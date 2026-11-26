@@ -36,16 +36,24 @@ function landMask(geo,ox,oz){
     let field=0,wood=0;const ws=regionWeights(x,z);
     for(const e of ws){if(e.w<=0)continue;field+=e.w*(LAND_FIELD_BIOMES[e.r.biome]||0);wood+=e.w*(e.r.density||0)*(e.r.trees&&e.r.trees!=='dead'?1:.3);}
     const away=sstep(ROAD_BLEND,ROAD_BLEND+14,rd)*(st&&!st.natural?0:1)*sstep(2.5,7,h);
-    m.setXYZ(i,st&&!st.natural?1:0,Math.min(1,wood*1.2)*sstep(1.6,4,h),Math.min(1,field)*away);}
+    /* S2682 — the woods read from afar only where the scatter stands trees: under its tree line (30 to 44 m) and off the steep */
+    const ny=geo.attributes.normal?geo.attributes.normal.getY(i):1;
+    m.setXYZ(i,st&&!st.natural?1:0,Math.min(1,wood*1.2)*sstep(1.6,4,h)*(1-sstep(30,44,h))*sstep(.55,.8,ny),Math.min(1,field)*away);}
   m.needsUpdate=true;
 }
-function landTerrainMat(){
+/* S2682 — far: the far sheet's own copy. Its points are 16 or 32 m apart and 3 m under the land, so where the land now folds between
+   them (a gully, the foot of a scarp) the sheet stood out of the near ground in pale disks. Within the loaded chunks, which cover it
+   anyway, the far sheet is let down 30 m in the vertex shader (the ring's radius read live, so WORLD.setRadius moves it); a chunk not
+   yet built still shows the land there, only lower. Its own program (the cache key), the near one's uniforms */
+function landTerrainMat(far){
   const m=new THREE.MeshLambertMaterial({vertexColors:true});
   m.onBeforeCompile=s=>{
     s.uniforms.uLandK=LAND.k;s.uniforms.uLandHoles=LAND_HOLES;
-    s.vertexShader='attribute vec3 aMask;\nvarying vec3 vLW;\nvarying vec3 vLN;\nvarying vec3 vLMask;\n'+s.vertexShader.replace('#include <begin_vertex>',
-      '#include <begin_vertex>\n vLW = (modelMatrix * vec4(position, 1.)).xyz; vLN = normalize(mat3(modelMatrix) * normal); vLMask = aMask;');
+    if(far)s.uniforms.uLandFar={get value(){return RADIUS*CHUNK;}};
+    s.vertexShader='attribute vec3 aMask;\nvarying vec3 vLW;\nvarying vec3 vLN;\nvarying vec3 vLMask;\n'+(far?'uniform float uLandFar;\n':'')+s.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\n vLW = (modelMatrix * vec4(position, 1.)).xyz; vLN = normalize(mat3(modelMatrix) * normal); vLMask = aMask;'+(far?'\n transformed.y -= 30. * (1. - smoothstep(uLandFar - 36., uLandFar, length(vLW.xz - cameraPosition.xz)));':''));
     s.fragmentShader='uniform vec4 uLandK;\nuniform vec4 uLandHoles[6];\nvarying vec3 vLW;\nvarying vec3 vLN;\nvarying vec3 vLMask;\n'+LAND_NOISE+`
+float lfb2(vec2 p){ return (lvn(p) * .667 + lvn(p * 2.03 + 17.1) * .333); } /* S2682 — two octaves, for the broad patches */
 vec3 landField(float r){ vec3 c = vec3(.40,.52,.20);
   if (r < .16) c = vec3(.66,.56,.24); else if (r < .27) c = vec3(.74,.64,.32); else if (r < .42) c = vec3(.46,.60,.20);
   else if (r < .56) c = vec3(.32,.48,.16); else if (r < .64) c = vec3(.56,.48,.28); else if (r < .80) c = vec3(.42,.58,.22); return c; }
@@ -58,6 +66,24 @@ vec3 landCol(vec3 base){
   vec3 c = base * (.84 + .26 * n1);
   c = mix(c, c * vec3(1.12, 1.05, .72), smoothstep(.55, .8, n2) * .45 * green);
   c *= .9 + .2 * n3;
+  // S2682 — the sward painted, not mown (P10b's valleys): broad patches of warm sunlit grass, cool lush grass and dun, laid on in
+  // strokes. The strokes run one way a patch (a field on a 90 m wave turns them), long and soft, coarser with distance as a
+  // painter's are; the drier olive and bracken on the slopes, the lusher green on the valley floors, heather browns on the
+  // high ground, and the sheep's tracks along the contours of a hillside.
+  float m1 = lfb2(p / 170. + 3.1), m2 = lfb2(p / 64. + 8.7), m3 = lfb2(p / 23. + 1.9);
+  c = mix(c, c * vec3(1.13, 1.06, .70), smoothstep(.47, .74, m1) * .6 * green);
+  c = mix(c, c * vec3(.80, .98, .90), smoothstep(.5, .26, m1) * .55 * green);
+  c = mix(c, c * vec3(1.10, .93, .68), smoothstep(.6, .78, m2) * smoothstep(.4, .6, m3) * .5 * green);
+  float ang = lfb2(p / 90. + 4.4) * 6.2832; vec2 sd = vec2(cos(ang), sin(ang));
+  float bs = 1. + dist / 90.;
+  float stroke = lvn(vec2(dot(p, sd) / (5.5 * bs), dot(p, vec2(-sd.y, sd.x)) / (1.4 * bs)) + m3 * 3.);
+  c *= mix(1., .9 + .2 * stroke, green * smoothstep(3., 12., dist));
+  float hgt = vLW.y;
+  c = mix(c, c * vec3(1.08, .96, .66), smoothstep(.1, .3, slope) * (.35 + .3 * m2) * green);
+  c = mix(c, c * vec3(.84, 1.06, .82), (1. - smoothstep(3., 22., hgt)) * (1. - smoothstep(.04, .14, slope)) * .3 * green);
+  c = mix(c, c * vec3(.98, .74, .66), smoothstep(34., 70., hgt + (m2 - .5) * 30.) * smoothstep(.45, .7, m3) * .45 * green);
+  float tk = abs(fract(hgt / 1.7 + n1 * .9) - .5);
+  c = mix(c, c * vec3(.9, .84, .66), (1. - smoothstep(.025, .07, tk)) * smoothstep(.12, .2, slope) * (1. - smoothstep(.42, .55, slope)) * (1. - smoothstep(40., 140., dist)) * .55 * green);
   // the open country: a patchwork of fields with hedgerows between, from the middle distance on
   vec2 fp = p / vec2(74., 56.) + vec2(lfb(p / 160.), lfb(p / 160. + 9.)) * 1.4; vec2 ip = floor(fp), ff = fract(fp); float d1 = 9., d2 = 9.; vec2 id = vec2(0.);
   for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) { vec2 o = vec2(float(x), float(y)); vec2 r = o + vec2(lh12(ip + o), lh12(ip + o + 7.3)) - ff; float d = dot(r, r);
@@ -73,9 +99,16 @@ vec3 landCol(vec3 base){
   // woods seen from afar, where the near trees end
   c = mix(c, vec3(.11,.22,.08) * (.75 + .5 * n2), vLMask.y * smoothstep(120., 300., dist) * .85);
   // rock on the steep: strata and cracks over groundColor's own rock
-  float rk = smoothstep(.32, .55, slope + (n1 - .5) * .2);
-  vec3 rock = mix(vec3(.40,.38,.34), vec3(.56,.53,.47), n2) * (.86 + .22 * sin(vLW.y * 1.9 + n1 * 6.));
-  c = mix(c, mix(rock, base * 1.1, smoothstep(.75, .9, lum)), rk);
+  // S2682: the rock breaks through the turf in crags on a hillside (a 16 m field, likelier the steeper), not only on the steep;
+  // joints and streaks down its faces, lichen on it and moss on its ledges; and a cliff too steep to hold snow shows its rock
+  float crag = lfb2(p / 16. + 2.3);
+  float rk = max(smoothstep(.3, .52, slope + (n1 - .5) * .22), smoothstep(.76, .86, crag + slope * 1.2) * smoothstep(.1, .2, slope)) * (.82 + .18 * smoothstep(.4, .6, slope));
+  vec3 rock = mix(vec3(.46,.42,.36), vec3(.66,.60,.50), n2) * mix(vec3(1.), vec3(1.06, .98, .86), smoothstep(.4, .7, n1));
+  rock *= .93 + .09 * sin(vLW.y * 1.3 + n1 * 9. + lvn(p / 7.) * 5.);
+  rock *= .84 + .24 * lvn(vec2(dot(p, vec2(.707, .707)) / 2.2, vLW.y * .5));
+  rock = mix(rock, vec3(.62, .62, .44), smoothstep(.7, .86, lvn(p / 2.6 + 5.)) * .35);
+  rock = mix(rock, vec3(.28, .36, .16), smoothstep(.55, .75, m3) * (1. - smoothstep(.28, .55, slope)) * .45);
+  c = mix(c, mix(rock, base * 1.1, smoothstep(.75, .9, lum) * (1. - smoothstep(.42, .6, slope))), rk);
   // trodden ground in a site's stamp
   c = mix(c, mix(c, vec3(.48,.43,.33) * (.85 + .3 * n3), .35), vLMask.x * smoothstep(.45, .7, n2) * green);
   // the sea and river bed seen through the water: shallows bright, depth into teal
@@ -85,9 +118,9 @@ vec3 landCol(vec3 base){
   // snow and the pale ground keep their brightness; the green and brown country takes the albedo cut
   return c * mix(uLandK.x, .82, smoothstep(.5, .78, lum)); }
 `+s.fragmentShader.replace('#include <clipping_planes_fragment>','#include <clipping_planes_fragment>\n for (int i = 0; i < 6; i++) { vec4 h = uLandHoles[i]; if (h.w > .5 && length(vLW.xz - h.xy) < h.z) discard; }').replace('#include <color_fragment>','#include <color_fragment>\n diffuseColor.rgb = landCol(vColor);');
-    LAND.terrainShader=s;};
-  m.customProgramCacheKey=()=>'og-land-terrain';
-  LAND.mat=m;return m;
+    if(!far)LAND.terrainShader=s;};
+  m.customProgramCacheKey=()=>far?'og-land-far':'og-land-terrain';
+  if(far)LAND.farMat=m;else LAND.mat=m;return m;
 }
 // ── the sky: a gradient dome, the sun's glow and the haze at its foot ────────────────────────────────────────────
 function landSky(){

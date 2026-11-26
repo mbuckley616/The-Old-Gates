@@ -1,0 +1,146 @@
+{
+ "start": {
+  "x": 13100,
+  "z": 25450,
+  "yaw": 0,
+  "h": 4.4,
+  "cell": [
+   5,
+   10
+  ],
+  "nat": "gatelands",
+  "dom": "plains",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 143614
+ },
+ "gatebasin": {
+  "x": 15348,
+  "z": 22300,
+  "yaw": 0,
+  "h": 3.7,
+  "cell": [
+   6,
+   9
+  ],
+  "nat": "gatelands",
+  "dom": "coast",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 114966
+ },
+ "gatevalley": {
+  "x": 16550,
+  "z": 20350,
+  "yaw": 1.833,
+  "h": 59.9,
+  "cell": [
+   6,
+   8
+  ],
+  "nat": "gatelands",
+  "dom": "forest",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 152521
+ },
+ "gatenorth": {
+  "x": 15212.5,
+  "z": 17545.4,
+  "yaw": 1.134,
+  "h": 75.2,
+  "cell": [
+   6,
+   7
+  ],
+  "nat": "gatelands",
+  "dom": "autumn",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 25531
+ },
+ "markupland": {
+  "x": 6106,
+  "z": 8900,
+  "yaw": 4.451,
+  "h": 62.8,
+  "cell": [
+   2,
+   3
+  ],
+  "nat": "mark",
+  "dom": "tundra",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 34807
+ },
+ "markvale": {
+  "x": 4600,
+  "z": 6050,
+  "yaw": 3.142,
+  "h": 243.5,
+  "cell": [
+   1,
+   2
+  ],
+  "nat": "mark",
+  "dom": "moor",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 24562
+ },
+ "aurcoast": {
+  "x": 25510,
+  "z": 8400,
+  "yaw": -2.071,
+  "h": 44.8,
+  "cell": [
+   10,
+   3
+  ],
+  "nat": "aurenne",
+  "dom": "wasteland",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 42722
+ },
+ "aurinland": {
+  "x": 20350,
+  "z": 7000,
+  "yaw": 0.262,
+  "h": 67.8,
+  "cell": [
+   8,
+   2
+  ],
+  "nat": "aurenne",
+  "dom": "dunes",
+  "chunks": 81,
+  "calls": 0,
+  "tris": 0,
+  "ms": 26195
+ },
+ "hill": {
+  "x": 13022.4,
+  "z": 24853.6,
+  "yaw": 3.142,
+  "h": 181.7,
+  "cell": [
+   5,
+   10
+  ],
+  "nat": "gatelands",
+  "dom": "forest",
+  "chunks": 90,
+  "calls": 0,
+  "tris": 0,
+  "ms": 76766
+ }
+}
