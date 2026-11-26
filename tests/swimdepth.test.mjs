@@ -16,12 +16,14 @@ await page.evaluate(() => {
 });
 
 // a shore near the start: a ray that runs from dry land (0.5 up) down to 3 m of water within 150 m, falling all the way
+// (S2670: and nothing solid on it: a town's dressing put a garden wall on the first such ray, and the walk stopped on land)
+await page.evaluate(() => { for (let i = 0; i < 90; i++) WORLD.tick(1 / 60, performance.now()); const t0 = performance.now(); while (JOBS.length && performance.now() - t0 < 60000) runJobs(); if (typeof tdrDrain === 'function') tdrDrain(); }); // the places near the start built and dressed before their ground is searched
 const shore = await page.evaluate(() => {
   const H = (x, z) => WORLD.worldH(x, z);
   for (let r = 0; r < 4000; r += 40) for (let a = 0; a < 6.28; a += .2) {
     const x0 = px + Math.cos(a) * r, z0 = pz + Math.sin(a) * r; if (H(x0, z0) < .5) continue;
     for (let b = 0; b < 6.28; b += .26) { const dx = Math.cos(b), dz = Math.sin(b); let prev = H(x0, z0), ok = true, d = 0;
-      for (d = 1; d <= 150; d++) { const h = H(x0 + dx * d, z0 + dz * d); if (h > prev + .02) { ok = false; break; } prev = h; if (h < -3) break; }
+      for (d = 1; d <= 150; d++) { const h = H(x0 + dx * d, z0 + dz * d); if (h > prev + .02 || WORLD.solidAt(x0 + dx * d, z0 + dz * d)) { ok = false; break; } prev = h; if (h < -3) break; }
       if (ok && prev < -3) return { x0, z0, dx, dz, len: d }; } }
   return null; });
 check('a shelving shore to walk into', !!shore, shore);
