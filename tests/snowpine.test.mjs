@@ -7,7 +7,7 @@ const g = await boot(); const { page } = g;
 const r = await page.evaluate(() => {
   if (!PROTO.oak) buildProtos();
   const G = PROTO.snowpine, p = G.attributes.position, c = G.attributes.color;
-  const TIERS = [[3.4, 4.2, 6.6], [2.7, 3.9, 9.0], [1.8, 3.6, 11.2]]; // radius, height, middle of the three green tiers
+  const TIERS = G.userData.tiers; // radius, height, middle of each green tier (S2709: five, read from the tree itself)
   const env = y => { let m = 0; for (const [R, H, yc] of TIERS) { const top = yc + H / 2, bot = yc - H / 2; if (y >= bot - .05 && y <= top + .1) m = Math.max(m, R * Math.max(0, top - y) / H); } return m; };
   let snow = 0, worst = 0, out = 0; const flat = [];
   for (let i = 0; i < p.count; i++) { if (c.getX(i) < .8 || c.getY(i) < .8 || c.getZ(i) < .8) continue; snow++;
