@@ -1,6 +1,6 @@
 // The sheath and Draw cut (Blade 25; Session 1080, Michael's A on DECISION #399 and his note: "a 'sheath' button where you can
-// sheath your equipped weapon. Torches or shields in your off hand stay equipped and in hand"). H sheathes and draws; a drawn
-// weapon is sheathed on its own after 5 s with no swing and no alert foe within 14 m; sheathed, the first-person hand is empty and
+// sheath your equipped weapon. Torches or shields in your off hand stay equipped and in hand"). H sheathes and draws (since
+// Session 2659 only H: the sheathe on its own after 5 s at peace is gone, Michael's playtest of 25 Nov); sheathed, the first-person hand is empty and
 // the shield stays; a swing from the sheath draws as it swings, and with Draw cut it drains ×2 posture.
 import { boot, check } from './lib/game.mjs';
 const g = await boot(); const { page } = g;
@@ -16,14 +16,11 @@ const r = await page.evaluate(() => {
   // H: sheathe, then draw
   toggleSheath(); out.afterH = { sheathed: SHEATHED, meshes: meshes(), weapon: EQ.weapon === SWORD, offhand: EQ.offhand === SHIELD };
   toggleSheath(); out.afterH2 = { sheathed: SHEATHED, meshes: meshes() };
-  // on its own: no foe about, 5 s after the last swing
-  ZE = []; _lastSwingG = playClockS - 4.9; tickSheath(); out.at49 = SHEATHED; _lastSwingG = playClockS - 5.1; tickSheath(); out.at51 = SHEATHED; drawWeapon();
-  // not with an alert foe within 14 m
+  // S2659: never on its own: no foe about, 5.1 s and 60 s after the last swing, the weapon stays drawn (Michael's playtest, 25 Nov)
+  ZE = []; _lastSwingG = playClockS - 5.1; tickSheath(); out.at51 = SHEATHED; _lastSwingG = playClockS - 60; tickSheath(); out.at60 = SHEATHED; drawWeapon();
   const mk = (d) => { const e = buildZoneEnemy(WORLD.scene, [], px + fwdX * d, pz + fwdZ * d, 'Bandit', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
     e.locked = false; e.alert = true; e.spd = 0; e.atkCd = 1e9; e.rng = null; e.hp = e.maxHp = 1000; e.def = 0; e.resist = {};
     e.combatYaw = Math.atan2(px - e.x, pz - e.z); if (typeof e.posture !== 'number') initPosture(e); e.posture = e.maxPosture = 1000; return e; };
-  const near = mk(10); ZE = [near]; _lastSwingG = playClockS - 6; tickSheath(); out.foeNear = SHEATHED; WORLD.scene.remove(near.mesh);
-  const far = mk(16); ZE = [far]; tickSheath(); out.foeFar = SHEATHED; WORLD.scene.remove(far.mesh); drawWeapon();
   // a new weapon in hand is drawn
   sheathWeapon(); EQ.weapon = { ...SWORD, name: 'Other Sword' }; tickSheath(); out.swapped = SHEATHED; EQ.weapon = SWORD;
   // Draw cut: the posture the swing drains, drawn and from the sheath, at Blade 24 and 25
@@ -45,8 +42,7 @@ const r = await page.evaluate(() => {
 console.log(JSON.stringify(r));
 check(`H sheathes: the hand is empty (${r.afterH.meshes} meshes, as the fists' ${r.fistMeshes}; the sword's ${r.swordMeshes}), the sword and the shield still equipped`, r.afterH.sheathed && r.afterH.meshes === r.fistMeshes && r.swordMeshes !== r.fistMeshes && r.afterH.weapon && r.afterH.offhand, r);
 check('H again draws it', !r.afterH2.sheathed && r.afterH2.meshes === r.swordMeshes, r.afterH2);
-check('on its own after 5 s with no swing and no foe about (not at 4.9 s)', !r.at49 && r.at51, r);
-check('not while an alert foe is within 14 m (10 m); one at 16 m does not hold it', !r.foeNear && r.foeFar, r);
+check('never sheathed on its own: still drawn 5.1 s and 60 s after the last swing with no foe about', !r.at51 && !r.at60, r);
 check('a new weapon in hand is drawn', !r.swapped, r);
 check('a swing from the sheath draws as it swings, and is the draw cut', r.d25.wasDrawn && r.d25.dc && !r.d25drawn.dc, r);
 check(`Draw cut (Blade 25): the swing from the sheath drains ×2 posture (${r.d25.d} against ${r.d25drawn.d} drawn and ${r.d24.d} at Blade 24)`, r.d24.d > 0 && r.d24.d === r.d25drawn.d && Math.abs(r.d25.d / r.d25drawn.d - 2) < .01, r);
@@ -230,7 +226,7 @@ const au = await page.evaluate(() => { const out = { err: null }; const eq0 = { 
   out.mace = one(W('mace', { wType: 'blunt' })); out.staff = one(W('staff', { wType: 'blunt', implement: 'staff', twoHand: true }));
   const keepZ = ZE; ZE = []; EQ.weapon = W('sword'); SHEATHED = false; SWING = null;
   _lastSwingG = playClockS - 5.1; out.idle = hear(() => tickSheath()); out.idle.sheathed = SHEATHED;
-  out.swing = hear(() => { beginSwing(false); }); out.swing.drawn = !SHEATHED; swingCancel();
+  sheathWeapon(); out.swing = hear(() => { beginSwing(false); }); /* S2659: sheathed by H now, not by the idle */ out.swing.drawn = !SHEATHED; swingCancel();
   sheathWeapon(); out.swap = hear(() => { EQ.weapon = W('sword', { name: 'Other Sword' }); tickSheath(); }); out.swap.sheathed = SHEATHED;
   ZE = keepZ; if (AX) { AX.createBufferSource = cs; AX.createOscillator = co; } Object.assign(EQ, eq0); SHEATHED = false; buildViewmodel(); return out; });
 console.log(JSON.stringify(au));
@@ -239,7 +235,7 @@ check(`the draw and the sheathe are heard by how the thing is worn: sword ${au.s
   && au.mace.sh === '1:sheathe/haft' && au.mace.dr === '1:draw/haft' && au.staff.sh === '1:sheathe/wood' && au.staff.dr === '1:draw/wood', au);
 check(`each sounds on the audio clock (nodes made: sword ${au.sword.nodes}, mace ${au.mace.nodes}, staff ${au.staff.nodes})`,
   au.ax && au.vol > 0 && [au.sword, au.dagger, au.claymore, au.mace, au.staff].every(o => o.nodes[0] >= 2 && o.nodes[1] >= 2), au);
-check('the idle sheathe and a swing from the sheath sound; a new weapon taken in hand while sheathed does not',
-  au.idle.calls === 1 && au.idle.sheathed && au.idle.last.kind === 'sheathe' && au.swing.calls === 1 && au.swing.drawn && au.swing.last.kind === 'draw'
+check('idle, nothing is sheathed or heard; a swing from the sheath sounds; a new weapon taken in hand while sheathed does not',
+  au.idle.calls === 0 && !au.idle.sheathed && au.swing.calls === 1 && au.swing.drawn && au.swing.last.kind === 'draw'
   && au.swap.calls === 0 && !au.swap.sheathed, au);
 await g.close();

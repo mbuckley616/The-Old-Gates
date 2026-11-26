@@ -381,11 +381,12 @@
   // room's programs). Its spot is where you stand to distil.
   const HOMEFIT_LAY={bench:homeBenchLay,oven:h=>homeClayLay(h,'oven'),kiln:h=>homeClayLay(h,'kiln'),still:h=>homeClayLay(h,'still')};
   function homeFitsDress(h){if(window.OG_LOOK!=='new'||!h||typeof homeMine!=='function'||!homeMine(h))return;
-    try{homeYardRacks(h);}catch(e){console.warn('home racks',e);}
-    if(typeof isInterior!=='function'||!isInterior()||currentHouse!==h||!interiorScene)return;
-    for(const o of interiorScene.children.filter(o=>o.userData&&o.userData.homeFit))interiorScene.remove(o);
-    for(const A of [INT_SOL,FOOTHOLDS])if(A)for(let i=A.length-1;i>=0;i--)if(A[i].homeFit)A.splice(i,1);
-    h._fits={};for(const k of Object.keys(HOMEFIT_LAY))if(homeFitted(h,k)){try{HOMEFIT_LAY[k](h);}catch(e){console.warn('home fit '+k,e);}}}
+    if(typeof isInterior==='function'&&isInterior()&&currentHouse===h&&interiorScene){
+      for(const o of interiorScene.children.filter(o=>o.userData&&o.userData.homeFit))interiorScene.remove(o);
+      for(const A of [INT_SOL,FOOTHOLDS])if(A)for(let i=A.length-1;i>=0;i--)if(A[i].homeFit)A.splice(i,1);
+      h._fits={};for(const k of Object.keys(HOMEFIT_LAY))if(homeFitted(h,k)){try{HOMEFIT_LAY[k](h);}catch(e){console.warn('home fit '+k,e);}}
+      homeFitsYardSet(h,Object.keys(HOMEFIT_LAY).filter(k=>homeFitted(h,k)&&!h._fits[k]));} /* S2680 — what the room could not hold goes to the yard's lean-to */
+    try{homeYardRacks(h);}catch(e){console.warn('home racks',e);}}
   // ── S2237 — the adventurer's kit where it is sold (#1504 B, the look's part): in a goods shop's room (its bake's userData.goodsKit, set by
   // buildInteriorFor as survivalFor stocks it) the rods' rack stands by a whole wall, and at a harbour's the net hangs on another; the
   // glass lies on the counter in the room's own bake. Found as the house's fittings are (homeWallSpot, homeWallWhole's rays up to
@@ -515,8 +516,64 @@
     const n=Math.max(2,Math.ceil((w-.04)/.1)),us=[];for(let k=0;k<=n;k++)us.push(-w/2+.02+(w-.04)*k/n); /* S2222 — every 0.1 m across its width, not its middle and ends only: Maeve's bench stood on 1.1 m of wall between two sashes and its rack hung over both (the critic, s1572) */
     for(const u of us)for(const y of ys){HF_O.set(x+ax*u+nx*.3,y,z+az*u+nz*.3);HF_RAY.set(HF_O,HF_D);HF_RAY.far=.45;if(!HF_RAY.intersectObjects(ms,false).length)return false;}
     return true;}
+  // ── S2680 — the yard's lean-to workshop (Michael's A on #1966; PKIT.props.leanto, 38-kit.js, S2679). A fitting your room has no wall
+  // for (homeFitsDress finds none: no `h._fits[k]`) stands under a lean-to against the house in its yard, and you work it from its
+  // front there (`h._yardFits[k]`, read by 50's homeYardAt at HOME_YARD_REACH). Which ones the room could not hold is learned when the
+  // room is dressed, and kept with the house's fittings (homeFitsYardSet: `worldState.fittings[id].yard`, saved with them), so the
+  // yard shows them from the next load on without your going in. The lean-to's place: the house's back wall first (its middle, then
+  // slid 0.5 and 1 m either way), then each gable end, at the first spot whose roof and fittings are clear of the town's solids (not
+  // the house's own), of every door by 1.5 m, of the town's walks, a road and the sea, on ground that falls under 0.8 m across it.
+  // Laid before the yard's racks and garden, so they keep off it. Its fittings in a row, 0.3 m apart, the largest sizes that fit the
+  // wall (the firewood at the screened end left out first, then the small bench, oven, kiln and still); the middle posts in the gaps.
+  // New look only; never on a house that is not yours. -> [{g, house, h, kinds, x, z}] (S.leanTos)
+  const LEANTO={D:2.2,GAP:.3,ORDER:['bench','oven','kiln','still']};
+  function homeFitsYardSet(h,kinds){if(!h||typeof homeFitRec!=='function')return false;const r=homeFitRec(h),v=LEANTO.ORDER.filter(k=>kinds.includes(k));
+    if(JSON.stringify(r.yard||[])===JSON.stringify(v))return false;r.yard=v;return true;}
+  function leanToFit(k,isle,small){return k==='bench'?PKIT.props.bench({L:small?1.1:1.5}):k==='still'?PKIT.props.still(isle,{small}):PKIT.props.clay(k,isle,{small});}
+  function townLeanTos(site,houses,sol,group,walks){if(window.OG_LOOK!=='new'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.leanto||typeof homeMine!=='function'||typeof homeFitted!=='function')return [];
+    const out=[];for(const h of houses){if(!homeMine(h)||!h._lot)continue;const r=worldState.fittings&&worldState.fittings[h.id];if(!r||!Array.isArray(r.yard))continue;
+      const kinds=LEANTO.ORDER.filter(k=>r.yard.includes(k)&&homeFitted(h,k));if(!kinds.length)continue;
+      try{const L=leanToStand(site,h,kinds,sol,group,walks);if(L)out.push(L);}catch(e){console.warn('lean-to',e);}}
+    return out;}
+  function leanToStand(site,h,kinds,sol,group,walks){const lot=h._lot,tx=lot.tx,tz=lot.tz,w=lot.w||6,d=lot.d||6;let isle='gatelands';try{isle=nationAt(h.doorX,h.doorZ)||isle;}catch(e){}
+    const hit=(x,z,R)=>sol.some(s=>{if(s.hid===h.id)return false;const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
+    const doors=typeof yardDoors==='function'?yardDoors(site,[h]):[],WK=typeof yardWalks==='function'?yardWalks(site,walks):{near:()=>false};
+    // the walls: [middle x, z, outward normal x, z, length]; the back first
+    const walls=[[lot.x-tx*d/2,lot.z-tz*d/2,-tx,-tz,w],[lot.x-tz*w/2,lot.z+tx*w/2,-tz,tx,d],[lot.x+tz*w/2,lot.z-tx*w/2,tz,-tx,d]];
+    // the row's sizes, largest first: with the firewood, without it, the small fittings with it, without it
+    const widths={};for(const k of kinds)for(const sm of [false,true]){const P=leanToFit(k,isle,sm);widths[k+(sm?':s':'')]={w:P.foot.x1-P.foot.x0,d:P.foot.z1-P.foot.z0};P.group.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
+    const span=sm=>kinds.reduce((a,k)=>a+widths[k+(sm?':s':'')].w,0)+LEANTO.GAP*(kinds.length-1);
+    const sizes=[[false,true],[false,false],[true,true],[true,false]].map(([sm,wood])=>({sm,wood,W:span(sm)+(wood?.97:.58)}));
+    for(const [ox,oz,nx,nz,len] of walls){const S0=sizes.find(z=>z.W<=len+.2)||sizes[3],W=S0.W,th=Math.atan2(nx,nz),c=Math.cos(th),s_=Math.sin(th);
+      for(const slide of [0,-.5,.5,-1,1]){if(Math.abs(slide)+W/2>len/2+.6)continue;
+        const at=(lx,lz)=>[ox+(lx+slide)*c+lz*s_,oz-(lx+slide)*s_+lz*c];let lo=1e9,hi=-1e9,ok=true;
+        for(let lx=-W/2-.15;lx<=W/2+.15+1e-6&&ok;lx+=.4)for(let lz=.3;lz<=LEANTO.D+.3+1e-6;lz+=.4){const [x,z]=at(lx,lz);
+          if(hit(x,z,.15)||doors.some(([a,b])=>Math.hypot(x-a,z-b)<1.5)||WK.near(x,z,.2)){ok=false;break;}const y=worldH(x,z);if(y<SEA_Y+.3){ok=false;break;}lo=Math.min(lo,y);hi=Math.max(hi,y);}
+        if(!ok||hi-lo>.8)continue;try{const [cx,cz]=at(0,LEANTO.D/2),ri=roadInfo(cx,cz);if(ri&&ri.d<3.5+LEANTO.D/2)continue;}catch(e){}
+        return leanToBuild(h,kinds,isle,S0,at,th,sol,group);}}
+    return null;}
+  function leanToBuild(h,kinds,isle,S0,at,th,sol,group){const [ox,oz]=at(0,0),y0=worldH(ox,oz),g=new THREE.Group();g.name='lean-to:'+h.id;g.position.set(ox,y0,oz);g.rotation.y=th;g.userData.noBake=true;
+    const ground=(lx,lz)=>{const [x,z]=at(lx,lz);return worldH(x,z)-y0;},c=Math.cos(th),s_=Math.sin(th),W=S0.W,parts=kinds.map(k=>({k,P:leanToFit(k,isle,S0.sm)}));
+    const x0=-W/2+.14+(S0.wood?.55:0)+.15,gaps=[];let x=x0;parts.forEach((p,i)=>{p.x=x;x+=p.P.foot.x1-p.P.foot.x0;if(i<parts.length-1)gaps.push(x+LEANTO.GAP/2);x+=LEANTO.GAP;});
+    const L=PKIT.props.leanto(isle,{W,D:LEANTO.D,ground,key:'leanto:'+h.id,gaps,wood:S0.wood,follow:true});for(const m of [...L.group.children])g.add(m);
+    const wp=(lx,lz)=>[ox+lx*c+lz*s_,oz-lx*s_+lz*c],spots={},sols=[];let tris=L.tris,draws=L.draws;
+    for(const {k,P,x:px0} of parts){const f=P.foot,fw=f.x1-f.x0,cx=px0+fw/2;let gy=-1e9;for(const u of [px0,cx,px0+fw])for(const v of [f.z0+.05,f.z1])gy=Math.max(gy,ground(u,v));
+      if(k!=='bench'){const mx=(f.x0+f.x1)/2;for(const ch of P.group.children)ch.position.x-=mx;P.group.position.set(cx,gy+.05,0);}else P.group.position.set(cx,gy+.05,0); /* the clay fittings' and the still's foot is off their middle (homeClayLay) */
+      P.group.userData.leanFit=k;P.group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});g.add(P.group);tris+=P.tris;draws+=P.draws;
+      const [sx,sz]=wp(cx,f.z1+.35);spots[k]={x:+sx.toFixed(3),z:+sz.toFixed(3)};const [bx,bz]=wp(cx,(f.z0+f.z1)/2);sols.push({cx:bx,cz:bz,rx:fw/2,rz:(f.z1-f.z0)/2,c,s:s_,bt:'leanto',house:h.id});}
+    for(const p of L.posts){const [bx,bz]=wp(p,L.front);sols.push({cx:bx,cz:bz,rx:.1,rz:.1,c,s:s_,bt:'leanto',house:h.id});}
+    {const [bx,bz]=wp(-W/2+.03,L.front/2);sols.push({cx:bx,cz:bz,rx:.06,rz:L.front/2,c,s:s_,bt:'leanto',house:h.id});} /* the screened end */
+    sol.push(...sols);group.add(g);h._yardFits=h._yardFits||{};Object.assign(h._yardFits,spots);
+    g.userData.leanto={island:isle,kinds:kinds.slice(),W:+W.toFixed(2),small:S0.sm,wood:S0.wood,tris:Math.round(tris),draws,posts:L.posts.length,spots};
+    const [mx,mz]=wp(0,LEANTO.D/2);return {g,house:h.id,h,kinds:kinds.slice(),x:mx,z:mz};}
+  function homeYardLeanTo(h,S){if(!Array.isArray(S.leanTos))S.leanTos=[];
+    for(let i=S.leanTos.length-1;i>=0;i--){const L=S.leanTos[i];if(L.house!==h.id)continue;S.group.remove(L.g);L.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});
+      if(h._yardFits)for(const k of L.kinds)delete h._yardFits[k];S.leanTos.splice(i,1);}
+    if(S.sol)for(let j=S.sol.length-1;j>=0;j--)if(S.sol[j].bt==='leanto'&&S.sol[j].house===h.id)S.sol.splice(j,1);
+    S.leanTos.push(...townLeanTos(S.site,[h],S.sol||[],S.group));}
   // the yard's racks for your own house: struck and stood again by what is fitted now (townRacks lays what curesOf gives, the fitted ones)
   function homeYardRacks(h){const S=typeof SETTLE!=='undefined'&&SETTLE.get(h.siteId);if(!S||!S.group||!Array.isArray(S.racks)||typeof townRacks!=='function')return;
+    try{homeYardLeanTo(h,S);}catch(e){console.warn('home lean-to',e);} /* S2680 — the lean-to first, so the racks and the garden keep off it */
     for(let i=S.racks.length-1;i>=0;i--){const R=S.racks[i];if(R.house!==h.id)continue;S.group.remove(R.g);R.g.traverse(o=>{if(o.geometry)o.geometry.dispose();});S.racks.splice(i,1);
       if(S.sol){const j=S.sol.findIndex(s=>s.bt==='rack'&&Math.abs(s.cx-R.x)<1e-6&&Math.abs(s.cz-R.z)<1e-6);if(j>=0)S.sol.splice(j,1);}}
     // S2165 — and its garden, struck with the racks and stood again after them, so the racks take the spots they took when the town was built

@@ -15,7 +15,7 @@ import { genome, build, pose } from './creatures.js';
 
 const HUD_SCENE = Q.get('scene') === 'hall' ? 'hall' : 'lane', HUD_FRAME = ['metal', 'carved', 'bare'].includes(Q.get('frame')) ? Q.get('frame') : 'metal';
 // catch what the slice renders with: its composer, and through it the renderer, the scene and the eye
-const HC = {}; { const c0 = EffectComposer.prototype.render; EffectComposer.prototype.render = function (dt) { HC.comp = this; HC.R = this.renderer; const rp = this.passes.find(p => p.scene && p.camera); if (rp) { HC.scene = rp.scene; HC.cam = rp.camera; } return c0.call(this, dt); }; }
+const HC = window.HUD_HC = {}; { const c0 = EffectComposer.prototype.render; EffectComposer.prototype.render = function (dt) { HC.comp = this; HC.R = this.renderer; const rp = this.passes.find(p => p.scene && p.camera); if (rp) { HC.scene = rp.scene; HC.cam = rp.camera; } return c0.call(this, dt); }; }
 
 // HUD-SCENE (bundle.py cuts here and puts the slice's own code in place of the import)
 // gate.js reads the shared query when it loads, which is now
@@ -68,7 +68,7 @@ function miniMap() {
   const cv = document.createElement('canvas'), N = 300, ch = R.domElement.height; cv.width = cv.height = N;
   cv.getContext('2d').drawImage(R.domElement, (R.domElement.width - ch) / 2, 0, ch, ch, 0, 0, N, N); return cv.toDataURL('image/jpeg', .9);
 }
-const MINI = miniMap();
+const MINI = window.HUD_MINI = miniMap();
 HC.comp.render(); // the eye's frame again, with the foe and over the minimap's
 
 // ── the layer ──
