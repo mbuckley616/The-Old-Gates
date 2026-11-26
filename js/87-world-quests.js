@@ -2535,12 +2535,13 @@ const giver=`${lord.title} ${lord.name}`;
     const idx=src.map((_,k)=>k);for(let k=idx.length-1;k>0;k--){const j=Math.floor(r()*(k+1));[idx[k],idx[j]]=[idx[j],idx[k]];}
     const n=Math.min(src.length,4+Math.floor(r()*4));return {trade,rows:idx.slice(0,n).sort((x,y)=>x-y).map(k=>Object.assign({},src[k]))};}
   function marketStallHouse(site,i,name){const w=marketWeek(),P=marketStallPack(site,i,w);return {id:site.id+':market:'+i,name:`${MSTALL_WARES[P.trade]}, ${site.name}’s market`,keeper:name,type:P.trade==='potion'?'potion':'misc',siteId:site.id,pack:P.rows,marketStall:true};}
-  /* S2696 — a stall's keeper takes a name nobody on the square or over a door in that town has (the critic, 26 Nov, s2007: Dunmore's six
-     stalls were Cathal, Róisín, Clodagh, Tadhg, Ruairí and Ruairí, and the potion stall's Cathal was not the apothecary's). Taken: the
-     town's keepers, its residents and the people standing in it (first names), and the stalls before this one. A name taken is redrawn
-     from the same seeded stream, up to 24 times. Each stall's draw is its own (site, week, index) stream, as before. */
+  /* S2696 — a stall's keeper takes a name no other stall has and nobody over a door in that town has (the critic, 26 Nov, s2007: Dunmore's
+     six stalls were Cathal, Róisín, Clodagh, Tadhg, Ruairí and Ruairí, and the potion stall's Cathal was not the apothecary's). Taken: the
+     town's keepers and its post-holders (S.npcs: the guards, the lord, the guild heads; S248's rule, that no two share a name), first
+     names, and the stalls before this one. Its residents are not counted: a people's bank holds 24 names and Dunmore's 44 householders
+     already repeat them. A name taken is redrawn from the same seeded stream, up to 24 times; each stall's is its own (site, week, index). */
   function marketTownNames(site){const S=SETTLE.get(site.id),T=new Set(),add=n=>{const f=String(n||'').split(' ')[0];if(f)T.add(f);};if(!S)return T;
-    for(const h of S.houses||[])add(h.keeper);for(const R of S.residents||[])add(R.def&&R.def.name);for(const n of S.npcs||[])if(n.def&&!n.def.marketStall)add(n.def.name);return T;}
+    for(const h of S.houses||[])add(h.keeper);for(const n of S.npcs||[])if(n.def&&!n.def.marketStall)add(n.def.name);return T;}
   function marketStallDraw(site,i,taken){const r=seededRng('marketkeeper',site.id+':'+marketWeek()+':'+i),[ci,cj]=cellOf(site.x,site.z),nat=nationOf(ci,cj),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
     if(!taken){taken=marketTownNames(site);for(let j=0;j<i;j++)taken.add(marketStallDraw(site,j,taken).nm);}
     let nm=pick(r,r()<.5?bank.m:(bank.f||bank.m));for(let k=0;k<24&&taken.has(nm);k++)nm=pick(r,r()<.5?bank.m:(bank.f||bank.m));
