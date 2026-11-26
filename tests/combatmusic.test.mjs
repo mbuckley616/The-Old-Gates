@@ -28,6 +28,21 @@ const r = await page.evaluate(async () => {
   EXPLORE.bus = saveBus; EXPLORE.verb = saveVerb; COMBAT.bus = null; COMBAT.log = null; H.zone = '';
   return { theme: theme1.id, bpm: theme1.bpm, bars: log1.length, drift: +drift.toExponential(2), l1: layersAt(4), l3: layersAt(7), l6: layersAt(10), rms1, rms2, themes };
 });
+// 3b. the death (Session 2692): a fight's cue is cut, and the sting's three hits sound and are gone by 6 s
+const death = await page.evaluate(async () => {
+  const H = devMusicHook, COMBAT = H.combat, EXPLORE = H.explore, SR = 22050, secs = 8; const saveBus = EXPLORE.bus, saveVerb = EXPLORE.verb;
+  const off = new OfflineAudioContext(1, SR * secs, SR); const mg = off.createGain(); mg.connect(off.destination); const p = H.swap(off, mg);
+  EXPLORE.bus = null; EXPLORE.verb = null; COMBAT.bus = null; let log = null, zone = null, bus = null;
+  try { H.zone = ''; COMBAT.heat = 6; startMusic('combat'); if (COMBAT.timer) { clearTimeout(COMBAT.timer); COMBAT.timer = null; } combatFill(4); log = musicDeath(); zone = H.zone; bus = !!COMBAT.bus; }
+  finally { H.swap(p[0], p[1]); } EXPLORE.bus = saveBus; EXPLORE.verb = saveVerb; COMBAT.bus = null; H.zone = '';
+  const d = (await off.startRendering()).getChannelData(0); const q = Math.floor(SR / 4), rms = []; let bad = 0;
+  for (let s = 0; s < secs * 4; s++) { let a = 0; for (let i = s * q; i < (s + 1) * q; i++) { if (!isFinite(d[i])) bad++; else a += d[i] * d[i]; } rms.push(+Math.sqrt(a / q).toFixed(4)); }
+  return { log, zone, bus, rms, bad }; });
+console.log(JSON.stringify(death));
+{ const R = death.rms, peak = Math.max(...R.slice(0, 16));
+  check('death: three hits, short, short, long (A, A, then F held over D)', death.log && death.log.length === 3 && death.log[1].t - death.log[0].t > .3 && death.log[2].d > 3 && death.log[2].m < death.log[0].m, death.log);
+  check('death: the fight\'s cue is cut at once and the music is the death\'s', death.zone === 'death' && !death.bus, { zone: death.zone, bus: death.bus });
+  check('death: the sting sounds through its held note and is silent by 6 s, with no bad samples', !death.bad && R.slice(0, 16).every(x => x > .002) && R.slice(24).every(x => x < peak * .02), R); }
 // 4. in the game's own audio context: a fight starts and hands back to the exploring music
 const live = await page.evaluate(async () => { const H = devMusicHook; initAudio(); H.zone = '';
   startMusic('combat'); const during = { zone: H.zone, bus: !!H.combat.bus, timer: !!H.combat.timer };
