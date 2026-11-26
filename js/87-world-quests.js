@@ -2535,7 +2535,7 @@ const giver=`${lord.title} ${lord.name}`;
     const idx=src.map((_,k)=>k);for(let k=idx.length-1;k>0;k--){const j=Math.floor(r()*(k+1));[idx[k],idx[j]]=[idx[j],idx[k]];}
     const n=Math.min(src.length,4+Math.floor(r()*4));return {trade,rows:idx.slice(0,n).sort((x,y)=>x-y).map(k=>Object.assign({},src[k]))};}
   function marketStallHouse(site,i,name){const w=marketWeek(),P=marketStallPack(site,i,w);return {id:site.id+':market:'+i,name:`${MSTALL_WARES[P.trade]}, ${site.name}’s market`,keeper:name,type:P.trade==='potion'?'potion':'misc',siteId:site.id,pack:P.rows,marketStall:true};}
-  /* S2696 — a stall's keeper takes a name no other stall has and nobody over a door in that town has (the critic, 26 Nov, s2007: Dunmore's
+  /* S2698 — a stall's keeper takes a name no other stall has and nobody over a door in that town has (the critic, 26 Nov, s2007: Dunmore's
      six stalls were Cathal, Róisín, Clodagh, Tadhg, Ruairí and Ruairí, and the potion stall's Cathal was not the apothecary's). Taken: the
      town's shop, inn and hall keepers and its post-holders (S.npcs but its villagers: the guards, the watch, the lord; S248's rule, that
      no two share a name), first names, and the stalls before this one. Its householders are not counted: a people's bank holds 24 names

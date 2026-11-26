@@ -99,7 +99,7 @@ const stalls = await page.evaluate(() => { const set = (d, h) => { worldState.ga
   const tick = () => { _mstallT = 0; tickMarketStalls(); return [...MSTALLS.values()].filter(D => D.site === 'dunmore'); };
   set(1, 10); const L = tick(); o.n = L.length; o.want = 4 + Math.floor(prosperity(t) / 25); o.onSquare = L.every(D => Math.hypot(D.npc.g.position.x - t.x, D.npc.g.position.z - t.z) < 16);
   o.npcs = L.every(D => npcs.includes(D.npc) && D.npc.def.topics.some(c => c.trade));
-  // S2696 — each stall's keeper has a name of their own: none twice on the square, none a keeper's, resident's or townsperson's of the town;
+  // S2698 — each stall's keeper has a name of their own: none twice on the square, none a keeper's, resident's or townsperson's of the town;
   // past the bank's free names (Dunmore leaves 5 of 24 for 6 stalls) only as many as it is short; the same names when drawn again
   { const first = D => String(D.npc.def.name).split(' ')[0], nm = L.map(first), town = marketTownNames(t);
     const [ci, cj] = cellOf(t.x, t.z), bank = NAMES[PEOPLES[nationOf(ci, cj).people].names] || NAMES.irish, free = bank.m.concat(bank.f || []).filter(x => !town.has(x)).length;
@@ -115,7 +115,7 @@ const stalls = await page.evaluate(() => { const set = (d, h) => { worldState.ga
   set(2, 10); o.after = tick().length; set(1, 15.5); o.late = tick().length; return o; });
 console.log(JSON.stringify(stalls));
 check('market day: Dunmore keeps 4 + prosperity ÷ 25 stalls on its square, each a keeper with a counter of 4 to 7 rows by town and week, at the market\'s price; gone after', stalls.n === stalls.want && stalls.n >= 4 && stalls.onSquare && stalls.npcs && stalls.house.rows >= 4 && stalls.same && stalls.weeks >= 3 && stalls.rowsOk && Math.abs(stalls.b1 / stalls.b0 - .9) < .02 && stalls.after === 0 && stalls.late === 0, stalls);
-check(`market day's keepers each have a name of their own (${stalls.names.nm.join(', ')}): none twice, none of the ${stalls.names.town} names over the town's doors and posts while the bank has ${stalls.names.free} free, the same when drawn again (S2696)`,
+check(`market day's keepers each have a name of their own (${stalls.names.nm.join(', ')}): none twice, none of the ${stalls.names.town} names over the town's doors and posts while the bank has ${stalls.names.free} free, the same when drawn again (S2698)`,
   stalls.names.distinct && stalls.names.clash.length === Math.max(0, stalls.names.nm.length - stalls.names.free) && stalls.names.town >= 10 && stalls.names.again, stalls.names);
 check('market day fills the square from 7: a resident who works at eight on another day is on the square at eight on Stoneday', stalls.res8[0] === 'sq' && stalls.res8[1] !== 'sq', stalls.res8);
 // S2650: the knock (Michael's A on #2009). E at a shut shop knocks first: from 21 until the trade opens the keeper is home, and with the

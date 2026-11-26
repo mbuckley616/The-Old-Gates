@@ -49,18 +49,29 @@ async function render(src, label) {
       else if (A.peak) { let p = PEAKS.find(p => p.name === A.peak); for (let j = 0; !p && j < GRID; j++) for (let i = 0; !p && i < GRID; i++) { const c = getCell(i, j); p = c && (c.peaks || []).find(q => q.name === A.peak); } if (!p) return { err: 'no peak ' + A.peak }; ax = p.x; az = p.z; }
       else if (A.coast) { const t = WORLD.siteAnywhere(A.coast); const d = { w: [-1, 0], e: [1, 0], n: [0, -1], s: [0, 1] }[A.dir || 'w'];
         ax = t.x; az = t.z; for (let k = 0; k < 2000 && worldH(ax, az) > WORLD.SEA_Y; k++) { ax += d[0] * 5; az += d[1] * 5; } }
-      else if (A.gate) { ax = px; az = pz; }
+      else if (A.gate) { [ax, az] = A.at || [px, pz]; } // Session 2697: from a fixed point, not where the last view left px
       const C = v.cam, L = v.look; return { ax, az, cx: ax + C.dx, cz: az + C.dz, lx: ax + L.dx, lz: az + L.dz }; }, v);
     if (at.err) { console.log(`  ${label}: ${v.id}: ${at.err}`); continue; }
     await page.evaluate(([x, z]) => { px = x; pz = z; }, [at.cx, at.cz]);
     await g.cells();
+    if (v.anchor.gate) {
+      // Session 2697 (the critic, 26 Nov): the gate is found from its fixed point (A.at) and named (a seed, or 'nearest' to that point), then
+      // the camera's own cells are loaded and their jobs run, so the gate's near level is built; it used to be moved to after the cells
+      const r = await page.evaluate(([v, at]) => {
+        for (let k = 0; k < 900 && (JOBS.length || [...LOADED.values()].some(L => L.pending)); k++) { tickCells(1); const t0 = performance.now(); while (JOBS.length && performance.now() - t0 < 1500) runJobs(); }
+        let G = null; const A = v.anchor;
+        if (typeof A.gate === 'number') G = RING_GATES.get(A.gate) || null;
+        else { let bd = 1e9; for (const Q of RING_GATES.values()) { const d = Math.hypot(Q.ox - at.ax, Q.oz - at.az); if (d < bd) { bd = d; G = Q; } } }
+        if (!G) return { err: 'no ring gate ' + A.gate + ' loaded near ' + at.ax + ', ' + at.az };
+        const fx = Math.sin(G.ry), fz = Math.cos(G.ry), f = v.cam.front || 30;
+        px = G.ox + fx * f; pz = G.oz + fz * f; return { seed: G.seed, ax: G.ox, az: G.oz, cx: px, cz: pz, lx: G.ox, lz: G.oz }; }, [v, at]);
+      if (r.err) { console.log(`  ${label}: ${v.id}: ${r.err}`); continue; }
+      console.log(`  ${label}: ${v.id}: gate ${r.seed}`); Object.assign(at, r);
+      await g.cells();
+    }
     const url = await page.evaluate(([v, at]) => {
       // every job the cells queued, so the statics and the near grass stand (as the camps' shot did)
       for (let k = 0; k < 900 && (JOBS.length || [...LOADED.values()].some(L => L.pending)); k++) { tickCells(1); const t0 = performance.now(); while (JOBS.length && performance.now() - t0 < 1500) runJobs(); }
-      if (v.anchor.gate) { let best = null; for (const G of RING_GATES.values()) { const d = Math.hypot(G.ox - px, G.oz - pz); if (!best || d < best.d) best = { G, d }; }
-        if (!best) return { err: 'no ring gate loaded near the start' };
-        const G = best.G, fx = Math.sin(G.ry), fz = Math.cos(G.ry), f = v.cam.front || 30;
-        at.ax = G.ox; at.az = G.oz; at.cx = G.ox + fx * f; at.cz = G.oz + fz * f; at.lx = G.ox; at.lz = G.oz; px = at.cx; pz = at.cz; }
       forceTime(v.hour);
       const w = v.weather || 'clear'; try { devWeather(w); } catch (e) {} const wx = WORLD.wx; wx.type = w; wx.next = w; wx.k = 1; if (w === 'storm' || w === 'blizzard') wx.heavy = 1;
       // over the sea, "up" is over the water and not the sea floor (Session 2689: the harbour's camera stood in the surface)
