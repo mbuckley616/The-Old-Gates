@@ -1431,7 +1431,7 @@ function genSettlement(site){
        every draw the town made. Laid, the old flat ribbon of the paths goes: the paving is drawn over the same lines. */
     if(window.OG_LOOK==='new'&&['village','town','city','port','garrison','outpost'].includes(site.kind))try{const J=townDressJob(S,{inner,pros:TST?prosperity(site):50,burned:burnedV,abandoned:abandonedV||sackedV},T=>{ /* a step a frame on the job queue, after the town stands */
       if(!T)return;const pm=group.children.find(m=>m.name==='town paths');if(pm){group.remove(pm);if(typeof _ribbons!=='undefined'){const k=_ribbons.indexOf(pm.geometry);if(k>=0)_ribbons.splice(k,1);}pm.geometry.dispose();}
-      S._route=null;S._routeGrid=null;S._beat=undefined;S._work=null; /* the watch's ways and the directions found again round the dressing's walls */});if(J)addJob(J,1);}catch(e){console.warn('town dress',e);}
+      S._route=null;S._routeGrid=null;S._routeNd=null;S._routeGridNd=null;S._beat=undefined;S._work=null;if(guardsOf(S).length)try{townRoute(S);}catch(e){} /* the watch's ways and the directions found again round the dressing's walls, the grid at once as the town's own */});if(J)TDR_Q.push(J);}catch(e){console.warn('town dress',e);}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
@@ -1459,15 +1459,16 @@ function genSettlement(site){
   const HOUSE_LOD={near:70,far:80};
   // S1073 — a kit town's houses (one group for the town, S.kitLod) by the same rule, measured from the town's centre less half its
   // houses' reach: near the town the kit's houses, from outside it their far copy
-  function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
+  function houseLod(){try{tdrTickJobs();}catch(e){} /* S2670 — the towns' dressing a step a frame */const cp=CAM.position;for(const S of SETTLE.values()){
     for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod,S.cairnLod,S.whLod,S.thLod,S.archLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     if(S.racks&&S.racks.length)townRacksLive(S,cp); /* S2136 — shown near, and what hangs kept to worldState.racks */
     if(S.gardens&&S.gardens.length)townGardensLive(S,cp);
     if(S.stalls&&S.stalls.length)festStallsLive(S,cp); /* S2351 — the bursar's table and the caravan's scale, out with their keepers */
     if(S.fair)fairRingLive(S,cp); /* S2333 — the Strait Fair's ring, up on its morning */ /* S2165 — and your garden's beds kept to worldState.garden */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
-    if(S.dressLod)for(const m of S.dressLod){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere,d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5); /* S2670 — the town's dressing, near and far, by the houses' rule; its own list, so the houses' twins stay paired */
-      const twin=m.userData.twin!==undefined?m.userData.twin:(m.userData.twin=S.dressLod.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey)||null);const near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:m.visible;m.visible=near;if(twin)twin.visible=!near;}
+    const dq=S.dressLod||S.dressGround?tdrQuality(S):1; /* S2670 — the dressing by the quality level (82) */
+    if(S.dressLod)for(const m of S.dressLod){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere,d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5),NEAR=dq===0?(String(m.userData.ckey).startsWith('dressn:')?-1:45):HOUSE_LOD.near,FAR=NEAR+10; /* Low: no small things, the walls near within 45 m */ /* S2670 — the town's dressing, near and far, by the houses' rule; its own list, so the houses' twins stay paired */
+      const twin=m.userData.twin!==undefined?m.userData.twin:(m.userData.twin=S.dressLod.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey)||null);const near=d<NEAR?true:d>FAR?false:m.visible;m.visible=near;if(twin)twin.visible=!near;}
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
       const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));
