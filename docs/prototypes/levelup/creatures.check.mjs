@@ -491,6 +491,20 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     const Lr = sit.lie; if (Lr) check(`${sp} lies down: level (pitch ${Lr.pitch}), the withers lowered from ${(T.wither * 100).toFixed(0)} to ${(Lr.wither * 100).toFixed(0)} cm, the forefeet ${((Lr.fore[0][1] - T.fore[0][1]) * 100).toFixed(0)} cm ahead of where it stands, the hind toes ${((Lr.hindZ - Lr.hipZ) * 100).toFixed(0)} cm ahead of the hips, the belly and haunch ${(Lr.haunch * 1000).toFixed(1)} mm off the ground, nothing but the toe pads under it (${Lr.pads}, ${T.pads} standing; the rest's lowest ${(Lr.rest * 1000).toFixed(1)} mm), the head ${(Lr.head * 100).toFixed(0)} cm up`,
       Lr.err < .01 && Lr.pitch === 0 && Lr.wither < .6 * T.wither && Lr.fore.every((f, i) => f[1] > T.fore[i][1] + .05 * T.wither) && Lr.hindZ > Lr.hipZ && Lr.haunch > .003 && Lr.haunch < .05 && Lr.pads <= T.pads && Lr.rest > Math.min(T.rest, 0) - .001 && Lr.head > Lr.wither, Lr); }
   check(`sitting plans: ${sitters.join(', ')}`, sitters.includes('wolfhound') && sitters.length >= 5, sitters);
+  // couched (Session 2685, the camel): lowered level, each foreleg folded under the chest, its wrist on the ground (within a tenth of the
+  // leg's height) under the shoulder (within a fifth of the leg's height), its hoof folded back behind the wrist; the belly a hair off the ground; nothing under it
+  const couchers = await page.evaluate(async () => { const K = await import('./creatures.js'); return Object.keys(K.PLANS).filter(k => K.PLANS[k].gaits.includes('couch')); });
+  for (const sp of couchers.filter(k => !only || only.split(',').includes(k))) { const c = await page.evaluate(async sp => { const K = await import('./creatures.js'), C = K.build(K.genome(sp, sp + ':check')), out = {};
+    for (const gait of ['stand', 'couch']) { C.gait = gait; const err = K.pose(C, 0); C.rig.updateMatrixWorld(true); const M = C.meshes[0], inv = C.rig.matrixWorld.clone().invert(), p = new C.rig.position.constructor(); M.skeleton.update();
+      let low = 1e9; for (let v = 0; v < M.geometry.attributes.position.count; v++) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); low = Math.min(low, p.y); }
+      const at = b => { const q = new C.rig.position.constructor(); b.getWorldPosition(q); return C.rig.worldToLocal(q); }, fore = C.B.legs.filter(L => L.at === 1);
+      out[gait] = { err: +err.toFixed(4), low: +low.toFixed(4), wither: +Math.max(...fore.map(L => at(L.bones[0]).y)).toFixed(3), hR: +fore[0].hR.toFixed(3),
+        legs: fore.map(L => { const sh = at(L.bones[0]), wr = at(L.bones[2]), tip = at(L.bones[L.bones.length - 1]); return { wrY: +wr.y.toFixed(3), ahead: +(wr.z - sh.z).toFixed(3), back: +(wr.z - tip.z).toFixed(3) }; }) }; }
+    return out; }, sp);
+    const S = c.couch, T = c.stand; console.log('couch', sp, JSON.stringify(c));
+    check(`${sp} couches: the withers lowered from ${(T.wither * 100).toFixed(0)} to ${(S.wither * 100).toFixed(0)} cm, its wrists on the ground (${S.legs.map(l => (l.wrY * 100).toFixed(1)).join(', ')} cm up) under the shoulders (${S.legs.map(l => (l.ahead * 100).toFixed(0)).join(', ')} cm ahead of them), the hooves folded ${S.legs.map(l => (l.back * 100).toFixed(0)).join(', ')} cm back behind them, its lowest flesh ${(S.low * 1000).toFixed(1)} mm (standing ${(T.low * 1000).toFixed(1)})`,
+      S.err < .01 && S.wither < .6 * T.wither && S.legs.every(l => l.wrY < .1 * S.hR && Math.abs(l.ahead) < .2 * S.hR && l.back > .1 * S.hR) && S.low > Math.min(T.low, 0) - .02, c); }
+  check(`couching plans: ${couchers.join(', ')}`, couchers.includes('camel') && couchers.includes('packcamel'), couchers);
   // the collar sits on the neck (Session 1261, the heavier horse): the hide's cross-section in the collar's plane (within 2 cm of it), as a share
   // of the collar's ellipse, stays inside the leather's inner edge (0.8 of it: the torus's tube is a fifth), and fills most of it
   const collar = await page.evaluate(async () => { const K = await import('./creatures.js'), T = await import('three'), out = {};
