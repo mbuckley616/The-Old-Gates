@@ -153,6 +153,12 @@ const post = await page.evaluate(() => { forceTime(12); for (let i = 0; i < 120;
   REN.render(scene, CAM); sc.onBeforeRender = ob;
   return { during, after: REN.toneMapping, aces: THREE.ACESFilmicToneMapping, graded: THREE.ShaderChunk.tonemapping_pars_fragment.includes('og-grade') && /ACESFilmicToneMapping[\s\S]*?return ogGrade/.test(THREE.ShaderChunk.tonemapping_pars_fragment) && !/NeutralToneMapping[^}]*ogGrade/.test(THREE.ShaderChunk.tonemapping_pars_fragment), calls: REN.info.render.calls, tris: REN.info.render.triangles }; });
 check('the world renders with ACES and the grade, and the renderer goes back to no tone mapping after it', post.during === post.aces && post.after === 0 && post.graded, post);
+// the shore by island (Session 2714): the Gatelands' grey-brown, the Mark's slate darker, Aurenne's the pale sand as before; the strand wet and darker
+const shore = await page.evaluate(() => { const at = {}; for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { const x = (i + .5) * WORLD.SIZE, z = (j + .5) * WORLD.SIZE, k = shoreIsleAt(x, z); if (!at[k]) at[k] = { x, z }; }
+  const lum = (k, h) => { const p = at[k]; if (!p) return null; const c = shoreColor(p.x, p.z, h); return +(c.r * .299 + c.g * .587 + c.b * .114).toFixed(3); };
+  return { isles: Object.keys(at), gl: lum('gatelands', 2.5), mk: lum('mark', 2.5), au: lum('aurenne', 2.5), glWet: lum('gatelands', .2), sand: +(SAND_C.r * .299 + SAND_C.g * .587 + SAND_C.b * .114).toFixed(3) }; });
+check('the shore takes its island\'s colour: the Mark\'s darker than the Gatelands\', the Gatelands\' under Aurenne\'s pale sand, the waterline darker still', shore.gl != null && shore.mk != null && shore.au != null && shore.mk < shore.gl && shore.gl < shore.au - .1 && shore.glWet < shore.gl && Math.abs(shore.au - shore.sand) < .03, shore);
+
 // Dunmore at noon, from the street: v2-scope.md §5's budget line, logged
 const d = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 4; yaw = 0; pitch = 0; for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now());
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.rotation.set(0, 0, 0); CAM.updateMatrixWorld(true);

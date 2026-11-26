@@ -284,6 +284,21 @@
     _bioCol[b]=c;return c;
   }
   const ALP_C=new THREE.Color(0x45484f),ROCK_C=new THREE.Color(0x6a655c),SNOW_C=new THREE.Color(0xd8dce0),SAND_C=new THREE.Color(0xb8ac88),DEEP_C=new THREE.Color(0x36485a);
+  // S2714 — the shore by island (the Gatelands' coast against P10b's Coastal Cliffs and its regional palettes: the Gatelands moss and
+  // soft blue with green-grey water, the Mark slate, Aurenne ochre with a turquoise sea). Every shore was one pale sand, which on the
+  // new look keeps the pale ground's brightness: a Gatelands beach read white and its shallows Caribbean cyan through the water. Now
+  // the Gatelands' shore is a grey-brown sand with shingle, the Mark's dark slate shingle, Aurenne's the pale sand as before; the
+  // strand a metre either side of the waterline is wet and darker. Keyed by the point's own cell (as snowLineAt is), never by the
+  // loaded regions, so a chunk laid after a far jump takes its own island's shore; the islands are apart, so no shore has a seam.
+  const SHORE_C={gatelands:new THREE.Color(0x7f7764),mark:new THREE.Color(0x4f5052),aurenne:SAND_C},SHINGLE_C=new THREE.Color(0x5a5650),_shC=new THREE.Color();
+  function shoreIsleAt(x,z){let k='gatelands';try{const c=cellOf(x,z);k=nationKeyOf(c[0],c[1])||k;}catch(e){}return SHORE_C[k]?k:'gatelands';}
+  function shoreColor(x,z,h){
+    if(typeof LAND==='undefined'||!LAND.on)return SAND_C;
+    const k=shoreIsleAt(x,z);_shC.copy(SHORE_C[k]);if(k==='aurenne')return _shC;
+    const sh=_smoothNoise(x,z,SEED+21,6)*.7+_smoothNoise(x,z,SEED+22,1.8)*.3;
+    _shC.lerp(SHINGLE_C,.55*sstep(.48,.68,sh));
+    _shC.multiplyScalar(1-.22*sstep(1.6,.2,h));
+    return _shC;}
   function groundColor(x,z,h,ny,out){
     const ws=regionWeights(x,z);
     out.setRGB(0,0,0);
@@ -329,7 +344,7 @@
     }
     // Shore = sand, then deep water bed.
     if(h<3.2){
-      const sand=sstep(3.2,.6,h);out.lerp(SAND_C,sand);
+      const sand=sstep(3.2,.6,h);out.lerp(shoreColor(x,z,h),sand);
       if(h<-1.0)out.lerp(DEEP_C,sstep(-1.0,-6,h));
     }
     return out;
@@ -884,7 +899,10 @@
     sc.userData.skyRingMat=skyMat; // lets the engine's night tint reach it if it ever runs
   }
   function buildWater(){
-    const wmat=new THREE.MeshLambertMaterial({color:0x2f7fb2,emissive:0x0a2a40,transparent:true,opacity:.8});
+    // S2714 — on the new look the sea's own colour is deep water's, not a lit cyan: 0x2f7fb2 under the hour's sun (1.6 at noon) clipped to a pale
+    // Caribbean turquoise from any height, on every island, and the island's tint (LIGHT_PAL's sea) could only shade it. The sheen and the
+    // sky's reflection (landWater) now carry the brightness at a low angle, the island's tint the hue (Aurenne's still turquoise).
+    const wmat=new THREE.MeshLambertMaterial({color:LAND.on?0x103c50:0x2f7fb2,emissive:LAND.on?0x03141c:0x0a2a40,transparent:true,opacity:.8});
     wmat.onBeforeCompile=sh=>{waterShader(sh);if(LAND.on)landWater(sh);wmat.userData.shader=sh;}; // S1180 (F3): the new look's sheen and glint
     water=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000,140,140),wmat);
     water.rotation.x=-Math.PI/2;
