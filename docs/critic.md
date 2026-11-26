@@ -2439,3 +2439,79 @@ I took the nearest gate of each condition to the start: Carrigbeg's Silence (see
 **Backlog notes.** None new.
 
 No proposal this run.
+
+## 2026-11-26 — Dunmore on market day, a knock at the apothecary at 23h, Lorcan's door, a death in the open (build s2007, read to Session 2694)
+
+**The look against the art** (`docs/look/critic-1126/`, all eight at High; against `docs/look/baseline-2026-11-25/`).
+- *Valley, 10h — far.* Warmer and with more contrast than yesterday (the light session), the cloud now painted; still a smooth green model
+  under an even sky, no crag, no castle, no ridges behind. Unchanged in shape.
+- *Street, 10h — far.* The market house and tower read; the light is a touch warmer. Still buildings on lawn with nothing between them.
+- *Mark upland, 13h — far, nearer.* New since yesterday: a white peak on the right where there was a grey hill. It is one smooth white cone
+  with no rock or tree line, under a saturated blue sky; the near ground is still bare brown dotted with bush blobs.
+- *Aurenne harbour, 17h30 — close on the light, far on the town.* The biggest change of the eight: an orange-to-violet evening sky with pink
+  lit clouds where yesterday was midday blue, and the camera is out of the water (S2689). The town is still a low strip of one-storey ports.
+- *Gatelands coast, 13h — far.* Bluer water and a whiter beach; no cliffs on this shore, as before.
+- *Town at night, 23h — close, darker.* The sky has gone from blue to near black with stars (#629's starlit floor); the arcade and the lamp
+  pools are warm and read. P10b's night is blue and moonlit; this one is black over the roofs.
+- *Storm, 15h — far.* Fair-weather white clouds over a grey ceiling, and a hard straight grey band across the middle of the frame where the
+  haze meets the far land. The panel's storm is cloud mass; this is a grey wash with a seam.
+- *Gate at dusk, 18h30 — far, but not the gate's fault.* A black banded hump with no script under a fine violet sky with pink clouds. I took it
+  for a regression and rendered it at 36554103 (before the light merge): the same hump. The shot picks the gate nearest to wherever the last
+  view left the player and does not load the cells round it, so it draws the far copy; gate 137 with its cells loaded, from 30 m at 18h30,
+  reads with every ring lit and the camp's tents beside it (`docs/critic/2026-11-26-gate-137-dusk-loaded.jpg`). Filed in I for the look builder.
+  The sheets of this view are not comparable across runs until it names its gate.
+
+The gap I would close first: **the storm**. It is the one view that is wrong in kind, not in degree: white cumulus in a storm, and a seam across
+the land. The night's black is Michael's own #629, and the valley and the Mark wait on the relief.
+
+**What I played.** One boot, seed 1, Dunmore. Stoneday (day 1) at 9h30, at High; then an ordinary night at 23h; then Lorcan's Forge at 10h; then
+a second boot to die to a Bandit in the open at 14h. The scene ran at a frame every few seconds on software GL, so I drove the fight with
+`g.spin()` and read times from the game, not the wall.
+
+**Market day.** At 9h30 on Stoneday `marketOn('dunmore')` is true and six stalls stand (4 + prosperity ÷ 25), their keepers 2 to 13 m from the
+square's middle, all visible, and thirteen people within 20 m. From the south edge of the square at High (`-market-square.png`) there is one
+striped stall with its fruit and its awning, the bench, the well's path and people going about; it reads as a busy morning. The first keeper,
+Cathal, has *What have you on the stall?* first, and his counter is four rows of remedies: Health Potion 13, Mana Draught 26, Stamina Draught
+19, Elixir of Regeneration (Mild) 26. That holds with the rules: the apothecary's Health Potion is 18 at the door at night at ×1.25, so about
+14 plain, and ×0.9 is 13. An item priced 38 at the apothecary on an ordinary day is 34 on market day.
+- **Wrong:** the six keepers are Cathal, Róisín, Clodagh, Tadhg, Ruairí and Ruairí. Two Ruairís a few metres apart, and the potion stall's
+  Cathal is not the Cathal of Cathal's Apothecary, who sells the same potions in the same town. `marketStallDef` draws each name fresh from the
+  bank. Filed for the systems builder.
+
+**The knock.** At 23h on day 2, standing at Cathal's Apothecary: *Cathal's Apothecary — locked till 9 · E to knock, again to pick*
+(`-knock-night.png`). E: *Cathal, through the door: “The door opens at nine, and it opens no sooner for the knocking.”* That is Finding 57's
+Gatelander, and *nine* is the apothecary's own hour (S2630), not seven. With the town's favour set to 2, E again: *Cathal comes down to the
+door.* and his counter opens with the Health Potion at 18 (`-knock-door-sale.png`, caught mid-fade). The rule reads as it is written.
+
+**Lorcan's Forge at 10h.** *Press 'E' to enter Lorcan's Forge* at the cart doors; E; inside, *Press E near the keeper to talk · Walk south to
+exit* (`-forge-fade-lift.png`). On software GL the whole fade passed inside one frame of mine, so I could not time S2678's held black.
+
+**A death.** A Bandit two metres off, my health at 8, at 14h by the start's hamlet. Dead after about 300 fixed ticks. The sting's three hits were
+logged (`DEATH_STING.log` 3). The eye goes 1.58 → 1.39 m at 12 ticks, 0.24 at 24, and rests at 0.14 from 36 (0.6 s), rolled −0.04 rad. The last
+frame (`-death-screen.png`) looks up from the grass at the Bandit standing over you with the evening sky behind, under *YOU DIED* and *Last save:
+autosave — the open country, level 1*. That is a death you see. Two things I could not settle: `devMusicHook.zone` still read `combat` after the
+sting, which may only be the label; and the Bandit over me was the old 17-bone wooden driver with its helmet, spear and shield, not a builder
+body. Foes keep the driver until their body is built (S2661), and in ~300 ticks on this machine it had not been; on a real machine it may be
+there before the blow. No page errors in either boot.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2642, S2647 (market day): the square at 9h30 reads full; one stall mesh in my frame for six keepers, as S2647 says. The duplicate names are
+  the one fault.
+- S2643 (prices by home): only the market's ×0.9 checked; I bought nothing across islands.
+- S2650, S2688 (the knock): heard as written in a Gatelander's mouth. The eight seconds to decide to pick I cannot judge headless: my frames
+  were longer than the window, so the prompt never showed *E again*. Not a bug. The Mark's fallback by nation: not tried.
+- S2659 (stamina, the guard, foe spacing): not judged; the fight was one blow and a fall.
+- S2661, S2678 (no old body before the new one; the held black): not timeable here.
+- S2692, S2694 (a death you feel): the fall reads; the eye's roll is small (−0.04) on this death, nowhere near S2694's ±1.3 cap, which suits a
+  fall on the back. The sound and the fade's 1.1 s need a real machine. The third-person camera's rise I did not try.
+- S2682, S2683 (the light by the hour): seen in all eight sheets, above. The harbour's evening is the best frame the sheets have had.
+- S2689, S2691 (the far copies): not looked at from a hill this run.
+- S2651–S2657, S2662, S2677, S2685 (the serpent), S2648, S2652, S2686, S2687 (the camels), S2663 (the set arrows), S2655, S2658, S2664–S2666
+  (doors), S2679–S2680 (the lean-to), S2660, S2684 (the hands), S2681 (levelling): not this run.
+- S2646, S2654, S2675, S2676, S2690, S2693 (QA and the sheets): S2675's gate view is the item above.
+
+**Harness.** `node tests/run.mjs export` 1/1, clean. Five boots in all this run, two at a time at most; each took 2 to 3 minutes to reach the world.
+
+**Backlog notes.** None new.
+
+No proposal this run.
