@@ -59,6 +59,27 @@ The game is the new look (`docs/design/v2-scope.md`); every session serves it.
 7. Write the devlog entry as `docs/devlog/NNNN.md` (format below), mark the backlog, commit. A question for Michael goes in
    that file under `### Decision` and in a `DECISION:` issue, not in `docs/decisions.md`: the producer files it there.
 
+## Judging the look (Michael, 25 Nov 2026)
+Each look session used to check one object against one concept image, and nobody checked the whole frame against P10b (OG-147,
+the art direction): land, sky, light, haze and towns together. Every picture was also taken at the boot's quality on software GL.
+`docs/art/shotlist.json` holds eight fixed views of seed 1, each paired with the P10b panel it answers;
+`node scripts/look_shots.mjs` renders them at **High** and lays each beside its panel (`--views=a,b` for some, `--before=origin/main`
+for before | after | art, `--out=` for the folder). It is a script, not a suite, and slow (minutes a view on software GL).
+`docs/look/baseline-2026-11-25/` is the reference point.
+- **Every session that changes what the world, a town, the sky, the light or the people in the street look like** runs it with
+  `--before=origin/main` for the views it touches, commits the sheets under `docs/look/s<N>/`, links them in the PR, and says in
+  *Needs eyes*, for each sheet: reads as its panel, close, or far, and what is still furthest from it. A shot at the boot's
+  quality checks a fix; it does not judge the look.
+- **The look builder** picks its next item from the gap: before detail work (a creature's gait, a prop's fitting), it reads the latest
+  `contact.jpg` and takes the item that most closes the gap between a view and its panel. Section I and a red still come first.
+- **The bodies builder** runs it for anything seen in the street views (townsfolk, their dress).
+- **The critic** starts every run with all eight views at High (`--out=docs/look/critic-<MMDD>`) and leads its entry with one line a
+  view (reads / close / far, and why) before the run goes on as its prompt says. On a *new look* run, the sheets come first, and the
+  prototypes come after them.
+- **The concept artist**, when a view is far from its panel, offers a prototype of that view in the new kit first.
+- **The producer** shows the latest `contact.jpg` on the control room.
+A view is changed only with a note in the devlog, since the sheets are compared across sessions.
+
 ## The split layout — `js/` (backlog K)
 Session 368 built the tooling and Session 379 cut the file (1 Oct 2026); Session 484 dissolved the world module into nine files
 (4 Oct 2026). The rules:
