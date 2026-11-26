@@ -13,10 +13,16 @@ await page.evaluate(() => { window._drive = (step, max) => {
   finally { window.requestAnimationFrame = raf; REN.render = rr; prevT = 0; K['KeyW'] = false; }
   return n; };
   // W held toward a body 2 units ahead; the nearest the two come, and whether you were held at its edge
+  /* S2707 — your posture is held full as your health is: on seed 4022 the two slimes' blows broke it, and the stagger's 0.8 s of real
+     time (PPOST.stagUntil, performance.now()) outlasted the third walk's 180 driven frames, so you never stepped toward the Skeleton
+     (min 2.0). `stag0` says whether a walk began staggered (false now), `broke` how many breaks its blows made (1 a walk from the Greater
+     Slime on; they still break it, and the stagger is lifted the next frame) */
   window._walkInto = (pos, setup) => { forceTime(12); PHP = maxHP; dead = false; ROLL = null; let min = 99, tells = 0, wasT = false, e = setup && setup();
-    _drive((n) => { PHP = maxHP; const p = pos(); const sy = Math.atan2(-(p.x - px), -(p.z - pz)); yaw = sy; K['KeyW'] = true;
+    const stag0 = playerStaggered(performance.now() / 1000); let broke = 0;
+    const steady = () => { if (PPOST.broke) broke++; PPOST.posture = PPOST.maxPosture; PPOST.stagUntil = 0; PPOST.broke = false; }; steady(); broke = 0;
+    _drive((n) => { PHP = maxHP; steady(); const p = pos(); const sy = Math.atan2(-(p.x - px), -(p.z - pz)); yaw = sy; K['KeyW'] = true;
       if (n > 5) min = Math.min(min, Math.hypot(p.x - px, p.z - pz)); if (e) { if (e.telegraphT > 0 && !wasT) tells++; wasT = e.telegraphT > 0; } return false; }, 180);
-    return { min: +min.toFixed(3), tells }; }; });
+    return { min: +min.toFixed(3), tells, stag0, broke }; }; });
 
 const world = await page.evaluate(() => { const out = []; const L = ZONES.world.enemies; const t = WORLD.siteAnywhere('dunmore');
   for (const kind of ['Bandit', 'Wolf', 'Ogre']) { px = t.x + 40; pz = t.z + 40; yaw = 0;
