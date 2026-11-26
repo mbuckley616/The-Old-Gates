@@ -124,11 +124,19 @@ const knock = await page.evaluate(() => { const set = (d, h) => { worldState.gam
     KNOCK.id = null; set(2, 23); F.dunmore = 2; o.k4 = knockDoor(h); o.say4 = msgs.at(-1); o.shop4 = shopOpen && currentHouse === h;
     o.at = shopCost(it); closeShop(); o.after = shopCost(Object.assign({}, it)); o.p5 = knockPrompt(h, WORLD.doorLockNow(h)); o.k5 = knockDoor(h);
     set(2, 12); o.dayLock = WORLD.doorLockNow(h); o.dayKnock = knockDoor(h);
+    o.refuse = keeperVoice(h, 'refuse', h.keeper); o.voices = ['gatelander', 'markman', 'aurennais', 'oldblood', 'nobody'].map(p => [keeperVoice({ people: p }, 'shut', 'K', 'nine'), keeperVoice({ people: p }, 'refuse', 'K')]);
   } finally { showMsg = m0; F.dunmore = f0; KNOCK.id = null; if (shopOpen) closeShop(); }
   return o; });
 console.log(JSON.stringify(knock));
 const opensWord = ['midnight','one','two','three','four','five','six','seven','eight','nine','ten'][knock.lk && knock.lk.opens];
-check('the knock: E at a shut shop knocks; at favour 0 the keeper says *Come back at* its hour, and E again picks', knock.lk && knock.lk.kind === 'shop' && /E to knock/.test(knock.p0) && knock.k1 === true && knock.say1.includes(`Come back at ${opensWord}.`) && /E again to pick the lock/.test(knock.p1) && knock.k2 === false && !knock.shop1, knock);
+check('the knock: E at a shut shop knocks; at favour 0 the Gatelander keeper says the door opens at its hour, and E again picks', knock.lk && knock.lk.kind === 'shop' && /E to knock/.test(knock.p0) && knock.k1 === true && knock.say1.includes(`through the door: “The door opens at ${opensWord}, and it opens no sooner for the knocking.”`) && /E again to pick the lock/.test(knock.p1) && knock.k2 === false && !knock.shop1, knock);
 check('the knock: in the evening nobody answers; at favour 2 the keeper comes down and sells at ×1.25 at the door, and the price is the plain one after', knock.k3 && /Nobody answers/.test(knock.say3) && !knock.shop3 && knock.k4 && /comes down/.test(knock.say4) && knock.shop4 && Math.abs(knock.at / knock.after - 1.25) < .02 && /E again/.test(knock.p5) && knock.k5 === false && !knock.dayLock && knock.dayKnock === false, knock);
+// S2688: Finding 57 (quest review run 58): the shut door's answer and a known thief's refusal in the keeper's people's voice, word for word
+const V = knock.voices || [];
+check('Finding 57: the knock\'s answer and the refusal follow the keeper\'s people (four voices; anything else a Gatelander\'s; Dunmore\'s keeper a Gatelander)',
+  V.length === 5 && V[1][0] === 'K, through the door: “Shut. Come back at nine.”' && V[2][0] === 'K, through the door: “The house opens at nine, Master. Until then it is, regrettably, closed.”' && V[3][0] === 'K, through the door: “At nine. Not before.”'
+  && V[0][1] === 'K: “A hand that’s been in my till won’t be shaken at my counter. Go on with you.”' && V[1][1] === 'K: “I know what you did. Get out.”'
+  && V[2][1] === 'K: “This house no longer extends you terms, Master. You will find the reason in your own account.”' && V[3][1] === 'K: “You took. You do not come in.”'
+  && V[4][0] === V[0][0] && V[4][1] === V[0][1] && knock.refuse && knock.refuse.endsWith('Go on with you.”'), V);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
