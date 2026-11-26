@@ -51,14 +51,14 @@ const d = await page.evaluate(id => { const site = siteAnywhere(id), S = WORLD.s
         along: G.slice(1).map((g, i) => { const dx = g.position.x - G[i].position.x, dz = g.position.z - G[i].position.z, L = Math.hypot(dx, dz) || 1; return +Math.abs((dx * Math.sin(g.rotation.y) + dz * Math.cos(g.rotation.y)) / L).toFixed(3); }) };
       /* S2652 — the lead ropes: folded while the bodies are the drivers', then each from a camel's halter ring to the tail of the one ahead */
       const R = CSTRING && CSTRING.rope, RP = R && R.geometry.attributes.position; o.cs.folded = !!R && [...RP.array].every(v => v === 0);
-      at(nc, 6.5); caravanStringTick(); /* S2686 — standing, the hour it comes in (couched from 7) */
+      at(nc, 6.5); caravanStringTick(); /* S2687 — standing, the hour it comes in (couched from 7) */
       for (const gr of G) { const rig = gr.children[0].userData.rig; if (!rig.hc) hcAttach(rig, HC.build(hcGenome(rig))); hcLevel(rig, 0); hcPose(rig); }
       caravanStringTick(); const ring = new THREE.Vector3(), tail = new THREE.Vector3(); let low = 1e9;
       if (R) for (let i = 0; i < RP.count; i++) low = Math.min(low, RP.getY(i) + R.position.y - worldH(RP.getX(i) + R.position.x, RP.getZ(i) + R.position.z));
       o.rope = { n: R ? R.userData.ends.length : 0, draws: R ? 1 : 0, tris: R ? R.geometry.index.count / 3 : 0, low: +low.toFixed(2), ends: (R ? R.userData.ends : []).map((e, i) => {
         const f = G[i].children[0].userData.rig, l = G[i + 1].children[0].userData.rig; if (!e || !reinsBit(f, ring, new THREE.Vector3())) return null;
         l.hc.C.byName.tail0.getWorldPosition(tail); return { ring: +e[0].distanceTo(ring).toFixed(3), tail: +e[1].distanceTo(tail).toFixed(2), span: +e[0].distanceTo(e[1]).toFixed(2), up: +(e[0].y - worldH(e[0].x, e[0].z)).toFixed(2) }; }) };
-      /* S2686 — couched while it trades: at noon every camel kneels (the kit's couch), its withers low; its rope still from its ring; up again at 17:30 */
+      /* S2687 — couched while it trades: at noon every camel kneels (the kit's couch), its withers low; its rope still from its ring; up again at 17:30 */
       const wy = () => G.map(gr => { const r = gr.children[0].userData.rig, p = r.hc.C.byName.spine0.getWorldPosition(new THREE.Vector3()); return +(p.y - worldH(p.x, p.z)).toFixed(2); });
       const pose = h => { at(nc, h); caravanStringTick(); for (const gr of G) hcPose(gr.children[0].userData.rig); caravanStringTick(); for (const gr of G) gr.updateMatrixWorld(true); };
       const stand0 = wy(); pose(12); let low2 = 1e9; if (R) for (let i = 0; i < RP.count; i++) low2 = Math.min(low2, RP.getY(i) + R.position.y - worldH(RP.getX(i) + R.position.x, RP.getZ(i) + R.position.z));
@@ -77,7 +77,7 @@ check(`the bursar stands behind the table (${JSON.stringify(d.bk)}) and the cara
 
 check(`the Caravan's string: ${d.cs && d.cs.n} pack camels (2 to 4), ${JSON.stringify(d.cs && d.cs.back)} m further from the middle than the keeper, ${d.cs && d.cs.solid} on a solid, ${JSON.stringify(d.cs && d.cs.gap)} m apart and facing along the line (${JSON.stringify(d.cs && d.cs.along)}); gone with the keeper (${d.cs && d.cs.after === null})`,
   d.cs && d.cs.n >= 2 && d.cs.n <= 4 && d.cs.kind && d.cs.back.every(b => b > 1.5 && b < 8) && d.cs.solid === 0 && d.cs.gap.every(x => x > 2.8) && d.cs.along.every(a => a > .95) && d.cs.after === null, d.cs);
-check(`the string couches while it trades (S2686): at noon ${d.couch && d.couch.gait.join(', ')}, the spine's root ${d.couch && d.couch.noon.join(', ')} m up against ${d.couch && d.couch.stand.join(', ')} standing at 6:30, ${d.couch && d.couch.ends} ropes still tied (lowest ${d.couch && d.couch.low} m); up again at 17:30 (${d.couch && d.couch.up.join(', ')} m)`,
+check(`the string couches while it trades (S2687): at noon ${d.couch && d.couch.gait.join(', ')}, the spine's root ${d.couch && d.couch.noon.join(', ')} m up against ${d.couch && d.couch.stand.join(', ')} standing at 6:30, ${d.couch && d.couch.ends} ropes still tied (lowest ${d.couch && d.couch.low} m); up again at 17:30 (${d.couch && d.couch.up.join(', ')} m)`,
   d.couch && d.couch.gait.every(g => g === 'couch') && d.couch.noon.every((y, i) => y < .55 * d.couch.stand[i]) && d.couch.ends === d.cs.n - 1 && d.couch.low > .05 && d.couch.up.every((y, i) => Math.abs(y - d.couch.stand[i]) < .05) && d.couch.after.every(c => !c), d.couch);
 check(`the string's lead ropes (S2652): ${d.rope && d.rope.n} for ${d.cs && d.cs.n} camels in ${d.rope && d.rope.draws} draw (${d.rope && d.rope.tris} triangles), folded until the kit's bodies are built (${d.cs && d.cs.folded}); each from the halter's ring to the tail of the camel ahead (${JSON.stringify(d.rope && d.rope.ends)}), its lowest point ${d.rope && d.rope.low} m off the ground`,
   d.rope && d.cs.folded && d.rope.n === d.cs.n - 1 && d.rope.draws === 1 && d.rope.ends.every(e => e && e.ring < .001 && e.tail < .2 && e.span > .8 && e.span < 2.6 && e.up > 1.2 && e.up < 2.2) && d.rope.low > .9, d.rope);

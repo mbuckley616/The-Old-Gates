@@ -286,7 +286,7 @@ const serp = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
     let cross = 0; for (let i = 1; i < ch.length; i++) if ((ch[i] > 0) !== (ch[i - 1] > 0)) cross++;
     let up = 0, all = 0; const v = new THREE.Vector3(); sk.update(); for (const m of H.C.meshes) { const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); m.applyBoneTransform(i, v); all++; if (v.y > sea) up++; } }
     Object.assign(o, { head: +y('head').toFixed(2), hi: +Math.max(...ch).toFixed(2), lo: +Math.min(...ch).toFixed(2), cross, up: +(up / all).toFixed(2) }); }
-  // Session 2684: the coil about her hull. A sloop's frame (13 × 4.4 m) set 13 m off its beam and S2656's coil held: the body eases onto
+  // Session 2685: the coil about her hull. A sloop's frame (13 × 4.4 m) set 13 m off its beam and S2656's coil held: the body eases onto
   // a path round her in 0.8 s, the head reared over her deck, the rest outside her hull a metre clear, round her stern to her far side;
   // let go, it eases back to its swimming coils and the culling it had
   { const keep = { x: SHIP.x, z: SHIP.z, yaw: SHIP.yaw, L: SHIP.L, W: SHIP.W }, on0 = SERP.on, B = H.C.byName;
@@ -301,7 +301,7 @@ const serp = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
     SERP.on = on0; Object.assign(SHIP, keep); }
   serpDrop(); hcTick(9.99e5 + 1e5); o.dropped = !rig.hc; return o; });
 console.log('  serpent:', JSON.stringify(serp));
-check(`the sea serpent coils about her hull while the coil holds (Session 2684): eased in (${serp.hull && serp.hull.kHalf} at 0.4 s, ${serp.hull && serp.hull.k} after), its head over her deck at ${serp.hull && serp.hull.head}, ${serp.hull && serp.hull.inHull} joints in her hull, its tail round her stern at ${serp.hull && serp.hull.tailU}, ${serp.hull && serp.hull.tailV}; let go, eased back (${serp.hull && serp.hull.after}, its head ${serp.hull && serp.hull.headBack} m off her side) and culled as before`,
+check(`the sea serpent coils about her hull while the coil holds (Session 2685): eased in (${serp.hull && serp.hull.kHalf} at 0.4 s, ${serp.hull && serp.hull.k} after), its head over her deck at ${serp.hull && serp.hull.head}, ${serp.hull && serp.hull.inHull} joints in her hull, its tail round her stern at ${serp.hull && serp.hull.tailU}, ${serp.hull && serp.hull.tailV}; let go, eased back (${serp.hull && serp.hull.after}, its head ${serp.hull && serp.hull.headBack} m off her side) and culled as before`,
   !serp.fail && serp.hull && serp.hull.kHalf > .2 && serp.hull.kHalf < .9 && serp.hull.k === 1 && Math.abs(serp.hull.head[0]) < 6.5 && Math.abs(serp.hull.head[1]) < 2.2 && serp.hull.head[2] > 2 &&
   serp.hull.inHull === 0 && serp.hull.tailU < -5 && serp.hull.uncull && serp.hull.after === 0 && serp.hull.cull && serp.hull.headBack > 4, serp);
 check(`the sea serpent the game raises wears the kit's (${serp.plan}, ${serp.bones} bones, ${serp.tris} triangles) at level ${serp.L}, the stand-in hidden (${!serp.stand}); it slithers as its group swims (${serp.gait}, the bones moving ${serp.moved}); dropped when it dives for good (${serp.dropped})`,
