@@ -6,6 +6,8 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
+| main | `0d44ed6d` | run 58: Sessions 2632–2684 as merged (build s1995), about 30 new player-readable lines: the sea serpent and its scale, the reef, the market stalls and the island's market day, *{place} discovered*, the knock at a shut shop. The narrator's lines clean; one finding (57): the keeper's answer to the knock, and the refusal of a known thief (S156, never read before), in one voice on every island |
+| auto/bodies-2684, auto/fable-light-grade, auto/fable-town-dressing | `d55f9f5d`, `6fc93d4d`, `18053e9a` | run 58: open PRs #2065 (`34-creatures.js`), #2062 (`89-world-land.js`) and #2058 (`83-world-generator.js`, the towns' dressing): no line a player reads |
 | main | `f6428797` | run 57: Sessions 2593–2631 as merged (build s1952), about 20 new player-readable lines: the sea's creatures' names (*Starweed Ray*, *Sea Turtle*, *Tidecrab*, *Lantern Jelly*, *Coastal Tuna*, *Drifter Squid*, *Skyskimmer*, *Abyssal Angler*, *Blackcurrent Eel*, *Sailfin Ray*, *Reef Moray*, *Stonefish*, *Giant Octopus*, *Grey Seal*; *Gate Eel* and *Sea Serpent* named but not yet rolled), the dialog's fold cue *▾ more below*, the lord's *How fares the town?* with its stray space gone (no word changed), the shops' hours by trade (no new line: *locked till* reads the trade's opening), the weapon glyphs and the plate's tooltip. Plain names and the narrator's UI; clean |
 | (open PRs) | — | run 57: none open from an auto/* branch |
 | main | `0955a985` | run 56: Sessions 2557–2592 as merged (build s1915), about 40 new player-readable lines: Finding 56 applied word for word (S2558, the lord's six refusals of the great forge by people and reason, the narrator's line kept for `showMsg`); the still and the vial (*Glass Vial*, *A draught is bottled in a glass vial.*, *Press 'E' to work the still*, *It takes {n} bronze ingots (you have {n}).*); the recipe leaf (*The mortar*, *Recipes*, *Made*, *Nothing between them*, *Study to discover*, *Chosen, without its specimen: you carry none.*, *Three herbs ask Alchemy 50.*, *no pair has failed you*); the great forge's corner (*Press 'E' to work the forge*, *The great forge stands in the corner of the hall, by the door.*); the vitals plate's tooltips (*Bare hands · Inventory (I)*, *No magic (F)*); the compass's *Exit*. The narrator's plain voice throughout; clean |
@@ -65,6 +67,38 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 ---
+
+## Run 58 — 26 Nov 2026
+
+About 30 player-readable strings read on main from `f6428797` to `0d44ed6d` (Sessions 2632–2684, build s1995), and the three open PRs from other lanes (#2065 bodies, #2062 and #2058 deep work: no line a player reads). The sea serpent's lines (*A sea serpent rises.*, *The serpent coils about her.*, *The serpent lets her go.*, *The serpent strikes her. Hull −{n}.*, *The serpent is slain. {n} Serpent Scales.*, *The serpent dives and does not rise again. A scale floats where it went down.*, *You take up the Serpent Scale.*) and the scale's card (*A scale off the sea serpent, as broad as a hand. It goes in a brew.*), the reef's (*She comes off the reef.*, *Aground — she strikes the shallows. Hull −{n}.*), the market stalls (*Food*, *Remedies*, *Odds and ends*, *{wares}, {town}’s market*, the player's *What have you on the stall?*), the island's market day in the leads, *{place} discovered*, and the knock's narrator lines (*You knock at {house}. Nobody answers.*, *{keeper} comes down to the door.*): the narrator's plain voice, and a ship is *her*, as a sailor on any island has it. Fine. One finding (57): the keeper who answers the knock speaks one people's words in every town, and so does the shop that refuses a known thief, a line older than this diff that had never been read.
+
+**Michael's calls:** none newer than 16 Oct on the drafts page.
+
+**Built:** nothing. Every approved draft is built except *The Seventh Niche*'s niche, which waits on §1a's approval. No `FREEZE:` issue is open.
+
+**Drafted:** *The Signs Over the Doors* (owed since S1875, the critic's note of s1254), unapproved: the line under every generated shop's name, three by trade for each nation's people and one for the Old Blood, with the guilds', the keep's and the shipwright's, which have had none.
+
+### Finding 57 — main — the knock and the refusal answer in one voice on three islands
+
+**Where.** `86-world-crime.js`, `knockDoor` (S2639): `showMsg(`${who}: “Come back at ${HOUR_WORDS[lk.opens]||lk.opens}.”`)` when the town's favour is under `KNOCK_FAVOR`, and `showMsg(`${who}: “I know what you did. Take your custom elsewhere.”`)` when `refusesTrade(house)`. The same refusal is at `60-shop.js`, the top of `openShop` (S156): `showMsg(`${currentHouse.keeper||'The keeper'}: “I know what you did. Take your custom elsewhere.”`)`.
+
+**Why.** §2 and §1.5 (*speech follows the speaker*). *Come back at seven.* is a Markman's bare order in a Gatelander's mouth, who never refuses outright, and in an Aurennais keeper's, who would give the hour as a term with a *Master* on it. *Take your custom elsewhere* is the same one voice for a shop that has been robbed, in every town of every island.
+
+**Replacement.** Choose by the keeper's people: `keeperPeople(house)`, else `PEOPLES` of `nationOf(cellOf(house.doorX,house.doorZ))`'s people (as the knock's own `buildNPCMesh` reads it); any other value reads as *gatelander*. `{h}` is `HOUR_WORDS[lk.opens]||lk.opens` as now. The narrator's lines stay as they are. Exactly:
+```
+knock, too little favour (the keeper is home, but will not come down):
+gatelander:  "{keeper}, through the door: “The door opens at {h}, and it opens no sooner for the knocking.”"
+markman:     "{keeper}, through the door: “Shut. Come back at {h}.”"
+aurennais:   "{keeper}, through the door: “The house opens at {h}, Master. Until then it is, regrettably, closed.”"
+oldblood:    "{keeper}, through the door: “At {h}. Not before.”"
+
+refused, a known thief (the knock and openShop alike):
+gatelander:  "{keeper}: “A hand that’s been in my till won’t be shaken at my counter. Go on with you.”"
+markman:     "{keeper}: “I know what you did. Get out.”"
+aurennais:   "{keeper}: “This house no longer extends you terms, Master. You will find the reason in your own account.”"
+oldblood:    "{keeper}: “You took. You do not come in.”"
+```
+`{keeper}` is `who` in `knockDoor` and `currentHouse.keeper||'The keeper'` in `openShop`; the colours stay as they are.
 
 ## Run 57 — 25 Nov 2026
 
