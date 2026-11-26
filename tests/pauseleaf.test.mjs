@@ -13,6 +13,10 @@ const state = () => page.evaluate(() => { const ov = document.getElementById('pa
   return { open: pauseOpen, shown: !!ov && ov.style.display === 'block', rows: P ? [...P.querySelectorAll('[data-pi]')].map(r => r.querySelector('span:nth-child(2) span').textContent) : [],
     on: pauseLeaf.on, view: pauseLeaf.view, text: P ? P.textContent : '', clock: worldState.gameTimeAbsMinutes, play: playClockS, inv: invOpen || hubOpen, sl: document.getElementById('slmenu').style.display }; });
 
+// S2701 — every bone of every townsperson in the scene, summed: in play a breath moves it; a full pause holds it
+const pose = () => page.evaluate(() => { let s = 0, n = 0; for (const r of PEOPLE_RIGS) { const t = r.foe ? r.root.parent : r.root; if (!t || t.parent !== scene || !t.visible) continue; n++;
+  r.root.traverse(o => { if (o.isBone) s += o.quaternion.x * 3 + o.quaternion.y * 5 + o.quaternion.z * 7 + o.position.y; }); } return { n, s: +s.toFixed(6) }; });
+
 // 1. Esc in play opens it
 await esc();
 const a = await state();
@@ -23,9 +27,12 @@ check('it heads with the date and the place, and ends with who you are', /Paused
 await page.screenshot({ path: 'docs/prototypes/pauseleaf-ingame.png' });
 
 // 2. the world stands still while it is open
+const p0 = await pose();
 await g.frames(20);
 const b = await state();
+const p1 = await pose();
 check('the world stands still: the clock and the play clock do not move over 20 frames', b.clock === a.clock && b.play === a.play, { a: [a.clock, a.play], b: [b.clock, b.play] });
+check('a full pause (S2701): no townsperson in sight stirs over 20 frames', p0.n > 0 && p0.s === p1.s, { p0, p1 });
 // play keys do nothing under it
 await page.keyboard.press('KeyI'); await page.keyboard.press('KeyF'); await g.frames(2);
 const c = await state();
@@ -80,6 +87,13 @@ const i0 = await state();
 await page.keyboard.press('Escape'); await g.frames(2);
 const i1 = await state();
 check('Esc with the pack open (I, the book at its pack) closes it and opens no leaf', i0.inv && !i1.inv && !i1.open, { i0: i0.inv, i1 });
+
+// 7b. Tab is a full pause too (S2701; Michael, 25 Nov): in play the street breathes, under the book nothing stirs
+const t0 = await pose(); await g.frames(10); const t1 = await pose();
+await page.focus('#g').catch(() => {}); await page.keyboard.press('Tab'); await g.frames(2);
+const h0 = { ...(await pose()), st: await state() }; await g.frames(20); const h1 = { ...(await pose()), st: await state() };
+check('Tab: in play the street moves, under the book it stands still (the people\'s bones and the play clock)', t0.s !== t1.s && h0.st.inv && h0.s === h1.s && h0.st.play === h1.st.play, { play: [t0.s, t1.s], book: [h0.s, h1.s], clock: [h0.st.play, h1.st.play] });
+await page.keyboard.press('Tab'); await g.frames(2);
 
 // 8. a lock lost that no panel asked for opens the leaf; one a panel asked for does not
 const lk = await page.evaluate(() => { const out = {};

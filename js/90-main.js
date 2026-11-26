@@ -42,6 +42,10 @@ function pushFromBodies(){
   for(const e of ZE){if(!e||e.dead||e.locked||Math.abs(e.x-px)>3||Math.abs(e.z-pz)>3)continue;if(e.mesh&&!e.mesh.visible)continue;push(e.x,e.z,bodyR(e,e.isBoss||e.boss?.9:.7));}
   if(activeZoneId==='world'&&typeof npcs!=='undefined')for(const n of npcs){if(!n.g||!n.g.visible)continue;const p=n.g.position;if(Math.abs(p.x-px)>2||Math.abs(p.z-pz)>2)continue;push(p.x,p.z,.3);}
 }
+/* S2701 — a full pause: the book (Tab), the pause leaf (Esc) or the pack (I) is open in play. The loop's own bail-out below holds the
+   clock, the foes and your vitals for every panel; this holds what it ran before that, too. Dialogue, books and the quest card keep the
+   street breathing behind them, as before. */
+function menuHeld(){return !!(started&&!dead&&(hubOpen||invOpen||(typeof pauseOpen!=='undefined'&&pauseOpen)));}
 function loop(now){
   const _pfL=PERF.on?performance.now():0;
   requestAnimationFrame(loop);
@@ -49,18 +53,21 @@ function loop(now){
   const dt=Math.min((now-prevT)/1000,.05);prevT=now;
   // Main scene render
   REN.autoClear=true;
+  /* S2701 — Michael, 25 Nov: Tab and Esc are full pauses. With the book (Tab), the pause leaf (Esc) or the pack (I) open, nothing below moves:
+     the people's and creatures' motion, the blows' numbers and debris, the growls, the dragons, a gate's foes and traps, the story's handover. */
+  const _menuHeld=menuHeld();
   tickCrosshair(); // v80 — the crosshair shows what E will open
-  try{tickDmgNums();}catch(e){} // S761 — the damage numbers rise and fade (74-strikes.js)
-  try{tickImpacts();}catch(e){} // S1949 — what a blow throws off, by surface (74-strikes.js)
-  try{tickPeople(dt,now);}catch(e){} // v80 S153 — every townsperson's stride and breath, indoors too
-  try{tickMimicJaws(now);}catch(e){} // v80 S198
-  try{tickCreatures(dt,now);}catch(e){} // v80 S166 — every wolf's stride, crouch and spring
+  if(!_menuHeld)try{tickDmgNums();}catch(e){} // S761 — the damage numbers rise and fade (74-strikes.js)
+  if(!_menuHeld)try{tickImpacts();}catch(e){} // S1949 — what a blow throws off, by surface (74-strikes.js)
+  if(!_menuHeld)try{tickPeople(dt,now);}catch(e){} // v80 S153 — every townsperson's stride and breath, indoors too
+  if(!_menuHeld)try{tickMimicJaws(now);}catch(e){} // v80 S198
+  if(!_menuHeld)try{tickCreatures(dt,now);}catch(e){} // v80 S166 — every wolf's stride, crouch and spring
   try{if(typeof WORLD!=='undefined'&&WORLD.rainIndoor)WORLD.rainIndoor(activeZoneId!=='world'?0:(currentHouse?(/^(inn|home|church|castle|guild_f|guild_m|weapon|armor|potion|misc|goods|forge|apothecary|armoury|shipwright)$/.test(currentHouse.type)?.22:0):1));}catch(e){} // v80 — rain is muffled indoors, silent underground
-  try{tickMonsterSounds(1/60);tickEnemyDetail();tickPortalFx(1/60);tickDragons(1/60);}catch(e){} // v80 — dungeon feel, dragons
+  if(!_menuHeld)try{tickMonsterSounds(1/60);tickEnemyDetail();tickPortalFx(1/60);tickDragons(1/60);}catch(e){} // v80 — dungeon feel, dragons
   if(typeof WORLD!=='undefined'&&scene===WORLD.scene)WORLD.sweepLights(); // v80 — never render with a changed light count
-  else if(scene){_sweepScenePool(scene);if(typeof WORLD!=='undefined'&&scene===dScene&&!dead)try{WORLD.tickBehaviours();}catch(e){}if(scene===dScene&&!dead)try{tickDungeonTraps(1/60);}catch(e){}} // v80 — dungeons and interiors get a pool too (the freeze on a kill was this); behaviours run in dungeons
+  else if(scene){_sweepScenePool(scene);if(typeof WORLD!=='undefined'&&scene===dScene&&!dead&&!_menuHeld)try{WORLD.tickBehaviours();}catch(e){}if(scene===dScene&&!dead&&!_menuHeld)try{tickDungeonTraps(1/60);}catch(e){}} // v80 — dungeons and interiors get a pool too (the freeze on a kill was this); behaviours run in dungeons
   // v80 — the main story is handed to you: if a main quest is complete and what it unlocks is still locked, hand it over with the popup
-  try{if(!window._mqT||performance.now()-window._mqT>1500){window._mqT=performance.now();for(const q of QUEST_DEFS){if(qState(q.id)!=='complete'||!q.unlocks)continue;for(const nid of q.unlocks){const nq=getQuest(nid);if(!nq||qState(nid)!=='locked'||!QS[nid])continue;QS[nid].state=nq.autoAccept?'active':'available';if(nq.autoAccept){showQuestUpdatePopup('accept',nq);if(typeof addLog==='function')addLog('📜',`New quest: ${nq.title}.`);}else if(nq.announce&&!QS[nid]._announced){QS[nid]._announced=true;showQuestUpdatePopup('accept',Object.assign({},nq,{title:`${nq.title} — speak with ${nq.giver}`}));if(typeof addLog==='function')addLog('📜',`${nq.giver} has something for you: ${nq.title}.`);}}}}}catch(e){}
+  if(!_menuHeld)try{if(!window._mqT||performance.now()-window._mqT>1500){window._mqT=performance.now();for(const q of QUEST_DEFS){if(qState(q.id)!=='complete'||!q.unlocks)continue;for(const nid of q.unlocks){const nq=getQuest(nid);if(!nq||qState(nid)!=='locked'||!QS[nid])continue;QS[nid].state=nq.autoAccept?'active':'available';if(nq.autoAccept){showQuestUpdatePopup('accept',nq);if(typeof addLog==='function')addLog('📜',`New quest: ${nq.title}.`);}else if(nq.announce&&!QS[nid]._announced){QS[nid]._announced=true;showQuestUpdatePopup('accept',Object.assign({},nq,{title:`${nq.title} — speak with ${nq.giver}`}));if(typeof addLog==='function')addLog('📜',`${nq.giver} has something for you: ${nq.title}.`);}}}}}catch(e){}
   const _pfD=PERF.on?performance.now():0;
   const _held=impactHeld(); /* S1949 — the 50 ms hold on a blow's contact (#1239 B): the picture only, nothing waits on it */
   if(_held){}else if(scene===dScene)dRender(scene,CAM);else REN.render(scene,CAM); /* S1302 — a gate draws by space (56-dungeon-build.js) */
