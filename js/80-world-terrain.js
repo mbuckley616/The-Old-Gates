@@ -295,6 +295,18 @@
     // Road verge: worn ground beside the ribbon.
     const ri=roadInfo(x,z);
     if(ri&&ri.d<ROAD_BLEND){_tmpC2.setHex(0x8a7a5a);out.lerp(_tmpC2,.35*(1-sstep(ROAD_HALF,ROAD_BLEND,ri.d)));}
+    // S2705 — the Mark's low ground (the Mark upland's view against P10b's Snowy Peaks; the canon's "black moor"): in a cold cell the
+    // moor is dark heather in patches with tawny dead grass between, not the Gatelands' brown, and old snow lies on the flat ground
+    // under the snow line, in drifts that thin out 45 m below it. The Gatelands' and Aurenne's ground is unchanged.
+    const sl=snowLineAt(x,z),cold=sl<30;
+    if(cold&&h>3.2){
+      let mw=0;for(const e of ws)if(e.r.biome==='moor')mw+=e.w;
+      if(mw>0){const hn2=_smoothNoise(x,z,SEED+18,17);_tmpC2.setHex(hn2>.52?0x2e272c:0x6a5e46);out.lerp(_tmpC2,mw*(.6+.3*sstep(.3,.7,Math.abs(hn2-.52)*4)));}
+      const below=sstep(sl-45,sl-2,h);
+      if(below>0){const t=1-.47*below,n=_smoothNoise(x,z,SEED+19,14)*.65+_smoothNoise(x,z,SEED+20,5)*.35;
+        const lie=sstep(t,t+.08,n)*sstep(.86,.97,ny);
+        if(lie>0)out.lerp(SNOW_C,lie*.9);}
+    }
     // Steep = rock.
     const rock=sstep(.86,.62,ny);
     if(rock>0)out.lerp(ROCK_C,rock);
@@ -302,7 +314,7 @@
     // S2702 — the mountain shows its rock (the Mark upland's view against P10b's Snowy Peaks): over the line the turf gives way to
     // scree, steep faces shed the snow and windswept patches are scoured to a dusting, so a fell reads as snow over rock, not one
     // smooth white cone. The settled cover below (WX.cover) is unchanged.
-    const sl=snowLineAt(x,z),hn=h+_smoothNoise(x,z,SEED+13,20)*8;
+    const hn=h+_smoothNoise(x,z,SEED+13,20)*8;
     const alp=sstep(sl-6,sl+14,hn);
     if(alp>0){out.lerp(ALP_C,alp*.8);
       const shed=sstep(.8,.95,ny+(_smoothNoise(x,z,SEED+15,9)-.5)*.16),scour=1-.88*sstep(.5,.64,_smoothNoise(x,z,SEED+16,30)*.7+_smoothNoise(x,z,SEED+17,11)*.3);
