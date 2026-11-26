@@ -504,6 +504,25 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     const S = c.couch, T = c.stand; console.log('couch', sp, JSON.stringify(c));
     check(`${sp} couches: the withers lowered from ${(T.wither * 100).toFixed(0)} to ${(S.wither * 100).toFixed(0)} cm, its wrists on the ground (${S.legs.map(l => (l.wrY * 100).toFixed(1)).join(', ')} cm up) under the shoulders (${S.legs.map(l => (l.ahead * 100).toFixed(0)).join(', ')} cm ahead of them), the hooves folded ${S.legs.map(l => (l.back * 100).toFixed(0)).join(', ')} cm back behind them, its lowest flesh ${(S.low * 1000).toFixed(1)} mm (standing ${(T.low * 1000).toFixed(1)})`,
       S.err < .01 && S.wither < .6 * T.wither && S.legs.every(l => l.wrY < .1 * S.hR && Math.abs(l.ahead) < .2 * S.hR && l.back > .1 * S.hR) && S.low > Math.min(T.low, 0) - .02, c); }
+  // the kneel (Session 2703): C.kneel from 0 (standing) to 1 (couched) under the gait 'couch'. The forequarters go down first: at the half the
+  // shoulders are under half their standing height, on the knees, and the hips still stand; the withers and the hips only ever come down; the hooves and wrists stay on the
+  // ground (the lowest joint of each leg within 2 cm of it, as low as the couch's or the stand's) and no flesh goes more than 2 cm under it;
+  // at either end it meets the stand and the couch (within 1 cm)
+  for (const sp of couchers.filter(k => !only || only.split(',').includes(k))) { const c = await page.evaluate(async sp => { const K = await import('./creatures.js'), C = K.build(K.genome(sp, sp + ':kneel')), rows = [];
+    const at = b => { const q = new C.rig.position.constructor(); b.getWorldPosition(q); return C.rig.worldToLocal(q); }, fore = C.B.legs.filter(L => L.at === 1), hind = C.B.legs.filter(L => L.at !== 1);
+    const M = C.meshes[0], p = new C.rig.position.constructor();
+    const read = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(); let low = 1e9; for (let v = 0; v < M.geometry.attributes.position.count; v += 3) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); low = Math.min(low, p.y); }
+      const legLow = L => Math.min(...L.bones.slice(1).map(b => at(b).y), at(L.bones[L.bones.length - 1]).y);
+      return { wither: +Math.max(...fore.map(L => at(L.bones[0]).y)).toFixed(3), hip: +Math.max(...hind.map(L => at(L.bones[0]).y)).toFixed(3), low: +low.toFixed(3), feet: [...fore, ...hind].map(L => +legLow(L).toFixed(3)) }; };
+    C.gait = 'stand'; C.kneel = undefined; K.pose(C, 0); const stand = read(); C.gait = 'couch'; K.pose(C, 0); const couch = read();
+    for (let i = 0; i <= 20; i++) { C.kneel = i / 20; K.pose(C, 0); rows.push({ k: i / 20, ...read() }); }
+    C.kneel = .001; K.pose(C, 0); const k0 = read(); C.kneel = .999; K.pose(C, 0); const k1 = read(); C.kneel = undefined;
+    return { stand, couch, rows, k0, k1, hR: fore[0].hR }; }, sp);
+    const R = c.rows, half = R[10], mono = key => R.every((r, i) => !i || r[key] <= R[i - 1][key] + .005), feetOk = R.every(r => r.feet.every((y, j) => y < Math.max(c.stand.feet[j], c.couch.feet[j]) + .02 && y > -.02)), lowOk = R.every(r => r.low > Math.min(c.stand.low, c.couch.low, 0) - .02);
+    console.log('kneel', sp, JSON.stringify({ stand: c.stand, couch: c.couch, half, k0: c.k0, k1: c.k1 }));
+    check(`${sp} kneels: forequarters first (at the half the withers ${(half.wither * 100).toFixed(0)} cm of ${(c.stand.wither * 100).toFixed(0)}, couched ${(c.couch.wither * 100).toFixed(0)}; the hips ${(half.hip * 100).toFixed(0)} of ${(c.stand.hip * 100).toFixed(0)}), only ever down, every hoof and wrist on the ground (worst ${(Math.max(...R.flatMap(r => r.feet)) * 100).toFixed(1)} cm), the lowest flesh ${(Math.min(...R.map(r => r.low)) * 100).toFixed(1)} cm, meeting the stand and the couch at its ends`,
+      half.wither < .5 * c.stand.wither && Math.abs(half.hip - c.stand.hip) < .02 && mono('wither') && mono('hip') && feetOk && lowOk
+      && Math.abs(c.k0.wither - c.stand.wither) < .01 && Math.abs(c.k0.hip - c.stand.hip) < .01 && Math.abs(c.k1.wither - c.couch.wither) < .01 && Math.abs(c.k1.hip - c.couch.hip) < .01, c); }
   check(`couching plans: ${couchers.join(', ')}`, couchers.includes('camel') && couchers.includes('packcamel'), couchers);
   // the collar sits on the neck (Session 1261, the heavier horse): the hide's cross-section in the collar's plane (within 2 cm of it), as a share
   // of the collar's ellipse, stays inside the leather's inner edge (0.8 of it: the torus's tube is a fifth), and fills most of it
