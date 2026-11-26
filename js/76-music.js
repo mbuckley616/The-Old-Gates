@@ -729,6 +729,30 @@ function combatEnd(){const bus=COMBAT.bus;if(!bus||!AX)return;COMBAT.bus=null;if
   bus.gain.cancelScheduledValues(AX.currentTime);bus.gain.setValueAtTime(1,t+1.2);bus.gain.linearRampToValueAtTime(0,t+3.2);
   setTimeout(()=>{try{bus.disconnect();}catch(e){}},(t-AX.currentTime+3.5)*1000);}
 
+// S2692 — a death you feel (Michael, 25 Nov 2026: "some sort of musical interruption (a la 'dun dun dunnnn')"). At death whatever plays
+// is cut in a tenth of a second (the exploring pieces, a fight's cue without its closing cadence, an old zone's drones), and three
+// hits sound on the orchestra in D minor: A, A, then F held over a low D, each on the timpani and the drum, the last swelling on the
+// strings and the choir and gone by 5.5 s. Then silence until the save loads; the loop's tickMusic starts the place's music again.
+const DEATH_STING={root:38,hits:[{t:0,m:57,d:.34},{t:.48,m:57,d:.34},{t:.96,m:53,d:3.4}],fadeAt:3.6,end:5.4,log:null};
+function musicDeath(){
+  if(!AX)return null;
+  const now=AX.currentTime;
+  if(COMBAT.bus){const cb=COMBAT.bus;COMBAT.bus=null;if(COMBAT.timer){clearTimeout(COMBAT.timer);COMBAT.timer=null;}
+    cb.gain.cancelScheduledValues(now);cb.gain.setValueAtTime(cb.gain.value,now);cb.gain.linearRampToValueAtTime(0,now+.1);setTimeout(()=>{try{cb.disconnect();}catch(e){}},400);}
+  exploreStop(.1);_clearMusic();
+  _musicZone='death';_lastMusicZone='';_combatActive=false;_combatFadeTimer=0;
+  _exBus();const bus=AX.createGain();bus.gain.value=1;bus.connect(musicGain);if(EXPLORE.verb)bus.connect(EXPLORE.verb);
+  const t0=now+.12,S=DEATH_STING,last=S.hits.length-1,log=[];
+  _voiceOut=bus;try{S.hits.forEach((h,i)=>{const t=t0+h.t,long=i===last;
+    VOICES.timpani(S.root+12,t,1,long?.3:.24);VOICES.taiko(0,t,1,long?.34:.26);
+    VOICES.lowstrings(S.root,t,h.d,long?.13:.1);VOICES.horn(h.m-12,t,h.d,long?.13:.11);VOICES.horn(h.m,t,h.d,long?.09:.07);
+    if(long){[S.root+12,S.root+15,S.root+19].forEach(m=>VOICES.strings(m,t,h.d,.05));VOICES.choir(h.m+12,t,h.d,.045);}
+    log.push({t:+(t-t0).toFixed(3),m:h.m,d:h.d});});}finally{_voiceOut=null;}
+  bus.gain.setValueAtTime(1,t0+S.fadeAt);bus.gain.linearRampToValueAtTime(0,t0+S.end);
+  setTimeout(()=>{try{bus.disconnect();}catch(e){}},(t0-now+S.end+.4)*1000);
+  S.log=log;return log;
+}
+
 // ── Village — warm, childlike, safe ────────────────────────────────────
 function _musicVillage(){
   if(!AX)return;
