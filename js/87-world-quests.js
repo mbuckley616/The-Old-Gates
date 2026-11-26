@@ -2268,6 +2268,11 @@ const giver=`${lord.title} ${lord.name}`;
       const at=day*1440+Math.floor(kind==='rider'?h*1440:360+h*720);out.push({id:`road:${key}:${day}:${k}`,kind,from,at,pace:ROADFOLK[kind].pace,road:key});}
     const fr=seededRng('roadfam',ck);for(const [end,other] of [['a',b],['b',a]]){const s=end==='a'?a:b;if(!roadEndNews(s,ROADFOLK_FLED))continue;
       for(let k=0;k<2;k++)out.push({id:`road:${key}:${day}:f${end}${k}`,kind:'family',from:end,at:day*1440+Math.floor(360+fr()*720),pace:ROADFOLK.family.pace,road:key});}
+    /* S2713 — the road the day before a market (#1971 B, a-towns-day.md: "each road into a market town carries one traveller more the day
+       before"): for each end whose market is tomorrow (marketOn at 7:00), one merchant more sets out from the other end bound for it, between
+       6 and 18, on a stream of his own, so the day's other departures stand as they were rolled */
+    if(typeof marketOn==='function'){const mr=seededRng('roadmkt',ck),next=(day+1)*1440+MARKET.from*60;
+      for(const [end,s] of [['a',a],['b',b]]){if(!marketOn(s.id,next))continue;out.push({id:`road:${key}:${day}:m${end}`,kind:'merchant',from:end==='a'?'b':'a',at:day*1440+Math.floor(360+mr()*720),pace:ROADFOLK.merchant.pace,road:key,market:s.id});}}
     _roadDays.set(ck,out);if(_roadDays.size>400){const f=_roadDays.keys().next().value;_roadDays.delete(f);}return out;}
   // where a traveller is now, or null while not yet set out or arrived
   // S2270 — a pilgrim's way (the page's pilgrim row): along the road from his end to its point nearest his shrine or gate, then off the road
@@ -2534,7 +2539,27 @@ const giver=`${lord.title} ${lord.name}`;
   function marketStallPack(site,i,week){const r=seededRng('market',site.id+':'+week+':'+i),trade=MSTALL_TRADES[(i+Math.floor(r()*3))%3],src=(typeof SHOP_STOCK!=='undefined'&&SHOP_STOCK[trade])||[];
     const idx=src.map((_,k)=>k);for(let k=idx.length-1;k>0;k--){const j=Math.floor(r()*(k+1));[idx[k],idx[j]]=[idx[j],idx[k]];}
     const n=Math.min(src.length,4+Math.floor(r()*4));return {trade,rows:idx.slice(0,n).sort((x,y)=>x-y).map(k=>Object.assign({},src[k]))};}
-  function marketStallHouse(site,i,name){const w=marketWeek(),P=marketStallPack(site,i,w);return {id:site.id+':market:'+i,name:`${MSTALL_WARES[P.trade]}, ${site.name}’s market`,keeper:name,type:P.trade==='potion'?'potion':'misc',siteId:site.id,pack:P.rows,marketStall:true};}
+  function marketStallHouse(site,i,name){const w=marketWeek();if(marketForeignStall(site,i)){const F=marketForeignPack(site,w),N=F.isles.map(k=>NATIONS[k].name).join(' and ');
+      return {id:site.id+':market:'+i,name:`From ${N}, ${site.name}’s market`,keeper:name,type:'misc',siteId:site.id,pack:F.rows,marketStall:true,foreign:F.isles.slice(),foreignMul:MSTALL_FOREIGN};}
+    const P=marketStallPack(site,i,w);return {id:site.id+':market:'+i,name:`${MSTALL_WARES[P.trade]}, ${site.name}’s market`,keeper:name,type:P.trade==='potion'?'potion':'misc',siteId:site.id,pack:P.rows,marketStall:true};}
+  /* S2713 — a port's foreign stall (#1971 B, docs/design/a-towns-day.md: "one stall sells a single crate's worth of the other islands'
+     goods as items, at ×1.3"; "the far islands are seen before they are visited"). In a port the first stall (the square's own) is the
+     foreign one: its keeper is of one of the other two islands, and its crate holds one made weapon of each of their makes (two of a sword,
+     a spear and a crossbow, tier 1 or 2, stamped by weaponStamp) and three to five of their herbs, 5 to 7 rows in all, drawn by
+     seededRng('market', '<site>:<week>:foreign') so it restocks each week. Its price is the counter's (the town's, an import's ×1.2 by
+     homeMul, market day's ×0.9, the barter) ×1.3 (shopCost reads the house's foreignMul): about ×1.4 of a home counter's, the cargo
+     rule's abroad. It pays for what you sell it as any stall does. Nothing is saved. */
+  const MSTALL_FOREIGN=1.3,MSTALL_FOREIGN_ARMS=['Sword','Spear','Crossbow'];
+  function marketForeignStall(site,i){return !!site&&site.kind==='port'&&i===0;}
+  function marketForeignIsles(site){const [ci,cj]=cellOf(site.x,site.z),own=nationKeyOf(ci,cj);return Object.keys(SWORD_MAKES).filter(k=>k!==own);}
+  function marketForeignKeeper(site,week){const I=marketForeignIsles(site),r=seededRng('marketforeign',site.id+':'+week);return I[Math.floor(r()*I.length)%I.length];}
+  function marketForeignPack(site,week){const r=seededRng('market',site.id+':'+week+':foreign'),isles=marketForeignIsles(site),rows=[];
+    const kinds=MSTALL_FOREIGN_ARMS.filter(t=>WEAPON_TYPES.some(w=>w.type===t));for(let k=kinds.length-1;k>0;k--){const j=Math.floor(r()*(k+1));[kinds[k],kinds[j]]=[kinds[j],kinds[k]];}
+    isles.forEach((isle,n)=>{const T=WEAPON_TYPES.find(w=>w.type===kinds[n%kinds.length]),it=T&&makeItem(1+(r()<.4?1:0),T,null,false);if(it)rows.push(weaponStamp(it,isle,r));}); /* a kind each, so no two rows share a name (#1425: a make is its look, the name the type's) */
+    const herbs=(typeof HERB_DEF!=='undefined'?Object.keys(HERB_DEF):[]).filter(k=>HERB_DEF[k]&&HERB_DEF[k].item&&HERB_DEF[k].item.type==='herb'&&HERB_DEF[k].zone!=='sea'&&isles.includes(herbIsland(k))).sort();
+    for(let k=herbs.length-1;k>0;k--){const j=Math.floor(r()*(k+1));[herbs[k],herbs[j]]=[herbs[j],herbs[k]];}
+    for(const k of herbs.slice(0,3+Math.floor(r()*3)))rows.push(Object.assign({},HERB_DEF[k].item));
+    return {isles,rows};}
   /* S2698 — a stall's keeper takes a name no other stall has and nobody over a door in that town has (the critic, 26 Nov, s2007: Dunmore's
      six stalls were Cathal, Róisín, Clodagh, Tadhg, Ruairí and Ruairí, and the potion stall's Cathal was not the apothecary's). Taken: the
      town's shop, inn and hall keepers and its post-holders (S.npcs but its villagers: the guards, the watch, the lord; S248's rule, that
@@ -2544,7 +2569,7 @@ const giver=`${lord.title} ${lord.name}`;
      keep it (`keepName`): it renamed every stall into the people's bank with its own pick, so the stall's drawn name never reached the square. */
   function marketTownNames(site){const S=SETTLE.get(site.id),T=new Set(),add=n=>{const f=String(n||'').split(' ')[0];if(f)T.add(f);};if(!S)return T;
     for(const h of S.houses||[])if(h.type!=='home')add(h.keeper);for(const n of S.npcs||[])if(n.def&&!n.def.marketStall&&(n.def._lord||n.sched&&n.sched.type!=='villager'&&n.sched.type!=='resident'))add(n.def.name);return T;}
-  function marketStallDraw(site,i,taken){const r=seededRng('marketkeeper',site.id+':'+marketWeek()+':'+i),[ci,cj]=cellOf(site.x,site.z),nat=nationOf(ci,cj),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
+  function marketStallDraw(site,i,taken){const r=seededRng('marketkeeper',site.id+':'+marketWeek()+':'+i),[ci,cj]=cellOf(site.x,site.z),nat=marketForeignStall(site,i)?NATIONS[marketForeignKeeper(site,marketWeek())]:nationOf(ci,cj),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
     if(!taken){taken={town:marketTownNames(site),stalls:new Set()};for(let j=0;j<i;j++)taken.stalls.add(marketStallDraw(site,j,taken).nm);}
     const fem=r()<.5,own=fem?(bank.f||bank.m):bank.m,all=own.concat(fem?bank.m:(bank.f||[]));let nm=pick(r,own);
     if(taken.town.has(nm)||taken.stalls.has(nm)){const free=a=>a.filter(x=>!taken.town.has(x)&&!taken.stalls.has(x));
