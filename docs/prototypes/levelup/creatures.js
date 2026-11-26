@@ -1326,7 +1326,7 @@ function couchPts(C, L, root) {
 // stand's directions toward the couch's (sitPts, couchPts) by its own share, and the body's height at that leg's root is what the leg then
 // reaches from the ground, so no hoof, wrist or hock floats or sinks; the back pitches between the two
 // Session 2706: and rests on its knees between the halves (KNEEL.rest of the curve, the pose held), as a camel does going down and getting up
-export const KNEEL = { fore: .4, rest: .2, knee: .8, neck: .6 };
+export const KNEEL = { fore: .4, rest: .2, knee: .8, neck: .6, plant: .3, cannon: 1.6 };
 const kneelEase = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
 export function kneelShares(k) { const h = kneelEase((k - KNEEL.fore - KNEEL.rest) / (1 - KNEEL.fore - KNEEL.rest)); return { f: KNEEL.knee * kneelEase(k / KNEEL.fore) + (1 - KNEEL.knee) * h, h }; }
 // the leg's joints at share w (from its root at the origin) and the root's height over the ground there
@@ -1336,6 +1336,24 @@ function kneelShape(C, L, w, fore) {
   for (let k = 0; k < R.length - 1; k++) { d.copy(R[k + 1]).sub(R[k]).normalize(); dc.copy(Pc[k + 1]).sub(Pc[k]).normalize();
     const q = new THREE.Quaternion().setFromUnitVectors(d, dc), qw = new THREE.Quaternion().slerp(q, w); P.push(P[k].clone().add(d.clone().applyQuaternion(qw).multiplyScalar(L.lens[k]))); low = Math.min(low, P[k + 1].y); }
   const minOf = Q => Math.min(...Q.slice(1).map(p => p.y)), ground = lerp(minOf(R), minOf(Pc), w);
+  if (fore || R.length !== 5 || w <= 0 || w >= 1) return { P, y: ground - low };
+  return kneelHind(C, L, w, R, Pc, ground, ground - low, minOf);
+}
+// Session 2711: the hind leg folds about a planted hoof. The slerp of every bone at one rate (above) drew the hoof forward under the belly
+// from the start of the fold, so the leg read as one straight prop raked forward with the hock floating (S2703's splay at 0.75). Now the
+// hoof stays where it stood for the first KNEEL.plant of the hind legs' share while the cannon lays down ahead of it (KNEEL.cannon: it
+// turns sooner than the rest), so the hock goes back and down as the hips come down; then the hoof is drawn in under the belly to the
+// couch's place. The thigh and the shin reach the hock by two-bone IK with the knee forward, from the root's height the chain gives (yr)
+function kneelHind(C, L, w, R, Pc, ground, yr, minOf) {
+  const at = (Q, k) => Q[k].clone().sub(Q[0]), s = kneelEase((w - KNEEL.plant) / (1 - KNEEL.plant)), c = 1 - (1 - w) ** KNEEL.cannon;
+  const hs = at(R, 3), hc = at(Pc, 3), fh = lerp(R[3].y - minOf(R), Pc[3].y - minOf(Pc), w);
+  const hoof = V(lerp(hs.x, hc.x, s), -yr + fh, lerp(hs.z, hc.z, s));
+  const turn = (a, b, t) => { const da = R[b].clone().sub(R[a]).normalize(), db = Pc[b].clone().sub(Pc[a]).normalize(); return da.applyQuaternion(new THREE.Quaternion().slerp(new THREE.Quaternion().setFromUnitVectors(da.clone(), db), t)); };
+  const hock = hoof.clone().addScaledVector(turn(2, 3, c), -L.lens[2]), L1 = L.lens[0], L2 = L.lens[1];
+  let dl = hock.length(); const u = hock.clone().divideScalar(dl || 1); dl = Math.max(Math.abs(L1 - L2) + 1e-4, Math.min(L1 + L2 - 1e-4, dl));
+  const a = (L1 * L1 - L2 * L2 + dl * dl) / (2 * dl), h = Math.sqrt(Math.max(0, L1 * L1 - a * a)), pole = L.pole.clone(); pole.sub(u.clone().multiplyScalar(pole.dot(u))).normalize();
+  const knee = u.clone().multiplyScalar(a).addScaledVector(pole, h), hk = u.clone().multiplyScalar(dl), hf = hk.clone().addScaledVector(turn(2, 3, c), L.lens[2]);
+  const P = [V(), knee, hk, hf, hf.clone().addScaledVector(turn(3, 4, w), L.lens[3])], low = Math.min(...P.slice(1).map(p => p.y));
   return { P, y: ground - low };
 }
 function kneelBody(C) {
