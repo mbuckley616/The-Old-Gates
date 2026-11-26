@@ -43,6 +43,27 @@ const wait = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore')
   o.built = { hb: !!rig.hb, k, driver: rig.mesh.visible, body: !!rig.hb && rig.hb.root.visible };
   WORLD.scene.remove(root); return o; });
 check('a townsperson waiting for the builder\'s body is not drawn nearer than 16 m (no frame of the old body, nor while the body\'s shaders warm), its driver shows past it, and the builder\'s body comes', !wait.made && !wait.near.shown && !wait.near.hb && wait.far && !wait.coldShown && wait.built.hb && !wait.built.driver && wait.built.body, wait);
+// S2678: a room's near people are built behind the door's fade. Entering a room (lid 'int_…'), the fade is held black while a townsperson
+// within HBODY.near waits for (or warms) the builder's body, the bodies are built with no HBODY.gap between them, and the fade lifts when the
+// last is drawn, or at HBODY.holdMs at most. A room with nobody near is not held
+const hold = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'), X = t.x - 24, Z = t.z + 34, fd = document.getElementById('fd'), lid0 = lid, ms0 = HBODY.holdMs;
+  const make = (key) => { const root = buildNPCMesh({ name: 'Hold Body', role: 'farmer' }, { nation: 'gatelander', key }), rig = [...PEOPLE_RIGS].find(r => r.root === root);
+    WORLD.scene.add(root); root.position.set(X, worldH(X, Z), Z); root.visible = true; return { root, rig }; };
+  const o = {}; let T = 4e6; const tick = () => { T += 1000 / 60; tickPeople(1 / 60, T); };
+  try { CAM.position.set(X + 5000, 50, Z + 5000); CAM.updateMatrixWorld(true); fd.style.opacity = '0';
+    lid = 'int_holdtest0'; tick(); o.empty = fd.style.opacity !== '1' && !HBODY.held; lid = lid0; tick();
+    HBODY.holdMs = 6e4; const A = make('holdbody'); CAM.position.set(X + 4, A.root.position.y + 1.65, Z); CAM.updateMatrixWorld(true); HBODY.last = T;
+    lid = 'int_holdtest1'; tick(); o.first = { black: fd.style.opacity === '1', held: HBODY.held };
+    let k = 0, lifted = false; while ((!A.rig.hb || A.rig.hb.cold) && !A.rig.hbFail && k++ < 900) { tick(); if (fd.style.opacity !== '1') lifted = true; }
+    tick(); o.built = { k, ms: Math.round(k * 1000 / 60), hb: !!A.rig.hb, cold: !!(A.rig.hb && A.rig.hb.cold), liftedEarly: lifted, black: fd.style.opacity === '1', held: HBODY.held, body: !!A.rig.hb && A.rig.hb.root.visible };
+    WORLD.scene.remove(A.root); lid = lid0; tick();
+    HBODY.holdMs = 100; const B = make('holdcap'); HBODY.last = T; lid = 'int_holdtest2'; tick(); const b0 = fd.style.opacity === '1'; for (let i = 0; i < 9; i++) tick();
+    o.cap = { black0: b0, after: fd.style.opacity, held: HBODY.held, hb: !!B.rig.hb }; WORLD.scene.remove(B.root);
+  } finally { lid = lid0; HBODY.holdMs = ms0; HBODY.rush = 0; HBODY.held = false; fd.style.opacity = '0'; tick(); }
+  return o; });
+console.log('  hold:', JSON.stringify(hold));
+check(`a room's near townsperson is built behind the fade (S2678): black while they wait (${hold.first && hold.first.black}), the body in ${hold.built && hold.built.ms} ms of game time with no gap, never lifted early (${hold.built && !hold.built.liftedEarly}), lifted when they are drawn; at the cap it lifts anyway (${hold.cap && hold.cap.after}); a room with nobody near is not held (${hold.empty})`,
+  hold.empty && hold.first.black && hold.first.held && hold.built.hb && !hold.built.cold && !hold.built.liftedEarly && !hold.built.black && !hold.built.held && hold.built.body && hold.cap.black0 && hold.cap.after === '0' && !hold.cap.held, hold);
 // S2529: a farmer walking carries the hoe on the right shoulder, the blade behind and above it, and standing plants it again
 const carry = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'), X = t.x + 20, Z = t.z + 30;
   let root = null, rig = null; for (let n = 0; n < 12 && !rig; n++) { root = buildNPCMesh({ name: 'Carry Hoe', role: 'farmer' }, { nation: 'gatelander', key: 'carryhoe' + n }); rig = [...PEOPLE_RIGS].find(r => r.root === root);
