@@ -7,10 +7,12 @@
 // in his walk behind the counter, in reach from its front, the strongbox and the counter's front before him (a witness); the strongbox the
 // shop's, clear before its lid; the trade's piece; the barber's chair to sit in; the stair still climbs to the loft; lit, within the draws;
 // out by the door. A picture from inside the door, one a trade.
+// Session 2693: the goods shop, the armourer and the barber here; the healer and the weaponsmith in `marktownshop2` (the same visit, its
+// own boot). Since S2661 each picture draws the keeper's builder body, about 80 s on a CI runner, and five rooms ran past run.mjs's 900 s.
 import { boot, check } from './lib/game.mjs';
 import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
-const TR = ['misc', 'armor', 'barber', 'potion', 'weapon'], WORD = { misc: 'goods shop', armor: 'armourer', barber: 'barber', potion: 'healer', weapon: 'weaponsmith' };
+const TR = ['misc', 'armor', 'barber'], WORD = { misc: 'goods shop', armor: 'armourer', barber: 'barber', potion: 'healer', weapon: 'weaponsmith' };
 const PIECE = { misc: 'rack', armor: 'stand', barber: 'chair', potion: 'rack', weapon: 'rack' };
 const towns = () => { anchoredPlaces(); return [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'mark').flatMap(c => c.sites).filter(s => ['port', 'city', 'town'].includes(s.kind)).slice(0, 4).map(s => s.id); };
 
@@ -26,6 +28,7 @@ const visit = async (t, lot) => {
   await page.evaluate(([s, id, t]) => { const h = WORLD.settle.get(s).houses.find(h => h.id === id); h._was = h.type; h.type = t; delete h._mtShop; window._H = h; forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); }, [site, lot.id, t]);
   for (let k = 0; k < 60 && !(await page.evaluate(() => isInterior() && currentHouse === _H)); k++) await page.waitForTimeout(250);
   await g.frames(3);
+  for (let k = 0; k < 60 && !(await page.evaluate(() => { let n = 0; if (intNPCMesh) intNPCMesh.traverse(o => { if (o.isMesh && o.visible) n++; }); return !intNPCMesh || n > 0; })); k++) await g.frames(2); /* S2693 — the keeper is drawn once the builder's body is (S2661, S2678; as S2690's six) */
   const r = await page.evaluate(() => {
     const h = currentHouse, T = h._markTown, S = T && T.shop; if (!S) return { none: true };
     const X = T.inner.x1, Z = T.inner.z1, FY = T.floors[0], F1 = T.floors[1] - FY, rx = x => x + X, rz = z => z + Z; interiorScene.updateMatrixWorld(true);

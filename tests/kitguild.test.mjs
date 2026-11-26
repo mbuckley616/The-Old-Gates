@@ -21,6 +21,7 @@ for (const type of ['guild_f', 'guild_m']) {
   await page.evaluate(type => { const h = WORLD.settle.get('dunmore').houses.find(h => h.type === type && h.kit && h.kit.kind === 'guildhall'); window._H = h; forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); }, type);
   for (let k = 0; k < 60 && !(await page.evaluate(() => isInterior() && currentHouse === _H)); k++) await page.waitForTimeout(250);
   await g.frames(3);
+  for (let k = 0; k < 120 && !(await page.evaluate(() => [intNPCMesh, ...INT_NPCS.map(n => n.g)].filter(Boolean).every(g => { let n = 0; g.traverse(o => { if (o.isMesh && o.visible) n++; }); return n > 0; }))); k++) await g.frames(2); /* S2693 — each of the hall's people is drawn once their builder body is (S2661, S2678) */
   const r = await page.evaluate(() => {
     const h = currentHouse, T = h._guildHall; if (!T) return { none: true, type: h && h.type };
     const W = h.intW, D = h.intD, X = T.inner.x1, Z = T.inner.z1, F1 = T.floors[1] - T.floors[0]; interiorScene.updateMatrixWorld(true);
