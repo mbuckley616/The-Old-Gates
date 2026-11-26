@@ -181,7 +181,7 @@ build('players-band.html', 'Players by island', 'Each island’s five players wi
 build('players-kit.html', 'The fifteen instruments', 'OG-112’s fifteen instruments at their true size, an island a row, the 1.8 m post beside them. &cam=wide|close. Drag to look.', 'musicians-view.js', True, '?view=kit')
 # the HUD in the new look (concept, 15 Oct 2026): the slice's scene, then hud.js in place of its dynamic import, the
 # approved kit's CSS, icons and fonts inlined (fonts from Google, the host allows no others)
-def hud(name, title, note, scene_src, query):
+def hud(name, title, note, scene_src, query, addon=None):
     css = open(os.path.join(here, '..', 'hud', 'kit.css'), encoding='utf-8').read() + open(os.path.join(here, 'hud.css'), encoding='utf-8').read()
     defs = open(os.path.join(here, '..', 'hud', 'defs.html'), encoding='utf-8').read()
     h = open(os.path.join(here, 'hud.js'), encoding='utf-8').read()
@@ -191,6 +191,10 @@ def hud(name, title, note, scene_src, query):
     hs = scene(h); himps = re.findall(r"^import .*;$", hs, flags=re.M); hbody = re.sub(r"^import .*;\n", '', hs, flags=re.M)
     # hud.js's catch goes in before the scene renders; the rest after it, in a block of its own
     cut = hbody.index('const until'); pre, post = hbody[:cut], hbody[cut:]
+    # an add-on page (notify.js) runs after hud.js's own code, in its block: its import of hud.js is cut, its imports joined to the rest
+    if addon:
+        a = re.sub(r"// NOTIFY-HUD .*?// NOTIFY-HUD-END\n", '', open(os.path.join(here, addon), encoding='utf-8').read(), flags=re.S)
+        a = scene(a); himps += re.findall(r"^import .*;$", a, flags=re.M); post += '\n' + re.sub(r"^import .*;\n", '', a, flags=re.M)
     src = '\n'.join(himps) + '\n' + pre + '\n' + s + '\n{\n' + post + '\n}\n'
     if "from './creatures.js'" in src: src = kit(src)
     if "from './pieces.js'" in src: src = kits(src, ['pieces'])
@@ -200,6 +204,8 @@ def hud(name, title, note, scene_src, query):
     head = HEAD.format(title=title, note=note, V=V).replace('<style>', '<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet"><style>' + css, 1)
     open(os.path.join(out, name), 'w', encoding='utf-8').write(head + code + '\n</script></body></html>\n')
 hud('hud-lane.html', 'The HUD in the new look', 'The approved HUD over the new look, in a Gatelands lane. ?frame=metal|carved|bare. Drag to look.', 'street.js', '?scene=lane&frame=metal')
+# notification cards (concept, 25 Nov 2026; OG-136): the five moments over the HUD, as ledger slips (A), a card (B), OG-136's card with a picture (C)
+hud('notify-cards.html', 'Notification cards', 'Notification cards (OG-136): a level, a quest’s step, a place found, a skill rising, a word learned, over the approved HUD in a Gatelands lane. ?level=a|b|c (A ledger slips, B a card, C OG-136’s card with a picture) &kind=level|quest|place|skill|word &play=1. Drag to look.', 'street.js', '?scene=lane&frame=metal&level=b&play=1', addon='notify.js')
 hud('hud-hall.html', 'The HUD inside a gate', 'The approved HUD over the new look, a skeleton in a gate’s hall. ?frame=metal|carved|bare. Drag to look.', 'gate.js', '?scene=hall&view=hall&frame=metal')
 # the character sheet's portrait (concept, 9 Nov 2026; OG-134): the approved Inventory page with your own body between the worn slots;
 # the kit's CSS, icons and fonts inlined as hud()'s are, the bind kit (its sword and reach) and the sheet's in closures

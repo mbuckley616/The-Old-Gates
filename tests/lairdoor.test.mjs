@@ -37,6 +37,12 @@ const ent = await page.evaluate((p) => { WORLD.loadCell(...p.cell); const s = WO
   if (!portal) return { ok: false }; px = portal.x; pz = portal.z - 2.5; goToDungeon(portal); return { ok: true, lair: portal.lair && portal.lair.siteId }; }, p);
 for (let k = 0; k < 60; k++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'dungeon')) break; }
 const inside = await page.evaluate(() => activeZoneId);
+// S2664 — inside, the way out is the old gate's door from its back (dunExitBuild's 'oldgate'): its leaves and frame under the roof, on the
+// entrance cell's wall, baked to three draws
+const ex = await page.evaluate(() => { const X = DUN_EXIT; if (!X) return { none: true }; return { kind: X.kind, w: X.w, h: X.h, parts: X.group.userData.parts, draws: X.group.children.length,
+  off: +Math.hypot(X.x - dAt(dEntranceX), X.z - dAt(dEntranceZ)).toFixed(2), half: DCELL / 2, H: FLOOR_HEIGHT }; });
+check(`inside, the way out is the old gate's door from behind: ${ex.kind}, ${ex.w} by ${ex.h} m of ${ex.parts} pieces in ${ex.draws} draws, on the entrance cell's wall (${ex.off} m of ${ex.half})`,
+  !ex.none && ex.kind === 'oldgate' && ex.parts >= 20 && ex.draws <= 3 && ex.h + .6 < ex.H && Math.abs(ex.off - ex.half) < .01, ex);
 await page.evaluate(() => goToOW());
 for (let k = 0; k < 60; k++) { await page.waitForTimeout(400); if (await page.evaluate(() => activeZoneId === 'world')) break; }
 await g.spin(null, 30);

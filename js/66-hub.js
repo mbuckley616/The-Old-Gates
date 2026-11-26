@@ -1123,7 +1123,7 @@ function renderHubAttrs(){
   document.getElementById('vb-mp').style.width=(mana/effMaxMana()*100)+'%';document.getElementById('vn-mp').textContent=Math.floor(mana)+' / '+effMaxMana();
   document.getElementById('vb-st').style.width=(stamina/effMaxStamina()*100)+'%';document.getElementById('vn-st').textContent=Math.floor(stamina)+' / '+effMaxStamina();
   document.getElementById('vr-mp').textContent=(0.8+(level-1)*0.15+attrEff('intelligence')*0.2).toFixed(1)+'/sec'; /* v80 S334 — the main loop's rate: Intelligence, as its card says (it read Resolve) */
-  document.getElementById('vr-st').textContent=(3+(level-1)*0.4+ATTRS.resolve*0.3).toFixed(1)+'/sec';
+  document.getElementById('vr-st').textContent=stRegenBase().toFixed(1)+'/sec'; /* S2659 — the base, moving; ×2 standing still */
   const rows=document.getElementById('attr-rows');rows.innerHTML='';
   Object.keys(ATTR_DEF).forEach(key=>{const def=ATTR_DEF[key];const pts=ATTRS[key]||0,rose=luRose(key),n=rose.reduce((a,r)=>a+r[1],0);const row=document.createElement('div');row.className='attr-row';row.title=rose.length?rose.map(([id,v])=>`${SKILL_DEF[id].label} +${v}`).join(', ')+' this level':'nothing rose under it this level';row.innerHTML=`<span class="attr-ico">${def.icon}</span><span class="attr-name-col">${def.label}</span><span class="attr-pts">${pts}</span><div class="attr-prog-wrap"><div class="attr-prog-fill" style="width:${Math.min(1,pts/ATTR_CAP)*100}%"></div></div><span class="attr-act-label">${n?'+'+n:''}</span><span class="attr-mult-badge">/${ATTR_CAP}</span>`;rows.appendChild(row);}); /* S952 — the attribute to its cap of 60, and the skill-ups under it this level (the action multipliers are gone) */
   const dg=document.getElementById('derived-grid');dg.innerHTML='';

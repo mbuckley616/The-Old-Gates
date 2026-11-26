@@ -1,8 +1,8 @@
 // Card F4 (Session 1195): on the new look the townsfolk wear the builder's bodies (docs/design/character-builder.md;
 // vendor/people.builder.js and vendor/mh-pack.js, made by scripts/people_bundle.py). The old 17-bone rig still drives them;
 // the builder's 163-bone skeleton copies its joints each frame (32-people.js, hbPose). Dunmore at noon: the people in the
-// street are the genome's meshes, each the same person on a second boot, walking, under the draw-call budget at the middle
-// quality, with the far ones on the cheap level. Pictures in docs/prototypes/f4/.
+// street are the genome's meshes, walking, with the far ones on the cheap level. The second boot (the same person again) and the
+// crowd's draw calls at the middle quality are f4crowd's since Session 2676: with them this suite ran past run.mjs's 900 s cap on CI. Pictures in docs/prototypes/f4/.
 import { boot, check, ROOT } from './lib/game.mjs';
 import { execFileSync } from 'child_process';
 import fs from 'fs'; import path from 'path';
@@ -29,6 +29,41 @@ async function dunmore(g) {
 
 const g = await boot({ look: 'new' }); const { page } = g;
 const b1 = await dunmore(g);
+// S2529 is below. S2661 (Michael, 25 Nov: the old cartoon body showed before the new one): a townsperson waiting for the builder's body is
+// not drawn nearer than HBODY.near (from the frame it is made), its old driver shows past it (the far level), and the body comes after
+const wait = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'), X = t.x - 18, Z = t.z + 26;
+  const root = buildNPCMesh({ name: 'Wait Body', role: 'farmer' }, { nation: 'gatelander', key: 'waitbody' }), rig = [...PEOPLE_RIGS].find(r => r.root === root);
+  const o = { made: rig.mesh.visible }; WORLD.scene.add(root); root.position.set(X, worldH(X, Z), Z); root.visible = true;
+  CAM.position.set(X + 4, root.position.y + 1.65, Z); CAM.updateMatrixWorld(true); HBODY.last = 1e12; /* held back: nothing is built */
+  tickPeople(1 / 60, 2e6); o.near = { shown: rig.mesh.visible, hb: !!rig.hb };
+  CAM.position.set(X + 60, root.position.y + 1.65, Z); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 2e6 + 20); o.far = rig.mesh.visible;
+  CAM.position.set(X + 4, root.position.y + 1.65, Z); CAM.updateMatrixWorld(true); HBODY.last = -1e9;
+  let k = 0, coldSeen = false; while ((!rig.hb || rig.hb.cold) && !rig.hbFail && k++ < 800) { tickPeople(1 / 60, 3e6 + k * (HBODY.gap + 1)); if (rig.hb && rig.hb.cold && rig.mesh.visible) coldSeen = true; }
+  tickPeople(1 / 60, 3e6 + (k + 1) * (HBODY.gap + 1)); o.coldShown = coldSeen;
+  o.built = { hb: !!rig.hb, k, driver: rig.mesh.visible, body: !!rig.hb && rig.hb.root.visible };
+  WORLD.scene.remove(root); return o; });
+check('a townsperson waiting for the builder\'s body is not drawn nearer than 16 m (no frame of the old body, nor while the body\'s shaders warm), its driver shows past it, and the builder\'s body comes', !wait.made && !wait.near.shown && !wait.near.hb && wait.far && !wait.coldShown && wait.built.hb && !wait.built.driver && wait.built.body, wait);
+// S2678: a room's near people are built behind the door's fade. Entering a room (lid 'int_…'), the fade is held black while a townsperson
+// within HBODY.near waits for (or warms) the builder's body, the bodies are built with no HBODY.gap between them, and the fade lifts when the
+// last is drawn, or at HBODY.holdMs at most. A room with nobody near is not held
+const hold = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'), X = t.x - 24, Z = t.z + 34, fd = document.getElementById('fd'), lid0 = lid, ms0 = HBODY.holdMs;
+  const make = (key) => { const root = buildNPCMesh({ name: 'Hold Body', role: 'farmer' }, { nation: 'gatelander', key }), rig = [...PEOPLE_RIGS].find(r => r.root === root);
+    WORLD.scene.add(root); root.position.set(X, worldH(X, Z), Z); root.visible = true; return { root, rig }; };
+  const o = {}; let T = 4e6; const tick = () => { T += 1000 / 60; tickPeople(1 / 60, T); };
+  try { CAM.position.set(X + 5000, 50, Z + 5000); CAM.updateMatrixWorld(true); fd.style.opacity = '0';
+    lid = 'int_holdtest0'; tick(); o.empty = fd.style.opacity !== '1' && !HBODY.held; lid = lid0; tick();
+    HBODY.holdMs = 6e4; const A = make('holdbody'); CAM.position.set(X + 4, A.root.position.y + 1.65, Z); CAM.updateMatrixWorld(true); HBODY.last = T;
+    lid = 'int_holdtest1'; tick(); o.first = { black: fd.style.opacity === '1', held: HBODY.held };
+    let k = 0, lifted = false; while ((!A.rig.hb || A.rig.hb.cold) && !A.rig.hbFail && k++ < 900) { tick(); if (fd.style.opacity !== '1') lifted = true; }
+    tick(); o.built = { k, ms: Math.round(k * 1000 / 60), hb: !!A.rig.hb, cold: !!(A.rig.hb && A.rig.hb.cold), liftedEarly: lifted, black: fd.style.opacity === '1', held: HBODY.held, body: !!A.rig.hb && A.rig.hb.root.visible };
+    WORLD.scene.remove(A.root); lid = lid0; tick();
+    HBODY.holdMs = 100; const B = make('holdcap'); HBODY.last = T; lid = 'int_holdtest2'; tick(); const b0 = fd.style.opacity === '1'; for (let i = 0; i < 9; i++) tick();
+    o.cap = { black0: b0, after: fd.style.opacity, held: HBODY.held, hb: !!B.rig.hb }; WORLD.scene.remove(B.root);
+  } finally { lid = lid0; HBODY.holdMs = ms0; HBODY.rush = 0; HBODY.held = false; fd.style.opacity = '0'; tick(); }
+  return o; });
+console.log('  hold:', JSON.stringify(hold));
+check(`a room's near townsperson is built behind the fade (S2678): black while they wait (${hold.first && hold.first.black}), the body in ${hold.built && hold.built.ms} ms of game time with no gap, never lifted early (${hold.built && !hold.built.liftedEarly}), lifted when they are drawn; at the cap it lifts anyway (${hold.cap && hold.cap.after}); a room with nobody near is not held (${hold.empty})`,
+  hold.empty && hold.first.black && hold.first.held && hold.built.hb && !hold.built.cold && !hold.built.liftedEarly && !hold.built.black && !hold.built.held && hold.built.body && hold.cap.black0 && hold.cap.after === '0' && !hold.cap.held, hold);
 // S2529: a farmer walking carries the hoe on the right shoulder, the blade behind and above it, and standing plants it again
 const carry = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'), X = t.x + 20, Z = t.z + 30;
   let root = null, rig = null; for (let n = 0; n < 12 && !rig; n++) { root = buildNPCMesh({ name: 'Carry Hoe', role: 'farmer' }, { nation: 'gatelander', key: 'carryhoe' + n }); rig = [...PEOPLE_RIGS].find(r => r.root === root);
@@ -761,26 +796,3 @@ const farHoe = await page.evaluate(() => { const gn = personGenome({ role: 'farm
 check(`the far level's hoe is laid blade down too: the blade within 1 cm of the haft's foot and ${farHoe.overBlade} of haft over it`,
   farHoe.bladeOff < .01 && farHoe.bladeH < .1 && farHoe.overBlade > .7, farHoe);
 await g.close();
-
-// a second boot: the same people, the same bodies
-const g2 = await boot({ look: 'new' }); await dunmore(g2);
-const g2genomes = await g2.page.evaluate((keys) => Object.fromEntries(keys.map(k => [k, HB_GENOMES.has(k) ? JSON.stringify(HB.toSaved(HB_GENOMES.get(k))) : null])), who.sample);
-const same = who.sample.filter(k => g2genomes[k] === genomes[k]).length;
-check('on a second boot each of them is the same person (the same genome from the same place and name)', same === who.sample.length && same >= 4, { same, of: who.sample.length });
-// S1224 (card F4): the near level's cost where the crowd is thickest. At 18h, the most of Dunmore's people within 16 m of one of them
-// (seven, Session 1224); 6 m off their middle, every body within 46 m built, the frame at the middle quality looking four ways
-const crowd = await g2.page.evaluate(() => { forceTime(18); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now());
-  let rs = [...HB_RIGS].filter(r => r.root.parent === WORLD.scene && r.root.visible), P = rs.map(r => [r.root.position.x, r.root.position.z]);
-  let best = 0, at = null; for (const [x, z] of P) { const n = P.filter(([a, b]) => Math.hypot(a - x, b - z) < 16).length; if (n > best) { best = n; at = [x, z]; } }
-  const near = P.filter(([a, b]) => Math.hypot(a - at[0], b - at[1]) < 16), cx = near.reduce((s, p) => s + p[0], 0) / near.length, cz = near.reduce((s, p) => s + p[1], 0) / near.length;
-  px = cx; pz = cz + 6; for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now());
-  { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 30000) runJobs(); }
-  pitch = -.05; CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.rotation.set(pitch, 0, 0, 'YXZ'); CAM.updateMatrixWorld(true);
-  const want = () => [...HB_RIGS].filter(r => (!r.hb || r.hb.cold) && !r.hbFail && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) < HBODY.build).length;
-  let k = 0; while (want() && k++ < 1500) tickPeople(1 / 60, 1e5 + k * (HBODY.gap + 1));
-  SETTINGS.quality = 1; rs = [...HB_RIGS].filter(r => r.hb && r.root.parent === WORLD.scene && r.root.visible);
-  const views = [0, Math.PI / 2, Math.PI, -Math.PI / 2].map(yw => { yaw = yw; CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 4e5); REN.render(scene, CAM); return REN.info.render.calls; });
-  return { most16: best, built: rs.length, left: want(), near: rs.filter(r => r.hb.L === 0).length, views, worst: Math.max(...views) }; });
-console.log('  crowd:', JSON.stringify(crowd));
-check(`where Dunmore's crowd is thickest (${crowd.most16} people within 16 m, ${crowd.near} bodies whole), the frame stays under 1,000 draw calls every way you look (${crowd.worst})`, crowd.left === 0 && crowd.most16 >= 4 && crowd.near >= 4 && crowd.worst < 1000, crowd);
-await g2.close();

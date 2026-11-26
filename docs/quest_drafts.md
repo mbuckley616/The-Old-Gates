@@ -2,7 +2,7 @@
 
 These are the quest writer's drafts. None of them is canon until Michael promotes it into `quest_writing.md`, and none is a spec until it is approved. Each draft gives the quest's shape, every line verbatim with its speaker and people, and a note on what in the code would carry it.
 
-Calls read to: 2026-10-16T17:51:09.360Z (run 57, 25 Nov: no new calls on the page)
+Calls read to: 2026-10-16T17:51:09.360Z (run 58, 26 Nov: no new calls on the page)
 
 ---
 
@@ -8454,3 +8454,106 @@ She stands at the edge of one hill village of the Gatelands, by day, looking out
 - Aldwyn keeps his scholar's register and his hundred and fifty years. He hints at what he hides (§14: he is Old Blood) without saying it.
 - The slurs: *turf-cutter* and *cold-eyes* come from Godric, who in the same breath tells the Old Blood player it is the gulls, not him, and asks every one of them to sit. The Markish rumour's *cold-eyes child* says *leave her be*. Each is about work, land and gods, never bodies.
 - No prophecy, no chosen one, no line on what the player is. The Herald comes nearest (*Who did it may stand in the square and listen*), and she stops at what was done.
+
+## The Signs Over the Doors — what every keeper says under the shop's name, by trade and people
+
+*Unapproved. Drafted 26 Nov 2026.* Owed since Session 1875, on the critic's note of s1254: "the guilds, the castle and the shipwright have no tagline until the quest writer gives them one" (`82-world-structures.js`, `TAGLINES`). The tagline is the line under a shop's name when its counter opens, set as the keeper's own saying: *{keeper} · "{tagline}"* (`60-shop.js`, `sh-sub`). Today there are twenty-four of them, three a trade, and every keeper on three islands says the same ones in one plain voice: a Markish smith and an Aurennais armourer both say *"Padding first, then plate."* This draft gives every trade three lines for each nation's people and one for the Old Blood, and writes the four trades that have none. It adds no rule and no system. It is a table of words and one small change in how one is chosen.
+
+### What the canon gives, and where it is silent
+
+- §2, the speech column: Gatelanders speak in *proverbs, indirection, no bare yes/no … oaths on the Weaver*; Markmen in *short sentences, aye, nicknames, oaths on iron and blood, no honorifics*; Aurennais *formal, honorifics (Factor, Prior, Master), qualifiers, contract metaphors, never an oath*; the Old Blood *sparing, exact, old words … the older name for the thing*.
+- §1.5: *speech follows the speaker, not the province*. A Markish smith in an Aurennais port still says *aye*. So the line follows the keeper's people, not the town's.
+- §1.1–1.3, what each people is proud of and scorns. Gatelanders: patience, *a road known by its stones, never leaving a wounded man*, and scorn for haste and coin-counting; *their ships come back, ours don't* (§2.1). Markmen: toughness, *a quarrel finished by noon*, and scorn for priests, ledgers, soft hands and *anyone who hires a guard instead of being one*. Aurennais: ledgers, learning, *paper over oaths*, *ships that come back*, the tithe, and scorn for brawling, duels and *gate-grubbing*.
+- §4.1: *the sea owns them twice a day* is An Mhuir's scripture. It goes in the Old Blood shipwright's mouth, under the sea's older name.
+- §3.1: the marks are *pale raised lines under the skin*, not ink, and reading the script is forbidden while touching it is allowed. The Old Blood barber and the Gatelands' mages' line lean on both.
+- *Silent:* what the Mark keeps in its churches. The Mark scorns priests (§1.2), but a Markish town's chapel has a keeper. I take *Faith*'s plainer reading (draft of 27 Oct, the Markish priest there is short, says *aye* and swears by iron): he keeps a bench and a quiet room and preaches no sermon.
+- *Silent:* who keeps a keep. The trade's role is *Steward* (`SHOP_ROLE.castle`), so the line is the steward's, speaking for the lord in the Gatelands, for the captain's hall in the Mark and for the Prior's or the Factor's house in Aurenne.
+- None of these lines is about a body, and none is a slur. Two of them touch another people's habits, one each way (*Duels are not offered*; *We don't hire guards*), and both are about work.
+
+### The lines
+
+Each trade's three lines for a people are a set. The keeper says one of them, the same one every visit (the town's stream draws it, as it does now). The Old Blood have one line a trade. An Old Blood keeper is rare, and one line said exactly is their register.
+
+**The smith** (`weapon`)
+- *Gatelander:* "A blade's like a neighbour: you know it best the day you need it." · "Slow at the forge, quick on the road." · "Steel for the road, and the Weaver keep you off the end of it."
+- *Markman:* "If it bends, I didn't make it." · "Mark iron. Ask the last man who doubted it." · "Buy it. Learn it. Then go."
+- *Aurennais:* "Well-made arms, Master, for those with a reasonable use for them." · "Each edge is warranted for the work it is sold for, and no other." · "Fair steel at a fair price, Master, and the terms in writing."
+- *Old Blood:* "Iarann. It keeps what it is given."
+
+**The armourer** (`armor`)
+- *Gatelander:* "The coat you didn't buy is the one you'll wish you had." · "Padding first, then plate, and patience over both." · "A good hide was never sorry to be thick."
+- *Markman:* "Walk out heavier. Walk back at all." · "Heavy? Aye. Lighter than being carried." · "Steel's cheaper than a healer."
+- *Aurennais:* "Protection at a reasonable rate, Master; the alternative is costlier." · "Fitted by measure, Master, and fitted again within the month without charge." · "Every hauberk entered in the book, and every rivet answerable."
+- *Old Blood:* "A second skin. The first is thin."
+
+**The apothecary** (`potion`)
+- *Gatelander:* "There's no root for a fool, but there's one for most else." · "Ask before you drink, and ask me, not the bottle." · "Bitter in the cup, sweet on the road home."
+- *Markman:* "Roots and salts. No prayers." · "For cuts, cold and fools. Mostly fools." · "It's bitter. So's the alternative."
+- *Aurennais:* "Remedies to the academy's receipts, Master, dispensed by weight." · "Consult before you drink, Master; the advice is included in the price." · "Bitter, Master, but honestly so, and labelled."
+- *Old Blood:* "Luibh. Every root has its name. Ask it."
+
+**The merchant** (`misc`)
+- *Gatelander:* "What the road wants, the road will find here." · "Rope, salt and candles: you'll miss them before you miss me." · "Bring in what you've found. There's a use for most things, and a buyer for the rest."
+- *Markman:* "Rope, salt, candles. Buying too." · "Fell off a cart. Don't ask which." · "Useful, I've got it. Not useful, I'll buy it."
+- *Aurennais:* "Sundries by the ell and the dozen, Master, and an honest account of each." · "We buy what you carry, Master, at the posted rate." · "Rope, lamp oil and wax, Master, with receipts on request."
+- *Old Blood:* "Things that were lost. Some wait to be found."
+
+**The innkeeper** (`inn`)
+- *Gatelander:* "A full bowl never asked where you walked from." · "The fire's lit, and the Weaver sends who the Weaver sends." · "Nobody's left on the step here, nor on the road, if we hear of it."
+- *Markman:* "Fire's lit. Door's open." · "Ale, a bench, a roof. Trouble outside." · "Sleep sound. Somebody here's awake."
+- *Aurennais:* "Board and bed, Master, by the night, by the week or by arrangement." · "Your room is held against your name until the morning bell, Master." · "Guests are welcome, Master. Disputes are settled at the door, and in writing."
+- *Old Blood:* "A fire, and no questions you could answer."
+
+**The barber and dyer** (`barber`)
+- *Gatelander:* "Come in rough, go out kempt, and nobody the wiser." · "A steady hand is half the razor." · "Shorn or dyed, it's still your own face they'll know on the road."
+- *Markman:* "Sit still. It's a razor." · "Beard off or beard trimmed. Sit." · "Steady hand. Ask the last man who flinched."
+- *Aurennais:* "Shaved, trimmed or dyed, Master, at the rate on the board." · "A steady hand and a clean blade, Master, which is more than most can promise." · "Dyes from the Compact's own vats, Master, the colour warranted to the season."
+- *Old Blood:* "The hair. Not the marks."
+
+**The priest** (`church`: the Gatelands' oratory to the six, a Markish town's chapel, the Church of the Weaver in Aurenne)
+- *Gatelander:* "The door's never barred. The dark's on the other side of it." · "Six of them listening, and not one of them in a hurry." · "Sit a while. Nobody here will be counting."
+- *Markman:* "Door's open. Don't make a speech." · "Sit if you need to. Nobody's asking." · "No sermon. A bench and quiet."
+- *Aurennais:* "The Weaver's door stands open, Master, and the thread is kept within." · "Rest here, Master. No account is kept of time spent with the Weaver." · "Those who unpick the loom are asked, respectfully, to leave their salvage at the door."
+- *Old Blood:* "Sit. The stones are warm here."
+
+**The steward** (`castle`; none today)
+- *Gatelander:* "The lord's door opens to the patient, and to the patient only." · "A town's kept the way a field is: every day, and nobody thanks you for it." · "The Crown's business is done here, and done in its own time."
+- *Markman:* "Captain's hall. Say it plain." · "Disputes at noon. Bring your own steel." · "The hall feeds who holds the wall."
+- *Aurennais:* "Petitions are received in writing, Master, and answered in due course." · "The house keeps its terms, Master, and expects the same of its guests." · "The Compact's business is conducted here, by appointment and by the book."
+- *Old Blood:* "The hall is newer than the hill."
+
+**The Fighters' Guild** (`guild_f`; none today)
+- *Gatelander:* "Nobody of ours is left where they fell." · "The work's dangerous. The guild's in no hurry to bury you." · "Contracts for the gates, the roads and the hills. Ask, and we'll see."
+- *Markman:* "We don't hire guards. We are them." · "Work's posted. Pay's fair. Don't die stupid." · "Gates, roads, bears. Aye, we'll take it."
+- *Aurennais:* "Contracts let for escort and clearance, Master, at the Guild's published rates." · "The Guild undertakes the work, Master; the outcome is not warranted." · "Engage us by the day or by the task, Master. Duels are not offered."
+- *Old Blood:* "We go in. We come out. Most of us."
+
+**The Mages' Guild** (`guild_m`; none today)
+- *Gatelander:* "The old words are slow to learn and slower to forget." · "We teach what's safe to know, and a little after." · "Touch the stones all you like. It's the reading gets a body into trouble."
+- *Markman:* "Words that burn. Mind your hands." · "Learn it here. Not off a wall." · "Fire, frost, the lot. Pay first."
+- *Aurennais:* "Instruction by subscription, Master, under the academy's charter." · "The words are taught here with their meanings, Master, so far as their meanings are known." · "Study is open to any who can pay, and to most who can read."
+- *Old Blood:* "The words are older than the teaching."
+
+**The shipwright** (`shipwright`; none today)
+- *Gatelander:* "Built slow, so she's slow to sink." · "Oak for the keel and patience for the rest." · "We'll make you a boat. Whether the sea keeps her is the sea's affair."
+- *Markman:* "Pine and pitch. She'll take a strait." · "Built for the strait. Not for show." · "Lose her, that's yours. Build her, that's mine."
+- *Aurennais:* "Ships that come back, Master. Consult the tithe-rolls." · "Hulls built to the Compact's measure, Master, and tithed at the quay." · "Each keel is laid to contract, Master, and delivered to the day."
+- *Old Blood:* "An Mhuir takes her twice a day. Build for it."
+
+The shuttered shop's *Gone to the city. Door nailed.* is the narrator's, and stays. The three old towns' authored keepers (Ashenmoor, Ironhaven, Hearthwick, from `HOUSES`) keep their own lines. So does a town's hero house, whose tagline is its own.
+
+### Register notes
+
+- *Gatelander.* Each line turns on a saying or a sideways answer. None is a bare yes or no. The Weaver is sworn by twice (the smith, the innkeeper). Patience is the people's pride and haste their scorn, and the steward and the shipwright lean on that. *Nobody of ours is left where they fell* is §1.1's pride said as a guild's.
+- *Markman.* Short sentences, one *aye*, no honorific, no god. *No prayers* and *No sermon* are §1.2's scorn for priests, said by an apothecary and by the Mark's own chapel-keeper, who agrees with it. *Disputes at noon* is the duel and the quarrel finished by noon.
+- *Aurennais.* Every line has a *Master* or a term of contract (*warranted*, *posted rate*, *by appointment*, *in writing*, *receipts*), and there is no oath anywhere. The Church's third line is the Compact's view of salvage (*gate-grubbing* is sacrilege), said as politely as a rule can be. *Ships that come back* is the people's pride, from §1.3.
+- *Old Blood.* One line, sparing. Three of them use the older word (*Iarann*, iron; *Luibh*, herb; *An Mhuir*, the sea). The barber's *The hair. Not the marks.* is §3.1: the marks are under the skin, and no razor or dye touches them.
+
+### What carries it
+
+- **Files.** `82-world-structures.js` (`TAGLINES`, the table) and one expression in `83-world-generator.js` (the house record in the settlement generator, `tagline:heroH?heroH.tagline:pick(r,TAGLINES[type]||TAGLINES.misc)`).
+- **The table.** `TAGLINES` becomes `{gatelander:{weapon:[…3],…}, markman:{…}, aurennais:{…}, oldblood:{weapon:[…1],…}}`, every trade above under every people. `TAGLINES.misc`'s fallback becomes the people's `misc`.
+- **The draw, unchanged.** The house record still takes exactly one `r()` where `pick` took it, so no lot, name or keeper after it changes. The build draws `const tagU=r()` there and keeps it on the house (`house._tagU`). The line is resolved once the keeper's people is known. That is the def's (`def.people`, set a few lines on by `makeDef`) or, failing that, the people of `nationOf(cellOf(doorX,doorZ))`. The rule is `T=TAGLINES[people]||TAGLINES.gatelander; arr=T[type]||T.misc; house.tagline=arr[Math.floor(tagU*arr.length)%arr.length]`, which is `pick`'s own arithmetic. `heroH` and the shuttered shop are untouched.
+- **No save.** The tagline is rebuilt with the town from its seed, as now. Nothing goes in `worldState`.
+- **A check.** A check script, not a suite (CLAUDE.md, *basic tests*): build one town on each island and read each shop's `tagline` against the table by its keeper's people. Every guild, keep and shipwright has a line. The town's lot names and keepers are the same before and after.
+- **Overlap.** PR #2058 (*towns dressed*, deep work) edits `82-world-structures.js` and `83-world-generator.js` near here. The build waits for it to land, or touches only the two places named.

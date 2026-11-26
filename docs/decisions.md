@@ -3,26 +3,6 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
-### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
-**The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.
-
-**Options.**
-- **A (recommended, built).** Not for 10 s, the same gap as its tells: a still ship is held 6 s in every 16, about 70 rig a minute.
-- **B.** At once: a still ship is held until she makes way or its head takes one hit of 30.
-- **C.** Once a rise: one coil each time it surfaces, at most two an encounter.
-
-Devlog: docs/devlog/2656.md.
-
-### How is the sea serpent both driven off and slain? (from the systems builder, 2026-11-25, #2039)
-**The question.** The page gives it 400 health; at half it dives for good and leaves one scale, and slain it gives three scales and its skull. As written nobody can slay it, since no hit takes 200 at once. Session 2657 built the slain half.
-
-**Options.**
-- **A (recommended).** Driven off is judged when a rise ends: at 200 or less it does not rise again and leaves one scale. Slain if it reaches 0 first.
-- **B.** At 200 it swims away at full speed for 10 s before it dives; the ballista and bows can finish it.
-- **C.** As the page says: at 200 it dives for good; in practice it cannot be slain.
-
-Also: the floating scale (60 s) is taken when her hull passes within **8 m** (recommended), or a swimmer within 2 m. Devlog: docs/devlog/2657.md.
-
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
@@ -35,7 +15,70 @@ Also: the floating scale (60 s) is taken when her hull passes within **8 m** (re
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### Notification cards: the ledger alone, a card at the top, or OG-136's card with a picture? (from the concept artist, 2026-11-25, #2047)
+**The question.** Since Session 2578 the game says everything in the ledger, up to four paper slips above the vitals, so the five moments a player waits for (a level, a quest's step, a place found, a skill rising, a word learned) look exactly like *gold paid*. Should those five get a card of their own?
+
+**Options.**
+- **A.** The ledger alone: as built, each moment one slip among the rest, gone in 6 s. Nothing to build. [lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-lane-a.jpg) · [fight](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-hall-a.jpg)
+- **B (recommended).** A paper card at the top centre (600 × 130 px at 1080p, clear of the minimap), a wax seal in the kind's colour, the kind, the name and one line; one at a time for 4 s; the ledger keeps the small lines. About one systems session. [lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-lane-b.jpg) · [all five](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-cards-b.jpg) · [fight](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-hall-b.jpg)
+- **C.** OG-136 as drawn: a larger card (678 × 200 px) with a picture beside the words (the place from above and behind you, a laurel, the quest's mark, the skill's ring, the word's sigil); 5 s. The place's picture costs a second render, and a dungeon from above comes out near black. [lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-lane-c.jpg) · [all five](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-cards-c.jpg) · [fight](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-hall-c.jpg)
+
+Page: `docs/prototypes/levelup/notify.html`; approach in `docs/concepts.md`.
+
+### Towns dressed: tighten the lots, or fill the gaps around them? (from the deep-work session, 2026-11-26, #2053)
+**The question.** The town-dressing session (Session 2670, `auto/fable-town-dressing`) was asked to tighten the lots where the lawn gaps are widest, and has not. A house's id is its lot's place in the town's layout (`g_<site>_<n>`), and saves key your house, its garden, its racks and its residents by that id: moving the lots moves every id, and an old save's house becomes someone else's. Instead the pass fills the gaps (walled yards, gated walls along the frontage, gardens, orchards, work yards and paddocks, the square and streets paved); from the roofs some green remains.
+
+**Options.**
+- **A (recommended).** Leave the lots where they are; the dressing fills the gaps and no id moves.
+- **B.** Add infill buildings after the existing lots (ids past every lot's, as the farm's `FARM_N` does): outbuildings, workshops, back-row cottages in the widest gaps; enterable or not as Michael likes. More residents is the systems builder's call.
+- **C.** Tighten the layout itself (lot step 14 to 11 m, rows closer) with a one-time save migration that re-keys owned houses by position; old saves risk losing a house if it misses.
+
+Pictures (before | after, 10h, High): [Gatelands, Dunmore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/gatelands.jpg) · [The Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/mark.jpg) · [Aurenne](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/aurenne.jpg)
+
+### Levelling too slow: quests pay marks, cheaper first levels, or cheaper skill-ups? (from the systems builder, 2026-11-26, #2059)
+**The question.** Michael's note of 25 Nov: "Leveling up feels veeeery slow now compared to before." Since Session 952 (#342 B) the level comes only from skill-ups; kills and quests pay nothing toward it. Level 2 takes 10.5 marks, a major skill at 25 needs 43 uses to rise, and a fresh Warrior earns about 8 uses a kill (Session 2681, measured headless), so about 55 kills for level 2. Before Session 952, one quest or four kills gave level 2.
+
+**Options.**
+- **A.** Quests pay marks: a quest handed in gives 2 (a main-quest step 3), a lord's job or guild commission 1. The skill curve and #342's B are unchanged.
+- **B.** The first levels are cheap: levels 2 to 6 take 5, 6, 7, 8 and 9 marks (against 10.5–12.5 today); from level 6 on as now.
+- **C.** Every skill-up is cheaper: 0.6 × L^1.2 instead of 0.9 × L^1.2 (29 uses at 25, 65 at 50); everything about 1.5× faster, tier gates sooner, late game shorter.
+- **D (recommended).** A and B together: the quests and kills of an evening give level 2 and nearly 3; skills and the curve past level 6 stay as #342 set them.
+
+### How mountainous should the Gatelands be between its towns? (from the deep-work session, 2026-11-26, #2063)
+**The question.** The land's relief (Session 2682, `auto/fable-land-relief`) raises the country between places so it reads as P10b's landscapes, not a mown lawn. Towns, roads, doors and rivers stay on flat ground (a calm field 110–190 m round each); between them uplands with ridges to ~46 m, tableland scarps ~24 m, cliff coasts ~30 m. The Gatelands' median height goes 6 → 13 m; the Mark goes higher (ridges ~78 m), Aurenne between. OG-101 asks for "a range across the middle"; P10b's Gatelands panels are green valleys under hills, not mountains.
+
+**Options.**
+- **A (recommended).** As built: rolling uplands and ridges to ~50 m, scarps, the range's crest in crags; valleys green, towns on the flat.
+- **B.** Gentler: half the Gatelands' amplitudes (ridges ~25 m, scarps ~12 m); hills you see over, not under. The Mark and Aurenne as built.
+- **C.** Bolder: the Gatelands as high as the Mark (ridges ~78 m), more uplands; a walk between towns is a climb.
+
+Any answer is a one-line change to `RELIEF.NAT`. Pictures: [the Gates' basin](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatebasin.jpg) · [a Gatelands lookout](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatevalley.jpg) · [the range north of the Gates](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatenorth.jpg) · [the Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-markvale.jpg)
+
 ## Answered
+### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
+**The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.
+
+**Options.**
+- **A (recommended, built).** Not for 10 s, the same gap as its tells: a still ship is held 6 s in every 16, about 70 rig a minute.
+- **B.** At once: a still ship is held until she makes way or its head takes one hit of 30.
+- **C.** Once a rise: one coil each time it surfaces, at most two an encounter.
+
+Devlog: docs/devlog/2656.md.
+
+Michael: **Not for 10 s, the gap of its tells** (A). (2026-11-25)
+
+### How is the sea serpent both driven off and slain? (from the systems builder, 2026-11-25, #2039)
+**The question.** The page gives it 400 health; at half it dives for good and leaves one scale, and slain it gives three scales and its skull. As written nobody can slay it, since no hit takes 200 at once. Session 2657 built the slain half.
+
+**Options.**
+- **A (recommended).** Driven off is judged when a rise ends: at 200 or less it does not rise again and leaves one scale. Slain if it reaches 0 first.
+- **B.** At 200 it swims away at full speed for 10 s before it dives; the ballista and bows can finish it.
+- **C.** As the page says: at 200 it dives for good; in practice it cannot be slain.
+
+Also: the floating scale (60 s) is taken when her hull passes within **8 m** (recommended), or a swimmer within 2 m. Devlog: docs/devlog/2657.md.
+
+Michael: **Judged when a rise ends** (A). (2026-11-25) The recommendation rides with it: the scale is taken by the hull within 8 m.
+
 ### Does a town's night begin at 21 or at 23? (from the systems builder, 2026-11-25, #2008)
 **The question.** A town's day (#1971 B), A's table, runs the inn until 23 and the night from 23. Today a household is home from 21, awake until 23 and asleep after, and burglary reads that (S1437: a break-in at 22 meets someone awake in the kitchen). A night from 23 empties every home until 23 and removes the awake hours. Session 2632 built the rest of the street and left the night at 21.
 

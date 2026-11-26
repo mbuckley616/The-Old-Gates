@@ -1121,9 +1121,7 @@ function completeQuest(id){
   });
   // Tail the completion toast with the most salient reward. Gold-rich quests show gold;
   // sigil quests award XP only, so those show XP instead of "+0g".
-  const tail = (q.rewards.gold>0) ? ` +${q.rewards.gold}g`
-              : (q.rewards.xp>0)  ? ` +${q.rewards.xp} XP`
-              : '';
+  const tail = (q.rewards.gold>0) ? ` +${q.rewards.gold}g` : ''; /* S2681 — no *+N XP*: since S952 xp levels nothing */
   showMsgLong(`✅ ${q.title} complete!${tail}`,'#ffd700');
   addLog('✅','Completed quest: '+q.title);
   updateQuestDots();
@@ -1225,7 +1223,6 @@ function renderQuestLog(){
       });
       if(state==='available'&&qDef.giver&&qDef.giver!=='—'){const ZN={overworld:'Ashenmoor',ironhaven:'Ironhaven',ashenmoor:'Ashenmoor'};objHtml=`<div class="qlog-obj"><span class="qobj-check">○</span>Speak with ${qDef.giver} in ${ZN[qDef.giverZone]||qDef.giverZone||'the village'} to begin</div>`;} // v80 S133 — the old NEXT box, folded in
       const rewardStr=[(qDef.rewards.gold?`${qDef.rewards.gold}🪙`:''),
-        (qDef.rewards.xp?`${qDef.rewards.xp} XP`:''),
         ...(qDef.rewards.items||[]).map(it=>it.name)].filter(Boolean).join(' · ');
       // Sigil-lore quests have no giver NPC — suppress the "Given by —" line for them.
       const giverLine = qDef.giver && qDef.giver!=='—' ? `<div class="qlog-giver">Given by ${qDef.giver}</div>` : '';

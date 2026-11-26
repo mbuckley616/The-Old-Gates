@@ -2486,7 +2486,9 @@ const GAITS = {
   sit: { duty: 1, fr: 0, sit: 1, phase: () => 0 },
   // Session 1117: lying down, head up (a sphinx): the body lowered level until its underside is on the ground, the hind legs folded
   // as they sit, the forelegs laid forward along the ground from the elbow (lieLeg)
-  lie: { duty: 1, fr: 0, sit: 1, lie: 1, phase: () => 0 }
+  lie: { duty: 1, fr: 0, sit: 1, lie: 1, phase: () => 0 },
+  // a camel's couch (Session 2686): lowered level as lying, the forelegs folded under the chest, kneeling on the wrists (couchLeg)
+  couch: { duty: 1, fr: 0, sit: 1, lie: 1, couch: 1, phase: () => 0 }
 };
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = V(), _m = new THREE.Matrix4();
 // a bone's rotation and position in the rig's frame (the body's own space: the ground is y = 0)
@@ -2626,7 +2628,7 @@ function pose(C, phase) {
   let worst = 0; const order = [...new Set(B.legs.map(L => L.at))].sort((a, b) => b - a);
   for (const L of B.legs) {
     if (G.sit && L.at === order[order.length - 1]) { worst = Math.max(worst, sitLeg(C, L)); continue; }
-    if (G.lie && L.at === order[0]) { worst = Math.max(worst, lieLeg(C, L)); continue; }
+    if (G.lie && L.at === order[0]) { worst = Math.max(worst, G.couch ? couchLeg(C, L) : lieLeg(C, L)); continue; }
     const p = order.indexOf(L.at), s = L.side > 0 ? 0 : 1, F0 = L.rest[L.rest.length - 1];
     let fl = ph + G.phase(p, s, n) + L.wobble; fl -= Math.floor(fl);
     const T = F0.clone(); let fold = 0;
@@ -2664,7 +2666,8 @@ function sitFind(C) {
     const low = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (let k = 0; k < vs.length; k++) { M.getVertexPosition(vs[k], p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
     // lying, the body is lowered level instead (C.sitY, how far), the same halving on the hip's height
     const lie = GAITS[C.gait].lie, set = h => { if (lie) C.sitY = hip.y - h; else C.sitA = pitchFor(h); }; C.sitY = 0;
-    let lo = .05 * hL.hR, hi = hip.y; for (let k = 0; k < 16; k++) { const h = (lo + hi) / 2; set(h); pose(C, 0); if (low() > SIT.haunch) hi = h; else lo = h; } set(hi); C.sitH = hi;
+    const clear = SIT.haunch + (GAITS[C.gait].couch ? COUCH.pad * hL.hR : 0); /* S2686 — a couched camel rests on its chest pad, its folded legs under it */
+    let lo = .05 * hL.hR, hi = hip.y; for (let k = 0; k < 16; k++) { const h = (lo + hi) / 2; set(h); pose(C, 0); if (low() > clear) hi = h; else lo = h; } set(hi); C.sitH = hi;
     // then the tail (Session 1115): lifted from lying level (a little drooped) only as far as its own flesh needs to clear the ground
     if (B.chains.tail) { const ti = new Set(B.chains.tail.map(n => C.bones.indexOf(C.byName[n]))), tv = []; for (let v = 0; v < si.count; v++) if (ti.has(si.getX(v))) tv.push(v);
       const tlow = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(), p = V(); let y = 1e9; for (const v of tv) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); y = Math.min(y, p.y); } return y; };
@@ -2718,6 +2721,21 @@ function lieLeg(C, L) {
   for (let k = 1; k < m; k++) { const y = k === m - 1 ? F0.y : L.rest[m - 1].y + lift, len = L.lens[k], fall = Math.abs(y - at.y); e2 = Math.max(e2, fall - len); const dz = Math.sqrt(Math.max(0, len * len - fall * fall)); at = V(F0.x, y, at.z + dz); Pp.push(at); }
   let Qp = parentQ; for (let k = 0; k < m; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
   return Math.max(err, e2);
+}
+// couched (Session 2686, the camel): the foreleg folded under the chest, as a camel kneels. The elbow is set down behind the shoulder as
+// lying's is, the forearm laid forward along the ground to the wrist, and the cannon and the hoof folded flat back under the forearm from
+// the wrist, a little to the outside of it, the sole turned up. The forearm and cannon stand at the fetlock's standing height, raised by
+// C.sitF as lying's are
+const COUCH = { out: .035, sole: .5, pad: .06 };
+function couchLeg(C, L) {
+  const m = L.J.length - 1, root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion());
+  L.bones[0].position.copy(L.restLocal);
+  const F0 = L.rest[m], y = L.rest[m - 1].y + (C.sitF || 0), ey = y + SIT.hock * L.hR, dy = root.y - ey, L0 = L.lens[0], err = Math.max(0, dy - L0);
+  const elbow = V(F0.x, ey, root.z - Math.sqrt(Math.max(0, L0 * L0 - dy * dy))), wrist = V(F0.x, y, elbow.z + Math.sqrt(Math.max(0, L.lens[1] ** 2 - (ey - y) ** 2)));
+  const Pp = [root, elbow, wrist], ox = Math.sign(F0.x || 1) * COUCH.out * L.hR; let at = wrist;
+  for (let k = 2; k < m; k++) { const len = L.lens[k], up = k === m - 1 ? COUCH.sole * (L.rest[m - 1].y - F0.y) : 0, dx = k === 2 ? ox : 0; at = at.clone().add(V(dx, up, -Math.sqrt(Math.max(0, len * len - up * up - dx * dx)))); Pp.push(at); }
+  let Qp = parentQ; for (let k = 0; k < m; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
+  return err;
 }
 // one leg: yaw the leg toward its foot (an insect's coxa), hold the distal segments (a paw, a hoof), bend the two in between
 function solveLeg(C, L, T, fold) {
@@ -3542,7 +3560,7 @@ Object.assign(PLANS, {
     palette: { coat: [.16, .12, .1], saddle: [.1, .08, .07], belly: [.22, .18, .15], dark: [.04, .03, .03], hoof: [.08, .07, .06], horn: [.78, .74, .66], skin: [.3, .24, .22] },
     fur: { len: .14, layers: 12, sx: 80, sy: 18, droop: .75 },
     parts: PLANS.cow.parts.map(([k, o]) => k === 'spine' ? [k, { ...o, hump: { at: .85, up: .22, len: .5, r: .3 } }] : k === 'head' ? [k, { ...o, horns: { ...o.horns, len: .36, r: .034, turn: .7, rise: .9, spread: .9 } }] : [k, o]) }),
-  camel: { name: 'Camel', src: 'OG-046 (beasts of burden: the camel, the caravans)', gaits: ['walk', 'trot', 'stand'], speedK: .9, wag: .05, neckNod: .1, rough: .7,
+  camel: { name: 'Camel', src: 'OG-046 (beasts of burden: the camel, the caravans)', gaits: ['walk', 'trot', 'stand', 'couch'], speedK: .9, wag: .05, neckNod: .1, rough: .7,
     palette: { coat: [.74, .58, .4], saddle: [.62, .46, .3], belly: [.84, .72, .56], dark: [.06, .05, .04], hoof: [.3, .24, .18] },
     fur: { len: .02, layers: 7, sx: 260, droop: .3 },
     parts: [

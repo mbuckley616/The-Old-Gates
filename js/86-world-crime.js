@@ -446,6 +446,17 @@
   // favour, no roll; nothing is saved.
   const KNOCK_FAVOR=2,KNOCK_MUL=1.25,KNOCK_WIN=8,KNOCK={id:null,t:-1e9,trade:null};
   const HOUR_WORDS=['midnight','one','two','three','four','five','six','seven','eight','nine','ten','eleven','noon'];
+  // S2688 — Finding 57 (quest review run 58): the knock's *too little favour* and a known thief's refusal (here and at openShop) in the keeper's
+  // people's voice, word for word: keeperPeople(house), else the people of the nation the door stands in; anything else reads as gatelander
+  const KEEPER_VOICE={
+    shut:{gatelander:'{k}, through the door: “The door opens at {h}, and it opens no sooner for the knocking.”',markman:'{k}, through the door: “Shut. Come back at {h}.”',
+      aurennais:'{k}, through the door: “The house opens at {h}, Master. Until then it is, regrettably, closed.”',oldblood:'{k}, through the door: “At {h}. Not before.”'},
+    refuse:{gatelander:'{k}: “A hand that’s been in my till won’t be shaken at my counter. Go on with you.”',markman:'{k}: “I know what you did. Get out.”',
+      aurennais:'{k}: “This house no longer extends you terms, Master. You will find the reason in your own account.”',oldblood:'{k}: “You took. You do not come in.”'}};
+  function keeperVoicePeople(house){let p;try{p=keeperPeople(house);}catch(e){}
+    if(!p&&house&&house.doorX!=null){try{p=nationOf(...cellOf(house.doorX,house.doorZ)).people;}catch(e){}}
+    return KEEPER_VOICE.shut[p]?p:'gatelander';}
+  function keeperVoice(house,kind,who,h){return KEEPER_VOICE[kind][keeperVoicePeople(house)].replace('{k}',who).replace('{h}',h);}
   function knockHomeNow(house){const h=hourNow();return h>=HRS.night||h<shopHours(house.type)[0];}
   function knockArmed(house){return !!house&&KNOCK.id===house.id&&performance.now()-KNOCK.t<KNOCK_WIN*1000;}
   // E at a locked door: true when this press was the knock (the lock waits for the next), false when E should pick
@@ -454,8 +465,8 @@
     KNOCK.id=house.id;KNOCK.t=performance.now();KNOCK.trade=null;try{sfxTone(180,90,.06,.12,'triangle');}catch(e){}
     const who=house.keeper,site=houseSite(house);
     if(!knockHomeNow(house)){showMsg(`You knock at ${house.name}. Nobody answers.`,'#c8b880');return true;}
-    if(!site||favor(site)<KNOCK_FAVOR){showMsg(`${who}: “Come back at ${HOUR_WORDS[lk.opens]||lk.opens}.”`,'#e8d8a8');return true;}
-    if(typeof refusesTrade==='function'&&refusesTrade(house)){showMsg(`${who}: “I know what you did. Take your custom elsewhere.”`,'#e8a880');return true;}
+    if(!site||favor(site)<KNOCK_FAVOR){showMsg(keeperVoice(house,'shut',who,HOUR_WORDS[lk.opens]||lk.opens),'#e8d8a8');return true;}
+    if(typeof refusesTrade==='function'&&refusesTrade(house)){showMsg(keeperVoice(house,'refuse',who),'#e8a880');return true;}
     KNOCK.trade=house.id;showMsg(`${who} comes down to the door.`,'#e8d8a8');currentHouse=house;if(typeof openShop==='function')openShop();return true;}
   // the door's trade: the price's ×1.25 while the counter opened by a knock is open, out of doors
   function knockMulNow(){const h=typeof currentHouse!=='undefined'&&currentHouse;return h&&KNOCK.trade===h.id&&!(typeof isInterior==='function'&&isInterior())?KNOCK_MUL:1;}
@@ -1837,6 +1848,21 @@
       const fs=sd>=50?1:.6+.4*sd/50,h=gameHour(),v=r.peak*fa*fs*Math.sin(Math.PI*(h%6)/6)*(isTideOut()?1:-1);
       if(!best||Math.abs(v)>best.m)best={x:r.ax*v,z:r.az*v,m:Math.abs(v),race:r};}
     return best;}
+  // S2663 — the navigator's set arrows (the sheet's session 6; the page: "the minimap's arrows for the set, with the navigator aboard"):
+  // with him at his station at sea, the minimap draws the race's set on a 13 px grid wherever it runs at 0.25 m/s or more, each arrow
+  // pointing the way the water goes, 4 px long at nothing and 10 at the peak (2.5 m/s). At slack there are none. Sampled four times a
+  // second at most (performance.now: what is drawn only, never an outcome); the list is kept for the suites.
+  const RACE_ARROW={t:-1e9,list:[],px:null,pz:null},RACE_ARROW_MIN=.25,RACE_ARROW_GAP=13;
+  function raceArrows(ctx,size){if(!navAboard()||activeZoneId!=='world'||(typeof isInterior==='function'&&isInterior())){RACE_ARROW.list=[];return 0;}
+    const R=navMapR(),s=size/(R*2),now=performance.now(),A=RACE_ARROW;
+    if(now-A.t>250||((A.px!==px||A.pz!==pz)&&now-A.t>100)){A.t=now;A.px=px;A.pz=pz;A.list=[];const L=seaRaces();
+      if(L.some(r=>Math.hypot(r.x-px,r.z-pz)<R*1.5+r.w*2))for(let y=RACE_ARROW_GAP/2;y<size;y+=RACE_ARROW_GAP)for(let x=RACE_ARROW_GAP/2;x<size;x+=RACE_ARROW_GAP){
+        const wx=px+(x-size/2)/s,wz=pz+(y-size/2)/s,r=raceSet(wx,wz);if(!r||r.m<RACE_ARROW_MIN)continue;A.list.push({x,y,dx:r.x/r.m,dy:r.z/r.m,m:r.m});}}
+    if(ctx){ctx.save();ctx.strokeStyle='#d8e6ee';ctx.fillStyle='#d8e6ee';ctx.lineWidth=1.2;
+      for(const a of A.list){const l=4+6*Math.min(1,a.m/2.5),hx=a.x+a.dx*l/2,hy=a.y+a.dy*l/2;ctx.beginPath();ctx.moveTo(a.x-a.dx*l/2,a.y-a.dy*l/2);ctx.lineTo(hx,hy);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(hx-a.dx*3-a.dy*2,hy-a.dy*3+a.dx*2);ctx.lineTo(hx-a.dx*3+a.dy*2,hy-a.dy*3-a.dx*2);ctx.closePath();ctx.fill();}
+      ctx.restore();}
+    return A.list.length;}
   // ═══ S2637 — the reefs (the sea that pushes back, session 2): one coastal chunk in six that is a headland keeps a reef off its point ═══
   // A chunk of a coast cell is coastal when its 3×3 samples hold both land and swimming water (placeH, the land keyed by place, as wreckSpot
   // reads it, so the answer never hangs on what has loaded). From its sea samples' middle eight rays of 300 m: land on one to three of them
@@ -1886,7 +1912,7 @@
   // Nothing is saved (the build sheet: no new key); the rest is kept for the session.
   const SERP_ODDS=1/250,SERP_V=11,SERP_PORT=300,SERP_BLACK=140,SERP_REST=20*60,SERP_UP=60,SERP_DOWN=90,SERP_AGAIN=600,SERP_DEEP=4,
     SERP_NEAR=25,SERP_GAP=10,SERP_TELL=2.5,SERP_LEAD=1.0,SERP_R=9,SERP_HIT=15,SERP_UISCE=1500,SERP_KEEP=12;
-  const SERP={on:null,last:-1e9,chunk:null,ports:null,g:null,hump:null};
+  const SERP={on:null,last:-1e9,chunk:null,ports:null,g:null,hump:null,fl:null};
   // S2656 — session 5: the coil, its health, the ballista, arrows and spells at its head. If it reaches her beam (14 m of her middle; it
   // holds 12 off) while she makes under 3 m/s, it coils her: held 6 s, speed 0, 3 rig a second; any one hit of 30 or more to its head
   // breaks it, and it may not coil again for 10 s (the tell's gap). Its 60 s up end a coil: it lets her go and dives. It has 400 health, struck only at its head while up (a sphere of
@@ -1926,9 +1952,9 @@
       if(serpDeep(nx,nz)){O.x=nx;O.z=nz;O.yaw=yw;return;}}}}
   // each tick at sea (tickShip): the roll on a new chunk, then the rise, the chase, the tells and the dives
   function serpentTick(dt){
-    if(activeZoneId!=='world'||!worldState.ship||(typeof isInterior==='function'&&isInterior())){if(SERP.on||SERP.g)serpDrop();return;}
+    if(activeZoneId!=='world'||!worldState.ship||(typeof isInterior==='function'&&isInterior())){if(SERP.on||SERP.g)serpDrop();if(SERP.fl)serpScaleDrop();return;}
     const cx=Math.floor(SHIP.x/CHUNK),cz=Math.floor(SHIP.z/CHUNK),ck=cx+','+cz;if(ck!==SERP.chunk){SERP.chunk=ck;if(SHIP.sailing)serpentChunk(cx,cz);}
-    const O=SERP.on;if(!O)return;O.t+=dt;
+    serpScaleTick(dt);const O=SERP.on;if(!O)return;O.t+=dt;
     if(O.phase==='down'){if(O.t<SERP_DOWN)return;
       if(O.rises<2&&openWater(SHIP.x,SHIP.z)&&Math.hypot(SHIP.x-O.dx,SHIP.z-O.dz)<SERP_AGAIN&&serpentRise(null,true))return;
       serpDrop();showMsg('The serpent is gone.','#c8b880');return;}
@@ -1944,7 +1970,7 @@
         if(Math.hypot(SHIP.x-P.x,SHIP.z-P.z)<SERP_R){const w=shipWear(SERP_HIT,0);O.strikes++;showMsg(`The serpent strikes her. Hull −${w?w.hull:SERP_HIT}.`,'#ff8060');}}}
     else{O.cd-=dt;if(O.cd<=0&&Math.hypot(SHIP.x-O.x,SHIP.z-O.z)<=SERP_NEAR){const v=SHIP.sailing?SHIP.speed:0;
         O.tell={t:0,x:SHIP.x-Math.sin(SHIP.yaw)*v*SERP_LEAD,z:SHIP.z-Math.cos(SHIP.yaw)*v*SERP_LEAD};O.cd=SERP_GAP;O.tells=(O.tells||0)+1;}}
-    if(O.t>=SERP_UP&&!O.tell){O.phase='down';O.t=0;O.dx=O.x;O.dz=O.z;}
+    if(O.t>=SERP_UP&&!O.tell){if(O.hp<=SERP_HP*SERP_DRIVE){serpentDriven();return;}O.phase='down';O.t=0;O.dx=O.x;O.dz=O.z;}
     serpDraw(O);}
   function serpDraw(O){const g=SERP.g;if(g){g.visible=O.phase==='up';g.position.set(O.x,SEA_Y-.4,O.z);g.rotation.set(0,O.yaw,0);}
     const hm=SERP.hump;if(hm){hm.visible=!!O.tell;if(O.tell){const k=Math.min(1,O.tell.t/SERP_TELL);hm.position.set(O.tell.x,SEA_Y-3.6+k*3.6*.35,O.tell.z);hm.scale.set(SERP_R/4,.35+k*.4,SERP_R/4);}}}
@@ -1969,6 +1995,23 @@
     showMsg(`The serpent is slain. ${SERP_SLAIN_SCALES} Serpent Scales.`,'#e8d8a0');grantHead('serpent');
     if(typeof renderHubInv==='function')renderHubInv();return true;}
   // an arrow or a spell in flight (tickZoneBalls): true when it struck the head and is spent
+  // S2662 — driven off (session 6; Michael's A on #2039): judged when a rise ends. If it dives at half its health or less (200 of 400),
+  // it does not rise again and leaves one Serpent Scale floating where it went down, for 60 s; stats.serpentsDriven counts it. Slain is
+  // 0 before that. The scale is taken when her hull passes within 8 m of it, or a swimmer comes within 2 m (the recommendation that rode
+  // with the answer). Nothing is saved: a scale left floating when you go ashore or the page reloads is lost, as the serpent is.
+  const SERP_DRIVE=.5,SERP_FLOAT_S=60,SERP_TAKE_HULL=8,SERP_TAKE_SWIM=2;
+  function serpentDriven(){const O=SERP.on;if(!O)return false;const x=O.x,z=O.z;serpDrop();
+    const st=worldState.stats||(worldState.stats={});st.serpentsDriven=(st.serpentsDriven||0)+1;
+    serpScaleDrop();const m=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.08,10),new THREE.MeshLambertMaterial({color:0x6f9a8c,emissive:0x1a2a26}));
+    m.name='serpentScaleFloat';m.position.set(x,SEA_Y+.05,z);sc.add(m);SERP.fl={x,z,t:0,mesh:m};
+    showMsg('The serpent dives and does not rise again. A scale floats where it went down.','#e8d8a0');return true;}
+  function serpScaleDrop(){const F=SERP.fl;if(F&&F.mesh&&F.mesh.parent)F.mesh.parent.remove(F.mesh);SERP.fl=null;}
+  // the named action: the floating scale taken into the bag
+  function serpentScaleTaken(){if(!SERP.fl)return false;serpScaleDrop();bagAdd(serpentScaleItem());showMsg('You take up the Serpent Scale.','#e8d8a0');return true;}
+  function serpScaleTick(dt){const F=SERP.fl;if(!F)return;F.t+=dt;if(F.t>=SERP_FLOAT_S){serpScaleDrop();return;}
+    if(F.mesh)F.mesh.position.y=SEA_Y+.05+Math.sin(F.t*1.7)*.08;
+    if(SHIP.x!=null&&Math.hypot(SHIP.x-F.x,SHIP.z-F.z)<=SERP_TAKE_HULL){serpentScaleTaken();return;}
+    if(typeof isSwimming==='function'&&isSwimming()&&Math.hypot(px-F.x,pz-F.z)<=SERP_TAKE_SWIM)serpentScaleTaken();}
   function serpentTakes(fb){const h=serpHead(),u=fb&&fb.userData;if(!h||!u||u.fromBoss)return false;const p=fb.position;
     if(Math.hypot(p.x-h.x,p.z-h.z)>SERP_HEAD_R||p.y<SEA_Y-1||p.y>SEA_Y+5)return false;const O=SERP.on;
     if(u.isArrow){const wt=u.wType||'pierce',k=O.resist&&typeof O.resist[wt]==='number'?O.resist[wt]:1;

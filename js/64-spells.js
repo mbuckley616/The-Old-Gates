@@ -686,9 +686,6 @@ function _renderQuestUpdatePopup(kind, qDef, opts){
   if(kind==='complete' && qDef.rewards){
     const rw = qDef.rewards;
     const parts = [];
-    if(rw.xp && rw.xp>0){
-      parts.push(`<span style="color:#c8b880">✦ ${rw.xp} XP</span>`);
-    }
     if(rw.gold && rw.gold>0){
       parts.push(`<span style="color:#ffd700">🪙 ${rw.gold} gold</span>`);
     }
