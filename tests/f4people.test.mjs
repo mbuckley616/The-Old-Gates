@@ -1,8 +1,8 @@
 // Card F4 (Session 1195): on the new look the townsfolk wear the builder's bodies (docs/design/character-builder.md;
 // vendor/people.builder.js and vendor/mh-pack.js, made by scripts/people_bundle.py). The old 17-bone rig still drives them;
 // the builder's 163-bone skeleton copies its joints each frame (32-people.js, hbPose). Dunmore at noon: the people in the
-// street are the genome's meshes, each the same person on a second boot, walking, under the draw-call budget at the middle
-// quality, with the far ones on the cheap level. Pictures in docs/prototypes/f4/.
+// street are the genome's meshes, walking, with the far ones on the cheap level. The second boot (the same person again) and the
+// crowd's draw calls at the middle quality are f4crowd's since Session 2676: with them this suite ran past run.mjs's 900 s cap on CI. Pictures in docs/prototypes/f4/.
 import { boot, check, ROOT } from './lib/game.mjs';
 import { execFileSync } from 'child_process';
 import fs from 'fs'; import path from 'path';
@@ -775,26 +775,3 @@ const farHoe = await page.evaluate(() => { const gn = personGenome({ role: 'farm
 check(`the far level's hoe is laid blade down too: the blade within 1 cm of the haft's foot and ${farHoe.overBlade} of haft over it`,
   farHoe.bladeOff < .01 && farHoe.bladeH < .1 && farHoe.overBlade > .7, farHoe);
 await g.close();
-
-// a second boot: the same people, the same bodies
-const g2 = await boot({ look: 'new' }); await dunmore(g2);
-const g2genomes = await g2.page.evaluate((keys) => Object.fromEntries(keys.map(k => [k, HB_GENOMES.has(k) ? JSON.stringify(HB.toSaved(HB_GENOMES.get(k))) : null])), who.sample);
-const same = who.sample.filter(k => g2genomes[k] === genomes[k]).length;
-check('on a second boot each of them is the same person (the same genome from the same place and name)', same === who.sample.length && same >= 4, { same, of: who.sample.length });
-// S1224 (card F4): the near level's cost where the crowd is thickest. At 18h, the most of Dunmore's people within 16 m of one of them
-// (seven, Session 1224); 6 m off their middle, every body within 46 m built, the frame at the middle quality looking four ways
-const crowd = await g2.page.evaluate(() => { forceTime(18); for (let i = 0; i < 120; i++) WORLD.tick(1 / 60, performance.now());
-  let rs = [...HB_RIGS].filter(r => r.root.parent === WORLD.scene && r.root.visible), P = rs.map(r => [r.root.position.x, r.root.position.z]);
-  let best = 0, at = null; for (const [x, z] of P) { const n = P.filter(([a, b]) => Math.hypot(a - x, b - z) < 16).length; if (n > best) { best = n; at = [x, z]; } }
-  const near = P.filter(([a, b]) => Math.hypot(a - at[0], b - at[1]) < 16), cx = near.reduce((s, p) => s + p[0], 0) / near.length, cz = near.reduce((s, p) => s + p[1], 0) / near.length;
-  px = cx; pz = cz + 6; for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now());
-  { const t1 = performance.now(); while (JOBS.length && performance.now() - t1 < 30000) runJobs(); }
-  pitch = -.05; CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.rotation.set(pitch, 0, 0, 'YXZ'); CAM.updateMatrixWorld(true);
-  const want = () => [...HB_RIGS].filter(r => (!r.hb || r.hb.cold) && !r.hbFail && r.root.parent === WORLD.scene && r.root.visible && Math.hypot(CAM.position.x - r.root.position.x, CAM.position.z - r.root.position.z) < HBODY.build).length;
-  let k = 0; while (want() && k++ < 1500) tickPeople(1 / 60, 1e5 + k * (HBODY.gap + 1));
-  SETTINGS.quality = 1; rs = [...HB_RIGS].filter(r => r.hb && r.root.parent === WORLD.scene && r.root.visible);
-  const views = [0, Math.PI / 2, Math.PI, -Math.PI / 2].map(yw => { yaw = yw; CAM.rotation.set(pitch, yaw, 0, 'YXZ'); CAM.updateMatrixWorld(true); tickPeople(1 / 60, 4e5); REN.render(scene, CAM); return REN.info.render.calls; });
-  return { most16: best, built: rs.length, left: want(), near: rs.filter(r => r.hb.L === 0).length, views, worst: Math.max(...views) }; });
-console.log('  crowd:', JSON.stringify(crowd));
-check(`where Dunmore's crowd is thickest (${crowd.most16} people within 16 m, ${crowd.near} bodies whole), the frame stays under 1,000 draw calls every way you look (${crowd.worst})`, crowd.left === 0 && crowd.most16 >= 4 && crowd.near >= 4 && crowd.worst < 1000, crowd);
-await g2.close();
