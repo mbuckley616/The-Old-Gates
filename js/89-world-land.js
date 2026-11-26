@@ -89,7 +89,7 @@ vec3 landCol(vec3 base){
   m.customProgramCacheKey=()=>'og-land-terrain';
   LAND.mat=m;return m;
 }
-// ── S2660 — the haze and the grade as uniforms every material shares (the light-and-grade card) ─────────────────────
+// ── S2676 — the haze and the grade as uniforms every material shares (the light-and-grade card) ─────────────────────
 // Two things the frame needs from every lit material, set per frame by the clock: an aerial haze over three's own fog, and the
 // grade's warmth, saturation and contrast (and the corruption level's drain and hue turn, visual-foundation.md, 0 for now). three
 // clones a built-in material's uniforms from ShaderLib when it compiles it, but a value that is a plain object (not a Color or a
@@ -116,7 +116,7 @@ function landUniformsOn(){const L=LAND.L;if(!L)return;
   OG_U.gradeB.x=LAND.drain||0;OG_U.gradeB.y=LAND.hue||0;}
 function landUniformsOff(){OG_U.haze.x=OG_U.haze.y=0;OG_U.gradeA.x=OG_U.gradeA.y=OG_U.gradeA.w=0;OG_U.gradeB.x=OG_U.gradeB.y=0;}
 // ── the sky: a gradient dome, the sun's glow and the haze at its foot ────────────────────────────────────────────
-// S2660: the haze band at the dome's foot is the land's own haze colour, so a far ridge melts into the sky with no seam; a low
+// S2676: the haze band at the dome's foot is the land's own haze colour, so a far ridge melts into the sky with no seam; a low
 // sun spreads its glow along the horizon as a band (the sunset's), a high one keeps a round halo; the wash is broken by a broad,
 // slow variation (a painted sky is never one flat gradient); High adds thin cirrus, lit by the glow.
 function landSky(){
@@ -150,7 +150,7 @@ function landWater(sh){
   sh.uniforms.uLSky=LAND.waterSky||(LAND.waterSky={value:new THREE.Color(.5,.66,.86)});
   sh.uniforms.uLSun=LAND.waterSun||(LAND.waterSun={value:new THREE.Vector3(0,1,0)});
   sh.uniforms.uLGlint=LAND.waterGlint||(LAND.waterGlint={value:1});
-  sh.uniforms.uLSea=LAND.waterSea||(LAND.waterSea={value:new THREE.Color(1,1,1)}); // S2660 — the island's sea (Aurenne's turquoise), a tint on the lit water
+  sh.uniforms.uLSea=LAND.waterSea||(LAND.waterSea={value:new THREE.Color(1,1,1)}); // S2676 — the island's sea (Aurenne's turquoise), a tint on the lit water
   sh.vertexShader='varying vec3 vLWW;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vLWW = (modelMatrix * vec4(position, 1.)).xyz;');
   sh.fragmentShader='uniform vec3 uLSky; uniform vec3 uLSun; uniform vec3 uLSea; uniform float uLGlint; varying vec3 vLWW;\n'+LAND_NOISE+sh.fragmentShader.replace('#include <opaque_fragment>',`
   { outgoingLight *= uLSea; vec2 p = vLWW.xz; float e = .9;
@@ -166,7 +166,7 @@ function landWater(sh){
     diffuseColor.a = mix(diffuseColor.a, 1., fr * .6); }
   #include <opaque_fragment>`);
 }
-// ── S2660 — the light by the hour (the light-and-grade card; P10b, OG-147) ─────────────────────────────────────────
+// ── S2676 — the light by the hour (the light-and-grade card; P10b, OG-147) ─────────────────────────────────────────
 // Every daytime frame was one flat noon: the sun's light never sank below 0.32 (atmosphere() clamped it), its colour and strength
 // moved only with the night factor, the ambient and the hemisphere together matched the sun so shadows barely read, and the haze
 // was the biome's one grey-green. The hour now reads its light from one curve, keyed at the hours P10b's lighting panel paints:
@@ -184,9 +184,9 @@ function landWater(sh){
 // Colours are as the shader reads them (colour management off, 05-compat.js), before ACES.
 const LIGHT_KEYS=[
   //  h      sun colour     sunI   ambient        ambI  hemi sky        hemi ground    hemiI  zenith            middle            horizon          haze             hazeD   glow           glowK exp   warm  sat   con  bloom vig
-  [ 0,    [.50,.62,.95],.55, [.30,.38,.62],.22, [.30,.40,.70],[.06,.07,.09],.30, [.010,.016,.045],[.022,.036,.085],[.05,.075,.14], [.035,.05,.09], .0011, [0,0,0],        0, 1.05, -.5, -.12, .06, .32, .45],
-  [ 4.3,  [.50,.62,.95],.55, [.30,.38,.62],.22, [.30,.40,.70],[.06,.07,.09],.30, [.010,.016,.045],[.022,.036,.085],[.05,.075,.14], [.035,.05,.09], .0011, [0,0,0],        0, 1.05, -.5, -.12, .06, .32, .45],
-  [ 5.2,  [.60,.60,.85],.20, [.42,.42,.62],.24, [.50,.50,.75],[.12,.10,.10],.32, [.04,.07,.19],   [.16,.18,.34],   [.62,.42,.48],  [.30,.28,.38],  .0012, [1,.5,.4],      .25, 1.08, -.1, -.05, .03, .26, .38],
+  [ 0,    [.50,.62,.95],.55, [.30,.38,.62],.22, [.30,.40,.70],[.06,.07,.09],.30, [.010,.016,.045],[.022,.036,.085],[.05,.075,.14], [.035,.05,.09], .0011, [0,0,0],        0, 1.05, -.5, -.6,  .06, .32, .45],
+  [ 4.3,  [.50,.62,.95],.55, [.30,.38,.62],.22, [.30,.40,.70],[.06,.07,.09],.30, [.010,.016,.045],[.022,.036,.085],[.05,.075,.14], [.035,.05,.09], .0011, [0,0,0],        0, 1.05, -.5, -.6,  .06, .32, .45],
+  [ 5.2,  [.60,.60,.85],.20, [.42,.42,.62],.24, [.50,.50,.75],[.12,.10,.10],.32, [.04,.07,.19],   [.16,.18,.34],   [.62,.42,.48],  [.30,.28,.38],  .0012, [1,.5,.4],      .25, 1.08, -.1, -.25, .03, .26, .38],
   [ 6.0,  [1,.55,.32],  .9,  [.50,.48,.60],.30, [.70,.62,.72],[.30,.24,.18],.45, [.14,.25,.55],   [.50,.50,.66],   [1.0,.62,.42],  [.78,.62,.56],  .0013, [1,.62,.38],    .8, 1.1,  .55, .08, .05, .30, .34],
   [ 7.0,  [1,.78,.56],  1.3, [.55,.58,.72],.26, [.70,.76,.92],[.36,.36,.26],.42, [.12,.30,.66],   [.40,.58,.84],   [.96,.84,.72],  [.80,.78,.76],  .0010, [1,.8,.6],      .5, 1.02,  .3,  .08, .05, .24, .30],
   [ 8.5,  [1,.92,.80],  1.5, [.58,.66,.84],.24, [.66,.78,1],  [.40,.44,.30],.42, [.10,.29,.70],   [.34,.56,.88],   [.80,.86,.92],  [.70,.78,.88],  .00075,[1,.9,.75],     .35, 1.0,  .1,  .10, .06, .22, .30],
@@ -195,22 +195,29 @@ const LIGHT_KEYS=[
   [17.0,  [1,.70,.40],  1.45,[.58,.52,.64],.26, [.78,.66,.70],[.44,.34,.22],.44, [.12,.24,.56],   [.48,.52,.70],   [1.0,.74,.48],  [.92,.72,.54],  .0009, [1,.68,.38],    .8, 1.04,  .7,  .16, .08, .30, .34],
   [17.85, [1,.50,.26],  1.05,[.52,.42,.56],.28, [.75,.52,.58],[.36,.26,.20],.44, [.12,.16,.42],   [.56,.40,.52],   [1.0,.52,.30],  [.80,.52,.44],  .0011, [1,.5,.28],    1.0, 1.1,  .75, .14, .08, .34, .38],
   [18.5,  [.60,.50,.70],.12, [.40,.36,.55],.28, [.50,.42,.60],[.14,.11,.12],.38, [.06,.09,.26],   [.28,.22,.40],   [.80,.42,.40],  [.38,.30,.40],  .0011, [1,.45,.35],    .4, 1.1,  .1,  .02, .06, .30, .40],
-  [19.3,  [.50,.60,.90],.35, [.32,.38,.62],.24, [.34,.42,.70],[.07,.07,.09],.32, [.025,.045,.13], [.08,.12,.26],   [.20,.22,.38],  [.10,.12,.22],  .0011, [0,0,0],        0, 1.06, -.35,-.08, .06, .32, .44],
-  [20.6,  [.50,.62,.95],.55, [.30,.38,.62],.22, [.30,.40,.70],[.06,.07,.09],.30, [.010,.016,.045],[.022,.036,.085],[.05,.075,.14], [.035,.05,.09], .0011, [0,0,0],        0, 1.05, -.5, -.12, .06, .32, .45],
-  [24,    [.50,.62,.95],.55, [.30,.38,.62],.22, [.30,.40,.70],[.06,.07,.09],.30, [.010,.016,.045],[.022,.036,.085],[.05,.075,.14], [.035,.05,.09], .0011, [0,0,0],        0, 1.05, -.5, -.12, .06, .32, .45]];
+  [19.3,  [.50,.60,.90],.35, [.32,.38,.62],.24, [.34,.42,.70],[.07,.07,.09],.32, [.025,.045,.13], [.08,.12,.26],   [.20,.22,.38],  [.10,.12,.22],  .0011, [0,0,0],        0, 1.06, -.35,-.4,  .06, .32, .44],
+  [20.6,  [.50,.62,.95],.55, [.30,.38,.62],.22, [.30,.40,.70],[.06,.07,.09],.30, [.010,.016,.045],[.022,.036,.085],[.05,.075,.14], [.035,.05,.09], .0011, [0,0,0],        0, 1.05, -.5, -.6,  .06, .32, .45],
+  [24,    [.50,.62,.95],.55, [.30,.38,.62],.22, [.30,.40,.70],[.06,.07,.09],.30, [.010,.016,.045],[.022,.036,.085],[.05,.075,.14], [.035,.05,.09], .0011, [0,0,0],        0, 1.05, -.5, -.6,  .06, .32, .45]];
 const LIGHT_F=['sun','sunI','amb','ambI','hSky','hGnd','hemiI','zen','mid','hor','haze','hazeD','glow','glowK','exp','warm','sat','con','bloom','vig'];
-// the islands' palettes and the biomes' nudges: colours multiply the curve's, the rest add (hazeD multiplies)
+// the islands' palettes (Michael's B on #719, 25 Oct 2026: each island its own air, OG-140 as the concept artist's air.js draws it,
+// blended across the sea), as ratios of each island's row to the Gatelands' laid over the curve: colours multiply, sunK, hemiK, hazeD
+// and cover multiply, warm, sat, con and exp add. The Gatelands soft and hazy (sight about 2.5 km at noon), green-grey water; the Mark a
+// hard, strong sun with less fill, a deep blue sky, crisp air (a third of the haze: about 8 km), dark water, few clouds and a cool,
+// contrasty, less saturated grade; Aurenne a fierce white sun, a bleached warm horizon and haze (about 4 km), a warm ground's bounce,
+// turquoise water, a sky nearly bare of cloud and a warm, saturated grade. The biomes nudge on top (a forest's and a fen's green,
+// thicker haze, the wastes' and the dunes' dust, the tundra's cold).
 const LIGHT_PAL={
-  gatelands:{sun:[1,1,1],amb:[1,1,1],sky:[1,1,1],hor:[1,1,1],haze:[.96,1.01,.98],hazeD:1,warm:.03,sat:.04,exp:0,sea:[1,1,1]},
-  mark:     {sun:[.95,.98,1.06],amb:[.9,.97,1.12],sky:[.86,.95,1.08],hor:[.92,.97,1.08],haze:[.86,.94,1.12],hazeD:.75,warm:-.2,sat:-.05,exp:.02,sea:[.86,.94,1.04]},
-  aurenne:  {sun:[1.04,.98,.88],amb:[1.05,1,.92],sky:[.92,1.02,1.04],hor:[1.08,1,.86],haze:[1.08,1,.84],hazeD:1.05,warm:.22,sat:.12,exp:.03,sea:[.78,1.08,1.02]}};
+  gatelands:{sun:[1,1,1],amb:[1,1,1],sky:[1,1,1],hor:[1,1,1],haze:[1,1.01,.99],sea:[.88,.9,.82],sunK:1,hemiK:1,hazeD:1.1,cover:1,warm:0,sat:-.04,con:-.02,exp:0},
+  mark:     {sun:[1,.95,.88],amb:[.82,.92,1.1],sky:[.62,.82,1.02],hor:[.86,.92,1.05],haze:[.84,.9,1.04],sea:[.55,.7,.85],sunK:1.2,hemiK:.8,hazeD:.35,cover:.55,warm:-.3,sat:-.14,con:.12,exp:.02},
+  aurenne:  {sun:[1,1.03,1.06],amb:[1.06,1.03,.96],sky:[.82,1.04,1.16],hor:[1.12,1.06,.95],haze:[1.14,1.05,.92],sea:[.68,1.1,1.14],sunK:1.2,hemiK:1.05,hazeD:.6,cover:.3,warm:.3,sat:.14,con:-.01,exp:-.03}};
 const LIGHT_BIOME={
   forest:{haze:[.9,1.03,.9],hazeD:1.25},fen:{haze:[.95,1.03,.96],hazeD:1.5},swamp:{haze:[.92,1.02,.9],hazeD:1.6},
   moor:{haze:[.96,.98,1.0],hazeD:1.15,sat:-.04},autumn:{haze:[1.04,.99,.92],warm:.1,sat:.04},
   tundra:{haze:[.94,.98,1.06],amb:[1,1,1.06],exp:.03},wastes:{haze:[1.12,.98,.8],hazeD:1.5,sat:-.06,warm:.08},
   wasteland:{haze:[1.1,.97,.82],hazeD:1.4,sat:-.08},dunes:{haze:[1.1,1,.82],hazeD:1.2,warm:.12},coast:{hazeD:.95}};
+const LIGHT_C3=['sun','amb','sky','hor','haze','sea'],LIGHT_MUL=['sunK','hemiK','hazeD','cover'],LIGHT_ADD=['warm','sat','con','exp'];
 const _lC={zen:new THREE.Color(),mid:new THREE.Color(),hor:new THREE.Color(),glow:new THREE.Color(),tmp:new THREE.Color(),v3:new THREE.Vector3(),
-  pal:{sun:[1,1,1],amb:[1,1,1],sky:[1,1,1],hor:[1,1,1],haze:[1,1,1],sea:[1,1,1],hazeD:1,warm:0,sat:0,exp:0}};
+  pal:{sun:[1,1,1],amb:[1,1,1],sky:[1,1,1],hor:[1,1,1],haze:[1,1,1],sea:[1,1,1],sunK:1,hemiK:1,hazeD:1,cover:1,warm:0,sat:0,con:0,exp:0}};
 // the curve at hour h, into out (an object of Colors and numbers, made once)
 function lightAt(h,out){
   h=((h%24)+24)%24;let i=0;while(i<LIGHT_KEYS.length-2&&LIGHT_KEYS[i+1][0]<=h)i++;
@@ -224,14 +231,16 @@ function lightIsle(r){if(r._isle)return r._isle;let k='gatelands';
   try{if(r.x!=null&&typeof nationKeyOf==='function'&&typeof cellOf==='function'){const c=cellOf(r.x,r.z);k=nationKeyOf(c[0],c[1])||k;}}catch(e){}
   return r._isle=k;}
 // the palette where you stand: the islands' and the biomes' by the regions' weights
-function lightPalette(ws){const P=_lC.pal;
-  for(const k of ['sun','amb','sky','hor','haze','sea'])P[k][0]=P[k][1]=P[k][2]=0;P.hazeD=P.warm=P.sat=P.exp=0;let W=0;
-  for(const e of ws){if(e.w<=0)continue;const I=LIGHT_PAL[lightIsle(e.r)]||LIGHT_PAL.gatelands,Bm=LIGHT_BIOME[e.r.biome]||{};W+=e.w;
-    for(const k of ['sun','amb','sky','hor','haze','sea'])for(let j=0;j<3;j++)P[k][j]+=e.w*I[k][j]*(Bm[k]?Bm[k][j]:1);
-    P.hazeD+=e.w*I.hazeD*(Bm.hazeD||1);P.warm+=e.w*(I.warm+(Bm.warm||0));P.sat+=e.w*(I.sat+(Bm.sat||0));P.exp+=e.w*(I.exp+(Bm.exp||0));}
-  if(W<=0){const I=LIGHT_PAL.gatelands;for(const k of ['sun','amb','sky','hor','haze','sea'])for(let j=0;j<3;j++)P[k][j]=I[k][j];P.hazeD=1;P.warm=I.warm;P.sat=I.sat;P.exp=0;return P;}
-  for(const k of ['sun','amb','sky','hor','haze','sea'])for(let j=0;j<3;j++)P[k][j]/=W;P.hazeD/=W;P.warm/=W;P.sat/=W;P.exp/=W;
+function lightPalette(ws){const P=_lC.pal;let W=0;
+  for(const k of LIGHT_C3)P[k][0]=P[k][1]=P[k][2]=0;for(const k of LIGHT_MUL)P[k]=0;for(const k of LIGHT_ADD)P[k]=0;
+  const add=(I,Bm,w)=>{W+=w;for(const k of LIGHT_C3)for(let j=0;j<3;j++)P[k][j]+=w*I[k][j]*(Bm[k]?Bm[k][j]:1);
+    for(const k of LIGHT_MUL)P[k]+=w*I[k]*(Bm[k]||1);for(const k of LIGHT_ADD)P[k]+=w*(I[k]+(Bm[k]||0));};
+  for(const e of ws)if(e.w>0)add(LIGHT_PAL[lightIsle(e.r)]||LIGHT_PAL.gatelands,LIGHT_BIOME[e.r.biome]||{},e.w);
+  if(W<=0)add(LIGHT_PAL.gatelands,{},1);
+  for(const k of LIGHT_C3)for(let j=0;j<3;j++)P[k][j]/=W;for(const k of LIGHT_MUL)P[k]/=W;for(const k of LIGHT_ADD)P[k]/=W;
   return P;}
+// the moon's lit share, 0 new to 1 full (skyBodies' phase: day 0 is a full moon)
+function lightMoon(){const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440),ph=((day+14)%29)/29;return(1-Math.cos(ph*Math.PI*2))/2;}
 // the weather's cloud, as skyBodies reads it (0 clear, 1 a storm's lid), and the storm's own share
 function lightCloud(){const cur=WX.type,nxt=WX.next,wk=(nxt!==cur)?WX.k:0,amt=k=>(cur===k?1:0)*(1-wk)+(nxt===k?1:0)*wk;
   return [Math.min(1,amt('overcast')*.75+amt('rain')*.9+amt('storm')+amt('snow')*.85+amt('fog')*.95),amt('storm')+amt('rain')*.4];}
@@ -245,11 +254,16 @@ function landHour(ws,den){
   const L=LAND.L||(LAND.L={});const hr=(typeof gameHour==='function')?gameHour():12;lightAt(hr,L);
   const P=lightPalette(ws);
   _lMul(L.sun,P.sun);_lMul(L.amb,P.amb);_lMul(L.hSky,P.amb);_lMul(L.zen,P.sky);_lMul(L.mid,P.sky);_lMul(L.hor,P.hor);_lMul(L.haze,P.haze);
-  L.hazeD*=P.hazeD;L.warm+=P.warm;L.sat+=P.sat;L.exp+=P.exp;L.sea=L.sea||new THREE.Color();L.sea.setRGB(P.sea[0],P.sea[1],P.sea[2]);
+  L.sunI*=P.sunK;L.hemiI*=P.hemiK;L.hazeD*=P.hazeD;L.cover=P.cover;L.warm+=P.warm;L.sat+=P.sat;L.con+=P.con;L.exp+=P.exp;L.sea=L.sea||new THREE.Color();L.sea.setRGB(P.sea[0],P.sea[1],P.sea[2]);
+  // the night by the moon's phase, with starlight as a floor (Michael's C on #629, 22 Oct 2026; hours.js's nightRow): under a new moon a
+  // fifth of a full moon's night is left in the sky, the haze, the ambient and the hemisphere, so the skyline and the roofs still read
+  // against the sky while a lit window carries across a dark field; the moon's own light goes with its phase (landLights)
+  const nt=(typeof _nightFactor==='function')?_nightFactor():0,moon=lightMoon(),nk=1-nt*(1-(.2+.8*moon));L.moon=moon;
+  if(nk<1){for(const k of ['zen','mid','hor','haze','hSky'])L[k].multiplyScalar(nk);L.ambI*=nk;L.exp*=1+.06*nt;}
   const [cloud,storm]=lightCloud();L.cloud=cloud;
   if(cloud>0){const dk=storm*.3;
     for(const k of ['zen','mid','hor'])_lGrey(L[k],cloud*.85,dk);_lGrey(L.haze,cloud*.8,dk*.8);_lGrey(L.sun,cloud*.5,0);_lGrey(L.hSky,cloud*.6,0);
-    L.ambI*=1+cloud*.9;L.hemiI*=1+cloud*.5;L.hazeD*=1+cloud*1.6;L.glowK*=1-cloud*.8;
+    L.sunI*=1-cloud*.65;L.ambI*=1+cloud*.9;L.hemiI*=1+cloud*.5; /* the lid takes the sun (shadows soften to nothing under a storm) and spreads it */L.hazeD*=1+cloud*1.6;L.glowK*=1-cloud*.8;
     L.warm*=1-cloud*.8;L.sat-=cloud*.12;L.con-=cloud*.03;L.exp*=1-storm*.08;}
   L.hazeMax=cameraUnderwater()?0:.92;
   // haze thins as you climb, as the exp2 does (from a summit the whole country is in view)
@@ -276,7 +290,7 @@ function landAtmosphere(){
     const day=Math.max(.05,Math.min(1,(L.mid.r*.2126+L.mid.g*.7152+L.mid.b*.0722)/.48));
     C.uHi.value.setRGB(1.3,1.27,1.2).multiply(_lC.tmp.copy(L.sun).lerp(_lC.glow.setRGB(1,1,1),.45)).multiplyScalar(.2+.8*day).lerp(_lC.zen.copy(L.mid).lerp(L.hor,.5).multiplyScalar(1.15),.1+.75*cloud);
     C.uLo.value.copy(L.mid).lerp(L.hor,.55).multiply(_lC.tmp.setRGB(.86,.84,.94)).multiplyScalar(.6+.35*day).lerp(_lC.glow.copy(L.glow),.12*L.glowK);
-    C.uRim.value.copy(L.glow).multiplyScalar(L.glowK*.9+.15*day);C.uOp.value=.88+.12*cloud;C.uGrow.value=1+cloud*.7;
+    C.uRim.value.copy(L.glow).multiplyScalar(L.glowK*.9+.15*day);C.uOp.value=.88+.12*cloud;C.uGrow.value=1+cloud*.7;C.uCover.value=Math.min(1.06,(L.cover==null?1:L.cover)+cloud*1.2); /* the island's share of the heaps (#719), all of them under a lid */
     LAND.clouds.rotation.y=(worldState.gameTimeAbsMinutes||0)*.00012;}
   if(LAND.waterSky){LAND.waterSky.value.copy(L.mid).lerp(L.hor,.5);LAND.waterSun.value.copy(U.uSun.value);LAND.waterGlint.value=Math.max(0,el)*(1-cloud);
     if(LAND.waterSea)LAND.waterSea.value.copy(L.sea).multiplyScalar(1-.3*cloud);} /* an overcast's sea is a darker, duller water */
@@ -290,8 +304,8 @@ function landLights(){
   const hr=(typeof gameHour==='function')?gameHour():12,dayAng=Math.PI*(hr-6)/12,eSun=Math.sin(dayAng);
   // by day the sun; when it is down, the moon (its own path, skyBodies'), scaled by its phase and whether it is up
   let e=eSun,a=dayAng,k=1;
-  if(eSun<-.04){a=dayAng+Math.PI;e=Math.sin(a);const day=Math.floor((worldState.gameTimeAbsMinutes||0)/1440),ph=((day+14)%29)/29,lit=(1-Math.cos(ph*Math.PI*2))/2;
-    k=(.3+.7*lit)*sstep(-.04,.15,e);}
+  if(eSun<-.04){a=dayAng+Math.PI;e=Math.sin(a);const lit=lightMoon();
+    k=lit*sstep(-.04,.15,e);} /* #629's C: the moon's light is its lit share; the floor is the sky's and the fill's (landHour) */
   const el=Math.max(.1,e),az=-.6+Math.cos(a)*.9,c=Math.sqrt(1-el*el);
   _lLD.set(Math.sin(az)*c,el,Math.cos(az)*c);
   sun.position.set(sunTarget.position.x+_lLD.x*260,sunTarget.position.y+_lLD.y*260,sunTarget.position.z+_lLD.z*260);
@@ -359,9 +373,10 @@ function landStreak(){if(!LAND.on||!LAND.sky)return;
 // No render targets: the grade rides in three's own ACES function, so it costs no pass and no draw call. The world scene
 // turns tone mapping on for its own render and off after it, so gates and the hands keep theirs; rooms take the neutral
 // curve (landRoomPost), which the grade does not touch (Session 1257: it was in the tone-mapping chunk, under every curve).
-// P10b's grade: shadows a touch cool, highlights warm, saturation lifted. S2660: by the hour (OG_U.gradeA, from LAND.L): the
+// P10b's grade: shadows a touch cool, highlights warm, saturation lifted. S2676: by the hour (OG_U.gradeA, from LAND.L): the
 // warmth pushes the highlights to amber at golden hour and the shadows to blue at night, the saturation and a contrast about the
-// middle move with it; OG_U.gradeB is the corruption level's (visual-foundation.md: the colour drained toward grey, the hue turned
+// middle move with it. A negative saturation (night, the blue hour, an overcast) drains the dark tones and spares the bright ones,
+// as eyes do in the dark: the moonlit land goes blue-grey while a lamp's pool keeps its amber. OG_U.gradeB is the corruption level's (visual-foundation.md: the colour drained toward grey, the hue turned
 // by a torn gate's school), LAND.drain and LAND.hue, both 0 until that card sets them. All four at zero is the S1180 grade exactly.
 function landGrade(){
   const C=THREE.ShaderChunk,A='vec3 ACESFilmicToneMapping( vec3 color ) {';
@@ -373,7 +388,7 @@ vec3 ogGrade( vec3 gc ) { /* og-grade */ const vec3 LW = vec3(.2126, .7152, .072
 	vec3 cool = vec3(.95, .985, 1.05) + vec3(-.03, -.01, .06) * max(-ogGradeA.x, 0.);
 	vec3 warm = vec3(1.05, 1., .92) + vec3(.06, .005, -.09) * ogGradeA.x;
 	gc *= mix(cool, warm, smoothstep(.03, .6, gl));
-	gc = mix(vec3(gl), gc, 1.14 + ogGradeA.y);
+	gc = mix(vec3(gl), gc, 1.14 + (ogGradeA.y < 0. ? ogGradeA.y * (1. - smoothstep(.15, .55, gl)) : ogGradeA.y));
 	gc = (gc - .42) * (1. + ogGradeA.w) + .42;
 	if (ogGradeB.x > 0.) gc = mix(gc, vec3(dot(gc, LW)), ogGradeB.x);
 	if (ogGradeB.y != 0.) { float ch = cos(ogGradeB.y), shh = sin(ogGradeB.y); vec3 k = vec3(.57735);
@@ -440,7 +455,7 @@ function landRender(raw,s,c){
       B.mBlur.uniforms.tDiffuse.value=B.b.texture;B.mBlur.uniforms.uDir.value.set(0,qy*(1+i));pass(B.mBlur,B.a);}
     const tm=REN.toneMapping,ex=REN.toneMappingExposure;REN.toneMapping=THREE.ACESFilmicToneMapping;REN.toneMappingExposure=LAND.exposure;
     B.mComp.uniforms.tScene.value=B.rt.texture;B.mComp.uniforms.tBloom.value=B.a.texture;
-    B.mComp.uniforms.uK.value=LAND.bloomK!=null?LAND.bloomK:.22;B.mComp.uniforms.uVig.value=LAND.vig!=null?LAND.vig:.3; /* S2660 — by the hour */
+    B.mComp.uniforms.uK.value=LAND.bloomK!=null?LAND.bloomK:.22;B.mComp.uniforms.uVig.value=LAND.vig!=null?LAND.vig:.3; /* S2676 — by the hour */
     landUniformsOn();
     try{pass(B.mComp,null);}finally{REN.toneMapping=tm;REN.toneMappingExposure=ex;landUniformsOff();}
     B.frames++;
@@ -563,7 +578,7 @@ function qualityProbeEnd(decided){const P=QPROBE;P.on=false;
 // ── the clouds: painted cumulus heaps, in one draw call ──────────────────────────────────────────────────────────
 // Each heap is a few dozen puffs, one instanced quad turned to face the eye in the vertex shader, so a sky of 30 heaps is one draw
 // call, not two thousand sprites. The heaps ride with the dome (they are scenery at the sky's distance, not places) and drift with
-// the wind; the quality level sets the count. S2660 (the light-and-grade card): they were round cotton puffs, lit by their height
+// the wind; the quality level sets the count. S2676 (the light-and-grade card): they were round cotton puffs, lit by their height
 // alone. Now each puff is a lumpy blob, shaded by the sun as part of its heap (the heap's own roundness, out from its centre and up
 // at its top, with a little of the puff's), so a heap has one lit side and one shadow side with a painted, soft-edged terminator between; the heap is cut flat at its base (cumulus sit on a level, the
 // condensation height) and darkest there; a sun behind it lights its edge (the silver lining); every puff varies a little in tone.
@@ -582,26 +597,26 @@ function landClouds(){
   const Q=landQ();if(!Q.clouds)return;
   let s=0x9e3779b9;const r=()=>{s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};
   const list=[],per=Q.clouds>=30?34:Q.clouds>=14?26:18;
-  for(let k=0;k<Q.clouds;k++){const a=r()*Math.PI*2,d=900+r()*1500,cx=Math.sin(a)*d,cz=Math.cos(a)*d,cy=330+r()*220+d*.05,size=90+r()*170,tall=.55+r()*.6;
+  for(let k=0;k<Q.clouds;k++){const a=r()*Math.PI*2,d=900+r()*1500,cx=Math.sin(a)*d,cz=Math.cos(a)*d,cy=330+r()*220+d*.05,size=90+r()*170,tall=.55+r()*.6,hk=r();
     const N=per+Math.floor(r()*per*.6);
     for(let i=0;i<N;i++){const ox=(r()-.5)*size*2.2,oz=(r()-.5)*size*1.2,dome=Math.max(0,1-Math.pow(ox/(size*1.1),2)-Math.pow(oz/(size*.62),2));
       const oy=Math.sqrt(dome)*size*tall*(.5+r()*.6),hn=Math.min(1,oy/(size*tall*.9));
-      list.push([cx+ox,cy+oy,cz+oz,size*(.5+r()*.34)*(1.25-.4*hn),hn,ox/size,oz/size,cy]);}}
+      list.push([cx+ox,cy+oy,cz+oz,size*(.5+r()*.34)*(1.25-.4*hn),hn,ox/size,oz/size,cy,hk]);}}
   const mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,fog:false,
     uniforms:{uMap:{value:landPuffTex()},uLo:{value:new THREE.Color()},uHi:{value:new THREE.Color()},uRim:{value:new THREE.Color()},uSunV:{value:new THREE.Vector3(0,1,0)},uSun:LAND.skyMat.uniforms.uSun,
-      uOp:{value:.9},uGrow:{value:1},ogGradeA:{value:OG_U.gradeA},ogGradeB:{value:OG_U.gradeB}},
-    vertexShader:`attribute vec4 aPuff; varying vec2 vUv; varying vec4 vP; varying float vH; varying float vJ;
-void main(){ vUv = uv; vP = aPuff; vec4 c = modelViewMatrix * vec4(instanceMatrix[3].xyz, 1.); float sz = length(instanceMatrix[0].xyz) * uGrow;
+      uOp:{value:.9},uGrow:{value:1},uCover:{value:1},ogGradeA:{value:OG_U.gradeA},ogGradeB:{value:OG_U.gradeB}},
+    vertexShader:`attribute vec4 aPuff; attribute float aHeap; varying vec2 vUv; varying vec4 vP; varying float vH; varying float vJ; varying float vK;
+void main(){ vUv = uv; vP = aPuff; vK = aHeap; vec4 c = modelViewMatrix * vec4(instanceMatrix[3].xyz, 1.); float sz = length(instanceMatrix[0].xyz) * uGrow;
   vec2 o = position.xy * sz; c.xy += o;
   vec3 upV = (viewMatrix * vec4(0., 1., 0., 0.)).xyz;
   vH = (modelMatrix * vec4(instanceMatrix[3].xyz, 1.)).y + dot(vec3(o, 0.), upV) - modelMatrix[3][1];
   vJ = fract(sin(float(gl_InstanceID) * 12.9898) * 43758.5453);
   gl_Position = projectionMatrix * c; }`.replace('void main','uniform float uGrow;\nvoid main'),
-    fragmentShader:`uniform sampler2D uMap; uniform vec3 uLo, uHi, uRim, uSunV, uSun; uniform float uOp; varying vec2 vUv; varying vec4 vP; varying float vH; varying float vJ;
+    fragmentShader:`uniform sampler2D uMap; uniform vec3 uLo, uHi, uRim, uSunV, uSun; uniform float uOp, uCover; varying vec2 vUv; varying vec4 vP; varying float vH; varying float vJ; varying float vK;
 ${LAND_NOISE}
 void main(){ float base = vP.w; vec2 q = vUv * 2. - 1.;
   float ta = texture2D(uMap, vUv).a, er = lvn(q * 2.6 + vJ * 37.) * .6 + lvn(q * 6.1 + vJ * 11.) * .4;
-  float a = smoothstep(.04, .7, ta * (.35 + 1.1 * er)) * uOp * smoothstep(base - 6., base + 26., vH); if (a < .01) discard; vec3 n = normalize(vec3(q * .9, sqrt(max(0., 1. - dot(q, q) * .81))));
+  float a = smoothstep(.04, .7, ta * (.35 + 1.1 * er)) * uOp * smoothstep(base - 6., base + 26., vH) * (1. - smoothstep(uCover - .06, uCover, vK)); if (a < .01) discard; vec3 n = normalize(vec3(q * .9, sqrt(max(0., 1. - dot(q, q) * .81))));
   vec3 nh = normalize(vec3(vP.y, vP.x * 1.4 - .35, vP.z)), nw = (vec4(n, 0.) * viewMatrix).xyz;
   vec3 S = normalize(uSunV); float lit = .5 + .5 * dot(normalize(nh + nw * .18), normalize(uSun));
   float shade = smoothstep(.22, .78, lit * .7 + vP.x * .45 - .08 + (er - .5) * .12);
@@ -611,9 +626,9 @@ void main(){ float base = vP.w; vec2 q = vUv * 2. - 1.;
   gl_FragColor = vec4(c, a);
   #include <tonemapping_fragment>
 }`});
-  const geo=new THREE.PlaneGeometry(1,1),im=new THREE.InstancedMesh(geo,mat,list.length),M=new THREE.Matrix4(),pf=new Float32Array(list.length*4);
-  list.forEach((p,i)=>{M.makeScale(p[3],p[3],p[3]).setPosition(p[0],p[1],p[2]);im.setMatrixAt(i,M);pf[i*4]=p[4];pf[i*4+1]=p[5];pf[i*4+2]=p[6];pf[i*4+3]=p[7];});
-  geo.setAttribute('aPuff',new THREE.InstancedBufferAttribute(pf,4));
+  const geo=new THREE.PlaneGeometry(1,1),im=new THREE.InstancedMesh(geo,mat,list.length),M=new THREE.Matrix4(),pf=new Float32Array(list.length*4),hf=new Float32Array(list.length);
+  list.forEach((p,i)=>{M.makeScale(p[3],p[3],p[3]).setPosition(p[0],p[1],p[2]);im.setMatrixAt(i,M);pf[i*4]=p[4];pf[i*4+1]=p[5];pf[i*4+2]=p[6];pf[i*4+3]=p[7];hf[i]=p[8];});
+  geo.setAttribute('aPuff',new THREE.InstancedBufferAttribute(pf,4));geo.setAttribute('aHeap',new THREE.InstancedBufferAttribute(hf,1));
   im.onBeforeRender=(rn,sc2,cam)=>{mat.uniforms.uSunV.value.copy(LAND.skyMat.uniforms.uSun.value).transformDirection(cam.matrixWorldInverse);};
   im.frustumCulled=false;im.renderOrder=-4;im.userData.puffs=list.length;im.userData.q=Q.name;
   LAND.clouds=im;LAND.sky.add(im);
