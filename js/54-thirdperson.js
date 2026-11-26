@@ -1227,8 +1227,56 @@ function tpGlassHeld(R,u,camY){const W=R.weapon,H=R.rig.hb,h=H&&R.hbHeld&&R.hbHe
 // the third-person camera brought to the eye as the glass comes up (after tpCamera)
 function tpGlassCam(u,camY){if(u<=0)return;const k=_rdEase(u/GLASS_CAM),F=glassEye(camY);CAM.position.lerp(F.eye,k);
   TP.near=Math.hypot(CAM.position.x-px,CAM.position.z-pz);TP.dist=Math.hypot(CAM.position.x-px,CAM.position.y-camY,CAM.position.z-pz);}
+// S2694 — your own fall (Michael, 25 Nov 2026: "Death ragdoll needs to be implemented for the player"). At death your body falls on the
+// foes' ragdoll (S419's 21 points, ragdollStart): pushed away from the nearest live foe, or let go backwards when nothing struck (a fall,
+// the cold, a drowning). The loop stops at `dead` before tpUpdate, so tickPeople (which ticks the ragdolls every frame) calls tpDeathTick:
+// the builder's body follows the driver's bones, and in first person the camera rides the head down to where it lies, rolled with it.
+// The first live frame after a load (tpUpdate) puts the body back on its feet. Nothing here decides an outcome; the fall's roll is cosmetic.
+const TP_DEATH={on:false,R:null,hips0:null,cull:true,off:null,t:0,roll:0,pitch:0};
+function tpDeathGround(){
+  if(activeZoneId==='dungeon'){const f=(typeof currentFloor!=='undefined'&&currentFloor===2&&typeof FLOOR2_Y!=='undefined')?FLOOR2_Y:0;return ()=>f;}
+  if(typeof isInterior==='function'&&isInterior()){const f=jumpY;return ()=>f;}
+  if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.isSwimming&&WORLD.isSwimming()){const f=SEA_Y-.2;return ()=>f;}
+  if(typeof activeTerrainH!=='function')return ()=>jumpY;
+  const t=activeTerrainH(px,pz),f=jumpY;return (typeof onGround!=='undefined'&&onGround&&f-t>.35)?()=>f:activeTerrainH; /* on a deck or a platform its boards are the floor */}
+function tpDeathSolid(){
+  if(typeof isInterior==='function'&&isInterior())return typeof intSolidAt==='function'?(x,z)=>intSolidAt(x,z,.05,0):null;
+  if(activeZoneId==='dungeon')return typeof dSolid==='function'?(x,z)=>dSolid(x,z):null;
+  if(activeZoneId==='world'&&typeof WORLD!=='undefined'&&WORLD.solidAt)return WORLD.solidAt;return null;}
+function tpDeathPush(){let best=null,bd=6;
+  const list=activeZoneId==='dungeon'?(typeof ENEMIES!=='undefined'?ENEMIES:[]):(typeof ZE!=='undefined'?ZE:[]);
+  for(const e of list){if(!e||e.dead||(activeZoneId==='dungeon'&&e.floor!==currentFloor))continue;const d=Math.hypot(px-e.x,pz-e.z);if(d<bd){bd=d;best=e;}}
+  let dx,dz,k;if(best&&bd>1e-3){dx=(px-best.x)/bd;dz=(pz-best.z)/bd;k=1.6+Math.random()*.7;}else{dx=Math.sin(yaw);dz=Math.cos(yaw);k=.5+Math.random()*.3;}
+  return new THREE.Vector3(dx*k,0,dz*k);}
+function tpDeathStart(){const D=TP_DEATH;if(D.on||!scene||typeof ragdollStart!=='function')return false;
+  let R=null;try{R=tpEnsure();}catch(e){console.warn('death: no body',e);}if(!R||!R.rig||!R.rig.B)return false;
+  if(R.root.parent!==scene){if(R.root.parent)R.root.parent.remove(R.root);scene.add(R.root);}
+  R.root.position.set(px,jumpY,pz);R.root.rotation.set(0,yaw+Math.PI,0);R.root.visible=!!thirdPerson;R.root.updateMatrixWorld(true);
+  const B=R.rig.B;D.hips0=B.hips.position.clone();D.cull=R.rig.mesh.frustumCulled;
+  if(!ragdollStart(R.rig,tpDeathPush(),{ground:tpDeathGround(),solid:tpDeathSolid()}))return false;
+  D.on=true;D.R=R;D.t=0;D.look=null;D.roll=CAM.rotation.z||0;D.pitch=CAM.rotation.x;
+  D.off=CAM.position.clone().sub(B.head.getWorldPosition(new THREE.Vector3()));
+  return true;}
+const _tpdV=new THREE.Vector3(),_tpdN=new THREE.Vector3();
+function tpDeathTick(dt){const D=TP_DEATH,R=D.R;if(!D.on||!R)return;dt=Math.min(Math.max(dt||0,0),.05);D.t+=dt;
+  if(R.rig.hb){hbPose(R.rig);R.root.updateMatrixWorld(true);tpHBHold(R);}
+  if(thirdPerson){ /* the camera keeps its side of you and its distance (2 to 3.5 m), rises to 1.9 m over the ground and looks down at the hips */
+    const hp=R.rig.B.hips.getWorldPosition(_tpdV),dx=CAM.position.x-hp.x,dz=CAM.position.z-hp.z,hd=Math.hypot(dx,dz)||1,k2=Math.max(2,Math.min(3.5,hd))/hd,e2=1-Math.exp(-dt/.35);
+    const gy=tpDeathGround()(hp.x,hp.z);CAM.position.x+=(hp.x+dx*k2-CAM.position.x)*e2;CAM.position.z+=(hp.z+dz*k2-CAM.position.z)*e2;CAM.position.y+=(gy+1.9-CAM.position.y)*e2;
+    if(!D.look)D.look=hp.clone().setY(hp.y+.6);D.look.lerp(hp,e2);CAM.lookAt(D.look);return;}
+  const B=R.rig.B,h=B.head.getWorldPosition(_tpdV),k=Math.min(1,D.t/.5),e=1-Math.exp(-dt/.12);
+  CAM.position.copy(h).addScaledVector(D.off,1-k*k);
+  {const g=tpDeathGround()(CAM.position.x,CAM.position.z)+.14;if(CAM.position.y<g)CAM.position.y=g;}
+  // the eye tips with the head: rolled by how far it lies to a side, pitched to the sky on its back and to the ground face down
+  B.neck.getWorldPosition(_tpdN);const v=_tpdV.sub(_tpdN),l=v.length()||1,vr=(v.x*Math.cos(yaw)-v.z*Math.sin(yaw))/l,vf=(-v.x*Math.sin(yaw)-v.z*Math.cos(yaw))/l,vy=v.y/l;
+  const roll=Math.max(-1.3,Math.min(1.3,-Math.atan2(vr,Math.abs(vy)+Math.abs(vf)))),pit=Math.max(-1.1,Math.min(1.1,-.7*Math.atan2(vf,Math.abs(vy)+Math.abs(vr))));
+  D.roll+=(roll-D.roll)*e;D.pitch+=(pit-D.pitch)*e;CAM.rotation.set(D.pitch,yaw,D.roll);}
+function tpDeathEnd(){const D=TP_DEATH,R=D.R;D.on=false;D.R=null;CAM.rotation.set(pitch,yaw,0);if(!R||!R.rig)return;
+  if(typeof RAGDOLLS!=='undefined')for(const r of RAGDOLLS)if(r.rig===R.rig)RAGDOLLS.delete(r);
+  R.rig.limp=false;R.rig.mesh.frustumCulled=D.cull;if(D.hips0)R.rig.B.hips.position.copy(D.hips0);R.root.rotation.x=0;TP.deadT=0;}
 function tpUpdate(dt,st){
   workTick();
+  if(TP_DEATH.on&&!dead)tpDeathEnd(); /* S2694 — up again after the load */
   if(!thirdPerson){
     if(TP.rig&&TP.rig.root.visible)TP.rig.root.visible=false;
     if(TP.hidVM){TP.hidVM=false;VM_SCENE.visible=true;}

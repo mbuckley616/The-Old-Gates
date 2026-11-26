@@ -1774,6 +1774,7 @@ function personRise(m){const rig=m&&m.userData.rig,cv=m&&m.userData.cover;if(cv)
   if(rig&&rig.hb)hbEyes(rig,false);}
 function tickPeople(dt,now){
   if(RAGDOLLS.size)tickRagdolls(dt); // S419 — the fallen
+  if(dead&&typeof TP_DEATH!=='undefined'&&TP_DEATH.on)try{tpDeathTick(dt);}catch(e){} /* S2694 — your own body and, in first person, the eye on it, while the loop stands at death */
   for(const rig of PEOPLE_RIGS){
     const root=rig.root;
     // a foe's body (S171) hangs in its enemy's group: that group is what stands in the scene, and the enemy's own
