@@ -23,6 +23,7 @@ async function walkRoom(sid, pick, W0, tag) {
 await page.evaluate(new Function('id', `${pick} forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h);`), sid);
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 await g.frames(2);
+for (let k = 0; k < 60 && !(await page.evaluate(() => { let n = 0; if (intNPCMesh) intNPCMesh.traverse(o => { if (o.isMesh && o.visible) n++; }); return !intNPCMesh || n > 0; })); k++) await g.frames(2); /* S2690 — the keeper is drawn once the builder's body is (S2661, S2678) */
 const r = await page.evaluate(() => {
   const h = currentHouse, T = h._churchHall; if (!T) return { none: true, type: h && h.type };
   const W = h._roomW, D = h._roomD, X = T.inner.x1, Z = T.inner.z1, F0 = T.floor; interiorScene.updateMatrixWorld(true);

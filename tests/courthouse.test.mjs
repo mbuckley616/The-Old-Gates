@@ -66,6 +66,7 @@ if (inside) {
   await page.evaluate(id => { const S = WORLD.settle.get(id), h = S.houses.find(h => h.siteId === id && h.kit && h.kit.kind === 'aurcourt'); forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); }, inside.id);
   for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
   await g.frames(2);
+  for (let k = 0; k < 60 && !(await page.evaluate(() => { let n = 0; if (intNPCMesh) intNPCMesh.traverse(o => { if (o.isMesh && o.visible) n++; }); return !intNPCMesh || n > 0; })); k++) await g.frames(2); /* S2690 — the keeper is drawn once the builder's body is (S2661, S2678) */
   const r = await page.evaluate(street => {
     const h = currentHouse, T = h._courtHouse; if (!T) return { none: true, type: h && h.type, kit: h && h.kit && h.kit.kind };
     const W = h._roomW, D = h._roomD, X = T.sh.A, Z = T.sh.A, FL = T.floors.map(y => y - T.floors[0]); interiorScene.updateMatrixWorld(true);
