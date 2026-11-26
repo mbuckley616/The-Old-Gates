@@ -2755,9 +2755,10 @@ function couchPts(C, L, root) {
 // curve back, so the hips come up first and the camel stands off its knees last, as one does. Each leg's bones are turned from the
 // stand's directions toward the couch's (sitPts, couchPts) by its own share, and the body's height at that leg's root is what the leg then
 // reaches from the ground, so no hoof, wrist or hock floats or sinks; the back pitches between the two
-const KNEEL = { fore: .5, knee: .8, neck: .6 };
+// Session 2706: and rests on its knees between the halves (KNEEL.rest of the curve, the pose held), as a camel does going down and getting up
+const KNEEL = { fore: .4, rest: .2, knee: .8, neck: .6 };
 const kneelEase = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
-function kneelShares(k) { return { f: KNEEL.knee * kneelEase(k / KNEEL.fore) + (1 - KNEEL.knee) * kneelEase((k - KNEEL.fore) / (1 - KNEEL.fore)), h: kneelEase((k - KNEEL.fore) / (1 - KNEEL.fore)) }; }
+function kneelShares(k) { const h = kneelEase((k - KNEEL.fore - KNEEL.rest) / (1 - KNEEL.fore - KNEEL.rest)); return { f: KNEEL.knee * kneelEase(k / KNEEL.fore) + (1 - KNEEL.knee) * h, h }; }
 // the leg's joints at share w (from its root at the origin) and the root's height over the ground there
 function kneelShape(C, L, w, fore) {
   const R = L.rest, root = R[0].clone(); root.y -= C.sitY || 0;

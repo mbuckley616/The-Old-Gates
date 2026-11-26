@@ -63,7 +63,7 @@ const d = await page.evaluate(id => { const site = siteAnywhere(id), S = WORLD.s
       const pose = h => { at(nc, h); caravanStringTick(); for (const gr of G) hcPose(gr.children[0].userData.rig); caravanStringTick(); for (const gr of G) gr.updateMatrixWorld(true); };
       const stand0 = wy(); pose(12); let low2 = 1e9; if (R) for (let i = 0; i < RP.count; i++) low2 = Math.min(low2, RP.getY(i) + R.position.y - worldH(RP.getX(i) + R.position.x, RP.getZ(i) + R.position.z));
       o.couch = { stand: stand0, noon: wy(), gait: G.map(gr => gr.children[0].userData.rig.gaitNow), ends: R ? R.userData.ends.filter(e => e).length : 0, low: +low2.toFixed(2) };
-      /* S2703 — the kneel: the first camel goes down over six game minutes from its hour, forequarters first, read off the clock */
+      /* S2703 — the kneel: the first camel goes down over eight game minutes from its hour (S2706), forequarters first, read off the clock */
       o.kneel = []; for (let m = 0; m <= 48; m++) { pose(7 + m / 60); const r = G[0].children[0].userData.rig, sp = r.hc.C.byName.spine0, w = r.hc.C.B.legs.filter(L => L.at === 1).map(L => L.bones[0].getWorldPosition(new THREE.Vector3())), f = Math.max(...w.map(p => p.y - worldH(p.x, p.z)));
         o.kneel.push({ k: +(r.couchK || 0).toFixed(2), g: r.gaitNow, y: wy()[0], f: +f.toFixed(2) }); }
       pose(17.5); o.couch.up = wy(); o.couch.after = G.map(gr => !!gr.children[0].userData.rig.couch);

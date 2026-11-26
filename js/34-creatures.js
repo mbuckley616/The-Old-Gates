@@ -935,7 +935,8 @@ function caravanStringSpots(C){const n0=C.npc&&C.npc.g;if(!n0)return [];const s=
 // 0 to 40 minutes later down and earlier up, so they kneel one by one; standing the hour the caravan comes in and the hour it packs
 // Session 2703: and goes down and up by the kit's kneel (forequarters first, hips first up) over CCOUCH.kneel game minutes (a second each),
 // read off the clock (rig.couchK, 0 standing to 1 couched), so a paused game or a dropped frame never leaves it half down
-const CCOUCH={from:7,to:17,stagger:40,kneel:6};
+// Session 2706: eight minutes, with the kit's rest on the knees (KNEEL.rest) between the halves, so each half keeps its three seconds
+const CCOUCH={from:7,to:17,stagger:40,kneel:8};
 function caravanCouch(){const S=CSTRING;if(!S)return;const h=typeof gameHour==='function'?gameHour():12;
   S.groups.forEach((g,i)=>{const rig=g.children[0]&&g.children[0].userData.rig;if(!rig)return;const off=(animalHash('couch:'+S.key+':'+i)%(CCOUCH.stagger+1))/60;
     const k=Math.max(0,Math.min(1,(h-CCOUCH.from-off)*60/CCOUCH.kneel,(CCOUCH.to-off-h)*60/CCOUCH.kneel));rig.couchK=k;rig.couch=k>0;});}
