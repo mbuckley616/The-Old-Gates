@@ -605,7 +605,29 @@ function hcSwimPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
   if(rig.land){const gait=rig.v>.02?SWIMMER[rig.name].move||'slither':'stand';if(H.C.gait!==gait)H.C.gait=gait;rig.ph+=d/Math.max(1e-3,HC.strideOf(H.C)*H.f);HC.pose(H.C,rig.ph);rig.gaitNow=gait;
     if(H.C.sac){const c=e._calls||0;if(rig.calls===undefined)rig.calls=c;else if(c!==rig.calls){rig.calls=c;rig.callT=now;}const k=rig.callT!=null?hcBellSac(now-rig.callT):0;if(k>0){const q=H.C.sac.scale,f=Math.max(1,Math.min(1+k,BELL_SAC.max/Math.max(q.z,1e-3)));q.set(q.x*f,q.y*f,q.z*f);}rig.sacK=k;}
     return;}
-  rig.ph+=rig.drift?dt*SWIMMER.idle*(1+rig.v):Math.max(dt*SWIMMER.idle,d/Math.max(1e-3,HC.strideOf(H.C)*H.f)); /* S2579 — a drifter's bell beats on the clock, quicker as it goes (a metre a second doubles it) */HC.pose(H.C,rig.ph);rig.gaitNow=rig.v>.05?(rig.drift?'drift':'swim'):'hold';}
+  rig.ph+=rig.drift?dt*SWIMMER.idle*(1+rig.v):Math.max(dt*SWIMMER.idle,d/Math.max(1e-3,HC.strideOf(H.C)*H.f)); /* S2579 — a drifter's bell beats on the clock, quicker as it goes (a metre a second doubles it) */HC.pose(H.C,rig.ph);rig.gaitNow=rig.v>.05?(rig.drift?'drift':'swim'):'hold';
+  if(e.serpent)hcSerpCoils(rig,d,dt);}
+/* S2676 — the sea serpent's coils. The eel's slither is a wave from side to side, so all 22 m lay on the sea at once, like a log (S2653).
+   A serpent shows its head reared and two or three humps of its back above the water and the rest below: a wave in the upright plane,
+   laid on after the kit's pose. Each bone's pitch is set so its joint stands on a profile h(s) metres over the sea, s the length back
+   from the head: the head 2.1 m up, then humps of 1.05 m on a line 0.6 m down, 7.5 m apart, that keep their place in the water as the body
+   slides through them (and drift slowly while it holds). The side wave is kept at 0.35 of the eel's. The kit body's group is moved so the
+   spine's root stands at its height; SERP.g (86-world-crime.js) is untouched. */
+const SERP_COIL={head:2.1,neck:5.5,line:-.6,amp:1.05,len:7.5,side:.35,drift:.8,nod:.15};
+function hcSerpCoils(rig,d,dt){const H=rig.hc,C=H.C,B=C.byName,g=rig.e.mesh,P=SERP_COIL;
+  if(!rig.coil){const F=['spine0','spine1','spine2','spine3','spine4','spine5','spine6','spine7','head'].filter(n=>B[n]),T=['tail0','tail1','tail2','tail3','tail4','tail5','tail6','tail7','tail8'].filter(n=>B[n]);
+    if(F.length<3)return;C.root.updateMatrixWorld(true);const gp=n=>B[n].getWorldPosition(new THREE.Vector3()),sc=g.getWorldScale(new THREE.Vector3()).y||1,s={},len=(a,b)=>gp(a).distanceTo(gp(b))/sc;
+    s.head=0;for(let k=F.length-2;k>=0;k--)s[F[k]]=s[F[k+1]]+len(F[k],F[k+1]);let p='spine0';for(const n of T){s[n]=s[p]+len(p,n);p=n;}
+    rig.coil={F,T,s,D:0};}
+  const Q=rig.coil,s=Q.s;Q.D+=d>0?d:dt*P.drift;
+  const h=x=>{const w=P.line+P.amp*Math.sin(Math.PI*2*(x+Q.D)/P.len),u=Math.min(1,x/P.neck),k=1-u*u*(3-2*u);return w+(P.head-.25*x-w)*k;};
+  const el=(a,b)=>{const L=Math.abs(s[b]-s[a])||1;return Math.asin(Math.max(-1,Math.min(1,(h(s[b])-h(s[a]))/L)));};
+  for(const n of [...Q.F,...Q.T])B[n].rotation.y*=P.side;
+  const F=Q.F,abs={};abs.spine0=-el('spine0',F[1]);for(let k=1;k<F.length-1;k++)abs[F[k]]=-el(F[k],F[k+1]);abs.head=P.nod;
+  let pa=abs.spine0;B.spine0.rotation.x=abs.spine0;for(let k=1;k<F.length;k++){B[F[k]].rotation.x=abs[F[k]]-pa;pa=abs[F[k]];}
+  pa=abs.spine0;const T=Q.T;for(let k=0;k<T.length;k++){const a=k<T.length-1?el(T[k],T[k+1]):(T.length>1?el(T[k-1],T[k]):0);B[T[k]].rotation.x=a-pa;pa=a;}
+  const off=Math.abs(SEA_Y-g.position.y)<3?SEA_Y-g.position.y:.4;H.W.position.y=H.y0;C.root.updateMatrixWorld(true);g.updateMatrixWorld(true);
+  const sp=g.worldToLocal(B.spine0.getWorldPosition(new THREE.Vector3()));H.W.position.y=H.y0+(off+h(s.spine0)-sp.y)/((H.W.parent&&H.W.parent.scale.y)||1);}
 // ── the wolf's motion: every joint an [x,y,z] rotation; `drop` lowers the hips ──
 const WG={
   JOINTS:['hips','spine','neck','head','jaw','tail1','tail2','tail3','shL','elL','wrL','pfL','shR','elR','wrR','pfR','thL','knL','hkL','phL','thR','knR','hkR','phR'],

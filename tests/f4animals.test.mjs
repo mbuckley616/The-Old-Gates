@@ -279,10 +279,19 @@ const serp = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
       performance.now = () => 9.97e5 + i0 * 1000 / 60; try { hcTick(performance.now()); } finally { performance.now = t0; } } sk.update(); return { m: Array.from(sk.boneMatrices), L: H.L, c: H.C.gait, shown: H.W.visible, stand: rig.mesh.visible }; };
   const a = run(30, 0), b = run(60, 11); let mv = 0, bad = 0; for (let i = 0; i < a.m.length; i++) { mv = Math.max(mv, Math.abs(a.m[i] - b.m[i])); if (!isFinite(b.m[i])) bad++; }
   const o = { plan: H.C.g.plan, bones: H.C.bones.length, tris: H.C.stats.tris, L: b.L, gait: b.c, shown: b.shown, stand: b.stand, moved: +mv.toFixed(3), bad };
+  // Session 2676: the coils. The sea is 0.4 m over the group's origin (S2651's SEA_Y − 0.4); the head stands out of it, the spine's joints
+  // cross it, crests above and troughs below, and most of the skin is under it
+  { G.updateMatrixWorld(true); const sea = G.position.y + .4, B = H.C.byName, y = n => B[n].getWorldPosition(new THREE.Vector3()).y - sea;
+    const ch = ['spine7', 'spine6', 'spine5', 'spine4', 'spine3', 'spine2', 'spine1', 'spine0', 'tail0', 'tail1', 'tail2', 'tail3', 'tail4', 'tail5', 'tail6', 'tail7', 'tail8'].filter(n => B[n]).map(y);
+    let cross = 0; for (let i = 1; i < ch.length; i++) if ((ch[i] > 0) !== (ch[i - 1] > 0)) cross++;
+    let up = 0, all = 0; const v = new THREE.Vector3(); sk.update(); for (const m of H.C.meshes) { const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); m.applyBoneTransform(i, v); all++; if (v.y > sea) up++; } }
+    Object.assign(o, { head: +y('head').toFixed(2), hi: +Math.max(...ch).toFixed(2), lo: +Math.min(...ch).toFixed(2), cross, up: +(up / all).toFixed(2) }); }
   serpDrop(); hcTick(9.99e5 + 1e5); o.dropped = !rig.hc; return o; });
 console.log('  serpent:', JSON.stringify(serp));
 check(`the sea serpent the game raises wears the kit's (${serp.plan}, ${serp.bones} bones, ${serp.tris} triangles) at level ${serp.L}, the stand-in hidden (${!serp.stand}); it slithers as its group swims (${serp.gait}, the bones moving ${serp.moved}); dropped when it dives for good (${serp.dropped})`,
   !serp.fail && serp.plan === 'game:Sea Serpent' && serp.shown && !serp.stand && serp.L < 2 && serp.gait === 'slither' && serp.moved > .01 && !serp.bad && serp.dropped, serp);
+check(`the sea serpent shows its coils (Session 2676): its head ${serp.head} m out of the sea, its spine from ${serp.lo} to ${serp.hi} m, crossing the surface ${serp.cross} times; ${serp.up} of its skin above the water`,
+  !serp.fail && serp.head > 1 && serp.hi > 0 && serp.lo < -1 && serp.cross >= 3 && serp.up > .15 && serp.up < .6, serp);
 // Session 2585: the grey seal, amphibious: in the water on the trout's path (its axis on the group's origin, nose to nose), holding and swimming;
 // ashore, its lowest point on the group's origin, still at the kit's stand and galumphing by its hump as the group moves; back in the water,
 // its axis again. The same key the same body; taken away, dropped. Picture: docs/prototypes/f4/f4-seal.jpg
