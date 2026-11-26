@@ -1494,7 +1494,7 @@ function genSettlement(site){
      copy's flat tints were guesses: the slate came out pale and every rubble house limewashed); cached by the kit's key */
   const KIT_LO_TONE=new Map();
   function kitLoTone(key,k=1){let c=KIT_LO_TONE.get(key);if(!c){c=new THREE.Color(.7,.7,.7);try{const m=PKIT.gl.mats()[key];if(m){c=m.color.clone();const im=m.map&&m.map.image;
-      if(im&&im.getContext){const d=im.getContext('2d').getImageData(0,0,im.width,im.height).data;let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=28){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}c.multiply(new THREE.Color(r/n/255,g/n/255,b/n/255));}}}catch(e){}KIT_LO_TONE.set(key,c);}
+      if(im&&im.width){const cv=document.createElement('canvas');cv.width=cv.height=32;const x2=cv.getContext('2d',{willReadFrequently:true});x2.drawImage(im,0,0,32,32);const d=x2.getImageData(0,0,32,32).data;let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=4){ /* a 32-pixel copy of its own, read once (no readback warning on the kit's canvas) */r+=d[i];g+=d[i+1];b+=d[i+2];n++;}c.multiply(new THREE.Color(r/n/255,g/n/255,b/n/255));}}}catch(e){}KIT_LO_TONE.set(key,c);}
     return c.clone().multiplyScalar(k);}
   function mergeGeos(list){
     let total=0;list.forEach(([g])=>total+=g.attributes.position.count);
