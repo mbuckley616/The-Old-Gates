@@ -931,12 +931,17 @@ function caravanStringSpots(C){const n0=C.npc&&C.npc.g;if(!n0)return [];const s=
     for(let k=0;k<CSTR.step&&(solid(x,z)||solid(x+dz*1.4,z-dx*1.4)||solid(x-dz*1.4,z+dx*1.4));k++){x-=dx;z-=dz;}
     out.push({x,z,ry:Math.atan2(-dz,dx)});}
   return out;}
+// Session 2686: the string couches while the caravan trades (S2685's couch): down from 7:00 and up again by 17:00, each camel a seeded
+// 0 to 40 minutes later down and earlier up, so they kneel one by one; standing the hour the caravan comes in and the hour it packs
+const CCOUCH={from:7,to:17,stagger:40};
+function caravanCouch(){const S=CSTRING;if(!S)return;const h=typeof gameHour==='function'?gameHour():12;
+  S.groups.forEach((g,i)=>{const rig=g.children[0]&&g.children[0].userData.rig;if(!rig)return;const off=(animalHash('couch:'+S.key+':'+i)%(CCOUCH.stagger+1))/60;rig.couch=h>=CCOUCH.from+off&&h<CCOUCH.to-off;});}
 function caravanStringTick(){const C=typeof CARAVAN!=='undefined'?CARAVAN:null;
   if(!C||!C.npc||!hcOn()||typeof scene==='undefined'){caravanStringOut();return;}
-  const key=C.site.id+':'+C.year;if(CSTRING&&CSTRING.key!==key)caravanStringOut();if(CSTRING){caravanRopeTick();return;}
+  const key=C.site.id+':'+C.year;if(CSTRING&&CSTRING.key!==key)caravanStringOut();if(CSTRING){caravanCouch();caravanRopeTick();return;}
   const groups=[];caravanStringSpots(C).forEach((P,i)=>{const rg=buildAnimal('Pack Camel','caravan:'+key+':'+i,'aurenne');if(!rg)return;const g=new THREE.Group();g.add(rg.root);
     g.position.set(P.x,typeof worldH==='function'?worldH(P.x,P.z):0,P.z);g.rotation.y=P.ry;g.userData.caravanString=i;scene.add(g);groups.push(g);});
-  CSTRING={key,groups,rope:null};if(groups.length>1){const m=caravanRopeMesh(groups.length-1);m.position.copy(groups[0].position);scene.add(m);CSTRING.rope=m;}}
+  CSTRING={key,groups,rope:null};caravanCouch();if(groups.length>1){const m=caravanRopeMesh(groups.length-1);m.position.copy(groups[0].position);scene.add(m);CSTRING.rope=m;}}
 
 // ── The spider on the shape kit (backlog H.4, Session 169): the second family, built the way the wolf is ──
 // A cephalothorax and a hairy abdomen, eight legs of three bones each (a hip that swings the leg round, a femur that
@@ -1448,8 +1453,13 @@ function hcSitPose(rig){const H=rig.hc,C=H.C,e=rig.e;C.gait='sit';H.sat=true;
 // Session 1853: OG-040's Lanternfox glows "at night": the kit's glow (HC_KINDS' night) at full from 19:00 to 05:00, out from 07:00 to
 // 17:00, faded linearly between; read off the clock each pose (gameHour), never the frame count
 function hcNightK(){const h=typeof gameHour==='function'?gameHour():12;return h>=19||h<5?1:h>=7&&h<17?0:h<7?(7-h)/2:(h-17)/2;}
+// Session 2686: a camel couched (the kit's `couch`, S2685: the forelegs folded under the chest, on its chest pad) poses its own body, as the
+// watcher's sit does, not a copy of the driver's stand; rig.couch is set by whoever rests it (the Caravan's string). Up again, H.sat puts
+// every bone back at the stand before the copy
+function hcCouchPose(rig){const H=rig.hc,C=H.C;C.gait='couch';H.sat=true;if(H.drop){H.W.position.y+=H.drop;H.drop=0;}HC.pose(C,0);rig.gaitNow='couch';}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs=H.rest;
   if(rig.e&&rig.e.watch&&!rig.e.dead&&!H.spider&&!H.feet){hcSitPose(rig);return;}
+  if(rig.couch&&H.C.plan.gaits&&H.C.plan.gaits.includes('couch')){hcCouchPose(rig);return;}
   if(H.sat){H.sat=false;H.C.gait='stand';HC.pose(H.C,0);} /* S1785 — up from the sit: every bone back at the stand before the copy */
   if(uh){B.spine.rotation.x-=uh[0];B.neck.rotation.x-=uh[1];B.head.rotation.x-=uh[2];}
   if(rs)for(const [j,v] of rs){const r=B[j].rotation;r.x-=v[0];r.y-=v[1];r.z-=v[2];}
