@@ -12,11 +12,12 @@ await page.evaluate(() => {
   window._ix = 0; const _i = interact; window.interact = function () { window._ix++; return _i.apply(this, arguments); };
   const ip = document.getElementById('ipr'); ip.textContent = "Press 'E' to catch a fish"; ip.style.opacity = '1'; ip.style.display = 'block';
   document.getElementById('ob').textContent = "Press 'E' to catch a fish";
+  initAudio(); devMusicHook.zone = ''; startMusic('road');
   PHP = 0; playerDead(); G.focus();
 });
 const atDeath = await page.evaluate(() => ({ dead, shown: document.getElementById('died').style.display === 'flex',
   ipr: getComputedStyle(document.getElementById('ipr')).display, ob: document.getElementById('ob').textContent,
-  focus: document.activeElement && document.activeElement.id }));
+  focus: document.activeElement && document.activeElement.id, music: devMusicHook.zone, explore: devMusicHook.explore.playing, sting: (DEATH_STING.log || []).length }));
 console.log('  at death', JSON.stringify(atDeath));
 const keys = {};
 for (const k of ['KeyE', 'KeyF', 'KeyI', 'Tab', 'KeyQ']) {
@@ -28,6 +29,7 @@ for (const k of ['KeyE', 'KeyF', 'KeyI', 'Tab', 'KeyQ']) {
 }
 console.log('  keys while dead', JSON.stringify(keys));
 check('the death screen shows with the view focused (the case the critic hit)', atDeath.dead && atDeath.shown && atDeath.focus === 'g', atDeath);
+check('the music breaks at death: the exploring piece stops and the sting\'s three hits sound (S2692)', atDeath.music === 'death' && !atDeath.explore && atDeath.sting === 3, atDeath);
 check('the HUD\'s prompt is cleared at death', atDeath.ipr === 'none' && !/Press 'E'/.test(atDeath.ob), atDeath);
 check('E while dead reaches no interaction', keys.KeyE.interact === 0, keys);
 check('F while dead casts nothing and spends no mana', keys.KeyF.manaSpent === 0 && keys.KeyF.cd <= 0, keys);
@@ -46,8 +48,9 @@ await page.evaluate(() => { knownWords = { caor: 1 }; activeSpellId = 'caor'; ma
 const m0 = await page.evaluate(() => mana);
 await page.keyboard.press('KeyF'); await page.waitForTimeout(800); await g.frames(2);
 await page.keyboard.press('KeyI'); await page.waitForTimeout(300);
-const live = await page.evaluate(m0 => ({ manaSpent: m0 - mana, hub: hubOpen }), m0);
+const live = await page.evaluate(m0 => ({ manaSpent: m0 - mana, hub: hubOpen, music: devMusicHook.zone }), m0);
 console.log('  after the load', JSON.stringify(live));
 check('after the load F casts and I opens the book again', live.manaSpent > 0 && live.hub, live);
+check('after the load the place\'s music plays again', live.music && live.music !== 'death', live);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
