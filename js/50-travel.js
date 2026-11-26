@@ -393,7 +393,7 @@ function useHerb(i){
   let eff=it.effect;
   if(!eff)return;
   if(!eff.type)eff=eff.heal?{type:'heal',amount:eff.heal}:eff.mana?{type:'mana',amount:eff.mana}:eff.stam?{type:'stamina',amount:eff.stam}:eff; /* S1483 — the sea's herbs are written {stam:20}, and eaten did nothing */
-  sndUsePotion();
+  sndConsume('herb'); /* S2710 — a herb is chewed, not drunk */
   // Apply known effect
   const said=herbKnownApply(eff,it.name);if(said)showMsg(`${it.name} — ${said[0]}`,said[1]);
   // Track consumption and check for hidden unlock
@@ -1052,7 +1052,7 @@ function drinkCup(i){const it=BAG[i];if(!it||!it.cup)return;const S=DISH_SECONDS
     else if(S.r==='restoring'){PHP=Math.min(effMaxHP(),PHP+CUP_RESTORE);stamina=Math.min(effMaxStamina(),stamina+CUP_RESTORE);say=`${nm} — +${CUP_RESTORE} health and stamina.`;}
     else{worldState.cup={r:S.r,until:gameMinNow()+Math.round(FED_MIN*CUP_LEN),k};say=`${nm} — ${DISH_RIDER[S.r].label} for ${Math.round(FED_MIN*CUP_LEN/60*10)/10} hours.`;}
     showMsg(say,'#e8c890');if(typeof updateHUD==='function')updateHUD();};
-  if(typeof startDrink==='function')startDrink(go,nm);else go();}
+  if(typeof startDrink==='function')startDrink(go,nm,'drink');else go();}
 function survItem(k,qty){return {...SURV_ITEMS[k],qty:qty||1};}
 function hasTinderbox(){return BAG.some(b=>b&&b.name===TINDERBOX_NAME);}
 function bagCount(pred){let n=0;BAG.forEach(b=>{if(b&&pred(b))n+=b.qty||1;});return n;}
@@ -1154,7 +1154,7 @@ function eatMeal(i){const it=BAG[i];if(!it||!it.meal)return;
   const go=()=>{const was=fedNow();setFed(m.kind,m.s||1,m.r,mx);const learnt=m.pair?learnDish(m.pair):false; /* S2035 — eating a dish teaches it */const K=FED_KIND[m.kind];const sd=m.season&&m.season.eff?herbKnownApply(m.season.eff,m.season.name):null; /* S1503 — Seasoned */
     let rs='';if(m.r){rs=' '+DISH_RIDER[m.r].label+'.';if(m.r==='restoring'){if(was&&was.r==='restoring')rs=' Restoring: you are fed by one already.';else{PHP=Math.min(effMaxHP(),PHP+DISH_RESTORE);stamina=Math.min(effMaxStamina(),stamina+DISH_RESTORE);rs=` Restoring: +${DISH_RESTORE} health and stamina.`;}}} /* S2028 — a dish's rider */
     showMsg(`${nm} — ${K.label}: ${K.say} for ${Math.round(mealMins({s:m.s,x:mx})/60*10)/10} hours.${rs}${sd?' '+sd[0].replace(/\.+$/,'')+'.':''}${learnt?' A dish new to you.':''}`,K.col);if(typeof updateHUD==='function')updateHUD();};
-  if(typeof startDrink==='function')startDrink(go,nm);else go();}
+  if(typeof startDrink==='function')startDrink(go,nm,'food');else go();}
 // what the fire can make from the bag: each recipe, what it takes, whether you have it
 const COOK_RECIPES=[
   {id:'meat',name:'Roast Meat',need:'1 Raw Meat',has:()=>bagCount(b=>foodOf(b)==='meat')>=1},
@@ -1698,7 +1698,7 @@ function drinkWater(i){const it=BAG[i];if(!it||!it.vessel||!WATER_VESSELS[it.ves
   const go=()=>{if(kind==='foul'){setQueasy(QUEASY.foul);showMsg('The water is foul. Your stomach turns.','#a0a060');if(typeof updateHUD==='function')updateHUD();return;}
     worldState.watered={until:gameMinNow()+Math.round(60*V.hours),v:it.vessel,hot:hot||undefined};if(sick)setQueasy(QUEASY.raw);
     showMsg((hot?`Watered, and warm: stamina regenerates a tenth faster, and Warmth 1 in the cold, for ${V.hours} hours.`:`Watered: stamina regenerates a tenth faster, and Cool 1 in the heat, for ${V.hours} hours.`)+(sick?' The water sits badly.':''),sick?'#a0a060':'#88b8e0');if(typeof updateHUD==='function')updateHUD();};
-  if(typeof startDrink==='function')startDrink(go,it.name);else go();if(typeof renderHubInv==='function')renderHubInv();}
+  if(typeof startDrink==='function')startDrink(go,it.name,'drink');else go();if(typeof renderHubInv==='function')renderHubInv();}
 function waterPill(){const W=wateredNow(),Q=queasyNow();let o='';
   if(W){const m=Math.ceil(W.until-gameMinNow());o+=`<span class="buff-pill" title="Watered — stamina regenerates ×${WATER_REGEN} · ${W.hot?'Warmth 1 in the cold':'Cool 1 in the heat'}, ${m} min remaining"><span class="bp-ico">💧</span><span class="bp-time">${m}m</span></span>`;}
   if(Q){const m=Math.ceil(Q.until-gameMinNow());o+=`<span class="buff-pill" title="Queasy — stamina regenerates ×${QUEASY.regen}, ${m} min remaining"><span class="bp-ico">🤢</span><span class="bp-time">${m}m</span></span>`;}

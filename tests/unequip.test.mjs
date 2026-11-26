@@ -40,5 +40,40 @@ check('fists swing faster than the starting weapon', r.fistSwing < r.swordSwing,
 check('the sheet and the slot show the fists’ 2–4', r.sa === `${2 + Math.floor(r.level * 1.5)}–${4 + Math.floor(r.level * 1.5)}` && /Fists/.test(r.tip), r);
 check('a save with an empty hand loads with an empty hand', r.savedWeapon === null && !r.loadedWeapon, r);
 check('the tunic can be put back on from the bag', r.reworn === r.start.chest && r.defReworn > 0, r);
+// Session 2710: an item is heard by what it is (Michael, 25 Nov): a take from a container or a put into the stash is a sweep and the
+// thing's touch, Take all is one sound; equipping is the thing put on (a blade drawn, plate's clang, mail's rings, leather's creak, a
+// robe's rustle, a ring's tink); drinking, eating and chewing a herb each have their own voice. Each makes sound nodes on the audio clock.
+const snd = await page.evaluate(() => { const out = { err: null }; try { initAudio(); } catch (e) { out.err = 'init ' + e.message; }
+  let nodes = 0; const cs = AX && AX.createBufferSource.bind(AX), co = AX && AX.createOscillator.bind(AX);
+  if (AX) { AX.createBufferSource = () => { nodes++; return cs(); }; AX.createOscillator = () => { nodes++; return co(); }; }
+  const hear = fn => { const n0 = ITEM_SND.n, k0 = nodes; try { fn(); } catch (e) { out.err = e.message; } const L = ITEM_SND.last; return { calls: ITEM_SND.n - n0, nodes: nodes - k0, v: L && (L.kind + '/' + (L.dir ? L.dir + '/' : '') + L.voice) }; };
+  const eq0 = { ...EQ }, keepAttr = { ...ATTRS }; for (const k in ATTRS) ATTRS[k] = 99;
+  const A = (t, tier, line) => makeItem(tier, line ? lineType(line, t) : ARMOR_TYPES.find(x => x.slot === t), null, true);
+  const W = sh => makeItem(4, WEAPON_TYPES.find(x => x.shape === sh), null, false);
+  const wear = it => { delete it.reqAttr; BAG.push(it); return hear(() => useItem(BAG.length - 1)); };
+  out.eq = { sword: wear(W('sword')), mace: wear(W('mace')), plate: wear(A('chest', 4)), mail: wear(A('chest', 3)), leather: wear(A('chest', 3, 'light')),
+    robe: wear(A('chest', 3, 'robe')), ring: wear(A('ring', 3)) };
+  out.tunic = itemVoice({ name: 'Tattered Tunic', type: 'equip', slot: 'chest', tier: 1 }); out.boots = itemVoice({ name: 'Leather Boots', type: 'equip', slot: 'feet', tier: 1 });
+  Object.assign(EQ, eq0); Object.assign(ATTRS, keepAttr);
+  const box = { items: [{ type: 'gold', value: 7 }, { name: 'Health Potion', type: 'potion', heal: 20, ico: '🧪', weight: .3 }, A('head', 4), { name: 'Old Letter', type: 'misc', weight: .01 }] };
+  const b0 = BAG.length, g0 = gold; openLoot(box);
+  out.one = hear(() => takeLootItem(0)); out.all = hear(() => takeAllLoot()); out.left = box.items.length; closeLoot && closeLoot();
+  out.put = hear(() => depositToStash(BAG.length - 1)); out.take = hear(() => withdrawFromStash(stashBag.length - 1));
+  BAG.splice(b0); gold = g0;
+  out.drink = { potion: hear(() => sndConsume('potion')), water: hear(() => sndConsume('drink')), meal: hear(() => sndConsume('food')), herb: hear(() => sndConsume('herb')) };
+  out.voices = { letter: itemVoice({ name: 'Old Letter', type: 'misc' }), ingot: itemVoice({ name: 'Iron Ingot', ingot: true }), arrows: itemVoice({ type: 'ammo', name: 'Arrows' }),
+    buckler: itemVoice(A('offhand', 1)), shield: itemVoice(A('offhand', 4)), bow: itemVoice(W('bow')) };
+  if (AX) { AX.createBufferSource = cs; AX.createOscillator = co; } return out; });
+console.log('itemsnd', JSON.stringify(snd));
+const E = snd.eq || {};
+check(`equipping is heard by what it is: sword ${E.sword && E.sword.v}, mace ${E.mace && E.mace.v}, steel ${E.plate && E.plate.v}, iron ${E.mail && E.mail.v}, a jerkin ${E.leather && E.leather.v}, a robe ${E.robe && E.robe.v}, a ring ${E.ring && E.ring.v}; the starter tunic ${snd.tunic}, boots ${snd.boots}`,
+  !snd.err && E.sword.v === 'equip/blade' && E.mace.v === 'equip/haft' && E.plate.v === 'equip/plate' && E.mail.v === 'equip/mail' && E.leather.v === 'equip/leather'
+  && E.robe.v === 'equip/cloth' && E.ring.v === 'equip/trinket' && snd.tunic === 'cloth' && snd.boots === 'leather' && Object.values(E).every(o => o.calls === 1 && o.nodes >= 2), snd);
+check(`a take from a container is one sound (gold ${snd.one.v}); Take all is one sound for the rest (${snd.all.v}, ${snd.left} left); the stash's put and take (${snd.put.v}, ${snd.take.v})`,
+  snd.one.calls === 1 && snd.one.v === 'move/take/coin' && snd.one.nodes >= 3 && snd.all.calls === 1 && snd.all.v === 'move/take/plate' && snd.left === 0
+  && snd.put.calls === 1 && /^move\/put\//.test(snd.put.v) && snd.take.calls === 1 && /^move\/take\//.test(snd.take.v), snd);
+check(`drinking, eating and a herb each sound (${Object.entries(snd.drink).map(([k, o]) => k + ' ' + o.nodes).join(', ')} nodes); a letter is paper, an ingot stone, arrows, a wooden buckler and a steel shield, a bow`,
+  Object.values(snd.drink).every(o => o.calls === 1 && o.nodes >= 3) && snd.voices.letter === 'paper' && snd.voices.ingot === 'stone' && snd.voices.arrows === 'arrows'
+  && snd.voices.buckler === 'shieldwood' && snd.voices.shield === 'shieldmetal' && snd.voices.bow === 'bow', snd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

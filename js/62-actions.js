@@ -790,7 +790,7 @@ function useItem(i){
   // equipped ammo is a DIFFERENT arrow type, fall through to the swap path:
   // displaced ammo goes to the bag, new ammo gets equipped.
   else if(it.type==='ammo'){
-    const cur = EQ.ammo;
+    const cur = EQ.ammo;sndEquipItem(it);
     if(cur && cur.name === it.name){
       // Same arrow type — merge stacks.
       cur.qty = (cur.qty||0) + (it.qty||1);
@@ -841,16 +841,15 @@ function useItem(i){
       showMsg('Equipped '+it.name+'!','#c8a84a');
     }
     invalidateArmorCache();
-    if(it.slot==='weapon'){sndEquipWeapon();buildViewmodel();}
-    else if(it.slot==='offhand'){sndEquipShield();buildShieldViewmodel();}
+    sndEquipItem(it); /* S2710 — heard by what it is (72-audio.js) */
+    if(it.slot==='weapon'){buildViewmodel();}
+    else if(it.slot==='offhand'){buildShieldViewmodel();}
     else if(it.slot==='hands' || it.slot==='chest'){
       // v70/v70.1 — gauntlets drive the FPV hand colour; the chestplate drives
       // the arm (sleeve) colour. Either changing rebuilds both viewmodels so
       // the weapon hand(s) AND the shield/torch hand+arm recolour.
-      sndEquipArmor(it.slot);
       buildViewmodel(); buildShieldViewmodel();
-    }
-    else{sndEquipArmor(it.slot);}}renderInv();}
+    }}renderInv();}
 
 // S762 — the health bar's tail (Michael's A on DECISION #198, docs/prototypes/hud/): a blow you take shows as the pale stretch the
 // bar has just lost, held 0.8 s from the last loss and then drained at half the bar a second; a heal past it takes it along. It
