@@ -108,7 +108,7 @@ const PK = await page.evaluate(() => { const out = { err: null }; try { initAudi
   let nodes = 0; const cs = AX && AX.createBufferSource.bind(AX), co = AX && AX.createOscillator.bind(AX);
   if (AX) { AX.createBufferSource = () => { nodes++; return cs(); }; AX.createOscillator = () => { nodes++; return co(); }; }
   const h = ZONES.world.herbs.find(x => !x.harvested && !x.bed), n0 = PICK_SND.n, b0 = BAG.length;
-  if (h) { harvestHerb(h); out.calls = PICK_SND.n - n0; out.voice = PICK_SND.last; out.type = h.type; out.nodes = nodes; if (BAG.length > b0) BAG.pop(); }
+  if (h) { harvestHerb(h); out.calls = PICK_SND.n - n0; out.voice = PICK_SND.last; out.type = h.type; out.want = pickVoice(h.type); out.nodes = nodes; if (BAG.length > b0) BAG.pop(); }
   if (AX) { AX.createBufferSource = cs; AX.createOscillator = co; }
   const V = ['leaf', 'ground', 'fungus', 'wet', 'crystal'];
   out.all = Object.keys(HERB_DEF).map(k => [k, pickVoice(k)]).concat(Object.keys(SPEC_DEF).map(k => [k, pickVoice(SPEC_DEF[k].kin)]));
@@ -117,7 +117,7 @@ const PK = await page.evaluate(() => { const out = { err: null }; try { initAudi
     sunglass: pickVoice(SPEC_DEF.sunglass.kin), seabed: pickVoice('silverleaf', true) };
   out.used = [...new Set(out.all.map(a => a[1]))].sort(); return out; });
 console.log('pick', JSON.stringify({ ...PK, all: PK.all.length }));
-check(`a herb picked in the world is heard once, in its kind's voice (${PK.type}: ${PK.voice}, ${PK.nodes} sound nodes)`, !PK.err && PK.calls === 1 && PK.nodes >= 3 && PK.voice === pickVoice(PK.type), PK);
+check(`a herb picked in the world is heard once, in its kind's voice (${PK.type}: ${PK.voice}, ${PK.nodes} sound nodes)`, !PK.err && PK.calls === 1 && PK.nodes >= 3 && PK.voice === PK.want, PK);
 check(`every herb and specimen has a voice (${PK.all.length}; heard: ${PK.used.join(', ')}): a berry bush rustles, moss tears, a cap pops, kelp sloshes, a crystal chips`,
   PK.bad.length === 0 && PK.used.length === 5 && PK.some.thornberry === 'leaf' && PK.some.firemoss === 'ground' && PK.some.shadowcap === 'fungus' && PK.some.caverglow === 'fungus'
   && PK.some.kelp === 'wet' && PK.some.seabed === 'wet' && PK.some.sunglass === 'crystal', PK);

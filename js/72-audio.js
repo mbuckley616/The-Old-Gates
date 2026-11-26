@@ -448,9 +448,9 @@ function sndDiscover(){DISC_SND.n++;const now=performance.now();if(now-DISC_SND.
    plant comes up with a slosh and a bubble; a crystal chips with a glassy tick. On the audio clock, cosmetic, about 0.3 s, a little
    varied each time so ten picks in a glade are not one sound ten times. PICK_SND counts the calls and keeps the last voice (tests). */
 const PICK_SND={n:0,last:null};
-function pickVoice(key,wet){const k=(typeof PLANT_KIND!=='undefined'&&PLANT_KIND[key])||key||'';
+function pickVoice(key,wet){if(/^(shardmoss|sunglass|skyshard|saltcrystal)$/.test(key||''))return 'crystal';const k=(typeof PLANT_KIND!=='undefined'&&PLANT_KIND[key])||key||'';
   if(wet||/^(kelp|sealily|pearl|waterleaf)$/.test(k))return 'wet';if(/^(mushrooms|bracket)$/.test(k)||/cap|shroom|caverglow/.test(k))return 'fungus';
-  if(/^(shardmoss|sunglass|skyshard|saltcrystal)$/.test(k))return 'crystal';if(/^(moss|clay|root|rosette|cliffflower|wisp)$/.test(k))return 'ground';return 'leaf';}
+  if(/^(moss|clay|root|rosette|cliffflower|wisp)$/.test(k))return 'ground';return 'leaf';}
 function sndPick(key,wet){const v=pickVoice(key,wet);PICK_SND.n++;PICK_SND.last=v;if(typeof AX==='undefined'||!AX||volLevel===0)return v;try{
   const j=()=>.9+Math.random()*.2;
   if(v==='leaf'){_sfxSweepAt(0,.09,2600*j(),3400*j(),.07,1.2,.25);_sfxSweepAt(.07,.11,3000*j(),2200*j(),.06,1.2,.2);
