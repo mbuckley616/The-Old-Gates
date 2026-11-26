@@ -607,7 +607,7 @@ function hcSwimPose(rig){const H=rig.hc,e=rig.e,g=e&&e.mesh;if(!H||!g||e.dead)re
     return;}
   rig.ph+=rig.drift?dt*SWIMMER.idle*(1+rig.v):Math.max(dt*SWIMMER.idle,d/Math.max(1e-3,HC.strideOf(H.C)*H.f)); /* S2579 — a drifter's bell beats on the clock, quicker as it goes (a metre a second doubles it) */HC.pose(H.C,rig.ph);rig.gaitNow=rig.v>.05?(rig.drift?'drift':'swim'):'hold';
   if(e.serpent)hcSerpCoils(rig,d,dt);}
-/* S2676 — the sea serpent's coils. The eel's slither is a wave from side to side, so all 22 m lay on the sea at once, like a log (S2653).
+/* S2677 — the sea serpent's coils. The eel's slither is a wave from side to side, so all 22 m lay on the sea at once, like a log (S2653).
    A serpent shows its head reared and two or three humps of its back above the water and the rest below: a wave in the upright plane,
    laid on after the kit's pose. Each bone's pitch is set so its joint stands on a profile h(s) metres over the sea, s the length back
    from the head: the head 2.1 m up, then humps of 1.05 m on a line 0.6 m down, 7.5 m apart, that keep their place in the water as the body
