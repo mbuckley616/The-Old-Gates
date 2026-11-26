@@ -35,6 +35,15 @@ Page: `docs/prototypes/levelup/notify.html`; approach in `docs/concepts.md`.
 
 Pictures (before | after, 10h, High): [Gatelands, Dunmore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/gatelands.jpg) · [The Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/mark.jpg) · [Aurenne](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/aurenne.jpg)
 
+### Levelling too slow: quests pay marks, cheaper first levels, or cheaper skill-ups? (from the systems builder, 2026-11-26, #2059)
+**The question.** Michael's note of 25 Nov: "Leveling up feels veeeery slow now compared to before." Since Session 952 (#342 B) the level comes only from skill-ups; kills and quests pay nothing toward it. Level 2 takes 10.5 marks, a major skill at 25 needs 43 uses to rise, and a fresh Warrior earns about 8 uses a kill (Session 2681, measured headless), so about 55 kills for level 2. Before Session 952, one quest or four kills gave level 2.
+
+**Options.**
+- **A.** Quests pay marks: a quest handed in gives 2 (a main-quest step 3), a lord's job or guild commission 1. The skill curve and #342's B are unchanged.
+- **B.** The first levels are cheap: levels 2 to 6 take 5, 6, 7, 8 and 9 marks (against 10.5–12.5 today); from level 6 on as now.
+- **C.** Every skill-up is cheaper: 0.6 × L^1.2 instead of 0.9 × L^1.2 (29 uses at 25, 65 at 50); everything about 1.5× faster, tier gates sooner, late game shorter.
+- **D (recommended).** A and B together: the quests and kills of an evening give level 2 and nearly 3; skills and the curve past level 6 stay as #342 set them.
+
 ## Answered
 ### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
 **The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.
