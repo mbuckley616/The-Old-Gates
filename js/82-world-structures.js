@@ -1748,7 +1748,7 @@
         col.push(c.r*edge*g*mid,c.g*edge*g*mid,c.b*edge*g*mid);
       }
     }
-    const paved={list:()=>paved.A,A:{P:pos,N:[],C:col}}; /* S2665 — a road through a paved town is laid in its setts (tdrStrip), its normals set up below with the rest */
+    const paved={list:()=>paved.A,A:{P:pos,N:[],C:col}}; /* S2670 — a road through a paved town is laid in its setts (tdrStrip), its normals set up below with the rest */
     for(const road of ROADS){
       const pts=road.pts;
       for(let i=0;i<pts.length-1;i++){
@@ -1767,7 +1767,7 @@
     const nor=new Float32Array(pos.length);for(let i=1;i<nor.length;i+=3)nor[i]=1;
     g.setAttribute('normal',new THREE.BufferAttribute(nor,3));
     g.computeBoundingSphere();
-    const m=new THREE.Mesh(g,ROAD_MAT);m.receiveShadow=true;m.userData.ribbon=true;m.userData.towns=tdrTownsNear(ox,oz); /* S2665 — the paved towns known when it was laid */
+    const m=new THREE.Mesh(g,ROAD_MAT);m.receiveShadow=true;m.userData.ribbon=true;m.userData.towns=tdrTownsNear(ox,oz); /* S2670 — the paved towns known when it was laid */
     snowWatch(g); // v80 S147 — a road takes snow too, but trodden: half of what the fields take
     group.add(m);
   }
@@ -3434,7 +3434,7 @@
     return {segs,near(x,z,m){for(const q of segs){if(x<q.x0-m||x>q.x1+m||z<q.z0-m||z>q.z1+m)continue;let u=q.L2?((x-q.ax)*q.vx+(z-q.az)*q.vz)/q.L2:0;u=u<0?0:u>1?1:u;
       if(Math.hypot(x-q.ax-q.vx*u,z-q.az-q.vz*u)<q.hw+m)return true;}return false;}};}
   function townRacks(site,houses,sol,group,walks){if(window.OG_LOOK!=='new'||typeof curesOf!=='function'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.rack)return [];
-    const out=[],hit=(x,z,R)=>sol.some(s=>{if(s.dress)return false; /* S2665 — the town's dressing gives way to what you fit */const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
+    const out=[],hit=(x,z,R)=>sol.some(s=>{if(s.dress)return false; /* S2670 — the town's dressing gives way to what you fit */const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
     const doors=yardDoors(site,houses),WK=yardWalks(site,walks);
     const HW=1.7,HD=1.05; /* the larger of the two racks' halves on any island (the Mark's hjell 3.2 m long, the Gatelands' sills 1.9 deep), with a hand's room */
     const clear=(x,z,ry)=>{const c=Math.cos(ry),s_=Math.sin(ry);let lo=1e9,hi=-1e9;
@@ -3491,7 +3491,7 @@
     g.userData.garden={island:isle,key,beds:null,tris:0,draws:0,herbs:0,box:null,plots:[],set(bd){if(JSON.stringify(bd||[])!==JSON.stringify(this.beds))build(bd);}};
     build(o.beds||[null,null,null,null]);return g;}
   function townGardens(site,houses,sol,group,walks){if(window.OG_LOOK!=='new'||typeof homeMine!=='function'||typeof homeFitted!=='function'||typeof PKIT==='undefined'||!PKIT.props||!PKIT.props.garden)return [];
-    const out=[],hit=(x,z,R)=>sol.some(s=>{if(s.dress)return false; /* S2665 — the town's dressing gives way to what you fit */const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
+    const out=[],hit=(x,z,R)=>sol.some(s=>{if(s.dress)return false; /* S2670 — the town's dressing gives way to what you fit */const dx=x-s.cx,dz=z-s.cz;if(s.c!==undefined){const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;return Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R;}return Math.abs(dx)<s.rx+R&&Math.abs(dz)<s.rz+R;});
     const doors=yardDoors(site,houses),WK=yardWalks(site,walks);
     const HW=2.15,HD=1.65; /* the largest garden's halves (Aurenne's with its jar 4.35 m long, the Mark's logs 3.4 deep), with a hand's room */
     const clear=(x,z,ry)=>{const c=Math.cos(ry),s_=Math.sin(ry);let lo=1e9,hi=-1e9;
@@ -3512,7 +3512,7 @@
     return out;}
   function townGardensLive(S,cp){const now=performance.now();for(const G of S.gardens){const v=Math.hypot(G.x-cp.x,G.z-cp.z)<RACK_SHOW;G.g.visible=v;
       if(v&&now-G.t>1000){G.t=now;try{G.g.userData.garden.set(gardenBedsOf(G.h));}catch(e){}}}}
-  /* S2665 (towns dressed; the deep-work side session of 25 Nov 2026, P10b OG-147) — a generated town's dressing on the new look: one pass,
+  /* S2670 (towns dressed; the deep-work side session of 25 Nov 2026, P10b OG-147) — a generated town's dressing on the new look: one pass,
      townDress(S,o), run by genSettlement once every house, plot, rack, garden and stall stands, before the bake. It lays, by island and the
      town's prosperity, each house's back yard and its boundary (the Gatelands' dry-stone walls and hedges, the Mark's slanted-pole fences and
      turf-topped walls, Aurenne's limewashed walls under tile, or cane), what is in the yard (washing, a woodpile or a peat stack, beds of greens,

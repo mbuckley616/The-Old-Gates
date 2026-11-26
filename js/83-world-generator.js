@@ -1425,7 +1425,7 @@ function genSettlement(site){
         const T=PKIT.props[mk]({ground:(lx,lz)=>worldH(x+lx*c+lz*s_,z-lx*s_+lz*c)-y0}),G=T.group;G.position.set(x,y0,z);G.rotation.y=ry;G.userData.noBake=true;G.visible=false;group.add(G);
         S.stalls.push({key,site:site.id,x,z,y:y0,ry,slide,group:G,tris:T.tris,draws:T.draws});}
     }catch(e){console.warn('feast stalls',e);}
-    /* S2665 (towns dressed) — the town's dressing on the new look (townDress, 82): yards and their walls, what stands in them and against the
+    /* S2670 (towns dressed) — the town's dressing on the new look (townDress, 82): yards and their walls, what stands in them and against the
        houses, the shops' trades, the streets' carts and barrels, sheds and orchards on the widest lawns, and the ground paved; its own streams, after
        every draw the town made. Laid, the old flat ribbon of the paths goes: the paving is drawn over the same lines. */
     if(window.OG_LOOK==='new'&&['village','town','city','port','garrison','outpost'].includes(site.kind))try{const T=townDress(S,{inner,pros:TST?prosperity(site):50,burned:burnedV,abandoned:abandonedV||sackedV});
@@ -1552,7 +1552,7 @@ function genSettlement(site){
     (S.herbs||[]).forEach(h=>{const k=ZONES.world.herbs.indexOf(h);if(k>=0)ZONES.world.herbs.splice(k,1);});
     if(S.chest&&typeof ZONE_CORPSES!=='undefined'){const k=ZONE_CORPSES.indexOf(S.chest);if(k>=0)ZONE_CORPSES.splice(k,1);}
     sc.remove(S.group);
-    S.group.traverse(o=>{if(o.isMesh){if(typeof _ribbons!=='undefined'&&o.geometry.userData.baseCol){const k=_ribbons.indexOf(o.geometry);if(k>=0)_ribbons.splice(k,1);} /* S2665 — the paths' and the dressing's ground leave the snow's list with the town */o.geometry.dispose();}});if(S.smoke)S.smoke.geometry.dispose();
+    S.group.traverse(o=>{if(o.isMesh){if(typeof _ribbons!=='undefined'&&o.geometry.userData.baseCol){const k=_ribbons.indexOf(o.geometry);if(k>=0)_ribbons.splice(k,1);} /* S2670 — the paths' and the dressing's ground leave the snow's list with the town */o.geometry.dispose();}});if(S.smoke)S.smoke.geometry.dispose();
     S.npcs.forEach(n=>{sc.remove(n.g);sc.remove(n.dot);const i=npcs.indexOf(n);if(i>=0)npcs.splice(i,1);});
     S.houses.forEach(h=>{const i=ZONES.world.houses.indexOf(h);if(i>=0)ZONES.world.houses.splice(i,1);});
     if(S.towerHouse&&S.towerHouse.cellar){const i=ZONES.world.houses.indexOf(S.towerHouse.cellar);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1765 — the tower house's cellar */
@@ -4696,7 +4696,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const S of SETTLE.values()){
       if(Math.abs(S.site.x-px)>radius+S.site.pad||Math.abs(S.site.z-pz)>radius+S.site.pad)continue;
       for(const r of S.sol){
-        if(r.c===undefined)continue;if(r.dress&&!r.bound&&Math.max(r.rx,r.rz)<1.6)continue; /* S2665 — the dressing's walls and sheds on the map, not its carts and barrels */
+        if(r.c===undefined)continue;if(r.dress&&!r.bound&&Math.max(r.rx,r.rz)<1.6)continue; /* S2670 — the dressing's walls and sheds on the map, not its carts and barrels */
         const [sx,sz]=toS(r.cx,r.cz);
         ctx.save();ctx.translate(sx,sz);ctx.rotate(-Math.atan2(r.s,r.c));
         const wall=r.bt==='wall'||(!r.bt&&r.rx>5&&r.rz<1.2);const B=wall?BLD.wall:bldOf(r.bt);
