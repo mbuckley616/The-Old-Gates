@@ -975,7 +975,7 @@
     SKY.moonDark.visible=SKY.moon.visible&&Math.abs(off)<33;
     SKY.stars.position.set(px,worldH(px,pz),pz);
     SKY.stars.scale.setScalar(SKY.R+60);
-    SKY.stars.material.opacity=t*clear*.9;
+    SKY.stars.material.opacity=(LAND.on?sstep(.6,1,t):t)*clear*.9; /* S2682 — on the new look the stars wait for the blue hour, not a sunset sky */
     SKY.stars.visible=SKY.stars.material.opacity>.01;
   }
   // ── Atmosphere per frame (sky/fog/lights blend by region + time) ─────
@@ -997,7 +997,8 @@
     // plains sky so the dome stays plausible.
     _dayC.setHex(BIOME_PROFILES.plains.bgCol);_atm.sky.lerp(_dayC,.55);
     const t=(typeof _nightFactor==='function')?_nightFactor():0;
-    _atm.sky.lerp(NIGHT_SKY,t);_atm.fog.lerp(NIGHT_FOG,t*.92);
+    if(LAND.on)den=landHour(ws,den); /* S2682 — the new look's sky and haze by the hour and the island (89-world-land.js) */
+    else{_atm.sky.lerp(NIGHT_SKY,t);_atm.fog.lerp(NIGHT_FOG,t*.92);}
     WX.fogMul=1;WX.sunMul=1;WX.fogFloor=0;applyWeather();den*=WX.fogMul;if(WX.fogFloor>0)den=Math.max(den,WX.fogFloor); // v80 S145
     if(cameraUnderwater()){_atm.sky.setHex(0x1a4a6a);_atm.fog.setHex(0x1a4a6a);den=.06;}
     // Ease toward target so region borders never snap.
@@ -1025,6 +1026,7 @@
     sun.color.setRGB(1-.02*t,.94-.35*t,.82-.3*t);
     amb.intensity=(.55*(1-t)+.16*t)*((typeof fxOn==='function'&&fxOn('nighteye'))?1+t*2.2:1);
     hemi.intensity=.55*(1-t)+.13*t;
+    if(LAND.on)landLights(); // S2682 — the new look's sun (or moon), ambient and hemisphere from the hour's curve
     // Water and sky follow the camera; grid-snap so nothing swims.
     water.position.x=Math.round(px/8)*8;water.position.z=Math.round(pz/8)*8;
     if(water.material.userData.shader)water.material.userData.shader.uniforms.uTime.value=performance.now()*.001;
