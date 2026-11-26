@@ -45,6 +45,13 @@ const built = await page.evaluate(() => { const f = FOOTHOLDS.find(f => f.kind =
     cols: DUNGEON_COLUMNS.filter(c => inHole(c.x, c.z, .3)).length, props: DUNGEON_PROPS.filter(p => !p.flightRail && inHole((p.x0 + p.x1) / 2, (p.z0 + p.z1) / 2, .2)).length, colsAll: DUNGEON_COLUMNS.length,
     hiTable: DUNGEON_PROPS.find(p => p.floor === 1 && !p.flightRail && p.z1 < f.z0 - 3 && Math.abs((p.x0 + p.x1) / 2 - (f.x0 + f.x1) / 2) < .5) || null }; });
 console.log(JSON.stringify(built));
+// S2665 — the way out is the keep's door from inside (dunExitBuild's 'keep'): the leaves shut under the arch, the keystone under the roof,
+// on the entrance cell's wall, baked to two draws
+const ex = await page.evaluate(() => { const X = DUN_EXIT; if (!X) return { none: true }; const b = new THREE.Box3().setFromObject(X.group);
+  return { kind: X.kind, w: X.w, h: X.h, parts: X.group.userData.parts, draws: X.group.children.length, top: +b.max.y.toFixed(2), H: FLOOR_HEIGHT,
+    off: +Math.hypot(X.x - dAt(dEntranceX), X.z - dAt(dEntranceZ)).toFixed(2), half: DCELL / 2 }; });
+check(`inside, the way out is the keep's door: ${ex.kind}, ${ex.w} m wide and ${ex.h} to the crown, ${ex.parts} pieces in ${ex.draws} draws, its top ${ex.top} under the roof's ${ex.H}, on the entrance cell's wall (${ex.off} of ${ex.half})`,
+  !ex.none && ex.kind === 'keep' && ex.parts >= 30 && ex.draws <= 2 && ex.top < ex.H && Math.abs(ex.off - ex.half) < .01, ex);
 check('the flight is built: one stair mesh, its walls, a ramp foothold, the stairwell on', built.mesh && built.walls && built.stairwell && built.f.y0 === built.f2 && built.f.y1 === 0, built); /* S1283 — floor two is FLOOR2_Y, under a fort's 3.6 */
 check('no column and no furniture stands in the hole', built.cols === 0 && built.props === 0 && built.colsAll > 0, [built.cols, built.props, built.colsAll]);
 
