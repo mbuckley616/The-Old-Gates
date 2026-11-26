@@ -614,6 +614,20 @@ function genSettlement(site){
     // centre, merged at the end into one mesh per material (PKIT.mergeByMaterial), so a town of them is some twenty draws.
     const KIT_TRADE={weapon:'ARMS · BLADES · BOWS',armor:'ARMOUR · MAIL · SHIELDS',potion:'APOTHECARY · HERBS',misc:'GENERAL GOODS',barber:'BARBER · SURGEON'};
     let kitG=null;const kitLo=[];
+    /* S2689 — round pieces for the far copy (Aurenne's domes, drums, round towers and caps, the cypresses): a lathe or a cylinder in the
+       piece's own frame, smooth-shaded, in the one merged far mesh; from the harbour or a hill the town is its far copy, and its skyline was cubes */
+    const kitLoLathe=(pts,n,x,y0,z,mx,col)=>{const g=new THREE.LatheGeometry(pts.map(([a,b])=>new THREE.Vector2(a,b)),n).toNonIndexed();g.translate(x,y0,z);kitLo.push([g,mx,col]);};
+    const kitLoCyl=(r0,r1,h,n,x,y0,z,mx,col)=>{const g=new THREE.CylinderGeometry(r1,r0,h,n).toNonIndexed();g.translate(x,y0+h/2,z);kitLo.push([g,mx,col]);};
+    /* a hipped roof (Aurenne's Roman houses and the tavern): eaves at y0 over rw by rd, the ridge along the longer side at y0 + rise */
+    const kitHip=(rw,rd,y0,rise)=>{const L=rw>=rd,a=Math.min(rw,rd),r_=Math.abs(rw-rd),y1=y0+rise,c=[[-rw,-rd],[rw,-rd],[rw,rd],[-rw,rd]],R=L?[[-r_,0],[r_,0]]:[[0,-r_],[0,r_]],P=[],q=(A,B,C)=>P.push(A,B,C);
+      const e=i=>[c[i][0],y0,c[i][1]],t=([x,z])=>[x,y1,z],r0=t(R[0]),r1=t(R[1]);
+      if(L){q(e(3),e(2),r1);q(e(3),r1,r0);q(e(1),e(0),r0);q(e(1),r0,r1);q(e(0),e(3),r0);q(e(2),e(1),r1);}else{q(e(2),e(1),r1);q(e(1),r0,r1);q(e(0),e(3),r0);q(e(3),r1,r0);q(e(3),e(2),r1);q(e(1),e(0),r0);}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P.flat()),3));g.computeVertexNormals();return g;};
+    /* a face's openings as dark quads just proud of the far box (u along the face, y from the plinth's top, the face at depth f) */
+    const kitLoHoles=(list,face,f,y0,mx,mir)=>{const dk=new THREE.Color(.17,.16,.17),dr=new THREE.Color(.33,.22,.15);for(const h of list||[]){const ht=h.h-(h.arch?h.w*.22:0),g=new THREE.PlaneGeometry(h.w,ht);const u=mir?-h.x:h.x;
+      if(face==='z+'){g.translate(u,y0+h.y+ht/2,f);}else if(face==='z-'){g.rotateY(Math.PI);g.translate(u,y0+h.y+ht/2,-f);}else if(face==='x+'){g.rotateY(Math.PI/2);g.translate(f,y0+h.y+ht/2,-u);}else{g.rotateY(-Math.PI/2);g.translate(-f,y0+h.y+ht/2,u);}
+      kitLo.push([g.toNonIndexed(),mx,h.door?dr:dk]);g.dispose();}};
+    const kitLoDome=(R,Hd,n,x,y0,z,mx,col)=>{const pts=[];for(let i=0;i<=5;i++){const a=i/5*Math.PI/2;pts.push([Math.max(.001,R*Math.cos(a)),Hd*Math.sin(a)]);}kitLoLathe(pts,n,x,y0,z,mx,col);};
     // a gable roof as one prism: eaves at y0 along ±hw (x) and ±hd (z), the ridge at y1 along x, its gables closed (non-indexed, for mergeGeos)
     function kitRoof(hw,hd,y0,y1){const P=[[-hw,y0,hd],[hw,y0,hd],[hw,y1,0],[-hw,y0,hd],[hw,y1,0],[-hw,y1,0],[hw,y0,-hd],[-hw,y0,-hd],[-hw,y1,0],[hw,y0,-hd],[-hw,y1,0],[hw,y1,0],[-hw,y0,-hd],[-hw,y0,hd],[-hw,y1,0],[hw,y0,hd],[hw,y0,-hd],[hw,y1,0]];
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P.flat()),3));g.computeVertexNormals();return g;}
@@ -748,10 +762,12 @@ function genSettlement(site){
       const tile=o.kind==='tile',hgt=tile?H.top+.16:H.top+.57,mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(X,y,Z);
       {const b=new THREE.BoxGeometry(o.w+.16,hgt,o.d+.16).toNonIndexed();b.translate(0,hgt/2,0);kitLo.push([b,mx,new THREE.Color(.86,.82,.72)]);}
       const cream=new THREE.Color(.86,.82,.72),part=(bw,bh,bd,u,y0,v,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(u,y0+bh/2,v);kitLo.push([b,mx,col||cream]);};
-      if(o.dome){const R=Math.min(o.w,o.d)*.27;part(2*R,1+R*.9,2*R,-o.w*.18,H.top,-o.d*.1,o.dome==='blue'?new THREE.Color(.25,.42,.62):cream);} /* the drum and the dome, as one block */
+      if(H.open){const fz=o.d/2+.09,fx=o.w/2+.09;kitLoHoles(H.open.front,'z+',fz,H.yW,mx);kitLoHoles(H.open.back,'z-',fz,H.yW,mx,true);kitLoHoles(H.open.side,'x+',fx,H.yW,mx);kitLoHoles(H.open.west,'x-',fx,H.yW,mx);} /* S2689 — its windows and door, where the near house has them */
+      if(!tile){let dc=new THREE.Color(.66,.63,.57);try{dc=PKIT.au.mats().plinth.color.clone();}catch(e){}const g=new THREE.BoxGeometry(o.w-.42,.02,o.d-.42).toNonIndexed();g.translate(0,hgt+.01,0);kitLo.push([g,mx,dc]);} /* S2689 — the flat roof's deck inside the parapet */
+      if(o.dome){const R=Math.min(o.w,o.d)*.27,x2=-o.w*.18,z2=-o.d*.1;kitLoCyl(R*1.02,R*1.02,1.0,12,x2,H.top,z2,mx,cream);kitLoDome(R,R*1.08,12,x2,H.top+1.0,z2,mx,o.dome==='blue'?new THREE.Color(.25,.42,.62):cream);} /* the drum and the dome (S2689: round, as the near house's) */
       if(tile&&o.arcade){const n=Math.max(3,Math.round(o.w/2.2));part(o.w+.3,2.05+o.w/n/2+.35+H.yW,1.9,0,0,o.d/2+.95);} /* the arcade */
       if(o.stair&&!tile)part(.9,H.top*.6,o.d-.6,-(o.w/2+.5),0,.3); /* the outside stair, its flight as a block of 0.6 of the wall */
-      if(tile){const rw=o.w/2+.45,rd=o.d/2+.45,r=rw>=rd?kitRoof(rw,rd,hgt,hgt+Math.tan(22*Math.PI/180)*rd):kitRoof(rd,rw,hgt,hgt+Math.tan(22*Math.PI/180)*rw);if(rw<rd)r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(.58,.32,.22)]);}
+      if(tile){const rw=o.w/2+.45,rd=o.d/2+.45;kitLo.push([kitHip(rw,rd,hgt,Math.tan(22*Math.PI/180)*Math.min(rw,rd)),mx,new THREE.Color(.58,.32,.22)]);} /* S2689 — hipped, as the near house's (was a gable) */
       let stk=null;if(k.smithy||k.apothecary){stk=PKIT.au.smithyStack(H,o,!!k.apothecary);const f=stk.flue;part(f.x1-f.x0+.2,f.y1+.28-H.top,f.z1-f.z0+.2,(f.x0+f.x1)/2,H.top,(f.z0+f.z1)/2);
         const fu=(f.x0+f.x1)/2,fv=(f.z0+f.z1)/2;k.stack={x:+(X+fu*c+fv*s_).toFixed(3),z:+(Z-fu*s_+fv*c).toFixed(3),y:+(y+f.y1+.25).toFixed(3)};S.chimneys.push({x:k.stack.x,y:k.stack.y+.1,z:k.stack.z,t:k.apothecary?'potion':'weapon',k:0});} /* S1865 — the smithy's stack, in the far copy a block, and the forge's smoke (the one Aurennais house that smokes); S1894 the apothecary's still's, at the back right */
       lot._kitDoor=+(u+H.doorX).toFixed(3);lot._wallH=+(H.top-H.yW).toFixed(3);lot._storeys=o.two?2:1; /* S1321 — the wall over its floor, the plinth's top (H.yW, 0.24): a storey is floor to eaves, as SCALE's table measures it */lot.two=!!o.two;k.tris=H.tris+(stk?stk.tris:0);k.calls=H.draws+(stk?2:0);k.colour=o.kind;k.door=lot._kitDoor;}
@@ -759,8 +775,15 @@ function genSettlement(site){
     // its far copy one box to the cornice in its wall's colour (the roof slopes in, under the parapet)
     function kitAurCourt(lot){const k=lot.kit,E=k.ext,H=PKIT.au.courtyard({},PKIT.stream(k.shell)),y=worldH(lot.x,lot.z)-.06,c=Math.cos(lot.ry),s_=Math.sin(lot.ry),u=(E[2]-E[3])/2,v=lot.d/2-H.d/2-E[1];
       const X=lot.x+u*c+v*s_,Z=lot.z-u*s_+v*c;H.group.position.set(X-cx,y,Z-cz);H.group.rotation.y=lot.ry;H.group.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});kitG.add(H.group);
-      const wm=H.group.children.find(m=>/^wall:/.test(m.name)),col=wm?wm.material.color.clone().multiplyScalar(.9):new THREE.Color(.86,.82,.72),b=new THREE.BoxGeometry(H.w+.16,H.top+.14,H.d+.16).toNonIndexed();
-      b.translate(0,(H.top+.14)/2,0);kitLo.push([b,new THREE.Matrix4().makeRotationY(lot.ry).setPosition(X,y,Z),col]);
+      const wm=H.group.children.find(m=>/^wall:/.test(m.name)),col=wm?wm.material.color.clone().multiplyScalar(.9):new THREE.Color(.86,.82,.72),mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(X,y,Z);
+      /* S2689 — its far copy is the near one's shape: the body to the gallery's eaves (the court's floor its top), the four pantile slopes rising
+         outward to the parapet, and the parapet's band round them (was one box to the cornice, a flat white roof from every hill) */
+      {const yE=H.yE,yA=H.Yr(H.A),E0=H.Rg-.35,hw=H.w/2+.08,hd=H.d/2+.08,P=.4,b=new THREE.BoxGeometry(H.w+.16,yE,H.d+.16).toNonIndexed();b.translate(0,yE/2,0);kitLo.push([b,mx,col]);
+        const sl=new THREE.CylinderGeometry(H.A*Math.SQRT2,E0*Math.SQRT2,yA-yE,4,1,true).toNonIndexed(),pp=sl.attributes.position,nn=sl.attributes.normal;
+        for(let i=0;i<pp.count;i+=3)for(const A_ of [pp,nn]){const t0=[A_.getX(i+1),A_.getY(i+1),A_.getZ(i+1)];A_.setXYZ(i+1,A_.getX(i+2),A_.getY(i+2),A_.getZ(i+2));A_.setXYZ(i+2,...t0);}
+        for(let i=0;i<nn.count;i++)nn.setXYZ(i,-nn.getX(i),-nn.getY(i),-nn.getZ(i)); /* the slopes face up and in: the cylinder's inside, turned */
+        sl.rotateY(Math.PI/4);sl.translate(0,(yE+yA)/2,0);kitLo.push([sl,mx,new THREE.Color(.58,.32,.22)]);
+        const ph=H.top+.14-yE;for(const [bw,bd,u,v] of [[H.w+.16,P,0,hd-P/2],[H.w+.16,P,0,-hd+P/2],[P,H.d+.16-2*P,hw-P/2,0],[P,H.d+.16-2*P,-hw+P/2,0]]){const q=new THREE.BoxGeometry(bw,ph,bd).toNonIndexed();q.translate(u,yE+ph/2,v);kitLo.push([q,mx,col]);}}
       lot._kitDoor=+u.toFixed(3);lot._wallH=+(2*(H.F1-H.F0)).toFixed(3);lot._storeys=2;lot.two=true;k.tris=H.tris;k.calls=H.draws;k.colour='court';k.door=lot._kitDoor;k.top=+H.top.toFixed(3);}
     // S1959 (card F6, #296 A) — the Mages' academy on its plot (PKIT.au.academy, its own stream keyed by the city), the lot's front its
     // plinth's: in the kit houses' group, so merged by material with the town. Its plinth stands on a footing of its own stone down 2.5 m
@@ -780,7 +803,12 @@ function genSettlement(site){
       ZONES.world.platforms.push(pl);
       const mx=new THREE.Matrix4().makeRotationY(L.ry).setPosition(X,y,Z),lime=new THREE.Color(.92,.9,.84),part=(bw,bh,bd,bx,y0,bz,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(bx,y0+bh/2,bz);kitLo.push([b,mx,col||lime]);};
       part(I.W+.4,I.pl+I.H+1.2,I.D,0,0,0);part(I.W+.4,I.pl,3.6,0,0,I.D/2+1.8); /* the hall to its cresting; the plinth's apron */
-      I.towers.forEach((T,i)=>{const top=A.towerTops[i],sh=I.pl+I.H+(top-I.pl-I.H)*.62;part(2*T.r,sh,2*T.r,T.x,0,T.z);part(1.3*T.r,top-sh,1.3*T.r,T.x,sh,T.z);});
+      {const n=Math.round(I.W/3.4),sp=I.W/n,fr=[],rest=len=>{const hs=[],k=Math.max(1,Math.round(len/4));for(let i=0;i<k;i++){const x=-len/2+(i+.5)*len/k;hs.push({x,y:1.8,w:.8,h:1.6,arch:1},{x,y:6.2,w:1.0,h:2.8,arch:1});}return hs;};
+        for(let i=0;i<n;i++){const x=-I.W/2+(i+.5)*sp;fr.push({x,y:0,w:sp-.9,h:4.6,arch:1},{x,y:6.0,w:1.1,h:3.2,arch:1});}
+        kitLoHoles(fr,'z+',I.D/2+.02,I.pl,mx);kitLoHoles(rest(I.W),'z-',I.D/2+.02,I.pl,mx);kitLoHoles(rest(I.D-1.2),'x+',I.W/2+.22,I.pl,mx);kitLoHoles(rest(I.D-1.2),'x-',I.W/2+.22,I.pl,mx);} /* S2689 — the arcade and the windows, as the kit's (I.T is the wall's .6) */
+      I.towers.forEach((T,i)=>{const top=A.towerTops[i],R=T.r/1.06,mid=R>2.4,lR=R*.78,gy=mid?top-1.7-lR-.1-3.55:top-9.35,cy=gy+.15+3.4; /* S2689 — round, as the kit draws them: the shaft, the gallery, the lantern, the white cap or the observatory's dome */
+        kitLoCyl(R*1.06,R,gy,14,T.x,0,T.z,mx,lime);kitLoCyl(R+.9,R+.9,1.2,14,T.x,gy-.1,T.z,mx,lime);kitLoCyl(lR,lR,3.4,12,T.x,gy+.15,T.z,mx,lime);
+        if(mid)kitLoDome(lR+.1,lR+.1,12,T.x,cy,T.z,mx,lime);else kitLoLathe([[.001,0],[lR+.3,0],[lR+.2,.3],[lR*.45,3.2],[.001,4.6]],12,T.x,cy,T.z,mx,lime);});
       S.academy={id:`${site.id}:academy`,x:X,z:Z,y,ry:L.ry,W:I.W,D:I.D,towers:I.towers.length,tops:A.towerTops,tris:A.tris,draws:A.draws,sols,plat:pl,r:Math.hypot(L.w,L.d)/2+.5,cx:L.x,cz:L.z};
       /* S1963 (card F9) — the library behind the arcade is a house of its own (type 'academy', g_<site>_6100, nobody keeps it, never locked),
          at the drawn size only (30 m, three towers: the capital's): its door at the arcade's arch at x 10 on the apron (the middle one has the
@@ -795,8 +823,16 @@ function genSettlement(site){
     function kitAurChurch(lot){const o=lot.kit.o||{rank:'town',w:14,tower:1},B=PKIT.au.churchBox(o),C=PKIT.au.church(o,PKIT.stream(`${site.id}:church`)),y=worldH(lot.x,lot.z)-.06,c=Math.cos(lot.ry),s_=Math.sin(lot.ry);
       const u=-(B.x0+B.x1)/2,v=-(B.z0+B.z1)/2,X=lot.x+u*c+v*s_,Z=lot.z-u*s_+v*c,I=C.inner;C.group.position.set(X-cx,y,Z-cz);C.group.rotation.y=lot.ry;C.group.traverse(m=>{if(m.isMesh){m.castShadow=m.name!=='dark';m.receiveShadow=true;}});kitG.add(C.group);
       const mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(X,y,Z),lime=new THREE.Color(.9,.88,.82),blue=new THREE.Color(.25,.42,.62),part=(bw,bh,bd,bx,y0,bz,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(bx,y0+bh/2,bz);kitLo.push([b,mx,col||lime]);};
-      part(I.W+.6,I.top+1.2,I.D+.6,0,0,0);part(I.W+.6,I.pl+4.2+(I.W+.4)/(I.W>16?7:5)/2+.9+.85,4.4,0,0,I.D/2+2.2);part(2*I.R,I.y0+I.dh+I.R*1.12-I.top,2*I.R,0,I.top,0,o.rank==='village'?lime:blue); /* the cube, the porch, the drum and the dome */
-      {const s=3.6,tx=I.W/2+s/2+.4,tz=I.D/2+4.4-s/2-.2,ty=B.towerTop-1.1-1.0-s*.44*1.15;part(s,ty,s,tx,0,tz);part(s*.88,B.towerTop-1.1-ty,s*.88,tx,ty,tz,o.rank==='village'?lime:blue);}
+      const dcol=o.rank==='village'?lime:blue,dark=new THREE.Color(.16,.15,.15),green=new THREE.Color(.17,.25,.15);
+      part(I.W+.6,I.top+1.2,I.D+.6,0,0,0);part(I.W+.6,I.pl+4.2+(I.W+.4)/(I.W>16?7:5)/2+.9+.85,4.4,0,0,I.D/2+2.2); /* the cube, the porch */
+      {const wi=Math.min(1.5,I.W*.08),tall=[0,1,2].map(i=>({x:-I.W/2+(i+.5)*I.W/3,y:3.2,w:wi,h:I.H*.42,arch:1})),f=I.W/2+.31;kitLoHoles(tall,'z-',f,I.pl,mx);kitLoHoles(tall,'x+',f,I.pl,mx);kitLoHoles(tall,'x-',f,I.pl,mx);
+        const n=I.W>16?7:5,sp=(I.W+.4)/n,ar=[];for(let i=0;i<n;i++)ar.push({x:-(I.W+.4)/2+(i+.5)*sp,y:0,w:sp-.55,h:4.2+(sp-.55)/2,arch:1});kitLoHoles(ar,'z+',I.D/2+4.41,I.pl,mx);} /* S2689 — the tall windows and the porch's arches */
+      kitLoCyl(I.R*1.03,I.R,I.dh+.4,20,0,I.top,0,mx,lime);kitLoDome(I.R,I.R*1.12,20,0,I.y0+I.dh,0,mx,dcol); /* S2689 — the drum and the dome, round */
+      {const s=3.6,tx=I.W/2+s/2+.4,tz=I.D/2+4.4-s/2-.2,ty=B.towerTop-1.1-1.0-s*.44*1.15,rt=s*.44,bh=4.2,by=ty-bh,e=s/2+.03;
+        for(let f=0;f<(o.tower??1);f++){const t_=f?-1:1;part(s,ty,s,t_*tx,0,tz);
+          for(const [ox,oz,w_,d_] of [[0,e,1.5,.06],[0,-e,1.5,.06],[e,0,.06,1.5],[-e,0,.06,1.5]])part(w_,3.0,d_,t_*tx+ox,by+.5,tz+oz,dark); /* the belfry's four openings */
+          part(s+.5,.4,s+.5,t_*tx,ty,tz);kitLoCyl(rt,rt,.6,12,t_*tx,ty+.4,tz,mx,lime);kitLoDome(rt,rt*1.15,12,t_*tx,ty+1,tz,mx,dcol);}} /* the cornice, the little drum and dome */
+      for(const sx of [-1,1])kitLoLathe([[.001,0],[.75,.4],[.8,2.8],[.55,6],[.001,8]],8,sx*(I.W*.275+1.4),.3,I.D/2+4.4+.6+.5,mx,green); /* the cypresses by the steps */
       lot._kitDoor=+u.toFixed(3);lot._wallH=I.top;lot._storeys=1;lot.two=false;lot.kit.tris=C.tris;lot.kit.calls=C.draws;lot.kit.colour='lime';lot.kit.door=lot._kitDoor;lot.kit.r=Math.hypot(lot.w,lot.d)/2;
       if(lot.gods)kitGods(lot.gods);}
     // S1320 (card F9, Michael's 1 A and 2 B on #602) — Aurenne's tavern with its rooms upstairs (PKIT.au.tavern, o.rooms) on the quay: the
@@ -810,7 +846,7 @@ function genSettlement(site){
       {const g=new THREE.BoxGeometry(w+.2,4.5+tr.y-.4,tr.z1+.25-d/2);g.translate(0,(tr.y-.4-4.5)/2,(d/2+tr.z1+.25)/2);const m=new THREE.Mesh(g,PKIT.au.roomMats().step);m.name='quaywall';m.castShadow=true;m.receiveShadow=true;T.group.add(m);}
       const mx=new THREE.Matrix4().makeRotationY(ry).setPosition(ox,y,oz),cream=new THREE.Color(.86,.82,.72),part=(bw,bh,bd,u,y0,v,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(u,y0+bh/2,v);kitLo.push([b,mx,col||cream]);};
       part(w+.16,top+.16,d+.16,0,0,0);part(w+.2,tr.parapet,tr.z1-d/2,0,0,(d/2+tr.z1)/2,new THREE.Color(.84,.80,.72)); /* the house; the loggia and the terrace to the parapet's top */
-      {const rw=w/2+.45,rd=d/2+.45,r=kitRoof(rw,rd,top+.16,top+.16+Math.tan(22*Math.PI/180)*rd);kitLo.push([r,mx,new THREE.Color(.58,.32,.22)]);}
+      {const rw=w/2+.45,rd=d/2+.45;kitLo.push([kitHip(rw,rd,top+.16,Math.tan(22*Math.PI/180)*Math.min(rw,rd)),mx,new THREE.Color(.58,.32,.22)]);} /* S2689 — hipped */
       lot._kitDoor=-4.2;lot._wallH=top;lot._storeys=2;lot.two=true;lot.kit.tris=T.tris+T.shellTris;lot.kit.calls=T.draws+T.shellCalls;lot.kit.colour='tile';lot.kit.door=lot._kitDoor;lot.kit.F=F;}
     // S1948 (card F6, Michael's A on #295) — an Aurennais port's warehouse on the shore beside its quay head (site.warehouseLot, found and
     // stamped flat when the cell loaded, 81's aurWarehouseLot): pieces.js's warehouse as drawn (PKIT.au.civic), its doors and crates to the

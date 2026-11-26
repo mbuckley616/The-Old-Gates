@@ -63,7 +63,9 @@ async function render(src, label) {
         at.ax = G.ox; at.az = G.oz; at.cx = G.ox + fx * f; at.cz = G.oz + fz * f; at.lx = G.ox; at.lz = G.oz; px = at.cx; pz = at.cz; }
       forceTime(v.hour);
       const w = v.weather || 'clear'; try { devWeather(w); } catch (e) {} const wx = WORLD.wx; wx.type = w; wx.next = w; wx.k = 1; if (w === 'storm' || w === 'blizzard') wx.heavy = 1;
-      const cy = worldH(at.cx, at.cz) + v.cam.up, ly = worldH(at.lx, at.lz) + v.look.up;
+      // over the sea, "up" is over the water and not the sea floor (Session 2689: the harbour's camera stood in the surface)
+      const gy = (x, z) => Math.max(worldH(x, z), WORLD.SEA_Y);
+      const cy = gy(at.cx, at.cz) + v.cam.up, ly = gy(at.lx, at.lz) + v.look.up;
       for (let i = 0; i < 90; i++) { CAM.position.set(at.cx, cy, at.cz); CAM.lookAt(at.lx, ly, at.lz); CAM.updateMatrixWorld(true); WORLD.tick(1 / 60, performance.now()); }
       CAM.position.set(at.cx, cy, at.cz); CAM.lookAt(at.lx, ly, at.lz); CAM.updateMatrixWorld(true);
       try { applyDayNightLighting(performance.now() / 1000); } catch (e) {}
