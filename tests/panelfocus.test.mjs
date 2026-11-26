@@ -12,7 +12,10 @@ await page.evaluate(() => forceTime(11));
 // takes seconds, and the suite's 150-odd frames were killed at its 900 s. Focus, the held key and the walk do not read a drawn pixel
 await page.evaluate(() => { REN.render = () => {}; });
 const focus = () => page.evaluate(() => { const a = document.activeElement; return a ? (a.id || a.tagName) : 'null'; });
-const walk = async () => { const p0 = await page.evaluate(() => [px, pz]);
+// S2670 — each walk starts from the same spot, facing the same way: the walks used to add up, about 6 m each, and the last panel's began
+// some 40 m north of the square, where a town's dressing now puts a garden wall in the way
+const home = await page.evaluate(() => [px, pz, yaw]);
+const walk = async () => { await page.evaluate(h => { px = h[0]; pz = h[1]; yaw = h[2]; }, home); const p0 = await page.evaluate(() => [px, pz]);
   await page.keyboard.down('KeyW'); await g.frames(30); const held = await page.evaluate(() => !!K.KeyW); await page.keyboard.up('KeyW'); await g.frames(2);
   const p1 = await page.evaluate(() => [px, pz]); return { held, moved: +Math.hypot(p1[0] - p0[0], p1[1] - p0[1]).toFixed(2) }; };
 const PANELS = [
