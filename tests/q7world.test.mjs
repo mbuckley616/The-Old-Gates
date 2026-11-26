@@ -78,10 +78,13 @@ const o1 = await obj(); console.log(JSON.stringify({ mark, bram }), o1);
 check('the Mark taken, and Bram seen to (his objective, now the Faolchú is down)', mark && bram === 1 && o1.startsWith('1111'), { mark, bram, o1 });
 
 // Oswin in the oratory, Edna in her cottage
-const inside = async (keeper) => { await page.evaluate((k) => { const S = WORLD.settle.get('ashenmoor'); const h = S.houses.find(x => x.keeper === k); px = h.exitX; pz = h.exitZ; goToInterior(h); }, keeper);
-  await W(4500); await g.hide();
-  return page.evaluate(() => { if (!intNPCMesh) return false; px = intNPCPos.x; pz = intNPCPos.z + 1; jumpY = 0; interact(); return dlgOpen; }); };
-const leave = async () => { await page.evaluate(() => { try { closeDialog(); } catch (e) {} exitInterior(); }); await W(3500); await g.hide(); };
+// Session 2700: wait for the room and its keeper's body (S2678 holds the fade for it), not a fixed 4.5 s; and look at the keeper before E,
+// as a player does: indoors E reaches what the crosshair is on (S646), and Edna's still takes E unless you look at her (S2560)
+const inside = async (keeper) => { await page.evaluate((k) => { const S = WORLD.settle.get('ashenmoor'); const h = S.houses.find(x => x.keeper === k); window._inH = h; px = h.exitX; pz = h.exitZ; goToInterior(h); }, keeper);
+  await page.waitForFunction(() => currentHouse === window._inH && !!intNPCMesh, null, { timeout: 60000, polling: 250 }).catch(() => {}); await g.hide();
+  await page.evaluate(() => { if (intNPCMesh) { px = intNPCPos.x; pz = intNPCPos.z + 1; jumpY = 0; lookAtPt(intNPCPos.x, 1.2, intNPCPos.z); } }); await g.frames(3);
+  return page.evaluate(() => { if (!intNPCMesh) return false; px = intNPCPos.x; pz = intNPCPos.z + 1; jumpY = 0; lookAtPt(intNPCPos.x, 1.2, intNPCPos.z); interact(); return dlgOpen; }); };
+const leave = async () => { await page.evaluate(() => { try { closeDialog(); } catch (e) {} exitInterior(); }); await page.waitForFunction(() => currentHouse == null, null, { timeout: 60000, polling: 250 }).catch(() => {}); await g.frames(2); await g.hide(); };
 const osw = await inside('Brother Oswin'); await leave();
 const edna = await inside('Edna'); const c0 = await choices();
 await click('I saw to them both'); await g.frames(2); const c1 = await choices(); await click('take it to him'); await g.frames(2);
