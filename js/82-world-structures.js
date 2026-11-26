@@ -1754,7 +1754,7 @@
       for(let i=0;i<pts.length-1;i++){
         const mx=(pts[i].x+pts[i+1].x)/2,mz=(pts[i].z+pts[i+1].z)/2;
         if(mx<ox||mx>=ox+CHUNK||mz<oz||mz>=oz+CHUNK)continue;
-        const T=tdrTownAt(mx,mz);if(T){const st=tdrStyle(isleAt(T.x,T.z),'sett');st.y=.07;st.verge=0;st.band=.5;paved.A.N.length=0;tdrStrip(paved,pts[i],pts[i+1],W,st,seededRng(T.id,'dress:road:'+Math.round(mx)+','+Math.round(mz)),new Map());continue;}
+        const T=tdrTownAt(mx,mz);if(T){const st=tdrStyle(isleAt(T.x,T.z),'sett');st.y=.07;st.verge=0;st.band=Math.hypot(mx-T.x,mz-T.z)<26?0:.5; /* clean-edged across the square, which meets it */paved.A.N.length=0;tdrStrip(paved,pts[i],pts[i+1],W,st,seededRng(T.id,'dress:road:'+Math.round(mx)+','+Math.round(mz)),new Map());continue;}
         addQuad(pts[i],pts[i+1],pts,i);
       }
     }
@@ -3588,10 +3588,10 @@
   /* the ground's styles (S2670, Michael's "tone paving down first"): setts small and uneven on the square and the main streets, worn earth
      everywhere else people walk, flags at the doors */
   function tdrStyle(isle,kind){const P=TDR_PAL[isle]||TDR_PAL.gatelands,c=h=>new THREE.Color(h);
-    if(kind==='street'||kind==='sett')return {cl:.38,cw:.36,vary:.3,y:.055,dome:.03,jit:.38,hi:1.05,lo:.5,moss:.3,band:.75,gap:.5,tone:c(P.sett),earth:c(P.earth),verge:.55};
+    if(kind==='street'||kind==='sett')return {cl:.3,cw:.29,vary:.3,y:.055,dome:.03,jit:.38,hi:1.05,lo:.5,moss:.3,band:.75,gap:.5,tone:c(P.sett),earth:c(P.earth),verge:.55};
     if(kind==='earth')return {cl:1.1,cw:.9,vary:.35,y:.05,dome:0,jit:.14,hi:1,lo:.92,moss:.15,band:.6,gap:.75,tone:c(P.earth),earth:c(P.earth),verge:.6};
     if(kind==='flag')return {cl:.6,cw:.7,vary:.2,y:.065,dome:.015,jit:.22,hi:1.04,lo:.66,moss:.2,band:0,gap:0,tone:c(P.flag),earth:c(P.earth),verge:0};
-    return {cl:.4,cw:.4,vary:.25,y:.075,dome:.03,jit:.38,hi:1.04,lo:.5,moss:.3,band:0,gap:0,tone:c(P.sett).multiplyScalar(.94),earth:c(P.earth),verge:0};}
+    return {cl:.3,cw:.31,vary:.25,y:.075,dome:.03,jit:.38,hi:1.04,lo:.5,moss:.3,band:0,gap:0,tone:c(P.sett).multiplyScalar(.94),earth:c(P.earth),verge:0};}
   /* pieces: each puts its parts on D at (x,z), turned ry, on the ground at y, from the stream r; `far` lays the far copy too */
   const TDR_R={woodpile:1.3,peat:1.3,butt:.55,barrels:1.5,crates:1.4,trough:.95,grindstone:.6,table:1.3,cart:1.75,coop:.8,jars:1.3,rick:2,logs:2.4,shed:2.75}; /* a piece's reach from its middle to its footprint's far corner, kept off the doors */
   const TDR_PIECE={
@@ -3777,14 +3777,14 @@
       const wob=a=>sq*(1+.1*Math.sin(a*3+site.x*.01)+.07*Math.sin(a*7+site.z*.01));
       /* the square in rings round the well; its edge wanders (wob), goes ragged and mossy over its last 1.6 m, and stops at a building, a plot or a road */
       {const st=pv?tdrStyle(isle,'square'):Object.assign(tdrStyle(isle,'earth'),{y:.075,cl:.9,cw:.9}),A=D.list('g',cx,cz),y0=st.y;
-        const skipQ=(x,z,a)=>{if(Math.hypot(x-cx,z-cz)>wob(a))return true;if(onSol(x,z)||inPlot(x,z))return true;const ri=roadInfo(x,z);return !!ri&&ri.d<ROAD_HALF*.85+.2;};
+        const skipQ=(x,z,a)=>{if(Math.hypot(x-cx,z-cz)>wob(a))return true;if(onSol(x,z)||inPlot(x,z))return true;const ri=roadInfo(x,z);return !!ri&&ri.d<ROAD_HALF*.85-.05;};
         const H=(x,z)=>[x,tdrH(x,z)+y0,z];
         for(let rr=.9;rr<sq*1.25;){const dr=st.cl*(1+(r()-.5)*.3),n=Math.max(8,Math.round(2*Math.PI*(rr+dr/2)/st.cw)),ph=r()*Math.PI*2;
           for(let k=0;k<n;k++){const a0=ph+k/n*Math.PI*2,a1=ph+(k+1)/n*Math.PI*2,am=(a0+a1)/2,rm=rr+dr/2,mx=cx+Math.cos(am)*rm,mz=cz+Math.sin(am)*rm;if(skipQ(mx,mz,am))continue;
             const e=Math.max(0,Math.min(1,(rm-(wob(am)-1.6))/1.6));if(e>0&&r()<e*.55)continue;
             tdrCell(A,[H(cx+Math.cos(a0)*rr,cz+Math.sin(a0)*rr),H(cx+Math.cos(a0)*(rr+dr),cz+Math.sin(a0)*(rr+dr)),H(cx+Math.cos(a1)*(rr+dr),cz+Math.sin(a1)*(rr+dr)),H(cx+Math.cos(a1)*rr,cz+Math.sin(a1)*rr)],st,r,e);}
           rr+=dr;}}
-      const skipS=(x,z)=>{if(onSol(x,z))return true;const ri=roadInfo(x,z);return !!ri&&ri.d<ROAD_HALF*.85+.1;};
+      const skipS=(x,z)=>{if(onSol(x,z))return true;if(Math.hypot(x-cx,z-cz)<wob(Math.atan2(z-cz,x-cx))-.2)return true; /* the square is laid over it */const ri=roadInfo(x,z);return !!ri&&ri.d<ROAD_HALF*.85+.1;};
       const mainLine=p=>{if(!pv||(p.w||0)<2.3)return false;const a=p.pts[0],b=p.pts[p.pts.length-1],L=Math.hypot(b.x-a.x,b.z-a.z)||1;return Math.abs((cx-a.x)*(b.z-a.z)-(cz-a.z)*(b.x-a.x))/L<7;};
       const sett=tdrStyle(isle,'sett'),earth=tdrStyle(isle,'earth');stats.mainStreets=0;
       (S.paths||[]).forEach((p,pi)=>{if(!p||!p.pts||p.pts.length<2)return;const main=mainLine(p),street=(p.w||0)>=2,st=main?sett:earth,Wd=main?2.15:street?p.w/2+.15:(p.w||1.3)/2-.05;if(main)stats.mainStreets++;
