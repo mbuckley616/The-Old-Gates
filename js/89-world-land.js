@@ -255,11 +255,12 @@ function landHour(ws,den){
   const P=lightPalette(ws);
   _lMul(L.sun,P.sun);_lMul(L.amb,P.amb);_lMul(L.hSky,P.amb);_lMul(L.zen,P.sky);_lMul(L.mid,P.sky);_lMul(L.hor,P.hor);_lMul(L.haze,P.haze);
   L.sunI*=P.sunK;L.hemiI*=P.hemiK;L.hazeD*=P.hazeD;L.cover=P.cover;L.warm+=P.warm;L.sat+=P.sat;L.con+=P.con;L.exp+=P.exp;L.sea=L.sea||new THREE.Color();L.sea.setRGB(P.sea[0],P.sea[1],P.sea[2]);
-  // the night by the moon's phase, with starlight as a floor (Michael's C on #629, 22 Oct 2026; hours.js's nightRow): under a new moon a
-  // fifth of a full moon's night is left in the sky, the haze, the ambient and the hemisphere, so the skyline and the roofs still read
-  // against the sky while a lit window carries across a dark field; the moon's own light goes with its phase (landLights)
-  const nt=(typeof _nightFactor==='function')?_nightFactor():0,moon=lightMoon(),nk=1-nt*(1-(.2+.8*moon));L.moon=moon;
-  if(nk<1){for(const k of ['zen','mid','hor','haze','hSky'])L[k].multiplyScalar(nk);L.ambI*=nk;L.exp*=1+.06*nt;}
+  // the night by the moon's phase, with starlight as a floor (Michael's C on #629, 22 Oct 2026; hours.js's nightRow): the moon's own
+  // light goes with its lit share (landLights), and under a new moon a fifth of a full moon's light is left on the land (the fill at
+  // 0.55, where the moon carried two thirds of the night) and the sky keeps 0.4 of its own, so the skyline and the roofs still read
+  // against it while a lit window carries across a dark field
+  const nt=(typeof _nightFactor==='function')?_nightFactor():0,moon=lightMoon(),ks=1-nt*.6*(1-moon),kf=1-nt*.45*(1-moon);L.moon=moon;
+  if(nt>0){for(const k of ['zen','mid','hor','haze'])L[k].multiplyScalar(ks);L.hSky.multiplyScalar(kf);L.ambI*=kf;L.exp*=1+.06*nt;}
   const [cloud,storm]=lightCloud();L.cloud=cloud;
   if(cloud>0){const dk=storm*.3;
     for(const k of ['zen','mid','hor'])_lGrey(L[k],cloud*.85,dk);_lGrey(L.haze,cloud*.8,dk*.8);_lGrey(L.sun,cloud*.5,0);_lGrey(L.hSky,cloud*.6,0);
