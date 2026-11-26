@@ -62,8 +62,10 @@
   const BIOME_TREE={forest:'conifer',plains:'broadleaf',coast:'scrub',wastes:'dead',tundra:'snowpine',fen:'willow',moor:'scrub',autumn:'autumn',dunes:'scrub',swamp:'mushroom',wasteland:'dead'};
   // new ground profiles (the engine's table only knows the original four)
   // Full profiles (sky, fog colour, fog density, ground) — a partial one makes the atmosphere NaN and the whole scene renders black.
+  // S2700 — the open moor's and the tundra's clear-weather fog thinned to about the plains' (.010 → .005, .011 → .004): the new look's haze
+  // layers the distance now, and at the old figures a Mark fell 600 m off was 93% fog colour (the weather's own floor still closes a snowfall)
   if(typeof BIOME_PROFILES!=='undefined'){const base=BIOME_PROFILES.plains||BIOME_PROFILES.forest||{};const mk=(o)=>Object.assign({},base,o);Object.assign(BIOME_PROFILES,{
-    tundra:mk({groundBase:'#cfd6d8',bgCol:0xa8bcd0,fogCol:0xc4d0dc,fogDen:.011}),fen:mk({groundBase:'#4a5a34',bgCol:0x7a8a7a,fogCol:0x8a9a86,fogDen:.016}),moor:mk({groundBase:'#6a5a4e',bgCol:0x8a96a8,fogCol:0x9aa4b0,fogDen:.010}),
+    tundra:mk({groundBase:'#cfd6d8',bgCol:0xa8bcd0,fogCol:0xc4d0dc,fogDen:.004}),fen:mk({groundBase:'#4a5a34',bgCol:0x7a8a7a,fogCol:0x8a9a86,fogDen:.016}),moor:mk({groundBase:'#6a5a4e',bgCol:0x8a96a8,fogCol:0x9aa4b0,fogDen:.005}),
     autumn:mk({groundBase:'#8a6a34',bgCol:0xa8b8d0,fogCol:0xc8b8a0,fogDen:.009}),dunes:mk({groundBase:'#d8c48c',bgCol:0x9cc0e8,fogCol:0xe0d4b8,fogDen:.007}),swamp:mk({groundBase:'#3a4a2a',bgCol:0x6a7a68,fogCol:0x707e68,fogDen:.018}),wasteland:mk({groundBase:'#4e4a46',bgCol:0x6a6260,fogCol:0x76706a,fogDen:.014})});}
 
   // Region weights at a point. Returns array of {r,w} with w summing to 1.
@@ -281,7 +283,7 @@
     c.multiplyScalar(1.25);
     _bioCol[b]=c;return c;
   }
-  const ROCK_C=new THREE.Color(0x6a655c),SNOW_C=new THREE.Color(0xd8dce0),SAND_C=new THREE.Color(0xb8ac88),DEEP_C=new THREE.Color(0x36485a);
+  const ALP_C=new THREE.Color(0x45484f),ROCK_C=new THREE.Color(0x6a655c),SNOW_C=new THREE.Color(0xd8dce0),SAND_C=new THREE.Color(0xb8ac88),DEEP_C=new THREE.Color(0x36485a);
   function groundColor(x,z,h,ny,out){
     const ws=regionWeights(x,z);
     out.setRGB(0,0,0);
@@ -297,8 +299,15 @@
     const rock=sstep(.86,.62,ny);
     if(rock>0)out.lerp(ROCK_C,rock);
     // High = snow / scree.
-    const sl=snowLineAt(x,z);const snow=sstep(sl,sl+20,h+_smoothNoise(x,z,SEED+13,20)*8);
-    if(snow>0)out.lerp(SNOW_C,snow);
+    // S2700 — the mountain shows its rock (the Mark upland's view against P10b's Snowy Peaks): over the line the turf gives way to
+    // scree, steep faces shed the snow and windswept patches are scoured to a dusting, so a fell reads as snow over rock, not one
+    // smooth white cone. The settled cover below (WX.cover) is unchanged.
+    const sl=snowLineAt(x,z),hn=h+_smoothNoise(x,z,SEED+13,20)*8;
+    const alp=sstep(sl-6,sl+14,hn);
+    if(alp>0){out.lerp(ALP_C,alp*.8);
+      const shed=sstep(.8,.95,ny+(_smoothNoise(x,z,SEED+15,9)-.5)*.16),scour=1-.88*sstep(.5,.64,_smoothNoise(x,z,SEED+16,30)*.7+_smoothNoise(x,z,SEED+17,11)*.3);
+      const snow=sstep(sl,sl+20,hn)*shed*scour;
+      if(snow>0)out.lerp(SNOW_C,snow);}
     // v80 S146 — snow that has settled. Flat ground holds it, steep ground sheds it, and it thickens
     // with altitude. Blended here so a chunk built during a snowfall looks like one recoloured by it.
     if(WX.cover>0&&h>SEA_Y+.4){
@@ -822,7 +831,10 @@
       const dens=regionScalar(x,z,'density');
       // S521 — the autumn wood's canopy russet from afar, as its trees are near
       if(h>1.6&&h<30){if(dominantRegion(x,z).r.biome==='autumn')_tmpC2.setRGB(.5,.26,.1);else _tmpC2.setRGB(.22,.36,.18);c.lerp(_tmpC2,Math.min(.75,dens*.9));}
-      c.multiplyScalar(.72); // match the near tiles, whose detail texture averages ~0.72
+      /* match the near tiles: the old look's detail texture averages ~0.72; S2700 — on the new look the land's own albedo cut (89's landCol:
+         the country at LAND.k's .5, snow and pale ground at .82), so a far fell's rock is as dark as the near rock and its snow as bright */
+      if(window.OG_LOOK==='new'&&typeof LAND!=='undefined'){const l=c.r*.299+c.g*.587+c.b*.114,k=LAND.k.value.x;c.multiplyScalar(k+(.82-k)*sstep(.5,.78,l));}
+      else c.multiplyScalar(.72);
       colArr[i*3]=c.r;colArr[i*3+1]=c.g;colArr[i*3+2]=c.b;
     }
     /* S2190 — a place cut into the world's ground (the cove, the falls, the ice mouth) sinks its 4 m points under its floor (offroadStamps).
