@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Item and herbal cards</title>
+<!-- The item card and the herbal card (concept artist, 26 Nov 2026; OG-136): what the bag says about one thing, over the approved
+     Inventory page in the new look. Serve docs/prototypes/ (not this folder alone). ?level=a|b|c &kind=item|herb -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<link href="../hud/kit.css" rel="stylesheet">
+<link href="./sheet.css" rel="stylesheet">
+<style>
+.row.hot{background:rgba(122,31,16,.09);box-shadow:inset 3px 0 0 var(--rubric)}.row.hot .n{color:var(--rubric)}
+#pointer{position:fixed;width:0;height:0;z-index:300;pointer-events:none;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:22px solid #f4ecd8;transform:rotate(-28deg);transform-origin:0 0;filter:drop-shadow(0 0 1px #000) drop-shadow(1px 2px 2px rgba(0,0,0,.6))}
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
+</script>
+</head>
+<body>
+<div id="note">The item card and the herbal card (backlog L, OG-136; a prototype): ?level=a|b|c (A the game’s tooltip as built; B a card in coloured ink; C OG-136 as drawn, with a picture), &amp;kind=item|herb.</div>
+<script type="module" src="./cards-view.js"></script>
+</body>
+</html>
