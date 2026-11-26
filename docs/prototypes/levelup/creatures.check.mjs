@@ -522,7 +522,11 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     console.log('kneel', sp, JSON.stringify({ stand: c.stand, couch: c.couch, half, k0: c.k0, k1: c.k1 }));
     check(`${sp} kneels: forequarters first (at the half the withers ${(half.wither * 100).toFixed(0)} cm of ${(c.stand.wither * 100).toFixed(0)}, couched ${(c.couch.wither * 100).toFixed(0)}; the hips ${(half.hip * 100).toFixed(0)} of ${(c.stand.hip * 100).toFixed(0)}), only ever down, every hoof and wrist on the ground (worst ${(Math.max(...R.flatMap(r => r.feet)) * 100).toFixed(1)} cm), the lowest flesh ${(Math.min(...R.map(r => r.low)) * 100).toFixed(1)} cm, meeting the stand and the couch at its ends`,
       half.wither < .5 * c.stand.wither && Math.abs(half.hip - c.stand.hip) < .02 && mono('wither') && mono('hip') && feetOk && lowOk
-      && Math.abs(c.k0.wither - c.stand.wither) < .01 && Math.abs(c.k0.hip - c.stand.hip) < .01 && Math.abs(c.k1.wither - c.couch.wither) < .01 && Math.abs(c.k1.hip - c.couch.hip) < .01, c); }
+      && Math.abs(c.k0.wither - c.stand.wither) < .01 && Math.abs(c.k0.hip - c.stand.hip) < .01 && Math.abs(c.k1.wither - c.couch.wither) < .01 && Math.abs(c.k1.hip - c.couch.hip) < .01, c);
+    // Session 2706: it rests on its knees between the halves, the pose held (k 0.4 to 0.6: rows 8 to 12)
+    { const P = R.slice(8, 13), dw = Math.max(...P.map(r => r.wither)) - Math.min(...P.map(r => r.wither)), dh = Math.max(...P.map(r => r.hip)) - Math.min(...P.map(r => r.hip));
+      check(`${sp} rests on its knees between the halves: from 0.4 to 0.6 the withers move ${(dw * 100).toFixed(1)} cm and the hips ${(dh * 100).toFixed(1)} (withers ${(P[2].wither * 100).toFixed(0)}, hips ${(P[2].hip * 100).toFixed(0)} cm)`,
+        dw < .01 && dh < .01 && P[2].wither < .5 * c.stand.wither && Math.abs(P[2].hip - c.stand.hip) < .02, P); } }
   check(`couching plans: ${couchers.join(', ')}`, couchers.includes('camel') && couchers.includes('packcamel'), couchers);
   // the collar sits on the neck (Session 1261, the heavier horse): the hide's cross-section in the collar's plane (within 2 cm of it), as a share
   // of the collar's ellipse, stays inside the leather's inner edge (0.8 of it: the torus's tube is a fifth), and fills most of it
