@@ -2537,17 +2537,21 @@ const giver=`${lord.title} ${lord.name}`;
   function marketStallHouse(site,i,name){const w=marketWeek(),P=marketStallPack(site,i,w);return {id:site.id+':market:'+i,name:`${MSTALL_WARES[P.trade]}, ${site.name}’s market`,keeper:name,type:P.trade==='potion'?'potion':'misc',siteId:site.id,pack:P.rows,marketStall:true};}
   /* S2696 — a stall's keeper takes a name no other stall has and nobody over a door in that town has (the critic, 26 Nov, s2007: Dunmore's
      six stalls were Cathal, Róisín, Clodagh, Tadhg, Ruairí and Ruairí, and the potion stall's Cathal was not the apothecary's). Taken: the
-     town's keepers and its post-holders (S.npcs: the guards, the lord, the guild heads; S248's rule, that no two share a name), first
-     names, and the stalls before this one. Its residents are not counted: a people's bank holds 24 names and Dunmore's 44 householders
-     already repeat them. A name taken is redrawn from the same seeded stream, up to 24 times; each stall's is its own (site, week, index). */
+     town's shop, inn and hall keepers and its post-holders (S.npcs but its villagers: the guards, the watch, the lord; S248's rule, that
+     no two share a name), first names, and the stalls before this one. Its householders are not counted: a people's bank holds 24 names
+     and Dunmore's 44 homes already repeat them (18 names over its doors and posts; 6 left for 6 stalls). If the bank runs out, the
+     stalls still never share one. A name taken is redrawn from the same seeded stream, up to 24 times; each stall's is its own (site, week, index). makeDef is told to
+     keep it (`keepName`): it renamed every stall into the people's bank with its own pick, so the stall's drawn name never reached the square. */
   function marketTownNames(site){const S=SETTLE.get(site.id),T=new Set(),add=n=>{const f=String(n||'').split(' ')[0];if(f)T.add(f);};if(!S)return T;
-    for(const h of S.houses||[])add(h.keeper);for(const n of S.npcs||[])if(n.def&&!n.def.marketStall)add(n.def.name);return T;}
+    for(const h of S.houses||[])if(h.type!=='home')add(h.keeper);for(const n of S.npcs||[])if(n.def&&!n.def.marketStall&&(n.def._lord||n.sched&&n.sched.type!=='villager'&&n.sched.type!=='resident'))add(n.def.name);return T;}
   function marketStallDraw(site,i,taken){const r=seededRng('marketkeeper',site.id+':'+marketWeek()+':'+i),[ci,cj]=cellOf(site.x,site.z),nat=nationOf(ci,cj),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
-    if(!taken){taken=marketTownNames(site);for(let j=0;j<i;j++)taken.add(marketStallDraw(site,j,taken).nm);}
-    let nm=pick(r,r()<.5?bank.m:(bank.f||bank.m));for(let k=0;k<24&&taken.has(nm);k++)nm=pick(r,r()<.5?bank.m:(bank.f||bank.m));
+    if(!taken){taken={town:marketTownNames(site),stalls:new Set()};for(let j=0;j<i;j++)taken.stalls.add(marketStallDraw(site,j,taken).nm);}
+    const draw=()=>pick(r,r()<.5?bank.m:(bank.f||bank.m));let nm=draw();
+    for(let k=0;k<24&&(taken.town.has(nm)||taken.stalls.has(nm));k++)nm=draw();
+    for(let k=0;k<24&&taken.stalls.has(nm);k++)nm=draw(); /* a town whose doors hold the whole bank: at least no two stalls alike */
     return {r,nm,nat};}
   function marketStallDef(site,i,spot){const D=marketStallDraw(site,i),r=D.r,nat=D.nat,nm=D.nm;let def=null;
-    def=makeDef(site,site.reg||'irish',r,'Merchant',nm,{people:nat.people,x:spot.x,z:spot.z,bCol:0x6a5236,sCol:0xd4a878,topics:[{label:'What have you on the stall?',trade:true,fn:()=>{currentHouse=marketStallHouse(site,i,def.name);}}]});
+    def=makeDef(site,site.reg||'irish',r,'Merchant',nm,{people:nat.people,keepName:true,x:spot.x,z:spot.z,bCol:0x6a5236,sCol:0xd4a878,topics:[{label:'What have you on the stall?',trade:true,fn:()=>{currentHouse=marketStallHouse(site,i,def.name);}}]});
     def._siteId=site.id;def.marketStall=site.id+':'+i;return def;}
   function dropMarketStall(id){const D=MSTALLS.get(id);if(!D)return;sc.remove(D.npc.g);sc.remove(D.npc.dot);const k=npcs.indexOf(D.npc);if(k>=0)npcs.splice(k,1);MSTALLS.delete(id);}
   // the stalls kept now near you: [{site, i, spot}], nearest town first
