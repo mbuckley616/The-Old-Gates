@@ -62,7 +62,7 @@
   const BIOME_TREE={forest:'conifer',plains:'broadleaf',coast:'scrub',wastes:'dead',tundra:'snowpine',fen:'willow',moor:'scrub',autumn:'autumn',dunes:'scrub',swamp:'mushroom',wasteland:'dead'};
   // new ground profiles (the engine's table only knows the original four)
   // Full profiles (sky, fog colour, fog density, ground) — a partial one makes the atmosphere NaN and the whole scene renders black.
-  // S2700 — the open moor's and the tundra's clear-weather fog thinned to about the plains' (.010 → .005, .011 → .004): the new look's haze
+  // S2702 — the open moor's and the tundra's clear-weather fog thinned to about the plains' (.010 → .005, .011 → .004): the new look's haze
   // layers the distance now, and at the old figures a Mark fell 600 m off was 93% fog colour (the weather's own floor still closes a snowfall)
   if(typeof BIOME_PROFILES!=='undefined'){const base=BIOME_PROFILES.plains||BIOME_PROFILES.forest||{};const mk=(o)=>Object.assign({},base,o);Object.assign(BIOME_PROFILES,{
     tundra:mk({groundBase:'#cfd6d8',bgCol:0xa8bcd0,fogCol:0xc4d0dc,fogDen:.004}),fen:mk({groundBase:'#4a5a34',bgCol:0x7a8a7a,fogCol:0x8a9a86,fogDen:.016}),moor:mk({groundBase:'#6a5a4e',bgCol:0x8a96a8,fogCol:0x9aa4b0,fogDen:.005}),
@@ -299,7 +299,7 @@
     const rock=sstep(.86,.62,ny);
     if(rock>0)out.lerp(ROCK_C,rock);
     // High = snow / scree.
-    // S2700 — the mountain shows its rock (the Mark upland's view against P10b's Snowy Peaks): over the line the turf gives way to
+    // S2702 — the mountain shows its rock (the Mark upland's view against P10b's Snowy Peaks): over the line the turf gives way to
     // scree, steep faces shed the snow and windswept patches are scoured to a dusting, so a fell reads as snow over rock, not one
     // smooth white cone. The settled cover below (WX.cover) is unchanged.
     const sl=snowLineAt(x,z),hn=h+_smoothNoise(x,z,SEED+13,20)*8;
@@ -831,7 +831,7 @@
       const dens=regionScalar(x,z,'density');
       // S521 — the autumn wood's canopy russet from afar, as its trees are near
       if(h>1.6&&h<30){if(dominantRegion(x,z).r.biome==='autumn')_tmpC2.setRGB(.5,.26,.1);else _tmpC2.setRGB(.22,.36,.18);c.lerp(_tmpC2,Math.min(.75,dens*.9));}
-      /* match the near tiles: the old look's detail texture averages ~0.72; S2700 — on the new look the land's own albedo cut (89's landCol:
+      /* match the near tiles: the old look's detail texture averages ~0.72; S2702 — on the new look the land's own albedo cut (89's landCol:
          the country at LAND.k's .5, snow and pale ground at .82), so a far fell's rock is as dark as the near rock and its snow as bright */
       if(window.OG_LOOK==='new'&&typeof LAND!=='undefined'){const l=c.r*.299+c.g*.587+c.b*.114,k=LAND.k.value.x;c.multiplyScalar(k+(.82-k)*sstep(.5,.78,l));}
       else c.multiplyScalar(.72);
