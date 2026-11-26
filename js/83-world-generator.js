@@ -1431,14 +1431,14 @@ function genSettlement(site){
        every draw the town made. Laid, the old flat ribbon of the paths goes: the paving is drawn over the same lines. */
     if(window.OG_LOOK==='new'&&['village','town','city','port','garrison','outpost'].includes(site.kind))try{const J=townDressJob(S,{inner,pros:TST?prosperity(site):50,burned:burnedV,abandoned:abandonedV||sackedV},T=>{ /* a step a frame on the job queue, after the town stands */
       if(!T)return;const pm=group.children.find(m=>m.name==='town paths');if(pm){group.remove(pm);if(typeof _ribbons!=='undefined'){const k=_ribbons.indexOf(pm.geometry);if(k>=0)_ribbons.splice(k,1);}pm.geometry.dispose();}
-      S._route=null;S._routeGrid=null;S._routeNd=null;S._routeGridNd=null;S._beat=undefined;S._work=null;if(guardsOf(S).length)try{townRoute(S);}catch(e){} /* the watch's ways and the directions found again round the dressing's walls, the grid at once as the town's own */});if(J)TDR_Q.push(J);}catch(e){console.warn('town dress',e);}
+      S._work=null;try{tdrMarkWalls(S);}catch(e){} /* its walls into the ways' grid read as the town stood (the night beat's own grid, read then too, never sees the dressing) */});if(J)TDR_Q.push(J);}catch(e){console.warn('town dress',e);}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
     houses.forEach(h=>ZONES.world.houses.push(h));
     if(IMPOSTORS[site.id])IMPOSTORS[site.id].visible=false;
     SETTLE.set(site.id,S);_townNames=null;_twinUsed=null;_roleNames=null;
-    if(guardsOf(S).length)try{townRoute(S);}catch(e){} // S166 — the watch's street grid, built with the town rather than at nightfall
+    if(guardsOf(S).length)try{townRoute(S);townRoute(S,true);}catch(e){} // S166 — the watch's street grid, built with the town rather than at nightfall; S2670 — and the beat's, the same grid kept clear of the dressing that follows
     return S;
   }
   // Bake a settlement: every static mesh with a plain (untextured, lit) material is

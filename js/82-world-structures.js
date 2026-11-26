@@ -3698,6 +3698,10 @@
   const TDR_Q=[];
   function tdrTickJobs(budget){if(!TDR_Q.length)return 0;const t0=performance.now();let n=0;do{const j=TDR_Q[0];let more=false;try{more=j();}catch(e){console.warn('town dress',e);}n++;if(!more)TDR_Q.shift();}while(TDR_Q.length&&performance.now()-t0<(budget||4));return n;}
   function tdrDrain(){let n=0;while(TDR_Q.length&&n<100000)n+=tdrTickJobs(1e9);return n;}
+  /* the dressing's walls traced into a town's way grid already read (S._routeGrid), as fill() traces them when the grid is read anew: the grid
+     is the one read as the town stood (the watch's ways, as before), and the rest of the dressing reaches it as any later solid does */
+  function tdrMarkWalls(S){const G=S&&S._routeGrid;if(!G||!S.site)return 0;const {R,N,sol}=G,cx=S.site.x,cz=S.site.z;let n=0;
+    for(const q of S.sol||[]){if(!q.dress||!q.bound)continue;for(let t=-q.rz;t<=q.rz+1e-6;t+=.25){const i=Math.round(q.cx+q.s*t-cx+R),j=Math.round(q.cz+q.c*t-cz+R);if(i>=0&&j>=0&&i<N&&j<N&&!sol[j*N+i]){sol[j*N+i]=1;n++;}}}return n;}
   function townDressJob(S,o,done){if(window.OG_LOOK!=='new'||!S||!S.site)return null;const lat=new Map(),it=townDressRun(S,o);let cpu=0,worst=0,steps=0;
     return ()=>{if(SETTLE.get(S.site.id)!==S)return false;const t=performance.now();let r;_tdrH=lat;try{r=it.next();}catch(e){console.warn('town dress',e);return false;}finally{_tdrH=null;}
       const dt=performance.now()-t;cpu+=dt;worst=Math.max(worst,dt);steps++;if(!r.done)return true;if(S.dress){S.dress.cpu=Math.round(cpu);S.dress.worst=Math.round(worst);S.dress.steps=steps;}try{if(done)done(S.dress);}catch(e){console.warn('town dress',e);}return false;};}
