@@ -2182,7 +2182,7 @@ function cartTick(D){const G=D.cart;if(!G)return;const H=[_cv[0],_cv[1]];if(!bie
 // person first comes within HBODY.build of the eye, the nearest first, one at a time at most every HBODY.gap ms, and never while
 // the world still has cells to load (makePerson takes 0.3 to 1.1 s on a CI runner's CPU, and the loading comes first); until then
 // the distant copy stands in. Only the body changes: names, roles, schedules and outcomes do not.
-const HBODY={on:true,near:16,mid:42,build:46,gap:250,slice:8,job:null,worst:0,frames:0,last:-1e9,ms:0,n:0,swap:null,cards:/^(hair|brows|beard|moust)$/};
+const HBODY={on:true,near:16,mid:42,build:46,gap:250,holdMs:1500,room:null,rush:0,held:false,heldAt:0,heldMs:0,slice:8,job:null,worst:0,frames:0,last:-1e9,ms:0,n:0,swap:null,cards:/^(hair|brows|beard|moust)$/};
 const HB_RIGS=new Set();
 const HB_GENOMES=new Map();
 /* S1259 (F10) — how many builder bodies have been hung on drivers: a corpse's search (bodyAimed) collects its bones again when it moves */
@@ -3345,8 +3345,20 @@ function hbBuildStep(now){const J=HBODY.job,rig=J.rig,top=rig.foe?rig.root.paren
   const dt=performance.now()-t0;J.ms+=dt;HBODY.ms+=dt;HBODY.worst=Math.max(HBODY.worst,dt);HBODY.frames++;
   if(!r.done)return null;
   HBODY.job=null;rig.hbP=r.value;return rig;}
-function hbTick(now){let best=null,bd=HBODY.build;
-  const busy=now-HBODY.last<HBODY.gap||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1591 — the world's queue holds a body back only where the world runs it (WORLD.tick: the open world, not a room); in a gate its town jobs wait, and every body there waited with them */
+/* S2678 — a room's near people built behind the fade (S2661's owed item; Michael, 25 Nov: Bram's forge). From the frame a room is entered,
+   for at most HBODY.holdMs, the bodies are built back to back (no HBODY.gap) and the black of the door's fade is held while a townsperson
+   within HBODY.near still waits for the builder's body or warms its shaders. Then the fade lifts on everyone at once. A room with nobody near,
+   or the old look (no builder rigs), is never held */
+function hbRoomHold(now){const room=typeof isInterior==='function'&&isInterior()?lid:null;
+  if(room!==HBODY.room){HBODY.room=room;HBODY.rush=room?now+HBODY.holdMs:0;}
+  let wait=false;if(now<HBODY.rush)for(const rig of HB_RIGS){if(rig.hbFoe||rig.hbFail)continue;const top=rig.root;if(!top.parent||top.parent!==scene||!top.visible)continue;
+    if(Math.hypot(CAM.position.x-top.position.x,CAM.position.z-top.position.z)<HBODY.near&&(!rig.hb||rig.hb.cold)){wait=true;break;}}
+  if(!wait&&HBODY.rush)HBODY.rush=0;const el=typeof document!=='undefined'&&document.getElementById('fd');
+  if(wait){if(el&&el.style.opacity!=='1')el.style.opacity='1';if(!HBODY.held){HBODY.held=true;HBODY.heldAt=now;}}
+  else if(HBODY.held){HBODY.held=false;HBODY.heldMs=now-HBODY.heldAt;if(el)el.style.opacity='0';}
+  return now<HBODY.rush;}
+function hbTick(now){let best=null,bd=HBODY.build;const rush=hbRoomHold(now);
+  const busy=(!rush&&now-HBODY.last<HBODY.gap)||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1591 — the world's queue holds a body back only where the world runs it (WORLD.tick: the open world, not a room); in a gate its town jobs wait, and every body there waited with them */
   for(const rig of HB_RIGS){const root=rig.root,top=rig.foe?root.parent:root; // a foe's body hangs in its enemy's group (tickPeople)
     if(!root.parent||!top.parent){hbDrop(rig);HB_RIGS.delete(rig);continue;}
     if(top.parent!==scene||!top.visible||!root.visible)continue;
