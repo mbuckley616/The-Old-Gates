@@ -30,6 +30,7 @@ check(`the innkeeper counts its ${n} rooms from the stair up the east gable (${p
 await page.evaluate(id => { const S = WORLD.settle.get(id), h = S.houses.find(h => h.siteId === id && h.type === 'inn'); px = h.exitX; pz = h.exitZ; goToInterior(h); }, vid);
 for (let k = 0; k < 40 && !(await page.evaluate(() => isInterior())); k++) await page.waitForTimeout(250);
 await g.frames(2);
+for (let k = 0; k < 60 && !(await page.evaluate(() => { let n = 0; if (intNPCMesh) intNPCMesh.traverse(o => { if (o.isMesh && o.visible) n++; }); return !intNPCMesh || n > 0; })); k++) await g.frames(2); /* S2690 — the keeper is drawn once the builder's body is (S2661, S2678) */
 const r = await page.evaluate(n => {
   const h = currentHouse, T = h._taproom, W = h._roomW, D = h._roomD, F1 = +(T.floors[1] - T.floors[0]).toFixed(3); interiorScene.updateMatrixWorld(true);
   const meshes = []; let lights = 0, draws = 0, tris = 0, kDraws = 0, kBuilder = false; const kinds = {}; const inKeeper = o => { for (let p = o; p; p = p.parent) if (p === intNPCMesh) return true; return false; };
