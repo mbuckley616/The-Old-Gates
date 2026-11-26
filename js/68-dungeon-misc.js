@@ -1057,6 +1057,7 @@ function playerDead(){
   addLog('💀','Fell in '+dunName+'.');
   silenceSigilHum();castT=0;blocking=false;staggered=[];
   if(typeof musicDeath==='function')try{musicDeath();}catch(e){console.warn(e);} /* S2692 — the music breaks: what plays is cut, and the sting sounds */
+  if(typeof tpDeathStart==='function')try{tpDeathStart();}catch(e){console.warn(e);} /* S2694 — your body falls (54-thirdperson.js) */
   {const ip=document.getElementById('ipr');if(ip){ip.style.opacity='0';ip.style.display='none';}const ob=document.getElementById('ob');if(ob)ob.textContent='';} /* S677 — the loop stops at death, so the last prompt stood behind the screen */
   if(typeof _releasePointerLockForMenu==='function')_releasePointerLockForMenu();
   let ov=document.getElementById('died');
@@ -1074,6 +1075,7 @@ function playerDead(){
   const _k=(typeof ssActiveKey==='function')?ssActiveKey():null;const d=_k?ssEntry(_k):null;
   ov.querySelector('#died-sub').textContent=d?`Last save: ${d.kind==='auto'?'autosave':'slot '+(d.slot+1)} — ${d.place||(d.zone==='world'?'the open country':d.zone||'…')}, level ${d.level||'?'}`:'No save found.';
   ov.style.display='flex';
+  ov.style.transition='none';ov.style.opacity='0';void ov.offsetWidth;ov.style.transition='opacity 1.2s ease 1.1s';ov.style.opacity='1'; /* S2694 — the screen comes up after the fall, so the fall is seen */
 }
 // Reload the active slot in place (used by the death screen).
 function reloadActiveSlot(){

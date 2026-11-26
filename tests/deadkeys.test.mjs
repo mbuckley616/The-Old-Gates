@@ -19,6 +19,13 @@ const atDeath = await page.evaluate(() => ({ dead, shown: document.getElementByI
   ipr: getComputedStyle(document.getElementById('ipr')).display, ob: document.getElementById('ob').textContent,
   focus: document.activeElement && document.activeElement.id, music: devMusicHook.zone, explore: devMusicHook.explore.playing, sting: (DEATH_STING.log || []).length }));
 console.log('  at death', JSON.stringify(atDeath));
+// S2694 — your body falls (the ragdoll, Michael's note of 25 Nov): driven 200 fixed steps of the people's tick, as the loop does while dead
+const fall = await page.evaluate(() => { const g0 = activeTerrainH(px, pz), v = new THREE.Vector3();
+  for (let i = 0; i < 200; i++) tickPeople(1 / 60, performance.now());
+  const B = TP.rig && TP.rig.rig.B; if (B) B.hips.getWorldPosition(v);
+  return { on: TP_DEATH.on, tp: !!thirdPerson, hips: B ? +(v.y - g0).toFixed(2) : null, eye: +(CAM.position.y - g0).toFixed(2), op: document.getElementById('died').style.opacity }; });
+console.log('  the fall', JSON.stringify(fall));
+check('at death your body falls to the ground, and in first person the eye goes down with it (S2694)', fall.on && fall.hips != null && fall.hips < .45 && (fall.tp || fall.eye < .6), fall);
 const keys = {};
 for (const k of ['KeyE', 'KeyF', 'KeyI', 'Tab', 'KeyQ']) {
   const before = await page.evaluate(() => ({ ix: window._ix, mana, hub: hubOpen }));
@@ -50,6 +57,8 @@ await page.keyboard.press('KeyF'); await page.waitForTimeout(800); await g.frame
 await page.keyboard.press('KeyI'); await page.waitForTimeout(300);
 const live = await page.evaluate(m0 => ({ manaSpent: m0 - mana, hub: hubOpen, music: devMusicHook.zone }), m0);
 console.log('  after the load', JSON.stringify(live));
+const up = await page.evaluate(() => { const v = new THREE.Vector3(); TP.rig.rig.B.hips.getWorldPosition(v); return { on: TP_DEATH.on, limp: !!TP.rig.rig.limp, roll: CAM.rotation.z, hips: +(v.y - activeTerrainH(px, pz)).toFixed(2) }; });
+check('after the load you stand again: the fall is over and the eye is level (S2694)', !up.on && !up.limp && up.roll === 0, up);
 check('after the load F casts and I opens the book again', live.manaSpent > 0 && live.hub, live);
 check('after the load the place\'s music plays again', live.music && live.music !== 'death', live);
 check('no page errors', g.errs.length === 0, g.errs);
