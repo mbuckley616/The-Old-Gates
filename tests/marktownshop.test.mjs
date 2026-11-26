@@ -26,6 +26,7 @@ const visit = async (t, lot) => {
   await page.evaluate(([s, id, t]) => { const h = WORLD.settle.get(s).houses.find(h => h.id === id); h._was = h.type; h.type = t; delete h._mtShop; window._H = h; forceTime(12); px = h.exitX; pz = h.exitZ; goToInterior(h); }, [site, lot.id, t]);
   for (let k = 0; k < 60 && !(await page.evaluate(() => isInterior() && currentHouse === _H)); k++) await page.waitForTimeout(250);
   await g.frames(3);
+  for (let k = 0; k < 60 && !(await page.evaluate(() => { let n = 0; if (intNPCMesh) intNPCMesh.traverse(o => { if (o.isMesh && o.visible) n++; }); return !intNPCMesh || n > 0; })); k++) await g.frames(2); /* S2691 — the keeper is drawn once the builder's body is (S2661, S2678; as S2690's six) */
   const r = await page.evaluate(() => {
     const h = currentHouse, T = h._markTown, S = T && T.shop; if (!S) return { none: true };
     const X = T.inner.x1, Z = T.inner.z1, FY = T.floors[0], F1 = T.floors[1] - FY, rx = x => x + X, rz = z => z + Z; interiorScene.updateMatrixWorld(true);
