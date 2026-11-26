@@ -384,7 +384,7 @@ function harvestHerb(h){
   if(h.def.respawn!=null)h.respawnT=h.def.respawn;
   bagAdd(item);if(h.gate&&typeof gateHerbPicked==='function')gateHerbPicked(h); /* S1886 — a gate's plant: entered within the hour, its gate teaches it */
   addLog('🌿','Harvested '+h.def.name);
-  if(typeof uiTone==='function'){uiTone(320,420,.12,.1,'sine');uiNoise(.1,.1,600);}
+  if(typeof sndPick==='function')sndPick(h.type,!!h.bed); /* S2704 — the pick heard by the plant's kind, not the UI's beep */
   showMsg('Harvested '+h.def.name+'!','#88cc88');
 }
 
@@ -687,7 +687,7 @@ function pickSpec(s){if(!s||specGone(s))return {why:''};const D=SPEC_DEF[s.kind]
   return {picked:D.name,first};}
 function specUse(s){const r=pickSpec(s);if(r.why){if(r.why)showMsg(r.why,'#cc8844');return;}
   if(r.bud){showMsg(r.said,'#c8b8e8');if(r.fresh)addLog('✿',r.said);return;}
-  addLog('✿','Picked '+r.picked);if(typeof uiTone==='function'){uiTone(320,420,.12,.1,'sine');}showMsg('Picked '+r.picked+'!','#e8c8f0');}
+  addLog('✿','Picked '+r.picked);if(typeof sndPick==='function')sndPick(SPEC_DEF[s.kind].kin); /* S2704 */showMsg('Picked '+r.picked+'!','#e8c8f0');}
 function specPrompt(s){const D=SPEC_DEF[s.kind];return specOpen(s.kind)?`Press 'E' to pick the ${D.name}`:`A closed bud · E to look closer`;}
 // ── S2159 — the specimens in the mortar (#1463 B, session 3 of 3): each a catalyst, one a grinding, riding with the herbs (brewMax unchanged)
 // and spent. What it does is hidden until learnt, by any of three (OG-097, Morrowind's learning by doing): observe (pick SPEC_OBSERVE open

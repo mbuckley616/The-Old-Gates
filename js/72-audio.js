@@ -442,6 +442,24 @@ function sndDiscover(){DISC_SND.n++;const now=performance.now();if(now-DISC_SND.
   _sfxToneAt(0,293.66,292.8,.55,.10,'triangle');_sfxToneAt(0,440,438.7,.5,.08,'triangle');
   _sfxToneAt(.22,587.33,586,.9,.09,'triangle');_sfxToneAt(.22,1174.66,null,.7,.035,'sine');
 }catch(e){}}
+/* S2704 — a herb picked is heard (Michael, 25 Nov: "We need to add sound effects when picking herbs in the overworld"). It had only the
+   UI's confirm beep. Five voices by what the plant is (PLANT_KIND, or a specimen's kin): leaves and stems rustle and the stem snaps;
+   moss, a rosette or a root tears from the ground with a soft thud of earth; a cap or a bracket breaks with a dull pop; a water or sea
+   plant comes up with a slosh and a bubble; a crystal chips with a glassy tick. On the audio clock, cosmetic, about 0.3 s, a little
+   varied each time so ten picks in a glade are not one sound ten times. PICK_SND counts the calls and keeps the last voice (tests). */
+const PICK_SND={n:0,last:null};
+function pickVoice(key,wet){const k=(typeof PLANT_KIND!=='undefined'&&PLANT_KIND[key])||key||'';
+  if(wet||/^(kelp|sealily|pearl|waterleaf)$/.test(k))return 'wet';if(/^(mushrooms|bracket)$/.test(k)||/cap|shroom|caverglow/.test(k))return 'fungus';
+  if(/^(shardmoss|sunglass|skyshard|saltcrystal)$/.test(k))return 'crystal';if(/^(moss|clay|root|rosette|cliffflower|wisp)$/.test(k))return 'ground';return 'leaf';}
+function sndPick(key,wet){const v=pickVoice(key,wet);PICK_SND.n++;PICK_SND.last=v;if(typeof AX==='undefined'||!AX||volLevel===0)return v;try{
+  const j=()=>.9+Math.random()*.2;
+  if(v==='leaf'){_sfxSweepAt(0,.09,2600*j(),3400*j(),.07,1.2,.25);_sfxSweepAt(.07,.11,3000*j(),2200*j(),.06,1.2,.2);
+    _sfxSweepAt(.16,.025,4200,4200,.09,3,.1);_sfxToneAt(.16,1250*j(),900,.03,.035,'triangle');}
+  else if(v==='ground'){_sfxSweepAt(0,.2,450*j(),1100*j(),.08,1.6,.7);_sfxSweepAt(.19,.08,300,220,.09,2,.15);_sfxToneAt(.19,140*j(),85,.09,.08);}
+  else if(v==='fungus'){_sfxSweepAt(0,.05,900*j(),600,.08,2.5,.2);_sfxToneAt(.01,280*j(),160,.07,.08,'triangle');_sfxSweepAt(.06,.07,1800,1200,.03,1.5,.3);}
+  else if(v==='wet'){_sfxSweepAt(0,.22,320*j(),700*j(),.09,1.4,.5);_sfxToneAt(.12,480*j(),950*j(),.06,.04);_sfxToneAt(.2,620*j(),1250*j(),.05,.03);}
+  else{_sfxToneAt(0,3800*j(),3700,.12,.03,'triangle');_sfxToneAt(0,5600*j(),null,.08,.014);_sfxSweepAt(0,.03,6000,6000,.05,3,.1);}
+}catch(e){}return v;}
 function sndSnowStep(sprint){
   sfxNoise(sprint?.045:.055,1,1,sprint?.10:.07,sprint?260:180);
 }
