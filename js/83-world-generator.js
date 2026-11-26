@@ -624,7 +624,7 @@ function genSettlement(site){
       if(L){q(e(3),e(2),r1);q(e(3),r1,r0);q(e(1),e(0),r0);q(e(1),r0,r1);q(e(0),e(3),r0);q(e(2),e(1),r1);}else{q(e(2),e(1),r1);q(e(1),r0,r1);q(e(0),e(3),r0);q(e(3),r1,r0);q(e(3),e(2),r1);q(e(1),e(0),r0);}
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(P.flat()),3));g.computeVertexNormals();return g;};
     /* a face's openings as dark quads just proud of the far box (u along the face, y from the plinth's top, the face at depth f) */
-    const kitLoHoles=(list,face,f,y0,mx,mir)=>{const dk=new THREE.Color(.17,.16,.17),dr=new THREE.Color(.33,.22,.15);for(const h of list||[]){const ht=h.h-(h.arch?h.w*.22:0),g=new THREE.PlaneGeometry(h.w,ht);const u=mir?-h.x:h.x;
+    const kitLoHoles=(list,face,f,y0,mx,mir,dc)=>{const dk=new THREE.Color(.17,.16,.17),dr=dc||new THREE.Color(.33,.22,.15);for(const h of list||[]){const ht=h.h-(h.arch?h.w*.22:0),g=new THREE.PlaneGeometry(h.w,ht);const u=mir?-h.x:h.x;
       if(face==='z+'){g.translate(u,y0+h.y+ht/2,f);}else if(face==='z-'){g.rotateY(Math.PI);g.translate(u,y0+h.y+ht/2,-f);}else if(face==='x+'){g.rotateY(Math.PI/2);g.translate(f,y0+h.y+ht/2,-u);}else{g.rotateY(-Math.PI/2);g.translate(-f,y0+h.y+ht/2,u);}
       kitLo.push([g.toNonIndexed(),mx,h.door?dr:dk]);g.dispose();}};
     const kitLoDome=(R,Hd,n,x,y0,z,mx,col)=>{const pts=[];for(let i=0;i<=5;i++){const a=i/5*Math.PI/2;pts.push([Math.max(.001,R*Math.cos(a)),Hd*Math.sin(a)]);}kitLoLathe(pts,n,x,y0,z,mx,col);};
@@ -637,10 +637,12 @@ function genSettlement(site){
     // roof prism and a box for the tower; its door the tower's or, side-on, the nave's south door
     function kitChurch(lot){const C=PKIT.gl.church({bays:lot.kit.bays,side:lot.kit.side,r:PKIT.stream(`${site.id}:windows:${lot.n}`)}),U=C.userData,y=worldH(lot.x,lot.z)-.06;
       C.position.set(lot.x-cx,y,lot.z-cz);C.rotation.y=lot.ry;C.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(C);
-      const sz=U.size,T=sz.tower,mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(lot.x,y,lot.z),stone=new THREE.Color(.78,.76,.71);
+      const sz=U.size,T=sz.tower,mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(lot.x,y,lot.z),stone=kitLoTone('rubble'); /* S2691 — the kit's tones */
       {const b=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed();b.translate(0,sz.eave/2,0);kitLo.push([b,mx,stone]);}
-      {const r=lot.kit.side?kitRoof(sz.w/2,sz.d/2+.3,sz.eave,sz.eave+4.6):kitRoof(sz.d/2,sz.w/2+.3,sz.eave,sz.eave+4.6);if(!lot.kit.side)r.rotateY(Math.PI/2);kitLo.push([r,mx,new THREE.Color(.24,.26,.30)]);}
-      {const b=new THREE.BoxGeometry(T.s,T.h,T.s).toNonIndexed();b.translate(lot.kit.side?T.at:0,T.h/2,lot.kit.side?0:T.at);kitLo.push([b,mx,stone]);}
+      {const r=lot.kit.side?kitRoof(sz.w/2,sz.d/2+.3,sz.eave,sz.eave+4.6):kitRoof(sz.d/2,sz.w/2+.3,sz.eave,sz.eave+4.6);if(!lot.kit.side)r.rotateY(Math.PI/2);kitLo.push([r,mx,kitLoTone('slate')]);}
+      {const tx=lot.kit.side?T.at:0,tz=lot.kit.side?0:T.at,hb=T.h-.7,b=new THREE.BoxGeometry(T.s,hb,T.s).toNonIndexed();b.translate(tx,hb/2,tz);kitLo.push([b,mx,stone]);
+        const n=4,mw=T.s/(2*n-1); /* S2691 — the parapet's merlons on the far tower's top, so its skyline is the near tower's and not a block */
+        for(let i=0;i<n;i++){const u=-T.s/2+mw/2+i*2*mw;for(const [bw,bd,x,z] of [[mw,.5,tx+u,tz+T.s/2-.25],[mw,.5,tx-u,tz-T.s/2+.25],[.5,mw,tx+T.s/2-.25,tz-u],[.5,mw,tx-T.s/2+.25,tz+u]]){const m=new THREE.BoxGeometry(bw,.7,bd).toNonIndexed();m.translate(x,hb+.35,z);kitLo.push([m,mx,stone]);}}}
       lot._kitDoor=U.door;lot._wallH=sz.eave;lot._storeys=1;lot.two=false;lot.kit.tris=U.tris;lot.kit.calls=U.calls;lot.kit.colour='stone';lot.kit.door=U.door+(lot.kit.slide||0);
       if(lot.gods)kitGods(lot.gods);}
     // S1904 (card F6, Michael's A on #475) — the market house on its plot (PKIT.gl.market, pieces.js's Session 1179/1188 as it stands): its
@@ -687,7 +689,7 @@ function genSettlement(site){
       const St=U.stair;if(St){put(St.landing.x1,St.landing.x1+.3,St.landing.z0,St.foot[1],St.landing.y+1);put(St.landing.x0,St.landing.x1+.3,St.landing.z0-.3,St.landing.z0,St.landing.y+1);}
       const mx=new THREE.Matrix4().makeRotationY(L.ry).setPosition(L.x,y,L.z),lime=new THREE.Color(.86,.84,.79);
       {const b=new THREE.BoxGeometry(w,sz.eave,d).toNonIndexed();b.translate(0,sz.eave/2,0);kitLo.push([b,mx,lime]);}
-      {const rr=kitRoof(hw+.32,hd+.32,sz.eave,sz.eave+(hd+.32)*Math.tan(32*Math.PI/180));kitLo.push([rr,mx,new THREE.Color(.24,.26,.30)]);}
+      {const rr=kitRoof(hw+.32,hd+.32,sz.eave,sz.eave+(hd+.32)*Math.tan(32*Math.PI/180));kitLo.push([rr,mx,kitLoTone('slate')]);}
       if(St){const b=new THREE.BoxGeometry(St.width+.3,St.landing.y+1,St.foot[1]-St.landing.z0+.3).toNonIndexed();b.translate(St.landing.x0+(St.width+.3)/2,(St.landing.y+1)/2,(St.foot[1]+St.landing.z0-.3)/2);kitLo.push([b,mx,lime]);}
       const ft=St?W_(St.foot[0],St.foot[1]+.5):null,beam=W_(0,0);
       S.market={id:`${site.id}:market`,x:L.x,z:L.z,y,ry:L.ry,w,d,eave:sz.eave,ridge:sz.ridge,stairOut:!!L.stairOut,foot:ft,beam,tris:U.tris,calls:U.calls,sols,r:Math.hypot(hw+1.5,hd)+.5};
@@ -711,12 +713,12 @@ function genSettlement(site){
     // a roof prism for the tower and a box for each wall, flanker and the house
     function kitKeep(lot){const K=kitPre.get(lot),U=K.userData,B=U.size.bawn,T=U.size.tower,k=lot.kit,y=worldH(k.at.x,k.at.z)-.06,c=Math.cos(lot.ry),s_=Math.sin(lot.ry);kitPre.delete(lot);
       K.position.set(k.at.x-cx,y,k.at.z-cz);K.rotation.y=lot.ry;K.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(K);
-      const mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(k.at.x,y,k.at.z),stone=new THREE.Color(.70,.68,.63),hw=B.w/2,hd=B.d/2,t=B.t,g=U.size.gate,R=2.25;
+      const mx=new THREE.Matrix4().makeRotationY(lot.ry).setPosition(k.at.x,y,k.at.z),stone=kitLoTone('rubble'),hw=B.w/2,hd=B.d/2,t=B.t,g=U.size.gate,R=2.25;
       const rects=[[-hw,g.x-g.w/2,hd-t,hd,B.h],[g.x+g.w/2,hw,hd-t,hd,B.h],[-hw,-hw+t,-hd+T.d,hd-t,B.h],[hw-t,hw,-hd,hd-t,B.h],[-hw+T.w,hw,-hd,-hd+t,B.h], /* the walls: the front either side of the gateway, west, east and back */
         ...[-1,1].map(sx=>[sx*(hw-.4)-R,sx*(hw-.4)+R,hd-.4-R,hd-.4+R,6.5]),[hw-t-5.5,hw-t,1.5-6,1.5+6,3.0],[3.1,4.9,-2.9,-1.1,0]]; /* the flankers, the bawn house against the east wall (12 by 5.5 m), the well */
       for(const [u0,u1,v0,v1,h] of rects){const u=(u0+u1)/2,v=(v0+v1)/2;sol.push({cx:k.at.x+u*c+v*s_,cz:k.at.z-u*s_+v*c,rx:(u1-u0)/2,rz:(v1-v0)/2,c,s:s_,bt:'wall'});
         if(h){const b=new THREE.BoxGeometry(u1-u0,h,v1-v0).toNonIndexed();b.translate(u,h/2,v);kitLo.push([b,mx,stone]);}}
-      {const b=new THREE.BoxGeometry(T.w,T.walk,T.d).toNonIndexed();b.translate(k.tu,T.walk/2,k.tv);kitLo.push([b,mx,stone]);const rf=kitRoof(T.w/2,T.d/2,T.walk,T.walk+T.d/2*Math.tan(50*Math.PI/180));rf.translate(k.tu,0,k.tv);kitLo.push([rf,mx,new THREE.Color(.24,.26,.30)]);}
+      {const b=new THREE.BoxGeometry(T.w,T.walk,T.d).toNonIndexed();b.translate(k.tu,T.walk/2,k.tv);kitLo.push([b,mx,stone]);const rf=kitRoof(T.w/2,T.d/2,T.walk,T.walk+T.d/2*Math.tan(50*Math.PI/180));rf.translate(k.tu,0,k.tv);kitLo.push([rf,mx,kitLoTone('slate')]);}
       lot._kitDoor=U.towerDoor.x;lot._wallH=T.walk;lot._storeys=4;lot.two=true;k.tris=U.tris;k.calls=U.calls;k.colour='stone';k.door=lot._kitDoor;}
     // S1339 — the coaching inn (PKIT.gl.coachInn, as #411 A chose it), its render and paint the street's (PKIT.gl.lot keyed by the town and
     // the lot, so it takes its turn in the street's colours), its lit windows keyed as a house's are. Built at the inn's centre and turned
@@ -729,8 +731,8 @@ function genSettlement(site){
       const rects=[[hw,g.x-g.w/2,hd-gt,hd,4.8],[g.x+g.w/2,x1,hd-gt,hd,4.8],[x1-gt,x1,Z.yard.z1,hd-gt,2.6],[-hw,-hw+gt,Z.yard.z1,-hd,2.6],[x1-2.4,x1-gt,-hd-3.35,-hd-2.65,0],[-hw,x1,zB,zB+S_.d,0]]; /* the gateway's wall either side of the arch, the yard's east and west walls, the trough, the stables */
       for(const [u0,u1,v0,v1,h] of rects){const u=(u0+u1)/2,v=(v0+v1)/2;sol.push({cx:lot.x+u*c+v*s_,cz:lot.z-u*s_+v*c,rx:(u1-u0)/2,rz:(v1-v0)/2,c,s:s_,bt:'wall'});
         if(h){const b=new THREE.BoxGeometry(u1-u0,h,v1-v0).toNonIndexed();b.translate(u,h/2,v);kitLo.push([b,mx,stone]);}}
-      const wc=PKIT.gl.mats()['w:'+L.colour],slate=new THREE.Color(.24,.26,.30);
-      {const b=new THREE.BoxGeometry(I.w,I.eave,I.d).toNonIndexed();b.translate(0,I.eave/2,0);kitLo.push([b,mx,wc?wc.color.clone().multiplyScalar(.82):new THREE.Color(.8,.78,.72)],[kitRoof(hw+.2,hd+.25,I.eave,I.ridge),mx,slate]);}
+      const wc=PKIT.gl.mats()['w:'+L.colour],slate=kitLoTone('slate');
+      {const b=new THREE.BoxGeometry(I.w,I.eave,I.d).toNonIndexed();b.translate(0,I.eave/2,0);kitLo.push([b,mx,wc?kitLoTone('w:'+L.colour):new THREE.Color(.8,.78,.72)],[kitRoof(hw+.2,hd+.25,I.eave,I.ridge),mx,slate]);}
       {const su=(x1-hw)/2,sv=zB+S_.d/2,b=new THREE.BoxGeometry(S_.w,S_.eave,S_.d).toNonIndexed(),rf=kitRoof(S_.w/2+.25,S_.d/2+.3,S_.eave,S_.ridge);b.translate(su,S_.eave/2,sv);rf.translate(su,0,sv);kitLo.push([b,mx,stone],[rf,mx,slate]);}
       for(const gx of [-1,1]){const x=gx*(hw-.36);S.chimneys.push({x:lot.x+x*c,y:y+I.ridge+.85,z:lot.z-x*s_,t:'inn',k:0});}
       lot._kitDoor=0;lot._wallH=I.eave;lot._storeys=3;lot.two=true;k.tris=U.tris;k.calls=U.calls;k.colour=L.colour;k.paint=L.paint;k.door=0;}
@@ -891,9 +893,23 @@ function genSettlement(site){
       if(lot.kit.kind==='coachinn'){kitCoachInn(lot);return;}
       const L=lot.kit.kind==='guildhall'?kitHall(lot):PKIT.gl.lot(site.id,lot.n,{kind:lot.kit.kind,bays:lot.kit.bays,d:lot.d,trade:KIT_TRADE[type]});const b=PKIT.gl.building(L.plan),U=b.userData;
       b.position.set(lot.x-cx,worldH(lot.x,lot.z)-.06,lot.z-cz);b.rotation.y=lot.ry;b.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});kitG.add(b);
-      {const sz=U.size,th=L.plan.roof.kind==='thatch',wc=PKIT.gl.mats()['w:'+(L.colour==='stone'?'lime':L.colour)],box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */
+      {const sz=U.size,P=L.plan,th=P.roof.kind==='thatch',box=new THREE.BoxGeometry(sz.w,sz.eave,sz.d).toNonIndexed(),mx=new THREE.Matrix4(); /* S1073 — its far copy: the walls a box and the roof a prism, in the wall's and the roof's colours */
         box.translate(0,sz.eave/2,0);mx.makeRotationY(lot.ry).setPosition(lot.x,worldH(lot.x,lot.z)-.06,lot.z);
-        kitLo.push([box,mx,wc?wc.color.clone().multiplyScalar(.82):new THREE.Color(.8,.78,.72)],[kitRoof(sz.w/2+(th?.35:.2),sz.d/2+(th?.45:.25),sz.eave,sz.ridge),mx,new THREE.Color(...(th?[.42,.35,.22]:[.24,.26,.30]))]);}
+        /* S2691 — in the kit's own tones (kitLoTone), the roof hipped where the plan hips it and flush with a parapet's gable, its windows and
+           doors where the plan cuts them (a door in the house's paint), the shop's fascia, the quoins at the corners, and every stack with its pots */
+        const gx=P.roof.hip?sz.w/2+(P.roof.ov??.3):P.roof.parapet?sz.w/2:sz.w/2+(th?.35:.2),gz=sz.d/2+(th?.45:.25),rc=kitLoTone(th?'thatch':'slate',th?1:.92),fin=P.fin,
+          part=(bw,bh,bd,u,y0,v,col)=>{const b=new THREE.BoxGeometry(bw,bh,bd).toNonIndexed();b.translate(u,y0+bh/2,v);kitLo.push([b,mx,col]);};
+        kitLo.push([box,mx,kitLoTone(fin.key)],[P.roof.hip?kitHip(gx,gz,sz.eave,sz.ridge-sz.eave):kitRoof(gx,gz,sz.eave,sz.ridge),mx,rc]);
+        const dc=kitLoTone('p:'+(P.paint||'green'),.8),hs=(k,lo)=>(P.open[k]||[]).filter(o=>lo?o.y+o.h<=sz.eave+.05:o.y+o.h>sz.eave+.05).map(o=>({x:o.x,y:o.y,w:o.w,h:o.h,door:/half|fan|transom|plank|shopdoor|cart/.test(o.kind)}));
+        {const fr=k=>hs(k,1).filter(o=>!o.door).map(o=>({x:o.x,y:o.y-.07,w:o.w+.14,h:o.h+.14,door:1})),fc=kitLoTone('frame',.9); /* the windows' white frames, a quad behind each */
+          kitLoHoles(fr('front'),'z+',sz.d/2+.02,0,mx,false,fc);kitLoHoles(fr('back'),'z-',sz.d/2+.02,0,mx,true,fc);kitLoHoles(fr('right'),'x+',sz.w/2+.02,0,mx,false,fc);kitLoHoles(fr('left'),'x-',sz.w/2+.02,0,mx,false,fc);}
+        kitLoHoles(hs('front',1),'z+',sz.d/2+.03,0,mx,false,dc);kitLoHoles(hs('back',1),'z-',sz.d/2+.03,0,mx,true,dc);kitLoHoles(hs('right',1),'x+',sz.w/2+.03,0,mx,false,dc);kitLoHoles(hs('left',1),'x-',sz.w/2+.03,0,mx,false,dc);
+        if(!P.roof.hip){kitLoHoles(hs('right'),'x+',gx+.02,0,mx,false,dc);kitLoHoles(hs('left'),'x-',gx+.02,0,mx,false,dc);} /* a gable's window, on the roof's closed end */
+        if(P.shop)part(P.shop.w,.62,.16,0,P.shop.top-.05,sz.d/2+.08,kitLoTone('p:'+P.shop.paint,.8));
+        if(fin.quoins){const qc=kitLoTone(fin.dressKey||'dress');for(const sx of [-1,1])for(const sz_ of [-1,1])part(.5,sz.eave-.1,.5,sx*(sz.w/2-.22),.1,sz_*(sz.d/2-.22),qc);}
+        const kc=kitLoTone(fin.key==='rubble'?'rubble':fin.stackKey||fin.key),pc=new THREE.Color(.62,.30,.18);
+        for(const c of P.chim||[]){const x=c.gable?c.gable*(sz.w/2-.36):c.x,y1=sz.ridge+(th?1.0:.85),b=.4+.36*(c.flues||1);part(.72,y1-sz.eave+.6,b,x,sz.eave-.6,0,kc);part(.34,.24,b-.3,x,y1,0,pc);}
+        if(!th)part(P.roof.hip?Math.max(.3,2*(gx-gz)):2*gx,.16,.22,0,sz.ridge-.06,0,kitLoTone('ridge')); /* the red clay ridge */}
       lot._kitDoor=L.plan.doorX||0;lot._wallH=U.size.eave;lot._storeys=L.plan.floors.length;lot.two=L.plan.floors.length>1;lot.kit.tris=U.tris;lot.kit.colour=L.colour;lot.kit.paint=L.paint;lot.kit.door=lot._kitDoor+(lot.kit.slide||0);if(lot.kit.kind==='forge'||lot.kit.kind==='apothecary')lot.kit.shell=`${site.id}:windows:${lot.n}`; /* S1860 — the room's shell takes the street's windows */
       const c=(L.plan.chim||[])[0];if(c){const x=c.gable?c.gable*(U.size.w/2-.36):c.x,y=U.size.ridge+(L.plan.roof.kind==='thatch'?1.0:.85),cs=Math.cos(lot.ry),sn=Math.sin(lot.ry),wy=b.position.y;
         S.chimneys.push({x:lot.x+x*cs,y:wy+y,z:lot.z-x*sn,t:type||'home',k:0});}}
@@ -1474,6 +1490,12 @@ function genSettlement(site){
   // Bake a settlement: every static mesh with a plain (untextured, lit) material is
   // merged into cluster meshes (60u cells) with vertex colours, one draw call each.
   // Skipped: textured signs, glass/glows (MeshBasic), banners (planes), boats, gulls.
+  /* S2691 — a kit material's tone for a far copy: its colour times its texture's mean, what the near piece averages to at range (the far
+     copy's flat tints were guesses: the slate came out pale and every rubble house limewashed); cached by the kit's key */
+  const KIT_LO_TONE=new Map();
+  function kitLoTone(key,k=1){let c=KIT_LO_TONE.get(key);if(!c){c=new THREE.Color(.7,.7,.7);try{const m=PKIT.gl.mats()[key];if(m){c=m.color.clone();const im=m.map&&m.map.image;
+      if(im&&im.getContext){const d=im.getContext('2d').getImageData(0,0,im.width,im.height).data;let r=0,g=0,b=0,n=0;for(let i=0;i<d.length;i+=28){r+=d[i];g+=d[i+1];b+=d[i+2];n++;}c.multiply(new THREE.Color(r/n/255,g/n/255,b/n/255));}}}catch(e){}KIT_LO_TONE.set(key,c);}
+    return c.clone().multiplyScalar(k);}
   function mergeGeos(list){
     let total=0;list.forEach(([g])=>total+=g.attributes.position.count);
     const pos=new Float32Array(total*3),nor=new Float32Array(total*3),col=new Float32Array(total*3);let o=0;const _n=new THREE.Matrix3();
