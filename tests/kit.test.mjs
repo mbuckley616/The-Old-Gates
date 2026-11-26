@@ -9,12 +9,18 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const rec = JSON.parse(fs.readFileSync(path.join(here, '../docs/prototypes/levelup/pieces-gatelands.json'), 'utf8')).line.plans;
 
 // the old look: the file is there and has painted nothing
-{ const g = await boot({ look: 'old' }); const o = await g.page.evaluate(() => ({ look: window.OG_LOOK || 'old', kit: typeof PKIT, made: PKIT.texturesMade(), fns: typeof PKIT.gl.building }));
-  check('on the old look the kit loads and paints nothing', o.look !== 'new' && o.kit === 'object' && o.made === 0 && o.fns === 'function' && g.errs.length === 0, { ...o, errs: g.errs });
+// Session 2700: since S2664 every way out of a dungeon is its world door seen from inside, built from the kit's gate-mouth materials
+// (dunExitBuild -> PKIT.places.gatemouthMats), and the boot builds the first floor, so the boot paints the 4 surfaces of that one piece.
+// The promise held is the same: the kit paints nothing beyond the pieces built. `extra` is what asking for the gate mouth's materials
+// again would leave painted that was not already; nothing else may be painted.
+const bootPaint = () => { const made = PKIT.texturesMade(), exit = typeof DUN_EXIT !== 'undefined' && !!DUN_EXIT; PKIT.places.gatemouthMats(); return { made, exit, after: PKIT.texturesMade() }; };
+{ const g = await boot({ look: 'old' }); const o = await g.page.evaluate((f) => ({ look: window.OG_LOOK || 'old', kit: typeof PKIT, paint: eval(f)(), fns: typeof PKIT.gl.building }), bootPaint.toString());
+  check('on the old look the kit loads and paints nothing beyond the first floor\'s exit (the gate mouth\'s materials)', o.look !== 'new' && o.kit === 'object' && (o.paint.made === 0 || (o.paint.exit && o.paint.after === o.paint.made)) && o.fns === 'function' && g.errs.length === 0, { ...o, errs: g.errs });
   await g.close(); }
 
 const g = await boot({ look: 'new' }); const { page } = g;
-check('the new look boots with the kit loaded and nothing painted yet', await page.evaluate(() => OG_LOOK === 'new' && PKIT.texturesMade() === 0) && g.errs.length === 0, g.errs);
+{ const p = await page.evaluate((f) => ({ look: OG_LOOK, ...eval(f)() }), bootPaint.toString());
+  check('the new look boots with the kit loaded and nothing painted yet beyond the first floor\'s exit (the gate mouth\'s materials)', p.look === 'new' && (p.made === 0 || (p.exit && p.after === p.made)) && g.errs.length === 0, { ...p, errs: g.errs }); }
 
 // the line-up, built as pieces.check.mjs builds it
 const line = await page.evaluate(() => { const P = PKIT.gl.PLANS, out = {}, t0 = performance.now();

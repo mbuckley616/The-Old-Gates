@@ -26,8 +26,13 @@ check('coming onto the pad is Q7\'s first step, Return to Ashenmoor', ruin.burne
 
 // Edna at home at 23h, in her burned voice
 const edna = await page.evaluate(() => { forceTime(23); const S = WORLD.settle.get('ashenmoor'); const h = S.houses.find(x => x.keeper === 'Edna'); window._h = h; px = h.exitX; pz = h.exitZ; goToInterior(h); return h.id; });
-await page.waitForTimeout(4500); await g.hide();
-const talk = await page.evaluate(() => { const inside = currentHouse === window._h; const here = !!intNPCMesh; if (here) { px = intNPCPos.x; pz = intNPCPos.z + 1; jumpY = 0; interact(); }
+// wait for the room and her body behind the fade (S2678 holds it up to 1.5 s), not a fixed 4.5 s, which missed the room on a loaded runner
+await page.waitForFunction(() => currentHouse === window._h && !!intNPCMesh, null, { timeout: 60000, polling: 250 }).catch(() => {}); await g.hide();
+// S646: indoors E reaches only what the crosshair is on, and since S2560 her cottage's still takes E unless you look at her:
+// stand a step in front of her and look at her chest, then let the loop move the camera before pressing E (Session 2700)
+await page.evaluate(() => { if (intNPCMesh) { px = intNPCPos.x; pz = intNPCPos.z + 1; jumpY = 0; lookAtPt(intNPCPos.x, 1.2, intNPCPos.z); } });
+await g.frames(3);
+const talk = await page.evaluate(() => { const inside = currentHouse === window._h; const here = !!intNPCMesh; if (here) { px = intNPCPos.x; pz = intNPCPos.z + 1; jumpY = 0; lookAtPt(intNPCPos.x, 1.2, intNPCPos.z); interact(); }
   const out = { inside, here, open: dlgOpen, name: dlgOpen && document.getElementById('dlg-name').textContent, text: dlgOpen && document.getElementById('dlg-text').textContent }; if (dlgOpen) closeDialog(); return out; });
 const burnedLines = await page.evaluate(() => SHOP_DIALOG_BURNED.Edna.greeting);
 console.log(JSON.stringify(talk));

@@ -77,14 +77,16 @@ const roundRun = (slide) => page.evaluate((slide) => { const S = WORLD.ship, m =
   const [bx, bz] = W(b.x, b.z), [ex, ez] = W(b.x, b.z + 1.0), [qx, qz] = W(b.x, b.z - 2.2);
   px = qx; pz = qz; jumpY = 1.0; onGround = true;
   const e = buildZoneEnemy(WORLD.scene, WORLD.STATIC_SOL, ex, ez, 'Pirate'); e.alert = true; e.homeX = S.x; e.homeZ = S.z; ZONES.world.enemies.push(e);
+  // S2659: a foe holds where its tell starts (foeHoldDist), 1.65 for a Pirate, so "reaches you" is within that hold + 0.25 (it was 1.6 when foes closed to 1.0; Session 2700)
+  const reach = +(foeHoldDist(e, false, 1.0) + .25).toFixed(2);
   let n = 0, best = 1e9, crossed = false;
   _drive(() => { PHP = maxHP; dead = false; S.x = _sea.x; S.z = _sea.z; S.speed = 0; px = qx; pz = qz; jumpY = 1.0; for (const o of [...WORLD.others]) WORLD.despawnOtherShip(o);
-    const d = Math.hypot(e.x - px, e.z - pz); best = Math.min(best, d); if (Math.hypot(e.x - bx, e.z - bz) < .5) crossed = true; return ++n > 300 || d < 1.6; }, 301);
-  const out = { secs: +(n / 60).toFixed(2), best: +best.toFixed(2), throughBarrel: crossed };
+    const d = Math.hypot(e.x - px, e.z - pz); best = Math.min(best, d); if (Math.hypot(e.x - bx, e.z - bz) < .5) crossed = true; return ++n > 300 || d < reach; }, 301);
+  const out = { secs: +(n / 60).toFixed(2), best: +best.toFixed(2), reach, throughBarrel: crossed };
   if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh); ZONES.world.enemies.splice(ZONES.world.enemies.indexOf(e), 1); return out; } finally { foeSlide = FS; } }, slide);
 const round = await roundRun(true), stuck = await roundRun(false);
 console.log('round', JSON.stringify(round), 'without the slide', JSON.stringify(stuck));
-check(`a pirate behind her barrel comes round it to you (within 1.6 in ${round.secs} s), never through it; without the slide he stands ${stuck.best} off for 5 s`, round.best <= 1.6 && !round.throughBarrel && stuck.best > 1.6 && !stuck.throughBarrel, { round, stuck });
+check(`a pirate behind her barrel comes round it to you (within his hold, ${round.reach}, in ${round.secs} s), never through it; without the slide he stands ${stuck.best} off for 5 s`, round.best <= round.reach && !round.throughBarrel && stuck.best > stuck.reach && !stuck.throughBarrel, { round, stuck });
 
 check('a merchantman\'s two hands stand on her deck, clear of her hatch and her cargo (S2126)', !!hands && hands.length === 2 && hands.every(([on, hit]) => on && !hit), hands);
 check('no page errors', g.errs.length === 0, g.errs);
