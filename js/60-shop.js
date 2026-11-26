@@ -2,7 +2,7 @@
 // ── SHOP ────────────────────────────────────────────────────
 function openShop(){
   if(!currentHouse)return;
-  if(typeof WORLD!=='undefined'&&WORLD.refusesTrade&&WORLD.refusesTrade(currentHouse)){showMsg(`${currentHouse.keeper||'The keeper'}: “I know what you did. Take your custom elsewhere.”`,'#e8a880');return;} // S156
+  if(typeof WORLD!=='undefined'&&WORLD.refusesTrade&&WORLD.refusesTrade(currentHouse)){showMsg(typeof keeperVoice==='function'?keeperVoice(currentHouse,'refuse',currentHouse.keeper||'The keeper'):`${currentHouse.keeper||'The keeper'}: “A hand that’s been in my till won’t be shaken at my counter. Go on with you.”`,'#e8a880');return;} // S156; S2688 the keeper's people's voice
   _releasePointerLockForMenu();
   shopOpen=true;
   const el=document.getElementById('shop');

@@ -446,6 +446,17 @@
   // favour, no roll; nothing is saved.
   const KNOCK_FAVOR=2,KNOCK_MUL=1.25,KNOCK_WIN=8,KNOCK={id:null,t:-1e9,trade:null};
   const HOUR_WORDS=['midnight','one','two','three','four','five','six','seven','eight','nine','ten','eleven','noon'];
+  // S2688 — Finding 57 (quest review run 58): the knock's *too little favour* and a known thief's refusal (here and at openShop) in the keeper's
+  // people's voice, word for word: keeperPeople(house), else the people of the nation the door stands in; anything else reads as gatelander
+  const KEEPER_VOICE={
+    shut:{gatelander:'{k}, through the door: “The door opens at {h}, and it opens no sooner for the knocking.”',markman:'{k}, through the door: “Shut. Come back at {h}.”',
+      aurennais:'{k}, through the door: “The house opens at {h}, Master. Until then it is, regrettably, closed.”',oldblood:'{k}, through the door: “At {h}. Not before.”'},
+    refuse:{gatelander:'{k}: “A hand that’s been in my till won’t be shaken at my counter. Go on with you.”',markman:'{k}: “I know what you did. Get out.”',
+      aurennais:'{k}: “This house no longer extends you terms, Master. You will find the reason in your own account.”',oldblood:'{k}: “You took. You do not come in.”'}};
+  function keeperVoicePeople(house){let p;try{p=keeperPeople(house);}catch(e){}
+    if(!p&&house&&house.doorX!=null){try{p=nationOf(...cellOf(house.doorX,house.doorZ)).people;}catch(e){}}
+    return KEEPER_VOICE.shut[p]?p:'gatelander';}
+  function keeperVoice(house,kind,who,h){return KEEPER_VOICE[kind][keeperVoicePeople(house)].replace('{k}',who).replace('{h}',h);}
   function knockHomeNow(house){const h=hourNow();return h>=HRS.night||h<shopHours(house.type)[0];}
   function knockArmed(house){return !!house&&KNOCK.id===house.id&&performance.now()-KNOCK.t<KNOCK_WIN*1000;}
   // E at a locked door: true when this press was the knock (the lock waits for the next), false when E should pick
@@ -454,8 +465,8 @@
     KNOCK.id=house.id;KNOCK.t=performance.now();KNOCK.trade=null;try{sfxTone(180,90,.06,.12,'triangle');}catch(e){}
     const who=house.keeper,site=houseSite(house);
     if(!knockHomeNow(house)){showMsg(`You knock at ${house.name}. Nobody answers.`,'#c8b880');return true;}
-    if(!site||favor(site)<KNOCK_FAVOR){showMsg(`${who}: “Come back at ${HOUR_WORDS[lk.opens]||lk.opens}.”`,'#e8d8a8');return true;}
-    if(typeof refusesTrade==='function'&&refusesTrade(house)){showMsg(`${who}: “I know what you did. Take your custom elsewhere.”`,'#e8a880');return true;}
+    if(!site||favor(site)<KNOCK_FAVOR){showMsg(keeperVoice(house,'shut',who,HOUR_WORDS[lk.opens]||lk.opens),'#e8d8a8');return true;}
+    if(typeof refusesTrade==='function'&&refusesTrade(house)){showMsg(keeperVoice(house,'refuse',who),'#e8a880');return true;}
     KNOCK.trade=house.id;showMsg(`${who} comes down to the door.`,'#e8d8a8');currentHouse=house;if(typeof openShop==='function')openShop();return true;}
   // the door's trade: the price's ×1.25 while the counter opened by a knock is open, out of doors
   function knockMulNow(){const h=typeof currentHouse!=='undefined'&&currentHouse;return h&&KNOCK.trade===h.id&&!(typeof isInterior==='function'&&isInterior())?KNOCK_MUL:1;}
