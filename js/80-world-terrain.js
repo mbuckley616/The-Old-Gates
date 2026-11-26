@@ -463,9 +463,14 @@
     // billows out like a skirt"): the old snow was three flat cones as wide as the tiers' feet, set high up each tier where the
     // needles had narrowed to a point, so they stood out as rings. Each cap is now its tier's own cone cut at the same apex,
     // a hair wider so it rests on the needles, covering the upper part; below it the tier's green shows, as under a real fall.
-    {const TIERS=[[3.4,4.2,6.6,0x2a4a2c,.8,0],[2.7,3.9,9.0,0x2e5030,.84,.4],[1.8,3.6,11.2,0x325434,.76,.8]],parts=[{geo:new THREE.CylinderGeometry(.22,.4,6.5,7),color:c(0x4a3018),y:3.25}];
+    // S2709 — the Mark's snow-pine as a spire, not three cartoon tiers (P10b's *Snowy Peaks*: dark, narrow conifers dusted white; the
+    // Mark upland's view had green cones on a 4.5 m bare trunk, half their faces white). Five dark tiers from 1.2 m to the top, half as
+    // wide for the height (.37 against .52), the snow on the upper part of each (the S522 rule), and the trunk only where it shows.
+    // Eight sides a tier; the snow cones are open (their feet are inside the needles): 130 triangles a tree, the old one 124.
+    {const TIERS=[[2.35,3.6,3.0,0x12221c,.5,0],[2.0,3.3,5.2,0x14251d,.52,.5],[1.65,3.0,7.3,0x16281f,.55,1],[1.3,2.7,9.3,0x182a21,.6,1.5],[.9,2.6,11.4,0x1a2d23,.7,2]],
+      parts=[{geo:new THREE.CylinderGeometry(.14,.3,4,5,1,true),color:c(0x3a2818),y:2}];
       for(const [R,H,y,col,f,ry] of TIERS){parts.push({geo:new THREE.ConeGeometry(R,H,8),color:c(col),y,ry});
-        const h=H*f,apex=y+H/2+.04;parts.push({geo:new THREE.ConeGeometry(R*f*1.045,h,8),color:c(0xf0f2f4),y:apex-h/2,ry,jitter:.05});}
+        const h=H*f,apex=y+H/2+.04;parts.push({geo:new THREE.ConeGeometry(R*f*1.045,h,8,1,true),color:c(0xf0f2f4),y:apex-h/2,ry,jitter:.05});}
       PROTO.snowpine=mergeParts(parts);PROTO.snowpine.userData.tiers=TIERS;}
     // S526 — the swamp's giant mushrooms in kinds (Michael, the inspector: "we need more variants — red, brown, purple, blue,
     // varying shapes and sizes"). One cap on a stem: a dome, a bell, a flat parasol; the red the old one with the fly agaric's
