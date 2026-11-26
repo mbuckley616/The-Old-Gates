@@ -50,8 +50,10 @@ const sprint = async (lv, where, st, frames) => {
 const sk0 = await page.evaluate(() => JSON.stringify(SKILLS.athletics));
 const onRoad = await sprint(75, r.state.onR, 8, 10);
 const offRoad74 = await sprint(74, r.state.offR, 8, 10);
-const tired = await sprint(99, r.state.offR, 1, 12);
-const tireless = await sprint(100, r.state.offR, 1, 12);
+// S2695 — stamina comes back at 6 a second since the playtest's fixes of 25 Nov (ST_REGEN, 10-player.js; it was 3), and it comes back
+// while you sprint: at 99 the sprint nets about −3.2 a second, so 1 point lasts 19 frames, not the 12 this gave it. Thirty frames empty it.
+const tired = await sprint(99, r.state.offR, 1, 30);
+const tireless = await sprint(100, r.state.offR, 1, 30);
 await page.evaluate(s => { SKILLS.athletics = JSON.parse(s); }, sk0);
 console.log(JSON.stringify({ onRoad, offRoad74, tired, tireless }));
 const dts = await page.evaluate(() => ({ n: _dts.length, min: Math.min(..._dts), max: Math.max(..._dts) }));

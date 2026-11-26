@@ -53,6 +53,9 @@ const r = await page.evaluate(() => {
     for (let k = 0; k < 10; k++) { if (!e.shieldUp) break; swing(false); wait(20); }
     out.frontUp = e.shieldUp;
     // 2. a bash from the front glances off
+    // S2695 — since S2658 the Captain holds where its tell starts (`foeHoldDist`, past 1.6 m), and a bash reaches 1.4 m centre to
+    // centre (BASH_RANGE 0.8, hull to hull): you step in to bash, as a player does, to 0.1 m inside its reach on the same line
+    { const d = Math.hypot(px - e.x, pz - e.z), k = Math.min(1, (reachTo(e, BASH_RANGE) - .1) / d); px = e.x + (px - e.x) * k; pz = e.z + (pz - e.z) * k; }
     keep(); face(); atkCd = 0; const bashMsgs = msgs.length; doBash(); out.bash = msgs.slice(bashMsgs); out.bashUp = e.shieldUp; wait(40);
     // 3. a power attack from the front: the guard breaks, it staggers, and the blow does no damage
     out.cycles = [];

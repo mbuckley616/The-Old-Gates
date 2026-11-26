@@ -286,6 +286,7 @@ check('the shop\'s row says it on both sides; the loot list, the bag\'s tooltip 
   && !/undefined/.test(RU.staff.tip + RU.wand.tip + RU.sword.tip) && RU.staff.tip.includes('Heavy · 28 stamina') && RU.wand.tip.includes('Light · 11 stamina') && RU.sword.tip.includes('Medium · 21 stamina')
   && !RU.sword.row && !RU.sword.sell && !/Held|Sent|Keeps/.test(RU.sword.loot + RU.sword.tip + RU.sword.worn) && RU.staff.loot.startsWith('ATK '), RU);
 
+// S2695 — the sword's glyph is S2612's table's, ⚔ with or without the emoji selector (U+FE0F): the same character
 // S1871 — the counter (critic 5 Nov): an implement's badge draws its own glyph (staff 🥢, wand 🪄, maul 🔨, tome 📖, orb 🔮; a
 // sword still ⚔), and a staff's row at 1280 px shows its whole name: the 2H badge stays, the second "Two-handed" note is gone
 const CT = await page.evaluate(() => {
@@ -303,7 +304,7 @@ const CT = await page.evaluate(() => {
   list.remove(); EQ.offhand = keep; return out; });
 console.log('counter', JSON.stringify(CT));
 check(`an implement's badge draws its own glyph: staff ${CT.g.staff}, wand ${CT.g.wand}, maul ${CT.g.maul}, tome ${CT.g.tome}, orb ${CT.g.orb}, sword ${CT.g.sword}`,
-  CT.g.staff === '🥢' && CT.g.wand === '🪄' && CT.g.maul === '🔨' && CT.g.tome === '📖' && CT.g.orb === '🔮' && CT.g.sword === '⚔', CT.g);
+  CT.g.staff === '🥢' && CT.g.wand === '🪄' && CT.g.maul === '🔨' && CT.g.tome === '📖' && CT.g.orb === '🔮' && CT.g.sword.replace(/\uFE0F/g, '') === '⚔', CT.g);
 check(`a staff's row shows its whole name (${CT.row.sw} px of ${CT.row.w}), the 2H badge and no second "Two-handed" note`,
   !CT.row.cut && CT.row.text.includes('Wooden Staff of Cloch') && CT.row.badge && !/Two-handed/.test(CT.row.text), CT.row);
 check('no page errors', g.errs.length === 0, g.errs);

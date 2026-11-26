@@ -2535,9 +2535,24 @@ const giver=`${lord.title} ${lord.name}`;
     const idx=src.map((_,k)=>k);for(let k=idx.length-1;k>0;k--){const j=Math.floor(r()*(k+1));[idx[k],idx[j]]=[idx[j],idx[k]];}
     const n=Math.min(src.length,4+Math.floor(r()*4));return {trade,rows:idx.slice(0,n).sort((x,y)=>x-y).map(k=>Object.assign({},src[k]))};}
   function marketStallHouse(site,i,name){const w=marketWeek(),P=marketStallPack(site,i,w);return {id:site.id+':market:'+i,name:`${MSTALL_WARES[P.trade]}, ${site.name}’s market`,keeper:name,type:P.trade==='potion'?'potion':'misc',siteId:site.id,pack:P.rows,marketStall:true};}
-  function marketStallDef(site,i,spot){const r=seededRng('marketkeeper',site.id+':'+marketWeek()+':'+i),[ci,cj]=cellOf(site.x,site.z),nat=nationOf(ci,cj),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
-    const nm=pick(r,r()<.5?bank.m:(bank.f||bank.m));let def=null;
-    def=makeDef(site,site.reg||'irish',r,'Merchant',nm,{people:nat.people,x:spot.x,z:spot.z,bCol:0x6a5236,sCol:0xd4a878,topics:[{label:'What have you on the stall?',trade:true,fn:()=>{currentHouse=marketStallHouse(site,i,def.name);}}]});
+  /* S2698 — a stall's keeper takes a name no other stall has and nobody over a door in that town has (the critic, 26 Nov, s2007: Dunmore's
+     six stalls were Cathal, Róisín, Clodagh, Tadhg, Ruairí and Ruairí, and the potion stall's Cathal was not the apothecary's). Taken: the
+     town's shop, inn and hall keepers and its post-holders (S.npcs but its villagers: the guards, the watch, the lord; S248's rule, that
+     no two share a name), first names, and the stalls before this one. Its householders are not counted: a people's bank holds 24 names
+     and Dunmore's 44 homes already repeat them (18 names over its doors and posts; 6 left for 6 stalls). If the bank runs out, the
+     stalls still never share one. A name taken is drawn again from the names still free (its sex's first), on the same seeded stream; each stall's is its own (site, week, index). makeDef is told to
+     keep it (`keepName`): it renamed every stall into the people's bank with its own pick, so the stall's drawn name never reached the square. */
+  function marketTownNames(site){const S=SETTLE.get(site.id),T=new Set(),add=n=>{const f=String(n||'').split(' ')[0];if(f)T.add(f);};if(!S)return T;
+    for(const h of S.houses||[])if(h.type!=='home')add(h.keeper);for(const n of S.npcs||[])if(n.def&&!n.def.marketStall&&(n.def._lord||n.sched&&n.sched.type!=='villager'&&n.sched.type!=='resident'))add(n.def.name);return T;}
+  function marketStallDraw(site,i,taken){const r=seededRng('marketkeeper',site.id+':'+marketWeek()+':'+i),[ci,cj]=cellOf(site.x,site.z),nat=nationOf(ci,cj),bank=NAMES[PEOPLES[nat.people].names]||NAMES.irish;
+    if(!taken){taken={town:marketTownNames(site),stalls:new Set()};for(let j=0;j<i;j++)taken.stalls.add(marketStallDraw(site,j,taken).nm);}
+    const fem=r()<.5,own=fem?(bank.f||bank.m):bank.m,all=own.concat(fem?bank.m:(bank.f||[]));let nm=pick(r,own);
+    if(taken.town.has(nm)||taken.stalls.has(nm)){const free=a=>a.filter(x=>!taken.town.has(x)&&!taken.stalls.has(x));
+      const pool=free(own).length?free(own):free(all).length?free(all):all.filter(x=>!taken.stalls.has(x)); /* the other sex's names, then any stall's own */
+      if(pool.length)nm=pick(r,pool);}
+    return {r,nm,nat};}
+  function marketStallDef(site,i,spot){const D=marketStallDraw(site,i),r=D.r,nat=D.nat,nm=D.nm;let def=null;
+    def=makeDef(site,site.reg||'irish',r,'Merchant',nm,{people:nat.people,keepName:true,x:spot.x,z:spot.z,bCol:0x6a5236,sCol:0xd4a878,topics:[{label:'What have you on the stall?',trade:true,fn:()=>{currentHouse=marketStallHouse(site,i,def.name);}}]});
     def._siteId=site.id;def.marketStall=site.id+':'+i;return def;}
   function dropMarketStall(id){const D=MSTALLS.get(id);if(!D)return;sc.remove(D.npc.g);sc.remove(D.npc.dot);const k=npcs.indexOf(D.npc);if(k>=0)npcs.splice(k,1);MSTALLS.delete(id);}
   // the stalls kept now near you: [{site, i, spot}], nearest town first
