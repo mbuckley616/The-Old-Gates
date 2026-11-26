@@ -102,5 +102,24 @@ check(`by island: the Gatelands' ${IS.cand.gatelands.n} land herbs, the Mark's $
 check(`Wolf's Bane grows on the Mark's forest floor, by trees, at a third of a common herb's weight (${JSON.stringify(IS.wolf)})`, IS.wolf && IS.wolf.w === 1 && IS.wolf.other === 3 && !IS.wolf.gl, IS.wolf);
 check(`a chest's herbs are its island's: ${Object.entries(IS.loot).map(([I, L]) => `${I} ${L.n} kinds, ${L.wrong.length} wrong`).join('; ')}`, Object.keys(IS.loot).length === 3 && Object.entries(IS.loot).every(([I, L]) => L.at === I && !L.wrong.length && L.n > 3), IS.loot);
 check(`the loaded country round the start (${IS.home}) grows none of the other islands' herbs (${IS.world.join(',') || 'none'})`, IS.home === 'gatelands' && IS.world.length === 0, IS.world);
+// Session 2704: a herb picked is heard (Michael, 25 Nov), by what the plant is: a pick in the world sounds once on the audio clock in its
+// kind's voice, and every herb, specimen and Caverglow has one of the five
+const PK = await page.evaluate(() => { const out = { err: null }; try { initAudio(); } catch (e) { out.err = 'init ' + e.message; }
+  let nodes = 0; const cs = AX && AX.createBufferSource.bind(AX), co = AX && AX.createOscillator.bind(AX);
+  if (AX) { AX.createBufferSource = () => { nodes++; return cs(); }; AX.createOscillator = () => { nodes++; return co(); }; }
+  const h = ZONES.world.herbs.find(x => !x.harvested && !x.bed), n0 = PICK_SND.n, b0 = BAG.length;
+  if (h) { harvestHerb(h); out.calls = PICK_SND.n - n0; out.voice = PICK_SND.last; out.type = h.type; out.want = pickVoice(h.type); out.nodes = nodes; if (BAG.length > b0) BAG.pop(); }
+  if (AX) { AX.createBufferSource = cs; AX.createOscillator = co; }
+  const V = ['leaf', 'ground', 'fungus', 'wet', 'crystal'];
+  out.all = Object.keys(HERB_DEF).map(k => [k, pickVoice(k)]).concat(Object.keys(SPEC_DEF).map(k => [k, pickVoice(SPEC_DEF[k].kin)]));
+  out.bad = out.all.filter(([, v]) => !V.includes(v)).map(([k]) => k);
+  out.some = { thornberry: pickVoice('thornberry'), firemoss: pickVoice('firemoss'), shadowcap: pickVoice('shadowcap'), kelp: pickVoice('kelp'), caverglow: pickVoice('caverglow'),
+    sunglass: pickVoice(SPEC_DEF.sunglass.kin), seabed: pickVoice('silverleaf', true) };
+  out.used = [...new Set(out.all.map(a => a[1]))].sort(); return out; });
+console.log('pick', JSON.stringify({ ...PK, all: PK.all.length }));
+check(`a herb picked in the world is heard once, in its kind's voice (${PK.type}: ${PK.voice}, ${PK.nodes} sound nodes)`, !PK.err && PK.calls === 1 && PK.nodes >= 3 && PK.voice === PK.want, PK);
+check(`every herb and specimen has a voice (${PK.all.length}; heard: ${PK.used.join(', ')}): a berry bush rustles, moss tears, a cap pops, kelp sloshes, a crystal chips`,
+  PK.bad.length === 0 && PK.used.length === 5 && PK.some.thornberry === 'leaf' && PK.some.firemoss === 'ground' && PK.some.shadowcap === 'fungus' && PK.some.caverglow === 'fungus'
+  && PK.some.kelp === 'wet' && PK.some.seabed === 'wet' && PK.some.sunglass === 'crystal', PK);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
