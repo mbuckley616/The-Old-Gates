@@ -7,10 +7,12 @@
 // in his walk behind the counter, in reach from its front, the strongbox and the counter's front before him (a witness); the strongbox the
 // shop's, clear before its lid; the trade's piece; the barber's chair to sit in; the stair still climbs to the loft; lit, within the draws;
 // out by the door. A picture from inside the door, one a trade.
+// Session 2691: the goods shop, the armourer and the barber here; the healer and the weaponsmith in `marktownshop2` (the same visit, its
+// own boot). Since S2661 each picture draws the keeper's builder body, about 80 s on a CI runner, and five rooms ran past run.mjs's 900 s.
 import { boot, check } from './lib/game.mjs';
 import path from 'path'; import { fileURLToPath } from 'url';
 const here = path.dirname(fileURLToPath(import.meta.url));
-const TR = ['misc', 'armor', 'barber', 'potion', 'weapon'], WORD = { misc: 'goods shop', armor: 'armourer', barber: 'barber', potion: 'healer', weapon: 'weaponsmith' };
+const TR = ['misc', 'armor', 'barber'], WORD = { misc: 'goods shop', armor: 'armourer', barber: 'barber', potion: 'healer', weapon: 'weaponsmith' };
 const PIECE = { misc: 'rack', armor: 'stand', barber: 'chair', potion: 'rack', weapon: 'rack' };
 const towns = () => { anchoredPlaces(); return [...CELLS.values()].filter(c => c.type !== 'sea' && nationKeyOf(c.i, c.j) === 'mark').flatMap(c => c.sites).filter(s => ['port', 'city', 'town'].includes(s.kind)).slice(0, 4).map(s => s.id); };
 
