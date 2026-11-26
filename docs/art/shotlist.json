@@ -23,7 +23,7 @@
       "anchor": { "site": "hearthwick" }, "cam": { "dx": -120, "dz": -420, "up": 28 }, "look": { "dx": 300, "dz": 60, "up": 0 },
       "panel": { "name": "Storm", "box": [340, 227, 40, 28] } },
     { "id": "gate-dusk", "title": "A lesser gate's court, dusk (18h30)", "hour": 18.5, "weather": "clear",
-      "anchor": { "gate": "nearest" }, "cam": { "dx": 0, "dz": 0, "up": 1.65, "front": 34 }, "look": { "dx": 0, "dz": 0, "up": 6 },
+      "anchor": { "gate": 137, "at": [12982, 25602] }, "note": "Session 2697 (the critic, 26 Nov): the gate is named, ring gate seed 137, found from a fixed point near the start, and the cells at the camera are loaded and their jobs run before the frame. It was the gate nearest wherever the last view left px, its near level never built (a black hump after the storm view). The baseline of 25 Nov happened to show this gate.", "cam": { "dx": 0, "dz": 0, "up": 1.65, "front": 34 }, "look": { "dx": 0, "dz": 0, "up": 6 },
       "panel": { "name": "Mystery & the Unknown · Gate Light", "box": [205, 34, 62, 46] } }
   ]
 }
