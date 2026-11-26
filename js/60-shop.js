@@ -115,9 +115,11 @@ function takeLootItem(idx){
   if(it.type==='gold'){
     gold += it.value;
     showMsg(`+${it.value} gold`, '#ffd700');
+    if(!LOOT_QUIET.on)sndMove(it,'take');else LOOT_QUIET.n++; /* S2710 — taken from a container, heard by what it is */
   } else {
     // bagAdd may refuse if adding would push total carry weight over 125% of max.
     if(!canCarry(it)){showMsg('Too heavy to carry!','#cc8844');return;}
+    if(!LOOT_QUIET.on)sndMove(it,'take');else{LOOT_QUIET.n++;if(!LOOT_QUIET.it||itemWeight(it)>itemWeight(LOOT_QUIET.it))LOOT_QUIET.it=it;}
     if(it.gateOrb!=null){takeGateOrb(it.gateOrb);delete it.gateOrb;} /* S1858 — a gate's orb, taken once */
     if(typeof markSalvage==='function')markSalvage(it); /* S2245 — a piece taken in a gate is gate salvage (86-world-crime.js) */
     bagAdd(it);
@@ -152,8 +154,11 @@ function takeLootItem(idx){
   }
   renderLoot();
 }
+/* S2710 — Take all is one sweep and the heaviest thing's touch, not a sound for every piece at once */
+const LOOT_QUIET={on:false,n:0,it:null};
 function takeAllLoot(){
   if(!currentLootContainer)return;
+  LOOT_QUIET.on=true;LOOT_QUIET.n=0;LOOT_QUIET.it=null;try{
   // Iterate by snapshot, take one-by-one; stop if bag fills up
   let i=0;
   while(i<currentLootContainer.items.length){
@@ -162,6 +167,7 @@ function takeAllLoot(){
     takeLootItem(i);
     if(currentLootContainer.items.length===preLen)break; // bag full, nothing more can be taken
   }
+  }finally{LOOT_QUIET.on=false;}if(LOOT_QUIET.n)sndMove(LOOT_QUIET.it||{type:'gold'},'take');
   const sk=currentLootContainer.items.find(x=>x&&x._skin);if(sk&&hasSkinKnife())skinStart(sk);
 }
 
@@ -188,8 +194,8 @@ function renderRack(){const R=shipRack(),bagEl=document.getElementById('sp-bag-l
     div.innerHTML=`<span class="lp-ico">${iconHTML(it)}</span><div class="lp-info"><div class="lp-name">${it.name}</div><div class="lp-desc">${lootItemDesc(it)}</div></div>`;div.onclick=fn;return div;};
   const say=r=>{if(r!==true)showMsg(r,'#cc8844');renderStash();};
   bagEl.innerHTML='';const ws=BAG.map((it,i)=>[it,i]).filter(([it])=>it&&it.type==='equip'&&it.slot==='weapon');
-  if(!ws.length)bagEl.innerHTML='<div class="sp-empty">No weapons in your bag.</div>';else ws.forEach(([it,i])=>bagEl.appendChild(row(it,()=>say(rackPut(i)))));
-  rEl.innerHTML='';if(!R.length)rEl.innerHTML='<div class="sp-empty">The rack is empty.</div>';else R.forEach((s,j)=>rEl.appendChild(row(rackItem(s),()=>say(rackTake(j)))));
+  if(!ws.length)bagEl.innerHTML='<div class="sp-empty">No weapons in your bag.</div>';else ws.forEach(([it,i])=>bagEl.appendChild(row(it,()=>{const r=rackPut(i);if(r===true)sndMove(it,'put');say(r);})));
+  rEl.innerHTML='';if(!R.length)rEl.innerHTML='<div class="sp-empty">The rack is empty.</div>';else R.forEach((s,j)=>rEl.appendChild(row(rackItem(s),()=>{const r=rackTake(j);if(r===true)sndMove(rackItem(s),'take');say(r);})));
   document.getElementById('sp-bag-meta').textContent=`${ws.length} weapon${ws.length===1?'':'s'} · ${bagWeight().toFixed(1)}/${maxCarry()} kg`;
   document.getElementById('sp-stash-meta').textContent=`${R.length} of ${SHIP_RACK_N}`;}
 function openStash(){
@@ -258,6 +264,7 @@ function depositToStash(idx){
   // a nice-to-have for a future pass; not in MVP.)
   BAG.splice(idx,1);
   _stashAdd(it);
+  sndMove(it,'put'); /* S2710 */
   renderStash();
 }
 // Withdraw a stash entry into the bag. Weight-checked: if pulling the
@@ -272,6 +279,7 @@ function withdrawFromStash(idx){
     return;
   }
   stashBag.splice(idx,1);
+  sndMove(it,'take'); /* S2710 */
   // Withdraw goes through normal bagAdd to inherit the stacking path.
   // bagAdd doesn't preserve qty on stackable adds (it sets qty:1 on push
   // and increments existing stacks one-at-a-time), so for a stack we add

@@ -426,10 +426,10 @@ function commitTurn(dt){
   _commitYaw=yaw;
 }
 // a potion: out of the bag now, into you when the 0.8 s are up (tickDrink in the loop)
-function startDrink(apply,name){
+function startDrink(apply,name,kind){
   if(DRINK)return false;
   DRINK={t0:playClockS,apply,name};
-  try{sndUsePotion();}catch(err){}
+  try{sndConsume(kind||'potion');}catch(err){} /* S2710 — a potion's cork and glugs, a drink's glugs, a meal's bites */
   return true;
 }
 function tickDrink(){

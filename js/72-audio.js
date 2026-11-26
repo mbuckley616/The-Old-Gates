@@ -419,7 +419,8 @@ function _sfxToneAt(at,freq,freqEnd,dur,gainPk,wave){const t=AX.currentTime+at,o
   if(freqEnd)o.frequency.exponentialRampToValueAtTime(freqEnd,t+dur);const g=AX.createGain();g.gain.setValueAtTime(gainPk,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.connect(g);g.connect(sfxGain);o.start(t);o.stop(t+dur);}
 const DRAW_SND={n:0,last:null};
-function sndDraw(it){const v=drawVoice(it);DRAW_SND.n++;DRAW_SND.last={kind:'draw',voice:v};if(!v||!AX||volLevel===0)return;try{
+function sndDraw(it){const v=drawVoice(it);DRAW_SND.n++;DRAW_SND.last={kind:'draw',voice:v};if(!v||!AX||volLevel===0)return;_drawPlay(v,it);}
+function _drawPlay(v,it){try{
   if(v==='blade'){const L=drawBladeLen(it),p=.22/L;
     _sfxSweepAt(0,L,1700*Math.sqrt(p),4200*Math.sqrt(p),.11,7,.5);
     _sfxToneAt(L*.92,3100*Math.sqrt(p),3050*Math.sqrt(p),.55,.03);_sfxToneAt(L*.92,4650*Math.sqrt(p),null,.35,.018);_sfxSweepAt(L*.9,.03,5000,5000,.05,2,.2);}
@@ -459,6 +460,72 @@ function sndPick(key,wet){const v=pickVoice(key,wet);PICK_SND.n++;PICK_SND.last=
   else if(v==='fungus'){_sfxSweepAt(0,.05,900*j(),600,.08,2.5,.2);_sfxToneAt(.01,280*j(),160,.07,.08,'triangle');_sfxSweepAt(.06,.07,1800,1200,.03,1.5,.3);}
   else if(v==='wet'){_sfxSweepAt(0,.22,320*j(),700*j(),.09,1.4,.5);_sfxToneAt(.12,480*j(),950*j(),.06,.04);_sfxToneAt(.2,620*j(),1250*j(),.05,.03);}
   else{_sfxToneAt(0,3800*j(),3700,.12,.03,'triangle');_sfxToneAt(0,5600*j(),null,.08,.014);_sfxSweepAt(0,.03,6000,6000,.05,3,.1);}
+}catch(e){}return v;}
+/* S2710 — an item heard by what it is (Michael, 25 Nov: "Sound effects when looting or equipping an item should be specific to that
+   item type. A swiping/grabbing sound if moving to / from a container, and also a sound for using/consuming/equipping"). Until now a
+   take from a chest or the stash was silent, equipping was one of six UI beeps by slot, and a potion, a herb, a meal and a cup of water
+   all played the same two rising sines. itemVoice names what a thing sounds like; itemTouch is its small contact sound (metal's clink,
+   glass, paper, wood, coin, stone or a soft thud). A move between a container and the bag (sndMove) is a sweep of cloth, up for a take
+   and down for a put, and the thing's touch; equipping (sndEquipItem) is the thing put on: a blade or a haft drawn as S2515's draw, a bow
+   strung, plate's clang and a buckle, mail's rings, bronze's sheet, wooden boards' clack, leather's creak, cloth's rustle, a shield's
+   strap and its knock or clang, a ring's tink, arrows into the quiver; consuming (sndConsume) is a potion's cork and glugs and bubbles, a
+   drink's glugs, a meal's bites, a herb chewed. On the effects bus and the audio clock, cosmetic; ITEM_SND counts calls (tests). */
+const ITEM_SND={n:0,last:null};
+function itemVoice(it){if(!it)return 'soft';if(it.type==='gold')return 'coin';
+  if(it.type==='equip'){const sl=it.slot||'';
+    if(sl==='weapon'){const sh=it.weaponShape||'';if(sh==='bow'||sh==='crossbow')return 'bow';return drawVoice(it);}
+    if(sl==='ring'||sl==='amulet')return 'trinket';
+    if(sl==='offhand')return it.shieldType==='shield'?((it.tier||1)<=1?'shieldwood':'shieldmetal'):'wood';
+    if(it.line==='robe')return 'cloth';if(it.line==='light')return 'leather';
+    const mt=typeof MATERIALS!=='undefined'&&it.tier&&MATERIALS[Math.max(1,Math.min(10,it.tier))-1];
+    if(!mt||mt.name!==it.material)return /leather|boot|hide|fur|belt/i.test(it.name||'')?'leather':'cloth'; /* the starter clothes and the made-up pieces: of no metal */
+    const f=typeof AR_FAM!=='undefined'?AR_FAM[Math.max(1,Math.min(10,it.tier||1))]:'plate';
+    return f==='lamellar'?'lamellar':f==='muscle'?'sheet':f==='mail'?'mail':'plate';}
+  if(it.type==='ammo')return 'arrows';
+  if(it.type==='potion'||it.brew)return 'potion';if(it.vessel||it.cup)return 'drink';if(it.meal||it.food||it._typeKey==='fish')return 'food';
+  if(it.type==='herb')return 'herb';if(it.type==='book'||it.type==='spellbook'||it.type==='rubbing'||it.erRub||/scroll|letter|map|note|deed/i.test(it.name||''))return 'paper';
+  if(it.ore||it.ingot||/stone|ore|ingot|gem/i.test(it.name||''))return 'stone';
+  if(it.log||it.plank||it.spar||it.heartwood)return 'wood';
+  if(/key|lockpick|coin|nail|chain|tool/i.test(it.name||'')||it.tool)return 'metal';return 'soft';}
+function itemTouchClass(v){return /^(blade|haft|plate|mail|sheet|shieldmetal|trinket|metal)$/.test(v)?(v==='mail'?'rings':'metal'):
+  /^(potion)$/.test(v)?'glass':v==='coin'?'coin':v==='paper'?'paper':v==='stone'?'stone':/^(wood|bow|lamellar|shieldwood|arrows)$/.test(v)?'wood':'soft';}
+function _clangAt(at,f,g,dur){[[1,1],[2.76,.55],[5.4,.3],[8.93,.14]].forEach(([m,a])=>_sfxToneAt(at,f*m,f*m*.995,dur/(1+m*.25),g*a,'sine'));_sfxSweepAt(at,.03,f*6,f*5,g*.8,2,.1);}
+function itemTouch(c,at,j){j=j||1;
+  if(c==='metal')_clangAt(at,1150*j,.03,.25);
+  else if(c==='rings'){for(let k=0;k<5;k++)_sfxToneAt(at+k*.022+Math.random()*.01,(3200+Math.random()*1800)*j,null,.06,.016,'triangle');_sfxSweepAt(at,.12,5000,4200,.03,2,.2);}
+  else if(c==='glass'){_sfxToneAt(at,2600*j,2580*j,.18,.03,'sine');_sfxToneAt(at+.05,3500*j,null,.12,.016,'sine');}
+  else if(c==='coin'){for(let k=0;k<4;k++)_sfxToneAt(at+k*.035,(2900+k*370)*j,null,.1,.025,'sine');_sfxSweepAt(at,.14,6000,5000,.025,2.5,.2);}
+  else if(c==='paper'){_sfxSweepAt(at,.12,3600*j,2400*j,.05,.9,.3);_sfxSweepAt(at+.1,.08,2800,3400,.035,.9,.3);}
+  else if(c==='stone'){_sfxSweepAt(at,.05,700*j,500,.09,2,.1);_sfxToneAt(at,190*j,130,.07,.08,'triangle');}
+  else if(c==='wood'){_sfxToneAt(at,520*j,430*j,.06,.06,'triangle');_sfxSweepAt(at,.03,1500,1200,.06,3,.1);}
+  else{_sfxSweepAt(at,.07,500*j,320*j,.07,1.4,.2);_sfxToneAt(at,120*j,90,.06,.05);}}
+function sndMove(it,dir){const v=itemVoice(it);ITEM_SND.n++;ITEM_SND.last={kind:'move',dir:dir||'take',voice:v};if(typeof AX==='undefined'||!AX||volLevel===0)return v;try{
+  const j=.92+Math.random()*.16,take=dir!=='put';
+  _sfxSweepAt(0,.13,take?900*j:2400*j,take?2400*j:900*j,.07,1.1,take?.35:.6);
+  itemTouch(itemTouchClass(v),take?.1:.12,j);
+}catch(e){}return v;}
+function sndEquipItem(it){const v=itemVoice(it);ITEM_SND.n++;ITEM_SND.last={kind:'equip',voice:v};if(typeof AX==='undefined'||!AX||volLevel===0)return v;try{
+  const j=.94+Math.random()*.12,buckle=at=>{_sfxToneAt(at,1900*j,1700,.04,.03,'square');_sfxSweepAt(at,.04,3000,2600,.04,3,.1);};
+  if(v==='blade'||v==='haft'||(v==='wood'&&it&&it.slot==='weapon'))_drawPlay(v,it);
+  else if(v==='bow'){_sfxSweepAt(0,.18,700,1100,.06,2,.4);_sfxToneAt(.16,190*j,180*j,.3,.06,'triangle');_sfxToneAt(.16,380*j,null,.18,.02,'sine');}
+  else if(v==='plate'){_sfxSweepAt(0,.08,1200,700,.06,1.5,.3);_clangAt(.07,420*j,.07,.55);_clangAt(.19,610*j,.035,.35);buckle(.36);}
+  else if(v==='sheet'){_sfxSweepAt(0,.08,1000,600,.06,1.5,.3);_clangAt(.07,330*j,.06,.6);buckle(.34);}
+  else if(v==='mail'){_sfxSweepAt(0,.1,900,600,.05,1.5,.3);itemTouch('rings',.04,j);itemTouch('rings',.16,j*.95);itemTouch('rings',.28,j*1.05);_sfxToneAt(.3,140,100,.08,.05);}
+  else if(v==='lamellar'){for(let k=0;k<4;k++)itemTouch('wood',k*.055,j*(1+k*.04));buckle(.3);}
+  else if(v==='leather'){_sfxSweepAt(0,.22,260*j,520*j,.06,4,.5);_sfxSweepAt(.2,.12,480*j,300*j,.04,4,.3);buckle(.3);}
+  else if(v==='cloth'){_sfxSweepAt(0,.25,1200*j,2600*j,.05,.8,.5);_sfxSweepAt(.2,.15,2400*j,1400*j,.035,.8,.3);}
+  else if(v==='shieldwood'||v==='shieldmetal'){_sfxSweepAt(0,.14,350,560,.05,4,.5);buckle(.12);if(v==='shieldwood'){_sfxToneAt(.2,210*j,170,.12,.09,'triangle');_sfxSweepAt(.2,.05,900,700,.06,2,.1);}else _clangAt(.2,360*j,.06,.5);}
+  else if(v==='trinket'){_sfxToneAt(0,3300*j,3280*j,.35,.03,'sine');_sfxToneAt(.07,4950*j,null,.25,.014,'sine');}
+  else if(v==='arrows'){for(let k=0;k<5;k++)_sfxToneAt(k*.03+Math.random()*.012,(780+Math.random()*300)*j,null,.04,.035,'triangle');_sfxSweepAt(0,.18,1600,1100,.03,1.2,.4);}
+  else itemTouch(itemTouchClass(v),0,j);
+}catch(e){}return v;}
+function sndConsume(kind){const v=kind||'potion';ITEM_SND.n++;ITEM_SND.last={kind:'consume',voice:v};if(typeof AX==='undefined'||!AX||volLevel===0)return v;try{
+  const j=.94+Math.random()*.12,glug=at=>{_sfxToneAt(at,170*j,260*j,.07,.08,'sine');_sfxSweepAt(at,.07,350,600,.05,3,.3);};
+  if(v==='potion'){_sfxToneAt(0,720*j,380,.03,.08,'sine');_sfxSweepAt(0,.03,2600,1800,.07,2,.1);glug(.18);glug(.34);glug(.5);
+    for(let k=0;k<5;k++)_sfxToneAt(.6+k*.045+Math.random()*.02,(700+Math.random()*700)*j,(1300+Math.random()*700)*j,.03,.025,'sine');}
+  else if(v==='drink'){_sfxSweepAt(0,.15,300,650,.05,1.4,.5);glug(.12);glug(.28);glug(.44);}
+  else if(v==='food'){for(let k=0;k<3;k++){_sfxSweepAt(k*.22,.06,1800*j,900*j,.07,1.2,.1);_sfxSweepAt(k*.22+.07,.1,500,300,.04,1.5,.3);}}
+  else{_sfxSweepAt(0,.08,2400*j,1600*j,.05,1.2,.2);_sfxSweepAt(.15,.08,1600*j,900*j,.045,1.4,.2);_sfxSweepAt(.3,.08,1400*j,800*j,.035,1.4,.2);}
 }catch(e){}return v;}
 function sndSnowStep(sprint){
   sfxNoise(sprint?.045:.055,1,1,sprint?.10:.07,sprint?260:180);
