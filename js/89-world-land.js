@@ -89,7 +89,7 @@ vec3 landCol(vec3 base){
   m.customProgramCacheKey=()=>'og-land-terrain';
   LAND.mat=m;return m;
 }
-// ── S2676 — the haze and the grade as uniforms every material shares (the light-and-grade card) ─────────────────────
+// ── S2682 — the haze and the grade as uniforms every material shares (the light-and-grade card) ─────────────────────
 // Two things the frame needs from every lit material, set per frame by the clock: an aerial haze over three's own fog, and the
 // grade's warmth, saturation and contrast (and the corruption level's drain and hue turn, visual-foundation.md, 0 for now). three
 // clones a built-in material's uniforms from ShaderLib when it compiles it, but a value that is a plain object (not a Color or a
@@ -116,7 +116,7 @@ function landUniformsOn(){const L=LAND.L;if(!L)return;
   OG_U.gradeB.x=LAND.drain||0;OG_U.gradeB.y=LAND.hue||0;}
 function landUniformsOff(){OG_U.haze.x=OG_U.haze.y=0;OG_U.gradeA.x=OG_U.gradeA.y=OG_U.gradeA.w=0;OG_U.gradeB.x=OG_U.gradeB.y=0;}
 // ── the sky: a gradient dome, the sun's glow and the haze at its foot ────────────────────────────────────────────
-// S2676: the haze band at the dome's foot is the land's own haze colour, so a far ridge melts into the sky with no seam; a low
+// S2682: the haze band at the dome's foot is the land's own haze colour, so a far ridge melts into the sky with no seam; a low
 // sun spreads its glow along the horizon as a band (the sunset's), a high one keeps a round halo; the wash is broken by a broad,
 // slow variation (a painted sky is never one flat gradient); High adds thin cirrus, lit by the glow.
 function landSky(){
@@ -150,7 +150,7 @@ function landWater(sh){
   sh.uniforms.uLSky=LAND.waterSky||(LAND.waterSky={value:new THREE.Color(.5,.66,.86)});
   sh.uniforms.uLSun=LAND.waterSun||(LAND.waterSun={value:new THREE.Vector3(0,1,0)});
   sh.uniforms.uLGlint=LAND.waterGlint||(LAND.waterGlint={value:1});
-  sh.uniforms.uLSea=LAND.waterSea||(LAND.waterSea={value:new THREE.Color(1,1,1)}); // S2676 — the island's sea (Aurenne's turquoise), a tint on the lit water
+  sh.uniforms.uLSea=LAND.waterSea||(LAND.waterSea={value:new THREE.Color(1,1,1)}); // S2682 — the island's sea (Aurenne's turquoise), a tint on the lit water
   sh.vertexShader='varying vec3 vLWW;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n vLWW = (modelMatrix * vec4(position, 1.)).xyz;');
   sh.fragmentShader='uniform vec3 uLSky; uniform vec3 uLSun; uniform vec3 uLSea; uniform float uLGlint; varying vec3 vLWW;\n'+LAND_NOISE+sh.fragmentShader.replace('#include <opaque_fragment>',`
   { outgoingLight *= uLSea; vec2 p = vLWW.xz; float e = .9;
@@ -166,7 +166,7 @@ function landWater(sh){
     diffuseColor.a = mix(diffuseColor.a, 1., fr * .6); }
   #include <opaque_fragment>`);
 }
-// ── S2676 — the light by the hour (the light-and-grade card; P10b, OG-147) ─────────────────────────────────────────
+// ── S2682 — the light by the hour (the light-and-grade card; P10b, OG-147) ─────────────────────────────────────────
 // Every daytime frame was one flat noon: the sun's light never sank below 0.32 (atmosphere() clamped it), its colour and strength
 // moved only with the night factor, the ambient and the hemisphere together matched the sun so shadows barely read, and the haze
 // was the biome's one grey-green. The hour now reads its light from one curve, keyed at the hours P10b's lighting panel paints:
@@ -373,7 +373,7 @@ function landStreak(){if(!LAND.on||!LAND.sky)return;
 // No render targets: the grade rides in three's own ACES function, so it costs no pass and no draw call. The world scene
 // turns tone mapping on for its own render and off after it, so gates and the hands keep theirs; rooms take the neutral
 // curve (landRoomPost), which the grade does not touch (Session 1257: it was in the tone-mapping chunk, under every curve).
-// P10b's grade: shadows a touch cool, highlights warm, saturation lifted. S2676: by the hour (OG_U.gradeA, from LAND.L): the
+// P10b's grade: shadows a touch cool, highlights warm, saturation lifted. S2682: by the hour (OG_U.gradeA, from LAND.L): the
 // warmth pushes the highlights to amber at golden hour and the shadows to blue at night, the saturation and a contrast about the
 // middle move with it. A negative saturation (night, the blue hour, an overcast) drains the dark tones and spares the bright ones,
 // as eyes do in the dark: the moonlit land goes blue-grey while a lamp's pool keeps its amber. OG_U.gradeB is the corruption level's (visual-foundation.md: the colour drained toward grey, the hue turned
@@ -455,7 +455,7 @@ function landRender(raw,s,c){
       B.mBlur.uniforms.tDiffuse.value=B.b.texture;B.mBlur.uniforms.uDir.value.set(0,qy*(1+i));pass(B.mBlur,B.a);}
     const tm=REN.toneMapping,ex=REN.toneMappingExposure;REN.toneMapping=THREE.ACESFilmicToneMapping;REN.toneMappingExposure=LAND.exposure;
     B.mComp.uniforms.tScene.value=B.rt.texture;B.mComp.uniforms.tBloom.value=B.a.texture;
-    B.mComp.uniforms.uK.value=LAND.bloomK!=null?LAND.bloomK:.22;B.mComp.uniforms.uVig.value=LAND.vig!=null?LAND.vig:.3; /* S2676 — by the hour */
+    B.mComp.uniforms.uK.value=LAND.bloomK!=null?LAND.bloomK:.22;B.mComp.uniforms.uVig.value=LAND.vig!=null?LAND.vig:.3; /* S2682 — by the hour */
     landUniformsOn();
     try{pass(B.mComp,null);}finally{REN.toneMapping=tm;REN.toneMappingExposure=ex;landUniformsOff();}
     B.frames++;
@@ -578,7 +578,7 @@ function qualityProbeEnd(decided){const P=QPROBE;P.on=false;
 // ── the clouds: painted cumulus heaps, in one draw call ──────────────────────────────────────────────────────────
 // Each heap is a few dozen puffs, one instanced quad turned to face the eye in the vertex shader, so a sky of 30 heaps is one draw
 // call, not two thousand sprites. The heaps ride with the dome (they are scenery at the sky's distance, not places) and drift with
-// the wind; the quality level sets the count. S2676 (the light-and-grade card): they were round cotton puffs, lit by their height
+// the wind; the quality level sets the count. S2682 (the light-and-grade card): they were round cotton puffs, lit by their height
 // alone. Now each puff is a lumpy blob, shaded by the sun as part of its heap (the heap's own roundness, out from its centre and up
 // at its top, with a little of the puff's), so a heap has one lit side and one shadow side with a painted, soft-edged terminator between; the heap is cut flat at its base (cumulus sit on a level, the
 // condensation height) and darkest there; a sun behind it lights its edge (the silver lining); every puff varies a little in tone.
