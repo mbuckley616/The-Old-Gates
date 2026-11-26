@@ -539,7 +539,10 @@ function tpScabbard(W,it){const kit=W.userData.kit||'',gc=tpHex(it&&it.matGuard,
   g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);
   g.addGroup(lea0[0],lea0[1],0);g.addGroup(m1[0],m1[1],1);g.addGroup(m2[0],m2[1],1);g.computeVertexNormals();g.computeBoundingSphere();
   const out={geo:g,mouth,tip,hw:R[0].hw,ht:R[0].ht,tris:I.length/3,R};TP_SCAB.set(key,out);return out;}
-function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.mantle)tpHBMantle(R);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);if(R.tpDraw)tpDrawTick(R,'held');if(R.gAim)tpHBGripL(R);}
+function tpHBPose(R){if(!R||!R.rig.hb)return;hbPose(R.rig);if(R.mantle)tpHBMantle(R);if(R.hbHook)tpHBBowHand(R);R.root.updateMatrixWorld(true);tpHBHold(R);if(R.tpDraw)tpDrawTick(R,'held');if(R.gAim&&R.mantle&&R.mantle.pull)R.gAim.w*=1-R.mantle.w;if(R.gAim)tpHBGripL(R);}
+/* S2711 — a pull's hands are both on the ledge: a two-handed weapon rides in the right fist, the left hand lets go of the grip while it is
+   planted (the grip's weight is what the pull leaves, 1 - M.w) and takes it again as the hands let go of the ledge. S2700: the left wrist
+   stayed on the haft, 0.38-0.43 m off its hold */
 // S2485 — the builder's left hand on a two-hander's grip (S2484's note): tpGripL (and the draw's tpDrawLeft) aim the driver's left wrist at
 // the driver's blade, but the blade that is seen rides in the builder's right fingers (tpHBHold), 0.30 m from the driver's, and the builder's
 // arm, copied joint for joint and of its own length, puts its wrist 0.24 m from the driver's: the left fist hung 0.31 m under the grip,
@@ -1046,7 +1049,7 @@ function tpMantle(R){
   R.root.updateMatrixWorld(true);
   R.mantle={w:1-sm((p-.72)/.2),T:[0,1].map(i=>{const side=i?1:-1;
     return new THREE.Vector3(MANTLE.x0+fx*e-fz*side*.2*s,MANTLE.y1+.04*s,MANTLE.z0+fz*e+fx*side*.2*s);}), /* the body's right is (−fz, fx) from its facing (fx, fz) */
-    q:[R.shL.quaternion.clone(),R.elL.quaternion.clone(),R.shR.quaternion.clone(),R.elR.quaternion.clone()]};
+    q:[R.shL.quaternion.clone(),R.elL.quaternion.clone(),R.shR.quaternion.clone(),R.elR.quaternion.clone()],pull:true};
   tpMantleArms(R,null);
 }
 // the arms onto the pull's two holds (R.mantle, set by tpMantle this frame); err, the builder's wrists less the holds, aims the driver's
