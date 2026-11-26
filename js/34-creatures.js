@@ -627,7 +627,51 @@ function hcSerpCoils(rig,d,dt){const H=rig.hc,C=H.C,B=C.byName,g=rig.e.mesh,P=SE
   let pa=abs.spine0;B.spine0.rotation.x=abs.spine0;for(let k=1;k<F.length;k++){B[F[k]].rotation.x=abs[F[k]]-pa;pa=abs[F[k]];}
   pa=abs.spine0;const T=Q.T;for(let k=0;k<T.length;k++){const a=k<T.length-1?el(T[k],T[k+1]):(T.length>1?el(T[k-1],T[k]):0);B[T[k]].rotation.x=a-pa;pa=a;}
   const off=Math.abs(SEA_Y-g.position.y)<3?SEA_Y-g.position.y:.4;H.W.position.y=H.y0;C.root.updateMatrixWorld(true);g.updateMatrixWorld(true);
-  const sp=g.worldToLocal(B.spine0.getWorldPosition(new THREE.Vector3()));H.W.position.y=H.y0+(off+h(s.spine0)-sp.y)/((H.W.parent&&H.W.parent.scale.y)||1);}
+  const sp=g.worldToLocal(B.spine0.getWorldPosition(new THREE.Vector3()));H.W.position.y=H.y0+(off+h(s.spine0)-sp.y)/((H.W.parent&&H.W.parent.scale.y)||1);
+  hcSerpHull(rig,dt);}
+/* S2684 — the coil about her hull. S2656's coil holds her 6 s, and its body still swam 12 m off her beam (SERP.g holds there; S2677 left it
+   owed). While SERP.on.coil holds, the body is laid on a path round her instead, in her own frame (u along her keel, v out to its side,
+   from targetOf's ship, SHIP): the head reared over her deck a pace inboard of the rail on its side, looking down at it; the neck arched out
+   over the rail and down into the sea; then the body along her side aft, round her stern and up her far side, on a stadium a metre clear of
+   her waterline, its back riding 0.1 to 0.6 m above the sea. Each bone is turned the least way that puts its child on the path, and the kit
+   body's group is moved so the spine's root stands on it. It eases in and out over 0.8 s (each bone's turn and the group's place blended
+   from the swimming pose). Only the drawing: SERP.g, the coil's rule and its head's sphere (86-world-crime.js) are untouched. */
+const SERP_HULL={clear:1.1,ends:1.2,headU:2.4,headIn:.9,headY:3.1,archY:4.5,entryU:-.6,lineY:.35,amp:.25,len:6,ease:.8};
+function serpHullPath(P,L,W){const out=[],b=W/2+P.clear,l=Math.max(.5,L/2+P.ends-b),V=THREE.Vector3,bz=(a,c,d,e,t)=>{const m=1-t;return a.clone().multiplyScalar(m*m*m).addScaledVector(c,3*m*m*t).addScaledVector(d,3*m*t*t).addScaledVector(e,t*t*t);};
+  const H0=new V(P.headU,W/2-P.headIn,P.headY),E=new V(P.entryU,b,P.lineY),A1=new V(P.headU+.3,W/2+.7,P.archY),A2=new V(P.entryU+2.4,b+.3,P.lineY+1.4);
+  for(let i=0;i<=24;i++)out.push(bz(H0,A1,A2,E,i/24));
+  const seg=(u0,v0,u1,v1,n)=>{for(let i=1;i<=n;i++){const t=i/n;out.push(new V(u0+(u1-u0)*t,v0+(v1-v0)*t,0));}},arc=(cu,a0,a1,n)=>{for(let i=1;i<=n;i++){const a=a0+(a1-a0)*i/n;out.push(new V(cu+Math.cos(a)*b,Math.sin(a)*b,0));}};
+  const neck=out.length;for(let r=0;r<2;r++){seg(r?l:P.entryU,b,-l,b,12);arc(-l,Math.PI/2,Math.PI*1.5,24);seg(-l,-b,l,-b,24);arc(l,-Math.PI/2,Math.PI/2,24);}
+  const S=[0];for(let i=1;i<out.length;i++)S.push(S[i-1]+out[i].distanceTo(out[i-1]));const sn=S[neck-1];
+  for(let i=neck;i<out.length;i++)out[i].z=P.lineY+P.amp*Math.sin(Math.PI*2*(S[i]-sn)/P.len);
+  for(let i=neck;i<out.length;i++)S[i]=S[i-1]+out[i].distanceTo(out[i-1]);return {pts:out,S,b,l};}
+function hcSerpHull(rig,dt){const H=rig.hc,C=H.C,B=C.byName,Q=rig.coil,P=SERP_HULL;if(!Q)return;
+  const O=typeof SERP!=='undefined'&&SERP.on,on=!!(O&&O.coil&&O.phase==='up'&&typeof SHIP!=='undefined'&&SHIP&&SHIP.L);
+  if(Q.wx==null){Q.wx=H.W.position.x;Q.wz=H.W.position.z;}
+  Q.k=Math.max(0,Math.min(1,(Q.k||0)+(on?1:-1)*(dt>0?dt:1/60)/P.ease));const k=Q.k*Q.k*(3-2*Q.k);
+  for(const m of C.meshes)m.frustumCulled=k<=0;
+  if(k<=0){H.W.position.x=Q.wx;H.W.position.z=Q.wz;Q.ship=null;return;}
+  if(on)Q.ship={x:SHIP.x,z:SHIP.z,yaw:SHIP.yaw,L:SHIP.L,W:SHIP.W||SHIP.L/3,sx:O.x,sz:O.z};const sh=Q.ship;if(!sh)return;
+  if(!Q.path||Q.path.L!==sh.L||Q.path.W!==sh.W){Q.path=serpHullPath(P,sh.L,sh.W);Q.path.L=sh.L;Q.path.W=sh.W;}
+  const V=THREE.Vector3,fx=-Math.sin(sh.yaw),fz=-Math.cos(sh.yaw),lx=fz,lz=-fx,sg=((sh.sx-sh.x)*lx+(sh.sz-sh.z)*lz)>=0?1:-1,{pts,S}=Q.path;
+  const world=q=>new V(sh.x+fx*q.x+lx*sg*q.y,SEA_Y+q.z,sh.z+fz*q.x+lz*sg*q.y);
+  const at=x=>{x=Math.max(0,Math.min(S[S.length-1],x));let lo=0,hi=S.length-1;while(hi-lo>1){const m=(lo+hi)>>1;if(S[m]<=x)lo=m;else hi=m;}const t=(x-S[lo])/Math.max(1e-6,S[hi]-S[lo]);return world(pts[lo].clone().lerp(pts[hi],t));};
+  const chain=[...Q.F,...Q.T],q0={};for(const n of chain)q0[n]=B[n].quaternion.clone();
+  H.W.position.x=Q.wx;H.W.position.z=Q.wz;const y0=H.W.position.y;C.root.updateMatrixWorld(true);H.W.updateMatrixWorld(true);
+  const s=Q.s,s0=s.spine0,sp=B.spine0.getWorldPosition(new V()),to=at(s0),hw=H.W.getWorldPosition(new V()),wp=H.W.parent?H.W.parent.worldToLocal(hw.clone().add(to.sub(sp))):hw.add(to.sub(sp));
+  const swim=new V(Q.wx,y0,Q.wz);H.W.position.copy(wp);H.W.updateMatrixWorld(true);
+  const qa=new THREE.Quaternion(),qp=new THREE.Quaternion(),qd=new THREE.Quaternion();
+  const aim=(b,r,D)=>{b.getWorldQuaternion(qa);const cur=r.clone().applyQuaternion(qa).normalize();if(cur.dot(D)>.99999)return;qd.setFromUnitVectors(cur,D);qa.premultiply(qd);
+    if(b.parent){b.parent.getWorldQuaternion(qp);qa.premultiply(qp.invert());}b.quaternion.copy(qa);b.updateMatrixWorld(true);};
+  const lay=list=>{for(let i=0;i<list.length-1;i++){const b=B[list[i]],c=B[list[i+1]],bp=b.getWorldPosition(new V()),D=at(s[list[i+1]]).sub(bp);if(D.lengthSq()<1e-8)continue;aim(b,c.position.clone().normalize(),D.normalize());}};
+  /* spine0 has two children, the forward chain's and the tail's: it is turned once, along the chord between their two places on the path */
+  const hd=B.head,t0=Q.T.length&&B[Q.T[0]];
+  if(t0){const r=B[Q.F[1]].position.clone().sub(t0.position),D=at(s[Q.F[1]]).sub(at(s[Q.T[0]]));if(r.lengthSq()>1e-8&&D.lengthSq()>1e-8)aim(B.spine0,r.normalize(),D.normalize());lay(Q.F.slice(1));lay(Q.T);}
+  else lay(Q.F);
+  if(hd)aim(hd,hd.position.clone().normalize(),new V(fx*.35-lx*sg,-.9,fz*.35-lz*sg).normalize());
+  const tl=Q.T.length>1&&B[Q.T[Q.T.length-1]];if(tl){const a=at(s[Q.T[Q.T.length-1]]),D=at(s[Q.T[Q.T.length-1]]+1).sub(a);if(D.lengthSq()>1e-8)aim(tl,tl.position.clone().normalize(),D.normalize());}
+  if(k<1){for(const n of chain)B[n].quaternion.copy(q0[n].clone().slerp(B[n].quaternion,k));H.W.position.lerpVectors(swim,wp,k);}
+  C.root.updateMatrixWorld(true);}
 // ── the wolf's motion: every joint an [x,y,z] rotation; `drop` lowers the hips ──
 const WG={
   JOINTS:['hips','spine','neck','head','jaw','tail1','tail2','tail3','shL','elL','wrL','pfL','shR','elR','wrR','pfR','thL','knL','hkL','phL','thR','knR','hkR','phR'],

@@ -286,8 +286,24 @@ const serp = await page.evaluate(() => { const fx = -Math.sin(yaw), fz = -Math.c
     let cross = 0; for (let i = 1; i < ch.length; i++) if ((ch[i] > 0) !== (ch[i - 1] > 0)) cross++;
     let up = 0, all = 0; const v = new THREE.Vector3(); sk.update(); for (const m of H.C.meshes) { const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i); m.applyBoneTransform(i, v); all++; if (v.y > sea) up++; } }
     Object.assign(o, { head: +y('head').toFixed(2), hi: +Math.max(...ch).toFixed(2), lo: +Math.min(...ch).toFixed(2), cross, up: +(up / all).toFixed(2) }); }
+  // Session 2684: the coil about her hull. A sloop's frame (13 × 4.4 m) set 13 m off its beam and S2656's coil held: the body eases onto
+  // a path round her in 0.8 s, the head reared over her deck, the rest outside her hull a metre clear, round her stern to her far side;
+  // let go, it eases back to its swimming coils and the culling it had
+  { const keep = { x: SHIP.x, z: SHIP.z, yaw: SHIP.yaw, L: SHIP.L, W: SHIP.W }, on0 = SERP.on, B = H.C.byName;
+    Object.assign(SHIP, { x: G.position.x + Math.cos(G.rotation.y) * 13, z: G.position.z - Math.sin(G.rotation.y) * 13, yaw: G.rotation.y + Math.PI / 2, L: 13, W: 4.4 });
+    SERP.on = { coil: { t: 0 }, phase: 'up', x: G.position.x, z: G.position.z };
+    const fx = -Math.sin(SHIP.yaw), fz = -Math.cos(SHIP.yaw), lx = fz, lz = -fx, sg = ((G.position.x - SHIP.x) * lx + (G.position.z - SHIP.z) * lz) >= 0 ? 1 : -1;
+    const loc = n => { const p = B[n].getWorldPosition(new THREE.Vector3()), dx = p.x - SHIP.x, dz = p.z - SHIP.z; return { u: dx * fx + dz * fz, v: (dx * lx + dz * lz) * sg, y: p.y - SEA_Y }; };
+    run(24, 0); const kHalf = rig.coil.k; run(40, 0); const hd = loc('head'), body = rig.coil.T.concat(rig.coil.F.slice(0, 4)).map(loc), tail = loc(rig.coil.T[rig.coil.T.length - 1]);
+    let inHull = 0; for (const q of body) if (Math.abs(q.u) < 6.5 && Math.abs(q.v) < 2.2 + .5) inHull++;
+    o.hull = { kHalf: +kHalf.toFixed(2), k: rig.coil.k, head: [hd.u, hd.v, hd.y].map(x => +x.toFixed(2)), inHull, tailV: +tail.v.toFixed(2), tailU: +tail.u.toFixed(2), uncull: H.C.meshes.every(m => !m.frustumCulled) };
+    SERP.on = null; run(60, 0); o.hull.after = rig.coil.k; o.hull.cull = H.C.meshes.every(m => m.frustumCulled); o.hull.headBack = +loc('head').v.toFixed(1);
+    SERP.on = on0; Object.assign(SHIP, keep); }
   serpDrop(); hcTick(9.99e5 + 1e5); o.dropped = !rig.hc; return o; });
 console.log('  serpent:', JSON.stringify(serp));
+check(`the sea serpent coils about her hull while the coil holds (Session 2684): eased in (${serp.hull && serp.hull.kHalf} at 0.4 s, ${serp.hull && serp.hull.k} after), its head over her deck at ${serp.hull && serp.hull.head}, ${serp.hull && serp.hull.inHull} joints in her hull, its tail round her stern at ${serp.hull && serp.hull.tailU}, ${serp.hull && serp.hull.tailV}; let go, eased back (${serp.hull && serp.hull.after}, its head ${serp.hull && serp.hull.headBack} m off her side) and culled as before`,
+  !serp.fail && serp.hull && serp.hull.kHalf > .2 && serp.hull.kHalf < .9 && serp.hull.k === 1 && Math.abs(serp.hull.head[0]) < 6.5 && Math.abs(serp.hull.head[1]) < 2.2 && serp.hull.head[2] > 2 &&
+  serp.hull.inHull === 0 && serp.hull.tailU < -5 && serp.hull.uncull && serp.hull.after === 0 && serp.hull.cull && serp.hull.headBack > 4, serp);
 check(`the sea serpent the game raises wears the kit's (${serp.plan}, ${serp.bones} bones, ${serp.tris} triangles) at level ${serp.L}, the stand-in hidden (${!serp.stand}); it slithers as its group swims (${serp.gait}, the bones moving ${serp.moved}); dropped when it dives for good (${serp.dropped})`,
   !serp.fail && serp.plan === 'game:Sea Serpent' && serp.shown && !serp.stand && serp.L < 2 && serp.gait === 'slither' && serp.moved > .01 && !serp.bad && serp.dropped, serp);
 check(`the sea serpent shows its coils (Session 2677): its head ${serp.head} m out of the sea, its spine from ${serp.lo} to ${serp.hi} m, crossing the surface ${serp.cross} times; ${serp.up} of its skin above the water`,
