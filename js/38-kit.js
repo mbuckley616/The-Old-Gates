@@ -6101,8 +6101,9 @@ function houseGarden(island, o = {}) {
 // the firewood stacked inside it. By island: the Gatelands' slate in lapped courses and a boarded end; the Mark's turf on boards behind a
 // log turf-stop, the end in tarred boards; Aurenne's pantiles with their round ends at the eave, a whitewashed end wall and terracotta flags.
 // In the wall's frame (the fittings' frame): the house's back wall at z = 0, the lean-to toward +z, its width along x centred on 0, y = 0
-// the yard's ground at the origin; o.ground(x, z) is the yard's height there against it (the floor is laid level at the highest point).
-//   PKIT.props.leanto(island, { W, D, ground, screen: -1 | 1 | 0, wood, key, gaps: [x…] }) -> { group, tris, draws, island, foot: { x0, x1, z0, z1 },
+// the yard's ground at the origin; o.ground(x, z) is the yard's height there against it (the floor is laid level at the highest point;
+// o.follow lays each flag on the ground under it instead, as the game does, so you never stand sunk in it).
+//   PKIT.props.leanto(island, { W, D, ground, screen: -1 | 1 | 0, wood, follow, key, gaps: [x…] }) -> { group, tris, draws, island, foot: { x0, x1, z0, z1 },
 //   floor, inner: { x0, x1 }, posts: [x…], front: z of the posts, top } — gaps: where a middle post may stand (between the fittings).
 let LTM = null;
 function yardLeanTo(island, o = {}) {
@@ -6126,7 +6127,7 @@ function yardLeanTo(island, o = {}) {
   const FY = hi + .06, HB = FY + 2.7, HF = FY + 2.05, PZ = D - .1, PW = .14, k = (HB - HF) / (PZ - .06), roofY = z => HB + .2 - k * z, EAVE = D + .3;
   { const FS = island === 'aurenne' ? .36 : .55, nx = Math.max(2, Math.round(W / FS)), nz = Math.max(2, Math.round(D / FS)), fw = W / nx, fd = D / nz;
     for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) { const x = -W / 2 + (i + .5) * fw, z = (j + .5) * fd;
-      const w = fw - .02 - rr() * .02, d = fd - .02 - rr() * .02, h = FY - lo + .08; box('flag', w, h, d, x, FY - h / 2 + (rr() - .5) * .006, z, 0, (rr() - .5) * .03, .8); } }
+      const w = fw - .02 - rr() * .02, d = fd - .02 - rr() * .02, top = o.follow ? G0(x, z) + .05 : FY, h = o.follow ? .18 : FY - lo + .08; box('flag', w, h, d, x, top - h / 2 + (rr() - .5) * .006, z, 0, (rr() - .5) * .03, .8); } }
   // the posts: at both ends, and between where the span would pass 2.4 m, at the gap nearest each even division
   const posts = [-W / 2 + PW / 2, W / 2 - PW / 2], n = Math.ceil((W - PW) / 2.4);
   for (let i = 1; i < n; i++) { const want = -W / 2 + W * i / n, gs = (o.gaps || []).filter(x => Math.abs(x) < W / 2 - .5); const x = gs.length ? gs.reduce((a, b) => Math.abs(b - want) < Math.abs(a - want) ? b : a) : want; if (!posts.some(p => Math.abs(p - x) < .4)) posts.push(x); }
@@ -6163,7 +6164,7 @@ function yardLeanTo(island, o = {}) {
   const inner = { x0: -W / 2 + PW, x1: W / 2 - PW };
   if (o.wood !== false) { const ws = side || -1, x = ws * (W / 2 - .28), Lg = .42;
     for (let r = 0; r < 5; r++) for (let c = 0; c < 6; c++) { const R = .055 + rr() * .02; const g = new THREE.CylinderGeometry(R, R, Lg + (rr() - .5) * .06, r % 2 ? 3 : 6); g.rotateX(Math.PI / 2); g.rotateZ(rr() * 3);
-      g.rotateY(Math.PI / 2); g.translate(x + (rr() - .5) * .03, FY + R + r * .12, .12 + c * .135 + (r % 2) * .06); put('beam', g, 1.4); }
+      g.rotateY(Math.PI / 2); g.translate(x + (rr() - .5) * .03, (o.follow ? G0(x, .12 + c * .135) + .05 : FY) + R + r * .12, .12 + c * .135 + (r % 2) * .06); put('beam', g, 1.4); }
     if (ws < 0) inner.x0 = x + .25; else inner.x1 = x - .25; }
   const group = new THREE.Group(); group.name = 'lean-to'; let tris = 0;
   for (const [km, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[km]); m.name = 'leanto:' + km; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
