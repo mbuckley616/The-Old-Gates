@@ -64,6 +64,17 @@ Any answer is a one-line change to `RELIEF.NAT`. Pictures: [the Gates' basin](ht
 
 Recommendation: B. The gate heard over the hill and the gravel under a sneak are the brief's first two feelings in sound, it is all made in code, and nothing is added to the download. Page: [what a place sounds like](https://github.com/mbuckley616/The-Old-Gates/blob/auto/design-1126/docs/design/what-a-place-sounds-like.md)
 
+### A long cloak worn back over the shoulders, behind them, or as today? (from the bodies builder, 2026-11-26, #2082)
+**The question.** Michael's note of 25 Nov (backlog H, *Cloaks as capes over the back?*): today a long cloak wraps the arms and closes at the throat, so a cloaked wearer's arms are held still at the hips and any gesture or blow brings a hand out through the front. Session 2699 built the alternative in the kit as a prototype (`D.cloakBack`, nothing changed in the game).
+
+**Options.**
+- **A.** Every long cloak worn back over the shoulders (pinned at each, the shoulders' fronts covered, breast and arms free), for townsfolk, foes and you. Shoulder capes stay as they are.
+- **B.** Every long cloak hung from behind the shoulders (nothing in front; from the front it nearly disappears).
+- **C (recommended).** A by default, closed round the front only where it is meant to be: hood up (drawn round in the weather), the burnous (sewn shut), and in the snow. The Gatelanders' tartan worn back as A.
+- **D.** As today: closed at the throat, the arms kept still under it.
+
+Recommendation: C. It ends the hands-through-the-cloak fault for most wearers and frees the arms, while the cloaks drawn round for a reason still read that way. Pictures: [all four wearers](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cloakback-2699.jpg) · [the Markman](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cloakback-2699-markman.jpg) · [the tartan](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cloakback-2699-tartan.jpg)
+
 ## Answered
 ### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
 **The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.

@@ -735,3 +735,13 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Nothing beyond the four answers. The 22 Nov weekly run's leftovers stay in backlog I.
 
 **Roadmap.** 357 of 465 stories done (352 of 455 yesterday). The new look is 7 of 18.
+
+## 26 Nov 2026
+
+**Waiting on you.** Six decisions: notification cards (#2047, C); towns' lots (#2053, A); levelling too slow (#2059); the Gatelands' relief (#2063, A); what a place sounds like (#2071, B); a long cloak worn back (#2082, C). One merge: *Fable: towns dressed* (#2058), CI green on 25fcbdd.
+
+**Landed on main since 25 Nov.** Sessions 2659–2699. Seven fixes from your 25 Nov playtest (stamina, the guard, the sheathe, foe spacing). The light by the hour, tuned against P10b: the islands' palettes, haze, painted clouds, night's colour (deep work). The look judged against P10b: eight fixed views at High beside their panels. First-person hands are skin; bare fists balled. A death you feel: the music breaks and you fall. The sea serpent coils and can be driven off; the race's set on the minimap. The camel and the Caravan couch. Gate, fort and Hollow exits from inside; the yard's lean-to. Aurenne's and the Gatelands' skylines from afar; the Mark's woods are snow-pines. Stall keepers take their own names. A playtest, quest drafts, the sound design page, the notification-card concepts. Build s2012.
+
+**Blocked.** Main's full check of 26 Nov: eight suites red with no fix yet, for QA to route. Nothing is reverted.
+
+**Roadmap.** 367 of 484 stories done (357 of 465 yesterday). The new look is 9 of 18; the core loop gained *a death you feel*.
