@@ -1429,8 +1429,9 @@ function genSettlement(site){
     /* S2670 (towns dressed) — the town's dressing on the new look (townDress, 82): yards and their walls, what stands in them and against the
        houses, the shops' trades, the streets' carts and barrels, sheds and orchards on the widest lawns, and the ground paved; its own streams, after
        every draw the town made. Laid, the old flat ribbon of the paths goes: the paving is drawn over the same lines. */
-    if(window.OG_LOOK==='new'&&['village','town','city','port','garrison','outpost'].includes(site.kind))try{const T=townDress(S,{inner,pros:TST?prosperity(site):50,burned:burnedV,abandoned:abandonedV||sackedV});
-      if(T){const pm=group.children.find(m=>m.name==='town paths');if(pm){group.remove(pm);if(typeof _ribbons!=='undefined'){const k=_ribbons.indexOf(pm.geometry);if(k>=0)_ribbons.splice(k,1);}pm.geometry.dispose();}}}catch(e){console.warn('town dress',e);}
+    if(window.OG_LOOK==='new'&&['village','town','city','port','garrison','outpost'].includes(site.kind))try{const J=townDressJob(S,{inner,pros:TST?prosperity(site):50,burned:burnedV,abandoned:abandonedV||sackedV},T=>{ /* a step a frame on the job queue, after the town stands */
+      if(!T)return;const pm=group.children.find(m=>m.name==='town paths');if(pm){group.remove(pm);if(typeof _ribbons!=='undefined'){const k=_ribbons.indexOf(pm.geometry);if(k>=0)_ribbons.splice(k,1);}pm.geometry.dispose();}
+      S._route=null;S._routeGrid=null;S._beat=undefined;S._work=null; /* the watch's ways and the directions found again round the dressing's walls */});if(J)addJob(J,1);}catch(e){console.warn('town dress',e);}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
@@ -1465,6 +1466,8 @@ function genSettlement(site){
     if(S.stalls&&S.stalls.length)festStallsLive(S,cp); /* S2351 — the bursar's table and the caravan's scale, out with their keepers */
     if(S.fair)fairRingLive(S,cp); /* S2333 — the Strait Fair's ring, up on its morning */ /* S2165 — and your garden's beds kept to worldState.garden */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
+    if(S.dressLod)for(const m of S.dressLod){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere,d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5); /* S2670 — the town's dressing, near and far, by the houses' rule; its own list, so the houses' twins stay paired */
+      const twin=m.userData.twin!==undefined?m.userData.twin:(m.userData.twin=S.dressLod.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey)||null);const near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:m.visible;m.visible=near;if(twin)twin.visible=!near;}
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
       const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));

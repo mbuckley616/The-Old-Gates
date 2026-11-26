@@ -2326,7 +2326,9 @@
   // the line is clear or no way is found (he walks the direct line as before).
   function townRoute(S){if(S._route)return S._route;const cx=S.site.x,cz=S.site.z;
     const R=Math.ceil((S.site.pad||40)+8),N=2*R+1,sol=new Uint8Array(N*N);
-    const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;};fill();S._routeGrid={R,N,sol}; /* S2023 — the directions' walk (wayWalk) reads this grid too */
+    const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;
+      for(const q of S.sol||[]){if(!q.dress)continue;const e=Math.hypot(q.rx,q.rz)+.5,i0=Math.max(0,Math.floor(q.cx-e-cx+R)),i1=Math.min(N-1,Math.ceil(q.cx+e-cx+R)),j0=Math.max(0,Math.floor(q.cz-e-cz+R)),j1=Math.min(N-1,Math.ceil(q.cz+e-cz+R)); /* S2670 — the dressing's walls are thinner than a cell: each is marked with half a metre round it, so no way runs through one */
+        for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const dx=cx-R+i-q.cx,dz=cz-R+j-q.cz,lx=dx*q.c-dz*q.s,lz=dx*q.s+dz*q.c;if(Math.abs(lx)<q.rx+.5&&Math.abs(lz)<q.rz+.5)sol[j*N+i]=1;}}};fill();S._routeGrid={R,N,sol}; /* S2023 — the directions' walk (wayWalk) reads this grid too */
     const cel=p=>[Math.max(0,Math.min(N-1,Math.round(p.x-cx+R))),Math.max(0,Math.min(N-1,Math.round(p.z-cz+R)))];
     const find=(s0,g0)=>{const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0];
       for(let h=0;h<q.length&&prev[g0]<0;h++){const c=q[h],ci=c%N,cj=(c-ci)/N;
@@ -3542,7 +3544,7 @@
   function tdrFinish(D,S,group){let tris=0,meshes=0;for(const [k,A] of D.M){if(!A.P.length)continue;const g=new THREE.BufferGeometry();
       g.setAttribute('position',new THREE.Float32BufferAttribute(A.P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(A.N,3));g.setAttribute('color',new THREE.Float32BufferAttribute(A.C,3));g.computeBoundingSphere();
       const lod=k.slice(k.lastIndexOf(',')+1),m=new THREE.Mesh(g,VC_MAT);m.name='town dress'+(lod==='g'?' ground':lod==='lo'?' far':'');m.userData.noBake=true;m.receiveShadow=true;m.castShadow=lod==='hi';
-      if(lod==='g'){if(typeof snowWatch==='function')snowWatch(g);}else{m.userData.lod=lod;m.userData.ckey='dress:'+k.slice(0,k.lastIndexOf(','));m.visible=lod==='lo';(S.lodMeshes||(S.lodMeshes=[])).push(m);}
+      if(lod==='g'){if(typeof snowWatch==='function')snowWatch(g);}else{m.userData.lod=lod;m.userData.ckey='dress:'+k.slice(0,k.lastIndexOf(','));m.visible=lod==='lo';(S.dressLod||(S.dressLod=[])).push(m);}
       group.add(m);tris+=A.P.length/9;meshes++;}return {tris:Math.round(tris),meshes};}
   /* a colour from a hex, its lightness moved by up to ±j/2 on the stream */
   function tdrCol(hex,r,j){_tdrC.setHex(hex);const k=1+(r()-.5)*(j==null?.16:j);return new THREE.Color(_tdrC.r*k,_tdrC.g*k,_tdrC.b*k);}
@@ -3659,9 +3661,14 @@
     for(const R of runs){const tm=(R.t0+R.t1)/2,x=x0+ux*tm,z=z0+uz*tm,len=R.t1-R.t0,y=worldH(x,z),col=kind==='hedge'?tdrCol(P.hedge[0],r,.1):kind==='skigard'?tdrCol(0x6a5a46,r,.1):kind==='plaster'?tdrCol(P.wash,r,.05):kind==='cane'?tdrCol(P.cane,r,.1):tdrCol(P.stone[0],r,.1);
       D.put('lo',G.box,col,x,y-.05,z,kind==='hedge'?1:.45,T,len,ry);R.x=x;R.z=z;R.len=len;R.ry=ry;R.w=kind==='hedge'?.9:kind==='skigard'?.5:.5;}
     return runs;}
-  function townDress(S,o){if(window.OG_LOOK!=='new'||!S||!S.site)return null;
-    _tdrH=new Map();try{return townDressRun(S,o);}finally{_tdrH=null;}}
-  function townDressRun(S,o){const site=S.site,cx=site.x,cz=site.z,sol=S.sol,houses=S.houses||[],group=S.group;
+  function townDress(S,o){if(window.OG_LOOK!=='new'||!S||!S.site)return null;const lat=new Map(),it=townDressRun(S,o);let r;_tdrH=lat;try{do{r=it.next();}while(!r.done);}finally{_tdrH=null;}return S.dress;}
+  /* the same pass a step at a time on the world's job queue (S2670): a few houses, a row of the lawns' search, ten paths a step, so a town's
+     build is not one long frame (a roll near Dunmore went nowhere while it built, the critic's hitch). done(S.dress) runs when it is laid;
+     a town let go before then is left alone. */
+  function townDressJob(S,o,done){if(window.OG_LOOK!=='new'||!S||!S.site)return null;const lat=new Map(),it=townDressRun(S,o);let cpu=0,worst=0,steps=0;
+    return ()=>{if(SETTLE.get(S.site.id)!==S)return false;const t=performance.now();let r;_tdrH=lat;try{r=it.next();}catch(e){console.warn('town dress',e);return false;}finally{_tdrH=null;}
+      const dt=performance.now()-t;cpu+=dt;worst=Math.max(worst,dt);steps++;if(!r.done)return true;if(S.dress){S.dress.cpu=Math.round(cpu);S.dress.worst=Math.round(worst);S.dress.steps=steps;}try{if(done)done(S.dress);}catch(e){console.warn('town dress',e);}return false;};}
+  function* townDressRun(S,o){const site=S.site,cx=site.x,cz=site.z,sol=S.sol,houses=S.houses||[],group=S.group;
     const t0=performance.now(),isle=isleAt(cx,cz),P=TDR_PAL[isle]||TDR_PAL.gatelands,town=['town','city','port'].includes(site.kind),pros=o.pros==null?50:o.pros,rich=pros>=60,poor=pros<35;
     const inner=o.inner,D=tdrAcc(),WK=yardWalks(site,S.paths||[]),occ=new Map(),stats={yards:0,walls:0,items:0,street:0,infill:0,sols:0};
     const doors=[];for(const h of houses){if(h.doorX!=null)doors.push([h.doorX,h.doorZ]);if(h.exitX!=null)doors.push([h.exitX,h.exitZ]);}
@@ -3686,12 +3693,12 @@
         for(const q of L){if(q._q===qid||q===own)continue;q._q=qid;if(q.door){if(Math.hypot(x-q.cx,z-q.cz)<dm)return no('door');continue;}if(inR(q,x,z,q._cl?R*.5:R))return no(q._cl?'claim':q.bt||'solid');}}
       for(const p of plots)if(inR(p,x,z,R+.3))return no('plot');for(const d of discs)if(Math.hypot(x-d[0],z-d[1])<d[2]+R)return no('disc');
       if(walkNear(x,z,R+.1))return no('walk');try{const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+.6+R)return no('road');}catch(e){}return tdrH(x,z)>SEA_Y+.5||no('sea');};
-    const solid=(x,z,rx,rz,ry,bound)=>{const q={cx:x,cz:z,rx,rz,c:Math.cos(ry),s:Math.sin(ry),dress:true};if(bound){q.bt='wall';q.bound=true;}sol.push(q);file(q,false);stats.sols++;return q;};
+    const solid=(x,z,rx,rz,ry,bound)=>{const q={cx:x,cz:z,rx,rz,c:Math.cos(ry),s:Math.sin(ry),dress:true,bt:'dress'};if(bound){q.bt='wall';q.bound=true;}sol.push(q);file(q,false);stats.sols++;return q;};
     const item=(name,r,x,z,ry,R,a1,a2)=>{if(!ok(x,z,R,false,undefined,TDR_R[name]))return false;const y=worldH(x,z),b=TDR_PIECE[name](D,P,r,x,y,z,ry,a1,a2);if(b&&b.rx!=null)solid(x,z,b.rx,b.rz,ry);else if(b&&b.r!=null)solid(x,z,b.r,b.r,0);else claims.push({cx:x,cz:z,rx:R*.8,rz:R*.8});stats.items++;return true;};
     const softItem=(name,r,x,z,ry,R,a1)=>{if(!ok(x,z,R,true))return false;TDR_PIECE[name](D,P,r,x,worldH(x,z),z,ry,a1);stats.items++;return true;};
     const live=!o.burned&&!o.abandoned;
     /* ── each house: its frame from its own solid (front toward its door), its yard behind, the boundary, the yard's things, the walls' greenery ── */
-    for(const h of houses){if(h.doorX==null)continue;const B=sol.find(q=>q.hid===h.id&&q.bt);if(!B||B.dress)continue;
+    let hn=0;for(const h of houses){if(++hn%6===0)yield;if(h.doorX==null)continue;const B=sol.find(q=>q.hid===h.id&&q.bt);if(!B||B.dress)continue;
       if(['church','castle','guild_f','guild_m','market','academy'].includes(h.type)||h.kit&&['guildhall','keep','coachinn','hall'].includes(h.kit.kind))continue;
       const r=seededRng(site.id,'dress:'+h.id),c=B.c==null?1:B.c,s=B.s==null?0:B.s,ldx=(h.doorX-B.cx)*c-(h.doorZ-B.cz)*s,ldz=(h.doorX-B.cx)*s+(h.doorZ-B.cz)*c;
       let fx,fz,hw,hd;if(Math.abs(ldz)/B.rz>=Math.abs(ldx)/B.rx){const g=Math.sign(ldz)||1;fx=s*g;fz=c*g;hw=B.rx-.15;hd=B.rz-.15;}else{const g=Math.sign(ldx)||1;fx=c*g;fz=-s*g;hw=B.rz-.15;hd=B.rx-.15;}
@@ -3731,7 +3738,7 @@
       if(h.type!=='home'&&!shut){const T={misc:['crates','cart','sacks'],inn:['barrels','table','cart'],weapon:['grindstone','trough','barrels'],forge:['grindstone','trough'],armor:['crates','grindstone'],potion:['pots','beds','crates'],shipwright:['logs','barrels','crates'],barber:['bench','pots']}[h.type]||['crates','barrels'];
         let k=0;for(const sd of [1,-1])for(const off of [3.3,4.6]){if(k>=T.length)break;const nm=T[k],[x,z]=W(ud+sd*off,hd+(nm==='cart'?1.6:nm==='table'?1.3:.6));const iry=nm==='cart'?ry+Math.PI/2:ry;
           if(nm==='pots'||nm==='bench'||nm==='sacks'){if(softItem(nm,r,x,z,iry,.4))k++;}else if(item(nm,r,x,z,iry,nm==='cart'?1.2:.7,nm==='cart'?(h.type==='inn'?'barrels':'sacks'):undefined))k++;}}}
-    lap('houses');
+    lap('houses');yield;
     /* ── the streets' clutter: a cart, barrels, a trough, hay, by prosperity, on the verge of the streets (S.paths 2 m wide and over) ── */
     if(live){const r=seededRng(site.id,'dress:streets'),odds=.14+.22*pros/100;let i=0;
       for(const p of S.paths||[]){if(!p||(p.w||0)<2)continue;for(let k=0;k<p.pts.length-1;k++){const a=p.pts[k],b=p.pts[k+1],L=Math.hypot(b.x-a.x,b.z-a.z);if(L<4)continue;const ux=(b.x-a.x)/L,uz=(b.z-a.z)/L;
@@ -3743,11 +3750,11 @@
        a work yard with a shed, a paddock with a rick; each walled as the island walls, its gate toward the town's middle ── */
     if(live){const r=seededRng(site.id,'dress:infill');let ta=0,best=0;for(const p of S.paths||[])if(p&&(p.w||0)>=2&&p.pts&&p.pts.length>1){const a=p.pts[0],b=p.pts[p.pts.length-1],L=Math.hypot(b.x-a.x,b.z-a.z);if(L>best){best=L;ta=Math.atan2(b.x-a.x,b.z-a.z);}}
       const cand=[],gd=2.5,c0=Math.cos(ta),s0=Math.sin(ta),r0=town?16:10;
-      for(let gu=-inner;gu<=inner;gu+=gd)for(let gv=-inner;gv<=inner;gv+=gd){const x=cx+gu*c0+gv*s0,z=cz-gu*s0+gv*c0,dc=Math.hypot(x-cx,z-cz);if(dc>inner-3||dc<r0)continue;if(ok(x,z,.5,true))cand.push([x,z,r()]);}
+      for(let gu=-inner;gu<=inner;gu+=gd){if(gu>-inner&&Math.round((gu+inner)/gd)%8===0)yield;for(let gv=-inner;gv<=inner;gv+=gd){const x=cx+gu*c0+gv*s0,z=cz-gu*s0+gv*c0,dc=Math.hypot(x-cx,z-cz);if(dc>inner-3||dc<r0)continue;if(ok(x,z,.5,true))cand.push([x,z,r()]);}}
       cand.sort((a,b)=>a[2]-b[2]);const cap=Math.max(4,Math.round(houses.length*(town?.7:.5)));
       const pool=isle==='mark'?['yard','yard','garden','grove','paddock']:isle==='aurenne'?['court','court','orchard','garden','cypress']:['garden','garden','orchard','yard','paddock'];
       const wk=isle==='mark'?'skigard':isle==='aurenne'?'plaster':null;
-      for(const [x,z] of cand){if(stats.infill>=cap)break;let fit=null;
+      let cn=0;for(const [x,z] of cand){if(stats.infill>=cap)break;if(++cn%30===0)yield;let fit=null;
         for(const [w,d] of [[8.5,6.5],[6.5,5],[5,4]]){for(const turn of [0,1]){const ry=ta+turn*Math.PI/2,c2=Math.cos(ry),s2=Math.sin(ry),hw=(turn?d:w)/2,hd=(turn?w:d)/2;let good=true;
             const pts=[[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd],[0,0]];for(let u=-hw;u<=hw+.01;u+=Math.max(.8,hw/4))for(let v=-hd;v<=hd+.01;v+=Math.max(.8,hd/3))pts.push([u,v]);
             for(const [u,v] of pts){const edge=Math.abs(u)>hw-.1||Math.abs(v)>hd-.1;if(!ok(x+u*c2+v*s2,z-u*s2+v*c2,edge?.4:.25,!edge)){good=false;break;}}
@@ -3768,7 +3775,7 @@
         else if(type==='court'){tree(0,0,r()<.5?'olive':'lemon');put('jars',-hw+.9,-hd+.6,.3);put('bench',hw-1,0,.3,ry+Math.PI/2);for(const [u,v] of [[-hw+.5,hd-.5],[hw-.5,hd-.5],[hw-.5,-hd+.5]])put('pots',u,v,.15);}
         else{put('rick',-hw*.4,0,1.4);put('trough',hw-1.2,-hd+.7,.5);}
         stats.infill++;}}
-    lap('infill');
+    lap('infill');yield;
     /* ── the ground (S2670, Michael's "tone paving down first"): the square laid in rings round the well, small setts on the main streets (those
        through the town's middle; the roads through it are laid so in buildRoadRibbons), worn earth on the side streets, the ring lane and the
        footpaths, and flags at every door (laid with the house, above). A village's square is earth. ── */
@@ -3784,11 +3791,12 @@
             const e=Math.max(0,Math.min(1,(rm-(wob(am)-1.6))/1.6));if(e>0&&r()<e*.55)continue;
             tdrCell(A,[H(cx+Math.cos(a0)*rr,cz+Math.sin(a0)*rr),H(cx+Math.cos(a0)*(rr+dr),cz+Math.sin(a0)*(rr+dr)),H(cx+Math.cos(a1)*(rr+dr),cz+Math.sin(a1)*(rr+dr)),H(cx+Math.cos(a1)*rr,cz+Math.sin(a1)*rr)],st,r,e);}
           rr+=dr;}}
+      yield;
       const skipS=(x,z)=>{if(onSol(x,z))return true;if(Math.hypot(x-cx,z-cz)<wob(Math.atan2(z-cz,x-cx))-.2)return true; /* the square is laid over it */const ri=roadInfo(x,z);return !!ri&&ri.d<ROAD_HALF*.85+.1;};
       const mainLine=p=>{if(!pv||(p.w||0)<2.3)return false;const a=p.pts[0],b=p.pts[p.pts.length-1],L=Math.hypot(b.x-a.x,b.z-a.z)||1;return Math.abs((cx-a.x)*(b.z-a.z)-(cz-a.z)*(b.x-a.x))/L<7;};
       const sett=tdrStyle(isle,'sett'),earth=tdrStyle(isle,'earth');stats.mainStreets=0;
-      (S.paths||[]).forEach((p,pi)=>{if(!p||!p.pts||p.pts.length<2)return;const main=mainLine(p),street=(p.w||0)>=2,st=main?sett:earth,Wd=main?2.15:street?p.w/2+.15:(p.w||1.3)/2-.05;if(main)stats.mainStreets++;
-        for(let k=0;k<p.pts.length-1;k++){const a=p.pts[k],b=p.pts[k+1],L=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(L/3));for(let j=0;j<n;j++){const A={x:a.x+(b.x-a.x)*j/n,z:a.z+(b.z-a.z)*j/n},Bq={x:a.x+(b.x-a.x)*(j+1)/n,z:a.z+(b.z-a.z)*(j+1)/n};tdrStrip(D,A,Bq,Wd,st,r,occ,skipS,'p'+pi);}}});}
+      const PS=S.paths||[];for(let pi=0;pi<PS.length;pi++){const p=PS[pi];if(pi%10===9)yield;if(!p||!p.pts||p.pts.length<2)continue;const main=mainLine(p),street=(p.w||0)>=2,st=main?sett:earth,Wd=main?2.15:street?p.w/2+.15:(p.w||1.3)/2-.05;if(main)stats.mainStreets++;
+        for(let k=0;k<p.pts.length-1;k++){const a=p.pts[k],b=p.pts[k+1],L=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(L/3));for(let j=0;j<n;j++){const A={x:a.x+(b.x-a.x)*j/n,z:a.z+(b.z-a.z)*j/n},Bq={x:a.x+(b.x-a.x)*(j+1)/n,z:a.z+(b.z-a.z)*(j+1)/n};tdrStrip(D,A,Bq,Wd,st,r,occ,skipS,'p'+pi);}}}}
     lap('ground');const F=tdrFinish(D,S,group);try{stats.relaid=tdrRelayRoads(site);}catch(e){}lap('finish');S.dress={...stats,...F,ms:Math.round(performance.now()-t0),isle,phase:ms,why,yardWhy};return S.dress;}
   /* a road through a paved town is laid as its streets are (buildRoadRibbons): the town whose inner ring holds (x,z), or null */
   function tdrTownsNear(ox,oz){if(window.OG_LOOK!=='new')return '';const out=[];for(const t of SITES){if(!['town','city','port','garrison'].includes(t.kind)||!(t.pad>0))continue;const dx=Math.max(ox-t.x,0,t.x-(ox+CHUNK)),dz=Math.max(oz-t.z,0,t.z-(oz+CHUNK));if(Math.hypot(dx,dz)<t.pad)out.push(t.id);}return out.join('|');}
