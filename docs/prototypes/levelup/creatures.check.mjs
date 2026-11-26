@@ -513,7 +513,7 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     const M = C.meshes[0], p = new C.rig.position.constructor();
     const read = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(); let low = 1e9; for (let v = 0; v < M.geometry.attributes.position.count; v += 3) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); low = Math.min(low, p.y); }
       const legLow = L => Math.min(...L.bones.slice(1).map(b => at(b).y), at(L.bones[L.bones.length - 1]).y);
-      return { wither: +Math.max(...fore.map(L => at(L.bones[0]).y)).toFixed(3), hip: +Math.max(...hind.map(L => at(L.bones[0]).y)).toFixed(3), low: +low.toFixed(3), feet: [...fore, ...hind].map(L => +legLow(L).toFixed(3)) }; };
+      return { wither: +Math.max(...fore.map(L => at(L.bones[0]).y)).toFixed(3), hip: +Math.max(...hind.map(L => at(L.bones[0]).y)).toFixed(3), low: +low.toFixed(3), feet: [...fore, ...hind].map(L => +legLow(L).toFixed(3)), hoofZ: +at(hind[0].bones[3]).z.toFixed(3), hockZ: +at(hind[0].bones[2]).z.toFixed(3), hipZ: +at(hind[0].bones[0]).z.toFixed(3) }; };
     C.gait = 'stand'; C.kneel = undefined; K.pose(C, 0); const stand = read(); C.gait = 'couch'; K.pose(C, 0); const couch = read();
     for (let i = 0; i <= 20; i++) { C.kneel = i / 20; K.pose(C, 0); rows.push({ k: i / 20, ...read() }); }
     C.kneel = .001; K.pose(C, 0); const k0 = read(); C.kneel = .999; K.pose(C, 0); const k1 = read(); C.kneel = undefined;
@@ -526,7 +526,12 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     // Session 2706: it rests on its knees between the halves, the pose held (k 0.4 to 0.6: rows 8 to 12)
     { const P = R.slice(8, 13), dw = Math.max(...P.map(r => r.wither)) - Math.min(...P.map(r => r.wither)), dh = Math.max(...P.map(r => r.hip)) - Math.min(...P.map(r => r.hip));
       check(`${sp} rests on its knees between the halves: from 0.4 to 0.6 the withers move ${(dw * 100).toFixed(1)} cm and the hips ${(dh * 100).toFixed(1)} (withers ${(P[2].wither * 100).toFixed(0)}, hips ${(P[2].hip * 100).toFixed(0)} cm)`,
-        dw < .01 && dh < .01 && P[2].wither < .5 * c.stand.wither && Math.abs(P[2].hip - c.stand.hip) < .02, P); } }
+        dw < .01 && dh < .01 && P[2].wither < .5 * c.stand.wither && Math.abs(P[2].hip - c.stand.hip) < .02, P); }
+    // Session 2711: the hind legs fold about planted hooves: from 0.6 to 0.75 (rows 12 to 15) the hind hoof moves under 2 cm while the hips come
+    // down, the hock going back behind the hip (at 0.75 more than 25 cm behind it), and only then is the hoof drawn in to the couch's place
+    { const P = R.slice(12, 16), dz = Math.max(...P.map(r => r.hoofZ)) - Math.min(...P.map(r => r.hoofZ)), back = R[15].hipZ - R[15].hockZ, drawn = R[20].hoofZ - R[15].hoofZ;
+      check(`${sp} folds its hind legs about planted hooves: from 0.6 to 0.75 the hoof moves ${(dz * 100).toFixed(1)} cm while the hips come down ${((R[12].hip - R[15].hip) * 100).toFixed(0)} cm, the hock ${(back * 100).toFixed(0)} cm behind the hip at 0.75, then the hoof drawn ${(drawn * 100).toFixed(0)} cm forward under the belly`,
+        dz < .02 && R[12].hip - R[15].hip > .2 && back > .25 && drawn > .3, R.map(r => ({ k: r.k, hoofZ: r.hoofZ, hockZ: r.hockZ, hip: r.hip }))); } }
   check(`couching plans: ${couchers.join(', ')}`, couchers.includes('camel') && couchers.includes('packcamel'), couchers);
   // the collar sits on the neck (Session 1261, the heavier horse): the hide's cross-section in the collar's plane (within 2 cm of it), as a share
   // of the collar's ellipse, stays inside the leather's inner edge (0.8 of it: the torus's tube is a fifth), and fills most of it

@@ -95,6 +95,16 @@ check(`a broken gate's chasm: falling just under its rim, untrained you go down 
 // pull lifts it, and lets go as it stands
 // S2700: empty-handed, as it was written. Until S2658 the boot's Great Club was sheathed on its own after 5 s; now only H sheathes,
 // and with the club drawn the left wrist stayed on the haft, 0.38-0.43 m off the hold, and the first-person view held no fists
+// S2711: with the boot's two-handed Great Club drawn, the pull plants both wrists too: the club rides in the right fist and the left
+// hand lets go of the haft while it is on the ledge (S2700 measured the left wrist 0.38-0.43 m off the hold)
+const D = await page.evaluate(() => { const w = EQ.weapon && EQ.weapon.name, two = !!(EQ.weapon && (WEAPON_TYPES.find(t => t.type === EQ.weapon.type) || {}).twoHand); thirdPerson = true; const at = [];
+  const r = _try(5, 1.5, { onPull: () => { const p = (FALL.clock - MANTLE.t0) / MANTLE_DUR, H = TP.rig && TP.rig.rig.hb; if (!H || p < .1 || p > .3) return;
+    TP.rig.root.updateMatrixWorld(true); const M = TP.rig.mantle; if (!M) return;
+    at.push(['wrist.L', 'wrist.R'].map((k, i) => +H.P.byName[k].getWorldPosition(new THREE.Vector3()).distanceTo(M.T[i]).toFixed(3)).concat(!!TP.rig.weapon)); } });
+  thirdPerson = false; return { w, two, sheathed: SHEATHED, r, at }; });
+console.log('drawn', JSON.stringify(D));
+const offD = D.at.length ? Math.max(...D.at.map(a => Math.max(a[0], a[1]))) : null;
+check(`with the ${D.w} drawn in both hands the pull plants both wrists on the ledge (within ${offD} m over ${D.at.length} frames), the club still in hand`, D.r.pulled && D.r.on && !D.sheathed && D.at.length > 3 && offD < .06 && D.at.every(a => a[2]), D);
 const held = await page.evaluate(() => { const w = EQ.weapon && EQ.weapon.name; if (EQ.weapon && !SHEATHED) sheathWeapon(); return { w, sheathed: SHEATHED }; });
 console.log('hand', JSON.stringify(held));
 const P = await page.evaluate(() => { thirdPerson = true; const at = []; let hb = false;
