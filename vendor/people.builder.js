@@ -1433,12 +1433,19 @@ const CAPE_NOT_WORN = /^(scalp|hair|brows|beardBase|beard|moust|bun|tie|braid\d|
 // per vertex of the pack: m where the vertex's heaviest bone is the lower forearm, the wrist, a metacarpal or a finger, else 0
 function armRoomV(m) { const B = PACK.ix.bones, arm = PACK.armBones || (PACK.armBones = new Uint8Array(B.map(b => /^(lowerarm02|wrist|finger|metacarpal)/.test(b.name) ? 1 : 0))), r = new Float32Array(PACK.N);
   for (let v = 0; v < PACK.N; v++) { let b = 0, w = 0; for (let q = 0; q < 4; q++) if (PACK.skinWeight[v * 4 + q] > w) { w = PACK.skinWeight[v * 4 + q]; b = PACK.skinIndex[v * 4 + q]; } if (arm[b]) r[v] = m; } return r; }
+// D.cloakBack true is worn over the shoulders (1.3 rad either side of the front open, so the cloth covers each shoulder's top and front);
+// a number is its own opening (1.69 hangs it from just behind the shoulders' tops, wholly behind the arms)
+const CLOAK_BACK_OPEN = 1.3;
 function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
   // a shoulder cape (Session 841; OG-059's short red capes on round brass pins, OG-048): cut to the elbows, wrapped round
   // to a narrow gap at the throat, and flared, so it falls over the arms as a circle of cloth rather than a back panel
-  const len = D.cloakLen ?? .8, cape = !!D.cape, L = cape ? .24 + .14 * len : .4 + 1.0 * len, K = 56, open = cape ? Math.max(.14, Math.min(1.2, D.capeOpen ?? .14)) : .38, flare = cape ? 1.55 : 1.12 + .4 * len;
+  // a long cloak worn back (Session 2699, Michael's 25 Nov note, a prototype for the DECISION): hung from the tops of both shoulders and down
+  // the back only, as a cape is worn back (S2364), so the arms and hands are in front of it and nothing of it crosses the breast. Pinned at
+  // each shoulder; nothing is thrown back for a spear or a staff, since the arms are already out of it
+  const back = !D.cape && !!D.cloakBack && !burnousOn(D);
+  const len = D.cloakLen ?? .8, cape = !!D.cape, L = cape ? .24 + .14 * len : .4 + 1.0 * len, K = 56, open = cape ? Math.max(.14, Math.min(1.2, D.capeOpen ?? .14)) : back ? (typeof D.cloakBack === 'number' ? Math.max(.6, Math.min(1.8, D.cloakBack)) : CLOAK_BACK_OPEN) : .38, flare = cape ? 1.55 : 1.12 + .4 * len;
   // over the breast a shoulder cape lies closer (Session 2404, S2393's owed note): a tunic's room (4 cm, for a cloak's sheet hung over a
   // body that walks under it) held the cape's front 6.6 cm off the skin from the collar to under the breast, where the tunic stands 2 cm
   // at most, so its two front panels read as a flat shelf. A cape rides the chest's own bone; from 1.9 rad round from the back's middle
@@ -1459,7 +1466,7 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
   // forearm and the stock held forward of it and stood out from the shoulder as a slab. The stock is held as the staff is, the upper arm
   // at the side and the forearm forward, so it opens the same way, from the side
   const capeStaff = cape && (!!D.staff || !!D.crossbow && !D.chair) && !D.spear;
-  const thrown = !!(D.spear || D.crossbow || D.staff || D.basket || D.lantern || D.book) && (!cape || capeStaff), low = thrown && !D.spear && !D.crossbow && !D.basket && !D.lantern && !D.book;
+  const thrown = !back && !!(D.spear || D.crossbow || D.staff || D.basket || D.lantern || D.book) && (!cape || capeStaff), low = thrown && !D.spear && !D.crossbow && !D.basket && !D.lantern && !D.book;
   const th0 = capeStaff ? -Math.PI / 2 - .15 : low ? -Math.PI / 2 - .33 : thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
   // the shoulder line, set out evenly along itself (Session 1944): the furthest point in each of K evenly turned directions is not evenly
   // placed. Many directions over the back find the same few points by the spine, and over the shoulders' round a few find points far
@@ -1599,7 +1606,7 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
     if (burnousOn(D)) { const B = buildBurnousPoint(cols, R, kb, neck, back[Math.floor(back.length / 2)].y, D); out.push(...B.meshes); pointStats = B.stats; } }
   // the brooch at the throat, where the two front columns meet. A shoulder cape worn back (Session 2364, D.capeOpen past half a radian: a
   // guild's head, so the breast's livery shows) has no front to meet: it is pinned at each shoulder, a brooch on either front corner
-  const wide = cape && !thrown && open > .5;
+  const wide = (cape || back) && !thrown && open > .5;
   const a = thrown ? tops[K - 1] : tops[0], b = wide ? tops[0] : tops[K - 1], at = a.start.clone().add(b.start).multiplyScalar(.5), nrm = a.n.clone().add(b.n).normalize();
   // a burnous is sewn shut at the chest and tied at the throat with a knot of its own cord in place of the brooch
   const knot = burnousOn(D), br = knot ? new THREE.Mesh(new THREE.SphereGeometry(.0105, 14, 10), clothMat(sRGB(...(D.burnousStripe || D.cloak)).multiplyScalar(.85), 'wool', { scale: 90 }))
@@ -5835,7 +5842,7 @@ function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'specs', 'hat', 'hatBand', 'shuttle', 'guildStar', 'reliquary', 'packSkull'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14, hatKind: 'straw', helmKind: null };
+const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'specs', 'hat', 'hatBand', 'shuttle', 'guildStar', 'reliquary', 'packSkull'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14, cloakBack: false, hatKind: 'straw', helmKind: null };
 function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -6128,5 +6135,5 @@ function castGenome(name, o = {}) {
   G.height = heightFor(G, C.metres); G.cast = name; return G;
 }
 
-return {loadPack,lozHemY,neckBandY,scarLine,seeded,browShape,astrolabeParts,reliquaryParts,scholarKitParts,swordParts,makePerson,makePersonIter,markGenome,toSaved,fromSaved,statureOf,heightFor,peopleGenome,rollGenome,castGenome,HAIR_STYLES,slvX,SWORDS,SPEAR_HEADS,CROSSBOWS,MANTLE_CUT,BODY_SLIDERS,GARMENTS,DRESS_FLAGS,PEOPLES,CAST,MH_PACK_SHA256,get PACK(){return PACK;}};
+return {loadPack,lozHemY,neckBandY,scarLine,seeded,browShape,astrolabeParts,reliquaryParts,scholarKitParts,swordParts,makePerson,makePersonIter,markGenome,toSaved,fromSaved,statureOf,heightFor,peopleGenome,rollGenome,castGenome,HAIR_STYLES,slvX,SWORDS,SPEAR_HEADS,CROSSBOWS,MANTLE_CUT,CLOAK_BACK_OPEN,BODY_SLIDERS,GARMENTS,DRESS_FLAGS,PEOPLES,CAST,MH_PACK_SHA256,get PACK(){return PACK;}};
 })();
