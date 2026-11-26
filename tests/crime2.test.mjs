@@ -22,8 +22,10 @@ await page.waitForTimeout(5000); await g.hide();
 // the wronged keeper refuses your custom for five days
 const refuse = await page.evaluate(async () => { const wait = ms => new Promise(r => setTimeout(r, ms)); await wait(500); if (currentHouse !== window._wronged) return { wrongHouse: currentHouse && currentHouse.name };
   forceTime(12); const before = shopOpen; openShop(); const refused = !shopOpen; const line = document.getElementById('msg') ? document.getElementById('msg').textContent : '';
-  worldState.refuse[window._wronged.id] = 0; openShop(); const later = shopOpen; closeShop(); return { refused, line, later }; });
-check('the wronged keeper refuses trade; five days on, the shop opens again', refuse.refused && /know what you did/.test(refuse.line) && refuse.later, refuse);
+  const voice = keeperVoice(window._wronged, 'refuse', window._wronged.keeper || 'The keeper');
+  worldState.refuse[window._wronged.id] = 0; openShop(); const later = shopOpen; closeShop(); return { refused, line, voice, later }; });
+// S2695 — since S2688 (the quest review's Finding 57) the refusal is in the keeper's people's voice (`keeperVoice`): the line is that one
+check('the wronged keeper refuses trade, in their people\'s voice; five days on, the shop opens again', refuse.refused && refuse.line === refuse.voice && /“/.test(refuse.voice) && refuse.later, refuse);
 
 // the fine at the lord, and favour coming back with quiet days
 const fine = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const site = S.site; const ln = S.npcs.find(n => n.def && n.def._lord); const lord = ln && ln.def; const topics = lord && lord._extraFn ? lord._extraFn() : [];
@@ -40,7 +42,9 @@ const found = await page.evaluate(() => { const S = WORLD.settle.get('dunmore');
   const at = rec && rec.at - worldState.gameTimeAbsMinutes; tickCrime(0, performance.now()); const fBefore = WORLD.favor(site);
   worldState.gameTimeAbsMinutes += at; tickCrime(0, performance.now()); const fAfter = WORLD.favor(site), debt = worldState.crime[site.id].debt, log = GAME_LOG.slice(-1)[0] && GAME_LOG.slice(-1)[0].text;
   SKILLS.locks = { lv: 100, p: 0 }; WORLD.doorLockFor(h2).onPick(); const marked = !!(worldState.crime[site.id].unfound || {})[h2.id];
-  goToInterior = gi; return { at, f0, fBefore, fAfter, debt, d0, bounty: WORLD.bountyAt(site), b0, log, left: Object.keys(worldState.crime[site.id].unfound || {}).length, marked }; });
-check('an unseen shop pick is found at the 8:00 opening, 9 hours on: favour −1 and a point of debt then, no fine; with No mark, never', found.at === 540 && found.fBefore === found.f0 && found.fAfter === found.f0 - 1 && found.debt === found.d0 + 1 && found.bounty === found.b0 && /opened on a picked lock/.test(found.log) && found.left === 0 && !found.marked, found);
+  const opens = shopHours(h.type)[0], due = ((opens - 23) * 60 + 1440) % 1440;
+  goToInterior = gi; return { at, due, opens, type: h.type, f0, fBefore, fAfter, debt, d0, bounty: WORLD.bountyAt(site), b0, log, left: Object.keys(worldState.crime[site.id].unfound || {}).length, marked }; });
+// S2695 — a shop opens at its trade's hour since S2643 (`SHOP_HRS`: a smithy 7:00, an apothecary or an armourer 9:00); 8:00 is the default's
+check(`an unseen shop pick is found at its opening (${found.type} at ${found.opens}:00), ${found.due / 60} hours on: favour −1 and a point of debt then, no fine; with No mark, never`, found.at === found.due && found.fBefore === found.f0 && found.fAfter === found.f0 - 1 && found.debt === found.d0 + 1 && found.bounty === found.b0 && /opened on a picked lock/.test(found.log) && found.left === 0 && !found.marked, found);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -39,7 +39,12 @@ const fight = (punch, fists, max, hand = 5, noThrow = false, noHeavy = false) =>
   _resolveZoneStrike = function () { const h = e.hp; const out = _r.apply(this, arguments); if (e.hp < h) log.hits++; return out; };
   const step = () => { if (e.dead || e.hp <= 0 || PHP <= 0) return true; stamina = maxStamina; if (noHeavy) e._heavyLast = true; yaw = Math.atan2(-(e.x - px), -(e.z - pz));
     if (staggered.find(s => s.e === e)) log.stagFrames++;
-    if (punch && atkCd <= 0 && !_pendingStrike && Math.hypot(e.x - px, e.z - pz) < 1.6) { attack(false); log.swings++; } };
+    // S2695 — since S2658 a chasing foe holds where its tell starts (`foeHoldDist`, 1.65 m for the Bandit), outside the fists' reach
+    // (0.9 m and the two hulls, about 1.5): the bot steps in at a walk (3.8 m a second) as a player does, where it used to wait for
+    // the Bandit to close to 1.0 m. It swings inside the fists' own reach (`reachTo`), where it swung inside 1.6 m.
+    const reach = reachTo(e, weaponAttack(EQ.weapon).reach) - .05, d = Math.hypot(e.x - px, e.z - pz);
+    if (punch && d > reach) { const k = Math.min(d - reach + .02, 3.8 / 60) / d; px += (e.x - px) * k; pz += (e.z - pz) * k; log.stepped = (log.stepped || 0) + 1; }
+    if (punch && atkCd <= 0 && !_pendingStrike && Math.hypot(e.x - px, e.z - pz) < reach) { attack(false); log.swings++; } };
   try { log.frames = _drive(step, max); } finally { sndTelegraph = _t; executeStrike = _x; _resolveZoneStrike = _r; if (_thr) PERK_LIVE.add('hand:50'); for (const o of held) o._duelHold = false; }
   Object.assign(log, { secs: +(log.frames / 60).toFixed(2), hpEnd: e.hp, dead: !!e.dead, php0: maxHP, phpEnd: PHP, tell: +telegraphDuration(e).toFixed(2), recover: e.atkSpd });
   if (!e.dead) { e.dead = true; if (e.mesh) WORLD.scene.remove(e.mesh); }
