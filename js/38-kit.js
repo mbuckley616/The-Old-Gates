@@ -6094,6 +6094,82 @@ function houseGarden(island, o = {}) {
   const W = 2 * BW + PATH + (island === 'mark' ? .4 : .1) + (island === 'aurenne' ? .45 : 0), D = 2 * BD + PATH + (island === 'mark' ? .4 : .1);
   return { group, tris: Math.round(tris), draws: group.children.length, island, beds, box: { w: +W.toFixed(2), d: +D.toFixed(2), h: EDGE }, plots, at };
 }
+// ── the yard's lean-to workshop (Session 2679; Michael's A on #1966: "a lean-to workshop in the yard"). What your house's room cannot
+// hold of its fittings (the bench, the clay oven, the kiln, the still) stands under a lean-to against the house's back wall, in its yard.
+// A mono-pitch roof from a wall plate on the house at 2.7 m to a front plate on posts at 2.05, the posts on stone pads, a knee brace each
+// way, rafters every 0.6 m with 0.3 m of eave; the floor flagged over the yard's own heights; one end screened against the weather, with
+// the firewood stacked inside it. By island: the Gatelands' slate in lapped courses and a boarded end; the Mark's turf on boards behind a
+// log turf-stop, the end in tarred boards; Aurenne's pantiles with their round ends at the eave, a whitewashed end wall and terracotta flags.
+// In the wall's frame (the fittings' frame): the house's back wall at z = 0, the lean-to toward +z, its width along x centred on 0, y = 0
+// the yard's ground at the origin; o.ground(x, z) is the yard's height there against it (the floor is laid level at the highest point;
+// o.follow lays each flag on the ground under it instead, as the game does, so you never stand sunk in it).
+//   PKIT.props.leanto(island, { W, D, ground, screen: -1 | 1 | 0, wood, follow, key, gaps: [x…] }) -> { group, tris, draws, island, foot: { x0, x1, z0, z1 },
+//   floor, inner: { x0, x1 }, posts: [x…], front: z of the posts, top } — gaps: where a middle post may stand (between the fittings).
+let LTM = null;
+function yardLeanTo(island, o = {}) {
+  island = island === 'mark' || island === 'aurenne' ? island : 'gatelands';
+  if (!LTM) LTM = {};
+  if (!LTM[island]) { const I = island; LTM[I] = { beam: mat('beam', { ns: 1.2, color: I === 'aurenne' ? 0xa88a6a : 0x9a7a60 }),
+    board: mat('wood', { ns: .9, color: I === 'mark' ? 0x4a3a2c : 0x7a6048, rough: .85 }),
+    roof: I === 'gatelands' ? mat('slate', { ns: 1.3, rough: .55, color: 0xd0d4dc }) : I === 'mark' ? mat('thatch', { ns: .7, color: 0x4c7a34, rough: 1 }) : mat('pantile', { ns: 1.4, rough: .75 }),
+    tile: new THREE.MeshStandardMaterial({ color: 0xb4643c, roughness: .7 }),
+    flag: mat('flag', { ns: 1.1, color: I === 'aurenne' ? 0xc8946a : I === 'mark' ? 0x8a8c88 : 0x9a968c, rough: .75 }),
+    end: I === 'aurenne' ? mat('plaster', { ns: .8, color: 0xf2eadc, rough: .95 }) : mat('wood', { ns: .9, color: I === 'mark' ? 0x3a2e24 : 0x6e5640, rough: .85 }) }; }
+  const M = LTM[island], key = String(o.key || 'leanto:' + island), rr = stream(key), B = new Map(), G0 = typeof o.ground === 'function' ? o.ground : () => 0;
+  const W = Math.max(1.6, o.W || 4), D = Math.max(1.6, o.D || 2.2), side = o.screen === 0 ? 0 : o.screen === 1 ? 1 : -1, V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const put = (k, g, s = 1) => { g = g.index ? g.toNonIndexed() : g; for (const a of Object.keys(g.attributes)) if (!['position', 'normal'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals(); worldUV(g, s); if (!B.has(k)) B.set(k, []); B.get(k).push(g); return g; };
+  const box = (k, w, h, d, x, y, z, rx = 0, ry = 0, s = 1) => { const g = new THREE.BoxGeometry(w, h, d); if (rx) g.rotateX(rx); if (ry) g.rotateY(ry); g.translate(x, y, z); put(k, g, s); };
+  const beam = (k, a, b, w, h, s = 1) => { const A = V3(...a), C = V3(...b), d = C.clone().sub(A), L = d.length(); if (L < 1e-4) return;
+    const g = new THREE.BoxGeometry(w, L, h); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), d.normalize())); g.translate((A.x + C.x) / 2, (A.y + C.y) / 2, (A.z + C.z) / 2); put(k, g, s); };
+  // the floor: level at the highest ground under it, each flag down to the lowest
+  let hi = -1e9, lo = 1e9; for (let x = -W / 2; x <= W / 2 + 1e-6; x += W / 6) for (let z = 0; z <= D + 1e-6; z += D / 4) { const y = G0(x, z); hi = Math.max(hi, y); lo = Math.min(lo, y); }
+  const FY = hi + .06, HB = FY + 2.7, HF = FY + 2.05, PZ = D - .1, PW = .14, k = (HB - HF) / (PZ - .06), roofY = z => HB + .2 - k * z, EAVE = D + .3;
+  { const FS = island === 'aurenne' ? .36 : .55, nx = Math.max(2, Math.round(W / FS)), nz = Math.max(2, Math.round(D / FS)), fw = W / nx, fd = D / nz;
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) { const x = -W / 2 + (i + .5) * fw, z = (j + .5) * fd;
+      const w = fw - .02 - rr() * .02, d = fd - .02 - rr() * .02, top = o.follow ? G0(x, z) + .05 : FY, h = o.follow ? .18 : FY - lo + .08; box('flag', w, h, d, x, top - h / 2 + (rr() - .5) * .006, z, 0, (rr() - .5) * .03, .8); } }
+  // the posts: at both ends, and between where the span would pass 2.4 m, at the gap nearest each even division
+  const posts = [-W / 2 + PW / 2, W / 2 - PW / 2], n = Math.ceil((W - PW) / 2.4);
+  for (let i = 1; i < n; i++) { const want = -W / 2 + W * i / n, gs = (o.gaps || []).filter(x => Math.abs(x) < W / 2 - .5); const x = gs.length ? gs.reduce((a, b) => Math.abs(b - want) < Math.abs(a - want) ? b : a) : want; if (!posts.some(p => Math.abs(p - x) < .4)) posts.push(x); }
+  posts.sort((a, b) => a - b);
+  for (const x of posts) { const g0 = G0(x, PZ); box('flag', .32, .22 + (FY - g0), .32, x, g0 + (.22 + FY - g0) / 2 - .1, PZ, 0, rr() * .2, .8); box('beam', PW, HF - FY - .12 + .02, PW, x, (FY + .12 + HF) / 2 - .01, PZ);
+    for (const s of [-1, 1]) { if ((x <= posts[0] + 1e-6 && s < 0) || (x >= posts[posts.length - 1] - 1e-6 && s > 0)) continue; beam('beam', [x + s * PW / 2, HF - .62, PZ], [x + s * .55, HF - .1, PZ], .09, .09); } }
+  // the front plate on the posts, the wall plate on the house, the rafters over them and past the eave
+  box('beam', W + .1, .18, .16, 0, HF - .09 + .06, PZ); box('beam', W + .1, .16, .12, 0, HB - .08, .06);
+  const nr = Math.max(3, Math.round(W / .6) + 1); for (let i = 0; i < nr; i++) { const x = -W / 2 + .03 + (W - .06) * i / (nr - 1); beam('beam', [x, roofY(.0) - .08, .02], [x, roofY(EAVE) - .08, EAVE], .06, .12); }
+  // the roof by island, on the rafters from the house's wall to the eave
+  const SL = Math.atan(k), RW = W + .3, len = EAVE / Math.cos(SL);
+  if (island === 'gatelands') { const C = .26, nc = Math.ceil(len / C); for (let c = 0; c < nc; c++) { const t0 = c * C, t1 = Math.min(len, t0 + C + .1), tm = (t0 + t1) / 2, z = tm * Math.cos(SL), y = roofY(z) - .02 + .012 * (c % 2);
+      box('roof', RW, .025, t1 - t0, (rr() - .5) * .02, y, z, SL, 0, .45); }
+    box('beam', RW, .05, .1, 0, roofY(0) + .01, .05); /* the flashing where the slates meet the wall */
+  } else if (island === 'mark') {
+    box('board', RW, .04, len, 0, roofY(EAVE / 2) - .03, EAVE / 2, SL, 0, .8);
+    const g = new THREE.PlaneGeometry(RW - .06, len - .12, 14, 8); g.rotateX(-Math.PI / 2); const P = g.attributes.position;
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), t = P.getZ(i) + (len - .12) / 2, edge = Math.min(1, (RW / 2 - Math.abs(x)) / .25, t / .2, (len - .12 - t) / .25);
+      const z = t * Math.cos(SL) + .03, h = .05 + .09 * Math.max(0, edge) * (.6 + .4 * rr()); P.setXYZ(i, x, roofY(z) + h - t * 0, z); }
+    g.computeVertexNormals(); put('roof', g, .7);
+    { const g = new THREE.CylinderGeometry(.08, .08, RW, 8); g.rotateZ(Math.PI / 2); g.translate(0, roofY(EAVE - .06) + .07, EAVE - .06); put('beam', g); }
+  } else {
+    box('roof', RW, .03, len, 0, roofY(EAVE / 2) - .01, EAVE / 2, SL, 0, 1.25);
+    const nt = Math.round(RW / .2); for (let i = 0; i < nt; i += 2) { const g = new THREE.CylinderGeometry(.075, .085, .34, 7, 1, false, 0, Math.PI); g.rotateZ(Math.PI / 2); g.rotateY(Math.PI / 2); g.rotateX(SL);
+      const x = -RW / 2 + (i + .5) * (RW / nt), z = EAVE - .14; g.translate(x, roofY(z) + .02, z); put('tile', g); }
+    box('tile', RW, .07, .14, 0, roofY(0) + .03, .07); /* the mortar fillet at the wall */
+  }
+  // the screened end: boards (the Gatelands, the Mark tarred) or a whitewashed wall (Aurenne) to the roof's line
+  if (side) { const x = side * (W / 2 - .03), sw = island === 'aurenne' ? .5 : .19, ns = Math.ceil(PZ / sw);
+    for (let i = 0; i < ns; i++) { const z0 = i * sw, z1 = Math.min(PZ - PW / 2, z0 + sw - (island === 'aurenne' ? 0 : .01)); if (z1 <= z0 + .02) continue; const zm = (z0 + z1) / 2, top = roofY(z1) - .14, bot = Math.min(FY, G0(x, zm)) - .05;
+      box('end', island === 'aurenne' ? .16 : .03, top - bot, z1 - z0, x + (island === 'aurenne' ? side * -.05 : 0), (top + bot) / 2, zm, 0, 0, .9); }
+    if (island !== 'aurenne') for (const y of [FY + .4, HF - .25]) box('beam', .05, .08, PZ, x - side * .04, y, PZ / 2); }
+  // the firewood, split logs stacked along the screened end (or the left end), their cut faces to the front
+  const inner = { x0: -W / 2 + PW, x1: W / 2 - PW };
+  if (o.wood !== false) { const ws = side || -1, x = ws * (W / 2 - .28), Lg = .42;
+    for (let r = 0; r < 5; r++) for (let c = 0; c < 6; c++) { const R = .055 + rr() * .02; const g = new THREE.CylinderGeometry(R, R, Lg + (rr() - .5) * .06, r % 2 ? 3 : 6); g.rotateX(Math.PI / 2); g.rotateZ(rr() * 3);
+      g.rotateY(Math.PI / 2); g.translate(x + (rr() - .5) * .03, (o.follow ? G0(x, .12 + c * .135) + .05 : FY) + R + r * .12, .12 + c * .135 + (r % 2) * .06); put('beam', g, 1.4); }
+    if (ws < 0) inner.x0 = x + .25; else inner.x1 = x - .25; }
+  const group = new THREE.Group(); group.name = 'lean-to'; let tris = 0;
+  for (const [km, gs] of B) { const g = mergeGeometries(gs); gs.forEach(x => x.dispose()); const m = new THREE.Mesh(g, M[km]); m.name = 'leanto:' + km; m.castShadow = true; m.receiveShadow = true; group.add(m); tris += g.attributes.position.count / 3; }
+  return { group, tris: Math.round(tris), draws: group.children.length, island, foot: { x0: -W / 2 - .15, x1: W / 2 + .15, z0: 0, z1: EAVE }, floor: +FY.toFixed(3), inner, posts, front: PZ, top: +(roofY(0) + .05).toFixed(3) };
+}
 // ── Riverfair's butts (Session 2331; Michael's A on #1672: the butts stand all year as the town's practice ground, a lane outside every
 // Gatelands town, shot only on Riverfair for the purse). Copied from docs/prototypes/levelup/contests.js (Session 2317), its sizes the
 // game's (js/87-world-quests.js: BUTT_ENDS, BUTT_RINGS, BUTT_R, BUTT_Y, BUTT_MARK_R): a straw boss 1.36 m across and 0.3 deep in twelve
@@ -13413,7 +13489,7 @@ function aurenneOrrery(hAt, o = {}) {
     return { group, tris, draws, byMat, size: SZ, cond, R0, CY, STEP, rings: RINGS.map(q => ({ ...q })), plate: +PLATE.toFixed(2), face: +FZ.toFixed(2), holeR: +holeR.toFixed(2), HW: +HW.toFixed(2), door, floors, lost, hung, counts,
       hill: { h: +H.HH.toFixed(1), a: +H.HA.toFixed(1), c: +H.HC.toFixed(1), z: +H.HZ.toFixed(1) }, camp: o.camp !== false ? camp : null, stair, sol, across: +(2 * RINGS[0].ro).toFixed(1) };
   }
-  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { gatemouth: lesserGateMouth, gatemouthShape: gateMouthShape, gatemouthMats: gateMouthMats, abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, minehead: markMineHead, mill: gatelandsMill, lighthouse: gatelandsLighthouse, lighthouseLit, mineheadShape: mineHeadShape, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, isles: gateIslesRuin, aqueducts: aqueductsRuin, aqueductsPlan, frostborn: frostbornRuin, frostbornLand, scarred: scarredGateRuin, stormwatch: stormwatchRuin, stormwatchLand, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, still: stillFitting, garden: houseGarden, crater: starCrater, skypine: skywoodPine, sigilstone: scriptStone, oysters: oysterBed }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
+  return { stream, hashKey, mergeByMaterial, dayGlow: DAYGLOW, places: { gatemouth: lesserGateMouth, gatemouthShape: gateMouthShape, gatemouthMats: gateMouthMats, abbey: gatelandsAbbey, towerhouse: gatelandsTowerHouse, towercellar: gatelandsTowerCellar, towerpit: gatelandsTowerPit, cairn: gatelandsCairn, cave: gatelandsCave, cavemouth: gatelandsCaveMouth, cove: smugglersCove, coveEscape, grotto: aurenneGrotto, mine: markMine, minehead: markMineHead, mill: gatelandsMill, lighthouse: gatelandsLighthouse, lighthouseLit, mineheadShape: mineHeadShape, aqueduct: aurenneAqueduct, carriage: gatelandsCarriage, hunters: markHuntersCamp, charcoal: gatelandsCharcoalCamp, cellar: gatelandsCellar, erratic: gatelandsErratic, shepherd: gatelandsShepherdHut, peat: gatelandsPeatCamp, cabin: markHuntingCabin, logging: markLoggingCamp, unfinished: markUnfinishedCamp, merchants: gatelandsMerchantCamp, expedition: aurenneExpedition, falls: gatelandsFalls, watchtower: aurenneWatchtower, icemouth: markIceMouth, hollow: markHollowBelow, inlet: aurenneCove, whale: seaWhaleFall, arches: seaDrownedArches, village: seaSunkenVillage, quarter: seaSunkenQuarter }, wonders: { skyfall: markSkyfall, orrery: aurenneOrrery, lough: gatelandsLough, ring: weaverRingRuin, northlight: northlightAltarRuin, spires: drownedSpiresRuin, isles: gateIslesRuin, aqueducts: aqueductsRuin, aqueductsPlan, frostborn: frostbornRuin, frostbornLand, scarred: scarredGateRuin, stormwatch: stormwatchRuin, stormwatchLand, gatePiece, weaverDoor, carving: stoneCarving }, halls: { fixtures: hallFixtures }, props: { bench: joinerBench, butt: contestButt, butts: contestButts, ring: contestRing, bursar: bursarTable, saffron: caravanScale, stocks: parishStocks, trunk: felledTrunk, stump: treeStump, claycut: clayCut, coach: roadCoach, camp: campGear, fire: campFire, rack: workRack, clay: clayFitting, still: stillFitting, garden: houseGarden, leanto: yardLeanTo, crater: starCrater, skypine: skywoodPine, sigilstone: scriptStone, oysters: oysterBed }, ships: { SWATCHES: SHIP_SWATCHES, swatch: shipSwatch, black: shipBlack, BANNERS: SHIP_BANNERS, banner: shipBanner, ballista: shipBallista, fitBallista: shipFitBallista, sideGroups: shipSideGroups, sloop: glSloop, sloopBase, cutter: mkCutter, cutterBase, caravel: mkCaravel, caravelBase, cog: mkCog, cogBase, galleon: mkGalleon, galleonBase }, texturesMade: () => Object.keys(TEX).length, signsMade: () => Object.keys(SIGNS).filter(k => !PANEL_KEY.test(k)).length, panelsMade: () => Object.keys(SIGNS).filter(k => PANEL_KEY.test(k)).length,
     mk: { hall: markHall, townhouse: markTownHouse, lot: markLot, alehall: markAlehall, smithy: markSmithy, apothecary: markApothecary, trader: markTrader, TRADER_TRADES, TOWN_TRADES, longhouse: markLonghouse, townroom: markTownRoom, cabin: markCabinRoom, mats: markMats, yard: markYard, ring: markRing },
     au: { house: aurenneHouse, lot: aurenneLot, smithy: aurenneSmithy, smithyStack: aurSmithyStack, apothecary: aurenneApothecary, courtyard: aurenneCourtyard, church: aurenneChurch, churchBox: aurenneChurchBox, civic: aurenneCivic, academy: aurenneAcademy, academyBox: aurenneAcademyBox, library: aurenneLibrary, churchHall: aurenneChurchHall, courtyardHouse: aurenneCourtyardHouse, home: aurenneHome, homeOne: aurenneHomeOne, tavern: aurenneTavern, mats: aurMats, roomMats: homeMats, AUR, tunnel: aurenneTunnel },
     gl: { PLANS, FIN, PS, PAINTS, guildHall: guildHallRoom, forge: forgeRoom, apothecary: apothecaryRoom, TOWN: GL_TOWN, building, church, keep, market: marketHouse, marketRoom, farmstead, coachInn, coachInnPlan, coachRoom, townhouse: townhouseRoom, farmhouse: farmhouseRoom, byre: byreRoom, barn: barnRoom, row: shrineRow, ROW_GODS, inn: gatelandsInn, cottage: gatelandsCottage, churchLen: n => +((n === 2 ? 2 : 3) * 4.8 + 1.6 + 5.6 - .5 + 7.2 - .9 - .02).toFixed(2), lot: gatelandsLot, mats: glMats, BAYS, bayPlan, bayWidth, baysFor } };

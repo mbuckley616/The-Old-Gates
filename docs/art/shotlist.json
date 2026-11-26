@@ -1,0 +1,29 @@
+{
+  "about": "The look's shot list (Session 2675): eight fixed views of seed 1, each paired with the P10b panel (OG-147) it answers. scripts/look_shots.mjs renders them at High and lays each beside its panel. A view is an anchor (a site id, a peak's name, a gate's name, or the coast found walking from a site), the camera's offset from it in metres (dx east, dz south, up over the ground under the camera) and the point looked at (offset from the anchor, up over the ground there). panel is the crop of docs/art/thumbs/OG-147.jpg (480 x 320) as [x, y, w, h]. Change a view only with a note in the devlog: the sheets are compared across sessions.",
+  "views": [
+    { "id": "gatelands-valley", "title": "A Gatelands valley, 10h", "hour": 10, "weather": "clear",
+      "anchor": { "site": "hearthwick" }, "cam": { "dx": -120, "dz": -420, "up": 28 }, "look": { "dx": 300, "dz": 60, "up": 0 },
+      "panel": { "name": "Hope & Life · Green Valley", "box": [3, 34, 64, 46] } },
+    { "id": "gatelands-street", "title": "A Gatelands town's street, 10h", "hour": 10, "weather": "clear",
+      "anchor": { "site": "dunmore" }, "cam": { "dx": 0, "dz": 30, "up": 1.65 }, "look": { "dx": 0, "dz": -40, "up": 3 },
+      "panel": { "name": "Architecture: Gatelander, stone & thatch", "box": [3, 108, 42, 38] } },
+    { "id": "mark-upland", "title": "A Mark upland, 13h", "hour": 13, "weather": "clear",
+      "anchor": { "peak": "Heifialos Fell" }, "cam": { "dx": 0, "dz": 950, "up": 6 }, "look": { "dx": 0, "dz": 0, "up": 40 },
+      "panel": { "name": "Solitude & Endurance · Snowy Peaks", "box": [69, 34, 66, 46] } },
+    { "id": "aurenne-harbour", "title": "An Aurenne harbour, 17h30", "hour": 17.5, "weather": "clear",
+      "anchor": { "site": "c7_1_s1" }, "cam": { "dx": -140, "dz": 60, "up": 8 }, "look": { "dx": 40, "dz": -10, "up": 4 },
+      "panel": { "name": "Beauty & Prosperity · Golden Hour", "box": [137, 34, 66, 46] } },
+    { "id": "gatelands-coast", "title": "The Gatelands' west coast, 13h", "hour": 13, "weather": "clear",
+      "anchor": { "coast": "hearthwick", "dir": "w" }, "cam": { "dx": 40, "dz": -160, "up": 12 }, "look": { "dx": 0, "dz": 40, "up": 0 },
+      "panel": { "name": "Coastal Cliffs", "box": [88, 227, 40, 28] } },
+    { "id": "town-night", "title": "A Gatelands town at night, 23h", "hour": 23, "weather": "clear",
+      "anchor": { "site": "dunmore" }, "cam": { "dx": 0, "dz": 30, "up": 1.65 }, "look": { "dx": 0, "dz": -40, "up": 3 },
+      "panel": { "name": "Night", "box": [382, 227, 40, 28] } },
+    { "id": "storm", "title": "A storm over open land, 15h", "hour": 15, "weather": "storm",
+      "anchor": { "site": "hearthwick" }, "cam": { "dx": -120, "dz": -420, "up": 28 }, "look": { "dx": 300, "dz": 60, "up": 0 },
+      "panel": { "name": "Storm", "box": [340, 227, 40, 28] } },
+    { "id": "gate-dusk", "title": "A lesser gate's court, dusk (18h30)", "hour": 18.5, "weather": "clear",
+      "anchor": { "gate": "nearest" }, "cam": { "dx": 0, "dz": 0, "up": 1.65, "front": 34 }, "look": { "dx": 0, "dz": 0, "up": 6 },
+      "panel": { "name": "Mystery & the Unknown · Gate Light", "box": [205, 34, 62, 46] } }
+  ]
+}

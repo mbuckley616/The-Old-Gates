@@ -1385,6 +1385,7 @@ function genSettlement(site){
     if(kitG){S.kitTris=PKIT.mergeByMaterial(kitG);S.kitCalls=kitG.children.length; // S1072 — the kit's houses, one mesh per material
       const lo=new THREE.Mesh(mergeGeos(kitLo),VC_MAT);lo.name='kit houses far';lo.userData.noBake=true;lo.castShadow=true;lo.receiveShadow=true;lo.visible=false;group.add(lo);kitLo.forEach(([g])=>g.dispose()); /* S1073 — and their far copy */
       let r=0;for(const l of use)if(l.kit)r=Math.max(r,Math.hypot(l.x-cx,l.z-cz)+(l.kit.r||Math.max(l.w,l.d)/2)); /* S1143 — the keep's reach is its bawn's */for(const Y of S.yards||[])r=Math.max(r,Math.hypot(Y.x-cx,Y.z-cz)+Y.r+2);if(S.market)r=Math.max(r,Math.hypot(S.market.x-cx,S.market.z-cz)+S.market.r); /* S1904 — and the market house */if(S.academy)r=Math.max(r,Math.hypot(S.academy.cx-cx,S.academy.cz-cz)+S.academy.r); /* S1959 — and the academy */ /* S1658 — and a yard outside the walls */S.kitLod={hi:kitG,lo,x:cx,z:cz,r,tris:lo.geometry.attributes.position.count/3};}
+    try{S.leanTos=typeof townLeanTos==='function'?townLeanTos(site,houses,sol,group,S.paths):[];}catch(e){console.warn('lean-tos',e);S.leanTos=[];} /* S2680 — your house's lean-to workshop (84), before the racks and the garden */
     try{S.racks=townRacks(site,houses,sol,group,S.paths);}catch(e){console.warn('racks',e);S.racks=[];} /* S2136 — the smith's and the harbour's racks in their yards */
     try{S.gardens=townGardens(site,houses,sol,group,S.paths);}catch(e){console.warn('gardens',e);S.gardens=[];} /* S2165 — your house's garden in its yard, after the racks */
     /* S2333 (Michael's A on #1672) — the Strait Fair's ring (PKIT.props.ring, 38-kit.js: FAIR_R's 5 m rope on ten stakes, the reeve's post 0.7 m
@@ -1665,7 +1666,7 @@ function genSettlement(site){
     if(!worldState.wdisc)worldState.wdisc={};
     if(worldState.wdisc[id])return false;
     worldState.wdisc[id]=true;
-    try{const t=siteAnywhere(id);const big=t&&(t.kind==='city'||t.kind==='town'||t.kind==='port');const gain=big?50:String(id).startsWith('door_')?30:25;xp+=gain;if(typeof chkLvl==='function')chkLvl();if(typeof updateHUD==='function')updateHUD();if(typeof showMsgLong==='function')showMsgLong(`${name} discovered  ·  +${gain} XP`,'#e8d8a0');else showMsg(`${name} discovered · +${gain} XP`,'#e8d8a0');(worldState.stats||(worldState.stats={})).found=((worldState.stats||{}).found||0)+1;}catch(e){if(typeof showMsg==='function')showMsg(`Discovered: ${name}`,'#e8d8a0');}
+    try{const t=siteAnywhere(id);const big=t&&(t.kind==='city'||t.kind==='town'||t.kind==='port');const gain=big?50:String(id).startsWith('door_')?30:25;xp+=gain;if(typeof chkLvl==='function')chkLvl();if(typeof updateHUD==='function')updateHUD();if(typeof showMsgLong==='function')showMsgLong(`${name} discovered`,'#e8d8a0');else showMsg(`${name} discovered`,'#e8d8a0');(worldState.stats||(worldState.stats={})).found=((worldState.stats||{}).found||0)+1;}catch(e){if(typeof showMsg==='function')showMsg(`Discovered: ${name}`,'#e8d8a0');}
     if(typeof addLog==='function')addLog('🗺️',`Discovered ${name}.`);
     if(typeof sndDiscover==='function')sndDiscover();
     return true;

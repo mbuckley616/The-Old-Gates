@@ -1005,7 +1005,7 @@ const VM_LIT={sc:null,amb:new THREE.Color(),sky:new THREE.Color(),gnd:new THREE.
   up:new THREE.Vector3(0,1,0),sd:new THREE.Vector3(1,2,1).normalize(),pd:new THREE.Vector3(0,1,0)};
 const _vlQ=new THREE.Quaternion(),_vlP=new THREE.Vector3(),_vlT=new THREE.Vector3(),_vlE=new THREE.Vector3(),_vlS=new THREE.Vector3(),_vlD=new THREE.Vector3();
 const _vlA=new THREE.Color(),_vlK=new THREE.Color(),_vlG=new THREE.Color(),_vlU=new THREE.Color(),_vlC=new THREE.Color(),_vlL=new THREE.Vector3();
-// S2659 — the hands take the tone curve of the place they are drawn over. The world's frame is tone-mapped (landPost: ACES at
+// S2684 — the hands take the tone curve of the place they are drawn over. The world's frame is tone-mapped (landPost: ACES at
 // LAND.exposure, P10b's grade in the same chunk) and a room's too (landRoomPost: Neutral), but the view model was drawn after them
 // linear, under the same lights, so skin clipped to white in every daylit frame (the critic's street at 10h, s1927). vmLight names
 // the scene; its own before/after hooks are run around the view model's draw, so the hands get exactly the frame's curve and grade.

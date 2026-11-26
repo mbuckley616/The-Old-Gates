@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notification cards</title>
+<!-- Notification cards in the new look (concept artist, 25 Nov 2026; OG-136): the game's five moments over hud.js's scene, as
+     ledger slips (A), a card (B) or OG-136's card with a picture (C). Serve docs/prototypes/ (not this folder alone). -->
+<link href="../ui/fonts/fonts.css" rel="stylesheet">
+<link href="../hud/kit.css" rel="stylesheet">
+<link href="./hud.css" rel="stylesheet">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
+</script>
+</head>
+<body>
+<div id="note">Notification cards in the new look (OG-136). ?level=a|b|c &amp;kind=level|quest|place|skill|word &amp;scene=lane|hall &amp;play=1. Drag to look.</div>
+<script type="module" src="./notify.js"></script>
+</body>
+</html>

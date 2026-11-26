@@ -79,5 +79,10 @@ const c = await page.evaluate(() => {
   return { sug, chips, bowNow, handMaj, maj: _ccState.majors.slice(), min: _ccState.minors.slice(), label: document.getElementById('cc-skill-count').textContent }; });
 check(`the creator suggests the Scout's five and five (${c.sug.maj.join(', ')}), 23 skills to choose from`, c.sug.maj.join() === 'bow,athletics,stealth,acrobatics,woodcutting' && c.chips === 23, c);
 check(`a click frees a minor, moves a major into it, and Hand-to-hand takes the major's place: majors ${c.maj.join(', ')}; minors ${c.min.join(', ')}`, c.bowNow && c.handMaj && c.maj.length === 5 && c.min.length === 5 && !c.min.includes('cooking'), c);
+// S2681 — xp levels nothing since S952, so no toast promises it: a quest that pays xp and no gold ends on its title alone
+const qx = await page.evaluate(() => { const id = Object.keys(QS).find(k => { const q = getQuest(k); return q && q.rewards && q.rewards.xp > 0 && !(q.rewards.gold > 0); });
+  if (!id) return { none: true }; const seen = [], _l = showMsgLong; showMsgLong = function (tx) { seen.push(String(tx)); return _l.apply(this, arguments); };
+  try { QS[id].state = 'reward'; completeQuest(id); } finally { showMsgLong = _l; } return { id, xp: getQuest(id).rewards.xp, seen }; });
+check(`a quest paying ${qx.xp} xp and no gold ends on *complete!* with no *XP* in the toast`, !qx.none && qx.seen.some(t => /complete!$/.test(t)) && !qx.seen.some(t => /XP/.test(t)), qx);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

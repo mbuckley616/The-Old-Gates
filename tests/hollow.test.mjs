@@ -45,6 +45,10 @@ const down = await page.waitForFunction(seed => activeZoneId === 'dungeon' && ty
 const t = await page.evaluate(() => ({ th: SS_THRESHOLD && { x: SS_THRESHOLD.x, z: SS_THRESHOLD.z }, out: hollowSite().out }));
 check('through the slit door into its gate, the threshold saved before the mouth', down && t.th && Math.hypot(t.th.x - t.out.x, t.th.z - t.out.z) < .5, t);
 await page.waitForTimeout(1500);
+// S2666 — inside, the way out is the slit door seen from its gate: the ring kind, its script dead as the Hollow's plate is
+await page.waitForFunction(() => typeof DUN_EXIT !== 'undefined' && DUN_EXIT, null, { timeout: 30000 }).catch(() => {});
+const ex = await page.evaluate(() => { const X = DUN_EXIT; return X ? { kind: X.kind, cond: X.cond, w: X.w, h: X.h, off: +Math.hypot(X.x - dAt(dEntranceX), X.z - dAt(dEntranceZ)).toFixed(2), half: DCELL / 2 } : { none: true }; });
+check(`inside, the way out is the slit door: ${ex.kind}, ${ex.cond}, ${ex.w} by ${ex.h} m, on the entrance cell's wall (${ex.off} of ${ex.half})`, !ex.none && ex.kind === 'ring' && ex.cond === 'catastrophic' && Math.abs(ex.off - ex.half) < .01, ex);
 await page.evaluate(() => goToOW());
 const up = await page.waitForFunction(() => activeZoneId === 'world' && lid === 'overworld', null, { timeout: 60000 }).then(() => true, () => false); await page.waitForTimeout(1500);
 const o = await page.evaluate(() => { const C = hollowSite(); return { d: +Math.hypot(px - C.out.x, pz - C.out.z).toFixed(2), solid: solidAt(px, pz) }; });
