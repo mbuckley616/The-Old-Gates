@@ -54,6 +54,16 @@ Pictures (before | after, 10h, High): [Gatelands, Dunmore](https://raw.githubuse
 
 Any answer is a one-line change to `RELIEF.NAT`. Pictures: [the Gates' basin](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatebasin.jpg) · [a Gatelands lookout](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatevalley.jpg) · [the range north of the Gates](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatenorth.jpg) · [the Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-markvale.jpg)
 
+### What a place sounds like — the palette, sound that tells you something, or recordings? (from the designer, 2026-11-26, #2071)
+**The question.** Today the world outside a fight is the exploring orchestra, the rain, the falls and your feet: an island has no air of its own, and a gate gives no sound until you reach its sigils. How far should OG-144's palette go?
+
+**Options.**
+- **A.** The palette: an Ambience bus and slider; wind, water and a town's murmur by island and hour, a forge, a tavern door and bells by their hours, rain and fog damping it, rooms' echo, footsteps on eight grounds, herbs by kind. Three systems sessions.
+- **B (recommended).** A, plus sound that tells you something: a gate heard by its condition (steady 80 m, failing 120 m, catastrophic 160 m), each school's own sound inside, a far undertone once three great gates are torn, the ground scaling how far a foe hears you (grass ×0.8 to gravel ×1.3), and the music resting 45–90 s between pieces outdoors. Five systems sessions.
+- **C.** B, with birds, footsteps, crowds and the forge from a CC0 recording pack (6–8 MB, the game's first sound files). B plus one deep-work session.
+
+Recommendation: B. The gate heard over the hill and the gravel under a sneak are the brief's first two feelings in sound, it is all made in code, and nothing is added to the download. Page: [what a place sounds like](https://github.com/mbuckley616/The-Old-Gates/blob/auto/design-1126/docs/design/what-a-place-sounds-like.md)
+
 ## Answered
 ### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
 **The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.
