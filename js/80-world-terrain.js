@@ -301,9 +301,9 @@
     const sl=snowLineAt(x,z),cold=sl<30;
     if(cold&&h>3.2){
       let mw=0;for(const e of ws)if(e.r.biome==='moor')mw+=e.w;
-      if(mw>0){const hn2=_smoothNoise(x,z,SEED+18,17);_tmpC2.setHex(hn2>.52?0x2e272c:0x6a5e46);out.lerp(_tmpC2,mw*(.5+.35*sstep(.3,.7,Math.abs(hn2-.52)*4)));}
+      if(mw>0){const hn2=_smoothNoise(x,z,SEED+18,17);_tmpC2.setHex(hn2>.52?0x2e272c:0x6a5e46);out.lerp(_tmpC2,mw*(.6+.3*sstep(.3,.7,Math.abs(hn2-.52)*4)));}
       const below=sstep(sl-45,sl-2,h);
-      if(below>0){const t=1-.55*below,n=_smoothNoise(x,z,SEED+19,14)*.65+_smoothNoise(x,z,SEED+20,5)*.35;
+      if(below>0){const t=1-.47*below,n=_smoothNoise(x,z,SEED+19,14)*.65+_smoothNoise(x,z,SEED+20,5)*.35;
         const lie=sstep(t,t+.08,n)*sstep(.86,.97,ny);
         if(lie>0)out.lerp(SNOW_C,lie*.9);}
     }
