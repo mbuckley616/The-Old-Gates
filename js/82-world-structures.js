@@ -3744,8 +3744,9 @@
       /* the yard: as deep as is clear behind the house (2.2 to 5 m), as wide as the house and a little */
       const U=hw+.45;let Y=0;tally=yardWhy;for(let y=.5;y<=5.01;y+=.5){let good=true;for(let u=-U;u<=U+.01&&good;u+=.6){const [x,z]=W(u,-hd-y);if(!ok(x,z,.25,true,B))good=false;}if(!good)break;Y=y;}tally=why; /* row by row back from the wall until one is not clear */
       const kind=isle==='mark'?(rich||town&&r()<.4?'turfwall':'skigard'):isle==='aurenne'?(poor&&r()<.6?'cane':'plaster'):(site.kind==='village'||poor?(r()<.6?'hedge':'stone'):(r()<.25?'hedge':'stone'));
-      if(Y>=2.2&&!mine){stats.yards++; /* your own yard is left open for what you fit in it */const yv=-hd-Y,okB=(x,z)=>ok(x,z,.3,false,B),gateSide=r()<.5?-1:1,gv=-hd-Y*.55;
-        const segs=[[-U,yv,U,yv],[gateSide*U,-hd+.3,gateSide*U,gv+1],[gateSide*U,gv-1,gateSide*U,yv],[-gateSide*U,-hd+.3,-gateSide*U,yv]];{const [gx,gz]=W(gateSide*U,gv);discs.push([gx,gz,1.7]);} /* the gate's ground kept clear, in and out */
+      const gs0=r()<.5?-1:1,gvv=-hd-Y*.55,outOk=(u,v)=>{const [x,z]=W(u,v);return ok(x,z,.45,true,B)&&!inBld(x,z,.3);},gChoice=Y>=2.2?(outOk(gs0*(hw+1.6),gvv)?gs0:outOk(-gs0*(hw+1.6),gvv)?-gs0:outOk(0,-hd-Y-1.2)?0:null):null; /* the gate where there is open ground outside it: a court whose gate met a neighbour's wall was shut */
+      if(Y>=2.2&&!mine&&gChoice!==null){stats.yards++; /* your own yard is left open for what you fit in it */const yv=-hd-Y,okB=(x,z)=>ok(x,z,.3,false,B),gateSide=gChoice||1,gv=gvv;
+        const segs=gChoice===0?[[-U,yv,-1,yv],[1,yv,U,yv],[U,-hd+.3,U,yv],[-U,-hd+.3,-U,yv]]:[[-U,yv,U,yv],[gateSide*U,-hd+.3,gateSide*U,gv+1],[gateSide*U,gv-1,gateSide*U,yv],[-gateSide*U,-hd+.3,-gateSide*U,yv]];{const [gx,gz]=gChoice===0?W(0,yv):W(gateSide*U,gv);discs.push([gx,gz,1.7]);} /* the gate's ground kept clear, in and out */
         for(const [u0,v0,u1,v1] of segs){const [a,b]=W(u0,v0),[c2,d2]=W(u1,v1);for(const R of tdrBound(D,P,r,kind,a,b,c2,d2,okB)){solid(R.x,R.z,R.w/2,R.len/2,R.ry,true);stats.walls++;}}
         const yc=W(0,-hd-Y/2),yard={cx:yc[0],cz:yc[1],rx:U,rz:Y/2,c:Math.cos(ry),s:Math.sin(ry),yard:true};claims.push(yard);
         if(live&&!shut&&!mine){const pool=isle==='mark'?['woodpile','woodpile','washing','beds','butt','tree:birch','logs']:isle==='aurenne'?['jars','tree:lemon','washing','beds','tree:olive','tree:cypress','bench']:['washing','peat','woodpile','beds','butt','coop','tree:apple'];
@@ -3800,7 +3801,8 @@
         if(!fit)continue;const {ry,c2,s2,hw,hd}=fit,Wp=(u,v)=>[x+u*c2+v*s2,z-u*s2+v*c2],claim={cx:x,cz:z,rx:hw+.3,rz:hd+.3,c:c2,s:s2};
         const type=pool[Math.floor(r()*pool.length)],kind=wk||(type==='paddock'||type==='orchard'||r()<.45?'hedge':'stone'),okB=(px_,pz_)=>ok(px_,pz_,.3,false,claim);
         /* the gate: on the side facing the middle */
-        const lx=(cx-x)*c2-(cz-z)*s2,lz=(cx-x)*s2+(cz-z)*c2,gz=Math.abs(lz)/hd>Math.abs(lx)/hw,gs=gz?Math.sign(lz)||1:Math.sign(lx)||1;
+        const lx=(cx-x)*c2-(cz-z)*s2,lz=(cx-x)*s2+(cz-z)*c2;let gz=Math.abs(lz)/hd>Math.abs(lx)/hw,gs=gz?Math.sign(lz)||1:Math.sign(lx)||1;
+        {const outside=(gzz,gss)=>{const [ox,oz]=gzz?Wp(0,gss*(hd+1.4)):Wp(gss*(hw+1.4),0);return ok(ox,oz,.45,true)&&!inBld(ox,oz,.3);};const tries=[[gz,gs],[gz,-gs],[!gz,1],[!gz,-1]];let got=null;for(const [a1,b1] of tries)if(outside(a1,b1)){got=[a1,b1];break;}if(!got)continue;gz=got[0];gs=got[1];} /* the gate where open ground is outside it, else no plot */
         const sides=[[-hw,-hd,hw,-hd,'z',-1],[hw,-hd,hw,hd,'x',1],[hw,hd,-hw,hd,'z',1],[-hw,hd,-hw,-hd,'x',-1]];
         for(const [u0,v0,u1,v1,ax,sg] of sides){const gate=(ax==='z')===gz&&sg===gs;if(gate){const [gx_,gz_]=Wp((u0+u1)/2,(v0+v1)/2);discs.push([gx_,gz_,1.8]);}const segs=gate?[[u0,v0,(u0+u1)/2-(u1>u0?1:-1),(v0+v1)/2-(v1>v0?1:-1)],[(u0+u1)/2+(u1>u0?1:-1),(v0+v1)/2+(v1>v0?1:-1),u1,v1]]:[[u0,v0,u1,v1]];
           for(const [a0,b0,a1,b1] of segs){const [p0,q0]=Wp(a0,b0),[p1,q1]=Wp(a1,b1);for(const R of tdrBound(D,P,r,kind,p0,q0,p1,q1,okB)){solid(R.x,R.z,R.w/2,R.len/2,R.ry,true);stats.walls++;}}}
