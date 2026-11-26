@@ -1754,7 +1754,7 @@
       for(let i=0;i<pts.length-1;i++){
         const mx=(pts[i].x+pts[i+1].x)/2,mz=(pts[i].z+pts[i+1].z)/2;
         if(mx<ox||mx>=ox+CHUNK||mz<oz||mz>=oz+CHUNK)continue;
-        const T=tdrTownAt(mx,mz);if(T){const st=tdrStyle(isleAt(T.x,T.z),'street',true);st.y=.07;st.verge=0;paved.A.N.length=0;tdrStrip(paved,pts[i],pts[i+1],W,st,seededRng(T.id,'dress:road:'+Math.round(mx)+','+Math.round(mz)),new Set());continue;}
+        const T=tdrTownAt(mx,mz);if(T){const st=tdrStyle(isleAt(T.x,T.z),'sett');st.y=.07;st.verge=0;st.band=.5;paved.A.N.length=0;tdrStrip(paved,pts[i],pts[i+1],W,st,seededRng(T.id,'dress:road:'+Math.round(mx)+','+Math.round(mz)),new Map());continue;}
         addQuad(pts[i],pts[i+1],pts,i);
       }
     }
@@ -3553,31 +3553,45 @@
       flower:[0xd8d0c0,0xb8a0c8,0xe0c040],leaf:0x3a5a32,ivy:0x30482a,peat:0x4a3626,cloth:[0xd8d0c0,0x8a2a20,0x2a4a6a,0x9a8a6a,0x5a6a4a],soil:0x3e2e22,fruit:0xc84a2a,sett:0x6e685e,flag:0x7a7468,earth:0x6a5a44},
     aurenne:{stone:[0xd8ccb2,0xc8bca0],wash:0xece2cc,tile:0xb8603a,blue:0x2c5ca8,cane:0xc8b07a,wood:0x7a5a3a,dark:0x4a3424,roof:0xb8603a,
       flower:[0xb02a78,0xd03a3a,0xe8a030,0xe8e0e0],leaf:0x5a7a3a,ivy:0x3a5a2a,olive:0x7a8a5a,cypress:0x26402a,cloth:[0xf0e8d8,0x2c5ca8,0xd8a030,0xb8603a,0x6a9aa0],soil:0x8a5a3a,fruit:0xe8d040,sett:0xa48c66,flag:0xb09a74,earth:0x8e7456}};
-  /* the ground: a strip from a to b, half-width W, laid as setts (each a low dome: its middle lifted and lit, its corners dark, so the joints
-     read); `occ` marks the half-metre squares laid already, so a crossing is laid once. A verge of worn earth each side dips under the turf. */
-  function tdrStrip(D,a,b,W,st,r,occ,skipFn){const dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz);if(L<.05)return;const ux=dx/L,uz=dz/L,nx=-uz,nz=ux;
-    const nL=Math.max(1,Math.round(L/st.cl)),nW=Math.max(2,Math.round(2*W/st.cw)),A=D.list('g',(a.x+b.x)/2,(a.z+b.z)/2);
-    const H=[];for(let i=0;i<=nL;i++){const row=[];for(let j=0;j<=nW;j++){const t=i/nL*L,s=-W+j/nW*2*W,x=a.x+ux*t+nx*s,z=a.z+uz*t+nz*s;row.push([x,tdrH(x,z)+st.y,z]);}H.push(row);}
-    const tone=st.tone,push=(v,c)=>{A.P.push(v[0],v[1],v[2]);A.N.push(0,1,0);A.C.push(c.r,c.g,c.b);};
-    for(let i=0;i<nL;i++)for(let j=0;j<nW;j++){const q=[H[i][j],H[i+1][j],H[i+1][j+1],H[i][j+1]],mx=(q[0][0]+q[2][0])/2,mz=(q[0][2]+q[2][2])/2,key=Math.round(mx*2)+','+Math.round(mz*2);
-      if(occ.has(key)||(skipFn&&skipFn(mx,mz)))continue;occ.add(key);tdrCell(A,q,st,r);}
-    if(!st.verge)return;const ec=st.earth;for(const sd of [-1,1]){const j=sd<0?0:nW;for(let i=0;i<nL;i++){const p0=H[i][j],p1=H[i+1][j],o0=[p0[0]+nx*sd*st.verge,0,p0[2]+nz*sd*st.verge],o1=[p1[0]+nx*sd*st.verge,0,p1[2]+nz*sd*st.verge];
+  /* the ground: a strip from a to b, half-width W, laid in courses across it, each course a little longer or shorter than st.cl and its joints
+     staggered from the last; each stone a low dome (its middle lifted and lit, its corners dark, so the joints read), moss in the joints and more
+     toward the edges, where a stone now and then is missing and the turf shows. `occ` maps the half-metre squares to the strip (id) that laid them,
+     so a crossing is laid once; one path's pieces share an id. A verge of worn earth each side dips under the turf. */
+  let _tdrStripN=0;
+  function tdrStrip(D,a,b,W,st,r,occ,skipFn,id){const dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz);if(L<.05)return;const ux=dx/L,uz=dz/L,nx=-uz,nz=ux,A=D.list('g',(a.x+b.x)/2,(a.z+b.z)/2);
+    id=id||('s'+(++_tdrStripN));const v=st.vary||0,band=Math.min(W,st.band||0),nW=Math.max(1,Math.round(2*W/st.cw)),cw=2*W/nW,mine=[];
+    const P=(t,s)=>{const x=a.x+ux*t+nx*s,z=a.z+uz*t+nz*s;return [x,tdrH(x,z)+st.y,z];};
+    let t0=0,row=0;while(t0<L-.01){let t1=t0+st.cl*(1+(r()-.5)*2*v);if(t1>L-st.cl*.4)t1=L;
+      const off=row%2?.5:0,E=[-W];for(let j=1;j<=nW;j++){const s_=-W+(j-off)*cw+(r()-.5)*v*cw;if(s_>E[E.length-1]+cw*.35&&s_<W-cw*.35)E.push(s_);}E.push(W);
+      for(let j=0;j<E.length-1;j++){const s0=E[j],s1=E[j+1],tm=(t0+t1)/2,sm=(s0+s1)/2,mx=a.x+ux*tm+nx*sm,mz=a.z+uz*tm+nz*sm,key=Math.round(mx*2)+','+Math.round(mz*2),o=occ.get(key);
+        if((o&&o!==id)||(skipFn&&skipFn(mx,mz)))continue;const e=band>0?Math.max(0,(Math.abs(sm)-(W-band))/band):0;if(e>0&&r()<e*(st.gap||0))continue;if(!o)mine.push(key);
+        tdrCell(A,[P(t0,s0),P(t1,s0),P(t1,s1),P(t0,s1)],st,r,e);}
+      t0=t1;row++;}
+    for(const k of mine)occ.set(k,id);
+    if(!st.verge)return;const ec=st.earth,push=(q,c)=>{A.P.push(q[0],q[1],q[2]);A.N.push(0,1,0);A.C.push(c.r,c.g,c.b);},dt=Math.max(.5,st.cl*1.4),nV=Math.max(1,Math.round(L/dt));
+    for(const sd of [-1,1])for(let i=0;i<nV;i++){const ta=i/nV*L,tb=(i+1)/nV*L,p0=P(ta,sd*W),p1=P(tb,sd*W),o0=[p0[0]+nx*sd*st.verge,0,p0[2]+nz*sd*st.verge],o1=[p1[0]+nx*sd*st.verge,0,p1[2]+nz*sd*st.verge];
       if(skipFn&&skipFn((p0[0]+p1[0])/2,(p0[2]+p1[2])/2))continue;
       o0[1]=tdrH(o0[0],o0[2])-.03-r()*.07;o1[1]=tdrH(o1[0],o1[2])-.03-r()*.07; /* the outer edge under the turf by 3 to 10 cm: where it comes up is ragged */
-      const c0=new THREE.Color(ec.r*(.9+r()*.2),ec.g*(.9+r()*.2),ec.b*(.9+r()*.2));const v=[p0,p1,o1,o0],cr=(p1[0]-p0[0])*(o0[2]-p0[2])-(p1[2]-p0[2])*(o0[0]-p0[0]);
-      const T=cr<0?[0,1,2,0,2,3]:[0,2,1,0,3,2];for(const t of T)push(v[t],c0);}}}
-  /* one sett: four corners [x,y,z] round it, its middle lifted by st.dome and lit, its corners dark; now and then a darker or a greener one */
-  function tdrCell(A,q,st,r){const tone=st.tone,u=r(),k=(1+(r()-.5)*st.jit)*(u<.06?.78:1),g=u>.95?1.1:1,cc=[tone.r*k*st.hi,tone.g*k*st.hi*g,tone.b*k*st.hi],cj=[tone.r*k*st.lo,tone.g*k*st.lo*g,tone.b*k*st.lo];
+      const c0=new THREE.Color(ec.r*(.9+r()*.2),ec.g*(.9+r()*.2),ec.b*(.9+r()*.2)).lerp(TDR_MOSS,.25*r());const q=[p0,p1,o1,o0],cr=(p1[0]-p0[0])*(o0[2]-p0[2])-(p1[2]-p0[2])*(o0[0]-p0[0]);
+      const T=cr<0?[0,1,2,0,2,3]:[0,2,1,0,3,2];for(const t of T)push(q[t],c0);}}
+  /* one stone: four corners [x,y,z] round it, its middle lifted by st.dome and lit, its corners dark; now and then a darker, a paler or a greener
+     one; moss in its joints by st.moss, and more by e, how far into the strip's edge band it lies (0 to 1) */
+  const TDR_MOSS=new THREE.Color(0x4a5a2c);
+  function tdrCell(A,q,st,r,e){e=e||0;const tone=st.tone,u=r(),k=(1+(r()-.5)*st.jit)*(u<.07?.76:u>.93?1.13:1),mo=Math.min(1,(st.moss||0)*(.3+.7*r())+e*.45),mc=Math.min(.6,e*.35*r()+(u>.97?.25:0)),M=TDR_MOSS;
+    const cc=[tone.r*k*st.hi*(1-mc)+M.r*mc,tone.g*k*st.hi*(1-mc)+M.g*mc,tone.b*k*st.hi*(1-mc)+M.b*mc],cj=[tone.r*k*st.lo*(1-mo)+M.r*.8*mo,tone.g*k*st.lo*(1-mo)+M.g*.8*mo,tone.b*k*st.lo*(1-mo)+M.b*.8*mo];
     const m=[(q[0][0]+q[1][0]+q[2][0]+q[3][0])/4,(q[0][1]+q[1][1]+q[2][1]+q[3][1])/4+st.dome,(q[0][2]+q[1][2]+q[2][2]+q[3][2])/4],push=(v,c)=>{A.P.push(v[0],v[1],v[2]);A.N.push(0,1,0);A.C.push(c[0],c[1],c[2]);};
-    for(let e=0;e<4;e++){const p0=q[e],p1=q[(e+1)%4];const cr=(p1[0]-p0[0])*(m[2]-p0[2])-(p1[2]-p0[2])*(m[0]-p0[0]);if(cr<0){push(p0,cj);push(p1,cj);push(m,cc);}else{push(p0,cj);push(m,cc);push(p1,cj);}}}
+    for(let i=0;i<4;i++){const p0=q[i],p1=q[(i+1)%4];const cr=(p1[0]-p0[0])*(m[2]-p0[2])-(p1[2]-p0[2])*(m[0]-p0[0]);if(cr<0){push(p0,cj);push(p1,cj);push(m,cc);}else{push(p0,cj);push(m,cc);push(p1,cj);}}}
   /* the ground's height while a town is dressed: worldH on a 1 m lattice, read bilinearly (exact on the flat pad), each corner asked once */
   let _tdrH=null;
   function tdrH(x,z){const M=_tdrH;if(!M)return worldH(x,z);const i=Math.floor(x),j=Math.floor(z),fx=x-i,fz=z-j,g=(a,b)=>{const k=a*32768+b;let v=M.get(k);if(v===undefined){v=worldH(a,b);M.set(k,v);}return v;};
     return (g(i,j)*(1-fx)+g(i+1,j)*fx)*(1-fz)+(g(i,j+1)*(1-fx)+g(i+1,j+1)*fx)*fz;}
-  function tdrStyle(isle,kind,town){const P=TDR_PAL[isle]||TDR_PAL.gatelands,c=h=>new THREE.Color(h);
-    if(kind==='street')return town?{cl:.7,cw:.7,y:.055,dome:.035,jit:.3,hi:1.08,lo:.62,tone:c(P.sett),earth:c(P.earth),verge:.7}:{cl:.9,cw:.9,y:.055,dome:.02,jit:.22,hi:1.02,lo:.85,tone:c(P.earth),earth:c(P.earth),verge:.8};
-    if(kind==='path')return town?{cl:.8,cw:.7,y:.045,dome:.025,jit:.26,hi:1.06,lo:.7,tone:c(P.flag),earth:c(P.earth),verge:.45}:{cl:.8,cw:.6,y:.045,dome:.015,jit:.2,hi:1,lo:.86,tone:c(P.earth),earth:c(P.earth),verge:.5};
-    return {cl:.6,cw:.62,y:.075,dome:.03,jit:.34,hi:1.04,lo:.56,tone:c(P.sett).multiplyScalar(.94),earth:c(P.earth),verge:0};}
+  /* the ground's styles (S2670, Michael's "tone paving down first"): setts small and uneven on the square and the main streets, worn earth
+     everywhere else people walk, flags at the doors */
+  function tdrStyle(isle,kind){const P=TDR_PAL[isle]||TDR_PAL.gatelands,c=h=>new THREE.Color(h);
+    if(kind==='street'||kind==='sett')return {cl:.38,cw:.36,vary:.3,y:.055,dome:.03,jit:.38,hi:1.05,lo:.5,moss:.3,band:.75,gap:.5,tone:c(P.sett),earth:c(P.earth),verge:.55};
+    if(kind==='earth')return {cl:1.1,cw:.9,vary:.35,y:.05,dome:0,jit:.14,hi:1,lo:.92,moss:.15,band:.6,gap:.75,tone:c(P.earth),earth:c(P.earth),verge:.6};
+    if(kind==='flag')return {cl:.6,cw:.7,vary:.2,y:.065,dome:.015,jit:.22,hi:1.04,lo:.66,moss:.2,band:0,gap:0,tone:c(P.flag),earth:c(P.earth),verge:0};
+    return {cl:.4,cw:.4,vary:.25,y:.075,dome:.03,jit:.38,hi:1.04,lo:.5,moss:.3,band:0,gap:0,tone:c(P.sett).multiplyScalar(.94),earth:c(P.earth),verge:0};}
   /* pieces: each puts its parts on D at (x,z), turned ry, on the ground at y, from the stream r; `far` lays the far copy too */
   const TDR_R={woodpile:1.3,peat:1.3,butt:.55,barrels:1.5,crates:1.4,trough:.95,grindstone:.6,table:1.3,cart:1.75,coop:.8,jars:1.3,rick:2,logs:2.4,shed:2.75}; /* a piece's reach from its middle to its footprint's far corner, kept off the doors */
   const TDR_PIECE={
@@ -3649,7 +3663,7 @@
     _tdrH=new Map();try{return townDressRun(S,o);}finally{_tdrH=null;}}
   function townDressRun(S,o){const site=S.site,cx=site.x,cz=site.z,sol=S.sol,houses=S.houses||[],group=S.group;
     const t0=performance.now(),isle=isleAt(cx,cz),P=TDR_PAL[isle]||TDR_PAL.gatelands,town=['town','city','port'].includes(site.kind),pros=o.pros==null?50:o.pros,rich=pros>=60,poor=pros<35;
-    const inner=o.inner,D=tdrAcc(),WK=yardWalks(site,S.paths||[]),occ=new Set(),stats={yards:0,walls:0,items:0,street:0,infill:0,sols:0};
+    const inner=o.inner,D=tdrAcc(),WK=yardWalks(site,S.paths||[]),occ=new Map(),stats={yards:0,walls:0,items:0,street:0,infill:0,sols:0};
     const doors=[];for(const h of houses){if(h.doorX!=null)doors.push([h.doorX,h.doorZ]);if(h.exitX!=null)doors.push([h.exitX,h.exitZ]);}
     for(const n of S.npcs||[]){const g=n&&(n.g||n.mesh);if(g&&g.position)doors.push([g.position.x,g.position.z]);}
     const inR=(q,x,z,R)=>{const dx=x-q.cx,dz=z-q.cz;if(q.c!==undefined){const lx=dx*q.c-dz*q.s,lz=dx*q.s+dz*q.c;return Math.abs(lx)<q.rx+R&&Math.abs(lz)<q.rz+R;}return Math.abs(dx)<q.rx+R&&Math.abs(dz)<q.rz+R;};
@@ -3702,6 +3716,8 @@
       if(!o.noLink){const A=W(hw+.3,hd-.55);let t=0;for(let k=.4;k<=9;k+=.4){if(inBld(A[0]+rx_*k,A[1]+rz_*k,0)){t=k;break;}}
         if(t>1.2){const okB=(x,z)=>ok(x,z,.3,false,B),E=(k)=>[A[0]+rx_*k,A[1]+rz_*k],parts=t>3.4?[[0,t/2-.65],[t/2+.65,t-.1]]:[[0,t-.1]];
           for(const [k0,k1] of parts){const [a,b]=E(k0),[c2,d2]=E(k1);for(const R of tdrBound(D,P,r,kind,a,b,c2,d2,okB)){solid(R.x,R.z,R.w/2,R.len/2,R.ry,true);stats.walls++;stats.links=(stats.links||0)+1;}}}}
+      /* the doorstep: four flags before the door, 1.5 m across and 1.05 m out */
+      if(live){const fs=tdrStyle(isle,'flag'),FA=D.list('g',h.doorX,h.doorZ),Q=(u,v)=>{const [x,z]=W(u,v);return [x,tdrH(x,z)+fs.y,z];},um=ud+(r()-.5)*.2;for(const [u0,u1] of [[ud-.75,um],[um,ud+.75]])for(const [v0,v1] of [[hd+.1,hd+.62],[hd+.62,hd+1.15]])tdrCell(FA,[Q(u0,v0),Q(u1,v0),Q(u1,v1),Q(u0,v1)],fs,r,0);}
       if(!live)continue;
       /* against the walls: greenery up a side wall or a front corner; flowers along the front, clear of the door by 1.4 m; a bench by it */
       const flw=P.flower[Math.floor(r()*P.flower.length)];
@@ -3753,20 +3769,26 @@
         else{put('rick',-hw*.4,0,1.4);put('trough',hw-1.2,-hd+.7,.5);}
         stats.infill++;}}
     lap('infill');
-    /* ── the ground: setts on the streets and the ring lane, flags on the footpaths, the square paved round the well ── */
+    /* ── the ground (S2670, Michael's "tone paving down first"): the square laid in rings round the well, small setts on the main streets (those
+       through the town's middle; the roads through it are laid so in buildRoadRibbons), worn earth on the side streets, the ring lane and the
+       footpaths, and flags at every door (laid with the house, above). A village's square is earth. ── */
     {const r=seededRng(site.id,'dress:ground'),pv=town||site.kind==='garrison',sq0=pv?(site.kind==='city'?15:site.kind==='port'?11:13):7,near3=sol.filter(q=>q.bt&&!q.dress&&q.bt!=='wall').map(q=>Math.hypot(q.cx-cx,q.cz-cz)-Math.max(q.rx,q.rz)).sort((a,b)=>a-b)[2],sq=pv&&near3>0?Math.max(9,Math.min(22,near3+1.5)):sq0; /* the square out to its third-nearest building's frontage */
       const onSol=(x,z)=>!!inBld(x,z,-.1),inPlot=(x,z)=>plots.some(p=>p.type!=='market'&&inR(p,x,z,0));
       const wob=a=>sq*(1+.1*Math.sin(a*3+site.x*.01)+.07*Math.sin(a*7+site.z*.01));
-      /* the square in rings round the well, each sett as long as it is deep; its edge wanders (wob) and it stops at a building, a plot or a road */
-      {const st=tdrStyle(isle,pv?'square':'street',pv);if(!pv){st.tone=new THREE.Color(P.earth);st.y=.075;st.dome=.012;st.lo=.88;st.hi=1;}const A=D.list('g',cx,cz),y0=st.y;
+      /* the square in rings round the well; its edge wanders (wob), goes ragged and mossy over its last 1.6 m, and stops at a building, a plot or a road */
+      {const st=pv?tdrStyle(isle,'square'):Object.assign(tdrStyle(isle,'earth'),{y:.075,cl:.9,cw:.9}),A=D.list('g',cx,cz),y0=st.y;
         const skipQ=(x,z,a)=>{if(Math.hypot(x-cx,z-cz)>wob(a))return true;if(onSol(x,z)||inPlot(x,z))return true;const ri=roadInfo(x,z);return !!ri&&ri.d<ROAD_HALF*.85+.2;};
         const H=(x,z)=>[x,tdrH(x,z)+y0,z];
-        for(let rr=.9;rr<sq*1.25;rr+=st.cl){const n=Math.max(8,Math.round(2*Math.PI*(rr+st.cl/2)/st.cw)),ph=r()*Math.PI*2;
-          for(let k=0;k<n;k++){const a0=ph+k/n*Math.PI*2,a1=ph+(k+1)/n*Math.PI*2,am=(a0+a1)/2,rm=rr+st.cl/2,mx=cx+Math.cos(am)*rm,mz=cz+Math.sin(am)*rm;if(skipQ(mx,mz,am))continue;
-            tdrCell(A,[H(cx+Math.cos(a0)*rr,cz+Math.sin(a0)*rr),H(cx+Math.cos(a0)*(rr+st.cl),cz+Math.sin(a0)*(rr+st.cl)),H(cx+Math.cos(a1)*(rr+st.cl),cz+Math.sin(a1)*(rr+st.cl)),H(cx+Math.cos(a1)*rr,cz+Math.sin(a1)*rr)],st,r);}}}
+        for(let rr=.9;rr<sq*1.25;){const dr=st.cl*(1+(r()-.5)*.3),n=Math.max(8,Math.round(2*Math.PI*(rr+dr/2)/st.cw)),ph=r()*Math.PI*2;
+          for(let k=0;k<n;k++){const a0=ph+k/n*Math.PI*2,a1=ph+(k+1)/n*Math.PI*2,am=(a0+a1)/2,rm=rr+dr/2,mx=cx+Math.cos(am)*rm,mz=cz+Math.sin(am)*rm;if(skipQ(mx,mz,am))continue;
+            const e=Math.max(0,Math.min(1,(rm-(wob(am)-1.6))/1.6));if(e>0&&r()<e*.55)continue;
+            tdrCell(A,[H(cx+Math.cos(a0)*rr,cz+Math.sin(a0)*rr),H(cx+Math.cos(a0)*(rr+dr),cz+Math.sin(a0)*(rr+dr)),H(cx+Math.cos(a1)*(rr+dr),cz+Math.sin(a1)*(rr+dr)),H(cx+Math.cos(a1)*rr,cz+Math.sin(a1)*rr)],st,r,e);}
+          rr+=dr;}}
       const skipS=(x,z)=>{if(onSol(x,z))return true;const ri=roadInfo(x,z);return !!ri&&ri.d<ROAD_HALF*.85+.1;};
-      for(const p of S.paths||[]){if(!p||!p.pts||p.pts.length<2)continue;const street=(p.w||0)>=2,st=tdrStyle(isle,street?'street':'path',pv),Wd=street?(pv&&p.w>2.3?2.15:p.w/2+.35):(p.w||1.3)/2+.05;
-        for(let k=0;k<p.pts.length-1;k++){const a=p.pts[k],b=p.pts[k+1],L=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(L/3));for(let j=0;j<n;j++){const A={x:a.x+(b.x-a.x)*j/n,z:a.z+(b.z-a.z)*j/n},Bq={x:a.x+(b.x-a.x)*(j+1)/n,z:a.z+(b.z-a.z)*(j+1)/n};tdrStrip(D,A,Bq,Wd,st,r,occ,skipS);}}}}
+      const mainLine=p=>{if(!pv||(p.w||0)<2.3)return false;const a=p.pts[0],b=p.pts[p.pts.length-1],L=Math.hypot(b.x-a.x,b.z-a.z)||1;return Math.abs((cx-a.x)*(b.z-a.z)-(cz-a.z)*(b.x-a.x))/L<7;};
+      const sett=tdrStyle(isle,'sett'),earth=tdrStyle(isle,'earth');stats.mainStreets=0;
+      (S.paths||[]).forEach((p,pi)=>{if(!p||!p.pts||p.pts.length<2)return;const main=mainLine(p),street=(p.w||0)>=2,st=main?sett:earth,Wd=main?2.15:street?p.w/2+.15:(p.w||1.3)/2-.05;if(main)stats.mainStreets++;
+        for(let k=0;k<p.pts.length-1;k++){const a=p.pts[k],b=p.pts[k+1],L=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(L/3));for(let j=0;j<n;j++){const A={x:a.x+(b.x-a.x)*j/n,z:a.z+(b.z-a.z)*j/n},Bq={x:a.x+(b.x-a.x)*(j+1)/n,z:a.z+(b.z-a.z)*(j+1)/n};tdrStrip(D,A,Bq,Wd,st,r,occ,skipS,'p'+pi);}}});}
     lap('ground');const F=tdrFinish(D,S,group);try{stats.relaid=tdrRelayRoads(site);}catch(e){}lap('finish');S.dress={...stats,...F,ms:Math.round(performance.now()-t0),isle,phase:ms,why,yardWhy};return S.dress;}
   /* a road through a paved town is laid as its streets are (buildRoadRibbons): the town whose inner ring holds (x,z), or null */
   function tdrTownsNear(ox,oz){if(window.OG_LOOK!=='new')return '';const out=[];for(const t of SITES){if(!['town','city','port','garrison'].includes(t.kind)||!(t.pad>0))continue;const dx=Math.max(ox-t.x,0,t.x-(ox+CHUNK)),dz=Math.max(oz-t.z,0,t.z-(oz+CHUNK));if(Math.hypot(dx,dz)<t.pad)out.push(t.id);}return out.join('|');}
