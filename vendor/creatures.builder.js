@@ -2550,7 +2550,7 @@ function pose(C, phase) {
   const G = GAITS[C.gait], B = C.B, n = B.legs.length / 2, tau = Math.PI * 2, ph = phase - Math.floor(phase);
   // a rest's numbers are found once per creature and gait (the sit's pitch, the lie's drop, the tail's lift), while finding them it poses itself
   if (G.sit && !C.sitFinding) { const R = (C.rests = C.rests || {})[C.gait]; if (R) Object.assign(C, R); else { C.sitFinding = true; sitFind(C); C.sitFinding = false; C.rests[C.gait] = { sitA: C.sitA, sitY: C.sitY, sitT: C.sitT, sitH: C.sitH, sitF: C.sitF }; } }
-  for (const b of C.bones) b.quaternion.identity();
+  for (const b of C.bones) b.quaternion.identity(); C.kneelW = null;
   const sp = C.byName.spine0, rest = B.bones[0].p; sp.position.copy(rest);
   // the body: a bob twice a stride, a roll and a sway once, the gallop's flex; the neck nods against the bob, the tail swings behind
   const bob = (G.bob || 0) * C.legH * Math.cos(tau * ph * 2), breathe = .006 * Math.sin(tau * ph);
@@ -2613,7 +2613,7 @@ function pose(C, phase) {
     C.byName[W.arm[0]].rotation.set(-.15 * fold, -W.side * .7 * fold, W.side * (.5 * flap - .35 * fold + .03 * Math.sin(tau * ph * .5)));
     C.byName[W.arm[1]].rotation.set(0, W.side * 1.1 * fold, W.side * -.3 * flap); C.byName[W.arm[2]].rotation.set(0, -W.side * .9 * fold, W.side * -.2 * flap);
     W.fingers.forEach((f, k) => C.byName[f[0]].rotation.set(0, W.side * (k / W.fingers.length) * .4 * fold, 0)); }
-  if (G.sit) sitBody(C);
+  if (G.sit) { if (G.couch && C.kneel != null && C.kneel < 1) kneelBody(C); else sitBody(C); }
   // a kick (Session 1915; the Stormplume's and the Redcrest's, which fight with their feet): C.kick = { a, b, side }, set by the caller
   // each frame. `a` (0 to 1) chambers the hind leg on that side, knee drawn up and the body rocked back; `b` (0 to 1) drives the foot
   // forward and down through the strike, the body pitching into it. The other leg stands; the neck takes back most of the rock
@@ -2627,6 +2627,7 @@ function pose(C, phase) {
   const sweep = sweepOf(C, G), D = C.dir;
   let worst = 0; const order = [...new Set(B.legs.map(L => L.at))].sort((a, b) => b - a);
   for (const L of B.legs) {
+    if (C.kneelW && (L.at === order[0] || L.at === order[order.length - 1])) { worst = Math.max(worst, kneelLeg(C, L)); continue; } /* S2703 — the kneel between the stand and the couch */
     if (G.sit && L.at === order[order.length - 1]) { worst = Math.max(worst, sitLeg(C, L)); continue; }
     if (G.lie && L.at === order[0]) { worst = Math.max(worst, G.couch ? couchLeg(C, L) : lieLeg(C, L)); continue; }
     const p = order.indexOf(L.at), s = L.side > 0 ? 0 : 1, F0 = L.rest[L.rest.length - 1];
@@ -2699,16 +2700,24 @@ function sitWrap(C, [a0, a]) {
 // a hind leg sitting: the toes' tip on the ground ahead, the toes and the hock's long bone laid back from it, the hock raised a
 // twentieth of the leg off the paw's height so the shin's flesh clears the ground, just behind the hip, and the thigh and shin bent to meet it about the knee (which points forward, as it stands)
 function sitLeg(C, L) {
-  const m = L.J.length - 1, root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion()), hR = L.hR;
+  const root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion());
   L.bones[0].position.copy(L.restLocal);
+  const { Pp, err } = sitPts(C, L, root); aimLeg(L, Pp, parentQ); return err;
+}
+// the sitting hind leg's joints from its root, in the rig's frame (Session 2703: split from sitLeg, so the kneel can read the couch's shape)
+function sitPts(C, L, root) {
+  const m = L.J.length - 1, hR = L.hR;
   const F0 = L.rest[m], P2 = L.rest[m - 1], toe = L.lens[m - 1], pawY = P2.y, tz = Math.sqrt(Math.max(0, toe * toe - (pawY - F0.y) ** 2));
   const hk = SIT.hock * hR, hock = V(F0.x, pawY + hk, root.z - .08 * hR), paw = hock.clone().add(V(0, -hk, Math.sqrt(L.lens[m - 2] ** 2 - hk * hk))), tip = paw.clone().add(V(0, F0.y - pawY, tz));
   const L1 = L.lens[0], L2 = L.lens[1], d = hock.clone().sub(root); let dl = d.length(); const u = d.divideScalar(dl || 1), err = Math.max(0, dl - (L1 + L2), Math.abs(L1 - L2) - dl);
   dl = Math.max(Math.abs(L1 - L2) + 1e-4, Math.min(L1 + L2 - 1e-4, dl));
   const a = (L1 * L1 - L2 * L2 + dl * dl) / (2 * dl), h = Math.sqrt(Math.max(0, L1 * L1 - a * a)), pole = L.pole.clone(); pole.sub(u.clone().multiplyScalar(pole.dot(u))).normalize();
   const Pp = [root, root.clone().addScaledVector(u, a).addScaledVector(pole, h), root.clone().addScaledVector(u, dl), paw, tip];
-  let Qp = parentQ; for (let k = 0; k < m; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
-  return err;
+  return { Pp, err };
+}
+// each bone turned from its rest direction onto the joints Pp (rig frame), its parent's turn taken off
+function aimLeg(L, Pp, parentQ) {
+  let Qp = parentQ; for (let k = 0; k < Pp.length - 1; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
 }
 // a foreleg lying (Session 1117): the elbow down on the ground just behind the shoulder, as far back as the upper arm reaches from
 // where the lowered shoulder is, and the forearm, the wrist and the toes laid forward along the ground from it
@@ -2728,14 +2737,57 @@ function lieLeg(C, L) {
 // C.sitF as lying's are
 const COUCH = { out: .035, sole: .5, pad: .06 };
 function couchLeg(C, L) {
-  const m = L.J.length - 1, root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion());
+  const root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion());
   L.bones[0].position.copy(L.restLocal);
-  const F0 = L.rest[m], y = L.rest[m - 1].y + (C.sitF || 0), ey = y + SIT.hock * L.hR, dy = root.y - ey, L0 = L.lens[0], err = Math.max(0, dy - L0);
+  const { Pp, err } = couchPts(C, L, root); aimLeg(L, Pp, parentQ); return err;
+}
+function couchPts(C, L, root) {
+  const m = L.J.length - 1, F0 = L.rest[m], y = L.rest[m - 1].y + (C.sitF || 0), ey = y + SIT.hock * L.hR, dy = root.y - ey, L0 = L.lens[0], err = Math.max(0, dy - L0);
   const elbow = V(F0.x, ey, root.z - Math.sqrt(Math.max(0, L0 * L0 - dy * dy))), wrist = V(F0.x, y, elbow.z + Math.sqrt(Math.max(0, L.lens[1] ** 2 - (ey - y) ** 2)));
   const Pp = [root, elbow, wrist], ox = Math.sign(F0.x || 1) * COUCH.out * L.hR; let at = wrist;
   for (let k = 2; k < m; k++) { const len = L.lens[k], up = k === m - 1 ? COUCH.sole * (L.rest[m - 1].y - F0.y) : 0, dx = k === 2 ? ox : 0; at = at.clone().add(V(dx, up, -Math.sqrt(Math.max(0, len * len - up * up - dx * dx)))); Pp.push(at); }
-  let Qp = parentQ; for (let k = 0; k < m; k++) { const nd = Pp[k + 1].clone().sub(Pp[k]).normalize(), Qk = new THREE.Quaternion().setFromUnitVectors(L.dirs[k], nd); L.bones[k].quaternion.copy(Qp.clone().invert().multiply(Qk)); Qp = Qk; }
-  return err;
+  return { Pp, err };
+}
+// Session 2703: the kneel between the stand and the couch, as a camel goes down: the forequarters first, onto the wrists, the hind still
+// standing and the back pitched down to the chest; then the hind legs fold and the hips come down to the couch. C.kneel, 0 (standing) to 1
+// (couched), with the gait 'couch' (none is the couch). The forelegs take its first half (KNEEL.fore of it) down onto their knees, KNEEL.knee
+// of their fold, the chest held clear; the hind legs fold in its second half as the forelegs finish. Rising runs the same
+// curve back, so the hips come up first and the camel stands off its knees last, as one does. Each leg's bones are turned from the
+// stand's directions toward the couch's (sitPts, couchPts) by its own share, and the body's height at that leg's root is what the leg then
+// reaches from the ground, so no hoof, wrist or hock floats or sinks; the back pitches between the two
+const KNEEL = { fore: .5, knee: .8, neck: .6 };
+const kneelEase = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
+function kneelShares(k) { return { f: KNEEL.knee * kneelEase(k / KNEEL.fore) + (1 - KNEEL.knee) * kneelEase((k - KNEEL.fore) / (1 - KNEEL.fore)), h: kneelEase((k - KNEEL.fore) / (1 - KNEEL.fore)) }; }
+// the leg's joints at share w (from its root at the origin) and the root's height over the ground there
+function kneelShape(C, L, w, fore) {
+  const R = L.rest, root = R[0].clone(); root.y -= C.sitY || 0;
+  const Pc = (fore ? couchPts : sitPts)(C, L, root).Pp, P = [V()], d = V(), dc = V(); let low = 0;
+  for (let k = 0; k < R.length - 1; k++) { d.copy(R[k + 1]).sub(R[k]).normalize(); dc.copy(Pc[k + 1]).sub(Pc[k]).normalize();
+    const q = new THREE.Quaternion().setFromUnitVectors(d, dc), qw = new THREE.Quaternion().slerp(q, w); P.push(P[k].clone().add(d.clone().applyQuaternion(qw).multiplyScalar(L.lens[k]))); low = Math.min(low, P[k + 1].y); }
+  const minOf = Q => Math.min(...Q.slice(1).map(p => p.y)), ground = lerp(minOf(R), minOf(Pc), w);
+  return { P, y: ground - low };
+}
+function kneelBody(C) {
+  const { B, order, hip } = sitFrame(C), sp = C.byName.spine0, { f, h } = kneelShares(C.kneel);
+  const fL = B.legs.find(L => L.at === order[0]), hL = B.legs.find(L => L.at === order[order.length - 1]);
+  const front = fL.rest[0].clone(); front.x = hip.x;
+  const df = front.y - kneelShape(C, fL, f, true).y, dh = hip.y - kneelShape(C, hL, h, false).y;
+  // the pitch about the hips that sets the shoulders (df - dh) lower than they stand, then the whole lowered by dh
+  const dy = front.y - hip.y, dz = front.z - hip.z, Rr = Math.hypot(dy, dz), phi = Math.atan2(dy, dz), a = phi - Math.asin(Math.max(-1, Math.min(1, (dy - (df - dh)) / Rr)));
+  const Q = new THREE.Quaternion().setFromAxisAngle(V(1, 0, 0), a); sp.quaternion.premultiply(Q); sp.position.sub(hip).applyQuaternion(Q).add(hip); sp.position.y -= dh;
+  C.kneelW = { f, h, a };
+  // the neck takes back most of the pitch so the head stays up, and rises as the couch's does once the forequarters are down
+  if (B.chains.neck) { C.byName[B.chains.neck[0]].rotation.x -= a * KNEEL.neck; const n = B.chains.neck; n.forEach(nm => C.byName[nm].rotation.x -= f * SIT.lieNeck / n.length); if (C.byName.head) C.byName.head.rotation.x += f * SIT.lieNeck; }
+  // the tail laid as the couch lays it, by the hind legs' share
+  if (B.chains.tail) { const t0 = C.byName[B.chains.tail[0]]; C.rig.updateMatrixWorld(true); const p0 = rigPos(C, t0, V()), d = rigPos(C, C.byName[B.chains.tail[1]], V()).sub(p0);
+    t0.rotation.x += h * (Math.atan2(-d.y, -d.z) + C.sitT); B.chains.tail.forEach((nm, k) => { if (k) C.byName[nm].rotation.y += h * SIT.tailCurl; }); }
+}
+function kneelLeg(C, L) {
+  const W = C.kneelW, fore = L.at === Math.max(...C.B.legs.map(l => l.at)), w = fore ? W.f : W.h;
+  const root = rigPos(C, L.bones[0], V()), parentQ = rigQuat(C, L.bones[0].parent, new THREE.Quaternion());
+  L.bones[0].position.copy(L.restLocal);
+  const Pp = kneelShape(C, L, w, fore).P.map(p => p.clone().add(root)); aimLeg(L, Pp, parentQ);
+  return 0;
 }
 // one leg: yaw the leg toward its foot (an insect's coxa), hold the distal segments (a paw, a hoof), bend the two in between
 function solveLeg(C, L, T, fold) {
@@ -4199,5 +4251,5 @@ Object.assign(PLANS, {
 });
 const CRAWLERS = ['bogcrawler'];
 
-return {hashKey,rng,genome,toSaved,fromSaved,build,buildIter,speedOf,strideOf,step,pose,humpSurge,footAt,SLIDERS,GAITS,STOOP,KICK,HUMP,FLIP,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,SHORE,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,PHANTOMS,ELEMENTALS,HOUNDS,CRAWLERS};
+return {hashKey,rng,genome,toSaved,fromSaved,build,buildIter,speedOf,strideOf,step,pose,kneelShares,humpSurge,footAt,SLIDERS,GAITS,STOOP,KICK,KNEEL,HUMP,FLIP,PLANS,COMMON,ISLES,COATS,LIVESTOCK,GATELANDS,MARK,AURENNE,STRANGE,SEA,SHORE,BURDEN,HARNESSED,CORRUPTED,TROLLS,SLIMES,GOBLINS,GARGOYLES,SKELETONS,FROST,FAILING,GOLEMS,WRAITHS,PHANTOMS,ELEMENTALS,HOUNDS,CRAWLERS};
 })();

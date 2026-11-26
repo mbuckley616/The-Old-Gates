@@ -933,9 +933,12 @@ function caravanStringSpots(C){const n0=C.npc&&C.npc.g;if(!n0)return [];const s=
   return out;}
 // Session 2687: the string couches while the caravan trades (S2686's couch): down from 7:00 and up again by 17:00, each camel a seeded
 // 0 to 40 minutes later down and earlier up, so they kneel one by one; standing the hour the caravan comes in and the hour it packs
-const CCOUCH={from:7,to:17,stagger:40};
+// Session 2703: and goes down and up by the kit's kneel (forequarters first, hips first up) over CCOUCH.kneel game minutes (a second each),
+// read off the clock (rig.couchK, 0 standing to 1 couched), so a paused game or a dropped frame never leaves it half down
+const CCOUCH={from:7,to:17,stagger:40,kneel:6};
 function caravanCouch(){const S=CSTRING;if(!S)return;const h=typeof gameHour==='function'?gameHour():12;
-  S.groups.forEach((g,i)=>{const rig=g.children[0]&&g.children[0].userData.rig;if(!rig)return;const off=(animalHash('couch:'+S.key+':'+i)%(CCOUCH.stagger+1))/60;rig.couch=h>=CCOUCH.from+off&&h<CCOUCH.to-off;});}
+  S.groups.forEach((g,i)=>{const rig=g.children[0]&&g.children[0].userData.rig;if(!rig)return;const off=(animalHash('couch:'+S.key+':'+i)%(CCOUCH.stagger+1))/60;
+    const k=Math.max(0,Math.min(1,(h-CCOUCH.from-off)*60/CCOUCH.kneel,(CCOUCH.to-off-h)*60/CCOUCH.kneel));rig.couchK=k;rig.couch=k>0;});}
 function caravanStringTick(){const C=typeof CARAVAN!=='undefined'?CARAVAN:null;
   if(!C||!C.npc||!hcOn()||typeof scene==='undefined'){caravanStringOut();return;}
   const key=C.site.id+':'+C.year;if(CSTRING&&CSTRING.key!==key)caravanStringOut();if(CSTRING){caravanCouch();caravanRopeTick();return;}
@@ -1456,7 +1459,8 @@ function hcNightK(){const h=typeof gameHour==='function'?gameHour():12;return h>
 // Session 2687: a camel couched (the kit's `couch`, S2686: the forelegs folded under the chest, on its chest pad) poses its own body, as the
 // watcher's sit does, not a copy of the driver's stand; rig.couch is set by whoever rests it (the Caravan's string). Up again, H.sat puts
 // every bone back at the stand before the copy
-function hcCouchPose(rig){const H=rig.hc,C=H.C;C.gait='couch';H.sat=true;if(H.drop){H.W.position.y+=H.drop;H.drop=0;}HC.pose(C,0);rig.gaitNow='couch';}
+function hcCouchPose(rig){const H=rig.hc,C=H.C;C.gait='couch';H.sat=true;if(H.drop){H.W.position.y+=H.drop;H.drop=0;}
+  C.kneel=rig.couchK!=null&&rig.couchK<1?rig.couchK:null; /* S2703 — the kit's kneel on the way down and up */HC.pose(C,0);C.kneel=null;rig.gaitNow=rig.couchK!=null&&rig.couchK<1?'kneel':'couch';}
 function hcPose(rig){const H=rig.hc,B=rig.B,map=H.map,uh=H.unhunch&&rig.hunch,rs=H.rest;
   if(rig.e&&rig.e.watch&&!rig.e.dead&&!H.spider&&!H.feet){hcSitPose(rig);return;}
   if(rig.couch&&H.C.plan.gaits&&H.C.plan.gaits.includes('couch')){hcCouchPose(rig);return;}
