@@ -295,7 +295,7 @@
     // Road verge: worn ground beside the ribbon.
     const ri=roadInfo(x,z);
     if(ri&&ri.d<ROAD_BLEND){_tmpC2.setHex(0x8a7a5a);out.lerp(_tmpC2,.35*(1-sstep(ROAD_HALF,ROAD_BLEND,ri.d)));}
-    // S2704 — the Mark's low ground (the Mark upland's view against P10b's Snowy Peaks; the canon's "black moor"): in a cold cell the
+    // S2705 — the Mark's low ground (the Mark upland's view against P10b's Snowy Peaks; the canon's "black moor"): in a cold cell the
     // moor is dark heather in patches with tawny dead grass between, not the Gatelands' brown, and old snow lies on the flat ground
     // under the snow line, in drifts that thin out 45 m below it. The Gatelands' and Aurenne's ground is unchanged.
     const sl=snowLineAt(x,z),cold=sl<30;
