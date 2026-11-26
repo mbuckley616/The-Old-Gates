@@ -2324,16 +2324,15 @@
   // The watch goes by the streets: a breadth-first search over a one-unit grid of the pad (built once per town), the
   // path pulled straight wherever the line is clear. Returns the turning points from a to b, not b itself; [] when
   // the line is clear or no way is found (he walks the direct line as before).
-  function townRoute(S){if(S._route)return S._route;const cx=S.site.x,cz=S.site.z;
+  function townRoute(S){if(S._route)return S._route; /* S2670 — the town's ways are the townsfolk's, and the dressing is not in their way (solidAtNpc) */const cx=S.site.x,cz=S.site.z;
     const R=Math.ceil((S.site.pad||40)+8),N=2*R+1,sol=new Uint8Array(N*N);
-    const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt(cx-R+i,cz-R+j)?1:0;
-      for(const q of S.sol||[]){if(!q.dress)continue;const e=Math.hypot(q.rx,q.rz)+.5,i0=Math.max(0,Math.floor(q.cx-e-cx+R)),i1=Math.min(N-1,Math.ceil(q.cx+e-cx+R)),j0=Math.max(0,Math.floor(q.cz-e-cz+R)),j1=Math.min(N-1,Math.ceil(q.cz+e-cz+R)); /* S2670 — the dressing's walls are thinner than a cell: each is marked with half a metre round it, so no way runs through one */
-        for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const dx=cx-R+i-q.cx,dz=cz-R+j-q.cz,lx=dx*q.c-dz*q.s,lz=dx*q.s+dz*q.c;if(Math.abs(lx)<q.rx+.5&&Math.abs(lz)<q.rz+.5)sol[j*N+i]=1;}}};fill();S._routeGrid={R,N,sol}; /* S2023 — the directions' walk (wayWalk) reads this grid too */
+    const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAtNpc(cx-R+i,cz-R+j)?1:0;
+};fill();S._routeGrid={R,N,sol}; /* S2023 — the directions' walk (wayWalk) reads this grid too */
     const cel=p=>[Math.max(0,Math.min(N-1,Math.round(p.x-cx+R))),Math.max(0,Math.min(N-1,Math.round(p.z-cz+R)))];
-    const find=(s0,g0)=>{const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0];
+    const find=(s0,g0)=>{const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0],si=s0%N,sj=(s0-si)/N,esc=(i,j)=>Math.abs(i-si)<=2&&Math.abs(j-sj)<=2; /* S2670 — the cells round where he stands may be stepped through: a man pressed into a wall's margin walks out of it */
       for(let h=0;h<q.length&&prev[g0]<0;h++){const c=q[h],ci=c%N,cj=(c-ci)/N;
         for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){if(!di&&!dj)continue;const ni=ci+di,nj=cj+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const k=nj*N+ni;
-          if(prev[k]>=0||(sol[k]&&k!==g0))continue;if(di&&dj&&(sol[cj*N+ni]||sol[nj*N+ci]))continue;prev[k]=c;q.push(k);}}
+          if(prev[k]>=0||(sol[k]&&k!==g0&&!esc(ni,nj)))continue;if(di&&dj&&!esc(ni,nj)&&(sol[cj*N+ni]||sol[nj*N+ci]))continue;prev[k]=c;q.push(k);}}
       if(prev[g0]<0)return null;const ks=[];for(let c=g0;c!==s0;c=prev[c])ks.push(c);ks.push(s0);return ks.reverse();};
     // S378 — the grid is read once, but solids go on arriving after the town is built (the chunks' trees and rocks, the
     // town's own later pieces): 3,710 solid cells at Dunmore's build, 3,928 six minutes on. A way through a cell gone solid
@@ -2341,15 +2340,15 @@
     // world as it is now: a cell gone solid is marked and the way found again; no way at all reads the whole grid afresh, once.
     // S513 — his own cell is the nearest by rounding, unless he stands clear and its centre is inside a solid (at its edge, in a corner:
     // CI held a guard so at 38.57 units for good); then the corner of the lattice round him nearest that he can walk to straight.
-    const startCel=p=>{const c0=cel(p);if(!solidAt(cx-R+c0[0],cz-R+c0[1])||solidAt(p.x,p.z))return c0;const fi=Math.floor(p.x-cx+R),fj=Math.floor(p.z-cz+R);let best=null,bd=1e9;
+    const startCel=p=>{const c0=cel(p);if(!solidAtNpc(cx-R+c0[0],cz-R+c0[1])||solidAtNpc(p.x,p.z))return c0;const fi=Math.floor(p.x-cx+R),fj=Math.floor(p.z-cz+R);let best=null,bd=1e9;
       for(const [i,j] of [[fi,fj],[fi+1,fj],[fi,fj+1],[fi+1,fj+1]]){if(i<0||j<0||i>=N||j>=N)continue;const x=cx-R+i,z=cz-R+j;let ok=true;
-        for(let t=1;t<=6&&ok;t++)if(solidAt(p.x+(x-p.x)*t/6,p.z+(z-p.z)*t/6))ok=false;
+        for(let t=1;t<=6&&ok;t++)if(solidAtNpc(p.x+(x-p.x)*t/6,p.z+(z-p.z)*t/6))ok=false;
         const d=Math.hypot(x-p.x,z-p.z);if(ok&&d<bd){bd=d;best=[i,j];}}
       return best||cel(p);};
     S._route=(a,b,raw)=>{const [ai,aj]=startCel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;let ks=null,fresh=false;
       for(let tries=0;tries<12;tries++){ks=find(s0,g0);
         if(!ks){if(fresh)break;fill();fresh=true;continue;}
-        let stale=false;for(let i=1;i<ks.length-1;i++){const k=ks[i];if(solidAt(cx-R+k%N,cz-R+Math.floor(k/N))){sol[k]=1;stale=true;}}
+        let stale=false;for(let i=1;i<ks.length-1;i++){const k=ks[i];if(solidAtNpc(cx-R+k%N,cz-R+Math.floor(k/N))){sol[k]=1;stale=true;}}
         if(!stale)break;ks=null;}
       if(!ks)return [];const cells=ks.map(c=>({x:cx-R+c%N,z:cz-R+Math.floor(c/N)})); // S247 — his own cell first: from a corner the line to the first turn can cut the wall
       if(raw)return cells; // S247 — every cell of the way, for a man the pulled-straight path has already failed
@@ -2423,12 +2422,16 @@
     for(let h=0;h<q.length&&end<0;h++){const i=q[h];if(Math.hypot(P[i].x-D.x,P[i].z-D.z)<=1.6){end=i;break;}
       for(let j=0;j<N;j++)if(prev[j]<0&&Math.hypot(P[j].x-P[i].x,P[j].z-P[i].z)<=1.5){prev[j]=i;q.push(j);}}
     if(end<0)return [];const out=[];for(let i=end;;i=prev[i]){out.unshift(P[i]);if(i===s0)break;}return out;}
+  /* S2670 — what stops a townsperson: the world's solids less the town's dressing (its walls, carts and stacks stop you, not them). The
+     guards' straight walk to the beat and the 1 m grid of their ways found pockets in it no way led out of (Dunmore's watch held for nine
+     minutes in a yard); the people walk as they did before the dressing. */
+  function solidAtNpc(x,z){NPC_THRU_DRESS=true;try{return solidAt(x,z);}finally{NPC_THRU_DRESS=false;}}
   function npcStep(n,tx,tz,spd,dt,near){
     const gx=n.g.position.x,gz=n.g.position.z,dx=tx-gx,dz=tz-gz,d=Math.hypot(dx,dz);
     if(d<(near||.8))return true;
     if(near&&d<spd*dt){n.g.position.x=tx;n.g.position.z=tz;return true;}
     const mx=dx/d*spd*dt,mz=dz/d*spd*dt;
-    const try_=(x,z)=>!solidAt(x,z),slide=spd*dt*.2; /* S1160 — a slide along one axis of under a fifth of the step is no headway: with the target dead ahead on one
+    const try_=(x,z)=>!solidAtNpc(x,z),slide=spd*dt*.2; /* S1160 — a slide along one axis of under a fifth of the step is no headway: with the target dead ahead on one
        axis, a 1e-12 slide along the other "succeeded", reset the count and held Portclare's watch at a wall for ten minutes */
     /* S1166 — along a wall at an angle: the lots stand turned since S1138, and a slide on x or z alone runs into a wall at 20°
        (Portclare's watch, wedged at a house's corner one step from his beat point). The step turned 20° to 80°, the side
@@ -3648,7 +3651,12 @@
   function tdrBound(D,P,r,kind,x0,z0,x1,z1,ok){const dx=x1-x0,dz=z1-z0,L=Math.hypot(dx,dz);if(L<.6)return [];const ry=Math.atan2(dx,dz),ux=dx/L,uz=dz/L,G=tdrGeos(),runs=[];let run=null;
     const step=kind==='hedge'?.8:kind==='plaster'||kind==='cane'?1:kind==='skigard'?.3:.6,n=Math.max(1,Math.round(L/step)),st=L/n;
     const T={stone:.95,hedge:1.25,skigard:1.2,turfwall:1,plaster:1.45,cane:1.35}[kind]||1;
-    for(let i=0;i<n;i++){const t=(i+.5)*st,x=x0+ux*t,z=z0+uz*t;if(!ok(x,z)){run=null;continue;}const y=worldH(x,z);
+    /* which pieces are clear, then every gap narrower than 2.2 m widened to it (an end's too): a slit a townsperson slips through but the
+       watch's grid reads as shut held a guard in a yard for good (S2670, beat) */
+    const M=[];for(let i=0;i<n;i++){const t=(i+.5)*st;M.push(!!ok(x0+ux*t,z0+uz*t));}
+    if(M.some(v=>v)&&M.some(v=>!v)){const need=Math.ceil(2.2/st);for(let pass=0;pass<3;pass++){let i=0;while(i<n){if(M[i]){i++;continue;}let j=i;while(j<n&&!M[j])j++;let len=j-i,lo=i,hi=j;
+          while(len<need&&(lo>0||hi<n)){if(lo>0&&(hi>=n||((lo+hi)&1))){lo--;M[lo]=false;}else if(hi<n){M[hi]=false;hi++;}len=hi-lo;}i=hi;}}}
+    for(let i=0;i<n;i++){const t=(i+.5)*st,x=x0+ux*t,z=z0+uz*t;if(!M[i]){run=null;continue;}const y=worldH(x,z);
       if(!run){run={t0:i*st,t1:(i+1)*st};runs.push(run);}else run.t1=(i+1)*st;
       if(kind==='stone'||kind==='turfwall'){const S=P.stone;for(let k=0;k<3;k++){const h=.26+r()*.06,o=(k%2?.15:-.1)*st;D.put('hi',G.box,tdrCol(S[Math.floor(r()*S.length)],r,.22),x+ux*o,y-.05+k*.29,z+uz*o,.5-.03*k,h,st*(.92+r()*.1),ry,(r()-.5)*.06,(r()-.5)*.08);}
         if(kind==='turfwall')D.put('hi',G.box,tdrCol(P.turf[Math.floor(r()*2)],r,.18),x,y+.8,z,.52,.22,st+.02,ry);
@@ -3672,7 +3680,7 @@
     const t0=performance.now(),isle=isleAt(cx,cz),P=TDR_PAL[isle]||TDR_PAL.gatelands,town=['town','city','port'].includes(site.kind),pros=o.pros==null?50:o.pros,rich=pros>=60,poor=pros<35;
     const inner=o.inner,D=tdrAcc(),WK=yardWalks(site,S.paths||[]),occ=new Map(),stats={yards:0,walls:0,items:0,street:0,infill:0,sols:0};
     const doors=[];for(const h of houses){if(h.doorX!=null)doors.push([h.doorX,h.doorZ]);if(h.exitX!=null)doors.push([h.exitX,h.exitZ]);}
-    for(const n of S.npcs||[]){const g=n&&(n.g||n.mesh);if(g&&g.position)doors.push([g.position.x,g.position.z]);}
+    for(const n of S.npcs||[]){const d=n&&n.def;if(d&&d.x!=null&&d.z!=null)doors.push([d.x,d.z]);} /* where each stands by right, not where he is now: the pass runs a step a frame, and he walks */
     const inR=(q,x,z,R)=>{const dx=x-q.cx,dz=z-q.cz;if(q.c!==undefined){const lx=dx*q.c-dz*q.s,lz=dx*q.s+dz*q.c;return Math.abs(lx)<q.rx+R&&Math.abs(lz)<q.rz+R;}return Math.abs(dx)<q.rx+R&&Math.abs(dz)<q.rz+R;};
     const plots=(S.plots||[]).map(p=>({cx:p.x,cz:p.z,rx:p.w/2,rz:p.d/2,c:Math.cos(p.ry),s:Math.sin(p.ry),type:p.type}));
     const discs=[];for(const Y of S.yards||[])discs.push([Y.x,Y.z,Y.r+1.5]);for(const K of [S.ring,S.fair,S.market])if(K&&K.x!=null)discs.push([K.x,K.z,(K.r||6)+1]);if(S.academy)discs.push([S.academy.cx,S.academy.cz,S.academy.r]);
@@ -3708,7 +3716,7 @@
       const U=hw+.45;let Y=0;tally=yardWhy;for(let y=.5;y<=5.01;y+=.5){let good=true;for(let u=-U;u<=U+.01&&good;u+=.6){const [x,z]=W(u,-hd-y);if(!ok(x,z,.25,true,B))good=false;}if(!good)break;Y=y;}tally=why; /* row by row back from the wall until one is not clear */
       const kind=isle==='mark'?(rich||town&&r()<.4?'turfwall':'skigard'):isle==='aurenne'?(poor&&r()<.6?'cane':'plaster'):(site.kind==='village'||poor?(r()<.6?'hedge':'stone'):(r()<.25?'hedge':'stone'));
       if(Y>=2.2&&!mine){stats.yards++; /* your own yard is left open for what you fit in it */const yv=-hd-Y,okB=(x,z)=>ok(x,z,.3,false,B),gateSide=r()<.5?-1:1,gv=-hd-Y*.55;
-        const segs=[[-U,yv,U,yv],[gateSide*U,-hd+.3,gateSide*U,gv+.6],[gateSide*U,gv-.6,gateSide*U,yv],[-gateSide*U,-hd+.3,-gateSide*U,yv]];
+        const segs=[[-U,yv,U,yv],[gateSide*U,-hd+.3,gateSide*U,gv+1],[gateSide*U,gv-1,gateSide*U,yv],[-gateSide*U,-hd+.3,-gateSide*U,yv]];{const [gx,gz]=W(gateSide*U,gv);discs.push([gx,gz,1.7]);} /* the gate's ground kept clear, in and out */
         for(const [u0,v0,u1,v1] of segs){const [a,b]=W(u0,v0),[c2,d2]=W(u1,v1);for(const R of tdrBound(D,P,r,kind,a,b,c2,d2,okB)){solid(R.x,R.z,R.w/2,R.len/2,R.ry,true);stats.walls++;}}
         const yc=W(0,-hd-Y/2),yard={cx:yc[0],cz:yc[1],rx:U,rz:Y/2,c:Math.cos(ry),s:Math.sin(ry),yard:true};claims.push(yard);
         if(live&&!shut&&!mine){const pool=isle==='mark'?['woodpile','woodpile','washing','beds','butt','tree:birch','logs']:isle==='aurenne'?['jars','tree:lemon','washing','beds','tree:olive','tree:cypress','bench']:['washing','peat','woodpile','beds','butt','coop','tree:apple'];
@@ -3722,7 +3730,7 @@
             else{const b=TDR_PIECE[pick](D,P,r,x,y,z,iry);if(b&&b.rx!=null&&pick!=='washing')solid(x,z,b.rx,b.rz,iry);stats.items++;}}}}
       /* the frontage: a wall (a gate in it where the gap is wide) from the front corner to the next house along the row, set back half a metre */
       if(!o.noLink){const A=W(hw+.3,hd-.55);let t=0;for(let k=.4;k<=9;k+=.4){if(inBld(A[0]+rx_*k,A[1]+rz_*k,0)){t=k;break;}}
-        if(t>1.2){const okB=(x,z)=>ok(x,z,.3,false,B),E=(k)=>[A[0]+rx_*k,A[1]+rz_*k],parts=t>3.4?[[0,t/2-.65],[t/2+.65,t-.1]]:[[0,t-.1]];
+        if(t>1.2){const okB=(x,z)=>ok(x,z,.3,false,B),E=(k)=>[A[0]+rx_*k,A[1]+rz_*k],parts=t>4?[[0,t/2-1],[t/2+1,t-.1]]:[[0,t-.1]];if(t>4){const [gx,gz]=E(t/2);discs.push([gx,gz,1.7]);}
           for(const [k0,k1] of parts){const [a,b]=E(k0),[c2,d2]=E(k1);for(const R of tdrBound(D,P,r,kind,a,b,c2,d2,okB)){solid(R.x,R.z,R.w/2,R.len/2,R.ry,true);stats.walls++;stats.links=(stats.links||0)+1;}}}}
       /* the doorstep: four flags before the door, 1.5 m across and 1.05 m out */
       if(live){const fs=tdrStyle(isle,'flag'),FA=D.list('g',h.doorX,h.doorZ),Q=(u,v)=>{const [x,z]=W(u,v);return [x,tdrH(x,z)+fs.y,z];},um=ud+(r()-.5)*.2;for(const [u0,u1] of [[ud-.75,um],[um,ud+.75]])for(const [v0,v1] of [[hd+.1,hd+.62],[hd+.62,hd+1.15]])tdrCell(FA,[Q(u0,v0),Q(u1,v0),Q(u1,v1),Q(u0,v1)],fs,r,0);}
@@ -3734,7 +3742,7 @@
       if(!shut){for(const sd of [-1,1]){const ua=ud+sd*1.45,ub=sd*(hw-.3);if(sd*(ub-ua)<.5)continue;for(let u=ua;sd*(ub-u)>0;u+=sd*(.7+r()*.4)){const [x,z]=W(u,hd+.35);if(!ok(x,z,.1,true,B))continue;
           if(isle==='aurenne'&&r()<.6)TDR_PIECE.pots(D,P,r,x,worldH(x,z),z);else if(r()<.75)TDR_PIECE.shrub(D,P,r,x,worldH(x,z),z,r()<(isle==='mark'?.3:.7)?flw:null);}}
         if(h.type==='home'&&r()<.45){const sd=r()<.5?-1:1,[x,z]=W(ud+sd*2.1,hd+.35);if(ok(x,z,.2,true,B)){TDR_PIECE.bench(D,P,r,x,worldH(x,z),z,ry);stats.items++;}}
-        if(r()<(isle==='aurenne'?.15:.4)){const sd=r()<.5?-1:1,[x,z]=W(sd*(hw+.45),hd-.4);if(ok(x,z,.35,true,B))item('butt',r,x,z,0,.35);}}
+        r();r();} /* (the water butt at the front corner pocketed a guard against the frontage wall; the yard keeps its own) */
       /* the trade on the shop's front, a metre or two to the door's side */
       if(h.type!=='home'&&!shut){const T={misc:['crates','cart','sacks'],inn:['barrels','table','cart'],weapon:['grindstone','trough','barrels'],forge:['grindstone','trough'],armor:['crates','grindstone'],potion:['pots','beds','crates'],shipwright:['logs','barrels','crates'],barber:['bench','pots']}[h.type]||['crates','barrels'];
         let k=0;for(const sd of [1,-1])for(const off of [3.3,4.6]){if(k>=T.length)break;const nm=T[k],[x,z]=W(ud+sd*off,hd+(nm==='cart'?1.6:nm==='table'?1.3:.6));const iry=nm==='cart'?ry+Math.PI/2:ry;
@@ -3765,7 +3773,7 @@
         /* the gate: on the side facing the middle */
         const lx=(cx-x)*c2-(cz-z)*s2,lz=(cx-x)*s2+(cz-z)*c2,gz=Math.abs(lz)/hd>Math.abs(lx)/hw,gs=gz?Math.sign(lz)||1:Math.sign(lx)||1;
         const sides=[[-hw,-hd,hw,-hd,'z',-1],[hw,-hd,hw,hd,'x',1],[hw,hd,-hw,hd,'z',1],[-hw,hd,-hw,-hd,'x',-1]];
-        for(const [u0,v0,u1,v1,ax,sg] of sides){const gate=(ax==='z')===gz&&sg===gs;const segs=gate?[[u0,v0,(u0+u1)/2-(u1>u0?.7:-.7),(v0+v1)/2-(v1>v0?.7:-.7)],[(u0+u1)/2+(u1>u0?.7:-.7),(v0+v1)/2+(v1>v0?.7:-.7),u1,v1]]:[[u0,v0,u1,v1]];
+        for(const [u0,v0,u1,v1,ax,sg] of sides){const gate=(ax==='z')===gz&&sg===gs;if(gate){const [gx_,gz_]=Wp((u0+u1)/2,(v0+v1)/2);discs.push([gx_,gz_,1.8]);}const segs=gate?[[u0,v0,(u0+u1)/2-(u1>u0?1:-1),(v0+v1)/2-(v1>v0?1:-1)],[(u0+u1)/2+(u1>u0?1:-1),(v0+v1)/2+(v1>v0?1:-1),u1,v1]]:[[u0,v0,u1,v1]];
           for(const [a0,b0,a1,b1] of segs){const [p0,q0]=Wp(a0,b0),[p1,q1]=Wp(a1,b1);for(const R of tdrBound(D,P,r,kind,p0,q0,p1,q1,okB)){solid(R.x,R.z,R.w/2,R.len/2,R.ry,true);stats.walls++;}}}
         claims.push(claim);const y=worldH(x,z),tryAt=(u,v,R)=>{const [px_,pz_]=Wp(u,v);return ok(px_,pz_,R,true,claim)?[px_,pz_]:null;};
         const put=(name,u,v,R,iry,a1)=>{const solidP=!!TDR_R[name],at=solidP?(()=>{const [px_,pz_]=Wp(u,v);return ok(px_,pz_,R,false,claim,TDR_R[name])?[px_,pz_]:null;})():tryAt(u,v,R);if(!at)return;const b=TDR_PIECE[name](D,P,r,at[0],worldH(at[0],at[1]),at[1],iry==null?ry:iry,a1);if(b&&b.rx!=null)solid(at[0],at[1],b.rx,b.rz,iry==null?ry:iry);stats.items++;};

@@ -1588,12 +1588,13 @@ function genSettlement(site){
       }
     }
   }
+  var NPC_THRU_DRESS=false; /* S2670 — set while a townsperson's step is tested (solidAtNpc, 82): the town's dressing is skipped */
   function settleSolid(x,z,R,MIN){
     for(const S of SETTLE.values()){
       const t=S.site;const reach=S.reach||t.pad+6;if(Math.abs(x-t.x)>reach||Math.abs(z-t.z)>reach)continue;
       const sol=S.sol;
       for(let i=0;i<sol.length;i++){
-        const s=sol[i];if(MIN&&Math.max(s.rx,s.rz)<MIN)continue;const dx=x-s.cx,dz=z-s.cz;
+        const s=sol[i];if(MIN&&Math.max(s.rx,s.rz)<MIN)continue;if(NPC_THRU_DRESS&&s.dress)continue;const dx=x-s.cx,dz=z-s.cz;
         if(s.c!==undefined){ // rotated rect: rotate the point into the rect's frame (mesh rotation.y = atan2(s,c))
           const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;
           if(Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R)return true;
