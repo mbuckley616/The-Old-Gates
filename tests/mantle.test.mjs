@@ -93,6 +93,10 @@ check(`a broken gate's chasm: falling just under its rim, untrained you go down 
 
 // S1401 — the pull's pose in third person: the builder's body plants both wrists on the ledge, a hand's breadth past its edge, while the
 // pull lifts it, and lets go as it stands
+// S2700: empty-handed, as it was written. Until S2658 the boot's Great Club was sheathed on its own after 5 s; now only H sheathes,
+// and with the club drawn the left wrist stayed on the haft, 0.38-0.43 m off the hold, and the first-person view held no fists
+const held = await page.evaluate(() => { const w = EQ.weapon && EQ.weapon.name; if (EQ.weapon && !SHEATHED) sheathWeapon(); return { w, sheathed: SHEATHED }; });
+console.log('hand', JSON.stringify(held));
 const P = await page.evaluate(() => { thirdPerson = true; const at = []; let hb = false;
   const r = _try(5, 1.5, { onPull: () => { const p = (FALL.clock - MANTLE.t0) / MANTLE_DUR, H = TP.rig && TP.rig.rig.hb; hb = hb || !!H; if (!H || p < .1 || p > .3) return;
     TP.rig.root.updateMatrixWorld(true); const M = TP.rig.mantle; if (!M) return;
