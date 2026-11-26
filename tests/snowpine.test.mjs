@@ -18,6 +18,16 @@ console.log(JSON.stringify(r));
 check('the snowpine has snow on it', r.snow > 30, r);
 check('every snow vertex lies on the needles\' slope (within 7% of the tier\'s radius at its height): no ring stands out', r.out === 0, r);
 check('it costs no more than before (172 triangles)', r.tris <= 172, r);
+// S2695 — the Mark's woods are the canon's snow-pines: in a cold cell no summer-leafed tree (an oak, a broadleaf, a willow) stands;
+// spruce, snowpine and birch take their places. Below Heifialos Fell, where the Mark upland's view (docs/art/shotlist.json) had oaks.
+await g.intoWorld();
+await page.evaluate(() => { let p = PEAKS.find(p => p.name === 'Heifialos Fell'); for (let j = 0; !p && j < GRID; j++) for (let i = 0; !p && i < GRID; i++) { const c = getCell(i, j); p = c && (c.peaks || []).find(q => q.name === 'Heifialos Fell'); } px = p.x; pz = p.z + 950; });
+await g.cells();
+const m = await page.evaluate(() => { const by = {}; let n = 0;
+  for (const ch of chunks.values()) { const x = ch.cx * CHUNK + CHUNK / 2, z = ch.cz * CHUNK + CHUNK / 2; if (Math.hypot(x - px, z - pz) > 300 || climateOfCell(...cellOf(x, z))!=="cold") continue; n++;
+    for (const o of ch.group.children) if (o.isInstancedMesh && o.userData.scatter) by[o.userData.scatter] = (by[o.userData.scatter] || 0) + o.count; }
+  return { chunks: n, by }; });
+check('in the Mark no oak, broadleaf or willow grows; spruce and snowpine do', m.chunks > 4 && !m.by.oak && !m.by.broadleaf && !m.by.willow && (m.by.spruce || 0) + (m.by.snowpine || 0) >= 5, m);
 await inspShots(g, [['plants-trees-rocks/trees-and-scrub/snowpine', 'snowpine-after.png']]);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

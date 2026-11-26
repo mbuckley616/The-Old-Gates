@@ -573,6 +573,9 @@
   // names its instances' ids (`userData.tids`) and each trunk's collider its tree (`tid`), so felling (50-travel.js) can take one out.
   // S2073 — the tundra's share of the ground at a point (regionWeights, as groundColor blends it), and the leafed kinds that may not stand in it
   const SNOWLEAF=new Set(['broadleaf','oak','birch','willow','spruce']),_snowBushC=new THREE.Color(1.3,1.32,1.36);
+  // S2695 — the Mark (a cold cell, by its nation): the leafed kinds that give way to its own woods, and the heather's cast on a bush there
+  const COLD_SWAP=new Set(['broadleaf','oak','willow','autumn','autumnRed','autumnGold','oakAutumn','birchAutumn']),_heathC=new THREE.Color(.5,.56,.6);
+  function coldCellAt(x,z){const [i,j]=cellOf(x,z);return climateOfCell(i,j)==='cold';}
   // Read from the 3×3 cells round the point's own (as withPlace does), never the live REGIONS: a chunk scattered before its neighbour's
   // tundra had loaded drew its trees from the plains, and the ground was recoloured white when the neighbour came (the gotcha of S701)
   const _twRing=new Map();
@@ -600,6 +603,7 @@
       const ny=slopeNormalY(x,z);
       const roll=hash01(gx,gz,3);
       const dom=dominantRegion(x,z);
+      const cold=coldCellAt(x,z);
       // Trees: density × clumping noise (clearings and thickets).
       const dens=regionScalar(x,z,'density');
       const clump=fbm(x,z,60,SEED+21,2);
@@ -616,7 +620,11 @@
         // takes the tundra's own, the snowpine, as the tundra's weight rises from .25 to .55, by its own die (S2076: a spruce in the snow too, since
         // the new look draws the spruce from green leaf cards and the snowpine with its snow)
         if(SNOWLEAF.has(sp)&&hash01(gx,gz,14)<sstep(.25,.55,tundraW(x,z)))sp='snowpine';
-        const sc_=hash01(gx,gz,5);const gi=.84+hash01(gx,gz,12)*.34;(trees[sp]=trees[sp]||[]).push({id:cx+','+cz+':'+(iz*100+ix),x,z,h,s:sc_<.06?1.7+sc_*3:.8+sc_*.7,r:hash01(gx,gz,6)*Math.PI*2,t:hash01(gx,gz,7),g:gi,sy:1+(1-gi)*.7,au:base==='autumn'}); // .8–1.5, rare giants; the girth (S192) a squat tree wider, a tall one slimmer
+        /* S2695 — the Mark's woods are the canon's snow-pines ("Tundra, black moor, snow-pines"): in a cold cell a summer-leafed tree that
+           the plains or the moor's mix put there (an oak, a broadleaf, a willow, an autumn kind) is a spruce, a snowpine or a birch, by its own
+           die. Keyed by the cell's climate (getCell's nation), never by what has loaded. The Mark upland's view had oaks against the fell. */
+        if(cold&&COLD_SWAP.has(sp)){const d=hash01(gx,gz,16);sp=d<.5?'spruce':d<.8?'snowpine':'birch';}
+        const sc_=hash01(gx,gz,5);const gi=.84+hash01(gx,gz,12)*.34;(trees[sp]=trees[sp]||[]).push({id:cx+','+cz+':'+(iz*100+ix),x,z,h,s:sc_<.06?1.7+sc_*3:.8+sc_*.7,r:hash01(gx,gz,6)*Math.PI*2,t:hash01(gx,gz,7),g:gi,sy:1+(1-gi)*.7,au:base==='autumn',cold}); // .8–1.5, rare giants; the girth (S192) a squat tree wider, a tall one slimmer
         _treePts.push(x,z);
         continue;
       }
@@ -626,7 +634,7 @@
       if(roll<p+rockP){const kr=hash01(gx,gz,13),kind=ny<.8&&kr<.55?'outcrop':kr<.5?'boulder':kr<.8?'outcrop':'cluster';rocks.push({x,z,h,s:.5+hash01(gx,gz,8)*1.3,r:hash01(gx,gz,9)*Math.PI*2,ny,proto:rockProto(ROCK_OF_BIOME[dom.r.biome]||'moor',kind)});continue;} // S264 — its kind by the ground's dice (outcrops likelier on a slope), dressed by its biome
       // Bushes: open ground only.
       const bushP=(dom.r.biome==='wastes'?.02:.06)*(1-dens)*sstep(.7,.9,ny);
-      if(roll<p+rockP+bushP)bushes.push({x,z,h,s:.7+hash01(gx,gz,10)*.7,r:hash01(gx,gz,11)*Math.PI*2,sn:sstep(.25,.55,tundraW(x,z))}); /* S2073 — sn, how much of the tundra's snow the bush stands in */
+      if(roll<p+rockP+bushP)bushes.push({x,z,h,s:.7+hash01(gx,gz,10)*.7,r:hash01(gx,gz,11)*Math.PI*2,sn:sstep(.25,.55,tundraW(x,z)),cold}); /* S2073 — sn, how much of the tundra's snow the bush stands in */
     }
     const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),s3=new THREE.Vector3(),c=new THREE.Color();
     function place(list,proto,tint,castShadow,solR){
@@ -668,13 +676,14 @@
         // Vertex colour already carries the base; the tint is a multiplier
         // around white, so normalise toward 1.
         c.r=.72+c.r*.5;c.g=.72+c.g*.5;c.b=.72+c.b*.5;
+        if(t.cold&&sp==='scrub'){const k=.9+(t.t-.5)*.16;c.copy(_heathC).multiplyScalar(k);} /* S2695 — the Mark's scrub is juniper and heather, dark and blue-green, not the Gatelands' bright blob */
       },solR=sp==='scrub'?0:({oak:.85,oakAutumn:.85,birch:.35,birchAutumn:.35,spruce:.45,pine:.45}[sp]||.5);
       if(!landTrees(group,trees[sp],sp,tint,solR,sol))place(trees[sp],sp,tint,true,solR); // S1182 (F3): the new look draws the leafy kinds and conifers from leaf cards, at the same places
       {const im=group.children[group.children.length-1];if(im&&im.isInstancedMesh)im.userData.tids=trees[sp].map(t=>t.id);
         for(const t of trees[sp])_treeRecs.push({id:t.id,x:t.x,z:t.z,h:t.h,sp,r:solR*t.s*(t.g||1)});} /* S1511 — felling's records */
     }
     {const by={};rocks.forEach(r=>{r.sink=0;(by[r.proto]||(by[r.proto]=[])).push(r);});for(const k in by)place(by[k],k,(t,c)=>{c.setRGB(.9+t.ny*.1,.9+t.ny*.08,.9);},true,.55);} // S264 — one instanced mesh per kind of rock in the chunk
-    place(bushes,'bush',(t,c)=>{c.setRGB(.92+(t.s-1)*.2,1,.9);if(t.sn)c.lerp(_snowBushC,.55*t.sn);},false,0); /* S2073 — a bush in the Mark's snow is frosted, not bright green */
+    place(bushes,'bush',(t,c)=>{c.setRGB(.92+(t.s-1)*.2,1,.9);if(t.cold)c.multiply(_heathC);if(t.sn)c.lerp(_snowBushC,.55*t.sn);},false,0); /* S2073 — a bush in the Mark's snow is frosted, not bright green */
     if(embers.length){place(embers,'ember',(t,c)=>{c.setRGB(1,1,1);},false,0);const gl=group.children[group.children.length-1];if(gl&&gl.isInstancedMesh){gl.material=new THREE.MeshBasicMaterial({vertexColors:true});}}
   }
 
