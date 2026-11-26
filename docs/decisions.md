@@ -44,6 +44,16 @@ Pictures (before | after, 10h, High): [Gatelands, Dunmore](https://raw.githubuse
 - **C.** Every skill-up is cheaper: 0.6 × L^1.2 instead of 0.9 × L^1.2 (29 uses at 25, 65 at 50); everything about 1.5× faster, tier gates sooner, late game shorter.
 - **D (recommended).** A and B together: the quests and kills of an evening give level 2 and nearly 3; skills and the curve past level 6 stay as #342 set them.
 
+### How mountainous should the Gatelands be between its towns? (from the deep-work session, 2026-11-26, #2063)
+**The question.** The land's relief (Session 2682, `auto/fable-land-relief`) raises the country between places so it reads as P10b's landscapes, not a mown lawn. Towns, roads, doors and rivers stay on flat ground (a calm field 110–190 m round each); between them uplands with ridges to ~46 m, tableland scarps ~24 m, cliff coasts ~30 m. The Gatelands' median height goes 6 → 13 m; the Mark goes higher (ridges ~78 m), Aurenne between. OG-101 asks for "a range across the middle"; P10b's Gatelands panels are green valleys under hills, not mountains.
+
+**Options.**
+- **A (recommended).** As built: rolling uplands and ridges to ~50 m, scarps, the range's crest in crags; valleys green, towns on the flat.
+- **B.** Gentler: half the Gatelands' amplitudes (ridges ~25 m, scarps ~12 m); hills you see over, not under. The Mark and Aurenne as built.
+- **C.** Bolder: the Gatelands as high as the Mark (ridges ~78 m), more uplands; a walk between towns is a climb.
+
+Any answer is a one-line change to `RELIEF.NAT`. Pictures: [the Gates' basin](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatebasin.jpg) · [a Gatelands lookout](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatevalley.jpg) · [the range north of the Gates](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatenorth.jpg) · [the Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-markvale.jpg)
+
 ## Answered
 ### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
 **The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.
