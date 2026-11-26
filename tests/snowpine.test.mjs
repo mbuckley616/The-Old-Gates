@@ -18,7 +18,7 @@ console.log(JSON.stringify(r));
 check('the snowpine has snow on it', r.snow > 30, r);
 check('every snow vertex lies on the needles\' slope (within 7% of the tier\'s radius at its height): no ring stands out', r.out === 0, r);
 check('it costs no more than before (172 triangles)', r.tris <= 172, r);
-// S2695 — the Mark's woods are the canon's snow-pines: in a cold cell no summer-leafed tree (an oak, a broadleaf, a willow) stands;
+// S2696 — the Mark's woods are the canon's snow-pines: in a cold cell no summer-leafed tree (an oak, a broadleaf, a willow) stands;
 // spruce, snowpine and birch take their places. Below Heifialos Fell, where the Mark upland's view (docs/art/shotlist.json) had oaks.
 await g.intoWorld();
 await page.evaluate(() => { let p = PEAKS.find(p => p.name === 'Heifialos Fell'); for (let j = 0; !p && j < GRID; j++) for (let i = 0; !p && i < GRID; i++) { const c = getCell(i, j); p = c && (c.peaks || []).find(q => q.name === 'Heifialos Fell'); } px = p.x; pz = p.z + 950; });

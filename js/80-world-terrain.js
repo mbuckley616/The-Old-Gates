@@ -573,7 +573,7 @@
   // names its instances' ids (`userData.tids`) and each trunk's collider its tree (`tid`), so felling (50-travel.js) can take one out.
   // S2073 — the tundra's share of the ground at a point (regionWeights, as groundColor blends it), and the leafed kinds that may not stand in it
   const SNOWLEAF=new Set(['broadleaf','oak','birch','willow','spruce']),_snowBushC=new THREE.Color(1.3,1.32,1.36);
-  // S2695 — the Mark (a cold cell, by its nation): the leafed kinds that give way to its own woods, and the heather's cast on a bush there
+  // S2696 — the Mark (a cold cell, by its nation): the leafed kinds that give way to its own woods, and the heather's cast on a bush there
   const COLD_SWAP=new Set(['broadleaf','oak','willow','autumn','autumnRed','autumnGold','oakAutumn','birchAutumn']),_heathC=new THREE.Color(.5,.56,.6);
   function coldCellAt(x,z){const [i,j]=cellOf(x,z);return climateOfCell(i,j)==='cold';}
   // Read from the 3×3 cells round the point's own (as withPlace does), never the live REGIONS: a chunk scattered before its neighbour's
@@ -620,7 +620,7 @@
         // takes the tundra's own, the snowpine, as the tundra's weight rises from .25 to .55, by its own die (S2076: a spruce in the snow too, since
         // the new look draws the spruce from green leaf cards and the snowpine with its snow)
         if(SNOWLEAF.has(sp)&&hash01(gx,gz,14)<sstep(.25,.55,tundraW(x,z)))sp='snowpine';
-        /* S2695 — the Mark's woods are the canon's snow-pines ("Tundra, black moor, snow-pines"): in a cold cell a summer-leafed tree that
+        /* S2696 — the Mark's woods are the canon's snow-pines ("Tundra, black moor, snow-pines"): in a cold cell a summer-leafed tree that
            the plains or the moor's mix put there (an oak, a broadleaf, a willow, an autumn kind) is a spruce, a snowpine or a birch, by its own
            die. Keyed by the cell's climate (getCell's nation), never by what has loaded. The Mark upland's view had oaks against the fell. */
         if(cold&&COLD_SWAP.has(sp)){const d=hash01(gx,gz,16);sp=d<.5?'spruce':d<.8?'snowpine':'birch';}
@@ -676,7 +676,7 @@
         // Vertex colour already carries the base; the tint is a multiplier
         // around white, so normalise toward 1.
         c.r=.72+c.r*.5;c.g=.72+c.g*.5;c.b=.72+c.b*.5;
-        if(t.cold&&sp==='scrub'){const k=.9+(t.t-.5)*.16;c.copy(_heathC).multiplyScalar(k);} /* S2695 — the Mark's scrub is juniper and heather, dark and blue-green, not the Gatelands' bright blob */
+        if(t.cold&&sp==='scrub'){const k=.9+(t.t-.5)*.16;c.copy(_heathC).multiplyScalar(k);} /* S2696 — the Mark's scrub is juniper and heather, dark and blue-green, not the Gatelands' bright blob */
       },solR=sp==='scrub'?0:({oak:.85,oakAutumn:.85,birch:.35,birchAutumn:.35,spruce:.45,pine:.45}[sp]||.5);
       if(!landTrees(group,trees[sp],sp,tint,solR,sol))place(trees[sp],sp,tint,true,solR); // S1182 (F3): the new look draws the leafy kinds and conifers from leaf cards, at the same places
       {const im=group.children[group.children.length-1];if(im&&im.isInstancedMesh)im.userData.tids=trees[sp].map(t=>t.id);
