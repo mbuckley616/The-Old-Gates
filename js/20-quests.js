@@ -1121,7 +1121,7 @@ function completeQuest(id){
   });
   // Tail the completion toast with the most salient reward. Gold-rich quests show gold;
   // sigil quests award XP only, so those show XP instead of "+0g".
-  const tail = (q.rewards.gold>0) ? ` +${q.rewards.gold}g` : ''; /* S2680 — no *+N XP*: since S952 xp levels nothing */
+  const tail = (q.rewards.gold>0) ? ` +${q.rewards.gold}g` : ''; /* S2681 — no *+N XP*: since S952 xp levels nothing */
   showMsgLong(`✅ ${q.title} complete!${tail}`,'#ffd700');
   addLog('✅','Completed quest: '+q.title);
   updateQuestDots();
