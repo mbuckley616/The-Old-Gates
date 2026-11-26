@@ -25,6 +25,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 Page: `docs/prototypes/levelup/notify.html`; approach in `docs/concepts.md`.
 
+### Towns dressed: tighten the lots, or fill the gaps around them? (from the deep-work session, 2026-11-26, #2053)
+**The question.** The town-dressing session (Session 2670, `auto/fable-town-dressing`) was asked to tighten the lots where the lawn gaps are widest, and has not. A house's id is its lot's place in the town's layout (`g_<site>_<n>`), and saves key your house, its garden, its racks and its residents by that id: moving the lots moves every id, and an old save's house becomes someone else's. Instead the pass fills the gaps (walled yards, gated walls along the frontage, gardens, orchards, work yards and paddocks, the square and streets paved); from the roofs some green remains.
+
+**Options.**
+- **A (recommended).** Leave the lots where they are; the dressing fills the gaps and no id moves.
+- **B.** Add infill buildings after the existing lots (ids past every lot's, as the farm's `FARM_N` does): outbuildings, workshops, back-row cottages in the widest gaps; enterable or not as Michael likes. More residents is the systems builder's call.
+- **C.** Tighten the layout itself (lot step 14 to 11 m, rows closer) with a one-time save migration that re-keys owned houses by position; old saves risk losing a house if it misses.
+
+Pictures (before | after, 10h, High): [Gatelands, Dunmore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/gatelands.jpg) · [The Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/mark.jpg) · [Aurenne](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/aurenne.jpg)
+
 ## Answered
 ### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
 **The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.
