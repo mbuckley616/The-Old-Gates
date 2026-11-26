@@ -72,6 +72,10 @@ async function render(src, label) {
     const url = await page.evaluate(([v, at]) => {
       // every job the cells queued, so the statics and the near grass stand (as the camps' shot did)
       for (let k = 0; k < 900 && (JOBS.length || [...LOADED.values()].some(L => L.pending)); k++) { tickCells(1); const t0 = performance.now(); while (JOBS.length && performance.now() - t0 < 1500) runJobs(); }
+      // Session 2714: a chunk laid while the jump's cells were still queued took its ground colour from the regions loaded then (the
+      // last view's: a Gatelands beach painted from Aurenne's after the harbour), which the game's own arrivals (WORLD.enter) never do.
+      // Every loaded chunk is recoloured once its cells stand, so a view no longer depends on the view before it.
+      for (const ch of chunks.values()) if (ch.terrain) recolourChunk(ch);
       forceTime(v.hour);
       const w = v.weather || 'clear'; try { devWeather(w); } catch (e) {} const wx = WORLD.wx; wx.type = w; wx.next = w; wx.k = 1; if (w === 'storm' || w === 'blizzard') wx.heavy = 1;
       // over the sea, "up" is over the water and not the sea floor (Session 2689: the harbour's camera stood in the surface)
