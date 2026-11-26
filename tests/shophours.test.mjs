@@ -146,5 +146,34 @@ check('Finding 57: the knock\'s answer and the refusal follow the keeper\'s peop
   && V[0][1] === 'K: “A hand that’s been in my till won’t be shaken at my counter. Go on with you.”' && V[1][1] === 'K: “I know what you did. Get out.”'
   && V[2][1] === 'K: “This house no longer extends you terms, Master. You will find the reason in your own account.”' && V[3][1] === 'K: “You took. You do not come in.”'
   && V[4][0] === V[0][0] && V[4][1] === V[0][1] && knock.refuse && knock.refuse.endsWith('Go on with you.”'), V);
+// S2713: a port's foreign stall and the road the day before (#1971 B). On market day a port's first stall sells the other two islands'
+// goods (a made weapon of each make and 3 to 5 of their herbs, 5 to 7 rows by port and week), kept by one of their people, at the
+// counter's price ×1.3; and each road into a town whose market is tomorrow carries one merchant more, bound for it, on his own stream.
+const foreign = await page.evaluate(() => { const set = (d, h) => { worldState.gameTimeAbsMinutes = 1440 * d + h * 60; worldState.gameTimeMinutes = h * 60; };
+  const o = {}, port = SITES.find(t => t.kind === 'port' && isleAt(t.x, t.z) === 'gatelands'), town = SITES.find(t => t.kind === 'town' && isleAt(t.x, t.z) === 'gatelands');
+  o.port = port && port.name; set(1, 10);
+  const H = marketStallHouse(port, 0, 'X'), F = marketForeignPack(port, marketWeek()), P1 = marketStallHouse(port, 1, 'Y');
+  o.name = H.name; o.rows = H.pack.map(r => r.name + ':' + (r.make || itemHome(r) || '?'));
+  o.homes = H.pack.map(r => itemHome(r)); o.isles = F.isles.join(); o.plainSecond = !P1.foreign && !P1.foreignMul;
+  o.keeper = PEOPLES[marketStallDraw(port, 0).nat.people].name; o.townFirst = !marketStallHouse(town, 0, 'Z').foreign;
+  o.weeks = new Set([0, 1, 2, 3, 4, 5].map(w => marketForeignPack(port, w).rows.map(r => r.name).join())).size;
+  o.same = marketForeignPack(port, 3).rows.map(r => r.name).join() === marketForeignPack(port, 3).rows.map(r => r.name).join();
+  const ch0 = currentHouse, ii = window.isInterior; window.isInterior = () => true; const sw = Object.assign({}, H.pack.find(r => r.make), { buyPrice: 1000 }); /* a dear copy, so rounding is not read as the rule */
+  currentHouse = H; o.stall = shopCost(sw); currentHouse = { siteId: port.id, type: 'weapon' }; o.counter = shopCost(sw);
+  currentHouse = H; o.rendered = (() => { try { renderShop(); return [...document.querySelectorAll('#sh-stock .sh-row')].length; } catch (e) { return 'err ' + e.message; } })();
+  currentHouse = ch0; window.isInterior = ii;
+  const rd = ROADS.find(r => roadfolkRoad(r) && (r.def.a === 'dunmore' || r.def.b === 'dunmore')), far = rd && (rd.def.a === 'dunmore' ? 'a' : 'b');
+  if (rd) { _roadDays.clear(); const eve = roadTravellers(rd, 0), stone = roadTravellers(rd, 1), wed = roadTravellers(rd, 7);
+    const mk = eve.filter(T => /:m[ab]$/.test(T.id)); const m0 = window.marketOn; window.marketOn = () => false; _roadDays.clear(); const none = roadTravellers(rd, 0); window.marketOn = m0; _roadDays.clear();
+    o.road = { n: eve.length, base: none.length, mk: mk.map(T => ({ kind: T.kind, from: T.from, to: T.market, h: (T.at - 0) / 60 })), dunEnd: far,
+      sameRest: JSON.stringify(eve.filter(T => !/:m[ab]$/.test(T.id))) === JSON.stringify(none), onDay: stone.filter(T => /:m[ab]$/.test(T.id)).length, eveAgain: wed.filter(T => T.market === 'dunmore').length }; }
+  return o; });
+console.log(JSON.stringify(foreign));
+check(`a port's foreign stall (${foreign.port}: "${foreign.name}"): the Mark's and Aurenne's goods only, a weapon of each make and 3 to 5 of their herbs, no name twice, kept by one of their people, by week; the second stall and a town's first are plain`,
+  foreign.isles === 'mark,aurenne' && foreign.homes.every(h => h === 'mark' || h === 'aurenne') && foreign.homes.includes('mark') && foreign.homes.includes('aurenne') && foreign.rows.length >= 5 && foreign.rows.length <= 7 && new Set(foreign.rows.map(r => r.split(':')[0])).size === foreign.rows.length
+  && /^From the Mark and Aurenne, /.test(foreign.name) && ['Markman', 'Aurennais'].includes(foreign.keeper) && foreign.weeks >= 3 && foreign.same && foreign.plainSecond && foreign.townFirst && foreign.rendered === foreign.rows.length, foreign);
+check('the foreign stall sells at the counter\'s price ×1.3 (the import\'s ×1.2 and market day\'s ×0.9 under it)', Math.abs(foreign.stall / foreign.counter - 1.3) < .03, { stall: foreign.stall, counter: foreign.counter });
+check('the day before Dunmore\'s market its road carries one merchant more, from the far end bound for Dunmore, 6 to 18; the day\'s other travellers as rolled; none more on market day itself, and again the eve a week on',
+  !!foreign.road && foreign.road.mk.length >= 1 && foreign.road.mk.some(m => m.kind === 'merchant' && m.to === 'dunmore' && m.from !== foreign.road.dunEnd && m.h >= 6 && m.h < 18) && foreign.road.n === foreign.road.base + foreign.road.mk.length && foreign.road.sameRest && foreign.road.onDay === 0 && foreign.road.eveAgain === 1, foreign.road);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
