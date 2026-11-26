@@ -14,7 +14,9 @@ const r = await page.evaluate(() => {
   const w0 = EQ.weapon, a0 = EQ.ammo, o0 = EQ.offhand, out = {};
   const XB = WEAPON_TYPES.find(t => t.type === 'Crossbow'), xb = makeItem(3, XB, null, false);
   out.item = { skill: weaponSkill(xb), twoHand: !!xb.twoHand, ico: xb.ico, wType: xb.wType };
-  EQ.weapon = xb; EQ.offhand = null; EQ.ammo = Object.assign({}, BOLT_IRON, { qty: 10 });
+  // S2695 — set as an equip sets it: the view model is rebuilt for it. Until S2658 the boot's weapon was sheathed on its own after 5 s,
+  // and `tickSheath` redrew the view model when the hand changed; with only H sheathing, the first-person piece stayed the Great Club
+  EQ.weapon = xb; EQ.offhand = null; EQ.ammo = Object.assign({}, BOLT_IRON, { qty: 10 }); buildViewmodel();
   drive(1);
   // S1476 — the span drawn: the string's middle (in the kit's frame) and the bolt, on the first-person piece
   const rig = () => { const k = vmSword.userData.kit, w = k && k.userData.xbow, P = w ? w.userData.xbowParts || {} : {}, s = P.xbowStringL; if (!s) return null;
