@@ -75,6 +75,18 @@ const clay = await page.evaluate(() => { const h = currentHouse, r = homeFitRec(
 check(`a clay oven, a kiln and a still fitted stand clear of the room and the bench, worked from their fronts, or fall back (oven ${clay.oven.placed ? clay.oven.tris + ' tris' : 'anywhere'}, kiln ${clay.kiln.placed ? clay.kiln.tris + ' tris' : 'anywhere'}, still ${clay.still.placed ? clay.still.tris + ' tris in ' + clay.still.draws + ' draws' : 'anywhere'})`,
   ['oven', 'kiln', 'still'].every(k => clay[k].placed ? clay[k].hit === 0 && clay[k].inRoom && clay[k].at && clay[k].draws <= 5 : clay[k].at), clay);
 await page.evaluate(() => exitInterior()); for (let n = 0; n < 40 && (await page.evaluate(() => isInterior())); n++) await page.waitForTimeout(250);
+// S2680 (the look builder; Michael's A on #1966): what the room could not hold stands in a lean-to against the house in its yard
+// (PKIT.props.leanto), kept with the fittings (worldState.fittings[id].yard) so a rebuilt town stands it again; each worked from its front there
+const lean = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id); const r = worldState.fittings[id];
+  const want = ['bench', 'oven', 'kiln', 'still'].filter(k => r.fit.includes(k) && !(h._fits && h._fits[k])), L = (S.leanTos || []).find(L => L.house === id), o = { want, yard: r.yard };
+  if (!L) return o; o.kinds = L.kinds; o.kit = L.g.userData.leanto; const mine = S.sol.filter(s => s.bt === 'leanto' && s.house === id);
+  const inside = (x, z, s) => { const dx = x - s.cx, dz = z - s.cz; if (s.c !== undefined) { const lx = dx * s.c - dz * s.s, lz = dx * s.s + dz * s.c; return Math.abs(lx) < s.rx && Math.abs(lz) < s.rz; } return Math.abs(dx) < s.rx && Math.abs(dz) < s.rz; };
+  o.clash = mine.filter(m => S.sol.some(s => s.bt !== 'leanto' && s.hid !== id && [[-1, -1], [-1, 1], [1, -1], [1, 1]].some(([a, b]) => inside(m.cx + a * m.rx * m.c + b * m.rz * m.s, m.cz - a * m.rx * m.s + b * m.rz * m.c, s)))).length;
+  const sx = px, sz = pz; o.at = L.kinds.every(k => { const sp = h._yardFits[k]; px = sp.x; pz = sp.z; const Y = homeYardAt(); return !!Y && Y.k === k && homeFitHere(k) && !WORLD.solidAt(px, pz); }); px = sx; pz = sz;
+  const t = WORLD.siteAnywhere('dunmore'); disposeSettlement('dunmore'); genSettlement(t); const S2 = WORLD.settle.get('dunmore'), h2 = S2.houses.find(h => h.id === id);
+  const L2 = (S2.leanTos || []).find(L => L.house === id); o.rebuilt = !!L2 && JSON.stringify(L2.kinds) === JSON.stringify(L.kinds) && L.kinds.every(k => h2._yardFits && h2._yardFits[k]); return o; }, pick.id);
+check(lean.want.length ? `what the room could not hold (${lean.want.join(', ')}) stands in a lean-to in the yard (${lean.kit && lean.kit.W} m, ${lean.kit && lean.kit.tris} tris, ${lean.kit && lean.kit.draws} draws), clear of the town's solids, each worked from its front, and again when the town is rebuilt`
+  : 'the room held every fitting: no lean-to', lean.want.length ? !!lean.kinds && JSON.stringify(lean.kinds) === JSON.stringify(lean.want) && lean.clash === 0 && lean.at && lean.rebuilt : !lean.kinds, lean);
 const yard = await page.evaluate((id) => { const S = WORLD.settle.get('dunmore'); const h = S.houses.find(h => h.id === id); homeFit(h, 'rack'); const n1 = S.racks.filter(R => R.house === id).length;
   homeUnfit(h, 'rack'); return { n1, n2: S.racks.filter(R => R.house === id).length }; }, pick.id);
 check('a tanner\'s rack fitted stands in the yard at once, and goes when taken out', yard.n1 === 1 && yard.n2 === 0, yard);
