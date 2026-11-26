@@ -3579,6 +3579,7 @@
     if(kind==='path')return town?{cl:.8,cw:.7,y:.045,dome:.025,jit:.26,hi:1.06,lo:.7,tone:c(P.flag),earth:c(P.earth),verge:.45}:{cl:.8,cw:.6,y:.045,dome:.015,jit:.2,hi:1,lo:.86,tone:c(P.earth),earth:c(P.earth),verge:.5};
     return {cl:.6,cw:.62,y:.075,dome:.03,jit:.34,hi:1.04,lo:.56,tone:c(P.sett).multiplyScalar(.94),earth:c(P.earth),verge:0};}
   /* pieces: each puts its parts on D at (x,z), turned ry, on the ground at y, from the stream r; `far` lays the far copy too */
+  const TDR_R={woodpile:1.3,peat:1.3,butt:.55,barrels:1.5,crates:1.4,trough:.95,grindstone:.6,table:1.3,cart:1.75,coop:.8,jars:1.3,rick:2,logs:2.4,shed:2.75}; /* a piece's reach from its middle to its footprint's far corner, kept off the doors */
   const TDR_PIECE={
     woodpile(D,P,r,x,y,z,ry){const G=tdrGeos(),c=Math.cos(ry),s=Math.sin(ry),L=1.4+r()*.8,H=.9+r()*.4;D.put('hi',G.box,tdrCol(P.wood,r,.2),x,y,z,L,H,.55,ry);
       for(let k=0;k<7;k++){const u=(r()-.5)*(L-.25),v=.06+r()*(H-.18);D.put('hi',G.cyl6,tdrCol(0xb89a70,r,.25),x+u*c+.29*s,y+v,z-u*s+.29*c,.09+r()*.04,.04,.09+r()*.04,ry,Math.PI/2);}
@@ -3666,13 +3667,13 @@
     const wgrid=new Map();for(const q of WK.segs)for(let i=Math.floor(q.x0/GS);i<=Math.floor(q.x1/GS);i++)for(let j=Math.floor(q.z0/GS);j<=Math.floor(q.z1/GS);j++){const k=gk(i,j);let L=wgrid.get(k);if(!L)wgrid.set(k,L=[]);L.push(q);}
     const walkNear=(x,z,m)=>{qid++;for(let i=Math.floor((x-m)/GS);i<=Math.floor((x+m)/GS);i++)for(let j=Math.floor((z-m)/GS);j<=Math.floor((z+m)/GS);j++){const L=wgrid.get(gk(i,j));if(!L)continue;
       for(const q of L){if(q._q===qid)continue;q._q=qid;if(x<q.x0-m||x>q.x1+m||z<q.z0-m||z>q.z1+m)continue;let u=q.L2?((x-q.ax)*q.vx+(z-q.az)*q.vz)/q.L2:0;u=u<0?0:u>1?1:u;if(Math.hypot(x-q.ax-q.vx*u,z-q.az-q.vz*u)<q.hw+m)return true;}}return false;};
-    const ok=(x,z,R,soft,own)=>{if(Math.hypot(x-cx,z-cz)>inner+(soft?.6:-1.2)-R)return no('ring');const dm=(soft?1.25:2.2)+R,M=Math.max(R,dm);qid++;
+    const ok=(x,z,R,soft,own,dR)=>{if(Math.hypot(x-cx,z-cz)>inner+(soft?.6:-1.2)-R)return no('ring');const dm=(soft?1.25:2.2)+(dR!=null?Math.max(R,dR):R), /* dR: a piece's whole reach, kept off the doors */M=Math.max(R,dm);qid++;
       for(let i=Math.floor((x-M)/GS);i<=Math.floor((x+M)/GS);i++)for(let j=Math.floor((z-M)/GS);j<=Math.floor((z+M)/GS);j++){const L=grid.get(gk(i,j));if(!L)continue;
         for(const q of L){if(q._q===qid||q===own)continue;q._q=qid;if(q.door){if(Math.hypot(x-q.cx,z-q.cz)<dm)return no('door');continue;}if(inR(q,x,z,q._cl?R*.5:R))return no(q._cl?'claim':q.bt||'solid');}}
       for(const p of plots)if(inR(p,x,z,R+.3))return no('plot');for(const d of discs)if(Math.hypot(x-d[0],z-d[1])<d[2]+R)return no('disc');
       if(walkNear(x,z,R+.1))return no('walk');try{const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF+.6+R)return no('road');}catch(e){}return tdrH(x,z)>SEA_Y+.5||no('sea');};
     const solid=(x,z,rx,rz,ry,bound)=>{const q={cx:x,cz:z,rx,rz,c:Math.cos(ry),s:Math.sin(ry),dress:true};if(bound){q.bt='wall';q.bound=true;}sol.push(q);file(q,false);stats.sols++;return q;};
-    const item=(name,r,x,z,ry,R,a1,a2)=>{if(!ok(x,z,R,false))return false;const y=worldH(x,z),b=TDR_PIECE[name](D,P,r,x,y,z,ry,a1,a2);if(b&&b.rx!=null)solid(x,z,b.rx,b.rz,ry);else if(b&&b.r!=null)solid(x,z,b.r,b.r,0);else claims.push({cx:x,cz:z,rx:R*.8,rz:R*.8});stats.items++;return true;};
+    const item=(name,r,x,z,ry,R,a1,a2)=>{if(!ok(x,z,R,false,undefined,TDR_R[name]))return false;const y=worldH(x,z),b=TDR_PIECE[name](D,P,r,x,y,z,ry,a1,a2);if(b&&b.rx!=null)solid(x,z,b.rx,b.rz,ry);else if(b&&b.r!=null)solid(x,z,b.r,b.r,0);else claims.push({cx:x,cz:z,rx:R*.8,rz:R*.8});stats.items++;return true;};
     const softItem=(name,r,x,z,ry,R,a1)=>{if(!ok(x,z,R,true))return false;TDR_PIECE[name](D,P,r,x,worldH(x,z),z,ry,a1);stats.items++;return true;};
     const live=!o.burned&&!o.abandoned;
     /* ── each house: its frame from its own solid (front toward its door), its yard behind, the boundary, the yard's things, the walls' greenery ── */
@@ -3684,7 +3685,7 @@
       /* the yard: as deep as is clear behind the house (2.2 to 5 m), as wide as the house and a little */
       const U=hw+.45;let Y=0;tally=yardWhy;for(let y=.5;y<=5.01;y+=.5){let good=true;for(let u=-U;u<=U+.01&&good;u+=.6){const [x,z]=W(u,-hd-y);if(!ok(x,z,.25,true,B))good=false;}if(!good)break;Y=y;}tally=why; /* row by row back from the wall until one is not clear */
       const kind=isle==='mark'?(rich||town&&r()<.4?'turfwall':'skigard'):isle==='aurenne'?(poor&&r()<.6?'cane':'plaster'):(site.kind==='village'||poor?(r()<.6?'hedge':'stone'):(r()<.25?'hedge':'stone'));
-      if(Y>=2.2&&!mine){stats.yards++; /* your own yard is left open for what you fit in it */const yv=-hd-Y,okB=(x,z)=>ok(x,z,.3,true,B),gateSide=r()<.5?-1:1,gv=-hd-Y*.55;
+      if(Y>=2.2&&!mine){stats.yards++; /* your own yard is left open for what you fit in it */const yv=-hd-Y,okB=(x,z)=>ok(x,z,.3,false,B),gateSide=r()<.5?-1:1,gv=-hd-Y*.55;
         const segs=[[-U,yv,U,yv],[gateSide*U,-hd+.3,gateSide*U,gv+.6],[gateSide*U,gv-.6,gateSide*U,yv],[-gateSide*U,-hd+.3,-gateSide*U,yv]];
         for(const [u0,v0,u1,v1] of segs){const [a,b]=W(u0,v0),[c2,d2]=W(u1,v1);for(const R of tdrBound(D,P,r,kind,a,b,c2,d2,okB)){solid(R.x,R.z,R.w/2,R.len/2,R.ry,true);stats.walls++;}}
         const yc=W(0,-hd-Y/2),yard={cx:yc[0],cz:yc[1],rx:U,rz:Y/2,c:Math.cos(ry),s:Math.sin(ry),yard:true};claims.push(yard);
@@ -3694,12 +3695,12 @@
             const back=-hd-Y+.55,mid=-hd-Y/2;let u,v,R,iry=ry;
             if(pick==='washing'){u=0;v=mid;R=.3;iry=ry+Math.PI/2*0;}else if(pick.startsWith('tree')){u=(r()<.5?-1:1)*(U-1.1);v=-hd-Y+1.2;R=.6;}else if(pick==='beds'){u=(r()<.5?-1:1)*(U*.45);v=mid+.2;R=.4;}
             else{u=(r()-.5)*(U-.8)*2;v=back+(pick==='butt'||pick==='coop'?.2:0);R=.5;}
-            const [x,z]=W(u,v);if(!ok(x,z,.2,true,yard))continue;const y=worldH(x,z);
+            const [x,z]=W(u,v),fr=TDR_R[pick]||0;if(!ok(x,z,fr?.5:.2,!fr,yard,fr||undefined))continue;const y=worldH(x,z); /* a stack against the yard's own wall: its reach less the wall's side */
             if(pick.startsWith('tree:')){if(!ok(x,z,.4,false,yard))continue;const t=TDR_PIECE.tree(D,P,r,x,y,z,pick.slice(5));solid(x,z,t.r,t.r,0);stats.items++;}
             else{const b=TDR_PIECE[pick](D,P,r,x,y,z,iry);if(b&&b.rx!=null&&pick!=='washing')solid(x,z,b.rx,b.rz,iry);stats.items++;}}}}
       /* the frontage: a wall (a gate in it where the gap is wide) from the front corner to the next house along the row, set back half a metre */
       if(!o.noLink){const A=W(hw+.3,hd-.55);let t=0;for(let k=.4;k<=9;k+=.4){if(inBld(A[0]+rx_*k,A[1]+rz_*k,0)){t=k;break;}}
-        if(t>1.2){const okB=(x,z)=>ok(x,z,.3,true,B),E=(k)=>[A[0]+rx_*k,A[1]+rz_*k],parts=t>3.4?[[0,t/2-.65],[t/2+.65,t-.1]]:[[0,t-.1]];
+        if(t>1.2){const okB=(x,z)=>ok(x,z,.3,false,B),E=(k)=>[A[0]+rx_*k,A[1]+rz_*k],parts=t>3.4?[[0,t/2-.65],[t/2+.65,t-.1]]:[[0,t-.1]];
           for(const [k0,k1] of parts){const [a,b]=E(k0),[c2,d2]=E(k1);for(const R of tdrBound(D,P,r,kind,a,b,c2,d2,okB)){solid(R.x,R.z,R.w/2,R.len/2,R.ry,true);stats.walls++;stats.links=(stats.links||0)+1;}}}}
       if(!live)continue;
       /* against the walls: greenery up a side wall or a front corner; flowers along the front, clear of the door by 1.4 m; a bench by it */
@@ -3712,7 +3713,7 @@
         if(r()<(isle==='aurenne'?.15:.4)){const sd=r()<.5?-1:1,[x,z]=W(sd*(hw+.45),hd-.4);if(ok(x,z,.35,true,B))item('butt',r,x,z,0,.35);}}
       /* the trade on the shop's front, a metre or two to the door's side */
       if(h.type!=='home'&&!shut){const T={misc:['crates','cart','sacks'],inn:['barrels','table','cart'],weapon:['grindstone','trough','barrels'],forge:['grindstone','trough'],armor:['crates','grindstone'],potion:['pots','beds','crates'],shipwright:['logs','barrels','crates'],barber:['bench','pots']}[h.type]||['crates','barrels'];
-        let k=0;for(const sd of [1,-1])for(const off of [2.4,3.4]){if(k>=T.length)break;const nm=T[k],[x,z]=W(ud+sd*off,hd+(nm==='cart'?1.6:nm==='table'?1.3:.6));const iry=nm==='cart'?ry+Math.PI/2:ry;
+        let k=0;for(const sd of [1,-1])for(const off of [3.3,4.6]){if(k>=T.length)break;const nm=T[k],[x,z]=W(ud+sd*off,hd+(nm==='cart'?1.6:nm==='table'?1.3:.6));const iry=nm==='cart'?ry+Math.PI/2:ry;
           if(nm==='pots'||nm==='bench'||nm==='sacks'){if(softItem(nm,r,x,z,iry,.4))k++;}else if(item(nm,r,x,z,iry,nm==='cart'?1.2:.7,nm==='cart'?(h.type==='inn'?'barrels':'sacks'):undefined))k++;}}}
     lap('houses');
     /* ── the streets' clutter: a cart, barrels, a trough, hay, by prosperity, on the verge of the streets (S.paths 2 m wide and over) ── */
@@ -3743,7 +3744,7 @@
         for(const [u0,v0,u1,v1,ax,sg] of sides){const gate=(ax==='z')===gz&&sg===gs;const segs=gate?[[u0,v0,(u0+u1)/2-(u1>u0?.7:-.7),(v0+v1)/2-(v1>v0?.7:-.7)],[(u0+u1)/2+(u1>u0?.7:-.7),(v0+v1)/2+(v1>v0?.7:-.7),u1,v1]]:[[u0,v0,u1,v1]];
           for(const [a0,b0,a1,b1] of segs){const [p0,q0]=Wp(a0,b0),[p1,q1]=Wp(a1,b1);for(const R of tdrBound(D,P,r,kind,p0,q0,p1,q1,okB)){solid(R.x,R.z,R.w/2,R.len/2,R.ry,true);stats.walls++;}}}
         claims.push(claim);const y=worldH(x,z),tryAt=(u,v,R)=>{const [px_,pz_]=Wp(u,v);return ok(px_,pz_,R,true,claim)?[px_,pz_]:null;};
-        const put=(name,u,v,R,iry,a1)=>{const at=tryAt(u,v,R);if(!at)return;const b=TDR_PIECE[name](D,P,r,at[0],worldH(at[0],at[1]),at[1],iry==null?ry:iry,a1);if(b&&b.rx!=null)solid(at[0],at[1],b.rx,b.rz,iry==null?ry:iry);stats.items++;};
+        const put=(name,u,v,R,iry,a1)=>{const solidP=!!TDR_R[name],at=solidP?(()=>{const [px_,pz_]=Wp(u,v);return ok(px_,pz_,R,false,claim,TDR_R[name])?[px_,pz_]:null;})():tryAt(u,v,R);if(!at)return;const b=TDR_PIECE[name](D,P,r,at[0],worldH(at[0],at[1]),at[1],iry==null?ry:iry,a1);if(b&&b.rx!=null)solid(at[0],at[1],b.rx,b.rz,iry==null?ry:iry);stats.items++;};
         const tree=(u,v,k)=>{const at=tryAt(u,v,.5);if(!at)return;const t=TDR_PIECE.tree(D,P,r,at[0],worldH(at[0],at[1]),at[1],k);solid(at[0],at[1],t.r,t.r,0);stats.items++;};
         if(type==='garden'){for(let v=-hd+1.1;v<hd-.9;v+=2.6)put('beds',-hw*.2,v,.3);if(hw>3)put(isle==='aurenne'?'jars':'butt',hw-.7,-hd+.7,.3);if(r()<.5)put('washing',0,hd-1.2,.3);}
         else if(type==='orchard'||type==='grove'||type==='cypress'){const k=type==='grove'?'birch':type==='cypress'?'cypress':isle==='aurenne'?'lemon':'apple';for(let u=-hw+1.4;u<hw-1;u+=2.8)for(let v=-hd+1.4;v<hd-1;v+=2.8)tree(u+(r()-.5)*.6,v+(r()-.5)*.6,k);}
