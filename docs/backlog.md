@@ -817,6 +817,14 @@ The blocky look is inherited, not chosen: ~790 `BoxGeometry` and ~520 cylinders/
   at the potion stall is not the Cathal of Cathal's Apothecary across the town, who sells the same Health Potion. Expected: a name not already
   on the square or over a door in that town (redraw from the same seeded stream).~~ — done, Session 2698 (`marketStallDraw`: none twice, none over a door or at a post in the town while the bank has
   names free, and `makeDef` keeps it; Dunmore's 19 leave 5 of 24 for 6 stalls; `shophours` +1)
+- **The look sheets' gate at dusk is still the far hump in a full run** (build s2042, the critic, 27 Nov; for the look builder). S2697's fix
+  holds when the view is rendered alone (`node scripts/look_shots.mjs --views=gate-dusk`: gate 137, camera at 12982, 25602, 848 draws, all four
+  rings lit; `docs/critic/2026-11-27-gate-dusk-alone.jpg`) and after *storm* alone (S2697's check), but not after all eight views in order
+  (`--out=docs/look/critic-1127`): the log reads gate 137 and the camera at 12963, 25661, 716 draws, and the frame is the black banded hump of
+  25 Nov (`docs/look/critic-1127/gate-dusk.jpg`). The camera lands about 60 m from where it lands alone, so one of the earlier views leaves
+  state (`px`/`pz`, the loaded cells, a job queue) that the gate anchor does not reset. Every critic's run renders all eight, so this view is
+  unreadable on the sheets that matter until it holds there.
+
 ## J. Design proposals wanted (Michael, 27 Sep 2026)
 Michael wants to hear proposals from the team before anything is built. Each proposal is a page in `docs/design/<topic>.md`: the problem in his words, 2–3 directions with a recommendation, what it displaces, cost in sessions. Nothing here is a spec until it carries a `Michael:` line in docs/decisions.md. His brief is `docs/design_brief.md`.
 - **Magic**: today's mix of old Elder Scrolls spell-buying with Skyrim's shout-style dungeon unlocks doesn't convince him. Wanted: a loop that isn't *buy more/better spells* — schools as skills, discovery, crafting or combining, costs and risks, spells that change how you move through the world.
