@@ -28,7 +28,7 @@ async function shoot(look) {
   // Session 1072: on the new look a Gatelands town is built from the kit (tests/kittown), so Dunmore's houses differ by design; this
   // suite compares the renderers, so both looks build the old town here.
   await page.evaluate(() => { window.OG_KIT_TOWNS = false; });
-  // Session 2724 (QA): the towns' dressing (S2670, #2058: setts, yards, walls) is the new look's alone, and once it is laid it takes the town's
+  // Session 2726 (QA): the towns' dressing (S2670, #2058: setts, yards, walls) is the new look's alone, and once it is laid it takes the town's
   // path ribbons out of `_ribbons` (genSettlement, js/83-world-generator.js). On main at s2036 the new look's ray through the road box then
   // never met a ribbon, the spots ran out at 300 frames each, and both tries died at run.mjs's 900 s cap (1,447 s here before the page closed).
   // The same card lays a road through a paved town's ring as setts on the new look (tdrTownAt in buildRoadRibbons, js/82-world-structures.js):
