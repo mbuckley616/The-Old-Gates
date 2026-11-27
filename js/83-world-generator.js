@@ -1734,7 +1734,7 @@ function genSettlement(site){
     if(!worldState.wdisc)worldState.wdisc={};
     if(worldState.wdisc[id])return false;
     worldState.wdisc[id]=true;
-    try{const t=siteAnywhere(id);const big=t&&(t.kind==='city'||t.kind==='town'||t.kind==='port');const gain=big?50:String(id).startsWith('door_')?30:25;xp+=gain;if(typeof chkLvl==='function')chkLvl();if(typeof updateHUD==='function')updateHUD();if(typeof showMsgLong==='function')showMsgLong(`${name} discovered`,'#e8d8a0');else showMsg(`${name} discovered`,'#e8d8a0');(worldState.stats||(worldState.stats={})).found=((worldState.stats||{}).found||0)+1;}catch(e){if(typeof showMsg==='function')showMsg(`Discovered: ${name}`,'#e8d8a0');}
+    try{const t=siteAnywhere(id);const big=t&&(t.kind==='city'||t.kind==='town'||t.kind==='port');const gain=big?50:String(id).startsWith('door_')?30:25;xp+=gain;if(typeof chkLvl==='function')chkLvl();if(typeof updateHUD==='function')updateHUD();if(typeof showMsgLong==='function')showMsgLong(`${name} discovered`,'#e8d8a0',{kind:'place',title:name,line:'Discovered'});else showMsg(`${name} discovered`,'#e8d8a0');(worldState.stats||(worldState.stats={})).found=((worldState.stats||{}).found||0)+1;}catch(e){if(typeof showMsg==='function')showMsg(`Discovered: ${name}`,'#e8d8a0');}
     if(typeof addLog==='function')addLog('🗺️',`Discovered ${name}.`);
     if(typeof sndDiscover==='function')sndDiscover();
     return true;
@@ -4901,7 +4901,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
   function tickPickups(){qPickupTick();for(let i=pickups.length-1;i>=0;i--){const p=pickups[i];if(p.quest)continue;if(Math.hypot(px-p.x,pz-p.z)<1.4){p.task.got=true;gStamp(p.task);sc.remove(p.task._obj.m);unregLight(p.task._obj.l);pickups.splice(i,1);showMsg('You take the binding-stone. Report back.','#e8d8a0');if(typeof addLog==='function')addLog('🔷','Took a binding-stone.');}}}
   function turnIn(g){gLapse();const st=gstate()[g];const t=st.active;if(!t)return "You've no task from us.";if(!taskDone(t))return `Not yet. ${progressLine(t)}.`;
     if(t.kind==='supply'&&!t.wood){gStamp(t);bagTake(b=>b.ore===t.ore,t.need);if(typeof renderHubInv==='function')renderHubInv();}
-    st.active=null;st.done++;const paid=questGold(gDatedPay(t));gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);qJournal(t,'complete',`Turned in to the ${GUILD_DEF[g].name}: ${paid} gold.`);
+    st.active=null;st.done++;const paid=questGold(gDatedPay(t));gold+=paid;xp+=Math.round(t.gold*.8);chkLvl();if(typeof questMarks==='function')questMarks('job');updateHUD();if(typeof addLog==='function')addLog('🏅',`${GUILD_DEF[g].name}: ${t.short} — ${paid} gold.`);qJournal(t,'complete',`Turned in to the ${GUILD_DEF[g].name}: ${paid} gold.`);
     if(g==='guild_m'&&typeof earnReading==='function'&&earnReading()){showMsg('📖 A reading from the shelves is owed you.','#c8b8f0');if(typeof addLog==='function')addLog('📖','A reading from the Mages\u2019 Guild\u2019s shelves.');} /* S1629 — a reading for every mages' task */
     const rk=rankOf(g);return `Good work. ${paid} gold. ${st.done%3===0?`You're ${aOrAn(rk)} ${rk} of the ${GUILD_DEF[g].name} now.`:`Rank: ${rk}.`}`;}
   // S682 — Michael's A on DECISION #217: a task you cannot finish is handed back, with no pay and no mark against your standing,

@@ -1226,7 +1226,7 @@
   // named action: the contract's work turned in to the Factor. Returns the gold the ledger fell by, or null when it is ordinary work
   function contractTurnIn(q){const L=ledgerSweep()||ledgerRec();if(!q||!q.contract||!L.contract||L.contract.q!==q.id)return null;const f0=L.bounty;
     L.bounty=Math.max(0,L.bounty-L.contract.sum);if(L.bounty===0){L.base=0;L.weeks=0;L.loot=0;delete L.lockFine;}delete L.contract;q.turnedIn=true;q.paid=0;
-    xp+=Math.round((q.reward||0)*.9);if(typeof chkLvl==='function')chkLvl();if(typeof updateHUD==='function')updateHUD();
+    xp+=Math.round((q.reward||0)*.9);if(typeof chkLvl==='function')chkLvl();if(typeof questMarks==='function')questMarks(qMarkKind(q));if(typeof updateHUD==='function')updateHUD();
     if(typeof addLog==='function')addLog('⚖',`${q.title}: the contract is met. The Compact's ledger fell from ${f0} to ${L.bounty} gold.`);
     qJournal(q,'complete',`Turned in to ${q.giver}: the Compact's ledger, ${L.bounty?`${L.bounty} gold still owed`:'cleared'}.`);return f0-L.bounty;}
   /* S2228 — law in three registers (Michael's B on #1540), the Mark's court: the reeve and the claim. In a town of the Mark the fine

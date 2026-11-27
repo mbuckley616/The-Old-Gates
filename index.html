@@ -160,6 +160,18 @@
 #ledger{position:absolute;left:18px;bottom:134px;width:min(430px,calc(50% - 90px));display:flex;flex-direction:column;align-items:flex-start;gap:6px;pointer-events:none;z-index:210}
 #ledger .ldg{padding:5px 16px 5px 10px;max-width:100%;box-sizing:border-box;font:15px/1.3 Georgia,serif;color:#2e1c0c;background:linear-gradient(#ecdcb2,#d8bf88);border-left:4px solid #7a1f10;border-radius:3px;box-shadow:0 0 0 1px #8a7040,0 2px 5px rgba(0,0,0,.55);transition:opacity .4s}
 #ledger .ldg.gone{opacity:0!important}
+/* S2723 — the five moments' card (Michael's B on #2047; docs/prototypes/levelup/notify.js, N_CSS): a paper slip at the top centre, a wax
+   seal in the kind's colour, the kind in small capitals, the name and one line; one at a time, 4 s each, the rest queued (noteCard, 20) */
+#note-card{position:absolute;left:50%;top:30px;transform:translateX(-50%);z-index:211;pointer-events:none;transition:opacity .35s;opacity:0}
+#note-card.on{opacity:1}
+#note-card .nc{position:relative;display:flex;gap:14px;align-items:center;color:#2e1c0c;padding:11px 26px 12px 14px;width:min(400px,calc(100vw - 260px));box-sizing:border-box;border-radius:4px;background:linear-gradient(170deg,#f2e4bc,#e3cd98 55%,#cdb27a);box-shadow:0 0 0 1px #8a7040,0 6px 10px rgba(0,0,0,.55)}
+#note-card .nc::after{content:"";position:absolute;left:78px;right:26px;bottom:8px;height:2px;background:linear-gradient(90deg,#9a7020,rgba(154,112,32,.15));border-radius:1px}
+#note-card .wax{flex:none;width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font:24px/1 Georgia,serif;color:#f6e2b8;text-shadow:0 1px 1px rgba(0,0,0,.6);background:radial-gradient(circle at 38% 34%,rgba(255,255,255,.35),transparent 38%),radial-gradient(circle,var(--s) 58%,color-mix(in srgb,var(--s) 60%,#000) 100%);box-shadow:0 0 0 3px color-mix(in srgb,var(--s) 80%,#000),0 0 0 4px rgba(0,0,0,.25),0 2px 4px rgba(0,0,0,.5)}
+#note-card .tx{min-width:0}
+#note-card .kd{font:13px/1 Georgia,serif;letter-spacing:.16em;color:#5a4128;text-transform:uppercase;font-variant:small-caps}
+#note-card .tt{font:24px/1.15 Georgia,serif;color:#7a1f10;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#note-card .ln2{font:italic 15px/1.25 Georgia,serif;color:#5a4128;margin-top:2px}
+#note-card .ln2:empty{display:none}
 /* S2597 — under 1,040 wide the ribbon's middle slides left with the band (S2594), so the ledger narrows with it: its right end stays 192 px
    short of the ribbon's middle at every width (430 at 1,040 and up, 310 at 800), and a ribbon of three names up to 352 wide clears it by 16 */
 /* S2591 — in a dialogue the ledger stands left of the panel (#dlg at 20%), its slips wrapped, so a line that comes mid-talk no longer covers the talk */
@@ -939,6 +951,7 @@ body:has(#shop[style*="flex"]) #ledger .ldg:last-child{display:block;white-space
   <canvas id="mm" width="104" height="104"></canvas>
   <div id="msg"></div>
   <div id="ledger"></div>
+  <div id="note-card"></div>
   <div id="dmgnums"></div>
   <div id="dp">
     <button style="grid-column:2;grid-row:1" id="pw">▲</button>

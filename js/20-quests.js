@@ -26,8 +26,23 @@ function ledgerLine(t,c,ms=LEDGER_MS){if(!LEDGER)return;t=String(t==null?'':t);i
   const live=[...LEDGER.children].filter(e=>!e.classList.contains('gone'));
   for(let i=0;i<live.length-LEDGER_N;i++){clearTimeout(live[i]._x);live[i].remove();}
   ledgerShade();}
-function showMsg(t,c='#d4b896'){MSGEL.textContent=t;MSGEL.style.color=c;ledgerLine(t,c);}
-function showMsgLong(t,c='#d4b896'){MSGEL.textContent=t;MSGEL.style.color=c;ledgerLine(t,c);}
+// S2723 — the five moments a player waits for (a level ready, a quest given or done, a place found, a skill rising, a word held) are
+// a card at the top centre, not a slip (Michael's B on #2047; the concept artist's notify.js). showMsg(t, c, card) with card
+// {kind, title, line} writes #msg as ever and queues the card in place of the slip; one card at a time, NOTE_MS each, a 0.35 s fade.
+// Cosmetic: the page's clock.
+const NOTE_KIND={level:{k:'Level',seal:'#b8862a',ico:'★'},quest:{k:'Quest',seal:'#8a2412',ico:'❦'},place:{k:'Found',seal:'#3f6a34',ico:'⚑'},
+  skill:{k:'Skill',seal:'#2e4c7c',ico:'✦'},word:{k:'Word',seal:'#b4441a',ico:'✺'}},NOTE_MS=4000,NOTE_Q=[];
+let _noteOn=null;
+function noteEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[ch]);}
+function noteCard(kind,title,line){const d=NOTE_KIND[kind];if(!d)return false;title=String(title||'').trim();if(!title)return false;
+  if((_noteOn&&_noteOn.title===title&&_noteOn.kind===kind)||NOTE_Q.some(n=>n.title===title&&n.kind===kind))return true;
+  NOTE_Q.push({kind,title,line:String(line||'').trim()});if(!_noteOn)noteNext();return true;}
+function noteNext(){const el=document.getElementById('note-card');const n=NOTE_Q.shift();_noteOn=n||null;if(!el)return;
+  if(!n){el.classList.remove('on');return;}const d=NOTE_KIND[n.kind];
+  el.innerHTML=`<div class="nc" data-kind="${n.kind}" style="--s:${d.seal}"><div class="wax">${d.ico}</div><div class="tx"><div class="kd">${d.k}</div><div class="tt">${noteEsc(n.title)}</div><div class="ln2">${noteEsc(n.line)}</div></div></div>`;
+  el.classList.add('on');requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{el.classList.remove('on');setTimeout(noteNext,350);},NOTE_MS)));} /* the hold counts from the first frame that shows it */
+function showMsg(t,c='#d4b896',card){MSGEL.textContent=t;MSGEL.style.color=c;if(!(card&&noteCard(card.kind,card.title,card.line)))ledgerLine(t,c);}
+function showMsgLong(t,c='#d4b896',card){MSGEL.textContent=t;MSGEL.style.color=c;if(!(card&&noteCard(card.kind,card.title,card.line)))ledgerLine(t,c);}
 function doFade(cb){const el=document.getElementById('fd');el.style.transition='opacity .4s';el.style.opacity='1';setTimeout(()=>{cb();el.style.opacity='0';},440);}
 
 // v61ae: defensive UI cleanup called on every zone/interior/dungeon transition.
@@ -1032,6 +1047,7 @@ function completeQuest(id){
   const _finalGold = questGold(_baseGold);
   gold += _finalGold;
   xp+=(q.rewards.xp||0);chkLvl();
+  questMarks(q.questline==='sigil_lore'?null:(q.questline||'main')==='main'?'main':'quest'); /* S2722 — #2059 D: a main-quest step 3 marks; a sigil's tier is attained, not handed in */
   (q.rewards.items||[]).forEach(it=>bagAdd({...it,qty:1}));
   // v61ad: consume quest items given at acceptance time. The item gets taken
   // in-fiction during the turn-in dialog (e.g. Aldwyn takes Edna's rubbing to
@@ -1101,7 +1117,7 @@ function completeQuest(id){
       QS[nextId].state = (nextQ && nextQ.autoAccept) ? 'active' : 'available';
       if(nextQ){
         if(nextQ.autoAccept){
-          setTimeout(()=>showMsgLong(`📜 New quest: ${nextQ.title}`,'#c8e88a'),1200);
+          setTimeout(()=>showMsgLong(`📜 New quest: ${nextQ.title}`,'#c8e88a',{kind:'quest',title:nextQ.title,line:'New quest'}),1200);
           // v61ak: showAcceptPopup opt-in for autoAccept quests. Sigil-lore
           // quests keep the silent activation (they already have the sigil
           // overlay as their accept-moment UI); Q7 and future "story" auto-
@@ -1114,7 +1130,7 @@ function completeQuest(id){
           const giverZone=nextQ.giverZone||'overworld';
           const zoneName=giverZone==='ironhaven'?'Ironhaven':giverZone==='forest'?'the Forest':'Ashenmoor';
           const location=giverZone!==activeZoneId?` (in ${zoneName})`:'';
-          setTimeout(()=>showMsgLong(`📜 New quest available: speak with ${nextQ.giver}${location}`,'#c8e88a'),1200);
+          setTimeout(()=>showMsgLong(`📜 New quest available: speak with ${nextQ.giver}${location}`,'#c8e88a',{kind:'quest',title:nextQ.title,line:`New quest available: speak with ${nextQ.giver}${location}`}),1200);
         }
       }
     }
@@ -1122,7 +1138,7 @@ function completeQuest(id){
   // Tail the completion toast with the most salient reward. Gold-rich quests show gold;
   // sigil quests award XP only, so those show XP instead of "+0g".
   const tail = (q.rewards.gold>0) ? ` +${q.rewards.gold}g` : ''; /* S2681 — no *+N XP*: since S952 xp levels nothing */
-  showMsgLong(`✅ ${q.title} complete!${tail}`,'#ffd700');
+  showMsgLong(`✅ ${q.title} complete!${tail}`,'#ffd700',{kind:'quest',title:q.title,line:`Complete${tail}`});
   addLog('✅','Completed quest: '+q.title);
   updateQuestDots();
   if(hubOpen)renderQuestLog();
