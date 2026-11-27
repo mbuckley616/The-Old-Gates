@@ -2532,11 +2532,15 @@ const giver=`${lord.title} ${lord.name}`;
   // other: the town's prices, the market day's ×0.9 and +10%, home prices and the barter all apply. Nothing is saved.
   const MSTALL_NEAR=140,MSTALL_TRADES=['inn','potion','misc'],MSTALL_WARES={inn:'Food',potion:'Remedies',misc:'Odds and ends'},MSTALLS=new Map();let _mstallT=0;
   function marketStallCount(site){let p=50;try{p=prosperity(site);}catch(e){}return 4+Math.floor(Math.max(0,Math.min(100,p))/25);}
-  function marketStallSpots(site){const S=SETTLE.get(site.id),n=marketStallCount(site),out=[];
+  function marketStallSpots(site){const S=SETTLE.get(site.id),n=marketStallCount(site),out=[];const ck=n+'',C=S&&(S._mspots||(S._mspots=new Map()));if(C&&C.has(ck))return C.get(ck).map(o=>Object.assign({},o)); /* S2740 — kept by the town and the count: the tick asks every second */
     for(const a of ((S&&S._stallAt)||[])){if(out.length>=n)break;const dx=a.x-site.x,dz=a.z-site.z,L=Math.hypot(dx,dz)||1;out.push({x:a.x+dx/L*1.3,z:a.z+dz/L*1.3,ang:Math.atan2(-dx,-dz),stall:true});}
     const r=seededRng('marketspots',site.id);for(let k=0;out.length<n&&k<n*12;k++){const a=r()*Math.PI*2,d=10+r()*4,x=site.x+Math.cos(a)*d,z=site.z+Math.sin(a)*d;
-      if(out.some(o=>Math.hypot(o.x-x,o.z-z)<4))continue;let ri=null;try{ri=roadInfo(x,z,true);}catch(e){}if(ri&&ri.d<3)continue;out.push({x,z,ang:Math.atan2(site.x-x,site.z-z),stall:false});}
-    return out;}
+      if(out.some(o=>Math.hypot(o.x-x,o.z-z)<4))continue;let ri=null;try{ri=roadInfo(x,z,true);}catch(e){}if(ri&&ri.d<3)continue;
+      /* S2740 — and only where the keeper stands clear and the look's stall behind his counter finds clear ground (82's marketStallPlace): a
+         spot against a house's wall put Portclare's foreign keeper's back in the apothecary, with nowhere for the stall */
+      if(S&&typeof marketStallPlace==='function'){let bad=false;try{bad=solidAt(x,z)||marketStallPlace(site,{x,z}).hits>0;}catch(e){}if(bad)continue;}
+      out.push({x,z,ang:Math.atan2(site.x-x,site.z-z),stall:false});}
+    if(C)C.set(ck,out.map(o=>Object.assign({},o)));return out;}
   function marketWeek(){return Math.floor(dayNow()/7);}
   function marketStallPack(site,i,week){const r=seededRng('market',site.id+':'+week+':'+i),trade=MSTALL_TRADES[(i+Math.floor(r()*3))%3],src=(typeof SHOP_STOCK!=='undefined'&&SHOP_STOCK[trade])||[];
     const idx=src.map((_,k)=>k);for(let k=idx.length-1;k>0;k--){const j=Math.floor(r()*(k+1));[idx[k],idx[j]]=[idx[j],idx[k]];}
@@ -2581,7 +2585,7 @@ const giver=`${lord.title} ${lord.name}`;
   function marketStallDef(site,i,spot){const D=marketStallDraw(site,i),r=D.r,nat=D.nat,nm=D.nm;let def=null;
     def=makeDef(site,site.reg||'irish',r,'Merchant',nm,{people:nat.people,keepName:true,x:spot.x,z:spot.z,bCol:0x6a5236,sCol:0xd4a878,topics:[{label:'What have you on the stall?',trade:true,fn:()=>{currentHouse=marketStallHouse(site,i,def.name);}}]});
     def._siteId=site.id;def.marketStall=site.id+':'+i;return def;}
-  function dropMarketStall(id){const D=MSTALLS.get(id);if(!D)return;sc.remove(D.npc.g);sc.remove(D.npc.dot);const k=npcs.indexOf(D.npc);if(k>=0)npcs.splice(k,1);MSTALLS.delete(id);}
+  function dropMarketStall(id){const D=MSTALLS.get(id);if(!D)return;if(D.mesh){sc.remove(D.mesh);D.mesh.geometry.dispose();} /* S2740 — the ring spot's stall goes with its keeper */sc.remove(D.npc.g);sc.remove(D.npc.dot);const k=npcs.indexOf(D.npc);if(k>=0)npcs.splice(k,1);MSTALLS.delete(id);}
   // the stalls kept now near you: [{site, i, spot}], nearest town first
   function marketStallsNow(){const out=[];if(activeZoneId!=='world'||typeof marketOn!=='function')return out;
     for(const S of SETTLE.values()){const t=S&&S.site;if(!t||!MARKET.kinds.includes(t.kind)||Math.hypot(t.x-px,t.z-pz)>MSTALL_NEAR+(t.pad||0))continue;if(!marketOn(t.id))continue;
@@ -2591,7 +2595,7 @@ const giver=`${lord.title} ${lord.name}`;
     const want=marketStallsNow(),keep=new Set(want.map(o=>o.site.id+':'+o.i+':'+marketWeek()));
     for(const id of [...MSTALLS.keys()])if(!keep.has(id))dropMarketStall(id);
     for(const o of want){const id=o.site.id+':'+o.i+':'+marketWeek();if(MSTALLS.has(id))continue;
-      const n=spawnNPC(marketStallDef(o.site,o.i,o.spot),o.spot.ang,true);n.sched={type:'lost'};n._settle=SETTLE.get(o.site.id)||n._settle;MSTALLS.set(id,{npc:n,site:o.site.id,i:o.i,spot:o.spot});}}
+      const n=spawnNPC(marketStallDef(o.site,o.i,o.spot),o.spot.ang,true);n.sched={type:'lost'};n._settle=SETTLE.get(o.site.id)||n._settle;let mesh=null;if(!o.spot.stall&&typeof marketRingStall==='function')try{mesh=marketRingStall(o.site,o.i,o.spot);sc.add(mesh);}catch(e){console.warn('market stall',e);mesh=null;} /* S2740 — a ring spot's keeper gets a stall to stand at (82) */MSTALLS.set(id,{npc:n,site:o.site.id,i:o.i,spot:o.spot,mesh});}}
   function tickRoadfolk(dt){try{roadGuardTick();}catch(e){} /* S2302 */try{tickMarketStalls();}catch(e){console.warn('market stalls',e);} /* S2647 */if(activeZoneId!=='world'){for(const [id,D] of [...ROADWALK.entries()]){if(D.attack){D.attack.enemies.forEach(e=>{e._roadfolk=null;});rfSet(id,{lost:true,day:dayNow()});}dropTraveller(id);}return;}
     if(Math.random()<.002)rfPrune();
     {const d=dayNow();if(d!==_almsDay){_almsDay=d;familyPay();}} /* S2276 — favour owed for alms, paid once the town is whole */

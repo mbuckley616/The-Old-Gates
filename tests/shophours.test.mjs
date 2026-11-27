@@ -112,11 +112,17 @@ const stalls = await page.evaluate(() => { const set = (d, h) => { worldState.ga
   const it = { buyPrice: 100, type: 'misc' }; o.b1 = shopCost(it); set(2, 10); o.b0 = shopCost(it); currentHouse = ch0;
   const res = S.residents[0], fake = { def: res.def, _settle: S, sched: { type: 'resident', door: res.door, plaza: { x: t.x, z: t.z }, padR: 20, inn: S.innDoor } };
   set(1, 8); const a = scheduleFor(fake, 8); set(2, 8); const b = scheduleFor(fake, 8); o.res8 = [a.work || (a.wander ? 'sq' : '?'), b.work || (b.wander ? 'sq' : '?')];
-  set(2, 10); o.after = tick().length; set(1, 15.5); o.late = tick().length; return o; });
+  // S2740 — a keeper on the ring (no square stall to stand at) gets a stall mesh: 1.1 m in front of him toward the middle, facing it; gone with him
+  o.ring = L.filter(D => !D.spot.stall).map(D => { const m = D.mesh; if (!m) return null; const s = Math.sin(m.rotation.y), c = Math.cos(m.rotation.y), k = D.npc.g.position;
+    return { on: !!m.parent, behind: +(s * (k.x - m.position.x) + c * (k.z - m.position.z)).toFixed(2), mid: +(s * (t.x - m.position.x) + c * (t.z - m.position.z)).toFixed(1), tris: m.geometry.index ? m.geometry.index.count / 3 : m.geometry.attributes.position.count / 3, hits: m.userData.hits }; });
+  o.ringN = L.filter(D => !D.spot.stall).length;
+  set(2, 10); o.after = tick().length; o.ringLeft = sc.children.filter(x => x.name === 'market stall').length; set(1, 15.5); o.late = tick().length; return o; });
 console.log(JSON.stringify(stalls));
 check('market day: Dunmore keeps 4 + prosperity ÷ 25 stalls on its square, each a keeper with a counter of 4 to 7 rows by town and week, at the market\'s price; gone after', stalls.n === stalls.want && stalls.n >= 4 && stalls.onSquare && stalls.npcs && stalls.house.rows >= 4 && stalls.same && stalls.weeks >= 3 && stalls.rowsOk && Math.abs(stalls.b1 / stalls.b0 - .9) < .02 && stalls.after === 0 && stalls.late === 0, stalls);
 check(`market day's keepers each have a name of their own (${stalls.names.nm.join(', ')}): none twice, none of the ${stalls.names.town} names over the town's doors and posts while the bank has ${stalls.names.free} free, the same when drawn again (S2698)`,
   stalls.names.distinct && stalls.names.clash.length === Math.max(0, stalls.names.nm.length - stalls.names.free) && stalls.names.town >= 10 && stalls.names.again, stalls.names);
+check(`market day: each of the ${stalls.ringN} keepers past the square's own stalls stands behind a stall of his own, its counter to the square's middle, on no solid, and the stalls go with the keepers (S2740)`,
+  stalls.ringN >= 1 && stalls.ring.every(q => q && q.on && q.behind > -1.4 && q.behind < -.8 && q.mid > 5 && q.tris > 100 && q.tris < 3000 && q.hits === 0) && stalls.ringLeft === 0, stalls.ring);
 check('market day fills the square from 7: a resident who works at eight on another day is on the square at eight on Stoneday', stalls.res8[0] === 'sq' && stalls.res8[1] !== 'sq', stalls.res8);
 // S2650: the knock (Michael's A on #2009). E at a shut shop knocks first: from 21 until the trade opens the keeper is home, and with the
 // town's favour at 2 or more comes down and sells at the door at ×1.25; below 2, *Come back at <its hour>*; between its close and 21 nobody
