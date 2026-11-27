@@ -63,5 +63,39 @@ check('the music ducks the bed to ×0.7 while a piece plays, and lets it up whil
 const inside = await page.evaluate(() => { const zone = activeZoneId; activeZoneId = 'dungeon'; const a = _amb(); activeZoneId = zone; return a; });
 check('out of the open world the beds go to nothing', !inside.open && inside.wind === 0 && inside.water === 0, inside);
 
+// S2730 — the town and the hours, the calls, indoors and the rooms' echo (the build sheet's second session)
+await g.settle('dunmore');
+const town = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), s = S.site; _wx('clear'); forceTime(12); px = s.x; pz = s.z;
+  for (let f = 0; f < 60 * 3; f++) WORLD.tick(1 / 60, performance.now()); const a = _amb();
+  return { folk: AMB.townsfolk, murmur: +AMB.beds.murmur.toFixed(3), isle: a.isle, churches: S.houses.filter(h => h.type === 'church').length, smiths: S.houses.filter(h => h.type === 'weapon' || h.type === 'forge').length }; });
+check('Dunmore\'s square at noon: the murmur of its people over 0.04 (0.01 a townsperson within 40 m, at most 0.12)', town.murmur > .04 && town.murmur <= .12 && Math.abs(town.murmur - Math.min(.12, town.folk * .01)) < 1e-3, town);
+const bell = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const c = S.houses.find(h => h.type === 'church'); if (!c) return null; px = c.exitX + 60; pz = c.exitZ;
+  forceTime(11.9); _amb(); AMB.bell.key = null; /* the square's check above crossed noon already: today's bell has rung */ const n0 = AMB.bell.count; forceTime(12.05); _amb(); const n1 = AMB.bell.count; _amb(); const n2 = AMB.bell.count;
+  forceTime(14); _amb(); const n3 = AMB.bell.count; forceTime(9); _amb(); forceTime(16); _amb(); const n4 = AMB.bell.count;
+  return { n0, n1, n2, n3, n4, strokes: AMB.bell.strokes, at: AMB.bell.at }; });
+check('a Gatelands bell at 12, once (nine strokes), and none for a clock jumped past 12 and 14', !!bell && bell.n1 === bell.n0 + 1 && bell.n2 === bell.n1 && bell.n3 === bell.n1 && bell.n4 === bell.n1 && bell.at === 12 && bell.strokes >= 9, bell);
+const forge = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const H = S.houses.find(h => h.type === 'weapon' || h.type === 'forge'); if (!H) return null; px = H.exitX + 5; pz = H.exitZ;
+  forceTime(14); _amb(); const on14 = !!(AMB.forge && AMB.forge.on), k14 = AMB.spots.map(s => s.kind); forceTime(18); _amb(); const on18 = !!(AMB.forge && AMB.forge.on); return { on14, on18, k14 }; });
+check('the forge\'s hammer in the smith\'s hours: on at 14, off at 18', !!forge && forge.on14 && !forge.on18 && forge.k14.includes('forge'), forge);
+const inn = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const H = S.houses.find(h => h.type === 'inn'); if (!H) return null; px = H.exitX + 4; pz = H.exitZ;
+  forceTime(19); _amb(); const T = AMB.tavern; const on = !!(T && T.on), lead = T && T.lead; forceTime(23); _amb(); return { on, lead, off: !AMB.tavern }; });
+check('the tavern door 17–21: the Gatelands\' fiddle plays a reel at 19, and not at 23', !!inn && inn.on && inn.lead === 'fiddle' && inn.off, inn);
+const calls = await page.evaluate(() => { const C = AMB.calls; forceTime(10); _wx('storm'); const c0 = C.count; for (let i = 0; i < 40; i++) { C.next = 1e-3; _amb(); } const storm = C.count - c0;
+  _wx('clear'); const c1 = C.count, kinds = new Set(); for (let i = 0; i < 40; i++) { C.next = 1e-3; _amb(); kinds.add(C.last); } const clear = C.count - c1;
+  forceTime(23); const kn = new Set(); for (let i = 0; i < 40; i++) { C.next = 1e-3; _amb(); kn.add(C.last); }
+  return { storm, clear, day: [...kinds], night: [...kn] }; });
+check('the calls: none in a storm; in the Gatelands by day a skylark, a blackbird or the rooks, by night the crickets or an owl', calls.storm === 0 && calls.clear >= 30
+  && calls.day.every(k => ['skylark', 'blackbird', 'rook'].includes(k)) && calls.night.every(k => ['crickets', 'owl'].includes(k)), calls);
+const echo = await page.evaluate(() => { const was = { lid, h: currentHouse, z: activeZoneId }; const out = {};
+  for (const t of ['home', 'inn', 'church', 'weapon']) { lid = 'int_test'; currentHouse = { type: t }; _amb(); out[t] = [AMB.room.kind, AMB.room.decay, AMB.room.wet, AMB.open]; }
+  lid = was.lid; currentHouse = was.h; activeZoneId = 'dungeon'; _amb(); out.dungeon = [AMB.room.kind, AMB.room.decay, AMB.room.wet];
+  activeZoneId = was.z; _amb(); out.out = [AMB.room.kind, AMB.room.wet]; return out; });
+check('the rooms\' echo: a cottage or a shop 0.4 s, an inn 0.8, a church 1.2, at 0.22 wet; underground (no vault) 0.7; none outdoors', echo.home[1] === .4 && echo.weapon[1] === .4 && echo.inn[1] === .8 && echo.church[1] === 1.2
+  && echo.home[2] === .22 && !echo.home[3] && echo.dungeon[0] === 'side' && echo.dungeon[1] === .7 && echo.out[0] === null && echo.out[1] === 0, echo);
+const busy = await page.evaluate(async () => { const S = WORLD.settle.get('dunmore'); const H = S.houses.find(h => h.type === 'weapon' || h.type === 'forge') || S.houses[0]; px = H.exitX + 6; pz = H.exitZ;
+  _wx('rain'); forceTime(12); let most = 0; for (let i = 0; i < 40; i++) { AMB.calls.next = 1e-3; _amb(); most = Math.max(most, AMB.live); await new Promise(r => setTimeout(r, 30)); }
+  _wx('clear'); return { most, nodes: AMB.nodes, spots: AMB.spots }; });
+check('Dunmore at noon in the rain by the forge, a call every tick: at most 40 live nodes on the bus', busy.most > busy.nodes && busy.most <= 40, busy);
+check('an hour is crossed within a quarter hour of it (12 from 11.9, 19 from 18.95, midnight from 23.9), never by a clock set past it (12 to 14)', await page.evaluate(() => ambCrossed(12, 12.05, 11.9) && !ambCrossed(12, 14, 11.9) && ambCrossed(6, 6.1, 5.9) && ambCrossed(19, 19.1, 18.95) && ambCrossed(0, .1, 23.9) && !ambCrossed(12, 11.95, 11.9)));
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

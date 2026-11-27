@@ -88,19 +88,32 @@ const ck = await page.evaluate(() => { const keep = { w: EQ.weapon, o: EQ.offhan
     tick(15, { move: 1 }); for (let i = 1; i <= 45; i++) { tick(1, { move: 1 }); if (i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; o.worst = Math.max(o.worst, c.worst); } }
     rig.tpHold = keepH; o.worst = +o.worst.toFixed(3); return o; };
   const out = {};
+  // S2728 (#2082 C) — the hold is for a long cloak drawn round the front (its hood up, or in the snow): this walk forces it shut (tpCloakShut)
+  const keepShut = tpCloakShut, keepWinter = hbWinter;
   try { reset(); thirdPerson = true; EQ.weapon = { name: 'Steel Sword', slot: 'weapon', weaponShape: 'sword', matCol: '#dde8ec', matGuard: '#a0b0b8' }; EQ.offhand = null;
-    EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' }; buildViewmodel(); buildShieldViewmodel(); tick(10, {});
+    EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' }; out.shutHere = keepShut(); hbWinter = () => true; out.shutWinter = keepShut(); hbWinter = keepWinter;
+    tpCloakShut = () => true; buildViewmodel(); buildShieldViewmodel(); tick(10, {}); out.shutBack = !!TP.rig.rig.hbG.dress.cloakBack;
     const rig = TP.rig.rig; out.cloak = !!rig.hb.full.find(m => m.name === 'cloak'); out.held = rig.hb.hold ? rig.hb.hold.size : 0; tick(30, {}); out.rest = test(rig); rig.tpHold = null; tick(1, {}); out.restFree = test(rig); rig.tpHold = TP.hbHold; tick(30, {});
     out.free = walk(false); out.hold = walk(true); out.k = { L: TP.hbHold.L, R: TP.hbHold.R, S: TP.hbHold.S, lean: +TP.rig.torso.rotation.x.toFixed(3) };
     out.forearmWalk = fore();
     vmSword.userData.swingMax = .5; vmSword.userData.swingVariant = 0; swingT = .5; for (let i = 0; i < 10; i++) { swingT = Math.max(0, .5 - i / 60); tick(1, { move: 1 }); }
     out.swing = { L: +TP.hbHold.L.toFixed(2), R: +TP.hbHold.R.toFixed(2), forearm: fore() }; reset(); tick(20, { move: 1 });
     blocking = true; tick(12, { move: 1 }); out.block = { L: +TP.hbHold.L.toFixed(2), R: +TP.hbHold.R.toFixed(2), forearm: fore() }; reset();
-  } finally { window.requestAnimationFrame = raf; EQ.weapon = keep.w; EQ.offhand = keep.o; EQ.back = keep.b; buildViewmodel(); buildShieldViewmodel(); reset(); tick(4, {}); }
+    // S2728 — the same cloak worn back over the shoulders (no hood up, not in the snow): nothing held, the right wrist swinging fore and aft
+    tpCloakShut = () => false; buildViewmodel(); buildShieldViewmodel(); tick(10, {}); TP.hbHold.L = TP.hbHold.R = TP.hbHold.S = 0;
+    { const rig = TP.rig.rig, wr = rig.hb.P.byName['wrist.' + (HBODY.swap ? 'L' : 'R')], z = []; out.back = { worn: !!rig.hbG.dress.cloakBack, held: rig.hb.hold ? rig.hb.hold.size : 0, tpHold: !!rig.tpHold };
+      tick(30, {}); out.back.rest = test(rig); tick(15, { move: 1 }); const o = { tested: 0, out: 0, worst: 0 };
+      for (let i = 1; i <= 45; i++) { tick(1, { move: 1 }); rig.root.updateMatrixWorld(true); z.push(wr.getWorldPosition(new THREE.Vector3()).applyMatrix4(rig.root.matrixWorld.clone().invert()).z); if (i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; o.worst = Math.max(o.worst, c.worst); } }
+      o.worst = +o.worst.toFixed(3); out.back.walk = o; out.back.swing = +(Math.max(...z) - Math.min(...z)).toFixed(3); reset(); }
+  } finally { tpCloakShut = keepShut; hbWinter = keepWinter; window.requestAnimationFrame = raf; EQ.weapon = keep.w; EQ.offhand = keep.o; EQ.back = keep.b; buildViewmodel(); buildShieldViewmodel(); reset(); tick(4, {}); }
   return out; });
 console.log('  cloak:', JSON.stringify(ck));
 check(`walking in a cloak, none of your hand and forearm points under it comes out by 3 mm (${ck.hold.out} of ${ck.hold.tested}, at most ${ck.hold.worst * 1000} mm; ${ck.free.out} of ${ck.free.tested} without the hold), nor standing with the sword (${ck.rest.out} of ${ck.rest.tested}; ${ck.restFree.out} without)`,
   ck.cloak && ck.held > 0 && ck.rest.out === 0 && ck.restFree.out > 0 && ck.hold.tested > 1000 && ck.hold.out === 0 && ck.hold.worst < .006 && ck.free.out > ck.hold.out, ck);
+// S2728 (Michael's C on #2082) — your long cloak is worn back over the shoulders unless drawn round (hood up, or in the snow: here, at the
+// start in autumn, it is open; in winter it would be shut), and worn back it holds no arm: the wrist swings and nothing comes out through it
+check(`your long cloak is worn back where nothing draws it round (open at the start, shut in winter), holds no arm worn back, the wrist swings ${ck.back.swing} m in the walk, and ${ck.back.walk.out} of ${ck.back.walk.tested} hand and forearm points the sheet covers come out by 3 mm`,
+  ck.shutHere === false && ck.shutWinter === true && ck.shutBack === false && ck.back.worn && ck.back.held === 0 && !ck.back.tpHold && ck.back.swing > .05 && ck.back.rest.out === 0 && ck.back.walk.out === 0 && ck.back.walk.worst < .006, { shutHere: ck.shutHere, shutWinter: ck.shutWinter, shutBack: ck.shutBack, back: ck.back });
 check('a swing or a block begun in the walk lets the arm go from the hold to the driver\'s pose (the right forearm within 30° of the driver\'s: 18° at rest)',
   ck.swing.R < .1 && ck.swing.forearm < 30 && ck.block.R === 0 && ck.block.forearm < 30, { swing: ck.swing, block: ck.block });
 // S2036 — your legs under your own long cloak: the hem's four bones (hbCloakLegs, as the townsfolk's) on your skeleton in a long cloak,
@@ -133,11 +146,12 @@ const ckLegs = await page.evaluate(() => { const keep = { b: EQ.back }, raf = wi
     return { tested, out, worst }; };
   const tick = (n, mv) => { for (let i = 0; i < n; i++) { onGround = true; velY = 0; if (mv) px += .022; tpUpdate(1 / 60, { moving: !!mv, sprinting: false, camY: 1.6, now: performance.now() + i * 16.7, roll: null }); } };
   const o = { tested: 0, out: 0, worst: 0, hem: 0 };
+  const keepShut = tpCloakShut; tpCloakShut = () => true; /* S2728 — the hem over the legs, read on the cloak drawn round (the closed sheet) */
   try { _sneaking = false; blocking = false; swingT = 0; castT = 0; dead = false; thirdPerson = true; EQ.back = { name: 'Wool Cloak', slot: 'back', cloak: 'wool' }; buildViewmodel(); tick(10);
     const rig = TP.rig.rig, P = rig.hb.P; TP.gph = .5; o.bones = P.skeleton.bones.length; o.hemBones = ['hemBone', 'hemBoneF', 'hemBoneL', 'hemBoneR'].filter(n => P.skeleton.bones.some(b => b.name === n)).length; tick(20, 1);
     for (let i = 1; i <= 120; i++) { tick(1, 1); if (P.hem) o.hem = Math.max(o.hem, P.hem.a); if (i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; o.worst = Math.max(o.worst, c.worst); } }
     o.worst = +o.worst.toFixed(3); o.hem = +o.hem.toFixed(2);
-  } finally { window.requestAnimationFrame = raf; EQ.back = keep.b; buildViewmodel(); tick(4); }
+  } finally { tpCloakShut = keepShut; window.requestAnimationFrame = raf; EQ.back = keep.b; buildViewmodel(); tick(4); }
   return o; });
 console.log('  legs under your cloak:', JSON.stringify(ckLegs));
 check(`walking in a long cloak, your skeleton carries the hem's four bones (${ckLegs.bones}) and its back swings over the trailing heel (up to ${ckLegs.hem} rad); ${ckLegs.out} of ${ckLegs.tested} points of what your legs wear out of it by 3 mm or more, at most ${ckLegs.worst * 100} cm`,

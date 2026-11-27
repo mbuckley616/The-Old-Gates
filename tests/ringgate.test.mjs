@@ -25,7 +25,7 @@ const st = await page.evaluate(() => { const out = { gates: 0, flights: 0, bad: 
   return out; });
 console.log(JSON.stringify(st));
 check(`a gate on a slope has its flight down the bank (${st.flights} of ${st.gates}, slopes ${st.s.join(', ')}), the ground along each falling without a step (worst ${st.worst.toFixed(2)} m in 0.25)`, st.bad.length === 0, st);
-// Session 2730 (the critic, 27 Nov: the look sheets' gate at dusk a hump after the other seven views): a door's spot is pushed off the roads,
+// Session 2732 (the critic, 27 Nov: the look sheets' gate at dusk a hump after the other seven views): a door's spot is pushed off the roads,
 // stamps and doors loaded when it is placed, so gate 137 came back 59 m from where it stood once its cells were unloaded and loaded again
 // with its neighbours not yet in (the gate's cell first, as a far jump's return gives it). It keeps the spot it was first given.
 const keep = await page.evaluate(() => { const G0 = RING_GATES.get(137); if (!G0) return { none: true }; const a = [+G0.x.toFixed(1), +G0.z.toFixed(1), +G0.ry.toFixed(2)];
