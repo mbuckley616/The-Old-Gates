@@ -1159,9 +1159,9 @@
   // thing in view, lit by nothing): the kit's ice materials (PKIT.dayGlow) at full by day, none from 19:00 to 05:00, eased between by the
   // sky's own dusk and dawn (_nightFactor); set only when it changes by a hundredth
   let ICE_GLOW=-1;
-  // S2744 — the ring gates' light on their courts (PKIT.gateSpill) by the hour: 0.35 of its strength by day, all of it by night
+  // S2744 — the ring gates' light on their courts (PKIT.gateSpill) by the hour: a tenth of its strength by day (the sun's ground is lit already), all of it by night
   let GATE_SPILL=-1;
-  function gateSpillTick(){if(typeof PKIT==='undefined'||!PKIT.gateSpill||!PKIT.gateSpill.size)return;const f=.35+.65*(typeof _nightFactor==='function'?_nightFactor():1);
+  function gateSpillTick(){if(typeof PKIT==='undefined'||!PKIT.gateSpill||!PKIT.gateSpill.size)return;const f=.1+.9*(typeof _nightFactor==='function'?_nightFactor():1);
     if(Math.abs(f-GATE_SPILL)<.01)return;GATE_SPILL=f;for(const m of PKIT.gateSpill){const k=m.userData.spill*f,c=m.userData.spillC||(m.userData.spillC=m.color.clone().multiplyScalar(1/m.userData.spill));m.color.copy(c).multiplyScalar(k);}}
   function iceDayGlow(){if(typeof PKIT==='undefined'||!PKIT.dayGlow||!PKIT.dayGlow.size)return;const f=typeof _nightFactor==='function'?1-_nightFactor():1;
     if(Math.abs(f-ICE_GLOW)<.01)return;ICE_GLOW=f;for(const m of PKIT.dayGlow)m.emissiveIntensity=f;}

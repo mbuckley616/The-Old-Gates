@@ -13392,11 +13392,14 @@ function aurenneOrrery(hAt, o = {}) {
       pennant: new THREE.MeshStandardMaterial({ color: 0x8a2a22, roughness: .9, side: THREE.DoubleSide }) };
     /* Session 2744 (the look sheets' gate at dusk: the script lit and the court under it black, where P10b's Gate Light is a place lit by
        the gate; OG-037, "subtle amber light, not bright effects") — the script's light on the court: a falloff drawn added over the ground, its
-       strength by the condition and by the hour (gateSpillTick, js/82: GM_SPILL's base times 0.35 by day to 1 at night) */
-    { const pool = cut(256, 256, x => { const g = x.createRadialGradient(128, 128, 0, 128, 128, 128); for (const [t, v] of [[0, 1], [.25, .62], [.5, .3], [.75, .1], [1, 0]]) g.addColorStop(t, `rgb(${v * 255 | 0},${v * 255 | 0},${v * 255 | 0})`); x.fillStyle = g; x.fillRect(0, 0, 256, 256); }, '#000', '#fff');
+       strength by the condition and by the hour (gateSpillTick, js/82: GM_SPILL's base times 0.1 by day to 1 at night) */
+    { const pool = cut(512, 256, x => { const ramp = (cx, stops) => { const g = x.createRadialGradient(cx, 128, 0, cx, 128, 126); for (const [t, v] of stops) g.addColorStop(t, `rgb(${v * 255 | 0},${v * 255 | 0},${v * 255 | 0})`); x.fillStyle = g; x.fillRect(cx - 128, 0, 256, 256); };
+        /* the left half the court's falloff; the right the headwall's, none inside the outer ring's hole (its script is lit), all of it at the
+           hole's rim (0.68 of the radius), out to nothing: one texture, so the two are one draw */
+        ramp(128, [[0, 1], [.25, .62], [.5, .3], [.75, .1], [1, 0]]); ramp(384, [[0, 0], [.6, 0], [.68, 1], [.78, .45], [.9, .14], [1, 0]]); }, '#000', '#fff');
       pool.wrapS = pool.wrapT = THREE.ClampToEdgeWrapping;
       const spill = (c, k) => { const m = new THREE.MeshBasicMaterial({ map: pool, color: c.clone().multiplyScalar(k), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: true, polygonOffset: true, polygonOffsetFactor: -4 }); m.userData.spill = k; GM_SPILL.add(m); return m; };
-      GM_MATS.spill = spill(AMBER, .34); GM_MATS.spillDim = spill(AMBER, .16); GM_MATS.spillRift = spill(VIOLET, .2); }
+      GM_MATS.spill = spill(AMBER, .6); GM_MATS.spillDim = spill(AMBER, .26); GM_MATS.spillRift = spill(VIOLET, .34); }
     GM_MATS.canvas.side = THREE.DoubleSide; return GM_MATS;
   }
   const GM_GLOW = ['lit', 'dim', 'dead', 'litD', 'dimD', 'deadD', 'sigil', 'sigilDim', 'sigilDead', 'seam', 'door', 'rift', 'ember', 'spill', 'spillDim', 'spillRift'];
@@ -13469,14 +13472,21 @@ function aurenneOrrery(hAt, o = {}) {
     { const rc = stream(key + ':court'), SL = Math.max(1.2, R0 * .16), X0 = -R0 * .95, X1 = R0 * .95, Z0 = ZF0 + .4, Z1 = ZF0 + R0 * .85;
       for (let x = X0 + SL / 2; x < X1; x += SL) for (let z = Z0 + SL / 2; z < Z1; z += SL) { if (rc() < .12 && z > Z0 + SL * 2) continue; const sink = rc() < .1 ? .04 + rc() * .08 : 0, g = new THREE.BoxGeometry(SL - .04, .3, SL - .04);
         g.translate(x, Math.max(ground(x, z), 0) - .14 - sink, z); put('dressed', g); } }
-    // Session 2744 — the script's light on the court and the ground before it: a half ellipse from the rings' face, 1.15 R0 to each side and
-    // 1.5 R0 out, a 2 m grid laid 6 cm over the ground (the slabs' tops are 1 cm over it), its brightest point a metre before the slit
-    { const RX = R0 * 1.15, RZ = R0 * 1.5, z0 = ZF0 + .25, nx = Math.ceil(2 * RX / 2), nz = Math.ceil((RZ - .25) / 2), pos = [], uv = [], idx = [];
+    // Session 2744 — the script's light on the court and the ground before it: a half ellipse from the rings' face, 1.6 R0 to each side and
+    // 2.6 R0 out, a 3 m grid laid 6 cm over the ground (the slabs' tops are 1 cm over it), its brightest point a metre before the slit;
+    // and on the headwall, a ring of it round the outer ring's rim, 0.9 m before the rock's face (its roughness stands up to 0.65 m out),
+    // kept inside the headwall's width and under its top
+    const sk = cond === 'steady' ? '' : cond === 'failing' ? 'Dim' : 'Rift';
+    { const Rf = holeR / .68, top = x => H.dome(x, FZ + .5) - .2, nx = 16, ny = 12, y0 = -.4, y1 = CY + Rf, pos = [], uv = [], idx = [];
+      for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) { const x = -HW + 2 * HW * i / nx, y = Math.min(y0 + (y1 - y0) * j / ny, top(x)); pos.push(x, y, FZ + R0 * .06 + .1); uv.push(.75 + Math.max(-.25, Math.min(.25, x / (4 * Rf))), .5 + (y - CY) / (2 * Rf)); }
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1; idx.push(a, b, c, b, d, c); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); put('spill' + sk, g); }
+    { const RX = R0 * 1.6, RZ = R0 * 2.6, z0 = ZF0 + .25, nx = Math.ceil(2 * RX / 3), nz = Math.ceil((RZ - .25) / 3), pos = [], uv = [], idx = [];
       for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) { const x = -RX + 2 * RX * i / nx, z = z0 + (RZ - .25) * j / nz, onCourt = Math.abs(x) < R0 * .95 && z < ZF0 + R0 * .85;
-        pos.push(x, (onCourt ? Math.max(ground(x, z), 0) : ground(x, z)) + .06, z); uv.push(.5 + x / (2 * RX), .5 + (z - ZF0 - 1) / (2 * RZ)); }
+        pos.push(x, (onCourt ? Math.max(ground(x, z), 0) : ground(x, z)) + .06, z); uv.push(.25 + x / (4 * RX), .5 + (z - ZF0 - 1) / (2 * RZ)); }
       for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1; idx.push(a, c, b, b, c, d); }
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
-      put(cond === 'steady' ? 'spill' : cond === 'failing' ? 'spillDim' : 'spillRift', g); }
+      put('spill' + sk, g); }
     // Session 2649 (s1963, the critic: a gate on a slope showed the walk up a bare bank) — the flight down the court's bank on the axis, when
     // the world cuts one (o.stair from ringGateStairPlan, js/82): n treads of rise r and going t from the court's front edge z0, each a block
     // down to under the cut's plane (r under the treads' nosing line), and a kerb either side along the nosings
