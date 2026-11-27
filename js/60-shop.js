@@ -1234,7 +1234,7 @@ function sellItem(i,sp){
   _pushBuyBack({...it, qty:1}, finalSp);
   it.qty--;if(it.qty<=0)BAG.splice(i,1);
   lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
-  sndGoldJingle();
+  sndTrade(it,'sell'); /* S2717 */
   if(currentHouse)addLog('🏪','Sold items at '+currentHouse.name);
   showMsg(`Sold ${it.name} for ${finalSp}🪙${tithe?` (the Crown's twentieth, ${tithe})`:''}`,'#44ee44');
   renderShop();
@@ -1282,7 +1282,7 @@ function _sellStackable(it, bagIdx, units, unitPrice){
   live.qty-=sellPieces;
   if(live.qty<=0) BAG.splice(bagIdx,1);
   lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
-  sndGoldJingle();
+  sndTrade(it,'sell'); /* S2717 */
   if(currentHouse)addLog('🏪','Sold items at '+currentHouse.name);
   showMsg(`Sold ${sellPieces}× ${it.name} for ${gain}🪙`,'#44ee44');
 }

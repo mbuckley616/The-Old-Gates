@@ -119,34 +119,6 @@ function sndTabSwitch(){
   uiNoise(.04,.2,1200);
   uiTone(600,700,.05,.15,'sine');
 }
-function sndEquipWeapon(){
-  if(!AX||volLevel===0)return;
-  uiNoise(.18,.35,3000);
-  uiTone(320,800,.12,.2,'sawtooth');
-  uiTone(880,1100,.25,.12,'sine');
-}
-function sndEquipShield(){
-  if(!AX||volLevel===0)return;
-  uiNoise(.12,.38,400);
-  uiTone(160,120,.15,.22,'square');
-  uiTone(240,200,.1,.12,'sine');
-}
-function sndEquipArmor(slot){
-  if(!AX||volLevel===0)return;
-  if(slot==='head'){
-    uiNoise(.09,.3,1200);uiTone(280,200,.1,.2,'square');
-  } else if(slot==='chest'){
-    uiNoise(.14,.38,800);uiTone(160,110,.15,.24,'sawtooth');uiNoise(.06,.14,600);
-  } else if(slot==='hands'){
-    uiNoise(.07,.22,1800);uiTone(420,320,.08,.14,'sine');
-  } else if(slot==='legs'){
-    uiNoise(.1,.28,1000);uiTone(220,160,.12,.18,'square');
-  } else if(slot==='feet'){
-    uiNoise(.08,.22,500);uiTone(180,140,.1,.14,'sawtooth');
-  } else {
-    uiNoise(.1,.18,600);
-  }
-}
 function sndReadScroll(){
   if(!AX||volLevel===0)return;
   uiNoise(.22,.2,1400);
@@ -162,20 +134,7 @@ function sndGoldJingle(){
   });
   uiNoise(.05,.14,3500);
 }
-function sndBuyItem(it){
-  if(!AX||volLevel===0)return;
-  if(it&&it.type==='equip'){
-    if(it.slot==='weapon')sndEquipWeapon();
-    else if(it.slot==='offhand')sndEquipShield();
-    else sndEquipArmor(it.slot||'');
-  } else if(it&&it.type==='potion'){
-    uiTone(900,1100,.1,.18,'sine');
-    uiTone(1100,900,.08,.14,'sine');
-  } else {
-    uiTone(480,560,.12,.16,'sine');
-    uiNoise(.06,.1,1000);
-  }
-}
+function sndBuyItem(it){return sndTrade(it,'buy');} /* S2717 — by what is bought (sndTrade, 72), not the slot's beeps */
 
 // ── MUSIC ENGINE ──────────────────────────────────────────────────────────
 let _musicZone='',_musicNodes=[],_musicScheduler=null,_musicScheduler2=null;
