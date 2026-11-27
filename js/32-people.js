@@ -3292,11 +3292,14 @@ function hbHairLow(o){const g=o.geometry,K=o.name==='hair'?HB_MID_HAIR.hair:HB_M
 // index as baked) are as they were. The hair's ribbons are never gathered (a card is thinner than a cell). One mesh to another is never
 // joined, so a garment does not close onto the skin under it.
 const HB_MID_CELL=.018;
-function hbThin(pos,ix,src,h){const rep=new Int32Array(src.length).fill(-1),cell=new Map(),q=1/h;
-  for(let i=0;i<src.length;i++){if(!src[i]){rep[i]=i;continue;}const k=((src[i]*2048+Math.floor(pos[i*3]*q)+1024)*2048+Math.floor(pos[i*3+1]*q)+1024)*2048+Math.floor(pos[i*3+2]*q)+1024;
+function hbThin(pos,ix,src,h,nor){const rep=new Int32Array(src.length).fill(-1),cell=new Map(),q=1/h;
+  /* the normal's side too (its largest axis and sign, 6 bins): a sheet's two faces, or a fold, within one cell stay apart */
+  const side=i=>{const x=nor[i*3],y=nor[i*3+1],z=nor[i*3+2],ax=Math.abs(x),ay=Math.abs(y),az=Math.abs(z);return ax>=ay&&ax>=az?(x<0?1:0):ay>=az?(y<0?3:2):(z<0?5:4);};
+  for(let i=0;i<src.length;i++){if(!src[i]){rep[i]=i;continue;}const k=(((src[i]*6+side(i))*2048+Math.floor(pos[i*3]*q)+1024)*2048+Math.floor(pos[i*3+1]*q)+1024)*2048+Math.floor(pos[i*3+2]*q)+1024;
     const r=cell.get(k);if(r===undefined){cell.set(k,i);rep[i]=i;}else rep[i]=r;}
-  const out=[],seen=new Set();
+  const out=[],seen=new Set(),dot=(a,b)=>nor[a*3]*nor[b*3]+nor[a*3+1]*nor[b*3+1]+nor[a*3+2]*nor[b*3+2];
   for(let i=0;i<ix.length;i+=3){const a=rep[ix[i]],b=rep[ix[i+1]],c=rep[ix[i+2]];if(a===b||b===c||a===c)continue;
+    if(src[a]&&(dot(a,b)<.05||dot(b,c)<.05||dot(a,c)<.05))continue; /* corners facing apart: their normal would pass through nothing (NaN shading, smeared by the bloom) */
     if(src[a]){const lo=Math.min(a,b,c),hi=Math.max(a,b,c),k=lo+','+(a+b+c-lo-hi)+','+hi;if(seen.has(k))continue;seen.add(k);}out.push(a,b,c);}
   return Uint32Array.from(out);}
 function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map((b,i)=>[b,i])),rootI=bi.get(P.byName.root);
@@ -3325,7 +3328,7 @@ function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map
     base+=pa.count;}
   const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.BufferAttribute(pos,3));G.setAttribute('normal',new THREE.BufferAttribute(nor,3));
   G.setAttribute('color',new THREE.BufferAttribute(col,3));G.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));G.userData.hair=hair;
-  const ix0=idx.subarray(0,ni),thin=HB_MID_CELL>0?hbThin(pos,ix0,src,HB_MID_CELL):ix0;if(thin!==ix0)G.userData.ix0=NV>65536?ix0.slice():Uint16Array.from(ix0);
+  const ix0=idx.subarray(0,ni),thin=HB_MID_CELL>0?hbThin(pos,ix0,src,HB_MID_CELL,nor):ix0;if(thin!==ix0)G.userData.ix0=NV>65536?ix0.slice():Uint16Array.from(ix0);
   G.setIndex(new THREE.BufferAttribute(NV>65536?(thin===ix0?ix0.slice():thin):Uint16Array.from(thin),1));
   const mesh=new THREE.SkinnedMesh(G,HB_MID_MAT);mesh.name='mid';mesh.bind(sk,new THREE.Matrix4());mesh.bindMode='detached';mesh.bindMatrixInverse.identity();
   mesh.castShadow=false;mesh.receiveShadow=true;mesh.visible=false;return mesh;}
