@@ -1781,6 +1781,7 @@
     ironhaven:{x:()=>SITE.ironhaven.x,z:()=>SITE.ironhaven.z,local:100,scale:2.6},
   };
   let dungeonWorldPos={}; // seed -> {x,z}
+  const DOOR_PLACED=new Map(); /* S2732 — seed -> the {x,z} placeDoor first gave it, kept when its cell unloads */
   /* S2274 — a home fort's ring clear of every road. A fort is set 120 m off its road, then pushed out of each pad by the pad and
      120 m, one pad at a time; where three villages crowd a short road (Hearthwick, Droichead and Colmán's Rest round the Old
      Garrison) the pushes put it back over the road: its ring stood 25 m from the line, its wall across the road, and every
@@ -1868,6 +1869,9 @@
           break;
         }
       }
+      /* S2732 — a door keeps the spot it was first given this page: the pushes above read the roads, stamps and doors loaded now, so gate 137
+         stood at (12976, 25636) facing 2.97 from the start and at (12963, 25695) facing 3.14 once its cells came back from the Mark (the look sheets' hump) */
+      {const m=DOOR_PLACED.get(e.seed);if(m){wx=m.x;wz=m.z;}else DOOR_PLACED.set(e.seed,{x:wx,z:wz});}
       dungeonWorldPos[e.seed]={x:wx,z:wz};CELL_DOORS.push(e);
       const isFort=e.kind==='fort_door';
       e.ring=ringGateOk(e);if(e.ring){ringGateStamp(e,wx,wz,cellK);return dungeonWorldPos[e.seed];} /* S2633 — the rings' hill in place of the door's pad */
@@ -2331,7 +2335,7 @@
     const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt_(cx-R+i,cz-R+j)?1:0;
 };fill();S[KG]={R,N,sol}; /* S2023 — the directions' walk (wayWalk) reads this grid too */
     const cel=p=>[Math.max(0,Math.min(N-1,Math.round(p.x-cx+R))),Math.max(0,Math.min(N-1,Math.round(p.z-cz+R)))];
-    const find=(s0,g0)=>{const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0],si=s0%N,sj=(s0-si)/N,esc=(i,j)=>Math.abs(i-si)<=2&&Math.abs(j-sj)<=2; /* S2670 — the cells round where he stands may be stepped through: a man pressed into a wall's margin walks out of it */
+    const find=(s0,g0)=>{const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0],si=s0%N,sj=(s0-si)/N,E=!!sol[s0],esc=(i,j)=>E&&Math.abs(i-si)<=2&&Math.abs(j-sj)<=2; /* S2670 — the cells round where he stands may be stepped through: a man pressed into a wall's margin walks out of it; S2730 — only when his own cell is solid (from a clear one esc let every way cut the wall's margin) */
       for(let h=0;h<q.length&&prev[g0]<0;h++){const c=q[h],ci=c%N,cj=(c-ci)/N;
         for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){if(!di&&!dj)continue;const ni=ci+di,nj=cj+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const k=nj*N+ni;
           if(prev[k]>=0||(sol[k]&&k!==g0&&!esc(ni,nj)))continue;if(di&&dj&&!esc(ni,nj)&&(sol[cj*N+ni]||sol[nj*N+ci]))continue;prev[k]=c;q.push(k);}}
@@ -2350,7 +2354,7 @@
     S[KR]=(a,b,raw)=>{const [ai,aj]=startCel(a),[bi,bj]=cel(b),s0=aj*N+ai,g0=bj*N+bi;let ks=null,fresh=false;
       for(let tries=0;tries<12;tries++){ks=find(s0,g0);
         if(!ks){if(fresh)break;fill();fresh=true;continue;}
-        let stale=false;for(let i=1;i<ks.length-1;i++){const k=ks[i];if(solidAt_(cx-R+k%N,cz-R+Math.floor(k/N))){sol[k]=1;stale=true;}}
+        let stale=false;for(let i=1;i<ks.length-1;i++){const k=ks[i];if(!sol[k]&&solidAt_(cx-R+k%N,cz-R+Math.floor(k/N))){sol[k]=1;stale=true;}} /* S2730 — only a cell the grid held clear is stale: one stepped through by esc is solid already, and counting it held every way out of a wall's margin stale for all twelve tries ([]) */
         if(!stale)break;ks=null;}
       if(!ks)return [];const cells=ks.map(c=>({x:cx-R+c%N,z:cz-R+Math.floor(c/N)})); // S247 — his own cell first: from a corner the line to the first turn can cut the wall
       if(raw)return cells; // S247 — every cell of the way, for a man the pulled-straight path has already failed

@@ -25,6 +25,14 @@ const st = await page.evaluate(() => { const out = { gates: 0, flights: 0, bad: 
   return out; });
 console.log(JSON.stringify(st));
 check(`a gate on a slope has its flight down the bank (${st.flights} of ${st.gates}, slopes ${st.s.join(', ')}), the ground along each falling without a step (worst ${st.worst.toFixed(2)} m in 0.25)`, st.bad.length === 0, st);
+// Session 2732 (the critic, 27 Nov: the look sheets' gate at dusk a hump after the other seven views): a door's spot is pushed off the roads,
+// stamps and doors loaded when it is placed, so gate 137 came back 59 m from where it stood once its cells were unloaded and loaded again
+// with its neighbours not yet in (the gate's cell first, as a far jump's return gives it). It keeps the spot it was first given.
+const keep = await page.evaluate(() => { const G0 = RING_GATES.get(137); if (!G0) return { none: true }; const a = [+G0.x.toFixed(1), +G0.z.toFixed(1), +G0.ry.toFixed(2)];
+  const [ci, cj] = cellOf(G0.x, G0.z); const ks = []; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const k = cellKey(ci + di, cj + dj); if (LOADED.has(k)) { ks.push([ci + di, cj + dj]); unloadCell(k); } }
+  loadCell(ci, cj); const G1 = RING_GATES.get(137); const b = G1 ? [+G1.x.toFixed(1), +G1.z.toFixed(1), +G1.ry.toFixed(2)] : null;
+  ks.forEach(([i, j]) => { if (!LOADED.has(cellKey(i, j))) loadCell(i, j); }); return { a, b, cells: ks.length }; });
+check(`a gate keeps its spot when its cells unload and its own cell loads again first (gate 137 at ${keep.a}, then ${keep.b})`, !keep.none && !!keep.b && keep.a.every((v, i) => v === keep.b[i]), keep);
 const S0 = a.near; await page.evaluate(G => { px = G.x; pz = G.z - 40; }, S0);
 for (let n = 0; n < 8; n++) { await g.cells(); if (await page.evaluate(s => { const G = RING_GATES.get(s); return !!(G && G.group && G.group.parent); }, S0.seed)) break; await page.waitForTimeout(1000); }
 await page.evaluate(() => WORLD.setRadius(RADIUS)); /* the chunks round you built now, as the game's frames would (CI read none streamed yet) */
