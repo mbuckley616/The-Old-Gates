@@ -128,5 +128,28 @@ const busy = await page.evaluate(async () => { const S = WORLD.settle.get('dunmo
   _wx('clear'); return { most, nodes: AMB.nodes, spots: AMB.spots }; });
 check('Dunmore at noon in the rain by the forge, a call every tick: at most 40 live nodes on the bus', busy.most > busy.nodes && busy.most <= 40, busy);
 check('an hour is crossed within a quarter hour of it (12 from 11.9, 19 from 18.95, midnight from 23.9), never by a clock set past it (12 to 14)', await page.evaluate(() => ambCrossed(12, 12.05, 11.9) && !ambCrossed(12, 14, 11.9) && ambCrossed(6, 6.1, 5.9) && ambCrossed(19, 19.1, 18.95) && ambCrossed(0, .1, 23.9) && !ambCrossed(12, 11.95, 11.9)));
+// S2740 — beds by school inside a gate, the whispers by condition (the build sheet's fifth session). One real entry, a Tine gate; then
+// the Uisce gate's portal stands in for it, and a lair's, on the same floor (the bed reads the portal and the floor's gen only).
+const bed = await page.evaluate(async () => { const by = {}; const [ci, cj] = cellOf(px, pz);
+  for (let r = 0; r < 6 && !(by.tine && by.uisce); r++) for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) { if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue; const c = getCell(ci + di, cj + dj); if (!c || !c.doors) continue;
+    for (const e of c.doors) { if (!gateHerbDoor(e) || greatSchoolOf(e)) continue; const k = gateSchool(e); if ((k === 'tine' || k === 'uisce') && !by[k]) by[k] = e; } }
+  if (!by.tine || !by.uisce) return { found: Object.keys(by) };
+  const def = e => { const p = makePortalDef(e); const wp = WORLD.dungeonPos[e.seed]; if (wp) { p.x = wp.x; p.z = wp.z; } p.zone = 'world'; return p; };
+  let drones = 0; const real = window._musicDungeon; window._musicDungeon = function () { drones++; return real.apply(this, arguments); };
+  const T = def(by.tine); px = T.x; pz = T.z + 3; goToDungeon(T); for (let i = 0; i < 30; i++) await new Promise(r => requestAnimationFrame(r));
+  _amb(); const I = AMB.inside; const o = { gen: !!(window._lastGen && window._lastGen.gate), cond: window._lastGen && window._lastGen.cond, tine: { bed: I.bed, level: I.level, built: !!(AMB.v.bed && AMB.v.bed.school === 'tine'), drones, music: _musicNodes.length, nodes: AMB.nodes } };
+  _ambLive.length = 0; I.evNext = 0; const e0 = I.events; _amb(); o.tine.tick = I.events - e0;
+  /* each trial on an empty budget (a stroke or whisper still sounding holds 4–6 of the 40) and a fresh draw of the interval */
+  const W = []; for (const c of ['steady', 'failing', 'catastrophic']) { _ambLive.length = 0; I.cond = null; window._lastGen.cond = c; _amb(); const w0 = I.whispers, n0 = I.next - AX.currentTime; I.next = 0; _amb(); W.push([c, +n0.toFixed(1), I.whispers - w0]); }
+  o.whispers = W; window._lastGen.cond = o.cond;
+  currentPortal = def(by.uisce); devMusicHook.zone = ''; startMusic('dungeon', currentPortal.theme); _amb(); o.uisce = { bed: I.bed, level: I.level, built: !!(AMB.v.bed && AMB.v.bed.school === 'uisce'), drones, nodes: AMB.nodes };
+  _ambLive.length = 0; I.evNext = 0; const e1 = I.events; _amb(); o.uisce.drip = I.events - e1;
+  currentPortal.lair = true; devMusicHook.zone = ''; startMusic('dungeon', currentPortal.theme); for (let k = 0; k < 10; k++) _amb(); o.lair = { bed: I.bed, drones, built: !!AMB.v.bed, nodes: AMB.nodes };
+  window._musicDungeon = real; return o; });
+console.log('bed', JSON.stringify(bed));
+check('inside a Tine gate its bed is on the Ambience bus (the roar at 0.05, metal ticking), and the dungeon\'s drone is not played', !!bed.tine && bed.gen && bed.tine.bed === 'tine' && bed.tine.level === .05 && bed.tine.built && bed.tine.drones === 0 && bed.tine.music === 0 && bed.tine.tick === 1, bed);
+check('an Uisce gate\'s bed is the lapping and the drips at 0.04; still no drone; the bus under 40', !!bed.uisce && bed.uisce.bed === 'uisce' && bed.uisce.level === .04 && bed.uisce.built && bed.uisce.drones === 0 && bed.uisce.drip === 1 && bed.uisce.nodes <= 40, bed);
+check('the whispers by condition: steady every 40–60 s, failing 12–20, catastrophic 6–10, each one whispered when due', !!bed.whispers && bed.whispers.every(([c, n, w]) => w === 1 && n >= { steady: 40, failing: 12, catastrophic: 6 }[c] - .5 && n <= { steady: 60, failing: 20, catastrophic: 10 }[c] + .5), bed.whispers);
+check('a lair keeps the dungeon\'s drone, and the gate\'s bed is taken down', !!bed.lair && bed.lair.drones === 1 && bed.lair.bed === null && !bed.lair.built, bed.lair);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

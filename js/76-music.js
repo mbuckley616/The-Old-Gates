@@ -169,7 +169,7 @@ function _mkDrone(freq,gainVal,detune=0){
 // with a crossfade and keeps playing through every peaceful zone and
 // interior. Combat, dungeon and burned cues are untouched.
 // ═══════════════════════════════════════════════════════════════════════
-const EXPLORE={playing:false,track:null,nodes:[],timer:null,startAt:0,order:[],cursor:0,bus:null,verb:null,verbGain:null,fadeTo:null,lastIdx:-1};
+const EXPLORE={playing:false,track:null,nodes:[],timer:null,rest:null,gap:0,startAt:0,order:[],cursor:0,bus:null,verb:null,verbGain:null,fadeTo:null,lastIdx:-1};
 const MODES={aeolian:[0,2,3,5,7,8,10],phrygian:[0,1,3,5,7,8,10],dorian:[0,2,3,5,7,9,10],mixolydian:[0,2,4,5,7,9,10],ionian:[0,2,4,5,7,9,11],lydian:[0,2,4,6,7,9,11]};
 const NOTE_ROOT={C:60,D:62,E:64,F:65,G:67,A:69,Bb:70,B:71,Eb:63};
 function midiHz(m){return 440*Math.pow(2,(m-69)/12);}
@@ -391,15 +391,24 @@ function nextPiece(){
   if(!EXPLORE.order.length||EXPLORE.cursor>=EXPLORE.order.length){const idx=PIECES.map((_,i)=>i);for(let i=idx.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}if(idx[0]===EXPLORE.lastIdx&&idx.length>1){[idx[0],idx[1]]=[idx[1],idx[0]];}EXPLORE.order=idx;EXPLORE.cursor=0;}
   const i=EXPLORE.order[EXPLORE.cursor++];EXPLORE.lastIdx=i;return PIECES[i];
 }
+// S2740 — the music's rest (the build sheet's fifth session): outdoors the next exploring piece starts 45–90 s after the last one ends,
+// so the place is heard between pieces (the ambience's duck lifts meanwhile); indoors and in a gate the gap stays 2.2 s, and a change
+// of place starts the next piece at once (startMusic calls explorePlay, which clears the rest). Cosmetic: Math.random.
+const MUSIC_REST={out:[45,90],in:2.2};
+function exploreGap(){const out=typeof lid!=='undefined'&&lid==='overworld'&&!(typeof isInterior==='function'&&isInterior());
+  return out?MUSIC_REST.out[0]+Math.random()*(MUSIC_REST.out[1]-MUSIC_REST.out[0]):MUSIC_REST.in;}
+function exploreRest(){const s=exploreGap();EXPLORE.gap=+s.toFixed(2);if(EXPLORE.rest)clearTimeout(EXPLORE.rest);
+  EXPLORE.rest=setTimeout(()=>{EXPLORE.rest=null;if(_musicZone==='explore')explorePlay();},s*1000);}
 function explorePlay(){
   if(!AX)return;if(EXPLORE.playing)return;
+  if(EXPLORE.rest){clearTimeout(EXPLORE.rest);EXPLORE.rest=null;}
   EXPLORE.playing=true;const bus=_exBus();const now=AX.currentTime;bus.gain.cancelScheduledValues(now);bus.gain.setValueAtTime(0,now);bus.gain.linearRampToValueAtTime(1,now+2.5);
   const P=nextPiece(),isle=musicIsland();EXPLORE.band=isle;const {events,length}=pieceEvents(P,isle?ISLAND_BAND[isle]:null);EXPLORE.track=P;EXPLORE.startAt=now+.3;let i=0;
   const CEIL={strings:79,lowstrings:60,horn:74,flute:81,harp:86,choir:77,bells:88,timpani:60,fiddle:88,whistle:93,lute:79,tagelharpa:72,warhorn:67,lyre:84,boneflute:84,oud:74,qanun:89,ney:83,santur:91,bodhran:127,framedrum:127,riq:127};
   const step=()=>{if(!EXPLORE.playing)return;const cur=AX.currentTime;while(i<events.length&&EXPLORE.startAt+events[i].t<cur+1.2){const e=events[i++];const vf=VOICES[e.v];let m=e.m;const c=CEIL[e.v]||84;while(m>c)m-=12;if(vf)vf(m,EXPLORE.startAt+e.t,e.d,e.vel);}
     // prune finished nodes' references now and then
     if(EXPLORE.nodes.length>900)EXPLORE.nodes.splice(0,EXPLORE.nodes.length-600);
-    if(i>=events.length&&cur>EXPLORE.startAt+length-2){EXPLORE.playing=false;EXPLORE.timer=null;setTimeout(()=>{if(_musicZone==='explore')explorePlay();},2200);return;}
+    if(i>=events.length&&cur>EXPLORE.startAt+length-2){EXPLORE.playing=false;EXPLORE.timer=null;exploreRest();return;}
     EXPLORE.timer=setTimeout(step,300);};
   step();
 }
@@ -427,7 +436,7 @@ function startMusic(zone,theme){
   else if(zone==='shop')_musicShop();
   else if(zone==='church')_musicChurch();
   else if(zone==='castle')_musicCastle();
-  else if(zone==='dungeon'){_currentDungeonTheme=theme||'ruins';_musicDungeon();}
+  else if(zone==='dungeon'){_currentDungeonTheme=theme||'ruins';if(!(typeof ambGateInside==='function'&&ambGateInside()))_musicDungeon();} /* S2740 — an old gate's bed is on the Ambience bus (ambBedTick, 72-audio.js) */
   else if(zone==='combat')_musicCombat();
   else if(zone==='burned')_musicBurned();
 }

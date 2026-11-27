@@ -91,5 +91,15 @@ check('layers follow the fight: one foe, three, a boss', r.l1 === 'ost+drum' && 
 check('it sounds, and louder as the fight grows', r.rms1.slice(0, Math.floor(14 * b)).every(x => x > .002) && loud > quiet * 1.2, { quiet: +quiet.toFixed(4), loud: +loud.toFixed(4), rms: r.rms1 });
 check('the close fades to silence instead of cutting', r.rms2[0] > .002 && r.rms2[2] > .0005 && r.rms2[5] < r.rms2[0] * .02, r.rms2);
 check('a fight never repeats the last fight\'s theme', r.themes.every((t, i) => !i || t !== r.themes[i - 1]) && new Set(r.themes).size >= 2, r.themes);
+// S2740 — the music's rest (what-a-place-sounds-like-build.md): 45–90 s outdoors between pieces, 2.2 indoors and in a gate, and a change of place at once
+const rest = await page.evaluate(() => { if (!AX) initAudio(); const E = devMusicHook.explore, was = { lid, h: currentHouse, z: devMusicHook.zone }; const out = [];
+  lid = 'overworld'; for (let i = 0; i < 40; i++) out.push(exploreGap());
+  lid = 'int_test'; currentHouse = { type: 'inn' }; const inside = exploreGap(); lid = 'dun_test'; currentHouse = null; const gate = exploreGap();
+  lid = 'overworld'; exploreStop(.1); devMusicHook.zone = 'explore'; exploreRest(); const armed = { rest: !!E.rest, gap: E.gap };
+  startMusic('town'); const moved = { playing: E.playing, rest: !!E.rest }; exploreStop(.1);
+  lid = was.lid; currentHouse = was.h; devMusicHook.zone = was.z;
+  return { lo: Math.min(...out), hi: Math.max(...out), inside, gate, armed, moved }; });
+check('the music\'s rest: outdoors the next piece waits 45–90 s, indoors and in a gate 2.2 s, and a change of place plays at once', rest.lo >= 45 && rest.hi <= 90 && rest.hi - rest.lo > 15 && rest.inside === 2.2 && rest.gate === 2.2
+  && rest.armed.rest && rest.armed.gap >= 45 && rest.moved.playing && !rest.moved.rest, rest);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
