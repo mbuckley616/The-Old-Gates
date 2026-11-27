@@ -1374,6 +1374,11 @@ function stripeOf(D, arm = false) { if (!D.robe || !D.robeStripe) return {};
 // hood, read off aTart there), 34 repeats round the neck (twice the robe's, as the cloak stands further out) and 17 round the head;
 // no tartan; a plain burnous when it has no stripe colour
 const burnousOn = D => !!(D && D.cloak && D.burnous && !D.cape);
+// a long cloak closed round the front (Session 2728, Michael's C on #2082): not a shoulder cape, and not worn back over the shoulders
+// (D.cloakBack; the burnous is sewn shut, so never back). What the right fist holds at the waist (a tankard, the hammer, a sword at rest)
+// and the hands' room in a coat's or a skirt's front were refused under any long cloak, which hung over the fist; a cloak worn back hangs
+// behind the arms, so only a closed one refuses them now
+const cloakShut = D => !!(D && D.cloak && !D.cape && !(D.cloakBack && !burnousOn(D)));
 function burnousOf(D, o, vt = false, n = vt ? 1 : 2) { if (!burnousOn(D) || !D.burnousStripe) return {}; if (!STRIPE_AX) stripeOf({ robe: 1, robeStripe: [0, 0, 0] });
   return { stripe: { k: sRGB(...D.burnousStripe), l: sRGB(...D.burnousStripe), o, s: STRIPE_AX.s, e: STRIPE_AX.e, w: STRIPE_AX.w, arm: false, vt, n } }; }
 const cloakPattern = (D, o, r, vt = false) => burnousOn(D) ? burnousOf(D, o, vt) : tartanOf(D, o, r);
@@ -1436,6 +1441,9 @@ function armRoomV(m) { const B = PACK.ix.bones, arm = PACK.armBones || (PACK.arm
 // D.cloakBack true is worn over the shoulders (1.3 rad either side of the front open, so the cloth covers each shoulder's top and front);
 // a number is its own opening (1.69 hangs it from just behind the shoulders' tops, wholly behind the arms)
 const CLOAK_BACK_OPEN = 1.3;
+// a long cloak worn back while the right fist holds a tankard or the hammer forward at the waist (Session 2729): over the right shoulder's
+// front its side hung over the forearm and stood out round it in a lump; on that side it is hung from behind the shoulder's top (B's opening)
+const CLOAK_BACK_HELD = 1.69;
 function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
   const D = G.dress, out = [], PP = posedBody(body), S = surfGrid(PP, PACK.G['body'], (x, y) => y > -.75);
   const neck = new THREE.Vector3(); byName['neck01'].getWorldPosition(neck); const neckY = neck.y;
@@ -1467,7 +1475,7 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
   // at the side and the forearm forward, so it opens the same way, from the side
   const capeStaff = cape && (!!D.staff || !!D.crossbow && !D.chair) && !D.spear;
   const thrown = !back && !!(D.spear || D.crossbow || D.staff || D.basket || D.lantern || D.book) && (!cape || capeStaff), low = thrown && !D.spear && !D.crossbow && !D.basket && !D.lantern && !D.book;
-  const th0 = capeStaff ? -Math.PI / 2 - .15 : low ? -Math.PI / 2 - .33 : thrown ? -Math.PI / 2 + .35 : -Math.PI + open, th1 = Math.PI - open, cols = [], tops = [];
+  const th0 = capeStaff ? -Math.PI / 2 - .15 : low ? -Math.PI / 2 - .33 : thrown ? -Math.PI / 2 + .35 : -Math.PI + (back && (tankardOn(D) || hammerOn(D)) ? Math.max(open, CLOAK_BACK_HELD) : open), th1 = Math.PI - open, cols = [], tops = [];
   // the shoulder line, set out evenly along itself (Session 1944): the furthest point in each of K evenly turned directions is not evenly
   // placed. Many directions over the back find the same few points by the spine, and over the shoulders' round a few find points far
   // apart, so a man's 56 columns stood 14 to 0.4 rad over the spine (the seam down the back, its folds crowded into a pleat) and 12 cm
@@ -4491,7 +4499,7 @@ function buildBook(G, body, byName, meshes, root, grip) {
 // y up the handle, the tankard's axis at the origin, the handle out along -x, the foot at 0. The arm is lifted clear of everything
 // worn, three hundredths of a radian at a time, as for the lantern
 // not under a full cloak: it hangs over the fist at the waist (an Old Blood woman's could not be cleared by lifting the arm 0.6); a cape is fine
-const tankardOn = D => !!D.tankard && !D.basket && !D.lantern && !D.book && !D.chair && !(D.cloak && !D.cape);
+const tankardOn = D => !!D.tankard && !D.basket && !D.lantern && !D.book && !D.chair && !cloakShut(D);
 // a sword at rest (Session 2366, the critic's 17 Nov note): held in the fist alone, it was carried as a tankard is, the forearm out and the
 // grip plumb, so the blade stood point-up beside the head (its tip 1.74 to 2.4 m off the ground). Now the arm hangs, the forearm a little
 // forward, the knuckles turned fore and aft and the wrist dropped, so the blade runs forward and down from the fist at DIP below the level
@@ -4577,7 +4585,7 @@ function buildTankard(G, body, byName, meshes, root, grip) {
 // fist's middle at 0, the face along -x and the peen along +x. The head is turned about the haft to the bearing (of sixteen) where it
 // stands furthest from everything worn, and the arm is lifted clear as for the tankard, the wrist taking the lift's roll back
 // not with a tankard, which takes the fist first; nor under a full cloak, which hangs over the fist at the waist, as for the tankard
-const hammerOn = D => !!D.hammer && !D.tankard && !D.basket && !D.lantern && !D.book && !D.chair && !(D.cloak && !D.cape);
+const hammerOn = D => !!D.hammer && !D.tankard && !D.basket && !D.lantern && !D.book && !D.chair && !cloakShut(D);
 const HAMMER = { L: .34, rFist: SPEAR_R, rNeck: .01, rButt: .015, face: .05, peen: .065, h: .03, d: .028, edge: .003, bevel: .004, iron: [.3, .3, .32], bright: [.66, .66, .68] };
 // the haft's radius at a height up it (from its butt at 0 to its top at L): the swell at the butt, the fist's run, the neck under the head
 // (a palm that closes tighter than the spear's shaft has the haft pared to it inside the fist, where the hand hides it: rIn over the
@@ -4677,7 +4685,7 @@ const SWORDS = {
 // each pommel's box for the clearance test, round its middle: x and y (from the grip's foot) of the middle, and its half sizes
 const SWORD_POMMEL = { wheel: [0, -.025, .027, .027, .013], lobed: [0, -.013, .036, .015, .013], disc: [0, -.036, .035, .035, .006], hook: [-.016, -.012, .026, .021, .011], cap: [0, -.012, .019, .016, .016], flyssa: [.006, -.025, .028, .027, .016] };
 const SWORD_BY_PEOPLE = { gatelander: 'arming', markman: 'norse', aurennais: 'takouba', oldblood: 'arming' };
-const swordOn = D => !!D.sword && !D.hammer && !D.tankard && !D.basket && !D.lantern && !D.book && !D.chair && !(D.cloak && !D.cape);
+const swordOn = D => !!D.sword && !D.hammer && !D.tankard && !D.basket && !D.lantern && !D.book && !D.chair && !cloakShut(D);
 // the blade's half widths, its half thickness and its middle's sweep at t (0 the forte, 1 the tip), in the blade's own frame
 function swordAt(K, t) { const p = K.point, s = t < 1 - p ? 0 : (t - (1 - p)) / p, E = .0004;
   let we = t < 1 - p ? K.w0 + (K.w1 - K.w0) * t / (1 - p) : K.w1, wb = K.back == null ? we : K.back;
@@ -5677,7 +5685,7 @@ function* makePersonSteps(G, o = {}) {
   // A mail skirt stands out further still, and is lifted clear of the same way (Session 897)
   // A short skirt too (Session 1011): the hands hang beside its lower half, and fingertips showed through its front at the thigh
   yield;
-  let lift = 0, skirtHands = null; const skM = !D.chair && !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'coatSkirt') || meshes.find(m => m.name === 'mailSkirt') || D.skirt && meshes.find(m => m.name === 'skirt'));
+  let lift = 0, skirtHands = null; const skM = !D.chair && !cloakShut(D) && (meshes.find(m => m.name === 'coatSkirt') || meshes.find(m => m.name === 'mailSkirt') || D.skirt && meshes.find(m => m.name === 'skirt'));
   const skV = skM && skM.name === 'mailSkirt' ? mailSkirtV(skM) : skM && skM.name === 'skirt' && D.skirt === 'short' ? PACK.skirtShortV || (PACK.skirtShortV = [...new Set(PACK.R.skirtShort)].filter(i => PACK.rest[i * 3 + 1] > -.2)) : skM && skM.name === 'skirt' && D.skirt === 'knee' ? PACK.skirtKneeV || (PACK.skirtKneeV = [...new Set(PACK.R.skirtLong)].filter(i => PACK.rest[i * 3 + 1] > SKIRT_CUT.knee)) : undefined;
   // a winter coat's skirt (Session 1147) stands 1.6 to 2.4 cm over a long skirt, so its hands may lift two steps further (to .36; a woman's needed .33)
   const kMax = skM && skM.name === 'coatSkirt' ? 12 : 10;
