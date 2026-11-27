@@ -299,7 +299,7 @@
     _shC.lerp(SHINGLE_C,.55*sstep(.48,.68,sh));
     _shC.multiplyScalar(1-.22*sstep(1.6,.2,h));
     return _shC;}
-  // S2716 — the sea's bed by island (the Gatelands' coast against P10b's Coastal Cliffs, after S2714). Under the waterline the shore's
+  // S2718 — the sea's bed by island (the Gatelands' coast against P10b's Coastal Cliffs, after S2714). Under the waterline the shore's
   // sand ran on to -6 m before it reached the deep bed, and the water (opacity .8) showed it, so a gentle shelf a hundred metres wide
   // read as bright Caribbean shallows on the Gatelands' coast. On the new look the Gatelands' bed turns to a dark green-grey silt and
   // weed within 2.6 m of the surface and the Mark's to a darker slate; Aurenne keeps its pale sand and turquoise shallows, as before.
@@ -307,7 +307,7 @@
   function seabedColor(x,z){
     if(typeof LAND==='undefined'||!LAND.on)return null;
     return SEABED_C[shoreIsleAt(x,z)]||null;}
-  // S2716 — the sea's body follows the island under the camera (one plane serves every sea), eased over a second or two so a crossing
+  // S2718 — the sea's body follows the island under the camera (one plane serves every sea), eased over a second or two so a crossing
   // between islands, out in open water, never snaps.
   const SEA_BODY={gatelands:[new THREE.Color(0x101c34),new THREE.Color(0x030a14)],mark:[new THREE.Color(0x101c34),new THREE.Color(0x030a14)],
     aurenne:[new THREE.Color(0x103c50),new THREE.Color(0x03141c)]};
@@ -918,7 +918,7 @@
     // S2714 — on the new look the sea's own colour is deep water's, not a lit cyan: 0x2f7fb2 under the hour's sun (1.6 at noon) clipped to a pale
     // Caribbean turquoise from any height, on every island, and the island's tint (LIGHT_PAL's sea) could only shade it. The sheen and the
     // sky's reflection (landWater) now carry the brightness at a low angle, the island's tint the hue (Aurenne's still turquoise).
-    // S2716 — the sea's body by island (seaBody, below): measured on the Gatelands' coast at 13h the near water was (42,125,136), a teal
+    // S2718 — the sea's body by island (seaBody, below): measured on the Gatelands' coast at 13h the near water was (42,125,136), a teal
     // made almost wholly by the lit body (the sky's reflection alone gave (6,35,50)). The Gatelands' and the Mark's body is a dark slate,
     // 0x101c34, which gives (42,82,119), Coastal Cliffs' dark blue-grey; Aurenne keeps S2714's 0x103c50 for its turquoise.
     const wmat=new THREE.MeshLambertMaterial({color:LAND.on?0x103c50:0x2f7fb2,emissive:LAND.on?0x03141c:0x0a2a40,transparent:true,opacity:.8});
