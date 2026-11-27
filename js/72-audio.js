@@ -696,7 +696,8 @@ const AMB_LEVEL=.6,AMB_TICK=.25,AMB_WATER_R=80,AMB_WATER_PEAK=.10;
 const AMB_DAMP={clear:[18000,1],fog:[2000,.7],rain:[1200,.6],snow:[3000,.8],storm:[900,.5]};
 const AMB={on:false,v:null,t:0,open:false,island:null,height:0,forest:false,beds:{wind:0,leaves:0,water:0,waterKind:null,waterD:Infinity,murmur:0,fire:0,fountain:0},
   gust:false,gustPh:0,gustP:7,gustMul:1,cut:18000,dampMul:1,duck:1,nodes:0,live:0,spots:[],forge:null,tavern:null,bell:{count:0,strokes:0,key:null},horn:{count:0,key:null},
-  calls:{count:0,next:0,last:null,heard:0},room:{kind:null,decay:0,wet:0},hour:null,townsfolk:0};
+  calls:{count:0,next:0,last:null,heard:0},room:{kind:null,decay:0,wet:0},hour:null,townsfolk:0,
+  gate:{seed:null,school:null,cond:null,great:false,d:null,R:0,level:0,beat:0,hz:0,rumble:0,whispers:0,next:0},under:{level:0,school:null}};
 // S2730 — the nodes a sound makes and when they end, so the bus never holds more than AMB_MAX at once (the build sheet's 40)
 const AMB_MAX=40,_ambLive=[];
 function ambRoom(n){const t=AX?AX.currentTime:0;for(let i=_ambLive.length-1;i>=0;i--)if(_ambLive[i][0]<=t)_ambLive.splice(i,1);
@@ -857,6 +858,67 @@ function ambEcho(t,V){const k=ambRoomKind(),R=AMB.room;
 // a room's fire: any lit fire or hearth in the room crackles, a bed of 0.015 and pops to 0.04
 function ambRoomFire(){if(!(typeof isInterior==='function'&&isInterior()))return false;try{for(const r of FURN_LIVE){if(r.parent!==interiorScene)continue;const U=r.userData;
   if(U.fire||(U.hearthFire&&U.hearthFire.visible))return true;}}catch(e){}return false;}
+// ── S2736, the build sheet's fourth session: a gate heard outside, the great gates and the world's undertone ─────────────────────
+// The hum is a fundamental by school with harmonics 2–5 at 0.5, 0.35, 0.25 and 0.15 (one PeriodicWave): laptop speakers give almost
+// nothing under 150 Hz and the ear rebuilds the fundamental from its harmonics. Only the nearest gate in reach sounds, falling as
+// (1 − d/R)², panned, through the bus's damping. A steady gate 80 m at 0.10; a failing one 120 m at 0.12, its second voice 4–7 Hz above
+// (by its seed) heard as the beat the two make, and a whisper every 6–12 s (noise through two moving formants, 0.6–1.2 s); a
+// catastrophic one 160 m at 0.14, the beat at 3 Hz, each whisper swelling and cut off, a rumble under 120 Hz at 0.05. A great gate
+// 240 m: untouched a steady hum, torn the catastrophic voice, sealed silent (greatGateState). Seeded and the world's: a friend beside
+// you hears the same gate. The voice is built when a gate is first heard and taken down 2 s after none is, so a town's budget is untouched.
+const AMB_GATE={steady:{R:80,lvl:.10,beat:0,wh:null},failing:{R:120,lvl:.12,beat:null,wh:[6,12]},catastrophic:{R:160,lvl:.14,beat:3,wh:[6,12]},greatR:240,
+  hz:{cloch:55,uisce:58,scath:61,gaoth:64,solas:67,tine:70},harm:[1,.5,.35,.25,.15],rumble:.05,whisper:.5,beatDepth:.45};
+// the gate you hear from (x, z), from the cells' own records (getCell), never what has loaded: {seed,school,cond,great,x,z,d,R,lvl,beat} or null
+function ambGatePick(x,z){if(typeof gatesNear!=='function'||typeof getCell!=='function')return null;let best=null;
+  const consider=(e,great)=>{const at=gateHerbAt(e);if(!at)return;const d=Math.hypot(at[0]-x,at[1]-z);let cond,school,R;
+    if(great){const st=greatGateState(great);if(st==='sealed')return;cond=st==='torn'?'catastrophic':'steady';school=great;R=AMB_GATE.greatR;}
+    else{cond=gateHerbCond(e);school=gateSchool(e)||'cloch';R=AMB_GATE[cond].R;}
+    if(d>=R||(best&&best.d<=d))return;const C=AMB_GATE[cond];
+    best={seed:e.seed,school,cond,great:!!great,x:at[0],z:at[1],d,R,lvl:C.lvl*ambFall(d,R),
+      beat:C.beat==null?+(4+3*seededRng('gatehum',e.seed)()).toFixed(2):C.beat};};
+  try{const [ci,cj]=cellOf(x,z);for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const c=getCell(ci+di,cj+dj);if(!c||!c.doors)continue;
+    for(const e of c.doors){if(e.seed==null||e.wet||e.x==null)continue;const gs=typeof greatSchoolOf==='function'?greatSchoolOf(e):null;
+      if(gs)consider(e,gs);else if(gateHerbDoor(e))consider(e,null);}}}catch(err){return null;}
+  return best;}
+let _ambHumWave=null;
+function ambHumWave(){if(_ambHumWave)return _ambHumWave;const H=AMB_GATE.harm,re=new Float32Array(H.length+1),im=new Float32Array(H.length+1);
+  H.forEach((a,i)=>{im[i+1]=a;});return _ambHumWave=AX.createPeriodicWave(re,im,{disableNormalization:true});}
+// the gate's voice: the hum (osc → am → level → pan → damping), its beat (an LFO on am) and the rumble (the shared noise, lowpassed) — 8 nodes
+function ambGateBuild(){const V=AMB.v;if(V.gate)return V.gate;
+  const o=AX.createOscillator();o.setPeriodicWave(ambHumWave());const am=AX.createGain();am.gain.value=1;const lv=AX.createGain();lv.gain.value=0;
+  const pan=AX.createStereoPanner?AX.createStereoPanner():AX.createGain();o.connect(am);am.connect(lv);lv.connect(pan);pan.connect(V.damp);
+  const lfo=AX.createOscillator();lfo.frequency.value=4;const ld=AX.createGain();ld.gain.value=0;lfo.connect(ld);ld.connect(am.gain);
+  const rf=AX.createBiquadFilter();rf.type='lowpass';rf.frequency.value=120;rf.Q.value=.7;const rg=AX.createGain();rg.gain.value=0;V.src.connect(rf);rf.connect(rg);rg.connect(pan);
+  o.start();lfo.start();AMB.nodes+=8;return V.gate={o,am,lv,pan,lfo,ld,rf,rg,idle:0};}
+function ambGateDrop(){const V=AMB.v,G=V&&V.gate;if(!G)return;try{G.o.stop();G.lfo.stop();V.src.disconnect(G.rf);G.pan.disconnect();}catch(e){}V.gate=null;AMB.nodes-=8;}
+// a whisper: the shared noise through two formants gliding apart, 0.6–1.2 s; reversed (catastrophic) it swells and is cut off — 4 nodes
+function ambWhisper(t,G,lvl,rev){if(!ambRoom(4))return false;const V=AMB.v,dur=.6+Math.random()*.6;
+  const s=AX.createBufferSource();s.buffer=V.src.buffer;const f1=AX.createBiquadFilter(),f2=AX.createBiquadFilter(),g=AX.createGain();
+  f1.type=f2.type='bandpass';f1.Q.value=f2.Q.value=6;const a=400+Math.random()*300,b=1500+Math.random()*700;
+  f1.frequency.setValueAtTime(a,t);f1.frequency.linearRampToValueAtTime(a*(.6+Math.random()*.8),t+dur);f2.frequency.setValueAtTime(b,t);f2.frequency.linearRampToValueAtTime(b*(.7+Math.random()*.6),t+dur);
+  if(rev){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(lvl,t+dur);g.gain.setValueAtTime(0,t+dur+.005);}
+  else{g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(lvl,t+.12);g.gain.exponentialRampToValueAtTime(.0001,t+dur);}
+  s.connect(f1);s.connect(f2);f1.connect(g);f2.connect(g);g.connect(G.pan);s.start(t,Math.random()*3);s.stop(t+dur+.05);ambTake(4,t+dur+.1);return true;}
+// the world's undertone: 0.02 × (corruptionLevel − 2) from three torn (0.02 to 0.08), the last torn school's hum, swelling over 20 s — 4 nodes
+function ambUnderLevel(){const n=typeof corruptionLevel==='function'?corruptionLevel():0;return n>=3?+(.02*(n-2)).toFixed(3):0;}
+function ambUnderTick(t,open){const V=AMB.v,U=AMB.under,lv=open?ambUnderLevel():0;U.level=lv;
+  if(lv>0){const torn=corruptionTorn(),sc=torn[torn.length-1];U.school=sc;U.hz=AMB_GATE.hz[sc]||55;
+    if(!V.under){const o=AX.createOscillator();o.setPeriodicWave(ambHumWave());o.frequency.value=AMB_GATE.hz[sc]||55;const g=AX.createGain();g.gain.value=1;const lfo=AX.createOscillator();lfo.frequency.value=1/20;
+      const ld=AX.createGain();ld.gain.value=0;lfo.connect(ld);ld.connect(g.gain);o.connect(g);g.connect(V.damp);o.start();lfo.start();AMB.nodes+=4;V.under={o,g,lfo,ld,idle:0};}
+    const W=V.under;W.idle=0;ambSet(W.o.frequency,AMB_GATE.hz[sc]||55,t,.5);ambSet(W.g.gain,lv*.75,t,3);ambSet(W.ld.gain,lv*.25,t,3);} /* between half and the whole level, over a 20 s swell */
+  else{U.school=null;U.hz=0;const W=V.under;if(W){ambSet(W.g.gain,0,t,.3);ambSet(W.ld.gain,0,t,.3);W.idle+=AMB_TICK;if(W.idle>2){try{W.o.stop();W.lfo.stop();W.g.disconnect();}catch(e){}V.under=null;AMB.nodes-=4;}}}}
+function ambGateTick(t,open){const V=AMB.v,A=AMB.gate;let P=null;if(open){try{P=ambGatePick(px,pz);}catch(e){}}
+  try{ambUnderTick(t,open);}catch(e){}
+  if(!P){A.seed=null;A.level=0;A.cond=null;A.school=null;A.d=null;A.great=false;A.beat=0;A.rumble=0;const G=V.gate;
+    if(G){ambSet(G.lv.gain,0,t,.3);ambSet(G.rg.gain,0,t,.3);G.idle+=AMB_TICK;if(G.idle>2)ambGateDrop();}return;}
+  const G=ambGateBuild();G.idle=0;const C=AMB_GATE[P.cond],M=AMB.dampMul;
+  if(A.seed!==P.seed){A.next=t+(C.wh?C.wh[0]+Math.random()*(C.wh[1]-C.wh[0]):0);}
+  Object.assign(A,{seed:P.seed,school:P.school,cond:P.cond,great:P.great,d:+P.d.toFixed(1),R:P.R,level:+P.lvl.toFixed(4),beat:P.beat,hz:AMB_GATE.hz[P.school]||55});
+  ambSet(G.o.frequency,A.hz,t,.3);ambSet(G.lv.gain,P.lvl*M,t,.4);
+  const dep=P.beat?AMB_GATE.beatDepth:0;ambSet(G.lfo.frequency,P.beat||4,t,.3);ambSet(G.ld.gain,dep,t,.3);ambSet(G.am.gain,1-dep,t,.3);
+  if(G.pan.pan)ambSet(G.pan.pan,ambPanOf(P.x,P.z),t,.2);
+  const rum=P.cond==='catastrophic'?AMB_GATE.rumble*ambFall(P.d,P.R):0;A.rumble=+rum.toFixed(4);ambSet(G.rg.gain,rum*M,t,.4);
+  if(C.wh&&t>=A.next){A.next=t+C.wh[0]+Math.random()*(C.wh[1]-C.wh[0]);if(ambWhisper(t,G,P.lvl*AMB_GATE.whisper*M,P.cond==='catastrophic'))A.whispers++;}}
 function tickAmbience(dt){
   const now=performance.now()/1000;if(now-AMB.t<AMB_TICK)return;AMB.t=now;
   if(!AX||!ambGain)return;
@@ -876,7 +938,7 @@ function tickAmbience(dt){
   else if(V.spot.mode==='fire'){V.spot.mode=null;ambSet(V.spot.g.gain,0,t,.3);}
   if(!open){B.wind=B.leaves=B.water=B.murmur=B.fountain=0;B.waterKind=null;B.waterD=Infinity;AMB.gust=false;AMB.spots=[];AMB.townsfolk=0;
     if(AMB.forge)AMB.forge.on=false;if(AMB.tavern&&AMB.tavern.out){try{AMB.tavern.out.disconnect();}catch(e){}AMB.nodes-=2;}AMB.tavern=null;
-    for(const k of ['wind','leaves','water','murmur'])ambSet(V[k].g.gain,0,t,.33);if(!fire)ambSet(V.spot.g.gain,0,t,.33);AMB.hour=h;return;} /* the world's beds fade over 1 s at the door */
+    for(const k of ['wind','leaves','water','murmur'])ambSet(V[k].g.gain,0,t,.33);if(!fire)ambSet(V.spot.g.gain,0,t,.33);try{ambGateTick(t,false);}catch(e){}AMB.hour=h;return;} /* the world's beds fade over 1 s at the door */
   // the wind: 0.05 at sea level, +0.03 per 50 m, at most 0.14; by island
   let ht=0;try{ht=Math.max(0,worldH(px,pz)-SEA_Y);}catch(e){}AMB.height=ht;
   let isle='gatelands';try{const n=nationAt(px,pz);if(n==='mark'||n==='aurenne')isle=n;}catch(e){}AMB.island=isle;
@@ -900,6 +962,7 @@ function tickAmbience(dt){
   // the town and the hours, and the calls
   try{ambTown(t,h,V);}catch(e){console.warn('ambience town',e);}
   try{ambCalls(t,h,isle);}catch(e){console.warn('ambience calls',e);}
+  try{ambGateTick(t,true);}catch(e){console.warn('ambience gate',e);}
   AMB.hour=h;
   const M=AMB.dampMul;
   ambSet(V.wind.g.gain,B.wind*M,t,.4);ambSet(V.leaves.g.gain,B.leaves*M,t,.4);ambSet(V.water.g.gain,lvl*M,t,.4);
