@@ -38,8 +38,18 @@ const made = await page.evaluate((KINDS) => { forceTime(12);
     return { n, key: G ? [...HB_GENOMES].find(([, x]) => x === G)?.[0] : null, want: 'foe:' + e.id, built: !!rig.hb, hi: t && share(rig.geoHi, t), lo: t && rig.geoLo && share(rig.geoLo, t), oldHi: share(rig.geoHi, old), before: (() => { const b = personBake(rig.g, 1), v = share(b.geo, old); b.geo.dispose(); return v; })(), same: !!t && t.equals(old) }; });
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.updateMatrixWorld(true);
   const want = () => _F.filter(f => f.rig && HB_RIGS.has(f.rig) && (!f.rig.hb || f.rig.hb.cold) && !f.rig.hbFail).length;
-  let k = 0; const t0 = performance.now(); HBODY.last = -1e9; while (want() && k++ < 1500) tickPeople(1 / 60, 2e5 + k * (HBODY.gap + 1));
+  // S2715: a built body warming its shaders one program a frame (no parallel compile, as here) is warmed before the next body's build starts:
+  // no job is begun while a body within HBODY.near is still cold, and each warms in a few frames of being built
+  const coldNear = () => _F.filter(f => f.rig && f.rig.hb && Array.isArray(f.rig.hb.cold) && Math.hypot(CAM.position.x - f.e.mesh.position.x, CAM.position.z - f.e.mesh.position.z) < HBODY.near);
+  const W = { par: !!HBODY.par, started: 0, startedCold: 0, warmTicks: [] }, bornAt = new Map();
+  let k = 0; const t0 = performance.now(); HBODY.last = -1e9; while (want() && k++ < 1500) { const j0 = HBODY.job && HBODY.job.rig, c0 = coldNear().length;
+    tickPeople(1 / 60, 2e5 + k * (HBODY.gap + 1)); const j1 = HBODY.job && HBODY.job.rig; if (j1 && j1 !== j0) { W.started++; if (c0) W.startedCold++; }
+    for (const f of _F) if (f.rig && f.rig.hb) { if (!bornAt.has(f.rig)) bornAt.set(f.rig, k); else if (!f.rig.hb.cold && !f.warmed) { f.warmed = true; W.warmTicks.push(k - bornAt.get(f.rig)); } } }
+  window._warm = { ...W, par: !!HBODY.par };
   return { d, ticks: k, left: want(), ms: Math.round(performance.now() - t0) }; }, KINDS);
+{ const W = await page.evaluate(() => _warm); console.log('  warm:', JSON.stringify(W));
+  check(`a built foe within 16 m warms its shaders before the next body's build begins (${W.started} builds begun, ${W.startedCold} with a near body cold; warmed in ${W.warmTicks.join(', ')} ticks)`,
+    W.par || (W.started >= 8 && W.startedCold === 0 && W.warmTicks.length >= 8 && Math.max(...W.warmTicks) <= 30), W); }
 console.log('  built:', JSON.stringify(made));
 const tint = await page.evaluate(() => _tint);
 console.log('  tint:', JSON.stringify(tint));
