@@ -680,8 +680,14 @@ function sndReturnOW(){
 // too, so the beds fade at a door or a gate's mouth instead of hanging. AMB is the state the suite (placesound) reads.
 const AMB_LEVEL=.6,AMB_TICK=.25,AMB_WATER_R=80,AMB_WATER_PEAK=.10;
 const AMB_DAMP={clear:[18000,1],fog:[2000,.7],rain:[1200,.6],snow:[3000,.8],storm:[900,.5]};
-const AMB={on:false,v:null,t:0,open:false,island:null,height:0,forest:false,beds:{wind:0,leaves:0,water:0,waterKind:null,waterD:Infinity},
-  gust:false,gustPh:0,gustP:7,gustMul:1,cut:18000,dampMul:1,duck:1,nodes:0};
+const AMB={on:false,v:null,t:0,open:false,island:null,height:0,forest:false,beds:{wind:0,leaves:0,water:0,waterKind:null,waterD:Infinity,murmur:0,fire:0,fountain:0},
+  gust:false,gustPh:0,gustP:7,gustMul:1,cut:18000,dampMul:1,duck:1,nodes:0,live:0,spots:[],forge:null,tavern:null,bell:{count:0,strokes:0,key:null},horn:{count:0,key:null},
+  calls:{count:0,next:0,last:null,heard:0},room:{kind:null,decay:0,wet:0},hour:null,townsfolk:0};
+// S2730 — the nodes a sound makes and when they end, so the bus never holds more than AMB_MAX at once (the build sheet's 40)
+const AMB_MAX=40,_ambLive=[];
+function ambRoom(n){const t=AX?AX.currentTime:0;for(let i=_ambLive.length-1;i>=0;i--)if(_ambLive[i][0]<=t)_ambLive.splice(i,1);
+  let s=0;for(const e of _ambLive)s+=e[1];AMB.live=AMB.nodes+s;return AMB.live+n<=AMB_MAX;}
+function ambTake(n,until){_ambLive.push([until,n]);AMB.live+=n;}
 function ambEnsure(){if(AMB.v)return true;if(!AX||!ambGain)return false;
   try{const n=AX.sampleRate*4,buf=AX.createBuffer(1,n,AX.sampleRate),d=buf.getChannelData(0);let b=0;
     for(let i=0;i<n;i++){const w=Math.random()*2-1;b=b*.98+w*.02;d[i]=w*.5+b*3;} /* one 4 s noise with a brown body, shared by every bed */
@@ -691,13 +697,20 @@ function ambEnsure(){if(AMB.v)return true;if(!AX||!ambGain)return false;
     const pan=AX.createStereoPanner?AX.createStereoPanner():null;if(pan)pan.connect(damp);const wOut=pan||damp;
     let count=3+(pan?1:0);
     const voice=(type,f,q,out)=>{const fl=AX.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=AX.createGain();g.gain.value=0;src.connect(fl);fl.connect(g);g.connect(out);count+=2;return {f:fl,g};};
-    const lapped=(type,f,q,hz,depth)=>{const lap=AX.createGain();lap.gain.value=1-depth;lap.connect(wOut);const o=AX.createOscillator();o.frequency.value=hz;const og=AX.createGain();og.gain.value=depth;o.connect(og);og.connect(lap.gain);o.start();count+=3;const v=voice(type,f,q,lap);v.lfo=o;return v;};
+    const lapped=(type,f,q,hz,depth,out)=>{const lap=AX.createGain();lap.gain.value=1-depth;lap.connect(out);const o=AX.createOscillator();o.frequency.value=hz;const og=AX.createGain();og.gain.value=depth;o.connect(og);og.connect(lap.gain);o.start();count+=3;const v=voice(type,f,q,lap);v.lfo=o;v.lap=lap;v.depth=og;return v;};
+    /* S2730 — one water voice, retuned by the kind of water nearest (only the nearest ever sounds): a river's 900 Hz band, a lake's
+       lapping at 0.5 Hz, the sea's 9–12 s swell. It was three voices (S2727); the 40-node budget wants the room for the town's spots */
     const v={src,damp,duck,pan,
       wind:voice('bandpass',500,.7,damp),
       leaves:voice('bandpass',4000,.8,damp),
-      river:voice('bandpass',900,1,wOut),
-      lake:lapped('lowpass',520,.5,.5,.45),          /* lapping at 0.5 Hz */
-      sea:lapped('lowpass',700,.4,1/(9+Math.random()*3),.6)}; /* the surf's 9–12 s swell */
+      water:lapped('bandpass',900,1,.5,0,wOut),
+      murmur:voice('bandpass',460,.9,damp),          /* the town's voices, a babble the tick swells and lets fall */
+      spot:voice('bandpass',2000,1.4,damp)};         /* a room's fire indoors (crackled by the tick), Aurenne's fountain outdoors */
+    v.water.kind=null;
+    /* S2730 — the rooms' echo: one convolver on decaying noise, the effects' and the ambience's buses sent to it by the room */
+    const conv=AX.createConvolver();conv.normalize=true;const wet=AX.createGain();wet.gain.value=1;conv.connect(wet);wet.connect(masterGain);
+    const sS=AX.createGain(),sA=AX.createGain();sS.gain.value=0;sA.gain.value=0;sfxGain.connect(sS);ambGain.connect(sA);sS.connect(conv);sA.connect(conv);count+=4;
+    v.conv=conv;v.sendS=sS;v.sendA=sA;
     src.start();AMB.v=v;AMB.nodes=count;AMB.on=true;return true;}catch(e){console.warn('ambience',e);return false;}}
 // the weather's damping: each kind's cutoff (blended in log frequency) and level, by how far the weather has turned (WX.k)
 function ambDampTarget(){const out=[18000,1];if(typeof WX==='undefined'||!WX)return out;const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?(WX.k||0):0;
@@ -720,24 +733,142 @@ function ambWater(x,z){let best=ambFresh(x,z,AMB_WATER_R);const fresh=best;
       if(!best||hi<best.d)best={kind:'sea',d:hi,bx:x+Math.sin(a)*hi,bz:z+Math.cos(a)*hi};}}if(best&&best.kind==='sea')break;r0=r;}
   return best||fresh;}
 function ambSet(p,v,t,tau){try{p.setTargetAtTime(v,t,tau);}catch(e){p.value=v;}}
+// ── S2730, the build sheet's second session: the town and the hours, the calls, indoors and the rooms' echo ─────────────────
+// The spots are the town's own: the forge's hammer in the smith's hours, the tavern's reel 17–21, Aurenne's fountain on the square,
+// the nearest four within 40 m; the Gatelands' church bell at 6, 12 and 18 and the Mark's horn at the watch's change carry to 400 m.
+// The calls are the island's birds and insects by the hour. Indoors a fire crackles, and every room has an echo by its size.
+const AMB_SPOT_R=40,AMB_FAR_R=400,AMB_MURMUR_R=40;
+const AMB_LVL={forge:.08,tavern:.05,fountain:.06,bell:.12,horn:.10,call:.05,fire:.04,murmurEach:.01,murmurMax:.12};
+const AMB_ECHO={small:[.4,.22],hall:[.8,.22],great:[1.2,.22],nave:[1.8,.30],side:[.7,.22]};
+const AMB_ECHO_KIND={inn:'hall',guild_f:'hall',guild_m:'hall',market:'hall',castle:'great',church:'great',constable:'great',academy:'great'};
+const AMB_LEAD={gatelands:'fiddle',mark:'boneflute',aurenne:'oud'};
+/* a reel in eighths, by scale degree from the island's root (two bars, played round): D for the Gatelands and the Mark, A for Aurenne */
+const AMB_REEL=[5,3,5,8,7,5,3,2,1,3,5,3,2,1,2,3,5,3,5,8,9,8,7,5,6,5,3,2,1,2,1,1],AMB_REEL_MODE={gatelands:['mixolydian',62],mark:['dorian',62],aurenne:['phrygian',57]};
+function ambPanOf(x,z){const dx=x-px,dz=z-pz,L=Math.hypot(dx,dz);return L>1?Math.max(-1,Math.min(1,(dx*Math.cos(yaw)-dz*Math.sin(yaw))/L*.7)):0;}
+function ambFall(d,R){return Math.pow(Math.max(0,1-d/R),2);}
+// a short sound: oscillators (ratio, level) at f, through one gain with an envelope, panned; n nodes counted against the budget
+function ambStrike(t,f,parts,lvl,att,dec,pan,type){const n=2*parts.length+2;if(!ambRoom(n))return false;
+  const g=AX.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(lvl,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+att+dec);
+  const p=AX.createStereoPanner?AX.createStereoPanner():AX.createGain();if(p.pan)p.pan.value=pan;g.connect(p);p.connect(AMB.v.damp);
+  for(const [r,a,glide] of parts){const o=AX.createOscillator();o.type=type||'sine';o.frequency.setValueAtTime(f*r,t);if(glide)o.frequency.exponentialRampToValueAtTime(f*r*glide,t+att+dec);
+    const og=AX.createGain();og.gain.value=a;o.connect(og);og.connect(g);o.start(t);o.stop(t+att+dec+.05);}
+  ambTake(n,t+att+dec+.1);return true;}
+function ambSeaWithin(x,z,R){const wet=(sx,sz)=>{if(worldH(sx,sz)>=SEA_Y)return false;const f=ambFresh(sx,sz,1);return !f||f.d>0;};
+  if(wet(x,z))return true;for(let r=R/3;r<=R+1;r+=R/3)for(let k=0;k<8;k++){const a=k*Math.PI/4;if(wet(x+Math.sin(a)*r,z+Math.cos(a)*r))return true;}return false;}
+// the hour crossed since the last tick, within a quarter hour of it (a jump of the clock past it rings nothing)
+function ambCrossed(H,h,last){if(last==null)return false;const hh=h<last?h+24:h;for(const x of [H,H+24])if(x>last&&x<=hh&&hh-x<.25)return true;return false;}
+// the town's sound: the murmur from its people, the spots near you, the bell and the horn
+function ambTown(t,h,V){const B=AMB.beds;let folk=0;
+  try{for(const n of npcs){if(!n.g||!n.g.visible)continue;if(Math.hypot(n.g.position.x-px,n.g.position.z-pz)<AMB_MURMUR_R)folk++;}}catch(e){}
+  AMB.townsfolk=folk;B.murmur=Math.min(AMB_LVL.murmurMax,folk*AMB_LVL.murmurEach);
+  const spots=[];let church=null,hornAt=null;
+  try{for(const S of SETTLE.values()){const s=S.site;if(!s)continue;const ds=Math.hypot(s.x-px,s.z-pz);if(ds>AMB_FAR_R+300)continue;
+    const isle=(()=>{try{const n=nationAt(s.x,s.z);return n==='mark'||n==='aurenne'?n:'gatelands';}catch(e){return 'gatelands';}})();
+    const dead=S.raid||(typeof storyRuin==='function'&&storyRuin(s.id));
+    for(const H of S.houses||[]){if(H.exitX==null)continue;const d=Math.hypot(H.exitX-px,H.exitZ-pz);
+      if(H.type==='church'&&isle==='gatelands'&&!dead&&d<AMB_FAR_R&&(!church||d<church.d))church={x:H.exitX,z:H.exitZ,d};
+      if(d>=AMB_SPOT_R||dead)continue;
+      if((H.type==='weapon'||H.type==='forge')&&!shopClosedNow(H))spots.push({kind:'forge',id:H.id,x:H.exitX,z:H.exitZ,d,isle});
+      else if(H.type==='inn'&&h>=HRS.inn&&h<HRS.night)spots.push({kind:'tavern',id:H.id,x:H.exitX,z:H.exitZ,d,isle});}
+    if(isle==='aurenne'&&s.kind!=='village'&&!dead){const fx=s.x+6,fz=s.z+4,d=Math.hypot(fx-px,fz-pz);if(d<AMB_SPOT_R)spots.push({kind:'fountain',id:s.id,x:fx,z:fz,d,isle});} /* the square's water, by the well (genSettlement's cx+6, cz+4) */
+    if(isle==='mark'&&!dead){let G=null;try{G=handoverGate(S);}catch(e){}if(G&&G.x!=null){const d=Math.hypot(G.x-px,G.z-pz);if(d<AMB_FAR_R&&(!hornAt||d<hornAt.d))hornAt={x:G.x,z:G.z,d};}}}}catch(e){}
+  spots.sort((a,b)=>a.d-b.d);spots.length=Math.min(4,spots.length);AMB.spots=spots.map(s=>({kind:s.kind,d:+s.d.toFixed(1)}));
+  // the fountain
+  const fo=spots.find(s=>s.kind==='fountain');B.fountain=fo?AMB_LVL.fountain*ambFall(fo.d,AMB_SPOT_R):0;
+  // the forge: a stroke every 0.8–1.4 s in runs of 4–9, then 3–8 s of quiet
+  const fg=spots.find(s=>s.kind==='forge');
+  if(fg){const F=AMB.forge&&AMB.forge.id===fg.id?AMB.forge:(AMB.forge={id:fg.id,next:t+.3,left:4+Math.floor(Math.random()*6),strokes:0});F.on=true;F.d=fg.d;
+    while(F.next<t+AMB_TICK){const at=Math.max(F.next,t);const lv=AMB_LVL.forge*ambFall(fg.d,AMB_SPOT_R);
+      if(ambStrike(at,560+Math.random()*60,[[1,1],[2.76,.45],[5.4,.2]],lv,.002,.5,ambPanOf(fg.x,fg.z)))F.strokes++;
+      if(--F.left>0)F.next=at+.8+Math.random()*.6;else{F.left=4+Math.floor(Math.random()*6);F.next=at+3+Math.random()*5;}}}
+  else if(AMB.forge)AMB.forge.on=false;
+  // the tavern: the island band's lead playing a reel, through a 900 Hz lowpass; the crowd is the murmur's
+  const tv=spots.find(s=>s.kind==='tavern');
+  if(tv){let T=AMB.tavern;if(!T||T.id!==tv.id){if(T&&T.out)try{T.out.disconnect();}catch(e){}T=AMB.tavern={id:tv.id,i:0,next:t+.2,notes:0,out:null,lp:null};}
+    if(!T.out&&ambRoom(2)){T.lp=AX.createBiquadFilter();T.lp.type='lowpass';T.lp.frequency.value=900;T.out=AX.createStereoPanner?AX.createStereoPanner():AX.createGain();T.lp.connect(T.out);T.out.connect(V.damp);AMB.nodes+=2;}
+    T.on=true;T.d=tv.d;T.lead=AMB_LEAD[tv.isle]||'fiddle';B.murmur=Math.min(AMB_LVL.murmurMax,B.murmur+.03*ambFall(tv.d,AMB_SPOT_R));
+    if(T.out){if(T.out.pan)ambSet(T.out.pan,ambPanOf(tv.x,tv.z),t,.2);const M=AMB_REEL_MODE[tv.isle]||AMB_REEL_MODE.gatelands,step=60/112/2,vf=typeof VOICES!=='undefined'&&VOICES[T.lead];
+      const lv=AMB_LVL.tavern*ambFall(tv.d,AMB_SPOT_R)*6;
+      while(vf&&T.next<t+AMB_TICK+.1){const at=Math.max(T.next,t);if(ambRoom(7)){_voiceOut=T.lp;try{vf(degMidi(M[1],M[0],AMB_REEL[T.i%AMB_REEL.length],0),at,step*.9,Math.min(.3,lv));}catch(e){}finally{_voiceOut=null;}ambTake(7,at+step+.4);T.notes++;}
+        T.i++;T.next=at+step;}}}
+  else if(AMB.tavern){const T=AMB.tavern;T.on=false;if(T.out){try{T.out.disconnect();}catch(e){}T.out=null;T.lp=null;AMB.nodes-=2;}AMB.tavern=null;}
+  // the Gatelands' bell at 6, 12 and 18: three strokes three times, 2.5 s apart, the last with a 9 s tail
+  const day=typeof gameDayNow==='function'?gameDayNow():0;
+  for(const H of [6,12,18])if(church&&ambCrossed(H,h,AMB.hour)){const key=day+':'+H;if(AMB.bell.key===key)continue;AMB.bell.key=key;AMB.bell.count++;AMB.bell.at=H;
+    const lv=AMB_LVL.bell*ambFall(church.d,AMB_FAR_R),pn=ambPanOf(church.x,church.z);
+    for(let i=0;i<9;i++){const at=t+.1+i*2.5+Math.floor(i/3)*2.5;AMB.bell.strokes++;
+      setTimeout(()=>{if(!AX||!AMB.v)return;ambStrike(Math.max(AX.currentTime,at),196,[[1,1],[2.4,.35],[.5,.4]],lv,.004,i===8?9:3,pn);},Math.max(0,(at-t-.2)*1000));}}
+  // the Mark's horn at the watch's change (HANDOVER, 6:30 and 19:00): one call of 2.5 s
+  for(const H of HANDOVER)if(hornAt&&ambCrossed(H,h,AMB.hour)){const key=day+':'+H;if(AMB.horn.key===key)continue;AMB.horn.key=key;AMB.horn.count++;AMB.horn.at=H;
+    ambStrike(t+.1,110,[[1,1],[1.5,.35],[2,.25]],AMB_LVL.horn*ambFall(hornAt.d,AMB_FAR_R),.35,2.15,ambPanOf(hornAt.x,hornAt.z),'sawtooth');}}
+// the island's calls by the hour: one every 4–20 s (twice as often at dawn, half as often in rain), half as far in fog, none in a storm
+const AMB_CALLS={gatelands:{day:['skylark','blackbird','rook'],night:['crickets']},mark:{day:['raven','hawk'],night:[]},aurenne:{day:[],night:['crickets']}};
+function ambCallPlay(kind,t,lv,pn){const S=(f,parts,a,d,type,at)=>ambStrike(at==null?t:at,f,parts,lv,a,d,pn,type);
+  switch(kind){
+    case 'skylark':{let k=0;for(let i=0;i<10;i++){if(S(2600+Math.random()*1800,[[1,1,1+(Math.random()-.5)*.4]],.01,.08,'sine',t+i*.13))k++;}return k>0;}
+    case 'blackbird':{let k=0;for(let i=0;i<5;i++){if(S(1500+Math.random()*1300,[[1,1,1.1+Math.random()*.3]],.03,.22,'sine',t+i*.3))k++;}return k>0;}
+    case 'rook':{let k=0;for(let i=0;i<2+Math.floor(Math.random()*2);i++){if(S(420+Math.random()*60,[[1,1,.85],[2,.4,.85]],.02,.24,'sawtooth',t+i*.45))k++;}return k>0;}
+    case 'raven':{let k=0;for(let i=0;i<1+Math.floor(Math.random()*2);i++){if(S(300+Math.random()*40,[[1,1,.8],[2.02,.5,.8]],.03,.32,'sawtooth',t+i*.6))k++;}return k>0;}
+    case 'hawk':return S(3200,[[1,1,.62]],.08,.9,'sawtooth');
+    case 'gull':{let k=0;for(let i=0;i<3+Math.floor(Math.random()*4);i++){if(S(1250-i*60,[[1,1,.7],[2,.3,.7]],.02,.2,'triangle',t+i*.24))k++;}return k>0;}
+    case 'owl':{const a=S(380,[[1,1,.97]],.08,.5,'sine');S(380,[[1,1,.95]],.12,.9,'sine',t+.9);return a;}
+    case 'crickets':{let k=0;for(let c=0;c<4;c++)for(let i=0;i<3;i++){if(S(4500+Math.random()*120,[[1,1]],.004,.03,'sine',t+c*.5+i*.05))k++;}return k>0;}
+    case 'cicadas':return S(5200,[[1,1],[1.02,.8]],.6,3.5,'sawtooth');}
+  return false;}
+function ambCalls(t,h,isle){const C=AMB.calls,W=typeof WX!=='undefined'&&WX?WX.type:'clear';
+  if(W==='storm'){C.next=Math.max(C.next,t+4);C.state='storm';return;}
+  if(C.next===0){C.next=t+1+Math.random()*4;return;}
+  if(t<C.next)return;
+  let gap=4+Math.random()*16;if(h>=5&&h<8)gap/=2;if(W==='rain')gap*=2;C.next=t+gap;
+  const night=h>=18||h<5,L=AMB_CALLS[isle]||AMB_CALLS.gatelands,pool=(night?L.night:L.day).slice();
+  if(night&&isle==='gatelands'&&Math.random()<.25){pool.length=0;pool.push('owl');}
+  if(!night&&isle==='aurenne'){try{if(ambSeaWithin(px,pz,300))pool.push('gull');}catch(e){}if(h>=11&&h<16)pool.push('cicadas');}
+  if(!pool.length){C.state='none';return;}
+  const kind=pool[Math.floor(Math.random()*pool.length)],reach=W==='fog'?40:80,d=10+Math.random()*70;C.last=kind;C.count++;
+  if(d>reach){C.state='lost';return;}
+  const a=Math.random()*Math.PI*2;if(ambCallPlay(kind,t+.05,AMB_LVL.call*ambFall(d,reach),ambPanOf(px+Math.sin(a)*d,pz+Math.cos(a)*d)))C.heard++;C.state=kind;}
+// where you are, for the echo: a room by its house, a gate's vault (a ceiling over 10 m: the nave, the crossing) or any other underground
+function ambRoomKind(){
+  if(typeof isInterior==='function'&&isInterior()){const H=typeof currentHouse!=='undefined'?currentHouse:null;return AMB_ECHO_KIND[H&&H.type]||'small';}
+  if(typeof activeZoneId!=='undefined'&&activeZoneId==='dungeon'){let c=0;try{c=dCeil(px,pz);}catch(e){}return c>10?'nave':'side';}
+  return null;}
+const _ambIR=new Map();
+function ambIR(decay){if(_ambIR.has(decay))return _ambIR.get(decay);const sr=AX.sampleRate,n=Math.ceil(sr*decay),b=AX.createBuffer(2,n,sr);
+  for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.exp(-6.9*i/n);} /* −60 dB over the decay */
+  _ambIR.set(decay,b);return b;}
+function ambEcho(t,V){const k=ambRoomKind(),R=AMB.room;
+  if(!k){R.kind=null;R.wet=0;ambSet(V.sendS.gain,0,t,.3);ambSet(V.sendA.gain,0,t,.3);return;}
+  const E=AMB_ECHO[k];if(R.kind!==k){R.kind=k;R.decay=E[0];try{V.conv.buffer=ambIR(E[0]);}catch(e){}}
+  R.wet=E[1];ambSet(V.sendS.gain,E[1],t,.3);ambSet(V.sendA.gain,E[1],t,.3);}
+// a room's fire: any lit fire or hearth in the room crackles, a bed of 0.015 and pops to 0.04
+function ambRoomFire(){if(!(typeof isInterior==='function'&&isInterior()))return false;try{for(const r of FURN_LIVE){if(r.parent!==interiorScene)continue;const U=r.userData;
+  if(U.fire||(U.hearthFire&&U.hearthFire.visible))return true;}}catch(e){}return false;}
 function tickAmbience(dt){
   const now=performance.now()/1000;if(now-AMB.t<AMB_TICK)return;AMB.t=now;
   if(!AX||!ambGain)return;
   const open=typeof activeZoneId!=='undefined'&&activeZoneId==='world'&&lid==='overworld'&&!(typeof isInterior==='function'&&isInterior());
-  AMB.open=open;if(!open&&!AMB.v)return;if(!ambEnsure())return;
-  const V=AMB.v,t=AX.currentTime,B=AMB.beds;
+  AMB.open=open;if(!open&&!AMB.v&&!(typeof isInterior==='function'&&isInterior())&&activeZoneId!=='dungeon')return;if(!ambEnsure())return;
+  const V=AMB.v,t=AX.currentTime,B=AMB.beds;ambRoom(0);
+  let h=12;try{h=gameHour();}catch(e){}
   // the music's duck, eased over 3 s
   const playing=typeof EXPLORE!=='undefined'&&EXPLORE.playing;AMB.duck=playing?.7:1;ambSet(V.duck.gain,AMB.duck,t,1);
   // the damping
   const D=open?ambDampTarget():[18000,1];AMB.cut=D[0];AMB.dampMul=D[1];ambSet(V.damp.frequency,D[0],t,.4);
-  if(!open){B.wind=B.leaves=B.water=0;B.waterKind=null;B.waterD=Infinity;AMB.gust=false;
-    for(const k of ['wind','leaves','river','lake','sea'])ambSet(V[k].g.gain,0,t,.33);return;} /* the world's beds fade over 1 s at the door */
+  // the echo, and a room's fire
+  ambEcho(t,V);
+  const fire=ambRoomFire();B.fire=fire?AMB_LVL.fire:0;
+  if(fire){const S=V.spot;if(S.mode!=='fire'){S.mode='fire';S.f.frequency.value=2600;S.f.Q.value=.6;}ambSet(S.g.gain,.015,t,.05);
+    const n=Math.floor(Math.random()*3);for(let i=0;i<n;i++){const at=t+Math.random()*AMB_TICK;try{S.g.gain.setTargetAtTime(AMB_LVL.fire,at,.005);S.g.gain.setTargetAtTime(.015,at+.02,.03);}catch(e){}}}
+  else if(V.spot.mode==='fire'){V.spot.mode=null;ambSet(V.spot.g.gain,0,t,.3);}
+  if(!open){B.wind=B.leaves=B.water=B.murmur=B.fountain=0;B.waterKind=null;B.waterD=Infinity;AMB.gust=false;AMB.spots=[];AMB.townsfolk=0;
+    if(AMB.forge)AMB.forge.on=false;if(AMB.tavern&&AMB.tavern.out){try{AMB.tavern.out.disconnect();}catch(e){}AMB.nodes-=2;}AMB.tavern=null;
+    for(const k of ['wind','leaves','water','murmur'])ambSet(V[k].g.gain,0,t,.33);if(!fire)ambSet(V.spot.g.gain,0,t,.33);AMB.hour=h;return;} /* the world's beds fade over 1 s at the door */
   // the wind: 0.05 at sea level, +0.03 per 50 m, at most 0.14; by island
-  let h=0;try{h=Math.max(0,worldH(px,pz)-SEA_Y);}catch(e){}AMB.height=h;
+  let ht=0;try{ht=Math.max(0,worldH(px,pz)-SEA_Y);}catch(e){}AMB.height=ht;
   let isle='gatelands';try{const n=nationAt(px,pz);if(n==='mark'||n==='aurenne')isle=n;}catch(e){}AMB.island=isle;
-  let wind=Math.min(.14,.05+.03*h/50);
+  let wind=Math.min(.14,.05+.03*ht/50);
   if(isle==='mark'){AMB.gust=true;AMB.gustPh+=AMB_TICK/AMB.gustP;if(AMB.gustPh>=1){AMB.gustPh-=1;AMB.gustP=5+Math.random()*5;}
-    const s=.5+.5*Math.sin(AMB.gustPh*Math.PI*2),lo=h>150?.4:.5,hi=h>150?1.9:1.6;AMB.gustMul=lo+(hi-lo)*s;wind*=AMB.gustMul;
+    const s=.5+.5*Math.sin(AMB.gustPh*Math.PI*2),lo=ht>150?.4:.5,hi=ht>150?1.9:1.6;AMB.gustMul=lo+(hi-lo)*s;wind*=AMB.gustMul;
     ambSet(V.wind.f.frequency,620,t,.5);V.wind.f.type='bandpass';V.wind.f.Q.value=.5;}
   else{AMB.gust=false;AMB.gustMul=1;
     if(isle==='aurenne'){V.wind.f.type='lowpass';ambSet(V.wind.f.frequency,350,t,.5);V.wind.f.Q.value=.4;}
@@ -749,6 +880,14 @@ function tickAmbience(dt){
   let W=null;try{W=ambWater(px,pz);}catch(e){}
   const lvl=W?AMB_WATER_PEAK*Math.pow(Math.max(0,1-W.d/AMB_WATER_R),2):0;B.water=lvl;B.waterKind=W?W.kind:null;B.waterD=W?W.d:Infinity;
   if(V.pan&&W){const dx=W.bx-px,dz=W.bz-pz,L=Math.hypot(dx,dz);ambSet(V.pan.pan,L>1?Math.max(-1,Math.min(1,(dx*Math.cos(yaw)-dz*Math.sin(yaw))/L*.6)):0,t,.2);}
+  if(W&&V.water.kind!==W.kind){const w=V.water;w.kind=W.kind; /* a river's band, a lake's lapping at 0.5 Hz, the sea's 9–12 s swell */
+    const T={river:['bandpass',900,1,.5,0],lake:['lowpass',520,.5,.5,.45],sea:['lowpass',700,.4,1/(9+Math.random()*3),.6]}[W.kind];
+    w.f.type=T[0];ambSet(w.f.frequency,T[1],t,.1);w.f.Q.value=T[2];ambSet(w.lfo.frequency,T[3],t,.1);ambSet(w.depth.gain,T[4],t,.1);ambSet(w.lap.gain,1-T[4],t,.1);}
+  // the town and the hours, and the calls
+  try{ambTown(t,h,V);}catch(e){console.warn('ambience town',e);}
+  try{ambCalls(t,h,isle);}catch(e){console.warn('ambience calls',e);}
+  AMB.hour=h;
   const M=AMB.dampMul;
-  ambSet(V.wind.g.gain,B.wind*M,t,.4);ambSet(V.leaves.g.gain,B.leaves*M,t,.4);
-  for(const k of ['river','lake','sea'])ambSet(V[k].g.gain,(B.waterKind===k?lvl:0)*M,t,.4);}
+  ambSet(V.wind.g.gain,B.wind*M,t,.4);ambSet(V.leaves.g.gain,B.leaves*M,t,.4);ambSet(V.water.g.gain,lvl*M,t,.4);
+  ambSet(V.murmur.g.gain,B.murmur*M*(.65+Math.random()*.7),t,.15); /* the babble: each quarter second the crowd swells or falls a little */
+  if(V.spot.mode!=='fountain'){V.spot.mode='fountain';V.spot.f.frequency.value=2000;V.spot.f.Q.value=1.4;}ambSet(V.spot.g.gain,B.fountain*M,t,.4);}
