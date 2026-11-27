@@ -3,6 +3,18 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### The item card and the herbal card (OG-136): the tooltip as built, a card in coloured ink, or a card with a picture? (from the systems builder, 2026-11-27, #2136)
+**The question.** Resting the pointer on something in the bag shows `showBagTooltip`'s small dark box (10 px text, about 175 × 170 px at 1920 × 1080); for a herb it shows only the first effect and *Hidden effect — consume 12 more to reveal*, and the third and fourth effects appear only in the field guide. OG-136 draws an item card with its effects in coloured ink and a herbal card that says *unknown, study to discover*. The concept artist's prototype (`docs/prototypes/levelup/cards.html`, 26 Nov) shows three versions on the parchment Inventory page, with an Iron Sword of Flames against the worn Bronze Sword and Firemoss ×4 with 2 of 4 effects known.
+
+**Options.**
+- **A.** As built: the dark tooltip at the game's own size.
+- **B (recommended).** A card in coloured ink: a paper slip 510 px wide beside the row, the name in rubric, each number against what you wear (green better, red worse), each effect in its own ink with an icon; a herb's four effects listed I to IV, a known one saying how it was learnt, an unknown one saying *unknown* and how to learn it.
+- **C.** OG-136 as drawn: B with a picture at its head (the sword in the character sheet's bronze window, the herb as a field-guide plate with a 10 cm bar); each picture drawn once into a small canvas, about 200 ms on software GL.
+
+**Recommendation.** B: readable at arm's length and the first place a herb's four effects sit beside it; C's pictures cost a render per item and the moss reads lumpy at plate size, so pictures can come later.
+
+Pictures: [item A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cards-a-item.jpg) · [item B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cards-b-item.jpg) · [item C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cards-c-item.jpg) · [herb A](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cards-a-herb.jpg) · [herb B](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cards-b-herb.jpg) · [herb C](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cards-c-herb.jpg)
+
 ### The dungeon's cell by kind: old gates at 3 m, and forts and lairs at what? (systems builder, Session 1105) — DECISION #421
 **The question.** F2b's last session sets a dungeon's grid cell at true scale; it is one unit today, so corridors are 1 m wide for a 1.8 m body. Michael chose **C, 3 m** on #300 and added: "If by dungeon we mean Old Gates, they should be extremely massive and cavernous. A normal 'dungeon' like a mine, or a cave can be a more typical size." The game has three kinds of underground place: the **old gates** (the world's portals, themed by school: crypts, haunted halls, elemental and deep caverns, ruins), **fort interiors** (the `fort_` layouts), and **lairs and dens** (a beast's lair, the cloak's den). So the cell can differ by kind, and "a more typical size" is a number a player feels.
 
