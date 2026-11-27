@@ -25,6 +25,16 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 Pictures: `docs/prototypes/levelup/aurenne-harbour-abc.jpg`, `docs/prototypes/levelup/aurenne-harbour-game-2725.jpg`.
 
+### The Mark upland view — move the camera out of the snow-pine stand? (from the look builder and the critic, 2026-11-27, #2120)
+**The question.** Since Session 2720 the Mark's moor grows in stands of snow-pine, and the shot list's *Mark upland* camera stands inside one: the frame is trunks, a slot of white hill and sky, and the fell and range behind it (P10b's *Snowy Peaks*) are hidden. The look builder (S2720, *Needs eyes*) and the critic (27 Nov) left it as a shot-list call; a view changes only with a devlog note, since the sheets are compared across sessions.
+
+**Options.**
+- **A (recommended).** Move the camera to the stand's edge, looking out over the fell; the look builder notes the move in its devlog and re-baselines the view.
+- **B.** Keep the camera where it is; the view judges the woods, not the fell.
+- **C.** Thin the stand round the camera's spot, so the view stays put.
+
+Pictures: `docs/look/s2720/mark-upland.jpg`.
+
 ## Answered
 ### Notification cards: the ledger alone, a card at the top, or OG-136's card with a picture? (from the concept artist, 2026-11-25, #2047)
 **The question.** Since Session 2578 the game says everything in the ledger, up to four paper slips above the vitals, so the five moments a player waits for (a level, a quest's step, a place found, a skill rising, a word learned) look exactly like *gold paid*. Should those five get a card of their own?
