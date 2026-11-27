@@ -697,7 +697,8 @@ const AMB_DAMP={clear:[18000,1],fog:[2000,.7],rain:[1200,.6],snow:[3000,.8],stor
 const AMB={on:false,v:null,t:0,open:false,island:null,height:0,forest:false,beds:{wind:0,leaves:0,water:0,waterKind:null,waterD:Infinity,murmur:0,fire:0,fountain:0},
   gust:false,gustPh:0,gustP:7,gustMul:1,cut:18000,dampMul:1,duck:1,nodes:0,live:0,spots:[],forge:null,tavern:null,bell:{count:0,strokes:0,key:null},horn:{count:0,key:null},
   calls:{count:0,next:0,last:null,heard:0},room:{kind:null,decay:0,wet:0},hour:null,townsfolk:0,
-  gate:{seed:null,school:null,cond:null,great:false,d:null,R:0,level:0,beat:0,hz:0,rumble:0,whispers:0,next:0},under:{level:0,school:null}};
+  gate:{seed:null,school:null,cond:null,great:false,d:null,R:0,level:0,beat:0,hz:0,rumble:0,whispers:0,next:0},under:{level:0,school:null},
+  inside:{school:null,cond:null,bed:null,level:0,nodes:0,events:0,whispers:0,next:0,evNext:0}};
 // S2730 — the nodes a sound makes and when they end, so the bus never holds more than AMB_MAX at once (the build sheet's 40)
 const AMB_MAX=40,_ambLive=[];
 function ambRoom(n){const t=AX?AX.currentTime:0;for(let i=_ambLive.length-1;i>=0;i--)if(_ambLive[i][0]<=t)_ambLive.splice(i,1);
@@ -919,6 +920,47 @@ function ambGateTick(t,open){const V=AMB.v,A=AMB.gate;let P=null;if(open){try{P=
   if(G.pan.pan)ambSet(G.pan.pan,ambPanOf(P.x,P.z),t,.2);
   const rum=P.cond==='catastrophic'?AMB_GATE.rumble*ambFall(P.d,P.R):0;A.rumble=+rum.toFixed(4);ambSet(G.rg.gain,rum*M,t,.4);
   if(C.wh&&t>=A.next){A.next=t+C.wh[0]+Math.random()*(C.wh[1]-C.wh[0]);if(ambWhisper(t,G,P.lvl*AMB_GATE.whisper*M,P.cond==='catastrophic'))A.whispers++;}}
+// ── S2740, the build sheet's fifth session: beds by school inside a gate, and the whispers by condition ──────────────────────────
+// Inside an old gate the school's bed takes the place of _musicDungeon's drone (startMusic, 76-music.js), on the Ambience bus, so a
+// player who mutes the music still hears the gate; forts and lairs keep the six drones. The beds: Tine a low fire's roar and metal
+// ticking as it cools every 2–5 s; Uisce drips every 1–4 s and water lapping at 0.4 Hz; Cloch stone grinding in 3 s swells every 15–30 s;
+// Scáth near silence, a 40 Hz floor at 0.02; Solas a ring at 1,760 Hz on a slow vibrato at 0.02; Gaoth the draught's band (sndDraught's
+// noise at Q 2.2) moaning as it glides. A whisper (ambWhisper) every 40–60 s in a steady gate, 12–20 s failing, 6–10 s catastrophic,
+// reversed in a catastrophic one. Cosmetic: Math.random for every stroke and whisper. Built on entering, taken down 2 s after leaving.
+const AMB_BED={lvl:{tine:.05,uisce:.04,cloch:.06,scath:.02,solas:.02,gaoth:.04},wh:{steady:[40,60],failing:[12,20],catastrophic:[6,10]},
+  whLvl:{steady:.05,failing:.06,catastrophic:.07},ev:{tine:[2,5],uisce:[1,4],cloch:[15,30]}};
+// the old gate you stand in, {school,cond}, or null: a gate's cave (gen.gate, makeGate), not a lair's, a fort's, the Root or the tutorial
+function ambGateInside(){if(typeof activeZoneId==='undefined'||activeZoneId!=='dungeon'||typeof currentPortal==='undefined'||!currentPortal)return null;
+  const P=currentPortal,G=window._lastGen;if(!G||!G.gate||P.lair||P.lairDoor||P.root||P.tutorial||P.kind==='fort_door'||(typeof P.interior==='string'&&P.interior.startsWith('fort_')))return null;
+  let school=null;try{school=gateOrbSchool(P);}catch(e){}return {school:AMB_BED.lvl[school]!=null?school:'cloch',cond:GATE_CONDS.includes(G.cond)?G.cond:'steady'};}
+function ambBedDrop(){const V=AMB.v,B=V&&V.bed;if(!B)return;for(const o of B.osc)try{o.stop();}catch(e){}for(const f of B.taps)try{V.src.disconnect(f);}catch(e){}
+  try{B.out.disconnect();}catch(e){}AMB.nodes-=B.n;V.bed=null;}
+// the bed's standing voices into one gain (the school's level), through the bus's damping: 3 to 7 nodes
+function ambBedBuild(school){const V=AMB.v;if(V.bed&&V.bed.school===school)return V.bed;if(V.bed)ambBedDrop();
+  const out=AX.createGain();out.gain.value=0;out.connect(V.damp);const B={school,out,osc:[],taps:[],n:1,idle:0,grind:null};
+  const noise=(type,f,q,a)=>{const fl=AX.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=AX.createGain();g.gain.value=a;V.src.connect(fl);fl.connect(g);g.connect(out);B.taps.push(fl);B.n+=2;return {fl,g};};
+  const tone=(f,a)=>{const o=AX.createOscillator();o.frequency.value=f;const g=AX.createGain();g.gain.value=a;o.connect(g);g.connect(out);o.start();B.osc.push(o);B.n+=2;return {o,g};};
+  const lfo=(hz,depth,param)=>{const o=AX.createOscillator();o.frequency.value=hz;const g=AX.createGain();g.gain.value=depth;o.connect(g);g.connect(param);o.start();B.osc.push(o);B.n+=2;};
+  if(school==='tine'){const r=noise('lowpass',300,.7,.8);lfo(.13,.2,r.g.gain);}          /* the roar, breathing a little */
+  else if(school==='uisce'){const w=noise('lowpass',500,.5,.5);lfo(.4,.45,w.g.gain);}     /* the lapping at 0.4 Hz */
+  else if(school==='cloch'){B.grind=noise('bandpass',180,2,0).g;}                          /* the grinding, swelled by the tick */
+  else if(school==='scath'){tone(40,1);}                                                   /* the floor */
+  else if(school==='solas'){const s=tone(1760,1);lfo(.3,6,s.o.frequency);}                 /* the ring, ±6 Hz at 0.3 Hz */
+  else{const d=noise('bandpass',1000,2.2,.7);lfo(.1,300,d.fl.frequency);lfo(.15,.3,d.g.gain);} /* Gaoth: the draught moaning through the halls */
+  AMB.nodes+=B.n;return V.bed=B;}
+// the bed's strokes: Tine's metal ticking, Uisce's drips, Cloch's swells
+function ambBedEvent(t,B){const pn=(Math.random()*2-1)*.6,L=AMB_BED.lvl[B.school];
+  if(B.school==='tine')return ambStrike(t,3000+Math.random()*2000,[[1,1],[1.5,.4]],L*.6,.002,.04,pn,'sine');
+  if(B.school==='uisce')return ambStrike(t,1400+Math.random()*600,[[1,1,.6]],L,.002,.08,pn,'sine');
+  if(B.school==='cloch'&&B.grind){const g=B.grind.gain;try{g.cancelScheduledValues(t);g.setValueAtTime(0,t);g.linearRampToValueAtTime(1,t+1.5);g.linearRampToValueAtTime(0,t+3);}catch(e){}return true;}
+  return false;}
+function ambBedTick(t){const V=AMB.v,I=AMB.inside,G=ambGateInside();
+  if(!G){I.school=null;I.cond=null;I.bed=null;I.level=0;const B=V.bed;if(B){ambSet(B.out.gain,0,t,.3);B.idle+=AMB_TICK;if(B.idle>2)ambBedDrop();}return;}
+  const B=ambBedBuild(G.school);B.idle=0;const L=AMB_BED.lvl[G.school],ev=AMB_BED.ev[G.school],W=AMB_BED.wh[G.cond];
+  if(I.school!==G.school||I.cond!==G.cond){I.next=t+W[0]+Math.random()*(W[1]-W[0]);I.evNext=ev?t+Math.random()*ev[0]:Infinity;}
+  Object.assign(I,{school:G.school,cond:G.cond,level:L,bed:G.school,nodes:B.n});ambSet(B.out.gain,L,t,.5);
+  if(ev&&t>=I.evNext){I.evNext=t+ev[0]+Math.random()*(ev[1]-ev[0]);if(ambBedEvent(t,B))I.events++;}
+  if(t>=I.next){I.next=t+W[0]+Math.random()*(W[1]-W[0]);if(ambWhisper(t,{pan:V.damp},AMB_BED.whLvl[G.cond],G.cond==='catastrophic'))I.whispers++;}}
 function tickAmbience(dt){
   const now=performance.now()/1000;if(now-AMB.t<AMB_TICK)return;AMB.t=now;
   if(!AX||!ambGain)return;
@@ -938,7 +980,7 @@ function tickAmbience(dt){
   else if(V.spot.mode==='fire'){V.spot.mode=null;ambSet(V.spot.g.gain,0,t,.3);}
   if(!open){B.wind=B.leaves=B.water=B.murmur=B.fountain=0;B.waterKind=null;B.waterD=Infinity;AMB.gust=false;AMB.spots=[];AMB.townsfolk=0;
     if(AMB.forge)AMB.forge.on=false;if(AMB.tavern&&AMB.tavern.out){try{AMB.tavern.out.disconnect();}catch(e){}AMB.nodes-=2;}AMB.tavern=null;
-    for(const k of ['wind','leaves','water','murmur'])ambSet(V[k].g.gain,0,t,.33);if(!fire)ambSet(V.spot.g.gain,0,t,.33);try{ambGateTick(t,false);}catch(e){}AMB.hour=h;return;} /* the world's beds fade over 1 s at the door */
+    for(const k of ['wind','leaves','water','murmur'])ambSet(V[k].g.gain,0,t,.33);if(!fire)ambSet(V.spot.g.gain,0,t,.33);try{ambGateTick(t,false);}catch(e){}try{ambBedTick(t);}catch(e){console.warn('ambience bed',e);}AMB.hour=h;return;} /* the world's beds fade over 1 s at the door */
   // the wind: 0.05 at sea level, +0.03 per 50 m, at most 0.14; by island
   let ht=0;try{ht=Math.max(0,worldH(px,pz)-SEA_Y);}catch(e){}AMB.height=ht;
   let isle='gatelands';try{const n=nationAt(px,pz);if(n==='mark'||n==='aurenne')isle=n;}catch(e){}AMB.island=isle;
