@@ -62,6 +62,16 @@ check(`from above, the hill over the rings (${r.over.join(', ')}) stands over th
 check(`the world's grid is sunk under it (${r.sunk} m) and laid again as the hill (${r.lifted} m)`, Math.abs(r.sunk + 1.5) < .01 && r.lifted > r.crown, r);
 check(`the walk from the court to the slit, the slit's width, is open (${r.blocked.length} blocked), the headwall, the reveals and the back plate are walls`, r.blocked.length === 0 && Object.values(r.walls).every(Boolean), r);
 check(`the kit as drawn at 30 m (level ${r.lod.at30}), one mesh at 200 m (level ${r.lod.at200}), drawn while its chunks stand (${r.lod.chunks})`, r.lod.at30 === 0 && r.lod.at200 === 1 && r.lod.farMeshes === 1 && r.lod.shown && r.lod.chunks > 0, r);
+// Session 2744 — the script's light on the court and the headwall: one mesh added over the ground, drawn near and never in the far copy, its
+// strength by the condition and the hour (a tenth by day, whole at night)
+const sp = await page.evaluate(s => { const G = RING_GATES.get(s), near = G.group.levels[0].object, far = G.group.levels[1].object, out = { near: [], far: 0, k: {} };
+  near.traverse(o => { if (o.isMesh && o.material.userData && o.material.userData.spill) out.near.push({ name: o.name, add: o.material.blending === THREE.AdditiveBlending, dw: o.material.depthWrite, tris: (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3 }); });
+  far.traverse(o => { if (o.isMesh && o.material.userData && o.material.userData.spill) out.far++; });
+  const h0 = gameHour(), m = PKIT.places.gatemouthMats(), lum = c => +(c.r + c.g + c.b).toFixed(3);
+  forceTime(12); GATE_SPILL = -1; gateSpillTick(); out.k.noon = lum(m.spill.color); forceTime(23); GATE_SPILL = -1; gateSpillTick(); out.k.night = lum(m.spill.color); out.k.failing = lum(m.spillDim.color); forceTime(h0);
+  return out; }, r.seed);
+check(`the script's light lies on its court and headwall (${sp.near.map(q => q.name + ' ' + q.tris).join(', ')} triangles, added, no depth), never in the far copy (${sp.far}); a tenth of it at noon (${sp.k.noon} against ${sp.k.night} at night), a failing gate's under half (${sp.k.failing})`,
+  sp.near.length === 1 && sp.near.every(q => q.add && !q.dw && q.tris < 2000) && sp.far === 0 && Math.abs(sp.k.noon / sp.k.night - .1) < .01 && sp.k.failing < sp.k.night * .5, sp);
 check(`the gate's door stands at the slit (${r.doorAt.join(', ')} in the kit's frame)`, Math.abs(r.doorAt[0]) < .01 && Math.abs(r.doorAt[1] - r.plate) < .01, r);
 // in by the gate's door and out again: you come up on its floor before the slit, looking out of the rings, not on the hill over them
 await page.evaluate(s => { const e = CELL_DOORS.find(d => d.seed === s), p = makePortalDef(e), w = dungeonWorldPos[s]; p.x = w.x; p.z = w.z; p.zone = 'world'; p.sigil = false; px = p.x; pz = p.z; goToDungeon(p); }, S0.seed);

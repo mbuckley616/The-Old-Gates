@@ -1153,12 +1153,16 @@
     return M.group;}
   // S2048 — the coach's lamp still burns on its bracket: dark from 19:00 to 06:30 (the towns' lamps' hours), its glass glows and it throws
   // a 9 m pool on the pool of lights; by day the glass is a faint ember. The glass's material is the kit's, one for every coach.
-  function waysideLamps(){iceDayGlow();const h=hourNow(),dark=isNight()||h<6.5||h>=19; /* S2150 — and the ice's glow by the hour */
+  function waysideLamps(){iceDayGlow();gateSpillTick();const h=hourNow(),dark=isNight()||h<6.5||h>=19; /* S2150 — and the ice's glow by the hour */
     for(const L of LOADED.values()){const D=L.cell&&L.cell._wayside;if(!D||!D.lamp||!D.group||D.lamp.lit===dark)continue;D.lamp.lit=dark;D.lamp.mat.emissiveIntensity=dark?1.6:.25;D.lamp.light.intensity=dark?1.5:0;}}
   // S2150 — the ice's blue glows with the day and goes out with it (the critic, 12 Nov: at 19:30 the ice mouth's tunnel was the brightest
   // thing in view, lit by nothing): the kit's ice materials (PKIT.dayGlow) at full by day, none from 19:00 to 05:00, eased between by the
   // sky's own dusk and dawn (_nightFactor); set only when it changes by a hundredth
   let ICE_GLOW=-1;
+  // S2744 — the ring gates' light on their courts (PKIT.gateSpill) by the hour: a tenth of its strength by day (the sun's ground is lit already), all of it by night
+  let GATE_SPILL=-1;
+  function gateSpillTick(){if(typeof PKIT==='undefined'||!PKIT.gateSpill||!PKIT.gateSpill.size)return;const f=.1+.9*(typeof _nightFactor==='function'?_nightFactor():1);
+    if(Math.abs(f-GATE_SPILL)<.01)return;GATE_SPILL=f;for(const m of PKIT.gateSpill){const k=m.userData.spill*f,c=m.userData.spillC||(m.userData.spillC=m.color.clone().multiplyScalar(1/m.userData.spill));m.color.copy(c).multiplyScalar(k);}}
   function iceDayGlow(){if(typeof PKIT==='undefined'||!PKIT.dayGlow||!PKIT.dayGlow.size)return;const f=typeof _nightFactor==='function'?1-_nightFactor():1;
     if(Math.abs(f-ICE_GLOW)<.01)return;ICE_GLOW=f;for(const m of PKIT.dayGlow)m.emissiveIntensity=f;}
   // S2063 — the places by a road and off it drawn only within 450 m of you (QA, S2060: two shepherd's huts 2.5 km out cost Dunmore's view 31
