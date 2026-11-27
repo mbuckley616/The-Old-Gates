@@ -1032,6 +1032,7 @@ function completeQuest(id){
   const _finalGold = questGold(_baseGold);
   gold += _finalGold;
   xp+=(q.rewards.xp||0);chkLvl();
+  questMarks(q.questline==='sigil_lore'?null:(q.questline||'main')==='main'?'main':'quest'); /* S2720 — #2059 D: a main-quest step 3 marks; a sigil's tier is attained, not handed in */
   (q.rewards.items||[]).forEach(it=>bagAdd({...it,qty:1}));
   // v61ad: consume quest items given at acceptance time. The item gets taken
   // in-fiction during the turn-in dialog (e.g. Aldwyn takes Edna's rubbing to
