@@ -3288,7 +3288,7 @@
     FPART(P,SK.cyl(.012,.012,1.1,4),0xb09a70,0,1.25,0);FPART(P,SK.lathe([[.001,0],[.13,0],[.15,.22],[.001,.22]],8),0x5a4028,0,.6,0);
     for(const s of [1,-1])FPART(P,SK.rbox(2.6,.08,1.0,.03,1),0x4a3a2a,0,2.72,s*.42,s*.55,0,0,.08);FPART(P,SK.cyl(.06,.06,2.7,6),0x3a2a1a,0,2.95,0,0,0,Math.PI/2);
     return mergeParts(P);}
-  function stallGeoHi(pk){const r0=furnRng(),P=[];const cl=new THREE.Color(pk.cloth),wh=new THREE.Color(0xe8e0c8);
+  function stallGeoHi(pk,rr){const r0=rr||furnRng(),P=[];const cl=new THREE.Color(pk.cloth),wh=new THREE.Color(0xe8e0c8);
     for(const [x,z] of [[-1.4,-.9],[1.4,-.9],[-1.4,.9],[1.4,.9]])FPART(P,SK.rbox(.12,z<0?2.5:2.1,.12,.02,1),0x5a3d1e,x,z<0?1.25:1.05,z,0,0,0,.05);
     for(let k=0;k<8;k++)FPART(P,new THREE.BoxGeometry(.42,.04,2.5),(k%2?wh:cl).getHex(),-1.47+k*.42,2.36,0,-.16,0,0,.05);
     for(let k=0;k<8;k++)FPART(P,SK.cone(.21,.22,3),(k%2?wh:cl).getHex(),-1.47+k*.42,2.05,1.23,Math.PI,Math.PI/6,0,.05);
@@ -3323,6 +3323,25 @@
     FPART(P,SK.bumpy(SK.ball(.7,10,5,0,Math.PI*2,0,Math.PI/2),.06,7,3),0x4a6a30,0,0,0,0,0,0,.1);return mergeParts(P);}
   function wellGeo(){const lo=wellGeoLo(),hi=wellGeoHi();hi.userData.lo=lo;return hi;}
   function stallGeo(r){const lo=stallGeoLo(r),hi=stallGeoHi(lo.userData.picks);hi.userData.lo=lo;return hi;}
+  // S2741 — market day's stall at a ring spot (S2713's owed look; docs/design/a-towns-day.md: "until then the stalls can stand on the old
+  // look's stallGeo"). marketStallSpots (87) puts the keepers past the square's own stalls on the plaza's ring with nothing to stand at;
+  // tickMarketStalls now builds this with the keeper and drops it with him. The stall stands 1.1 m in front of the keeper toward the
+  // square's middle, its counter to the middle, the keeper behind its back posts. Its picks come from its own stream (place and index),
+  // not furnRng, so building one late never shifts the town's furniture. One mesh, VC_MAT, the detailed copy only (it stands within
+  // MSTALL_NEAR); nothing of it is solid, as the bursar's table.
+  function marketStallPlace(site,spot){const ry0=Math.atan2(site.x-spot.x,site.z-spot.z);
+    /* slid along its own length (0, then ±0.3 to ±1.2 m, so the keeper is still behind its 3 m counter), then turned about the keeper up to
+       ±0.5 rad, to the first place where none of its 3 by 2 m footprint is on a solid (a lamp post, the well, the stocks); with none clear,
+       the place that touches fewest */
+    const at=(da,sl)=>{const ry=ry0+da,c=Math.cos(ry),s_=Math.sin(ry);return {ry,c,s_,x:spot.x+s_*1.1+sl*c,z:spot.z+c*1.1-sl*s_};};
+    const hits=P=>{let n=0;for(const lx of [-1.5,-.75,0,.75,1.5])for(const lz of [-1,0,1]){const qx=P.x+lx*P.c+lz*P.s_,qz=P.z-lx*P.s_+lz*P.c;try{if(solidAt(qx,qz))n++;}catch(e){}}return n;};
+    let best=null,bn=1e9,bs=0,bd=0;
+    out:for(const da of [0,.25,-.25,.5,-.5])for(const sl of [0,.3,-.3,.6,-.6,.9,-.9,1.2,-1.2]){const P=at(da,sl),n=hits(P);if(n<bn){bn=n;best=P;bs=sl;bd=da;}if(!n)break out;}
+    return {x:best.x,z:best.z,ry:best.ry,slide:bs,turn:bd,hits:bn};}
+  // marketStallSpots (87) keeps a ring spot only where its keeper stands clear and marketStallPlace finds its stall clear ground
+  function marketRingStall(site,i,spot){const r=seededRng('marketstall',site.id+':'+i),lo=stallGeoLo(r),geo=stallGeoHi(lo.userData.picks,r);lo.dispose();
+    const P=marketStallPlace(site,spot),x=P.x,z=P.z;
+    const m=new THREE.Mesh(geo,VC_MAT);m.position.set(x,worldH(x,z)-.06,z);m.rotation.y=P.ry;m.userData.slide=P.slide;m.userData.turn=P.turn;m.userData.hits=P.hits;m.castShadow=true;m.receiveShadow=true;m.name='market stall';m.userData.noBake=true;m.userData.mstall=site.id+':'+i;return m;}
   function tentGeo(r){const lo=tentGeoLo(r),hi=tentGeoHi(lo.userData.picks);hi.userData.lo=lo;return hi;}
   function ruinGeo(r){const lo=ruinGeoLo(r),hi=ruinGeoHi({picks:lo.userData.picks});hi.userData.lo=lo;return hi;}
   function standingStoneGeo(r){const lo=standingStoneGeoLo(r),hi=standingStoneGeoHi(lo.userData.picks);hi.userData.lo=lo;return hi;}
