@@ -395,6 +395,20 @@ function sndBowEmpty(){
 function sndFootstep(sprint){
   sfxNoise(sprint?.055:.07,1,1,sprint?.18:.12,sprint?500:300);
 }
+// S2735 — a step by the ground (groundHere, 50-travel.js): earth is the plain step above; grass a soft high brush, sand a dry hiss, snow
+// the S147 crunch, mud a low suck, stone a hard click with a ring, wood a hollow knock, gravel a bright crunch in two grains, the
+// shallows a splash. Cosmetic: the noise and its filter only. GROUND_SND counts them for the suites.
+const GROUND_SND={n:0,last:null};
+function sndGroundStep(k,sprint){GROUND_SND.n++;GROUND_SND.last=k;const s=sprint?1.4:1;
+  if(k==='grass'){sfxNoise(.08,1,1,.07*s,2400);sfxNoise(.04,1,1,.05*s,260);}
+  else if(k==='sand'){sfxNoise(.09,1,1,.06*s,1500);sfxNoise(.05,1,1,.04*s,320);}
+  else if(k==='snow')sndSnowStep(sprint);
+  else if(k==='mud'){sfxNoise(.1,1,1,.10*s,240);sfxTone(170,85,.09,.05*s,'sine');}
+  else if(k==='stone'){sfxNoise(.04,1,1,.11*s,1900);sfxTone(880,620,.035,.035*s,'triangle');}
+  else if(k==='wood'){sfxTone(210,150,.07,.08*s,'triangle');sfxNoise(.045,1,1,.07*s,650);}
+  else if(k==='gravel'){sfxNoise(.07,1,1,.09*s,3200);sfxNoise(.05,1,1,.07*s,1200);}
+  else if(k==='water'){sfxNoise(.16,1,1,.11*s,1000);sfxNoise(.22,1,1,.04*s,2600);}
+  else sndFootstep(sprint);}
 // S2416 — a step on a hollow slab (a stair under the floor): lower, with a ring in it
 function sndHollowStep(sprint){
   sfxNoise(sprint?.06:.08,1,1,sprint?.16:.11,200);sfxTone(150,96,.22,sprint?.08:.06,'sine');

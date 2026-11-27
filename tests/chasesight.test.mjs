@@ -52,20 +52,27 @@ check(`a foe that faces you sees you at 18 units (${sight[18]}) and not at 22 ($
 // 4. hearing: behind a foe, walking at 2.5 units is heard; standing still or sneaking at 2.5 is not; sneaking at 0.8 is
 const hear = await page.evaluate(() => { _clear(); const e = _spawn('Bandit', px, pz - 5); e.combatYaw = 0; e.alert = false;
   const behind = d => { e.x = px; e.z = pz - d; e.combatYaw = Math.PI; }; const was = { step: _pStep, sn: _sneaking };
-  const r = {}; behind(2.5);
-  _pStep = true; _sneaking = false; r.walk = canSeePlayer(e, 2.5, 20); _pStep = false; r.still = canSeePlayer(e, 2.5, 20);
-  _pStep = true; _sneaking = true; r.sneak25 = canSeePlayer(e, 2.5, 20); r.sneak08 = canSeePlayer(e, .8, 20); r.walk35 = (_sneaking = false, canSeePlayer(e, 3.5, 20));
+  const r = {}; _gnd.at = -1e9; const gh = r.ground = groundHear(); r.kind = groundHere(); /* S2735 — the distances by the ground's factor, as the rule is (3 × g walking) */ behind(2.5 * gh);
+  _pStep = true; _sneaking = false; r.walk = canSeePlayer(e, 2.5 * gh, 20); _pStep = false; r.still = canSeePlayer(e, 2.5 * gh, 20);
+  _pStep = true; _sneaking = true; r.sneak25 = canSeePlayer(e, 2.5 * gh, 20); r.sneak08 = canSeePlayer(e, .8, 20); r.walk35 = (_sneaking = false, canSeePlayer(e, 3.5 * gh, 20));
   _pStep = was.step; _sneaking = was.sn;
   // in the loop: D held, the foe's back to you at 2.5 units, it turns on you
-  e.x = px; e.z = pz + 2.5; e.alert = false; e.walkT = 0; e.homeX = e.x; e.homeZ = e.z; yaw = Math.PI / 2;
+  e.x = px; e.z = pz + 2.5 * gh; e.alert = false; e.walkT = 0; e.homeX = e.x; e.homeZ = e.z; yaw = Math.PI / 2;
   K['KeyD'] = true; let n = 0; try { n = _drive(() => { PHP = maxHP; e.combatYaw = Math.atan2(e.x - px, e.z - pz); return e.alert; }, 30); } finally { K['KeyD'] = false; }
   r.loopAlert = e.alert; r.ticks = n; r.loopStep = _pStep;
   // and standing still in the same place it does not
-  e.alert = false; e.x = px; e.z = pz + 2.5; _drive(() => { PHP = maxHP; e.combatYaw = Math.atan2(e.x - px, e.z - pz); return e.alert; }, 30); r.stillAlert = e.alert;
+  e.alert = false; e.x = px; e.z = pz + 2.5 * gh; _drive(() => { PHP = maxHP; e.combatYaw = Math.atan2(e.x - px, e.z - pz); return e.alert; }, 30); r.stillAlert = e.alert;
   _drop(e); return r; });
 console.log(' hear', JSON.stringify(hear));
 check(`behind a foe you are heard walking at 2.5 (${hear.walk}), not at 3.5 (${hear.walk35}), not standing still (${hear.still}), not sneaking at 2.5 (${hear.sneak25}); sneaking at 0.8 you are (${hear.sneak08})`,
   hear.walk && !hear.walk35 && !hear.still && !hear.sneak25 && hear.sneak08, hear);
+// S2735 — the ground underfoot (the place-sound sheet's third session): Dunmore's square, once the town is dressed, is its setts, stone,
+// heard at 3 × 1.15 = 3.45 m walking; 60 m out of its pad the land is grass
+for (let i = 0; i < 4 && !(await page.evaluate(() => !!WORLD.settle.get('dunmore').square)); i++) await g.spin(null, 300);
+const sq = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), Q = S.square; if (!Q) return null; const x0 = px, z0 = pz; px = Q.x + 2; pz = Q.z + 2; _gnd.at = -1e9; _pStep = true; _sneaking = false;
+  const o = { k: groundHere(), w: +hearingRadius().toFixed(3), r: Q.r, out: groundKind(S.site.x + S.site.pad + 60, S.site.z) }; _pStep = false; px = x0; pz = z0; _gnd.at = -1e9; return o; });
+console.log(' square', JSON.stringify(sq));
+check('Dunmore\'s square is stone underfoot, heard at 3.45 m walking', !!sq && sq.k === 'stone' && sq.w === 3.45, sq);
 check(`in the loop, walking behind a foe at 2.5 units turns it on you in ${hear.ticks} ticks; standing there it does not (${hear.stillAlert})`, hear.loopAlert && !hear.stillAlert, hear);
 
 check('no page errors', g.errs.length === 0, g.errs);
