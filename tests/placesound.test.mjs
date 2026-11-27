@@ -63,6 +63,37 @@ check('the music ducks the bed to ×0.7 while a piece plays, and lets it up whil
 const inside = await page.evaluate(() => { const zone = activeZoneId; activeZoneId = 'dungeon'; const a = _amb(); activeZoneId = zone; return a; });
 check('out of the open world the beds go to nothing', !inside.open && inside.wind === 0 && inside.water === 0, inside);
 
+// S2736 — a gate heard outside, the great gates and the undertone (the build sheet's fourth session). The gates are read from the cells'
+// records (ambGatePick), so you stand by one with px/pz and one tick; nothing is travelled
+const GT = await page.evaluate(() => { const x0 = px, z0 = pz, o = {}, by = {};
+  for (let i = 0; i < GRID; i++) for (let j = 0; j < GRID; j++) { let c = null; try { c = getCell(i, j); } catch (e) {} if (!c || !c.doors) continue;
+    for (const e of c.doors) { if (!gateHerbDoor(e) || greatSchoolOf(e)) continue; const at = gateHerbAt(e); if (!at) continue; const k = gateHerbCond(e), d = Math.hypot(at[0] - x0, at[1] - z0);
+      if (!by[k] || d < by[k].d) by[k] = { e, at, d }; } }
+  const standBy = (G, r) => { for (let k = 0; k < 16; k++) { const a = k * Math.PI / 8, x = G.at[0] + Math.cos(a) * r, z = G.at[1] + Math.sin(a) * r, P = ambGatePick(x, z);
+      if (!P || P.seed === G.e.seed) { px = x; pz = z; _amb(); return { seed: AMB.gate.seed === G.e.seed, cond: AMB.gate.cond, level: AMB.gate.level, beat: AMB.gate.beat, hz: AMB.gate.hz, school: AMB.gate.school, rumble: AMB.gate.rumble, d: AMB.gate.d, nodes: AMB.nodes, built: !!AMB.v.gate }; } } return null; };
+  o.found = Object.keys(by);
+  if (by.failing) { o.fail100 = standBy(by.failing, 100); const w0 = AMB.gate.whispers; AMB.gate.next = 0; _amb(); o.whisper = AMB.gate.whispers - w0; }
+  if (by.steady) { o.steady100 = standBy(by.steady, 100); o.steady60 = standBy(by.steady, 60);
+    const sd = by.steady.e.seed; devGreatGate('tine', sd); const keep = JSON.stringify(worldState.greatGates || null);
+    o.great200 = standBy(by.steady, 200); setGreatGate('tine', 'torn'); o.torn200 = standBy(by.steady, 200); setGreatGate('tine', 'sealed'); o.sealed60 = standBy(by.steady, 60);
+    delete GREAT_STANDIN[sd]; worldState.greatGates = JSON.parse(keep); if (!worldState.greatGates) delete worldState.greatGates; }
+  if (by.catastrophic) o.cat100 = standBy(by.catastrophic, 100);
+  // the undertone: two torn nothing, three 0.02 (the last torn school's hum), six 0.08; and nothing indoors
+  px = x0; pz = z0; const keep = worldState.greatGates; const U = gates => { worldState.greatGates = { gates, fate: null, fatedAt: null }; _amb(); return [AMB.under.level, AMB.under.school]; };
+  o.u2 = U({ tine: 'torn', uisce: 'torn' }); o.u3 = U({ tine: 'torn', uisce: 'torn', cloch: 'torn' }); o.u6 = U({ tine: 'torn', uisce: 'torn', cloch: 'torn', scath: 'torn', solas: 'torn', gaoth: 'torn' });
+  o.uHz = AMB.v.under ? AMB.under.hz : null; const zone = activeZoneId; activeZoneId = 'dungeon'; _amb(); o.uIn = AMB.under.level; activeZoneId = zone;
+  worldState.greatGates = keep; if (!keep) delete worldState.greatGates;
+  // away from every gate, the voice is taken down 2 s after the last is heard
+  for (let k = 0; k < 10; k++) _amb(); o.after = { gate: !!AMB.v.gate, under: !!AMB.v.under, nodes: AMB.nodes, level: AMB.gate.level };
+  px = x0; pz = z0; return o; });
+console.log('gates', JSON.stringify(GT));
+check('a failing gate is heard at 100 m, its hum beating at 4–7 Hz by its seed, and it whispers', !!GT.fail100 && GT.fail100.seed && GT.fail100.cond === 'failing' && GT.fail100.level > 0 && GT.fail100.beat >= 4 && GT.fail100.beat <= 7 && GT.whisper === 1 && GT.fail100.built, GT);
+check('a steady gate is silent at 100 m and heard at 60 m, steady (no beat), its school\'s fundamental', !!GT.steady100 && !GT.steady100.seed && !!GT.steady60 && GT.steady60.seed && GT.steady60.cond === 'steady' && GT.steady60.beat === 0 && Math.abs(GT.steady60.level - .10 * (1 - 60 / 80) ** 2) < 2e-3 && [55, 58, 61, 64, 67, 70].includes(GT.steady60.hz), GT);
+check('a great gate: untouched a steady hum at 200 m (240 m reach), torn the catastrophic voice (the beat at 3 Hz, the rumble), sealed silent', !!GT.great200 && GT.great200.seed && GT.great200.cond === 'steady' && GT.great200.school === 'tine' && GT.great200.hz === 70
+  && GT.torn200.seed && GT.torn200.cond === 'catastrophic' && GT.torn200.beat === 3 && GT.torn200.rumble > 0 && !GT.sealed60.seed && GT.sealed60.rumble === 0, GT);
+check('the undertone: two torn nothing, three 0.02 on the last torn school\'s hum, six 0.08; none underground', GT.u2[0] === 0 && GT.u3[0] === .02 && GT.u3[1] === 'cloch' && GT.u6[0] === .08 && GT.u6[1] === 'gaoth' && GT.uHz === 64 && GT.uIn === 0, GT);
+check('away from every gate the voice is taken down, and the bus keeps its nodes', !GT.after.gate && !GT.after.under && GT.after.level === 0 && GT.after.nodes <= 40, GT);
+
 // S2730 — the town and the hours, the calls, indoors and the rooms' echo (the build sheet's second session)
 await g.settle('dunmore');
 const town = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), s = S.site; _wx('clear'); forceTime(12); px = s.x; pz = s.z;
