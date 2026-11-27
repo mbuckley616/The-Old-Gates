@@ -1781,6 +1781,7 @@
     ironhaven:{x:()=>SITE.ironhaven.x,z:()=>SITE.ironhaven.z,local:100,scale:2.6},
   };
   let dungeonWorldPos={}; // seed -> {x,z}
+  const DOOR_PLACED=new Map(); /* S2730 — seed -> the {x,z} placeDoor first gave it, kept when its cell unloads */
   /* S2274 — a home fort's ring clear of every road. A fort is set 120 m off its road, then pushed out of each pad by the pad and
      120 m, one pad at a time; where three villages crowd a short road (Hearthwick, Droichead and Colmán's Rest round the Old
      Garrison) the pushes put it back over the road: its ring stood 25 m from the line, its wall across the road, and every
@@ -1868,6 +1869,9 @@
           break;
         }
       }
+      /* S2730 — a door keeps the spot it was first given this page: the pushes above read the roads, stamps and doors loaded now, so gate 137
+         stood at (12976, 25636) facing 2.97 from the start and at (12963, 25695) facing 3.14 once its cells came back from the Mark (the look sheets' hump) */
+      {const m=DOOR_PLACED.get(e.seed);if(m){wx=m.x;wz=m.z;}else DOOR_PLACED.set(e.seed,{x:wx,z:wz});}
       dungeonWorldPos[e.seed]={x:wx,z:wz};CELL_DOORS.push(e);
       const isFort=e.kind==='fort_door';
       e.ring=ringGateOk(e);if(e.ring){ringGateStamp(e,wx,wz,cellK);return dungeonWorldPos[e.seed];} /* S2633 — the rings' hill in place of the door's pad */
