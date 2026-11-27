@@ -1072,7 +1072,7 @@ function renderHubMagic(){
     lex+=`</select>`;}
   // the spell being made
   const nm=bookLineName({word:id,form:f,rider:join.ok?rider:null}),dur=wordCellDur(id,f);
-  let say=wordCellSay(id,f)+(dur?`, ${dur} s`:'');if(rider&&join.ok)say+=`; and it ${RIDERS[rider].verb}`;
+  let say=wordCellSay(id,f)+(dur?`, ${dur} s`:'');if(rider&&join.ok){if(f==='laid'){const ls=riderLaidSay(id,rider);say+=ls?`; ${ls}`:`; ${WORD_BY[rider].nameIr} does nothing to it laid`;}else say+=`; and it ${RIDERS[rider].verb}`;} /* S2747 — the laid column's words */
   let mid=`<div class="mp-h">The spell</div><div class="mp-title">${nm}</div>`+(tw<2?`<div class="mp-meta">the English comes when ${w.nameIr} does</div>`:'')+`<div class="mp-say">${say?say.charAt(0).toUpperCase()+say.slice(1)+'.':''}</div>`;
   mid+=`<div class="mp-h">Form <span class="mp-meta">the guild teaches forms by rank</span></div><div class="mp-forms">`;
   for(const x of FORM_ORDER){const F=FORMS[x],live=wordLive(id,x),held=formHeld(x);
@@ -1082,7 +1082,7 @@ function renderHubMagic(){
   mid+=`</div><div class="mp-h">A second word <span class="mp-meta">adds only its rider · both words at Comprehension</span></div><div class="mp-chips">`;
   const rid=Object.keys(RIDERS).filter(r=>knownWords[r]&&r!==id);
   if(!rid.length)mid+=`<span class="mp-meta">no word you hold rides another yet</span>`;
-  for(const r of rid){const ok=wordJoin(id,f,r,tw,wordTierOf(r)).ok;mid+=`<span class="mp-chip${r===rider?' on':''}${ok?'':' off'}" data-rider="${r}" onclick="magicPickRider('${r}')"><b>${WORD_BY[r].nameIr}</b> ${RIDERS[r].verb}</span>`;}
+  for(const r of rid){const ok=wordJoin(id,f,r,tw,wordTierOf(r)).ok;mid+=`<span class="mp-chip${r===rider?' on':''}${ok?'':' off'}" data-rider="${r}" onclick="magicPickRider('${r}')"><b>${WORD_BY[r].nameIr}</b> ${f==='laid'?RIDER_LAID[r]:RIDERS[r].verb}</span>`;}
   mid+=`</div>`;
   if(rider&&!join.ok)mid+=`<div class="mp-warn">${f==='worn'?'A worn word takes no second word.':`${(tw<WORD_JOIN_TIER?w:WORD_BY[rider]).nameIr} is only at Impression, so the words will not join yet.`}</div>`;
   const cost=magicCost(id,f,join.ok?rider:null),per=FORMS[f].perSec?' a second':'',over=cost-maxMana;
