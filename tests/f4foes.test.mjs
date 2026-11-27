@@ -155,13 +155,19 @@ const gear = await page.evaluate(() => { const c0 = CAM.position.clone(), q0 = S
   const held = () => _F.filter(f => f.rig && (f.rig.weapon || f.rig.shieldKit)).map(f => [f.rig, [f.rig.weapon, f.rig.shieldKit].filter(Boolean)]);
   const read = () => held().map(([rig, gs]) => ({ off: gs.every(w => { let ok = true; w.traverse(o => { if (o.isMesh && o.layers.test(CAM.layers)) ok = false; }); return ok; }), drv: rig.mesh.layers.test(CAM.layers) }));
   try { for (const [q, d] of [[0, 120], [2, 120], [2, 200]]) { SETTINGS.quality = q; const f = _F[0].e.mesh.position; CAM.position.set(f.x + d, c0.y, f.z); CAM.updateMatrixWorld(true);
-      for (let i = 0; i < 3; i++) tickPeople(1 / 60, 8e5 + i * 16.7); const r = read(); L.push({ q, d, n: r.length, off: r.filter(x => x.off).length, drv: r.filter(x => x.drv).length }); } }
+      for (let i = 0; i < 3; i++) tickPeople(1 / 60, 8e5 + i * 16.7); const r = read(); L.push({ q, d, n: r.length, off: r.filter(x => x.off).length, drv: r.filter(x => x.drv).length }); }
+    // S2746: a mesh taken up while already past the line is swept off the eye's layer within PEOPLE_LOD.gearSweep
+    const w0 = held()[0][1][0], probe = new THREE.Mesh(new THREE.BoxGeometry(.1, .1, .1)); w0.parent.add(probe);
+    tickPeople(1 / 60, 8e5 + 300); const p0 = probe.layers.test(CAM.layers); tickPeople(1 / 60, 8e5 + 1300); const p1 = probe.layers.test(CAM.layers);
+    w0.parent.remove(probe); probe.geometry.dispose(); L.push({ probe: true, at300: p0, at1300: p1 }); }
   finally { SETTINGS.quality = q0; CAM.position.copy(c0); CAM.updateMatrixWorld(true); }
   for (let i = 0; i < 3; i++) tickPeople(1 / 60, 8.1e5 + i * 16.7); const r = read(); L.push({ back: true, n: r.length, off: r.filter(x => x.off).length, drv: r.filter(x => x.drv).length });
   REN.render(scene, CAM); return L; });
 console.log('  gear:', JSON.stringify(gear));
-check(`a far foe's weapon and shield leave the eye's layer past the quality's distance, its driver stays, and both come back near (${gear.map(x => x.back ? 'near ' + x.off : x.d + ' m q' + x.q + ' ' + x.off + '/' + x.n).join(', ')})`,
-  gear[0].n >= 5 && gear[0].off === gear[0].n && gear[1].off === 0 && gear[2].off === gear[2].n && gear.every(x => x.drv === x.n) && gear[3].off === 0, gear);
+const probe = gear.find(x => x.probe), gearL = gear.filter(x => !x.probe);
+check(`a far foe's weapon and shield leave the eye's layer past the quality's distance, its driver stays, and both come back near (${gearL.map(x => x.back ? 'near ' + x.off : x.d + ' m q' + x.q + ' ' + x.off + '/' + x.n).join(', ')})`,
+  gearL[0].n >= 5 && gearL[0].off === gearL[0].n && gearL[1].off === 0 && gearL[2].off === gearL[2].n && gearL.every(x => x.drv === x.n) && gearL[3].off === 0, gear);
+check(`a mesh a far foe takes up past the line leaves the eye's layer at the next sweep (seen at 0.3 s ${probe && probe.at300}, at 1.3 s ${probe && probe.at1300})`, !!probe && probe.at300 === true && probe.at1300 === false, probe);
 const dead = await page.evaluate(() => { const f = _F[0], rig = f.rig, before = []; rig.hb.root.traverse(o => { if (o.isMesh) before.push([o, o.material]); });
   f.e.hp = 0; killZoneEnemy(f.e, WORLD.scene, '');
   for (let i = 0; i < 90; i++) tickPeople(1 / 60, 7e5 + i * 16.7);
