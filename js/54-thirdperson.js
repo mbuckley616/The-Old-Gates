@@ -37,7 +37,19 @@ function tpHex(s,def){if(typeof s==='number')return s;if(typeof s==='string'&&s[
 function tpMatColor(it,def){if(!it)return def;if(it.matCol!=null)return it.matCol;const name=(it.name||'').toLowerCase();for(const k in ICO_MAT){if((it.material||'').toLowerCase()===k||name.startsWith(k+' ')||name.includes(' '+k+' '))return tpHex(ICO_MAT[k],def);}
   if(/leather|hide|hood|cap\b|boots|breeches|gloves/.test(name))return 0x6a4a2e;if(/tunic|robe|cloth|shirt|trousers/.test(name))return 0x6a5a44;if(/iron|rusty/.test(name))return 0x8a8f98;if(/steel|plate|chain|mail/.test(name))return 0xb8bcc4;return def;}
 function tpIsCloth(it){if(!it)return true;const n=(it.name||'').toLowerCase();return /tunic|robe|cloth|breeches|trousers|shirt|hood|cap\b|leather|hide|worn|tattered|boots|gloves/.test(n)&&!/cuirass|plate|mail|helm|greaves|gauntlet|sabaton/.test(n);}
-function tpSig(){const L=lookNow();const k=(L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','weapon','offhand','amulet','ammo','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|');let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}return k+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype+'#'+tpPackKind()+(tpSheathed()?'#sheathed':'');}
+function tpSig(){const L=lookNow();const k=(L?JSON.stringify(L):'')+['head','chest','hands','legs','feet','weapon','offhand','amulet','ammo','back'].map(s=>EQ[s]?(EQ[s].name||'?')+(EQ[s].col!=null?'~'+EQ[s].col:''):'-').join('|');let pp='gatelander';try{pp=WORLD.playerPeople();}catch(e){}return k+'#'+pp+'#'+(playerName||'')+'#'+playerArchetype+'#'+tpPackKind()+(tpSheathed()?'#sheathed':'')+(tpCloakShut()?'#shut':'');}
+/* S2728 (Michael's C on #2082: "A, closed only for hood up, burnous and snow") — your own long cloak worn back over the shoulders as the
+   townsfolk's are since S2724 (people.js's D.cloakBack; hbCloakWorn), so the arms swing and strike in front of it, not through it. It is
+   drawn round the front with its hood up (tpHBDress) and in the snow: out of doors in winter, or anywhere out of doors in the Mark's cold
+   land (the nation's climate where you stand). Indoors and underground it is worn back. A change rebuilds your body (tpSig) */
+// how far your cloak worn back is open either side of the front, in radians: the kit's 1.3 (the townsfolk's, over the tops and fronts of the
+// shoulders) left your forearm with a blade at rest and the hand hanging by the hip under its sides, up to 12.6 cm out; at 1.36 it still
+// lies over the shoulders' tops and fronts and none comes out (1.69 would hang it wholly behind them, Michael's B, which he did not choose)
+const TP_CLOAK_BACK=1.36;
+function tpCloakShut(){const bk=typeof EQ!=='undefined'&&EQ.back;if(!bk||!bk.cloak)return false;const K=TP_CLOAK[bk.cloak]||TP_CLOAK.wool;if(K.cut==='short')return false;
+  if(typeof hbIndoors==='function'&&hbIndoors()||typeof activeZoneId!=='undefined'&&activeZoneId!=='world'||typeof lid!=='undefined'&&lid&&String(lid).startsWith('dyn_'))return false;
+  if(typeof hbWinter==='function'&&hbWinter())return true;
+  try{const c=cellOf(px,pz),N=NATIONS[nationKeyOf(c[0],c[1])];return !!(N&&N.climate==='cold');}catch(e){return false;}}
 // S2217 — the pack in the bag (Michael's B on #1504, the systems builder's packItem), drawn on your back by island: the Gatelands' wicker
 // creel, the Mark's birch pack frame with its hide bundle, Aurenne's striped saddle-roll (people.js's D.backpack, buildBackpack)
 const TP_PACK={gatelands:{kind:'creel',col:[.92,.74,.48]},mark:{kind:'frame',col:[.42,.3,.2]},aurenne:{kind:'roll',col:[.55,.16,.1]}};
@@ -202,6 +214,8 @@ function tpBuild(lookIn,ppIn,reuse){
   if(E){const K=EQ.back&&EQ.back.cloak?(TP_CLOAK[EQ.back.cloak]||TP_CLOAK.wool):null;
     rig.hbG=tpHBDress(E.G,{AR,ch,lg,ft,hd,gl,clothCol,legsCol,chestCol,bootCol,helmCol:hd?tpMatColor(hd,0x8a8f98):0x8a8f98,robe:!!(ch&&!ch.line&&/robe/i.test(ch.name||'')),
       cloak:K?{col:EQ.back.col!=null?EQ.back.col:K.col,cut:K.cut,hood:!!K.hood,fur:K.fur,trim:K.trim}:null,pack:tpPackKind()});
+    rig.hbG=hbCloakWorn(rig.hbG,tpCloakShut()); /* S2728 — a long cloak worn back unless its hood is up or you stand in the snow (#2082 C) */
+    if(rig.hbG.dress&&rig.hbG.dress.cloakBack===true)rig.hbG={...rig.hbG,dress:{...rig.hbG.dress,cloakBack:TP_CLOAK_BACK}};
     // F10, part two — a change of kit that leaves the dressed genome as it was (a weapon, a shield, a ring) keeps the builder's body
     // that was built for it: carried over from the body this one replaces (reuse, TP.rig) onto the new driver, not built again
     const key=JSON.stringify(rig.hbG),old=reuse&&reuse.rig&&reuse.rig.hb&&reuse.hbKey===key?reuse:null;R.hbKey=key;
