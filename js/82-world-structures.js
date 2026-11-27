@@ -1754,7 +1754,7 @@
       for(let i=0;i<pts.length-1;i++){
         const mx=(pts[i].x+pts[i+1].x)/2,mz=(pts[i].z+pts[i+1].z)/2;
         if(mx<ox||mx>=ox+CHUNK||mz<oz||mz>=oz+CHUNK)continue;
-        const T=tdrTownAt(mx,mz);if(T){const st=tdrStyle(isleAt(T.x,T.z),'sett');st.y=.07;st.verge=0;st.band=Math.hypot(mx-T.x,mz-T.z)<26?0:.5;st.gap=0; /* clean-edged across the square, which meets it; and no stone missing on a road (a ray at it met the turf: lookpair) */paved.A.N.length=0;tdrStrip(paved,pts[i],pts[i+1],W,st,seededRng(T.id,'dress:road:'+Math.round(mx)+','+Math.round(mz)),new Map());continue;}
+        const T=tdrTownAt(mx,mz);if(T){const st=tdrStyle(isleAt(T.x,T.z),'sett'),sq=Math.hypot(mx-T.x,mz-T.z)<26;st.y=.07;st.verge=sq?0:.6;st.vdark=.5;st.vout=.65;st.vskip=(x,z)=>Math.hypot(x-T.x,z-T.z)<24;st.band=sq?0:.5;st.gap=0; /* clean-edged across the square, which meets it; and no stone missing on a road (a ray at it met the turf: lookpair). S2734: past the square a worn verge, 0.6 m of dark earth going to moss and dipping under the turf, so the setts no longer stop in a hard line on the lawn (the critic's street, 27 Nov) */paved.A.N.length=0;tdrStrip(paved,pts[i],pts[i+1],W,st,seededRng(T.id,'dress:road:'+Math.round(mx)+','+Math.round(mz)),new Map());continue;}
         addQuad(pts[i],pts[i+1],pts,i);
       }
     }
@@ -3566,7 +3566,7 @@
   function tdrCol(hex,r,j){_tdrC.setHex(hex);const k=1+(r()-.5)*(j==null?.16:j);return new THREE.Color(_tdrC.r*k,_tdrC.g*k,_tdrC.b*k);}
   const TDR_PAL={
     gatelands:{stone:[0x8d877a,0x7b776c,0x9a9282,0x6f6a5e],hedge:[0x3c5a28,0x46682e,0x35502a],wood:0x6a4c32,dark:0x3e2c1e,wash:0xe9e3d3,thatch:0xb59a5e,roof:0x55606a,
-      flower:[0xc85aa0,0xe8e2e0,0xe0b832,0xb03a3a,0x9a7ad0],leaf:0x3f6a2e,ivy:0x2c4a22,peat:0x3a2a1e,cloth:[0xe8e4d8,0xd8d0b8,0x5a6e9a,0xa84a3a,0x6a8a5a],soil:0x4a3624,fruit:0xb8402a,sett:0x746e60,flag:0x827b6b,earth:0x6e6046},
+      flower:[0xc85aa0,0xe8e2e0,0xe0b832,0xb03a3a,0x9a7ad0],leaf:0x3f6a2e,ivy:0x2c4a22,peat:0x3a2a1e,cloth:[0xe8e4d8,0xd8d0b8,0x5a6e9a,0xa84a3a,0x6a8a5a],soil:0x4a3624,fruit:0xb8402a,sett:0x5e5c56,flag:0x6e6b64,earth:0x6e6046},
     mark:{stone:[0x6e6a64,0x5e5a54,0x7a766e],hedge:[0x2f4a30,0x3a5434],wood:0x5a4030,dark:0x3a2a20,wash:0x8a6a4a,thatch:0x6a7a3a,roof:0x5a6a34,turf:[0x5a6e34,0x667a3c],
       flower:[0xd8d0c0,0xb8a0c8,0xe0c040],leaf:0x3a5a32,ivy:0x30482a,peat:0x4a3626,cloth:[0xd8d0c0,0x8a2a20,0x2a4a6a,0x9a8a6a,0x5a6a4a],soil:0x3e2e22,fruit:0xc84a2a,sett:0x6e685e,flag:0x7a7468,earth:0x6a5a44},
     aurenne:{stone:[0xd8ccb2,0xc8bca0],wash:0xece2cc,tile:0xb8603a,blue:0x2c5ca8,cane:0xc8b07a,wood:0x7a5a3a,dark:0x4a3424,roof:0xb8603a,
@@ -3589,10 +3589,11 @@
     if(st.inset&&mine.length)tdrJoint(D.list('gc',mx0,mz0),[P(0,-W),P(L,-W),P(L,W),P(0,W)],Object.assign({},st,{lo:(st.hi+st.lo)/2/.85,moss:0})); /* Low's ground: the strip in one quad of its tone */
     if(!st.verge)return;const AV=D.list('ge',mx0,mz0),ec=st.earth,push=(q,c)=>{AV.P.push(q[0],q[1],q[2]);AV.N.push(0,1,0);AV.C.push(c.r,c.g,c.b);},dt=Math.max(.5,st.cl*1.4),nV=Math.max(1,Math.round(L/dt));
     for(const sd of [-1,1])for(let i=0;i<nV;i++){const ta=i/nV*L,tb=(i+1)/nV*L,p0=P(ta,sd*W),p1=P(tb,sd*W),o0=[p0[0]+nx*sd*st.verge,0,p0[2]+nz*sd*st.verge],o1=[p1[0]+nx*sd*st.verge,0,p1[2]+nz*sd*st.verge];
-      if(skipFn&&skipFn((p0[0]+p1[0])/2,(p0[2]+p1[2])/2))continue;
+      if((skipFn&&skipFn((p0[0]+p1[0])/2,(p0[2]+p1[2])/2))||(st.vskip&&st.vskip((o0[0]+o1[0])/2,(o0[2]+o1[2])/2)))continue; /* st.vskip: the verge alone held back (a road's at a square, S2734) */
       o0[1]=tdrH(o0[0],o0[2])-.03-r()*.07;o1[1]=tdrH(o1[0],o1[2])-.03-r()*.07; /* the outer edge under the turf by 3 to 10 cm: where it comes up is ragged */
-      const c0=new THREE.Color(ec.r*(.9+r()*.2),ec.g*(.9+r()*.2),ec.b*(.9+r()*.2)).lerp(TDR_MOSS,.25*r());const q=[p0,p1,o1,o0],cr=(p1[0]-p0[0])*(o0[2]-p0[2])-(p1[2]-p0[2])*(o0[0]-p0[0]);
-      const T=cr<0?[0,1,2,0,2,3]:[0,2,1,0,3,2];for(const t of T)push(q[t],c0);}}
+      const c0=new THREE.Color(ec.r*(.9+r()*.2),ec.g*(.9+r()*.2),ec.b*(.9+r()*.2)).lerp(TDR_MOSS,.25*r());if(st.vdark)c0.multiplyScalar(st.vdark);const q=[p0,p1,o1,o0],cr=(p1[0]-p0[0])*(o0[2]-p0[2])-(p1[2]-p0[2])*(o0[0]-p0[0]);
+      const co=st.vout?c0.clone().lerp(TDR_MOSS,st.vout):c0,QC=[c0,c0,co,co]; /* st.vdark, st.vout: a darker verge whose outer edge goes to the moss (the road's, S2734) */
+      const T=cr<0?[0,1,2,0,2,3]:[0,2,1,0,3,2];for(const t of T)push(q[t],QC[t]);}}
   /* one stone: four corners [x,y,z] round it, drawn as two triangles drawn in by st.inset of its size, so the joint's underlay (tdrJoint)
      shows between stones; lit across from its first corner to its third (a gradient for the old low dome: Dunmore's street at Low went
      over 1.2 M triangles with four a stone, S2670); now and then a darker, a paler or a greener one; moss toward its dark corner by
