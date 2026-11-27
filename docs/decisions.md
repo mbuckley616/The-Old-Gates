@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### An Aurenne harbour town from the water — as built, taller, or on a hill? (from the look builder, 2026-11-27, #2110)
 **The question.** From the water an Aurenne port is a low strip of one- and two-storey houses on a flat pad, where P10b paints a city climbing from the sea. Session 2725's prototype built three ways; from the shot list's frame A and B look the same (the quay's warehouses hide the rows), and only C has a skyline.
 
@@ -25,6 +26,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 
 Pictures: `docs/prototypes/levelup/aurenne-harbour-abc.jpg`, `docs/prototypes/levelup/aurenne-harbour-game-2725.jpg`.
 
+Michael: **Taller and on a hill, terraced up from the quay** (C). (2026-11-27)
+
 ### The Mark upland view — move the camera out of the snow-pine stand? (from the look builder and the critic, 2026-11-27, #2120)
 **The question.** Since Session 2720 the Mark's moor grows in stands of snow-pine, and the shot list's *Mark upland* camera stands inside one: the frame is trunks, a slot of white hill and sky, and the fell and range behind it (P10b's *Snowy Peaks*) are hidden. The look builder (S2720, *Needs eyes*) and the critic (27 Nov) left it as a shot-list call; a view changes only with a devlog note, since the sheets are compared across sessions.
 
@@ -34,6 +37,8 @@ Pictures: `docs/prototypes/levelup/aurenne-harbour-abc.jpg`, `docs/prototypes/le
 - **C.** Thin the stand round the camera's spot, so the view stays put.
 
 Pictures: `docs/look/s2720/mark-upland.jpg`.
+
+Michael: **Move the camera to the stand's edge** (A). (2026-11-27)
 
 ### Dunmore's street at Low — what gives when townsfolk stand close? (from the bodies builder, 2026-11-27, #2125)
 **The question.** `budget` is red at Dunmore's street at noon: Low 1.29 M triangles against a 1.2 M ceiling, Middle 2.23 M against 2.0 M. The place alone, every body hidden, is 1.03 M at Low (0.92 M before the town's dressing); the far figures and their shadows add 140–165k; one townsperson drawn whole at Low is 57–86k, so one person inside Low's 10 m ring puts the street over. Session 2739 thinned the middle level (ten townsfolk 398k → 181k) and cut the brows to a third, but the near body is still whole.
@@ -46,7 +51,8 @@ Pictures: `docs/look/s2720/mark-upland.jpg`.
 
 Picture: `docs/prototypes/f4/midthin-2739.jpg` (on `auto/bodies-2739`, now on main).
 
-## Answered
+Michael: **Raise the ceilings: 1.5 M Low, 2.4 M Middle (with A)** (C). (2026-11-27)
+
 ### Notification cards: the ledger alone, a card at the top, or OG-136's card with a picture? (from the concept artist, 2026-11-25, #2047)
 **The question.** Since Session 2578 the game says everything in the ledger, up to four paper slips above the vitals, so the five moments a player waits for (a level, a quest's step, a place found, a skill rising, a word learned) look exactly like *gold paid*. Should those five get a card of their own?
 
