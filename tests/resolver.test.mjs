@@ -130,8 +130,8 @@ const ch = await page.evaluate(() => {
     e.locked = false; e.spd = 0; e.atkCd = 1e9; e.rng = null; e.hp = e.maxHp = 1000; e.def = 0; e.resist = {}; e.combatYaw = Math.atan2(px - e.x, pz - e.z); if (typeof e.posture !== 'number') initPosture(e); e.posture = e.maxPosture = 1000;
     SWING = { t0: playClockS, tell: .3, strike: .06, recovery: .18, total: .55, isPow: false, chain }; _swingStartS = -1e9; ZE = [e];
     try { resolvePlayerStrike(false); } finally { ZE = keepZ; } const r = { lost: 1000 - e.hp, post: 1000 - e.posture }; WORLD.scene.remove(e.mesh); SWING = null; return r; };
-  const raw = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0]))) * skillMult(weaponSkill(EQ.weapon)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1));
-  const raw3 = Math.floor((FISTS.atk[0] + Math.floor(.5 * (FISTS.atk[1] - FISTS.atk[0]))) * skillMult(weaponSkill(EQ.weapon)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1) * 1.3);
+  const raw = Math.floor(rollRange(FISTS.atk[0], FISTS.atk[1], .5) * skillMult(weaponSkill(EQ.weapon)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1));
+  const raw3 = Math.floor(rollRange(FISTS.atk[0], FISTS.atk[1], .5) * skillMult(weaponSkill(EQ.weapon)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT) * _buffMult('meleeDmg', 1) * _buffMult('dmgBurst', 1) * 1.3);
   out.first = blow(1); out.third = blow(3); out.want = { first: challengeDealt(Math.max(1, raw)), third: challengeDealt(Math.max(1, raw3)) };
   Math.random = rnd; Object.assign(EQ, EQk); SKILLS.hand = hand0; return out;
 });
@@ -209,6 +209,23 @@ const snd = await page.evaluate(() => {
 console.log(JSON.stringify(snd));
 check('a fist\'s blow on a Bandit hands the hit sound its type, blunt, and plays the blunt hit', snd.hits === 1 && snd.args && snd.args[0] === 'blunt' && snd.swungIsBlunt, snd);
 check('the hit sounds by weapon class: slash, pierce and blunt, each with its resisted ring, six sounds of their own', snd.arity === 2 && snd.distinct === 6, snd.prints);
+
+// S2745 — a weapon's range as its sheet shows it, both ends: ATK 8–9 rolled 8 every time (lo + floor(r × (hi − lo))).
+const rng = await page.evaluate(() => {
+  const seen = (lo, hi) => { const s = new Set(); for (let i = 0; i < 1000; i++) s.add(rollRange(lo, hi, i / 1000)); return [...s].sort((a, b) => a - b); };
+  const EQk = { ...EQ }; const keepZ = ZE;
+  const e = buildZoneEnemy(WORLD.scene, [], px + fwdX * 1.2, pz + fwdZ * 1.2, 'Bandit', null); if (!e.mesh.parent) WORLD.scene.add(e.mesh);
+  const chain = (r) => { e.rng = () => r; return meleeDamageChain(e, { isPow: false, shMult: 1, row: { dmg: 1 }, chainDmg: 1 }); };
+  EQ.weapon = { name: 'Test Sword', atk: [8, 9], type: 'equip', slot: 'weapon', wType: 'slash' };
+  const sword = { lo: chain(0), hi: chain(.999) };
+  const u = { arrowDmg: 1, roll: { bLo: 6, bHi: 10, aLo: 2, aHi: 4, lv: 0, m: 1 } };
+  e.rng = () => .999; const arrowTop = arrowRawFor(u, e); e.rng = () => 0; const arrowLow = arrowRawFor(u, e);
+  WORLD.scene.remove(e.mesh); ZE = keepZ; for (const k in EQk) EQ[k] = EQk[k];
+  return { s89: seen(8, 9), f24: seen(2, 4), z00: seen(0, 0), sword, arrowTop, arrowLow, mult: skillMult(weaponSkill(EQ.weapon)) };
+});
+console.log(JSON.stringify(rng));
+check(`a range rolls both its ends: 8–9 gives ${rng.s89}, a 2–4 gives ${rng.f24}, an arrow's 0–0 gives ${rng.z00}`, rng.s89.join() === '8,9' && rng.f24.join() === '2,3,4' && rng.z00.join() === '0', rng);
+check(`a sword of ATK 8–9 swung at the roll's top deals more than at its bottom (${rng.sword.lo} → ${rng.sword.hi}); a bow 6–10 with arrows 2–4 at a keyed foe ${rng.arrowLow} → ${rng.arrowTop}`, rng.sword.hi > rng.sword.lo && rng.arrowLow === 8 && rng.arrowTop === 14, rng);
 
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

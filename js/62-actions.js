@@ -114,7 +114,7 @@ function _resolveDungeonStrike(_isPow){return resolvePlayerStrike(_isPow);} // S
 // S480 — an arrow's damage at the hit: a keyed foe (keyFoe) rolls the bow's and the arrow's spread from its own stream, as a
 // swing does; anything else takes the roll made at release
 function arrowRawFor(u,e){const R=u&&u.roll;if(!R||!e||!e.rng)return u.arrowDmg;
-  const b=R.bLo+Math.floor(foeRand(e)*Math.max(1,R.bHi-R.bLo)),a=R.aLo+Math.floor(foeRand(e)*Math.max(1,R.aHi-R.aLo));return Math.max(1,Math.floor((b+a+R.lv)*R.m));}
+  const b=rollRange(R.bLo,R.bHi,foeRand(e)),a=rollRange(R.aLo,R.aHi,foeRand(e)); /* S2745 — both ends */return Math.max(1,Math.floor((b+a+R.lv)*R.m));}
 // S1457 — the crossbow's shot (#745 2 A): a click while spanned, with bolts in the quiver, shoots at once; the span starts over
 function xbowShoot(){
   if(!_hasArrows()){sndBowEmpty();showMsg('No bolts equipped.','#cc8844');return false;}
@@ -140,11 +140,11 @@ function fireArrow(strength,o){
   // Bow contribution (atk roll, scales with material tier).
   const bowLo = bow.atk ? bow.atk[0] : 6;
   const bowHi = bow.atk ? bow.atk[1] : 10;
-  const bowRoll = bowLo + Math.floor(Math.random() * Math.max(1, bowHi - bowLo));
+  const bowRoll = rollRange(bowLo, bowHi, Math.random()); /* S2745 — both ends of the range */
   // Arrow contribution (per-arrow type).
   const aLo = (ammo.arrowDmg && ammo.arrowDmg[0]) || 0;
   const aHi = (ammo.arrowDmg && ammo.arrowDmg[1]) || 0;
-  const arrowRoll = aLo + Math.floor(Math.random() * Math.max(1, aHi - aLo));
+  const arrowRoll = rollRange(aLo, aHi, Math.random());
   // Draw scaling — linear MIN..MAX over strength 0..1.
   const drawMult = xb ? BOW_DAMAGE_MULT_MAX * XBOW_DMG_MULT : BOW_DAMAGE_MULT_MIN + (bowNow().mult - BOW_DAMAGE_MULT_MIN) * strength; /* S1457 — a crossbow: the full draw ×1.15; S1549 — a longbow's full draw ×1.70, a war bow's ×2.00 */
   // Finesse — bow's primary attribute, mirrors Might’s melee scaling (ATTR_DMG_PER_POINT).
@@ -734,7 +734,9 @@ function _applyPotionBuff(eff){
 
 function openInv(){_releasePointerLockForMenu();invOpen=true;document.getElementById('ip').style.display='block';renderInv();}
 function closeInv(){invOpen=false;document.getElementById('ip').style.display='none';G.focus();}
-function renderInv(){[['head','🪖'],['chest','👕'],['hands','🧤'],['legs','👖'],['feet','👢'],['weapon','⚔️'],['offhand','🛡']].forEach(([k,def])=>{const el1=document.getElementById('qi-'+k),el2=document.getElementById('qn-'+k);if(!el1)return;const it=EQ[k];if(it)el1.innerHTML=iconHTML(it).replace('margin-right:6px','margin:0');else el1.textContent=def;el2.textContent=it?it.name:'—';});const w=EQ.weapon,lo=w?w.atk[0]:FISTS.atk[0],hi=w?w.atk[1]:FISTS.atk[1];document.getElementById('sa').textContent=`${lo+Math.floor(level*1.5)}–${hi+Math.floor(level*1.5)}`;const def2=Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);document.getElementById('sd').textContent=def2;document.getElementById('sl').textContent=level;document.getElementById('sk').textContent=kills;document.getElementById('sg').textContent=gold;const _tw=totalCarryWeight(),_mx=maxCarry();document.getElementById('si').textContent=_tw.toFixed(1);document.getElementById('bc').textContent=`(${_tw.toFixed(1)}/${_mx.toFixed(0)} wt)`;const grid=document.getElementById('bgrid');grid.innerHTML='';const cellCount=Math.max(20,BAG.length);for(let i=0;i<cellCount;i++){const div=document.createElement('div');if(i<BAG.length){const it=BAG[i];div.className='bi';div.innerHTML=`<span class="bo">${iconHTML(it)}</span><span class="bn">${it.name}</span>${it.qty>1?`<span class="bq">x${it.qty}</span>`:''}`;div.onclick=()=>useItem(i);}else{div.className='be';}grid.appendChild(div);}}
+// S2745 — what a swing deals before the buffs, the blow's row and armour: the weapon's range (both ends, rollRange) × its skill × Might, floored as meleeDamageChain does
+function atkShown(){const w=EQ.weapon,fa=!w&&perk('hand',100)?STONE_HAND_ATK:FISTS.atk,lo=w&&w.atk?w.atk[0]:fa[0],hi=w&&w.atk?w.atk[1]:fa[1],k=skillMult(weaponSkill(w))*(1+attrEff('might')*ATTR_DMG_PER_POINT);return [Math.floor(lo*k),Math.floor(hi*k)];}
+function renderInv(){[['head','🪖'],['chest','👕'],['hands','🧤'],['legs','👖'],['feet','👢'],['weapon','⚔️'],['offhand','🛡']].forEach(([k,def])=>{const el1=document.getElementById('qi-'+k),el2=document.getElementById('qn-'+k);if(!el1)return;const it=EQ[k];if(it)el1.innerHTML=iconHTML(it).replace('margin-right:6px','margin:0');else el1.textContent=def;el2.textContent=it?it.name:'—';});{const A=atkShown();document.getElementById('sa').textContent=`${A[0]}–${A[1]}`;} /* S2745 — the swing's range, not S941's gone level × 1.5 */const def2=Object.values(EQ).reduce((a,v)=>a+(v&&v.def?v.def:0),0);document.getElementById('sd').textContent=def2;document.getElementById('sl').textContent=level;document.getElementById('sk').textContent=kills;document.getElementById('sg').textContent=gold;const _tw=totalCarryWeight(),_mx=maxCarry();document.getElementById('si').textContent=_tw.toFixed(1);document.getElementById('bc').textContent=`(${_tw.toFixed(1)}/${_mx.toFixed(0)} wt)`;const grid=document.getElementById('bgrid');grid.innerHTML='';const cellCount=Math.max(20,BAG.length);for(let i=0;i<cellCount;i++){const div=document.createElement('div');if(i<BAG.length){const it=BAG[i];div.className='bi';div.innerHTML=`<span class="bo">${iconHTML(it)}</span><span class="bn">${it.name}</span>${it.qty>1?`<span class="bq">x${it.qty}</span>`:''}`;div.onclick=()=>useItem(i);}else{div.className='be';}grid.appendChild(div);}}
 function useItem(i){
   const it=BAG[i];if(!it)return;
   if(typeof ringForfeit==='function')ringForfeit(it); /* S1645 — drunk, eaten or read inside a ladder's rope: the bout is forfeit */
