@@ -1975,3 +1975,51 @@ at every level (one in Land, one in Other: 364 / 557 / 603 → 366 / 560 / 606),
 | Portclare square, noon | Low | 364 | 692k | 0 | 0 | 34 (0 full) | 65 | 191 | 74 | Mesh 31, mill 10, cave mouth 8, sea cave mouth 8, Group 6 | 330, 627k |
 | Portclare square, noon | Middle | 556 | 1.45 M | 157 | 6 | 47 (1 full) | 65 | 207 | 74 | Mesh 31, mill 10, cave mouth 8, sea cave mouth 8, Group 6 | 501, 1.32 M |
 | Portclare square, noon | High | 611 | 1.91 M | 192 | 6 | 56 (2 full) | 65 | 218 | 74 | Mesh 31, mill 10, cave mouth 8, sea cave mouth 8, Group 6 | 544, 1.64 M |
+
+### s2046 — 2026-11-27 13:02 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 677 | 1.43 M | 0 | 0 | 182 (3 full) | 160 | 250 | 85 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 495, 1.02 M |
+| Dunmore street, noon | Middle | 881 | 2.25 M | 147 | 6 | 221 (5 full) | 161 | 261 | 85 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 635, 1.74 M |
+| Dunmore street, noon | High | 945 | 2.76 M | 193 | 6 | 221 (6 full) | 161 | 279 | 85 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 697, 2.24 M |
+| Dunmore street, midnight | Low | 674 | 1.17 M | 0 | 0 | 122 (1 full) | 216 | 250 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 552, 1.02 M |
+| Dunmore street, midnight | Middle | 796 | 1.86 M | 104 | 6 | 122 (1 full) | 217 | 261 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 672, 1.71 M |
+| Dunmore street, midnight | High | 858 | 2.36 M | 148 | 6 | 122 (1 full) | 217 | 279 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 734, 2.22 M |
+
+### s2046 — 2026-11-27 13:12 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| the field west of Dunmore, noon | Low | 473 | 629k | 0 | 0 | 56 (0 full) | 142 | 232 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 417, 550k |
+| the field west of Dunmore, noon | Middle | 577 | 1.08 M | 80 | 6 | 56 (0 full) | 142 | 250 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 520, 1.00 M |
+| the field west of Dunmore, noon | High | 626 | 1.58 M | 119 | 6 | 56 (0 full) | 143 | 259 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 569, 1.49 M |
+| the field west of Dunmore, dawn | Low | 558 | 617k | 0 | 0 | 62 (0 full) | 221 | 232 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 496, 551k |
+| the field west of Dunmore, dawn | Middle | 723 | 1.14 M | 141 | 6 | 62 (0 full) | 221 | 250 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 655, 1.06 M |
+| the field west of Dunmore, dawn | High | 772 | 1.67 M | 180 | 6 | 62 (0 full) | 222 | 259 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 701, 1.59 M |
+
+### s2046 — 2026-11-27 13:20 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 436 | 888k | 0 | 0 | 99 (3 full) | 73 | 191 | 73 | Mesh 31, mill 10, cave mouth 8, sea cave mouth 8, Group 6 | 337, 708k |
+| Portclare square, noon | Middle | 616 | 1.69 M | 147 | 6 | 108 (3 full) | 75 | 207 | 73 | Mesh 31, mill 10, cave mouth 8, sea cave mouth 8, Group 6 | 500, 1.38 M |
+| Portclare square, noon | High | 670 | 2.18 M | 186 | 6 | 111 (3 full) | 76 | 218 | 73 | Mesh 31, mill 10, cave mouth 8, sea cave mouth 8, Group 6 | 553, 1.75 M |
+
+### s2046 — 2026-11-27 13:23 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 33 | 21k | 0 | 0 | 0 (0 full) | 0 | 0 | 33 |  | 33, 21k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 105 | 396k | 0 | 0 | 33 (0 full) | 0 | 0 | 71 |  | 71, 351k |
+
+### s2046 — 2026-11-27 13:37 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 659 | 1.33 M | 0 | 0 | 164 (1 full) | 160 | 250 | 85 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 495, 1.02 M |
+| Dunmore street, noon | Middle | 862 | 2.23 M | 147 | 6 | 202 (4 full) | 161 | 261 | 85 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 635, 1.74 M |
+| Dunmore street, noon | High | 942 | 2.75 M | 193 | 6 | 218 (6 full) | 161 | 279 | 85 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 697, 2.24 M |
+| Dunmore street, midnight | Low | 674 | 1.17 M | 0 | 0 | 122 (0 full) | 216 | 250 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 552, 1.02 M |
+| Dunmore street, midnight | Middle | 796 | 1.86 M | 104 | 6 | 122 (1 full) | 217 | 261 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 672, 1.71 M |
+| Dunmore street, midnight | High | 858 | 2.36 M | 148 | 6 | 122 (1 full) | 217 | 279 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 734, 2.22 M |
