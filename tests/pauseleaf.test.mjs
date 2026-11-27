@@ -8,7 +8,7 @@ await g.intoWorld(); await g.settle('dunmore');
 // the harness hides the opening quest popup by its style alone; closing it as the game does clears its flag too
 await page.evaluate(() => { _questPopupOpen = false; forceTime(16.4); document.getElementById('g').focus(); });
 await g.frames(3);
-// S2715 (QA): a frame here costs 3–5 s on software GL (Dunmore's street, any quality, any canvas size), and the suite waited ~170
+// S2716 (QA): a frame here costs 3–5 s on software GL (Dunmore's street, any quality, any canvas size), and the suite waited ~170
 // of them, 830 s on CI against run.mjs's 900 s cap. A wait for something to happen now ends when it has happened, frame by frame,
 // with the old count as its limit (`upto`); a wait that proves nothing happens (the stillness, a key that must open nothing) stays fixed.
 const upto = async (fn, n) => { for (let i = 0; i < n; i++) { await g.frames(1); if (await fn()) return true; } return false; };

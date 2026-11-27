@@ -3320,7 +3320,8 @@ function hbWarm(rig){const H=rig.hb;if(!H||typeof REN==='undefined'||!REN.compil
   if(HBODY.par){H.cold=true;try{if(mid)hbCompile(mid,false);hbCompile(H.root,true).then(()=>{H.cold=false;},()=>{H.cold=false;});}catch(e){H.cold=false;}return;}
   H.cold=H.full.slice();if(mid)H.cold.unshift(mid);}
 // the next cold body's materials, one at a time, until one of them makes a program (that is this frame's compile) or all are done
-function hbWarmStep(){for(const rig of HB_RIGS){const H=rig.hb;if(!H||!Array.isArray(H.cold))continue;
+/* S2715 — or the one asked for (hbTick's nearest cold body within HBODY.near) */
+function hbWarmStep(only){for(const rig of only?[only]:HB_RIGS){const H=rig.hb;if(!H||!Array.isArray(H.cold))continue;
     const n0=REN.info.programs.length;
     while(H.cold.length){const o=H.cold.pop();try{hbCompile(o,false);hbUpload(o);}catch(e){}if(REN.info.programs.length!==n0)break;}
     // Chrome links a program when it is first asked about it: ask now, so the wait is this frame's and not the first draw's
@@ -3358,7 +3359,7 @@ function hbRoomHold(now){const room=typeof isInterior==='function'&&isInterior()
   if(wait){if(el&&el.style.opacity!=='1')el.style.opacity='1';if(!HBODY.held){HBODY.held=true;HBODY.heldAt=now;}}
   else if(HBODY.held){HBODY.held=false;HBODY.heldMs=now-HBODY.heldAt;if(el)el.style.opacity='0';}
   return now<HBODY.rush;}
-function hbTick(now){let best=null,bd=HBODY.build;const rush=hbRoomHold(now);
+function hbTick(now){let best=null,bd=HBODY.build,warm=null,wd=1e9;const rush=hbRoomHold(now);
   const busy=(!rush&&now-HBODY.last<HBODY.gap)||(typeof JOBS!=='undefined'&&JOBS.length&&activeZoneId==='world'&&!(typeof isInterior==='function'&&isInterior())); /* S1591 — the world's queue holds a body back only where the world runs it (WORLD.tick: the open world, not a room); in a gate its town jobs wait, and every body there waited with them */
   for(const rig of HB_RIGS){const root=rig.root,top=rig.foe?root.parent:root; // a foe's body hangs in its enemy's group (tickPeople)
     if(!root.parent||!top.parent){hbDrop(rig);HB_RIGS.delete(rig);continue;}
@@ -3369,9 +3370,15 @@ function hbTick(now){let best=null,bd=HBODY.build;const rush=hbRoomHold(now);
     // failed. A foe keeps its driver until then: one coming at you is never invisible
     if(!rig.hb){if(!rig.hbFoe){const hide=!rig.hbFail&&d<HBODY.near;if(hide!==!!rig.hbHid){rig.hbHid=hide;rig.mesh.visible=!hide;}}
       if(!busy&&!HBODY.job&&!rig.hbFail&&d<bd){bd=d;best=rig;}continue;}
+    if(Array.isArray(rig.hb.cold)&&d<HBODY.near&&d<wd){wd=d;warm=rig;}
     const L=rig.hb.L,a=HBODY.near+(L>0?-1:1),b=HBODY.mid+(L>1?-1:1);hbLevel(rig,rig.hb.cold?2:d<a?0:d<b?1:2);
     if(!rig.hbFoe&&rig.hb.L===2)rig.mesh.visible=!(rig.hb.cold&&d<HBODY.near); /* S2661 — nor while its shaders warm (cold, drawn as the far level) */
     if(rig.hb.L<2){hbPose(rig);if(rig.hb.glow)hbGlow(rig);if(rig.hb.held.length)hbHold(rig);if(rig.ride&&!rig.hb.rideSkirt&&rig.w&&rig.w.ride>.99)hbRideSkirt(rig);}} /* S2300 — a rider's skirt seated on the saddle, once */
+  /* S2715 — a built body still warming its shaders is drawn as the driver (a foe) or not at all (a townsperson near), and the warm step
+     ran only on a frame with no build: where programs compile one a frame (no KHR_parallel_shader_compile; SwiftShader), a Bandit 3 m off
+     built first stood as the old doll for 590 s while the 16 townsfolk round the start's hamlet were built after it (the critic, 26 Nov).
+     The nearest cold body within HBODY.near now takes the frame before any build goes on */
+  if(warm){hbWarmStep(warm);return;}
   if(best&&best.hbFoe&&!best.hbG){try{best.hbG=hbFoeGenome(best);}catch(e){best.hbFail=true;console.warn('F4: no genome for the foe',best.hbFoe,e);best=null;}}
   if(best&&HB.makePersonIter){try{HBODY.job={rig:best,it:HB.makePersonIter(best.hbG,HB_LEAN),ms:0,steps:0};}catch(e){best.hbFail=true;console.warn('F4: makePerson failed for',best.g.hbKey,e);}best=null;}
   const step=!best&&HBODY.job&&!busy;if(step)best=hbBuildStep(now);
