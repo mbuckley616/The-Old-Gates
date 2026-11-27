@@ -567,5 +567,20 @@ check(`at 99 → 100: a Caor burn catches ${JSON.stringify(q100.lo.caught)} → 
   q100.lo.caught.length === 0 && JSON.stringify(q100.hi.caught) === '[1]' && q100.hi.time === 8 &&
   q100.lo.finSlow === q100.lo.fin && q100.hi.finSlow === Math.round(q100.hi.fin * 1.5) && q100.hi.finHeld === q100.hi.finSlow &&
   q100.skel && !q100.lo.undead && q100.hi.undead === 1.5 && q100.hi.living === false, q100);
+// S2747 — the Magic page says what a rider does to a laid thing in the sheet's words (the riders' table, "On a laid thing"), not the
+// hit's verb: Tonn laid with Sioc said "and it slows" where the wave stands as a bridge (the concept artist, 27 Nov)
+const pg = await page.evaluate(() => {
+  knownWords = { tonn: 2, sioc: 2, caor: 2, cloch_ghear: 2, sideen: 2 }; for (const f of ['laid', 'touched', 'held']) if (!formsGranted.includes(f)) formsGranted.push(f);
+  const say = (w, f, r) => { MAGIC_PAGE.word = w; MAGIC_PAGE.form = f; MAGIC_PAGE.rider = r; openHub('magic');
+    const t = (document.querySelector('#hpanel-magic .mp-say') || {}).textContent || '';
+    const chip = [...document.querySelectorAll('#hpanel-magic .mp-chip')].map(c => c.textContent).join(' | '); closeHub(); return { t, chip }; };
+  return { bridge: say('tonn', 'laid', 'sioc'), hot: say('cloch_ghear', 'laid', 'caor'), none: say('cloch_ghear', 'laid', 'sioc'),
+    thrown: say('cloch_ghear', 'laid', 'sideen'), sent: say('caor', 'sent', 'sioc') };
+});
+console.log(JSON.stringify(pg));
+check('the page reads a laid rider in the sheet\'s words: Tonn and Sioc a bridge 6.2 × 1.6 m for 20 s, a hot Cloch pillar, a pillar that throws, Sioc on a pillar nothing; a sent Caor with Sioc still "and it slows"',
+  /it freezes: the wave stands as a bridge 6\.2 × 1\.6 m, 20 s/.test(pg.bridge.t) && !/slows/.test(pg.bridge.t) && /Sioc freezes/.test(pg.bridge.chip) &&
+  /it is hot: 3 a second to a foe touching it/.test(pg.hot.t) && /Sioc does nothing to it laid/.test(pg.none.t) && /throws you as it rises/.test(pg.thrown.t) &&
+  /and it slows/.test(pg.sent.t) && /Sioc slows/.test(pg.sent.chip), pg);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

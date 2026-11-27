@@ -1096,6 +1096,18 @@ const RIDERS={
   solas_gheal:{verb:'lights',hit:{glow:10},              laid:{light:8}},
   leigheas:   {verb:'mends', hit:{lifesteal:.25},        laid:{hps:2}},
 };
+// S2747 — what a rider does to a laid thing, in the sheet's words (magic-build.md, the riders' table, "On a laid thing"), for the page:
+// its verb on the chip, and its line, or '' where the rider does nothing to that word laid (Sioc's bridge is Tonn's alone, Séideán's
+// throw a Cloch pillar's; laidShape, laidRiderStart). The page said the hit's verb on a laid spell: "Tonn laid … and it slows".
+const RIDER_LAID={caor:'heats',sioc:'freezes',sideen:'throws',freamh:'roots',solas_gheal:'lights',leigheas:'mends'};
+function riderLaidSay(word,rider){const R=RIDERS[rider]&&RIDERS[rider].laid;if(!R)return '';
+  if(rider==='sioc'){const B=R.bridge;return word==='tonn'?`it freezes: the wave stands as a bridge ${B.len} × ${B.wide} m, ${B.dur} s`:'';}
+  if(rider==='sideen')return word==='cloch_ghear'?'it throws: the pillar throws you as it rises':'';
+  if(R.hot)return `it is hot: ${R.hot} a second to a foe touching it`;
+  if(R.root)return `the first foe across it is rooted ${R.root} s`;
+  if(R.light)return `it lights ${R.light} m around for its time`;
+  if(R.hps)return `you heal ${R.hps} a second while you stand in it`;
+  return '';}
 const WORD_JOIN_MULT=1.25,WORD_JOIN_TIER=2,WORD_MIXED_WILD=.10,WORD_MIXED_SKILL=25;
 function wordLive(id,form){const w=WORD_BY[id];return !!(w&&w.forms[form]);}
 // may `rider` join `id` in `form`? Both words at Comprehension, the rider one of the six and not the word itself, and never on Worn
