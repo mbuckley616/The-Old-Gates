@@ -138,11 +138,12 @@ const bed = await page.evaluate(async () => { const by = {}; const [ci, cj] = ce
   let drones = 0; const real = window._musicDungeon; window._musicDungeon = function () { drones++; return real.apply(this, arguments); };
   const T = def(by.tine); px = T.x; pz = T.z + 3; goToDungeon(T); for (let i = 0; i < 30; i++) await new Promise(r => requestAnimationFrame(r));
   _amb(); const I = AMB.inside; const o = { gen: !!(window._lastGen && window._lastGen.gate), cond: window._lastGen && window._lastGen.cond, tine: { bed: I.bed, level: I.level, built: !!(AMB.v.bed && AMB.v.bed.school === 'tine'), drones, music: _musicNodes.length, nodes: AMB.nodes } };
-  I.evNext = 0; const e0 = I.events; _amb(); o.tine.tick = I.events - e0;
-  const W = []; for (const c of ['steady', 'failing', 'catastrophic']) { window._lastGen.cond = c; _amb(); const w0 = I.whispers, n0 = I.next - AX.currentTime; I.next = 0; _amb(); W.push([c, +n0.toFixed(1), I.whispers - w0]); }
+  _ambLive.length = 0; I.evNext = 0; const e0 = I.events; _amb(); o.tine.tick = I.events - e0;
+  /* each trial on an empty budget (a stroke or whisper still sounding holds 4–6 of the 40) and a fresh draw of the interval */
+  const W = []; for (const c of ['steady', 'failing', 'catastrophic']) { _ambLive.length = 0; I.cond = null; window._lastGen.cond = c; _amb(); const w0 = I.whispers, n0 = I.next - AX.currentTime; I.next = 0; _amb(); W.push([c, +n0.toFixed(1), I.whispers - w0]); }
   o.whispers = W; window._lastGen.cond = o.cond;
   currentPortal = def(by.uisce); devMusicHook.zone = ''; startMusic('dungeon', currentPortal.theme); _amb(); o.uisce = { bed: I.bed, level: I.level, built: !!(AMB.v.bed && AMB.v.bed.school === 'uisce'), drones, nodes: AMB.nodes };
-  I.evNext = 0; const e1 = I.events; _amb(); o.uisce.drip = I.events - e1;
+  _ambLive.length = 0; I.evNext = 0; const e1 = I.events; _amb(); o.uisce.drip = I.events - e1;
   currentPortal.lair = true; devMusicHook.zone = ''; startMusic('dungeon', currentPortal.theme); for (let k = 0; k < 10; k++) _amb(); o.lair = { bed: I.bed, drones, built: !!AMB.v.bed, nodes: AMB.nodes };
   window._musicDungeon = real; return o; });
 console.log('bed', JSON.stringify(bed));
