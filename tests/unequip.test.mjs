@@ -63,6 +63,11 @@ const snd = await page.evaluate(() => { const out = { err: null }; try { initAud
   out.drink = { potion: hear(() => sndConsume('potion')), water: hear(() => sndConsume('drink')), meal: hear(() => sndConsume('food')), herb: hear(() => sndConsume('herb')) };
   out.voices = { letter: itemVoice({ name: 'Old Letter', type: 'misc' }), ingot: itemVoice({ name: 'Iron Ingot', ingot: true }), arrows: itemVoice({ type: 'ammo', name: 'Arrows' }),
     buckler: itemVoice(A('offhand', 1)), shield: itemVoice(A('offhand', 4)), bow: itemVoice(W('bow')) };
+  // S2717 — the counter: a buy is coins then the piece's take, a sale the piece's put then coins, each by what changes hands
+  { const rs = renderShop, b1 = BAG.length, g1 = gold; renderShop = () => {}; gold = 99999;
+    out.shop = { sword: hear(() => buyItem(W('sword'))), potion: hear(() => buyItem({ name: 'Health Potion', type: 'potion', heal: 20, ico: '🧪', weight: .3, price: 20 })) };
+    BAG.push({ name: 'Old Letter', type: 'misc', weight: .01, qty: 1 }); out.shop.sell = hear(() => sellItem(BAG.length - 1, 3));
+    out.shop.sold = !BAG.some(b => b.name === 'Old Letter'); renderShop = rs; BAG.splice(b1); gold = g1; }
   if (AX) { AX.createBufferSource = cs; AX.createOscillator = co; } return out; });
 console.log('itemsnd', JSON.stringify(snd));
 const E = snd.eq || {};
@@ -75,5 +80,9 @@ check(`a take from a container is one sound (gold ${snd.one.v}); Take all is one
 check(`drinking, eating and a herb each sound (${Object.entries(snd.drink).map(([k, o]) => k + ' ' + o.nodes).join(', ')} nodes); a letter is paper, an ingot stone, arrows, a wooden buckler and a steel shield, a bow`,
   Object.values(snd.drink).every(o => o.calls === 1 && o.nodes >= 3) && snd.voices.letter === 'paper' && snd.voices.ingot === 'stone' && snd.voices.arrows === 'arrows'
   && snd.voices.buckler === 'shieldwood' && snd.voices.shield === 'shieldmetal' && snd.voices.bow === 'bow', snd);
+const S = snd.shop || {};
+check(`the counter is heard by what changes hands: buying a sword ${S.sword && S.sword.v}, a potion ${S.potion && S.potion.v}; selling a letter ${S.sell && S.sell.v}`,
+  !snd.err && S.sword.calls === 1 && S.sword.v === 'buy/blade' && S.potion.calls === 1 && S.potion.v === 'buy/potion' && S.sell.calls === 1 && S.sell.v === 'sell/paper' && S.sold
+  && [S.sword, S.potion, S.sell].every(o => o.nodes >= 5), snd);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

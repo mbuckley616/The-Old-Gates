@@ -499,11 +499,16 @@ function itemTouch(c,at,j){j=j||1;
   else if(c==='stone'){_sfxSweepAt(at,.05,700*j,500,.09,2,.1);_sfxToneAt(at,190*j,130,.07,.08,'triangle');}
   else if(c==='wood'){_sfxToneAt(at,520*j,430*j,.06,.06,'triangle');_sfxSweepAt(at,.03,1500,1200,.06,3,.1);}
   else{_sfxSweepAt(at,.07,500*j,320*j,.07,1.4,.2);_sfxToneAt(at,120*j,90,.06,.05);}}
-function sndMove(it,dir){const v=itemVoice(it);ITEM_SND.n++;ITEM_SND.last={kind:'move',dir:dir||'take',voice:v};if(typeof AX==='undefined'||!AX||volLevel===0)return v;try{
-  const j=.92+Math.random()*.16,take=dir!=='put';
-  _sfxSweepAt(0,.13,take?900*j:2400*j,take?2400*j:900*j,.07,1.1,take?.35:.6);
-  itemTouch(itemTouchClass(v),take?.1:.12,j);
+function sndMove(it,dir,at){const v=itemVoice(it);ITEM_SND.n++;ITEM_SND.last={kind:'move',dir:dir||'take',voice:v};if(typeof AX==='undefined'||!AX||volLevel===0)return v;try{
+  const j=.92+Math.random()*.16,take=dir!=='put',a=at||0;
+  _sfxSweepAt(a,.13,take?900*j:2400*j,take?2400*j:900*j,.07,1.1,take?.35:.6);
+  itemTouch(itemTouchClass(v),a+(take?.1:.12),j);
 }catch(e){}return v;}
+/* S2717 — the counter, by what changes hands (S2710's owed item): a buy is your coins counted onto the counter, then the piece taken up
+   by its own touch (a blade's metal, a potion's glass, a book's paper); a sale is the piece put down by its touch, then the keeper's coins
+   counted into your hand. Both on the effects bus with the other item sounds; ITEM_SND.last says {kind:'buy'|'sell',voice}. */
+function sndTrade(it,dir){const sell=dir==='sell',v=sndMove(it,sell?'put':'take',sell?0:.16);ITEM_SND.last={kind:sell?'sell':'buy',voice:v};
+  if(typeof AX==='undefined'||!AX||volLevel===0)return v;try{const j=.94+Math.random()*.12;itemTouch('coin',sell?.24:0,j);if(sell)itemTouch('coin',.36,j*1.06);}catch(e){}return v;}
 function sndEquipItem(it){const v=itemVoice(it);ITEM_SND.n++;ITEM_SND.last={kind:'equip',voice:v};if(typeof AX==='undefined'||!AX||volLevel===0)return v;try{
   const j=.94+Math.random()*.12,buckle=at=>{_sfxToneAt(at,1900*j,1700,.04,.03,'square');_sfxSweepAt(at,.04,3000,2600,.04,3,.1);};
   if(v==='blade'||v==='haft'||(v==='wood'&&it&&it.slot==='weapon'))_drawPlay(v,it);
