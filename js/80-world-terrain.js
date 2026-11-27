@@ -664,7 +664,12 @@
       // Trees: density × clumping noise (clearings and thickets).
       const dens=regionScalar(x,z,'density');
       const clump=fbm(x,z,60,SEED+21,2);
-      const p=dens*(.5+clump*1.3)*sstep(.55,.8,ny)*(1-sstep(30,44,h));
+      let p=dens*(.5+clump*1.3)*sstep(.55,.8,ny)*(1-sstep(30,44,h));
+      /* S2720 — the Mark's moor stands in dark stands of pine (P10b's Snowy Peaks), not one lone tree in a hundred metres: in a cold cell a broad
+         field (stands about 150–300 m across) gathers its trees, so where it is high the lattice point takes a tree about one time in three, whatever the region's
+         density, and the moor between is open. Its trees are the dark conifers (below), and the slope and the height still thin it */
+      const stand=cold?sstep(.53,.61,fbm(x,z,260,SEED+37,2))*.3*sstep(.6,.8,ny)*(1-sstep(30,48,h)):0;
+      if(stand>p)p=stand;
       if(roll<p){
         if(grazeAt(x,z)&&hash01(gx,gz,15)>=.08)continue; /* S2088 — a pasture keeps one tree in twelve, a lone thorn or ash in the grass */
         // Species by dominant biome, with a broadleaf minority in conifer land and vice versa.
@@ -681,6 +686,7 @@
            the plains or the moor's mix put there (an oak, a broadleaf, a willow, an autumn kind) is a spruce, a snowpine or a birch, by its own
            die. Keyed by the cell's climate (getCell's nation), never by what has loaded. The Mark upland's view had oaks against the fell. */
         if(cold&&COLD_SWAP.has(sp)){const d=hash01(gx,gz,16);sp=d<.5?'spruce':d<.8?'snowpine':'birch';}
+        if(stand>.2&&roll<stand&&sp!=='dead')sp='snowpine'; /* S2720 — a stand is snow-pine alone, no birch, scrub or spruce: the spruce's leaf cards read a bright summer green against the panel's dark spires */
         const sc_=hash01(gx,gz,5);const gi=.84+hash01(gx,gz,12)*.34;(trees[sp]=trees[sp]||[]).push({id:cx+','+cz+':'+(iz*100+ix),x,z,h,s:sc_<.06?1.7+sc_*3:.8+sc_*.7,r:hash01(gx,gz,6)*Math.PI*2,t:hash01(gx,gz,7),g:gi,sy:1+(1-gi)*.7,au:base==='autumn',cold}); // .8–1.5, rare giants; the girth (S192) a squat tree wider, a tall one slimmer
         _treePts.push(x,z);
         continue;

@@ -26,7 +26,7 @@ function ledgerLine(t,c,ms=LEDGER_MS){if(!LEDGER)return;t=String(t==null?'':t);i
   const live=[...LEDGER.children].filter(e=>!e.classList.contains('gone'));
   for(let i=0;i<live.length-LEDGER_N;i++){clearTimeout(live[i]._x);live[i].remove();}
   ledgerShade();}
-// S2721 — the five moments a player waits for (a level ready, a quest given or done, a place found, a skill rising, a word held) are
+// S2723 — the five moments a player waits for (a level ready, a quest given or done, a place found, a skill rising, a word held) are
 // a card at the top centre, not a slip (Michael's B on #2047; the concept artist's notify.js). showMsg(t, c, card) with card
 // {kind, title, line} writes #msg as ever and queues the card in place of the slip; one card at a time, NOTE_MS each, a 0.35 s fade.
 // Cosmetic: the page's clock.
@@ -1047,7 +1047,7 @@ function completeQuest(id){
   const _finalGold = questGold(_baseGold);
   gold += _finalGold;
   xp+=(q.rewards.xp||0);chkLvl();
-  questMarks(q.questline==='sigil_lore'?null:(q.questline||'main')==='main'?'main':'quest'); /* S2720 — #2059 D: a main-quest step 3 marks; a sigil's tier is attained, not handed in */
+  questMarks(q.questline==='sigil_lore'?null:(q.questline||'main')==='main'?'main':'quest'); /* S2722 — #2059 D: a main-quest step 3 marks; a sigil's tier is attained, not handed in */
   (q.rewards.items||[]).forEach(it=>bagAdd({...it,qty:1}));
   // v61ad: consume quest items given at acceptance time. The item gets taken
   // in-fiction during the turn-in dialog (e.g. Aldwyn takes Edna's rubbing to

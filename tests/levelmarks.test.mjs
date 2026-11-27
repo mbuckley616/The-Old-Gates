@@ -34,7 +34,7 @@ const r = await page.evaluate(() => {
   out.confirmed = confirmLevelUp();
   out.gain = { fort: ATTRS.fortitude - a0.fortitude, might: ATTRS.might - a0.might, fin: ATTRS.finesse - a0.finesse, other: Object.keys(ATTRS).filter(k => !['fortitude', 'might', 'finesse'].includes(k) && ATTRS[k] !== a0[k]),
     hp: maxHP - hp0, st: maxStamina - st0, ups: Object.keys(levelUps).length };
-  // non-major skills: a quarter each, so twenty-four make the next level (6 needed at level 2, S2720)
+  // non-major skills: a quarter each, so twenty-four make the next level (6 needed at level 2, S2722)
   levelMarks = 0; levelUps = {};
   for (let i = 0; i < 20; i++) up(['tine', 'alchemy', 'mining', 'joinery'][i % 4]);
   out.forty = { marks: levelMarks, need: marksNeeded(), ready: levelReady() };
@@ -86,7 +86,7 @@ const qx = await page.evaluate(() => { const id = Object.keys(QS).find(k => { co
   if (!id) return { none: true }; const seen = [], _l = showMsgLong; showMsgLong = function (tx) { seen.push(String(tx)); return _l.apply(this, arguments); };
   try { QS[id].state = 'reward'; completeQuest(id); } finally { showMsgLong = _l; } return { id, xp: getQuest(id).rewards.xp, seen }; });
 check(`a quest paying ${qx.xp} xp and no gold ends on *complete!* with no *XP* in the toast`, !qx.none && qx.seen.some(t => /complete!$/.test(t)) && !qx.seen.some(t => /XP/.test(t)), qx);
-// S2720 — #2059 D: a quest handed in pays marks of its own, by what it is
+// S2722 — #2059 D: a quest handed in pays marks of its own, by what it is
 const qm = await page.evaluate(() => {
   const at = (f) => { levelMarks = 0; f(); return levelMarks; };
   const out = {};
@@ -101,7 +101,7 @@ const qm = await page.evaluate(() => {
   levelMarks = 0; return out; });
 check(`a main-quest step pays ${qm.main} marks, a quest ${qm.errand} (a faction's service ${qm.service}), a lord's job ${qm.job} (a war's ${qm.war}), a sigil's tier ${qm.sigil}`,
   qm.main === 3 && qm.errand === 2 && qm.service === 2 && qm.job === 1 && qm.war === 1 && qm.sigil === 0 && qm.skill === 1, qm);
-// S2721 — Michael's B on #2047: the five moments are a card at the top centre, one at a time; the ledger keeps the small lines
+// S2723 — Michael's B on #2047: the five moments are a card at the top centre, one at a time; the ledger keeps the small lines
 const nc = await page.evaluate(() => {
   NOTE_Q.length = 0; _noteOn = null; const L = document.getElementById('ledger'); L.innerHTML = ''; const el = document.getElementById('note-card');
   const s = SKILLS.blade; s.p = skillCost(s.lv) - 1; skillUse('blade', 1, 'nc'); const lv = s.lv;

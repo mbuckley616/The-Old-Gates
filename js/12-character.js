@@ -277,7 +277,7 @@ function skillUse(id,w,target){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)re
 // ── THE LEVEL ON MARKS (Session 952: the build sheet's second session; Michael's B on #342) ──
 // Every skill-up counts toward the level: a major's or a minor's is a mark, any other skill's a quarter, so levelling by
 // alchemy is never wasted. A level takes ten marks plus half the level you stand at (10.5 at level 1, 15 at 10, 20 at 20).
-// Kills no longer pay the level (their xp is counted and read by nothing that levels). Since S2720 (Michael's D on #2059) the
+// Kills no longer pay the level (their xp is counted and read by nothing that levels). Since S2722 (Michael's D on #2059) the
 // first levels are cheaper (5, 6, 7, 8 and 9 marks for levels 2 to 6, then 10 + half as before) and a quest handed in pays
 // marks of its own: 2, a main-quest step 3, a lord's job or a guild's task 1 (`questMarks`). At a bed the level is
 // taken and you place 12 points, at most 5 in one attribute, each attribute to 60 (Oblivion Remastered's two fixes); the
@@ -285,7 +285,7 @@ function skillUse(id,w,target){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)re
 const LEVEL_PTS=12,LEVEL_ROW_MAX=5,ATTR_CAP=60;
 let levelMarks=0,levelUps={},luPts={};
 function marksNeeded(L){const l=L==null?level:L;return l<6?4+l:10+l/2;}
-/* S2720 — a quest's own marks toward the level, by what it is: 'main' (a main-quest step), 'quest' (any other quest handed in), 'job' (a lord's job or a guild's task); anything else pays none */
+/* S2722 — a quest's own marks toward the level, by what it is: 'main' (a main-quest step), 'quest' (any other quest handed in), 'job' (a lord's job or a guild's task); anything else pays none */
 const QUEST_MARKS={main:3,quest:2,job:1};
 function questMarks(kind){const n=QUEST_MARKS[kind]||0;if(!n)return 0;levelMarks+=n;if(typeof chkLvl==='function')chkLvl();return n;}
 function levelReady(){return levelMarks>=marksNeeded()-1e-9;}
