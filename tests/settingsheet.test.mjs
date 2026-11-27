@@ -33,7 +33,8 @@ const a = await sheet();
 console.log(JSON.stringify(a.rows));
 const hasRule = await page.evaluate(() => typeof setChallenge === 'function');
 // Session 822: a tenth, the renderer (card F1), after the mouse's two
-const nine = ['Everything', 'Music', 'Blows and steps', 'Spoken lines', 'Brightness', 'Field of view', 'Full screen', 'Look speed', 'Up and down', 'Renderer'];
+// Session 2727: Ambience after Blows and steps (#2071 B), so every ↓ past it is one more
+const nine = ['Everything', 'Music', 'Blows and steps', 'Ambience', 'Spoken lines', 'Brightness', 'Field of view', 'Full screen', 'Look speed', 'Up and down', 'Renderer'];
 // Session 1181 (card F3): on the new look, Quality follows the renderer (the land's three levels); the old look has no land to set
 if (await page.evaluate(() => window.OG_LOOK === 'new')) nine.push('Quality');
 check('Settings on the leaf opens the sheet with its ten rows (and the challenge only where the rule is built)', a.view === 'settings' && JSON.stringify(a.rows) === JSON.stringify(hasRule ? [...nine, 'How hard the world strikes'] : nine), { hasRule, rows: a.rows });
@@ -44,8 +45,15 @@ await key('ArrowLeft', 4); await key('ArrowDown'); await key('ArrowLeft', 10);
 const s = await page.evaluate(() => ({ S: { ...SETTINGS }, music: volKind('music'), fx: volKind('effects'), gain: AX ? +musicGain.gain.value.toFixed(3) : null, stored: JSON.parse(localStorage.getItem('og.settings')) }));
 check('← on Everything and Music: 80 and 50, music at .4 of the button\'s level, effects at .8, kept in this browser', s.S.master === 80 && s.S.music === 50 && Math.abs(s.music - .4) < 1e-9 && Math.abs(s.fx - .8) < 1e-9 && s.stored.master === 80 && s.stored.music === 50, s);
 
+// the place's sound (Session 2727): ← on Ambience is 95, its bus at .95 of its level at 100 (the effects' × 0.6); → puts it back.
+// One press each way: every press waits a frame, seconds on software GL; placesound measures 0 and 50.
+await key('ArrowDown', 2); await key('ArrowLeft');
+const am = await page.evaluate(() => ({ v: SETTINGS.ambience, at: VOL_SFX[volLevel] * .6 * volKind('ambience'), full: VOL_SFX[volLevel] * .6 * SETTINGS.master / 100, stored: JSON.parse(localStorage.getItem('og.settings')).ambience }));
+await key('ArrowRight');
+const am2 = await page.evaluate(() => SETTINGS.ambience);
+check('← on Ambience: 95, the bus at .95 of its level, kept in this browser; → puts it back to 100', am.v === 95 && Math.abs(am.at - am.full * .95) < 1e-9 && am.stored === 95 && am2 === 100, { am, am2 });
 // the light: brightness +10, field of view 90
-await key('ArrowDown', 3); await key('ArrowRight', 2);
+await key('ArrowDown', 2); await key('ArrowRight', 2);
 await key('ArrowDown'); await key('ArrowRight', 3);
 const l = await page.evaluate(() => ({ S: { ...SETTINGS }, filter: CV.style.filter }));
 check('brightness +10 is a 1.10 brightness on the canvas; the field of view 90', l.S.bright === 10 && /brightness\(1\.1/.test(l.filter) && l.S.fov === 90, l);
@@ -64,7 +72,7 @@ check('in play at rest the camera\'s field of view is 90', Math.abs(fov - 90) < 
 
 // the mouse: look 2×, inverted; a locked pointer's 100-pixel move turns you twice as far, and up is down
 await focusG(); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
-await key('ArrowDown', 7); await key('ArrowRight', 20); await key('ArrowDown'); await key('KeyE');
+await key('ArrowDown', 8); await key('ArrowRight', 20); await key('ArrowDown'); await key('KeyE');
 const m = await page.evaluate(() => { const S = { ...SETTINGS }; closePauseLeaf(false);
   Object.defineProperty(document, 'pointerLockElement', { get: () => CV, configurable: true }); LOCK.t = null;
   const y0 = yaw, p0 = pitch = 0; window.dispatchEvent(new MouseEvent('mousemove', { movementX: 100, movementY: 50 }));
@@ -74,7 +82,7 @@ check('look speed 2× and inverted: 100 pixels across turn you .8 (was .4), 50 d
 // the renderer (Session 822; the new look the default since 18 Oct 2026): ← asks for the old look, r128, kept in this browser as
 // og.renderer='old'; in play it waits for the next load (the page does not reload under you), and the row says so; → puts it back
 await focusG(); await key('Escape'); await key('ArrowDown', 3); await key('KeyE');
-await key('ArrowDown', 9); await key('ArrowLeft');
+await key('ArrowDown', 10); await key('ArrowLeft');
 const rd = await page.evaluate(() => ({ stored: localStorage.getItem('og.renderer'), look: OG_LOOK, rev: THREE.REVISION, view: pauseLeaf.view, text: document.querySelector('#pause-paper').textContent }));
 await key('ArrowRight');
 const rd2 = await page.evaluate(() => ({ stored: localStorage.getItem('og.renderer') }));
@@ -99,7 +107,7 @@ const r = await page.evaluate(() => ({ S: { ...SETTINGS }, filter: CV.style.filt
 check('after a reload the settings are still yours (80, 50, +10, 90°, 2×, inverted), the brightness on at the title', r.S.master === 80 && r.S.music === 50 && r.S.bright === 10 && r.S.fov === 90 && r.S.look === 2 && r.S.invert === true && /brightness\(1\.1/.test(r.filter), r);
 // As they were
 const w = await page.evaluate(() => { settingsBack(); return { S: { ...SETTINGS }, filter: CV.style.filter, stored: JSON.parse(localStorage.getItem('og.settings')) }; });
-check('As they were puts every setting back as it was, and keeps that', w.S.master === 100 && w.S.music === 100 && w.S.bright === 0 && w.S.fov === 75 && w.S.look === 1 && !w.S.invert && w.filter === '' && w.stored.look === 1, w);
+check('As they were puts every setting back as it was, and keeps that', w.S.master === 100 && w.S.music === 100 && w.S.ambience === 100 && w.S.bright === 0 && w.S.fov === 75 && w.S.look === 1 && !w.S.invert && w.filter === '' && w.stored.look === 1, w);
 
 console.log(`  settingsheet: ${Math.round((Date.now() - T0) / 1000)} s from the boot's end, quality at the start 0`);
 check('no page errors', g.errs.length === 0, g.errs);
