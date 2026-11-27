@@ -231,16 +231,22 @@ const cloaks = await page.evaluate(() => { const v = new THREE.Vector3();
       if (th < col(1, p.y).th || th > col(K - 2, p.y).th) continue; let k = 1, A = col(1, p.y), B = col(2, p.y); while (k < K - 3 && B.th < th) { k++; A = B; B = col(k + 1, p.y); }
       const t = Math.max(0, Math.min(1, (th - A.th) / Math.max(1e-6, B.th - A.th))), cr = A.r + (B.r - A.r) * t; tested++; if (r - cr > worst) { worst = r - cr; at0 = rig._armB[ai] + '@' + p.y.toFixed(2); } if (r > cr + .003) out++; }
     return { tested, out, worst, at: at0 }; };
-  const rigs = [...HB_RIGS].filter(r => r.hb && r.hb.L < 2 && r.root.parent === WORLD.scene && !r.sleep && r.hb.full.find(m => m.name === 'cloak')).slice(0, 4);
-  return rigs.map(rig => { const root = rig.root, fy = root.rotation.y, hold = rig.hb.hold, o = { key: rig.g.hbKey, held: hold ? hold.size : 0, rest: test(rig), tested: 0, out: 0, worst: 0, swing: 0 };
-    const wr = rig.hb.P.byName['wrist.R'], free = hold && !hold.has(rig.hb.map.findIndex(([j]) => j === 'wrR')), seen = [];
+  const near = [...HB_RIGS].filter(r => r.hb && r.hb.L < 2 && r.root.parent === WORLD.scene && !r.sleep && r.hb.full.find(m => m.name === 'cloak'));
+  const rigs = [...near.filter(r => !r.hbG.dress.cloakBack).slice(0, 4), ...near.filter(r => r.hbG.dress.cloakBack).slice(0, 3)];
+  return rigs.map(rig => { const root = rig.root, fy = root.rotation.y, hold = rig.hb.hold, o = { key: rig.g.hbKey, back: !!rig.hbG.dress.cloakBack, held: hold ? hold.size : 0, rest: test(rig), tested: 0, out: 0, worst: 0, swing: 0 };
+    const wr = rig.hb.P.byName['wrist.R'], free = rig.hbG.dress.cloakBack ? !hold || !hold.has(rig.hb.map.findIndex(([j]) => j === 'wrR')) : hold && !hold.has(rig.hb.map.findIndex(([j]) => j === 'wrR')), seen = [];
     for (let i = 1; i <= 60; i++) { root.position.x += Math.sin(fy) * .012; root.position.z += Math.cos(fy) * .012; tickPeople(1 / 60, 6e5 + i * 16.7);
       if (i > 15 && i % 3 === 0) { const c = test(rig); o.tested += c.tested; o.out += c.out; if (c.worst > o.worst) { o.worst = c.worst; o.at = c.at + ' tick ' + i + ' walk ' + rig.w.walk.toFixed(2); } if (free) seen.push(wr.getWorldPosition(new THREE.Vector3()).applyMatrix4(root.matrixWorld.clone().invert())); } }
     if (free) o.swing = +Math.max(...seen.map(a => Math.max(...seen.map(b => Math.abs(a.z - b.z))))).toFixed(3); o.free = !!free; o.worst = +o.worst.toFixed(3); o.walk = +rig.w.walk.toFixed(2); return o; }); });
 console.log('  cloaks:', JSON.stringify(cloaks));
-check(`walking, no arm comes out through a cloak (${cloaks.map(c => c.out + ' of ' + c.tested).join(', ')} hand and forearm points under it out by 3 mm or more, at most ${Math.max(...cloaks.map(c => c.worst)) * 1000} mm, ${cloaks.length} cloaked walkers)`,
-  cloaks.length >= 2 && cloaks.every(c => c.held > 0 && c.walk > .9 && c.rest.out === 0 && c.tested > 1000 && c.out === 0 && c.worst < .006), cloaks);
-const freeArm = cloaks.filter(c => c.free);
+const shut = cloaks.filter(c => !c.back), worn = cloaks.filter(c => c.back);
+check(`walking, no arm comes out through a cloak (${shut.map(c => c.out + ' of ' + c.tested).join(', ')} hand and forearm points under it out by 3 mm or more, at most ${Math.max(...shut.map(c => c.worst)) * 1000} mm, ${shut.length} cloaked walkers)`,
+  shut.length >= 2 && shut.every(c => c.held > 0 && c.walk > .9 && c.rest.out === 0 && c.tested > 1000 && c.out === 0 && c.worst < .006), shut);
+// S2724 (Michael's C on #2082) — a long cloak worn back over the shoulders (no hood up, no burnous, not in the snow) leaves both arms free:
+// nothing holds them, the right wrist swings in the walk, and no hand or forearm point the sheet covers comes out through it
+check(`walking, a long cloak worn back holds no arm, the arms swing (the wrist ${worn.map(c => c.swing).join(', ')} m), and none comes out through it (${worn.map(c => c.out + ' of ' + c.tested).join(', ')} points out by 3 mm, at most ${worn.length ? Math.max(...worn.map(c => c.worst)) * 1000 : '-'} mm)`,
+  worn.length >= 1 && worn.every(c => c.held === 0 && c.free && c.swing > .05 && c.walk > .9 && c.rest.out === 0 && c.out === 0 && c.worst < .006), worn);
+const freeArm = shut.filter(c => c.free);
 if (freeArm.length) check(`the right arm a thrown-back cloak leaves out still swings (the wrist ${freeArm.map(c => c.swing).join(', ')} m fore and aft)`, freeArm.every(c => c.swing > .05), freeArm);
 // S1987 — the legs under a long cloak: the cloak rode the pelvis whole, so the stride carried a skirt, the trousers or the boots out through
 // its sides and front (S1980's Sinéad, her tunic through at the hip). Its skirts are weighted in part to the thighs and shins (hbCloakLegs).

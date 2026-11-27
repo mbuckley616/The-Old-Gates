@@ -2210,7 +2210,17 @@ function hbGenome(g){let G=HB_GENOMES.get(g.hbKey);if(G&&(G.guardTier||0)===(g.g
   if(!cast&&!g.child){const O=hbOfficeDress(g,G);if(O)G.dress=O;} /* S2242 — the lord's forester and the Church's inquisitor */
   if(!cast&&g.guildHead)G.dress=hbGuildDress(g,G); /* S2329 (#1658 B) — a guild's head in its livery over their people's own */
   if(!cast&&!g.child&&!g.guildHead&&!g.power){const T=hbTradeDress(g,G);if(T)G.dress=T;} /* S2503 — the smith's leather apron and hammer, the innkeeper's linen apron */
+  G=hbCloakWorn(G,hbColdLand(g)); /* S2724 (#2082 C) — a long cloak worn back over the shoulders, unless drawn round for a reason */
   HB_GENOMES.set(g.hbKey,G);return G;}
+/* S2724 (Michael's C on #2082, 26 Nov: "A, closed only for hood up, burnous and snow"). A townsperson's long cloak was hung closed at
+   the throat (people.js: 0.38 rad either side of the front open), so it wrapped the arms, which were held still at the hips under it
+   (hbCloakArms) and came out through the front at any gesture. Now it is worn back as S2699's prototype drew it (the kit's D.cloakBack:
+   1.3 rad open, over the tops and fronts of the shoulders, pinned at each), and the arms swing free in front of it. It stays closed round
+   the front only where it is drawn round for a reason: its hood up, the burnous (sewn shut, the kit's own rule), and in the snow, which
+   is the Mark's cold land (its nation's climate) and anywhere out of doors in winter (hbSeasonDress). A shoulder cape is unchanged */
+function hbColdLand(g){return !!(g&&typeof NATIONS!=='undefined'&&NATIONS[g.nation]&&NATIONS[g.nation].climate==='cold');}
+function hbCloakWorn(G,cold){const D=G&&G.dress;if(!D||!D.cloak||D.cape)return G;const back=D.hood!=='up'&&!D.burnous&&!cold;
+  return !!D.cloakBack===back?G:{...G,dress:{...D,cloakBack:back}};}
 /* S2353 (backlog L1: OG-048's Crown guards, OG-025's hold guards, OG-044's Compact guards) — a town's guard dressed by their people, in the
    kit's own guard dress (builder.check.mjs's pictures: builder-armour-crown, -shield-crown, builder-scales-guard, -scales-kit). Every guard
    wore the same iron mail, kettle helm and spear. Now a Gatelander guard is the Crown's: the mail under a crimson tabard edged in gold. A
@@ -2506,6 +2516,7 @@ function hbSeasonDress(g,G){if(G&&hbFeast())G=hbFeastDress(g,G);if(!G||!hbWinter
       W={...G,dress:{...D,cloak:R[0],burnous:true,burnousStripe:R[1],cape:null,cloakFur:null,cloakHem:null,tartan:null,tartanLine:null,hood:!D.wrap&&r()<.3?'up':'down'}};}
     else if(!D.robe){const fur=people==='markman'||people==='gatelander'&&r()<.5;
       W={...G,dress:{...D,coat:pick(P.wool),coatLen:.75,coatFur:fur?pick(HB_WINTER_FUR):null,coatHood:people==='markman'?(r()<.3?'up':'down'):null}};}}
+  W=hbCloakWorn(W,true); /* S2724 — and in winter out of doors a long cloak is drawn round the front (#2082 C, snow) */
   HB_GENOMES.set(kc,W);return W;}
 // S1779 (backlog L6, #979 B's session 4: "their bodies below deck ... left to the bodies builder") — her crew in her hold. Each hand
 // aboard (worldState.ship.crew) stands at their station when you go below: the carpenter at the workbench, the cook by the water cask
@@ -3068,7 +3079,8 @@ const HB_CLOAK_LEAN={k:1},_hbLX=new THREE.Vector3(1,0,0),_hbLq=new THREE.Quatern
 function hbCloakLean(rig){const B=rig.B,d=HB_CLOAK_LEAN.k*B.spine.rotation.x;if(Math.abs(d)<1e-4||!B.thL||!B.thR)return;
   B.hips.quaternion.multiply(_hbLq.setFromAxisAngle(_hbLX,d));_hbLq.setFromAxisAngle(_hbLX,-d);
   B.spine.quaternion.premultiply(_hbLq);B.thL.quaternion.premultiply(_hbLq);B.thR.quaternion.premultiply(_hbLq);}
-function hbCloakArms(D,map){if(!D||!D.cloak)return null;const thrown=!!(D.spear||D.crossbow||D.staff||D.basket||D.lantern)&&(!D.cape||!!D.staff&&!D.spear&&!D.crossbow),sides=thrown?/L$/:/[LR]$/; /* S1798: a cape over a staff opens on the staff's side, as people.js's buildCloak */
+function hbCloakArms(D,map){if(!D||!D.cloak||D.cloakBack&&!D.cape&&!D.burnous)return null; /* S2724 — a long cloak worn back leaves both arms free (#2082 C) */
+  const thrown=!!(D.spear||D.crossbow||D.staff||D.basket||D.lantern)&&(!D.cape||!!D.staff&&!D.spear&&!D.crossbow),sides=thrown?/L$/:/[LR]$/; /* S1798: a cape over a staff opens on the staff's side, as people.js's buildCloak */
   const low=thrown&&!!D.staff&&!D.spear&&!D.crossbow&&!D.basket&&!D.lantern&&!D.cape,i=map.map(([j],k)=>/^(sh|el|wr)[LR]$/.test(j)&&(sides.test(j)||low)?k:-1).filter(k=>k>=0);
   if(!i.length)return null;const S=new Set(i);if(low)S.staff=new Set(i.filter(k=>/R$/.test(map[k][0])));return S;}
 function hbHoldF(rig){const H=rig.hb,w=rig.w;if(!H.hold||!w||rig.limp||rig.sleep)return 0;if(rig.tpHold)return HB_CLOAK_HOLD;const e=rig.e;
