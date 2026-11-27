@@ -236,6 +236,20 @@ def cards_page(name, title, note, query):
     head = HEAD.format(title=title, note=note, V=V).replace('<style>', '<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet"><style>' + css, 1)
     open(os.path.join(out, name), 'w', encoding='utf-8').write(head + code + '\n</script></body></html>\n')
 cards_page('cards-bag.html', 'Item and herbal cards', 'The item card and the herbal card (L, OG-136): what the bag says about one thing. ?level=a|b|c (A the game’s tooltip as built; B a card in coloured ink; C OG-136 as drawn, with a picture), &kind=item|herb.', '?level=b&kind=item')
+# the schools on cards (concept, 27 Nov 2026; OG-128): the Magic page composing a spell, as built (A), the school's card in coloured
+# ink (B), and OG-128 as drawn with the spell shown working (C); the kit's CSS, icons and fonts inlined as cards_page's are
+def schools_page(name, title, note, query):
+    css = open(os.path.join(here, '..', 'hud', 'kit.css'), encoding='utf-8').read() + open(os.path.join(here, 'sheet.css'), encoding='utf-8').read()
+    defs = open(os.path.join(here, '..', 'hud', 'defs.html'), encoding='utf-8').read()
+    s = scene(open(os.path.join(here, 'schools-view.js'), encoding='utf-8').read())
+    s = s.replace('window.HUD_DEFS ||', json.dumps(defs) + ' ||').replace("window.SHEET_BG || 'pieces-gatelands-street-a.jpg'", "''")
+    s = kits(s, ['schools'])
+    imps = re.findall(r"^import .*;$", s, flags=re.M); body = re.sub(r"^import .*;\n", '', s, flags=re.M)
+    code = '\n'.join(merge_imports(imports_c + imps)) + '\n' + common_body + '\n' + body
+    code = code.replace("new URLSearchParams(location.search)", f"new URLSearchParams(location.search || '{query}')")
+    head = HEAD.format(title=title, note=note, V=V).replace('<style>', '<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet"><style>' + css, 1)
+    open(os.path.join(out, name), 'w', encoding='utf-8').write(head + code + '\n</script></body></html>\n')
+schools_page('schools-magic.html', 'The schools on cards', 'The schools on cards (L11, OG-128): the Magic page composing a spell. ?level=a|b|c (A the page as built; B the school’s card in coloured ink; C OG-128 as drawn, the spell shown working), &spell=bridge|caor (Tonn and Sioc laid; Caor at three tiers), &view=seen (C’s pictures at full size).', '?level=c&spell=bridge')
 build('corruption-field.html', 'The world corrupted', 'The world’s corruption, 0 to 6 (L12, OG-145; F12): one Gatelands lane as each great gate is torn. The slider and the cast switch are top left; ?level=0..6, &cast=none|sky|world, &cam=field|hill|scale. Drag to look.', 'corruption-view.js', True, '?level=3')
 build('seasons-field.html', 'The seasons in the land', 'The seasons in the land (L12, OG-139; F3): one Gatelands lane through the year. The year, the rows (OG-139’s four seasons or OG-140’s green all year) and the snow are top left; ?season=spring|summer|autumn|winter, &rows=full|gentle, &snow=0..1, &cam=field|high|hedge|scale. Drag to look.', 'seasons-view.js', True, '?season=autumn')
 build('hours-lane.html', 'The hours of the day', 'The hours, island by island (L12, OG-137; F3): one Gatelands lane through a summer day and night. The hour, the night (A readable, B by the moon’s phase, C by phase with a starlit floor) and the moon are top left; ?hour=dawn|sunrise|midday|golden|twilight|moonlit|deep, &night=readable|phase|floor, &moon=0..1, &cam=field|hill|scale|high. Drag to look.', 'hours-view.js', True, '?hour=twilight')
