@@ -1431,7 +1431,7 @@ function genSettlement(site){
        every draw the town made. Laid, the old flat ribbon of the paths goes: the paving is drawn over the same lines. */
     if(window.OG_LOOK==='new'&&['village','town','city','port','garrison','outpost'].includes(site.kind))try{const J=townDressJob(S,{inner,pros:TST?prosperity(site):50,burned:burnedV,abandoned:abandonedV||sackedV},T=>{ /* a step a frame on the job queue, after the town stands */
       if(!T)return;const pm=group.children.find(m=>m.name==='town paths');if(pm){group.remove(pm);if(typeof _ribbons!=='undefined'){const k=_ribbons.indexOf(pm.geometry);if(k>=0)_ribbons.splice(k,1);}pm.geometry.dispose();}
-      S._work=null;try{tdrMarkWalls(S);}catch(e){} /* its walls into the ways' grid read as the town stood (the night beat's own grid, read then too, never sees the dressing) */});if(J)TDR_Q.push(J);}catch(e){console.warn('town dress',e);}
+      S._work=null; /* the ways' grid read as the town stood meets the dressing as any later solid; the night beat's never does */});if(J)TDR_Q.push(J);}catch(e){console.warn('town dress',e);}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);

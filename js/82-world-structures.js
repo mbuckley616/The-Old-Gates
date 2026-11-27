@@ -2324,12 +2324,11 @@
   // The watch goes by the streets: a breadth-first search over a one-unit grid of the pad (built once per town), the
   // path pulled straight wherever the line is clear. Returns the turning points from a to b, not b itself; [] when
   // the line is clear or no way is found (he walks the direct line as before).
-  /* S2670 — two grids: the town's ways keep off its dressing (its walls traced into the grid), while the night beat's (nd) are the ways it had
-     before the dressing, so the watch keeps its pace and its doors; a townsperson's own step goes through the dressing either way (solidAtNpc) */
+  /* S2670 — two grids, both read when the town stands: the town's ways meet its dressing as any later solid (S378's check below), while the
+     night beat's (nd) never do, so the watch keeps its pace and its doors; a townsperson's own step goes through the dressing (solidAtNpc) */
   function townRoute(S,nd){const KR=nd?'_routeNd':'_route',KG=nd?'_routeGridNd':'_routeGrid';if(S[KR])return S[KR];const cx=S.site.x,cz=S.site.z,solidAt_=nd?solidAtNpc:solidAt;
     const R=Math.ceil((S.site.pad||40)+8),N=2*R+1,sol=new Uint8Array(N*N);
     const fill=()=>{for(let j=0;j<N;j++)for(let i=0;i<N;i++)sol[j*N+i]=solidAt_(cx-R+i,cz-R+j)?1:0;
-      if(!nd)for(const q of S.sol||[]){if(!q.dress||!q.bound)continue;const mk=(x,z)=>{const i=Math.round(x-cx+R),j=Math.round(z-cz+R);if(i>=0&&j>=0&&i<N&&j<N)sol[j*N+i]=1;},L=q.rz;for(let t=-L;t<=L+1e-6;t+=.25)mk(q.cx+q.s*t,q.cz+q.c*t);} /* a wall thinner than a cell, traced along its line */
 };fill();S[KG]={R,N,sol}; /* S2023 — the directions' walk (wayWalk) reads this grid too */
     const cel=p=>[Math.max(0,Math.min(N-1,Math.round(p.x-cx+R))),Math.max(0,Math.min(N-1,Math.round(p.z-cz+R)))];
     const find=(s0,g0)=>{const prev=new Int32Array(N*N).fill(-1);prev[s0]=s0;const q=[s0],si=s0%N,sj=(s0-si)/N,esc=(i,j)=>Math.abs(i-si)<=2&&Math.abs(j-sj)<=2; /* S2670 — the cells round where he stands may be stepped through: a man pressed into a wall's margin walks out of it */
@@ -3698,10 +3697,6 @@
   const TDR_Q=[];
   function tdrTickJobs(budget){if(!TDR_Q.length)return 0;const t0=performance.now();let n=0;do{const j=TDR_Q[0];let more=false;try{more=j();}catch(e){console.warn('town dress',e);}n++;if(!more)TDR_Q.shift();}while(TDR_Q.length&&performance.now()-t0<(budget||4));return n;}
   function tdrDrain(){let n=0;while(TDR_Q.length&&n<100000)n+=tdrTickJobs(1e9);return n;}
-  /* the dressing's walls traced into a town's way grid already read (S._routeGrid), as fill() traces them when the grid is read anew: the grid
-     is the one read as the town stood (the watch's ways, as before), and the rest of the dressing reaches it as any later solid does */
-  function tdrMarkWalls(S){const G=S&&S._routeGrid;if(!G||!S.site)return 0;const {R,N,sol}=G,cx=S.site.x,cz=S.site.z;let n=0;
-    for(const q of S.sol||[]){if(!q.dress||!q.bound)continue;for(let t=-q.rz;t<=q.rz+1e-6;t+=.25){const i=Math.round(q.cx+q.s*t-cx+R),j=Math.round(q.cz+q.c*t-cz+R);if(i>=0&&j>=0&&i<N&&j<N&&!sol[j*N+i]){sol[j*N+i]=1;n++;}}}return n;}
   function townDressJob(S,o,done){if(window.OG_LOOK!=='new'||!S||!S.site)return null;const lat=new Map(),it=townDressRun(S,o);let cpu=0,worst=0,steps=0;
     return ()=>{if(SETTLE.get(S.site.id)!==S)return false;const t=performance.now();let r;_tdrH=lat;try{r=it.next();}catch(e){console.warn('town dress',e);return false;}finally{_tdrH=null;}
       const dt=performance.now()-t;cpu+=dt;worst=Math.max(worst,dt);steps++;if(!r.done)return true;if(S.dress){S.dress.cpu=Math.round(cpu);S.dress.worst=Math.round(worst);S.dress.steps=steps;}try{if(done)done(S.dress);}catch(e){console.warn('town dress',e);}return false;};}
