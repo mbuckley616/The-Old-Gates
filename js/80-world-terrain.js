@@ -647,7 +647,7 @@
     const trees={},bushes=[],rocks=[],embers=[];
     // Candidate lattice at 4u; each cell rolls against local density.
     const STEP=6;
-    /* S2747 — the scatter's region reads (the dominant region, the tree density, the rocks) keyed by place: under withPlace for the
+    /* S2748 — the scatter's region reads (the dominant region, the tree density, the rocks) keyed by place: under withPlace for the
        chunk's own cell, never the live REGIONS, which hold what has loaded (S701). The same lattice point grew a spruce on one boot and
        nothing on another, by where the player had come from (the Mark upland's view, beside Heifialos Fell). A region reaches 540 m past
        its cell and a chunk is 64 m, so the ring round the chunk's middle holds every region that reaches any of its points. */
