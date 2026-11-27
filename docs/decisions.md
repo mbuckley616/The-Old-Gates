@@ -35,6 +35,17 @@ Pictures: `docs/prototypes/levelup/aurenne-harbour-abc.jpg`, `docs/prototypes/le
 
 Pictures: `docs/look/s2720/mark-upland.jpg`.
 
+### Dunmore's street at Low — what gives when townsfolk stand close? (from the bodies builder, 2026-11-27, #2125)
+**The question.** `budget` is red at Dunmore's street at noon: Low 1.29 M triangles against a 1.2 M ceiling, Middle 2.23 M against 2.0 M. The place alone, every body hidden, is 1.03 M at Low (0.92 M before the town's dressing); the far figures and their shadows add 140–165k; one townsperson drawn whole at Low is 57–86k, so one person inside Low's 10 m ring puts the street over. Session 2739 thinned the middle level (ten townsfolk 398k → 181k) and cut the brows to a third, but the near body is still whole.
+
+**Options.**
+- **A.** Shrink Low's whole-body ring from 10 m to 6 m; from 6 m out a person is the thinned bake (~20k). With three near, the street lands around 1.25–1.3 M, still a little over.
+- **B.** Thin the whole body at Low too (skin and garments through the same cells; hair, brows and eyes as now). About 40k off each near body, but faces close up read mottled at Low.
+- **C (recommended, with A).** Raise Low's ceiling to 1.5 M (and Middle's to 2.4 M). The ceilings were set when every townsperson was a 5k figure.
+- **D.** Leave it: `budget` stays red at noon until the place itself comes down.
+
+Picture: `docs/prototypes/f4/midthin-2739.jpg` (on `auto/bodies-2739`, now on main).
+
 ## Answered
 ### Notification cards: the ledger alone, a card at the top, or OG-136's card with a picture? (from the concept artist, 2026-11-25, #2047)
 **The question.** Since Session 2578 the game says everything in the ledger, up to four paper slips above the vitals, so the five moments a player waits for (a level, a quest's step, a place found, a skill rising, a word learned) look exactly like *gold paid*. Should those five get a card of their own?
