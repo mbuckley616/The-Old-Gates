@@ -31,8 +31,12 @@ async function shoot(look) {
   // Session 2724 (QA): the towns' dressing (S2670, #2058: setts, yards, walls) is the new look's alone, and once it is laid it takes the town's
   // path ribbons out of `_ribbons` (genSettlement, js/83-world-generator.js). On main at s2036 the new look's ray through the road box then
   // never met a ribbon, the spots ran out at 300 frames each, and both tries died at run.mjs's 900 s cap (1,447 s here before the page closed).
-  // For the reason above, both looks build the town undressed here; the dressing's own suites are its.
-  await page.evaluate(() => { if (typeof townDressJob === 'function') townDressJob = () => null; });
+  // The same card lays a road through a paved town's ring as setts on the new look (tdrTownAt in buildRoadRibbons, js/82-world-structures.js):
+  // the road box's chunk then held one ribbon of 22,068 vertices against the old look's 84, so its laid count never met the chunk's 14
+  // segments and the camera never left the first spot. For the reason above, both looks build the town and its roads undressed here (each
+  // hook returns what the old look's does); the dressing's own suites are its.
+  await page.evaluate(() => { if (typeof townDressJob === 'function') townDressJob = () => null;
+    if (typeof tdrTownAt === 'function') tdrTownAt = () => null; if (typeof tdrTownsNear === 'function') tdrTownsNear = () => ''; });
   // Session 1180 (card F3): the new look's land (js/89-world-land.js) shades the ground, the sky and the water its own way and
   // tone-maps the world's frame, by design; for the same reason, both looks draw the old land here. The world is not built yet,
   // so the switch holds for every chunk.
