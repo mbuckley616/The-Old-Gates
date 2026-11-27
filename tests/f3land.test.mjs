@@ -159,6 +159,17 @@ const shore = await page.evaluate(() => { const at = {}; for (let j = 0; j < GRI
   return { isles: Object.keys(at), gl: lum('gatelands', 2.5), mk: lum('mark', 2.5), au: lum('aurenne', 2.5), glWet: lum('gatelands', .2), sand: +(SAND_C.r * .299 + SAND_C.g * .587 + SAND_C.b * .114).toFixed(3) }; });
 check('the shore takes its island\'s colour: the Mark\'s darker than the Gatelands\', the Gatelands\' under Aurenne\'s pale sand, the waterline darker still', shore.gl != null && shore.mk != null && shore.au != null && shore.mk < shore.gl && shore.gl < shore.au - .1 && shore.glWet < shore.gl && Math.abs(shore.au - shore.sand) < .03, shore);
 
+// the sea's bed by island (Session 2716): under the Gatelands' and the Mark's water the bed is dark within 2.6 m, Aurenne's stays pale sand
+const bed = await page.evaluate(() => { const at = {}; for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { const x = (i + .5) * WORLD.SIZE, z = (j + .5) * WORLD.SIZE, k = shoreIsleAt(x, z); if (!at[k]) at[k] = { x, z }; }
+  const lum = (k, h) => { const p = at[k]; if (!p) return null; const c = groundColor(p.x, p.z, h, 1, new THREE.Color()); return +(c.r * .299 + c.g * .587 + c.b * .114).toFixed(3); };
+  return { gl0: lum('gatelands', .2), gl3: lum('gatelands', -3), mk3: lum('mark', -3), au3: lum('aurenne', -3), au0: lum('aurenne', .2) }; });
+const body = await page.evaluate(() => { const at = {}; for (let j = 0; j < GRID; j++) for (let i = 0; i < GRID; i++) { const x = (i + .5) * WORLD.SIZE, z = (j + .5) * WORLD.SIZE, k = shoreIsleAt(x, z); if (!at[k]) at[k] = { x, z }; }
+  const x0 = px, z0 = pz, m = new THREE.MeshLambertMaterial(), o = {};
+  for (const k of ['gatelands', 'mark', 'aurenne']) { if (!at[k]) continue; px = at[k].x; pz = at[k].z; seaBody(m, 10); o[k] = m.color.getHexString(); }
+  px = at.gatelands.x; pz = at.gatelands.z; seaBody(m, 1 / 60); o.eased = m.color.getHexString(); px = x0; pz = z0; o.live = water.material.color.getHexString(); return o; });
+check('the sea\'s body by island (Session 2716): slate on the Gatelands and the Mark, Aurenne\'s deep turquoise, eased (not snapped) on a crossing', body.gatelands === '101c34' && body.mark === '101c34' && body.aurenne === '103c50' && body.eased !== '101c34' && body.eased !== '103c50', body);
+check('the sea\'s bed: the Gatelands\' and the Mark\'s dark silt 3 m down, darker than their strand; Aurenne\'s pale sand still shows', bed.gl3 != null && bed.mk3 != null && bed.au3 != null && bed.gl3 < .2 && bed.mk3 < bed.gl3 + .02 && bed.gl3 < bed.gl0 * .6 && bed.au3 > bed.gl3 + .15, bed);
+
 // Dunmore at noon, from the street: v2-scope.md §5's budget line, logged
 const d = await page.evaluate(() => { const t = WORLD.siteAnywhere('dunmore'); px = t.x; pz = t.z + 4; yaw = 0; pitch = 0; for (let i = 0; i < 30; i++) WORLD.tick(1 / 60, performance.now());
   CAM.position.set(px, worldH(px, pz) + 1.65, pz); CAM.rotation.set(0, 0, 0); CAM.updateMatrixWorld(true);
