@@ -144,6 +144,12 @@ function personGenome(def,opts){
 // distant copy: fewer segments, and the tiny parts (pupils, irises, freckles) left out. Bones are created
 // in the same order at every quality, so either geometry skins to either skeleton.
 const PEOPLE_LOD={q:.5,far:17,near:15,tiny:.012,shadowLo:true};
+// S2742 — what a far body carries (a foe's weapon, shield, quiver and eye-glow; anything in its group but the driver's own mesh) is put on
+// a layer the camera does not see past PEOPLE_LOD.gear metres by quality (Low, Middle, High), and back inside it less 10 m. From Dunmore's
+// street at noon on Low, 23 foes 190 to 313 m north drew their gear in 2 to 6 calls each, about 55k triangles and 80 calls, where a sword
+// is 3 px. Layers, not .visible, which the drawing, sheathing and hiding code owns; nothing else in the game sets a layer
+PEOPLE_LOD.gear=[90,130,180];PEOPLE_LOD.gearLayer=7;
+function peopleGearOff(rig,top,off){const m=off?1<<PEOPLE_LOD.gearLayer:1;top.traverse(o=>{if(o!==rig.mesh&&(o.isMesh||o.isLine||o.isPoints||o.isSprite))o.layers.mask=m;});}
 // S265 — shading in the people's creases (Michael's A on Session 243, this strength): after the bake, each part stands in
 // as one to six spheres along its longest axis (the radius the mean of its two shorter half-extents), and each vertex is
 // darkened by the spheres of every other part it faces, the analytic sphere occlusion (the cosine to the centre times
@@ -1789,6 +1795,8 @@ function tickPeople(dt,now){
       const lod=rig.lod?(cd>PEOPLE_LOD.near?1:0):(cd>PEOPLE_LOD.far?1:0);
       if(lod!==rig.lod){rig.lod=lod;rig.mesh.geometry=lod||!rig.geoHi?rig.geoLo:rig.geoHi;}
       if(!lod&&!rig.geoHi&&rig.mesh.visible)personHiAsk(rig);} /* S1487 — a lazy rig's near copy, owed until it is baked */
+    {const gd=Math.hypot(CAM.position.x-at.x,CAM.position.z-at.z),qi=typeof SETTINGS!=='undefined'&&SETTINGS.quality!=null?Math.max(0,Math.min(2,SETTINGS.quality|0)):1,G=PEOPLE_LOD.gear[qi],off=rig.gearOff?gd>G-10:gd>G;
+      if(off!==!!rig.gearOff){rig.gearOff=off;peopleGearOff(rig,top,off);}} /* S2742 — a far body's gear off the eye's layer */
     let d=rig.lx==null?0:Math.hypot(at.x-rig.lx,at.z-rig.lz);rig.lx=at.x;rig.lz=at.z;
     // a teleport, not a stride: a jump, or more than 12 m/s, which no one walks or runs (S1223: the town's schedule moving someone on
     // through a hitch, or ticks with no tickPeople between, read as one step of a metre in a frame and latched the run for half a second)
