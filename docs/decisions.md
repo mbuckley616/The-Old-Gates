@@ -15,6 +15,7 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+## Answered
 ### Notification cards: the ledger alone, a card at the top, or OG-136's card with a picture? (from the concept artist, 2026-11-25, #2047)
 **The question.** Since Session 2578 the game says everything in the ledger, up to four paper slips above the vitals, so the five moments a player waits for (a level, a quest's step, a place found, a skill rising, a word learned) look exactly like *gold paid*. Should those five get a card of their own?
 
@@ -24,6 +25,8 @@ Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on 
 - **C.** OG-136 as drawn: a larger card (678 × 200 px) with a picture beside the words (the place from above and behind you, a laurel, the quest's mark, the skill's ring, the word's sigil); 5 s. The place's picture costs a second render, and a dungeon from above comes out near black. [lane](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-lane-c.jpg) · [all five](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-cards-c.jpg) · [fight](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/concept-1125/docs/prototypes/levelup/notify-hall-c.jpg)
 
 Page: `docs/prototypes/levelup/notify.html`; approach in `docs/concepts.md`.
+
+Michael: **A paper card at the top centre** (B). (2026-11-26)
 
 ### Towns dressed: tighten the lots, or fill the gaps around them? (from the deep-work session, 2026-11-26, #2053)
 **The question.** The town-dressing session (Session 2670, `auto/fable-town-dressing`) was asked to tighten the lots where the lawn gaps are widest, and has not. A house's id is its lot's place in the town's layout (`g_<site>_<n>`), and saves key your house, its garden, its racks and its residents by that id: moving the lots moves every id, and an old save's house becomes someone else's. Instead the pass fills the gaps (walled yards, gated walls along the frontage, gardens, orchards, work yards and paddocks, the square and streets paved); from the roofs some green remains.
@@ -35,6 +38,8 @@ Page: `docs/prototypes/levelup/notify.html`; approach in `docs/concepts.md`.
 
 Pictures (before | after, 10h, High): [Gatelands, Dunmore](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/gatelands.jpg) · [The Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/mark.jpg) · [Aurenne](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-town-dressing/docs/prototypes/town-dressing/aurenne.jpg)
 
+Michael: **Leave the lots; the dressing fills the gaps** (A). (2026-11-26)
+
 ### Levelling too slow: quests pay marks, cheaper first levels, or cheaper skill-ups? (from the systems builder, 2026-11-26, #2059)
 **The question.** Michael's note of 25 Nov: "Leveling up feels veeeery slow now compared to before." Since Session 952 (#342 B) the level comes only from skill-ups; kills and quests pay nothing toward it. Level 2 takes 10.5 marks, a major skill at 25 needs 43 uses to rise, and a fresh Warrior earns about 8 uses a kill (Session 2681, measured headless), so about 55 kills for level 2. Before Session 952, one quest or four kills gave level 2.
 
@@ -43,6 +48,8 @@ Pictures (before | after, 10h, High): [Gatelands, Dunmore](https://raw.githubuse
 - **B.** The first levels are cheap: levels 2 to 6 take 5, 6, 7, 8 and 9 marks (against 10.5–12.5 today); from level 6 on as now.
 - **C.** Every skill-up is cheaper: 0.6 × L^1.2 instead of 0.9 × L^1.2 (29 uses at 25, 65 at 50); everything about 1.5× faster, tier gates sooner, late game shorter.
 - **D (recommended).** A and B together: the quests and kills of an evening give level 2 and nearly 3; skills and the curve past level 6 stay as #342 set them.
+
+Michael: **A and B together** (D). (2026-11-26)
 
 ### How mountainous should the Gatelands be between its towns? (from the deep-work session, 2026-11-26, #2063)
 **The question.** The land's relief (Session 2682, `auto/fable-land-relief`) raises the country between places so it reads as P10b's landscapes, not a mown lawn. Towns, roads, doors and rivers stay on flat ground (a calm field 110–190 m round each); between them uplands with ridges to ~46 m, tableland scarps ~24 m, cliff coasts ~30 m. The Gatelands' median height goes 6 → 13 m; the Mark goes higher (ridges ~78 m), Aurenne between. OG-101 asks for "a range across the middle"; P10b's Gatelands panels are green valleys under hills, not mountains.
@@ -54,6 +61,8 @@ Pictures (before | after, 10h, High): [Gatelands, Dunmore](https://raw.githubuse
 
 Any answer is a one-line change to `RELIEF.NAT`. Pictures: [the Gates' basin](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatebasin.jpg) · [a Gatelands lookout](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatevalley.jpg) · [the range north of the Gates](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-gatenorth.jpg) · [the Mark](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/auto/fable-land-relief/docs/prototypes/land-relief/pair-markvale.jpg)
 
+Michael: **As built: ridges to ~50 m, scarps, crags on the crest** (A). (2026-11-26)
+
 ### What a place sounds like — the palette, sound that tells you something, or recordings? (from the designer, 2026-11-26, #2071)
 **The question.** Today the world outside a fight is the exploring orchestra, the rain, the falls and your feet: an island has no air of its own, and a gate gives no sound until you reach its sigils. How far should OG-144's palette go?
 
@@ -63,6 +72,8 @@ Any answer is a one-line change to `RELIEF.NAT`. Pictures: [the Gates' basin](ht
 - **C.** B, with birds, footsteps, crowds and the forge from a CC0 recording pack (6–8 MB, the game's first sound files). B plus one deep-work session.
 
 Recommendation: B. The gate heard over the hill and the gravel under a sneak are the brief's first two feelings in sound, it is all made in code, and nothing is added to the download. Page: [what a place sounds like](https://github.com/mbuckley616/The-Old-Gates/blob/auto/design-1126/docs/design/what-a-place-sounds-like.md)
+
+Michael: **A, plus sound that tells you something** (B). (2026-11-26)
 
 ### A long cloak worn back over the shoulders, behind them, or as today? (from the bodies builder, 2026-11-26, #2082)
 **The question.** Michael's note of 25 Nov (backlog H, *Cloaks as capes over the back?*): today a long cloak wraps the arms and closes at the throat, so a cloaked wearer's arms are held still at the hips and any gesture or blow brings a hand out through the front. Session 2699 built the alternative in the kit as a prototype (`D.cloakBack`, nothing changed in the game).
@@ -75,7 +86,8 @@ Recommendation: B. The gate heard over the hill and the gravel under a sneak are
 
 Recommendation: C. It ends the hands-through-the-cloak fault for most wearers and frees the arms, while the cloaks drawn round for a reason still read that way. Pictures: [all four wearers](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cloakback-2699.jpg) · [the Markman](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cloakback-2699-markman.jpg) · [the tartan](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/cloakback-2699-tartan.jpg)
 
-## Answered
+Michael: **A, closed only for hood up, burnous and snow** (C). (2026-11-26)
+
 ### How soon may the sea serpent coil a ship again after a coil ends? (from the systems builder, 2026-11-25, #2037)
 **The question.** The serpent's coil holds a ship for 6 s at 3 rig a second when she makes under 3 m/s. The build sheet does not say how soon it may coil her again. Session 2656 built it at 10 s.
 
