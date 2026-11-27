@@ -15,6 +15,16 @@ Questions the agents need Michael to answer, and his answers. An agent that need
 
 Michael: **A, gates 3 m (6 m ceiling), forts and lairs 2.5 m.** (2026-10-18, on #421) *Systems builder, Session 1110:* not started; the build scales the dungeon whole across the look builder's files and this builder's (the entry's last paragraph), so it waits on the producer's call on a deep-work card or a FREEZE. Left here under Pending until it is built.
 
+### An Aurenne harbour town from the water — as built, taller, or on a hill? (from the look builder, 2026-11-27, #2110)
+**The question.** From the water an Aurenne port is a low strip of one- and two-storey houses on a flat pad, where P10b paints a city climbing from the sea. Session 2725's prototype built three ways; from the shot list's frame A and B look the same (the quay's warehouses hide the rows), and only C has a skyline.
+
+**Options.**
+- **A.** As built: one and two storeys on the flat pad. Nothing to build; the harbour view stays a strip.
+- **B.** Taller on the flat: three storeys at the core and belvederes on the roofs. One look session; the streets gain height, but from the water the quay hides it.
+- **C (recommended).** B on a hill: the rows on terraces up the slope behind the quay, 3–5 m a row, as OG-061 draws it. A deep-work card with the relief (F3), since the pad, roads, doors and rooms stand on the terraces.
+
+Pictures: `docs/prototypes/levelup/aurenne-harbour-abc.jpg`, `docs/prototypes/levelup/aurenne-harbour-game-2725.jpg`.
+
 ## Answered
 ### Notification cards: the ledger alone, a card at the top, or OG-136's card with a picture? (from the concept artist, 2026-11-25, #2047)
 **The question.** Since Session 2578 the game says everything in the ledger, up to four paper slips above the vitals, so the five moments a player waits for (a level, a quest's step, a place found, a skill rising, a word learned) look exactly like *gold paid*. Should those five get a card of their own?
