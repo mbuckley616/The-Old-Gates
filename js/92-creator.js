@@ -927,6 +927,7 @@ function settingRows(){const r=[
   {k:'master',g:'Sound',w:'Everything',min:0,max:100,st:5,note:'over the speaker button’s loud or quiet'},
   {k:'music',w:'Music',min:0,max:100,st:5,note:'by the place you stand'},
   {k:'effects',w:'Blows and steps',min:0,max:100,st:5,note:'the sword, the bow, the doors, the weather'},
+  {k:'ambience',w:'Ambience',min:0,max:100,st:5,note:'the place: the wind, the water, a town about you'}, /* S2726 — #2071 B */
   {k:'voices',w:'Spoken lines',min:0,max:100,st:5,note:'the people’s voices; M still mutes them anywhere'},
   {k:'bright',g:'The light',w:'Brightness',min:-50,max:50,st:5,note:'set it so the left mark can only just be seen',marks:true},
   {k:'fov',w:'Field of view',min:60,max:100,st:5,fmt:v=>v+'°',note:'75 as it was; from 60 to 100'},
@@ -947,7 +948,7 @@ function settingSet(row,v){
     else if(row.k==='quality'){SETTINGS.quality=v;SETTINGS.qualityProbed=true;settingsSave();qualityApply();} /* S1341 — every knob of the level, not the land's alone; S1352 — a level chosen is never probed */
     return;}
   v=Math.max(row.min,Math.min(row.max,Math.round(v/row.st)*row.st));SETTINGS[row.k]=+v.toFixed(2);settingsSave();
-  if(['master','music','effects','voices'].includes(row.k)&&typeof applyVolumes==='function')applyVolumes();
+  if(['master','music','effects','ambience','voices'].includes(row.k)&&typeof applyVolumes==='function')applyVolumes();
   if(row.k==='bright')settingsLight();}
 // S822 (F1) — the renderer: kept in this browser as og.renderer and read by index.html's head script before the game loads,
 // so it takes hold on a reload. Since 18 Oct 2026 the new look is the default and the setting keeps only 'old', the way back. Chosen on the title screen it reloads at once; in play it waits, so nothing unsaved is lost.

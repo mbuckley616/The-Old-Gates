@@ -4,7 +4,7 @@
 // AUDIO SYSTEM
 // ══════════════════════════════════════════════════════════════════════════
 let AX=null; // AudioContext — created on first user interaction
-let masterGain=null,sfxGain=null,musicGain=null,uiGain=null;
+let masterGain=null,sfxGain=null,musicGain=null,uiGain=null,ambGain=null;
 let volLevel=2; // 0=mute 1=quiet 2=loud
 const VOL_ICONS=['🔇','🔉','🔊'];
 const VOL_MUSIC=[0,0.18,0.38];
@@ -27,6 +27,7 @@ function initAudio(){
     musicGain=AX.createGain();musicGain.gain.value=VOL_MUSIC[volLevel]*volKind('music');musicGain.connect(masterGain);
     sfxGain=AX.createGain();sfxGain.gain.value=VOL_SFX[volLevel]*volKind('effects');sfxGain.connect(masterGain);
     uiGain=AX.createGain();uiGain.gain.value=VOL_SFX[volLevel]*.28*volKind('effects');uiGain.connect(masterGain);
+    ambGain=AX.createGain();ambGain.gain.value=VOL_SFX[volLevel]*AMB_LEVEL*volKind('ambience');ambGain.connect(masterGain); /* S2726 — the Ambience bus (#2071 B) */
     if(_initialMusicOverride){
       startMusic(_initialMusicOverride.zone, _initialMusicOverride.theme);
     } else {
@@ -39,13 +40,14 @@ function cycleVol(){
   document.getElementById('vol-btn').textContent=VOL_ICONS[volLevel];
   applyVolumes();
 }
-// S691 — the settings sheet's four volumes (everything, music, blows and steps, spoken lines) over the button's level
+// S691 — the settings sheet's four volumes (everything, music, blows and steps, spoken lines) over the button's level; S2726 a fifth, the place's own sound (ambience)
 function volKind(k){return (SETTINGS.master/100)*(SETTINGS[k]/100);}
 function applyVolumes(){
   if(!AX)return;
   musicGain.gain.setTargetAtTime(VOL_MUSIC[volLevel]*volKind('music'),AX.currentTime,.1);
   sfxGain.gain.setTargetAtTime(VOL_SFX[volLevel]*volKind('effects'),AX.currentTime,.1);
   if(uiGain)uiGain.gain.setTargetAtTime(VOL_SFX[volLevel]*.28*volKind('effects'),AX.currentTime,.1);
+  if(ambGain)ambGain.gain.setTargetAtTime(VOL_SFX[volLevel]*AMB_LEVEL*volKind('ambience'),AX.currentTime,.1);
 }
 
 // ── SFX HELPERS ───────────────────────────────────────────────────────────
@@ -669,3 +671,84 @@ function sndReturnOW(){
   sfxTone(440,520,.6,.12,'sine');
   sfxTone(550,640,.5,.08,'sine');
 }
+
+// ── WHAT A PLACE SOUNDS LIKE (Session 2726; Michael's B on #2071, the build sheet's first session) ──────────────────
+// The Ambience bus: every bed → one lowpass (the weather's damping) → the duck (× 0.7 while a piece plays) → ambGain (the effects'
+// level × 0.6 × the Ambience slider) → master. Outdoors in the open world, two beds: the wind (by height and island; a wood's canopy
+// takes some and adds the leaves) and the nearest water within 80 m (a river, a lake's lapping, the sea's swell). Everything here is
+// cosmetic (Math.random, the page's clock) and writes nothing to worldState. The tick runs from the main loop, every 0.25 s, indoors
+// too, so the beds fade at a door or a gate's mouth instead of hanging. AMB is the state the suite (placesound) reads.
+const AMB_LEVEL=.6,AMB_TICK=.25,AMB_WATER_R=80,AMB_WATER_PEAK=.10;
+const AMB_DAMP={clear:[18000,1],fog:[2000,.7],rain:[1200,.6],snow:[3000,.8],storm:[900,.5]};
+const AMB={on:false,v:null,t:0,open:false,island:null,height:0,forest:false,beds:{wind:0,leaves:0,water:0,waterKind:null,waterD:Infinity},
+  gust:false,gustPh:0,gustP:7,gustMul:1,cut:18000,dampMul:1,duck:1,nodes:0};
+function ambEnsure(){if(AMB.v)return true;if(!AX||!ambGain)return false;
+  try{const n=AX.sampleRate*4,buf=AX.createBuffer(1,n,AX.sampleRate),d=buf.getChannelData(0);let b=0;
+    for(let i=0;i<n;i++){const w=Math.random()*2-1;b=b*.98+w*.02;d[i]=w*.5+b*3;} /* one 4 s noise with a brown body, shared by every bed */
+    const src=AX.createBufferSource();src.buffer=buf;src.loop=true;
+    const damp=AX.createBiquadFilter();damp.type='lowpass';damp.frequency.value=18000;damp.Q.value=.5;
+    const duck=AX.createGain();duck.gain.value=1;damp.connect(duck);duck.connect(ambGain);
+    const pan=AX.createStereoPanner?AX.createStereoPanner():null;if(pan)pan.connect(damp);const wOut=pan||damp;
+    let count=3+(pan?1:0);
+    const voice=(type,f,q,out)=>{const fl=AX.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=AX.createGain();g.gain.value=0;src.connect(fl);fl.connect(g);g.connect(out);count+=2;return {f:fl,g};};
+    const lapped=(type,f,q,hz,depth)=>{const lap=AX.createGain();lap.gain.value=1-depth;lap.connect(wOut);const o=AX.createOscillator();o.frequency.value=hz;const og=AX.createGain();og.gain.value=depth;o.connect(og);og.connect(lap.gain);o.start();count+=3;const v=voice(type,f,q,lap);v.lfo=o;return v;};
+    const v={src,damp,duck,pan,
+      wind:voice('bandpass',500,.7,damp),
+      leaves:voice('bandpass',4000,.8,damp),
+      river:voice('bandpass',900,1,wOut),
+      lake:lapped('lowpass',520,.5,.5,.45),          /* lapping at 0.5 Hz */
+      sea:lapped('lowpass',700,.4,1/(9+Math.random()*3),.6)}; /* the surf's 9–12 s swell */
+    src.start();AMB.v=v;AMB.nodes=count;AMB.on=true;return true;}catch(e){console.warn('ambience',e);return false;}}
+// the weather's damping: each kind's cutoff (blended in log frequency) and level, by how far the weather has turned (WX.k)
+function ambDampTarget(){const out=[18000,1];if(typeof WX==='undefined'||!WX)return out;const cur=WX.type,nxt=WX.next,mix=(nxt!==cur)?(WX.k||0):0;
+  let lf=0,m=0;const add=(t,w)=>{if(w<=0)return;const D=AMB_DAMP[t]||AMB_DAMP.clear;lf+=w*Math.log(D[0]);m+=w*D[1];};add(cur,1-mix);add(nxt,mix);
+  out[0]=Math.exp(lf);out[1]=m;return out;}
+// the nearest water within 80 m: a river or a lake from the routed carve grid (RVG, the same whether a cell is loaded or not),
+// the sea where the land is under SEA_Y on 8 bearings at 10, 25, 50 and 80 m (and under your feet). Returns {kind,d,bx,bz}.
+const _ambRs=[0,0];
+function ambFresh(x,z,R){let best=null;if(typeof RVG==='undefined'||typeof riverSample!=='function')return best;if(typeof RV!=='undefined'&&!RV.ready&&typeof routeWorld==='function')routeWorld();
+  const gx=Math.floor(x/RVSG),gz=Math.floor(z/RVSG),seen=new Set();
+  for(let i=gx-1;i<=gx+1;i++)for(let j=gz-1;j<=gz+1;j++){const bk=RVG.get(sgKey(i,j));if(!bk)continue;
+    for(const e of bk){if(e.lk){if(seen.has(e.lk))continue;seen.add(e.lk);const d=Math.max(0,Math.hypot(x-e.lk.x,z-e.lk.z)-e.lk.r);if(d<R&&(!best||d<best.d))best={kind:'lake',d,bx:e.lk.x,bz:e.lk.z};continue;}
+      riverSample(e.rv,e.i0,e.i1,x,z,_ambRs);const d=Math.max(0,_ambRs[0]-_ambRs[1]);if(d<R&&(!best||d<best.d))best={kind:'river',d,bx:x,bz:z};}}
+  return best;}
+function ambWater(x,z){let best=ambFresh(x,z,AMB_WATER_R);const fresh=best;
+  const wet=(sx,sz)=>{if(worldH(sx,sz)>=SEA_Y)return false;const f=ambFresh(sx,sz,1);return !f||f.d>0;}; /* under sea level, and not a lake's or a river's bed */
+  if(wet(x,z))return {kind:'sea',d:0,bx:x,bz:z};
+  let r0=0;for(const r of [10,25,50,80]){if(best&&best.d<=r)break;for(let k=0;k<8;k++){const a=k*Math.PI/4,sx=x+Math.sin(a)*r,sz=z+Math.cos(a)*r;
+    if(wet(sx,sz)){let lo=r0,hi=r;for(let n=0;n<4;n++){const m=(lo+hi)/2;if(wet(x+Math.sin(a)*m,z+Math.cos(a)*m))hi=m;else lo=m;} /* the shore found along that bearing to a metre or so */
+      if(!best||hi<best.d)best={kind:'sea',d:hi,bx:x+Math.sin(a)*hi,bz:z+Math.cos(a)*hi};}}if(best&&best.kind==='sea')break;r0=r;}
+  return best||fresh;}
+function ambSet(p,v,t,tau){try{p.setTargetAtTime(v,t,tau);}catch(e){p.value=v;}}
+function tickAmbience(dt){
+  const now=performance.now()/1000;if(now-AMB.t<AMB_TICK)return;AMB.t=now;
+  if(!AX||!ambGain)return;
+  const open=typeof activeZoneId!=='undefined'&&activeZoneId==='world'&&lid==='overworld'&&!(typeof isInterior==='function'&&isInterior());
+  AMB.open=open;if(!open&&!AMB.v)return;if(!ambEnsure())return;
+  const V=AMB.v,t=AX.currentTime,B=AMB.beds;
+  // the music's duck, eased over 3 s
+  const playing=typeof EXPLORE!=='undefined'&&EXPLORE.playing;AMB.duck=playing?.7:1;ambSet(V.duck.gain,AMB.duck,t,1);
+  // the damping
+  const D=open?ambDampTarget():[18000,1];AMB.cut=D[0];AMB.dampMul=D[1];ambSet(V.damp.frequency,D[0],t,.6);
+  if(!open){B.wind=B.leaves=B.water=0;B.waterKind=null;B.waterD=Infinity;AMB.gust=false;
+    for(const k of ['wind','leaves','river','lake','sea'])ambSet(V[k].g.gain,0,t,.33);return;} /* the world's beds fade over 1 s at the door */
+  // the wind: 0.05 at sea level, +0.03 per 50 m, at most 0.14; by island
+  let h=0;try{h=Math.max(0,worldH(px,pz)-SEA_Y);}catch(e){}AMB.height=h;
+  let isle='gatelands';try{const n=nationAt(px,pz);if(n==='mark'||n==='aurenne')isle=n;}catch(e){}AMB.island=isle;
+  let wind=Math.min(.14,.05+.03*h/50);
+  if(isle==='mark'){AMB.gust=true;AMB.gustPh+=AMB_TICK/AMB.gustP;if(AMB.gustPh>=1){AMB.gustPh-=1;AMB.gustP=5+Math.random()*5;}
+    const s=.5+.5*Math.sin(AMB.gustPh*Math.PI*2),lo=h>150?.4:.5,hi=h>150?1.9:1.6;AMB.gustMul=lo+(hi-lo)*s;wind*=AMB.gustMul;
+    ambSet(V.wind.f.frequency,620,t,.5);V.wind.f.type='bandpass';V.wind.f.Q.value=.5;}
+  else{AMB.gust=false;AMB.gustMul=1;
+    if(isle==='aurenne'){V.wind.f.type='lowpass';ambSet(V.wind.f.frequency,350,t,.5);V.wind.f.Q.value=.4;}
+    else{V.wind.f.type='bandpass';ambSet(V.wind.f.frequency,500,t,.5);V.wind.f.Q.value=.7;}}
+  let forest=false;try{forest=typeof specBiome==='function'&&specBiome(px,pz)==='forest';}catch(e){}AMB.forest=forest;
+  if(forest)wind*=.6;
+  B.wind=wind;B.leaves=forest?.035:0;
+  // the water
+  let W=null;try{W=ambWater(px,pz);}catch(e){}
+  const lvl=W?AMB_WATER_PEAK*Math.pow(Math.max(0,1-W.d/AMB_WATER_R),2):0;B.water=lvl;B.waterKind=W?W.kind:null;B.waterD=W?W.d:Infinity;
+  if(V.pan&&W){const dx=W.bx-px,dz=W.bz-pz,L=Math.hypot(dx,dz);ambSet(V.pan.pan,L>1?Math.max(-1,Math.min(1,(dx*Math.cos(yaw)-dz*Math.sin(yaw))/L*.6)):0,t,.2);}
+  const M=AMB.dampMul;
+  ambSet(V.wind.g.gain,B.wind*M,t,.4);ambSet(V.leaves.g.gain,B.leaves*M,t,.4);
+  for(const k of ['river','lake','sea'])ambSet(V[k].g.gain,(B.waterKind===k?lvl:0)*M,t,.4);}
