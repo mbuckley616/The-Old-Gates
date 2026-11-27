@@ -371,7 +371,7 @@ Started 15 Oct 2026 (QA run of 18:51 UTC, main 0773903 plus Sessions 946–949).
 | `lockswitch` | 4/14 | pass | pass | 37 |  |
 | `lod` | 10/14 | pass | pass | 426 |  |
 | `looknew` | w17/20 | — | pass | 188 |  |
-| `lookpair` | w1/20 | — | pass | 354 |  |
+| `lookpair` | w1/20 | — | pass | 354 | Red on main at s2036 (#2058: the dressing and the setts on roads through a paved town are the new look's alone; the ray never met a ribbon, cut at 900 s). The suite builds both towns undressed, S2726: 431 s, 7/7. |
 | `lootpicks` | 7/14 | pass | pass | 118 |  |
 | `lootseed` | 4/14 | pass | pass | 65 |  |
 | `lvact` | w18/20 | — | pass | 221 |  |
