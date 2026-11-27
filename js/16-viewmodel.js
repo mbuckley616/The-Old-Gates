@@ -246,10 +246,29 @@ function vmFistPose(gb,pb,sway,bob){
 // (FIST_POSE.press), and sink below the view as the pull lifts you past them; a held weapon's hand goes to the ledge with it, so
 // the weapon drops out of the view's lower edge, lying flat. Both come back as you stand. Laid over the pose the loop set this
 // frame; read from MANTLE and the loop's clock, as the pull is (and the third person's, tpMantle).
-function vmMantle(){if(!vmSword||typeof MANTLE==='undefined'||MANTLE.t0==null)return;
+/* S2719 — with a weapon drawn and nothing in the off hand, the free left hand plants on the ledge too, as the fists' left does and as the
+   third person's both wrists do (S2712): a left fist of the body's own (buildFistMesh), up from under the view's edge to the press and
+   sunk with the pull, kept in VM_MANTLE_L for the hand it was built beside. A two-hander's lower hand lets go of the haft meanwhile
+   (hidden, and the left arm's bridge carried to the planted fist), and takes it again as the pull lets go. */
+const VM_MANTLE_L={fl:null,arm:null,sw:null,low:null,wrist:null};
+function vmMantleL(on,w,sink){const M=VM_MANTLE_L;
+  if(!on||M.sw!==vmSword){if(M.low){M.low.visible=true;if(vmArmL&&M.wrist&&M.fl&&vmArmL.userData.wristHand===M.fl.userData.elbow)vmArmL.userData.wristHand=M.wrist;}M.low=null;M.wrist=null;
+    if(M.fl&&(M.sw!==vmSword||!on)){M.fl.visible=false;if(M.arm)M.arm.visible=false;}
+    if(M.sw!==vmSword){if(M.fl)VM_SCENE.remove(M.fl);if(M.arm)VM_SCENE.remove(M.arm);M.fl=M.arm=null;M.sw=vmSword;}
+    if(!on)return;}
+  if(!M.fl){M.fl=buildFistMesh(true);VM_SCENE.add(M.fl);M.arm=_fistBridge(FIST_SHOULDER_L,M.fl);VM_SCENE.add(M.arm);}
+  const P=FIST_POSE.press,fl=M.fl,mix=(o,v)=>o+(v-o)*w;fl.visible=true;
+  fl.position.set(mix(-.22,-P[0]),mix(-.62,P[1]-sink),mix(-.5,P[2]));fl.rotation.set(mix(1,P[3]),mix(-.2,-P[4]),mix(.45,-P[5]));
+  fl.updateMatrixWorld(true);
+  const low=vmSword.userData.handLow;
+  if(low&&vmArmL){if(!M.low){M.low=low;M.wrist=vmArmL.userData.wristHand;}low.visible=false;vmArmL.userData.wristHand=fl.userData.elbow;M.arm.visible=false;}
+  else _updateArmBridge(M.arm);}
+function vmMantle(){const off=()=>{if(VM_MANTLE_L.fl||VM_MANTLE_L.low)vmMantleL(false);};
+  if(!vmSword||typeof MANTLE==='undefined'||MANTLE.t0==null)return off();
   const p=Math.max(0,Math.min(1,(FALL.clock-MANTLE.t0)/MANTLE_DUR)),sm=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
-  const w=sm(p/.15)*(1-sm((p-.8)/.2));if(w<=0)return;
+  const w=sm(p/.15)*(1-sm((p-.8)/.2));if(w<=0)return off();
   const u=vmSword.userData;
+  if(!u.fists&&!EQ.offhand)vmMantleL(true,w,.3*sm((p-.25)/.45));else off();
   if(u.fists){const P=FIST_POSE.press,sink=.3*sm((p-.25)/.45),fL=u.fistL,mix=(o,v)=>o+(v-o)*w;
     vmSword.position.set(mix(vmSword.position.x,P[0]),mix(vmSword.position.y,P[1]-sink),mix(vmSword.position.z,P[2]));
     vmSword.rotation.set(mix(vmSword.rotation.x,P[3]),mix(vmSword.rotation.y,P[4]),mix(vmSword.rotation.z,P[5]));

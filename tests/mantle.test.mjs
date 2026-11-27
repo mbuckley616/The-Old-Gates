@@ -105,6 +105,23 @@ const D = await page.evaluate(() => { const w = EQ.weapon && EQ.weapon.name, two
 console.log('drawn', JSON.stringify(D));
 const offD = D.at.length ? Math.max(...D.at.map(a => Math.max(a[0], a[1]))) : null;
 check(`with the ${D.w} drawn in both hands the pull plants both wrists on the ledge (within ${offD} m over ${D.at.length} frames), the club still in hand`, D.r.pulled && D.r.on && !D.sheathed && D.at.length > 3 && offD < .06 && D.at.every(a => a[2]), D);
+// S2719: and in first person with a weapon drawn, the free left hand plants on the ledge as the fists' left does (FIST_POSE.press) and
+// sinks with the pull; a two-hander's lower hand lets go of the haft meanwhile and is back on it once you stand. Then a one-hander.
+const fpW = () => page.evaluate(() => { thirdPerson = false; const ys = []; const w = EQ.weapon && EQ.weapon.name;
+  const r = _try(5, 1.5, { onPull: () => { const p = (FALL.clock - MANTLE.t0) / MANTLE_DUR, M = VM_MANTLE_L, low = vmSword && vmSword.userData.handLow;
+    ys.push([+p.toFixed(2), M.fl && M.fl.visible ? +M.fl.position.y.toFixed(3) : null, low ? low.visible : null, !!(vmSword && vmSword.userData.fists)]); } });
+  const low = vmSword && vmSword.userData.handLow;
+  return { w, r, ys, press: FIST_POSE.press[1], after: { fl: !!(VM_MANTLE_L.fl && VM_MANTLE_L.fl.visible), low: low ? low.visible : null, arm: !!(vmArmL && low && vmArmL.userData.wristHand === (low.userData.elbow || low)) } }; });
+const fpOk = (V, two) => { const at = q => V.ys.find(y => y[0] >= q);
+  return V.r.pulled && at(.2) && at(.6) && !at(.2)[3] && Math.abs(at(.2)[1] - V.press) < .03 && at(.6)[1] < V.press - .15 && (!two || at(.2)[2] === false) && !V.after.fl && (!two || (V.after.low && V.after.arm)); };
+const W2 = await fpW();
+console.log('fp drawn', JSON.stringify(W2));
+check(`in first person with the ${W2.w} drawn the left hand lets go of the haft and plants on the ledge (${W2.ys.find(y => y[0] >= .2)} at 0.2, ${W2.ys.find(y => y[0] >= .6)} at 0.6) and takes the haft again (${JSON.stringify(W2.after)})`, fpOk(W2, true), W2);
+const W1 = await page.evaluate(() => { const was = EQ.weapon; EQ.weapon = makeItem(2, WEAPON_TYPES.find(t => t.type === 'sword' && !t.twoHand) || WEAPON_TYPES.find(t => !t.twoHand)); window._fpWas = was; SHEATHED = false; buildViewmodel(); return !!(EQ.weapon && !(WEAPON_TYPES.find(t => t.type === EQ.weapon.type) || {}).twoHand); });
+const V1 = W1 ? await fpW() : null;
+console.log('fp one-hand', JSON.stringify(V1));
+check(`in first person with a one-hander (${V1 && V1.w}) drawn the empty left hand plants on the ledge and is gone once you stand`, W1 && fpOk(V1, false), V1);
+await page.evaluate(() => { EQ.weapon = window._fpWas; buildViewmodel(); });
 const held = await page.evaluate(() => { const w = EQ.weapon && EQ.weapon.name; if (EQ.weapon && !SHEATHED) sheathWeapon(); return { w, sheathed: SHEATHED }; });
 console.log('hand', JSON.stringify(held));
 const P = await page.evaluate(() => { thirdPerson = true; const at = []; let hb = false;
