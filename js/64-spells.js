@@ -437,7 +437,7 @@ function touchSigil(sigil){
       // predecessor's completion to unlock.
       if(firstObj && (firstObj.firstTouch || firstObj.minTier===1)){
         qs.state='active';
-        showMsgLong(`📜 New quest: ${q.title}`,'#c0a8ff');
+        showMsgLong(`📜 New quest: ${q.title}`,'#c0a8ff',{kind:'quest',title:q.title,line:'New quest'});
         updateQuestDots();
         if(hubOpen)renderQuestLog();
       }
@@ -1436,7 +1436,7 @@ function holdWord(bk){
   return {ok:true};}
 // the cast of a held entry from the book (castSpell hands it here)
 function castHeld(bk){if(HELD)return true;const r=holdWord(bk);if(r.say)showMsg(r.say,r.ok?'#8a8ac8':'#a8a8d4');
-  else if(r.ok&&HELD)showMsg(`${WORD_BY[bk.word].ico} ${WORD_BY[bk.word].nameIr}, held`,'#88ccff');return !!r.ok;}
+  else if(r.ok&&HELD)showMsg(`${WORD_BY[bk.word].ico} ${WORD_BY[bk.word].nameIr}, held`,'#88ccff',{kind:'word',title:`${WORD_BY[bk.word].nameIr}, held`,line:WORD_BY[bk.word].nameEn||''});return !!r.ok;}
 function heldEnd(why){const H=HELD;if(!H)return;HELD=null;
   const m=H.mesh;if(m&&m.parent)m.parent.remove(m);if(m)m.traverse(o=>{if(o.geometry)o.geometry.dispose();});
   spCd=spellCooldown(H.sp,H.tier);castMark(0);

@@ -222,7 +222,7 @@
   function qJournal(q,kind,text){if(q&&q.id&&text&&typeof journalQuest==='function')try{journalQuest(kind,q,text);}catch(e){}}
   function qFind(id){return QJ().find(q=>q.id===id);}
   function qActive(){return QJ().filter(q=>!q.turnedIn);}
-  function qAdd(q){QJ().push(q);if(typeof addLog==='function')addLog('📜',`${q.title} — ${q.giver}`);if(q.desc)qJournal(q,'accept',q.desc);showMsg(`New quest: ${q.title}`,'#e8d8a0');return q;}
+  function qAdd(q){QJ().push(q);if(typeof addLog==='function')addLog('📜',`${q.title} — ${q.giver}`);if(q.desc)qJournal(q,'accept',q.desc);showMsg(`New quest: ${q.title}`,'#e8d8a0',{kind:'quest',title:q.title,line:q.giver?`New quest · ${q.giver}`:'New quest'});return q;}
   // S500 — dated work (Michael's C on DECISION #132, part B): a lord's job may carry a date, q.due (the first minute after
   // its last day). Done by then it pays a quarter more; past it, undone, the lord takes it back. One job in three is dated,
   // 7 to 14 days out, rolled from a stream keyed by the town and the day it was given (the co-op rule on seeded rolls).
@@ -231,7 +231,7 @@
   function datedLapse(q){if(!q||!q.due||q.done||q.turnedIn||(worldState.gameTimeAbsMinutes||0)<q.due)return false;q.turnedIn=true;q.lapsed=true;if(typeof addLog==='function')addLog('📜',`${q.title}: the date passed, and ${q.giver} has given the work to someone else.`);qJournal(q,'lapsed',`The date passed, and ${q.giver} has given the work to someone else.`);showMsg(`${q.title}: the date has passed. The work is taken back.`,'#c8b880');return true;}
   let _datedAt=0;
   function tickDatedWork(){const now=worldState.gameTimeAbsMinutes||0;if(now<_datedAt&&now>=_datedAt-60)return;_datedAt=Math.floor(now/60)*60+60;QJ().forEach(q=>{datedLapse(q);erLapse(q);});gLapse();} /* S1510 — an errand's date too */
-  function qComplete(q){if(q.done||q.lapsed)return;if(datedLapse(q))return;q.done=true;q.doneAt=Math.floor(worldState.gameTimeAbsMinutes||0);showMsg(`${q.title}: done — report to ${q.giver}.`,'#e8d8a0');if(typeof addLog==='function')addLog('✅',`${q.title}: objective complete.`);qJournal(q,'ready',`Done — report to ${q.giver}.`);}
+  function qComplete(q){if(q.done||q.lapsed)return;if(datedLapse(q))return;q.done=true;q.doneAt=Math.floor(worldState.gameTimeAbsMinutes||0);showMsg(`${q.title}: done — report to ${q.giver}.`,'#e8d8a0',{kind:'quest',title:q.title,line:`Done — report to ${q.giver}.`});if(typeof addLog==='function')addLog('✅',`${q.title}: objective complete.`);qJournal(q,'ready',`Done — report to ${q.giver}.`);}
   // S2720 — what a turned-in quest pays toward the level (#2059 D): a lord's job (the town's, a war's, a road writ) 1, a faction's service, an errand, the spire and every other quest 2
   function qMarkKind(q){if(!q)return null;if(q.faction)return 'quest';return /^(tq|war|writ):/.test(String(q.id||''))?'job':'quest';}
   function qTurnIn(q){if(q&&q.contract&&typeof contractTurnIn==='function'){const k=contractTurnIn(q);if(k!=null)return 0;} /* S2230 — the Compact's contract: no gold, the ledger */q.turnedIn=true;if(q.rival&&q.kind==='find'){const j=qFind(q.id),n=q._npc||(j&&j._npc);if(n)duelRemoveNpc(n);q._npc=null;if(j)j._npc=null;} /* S463 — Rowe, found, rides back: she is not left sitting on the land */const paid=questGold(datedPay(q));q.paid=paid;gold+=paid;(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;xp+=Math.round((q.reward||0)*.9);chkLvl();questMarks(qMarkKind(q));updateHUD();if(typeof addLog==='function')addLog('🏅',`${q.title}: ${paid} gold.`);qJournal(q,'complete',paid>0?`Turned in to ${q.giver}: ${paid} gold.`:`Turned in to ${q.giver}.`);return paid;}
@@ -5318,7 +5318,7 @@ const giver=`${lord.title} ${lord.name}`;
   function tutQuest(id){return QJ().find(q=>q.id===id);}
   function tutLog(msg){if(typeof addLog==='function')addLog('🧭',msg);}
   function tutSet(id,title,giver,desc,objective,reward,done){let q=tutQuest(id);
-    if(!q){q={id,giver,title,desc,objective,kind:'tut',data:{},reward:reward||0,tut:true,done:!!done};QJ().push(q);if(typeof addLog==='function')addLog('📜',`${title} — ${giver}`);showMsg(`New quest: ${title}`,'#e8d8a0');}
+    if(!q){q={id,giver,title,desc,objective,kind:'tut',data:{},reward:reward||0,tut:true,done:!!done};QJ().push(q);if(typeof addLog==='function')addLog('📜',`${title} — ${giver}`);showMsg(`New quest: ${title}`,'#e8d8a0',{kind:'quest',title,line:giver?`New quest · ${giver}`:'New quest'});}
     else{q.desc=desc;q.objective=objective;q.done=!!done;if(reward!=null)q.reward=reward;}
     return q;}
   function tutFinish(id,gold_){const q=tutQuest(id);if(q){q.done=true;q.turnedIn=true;}const paid=questGold(gold_);gold+=paid;xp+=Math.round(gold_*.9);questMarks('quest');(worldState.stats||(worldState.stats={})).goldIn=((worldState.stats||{}).goldIn||0)+paid;if(typeof chkLvl==='function')chkLvl();updateHUD();}

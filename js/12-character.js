@@ -272,7 +272,7 @@ function skillUse(id,w,target){const S=skillsReady(),s=S[id];if(!s||s.lv>=100)re
   m.set(key,now);s.p+=(w||1)*SKILL_W_MULT*(typeof _buffMult==='function'?_buffMult('xpBoost',1):1)*(typeof restSkillMult==='function'?restSkillMult():1);let up=0; /* S2085 — Rested ×1.1, Well rested ×1.15 */
   while(s.lv<100&&s.p>=skillCost(s.lv)){s.p-=skillCost(s.lv);s.lv++;up++;}
   if(s.lv>=100)s.p=0;
-  if(up){skillMark(id,up);if(typeof showMsg==='function')showMsg(`${SKILL_DEF[id].label} rises to ${s.lv}.`,'#c8b8e8');}
+  if(up){skillMark(id,up);if(typeof showMsg==='function')showMsg(`${SKILL_DEF[id].label} rises to ${s.lv}.`,'#c8b8e8',{kind:'skill',title:`${SKILL_DEF[id].label} rises to ${s.lv}`,line:(ATTR_DEF[SKILL_DEF[id].attr]||{}).label?`${ATTR_DEF[SKILL_DEF[id].attr].label}’s skill`:''});}
   return true;}
 // ── THE LEVEL ON MARKS (Session 952: the build sheet's second session; Michael's B on #342) ──
 // Every skill-up counts toward the level: a major's or a minor's is a mark, any other skill's a quarter, so levelling by

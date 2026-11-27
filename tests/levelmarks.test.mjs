@@ -101,5 +101,17 @@ const qm = await page.evaluate(() => {
   levelMarks = 0; return out; });
 check(`a main-quest step pays ${qm.main} marks, a quest ${qm.errand} (a faction's service ${qm.service}), a lord's job ${qm.job} (a war's ${qm.war}), a sigil's tier ${qm.sigil}`,
   qm.main === 3 && qm.errand === 2 && qm.service === 2 && qm.job === 1 && qm.war === 1 && qm.sigil === 0 && qm.skill === 1, qm);
+// S2721 — Michael's B on #2047: the five moments are a card at the top centre, one at a time; the ledger keeps the small lines
+const nc = await page.evaluate(() => {
+  NOTE_Q.length = 0; _noteOn = null; const L = document.getElementById('ledger'); L.innerHTML = ''; const el = document.getElementById('note-card');
+  const s = SKILLS.blade; s.p = skillCost(s.lv) - 1; skillUse('blade', 1, 'nc'); const lv = s.lv;
+  const first = { on: el.classList.contains('on'), kind: el.querySelector('.nc')?.dataset.kind, title: el.querySelector('.tt')?.textContent, line: el.querySelector('.ln2')?.textContent, msg: document.getElementById('msg').textContent };
+  showMsg('Gold paid.', '#e8d8a0'); showMsgLong('Dunmore discovered', '#e8d8a0', { kind: 'place', title: 'Dunmore', line: 'Discovered' });
+  const r = el.getBoundingClientRect();
+  return { first, lv, queued: NOTE_Q.map(n => n.kind + ':' + n.title), slips: [...L.children].map(e => e.textContent), box: { top: Math.round(r.top), mid: Math.round(r.left + r.width / 2), W: innerWidth } }; });
+check(`a skill's rise is a card (${nc.first.kind}: *${nc.first.title}*, *${nc.first.line}*), a place found waits behind it, and only *Gold paid.* is a slip`,
+  nc.first.on && nc.first.kind === 'skill' && nc.first.title === `Blade rises to ${nc.lv}` && /Might/.test(nc.first.line) && /rises to/.test(nc.first.msg)
+  && nc.queued.join() === 'place:Dunmore' && nc.slips.join('|') === 'Gold paid.' && nc.box.top >= 20 && nc.box.top <= 40 && Math.abs(nc.box.mid - nc.box.W / 2) < 4, nc);
+await page.screenshot({ path: 'tests/tmp/notecard.png' }).catch(() => {});
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

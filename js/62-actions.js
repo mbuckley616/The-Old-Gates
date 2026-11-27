@@ -324,7 +324,7 @@ function slimeSplitSpots(e){
 let _lvlReadyShown=false;
 function chkLvl(){
   try{const b=document.getElementById('lvready');if(b)b.style.display=levelReady()?'inline-block':'none';}catch(e){} /* S952 — the level comes on skill marks, not xp */
-  if(levelReady()&&!_lvlReadyShown){_lvlReadyShown=true;showMsg('You feel ready to advance — find a bed and rest.','#e8d8a0');addLog('✨','Ready to level. Rest in a bed.');}
+  if(levelReady()&&!_lvlReadyShown){_lvlReadyShown=true;showMsg('You feel ready to advance — find a bed and rest.','#e8d8a0',{kind:'level',title:`Level ${level+1}`,line:'You feel ready to advance — find a bed and rest.'});addLog('✨','Ready to level. Rest in a bed.');}
 }
 function takeLevelIfReady(){
   if(!levelReady()||luOpen)return false;

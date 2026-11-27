@@ -1734,7 +1734,7 @@ function genSettlement(site){
     if(!worldState.wdisc)worldState.wdisc={};
     if(worldState.wdisc[id])return false;
     worldState.wdisc[id]=true;
-    try{const t=siteAnywhere(id);const big=t&&(t.kind==='city'||t.kind==='town'||t.kind==='port');const gain=big?50:String(id).startsWith('door_')?30:25;xp+=gain;if(typeof chkLvl==='function')chkLvl();if(typeof updateHUD==='function')updateHUD();if(typeof showMsgLong==='function')showMsgLong(`${name} discovered`,'#e8d8a0');else showMsg(`${name} discovered`,'#e8d8a0');(worldState.stats||(worldState.stats={})).found=((worldState.stats||{}).found||0)+1;}catch(e){if(typeof showMsg==='function')showMsg(`Discovered: ${name}`,'#e8d8a0');}
+    try{const t=siteAnywhere(id);const big=t&&(t.kind==='city'||t.kind==='town'||t.kind==='port');const gain=big?50:String(id).startsWith('door_')?30:25;xp+=gain;if(typeof chkLvl==='function')chkLvl();if(typeof updateHUD==='function')updateHUD();if(typeof showMsgLong==='function')showMsgLong(`${name} discovered`,'#e8d8a0',{kind:'place',title:name,line:'Discovered'});else showMsg(`${name} discovered`,'#e8d8a0');(worldState.stats||(worldState.stats={})).found=((worldState.stats||{}).found||0)+1;}catch(e){if(typeof showMsg==='function')showMsg(`Discovered: ${name}`,'#e8d8a0');}
     if(typeof addLog==='function')addLog('🗺️',`Discovered ${name}.`);
     if(typeof sndDiscover==='function')sndDiscover();
     return true;
