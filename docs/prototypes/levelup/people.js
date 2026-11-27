@@ -1136,6 +1136,11 @@ function buildBurnousPoint(cols, R, kb, neck, rollY, D) {
 // how far a full cloak is kept off the hands and lower forearms (Sessions 1944 and 1953): in the hang (wornMask's armRoom) and in the
 // drape's push-out and the spacing's clearing (armRoomV, by each surface point's own bone), since the drape places the cloth by the hand
 const CLOAK_ARM_ROOM = .03;
+// a long cloak worn back stood a hand's width off the arms from the front (the critic, 27 Nov: a narrow-shouldered woman broader at the
+// elbows than at the shoulders). Its sides hang plumb from the shoulder line, which stood the tunic's 4 cm room off the deltoid, and each
+// column's drape set out half as far outward as down. Session 2734: over the sides (CLOAK_BACK_SIDE rad from the back's middle and
+// on round to the opening) the room is less by CLOAK_BACK_CLEAR and the drape sets out at CLOAK_BACK_LEAN of the closed cloak's lean
+export const CLOAK_BACK_CLEAR = .02, CLOAK_BACK_SIDE = [1.35, 1.65], CLOAK_BACK_LEAN = .5;
 // what a shoulder cape's front is not laid over (Session 2404): the hair and beard (loose hair has its own lift), and what is below the cape
 const CAPE_NOT_WORN = /^(scalp|hair|brows|beardBase|beard|moust|bun|tie|braid\d|brush|tail|lashes|eyes?|teeth|boots|trousers|legWraps|skirt|sandals)$/;
 // per vertex of the pack: m where the vertex's heaviest bone is the lower forearm, the wrist, a metacarpal or a finger, else 0
@@ -1162,7 +1167,8 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
   // at most, so its two front panels read as a flat shelf. A cape rides the chest's own bone; from 1.9 rad round from the back's middle
   // the tunic's room eases to 2 cm, so the front lies 4.6 cm off the skin, over the tunic
   const capeFront = q => { if (!cape) return 0; const u = Math.max(0, Math.min(1, (Math.abs(Math.atan2(q.x - neck.x, -(q.z - neck.z))) - 1.9) / .6)); return u * u * (3 - 2 * u); };
-  const clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .02 - q.y) / .03)); return .03 + k * ((D.mantle && q.y > neckY - .32 ? .095 : D.tabard ? (D.mail ? .06 : .05) : D.tunic ? .04 - .02 * capeFront(q) : .015) - .01); };
+  const backSide = q => { if (!back) return 0; const u = Math.max(0, Math.min(1, (Math.abs(Math.atan2(q.x - neck.x, -(q.z - neck.z))) - CLOAK_BACK_SIDE[0]) / (CLOAK_BACK_SIDE[1] - CLOAK_BACK_SIDE[0]))); return u * u * (3 - 2 * u); };
+  const clearAt = q => { const k = Math.max(0, Math.min(1, (neckY - .02 - q.y) / .03)); return .03 + k * ((D.mantle && q.y > neckY - .32 ? .095 : D.tabard ? (D.mail ? .06 : .05) : D.tunic ? .04 - .02 * capeFront(q) - CLOAK_BACK_CLEAR * backSide(q) : .015) - .01); };
   // the shoulder line: for each angle round the neck, the surface point furthest out and a little down from the neck
   // with a spear in the right fist (Session 909) a full cloak is thrown back off the right shoulder, as a Markman frees his
   // weapon arm: it opens from the throat round to just behind the shoulder, so the forearm held forward is out of it
@@ -1216,7 +1222,7 @@ function buildCloak(G, body, byName, rnd, hairMeshes = null, wornOver = null) {
     const t = Math.max(0, Math.min(1, (s - arc[j]) / Math.max(1e-9, arc[j + 1] - arc[j]))), n = ringU[j].n.clone().lerp(ringU[j + 1].n, t).normalize(), start = ringU[j].p.clone().lerp(ringU[j + 1].p, t);
     for (let it = 0; it < 3; it++) { const cl = clearAt(start) + .006, hit = heightOver(S, start); if (hit && hit.h < cl) start.addScaledVector(hit.e.n, cl - hit.h); }
     const th = polarTh(start), dir = new THREE.Vector3(Math.sin(th), 0, -Math.cos(th)); tops.push({ start, dir, n });
-    cols.push(drape(S, start, dir.clone().multiplyScalar(.5).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006, { room })); }
+    cols.push(drape(S, start, dir.clone().multiplyScalar(.5 * (1 - (1 - CLOAK_BACK_LEAN) * backSide(start))).add(new THREE.Vector3(0, -1, 0)), L, q => clearAt(q) + .006, { room })); }
   const R = Math.min(...cols.map(c => c.length));
   // hold neighbours to a spacing that widens toward the hem, then clear the body again
   // a shoulder cape's flare fades over the breast (Session 2404, S2393's owed note): the whole sheet was held to spacings 1.55 times its
