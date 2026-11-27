@@ -23,7 +23,7 @@ const r = await page.evaluate(() => {
   out.bag = BAG.filter(it => [out.start.chest, out.start.legs, out.start.feet, swordName].includes(it.name)).map(it => ({ name: it.name, type: it.type, slot: it.slot }));
   out.rusty = BAG.some(it => it.name === 'Rusty Sword') || (EQ.weapon && EQ.weapon.name === 'Rusty Sword');
   out.fistHit = hit(); out.fistSwing = _weaponSwingFactor(); out.swordSwing = swordSwing; out.level = level;
-  renderInv(); out.sa = document.getElementById('sa').textContent;
+  renderInv(); out.sa = document.getElementById('sa').textContent; { const k = skillMult(weaponSkill(null)) * (1 + attrEff('might') * ATTR_DMG_PER_POINT); out.shown = `${Math.floor(2 * k)}–${Math.floor(3 * k)}`; }
   hoverEqSlot('weapon'); out.tip = document.getElementById('eq-tooltip-stat').textContent;
   Math.random = rnd; Object.assign(ATTRS, keepAttr);
   // a saved empty hand stays empty; then put the tunic back on from the bag
@@ -37,7 +37,7 @@ check('the starter clothes and the weapon all come off', r.start.chest && r.star
 check('what came off is in the bag as gear with its slot, and no Rusty Sword appears', r.bag.length === 4 && r.bag.every(b => b.type === 'equip' && b.slot) && !r.rusty, r);
 check('fists hit for less than the starting weapon', r.fistHit > 0 && r.fistHit < r.swordHit, r);
 check('fists swing faster than the starting weapon', r.fistSwing < r.swordSwing, r);
-check('the sheet and the slot show the fists’ 2–4', r.sa === `${2 + Math.floor(r.level * 1.5)}–${4 + Math.floor(r.level * 1.5)}` && /Fists/.test(r.tip), r);
+check(`the sheet and the slot show the fists’ 2–3 × their skill and Might (${r.sa}, as atkShown's ${r.shown})`, r.sa === r.shown && /Fists/.test(r.tip), r); /* S2744 — the level × 1.5 left the damage in S941 and the sheet now */
 check('a save with an empty hand loads with an empty hand', r.savedWeapon === null && !r.loadedWeapon, r);
 check('the tunic can be put back on from the bag', r.reworn === r.start.chest && r.defReworn > 0, r);
 // Session 2710: an item is heard by what it is (Michael, 25 Nov): a take from a container or a put into the stash is a sweep and the

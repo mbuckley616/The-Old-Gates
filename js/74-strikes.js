@@ -263,7 +263,7 @@ function meleeDamageChain(e,o){
   const meleeBuff=_buffMult('meleeDmg',1)*_buffMult('dmgBurst',1); // S322 — Firemoss and Caor Dubh everywhere
   const powerMult=o.isPow?POWER_DMG_MULT:1.0;
   // S941 — the weapon's skill carries the damage, ×0.64 at 5 to ×1.4 at 100; the flat level × 1.5 is gone (skills and perks A)
-  return Math.floor((lo+Math.floor(foeRand(e)*(hi-lo)))*skillMult(weaponSkill(w))*mightMult*meleeBuff*powerMult*o.shMult*o.row.dmg*o.chainDmg);
+  return Math.floor(rollRange(lo,hi,foeRand(e))*skillMult(weaponSkill(w))*mightMult*meleeBuff*powerMult*o.shMult*o.row.dmg*o.chainDmg);
 }
 function staggerFlash(e){
   const body=enemyBodyMesh(e),m=body&&body.material;

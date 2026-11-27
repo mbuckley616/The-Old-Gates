@@ -20,7 +20,9 @@ const BAG=[];
 // v80 S173 — every slot may be empty (Michael, 27 Sep). With no weapon you fight with your fists:
 // light, quick and weak. The starter clothes and anything else taken off go to the bag as gear
 // that can be put back on (the starter kit never carried a type or slot, so it could not).
-const FISTS={name:'Fists',atk:[2,4],weight:1,wType:'blunt'};
+const FISTS={name:'Fists',atk:[2,3],weight:1,wType:'blunt'};
+/* S2744 — a range as the sheet shows it, both ends: ATK 8–9 rolls 8 or 9 (lo + floor(r × (hi − lo)) never reached hi). Fists' 2–4 and Stone hand's 4–8 rolled 2–3 and 4–7, and are written so */
+function rollRange(lo,hi,r){return lo+Math.floor(r*Math.max(1,hi-lo+1));}
 function eqBagCopy(it,slot){return {...it,qty:1,type:it.type||'equip',slot:it.slot||slot};}
 // v61d4 — Persistent shared stash. Lives in the Caldric Safehouse, accessed
 // via the chest on the back wall. Mirrors BAG's structure (array of item

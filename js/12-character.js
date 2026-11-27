@@ -243,7 +243,7 @@ function rollLoad(){if(typeof packCarried==='function'&&packCarried()>PACK_HEAVY
 // 0.6 s longer; Earthshaker (100) the chain's third hit staggers every foe within 2 m of you. Hand-to-hand: Hard knuckles (25)
 // a punch drains ×1.5 posture; Stone hand (100) the fists roll 4 to 7. Ringing (50, S1077) a shield a power hit breaks stays down while its bearer is alert. Throw (50, S1078) a punch on a staggered foe knocks it down (throwFoe). Catch the blade (75, S1079) a bare-handed perfect parry disarms (catchBlade). Draw cut (25, S1080) the swing that draws from the sheath drains ×2 posture (the sheath is in 74-strikes.js).
 function armsPerk(id,rank){return weaponSkill(EQ.weapon)===id&&perk(id,rank);}
-const CROSSING_R=3,DAZE_S=.6,EARTHSHAKER_R=2,STONE_HAND_ATK=[4,8];
+const CROSSING_R=3,DAZE_S=.6,EARTHSHAKER_R=2,STONE_HAND_ATK=[4,7]; /* S2744 — as it rolled (rollRange takes both ends now) */
 function riposteSecs(){return armsPerk('blade',50)?1.2:RIPOSTE_S;}
 function armsPostureMult(){return armsPerk('blunt',25)?1.25:armsPerk('hand',25)?1.5:1;}
 function dazeS(t){return t+(armsPerk('blunt',75)?DAZE_S:0);}
