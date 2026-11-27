@@ -27,7 +27,7 @@ function initAudio(){
     musicGain=AX.createGain();musicGain.gain.value=VOL_MUSIC[volLevel]*volKind('music');musicGain.connect(masterGain);
     sfxGain=AX.createGain();sfxGain.gain.value=VOL_SFX[volLevel]*volKind('effects');sfxGain.connect(masterGain);
     uiGain=AX.createGain();uiGain.gain.value=VOL_SFX[volLevel]*.28*volKind('effects');uiGain.connect(masterGain);
-    ambGain=AX.createGain();ambGain.gain.value=VOL_SFX[volLevel]*AMB_LEVEL*volKind('ambience');ambGain.connect(masterGain); /* S2726 — the Ambience bus (#2071 B) */
+    ambGain=AX.createGain();ambGain.gain.value=VOL_SFX[volLevel]*AMB_LEVEL*volKind('ambience');ambGain.connect(masterGain); /* S2727 — the Ambience bus (#2071 B) */
     if(_initialMusicOverride){
       startMusic(_initialMusicOverride.zone, _initialMusicOverride.theme);
     } else {
@@ -40,7 +40,7 @@ function cycleVol(){
   document.getElementById('vol-btn').textContent=VOL_ICONS[volLevel];
   applyVolumes();
 }
-// S691 — the settings sheet's four volumes (everything, music, blows and steps, spoken lines) over the button's level; S2726 a fifth, the place's own sound (ambience)
+// S691 — the settings sheet's four volumes (everything, music, blows and steps, spoken lines) over the button's level; S2727 a fifth, the place's own sound (ambience)
 function volKind(k){return (SETTINGS.master/100)*(SETTINGS[k]/100);}
 function applyVolumes(){
   if(!AX)return;
@@ -672,7 +672,7 @@ function sndReturnOW(){
   sfxTone(550,640,.5,.08,'sine');
 }
 
-// ── WHAT A PLACE SOUNDS LIKE (Session 2726; Michael's B on #2071, the build sheet's first session) ──────────────────
+// ── WHAT A PLACE SOUNDS LIKE (Session 2727; Michael's B on #2071, the build sheet's first session) ──────────────────
 // The Ambience bus: every bed → one lowpass (the weather's damping) → the duck (× 0.7 while a piece plays) → ambGain (the effects'
 // level × 0.6 × the Ambience slider) → master. Outdoors in the open world, two beds: the wind (by height and island; a wood's canopy
 // takes some and adds the leaves) and the nearest water within 80 m (a river, a lake's lapping, the sea's swell). Everything here is

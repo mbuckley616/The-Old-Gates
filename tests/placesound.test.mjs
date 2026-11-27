@@ -1,4 +1,4 @@
-// What a place sounds like (Michael's B on #2071; docs/design/what-a-place-sounds-like-build.md). Session 2726, the build sheet's first
+// What a place sounds like (Michael's B on #2071; docs/design/what-a-place-sounds-like-build.md). Session 2727, the build sheet's first
 // session: the Ambience bus under the effects, the wind by height and island, the nearest water within 80 m, the weather's damping and
 // the music's duck. The tick is called by hand (it runs every 0.25 s of the page's clock in the main loop); AMB holds what it decided.
 import { boot, check } from './lib/game.mjs';

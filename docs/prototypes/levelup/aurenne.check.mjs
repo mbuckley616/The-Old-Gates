@@ -10,6 +10,7 @@
 // ground, within their width, the same twice; the quay and the line-up render. --shots adds aurenne-quay and aurenne-civic.
 // Session 836, the Mages' academy (aurenneAcademy): four sizes with two and three towers build in budget, on the ground, the
 // same twice, the observatory tower the tallest and every tower well above the hall; the page renders. --shots adds aurenne-academy.
+// Session 2725, the harbour town: three storeys and the belvedere in budget; the three options render. --shots adds aurenne-harbour-*.
 import { chromium } from 'playwright'; import http from 'http'; import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -90,5 +91,17 @@ for (const v of ['church', 'churches']) { const pg = await browser.newPage({ vie
   await pg.goto(`http://localhost:${port}/aurenne.html?still&nopeople&w=640&h=360&view=${v}`); await pg.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 });
   const st = await pg.evaluate(() => window.__stats); check(`the ${v} page: ${st.churches.length} church${st.churches.length > 1 ? 'es' : ''} and ${st.houses.length} houses, no page errors`, e2.length === 0 && st.churches.length === (v === 'church' ? 1 : 3) && st.houses.length === (v === 'church' ? 8 : 0), e2.slice(0, 3)); await pg.close(); }
 await page.close();
-if (process.argv.includes('--shots')) for (const [name, q] of [['aurenne-street', ''], ['aurenne-houses', 'view=houses'], ['aurenne-church', 'view=church'], ['aurenne-churches', 'view=churches'], ['aurenne-church-dome', 'view=church&top'], ['aurenne-quay', 'view=quay'], ['aurenne-civic', 'view=civic'], ['aurenne-academy', 'view=academy']]) console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=aurenne.html', '--name=' + name, ...(q ? ['--q=' + q] : [])]).toString().split('{')[0]);
+// Session 2725, the harbour town (?view=harbour&opt=a|b|c): three-storey houses and the roof's belvedere build in budget, on the
+// ground, under 13.5 m, the same twice from one key; each option's page renders with no errors
+{ const pg0 = await browser.newPage(); await pg0.goto(`http://localhost:${port}/aurenne.html?still&nopeople&w=320&h=180&view=houses`); await pg0.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 });
+  const t = await pg0.evaluate(async () => { const THREE = await import('three'), K = await import('./pieces.js'), out = [];
+    for (let i = 0; i < 60; i++) { const L = K.aurenneLot('h3', i), o = { ...L.o, storeys: 3, two: true, stair: false, belvedere: L.o.kind === 'flat' && !L.o.dome, pergola: false }, a = K.aurenneHouse(o, K.stream('h3:' + i)), b = K.aurenneHouse(o, K.stream('h3:' + i)), bx = new THREE.Box3().setFromObject(a.group);
+      let same = a.tris === b.tris && a.draws === b.draws; out.push({ kind: o.kind, bel: o.belvedere, tris: a.tris, draws: a.draws, below: +bx.min.y.toFixed(3), top: +bx.max.y.toFixed(2), same }); for (const g of [a, b]) g.group.traverse(m => m.geometry && m.geometry.dispose()); }
+    return out; }); await pg0.close();
+  const mx = k => Math.max(...t.map(h => h[k])); check(`three storeys (${t.length}, ${t.filter(h => h.bel).length} with a belvedere): at most ${mx('tris').toLocaleString()} triangles and ${mx('draws')} meshes, none below the ground, the tallest ${mx('top')} m, each the same twice`,
+    mx('tris') < 16000 && mx('draws') <= 16 && t.every(h => h.below > -.01 && h.same) && mx('top') < 13.5 && t.some(h => h.bel), { tris: mx('tris'), top: mx('top') });
+  for (const opt of ['a', 'b', 'c']) { const p2 = await browser.newPage({ viewport: { width: 640, height: 360 } }), e2 = []; p2.on('pageerror', e => e2.push(String(e)));
+    await p2.goto(`http://localhost:${port}/aurenne.html?still&nopeople&w=640&h=360&view=harbour&opt=${opt}`); await p2.waitForFunction(() => window.__done || window.__err, null, { timeout: 600000 });
+    const st = await p2.evaluate(() => window.__stats.harbour); check(`the harbour, option ${opt}: ${st.lots} lots (storeys 1/2/3: ${st.storeys.slice(1).join('/')}, ${st.belvederes} belvederes), ${Math.round(st.tris / 1000)}k triangles, no errors`, !e2.length && st.lots >= 30 && (opt === 'a' ? !st.storeys[3] : st.storeys[3] > 0), e2.slice(0, 2)); await p2.close(); } }
+if (process.argv.includes('--shots')) for (const [name, q] of [['aurenne-harbour-a', 'view=harbour&opt=a&nopeople'], ['aurenne-harbour-b', 'view=harbour&opt=b&nopeople'], ['aurenne-harbour-c', 'view=harbour&opt=c&nopeople'], ['aurenne-harbour-near-a', 'view=harbour&opt=a&nopeople&near'], ['aurenne-harbour-near-b', 'view=harbour&opt=b&nopeople&near'], ['aurenne-harbour-near-c', 'view=harbour&opt=c&nopeople&near'], ['aurenne-street', ''], ['aurenne-houses', 'view=houses'], ['aurenne-church', 'view=church'], ['aurenne-churches', 'view=churches'], ['aurenne-church-dome', 'view=church&top'], ['aurenne-quay', 'view=quay'], ['aurenne-civic', 'view=civic'], ['aurenne-academy', 'view=academy']]) console.log(execFileSync('node', [path.join(here, 'shoot.mjs'), '--page=aurenne.html', '--name=' + name, ...(q ? ['--q=' + q] : [])]).toString().split('{')[0]);
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

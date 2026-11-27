@@ -852,7 +852,7 @@ function loop(now){
   if(typeof tickFlagstone==='function')tickFlagstone(); /* S1353 — the Ashfeld's flagstone */
   if(typeof tickBladeStone==='function')tickBladeStone(); /* S802 — the Gate-Blade's stone, and its first sight */
   if(typeof tickBellWreck==='function')tickBellWreck(); /* S801 — the Drowned Bell's wreck, set by the tide, and its first sight */
-  if(typeof tickAmbience==='function')try{tickAmbience(dt);}catch(e){} /* S2726 — the place's own sound (#2071 B), indoors too so the beds fade at the door */
+  if(typeof tickAmbience==='function')try{tickAmbience(dt);}catch(e){} /* S2727 — the place's own sound (#2071 B), indoors too so the beds fade at the door */
   if(lid==='overworld'){
     // v80 — streamed world: chunk streaming + atmosphere. Runs before the zone chain.
     if(activeZoneId==='world'&&typeof WORLD!=='undefined')WORLD.tick(dt,now);

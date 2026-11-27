@@ -33,7 +33,7 @@ const a = await sheet();
 console.log(JSON.stringify(a.rows));
 const hasRule = await page.evaluate(() => typeof setChallenge === 'function');
 // Session 822: a tenth, the renderer (card F1), after the mouse's two
-// Session 2726: Ambience after Blows and steps (#2071 B), so every ↓ past it is one more
+// Session 2727: Ambience after Blows and steps (#2071 B), so every ↓ past it is one more
 const nine = ['Everything', 'Music', 'Blows and steps', 'Ambience', 'Spoken lines', 'Brightness', 'Field of view', 'Full screen', 'Look speed', 'Up and down', 'Renderer'];
 // Session 1181 (card F3): on the new look, Quality follows the renderer (the land's three levels); the old look has no land to set
 if (await page.evaluate(() => window.OG_LOOK === 'new')) nine.push('Quality');
@@ -45,7 +45,7 @@ await key('ArrowLeft', 4); await key('ArrowDown'); await key('ArrowLeft', 10);
 const s = await page.evaluate(() => ({ S: { ...SETTINGS }, music: volKind('music'), fx: volKind('effects'), gain: AX ? +musicGain.gain.value.toFixed(3) : null, stored: JSON.parse(localStorage.getItem('og.settings')) }));
 check('← on Everything and Music: 80 and 50, music at .4 of the button\'s level, effects at .8, kept in this browser', s.S.master === 80 && s.S.music === 50 && Math.abs(s.music - .4) < 1e-9 && Math.abs(s.fx - .8) < 1e-9 && s.stored.master === 80 && s.stored.music === 50, s);
 
-// the place's sound (Session 2726): ← on Ambience is 95, its bus at .95 of its level at 100 (the effects' × 0.6); → puts it back.
+// the place's sound (Session 2727): ← on Ambience is 95, its bus at .95 of its level at 100 (the effects' × 0.6); → puts it back.
 // One press each way: every press waits a frame, seconds on software GL; placesound measures 0 and 50.
 await key('ArrowDown', 2); await key('ArrowLeft');
 const am = await page.evaluate(() => ({ v: SETTINGS.ambience, at: VOL_SFX[volLevel] * .6 * volKind('ambience'), full: VOL_SFX[volLevel] * .6 * SETTINGS.master / 100, stored: JSON.parse(localStorage.getItem('og.settings')).ambience }));

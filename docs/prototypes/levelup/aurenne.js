@@ -15,10 +15,11 @@ const R = makeRenderer(.82), scene = new THREE.Scene(), VIEW = Q.get('view') || 
 scene.fog = new THREE.FogExp2(new THREE.Color(.80, .84, .90), .0028);
 const cam = new THREE.PerspectiveCamera(52, W / H, .1, 30000);
 buildTextures();
-const SUN = new THREE.Vector3(.55, .62, .38).normalize();
-const sun = new THREE.DirectionalLight(new THREE.Color(1, .9, .74), 4.0); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -.0003; sun.shadow.normalBias = .04;
+const GOLD = VIEW === 'harbour', SUN = GOLD ? new THREE.Vector3(-.35, .16, .92).normalize() : new THREE.Vector3(.55, .62, .38).normalize();
+const sun = new THREE.DirectionalLight(GOLD ? new THREE.Color(1, .72, .46) : new THREE.Color(1, .9, .74), GOLD ? 3.4 : 4.0); sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -.0003; sun.shadow.normalBias = .04;
 scene.add(sun, sun.target, new THREE.HemisphereLight(new THREE.Color(.62, .74, .96), new THREE.Color(.55, .45, .32), 1.2));
-skyDome(scene, SUN, { hor: [.80, .85, .92], mid: [.36, .58, .88] }); clouds(scene, SUN, { n: 10, d0: 1800, dw: 5000, y0: 300 });
+if (GOLD) { scene.fog.color.setRGB(.86, .70, .62); scene.fog.density = .0016; skyDome(scene, SUN, { hor: [1.0, .66, .46], mid: [.70, .56, .66], zen: [.22, .26, .52], glow: [1, .7, .4], glowK: .6 }); clouds(scene, SUN, { n: 8, d0: 1600, dw: 4000, y0: 260, a0: -.9, aw: 1.8, lo: [.66, .5, .58], hi: [1.4, 1.0, .78] }); }
+else { skyDome(scene, SUN, { hor: [.80, .85, .92], mid: [.36, .58, .88] }); clouds(scene, SUN, { n: 10, d0: 1800, dw: 5000, y0: 300 }); }
 aurenneTextures(); const ground = mat('limestone', { ns: 1.1, rough: .8 }); // Session 820: Aurenne's own pale limestone (it was the kit's dark flag, lifted past 1)
 const STAT = STATS.houses = [];
 function place(lot, x, z, ry) { const h = aurenneHouse(lot.o, lot.r); h.group.position.set(x, 0, z); h.group.rotation.y = ry; scene.add(h.group); STAT.push({ kind: h.kind, w: lot.o.w, d: lot.o.d, two: !!lot.o.two, dome: lot.o.dome || null, arcade: !!lot.o.arcade, tris: h.tris, draws: h.draws, roofTop: +h.roofTop.toFixed(2) }); return h; }
@@ -28,7 +29,43 @@ const CH = STATS.churches = [], DOME = Q.get('dome');
 function church(o, key, x, z, ry) { const c = aurenneChurch(o, stream(key)); c.group.position.set(x, 0, z); c.group.rotation.y = ry; scene.add(c.group); CH.push({ w: o.w, dome: o.dome, tower: o.tower ?? 1, corners: !!o.corners, tris: c.tris, draws: c.draws, domeTop: +c.domeTop.toFixed(2), towerTop: +c.towerTop.toFixed(2), top: +c.roofTop.toFixed(2), door: c.door.h }); return c; }
 const CV = STATS.civic = [], CROWN = Q.get('crown') || 'merlons';
 function civic(o, key, x, z, ry) { const c = aurenneCivic({ crown: CROWN, ...o }, stream(key)); c.group.position.set(x, 0, z); c.group.rotation.y = ry; scene.add(c.group); CV.push({ kind: c.kind, w: o.w, d: o.d, tris: c.tris, draws: c.draws, top: +c.roofTop.toFixed(2) }); return c; }
-if (VIEW === 'academy') {
+if (VIEW === 'harbour') {
+  // Session 2725: an Aurenne harbour town from the water at 17h30, about 150 m out and 8 m up, as the look's shot list frames it
+  // (docs/art/shotlist.json, aurenne-harbour, against P10b's Golden Hour). &opt=a: as the game builds a port today, houses of one and
+  // two storeys by Michael's mix on flat ground; b: the same lots, the storeys rising toward the town's middle (three in the core),
+  // a belvedere on one flat roof in four; c: b on a hill, each row back 4.2 m above the one before it on a terrace wall.
+  const OPT = Q.get('opt') || 'b', rise = OPT === 'c' ? 4.2 : 0, H_ = STATS.harbour = { opt: OPT, lots: 0, storeys: [0, 0, 0, 0], belvederes: 0, tris: 0, top: 0 };
+  const wm = mat('ashlar', { ns: 1.1, color: 0xd9c9a8, rough: .9 });
+  { const g = new THREE.BoxGeometry(260, 3.2, 1.2); worldUV(g, .5); const q = new THREE.Mesh(g, wm); q.position.set(0, -1.6, 7.4); q.receiveShadow = true; scene.add(q); }
+  { const sea = new THREE.Mesh(new THREE.PlaneGeometry(4000, 2000).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x2c7a86, emissive: 0x0c2a34, roughness: .32, metalness: .05 })); sea.position.set(0, -1.4, 1008); scene.add(sea); }
+  // the ground: one flat apron, or (c) a terrace a row, its retaining wall in the quay's stone
+  const ROWS = 5, rowZ = k => -6 - k * 14, rowY = k => k * rise;
+  const rowW = k => 2 * (62 - Math.max(1, k) * 7) + 24;
+  for (let k = -1; k < ROWS + 1; k++) { const z0 = k < 0 ? 7.4 : rowZ(k) + 7, z1 = rowZ(k + 1) + 7, y = Math.max(0, rowY(k)), g = new THREE.PlaneGeometry(k < 1 ? 260 : rowW(k), z0 - z1); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, ground); m.position.set(0, y, (z0 + z1) / 2); m.receiveShadow = true; scene.add(m);
+    if (rise && k >= 1) { const b = new THREE.BoxGeometry(rowW(k), y, 1); worldUV(b, .5); const wl = new THREE.Mesh(b, wm); wl.position.set(0, y / 2, z0 - .5); wl.receiveShadow = wl.castShadow = true; scene.add(wl); } }
+  { const g = new THREE.PlaneGeometry(1400, 1400, 70, 70); g.rotateX(-Math.PI / 2); const P = g.attributes.position, zt = rowZ(ROWS) + 7;
+    // the land round the town: flat scrub at the apron's height (a, b), or (c) a hillside whose slope carries on above the top row and falls to the shore on either side
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i) - 400 + 7; let y = -.08; if (rise) { const up = Math.max(0, -z + 6) / 14 * rise, side = Math.max(0, Math.abs(x) - (62 - Math.min(ROWS, Math.max(1, (-z - 6) / 14)) * 7) - 14); y = Math.max(-.08, up - side * .22 - (z > zt ? 1 : 0) * 2); } if (z > 7.6) y = -6; P.setY(i, y); }
+    g.computeVertexNormals(); const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x6f7a4a, roughness: 1 })); m.position.set(0, -.02, -400 + 7); m.receiveShadow = true; scene.add(m); }
+  // the quay's front: the tithe house between two warehouses, as the game's port lays its quay
+  civic({ kind: 'tithe', w: 20, d: 13 }, 'hb:tithe', 0, -6.5, 0); civic({ kind: 'warehouse', w: 22, d: 11 }, 'hb:w0', -27, -5.5, 0); civic({ kind: 'warehouse', w: 18, d: 11 }, 'hb:w1', 25, -5.5, 0);
+  // the church on the second row, a little east of the middle
+  const chX = 14, chRow = 2; { const c = church({ w: 16, rank: 'town', tower: 1 }, 'hb:church', chX, 0, 0); c.group.position.set(chX, rowY(chRow), rowZ(chRow) - 4); }
+  // the rows of houses, fronts to the sea, narrowing up the town; each lot's storeys by the option
+  let n = 0;
+  for (let k = 1; k <= ROWS; k++) { const half = 62 - k * 7; let x = -half;
+    while (x < half) { const lot = aurenneLot('harbour', n++), o = lot.o, w = o.w; if (x + w > half) break;
+      const cx = x + w / 2; x += w + .3 + (lot.r() < .2 ? 3.2 : 0);
+      if (k === chRow && Math.abs(cx - chX) < 15) continue;
+      const core = Math.hypot(cx / 1.6, (k - 1.5) * 14), rr = lot.r();
+      if (OPT !== 'a') { o.storeys = core < 26 ? (rr < .7 ? 3 : 2) : core < 48 ? (rr < .75 ? 2 : 1) : (rr < .4 ? 2 : 1); o.two = o.storeys > 1; if (o.storeys > 1) o.stair = false;
+        o.belvedere = o.kind === 'flat' && !o.dome && lot.r() < (core < 40 ? .35 : .15); if (o.belvedere) o.pergola = false; }
+      place(lot, cx, rowZ(k) - o.d / 2 + (o.arcade ? -1.8 : 0), 0); const h = scene.children[scene.children.length - 1]; h.position.y = rowY(k);
+      H_.lots++; H_.storeys[o.storeys ?? (o.two ? 2 : 1)]++; if (o.belvedere) H_.belvederes++; } }
+  H_.tris = STAT.reduce((a, s) => a + s.tris, 0); H_.top = +Math.max(...STAT.map(s => s.roofTop + 0)).toFixed(1);
+  cam.fov = 50; cam.updateProjectionMatrix(); if (Q.has('near')) { cam.position.set(-24, 4, 70); cam.lookAt(0, 9 + rise * 2, -30); } else { cam.position.set(-40, 8, 150); cam.lookAt(0, 9 + rise * 1.5, -30); }
+  sun.position.copy(SUN).multiplyScalar(220).add(new THREE.Vector3(0, 0, -30)); sun.target.position.set(0, 0, -30); Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 110, bottom: -110, near: 1, far: 600 }); sun.shadow.camera.updateProjectionMatrix();
+} else if (VIEW === 'academy') {
   { const g = new THREE.PlaneGeometry(600, 600); g.rotateX(-Math.PI / 2); worldUV(g, .3); const m = new THREE.Mesh(g, ground); m.receiveShadow = true; scene.add(m); }
   const a = aurenneAcademy({ w: 30, towers: +(Q.get('towers') || 3) }, stream('academy')); scene.add(a.group); STATS.academy = { tris: a.tris, draws: a.draws, top: +a.roofTop.toFixed(2), towers: a.towerTops };
   cam.fov = 55; cam.updateProjectionMatrix(); cam.position.set(-8, 1.65, 36); cam.lookAt(0, 14, -2);

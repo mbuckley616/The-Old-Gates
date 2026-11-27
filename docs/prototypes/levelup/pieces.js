@@ -95,7 +95,7 @@ function aurKit() {
 
 export function aurenneHouse(o, r) {
   const { Mt, put, wallGeo: wallG, box, finish } = aurKit(), w = o.w, d = o.d;
-  const T = .32, pl = .24, fh = 3.0, H = fh + (o.two ? 2.6 : 0), wallK = 'wall:' + (o.wall ?? Math.floor(r() * AUR.walls.length)), doorK = 'door:' + (o.door ?? Math.floor(r() * AUR.doors.length));
+  const T = .32, pl = .24, fh = 3.0, NS = o.storeys ?? (o.two ? 2 : 1), H = fh + 2.6 * (NS - 1), wallK = 'wall:' + (o.wall ?? Math.floor(r() * AUR.walls.length)), doorK = 'door:' + (o.door ?? Math.floor(r() * AUR.doors.length));
   const wallGeo = (len, ht, holes, t = T) => wallG(len, ht, holes, t);
   // the openings, by storey: an arched door on the front, windows small and deep as in a hot country
   const front = [], back = [], side = [], doorW = 1.05, doorH = 2.1, dx = o.kind === 'tile' ? 0 : (r() < .5 ? -1 : 1) * Math.min(w * .18, 1.1);
@@ -104,8 +104,9 @@ export function aurenneHouse(o, r) {
   const nWin = Math.max(1, Math.floor((w - 2) / 2.4));
   for (let i = 0; i < nWin; i++) { const x = -w / 2 + 1.0 + (i + .5) * (w - 2) / nWin; if (Math.abs(x - dx) < 1.3) continue; front.push({ x, y: 1.1, w: .62, h: .95, arch: 1 }); }
   back.push({ x: 0, y: 1.1, w: .62, h: .95, arch: 1 }); side.push({ x: 0, y: 1.1, w: .55, h: .8, arch: 0 });
-  if (o.two) { for (let i = 0; i < nWin + 1; i++) { const x = -w / 2 + .9 + (i + .5) * (w - 1.8) / (nWin + 1); front.push({ x, y: fh + .7, w: .66, h: 1.15, arch: 1, up: 1 }); }
-    back.push({ x: -w * .2, y: fh + .7, w: .62, h: 1.0, arch: 1, up: 1 }); side.push({ x: 0, y: fh + .8, w: .55, h: .85, arch: 1, up: 1 }); }
+  // the upper storeys, 2.6 m each (o.storeys, Session 2725: a third for the harbour towns' prototype; o.two is two)
+  for (let k = 1; k < NS; k++) { const fy = fh + 2.6 * (k - 1); for (let i = 0; i < nWin + 1; i++) { const x = -w / 2 + .9 + (i + .5) * (w - 1.8) / (nWin + 1); front.push({ x, y: fy + .7, w: .66, h: 1.15, arch: 1, up: 1 }); }
+    back.push({ x: -w * .2, y: fy + .7, w: .62, h: 1.0, arch: 1, up: 1 }); side.push({ x: 0, y: fy + .8, w: .55, h: .85, arch: 1, up: 1 }); }
   // the plinth, the four walls, the room's gloom behind every opening
   put(box(w + .16, pl, d + .16), 'plinth', 0, pl / 2, 0);
   const yW = pl;
@@ -181,8 +182,16 @@ export function aurenneHouse(o, r) {
       put(new THREE.TorusGeometry(R * 1.03, .05, 6, 28), 'stone', x2, top + 1.01, z2, 0, Math.PI / 2);
       put(new THREE.LatheGeometry([[.001, 0], [.07, 0], [.05, .12], [.09, .2], [.001, .42]].map(([a, b]) => new THREE.Vector2(a, b)), 10), 'gold', x2, top + 1.0 + R * 1.08 - .02, z2);
       roofTop = Math.max(roofTop, top + 1.0 + R * 1.08 + .4); }
+    // the belvedere (Session 2725, prototype): a small square room on the roof at the back corner away from the dome, open on four
+    // sides in round arches, under a low pyramid of pantile: the altana of a Ligurian or Sicilian harbour house, the skyline's tooth
+    if (o.belvedere) { const bw = Math.min(3.2, w * .42), bh = 2.7, bx = (o.dome ? 1 : -1) * (w / 2 - bw / 2 - .2), bz = -(d / 2 - bw / 2 - .2), ar = [{ x: 0, y: .25, w: bw * .48, h: 2.0, arch: 1 }];
+      for (const [ry, ox, oz] of [[0, 0, bw / 2 - .13], [Math.PI, 0, -bw / 2 + .13], [Math.PI / 2, bw / 2 - .13, 0], [-Math.PI / 2, -bw / 2 + .13, 0]]) put(wallGeo(bw, bh, ar, .26), wallK, bx + ox, top, bz + oz, ry);
+      put(box(bw - .5, bh - .3, bw - .5), 'dark', bx, top + (bh - .3) / 2, bz);
+      put(box(bw + .3, .14, bw + .3), 'stone', bx, top + bh + .07, bz);
+      const cone = new THREE.ConeGeometry((bw + .7) / Math.SQRT2, Math.tan(24 * Math.PI / 180) * (bw + .7) / 2, 4, 1); cone.rotateY(Math.PI / 4); put(cone, 'pantile', bx, top + bh + .14 + Math.tan(24 * Math.PI / 180) * (bw + .7) / 4, bz);
+      roofTop = Math.max(roofTop, top + bh + .14 + Math.tan(24 * Math.PI / 180) * (bw + .7) / 2); }
     // the pergola: four cedar posts, two beams, the striped awning
-    if (o.pergola) { const pw = Math.min(2.6, w * .42), pd = Math.min(2.2, d * .45), px0 = w / 2 - pw / 2 - .35, pz0 = d / 2 - pd / 2 - .35, ph2 = 1.95;
+    if (o.pergola && !o.belvedere) { const pw = Math.min(2.6, w * .42), pd = Math.min(2.2, d * .45), px0 = w / 2 - pw / 2 - .35, pz0 = d / 2 - pd / 2 - .35, ph2 = 1.95;
       for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) put(new THREE.CylinderGeometry(.05, .06, ph2, 8), 'cedar', px0 + sx * pw / 2, top + ph2 / 2, pz0 + sz * pd / 2);
       for (const sz of [1, -1]) put(box(pw + .3, .09, .09), 'cedar', px0, top + ph2, pz0 + sz * pd / 2);
       const g = new THREE.PlaneGeometry(pw + .1, pd + .2); g.rotateX(-Math.PI / 2); put(g, 'awning', px0, top + ph2 + .07, pz0, 0, .06);

@@ -927,7 +927,7 @@ function settingRows(){const r=[
   {k:'master',g:'Sound',w:'Everything',min:0,max:100,st:5,note:'over the speaker button’s loud or quiet'},
   {k:'music',w:'Music',min:0,max:100,st:5,note:'by the place you stand'},
   {k:'effects',w:'Blows and steps',min:0,max:100,st:5,note:'the sword, the bow, the doors, the weather'},
-  {k:'ambience',w:'Ambience',min:0,max:100,st:5,note:'the place: the wind, the water, a town about you'}, /* S2726 — #2071 B */
+  {k:'ambience',w:'Ambience',min:0,max:100,st:5,note:'the place: the wind, the water, a town about you'}, /* S2727 — #2071 B */
   {k:'voices',w:'Spoken lines',min:0,max:100,st:5,note:'the people’s voices; M still mutes them anywhere'},
   {k:'bright',g:'The light',w:'Brightness',min:-50,max:50,st:5,note:'set it so the left mark can only just be seen',marks:true},
   {k:'fov',w:'Field of view',min:60,max:100,st:5,fmt:v=>v+'°',note:'75 as it was; from 60 to 100'},
