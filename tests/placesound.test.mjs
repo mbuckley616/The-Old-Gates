@@ -47,12 +47,13 @@ check('the Mark\'s high ground: the gust is on and swings the wind across its ra
 // 5. the weather's damping, and its level
 await page.evaluate(([x, z]) => { px = x; pz = z; }, [13100, 25450]);
 const damp = await page.evaluate(async () => { const out = {}; for (const t of ['clear', 'fog', 'rain', 'snow', 'storm']) { _wx(t); const a = _amb(); out[t] = [a.cut, a.mul]; }
-  _wx('rain'); _amb(); const s0 = AX.state; await new Promise(r => setTimeout(r, 3000)); _amb(); out.state = s0; out.heard = Math.round(AMB.v.damp.frequency.value);
+  _wx('rain'); _amb(); const s0 = AX.state; const a0 = AX.currentTime, w0 = performance.now(); /* 3 s of the audio clock, not the page's */
+  while (AX.currentTime - a0 < 3 && performance.now() - w0 < 15000) await new Promise(r => setTimeout(r, 100)); out.audioS = +(AX.currentTime - a0).toFixed(2); _amb(); out.state = s0; out.heard = Math.round(AMB.v.damp.frequency.value);
   WX.type = 'clear'; WX.next = 'rain'; WX.k = .5; out.half = _amb().cut; _wx('clear'); _amb(); return out; });
 check('the damping by weather: clear 18 kHz, fog 2,000 at ×0.7, rain 1,200 at ×0.6, snow 3,000 at ×0.8, a storm 900 at ×0.5', damp.clear[0] === 18000 && damp.clear[1] === 1
   && damp.fog[0] === 2000 && damp.fog[1] === .7 && damp.rain[0] === 1200 && damp.rain[1] === .6 && damp.snow[0] === 3000 && damp.snow[1] === .8 && damp.storm[0] === 900 && damp.storm[1] === .5, damp);
 check('a weather half turned is between the two, in log frequency (clear to rain: about 4,650 Hz)', Math.abs(damp.half - Math.sqrt(18000 * 1200)) < 5, damp.half);
-check('the bus\'s filter is at 1,200 ± 100 Hz 3 s into the rain (where the page\'s audio clock runs)', damp.state !== 'running' || Math.abs(damp.heard - 1200) <= 100, { state: damp.state, heard: damp.heard });
+check('the bus\'s filter is at 1,200 ± 100 Hz 3 s into the rain (where the page\'s audio clock runs)', damp.state !== 'running' || Math.abs(damp.heard - 1200) <= 100, { state: damp.state, heard: damp.heard, audioS: damp.audioS });
 
 // 6. the duck while a piece plays
 const duck = await page.evaluate(() => { const was = EXPLORE.playing; EXPLORE.playing = true; const a = _amb().duck; EXPLORE.playing = false; const b = _amb().duck; EXPLORE.playing = was; return { a, b }; });

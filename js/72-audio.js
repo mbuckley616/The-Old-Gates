@@ -729,7 +729,7 @@ function tickAmbience(dt){
   // the music's duck, eased over 3 s
   const playing=typeof EXPLORE!=='undefined'&&EXPLORE.playing;AMB.duck=playing?.7:1;ambSet(V.duck.gain,AMB.duck,t,1);
   // the damping
-  const D=open?ambDampTarget():[18000,1];AMB.cut=D[0];AMB.dampMul=D[1];ambSet(V.damp.frequency,D[0],t,.6);
+  const D=open?ambDampTarget():[18000,1];AMB.cut=D[0];AMB.dampMul=D[1];ambSet(V.damp.frequency,D[0],t,.4);
   if(!open){B.wind=B.leaves=B.water=0;B.waterKind=null;B.waterD=Infinity;AMB.gust=false;
     for(const k of ['wind','leaves','river','lake','sea'])ambSet(V[k].g.gain,0,t,.33);return;} /* the world's beds fade over 1 s at the door */
   // the wind: 0.05 at sea level, +0.03 per 50 m, at most 0.14; by island
