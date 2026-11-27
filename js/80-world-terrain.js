@@ -647,8 +647,16 @@
     const trees={},bushes=[],rocks=[],embers=[];
     // Candidate lattice at 4u; each cell rolls against local density.
     const STEP=6;
+    /* S2747 — the scatter's region reads (the dominant region, the tree density, the rocks) keyed by place: under withPlace for the
+       chunk's own cell, never the live REGIONS, which hold what has loaded (S701). The same lattice point grew a spruce on one boot and
+       nothing on another, by where the player had come from (the Mark upland's view, beside Heifialos Fell). A region reaches 540 m past
+       its cell and a chunk is 64 m, so the ring round the chunk's middle holds every region that reaches any of its points. */
+    const NL=Math.ceil(CHUNK/STEP),_sDom=new Array(NL*NL),_sDens=new Float32Array(NL*NL),_sRock=new Float32Array(NL*NL);
+    withPlace(ox+CHUNK/2,oz+CHUNK/2,()=>{for(let iz=0;iz<CHUNK/STEP;iz++)for(let ix=0;ix<CHUNK/STEP;ix++){
+      const gx=cx*CHUNK/STEP+ix,gz=cz*CHUNK/STEP+iz,x=ox+(ix+.15+hash01(gx,gz,1)*.7)*STEP,z=oz+(iz+.15+hash01(gx,gz,2)*.7)*STEP,k=iz*NL+ix;
+      _sDom[k]={r:dominantRegion(x,z).r};_sDens[k]=regionScalar(x,z,'density');_sRock[k]=regionScalar(x,z,'rocks');}});
     for(let iz=0;iz<CHUNK/STEP;iz++)for(let ix=0;ix<CHUNK/STEP;ix++){
-      const gx=cx*CHUNK/STEP+ix,gz=cz*CHUNK/STEP+iz;
+      const gx=cx*CHUNK/STEP+ix,gz=cz*CHUNK/STEP+iz,_sk=iz*NL+ix;
       const x=ox+(ix+.15+hash01(gx,gz,1)*.7)*STEP;
       const z=oz+(iz+.15+hash01(gx,gz,2)*.7)*STEP;
       if(x<2||z<2||x>SIZE*GRID-2||z>SIZE*GRID-2)continue;
@@ -659,10 +667,10 @@
       const _ri=roadInfo(x,z);if(_ri&&_ri.d<ROAD_HALF+3)continue;
       const ny=slopeNormalY(x,z);
       const roll=hash01(gx,gz,3);
-      const dom=dominantRegion(x,z);
+      const dom=_sDom[_sk];
       const cold=coldCellAt(x,z);
       // Trees: density × clumping noise (clearings and thickets).
-      const dens=regionScalar(x,z,'density');
+      const dens=_sDens[_sk];
       const clump=fbm(x,z,60,SEED+21,2);
       let p=dens*(.5+clump*1.3)*sstep(.55,.8,ny)*(1-sstep(30,44,h));
       /* S2720 — the Mark's moor stands in dark stands of pine (P10b's Snowy Peaks), not one lone tree in a hundred metres: in a cold cell a broad
@@ -693,7 +701,7 @@
       }
       // Rocks: more on slopes and in rocky regions.
       if(dom.r.biome==='wasteland'&&roll<.9&&hash01(gx,gz,9)<.045){embers.push({x,z,h,s:.7+hash01(gx,gz,10)*.8,r:hash01(gx,gz,6)*Math.PI*2,t:0});continue;}
-      const rockP=.012*regionScalar(x,z,'rocks')*(1+sstep(.9,.6,ny)*4);
+      const rockP=.012*_sRock[_sk]*(1+sstep(.9,.6,ny)*4);
       if(roll<p+rockP){const kr=hash01(gx,gz,13),kind=ny<.8&&kr<.55?'outcrop':kr<.5?'boulder':kr<.8?'outcrop':'cluster';rocks.push({x,z,h,s:.5+hash01(gx,gz,8)*1.3,r:hash01(gx,gz,9)*Math.PI*2,ny,proto:rockProto(ROCK_OF_BIOME[dom.r.biome]||'moor',kind)});continue;} // S264 — its kind by the ground's dice (outcrops likelier on a slope), dressed by its biome
       // Bushes: open ground only.
       const bushP=(dom.r.biome==='wastes'?.02:.06)*(1-dens)*sstep(.7,.9,ny);
