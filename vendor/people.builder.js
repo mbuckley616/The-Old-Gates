@@ -1376,8 +1376,9 @@ function stripeOf(D, arm = false) { if (!D.robe || !D.robeStripe) return {};
 const burnousOn = D => !!(D && D.cloak && D.burnous && !D.cape);
 // a long cloak closed round the front (Session 2728, Michael's C on #2082): not a shoulder cape, and not worn back over the shoulders
 // (D.cloakBack; the burnous is sewn shut, so never back). What the right fist holds at the waist (a tankard, the hammer, a sword at rest)
-// and the hands' room in a coat's or a skirt's front were refused under any long cloak, which hung over the fist; a cloak worn back hangs
-// behind the arms, so only a closed one refuses them now
+// were refused under any long cloak, which hung over the fist; a cloak worn back hangs
+// behind the arms, so only a closed one refuses them now. The hands' room in a skirt's front is still left out under any long cloak: given
+// it, a worn-back cloak's wearer (Maeve of Dunmore, an apron) walked with the left fingers 6.4 cm out through the cloak's side
 const cloakShut = D => !!(D && D.cloak && !D.cape && !(D.cloakBack && !burnousOn(D)));
 function burnousOf(D, o, vt = false, n = vt ? 1 : 2) { if (!burnousOn(D) || !D.burnousStripe) return {}; if (!STRIPE_AX) stripeOf({ robe: 1, robeStripe: [0, 0, 0] });
   return { stripe: { k: sRGB(...D.burnousStripe), l: sRGB(...D.burnousStripe), o, s: STRIPE_AX.s, e: STRIPE_AX.e, w: STRIPE_AX.w, arm: false, vt, n } }; }
@@ -5685,7 +5686,7 @@ function* makePersonSteps(G, o = {}) {
   // A mail skirt stands out further still, and is lifted clear of the same way (Session 897)
   // A short skirt too (Session 1011): the hands hang beside its lower half, and fingertips showed through its front at the thigh
   yield;
-  let lift = 0, skirtHands = null; const skM = !D.chair && !cloakShut(D) && (meshes.find(m => m.name === 'coatSkirt') || meshes.find(m => m.name === 'mailSkirt') || D.skirt && meshes.find(m => m.name === 'skirt'));
+  let lift = 0, skirtHands = null; const skM = !D.chair && !(D.cloak && !D.cape) && (meshes.find(m => m.name === 'coatSkirt') || meshes.find(m => m.name === 'mailSkirt') || D.skirt && meshes.find(m => m.name === 'skirt'));
   const skV = skM && skM.name === 'mailSkirt' ? mailSkirtV(skM) : skM && skM.name === 'skirt' && D.skirt === 'short' ? PACK.skirtShortV || (PACK.skirtShortV = [...new Set(PACK.R.skirtShort)].filter(i => PACK.rest[i * 3 + 1] > -.2)) : skM && skM.name === 'skirt' && D.skirt === 'knee' ? PACK.skirtKneeV || (PACK.skirtKneeV = [...new Set(PACK.R.skirtLong)].filter(i => PACK.rest[i * 3 + 1] > SKIRT_CUT.knee)) : undefined;
   // a winter coat's skirt (Session 1147) stands 1.6 to 2.4 cm over a long skirt, so its hands may lift two steps further (to .36; a woman's needed .33)
   const kMax = skM && skM.name === 'coatSkirt' ? 12 : 10;
