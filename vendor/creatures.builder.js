@@ -2797,9 +2797,11 @@ function kneelBody(C) {
   C.kneelW = { f, h, a };
   // the neck takes back most of the pitch so the head stays up, and rises as the couch's does once the forequarters are down
   if (B.chains.neck) { C.byName[B.chains.neck[0]].rotation.x -= a * KNEEL.neck; const n = B.chains.neck; n.forEach(nm => C.byName[nm].rotation.x -= f * SIT.lieNeck / n.length); if (C.byName.head) C.byName.head.rotation.x += f * SIT.lieNeck; }
-  // the tail laid as the couch lays it, by the hind legs' share
+  // the tail laid as the couch lays it, by the hind legs' share. Session 2733: until then it hangs at its own droop under the raised hips
+  // (it was carried up with the rump by the pitch, 75° below level to 20°, and stood out stiff like a second head: the critic, 27 Nov)
   if (B.chains.tail) { const t0 = C.byName[B.chains.tail[0]]; C.rig.updateMatrixWorld(true); const p0 = rigPos(C, t0, V()), d = rigPos(C, C.byName[B.chains.tail[1]], V()).sub(p0);
-    t0.rotation.x += h * (Math.atan2(-d.y, -d.z) + C.sitT); B.chains.tail.forEach((nm, k) => { if (k) C.byName[nm].rotation.y += h * SIT.tailCurl; }); }
+    const th = Math.atan2(-d.y, -d.z), tp = (C.plan.parts.find(q => q[0] === 'tail') || [])[1], hang = (tp && tp.droop || 0) * DEG;
+    t0.rotation.x += h * (th + C.sitT) + (1 - h) * (th - hang); B.chains.tail.forEach((nm, k) => { if (k) C.byName[nm].rotation.y += h * SIT.tailCurl; }); }
 }
 function kneelLeg(C, L) {
   const W = C.kneelW, fore = L.at === Math.max(...C.B.legs.map(l => l.at)), w = fore ? W.f : W.h;
