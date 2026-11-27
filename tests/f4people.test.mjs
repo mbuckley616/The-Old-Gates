@@ -332,6 +332,18 @@ const mid = await page.evaluate(() => { const rig = [...HB_RIGS].find(r => r.hb 
   const m = rig.hb.mid, t = (m.geometry.index.count / 3) | 0; let full = 0; for (const o of rig.hb.full) full += ((o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3) | 0;
   return { key: rig.g.hbKey, level: rig.hb.L, shown: shown.length, mid: shown[0] === m, skinned: m.isSkinnedMesh && m.skeleton === rig.hb.P.skeleton, tris: t, fullTris: full, ok: !!rig.hb.full.length }; });
 check('a body in the middle range is one mesh on its own skeleton, the whole body baked', mid.level === 1 && mid.shown === 1 && mid.mid && mid.skinned && mid.tris > 10000, mid);
+// S2739 — the middle level thinned (hbThin, cells of HB_MID_CELL): every townsperson's bake under 60% of its triangles as baked and
+// none over 26k (they were 23–50k: Dunmore's street over Low's 1.2 M with two bodies at 10 m, QA S2736); a near body's brows a third of
+// theirs below High (one quad a hair), whole at High
+const thin = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.hb && !r.foe && !r.hbLazy && r.root.parent === WORLD.scene).slice(0, 12), out = [];
+  for (const r of rs) { const m = hbMid(r); if (!m) continue; const G = m.geometry; out.push([r.g.hbKey, G.index.count / 3, (G.userData.ix0 || G.index.array).length / 3]); }
+  const rig = rs.find(r => r.hb.full.some(o => o.name === 'brows' && o.geometry.index)); let brows = null;
+  if (rig) { const b = rig.hb.full.find(o => o.name === 'brows'), q0 = SETTINGS.quality, L = rig.hb.L, at = q => { SETTINGS.quality = q; rig.hb.hairK = null; hbLevel(rig, 1); hbLevel(rig, 0); return b.geometry.index.count / 3; };
+    brows = { key: rig.g.hbKey, high: at(2), middle: at(1), low: at(0) }; SETTINGS.quality = q0; rig.hb.hairK = null; hbLevel(rig, 1); hbLevel(rig, L); }
+  return { out, brows }; });
+console.log('  middle level thinned:', JSON.stringify(thin));
+check(`every middle level thinned, under 60% of its baked triangles and none over 26k (${thin.out.map(x => x[1]).join(', ')}), the brows a third below High (${thin.brows && thin.brows.middle} of ${thin.brows && thin.brows.high})`,
+  thin.out.length >= 4 && thin.out.every(([, t, w]) => t < w * .6 && t < 26000 && t > 5000) && thin.brows && thin.brows.middle === thin.brows.high / 3 && thin.brows.low === thin.brows.middle, thin);
 // S2232 — the middle level keeps the hair: a head of long hair bakes a few thousand opaque ribbons from its cards (it was the scalp's shell
 // alone, bald from 16 to 42 m), and a bed's fit (hbSkinPts) never reads them
 const midHair = await page.evaluate(() => { const rs = [...HB_RIGS].filter(r => r.hb && !r.foe && !r.hbLazy && r.root.parent === WORLD.scene && r.hb.full.some(o => o.name === 'hair' && o.geometry.index && (o.geometry.userData.hairIx && o.geometry.userData.hairIx[1] || o.geometry.index).count > 3e5));
