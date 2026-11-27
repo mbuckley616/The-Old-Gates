@@ -6,6 +6,8 @@ Every player-readable string added or changed in `index.html` and, since the spl
 
 | Branch | Reviewed to | Note |
 |---|---|---|
+| main | `dbd58acc` | run 59: Sessions 2685–2719 as merged (build s2033), about 15 new player-readable lines: Finding 57 applied word for word (S2688, `keeperVoice`, the knock and the refusal by people, at `knockDoor` and `openShop`); the port's foreign stall (*From {island}, {town}’s market*); the ship's arms rack (*No weapons in your bag.*, *The rack is empty.*); a herb's *Picked {herb}!* kept as it was; a quest that unlocks one (*{giver} has something for you: {title}.*, *{title} — speak with {giver}*). The narrator's plain voice; clean |
+| (open PRs) | — | run 59: none open from an auto/* branch |
 | main | `0d44ed6d` | run 58: Sessions 2632–2684 as merged (build s1995), about 30 new player-readable lines: the sea serpent and its scale, the reef, the market stalls and the island's market day, *{place} discovered*, the knock at a shut shop. The narrator's lines clean; one finding (57): the keeper's answer to the knock, and the refusal of a known thief (S156, never read before), in one voice on every island |
 | auto/bodies-2684, auto/fable-light-grade, auto/fable-town-dressing | `d55f9f5d`, `6fc93d4d`, `18053e9a` | run 58: open PRs #2065 (`34-creatures.js`), #2062 (`89-world-land.js`) and #2058 (`83-world-generator.js`, the towns' dressing): no line a player reads |
 | main | `f6428797` | run 57: Sessions 2593–2631 as merged (build s1952), about 20 new player-readable lines: the sea's creatures' names (*Starweed Ray*, *Sea Turtle*, *Tidecrab*, *Lantern Jelly*, *Coastal Tuna*, *Drifter Squid*, *Skyskimmer*, *Abyssal Angler*, *Blackcurrent Eel*, *Sailfin Ray*, *Reef Moray*, *Stonefish*, *Giant Octopus*, *Grey Seal*; *Gate Eel* and *Sea Serpent* named but not yet rolled), the dialog's fold cue *▾ more below*, the lord's *How fares the town?* with its stray space gone (no word changed), the shops' hours by trade (no new line: *locked till* reads the trade's opening), the weapon glyphs and the plate's tooltip. Plain names and the narrator's UI; clean |
@@ -67,6 +69,16 @@ Every player-readable string added or changed in `index.html` and, since the spl
 | auto/split | — | merged into main, nothing ahead |
 | claude/lucid-faraday-6qlft7 | — | shares no history with main; not read |
 ---
+
+## Run 59 — 27 Nov 2026
+
+About 15 player-readable strings read on main from `0d44ed6d` to `dbd58acc` (Sessions 2685–2719, build s2033). Finding 57 is on main as written (S2688). The rest is the narrator's plain voice and the stall's and the rack's labels. Clean; no finding. No PR open from an auto/* branch.
+
+**Michael's calls:** none newer than 16 Oct on the drafts page.
+
+**Built:** nothing. Every approved draft is built except *The Seventh Niche*'s niche, which waits on §1a's approval. No `FREEZE:` issue is open.
+
+**Drafted:** nothing. Every story and faction item the backlog gives the quest writer is drafted, and the one left (the children's rites, L) is outside Michael's B on #1445, which built the games and not the school or the rites. Thirty-four unapproved drafts wait unread since 16 Oct; another would only lengthen the queue. The next run drafts again when Michael marks the page or the backlog owes a line.
 
 ## Run 58 — 26 Nov 2026
 
