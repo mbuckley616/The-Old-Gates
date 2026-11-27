@@ -2515,3 +2515,85 @@ there before the blow. No page errors in either boot.
 **Backlog notes.** None new.
 
 No proposal this run.
+
+## 2026-11-27 — The new look: an Aurenne harbour on a hill, the item and herbal cards, the cloak worn back, the camel's kneel (build s2042, read to Session 2727)
+
+**The look against the art** (`docs/look/critic-1127/`, all eight at High, in order; against `docs/look/critic-1126/`).
+- *Valley, 10h — far, unchanged.* The same smooth green model under an even sky; no crag, no keep, no ridges behind. The relief (#2063)
+  is still on its branch.
+- *Street, 10h — close on the ground, far on the houses.* New since yesterday: towns dressed (#2058). The square and the main street are
+  setts now, where yesterday they were a flat beige ribbon over lawn, and a stall stands at the square's edge. The setts read large and pale
+  at the camera (each near one about the width of a boot's length doubled), and the paving stops in a hard line on mown grass. A walled
+  yard's end sits in the left foreground as three dark grey boxes. The panel is thatch, timber and moss; the frame is still dressed stone and
+  slate under a blue sky.
+- *Mark upland, 13h — far, changed in kind.* S2709 and S2720's snow-pines: five-tier dark spires with snow on each tier, in a stand. They read
+  as conifers in snow, which yesterday's oaks did not. But the camera now stands inside the stand (as the look builder warned), so the fell
+  S2702 dressed is hidden behind trunks; the frame is trees, a slot of white hill and blue sky. One yellow-green round crown stands among the
+  pines at the left, about a fifth of the way in; I could not tell from the sheet whether it is a birch or a summer tree left over.
+- *Aurenne harbour, 17h30 — close on the light, far on the town.* Unchanged: the violet-orange evening is still the best sky on the sheets;
+  the town a low strip. The prototype below is the answer the look builder has asked for (#2110).
+- *Gatelands coast, 13h — far, nearer.* S2714 and S2718: the sand is grey-brown, not white, and the sea a deep blue, not cyan. It no longer
+  reads tropical. Still no cliff; the land behind the strand is pale with dark dots of scrub.
+- *Town at night, 23h — close.* The setts carry the lamp pools well; the rest as yesterday, black over the roofs.
+- *Storm, 15h — far, unchanged.* White fair-weather cumulus over a grey ceiling, and the straight grey seam across the land.
+- *Gate at dusk, 18h30 — far, and the view is broken again.* The black banded hump, the same as 25 and 26 Nov. S2697 named the gate and
+  loaded its cells, and rendered alone today it reads: all four rings lit, the slit, the camp (`docs/critic/2026-11-27-gate-dusk-alone.jpg`,
+  848 draws). After the other seven views in order it does not: the log says gate 137, but the camera is at 12963, 25661 (alone 12982, 25602)
+  and the frame has 716 draws. S2697 checked it after *storm* only. Filed in I for the look builder.
+
+The gap I would close first is still **the storm**, for the reason I gave yesterday: it is wrong in kind. The gate view is a fault in the
+script, not a gap, and comes before it.
+
+**What I looked at.** This was a new-look run (yesterday's was a playtest). Since 25 Nov the prototype pages added or changed are the
+Aurenne harbour (`aurenne.html?view=harbour`, S2725), the item and herbal cards (`cards.html`, the concept artist, 26 Nov), the long cloak worn
+back (`builder.html`, S2699, now in the game as S2724), and the camel's kneel (S2703, S2706, S2711). I rendered the harbour and the cards
+myself, served over http in the test Chromium at 1280 × 720, and read the committed sheets for the cloak and the camel.
+
+**The Aurenne harbour, C** (`docs/critic/2026-11-27-harbour-c.jpg`, `-harbour-c-near.jpg`; OG-061, P10b's *Golden Hour*). From 70 m out, C
+is the first Aurenne frame that has a town's shape: rows of white cubes stepping up behind the quay to a blue dome and a bell tower, red
+pantile and flat roofs mixed, the tithe house's arcade in front. It rendered in 4–5 s, no page errors, 233k triangles as the devlog says. I
+agree with the recommendation: A and B are the same picture from the water (the look builder's own sheet shows it), so B alone buys nothing
+the view can see. What C still lacks against OG-061:
+- The quay is grass. The warehouses and the tithe house stand on a green strip, and the sea meets that strip at a thin brown line. OG-061's
+  harbour is a stone quay with steps, moles and ships at it; there is not one boat in the frame.
+- The terrace walls run on as thin brown lines across the bare hillside well past the last house on both sides, so from the water they read
+  as fences across an empty field rather than the town's own terraces.
+- The town is 40 lots and fills a fifth of the frame from the shot list's distance. OG-061 and the panel paint a capital that fills the
+  shore; a port the game calls a town will never be that, which is a question of which Aurenne place the view should frame, not of C.
+- Scale: the storeys are 2.6 m and the cart arches about 3 m, inside the visual foundation's 2.6–3.0 m storey; nothing off.
+
+**The cards, C** (`-cards-c-item.jpg`, `-cards-c-herb.jpg`; OG-136 panels 3 and 8). Both read at a glance and in the right register. The
+item card's sums hold: 10–12 against the worn Bronze Sword's 8–9 is "+2 to +3", as printed. *of Flames: a quarter of each blow again as fire,
+2–3* is 10–12 × ¼, rounded. The herbal card is the better of the two: I–IV in order, *unknown* in grey italic with how to learn each (*eaten
+3 of 15 times*, *study to discover*), which is OG-136's "unknown, study to discover" to the letter. Two things: the card covers the bag's
+Stat column for every row above and below the one pointed at, so you cannot compare two swords by moving the pointer down the list without the
+card hiding the next row's numbers; and the herb's plate reads as a red rock pile with gold flecks, not moss, at 150 px (*a smouldering orange
+moss* says the text; the picture is crimson). No frame counter on either page.
+
+**The cloak worn back** (`cloakback-2699.jpg`, row A). From the front the cloak is two dark strips at the shoulders and the tunic shows whole;
+with the arms swung nothing comes through, and from behind it still reads as a full cloak. That answers Michael's note. As S2724 says, the
+sides stand off the arms a hand's width from straight on, which makes a narrow-shouldered wearer (the woman's row) look broader at the elbows
+than at the shoulders. I did not see one in the game this run.
+
+**The camel's kneel** (`kneel-2711.jpg`). The hind legs now fold about a planted hoof; no prop. In the three middle frames the tail stands out
+stiff at the height of the raised hips, and at this size it reads as a second head pointing the other way. A small thing, but the camel is
+seen side-on at a caravan.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2702, S2705, S2709, S2720 (the Mark): the snow-pines read; the view's camera now stands in a stand (above). That is a shot-list call for the
+  producer, and the look builder already raised it.
+- S2714, S2718 (the coast and the sea): seen on the sheet; it reads as northern water now. Aurenne's coves I did not see.
+- S2725 (the harbour): above.
+- S2724, S2699 (the cloak): judged from the prototype only; not seen in a street.
+- S2703, S2706, S2711 (the camel): from the sheet; the 3 s halves and the rest need a real machine.
+- S2697 (the gate view): broken in a full run, above.
+- S2698 (the stall keepers' names), S2713 (the foreign stall), S2701 (full pauses), S2704, S2710, S2717, S2727 (sounds), S2712, S2719 (the
+  mantle's hands), S2715 (a foe's body warmed), S2722–S2723 (levels, the card at the top): not this run; the sounds cannot be judged headless.
+- S2695, S2700, S2707, S2708, S2716, S2726 (QA and the reds): nothing to judge in play.
+
+**Harness.** `node tests/run.mjs export` 1/1, clean. The eight sheets took about 6 minutes of rendering after a long boot; the gate view alone
+3 minutes. No page errors on any prototype page.
+
+**Backlog notes.** None new.
+
+No proposal this run.
