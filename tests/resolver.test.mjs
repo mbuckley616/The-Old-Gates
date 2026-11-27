@@ -210,7 +210,7 @@ console.log(JSON.stringify(snd));
 check('a fist\'s blow on a Bandit hands the hit sound its type, blunt, and plays the blunt hit', snd.hits === 1 && snd.args && snd.args[0] === 'blunt' && snd.swungIsBlunt, snd);
 check('the hit sounds by weapon class: slash, pierce and blunt, each with its resisted ring, six sounds of their own', snd.arity === 2 && snd.distinct === 6, snd.prints);
 
-// S2744 — a weapon's range as its sheet shows it, both ends: ATK 8–9 rolled 8 every time (lo + floor(r × (hi − lo))).
+// S2745 — a weapon's range as its sheet shows it, both ends: ATK 8–9 rolled 8 every time (lo + floor(r × (hi − lo))).
 const rng = await page.evaluate(() => {
   const seen = (lo, hi) => { const s = new Set(); for (let i = 0; i < 1000; i++) s.add(rollRange(lo, hi, i / 1000)); return [...s].sort((a, b) => a - b); };
   const EQk = { ...EQ }; const keepZ = ZE;

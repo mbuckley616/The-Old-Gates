@@ -37,7 +37,7 @@ check('the starter clothes and the weapon all come off', r.start.chest && r.star
 check('what came off is in the bag as gear with its slot, and no Rusty Sword appears', r.bag.length === 4 && r.bag.every(b => b.type === 'equip' && b.slot) && !r.rusty, r);
 check('fists hit for less than the starting weapon', r.fistHit > 0 && r.fistHit < r.swordHit, r);
 check('fists swing faster than the starting weapon', r.fistSwing < r.swordSwing, r);
-check(`the sheet and the slot show the fists’ 2–3 × their skill and Might (${r.sa}, as atkShown's ${r.shown})`, r.sa === r.shown && /Fists/.test(r.tip), r); /* S2744 — the level × 1.5 left the damage in S941 and the sheet now */
+check(`the sheet and the slot show the fists’ 2–3 × their skill and Might (${r.sa}, as atkShown's ${r.shown})`, r.sa === r.shown && /Fists/.test(r.tip), r); /* S2745 — the level × 1.5 left the damage in S941 and the sheet now */
 check('a save with an empty hand loads with an empty hand', r.savedWeapon === null && !r.loadedWeapon, r);
 check('the tunic can be put back on from the bag', r.reworn === r.start.chest && r.defReworn > 0, r);
 // Session 2710: an item is heard by what it is (Michael, 25 Nov): a take from a container or a put into the stash is a sweep and the
