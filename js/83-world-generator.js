@@ -1237,7 +1237,7 @@ function genSettlement(site){
         for(const k of tri){const [x,z]=v[k];pos.push(x,worldH(x,z)+.05,z);const g=1+(Math.random()-.5)*.12;col.push(tone.r*g,tone.g*g,tone.b*g);}}});
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
       const nor=new Float32Array(pos.length);for(let i=1;i<nor.length;i+=3)nor[i]=1;g.setAttribute('normal',new THREE.BufferAttribute(nor,3));g.computeBoundingSphere();
-      const pm=new THREE.Mesh(g,ROAD_MAT);pm.receiveShadow=true;snowWatch(g);group.add(pm); // v80 S147
+      const pm=new THREE.Mesh(g,ROAD_MAT);pm.receiveShadow=true;pm.name='town paths';snowWatch(g);group.add(pm); // v80 S147
     }
     // Loot barrels and crates tucked beside buildings — everyday goods only.
     if(plan.rows>0){
@@ -1478,13 +1478,19 @@ function genSettlement(site){
         const T=PKIT.props[mk]({ground:(lx,lz)=>worldH(x+lx*c+lz*s_,z-lx*s_+lz*c)-y0}),G=T.group;G.position.set(x,y0,z);G.rotation.y=ry;G.userData.noBake=true;G.visible=false;group.add(G);
         S.stalls.push({key,site:site.id,x,z,y:y0,ry,slide,group:G,tris:T.tris,draws:T.draws});}
     }catch(e){console.warn('feast stalls',e);}
+    /* S2670 (towns dressed) — the town's dressing on the new look (townDress, 82): yards and their walls, what stands in them and against the
+       houses, the shops' trades, the streets' carts and barrels, sheds and orchards on the widest lawns, and the ground paved; its own streams, after
+       every draw the town made. Laid, the old flat ribbon of the paths goes: the paving is drawn over the same lines. */
+    if(window.OG_LOOK==='new'&&['village','town','city','port','garrison','outpost'].includes(site.kind))try{const J=townDressJob(S,{inner,pros:TST?prosperity(site):50,burned:burnedV,abandoned:abandonedV||sackedV},T=>{ /* a step a frame on the job queue, after the town stands */
+      if(!T)return;const pm=group.children.find(m=>m.name==='town paths');if(pm){group.remove(pm);if(typeof _ribbons!=='undefined'){const k=_ribbons.indexOf(pm.geometry);if(k>=0)_ribbons.splice(k,1);}pm.geometry.dispose();}
+      S._work=null; /* the ways' grid read as the town stood meets the dressing as any later solid; the night beat's never does */});if(J)TDR_Q.push(J);}catch(e){console.warn('town dress',e);}
     bakeSettlement(S);
     if(S.chimneys.length)try{smokeFor(S);}catch(e){console.warn('smoke',e);}
     sc.add(group);
     houses.forEach(h=>ZONES.world.houses.push(h));
     if(IMPOSTORS[site.id])IMPOSTORS[site.id].visible=false;
     SETTLE.set(site.id,S);_townNames=null;_twinUsed=null;_roleNames=null;
-    if(guardsOf(S).length)try{townRoute(S);}catch(e){} // S166 — the watch's street grid, built with the town rather than at nightfall
+    if(guardsOf(S).length)try{townRoute(S);townRoute(S,true);}catch(e){} // S166 — the watch's street grid, built with the town rather than at nightfall; S2670 — and the beat's, the same grid kept clear of the dressing that follows
     return S;
   }
   // Bake a settlement: every static mesh with a plain (untextured, lit) material is
@@ -1511,13 +1517,16 @@ function genSettlement(site){
   const HOUSE_LOD={near:70,far:80};
   // S1073 — a kit town's houses (one group for the town, S.kitLod) by the same rule, measured from the town's centre less half its
   // houses' reach: near the town the kit's houses, from outside it their far copy
-  function houseLod(){const cp=CAM.position;for(const S of SETTLE.values()){
+  function houseLod(){try{tdrTickJobs();}catch(e){} /* S2670 — the towns' dressing a step a frame */const cp=CAM.position;for(const S of SETTLE.values()){
     for(const K of [S.kitLod,S.farmLod,S.ringLod,S.abbeyLod,S.towerLod,S.cairnLod,S.whLod,S.thLod,S.archLod])if(K){const d=Math.max(0,Math.hypot(K.x-cp.x,K.z-cp.z)-K.r*.5),near=d<HOUSE_LOD.near?true:d>HOUSE_LOD.far?false:K.hi.visible;K.hi.visible=near;K.lo.visible=!near;} /* S1455 — and a village's farm */
     if(S.racks&&S.racks.length)townRacksLive(S,cp); /* S2136 — shown near, and what hangs kept to worldState.racks */
     if(S.gardens&&S.gardens.length)townGardensLive(S,cp);
     if(S.stalls&&S.stalls.length)festStallsLive(S,cp); /* S2351 — the bursar's table and the caravan's scale, out with their keepers */
     if(S.fair)fairRingLive(S,cp); /* S2333 — the Strait Fair's ring, up on its morning */ /* S2165 — and your garden's beds kept to worldState.garden */
     if(S.ring&&S.ring.paint&&S.ringLod&&S.ringLod.hi.visible)try{S.ring.paint(ringPostNames(S.ring.site));}catch(e){} /* S1662 — the post's names, cut again when the champion or the dead change (paint keeps its own key) */
+    const dq=S.dressLod||S.dressGround?tdrQuality(S):1; /* S2670 — the dressing by the quality level (82) */
+    if(S.dressLod)for(const m of S.dressLod){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere,d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5),NEAR=dq===0?(String(m.userData.ckey).startsWith('dressn:')?-1:45):HOUSE_LOD.near,FAR=NEAR+10; /* Low: no small things, the walls near within 45 m */ /* S2670 — the town's dressing, near and far, by the houses' rule; its own list, so the houses' twins stay paired */
+      const twin=m.userData.twin!==undefined?m.userData.twin:(m.userData.twin=S.dressLod.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey)||null);const near=d<NEAR?true:d>FAR?false:m.visible;m.visible=near;if(twin)twin.visible=!near;}
     const L=S.lodMeshes;if(!L)continue;
     for(const m of L){if(m.userData.lod!=='hi')continue;const b=m.geometry.boundingSphere;const d=Math.max(0,Math.hypot(b.center.x-cp.x,b.center.z-cp.z)-b.radius*.5);
       const twin=m.userData.twin||(m.userData.twin=L.find(o=>o.userData.lod==='lo'&&o.userData.ckey===m.userData.ckey));
@@ -1606,7 +1615,7 @@ function genSettlement(site){
     (S.herbs||[]).forEach(h=>{const k=ZONES.world.herbs.indexOf(h);if(k>=0)ZONES.world.herbs.splice(k,1);});
     if(S.chest&&typeof ZONE_CORPSES!=='undefined'){const k=ZONE_CORPSES.indexOf(S.chest);if(k>=0)ZONE_CORPSES.splice(k,1);}
     sc.remove(S.group);
-    S.group.traverse(o=>{if(o.isMesh){o.geometry.dispose();}});if(S.smoke)S.smoke.geometry.dispose();
+    S.group.traverse(o=>{if(o.isMesh){if(typeof _ribbons!=='undefined'&&o.geometry.userData.baseCol){const k=_ribbons.indexOf(o.geometry);if(k>=0)_ribbons.splice(k,1);} /* S2670 — the paths' and the dressing's ground leave the snow's list with the town */o.geometry.dispose();}});if(S.smoke)S.smoke.geometry.dispose();
     S.npcs.forEach(n=>{sc.remove(n.g);sc.remove(n.dot);const i=npcs.indexOf(n);if(i>=0)npcs.splice(i,1);});
     S.houses.forEach(h=>{const i=ZONES.world.houses.indexOf(h);if(i>=0)ZONES.world.houses.splice(i,1);});
     if(S.towerHouse&&S.towerHouse.cellar){const i=ZONES.world.houses.indexOf(S.towerHouse.cellar);if(i>=0)ZONES.world.houses.splice(i,1);} /* S1765 — the tower house's cellar */
@@ -1638,12 +1647,13 @@ function genSettlement(site){
       }
     }
   }
+  var NPC_THRU_DRESS=false; /* S2670 — set while a townsperson's step is tested (solidAtNpc, 82): the town's dressing is skipped */
   function settleSolid(x,z,R,MIN){
     for(const S of SETTLE.values()){
       const t=S.site;const reach=S.reach||t.pad+6;if(Math.abs(x-t.x)>reach||Math.abs(z-t.z)>reach)continue;
       const sol=S.sol;
       for(let i=0;i<sol.length;i++){
-        const s=sol[i];if(MIN&&Math.max(s.rx,s.rz)<MIN)continue;const dx=x-s.cx,dz=z-s.cz;
+        const s=sol[i];if(MIN&&Math.max(s.rx,s.rz)<MIN)continue;if(NPC_THRU_DRESS&&s.dress)continue;const dx=x-s.cx,dz=z-s.cz;
         if(s.c!==undefined){ // rotated rect: rotate the point into the rect's frame (mesh rotation.y = atan2(s,c))
           const lx=dx*s.c-dz*s.s,lz=dx*s.s+dz*s.c;
           if(Math.abs(lx)<s.rx+R&&Math.abs(lz)<s.rz+R)return true;
@@ -4750,7 +4760,7 @@ function shellFrame(sc_,o){const {W,D,H,type,st,wallKind,FN,FSEED,beams,wins,TAL
     for(const S of SETTLE.values()){
       if(Math.abs(S.site.x-px)>radius+S.site.pad||Math.abs(S.site.z-pz)>radius+S.site.pad)continue;
       for(const r of S.sol){
-        if(r.c===undefined)continue;
+        if(r.c===undefined)continue;if(r.dress&&!r.bound&&Math.max(r.rx,r.rz)<1.6)continue; /* S2670 — the dressing's walls and sheds on the map, not its carts and barrels */
         const [sx,sz]=toS(r.cx,r.cz);
         ctx.save();ctx.translate(sx,sz);ctx.rotate(-Math.atan2(r.s,r.c));
         const wall=r.bt==='wall'||(!r.bt&&r.rx>5&&r.rz<1.2);const B=wall?BLD.wall:bldOf(r.bt);

@@ -19,7 +19,9 @@ await page.evaluate(() => { window.ball = (an, v) => v.copy(an.localToWorld(new 
 // jumped 1.8 mm, read as the planted foot's slip (2.0-2.05 mm against 2; the walk's own is 0.01-1.0 mm a frame). So the suite waits for
 // the game's loop to build one (below) and drives that walker; the old pick only if none has built in 300 s (logged as built: false).
 const drive = (pace, n) => page.evaluate(([pace, n]) => {
-  const ok = r => r.root.parent === WORLD.scene && r.root.visible && !r.g.gear;
+  // S2670: a body held in a pose of its own (seated, asleep, riding, a child at play) is never driven: its mode is set before the pace is read,
+  // and with a town's dressing building first one of those (the watchwoman asleep, a rider) was the first body built
+  const ok = r => r.root.parent === WORLD.scene && r.root.visible && !r.g.gear && !r.sit && !r.sleep && !r.ride && !r.play;
   const rig = window._gr || (window._gr = [...PEOPLE_RIGS].find(r => ok(r) && r.hb) || [...PEOPLE_RIGS].find(ok)); const root = rig.root;
   if (!window._grLog) window._grLog = { name: rig.g.name, built: !!rig.hb };
   const fyaw = root.rotation.y, s = root.scale.x, step = pace / 60; const vL = new THREE.Vector3(), vR = new THREE.Vector3(), hp = new THREE.Vector3(), hd = new THREE.Vector3();
@@ -46,7 +48,7 @@ const drive = (pace, n) => page.evaluate(([pace, n]) => {
 }, [pace, n]);
 
 const t0w = Date.now();
-await page.waitForFunction(() => [...PEOPLE_RIGS].some(r => r.root.parent === WORLD.scene && r.root.visible && !r.g.gear && r.hb), null, { timeout: 300000, polling: 1000 }).catch(() => {});
+await page.waitForFunction(() => [...PEOPLE_RIGS].some(r => r.root.parent === WORLD.scene && r.root.visible && !r.g.gear && !r.sit && !r.sleep && !r.ride && !r.play && r.hb), null, { timeout: 300000, polling: 1000 }).catch(() => {});
 console.log('  a built walker after', Math.round((Date.now() - t0w) / 1000), 's');
 const stroll = await drive(.7, 120), guard = await drive(.95, 120);
 console.log('  walker', JSON.stringify(await page.evaluate(() => window._grLog)));
