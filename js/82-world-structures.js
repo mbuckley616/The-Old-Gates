@@ -3323,7 +3323,7 @@
     FPART(P,SK.bumpy(SK.ball(.7,10,5,0,Math.PI*2,0,Math.PI/2),.06,7,3),0x4a6a30,0,0,0,0,0,0,.1);return mergeParts(P);}
   function wellGeo(){const lo=wellGeoLo(),hi=wellGeoHi();hi.userData.lo=lo;return hi;}
   function stallGeo(r){const lo=stallGeoLo(r),hi=stallGeoHi(lo.userData.picks);hi.userData.lo=lo;return hi;}
-  // S2740 — market day's stall at a ring spot (S2713's owed look; docs/design/a-towns-day.md: "until then the stalls can stand on the old
+  // S2741 — market day's stall at a ring spot (S2713's owed look; docs/design/a-towns-day.md: "until then the stalls can stand on the old
   // look's stallGeo"). marketStallSpots (87) puts the keepers past the square's own stalls on the plaza's ring with nothing to stand at;
   // tickMarketStalls now builds this with the keeper and drops it with him. The stall stands 1.1 m in front of the keeper toward the
   // square's middle, its counter to the middle, the keeper behind its back posts. Its picks come from its own stream (place and index),
