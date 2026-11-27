@@ -932,9 +932,13 @@ const HEARING_WALK = 3, HEARING_SNEAK = 1;
 let _pStep = false;
 // S2211 — Michael's B on #1511: rain and snow cover your steps outdoors (wxHearScale, 86-world-crime.js): walking 2 m in rain or snow,
 // 1.5 m in a storm, heavy rain or a blizzard; sneaking never under the still HEARING_RADIUS
+// S2735 — and the ground's (groundHear, 50-travel.js; the place-sound sheet's third session): walk 3 × g × w, sneak max(0.9, 1 × g × w),
+// g 0.8 on grass, sand and snow, 1 on earth and mud, 1.15 on stone and wood, 1.3 on gravel and in the shallows. Noisy hobnails keep 4 and 1.5
 function hearingRadius(){if(!_pStep)return HEARING_RADIUS;const w=(typeof wxHearScale==='function')?wxHearScale():1;
   const nl=typeof hobnailNoisy==='function'&&hobnailNoisy(); /* S2477 — hobnails on stone and planks */
-  return _sneaking?Math.max(HEARING_RADIUS,(nl?HOBNAIL.sneak:HEARING_SNEAK)*w):(nl?HOBNAIL.walk:HEARING_WALK)*w;}
+  if(nl)return _sneaking?Math.max(HEARING_RADIUS,HOBNAIL.sneak*w):HOBNAIL.walk*w;
+  const g=typeof groundHear==='function'?groundHear():1;
+  return _sneaking?Math.max(HEARING_RADIUS,HEARING_SNEAK*g*w):HEARING_WALK*g*w;}
 // Directional detection predicate. Returns true if the enemy can detect
 // the player given current distance, sneak state, and facing. Detection
 // fires when EITHER:

@@ -3822,6 +3822,7 @@
     {const r=seededRng(site.id,'dress:ground'),pv=town||site.kind==='garrison',sq0=pv?(site.kind==='city'?15:site.kind==='port'?11:13):7,near3=sol.filter(q=>q.bt&&!q.dress&&q.bt!=='wall').map(q=>Math.hypot(q.cx-cx,q.cz-cz)-Math.max(q.rx,q.rz)).sort((a,b)=>a-b)[2],sq=pv&&near3>0?Math.max(9,Math.min(20,near3+1.5)):sq0; /* the square out to its third-nearest building's frontage */
       const onSol=(x,z)=>!!inBld(x,z,-.1),inPlot=(x,z)=>plots.some(p=>p.type!=='market'&&inR(p,x,z,0));
       const wob=a=>sq*(1+.1*Math.sin(a*3+site.x*.01)+.07*Math.sin(a*7+site.z*.01));
+      S.square={x:cx,z:cz,r:sq,paved:!!pv}; /* S2735 — the square's reach kept for the ground underfoot (groundKind, 50-travel.js): wob's own radius */
       /* the square in rings round the well; its edge wanders (wob), goes ragged and mossy over its last 1.6 m, and stops at a building, a plot or a road */
       {const st=pv?tdrStyle(isle,'square'):Object.assign(tdrStyle(isle,'earth'),{y:.075,cl:.9,cw:.9}),A=D.list(pv?'g':'ge',cx,cz),AC=D.list('gc',cx,cz),stC=Object.assign({},st,{lo:(st.hi+st.lo)/2/.85,moss:0}),y0=st.y;
         const skipQ=(x,z,a)=>{if(Math.hypot(x-cx,z-cz)>wob(a))return true;if(onSol(x,z)||inPlot(x,z))return true;const ri=roadInfo(x,z);return !!ri&&ri.d<ROAD_HALF*.85-.05;};

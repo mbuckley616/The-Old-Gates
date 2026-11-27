@@ -144,7 +144,7 @@ console.log('hobnails', JSON.stringify(HN));
 check('a Gatelands smith nails your boots for 25 gold and an hour, on the forge page\'s own row; 5 gold draws them', HN.here && HN.row && HN.said === 'Your boots are nailed.' && HN.mins === 60 && HN.gold === 75 && HN.nailed && HN.rowDraw && HN.drawn && HN.gold2 === 70, HN);
 check('Aurenne\'s smith nails nothing', !HN.aurenne && /No smith/.test(HN.aurenneGo || ''), HN);
 check('nailed: the ice grips at 20 m/s² (6 bare); deep snow is only snow (×0.9, the roll whole)', HN.acc === 20 && HN.accBare === 6 && Math.abs(HN.deepRun - .9) < 1e-9 && HN.deepRoll === 1, HN);
-check('nailed, indoors a foe hears you walk at 4 m and sneak at 1.5; bare 3; outdoors on soil the nails are quiet', HN.walk === 4 && HN.sneak === 1.5 && HN.walkBare === 3 && HN.outWalk <= 3, HN);
+check('nailed, indoors a foe hears you walk at 4 m and sneak at 1.5; bare 3.45 (a smithy\'s planks, ×1.15, S2735); outdoors on soil the nails are quiet', HN.walk === 4 && HN.sneak === 1.5 && Math.abs(HN.walkBare - 3.45) < 1e-9 && HN.outWalk <= 3, HN);
 await page.evaluate(() => { EQ.feet.nails = true; });
 const SN = await slide({ iceAt: 0, stopAt: 120 });
 await page.evaluate(() => { delete EQ.feet.nails; });
@@ -171,14 +171,34 @@ const NS = await page.evaluate(() => { const o = {}, L = lid, H = currentHouse, 
   o.desc = itemDesc(b); o.descBare = itemDesc(Object.assign({}, b, { nails: false }));
   BAG.push(b); showBagTooltip(BAG.length - 1, { clientX: 10, clientY: 10 }); o.tip = document.getElementById('bag-tooltip').innerHTML.includes('Hobnailed'); BAG.pop();
   const was = EQ.feet; EQ.feet = b; hoverEqSlot('feet'); o.slot = document.getElementById('eq-tooltip-stat').textContent;
-  const heard = []; const sN = sndNailStep, sF = sndFootstep; sndNailStep = () => heard.push('nail'); sndFootstep = () => heard.push('bare');
+  const heard = []; const sN = sndNailStep, sF = sndFootstep, sG = sndGroundStep; sndNailStep = () => heard.push('nail'); sndFootstep = () => heard.push('bare'); sndGroundStep = k => heard.push('bare:' + k);
   const step = () => { onGround = true; _stepT = 0; tickFootsteps(.5, true, false); };
   _wx('clear', 0); lid = 'int_test'; currentHouse = { type: 'weapon', siteId: 'hearthwick', name: 'Smithy' }; step(); lid = L; currentHouse = H; step();
   EQ.feet = Object.assign({}, b, { nails: false }); lid = 'int_test'; currentHouse = { type: 'weapon', siteId: 'hearthwick', name: 'Smithy' }; step(); lid = L; currentHouse = H;
-  sndNailStep = sN; sndFootstep = sF; EQ.feet = was; o.heard = heard; return o; });
+  sndNailStep = sN; sndFootstep = sF; sndGroundStep = sG; EQ.feet = was; o.heard = heard; return o; });
 console.log('nails shown', JSON.stringify(NS));
 check('the boots say Hobnailed on their card, the bag\'s tooltip and the worn slot; bare boots do not', /Hobnailed/.test(NS.desc) && !/Hobnailed/.test(NS.descBare) && NS.tip && /Hobnailed/.test(NS.slot), NS);
-check('a step: nailed indoors the nailed step, nailed outdoors the bare one, bare boots indoors the bare one', NS.heard.join() === 'nail,bare,bare', NS);
+check('a step: nailed indoors the nailed step, nailed outdoors the field\'s own (grass, S2735), bare boots indoors the smithy\'s planks', NS.heard.join() === 'nail,bare:grass,bare:wood', NS);
+
+// 10. the ground heard (Session 2735; the place-sound sheet's third session): groundKind where you stand, and hearingRadius walk
+// 3 × g, sneak max(0.9, 1 × g): the start's road earth (3 and 1), the field grass (2.4, the sneak at the 0.9 floor), steep rock stone
+// (3.45), a Gatelands shingle gravel (3.9 and 1.3); hobnails indoors still 4 and 1.5, a smithy's planks bare 3.45
+const GH = await page.evaluate(([F, H]) => { const o = {}, x0 = px, z0 = pz; _wx('clear', 0);
+  const at = (x, z) => { px = x; pz = z; _gnd.at = -1e9; _pStep = true; _sneaking = false; const w = hearingRadius(); _sneaking = true; const s = hearingRadius(); _sneaking = false; _pStep = false;
+    return { k: groundHere(), w: +w.toFixed(3), s: +s.toFixed(3) }; };
+  o.road = at(H[0], H[1]); o.field = at(F[0], F[1]);
+  let rock = null, shingle = null;
+  for (let r = 30; r < 3000 && !(rock && shingle); r += 7) for (let a = 0; a < 6.28 && !(rock && shingle); a += 7 / r) { const x = H[0] + Math.cos(a) * r, z = H[1] + Math.sin(a) * r;
+    if (!rock && worldH(x, z) > 6 && slopeNormalY(x, z) < .6 && !stampAt(x, z) && groundKind(x, z) === 'stone') rock = [x, z];
+    if (!shingle && shoreIsleAt(x, z) === 'gatelands' && worldH(x, z) > .3 && groundKind(x, z) === 'gravel') shingle = [x, z]; }
+  o.rock = rock && at(...rock); o.shingle = shingle && at(...shingle);
+  const L = lid, Hh = currentHouse; EQ.feet = { name: 'Leather Boots', ico: '👢', def: 0, weight: 1, nails: true }; lid = 'int_test'; currentHouse = { type: 'weapon', siteId: 'hearthwick', name: 'Smithy' };
+  o.nails = at(px, pz); delete EQ.feet.nails; o.planks = at(px, pz); currentHouse = { type: 'church', name: 'Church' }; o.church = at(px, pz); lid = L; currentHouse = Hh;
+  px = x0; pz = z0; _gnd.at = -1e9; return o; }, [F, home]);
+console.log('ground', JSON.stringify(GH));
+check('the ground: the start\'s road earth, walk 3 and sneak 1; the field grass, walk 2.4 and sneak at the 0.9 floor', GH.road.k === 'earth' && GH.road.w === 3 && GH.road.s === 1 && GH.field.k === 'grass' && GH.field.w === 2.4 && GH.field.s === .9, GH);
+check('steep rock is stone, walk 3.45 and sneak 1.15; a Gatelands shingle gravel, walk 3.9 and sneak 1.3', !!GH.rock && GH.rock.k === 'stone' && GH.rock.w === 3.45 && GH.rock.s === 1.15 && !!GH.shingle && GH.shingle.k === 'gravel' && GH.shingle.w === 3.9 && GH.shingle.s === 1.3, GH);
+check('indoors: hobnails still 4 and 1.5; bare boots on a smithy\'s planks wood 3.45, a church stone', GH.nails.w === 4 && GH.nails.s === 1.5 && GH.planks.k === 'wood' && GH.planks.w === 3.45 && GH.church.k === 'stone', GH);
 
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();

@@ -1588,6 +1588,55 @@ function hobnailGo(){if(!hobnailHere())return {done:false,why:'No smith here nai
   if(b.nails){if(gold<HOBNAIL.draw)return {done:false,why:`The smith asks ${HOBNAIL.draw} gold to draw them.`};gold-=HOBNAIL.draw;delete b.nails;_foot.at=-1e9;return {done:true,nailed:false};}
   if(gold<HOBNAIL.price)return {done:false,why:`The smith asks ${HOBNAIL.price} gold.`};gold-=HOBNAIL.price;b.nails=true;_foot.at=-1e9;
   if(typeof advanceClock==='function')advanceClock(HOBNAIL.min);return {done:true,nailed:true};}
+// ── S2735 — what a place sounds like, session 3 (Michael's B on #2071; docs/design/what-a-place-sounds-like-build.md): the ground underfoot.
+// groundKind(x,z) is one of nine grounds, read only from what is seeded or saved (the room's kind, the dungeon's, the road, a stamp, a
+// paved town's square and main streets, the slope, footingAt's snow and mud, the shore by island, the Mark's scree, a desert); groundHere()
+// is yours, with the deck, a bridge's or a wonder's walk and the shallows, read once a quarter second. The step's voice is the ground's,
+// and so is the hearing: walk 3 × g × w, sneak max(0.9, 1 × g × w), w the weather's (wxHearScale). Hobnails where they are noisy (indoors,
+// in a gate) keep their 4 and 1.5 m unmultiplied; elsewhere nailed boots take the factor like any. A pure function of where you stand.
+const GROUND={hear:{grass:.8,sand:.8,snow:.8,earth:1,mud:1,stone:1.15,wood:1.15,gravel:1.3,water:1.3},
+  stoneRooms:{church:1,castle:1,guild_f:1,guild_m:1,constable:1,academy:1,cellar:1},shore:1.9,shallow:.1,street:2.15};
+function groundRoom(){const H=typeof currentHouse!=='undefined'?currentHouse:null;return GROUND.stoneRooms[H&&H.type]?'stone':'wood';}
+function groundDungeon(){const P=typeof currentPortal!=='undefined'?currentPortal:null;return P&&(P.lair||P.lairDoor)?'earth':'stone';}
+// on a paved town's setts: its square (out to wob's edge) or a main street (through the middle, 2.3 m wide or more), or a road through it
+function groundPaved(x,z){const T=typeof tdrTownAt==='function'?tdrTownAt(x,z):null;if(!T)return false;
+  const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF)return true;
+  const S=SETTLE.get(T.id),Q=S&&S.square;
+  if(Q&&Q.paved){const a=Math.atan2(z-Q.z,x-Q.x),r=Q.r*(1+.1*Math.sin(a*3+T.x*.01)+.07*Math.sin(a*7+T.z*.01));if(Math.hypot(x-Q.x,z-Q.z)<r)return true;}
+  for(const p of (S&&S.paths)||[]){if(!p||!p.pts||p.pts.length<2||(p.w||0)<2.3)continue;const a=p.pts[0],b=p.pts[p.pts.length-1],L=Math.hypot(b.x-a.x,b.z-a.z)||1;
+    if(Math.abs((T.x-a.x)*(b.z-a.z)-(T.z-a.z)*(b.x-a.x))/L>=7)continue;
+    for(let k=0;k<p.pts.length-1;k++){const A=p.pts[k],B=p.pts[k+1],dx=B.x-A.x,dz=B.z-A.z,l2=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-A.x)*dx+(z-A.z)*dz)/l2));
+      if(Math.hypot(x-A.x-dx*t,z-A.z-dz*t)<GROUND.street)return true;}}
+  return false;}
+function groundKind(x,z){
+  if(typeof isInterior==='function'&&isInterior())return groundRoom();
+  if(activeZoneId==='dungeon'||(lid&&String(lid).startsWith('dyn_')))return groundDungeon();
+  if(!footOutside())return 'earth';
+  const h=worldH(x,z);
+  if(h<SEA_Y-GROUND.shallow&&h>SEA_Y-SWIM_DEPTH)return 'water';
+  if(groundPaved(x,z))return 'stone';
+  const ri=roadInfo(x,z);if(ri&&ri.d<ROAD_HALF)return 'earth';
+  if(stampAt(x,z))return 'earth';
+  if(slopeNormalY(x,z)<FOOT.rock)return 'stone';
+  const f=footingAt(x,z).k;if(f==='snow'||f==='deep')return 'snow';if(f==='mud')return 'mud';
+  const isle=shoreIsleAt(x,z);
+  if(h<GROUND.shore){if(isle==='aurenne')return 'sand';if(isle==='mark')return 'gravel';
+    return (_smoothNoise(x,z,SEED+21,6)*.7+_smoothNoise(x,z,SEED+22,1.8)*.3)>.58?'gravel':'sand';} /* the Gatelands' shingle where shoreColor lays it */
+  if(isle==='mark'&&h>snowLineAt(x,z))return 'gravel';
+  if(CLIMATE.sand[specBiome(x,z)])return 'sand';
+  return 'grass';}
+// yours: a ship's deck is wood; a bridge, an aqueduct's walk or a wonder's step is stone, any other walk wood; a river's or a lake's water
+// you stand in (not swim) is the shallows
+function groundPlat(){if(typeof onDeck==='function'&&onDeck())return 'wood';
+  try{for(const p of ZONES.world.platforms){if(px>p.x0&&px<p.x1&&pz>p.z0&&pz<p.z1&&(!p.inside||p.inside(px,pz))&&Math.abs(jumpY-(p.top?(p.top(px,pz)??-1e9):p.y))<1.2)
+    return (p.bridge||p.wonder||AQ_WALKS.includes(p))?'stone':'wood';}}catch(e){}return null;}
+const _gnd={k:'earth',at:-1e9,x:0,z:0,key:''};
+function groundHere(){const now=performance.now(),key=`${lid}|${activeZoneId}|${typeof currentHouse!=='undefined'&&currentHouse?currentHouse.type:''}|${typeof WX!=='undefined'?WX.type+(WX.cover>=FOOT.snow?'s':''):''}`; /* a door, a gate or the weather turning reads it again at once */
+  if(now-_gnd.at>250||Math.hypot(px-_gnd.x,pz-_gnd.z)>1||key!==_gnd.key){_gnd.key=key;
+    let k=null;if(footOutside()){k=groundPlat();if(!k&&typeof ambFresh==='function'){const f=ambFresh(px,pz,1);if(f&&f.d<=0&&!(typeof isSwimming==='function'&&isSwimming()))k='water';}}
+    _gnd.k=k||groundKind(px,pz);_gnd.at=now;_gnd.x=px;_gnd.z=pz;}
+  return _gnd.k;}
+function groundHear(){return GROUND.hear[groundHere()]||1;}
 function iceAcc(){return bootsNailed()?HOBNAIL.acc:ICE.acc;}
 // the loop's step: mx, mz the way you ask (0, 0 for none), spd this frame's distance at your speed. Off ice it only keeps the velocity
 // you are moving at and returns null; on ice it returns this frame's step, {dx, dz}
