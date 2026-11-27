@@ -745,3 +745,15 @@ Written by the producer once a day, after 12:00 UTC. Newest last.
 **Blocked.** Main's full check of 26 Nov: eight suites red with no fix yet, for QA to route. Nothing is reverted.
 
 **Roadmap.** 367 of 484 stories done (357 of 465 yesterday). The new look is 9 of 18; the core loop gained *a death you feel*.
+
+## 27 Nov 2026
+
+**Waiting on you.** Two decisions: an Aurenne harbour town from the water (#2110, C: on a hill); the Mark upland view's camera, out of the snow-pine stand (#2120, A). No merge waits for you.
+
+**Landed on main since 26 Nov.** Sessions 2700–2733 and *Fable: towns dressed* (#2058, which you approved): walled yards, gardens, paddocks, carts and paved squares in every town. Your six answers of 26 Nov built: the first levels cheap and quests pay toward a level; the five moments as cards at the top; your long cloak worn back; what a place sounds like (wind, water, the town by the hour, rooms' echo). The Mark's fells, black moor and snow-pine stands; the Gatelands' sea a dark slate. A herb, an item and the counter heard by what they are. Tab, Esc and the pack pause. The camel kneels. The beat and watch suites green again; the gate at dusk lit after all eight views. A playtest, quest review, the place-sound build sheet, the item-card concepts. Build s2046.
+
+**Under way.** Bodies: Session 2733 (the camel's tail while it kneels), CI green. Look: the market stalls owed from S2713.
+
+**Blocked.** Main's full check of 26 Nov: QA has triaged six of eight; bodies and innrooms followed. The 22 Nov weekly leftovers stay in backlog I. Nothing is reverted.
+
+**Roadmap.** 374 of 490 stories done (367 of 484 yesterday). The new look is 9 of 18.

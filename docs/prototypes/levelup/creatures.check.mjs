@@ -510,10 +510,11 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
   // at either end it meets the stand and the couch (within 1 cm)
   for (const sp of couchers.filter(k => !only || only.split(',').includes(k))) { const c = await page.evaluate(async sp => { const K = await import('./creatures.js'), C = K.build(K.genome(sp, sp + ':kneel')), rows = [];
     const at = b => { const q = new C.rig.position.constructor(); b.getWorldPosition(q); return C.rig.worldToLocal(q); }, fore = C.B.legs.filter(L => L.at === 1), hind = C.B.legs.filter(L => L.at !== 1);
-    const M = C.meshes[0], p = new C.rig.position.constructor();
+    const M = C.meshes[0], p = new C.rig.position.constructor(), tc = C.B.chains.tail;
+    const tailBelow = () => { if (!tc) return null; const a = at(C.byName[tc[0]]), b = at(C.byName[tc[tc.length - 1]]); return +(Math.atan2(a.y - b.y, Math.hypot(b.x - a.x, b.z - a.z)) * 180 / Math.PI).toFixed(1); };
     const read = () => { C.rig.updateMatrixWorld(true); M.skeleton.update(); const inv = C.rig.matrixWorld.clone().invert(); let low = 1e9; for (let v = 0; v < M.geometry.attributes.position.count; v += 3) { M.getVertexPosition(v, p); p.applyMatrix4(M.matrixWorld).applyMatrix4(inv); low = Math.min(low, p.y); }
       const legLow = L => Math.min(...L.bones.slice(1).map(b => at(b).y), at(L.bones[L.bones.length - 1]).y);
-      return { wither: +Math.max(...fore.map(L => at(L.bones[0]).y)).toFixed(3), hip: +Math.max(...hind.map(L => at(L.bones[0]).y)).toFixed(3), low: +low.toFixed(3), feet: [...fore, ...hind].map(L => +legLow(L).toFixed(3)), hoofZ: +at(hind[0].bones[3]).z.toFixed(3), hockZ: +at(hind[0].bones[2]).z.toFixed(3), hipZ: +at(hind[0].bones[0]).z.toFixed(3) }; };
+      return { wither: +Math.max(...fore.map(L => at(L.bones[0]).y)).toFixed(3), hip: +Math.max(...hind.map(L => at(L.bones[0]).y)).toFixed(3), low: +low.toFixed(3), feet: [...fore, ...hind].map(L => +legLow(L).toFixed(3)), hoofZ: +at(hind[0].bones[3]).z.toFixed(3), hockZ: +at(hind[0].bones[2]).z.toFixed(3), hipZ: +at(hind[0].bones[0]).z.toFixed(3), tail: tailBelow() }; };
     C.gait = 'stand'; C.kneel = undefined; K.pose(C, 0); const stand = read(); C.gait = 'couch'; K.pose(C, 0); const couch = read();
     for (let i = 0; i <= 20; i++) { C.kneel = i / 20; K.pose(C, 0); rows.push({ k: i / 20, ...read() }); }
     C.kneel = .001; K.pose(C, 0); const k0 = read(); C.kneel = .999; K.pose(C, 0); const k1 = read(); C.kneel = undefined;
@@ -531,7 +532,12 @@ const check = (name, ok, info) => { console.log((ok ? 'PASS ' : 'FAIL ') + name 
     // down, the hock going back behind the hip (at 0.75 more than 25 cm behind it), and only then is the hoof drawn in to the couch's place
     { const P = R.slice(12, 16), dz = Math.max(...P.map(r => r.hoofZ)) - Math.min(...P.map(r => r.hoofZ)), back = R[15].hipZ - R[15].hockZ, drawn = R[20].hoofZ - R[15].hoofZ;
       check(`${sp} folds its hind legs about planted hooves: from 0.6 to 0.75 the hoof moves ${(dz * 100).toFixed(1)} cm while the hips come down ${((R[12].hip - R[15].hip) * 100).toFixed(0)} cm, the hock ${(back * 100).toFixed(0)} cm behind the hip at 0.75, then the hoof drawn ${(drawn * 100).toFixed(0)} cm forward under the belly`,
-        dz < .02 && R[12].hip - R[15].hip > .2 && back > .25 && drawn > .3, R.map(r => ({ k: r.k, hoofZ: r.hoofZ, hockZ: r.hockZ, hip: r.hip }))); } }
+        dz < .02 && R[12].hip - R[15].hip > .2 && back > .25 && drawn > .3, R.map(r => ({ k: r.k, hoofZ: r.hoofZ, hockZ: r.hockZ, hip: r.hip }))); }
+    // Session 2733 (the critic, 27 Nov: the tail stood out stiff at the raised hips' height, a second head): until the hind legs fold (k to
+    // 0.6, rows 0 to 12) the tail hangs within 5° of its standing angle below level, and couched it lies near level as before
+    if (c.stand.tail != null) { const P = R.slice(0, 13), worst = Math.max(...P.map(r => Math.abs(r.tail - c.stand.tail)));
+      check(`${sp}'s tail hangs under the raised hips while it kneels: ${c.stand.tail}° below level standing, within ${worst.toFixed(1)}° of it to 0.6 (${R[10].tail}° at the half), ${R[20].tail}° couched`,
+        worst < 5 && c.stand.tail > 45 && R[20].tail < 20, R.map(r => ({ k: r.k, tail: r.tail }))); } }
   check(`couching plans: ${couchers.join(', ')}`, couchers.includes('camel') && couchers.includes('packcamel'), couchers);
   // the collar sits on the neck (Session 1261, the heavier horse): the hide's cross-section in the collar's plane (within 2 cm of it), as a share
   // of the collar's ellipse, stays inside the leather's inner edge (0.8 of it: the torus's tube is a fifth), and fills most of it
