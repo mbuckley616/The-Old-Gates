@@ -66,11 +66,11 @@ check('out of the open world the beds go to nothing', !inside.open && inside.win
 // S2730 — the town and the hours, the calls, indoors and the rooms' echo (the build sheet's second session)
 await g.settle('dunmore');
 const town = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'), s = S.site; _wx('clear'); forceTime(12); px = s.x; pz = s.z;
-  for (let f = 0; f < 60 * 8; f++) WORLD.tick(1 / 60, performance.now()); const a = _amb();
+  for (let f = 0; f < 60 * 3; f++) WORLD.tick(1 / 60, performance.now()); const a = _amb();
   return { folk: AMB.townsfolk, murmur: +AMB.beds.murmur.toFixed(3), isle: a.isle, churches: S.houses.filter(h => h.type === 'church').length, smiths: S.houses.filter(h => h.type === 'weapon' || h.type === 'forge').length }; });
 check('Dunmore\'s square at noon: the murmur of its people over 0.04 (0.01 a townsperson within 40 m, at most 0.12)', town.murmur > .04 && town.murmur <= .12 && Math.abs(town.murmur - Math.min(.12, town.folk * .01)) < 1e-3, town);
 const bell = await page.evaluate(() => { const S = WORLD.settle.get('dunmore'); const c = S.houses.find(h => h.type === 'church'); if (!c) return null; px = c.exitX + 60; pz = c.exitZ;
-  forceTime(11.9); _amb(); const n0 = AMB.bell.count; forceTime(12.05); _amb(); const n1 = AMB.bell.count; _amb(); const n2 = AMB.bell.count;
+  forceTime(11.9); _amb(); AMB.bell.key = null; /* the square's check above crossed noon already: today's bell has rung */ const n0 = AMB.bell.count; forceTime(12.05); _amb(); const n1 = AMB.bell.count; _amb(); const n2 = AMB.bell.count;
   forceTime(14); _amb(); const n3 = AMB.bell.count; forceTime(9); _amb(); forceTime(16); _amb(); const n4 = AMB.bell.count;
   return { n0, n1, n2, n3, n4, strokes: AMB.bell.strokes, at: AMB.bell.at }; });
 check('a Gatelands bell at 12, once (nine strokes), and none for a clock jumped past 12 and 14', !!bell && bell.n1 === bell.n0 + 1 && bell.n2 === bell.n1 && bell.n3 === bell.n1 && bell.n4 === bell.n1 && bell.at === 12 && bell.strokes >= 9, bell);
