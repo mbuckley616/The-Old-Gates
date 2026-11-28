@@ -38,5 +38,27 @@ const hub = await page.evaluate(() => { SKILLS.speech = { lv: 0, p: 0 }; const r
   ATTRS.charisma = 60; renderHubAttrs(); const c40 = rd(); ATTRS.charisma = 0; renderHubAttrs(); return { i10, c7, c40 }; });
 check('a bought-back piece costs what you were paid for it, whatever your Charisma', r.backs.length === 3 && r.backs.join() === [r.s0.got, r.s10.got, r.s40.got].join() && r.backCost.join() === r.backs.join(), { backs: r.backs, backCost: r.backCost });
 check('the hub’s Barter row reads Charisma only, capped at 25%', hub.i10 === 0 && hub.c7 === 4 && hub.c40 === 25, hub);
+// S2754 — a counter never pays more for a piece than it asks for one like it: every Dunmore counter's stock, bought and sold back
+// at the full barter (Charisma's quarter, Speech's fifth, Haggle, the cape) on a market day, then the sale through the bag's row,
+// a stack's prompt and a gold-find buff. Before, a Greater Potion bought for 26 sold back for 28 at Charisma 50 on market day.
+const rt = await page.evaluate(() => {
+  const S = WORLD.settle.get('dunmore'); const shops = S.houses.filter(x => x.keeper && SHOP_STOCK[x.type]); const keep = currentHouse;
+  const mk = window.marketHere, bp = window.barterPct, cost = shopCost; let n = 0, over = [], equal = 0, low = null;
+  for (const h of shops) { currentHouse = h; const seen = []; window.shopCost = it => { seen.push(it); return cost(it); }; try { renderShop(); } catch (e) {} window.shopCost = cost;
+    const stock = [...new Set(seen)].filter(it => !it._boughtBack && it.buyPrice > 0);
+    for (const B of [0, .25, .52]) { window.barterPct = () => B; window.marketHere = () => B > 0;
+      for (const it of stock) { n++; const c = shopCost(it), s = counterSellPrice({ ...it, qty: 1 }); if (s >= c && c > 1) over.push({ shop: h.type, B, name: it.name, c, s }); if (s === c) equal++;
+        if (B === 0 && it.name === 'Greater Potion') low = { c, s, raw: sellPrice(it), home: homeMul(it) }; } } }
+  window.barterPct = () => .52; window.marketHere = () => true; currentHouse = shops.find(h => h.type === 'potion') || shops[0];
+  const pot = (SHOP_STOCK[currentHouse.type] || []).find(i => i.buyPrice >= 20) || { name: 'Greater Potion', ico: '🫙', type: 'potion', heal: 60, weight: .5, sellMult: .5, buyPrice: 40 };
+  const ask = shopCost(pot); gold = 1000; const s1 = { ...pot, qty: 1 }; BAG.push(s1); const g0 = gold; sellItem(BAG.indexOf(s1), counterSellPrice(s1)); const one = gold - g0;
+  const fb = { type: 'goldFind', mult: 2, remaining: 1e9 }; ACTIVE_BUFFS.unshift(fb); let buff = null; try { const s2 = { ...pot, qty: 1 }; BAG.push(s2); const g1 = gold; sellItem(BAG.indexOf(s2), counterSellPrice(s2)); buff = gold - g1;
+    const s3 = { ...pot, qty: 3 }; BAG.push(s3); openQtyModal(s3, 'sell', BAG.indexOf(s3)); var stackEach = _qtyCtx && _qtyCtx.unitPrice; closeQtyModal(); BAG.splice(BAG.indexOf(s3), 1); } finally { ACTIVE_BUFFS.splice(ACTIVE_BUFFS.indexOf(fb), 1); }
+  window.marketHere = mk; window.barterPct = bp; currentHouse = keep;
+  return { n, over, equal, low, ask, one, buff, stackEach, name: pot.name };
+});
+check('no Dunmore counter pays as much as it asks, at full barter on a market day', rt.n > 100 && rt.over.length === 0, { n: rt.n, over: rt.over.slice(0, 6) });
+check('a sale at the full barter is a coin under the price, through the row, a gold-find buff and a stack', rt.one === rt.ask - 1 && rt.buff === rt.ask - 1 && rt.stackEach === rt.ask - 1, rt);
+check('with no barter the sale is unchanged: half the potion’s price', !!rt.low && rt.low.s === Math.max(1, Math.round(rt.low.raw * rt.low.home)) && rt.low.s < rt.low.c, rt.low);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
