@@ -8,7 +8,7 @@
       "anchor": { "site": "dunmore" }, "cam": { "dx": 0, "dz": 30, "up": 1.65 }, "look": { "dx": 0, "dz": -40, "up": 3 },
       "panel": { "name": "Architecture: Gatelander, stone & thatch", "box": [3, 108, 42, 38] } },
     { "id": "mark-upland", "title": "A Mark upland, 13h", "hour": 13, "weather": "clear",
-      "anchor": { "peak": "Heifialos Fell" }, "cam": { "dx": 0, "dz": 950, "up": 6 }, "look": { "dx": 0, "dz": 0, "up": 40 },
+      "anchor": { "peak": "Heifialos Fell" }, "note": "Session 2748 (Michael's A on #2120): the camera moved from dx 0, dz 950 (inside a snow-pine stand since S2720, the fell hidden by trunks) to the stand's northern edge, in a clearing with no tree in the 70 m before it (nor scrub in 25), the stand at its back and the moor open to the fell. The same session keyed the scatter's regions by place (withPlace): before, the trees at this spot changed with the views rendered before it.", "cam": { "dx": -294, "dz": 881, "up": 6 }, "look": { "dx": 0, "dz": 0, "up": 40 },
       "panel": { "name": "Solitude & Endurance · Snowy Peaks", "box": [69, 34, 66, 46] } },
     { "id": "aurenne-harbour", "title": "An Aurenne harbour, 17h30", "hour": 17.5, "weather": "clear",
       "anchor": { "site": "c7_1_s1" }, "cam": { "dx": -140, "dz": 60, "up": 8 }, "look": { "dx": 40, "dz": -10, "up": 4 },
