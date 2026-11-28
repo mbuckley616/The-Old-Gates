@@ -795,7 +795,7 @@ function openQtyModal(it, side, bagIdx){
   } else {
     // Selling: unit = one piece, priced per piece.
     piecesPerUnit = 1;
-    unitPrice = counterCap(it,Math.round(counterSellPrice(it)*_buffMult('goldFind',1))); /* S2754 — a buff's gold too stays under the counter's price */
+    unitPrice = counterCap(it,Math.round(counterSellPrice(it)*_buffMult('goldFind',1))); /* S2755 — a buff's gold too stays under the counter's price */
     maxUnits = it.qty||1;
   }
   _qtyCtx={it, side, bagIdx, unitPrice, piecesPerUnit, maxUnits};
@@ -1184,7 +1184,7 @@ function capeCounter(){if(typeof cloakOn!=='function'||!cloakOn('cape'))return f
 function furWarm(){if(!(typeof cloakOn==='function'&&cloakOn('fur'))&&!(typeof _hasBuff==='function'&&_hasBuff('resistCold'))||activeZoneId!=='world')return false; /* S1483 — a tincture's Resist Cold warms as the fur cloak does */try{if(typeof isInterior==='function'&&isInterior())return false;if(WX.type==='snow')return true;return isNight()&&worldH(px,pz)>snowLineAt(px,pz);}catch(e){return false;}}
 function shopCost(it){const b=it.buyPrice||0;if(it._boughtBack||b<=0)return b;return Math.max(1,Math.round(b*shopMul()*homeMul(it)*(marketHere()?MARKET.buy:1)*((typeof currentHouse!=='undefined'&&currentHouse&&currentHouse.foreignMul)||1)*(typeof knockMulNow==='function'?knockMulNow():1)*(1-barterPct())));} /* S2650 — a knock's ×1.25 at the door; S2642 — market day ×0.9; S2643 — by home */
 function counterSellPrice(it){const sp=sellPrice(it);return sp<=0?0:counterCap(it,Math.max(1,Math.round(sp*homeMul(it)*(marketHere()?MARKET.sell:1)*(1+barterPct()))));} /* S2642 — market day +10%; S2643 — by home */
-// S2754 — a counter never pays more for a piece than it asks for one like it, less a coin (never under 1). Charisma's quarter,
+// S2755 — a counter never pays more for a piece than it asks for one like it, less a coin (never under 1). Charisma's quarter,
 // Speech's fifth, Haggle, the cape and market day all raise the sale and cut the price, and from Charisma 50 on a market day
 // the two crossed: a Greater Potion bought for 26 sold back for 28, and at the full 52% an Iron Sword bought for 13 sold for 23.
 // S339 meant the two never to be played against each other. Only the counter's own asking price caps it, so a sale below it is unchanged.
@@ -1232,7 +1232,7 @@ function sellItem(i,sp){
   if(it.type==='cargo'){showMsg(`A harbour's factor buys trade goods, not a shop.`,'#c8a84a');return;} // S390
   if(!(sp>0)){showMsg(`${it.name} is not worth a coin at the counter.`,'#c8a84a');return;} // S366 — a single arrow
   if(typeof sellSacrilege==='function'&&sellSacrilege(i)){updateHUD();renderShop();return;} /* S2245 — gate salvage in a Prior's town (#1540 B) */
-  const finalSp=counterCap(it,Math.round(sp*_buffMult('goldFind',1))); /* S2754 */
+  const finalSp=counterCap(it,Math.round(sp*_buffMult('goldFind',1))); /* S2755 */
   const tithe=typeof bladeTithe==='function'?bladeTithe(finalSp):0; /* S787 — the Crown's twentieth, while the Gate-Blade is on you under licence */
   gold+=finalSp-tithe;(worldState.stats||(worldState.stats={})).sold=((worldState.stats||{}).sold||0)+1;(worldState.stats||{}).goldIn=((worldState.stats||{}).goldIn||0)+finalSp;
   // v68 — buy-back: offer one unit of the sold item back to this merchant at the

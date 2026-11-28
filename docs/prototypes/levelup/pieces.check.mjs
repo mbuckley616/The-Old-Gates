@@ -237,4 +237,20 @@ if (head === now) console.log('SKIP the lane comparison: street.js is HEAD\'s');
     const [a, b] = await Promise.all([px(A), px(B)]); let big = 0, s = 0; for (let i = 0; i < a.length; i += 4) { const e = Math.max(Math.abs(a[i] - b[i]), Math.abs(a[i + 1] - b[i + 1]), Math.abs(a[i + 2] - b[i + 2])); s += e; if (e > 24) big++; } return { over24: big, px: a.length / 4, mean: +(s / (a.length / 4)).toFixed(4) }; }, [u('_lane-before.jpg'), u('_lane-after.jpg')]);
   check(`the lane renders as before the move: ${d.over24} of ${d.px.toLocaleString()} pixels differ by more than 24 (mean difference ${d.mean})`, d.over24 < d.px * 1e-4, d);
   for (const f of ['_lane-before.jpg', '_lane-after.jpg']) fs.rmSync(path.join(here, f)); await p.close(); }
+// Session 2754: the market stalls by island (markStall, aurenneStall), asked of Michael. Every kind of goods builds in budget (under
+// 2,000 triangles and 16 meshes, the game's ring stall 988 to 1,196 in one draw), finite, about a person's reach (a counter 0.85 to 0.95 m,
+// the eaves over a 1.8 m head), the same key building the same stall, and stalls.html's three views render without a page error.
+{ const p = await browser.newPage({ viewport: { width: 640, height: 360 } }), e2 = []; p.on('pageerror', e => e2.push(String(e)));
+  await p.goto(`http://localhost:${port}/stalls.html?still&nopeople&w=640&h=360&view=row`); await p.waitForFunction(() => window.__done, null, { timeout: 300000 });
+  const st = await p.evaluate(async () => { const P = await import('./pieces.js'), T = await import('three'), out = [];
+    for (const [fn, kinds] of [['markStall', ['furs', 'fish', 'wool']], ['aurenneStall', ['spice', 'pots', 'cloth']]]) for (const k of kinds) {
+      const a = P[fn]({ goods: k }, P.stream('chk:' + k)), b = P[fn]({ goods: k }, P.stream('chk:' + k)); let nan = false, lowEave = 9;
+      a.group.traverse(o => { if (o.isMesh) for (const v of o.geometry.attributes.position.array) if (!Number.isFinite(v)) nan = true; });
+      const bb = new T.Box3().setFromObject(a.group), size = bb.getSize(new T.Vector3());
+      out.push({ fn, k, tris: a.tris, draws: a.draws, same: a.tris === b.tris && a.draws === b.draws, nan, top: +a.top.toFixed(2), cy: a.counter.y, w: +size.x.toFixed(2), d: +size.z.toFixed(2) }); }
+    return out; });
+  for (const s of st) check(`${s.fn} with ${s.k}: ${s.tris} tris in ${s.draws} meshes, ${s.w} by ${s.d} m, ${s.top} m to the top, the counter at ${s.cy} m; the same key, the same stall`,
+    s.tris < 2000 && s.draws <= 16 && s.same && !s.nan && s.cy >= .85 && s.cy <= .95 && s.top > 2.5 && s.top < 4.2 && s.w < 4.2 && s.d < 3.6, s);
+  for (const v of ['mark', 'aurenne']) { await p.goto(`http://localhost:${port}/stalls.html?still&nopeople&w=640&h=360&view=${v}`); await p.waitForFunction(() => window.__done, null, { timeout: 300000 }); }
+  check(`stalls.html renders its three views (row, mark, aurenne) with no page errors`, e2.length === 0, e2.slice(0, 3)); await p.close(); }
 await browser.close(); srv.close(); console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

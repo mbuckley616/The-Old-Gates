@@ -38,7 +38,7 @@ const hub = await page.evaluate(() => { SKILLS.speech = { lv: 0, p: 0 }; const r
   ATTRS.charisma = 60; renderHubAttrs(); const c40 = rd(); ATTRS.charisma = 0; renderHubAttrs(); return { i10, c7, c40 }; });
 check('a bought-back piece costs what you were paid for it, whatever your Charisma', r.backs.length === 3 && r.backs.join() === [r.s0.got, r.s10.got, r.s40.got].join() && r.backCost.join() === r.backs.join(), { backs: r.backs, backCost: r.backCost });
 check('the hub’s Barter row reads Charisma only, capped at 25%', hub.i10 === 0 && hub.c7 === 4 && hub.c40 === 25, hub);
-// S2754 — a counter never pays more for a piece than it asks for one like it: every Dunmore counter's stock, bought and sold back
+// S2755 — a counter never pays more for a piece than it asks for one like it: every Dunmore counter's stock, bought and sold back
 // at the full barter (Charisma's quarter, Speech's fifth, Haggle, the cape) on a market day, then the sale through the bag's row,
 // a stack's prompt and a gold-find buff. Before, a Greater Potion bought for 26 sold back for 28 at Charisma 50 on market day.
 const rt = await page.evaluate(() => {
