@@ -1633,3 +1633,115 @@ export function markTownHouse(o, r) {
   const tris = mergeByMaterial(g);
   return { group: g, tris, draws: g.children.length, roofTop: new THREE.Box3().setFromObject(g).max.y, sill: foot, front: d / 2, stairOut: z1 + TREAD, wh: h1 + h2, h1, h2, jetty: J, pitch, ry0, ov, door, hoist, top };
 }
+
+// ── market stalls by island (Session 2754, card F6; docs/design/a-towns-day.md: "B's stalls on the new look need card F6's pieces for
+// each island (the Gatelands' market house is there; the Mark's and Aurenne's stalls are not)"). A prototype for a DECISION. The game
+// has one stall everywhere (82's stallGeoHi: a striped fly on four poles over a trestle). These are the other two islands' own.
+// markStall(o, r): OG-034's winter market, a booth of the Mark's halls: four squared posts, a steep shingle roof (52°, as the halls)
+// with the halls' carved bargeboards and heads, a plank back and half sides against the wind, a counter on a plank front; its goods
+// by o.goods ('furs' | 'fish' | 'wool'): pelts over the counter and pinned to the back, stockfish hung in pairs from a pole under the
+// front eave, or wool in hanks and rolls in OG-025's red and blue; an iron brazier at the corner, lit.
+// aurenneStall(o, r): OG-044's "quayside market under striped awnings" and OG-061's spice markets: two tall cedar posts at the back,
+// two short ones at the front, the kit's madder-and-cream canvas pitched forward with a scalloped valance, a counter draped in
+// indigo cloth with a block-printed border; its goods by o.goods ('spice' | 'pots' | 'cloth'): spice heaped in cones in baskets
+// (saffron, paprika, turmeric, sumac, cumin), terracotta jars and an amphora, or bolts of dyed cloth and a hanging length; a brass
+// tray and scale either way, a rug on the ground in front.
+// Both: { group, tris, draws, top, w, d, counter: { y, z } }, one mesh per material, the front toward +z, the keeper's place behind.
+let SG = null;
+function stallMats() {
+  if (SG) return SG; const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: o.rough ?? .9, metalness: o.metal ?? 0, side: o.side ?? THREE.FrontSide });
+  SG = { fur: [0x4a3626, 0x6e5a44, 0x8c8478, 0xd8d2c4].map(c => std(c, { rough: 1, side: THREE.DoubleSide })), hide: std(0xb08a60, { rough: 1, side: THREE.DoubleSide }), fish: std(0x7a6a52, { rough: .8, side: THREE.DoubleSide }), wool: [0x8a2a22, 0x2c3e68, 0xcfc4a8, 0x6a5a3e].map(c => std(c, { rough: 1 })),
+    spice: [0xd89a1c, 0xb4401e, 0xd8b028, 0x7a2430, 0x9a6a34].map(c => std(c, { rough: 1 })), basket: std(0xa88850, { rough: 1 }), indigo: std(0x26345e, { rough: 1, side: THREE.DoubleSide }),
+    border: std(0xb88a2a, { rough: 1, side: THREE.DoubleSide }), rug: [std(0x7a2a22, { rough: 1 }), std(0x2a3a5e, { rough: 1 })], coal: new THREE.MeshStandardMaterial({ color: 0x2a0c04, emissive: new THREE.Color(1, .22, .04), emissiveIntensity: .8, roughness: .9 }), bolt: [0x7a2430, 0x26345e, 0xd89a1c, 0x2a6a5a, 0xe8dcc0].map(c => std(c, { rough: .95, side: THREE.DoubleSide })) };
+  return SG;
+}
+const lathe = (pts, n = 10) => new THREE.LatheGeometry(pts.map(([a, b]) => new THREE.Vector2(a, b)), n);
+export function markStall(o = {}, r = stream('markstall')) {
+  const Mt = markMats(), S = stallMats(), g = new THREE.Group(), w = o.w ?? 2.9, d = o.d ?? 1.9, eave = 2.05, pitch = 52 * Math.PI / 180, tp = Math.tan(pitch), goods = o.goods || ['furs', 'fish', 'wool'][Math.floor(r() * 3)];
+  const wallM = Mt.wall[o.wall ?? Math.floor(r() * Mt.wall.length)];
+  const add = (geo, m, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0, uv = .5, slopeX) => { if (m.map) worldUV(geo, uv, { slopeX }); const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, rz, 'YXZ'); mesh.castShadow = m !== Mt.glow; g.add(mesh); return mesh; };
+  const box = (a, b, c) => new THREE.BoxGeometry(a, b, c), V = (a, b) => new THREE.Vector2(a, b);
+  // the posts on flat stones, the plates and tie beams under the roof
+  for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { add(box(.17, eave, .17), Mt.beam, sx * (w / 2 - .09), eave / 2, sz * (d / 2 - .09), 0, 0, 0, .8); add(box(.36, .1, .36), Mt.stone, sx * (w / 2 - .09), .05, sz * (d / 2 - .09), 0, 0, 0, .45); }
+  for (const sz of [1, -1]) add(box(w + .1, .16, .16), Mt.beam, 0, eave - .02, sz * (d / 2 - .09), 0, 0, 0, .8);
+  for (const sx of [1, -1]) add(box(.14, .14, d), Mt.beam, sx * (w / 2 - .09), eave - .02, 0, 0, 0, 0, .8);
+  // the back in planks to the plate, the sides half up (the wind off the fell), the counter's front in planks, its top a thick board
+  add(box(w - .2, eave - .1, .06), wallM, 0, (eave - .1) / 2 + .05, -d / 2 + .1, 0, 0, 0, .9);
+  for (const sx of [1, -1]) { const s = new THREE.Shape([V(-d / 2 + .15, 0), V(d / 2 - .2, 0), V(d / 2 - .2, 1.0), V(-d / 2 + .15, 1.6)]); const geo = new THREE.ExtrudeGeometry(s, { depth: .05, bevelEnabled: false }); add(geo, wallM, sx * (w / 2 - .09) - .025, .05, 0, -Math.PI / 2, 0, 0, .9); }
+  const cz = d / 2 - .28, cy = .92; add(box(w - .3, cy - .05, .05), wallM, 0, (cy - .05) / 2, cz + .18, 0, 0, 0, .9); add(box(w - .1, .07, .6), Mt.beam, 0, cy, cz, 0, 0, 0, .8);
+  // the roof: two shingle slabs over the gables, the ridge beam, the bargeboards and their carved heads (markTownHouse's)
+  const ov = .35, slope = (d / 2 + ov) / Math.cos(pitch), t = .1, ry0 = eave + .06 - ov * tp, len = w + .5, ridgeY = ry0 + (d / 2 + ov) * tp;
+  for (const sz of [-1, 1]) { const geo = box(len, t, slope); geo.translate(0, t / 2, sz * slope / 2); add(geo, Mt.shingle, 0, ry0, sz * -(d / 2 + ov), 0, -sz * pitch, 0, .9, false); }
+  add(box(len + .05, .14, .18), Mt.beam, 0, ridgeY + .1, 0, 0, 0, 0, .8);
+  for (const x of [len / 2 + .03, -len / 2 - .03]) for (const sz of [-1, 1]) { const E = V(sz * (d / 2 + ov), ry0 + t), Rg = V(0, ridgeY + t), dir = Rg.clone().sub(E).normalize(), P = Rg.clone().addScaledVector(dir, .45), L = P.distanceTo(E);
+    add(box(.06, .22, L), Mt.carve, x, (E.y + P.y) / 2 + .06, (E.x + P.x) / 2, 0, Math.atan2(-(P.y - E.y), P.x - E.x), 0, .8);
+    if (sz > 0) { const hs = new THREE.Shape(); hs.moveTo(0, 0); hs.quadraticCurveTo(.13, .23, .03, .38); hs.quadraticCurveTo(-.06, .48, -.23, .43); hs.quadraticCurveTo(-.11, .38, -.09, .32); hs.quadraticCurveTo(-.02, .24, -.1, 0); hs.lineTo(0, 0);
+      for (const side of [1, -1]) { const hg = new THREE.ExtrudeGeometry(hs, { depth: .06, bevelEnabled: false, curveSegments: 5 }); hg.translate(0, 0, -.03); add(hg, Mt.carve, x, ridgeY + .12, 0, Math.PI / 2 * side, 0, 0, .8); } } }
+  // the goods
+  // a pelt draped over the counter's front edge: half on the board, half hanging, narrowing to the legs at each end
+  const drape = (x, wd, m, ry) => { const L = 1.15, top = .5, geo = new THREE.PlaneGeometry(wd, L, 4, 10), p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) { const u = p.getX(i) / wd, t = p.getY(i) / L + .5, leg = (t < .12 || t > .88) ? (Math.abs(u) > .3 ? 1 : .55) : 1, xx = p.getX(i) * leg * (.85 + .15 * Math.sin(t * 9 + x));
+      const along = t * L, onTop = along < top, y = onTop ? cy + .045 + .02 * Math.sin(u * 7 + along * 6) : cy + .04 - (along - top), z = onTop ? cz - .3 + along : cz + .31 + .02 * Math.sin(u * 5);
+      p.setXYZ(i, xx, y, z); } geo.computeVertexNormals(); add(geo, m, x, 0, 0, ry); };
+  // a hide on its stretching frame against the back: the hide's outline with its four legs, the frame of poles round it
+  const hide = (x, m) => { const s = new THREE.Shape(), P = [[0, .62], [.16, .56], [.3, .6], [.26, .36], [.2, .1], [.32, -.18], [.36, -.42], [.18, -.36], [.05, -.6], [-.05, -.6], [-.18, -.36], [-.36, -.42], [-.32, -.18], [-.2, .1], [-.26, .36], [-.3, .6], [-.16, .56]];
+    s.moveTo(...P[0]); for (const q of P.slice(1)) s.lineTo(...q); s.lineTo(...P[0]); add(new THREE.ShapeGeometry(s), m, x, 1.3, -d / 2 + .16);
+    for (const [a, b2, c] of [[.84, .04, 0], [.84, -.04, 0]]) add(box(a, .04, .04), Mt.beam, x, 1.3 + (b2 > 0 ? .68 : -.68), -d / 2 + .15, 0, 0, 0, .8);
+    for (const sx of [-1, 1]) add(box(.04, 1.4, .04), Mt.beam, x + sx * .42, 1.3, -d / 2 + .15, 0, 0, 0, .8); };
+  const fishGeo = () => { const f = new THREE.Shape(); f.moveTo(0, 0); f.lineTo(.07, .04); f.lineTo(.03, -.08); f.quadraticCurveTo(.1, -.3, .07, -.5); f.lineTo(0, -.56); f.lineTo(-.07, -.5); f.quadraticCurveTo(-.1, -.3, -.03, -.08); f.lineTo(-.07, .04); f.lineTo(0, 0); return new THREE.ShapeGeometry(f, 3); };
+  if (goods === 'furs') {
+    for (let i = 0; i < 3; i++) drape(-w / 2 + .62 + i * (w - 1.24) / 2, .62 + r() * .12, S.fur[[0, 3, 1][i]], (r() - .5) * .12);
+    hide(-.6, S.hide); hide(.6, S.fur[2]);
+    add(lathe([[.001, 0], [.24, 0], [.27, .3], [.24, .6], [.001, .6]], 9), Mt.beam, -w / 2 + .45, 0, -d / 2 + .55, 0, 0, 0, .8);
+  } else if (goods === 'fish') {
+    add(new THREE.CylinderGeometry(.035, .035, w - .1, 6).rotateZ(Math.PI / 2), Mt.beam, 0, eave - .2, d / 2 - .02, 0, 0, 0, .8);
+    for (let i = 0; i < 9; i++) { const x = -w / 2 + .3 + i * (w - .6) / 8; for (const k of [-1, 1]) add(fishGeo(), S.fish, x + k * .05, eave - .25, d / 2 - .02 + k * .015, k * .25, 0, k * .08); }
+    for (let i = 0; i < 2; i++) add(box(.6, .26, .42), Mt.beam, -.5 + i * 1.0, cy + .17, cz, (r() - .5) * .2, 0, 0, .8);
+    for (let i = 0; i < 6; i++) add(fishGeo(), S.fish, -.7 + i * .11 + (i > 2 ? .7 : 0), cy + .33, cz - .05, 0, Math.PI / 2 - .3, 0);
+  } else {
+    for (let i = 0; i < 5; i++) add(new THREE.CylinderGeometry(.13, .13, .5, 8).rotateZ(Math.PI / 2), S.wool[i % 4], -w / 2 + .5 + i * .45, cy + .17, cz - (i % 2) * .12, 0, 0, 0);
+    for (let i = 0; i < 4; i++) add(new THREE.TorusGeometry(.14, .05, 5, 9), S.wool[(i + 1) % 4], -.9 + i * .6, 1.45, -d / 2 + .16, 0, 0, Math.PI / 2);
+    add(new THREE.CylinderGeometry(.03, .03, w - .3, 5).rotateZ(Math.PI / 2), Mt.beam, 0, 1.68, -d / 2 + .18, 0, 0, 0, .8);
+  }
+  // the brazier at the front corner: three iron legs, a bowl, the coals lit
+  { const bx = w / 2 + .45, bz = d / 2 + .1; for (let k = 0; k < 3; k++) { const a = k * 2.094; add(new THREE.CylinderGeometry(.018, .018, .62, 4), Mt.iron, bx + Math.sin(a) * .16, .3, bz + Math.cos(a) * .16, 0, Math.cos(a) * .15, -Math.sin(a) * .15); }
+    add(lathe([[.001, 0], [.22, .02], [.27, .16], [.25, .17], [.001, .06]], 10), Mt.iron, bx, .6, bz); add(lathe([[.001, .14], [.22, .1], [.001, .2]], 8), S.coal, bx, .6, bz); }
+  const tris = mergeByMaterial(g); for (const m of g.children) if (m.material === S.coal) m.castShadow = false;
+  return { group: g, tris, draws: g.children.length, top: new THREE.Box3().setFromObject(g).max.y, w, d, goods, counter: { y: cy, z: cz } };
+}
+export function aurenneStall(o = {}, r = stream('aurstall')) {
+  const K = aurKit(), S = stallMats(), w = o.w ?? 3.0, d = o.d ?? 2.0, back = 2.75, front = 2.2, goods = o.goods || ['spice', 'pots', 'cloth'][Math.floor(r() * 3)];
+  const extra = new THREE.Group(), add = (geo, m, x = 0, y = 0, z = 0, ry = 0, rx = 0, rz = 0) => { const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.rotation.set(rx, ry, rz, 'YXZ'); mesh.castShadow = true; extra.add(mesh); return mesh; };
+  // the posts: cedar, two tall at the back, two short at the front, a rail along the top of each pair
+  for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { const h = sz > 0 ? front : back; K.put(new THREE.CylinderGeometry(.055, .065, h, 7), 'cedar', sx * (w / 2 - .06), h / 2, sz * (d / 2 - .06)); }
+  for (const [sz, h] of [[1, front], [-1, back]]) K.put(new THREE.CylinderGeometry(.045, .045, w + .2, 6).rotateZ(Math.PI / 2), 'cedar', 0, h - .03, sz * (d / 2 - .06));
+  // the canvas, pitched forward over the posts and a hand past them, and its valance: a band of scallops along the front
+  { const k = (back - front) / (d - .12), yAt = z => front + (d / 2 - .06 - z) * k + .05, z0 = -d / 2 - .05, z1 = d / 2 + .45, zc = (z0 + z1) / 2, L = (z1 - z0) * Math.hypot(1, k), W2 = w + .35;
+    const geo = new THREE.PlaneGeometry(W2, L, 1, 6), p = geo.attributes.position; for (let i = 0; i < p.count; i++) p.setZ(i, -.06 * Math.cos(p.getY(i) / L * Math.PI));
+    geo.rotateX(-Math.PI / 2); K.put(geo, 'awning', 0, yAt(zc), zc, 0, Math.atan(k));
+    const n = 9, sw = W2 / n, s = new THREE.Shape(); s.moveTo(-W2 / 2, 0); s.lineTo(W2 / 2, 0); s.lineTo(W2 / 2, -.12); for (let q = n - 1; q >= 0; q--) { const x0 = -W2 / 2 + q * sw; s.quadraticCurveTo(x0 + sw / 2, -.38, x0, -.12); } s.lineTo(-W2 / 2, 0);
+    K.put(new THREE.ShapeGeometry(s, 4), 'awning', 0, yAt(z1) + .01, z1); }
+  // the counter: trestle boards under an indigo cloth with a printed border, hanging to the ground at the front
+  const cz = d / 2 - .4, cy = .86; K.put(new THREE.BoxGeometry(w - .3, .05, .66), 'cedar', 0, cy, cz);
+  add(new THREE.BoxGeometry(w - .2, .02, .72), S.indigo, 0, cy + .035, cz); add(new THREE.BoxGeometry(w - .2, cy - .06, .02), S.indigo, 0, (cy - .06) / 2 + .06, cz + .36);
+  add(new THREE.BoxGeometry(w - .2, .1, .025), S.border, 0, cy - .12, cz + .365); add(new THREE.BoxGeometry(w - .2, .06, .025), S.border, 0, .14, cz + .365);
+  for (const sx of [-1, 1]) add(new THREE.BoxGeometry(.02, cy - .06, .72), S.indigo, sx * (w / 2 - .1), (cy - .06) / 2 + .06, cz);
+  // the goods
+  if (goods === 'spice') {
+    for (let i = 0; i < 5; i++) { const x = -w / 2 + .45 + i * (w - .9) / 4, z = cz + (i % 2 ? -.12 : .1); add(lathe([[.001, 0], [.17, 0], [.2, .13], [.19, .14], [.001, .14]], 10), S.basket, x, cy + .045, z); add(lathe([[.001, .13], [.17, .13], [.1, .3], [.001, .4]], 10), S.spice[i], x, cy + .045, z); }
+    for (let i = 0; i < 3; i++) { add(lathe([[.001, 0], [.2, 0], [.24, .18], [.22, .2], [.001, .2]], 10), S.basket, -.7 + i * .7, 0, d / 2 + .25); add(lathe([[.001, .18], [.2, .18], [.12, .36], [.001, .46]], 10), S.spice[(i + 2) % 5], -.7 + i * .7, 0, d / 2 + .25); }
+  } else if (goods === 'pots') {
+    for (let i = 0; i < 4; i++) K.put(lathe([[.001, 0], [.09, 0], [.15, .12], [.14, .24], [.07, .32], [.08, .36], [.001, .36]], 10), 'terra', -w / 2 + .5 + i * .66, cy + .045, cz);
+    for (let i = 0; i < 3; i++) K.put(lathe([[.001, 0], [.14, 0], [.26, .25], [.24, .5], [.1, .62], [.11, .68], [.001, .68]], 10), 'terra', -.8 + i * .8, 0, d / 2 + .3);
+    K.put(lathe([[.001, 0], [.04, .05], [.2, .35], [.22, .7], [.08, .95], [.06, 1.05], [.001, 1.05]], 10), 'terra', w / 2 + .3, 0, d / 2 - .3, 0, .15);
+  } else {
+    for (let i = 0; i < 5; i++) add(new THREE.BoxGeometry(.42, .14, .5), S.bolt[i], -w / 2 + .4 + i * .55, cy + .11 + (i % 2) * .14, cz - .05, (r() - .5) * .2);
+    add(new THREE.PlaneGeometry(.6, 1.5, 1, 4), S.bolt[Math.floor(r() * 5)], -w / 2 + .45, back - .85, -d / 2 + .1); add(new THREE.PlaneGeometry(.6, 1.3, 1, 4), S.bolt[Math.floor(r() * 5)], .9, back - .75, -d / 2 + .1);
+  }
+  // the brass tray and the scale on the counter; the rug in front
+  K.put(new THREE.CylinderGeometry(.24, .24, .02, 14), 'gold', w / 2 - .5, cy + .055, cz + .1); K.put(new THREE.CylinderGeometry(.01, .01, .45, 4), 'iron', w / 2 - .5, cy + .27, cz + .1);
+  K.put(new THREE.BoxGeometry(.4, .012, .012), 'iron', w / 2 - .5, cy + .48, cz + .1); for (const k of [-1, 1]) K.put(new THREE.CylinderGeometry(.07, .05, .02, 10), 'gold', w / 2 - .5 + k * .19, cy + .33, cz + .1);
+  add(new THREE.BoxGeometry(1.8, .012, 1.1), S.rug[0], 0, .006, d / 2 + .8); add(new THREE.BoxGeometry(1.5, .014, .8), S.rug[1], 0, .008, d / 2 + .8);
+  const F = K.finish(), g = F.group; for (const c of [...extra.children]) g.add(c); const tris = mergeByMaterial(g);
+  return { group: g, tris, draws: g.children.length, top: new THREE.Box3().setFromObject(g).max.y, w, d, goods, counter: { y: cy, z: cz } };
+}
