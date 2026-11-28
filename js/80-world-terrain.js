@@ -572,6 +572,21 @@
       {geo:new THREE.IcosahedronGeometry(.75,1),color:new THREE.Color(0x4a7a2c),y:.45,sy:.75,jitter:.18},
       {geo:new THREE.IcosahedronGeometry(.55,1),color:new THREE.Color(0x558a34),y:.55,x:.5,sy:.7,jitter:.18},
     ]);
+    /* S2762 — the Mark's moor (a cold cell): juniper, not the Gatelands' blob on a stick, and heather, not a green pill. The Mark upland's
+       view had 128 bright lumps between the camera and the fell. Juniper: a short bole and four dark cones, the tallest 1.5 m, two
+       leaning out; heather: three low mounds, purple-brown and bracken, a hand's height under the knee. */
+    PROTO.juniper=mergeParts([
+      {geo:new THREE.CylinderGeometry(.05,.09,.4,4),color:barkDk,y:.2},
+      {geo:new THREE.ConeGeometry(.48,1.5,7,1,true),color:c(0x24362c),y:.95,jitter:.2},
+      {geo:new THREE.ConeGeometry(.4,1.05,6,1,true),color:c(0x2c3e30),y:.6,x:.32,z:.08,rz:-.3,jitter:.2},
+      {geo:new THREE.ConeGeometry(.38,.9,6,1,true),color:c(0x203228),y:.52,x:-.3,z:-.14,rz:.34,rx:-.12,jitter:.2},
+      {geo:new THREE.ConeGeometry(.34,.62,6,1,true),color:c(0x34443a),y:.34,z:.34,rx:.42,jitter:.2},
+    ]);
+    PROTO.heath=mergeParts([
+      {geo:new THREE.DodecahedronGeometry(.62,0),color:c(0x3c3032),y:.08,sy:.5,jitter:.24},
+      {geo:new THREE.DodecahedronGeometry(.48,0),color:c(0x4a4232),y:.07,x:.55,z:.2,sy:.52,jitter:.24},
+      {geo:new THREE.DodecahedronGeometry(.42,0),color:c(0x36302c),y:.06,x:-.4,z:.38,sy:.48,jitter:.24},
+    ]);
     PROTO.rock=mergeParts([
       {geo:new THREE.DodecahedronGeometry(1,0),color:new THREE.Color(0x77726a),jitter:.12},
       {geo:new THREE.DodecahedronGeometry(.7,0),color:new THREE.Color(0x6a655c),x:.7,y:-.2,z:.3,jitter:.12},
@@ -749,12 +764,18 @@
         c.r=.72+c.r*.5;c.g=.72+c.g*.5;c.b=.72+c.b*.5;
         if(t.cold&&sp==='scrub'){const k=.9+(t.t-.5)*.16;c.copy(_heathC).multiplyScalar(k);} /* S2696 — the Mark's scrub is juniper and heather, dark and blue-green, not the Gatelands' bright blob */
       },solR=sp==='scrub'?0:({oak:.85,oakAutumn:.85,birch:.35,birchAutumn:.35,spruce:.45,pine:.45}[sp]||.5);
+      if(sp==='scrub'){ /* S2762 — the Mark's scrub is the juniper; each half names its own trees */
+        for(const L of [trees[sp].filter(t=>!t.cold),trees[sp].filter(t=>t.cold)]){if(!L.length)continue;
+          place(L,L[0].cold?'juniper':'scrub',L[0].cold?(t,c)=>{const k=.86+(t.t-.5)*.24;c.setRGB(k,k*1.02,k*1.04);}:tint,true,solR);
+          const im=group.children[group.children.length-1];if(im&&im.isInstancedMesh)im.userData.tids=L.map(t=>t.id);}
+        for(const t of trees[sp])_treeRecs.push({id:t.id,x:t.x,z:t.z,h:t.h,sp,r:0});continue;}
       if(!landTrees(group,trees[sp],sp,tint,solR,sol))place(trees[sp],sp,tint,true,solR); // S1182 (F3): the new look draws the leafy kinds and conifers from leaf cards, at the same places
       {const im=group.children[group.children.length-1];if(im&&im.isInstancedMesh)im.userData.tids=trees[sp].map(t=>t.id);
         for(const t of trees[sp])_treeRecs.push({id:t.id,x:t.x,z:t.z,h:t.h,sp,r:solR*t.s*(t.g||1)});} /* S1511 — felling's records */
     }
     {const by={};rocks.forEach(r=>{r.sink=0;(by[r.proto]||(by[r.proto]=[])).push(r);});for(const k in by)place(by[k],k,(t,c)=>{c.setRGB(.9+t.ny*.1,.9+t.ny*.08,.9);},true,.55);} // S264 — one instanced mesh per kind of rock in the chunk
-    place(bushes,'bush',(t,c)=>{c.setRGB(.92+(t.s-1)*.2,1,.9);if(t.cold)c.multiply(_heathC);if(t.sn)c.lerp(_snowBushC,.55*t.sn);},false,0); /* S2073 — a bush in the Mark's snow is frosted, not bright green */
+    place(bushes.filter(t=>!t.cold),'bush',(t,c)=>{c.setRGB(.92+(t.s-1)*.2,1,.9);if(t.sn)c.lerp(_snowBushC,.55*t.sn);},false,0);
+    place(bushes.filter(t=>t.cold),'heath',(t,c)=>{const k=.85+(t.s-1)*.3;c.setRGB(k,k*.97,k*.98);if(t.sn)c.lerp(_snowBushC,.3*t.sn);},false,0); /* S2762 — in the Mark a bush is a clump of heather, frosted where the snow lies */ /* S2073 — a bush in the Mark's snow is frosted, not bright green */
     if(embers.length){place(embers,'ember',(t,c)=>{c.setRGB(1,1,1);},false,0);const gl=group.children[group.children.length-1];if(gl&&gl.isInstancedMesh){gl.material=new THREE.MeshBasicMaterial({vertexColors:true});}}
   }
 
