@@ -1138,6 +1138,22 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
     R.turn > 0 && R.turn < 1.6 && R.armIn === false && R.inside === 0 && R.tested > 0 && R.near >= .004 && R.tris < 800, R); }
   { const A = r.Zahra.astrolabe || {}; check(`Zahra's astrolabe at her right hip: turned ${A.turn} rad, her arm clear (${A.armIn}), nothing inside it (${A.inside})`, A.turn < 0 && A.armIn === false && A.inside === 0, A); }
   check('the travellers: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
+// the strange and the legendary, I (Session 2759, L2; Michael's C on #1911, OG-054 as drawn): the Veiled Merchant from CAST at his 1.90 m,
+// saved and loaded back the same, his gold mask on the head bone over the veil, nothing of the face or the veil in front of it; the mask's
+// three kinds build, the brass and the construct to the chin on a shaven face, the construct's eyes lit; none under a raised hood
+if (!process.argv.includes('--shots-only')) { const page = await browser.newPage({ viewport: { width: 640, height: 360 } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.goto(`http://localhost:${port}/builder.html?still&w=640&h=360&seed=check`); await page.waitForFunction(() => window.__done || window.__err, null, { timeout: 300000 });
+  const r = await page.evaluate(async () => { const K = await import('./people.js'), out = {}, onBone = (p, re) => { let n = null; p.root.traverse(o => { if (re.test(o.name)) for (let q = o.parent; q; q = q.parent) if (q.isBone) { n = n || q.name; break; } }); return n; };
+    { const G = K.castGenome('Veiled'), p = K.makePerson(G), s1 = JSON.stringify(K.toSaved(G)); out.veiled = { off: +Math.abs(K.statureOf(G) - 1.9).toFixed(4), saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), mask: p.mask, veil: !!p.veil, on: onBone(p, /^maskSheet$/), people: G.people }; }
+    for (const kind of ['brass', 'construct']) { const G0 = K.rollGenome('mask:' + kind, { people: 'gatelander', g: 1 }), G = { ...G0, beard: .8, dress: { ...G0.dress, mask: kind, hood: null, helm: null } }, p = K.makePerson(G);
+      let beard = false; p.root.traverse(o => { if (o.name === 'beard') beard = true; }); out[kind] = { mask: p.mask, beard }; }
+    { const G0 = K.rollGenome('mask:hood', { people: 'gatelander', g: 1 }), p = K.makePerson({ ...G0, dress: { ...G0.dress, cloak: [.3, .3, .3], hood: 'up', mask: 'brass' } }); out.hood = p.mask; }
+    return out; });
+  { const v = r.veiled, M = v.mask || {}; check(`the Veiled Merchant from CAST: ${v.off} m off his 1.90, saved and loaded back the same; the gold mask on ${v.on} over the veil (${M.overVeil} of its points), nothing in front of it (${M.through} of ${M.tested}), ${M.gap} m off at the least, ${M.tris} triangles`,
+    v.off < .01 && v.saved && v.people === 'aurennais' && v.veil && v.on === 'head' && M.kind === 'gold' && M.overVeil > 0 && M.through === 0 && M.tested > 500 && M.gap >= .003 && M.tris < 6000 && M.draws === 1, v); }
+  { const B = r.brass.mask || {}, C = r.construct.mask || {}; check(`the brass and the construct to the chin (${B.bottom}, ${C.bottom} m under the eyes), nothing in front (${B.through}, ${C.through}), no beard under them (${r.brass.beard}, ${r.construct.beard}), the construct's eyes lit (${C.glowTris} triangles); none under a raised hood (${r.hood})`,
+    B.kind === 'brass' && C.kind === 'construct' && B.bottom < -.08 && C.bottom < -.08 && B.through === 0 && C.through === 0 && !r.brass.beard && !r.construct.beard && C.glowTris > 0 && C.draws === 3 && r.hood === null, r); }
+  check('the strange and the legendary, I: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
   const shot = async (name, q, w = 1920, h = 1080, panel = false, crop = null) => { if (only && !only.split(',').some(o => name.includes(o))) return; const page = await browser.newPage({ viewport: { width: w, height: h } }); const errs = []; page.on('pageerror', e => errs.push(String(e)));
