@@ -3,6 +3,18 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Market stalls by island: one stall everywhere, or each island's own? (from the look builder, 2026-11-28, #2149)
+**The question.** On market day every island's square fills with the same stall, 82's `stallGeoHi` (a striped fly on four poles over a trestle); `docs/design/a-towns-day.md` notes that the Mark's and Aurenne's stalls were never made. Session 2754 prototyped one stall for each island in the piece kit (`docs/prototypes/levelup/stalls.html`, `markStall` and `aurenneStall` in `pieces.js`). The Mark's booth (OG-034): squared posts on flat stones, a steep shingle roof at the halls' 52° with their bargeboards and crossed heads, a plank back and half sides, a counter selling furs, stockfish or red-and-blue wool, a lit brazier; 1,056–1,308 triangles. Aurenne's awning (OG-044, OG-061): cedar posts and madder-and-cream canvas with a scalloped edge over an indigo counter cloth, selling spice cones, jars and an amphora, or dyed cloth, with a brass scale and a rug; 557–1,601 triangles. Today's ring stall is 988–1,196 triangles; each would be one draw.
+
+**Options.**
+- **A.** As built: the striped stall on every island's square.
+- **B (recommended).** Each island its own: the Mark's booth and Aurenne's awning, the Gatelands keeping today's stall. They go into `marketRingStall` and the square's own stalls.
+- **C.** Aurenne's awning only. The Mark keeps today's stall, because the booth reads heavy and closed: from the square its goods sit in the shade of a deep roof.
+
+**Recommendation.** B.
+
+Pictures: [today | the Mark | Aurenne, and the Mark's booth close](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/stalls-row.jpg) · [each island's three kinds before its own houses](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/stalls-goods.jpg) · details in `docs/devlog/2754.md`
+
 ### A lesser gate's surroundings: as built, the Weavers' own outworks, or a lost kingdom's watch? (from the look builder, 2026-11-28, #2143)
 **The question.** The shot list's *gate at dusk* is still far from P10b's *Gate Light*: the panel shows a lit place of dark towers and broken walls, the game one 26 m ring cut into a turf hill, alone on a lawn. Session 2751 prototyped what could stand round a lesser gate (`docs/prototypes/levelup/gatewards.js`, `gatemouth.html?wards=weave|watch&view=shot&dusk`); nothing in the game has changed. Who built the towers is a lore call: the canon says the Weavers left "the same structure in every province … and nothing else", and its forts are spaces "some kingdom built and then lost".
 
