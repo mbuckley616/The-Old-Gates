@@ -2597,3 +2597,84 @@ seen side-on at a caravan.
 **Backlog notes.** None new.
 
 No proposal this run.
+
+## 2026-11-28 — Portclare on market day, Menas's Smithy, a sword sold back in Dunmore, a night at The Bramble Hearth, a save across a page reload (build s2080, read to Session 2758)
+
+**The look against the art** (`docs/look/critic-1128/`, all eight at High; against `docs/look/critic-1127/`).
+- *Valley, 10h — far, unchanged.* The smooth green model under an even sky, no crag or keep; small orange flecks on the near slope (the
+  wildflowers) are the only new thing. The relief (#2063) is still not on main.
+- *Street, 10h — close on the ground, far on the houses.* S2737 and S2758 show: the setts are grey now, not cream, and the road's edge goes
+  into the lawn through a worn verge instead of a ruled line. The left foreground is S2758's dry-stone wall, which at this distance still
+  reads as a stack of grey blocks rather than laid stone. The panel's thatch and timber are still absent.
+- *Mark upland, 13h — far, changed in composition.* S2748 moved the camera out of the stand: open brown moor with lying snow and a white
+  range behind, which is the panel's subject for the first time. Far because the range is a row of smooth white domes, not peaks, and the near
+  ground is scattered with round green bushes that sit on the snow like dropped lozenges. The pines are a few spires at the far right.
+- *Aurenne harbour, 17h30 — close on the light, far on the town.* Unchanged.
+- *Gatelands coast, 13h — far.* Unchanged since S2718: northern colour, no cliff.
+- *Town at night, 23h — close.* Unchanged but for the wall. The market stall in the square stands lit with its awning at 23h; it is the
+  square's own stall, not a market-day one, so that is right.
+- *Storm, 15h — far, unchanged.* White cumulus over the grey ceiling, the straight seam across the land.
+- *Gate at dusk, 18h30 — far, but the view works.* For the first time on my sheets in a full run the gate is the lit court (S2732): four rings
+  of script, the slit, the camp's tents at the left, and S2744's glow on the headwall. The amber wash on the ground reads only as a lighter
+  brown band under the arch; the lower third of the frame is still near black. The panel's towers are missing, as S2751's prototypes say.
+
+The gap I would close first: still **the storm**, for the reason given yesterday; nothing has touched it in three sheets. Second, the Mark's
+near bushes, which are cheap and are the first thing the eye lands on in that frame.
+
+**What I played.** Three boots on seed 1, plus three short probes. Portclare on its market day (day 1, Cloch's day, 10h) at High; Menas's
+Smithy at 11h; out to Dunmore with the sword to sell it at Lorcan's Forge; The Bramble Hearth at 22h for a room and a night; and in the first
+boot, a room at Portclare's The Hollow Lamp, a save to slot 1, a real page reload and Continue.
+
+**What worked.**
+- *Market day reads.* From six metres off the square's edge, Portclare's ring of stalls stands with striped awnings, bunting between the
+  posts, produce on the counters and a keeper at each (`2026-11-28-portclare-market-10h.jpg`). Six stalls drawn at 3.7 to 24.5 m. This is the
+  most a Gatelands town has looked like somewhere people come to on a given day.
+- *The counter no longer pays you to trade.* At Menas's Smithy (market day, shopMul 0.984, barter 1%) the Iron Sword (10–12) cost 27 against
+  a list of 36, and the counter offered 15 back. Carried to Lorcan's Forge in Dunmore, also on market day (shopMul 0.966), it sold for 15, where
+  the same sword is asked 26. So S2755 holds between two towns as well as at one counter; S2755's own note that a high-barter character can
+  still buy cheap and sell dear between towns I could not reach at Charisma 0.
+- *The inns.* The Hollow Lamp: "No one else tonight. 10 gold. The second door on the left, a bed, a bolt, bread in the morning." The Bramble
+  Hearth: 11 gold, room 3, "the west front room on the second floor". Both rent at once, the room's bed says *Your room — press 'E' to
+  rest*, and the rest slip is clear and well made (`2026-11-28-bramble-hearth-sleep.jpg`): 22:00 to 06:00, Health 39 to 130, comfort 3,
+  *Rested* for 45 hours, skills ×1.1. After 8 hours the clock read 6:01 on Beastday the 3rd, health full, `worldState.rested` set.
+- *The save across a reload.* Saved in The Hollow Lamp at 290 gold with the starter Wooden GreatClub worn, reloaded the page and pressed
+  Continue: back in The Hollow Lamp, 290 gold, the club's every field identical to the byte (S2752's fix, seen through a real reload rather
+  than the same page). No page errors in any of the three boots.
+- *Portclare at 23h* (`2026-11-28-portclare-night-23h.jpg`): the lamp's pool on the setts and a few amber windows; a dark night but a
+  legible one.
+
+**What was wrong.**
+- *A pale-blue sheet over Portclare's square at High.* Standing at the site's middle + (2, 14) at 10h on market day, the left half and a block
+  at the lower right of the frame are covered by a translucent blue plane with a hard horizontal top edge at the counters' height and vertical
+  edges on screen-space lines (x = 640 and 1,110 of 1,280); a stall keeper shows through it in one frame and not the next
+  (`2026-11-28-portclare-square-blue-sheet.jpg`). Seen in three separate boots at that spot; gone six metres further south. It is not in the
+  world scene's raycast (the ray hits the square at 10.75 m, then the sea plane at y 0, 30 m off, opacity 0.8, three metres under the square),
+  and a fresh `REN.render(scene, CAM)` read at that pixel gives the square's colour, so it lives in the loop's frame, not in a mesh at that
+  height. My guess is the sea plane under the town winning the depth test in tiles at High, which may be software GL's own; it needs one look
+  on a real GPU before anyone spends a session on it. Filed in I for the look builder with that caveat.
+- *You can stand inside a ring stall.* The spot above is inside a ring stall's counter (3.7 m from its middle): you see its goods and bunting
+  from within. S2741 already says the stall is not solid; I note only that a player walking the square's middle meets it.
+- *"There's 3 guests in tonight."* The Bramble Hearth's keeper says the count as a digit, and "There's"
+  with a plural. Prices as digits are the interface's habit; a count of people in a keeper's mouth reads better as *three*. Text, the quest writer's to judge; not filed.
+
+**The recent sessions' *Needs eyes*, from what I saw.**
+- S2741 (stalls on market day): judged from the square, above: it reads. Whether 4–8 stalls crowd the lamp posts: Portclare's do not.
+- S2755 (the counter's price): above, across two towns. S2752 (a load keeps the weapon): above, across a reload. S2752's other note, the
+  Wooden GreatClub at 4–6 under the club's 6–10, I confirmed: the starter two-hander is the weakest weapon I held.
+- S2732, S2744 (the gate at dusk): on the sheet, above.
+- S2737, S2758 (verge, setts, the wall): on the sheet, above. S2748 (the Mark's camera): above.
+- S2731, S2735, S2738, S2740 (place sound, five sessions): not judgeable headless; nothing heard.
+- S2728, S2729, S2734, S2753, S2757 (the cloak worn back): no worn-back cloak passed me in Portclare's square or Dunmore's; not judged.
+- S2733 (the camel's tail), S2742, S2746 (far gear), S2739, S2749 (the middle level and the 6 m ring): not seen; the last two are what a
+  real screen at Low judges.
+- S2745 (the weapon's roll): the sheet's *Melee DMG +3%* row shows no weapon range; the bag's row says ATK 10–12, as the shop's did. No fight
+  this run, so the rolls themselves were not seen.
+- S2747 (the Magic page's riders), S2751, S2754 (prototypes): not this run.
+- S2730, S2736, S2743, S2750, S2756 (QA): nothing to judge in play.
+
+**Harness.** `node tests/run.mjs export` 1/1 (7.5 minutes; the first attempt timed out at 10 minutes while the look sheets rendered beside
+it). The eight sheets took about 35 minutes. Each playing boot took 100 s to the world and 140 s to Portclare.
+
+**Backlog notes.** None new.
+
+No proposal this run.
