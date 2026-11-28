@@ -3306,7 +3306,7 @@ function hbHairLow(o){const g=o.geometry,K=o.name==='hair'?HB_MID_HAIR.hair:HB_M
 // index as baked) are as they were. The hair's ribbons are never gathered (a card is thinner than a cell). One mesh to another is never
 // joined, so a garment does not close onto the skin under it.
 const HB_MID_CELL=.018;
-// S2756 — the face in the middle level (S2739's and S2749's note: since #2125 A it is drawn at Low from 6 m, and at 1.8 cm cells the eyes
+// S2757 — the face in the middle level (S2739's and S2749's note: since #2125 A it is drawn at Low from 6 m, and at 1.8 cm cells the eyes
 // and mouth went mottled). A vertex led by one of the face's own bones (every bone under the head but the head: the eyes, lids, brows'
 // muscles, the mouth and jaw) is gathered in cells HB_MID_FACE of the size, so the eyes (two 1,472-triangle balls 2.4 cm across) and
 // the lips keep their shape; the scalp, the ears' backs and the hood ride the head and are thinned as before.
