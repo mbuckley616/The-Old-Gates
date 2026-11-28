@@ -3694,6 +3694,23 @@
   for(const nm of ['shed','tree','rick','logs']){const f=TDR_PIECE[nm];TDR_PIECE[nm]=function(D){const ns=D.ns;D.ns=false;try{return f.apply(null,arguments);}finally{D.ns=ns;}};} /* these cast shadows; the rest do not */
   /* a boundary from (x0,z0) to (x1,z1), of a kind and height, piece by piece; a piece whose place is not clear (ok) is left out, so the run
      breaks round what stands there. -> the runs laid, as rotated rects for the town's solids */
+  /* S2757 — a Gatelands dry-stone wall, laid (the street's and the night's nearest thing, the views' foreground): a step of the run (st, about
+     0.6 m) was two slabs and a cap, three boxes that read as flat dark cubes 6 m from the camera. Now: two foot stones with a joint between
+     them, a narrower stone over the joint (the batter), and a coping of two stones set on edge, leaning a little along the wall (cock and hen);
+     a stone in five takes lichen, a foot stone moss. 5 boxes a step, 60 triangles (was 36), all in the dressing's one merged mesh, no draw added.
+     It draws the same 16 numbers from the house's stream a step as the old wall did, so nothing dressed after a wall moves. */
+  function tdrDryStone(D,P,r,G,x,y,z,ux,uz,st,ry){const S=P.stone,R=[];for(let i=0;i<16;i++)R.push(r());let q=0,hs=Math.floor(R[15]*4294967296)>>>0;const n=()=>{if(q<16)return R[q++];hs=(Math.imul(hs,1664525)+1013904223)>>>0;return hs/4294967296;};
+    const lich=P.lichen||0xb2aa86,moss=P.moss||0x5a6838,col=k=>{const c=tdrCol(S[Math.floor(n()*S.length)],n,.36);if(k===1)c.lerp(_tdrC.setHex(lich),.45+n()*.25);else if(k===2)c.lerp(_tdrC.setHex(moss),.45+n()*.2);return c;};
+    const at=o=>[x+ux*o*st,z+uz*o*st];
+    /* the foot: two stones, the joint a little off the middle, 2 cm apart, each its own height and width */
+    const j=(n()-.5)*.3,lA=(.5+j)*st-.01,lB=(.5-j)*st-.01;
+    {const [ax,az]=at(-.5+(.5+j)/2),[bx,bz]=at(.5-(.5-j)/2);
+      D.put('hi',G.box,col(n()<.35?2:0),ax,y-.06,az,.54+n()*.04,.36+n()*.06,lA,ry+(n()-.5)*.06,(n()-.5)*.05,(n()-.5)*.06);
+      D.put('hi',G.box,col(n()<.35?2:n()<.2?1:0),bx,y-.06,bz,.52+n()*.05,.34+n()*.07,lB,ry+(n()-.5)*.06,(n()-.5)*.05,(n()-.5)*.06);}
+    /* the course over the joint, set in from the face */
+    {const [cx,cz]=at(j*.5);D.put('hi',G.box,col(n()<.2?1:0),cx,y+.3,cz,.46+n()*.04,.3+n()*.05,st*(.86+n()*.12),ry+(n()-.5)*.08,(n()-.5)*.06,(n()-.5)*.07);}
+    /* the coping: two stones on edge, a tall one and a short one, leaning along the wall */
+    for(let k=0;k<2;k++){const [ex,ez]=at(k?.24:-.24),lean=(n()-.5)*.3;D.put('hi',G.box,col(n()<.3?1:0),ex,y+.6,ez,.36+n()*.06,(k?.2:.27)+n()*.06,st*(.38+n()*.06),ry,lean,(n()-.5)*.05);}}
   function tdrBound(D,P,r,kind,x0,z0,x1,z1,ok){const ns=D.ns;D.ns=false;try{return tdrBoundRun(D,P,r,kind,x0,z0,x1,z1,ok);}finally{D.ns=ns;}}
   function tdrBoundRun(D,P,r,kind,x0,z0,x1,z1,ok){const dx=x1-x0,dz=z1-z0,L=Math.hypot(dx,dz);if(L<.6)return [];const ry=Math.atan2(dx,dz),ux=dx/L,uz=dz/L,G=tdrGeos(),runs=[];let run=null;
     const step=kind==='hedge'?.8:kind==='plaster'||kind==='cane'?1:kind==='skigard'?.3:.6,n=Math.max(1,Math.round(L/step)),st=L/n;
@@ -3705,7 +3722,8 @@
           while(len<need&&(lo>0||hi<n)){if(lo>0&&(hi>=n||((lo+hi)&1))){lo--;M[lo]=false;}else if(hi<n){M[hi]=false;hi++;}len=hi-lo;}i=hi;}}}
     for(let i=0;i<n;i++){const t=(i+.5)*st,x=x0+ux*t,z=z0+uz*t;if(!M[i]){run=null;continue;}const y=worldH(x,z);
       if(!run){run={t0:i*st,t1:(i+1)*st};runs.push(run);}else run.t1=(i+1)*st;
-      if(kind==='stone'||kind==='turfwall'){const S=P.stone;for(let k=0;k<2;k++){const h=.4+r()*.06,o=(k%2?.15:-.1)*st;D.put('hi',G.box,tdrCol(S[Math.floor(r()*S.length)],r,.22),x+ux*o,y-.05+k*.43,z+uz*o,.5-.04*k,h,st*(.92+r()*.1),ry,(r()-.5)*.06,(r()-.5)*.08);}
+      if(kind==='stone'){tdrDryStone(D,P,r,G,x,y,z,ux,uz,st,ry);}
+      else if(kind==='turfwall'){const S=P.stone;for(let k=0;k<2;k++){const h=.4+r()*.06,o=(k%2?.15:-.1)*st;D.put('hi',G.box,tdrCol(S[Math.floor(r()*S.length)],r,.22),x+ux*o,y-.05+k*.43,z+uz*o,.5-.04*k,h,st*(.92+r()*.1),ry,(r()-.5)*.06,(r()-.5)*.08);}
         if(kind==='turfwall')D.put('hi',G.box,tdrCol(P.turf[Math.floor(r()*2)],r,.18),x,y+.8,z,.52,.22,st+.02,ry);
         else D.put('hi',G.box,tdrCol(S[Math.floor(r()*S.length)],r,.2),x,y+.82,z,.42,.2+r()*.08,st*.45,ry,(r()-.5)*.25);}
       else if(kind==='hedge'){const H=P.hedge;D.put('hi',G.box,tdrCol(H[2]||H[0],r,.12),x,y,z,.78,1.02,st+.04,ry);D.put('hi',G.blob,tdrCol(H[Math.floor(r()*H.length)],r,.2),x,y+.55,z,.55,.7,st*.75,ry,r()*.5);D.put('hi',G.blob,tdrCol(H[Math.floor(r()*H.length)],r,.25),x+(r()-.5)*.15,y+1,z+(r()-.5)*.15,.42,.32,st*.55,ry+r()*.8);
