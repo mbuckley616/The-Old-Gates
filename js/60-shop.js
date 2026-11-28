@@ -738,6 +738,16 @@ function restAtBed(hours){
 // buy-back, per the v68 design). Stackables merge by name into one entry.
 let merchantStock = {};
 function _merchantKey(){ return currentHouse && currentHouse.id ? currentHouse.id : '_none'; }
+// S2762 — Speech is taught by trade, and a trade undone teaches nothing. A sale and a purchase are each a use (the skills sheet),
+// and a sold piece is offered back at what you were paid (S366), so selling a piece and buying it back moved no gold and taught
+// two uses, over and over, one a second; a one-coin piece bought for 1 sold for 1 the same way (S2755's floor). A trade now teaches
+// only if it is not the reverse of one made at this counter in the same goods today: sell what you bought here, or buy back what
+// you sold here, and Speech is not taught. Buying several of a thing, selling a haul, and trade between counters teach as before.
+const SPEECH_TRADE=new Map();let _speechTradeDay=-1;
+function speechTrade(it,dir){const d=gameDayNow();if(d!==_speechTradeDay){SPEECH_TRADE.clear();_speechTradeDay=d;}
+  const k=_merchantKey()+'|'+(it&&it.name),was=SPEECH_TRADE.get(k)||'',back=dir==='buy'?'sell':'buy';
+  if(!was.includes(dir))SPEECH_TRADE.set(k,was+dir);
+  if(was.includes(back))return false;return skillUse('speech',1,'trade');}
 function _pushBuyBack(it, sp){
   const key=_merchantKey();
   if(!merchantStock[key]) merchantStock[key]=[];
@@ -1211,7 +1221,7 @@ function buyItem(it){
   bagAdd(item);
   // v68 — if this was a bought-back item, remove it from the merchant overlay.
   if(it._boughtBack) _consumeBuyBack(it, _bundleQty);
-  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
+  lvAct.transactions++;speechTrade(it,'buy'); /* S941; S2762 — not a trade undone */
   sndBuyItem(it);
   showMsg(`Bought ${it.name} for ${_cost}🪙`,'#c8a84a');
   renderShop();
@@ -1240,7 +1250,7 @@ function sellItem(i,sp){
   // doesn't drop a 12-bundle into buy-back).
   _pushBuyBack({...it, qty:1}, finalSp);
   it.qty--;if(it.qty<=0)BAG.splice(i,1);
-  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
+  lvAct.transactions++;speechTrade(it,'sell'); /* S941; S2762 */
   sndTrade(it,'sell'); /* S2717 */
   if(currentHouse)addLog('🏪','Sold items at '+currentHouse.name);
   showMsg(`Sold ${it.name} for ${finalSp}🪙${tithe?` (the Crown's twentieth, ${tithe})`:''}`,'#44ee44');
@@ -1267,7 +1277,7 @@ function _buyStackable(it, units, piecesPerUnit, unitPrice){
     return;
   }
   gold-=spent;
-  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
+  lvAct.transactions++;speechTrade(it,'buy'); /* S941; S2762 */
   sndBuyItem(it);
   const totalPieces = piecesPerUnit>1 ? piecesPerUnit*bought : bought;
   showMsg(`Bought ${totalPieces}× ${it.name} for ${spent}🪙`,'#c8a84a');
@@ -1288,7 +1298,7 @@ function _sellStackable(it, bagIdx, units, unitPrice){
   _pushBuyBack({...live, qty:sellPieces}, unitPrice); // buy-back priced per piece
   live.qty-=sellPieces;
   if(live.qty<=0) BAG.splice(bagIdx,1);
-  lvAct.transactions++;skillUse('speech',1,'trade'); /* S941 */
+  lvAct.transactions++;speechTrade(it,'sell'); /* S941; S2762 */
   sndTrade(it,'sell'); /* S2717 */
   if(currentHouse)addLog('🏪','Sold items at '+currentHouse.name);
   showMsg(`Sold ${sellPieces}× ${it.name} for ${gain}🪙`,'#44ee44');
