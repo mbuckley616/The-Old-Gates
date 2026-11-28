@@ -65,7 +65,8 @@ check('the old save loads to the same state', same.started && same.gold === 4242
 await page.evaluate(() => openSLMenu('load', false)); await W(600);
 const btns = await page.evaluate(() => [...document.querySelectorAll('#sl-slots button')].map(b => b.textContent).filter(t => /Export|World/.test(t)));
 check('the menu offers Export and World per character', btns.filter(t => /Export/.test(t)).length >= 2 && btns.filter(t => /World/.test(t)).length >= 2, btns);
-const dl = async (fn) => { const [d] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), page.evaluate(fn)]); return fs.readFileSync(await d.path(), 'utf8'); };
+// S2752 — the download is waited for up to 180 s, as `export`'s since S2377: a world frame on software GL holds the page past 15 s
+const dl = async (fn) => { const [d] = await Promise.all([page.waitForEvent('download', { timeout: 180000 }), page.evaluate(fn)]); return fs.readFileSync(await d.path(), 'utf8'); };
 const charTxt = await dl(() => ssExportChar('oldone')); const worldTxt = await dl(() => ssExportWorld('oldone'));
 const cdoc = JSON.parse(charTxt), wdoc = JSON.parse(worldTxt);
 const crows = cdoc.saves.map(r => JSON.parse(r.data)), wrows = wdoc.saves.map(r => JSON.parse(r.data));

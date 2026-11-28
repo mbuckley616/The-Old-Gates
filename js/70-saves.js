@@ -410,6 +410,7 @@ function _buildSavePayload(){
       if(activeZoneId==='world')return {kind:'world',x:px,z:pz,yaw};
     }catch(e){}return null;})(),
     placeName:ssPlaceName(), /* S475 — the slot list's label: the town, near one, a house in one, or the gate */
+    itemsV:1, /* S2752 — the items' numbers are kept as saved: the v56/v57/v61v recomputes in _applyLoadData run only on a save without this */
   };
 }
 
@@ -418,6 +419,7 @@ function _buildSavePayload(){
 function _applyLoadData(d,w){
   _ssLoadGen++; /* S951 — a write still in flight no longer points Continue at itself (ssWrite) */
   if(w)d=ssJoinPayload(d,w); /* Session 456 — the character row and the world row; one joined payload, or an old one-row save, is d alone */
+  const _itemsOld=!(d.itemsV>=1); /* S2752 — a save written before S2752: its weapons' attack, prices and weights are rebuilt from the tables once, as every load did; after, an item keeps what it was made with */
   _castMin=null; /* S685 — a load starts the caster's count afresh, so a cast made after loading rolls as it did after the save (casterRand) */
   xp=d.xp||0; level=d.level||1; xpNext=d.xpNext||200;
   kills=d.kills||0; gold=d.gold||0;
@@ -464,7 +466,7 @@ function _applyLoadData(d,w){
   // Only touches items that have both `tier` and `weaponShape` (skips legacy hand-crafted items
   // like the Rusty Sword which don't have a shape but do have hardcoded atk).
   function _migrateWeaponAtk(it){
-    if(!it||it.type!=='equip'||!it.atk||!it.tier||!it.weaponShape)return;
+    if(!_itemsOld||!it||it.type!=='equip'||!it.atk||!it.tier||!it.weaponShape)return;
     // v61v: Rusty Sword has a bespoke [5,9] range — wider spread than the generic
     // tier-1 sword formula would produce ([6,7]). Skip it by name so the migration
     // doesn't flatten the "inconsistent junk" character back into a clean statline.
@@ -489,7 +491,7 @@ function _applyLoadData(d,w){
     // Weapon path
     if(it.atk && it.weaponShape){
       const typeObj=WEAPON_TYPES.find(t=>t.shape===it.weaponShape);
-      if(typeObj && typeof TIER_VALUE!=='undefined'){
+      if(_itemsOld && typeObj && typeof TIER_VALUE!=='undefined'){
         it.buyPrice=Math.max(3, Math.round(TIER_VALUE[tier]*typeObj.atkMult[1]));
       }
       // Material-derived might req
@@ -500,7 +502,7 @@ function _applyLoadData(d,w){
     // Armor/shield/accessory path
     if(it.slot && it.slot!=='weapon' && !it.cloak){ // S564 — a cloak keeps its own price and needs nothing
       const typeObj=armorTypeOf(it); /* S564 — a light or robe piece by its line, not as the heavy piece of its slot */
-      if(typeObj && typeof TIER_VALUE!=='undefined'){
+      if(_itemsOld && typeObj && typeof TIER_VALUE!=='undefined'){
         it.buyPrice=armorPrice(tier,typeObj);
       }
       // Fortitude req from table — only T3+ (Finesse for the light line, Intelligence for robes)
@@ -516,7 +518,7 @@ function _applyLoadData(d,w){
   //   2. Crafted weapons — look up by weaponShape in WEAPON_TYPES.
   //   3. Crafted armor/accessories — look up by slot (shields via shieldType) in ARMOR_TYPES.
   function _migrateItemWeight(it){
-    if(!it)return;
+    if(!_itemsOld||!it)return;
     // 1. Starter kit — legacy hand-rolled items with no slot/tier
     const STARTER_WEIGHTS = {
       'Rusty Sword':3, 'Tattered Tunic':2, 'Worn Breeches':2, 'Leather Boots':1,

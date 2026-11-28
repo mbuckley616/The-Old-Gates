@@ -30,6 +30,23 @@ const sweep = await page.evaluate((names) => {
   return { n: found.length, lost };
 }, (() => { const s = new Set(); for (const f of fs.readdirSync('js').filter(f => f.endsWith('.js'))) for (const m of fs.readFileSync('js/' + f, 'utf8').matchAll(/^(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/gm)) s.add(m[1]); return [...s]; })());
 check(`every item the game defines keeps its fields through the save (${sweep.n} items)`, sweep.n > 100 && Object.keys(sweep.lost).length === 0, sweep.lost);
+// S2752 — a load keeps an item's numbers as saved. The v56/v57/v61v recomputes ran on every load, so the creator's own Wooden Sword (5–9,
+// 14 gold) came back 6–7 and 5 gold, the club 6–10 as 7–9, the dagger 4–7 as 4–6; now they run once, on a save written before `itemsV`.
+// And the creator's picker shows the bow and great club makeItem gives you (it read 6–10 and 8–13 against 5–6 and 4–6).
+const keep = await page.evaluate(() => {
+  const was = BAG.slice(); BAG.length = 0;
+  for (const k of ['sword', 'club', 'dagger']) BAG.push(JSON.parse(JSON.stringify(STARTER_WEAPONS[k])));
+  const nums = () => BAG.map(i => [i.name, i.atk.join('-'), i.buyPrice, i.weight].join(' '));
+  const a = nums(), d = JSON.parse(ssStringify(_buildSavePayload()));
+  _applyLoadData(JSON.parse(JSON.stringify(d))); const b = nums();
+  delete d.itemsV; _applyLoadData(JSON.parse(JSON.stringify(d))); const old = nums();
+  BAG.length = 0; BAG.push(...was);
+  const pick = ['bow', 'greatclub'].map(k => { const t = WEAPON_TYPES.find(x => x.type === STARTER_WEAPONS[k].buildVia); return [STARTER_WEAPONS[k].atk.join('-'), makeItem(1, t, null, false).atk.join('-')]; });
+  return { a, b, old, itemsV: d.itemsV === undefined, pick };
+});
+check('a load keeps the starter sword, club and dagger as made (attack, price, weight)', JSON.stringify(keep.a) === JSON.stringify(keep.b) && keep.a[0] === 'Wooden Sword 5-9 14 3', keep);
+check('a save written before S2752 still has its weapons rebuilt from the tables once', keep.old[0] === 'Wooden Sword 6-7 5 3', keep.old);
+check('the creator shows the bow and great club it gives (makeItem at tier 1)', keep.pick.every(([s, m]) => s === m), keep.pick);
 // …and a bedroll, a tent and a Markish sword come back from a real load (the legacy row below) as what they were
 await page.evaluate(() => { BAG.push(rollItem('wool'), { ...TENT_ITEM }, swordStamp(makeItem(3, WEAPON_TYPES.find(t => t.type === 'Sword')), 'mark')); });
 // legacy migration: the s135 way of storing a save

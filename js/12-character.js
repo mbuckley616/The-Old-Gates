@@ -83,10 +83,11 @@ const STARTER_WEAPONS={
   // hook ccBegin reads to route these through makeItem instead of a deep-clone.
   // STARTER_WEAPONS is declared before WEAPON_TYPES/makeItem in source order,
   // so the build can only happen later, at finalize time.
-  bow:    {name:'Wooden Bow',    ico:'🏹', type:'equip', slot:'weapon', atk:[6,10], weight:3,   tier:1, material:'Wooden', weaponShape:'bow',      wType:'pierce', matCol:0x8B5E3C, matGuard:0x6B3E20, matGlow:null, sellMult:.3, buyPrice:14,
+  /* S2752 — the picker's attack for these two is makeItem(1,…)'s, which is what you are given: it read 6–10 and 8–13 against a bow of 5–6 and a great club of 4–6 */
+  bow:    {name:'Wooden Bow',    ico:'🏹', type:'equip', slot:'weapon', atk:[5,6], weight:3,   tier:1, material:'Wooden', weaponShape:'bow',      wType:'pierce', matCol:0x8B5E3C, matGuard:0x6B3E20, matGlow:null, sellMult:.3, buyPrice:14,
            buildVia:'Bow', twoHand:true, grantsAmmo:'arrow',
            desc:'Strike from range. Draw to charge — a fuller pull hits harder and flies straighter. Comes with a quiver of iron arrows.'},
-  greatclub:{name:'Wooden Great Club',ico:'🏏',type:'equip',slot:'weapon',atk:[8,13],weight:4, tier:1, material:'Wooden', weaponShape:'greatclub',wType:'blunt',  matCol:0x6a3e12, matGuard:0x4a2808, matGlow:null, sellMult:.3, buyPrice:14,
+  greatclub:{name:'Wooden Great Club',ico:'🏏',type:'equip',slot:'weapon',atk:[4,6],weight:4, tier:1, material:'Wooden', weaponShape:'greatclub',wType:'blunt',  matCol:0x6a3e12, matGuard:0x4a2808, matGlow:null, sellMult:.3, buyPrice:14,
            buildVia:'GreatClub', twoHand:true,
            desc:'A heavy two-handed stick. Slow, brutal, single-target. Hold to commit a crushing power blow; can haft-parry without a shield.'},
 };
