@@ -2,14 +2,18 @@
 // ?size=s|m|l (the door as today's, 2.4 by 5.5 m, 3.6 by 11 m), &cond=steady|failing|catastrophic, &view=far (default, the face from the
 // path, the camp in front) | foot (at the camp, up at the rings) | door (on the court before the slit) | wide (the hill from off the path),
 // &dusk (the script against a late sky), &nocamp, &cam=x,y,z,tx,ty,tz.
+// Session 2751: &wards=none|weave|watch (gatewards.js: the gate's surroundings), &view=shot (the shot list's *gate at dusk*: 34 m out, 1.65 m
+// up, looking at 6 m over the gate's middle, the game's 75 degree lens).
 import * as THREE from 'three';
 import { Q, W, H, STATS, makeRenderer, makeComposer, buildTextures, run, skyDome } from './common.js';
 import { gateMouth } from './gatemouth.js';
+import { gateWards } from './gatewards.js';
 
 const VIEW = Q.get('view') || 'far', DUSK = Q.has('dusk');
 const R = makeRenderer(DUSK ? 1.25 : .9), scene = new THREE.Scene(); buildTextures();
 const A = gateMouth({ size: Q.get('size') || 'm', cond: Q.get('cond') || 'steady', camp: !Q.has('nocamp') }); scene.add(A.group);
-const R0 = A.R0;
+const R0 = A.R0, WD = gateWards(A, { kind: Q.get('wards') || 'none' }); scene.add(WD.group);
+for (const L of WD.lights) if (L.k > 0) { const l = new THREE.PointLight(new THREE.Color(...L.c), (DUSK ? 26 : 4) * L.k * (R0 / 13) ** 2, R0 * 1.4, 1.6); l.position.set(L.x, L.y, L.z); scene.add(l); }
 scene.fog = new THREE.FogExp2(DUSK ? new THREE.Color(.42, .4, .46) : new THREE.Color(.72, .78, .84), (DUSK ? .006 : .0045) * 13 / Math.max(13, R0));
 const cam = new THREE.PerspectiveCamera(55, W / H, .05, 30000);
 // the day: the sun low in the south-west over the viewer's left shoulder; at dusk lower and warmer, the sky gone violet-grey
@@ -25,11 +29,12 @@ if (A.cond === 'catastrophic') { const l = new THREE.PointLight(new THREE.Color(
 const g = A.ground, E = 1.65, f = A.figure; let eye, at;
 if (VIEW === 'foot') { eye = [f.x + 1.2, g(f.x + 1.2, f.z + 2.5) + E, f.z + 2.5]; at = [0, A.CY + R0 * .35, A.plate]; cam.fov = 62; }
 else if (VIEW === 'door') { const z = A.rings[0].zf + 2.2; eye = [A.door.w * .9, E, z]; at = [0, A.door.h * .6, A.plate]; cam.fov = 66; }
+else if (VIEW === 'shot') { eye = [0, g(0, 34) + E, 34]; at = [0, 6, 0]; cam.fov = 75; }
 else if (VIEW === 'wide') { eye = [R0 * 2.6, g(R0 * 2.6, R0 * 4.2) + R0 * .5 + 2, R0 * 4.2]; at = [0, A.CY + R0 * .15, -R0 * .3]; cam.fov = 50; }
 else { const z = R0 * 2.2 + 12; eye = [-R0 * .5, g(-R0 * .5, z) + E, z]; at = [0, A.CY + R0 * .1, A.plate]; cam.fov = 55; }
 cam.position.set(...eye); cam.lookAt(...at);
 if (Q.get('cam')) { const c = Q.get('cam').split(',').map(Number); cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); }
 cam.updateProjectionMatrix();
 STATS.place = { place: 'gatemouth', view: VIEW, size: A.size, cond: A.cond, R0, across: A.across, door: A.door, hill: A.hill, tris: A.tris, draws: A.draws, gateTris: A.gateTris, gateDraws: A.gateDraws,
-  byMat: A.byMat, counts: A.counts, lost: A.lost.length, hung: A.hung.length, rings: A.rings.map(q => [q.ri, q.ro, q.zf, q.n, q.gone]), plate: A.plate, figure: A.figure, eye };
+  byMat: A.byMat, wards: { kind: WD.kind, tris: WD.tris, draws: WD.draws, byMat: WD.byMat, lights: WD.lights.filter(l => l.k > 0).length, parts: WD.parts }, counts: A.counts, lost: A.lost.length, hung: A.hung.length, rings: A.rings.map(q => [q.ri, q.ro, q.zf, q.n, q.gone]), plate: A.plate, figure: A.figure, eye };
 run(makeComposer(R, scene, cam, { bloom: DUSK ? .45 : .25, bloomT: .8, sat: 1.0, vig: .35 }), cam);
