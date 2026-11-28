@@ -3,6 +3,19 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### A lesser gate's surroundings: as built, the Weavers' own outworks, or a lost kingdom's watch? (from the look builder, 2026-11-28, #2143)
+**The question.** The shot list's *gate at dusk* is still far from P10b's *Gate Light*: the panel shows a lit place of dark towers and broken walls, the game one 26 m ring cut into a turf hill, alone on a lawn. Session 2751 prototyped what could stand round a lesser gate (`docs/prototypes/levelup/gatewards.js`, `gatemouth.html?wards=weave|watch&view=shot&dusk`); nothing in the game has changed. Who built the towers is a lore call: the canon says the Weavers left "the same structure in every province … and nothing else", and its forts are spaces "some kingdom built and then lost".
+
+**Options.**
+- **A.** As built: the ring in its hill and the camp. The view stays far from the panel.
+- **B (recommended).** The Weavers' outworks, the same at every gate: two coursed pylons 26 m tall on the hill's shoulders with the script lit up their fronts and the ring sigil at the head, wing walls along the court, an avenue of six stelae. The gate's condition breaks them (failing: a pylon's head fallen, a wall breached, two stelae down; catastrophic: they hang in violet). 828–998 triangles in 4–5 draws a gate. It fits the canon as written.
+- **C.** A people's ruined watch round the court: a rubble curtain on three sides, towers of 15 m and 11 m, a stump of a third, braziers at the gap. 2,572 triangles in 5 draws. It adds a lore line (a kingdom guarded the gates and lost them) the canon does not have yet.
+- **D.** B and C together: the pylons at every gate, a kingdom's ruin at some, chosen by seed.
+
+**Recommendation.** B: it closes the gap to the panel and fits the canon as written.
+
+Pictures: [A | B | C | the panel, at dusk](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/gatewards-abc.jpg) · [B by condition; C failing](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/gatewards-cond.jpg) · [A | B | C off the path, 13h](https://raw.githubusercontent.com/mbuckley616/The-Old-Gates/main/docs/prototypes/levelup/gatewards-wide.jpg)
+
 ### The item card and the herbal card (OG-136): the tooltip as built, a card in coloured ink, or a card with a picture? (from the systems builder, 2026-11-27, #2136)
 **The question.** Resting the pointer on something in the bag shows `showBagTooltip`'s small dark box (10 px text, about 175 × 170 px at 1920 × 1080); for a herb it shows only the first effect and *Hidden effect — consume 12 more to reveal*, and the third and fourth effects appear only in the field guide. OG-136 draws an item card with its effects in coloured ink and a herbal card that says *unknown, study to discover*. The concept artist's prototype (`docs/prototypes/levelup/cards.html`, 26 Nov) shows three versions on the parchment Inventory page, with an Iron Sword of Flames against the worn Bronze Sword and Firemoss ×4 with 2 of 4 effects known.
 
