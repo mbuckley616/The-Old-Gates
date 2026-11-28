@@ -2391,6 +2391,11 @@ function buildVeil(P, G, heads, byName, meshes, hairPts = []) {
   const put = (x, y, z) => { const b = Math.round((y - y0) / DY); if (b < 0 || b >= NB) return; const a = ((Math.round(Math.atan2(x - c.x, z - c.z) / TAU * NT) % NT) + NT) % NT; M[b * NT + a] = Math.max(M[b * NT + a], Math.hypot(x - c.x, z - c.z)); };
   const pts = []; for (const i of bodyV()) if (R0[i * 3 + 1] > .58 || R0[i * 3 + 1] > .5 && Math.abs(R0[i * 3]) < .08 && R0[i * 3 + 2] > 0) pts.push(V(i)); for (const q of hairPts) pts.push(q);
   for (const m of meshes) if (m.name === 'beard' || m.name === 'moust') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) if (a[i + 1] > yLow - .005) pts.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); }
+  // S2760 — the pose turns the jaw (pose.jaw, -0.12 rad unless given) after this fit, which brings the chin up to 6 mm forward; the lower face
+  // (under the lips, within the jaw's width) is laid a second time as the jaw will hold it, so the cloth clears both (it put a speck of the
+  // Veiled Merchant's chin through at 0 mm)
+  if (heads['jaw']) { const ja = G.pose?.jaw ?? -.12, J = heads['jaw'], rq = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), ja);
+    for (const i of bodyV()) if (R0[i * 3 + 1] < .65 && R0[i * 3 + 1] > .55 && R0[i * 3 + 2] > .03 && Math.abs(R0[i * 3]) < .08) pts.push(V(i).sub(J).applyQuaternion(rq).add(J)); }
   for (const q of pts) put(q.x, q.y, q.z);
   // spread each bin over its neighbours, then let the cloth span: never in faster than it falls or goes round
   let S = new Float32Array(M.length); for (let b = 0; b < NB; b++) for (let a = 0; a < NT; a++) { let m = 0; for (let da = -1; da <= 1; da++) for (let db = -1; db <= 1; db++) { const bb2 = b + db; if (bb2 >= 0 && bb2 < NB) m = Math.max(m, M[bb2 * NT + (a + da + NT) % NT]); } S[b * NT + a] = m; }
@@ -2541,6 +2546,64 @@ function buildCirclet(P, G, heads, byName, meshes) {
   const tris = grp.children.reduce((a, m) => a + m.geometry.index.count / 3, 0);
   return { mesh: grp, stats: { through, hairThrough, hairPts: hairN, gapFront: +gapF.toFixed(4), overBrow: +(yF - bt).toFixed(4), overEar: +(yAt(Math.PI / 2) - earTop).toFixed(4), lift: +lift.toFixed(4), underTop: +(top - yF).toFixed(3), drop: K.drop, width: +(S[K.n / 4] + S[3 * K.n / 4] + 2 * (K.clear + K.t)).toFixed(3),
     depth: +(S[0] + S[K.n / 2] + 2 * (K.clear + K.t)).toFixed(3), wide: +(Math.max(...S) - Math.min(...S)).toFixed(3), tris, stoneTris, draws: grp.children.length } };
+}
+
+// ── a face mask (Session 2759, L2's *The strange and the legendary*, Michael's C on #1911: OG-054 as drawn; the concept artist's
+// `strange.js` `faceMask`, 22 Nov 2026, made a kit piece) ──
+// A beaten sheet over the face, carried by the head bone: the Veiled Merchant's gold (D.mask 'gold', from 4.5 cm over the eyes to 4 cm under
+// them, the veil taking the rest), Fiontán's brass (D.mask 'brass', the brow to 3 cm under the chin) or OG-054's riveted construct (D.mask
+// 'construct', the brass with a seam down the middle, a ring of rivets and the eye-holes lit amber from inside). Round the face's middle
+// (the eyes' height, 3.5 cm behind the head bone) in 56 × 36 directions, each bin is the furthest point in it of the face, and of a veil
+// when there is one, so the gold lies over the cream; spread to its neighbours and smoothed four times, so it bridges the nose and the lips
+// as a sheet does, then stood 5 mm off (4 for the gold). Its outline (an oval, the gold's sides cut back at the ears) and two almond
+// eye-holes where the eyes are are an alpha map; no mouth. Never under a helm or a raised hood; a hat's brim (Fiontán's straw) sits over it.
+const MASK = { na: 56, nb: 36, a0: -1.45, a1: 1.45 };
+function maskOn(D) { return !!(D && D.mask && !D.helm && !hoodUpOn(D) && !(D.tier && tierHelmOn(D))); }
+function maskTex(kind) { const key = 'maskTex_' + kind; if (PACK[key]) return PACK[key];
+  const c = document.createElement('canvas'); c.width = 512; c.height = 384; const x = c.getContext('2d'), w = 512, h = 384, gold = kind === 'gold', rnd = seeded('mask|' + kind);
+  const gr = x.createLinearGradient(0, 0, w, h); for (const [t, s] of gold ? [[0, '#c9a050'], [.5, '#e2c37a'], [1, '#a07a34']] : [[0, '#a87a34'], [.45, '#d4a456'], [1, '#8a6024']]) gr.addColorStop(t, s); x.fillStyle = gr; x.fillRect(0, 0, w, h);
+  x.globalAlpha = .06; for (let i = 0; i < 900; i++) { x.fillStyle = rnd() < .5 ? '#5a3a10' : '#fff0c0'; x.beginPath(); x.ellipse(rnd() * w, rnd() * h, 3 + rnd() * 4, 2 + rnd() * 3, rnd() * 3, 0, Math.PI * 2); x.fill(); } x.globalAlpha = 1;
+  if (kind === 'construct') { x.strokeStyle = '#5a4018'; x.lineWidth = 3; x.beginPath(); x.moveTo(w / 2, h * .02); x.lineTo(w / 2, h * .98); x.stroke(); x.beginPath(); x.ellipse(w / 2, h / 2, w * .27, h * .47, 0, 0, Math.PI * 2); x.stroke();
+    x.fillStyle = '#e6c77e'; x.lineWidth = 1.5; for (let i = 0; i < 22; i++) { const t = i / 22 * Math.PI * 2; x.beginPath(); x.arc(w / 2 + Math.cos(t) * w * .255, h / 2 + Math.sin(t) * h * .445, 4.5, 0, Math.PI * 2); x.fill(); x.stroke(); }
+    for (let i = 0; i < 8; i++) { x.beginPath(); x.arc(w / 2 + (i % 2 ? 9 : -9), h * (.1 + i * .11), 3.5, 0, Math.PI * 2); x.fill(); x.stroke(); } }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return (PACK[key] = t); }
+function buildFaceMask(P, G, heads, byName, meshes) {
+  const R0 = PACK.rest, D = G.dress, kind = ['gold', 'brass', 'construct'].includes(D.mask) ? D.mask : 'brass', gold = kind === 'gold', K = MASK, head = byName['head'];
+  const hv = PACK.headV || (PACK.headV = [...new Set(PACK.G['body'])].filter(i => R0[i * 3 + 1] > .6)), hp = heads['head'], eyes = [heads['eye.L'], heads['eye.R']];
+  const face = []; for (const i of hv) { const y = P[i * 3 + 1], z = P[i * 3 + 2], x = P[i * 3]; if (y > hp.y - .06 && z > hp.z - .01 && Math.abs(x - hp.x) < .1) face.push(new THREE.Vector3(x, y, z)); }
+  // a veil (on the head bone, in its frame) lies under the gold: its points join the face's
+  const over = []; for (const m of head.children) if (m.name === 'veil') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) over.push(new THREE.Vector3(a[i] + hp.x, a[i + 1] + hp.y, a[i + 2] + hp.z)); }
+  const eyeY = (eyes[0].y + eyes[1].y) / 2, c = new THREE.Vector3(hp.x, eyeY - .01, hp.z - .035);
+  let chin = 9, front = -9; for (const q of face) { if (Math.abs(q.x - c.x) < .02) chin = Math.min(chin, q.y); front = Math.max(front, q.z); }
+  const TOP = eyeY + .045, BOT = gold ? eyeY - .04 : chin - .03, NA = K.na, NB = K.nb, A0 = K.a0, A1 = K.a1;
+  const B0 = Math.atan2(BOT - c.y, front - c.z) - .05, B1 = Math.atan2(TOP - c.y, front - c.z) + .04;
+  const R = Array.from({ length: NB + 1 }, () => new Float32Array(NA + 1)), binOf = q => { const d = q.clone().sub(c); return [Math.round((Math.atan2(d.x, d.z) - A0) / (A1 - A0) * NA), Math.round((Math.atan2(d.y, Math.hypot(d.x, d.z)) - B0) / (B1 - B0) * NB), d.length()]; };
+  for (const q of [...face, ...over]) { const [ia, ib, L] = binOf(q); for (let da = -1; da <= 1; da++) for (let db = -1; db <= 1; db++) { const a = ia + da, b = ib + db; if (a < 0 || a > NA || b < 0 || b > NB) continue; R[b][a] = Math.max(R[b][a], L); } }
+  for (const row of R) { let last = 0; for (let a = 0; a <= NA; a++) if (row[a]) last = row[a]; else row[a] = last; }
+  const pass = (src, f) => src.map((row, b) => Float32Array.from(row, (_, a) => { const v = []; for (let db = -3; db <= 3; db++) for (let da = -3; da <= 3; da++) v.push(src[Math.min(NB, Math.max(0, b + db))][Math.min(NA, Math.max(0, a + da))]); return f(v); }));
+  let S = pass(R, v => Math.max(...v)); for (let k = 0; k < 4; k++) S = pass(S, v => v.reduce((x, y) => x + y) / v.length);
+  // never under a bin's own furthest point: the smoothing would take the nose's tip and the veil's folds inside the sheet
+  S = S.map((row, b) => row.map((v, a) => Math.max(v, R[b][a])));
+  const lift = gold ? .004 : .005, pos = [], uv = [], idx = [], dir = (az, el) => new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+  for (let b = 0; b <= NB; b++) for (let a = 0; a <= NA; a++) { const az = A0 + (A1 - A0) * a / NA, el = B0 + (B1 - B0) * b / NB, q = c.clone().addScaledVector(dir(az, el), S[b][a] + lift); pos.push(q.x, q.y, q.z); uv.push(a / NA, b / NB); }
+  for (let b = 0; b < NB; b++) for (let a = 0; a < NA; a++) { const i = b * (NA + 1) + a; idx.push(i, i + 1, i + NA + 2, i, i + NA + 2, i + NA + 1); }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+  // the outline and the eye-holes, at this face's own eyes
+  const eu = eyes.map(e => { const d = e.clone().sub(c); return [(Math.atan2(d.x, d.z) - A0) / (A1 - A0), (Math.atan2(d.y, Math.hypot(d.x, d.z)) - B0) / (B1 - B0)]; });
+  const ac = document.createElement('canvas'); ac.width = 512; ac.height = 384; { const x = ac.getContext('2d'), w = 512, h = 384; x.fillStyle = '#000'; x.fillRect(0, 0, w, h); x.fillStyle = '#fff'; x.beginPath(); x.ellipse(w / 2, h / 2, w * (gold ? .36 : .3), h * .52, 0, 0, Math.PI * 2); x.fill();
+    if (gold) x.fillRect(w * .14, 0, w * .72, h * .5); x.fillStyle = '#000'; for (const [u, v] of eu) { x.beginPath(); x.ellipse(u * w, (1 - v) * h, w * .034, h * .03, 0, 0, Math.PI * 2); x.fill(); } }
+  const alpha = new THREE.CanvasTexture(ac), grp = new THREE.Group(); grp.name = 'mask';
+  const mat = new THREE.MeshStandardMaterial({ map: maskTex(kind), alphaMap: alpha, alphaTest: .5, color: 0xffffff, metalness: gold ? .5 : .45, roughness: gold ? .3 : .4, emissive: new THREE.Color(gold ? .16 : .1, gold ? .11 : .06, .02), side: THREE.DoubleSide });
+  const sheet = new THREE.Mesh(geo, mat); sheet.name = 'maskSheet'; grp.add(sheet); let glowTris = 0;
+  // the construct's eyes: an amber light 2.6 cm across behind each hole, 2 mm in front of the eye
+  if (kind === 'construct') for (const e of eyes) { const sg = new THREE.SphereGeometry(.013, 12, 8); sg.translate(e.x, e.y, e.z + .002); const gm = new THREE.Mesh(sg, new THREE.MeshStandardMaterial({ color: sRGB(1, .6, .2), emissive: sRGB(1, .55, .15), emissiveIntensity: 3 })); gm.name = 'maskEye'; grp.add(gm); glowTris += sg.index.count / 3; }
+  // its numbers: face points in front of the sheet inside its outline (none should be), the sheet's least gap to the face there
+  const inside = (az, el) => { const u = (az - A0) / (A1 - A0), v = (el - B0) / (B1 - B0); if (u < 0 || u > 1 || v < 0 || v > 1) return false; const ex = (u - .5) / (gold ? .36 : .3), ey = (.5 - v) / .52, inOval = ex * ex + ey * ey < 1 || (gold && u > .14 && u < .86 && v > .5); if (!inOval) return false; return !eu.some(([eU, eV]) => ((u - eU) / .034) ** 2 + ((v - eV) / .03) ** 2 < 1); };
+  let through = 0, tested = 0, gap = 9; for (const q of [...face, ...over]) { const d = q.clone().sub(c), az = Math.atan2(d.x, d.z), el = Math.atan2(d.y, Math.hypot(d.x, d.z)); if (!inside(az, el)) continue;
+    const a = Math.round((az - A0) / (A1 - A0) * NA), b = Math.round((el - B0) / (B1 - B0) * NB); tested++; const g2 = S[b][a] + lift - d.length(); gap = Math.min(gap, g2); if (g2 < .001) through++; }
+  for (const m of grp.children) { m.geometry.translate(-hp.x, -hp.y, -hp.z); m.castShadow = true; } head.add(grp);
+  const tris = geo.index.count / 3 + glowTris;
+  return { mesh: grp, stats: { kind, tris, glowTris, through, tested, gap: +gap.toFixed(4), overVeil: over.length, top: +(TOP - eyeY).toFixed(3), bottom: +(BOT - eyeY).toFixed(3), draws: grp.children.length } };
 }
 
 // ── hoop earrings (Session 995, L1; OG-044 and OG-056: the Aurennais' coin and hoop jewellery) ──
@@ -5606,7 +5669,8 @@ function* makePersonSteps(G, o = {}) {
     yield;
     { const B = buildBrows(P, G, headB); meshes.push(B.mesh); browStats = B.stats; }
     yield;
-    if (G.beard) { const jawB = ix.bones.findIndex(b => b.name === 'jaw');
+    // a mask to the chin (Session 2759: the brass and the construct; the gold stops under the eyes) is worn on a shaven face
+    if (G.beard && !(maskOn(G.dress) && G.dress.mask !== 'gold')) { const jawB = ix.bones.findIndex(b => b.name === 'jaw');
       push('beardBase', PACK.R.beardBase, shellMat(sRGB(...G.hairCol).multiplyScalar(.6), 0, 3, { solid: true }), .0015);
       // under a tunic the throat below its collar (rest y .63) grows no beard: those hairs came out through the cloth (Session 878)
       const beardTris = D0.tunic ? (PACK.R.beardTunic || (PACK.R.beardTunic = (() => { const R = PACK.rest, B = PACK.R.beard, o = []; for (let t = 0; t < B.length; t += 3) if (Math.min(R[B[t] * 3 + 1], R[B[t + 1] * 3 + 1], R[B[t + 2] * 3 + 1]) > .638 || R[B[t] * 3 + 2] + R[B[t + 1] * 3 + 2] + R[B[t + 2] * 3 + 2] > 3 * BEARD_CHIN_Z) o.push(B[t], B[t + 1], B[t + 2]); return o; })())) : PACK.R.beard;
@@ -5655,6 +5719,8 @@ function* makePersonSteps(G, o = {}) {
   let veilStats = null; if (wrapStats && veilOn(D)) { const hp = []; for (const m of meshes) if (m.name === 'hair') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) hp.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); } veilStats = buildVeil(P, G, heads, byName, meshes, hp).stats; }
   // the circlet (Session 1206), over the hair, when nothing else is on the head
   let circletStats = null; if (circletOn(D)) circletStats = buildCirclet(P, G, heads, byName, meshes).stats;
+  // the face mask (Session 2759), over the face and a veil, on the head bone
+  let maskStats = null; if (maskOn(D)) maskStats = buildFaceMask(P, G, heads, byName, meshes).stats;
   yield;
   // pose: arms down from the A-pose, a slight bend at the elbow, weight on one leg, the head turned a little
   const q = (ax, ay, az) => new THREE.Quaternion().setFromEuler(new THREE.Euler(ax, ay, az, 'XYZ'));
@@ -5834,7 +5900,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, hat: hatStats, lenses: lensStats, specs: specStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, reliquary: reliqStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, hat: hatStats, lenses: lensStats, specs: specStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, mask: maskStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, reliquary: reliqStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -5857,7 +5923,7 @@ function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'specs', 'hat', 'hatBand', 'shuttle', 'guildStar', 'reliquary', 'packSkull'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14, cloakBack: false, hatKind: 'straw', helmKind: null };
+const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'specs', 'hat', 'hatBand', 'shuttle', 'guildStar', 'reliquary', 'packSkull'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14, cloakBack: false, hatKind: 'straw', helmKind: null, mask: null };
 function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -6137,7 +6203,20 @@ const CAST = {
   // in gold, gold at the ears, a gold cup in his fist
   Markos: { people: 'aurennais', g: 1, age: .55, muscle: .4, weight: .62, metres: 1.76, hairCol: [.06, .04, .03], hair: { style: 'short', len: .5 }, beard: .9, skin: [.6, .43, .3],
     dress: { tunic: [.82, .77, .64], trousers: [.1, .08, .08], boots: [.12, .08, .06], belt: [.12, .08, .06], coat: [.3, .04, .09], coatLen: .8, coatTrim: [.74, .56, .2], coatOpen: true,
-      tankard: [.74, .56, .2], earrings: [.74, .56, .2] } } };
+      tankard: [.74, .56, .2], earrings: [.74, .56, .2] } },
+  // The strange and the legendary, I (the quest writer's draft of 22 Nov, unapproved; Michael's C on #1911, OG-054 as drawn: the concept
+  // artist's `strange.js` level c, Session 2759). The Veiled Merchant, one of the awake, who sells back what you sold anywhere: tall, his
+  // people never shown (Aurennais in his speech), a cream head-wrap with its veil drawn across the face and a featureless gold mask over it
+  // but for the eyes, a long cream coat trimmed in gold, pale gloves, a gold chain
+  Veiled: { people: 'aurennais', g: 1, age: .5, muscle: .4, weight: .3, metres: 1.9, skin: [.2, .12, .08], hairCol: [.05, .04, .035], hair: { style: 'short', len: .3 }, beard: 0,
+    dress: { coat: [.8, .75, .62], coatLen: 1, coatTrim: [.74, .56, .2], tunic: [.7, .66, .56], trousers: [.62, .58, .5], boots: [.3, .22, .14], belt: [.4, .3, .2],
+      wrap: [.8, .75, .62], veil: [.8, .75, .62], gloves: [.86, .84, .78], glovesKind: 'leather', mask: 'gold', necklace: [.74, .56, .2] }  },
+  // Fiontán, the pilgrim in the brass face (Session 2761): a Gatelander, tall and stooped, a chronicler a day behind you on the road. At c,
+  // OG-054's construct, its corrections kept (a man, not a made thing): the riveted brass face with the eyes lit, the hands in brass, an undyed
+  // robe under a madder sash, the straw hat, the hazel staff and the wicker creel. Owed: the patches, the ledger on the creel, the wheel at the breast
+  Fiontán: { people: 'gatelander', g: 1, age: .62, muscle: .45, weight: .3, metres: 1.86, hairCol: [.32, .3, .28], hair: { style: 'short', len: .4 }, beard: 0, pose: { stoop: .16 },
+    dress: { robe: [.6, .56, .46], cord: [.4, .32, .22], sash: [.5, .14, .08], sashPrint: false, boots: [.22, .15, .1], hat: [.8, .7, .45], hatKind: 'straw', staff: [.4, .3, .2], staffMake: 'hazel',
+      backpack: [.5, .4, .26], backpackKind: 'creel', mask: 'construct', gloves: [.62, .46, .2], glovesKind: 'sheet' } } };
 // a cast member's genome: their name's roll, then the sheet. `o.people` keeps a people the caller already knows (Corwin's), unless the
 // sheet's is `fixed` (Aldwyn's Old Blood, which the game's Gatelander driver does not know; Session 2103); `o.outfit` dresses them in one of
 // their sheet's other outfits in place of the first (Aldwyn's `travel`, Session 2113; `study`, Session 2135), the same face and body
