@@ -6210,7 +6210,13 @@ const CAST = {
   // but for the eyes, a long cream coat trimmed in gold, pale gloves, a gold chain
   Veiled: { people: 'aurennais', g: 1, age: .5, muscle: .4, weight: .3, metres: 1.9, skin: [.2, .12, .08], hairCol: [.05, .04, .035], hair: { style: 'short', len: .3 }, beard: 0,
     dress: { coat: [.8, .75, .62], coatLen: 1, coatTrim: [.74, .56, .2], tunic: [.7, .66, .56], trousers: [.62, .58, .5], boots: [.3, .22, .14], belt: [.4, .3, .2],
-      wrap: [.8, .75, .62], veil: [.8, .75, .62], gloves: [.86, .84, .78], glovesKind: 'leather', mask: 'gold', necklace: [.74, .56, .2] } } };
+      wrap: [.8, .75, .62], veil: [.8, .75, .62], gloves: [.86, .84, .78], glovesKind: 'leather', mask: 'gold', necklace: [.74, .56, .2] }  },
+  // Fiontán, the pilgrim in the brass face (Session 2761): a Gatelander, tall and stooped, a chronicler a day behind you on the road. At c,
+  // OG-054's construct, its corrections kept (a man, not a made thing): the riveted brass face with the eyes lit, the hands in brass, an undyed
+  // robe under a madder sash, the straw hat, the hazel staff and the wicker creel. Owed: the patches, the ledger on the creel, the wheel at the breast
+  Fiontán: { people: 'gatelander', g: 1, age: .62, muscle: .45, weight: .3, metres: 1.86, hairCol: [.32, .3, .28], hair: { style: 'short', len: .4 }, beard: 0, pose: { stoop: .16 },
+    dress: { robe: [.6, .56, .46], cord: [.4, .32, .22], sash: [.5, .14, .08], sashPrint: false, boots: [.22, .15, .1], hat: [.8, .7, .45], hatKind: 'straw', staff: [.4, .3, .2], staffMake: 'hazel',
+      backpack: [.5, .4, .26], backpackKind: 'creel', mask: 'construct', gloves: [.62, .46, .2], glovesKind: 'sheet' } } };
 // a cast member's genome: their name's roll, then the sheet. `o.people` keeps a people the caller already knows (Corwin's), unless the
 // sheet's is `fixed` (Aldwyn's Old Blood, which the game's Gatelander driver does not know; Session 2103); `o.outfit` dresses them in one of
 // their sheet's other outfits in place of the first (Aldwyn's `travel`, Session 2113; `study`, Session 2135), the same face and body

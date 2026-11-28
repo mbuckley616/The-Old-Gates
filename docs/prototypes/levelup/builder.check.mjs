@@ -1152,6 +1152,8 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
         for (const i of used) { body.getVertexPosition(i, V); V.applyMatrix4(body.matrixWorld); if (V.y < vb.min.y + .004 || V.y > vb.max.y - .004 || Math.abs(V.x - ax.x) > .05 || V.z < ax.z) continue;
           const o = new T.Vector3(ax.x, V.y, ax.z), d = V.clone().sub(o); d.y = 0; const L = d.length(); if (L < .02) continue; rc.set(o, d.normalize()); rc.far = 1; const h = rc.intersectObject(veil, true); if (!h.length) continue; n++; mg = Math.min(mg, h[0].distance - L); }
         out.veiled.posed = { gap: +mg.toFixed(4), tested: n }; } }
+    { const G = K.castGenome('Fiontán'), p = K.makePerson(G), s1 = JSON.stringify(K.toSaved(G)); let beard = false, gl = null; p.root.traverse(o => { if (o.name === 'beard') beard = true; if (o.name === 'gloves') gl = o.material.metalness; });
+      out.fiontan = { off: +Math.abs(K.statureOf(G) - 1.86).toFixed(4), saved: s1 === JSON.stringify(K.toSaved(K.fromSaved(JSON.parse(s1)))), mask: p.mask, on: onBone(p, /^maskSheet$/), beard, gloveMetal: gl, hat: !!p.hat, pack: p.backpack?.kind || null, staff: !!p.staff }; }
     for (const kind of ['brass', 'construct']) { const G0 = K.rollGenome('mask:' + kind, { people: 'gatelander', g: 1 }), G = { ...G0, beard: .8, dress: { ...G0.dress, mask: kind, hood: null, helm: null } }, p = K.makePerson(G);
       let beard = false; p.root.traverse(o => { if (o.name === 'beard') beard = true; }); out[kind] = { mask: p.mask, beard }; }
     { const G0 = K.rollGenome('mask:hood', { people: 'gatelander', g: 1 }), p = K.makePerson({ ...G0, dress: { ...G0.dress, cloak: [.3, .3, .3], hood: 'up', mask: 'brass' } }); out.hood = p.mask; }
@@ -1161,6 +1163,8 @@ if (!process.argv.includes('--shots-only')) { const page = await browser.newPage
   { const q = r.veiled.posed || {}; check(`the Merchant's veil clear of his face as posed, the jaw turned (Session 2760): ${q.gap} m at the least over ${q.tested} points of the face's front (it was -0.0003, the chin through)`, q.tested > 200 && q.gap >= .003, q); }
   { const B = r.brass.mask || {}, C = r.construct.mask || {}; check(`the brass and the construct to the chin (${B.bottom}, ${C.bottom} m under the eyes), nothing in front (${B.through}, ${C.through}), no beard under them (${r.brass.beard}, ${r.construct.beard}), the construct's eyes lit (${C.glowTris} triangles); none under a raised hood (${r.hood})`,
     B.kind === 'brass' && C.kind === 'construct' && B.bottom < -.08 && C.bottom < -.08 && B.through === 0 && C.through === 0 && !r.brass.beard && !r.construct.beard && C.glowTris > 0 && C.draws === 3 && r.hood === null, r); }
+  { const f = r.fiontan, M = f.mask || {}; check(`Fiontán from CAST (Session 2761): ${f.off} m off his 1.86, saved and loaded back the same; the construct on ${f.on} under his straw hat (${f.hat}), nothing in front of it (${M.through} of ${M.tested}), no beard; brass hands (metalness ${f.gloveMetal}), the ${f.pack} and the staff`,
+    f.off < .01 && f.saved && f.on === 'head' && M.kind === 'construct' && M.through === 0 && M.tested > 500 && !f.beard && f.gloveMetal > .5 && f.hat && f.pack === 'creel' && f.staff, f); }
   check('the strange and the legendary, I: no page errors', errs.length === 0, errs.slice(0, 3)); await page.close(); }
 const shotArg = process.argv.find(a => a.startsWith('--shots') && a !== '--shots-only');
 if (shotArg) { const only = shotArg.split('=')[1];
