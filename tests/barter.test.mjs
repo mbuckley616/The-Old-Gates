@@ -60,5 +60,24 @@ const rt = await page.evaluate(() => {
 check('no Dunmore counter pays as much as it asks, at full barter on a market day', rt.n > 100 && rt.over.length === 0, { n: rt.n, over: rt.over.slice(0, 6) });
 check('a sale at the full barter is a coin under the price, through the row, a gold-find buff and a stack', rt.one === rt.ask - 1 && rt.buff === rt.ask - 1 && rt.stackEach === rt.ask - 1, rt);
 check('with no barter the sale is unchanged: half the potion’s price', !!rt.low && rt.low.s === Math.max(1, Math.round(rt.low.raw * rt.low.home)) && rt.low.s < rt.low.c, rt.low);
+// S2762 — a trade undone teaches no Speech: selling a piece and buying it back moved no gold and taught two uses, one a second,
+// for as long as you clicked. Through buyItem and sellItem at two Dunmore counters, the second's limit cleared before each trade.
+const sp = await page.evaluate(() => {
+  const S = WORLD.settle.get('dunmore'); const shops = S.houses.filter(x => x.keeper && SHOP_STOCK[x.type]); const keep = currentHouse;
+  const A = shops[0], B = shops.find(h => h.id !== A.id); gold = 99999; SKILLS.speech = { lv: 20, p: 0 };
+  const use = f => { SKILL_LAST.clear(); const p0 = SKILLS.speech.p, l0 = SKILLS.speech.lv; f(); return SKILLS.speech.lv > l0 ? 'up' : +(SKILLS.speech.p - p0).toFixed(3); };
+  const stock = h => (SHOP_STOCK[h.type] || []).filter(i => i.buyPrice > 0 && !isStackable(i));
+  const sellLast = () => { const it = BAG[BAG.length - 1]; sellItem(BAG.length - 1, counterSellPrice(it)); };
+  const backOf = name => (merchantStock[_merchantKey()] || []).find(x => x._boughtBack && x.name === name);
+  currentHouse = A; const it = stock(A)[0], other = stock(A).find(i => i.name !== it.name) || it;
+  const r = {};
+  r.buy = use(() => buyItem(it)); r.sellSame = use(sellLast); r.buyBack = use(() => buyItem(backOf(it.name))); r.sellAgain = use(sellLast);
+  r.buyOther = use(() => buyItem(other)); r.buyOther2 = use(() => buyItem(other));
+  const loot = { ...stock(B)[0], qty: 1 }; currentHouse = B; BAG.push(loot); r.sellLoot = use(sellLast);
+  currentHouse = A; const found = { ...it, qty: 1 }; currentHouse = B; BAG.push(found); r.sellElsewhere = use(sellLast);
+  worldState.gameTimeAbsMinutes = (worldState.gameTimeAbsMinutes || 0) + 1440; r.nextDay = use(() => buyItem(backOf(found.name)));
+  currentHouse = keep; return { A: A.type, B: B.type, it: it.name, other: other.name, ...r };
+});
+check('a sale and its buy-back at one counter teach no Speech; other trade teaches 1 a time', sp.buy === 1 && sp.sellSame === 0 && sp.buyBack === 0 && sp.sellAgain === 0 && sp.buyOther === 1 && sp.buyOther2 === 1 && sp.sellLoot === 1 && sp.sellElsewhere === 1 && sp.nextDay === 1, sp);
 check('no page errors', g.errs.length === 0, g.errs);
 await g.close();
