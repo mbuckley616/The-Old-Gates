@@ -2042,3 +2042,21 @@ at every level (one in Land, one in Other: 364 / 557 / 603 → 366 / 560 / 606),
 | Dunmore street, midnight | Low | 593 | 1.12 M | 0 | 0 | 41 (0 full) | 216 | 250 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 552, 1.03 M |
 | Dunmore street, midnight | Middle | 715 | 1.81 M | 104 | 6 | 41 (1 full) | 217 | 261 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 672, 1.71 M |
 | Dunmore street, midnight | High | 777 | 2.31 M | 148 | 6 | 41 (1 full) | 217 | 279 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 734, 2.22 M |
+
+### s2066 — 2026-11-28 01:14 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| The Bramble Hearth (Dunmore's inn), the hall from the door, 20h | Middle (indoors) | 33 | 21k | 0 | 0 | 0 (0 full) | 0 | 0 | 33 |  | 33, 21k |
+| a medium gate (ruins, seed 11), from its entrance | Middle (indoors) | 105 | 396k | 0 | 0 | 33 (0 full) | 0 | 0 | 71 |  | 71, 351k |
+
+### s2066 — 2026-11-28 01:19 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| the field west of Dunmore, noon | Low | 443 | 612k | 0 | 0 | 26 (0 full) | 142 | 232 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 417, 552k |
+| the field west of Dunmore, noon | Middle | 547 | 1.07 M | 80 | 6 | 26 (0 full) | 142 | 250 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 520, 1.00 M |
+| the field west of Dunmore, noon | High | 596 | 1.56 M | 119 | 6 | 26 (0 full) | 143 | 259 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 569, 1.50 M |
+| the field west of Dunmore, dawn | Low | 516 | 599k | 0 | 0 | 20 (0 full) | 221 | 232 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 496, 553k |
+| the field west of Dunmore, dawn | Middle | 681 | 1.13 M | 141 | 6 | 20 (0 full) | 221 | 250 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 655, 1.06 M |
+| the field west of Dunmore, dawn | High | 733 | 1.66 M | 180 | 6 | 23 (0 full) | 222 | 259 | 43 | Mesh 28, lighthouse 6, cave mouth 4, quaywall 2, Group 2 | 701, 1.59 M |
