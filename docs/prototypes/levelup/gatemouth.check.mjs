@@ -22,5 +22,19 @@ for (const r of rows) { const tag = `${r.size}/${r.cond}`;
   if (r.cond === 'failing') ok(r.lost > 3 && r.hung === 0 && r.counts.slipped === 3 && r.counts.dead > 0 && r.counts.dim > 0 && r.counts.lit === 0, `${tag}: failing drops an arc and dims the script: lost ${r.lost}, slipped ${r.counts.slipped}`);
   if (r.cond === 'catastrophic') ok(r.hung > 8 && r.lost === 0 && r.counts.dead === r.counts.stones, `${tag}: catastrophic hangs its lost stones and the script is dead: hung ${r.hung}`); }
 console.log(rows.map(r => `${r.size}/${r.cond} ${r.tris} tris ${r.draws} draws, door ${r.door.w}x${r.door.h} under ${r.innerTop}, hill ${r.hillAtFace} over ${r.ringTop}, lost ${r.lost} hung ${r.hung}`).join('\n'));
+// Session 2751: gatewards.js, the gate's surroundings, at the medium gate in every condition
+const wards = await page.evaluate(async () => { const { gateMouth } = await import('./gatemouth.js'), { gateWards } = await import('./gatewards.js'), out = [];
+  for (const kind of ['weave', 'watch']) for (const cond of ['steady', 'failing', 'catastrophic']) { const A = gateMouth({ size: 'm', cond }), W = gateWards(A, { kind }); let nan = 0;
+    W.group.traverse(o => { if (o.isMesh) { const p = o.geometry.attributes.position.array; for (let i = 0; i < p.length; i++) if (!isFinite(p[i])) { nan++; break; } } });
+    out.push({ kind, cond, tris: W.tris, draws: W.draws, nan, parts: W.parts, hillTop: A.hill.h, ringTop: A.CY + A.R0, halfCourt: A.R0 * .95 }); }
+  return out; });
+for (const w of wards) { const tag = `wards ${w.kind}/${w.cond}`;
+  ok(w.nan === 0 && w.tris > 0 && w.tris < 3000 && w.draws <= 6, `${tag}: under 3,000 triangles in 6 draws, no NaN: ${w.tris}, ${w.draws}`);
+  if (w.kind === 'weave') { const P = w.parts.pylons, S = w.parts.stelae;
+    ok(P.length === 2 && P.every(q => q.broke || q.top > w.ringTop + 5) && P.every(q => Math.abs(q.x) > w.halfCourt + 4), `${tag}: two pylons off the court, a whole one over the rings: ${P.map(q => q.top).join(', ')}`);
+    ok(S.length === 6 && S.every(q => Math.abs(q.x) > 3), `${tag}: six stelae clear of the way in`);
+    ok(w.cond === 'steady' ? P.every(q => !q.broke) && S.every(q => q.fate === 'stand') : P.filter(q => q.broke).length === 1 && S.filter(q => q.fate !== 'stand').length === 2, `${tag}: the condition breaks one pylon and two stelae: ${S.map(q => q.fate).join(',')}`); }
+  else { ok(w.parts.towers.length === 3 && w.parts.walls.every(q => q.made > 5), `${tag}: three towers and three runs of curtain`); } }
+console.log(wards.map(w => `wards ${w.kind}/${w.cond} ${w.tris} tris ${w.draws} draws`).join('\n'));
 ok(errs.length === 0, 'no page errors: ' + errs.slice(0, 3).join(' | '));
 console.log(`gatemouth.check: ${pass} of ${pass + fail} passed`); await browser.close(); srv.close(); process.exit(fail ? 1 : 0);
