@@ -6,8 +6,8 @@ frame by `REN.info`, the sun's shadow pass and the bloom's passes included:
 
 | Level | Draw calls | Triangles |
 |---|---|---|
-| Low | 700 | 1.2 M |
-| Middle | 1,000 | 2.0 M |
+| Low | 700 | 1.5 M (1.2 M until S2749; Michael's C on #2125) |
+| Middle | 1,000 | 2.4 M (2.0 M until S2749) |
 | High | 1,300 | 4.0 M |
 
 The five views are the build sheet's: Dunmore's street (from the site's centre, 4 m south, looking north) and the field 160 m west of it

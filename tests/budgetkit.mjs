@@ -4,7 +4,7 @@
 // docs/qa/budget.md with the build tag.
 import { check, ROOT } from './lib/game.mjs';
 import fs from 'fs'; import path from 'path';
-export const CEIL = { Low: { calls: 700, tris: 1.2e6 }, Middle: { calls: 1000, tris: 2.0e6 }, High: { calls: 1300, tris: 4.0e6 } };
+export const CEIL = { Low: { calls: 700, tris: 1.5e6 }, Middle: { calls: 1000, tris: 2.4e6 }, High: { calls: 1300, tris: 4.0e6 } };
 export const LEVELS = [['Low', 0], ['Middle', 1], ['High', 2]];
 export function budgetKit(g) {
 const T0 = Date.now(), el = () => Math.round((Date.now() - T0) / 1000);

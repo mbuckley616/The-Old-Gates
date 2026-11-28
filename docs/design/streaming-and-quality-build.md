@@ -46,8 +46,8 @@ Counted by `REN.info` on the world's frame (the bloom's passes included) in five
 
 | Level | Draw calls | Triangles | Frame rate (measured by hand) |
 |---|---|---|---|
-| Low | 700 | 1.2 M | 30 fps on a five-year-old integrated laptop GPU |
-| Middle | 1,000 | 2.0 M | 45 fps on Michael's laptop, Portclare at noon (§5) |
+| Low | 700 | 1.5 M (1.2 M until S2749; Michael's C on #2125) | 30 fps on a five-year-old integrated laptop GPU |
+| Middle | 1,000 | 2.4 M (2.0 M until S2749) | 45 fps on Michael's laptop, Portclare at noon (§5) |
 | High | 1,300 | 4.0 M | 60 fps on a discrete GPU |
 
 Calls and triangles are counts, so a headless run measures them exactly. Frame rates are not, and no suite claims them: the 45 at Middle is Michael's one reading once the table is in.

@@ -1,6 +1,6 @@
 // The budgets (Session 1297, QA; v2-scope.md §5 and docs/design/streaming-and-quality-build.md, "The ceilings"): draw calls and
 // triangles counted by REN.info on the frame the game draws (REN.render(scene, CAM): the sun's shadow pass and the bloom's passes
-// included), at each quality level, against that level's ceilings (Low 700 calls and 1.2 M triangles, Middle 1,000 and 2.0 M, High
+// included), at each quality level, against that level's ceilings (Low 700 calls and 1.5 M triangles, Middle 1,000 and 2.4 M since S2749 by #2125 C, High
 // 1,300 and 4.0 M). This suite holds two of the build sheet's five views: Dunmore's street at noon and at midnight; `budgetfield`
 // holds the field 160 m west of it at noon and at dawn, and `budgetport` the fifth, Portclare's square at noon, and the ledger's indoor
 // spots. S2360: the field went to its own file (backlog K's rule) when the four views together ran into run.mjs's 900 s cap alone.
