@@ -3347,7 +3347,7 @@ function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map
     base+=pa.count;}
   const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.BufferAttribute(pos,3));G.setAttribute('normal',new THREE.BufferAttribute(nor,3));
   G.setAttribute('color',new THREE.BufferAttribute(col,3));G.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));G.userData.hair=hair;
-  const face=new Uint8Array(bones.length),fine=new Uint8Array(NV);P.byName.head.traverse(b=>{if(b.isBone&&b!==P.byName.head&&bi.has(b))face[bi.get(b)]=1;});
+  const face=new Uint8Array(bones.length),fine=new Uint8Array(NV),hd=P.byName&&P.byName.head;if(hd)hd.traverse(b=>{if(b.isBone&&b!==hd&&bi.has(b))face[bi.get(b)]=1;}); /* a creature's bake has no such head: nothing is fine */
   for(let i=0;i<NV;i++){const k4=i*4;let m=0;for(let j=1;j<4;j++)if(sw[k4+j]>sw[k4+m])m=j;fine[i]=face[si[k4+m]];}
   const ix0=idx.subarray(0,ni),thin=HB_MID_CELL>0?hbThin(pos,ix0,src,HB_MID_CELL,nor,fine):ix0;if(thin!==ix0)G.userData.ix0=NV>65536?ix0.slice():Uint16Array.from(ix0);
   G.setIndex(new THREE.BufferAttribute(NV>65536?(thin===ix0?ix0.slice():thin):Uint16Array.from(thin),1));
