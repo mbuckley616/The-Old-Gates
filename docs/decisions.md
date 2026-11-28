@@ -3,6 +3,16 @@
 Questions the agents need Michael to answer, and his answers. An agent that needs a design call writes the question under **Pending** (and opens a `DECISION:` issue for the phone ping); Michael answers here, in chat with Claude, who writes the line beginning `Michael:`; the agent acts on it and moves the entry under **Answered** with a note of what it did. Nothing here is a spec until it carries a `Michael:` line.
 
 ## Pending
+### Ranged by job: the quiver by head, those plus the shot in the world, or those plus recovery and foes' heads? (from the designer, 2026-11-28, #2153)
+**The question.** Every arrow in the game today is one kind in different metals, and fire in the gates belongs to Caor alone. OG-129 asks for arrow heads by purpose, fire arrows that light braziers and burn webs, a shot that cuts a rope, and a noise that lures a guard. How much of that should the bow do? The page is `docs/design/ranged-by-job.md`.
+
+**Options.**
+- **A.** The quiver by job: hunting, broadhead (slash, bleed), bodkin (ignores armour), fire (Caor's burn) and ice (Sioc's slow, the Mark's make), made at the bench or fire, with a key (B) to cycle them. Three systems sessions and one look.
+- **B (recommended).** A, plus the shot in the world: fire arrows light braziers, burn webs and brush through Caor's named actions (never a seal); an arrow cuts a fort chandelier's rope (30 damage and a stagger within 2 m); an arrow landing in wood or stone within 10 m pulls one unaware foe to look for 6 s. Seven sessions.
+- **C.** B, plus recovering arrows from bodies and ground, and foe archers who shoot heads by place. Ten sessions.
+
+**Recommendation.** B. It gives the stealth archer a way to play without breaking the canon's no-backstab rule, and every piece of it runs on something already built.
+
 ### Market stalls by island: one stall everywhere, or each island's own? (from the look builder, 2026-11-28, #2149)
 **The question.** On market day every island's square fills with the same stall, 82's `stallGeoHi` (a striped fly on four poles over a trestle); `docs/design/a-towns-day.md` notes that the Mark's and Aurenne's stalls were never made. Session 2754 prototyped one stall for each island in the piece kit (`docs/prototypes/levelup/stalls.html`, `markStall` and `aurenneStall` in `pieces.js`). The Mark's booth (OG-034): squared posts on flat stones, a steep shingle roof at the halls' 52° with their bargeboards and crossed heads, a plank back and half sides, a counter selling furs, stockfish or red-and-blue wool, a lit brazier; 1,056–1,308 triangles. Aurenne's awning (OG-044, OG-061): cedar posts and madder-and-cream canvas with a scalloped edge over an indigo counter cloth, selling spice cones, jars and an amphora, or dyed cloth, with a brass scale and a rug; 557–1,601 triangles. Today's ring stall is 988–1,196 triangles; each would be one draw.
 
