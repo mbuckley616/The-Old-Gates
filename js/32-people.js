@@ -3306,10 +3306,15 @@ function hbHairLow(o){const g=o.geometry,K=o.name==='hair'?HB_MID_HAIR.hair:HB_M
 // index as baked) are as they were. The hair's ribbons are never gathered (a card is thinner than a cell). One mesh to another is never
 // joined, so a garment does not close onto the skin under it.
 const HB_MID_CELL=.018;
-function hbThin(pos,ix,src,h,nor){const rep=new Int32Array(src.length).fill(-1),cell=new Map(),q=1/h;
+// S2757 — the face in the middle level (S2739's and S2749's note: since #2125 A it is drawn at Low from 6 m, and at 1.8 cm cells the eyes
+// and mouth went mottled). A vertex led by one of the face's own bones (every bone under the head but the head: the eyes, lids, brows'
+// muscles, the mouth and jaw) is gathered in cells HB_MID_FACE of the size, so the eyes (two 1,472-triangle balls 2.4 cm across) and
+// the lips keep their shape; the scalp, the ears' backs and the hood ride the head and are thinned as before.
+const HB_MID_FACE=1/3;
+function hbThin(pos,ix,src,h,nor,fine){const rep=new Int32Array(src.length).fill(-1),cell=new Map(),q=1/h,qf=q/HB_MID_FACE;
   /* the normal's side too (its largest axis and sign, 6 bins): a sheet's two faces, or a fold, within one cell stay apart */
   const side=i=>{const x=nor[i*3],y=nor[i*3+1],z=nor[i*3+2],ax=Math.abs(x),ay=Math.abs(y),az=Math.abs(z);return ax>=ay&&ax>=az?(x<0?1:0):ay>=az?(y<0?3:2):(z<0?5:4);};
-  for(let i=0;i<src.length;i++){if(!src[i]){rep[i]=i;continue;}const k=(((src[i]*6+side(i))*2048+Math.floor(pos[i*3]*q)+1024)*2048+Math.floor(pos[i*3+1]*q)+1024)*2048+Math.floor(pos[i*3+2]*q)+1024;
+  for(let i=0;i<src.length;i++){if(!src[i]){rep[i]=i;continue;}const f=fine&&fine[i]?1:0,Q=f?qf:q,k=((((src[i]*6+side(i))*2+f)*4096+Math.floor(pos[i*3]*Q)+2048)*4096+Math.floor(pos[i*3+1]*Q)+2048)*4096+Math.floor(pos[i*3+2]*Q)+2048;
     const r=cell.get(k);if(r===undefined){cell.set(k,i);rep[i]=i;}else rep[i]=r;}
   const out=[],seen=new Set(),dot=(a,b)=>nor[a*3]*nor[b*3]+nor[a*3+1]*nor[b*3+1]+nor[a*3+2]*nor[b*3+2];
   for(let i=0;i<ix.length;i+=3){const a=rep[ix[i]],b=rep[ix[i+1]],c=rep[ix[i+2]];if(a===b||b===c||a===c)continue;
@@ -3342,7 +3347,9 @@ function hbMerge(P,skip){const sk=P.skeleton,bones=sk.bones,bi=new Map(bones.map
     base+=pa.count;}
   const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.BufferAttribute(pos,3));G.setAttribute('normal',new THREE.BufferAttribute(nor,3));
   G.setAttribute('color',new THREE.BufferAttribute(col,3));G.setAttribute('skinIndex',new THREE.BufferAttribute(si,4));G.setAttribute('skinWeight',new THREE.BufferAttribute(sw,4));G.userData.hair=hair;
-  const ix0=idx.subarray(0,ni),thin=HB_MID_CELL>0?hbThin(pos,ix0,src,HB_MID_CELL,nor):ix0;if(thin!==ix0)G.userData.ix0=NV>65536?ix0.slice():Uint16Array.from(ix0);
+  const face=new Uint8Array(bones.length),fine=new Uint8Array(NV),hd=P.byName&&P.byName.head;if(hd)hd.traverse(b=>{if(b.isBone&&b!==hd&&bi.has(b))face[bi.get(b)]=1;}); /* a creature's bake has no such head: nothing is fine */
+  for(let i=0;i<NV;i++){const k4=i*4;let m=0;for(let j=1;j<4;j++)if(sw[k4+j]>sw[k4+m])m=j;fine[i]=face[si[k4+m]];}
+  const ix0=idx.subarray(0,ni),thin=HB_MID_CELL>0?hbThin(pos,ix0,src,HB_MID_CELL,nor,fine):ix0;if(thin!==ix0)G.userData.ix0=NV>65536?ix0.slice():Uint16Array.from(ix0);
   G.setIndex(new THREE.BufferAttribute(NV>65536?(thin===ix0?ix0.slice():thin):Uint16Array.from(thin),1));
   const mesh=new THREE.SkinnedMesh(G,HB_MID_MAT);mesh.name='mid';mesh.bind(sk,new THREE.Matrix4());mesh.bindMode='detached';mesh.bindMatrixInverse.identity();
   mesh.castShadow=false;mesh.receiveShadow=true;mesh.visible=false;return mesh;}

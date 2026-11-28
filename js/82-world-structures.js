@@ -3694,7 +3694,7 @@
   for(const nm of ['shed','tree','rick','logs']){const f=TDR_PIECE[nm];TDR_PIECE[nm]=function(D){const ns=D.ns;D.ns=false;try{return f.apply(null,arguments);}finally{D.ns=ns;}};} /* these cast shadows; the rest do not */
   /* a boundary from (x0,z0) to (x1,z1), of a kind and height, piece by piece; a piece whose place is not clear (ok) is left out, so the run
      breaks round what stands there. -> the runs laid, as rotated rects for the town's solids */
-  /* S2757 — a Gatelands dry-stone wall, laid (the street's and the night's nearest thing, the views' foreground): a step of the run (st, about
+  /* S2758 — a Gatelands dry-stone wall, laid (the street's and the night's nearest thing, the views' foreground): a step of the run (st, about
      0.6 m) was two slabs and a cap, three boxes that read as flat dark cubes 6 m from the camera. Now: two foot stones with a joint between
      them, a narrower stone over the joint (the batter), and a coping of two stones set on edge, leaning a little along the wall (cock and hen);
      a stone in five takes lichen, a foot stone moss. 5 boxes a step, 60 triangles (was 36), all in the dressing's one merged mesh, no draw added.

@@ -20,7 +20,11 @@ const forts = await page.evaluate(() => { const out = [];
   return out; });
 console.log('fort doors in the world:', forts.length);
 // the six nearest home (every fort is the same compound, and a far cell takes a minute to build on software GL)
-const walkList = forts.map(f => ({ ...f, d: Math.hypot(f.x - 13100, f.z - 25450) })).sort((a, b) => a.d - b.d).slice(0, 6);
+/* S2756 — split for CI's 900 s cap: towns dressed (#2058) took the six forts to 1,287 s beside one other boot here, and both CI tries of the
+   card's full check (45916097237) were cut in the fifth fort (2–4.5 min a fort there, 2.7 min to boot). This suite walks the nearest two; fortwalk2 and fortwalk3
+   set FORTWALK_PART to walk the third and fourth, and the fifth and sixth, through this same body. The checks are unchanged. */
+const [p0, p1] = globalThis.FORTWALK_PART || [0, 2];
+const walkList = forts.map(f => ({ ...f, d: Math.hypot(f.x - 13100, f.z - 25450) })).sort((a, b) => a.d - b.d).slice(p0, p1);
 
 const rows = [];
 for (const f of walkList) {
