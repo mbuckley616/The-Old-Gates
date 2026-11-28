@@ -1140,7 +1140,7 @@ const CLOAK_ARM_ROOM = .03;
 // elbows than at the shoulders). Its sides hang plumb from the shoulder line, which stood the tunic's 4 cm room off the deltoid, and each
 // column's drape set out half as far outward as down. Session 2734: over the sides (CLOAK_BACK_SIDE rad from the back's middle and
 // on round to the opening) the room is less by CLOAK_BACK_CLEAR and the drape sets out at CLOAK_BACK_LEAN of the closed cloak's lean
-export const CLOAK_BACK_CLEAR = .02, CLOAK_BACK_SIDE = [1.0, 1.65], CLOAK_BACK_LEAN = .4;
+export const CLOAK_BACK_CLEAR = .02, CLOAK_BACK_SIDE = [1.35, 1.65], CLOAK_BACK_LEAN = .5;
 // what a shoulder cape's front is not laid over (Session 2404): the hair and beard (loose hair has its own lift), and what is below the cape
 const CAPE_NOT_WORN = /^(scalp|hair|brows|beardBase|beard|moust|bun|tie|braid\d|brush|tail|lashes|eyes?|teeth|boots|trousers|legWraps|skirt|sandals)$/;
 // per vertex of the pack: m where the vertex's heaviest bone is the lower forearm, the wrist, a metacarpal or a finger, else 0
