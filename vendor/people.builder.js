@@ -2391,6 +2391,11 @@ function buildVeil(P, G, heads, byName, meshes, hairPts = []) {
   const put = (x, y, z) => { const b = Math.round((y - y0) / DY); if (b < 0 || b >= NB) return; const a = ((Math.round(Math.atan2(x - c.x, z - c.z) / TAU * NT) % NT) + NT) % NT; M[b * NT + a] = Math.max(M[b * NT + a], Math.hypot(x - c.x, z - c.z)); };
   const pts = []; for (const i of bodyV()) if (R0[i * 3 + 1] > .58 || R0[i * 3 + 1] > .5 && Math.abs(R0[i * 3]) < .08 && R0[i * 3 + 2] > 0) pts.push(V(i)); for (const q of hairPts) pts.push(q);
   for (const m of meshes) if (m.name === 'beard' || m.name === 'moust') { const a = m.geometry.attributes.position.array; for (let i = 0; i < a.length; i += 3) if (a[i + 1] > yLow - .005) pts.push(new THREE.Vector3(a[i], a[i + 1], a[i + 2])); }
+  // S2760 — the pose turns the jaw (pose.jaw, -0.12 rad unless given) after this fit, which brings the chin up to 6 mm forward; the lower face
+  // (under the lips, within the jaw's width) is laid a second time as the jaw will hold it, so the cloth clears both (it put a speck of the
+  // Veiled Merchant's chin through at 0 mm)
+  if (heads['jaw']) { const ja = G.pose?.jaw ?? -.12, J = heads['jaw'], rq = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), ja);
+    for (const i of bodyV()) if (R0[i * 3 + 1] < .65 && R0[i * 3 + 1] > .55 && R0[i * 3 + 2] > .03 && Math.abs(R0[i * 3]) < .08) pts.push(V(i).sub(J).applyQuaternion(rq).add(J)); }
   for (const q of pts) put(q.x, q.y, q.z);
   // spread each bin over its neighbours, then let the cloth span: never in faster than it falls or goes round
   let S = new Float32Array(M.length); for (let b = 0; b < NB; b++) for (let a = 0; a < NT; a++) { let m = 0; for (let da = -1; da <= 1; da++) for (let db = -1; db <= 1; db++) { const bb2 = b + db; if (bb2 >= 0 && bb2 < NB) m = Math.max(m, M[bb2 * NT + (a + da + NT) % NT]); } S[b * NT + a] = m; }
