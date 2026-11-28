@@ -3719,6 +3719,20 @@ function backpackParts(D, P, kind) {
       add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 60, r, 6, true), new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(.85), map: tex, roughness: .85 }), 'packRim'); }
     // the linen bundle standing in its mouth
     const b = new THREE.SphereGeometry(.1, 14, 10); b.scale(P.W * .42 / .1 * .9, .7, P.T * .42 / .1 * .85); b.translate(0, .005, P.T * .45); add(withBase(b), clothMat(sRGB(.78, .74, .64), 'linen'), 'packLinen');
+    // a ledger strapped to its right side (Session 2764; Fiontán's, OG-054 at b and c): 24 cm tall, 17 deep and 5 thick, two boards and a
+    // spine of the leather (`packLedger`) round the paper's three cut edges, held by two straps of the belt's leather round it and the creel.
+    // It stands 4 mm off the creel's widest point over its height (the rim's rod counted), its spine toward the back, upright
+    if (D.packLedger) { const LH = .24, LD = .17, LT = .05, yc = -P.H / 2 - .04, f = (yc + LH / 2 + P.H) / P.H, hw = Math.max((P.Wb + (P.W - P.Wb) * f) / 2, (P.Wb + (P.W - P.Wb) * .36) / 2 + .007), x0 = hw + .004, xc = x0 + LT / 2, zc = .006 + LD / 2;
+      const box = (w, h, d, x, y, z) => new THREE.BoxGeometry(w, h, d).translate(x, y, z), bd = .004, lea = [], pg = [], st = [];
+      for (const sx of [-1, 1]) lea.push(box(bd, LH, LD, xc + sx * (LT / 2 - bd / 2), yc, zc));
+      lea.push(box(LT, LH, bd, xc, yc, zc - LD / 2 + bd / 2));
+      pg.push(box(LT - 2 * bd, LH - .008, LD - bd - .004, xc, yc, zc + bd / 2 - .002));
+      // each strap a loop of flat leather 2 cm wide round the ledger, its inner run in the gap against the creel's weave, through which it is laced
+      for (const dy of [-.065, .065]) { const y = yc + dy, e = .0015, W = LT + 2 * e + .002, Dd = LD + 2 * e + .002; st.push(box(.002, .02, Dd, x0 + LT + e, y, zc), box(.002, .02, Dd, x0 - e, y, zc), box(W, .02, .002, xc, y, zc + LD / 2 + e), box(W, .02, .002, xc, y, zc - LD / 2 - e)); }
+      const lm = clothMat(sRGB(...D.packLedger), 'leather', { rough: .7 }), L = add(withBase(mergeUV(lea)), lm, 'packLedger');
+      add(withBase(mergeUV(pg)), new THREE.MeshStandardMaterial({ color: sRGB(.82, .76, .6), roughness: .9 }), 'packLedgerPages');
+      add(withBase(mergeUV(st)), clothMat(sRGB(...(D.belt || [.3, .2, .13])), 'leather'), 'packLedgerStraps');
+      grp.userData.ledger = { x0, x1: x0 + LT, y0: yc - LH / 2, y1: yc + LH / 2, z0: .006, z1: .006 + LD }; }
   } else if (kind === 'frame') {
     const bm = new THREE.MeshStandardMaterial({ color: 0xffffff, map: birchTex(), roughness: .8 }), poles = [], up = [-1, 1].map(s => s * .16);
     for (const x of up) poles.push(poleGeom(new V(x, -P.H, .016), new V(x * .94, 0, .02), .017));
@@ -3783,6 +3797,9 @@ function buildBackpack(G, body, byName, meshes, root) {
   // the promise: no point of the person or what they wear inside it (within its outline, between its back and 8 cm in), the arms counted apart
   let inside = 0, armInside = 0, near = 1; eachPoint(clouds, (x, y, z, i) => { v.set(x, y, z).applyMatrix4(inv); if (v.y > 0 || v.y < -P.H || Math.abs(v.x) > halfW(v.y)) return; const bz = backpackBackZ(kind, P, v.y);
     if (v.z > bz - .001 && v.z < bz + .08) { if (armAny(i)) armInside++; else inside++; } else if (v.z <= bz - .001 && !armAny(i)) near = Math.min(near, bz - v.z); });
+  // the ledger (Session 2764): nothing of the person or what they wear within it or 5 mm of it, the arms counted apart, and the nearest arm point
+  const LB = grp.userData.ledger; let ledgerSt = null; if (LB) { let lin = 0, larm = 0, lnear = 1; eachPoint(clouds, (x, y, z, i) => { v.set(x, y, z).applyMatrix4(inv); const dx = Math.max(LB.x0 - v.x, 0, v.x - LB.x1), dy = Math.max(LB.y0 - v.y, 0, v.y - LB.y1), dz = Math.max(LB.z0 - v.z, 0, v.z - LB.z1), d = Math.hypot(dx, dy, dz);
+    if (d < .005) { if (armAny(i)) larm++; else lin++; } if (armAny(i)) lnear = Math.min(lnear, d); }); ledgerSt = { inside: lin, armInside: larm, armNear: +lnear.toFixed(4), off: +LB.x0.toFixed(3) }; }
   // the straps: from the pack's top over each shoulder, down the chest, under the arm and back to its foot (the arms' skin left out, as
   // under the guige; nothing over the neck's foot and 3 cm)
   const strapClouds = wornClouds(body, meshes, root).filter(c => !(c.m && /^(backpack|pack)/.test(c.m.name))).map(c => c.ids ? { X: c.X, ids: c.ids.filter(i => !armAny(i) && c.X[i * 3 + 1] < neck.y + .06) } : { X: c.X.filter((_, k) => c.X[k - k % 3 + 1] < neck.y + .03), ids: null });
@@ -3807,7 +3824,7 @@ function buildBackpack(G, body, byName, meshes, root) {
   for (const m of straps) root.add(m); root.updateMatrixWorld(true); chest.attach(grp); for (const m of straps) chest.attach(m);
   let tris = 0; for (const o of [grp, ...straps]) o.traverse(m => { if (m.isMesh) tris += (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; });
   let draws = straps.length ? 1 : 0; grp.traverse(m => { if (m.isMesh) draws++; });
-  return { mesh: grp, stats: { kind, lean: +lean.toFixed(3), back: +back.toFixed(3), inside, armInside, near: +near.toFixed(4), tris, draws, top: +(C.y - neck.y).toFixed(3), strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps } } };
+  return { mesh: grp, stats: { kind, ledger: ledgerSt, lean: +lean.toFixed(3), back: +back.toFixed(3), inside, armInside, near: +near.toFixed(4), tris, draws, top: +(C.y - neck.y).toFixed(3), strap: { len: +len.toFixed(3), through, worst: +worst.toFixed(4), tested, steps } } };
 }
 // the end of a rolled map (Session 2144): the sheet wound on itself, a spiral of its edge in faint ink round a dark hollow core
 function mapsTex() {
@@ -5137,6 +5154,35 @@ function buildShuttle(G, body, byName, meshes, root) {
   root.add(grp); bone.attach(grp);
   return { mesh: grp, stats: { under: +(nk.y - yC).toFixed(3), out: +(bb.min.z - fz).toFixed(4), through, cordIn, cordTested, bone: bone.name, tris: Math.round(tris) } };
 }
+// ── the wheel at the breast (Session 2764; Fiontán's, OG-054 at c: "a wheel turning at his breast", Michael's C on #1911) ──
+// A brass porthole 9 cm across on the breast, 14 cm under the neck's root and on the middle line, inside the sash where it crosses from
+// the left shoulder, as if the robe opened on what turns inside him: a bezel (a ring 8 mm thick) round a dark well, and in it two gears,
+// one of fourteen teeth 6 cm across, one of eight 3 cm across meshing with it up and to his left, both inside the bezel's 7.4 cm opening. It is laid 4 mm out from the frontmost of whatever is worn there (the
+// robe, the sash, the pack's straps), and carried by the spine's bone nearest it, as the guild's star is. `wheel` is the brass
+function buildBreastWheel(G, body, byName, meshes, root) {
+  const D = G.dress, clouds = wornClouds(body, meshes, root, false), loc = n => root.worldToLocal(byName[n].getWorldPosition(new THREE.Vector3())); root.updateMatrixWorld(true);
+  // the straps are rigid and kept out of the worn clouds (userData.shield): the wheel is laid over them too
+  root.traverse(m => { if (m.isMesh && !m.isSkinnedMesh && /^(packStrap|satchelStrap)/.test(m.name)) { const o = new Float32Array(m.geometry.attributes.position.count * 3); rigidInto(m, o); clouds.push({ X: o, ids: null, m }); } });
+  const nk = loc('neck01'), yC = nk.y - .14, xC = nk.x - .01, R = .046, T = .008;
+  let fz = -9; eachPoint(clouds, (px, py, pz) => { if (Math.hypot(py - yC, px - xC) < R + .004 && pz > fz) fz = pz; });
+  const z0 = fz + .004, col = sRGB(...D.wheel), brass = new THREE.MeshStandardMaterial({ color: col, metalness: .85, roughness: .34 }), dark = new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(.75), metalness: .85, roughness: .42 });
+  const grp = new THREE.Group(); grp.name = 'breastWheel'; let tris = 0; const add = (geo, m, name) => { geo.translate(xC, yC, z0); const o = new THREE.Mesh(geo, m); o.name = name; o.castShadow = o.receiveShadow = true; o.userData.shield = true; grp.add(o); tris += (geo.index ? geo.index.count : geo.attributes.position.count) / 3; return o; };
+  // the bezel: a ring, its back on z 0, its rounded face 8 mm out; the well behind the gears closes it
+  { const sh = new THREE.Shape(); sh.absarc(0, 0, R, 0, Math.PI * 2, false); const h = new THREE.Path(); h.absarc(0, 0, R - .009, 0, Math.PI * 2, true); sh.holes.push(h);
+    add(new THREE.ExtrudeGeometry(sh, { depth: T - .003, bevelEnabled: true, bevelSize: .0015, bevelThickness: .0015, bevelSegments: 2, curveSegments: 40 }).translate(0, 0, .0015), brass, 'wheelBezel'); }
+  add(new THREE.CircleGeometry(R - .007, 32).translate(0, 0, .001), new THREE.MeshStandardMaterial({ color: sRGB(.05, .04, .03), roughness: .9 }), 'wheelWell');
+  const gear = (Rg, teeth, x, y, rot, m, name) => { const s = new THREE.Shape(); for (let i = 0; i <= teeth * 4; i++) { const t = i / (teeth * 4) * Math.PI * 2 + rot, rr = (i % 4 < 2) ? Rg : Rg * .8; i ? s.lineTo(Math.cos(t) * rr, Math.sin(t) * rr) : s.moveTo(rr * Math.cos(t), rr * Math.sin(t)); }
+    const h = new THREE.Path(); h.absarc(0, 0, Rg * .22, 0, Math.PI * 2, true); s.holes.push(h); if (Rg > .03) for (let k = 0; k < 4; k++) { const w = new THREE.Path(), a = k * Math.PI / 2 + rot + .3; w.absarc(Math.cos(a) * Rg * .5, Math.sin(a) * Rg * .5, Rg * .17, 0, Math.PI * 2, true); s.holes.push(w); }
+    return add(new THREE.ExtrudeGeometry(s, { depth: .004, bevelEnabled: false, curveSegments: 8 }).translate(x, y, .002), m, name); };
+  gear(.03, 14, -.011, -.01, .2, brass, 'wheelGear');
+  gear(.015, 8, .017, .016, 0, dark, 'wheelPinion');
+  // the promise: nothing worn in front of the wheel's face, nor through it
+  let through = 0; const bb = new THREE.Box3(); grp.children.forEach(o => { o.geometry.computeBoundingBox(); bb.union(o.geometry.boundingBox); });
+  eachPoint(clouds, (x, y, z) => { if (Math.hypot(x - xC, y - yC) < R && z > bb.min.z) through++; });
+  const bone = ['spine05', 'spine04', 'spine03', 'spine02'].map(n => byName[n]).filter(Boolean).sort((p, q) => Math.abs(loc(p.name).y - yC) - Math.abs(loc(q.name).y - yC))[0];
+  root.add(grp); bone.attach(grp);
+  return { mesh: grp, stats: { under: +(nk.y - yC).toFixed(3), off: +(xC - nk.x).toFixed(3), across: 2 * R, out: +(bb.min.z - fz).toFixed(4), through, bone: bone.name, draws: grp.children.length, tris: Math.round(tris) } };
+}
 // ── the Mages' Guild's star (Session 2329; Michael's B on #1658, OG-064: the guild's livery over the people's own) ──
 // The hall sign's star (SIGN_STYLE's guild_m) worn as a brooch on the Archmage's deep blue robe: eight points, 7 cm across tip to tip
 // (the long points 3.6 cm from the middle, the short 2.6, the notches 1.4), 4 mm thick, its middle 6 cm to the wearer's right of the
@@ -5887,6 +5933,8 @@ function* makePersonSteps(G, o = {}) {
   let shuttleStats = null; if (D.shuttle && !D.tabard) shuttleStats = buildShuttle(G, body, byName, meshes, root)?.stats ?? null;
   // the Mages' Guild's star (Session 2329), over everything worn on the breast but a tabard
   let starStats = null; if (D.guildStar && !D.tabard) starStats = buildGuildStar(G, body, byName, meshes, root)?.stats ?? null;
+  // the wheel at the breast (Session 2764), over everything worn on the breast and the pack's straps
+  let wheelStats = null; if (D.wheel && !D.tabard) wheelStats = buildBreastWheel(G, body, byName, meshes, root)?.stats ?? null;
   let pipeStats = null; if (D.pipe && !D.helm && !hoodUpOn(D) && !veilOn(D) && !(D.tier && tierHelmOn(D))) pipeStats = buildPipe(G, body, byName, meshes, root, heads, jp, ix.bones).stats;
   // the wheeled chair (Session 1106), last, built to the seated body and everything on it
   yield;
@@ -5900,7 +5948,7 @@ function* makePersonSteps(G, o = {}) {
   yield;
   let tierFit = null; if (D.tier && (tierHelmOn(D) || hoodUpOn(D) && !D.helm)) { root.updateMatrixWorld(true); const F = fitHead({ root, skeleton, byName, meshes }), h = D.helm ? tierHelm(D.tier, F, { bold: true, closed: true }) : hoodDress(D.tier, F, { bold: true });
     if (h) { byName['head'].add(h.group); tierFit = { F, h }; const st = { tier: D.tier, tris: h.tris, draws: h.draws, gap: h.gap, size: h.size, above: h.top }; if (D.helm) helmStats = st; else hoodStats = { ...(hoodStats || {}), dress: st }; } }
-  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, hat: hatStats, lenses: lensStats, specs: specStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, mask: maskStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, reliquary: reliqStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
+  root.position.y = -(chairSt ? chairSt.ground : sandalSt ? sandalSt.ground : minY); return { root, skeleton, byName, meshes, hat: hatStats, lenses: lensStats, specs: specStats, wheel: wheelStats, shuttle: shuttleStats, guildStar: starStats, coldLook: { eyes: G.eyes, skin: G.skin }, buttons: buttonStats, hair: hairStats, cloak: cloakStats, tabard: tabardStats, sash: sashStats, shoulderWrap: shoulderWrapStats, wrap: wrapStats, veil: veilStats, wrapTail: tailStats, earrings: earStats, circlet: circletStats, mask: maskStats, eyepatch: patchStats, necklace: neckStats, beltCoins: beltCoinStats, beltCharms: charmStats, sandals: sandalSt, sashBelt: sashBeltSt, cord: cordStats, lacing: laceStats, skirtHands, hood: hoodStats, brows: browStats, helm: helmStats, mail: mailSt, shield: shieldStats, satchel: satchelStats, backpack: backpackStats, astrolabe: astroStats, reliquary: reliqStats, scholarKit: sKitStats, spear: spearStats, crossbow: crossbowStats, staff: staffStats, basket: basketStats, lantern: lanternStats, book: bookStats, tankard: tankardStats, hammer: hammerStats, sword: swordStats, pipe: pipeStats, legWraps: legWrapSt, chair: chairSt, coat: coatSt, coatHood: coatHoodSt, tierFit };
 }
 
 // palettes from OG-025: undyed wool, browns, slate blue, madder red; furs; ash-blond to red hair; pale to weathered skin
@@ -5923,7 +5971,7 @@ function markGenome(rnd, g, o = {}) {
 const hex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 const unhex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const r3 = v => Math.round(v * 1000) / 1000, round = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, r3(v)]));
-const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'specs', 'hat', 'hatBand', 'shuttle', 'guildStar', 'reliquary', 'packSkull'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14, cloakBack: false, hatKind: 'straw', helmKind: null, mask: null };
+const BODY_SLIDERS = ['g', 'age', 'muscle', 'weight', 'height', 'prop'], GARMENTS = ['tunic', 'trousers', 'boots', 'belt', 'mantle', 'cuffs', 'skirtColor', 'cloak', 'cloakFur', 'cloakHem', 'brooch', 'apron', 'tabard', 'tabardTrim', 'sash', 'sashBorder', 'wrap', 'wrapBorder', 'earrings', 'necklace', 'beltCoins', 'sashBelt', 'sandals', 'robe', 'cord', 'bodice', 'lace', 'cuffBand', 'mail', 'helm', 'shield', 'shieldPaint', 'shieldRim', 'spear', 'crossbow', 'legWraps', 'scarfPrint', 'basket', 'basketCloth', 'amulet', 'charms', 'dots', 'shoulderWrap', 'eyepatch', 'staff', 'chair', 'waistcoat', 'tartan', 'tartanLine', 'coat', 'coatFur', 'bands', 'bandsMotif', 'robeStripe', 'robeStripeLine', 'circlet', 'circletStone', 'gownBorder', 'burnousStripe', 'veil', 'vambrace', 'gloves', 'greaves', 'plateGlow', 'cowl', 'lantern', 'pipe', 'tankard', 'hammer', 'coatTrim', 'sword', 'satchel', 'backpack', 'book', 'penner', 'seal', 'astrolabe', 'maps', 'purses', 'lenses', 'specs', 'hat', 'hatBand', 'shuttle', 'guildStar', 'reliquary', 'packSkull', 'wheel', 'packLedger'], DRESS_FLAGS = { hood: null, cloakLen: .8, bib: false, apronLeather: false, cape: false, tabardLen: .5, sashSide: 'L', sashPrint: true, sashKnot: true, turban: false, scarf: false, wrapTail: null, shieldTurn: 1, shieldMetal: false, shieldShape: 'round', scales: false, spearHead: null, crossbowMake: null, swordMake: null, amuletSide: 'L', shoulderWrapSide: 'L', eyepatchSide: 'L', staffMake: null, dotsStyle: 'powder', waistcoatLeather: false, coatLen: .75, coatHood: null, tier: null, burnous: false, plate: null, vambraceKind: 'sheet', glovesKind: 'leather', greavesKind: 'sheet', cuisses: false, plateSig: null, sleevesRolled: false, coatOpen: false, broochMake: null, backpackKind: null, tabardSign: null, capeOpen: .14, cloakBack: false, hatKind: 'straw', helmKind: null, mask: null };
 function toSaved(G) {
   const D = G.dress || {}, dress = {}; for (const k of GARMENTS) if (D[k]) dress[k] = hex(D[k]); dress.skirt = D.skirt || null; for (const [k, d] of Object.entries(DRESS_FLAGS)) if (D[k] != null && (typeof D[k] === 'number' ? r3(D[k]) : D[k]) !== d) dress[k] = typeof D[k] === 'number' ? r3(D[k]) : D[k];
   const style = G.hair?.style ?? ((G.hairLen ?? .3) < .45 ? 'short' : 'loose');
@@ -6213,10 +6261,11 @@ const CAST = {
       wrap: [.8, .75, .62], veil: [.8, .75, .62], gloves: [.86, .84, .78], glovesKind: 'leather', mask: 'gold', necklace: [.74, .56, .2] }  },
   // Fiontán, the pilgrim in the brass face (Session 2761): a Gatelander, tall and stooped, a chronicler a day behind you on the road. At c,
   // OG-054's construct, its corrections kept (a man, not a made thing): the riveted brass face with the eyes lit, the hands in brass, an undyed
-  // robe under a madder sash, the straw hat, the hazel staff and the wicker creel. Owed: the patches, the ledger on the creel, the wheel at the breast
+  // robe under a madder sash, the straw hat, the hazel staff and the wicker creel; the ledger strapped to the creel and the wheel at the breast (Session 2764). Owed: the patches
   Fiontán: { people: 'gatelander', g: 1, age: .62, muscle: .45, weight: .3, metres: 1.86, hairCol: [.32, .3, .28], hair: { style: 'short', len: .4 }, beard: 0, pose: { stoop: .16 },
     dress: { robe: [.6, .56, .46], cord: [.4, .32, .22], sash: [.5, .14, .08], sashPrint: false, boots: [.22, .15, .1], hat: [.8, .7, .45], hatKind: 'straw', staff: [.4, .3, .2], staffMake: 'hazel',
-      backpack: [.5, .4, .26], backpackKind: 'creel', mask: 'construct', gloves: [.62, .46, .2], glovesKind: 'sheet' } } };
+      backpack: [.5, .4, .26], backpackKind: 'creel', mask: 'construct', gloves: [.62, .46, .2], glovesKind: 'sheet',
+      packLedger: [.26, .12, .07], wheel: [.62, .46, .2] } } };
 // a cast member's genome: their name's roll, then the sheet. `o.people` keeps a people the caller already knows (Corwin's), unless the
 // sheet's is `fixed` (Aldwyn's Old Blood, which the game's Gatelander driver does not know; Session 2103); `o.outfit` dresses them in one of
 // their sheet's other outfits in place of the first (Aldwyn's `travel`, Session 2113; `study`, Session 2135), the same face and body
