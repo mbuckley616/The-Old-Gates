@@ -2023,3 +2023,22 @@ at every level (one in Land, one in Other: 364 / 557 / 603 → 366 / 560 / 606),
 | Dunmore street, midnight | Low | 674 | 1.17 M | 0 | 0 | 122 (0 full) | 216 | 250 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 552, 1.02 M |
 | Dunmore street, midnight | Middle | 796 | 1.86 M | 104 | 6 | 122 (1 full) | 217 | 261 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 672, 1.71 M |
 | Dunmore street, midnight | High | 858 | 2.36 M | 148 | 6 | 122 (1 full) | 217 | 279 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 734, 2.22 M |
+
+### s2066 — 2026-11-28 01:06 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Portclare square, noon | Low | 357 | 799k | 0 | 0 | 20 (0 full) | 73 | 191 | 73 | Mesh 31, mill 10, cave mouth 8, sea cave mouth 8, Group 6 | 337, 710k |
+| Portclare square, noon | Middle | 603 | 1.67 M | 147 | 6 | 95 (2 full) | 75 | 207 | 73 | Mesh 31, mill 10, cave mouth 8, sea cave mouth 8, Group 6 | 500, 1.39 M |
+| Portclare square, noon | High | 662 | 2.10 M | 186 | 6 | 103 (3 full) | 76 | 218 | 73 | Mesh 31, mill 10, cave mouth 8, sea cave mouth 8, Group 6 | 553, 1.75 M |
+
+### s2066 — 2026-11-28 01:08 UTC
+
+| View | Level | Calls | Triangles | Shadow | Post | Bodies | Houses | Land | Other | Most of the other | Without bodies (calls, triangles) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Dunmore street, noon | Low | 542 | 1.18 M | 0 | 0 | 47 (0 full) | 160 | 250 | 85 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 495, 1.03 M |
+| Dunmore street, noon | Middle | 802 | 2.18 M | 147 | 6 | 142 (5 full) | 161 | 261 | 85 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 635, 1.74 M |
+| Dunmore street, noon | High | 866 | 2.71 M | 193 | 6 | 142 (6 full) | 161 | 279 | 85 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 697, 2.24 M |
+| Dunmore street, midnight | Low | 593 | 1.12 M | 0 | 0 | 41 (0 full) | 216 | 250 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 552, 1.03 M |
+| Dunmore street, midnight | Middle | 715 | 1.81 M | 104 | 6 | 41 (1 full) | 217 | 261 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 672, 1.71 M |
+| Dunmore street, midnight | High | 777 | 2.31 M | 148 | 6 | 41 (1 full) | 217 | 279 | 86 | Mesh 46, mill 12, sea cave mouth 8, cave mouth 7, weaver door 4 | 734, 2.22 M |
